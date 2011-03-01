@@ -1,0 +1,10 @@
+How to compile
+- install cmake
+- open therminal emulator and make this:
+	mkdir build
+	cd build
+	cmake ..
+If something going wrong, fix it - install qt4, sdl, alsa and zlib developement files
+And...
+	make
+Result should be './build/xpeccy' executable file
