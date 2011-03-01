@@ -1,0 +1,600 @@
+#include "setupwin.h"
+#include "emulwin.h"
+#include "settings.h"
+#include "filer.h"
+
+//#include "iosys.h"
+//#include "memory.h"
+#include "sound.h"
+//#include "video.h"
+#include "bdi.h"
+#include "tape.h"
+#include "hdd.h"
+#include "gs.h"
+#include "spectrum.h"
+
+#include <QStandardItemModel>
+#include <QFileDialog>
+
+SetupWin::SetupWin(QWidget* par):QDialog(par) {
+	setModal(true);
+	ui.setupUi(this);
+
+	umadial = new QDialog;
+	uia.setupUi(umadial);
+	umadial->setModal(true);
+
+	unsigned int i;
+// machine
+	for (i=0;i<sys->io->machlist.size();i++) {ui.machbox->addItem(QDialog::trUtf8(sys->io->machlist[i].name.c_str()));}
+	for (i=0;i<sys->mem->rsetlist.size();i++) {ui.rsetbox->addItem(QDialog::trUtf8(sys->mem->rsetlist[i].name.c_str()));}
+	ui.resbox->addItems(QStringList()<<"0:Basic 128"<<"1:Basic48"<<"2:Shadow"<<"3:DOS");
+	ui.mszbox->addItems(QStringList()<<"48K"<<"128K"<<"256K"<<"512K"<<"1024K");
+// video
+	ui.ssfbox->addItems(QStringList()<<"bmp"<<"png"<<"jpg"<<"scr");
+	for (i=0;i<sys->vid->layout.size();i++) {ui.geombox->addItem(QDialog::trUtf8(sys->vid->layout[i].name.c_str()));}
+// sound
+	for (i=0;i<snd->outsyslist.size();i++) {ui.outbox->addItem(QDialog::trUtf8(snd->outsyslist[i].name.c_str()));}
+	ui.ratbox->addItems(QStringList()<<"44100"<<"22050"<<"11025");
+	ui.schip1box->addItem(QIcon(":/images/cancel.png"),"none",QVariant(SND_NONE));
+	ui.schip1box->addItem(QIcon(":/images/MicrochipLogo.png"),"AY-3-8910",QVariant(SND_AY));
+	ui.schip1box->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2149",QVariant(SND_YM));
+	ui.schip2box->addItem(QIcon(":/images/cancel.png"),"none",QVariant(SND_NONE));
+	ui.schip2box->addItem(QIcon(":/images/MicrochipLogo.png"),"AY-3-8910",QVariant(SND_AY));
+	ui.schip2box->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2149",QVariant(SND_YM));
+	ui.stereo1box->addItem("Mono",QVariant(AY_MONO)); ui.stereo2box->addItem("Mono",QVariant(AY_MONO));
+	ui.stereo1box->addItem("ABC",QVariant(AY_ABC)); ui.stereo2box->addItem("ABC",QVariant(AY_ABC));
+	ui.stereo1box->addItem("ACB",QVariant(AY_ACB)); ui.stereo2box->addItem("ACB",QVariant(AY_ACB));
+	ui.stereo1box->addItem("BAC",QVariant(AY_BAC)); ui.stereo2box->addItem("BAC",QVariant(AY_BAC));
+	ui.stereo1box->addItem("BCA",QVariant(AY_BCA)); ui.stereo2box->addItem("BCA",QVariant(AY_BCA));
+	ui.stereo1box->addItem("CAB",QVariant(AY_CAB)); ui.stereo2box->addItem("CAB",QVariant(AY_CAB));
+	ui.stereo1box->addItem("CBA",QVariant(AY_CBA)); ui.stereo2box->addItem("CBA",QVariant(AY_BCA));
+	ui.tsbox->addItem("None",QVariant(TS_NONE));
+	ui.tsbox->addItem("NedoPC",QVariant(TS_NEDOPC));
+	ui.gstereobox->addItem("Mono",QVariant(GS_MONO));
+	ui.gstereobox->addItem("L:1,2; R:3,4",QVariant(GS_12_34));
+// hdd
+	ui.hiface->addItem("None",QVariant(IDE_NONE));
+	ui.hiface->addItem("Nemo",QVariant(IDE_NEMO));
+	ui.hiface->addItem("Nemo A8",QVariant(IDE_NEMOA8));
+	ui.hm_type->addItem(QIcon(":/images/cancel.png"),"Not connected",QVariant(IDE_NONE));
+	ui.hm_type->addItem(QIcon(":/images/hdd.png"),"HDD (ATA)",QVariant(IDE_ATA));
+	ui.hm_type->addItem(QIcon(":/images/cd.png"),"CD (ATAPI) not working yet",QVariant(IDE_ATAPI));
+	ui.hs_type->addItem(QIcon(":/images/cancel.png"),"Not connected",QVariant(IDE_NONE));
+	ui.hs_type->addItem(QIcon(":/images/hdd.png"),"HDD (ATA)",QVariant(IDE_ATA));
+	ui.hs_type->addItem(QIcon(":/images/cd.png"),"CD (ATAPI) not working yet",QVariant(IDE_ATAPI));
+
+// all
+	QObject::connect(ui.okbut,SIGNAL(released()),this,SLOT(okay()));
+	QObject::connect(ui.apbut,SIGNAL(released()),this,SLOT(apply()));
+	QObject::connect(ui.cnbut,SIGNAL(released()),this,SLOT(reject()));
+// machine
+	QObject::connect(ui.rsetbox,SIGNAL(currentIndexChanged(int)),this,SLOT(buildrsetlist()));
+	QObject::connect(ui.machbox,SIGNAL(currentIndexChanged(int)),this,SLOT(setmszbox(int)));
+	QObject::connect(ui.mszbox,SIGNAL(currentIndexChanged(int)),this,SLOT(okbuts()));
+	QObject::connect(ui.cpufrq,SIGNAL(valueChanged(int)),this,SLOT(updfrq()));
+// video
+	QObject::connect(ui.pathtb,SIGNAL(released()),this,SLOT(selsspath()));
+	QObject::connect(ui.bszsld,SIGNAL(valueChanged(int)),this,SLOT(chabsz()));
+// sound
+	QObject::connect(ui.bvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
+	QObject::connect(ui.tvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
+	QObject::connect(ui.avsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
+	QObject::connect(ui.gvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
+// dos
+	QObject::connect(ui.newatb,SIGNAL(released()),this,SLOT(newa()));
+	QObject::connect(ui.newbtb,SIGNAL(released()),this,SLOT(newb()));
+	QObject::connect(ui.newctb,SIGNAL(released()),this,SLOT(newc()));
+	QObject::connect(ui.newdtb,SIGNAL(released()),this,SLOT(newd()));
+
+	QObject::connect(ui.loadatb,SIGNAL(released()),this,SLOT(loada()));
+	QObject::connect(ui.loadbtb,SIGNAL(released()),this,SLOT(loadb()));
+	QObject::connect(ui.loadctb,SIGNAL(released()),this,SLOT(loadc()));
+	QObject::connect(ui.loaddtb,SIGNAL(released()),this,SLOT(loadd()));
+
+	QObject::connect(ui.saveatb,SIGNAL(released()),this,SLOT(savea()));
+	QObject::connect(ui.savebtb,SIGNAL(released()),this,SLOT(saveb()));
+	QObject::connect(ui.savectb,SIGNAL(released()),this,SLOT(savec()));
+	QObject::connect(ui.savedtb,SIGNAL(released()),this,SLOT(saved()));
+
+	QObject::connect(ui.remoatb,SIGNAL(released()),this,SLOT(ejcta()));
+	QObject::connect(ui.remobtb,SIGNAL(released()),this,SLOT(ejctb()));
+	QObject::connect(ui.remoctb,SIGNAL(released()),this,SLOT(ejctc()));
+	QObject::connect(ui.remodtb,SIGNAL(released()),this,SLOT(ejctd()));
+// tape
+	QObject::connect(ui.tapelist,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(chablock(QModelIndex)));
+	QObject::connect(ui.tloadtb,SIGNAL(released()),this,SLOT(loatape()));
+	QObject::connect(ui.tsavetb,SIGNAL(released()),this,SLOT(savtape()));
+	QObject::connect(ui.tremotb,SIGNAL(released()),this,SLOT(ejctape()));
+	QObject::connect(ui.blkuptb,SIGNAL(released()),this,SLOT(tblkup()));
+	QObject::connect(ui.blkdntb,SIGNAL(released()),this,SLOT(tblkdn()));
+	QObject::connect(ui.blkrmtb,SIGNAL(released()),this,SLOT(tblkrm()));
+// hdd
+	QObject::connect(ui.hm_islba,SIGNAL(stateChanged(int)),this,SLOT(hddcap()));
+	QObject::connect(ui.hm_glba,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	QObject::connect(ui.hm_gcyl,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	QObject::connect(ui.hm_ghd,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	QObject::connect(ui.hm_gsec,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	QObject::connect(ui.hs_islba,SIGNAL(stateChanged(int)),this,SLOT(hddcap()));
+	QObject::connect(ui.hs_glba,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	QObject::connect(ui.hs_gcyl,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	QObject::connect(ui.hs_ghd,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	QObject::connect(ui.hs_gsec,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+//tools
+	QObject::connect(ui.sjselptb,SIGNAL(released()),this,SLOT(ssjapath()));
+	QObject::connect(ui.pdselptb,SIGNAL(released()),this,SLOT(sprjpath()));
+	QObject::connect(ui.umlist,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(umedit(QModelIndex)));
+	QObject::connect(ui.umaddtb,SIGNAL(released()),this,SLOT(umadd()));
+	QObject::connect(ui.umdeltb,SIGNAL(released()),this,SLOT(umdel()));
+	QObject::connect(ui.umuptb,SIGNAL(released()),this,SLOT(umup()));
+	QObject::connect(ui.umdntb,SIGNAL(released()),this,SLOT(umdn()));
+//usermenu add dialog
+	QObject::connect(uia.umasptb,SIGNAL(released()),this,SLOT(umaselp()));
+	QObject::connect(uia.umaok,SIGNAL(released()),this,SLOT(umaconf()));
+	QObject::connect(uia.umacn,SIGNAL(released()),umadial,SLOT(hide()));
+}
+
+void SetupWin::okay() {apply();reject();}
+
+void SetupWin::start() {
+	mwin->repause(true,PR_OPTS);
+// machine
+	ui.machbox->setCurrentIndex(ui.machbox->findText(QDialog::trUtf8(machine->name.c_str())));
+	ui.rsetbox->setCurrentIndex(ui.rsetbox->findText(QDialog::trUtf8(sys->mem->romset->name.c_str())));
+	ui.reschk->setChecked(sys->io->resafter);
+	ui.resbox->setCurrentIndex(sys->mem->res);
+	switch(sys->io->mask) {
+		case 0x00: ui.mszbox->setCurrentIndex(0); break;
+		case 0x07: ui.mszbox->setCurrentIndex(1); break;
+		case 0x0f: ui.mszbox->setCurrentIndex(2); break;
+		case 0x1f: ui.mszbox->setCurrentIndex(3); break;
+		case 0x3f: ui.mszbox->setCurrentIndex(4); break;
+	}
+	ui.cpufrq->setValue(sys->cpu->frq * 2);
+	ui.scrpwait->setChecked(sets->wait);
+	updfrq();
+// video
+	ui.dszchk->setChecked((sys->vid->flags & VF_DOUBLE));
+//	ui.fscchk->setChecked(vid->fscreen);
+	ui.bszsld->setValue((int)(sys->vid->brdsize * 100));
+	ui.pathle->setText(QDialog::trUtf8(sets->ssdir.c_str()));
+	ui.ssfbox->setCurrentIndex(ui.ssfbox->findText(QDialog::trUtf8(sets->ssformat.c_str())));
+	ui.scntbox->setValue(sets->sscnt);
+	ui.sintbox->setValue(sets->ssint);
+	ui.geombox->setCurrentIndex(ui.geombox->findText(QDialog::trUtf8(sys->vid->curlay.c_str())));
+// sound
+	ui.senbox->setChecked(snd->enabled);
+	ui.mutbox->setChecked(snd->mute);
+	ui.gsrbox->setChecked(gs->flags & GS_RESET);
+	ui.outbox->setCurrentIndex(ui.outbox->findText(QDialog::trUtf8(sets->soutname.c_str())));
+	ui.ratbox->setCurrentIndex(ui.ratbox->findText(QString::number(snd->rate)));
+	ui.bvsld->setValue(snd->beepvol);
+	ui.tvsld->setValue(snd->tapevol);
+	ui.avsld->setValue(snd->ayvol);
+	ui.gvsld->setValue(snd->gsvol);
+	ui.schip1box->setCurrentIndex(ui.schip1box->findData(QVariant(snd->sc1->type)));
+	ui.schip2box->setCurrentIndex(ui.schip2box->findData(QVariant(snd->sc2->type)));
+	ui.stereo1box->setCurrentIndex(ui.stereo1box->findData(QVariant(snd->sc1->stereo)));
+	ui.stereo2box->setCurrentIndex(ui.stereo2box->findData(QVariant(snd->sc2->stereo)));
+	ui.gstereobox->setCurrentIndex(ui.gstereobox->findData(QVariant(gs->stereo)));
+	ui.gsgroup->setChecked(gs->flags & GS_ENABLE);
+	ui.tsbox->setCurrentIndex(ui.tsbox->findData(QVariant(snd->tstype)));
+// dos
+	ui.bdebox->setChecked(bdi->enable);
+	ui.bdtbox->setChecked(bdi->turbo);
+	ui.apathle->setText(QDialog::trUtf8(bdi->flop[0].path.c_str()));
+		ui.a80box->setChecked(bdi->flop[0].trk80);
+		ui.adsbox->setChecked(bdi->flop[0].dblsid);
+		ui.awpbox->setChecked(bdi->flop[0].protect);
+	ui.bpathle->setText(QDialog::trUtf8(bdi->flop[1].path.c_str()));
+		ui.b80box->setChecked(bdi->flop[1].trk80);
+		ui.bdsbox->setChecked(bdi->flop[1].dblsid);
+		ui.bwpbox->setChecked(bdi->flop[1].protect);
+	ui.cpathle->setText(QDialog::trUtf8(bdi->flop[2].path.c_str()));
+		ui.c80box->setChecked(bdi->flop[2].trk80);
+		ui.cdsbox->setChecked(bdi->flop[2].dblsid);
+		ui.cwpbox->setChecked(bdi->flop[2].protect);
+	ui.dpathle->setText(QDialog::trUtf8(bdi->flop[3].path.c_str()));
+		ui.d80box->setChecked(bdi->flop[3].trk80);
+		ui.ddsbox->setChecked(bdi->flop[3].dblsid);
+		ui.dwpbox->setChecked(bdi->flop[3].protect);
+// hdd
+	ui.hiface->setCurrentIndex(ui.hiface->findData(ide->iface));
+	
+	ui.hm_type->setCurrentIndex(ui.hm_type->findData(QVariant(ide->master.iface)));
+	ui.hm_model->setText(QDialog::trUtf8(ide->master.pass.model.c_str()));
+	ui.hm_ser->setText(QDialog::trUtf8(ide->master.pass.serial.c_str()));
+	ui.hm_path->setText(QDialog::trUtf8(ide->master.image.c_str()));
+	ui.hm_islba->setChecked(ide->master.canlba);
+	ui.hm_gsec->setValue(ide->master.pass.spt);
+	ui.hm_ghd->setValue(ide->master.pass.hds);
+	ui.hm_gcyl->setValue(ide->master.pass.cyls);
+
+	ui.hs_type->setCurrentIndex(ui.hm_type->findData(QVariant(ide->slave.iface)));
+	ui.hs_model->setText(QDialog::trUtf8(ide->slave.pass.model.c_str()));
+	ui.hs_ser->setText(QDialog::trUtf8(ide->slave.pass.serial.c_str()));
+	ui.hs_path->setText(QDialog::trUtf8(ide->slave.image.c_str()));
+	ui.hs_islba->setChecked(ide->slave.canlba);
+	ui.hs_gsec->setValue(ide->slave.pass.spt);
+	ui.hs_ghd->setValue(ide->slave.pass.hds);
+	ui.hs_gcyl->setValue(ide->slave.pass.cyls);
+// tape
+	ui.tpathle->setText(QDialog::trUtf8(tape->path.c_str()));
+	buildtapelist();
+// tools
+	ui.sjpathle->setText(QDialog::trUtf8(sets->sjapath.c_str()));
+	ui.prjdirle->setText(QDialog::trUtf8(sets->prjdir.c_str()));
+	buildmenulist();
+
+	show();
+}
+
+void SetupWin::apply() {
+// machine
+	Machine *oldmac = machine;
+	sets->machname = std::string(ui.machbox->currentText().toUtf8().data());
+	sys->io->setmacptr(sets->machname);
+	sets->rsetname = std::string(ui.rsetbox->currentText().toUtf8().data());
+	sys->mem->setromptr(sets->rsetname); sys->mem->loadromset();
+	sys->io->resafter = ui.reschk->isChecked();
+	sys->mem->res = ui.resbox->currentIndex();
+	switch(ui.mszbox->currentIndex()) {
+		case 0: sys->io->mask = 0x00; break;
+		case 1: sys->io->mask = 0x07; break;
+		case 2: sys->io->mask = 0x0f; break;
+		case 3: sys->io->mask = 0x1f; break;
+		case 4: sys->io->mask = 0x3f; break;
+	}
+	if (machine != oldmac) mwin->reset();
+	sys->cpu->frq = ui.cpufrq->value() / 2.0;
+	sets->wait = ui.scrpwait->isChecked();
+// video
+	if (ui.dszchk->isChecked()) sys->vid->flags |= VF_DOUBLE; else sys->vid->flags |= VF_DOUBLE;
+//	vid->fscreen = ui.fscchk->isChecked();
+	sys->vid->brdsize = ui.bszsld->value()/100.0;
+	sets->ssdir = std::string(ui.pathle->text().toUtf8().data());
+	sets->ssformat = std::string(ui.ssfbox->currentText().toUtf8().data());
+	sets->sscnt = ui.scntbox->value();
+	sets->ssint = ui.sintbox->value();
+	sys->vid->setlayout(std::string(ui.geombox->currentText().toUtf8().data()));
+// sound
+	std::string oname = sets->soutname;
+	int orate = snd->rate;
+	snd->enabled = ui.senbox->isChecked();
+	snd->mute = ui.mutbox->isChecked();
+	if (ui.gsrbox->isChecked()) gs->flags |= GS_RESET; else gs->flags &= ~GS_RESET;
+	sets->soutname = std::string(ui.outbox->currentText().toUtf8().data());
+	snd->rate = ui.ratbox->currentText().toInt();
+	snd->beepvol = ui.bvsld->value();
+	snd->tapevol = ui.tvsld->value();
+	snd->ayvol = ui.avsld->value();
+	snd->gsvol = ui.gvsld->value();
+	if ((oname != sets->soutname) || (orate != snd->rate)) snd->setoutptr(sets->soutname);
+	snd->sc1->settype(ui.schip1box->itemData(ui.schip1box->currentIndex()).toInt());
+	snd->sc2->settype(ui.schip2box->itemData(ui.schip2box->currentIndex()).toInt());
+	snd->sc1->stereo = ui.stereo1box->itemData(ui.stereo1box->currentIndex()).toInt();
+	snd->sc2->stereo = ui.stereo2box->itemData(ui.stereo2box->currentIndex()).toInt();
+	gs->stereo = ui.gstereobox->itemData(ui.gstereobox->currentIndex()).toInt();
+	if (ui.gsgroup->isChecked()) gs->flags |= GS_ENABLE; else gs->flags &= ~GS_ENABLE;
+	snd->tstype = ui.tsbox->itemData(ui.tsbox->currentIndex()).toInt();
+// dos
+	bdi->enable = ui.bdebox->isChecked();
+	bdi->turbo = ui.bdtbox->isChecked();
+	bdi->flop[0].trk80 = ui.a80box->isChecked();
+		bdi->flop[0].dblsid = ui.adsbox->isChecked();
+		bdi->flop[0].protect = ui.awpbox->isChecked();
+	bdi->flop[1].trk80 = ui.b80box->isChecked();
+		bdi->flop[1].dblsid = ui.bdsbox->isChecked();
+		bdi->flop[1].protect = ui.bwpbox->isChecked();
+	bdi->flop[2].trk80 = ui.c80box->isChecked();
+		bdi->flop[2].dblsid = ui.cdsbox->isChecked();
+		bdi->flop[2].protect = ui.cwpbox->isChecked();
+	bdi->flop[3].trk80 = ui.d80box->isChecked();
+		bdi->flop[3].dblsid = ui.ddsbox->isChecked();
+		bdi->flop[3].protect = ui.dwpbox->isChecked();
+// hdd
+	ide->iface = ui.hiface->itemData(ui.hiface->currentIndex()).toInt();
+
+	ide->master.iface = ui.hm_type->itemData(ui.hm_type->currentIndex()).toInt();
+	ide->master.pass.model = std::string(ui.hm_model->text().toUtf8().data(),40);
+	ide->master.pass.serial = std::string(ui.hm_ser->text().toUtf8().data(),20);
+	ide->master.image = std::string(ui.hm_path->text().toUtf8().data());
+	ide->master.canlba = ui.hm_islba->isChecked();
+	ide->master.pass.spt = ui.hm_gsec->value();
+	ide->master.pass.hds = ui.hm_ghd->value();
+	ide->master.pass.cyls = ui.hm_gcyl->value();
+	
+	ide->slave.iface = ui.hs_type->itemData(ui.hs_type->currentIndex()).toInt();
+	ide->slave.pass.model = std::string(ui.hs_model->text().toUtf8().data(),40);
+	ide->slave.pass.serial = std::string(ui.hs_ser->text().toUtf8().data(),20);
+	ide->slave.image = std::string(ui.hs_path->text().toUtf8().data());
+	ide->slave.canlba = ui.hs_islba->isChecked();
+	ide->slave.pass.spt = ui.hs_gsec->value();
+	ide->slave.pass.hds = ui.hs_ghd->value();
+	ide->slave.pass.cyls = ui.hs_gcyl->value();
+
+// tools
+	sets->sjapath = std::string(ui.sjpathle->text().toUtf8().data());
+	sets->prjdir = std::string(ui.prjdirle->text().toUtf8().data());
+
+	snd->defpars();
+	sys->vid->update();
+	sets->save();
+}
+
+void SetupWin::reject() {
+	hide();
+	mwin->makemenu();
+	mwin->repause(false,PR_OPTS);
+}
+
+// lists
+
+void SetupWin::okbuts() {
+	int t = sys->io->machlist[ui.machbox->currentIndex()].mask;
+	if (t == 0x00) {
+		ui.okbut->setEnabled(ui.mszbox->currentIndex()==0);
+	} else {
+		ui.okbut->setEnabled((1<<(ui.mszbox->currentIndex()-1)) & t);
+	}
+	ui.apbut->setEnabled(ui.okbut->isEnabled());
+}
+
+void SetupWin::setmszbox(int idx) {
+	int t = sys->io->machlist[idx].mask;
+	QIcon okicon = QIcon(":/images/ok-apply.png");
+	QIcon ericon = QIcon(":/images/cancel.png");
+	if (t == 0x00) {
+		ui.mszbox->setItemIcon(0,okicon);
+		ui.mszbox->setItemIcon(1,ericon);
+		ui.mszbox->setItemIcon(2,ericon);
+		ui.mszbox->setItemIcon(3,ericon);
+		ui.mszbox->setItemIcon(4,ericon);
+	} else {
+		ui.mszbox->setItemIcon(0,ericon);
+		ui.mszbox->setItemIcon(1,(t & 1)?okicon:ericon);
+		ui.mszbox->setItemIcon(2,(t & 2)?okicon:ericon);
+		ui.mszbox->setItemIcon(3,(t & 4)?okicon:ericon);
+		ui.mszbox->setItemIcon(4,(t & 8)?okicon:ericon);
+	}
+	okbuts();
+}
+
+void SetupWin::buildrsetlist() {
+	int i;
+	RomSet rset = sys->mem->rsetlist[ui.rsetbox->currentIndex()];
+	QStringList lst = QStringList()<<"Basic128"<<"Basic48"<<"Shadow"<<"DOS"<<"ext0"<<"ext1"<<"ext2"<<"ext3";
+	QStandardItemModel *model = new QStandardItemModel(8,3);
+	QStandardItem *itm;
+	for (i=0; i<8; i++) {
+		itm = new QStandardItem(lst[i]); model->setItem(i,0,itm);
+		itm = new QStandardItem(QDialog::trUtf8(rset.roms[i].path.c_str())); model->setItem(i,1,itm);
+		if (rset.roms[i].path!="") {
+			itm = new QStandardItem(QString::number(rset.roms[i].part));
+		} else {
+			itm = new QStandardItem();
+		}
+		model->setItem(i,2,itm);
+	}
+	itm = new QStandardItem("GS"); model->setItem(i,0,itm);
+	itm = new QStandardItem(QDialog::trUtf8(sets->gsrom.c_str())); model->setItem(i,1,itm);
+	ui.rstab->setModel(model);
+	ui.rstab->setColumnWidth(0,100);
+	ui.rstab->setColumnWidth(1,300);
+	ui.rstab->setColumnWidth(2,50);
+}
+
+void SetupWin::buildtapelist() {
+	int i,tm,ts;
+	QStandardItemModel *model = new QStandardItemModel(tape->data.size(),5);
+	QStandardItem *itm;
+	for(i=0;i<model->rowCount();i++) {
+		if ((int)tape->block == i) {
+			itm = new QStandardItem(QIcon(":/images/checkbox.png"),"");
+			model->setItem(i,0,itm);
+			ts = tape->data[i].gettime(tape->pos); tm = ts/60; ts -= tm*60;
+			itm = new QStandardItem(QString::number(tm).append(":").append(QString::number(ts+100).right(2)));
+			model->setItem(i,2,itm);
+		} else {
+			itm = new QStandardItem(); model->setItem(i,0,itm);
+			itm = new QStandardItem(); model->setItem(i,2,itm);
+		}
+		ts = tape->data[i].gettime(-1); tm = ts/60; ts -= tm*60;
+		itm = new QStandardItem(QString::number(tm).append(":").append(QString::number(ts+100).right(2)));
+		model->setItem(i,1,itm);
+		itm = new QStandardItem(QString::number(tape->data[i].getsize()));
+		model->setItem(i,3,itm);
+		itm = new QStandardItem(QDialog::trUtf8(tape->data[i].getheader().c_str()));
+		model->setItem(i,4,itm);
+	}
+	ui.tapelist->setModel(model);
+	ui.tapelist->setColumnWidth(0,20);
+	ui.tapelist->setColumnWidth(1,50);
+	ui.tapelist->setColumnWidth(2,50);
+	ui.tapelist->setColumnWidth(3,100);
+	ui.tapelist->selectRow(0);
+}
+
+void SetupWin::buildmenulist() {
+	QStandardItemModel *model = new QStandardItemModel(sets->umenu.data.size(),2);
+	QStandardItem *itm;
+	unsigned char i;
+	for(i=0;i<sets->umenu.data.size();i++) {
+		itm = new QStandardItem(QDialog::trUtf8(sets->umenu.data[i].name.c_str()));
+		model->setItem(i,0,itm);
+		itm = new QStandardItem(QDialog::trUtf8(sets->umenu.data[i].path.c_str()));
+		model->setItem(i,1,itm);
+	}
+	ui.umlist->setModel(model);
+	ui.umlist->setColumnWidth(0,100);
+	ui.umlist->selectRow(0);
+};
+
+// machine
+
+void SetupWin::updfrq() {
+	double f = ui.cpufrq->value() / 2.0;
+	ui.cpufrqlab->setText(QString::number(f,'f',2).append(" MHz"));
+}
+
+// video
+
+void SetupWin::chabsz() {ui.bszlab->setText(QString::number(ui.bszsld->value()).append("%"));}
+
+void SetupWin::selsspath() {
+	QString fpath = QFileDialog::getExistingDirectory(this,"Screenshots folder",QDialog::trUtf8(sets->ssdir.c_str()),QFileDialog::ShowDirsOnly);
+	if (fpath!="") ui.pathle->setText(fpath);
+}
+
+// sound
+
+void SetupWin::updvolumes() {
+	ui.bvlab->setText(QString::number(ui.bvsld->value()));
+	ui.tvlab->setText(QString::number(ui.tvsld->value()));
+	ui.avlab->setText(QString::number(ui.avsld->value()));
+	ui.gslab->setText(QString::number(ui.gvsld->value()));
+}
+
+// disk
+
+void SetupWin::newdisk(int idx) {
+	Floppy *flp = &bdi->flop[idx & 3];
+	if (!flp->savecha()) return;
+	flp->format();
+	flp->path = std::string(QDir::homePath().toUtf8().data()) + "/disk.trd";
+	flp->insert = true;
+	flp->changed = true;
+	updatedisknams();
+}
+
+void SetupWin::newa() {newdisk(0);}
+void SetupWin::newb() {newdisk(1);}
+void SetupWin::newc() {newdisk(2);}
+void SetupWin::newd() {newdisk(3);}
+
+void SetupWin::loada() {filer->loaddisk("",0,true); updatedisknams();}
+void SetupWin::loadb() {filer->loaddisk("",1,true); updatedisknams();}
+void SetupWin::loadc() {filer->loaddisk("",2,true); updatedisknams();}
+void SetupWin::loadd() {filer->loaddisk("",3,true); updatedisknams();}
+
+void SetupWin::savea() {filer->savedisk(bdi->flop[0].path,0,true);}
+void SetupWin::saveb() {filer->savedisk(bdi->flop[1].path,1,true);}
+void SetupWin::savec() {filer->savedisk(bdi->flop[2].path,2,true);}
+void SetupWin::saved() {filer->savedisk(bdi->flop[3].path,3,true);}
+
+void SetupWin::ejcta() {bdi->flop[0].eject(); updatedisknams();}
+void SetupWin::ejctb() {bdi->flop[1].eject(); updatedisknams();}
+void SetupWin::ejctc() {bdi->flop[2].eject(); updatedisknams();}
+void SetupWin::ejctd() {bdi->flop[3].eject(); updatedisknams();}
+
+void SetupWin::updatedisknams() {
+	ui.apathle->setText(QDialog::trUtf8(bdi->flop[0].path.c_str()));
+	ui.bpathle->setText(QDialog::trUtf8(bdi->flop[1].path.c_str()));
+	ui.cpathle->setText(QDialog::trUtf8(bdi->flop[2].path.c_str()));
+	ui.dpathle->setText(QDialog::trUtf8(bdi->flop[3].path.c_str()));
+}
+
+// tape
+
+void SetupWin::loatape() {filer->loadtape("",true); ui.tpathle->setText(QDialog::trUtf8(tape->path.c_str())); buildtapelist();}
+void SetupWin::savtape() {filer->savetape(tape->path,true);}
+void SetupWin::ejctape() {tape->eject(); ui.tpathle->setText(QDialog::trUtf8(tape->path.c_str())); buildtapelist();}
+void SetupWin::tblkup() {
+	int ps = ui.tapelist->currentIndex().row();
+	if (ps>0) {tape->swapblocks(ps,ps-1); buildtapelist(); ui.tapelist->selectRow(ps-1);}
+}
+void SetupWin::tblkdn() {
+	int ps = ui.tapelist->currentIndex().row();
+	if ((ps!=-1) && (ps<(int)tape->data.size()-1)) {tape->swapblocks(ps,ps+1); buildtapelist(); ui.tapelist->selectRow(ps+1);}
+}
+void SetupWin::tblkrm() {
+	int ps = ui.tapelist->currentIndex().row();
+	if (ps!=-1) {tape->data.erase(tape->data.begin()+ps); buildtapelist(); ui.tapelist->selectRow(ps);}
+}
+
+void SetupWin::chablock(QModelIndex idx) {
+	int row = idx.row();
+	tape->block = row;
+	tape->pos = 0;
+	buildtapelist();
+	ui.tapelist->selectRow(row);
+}
+
+// hdd
+
+void SetupWin::hddcap() {
+	unsigned int sz;
+	if (ui.hm_islba->checkState() == Qt::Checked) {
+		sz = (ui.hm_glba->value() >> 11);
+	} else {
+		sz = ((ui.hm_gsec->value() * (ui.hm_ghd->value() + 1) * (ui.hm_gcyl->value() + 1)) >> 11);
+	}
+	ui.hm_capacity->setValue(sz);
+	if (ui.hs_islba->checkState() == Qt::Checked) {
+		sz = (ui.hs_glba->value() >> 11);
+	} else {
+		sz = ((ui.hs_gsec->value() * (ui.hs_ghd->value() + 1) * (ui.hs_gcyl->value() + 1)) >> 11);
+	}
+	ui.hs_capacity->setValue(sz);
+}
+
+// tools
+
+void SetupWin::ssjapath() {
+	QString fnam = filer->open(NULL,"Select SJAsm executable","",QStringList()<<"All files (*)").selfile;
+	if (fnam!="") ui.sjpathle->setText(fnam);
+}
+
+void SetupWin::sprjpath() {
+	QString fnam = QFileDialog::getExistingDirectory(this,"Projects file",QDialog::trUtf8(sets->prjdir.c_str()),QFileDialog::ShowDirsOnly);
+	if (fnam!="") ui.prjdirle->setText(fnam);
+}
+
+void SetupWin::umup() {
+	int ps = ui.umlist->currentIndex().row();
+	if (ps>0) {sets->umenu.swap(ps,ps-1); buildmenulist(); ui.umlist->selectRow(ps-1);}
+}
+
+void SetupWin::umdn() {
+	int ps = ui.umlist->currentIndex().row();
+	if ((ps!=-1) && (ps < (int)sets->umenu.data.size()-1)) {sets->umenu.swap(ps,ps+1); buildmenulist(); ui.umlist->selectRow(ps+1);}
+}
+
+void SetupWin::umdel() {
+	int ps = ui.umlist->currentIndex().row();
+	if (ps!=-1) {
+		sets->umenu.del(ps); buildmenulist();
+		if (ps==(int)sets->umenu.data.size()) ui.umlist->selectRow(ps-1); else ui.umlist->selectRow(ps);
+	}
+}
+
+void SetupWin::umadd() {
+	uia.namele->clear();
+	uia.pathle->clear();
+	umidx = -1;
+	umadial->show();
+}
+
+void SetupWin::umedit(QModelIndex idx) {
+	umidx = idx.row();
+	uia.namele->setText(QDialog::trUtf8(sets->umenu.data[umidx].name.c_str()));
+	uia.pathle->setText(QDialog::trUtf8(sets->umenu.data[umidx].path.c_str()));
+	umadial->show();
+}
+
+void SetupWin::umaselp() {
+	QString fpath = filer->open(NULL,"Select file","",QStringList()<<"Known formats (*.sna *.tap *.tzx *.trd *.scl)").selfile;
+	if (fpath!="") uia.pathle->setText(fpath);
+}
+
+void SetupWin::umaconf() {
+	if ((uia.namele->text()=="") || (uia.pathle->text()=="")) return;
+	if (umidx == -1) {
+		sets->umenu.add(std::string(uia.namele->text().toUtf8().data()),std::string(uia.pathle->text().toUtf8().data()));
+	} else {
+		sets->umenu.set(umidx,std::string(uia.namele->text().toUtf8().data()),std::string(uia.pathle->text().toUtf8().data()));
+	}
+	umadial->hide();
+	buildmenulist();
+	ui.umlist->selectRow(sets->umenu.data.size()-1);
+}
