@@ -48,6 +48,11 @@ MFiler *filer;
 
 Settings *sets;
 
+void shithappens(const char* msg) {
+	QMessageBox mbx(QMessageBox::Critical,"Shit happens",QString(msg),QMessageBox::Ok);
+	mbx.exec();
+}
+
 std::string int2str(int num) {std::stringstream str; str<<num; return str.str();}
 bool str2bool(std::string v) {
 	return (v=="y" || v=="Y" || v=="1" || v=="yes" || v=="YES" || v=="true" || v=="TRUE");
@@ -91,8 +96,8 @@ void zx_out(int,unsigned char);
 void filltabs();
 
 int main(int ac,char** av) {
+	QApplication app(ac,av);
 	try {
-		QApplication app(ac,av);
 #if SDLMAINWIN
 		app.setQuitOnLastWindowClosed(true);
 #endif
@@ -140,6 +145,9 @@ int main(int ac,char** av) {
 			mkdir(sets->romdir.c_str());
 			sets->soutname = "WaveOut";
 #endif
+#if !SDLMAINWIN
+			mwin->show();
+#endif
 			sets->load(false);
 			swin = new SetupWin((QWidget*)mwin);
 			mwin->reset();
@@ -151,7 +159,7 @@ int main(int ac,char** av) {
 #if SDLMAINWIN
 			QObject::connect(mwin,SIGNAL(icum()),&app,SLOT(quit()));
 #else
-			mwin->show();
+//			mwin->show();
 #endif
 			mwin->tim1->start(20);
 			mwin->tim2->start(20);
@@ -162,11 +170,13 @@ int main(int ac,char** av) {
 		}
 	}
 	catch (const char* s) {
-		QMessageBox mbx;
-		mbx.setIcon(QMessageBox::Critical);
-		mbx.setWindowTitle("Shit happens");
-		mbx.setText(QString(s));
-		mbx.exec();
+		shithappens(s);
+//		QMessageBox mbx;
+//		mbx.setIcon(QMessageBox::Critical);
+//		mbx.setWindowTitle("Shit happens");
+//		mbx.setText(QString(s));
+//		mbx.exec();
+		SDL_Quit();
 		return 1;
 	}
 	catch (int i) {

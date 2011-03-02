@@ -40,6 +40,7 @@ void splitline(std::string,std::string*,std::string*);
 std::vector<std::string> splitstr(std::string,const char*);
 unsigned char zx_in(int);
 void zx_out(int,unsigned char);
+void shithappens(const char*);
 
 EmulWin::EmulWin() {
 	setcuricon(":/images/logo.png");
@@ -406,10 +407,12 @@ int zlib_uncompress(unsigned char* in, int ilen, unsigned char* out, int olen) {
 	return (olen - strm.avail_out);
 }
 
+/*
 void EmulWin::shithappens(const char* msg) {
 	QMessageBox mbx(QMessageBox::Critical,"Shit happens",QString(msg),QMessageBox::Ok);
 	mbx.exec();
 }
+*/
 
 void EmulWin::load(std::string fnam,int typ) {
 	std::ifstream file(fnam.c_str());
@@ -716,7 +719,18 @@ void Settings::load(bool dev) {
 	char* buf = new char[2048];
 	int tmask = 0xff;
 	if (!dev) sys->io->mask = 0;
-	if (file.good()) {
+	if (!file.good()) {
+		shithappens("Can't find config file<br><b>~/.samstyle/samulator/samulator.conf</b><br>Default one will be created.");
+		std::ofstream ofile(optpath.c_str());
+		ofile << "[MACHINE]\n\ncurrent = ZX48K\nmemory = 48\n\n";
+		ofile << "[BETADISK]\n\nenabled = n\n\n";
+		ofile << "[ROMSETS]\n\nname = ZX48\nbasic48 = 1982.rom\n\ncurrent = ZX48\nreset = basic48\n";
+		ofile.close();
+		file.open(optpath.c_str(),std::ifstream::in);
+	}
+	if (!file.good()) {
+		throw("Damn! I can't open config file<br>Zetsuboushita!");
+	} else {
 		RomSet newrs;
 		VidLayout vlay;
 		int tmp2=0;

@@ -47,7 +47,7 @@ struct RZXFrame {
 		std::vector<RZXFrame> rzx;
 		void repause(bool,int);
 		void load(std::string,int);
-		void shithappens(const char*);
+//		void shithappens(const char*);
 		void makemenu();
 		void reset();
 		void exec();

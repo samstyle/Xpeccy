@@ -8,3 +8,5 @@ If something going wrong, fix it - install qt4, sdl, alsa and zlib developement 
 And...
 	make
 Result should be './build/xpeccy' executable file
+
+How to run at first time
