@@ -18,7 +18,7 @@ struct XPKey {
 
 #ifndef WIN32
 
-unsigned char keys[256][2][2]={
+uint8_t keys[256][2][2]={
 	ZK(0,0,0,0),ZK(0,0,0,0),ZK(0,0,0,0),ZK(0,0,0,0),ZK(0,0,0,0),			// 0
 	ZK(0,0,0,0),ZK(0,0,0,0),ZK(0,0,0,0),ZK(0,0,0,0),ZK(0,0,0,0),			// 5
 	ZK(4,1,0,0),ZK(4,2,0,0),ZK(4,4,0,0),ZK(4,8,0,0),ZK(4,16,0,0),			// 10	1  2  3  4  5
@@ -48,7 +48,7 @@ unsigned char keys[256][2][2]={
 
 # else
 
-unsigned char keys[256][2][2]={
+uint8_t keys[256][2][2]={
 	ZK(0,0,0,0),ZK(0,0,0,0),						// 0  :
 	ZK(4,1,0,0),ZK(4,2,0,0),ZK(4,4,0,0),ZK(4,8,0,0),ZK(4,16,0,0),		// 2  : 1  2  3  4  5
 	ZK(3,16,0,0),ZK(3,8,0,0),ZK(3,4,0,0),ZK(3,2,0,0),ZK(3,1,0,0),		// 7  : 6  7  8  9  0
@@ -82,12 +82,12 @@ Mouse::Mouse() {
 	enable = true;
 }
 
-void Keyboard::press(unsigned char cod) {
+void Keyboard::press(uint8_t cod) {
 	map[keys[cod][0][0]] &= ~keys[cod][0][1];
 	map[keys[cod][1][0]] &= ~keys[cod][1][1];
 }
 
-void Keyboard::release(unsigned char cod) {
+void Keyboard::release(uint8_t cod) {
 	map[keys[cod][0][0]] |= keys[cod][0][1];
 	map[keys[cod][1][0]] |= keys[cod][1][1];
 }
@@ -97,8 +97,8 @@ void Keyboard::releaseall() {
 	map[4] = map[5] = map[6] = map[7] = 0x1f;
 }
 
-unsigned char Keyboard::getmap(unsigned char prt) {
-	unsigned char res = 0x1f;
+uint8_t Keyboard::getmap(uint8_t prt) {
+	uint8_t res = 0x1f;
 	int i;
 	for (i=0;i<8;i++) {
 		if (~prt & 0x80) res &= map[i];

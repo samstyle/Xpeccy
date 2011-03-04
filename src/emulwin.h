@@ -5,6 +5,7 @@
 #include <QIcon>
 #include <QMenu>
 #include <QTimer>
+#include <stdint.h>
 
 #ifndef WIN32
 	#include <QX11EmbedContainer>
@@ -28,7 +29,7 @@
 
 struct RZXFrame {
 	int fetches;		// fetches till next int
-	std::vector<unsigned char> in;
+	std::vector<uint8_t> in;
 };
 
 #ifndef WIN32
@@ -42,8 +43,8 @@ struct RZXFrame {
 		QTimer *tim1,*tim2;
 		bool fast;
 		int flags;
-		unsigned int rfnum;
-		unsigned int rfpos;
+		uint32_t rfnum;
+		uint32_t rfpos;
 		std::vector<RZXFrame> rzx;
 		void repause(bool,int);
 		void load(std::string,int);

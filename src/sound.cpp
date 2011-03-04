@@ -12,7 +12,7 @@
 
 bool noizes[0x20000];		// here iz noize values [generated at start]
 
-unsigned char envforms[16][33]={
+uint8_t envforms[16][33]={
 /*	  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32	*/
 	{15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,255},
 	{15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,255},
@@ -45,7 +45,7 @@ void Sound::setoutptr(std::string nam) {
 //	printf("Finding %s from %i elements\n",nam.c_str(),outsyslist.size());
 	outsys = NULL;
 //	beepvol = tapevol = ayvol = gsvol = 16;
-	unsigned int i;
+	uint32_t i;
 	for (i=0; i<outsyslist.size();i++) {
 //		printf("'%s' - '%s'\n",nam.c_str(),outsyslist[i].name.c_str());
 		if (outsyslist[i].name == nam) {
@@ -129,18 +129,18 @@ SndData AYProc::getvol() {
 	SndData res; res.l = res.r = 8;
 	Video* p = sys->vid;
 	if (type == SND_NONE) return res;
-	if (a.lim != 0) {if ((p->t - a.bgn) > a.lim) {a.lev = !a.lev; a.bgn += (unsigned int)a.lim;}} else {a.bgn = p->t;}
-	if (b.lim != 0) {if ((p->t - b.bgn) > b.lim) {b.lev = !b.lev; b.bgn += (unsigned int)b.lim;}} else {b.bgn = p->t;}
-	if (c.lim != 0) {if ((p->t - c.bgn) > c.lim) {c.lev = !c.lev; c.bgn += (unsigned int)c.lim;}} else {c.bgn = p->t;}
+	if (a.lim != 0) {if ((p->t - a.bgn) > a.lim) {a.lev = !a.lev; a.bgn += (uint32_t)a.lim;}} else {a.bgn = p->t;}
+	if (b.lim != 0) {if ((p->t - b.bgn) > b.lim) {b.lev = !b.lev; b.bgn += (uint32_t)b.lim;}} else {b.bgn = p->t;}
+	if (c.lim != 0) {if ((p->t - c.bgn) > c.lim) {c.lev = !c.lev; c.bgn += (uint32_t)c.lim;}} else {c.bgn = p->t;}
 	if (e.lim != 0) {
 		if ((p->t - e.bgn) > e.lim) {
 			e.pos++;
-			e.bgn += (unsigned int)e.lim;
+			e.bgn += (uint32_t)e.lim;
 			if (envforms[e.cur][e.pos]==255) e.pos--;
 			if (envforms[e.cur][e.pos]==253) e.pos=0;
 		}
 	} else {e.bgn = p->t;}
-	if (n.lim != 0) {if ((p->t - n.bgn) > n.lim) {n.pos++; n.bgn += (unsigned int)n.lim;}} else {n.bgn = p->t;}
+	if (n.lim != 0) {if ((p->t - n.bgn) > n.lim) {n.pos++; n.bgn += (uint32_t)n.lim;}} else {n.bgn = p->t;}
 	n.lev = noizes[n.pos & 0x1ffff];
 // mix channels, envelope & noise
 	a.vol=(reg[8]&16)?envforms[e.cur][e.pos]:(reg[8]&15);
@@ -189,7 +189,7 @@ void AYProc::reset() {
 	a.lim = b.lim = c.lim = n.lim = e.lim = 0;
 }
 
-void AYProc::setreg(unsigned char value) {
+void AYProc::setreg(uint8_t value) {
 	if (curreg > 15) return;
 	if (curreg < 14) reg[curreg]=value;
 	switch (curreg) {
@@ -266,7 +266,7 @@ bool oss_open() {
 void oss_play() {
 	if (snd->audio < 0) return;
 	int res;
-	unsigned char* ptr = snd->sndbuf;
+	uint8_t* ptr = snd->sndbuf;
 	int fsz = snd->sbptr - ptr;
 	while (fsz > 0) {
 		res = write(snd->audio, ptr, fsz);
@@ -309,7 +309,7 @@ bool alsa_open() {
 
 void alsa_play() {
 	snd_pcm_sframes_t res;
-	unsigned char* ptr = snd->sndbuf;
+	uint8_t* ptr = snd->sndbuf;
 	int fsz = (snd->sbptr - ptr) / snd->chans;
 	while (fsz > 0) {
 		res = snd_pcm_writei(snd->ahandle, ptr, fsz);

@@ -1,6 +1,7 @@
 #ifndef _FILER_H
 #define _FILER_H
 
+#include <stdint.h>
 #include <QFileDialog>
 
 struct MFResult {
@@ -17,12 +18,12 @@ class MFiler : public QFileDialog {
 		QDir lastdir;
 		void loadtape(std::string,bool);
 		void savetape(std::string,bool);
-		void loaddisk(std::string,unsigned char,bool);
-		bool savedisk(std::string,unsigned char,bool);
+		void loaddisk(std::string,uint8_t,bool);
+		bool savedisk(std::string,uint8_t,bool);
 		void savesnapshot(std::string,bool);
 		void saveonf2();
 		void opensomewhat();
-		void loadsomefile(std::string,unsigned char);
+		void loadsomefile(std::string,uint8_t);
 	private:
 		MFResult execute(QWidget*,QString,QString,QStringList);
 };

@@ -469,7 +469,7 @@ struct FilePos {
 };
 
 // crc32 for UDI, taken from Unreal 0.32.7
-void crc32(int &crc, unsigned char *buf, unsigned len) {
+void crc32(int &crc, uint8_t *buf, unsigned len) {
 	while (len--) {
 		crc ^= -1 ^ *buf++;
 		for(int k = 8; k--; ) {
@@ -585,4 +585,15 @@ void Floppy::save(std::string fnam, uint8_t type) {
 			file.close();
 			break;
 	}
+}
+
+Sector::Sector() {
+	type = 0xfb;
+	crc = -1;
+}
+
+Sector::Sector(uint8_t p1,uint8_t p2,uint8_t p3,uint8_t p4,uint8_t* p5) {
+	cyl = p1; side = p2; sec = p3; len = p4; data = p5;
+	type = 0xfb;
+	crc = -1;
 }

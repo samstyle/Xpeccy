@@ -37,7 +37,7 @@ void MFiler::savetape(std::string sfnam, bool sel=true) {
 	tape->path=sfnam;
 }
 
-void MFiler::loaddisk(std::string sfnam, unsigned char drv=0,bool sel=true) {
+void MFiler::loaddisk(std::string sfnam, uint8_t drv=0,bool sel=true) {
 	QString fnam(sfnam.c_str());
 	if (sel) {
 		fnam = open(NULL,QString("Open disk %1:").arg(QChar('A'+drv)),"",QStringList()<<"Disk images (*.trd *.scl *.fdi *.udi)").selfile;
@@ -50,7 +50,7 @@ void MFiler::loaddisk(std::string sfnam, unsigned char drv=0,bool sel=true) {
 	if (fnam.endsWith(".udi",Qt::CaseInsensitive)) bdi->flop[drv].load(sfnam,TYPE_UDI);
 }
 
-void MFiler::loadsomefile(std::string sfnam,unsigned char drv) {
+void MFiler::loadsomefile(std::string sfnam,uint8_t drv) {
 	QString fnam = QDialog::trUtf8(sfnam.c_str());
 	if (fnam.endsWith(".sna",Qt::CaseInsensitive)) sys->mem->load(sfnam,TYP_SNA);
 	if (fnam.endsWith(".z80",Qt::CaseInsensitive)) sys->mem->load(sfnam,TYP_Z80);
@@ -78,7 +78,7 @@ void MFiler::opensomewhat() {
 
 // SAVE
 
-bool MFiler::savedisk(std::string sfnam, unsigned char drv,bool sel) {
+bool MFiler::savedisk(std::string sfnam, uint8_t drv,bool sel) {
 	if (!bdi->flop[drv].insert) return true;
 	QString fnam(sfnam.c_str());
 	if (sel) {

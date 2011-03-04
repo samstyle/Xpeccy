@@ -28,7 +28,8 @@
 #define HDD_ASTATE	0x3F6
 #define HDD_ADDR	0x3F7
 
-struct ATADev {
+class ATADev {
+	public:
 	ATADev();
 	std::string image;		// image file path
 	int32_t iface;
@@ -68,7 +69,8 @@ struct ATADev {
 	void in(int32_t);
 };
 
-struct IDE {
+class IDE {
+	public:
 	IDE();
 	ATADev master;
 	ATADev slave;

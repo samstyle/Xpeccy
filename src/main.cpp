@@ -93,8 +93,8 @@ void splitline(std::string line, std::string* pnam, std::string* pval) {
 	}
 }
 
-unsigned char zx_in(int);
-void zx_out(int,unsigned char);
+uint8_t zx_in(int);
+void zx_out(int,uint8_t);
 void filltabs();
 
 int main(int ac,char** av) {

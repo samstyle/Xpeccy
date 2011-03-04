@@ -1,6 +1,8 @@
 #ifndef _XPGSOUND
 #define _XPGSOUND
 
+#include <stdint.h>
+
 #include "spectrum.h"
 #include "sound.h"
 
@@ -12,27 +14,28 @@
 #define	GS_MONO		0
 #define	GS_12_34	1
 
-unsigned char gs_in(int);
-void gs_out(int,unsigned char);
+uint8_t gs_in(int32_t);
+void gs_out(int32_t,uint8_t);
 
-struct GS {
+class GS {
+	public:
 	GS();
 	int flags;
 	Spec* sys;
-	unsigned int t;
-	unsigned char pb3_gs;	// gs -> zx
-	unsigned char pb3_zx;	// zx -> gs
-	unsigned char pbb_zx;
-	unsigned char rp0;
-	unsigned char pstate;	// state register (d0, d7)
+	uint32_t t;
+	uint8_t pb3_gs;	// gs -> zx
+	uint8_t pb3_zx;	// zx -> gs
+	uint8_t pbb_zx;
+	uint8_t rp0;
+	uint8_t pstate;	// state register (d0, d7)
 	int vol1,vol2,vol3,vol4;
 	int ch1,ch2,ch3,ch4;
 	int cnt;
 	int stereo;
 	void reset();
-	bool in(int,unsigned char*);
-	bool out(int,unsigned char);
-	void sync(unsigned int);
+	bool in(int,uint8_t*);
+	bool out(int,uint8_t);
+	void sync(uint32_t);
 	SndData getvol();
 };
 

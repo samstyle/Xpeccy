@@ -37,8 +37,8 @@ std::string TapeBlock::getheader() {
 	return res;
 }
 
-unsigned char TapeBlock::getbyte(int pos) {
-	unsigned char i,res=0,msk=0x80;
+uint8_t TapeBlock::getbyte(int pos) {
+	uint8_t i,res=0,msk=0x80;
 	for (i=0;i<8;i++) {
 		if ((data[pos] == len1) && (data[pos+1] == len1)) res |= msk;
 		msk >>= 1;
@@ -123,9 +123,9 @@ void Tape::startrec() {
 void Tape::storeblock() {
 	if (tmpblock.data.size()>0) tmpblock.data.pop_back();
 	if (tmpblock.data.size()==0) return;
-	unsigned int i,j;
+	uint32_t i,j;
 	bool same;
-	std::vector<unsigned int> siglens;
+	std::vector<uint32_t> siglens;
 	for (i=0; i < tmpblock.data.size(); i++) {
 		same = false;
 		for (j=0; j<siglens.size(); j++) {
@@ -176,10 +176,10 @@ void Tape::swapblocks(int r1,int r2) {
 	data[r2] = tb1;
 }
 
-unsigned char Tape::getbyte(int blk, int pos) {return data[blk].getbyte(pos);}
+uint8_t Tape::getbyte(int blk, int pos) {return data[blk].getbyte(pos);}
 
-std::vector<unsigned char> Tape::getdata(int blk, int pos, int len) {
-	std::vector<unsigned char> res;
+std::vector<uint8_t> Tape::getdata(int blk, int pos, int len) {
+	std::vector<uint8_t> res;
 	if (pos==-1) pos=data[blk].datapos;		// с начала
 	if (len==-1) len=int((data[blk].data.size()-pos)>>4);	// до конца (в байтах)
 	while (len!=0) {
@@ -191,11 +191,11 @@ std::vector<unsigned char> Tape::getdata(int blk, int pos, int len) {
 }
 
 // переконвертить len байт из *file в сигналы мофона. длины сигналов в slens. на выходе - блок
-TapeBlock Tape::parse(std::ifstream *file, unsigned int len, std::vector<int> slens) {
+TapeBlock Tape::parse(std::ifstream *file, uint32_t len, std::vector<int> slens) {
 	TapeBlock newb;
-	unsigned int i;
-	unsigned int j;
-	unsigned char tmp = file->peek();
+	uint32_t i;
+	uint32_t j;
+	uint8_t tmp = file->peek();
 	newb.plen=slens[0];
 	newb.s1len=slens[1];
 	newb.s2len=slens[2];
@@ -221,9 +221,9 @@ TapeBlock Tape::parse(std::ifstream *file, unsigned int len, std::vector<int> sl
 	return newb;
 }
 
-unsigned int getlen(std::ifstream *file,unsigned char n) {
-	unsigned int len;
-	unsigned char tm;
+uint32_t getlen(std::ifstream *file,uint8_t n) {
+	uint32_t len;
+	uint8_t tm;
 	file->read((char*)&tm,1); len = tm;
 	if (n > 1) {file->read((char*)&tm,1); len += (tm<<8);}
 	if (n > 2) {file->read((char*)&tm,1); len += (tm<<16);}
@@ -231,7 +231,7 @@ unsigned int getlen(std::ifstream *file,unsigned char n) {
 	return len;
 }
 
-void Tape::load(std::string sfnam,unsigned char type) {
+void Tape::load(std::string sfnam,uint8_t type) {
 	QMessageBox mbx; mbx.setIcon(QMessageBox::Critical); mbx.setWindowTitle("Error");
 	std::ifstream file(sfnam.c_str(),std::ios::binary);
 	if (!file.good()) {
@@ -240,13 +240,13 @@ void Tape::load(std::string sfnam,unsigned char type) {
 		mbx.exec();
 		return;
 	}
-	unsigned int len,paulen,loopc=0;
+	uint32_t len,paulen,loopc=0;
 	std::streampos loopos = 0;
 	int sd[] = {2168,667,735,855,1710,954,-1};	// длины сигналов (pilot,s1,s2,0,1,s3,pilotsize (-1==auto))
 	std::vector<int> slens = std::vector<int>(sd,sd + sizeof(sd) / sizeof(int));
 	std::vector<int> alens = slens;
-	unsigned char *buf = new unsigned char[256];
-	unsigned char tmp;
+	uint8_t *buf = new uint8_t[256];
+	uint8_t tmp;
 	bool err = true;
 	TapeBlock newb;
 	eject();
@@ -417,11 +417,11 @@ void Tape::load(std::string sfnam,unsigned char type) {
 	}
 }
 
-void Tape::save(std::string fname, unsigned char type) {
+void Tape::save(std::string fname, uint8_t type) {
 	std::ofstream file(fname.c_str(),std::ios::binary);
-	std::vector<unsigned char> buf;
-	unsigned char lenh,lenl;
-	unsigned int i;
+	std::vector<uint8_t> buf;
+	uint8_t lenh,lenl;
+	uint32_t i;
 	switch (type) {
 		case TYPE_TAP:
 			for (i=0;i<data.size();i++) {

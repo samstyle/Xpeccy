@@ -24,7 +24,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	uia.setupUi(umadial);
 	umadial->setModal(true);
 
-	unsigned int i;
+	uint32_t i;
 // machine
 	for (i=0;i<sys->io->machlist.size();i++) {ui.machbox->addItem(QDialog::trUtf8(sys->io->machlist[i].name.c_str()));}
 	for (i=0;i<sys->mem->rsetlist.size();i++) {ui.rsetbox->addItem(QDialog::trUtf8(sys->mem->rsetlist[i].name.c_str()));}
@@ -418,7 +418,7 @@ void SetupWin::buildtapelist() {
 void SetupWin::buildmenulist() {
 	QStandardItemModel *model = new QStandardItemModel(sets->umenu.data.size(),2);
 	QStandardItem *itm;
-	unsigned char i;
+	uint8_t i;
 	for(i=0;i<sets->umenu.data.size();i++) {
 		itm = new QStandardItem(QDialog::trUtf8(sets->umenu.data[i].name.c_str()));
 		model->setItem(i,0,itm);
@@ -523,7 +523,7 @@ void SetupWin::chablock(QModelIndex idx) {
 // hdd
 
 void SetupWin::hddcap() {
-	unsigned int sz;
+	uint32_t sz;
 	if (ui.hm_islba->checkState() == Qt::Checked) {
 		sz = (ui.hm_glba->value() >> 11);
 	} else {

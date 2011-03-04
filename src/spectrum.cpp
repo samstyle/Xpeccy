@@ -47,7 +47,7 @@ void Spec::nmihandle() {
 int Spec::exec() {
 	istrb = false;
 	cpu->err = false;
-	unsigned int fcnt = cpu->t;
+	uint32_t fcnt = cpu->t;
 //	if (cpu->block & !dbg->active) {sync(4); return;}
 	if (cpu->nextei) {
 		cpu->iff1 = cpu->iff2 = true;

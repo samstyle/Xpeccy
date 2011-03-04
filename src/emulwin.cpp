@@ -38,8 +38,8 @@ std::string int2str(int);
 bool str2bool(std::string);
 void splitline(std::string,std::string*,std::string*);
 std::vector<std::string> splitstr(std::string,const char*);
-unsigned char zx_in(int);
-void zx_out(int,unsigned char);
+uint8_t zx_in(int);
+void zx_out(int,uint8_t);
 void shithappens(const char*);
 
 EmulWin::EmulWin() {
@@ -196,7 +196,7 @@ void EmulWin::emulframe() {
 }
 
 void EmulWin::exec() {
-	unsigned int ln = sys->vid->t;
+	uint32_t ln = sys->vid->t;
 	sys->exec();
 	ln = sys->vid->t - ln;
 	if (sys->vid->t > snd->t) {
@@ -371,15 +371,15 @@ void EmulWin::SDLEventHandler() {
 
 // load rzx
 
-unsigned int getint(std::ifstream* file) {
-	unsigned int wrd = file->get();
+uint32_t getint(std::ifstream* file) {
+	uint32_t wrd = file->get();
 	wrd += (file->get() << 8);
 	wrd += (file->get() << 16);
 	wrd += (file->get() << 24);
 	return wrd;
 }
 
-int zlib_uncompress(unsigned char* in, int ilen, unsigned char* out, int olen) {
+int zlib_uncompress(uint8_t* in, int ilen, uint8_t* out, int olen) {
 	int ret;
 	z_stream strm;
 	strm.zalloc = Z_NULL;
@@ -423,12 +423,12 @@ void EmulWin::load(std::string fnam,int typ) {
 		shithappens("Can't open file");
 		return;
 	}
-	unsigned char* buf = new unsigned char[0x1000000];
-	unsigned char* zbuf = new unsigned char[0x100000];
-//	unsigned char* bptr;
-//	unsigned int frm;
-	unsigned int len,wrd,flg;
-	unsigned char tmp=0,typz;
+	uint8_t* buf = new uint8_t[0x1000000];
+	uint8_t* zbuf = new uint8_t[0x100000];
+//	uint8_t* bptr;
+//	uint32_t frm;
+	uint32_t len,wrd,flg;
+	uint8_t tmp=0,typz;
 	RZXFrame rzxfrm;
 	switch (typ) {
 		case TYP_RZX:

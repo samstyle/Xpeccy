@@ -3,23 +3,26 @@
 
 #include <string>
 #include <vector>
+#include <stdint.h>
 
 struct MenuEntry {
 	std::string name;
 	std::string path;
 };
 
-struct UserMenu {
-	std::vector<MenuEntry> data;
-	void add(std::string,std::string);
-	void del(int);
-	void swap(int,int);
-	void set(int,std::string,std::string);
+class UserMenu {
+	public:
+		std::vector<MenuEntry> data;
+		void add(std::string,std::string);
+		void del(int32_t);
+		void swap(int32_t,int32_t);
+		void set(int32_t,std::string,std::string);
 };
 
 struct Settings {
+	public:
 	Settings();
-	int sscnt,ssint;
+	int32_t sscnt,ssint;
 	bool wait;
 	UserMenu umenu;
 	std::string gsrom;

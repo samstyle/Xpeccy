@@ -22,12 +22,12 @@ Memory::Memory(int tp) {
 	pt3 = &ram[0][0];
 }
 
-void Memory::setram(unsigned char p) {
+void Memory::setram(uint8_t p) {
 	cram = (p & sys->io->mask);
 	pt3 = &ram[cram][0];
 }
 
-void Memory::setrom(unsigned char p) {
+void Memory::setrom(uint8_t p) {
 	crom = p;
 	if (p==0xff) {
 		pt0 = &ram[0][0];
@@ -36,8 +36,8 @@ void Memory::setrom(unsigned char p) {
 	}
 }
 
-unsigned char Memory::rd(unsigned short adr) {
-	unsigned char res;
+uint8_t Memory::rd(uint16_t adr) {
+	uint8_t res;
 	switch (adr & 0xc000) {
 		case 0x0000: res = *(pt0 + (adr & 0x3fff)); break;
 		case 0x4000: res = *(pt1 + (adr & 0x3fff)); break;
@@ -55,7 +55,7 @@ unsigned char Memory::rd(unsigned short adr) {
 	return res;
 }
 
-void Memory::wr(unsigned short adr,unsigned char val) {
+void Memory::wr(uint16_t adr,uint8_t val) {
 	switch (adr & 0xc000) {
 		case 0x0000: if (crom==0xff) {*(pt0 + (adr&0x3fff)) = val;} break;
 		case 0x4000: *(pt1 + (adr&0x3fff)) = val; break;
@@ -66,7 +66,7 @@ void Memory::wr(unsigned short adr,unsigned char val) {
 
 void z80uncompress(std::ifstream* file,char* buf,int maxlen) {
 	char *ptr = buf;
-	unsigned char tmp,tmp2,lst;
+	uint8_t tmp,tmp2,lst;
 	lst = 0xed;
 	bool btm = true;
 	do {
@@ -96,8 +96,8 @@ void z80uncompress(std::ifstream* file,char* buf,int maxlen) {
 	} while (btm && !file->eof() && (ptr - buf < maxlen));
 }
 
-unsigned char z80readblock(std::ifstream* file,char* buf) {
-	unsigned char tmp,tmp2;
+uint8_t z80readblock(std::ifstream* file,char* buf) {
+	uint8_t tmp,tmp2;
 	int adr;
 	tmp = file->get(); tmp2 = file->get(); adr = tmp + (tmp2 << 8);	// compr.page size
 	tmp = file->get();						// page num
@@ -121,8 +121,8 @@ void Memory::load(std::string sfnam,int typ) {
 }
 
 void Memory::parse(std::ifstream* file,int typ) {
-	unsigned char tmp,tmp2,lst;
-	unsigned char snabank;
+	uint8_t tmp,tmp2,lst;
+	uint8_t snabank;
 	int adr;
 	bool btm;
 	char* buf = new char[0x10000];
@@ -341,7 +341,7 @@ void Memory::save(std::string sfnam,int typ,bool sna48=false) {
 }
 
 void Memory::setromptr(std::string nam) {
-	unsigned int i;
+	uint32_t i;
 	romset = NULL;
 	for (i=0;i<rsetlist.size();i++) {
 		if (rsetlist[i].name == nam) {romset = &rsetlist[i]; break;}

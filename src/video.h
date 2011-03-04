@@ -17,15 +17,17 @@
 #define	VF_DOUBLE		2
 #define VF_BLOCKFULLSCREEN	4
 
-enum VMode {
-	VID_NORMAL = 0,
-	VID_ALCO
-};
+#define	VID_NORMAL	0
+#define	VID_ALCO	1
 
 struct VSize {
-	unsigned int h;
-	unsigned int v;
-	bool operator =(VSize p) {h = p.h; v = p.v; return true;}
+	uint32_t h;
+	uint32_t v;
+	bool operator =(VSize p) {
+		h = p.h;
+		v = p.v;
+		return true;
+	}
 };
 
 struct VidLayout {
@@ -47,21 +49,21 @@ struct Video {
 	int flags;
 	SDL_Surface *surf;
 	SDL_Color pal[256];
-	unsigned char* scrptr;
+	uint8_t* scrptr;
 	VSize full,bord,scrn,curr,synh;
 	VSize lcut,rcut,vsze,wsze;
-	unsigned int frmsz, t, intsz, intpos;
+	uint32_t frmsz, t, intsz, intpos;
 	struct {
-		unsigned char *scr5,*atr5;		// screen 0
-		unsigned char *scr7,*atr7;		// screen 1
-		unsigned char *ac00,*ac01,*ac02,*ac03;	// alco parts (screen 0)
-		unsigned char *ac10,*ac11,*ac12,*ac13;	// alco parts (screen 1)
+		uint8_t *scr5,*atr5;		// screen 0
+		uint8_t *scr7,*atr7;		// screen 1
+		uint8_t *ac00,*ac01,*ac02,*ac03;	// alco parts (screen 0)
+		uint8_t *ac10,*ac11,*ac12,*ac13;	// alco parts (screen 1)
 	} ladrz[0x1800];	// адреса на экране
 	int iacount;		// счетчик для ladrz
-	VMode mode;
+	int32_t mode;
 	float zoom,brdsize, pxcnt;
 	bool intupt,flash,curscr;
-	unsigned char fcnt,brdcol,scrbyte,prescr,atrbyte,ink,pap;
+	uint8_t fcnt,brdcol,scrbyte,prescr,atrbyte,ink,pap;
 	std::vector<VidLayout> layout;	// screen layouts
 	std::string curlay;		// current layout name
 	void tick();

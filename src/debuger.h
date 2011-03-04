@@ -8,14 +8,16 @@
 #include <QLabel>
 #include <QKeyEvent>
 
+#include <stdint.h>
+
 #define DASMROW 25
 #define DMPSIZE 16
 
 struct BPoint {
-	BPoint(unsigned char pg,unsigned short ad) {page = pg; adr = ad;}
+	BPoint(uint8_t pg,uint16_t ad) {page = pg; adr = ad;}
 	BPoint() {}
-	unsigned char page;		// ram (adr>0x3fff) or rom (adr<0x4000)
-	unsigned short adr;		// addr (0x0000..0xffff);
+	uint8_t page;		// ram (adr>0x3fff) or rom (adr<0x4000)
+	uint16_t adr;		// addr (0x0000..0xffff);
 };
 
 struct DasmRow {
@@ -41,7 +43,7 @@ class DebugWin : public QDialog {
 		void start();
 		void stop();
 		int findbp(BPoint);
-		unsigned char getbpage(unsigned short);
+		uint8_t getbpage(uint16_t);
 		void switchbp(BPoint);
 	private:
 		QLineEdit *ledit;
@@ -61,7 +63,7 @@ class DebugWin : public QDialog {
 		ushort getprevadr(ushort);
 		DasmRow getdisasm();
 		bool tmpb;
-		unsigned int t;
+		uint32_t t;
 	protected:
 		void keyPressEvent(QKeyEvent*);
 };

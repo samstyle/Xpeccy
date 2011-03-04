@@ -11,17 +11,19 @@
 
 #define PF_MAIN 1
 
-struct ProjectFile {
-	QString name;
-	QTextEdit* text;
+class ProjectFile {
+	public:
+		QString name;
+		QTextEdit* text;
 };
 
-struct Project {
-	QString name;
-	QList<ProjectFile> files;
-	int build;
-	void clear();
-	bool havefile(QString);
+class Project {
+	public:
+		QString name;
+		QList<ProjectFile> files;
+		int build;
+		void clear();
+		bool havefile(QString);
 };
 
 class DevelWin : public QDialog {

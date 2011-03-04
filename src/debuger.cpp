@@ -290,7 +290,7 @@ DasmRow DebugWin::getdisasm() {
 	return res;
 }
 
-unsigned char DebugWin::getbpage(unsigned short ad) {
+uint8_t DebugWin::getbpage(uint16_t ad) {
 	uchar res = 0;
 	if (ad<0x4000) {res = sys->mem->crom;}
 		else {if (ad>0xbfff) res = sys->mem->cram;}

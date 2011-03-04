@@ -36,7 +36,7 @@ SndData GS::getvol() {
 	return res;
 }
 
-void GS::sync(unsigned int tk) {
+void GS::sync(uint32_t tk) {
 	int ln = (tk - t) * GS_FRQ / 7.0;		// scale to GS ticks;
 	t = tk;
 	if (~flags & GS_ENABLE) return;
@@ -55,7 +55,7 @@ void GS::sync(unsigned int tk) {
 
 // external in/out
 
-bool GS::in(int prt,unsigned char* val) {
+bool GS::in(int prt,uint8_t* val) {
 	if (~flags & GS_ENABLE) return false;	// gs disabled
 	if ((prt & 0x44) != 0) return false;	// port don't catched
 	if (prt & 8) {
@@ -67,7 +67,7 @@ bool GS::in(int prt,unsigned char* val) {
 	return true;
 }
 
-bool GS::out(int prt,unsigned char val) {
+bool GS::out(int prt,uint8_t val) {
 	if (~flags & GS_ENABLE) return false;
 	if ((prt & 0x44) != 0) return false;
 	if (prt & 8) {
@@ -82,8 +82,8 @@ bool GS::out(int prt,unsigned char val) {
 
 // internal in/out
 
-unsigned char gs_in(int prt) {
-	unsigned char res = 0xff;
+uint8_t gs_in(int prt) {
+	uint8_t res = 0xff;
 	prt &= 0x0f;
 	switch (prt) {
 		case 0: break;
@@ -103,7 +103,7 @@ unsigned char gs_in(int prt) {
 	return res;
 }
 
-void gs_out(int prt,unsigned char val) {
+void gs_out(int prt,uint8_t val) {
 	prt &= 0x0f;
 	switch (prt) {
 		case 0: gs->rp0 = val;

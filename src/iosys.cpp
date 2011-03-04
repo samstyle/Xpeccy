@@ -9,7 +9,7 @@
 #include "spectrum.h"
 #include "gs.h"
 
-void zx_out(int port, unsigned char val) {
+void zx_out(int port, uint8_t val) {
 //	if (ide->out(port,val)) return;
 	gs->sync(sys->vid->t);
 	if (gs->out(port,val)) return;
@@ -18,8 +18,8 @@ void zx_out(int port, unsigned char val) {
 	machine->out(port,val);
 }
 
-unsigned char zx_in(int port) {
-	unsigned char res = 0xff;
+uint8_t zx_in(int port) {
+	uint8_t res = 0xff;
 //	if (mwin->flags & FL_RZX) {
 //		if (mwin->rfpos >= mwin->rzx[mwin->rfnum].in.size()) {
 //			printf("WARNING: CPU.IN_COUNT > RZX.IN_COUNT at frame %i\n",mwin->rfnum);
@@ -38,7 +38,7 @@ unsigned char zx_in(int port) {
 	return machine->in(port);
 }
 
-void IOSys::out7ffd(unsigned char val) {
+void IOSys::out7ffd(uint8_t val) {
 	if (block7ffd) return;
 	sys->mem->prt0 = val;
 	sys->vid->curscr = val & 0x08;
@@ -47,7 +47,7 @@ void IOSys::out7ffd(unsigned char val) {
 
 void IOSys::setmacptr(std::string nam) {
 	machine = NULL;
-	unsigned int i; for (i=0;i<machlist.size();i++) {
+	uint32_t i; for (i=0;i<machlist.size();i++) {
 		if (machlist[i].name == nam) {
 			machine = &machlist[i];
 			flags = machine->flags;
@@ -56,8 +56,8 @@ void IOSys::setmacptr(std::string nam) {
 	}
 }
 
-unsigned char IOSys::iostdin(int port) {
-	unsigned char res = 0xff;
+uint8_t IOSys::iostdin(int port) {
+	uint8_t res = 0xff;
 	if ((port&0xff) == 0xfe) {
 		tape->sync();
 		res = keyb->getmap((port&0xff00)>>8) | ((tape->signal<<6)&0x40);
@@ -78,7 +78,7 @@ unsigned char IOSys::iostdin(int port) {
 	return res;
 }
 
-void IOSys::iostdout(int port, unsigned char val) {
+void IOSys::iostdout(int port, uint8_t val) {
 	if ((port&0xff) == 0xfe) {
 		sys->vid->brdcol = val&0x07;
 		snd->beeplev = val&0x10;
@@ -95,7 +95,7 @@ void IOSys::iostdout(int port, unsigned char val) {
 	}
 }
 
-void IOSys::addmachine(std::string nam,int(*gpfnc)(int),void(*ofnc)(int,unsigned char),unsigned char(*ifnc)(int),void(*sfnc)(), int msk, int flg) {
+void IOSys::addmachine(std::string nam,int(*gpfnc)(int),void(*ofnc)(int,uint8_t),uint8_t(*ifnc)(int),void(*sfnc)(), int msk, int flg) {
 	Machine newmac;
 	newmac.name = nam;
 	newmac.mask = msk;
@@ -122,11 +122,11 @@ void zx48_setrom() {
 	sys->mem->setram(0);
 }
 
-void zx48_outport(int port, unsigned char val) {
+void zx48_outport(int port, uint8_t val) {
 	sys->io->iostdout(port,val);
 }
 
-unsigned char zx48_inport(int port) {
+uint8_t zx48_inport(int port) {
 	return sys->io->iostdin(port);
 }
 
@@ -151,14 +151,14 @@ void pent_setrom() {
 	sys->mem->setram((sys->mem->prt0 & 7) | ((sys->mem->prt0 & 0xc0)>>3));
 }
 
-void pent_outport(int port, unsigned char val) {
+void pent_outport(int port, uint8_t val) {
 	sys->io->iostdout(port,val);
 	switch (port) {
 		case 0x7ffd: sys->io->out7ffd(val); pent_setrom(); break;
 	}
 }
 
-unsigned char pent_inport(int port) {
+uint8_t pent_inport(int port) {
 	return sys->io->iostdin(port);
 }
 
@@ -181,7 +181,7 @@ void p1m_setrom() {
 	sys->mem->setram((sys->mem->prt0 & 7) | ((sys->mem->prt1 & 4)?0:((sys->mem->prt0 & 0x20) | ((sys->mem->prt0 & 0xc0)>>3))));
 }
 
-void p1m_outport(int port,unsigned char val) {
+void p1m_outport(int port,uint8_t val) {
 	sys->io->iostdout(port,val);
 	switch (port) {
 		case 0x7ffd:
@@ -200,7 +200,7 @@ void p1m_outport(int port,unsigned char val) {
 	}
 }
 
-unsigned char p1m_inport(int port) {
+uint8_t p1m_inport(int port) {
 	return sys->io->iostdin(port);
 }
 
@@ -228,7 +228,7 @@ void scrp_setrom() {
 	sys->mem->setram((sys->mem->prt0 & 7) | ((sys->mem->prt1 & 0x10)>>1) | ((sys->mem->prt1 & 0xc0)>>2));
 }
 
-void scrp_outport(int port,unsigned char val) {
+void scrp_outport(int port,uint8_t val) {
 	sys->io->iostdout(port,val);
 	switch (port) {
 		case 0x1ffd: sys->mem->prt1 = val; scrp_setrom(); break;
@@ -236,8 +236,8 @@ void scrp_outport(int port,unsigned char val) {
 	}
 }
 
-unsigned char scrp_inport(int port) {
-	unsigned char res = 0xff;
+uint8_t scrp_inport(int port) {
+	uint8_t res = 0xff;
 	res = sys->io->iostdin(port);
 	switch (port) {
 		case 0x7ffd: sys->cpu->frq = 7.0; break;
@@ -251,7 +251,7 @@ unsigned char scrp_inport(int port) {
 
 //-------------
 
-IOSys::IOSys(unsigned char(*p1)(int),void(*p2)(int,unsigned char)) {
+IOSys::IOSys(uint8_t(*p1)(int),void(*p2)(int,uint8_t)) {
 	in = p1;
 	out = p2;
 	flags = 0;

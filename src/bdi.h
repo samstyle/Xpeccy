@@ -19,13 +19,10 @@ struct TrackIMG {
 	uint8_t field[TRACKLEN];
 };
 
-struct Sector {
-	Sector() {type = 0xfb;crc = -1;}
-	Sector(uint8_t p1,uint8_t p2,uint8_t p3,uint8_t p4,uint8_t* p5) {
-		cyl = p1; side = p2; sec = p3; len = p4; data = p5;
-		type = 0xfb;
-		crc = -1;
-	}
+class Sector {
+	public:
+	Sector();
+	Sector(uint8_t,uint8_t,uint8_t,uint8_t,uint8_t*);
 	uint8_t cyl;
 	uint8_t side;
 	uint8_t sec;
@@ -35,7 +32,8 @@ struct Sector {
 	int32_t crc;	// data crc (-1 = calculated)
 };
 
-struct Floppy {
+class Floppy {
+	public:
 	Floppy();
 	bool insert;		// disk inserted
 	bool protect;		// write protected
@@ -74,7 +72,8 @@ struct Floppy {
 	std::vector<Sector> getsectors(uint8_t);
 };
 
-struct VG93 {
+class VG93 {
+	public:
 	VG93();
 	bool idle;
 	bool mr;			// master reset
@@ -98,7 +97,8 @@ struct VG93 {
 	uint8_t getflag();
 };
 
-struct BDI {
+class BDI {
+	public:
 	BDI();
 	bool enable;		// есть-нет
 	bool active;		// активен дос

@@ -142,7 +142,7 @@ void Video::update() {
 #endif
 #endif
 	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,pal,0,256);
-	scrptr = (unsigned char*)surf->pixels;
+	scrptr = (uint8_t*)surf->pixels;
 }
 
 void Video::sync(int tk,float fr) {
@@ -159,7 +159,7 @@ void Video::tick() {
 	bool onscr = (curr.v >= lcut.v) && (curr.v < rcut.v);
 #if !NOVIDEO
 	if ((curr.h >= lcut.h) && (curr.h < rcut.h) && onscr) {
-		unsigned char col = 5;
+		uint8_t col = 5;
 		if ((curr.h < bord.h) || (curr.h > bord.h + 255) || (curr.v < bord.v) || (curr.v > bord.v + 191)) {
 			col=brdcol;
 		} else {
@@ -213,7 +213,7 @@ void Video::tick() {
 //	printf("%i\n",sys->cpu->t - sys->cpu->tb);
 			sys->cpu->tb = sys->cpu->t;
 			fcnt++; flash = fcnt & 0x20;
-			scrptr = (unsigned char*)surf->pixels;
+			scrptr = (uint8_t*)surf->pixels;
 			iacount=0;
 		}
 		intupt = (curr.v==intpos) && (curr.h < intsz);

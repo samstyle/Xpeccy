@@ -10,7 +10,7 @@ IDE::IDE() {
 	cur = &master;
 }
 
-bool IDE::in(unsigned short port,unsigned char* val) {
+bool IDE::in(uint16_t port,uint8_t* val) {
 	bool res = false;
 	bool ishi;
 	int prt = 0;
@@ -30,7 +30,7 @@ bool IDE::in(unsigned short port,unsigned char* val) {
 	return res;
 }
 
-bool IDE::out(unsigned short port,unsigned char val) {
+bool IDE::out(uint16_t port,uint8_t val) {
 	bool res = false;
 	bool ishi;
 	int prt;

@@ -1,21 +1,25 @@
 #ifndef _KEYB_H
 #define _KEYB_H
 
-struct Keyboard {
+#include <stdint.h>
+
+class Keyboard {
+	public:
 	Keyboard();
-	unsigned char map[8];
-	void press(unsigned char);
-	void release(unsigned char);
+	uint8_t map[8];
+	void press(uint8_t);
+	void release(uint8_t);
 	void releaseall();
-	unsigned char getmap(unsigned char);
+	uint8_t getmap(uint8_t);
 };
 
-struct Mouse {
+class Mouse {
+	public:
 	Mouse();
 	bool enable;
-	unsigned char xpos;
-	unsigned char ypos;
-	unsigned char buttons;	// b0=LMB; b1=RMB;
+	uint8_t xpos;
+	uint8_t ypos;
+	uint8_t buttons;	// b0=LMB; b1=RMB;
 };
 
 extern Keyboard *keyb;
