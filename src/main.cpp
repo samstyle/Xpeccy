@@ -3,6 +3,8 @@
 #include <QTimer>
 
 #include <sstream>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 //#include "video.h"
 //#include "memory.h"

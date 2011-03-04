@@ -276,8 +276,14 @@ DasmRow DebugWin::getdisasm() {
 		res.dasm.replace(":5",nm);
 	}
 	if (res.dasm.indexOf(":1")!=-1) res.dasm.replace(":1",QString::number(sys->mem->rd(adr++)+0x100,16).right(2).toUpper());
-	if (res.dasm.indexOf(":2")!=-1) res.dasm.replace(":2",gethexword(sys->mem->rd(adr++) + (sys->mem->rd(adr++)<<8)));
-	if (res.dasm.indexOf(":3")!=-1) res.dasm.replace(":3",gethexword(adr + (signed char)sys->mem->rd(adr++) + 1));
+	if (res.dasm.indexOf(":2")!=-1) {
+		res.dasm.replace(":2",gethexword(sys->mem->rd(adr) + (sys->mem->rd(adr+1)<<8)));
+		adr += 2;
+	}
+	if (res.dasm.indexOf(":3")!=-1) {
+		res.dasm.replace(":3",gethexword(adr + (signed char)sys->mem->rd(adr) + 1));
+		adr++;
+	}
 
 	for (ddz=res.adr; ddz<adr; ddz++) {res.bytes.append(gethexbyte(sys->mem->rd(ddz)));}
 	if (res.bytes.size()>10) res.bytes = res.bytes.left(2).append("..").append(res.bytes.right(6));
