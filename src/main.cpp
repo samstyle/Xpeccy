@@ -3,8 +3,6 @@
 #include <QTimer>
 
 #include <sstream>
-#include <sys/stat.h>
-#include <sys/types.h>
 
 //#include "video.h"
 //#include "memory.h"
@@ -139,12 +137,8 @@ int main(int ac,char** av) {
 			dwin = new DevelWin();
 			filer = new MFiler(NULL);
 #ifndef WIN32
-			mkdir(sets->workdir.c_str(),0777);
-			mkdir(sets->romdir.c_str(),0777);
 			sets->soutname = "ALSA";
 #else
-			mkdir(sets->workdir.c_str());
-			mkdir(sets->romdir.c_str());
 			sets->soutname = "WaveOut";
 #endif
 #if !SDLMAINWIN

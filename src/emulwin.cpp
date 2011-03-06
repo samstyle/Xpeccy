@@ -1,5 +1,7 @@
 #include <QUrl>
 #include <QMessageBox>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #ifdef WIN32
 	#include <SDL.h>
@@ -578,19 +580,37 @@ void UserMenu::swap(int ps1, int ps2) {
 
 Settings::Settings() {
 #ifndef WIN32
-	workdir = std::string(getenv("HOME")) + "/.samstyle/samulator";
-	romdir = workdir + "/roms";
-	optpath = workdir + "/samulator.conf";
+// move config dir to new place
+	QString oldpath = QDir::homePath() + "/.samstyle/samulator";
+	QString newpath = QDir::homePath() + "/.config/samstyle/xpeccy";
+	QString oldfile = oldpath + "/samulator.conf";
+	QString newfile = newpath + "/xpeccy.conf";
+	QDir dir;
+	QFile file;
+	dir.mkpath(newpath);
+	file.rename(oldfile,newfile);
+	dir.rename(oldpath + "/roms",newpath + "/roms");
+	dir.rmdir(oldpath);
 	ssdir = std::string(getenv("HOME"));
+// set new paths
+	std::string mydir = ssdir + "/.config/samstyle";
+	workdir = ssdir + "/.config/samstyle/xpeccy";
+	romdir = workdir + "/roms";
+	optpath = workdir + "/xpeccy.conf";
+//	mkdir(workdir.c_str(),0777);
+//	mkdir(romdir.c_str(),0777);
+	soutname = "ALSA";
 #else
 	workdir = std::string(".\\config");
 	romdir = workdir + "\\roms";
-	optpath = workdir + "\\samulator.conf";
+	optpath = workdir + "\\xpeccy.conf";
 	ssdir = std::string(getenv("HOMEPATH"));
+	mkdir(workdir.c_str());
+	mkdir(romdir.c_str());
+	soutname = "WaveOut";
 #endif
 	machname = "ZX48K";
 	rsetname = "ZX48";
-	soutname = "ALSA";
 	ssformat = "png";
 }
 
