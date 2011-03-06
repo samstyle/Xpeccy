@@ -581,24 +581,26 @@ void UserMenu::swap(int ps1, int ps2) {
 Settings::Settings() {
 #ifndef WIN32
 // move config dir to new place
-	QString oldpath = QDir::homePath() + "/.samstyle/samulator";
-	QString newpath = QDir::homePath() + "/.config/samstyle/xpeccy";
-	QString oldfile = oldpath + "/samulator.conf";
-	QString newfile = newpath + "/xpeccy.conf";
 	QDir dir;
-	QFile file;
-	dir.mkpath(newpath);
-	file.rename(oldfile,newfile);
-	dir.rename(oldpath + "/roms",newpath + "/roms");
-	dir.rmdir(oldpath);
+	QString newpath = QDir::homePath() + "/.config/samstyle/xpeccy";
+	if (!dir.exists(newpath)) {
+		QFile file;
+		QString oldpath = QDir::homePath() + "/.samstyle/samulator";
+		QString oldfile = oldpath + "/samulator.conf";
+		QString newfile = newpath + "/xpeccy.conf";
+		dir.mkpath(newpath);
+		file.rename(oldfile,newfile);
+		dir.rename(oldpath + "/roms",newpath + "/roms");
+		dir.rmdir(oldpath);
+	}
 	ssdir = std::string(getenv("HOME"));
 // set new paths
 	std::string mydir = ssdir + "/.config/samstyle";
 	workdir = ssdir + "/.config/samstyle/xpeccy";
 	romdir = workdir + "/roms";
 	optpath = workdir + "/xpeccy.conf";
-//	mkdir(workdir.c_str(),0777);
-//	mkdir(romdir.c_str(),0777);
+	mkdir(workdir.c_str(),0777);
+	mkdir(romdir.c_str(),0777);
 	soutname = "ALSA";
 #else
 	workdir = std::string(".\\config");
@@ -740,7 +742,7 @@ void Settings::load(bool dev) {
 	int tmask = 0xff;
 	if (!dev) sys->io->mask = 0;
 	if (!file.good()) {
-		shithappens("Can't find config file<br><b>~/.samstyle/samulator/samulator.conf</b><br>Default one will be created.");
+		shithappens("Can't find config file<br><b>~/.config/samstyle/xpeccy/xpeccy.conf</b><br>Default one will be created.");
 		std::ofstream ofile(optpath.c_str());
 		ofile << "[MACHINE]\n\ncurrent = ZX48K\nmemory = 48\n\n";
 		ofile << "[BETADISK]\n\nenabled = n\n\n";
