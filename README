@@ -9,5 +9,4 @@ And...
 	make
 Result should be './build/xpeccy' executable file
 
-Before first run, you must find .rom file for 48K-basic and put it in ~/.config/samstyle/xpeccy/roms/1982.rom
-It is necessary for first run.
+By default there is only ZX Spectrum 48K romset w/o TRDOS.
