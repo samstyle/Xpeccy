@@ -738,7 +738,7 @@ void Settings::load(bool dev) {
 	std::string line,pnam,pval;
 	std::vector<std::string> vect;
 	size_t pos;
-	char* buf = new char[2048];
+	char* buf = new char[0x4000];
 	int tmask = 0xff;
 	if (!dev) sys->io->mask = 0;
 	if (!file.good()) {
@@ -748,6 +748,8 @@ void Settings::load(bool dev) {
 		ofile << "[BETADISK]\n\nenabled = n\n\n";
 		ofile << "[ROMSETS]\n\nname = ZX48\nbasic48 = 1982.rom\n\ncurrent = ZX48\nreset = basic48\n";
 		ofile.close();
+		QFile fle(":/rom/1982.rom");
+		fle.copy(QString(std::string(romdir + "/1982.rom").c_str()));
 		file.open(optpath.c_str(),std::ifstream::in);
 	}
 	if (!file.good()) {

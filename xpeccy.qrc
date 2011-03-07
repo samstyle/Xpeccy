@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/">
+	<file>rom/1982.rom</file>
     <file>images/cd.png</file>
     <file>images/hdd.png</file>
     <file>images/add.png</file>
