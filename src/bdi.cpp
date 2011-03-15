@@ -10,6 +10,8 @@
 
 bool vgdebug = false;
 
+extern BDI* bdi;
+
 // BDI
 
 BDI::BDI() {

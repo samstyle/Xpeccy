@@ -125,6 +125,6 @@ struct Sound {
 		void defpars();
 };
 
-extern Sound *snd;
+// extern Sound *snd;
 
 #endif

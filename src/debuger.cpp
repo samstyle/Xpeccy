@@ -8,11 +8,15 @@
 #include "emulwin.h"
 // #include "dbg_mnem.h"
 
+extern BDI* bdi;
+extern ZXComp* zx;
+extern EmulWin* mwin;
+
 void DebugWin::start() {
 	mwin->repause(true,PR_DEBUG);
 	ledit->hide();
 	active = true;
-	upadr = sys->cpu->pc;
+	upadr = zx->sys->cpu->pc;
 	curcol = 3; currow = 0;
 	fillall();
 	show();
@@ -180,18 +184,18 @@ void DebugWin::fillvg() {
 void DebugWin::fillrays() {
 	QLabel *lab;
 	lab = (QLabel*)raylay->itemAtPosition(0,1)->widget();
-		if (sys->vid->curr.h < sys->vid->synh.h) {
+		if (zx->sys->vid->curr.h < zx->sys->vid->synh.h) {
 			lab->setText("HS");
 		} else {
-			lab->setText(QString::number(sys->vid->curr.h - sys->vid->synh.h));
+			lab->setText(QString::number(zx->sys->vid->curr.h - zx->sys->vid->synh.h));
 		}
 	lab = (QLabel*)raylay->itemAtPosition(1,1)->widget();
-		if (sys->vid->curr.v < sys->vid->synh.v) {
+		if (zx->sys->vid->curr.v < zx->sys->vid->synh.v) {
 			lab->setText("VS");
 		} else {
-			lab->setText(QString::number(sys->vid->curr.v - sys->vid->synh.v));
+			lab->setText(QString::number(zx->sys->vid->curr.v - zx->sys->vid->synh.v));
 		}
-	tlab->setText(QString("tick:").append(QString::number(sys->cpu->t - t)).append(" (").append(QString::number(sys->cpu->t - sys->cpu->tb)).append(")"));
+	tlab->setText(QString("tick:").append(QString::number(zx->sys->cpu->t - t)).append(" (").append(QString::number(zx->sys->cpu->t - zx->sys->cpu->tb)).append(")"));
 }
 
 void DebugWin::filldump() {
@@ -202,7 +206,7 @@ void DebugWin::filldump() {
 		lab = (QLabel*)dmplay->itemAtPosition(i,0)->widget(); lab->setText(gethexword(adr));
 		lab->setBackgroundRole((curcol==4 && currow==i)?QPalette::Highlight:QPalette::Window);
 		for (j=1; j<9; j++) {
-			lab = (QLabel*)dmplay->itemAtPosition(i,j)->widget(); lab->setText(gethexbyte(sys->mem->rd(adr++)));
+			lab = (QLabel*)dmplay->itemAtPosition(i,j)->widget(); lab->setText(gethexbyte(zx->sys->mem->rd(adr++)));
 			lab->setBackgroundRole((curcol==4+j && currow==i)?QPalette::Highlight:QPalette::Window);
 		}
 	}
@@ -210,33 +214,33 @@ void DebugWin::filldump() {
 
 void DebugWin::fillregz() {
 	QLabel *lab;
-	lab = (QLabel*)rglay->itemAtPosition(0,1)->widget(); lab->setText(gethexword(sys->cpu->af));	// af
+	lab = (QLabel*)rglay->itemAtPosition(0,1)->widget(); lab->setText(gethexword(zx->sys->cpu->af));	// af
 		lab->setBackgroundRole((curcol==0 && currow==0)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(1,1)->widget(); lab->setText(gethexword(sys->cpu->bc));	// bc
+	lab = (QLabel*)rglay->itemAtPosition(1,1)->widget(); lab->setText(gethexword(zx->sys->cpu->bc));	// bc
 		lab->setBackgroundRole((curcol==0 && currow==1)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(2,1)->widget(); lab->setText(gethexword(sys->cpu->de));	// de
+	lab = (QLabel*)rglay->itemAtPosition(2,1)->widget(); lab->setText(gethexword(zx->sys->cpu->de));	// de
 		lab->setBackgroundRole((curcol==0 && currow==2)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(3,1)->widget(); lab->setText(gethexword(sys->cpu->hl));	// hl
+	lab = (QLabel*)rglay->itemAtPosition(3,1)->widget(); lab->setText(gethexword(zx->sys->cpu->hl));	// hl
 		lab->setBackgroundRole((curcol==0 && currow==3)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(4,1)->widget(); lab->setText(gethexword(sys->cpu->alt.af));	// af'
+	lab = (QLabel*)rglay->itemAtPosition(4,1)->widget(); lab->setText(gethexword(zx->sys->cpu->alt.af));	// af'
 		lab->setBackgroundRole((curcol==0 && currow==4)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(5,1)->widget(); lab->setText(gethexword(sys->cpu->alt.bc));	// bc'
+	lab = (QLabel*)rglay->itemAtPosition(5,1)->widget(); lab->setText(gethexword(zx->sys->cpu->alt.bc));	// bc'
 		lab->setBackgroundRole((curcol==0 && currow==5)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(6,1)->widget(); lab->setText(gethexword(sys->cpu->alt.de));	// de'
+	lab = (QLabel*)rglay->itemAtPosition(6,1)->widget(); lab->setText(gethexword(zx->sys->cpu->alt.de));	// de'
 		lab->setBackgroundRole((curcol==0 && currow==6)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(7,1)->widget(); lab->setText(gethexword(sys->cpu->alt.hl));	// hl'
+	lab = (QLabel*)rglay->itemAtPosition(7,1)->widget(); lab->setText(gethexword(zx->sys->cpu->alt.hl));	// hl'
 		lab->setBackgroundRole((curcol==0 && currow==7)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(8,1)->widget(); lab->setText(gethexword(sys->cpu->ix));	// ix
+	lab = (QLabel*)rglay->itemAtPosition(8,1)->widget(); lab->setText(gethexword(zx->sys->cpu->ix));	// ix
 		lab->setBackgroundRole((curcol==0 && currow==8)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(9,1)->widget(); lab->setText(gethexword(sys->cpu->iy));	// iy
+	lab = (QLabel*)rglay->itemAtPosition(9,1)->widget(); lab->setText(gethexword(zx->sys->cpu->iy));	// iy
 		lab->setBackgroundRole((curcol==0 && currow==9)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(10,1)->widget(); lab->setText(gethexword(sys->cpu->ir));	// ir
+	lab = (QLabel*)rglay->itemAtPosition(10,1)->widget(); lab->setText(gethexword(zx->sys->cpu->ir));	// ir
 		lab->setBackgroundRole((curcol==0 && currow==10)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(11,1)->widget(); lab->setText(gethexword(sys->cpu->pc));		// pc
+	lab = (QLabel*)rglay->itemAtPosition(11,1)->widget(); lab->setText(gethexword(zx->sys->cpu->pc));		// pc
 		lab->setBackgroundRole((curcol==0 && currow==11)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(12,1)->widget(); lab->setText(gethexword(sys->cpu->sp));	// sp
+	lab = (QLabel*)rglay->itemAtPosition(12,1)->widget(); lab->setText(gethexword(zx->sys->cpu->sp));	// sp
 		lab->setBackgroundRole((curcol==0 && currow==12)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(13,1)->widget(); lab->setText(QString::number(sys->cpu->imode).append(" ").append(QString::number(sys->cpu->iff1)).append(QString::number(sys->cpu->iff2)));
+	lab = (QLabel*)rglay->itemAtPosition(13,1)->widget(); lab->setText(QString::number(zx->sys->cpu->imode).append(" ").append(QString::number(zx->sys->cpu->iff1)).append(QString::number(zx->sys->cpu->iff2)));
 		lab->setBackgroundRole((curcol==0 && currow==13)?QPalette::Highlight:QPalette::Window);
 }
 
@@ -250,7 +254,7 @@ DasmRow DebugWin::getdisasm() {
 	res.dasm = "";
 	do {
 		prf = false;
-		cde = sys->mem->rd(adr++);
+		cde = zx->sys->mem->rd(adr++);
 		if (!(mde & 12)) {
 			if (cde==0xdd) {mde = 1; prf=true;}
 			if (cde==0xfd) {mde = 2; prf=true;}
@@ -258,42 +262,42 @@ DasmRow DebugWin::getdisasm() {
 			if (cde==0xed) {mde = 8; prf=true;}
 		}
 	} while (prf);
-	if ((mde==5) || (mde==6)) {cde=sys->mem->rd(adr++);}
-	res.dasm = QString(sys->inst[mde][cde].name).toUpper();
+	if ((mde==5) || (mde==6)) {cde=zx->sys->mem->rd(adr++);}
+	res.dasm = QString(zx->sys->inst[mde][cde].name).toUpper();
 
 	QString nm;
 	signed char bt;
 	if (res.dasm.indexOf(":4")!=-1) {
-		bt = (signed char)sys->mem->rd(adr++);
+		bt = (signed char)zx->sys->mem->rd(adr++);
 		if (bt < 0) {nm=QString("-").append(QString::number(512-bt,16).right(2));}
 			else {nm=QString("+").append(QString::number(256+bt,16).right(2));}
 		res.dasm.replace(":4",nm);
 	}
 	if (res.dasm.indexOf(":5")!=-1) {
-		bt = (signed char)sys->mem->rd(adr-2);
+		bt = (signed char)zx->sys->mem->rd(adr-2);
 		if (bt < 0) {nm=QString("-").append(QString::number(512-bt,16).right(2));}
 			else {nm=QString("+").append(QString::number(256+bt,16).right(2));}
 		res.dasm.replace(":5",nm);
 	}
-	if (res.dasm.indexOf(":1")!=-1) res.dasm.replace(":1",QString::number(sys->mem->rd(adr++)+0x100,16).right(2).toUpper());
+	if (res.dasm.indexOf(":1")!=-1) res.dasm.replace(":1",QString::number(zx->sys->mem->rd(adr++)+0x100,16).right(2).toUpper());
 	if (res.dasm.indexOf(":2")!=-1) {
-		res.dasm.replace(":2",gethexword(sys->mem->rd(adr) + (sys->mem->rd(adr+1)<<8)));
+		res.dasm.replace(":2",gethexword(zx->sys->mem->rd(adr) + (zx->sys->mem->rd(adr+1)<<8)));
 		adr += 2;
 	}
 	if (res.dasm.indexOf(":3")!=-1) {
-		res.dasm.replace(":3",gethexword(adr + (signed char)sys->mem->rd(adr) + 1));
+		res.dasm.replace(":3",gethexword(adr + (signed char)zx->sys->mem->rd(adr) + 1));
 		adr++;
 	}
 
-	for (ddz=res.adr; ddz<adr; ddz++) {res.bytes.append(gethexbyte(sys->mem->rd(ddz)));}
+	for (ddz=res.adr; ddz<adr; ddz++) {res.bytes.append(gethexbyte(zx->sys->mem->rd(ddz)));}
 	if (res.bytes.size()>10) res.bytes = res.bytes.left(2).append("..").append(res.bytes.right(6));
 	return res;
 }
 
 uint8_t DebugWin::getbpage(uint16_t ad) {
 	uchar res = 0;
-	if (ad<0x4000) {res = sys->mem->crom;}
-		else {if (ad>0xbfff) res = sys->mem->cram;}
+	if (ad<0x4000) {res = zx->sys->mem->crom;}
+		else {if (ad>0xbfff) res = zx->sys->mem->cram;}
 	return res;
 }
 
@@ -312,13 +316,13 @@ bool DebugWin::filldasm() {
 		bp.page = getbpage(adr);
 		bp.adr = adr;
 		idx = findbp(bp);
-		if (adr==sys->cpu->pc) ispc=true;
+		if (adr==zx->sys->cpu->pc) ispc=true;
 		lab1 = (QLabel*)asmlay->itemAtPosition(i,0)->widget();
 		lab2 = (QLabel*)asmlay->itemAtPosition(i,1)->widget();
 		lab3 = (QLabel*)asmlay->itemAtPosition(i,2)->widget();
-		lab1->setBackgroundRole((sys->cpu->pc==adr)?QPalette::ToolTipBase:QPalette::Window);
-		lab2->setBackgroundRole((sys->cpu->pc==adr)?QPalette::ToolTipBase:QPalette::Window);
-		lab3->setBackgroundRole((sys->cpu->pc==adr)?QPalette::ToolTipBase:QPalette::Window);
+		lab1->setBackgroundRole((zx->sys->cpu->pc==adr)?QPalette::ToolTipBase:QPalette::Window);
+		lab2->setBackgroundRole((zx->sys->cpu->pc==adr)?QPalette::ToolTipBase:QPalette::Window);
+		lab3->setBackgroundRole((zx->sys->cpu->pc==adr)?QPalette::ToolTipBase:QPalette::Window);
 		lab1->setForegroundRole((idx==-1)?QPalette::WindowText:QPalette::ToolTipText);
 		lab2->setForegroundRole((idx==-1)?QPalette::WindowText:QPalette::ToolTipText);
 		lab3->setForegroundRole((idx==-1)?QPalette::WindowText:QPalette::ToolTipText);
@@ -383,14 +387,14 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 		switch (ev->modifiers()) {
 		case Qt::AltModifier:
 			switch (cod) {
-				case Qt::Key_A: dmpadr = sys->cpu->af; filldump(); break;
-				case Qt::Key_B: dmpadr = sys->cpu->bc; filldump(); break;
-				case Qt::Key_D: dmpadr = sys->cpu->de; filldump(); break;
-				case Qt::Key_H: dmpadr = sys->cpu->hl; filldump(); break;
-				case Qt::Key_X: dmpadr = sys->cpu->ix; filldump(); break;
-				case Qt::Key_Y: dmpadr = sys->cpu->iy; filldump(); break;
-				case Qt::Key_S: dmpadr = sys->cpu->sp; filldump(); break;
-				case Qt::Key_P: dmpadr = sys->cpu->pc; filldump(); break;
+				case Qt::Key_A: dmpadr = zx->sys->cpu->af; filldump(); break;
+				case Qt::Key_B: dmpadr = zx->sys->cpu->bc; filldump(); break;
+				case Qt::Key_D: dmpadr = zx->sys->cpu->de; filldump(); break;
+				case Qt::Key_H: dmpadr = zx->sys->cpu->hl; filldump(); break;
+				case Qt::Key_X: dmpadr = zx->sys->cpu->ix; filldump(); break;
+				case Qt::Key_Y: dmpadr = zx->sys->cpu->iy; filldump(); break;
+				case Qt::Key_S: dmpadr = zx->sys->cpu->sp; filldump(); break;
+				case Qt::Key_P: dmpadr = zx->sys->cpu->pc; filldump(); break;
 			}
 			break;
 		case Qt::NoModifier:
@@ -422,19 +426,19 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					break;
 				case Qt::Key_Z:
 					if (curcol>0 && curcol<4) {
-						sys->cpu->pc = fdasm[currow].adr;
+						zx->sys->cpu->pc = fdasm[currow].adr;
 						filldasm();
 					}
 					break;
 				case Qt::Key_F7:
-					t = sys->cpu->t;
+					t = zx->sys->cpu->t;
 					mwin->exec();
-					if (!fillall()) {upadr = sys->cpu->pc; filldasm();}
+					if (!fillall()) {upadr = zx->sys->cpu->pc; filldasm();}
 					break;
 				case Qt::Key_F8:
-					t = sys->cpu->t;
-					cpoint.adr = sys->cpu->pc;
-					cpoint.sp = sys->cpu->sp;
+					t = zx->sys->cpu->t;
+					cpoint.adr = zx->sys->cpu->pc;
+					cpoint.sp = zx->sys->cpu->sp;
 					cpoint.active = true;
 					stop();
 					break;
@@ -499,7 +503,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					}
 					break;
 				case Qt::Key_Home:
-					upadr = sys->cpu->pc;
+					upadr = zx->sys->cpu->pc;
 					filldasm();
 					break;
 			}
@@ -517,23 +521,23 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					case 0: idx = ledit->text().toUShort(&tmpb,16);
 						if (!tmpb) break;
 						switch (currow) {
-							case 0: sys->cpu->af = idx; break;
-							case 1: sys->cpu->bc = idx; break;
-							case 2: sys->cpu->de = idx; break;
-							case 3: sys->cpu->hl = idx; break;
-							case 4: sys->cpu->alt.af = idx; break;
-							case 5: sys->cpu->alt.bc = idx; break;
-							case 6: sys->cpu->alt.de = idx; break;
-							case 7: sys->cpu->alt.hl = idx; break;
-							case 8:sys-> cpu->ix = idx; break;
-							case 9:sys-> cpu->iy = idx; break;
-							case 10: sys->cpu->ir = idx; break;
-							case 11: sys->cpu->pc = idx; break;
-							case 12: sys->cpu->sp = idx; break;
+							case 0: zx->sys->cpu->af = idx; break;
+							case 1: zx->sys->cpu->bc = idx; break;
+							case 2: zx->sys->cpu->de = idx; break;
+							case 3: zx->sys->cpu->hl = idx; break;
+							case 4: zx->sys->cpu->alt.af = idx; break;
+							case 5: zx->sys->cpu->alt.bc = idx; break;
+							case 6: zx->sys->cpu->alt.de = idx; break;
+							case 7: zx->sys->cpu->alt.hl = idx; break;
+							case 8: zx->sys-> cpu->ix = idx; break;
+							case 9: zx->sys-> cpu->iy = idx; break;
+							case 10: zx->sys->cpu->ir = idx; break;
+							case 11: zx->sys->cpu->pc = idx; break;
+							case 12: zx->sys->cpu->sp = idx; break;
 							case 13: if ((idx & 0xf00)>0x200) {tmpb = false;} else {
-									sys->cpu->imode = ((idx & 0xf00)>>8);
-									sys->cpu->iff1 = (idx & 0xf0);
-									sys->cpu->iff2 = (idx & 0x0f);
+									zx->sys->cpu->imode = ((idx & 0xf00)>>8);
+									zx->sys->cpu->iff1 = (idx & 0xf0);
+									zx->sys->cpu->iff2 = (idx & 0x0f);
 								}
 								break;
 						}
@@ -561,7 +565,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					case 12: idx = ledit->text().toShort(&tmpb,16);
 						tmpb &= (idx<0x100);
 						if (!tmpb) break;
-						sys->mem->wr(dmpadr+(currow<<3)+curcol-5,idx&0xff);
+						zx->sys->mem->wr(dmpadr+(currow<<3)+curcol-5,idx&0xff);
 						curcol++;
 						if (curcol > 12) {
 							curcol=5; currow++;

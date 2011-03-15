@@ -1,89 +1,89 @@
 // NOTE	CHECKED. NO MINES HERE
 
 // ld rp,nn
-void npr01(Spec *p) {p->cpu->c = p->mem->rd(p->cpu->pc++); p->cpu->b = p->mem->rd(p->cpu->pc++);}
-void npr11(Spec *p) {p->cpu->e = p->mem->rd(p->cpu->pc++); p->cpu->d = p->mem->rd(p->cpu->pc++);}
-void npr21(Spec *p) {p->cpu->l = p->mem->rd(p->cpu->pc++); p->cpu->h = p->mem->rd(p->cpu->pc++);}
-void npr31(Spec *p) {p->cpu->lsp = p->mem->rd(p->cpu->pc++); p->cpu->hsp = p->mem->rd(p->cpu->pc++);}
+void npr01(ZXBase* p) {p->cpu->c = p->mem->rd(p->cpu->pc++); p->cpu->b = p->mem->rd(p->cpu->pc++);}
+void npr11(ZXBase* p) {p->cpu->e = p->mem->rd(p->cpu->pc++); p->cpu->d = p->mem->rd(p->cpu->pc++);}
+void npr21(ZXBase* p) {p->cpu->l = p->mem->rd(p->cpu->pc++); p->cpu->h = p->mem->rd(p->cpu->pc++);}
+void npr31(ZXBase* p) {p->cpu->lsp = p->mem->rd(p->cpu->pc++); p->cpu->hsp = p->mem->rd(p->cpu->pc++);}
 // inc rp
-void npr03(Spec *p) {p->cpu->bc++;}
-void npr13(Spec *p) {p->cpu->de++;}
-void npr23(Spec *p) {p->cpu->hl++;}
-void npr33(Spec *p) {p->cpu->sp++;}
+void npr03(ZXBase* p) {p->cpu->bc++;}
+void npr13(ZXBase* p) {p->cpu->de++;}
+void npr23(ZXBase* p) {p->cpu->hl++;}
+void npr33(ZXBase* p) {p->cpu->sp++;}
 // dec rp
-void npr0B(Spec *p) {p->cpu->bc--;}
-void npr1B(Spec *p) {p->cpu->de--;}
-void npr2B(Spec *p) {p->cpu->hl--;}
-void npr3B(Spec *p) {p->cpu->sp--;}
+void npr0B(ZXBase* p) {p->cpu->bc--;}
+void npr1B(ZXBase* p) {p->cpu->de--;}
+void npr2B(ZXBase* p) {p->cpu->hl--;}
+void npr3B(ZXBase* p) {p->cpu->sp--;}
 
 // ld r,n
-void npr06(Spec *p) {p->cpu->b = p->mem->rd(p->cpu->pc++);}
-void npr0E(Spec *p) {p->cpu->c = p->mem->rd(p->cpu->pc++);}
-void npr16(Spec *p) {p->cpu->d = p->mem->rd(p->cpu->pc++);}
-void npr1E(Spec *p) {p->cpu->e = p->mem->rd(p->cpu->pc++);}
-void npr26(Spec *p) {p->cpu->h = p->mem->rd(p->cpu->pc++);}
-void npr2E(Spec *p) {p->cpu->l = p->mem->rd(p->cpu->pc++);}
-void npr36(Spec *p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->pc++));}
-void npr3E(Spec *p) {p->cpu->a = p->mem->rd(p->cpu->pc++);}
+void npr06(ZXBase* p) {p->cpu->b = p->mem->rd(p->cpu->pc++);}
+void npr0E(ZXBase* p) {p->cpu->c = p->mem->rd(p->cpu->pc++);}
+void npr16(ZXBase* p) {p->cpu->d = p->mem->rd(p->cpu->pc++);}
+void npr1E(ZXBase* p) {p->cpu->e = p->mem->rd(p->cpu->pc++);}
+void npr26(ZXBase* p) {p->cpu->h = p->mem->rd(p->cpu->pc++);}
+void npr2E(ZXBase* p) {p->cpu->l = p->mem->rd(p->cpu->pc++);}
+void npr36(ZXBase* p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->pc++));}
+void npr3E(ZXBase* p) {p->cpu->a = p->mem->rd(p->cpu->pc++);}
 // inc r
-void npr04(Spec *p) {p->cpu->b++; p->cpu->f = flag[p->cpu->b].inc | (p->cpu->f & FC);}
-void npr0C(Spec *p) {p->cpu->c++; p->cpu->f = flag[p->cpu->c].inc | (p->cpu->f & FC);}
-void npr14(Spec *p) {p->cpu->d++; p->cpu->f = flag[p->cpu->d].inc | (p->cpu->f & FC);}
-void npr1C(Spec *p) {p->cpu->e++; p->cpu->f = flag[p->cpu->e].inc | (p->cpu->f & FC);}
-void npr24(Spec *p) {p->cpu->h++; p->cpu->f = flag[p->cpu->h].inc | (p->cpu->f & FC);}
-void npr2C(Spec *p) {p->cpu->l++; p->cpu->f = flag[p->cpu->l].inc | (p->cpu->f & FC);}
-void npr34(Spec *p) {p->cpu->x = p->mem->rd(p->cpu->hl) + 1; p->mem->wr(p->cpu->hl,p->cpu->x); p->cpu->f = flag[p->cpu->x].inc | (p->cpu->f & FC);}
-void npr3C(Spec *p) {p->cpu->a++; p->cpu->f = flag[p->cpu->a].inc | (p->cpu->f & FC);}
+void npr04(ZXBase* p) {p->cpu->b++; p->cpu->f = flag[p->cpu->b].inc | (p->cpu->f & FC);}
+void npr0C(ZXBase* p) {p->cpu->c++; p->cpu->f = flag[p->cpu->c].inc | (p->cpu->f & FC);}
+void npr14(ZXBase* p) {p->cpu->d++; p->cpu->f = flag[p->cpu->d].inc | (p->cpu->f & FC);}
+void npr1C(ZXBase* p) {p->cpu->e++; p->cpu->f = flag[p->cpu->e].inc | (p->cpu->f & FC);}
+void npr24(ZXBase* p) {p->cpu->h++; p->cpu->f = flag[p->cpu->h].inc | (p->cpu->f & FC);}
+void npr2C(ZXBase* p) {p->cpu->l++; p->cpu->f = flag[p->cpu->l].inc | (p->cpu->f & FC);}
+void npr34(ZXBase* p) {p->cpu->x = p->mem->rd(p->cpu->hl) + 1; p->mem->wr(p->cpu->hl,p->cpu->x); p->cpu->f = flag[p->cpu->x].inc | (p->cpu->f & FC);}
+void npr3C(ZXBase* p) {p->cpu->a++; p->cpu->f = flag[p->cpu->a].inc | (p->cpu->f & FC);}
 // dec r
-void npr05(Spec *p) {p->cpu->b--; p->cpu->f = flag[p->cpu->b].dec | (p->cpu->f & FC);}
-void npr0D(Spec *p) {p->cpu->c--; p->cpu->f = flag[p->cpu->c].dec | (p->cpu->f & FC);}
-void npr15(Spec *p) {p->cpu->d--; p->cpu->f = flag[p->cpu->d].dec | (p->cpu->f & FC);}
-void npr1D(Spec *p) {p->cpu->e--; p->cpu->f = flag[p->cpu->e].dec | (p->cpu->f & FC);}
-void npr25(Spec *p) {p->cpu->h--; p->cpu->f = flag[p->cpu->h].dec | (p->cpu->f & FC);}
-void npr2D(Spec *p) {p->cpu->l--; p->cpu->f = flag[p->cpu->l].dec | (p->cpu->f & FC);}
-void npr35(Spec *p) {p->cpu->x = p->mem->rd(p->cpu->hl) - 1; p->mem->wr(p->cpu->hl,p->cpu->x); p->cpu->f = flag[p->cpu->x].dec | (p->cpu->f & FC);}
-void npr3D(Spec *p) {p->cpu->a--; p->cpu->f = flag[p->cpu->a].dec | (p->cpu->f & FC);}
+void npr05(ZXBase* p) {p->cpu->b--; p->cpu->f = flag[p->cpu->b].dec | (p->cpu->f & FC);}
+void npr0D(ZXBase* p) {p->cpu->c--; p->cpu->f = flag[p->cpu->c].dec | (p->cpu->f & FC);}
+void npr15(ZXBase* p) {p->cpu->d--; p->cpu->f = flag[p->cpu->d].dec | (p->cpu->f & FC);}
+void npr1D(ZXBase* p) {p->cpu->e--; p->cpu->f = flag[p->cpu->e].dec | (p->cpu->f & FC);}
+void npr25(ZXBase* p) {p->cpu->h--; p->cpu->f = flag[p->cpu->h].dec | (p->cpu->f & FC);}
+void npr2D(ZXBase* p) {p->cpu->l--; p->cpu->f = flag[p->cpu->l].dec | (p->cpu->f & FC);}
+void npr35(ZXBase* p) {p->cpu->x = p->mem->rd(p->cpu->hl) - 1; p->mem->wr(p->cpu->hl,p->cpu->x); p->cpu->f = flag[p->cpu->x].dec | (p->cpu->f & FC);}
+void npr3D(ZXBase* p) {p->cpu->a--; p->cpu->f = flag[p->cpu->a].dec | (p->cpu->f & FC);}
 
 // rlca,rrca,rla,rra
-void npr07(Spec *p) {p->cpu->a = flag[p->cpu->a].rlc.r; p->cpu->f = (p->cpu->f & (FS | FZ | FP)) | (p->cpu->a & (F5 | F3 | FC));}
-void npr0F(Spec *p) {p->cpu->a = flag[p->cpu->a].rrc.r; p->cpu->f = (p->cpu->f & (FS | FZ | FP)) | (p->cpu->a & (F5 | F3)) | ((p->cpu->a & 128)?FC:0);}
-void npr17(Spec *p) {bool z = (p->cpu->a & 128); p->cpu->a = flag[p->cpu->a].rl[p->cpu->f & FC].r; p->cpu->f = (p->cpu->f & (FS | FZ | FP)) | (p->cpu->a & (F5 | F3)) | (z?FC:0);}
-void npr1F(Spec *p) {bool z = (p->cpu->a & 1); p->cpu->a = flag[p->cpu->a].rr[p->cpu->f & FC].r; p->cpu->f = (p->cpu->f & (FS | FZ | FP)) | (p->cpu->a & (F5 | F3)) | (z?FC:0);}
+void npr07(ZXBase* p) {p->cpu->a = flag[p->cpu->a].rlc.r; p->cpu->f = (p->cpu->f & (FS | FZ | FP)) | (p->cpu->a & (F5 | F3 | FC));}
+void npr0F(ZXBase* p) {p->cpu->a = flag[p->cpu->a].rrc.r; p->cpu->f = (p->cpu->f & (FS | FZ | FP)) | (p->cpu->a & (F5 | F3)) | ((p->cpu->a & 128)?FC:0);}
+void npr17(ZXBase* p) {bool z = (p->cpu->a & 128); p->cpu->a = flag[p->cpu->a].rl[p->cpu->f & FC].r; p->cpu->f = (p->cpu->f & (FS | FZ | FP)) | (p->cpu->a & (F5 | F3)) | (z?FC:0);}
+void npr1F(ZXBase* p) {bool z = (p->cpu->a & 1); p->cpu->a = flag[p->cpu->a].rr[p->cpu->f & FC].r; p->cpu->f = (p->cpu->f & (FS | FZ | FP)) | (p->cpu->a & (F5 | F3)) | (z?FC:0);}
 
 // jr	mptr = addr when condition is true
-void npr18(Spec *p) {p->cpu->x = p->mem->rd(p->cpu->pc++); p->cpu->pc += (signed char)p->cpu->x; p->cpu->mptr = p->cpu->pc;}
-void npr20(Spec *p) {p->cpu->x = p->mem->rd(p->cpu->pc++); if (~p->cpu->f & FZ) {p->cpu->pc += (signed char)p->cpu->x; p->cpu->t += 5; p->cpu->mptr = p->cpu->pc;}}
-void npr28(Spec *p) {p->cpu->x = p->mem->rd(p->cpu->pc++); if (p->cpu->f & FZ) {p->cpu->pc += (signed char)p->cpu->x; p->cpu->t += 5; p->cpu->mptr = p->cpu->pc;}}
-void npr30(Spec *p) {p->cpu->x = p->mem->rd(p->cpu->pc++); if (~p->cpu->f & FC) {p->cpu->pc += (signed char)p->cpu->x; p->cpu->t += 5; p->cpu->mptr = p->cpu->pc;}}
-void npr38(Spec *p) {p->cpu->x = p->mem->rd(p->cpu->pc++); if (p->cpu->f & FC) {p->cpu->pc += (signed char)p->cpu->x; p->cpu->t += 5; p->cpu->mptr = p->cpu->pc;}}
+void npr18(ZXBase* p) {p->cpu->x = p->mem->rd(p->cpu->pc++); p->cpu->pc += (signed char)p->cpu->x; p->cpu->mptr = p->cpu->pc;}
+void npr20(ZXBase* p) {p->cpu->x = p->mem->rd(p->cpu->pc++); if (~p->cpu->f & FZ) {p->cpu->pc += (signed char)p->cpu->x; /*p->cpu->t += 5;*/ p->cpu->mptr = p->cpu->pc;}}
+void npr28(ZXBase* p) {p->cpu->x = p->mem->rd(p->cpu->pc++); if (p->cpu->f & FZ) {p->cpu->pc += (signed char)p->cpu->x; /*p->cpu->t += 5;*/ p->cpu->mptr = p->cpu->pc;}}
+void npr30(ZXBase* p) {p->cpu->x = p->mem->rd(p->cpu->pc++); if (~p->cpu->f & FC) {p->cpu->pc += (signed char)p->cpu->x; /*p->cpu->t += 5;*/ p->cpu->mptr = p->cpu->pc;}}
+void npr38(ZXBase* p) {p->cpu->x = p->mem->rd(p->cpu->pc++); if (p->cpu->f & FC) {p->cpu->pc += (signed char)p->cpu->x; /*p->cpu->t += 5;*/ p->cpu->mptr = p->cpu->pc;}}
 
 // ld (bc|de),a; ld a,(bc|de)
-void npr02(Spec *p) {p->mem->wr(p->cpu->bc,p->cpu->a); p->cpu->lptr = p->cpu->c + 1; p->cpu->hptr = p->cpu->a;}		// mptr = (a << 8) + ((bc + 1) & 0xff)
-void npr12(Spec *p) {p->mem->wr(p->cpu->de,p->cpu->a); p->cpu->lptr = p->cpu->e + 1; p->cpu->hptr = p->cpu->a;}		// mptr = (a << 8) + ((de + 1) & 0xff)
-void npr0A(Spec *p) {p->cpu->a = p->mem->rd(p->cpu->bc); p->cpu->mptr = p->cpu->bc + 1;}			// mptr = bc + 1
-void npr1A(Spec *p) {p->cpu->a = p->mem->rd(p->cpu->de); p->cpu->mptr = p->cpu->de + 1;}			// mptr = de + 1
+void npr02(ZXBase* p) {p->mem->wr(p->cpu->bc,p->cpu->a); p->cpu->lptr = p->cpu->c + 1; p->cpu->hptr = p->cpu->a;}		// mptr = (a << 8) + ((bc + 1) & 0xff)
+void npr12(ZXBase* p) {p->mem->wr(p->cpu->de,p->cpu->a); p->cpu->lptr = p->cpu->e + 1; p->cpu->hptr = p->cpu->a;}		// mptr = (a << 8) + ((de + 1) & 0xff)
+void npr0A(ZXBase* p) {p->cpu->a = p->mem->rd(p->cpu->bc); p->cpu->mptr = p->cpu->bc + 1;}			// mptr = bc + 1
+void npr1A(ZXBase* p) {p->cpu->a = p->mem->rd(p->cpu->de); p->cpu->mptr = p->cpu->de + 1;}			// mptr = de + 1
 // ld (nn),[hl|a]; ld [hl|a],(nn)
-void npr22(Spec *p) {p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->cpu->hptr = p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr++,p->cpu->l); p->mem->wr(p->cpu->mptr,p->cpu->h);}	// mptr = nn + 1
-void npr2A(Spec *p) {p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->cpu->hptr = p->mem->rd(p->cpu->pc++); p->cpu->l = p->mem->rd(p->cpu->mptr++); p->cpu->h = p->mem->rd(p->cpu->mptr);}		// mptr = nn + 1
-void npr32(Spec *p) {p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->cpu->hptr = p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr++,p->cpu->a); p->cpu->hptr = p->cpu->a;}				// mptr = (A << 8) + ((adr + 1) & 0xff)
-void npr3A(Spec *p) {p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->cpu->hptr = p->mem->rd(p->cpu->pc++); p->cpu->a = p->mem->rd(p->cpu->mptr++);}						// mptr = nn + 1
+void npr22(ZXBase* p) {p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->cpu->hptr = p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr++,p->cpu->l); p->mem->wr(p->cpu->mptr,p->cpu->h);}	// mptr = nn + 1
+void npr2A(ZXBase* p) {p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->cpu->hptr = p->mem->rd(p->cpu->pc++); p->cpu->l = p->mem->rd(p->cpu->mptr++); p->cpu->h = p->mem->rd(p->cpu->mptr);}		// mptr = nn + 1
+void npr32(ZXBase* p) {p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->cpu->hptr = p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr++,p->cpu->a); p->cpu->hptr = p->cpu->a;}				// mptr = (A << 8) + ((adr + 1) & 0xff)
+void npr3A(ZXBase* p) {p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->cpu->hptr = p->mem->rd(p->cpu->pc++); p->cpu->a = p->mem->rd(p->cpu->mptr++);}						// mptr = nn + 1
 // add hl,rp	mptr = hl + 1 (before adding)
-void addHL(Spec *p,int op) {
+void addHL(ZXBase* p,int op) {
 	int z = p->cpu->hl;
 	p->cpu->mptr = p->cpu->hl + 1;
 	p->cpu->hl += op;
 	p->cpu->f = (p->cpu->f & (FS | FZ | FP)) | (p->cpu->h & (F5 | F3)) | ((((z & 0xfff) + (op & 0xfff)) > 0xfff)?FH:0) | (((z + op) > 0xffff)?FC:0);
 }
-void npr09(Spec *p) {addHL(p,p->cpu->bc);}
-void npr19(Spec *p) {addHL(p,p->cpu->de);}
-void npr29(Spec *p) {addHL(p,p->cpu->hl);}
-void npr39(Spec *p) {addHL(p,p->cpu->sp);}
+void npr09(ZXBase* p) {addHL(p,p->cpu->bc);}
+void npr19(ZXBase* p) {addHL(p,p->cpu->de);}
+void npr29(ZXBase* p) {addHL(p,p->cpu->hl);}
+void npr39(ZXBase* p) {addHL(p,p->cpu->sp);}
 
 // others (nop,exa,djnz,daa,cpl,scf,ccf
-void npr00(Spec*) {}			// nop
-void npr08(Spec *p) {int tmp = p->cpu->af; p->cpu->af = p->cpu->alt.af; p->cpu->alt.af = tmp;}	// ex af,af'
-void npr10(Spec *p) {p->cpu->dlt = p->mem->rd(p->cpu->pc++); p->cpu->b--; if (p->cpu->b != 0) {p->cpu->pc += (signed char)p->cpu->dlt; p->cpu->t += 5; p->cpu->mptr = p->cpu->pc;}}	// mptr = addr when b!=0
-void npr27(Spec *p) {
+void npr00(ZXBase*) {}			// nop
+void npr08(ZXBase* p) {int tmp = p->cpu->af; p->cpu->af = p->cpu->alt.af; p->cpu->alt.af = tmp;}	// ex af,af'
+void npr10(ZXBase* p) {p->cpu->dlt = p->mem->rd(p->cpu->pc++); p->cpu->b--; if (p->cpu->b != 0) {p->cpu->pc += (signed char)p->cpu->dlt; /*p->cpu->t += 5;*/ p->cpu->mptr = p->cpu->pc;}}	// mptr = addr when b!=0
+void npr27(ZXBase* p) {
 	switch (p->cpu->f & (FH | FN | FC)) {
 		case 0: if ((p->cpu->a & 15) < 10) {
 				if (p->cpu->a > 0x9f) {p->cpu->a += 0x60; p->cpu->f |= FC;}
@@ -100,250 +100,250 @@ void npr27(Spec *p) {
 	}
 	p->cpu->f = (p->cpu->f & (FN | FC)) | (p->cpu->a & (FS | F5 | F3)) | ((p->cpu->a == 0)?FZ:0) | (parity(p->cpu->a)?FP:0);
 }
-void npr2F(Spec *p) {p->cpu->a ^= 255; p->cpu->f = (p->cpu->f & ~(F5 | F3)) | (p->cpu->a & (F5 | F3)) | FH | FN;}
-void npr37(Spec *p) {p->cpu->f = (p->cpu->f & ~(FH | FN)) | (p->cpu->a & (F5 | F3)) | FC;}
-void npr3F(Spec *p) {p->cpu->f = ((p->cpu->f & ~(FH | FN)) | ((p->cpu->f & FC)?FH:0) | (p->cpu->a & (F5 | F3))) ^ FC;}
+void npr2F(ZXBase* p) {p->cpu->a ^= 255; p->cpu->f = (p->cpu->f & ~(F5 | F3)) | (p->cpu->a & (F5 | F3)) | FH | FN;}
+void npr37(ZXBase* p) {p->cpu->f = (p->cpu->f & ~(FH | FN)) | (p->cpu->a & (F5 | F3)) | FC;}
+void npr3F(ZXBase* p) {p->cpu->f = ((p->cpu->f & ~(FH | FN)) | ((p->cpu->f & FC)?FH:0) | (p->cpu->a & (F5 | F3))) ^ FC;}
 
 // ld b,r
-void npr40(Spec*) {}
-void npr41(Spec *p) {p->cpu->b = p->cpu->c;}
-void npr42(Spec *p) {p->cpu->b = p->cpu->d;}
-void npr43(Spec *p) {p->cpu->b = p->cpu->e;}
-void npr44(Spec *p) {p->cpu->b = p->cpu->h;}
-void npr45(Spec *p) {p->cpu->b = p->cpu->l;}
-void npr46(Spec *p) {p->cpu->b = p->mem->rd(p->cpu->hl);}
-void npr47(Spec *p) {p->cpu->b = p->cpu->a;}
+void npr40(ZXBase*) {}
+void npr41(ZXBase* p) {p->cpu->b = p->cpu->c;}
+void npr42(ZXBase* p) {p->cpu->b = p->cpu->d;}
+void npr43(ZXBase* p) {p->cpu->b = p->cpu->e;}
+void npr44(ZXBase* p) {p->cpu->b = p->cpu->h;}
+void npr45(ZXBase* p) {p->cpu->b = p->cpu->l;}
+void npr46(ZXBase* p) {p->cpu->b = p->mem->rd(p->cpu->hl);}
+void npr47(ZXBase* p) {p->cpu->b = p->cpu->a;}
 // ld c,r
-void npr48(Spec *p) {p->cpu->c = p->cpu->b;}
-void npr49(Spec*) {}
-void npr4A(Spec *p) {p->cpu->c = p->cpu->d;}
-void npr4B(Spec *p) {p->cpu->c = p->cpu->e;}
-void npr4C(Spec *p) {p->cpu->c = p->cpu->h;}
-void npr4D(Spec *p) {p->cpu->c = p->cpu->l;}
-void npr4E(Spec *p) {p->cpu->c = p->mem->rd(p->cpu->hl);}
-void npr4F(Spec *p) {p->cpu->c = p->cpu->a;}
+void npr48(ZXBase* p) {p->cpu->c = p->cpu->b;}
+void npr49(ZXBase*) {}
+void npr4A(ZXBase* p) {p->cpu->c = p->cpu->d;}
+void npr4B(ZXBase* p) {p->cpu->c = p->cpu->e;}
+void npr4C(ZXBase* p) {p->cpu->c = p->cpu->h;}
+void npr4D(ZXBase* p) {p->cpu->c = p->cpu->l;}
+void npr4E(ZXBase* p) {p->cpu->c = p->mem->rd(p->cpu->hl);}
+void npr4F(ZXBase* p) {p->cpu->c = p->cpu->a;}
 // ld d,r
-void npr50(Spec *p) {p->cpu->d = p->cpu->b;}
-void npr51(Spec *p) {p->cpu->d = p->cpu->c;}
-void npr52(Spec*) {}
-void npr53(Spec *p) {p->cpu->d = p->cpu->e;}
-void npr54(Spec *p) {p->cpu->d = p->cpu->h;}
-void npr55(Spec *p) {p->cpu->d = p->cpu->l;}
-void npr56(Spec *p) {p->cpu->d = p->mem->rd(p->cpu->hl);}
-void npr57(Spec *p) {p->cpu->d = p->cpu->a;}
+void npr50(ZXBase* p) {p->cpu->d = p->cpu->b;}
+void npr51(ZXBase* p) {p->cpu->d = p->cpu->c;}
+void npr52(ZXBase*) {}
+void npr53(ZXBase* p) {p->cpu->d = p->cpu->e;}
+void npr54(ZXBase* p) {p->cpu->d = p->cpu->h;}
+void npr55(ZXBase* p) {p->cpu->d = p->cpu->l;}
+void npr56(ZXBase* p) {p->cpu->d = p->mem->rd(p->cpu->hl);}
+void npr57(ZXBase* p) {p->cpu->d = p->cpu->a;}
 // ld e,r
-void npr58(Spec *p) {p->cpu->e = p->cpu->b;}
-void npr59(Spec *p) {p->cpu->e = p->cpu->c;}
-void npr5A(Spec *p) {p->cpu->e = p->cpu->d;}
-void npr5B(Spec*) {}
-void npr5C(Spec *p) {p->cpu->e = p->cpu->h;}
-void npr5D(Spec *p) {p->cpu->e = p->cpu->l;}
-void npr5E(Spec *p) {p->cpu->e = p->mem->rd(p->cpu->hl);}
-void npr5F(Spec *p) {p->cpu->e = p->cpu->a;}
+void npr58(ZXBase* p) {p->cpu->e = p->cpu->b;}
+void npr59(ZXBase* p) {p->cpu->e = p->cpu->c;}
+void npr5A(ZXBase* p) {p->cpu->e = p->cpu->d;}
+void npr5B(ZXBase*) {}
+void npr5C(ZXBase* p) {p->cpu->e = p->cpu->h;}
+void npr5D(ZXBase* p) {p->cpu->e = p->cpu->l;}
+void npr5E(ZXBase* p) {p->cpu->e = p->mem->rd(p->cpu->hl);}
+void npr5F(ZXBase* p) {p->cpu->e = p->cpu->a;}
 // ld h,r
-void npr60(Spec *p) {p->cpu->h = p->cpu->b;}
-void npr61(Spec *p) {p->cpu->h = p->cpu->c;}
-void npr62(Spec *p) {p->cpu->h = p->cpu->d;}
-void npr63(Spec *p) {p->cpu->h = p->cpu->e;}
-void npr64(Spec*) {}
-void npr65(Spec *p) {p->cpu->h = p->cpu->l;}
-void npr66(Spec *p) {p->cpu->h = p->mem->rd(p->cpu->hl);}
-void npr67(Spec *p) {p->cpu->h = p->cpu->a;}
+void npr60(ZXBase* p) {p->cpu->h = p->cpu->b;}
+void npr61(ZXBase* p) {p->cpu->h = p->cpu->c;}
+void npr62(ZXBase* p) {p->cpu->h = p->cpu->d;}
+void npr63(ZXBase* p) {p->cpu->h = p->cpu->e;}
+void npr64(ZXBase*) {}
+void npr65(ZXBase* p) {p->cpu->h = p->cpu->l;}
+void npr66(ZXBase* p) {p->cpu->h = p->mem->rd(p->cpu->hl);}
+void npr67(ZXBase* p) {p->cpu->h = p->cpu->a;}
 // ld l,r
-void npr68(Spec *p) {p->cpu->l = p->cpu->b;}
-void npr69(Spec *p) {p->cpu->l = p->cpu->c;}
-void npr6A(Spec *p) {p->cpu->l = p->cpu->d;}
-void npr6B(Spec *p) {p->cpu->l = p->cpu->e;}
-void npr6C(Spec *p) {p->cpu->l = p->cpu->h;}
-void npr6D(Spec*) {}
-void npr6E(Spec *p) {p->cpu->l = p->mem->rd(p->cpu->hl);}
-void npr6F(Spec *p) {p->cpu->l = p->cpu->a;}
+void npr68(ZXBase* p) {p->cpu->l = p->cpu->b;}
+void npr69(ZXBase* p) {p->cpu->l = p->cpu->c;}
+void npr6A(ZXBase* p) {p->cpu->l = p->cpu->d;}
+void npr6B(ZXBase* p) {p->cpu->l = p->cpu->e;}
+void npr6C(ZXBase* p) {p->cpu->l = p->cpu->h;}
+void npr6D(ZXBase*) {}
+void npr6E(ZXBase* p) {p->cpu->l = p->mem->rd(p->cpu->hl);}
+void npr6F(ZXBase* p) {p->cpu->l = p->cpu->a;}
 // ld (hl),r
-void npr70(Spec *p) {p->mem->wr(p->cpu->hl,p->cpu->b);}
-void npr71(Spec *p) {p->mem->wr(p->cpu->hl,p->cpu->c);}
-void npr72(Spec *p) {p->mem->wr(p->cpu->hl,p->cpu->d);}
-void npr73(Spec *p) {p->mem->wr(p->cpu->hl,p->cpu->e);}
-void npr74(Spec *p) {p->mem->wr(p->cpu->hl,p->cpu->h);}
-void npr75(Spec *p) {p->mem->wr(p->cpu->hl,p->cpu->l);}
-void npr76(Spec *p) {if (!p->istrb) p->cpu->pc--;}
-void npr77(Spec *p) {p->mem->wr(p->cpu->hl,p->cpu->a);}
+void npr70(ZXBase* p) {p->mem->wr(p->cpu->hl,p->cpu->b);}
+void npr71(ZXBase* p) {p->mem->wr(p->cpu->hl,p->cpu->c);}
+void npr72(ZXBase* p) {p->mem->wr(p->cpu->hl,p->cpu->d);}
+void npr73(ZXBase* p) {p->mem->wr(p->cpu->hl,p->cpu->e);}
+void npr74(ZXBase* p) {p->mem->wr(p->cpu->hl,p->cpu->h);}
+void npr75(ZXBase* p) {p->mem->wr(p->cpu->hl,p->cpu->l);}
+void npr76(ZXBase* p) {if (!p->istrb) p->cpu->pc--;}
+void npr77(ZXBase* p) {p->mem->wr(p->cpu->hl,p->cpu->a);}
 // ld a,r
-void npr78(Spec *p) {p->cpu->a = p->cpu->b;}
-void npr79(Spec *p) {p->cpu->a = p->cpu->c;}
-void npr7A(Spec *p) {p->cpu->a = p->cpu->d;}
-void npr7B(Spec *p) {p->cpu->a = p->cpu->e;}
-void npr7C(Spec *p) {p->cpu->a = p->cpu->h;}
-void npr7D(Spec *p) {p->cpu->a = p->cpu->l;}
-void npr7E(Spec *p) {p->cpu->a = p->mem->rd(p->cpu->hl);}
-void npr7F(Spec*) {}
+void npr78(ZXBase* p) {p->cpu->a = p->cpu->b;}
+void npr79(ZXBase* p) {p->cpu->a = p->cpu->c;}
+void npr7A(ZXBase* p) {p->cpu->a = p->cpu->d;}
+void npr7B(ZXBase* p) {p->cpu->a = p->cpu->e;}
+void npr7C(ZXBase* p) {p->cpu->a = p->cpu->h;}
+void npr7D(ZXBase* p) {p->cpu->a = p->cpu->l;}
+void npr7E(ZXBase* p) {p->cpu->a = p->mem->rd(p->cpu->hl);}
+void npr7F(ZXBase*) {}
 
 // add a,r
-void npr80(Spec *p) {p->cpu->f = flag[p->cpu->a].add[p->cpu->b][0]; p->cpu->a += p->cpu->b;}
-void npr81(Spec *p) {p->cpu->f = flag[p->cpu->a].add[p->cpu->c][0]; p->cpu->a += p->cpu->c;}
-void npr82(Spec *p) {p->cpu->f = flag[p->cpu->a].add[p->cpu->d][0]; p->cpu->a += p->cpu->d;}
-void npr83(Spec *p) {p->cpu->f = flag[p->cpu->a].add[p->cpu->e][0]; p->cpu->a += p->cpu->e;}
-void npr84(Spec *p) {p->cpu->f = flag[p->cpu->a].add[p->cpu->h][0]; p->cpu->a += p->cpu->h;}
-void npr85(Spec *p) {p->cpu->f = flag[p->cpu->a].add[p->cpu->l][0]; p->cpu->a += p->cpu->l;}
-void npr86(Spec *p) {p->cpu->x = p->mem->rd(p->cpu->hl); p->cpu->f = flag[p->cpu->a].add[p->cpu->x][0]; p->cpu->a += p->cpu->x;}
-void npr87(Spec *p) {p->cpu->f = flag[p->cpu->a].add[p->cpu->a][0]; p->cpu->a += p->cpu->a;}
+void npr80(ZXBase* p) {p->cpu->f = flag[p->cpu->a].add[p->cpu->b][0]; p->cpu->a += p->cpu->b;}
+void npr81(ZXBase* p) {p->cpu->f = flag[p->cpu->a].add[p->cpu->c][0]; p->cpu->a += p->cpu->c;}
+void npr82(ZXBase* p) {p->cpu->f = flag[p->cpu->a].add[p->cpu->d][0]; p->cpu->a += p->cpu->d;}
+void npr83(ZXBase* p) {p->cpu->f = flag[p->cpu->a].add[p->cpu->e][0]; p->cpu->a += p->cpu->e;}
+void npr84(ZXBase* p) {p->cpu->f = flag[p->cpu->a].add[p->cpu->h][0]; p->cpu->a += p->cpu->h;}
+void npr85(ZXBase* p) {p->cpu->f = flag[p->cpu->a].add[p->cpu->l][0]; p->cpu->a += p->cpu->l;}
+void npr86(ZXBase* p) {p->cpu->x = p->mem->rd(p->cpu->hl); p->cpu->f = flag[p->cpu->a].add[p->cpu->x][0]; p->cpu->a += p->cpu->x;}
+void npr87(ZXBase* p) {p->cpu->f = flag[p->cpu->a].add[p->cpu->a][0]; p->cpu->a += p->cpu->a;}
 // adc a,r
-void adcXX(Spec *p, unsigned char op) {
+void adcXX(ZXBase* p, unsigned char op) {
 	int z = (p->cpu->f & FC)?1:0;
 	p->cpu->f = flag[p->cpu->a].add[op][z];
 	p->cpu->a += (op + z);
 }
-void npr88(Spec *p) {adcXX(p,p->cpu->b);}
-void npr89(Spec *p) {adcXX(p,p->cpu->c);}
-void npr8A(Spec *p) {adcXX(p,p->cpu->d);}
-void npr8B(Spec *p) {adcXX(p,p->cpu->e);}
-void npr8C(Spec *p) {adcXX(p,p->cpu->h);}
-void npr8D(Spec *p) {adcXX(p,p->cpu->l);}
-void npr8E(Spec *p) {adcXX(p,p->mem->rd(p->cpu->hl));}
-void npr8F(Spec *p) {adcXX(p,p->cpu->a);}
+void npr88(ZXBase* p) {adcXX(p,p->cpu->b);}
+void npr89(ZXBase* p) {adcXX(p,p->cpu->c);}
+void npr8A(ZXBase* p) {adcXX(p,p->cpu->d);}
+void npr8B(ZXBase* p) {adcXX(p,p->cpu->e);}
+void npr8C(ZXBase* p) {adcXX(p,p->cpu->h);}
+void npr8D(ZXBase* p) {adcXX(p,p->cpu->l);}
+void npr8E(ZXBase* p) {adcXX(p,p->mem->rd(p->cpu->hl));}
+void npr8F(ZXBase* p) {adcXX(p,p->cpu->a);}
 // sub r
-void npr90(Spec *p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->b][0]; p->cpu->a -= p->cpu->b;}
-void npr91(Spec *p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->c][0]; p->cpu->a -= p->cpu->c;}
-void npr92(Spec *p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->d][0]; p->cpu->a -= p->cpu->d;}
-void npr93(Spec *p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->e][0]; p->cpu->a -= p->cpu->e;}
-void npr94(Spec *p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->h][0]; p->cpu->a -= p->cpu->h;}
-void npr95(Spec *p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->l][0]; p->cpu->a -= p->cpu->l;}
-void npr96(Spec *p) {p->cpu->x = p->mem->rd(p->cpu->hl); p->cpu->f = flag[p->cpu->a].sub[p->cpu->x][0]; p->cpu->a -= p->cpu->x;}
-void npr97(Spec *p) {p->cpu->f = FZ | FN; p->cpu->a = 0;}
+void npr90(ZXBase* p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->b][0]; p->cpu->a -= p->cpu->b;}
+void npr91(ZXBase* p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->c][0]; p->cpu->a -= p->cpu->c;}
+void npr92(ZXBase* p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->d][0]; p->cpu->a -= p->cpu->d;}
+void npr93(ZXBase* p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->e][0]; p->cpu->a -= p->cpu->e;}
+void npr94(ZXBase* p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->h][0]; p->cpu->a -= p->cpu->h;}
+void npr95(ZXBase* p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->l][0]; p->cpu->a -= p->cpu->l;}
+void npr96(ZXBase* p) {p->cpu->x = p->mem->rd(p->cpu->hl); p->cpu->f = flag[p->cpu->a].sub[p->cpu->x][0]; p->cpu->a -= p->cpu->x;}
+void npr97(ZXBase* p) {p->cpu->f = FZ | FN; p->cpu->a = 0;}
 // sbc a,r
-void sbcXX(Spec *p,unsigned char op) {
+void sbcXX(ZXBase* p,unsigned char op) {
 	int z = (p->cpu->f & FC)?1:0;
 	p->cpu->f = flag[p->cpu->a].sub[op][z];
 	p->cpu->a -= (op + z);
 }
-void npr98(Spec *p) {sbcXX(p,p->cpu->b);}
-void npr99(Spec *p) {sbcXX(p,p->cpu->c);}
-void npr9A(Spec *p) {sbcXX(p,p->cpu->d);}
-void npr9B(Spec *p) {sbcXX(p,p->cpu->e);}
-void npr9C(Spec *p) {sbcXX(p,p->cpu->h);}
-void npr9D(Spec *p) {sbcXX(p,p->cpu->l);}
-void npr9E(Spec *p) {sbcXX(p,p->mem->rd(p->cpu->hl));}
-void npr9F(Spec *p) {sbcXX(p,p->cpu->a);}
+void npr98(ZXBase* p) {sbcXX(p,p->cpu->b);}
+void npr99(ZXBase* p) {sbcXX(p,p->cpu->c);}
+void npr9A(ZXBase* p) {sbcXX(p,p->cpu->d);}
+void npr9B(ZXBase* p) {sbcXX(p,p->cpu->e);}
+void npr9C(ZXBase* p) {sbcXX(p,p->cpu->h);}
+void npr9D(ZXBase* p) {sbcXX(p,p->cpu->l);}
+void npr9E(ZXBase* p) {sbcXX(p,p->mem->rd(p->cpu->hl));}
+void npr9F(ZXBase* p) {sbcXX(p,p->cpu->a);}
 
 // and r
-void nprA0(Spec *p) {p->cpu->a &= p->cpu->b; p->cpu->f = flag[p->cpu->a].andf;}
-void nprA1(Spec *p) {p->cpu->a &= p->cpu->c; p->cpu->f = flag[p->cpu->a].andf;}
-void nprA2(Spec *p) {p->cpu->a &= p->cpu->d; p->cpu->f = flag[p->cpu->a].andf;}
-void nprA3(Spec *p) {p->cpu->a &= p->cpu->e; p->cpu->f = flag[p->cpu->a].andf;}
-void nprA4(Spec *p) {p->cpu->a &= p->cpu->h; p->cpu->f = flag[p->cpu->a].andf;}
-void nprA5(Spec *p) {p->cpu->a &= p->cpu->l; p->cpu->f = flag[p->cpu->a].andf;}
-void nprA6(Spec *p) {p->cpu->a &= p->mem->rd(p->cpu->hl); p->cpu->f = flag[p->cpu->a].andf;}
-void nprA7(Spec *p) {p->cpu->f = flag[p->cpu->a].andf;}
+void nprA0(ZXBase* p) {p->cpu->a &= p->cpu->b; p->cpu->f = flag[p->cpu->a].andf;}
+void nprA1(ZXBase* p) {p->cpu->a &= p->cpu->c; p->cpu->f = flag[p->cpu->a].andf;}
+void nprA2(ZXBase* p) {p->cpu->a &= p->cpu->d; p->cpu->f = flag[p->cpu->a].andf;}
+void nprA3(ZXBase* p) {p->cpu->a &= p->cpu->e; p->cpu->f = flag[p->cpu->a].andf;}
+void nprA4(ZXBase* p) {p->cpu->a &= p->cpu->h; p->cpu->f = flag[p->cpu->a].andf;}
+void nprA5(ZXBase* p) {p->cpu->a &= p->cpu->l; p->cpu->f = flag[p->cpu->a].andf;}
+void nprA6(ZXBase* p) {p->cpu->a &= p->mem->rd(p->cpu->hl); p->cpu->f = flag[p->cpu->a].andf;}
+void nprA7(ZXBase* p) {p->cpu->f = flag[p->cpu->a].andf;}
 // xor r
-void nprA8(Spec *p) {p->cpu->a ^= p->cpu->b; p->cpu->f = flag[p->cpu->a].orf;}
-void nprA9(Spec *p) {p->cpu->a ^= p->cpu->c; p->cpu->f = flag[p->cpu->a].orf;}
-void nprAA(Spec *p) {p->cpu->a ^= p->cpu->d; p->cpu->f = flag[p->cpu->a].orf;}
-void nprAB(Spec *p) {p->cpu->a ^= p->cpu->e; p->cpu->f = flag[p->cpu->a].orf;}
-void nprAC(Spec *p) {p->cpu->a ^= p->cpu->h; p->cpu->f = flag[p->cpu->a].orf;}
-void nprAD(Spec *p) {p->cpu->a ^= p->cpu->l; p->cpu->f = flag[p->cpu->a].orf;}
-void nprAE(Spec *p) {p->cpu->a ^= p->mem->rd(p->cpu->hl); p->cpu->f = flag[p->cpu->a].orf;}
-void nprAF(Spec *p) {p->cpu->a = 0; p->cpu->f = FZ | FP;}
+void nprA8(ZXBase* p) {p->cpu->a ^= p->cpu->b; p->cpu->f = flag[p->cpu->a].orf;}
+void nprA9(ZXBase* p) {p->cpu->a ^= p->cpu->c; p->cpu->f = flag[p->cpu->a].orf;}
+void nprAA(ZXBase* p) {p->cpu->a ^= p->cpu->d; p->cpu->f = flag[p->cpu->a].orf;}
+void nprAB(ZXBase* p) {p->cpu->a ^= p->cpu->e; p->cpu->f = flag[p->cpu->a].orf;}
+void nprAC(ZXBase* p) {p->cpu->a ^= p->cpu->h; p->cpu->f = flag[p->cpu->a].orf;}
+void nprAD(ZXBase* p) {p->cpu->a ^= p->cpu->l; p->cpu->f = flag[p->cpu->a].orf;}
+void nprAE(ZXBase* p) {p->cpu->a ^= p->mem->rd(p->cpu->hl); p->cpu->f = flag[p->cpu->a].orf;}
+void nprAF(ZXBase* p) {p->cpu->a = 0; p->cpu->f = FZ | FP;}
 // or r
-void nprB0(Spec *p) {p->cpu->a |= p->cpu->b; p->cpu->f = flag[p->cpu->a].orf;}
-void nprB1(Spec *p) {p->cpu->a |= p->cpu->c; p->cpu->f = flag[p->cpu->a].orf;}
-void nprB2(Spec *p) {p->cpu->a |= p->cpu->d; p->cpu->f = flag[p->cpu->a].orf;}
-void nprB3(Spec *p) {p->cpu->a |= p->cpu->e; p->cpu->f = flag[p->cpu->a].orf;}
-void nprB4(Spec *p) {p->cpu->a |= p->cpu->h; p->cpu->f = flag[p->cpu->a].orf;}
-void nprB5(Spec *p) {p->cpu->a |= p->cpu->l; p->cpu->f = flag[p->cpu->a].orf;}
-void nprB6(Spec *p) {p->cpu->a |= p->mem->rd(p->cpu->hl); p->cpu->f = flag[p->cpu->a].orf;}
-void nprB7(Spec *p) {p->cpu->f = flag[p->cpu->a].orf;}
+void nprB0(ZXBase* p) {p->cpu->a |= p->cpu->b; p->cpu->f = flag[p->cpu->a].orf;}
+void nprB1(ZXBase* p) {p->cpu->a |= p->cpu->c; p->cpu->f = flag[p->cpu->a].orf;}
+void nprB2(ZXBase* p) {p->cpu->a |= p->cpu->d; p->cpu->f = flag[p->cpu->a].orf;}
+void nprB3(ZXBase* p) {p->cpu->a |= p->cpu->e; p->cpu->f = flag[p->cpu->a].orf;}
+void nprB4(ZXBase* p) {p->cpu->a |= p->cpu->h; p->cpu->f = flag[p->cpu->a].orf;}
+void nprB5(ZXBase* p) {p->cpu->a |= p->cpu->l; p->cpu->f = flag[p->cpu->a].orf;}
+void nprB6(ZXBase* p) {p->cpu->a |= p->mem->rd(p->cpu->hl); p->cpu->f = flag[p->cpu->a].orf;}
+void nprB7(ZXBase* p) {p->cpu->f = flag[p->cpu->a].orf;}
 // cp r
-void nprB8(Spec *p) {p->cpu->f = flag[p->cpu->a].cp[p->cpu->b];}
-void nprB9(Spec *p) {p->cpu->f = flag[p->cpu->a].cp[p->cpu->c];}
-void nprBA(Spec *p) {p->cpu->f = flag[p->cpu->a].cp[p->cpu->d];}
-void nprBB(Spec *p) {p->cpu->f = flag[p->cpu->a].cp[p->cpu->e];}
-void nprBC(Spec *p) {p->cpu->f = flag[p->cpu->a].cp[p->cpu->h];}
-void nprBD(Spec *p) {p->cpu->f = flag[p->cpu->a].cp[p->cpu->l];}
-void nprBE(Spec *p) {p->cpu->f = flag[p->cpu->a].cp[p->mem->rd(p->cpu->hl)];}
-void nprBF(Spec *p) {p->cpu->f = flag[p->cpu->a].cp[p->cpu->a];}		// flag[p->cpu->a].cp[p->cpu->a]
+void nprB8(ZXBase* p) {p->cpu->f = flag[p->cpu->a].cp[p->cpu->b];}
+void nprB9(ZXBase* p) {p->cpu->f = flag[p->cpu->a].cp[p->cpu->c];}
+void nprBA(ZXBase* p) {p->cpu->f = flag[p->cpu->a].cp[p->cpu->d];}
+void nprBB(ZXBase* p) {p->cpu->f = flag[p->cpu->a].cp[p->cpu->e];}
+void nprBC(ZXBase* p) {p->cpu->f = flag[p->cpu->a].cp[p->cpu->h];}
+void nprBD(ZXBase* p) {p->cpu->f = flag[p->cpu->a].cp[p->cpu->l];}
+void nprBE(ZXBase* p) {p->cpu->f = flag[p->cpu->a].cp[p->mem->rd(p->cpu->hl)];}
+void nprBF(ZXBase* p) {p->cpu->f = flag[p->cpu->a].cp[p->cpu->a];}		// flag[p->cpu->a].cp[p->cpu->a]
 
 // ret cc	mptr = ret.addr when condition is true
-void nprC9(Spec *p) {p->cpu->lpc = p->mem->rd(p->cpu->sp++); p->cpu->hpc = p->mem->rd(p->cpu->sp++); p->cpu->mptr = p->cpu->pc;}
-void nprC0(Spec *p) {if (!(p->cpu->f & FZ)) {nprC9(p); p->cpu->t += 6;}}
-void nprC8(Spec *p) {if (p->cpu->f & FZ) {nprC9(p); p->cpu->t += 6;}}
-void nprD0(Spec *p) {if (!(p->cpu->f & FC)) {nprC9(p); p->cpu->t += 6;}}
-void nprD8(Spec *p) {if (p->cpu->f & FC) {nprC9(p); p->cpu->t += 6;}}
-void nprE0(Spec *p) {if (!(p->cpu->f & FP)) {nprC9(p); p->cpu->t += 6;}}
-void nprE8(Spec *p) {if (p->cpu->f & FP) {nprC9(p); p->cpu->t += 6;}}
-void nprF0(Spec *p) {if (!(p->cpu->f & FS)) {nprC9(p); p->cpu->t += 6;}}
-void nprF8(Spec *p) {if (p->cpu->f & FS) {nprC9(p); p->cpu->t += 6;}}
+void nprC9(ZXBase* p) {p->cpu->lpc = p->mem->rd(p->cpu->sp++); p->cpu->hpc = p->mem->rd(p->cpu->sp++); p->cpu->mptr = p->cpu->pc;}
+void nprC0(ZXBase* p) {if (!(p->cpu->f & FZ)) {nprC9(p); /*p->cpu->t += 6;*/}}
+void nprC8(ZXBase* p) {if (p->cpu->f & FZ) {nprC9(p); /*p->cpu->t += 6;*/}}
+void nprD0(ZXBase* p) {if (!(p->cpu->f & FC)) {nprC9(p); /*p->cpu->t += 6;*/}}
+void nprD8(ZXBase* p) {if (p->cpu->f & FC) {nprC9(p); /*p->cpu->t += 6;*/}}
+void nprE0(ZXBase* p) {if (!(p->cpu->f & FP)) {nprC9(p); /*p->cpu->t += 6;*/}}
+void nprE8(ZXBase* p) {if (p->cpu->f & FP) {nprC9(p); /*p->cpu->t += 6;*/}}
+void nprF0(ZXBase* p) {if (!(p->cpu->f & FS)) {nprC9(p); /*p->cpu->t += 6;*/}}
+void nprF8(ZXBase* p) {if (p->cpu->f & FS) {nprC9(p); /*p->cpu->t += 6;*/}}
 // jp cc
-void jumpif(Spec *p, bool cnd) {p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->cpu->hptr = p->mem->rd(p->cpu->pc++); if (cnd) p->cpu->pc = p->cpu->mptr;}
-void nprC3(Spec *p) {jumpif(p, true);}
-void nprC2(Spec *p) {jumpif (p, !(p->cpu->f & FZ));}
-void nprCA(Spec *p) {jumpif(p, p->cpu->f & FZ);}
-void nprD2(Spec *p) {jumpif(p, !(p->cpu->f & FC));}
-void nprDA(Spec *p) {jumpif(p, p->cpu->f & FC);}
-void nprE2(Spec *p) {jumpif(p, !(p->cpu->f & FP));}
-void nprEA(Spec *p) {jumpif(p, p->cpu->f & FP);}
-void nprF2(Spec *p) {jumpif(p, !(p->cpu->f & FS));}
-void nprFA(Spec *p) {jumpif(p, p->cpu->f & FS);}
+void jumpif(ZXBase* p, bool cnd) {p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->cpu->hptr = p->mem->rd(p->cpu->pc++); if (cnd) p->cpu->pc = p->cpu->mptr;}
+void nprC3(ZXBase* p) {jumpif(p, true);}
+void nprC2(ZXBase* p) {jumpif (p, !(p->cpu->f & FZ));}
+void nprCA(ZXBase* p) {jumpif(p, p->cpu->f & FZ);}
+void nprD2(ZXBase* p) {jumpif(p, !(p->cpu->f & FC));}
+void nprDA(ZXBase* p) {jumpif(p, p->cpu->f & FC);}
+void nprE2(ZXBase* p) {jumpif(p, !(p->cpu->f & FP));}
+void nprEA(ZXBase* p) {jumpif(p, p->cpu->f & FP);}
+void nprF2(ZXBase* p) {jumpif(p, !(p->cpu->f & FS));}
+void nprFA(ZXBase* p) {jumpif(p, p->cpu->f & FS);}
 // call cc
-void callif(Spec *p, bool cnd) {
+void callif(ZXBase* p, bool cnd) {
 	p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->cpu->hptr = p->mem->rd(p->cpu->pc++);
-	if (cnd) {p->cpu->t += 7; p->mem->wr(--p->cpu->sp,p->cpu->hpc); p->mem->wr(--p->cpu->sp,p->cpu->lpc); p->cpu->pc = p->cpu->mptr;}
+	if (cnd) {/*p->cpu->t += 7;*/ p->mem->wr(--p->cpu->sp,p->cpu->hpc); p->mem->wr(--p->cpu->sp,p->cpu->lpc); p->cpu->pc = p->cpu->mptr;}
 }
-void nprCD(Spec *p) {callif(p, true);}
-void nprC4(Spec *p) {callif(p, !(p->cpu->f & FZ));}
-void nprCC(Spec *p) {callif(p, p->cpu->f & FZ);}
-void nprD4(Spec *p) {callif(p, !(p->cpu->f & FC));}
-void nprDC(Spec *p) {callif(p, p->cpu->f & FC);}
-void nprE4(Spec *p) {callif(p, !(p->cpu->f & FP));}
-void nprEC(Spec *p) {callif(p, p->cpu->f & FP);}
-void nprF4(Spec *p) {callif(p, !(p->cpu->f & FS));}
-void nprFC(Spec *p) {callif(p, p->cpu->f & FS);}
+void nprCD(ZXBase* p) {callif(p, true);}
+void nprC4(ZXBase* p) {callif(p, !(p->cpu->f & FZ));}
+void nprCC(ZXBase* p) {callif(p, p->cpu->f & FZ);}
+void nprD4(ZXBase* p) {callif(p, !(p->cpu->f & FC));}
+void nprDC(ZXBase* p) {callif(p, p->cpu->f & FC);}
+void nprE4(ZXBase* p) {callif(p, !(p->cpu->f & FP));}
+void nprEC(ZXBase* p) {callif(p, p->cpu->f & FP);}
+void nprF4(ZXBase* p) {callif(p, !(p->cpu->f & FS));}
+void nprFC(ZXBase* p) {callif(p, p->cpu->f & FS);}
 // pop
-void nprC1(Spec *p) {p->cpu->c = p->mem->rd(p->cpu->sp++); p->cpu->b = p->mem->rd(p->cpu->sp++);}
-void nprD1(Spec *p) {p->cpu->e = p->mem->rd(p->cpu->sp++); p->cpu->d = p->mem->rd(p->cpu->sp++);}
-void nprE1(Spec *p) {p->cpu->l = p->mem->rd(p->cpu->sp++); p->cpu->h = p->mem->rd(p->cpu->sp++);}
-void nprF1(Spec *p) {p->cpu->f = p->mem->rd(p->cpu->sp++); p->cpu->a = p->mem->rd(p->cpu->sp++);}
+void nprC1(ZXBase* p) {p->cpu->c = p->mem->rd(p->cpu->sp++); p->cpu->b = p->mem->rd(p->cpu->sp++);}
+void nprD1(ZXBase* p) {p->cpu->e = p->mem->rd(p->cpu->sp++); p->cpu->d = p->mem->rd(p->cpu->sp++);}
+void nprE1(ZXBase* p) {p->cpu->l = p->mem->rd(p->cpu->sp++); p->cpu->h = p->mem->rd(p->cpu->sp++);}
+void nprF1(ZXBase* p) {p->cpu->f = p->mem->rd(p->cpu->sp++); p->cpu->a = p->mem->rd(p->cpu->sp++);}
 // push
-void nprC5(Spec *p) {p->mem->wr(--p->cpu->sp,p->cpu->b); p->mem->wr(--p->cpu->sp,p->cpu->c);}
-void nprD5(Spec *p) {p->mem->wr(--p->cpu->sp,p->cpu->d); p->mem->wr(--p->cpu->sp,p->cpu->e);}
-void nprE5(Spec *p) {p->mem->wr(--p->cpu->sp,p->cpu->h); p->mem->wr(--p->cpu->sp,p->cpu->l);}
-void nprF5(Spec *p) {p->mem->wr(--p->cpu->sp,p->cpu->a); p->mem->wr(--p->cpu->sp,p->cpu->f);}
+void nprC5(ZXBase* p) {p->mem->wr(--p->cpu->sp,p->cpu->b); p->mem->wr(--p->cpu->sp,p->cpu->c);}
+void nprD5(ZXBase* p) {p->mem->wr(--p->cpu->sp,p->cpu->d); p->mem->wr(--p->cpu->sp,p->cpu->e);}
+void nprE5(ZXBase* p) {p->mem->wr(--p->cpu->sp,p->cpu->h); p->mem->wr(--p->cpu->sp,p->cpu->l);}
+void nprF5(ZXBase* p) {p->mem->wr(--p->cpu->sp,p->cpu->a); p->mem->wr(--p->cpu->sp,p->cpu->f);}
 // ariphmetic / logic
-void nprC6(Spec *p) {p->cpu->x = p->mem->rd(p->cpu->pc++); p->cpu->f = flag[p->cpu->a].add[p->cpu->x][0]; p->cpu->a += p->cpu->x;}
-void nprCE(Spec *p) {adcXX(p,p->mem->rd(p->cpu->pc++));}
-void nprD6(Spec *p) {p->cpu->x = p->mem->rd(p->cpu->pc++); p->cpu->f = flag[p->cpu->a].sub[p->cpu->x][0]; p->cpu->a -= p->cpu->x;}
-void nprDE(Spec *p) {sbcXX(p,p->mem->rd(p->cpu->pc++));}
-void nprE6(Spec *p) {p->cpu->a &= p->mem->rd(p->cpu->pc++); p->cpu->f = flag[p->cpu->a].andf;}
-void nprEE(Spec *p) {p->cpu->a ^= p->mem->rd(p->cpu->pc++); p->cpu->f = flag[p->cpu->a].orf;}
-void nprF6(Spec *p) {p->cpu->a |= p->mem->rd(p->cpu->pc++); p->cpu->f = flag[p->cpu->a].orf;}
-void nprFE(Spec *p) {p->cpu->f = flag[p->cpu->a].cp[p->mem->rd(p->cpu->pc++)];}
+void nprC6(ZXBase* p) {p->cpu->x = p->mem->rd(p->cpu->pc++); p->cpu->f = flag[p->cpu->a].add[p->cpu->x][0]; p->cpu->a += p->cpu->x;}
+void nprCE(ZXBase* p) {adcXX(p,p->mem->rd(p->cpu->pc++));}
+void nprD6(ZXBase* p) {p->cpu->x = p->mem->rd(p->cpu->pc++); p->cpu->f = flag[p->cpu->a].sub[p->cpu->x][0]; p->cpu->a -= p->cpu->x;}
+void nprDE(ZXBase* p) {sbcXX(p,p->mem->rd(p->cpu->pc++));}
+void nprE6(ZXBase* p) {p->cpu->a &= p->mem->rd(p->cpu->pc++); p->cpu->f = flag[p->cpu->a].andf;}
+void nprEE(ZXBase* p) {p->cpu->a ^= p->mem->rd(p->cpu->pc++); p->cpu->f = flag[p->cpu->a].orf;}
+void nprF6(ZXBase* p) {p->cpu->a |= p->mem->rd(p->cpu->pc++); p->cpu->f = flag[p->cpu->a].orf;}
+void nprFE(ZXBase* p) {p->cpu->f = flag[p->cpu->a].cp[p->mem->rd(p->cpu->pc++)];}
 // rst n	mptr = adr
-void nprC7(Spec *p) {p->mem->wr(--p->cpu->sp,p->cpu->hpc); p->mem->wr(--p->cpu->sp,p->cpu->lpc); p->cpu->pc = 0x00; p->cpu->mptr = p->cpu->pc;}
-void nprCF(Spec *p) {p->mem->wr(--p->cpu->sp,p->cpu->hpc); p->mem->wr(--p->cpu->sp,p->cpu->lpc); p->cpu->pc = 0x08; p->cpu->mptr = p->cpu->pc;}
-void nprD7(Spec *p) {p->mem->wr(--p->cpu->sp,p->cpu->hpc); p->mem->wr(--p->cpu->sp,p->cpu->lpc); p->cpu->pc = 0x10; p->cpu->mptr = p->cpu->pc;}
-void nprDF(Spec *p) {p->mem->wr(--p->cpu->sp,p->cpu->hpc); p->mem->wr(--p->cpu->sp,p->cpu->lpc); p->cpu->pc = 0x18; p->cpu->mptr = p->cpu->pc;}
-void nprE7(Spec *p) {p->mem->wr(--p->cpu->sp,p->cpu->hpc); p->mem->wr(--p->cpu->sp,p->cpu->lpc); p->cpu->pc = 0x20; p->cpu->mptr = p->cpu->pc;}
-void nprEF(Spec *p) {p->mem->wr(--p->cpu->sp,p->cpu->hpc); p->mem->wr(--p->cpu->sp,p->cpu->lpc); p->cpu->pc = 0x28; p->cpu->mptr = p->cpu->pc;}
-void nprF7(Spec *p) {p->mem->wr(--p->cpu->sp,p->cpu->hpc); p->mem->wr(--p->cpu->sp,p->cpu->lpc); p->cpu->pc = 0x30; p->cpu->mptr = p->cpu->pc;}
-void nprFF(Spec *p) {p->mem->wr(--p->cpu->sp,p->cpu->hpc); p->mem->wr(--p->cpu->sp,p->cpu->lpc); p->cpu->pc = 0x38; p->cpu->mptr = p->cpu->pc;}
+void nprC7(ZXBase* p) {p->mem->wr(--p->cpu->sp,p->cpu->hpc); p->mem->wr(--p->cpu->sp,p->cpu->lpc); p->cpu->pc = 0x00; p->cpu->mptr = p->cpu->pc;}
+void nprCF(ZXBase* p) {p->mem->wr(--p->cpu->sp,p->cpu->hpc); p->mem->wr(--p->cpu->sp,p->cpu->lpc); p->cpu->pc = 0x08; p->cpu->mptr = p->cpu->pc;}
+void nprD7(ZXBase* p) {p->mem->wr(--p->cpu->sp,p->cpu->hpc); p->mem->wr(--p->cpu->sp,p->cpu->lpc); p->cpu->pc = 0x10; p->cpu->mptr = p->cpu->pc;}
+void nprDF(ZXBase* p) {p->mem->wr(--p->cpu->sp,p->cpu->hpc); p->mem->wr(--p->cpu->sp,p->cpu->lpc); p->cpu->pc = 0x18; p->cpu->mptr = p->cpu->pc;}
+void nprE7(ZXBase* p) {p->mem->wr(--p->cpu->sp,p->cpu->hpc); p->mem->wr(--p->cpu->sp,p->cpu->lpc); p->cpu->pc = 0x20; p->cpu->mptr = p->cpu->pc;}
+void nprEF(ZXBase* p) {p->mem->wr(--p->cpu->sp,p->cpu->hpc); p->mem->wr(--p->cpu->sp,p->cpu->lpc); p->cpu->pc = 0x28; p->cpu->mptr = p->cpu->pc;}
+void nprF7(ZXBase* p) {p->mem->wr(--p->cpu->sp,p->cpu->hpc); p->mem->wr(--p->cpu->sp,p->cpu->lpc); p->cpu->pc = 0x30; p->cpu->mptr = p->cpu->pc;}
+void nprFF(ZXBase* p) {p->mem->wr(--p->cpu->sp,p->cpu->hpc); p->mem->wr(--p->cpu->sp,p->cpu->lpc); p->cpu->pc = 0x38; p->cpu->mptr = p->cpu->pc;}
 // di,ei
-void nprF3(Spec *p) {p->cpu->iff1 = p->cpu->iff2 = false;}
-void nprFB(Spec *p) {p->cpu->nextei = true;}
+void nprF3(ZXBase* p) {p->cpu->iff1 = p->cpu->iff2 = false;}
+void nprFB(ZXBase* p) {p->cpu->nextei = true;}
 // exchange
-void nprD9(Spec *p) {
+void nprD9(ZXBase* p) {
 	p->cpu->adr = p->cpu->bc; p->cpu->bc = p->cpu->alt.bc; p->cpu->alt.bc = p->cpu->adr;
 	p->cpu->adr = p->cpu->de; p->cpu->de = p->cpu->alt.de; p->cpu->alt.de = p->cpu->adr;
 	p->cpu->adr = p->cpu->hl; p->cpu->hl = p->cpu->alt.hl; p->cpu->alt.hl = p->cpu->adr;}
-void nprEB(Spec *p) {p->cpu->adr = p->cpu->de; p->cpu->de = p->cpu->hl; p->cpu->hl = p->cpu->adr;}
+void nprEB(ZXBase* p) {p->cpu->adr = p->cpu->de; p->cpu->de = p->cpu->hl; p->cpu->hl = p->cpu->adr;}
 // other
-void nprD3(Spec *p) {p->cpu->hptr = p->cpu->a; p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->io->out(p->cpu->mptr,p->cpu->a); p->cpu->lptr++;}	// mptr = (a << 8) + ((n + 1) & FF)
-void nprDB(Spec *p) {p->cpu->hptr = p->cpu->a; p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->cpu->a = p->io->in(p->cpu->mptr); p->cpu->mptr++;}	// mptr = (a << 8) + n + 1
-void nprE3(Spec *p) {p->cpu->lptr = p->mem->rd(p->cpu->sp++); p->cpu->hptr = p->mem->rd(p->cpu->sp); p->mem->wr(p->cpu->sp--,p->cpu->h); p->mem->wr(p->cpu->sp,p->cpu->l); p->cpu->hl = p->cpu->mptr;}	// ex (sp),rp	mptr = rp after operation
-void nprE9(Spec *p) {p->cpu->pc = p->cpu->hl;}
-void nprF9(Spec *p) {p->cpu->sp = p->cpu->hl;}
+void nprD3(ZXBase* p) {p->cpu->hptr = p->cpu->a; p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->io->out(p->cpu->mptr,p->cpu->a); p->cpu->lptr++;}	// mptr = (a << 8) + ((n + 1) & FF)
+void nprDB(ZXBase* p) {p->cpu->hptr = p->cpu->a; p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->cpu->a = p->io->in(p->cpu->mptr); p->cpu->mptr++;}	// mptr = (a << 8) + n + 1
+void nprE3(ZXBase* p) {p->cpu->lptr = p->mem->rd(p->cpu->sp++); p->cpu->hptr = p->mem->rd(p->cpu->sp); p->mem->wr(p->cpu->sp--,p->cpu->h); p->mem->wr(p->cpu->sp,p->cpu->l); p->cpu->hl = p->cpu->mptr;}	// ex (sp),rp	mptr = rp after operation
+void nprE9(ZXBase* p) {p->cpu->pc = p->cpu->hl;}
+void nprF9(ZXBase* p) {p->cpu->sp = p->cpu->hl;}
 // prefix
-void nprDD(Spec *p) {p->cpu->mod = 1;}		// DD: ix
-void nprFD(Spec *p) {p->cpu->mod = 2;}		// FD: iy
-void nprED(Spec *p) {p->cpu->mod = 8;}		// ED
-void nprCB(Spec *p) {				// CB (DDCB,FDCB)
+void nprDD(ZXBase* p) {p->cpu->mod = 1;}		// DD: ix
+void nprFD(ZXBase* p) {p->cpu->mod = 2;}		// FD: iy
+void nprED(ZXBase* p) {p->cpu->mod = 8;}		// ED
+void nprCB(ZXBase* p) {				// CB (DDCB,FDCB)
 	p->cpu->mod |= 4;
 	if (p->cpu->mod != 4) {
 		p->cpu->dlt = p->mem->rd(p->cpu->pc++);
@@ -372,7 +372,7 @@ ZOp nopref[256]={
 	ZOp(&npr0E,7,"ld c,:1"),
 	ZOp(&npr0F,4,"rrca"),
 
-	ZOp(&npr10,8,"djnz :3"),
+	ZOp(&npr10,8,CND_DJNZ,5,0,"djnz :3",0),
 	ZOp(&npr11,10,"ld de,:2"),
 	ZOp(&npr12,7,"ld (de),a"),
 	ZOp(&npr13,6,"inc de"),
@@ -390,7 +390,7 @@ ZOp nopref[256]={
 	ZOp(&npr1E,7,"ld e,:1"),
 	ZOp(&npr1F,4,"rra"),
 
-	ZOp(&npr20,7,"jr nz,:3"),
+	ZOp(&npr20,7,CND_Z,0,5,"jr nz,:3",0),
 	ZOp(&npr21,10,"ld hl,:2"),
 	ZOp(&npr22,16,"ld (:2),hl"),
 	ZOp(&npr23,6,"inc hl"),
@@ -399,7 +399,7 @@ ZOp nopref[256]={
 	ZOp(&npr26,7,"ld h,:1"),
 	ZOp(&npr27,4,"daa"),
 
-	ZOp(&npr28,7,"jr z,:3"),
+	ZOp(&npr28,7,CND_Z,5,0,"jr z,:3",0),
 	ZOp(&npr29,11,"add hl,hl"),
 	ZOp(&npr2A,16,"ld hl,(:2)"),
 	ZOp(&npr2B,6,"dec hl"),
@@ -408,7 +408,7 @@ ZOp nopref[256]={
 	ZOp(&npr2E,7,"ld l,:1"),
 	ZOp(&npr2F,4,"cpl"),
 
-	ZOp(&npr30,7,"jr nc,:3"),
+	ZOp(&npr30,7,CND_C,0,5,"jr nc,:3",0),
 	ZOp(&npr31,10,"ld sp,:2"),
 	ZOp(&npr32,13,"ld (:2),a"),
 	ZOp(&npr33,6,"inc sp"),
@@ -417,7 +417,7 @@ ZOp nopref[256]={
 	ZOp(&npr36,10,"ld (hl),:1"),
 	ZOp(&npr37,4,"scf"),
 
-	ZOp(&npr38,7,"jr c,:3"),
+	ZOp(&npr38,7,CND_C,5,0,"jr c,:3",0),
 	ZOp(&npr39,11,"add hl,sp"),
 	ZOp(&npr3A,13,"ld a,(:2)"),
 	ZOp(&npr3B,6,"dec sp"),
@@ -570,75 +570,75 @@ ZOp nopref[256]={
 	ZOp(&nprBE,7,"cp (hl)"),
 	ZOp(&nprBF,4,"cp a"),
 
-	ZOp(&nprC0,5,"ret nz"),		// [+6]
+	ZOp(&nprC0,5,CND_Z,0,6,"ret nz",0),		// [+6]
 	ZOp(&nprC1,10,"pop bc"),
 	ZOp(&nprC2,10,"jp nz,:2"),
 	ZOp(&nprC3,10,"jp :2"),
-	ZOp(&nprC4,10,"call nz,:2"),	// [+7]
+	ZOp(&nprC4,10,CND_Z,0,7,"call nz,:2",0),	// [+7]
 	ZOp(&nprC5,11,"push bc"),
 	ZOp(&nprC6,7,"add a,:1"),
 	ZOp(&nprC7,11,"rst #00"),
 
-	ZOp(&nprC8,5,"ret z"),		// [+7]
+	ZOp(&nprC8,5,CND_Z,6,0,"ret z",0),		// [+7]
 	ZOp(&nprC9,10,"ret"),
 	ZOp(&nprCA,10,"jp z,:2"),
-	ZOp(&nprCB,4,"#CB",true),
-	ZOp(&nprCC,10,"call z,:2"),	// [+7]
-	ZOp(&nprCD,10,"call :2"),	// [+7]: acts like CALL true,nn
+	ZOp(&nprCB,4,CND_NONE,0,0,"#CB",ZOP_PREFIX),
+	ZOp(&nprCC,10,CND_Z,7,0,"call z,:2",0),	// [+7]
+	ZOp(&nprCD,17,"call :2"),
 	ZOp(&nprCE,7,"adc a,:1"),
 	ZOp(&nprCF,11,"rst #08"),
 
-	ZOp(&nprD0,5,"ret nc"),		// [+6]
+	ZOp(&nprD0,5,CND_C,0,6,"ret nc",0),		// [+6]
 	ZOp(&nprD1,10,"pop de"),
 	ZOp(&nprD2,10,"jp nc,:2"),
 	ZOp(&nprD3,11,"out (:1),a"),
-	ZOp(&nprD4,10,"call nc,:2"),	// [+7]
+	ZOp(&nprD4,10,CND_C,0,7,"call nc,:2",0),	// [+7]
 	ZOp(&nprD5,11,"push de"),
 	ZOp(&nprD6,7,"sub :1"),
 	ZOp(&nprD7,11,"rst #10"),
 
-	ZOp(&nprD8,5,"ret c"),		// [+6]
+	ZOp(&nprD8,5,CND_C,6,0,"ret c",0),		// [+6]
 	ZOp(&nprD9,4,"exx"),
 	ZOp(&nprDA,10,"jp c,:2"),
 	ZOp(&nprDB,11,"in a,(:1)"),
-	ZOp(&nprDC,10,"call c,:2"),	// [+7]
-	ZOp(&nprDD,4,"#DD",true),
+	ZOp(&nprDC,10,CND_C,7,0,"call c,:2",0),	// [+7]
+	ZOp(&nprDD,4,CND_NONE,0,0,"#DD",ZOP_PREFIX),
 	ZOp(&nprDE,7,"sbc a,:1"),
 	ZOp(&nprDF,11,"rst #18"),
 
-	ZOp(&nprE0,5,"ret po"),		// [+6]
+	ZOp(&nprE0,5,CND_P,0,6,"ret po",0),		// [+6]
 	ZOp(&nprE1,10,"pop hl"),
 	ZOp(&nprE2,10,"jp po,:2"),
 	ZOp(&nprE3,19,"ex (sp),hl"),
-	ZOp(&nprE4,10,"call c,:2"),	// [+7]
+	ZOp(&nprE4,10,CND_P,0,7,"call po,:2",0),	// [+7]
 	ZOp(&nprE5,11,"push hl"),
 	ZOp(&nprE6,7,"and :1"),
 	ZOp(&nprE7,11,"rst #20"),
 
-	ZOp(&nprE8,5,"ret pe"),		// [+6]
+	ZOp(&nprE8,5,CND_P,6,0,"ret pe",0),		// [+6]
 	ZOp(&nprE9,4,"jp (hl)"),
 	ZOp(&nprEA,10,"jp pe,:2"),
 	ZOp(&nprEB,4,"ex de,hl"),
-	ZOp(&nprEC,10,"call pe,:2"),	// [+7]
-	ZOp(&nprED,4,"#ED",true),
+	ZOp(&nprEC,10,CND_P,7,0,"call pe,:2",0),	// [+7]
+	ZOp(&nprED,4,CND_NONE,0,0,"#ED",ZOP_PREFIX),
 	ZOp(&nprEE,7,"xor :1"),
 	ZOp(&nprEF,11,"rst #28"),
 
-	ZOp(&nprF0,5,"ret p"),		// [+6]
+	ZOp(&nprF0,5,CND_S,0,6,"ret p",0),		// [+6]
 	ZOp(&nprF1,10,"pop af"),
 	ZOp(&nprF2,10,"jp p,:2"),
 	ZOp(&nprF3,4,"di"),
-	ZOp(&nprF4,10,"call p,:2"),	// [+7]
+	ZOp(&nprF4,10,CND_S,0,7,"call p,:2",0),	// [+7]
 	ZOp(&nprF5,11,"push af"),
 	ZOp(&nprF6,7,"or :1"),
 	ZOp(&nprF7,11,"rst #30"),
 
-	ZOp(&nprF8,5,"ret m"),		// [+6]
+	ZOp(&nprF8,5,CND_S,6,0,"ret m",0),		// [+6]
 	ZOp(&nprF9,6,"ld sp,hl"),
 	ZOp(&nprFA,10,"jp m,:2"),
 	ZOp(&nprFB,4,"ei"),
-	ZOp(&nprFC,10,"call m,:2"),	// [+7]
-	ZOp(&nprFD,4,"#FD",true),
+	ZOp(&nprFC,10,CND_S,7,0,"call m,:2",0),	// [+7]
+	ZOp(&nprFD,4,CND_NONE,0,0,"#FD",ZOP_PREFIX),
 	ZOp(&nprFE,7,"cp :1"),
 	ZOp(&nprFF,11,"rst #38")
 };

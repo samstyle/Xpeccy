@@ -6,7 +6,46 @@
 #include "z80/tables.c"
 #include "z80/instr.c"
 
-Spec::Spec () {
+extern Settings* sets;
+extern BDI* bdi;
+extern HardWare* hw;
+
+ZOp::ZOp(void(*fn)(ZXBase*),int32_t tks,int32_t cnd,int32_t t1,int32_t t0,const char* nm,int32_t fl) {
+	name = nm;
+	func = fn;
+	t = tks;
+	cond = cnd;
+	tcn0 = t0;
+	tcn1 = t1;
+	flags = fl;
+}
+
+ZOp::ZOp(void(*fn)(ZXBase*),int32_t tks,const char* nm) {
+	name = nm;
+	func = fn;
+	t = tks;
+	cond = CND_NONE;
+	tcn0 = tcn1 = 0;
+	flags = 0;
+}
+
+ZXComp::ZXComp() {
+	sys = new ZXBase;
+	tape = new Tape;
+}
+
+void ZXComp::reset() {
+	sys->io->block7ffd=false;
+	sys->mem->prt1 = 0;
+	sys->mem->prt0 = ((sys->mem->res==1)<<4);
+	sys->mem->setrom(sys->mem->res);
+	sys->mem->setram(0);
+	sys->cpu->reset();
+	sys->vid->curscr = false;
+	sys->vid->mode = VID_NORMAL;
+}
+
+ZXBase::ZXBase () {
 	inst[0] = nopref;
 	inst[1] = ixpref;
 	inst[2] = iypref;
@@ -17,7 +56,7 @@ Spec::Spec () {
 	nmi = false;
 }
 
-int Spec::interrupt() {
+int ZXBase::interrupt() {
 	if (!cpu->iff1) return 0;
 	cpu->iff1 = cpu->iff2 = false;
 	int res = 0;
@@ -33,18 +72,18 @@ int Spec::interrupt() {
 	return res;
 }
 
-void Spec::nmihandle() {
+void ZXBase::nmihandle() {
 	cpu->iff2 = cpu->iff1;
 	cpu->iff1 = false;
 	mem->wr(--cpu->sp,cpu->hpc);
 	mem->wr(--cpu->sp,cpu->lpc);
 	cpu->pc = 0x66;
 	bdi->active = true;
-	machine->setrom();
+	hw->setrom();
 	cpu->t += 11;
 }
 
-int Spec::exec() {
+int ZXBase::exec() {
 	istrb = false;
 	cpu->err = false;
 	uint32_t fcnt = cpu->t;
@@ -61,8 +100,17 @@ int Spec::exec() {
 		cpu->cod = mem->rd(cpu->pc++);
 		res = &inst[cpu->mod][cpu->cod];
 		cpu->t += res->t;
-		if (res->prf) res->func(this);
-	} while (res->prf);
+		if (res->flags & ZOP_PREFIX) res->func(this);
+	} while (res->flags & ZOP_PREFIX);
+	switch (res->cond) {
+		case CND_NONE: break;
+		case CND_Z: cpu->t += (cpu->f & FZ) ? res->tcn1 : res->tcn0; break;
+		case CND_C: cpu->t += (cpu->f & FC) ? res->tcn1 : res->tcn0; break;
+		case CND_P: cpu->t += (cpu->f & FP) ? res->tcn1 : res->tcn0; break;
+		case CND_S: cpu->t += (cpu->f & FS) ? res->tcn1 : res->tcn0; break;
+		case CND_DJNZ: cpu->t += (cpu->b != 1) ? res->tcn1 : res->tcn0; break;
+		default: printf("undefined condition\n"); throw(0);
+	}
 	if (vid != NULL) {vid->sync(cpu->t - cpu->ti, cpu->frq); fcnt = cpu->t;}
 	res->func(this);
 	if ((io->flags & IO_WAIT) && sets->wait && (cpu->t & 1)) cpu->t++;		// WAIT

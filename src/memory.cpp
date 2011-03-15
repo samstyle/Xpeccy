@@ -14,6 +14,12 @@
 #include <string>
 #include <fstream>
 
+extern Settings* sets;
+extern BDI* bdi;
+extern GS* gs;
+extern ZXComp* zx;
+extern Sound* snd;
+
 Memory::Memory(int tp) {
 	type = tp;
 	pt0 = &rom[0][0];
@@ -23,7 +29,7 @@ Memory::Memory(int tp) {
 }
 
 void Memory::setram(uint8_t p) {
-	cram = (p & sys->io->mask);
+	cram = (p & zx->sys->io->mask);
 	pt3 = &ram[cram][0];
 }
 
@@ -126,7 +132,7 @@ void Memory::parse(std::ifstream* file,int typ) {
 	int adr;
 	bool btm;
 	char* buf = new char[0x10000];
-	Z80* cpu = sys->cpu;
+	Z80* cpu = zx->sys->cpu;
 	file->seekg(0,std::ios_base::end);
 	size_t sz=file->tellg();
 	file->seekg(0);
@@ -136,7 +142,7 @@ void Memory::parse(std::ifstream* file,int typ) {
 			prt1 = 0x00;
 			setrom(1);
 			setram(0);
-			sys->vid->curscr = false;
+			zx->sys->vid->curscr = false;
 			cpu->a = file->get(); cpu->f = file->get();
 			cpu->c = file->get(); cpu->b = file->get();
 			cpu->l = file->get(); cpu->c = file->get();
@@ -145,7 +151,7 @@ void Memory::parse(std::ifstream* file,int typ) {
 			cpu->i = file->get(); cpu->r = file->get() & 0x7f;
 			tmp = file->get(); if (tmp == 0xff) tmp = 0x01;
 			if (tmp & 1) cpu->r |= 0x80;
-			sys->vid->brdcol = (tmp >> 1) & 7;
+			zx->sys->vid->brdcol = (tmp >> 1) & 7;
 			cpu->e = file->get(); cpu->d = file->get();
 			cpu->alt.c = file->get(); cpu->alt.b = file->get();
 			cpu->alt.e = file->get(); cpu->alt.d = file->get();
@@ -162,10 +168,10 @@ void Memory::parse(std::ifstream* file,int typ) {
 				adr = tmp + (tmp2 << 8);
 				cpu->lpc = file->get(); cpu->hpc = file->get();
 				lst = file->get();			// 34: HW mode
-				tmp = file->get(); sys->io->out(0x7ffd,tmp); // 35: 7FFD last out
+				tmp = file->get(); zx->sys->io->out(0x7ffd,tmp); // 35: 7FFD last out
 				tmp = file->get();			// 36: skip (IF1)
 				tmp = file->get();			// 37: skip (flags) TODO
-				tmp = file->get(); sys->io->out(0xfffd,tmp); // 38: last out to fffd
+				tmp = file->get(); zx->sys->io->out(0xfffd,tmp); // 38: last out to fffd
 				for (tmp2=0; tmp2<16; tmp2++) {
 					tmp = file->get();
 					snd->sc1->reg[tmp2] = tmp;
@@ -268,7 +274,7 @@ void Memory::parse(std::ifstream* file,int typ) {
 			cpu->f = file->get(); cpu->a = file->get();
 			cpu->lsp = file->get(); cpu->hsp = file->get();
 			cpu->imode = file->get();
-			tmp = file->get(); sys->vid->brdcol = (tmp & 7);
+			tmp = file->get(); zx->sys->vid->brdcol = (tmp & 7);
 			file->read((char*)ram[5],0x4000);
 			file->read((char*)ram[2],0x4000);
 			file->read(buf,0x4000);
@@ -278,12 +284,12 @@ void Memory::parse(std::ifstream* file,int typ) {
 				prt1 = 0x00;
 				setrom(1);
 				setram(0);
-				sys->vid->curscr = false;
+				zx->sys->vid->curscr = false;
 				cpu->lpc = rd(cpu->sp++);
 				cpu->hpc = rd(cpu->sp++);
 			} else {
 				cpu->lpc = file->get(); cpu->hpc = file->get();
-				tmp = file->get(); snabank = (tmp & 7); sys->io->out(0x7ffd,tmp);
+				tmp = file->get(); snabank = (tmp & 7); zx->sys->io->out(0x7ffd,tmp);
 				bdi->active = (file->get() & 1);
 				if (snabank!=0) file->read((char*)ram[0],0x4000);
 				if (snabank!=1) file->read((char*)ram[1],0x4000);
@@ -299,7 +305,7 @@ void Memory::parse(std::ifstream* file,int typ) {
 
 void Memory::save(std::string sfnam,int typ,bool sna48=false) {
 	std::ofstream file(sfnam.c_str(),std::ios::binary);
-	Z80* cpu = sys->cpu;
+	Z80* cpu = zx->sys->cpu;
 	switch (typ) {
 		case TYP_Z80:
 			break;
@@ -318,7 +324,7 @@ void Memory::save(std::string sfnam,int typ,bool sna48=false) {
 			file.put((char)(cpu->iff2?4:0)).put((char)cpu->r);// iff2,r
 			file.put((char)cpu->f).put((char)cpu->a);		// f,a
 			file.put((char)cpu->lsp).put((char)cpu->hsp);	// SP
-			file.put((char)cpu->imode).put((char)sys->vid->brdcol);		// imode, border color
+			file.put((char)cpu->imode).put((char)zx->sys->vid->brdcol);		// imode, border color
 			file.write((char*)ram[5],0x4000);		// 0x4000 - 0x7fff
 			file.write((char*)ram[2],0x4000);		// 0x8000 - 0xcfff
 			if (sna48) {

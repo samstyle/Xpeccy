@@ -1,6 +1,3 @@
-#include "bdi.h"
-//#include "z80.h"
-
 #include <fstream>
 
 #include <QMessageBox>
@@ -8,7 +5,11 @@
 #include <QString>
 #include <QDebug>
 
+#include "bdi.h"
 #include "filer.h"
+
+extern BDI* bdi;
+extern MFiler* filer;
 
 uint8_t trd_8e1[] = {
 	0x00,0x00,0x01,0x16,0x00,0xf0,0x09,0x10,0x00,0x00,0x20,0x20,0x20,0x20,0x20,0x20,

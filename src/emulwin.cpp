@@ -44,13 +44,27 @@ uint8_t zx_in(int);
 void zx_out(int,uint8_t);
 void shithappens(const char*);
 
+extern ZXComp* zx;
+extern BDI* bdi;
+extern Keyboard* keyb;
+extern Mouse* mouse;
+extern Sound* snd;
+extern Settings* sets;
+extern HardWare* hw;
+extern IDE* ide;
+extern GS* gs;
+//extern Tape* tape;
+extern EmulWin* mwin;
+extern DebugWin* dbg;
+extern MFiler* filer;
+
 EmulWin::EmulWin() {
 	setcuricon(":/images/logo.png");
 	setWindowTitle("Xpeccy 0.4.3");
 	setMouseTracking(true);
 
 	pal.clear(); pal.resize(256);
-	int i; for(i=0;i<256;i++) {pal[i] = qRgb(sys->vid->pal[i].r,sys->vid->pal[i].g,sys->vid->pal[i].b);}
+	int i; for(i=0;i<256;i++) {pal[i] = qRgb(zx->sys->vid->pal[i].r,zx->sys->vid->pal[i].g,zx->sys->vid->pal[i].b);}
 
 	fast = false;
 
@@ -58,7 +72,7 @@ EmulWin::EmulWin() {
 	flags = 0;
 	menu = new QMenu("User Menu",this);
 
-	setFixedSize(sys->vid->wsze.h,sys->vid->wsze.v);
+	setFixedSize(zx->sys->vid->wsze.h,zx->sys->vid->wsze.v);
 #ifndef WIN32
 	SDL_SysWMinfo inf;
 	SDL_VERSION(&inf.version);
@@ -127,7 +141,7 @@ void EmulWin::updateframe() {
 		SDL_BlitSurface(csurf,NULL,sys->vid->surf,NULL);
 	}
 */
-	SDL_UpdateRect(sys->vid->surf,0,0,0,0);
+	SDL_UpdateRect(zx->sys->vid->surf,0,0,0,0);
 }
 
 void EmulWin::emulframe() {
@@ -149,11 +163,11 @@ void EmulWin::emulframe() {
 			snd->outsys->play();
 		}
 		snd->sbptr = snd->sndbuf;
-		snd->t = sys->vid->t;
+		snd->t = zx->sys->vid->t;
 		do {
 			exec();
-		} while (!sys->cpu->err && !sys->istrb);
-		sys->nmi = false;
+		} while (!zx->sys->cpu->err && !zx->sys->istrb);
+		zx->sys->nmi = false;
 //		if (flags & FL_RZX) {
 //			rfnum++; rfpos = 0;
 //			printf("=== Frame %i\n",rfnum);
@@ -182,9 +196,9 @@ void EmulWin::emulframe() {
 		std::string fnam = sets->ssdir + "/sshot" + int2str(ssnum) + "." + sets->ssformat;
 		if (sets->ssformat == "scr") {
 			std::ofstream file(fnam.c_str(),std::ios::binary);
-			file.write((char*)&sys->mem->ram[sys->vid->curscr?7:5][0],0x1b00);
+			file.write((char*)&zx->sys->mem->ram[zx->sys->vid->curscr?7:5][0],0x1b00);
 		} else {
-			QImage *img = new QImage((uchar*)sys->vid->surf->pixels,sys->vid->wsze.h,sys->vid->wsze.v,QImage::Format_Indexed8);
+			QImage *img = new QImage((uchar*)zx->sys->vid->surf->pixels,zx->sys->vid->wsze.h,zx->sys->vid->wsze.v,QImage::Format_Indexed8);
 			img->setColorTable(pal);
 			if (img==NULL) {
 				printf("NULL image\n");
@@ -198,26 +212,26 @@ void EmulWin::emulframe() {
 }
 
 void EmulWin::exec() {
-	uint32_t ln = sys->vid->t;
-	sys->exec();
-	ln = sys->vid->t - ln;
-	if (sys->vid->t > snd->t) {
+	uint32_t ln = zx->sys->vid->t;
+	zx->sys->exec();
+	ln = zx->sys->vid->t - ln;
+	if (zx->sys->vid->t > snd->t) {
 		snd->sync();
 	}
 	if (bdi->enable) {
 		bdi->sync(ln);
-		if (bdi->active && (sys->cpu->hpc > 0x3f)) {bdi->active = false; machine->setrom();}
-		if (!bdi->active && (sys->cpu->hpc == 0x3d) && (sys->mem->prt0 & 0x10)) {bdi->active = true; machine->setrom();}
+		if (bdi->active && (zx->sys->cpu->hpc > 0x3f)) {bdi->active = false; hw->setrom();}
+		if (!bdi->active && (zx->sys->cpu->hpc == 0x3d) && (zx->sys->mem->prt0 & 0x10)) {bdi->active = true; hw->setrom();}
 	}
 	if (!dbg->active) {
 		// somehow catch CPoint
-		if (dbg->findbp(BPoint((sys->cpu->pc < 0x4000)?sys->mem->crom:sys->mem->cram,sys->cpu->pc)) != -1) {
+		if (dbg->findbp(BPoint((zx->sys->cpu->pc < 0x4000) ? zx->sys->mem->crom : zx->sys->mem->cram, zx->sys->cpu->pc)) != -1) {
 			dbg->start();
-			sys->cpu->err = true;
+			zx->sys->cpu->err = true;
 		}
-		if (!sys->cpu->err && sys->istrb) {
-			ln = sys->interrupt();
-			sys->vid->sync(ln,sys->cpu->frq);
+		if (!zx->sys->cpu->err && zx->sys->istrb) {
+			ln = zx->sys->interrupt();
+			zx->sys->vid->sync(ln, zx->sys->cpu->frq);
 		}
 	}
 }
@@ -245,27 +259,20 @@ void EmulWin::repause(bool p, int msk) {
 	}
 	if (msk & PR_PAUSE) return;
 	if ((paused & ~PR_PAUSE) == 0) {
-		sys->vid->flags &= ~VF_BLOCKFULLSCREEN;
-		if (sys->vid->flags & VF_FULLSCREEN) sys->vid->update();
+		zx->sys->vid->flags &= ~VF_BLOCKFULLSCREEN;
+		if (zx->sys->vid->flags & VF_FULLSCREEN) zx->sys->vid->update();
 	} else {
-		sys->vid->flags |= VF_BLOCKFULLSCREEN;
-		if (sys->vid->flags & VF_FULLSCREEN) sys->vid->update();
+		zx->sys->vid->flags |= VF_BLOCKFULLSCREEN;
+		if (zx->sys->vid->flags & VF_FULLSCREEN) zx->sys->vid->update();
 	}
 }
 
 void EmulWin::reset() {
-	sys->io->block7ffd=false;
-	sys->mem->prt1 = 0;
-	sys->mem->prt0 = ((sys->mem->res==1)<<4);
-	sys->mem->setrom(sys->mem->res);
-	sys->mem->setram(0);
-	sys->cpu->reset();
-	sys->vid->curscr = false;
-	sys->vid->mode = VID_NORMAL;
+	zx->reset();
 	snd->sc1->reset();
 	snd->sc2->reset();
 	snd->scc = snd->sc1;
-	bdi->active = (sys->mem->res==3);
+	bdi->active = (zx->sys->mem->res==3);
 	bdi->vg93.count = 0;
 	bdi->vg93.setmr(false);
 	ide->reset();
@@ -279,15 +286,15 @@ void EmulWin::SDLEventHandler() {
 			case SDL_KEYDOWN:
 				if (ev.key.keysym.mod & KMOD_ALT) {
 					switch(ev.key.keysym.sym) {
-						case SDLK_0: sys->vid->mode = (sys->vid->mode==VID_NORMAL)?VID_ALCO:VID_NORMAL; break;
-						case SDLK_1: sys->vid->flags &= ~VF_DOUBLE; sys->vid->update(); sets->save(); break;
-						case SDLK_2: sys->vid->flags |= VF_DOUBLE; sys->vid->update(); sets->save(); break;
+						case SDLK_0: zx->sys->vid->mode = (zx->sys->vid->mode==VID_NORMAL)?VID_ALCO:VID_NORMAL; break;
+						case SDLK_1: zx->sys->vid->flags &= ~VF_DOUBLE; zx->sys->vid->update(); sets->save(); break;
+						case SDLK_2: zx->sys->vid->flags |= VF_DOUBLE; zx->sys->vid->update(); sets->save(); break;
 						case SDLK_3: fast = !fast;
 							tim1->start(fast?0:20);
 							break;
 						case SDLK_F4: close(); break;
 						case SDLK_F7: ssbcnt = sets->sscnt; ssbint=0; break;	// ALT+F7 combo
-						case SDLK_RETURN: sys->vid->flags ^= VF_FULLSCREEN; sys->vid->update(); sets->save(); break;
+						case SDLK_RETURN: zx->sys->vid->flags ^= VF_FULLSCREEN; zx->sys->vid->update(); sets->save(); break;
 						case SDLK_c:
 							flags ^= FL_GRAB;
 							if (flags & FL_GRAB) {
@@ -309,19 +316,19 @@ void EmulWin::SDLEventHandler() {
 						case SDLK_F1: emit(wannasetup()); break;
 						case SDLK_F2: filer->saveonf2(); break;
 						case SDLK_F3: filer->opensomewhat(); break;
-						case SDLK_F4: if (tape->flags & TAPE_ON) {
-									tape->stop();
+						case SDLK_F4: if (zx->tape->flags & TAPE_ON) {
+									zx->tape->stop();
 									setcuricon(":/images/logo.png");
 								} else {
-									tape->startplay();
+									zx->tape->startplay();
 									setcuricon(":/images/play.png");
 								}
 								break;
-						case SDLK_F5: if (tape->flags & TAPE_ON) {
-									tape->stop();
+						case SDLK_F5: if (zx->tape->flags & TAPE_ON) {
+									zx->tape->stop();
 									setcuricon(":/images/logo.png");
 								} else {
-									tape->startrec();
+									zx->tape->startrec();
 									setcuricon(":/images/rec.png");
 								}
 								break;
@@ -333,7 +340,7 @@ void EmulWin::SDLEventHandler() {
 							bdi->flop[3].savecha();
 							break;
 						case SDLK_F10:
-							sys->nmi = true;
+							zx->sys->nmi = true;
 							break;
 						case SDLK_F12: reset(); break;
 						default: break;
@@ -477,7 +484,7 @@ void EmulWin::load(std::string fnam,int typ) {
 							} else {
 								ofle.write((char*)buf,wrd);
 								ofle.close();
-								sys->mem->load(onam,tmp);		// parse (unpacked) snapshot
+								zx->sys->mem->load(onam,tmp);		// parse (unpacked) snapshot
 							}
 						}
 						break;
@@ -623,21 +630,21 @@ void Settings::save() {
 
 	sfile<<"[CPU]\n\n";
 	sfile<<"# real cpu freq in MHz = this value / 2; correct range is 2 to 14 (1 to 7 MHz)\n";
-	sfile<<"cpu.frq = "<<int2str((int)(sys->cpu->frq * 2.0)).c_str()<<"\n";
+	sfile<<"cpu.frq = "<<int2str((int)(zx->sys->cpu->frq * 2.0)).c_str()<<"\n";
 	
 	sfile<<"\n[VIDEO]\n\n";
-	sfile<<"doublesize = "<<((sys->vid->flags & VF_DOUBLE)?"y":"n")<<"\n";
-	sfile<<"fullscreen = "<<((sys->vid->flags & VF_FULLSCREEN)?"y":"n")<<"\n";
-	sfile<<"bordersize = "<<int2str((int)(sys->vid->brdsize * 100)).c_str()<<"\n";
-	for (i=1; i<sys->vid->layout.size(); i++) {
-		sfile<<"layout = ";
-		sfile<<sys->vid->layout[i].name.c_str()<<":";
-		sfile<<int2str(sys->vid->layout[i].full.h)<<":"<<int2str(sys->vid->layout[i].full.v)<<":";
-		sfile<<int2str(sys->vid->layout[i].bord.h)<<":"<<int2str(sys->vid->layout[i].bord.v)<<":";
-		sfile<<int2str(sys->vid->layout[i].sync.h)<<":"<<int2str(sys->vid->layout[i].sync.v)<<":";
-		sfile<<int2str(sys->vid->layout[i].intsz)<<":"<<int2str(sys->vid->layout[i].intpos)<<"\n";
+	sfile<<"doublesize = "<<((zx->sys->vid->flags & VF_DOUBLE)?"y":"n")<<"\n";
+	sfile<<"fullscreen = "<<((zx->sys->vid->flags & VF_FULLSCREEN)?"y":"n")<<"\n";
+	sfile<<"bordersize = "<<int2str((int)(zx->sys->vid->brdsize * 100)).c_str()<<"\n";
+	for (i=1; i < zx->sys->vid->layout.size(); i++) {
+		sfile << "layout = ";
+		sfile << zx->sys->vid->layout[i].name.c_str() << ":";
+		sfile << int2str(zx->sys->vid->layout[i].full.h) << ":" << int2str(zx->sys->vid->layout[i].full.v) << ":";
+		sfile << int2str(zx->sys->vid->layout[i].bord.h) << ":" << int2str(zx->sys->vid->layout[i].bord.v) << ":";
+		sfile << int2str(zx->sys->vid->layout[i].sync.h) << ":" << int2str(zx->sys->vid->layout[i].sync.v) << ":";
+		sfile << int2str(zx->sys->vid->layout[i].intsz) << ":" << int2str(zx->sys->vid->layout[i].intpos) << "\n";
 	}
-	sfile<<"geometry = "<<sys->vid->curlay.c_str()<<"\n";
+	sfile<<"geometry = "<<zx->sys->vid->curlay.c_str()<<"\n";
 
 	sfile<<"\n[SCREENSHOTS]\n\n";
 	sfile<<"folder = "<<ssdir.c_str()<<"\n";
@@ -690,38 +697,38 @@ void Settings::save() {
 
 	sfile<<"\n[MACHINE]\n\n";
 	sfile<<"# possible values:";
-	for (i=0;i<sys->io->machlist.size();i++) {if (i!=0) sfile<<", "; sfile<<sys->io->machlist[i].name.c_str();}
+	for (i=0; i < zx->sys->io->hwlist.size(); i++) {if (i!=0) sfile<<", "; sfile << zx->sys->io->hwlist[i].name.c_str();}
 	sfile<<"\n";
-	sfile<<"current = "<<machine->name.c_str()<<"\n";
+	sfile<<"current = "<<hw->name.c_str()<<"\n";
 	sfile<<"memory = ";
-	switch (sys->io->mask) {
+	switch (zx->sys->io->mask) {
 		case 0x07: sfile<<"128\n"; break;
 		case 0x0f: sfile<<"256\n"; break;
 		case 0x1f: sfile<<"512\n"; break;
 		case 0x3f: sfile<<"1024\n"; break;
 		default: sfile<<"48\n"; break;
 	}
-	sfile<<"restart = "<<(sys->io->resafter?"y":"n")<<"\n";
+	sfile<<"restart = "<<(zx->sys->io->resafter?"y":"n")<<"\n";
 	sfile<<"scrp.wait = "<<(sets->wait?"y":"n")<<"\n";
 
 	sfile<<"\n[ROMSETS]\n\n";
 	std::vector<std::string> rmnam;
 	rmnam.push_back("basic128"); rmnam.push_back("basic48"); rmnam.push_back("shadow"); rmnam.push_back("trdos");
 	rmnam.push_back("ext4"); rmnam.push_back("ext5"); rmnam.push_back("ext6"); rmnam.push_back("ext7");
-	for (i=0;i<sys->mem->rsetlist.size();i++) {
-		sfile<<"name = "<<sys->mem->rsetlist[i].name.c_str()<<"\n";
+	for (i=0;i < zx->sys->mem->rsetlist.size();i++) {
+		sfile<<"name = " << zx->sys->mem->rsetlist[i].name.c_str()<<"\n";
 		for (j=0;j<8;j++) {
-			if (sys->mem->rsetlist[i].roms[j].path!="") {
-				sfile<<rmnam[j].c_str()<<" = "<<sys->mem->rsetlist[i].roms[j].path.c_str();
-				if (sys->mem->rsetlist[i].roms[j].part!=0) sfile<<":"<<int2str(sys->mem->rsetlist[i].roms[j].part).c_str();
+			if (zx->sys->mem->rsetlist[i].roms[j].path!="") {
+				sfile<<rmnam[j].c_str()<<" = " << zx->sys->mem->rsetlist[i].roms[j].path.c_str();
+				if (zx->sys->mem->rsetlist[i].roms[j].part!=0) sfile<<":"<<int2str(zx->sys->mem->rsetlist[i].roms[j].part).c_str();
 				sfile<<"\n";
 			}
 		}
 		sfile<<"\n";
 	}
 	sfile<<"gs = "<<sets->gsrom.c_str()<<"\n";
-	sfile<<"current = "<<sys->mem->romset->name.c_str()<<"\n";
-	sfile<<"reset = "<<rmnam[sys->mem->res].c_str()<<"\n";
+	sfile<<"current = "<<zx->sys->mem->romset->name.c_str()<<"\n";
+	sfile<<"reset = "<<rmnam[zx->sys->mem->res].c_str()<<"\n";
 
 	sfile<<"\n[TOOLS]\n\n";
 	sfile<<"sjasm = "<<sjapath.c_str()<<"\n";
@@ -740,7 +747,7 @@ void Settings::load(bool dev) {
 	size_t pos;
 	char* buf = new char[0x4000];
 	int tmask = 0xff;
-	if (!dev) sys->io->mask = 0;
+	if (!dev) zx->sys->io->mask = 0;
 	if (!file.good()) {
 		shithappens("Can't find config file<br><b>~/.config/samstyle/xpeccy/xpeccy.conf</b><br>Default one will be created.");
 		std::ofstream ofile(optpath.c_str());
@@ -788,42 +795,42 @@ void Settings::load(bool dev) {
 						} else {fnam = pval; fprt = 0;}
 						if (pnam=="name") {
 							newrs.name = pval;
-							sys->mem->rsetlist.push_back(newrs);
+							zx->sys->mem->rsetlist.push_back(newrs);
 						}
 						if ((pnam=="basic128") || (pnam=="0")) {
-							sys->mem->rsetlist.back().roms[0].path=fnam;
-							sys->mem->rsetlist.back().roms[0].part=fprt;}
+							zx->sys->mem->rsetlist.back().roms[0].path=fnam;
+							zx->sys->mem->rsetlist.back().roms[0].part=fprt;}
 						if ((pnam=="basic48") || (pnam=="1")) {
-							sys->mem->rsetlist.back().roms[1].path=fnam;
-							sys->mem->rsetlist.back().roms[1].part=fprt;}
+							zx->sys->mem->rsetlist.back().roms[1].path=fnam;
+							zx->sys->mem->rsetlist.back().roms[1].part=fprt;}
 						if ((pnam=="shadow") || (pnam=="2")) {
-							sys->mem->rsetlist.back().roms[2].path=fnam;
-							sys->mem->rsetlist.back().roms[2].part=fprt;}
+							zx->sys->mem->rsetlist.back().roms[2].path=fnam;
+							zx->sys->mem->rsetlist.back().roms[2].part=fprt;}
 						if ((pnam=="trdos") || (pnam=="3")) {
-							sys->mem->rsetlist.back().roms[3].path=fnam;
-							sys->mem->rsetlist.back().roms[3].part=fprt;}
+							zx->sys->mem->rsetlist.back().roms[3].path=fnam;
+							zx->sys->mem->rsetlist.back().roms[3].part=fprt;}
 						if (pnam=="reset") {
-							if ((pval=="basic128") || (pval=="0")) sys->mem->res = 0;
-							if ((pval=="basic48") || (pval=="1")) sys->mem->res = 1;
-							if ((pval=="shadow") || (pval=="2")) sys->mem->res = 2;
-							if ((pval=="trdos") || (pval=="3")) sys->mem->res = 3;
+							if ((pval=="basic128") || (pval=="0")) zx->sys->mem->res = 0;
+							if ((pval=="basic48") || (pval=="1")) zx->sys->mem->res = 1;
+							if ((pval=="shadow") || (pval=="2")) zx->sys->mem->res = 2;
+							if ((pval=="trdos") || (pval=="3")) zx->sys->mem->res = 3;
 						}
 						if (pnam=="current") rsetname=pval;
 						if (pnam=="gs") sets->gsrom=pval;
 						break;
 					case 2: if (pnam=="doublesize") {
 							if (str2bool(pval))
-								sys->vid->flags |= VF_DOUBLE;
+								zx->sys->vid->flags |= VF_DOUBLE;
 							else
-								sys->vid->flags &= ~VF_DOUBLE;
+								zx->sys->vid->flags &= ~VF_DOUBLE;
 						}
 						if (pnam=="fullscreen") {
 							if (str2bool(pval))
-								sys->vid->flags |= VF_FULLSCREEN;
+								zx->sys->vid->flags |= VF_FULLSCREEN;
 							else
-								sys->vid->flags &= ~VF_FULLSCREEN;
+								zx->sys->vid->flags &= ~VF_FULLSCREEN;
 						}
-						if (pnam=="bordersize") {test = atoi(pval.c_str()); if ((test>-1) && (test<101)) sys->vid->brdsize = test/100.0;}
+						if (pnam=="bordersize") {test = atoi(pval.c_str()); if ((test>-1) && (test<101)) zx->sys->vid->brdsize = test/100.0;}
 						if (pnam=="layout") {
 							vect = splitstr(pval,":");
 //for(uint i=0;i<vect.size();i++) printf("%s\t",vect[i].c_str());
@@ -837,11 +844,11 @@ void Settings::load(bool dev) {
 								vlay.intsz = atoi(vect[7].c_str()); vlay.intpos = atoi(vect[8].c_str());
 //printf("%s\t%i\t%i\t%i\t%i\t%i\t%i\t%i\n",vlay.name.c_str(),vlay.full.h,vlay.full.v,vlay.bord.h,vlay.bord.v,vlay.sync.h,vlay.sync.v,vlay.intsz);
 								if ((vlay.full.h > vlay.bord.h + 256) && (vlay.bord.h > vlay.sync.h) && (vlay.full.v > vlay.bord.v + 192) && (vlay.bord.v > vlay.sync.v)) {
-									sys->vid->layout.push_back(vlay);
+									zx->sys->vid->layout.push_back(vlay);
 								}
 							}
 						}
-						if (pnam=="geometry") sys->vid->curlay = pval;
+						if (pnam=="geometry") zx->sys->vid->curlay = pval;
 						break;
 					case 3: if (pnam=="folder") ssdir=pval;
 						if (pnam=="format") ssformat=pval;
@@ -874,13 +881,13 @@ void Settings::load(bool dev) {
 						break;
 					case 6: if (pnam=="current") machname = pval;
 						if (pnam=="memory") {
-							if (pval=="48") {sys->io->mask = 0x00; tmask = 0;}
-							if (pval=="128") {sys->io->mask = 0x07; tmask = 1;}
-							if (pval=="256") {sys->io->mask = 0x0f; tmask = 2;}
-							if (pval=="512") {sys->io->mask = 0x1f; tmask = 4;}
-							if (pval=="1024") {sys->io->mask = 0x3f; tmask = 8;}
+							if (pval=="48") {zx->sys->io->mask = 0x00; tmask = 0;}
+							if (pval=="128") {zx->sys->io->mask = 0x07; tmask = 1;}
+							if (pval=="256") {zx->sys->io->mask = 0x0f; tmask = 2;}
+							if (pval=="512") {zx->sys->io->mask = 0x1f; tmask = 4;}
+							if (pval=="1024") {zx->sys->io->mask = 0x3f; tmask = 8;}
 						}
-						if (pnam=="restart") sys->io->resafter = str2bool(pval);
+						if (pnam=="restart") zx->sys->io->resafter = str2bool(pval);
 						if (pnam=="scrp.wait") sets->wait = str2bool(pval);
 						break;
 					case 7: if (pnam=="sjasm") sjapath=pval;
@@ -920,7 +927,7 @@ void Settings::load(bool dev) {
 					case 10:
 						if (pnam=="cpu.frq") {
 							fprt = atoi(pval.c_str());
-							if ((fprt > 0) && (fprt < 14)) sys->cpu->frq = fprt / 2.0;
+							if ((fprt > 0) && (fprt < 14)) zx->sys->cpu->frq = fprt / 2.0;
 						}
 						break;
 				}
@@ -929,14 +936,14 @@ void Settings::load(bool dev) {
 	}
 	if (dev) return;
 	snd->defpars();
-	sys->io->setmacptr(machname);
-	sys->mem->setromptr(rsetname);
+	zx->sys->io->setmacptr(machname);
+	zx->sys->mem->setromptr(rsetname);
 	snd->setoutptr(soutname);
-	if (machine==NULL) throw("Can't found current machine");
-	if (sys->mem->romset==NULL) throw("Can't found current romset");
-	if (~machine->mask & tmask) throw("Incorrect memory size for this machine");
-	if (!sys->vid->setlayout(sys->vid->curlay)) sys->vid->setlayout("default");
-	sys->vid->update();
-	sys->mem->loadromset();
+	if (hw==NULL) throw("Can't found current machine");
+	if (zx->sys->mem->romset==NULL) throw("Can't found current romset");
+	if (~hw->mask & tmask) throw("Incorrect memory size for this machine");
+	if (!zx->sys->vid->setlayout(zx->sys->vid->curlay)) zx->sys->vid->setlayout("default");
+	zx->sys->vid->update();
+	zx->sys->mem->loadromset();
 	mwin->makemenu();
 }

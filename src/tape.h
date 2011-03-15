@@ -55,6 +55,6 @@ class Tape {
 		void save(std::string,uint8_t);
 };
 
-extern Tape *tape;
+//extern Tape *tape;
 
 #endif

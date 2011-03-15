@@ -9,6 +9,9 @@
 
 #define NOVIDEO 0
 
+extern EmulWin* mwin;
+extern ZXComp* zx;
+
 Video::Video() {
 //	sys->mem = new Memory;
 	int i,j,k,l;
@@ -24,18 +27,18 @@ Video::Video() {
 		for (j=0;j<8;j++) {
 			for (k=0;k<8;k++) {
 				for (l=0;l<32;l++) {
-					ladrz[idx].scr5 = sys->mem->ram[5] + sadr;
-					ladrz[idx].atr5 = sys->mem->ram[5] + aadr;
-					ladrz[idx].scr7 = sys->mem->ram[7] + sadr;
-					ladrz[idx].atr7 = sys->mem->ram[7] + aadr;
-					ladrz[idx].ac00 = sys->mem->ram[4] + sadr;
-					ladrz[idx].ac10 = sys->mem->ram[6] + sadr;
-					ladrz[idx].ac01 = sys->mem->ram[5] + sadr;
-					ladrz[idx].ac11 = sys->mem->ram[7] + sadr;
-					ladrz[idx].ac02 = sys->mem->ram[4] + sadr + 0x2000;
-					ladrz[idx].ac12 = sys->mem->ram[6] + sadr + 0x2000;
-					ladrz[idx].ac03 = sys->mem->ram[5] + sadr + 0x2000;
-					ladrz[idx].ac13 = sys->mem->ram[7] + sadr + 0x2000;
+					ladrz[idx].scr5 = zx->sys->mem->ram[5] + sadr;
+					ladrz[idx].atr5 = zx->sys->mem->ram[5] + aadr;
+					ladrz[idx].scr7 = zx->sys->mem->ram[7] + sadr;
+					ladrz[idx].atr7 = zx->sys->mem->ram[7] + aadr;
+					ladrz[idx].ac00 = zx->sys->mem->ram[4] + sadr;
+					ladrz[idx].ac10 = zx->sys->mem->ram[6] + sadr;
+					ladrz[idx].ac01 = zx->sys->mem->ram[5] + sadr;
+					ladrz[idx].ac11 = zx->sys->mem->ram[7] + sadr;
+					ladrz[idx].ac02 = zx->sys->mem->ram[4] + sadr + 0x2000;
+					ladrz[idx].ac12 = zx->sys->mem->ram[6] + sadr + 0x2000;
+					ladrz[idx].ac03 = zx->sys->mem->ram[5] + sadr + 0x2000;
+					ladrz[idx].ac13 = zx->sys->mem->ram[7] + sadr + 0x2000;
 					idx++;
 					sadr++;
 					aadr++;
@@ -211,12 +214,12 @@ void Video::tick() {
 			curr.v = 0;
 //			intupt = true;
 //	printf("%i\n",sys->cpu->t - sys->cpu->tb);
-			sys->cpu->tb = sys->cpu->t;
+			zx->sys->cpu->tb = zx->sys->cpu->t;
 			fcnt++; flash = fcnt & 0x20;
 			scrptr = (uint8_t*)surf->pixels;
 			iacount=0;
 		}
 		intupt = (curr.v==intpos) && (curr.h < intsz);
-		sys->istrb |= intupt;
+		zx->sys->istrb |= intupt;
 	}
 }

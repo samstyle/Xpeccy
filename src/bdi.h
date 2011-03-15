@@ -113,7 +113,7 @@ class BDI {
 	int32_t getport(int);
 };
 
-extern BDI *bdi;
+// extern BDI *bdi;
 typedef void(*VGOp)(VG93*);
 
 #endif

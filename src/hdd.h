@@ -82,6 +82,6 @@ class IDE {
 	void reset();
 };
 
-extern IDE* ide;
+// extern IDE* ide;
 
 #endif

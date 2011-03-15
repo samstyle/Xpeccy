@@ -8,6 +8,8 @@
 
 void splitline(std::string,std::string*,std::string*);
 
+extern Settings* sets;
+
 DevelWin::DevelWin() {
 	ui.setupUi(this);
 	ui.ptabs->clear();

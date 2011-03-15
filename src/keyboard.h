@@ -22,7 +22,7 @@ class Mouse {
 	uint8_t buttons;	// b0=LMB; b1=RMB;
 };
 
-extern Keyboard *keyb;
-extern Mouse *mouse;
+//extern Keyboard *keyb;
+//extern Mouse *mouse;
 
 #endif

@@ -68,6 +68,6 @@ class DebugWin : public QDialog {
 		void keyPressEvent(QKeyEvent*);
 };
 
-extern DebugWin *dbg;
+// extern DebugWin *dbg;
 
 #endif

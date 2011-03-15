@@ -7,6 +7,12 @@
 #include "emulwin.h"
 #include "settings.h"
 
+//extern Tape* tape;
+extern BDI* bdi;
+extern ZXComp* zx;
+extern Settings* sets;
+extern EmulWin* mwin;
+
 #include <QDebug>
 
 MFiler::MFiler(QWidget *pr):QFileDialog(pr) {
@@ -21,8 +27,8 @@ void MFiler::loadtape(std::string sfnam,bool sel) {
 		sfnam = std::string(fnam.toUtf8().data());
 	}
 	if (sfnam=="") return;
-	if (fnam.endsWith(".tap",Qt::CaseInsensitive)) tape->load(sfnam,TYPE_TAP);
-	if (fnam.endsWith(".tzx",Qt::CaseInsensitive)) tape->load(sfnam,TYPE_TZX);
+	if (fnam.endsWith(".tap",Qt::CaseInsensitive)) zx->tape->load(sfnam,TYPE_TAP);
+	if (fnam.endsWith(".tzx",Qt::CaseInsensitive)) zx->tape->load(sfnam,TYPE_TZX);
 }
 
 void MFiler::savetape(std::string sfnam, bool sel=true) {
@@ -33,8 +39,8 @@ void MFiler::savetape(std::string sfnam, bool sel=true) {
 	}
 	if (sfnam=="") return;
 	if (!fnam.endsWith(".tap",Qt::CaseInsensitive)) sfnam.append(".tap");
-	tape->save(sfnam,TYPE_TAP);
-	tape->path=sfnam;
+	zx->tape->save(sfnam,TYPE_TAP);
+	zx->tape->path=sfnam;
 }
 
 void MFiler::loaddisk(std::string sfnam, uint8_t drv=0,bool sel=true) {
@@ -52,10 +58,10 @@ void MFiler::loaddisk(std::string sfnam, uint8_t drv=0,bool sel=true) {
 
 void MFiler::loadsomefile(std::string sfnam,uint8_t drv) {
 	QString fnam = QDialog::trUtf8(sfnam.c_str());
-	if (fnam.endsWith(".sna",Qt::CaseInsensitive)) sys->mem->load(sfnam,TYP_SNA);
-	if (fnam.endsWith(".z80",Qt::CaseInsensitive)) sys->mem->load(sfnam,TYP_Z80);
-	if (fnam.endsWith(".tap",Qt::CaseInsensitive)) tape->load(sfnam,TYPE_TAP);
-	if (fnam.endsWith(".tzx",Qt::CaseInsensitive)) tape->load(sfnam,TYPE_TZX);
+	if (fnam.endsWith(".sna",Qt::CaseInsensitive)) zx->sys->mem->load(sfnam,TYP_SNA);
+	if (fnam.endsWith(".z80",Qt::CaseInsensitive)) zx->sys->mem->load(sfnam,TYP_Z80);
+	if (fnam.endsWith(".tap",Qt::CaseInsensitive)) zx->tape->load(sfnam,TYPE_TAP);
+	if (fnam.endsWith(".tzx",Qt::CaseInsensitive)) zx->tape->load(sfnam,TYPE_TZX);
 	if (fnam.endsWith(".trd",Qt::CaseInsensitive)) bdi->flop[drv].load(sfnam,TYPE_TRD);
 	if (fnam.endsWith(".scl",Qt::CaseInsensitive)) bdi->flop[drv].load(sfnam,TYPE_SCL);
 	if (fnam.endsWith(".fdi",Qt::CaseInsensitive)) bdi->flop[drv].load(sfnam,TYPE_FDI);
@@ -102,13 +108,13 @@ void MFiler::saveonf2() {
 	QStringList filter;
 	std::string sfnam;
 	if (bdi->flop[0].insert) {filter<<"Disk A (*.trd *.scl *.udi)"; sfnam = bdi->flop[0].path;}
-	if (tape->data.size()!=0) {filter<<"Tape (*.tap)"; if (sfnam=="") sfnam = tape->path;}
+	if (zx->tape->data.size()!=0) {filter<<"Tape (*.tap)"; if (sfnam=="") sfnam = zx->tape->path;}
 	filter<<"Snapshot (*.sna)"; if (sfnam=="") sfnam = "snapshot.sna";
 	MFResult res = save(0,"Save something",QString(sfnam.c_str()),filter);
 	if (res.selfile!="") {
 		sfnam = std::string(res.selfile.toUtf8().data());
 		QString filt = res.selfilt;
-		if (filt.indexOf("Snapshot")!=-1) sys->mem->save(sfnam,TYP_SNA,sets->machname=="ZX48K");
+		if (filt.indexOf("Snapshot")!=-1) zx->sys->mem->save(sfnam,TYP_SNA,sets->machname=="ZX48K");
 		if (filt.indexOf("Disk A")!=-1) savedisk(sfnam,0,false);
 		if (filt.indexOf("Tape")!=-1) savetape(sfnam,false);
 	}
@@ -154,6 +160,6 @@ MFResult MFiler::execute(QWidget* par,QString name,QString fnam,QStringList filt
 void MFiler::savesnapshot(std::string sfnam,bool sna48=false) {
 	bool kformat=false;
 	QString fnam(sfnam.c_str());
-	if (fnam.endsWith(".sna",Qt::CaseInsensitive)) {sys->mem->save(sfnam,TYP_SNA,sna48); kformat=true;}
-	if (!kformat) {sfnam.append(".sna"); sys->mem->save(sfnam,TYP_SNA,sna48);}
+	if (fnam.endsWith(".sna",Qt::CaseInsensitive)) {zx->sys->mem->save(sfnam,TYP_SNA,sna48); kformat=true;}
+	if (!kformat) {sfnam.append(".sna"); zx->sys->mem->save(sfnam,TYP_SNA,sna48);}
 }

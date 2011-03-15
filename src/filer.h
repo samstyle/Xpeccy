@@ -28,6 +28,6 @@ class MFiler : public QFileDialog {
 		MFResult execute(QWidget*,QString,QString,QStringList);
 };
 
-extern MFiler *filer;
+// extern MFiler *filer;
 
 #endif

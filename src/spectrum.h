@@ -7,23 +7,42 @@
 #include "memory.h"
 #include "iosys.h"
 #include "video.h"
+#include "tape.h"
+#include "bdi.h"
 
 #define TYP_RZX		0
+// conditions
+#define CND_NONE	0
+#define	CND_Z		1
+#define	CND_C		2
+#define CND_P		3
+#define CND_S		4
+#define CND_DJNZ	5
+#define CND_BLK		6
 
-class Spec;
+#define	ZOP_PREFIX	(1<<0)
+
+class ZXBase;
 class ZOp {
 	public:
-		ZOp(void(*fn)(Spec*),int32_t a,const char *nm) {name = nm; func = fn; t = a; prf = false;}
-		ZOp(void(*fn)(Spec*),int32_t a,const char *nm, bool pr) {name = nm; func = fn; t = a; prf = pr;}
+		ZOp(void(*)(ZXBase*),int32_t,int32_t,int32_t,int32_t,const char*,int32_t);
+		ZOp(void(*)(ZXBase*),int32_t,const char*);
+/*		
+		ZOp(void(*fn)(ZXBase*),int32_t a,const char *nm) {name = nm; func = fn; t = a; prf = false;}
+		ZOp(void(*fn)(ZXBase*),int32_t a,const char *nm, bool pr) {name = nm; func = fn; t = a; prf = pr;}
+*/
 		const char *name;	// mnemonic
-		void (*func)(Spec*);	// execution func
-		int32_t t;		// Z80 ticks on execution
-		bool prf;		// is prefix (CB,DD,ED,FD)
+		void (*func)(ZXBase*);	// execution func
+		int32_t t;		// Z80 ticks on execution (base, w/o prefixes & conditions)
+		int32_t cond;		// condition type
+		int32_t tcn1,tcn0;	// ticks if condition true or false
+		int32_t flags;
+//		bool prf;		// is prefix (CB,DD,ED,FD)
 };
 
-class Spec {
+class ZXBase {
 	public:
-		Spec();
+		ZXBase();
 		bool istrb;
 		bool fstrb;
 		bool nmi;
@@ -37,6 +56,15 @@ class Spec {
 		int32_t interrupt();
 };
 
-extern Spec *sys;
+class ZXComp {
+	public:
+		ZXComp();
+		ZXBase* sys;
+		Tape* tape;
+//		BDI* bdi;
+		void reset();
+};
+
+// extern Spec *sys;
 
 #endif

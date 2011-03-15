@@ -1,112 +1,112 @@
 // add iy,rp
-void iyp09(Spec *p) {addIY(p,p->cpu->bc);}
-void iyp19(Spec *p) {addIY(p,p->cpu->de);}
-void iyp29(Spec *p) {addIY(p,p->cpu->iy);}
-void iyp39(Spec *p) {addIY(p,p->cpu->sp);}
+void iyp09(ZXBase* p) {addIY(p,p->cpu->bc);}
+void iyp19(ZXBase* p) {addIY(p,p->cpu->de);}
+void iyp29(ZXBase* p) {addIY(p,p->cpu->iy);}
+void iyp39(ZXBase* p) {addIY(p,p->cpu->sp);}
 
 // inc/dec/ld iy
-void iyp23(Spec *p) {p->cpu->iy++;}
-void iyp2B(Spec *p) {p->cpu->iy--;}
-void iyp21(Spec *p) {p->cpu->ly = p->mem->rd(p->cpu->pc++); p->cpu->hy = p->mem->rd(p->cpu->pc++);}
+void iyp23(ZXBase* p) {p->cpu->iy++;}
+void iyp2B(ZXBase* p) {p->cpu->iy--;}
+void iyp21(ZXBase* p) {p->cpu->ly = p->mem->rd(p->cpu->pc++); p->cpu->hy = p->mem->rd(p->cpu->pc++);}
 // ld (nn),iy | ld iy,(nn)	mptr = nn + 1
-void iyp22(Spec *p) {p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->cpu->hptr = p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr++,p->cpu->ly); p->mem->wr(p->cpu->mptr,p->cpu->hy);}
-void iyp2A(Spec *p) {p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->cpu->hptr = p->mem->rd(p->cpu->pc++); p->cpu->ly = p->mem->rd(p->cpu->mptr++); p->cpu->hy = p->mem->rd(p->cpu->mptr);}
+void iyp22(ZXBase* p) {p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->cpu->hptr = p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr++,p->cpu->ly); p->mem->wr(p->cpu->mptr,p->cpu->hy);}
+void iyp2A(ZXBase* p) {p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->cpu->hptr = p->mem->rd(p->cpu->pc++); p->cpu->ly = p->mem->rd(p->cpu->mptr++); p->cpu->hy = p->mem->rd(p->cpu->mptr);}
 // inc/dec/ld ly
-void iyp2C(Spec *p) {p->cpu->ly++; p->cpu->f = flag[p->cpu->ly].inc | (p->cpu->f & FC);}
-void iyp2D(Spec *p) {p->cpu->ly--; p->cpu->f = flag[p->cpu->ly].dec | (p->cpu->f & FC);}
-void iyp2E(Spec *p) {p->cpu->ly = p->mem->rd(p->cpu->pc++);}
+void iyp2C(ZXBase* p) {p->cpu->ly++; p->cpu->f = flag[p->cpu->ly].inc | (p->cpu->f & FC);}
+void iyp2D(ZXBase* p) {p->cpu->ly--; p->cpu->f = flag[p->cpu->ly].dec | (p->cpu->f & FC);}
+void iyp2E(ZXBase* p) {p->cpu->ly = p->mem->rd(p->cpu->pc++);}
 // inc/dec/ld hy
-void iyp24(Spec *p) {p->cpu->hy++; p->cpu->f = flag[p->cpu->hy].inc | (p->cpu->f & FC);}
-void iyp25(Spec *p) {p->cpu->hy--; p->cpu->f = flag[p->cpu->hy].dec | (p->cpu->f & FC);}
-void iyp26(Spec *p) {p->cpu->hy = p->mem->rd(p->cpu->pc++);}
+void iyp24(ZXBase* p) {p->cpu->hy++; p->cpu->f = flag[p->cpu->hy].inc | (p->cpu->f & FC);}
+void iyp25(ZXBase* p) {p->cpu->hy--; p->cpu->f = flag[p->cpu->hy].dec | (p->cpu->f & FC);}
+void iyp26(ZXBase* p) {p->cpu->hy = p->mem->rd(p->cpu->pc++);}
 // inc/dec/ld (iy+e)
-void iyp34(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->x = p->mem->rd(p->cpu->mptr) + 1; p->mem->wr(p->cpu->mptr,p->cpu->x); p->cpu->f = flag[p->cpu->x].inc | (p->cpu->f & FC);}
-void iyp35(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->x = p->mem->rd(p->cpu->mptr) - 1; p->mem->wr(p->cpu->mptr,p->cpu->x); p->cpu->f = flag[p->cpu->x].dec | (p->cpu->f & FC);}
-void iyp36(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->mem->rd(p->cpu->pc++));}
+void iyp34(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->x = p->mem->rd(p->cpu->mptr) + 1; p->mem->wr(p->cpu->mptr,p->cpu->x); p->cpu->f = flag[p->cpu->x].inc | (p->cpu->f & FC);}
+void iyp35(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->x = p->mem->rd(p->cpu->mptr) - 1; p->mem->wr(p->cpu->mptr,p->cpu->x); p->cpu->f = flag[p->cpu->x].dec | (p->cpu->f & FC);}
+void iyp36(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->mem->rd(p->cpu->pc++));}
 // ld b,y
-void iyp44(Spec *p) {p->cpu->b = p->cpu->hy;}
-void iyp45(Spec *p) {p->cpu->b = p->cpu->ly;}
-void iyp46(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->b = p->mem->rd(p->cpu->mptr);}
+void iyp44(ZXBase* p) {p->cpu->b = p->cpu->hy;}
+void iyp45(ZXBase* p) {p->cpu->b = p->cpu->ly;}
+void iyp46(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->b = p->mem->rd(p->cpu->mptr);}
 // ld c,y
-void iyp4C(Spec *p) {p->cpu->c = p->cpu->hy;}
-void iyp4D(Spec *p) {p->cpu->c = p->cpu->ly;}
-void iyp4E(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->c = p->mem->rd(p->cpu->mptr);}
+void iyp4C(ZXBase* p) {p->cpu->c = p->cpu->hy;}
+void iyp4D(ZXBase* p) {p->cpu->c = p->cpu->ly;}
+void iyp4E(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->c = p->mem->rd(p->cpu->mptr);}
 // ld d,y
-void iyp54(Spec *p) {p->cpu->d = p->cpu->hy;}
-void iyp55(Spec *p) {p->cpu->d = p->cpu->ly;}
-void iyp56(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->d = p->mem->rd(p->cpu->mptr);}
+void iyp54(ZXBase* p) {p->cpu->d = p->cpu->hy;}
+void iyp55(ZXBase* p) {p->cpu->d = p->cpu->ly;}
+void iyp56(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->d = p->mem->rd(p->cpu->mptr);}
 // ld e,y
-void iyp5C(Spec *p) {p->cpu->e = p->cpu->hy;}
-void iyp5D(Spec *p) {p->cpu->e = p->cpu->ly;}
-void iyp5E(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->e = p->mem->rd(p->cpu->mptr);}
+void iyp5C(ZXBase* p) {p->cpu->e = p->cpu->hy;}
+void iyp5D(ZXBase* p) {p->cpu->e = p->cpu->ly;}
+void iyp5E(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->e = p->mem->rd(p->cpu->mptr);}
 // ld hy,r
-void iyp60(Spec *p) {p->cpu->hy = p->cpu->b;}
-void iyp61(Spec *p) {p->cpu->hy = p->cpu->c;}
-void iyp62(Spec *p) {p->cpu->hy = p->cpu->d;}
-void iyp63(Spec *p) {p->cpu->hy = p->cpu->e;}
-void iyp64(Spec*) {}
-void iyp65(Spec *p) {p->cpu->hy = p->cpu->ly;}
-void iyp66(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->h = p->mem->rd(p->cpu->mptr);}
-void iyp67(Spec *p) {p->cpu->hy = p->cpu->a;}
+void iyp60(ZXBase* p) {p->cpu->hy = p->cpu->b;}
+void iyp61(ZXBase* p) {p->cpu->hy = p->cpu->c;}
+void iyp62(ZXBase* p) {p->cpu->hy = p->cpu->d;}
+void iyp63(ZXBase* p) {p->cpu->hy = p->cpu->e;}
+void iyp64(ZXBase*) {}
+void iyp65(ZXBase* p) {p->cpu->hy = p->cpu->ly;}
+void iyp66(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->h = p->mem->rd(p->cpu->mptr);}
+void iyp67(ZXBase* p) {p->cpu->hy = p->cpu->a;}
 // ld ly,r
-void iyp68(Spec *p) {p->cpu->ly = p->cpu->b;}
-void iyp69(Spec *p) {p->cpu->ly = p->cpu->c;}
-void iyp6A(Spec *p) {p->cpu->ly = p->cpu->d;}
-void iyp6B(Spec *p) {p->cpu->ly = p->cpu->e;}
-void iyp6C(Spec *p) {p->cpu->ly = p->cpu->hy;}
-void iyp6D(Spec*) {}
-void iyp6E(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->l = p->mem->rd(p->cpu->mptr);}
-void iyp6F(Spec *p) {p->cpu->ly = p->cpu->a;}
+void iyp68(ZXBase* p) {p->cpu->ly = p->cpu->b;}
+void iyp69(ZXBase* p) {p->cpu->ly = p->cpu->c;}
+void iyp6A(ZXBase* p) {p->cpu->ly = p->cpu->d;}
+void iyp6B(ZXBase* p) {p->cpu->ly = p->cpu->e;}
+void iyp6C(ZXBase* p) {p->cpu->ly = p->cpu->hy;}
+void iyp6D(ZXBase*) {}
+void iyp6E(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->l = p->mem->rd(p->cpu->mptr);}
+void iyp6F(ZXBase* p) {p->cpu->ly = p->cpu->a;}
 // ld (iy+e),r
-void iyp70(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->b);}
-void iyp71(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->c);}
-void iyp72(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->d);}
-void iyp73(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->e);}
-void iyp74(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->h);}
-void iyp75(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->l);}
-void iyp77(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->a);}
+void iyp70(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->b);}
+void iyp71(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->c);}
+void iyp72(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->d);}
+void iyp73(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->e);}
+void iyp74(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->h);}
+void iyp75(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->l);}
+void iyp77(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->a);}
 // ld a,y
-void iyp7C(Spec *p) {p->cpu->a = p->cpu->hy;}
-void iyp7D(Spec *p) {p->cpu->a = p->cpu->ly;}
-void iyp7E(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->a = p->mem->rd(p->cpu->mptr);}
+void iyp7C(ZXBase* p) {p->cpu->a = p->cpu->hy;}
+void iyp7D(ZXBase* p) {p->cpu->a = p->cpu->ly;}
+void iyp7E(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->a = p->mem->rd(p->cpu->mptr);}
 // add y
-void iyp84(Spec *p) {p->cpu->f = flag[p->cpu->a].add[p->cpu->hy][0]; p->cpu->a += p->cpu->hy;}
-void iyp85(Spec *p) {p->cpu->f = flag[p->cpu->a].add[p->cpu->ly][0]; p->cpu->a += p->cpu->ly;}
-void iyp86(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->x = p->mem->rd(p->cpu->mptr); p->cpu->f = flag[p->cpu->a].add[p->cpu->x][0]; p->cpu->a += p->cpu->x;}
+void iyp84(ZXBase* p) {p->cpu->f = flag[p->cpu->a].add[p->cpu->hy][0]; p->cpu->a += p->cpu->hy;}
+void iyp85(ZXBase* p) {p->cpu->f = flag[p->cpu->a].add[p->cpu->ly][0]; p->cpu->a += p->cpu->ly;}
+void iyp86(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->x = p->mem->rd(p->cpu->mptr); p->cpu->f = flag[p->cpu->a].add[p->cpu->x][0]; p->cpu->a += p->cpu->x;}
 // adc y
-void iyp8C(Spec *p) {adcXX(p,p->cpu->hy);}
-void iyp8D(Spec *p) {adcXX(p,p->cpu->ly);}
-void iyp8E(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); adcXX(p,p->mem->rd(p->cpu->mptr));}
+void iyp8C(ZXBase* p) {adcXX(p,p->cpu->hy);}
+void iyp8D(ZXBase* p) {adcXX(p,p->cpu->ly);}
+void iyp8E(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); adcXX(p,p->mem->rd(p->cpu->mptr));}
 // sub y
-void iyp94(Spec *p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->hy][0]; p->cpu->a -= p->cpu->hy;}
-void iyp95(Spec *p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->ly][0]; p->cpu->a -= p->cpu->ly;}
-void iyp96(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->x = p->mem->rd(p->cpu->mptr); p->cpu->f = flag[p->cpu->a].sub[p->cpu->x][0]; p->cpu->a -= p->cpu->x;}
+void iyp94(ZXBase* p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->hy][0]; p->cpu->a -= p->cpu->hy;}
+void iyp95(ZXBase* p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->ly][0]; p->cpu->a -= p->cpu->ly;}
+void iyp96(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->x = p->mem->rd(p->cpu->mptr); p->cpu->f = flag[p->cpu->a].sub[p->cpu->x][0]; p->cpu->a -= p->cpu->x;}
 // sbc y
-void iyp9C(Spec *p) {sbcXX(p,p->cpu->hy);}
-void iyp9D(Spec *p) {sbcXX(p,p->cpu->ly);}
-void iyp9E(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); sbcXX(p,p->mem->rd(p->cpu->mptr));}
+void iyp9C(ZXBase* p) {sbcXX(p,p->cpu->hy);}
+void iyp9D(ZXBase* p) {sbcXX(p,p->cpu->ly);}
+void iyp9E(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); sbcXX(p,p->mem->rd(p->cpu->mptr));}
 // and y
-void iypA4(Spec *p) {p->cpu->a &= p->cpu->hy; p->cpu->f = flag[p->cpu->a].andf;}
-void iypA5(Spec *p) {p->cpu->a &= p->cpu->ly; p->cpu->f = flag[p->cpu->a].andf;}
-void iypA6(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->a &= p->mem->rd(p->cpu->mptr); p->cpu->f = flag[p->cpu->a].andf;}
+void iypA4(ZXBase* p) {p->cpu->a &= p->cpu->hy; p->cpu->f = flag[p->cpu->a].andf;}
+void iypA5(ZXBase* p) {p->cpu->a &= p->cpu->ly; p->cpu->f = flag[p->cpu->a].andf;}
+void iypA6(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->a &= p->mem->rd(p->cpu->mptr); p->cpu->f = flag[p->cpu->a].andf;}
 // xor y
-void iypAC(Spec *p) {p->cpu->a ^= p->cpu->hy; p->cpu->f = flag[p->cpu->a].orf;}
-void iypAD(Spec *p) {p->cpu->a ^= p->cpu->ly; p->cpu->f = flag[p->cpu->a].orf;}
-void iypAE(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->a ^= p->mem->rd(p->cpu->mptr); p->cpu->f = flag[p->cpu->a].orf;}
+void iypAC(ZXBase* p) {p->cpu->a ^= p->cpu->hy; p->cpu->f = flag[p->cpu->a].orf;}
+void iypAD(ZXBase* p) {p->cpu->a ^= p->cpu->ly; p->cpu->f = flag[p->cpu->a].orf;}
+void iypAE(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->a ^= p->mem->rd(p->cpu->mptr); p->cpu->f = flag[p->cpu->a].orf;}
 // or y
-void iypB4(Spec *p) {p->cpu->a |= p->cpu->hy; p->cpu->f = flag[p->cpu->a].orf;}
-void iypB5(Spec *p) {p->cpu->a |= p->cpu->ly; p->cpu->f = flag[p->cpu->a].orf;}
-void iypB6(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->a |= p->mem->rd(p->cpu->mptr); p->cpu->f = flag[p->cpu->a].orf;}
+void iypB4(ZXBase* p) {p->cpu->a |= p->cpu->hy; p->cpu->f = flag[p->cpu->a].orf;}
+void iypB5(ZXBase* p) {p->cpu->a |= p->cpu->ly; p->cpu->f = flag[p->cpu->a].orf;}
+void iypB6(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->a |= p->mem->rd(p->cpu->mptr); p->cpu->f = flag[p->cpu->a].orf;}
 // cp y
-void iypBC(Spec *p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->hy][0];}
-void iypBD(Spec *p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->ly][0];}
-void iypBE(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->f = flag[p->cpu->a].sub[p->mem->rd(p->cpu->mptr)][0];}
+void iypBC(ZXBase* p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->hy][0];}
+void iypBD(ZXBase* p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->ly][0];}
+void iypBE(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->f = flag[p->cpu->a].sub[p->mem->rd(p->cpu->mptr)][0];}
 // end
-void iypE1(Spec *p) {p->cpu->ly = p->mem->rd(p->cpu->sp++); p->cpu->hy = p->mem->rd(p->cpu->sp++);}
-void iypE5(Spec *p) {p->mem->wr(--p->cpu->sp,p->cpu->hy); p->mem->wr(--p->cpu->sp,p->cpu->ly);}
-void iypE3(Spec *p) {p->cpu->lptr = p->mem->rd(p->cpu->sp++); p->cpu->hptr = p->mem->rd(p->cpu->sp); p->mem->wr(p->cpu->sp--,p->cpu->hy); p->mem->wr(p->cpu->sp,p->cpu->ly); p->cpu->iy = p->cpu->mptr;}	// mptr = rp after operation
-void iypE9(Spec *p) {p->cpu->pc = p->cpu->iy;}
-void iypF9(Spec *p) {p->cpu->sp = p->cpu->iy;}
+void iypE1(ZXBase* p) {p->cpu->ly = p->mem->rd(p->cpu->sp++); p->cpu->hy = p->mem->rd(p->cpu->sp++);}
+void iypE5(ZXBase* p) {p->mem->wr(--p->cpu->sp,p->cpu->hy); p->mem->wr(--p->cpu->sp,p->cpu->ly);}
+void iypE3(ZXBase* p) {p->cpu->lptr = p->mem->rd(p->cpu->sp++); p->cpu->hptr = p->mem->rd(p->cpu->sp); p->mem->wr(p->cpu->sp--,p->cpu->hy); p->mem->wr(p->cpu->sp,p->cpu->ly); p->cpu->iy = p->cpu->mptr;}	// mptr = rp after operation
+void iypE9(ZXBase* p) {p->cpu->pc = p->cpu->iy;}
+void iypF9(ZXBase* p) {p->cpu->sp = p->cpu->iy;}
 
 //==================
 
@@ -129,7 +129,7 @@ ZOp iypref[256]={
 	ZOp(&npr0E,7,"ld c,:1"),
 	ZOp(&npr0F,4,"rrca"),
 
-	ZOp(&npr10,8,"djnz :3"),
+	ZOp(&npr10,8,CND_DJNZ,5,0,"djnz :3",0),
 	ZOp(&npr11,10,"ld de,:2"),
 	ZOp(&npr12,7,"ld (de),a"),
 	ZOp(&npr13,6,"inc de"),
@@ -147,7 +147,7 @@ ZOp iypref[256]={
 	ZOp(&npr1E,7,"ld e,:1"),
 	ZOp(&npr1F,4,"rra"),
 
-	ZOp(&npr20,7,"jr nz,:3"),
+	ZOp(&npr20,7,CND_Z,0,5,"jr nz,:3",0),
 	ZOp(&iyp21,10,"ld iy,:2"),
 	ZOp(&iyp22,16,"ld (:2),iy"),
 	ZOp(&iyp23,6,"inc iy"),
@@ -156,7 +156,7 @@ ZOp iypref[256]={
 	ZOp(&iyp26,7,"ld hy,:1"),
 	ZOp(&npr27,4,"daa"),
 
-	ZOp(&npr28,7,"jr z,:3"),
+	ZOp(&npr28,7,CND_Z,5,0,"jr z,:3",0),
 	ZOp(&iyp29,11,"add iy,iy"),
 	ZOp(&iyp2A,16,"ld iy,(:2)"),
 	ZOp(&iyp2B,6,"dec iy"),
@@ -165,7 +165,7 @@ ZOp iypref[256]={
 	ZOp(&iyp2E,7,"ld ly,:1"),
 	ZOp(&npr2F,4,"cpl"),
 
-	ZOp(&npr30,7,"jr nc,:3"),
+	ZOp(&npr30,7,CND_C,0,5,"jr nc,:3",0),
 	ZOp(&npr31,10,"ld sp,:2"),
 	ZOp(&npr32,13,"ld (:2),a"),
 	ZOp(&npr33,6,"inc sp"),
@@ -174,7 +174,7 @@ ZOp iypref[256]={
 	ZOp(&iyp36,19,"ld (iy:4),:1"),
 	ZOp(&npr37,4,"scf"),
 
-	ZOp(&npr38,7,"jr c,:3"),
+	ZOp(&npr38,7,CND_C,5,0,"jr c,:3",0),
 	ZOp(&iyp39,11,"add iy,sp"),
 	ZOp(&npr3A,13,"ld a,(:2)"),
 	ZOp(&npr3B,6,"dec sp"),
@@ -327,75 +327,75 @@ ZOp iypref[256]={
 	ZOp(&iypBE,15,"cp (iy:4)"),
 	ZOp(&nprBF,4,"cp a"),
 
-	ZOp(&nprC0,5,"ret nz"),
+	ZOp(&nprC0,5,CND_Z,0,6,"ret nz",0),		// [+6]
 	ZOp(&nprC1,10,"pop bc"),
 	ZOp(&nprC2,10,"jp nz,:2"),
 	ZOp(&nprC3,10,"jp :2"),
-	ZOp(&nprC4,10,"call nz,:2"),
+	ZOp(&nprC4,10,CND_Z,0,7,"call nz,:2",0),	// [+7]
 	ZOp(&nprC5,11,"push bc"),
 	ZOp(&nprC6,7,"add a,:1"),
 	ZOp(&nprC7,11,"rst #00"),
 
-	ZOp(&nprC8,5,"ret z"),
+	ZOp(&nprC8,5,CND_Z,6,0,"ret z",0),		// [+7]
 	ZOp(&nprC9,10,"ret"),
 	ZOp(&nprCA,10,"jp z,:2"),
-	ZOp(&nprCB,4,"#CB",true),
+	ZOp(&nprCB,4,CND_NONE,0,0,"#CB",ZOP_PREFIX),
 	ZOp(&nprCC,10,"call z,:2"),
 	ZOp(&nprCD,10,"call :2"),	// [+4 +3]: it acts like CALL true,nn
 	ZOp(&nprCE,7,"adc a,:1"),
 	ZOp(&nprCF,11,"rst #08"),
 
-	ZOp(&nprD0,5,"ret nc"),
+	ZOp(&nprD0,5,CND_C,0,6,"ret nc",0),		// [+6]
 	ZOp(&nprD1,10,"pop de"),
 	ZOp(&nprD2,10,"jp nc,:2"),
-	ZOp(&nprD3,11,"out (:2),a"),
-	ZOp(&nprD4,10,"call nc,:2"),
+	ZOp(&nprD3,11,"out (:1),a"),
+	ZOp(&nprD4,10,CND_C,0,7,"call nc,:2",0),	// [+7]
 	ZOp(&nprD5,11,"push de"),
 	ZOp(&nprD6,7,"sub :1"),
 	ZOp(&nprD7,11,"rst #10"),
 
-	ZOp(&nprD8,5,"ret c"),
+	ZOp(&nprD8,5,CND_C,6,0,"ret c",0),		// [+6]
 	ZOp(&nprD9,4,"exx"),
 	ZOp(&nprDA,10,"jp c,:2"),
 	ZOp(&nprDB,11,"in a,(:1)"),
-	ZOp(&nprDC,10,"call c,:2"),
-	ZOp(&nprDD,4,"#DD",true),
+	ZOp(&nprDC,10,CND_C,7,0,"call c,:2",0),	// [+7]
+	ZOp(&nprDD,4,CND_NONE,0,0,"#DD",ZOP_PREFIX),
 	ZOp(&nprDE,7,"sbc a,:1"),
 	ZOp(&nprDF,11,"rst #18"),
 
-	ZOp(&nprE0,5,"ret po"),
+	ZOp(&nprE0,5,CND_P,0,6,"ret po",0),		// [+6]
 	ZOp(&iypE1,10,"pop iy"),
 	ZOp(&nprE2,10,"jp po,:2"),
 	ZOp(&iypE3,19,"ex (sp),iy"),
-	ZOp(&nprE4,10,"call c,:2"),
+	ZOp(&nprE4,10,CND_P,0,7,"call po,:2",0),	// [+7]
 	ZOp(&iypE5,11,"push iy"),
 	ZOp(&nprE6,7,"and :1"),
 	ZOp(&nprE7,11,"rst #20"),
 
-	ZOp(&nprE8,5,"ret pe"),
+	ZOp(&nprE8,5,CND_P,6,0,"ret pe",0),		// [+6]
 	ZOp(&iypE9,4,"jp (iy)"),
 	ZOp(&nprEA,10,"jp pe,:2"),
 	ZOp(&nprEB,4,"ex de,hl"),
-	ZOp(&nprEC,10,"call pe,:2"),
-	ZOp(&nprEB,4,"#EB",true),
+	ZOp(&nprEC,10,CND_P,7,0,"call pe,:2",0),	// [+7]
+	ZOp(&nprEB,4,CND_NONE,0,0,"#EB",ZOP_PREFIX),
 	ZOp(&nprEE,7,"xor :1"),
 	ZOp(&nprEF,11,"rst #28"),
 
-	ZOp(&nprF0,5,"ret p"),
+	ZOp(&nprF0,5,CND_S,0,6,"ret p",0),		// [+6]
 	ZOp(&nprF1,10,"pop af"),
 	ZOp(&nprF2,10,"jp p,:2"),
 	ZOp(&nprF3,4,"di"),
-	ZOp(&nprF4,10,"call p,:2"),
+	ZOp(&nprF4,10,CND_S,0,7,"call p,:2",0),	// [+7]
 	ZOp(&nprF5,11,"push af"),
 	ZOp(&nprF6,7,"xor :1"),
 	ZOp(&nprF7,11,"rst #30"),
 
-	ZOp(&nprF8,5,"ret m"),
+	ZOp(&nprF8,5,CND_S,6,0,"ret m",0),		// [+6]
 	ZOp(&iypF9,6,"ld sp,iy"),
 	ZOp(&nprFA,10,"jp m,:2"),
 	ZOp(&nprFB,4,"ei"),
-	ZOp(&nprFC,10,"call m,:2"),
-	ZOp(&nprFD,4,"#FD",true),
+	ZOp(&nprFC,10,CND_S,7,0,"call m,:2",0),	// [+7]
+	ZOp(&nprFD,4,CND_NONE,0,0,"#FD",ZOP_PREFIX),
 	ZOp(&nprFE,7,"cp :1"),
 	ZOp(&nprFF,11,"rst #38")
 };

@@ -36,6 +36,6 @@ struct Settings {
 	void load(bool);
 	void save();
 };
-extern Settings *sets;
+//extern Settings *sets;
 
 #endif

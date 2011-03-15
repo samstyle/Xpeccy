@@ -1,114 +1,114 @@
 // add ix,rp
-void ixp09(Spec *p) {addIX(p,p->cpu->bc);}
-void ixp19(Spec *p) {addIX(p,p->cpu->de);}
-void ixp29(Spec *p) {addIX(p,p->cpu->ix);}
-void ixp39(Spec *p) {addIX(p,p->cpu->sp);}
+void ixp09(ZXBase* p) {addIX(p,p->cpu->bc);}
+void ixp19(ZXBase* p) {addIX(p,p->cpu->de);}
+void ixp29(ZXBase* p) {addIX(p,p->cpu->ix);}
+void ixp39(ZXBase* p) {addIX(p,p->cpu->sp);}
 
 // inc/dec/ld ix
-void ixp23(Spec *p) {p->cpu->ix++;}
-void ixp2B(Spec *p) {p->cpu->ix--;}
-void ixp21(Spec *p) {p->cpu->lx = p->mem->rd(p->cpu->pc++); p->cpu->hx = p->mem->rd(p->cpu->pc++);}
+void ixp23(ZXBase* p) {p->cpu->ix++;}
+void ixp2B(ZXBase* p) {p->cpu->ix--;}
+void ixp21(ZXBase* p) {p->cpu->lx = p->mem->rd(p->cpu->pc++); p->cpu->hx = p->mem->rd(p->cpu->pc++);}
 // ld (nn),ix | ld ix,(nn)	mptr = nn + 1
-void ixp22(Spec *p) {p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->cpu->hptr = p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr++,p->cpu->lx); p->mem->wr(p->cpu->mptr,p->cpu->hx);}
-void ixp2A(Spec *p) {p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->cpu->hptr = p->mem->rd(p->cpu->pc++); p->cpu->lx = p->mem->rd(p->cpu->mptr++); p->cpu->hx = p->mem->rd(p->cpu->mptr);}
+void ixp22(ZXBase* p) {p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->cpu->hptr = p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr++,p->cpu->lx); p->mem->wr(p->cpu->mptr,p->cpu->hx);}
+void ixp2A(ZXBase* p) {p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->cpu->hptr = p->mem->rd(p->cpu->pc++); p->cpu->lx = p->mem->rd(p->cpu->mptr++); p->cpu->hx = p->mem->rd(p->cpu->mptr);}
 
 // inc/dec/ld lx
-void ixp2C(Spec *p) {p->cpu->lx++; p->cpu->f = flag[p->cpu->lx].inc | (p->cpu->f & FC);}
-void ixp2D(Spec *p) {p->cpu->lx--; p->cpu->f = flag[p->cpu->lx].dec | (p->cpu->f & FC);}
-void ixp2E(Spec *p) {p->cpu->lx = p->mem->rd(p->cpu->pc++);}
+void ixp2C(ZXBase* p) {p->cpu->lx++; p->cpu->f = flag[p->cpu->lx].inc | (p->cpu->f & FC);}
+void ixp2D(ZXBase* p) {p->cpu->lx--; p->cpu->f = flag[p->cpu->lx].dec | (p->cpu->f & FC);}
+void ixp2E(ZXBase* p) {p->cpu->lx = p->mem->rd(p->cpu->pc++);}
 // inc/dec/ld hx
-void ixp24(Spec *p) {p->cpu->hx++; p->cpu->f = flag[p->cpu->hx].inc | (p->cpu->f & FC);}
-void ixp25(Spec *p) {p->cpu->hx--; p->cpu->f = flag[p->cpu->hx].dec | (p->cpu->f & FC);}
-void ixp26(Spec *p) {p->cpu->hx = p->mem->rd(p->cpu->pc++);}
+void ixp24(ZXBase* p) {p->cpu->hx++; p->cpu->f = flag[p->cpu->hx].inc | (p->cpu->f & FC);}
+void ixp25(ZXBase* p) {p->cpu->hx--; p->cpu->f = flag[p->cpu->hx].dec | (p->cpu->f & FC);}
+void ixp26(ZXBase* p) {p->cpu->hx = p->mem->rd(p->cpu->pc++);}
 // inc/dec/ld (ix+e)	mptr = ix + e
-void ixp34(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->x = p->mem->rd(p->cpu->mptr) + 1; p->mem->wr(p->cpu->mptr,p->cpu->x); p->cpu->f = flag[p->cpu->x].inc | (p->cpu->f & FC);}
-void ixp35(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->x = p->mem->rd(p->cpu->mptr) - 1; p->mem->wr(p->cpu->mptr,p->cpu->x); p->cpu->f = flag[p->cpu->x].dec | (p->cpu->f & FC);}
-void ixp36(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->mem->rd(p->cpu->pc++));}
+void ixp34(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->x = p->mem->rd(p->cpu->mptr) + 1; p->mem->wr(p->cpu->mptr,p->cpu->x); p->cpu->f = flag[p->cpu->x].inc | (p->cpu->f & FC);}
+void ixp35(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->x = p->mem->rd(p->cpu->mptr) - 1; p->mem->wr(p->cpu->mptr,p->cpu->x); p->cpu->f = flag[p->cpu->x].dec | (p->cpu->f & FC);}
+void ixp36(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->mem->rd(p->cpu->pc++));}
 
 // ld b,x
-void ixp44(Spec *p) {p->cpu->b = p->cpu->hx;}
-void ixp45(Spec *p) {p->cpu->b = p->cpu->lx;}
-void ixp46(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->b = p->mem->rd(p->cpu->mptr);}
+void ixp44(ZXBase* p) {p->cpu->b = p->cpu->hx;}
+void ixp45(ZXBase* p) {p->cpu->b = p->cpu->lx;}
+void ixp46(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->b = p->mem->rd(p->cpu->mptr);}
 // ld c,x
-void ixp4C(Spec *p) {p->cpu->c = p->cpu->hx;}
-void ixp4D(Spec *p) {p->cpu->c = p->cpu->lx;}
-void ixp4E(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->c = p->mem->rd(p->cpu->mptr);}
+void ixp4C(ZXBase* p) {p->cpu->c = p->cpu->hx;}
+void ixp4D(ZXBase* p) {p->cpu->c = p->cpu->lx;}
+void ixp4E(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->c = p->mem->rd(p->cpu->mptr);}
 // ld d,x
-void ixp54(Spec *p) {p->cpu->d = p->cpu->hx;}
-void ixp55(Spec *p) {p->cpu->d = p->cpu->lx;}
-void ixp56(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->d = p->mem->rd(p->cpu->mptr);}
+void ixp54(ZXBase* p) {p->cpu->d = p->cpu->hx;}
+void ixp55(ZXBase* p) {p->cpu->d = p->cpu->lx;}
+void ixp56(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->d = p->mem->rd(p->cpu->mptr);}
 // ld e,x
-void ixp5C(Spec *p) {p->cpu->e = p->cpu->hx;}
-void ixp5D(Spec *p) {p->cpu->e = p->cpu->lx;}
-void ixp5E(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->e = p->mem->rd(p->cpu->mptr);}
+void ixp5C(ZXBase* p) {p->cpu->e = p->cpu->hx;}
+void ixp5D(ZXBase* p) {p->cpu->e = p->cpu->lx;}
+void ixp5E(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->e = p->mem->rd(p->cpu->mptr);}
 // ld hx,r
-void ixp60(Spec *p) {p->cpu->hx = p->cpu->b;}
-void ixp61(Spec *p) {p->cpu->hx = p->cpu->c;}
-void ixp62(Spec *p) {p->cpu->hx = p->cpu->d;}
-void ixp63(Spec *p) {p->cpu->hx = p->cpu->e;}
-void ixp64(Spec*) {}
-void ixp65(Spec *p) {p->cpu->hx = p->cpu->lx;}
-void ixp66(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->h = p->mem->rd(p->cpu->mptr);}
-void ixp67(Spec *p) {p->cpu->hx = p->cpu->a;}
+void ixp60(ZXBase* p) {p->cpu->hx = p->cpu->b;}
+void ixp61(ZXBase* p) {p->cpu->hx = p->cpu->c;}
+void ixp62(ZXBase* p) {p->cpu->hx = p->cpu->d;}
+void ixp63(ZXBase* p) {p->cpu->hx = p->cpu->e;}
+void ixp64(ZXBase*) {}
+void ixp65(ZXBase* p) {p->cpu->hx = p->cpu->lx;}
+void ixp66(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->h = p->mem->rd(p->cpu->mptr);}
+void ixp67(ZXBase* p) {p->cpu->hx = p->cpu->a;}
 // ld lx,r
-void ixp68(Spec *p) {p->cpu->lx = p->cpu->b;}
-void ixp69(Spec *p) {p->cpu->lx = p->cpu->c;}
-void ixp6A(Spec *p) {p->cpu->lx = p->cpu->d;}
-void ixp6B(Spec *p) {p->cpu->lx = p->cpu->e;}
-void ixp6C(Spec *p) {p->cpu->lx = p->cpu->hx;}
-void ixp6D(Spec*) {}
-void ixp6E(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->l = p->mem->rd(p->cpu->mptr);}
-void ixp6F(Spec *p) {p->cpu->lx = p->cpu->a;}
+void ixp68(ZXBase* p) {p->cpu->lx = p->cpu->b;}
+void ixp69(ZXBase* p) {p->cpu->lx = p->cpu->c;}
+void ixp6A(ZXBase* p) {p->cpu->lx = p->cpu->d;}
+void ixp6B(ZXBase* p) {p->cpu->lx = p->cpu->e;}
+void ixp6C(ZXBase* p) {p->cpu->lx = p->cpu->hx;}
+void ixp6D(ZXBase*) {}
+void ixp6E(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->l = p->mem->rd(p->cpu->mptr);}
+void ixp6F(ZXBase* p) {p->cpu->lx = p->cpu->a;}
 // ld (ix+e),r
-void ixp70(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->b);}
-void ixp71(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->c);}
-void ixp72(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->d);}
-void ixp73(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->e);}
-void ixp74(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->h);}
-void ixp75(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->l);}
-void ixp77(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->a);}
+void ixp70(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->b);}
+void ixp71(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->c);}
+void ixp72(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->d);}
+void ixp73(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->e);}
+void ixp74(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->h);}
+void ixp75(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->l);}
+void ixp77(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->mem->wr(p->cpu->mptr,p->cpu->a);}
 // ld a,x
-void ixp7C(Spec *p) {p->cpu->a = p->cpu->hx;}
-void ixp7D(Spec *p) {p->cpu->a = p->cpu->lx;}
-void ixp7E(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->a = p->mem->rd(p->cpu->mptr);}
+void ixp7C(ZXBase* p) {p->cpu->a = p->cpu->hx;}
+void ixp7D(ZXBase* p) {p->cpu->a = p->cpu->lx;}
+void ixp7E(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->a = p->mem->rd(p->cpu->mptr);}
 // add a,x
-void ixp84(Spec *p) {p->cpu->f = flag[p->cpu->a].add[p->cpu->hx][0]; p->cpu->a += p->cpu->hx;}
-void ixp85(Spec *p) {p->cpu->f = flag[p->cpu->a].add[p->cpu->lx][0]; p->cpu->a += p->cpu->lx;}
-void ixp86(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->x = p->mem->rd(p->cpu->mptr); p->cpu->f = flag[p->cpu->a].add[p->cpu->x][0]; p->cpu->a += p->cpu->x;}
+void ixp84(ZXBase* p) {p->cpu->f = flag[p->cpu->a].add[p->cpu->hx][0]; p->cpu->a += p->cpu->hx;}
+void ixp85(ZXBase* p) {p->cpu->f = flag[p->cpu->a].add[p->cpu->lx][0]; p->cpu->a += p->cpu->lx;}
+void ixp86(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->x = p->mem->rd(p->cpu->mptr); p->cpu->f = flag[p->cpu->a].add[p->cpu->x][0]; p->cpu->a += p->cpu->x;}
 // adc a,x
-void ixp8C(Spec *p) {adcXX(p,p->cpu->hx);}
-void ixp8D(Spec *p) {adcXX(p,p->cpu->lx);}
-void ixp8E(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); adcXX(p,p->mem->rd(p->cpu->mptr));}
+void ixp8C(ZXBase* p) {adcXX(p,p->cpu->hx);}
+void ixp8D(ZXBase* p) {adcXX(p,p->cpu->lx);}
+void ixp8E(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); adcXX(p,p->mem->rd(p->cpu->mptr));}
 // sub x
-void ixp94(Spec *p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->hx][0]; p->cpu->a -= p->cpu->hx;}
-void ixp95(Spec *p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->lx][0]; p->cpu->a -= p->cpu->lx;}
-void ixp96(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->x = p->mem->rd(p->cpu->mptr); p->cpu->f = flag[p->cpu->a].sub[p->cpu->x][0]; p->cpu->a -= p->cpu->x;}
+void ixp94(ZXBase* p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->hx][0]; p->cpu->a -= p->cpu->hx;}
+void ixp95(ZXBase* p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->lx][0]; p->cpu->a -= p->cpu->lx;}
+void ixp96(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->x = p->mem->rd(p->cpu->mptr); p->cpu->f = flag[p->cpu->a].sub[p->cpu->x][0]; p->cpu->a -= p->cpu->x;}
 // sbc a,x
-void ixp9C(Spec *p) {sbcXX(p,p->cpu->hx);}
-void ixp9D(Spec *p) {sbcXX(p,p->cpu->lx);}
-void ixp9E(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); sbcXX(p,p->mem->rd(p->cpu->mptr));}
+void ixp9C(ZXBase* p) {sbcXX(p,p->cpu->hx);}
+void ixp9D(ZXBase* p) {sbcXX(p,p->cpu->lx);}
+void ixp9E(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); sbcXX(p,p->mem->rd(p->cpu->mptr));}
 // and x
-void ixpA4(Spec *p) {p->cpu->a &= p->cpu->hx; p->cpu->f = flag[p->cpu->a].andf;}
-void ixpA5(Spec *p) {p->cpu->a &= p->cpu->lx; p->cpu->f = flag[p->cpu->a].andf;}
-void ixpA6(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->a &= p->mem->rd(p->cpu->mptr); p->cpu->f = flag[p->cpu->a].andf;}
+void ixpA4(ZXBase* p) {p->cpu->a &= p->cpu->hx; p->cpu->f = flag[p->cpu->a].andf;}
+void ixpA5(ZXBase* p) {p->cpu->a &= p->cpu->lx; p->cpu->f = flag[p->cpu->a].andf;}
+void ixpA6(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->a &= p->mem->rd(p->cpu->mptr); p->cpu->f = flag[p->cpu->a].andf;}
 // xor x
-void ixpAC(Spec *p) {p->cpu->a ^= p->cpu->hx; p->cpu->f = flag[p->cpu->a].orf;}
-void ixpAD(Spec *p) {p->cpu->a ^= p->cpu->lx; p->cpu->f = flag[p->cpu->a].orf;}
-void ixpAE(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->a ^= p->mem->rd(p->cpu->mptr); p->cpu->f = flag[p->cpu->a].orf;}
+void ixpAC(ZXBase* p) {p->cpu->a ^= p->cpu->hx; p->cpu->f = flag[p->cpu->a].orf;}
+void ixpAD(ZXBase* p) {p->cpu->a ^= p->cpu->lx; p->cpu->f = flag[p->cpu->a].orf;}
+void ixpAE(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->a ^= p->mem->rd(p->cpu->mptr); p->cpu->f = flag[p->cpu->a].orf;}
 // or x
-void ixpB4(Spec *p) {p->cpu->a |= p->cpu->hx; p->cpu->f = flag[p->cpu->a].orf;}
-void ixpB5(Spec *p) {p->cpu->a |= p->cpu->lx; p->cpu->f = flag[p->cpu->a].orf;}
-void ixpB6(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->a |= p->mem->rd(p->cpu->mptr); p->cpu->f = flag[p->cpu->a].orf;}
+void ixpB4(ZXBase* p) {p->cpu->a |= p->cpu->hx; p->cpu->f = flag[p->cpu->a].orf;}
+void ixpB5(ZXBase* p) {p->cpu->a |= p->cpu->lx; p->cpu->f = flag[p->cpu->a].orf;}
+void ixpB6(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->a |= p->mem->rd(p->cpu->mptr); p->cpu->f = flag[p->cpu->a].orf;}
 // cp x
-void ixpBC(Spec *p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->hx][0];}
-void ixpBD(Spec *p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->lx][0];}
-void ixpBE(Spec *p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->f = flag[p->cpu->a].sub[p->mem->rd(p->cpu->mptr)][0];}
+void ixpBC(ZXBase* p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->hx][0];}
+void ixpBD(ZXBase* p) {p->cpu->f = flag[p->cpu->a].sub[p->cpu->lx][0];}
+void ixpBE(ZXBase* p) {p->cpu->mptr = p->cpu->ix + (signed char)p->mem->rd(p->cpu->pc++); p->cpu->f = flag[p->cpu->a].sub[p->mem->rd(p->cpu->mptr)][0];}
 // end - pop ix;push ix;ex (sp),ix;jp (ix);ld sp,ix
-void ixpE1(Spec *p) {p->cpu->lx = p->mem->rd(p->cpu->sp++); p->cpu->hx = p->mem->rd(p->cpu->sp++);}	// pop
-void ixpE5(Spec *p) {p->mem->wr(--p->cpu->sp,p->cpu->hx); p->mem->wr(--p->cpu->sp,p->cpu->lx);}		// push
-void ixpE3(Spec *p) {p->cpu->lptr = p->mem->rd(p->cpu->sp++); p->cpu->hptr = p->mem->rd(p->cpu->sp); p->mem->wr(p->cpu->sp--,p->cpu->hx); p->mem->wr(p->cpu->sp,p->cpu->lx); p->cpu->ix = p->cpu->mptr;}	// mptr = rp after operation
-void ixpE9(Spec *p) {p->cpu->pc = p->cpu->ix;}
-void ixpF9(Spec *p) {p->cpu->sp = p->cpu->ix;}
+void ixpE1(ZXBase* p) {p->cpu->lx = p->mem->rd(p->cpu->sp++); p->cpu->hx = p->mem->rd(p->cpu->sp++);}	// pop
+void ixpE5(ZXBase* p) {p->mem->wr(--p->cpu->sp,p->cpu->hx); p->mem->wr(--p->cpu->sp,p->cpu->lx);}		// push
+void ixpE3(ZXBase* p) {p->cpu->lptr = p->mem->rd(p->cpu->sp++); p->cpu->hptr = p->mem->rd(p->cpu->sp); p->mem->wr(p->cpu->sp--,p->cpu->hx); p->mem->wr(p->cpu->sp,p->cpu->lx); p->cpu->ix = p->cpu->mptr;}	// mptr = rp after operation
+void ixpE9(ZXBase* p) {p->cpu->pc = p->cpu->ix;}
+void ixpF9(ZXBase* p) {p->cpu->sp = p->cpu->ix;}
 
 //==================
 
@@ -131,7 +131,7 @@ ZOp ixpref[256]={
 	ZOp(&npr0E,7,"ld c,:1"),
 	ZOp(&npr0F,4,"rrca"),
 
-	ZOp(&npr10,8,"djnz :3"),
+	ZOp(&npr10,8,CND_DJNZ,5,0,"djnz :3",0),
 	ZOp(&npr11,10,"ld de,:2"),
 	ZOp(&npr12,7,"ld (de),a"),
 	ZOp(&npr13,6,"inc de"),
@@ -149,7 +149,7 @@ ZOp ixpref[256]={
 	ZOp(&npr1E,7,"ld e,:1"),
 	ZOp(&npr1F,4,"rra"),
 
-	ZOp(&npr20,7,"jr nz,:3"),
+	ZOp(&npr20,7,CND_Z,0,5,"jr nz,:3",0),
 	ZOp(&ixp21,10,"ld ix,:2"),
 	ZOp(&ixp22,16,"ld (:2),ix"),
 	ZOp(&ixp23,6,"inc ix"),
@@ -158,7 +158,7 @@ ZOp ixpref[256]={
 	ZOp(&ixp26,7,"ld hx,:1"),
 	ZOp(&npr27,4,"daa"),
 
-	ZOp(&npr28,7,"jr z,:3"),
+	ZOp(&npr28,7,CND_Z,5,0,"jr z,:3",0),
 	ZOp(&ixp29,11,"add ix,ix"),
 	ZOp(&ixp2A,16,"ld ix,(:2)"),
 	ZOp(&ixp2B,6,"dec ix"),
@@ -167,7 +167,7 @@ ZOp ixpref[256]={
 	ZOp(&ixp2E,7,"ld lx,:1"),
 	ZOp(&npr2F,4,"cpl"),
 
-	ZOp(&npr30,7,"jr nc,:3"),
+	ZOp(&npr30,7,CND_C,0,5,"jr nc,:3",0),
 	ZOp(&npr31,10,"ld sp,:2"),
 	ZOp(&npr32,13,"ld (:2),a"),
 	ZOp(&npr33,6,"inc sp"),
@@ -176,7 +176,7 @@ ZOp ixpref[256]={
 	ZOp(&ixp36,19,"ld (ix:4),:1"),
 	ZOp(&npr37,4,"scf"),
 
-	ZOp(&npr38,7,"jr c,:3"),
+	ZOp(&npr38,7,CND_C,5,0,"jr c,:3",0),
 	ZOp(&ixp39,11,"add ix,sp"),
 	ZOp(&npr3A,13,"ld a,(:2)"),
 	ZOp(&npr3B,6,"dec sp"),
@@ -329,75 +329,75 @@ ZOp ixpref[256]={
 	ZOp(&ixpBE,15,"cp (ix:4)"),
 	ZOp(&nprBF,4,"cp a"),
 
-	ZOp(&nprC0,5,"ret nz"),
+	ZOp(&nprC0,5,CND_Z,0,6,"ret nz",0),
 	ZOp(&nprC1,10,"pop bc"),
 	ZOp(&nprC2,10,"jp nz,:2"),
 	ZOp(&nprC3,10,"jp :2"),
-	ZOp(&nprC4,10,"call nz,:2"),
+	ZOp(&nprC4,10,CND_Z,0,7,"call nz,:2",0),
 	ZOp(&nprC5,11,"push bc"),
 	ZOp(&nprC6,7,"add a,:1"),
 	ZOp(&nprC7,11,"rst #00"),
 
-	ZOp(&nprC8,5,"ret z"),
+	ZOp(&nprC8,5,CND_Z,6,0,"ret z",0),
 	ZOp(&nprC9,10,"ret"),
 	ZOp(&nprCA,10,"jp z,:2"),
-	ZOp(&nprCB,4,"#CB",true),
-	ZOp(&nprCC,10,"call z,:2"),
-	ZOp(&nprCD,10,"call :2"),	// [+4 +3]: acts like CALL true,nn
+	ZOp(&nprCB,4,CND_NONE,0,0,"#CB",ZOP_PREFIX),
+	ZOp(&nprCC,10,CND_Z,7,0,"call z,:2",0),
+	ZOp(&nprCD,17,"call :2"),
 	ZOp(&nprCE,7,"adc a,:1"),
 	ZOp(&nprCF,11,"rst #08"),
 
-	ZOp(&nprD0,5,"ret nc"),
+	ZOp(&nprD0,5,CND_C,0,6,"ret nc",0),
 	ZOp(&nprD1,10,"pop de"),
 	ZOp(&nprD2,10,"jp nc,:2"),
 	ZOp(&nprD3,11,"out (:2),a"),
-	ZOp(&nprD4,10,"call nc,:2"),
+	ZOp(&nprD4,10,CND_C,0,7,"call nc,:2",0),
 	ZOp(&nprD5,11,"push de"),
 	ZOp(&nprD6,7,"sub :1"),
 	ZOp(&nprD7,11,"rst #10"),
 
-	ZOp(&nprD8,5,"ret c"),
+	ZOp(&nprD8,5,CND_C,6,0,"ret c",0),
 	ZOp(&nprD9,4,"exx"),
 	ZOp(&nprDA,10,"jp c,:2"),
 	ZOp(&nprDB,11,"in a,(:1)"),
-	ZOp(&nprDC,10,"call c,:2"),
-	ZOp(&nprDD,4,"#DD",true),
+	ZOp(&nprDC,10,CND_C,7,0,"call c,:2",0),
+	ZOp(&nprDD,4,CND_NONE,0,0,"#DD",ZOP_PREFIX),
 	ZOp(&nprDE,7,"sbc a,:1"),
 	ZOp(&nprDF,11,"rst #18"),
 
-	ZOp(&nprE0,5,"ret po"),
+	ZOp(&nprE0,5,CND_P,0,6,"ret po",0),
 	ZOp(&ixpE1,10,"pop ix"),
 	ZOp(&nprE2,10,"jp po,:2"),
 	ZOp(&ixpE3,19,"ex (sp),ix"),
-	ZOp(&nprE4,10,"call c,:2"),
+	ZOp(&nprE4,10,CND_P,0,7,"call po,:2",0),
 	ZOp(&ixpE5,11,"push ix"),
 	ZOp(&nprE6,7,"and :1"),
 	ZOp(&nprE7,11,"rst #20"),
 
-	ZOp(&nprE8,5,"ret pe"),
+	ZOp(&nprE8,5,CND_P,6,0,"ret pe",0),
 	ZOp(&ixpE9,4,"jp (ix)"),
 	ZOp(&nprEA,10,"jp pe,:2"),
 	ZOp(&nprEB,4,"ex de,hl"),
-	ZOp(&nprEC,10,"call pe,:2"),
-	ZOp(&nprED,4,"#ED",true),
+	ZOp(&nprEC,10,CND_P,7,0,"call pe,:2",0),
+	ZOp(&nprED,4,CND_NONE,0,0,"#ED",ZOP_PREFIX),
 	ZOp(&nprEE,7,"xor :1"),
 	ZOp(&nprEF,11,"rst #28"),
 
-	ZOp(&nprF0,5,"ret p"),
+	ZOp(&nprF0,5,CND_S,0,6,"ret p",0),
 	ZOp(&nprF1,10,"pop af"),
 	ZOp(&nprF2,10,"jp p,:2"),
 	ZOp(&nprF3,4,"di"),
-	ZOp(&nprF4,10,"call p,:2"),
+	ZOp(&nprF4,10,CND_S,0,7,"call p,:2",0),
 	ZOp(&nprF5,11,"push af"),
 	ZOp(&nprF6,7,"xor :1"),
 	ZOp(&nprF7,11,"rst #30"),
 
-	ZOp(&nprF8,5,"ret m"),
+	ZOp(&nprF8,5,CND_S,6,0,"ret m",0),
 	ZOp(&ixpF9,6,"ld sp,ix"),
 	ZOp(&nprFA,10,"jp m,:2"),
 	ZOp(&nprFB,4,"ei"),
-	ZOp(&nprFC,10,"call m,:2"),
-	ZOp(&nprFD,4,"#FD",true),
+	ZOp(&nprFC,10,CND_S,7,0,"call m,:2",0),
+	ZOp(&nprFD,4,CND_NONE,0,0,"#FD",ZOP_PREFIX),
 	ZOp(&nprFE,7,"cp :1"),
 	ZOp(&nprFF,11,"rst #38")
 };

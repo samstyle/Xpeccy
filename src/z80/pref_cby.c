@@ -1,227 +1,227 @@
-void cyp00(Spec *p) {p->cpu->b = xRLC(p,p->cpu->iy);}
-void cyp01(Spec *p) {p->cpu->c = xRLC(p,p->cpu->iy);}
-void cyp02(Spec *p) {p->cpu->d = xRLC(p,p->cpu->iy);}
-void cyp03(Spec *p) {p->cpu->e = xRLC(p,p->cpu->iy);}
-void cyp04(Spec *p) {p->cpu->h = xRLC(p,p->cpu->iy);}
-void cyp05(Spec *p) {p->cpu->l = xRLC(p,p->cpu->iy);}
-void cyp06(Spec *p) {xRLC(p,p->cpu->iy);}
-void cyp07(Spec *p) {p->cpu->a = xRLC(p,p->cpu->iy);}
+void cyp00(ZXBase* p) {p->cpu->b = xRLC(p,p->cpu->iy);}
+void cyp01(ZXBase* p) {p->cpu->c = xRLC(p,p->cpu->iy);}
+void cyp02(ZXBase* p) {p->cpu->d = xRLC(p,p->cpu->iy);}
+void cyp03(ZXBase* p) {p->cpu->e = xRLC(p,p->cpu->iy);}
+void cyp04(ZXBase* p) {p->cpu->h = xRLC(p,p->cpu->iy);}
+void cyp05(ZXBase* p) {p->cpu->l = xRLC(p,p->cpu->iy);}
+void cyp06(ZXBase* p) {xRLC(p,p->cpu->iy);}
+void cyp07(ZXBase* p) {p->cpu->a = xRLC(p,p->cpu->iy);}
 
-void cyp08(Spec *p) {p->cpu->b = xRRC(p,p->cpu->iy);}
-void cyp09(Spec *p) {p->cpu->c = xRRC(p,p->cpu->iy);}
-void cyp0A(Spec *p) {p->cpu->d = xRRC(p,p->cpu->iy);}
-void cyp0B(Spec *p) {p->cpu->e = xRRC(p,p->cpu->iy);}
-void cyp0C(Spec *p) {p->cpu->h = xRRC(p,p->cpu->iy);}
-void cyp0D(Spec *p) {p->cpu->l = xRRC(p,p->cpu->iy);}
-void cyp0E(Spec *p) {xRRC(p,p->cpu->iy);}
-void cyp0F(Spec *p) {p->cpu->a = xRRC(p,p->cpu->iy);}
+void cyp08(ZXBase* p) {p->cpu->b = xRRC(p,p->cpu->iy);}
+void cyp09(ZXBase* p) {p->cpu->c = xRRC(p,p->cpu->iy);}
+void cyp0A(ZXBase* p) {p->cpu->d = xRRC(p,p->cpu->iy);}
+void cyp0B(ZXBase* p) {p->cpu->e = xRRC(p,p->cpu->iy);}
+void cyp0C(ZXBase* p) {p->cpu->h = xRRC(p,p->cpu->iy);}
+void cyp0D(ZXBase* p) {p->cpu->l = xRRC(p,p->cpu->iy);}
+void cyp0E(ZXBase* p) {xRRC(p,p->cpu->iy);}
+void cyp0F(ZXBase* p) {p->cpu->a = xRRC(p,p->cpu->iy);}
 
-void cyp10(Spec *p) {p->cpu->b = xRL(p,p->cpu->iy);}
-void cyp11(Spec *p) {p->cpu->c = xRL(p,p->cpu->iy);}
-void cyp12(Spec *p) {p->cpu->d = xRL(p,p->cpu->iy);}
-void cyp13(Spec *p) {p->cpu->e = xRL(p,p->cpu->iy);}
-void cyp14(Spec *p) {p->cpu->h = xRL(p,p->cpu->iy);}
-void cyp15(Spec *p) {p->cpu->l = xRL(p,p->cpu->iy);}
-void cyp16(Spec *p) {xRL(p,p->cpu->iy);}
-void cyp17(Spec *p) {p->cpu->a = xRL(p,p->cpu->iy);}
+void cyp10(ZXBase* p) {p->cpu->b = xRL(p,p->cpu->iy);}
+void cyp11(ZXBase* p) {p->cpu->c = xRL(p,p->cpu->iy);}
+void cyp12(ZXBase* p) {p->cpu->d = xRL(p,p->cpu->iy);}
+void cyp13(ZXBase* p) {p->cpu->e = xRL(p,p->cpu->iy);}
+void cyp14(ZXBase* p) {p->cpu->h = xRL(p,p->cpu->iy);}
+void cyp15(ZXBase* p) {p->cpu->l = xRL(p,p->cpu->iy);}
+void cyp16(ZXBase* p) {xRL(p,p->cpu->iy);}
+void cyp17(ZXBase* p) {p->cpu->a = xRL(p,p->cpu->iy);}
 
-void cyp18(Spec *p) {p->cpu->b = xRR(p,p->cpu->iy);}
-void cyp19(Spec *p) {p->cpu->c = xRR(p,p->cpu->iy);}
-void cyp1A(Spec *p) {p->cpu->d = xRR(p,p->cpu->iy);}
-void cyp1B(Spec *p) {p->cpu->e = xRR(p,p->cpu->iy);}
-void cyp1C(Spec *p) {p->cpu->h = xRR(p,p->cpu->iy);}
-void cyp1D(Spec *p) {p->cpu->l = xRR(p,p->cpu->iy);}
-void cyp1E(Spec *p) {xRR(p,p->cpu->iy);}
-void cyp1F(Spec *p) {p->cpu->a = xRR(p,p->cpu->iy);}
+void cyp18(ZXBase* p) {p->cpu->b = xRR(p,p->cpu->iy);}
+void cyp19(ZXBase* p) {p->cpu->c = xRR(p,p->cpu->iy);}
+void cyp1A(ZXBase* p) {p->cpu->d = xRR(p,p->cpu->iy);}
+void cyp1B(ZXBase* p) {p->cpu->e = xRR(p,p->cpu->iy);}
+void cyp1C(ZXBase* p) {p->cpu->h = xRR(p,p->cpu->iy);}
+void cyp1D(ZXBase* p) {p->cpu->l = xRR(p,p->cpu->iy);}
+void cyp1E(ZXBase* p) {xRR(p,p->cpu->iy);}
+void cyp1F(ZXBase* p) {p->cpu->a = xRR(p,p->cpu->iy);}
 
-void cyp20(Spec *p) {p->cpu->b = xSLA(p,p->cpu->iy);}
-void cyp21(Spec *p) {p->cpu->c = xSLA(p,p->cpu->iy);}
-void cyp22(Spec *p) {p->cpu->d = xSLA(p,p->cpu->iy);}
-void cyp23(Spec *p) {p->cpu->e = xSLA(p,p->cpu->iy);}
-void cyp24(Spec *p) {p->cpu->h = xSLA(p,p->cpu->iy);}
-void cyp25(Spec *p) {p->cpu->l = xSLA(p,p->cpu->iy);}
-void cyp26(Spec *p) {xSLA(p,p->cpu->iy);}
-void cyp27(Spec *p) {p->cpu->a = xSLA(p,p->cpu->iy);}
+void cyp20(ZXBase* p) {p->cpu->b = xSLA(p,p->cpu->iy);}
+void cyp21(ZXBase* p) {p->cpu->c = xSLA(p,p->cpu->iy);}
+void cyp22(ZXBase* p) {p->cpu->d = xSLA(p,p->cpu->iy);}
+void cyp23(ZXBase* p) {p->cpu->e = xSLA(p,p->cpu->iy);}
+void cyp24(ZXBase* p) {p->cpu->h = xSLA(p,p->cpu->iy);}
+void cyp25(ZXBase* p) {p->cpu->l = xSLA(p,p->cpu->iy);}
+void cyp26(ZXBase* p) {xSLA(p,p->cpu->iy);}
+void cyp27(ZXBase* p) {p->cpu->a = xSLA(p,p->cpu->iy);}
 
-void cyp28(Spec *p) {p->cpu->b = xSRA(p,p->cpu->iy);}
-void cyp29(Spec *p) {p->cpu->c = xSRA(p,p->cpu->iy);}
-void cyp2A(Spec *p) {p->cpu->d = xSRA(p,p->cpu->iy);}
-void cyp2B(Spec *p) {p->cpu->e = xSRA(p,p->cpu->iy);}
-void cyp2C(Spec *p) {p->cpu->h = xSRA(p,p->cpu->iy);}
-void cyp2D(Spec *p) {p->cpu->l = xSRA(p,p->cpu->iy);}
-void cyp2E(Spec *p) {xSRA(p,p->cpu->iy);}
-void cyp2F(Spec *p) {p->cpu->a = xSRA(p,p->cpu->iy);}
+void cyp28(ZXBase* p) {p->cpu->b = xSRA(p,p->cpu->iy);}
+void cyp29(ZXBase* p) {p->cpu->c = xSRA(p,p->cpu->iy);}
+void cyp2A(ZXBase* p) {p->cpu->d = xSRA(p,p->cpu->iy);}
+void cyp2B(ZXBase* p) {p->cpu->e = xSRA(p,p->cpu->iy);}
+void cyp2C(ZXBase* p) {p->cpu->h = xSRA(p,p->cpu->iy);}
+void cyp2D(ZXBase* p) {p->cpu->l = xSRA(p,p->cpu->iy);}
+void cyp2E(ZXBase* p) {xSRA(p,p->cpu->iy);}
+void cyp2F(ZXBase* p) {p->cpu->a = xSRA(p,p->cpu->iy);}
 
-void cyp30(Spec *p) {p->cpu->b = xSLI(p,p->cpu->iy);}
-void cyp31(Spec *p) {p->cpu->c = xSLI(p,p->cpu->iy);}
-void cyp32(Spec *p) {p->cpu->d = xSLI(p,p->cpu->iy);}
-void cyp33(Spec *p) {p->cpu->e = xSLI(p,p->cpu->iy);}
-void cyp34(Spec *p) {p->cpu->h = xSLI(p,p->cpu->iy);}
-void cyp35(Spec *p) {p->cpu->l = xSLI(p,p->cpu->iy);}
-void cyp36(Spec *p) {xSLI(p,p->cpu->iy);}
-void cyp37(Spec *p) {p->cpu->a = xSLI(p,p->cpu->iy);}
+void cyp30(ZXBase* p) {p->cpu->b = xSLI(p,p->cpu->iy);}
+void cyp31(ZXBase* p) {p->cpu->c = xSLI(p,p->cpu->iy);}
+void cyp32(ZXBase* p) {p->cpu->d = xSLI(p,p->cpu->iy);}
+void cyp33(ZXBase* p) {p->cpu->e = xSLI(p,p->cpu->iy);}
+void cyp34(ZXBase* p) {p->cpu->h = xSLI(p,p->cpu->iy);}
+void cyp35(ZXBase* p) {p->cpu->l = xSLI(p,p->cpu->iy);}
+void cyp36(ZXBase* p) {xSLI(p,p->cpu->iy);}
+void cyp37(ZXBase* p) {p->cpu->a = xSLI(p,p->cpu->iy);}
 
-void cyp38(Spec *p) {p->cpu->b = xSRL(p,p->cpu->iy);}
-void cyp39(Spec *p) {p->cpu->c = xSRL(p,p->cpu->iy);}
-void cyp3A(Spec *p) {p->cpu->d = xSRL(p,p->cpu->iy);}
-void cyp3B(Spec *p) {p->cpu->e = xSRL(p,p->cpu->iy);}
-void cyp3C(Spec *p) {p->cpu->h = xSRL(p,p->cpu->iy);}
-void cyp3D(Spec *p) {p->cpu->l = xSRL(p,p->cpu->iy);}
-void cyp3E(Spec *p) {xSRL(p,p->cpu->iy);}
-void cyp3F(Spec *p) {p->cpu->a = xSRL(p,p->cpu->iy);}
+void cyp38(ZXBase* p) {p->cpu->b = xSRL(p,p->cpu->iy);}
+void cyp39(ZXBase* p) {p->cpu->c = xSRL(p,p->cpu->iy);}
+void cyp3A(ZXBase* p) {p->cpu->d = xSRL(p,p->cpu->iy);}
+void cyp3B(ZXBase* p) {p->cpu->e = xSRL(p,p->cpu->iy);}
+void cyp3C(ZXBase* p) {p->cpu->h = xSRL(p,p->cpu->iy);}
+void cyp3D(ZXBase* p) {p->cpu->l = xSRL(p,p->cpu->iy);}
+void cyp3E(ZXBase* p) {xSRL(p,p->cpu->iy);}
+void cyp3F(ZXBase* p) {p->cpu->a = xSRL(p,p->cpu->iy);}
 // bit n,(iy+e)		flag b3,5 = memptr b3,5
-void cyp46(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->cpu->dlt; p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->mptr)].bit[0]) & (~(F5 | F3))) | (p->cpu->hptr & (F3 | F5));}
-void cyp4E(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->cpu->dlt; p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->mptr)].bit[1]) & (~(F5 | F3))) | (p->cpu->hptr & (F3 | F5));}
-void cyp56(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->cpu->dlt; p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->mptr)].bit[2]) & (~(F5 | F3))) | (p->cpu->hptr & (F3 | F5));}
-void cyp5E(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->cpu->dlt; p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->mptr)].bit[3]) & (~(F5 | F3))) | (p->cpu->hptr & (F3 | F5));}
-void cyp66(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->cpu->dlt; p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->mptr)].bit[4]) & (~(F5 | F3))) | (p->cpu->hptr & (F3 | F5));}
-void cyp6E(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->cpu->dlt; p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->mptr)].bit[5]) & (~(F5 | F3))) | (p->cpu->hptr & (F3 | F5));}
-void cyp76(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->cpu->dlt; p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->mptr)].bit[6]) & (~(F5 | F3))) | (p->cpu->hptr & (F3 | F5));}
-void cyp7E(Spec *p) {p->cpu->mptr = p->cpu->iy + (signed char)p->cpu->dlt; p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->mptr)].bit[7]) & (~(F5 | F3))) | (p->cpu->hptr & (F3 | F5));}
+void cyp46(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->cpu->dlt; p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->mptr)].bit[0]) & (~(F5 | F3))) | (p->cpu->hptr & (F3 | F5));}
+void cyp4E(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->cpu->dlt; p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->mptr)].bit[1]) & (~(F5 | F3))) | (p->cpu->hptr & (F3 | F5));}
+void cyp56(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->cpu->dlt; p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->mptr)].bit[2]) & (~(F5 | F3))) | (p->cpu->hptr & (F3 | F5));}
+void cyp5E(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->cpu->dlt; p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->mptr)].bit[3]) & (~(F5 | F3))) | (p->cpu->hptr & (F3 | F5));}
+void cyp66(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->cpu->dlt; p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->mptr)].bit[4]) & (~(F5 | F3))) | (p->cpu->hptr & (F3 | F5));}
+void cyp6E(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->cpu->dlt; p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->mptr)].bit[5]) & (~(F5 | F3))) | (p->cpu->hptr & (F3 | F5));}
+void cyp76(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->cpu->dlt; p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->mptr)].bit[6]) & (~(F5 | F3))) | (p->cpu->hptr & (F3 | F5));}
+void cyp7E(ZXBase* p) {p->cpu->mptr = p->cpu->iy + (signed char)p->cpu->dlt; p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->mptr)].bit[7]) & (~(F5 | F3))) | (p->cpu->hptr & (F3 | F5));}
 
-void cyp80(Spec *p) {p->cpu->b = xRES(p,p->cpu->iy,0x01);}
-void cyp81(Spec *p) {p->cpu->c = xRES(p,p->cpu->iy,0x01);}
-void cyp82(Spec *p) {p->cpu->d = xRES(p,p->cpu->iy,0x01);}
-void cyp83(Spec *p) {p->cpu->e = xRES(p,p->cpu->iy,0x01);}
-void cyp84(Spec *p) {p->cpu->h = xRES(p,p->cpu->iy,0x01);}
-void cyp85(Spec *p) {p->cpu->l = xRES(p,p->cpu->iy,0x01);}
-void cyp86(Spec *p) {xRES(p,p->cpu->iy,0x01);}
-void cyp87(Spec *p) {p->cpu->a = xRES(p,p->cpu->iy,0x01);}
+void cyp80(ZXBase* p) {p->cpu->b = xRES(p,p->cpu->iy,0x01);}
+void cyp81(ZXBase* p) {p->cpu->c = xRES(p,p->cpu->iy,0x01);}
+void cyp82(ZXBase* p) {p->cpu->d = xRES(p,p->cpu->iy,0x01);}
+void cyp83(ZXBase* p) {p->cpu->e = xRES(p,p->cpu->iy,0x01);}
+void cyp84(ZXBase* p) {p->cpu->h = xRES(p,p->cpu->iy,0x01);}
+void cyp85(ZXBase* p) {p->cpu->l = xRES(p,p->cpu->iy,0x01);}
+void cyp86(ZXBase* p) {xRES(p,p->cpu->iy,0x01);}
+void cyp87(ZXBase* p) {p->cpu->a = xRES(p,p->cpu->iy,0x01);}
 
-void cyp88(Spec *p) {p->cpu->b = xRES(p,p->cpu->iy,0x02);}
-void cyp89(Spec *p) {p->cpu->c = xRES(p,p->cpu->iy,0x02);}
-void cyp8A(Spec *p) {p->cpu->d = xRES(p,p->cpu->iy,0x02);}
-void cyp8B(Spec *p) {p->cpu->e = xRES(p,p->cpu->iy,0x02);}
-void cyp8C(Spec *p) {p->cpu->h = xRES(p,p->cpu->iy,0x02);}
-void cyp8D(Spec *p) {p->cpu->l = xRES(p,p->cpu->iy,0x02);}
-void cyp8E(Spec *p) {xRES(p,p->cpu->iy,0x02);}
-void cyp8F(Spec *p) {p->cpu->a = xRES(p,p->cpu->iy,0x02);}
+void cyp88(ZXBase* p) {p->cpu->b = xRES(p,p->cpu->iy,0x02);}
+void cyp89(ZXBase* p) {p->cpu->c = xRES(p,p->cpu->iy,0x02);}
+void cyp8A(ZXBase* p) {p->cpu->d = xRES(p,p->cpu->iy,0x02);}
+void cyp8B(ZXBase* p) {p->cpu->e = xRES(p,p->cpu->iy,0x02);}
+void cyp8C(ZXBase* p) {p->cpu->h = xRES(p,p->cpu->iy,0x02);}
+void cyp8D(ZXBase* p) {p->cpu->l = xRES(p,p->cpu->iy,0x02);}
+void cyp8E(ZXBase* p) {xRES(p,p->cpu->iy,0x02);}
+void cyp8F(ZXBase* p) {p->cpu->a = xRES(p,p->cpu->iy,0x02);}
 
-void cyp90(Spec *p) {p->cpu->b = xRES(p,p->cpu->iy,0x04);}
-void cyp91(Spec *p) {p->cpu->c = xRES(p,p->cpu->iy,0x04);}
-void cyp92(Spec *p) {p->cpu->d = xRES(p,p->cpu->iy,0x04);}
-void cyp93(Spec *p) {p->cpu->e = xRES(p,p->cpu->iy,0x04);}
-void cyp94(Spec *p) {p->cpu->h = xRES(p,p->cpu->iy,0x04);}
-void cyp95(Spec *p) {p->cpu->l = xRES(p,p->cpu->iy,0x04);}
-void cyp96(Spec *p) {xRES(p,p->cpu->iy,0x04);}
-void cyp97(Spec *p) {p->cpu->a = xRES(p,p->cpu->iy,0x04);}
+void cyp90(ZXBase* p) {p->cpu->b = xRES(p,p->cpu->iy,0x04);}
+void cyp91(ZXBase* p) {p->cpu->c = xRES(p,p->cpu->iy,0x04);}
+void cyp92(ZXBase* p) {p->cpu->d = xRES(p,p->cpu->iy,0x04);}
+void cyp93(ZXBase* p) {p->cpu->e = xRES(p,p->cpu->iy,0x04);}
+void cyp94(ZXBase* p) {p->cpu->h = xRES(p,p->cpu->iy,0x04);}
+void cyp95(ZXBase* p) {p->cpu->l = xRES(p,p->cpu->iy,0x04);}
+void cyp96(ZXBase* p) {xRES(p,p->cpu->iy,0x04);}
+void cyp97(ZXBase* p) {p->cpu->a = xRES(p,p->cpu->iy,0x04);}
 
-void cyp98(Spec *p) {p->cpu->b = xRES(p,p->cpu->iy,0x08);}
-void cyp99(Spec *p) {p->cpu->c = xRES(p,p->cpu->iy,0x08);}
-void cyp9A(Spec *p) {p->cpu->d = xRES(p,p->cpu->iy,0x08);}
-void cyp9B(Spec *p) {p->cpu->e = xRES(p,p->cpu->iy,0x08);}
-void cyp9C(Spec *p) {p->cpu->h = xRES(p,p->cpu->iy,0x08);}
-void cyp9D(Spec *p) {p->cpu->l = xRES(p,p->cpu->iy,0x08);}
-void cyp9E(Spec *p) {xRES(p,p->cpu->iy,0x08);}
-void cyp9F(Spec *p) {p->cpu->a = xRES(p,p->cpu->iy,0x08);}
+void cyp98(ZXBase* p) {p->cpu->b = xRES(p,p->cpu->iy,0x08);}
+void cyp99(ZXBase* p) {p->cpu->c = xRES(p,p->cpu->iy,0x08);}
+void cyp9A(ZXBase* p) {p->cpu->d = xRES(p,p->cpu->iy,0x08);}
+void cyp9B(ZXBase* p) {p->cpu->e = xRES(p,p->cpu->iy,0x08);}
+void cyp9C(ZXBase* p) {p->cpu->h = xRES(p,p->cpu->iy,0x08);}
+void cyp9D(ZXBase* p) {p->cpu->l = xRES(p,p->cpu->iy,0x08);}
+void cyp9E(ZXBase* p) {xRES(p,p->cpu->iy,0x08);}
+void cyp9F(ZXBase* p) {p->cpu->a = xRES(p,p->cpu->iy,0x08);}
 
-void cypA0(Spec *p) {p->cpu->b = xRES(p,p->cpu->iy,0x10);}
-void cypA1(Spec *p) {p->cpu->c = xRES(p,p->cpu->iy,0x10);}
-void cypA2(Spec *p) {p->cpu->d = xRES(p,p->cpu->iy,0x10);}
-void cypA3(Spec *p) {p->cpu->e = xRES(p,p->cpu->iy,0x10);}
-void cypA4(Spec *p) {p->cpu->h = xRES(p,p->cpu->iy,0x10);}
-void cypA5(Spec *p) {p->cpu->l = xRES(p,p->cpu->iy,0x10);}
-void cypA6(Spec *p) {xRES(p,p->cpu->iy,0x10);}
-void cypA7(Spec *p) {p->cpu->a = xRES(p,p->cpu->iy,0x10);}
+void cypA0(ZXBase* p) {p->cpu->b = xRES(p,p->cpu->iy,0x10);}
+void cypA1(ZXBase* p) {p->cpu->c = xRES(p,p->cpu->iy,0x10);}
+void cypA2(ZXBase* p) {p->cpu->d = xRES(p,p->cpu->iy,0x10);}
+void cypA3(ZXBase* p) {p->cpu->e = xRES(p,p->cpu->iy,0x10);}
+void cypA4(ZXBase* p) {p->cpu->h = xRES(p,p->cpu->iy,0x10);}
+void cypA5(ZXBase* p) {p->cpu->l = xRES(p,p->cpu->iy,0x10);}
+void cypA6(ZXBase* p) {xRES(p,p->cpu->iy,0x10);}
+void cypA7(ZXBase* p) {p->cpu->a = xRES(p,p->cpu->iy,0x10);}
 
-void cypA8(Spec *p) {p->cpu->b = xRES(p,p->cpu->iy,0x20);}
-void cypA9(Spec *p) {p->cpu->c = xRES(p,p->cpu->iy,0x20);}
-void cypAA(Spec *p) {p->cpu->d = xRES(p,p->cpu->iy,0x20);}
-void cypAB(Spec *p) {p->cpu->e = xRES(p,p->cpu->iy,0x20);}
-void cypAC(Spec *p) {p->cpu->h = xRES(p,p->cpu->iy,0x20);}
-void cypAD(Spec *p) {p->cpu->l = xRES(p,p->cpu->iy,0x20);}
-void cypAE(Spec *p) {xRES(p,p->cpu->iy,0x20);}
-void cypAF(Spec *p) {p->cpu->a = xRES(p,p->cpu->iy,0x20);}
+void cypA8(ZXBase* p) {p->cpu->b = xRES(p,p->cpu->iy,0x20);}
+void cypA9(ZXBase* p) {p->cpu->c = xRES(p,p->cpu->iy,0x20);}
+void cypAA(ZXBase* p) {p->cpu->d = xRES(p,p->cpu->iy,0x20);}
+void cypAB(ZXBase* p) {p->cpu->e = xRES(p,p->cpu->iy,0x20);}
+void cypAC(ZXBase* p) {p->cpu->h = xRES(p,p->cpu->iy,0x20);}
+void cypAD(ZXBase* p) {p->cpu->l = xRES(p,p->cpu->iy,0x20);}
+void cypAE(ZXBase* p) {xRES(p,p->cpu->iy,0x20);}
+void cypAF(ZXBase* p) {p->cpu->a = xRES(p,p->cpu->iy,0x20);}
 
-void cypB0(Spec *p) {p->cpu->b = xRES(p,p->cpu->iy,0x40);}
-void cypB1(Spec *p) {p->cpu->c = xRES(p,p->cpu->iy,0x40);}
-void cypB2(Spec *p) {p->cpu->d = xRES(p,p->cpu->iy,0x40);}
-void cypB3(Spec *p) {p->cpu->e = xRES(p,p->cpu->iy,0x40);}
-void cypB4(Spec *p) {p->cpu->h = xRES(p,p->cpu->iy,0x40);}
-void cypB5(Spec *p) {p->cpu->l = xRES(p,p->cpu->iy,0x40);}
-void cypB6(Spec *p) {xRES(p,p->cpu->iy,0x40);}
-void cypB7(Spec *p) {p->cpu->a = xRES(p,p->cpu->iy,0x40);}
+void cypB0(ZXBase* p) {p->cpu->b = xRES(p,p->cpu->iy,0x40);}
+void cypB1(ZXBase* p) {p->cpu->c = xRES(p,p->cpu->iy,0x40);}
+void cypB2(ZXBase* p) {p->cpu->d = xRES(p,p->cpu->iy,0x40);}
+void cypB3(ZXBase* p) {p->cpu->e = xRES(p,p->cpu->iy,0x40);}
+void cypB4(ZXBase* p) {p->cpu->h = xRES(p,p->cpu->iy,0x40);}
+void cypB5(ZXBase* p) {p->cpu->l = xRES(p,p->cpu->iy,0x40);}
+void cypB6(ZXBase* p) {xRES(p,p->cpu->iy,0x40);}
+void cypB7(ZXBase* p) {p->cpu->a = xRES(p,p->cpu->iy,0x40);}
 
-void cypB8(Spec *p) {p->cpu->b = xRES(p,p->cpu->iy,0x80);}
-void cypB9(Spec *p) {p->cpu->c = xRES(p,p->cpu->iy,0x80);}
-void cypBA(Spec *p) {p->cpu->d = xRES(p,p->cpu->iy,0x80);}
-void cypBB(Spec *p) {p->cpu->e = xRES(p,p->cpu->iy,0x80);}
-void cypBC(Spec *p) {p->cpu->h = xRES(p,p->cpu->iy,0x80);}
-void cypBD(Spec *p) {p->cpu->l = xRES(p,p->cpu->iy,0x80);}
-void cypBE(Spec *p) {xRES(p,p->cpu->iy,0x80);}
-void cypBF(Spec *p) {p->cpu->a = xRES(p,p->cpu->iy,0x80);}
+void cypB8(ZXBase* p) {p->cpu->b = xRES(p,p->cpu->iy,0x80);}
+void cypB9(ZXBase* p) {p->cpu->c = xRES(p,p->cpu->iy,0x80);}
+void cypBA(ZXBase* p) {p->cpu->d = xRES(p,p->cpu->iy,0x80);}
+void cypBB(ZXBase* p) {p->cpu->e = xRES(p,p->cpu->iy,0x80);}
+void cypBC(ZXBase* p) {p->cpu->h = xRES(p,p->cpu->iy,0x80);}
+void cypBD(ZXBase* p) {p->cpu->l = xRES(p,p->cpu->iy,0x80);}
+void cypBE(ZXBase* p) {xRES(p,p->cpu->iy,0x80);}
+void cypBF(ZXBase* p) {p->cpu->a = xRES(p,p->cpu->iy,0x80);}
 
-void cypC0(Spec *p) {p->cpu->b = xSET(p,p->cpu->iy,0x01);}
-void cypC1(Spec *p) {p->cpu->c = xSET(p,p->cpu->iy,0x01);}
-void cypC2(Spec *p) {p->cpu->d = xSET(p,p->cpu->iy,0x01);}
-void cypC3(Spec *p) {p->cpu->e = xSET(p,p->cpu->iy,0x01);}
-void cypC4(Spec *p) {p->cpu->h = xSET(p,p->cpu->iy,0x01);}
-void cypC5(Spec *p) {p->cpu->l = xSET(p,p->cpu->iy,0x01);}
-void cypC6(Spec *p) {xSET(p,p->cpu->iy,0x01);}
-void cypC7(Spec *p) {p->cpu->a = xSET(p,p->cpu->iy,0x01);}
+void cypC0(ZXBase* p) {p->cpu->b = xSET(p,p->cpu->iy,0x01);}
+void cypC1(ZXBase* p) {p->cpu->c = xSET(p,p->cpu->iy,0x01);}
+void cypC2(ZXBase* p) {p->cpu->d = xSET(p,p->cpu->iy,0x01);}
+void cypC3(ZXBase* p) {p->cpu->e = xSET(p,p->cpu->iy,0x01);}
+void cypC4(ZXBase* p) {p->cpu->h = xSET(p,p->cpu->iy,0x01);}
+void cypC5(ZXBase* p) {p->cpu->l = xSET(p,p->cpu->iy,0x01);}
+void cypC6(ZXBase* p) {xSET(p,p->cpu->iy,0x01);}
+void cypC7(ZXBase* p) {p->cpu->a = xSET(p,p->cpu->iy,0x01);}
 
-void cypC8(Spec *p) {p->cpu->b = xSET(p,p->cpu->iy,0x02);}
-void cypC9(Spec *p) {p->cpu->c = xSET(p,p->cpu->iy,0x02);}
-void cypCA(Spec *p) {p->cpu->d = xSET(p,p->cpu->iy,0x02);}
-void cypCB(Spec *p) {p->cpu->e = xSET(p,p->cpu->iy,0x02);}
-void cypCC(Spec *p) {p->cpu->h = xSET(p,p->cpu->iy,0x02);}
-void cypCD(Spec *p) {p->cpu->l = xSET(p,p->cpu->iy,0x02);}
-void cypCE(Spec *p) {xSET(p,p->cpu->iy,0x02);}
-void cypCF(Spec *p) {p->cpu->a = xSET(p,p->cpu->iy,0x02);}
+void cypC8(ZXBase* p) {p->cpu->b = xSET(p,p->cpu->iy,0x02);}
+void cypC9(ZXBase* p) {p->cpu->c = xSET(p,p->cpu->iy,0x02);}
+void cypCA(ZXBase* p) {p->cpu->d = xSET(p,p->cpu->iy,0x02);}
+void cypCB(ZXBase* p) {p->cpu->e = xSET(p,p->cpu->iy,0x02);}
+void cypCC(ZXBase* p) {p->cpu->h = xSET(p,p->cpu->iy,0x02);}
+void cypCD(ZXBase* p) {p->cpu->l = xSET(p,p->cpu->iy,0x02);}
+void cypCE(ZXBase* p) {xSET(p,p->cpu->iy,0x02);}
+void cypCF(ZXBase* p) {p->cpu->a = xSET(p,p->cpu->iy,0x02);}
 
-void cypD0(Spec *p) {p->cpu->b = xSET(p,p->cpu->iy,0x04);}
-void cypD1(Spec *p) {p->cpu->c = xSET(p,p->cpu->iy,0x04);}
-void cypD2(Spec *p) {p->cpu->d = xSET(p,p->cpu->iy,0x04);}
-void cypD3(Spec *p) {p->cpu->e = xSET(p,p->cpu->iy,0x04);}
-void cypD4(Spec *p) {p->cpu->h = xSET(p,p->cpu->iy,0x04);}
-void cypD5(Spec *p) {p->cpu->l = xSET(p,p->cpu->iy,0x04);}
-void cypD6(Spec *p) {xSET(p,p->cpu->iy,0x04);}
-void cypD7(Spec *p) {p->cpu->a = xSET(p,p->cpu->iy,0x04);}
+void cypD0(ZXBase* p) {p->cpu->b = xSET(p,p->cpu->iy,0x04);}
+void cypD1(ZXBase* p) {p->cpu->c = xSET(p,p->cpu->iy,0x04);}
+void cypD2(ZXBase* p) {p->cpu->d = xSET(p,p->cpu->iy,0x04);}
+void cypD3(ZXBase* p) {p->cpu->e = xSET(p,p->cpu->iy,0x04);}
+void cypD4(ZXBase* p) {p->cpu->h = xSET(p,p->cpu->iy,0x04);}
+void cypD5(ZXBase* p) {p->cpu->l = xSET(p,p->cpu->iy,0x04);}
+void cypD6(ZXBase* p) {xSET(p,p->cpu->iy,0x04);}
+void cypD7(ZXBase* p) {p->cpu->a = xSET(p,p->cpu->iy,0x04);}
 
-void cypD8(Spec *p) {p->cpu->b = xSET(p,p->cpu->iy,0x08);}
-void cypD9(Spec *p) {p->cpu->c = xSET(p,p->cpu->iy,0x08);}
-void cypDA(Spec *p) {p->cpu->d = xSET(p,p->cpu->iy,0x08);}
-void cypDB(Spec *p) {p->cpu->e = xSET(p,p->cpu->iy,0x08);}
-void cypDC(Spec *p) {p->cpu->h = xSET(p,p->cpu->iy,0x08);}
-void cypDD(Spec *p) {p->cpu->l = xSET(p,p->cpu->iy,0x08);}
-void cypDE(Spec *p) {xSET(p,p->cpu->iy,0x08);}
-void cypDF(Spec *p) {p->cpu->a = xSET(p,p->cpu->iy,0x08);}
+void cypD8(ZXBase* p) {p->cpu->b = xSET(p,p->cpu->iy,0x08);}
+void cypD9(ZXBase* p) {p->cpu->c = xSET(p,p->cpu->iy,0x08);}
+void cypDA(ZXBase* p) {p->cpu->d = xSET(p,p->cpu->iy,0x08);}
+void cypDB(ZXBase* p) {p->cpu->e = xSET(p,p->cpu->iy,0x08);}
+void cypDC(ZXBase* p) {p->cpu->h = xSET(p,p->cpu->iy,0x08);}
+void cypDD(ZXBase* p) {p->cpu->l = xSET(p,p->cpu->iy,0x08);}
+void cypDE(ZXBase* p) {xSET(p,p->cpu->iy,0x08);}
+void cypDF(ZXBase* p) {p->cpu->a = xSET(p,p->cpu->iy,0x08);}
 
-void cypE0(Spec *p) {p->cpu->b = xSET(p,p->cpu->iy,0x10);}
-void cypE1(Spec *p) {p->cpu->c = xSET(p,p->cpu->iy,0x10);}
-void cypE2(Spec *p) {p->cpu->d = xSET(p,p->cpu->iy,0x10);}
-void cypE3(Spec *p) {p->cpu->e = xSET(p,p->cpu->iy,0x10);}
-void cypE4(Spec *p) {p->cpu->h = xSET(p,p->cpu->iy,0x10);}
-void cypE5(Spec *p) {p->cpu->l = xSET(p,p->cpu->iy,0x10);}
-void cypE6(Spec *p) {xSET(p,p->cpu->iy,0x10);}
-void cypE7(Spec *p) {p->cpu->a = xSET(p,p->cpu->iy,0x10);}
+void cypE0(ZXBase* p) {p->cpu->b = xSET(p,p->cpu->iy,0x10);}
+void cypE1(ZXBase* p) {p->cpu->c = xSET(p,p->cpu->iy,0x10);}
+void cypE2(ZXBase* p) {p->cpu->d = xSET(p,p->cpu->iy,0x10);}
+void cypE3(ZXBase* p) {p->cpu->e = xSET(p,p->cpu->iy,0x10);}
+void cypE4(ZXBase* p) {p->cpu->h = xSET(p,p->cpu->iy,0x10);}
+void cypE5(ZXBase* p) {p->cpu->l = xSET(p,p->cpu->iy,0x10);}
+void cypE6(ZXBase* p) {xSET(p,p->cpu->iy,0x10);}
+void cypE7(ZXBase* p) {p->cpu->a = xSET(p,p->cpu->iy,0x10);}
 
-void cypE8(Spec *p) {p->cpu->b = xSET(p,p->cpu->iy,0x20);}
-void cypE9(Spec *p) {p->cpu->c = xSET(p,p->cpu->iy,0x20);}
-void cypEA(Spec *p) {p->cpu->d = xSET(p,p->cpu->iy,0x20);}
-void cypEB(Spec *p) {p->cpu->e = xSET(p,p->cpu->iy,0x20);}
-void cypEC(Spec *p) {p->cpu->h = xSET(p,p->cpu->iy,0x20);}
-void cypED(Spec *p) {p->cpu->l = xSET(p,p->cpu->iy,0x20);}
-void cypEE(Spec *p) {xSET(p,p->cpu->iy,0x20);}
-void cypEF(Spec *p) {p->cpu->a = xSET(p,p->cpu->iy,0x20);}
+void cypE8(ZXBase* p) {p->cpu->b = xSET(p,p->cpu->iy,0x20);}
+void cypE9(ZXBase* p) {p->cpu->c = xSET(p,p->cpu->iy,0x20);}
+void cypEA(ZXBase* p) {p->cpu->d = xSET(p,p->cpu->iy,0x20);}
+void cypEB(ZXBase* p) {p->cpu->e = xSET(p,p->cpu->iy,0x20);}
+void cypEC(ZXBase* p) {p->cpu->h = xSET(p,p->cpu->iy,0x20);}
+void cypED(ZXBase* p) {p->cpu->l = xSET(p,p->cpu->iy,0x20);}
+void cypEE(ZXBase* p) {xSET(p,p->cpu->iy,0x20);}
+void cypEF(ZXBase* p) {p->cpu->a = xSET(p,p->cpu->iy,0x20);}
 
-void cypF0(Spec *p) {p->cpu->b = xSET(p,p->cpu->iy,0x40);}
-void cypF1(Spec *p) {p->cpu->c = xSET(p,p->cpu->iy,0x40);}
-void cypF2(Spec *p) {p->cpu->d = xSET(p,p->cpu->iy,0x40);}
-void cypF3(Spec *p) {p->cpu->e = xSET(p,p->cpu->iy,0x40);}
-void cypF4(Spec *p) {p->cpu->h = xSET(p,p->cpu->iy,0x40);}
-void cypF5(Spec *p) {p->cpu->l = xSET(p,p->cpu->iy,0x40);}
-void cypF6(Spec *p) {xSET(p,p->cpu->iy,0x40);}
-void cypF7(Spec *p) {p->cpu->a = xSET(p,p->cpu->iy,0x40);}
+void cypF0(ZXBase* p) {p->cpu->b = xSET(p,p->cpu->iy,0x40);}
+void cypF1(ZXBase* p) {p->cpu->c = xSET(p,p->cpu->iy,0x40);}
+void cypF2(ZXBase* p) {p->cpu->d = xSET(p,p->cpu->iy,0x40);}
+void cypF3(ZXBase* p) {p->cpu->e = xSET(p,p->cpu->iy,0x40);}
+void cypF4(ZXBase* p) {p->cpu->h = xSET(p,p->cpu->iy,0x40);}
+void cypF5(ZXBase* p) {p->cpu->l = xSET(p,p->cpu->iy,0x40);}
+void cypF6(ZXBase* p) {xSET(p,p->cpu->iy,0x40);}
+void cypF7(ZXBase* p) {p->cpu->a = xSET(p,p->cpu->iy,0x40);}
 
-void cypF8(Spec *p) {p->cpu->b = xSET(p,p->cpu->iy,0x80);}
-void cypF9(Spec *p) {p->cpu->c = xSET(p,p->cpu->iy,0x80);}
-void cypFA(Spec *p) {p->cpu->d = xSET(p,p->cpu->iy,0x80);}
-void cypFB(Spec *p) {p->cpu->e = xSET(p,p->cpu->iy,0x80);}
-void cypFC(Spec *p) {p->cpu->h = xSET(p,p->cpu->iy,0x80);}
-void cypFD(Spec *p) {p->cpu->l = xSET(p,p->cpu->iy,0x80);}
-void cypFE(Spec *p) {xSET(p,p->cpu->iy,0x80);}
-void cypFF(Spec *p) {p->cpu->a = xSET(p,p->cpu->iy,0x80);}
+void cypF8(ZXBase* p) {p->cpu->b = xSET(p,p->cpu->iy,0x80);}
+void cypF9(ZXBase* p) {p->cpu->c = xSET(p,p->cpu->iy,0x80);}
+void cypFA(ZXBase* p) {p->cpu->d = xSET(p,p->cpu->iy,0x80);}
+void cypFB(ZXBase* p) {p->cpu->e = xSET(p,p->cpu->iy,0x80);}
+void cypFC(ZXBase* p) {p->cpu->h = xSET(p,p->cpu->iy,0x80);}
+void cypFD(ZXBase* p) {p->cpu->l = xSET(p,p->cpu->iy,0x80);}
+void cypFE(ZXBase* p) {xSET(p,p->cpu->iy,0x80);}
+void cypFF(ZXBase* p) {p->cpu->a = xSET(p,p->cpu->iy,0x80);}
 
 //==================
 

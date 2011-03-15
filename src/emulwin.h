@@ -80,6 +80,6 @@ struct RZXFrame {
 		
 };
 
-extern EmulWin *mwin;
+// extern EmulWin *mwin;
 
 #endif

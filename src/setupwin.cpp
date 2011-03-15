@@ -16,6 +16,17 @@
 #include <QStandardItemModel>
 #include <QFileDialog>
 
+extern Settings* sets;
+extern EmulWin* mwin;
+extern MFiler* filer;
+extern Sound* snd;
+extern BDI* bdi;
+//extern Tape* tape;
+extern IDE* ide;
+extern GS* gs;
+extern ZXComp* zx;
+extern HardWare* hw;
+
 SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	setModal(true);
 	ui.setupUi(this);
@@ -26,13 +37,13 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 
 	uint32_t i;
 // machine
-	for (i=0;i<sys->io->machlist.size();i++) {ui.machbox->addItem(QDialog::trUtf8(sys->io->machlist[i].name.c_str()));}
-	for (i=0;i<sys->mem->rsetlist.size();i++) {ui.rsetbox->addItem(QDialog::trUtf8(sys->mem->rsetlist[i].name.c_str()));}
+	for (i=0;i<zx->sys->io->hwlist.size();i++) {ui.machbox->addItem(QDialog::trUtf8(zx->sys->io->hwlist[i].name.c_str()));}
+	for (i=0;i<zx->sys->mem->rsetlist.size();i++) {ui.rsetbox->addItem(QDialog::trUtf8(zx->sys->mem->rsetlist[i].name.c_str()));}
 	ui.resbox->addItems(QStringList()<<"0:Basic 128"<<"1:Basic48"<<"2:Shadow"<<"3:DOS");
 	ui.mszbox->addItems(QStringList()<<"48K"<<"128K"<<"256K"<<"512K"<<"1024K");
 // video
 	ui.ssfbox->addItems(QStringList()<<"bmp"<<"png"<<"jpg"<<"scr");
-	for (i=0;i<sys->vid->layout.size();i++) {ui.geombox->addItem(QDialog::trUtf8(sys->vid->layout[i].name.c_str()));}
+	for (i=0;i<zx->sys->vid->layout.size();i++) {ui.geombox->addItem(QDialog::trUtf8(zx->sys->vid->layout[i].name.c_str()));}
 // sound
 	for (i=0;i<snd->outsyslist.size();i++) {ui.outbox->addItem(QDialog::trUtf8(snd->outsyslist[i].name.c_str()));}
 	ui.ratbox->addItems(QStringList()<<"44100"<<"22050"<<"11025");
@@ -139,29 +150,29 @@ void SetupWin::okay() {apply();reject();}
 void SetupWin::start() {
 	mwin->repause(true,PR_OPTS);
 // machine
-	ui.machbox->setCurrentIndex(ui.machbox->findText(QDialog::trUtf8(machine->name.c_str())));
-	ui.rsetbox->setCurrentIndex(ui.rsetbox->findText(QDialog::trUtf8(sys->mem->romset->name.c_str())));
-	ui.reschk->setChecked(sys->io->resafter);
-	ui.resbox->setCurrentIndex(sys->mem->res);
-	switch(sys->io->mask) {
+	ui.machbox->setCurrentIndex(ui.machbox->findText(QDialog::trUtf8(hw->name.c_str())));
+	ui.rsetbox->setCurrentIndex(ui.rsetbox->findText(QDialog::trUtf8(zx->sys->mem->romset->name.c_str())));
+	ui.reschk->setChecked(zx->sys->io->resafter);
+	ui.resbox->setCurrentIndex(zx->sys->mem->res);
+	switch(zx->sys->io->mask) {
 		case 0x00: ui.mszbox->setCurrentIndex(0); break;
 		case 0x07: ui.mszbox->setCurrentIndex(1); break;
 		case 0x0f: ui.mszbox->setCurrentIndex(2); break;
 		case 0x1f: ui.mszbox->setCurrentIndex(3); break;
 		case 0x3f: ui.mszbox->setCurrentIndex(4); break;
 	}
-	ui.cpufrq->setValue(sys->cpu->frq * 2);
+	ui.cpufrq->setValue(zx->sys->cpu->frq * 2);
 	ui.scrpwait->setChecked(sets->wait);
 	updfrq();
 // video
-	ui.dszchk->setChecked((sys->vid->flags & VF_DOUBLE));
+	ui.dszchk->setChecked((zx->sys->vid->flags & VF_DOUBLE));
 //	ui.fscchk->setChecked(vid->fscreen);
-	ui.bszsld->setValue((int)(sys->vid->brdsize * 100));
+	ui.bszsld->setValue((int)(zx->sys->vid->brdsize * 100));
 	ui.pathle->setText(QDialog::trUtf8(sets->ssdir.c_str()));
 	ui.ssfbox->setCurrentIndex(ui.ssfbox->findText(QDialog::trUtf8(sets->ssformat.c_str())));
 	ui.scntbox->setValue(sets->sscnt);
 	ui.sintbox->setValue(sets->ssint);
-	ui.geombox->setCurrentIndex(ui.geombox->findText(QDialog::trUtf8(sys->vid->curlay.c_str())));
+	ui.geombox->setCurrentIndex(ui.geombox->findText(QDialog::trUtf8(zx->sys->vid->curlay.c_str())));
 // sound
 	ui.senbox->setChecked(snd->enabled);
 	ui.mutbox->setChecked(snd->mute);
@@ -219,7 +230,7 @@ void SetupWin::start() {
 	ui.hs_ghd->setValue(ide->slave.pass.hds);
 	ui.hs_gcyl->setValue(ide->slave.pass.cyls);
 // tape
-	ui.tpathle->setText(QDialog::trUtf8(tape->path.c_str()));
+	ui.tpathle->setText(QDialog::trUtf8(zx->tape->path.c_str()));
 	buildtapelist();
 // tools
 	ui.sjpathle->setText(QDialog::trUtf8(sets->sjapath.c_str()));
@@ -231,32 +242,32 @@ void SetupWin::start() {
 
 void SetupWin::apply() {
 // machine
-	Machine *oldmac = machine;
+	HardWare *oldmac = hw;
 	sets->machname = std::string(ui.machbox->currentText().toUtf8().data());
-	sys->io->setmacptr(sets->machname);
+	zx->sys->io->setmacptr(sets->machname);
 	sets->rsetname = std::string(ui.rsetbox->currentText().toUtf8().data());
-	sys->mem->setromptr(sets->rsetname); sys->mem->loadromset();
-	sys->io->resafter = ui.reschk->isChecked();
-	sys->mem->res = ui.resbox->currentIndex();
+	zx->sys->mem->setromptr(sets->rsetname); zx->sys->mem->loadromset();
+	zx->sys->io->resafter = ui.reschk->isChecked();
+	zx->sys->mem->res = ui.resbox->currentIndex();
 	switch(ui.mszbox->currentIndex()) {
-		case 0: sys->io->mask = 0x00; break;
-		case 1: sys->io->mask = 0x07; break;
-		case 2: sys->io->mask = 0x0f; break;
-		case 3: sys->io->mask = 0x1f; break;
-		case 4: sys->io->mask = 0x3f; break;
+		case 0: zx->sys->io->mask = 0x00; break;
+		case 1: zx->sys->io->mask = 0x07; break;
+		case 2: zx->sys->io->mask = 0x0f; break;
+		case 3: zx->sys->io->mask = 0x1f; break;
+		case 4: zx->sys->io->mask = 0x3f; break;
 	}
-	if (machine != oldmac) mwin->reset();
-	sys->cpu->frq = ui.cpufrq->value() / 2.0;
+	if (hw != oldmac) mwin->reset();
+	zx->sys->cpu->frq = ui.cpufrq->value() / 2.0;
 	sets->wait = ui.scrpwait->isChecked();
 // video
-	if (ui.dszchk->isChecked()) sys->vid->flags |= VF_DOUBLE; else sys->vid->flags |= VF_DOUBLE;
+	if (ui.dszchk->isChecked()) zx->sys->vid->flags |= VF_DOUBLE; else zx->sys->vid->flags &= ~VF_DOUBLE;
 //	vid->fscreen = ui.fscchk->isChecked();
-	sys->vid->brdsize = ui.bszsld->value()/100.0;
+	zx->sys->vid->brdsize = ui.bszsld->value()/100.0;
 	sets->ssdir = std::string(ui.pathle->text().toUtf8().data());
 	sets->ssformat = std::string(ui.ssfbox->currentText().toUtf8().data());
 	sets->sscnt = ui.scntbox->value();
 	sets->ssint = ui.sintbox->value();
-	sys->vid->setlayout(std::string(ui.geombox->currentText().toUtf8().data()));
+	zx->sys->vid->setlayout(std::string(ui.geombox->currentText().toUtf8().data()));
 // sound
 	std::string oname = sets->soutname;
 	int orate = snd->rate;
@@ -318,7 +329,7 @@ void SetupWin::apply() {
 	sets->prjdir = std::string(ui.prjdirle->text().toUtf8().data());
 
 	snd->defpars();
-	sys->vid->update();
+	zx->sys->vid->update();
 	sets->save();
 }
 
@@ -331,7 +342,7 @@ void SetupWin::reject() {
 // lists
 
 void SetupWin::okbuts() {
-	int t = sys->io->machlist[ui.machbox->currentIndex()].mask;
+	int t = zx->sys->io->hwlist[ui.machbox->currentIndex()].mask;
 	if (t == 0x00) {
 		ui.okbut->setEnabled(ui.mszbox->currentIndex()==0);
 	} else {
@@ -341,7 +352,7 @@ void SetupWin::okbuts() {
 }
 
 void SetupWin::setmszbox(int idx) {
-	int t = sys->io->machlist[idx].mask;
+	int t = zx->sys->io->hwlist[idx].mask;
 	QIcon okicon = QIcon(":/images/ok-apply.png");
 	QIcon ericon = QIcon(":/images/cancel.png");
 	if (t == 0x00) {
@@ -362,7 +373,7 @@ void SetupWin::setmszbox(int idx) {
 
 void SetupWin::buildrsetlist() {
 	int i;
-	RomSet rset = sys->mem->rsetlist[ui.rsetbox->currentIndex()];
+	RomSet rset = zx->sys->mem->rsetlist[ui.rsetbox->currentIndex()];
 	QStringList lst = QStringList()<<"Basic128"<<"Basic48"<<"Shadow"<<"DOS"<<"ext0"<<"ext1"<<"ext2"<<"ext3";
 	QStandardItemModel *model = new QStandardItemModel(8,3);
 	QStandardItem *itm;
@@ -386,25 +397,25 @@ void SetupWin::buildrsetlist() {
 
 void SetupWin::buildtapelist() {
 	int i,tm,ts;
-	QStandardItemModel *model = new QStandardItemModel(tape->data.size(),5);
+	QStandardItemModel *model = new QStandardItemModel(zx->tape->data.size(),5);
 	QStandardItem *itm;
 	for(i=0;i<model->rowCount();i++) {
-		if ((int)tape->block == i) {
+		if ((int)zx->tape->block == i) {
 			itm = new QStandardItem(QIcon(":/images/checkbox.png"),"");
 			model->setItem(i,0,itm);
-			ts = tape->data[i].gettime(tape->pos); tm = ts/60; ts -= tm*60;
+			ts = zx->tape->data[i].gettime(zx->tape->pos); tm = ts/60; ts -= tm*60;
 			itm = new QStandardItem(QString::number(tm).append(":").append(QString::number(ts+100).right(2)));
 			model->setItem(i,2,itm);
 		} else {
 			itm = new QStandardItem(); model->setItem(i,0,itm);
 			itm = new QStandardItem(); model->setItem(i,2,itm);
 		}
-		ts = tape->data[i].gettime(-1); tm = ts/60; ts -= tm*60;
+		ts = zx->tape->data[i].gettime(-1); tm = ts/60; ts -= tm*60;
 		itm = new QStandardItem(QString::number(tm).append(":").append(QString::number(ts+100).right(2)));
 		model->setItem(i,1,itm);
-		itm = new QStandardItem(QString::number(tape->data[i].getsize()));
+		itm = new QStandardItem(QString::number(zx->tape->data[i].getsize()));
 		model->setItem(i,3,itm);
-		itm = new QStandardItem(QDialog::trUtf8(tape->data[i].getheader().c_str()));
+		itm = new QStandardItem(QDialog::trUtf8(zx->tape->data[i].getheader().c_str()));
 		model->setItem(i,4,itm);
 	}
 	ui.tapelist->setModel(model);
@@ -496,26 +507,26 @@ void SetupWin::updatedisknams() {
 
 // tape
 
-void SetupWin::loatape() {filer->loadtape("",true); ui.tpathle->setText(QDialog::trUtf8(tape->path.c_str())); buildtapelist();}
-void SetupWin::savtape() {filer->savetape(tape->path,true);}
-void SetupWin::ejctape() {tape->eject(); ui.tpathle->setText(QDialog::trUtf8(tape->path.c_str())); buildtapelist();}
+void SetupWin::loatape() {filer->loadtape("",true); ui.tpathle->setText(QDialog::trUtf8(zx->tape->path.c_str())); buildtapelist();}
+void SetupWin::savtape() {filer->savetape(zx->tape->path,true);}
+void SetupWin::ejctape() {zx->tape->eject(); ui.tpathle->setText(QDialog::trUtf8(zx->tape->path.c_str())); buildtapelist();}
 void SetupWin::tblkup() {
 	int ps = ui.tapelist->currentIndex().row();
-	if (ps>0) {tape->swapblocks(ps,ps-1); buildtapelist(); ui.tapelist->selectRow(ps-1);}
+	if (ps>0) {zx->tape->swapblocks(ps,ps-1); buildtapelist(); ui.tapelist->selectRow(ps-1);}
 }
 void SetupWin::tblkdn() {
 	int ps = ui.tapelist->currentIndex().row();
-	if ((ps!=-1) && (ps<(int)tape->data.size()-1)) {tape->swapblocks(ps,ps+1); buildtapelist(); ui.tapelist->selectRow(ps+1);}
+	if ((ps!=-1) && (ps<(int)zx->tape->data.size()-1)) {zx->tape->swapblocks(ps,ps+1); buildtapelist(); ui.tapelist->selectRow(ps+1);}
 }
 void SetupWin::tblkrm() {
 	int ps = ui.tapelist->currentIndex().row();
-	if (ps!=-1) {tape->data.erase(tape->data.begin()+ps); buildtapelist(); ui.tapelist->selectRow(ps);}
+	if (ps!=-1) {zx->tape->data.erase(zx->tape->data.begin()+ps); buildtapelist(); ui.tapelist->selectRow(ps);}
 }
 
 void SetupWin::chablock(QModelIndex idx) {
 	int row = idx.row();
-	tape->block = row;
-	tape->pos = 0;
+	zx->tape->block = row;
+	zx->tape->pos = 0;
 	buildtapelist();
 	ui.tapelist->selectRow(row);
 }

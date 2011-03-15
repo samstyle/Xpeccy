@@ -1,293 +1,293 @@
 // NOTE: prefix fetch not included in ticks (ZB: rl b took 8 ticks, but here is only last 4, because lead 4 is CB-fetch)
 
-void cbp00(Spec *p) {p->cpu->f = flag[p->cpu->b].rlc.f; p->cpu->b = flag[p->cpu->b].rlc.r;}
-void cbp01(Spec *p) {p->cpu->f = flag[p->cpu->c].rlc.f; p->cpu->c = flag[p->cpu->c].rlc.r;}
-void cbp02(Spec *p) {p->cpu->f = flag[p->cpu->d].rlc.f; p->cpu->d = flag[p->cpu->d].rlc.r;}
-void cbp03(Spec *p) {p->cpu->f = flag[p->cpu->e].rlc.f; p->cpu->e = flag[p->cpu->e].rlc.r;}
-void cbp04(Spec *p) {p->cpu->f = flag[p->cpu->h].rlc.f; p->cpu->h = flag[p->cpu->h].rlc.r;}
-void cbp05(Spec *p) {p->cpu->f = flag[p->cpu->l].rlc.f; p->cpu->l = flag[p->cpu->l].rlc.r;}
-void cbp06(Spec *p) {p->cpu->x = p->mem->rd(p->cpu->hl); p->cpu->f = flag[p->cpu->x].rlc.f; p->mem->wr(p->cpu->hl,flag[p->cpu->x].rlc.r);}
-void cbp07(Spec *p) {p->cpu->f = flag[p->cpu->a].rlc.f; p->cpu->a = flag[p->cpu->a].rlc.r;}
+void cbp00(ZXBase* p) {p->cpu->f = flag[p->cpu->b].rlc.f; p->cpu->b = flag[p->cpu->b].rlc.r;}
+void cbp01(ZXBase* p) {p->cpu->f = flag[p->cpu->c].rlc.f; p->cpu->c = flag[p->cpu->c].rlc.r;}
+void cbp02(ZXBase* p) {p->cpu->f = flag[p->cpu->d].rlc.f; p->cpu->d = flag[p->cpu->d].rlc.r;}
+void cbp03(ZXBase* p) {p->cpu->f = flag[p->cpu->e].rlc.f; p->cpu->e = flag[p->cpu->e].rlc.r;}
+void cbp04(ZXBase* p) {p->cpu->f = flag[p->cpu->h].rlc.f; p->cpu->h = flag[p->cpu->h].rlc.r;}
+void cbp05(ZXBase* p) {p->cpu->f = flag[p->cpu->l].rlc.f; p->cpu->l = flag[p->cpu->l].rlc.r;}
+void cbp06(ZXBase* p) {p->cpu->x = p->mem->rd(p->cpu->hl); p->cpu->f = flag[p->cpu->x].rlc.f; p->mem->wr(p->cpu->hl,flag[p->cpu->x].rlc.r);}
+void cbp07(ZXBase* p) {p->cpu->f = flag[p->cpu->a].rlc.f; p->cpu->a = flag[p->cpu->a].rlc.r;}
 
-void cbp08(Spec *p) {p->cpu->f = flag[p->cpu->b].rrc.f; p->cpu->b = flag[p->cpu->b].rrc.r;}
-void cbp09(Spec *p) {p->cpu->f = flag[p->cpu->c].rrc.f; p->cpu->c = flag[p->cpu->c].rrc.r;}
-void cbp0A(Spec *p) {p->cpu->f = flag[p->cpu->d].rrc.f; p->cpu->d = flag[p->cpu->d].rrc.r;}
-void cbp0B(Spec *p) {p->cpu->f = flag[p->cpu->e].rrc.f; p->cpu->e = flag[p->cpu->e].rrc.r;}
-void cbp0C(Spec *p) {p->cpu->f = flag[p->cpu->h].rrc.f; p->cpu->h = flag[p->cpu->h].rrc.r;}
-void cbp0D(Spec *p) {p->cpu->f = flag[p->cpu->l].rrc.f; p->cpu->l = flag[p->cpu->l].rrc.r;}
-void cbp0E(Spec *p) {p->cpu->x = p->mem->rd(p->cpu->hl); p->cpu->f = flag[p->cpu->x].rrc.f; p->mem->wr(p->cpu->hl,flag[p->cpu->x].rrc.r);}
-void cbp0F(Spec *p) {p->cpu->f = flag[p->cpu->a].rrc.f; p->cpu->a = flag[p->cpu->a].rrc.r;}
+void cbp08(ZXBase* p) {p->cpu->f = flag[p->cpu->b].rrc.f; p->cpu->b = flag[p->cpu->b].rrc.r;}
+void cbp09(ZXBase* p) {p->cpu->f = flag[p->cpu->c].rrc.f; p->cpu->c = flag[p->cpu->c].rrc.r;}
+void cbp0A(ZXBase* p) {p->cpu->f = flag[p->cpu->d].rrc.f; p->cpu->d = flag[p->cpu->d].rrc.r;}
+void cbp0B(ZXBase* p) {p->cpu->f = flag[p->cpu->e].rrc.f; p->cpu->e = flag[p->cpu->e].rrc.r;}
+void cbp0C(ZXBase* p) {p->cpu->f = flag[p->cpu->h].rrc.f; p->cpu->h = flag[p->cpu->h].rrc.r;}
+void cbp0D(ZXBase* p) {p->cpu->f = flag[p->cpu->l].rrc.f; p->cpu->l = flag[p->cpu->l].rrc.r;}
+void cbp0E(ZXBase* p) {p->cpu->x = p->mem->rd(p->cpu->hl); p->cpu->f = flag[p->cpu->x].rrc.f; p->mem->wr(p->cpu->hl,flag[p->cpu->x].rrc.r);}
+void cbp0F(ZXBase* p) {p->cpu->f = flag[p->cpu->a].rrc.f; p->cpu->a = flag[p->cpu->a].rrc.r;}
 
-void cbp10(Spec *p) {p->cpu->x = p->cpu->b; p->cpu->b = flag[p->cpu->x].rl[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rl[p->cpu->f & FC].f;}
-void cbp11(Spec *p) {p->cpu->x = p->cpu->c; p->cpu->c = flag[p->cpu->x].rl[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rl[p->cpu->f & FC].f;}
-void cbp12(Spec *p) {p->cpu->x = p->cpu->d; p->cpu->d = flag[p->cpu->x].rl[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rl[p->cpu->f & FC].f;}
-void cbp13(Spec *p) {p->cpu->x = p->cpu->e; p->cpu->e = flag[p->cpu->x].rl[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rl[p->cpu->f & FC].f;}
-void cbp14(Spec *p) {p->cpu->x = p->cpu->h; p->cpu->h = flag[p->cpu->x].rl[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rl[p->cpu->f & FC].f;}
-void cbp15(Spec *p) {p->cpu->x = p->cpu->l; p->cpu->l = flag[p->cpu->x].rl[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rl[p->cpu->f & FC].f;}
-void cbp16(Spec *p) {p->cpu->x = p->mem->rd(p->cpu->hl); p->mem->wr(p->cpu->hl,flag[p->cpu->x].rl[p->cpu->f & FC].r); p->cpu->f = flag[p->cpu->x].rl[p->cpu->f & FC].f;}
-void cbp17(Spec *p) {p->cpu->x = p->cpu->a; p->cpu->a = flag[p->cpu->x].rl[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rl[p->cpu->f & FC].f;}
+void cbp10(ZXBase* p) {p->cpu->x = p->cpu->b; p->cpu->b = flag[p->cpu->x].rl[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rl[p->cpu->f & FC].f;}
+void cbp11(ZXBase* p) {p->cpu->x = p->cpu->c; p->cpu->c = flag[p->cpu->x].rl[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rl[p->cpu->f & FC].f;}
+void cbp12(ZXBase* p) {p->cpu->x = p->cpu->d; p->cpu->d = flag[p->cpu->x].rl[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rl[p->cpu->f & FC].f;}
+void cbp13(ZXBase* p) {p->cpu->x = p->cpu->e; p->cpu->e = flag[p->cpu->x].rl[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rl[p->cpu->f & FC].f;}
+void cbp14(ZXBase* p) {p->cpu->x = p->cpu->h; p->cpu->h = flag[p->cpu->x].rl[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rl[p->cpu->f & FC].f;}
+void cbp15(ZXBase* p) {p->cpu->x = p->cpu->l; p->cpu->l = flag[p->cpu->x].rl[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rl[p->cpu->f & FC].f;}
+void cbp16(ZXBase* p) {p->cpu->x = p->mem->rd(p->cpu->hl); p->mem->wr(p->cpu->hl,flag[p->cpu->x].rl[p->cpu->f & FC].r); p->cpu->f = flag[p->cpu->x].rl[p->cpu->f & FC].f;}
+void cbp17(ZXBase* p) {p->cpu->x = p->cpu->a; p->cpu->a = flag[p->cpu->x].rl[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rl[p->cpu->f & FC].f;}
 
-void cbp18(Spec *p) {p->cpu->x = p->cpu->b; p->cpu->b = flag[p->cpu->x].rr[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rr[p->cpu->f & FC].f;}
-void cbp19(Spec *p) {p->cpu->x = p->cpu->c; p->cpu->c = flag[p->cpu->x].rr[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rr[p->cpu->f & FC].f;}
-void cbp1A(Spec *p) {p->cpu->x = p->cpu->d; p->cpu->d = flag[p->cpu->x].rr[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rr[p->cpu->f & FC].f;}
-void cbp1B(Spec *p) {p->cpu->x = p->cpu->e; p->cpu->e = flag[p->cpu->x].rr[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rr[p->cpu->f & FC].f;}
-void cbp1C(Spec *p) {p->cpu->x = p->cpu->h; p->cpu->h = flag[p->cpu->x].rr[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rr[p->cpu->f & FC].f;}
-void cbp1D(Spec *p) {p->cpu->x = p->cpu->l; p->cpu->l = flag[p->cpu->x].rr[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rr[p->cpu->f & FC].f;}
-void cbp1E(Spec *p) {p->cpu->x = p->mem->rd(p->cpu->hl); p->mem->wr(p->cpu->hl,flag[p->cpu->x].rr[p->cpu->f & FC].r); p->cpu->f = flag[p->cpu->x].rr[p->cpu->f & FC].f;}
-void cbp1F(Spec *p) {p->cpu->x = p->cpu->a; p->cpu->a = flag[p->cpu->x].rr[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rr[p->cpu->f & FC].f;}
+void cbp18(ZXBase* p) {p->cpu->x = p->cpu->b; p->cpu->b = flag[p->cpu->x].rr[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rr[p->cpu->f & FC].f;}
+void cbp19(ZXBase* p) {p->cpu->x = p->cpu->c; p->cpu->c = flag[p->cpu->x].rr[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rr[p->cpu->f & FC].f;}
+void cbp1A(ZXBase* p) {p->cpu->x = p->cpu->d; p->cpu->d = flag[p->cpu->x].rr[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rr[p->cpu->f & FC].f;}
+void cbp1B(ZXBase* p) {p->cpu->x = p->cpu->e; p->cpu->e = flag[p->cpu->x].rr[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rr[p->cpu->f & FC].f;}
+void cbp1C(ZXBase* p) {p->cpu->x = p->cpu->h; p->cpu->h = flag[p->cpu->x].rr[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rr[p->cpu->f & FC].f;}
+void cbp1D(ZXBase* p) {p->cpu->x = p->cpu->l; p->cpu->l = flag[p->cpu->x].rr[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rr[p->cpu->f & FC].f;}
+void cbp1E(ZXBase* p) {p->cpu->x = p->mem->rd(p->cpu->hl); p->mem->wr(p->cpu->hl,flag[p->cpu->x].rr[p->cpu->f & FC].r); p->cpu->f = flag[p->cpu->x].rr[p->cpu->f & FC].f;}
+void cbp1F(ZXBase* p) {p->cpu->x = p->cpu->a; p->cpu->a = flag[p->cpu->x].rr[p->cpu->f & FC].r; p->cpu->f = flag[p->cpu->x].rr[p->cpu->f & FC].f;}
 
-void cbp20(Spec *p) {p->cpu->f = flag[p->cpu->b].rl[0].f; p->cpu->b = flag[p->cpu->b].rl[0].r;}
-void cbp21(Spec *p) {p->cpu->f = flag[p->cpu->c].rl[0].f; p->cpu->c = flag[p->cpu->c].rl[0].r;}
-void cbp22(Spec *p) {p->cpu->f = flag[p->cpu->d].rl[0].f; p->cpu->d = flag[p->cpu->d].rl[0].r;}
-void cbp23(Spec *p) {p->cpu->f = flag[p->cpu->e].rl[0].f; p->cpu->e = flag[p->cpu->e].rl[0].r;}
-void cbp24(Spec *p) {p->cpu->f = flag[p->cpu->h].rl[0].f; p->cpu->h = flag[p->cpu->h].rl[0].r;}
-void cbp25(Spec *p) {p->cpu->f = flag[p->cpu->l].rl[0].f; p->cpu->l = flag[p->cpu->l].rl[0].r;}
-void cbp26(Spec *p) {p->cpu->x = p->mem->rd(p->cpu->hl); p->cpu->f = flag[p->cpu->x].rl[0].f; p->mem->wr(p->cpu->hl,flag[p->cpu->x].rl[0].r);}
-void cbp27(Spec *p) {p->cpu->f = flag[p->cpu->a].rl[0].f; p->cpu->a = flag[p->cpu->a].rl[0].r;}
+void cbp20(ZXBase* p) {p->cpu->f = flag[p->cpu->b].rl[0].f; p->cpu->b = flag[p->cpu->b].rl[0].r;}
+void cbp21(ZXBase* p) {p->cpu->f = flag[p->cpu->c].rl[0].f; p->cpu->c = flag[p->cpu->c].rl[0].r;}
+void cbp22(ZXBase* p) {p->cpu->f = flag[p->cpu->d].rl[0].f; p->cpu->d = flag[p->cpu->d].rl[0].r;}
+void cbp23(ZXBase* p) {p->cpu->f = flag[p->cpu->e].rl[0].f; p->cpu->e = flag[p->cpu->e].rl[0].r;}
+void cbp24(ZXBase* p) {p->cpu->f = flag[p->cpu->h].rl[0].f; p->cpu->h = flag[p->cpu->h].rl[0].r;}
+void cbp25(ZXBase* p) {p->cpu->f = flag[p->cpu->l].rl[0].f; p->cpu->l = flag[p->cpu->l].rl[0].r;}
+void cbp26(ZXBase* p) {p->cpu->x = p->mem->rd(p->cpu->hl); p->cpu->f = flag[p->cpu->x].rl[0].f; p->mem->wr(p->cpu->hl,flag[p->cpu->x].rl[0].r);}
+void cbp27(ZXBase* p) {p->cpu->f = flag[p->cpu->a].rl[0].f; p->cpu->a = flag[p->cpu->a].rl[0].r;}
 
-void cbp28(Spec *p) {p->cpu->f = flag[p->cpu->b].sra.f; p->cpu->b = flag[p->cpu->b].sra.r;}
-void cbp29(Spec *p) {p->cpu->f = flag[p->cpu->c].sra.f; p->cpu->c = flag[p->cpu->c].sra.r;}
-void cbp2A(Spec *p) {p->cpu->f = flag[p->cpu->d].sra.f; p->cpu->d = flag[p->cpu->d].sra.r;}
-void cbp2B(Spec *p) {p->cpu->f = flag[p->cpu->e].sra.f; p->cpu->e = flag[p->cpu->e].sra.r;}
-void cbp2C(Spec *p) {p->cpu->f = flag[p->cpu->h].sra.f; p->cpu->h = flag[p->cpu->h].sra.r;}
-void cbp2D(Spec *p) {p->cpu->f = flag[p->cpu->l].sra.f; p->cpu->l = flag[p->cpu->l].sra.r;}
-void cbp2E(Spec *p) {p->cpu->x = p->mem->rd(p->cpu->hl); p->cpu->f = flag[p->cpu->x].sra.f; p->mem->wr(p->cpu->hl,flag[p->cpu->x].sra.r);}
-void cbp2F(Spec *p) {p->cpu->f = flag[p->cpu->a].sra.f; p->cpu->a = flag[p->cpu->a].sra.r;}
+void cbp28(ZXBase* p) {p->cpu->f = flag[p->cpu->b].sra.f; p->cpu->b = flag[p->cpu->b].sra.r;}
+void cbp29(ZXBase* p) {p->cpu->f = flag[p->cpu->c].sra.f; p->cpu->c = flag[p->cpu->c].sra.r;}
+void cbp2A(ZXBase* p) {p->cpu->f = flag[p->cpu->d].sra.f; p->cpu->d = flag[p->cpu->d].sra.r;}
+void cbp2B(ZXBase* p) {p->cpu->f = flag[p->cpu->e].sra.f; p->cpu->e = flag[p->cpu->e].sra.r;}
+void cbp2C(ZXBase* p) {p->cpu->f = flag[p->cpu->h].sra.f; p->cpu->h = flag[p->cpu->h].sra.r;}
+void cbp2D(ZXBase* p) {p->cpu->f = flag[p->cpu->l].sra.f; p->cpu->l = flag[p->cpu->l].sra.r;}
+void cbp2E(ZXBase* p) {p->cpu->x = p->mem->rd(p->cpu->hl); p->cpu->f = flag[p->cpu->x].sra.f; p->mem->wr(p->cpu->hl,flag[p->cpu->x].sra.r);}
+void cbp2F(ZXBase* p) {p->cpu->f = flag[p->cpu->a].sra.f; p->cpu->a = flag[p->cpu->a].sra.r;}
 
-void cbp30(Spec *p) {p->cpu->f = flag[p->cpu->b].rl[1].f; p->cpu->b = flag[p->cpu->b].rl[1].r;}
-void cbp31(Spec *p) {p->cpu->f = flag[p->cpu->c].rl[1].f; p->cpu->c = flag[p->cpu->c].rl[1].r;}
-void cbp32(Spec *p) {p->cpu->f = flag[p->cpu->d].rl[1].f; p->cpu->d = flag[p->cpu->d].rl[1].r;}
-void cbp33(Spec *p) {p->cpu->f = flag[p->cpu->e].rl[1].f; p->cpu->e = flag[p->cpu->e].rl[1].r;}
-void cbp34(Spec *p) {p->cpu->f = flag[p->cpu->h].rl[1].f; p->cpu->h = flag[p->cpu->h].rl[1].r;}
-void cbp35(Spec *p) {p->cpu->f = flag[p->cpu->l].rl[1].f; p->cpu->l = flag[p->cpu->l].rl[1].r;}
-void cbp36(Spec *p) {p->cpu->x = p->mem->rd(p->cpu->hl); p->cpu->f = flag[p->cpu->x].rl[1].f; p->mem->wr(p->cpu->hl,flag[p->cpu->x].rl[1].r);}
-void cbp37(Spec *p) {p->cpu->f = flag[p->cpu->a].rl[1].f; p->cpu->a = flag[p->cpu->a].rl[1].r;}
+void cbp30(ZXBase* p) {p->cpu->f = flag[p->cpu->b].rl[1].f; p->cpu->b = flag[p->cpu->b].rl[1].r;}
+void cbp31(ZXBase* p) {p->cpu->f = flag[p->cpu->c].rl[1].f; p->cpu->c = flag[p->cpu->c].rl[1].r;}
+void cbp32(ZXBase* p) {p->cpu->f = flag[p->cpu->d].rl[1].f; p->cpu->d = flag[p->cpu->d].rl[1].r;}
+void cbp33(ZXBase* p) {p->cpu->f = flag[p->cpu->e].rl[1].f; p->cpu->e = flag[p->cpu->e].rl[1].r;}
+void cbp34(ZXBase* p) {p->cpu->f = flag[p->cpu->h].rl[1].f; p->cpu->h = flag[p->cpu->h].rl[1].r;}
+void cbp35(ZXBase* p) {p->cpu->f = flag[p->cpu->l].rl[1].f; p->cpu->l = flag[p->cpu->l].rl[1].r;}
+void cbp36(ZXBase* p) {p->cpu->x = p->mem->rd(p->cpu->hl); p->cpu->f = flag[p->cpu->x].rl[1].f; p->mem->wr(p->cpu->hl,flag[p->cpu->x].rl[1].r);}
+void cbp37(ZXBase* p) {p->cpu->f = flag[p->cpu->a].rl[1].f; p->cpu->a = flag[p->cpu->a].rl[1].r;}
 
-void cbp38(Spec *p) {p->cpu->f = flag[p->cpu->b].rr[0].f; p->cpu->b = flag[p->cpu->b].rr[0].r;}
-void cbp39(Spec *p) {p->cpu->f = flag[p->cpu->c].rr[0].f; p->cpu->c = flag[p->cpu->c].rr[0].r;}
-void cbp3A(Spec *p) {p->cpu->f = flag[p->cpu->d].rr[0].f; p->cpu->d = flag[p->cpu->d].rr[0].r;}
-void cbp3B(Spec *p) {p->cpu->f = flag[p->cpu->e].rr[0].f; p->cpu->e = flag[p->cpu->e].rr[0].r;}
-void cbp3C(Spec *p) {p->cpu->f = flag[p->cpu->h].rr[0].f; p->cpu->h = flag[p->cpu->h].rr[0].r;}
-void cbp3D(Spec *p) {p->cpu->f = flag[p->cpu->l].rr[0].f; p->cpu->l = flag[p->cpu->l].rr[0].r;}
-void cbp3E(Spec *p) {p->cpu->x = p->mem->rd(p->cpu->hl); p->cpu->f = flag[p->cpu->x].rr[0].f; p->mem->wr(p->cpu->hl,flag[p->cpu->x].rr[0].r);}
-void cbp3F(Spec *p) {p->cpu->f = flag[p->cpu->a].rr[0].f; p->cpu->a = flag[p->cpu->a].rr[0].r;}
+void cbp38(ZXBase* p) {p->cpu->f = flag[p->cpu->b].rr[0].f; p->cpu->b = flag[p->cpu->b].rr[0].r;}
+void cbp39(ZXBase* p) {p->cpu->f = flag[p->cpu->c].rr[0].f; p->cpu->c = flag[p->cpu->c].rr[0].r;}
+void cbp3A(ZXBase* p) {p->cpu->f = flag[p->cpu->d].rr[0].f; p->cpu->d = flag[p->cpu->d].rr[0].r;}
+void cbp3B(ZXBase* p) {p->cpu->f = flag[p->cpu->e].rr[0].f; p->cpu->e = flag[p->cpu->e].rr[0].r;}
+void cbp3C(ZXBase* p) {p->cpu->f = flag[p->cpu->h].rr[0].f; p->cpu->h = flag[p->cpu->h].rr[0].r;}
+void cbp3D(ZXBase* p) {p->cpu->f = flag[p->cpu->l].rr[0].f; p->cpu->l = flag[p->cpu->l].rr[0].r;}
+void cbp3E(ZXBase* p) {p->cpu->x = p->mem->rd(p->cpu->hl); p->cpu->f = flag[p->cpu->x].rr[0].f; p->mem->wr(p->cpu->hl,flag[p->cpu->x].rr[0].r);}
+void cbp3F(ZXBase* p) {p->cpu->f = flag[p->cpu->a].rr[0].f; p->cpu->a = flag[p->cpu->a].rr[0].r;}
 // bit n,reg
 // bit n,(hl): b3,5 = memptr b3,5
-void cbp40(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->b].bit[0];}
-void cbp41(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->c].bit[0];}
-void cbp42(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->d].bit[0];}
-void cbp43(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->e].bit[0];}
-void cbp44(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->h].bit[0];}
-void cbp45(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->l].bit[0];}
-void cbp46(Spec *p) {p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->hl)].bit[0]) & (~(F5 | F3))) | (p->cpu->hptr & (F5 | F3));}
-void cbp47(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->a].bit[0];}
+void cbp40(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->b].bit[0];}
+void cbp41(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->c].bit[0];}
+void cbp42(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->d].bit[0];}
+void cbp43(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->e].bit[0];}
+void cbp44(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->h].bit[0];}
+void cbp45(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->l].bit[0];}
+void cbp46(ZXBase* p) {p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->hl)].bit[0]) & (~(F5 | F3))) | (p->cpu->hptr & (F5 | F3));}
+void cbp47(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->a].bit[0];}
 
-void cbp48(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->b].bit[1];}
-void cbp49(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->c].bit[1];}
-void cbp4A(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->d].bit[1];}
-void cbp4B(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->e].bit[1];}
-void cbp4C(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->h].bit[1];}
-void cbp4D(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->l].bit[1];}
-void cbp4E(Spec *p) {p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->hl)].bit[1]) & (~(F5 | F3))) | (p->cpu->hptr & (F5 | F3));}
-void cbp4F(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->a].bit[1];}
+void cbp48(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->b].bit[1];}
+void cbp49(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->c].bit[1];}
+void cbp4A(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->d].bit[1];}
+void cbp4B(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->e].bit[1];}
+void cbp4C(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->h].bit[1];}
+void cbp4D(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->l].bit[1];}
+void cbp4E(ZXBase* p) {p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->hl)].bit[1]) & (~(F5 | F3))) | (p->cpu->hptr & (F5 | F3));}
+void cbp4F(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->a].bit[1];}
 
-void cbp50(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->b].bit[2];}
-void cbp51(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->c].bit[2];}
-void cbp52(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->d].bit[2];}
-void cbp53(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->e].bit[2];}
-void cbp54(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->h].bit[2];}
-void cbp55(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->l].bit[2];}
-void cbp56(Spec *p) {p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->hl)].bit[2]) & (~(F5 | F3))) | (p->cpu->hptr & (F5 | F3));}
-void cbp57(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->a].bit[2];}
+void cbp50(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->b].bit[2];}
+void cbp51(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->c].bit[2];}
+void cbp52(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->d].bit[2];}
+void cbp53(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->e].bit[2];}
+void cbp54(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->h].bit[2];}
+void cbp55(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->l].bit[2];}
+void cbp56(ZXBase* p) {p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->hl)].bit[2]) & (~(F5 | F3))) | (p->cpu->hptr & (F5 | F3));}
+void cbp57(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->a].bit[2];}
 
-void cbp58(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->b].bit[3];}
-void cbp59(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->c].bit[3];}
-void cbp5A(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->d].bit[3];}
-void cbp5B(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->e].bit[3];}
-void cbp5C(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->h].bit[3];}
-void cbp5D(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->l].bit[3];}
-void cbp5E(Spec *p) {p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->hl)].bit[3]) & (~(F5 | F3))) | (p->cpu->hptr & (F5 | F3));}
-void cbp5F(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->a].bit[3];}
+void cbp58(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->b].bit[3];}
+void cbp59(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->c].bit[3];}
+void cbp5A(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->d].bit[3];}
+void cbp5B(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->e].bit[3];}
+void cbp5C(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->h].bit[3];}
+void cbp5D(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->l].bit[3];}
+void cbp5E(ZXBase* p) {p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->hl)].bit[3]) & (~(F5 | F3))) | (p->cpu->hptr & (F5 | F3));}
+void cbp5F(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->a].bit[3];}
 
-void cbp60(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->b].bit[4];}
-void cbp61(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->c].bit[4];}
-void cbp62(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->d].bit[4];}
-void cbp63(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->e].bit[4];}
-void cbp64(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->h].bit[4];}
-void cbp65(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->l].bit[4];}
-void cbp66(Spec *p) {p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->hl)].bit[4]) & (~(F5 | F3))) | (p->cpu->hptr & (F5 | F3));}
-void cbp67(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->a].bit[4];}
+void cbp60(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->b].bit[4];}
+void cbp61(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->c].bit[4];}
+void cbp62(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->d].bit[4];}
+void cbp63(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->e].bit[4];}
+void cbp64(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->h].bit[4];}
+void cbp65(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->l].bit[4];}
+void cbp66(ZXBase* p) {p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->hl)].bit[4]) & (~(F5 | F3))) | (p->cpu->hptr & (F5 | F3));}
+void cbp67(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->a].bit[4];}
 
-void cbp68(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->b].bit[5];}
-void cbp69(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->c].bit[5];}
-void cbp6A(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->d].bit[5];}
-void cbp6B(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->e].bit[5];}
-void cbp6C(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->h].bit[5];}
-void cbp6D(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->l].bit[5];}
-void cbp6E(Spec *p) {p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->hl)].bit[5]) & (~(F5 | F3))) | (p->cpu->hptr & (F5 | F3));}
-void cbp6F(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->a].bit[5];}
+void cbp68(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->b].bit[5];}
+void cbp69(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->c].bit[5];}
+void cbp6A(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->d].bit[5];}
+void cbp6B(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->e].bit[5];}
+void cbp6C(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->h].bit[5];}
+void cbp6D(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->l].bit[5];}
+void cbp6E(ZXBase* p) {p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->hl)].bit[5]) & (~(F5 | F3))) | (p->cpu->hptr & (F5 | F3));}
+void cbp6F(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->a].bit[5];}
 
-void cbp70(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->b].bit[6];}
-void cbp71(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->c].bit[6];}
-void cbp72(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->d].bit[6];}
-void cbp73(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->e].bit[6];}
-void cbp74(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->h].bit[6];}
-void cbp75(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->l].bit[6];}
-void cbp76(Spec *p) {p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->hl)].bit[6]) & (~(F5 | F3))) | (p->cpu->hptr & (F5 | F3));}
-void cbp77(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->a].bit[6];}
+void cbp70(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->b].bit[6];}
+void cbp71(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->c].bit[6];}
+void cbp72(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->d].bit[6];}
+void cbp73(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->e].bit[6];}
+void cbp74(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->h].bit[6];}
+void cbp75(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->l].bit[6];}
+void cbp76(ZXBase* p) {p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->hl)].bit[6]) & (~(F5 | F3))) | (p->cpu->hptr & (F5 | F3));}
+void cbp77(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->a].bit[6];}
 
-void cbp78(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->b].bit[7];}
-void cbp79(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->c].bit[7];}
-void cbp7A(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->d].bit[7];}
-void cbp7B(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->e].bit[7];}
-void cbp7C(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->h].bit[7];}
-void cbp7D(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->l].bit[7];}
-void cbp7E(Spec *p) {p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->hl)].bit[7]) & (~(F5 | F3))) | (p->cpu->hptr & (F5 | F3));}
-void cbp7F(Spec *p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->a].bit[7];}
+void cbp78(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->b].bit[7];}
+void cbp79(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->c].bit[7];}
+void cbp7A(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->d].bit[7];}
+void cbp7B(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->e].bit[7];}
+void cbp7C(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->h].bit[7];}
+void cbp7D(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->l].bit[7];}
+void cbp7E(ZXBase* p) {p->cpu->f = (((p->cpu->f & FC) | flag[p->mem->rd(p->cpu->hl)].bit[7]) & (~(F5 | F3))) | (p->cpu->hptr & (F5 | F3));}
+void cbp7F(ZXBase* p) {p->cpu->f = (p->cpu->f & FC) | flag[p->cpu->a].bit[7];}
 
-void cbp80(Spec *p) {p->cpu->b &= 0xfe;}
-void cbp81(Spec *p) {p->cpu->c &= 0xfe;}
-void cbp82(Spec *p) {p->cpu->d &= 0xfe;}
-void cbp83(Spec *p) {p->cpu->e &= 0xfe;}
-void cbp84(Spec *p) {p->cpu->h &= 0xfe;}
-void cbp85(Spec *p) {p->cpu->l &= 0xfe;}
-void cbp86(Spec *p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) & 0xfe);}
-void cbp87(Spec *p) {p->cpu->a &= 0xfe;}
+void cbp80(ZXBase* p) {p->cpu->b &= 0xfe;}
+void cbp81(ZXBase* p) {p->cpu->c &= 0xfe;}
+void cbp82(ZXBase* p) {p->cpu->d &= 0xfe;}
+void cbp83(ZXBase* p) {p->cpu->e &= 0xfe;}
+void cbp84(ZXBase* p) {p->cpu->h &= 0xfe;}
+void cbp85(ZXBase* p) {p->cpu->l &= 0xfe;}
+void cbp86(ZXBase* p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) & 0xfe);}
+void cbp87(ZXBase* p) {p->cpu->a &= 0xfe;}
 
-void cbp88(Spec *p) {p->cpu->b &= 0xfd;}
-void cbp89(Spec *p) {p->cpu->c &= 0xfd;}
-void cbp8A(Spec *p) {p->cpu->d &= 0xfd;}
-void cbp8B(Spec *p) {p->cpu->e &= 0xfd;}
-void cbp8C(Spec *p) {p->cpu->h &= 0xfd;}
-void cbp8D(Spec *p) {p->cpu->l &= 0xfd;}
-void cbp8E(Spec *p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) & 0xfd);}
-void cbp8F(Spec *p) {p->cpu->a &= 0xfd;}
+void cbp88(ZXBase* p) {p->cpu->b &= 0xfd;}
+void cbp89(ZXBase* p) {p->cpu->c &= 0xfd;}
+void cbp8A(ZXBase* p) {p->cpu->d &= 0xfd;}
+void cbp8B(ZXBase* p) {p->cpu->e &= 0xfd;}
+void cbp8C(ZXBase* p) {p->cpu->h &= 0xfd;}
+void cbp8D(ZXBase* p) {p->cpu->l &= 0xfd;}
+void cbp8E(ZXBase* p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) & 0xfd);}
+void cbp8F(ZXBase* p) {p->cpu->a &= 0xfd;}
 
-void cbp90(Spec *p) {p->cpu->b &= 0xfb;}
-void cbp91(Spec *p) {p->cpu->c &= 0xfb;}
-void cbp92(Spec *p) {p->cpu->d &= 0xfb;}
-void cbp93(Spec *p) {p->cpu->e &= 0xfb;}
-void cbp94(Spec *p) {p->cpu->h &= 0xfb;}
-void cbp95(Spec *p) {p->cpu->l &= 0xfb;}
-void cbp96(Spec *p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) & 0xfb);}
-void cbp97(Spec *p) {p->cpu->a &= 0xfb;}
+void cbp90(ZXBase* p) {p->cpu->b &= 0xfb;}
+void cbp91(ZXBase* p) {p->cpu->c &= 0xfb;}
+void cbp92(ZXBase* p) {p->cpu->d &= 0xfb;}
+void cbp93(ZXBase* p) {p->cpu->e &= 0xfb;}
+void cbp94(ZXBase* p) {p->cpu->h &= 0xfb;}
+void cbp95(ZXBase* p) {p->cpu->l &= 0xfb;}
+void cbp96(ZXBase* p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) & 0xfb);}
+void cbp97(ZXBase* p) {p->cpu->a &= 0xfb;}
 
-void cbp98(Spec *p) {p->cpu->b &= 0xf7;}
-void cbp99(Spec *p) {p->cpu->c &= 0xf7;}
-void cbp9A(Spec *p) {p->cpu->d &= 0xf7;}
-void cbp9B(Spec *p) {p->cpu->e &= 0xf7;}
-void cbp9C(Spec *p) {p->cpu->h &= 0xf7;}
-void cbp9D(Spec *p) {p->cpu->l &= 0xf7;}
-void cbp9E(Spec *p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) & 0xf7);}
-void cbp9F(Spec *p) {p->cpu->a &= 0xf7;}
+void cbp98(ZXBase* p) {p->cpu->b &= 0xf7;}
+void cbp99(ZXBase* p) {p->cpu->c &= 0xf7;}
+void cbp9A(ZXBase* p) {p->cpu->d &= 0xf7;}
+void cbp9B(ZXBase* p) {p->cpu->e &= 0xf7;}
+void cbp9C(ZXBase* p) {p->cpu->h &= 0xf7;}
+void cbp9D(ZXBase* p) {p->cpu->l &= 0xf7;}
+void cbp9E(ZXBase* p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) & 0xf7);}
+void cbp9F(ZXBase* p) {p->cpu->a &= 0xf7;}
 
-void cbpA0(Spec *p) {p->cpu->b &= 0xef;}
-void cbpA1(Spec *p) {p->cpu->c &= 0xef;}
-void cbpA2(Spec *p) {p->cpu->d &= 0xef;}
-void cbpA3(Spec *p) {p->cpu->e &= 0xef;}
-void cbpA4(Spec *p) {p->cpu->h &= 0xef;}
-void cbpA5(Spec *p) {p->cpu->l &= 0xef;}
-void cbpA6(Spec *p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) & 0xef);}
-void cbpA7(Spec *p) {p->cpu->a &= 0xef;}
+void cbpA0(ZXBase* p) {p->cpu->b &= 0xef;}
+void cbpA1(ZXBase* p) {p->cpu->c &= 0xef;}
+void cbpA2(ZXBase* p) {p->cpu->d &= 0xef;}
+void cbpA3(ZXBase* p) {p->cpu->e &= 0xef;}
+void cbpA4(ZXBase* p) {p->cpu->h &= 0xef;}
+void cbpA5(ZXBase* p) {p->cpu->l &= 0xef;}
+void cbpA6(ZXBase* p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) & 0xef);}
+void cbpA7(ZXBase* p) {p->cpu->a &= 0xef;}
 
-void cbpA8(Spec *p) {p->cpu->b &= 0xdf;}
-void cbpA9(Spec *p) {p->cpu->c &= 0xdf;}
-void cbpAA(Spec *p) {p->cpu->d &= 0xdf;}
-void cbpAB(Spec *p) {p->cpu->e &= 0xdf;}
-void cbpAC(Spec *p) {p->cpu->h &= 0xdf;}
-void cbpAD(Spec *p) {p->cpu->l &= 0xdf;}
-void cbpAE(Spec *p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) & 0xdf);}
-void cbpAF(Spec *p) {p->cpu->a &= 0xdf;}
+void cbpA8(ZXBase* p) {p->cpu->b &= 0xdf;}
+void cbpA9(ZXBase* p) {p->cpu->c &= 0xdf;}
+void cbpAA(ZXBase* p) {p->cpu->d &= 0xdf;}
+void cbpAB(ZXBase* p) {p->cpu->e &= 0xdf;}
+void cbpAC(ZXBase* p) {p->cpu->h &= 0xdf;}
+void cbpAD(ZXBase* p) {p->cpu->l &= 0xdf;}
+void cbpAE(ZXBase* p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) & 0xdf);}
+void cbpAF(ZXBase* p) {p->cpu->a &= 0xdf;}
 
-void cbpB0(Spec *p) {p->cpu->b &= 0xbf;}
-void cbpB1(Spec *p) {p->cpu->c &= 0xbf;}
-void cbpB2(Spec *p) {p->cpu->d &= 0xbf;}
-void cbpB3(Spec *p) {p->cpu->e &= 0xbf;}
-void cbpB4(Spec *p) {p->cpu->h &= 0xbf;}
-void cbpB5(Spec *p) {p->cpu->l &= 0xbf;}
-void cbpB6(Spec *p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) & 0xbf);}
-void cbpB7(Spec *p) {p->cpu->a &= 0xbf;}
+void cbpB0(ZXBase* p) {p->cpu->b &= 0xbf;}
+void cbpB1(ZXBase* p) {p->cpu->c &= 0xbf;}
+void cbpB2(ZXBase* p) {p->cpu->d &= 0xbf;}
+void cbpB3(ZXBase* p) {p->cpu->e &= 0xbf;}
+void cbpB4(ZXBase* p) {p->cpu->h &= 0xbf;}
+void cbpB5(ZXBase* p) {p->cpu->l &= 0xbf;}
+void cbpB6(ZXBase* p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) & 0xbf);}
+void cbpB7(ZXBase* p) {p->cpu->a &= 0xbf;}
 
-void cbpB8(Spec *p) {p->cpu->b &= 0x7f;}
-void cbpB9(Spec *p) {p->cpu->c &= 0x7f;}
-void cbpBA(Spec *p) {p->cpu->d &= 0x7f;}
-void cbpBB(Spec *p) {p->cpu->e &= 0x7f;}
-void cbpBC(Spec *p) {p->cpu->h &= 0x7f;}
-void cbpBD(Spec *p) {p->cpu->l &= 0x7f;}
-void cbpBE(Spec *p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) & 0x7f);}
-void cbpBF(Spec *p) {p->cpu->a &= 0x7f;}
+void cbpB8(ZXBase* p) {p->cpu->b &= 0x7f;}
+void cbpB9(ZXBase* p) {p->cpu->c &= 0x7f;}
+void cbpBA(ZXBase* p) {p->cpu->d &= 0x7f;}
+void cbpBB(ZXBase* p) {p->cpu->e &= 0x7f;}
+void cbpBC(ZXBase* p) {p->cpu->h &= 0x7f;}
+void cbpBD(ZXBase* p) {p->cpu->l &= 0x7f;}
+void cbpBE(ZXBase* p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) & 0x7f);}
+void cbpBF(ZXBase* p) {p->cpu->a &= 0x7f;}
 
-void cbpC0(Spec *p) {p->cpu->b |= 0x01;}
-void cbpC1(Spec *p) {p->cpu->c |= 0x01;}
-void cbpC2(Spec *p) {p->cpu->d |= 0x01;}
-void cbpC3(Spec *p) {p->cpu->e |= 0x01;}
-void cbpC4(Spec *p) {p->cpu->h |= 0x01;}
-void cbpC5(Spec *p) {p->cpu->l |= 0x01;}
-void cbpC6(Spec *p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) | 0x01);}
-void cbpC7(Spec *p) {p->cpu->a |= 0x01;}
+void cbpC0(ZXBase* p) {p->cpu->b |= 0x01;}
+void cbpC1(ZXBase* p) {p->cpu->c |= 0x01;}
+void cbpC2(ZXBase* p) {p->cpu->d |= 0x01;}
+void cbpC3(ZXBase* p) {p->cpu->e |= 0x01;}
+void cbpC4(ZXBase* p) {p->cpu->h |= 0x01;}
+void cbpC5(ZXBase* p) {p->cpu->l |= 0x01;}
+void cbpC6(ZXBase* p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) | 0x01);}
+void cbpC7(ZXBase* p) {p->cpu->a |= 0x01;}
 
-void cbpC8(Spec *p) {p->cpu->b |= 0x02;}
-void cbpC9(Spec *p) {p->cpu->c |= 0x02;}
-void cbpCA(Spec *p) {p->cpu->d |= 0x02;}
-void cbpCB(Spec *p) {p->cpu->e |= 0x02;}
-void cbpCC(Spec *p) {p->cpu->h |= 0x02;}
-void cbpCD(Spec *p) {p->cpu->l |= 0x02;}
-void cbpCE(Spec *p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) | 0x02);}
-void cbpCF(Spec *p) {p->cpu->a |= 0x02;}
+void cbpC8(ZXBase* p) {p->cpu->b |= 0x02;}
+void cbpC9(ZXBase* p) {p->cpu->c |= 0x02;}
+void cbpCA(ZXBase* p) {p->cpu->d |= 0x02;}
+void cbpCB(ZXBase* p) {p->cpu->e |= 0x02;}
+void cbpCC(ZXBase* p) {p->cpu->h |= 0x02;}
+void cbpCD(ZXBase* p) {p->cpu->l |= 0x02;}
+void cbpCE(ZXBase* p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) | 0x02);}
+void cbpCF(ZXBase* p) {p->cpu->a |= 0x02;}
 
-void cbpD0(Spec *p) {p->cpu->b |= 0x04;}
-void cbpD1(Spec *p) {p->cpu->c |= 0x04;}
-void cbpD2(Spec *p) {p->cpu->d |= 0x04;}
-void cbpD3(Spec *p) {p->cpu->e |= 0x04;}
-void cbpD4(Spec *p) {p->cpu->h |= 0x04;}
-void cbpD5(Spec *p) {p->cpu->l |= 0x04;}
-void cbpD6(Spec *p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) | 0x04);}
-void cbpD7(Spec *p) {p->cpu->a |= 0x04;}
+void cbpD0(ZXBase* p) {p->cpu->b |= 0x04;}
+void cbpD1(ZXBase* p) {p->cpu->c |= 0x04;}
+void cbpD2(ZXBase* p) {p->cpu->d |= 0x04;}
+void cbpD3(ZXBase* p) {p->cpu->e |= 0x04;}
+void cbpD4(ZXBase* p) {p->cpu->h |= 0x04;}
+void cbpD5(ZXBase* p) {p->cpu->l |= 0x04;}
+void cbpD6(ZXBase* p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) | 0x04);}
+void cbpD7(ZXBase* p) {p->cpu->a |= 0x04;}
 
-void cbpD8(Spec *p) {p->cpu->b |= 0x08;}
-void cbpD9(Spec *p) {p->cpu->c |= 0x08;}
-void cbpDA(Spec *p) {p->cpu->d |= 0x08;}
-void cbpDB(Spec *p) {p->cpu->e |= 0x08;}
-void cbpDC(Spec *p) {p->cpu->h |= 0x08;}
-void cbpDD(Spec *p) {p->cpu->l |= 0x08;}
-void cbpDE(Spec *p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) | 0x08);}
-void cbpDF(Spec *p) {p->cpu->a |= 0x08;}
+void cbpD8(ZXBase* p) {p->cpu->b |= 0x08;}
+void cbpD9(ZXBase* p) {p->cpu->c |= 0x08;}
+void cbpDA(ZXBase* p) {p->cpu->d |= 0x08;}
+void cbpDB(ZXBase* p) {p->cpu->e |= 0x08;}
+void cbpDC(ZXBase* p) {p->cpu->h |= 0x08;}
+void cbpDD(ZXBase* p) {p->cpu->l |= 0x08;}
+void cbpDE(ZXBase* p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) | 0x08);}
+void cbpDF(ZXBase* p) {p->cpu->a |= 0x08;}
 
-void cbpE0(Spec *p) {p->cpu->b |= 0x10;}
-void cbpE1(Spec *p) {p->cpu->c |= 0x10;}
-void cbpE2(Spec *p) {p->cpu->d |= 0x10;}
-void cbpE3(Spec *p) {p->cpu->e |= 0x10;}
-void cbpE4(Spec *p) {p->cpu->h |= 0x10;}
-void cbpE5(Spec *p) {p->cpu->l |= 0x10;}
-void cbpE6(Spec *p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) | 0x10);}
-void cbpE7(Spec *p) {p->cpu->a |= 0x10;}
+void cbpE0(ZXBase* p) {p->cpu->b |= 0x10;}
+void cbpE1(ZXBase* p) {p->cpu->c |= 0x10;}
+void cbpE2(ZXBase* p) {p->cpu->d |= 0x10;}
+void cbpE3(ZXBase* p) {p->cpu->e |= 0x10;}
+void cbpE4(ZXBase* p) {p->cpu->h |= 0x10;}
+void cbpE5(ZXBase* p) {p->cpu->l |= 0x10;}
+void cbpE6(ZXBase* p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) | 0x10);}
+void cbpE7(ZXBase* p) {p->cpu->a |= 0x10;}
 
-void cbpE8(Spec *p) {p->cpu->b |= 0x20;}
-void cbpE9(Spec *p) {p->cpu->c |= 0x20;}
-void cbpEA(Spec *p) {p->cpu->d |= 0x20;}
-void cbpEB(Spec *p) {p->cpu->e |= 0x20;}
-void cbpEC(Spec *p) {p->cpu->h |= 0x20;}
-void cbpED(Spec *p) {p->cpu->l |= 0x20;}
-void cbpEE(Spec *p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) | 0x20);}
-void cbpEF(Spec *p) {p->cpu->a |= 0x20;}
+void cbpE8(ZXBase* p) {p->cpu->b |= 0x20;}
+void cbpE9(ZXBase* p) {p->cpu->c |= 0x20;}
+void cbpEA(ZXBase* p) {p->cpu->d |= 0x20;}
+void cbpEB(ZXBase* p) {p->cpu->e |= 0x20;}
+void cbpEC(ZXBase* p) {p->cpu->h |= 0x20;}
+void cbpED(ZXBase* p) {p->cpu->l |= 0x20;}
+void cbpEE(ZXBase* p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) | 0x20);}
+void cbpEF(ZXBase* p) {p->cpu->a |= 0x20;}
 
-void cbpF0(Spec *p) {p->cpu->b |= 0x40;}
-void cbpF1(Spec *p) {p->cpu->c |= 0x40;}
-void cbpF2(Spec *p) {p->cpu->d |= 0x40;}
-void cbpF3(Spec *p) {p->cpu->e |= 0x40;}
-void cbpF4(Spec *p) {p->cpu->h |= 0x40;}
-void cbpF5(Spec *p) {p->cpu->l |= 0x40;}
-void cbpF6(Spec *p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) | 0x40);}
-void cbpF7(Spec *p) {p->cpu->a |= 0x40;}
+void cbpF0(ZXBase* p) {p->cpu->b |= 0x40;}
+void cbpF1(ZXBase* p) {p->cpu->c |= 0x40;}
+void cbpF2(ZXBase* p) {p->cpu->d |= 0x40;}
+void cbpF3(ZXBase* p) {p->cpu->e |= 0x40;}
+void cbpF4(ZXBase* p) {p->cpu->h |= 0x40;}
+void cbpF5(ZXBase* p) {p->cpu->l |= 0x40;}
+void cbpF6(ZXBase* p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) | 0x40);}
+void cbpF7(ZXBase* p) {p->cpu->a |= 0x40;}
 
-void cbpF8(Spec *p) {p->cpu->b |= 0x80;}
-void cbpF9(Spec *p) {p->cpu->c |= 0x80;}
-void cbpFA(Spec *p) {p->cpu->d |= 0x80;}
-void cbpFB(Spec *p) {p->cpu->e |= 0x80;}
-void cbpFC(Spec *p) {p->cpu->h |= 0x80;}
-void cbpFD(Spec *p) {p->cpu->l |= 0x80;}
-void cbpFE(Spec *p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) | 0x80);}
-void cbpFF(Spec *p) {p->cpu->a |= 0x80;}
+void cbpF8(ZXBase* p) {p->cpu->b |= 0x80;}
+void cbpF9(ZXBase* p) {p->cpu->c |= 0x80;}
+void cbpFA(ZXBase* p) {p->cpu->d |= 0x80;}
+void cbpFB(ZXBase* p) {p->cpu->e |= 0x80;}
+void cbpFC(ZXBase* p) {p->cpu->h |= 0x80;}
+void cbpFD(ZXBase* p) {p->cpu->l |= 0x80;}
+void cbpFE(ZXBase* p) {p->mem->wr(p->cpu->hl,p->mem->rd(p->cpu->hl) | 0x80);}
+void cbpFF(ZXBase* p) {p->cpu->a |= 0x80;}
 
 //==================
 

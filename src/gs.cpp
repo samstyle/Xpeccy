@@ -1,7 +1,9 @@
 #include "gs.h"
 
+extern GS* gs;
+
 GS::GS() {
-	sys = new Spec;
+	sys = new ZXBase;
 	sys->cpu = new Z80(GS_FRQ);
 	sys->mem = new Memory(MEM_GS);
 	sys->io = new IOSys(&gs_in,&gs_out);

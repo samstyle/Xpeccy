@@ -4,6 +4,9 @@
 #include "bdi.h"
 #include "hdd.h"
 
+extern IDE* ide;
+extern BDI* bdi;
+
 // IDE controller
 
 IDE::IDE() {
