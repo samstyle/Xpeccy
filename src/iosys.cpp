@@ -21,7 +21,7 @@ extern GS* gs;
 
 void zx_out(int port, uint8_t val) {
 //	if (ide->out(port,val)) return;
-	gs->sync(zx->sys->vid->t);
+	gs->sync(zx->vid->t);
 	if (gs->out(port,val)) return;
 	if (bdi->out(port,val)) return;
 	port = hw->getport(port);
@@ -41,7 +41,7 @@ uint8_t zx_in(int port) {
 //		return res;
 //	}
 //	if (ide->in(port,&res)) return res;
-	gs->sync(zx->sys->vid->t);
+	gs->sync(zx->vid->t);
 	if (gs->in(port,&res)) return res;
 	if (bdi->in(port,&res)) return res;
 	port = hw->getport(port);
@@ -51,7 +51,7 @@ uint8_t zx_in(int port) {
 void IOSys::out7ffd(uint8_t val) {
 	if (block7ffd) return;
 	zx->sys->mem->prt0 = val;
-	zx->sys->vid->curscr = val & 0x08;
+	zx->vid->curscr = val & 0x08;
 	block7ffd = val & 0x20;
 }
 
@@ -90,7 +90,7 @@ uint8_t IOSys::iostdin(int port) {
 
 void IOSys::iostdout(int port, uint8_t val) {
 	if ((port&0xff) == 0xfe) {
-		zx->sys->vid->brdcol = val&0x07;
+		zx->vid->brdcol = val&0x07;
 		snd->beeplev = val&0x10;
 		zx->tape->outsig = val&0x08; zx->tape->sync();
 	}
@@ -196,14 +196,14 @@ void p1m_outport(int port,uint8_t val) {
 	switch (port) {
 		case 0x7ffd:
 			if (zx->sys->io->block7ffd) break;
-			zx->sys->vid->curscr = val & 0x08;
+			zx->vid->curscr = val & 0x08;
 			zx->sys->mem->prt0 = val;
 			zx->sys->io->block7ffd = ((zx->sys->mem->prt1 & 4) && (val & 0x20));
 			p1m_setrom();
 			break;
 		case 0xeff7:
 			zx->sys->mem->prt1 = val;
-			zx->sys->vid->mode = (val & 1) ? VID_ALCO : VID_NORMAL;
+			zx->vid->mode = (val & 1) ? VID_ALCO : VID_NORMAL;
 			zx->sys->cpu->frq = (val & 16) ? 7.0 : 3.5;
 			p1m_setrom();
 			break;
@@ -252,8 +252,8 @@ uint8_t scrp_inport(int port) {
 	switch (port) {
 		case 0x7ffd: zx->sys->cpu->frq = 7.0; break;
 		case 0x1ffd: zx->sys->cpu->frq = 3.5; break;
-		case 0xff: if (((zx->sys->vid->curr.h - zx->sys->vid->bord.h) < 256) && ((zx->sys->vid->curr.v - zx->sys->vid->bord.v) < 192)) {
-				res = zx->sys->vid->atrbyte;
+		case 0xff: if (((zx->vid->curr.h - zx->vid->bord.h) < 256) && ((zx->vid->curr.v - zx->vid->bord.v) < 192)) {
+				res = zx->vid->atrbyte;
 			} break;
 	}
 	return res;

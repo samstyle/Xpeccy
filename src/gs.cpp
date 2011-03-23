@@ -7,7 +7,7 @@ GS::GS() {
 	sys->cpu = new Z80(GS_FRQ);
 	sys->mem = new Memory(MEM_GS);
 	sys->io = new IOSys(&gs_in,&gs_out);
-	sys->vid = NULL;
+//	sys->vid = NULL;
 	sys->mem->pt0 = &sys->mem->rom[0][0];
 	sys->mem->pt1 = &sys->mem->ram[0][0];
 	sys->mem->pt2 = &sys->mem->ram[0][0];
@@ -39,13 +39,15 @@ SndData GS::getvol() {
 }
 
 void GS::sync(uint32_t tk) {
+	ZOpResult res;
 	int ln = (tk - t) * GS_FRQ / 7.0;		// scale to GS ticks;
 	t = tk;
 	if (~flags & GS_ENABLE) return;
 	while (ln > 0) {
-		tk = sys->exec();
-		ln -= tk;
-		cnt += tk;
+		res = sys->exec();
+		res.exec(sys);
+		ln -= res.ticks;
+		cnt += res.ticks;
 		if (cnt > 320) {	// 12MHz CLK, 37.5KHz INT -> int in each 320 ticks
 			cnt -= 320;
 			tk = sys->interrupt();

@@ -96,15 +96,15 @@ void edpA9(ZXBase* p) {p->cpu->bc--; p->cpu->x = p->mem->rd(p->cpu->hl--); p->cp
 void edpAA(ZXBase* p) {p->cpu->mptr = p->cpu->bc - 1; p->mem->wr(p->cpu->hl--,p->io->in(p->cpu->bc)); p->cpu->b--; p->cpu->f = (p->cpu->f & ~(FZ | FN)) | ((p->cpu->b == 0)?FZ:0) | FN;}	// ind	mptr = bc.before - 1
 void edpAB(ZXBase* p) {p->io->out(p->cpu->bc,p->mem->rd(p->cpu->hl--)); p->cpu->b--; p->cpu->mptr = p->cpu->bc - 1; p->cpu->f = (p->cpu->f & ~(FZ | FN)) | ((p->cpu->b == 0)?FZ:0) | FN;}	// outd	mptr = bc.after - 1
 // [blk]ir
-void edpB0(ZXBase* p) {edpA0(p); if (p->cpu->f & FP) {p->cpu->mptr = p->cpu->pc - 1; p->cpu->pc -= 2; p->cpu->t += 5;}}			// ldir: if (not over) mptr = instr.adr + 1
-void edpB1(ZXBase* p) {edpA1(p); if ((!(p->cpu->f & FZ)) && (p->cpu->f & FP)) {p->cpu->mptr = p->cpu->pc - 1; p->cpu->pc -= 2; p->cpu->t += 5;}}	// cpir: if (not over) mptr = instr.adr + 1
-void edpB2(ZXBase* p) {edpA2(p); if (!(p->cpu->f & FZ)) {p->cpu->pc -= 2; p->cpu->t += 5;}}
-void edpB3(ZXBase* p) {edpA3(p); if (!(p->cpu->f & FZ)) {p->cpu->pc -= 2; p->cpu->t += 5;}}
+void edpB0(ZXBase* p) {edpA0(p); if (p->cpu->f & FP) {p->cpu->mptr = p->cpu->pc - 1; p->cpu->pc -= 2; /*p->cpu->t += 5;*/}}			// ldir: if (not over) mptr = instr.adr + 1
+void edpB1(ZXBase* p) {edpA1(p); if ((!(p->cpu->f & FZ)) && (p->cpu->f & FP)) {p->cpu->mptr = p->cpu->pc - 1; p->cpu->pc -= 2; /*p->cpu->t += 5;*/}}	// cpir: if (not over) mptr = instr.adr + 1
+void edpB2(ZXBase* p) {edpA2(p); if (!(p->cpu->f & FZ)) {p->cpu->pc -= 2; /*p->cpu->t += 5;*/}}
+void edpB3(ZXBase* p) {edpA3(p); if (!(p->cpu->f & FZ)) {p->cpu->pc -= 2; /*p->cpu->t += 5;*/}}
 // [blk]dr
-void edpB8(ZXBase* p) {edpA8(p); if (p->cpu->f & FP) {p->cpu->mptr = p->cpu->pc - 1; p->cpu->pc -= 2; p->cpu->t += 5;}}			// lddr: if (not over) mptr = instr.adr + 1
-void edpB9(ZXBase* p) {edpA9(p); if ((!(p->cpu->f & FZ)) && (p->cpu->f & FP)) {p->cpu->mptr = p->cpu->pc - 1; p->cpu->pc -= 2; p->cpu->t += 5;}}	// cpdr: if (not over) mptr = instr.adr + 1
-void edpBA(ZXBase* p) {edpAA(p); if (!(p->cpu->f & FZ)) {p->cpu->pc -= 2; p->cpu->t += 5;}}
-void edpBB(ZXBase* p) {edpAB(p); if (!(p->cpu->f & FZ)) {p->cpu->pc -= 2; p->cpu->t += 5;}}
+void edpB8(ZXBase* p) {edpA8(p); if (p->cpu->f & FP) {p->cpu->mptr = p->cpu->pc - 1; p->cpu->pc -= 2; /*p->cpu->t += 5;*/}}			// lddr: if (not over) mptr = instr.adr + 1
+void edpB9(ZXBase* p) {edpA9(p); if ((!(p->cpu->f & FZ)) && (p->cpu->f & FP)) {p->cpu->mptr = p->cpu->pc - 1; p->cpu->pc -= 2; /*p->cpu->t += 5;*/}}	// cpdr: if (not over) mptr = instr.adr + 1
+void edpBA(ZXBase* p) {edpAA(p); if (!(p->cpu->f & FZ)) {p->cpu->pc -= 2; /*p->cpu->t += 5;*/}}
+void edpBB(ZXBase* p) {edpAB(p); if (!(p->cpu->f & FZ)) {p->cpu->pc -= 2; /*p->cpu->t += 5;*/}}
 
 ZOp edpref[256]={
 	ZOp(&npr00,4,"nop *"),
@@ -305,19 +305,19 @@ ZOp edpref[256]={
 	ZOp(&npr00,4,"nop *"),
 	ZOp(&npr00,4,"nop *"),
 
-	ZOp(&edpB0,12,"ldir"),
-	ZOp(&edpB1,12,"cpir"),
-	ZOp(&edpB2,12,"inir"),
-	ZOp(&edpB3,12,"otir"),
+	ZOp(&edpB0,12,CND_LDIR,5,0,"ldir",0),
+	ZOp(&edpB1,12,CND_CPIR,5,0,"cpir",0),
+	ZOp(&edpB2,12,CND_LDIR,5,0,"inir",0),
+	ZOp(&edpB3,12,CND_LDIR,5,0,"otir",0),
 	ZOp(&npr00,4,"nop *"),
 	ZOp(&npr00,4,"nop *"),
 	ZOp(&npr00,4,"nop *"),
 	ZOp(&npr00,4,"nop *"),
 
-	ZOp(&edpB8,12,"lddr"),
-	ZOp(&edpB9,12,"cpdr"),
-	ZOp(&edpBA,12,"indr"),
-	ZOp(&edpBB,12,"otdr"),
+	ZOp(&edpB8,12,CND_LDIR,5,0,"lddr",0),
+	ZOp(&edpB9,12,CND_CPIR,5,0,"cpdr",0),
+	ZOp(&edpBA,12,CND_LDIR,5,0,"indr",0),
+	ZOp(&edpBB,12,CND_LDIR,5,0,"otdr",0),
 	ZOp(&npr00,4,"nop *"),
 	ZOp(&npr00,4,"nop *"),
 	ZOp(&npr00,4,"nop *"),

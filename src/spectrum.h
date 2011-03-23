@@ -18,7 +18,8 @@
 #define CND_P		3
 #define CND_S		4
 #define CND_DJNZ	5
-#define CND_BLK		6
+#define CND_LDIR	6
+#define CND_CPIR	7
 
 #define	ZOP_PREFIX	(1<<0)
 
@@ -40,6 +41,11 @@ class ZOp {
 //		bool prf;		// is prefix (CB,DD,ED,FD)
 };
 
+struct ZOpResult {
+	int ticks;
+	void(*exec)(ZXBase*);
+};
+
 class ZXBase {
 	public:
 		ZXBase();
@@ -49,10 +55,10 @@ class ZXBase {
 		Z80 *cpu;
 		Memory* mem;
 		IOSys* io;
-		Video* vid;
+//		Video* vid;
 		ZOp* inst[9];
-		void nmihandle();
-		int32_t exec();
+//		void nmihandle();
+		ZOpResult exec();
 		int32_t interrupt();
 };
 
@@ -60,9 +66,15 @@ class ZXComp {
 	public:
 		ZXComp();
 		ZXBase* sys;
+		Video* vid;
 		Tape* tape;
 //		BDI* bdi;
+		void exec();
 		void reset();
+//		uint8_t in(int);
+//		void out(int,uint8_t);
+		void INTHandle();
+		void NMIHandle();
 };
 
 // extern Spec *sys;

@@ -42,7 +42,7 @@ AYChan::AYChan() {lev = false; vol = lim = bgn = pos = cur = 0;}
 void Sound::defpars() {
 	chunks = (int)(rate/50.0);
 	bufsize = (int)(rate*chans/50.0);
-	tatbyte = (int)(zx->sys->vid->frmsz / ((float)chunks * 1.0));	// 2.0
+	tatbyte = (int)(zx->vid->frmsz / ((float)chunks * 1.0));	// 2.0
 }
 
 void Sound::setoutptr(std::string nam) {
@@ -72,7 +72,7 @@ void Sound::sync() {
 //	printf("%i + %i ? %i\n",t,tatbyte,sys->vid->t);
 	t += tatbyte;
 	zx->tape->sync();
-	gs->sync(zx->sys->vid->t);
+	gs->sync(zx->vid->t);
 	lev = beeplev?beepvol:0;
 	if (zx->tape->flags & TAPE_ON) lev += (((zx->tape->outsig & 1)?tapevol:0) + ((zx->tape->signal & 1)?tapevol:0));
 #if 0
@@ -126,13 +126,13 @@ void AYProc::settype(int t) {
 			break;
 		default: throw("Internal error\nUnexpected AY type in AYProc::settype"); break;
 	}
-	aycoe = 400 * zx->sys->vid->frmsz / (float)freq;		// vid ticks in half-period of note 1 (400)
+	aycoe = 400 * zx->vid->frmsz / (float)freq;		// vid ticks in half-period of note 1 (400)
 }
 
 SndData AYProc::getvol() {
 // calculating A,B,C,envelope & noise levels
 	SndData res; res.l = res.r = 8;
-	Video* p = zx->sys->vid;
+	Video* p = zx->vid;
 	if (type == SND_NONE) return res;
 	if (a.lim != 0) {if ((p->t - a.bgn) > a.lim) {a.lev = !a.lev; a.bgn += (uint32_t)a.lim;}} else {a.bgn = p->t;}
 	if (b.lim != 0) {if ((p->t - b.bgn) > b.lim) {b.lev = !b.lev; b.bgn += (uint32_t)b.lim;}} else {b.bgn = p->t;}
@@ -190,7 +190,7 @@ void AYProc::reset() {
 	int i; for (i = 0;i < 16;i++) reg[i] = 0;
 	n.cur = 0xffff; e.cur = 0;
 	n.pos = e.pos = 0;
-	a.bgn = b.bgn = c.bgn = n.bgn = e.bgn = zx->sys->vid->t;
+	a.bgn = b.bgn = c.bgn = n.bgn = e.bgn = zx->vid->t;
 	a.lim = b.lim = c.lim = n.lim = e.lim = 0;
 }
 
@@ -207,7 +207,7 @@ void AYProc::setreg(uint8_t value) {
 		case 0x06: n.lim = 2*aycoe*(value&31); break;
 		case 0x0b:
 		case 0x0c: e.lim = 2*aycoe*(reg[11]+(reg[12]<<8)); break;
-		case 0x0d: e.cur = value&15; e.pos = 0; e.bgn = zx->sys->vid->t; break;
+		case 0x0d: e.cur = value&15; e.pos = 0; e.bgn = zx->vid->t; break;
 		case 0x0e: if (reg[7]&0x40) reg[14]=value; break;
 		case 0x0f: if (reg[7]&0x80) reg[15]=value; break;
 	}

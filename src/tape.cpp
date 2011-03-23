@@ -18,7 +18,7 @@ int TapeBlock::gettime(int p=-1) {
 	long totsz = 0;
 	if (p==-1) p=data.size();
 	int i; for(i=0; i<p; i++) totsz += data[i];
-	return (totsz / (zx->sys->vid->frmsz * 25));
+	return (totsz / (zx->vid->frmsz * 25));
 }
 
 int TapeBlock::getsize() {return (((data.size() - datapos)>>4) - 2);}
@@ -55,8 +55,8 @@ void Tape::eject() {
 }
 
 void Tape::sync() {
-	int dlt = (zx->sys->vid->t - lastick) / 2.0;
-	lastick = zx->sys->vid->t;
+	int dlt = (zx->vid->t - lastick) / 2.0;
+	lastick = zx->vid->t;
 	if (flags & TAPE_ON) {
 		if (flags & TAPE_REC) {
 			if (flags & TAPE_WAIT) {
@@ -93,7 +93,7 @@ void Tape::sync() {
 		siglen -= dlt;
 		while (siglen < 1) {
 			signal = !signal;
-			siglen += zx->sys->vid->frmsz*25;	// .5 sec
+			siglen += zx->vid->frmsz*25;	// .5 sec
 		}
 	}
 }
@@ -255,7 +255,7 @@ void Tape::load(std::string sfnam,uint8_t type) {
 				len = getlen(&file,2);
 				if (!file.eof()) {
 					newb = parse(&file,len,slens);
-					newb.pause = zx->sys->vid->frmsz * ((newb.pdur==8063)?50:25);
+					newb.pause = zx->vid->frmsz * ((newb.pdur==8063)?50:25);
 					data.push_back(newb);
 				}
 			}
@@ -277,7 +277,7 @@ void Tape::load(std::string sfnam,uint8_t type) {
 						paulen = getlen(&file,2);
 						len = getlen(&file,2);
 						newb = parse(&file,len,slens);
-						newb.data.push_back((zx->sys->vid->frmsz/20)*paulen);
+						newb.data.push_back((zx->vid->frmsz/20)*paulen);
 						data.push_back(newb);
 						break;
 					case 0x11:
@@ -291,7 +291,7 @@ void Tape::load(std::string sfnam,uint8_t type) {
 						paulen = getlen(&file,2);
 						len = getlen(&file,3);
 						newb = parse(&file,len,alens);
-						newb.data.push_back((zx->sys->vid->frmsz/20)*paulen);
+						newb.data.push_back((zx->vid->frmsz/20)*paulen);
 						data.push_back(newb);
 						flags &= ~TAPE_CANSAVE;
 						break;
@@ -316,7 +316,7 @@ void Tape::load(std::string sfnam,uint8_t type) {
 						paulen = getlen(&file,2);
 						len = getlen(&file,3);
 						newb = parse(&file,len,alens);
-						newb.data.push_back((zx->sys->vid->frmsz/20)*paulen);
+						newb.data.push_back((zx->vid->frmsz/20)*paulen);
 						data.push_back(newb);
 						flags &= ~TAPE_CANSAVE;
 						break;

@@ -92,8 +92,8 @@ void splitline(std::string line, std::string* pnam, std::string* pval) {
 	}
 }
 
-uint8_t zx_in(int);
-void zx_out(int,uint8_t);
+//uint8_t zx_in(int);
+//void zx_out(int,uint8_t);
 void filltabs();
 
 int main(int ac,char** av) {
@@ -120,11 +120,8 @@ int main(int ac,char** av) {
 //			cpu = new Z80();
 //			iosys = new IOSys(&zx_in,&zx_out);
 			zx = new ZXComp;
+			zx->vid = new Video;
 //			zx->sys = new ZXBase;
-				zx->sys->cpu = new Z80(3.5);
-				zx->sys->mem = new Memory(MEM_ZX);
-				zx->sys->io = new IOSys(&zx_in,&zx_out);
-				zx->sys->vid = new Video;
 //			vid = new Video();
 			keyb = new Keyboard();
 			mouse = new Mouse();

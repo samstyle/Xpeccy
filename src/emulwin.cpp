@@ -64,7 +64,7 @@ EmulWin::EmulWin() {
 	setMouseTracking(true);
 
 	pal.clear(); pal.resize(256);
-	int i; for(i=0;i<256;i++) {pal[i] = qRgb(zx->sys->vid->pal[i].r,zx->sys->vid->pal[i].g,zx->sys->vid->pal[i].b);}
+	int i; for(i=0;i<256;i++) {pal[i] = qRgb(zx->vid->pal[i].r,zx->vid->pal[i].g,zx->vid->pal[i].b);}
 
 	fast = false;
 
@@ -72,7 +72,7 @@ EmulWin::EmulWin() {
 	flags = 0;
 	menu = new QMenu("User Menu",this);
 
-	setFixedSize(zx->sys->vid->wsze.h,zx->sys->vid->wsze.v);
+	setFixedSize(zx->vid->wsze.h,zx->vid->wsze.v);
 #ifndef WIN32
 	SDL_SysWMinfo inf;
 	SDL_VERSION(&inf.version);
@@ -141,7 +141,7 @@ void EmulWin::updateframe() {
 		SDL_BlitSurface(csurf,NULL,sys->vid->surf,NULL);
 	}
 */
-	SDL_UpdateRect(zx->sys->vid->surf,0,0,0,0);
+	SDL_UpdateRect(zx->vid->surf,0,0,0,0);
 }
 
 void EmulWin::emulframe() {
@@ -163,7 +163,7 @@ void EmulWin::emulframe() {
 			snd->outsys->play();
 		}
 		snd->sbptr = snd->sndbuf;
-		snd->t = zx->sys->vid->t;
+		snd->t = zx->vid->t;
 		do {
 			exec();
 		} while (!zx->sys->cpu->err && !zx->sys->istrb);
@@ -196,9 +196,9 @@ void EmulWin::emulframe() {
 		std::string fnam = sets->ssdir + "/sshot" + int2str(ssnum) + "." + sets->ssformat;
 		if (sets->ssformat == "scr") {
 			std::ofstream file(fnam.c_str(),std::ios::binary);
-			file.write((char*)&zx->sys->mem->ram[zx->sys->vid->curscr?7:5][0],0x1b00);
+			file.write((char*)&zx->sys->mem->ram[zx->vid->curscr?7:5][0],0x1b00);
 		} else {
-			QImage *img = new QImage((uchar*)zx->sys->vid->surf->pixels,zx->sys->vid->wsze.h,zx->sys->vid->wsze.v,QImage::Format_Indexed8);
+			QImage *img = new QImage((uchar*)zx->vid->surf->pixels,zx->vid->wsze.h,zx->vid->wsze.v,QImage::Format_Indexed8);
 			img->setColorTable(pal);
 			if (img==NULL) {
 				printf("NULL image\n");
@@ -212,10 +212,10 @@ void EmulWin::emulframe() {
 }
 
 void EmulWin::exec() {
-	uint32_t ln = zx->sys->vid->t;
-	zx->sys->exec();
-	ln = zx->sys->vid->t - ln;
-	if (zx->sys->vid->t > snd->t) {
+	uint32_t ln = zx->vid->t;
+	zx->exec();
+	ln = zx->vid->t - ln;
+	if (zx->vid->t > snd->t) {
 		snd->sync();
 	}
 	if (bdi->enable) {
@@ -230,8 +230,8 @@ void EmulWin::exec() {
 			zx->sys->cpu->err = true;
 		}
 		if (!zx->sys->cpu->err && zx->sys->istrb) {
-			ln = zx->sys->interrupt();
-			zx->sys->vid->sync(ln, zx->sys->cpu->frq);
+			zx->INTHandle();
+//			zx->vid->sync(ln, zx->sys->cpu->frq);
 		}
 	}
 }
@@ -259,11 +259,11 @@ void EmulWin::repause(bool p, int msk) {
 	}
 	if (msk & PR_PAUSE) return;
 	if ((paused & ~PR_PAUSE) == 0) {
-		zx->sys->vid->flags &= ~VF_BLOCKFULLSCREEN;
-		if (zx->sys->vid->flags & VF_FULLSCREEN) zx->sys->vid->update();
+		zx->vid->flags &= ~VF_BLOCKFULLSCREEN;
+		if (zx->vid->flags & VF_FULLSCREEN) zx->vid->update();
 	} else {
-		zx->sys->vid->flags |= VF_BLOCKFULLSCREEN;
-		if (zx->sys->vid->flags & VF_FULLSCREEN) zx->sys->vid->update();
+		zx->vid->flags |= VF_BLOCKFULLSCREEN;
+		if (zx->vid->flags & VF_FULLSCREEN) zx->vid->update();
 	}
 }
 
@@ -286,15 +286,15 @@ void EmulWin::SDLEventHandler() {
 			case SDL_KEYDOWN:
 				if (ev.key.keysym.mod & KMOD_ALT) {
 					switch(ev.key.keysym.sym) {
-						case SDLK_0: zx->sys->vid->mode = (zx->sys->vid->mode==VID_NORMAL)?VID_ALCO:VID_NORMAL; break;
-						case SDLK_1: zx->sys->vid->flags &= ~VF_DOUBLE; zx->sys->vid->update(); sets->save(); break;
-						case SDLK_2: zx->sys->vid->flags |= VF_DOUBLE; zx->sys->vid->update(); sets->save(); break;
+						case SDLK_0: zx->vid->mode = (zx->vid->mode==VID_NORMAL)?VID_ALCO:VID_NORMAL; break;
+						case SDLK_1: zx->vid->flags &= ~VF_DOUBLE; zx->vid->update(); sets->save(); break;
+						case SDLK_2: zx->vid->flags |= VF_DOUBLE; zx->vid->update(); sets->save(); break;
 						case SDLK_3: fast = !fast;
 							tim1->start(fast?0:20);
 							break;
 						case SDLK_F4: close(); break;
 						case SDLK_F7: ssbcnt = sets->sscnt; ssbint=0; break;	// ALT+F7 combo
-						case SDLK_RETURN: zx->sys->vid->flags ^= VF_FULLSCREEN; zx->sys->vid->update(); sets->save(); break;
+						case SDLK_RETURN: zx->vid->flags ^= VF_FULLSCREEN; zx->vid->update(); sets->save(); break;
 						case SDLK_c:
 							flags ^= FL_GRAB;
 							if (flags & FL_GRAB) {
@@ -633,18 +633,18 @@ void Settings::save() {
 	sfile<<"cpu.frq = "<<int2str((int)(zx->sys->cpu->frq * 2.0)).c_str()<<"\n";
 	
 	sfile<<"\n[VIDEO]\n\n";
-	sfile<<"doublesize = "<<((zx->sys->vid->flags & VF_DOUBLE)?"y":"n")<<"\n";
-	sfile<<"fullscreen = "<<((zx->sys->vid->flags & VF_FULLSCREEN)?"y":"n")<<"\n";
-	sfile<<"bordersize = "<<int2str((int)(zx->sys->vid->brdsize * 100)).c_str()<<"\n";
-	for (i=1; i < zx->sys->vid->layout.size(); i++) {
+	sfile<<"doublesize = "<<((zx->vid->flags & VF_DOUBLE)?"y":"n")<<"\n";
+	sfile<<"fullscreen = "<<((zx->vid->flags & VF_FULLSCREEN)?"y":"n")<<"\n";
+	sfile<<"bordersize = "<<int2str((int)(zx->vid->brdsize * 100)).c_str()<<"\n";
+	for (i=1; i < zx->vid->layout.size(); i++) {
 		sfile << "layout = ";
-		sfile << zx->sys->vid->layout[i].name.c_str() << ":";
-		sfile << int2str(zx->sys->vid->layout[i].full.h) << ":" << int2str(zx->sys->vid->layout[i].full.v) << ":";
-		sfile << int2str(zx->sys->vid->layout[i].bord.h) << ":" << int2str(zx->sys->vid->layout[i].bord.v) << ":";
-		sfile << int2str(zx->sys->vid->layout[i].sync.h) << ":" << int2str(zx->sys->vid->layout[i].sync.v) << ":";
-		sfile << int2str(zx->sys->vid->layout[i].intsz) << ":" << int2str(zx->sys->vid->layout[i].intpos) << "\n";
+		sfile << zx->vid->layout[i].name.c_str() << ":";
+		sfile << int2str(zx->vid->layout[i].full.h) << ":" << int2str(zx->vid->layout[i].full.v) << ":";
+		sfile << int2str(zx->vid->layout[i].bord.h) << ":" << int2str(zx->vid->layout[i].bord.v) << ":";
+		sfile << int2str(zx->vid->layout[i].sync.h) << ":" << int2str(zx->vid->layout[i].sync.v) << ":";
+		sfile << int2str(zx->vid->layout[i].intsz) << ":" << int2str(zx->vid->layout[i].intpos) << "\n";
 	}
-	sfile<<"geometry = "<<zx->sys->vid->curlay.c_str()<<"\n";
+	sfile<<"geometry = "<<zx->vid->curlay.c_str()<<"\n";
 
 	sfile<<"\n[SCREENSHOTS]\n\n";
 	sfile<<"folder = "<<ssdir.c_str()<<"\n";
@@ -820,17 +820,17 @@ void Settings::load(bool dev) {
 						break;
 					case 2: if (pnam=="doublesize") {
 							if (str2bool(pval))
-								zx->sys->vid->flags |= VF_DOUBLE;
+								zx->vid->flags |= VF_DOUBLE;
 							else
-								zx->sys->vid->flags &= ~VF_DOUBLE;
+								zx->vid->flags &= ~VF_DOUBLE;
 						}
 						if (pnam=="fullscreen") {
 							if (str2bool(pval))
-								zx->sys->vid->flags |= VF_FULLSCREEN;
+								zx->vid->flags |= VF_FULLSCREEN;
 							else
-								zx->sys->vid->flags &= ~VF_FULLSCREEN;
+								zx->vid->flags &= ~VF_FULLSCREEN;
 						}
-						if (pnam=="bordersize") {test = atoi(pval.c_str()); if ((test>-1) && (test<101)) zx->sys->vid->brdsize = test/100.0;}
+						if (pnam=="bordersize") {test = atoi(pval.c_str()); if ((test>-1) && (test<101)) zx->vid->brdsize = test/100.0;}
 						if (pnam=="layout") {
 							vect = splitstr(pval,":");
 //for(uint i=0;i<vect.size();i++) printf("%s\t",vect[i].c_str());
@@ -844,11 +844,11 @@ void Settings::load(bool dev) {
 								vlay.intsz = atoi(vect[7].c_str()); vlay.intpos = atoi(vect[8].c_str());
 //printf("%s\t%i\t%i\t%i\t%i\t%i\t%i\t%i\n",vlay.name.c_str(),vlay.full.h,vlay.full.v,vlay.bord.h,vlay.bord.v,vlay.sync.h,vlay.sync.v,vlay.intsz);
 								if ((vlay.full.h > vlay.bord.h + 256) && (vlay.bord.h > vlay.sync.h) && (vlay.full.v > vlay.bord.v + 192) && (vlay.bord.v > vlay.sync.v)) {
-									zx->sys->vid->layout.push_back(vlay);
+									zx->vid->layout.push_back(vlay);
 								}
 							}
 						}
-						if (pnam=="geometry") zx->sys->vid->curlay = pval;
+						if (pnam=="geometry") zx->vid->curlay = pval;
 						break;
 					case 3: if (pnam=="folder") ssdir=pval;
 						if (pnam=="format") ssformat=pval;
@@ -942,8 +942,8 @@ void Settings::load(bool dev) {
 	if (hw==NULL) throw("Can't found current machine");
 	if (zx->sys->mem->romset==NULL) throw("Can't found current romset");
 	if (~hw->mask & tmask) throw("Incorrect memory size for this machine");
-	if (!zx->sys->vid->setlayout(zx->sys->vid->curlay)) zx->sys->vid->setlayout("default");
-	zx->sys->vid->update();
+	if (!zx->vid->setlayout(zx->vid->curlay)) zx->vid->setlayout("default");
+	zx->vid->update();
 	zx->sys->mem->loadromset();
 	mwin->makemenu();
 }

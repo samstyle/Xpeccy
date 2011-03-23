@@ -43,7 +43,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.mszbox->addItems(QStringList()<<"48K"<<"128K"<<"256K"<<"512K"<<"1024K");
 // video
 	ui.ssfbox->addItems(QStringList()<<"bmp"<<"png"<<"jpg"<<"scr");
-	for (i=0;i<zx->sys->vid->layout.size();i++) {ui.geombox->addItem(QDialog::trUtf8(zx->sys->vid->layout[i].name.c_str()));}
+	for (i=0;i<zx->vid->layout.size();i++) {ui.geombox->addItem(QDialog::trUtf8(zx->vid->layout[i].name.c_str()));}
 // sound
 	for (i=0;i<snd->outsyslist.size();i++) {ui.outbox->addItem(QDialog::trUtf8(snd->outsyslist[i].name.c_str()));}
 	ui.ratbox->addItems(QStringList()<<"44100"<<"22050"<<"11025");
@@ -165,14 +165,14 @@ void SetupWin::start() {
 	ui.scrpwait->setChecked(sets->wait);
 	updfrq();
 // video
-	ui.dszchk->setChecked((zx->sys->vid->flags & VF_DOUBLE));
+	ui.dszchk->setChecked((zx->vid->flags & VF_DOUBLE));
 //	ui.fscchk->setChecked(vid->fscreen);
-	ui.bszsld->setValue((int)(zx->sys->vid->brdsize * 100));
+	ui.bszsld->setValue((int)(zx->vid->brdsize * 100));
 	ui.pathle->setText(QDialog::trUtf8(sets->ssdir.c_str()));
 	ui.ssfbox->setCurrentIndex(ui.ssfbox->findText(QDialog::trUtf8(sets->ssformat.c_str())));
 	ui.scntbox->setValue(sets->sscnt);
 	ui.sintbox->setValue(sets->ssint);
-	ui.geombox->setCurrentIndex(ui.geombox->findText(QDialog::trUtf8(zx->sys->vid->curlay.c_str())));
+	ui.geombox->setCurrentIndex(ui.geombox->findText(QDialog::trUtf8(zx->vid->curlay.c_str())));
 // sound
 	ui.senbox->setChecked(snd->enabled);
 	ui.mutbox->setChecked(snd->mute);
@@ -260,14 +260,14 @@ void SetupWin::apply() {
 	zx->sys->cpu->frq = ui.cpufrq->value() / 2.0;
 	sets->wait = ui.scrpwait->isChecked();
 // video
-	if (ui.dszchk->isChecked()) zx->sys->vid->flags |= VF_DOUBLE; else zx->sys->vid->flags &= ~VF_DOUBLE;
+	if (ui.dszchk->isChecked()) zx->vid->flags |= VF_DOUBLE; else zx->vid->flags &= ~VF_DOUBLE;
 //	vid->fscreen = ui.fscchk->isChecked();
-	zx->sys->vid->brdsize = ui.bszsld->value()/100.0;
+	zx->vid->brdsize = ui.bszsld->value()/100.0;
 	sets->ssdir = std::string(ui.pathle->text().toUtf8().data());
 	sets->ssformat = std::string(ui.ssfbox->currentText().toUtf8().data());
 	sets->sscnt = ui.scntbox->value();
 	sets->ssint = ui.sintbox->value();
-	zx->sys->vid->setlayout(std::string(ui.geombox->currentText().toUtf8().data()));
+	zx->vid->setlayout(std::string(ui.geombox->currentText().toUtf8().data()));
 // sound
 	std::string oname = sets->soutname;
 	int orate = snd->rate;
@@ -329,7 +329,7 @@ void SetupWin::apply() {
 	sets->prjdir = std::string(ui.prjdirle->text().toUtf8().data());
 
 	snd->defpars();
-	zx->sys->vid->update();
+	zx->vid->update();
 	sets->save();
 }
 
