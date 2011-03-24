@@ -7,10 +7,10 @@
 //#include "memory.h"
 #include "sound.h"
 //#include "video.h"
-#include "bdi.h"
-#include "tape.h"
+//#include "bdi.h"
+//#include "tape.h"
 #include "hdd.h"
-#include "gs.h"
+//#include "gs.h"
 #include "spectrum.h"
 
 #include <QStandardItemModel>
@@ -20,10 +20,10 @@ extern Settings* sets;
 extern EmulWin* mwin;
 extern MFiler* filer;
 extern Sound* snd;
-extern BDI* bdi;
+//extern BDI* bdi;
 //extern Tape* tape;
 extern IDE* ide;
-extern GS* gs;
+//extern GS* gs;
 extern ZXComp* zx;
 extern HardWare* hw;
 
@@ -176,39 +176,39 @@ void SetupWin::start() {
 // sound
 	ui.senbox->setChecked(snd->enabled);
 	ui.mutbox->setChecked(snd->mute);
-	ui.gsrbox->setChecked(gs->flags & GS_RESET);
+	ui.gsrbox->setChecked(zx->gs->flags & GS_RESET);
 	ui.outbox->setCurrentIndex(ui.outbox->findText(QDialog::trUtf8(sets->soutname.c_str())));
 	ui.ratbox->setCurrentIndex(ui.ratbox->findText(QString::number(snd->rate)));
 	ui.bvsld->setValue(snd->beepvol);
 	ui.tvsld->setValue(snd->tapevol);
 	ui.avsld->setValue(snd->ayvol);
 	ui.gvsld->setValue(snd->gsvol);
-	ui.schip1box->setCurrentIndex(ui.schip1box->findData(QVariant(snd->sc1->type)));
-	ui.schip2box->setCurrentIndex(ui.schip2box->findData(QVariant(snd->sc2->type)));
-	ui.stereo1box->setCurrentIndex(ui.stereo1box->findData(QVariant(snd->sc1->stereo)));
-	ui.stereo2box->setCurrentIndex(ui.stereo2box->findData(QVariant(snd->sc2->stereo)));
-	ui.gstereobox->setCurrentIndex(ui.gstereobox->findData(QVariant(gs->stereo)));
-	ui.gsgroup->setChecked(gs->flags & GS_ENABLE);
-	ui.tsbox->setCurrentIndex(ui.tsbox->findData(QVariant(snd->tstype)));
+	ui.schip1box->setCurrentIndex(ui.schip1box->findData(QVariant(zx->aym->sc1->type)));
+	ui.schip2box->setCurrentIndex(ui.schip2box->findData(QVariant(zx->aym->sc2->type)));
+	ui.stereo1box->setCurrentIndex(ui.stereo1box->findData(QVariant(zx->aym->sc1->stereo)));
+	ui.stereo2box->setCurrentIndex(ui.stereo2box->findData(QVariant(zx->aym->sc2->stereo)));
+	ui.gstereobox->setCurrentIndex(ui.gstereobox->findData(QVariant(zx->gs->stereo)));
+	ui.gsgroup->setChecked(zx->gs->flags & GS_ENABLE);
+	ui.tsbox->setCurrentIndex(ui.tsbox->findData(QVariant(zx->aym->tstype)));
 // dos
-	ui.bdebox->setChecked(bdi->enable);
-	ui.bdtbox->setChecked(bdi->turbo);
-	ui.apathle->setText(QDialog::trUtf8(bdi->flop[0].path.c_str()));
-		ui.a80box->setChecked(bdi->flop[0].trk80);
-		ui.adsbox->setChecked(bdi->flop[0].dblsid);
-		ui.awpbox->setChecked(bdi->flop[0].protect);
-	ui.bpathle->setText(QDialog::trUtf8(bdi->flop[1].path.c_str()));
-		ui.b80box->setChecked(bdi->flop[1].trk80);
-		ui.bdsbox->setChecked(bdi->flop[1].dblsid);
-		ui.bwpbox->setChecked(bdi->flop[1].protect);
-	ui.cpathle->setText(QDialog::trUtf8(bdi->flop[2].path.c_str()));
-		ui.c80box->setChecked(bdi->flop[2].trk80);
-		ui.cdsbox->setChecked(bdi->flop[2].dblsid);
-		ui.cwpbox->setChecked(bdi->flop[2].protect);
-	ui.dpathle->setText(QDialog::trUtf8(bdi->flop[3].path.c_str()));
-		ui.d80box->setChecked(bdi->flop[3].trk80);
-		ui.ddsbox->setChecked(bdi->flop[3].dblsid);
-		ui.dwpbox->setChecked(bdi->flop[3].protect);
+	ui.bdebox->setChecked(zx->bdi->enable);
+	ui.bdtbox->setChecked(zx->bdi->vg93.turbo);
+	ui.apathle->setText(QDialog::trUtf8(zx->bdi->flop[0].path.c_str()));
+		ui.a80box->setChecked(zx->bdi->flop[0].trk80);
+		ui.adsbox->setChecked(zx->bdi->flop[0].dblsid);
+		ui.awpbox->setChecked(zx->bdi->flop[0].protect);
+	ui.bpathle->setText(QDialog::trUtf8(zx->bdi->flop[1].path.c_str()));
+		ui.b80box->setChecked(zx->bdi->flop[1].trk80);
+		ui.bdsbox->setChecked(zx->bdi->flop[1].dblsid);
+		ui.bwpbox->setChecked(zx->bdi->flop[1].protect);
+	ui.cpathle->setText(QDialog::trUtf8(zx->bdi->flop[2].path.c_str()));
+		ui.c80box->setChecked(zx->bdi->flop[2].trk80);
+		ui.cdsbox->setChecked(zx->bdi->flop[2].dblsid);
+		ui.cwpbox->setChecked(zx->bdi->flop[2].protect);
+	ui.dpathle->setText(QDialog::trUtf8(zx->bdi->flop[3].path.c_str()));
+		ui.d80box->setChecked(zx->bdi->flop[3].trk80);
+		ui.ddsbox->setChecked(zx->bdi->flop[3].dblsid);
+		ui.dwpbox->setChecked(zx->bdi->flop[3].protect);
 // hdd
 	ui.hiface->setCurrentIndex(ui.hiface->findData(ide->iface));
 	
@@ -273,7 +273,7 @@ void SetupWin::apply() {
 	int orate = snd->rate;
 	snd->enabled = ui.senbox->isChecked();
 	snd->mute = ui.mutbox->isChecked();
-	if (ui.gsrbox->isChecked()) gs->flags |= GS_RESET; else gs->flags &= ~GS_RESET;
+	if (ui.gsrbox->isChecked()) zx->gs->flags |= GS_RESET; else zx->gs->flags &= ~GS_RESET;
 	sets->soutname = std::string(ui.outbox->currentText().toUtf8().data());
 	snd->rate = ui.ratbox->currentText().toInt();
 	snd->beepvol = ui.bvsld->value();
@@ -281,28 +281,28 @@ void SetupWin::apply() {
 	snd->ayvol = ui.avsld->value();
 	snd->gsvol = ui.gvsld->value();
 	if ((oname != sets->soutname) || (orate != snd->rate)) snd->setoutptr(sets->soutname);
-	snd->sc1->settype(ui.schip1box->itemData(ui.schip1box->currentIndex()).toInt());
-	snd->sc2->settype(ui.schip2box->itemData(ui.schip2box->currentIndex()).toInt());
-	snd->sc1->stereo = ui.stereo1box->itemData(ui.stereo1box->currentIndex()).toInt();
-	snd->sc2->stereo = ui.stereo2box->itemData(ui.stereo2box->currentIndex()).toInt();
-	gs->stereo = ui.gstereobox->itemData(ui.gstereobox->currentIndex()).toInt();
-	if (ui.gsgroup->isChecked()) gs->flags |= GS_ENABLE; else gs->flags &= ~GS_ENABLE;
-	snd->tstype = ui.tsbox->itemData(ui.tsbox->currentIndex()).toInt();
+	zx->aym->sc1->settype(ui.schip1box->itemData(ui.schip1box->currentIndex()).toInt());
+	zx->aym->sc2->settype(ui.schip2box->itemData(ui.schip2box->currentIndex()).toInt());
+	zx->aym->sc1->stereo = ui.stereo1box->itemData(ui.stereo1box->currentIndex()).toInt();
+	zx->aym->sc2->stereo = ui.stereo2box->itemData(ui.stereo2box->currentIndex()).toInt();
+	zx->gs->stereo = ui.gstereobox->itemData(ui.gstereobox->currentIndex()).toInt();
+	if (ui.gsgroup->isChecked()) zx->gs->flags |= GS_ENABLE; else zx->gs->flags &= ~GS_ENABLE;
+	zx->aym->tstype = ui.tsbox->itemData(ui.tsbox->currentIndex()).toInt();
 // dos
-	bdi->enable = ui.bdebox->isChecked();
-	bdi->turbo = ui.bdtbox->isChecked();
-	bdi->flop[0].trk80 = ui.a80box->isChecked();
-		bdi->flop[0].dblsid = ui.adsbox->isChecked();
-		bdi->flop[0].protect = ui.awpbox->isChecked();
-	bdi->flop[1].trk80 = ui.b80box->isChecked();
-		bdi->flop[1].dblsid = ui.bdsbox->isChecked();
-		bdi->flop[1].protect = ui.bwpbox->isChecked();
-	bdi->flop[2].trk80 = ui.c80box->isChecked();
-		bdi->flop[2].dblsid = ui.cdsbox->isChecked();
-		bdi->flop[2].protect = ui.cwpbox->isChecked();
-	bdi->flop[3].trk80 = ui.d80box->isChecked();
-		bdi->flop[3].dblsid = ui.ddsbox->isChecked();
-		bdi->flop[3].protect = ui.dwpbox->isChecked();
+	zx->bdi->enable = ui.bdebox->isChecked();
+	zx->bdi->vg93.turbo = ui.bdtbox->isChecked();
+	zx->bdi->flop[0].trk80 = ui.a80box->isChecked();
+		zx->bdi->flop[0].dblsid = ui.adsbox->isChecked();
+		zx->bdi->flop[0].protect = ui.awpbox->isChecked();
+	zx->bdi->flop[1].trk80 = ui.b80box->isChecked();
+		zx->bdi->flop[1].dblsid = ui.bdsbox->isChecked();
+		zx->bdi->flop[1].protect = ui.bwpbox->isChecked();
+	zx->bdi->flop[2].trk80 = ui.c80box->isChecked();
+		zx->bdi->flop[2].dblsid = ui.cdsbox->isChecked();
+		zx->bdi->flop[2].protect = ui.cwpbox->isChecked();
+	zx->bdi->flop[3].trk80 = ui.d80box->isChecked();
+		zx->bdi->flop[3].dblsid = ui.ddsbox->isChecked();
+		zx->bdi->flop[3].protect = ui.dwpbox->isChecked();
 // hdd
 	ide->iface = ui.hiface->itemData(ui.hiface->currentIndex()).toInt();
 
@@ -469,7 +469,7 @@ void SetupWin::updvolumes() {
 // disk
 
 void SetupWin::newdisk(int idx) {
-	Floppy *flp = &bdi->flop[idx & 3];
+	Floppy *flp = &zx->bdi->flop[idx & 3];
 	if (!flp->savecha()) return;
 	flp->format();
 	flp->path = std::string(QDir::homePath().toUtf8().data()) + "/disk.trd";
@@ -488,21 +488,21 @@ void SetupWin::loadb() {filer->loaddisk("",1,true); updatedisknams();}
 void SetupWin::loadc() {filer->loaddisk("",2,true); updatedisknams();}
 void SetupWin::loadd() {filer->loaddisk("",3,true); updatedisknams();}
 
-void SetupWin::savea() {filer->savedisk(bdi->flop[0].path,0,true);}
-void SetupWin::saveb() {filer->savedisk(bdi->flop[1].path,1,true);}
-void SetupWin::savec() {filer->savedisk(bdi->flop[2].path,2,true);}
-void SetupWin::saved() {filer->savedisk(bdi->flop[3].path,3,true);}
+void SetupWin::savea() {filer->savedisk(zx->bdi->flop[0].path,0,true);}
+void SetupWin::saveb() {filer->savedisk(zx->bdi->flop[1].path,1,true);}
+void SetupWin::savec() {filer->savedisk(zx->bdi->flop[2].path,2,true);}
+void SetupWin::saved() {filer->savedisk(zx->bdi->flop[3].path,3,true);}
 
-void SetupWin::ejcta() {bdi->flop[0].eject(); updatedisknams();}
-void SetupWin::ejctb() {bdi->flop[1].eject(); updatedisknams();}
-void SetupWin::ejctc() {bdi->flop[2].eject(); updatedisknams();}
-void SetupWin::ejctd() {bdi->flop[3].eject(); updatedisknams();}
+void SetupWin::ejcta() {zx->bdi->flop[0].eject(); updatedisknams();}
+void SetupWin::ejctb() {zx->bdi->flop[1].eject(); updatedisknams();}
+void SetupWin::ejctc() {zx->bdi->flop[2].eject(); updatedisknams();}
+void SetupWin::ejctd() {zx->bdi->flop[3].eject(); updatedisknams();}
 
 void SetupWin::updatedisknams() {
-	ui.apathle->setText(QDialog::trUtf8(bdi->flop[0].path.c_str()));
-	ui.bpathle->setText(QDialog::trUtf8(bdi->flop[1].path.c_str()));
-	ui.cpathle->setText(QDialog::trUtf8(bdi->flop[2].path.c_str()));
-	ui.dpathle->setText(QDialog::trUtf8(bdi->flop[3].path.c_str()));
+	ui.apathle->setText(QDialog::trUtf8(zx->bdi->flop[0].path.c_str()));
+	ui.bpathle->setText(QDialog::trUtf8(zx->bdi->flop[1].path.c_str()));
+	ui.cpathle->setText(QDialog::trUtf8(zx->bdi->flop[2].path.c_str()));
+	ui.dpathle->setText(QDialog::trUtf8(zx->bdi->flop[3].path.c_str()));
 }
 
 // tape

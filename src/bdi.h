@@ -43,6 +43,7 @@ class Floppy {
 	bool motor;		// motor on/off
 	bool head;		// head load/unload
 	bool changed;		// disk changed
+	bool side;		// side signal from FDC
 	uint8_t id;	// 0..3 = A..D
 	uint8_t iback;	// countdown for index (250);
 	uint8_t trk,rtrk;	// physic, logic track number
@@ -74,43 +75,43 @@ class Floppy {
 
 class VG93 {
 	public:
-	VG93();
-	bool idle;
-	bool mr;			// master reset
-	bool crchi;
-	bool block,mfm,irq,drq,sdir;
-	bool idxold,idx,strb;
-	uint8_t com,cop; //,fld;//,lop
-	uint8_t trk,sec,side,data,flag,bus;	// ,drv
-	uint8_t buf[6];
-	uint8_t dpos;
-	uint8_t mode,sc;
-	uint8_t *wptr, *sp;
-	uint16_t ic;
-	uint16_t crc,fcrc;
-	int32_t count;			// задержка;
-	Floppy* fptr;
-	void tick();
-	void command(uint8_t);
-	void setmr(bool);
-	void addcrc(uint8_t);
-	uint8_t getflag();
+		VG93();
+		bool turbo;		// турбо
+		bool idle;
+		bool mr;			// master reset
+		bool crchi;
+		bool block,mfm,irq,drq,sdir;
+		bool idxold,idx,strb;
+		uint8_t com,cop; //,fld;//,lop
+		uint8_t trk,sec,side,data,flag,bus;	// ,drv
+		uint8_t buf[6];
+		uint8_t dpos;
+		uint8_t mode,sc;
+		uint8_t *wptr, *sp;
+		uint16_t ic;
+		uint16_t crc,fcrc;
+		int32_t count;			// задержка;
+		Floppy* fptr;
+		void tick();
+		void command(uint8_t);
+		void setmr(bool);
+		void addcrc(uint8_t);
+		uint8_t getflag();
 };
 
 class BDI {
 	public:
-	BDI();
-	bool enable;		// есть-нет
-	bool active;		// активен дос
-	bool pcatch;		// порт перехвачен
-	bool turbo;		// турбо
-	uint32_t t,tf,tab;	// tab: ticks @ floppy byte; tf: countdown for it;
-	Floppy flop[4];
-	VG93 vg93;
-	void sync(uint32_t);
-	bool out(int32_t, uint8_t);
-	bool in(int32_t, uint8_t*);
-	int32_t getport(int);
+		BDI();
+		bool enable;		// есть-нет
+		bool active;		// активен дос
+		bool pcatch;		// порт перехвачен
+		uint32_t t,tf,tab;	// tab: ticks @ floppy byte; tf: countdown for it;
+		Floppy flop[4];
+		VG93 vg93;
+		void sync(uint32_t);
+		bool out(int32_t, uint8_t);
+		bool in(int32_t, uint8_t*);
+		int32_t getport(int);
 };
 
 // extern BDI *bdi;

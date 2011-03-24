@@ -7,7 +7,7 @@
 #include "z80/instr.c"
 
 extern Settings* sets;
-extern BDI* bdi;
+// extern BDI* bdi;
 extern HardWare* hw;
 
 uint8_t zx_in(int);
@@ -36,26 +36,67 @@ ZXComp::ZXComp() {
 	sys = new ZXBase;
 	sys->cpu = new Z80(3.5);
 	sys->mem = new Memory(MEM_ZX);
-	sys->io = new IOSys(&zx_in,&zx_out);
+//	sys->io = new IOSys(&zx_in,&zx_out);
+	sys->io = new IOSys(IO_ZX);
 //	vid = new Video;
+	keyb = new Keyboard;
+	mouse = new Mouse;
 	tape = new Tape;
+	bdi = new BDI;
+	aym = new AYSys;
+	gs = new GS; gs->reset();
 }
 
 void ZXComp::reset() {
 	sys->io->block7ffd=false;
 	sys->mem->prt1 = 0;
-	sys->mem->prt0 = ((sys->mem->res==1)<<4);
+	sys->mem->prt0 = ((sys->mem->res == 1) << 4);
 	sys->mem->setrom(sys->mem->res);
 	sys->mem->setram(0);
 	sys->cpu->reset();
 	vid->curscr = false;
 	vid->mode = VID_NORMAL;
+	bdi->active = (sys->mem->res == 3);
+	bdi->vg93.count = 0;
+	bdi->vg93.setmr(false);
+	if (gs->flags & GS_RESET) gs->reset();
+	aym->sc1->reset();
+	aym->sc2->reset();
+	aym->scc = aym->sc1;
+}
+
+uint8_t ZXComp::in(int32_t port) {
+	uint8_t res = 0xff;
+	gs->sync(vid->t);
+	if (gs->in(port,&res)) return res;
+	if (bdi->in(port,&res)) return res;
+	port = hw->getport(port);
+	return hw->in(port);
+}
+
+void ZXComp::out(int32_t port,uint8_t val) {
+	gs->sync(vid->t);
+	if (gs->out(port,val)) return;
+	if (bdi->out(port,val)) return;
+	port = hw->getport(port);
+	hw->out(port,val);
 }
 
 void ZXComp::exec() {
 	ZOpResult res = sys->exec();
 	vid->sync(res.ticks,sys->cpu->frq);
 	res.exec(sys);
+	if (bdi->enable) {
+		bdi->sync(vid->t);
+		if (bdi->active && (sys->cpu->hpc > 0x3f)) {
+			bdi->active = false;
+			hw->setrom();
+		}
+		if (!bdi->active && (sys->cpu->hpc == 0x3d) && (sys->mem->prt0 & 0x10)) {
+			bdi->active = true;
+			hw->setrom();
+		}
+	}
 	if ((sys->cpu->hpc > 0x3f) && sys->nmi) {
 		NMIHandle();
 	}

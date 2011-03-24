@@ -1,11 +1,13 @@
 #include <fstream>
 #include <string.h>
 
-#include "bdi.h"
+//#include "bdi.h"
 #include "hdd.h"
+#include "spectrum.h"
 
+extern ZXComp* zx;
 extern IDE* ide;
-extern BDI* bdi;
+//extern BDI* bdi;
 
 // IDE controller
 
@@ -20,7 +22,7 @@ bool IDE::in(uint16_t port,uint8_t* val) {
 	switch (iface) {
 		case IDE_NEMO:
 		case IDE_NEMOA8:
-			if (((port & 6) != 0) || bdi->active) return false;
+			if (((port & 6) != 0) || zx->bdi->active) return false;
 			prt = (((port & 0xe0) >> 5) | (((port & 0x18) ^ 0x18) << 5) | 0x00f0);
 			res = true;
 			ishi = (port & ((iface==IDE_NEMO) ? 0x01 : 0x80));
@@ -40,7 +42,7 @@ bool IDE::out(uint16_t port,uint8_t val) {
 	switch (iface) {
 		case IDE_NEMO:
 		case IDE_NEMOA8:
-			if (((port & 6) != 0) || bdi->active) return false;
+			if (((port & 6) != 0) || zx->bdi->active) return false;
 			res = true;
 			prt = ((port & 0xe0) >> 5) | (((port & 0x18) ^ 0x18) << 5) | 0x00f0;
 			if (prt == HDD_HEAD) cur = (prt & 0x08) ? &slave : &master;	// write to head reg: select MASTER/SLAVE

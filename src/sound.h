@@ -80,6 +80,15 @@ class AYProc {
 		void calculate();
 };
 
+class AYSys {
+	public:
+		AYSys();
+		AYProc* sc1;
+		AYProc* sc2;
+		AYProc* scc;
+		int32_t tstype;
+};
+
 struct Sound {
 	public:
 		Sound();
@@ -89,12 +98,12 @@ struct Sound {
 		OutSys *outsys;
 		void addoutsys(std::string, bool(*)(),void(*)(),void(*)());
 		void setoutptr(std::string);
-		AYProc* sc1;	// 1st chip
-		AYProc* sc2;	// 2nd chip
-		AYProc* scc;	// selected chip
+//		AYProc* sc1;	// 1st chip
+//		AYProc* sc2;	// 2nd chip
+//		AYProc* scc;	// selected chip
 		bool enabled;
 		bool mute;
-		int32_t tstype;
+//		int32_t tstype;
 		int32_t rate;
 		int32_t chans;
 		int32_t bufsize,chunks;

@@ -6,9 +6,10 @@
 #include <QDebug>
 
 #include "bdi.h"
+#include "spectrum.h"
 #include "filer.h"
 
-extern BDI* bdi;
+extern ZXComp* zx;
 extern MFiler* filer;
 
 uint8_t trd_8e1[] = {
@@ -55,11 +56,11 @@ void Floppy::tick() {
 }
 */
 void Floppy::next() {
-	rtrk = trk<<1; if (dblsid) rtrk += bdi->vg93.side?0:1;
+	rtrk = trk<<1; if (dblsid) rtrk += zx->bdi->vg93.side?0:1;
 	if (insert) {
 		if (++pos >= TRACKLEN) {
 			pos = 0;
-			ti = bdi->t;		// tick of index begin
+			ti = zx->bdi->t;		// tick of index begin
 		}
 		field = data[rtrk].field[pos];
 	} else {

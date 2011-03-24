@@ -1,9 +1,9 @@
 //#include "video.h"
-#include "tape.h"
+//#include "tape.h"
 //#include "z80.h"
 #include "sound.h"
 #include "spectrum.h"
-#include "gs.h"
+//#include "gs.h"
 
 #include <iostream>
 #if HAVESDLSOUND
@@ -12,7 +12,7 @@
 
 extern ZXComp* zx;
 //extern Tape* tape;
-extern GS* gs;
+//extern GS* gs;
 extern Sound* snd;
 
 bool noizes[0x20000];		// here iz noize values [generated at start]
@@ -37,7 +37,16 @@ uint8_t envforms[16][33]={
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,255}
 };
 
-AYChan::AYChan() {lev = false; vol = lim = bgn = pos = cur = 0;}
+AYChan::AYChan() {
+	lev = false;
+	vol = lim = bgn = pos = cur = 0;
+}
+
+AYSys::AYSys() {
+	sc1 = new AYProc(SND_AY);
+	sc2 = new AYProc(SND_NONE);
+	tstype = TS_NEDOPC;
+}
 
 void Sound::defpars() {
 	chunks = (int)(rate/50.0);
@@ -72,7 +81,7 @@ void Sound::sync() {
 //	printf("%i + %i ? %i\n",t,tatbyte,sys->vid->t);
 	t += tatbyte;
 	zx->tape->sync();
-	gs->sync(zx->vid->t);
+	zx->gs->sync(zx->vid->t);
 	lev = beeplev?beepvol:0;
 	if (zx->tape->flags & TAPE_ON) lev += (((zx->tape->outsig & 1)?tapevol:0) + ((zx->tape->signal & 1)?tapevol:0));
 #if 0
@@ -82,13 +91,13 @@ void Sound::sync() {
 #else
 	levl = lev;
 	levr = lev;
-	SndData tmpl = sc1->getvol();
+	SndData tmpl = zx->aym->sc1->getvol();
 	levl += tmpl.l * ayvol / 16.0;
 	levr += tmpl.r * ayvol / 16.0;
-	tmpl = sc2->getvol();
+	tmpl = zx->aym->sc2->getvol();
 	levl += tmpl.l * ayvol / 16.0;
 	levr += tmpl.r * ayvol / 16.0;
-	tmpl = gs->getvol();
+	tmpl = zx->gs->getvol();
 	levl += tmpl.l * gsvol / 16.0;
 	levr += tmpl.r * gsvol / 16.0;	
 	*(sbptr++) = levl;
@@ -126,7 +135,7 @@ void AYProc::settype(int t) {
 			break;
 		default: throw("Internal error\nUnexpected AY type in AYProc::settype"); break;
 	}
-	aycoe = 400 * zx->vid->frmsz / (float)freq;		// vid ticks in half-period of note 1 (400)
+	aycoe = 400 * 448 * 320 / (float)freq;		// vid ticks in half-period of note 1 (400)	400 * zx->vid->frmsz / (float)freq
 }
 
 SndData AYProc::getvol() {
@@ -421,18 +430,19 @@ Sound::Sound() {
 	beepvol = tapevol = ayvol = 16;
 	sbptr = sndbuf;
 
-	sc1 = new AYProc(SND_AY);
-	sc2 = new AYProc(SND_NONE);
-	tstype = TS_NEDOPC;
+//	sc1 = new AYProc(SND_AY);
+//	sc2 = new AYProc(SND_NONE);
+//	tstype = TS_NEDOPC;
 
 	int i;
-	sc1->n.cur = 0xffff;
+	uint32_t cur = 0xffff;
+	bool lev;
 	for (i=0;i<0x20000;i++) {
-		sc1->n.lev = sc1->n.cur&0x10000;
-		noizes[i] = sc1->n.lev;
-		sc1->n.cur = ((sc1->n.cur<<1) + ((sc1->n.lev==((sc1->n.cur&0x2000)==0x2000))?0:1)) & 0x1ffff;
+		lev = cur & 0x10000;
+		noizes[i] = lev;
+		cur = ((cur << 1) + ((lev == ((cur & 0x2000) == 0x2000)) ? 0 : 1)) & 0x1ffff;
 	}
-	sc2->n.cur = sc1->n.cur;
+	zx->aym->sc2->n.cur = zx->aym->sc1->n.cur = cur;
 
 	addoutsys("NULL",&null_open,&null_play,&null_close);
 #ifndef WIN32

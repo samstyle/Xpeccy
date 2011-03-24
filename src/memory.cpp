@@ -7,16 +7,16 @@
 #include "spectrum.h"
 //#include "z80.h"
 //#include "iosys.h"
-#include "bdi.h"
-#include "gs.h"
+//#include "bdi.h"
+//#include "gs.h"
 
 #include <QMessageBox>
 #include <string>
 #include <fstream>
 
 extern Settings* sets;
-extern BDI* bdi;
-extern GS* gs;
+//extern BDI* bdi;
+//extern GS* gs;
 extern ZXComp* zx;
 extern Sound* snd;
 
@@ -52,10 +52,10 @@ uint8_t Memory::rd(uint16_t adr) {
 	}
 	if (type == MEM_GS) {
 		switch (adr & 0xe300) {
-			case 0x6000: gs->ch1 = res; break;
-			case 0x6100: gs->ch2 = res; break;
-			case 0x6200: gs->ch3 = res; break;
-			case 0x6300: gs->ch4 = res; break;
+			case 0x6000: zx->gs->ch1 = res; break;
+			case 0x6100: zx->gs->ch2 = res; break;
+			case 0x6200: zx->gs->ch3 = res; break;
+			case 0x6300: zx->gs->ch4 = res; break;
 		}
 	}
 	return res;
@@ -174,7 +174,7 @@ void Memory::parse(std::ifstream* file,int typ) {
 				tmp = file->get(); zx->sys->io->out(0xfffd,tmp); // 38: last out to fffd
 				for (tmp2=0; tmp2<16; tmp2++) {
 					tmp = file->get();
-					snd->sc1->reg[tmp2] = tmp;
+					zx->aym->sc1->reg[tmp2] = tmp;
 				}
 				if (adr > 23) {
 		printf(".z80 version 3\n");
@@ -290,7 +290,7 @@ void Memory::parse(std::ifstream* file,int typ) {
 			} else {
 				cpu->lpc = file->get(); cpu->hpc = file->get();
 				tmp = file->get(); snabank = (tmp & 7); zx->sys->io->out(0x7ffd,tmp);
-				bdi->active = (file->get() & 1);
+				zx->bdi->active = (file->get() & 1);
 				if (snabank!=0) file->read((char*)ram[0],0x4000);
 				if (snabank!=1) file->read((char*)ram[1],0x4000);
 				if (snabank!=3) file->read((char*)ram[3],0x4000);
@@ -333,7 +333,7 @@ void Memory::save(std::string sfnam,int typ,bool sna48=false) {
 				file.write((char*)ram[cram & 7],0x4000);	// current bank
 				file.put((char)cpu->lpc).put((char)cpu->hpc);	// pc
 				file.put((char)prt0);			// 7ffd
-				file.put((char)(bdi->active?0xff:0x00));
+				file.put((char)(zx->bdi->active?0xff:0x00));
 				uchar bnk = cram & 7;
 				if (bnk!=0) file.write((char*)ram[0],0x4000);
 				if (bnk!=1) file.write((char*)ram[1],0x4000);
@@ -379,8 +379,8 @@ void Memory::loadromset() {
 	}
 	if (sets->gsrom=="") {
 		for (ad=0;ad<0x4000;ad++) {
-			gs->sys->mem->rom[0][ad]=0xff;
-			gs->sys->mem->rom[1][ad]=0xff;
+			zx->gs->sys->mem->rom[0][ad]=0xff;
+			zx->gs->sys->mem->rom[1][ad]=0xff;
 		}
 	} else {
 #ifndef WIN32
@@ -390,13 +390,13 @@ void Memory::loadromset() {
 #endif
 			std::ifstream file(fpath.c_str());
 			if (file.good()) {
-				file.read((char*)&gs->sys->mem->rom[0][0],0x4000);
-				file.read((char*)&gs->sys->mem->rom[1][0],0x4000);
+				file.read((char*)&zx->gs->sys->mem->rom[0][0],0x4000);
+				file.read((char*)&zx->gs->sys->mem->rom[1][0],0x4000);
 			} else {
 				printf("Can't load gs rom '%s'\n",sets->gsrom.c_str());
 				for (ad=0;ad<0x4000;ad++) {
-					gs->sys->mem->rom[0][ad]=0xff;
-					gs->sys->mem->rom[1][ad]=0xff;
+					zx->gs->sys->mem->rom[0][ad]=0xff;
+					zx->gs->sys->mem->rom[1][ad]=0xff;
 				}
 			}
 			file.close();

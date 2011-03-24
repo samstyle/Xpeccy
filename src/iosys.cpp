@@ -1,29 +1,46 @@
 //#include "video.h"
 //#include "iosys.h"
 //#include "memory.h"
-#include "keyboard.h"
+//#include "keyboard.h"
 #include "hdd.h"
-#include "bdi.h"
+//#include "bdi.h"
 #include "sound.h"
-#include "tape.h"
+//#include "tape.h"
 #include "spectrum.h"
-#include "gs.h"
+//#include "gs.h"
 
 extern HardWare* hw;
-extern Keyboard* keyb;
-extern Mouse* mouse;
-extern IDE* ide;
-extern BDI* bdi;
+//extern Keyboard* keyb;
+//extern Mouse* mouse;
+//extern IDE* ide;
+//extern BDI* bdi;
 extern Sound* snd;
 //extern Tape* tape;
 extern ZXComp* zx;
-extern GS* gs;
+//extern GS* gs;
 
+uint8_t IOSys::in(int32_t port) {
+	uint8_t res = 0xff;
+	switch (type) {
+		case IO_ZX: res = zx->in(port); break;
+		case IO_GS: res = zx->gs->intin(port); break;
+	}
+	return res;
+}
+
+void IOSys::out(int32_t port, uint8_t val) {
+	switch (type) {
+		case IO_ZX: zx->out(port,val); break;
+		case IO_GS: zx->gs->intout(port,val); break;
+	}
+}
+
+/*
 void zx_out(int port, uint8_t val) {
 //	if (ide->out(port,val)) return;
 	gs->sync(zx->vid->t);
 	if (gs->out(port,val)) return;
-	if (bdi->out(port,val)) return;
+	if (zx->bdi->out(port,val)) return;
 	port = hw->getport(port);
 	hw->out(port,val);
 }
@@ -43,10 +60,11 @@ uint8_t zx_in(int port) {
 //	if (ide->in(port,&res)) return res;
 	gs->sync(zx->vid->t);
 	if (gs->in(port,&res)) return res;
-	if (bdi->in(port,&res)) return res;
+	if (zx->bdi->in(port,&res)) return res;
 	port = hw->getport(port);
 	return hw->in(port);
 }
+*/
 
 void IOSys::out7ffd(uint8_t val) {
 	if (block7ffd) return;
@@ -70,18 +88,18 @@ uint8_t IOSys::iostdin(int port) {
 	uint8_t res = 0xff;
 	if ((port&0xff) == 0xfe) {
 		zx->tape->sync();
-		res = keyb->getmap((port&0xff00)>>8) | ((zx->tape->signal<<6)&0x40);
+		res = zx->keyb->getmap((port&0xff00)>>8) | ((zx->tape->signal<<6)&0x40);
 	}
 	switch (port) {
-		case 0xfbdf: res = mouse->xpos; break;
-		case 0xffdf: res = mouse->ypos; break;
-		case 0xfadf: res = mouse->buttons; break;
+		case 0xfbdf: res = zx->mouse->xpos; break;
+		case 0xffdf: res = zx->mouse->ypos; break;
+		case 0xfadf: res = zx->mouse->buttons; break;
 		case 0xfffd:
-			if (snd->scc->curreg<14) {
-				res = snd->scc->reg[snd->scc->curreg];
+			if (zx->aym->scc->curreg<14) {
+				res = zx->aym->scc->reg[zx->aym->scc->curreg];
 			} else {
-				if ((snd->scc->reg[7]&0x40) && (snd->scc->curreg == 14)) res = snd->scc->reg[14];
-				if ((snd->scc->reg[7]&0x80) && (snd->scc->curreg == 15)) res = snd->scc->reg[15];
+				if ((zx->aym->scc->reg[7]&0x40) && (zx->aym->scc->curreg == 14)) res = zx->aym->scc->reg[14];
+				if ((zx->aym->scc->reg[7]&0x80) && (zx->aym->scc->curreg == 15)) res = zx->aym->scc->reg[15];
 			}
 			break;
 	}
@@ -96,12 +114,12 @@ void IOSys::iostdout(int port, uint8_t val) {
 	}
 	switch (port) {
 		case 0xfffd: switch (val) {
-				case 0xfe: if (snd->tstype == TS_NEDOPC) snd->scc = snd->sc1; break;	// fe / ff - select sound chip in TS
-				case 0xff: if (snd->tstype == TS_NEDOPC) snd->scc = snd->sc2; break;
-				default: snd->scc->curreg = val; break;		// set sound chip register
+				case 0xfe: if (zx->aym->tstype == TS_NEDOPC) zx->aym->scc = zx->aym->sc1; break;	// fe / ff - select sound chip in TS
+				case 0xff: if (zx->aym->tstype == TS_NEDOPC) zx->aym->scc = zx->aym->sc2; break;
+				default: zx->aym->scc->curreg = val; break;		// set sound chip register
 			}
 			break;
-		case 0xbffd: snd->scc->setreg(val); break;			// write in sound chip register
+		case 0xbffd: zx->aym->scc->setreg(val); break;			// write in sound chip register
 	}
 }
 
@@ -128,7 +146,7 @@ int zx48_getport(int prt) {
 }
 
 void zx48_setrom() {
-	zx->sys->mem->setrom(bdi->active?3:1);
+	zx->sys->mem->setrom(zx->bdi->active?3:1);
 	zx->sys->mem->setram(0);
 }
 
@@ -157,7 +175,7 @@ int pent_getport(int prt) {
 }
 
 void pent_setrom() {
-	zx->sys->mem->setrom((bdi->active) ? 3 : ((zx->sys->mem->prt0 & 0x10)>>4));
+	zx->sys->mem->setrom((zx->bdi->active) ? 3 : ((zx->sys->mem->prt0 & 0x10)>>4));
 	zx->sys->mem->setram((zx->sys->mem->prt0 & 7) | ((zx->sys->mem->prt0 & 0xc0)>>3));
 }
 
@@ -187,7 +205,7 @@ int p1m_getport(int prt) {
 }
 
 void p1m_setrom() {
-	zx->sys->mem->setrom(bdi->active ? 3 : ((zx->sys->mem->prt1 & 8) ? 0xff : ((zx->sys->mem->prt0 & 0x10)>>4)));
+	zx->sys->mem->setrom(zx->bdi->active ? 3 : ((zx->sys->mem->prt1 & 8) ? 0xff : ((zx->sys->mem->prt0 & 0x10)>>4)));
 	zx->sys->mem->setram((zx->sys->mem->prt0 & 7) | ((zx->sys->mem->prt1 & 4)?0:((zx->sys->mem->prt0 & 0x20) | ((zx->sys->mem->prt0 & 0xc0)>>3))));
 }
 
@@ -234,7 +252,7 @@ int scrp_getport(int prt) {
 }
 
 void scrp_setrom() {
-	zx->sys->mem->setrom((zx->sys->mem->prt1 & 0x01)?0xff:((zx->sys->mem->prt1 & 0x02)?2:((bdi->active)?3:((zx->sys->mem->prt0 & 0x10)>>4))));
+	zx->sys->mem->setrom((zx->sys->mem->prt1 & 0x01)?0xff:((zx->sys->mem->prt1 & 0x02)?2:((zx->bdi->active)?3:((zx->sys->mem->prt0 & 0x10)>>4))));
 	zx->sys->mem->setram((zx->sys->mem->prt0 & 7) | ((zx->sys->mem->prt1 & 0x10)>>1) | ((zx->sys->mem->prt1 & 0xc0)>>2));
 }
 
@@ -261,9 +279,11 @@ uint8_t scrp_inport(int port) {
 
 //-------------
 
-IOSys::IOSys(uint8_t(*p1)(int),void(*p2)(int,uint8_t)) {
-	in = p1;
-	out = p2;
+//IOSys::IOSys(uint8_t(*p1)(int),void(*p2)(int,uint8_t)) {
+IOSys::IOSys(int p1) {
+//	in = p1;
+//	out = p2;
+	type = p1;
 	flags = 0;
 	addhardware("ZX48K",&zx48_getport,&zx48_outport,&zx48_inport,&zx48_setrom,0x00,0);
 	addhardware("Pentagon",&pent_getport,&pent_outport,&pent_inport,&pent_setrom,0x05,0);

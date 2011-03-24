@@ -1,5 +1,6 @@
 #include "bdi.h"
-#include "z80.h"
+//#include "z80.h"
+#include "spectrum.h"
 
 #include <stdio.h>
 
@@ -10,7 +11,8 @@
 
 bool vgdebug = false;
 
-extern BDI* bdi;
+// extern BDI* bdi;
+extern ZXComp* zx;
 
 // BDI
 
@@ -70,8 +72,11 @@ bool BDI::in(int32_t port, uint8_t* val) {
 	return true;
 }
 
-void BDI::sync(uint32_t tk) {
+void BDI::sync(uint32_t tn) {
 	uint32_t tz;
+	uint32_t tk = tn - t;
+//printf("%i\t%i\t%i\n",tn,t,tk);// throw(0);
+//	t = tn;
 	while (tk > 0) {
 		if (tk < tf) {
 			tz = tk;
@@ -491,8 +496,8 @@ void v01(VG93* p) {p1 = *(p->wptr++); p->wptr = vgwork[p1];}
 void v02(VG93* p) {p1 = *(p->wptr++); p->sp = p->wptr; p->wptr = vgwork[p1];}
 void v03(VG93* p) {p->wptr = p->sp;}
 
-void v10(VG93* p) {p->count += bdi->turbo?TRBDELAY:delays[p->com & 3];}
-void v11(VG93* p) {p1 = *(p->wptr++); p->count += bdi->turbo?TRBDELAY:delays[p1];}
+void v10(VG93* p) {p->count += p->turbo?TRBDELAY:delays[p->com & 3];}
+void v11(VG93* p) {p1 = *(p->wptr++); p->count += p->turbo?TRBDELAY:delays[p1];}
 
 void v20(VG93* p) {p->mode = *(p->wptr++);}
 
@@ -527,8 +532,8 @@ void vA0(VG93* p) {p->sdir = false; p->fptr->step(false);}
 void vA1(VG93* p) {p->sdir = true; p->fptr->step(true);}
 void vA2(VG93* p) {p->fptr->step(p->sdir);}
 
-void vA8(VG93* p) {if (bdi->turbo) {bdi->tf = BYTEDELAY; p->count = 0; p->fptr->next();} else {p->count += bdi->tf;}}
-void vA9(VG93* p) {p->count += bdi->tf;}
+void vA8(VG93* p) {if (p->turbo) {zx->bdi->tf = BYTEDELAY; p->count = 0; p->fptr->next();} else {p->count += zx->bdi->tf;}}
+void vA9(VG93* p) {p->count += zx->bdi->tf;}
 void vAA(VG93* p) {p->side = !p->side;}
 
 void vB0(VG93* p) {p->ic = *(p->wptr++);}
@@ -568,7 +573,7 @@ void vE0(VG93* p) {
 		p->fptr->motor = false;
 		p->fptr->head = false;
 	} else {
-		if (!p->fptr->head) p->count += bdi->turbo?TRBDELAY:delays[5];
+		if (!p->fptr->head) p->count += p->turbo?TRBDELAY:delays[5];
 		p->fptr->motor = true;
 		p->fptr->head = true;
 	}

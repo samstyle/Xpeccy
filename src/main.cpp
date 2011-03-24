@@ -8,12 +8,13 @@
 //#include "memory.h"
 //#include "iosys.h"
 //#include "z80.h"
-#include "keyboard.h"
+//#include "keyboard.h"
+#include "spectrum.h"
 #include "sound.h"
-#include "bdi.h"
-#include "tape.h"
+//#include "bdi.h"
+//#include "tape.h"
 #include "hdd.h"
-#include "gs.h"
+//#include "gs.h"
 
 #include "emulwin.h"
 #include "settings.h"
@@ -34,12 +35,12 @@ HardWare *hw;
 ZXComp* zx;
 //Spec* sys;
 Sound *snd;
-Keyboard *keyb;
-BDI *bdi;
+//Keyboard *keyb;
+//BDI *bdi;
 //Tape *tape;
-Mouse *mouse;
+//Mouse *mouse;
 IDE *ide;
-GS *gs;
+//GS *gs;
 
 EmulWin *mwin;
 DebugWin *dbg;
@@ -123,13 +124,13 @@ int main(int ac,char** av) {
 			zx->vid = new Video;
 //			zx->sys = new ZXBase;
 //			vid = new Video();
-			keyb = new Keyboard();
-			mouse = new Mouse();
+//			keyb = new Keyboard();
+//			mouse = new Mouse();
 			snd = new Sound();
-			bdi = new BDI();
+//			bdi = new BDI();
 //			tape = new Tape();
 			ide = new IDE;
-			gs = new GS(); gs->reset();
+//			gs = new GS(); gs->reset();
 
 			mwin = new EmulWin();
 			dbg = new DebugWin((QWidget*)mwin);

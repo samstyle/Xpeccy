@@ -6,6 +6,9 @@
 
 #define	IO_WAIT	1
 
+#define IO_ZX	0
+#define	IO_GS	1
+
 class HardWare {
 	public:
 		std::string name;
@@ -19,22 +22,21 @@ class HardWare {
 
 class IOSys {
 	public:
-		IOSys(uint8_t(*)(int),void(*)(int,uint8_t));
+//		IOSys(uint8_t(*)(int),void(*)(int,uint8_t));
+		IOSys(int);
 		std::vector<HardWare> hwlist;
 		void addhardware(std::string,int(*)(int),void(*)(int,uint8_t),uint8_t(*)(int),void(*)(),int,int);
 		void setmacptr(std::string);
 		bool block7ffd;
 		bool resafter;
-		int mask;		// rampage mask (0x00,0x0f,0x1f,0x3f)
-		int flags;
+		int32_t mask;		// rampage mask (0x00,0x0f,0x1f,0x3f)
+		int32_t flags;
+		int32_t type;
 		void iostdout(int,uint8_t);
 		uint8_t iostdin(int);
 		void out7ffd(uint8_t);
-		void (*out)(int,uint8_t);
-		uint8_t (*in)(int);
+		void out(int32_t,uint8_t);
+		uint8_t in(int32_t);
 };
-
-//extern IOSys *iosys;
-//extern Machine *machine;
 
 #endif

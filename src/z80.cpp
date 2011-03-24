@@ -3,7 +3,7 @@
 #include "video.h"
 #include "sound.h"
 #include "tape.h"
-#include "bdi.h"
+// #include "bdi.h"
 
 Z80::Z80(float fr) {
 	t = tb = 0;

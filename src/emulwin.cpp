@@ -12,11 +12,11 @@
 #endif
 //#include "video.h"
 #include "sound.h"
-#include "keyboard.h"
-#include "bdi.h"
-#include "tape.h"
+//#include "keyboard.h"
+//#include "bdi.h"
+//#include "tape.h"
 #include "hdd.h"
-#include "gs.h"
+//#include "gs.h"
 
 #include "spectrum.h"
 //#include "z80.h"
@@ -45,14 +45,14 @@ void zx_out(int,uint8_t);
 void shithappens(const char*);
 
 extern ZXComp* zx;
-extern BDI* bdi;
-extern Keyboard* keyb;
-extern Mouse* mouse;
+//extern BDI* bdi;
+//extern Keyboard* keyb;
+//extern Mouse* mouse;
 extern Sound* snd;
 extern Settings* sets;
 extern HardWare* hw;
 extern IDE* ide;
-extern GS* gs;
+//extern GS* gs;
 //extern Tape* tape;
 extern EmulWin* mwin;
 extern DebugWin* dbg;
@@ -109,10 +109,10 @@ printf("Drop\n");
 
 void EmulWin::closeEvent(QCloseEvent* ev) {
 		repause(true,PR_QUIT);
-		bool yep = bdi->flop[0].savecha();
-		yep &= bdi->flop[1].savecha();
-		yep &= bdi->flop[2].savecha();
-		yep &= bdi->flop[3].savecha();
+		bool yep = zx->bdi->flop[0].savecha();
+		yep &= zx->bdi->flop[1].savecha();
+		yep &= zx->bdi->flop[2].savecha();
+		yep &= zx->bdi->flop[3].savecha();
 		if (yep) {
 			ev->accept();
 		} else {
@@ -150,8 +150,8 @@ void EmulWin::emulframe() {
 //	}
 #if !SDLMAINWIN
 	if (!isActiveWindow()) {
-		keyb->releaseall();		// в неактивном окне все кнопки отпущены и мышь не заграблена
-		mouse->buttons = 0xff;
+		zx->keyb->releaseall();		// в неактивном окне все кнопки отпущены и мышь не заграблена
+		zx->mouse->buttons = 0xff;
 //		SDL_WM_GrabInput(SDL_GRAB_OFF);
 //		SDL_ShowCursor(SDL_ENABLE);
 	}
@@ -218,11 +218,6 @@ void EmulWin::exec() {
 	if (zx->vid->t > snd->t) {
 		snd->sync();
 	}
-	if (bdi->enable) {
-		bdi->sync(ln);
-		if (bdi->active && (zx->sys->cpu->hpc > 0x3f)) {bdi->active = false; hw->setrom();}
-		if (!bdi->active && (zx->sys->cpu->hpc == 0x3d) && (zx->sys->mem->prt0 & 0x10)) {bdi->active = true; hw->setrom();}
-	}
 	if (!dbg->active) {
 		// somehow catch CPoint
 		if (dbg->findbp(BPoint((zx->sys->cpu->pc < 0x4000) ? zx->sys->mem->crom : zx->sys->mem->cram, zx->sys->cpu->pc)) != -1) {
@@ -269,14 +264,10 @@ void EmulWin::repause(bool p, int msk) {
 
 void EmulWin::reset() {
 	zx->reset();
-	snd->sc1->reset();
-	snd->sc2->reset();
-	snd->scc = snd->sc1;
-	bdi->active = (zx->sys->mem->res==3);
-	bdi->vg93.count = 0;
-	bdi->vg93.setmr(false);
+//	snd->sc1->reset();
+//	snd->sc2->reset();
+//	snd->scc = snd->sc1;
 	ide->reset();
-	if (gs->flags & GS_RESET) gs->reset();
 }
 
 void EmulWin::SDLEventHandler() {
@@ -308,7 +299,7 @@ void EmulWin::SDLEventHandler() {
 						default: break;
 					}
 				} else {
-					keyb->press(ev.key.keysym.scancode);
+					zx->keyb->press(ev.key.keysym.scancode);
 					switch (ev.key.keysym.sym) {
 						case SDLK_PAUSE: if (paused == 0) repause(true,PR_PAUSE); else repause(false,PR_PAUSE); break;
 						case SDLK_ESCAPE: dbg->start(); break;
@@ -334,10 +325,10 @@ void EmulWin::SDLEventHandler() {
 								break;
 						case SDLK_F6: emit wannadevelop(); break;
 						case SDLK_F7: if (ssbcnt==0) {flags |= FL_SHOT;} else {flags &= ~FL_SHOT;} break;
-						case SDLK_F9: bdi->flop[0].savecha();
-							bdi->flop[1].savecha();
-							bdi->flop[2].savecha();
-							bdi->flop[3].savecha();
+						case SDLK_F9: zx->bdi->flop[0].savecha();
+							zx->bdi->flop[1].savecha();
+							zx->bdi->flop[2].savecha();
+							zx->bdi->flop[3].savecha();
 							break;
 						case SDLK_F10:
 							zx->sys->nmi = true;
@@ -348,13 +339,13 @@ void EmulWin::SDLEventHandler() {
 				}
 				break;
 			case SDL_KEYUP:
-				keyb->release(ev.key.keysym.scancode);
+				zx->keyb->release(ev.key.keysym.scancode);
 				break;
 			case SDL_MOUSEBUTTONDOWN:
 				switch (ev.button.button) {
 					if (paused!=0) break;
-					case SDL_BUTTON_LEFT: if (flags & FL_GRAB) mouse->buttons &= ~0x01; break;
-					case SDL_BUTTON_RIGHT: if (flags & FL_GRAB) mouse->buttons &= ~0x02; break;
+					case SDL_BUTTON_LEFT: if (flags & FL_GRAB) zx->mouse->buttons &= ~0x01; break;
+					case SDL_BUTTON_RIGHT: if (flags & FL_GRAB) zx->mouse->buttons &= ~0x02; break;
 					case SDL_BUTTON_MIDDLE:
 						break;
 				}
@@ -362,15 +353,15 @@ void EmulWin::SDLEventHandler() {
 			case SDL_MOUSEBUTTONUP:
 				if (!(flags & FL_GRAB) || (paused!=0)) break;
 				switch (ev.button.button) {
-					case SDL_BUTTON_LEFT: mouse->buttons |= 0x01; break;
-					case SDL_BUTTON_RIGHT: mouse->buttons |= 0x02; break;
+					case SDL_BUTTON_LEFT: zx->mouse->buttons |= 0x01; break;
+					case SDL_BUTTON_RIGHT: zx->mouse->buttons |= 0x02; break;
 				}
 				break;
 			case SDL_MOUSEMOTION:
 				if (!(flags & FL_GRAB) || (paused!=0)) break;
-				mouse->xpos = (ev.motion.x - 1)&0xff;
-				mouse->ypos = (257 - ev.motion.y)&0xff;
-				SDL_WarpMouse(mouse->xpos + 1, 257 - mouse->ypos);
+				zx->mouse->xpos = (ev.motion.x - 1)&0xff;
+				zx->mouse->ypos = (257 - ev.motion.y)&0xff;
+				SDL_WarpMouse(zx->mouse->xpos + 1, 257 - zx->mouse->ypos);
 				SDL_PeepEvents(&ev,1,SDL_GETEVENT,SDL_EVENTMASK(SDL_MOUSEMOTION));
 				break;
 		}
@@ -667,18 +658,18 @@ void Settings::save() {
 	sfile<<"volume.tape = "<<int2str(snd->tapevol).c_str()<<"\n";
 	sfile<<"volume.ay = "<<int2str(snd->ayvol).c_str()<<"\n";
 	sfile<<"volume.gs = "<<int2str(snd->gsvol).c_str()<<"\n";
-	sfile<<"chip1 = "<<int2str(snd->sc1->type)<<"\n";
-	sfile<<"chip2 = "<<int2str(snd->sc2->type)<<"\n";
-	sfile<<"chip1.stereo = "<<int2str(snd->sc1->stereo)<<"\n";
-	sfile<<"chip2.stereo = "<<int2str(snd->sc2->stereo)<<"\n";
-	sfile<<"ts.type = "<<int2str(snd->tstype)<<"\n";
-	sfile<<"gs = "<<((gs->flags & GS_ENABLE)?"y":"n")<<"\n";
-	sfile<<"gs.reset = "<<((gs->flags & GS_RESET)?"y":"n")<<"\n";
-	sfile<<"gs.stereo = "<<int2str(gs->stereo)<<"\n";
+	sfile<<"chip1 = "<<int2str(zx->aym->sc1->type)<<"\n";
+	sfile<<"chip2 = "<<int2str(zx->aym->sc2->type)<<"\n";
+	sfile<<"chip1.stereo = "<<int2str(zx->aym->sc1->stereo)<<"\n";
+	sfile<<"chip2.stereo = "<<int2str(zx->aym->sc2->stereo)<<"\n";
+	sfile<<"ts.type = "<<int2str(zx->aym->tstype)<<"\n";
+	sfile<<"gs = "<<((zx->gs->flags & GS_ENABLE)?"y":"n")<<"\n";
+	sfile<<"gs.reset = "<<((zx->gs->flags & GS_RESET)?"y":"n")<<"\n";
+	sfile<<"gs.stereo = "<<int2str(zx->gs->stereo)<<"\n";
 
 	sfile<<"\n[BETADISK]\n\n";
-	sfile<<"enabled = "<<(bdi->enable?"y":"n")<<"\n";
-	sfile<<"fast = "<<(bdi->turbo?"y":"n")<<"\n";
+	sfile<<"enabled = "<<(zx->bdi->enable?"y":"n")<<"\n";
+	sfile<<"fast = "<<(zx->bdi->vg93.turbo?"y":"n")<<"\n";
 
 	sfile<<"\n[IDE]\n\n";
 	sfile<<"iface = "<<int2str(ide->iface)<<"\n";
@@ -863,21 +854,21 @@ void Settings::load(bool dev) {
 						if (pnam=="volume.tape") {snd->tapevol = atoi(pval.c_str()); if (snd->tapevol > 16) snd->tapevol = 16;}
 						if (pnam=="volume.ay") {snd->ayvol = atoi(pval.c_str()); if (snd->ayvol > 16) snd->ayvol = 16;}
 						if (pnam=="volume.gs") {snd->gsvol = atoi(pval.c_str()); if (snd->gsvol > 16) snd->gsvol = 16;}
-						if (pnam=="chip1") {test = atoi(pval.c_str()); if (test < SND_END) snd->sc1->settype(test);}
-						if (pnam=="chip2") {test = atoi(pval.c_str()); if (test < SND_END) snd->sc2->settype(test);}
-						if (pnam=="chip1.stereo") snd->sc1->stereo = atoi(pval.c_str());
-						if (pnam=="chip2.stereo") snd->sc2->stereo = atoi(pval.c_str());
-						if (pnam=="ts.type") snd->tstype = atoi(pval.c_str());
+						if (pnam=="chip1") {test = atoi(pval.c_str()); if (test < SND_END) zx->aym->sc1->settype(test);}
+						if (pnam=="chip2") {test = atoi(pval.c_str()); if (test < SND_END) zx->aym->sc2->settype(test);}
+						if (pnam=="chip1.stereo") zx->aym->sc1->stereo = atoi(pval.c_str());
+						if (pnam=="chip2.stereo") zx->aym->sc2->stereo = atoi(pval.c_str());
+						if (pnam=="ts.type") zx->aym->tstype = atoi(pval.c_str());
 						if (pnam=="gs") {
-							if (str2bool(pval)) gs->flags |= GS_ENABLE; else gs->flags &= ~GS_ENABLE;
+							if (str2bool(pval)) zx->gs->flags |= GS_ENABLE; else zx->gs->flags &= ~GS_ENABLE;
 						}
 						if (pnam=="gs.reset") {
-							if (str2bool(pval)) gs->flags |= GS_RESET; else gs->flags &= ~GS_RESET;
+							if (str2bool(pval)) zx->gs->flags |= GS_RESET; else zx->gs->flags &= ~GS_RESET;
 						}
-						if (pnam=="gs.stereo") gs->stereo = atoi(pval.c_str());
+						if (pnam=="gs.stereo") zx->gs->stereo = atoi(pval.c_str());
 						break;
-					case 5: if (pnam=="enabled") bdi->enable=str2bool(pval);
-						if (pnam=="fast") bdi->turbo=str2bool(pval);
+					case 5: if (pnam=="enabled") zx->bdi->enable=str2bool(pval);
+						if (pnam=="fast") zx->bdi->vg93.turbo=str2bool(pval);
 						break;
 					case 6: if (pnam=="current") machname = pval;
 						if (pnam=="memory") {

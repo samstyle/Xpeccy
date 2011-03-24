@@ -8,7 +8,7 @@
 #include "settings.h"
 
 //extern Tape* tape;
-extern BDI* bdi;
+//extern BDI* bdi;
 extern ZXComp* zx;
 extern Settings* sets;
 extern EmulWin* mwin;
@@ -50,10 +50,10 @@ void MFiler::loaddisk(std::string sfnam, uint8_t drv=0,bool sel=true) {
 		sfnam = std::string(fnam.toUtf8().data());
 	}
 	if (sfnam == "") return;
-	if (fnam.endsWith(".trd",Qt::CaseInsensitive)) bdi->flop[drv].load(sfnam,TYPE_TRD);
-	if (fnam.endsWith(".scl",Qt::CaseInsensitive)) bdi->flop[drv].load(sfnam,TYPE_SCL);
-	if (fnam.endsWith(".fdi",Qt::CaseInsensitive)) bdi->flop[drv].load(sfnam,TYPE_FDI);
-	if (fnam.endsWith(".udi",Qt::CaseInsensitive)) bdi->flop[drv].load(sfnam,TYPE_UDI);
+	if (fnam.endsWith(".trd",Qt::CaseInsensitive)) zx->bdi->flop[drv].load(sfnam,TYPE_TRD);
+	if (fnam.endsWith(".scl",Qt::CaseInsensitive)) zx->bdi->flop[drv].load(sfnam,TYPE_SCL);
+	if (fnam.endsWith(".fdi",Qt::CaseInsensitive)) zx->bdi->flop[drv].load(sfnam,TYPE_FDI);
+	if (fnam.endsWith(".udi",Qt::CaseInsensitive)) zx->bdi->flop[drv].load(sfnam,TYPE_UDI);
 }
 
 void MFiler::loadsomefile(std::string sfnam,uint8_t drv) {
@@ -62,10 +62,10 @@ void MFiler::loadsomefile(std::string sfnam,uint8_t drv) {
 	if (fnam.endsWith(".z80",Qt::CaseInsensitive)) zx->sys->mem->load(sfnam,TYP_Z80);
 	if (fnam.endsWith(".tap",Qt::CaseInsensitive)) zx->tape->load(sfnam,TYPE_TAP);
 	if (fnam.endsWith(".tzx",Qt::CaseInsensitive)) zx->tape->load(sfnam,TYPE_TZX);
-	if (fnam.endsWith(".trd",Qt::CaseInsensitive)) bdi->flop[drv].load(sfnam,TYPE_TRD);
-	if (fnam.endsWith(".scl",Qt::CaseInsensitive)) bdi->flop[drv].load(sfnam,TYPE_SCL);
-	if (fnam.endsWith(".fdi",Qt::CaseInsensitive)) bdi->flop[drv].load(sfnam,TYPE_FDI);
-	if (fnam.endsWith(".udi",Qt::CaseInsensitive)) bdi->flop[drv].load(sfnam,TYPE_UDI);
+	if (fnam.endsWith(".trd",Qt::CaseInsensitive)) zx->bdi->flop[drv].load(sfnam,TYPE_TRD);
+	if (fnam.endsWith(".scl",Qt::CaseInsensitive)) zx->bdi->flop[drv].load(sfnam,TYPE_SCL);
+	if (fnam.endsWith(".fdi",Qt::CaseInsensitive)) zx->bdi->flop[drv].load(sfnam,TYPE_FDI);
+	if (fnam.endsWith(".udi",Qt::CaseInsensitive)) zx->bdi->flop[drv].load(sfnam,TYPE_UDI);
 	if (fnam.endsWith(".rzx",Qt::CaseInsensitive)) mwin->load(sfnam,TYP_RZX);
 }
 
@@ -85,7 +85,7 @@ void MFiler::opensomewhat() {
 // SAVE
 
 bool MFiler::savedisk(std::string sfnam, uint8_t drv,bool sel) {
-	if (!bdi->flop[drv].insert) return true;
+	if (!zx->bdi->flop[drv].insert) return true;
 	QString fnam(sfnam.c_str());
 	if (sel) {
 		fnam = save(NULL,QString("Save disk %1:").arg(QChar('A'+drv)),fnam,QStringList()<<"Disk image (*.trd *.scl *.udi)").selfile;
@@ -93,12 +93,12 @@ bool MFiler::savedisk(std::string sfnam, uint8_t drv,bool sel) {
 	}
 	if (sfnam!="") {
 		bool kformat=false;
-		if (fnam.endsWith(".trd",Qt::CaseInsensitive)) {bdi->flop[drv].save(sfnam,TYPE_TRD); kformat=true;}
-		if (fnam.endsWith(".scl",Qt::CaseInsensitive)) {bdi->flop[drv].save(sfnam,TYPE_SCL); kformat=true;}
-		if (fnam.endsWith(".udi",Qt::CaseInsensitive)) {bdi->flop[drv].save(sfnam,TYPE_UDI); kformat=true;}
-		if (!kformat) {fnam.append(".trd"); bdi->flop[drv].save(sfnam,TYPE_TRD);}
-		bdi->flop[drv].path=sfnam;
-		bdi->flop[drv].changed=false;
+		if (fnam.endsWith(".trd",Qt::CaseInsensitive)) {zx->bdi->flop[drv].save(sfnam,TYPE_TRD); kformat=true;}
+		if (fnam.endsWith(".scl",Qt::CaseInsensitive)) {zx->bdi->flop[drv].save(sfnam,TYPE_SCL); kformat=true;}
+		if (fnam.endsWith(".udi",Qt::CaseInsensitive)) {zx->bdi->flop[drv].save(sfnam,TYPE_UDI); kformat=true;}
+		if (!kformat) {fnam.append(".trd"); zx->bdi->flop[drv].save(sfnam,TYPE_TRD);}
+		zx->bdi->flop[drv].path=sfnam;
+		zx->bdi->flop[drv].changed=false;
 	}
 	return (sfnam!="");
 }
@@ -107,7 +107,7 @@ void MFiler::saveonf2() {
 	mwin->repause(true,PR_FILE);
 	QStringList filter;
 	std::string sfnam;
-	if (bdi->flop[0].insert) {filter<<"Disk A (*.trd *.scl *.udi)"; sfnam = bdi->flop[0].path;}
+	if (zx->bdi->flop[0].insert) {filter<<"Disk A (*.trd *.scl *.udi)"; sfnam = zx->bdi->flop[0].path;}
 	if (zx->tape->data.size()!=0) {filter<<"Tape (*.tap)"; if (sfnam=="") sfnam = zx->tape->path;}
 	filter<<"Snapshot (*.sna)"; if (sfnam=="") sfnam = "snapshot.sna";
 	MFResult res = save(0,"Save something",QString(sfnam.c_str()),filter);

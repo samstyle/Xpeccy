@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include "spectrum.h"
+#include "zxbase.h"
 #include "sound.h"
 
 #define GS_FRQ		12.0
@@ -14,8 +14,8 @@
 #define	GS_MONO		0
 #define	GS_12_34	1
 
-uint8_t gs_in(int32_t);
-void gs_out(int32_t,uint8_t);
+//uint8_t gs_in(int32_t);
+//void gs_out(int32_t,uint8_t);
 
 class GS {
 	public:
@@ -35,6 +35,8 @@ class GS {
 	void reset();
 	bool in(int,uint8_t*);
 	bool out(int,uint8_t);
+	uint8_t intin(int32_t);
+	void intout(int32_t,uint8_t);
 	void sync(uint32_t);
 	SndData getvol();
 };
