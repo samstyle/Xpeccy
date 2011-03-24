@@ -10,6 +10,7 @@
 #include "bdi.h"
 #include "sound.h"
 #include "gs.h"
+#include "hdd.h"
 
 #define TYP_RZX		0
 // conditions
@@ -33,6 +34,7 @@ class ZXComp {
 		Mouse* mouse;
 		Tape* tape;
 		BDI* bdi;
+		IDE* ide;
 		GS* gs;
 		AYSys* aym;
 		void exec();

@@ -6,7 +6,7 @@
 #include "spectrum.h"
 
 extern ZXComp* zx;
-extern IDE* ide;
+//extern IDE* ide;
 //extern BDI* bdi;
 
 // IDE controller
@@ -66,7 +66,6 @@ ATADev::ATADev() {
 
 // set REG value to bus (16bit for data, low for other)
 void ATADev::in(int) {
-	ide->bus.hi = ide->bus.low = 0xff;
 }
 
 void ATADev::out(int) {

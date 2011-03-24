@@ -9,7 +9,7 @@
 //#include "video.h"
 //#include "bdi.h"
 //#include "tape.h"
-#include "hdd.h"
+//#include "hdd.h"
 //#include "gs.h"
 #include "spectrum.h"
 
@@ -22,7 +22,7 @@ extern MFiler* filer;
 extern Sound* snd;
 //extern BDI* bdi;
 //extern Tape* tape;
-extern IDE* ide;
+//extern IDE* ide;
 //extern GS* gs;
 extern ZXComp* zx;
 extern HardWare* hw;
@@ -210,25 +210,25 @@ void SetupWin::start() {
 		ui.ddsbox->setChecked(zx->bdi->flop[3].dblsid);
 		ui.dwpbox->setChecked(zx->bdi->flop[3].protect);
 // hdd
-	ui.hiface->setCurrentIndex(ui.hiface->findData(ide->iface));
+	ui.hiface->setCurrentIndex(ui.hiface->findData(zx->ide->iface));
 	
-	ui.hm_type->setCurrentIndex(ui.hm_type->findData(QVariant(ide->master.iface)));
-	ui.hm_model->setText(QDialog::trUtf8(ide->master.pass.model.c_str()));
-	ui.hm_ser->setText(QDialog::trUtf8(ide->master.pass.serial.c_str()));
-	ui.hm_path->setText(QDialog::trUtf8(ide->master.image.c_str()));
-	ui.hm_islba->setChecked(ide->master.canlba);
-	ui.hm_gsec->setValue(ide->master.pass.spt);
-	ui.hm_ghd->setValue(ide->master.pass.hds);
-	ui.hm_gcyl->setValue(ide->master.pass.cyls);
+	ui.hm_type->setCurrentIndex(ui.hm_type->findData(QVariant(zx->ide->master.iface)));
+	ui.hm_model->setText(QDialog::trUtf8(zx->ide->master.pass.model.c_str()));
+	ui.hm_ser->setText(QDialog::trUtf8(zx->ide->master.pass.serial.c_str()));
+	ui.hm_path->setText(QDialog::trUtf8(zx->ide->master.image.c_str()));
+	ui.hm_islba->setChecked(zx->ide->master.canlba);
+	ui.hm_gsec->setValue(zx->ide->master.pass.spt);
+	ui.hm_ghd->setValue(zx->ide->master.pass.hds);
+	ui.hm_gcyl->setValue(zx->ide->master.pass.cyls);
 
-	ui.hs_type->setCurrentIndex(ui.hm_type->findData(QVariant(ide->slave.iface)));
-	ui.hs_model->setText(QDialog::trUtf8(ide->slave.pass.model.c_str()));
-	ui.hs_ser->setText(QDialog::trUtf8(ide->slave.pass.serial.c_str()));
-	ui.hs_path->setText(QDialog::trUtf8(ide->slave.image.c_str()));
-	ui.hs_islba->setChecked(ide->slave.canlba);
-	ui.hs_gsec->setValue(ide->slave.pass.spt);
-	ui.hs_ghd->setValue(ide->slave.pass.hds);
-	ui.hs_gcyl->setValue(ide->slave.pass.cyls);
+	ui.hs_type->setCurrentIndex(ui.hm_type->findData(QVariant(zx->ide->slave.iface)));
+	ui.hs_model->setText(QDialog::trUtf8(zx->ide->slave.pass.model.c_str()));
+	ui.hs_ser->setText(QDialog::trUtf8(zx->ide->slave.pass.serial.c_str()));
+	ui.hs_path->setText(QDialog::trUtf8(zx->ide->slave.image.c_str()));
+	ui.hs_islba->setChecked(zx->ide->slave.canlba);
+	ui.hs_gsec->setValue(zx->ide->slave.pass.spt);
+	ui.hs_ghd->setValue(zx->ide->slave.pass.hds);
+	ui.hs_gcyl->setValue(zx->ide->slave.pass.cyls);
 // tape
 	ui.tpathle->setText(QDialog::trUtf8(zx->tape->path.c_str()));
 	buildtapelist();
@@ -304,25 +304,25 @@ void SetupWin::apply() {
 		zx->bdi->flop[3].dblsid = ui.ddsbox->isChecked();
 		zx->bdi->flop[3].protect = ui.dwpbox->isChecked();
 // hdd
-	ide->iface = ui.hiface->itemData(ui.hiface->currentIndex()).toInt();
+	zx->ide->iface = ui.hiface->itemData(ui.hiface->currentIndex()).toInt();
 
-	ide->master.iface = ui.hm_type->itemData(ui.hm_type->currentIndex()).toInt();
-	ide->master.pass.model = std::string(ui.hm_model->text().toUtf8().data(),40);
-	ide->master.pass.serial = std::string(ui.hm_ser->text().toUtf8().data(),20);
-	ide->master.image = std::string(ui.hm_path->text().toUtf8().data());
-	ide->master.canlba = ui.hm_islba->isChecked();
-	ide->master.pass.spt = ui.hm_gsec->value();
-	ide->master.pass.hds = ui.hm_ghd->value();
-	ide->master.pass.cyls = ui.hm_gcyl->value();
+	zx->ide->master.iface = ui.hm_type->itemData(ui.hm_type->currentIndex()).toInt();
+	zx->ide->master.pass.model = std::string(ui.hm_model->text().toUtf8().data(),40);
+	zx->ide->master.pass.serial = std::string(ui.hm_ser->text().toUtf8().data(),20);
+	zx->ide->master.image = std::string(ui.hm_path->text().toUtf8().data());
+	zx->ide->master.canlba = ui.hm_islba->isChecked();
+	zx->ide->master.pass.spt = ui.hm_gsec->value();
+	zx->ide->master.pass.hds = ui.hm_ghd->value();
+	zx->ide->master.pass.cyls = ui.hm_gcyl->value();
 	
-	ide->slave.iface = ui.hs_type->itemData(ui.hs_type->currentIndex()).toInt();
-	ide->slave.pass.model = std::string(ui.hs_model->text().toUtf8().data(),40);
-	ide->slave.pass.serial = std::string(ui.hs_ser->text().toUtf8().data(),20);
-	ide->slave.image = std::string(ui.hs_path->text().toUtf8().data());
-	ide->slave.canlba = ui.hs_islba->isChecked();
-	ide->slave.pass.spt = ui.hs_gsec->value();
-	ide->slave.pass.hds = ui.hs_ghd->value();
-	ide->slave.pass.cyls = ui.hs_gcyl->value();
+	zx->ide->slave.iface = ui.hs_type->itemData(ui.hs_type->currentIndex()).toInt();
+	zx->ide->slave.pass.model = std::string(ui.hs_model->text().toUtf8().data(),40);
+	zx->ide->slave.pass.serial = std::string(ui.hs_ser->text().toUtf8().data(),20);
+	zx->ide->slave.image = std::string(ui.hs_path->text().toUtf8().data());
+	zx->ide->slave.canlba = ui.hs_islba->isChecked();
+	zx->ide->slave.pass.spt = ui.hs_gsec->value();
+	zx->ide->slave.pass.hds = ui.hs_ghd->value();
+	zx->ide->slave.pass.cyls = ui.hs_gcyl->value();
 
 // tools
 	sets->sjapath = std::string(ui.sjpathle->text().toUtf8().data());

@@ -43,6 +43,7 @@ ZXComp::ZXComp() {
 	mouse = new Mouse;
 	tape = new Tape;
 	bdi = new BDI;
+	ide = new IDE;
 	aym = new AYSys;
 	gs = new GS; gs->reset();
 }
@@ -63,11 +64,13 @@ void ZXComp::reset() {
 	aym->sc1->reset();
 	aym->sc2->reset();
 	aym->scc = aym->sc1;
+	ide->reset();
 }
 
 uint8_t ZXComp::in(int32_t port) {
 	uint8_t res = 0xff;
 	gs->sync(vid->t);
+//	if (ide->in(port,&res)) return res;
 	if (gs->in(port,&res)) return res;
 	if (bdi->in(port,&res)) return res;
 	port = hw->getport(port);
@@ -76,6 +79,7 @@ uint8_t ZXComp::in(int32_t port) {
 
 void ZXComp::out(int32_t port,uint8_t val) {
 	gs->sync(vid->t);
+//	if (ide->out(port,val)) return;
 	if (gs->out(port,val)) return;
 	if (bdi->out(port,val)) return;
 	port = hw->getport(port);

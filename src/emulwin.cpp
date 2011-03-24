@@ -15,7 +15,7 @@
 //#include "keyboard.h"
 //#include "bdi.h"
 //#include "tape.h"
-#include "hdd.h"
+//#include "hdd.h"
 //#include "gs.h"
 
 #include "spectrum.h"
@@ -51,7 +51,7 @@ extern ZXComp* zx;
 extern Sound* snd;
 extern Settings* sets;
 extern HardWare* hw;
-extern IDE* ide;
+//extern IDE* ide;
 //extern GS* gs;
 //extern Tape* tape;
 extern EmulWin* mwin;
@@ -267,7 +267,7 @@ void EmulWin::reset() {
 //	snd->sc1->reset();
 //	snd->sc2->reset();
 //	snd->scc = snd->sc1;
-	ide->reset();
+//	ide->reset();
 }
 
 void EmulWin::SDLEventHandler() {
@@ -672,19 +672,19 @@ void Settings::save() {
 	sfile<<"fast = "<<(zx->bdi->vg93.turbo?"y":"n")<<"\n";
 
 	sfile<<"\n[IDE]\n\n";
-	sfile<<"iface = "<<int2str(ide->iface)<<"\n";
-	sfile<<"master.type = "<<int2str(ide->master.iface)<<"\n";
-	sfile<<"master.model = "<<ide->master.pass.model.c_str()<<"\n";
-	sfile<<"master.serial = "<<ide->master.pass.serial.c_str()<<"\n";
-	sfile<<"master.image = "<<ide->master.image.c_str()<<"\n";
-	sfile<<"master.lba = "<<(ide->master.canlba?"y":"n")<<"\n";
-	sfile<<"master.chs = "<<int2str(ide->master.pass.spt)<<"/"<<int2str(ide->master.pass.hds)<<"/"<<int2str(ide->master.pass.cyls)<<"\n";
-	sfile<<"slave.type = "<<int2str(ide->slave.iface)<<"\n";
-	sfile<<"slave.model = "<<ide->slave.pass.model.c_str()<<"\n";
-	sfile<<"slave.serial = "<<ide->slave.pass.serial.c_str()<<"\n";
-	sfile<<"slave.image = "<<ide->slave.image.c_str()<<"\n";
-	sfile<<"slave.lba = "<<(ide->slave.canlba?"y":"n")<<"\n";
-	sfile<<"slave.chs = "<<int2str(ide->slave.pass.spt)<<"/"<<int2str(ide->slave.pass.hds)<<"/"<<int2str(ide->slave.pass.cyls)<<"\n";
+	sfile<<"iface = "<<int2str(zx->ide->iface)<<"\n";
+	sfile<<"master.type = "<<int2str(zx->ide->master.iface)<<"\n";
+	sfile<<"master.model = "<<zx->ide->master.pass.model.c_str()<<"\n";
+	sfile<<"master.serial = "<<zx->ide->master.pass.serial.c_str()<<"\n";
+	sfile<<"master.image = "<<zx->ide->master.image.c_str()<<"\n";
+	sfile<<"master.lba = "<<(zx->ide->master.canlba?"y":"n")<<"\n";
+	sfile<<"master.chs = "<<int2str(zx->ide->master.pass.spt)<<"/"<<int2str(zx->ide->master.pass.hds)<<"/"<<int2str(zx->ide->master.pass.cyls)<<"\n";
+	sfile<<"slave.type = "<<int2str(zx->ide->slave.iface)<<"\n";
+	sfile<<"slave.model = "<<zx->ide->slave.pass.model.c_str()<<"\n";
+	sfile<<"slave.serial = "<<zx->ide->slave.pass.serial.c_str()<<"\n";
+	sfile<<"slave.image = "<<zx->ide->slave.image.c_str()<<"\n";
+	sfile<<"slave.lba = "<<(zx->ide->slave.canlba?"y":"n")<<"\n";
+	sfile<<"slave.chs = "<<int2str(zx->ide->slave.pass.spt)<<"/"<<int2str(zx->ide->slave.pass.hds)<<"/"<<int2str(zx->ide->slave.pass.cyls)<<"\n";
 
 	sfile<<"\n[MACHINE]\n\n";
 	sfile<<"# possible values:";
@@ -887,31 +887,31 @@ void Settings::load(bool dev) {
 					case 8: umenu.add(pnam,pval);
 						break;
 					case 9:
-						if (pnam=="iface") ide->iface = atoi(pval.c_str());
-						if (pnam=="master.type") ide->master.iface = atoi(pval.c_str());
-						if (pnam=="master.model") ide->master.pass.model = std::string(pval,0,40);
-						if (pnam=="master.serial") ide->master.pass.serial = std::string(pval,0,20);
-						if (pnam=="master.lba") ide->master.canlba = str2bool(pval);
-						if (pnam=="master.image") ide->master.image = pval;
+						if (pnam=="iface") zx->ide->iface = atoi(pval.c_str());
+						if (pnam=="master.type") zx->ide->master.iface = atoi(pval.c_str());
+						if (pnam=="master.model") zx->ide->master.pass.model = std::string(pval,0,40);
+						if (pnam=="master.serial") zx->ide->master.pass.serial = std::string(pval,0,20);
+						if (pnam=="master.lba") zx->ide->master.canlba = str2bool(pval);
+						if (pnam=="master.image") zx->ide->master.image = pval;
 						if (pnam=="master.chs") {
 							vect = splitstr(pval,"/");
 							if (vect.size() > 2) {
-								ide->master.pass.spt = atoi(vect.at(0).c_str());
-								ide->master.pass.hds = atoi(vect.at(1).c_str());
-								ide->master.pass.cyls = atoi(vect.at(2).c_str());
+								zx->ide->master.pass.spt = atoi(vect.at(0).c_str());
+								zx->ide->master.pass.hds = atoi(vect.at(1).c_str());
+								zx->ide->master.pass.cyls = atoi(vect.at(2).c_str());
 							}
 						}
-						if (pnam=="slave.type") ide->slave.iface = atoi(pval.c_str());
-						if (pnam=="slave.model") ide->slave.pass.model = std::string(pval,0,40);
-						if (pnam=="slave.serial") ide->slave.pass.serial = std::string(pval,0,20);
-						if (pnam=="slave.lba") ide->slave.canlba = str2bool(pval);
-						if (pnam=="slave.image") ide->slave.image = pval;
+						if (pnam=="slave.type") zx->ide->slave.iface = atoi(pval.c_str());
+						if (pnam=="slave.model") zx->ide->slave.pass.model = std::string(pval,0,40);
+						if (pnam=="slave.serial") zx->ide->slave.pass.serial = std::string(pval,0,20);
+						if (pnam=="slave.lba") zx->ide->slave.canlba = str2bool(pval);
+						if (pnam=="slave.image") zx->ide->slave.image = pval;
 						if (pnam=="slave.chs") {
 							vect = splitstr(pval,"/");
 							if (vect.size() > 2) {
-								ide->slave.pass.spt = atoi(vect.at(0).c_str());
-								ide->slave.pass.hds = atoi(vect.at(1).c_str());
-								ide->slave.pass.cyls = atoi(vect.at(2).c_str());
+								zx->ide->slave.pass.spt = atoi(vect.at(0).c_str());
+								zx->ide->slave.pass.hds = atoi(vect.at(1).c_str());
+								zx->ide->slave.pass.cyls = atoi(vect.at(2).c_str());
 							}
 						}
 						break;

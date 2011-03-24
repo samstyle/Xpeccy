@@ -2,7 +2,7 @@
 //#include "iosys.h"
 //#include "memory.h"
 //#include "keyboard.h"
-#include "hdd.h"
+//#include "hdd.h"
 //#include "bdi.h"
 #include "sound.h"
 //#include "tape.h"
@@ -34,37 +34,6 @@ void IOSys::out(int32_t port, uint8_t val) {
 		case IO_GS: zx->gs->intout(port,val); break;
 	}
 }
-
-/*
-void zx_out(int port, uint8_t val) {
-//	if (ide->out(port,val)) return;
-	gs->sync(zx->vid->t);
-	if (gs->out(port,val)) return;
-	if (zx->bdi->out(port,val)) return;
-	port = hw->getport(port);
-	hw->out(port,val);
-}
-
-uint8_t zx_in(int port) {
-	uint8_t res = 0xff;
-//	if (mwin->flags & FL_RZX) {
-//		if (mwin->rfpos >= mwin->rzx[mwin->rfnum].in.size()) {
-//			printf("WARNING: CPU.IN_COUNT > RZX.IN_COUNT at frame %i\n",mwin->rfnum);
-//		} else {
-//			res = mwin->rzx[mwin->rfnum].in[mwin->rfpos];
-//			printf("res = %.2X\n",res);
-//			mwin->rfpos++;
-//		}
-//		return res;
-//	}
-//	if (ide->in(port,&res)) return res;
-	gs->sync(zx->vid->t);
-	if (gs->in(port,&res)) return res;
-	if (zx->bdi->in(port,&res)) return res;
-	port = hw->getport(port);
-	return hw->in(port);
-}
-*/
 
 void IOSys::out7ffd(uint8_t val) {
 	if (block7ffd) return;

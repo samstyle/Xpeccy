@@ -13,7 +13,7 @@
 #include "sound.h"
 //#include "bdi.h"
 //#include "tape.h"
-#include "hdd.h"
+//#include "hdd.h"
 //#include "gs.h"
 
 #include "emulwin.h"
@@ -39,7 +39,7 @@ Sound *snd;
 //BDI *bdi;
 //Tape *tape;
 //Mouse *mouse;
-IDE *ide;
+//IDE *ide;
 //GS *gs;
 
 EmulWin *mwin;
@@ -129,7 +129,7 @@ int main(int ac,char** av) {
 			snd = new Sound();
 //			bdi = new BDI();
 //			tape = new Tape();
-			ide = new IDE;
+//			ide = new IDE;
 //			gs = new GS(); gs->reset();
 
 			mwin = new EmulWin();
