@@ -355,6 +355,16 @@ void EmulWin::SDLEventHandler() {
 				switch (ev.button.button) {
 					case SDL_BUTTON_LEFT: zx->mouse->buttons |= 0x01; break;
 					case SDL_BUTTON_RIGHT: zx->mouse->buttons |= 0x02; break;
+					case SDL_BUTTON_MIDDLE:
+						flags ^= FL_GRAB;
+						if (flags & FL_GRAB) {
+							SDL_WM_GrabInput(SDL_GRAB_ON);
+							SDL_ShowCursor(SDL_DISABLE);
+						} else {
+							SDL_WM_GrabInput(SDL_GRAB_OFF);
+							SDL_ShowCursor(SDL_ENABLE);
+						}
+						break;
 				}
 				break;
 			case SDL_MOUSEMOTION:
