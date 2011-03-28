@@ -29,7 +29,7 @@ Memory::Memory(int tp) {
 }
 
 void Memory::setram(uint8_t p) {
-	cram = (p & zx->sys->io->mask);
+	cram = (p & mask);
 	pt3 = &ram[cram][0];
 }
 

@@ -14,6 +14,7 @@ class HardWare {
 		std::string name;
 		int mask;		// mem size mask (0:128, 1:256, 2:512, 3:1024); =0 for 48K
 		int flags;
+		int type;
 		int (*getport)(int);
 		void (*out)(int,uint8_t);
 		uint8_t (*in)(int);
@@ -24,13 +25,13 @@ class IOSys {
 	public:
 //		IOSys(uint8_t(*)(int),void(*)(int,uint8_t));
 		IOSys(int);
-		std::vector<HardWare> hwlist;
-		void addhardware(std::string,int(*)(int),void(*)(int,uint8_t),uint8_t(*)(int),void(*)(),int,int);
-		void setmacptr(std::string);
+//		std::vector<HardWare> hwlist;
+//		void addhardware(std::string,int(*)(int),void(*)(int,uint8_t),uint8_t(*)(int),void(*)(),int,int);
+//		void setmacptr(std::string);
 		bool block7ffd;
 		bool resafter;
-		int32_t mask;		// rampage mask (0x00,0x0f,0x1f,0x3f)
-		int32_t flags;
+//		int32_t mask;		// rampage mask (0x00,0x0f,0x1f,0x3f)
+//		int32_t flags;
 		int32_t type;
 		void iostdout(int,uint8_t);
 		uint8_t iostdin(int);

@@ -34,6 +34,7 @@ class ZXBase {
 		bool istrb;
 		bool fstrb;
 		bool nmi;
+		int32_t hwflags;
 		Z80 *cpu;
 		Memory* mem;
 		IOSys* io;

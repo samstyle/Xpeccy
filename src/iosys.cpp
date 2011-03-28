@@ -9,7 +9,7 @@
 #include "spectrum.h"
 //#include "gs.h"
 
-extern HardWare* hw;
+//extern HardWare* hw;
 //extern Keyboard* keyb;
 //extern Mouse* mouse;
 //extern IDE* ide;
@@ -42,16 +42,18 @@ void IOSys::out7ffd(uint8_t val) {
 	block7ffd = val & 0x20;
 }
 
+/*
 void IOSys::setmacptr(std::string nam) {
 	hw = NULL;
 	uint32_t i; for (i=0;i<hwlist.size();i++) {
 		if (hwlist[i].name == nam) {
 			hw = &hwlist[i];
-			flags = hw->flags;
+			flags = zx->hw->flags;
 			break;
 		}
 	}
 }
+*/
 
 uint8_t IOSys::iostdin(int port) {
 	uint8_t res = 0xff;
@@ -92,6 +94,7 @@ void IOSys::iostdout(int port, uint8_t val) {
 	}
 }
 
+/*
 void IOSys::addhardware(std::string nam,int(*gpfnc)(int),void(*ofnc)(int,uint8_t),uint8_t(*ifnc)(int),void(*sfnc)(), int msk, int flg) {
 	HardWare newmac;
 	newmac.name = nam;
@@ -103,11 +106,13 @@ void IOSys::addhardware(std::string nam,int(*gpfnc)(int),void(*ofnc)(int,uint8_t
 	newmac.flags = flg;
 	hwlist.push_back(newmac);
 }
+*/
 
 //==========================
 // Spectrum 48K
 //==========================
 
+/*
 int zx48_getport(int prt) {
 	int port = 0;
 	if ((prt&0x01)==0) port=(prt&0xff00)|0xfe;
@@ -126,11 +131,13 @@ void zx48_outport(int port, uint8_t val) {
 uint8_t zx48_inport(int port) {
 	return zx->sys->io->iostdin(port);
 }
+*/
 
 //==========================
 // Pentagon 128/512K
 //==========================
 
+/*
 int pent_getport(int prt) {
 	int port = 0;
 	if ((prt&0x8002)==0x0000) port=0x7ffd;
@@ -158,11 +165,13 @@ void pent_outport(int port, uint8_t val) {
 uint8_t pent_inport(int port) {
 	return zx->sys->io->iostdin(port);
 }
+*/
 
 //==========================
 // Pentagon 1024 SL 2
 //==========================
 
+/*
 int p1m_getport(int prt) {
 	int port = 0;
 	if ((prt&0x8002)==0x0000) port=0x7ffd;
@@ -245,6 +254,7 @@ uint8_t scrp_inport(int port) {
 	}
 	return res;
 }
+*/
 
 //-------------
 
@@ -253,9 +263,5 @@ IOSys::IOSys(int p1) {
 //	in = p1;
 //	out = p2;
 	type = p1;
-	flags = 0;
-	addhardware("ZX48K",&zx48_getport,&zx48_outport,&zx48_inport,&zx48_setrom,0x00,0);
-	addhardware("Pentagon",&pent_getport,&pent_outport,&pent_inport,&pent_setrom,0x05,0);
-	addhardware("Pentagon1024SL",&p1m_getport,&p1m_outport,&p1m_inport,&p1m_setrom,0x08,0);
-	addhardware("Scorpion",&scrp_getport,&scrp_outport,&scrp_inport,&scrp_setrom,0x0a,IO_WAIT);
+//	flags = 0;
 }

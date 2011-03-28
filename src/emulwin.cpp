@@ -50,7 +50,7 @@ extern ZXComp* zx;
 //extern Mouse* mouse;
 extern Sound* snd;
 extern Settings* sets;
-extern HardWare* hw;
+//extern HardWare* hw;
 //extern IDE* ide;
 //extern GS* gs;
 //extern Tape* tape;
@@ -688,11 +688,11 @@ void Settings::save() {
 
 	sfile<<"\n[MACHINE]\n\n";
 	sfile<<"# possible values:";
-	for (i=0; i < zx->sys->io->hwlist.size(); i++) {if (i!=0) sfile<<", "; sfile << zx->sys->io->hwlist[i].name.c_str();}
+	for (i=0; i < zx->hwlist.size(); i++) {if (i!=0) sfile<<", "; sfile << zx->hwlist[i].name.c_str();}
 	sfile<<"\n";
-	sfile<<"current = "<<hw->name.c_str()<<"\n";
+	sfile<<"current = "<<zx->hw->name.c_str()<<"\n";
 	sfile<<"memory = ";
-	switch (zx->sys->io->mask) {
+	switch (zx->sys->mem->mask) {
 		case 0x07: sfile<<"128\n"; break;
 		case 0x0f: sfile<<"256\n"; break;
 		case 0x1f: sfile<<"512\n"; break;
@@ -738,7 +738,7 @@ void Settings::load(bool dev) {
 	size_t pos;
 	char* buf = new char[0x4000];
 	int tmask = 0xff;
-	if (!dev) zx->sys->io->mask = 0;
+	if (!dev) zx->sys->mem->mask = 0;
 	if (!file.good()) {
 		shithappens("Can't find config file<br><b>~/.config/samstyle/xpeccy/xpeccy.conf</b><br>Default one will be created.");
 		std::ofstream ofile(optpath.c_str());
@@ -872,11 +872,11 @@ void Settings::load(bool dev) {
 						break;
 					case 6: if (pnam=="current") machname = pval;
 						if (pnam=="memory") {
-							if (pval=="48") {zx->sys->io->mask = 0x00; tmask = 0;}
-							if (pval=="128") {zx->sys->io->mask = 0x07; tmask = 1;}
-							if (pval=="256") {zx->sys->io->mask = 0x0f; tmask = 2;}
-							if (pval=="512") {zx->sys->io->mask = 0x1f; tmask = 4;}
-							if (pval=="1024") {zx->sys->io->mask = 0x3f; tmask = 8;}
+							if (pval=="48") {zx->sys->mem->mask = 0x00; tmask = 0;}
+							if (pval=="128") {zx->sys->mem->mask = 0x07; tmask = 1;}
+							if (pval=="256") {zx->sys->mem->mask = 0x0f; tmask = 2;}
+							if (pval=="512") {zx->sys->mem->mask = 0x1f; tmask = 4;}
+							if (pval=="1024") {zx->sys->mem->mask = 0x3f; tmask = 8;}
 						}
 						if (pnam=="restart") zx->sys->io->resafter = str2bool(pval);
 						if (pnam=="scrp.wait") sets->wait = str2bool(pval);
@@ -927,12 +927,12 @@ void Settings::load(bool dev) {
 	}
 	if (dev) return;
 	snd->defpars();
-	zx->sys->io->setmacptr(machname);
+	zx->setHardware(machname);
 	zx->sys->mem->setromptr(rsetname);
 	snd->setoutptr(soutname);
-	if (hw==NULL) throw("Can't found current machine");
+	if (zx->hw==NULL) throw("Can't found current machine");
 	if (zx->sys->mem->romset==NULL) throw("Can't found current romset");
-	if (~hw->mask & tmask) throw("Incorrect memory size for this machine");
+	if (~zx->hw->mask & tmask) throw("Incorrect memory size for this machine");
 	if (!zx->vid->setlayout(zx->vid->curlay)) zx->vid->setlayout("default");
 	zx->vid->update();
 	zx->sys->mem->loadromset();

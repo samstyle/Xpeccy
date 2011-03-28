@@ -25,7 +25,7 @@ extern Sound* snd;
 //extern IDE* ide;
 //extern GS* gs;
 extern ZXComp* zx;
-extern HardWare* hw;
+//extern HardWare* hw;
 
 SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	setModal(true);
@@ -37,8 +37,12 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 
 	uint32_t i;
 // machine
-	for (i=0;i<zx->sys->io->hwlist.size();i++) {ui.machbox->addItem(QDialog::trUtf8(zx->sys->io->hwlist[i].name.c_str()));}
-	for (i=0;i<zx->sys->mem->rsetlist.size();i++) {ui.rsetbox->addItem(QDialog::trUtf8(zx->sys->mem->rsetlist[i].name.c_str()));}
+	for (i=0; i < zx->hwlist.size(); i++) {
+		ui.machbox->addItem(QDialog::trUtf8(zx->hwlist[i].name.c_str()));
+	}
+	for (i=0; i < zx->sys->mem->rsetlist.size(); i++) {
+		ui.rsetbox->addItem(QDialog::trUtf8(zx->sys->mem->rsetlist[i].name.c_str()));
+	}
 	ui.resbox->addItems(QStringList()<<"0:Basic 128"<<"1:Basic48"<<"2:Shadow"<<"3:DOS");
 	ui.mszbox->addItems(QStringList()<<"48K"<<"128K"<<"256K"<<"512K"<<"1024K");
 // video
@@ -150,11 +154,11 @@ void SetupWin::okay() {apply();reject();}
 void SetupWin::start() {
 	mwin->repause(true,PR_OPTS);
 // machine
-	ui.machbox->setCurrentIndex(ui.machbox->findText(QDialog::trUtf8(hw->name.c_str())));
+	ui.machbox->setCurrentIndex(ui.machbox->findText(QDialog::trUtf8(zx->hw->name.c_str())));
 	ui.rsetbox->setCurrentIndex(ui.rsetbox->findText(QDialog::trUtf8(zx->sys->mem->romset->name.c_str())));
 	ui.reschk->setChecked(zx->sys->io->resafter);
 	ui.resbox->setCurrentIndex(zx->sys->mem->res);
-	switch(zx->sys->io->mask) {
+	switch(zx->sys->mem->mask) {
 		case 0x00: ui.mszbox->setCurrentIndex(0); break;
 		case 0x07: ui.mszbox->setCurrentIndex(1); break;
 		case 0x0f: ui.mszbox->setCurrentIndex(2); break;
@@ -242,21 +246,21 @@ void SetupWin::start() {
 
 void SetupWin::apply() {
 // machine
-	HardWare *oldmac = hw;
+	HardWare *oldmac = zx->hw;
 	sets->machname = std::string(ui.machbox->currentText().toUtf8().data());
-	zx->sys->io->setmacptr(sets->machname);
+	zx->setHardware(sets->machname); //zx->sys->io->setmacptr(sets->machname);
 	sets->rsetname = std::string(ui.rsetbox->currentText().toUtf8().data());
 	zx->sys->mem->setromptr(sets->rsetname); zx->sys->mem->loadromset();
 	zx->sys->io->resafter = ui.reschk->isChecked();
 	zx->sys->mem->res = ui.resbox->currentIndex();
 	switch(ui.mszbox->currentIndex()) {
-		case 0: zx->sys->io->mask = 0x00; break;
-		case 1: zx->sys->io->mask = 0x07; break;
-		case 2: zx->sys->io->mask = 0x0f; break;
-		case 3: zx->sys->io->mask = 0x1f; break;
-		case 4: zx->sys->io->mask = 0x3f; break;
+		case 0: zx->sys->mem->mask = 0x00; break;
+		case 1: zx->sys->mem->mask = 0x07; break;
+		case 2: zx->sys->mem->mask = 0x0f; break;
+		case 3: zx->sys->mem->mask = 0x1f; break;
+		case 4: zx->sys->mem->mask = 0x3f; break;
 	}
-	if (hw != oldmac) mwin->reset();
+	if (zx->hw != oldmac) mwin->reset();
 	zx->sys->cpu->frq = ui.cpufrq->value() / 2.0;
 	sets->wait = ui.scrpwait->isChecked();
 // video
@@ -342,7 +346,7 @@ void SetupWin::reject() {
 // lists
 
 void SetupWin::okbuts() {
-	int t = zx->sys->io->hwlist[ui.machbox->currentIndex()].mask;
+	int t = zx->hwlist[ui.machbox->currentIndex()].mask;
 	if (t == 0x00) {
 		ui.okbut->setEnabled(ui.mszbox->currentIndex()==0);
 	} else {
@@ -352,7 +356,7 @@ void SetupWin::okbuts() {
 }
 
 void SetupWin::setmszbox(int idx) {
-	int t = zx->sys->io->hwlist[idx].mask;
+	int t = zx->hwlist[idx].mask;
 	QIcon okicon = QIcon(":/images/ok-apply.png");
 	QIcon ericon = QIcon(":/images/cancel.png");
 	if (t == 0x00) {

@@ -8,10 +8,10 @@
 
 extern Settings* sets;
 // extern BDI* bdi;
-extern HardWare* hw;
+//extern HardWare* hw;
 
-uint8_t zx_in(int);
-void zx_out(int,uint8_t);
+//uint8_t zx_in(int);
+//void zx_out(int,uint8_t);
 
 ZOp::ZOp(void(*fn)(ZXBase*),int32_t tks,int32_t cnd,int32_t t1,int32_t t0,const char* nm,int32_t fl) {
 	name = nm;
@@ -46,6 +46,17 @@ ZXComp::ZXComp() {
 	ide = new IDE;
 	aym = new AYSys;
 	gs = new GS; gs->reset();
+#if 0
+	addHardware("ZX48K",&zx48_getport,&zx48_outport,&zx48_inport,&zx48_setrom,0x00,0);
+	addHardware("Pentagon",&pent_getport,&pent_outport,&pent_inport,&pent_setrom,0x05,0);
+	addHardware("Pentagon1024SL",&p1m_getport,&p1m_outport,&p1m_inport,&p1m_setrom,0x08,0);
+	addHardware("Scorpion",&scrp_getport,&scrp_outport,&scrp_inport,&scrp_setrom,0x0a,IO_WAIT);
+#else
+	addHardware("ZX48K",HW_ZX48,0x00,0);
+	addHardware("Pentagon",HW_PENT,0x05,0);
+	addHardware("Pentagon1024SL",HW_P1024,0x08,0);
+	addHardware("Scorpion",HW_SCORP,0x0a,IO_WAIT);
+#endif
 }
 
 void ZXComp::reset() {
@@ -67,14 +78,98 @@ void ZXComp::reset() {
 	ide->reset();
 }
 
+void ZXComp::mapMemory() {
+	switch (hw->type) {
+		case HW_ZX48:
+			sys->mem->setrom(bdi->active?3:1);
+			sys->mem->setram(0);
+			break;
+		case HW_PENT:
+			sys->mem->setrom((bdi->active) ? 3 : ((sys->mem->prt0 & 0x10)>>4));
+			sys->mem->setram((sys->mem->prt0 & 7) | ((sys->mem->prt0 & 0xc0)>>3));
+			break;
+		case HW_P1024:
+			sys->mem->setrom(bdi->active ? 3 : ((sys->mem->prt1 & 8) ? 0xff : ((sys->mem->prt0 & 0x10)>>4)));
+			sys->mem->setram((sys->mem->prt0 & 7) | ((sys->mem->prt1 & 4)?0:((sys->mem->prt0 & 0x20) | ((sys->mem->prt0 & 0xc0)>>3))));
+			break;
+		case HW_SCORP:
+			sys->mem->setrom((sys->mem->prt1 & 0x01)?0xff:((sys->mem->prt1 & 0x02)?2:((bdi->active)?3:((sys->mem->prt0 & 0x10)>>4))));
+			sys->mem->setram((sys->mem->prt0 & 7) | ((sys->mem->prt1 & 0x10)>>1) | ((sys->mem->prt1 & 0xc0)>>2));
+			break;
+	}
+}
+
+int32_t ZXComp::getPort(int32_t port) {
+	switch (hw->type) {
+		case HW_ZX48:
+			if ((port & 0x01) == 0) {
+				port = (port & 0xff00) | 0xfe;
+			}
+			break;
+		case HW_PENT:
+			if ((port & 0x8002) == 0x0000) port = 0x7ffd;
+			if ((port & 0xc002) == 0x8000) port = 0xbffd;
+			if ((port & 0xc002) == 0xc000) port = 0xfffd;
+			if ((port & 0x05a1) == 0x0081) port = 0xfadf;
+			if ((port & 0x05a1) == 0x0181) port = 0xfbdf;
+			if ((port & 0x05a1) == 0x0581) port = 0xffdf;
+			if ((port & 0x0003) == 0x0002) port = (port & 0xff00) | 0xfe;	// TODO: уточнить
+			break;
+		case HW_P1024:
+			if ((port & 0x8002) == 0x0000) port = 0x7ffd;
+			if ((port & 0xc002) == 0x8000) port = 0xbffd;
+			if ((port & 0xc002) == 0xc000) port = 0xfffd;
+			if ((port & 0xf008) == 0xe000) port = 0xeff7;
+			if ((port & 0x0003) == 0x0002) port = (port & 0xff00) | 0xfe;	// TODO: уточнить
+			break;
+		case HW_SCORP:
+			if ((port & 0x0023) == 0x0001) port = 0x00dd;		// printer
+			if ((port & 0x0523) == 0x0003) port = 0xfadf;		// mouse
+			if ((port & 0x0523) == 0x0103) port = 0xfbdf;
+			if ((port & 0x0523) == 0x0503) port = 0xffdf;
+			if ((port & 0xc023) == 0x0021) port = 0x1ffd;		// mem
+			if ((port & 0xc023) == 0x4021) port = 0x7ffd;
+			if ((port & 0xc023) == 0x8021) port = 0xbffd;		// ay
+			if ((port & 0xc023) == 0xc021) port = 0xfffd;
+			if ((port & 0x0023) == 0x0022) port = (port & 0xff00) | 0xfe;	// fe
+			if ((port & 0x0023) == 0xc023) port = 0x00ff;		// ff
+			break;
+	}
+	return port;
+}
+
 uint8_t ZXComp::in(int32_t port) {
 	uint8_t res = 0xff;
 	gs->sync(vid->t);
 //	if (ide->in(port,&res)) return res;
 	if (gs->in(port,&res)) return res;
 	if (bdi->in(port,&res)) return res;
-	port = hw->getport(port);
-	return hw->in(port);
+	port = getPort(port);
+	res = sys->io->iostdin(port);
+	switch (hw->type) {
+		case HW_ZX48:
+			break;
+		case HW_PENT:
+			break;
+		case HW_P1024:
+			break;
+		case HW_SCORP:
+			switch (port) {
+				case 0x7ffd:
+					sys->cpu->frq = 7.0;
+					break;
+				case 0x1ffd:
+					sys->cpu->frq = 3.5;
+					break;
+				case 0xff:
+					if (((vid->curr.h - vid->bord.h) < 256) && ((vid->curr.v - vid->bord.v) < 192)) {
+						res = vid->atrbyte;
+					}
+					break;
+			}
+			break;
+	}
+	return res;
 }
 
 void ZXComp::out(int32_t port,uint8_t val) {
@@ -82,8 +177,49 @@ void ZXComp::out(int32_t port,uint8_t val) {
 //	if (ide->out(port,val)) return;
 	if (gs->out(port,val)) return;
 	if (bdi->out(port,val)) return;
-	port = hw->getport(port);
-	hw->out(port,val);
+	port = getPort(port);
+	sys->io->iostdout(port,val);
+	switch (hw->type) {
+		case HW_ZX48:
+			break;
+		case HW_PENT:
+			switch(port) {
+				case 0x7ffd:
+					sys->io->out7ffd(val);
+					mapMemory();
+					break;
+			}
+			break;
+		case HW_P1024:
+			switch(port) {
+				case 0x7ffd:
+					if (sys->io->block7ffd) break;
+					vid->curscr = val & 0x08;
+					sys->mem->prt0 = val;
+					sys->io->block7ffd = ((sys->mem->prt1 & 4) && (val & 0x20));
+					mapMemory();
+					break;
+				case 0xeff7:
+					sys->mem->prt1 = val;
+					vid->mode = (val & 1) ? VID_ALCO : VID_NORMAL;
+					sys->cpu->frq = (val & 16) ? 7.0 : 3.5;
+					mapMemory();
+					break;
+			}
+			break;
+		case HW_SCORP:
+			switch(port) {
+				case 0x7ffd:
+					sys->io->out7ffd(val);
+					mapMemory();
+					break;
+				case 0x1ffd:
+					sys->mem->prt1 = val;
+					mapMemory();
+					break;
+			}
+			break;
+	}
 }
 
 void ZXComp::exec() {
@@ -94,11 +230,11 @@ void ZXComp::exec() {
 		bdi->sync(vid->t);
 		if (bdi->active && (sys->cpu->hpc > 0x3f)) {
 			bdi->active = false;
-			hw->setrom();
+			mapMemory();	//hw->setrom();
 		}
 		if (!bdi->active && (sys->cpu->hpc == 0x3d) && (sys->mem->prt0 & 0x10)) {
 			bdi->active = true;
-			hw->setrom();
+			mapMemory();	//hw->setrom();
 		}
 	}
 	if ((sys->cpu->hpc > 0x3f) && sys->nmi) {
@@ -123,6 +259,41 @@ void ZXComp::NMIHandle() {
 	sys->cpu->t += 11;
 	vid->sync(11,sys->cpu->frq);
 }
+
+void ZXComp::setHardware(std::string nam) {
+	hw = NULL;
+	for (uint32_t i = 0; i < hwlist.size(); i++) {
+		if (hwlist[i].name == nam) {
+			hw = &hwlist[i];
+			sys->hwflags = hw->flags;
+//			sys->mem->mask = hw->mask;
+			break;
+		}
+	}
+}
+
+void ZXComp::addHardware(std::string nam, int typ, int msk, int flg) {
+	HardWare nhw;
+	nhw.name = nam;
+	nhw.type = typ;
+	nhw.mask = msk;
+	nhw.flags = flg;
+	hwlist.push_back(nhw);
+}
+
+/*
+void ZXComp::addHardware(std::string nam,int(*gpfnc)(int),void(*ofnc)(int,uint8_t),uint8_t(*ifnc)(int),void(*sfnc)(), int msk, int flg) {
+	HardWare newmac;
+	newmac.name = nam;
+	newmac.mask = msk;
+	newmac.getport = gpfnc;
+	newmac.out = ofnc;
+	newmac.in = ifnc;
+	newmac.setrom = sfnc;
+	newmac.flags = flg;
+	hwlist.push_back(newmac);
+}
+*/
 
 ZXBase::ZXBase () {
 	inst[0] = nopref;
@@ -169,7 +340,7 @@ ZOpResult ZXBase::exec() {
 //	if (vid != NULL) {vid->sync(cpu->t - cpu->ti, cpu->frq); fcnt = cpu->t;}
 	zres.exec = res->func;
 //	res->func(this);
-	if ((io->flags & IO_WAIT) && sets->wait && (cpu->t & 1)) cpu->t++;		// WAIT
+	if ((hwflags & IO_WAIT) && sets->wait && (cpu->t & 1)) cpu->t++;		// WAIT
 //	if ((cpu->hpc > 0x3f) && nmi) nmihandle();					// NMI
 //	if ((vid != NULL) && (cpu->t > fcnt)) vid->sync(cpu->t - fcnt, cpu->frq);
 //	return (cpu->t - cpu->ti);
@@ -203,7 +374,7 @@ int32_t ZXBase::interrupt() {
 			res = 19;
 			break;
 	}
-	if ((io->flags & IO_WAIT) && sets->wait && (cpu->t & 1)) res++;		// TODO: is INT handle is WAIT'ing too?
+	if ((hwflags & IO_WAIT) && sets->wait && (cpu->t & 1)) res++;		// TODO: is INT handle is WAIT'ing too?
 	cpu->t += res;
 	return res;
 }

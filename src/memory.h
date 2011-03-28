@@ -31,6 +31,7 @@ class Memory {
 	uint8_t prt0;		// 7ffd value
 	uint8_t prt1;		// extend port value
 	uint8_t res;		// rompart active after reset
+	int32_t	mask;
 	uint8_t rd(uint16_t);
 	void wr(uint16_t, uint8_t);
 	void load(std::string,int32_t);
