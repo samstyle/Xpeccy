@@ -351,10 +351,18 @@ void EmulWin::SDLEventHandler() {
 				}
 				break;
 			case SDL_MOUSEBUTTONUP:
-				if (!(flags & FL_GRAB) || (paused!=0)) break;
+				if (paused!=0) break;
 				switch (ev.button.button) {
-					case SDL_BUTTON_LEFT: zx->mouse->buttons |= 0x01; break;
-					case SDL_BUTTON_RIGHT: zx->mouse->buttons |= 0x02; break;
+					case SDL_BUTTON_LEFT:
+						if (flags & FL_GRAB) {
+							zx->mouse->buttons |= 0x01;
+						}
+						break;
+					case SDL_BUTTON_RIGHT:
+						if (flags & FL_GRAB) {
+							zx->mouse->buttons |= 0x02;
+						}
+						break;
 					case SDL_BUTTON_MIDDLE:
 						flags ^= FL_GRAB;
 						if (flags & FL_GRAB) {
