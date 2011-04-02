@@ -255,7 +255,7 @@ void ZXComp::NMIHandle() {
 	sys->mem->wr(--sys->cpu->sp,sys->cpu->lpc);
 	sys->cpu->pc = 0x66;
 	bdi->active = true;
-	hw->setrom();
+	mapMemory();
 	sys->cpu->t += 11;
 	vid->sync(11,sys->cpu->frq);
 }

@@ -15,10 +15,10 @@ class HardWare {
 		int mask;		// mem size mask (0:128, 1:256, 2:512, 3:1024); =0 for 48K
 		int flags;
 		int type;
-		int (*getport)(int);
-		void (*out)(int,uint8_t);
-		uint8_t (*in)(int);
-		void (*setrom)();
+//		int (*getport)(int);
+//		void (*out)(int,uint8_t);
+//		uint8_t (*in)(int);
+//		void (*setrom)();
 };
 
 class IOSys {
