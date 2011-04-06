@@ -1,6 +1,6 @@
 How to compile
 - install cmake
-- open therminal emulator and make this:
+- open terminal emulator and make this:
 	mkdir build
 	cd build
 	cmake ..
