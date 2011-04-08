@@ -173,7 +173,7 @@ void EmulWin::updateframe() {
 		SDL_BlitSurface(csurf,NULL,sys->vid->surf,NULL);
 	}
 */
-	SDL_UpdateRect(zx->vid->surf,0,0,0,0);
+	SDL_UpdateRect(surf,0,0,0,0);		//SDL_UpdateRect(zx->vid->surf,0,0,0,0);
 }
 
 void EmulWin::emulframe() {
@@ -230,7 +230,7 @@ void EmulWin::emulframe() {
 			std::ofstream file(fnam.c_str(),std::ios::binary);
 			file.write((char*)&zx->sys->mem->ram[zx->vid->curscr ? 7 : 5][0],0x1b00);
 		} else {
-			QImage *img = new QImage((uchar*)zx->vid->surf->pixels,zx->vid->wsze.h,zx->vid->wsze.v,QImage::Format_Indexed8);
+			QImage *img = new QImage((uchar*)surf->pixels,surf->w,surf->h,QImage::Format_Indexed8);
 			img->setColorTable(pal);
 			if (img==NULL) {
 				printf("NULL image\n");
@@ -301,6 +301,17 @@ void EmulWin::reset() {
 //	snd->scc = snd->sc1;
 //	ide->reset();
 }
+
+// profiles
+
+void EmulWin::addProfile(std::string nm,std::string cf) {
+	EmulProfile np;
+	np.name = nm;
+	np.configFileName = cf;
+	np.zx = new ZXComp;
+}
+
+// keys
 
 void EmulWin::SDLEventHandler() {
 	SDL_Event ev;

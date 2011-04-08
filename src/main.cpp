@@ -118,28 +118,12 @@ int main(int ac,char** av) {
 			atexit(SDL_Quit);
 			
 			filltabs();
-//			cpu = new Z80();
-//			iosys = new IOSys(&zx_in,&zx_out);
 			zx = new ZXComp;
-			zx->vid = new Video;
-//			zx->sys = new ZXBase;
-//			vid = new Video();
-//			keyb = new Keyboard();
-//			mouse = new Mouse();
 			snd = new Sound();
-//			bdi = new BDI();
-//			tape = new Tape();
-//			ide = new IDE;
-//			gs = new GS(); gs->reset();
 			mwin = new EmulWin();
 			dbg = new DebugWin((QWidget*)mwin);
 			dwin = new DevelWin();
 			filer = new MFiler(NULL);
-//#ifndef WIN32
-//			sets->soutname = "ALSA";
-//#else
-//			sets->soutname = "WaveOut";
-//#endif
 #if !SDLMAINWIN
 			mwin->show();
 #endif

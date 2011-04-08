@@ -12,7 +12,7 @@
 extern EmulWin* mwin;
 extern ZXComp* zx;
 
-Video::Video() {
+Video::Video(Memory* me) {
 //	sys->mem = new Memory;
 	int i,j,k,l;
 	int idx=0;
@@ -27,18 +27,18 @@ Video::Video() {
 		for (j=0;j<8;j++) {
 			for (k=0;k<8;k++) {
 				for (l=0;l<32;l++) {
-					ladrz[idx].scr5 = zx->sys->mem->ram[5] + sadr;
-					ladrz[idx].atr5 = zx->sys->mem->ram[5] + aadr;
-					ladrz[idx].scr7 = zx->sys->mem->ram[7] + sadr;
-					ladrz[idx].atr7 = zx->sys->mem->ram[7] + aadr;
-					ladrz[idx].ac00 = zx->sys->mem->ram[4] + sadr;
-					ladrz[idx].ac10 = zx->sys->mem->ram[6] + sadr;
-					ladrz[idx].ac01 = zx->sys->mem->ram[5] + sadr;
-					ladrz[idx].ac11 = zx->sys->mem->ram[7] + sadr;
-					ladrz[idx].ac02 = zx->sys->mem->ram[4] + sadr + 0x2000;
-					ladrz[idx].ac12 = zx->sys->mem->ram[6] + sadr + 0x2000;
-					ladrz[idx].ac03 = zx->sys->mem->ram[5] + sadr + 0x2000;
-					ladrz[idx].ac13 = zx->sys->mem->ram[7] + sadr + 0x2000;
+					ladrz[idx].scr5 = me->ram[5] + sadr;
+					ladrz[idx].atr5 = me->ram[5] + aadr;
+					ladrz[idx].scr7 = me->ram[7] + sadr;
+					ladrz[idx].atr7 = me->ram[7] + aadr;
+					ladrz[idx].ac00 = me->ram[4] + sadr;
+					ladrz[idx].ac10 = me->ram[6] + sadr;
+					ladrz[idx].ac01 = me->ram[5] + sadr;
+					ladrz[idx].ac11 = me->ram[7] + sadr;
+					ladrz[idx].ac02 = me->ram[4] + sadr + 0x2000;
+					ladrz[idx].ac12 = me->ram[6] + sadr + 0x2000;
+					ladrz[idx].ac03 = me->ram[5] + sadr + 0x2000;
+					ladrz[idx].ac13 = me->ram[7] + sadr + 0x2000;
 					idx++;
 					sadr++;
 					aadr++;
@@ -68,7 +68,10 @@ Video::Video() {
 //	mod = - synh.h - synh.v * full.h;	// VS + 1st HS
 }
 
-void Video::setborder(float prc) {brdsize = prc; update();}
+void Video::setborder(float prc) {
+	brdsize = prc;
+	update();
+}
 
 bool Video::setlayout(std::string nm) {
 	uint i;
@@ -135,17 +138,19 @@ void Video::update() {
 //		szh = QApplication::desktop()->width();
 //		szw = QApplication::desktop()->height();
 	}
+	if (mwin) {
 #if SDLMAINWIN
-	surf = SDL_SetVideoMode(szh,szw,8,sdlflg);
-	SDL_WM_SetCaption("Xpeccy 0.4.1 beta Win32","");
+		mwin->surf = SDL_SetVideoMode(szh,szw,8,sdlflg);
+		SDL_WM_SetCaption("Xpeccy 0.4.1 beta Win32","");
 #else
-	surf = SDL_SetVideoMode(szh,szw,8,sdlflg | SDL_NOFRAME);
+		mwin->surf = SDL_SetVideoMode(szh,szw,8,sdlflg | SDL_NOFRAME);
 #ifdef WIN32
-	if (mwin) SetWindowPos(mwin->inf.window,HWND_TOP,0,0,szh,szw,0);
+		SetWindowPos(mwin->inf.window,HWND_TOP,0,0,szh,szw,0);
 #endif
 #endif
-	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,pal,0,256);
-	scrptr = (uint8_t*)surf->pixels;
+		SDL_SetPalette(mwin->surf,SDL_LOGPAL|SDL_PHYSPAL,pal,0,256);
+		scrptr = (uint8_t*)mwin->surf->pixels;
+	}
 }
 
 void Video::sync(int tk,float fr) {
@@ -198,8 +203,8 @@ void Video::tick() {
 		}
 		*(scrptr++)=col;
 		if (flags & VF_DOUBLE) {
-			*(scrptr + surf->w - 1) = col;
-			*(scrptr + surf->w) = col;
+			*(scrptr + mwin->surf->w - 1) = col;
+			*(scrptr + mwin->surf->w) = col;
 			*(scrptr++)=col;
 		}
 	}
@@ -207,8 +212,8 @@ void Video::tick() {
 	if (++curr.h >= full.h) {
 		curr.h = 0;
 		if (onscr) {
-			scrptr += surf->w - wsze.h;
-			if (flags & VF_DOUBLE) scrptr += surf->w;
+			scrptr += mwin->surf->w - wsze.h;
+			if (flags & VF_DOUBLE) scrptr += mwin->surf->w;
 		}
 		if (++curr.v >= full.v) {
 			curr.v = 0;
@@ -216,7 +221,7 @@ void Video::tick() {
 //	printf("%i\n",sys->cpu->t - sys->cpu->tb);
 			zx->sys->cpu->tb = zx->sys->cpu->t;
 			fcnt++; flash = fcnt & 0x20;
-			scrptr = (uint8_t*)surf->pixels;
+			scrptr = (uint8_t*)mwin->surf->pixels;
 			iacount=0;
 		}
 		intupt = (curr.v==intpos) && (curr.h < intsz);

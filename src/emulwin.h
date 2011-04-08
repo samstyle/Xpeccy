@@ -14,6 +14,8 @@
 	#include <SDL_syswm.h>
 #endif
 
+#include "spectrum.h"
+
 // pause reasons
 #define PR_MENU		0x01
 #define PR_FILE		0x02
@@ -32,6 +34,12 @@ struct RZXFrame {
 	std::vector<uint8_t> in;
 };
 
+struct EmulProfile {
+	std::string name;		// name of profile
+	std::string configFileName;	// config file name
+	ZXComp* zx;			// zx for emulation
+};
+
 #ifndef WIN32
 	class EmulWin : public QX11EmbedContainer {
 #else
@@ -46,6 +54,9 @@ struct RZXFrame {
 		uint32_t rfnum;
 		uint32_t rfpos;
 		std::vector<RZXFrame> rzx;
+		std::vector<EmulProfile> profs;
+		SDL_Surface* surf;
+		EmulProfile* prof;
 		struct {
 			std::string sndOutputName;
 			std::string scrshotDir,scrshotFormat;
@@ -55,6 +66,9 @@ struct RZXFrame {
 		void load(std::string,int);
 //		void shithappens(const char*);
 		void makeBookmarkMenu();
+		void addProfile(std::string,std::string);
+		bool setProfile(std::string);
+		void setcuricon(QString);
 		void reset();
 		void exec();
 #ifdef WIN32
@@ -74,7 +88,6 @@ struct RZXFrame {
 		void emitSDLevents();
 		int paused;
 		int ssbcnt,ssbint,ssnum;
-		void setcuricon(QString);
 	private slots:
 		void actmenu(QAction*);
 		void SDLEventHandler();

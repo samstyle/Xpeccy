@@ -38,6 +38,7 @@ ZXComp::ZXComp() {
 	sys->mem = new Memory(MEM_ZX);
 //	sys->io = new IOSys(&zx_in,&zx_out);
 	sys->io = new IOSys(IO_ZX);
+	vid = new Video(sys->mem);
 //	vid = new Video;
 	keyb = new Keyboard;
 	mouse = new Mouse;
