@@ -46,10 +46,15 @@ struct RZXFrame {
 		uint32_t rfnum;
 		uint32_t rfpos;
 		std::vector<RZXFrame> rzx;
+		struct {
+			std::string sndOutputName;
+			std::string scrshotDir,scrshotFormat;
+			std::string workDir,romDir,optPath;
+		} opt;
 		void repause(bool,int);
 		void load(std::string,int);
 //		void shithappens(const char*);
-		void makemenu();
+		void makeBookmarkMenu();
 		void reset();
 		void exec();
 #ifdef WIN32
@@ -61,7 +66,7 @@ struct RZXFrame {
 		void wannasetup();
 		void wannadevelop();
 	private:
-		QMenu *menu;
+		QMenu *mainMenu,*bookmarkMenu,*profileMenu;
 		QVector<QRgb> pal;
 		QIcon curicon;
 		void rmksize();

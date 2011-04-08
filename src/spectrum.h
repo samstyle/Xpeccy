@@ -45,6 +45,14 @@ class ZXComp {
 		IDE* ide;
 		GS* gs;
 		AYSys* aym;
+		struct {
+//			bool wait;
+			std::string GSRom;
+			std::string hwName;
+			std::string romsetName;
+//			std::string sndOutputName;
+//			std::string scrshotDir,scrshotFormat;
+		} opt;
 		void exec();
 		void reset();
 //		void addHardware(std::string,int(*)(int),void(*)(int,uint8_t),uint8_t(*)(int),void(*)(),int,int);

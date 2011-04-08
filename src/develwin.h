@@ -30,6 +30,10 @@ class DevelWin : public QDialog {
 	Q_OBJECT
 	public:
 		DevelWin();
+		struct {
+			std::string asmPath;
+			std::string projectsDir;
+		} opt;
 	public slots:
 		void start();
 	private slots:

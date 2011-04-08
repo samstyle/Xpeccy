@@ -5,6 +5,7 @@
 #include <vector>
 
 #define	IO_WAIT	1
+#define WAIT_ON	2
 
 #define IO_ZX	0
 #define	IO_GS	1

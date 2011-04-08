@@ -26,6 +26,7 @@
 #include "settings.h"
 #include "emulwin.h"
 #include "debuger.h"
+#include "develwin.h"
 #include "filer.h"
 
 #ifndef WIN32
@@ -56,6 +57,7 @@ extern Settings* sets;
 //extern Tape* tape;
 extern EmulWin* mwin;
 extern DebugWin* dbg;
+extern DevelWin* dwin;
 extern MFiler* filer;
 
 EmulWin::EmulWin() {
@@ -67,25 +69,55 @@ EmulWin::EmulWin() {
 	int i; for(i=0;i<256;i++) {pal[i] = qRgb(zx->vid->pal[i].r,zx->vid->pal[i].g,zx->vid->pal[i].b);}
 
 	fast = false;
-
 	ssnum = ssbcnt = ssbint = 0;
 	flags = 0;
-	menu = new QMenu("User Menu",this);
+	
+	mainMenu = new QMenu("Main menu",this);
+	bookmarkMenu = new QMenu("Bookmarks",this);
+	profileMenu = new QMenu("Profiles",this);
+	mainMenu->addMenu(bookmarkMenu);
+	mainMenu->addMenu(profileMenu);
 
 	setFixedSize(zx->vid->wsze.h,zx->vid->wsze.v);
+
+	opt.scrshotFormat = "png";
+	
 #ifndef WIN32
+
 	SDL_SysWMinfo inf;
 	SDL_VERSION(&inf.version);
 	SDL_GetWMInfo(&inf);
 	embedClient(inf.info.x11.wmwindow);
+
+	opt.sndOutputName = "ALSA";
+	opt.scrshotDir = std::string(getenv("HOME"));
+	opt.workDir = opt.scrshotDir + "/.config/samstyle/xpeccy";
+	opt.romDir = opt.workDir + "/roms";
+	opt.optPath = opt.workDir + "/xpeccy.conf";
+	mkdir(opt.workDir.c_str(),0777);
+	mkdir(opt.romDir.c_str(),0777);
+
 #else
+
 #if !SDLMAINWIN
+
 	SDL_VERSION(&inf.version);
 	SDL_GetWMInfo(&inf);
 //	SetWindowLong(inf.window,GWL_STYLE,GetWindowLong(inf.window,GWL_STYLE) | WS_CHILD);
 	SetParent(inf.window,winId());
+	
 #endif
+
+	opt.sndOutputName = "WaveOut";
+	opt.scrshotDir = std::string(getenv("HOMEPATH"));
+	opt.workDir = std::string(".\\config");
+	opt.romDir = opt.workDir + "\\roms";
+	opt.optPath = opt.workDir + "\\xpeccy.conf";
+	mkdir(opt.workDir.c_str());
+	mkdir(opt.romDir.c_str());
+
 #endif
+
 	tim1 = new QTimer();
 	tim2 = new QTimer();
 	QObject::connect(tim1,SIGNAL(timeout()),this,SLOT(emulframe()));
@@ -193,17 +225,17 @@ void EmulWin::emulframe() {
 		}
 	}
 	if (flags & FL_SHOT) {
-		std::string fnam = sets->ssdir + "/sshot" + int2str(ssnum) + "." + sets->ssformat;
-		if (sets->ssformat == "scr") {
+		std::string fnam = opt.scrshotDir + "/sshot" + int2str(ssnum) + "." + opt.scrshotFormat;
+		if (opt.scrshotFormat == "scr") {
 			std::ofstream file(fnam.c_str(),std::ios::binary);
-			file.write((char*)&zx->sys->mem->ram[zx->vid->curscr?7:5][0],0x1b00);
+			file.write((char*)&zx->sys->mem->ram[zx->vid->curscr ? 7 : 5][0],0x1b00);
 		} else {
 			QImage *img = new QImage((uchar*)zx->vid->surf->pixels,zx->vid->wsze.h,zx->vid->wsze.v,QImage::Format_Indexed8);
 			img->setColorTable(pal);
 			if (img==NULL) {
 				printf("NULL image\n");
 			} else {
-				img->save(QString(fnam.c_str()),sets->ssformat.c_str());
+				img->save(QString(fnam.c_str()),opt.scrshotFormat.c_str());
 			}
 		}
 		flags &= ~FL_SHOT;
@@ -303,7 +335,7 @@ void EmulWin::SDLEventHandler() {
 					switch (ev.key.keysym.sym) {
 						case SDLK_PAUSE: if (paused == 0) repause(true,PR_PAUSE); else repause(false,PR_PAUSE); break;
 						case SDLK_ESCAPE: dbg->start(); break;
-						case SDLK_MENU: repause(true,PR_MENU); menu->popup(pos() + QPoint(20,20)); break;
+						case SDLK_MENU: repause(true,PR_MENU); mainMenu->popup(pos() + QPoint(20,20)); break;
 						case SDLK_F1: emit(wannasetup()); break;
 						case SDLK_F2: filer->saveonf2(); break;
 						case SDLK_F3: filer->opensomewhat(); break;
@@ -384,7 +416,7 @@ void EmulWin::SDLEventHandler() {
 				break;
 		}
 	}
-	if (!menu->isVisible() && (paused & PR_MENU)) repause(false,PR_MENU);
+	if (!mainMenu->isVisible() && (paused & PR_MENU)) repause(false,PR_MENU);
 }
 
 // load rzx
@@ -434,7 +466,7 @@ void EmulWin::shithappens(const char* msg) {
 
 void EmulWin::load(std::string fnam,int typ) {
 	std::ifstream file(fnam.c_str());
-	std::string onam = sets->workdir + "/lain.tmp";
+	std::string onam = opt.workDir + "/lain.tmp";
 	std::string extn;
 	std::ofstream ofle(onam.c_str());
 	if (!file.good()) {
@@ -549,18 +581,18 @@ void EmulWin::load(std::string fnam,int typ) {
 //=====================
 // MENU
 
-void EmulWin::makemenu() {
-	menu->clear();
+void EmulWin::makeBookmarkMenu() {
+	bookmarkMenu->clear();
 	uint i;
 	QAction *act;
 	for (i=0; i<sets->umenu.data.size(); i++) {
-		act = menu->addAction(QString(sets->umenu.data[i].name.c_str()));
+		act = bookmarkMenu->addAction(QString(sets->umenu.data[i].name.c_str()));
 		act->setToolTip(QString(sets->umenu.data[i].path.c_str()));
 	}
-	if (menu->isEmpty()) {
-		act = menu->addAction("None"); act->setEnabled(false);
+	if (bookmarkMenu->isEmpty()) {
+		act = bookmarkMenu->addAction("None"); act->setEnabled(false);
 	}
-	QObject::connect(menu,SIGNAL(triggered(QAction*)),this,SLOT(actmenu(QAction*)));
+	QObject::connect(bookmarkMenu,SIGNAL(triggered(QAction*)),this,SLOT(actmenu(QAction*)));
 }
 
 void EmulWin::actmenu(QAction* act) {
@@ -568,24 +600,24 @@ void EmulWin::actmenu(QAction* act) {
 	setFocus();
 }
 
-void UserMenu::add(std::string name,std::string path) {
-	MenuEntry ment;
+void BookmarkMenu::add(std::string name,std::string path) {
+	BookmarkEntry ment;
 	ment.name = name;
 	ment.path = path;
 	data.push_back(ment);
 }
 
-void UserMenu::set(int idx,std::string name,std::string path) {
+void BookmarkMenu::set(int idx,std::string name,std::string path) {
 	data[idx].name = name;
 	data[idx].path = path;
 }
 
-void UserMenu::del(int pos) {
+void BookmarkMenu::del(int pos) {
 	data.erase(data.begin()+pos);
 }
 
-void UserMenu::swap(int ps1, int ps2) {
-	MenuEntry ment = data[ps1];
+void BookmarkMenu::swap(int ps1, int ps2) {
+	BookmarkEntry ment = data[ps1];
 	data[ps1] = data[ps2];
 	data[ps2] = ment;
 }
@@ -609,33 +641,19 @@ Settings::Settings() {
 		dir.rename(oldpath + "/roms",newpath + "/roms");
 		dir.rmdir(oldpath);
 	}
-	ssdir = std::string(getenv("HOME"));
 // set new paths
-	std::string mydir = ssdir + "/.config/samstyle";
-	workdir = ssdir + "/.config/samstyle/xpeccy";
-	romdir = workdir + "/roms";
-	optpath = workdir + "/xpeccy.conf";
-	mkdir(workdir.c_str(),0777);
-	mkdir(romdir.c_str(),0777);
-	soutname = "ALSA";
-#else
-	workdir = std::string(".\\config");
-	romdir = workdir + "\\roms";
-	optpath = workdir + "\\xpeccy.conf";
-	ssdir = std::string(getenv("HOMEPATH"));
-	mkdir(workdir.c_str());
-	mkdir(romdir.c_str());
-	soutname = "WaveOut";
+//	ssdir = std::string(getenv("HOME"));
+//	std::string mydir = ssdir + "/.config/samstyle";
 #endif
-	machname = "ZX48K";
-	rsetname = "ZX48";
-	ssformat = "png";
 }
 
 void Settings::save() {
-	std::ofstream sfile(optpath.c_str());
-	if (!sfile.good()) {printf("Can't open settings file\n"); throw(0);}
-	uint i,j;
+	std::ofstream sfile(mwin->opt.optPath.c_str());
+	if (!sfile.good()) {
+		shithappens("Can't open settings file");
+		throw(0);
+	}
+	uint32_t i,j;
 
 	sfile<<"[CPU]\n\n";
 	sfile<<"# real cpu freq in MHz = this value / 2; correct range is 2 to 14 (1 to 7 MHz)\n";
@@ -655,14 +673,14 @@ void Settings::save() {
 	}
 	sfile<<"geometry = "<<zx->vid->curlay.c_str()<<"\n";
 
-	sfile<<"\n[SCREENSHOTS]\n\n";
-	sfile<<"folder = "<<ssdir.c_str()<<"\n";
-	sfile<<"format = "<<ssformat.c_str()<<"\n";
-	sfile<<"combo.count = "<<int2str(sscnt).c_str()<<"\n";
-	sfile<<"combo.interval = "<<int2str(ssint).c_str()<<"\n";
+	sfile << "\n[SCREENSHOTS]\n\n";
+	sfile << "folder = " << mwin->opt.scrshotDir.c_str() << "\n";
+	sfile << "format = " << mwin->opt.scrshotFormat.c_str() << "\n";
+	sfile << "combo.count = " << int2str(sscnt).c_str() << "\n";
+	sfile << "combo.interval = " << int2str(ssint).c_str() << "\n";
 
-	sfile<<"\n[SOUND]\n\n";
-	sfile<<"enabled = "<<(snd->enabled?"y":"n")<<"\n";
+	sfile << "\n[SOUND]\n\n";
+	sfile << "enabled = " << (snd->enabled ? "y" : "n") << "\n";
 	sfile<<"# possible sound systems are:";
 	for (i=0;i<snd->outsyslist.size();i++) {
 		if (i!=0) sfile<<", ";
@@ -718,7 +736,7 @@ void Settings::save() {
 		default: sfile<<"48\n"; break;
 	}
 	sfile<<"restart = "<<(zx->sys->io->resafter?"y":"n")<<"\n";
-	sfile<<"scrp.wait = "<<(sets->wait?"y":"n")<<"\n";
+	sfile << "scrp.wait = "<< ((zx->sys->hwflags & WAIT_ON) ? "y" : "n") << "\n";
 
 	sfile<<"\n[ROMSETS]\n\n";
 	std::vector<std::string> rmnam;
@@ -735,13 +753,13 @@ void Settings::save() {
 		}
 		sfile<<"\n";
 	}
-	sfile<<"gs = "<<sets->gsrom.c_str()<<"\n";
-	sfile<<"current = "<<zx->sys->mem->romset->name.c_str()<<"\n";
-	sfile<<"reset = "<<rmnam[zx->sys->mem->res].c_str()<<"\n";
+	sfile << "gs = "	<< zx->opt.GSRom.c_str()		<< "\n";
+	sfile << "current = "	<< zx->sys->mem->romset->name.c_str()	<< "\n";
+	sfile << "reset = "	<< rmnam[zx->sys->mem->res].c_str()	<< "\n";
 
-	sfile<<"\n[TOOLS]\n\n";
-	sfile<<"sjasm = "<<sjapath.c_str()<<"\n";
-	sfile<<"projectsdir = "<<prjdir.c_str()<<"\n";
+	sfile << "\n[TOOLS]\n\n";
+	sfile << "sjasm = "		<< dwin->opt.asmPath.c_str()	<< "\n";
+	sfile << "projectsdir = "	<< dwin->opt.projectsDir.c_str()<< "\n";
 
 	sfile<<"\n[MENU]\n\n";
 	for (i=0; i<umenu.data.size(); i++) {
@@ -750,7 +768,7 @@ void Settings::save() {
 }
 
 void Settings::load(bool dev) {
-	std::ifstream file(optpath.c_str());
+	std::ifstream file(mwin->opt.optPath.c_str());
 	std::string line,pnam,pval;
 	std::vector<std::string> vect;
 	size_t pos;
@@ -759,17 +777,18 @@ void Settings::load(bool dev) {
 	if (!dev) zx->sys->mem->mask = 0;
 	if (!file.good()) {
 		shithappens("Can't find config file<br><b>~/.config/samstyle/xpeccy/xpeccy.conf</b><br>Default one will be created.");
-		std::ofstream ofile(optpath.c_str());
+		std::ofstream ofile(mwin->opt.optPath.c_str());
 		ofile << "[MACHINE]\n\ncurrent = ZX48K\nmemory = 48\n\n";
 		ofile << "[BETADISK]\n\nenabled = n\n\n";
 		ofile << "[ROMSETS]\n\nname = ZX48\nbasic48 = 1982.rom\n\ncurrent = ZX48\nreset = basic48\n";
 		ofile.close();
 		QFile fle(":/rom/1982.rom");
-		fle.copy(QString(std::string(romdir + "/1982.rom").c_str()));
-		file.open(optpath.c_str(),std::ifstream::in);
+		fle.copy(QString(std::string(mwin->opt.romDir + "/1982.rom").c_str()));
+		file.open(mwin->opt.optPath.c_str(),std::ifstream::in);
 	}
 	if (!file.good()) {
-		throw("Damn! I can't open config file<br>Zetsuboushita!");
+		shithappens("Damn! I can't open config file<br>Zetsuboushita!");
+		throw(0);
 	} else {
 		RomSet newrs;
 		VidLayout vlay;
@@ -824,8 +843,8 @@ void Settings::load(bool dev) {
 							if ((pval=="shadow") || (pval=="2")) zx->sys->mem->res = 2;
 							if ((pval=="trdos") || (pval=="3")) zx->sys->mem->res = 3;
 						}
-						if (pnam=="current") rsetname=pval;
-						if (pnam=="gs") sets->gsrom=pval;
+						if (pnam=="current") zx->opt.romsetName = pval;
+						if (pnam=="gs") zx->opt.GSRom = pval;
 						break;
 					case 2: if (pnam=="doublesize") {
 							if (str2bool(pval))
@@ -859,14 +878,14 @@ void Settings::load(bool dev) {
 						}
 						if (pnam=="geometry") zx->vid->curlay = pval;
 						break;
-					case 3: if (pnam=="folder") ssdir=pval;
-						if (pnam=="format") ssformat=pval;
+					case 3: if (pnam=="folder") mwin->opt.scrshotDir = pval;
+						if (pnam=="format") mwin->opt.scrshotFormat = pval;
 						if (pnam=="combo.count") sscnt=atoi(pval.c_str());
 						if (pnam=="combo.interval") ssint=atoi(pval.c_str());
 						break;
 					case 4: if (pnam=="enabled") snd->enabled=str2bool(pval);
 						if (pnam=="dontmute") snd->mute=str2bool(pval);
-						if (pnam=="soundsys") soutname = pval;
+						if (pnam=="soundsys") mwin->opt.sndOutputName = pval;
 						if (pnam=="rate") snd->rate = atoi(pval.c_str());
 						if (pnam=="volume.beep") {snd->beepvol=atoi(pval.c_str()); if (snd->beepvol > 16) snd->beepvol = 16;}
 						if (pnam=="volume.tape") {snd->tapevol = atoi(pval.c_str()); if (snd->tapevol > 16) snd->tapevol = 16;}
@@ -888,7 +907,7 @@ void Settings::load(bool dev) {
 					case 5: if (pnam=="enabled") zx->bdi->enable=str2bool(pval);
 						if (pnam=="fast") zx->bdi->vg93.turbo=str2bool(pval);
 						break;
-					case 6: if (pnam=="current") machname = pval;
+					case 6: if (pnam=="current") zx->opt.hwName = pval;
 						if (pnam=="memory") {
 							if (pval=="48") {zx->sys->mem->mask = 0x00; tmask = 0;}
 							if (pval=="128") {zx->sys->mem->mask = 0x07; tmask = 1;}
@@ -897,10 +916,12 @@ void Settings::load(bool dev) {
 							if (pval=="1024") {zx->sys->mem->mask = 0x3f; tmask = 8;}
 						}
 						if (pnam=="restart") zx->sys->io->resafter = str2bool(pval);
-						if (pnam=="scrp.wait") sets->wait = str2bool(pval);
+						if (pnam=="scrp.wait") {
+							if (str2bool(pval)) zx->sys->hwflags |= WAIT_ON; else zx->sys->hwflags &= ~WAIT_ON;
+						}
 						break;
-					case 7: if (pnam=="sjasm") sjapath=pval;
-						if (pnam=="projectsdir") prjdir=pval;
+					case 7: if (pnam=="sjasm") dwin->opt.asmPath = pval;
+						if (pnam=="projectsdir") dwin->opt.projectsDir = pval;
 						break;
 					case 8: umenu.add(pnam,pval);
 						break;
@@ -945,14 +966,14 @@ void Settings::load(bool dev) {
 	}
 	if (dev) return;
 	snd->defpars();
-	zx->setHardware(machname);
-	zx->sys->mem->setromptr(rsetname);
-	snd->setoutptr(soutname);
+	zx->setHardware(zx->opt.hwName);
+	zx->sys->mem->setromptr(zx->opt.romsetName);
+	snd->setoutptr(mwin->opt.sndOutputName);
 	if (zx->hw==NULL) throw("Can't found current machine");
 	if (zx->sys->mem->romset==NULL) throw("Can't found current romset");
 	if (~zx->hw->mask & tmask) throw("Incorrect memory size for this machine");
 	if (!zx->vid->setlayout(zx->vid->curlay)) zx->vid->setlayout("default");
 	zx->vid->update();
 	zx->sys->mem->loadromset();
-	mwin->makemenu();
+	mwin->makeBookmarkMenu();
 }

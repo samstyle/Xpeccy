@@ -114,7 +114,7 @@ void MFiler::saveonf2() {
 	if (res.selfile!="") {
 		sfnam = std::string(res.selfile.toUtf8().data());
 		QString filt = res.selfilt;
-		if (filt.indexOf("Snapshot")!=-1) zx->sys->mem->save(sfnam,TYP_SNA,sets->machname=="ZX48K");
+		if (filt.indexOf("Snapshot")!=-1) zx->sys->mem->save(sfnam,TYP_SNA,zx->opt.hwName=="ZX48K");
 		if (filt.indexOf("Disk A")!=-1) savedisk(sfnam,0,false);
 		if (filt.indexOf("Tape")!=-1) savetape(sfnam,false);
 	}

@@ -53,21 +53,20 @@ void Project::clear() {
 //=======================
 // all
 
+void shithappens(const char*);
+
 void DevelWin::compile() {
 	if (prj.name=="" || prj.files.size()==0) return;
 	saveprj();
 	ui.ficons->clear();
-	QString sjap(sets->sjapath.c_str());
+	QString sjap(opt.asmPath.c_str());
 	if (!QFile::exists(sjap)) {
-		QMessageBox mbx;
-		mbx.setIcon(QMessageBox::Critical);
-		mbx.setText("<b>SJAsm file doesn't exist</b>");
-		mbx.exec();
+		shithappens("<b>SJAsm file doesn't exist</b>");
 		return;
 	}
 	QProcess proc;
 	proc.setWorkingDirectory(prjdir.absolutePath() + "/" + prj.name + "/");
-	proc.start(QString(sets->sjapath.c_str()),QStringList()<<prj.files[0].name);
+	proc.start(QString(opt.asmPath.c_str()),QStringList() << prj.files[0].name);
 	proc.waitForFinished(60000);			// 1 minute for finishing compilation
 	ui.ficons->setText(QDialog::trUtf8(proc.readAll()));
 	prj.build++;
@@ -212,15 +211,12 @@ void DevelWin::saveprj() {
 }
 
 void DevelWin::start() {
-	QDir dir(QString(sets->prjdir.c_str()));
+	QDir dir(QString(opt.projectsDir.c_str()));
 	if (!dir.exists()) {
-		QMessageBox mbx;
-		mbx.setIcon(QMessageBox::Warning);
-		mbx.setText("<b>Projects directory not exists</b><br>Select it correctly first");
-		mbx.exec();
+		shithappens("<b>Projects directory not exists</b><br>Select it correctly first");
 		return;
 	}
-	prjdir = QDir(QString(sets->prjdir.c_str()));
+	prjdir = QDir(QString(opt.projectsDir.c_str()));
 	makepmenu();
 	show();
 }

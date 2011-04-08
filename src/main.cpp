@@ -131,16 +131,15 @@ int main(int ac,char** av) {
 //			tape = new Tape();
 //			ide = new IDE;
 //			gs = new GS(); gs->reset();
-
 			mwin = new EmulWin();
 			dbg = new DebugWin((QWidget*)mwin);
 			dwin = new DevelWin();
 			filer = new MFiler(NULL);
-#ifndef WIN32
-			sets->soutname = "ALSA";
-#else
-			sets->soutname = "WaveOut";
-#endif
+//#ifndef WIN32
+//			sets->soutname = "ALSA";
+//#else
+//			sets->soutname = "WaveOut";
+//#endif
 #if !SDLMAINWIN
 			mwin->show();
 #endif

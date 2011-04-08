@@ -6,7 +6,7 @@
 #include "z80/tables.c"
 #include "z80/instr.c"
 
-extern Settings* sets;
+//extern Settings* sets;
 // extern BDI* bdi;
 //extern HardWare* hw;
 
@@ -46,17 +46,12 @@ ZXComp::ZXComp() {
 	ide = new IDE;
 	aym = new AYSys;
 	gs = new GS; gs->reset();
-#if 0
-	addHardware("ZX48K",&zx48_getport,&zx48_outport,&zx48_inport,&zx48_setrom,0x00,0);
-	addHardware("Pentagon",&pent_getport,&pent_outport,&pent_inport,&pent_setrom,0x05,0);
-	addHardware("Pentagon1024SL",&p1m_getport,&p1m_outport,&p1m_inport,&p1m_setrom,0x08,0);
-	addHardware("Scorpion",&scrp_getport,&scrp_outport,&scrp_inport,&scrp_setrom,0x0a,IO_WAIT);
-#else
 	addHardware("ZX48K",HW_ZX48,0x00,0);
 	addHardware("Pentagon",HW_PENT,0x05,0);
 	addHardware("Pentagon1024SL",HW_P1024,0x08,0);
 	addHardware("Scorpion",HW_SCORP,0x0a,IO_WAIT);
-#endif
+	opt.hwName = "ZX48K";
+	opt.romsetName = "ZX48";
 }
 
 void ZXComp::reset() {
@@ -340,7 +335,7 @@ ZOpResult ZXBase::exec() {
 //	if (vid != NULL) {vid->sync(cpu->t - cpu->ti, cpu->frq); fcnt = cpu->t;}
 	zres.exec = res->func;
 //	res->func(this);
-	if ((hwflags & IO_WAIT) && sets->wait && (cpu->t & 1)) cpu->t++;		// WAIT
+	if ((hwflags & IO_WAIT) && (hwflags & WAIT_ON) && (cpu->t & 1)) cpu->t++;		// WAIT
 //	if ((cpu->hpc > 0x3f) && nmi) nmihandle();					// NMI
 //	if ((vid != NULL) && (cpu->t > fcnt)) vid->sync(cpu->t - fcnt, cpu->frq);
 //	return (cpu->t - cpu->ti);
@@ -374,7 +369,7 @@ int32_t ZXBase::interrupt() {
 			res = 19;
 			break;
 	}
-	if ((hwflags & IO_WAIT) && sets->wait && (cpu->t & 1)) res++;		// TODO: is INT handle is WAIT'ing too?
+	if ((hwflags & IO_WAIT) && (hwflags & WAIT_ON) && (cpu->t & 1)) res++;		// TODO: is INT handle is WAIT'ing too?
 	cpu->t += res;
 	return res;
 }

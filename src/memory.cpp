@@ -1,4 +1,4 @@
-//#include "emulwin.h"
+#include "emulwin.h"
 #include "settings.h"
 #include "debuger.h"
 #include "memory.h"
@@ -19,6 +19,7 @@ extern Settings* sets;
 //extern GS* gs;
 extern ZXComp* zx;
 extern Sound* snd;
+extern EmulWin* mwin;
 
 Memory::Memory(int tp) {
 	type = tp;
@@ -362,9 +363,9 @@ void Memory::loadromset() {
 			for (ad=0;ad<0x4000;ad++) rom[i][ad]=0xff;
 		} else {
 #ifndef WIN32
-			fpath = sets->romdir + "/" + romset->roms[i].path;
+			fpath = mwin->opt.romDir + "/" + romset->roms[i].path;
 #else
-			fpath = sets->romdir + "\\" + romset->roms[i].path;
+			fpath = mwin->opt.romDir + "\\" + romset->roms[i].path;
 #endif
 			std::ifstream file(fpath.c_str());
 			if (file.good()) {
@@ -377,23 +378,23 @@ void Memory::loadromset() {
 			file.close();
 		}
 	}
-	if (sets->gsrom=="") {
+	if (zx->opt.GSRom == "") {
 		for (ad=0;ad<0x4000;ad++) {
 			zx->gs->sys->mem->rom[0][ad]=0xff;
 			zx->gs->sys->mem->rom[1][ad]=0xff;
 		}
 	} else {
 #ifndef WIN32
-			fpath = sets->romdir + "/" + sets->gsrom;
+			fpath = mwin->opt.romDir + "/" + zx->opt.GSRom;
 #else
-			fpath = sets->romdir + "\\" + sets->gsrom;
+			fpath = mwin->opt.romDir + "\\" + zx->opt.GSRom;
 #endif
 			std::ifstream file(fpath.c_str());
 			if (file.good()) {
 				file.read((char*)&zx->gs->sys->mem->rom[0][0],0x4000);
 				file.read((char*)&zx->gs->sys->mem->rom[1][0],0x4000);
 			} else {
-				printf("Can't load gs rom '%s'\n",sets->gsrom.c_str());
+				printf("Can't load gs rom '%s'\n",zx->opt.GSRom.c_str());
 				for (ad=0;ad<0x4000;ad++) {
 					zx->gs->sys->mem->rom[0][ad]=0xff;
 					zx->gs->sys->mem->rom[1][ad]=0xff;
