@@ -73,7 +73,7 @@ class AYProc {
 		int32_t freq;
 		uint8_t curreg;
 		float aycoe;
-		void reset();
+		void reset(uint32_t);
 		void setreg(uint8_t);
 		void settype(int32_t);
 		SndData getvol();

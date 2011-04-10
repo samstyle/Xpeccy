@@ -7,6 +7,7 @@
 #include <QDir>
 
 void splitline(std::string,std::string*,std::string*);
+void shithappens(std::string);
 
 extern Settings* sets;
 
@@ -52,8 +53,6 @@ void Project::clear() {
 
 //=======================
 // all
-
-void shithappens(const char*);
 
 void DevelWin::compile() {
 	if (prj.name=="" || prj.files.size()==0) return;

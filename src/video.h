@@ -53,7 +53,7 @@ class Video {
 		Video(Memory*);
 		int flags;
 //		SDL_Surface *surf;
-		SDL_Color pal[256];
+//		SDL_Color pal[256];
 		uint8_t* scrptr;
 		VSize full,bord,scrn,curr,synh;
 		VSize lcut,rcut,vsze,wsze;

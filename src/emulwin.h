@@ -34,12 +34,6 @@ struct RZXFrame {
 	std::vector<uint8_t> in;
 };
 
-struct EmulProfile {
-	std::string name;		// name of profile
-	std::string configFileName;	// config file name
-	ZXComp* zx;			// zx for emulation
-};
-
 #ifndef WIN32
 	class EmulWin : public QX11EmbedContainer {
 #else
@@ -54,20 +48,18 @@ struct EmulProfile {
 		uint32_t rfnum;
 		uint32_t rfpos;
 		std::vector<RZXFrame> rzx;
-		std::vector<EmulProfile> profs;
 		SDL_Surface* surf;
-		EmulProfile* prof;
+		SDL_Color zxpal[256];
 		struct {
 			std::string sndOutputName;
 			std::string scrshotDir,scrshotFormat;
-			std::string workDir,romDir,optPath;
+//			std::string workDir,romDir,optPath;
 		} opt;
 		void repause(bool,int);
 		void load(std::string,int);
-//		void shithappens(const char*);
+		void updateWin();
 		void makeBookmarkMenu();
-		void addProfile(std::string,std::string);
-		bool setProfile(std::string);
+		void makeProfileMenu();
 		void setcuricon(QString);
 		void reset();
 		void exec();
@@ -89,7 +81,8 @@ struct EmulProfile {
 		int paused;
 		int ssbcnt,ssbint,ssnum;
 	private slots:
-		void actmenu(QAction*);
+		void bookmarkSelected(QAction*);
+		void profileSelected(QAction*);
 		void SDLEventHandler();
 		void emulframe();
 		void updateframe();

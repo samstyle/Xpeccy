@@ -1,23 +1,8 @@
-//#include "video.h"
-//#include "iosys.h"
-//#include "memory.h"
-//#include "keyboard.h"
-//#include "hdd.h"
-//#include "bdi.h"
 #include "sound.h"
-//#include "tape.h"
 #include "spectrum.h"
-//#include "gs.h"
 
-//extern HardWare* hw;
-//extern Keyboard* keyb;
-//extern Mouse* mouse;
-//extern IDE* ide;
-//extern BDI* bdi;
 extern Sound* snd;
-//extern Tape* tape;
 extern ZXComp* zx;
-//extern GS* gs;
 
 uint8_t IOSys::in(int32_t port) {
 	uint8_t res = 0xff;

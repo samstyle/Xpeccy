@@ -195,11 +195,11 @@ SndData AYProc::getvol() {
 	return res;
 }
 
-void AYProc::reset() {
+void AYProc::reset(uint32_t tk) {
 	int i; for (i = 0;i < 16;i++) reg[i] = 0;
 	n.cur = 0xffff; e.cur = 0;
 	n.pos = e.pos = 0;
-	a.bgn = b.bgn = c.bgn = n.bgn = e.bgn = zx->vid->t;
+	a.bgn = b.bgn = c.bgn = n.bgn = e.bgn = tk;
 	a.lim = b.lim = c.lim = n.lim = e.lim = 0;
 }
 

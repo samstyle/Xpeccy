@@ -30,7 +30,7 @@
 //Video *vid;
 //Memory *mem;
 //IOSys *iosys;
-HardWare *hw;
+//HardWare *hw;
 //Z80 *cpu;
 ZXComp* zx;
 //Spec* sys;
@@ -50,8 +50,8 @@ MFiler *filer;
 
 Settings *sets;
 
-void shithappens(const char* msg) {
-	QMessageBox mbx(QMessageBox::Critical,"Shit happens",QString(msg),QMessageBox::Ok);
+void shithappens(std::string msg) {
+	QMessageBox mbx(QMessageBox::Critical,"Shit happens",QString(msg.c_str()),QMessageBox::Ok);
 	mbx.exec();
 }
 
@@ -105,6 +105,8 @@ int main(int ac,char** av) {
 #endif
 		int i; bool dev = false;
 		sets = new Settings;
+		sets->addProfile("default","xpeccy.conf");
+		sets->setProfile("default");
 		for (i=1; i<ac; i++) {
 			if (std::string(av[i])=="-dev") dev=true;
 		}
@@ -118,17 +120,20 @@ int main(int ac,char** av) {
 			atexit(SDL_Quit);
 			
 			filltabs();
-			zx = new ZXComp;
+//			zx = new ZXComp;
 			snd = new Sound();
 			mwin = new EmulWin();
 			dbg = new DebugWin((QWidget*)mwin);
 			dwin = new DevelWin();
+			swin = new SetupWin((QWidget*)mwin);
 			filer = new MFiler(NULL);
+			sets->loadProfiles();
+			mwin->makeProfileMenu();
+			mwin->updateWin();
 #if !SDLMAINWIN
 			mwin->show();
 #endif
 			sets->load(false);
-			swin = new SetupWin((QWidget*)mwin);
 			mwin->reset();
 
 			for(i=1;i<ac;i++) filer->loadsomefile(std::string(av[i]),0);

@@ -4,14 +4,7 @@
 #include "settings.h"
 #include "filer.h"
 
-//#include "iosys.h"
-//#include "memory.h"
 #include "sound.h"
-//#include "video.h"
-//#include "bdi.h"
-//#include "tape.h"
-//#include "hdd.h"
-//#include "gs.h"
 #include "spectrum.h"
 
 #include <QStandardItemModel>
@@ -22,12 +15,7 @@ extern EmulWin* mwin;
 extern MFiler* filer;
 extern Sound* snd;
 extern DevelWin* dwin;
-//extern BDI* bdi;
-//extern Tape* tape;
-//extern IDE* ide;
-//extern GS* gs;
 extern ZXComp* zx;
-//extern HardWare* hw;
 
 SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	setModal(true);
@@ -42,9 +30,12 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	for (i=0; i < zx->hwlist.size(); i++) {
 		ui.machbox->addItem(QDialog::trUtf8(zx->hwlist[i].name.c_str()));
 	}
+/*
+	ui.rsetbox->clear();
 	for (i=0; i < zx->sys->mem->rsetlist.size(); i++) {
 		ui.rsetbox->addItem(QDialog::trUtf8(zx->sys->mem->rsetlist[i].name.c_str()));
 	}
+*/
 	ui.resbox->addItems(QStringList()<<"0:Basic 128"<<"1:Basic48"<<"2:Shadow"<<"3:DOS");
 	ui.mszbox->addItems(QStringList()<<"48K"<<"128K"<<"256K"<<"512K"<<"1024K");
 // video
@@ -154,8 +145,13 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 void SetupWin::okay() {apply();reject();}
 
 void SetupWin::start() {
+	uint32_t i;
 	mwin->repause(true,PR_OPTS);
 // machine
+	ui.rsetbox->clear();
+	for (i=0; i < zx->sys->mem->rsetlist.size(); i++) {
+		ui.rsetbox->addItem(QDialog::trUtf8(zx->sys->mem->rsetlist[i].name.c_str()));
+	}
 	ui.machbox->setCurrentIndex(ui.machbox->findText(QDialog::trUtf8(zx->hw->name.c_str())));
 	ui.rsetbox->setCurrentIndex(ui.rsetbox->findText(QDialog::trUtf8(zx->sys->mem->romset->name.c_str())));
 	ui.reschk->setChecked(zx->sys->io->resafter);
@@ -274,6 +270,7 @@ void SetupWin::apply() {
 	sets->sscnt = ui.scntbox->value();
 	sets->ssint = ui.sintbox->value();
 	zx->vid->setlayout(std::string(ui.geombox->currentText().toUtf8().data()));
+	mwin->updateWin();
 // sound
 	std::string oname = mwin->opt.sndOutputName;
 	int orate = snd->rate;
@@ -379,6 +376,12 @@ void SetupWin::setmszbox(int idx) {
 
 void SetupWin::buildrsetlist() {
 	int i;
+	if (ui.rsetbox->currentIndex() < 0) {
+		ui.rstab->setEnabled(false);
+		return;
+	} else {
+		ui.rstab->setEnabled(true);
+	}
 	RomSet rset = zx->sys->mem->rsetlist[ui.rsetbox->currentIndex()];
 	QStringList lst = QStringList()<<"Basic128"<<"Basic48"<<"Shadow"<<"DOS"<<"ext0"<<"ext1"<<"ext2"<<"ext3";
 	QStandardItemModel *model = new QStandardItemModel(8,3);

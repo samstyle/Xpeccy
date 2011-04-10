@@ -5,36 +5,44 @@
 #include <vector>
 #include <stdint.h>
 
-struct BookmarkEntry {
+#include "spectrum.h"
+
+struct MenuEntry {
 	std::string name;
 	std::string path;
 };
 
-class BookmarkMenu {
+class UserMenu {
 	public:
-		std::vector<BookmarkEntry> data;
+		std::vector<MenuEntry> data;
 		void add(std::string,std::string);
 		void del(int32_t);
 		void swap(int32_t,int32_t);
 		void set(int32_t,std::string,std::string);
 };
 
-struct Settings {
+struct Profile {
+	std::string name;
+	std::string file;
+	ZXComp* zx;
+};
+
+class Settings {
 	public:
-	Settings();
-	int32_t sscnt,ssint;
-//	bool wait;
-	BookmarkMenu umenu;
-//	std::string gsrom;
-//	std::string machname;
-//	std::string rsetname;
-//	std::string soutname;
-//	std::string ssdir,ssformat;
-//	std::string sjapath;
-//	std::string prjdir;
-//	std::string workdir,romdir,optpath;
-	void load(bool);
-	void save();
+		Settings();
+		int32_t sscnt,ssint;
+		UserMenu umenu;		// bookmarks
+		std::vector<Profile> profs;
+		Profile* cprof;
+		struct {
+			std::string workDir,romDir,profPath;
+		} opt;
+		void addProfile(std::string,std::string);
+		bool setProfile(std::string);
+		void loadProfiles();
+		void saveProfiles();
+		void load(bool);
+		void save();
 };
 //extern Settings *sets;
 

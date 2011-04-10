@@ -18,11 +18,6 @@ Video::Video(Memory* me) {
 	int idx=0;
 	int sadr=0x0000;
 	int aadr=0x1800;
-	for (i=0;i<16;i++) {
-		pal[i].b = (i & 1)?((i & 8)?0xff:0xc0):0;
-		pal[i].r = (i & 2)?((i & 8)?0xff:0xc0):0;
-		pal[i].g = (i & 4)?((i & 8)?0xff:0xc0):0;
-	}
 	for (i=0;i<3;i++) {
 		for (j=0;j<8;j++) {
 			for (k=0;k<8;k++) {
@@ -70,7 +65,8 @@ Video::Video(Memory* me) {
 
 void Video::setborder(float prc) {
 	brdsize = prc;
-	update();
+//	update();
+	mwin->updateWin();
 }
 
 bool Video::setlayout(std::string nm) {
@@ -93,6 +89,7 @@ bool Video::setlayout(std::string nm) {
 	scrn.v = full.v - synh.v;
 	frmsz = full.h * full.v;
 	update();
+//	mwin->updateWin();
 	return true;
 }
 /*
@@ -126,31 +123,6 @@ void Video::update() {
 	vsze.v = rcut.v - lcut.v;
 	wsze.h = vsze.h * ((flags & VF_DOUBLE) ? 2 : 1);
 	wsze.v = vsze.v * ((flags & VF_DOUBLE) ? 2 : 1);
-	if (mwin != NULL) {
-		mwin->setFixedSize(wsze.h,wsze.v);
-	//	mwin->showFullScreen();
-	}
-	int sdlflg = SDL_HWSURFACE;// | SDL_FULLSCREEN;
-	int szh = wsze.h;
-	int szw = wsze.v;
-	if ((flags & VF_FULLSCREEN) && !(flags & VF_BLOCKFULLSCREEN)) {
-		sdlflg |= SDL_FULLSCREEN;
-//		szh = QApplication::desktop()->width();
-//		szw = QApplication::desktop()->height();
-	}
-	if (mwin) {
-#if SDLMAINWIN
-		mwin->surf = SDL_SetVideoMode(szh,szw,8,sdlflg);
-		SDL_WM_SetCaption("Xpeccy 0.4.1 beta Win32","");
-#else
-		mwin->surf = SDL_SetVideoMode(szh,szw,8,sdlflg | SDL_NOFRAME);
-#ifdef WIN32
-		SetWindowPos(mwin->inf.window,HWND_TOP,0,0,szh,szw,0);
-#endif
-#endif
-		SDL_SetPalette(mwin->surf,SDL_LOGPAL|SDL_PHYSPAL,pal,0,256);
-		scrptr = (uint8_t*)mwin->surf->pixels;
-	}
 }
 
 void Video::sync(int tk,float fr) {

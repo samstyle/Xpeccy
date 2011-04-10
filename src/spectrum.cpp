@@ -36,10 +36,8 @@ ZXComp::ZXComp() {
 	sys = new ZXBase;
 	sys->cpu = new Z80(3.5);
 	sys->mem = new Memory(MEM_ZX);
-//	sys->io = new IOSys(&zx_in,&zx_out);
 	sys->io = new IOSys(IO_ZX);
 	vid = new Video(sys->mem);
-//	vid = new Video;
 	keyb = new Keyboard;
 	mouse = new Mouse;
 	tape = new Tape;
@@ -53,12 +51,13 @@ ZXComp::ZXComp() {
 	addHardware("Scorpion",HW_SCORP,0x0a,IO_WAIT);
 	opt.hwName = "ZX48K";
 	opt.romsetName = "ZX48";
+	reset();
 }
 
 void ZXComp::reset() {
 	sys->io->block7ffd=false;
 	sys->mem->prt1 = 0;
-	sys->mem->prt0 = ((sys->mem->res == 1) << 4);
+	sys->mem->prt0 = ((sys->mem->res & 1) << 4);
 	sys->mem->setrom(sys->mem->res);
 	sys->mem->setram(0);
 	sys->cpu->reset();
@@ -68,8 +67,8 @@ void ZXComp::reset() {
 	bdi->vg93.count = 0;
 	bdi->vg93.setmr(false);
 	if (gs->flags & GS_RESET) gs->reset();
-	aym->sc1->reset();
-	aym->sc2->reset();
+	aym->sc1->reset(vid->t);
+	aym->sc2->reset(vid->t);
 	aym->scc = aym->sc1;
 	ide->reset();
 }

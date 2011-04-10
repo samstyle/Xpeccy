@@ -363,9 +363,9 @@ void Memory::loadromset() {
 			for (ad=0;ad<0x4000;ad++) rom[i][ad]=0xff;
 		} else {
 #ifndef WIN32
-			fpath = mwin->opt.romDir + "/" + romset->roms[i].path;
+			fpath = sets->opt.romDir + "/" + romset->roms[i].path;
 #else
-			fpath = mwin->opt.romDir + "\\" + romset->roms[i].path;
+			fpath = sets->opt.romDir + "\\" + romset->roms[i].path;
 #endif
 			std::ifstream file(fpath.c_str());
 			if (file.good()) {
@@ -385,9 +385,9 @@ void Memory::loadromset() {
 		}
 	} else {
 #ifndef WIN32
-			fpath = mwin->opt.romDir + "/" + zx->opt.GSRom;
+			fpath = sets->opt.romDir + "/" + zx->opt.GSRom;
 #else
-			fpath = mwin->opt.romDir + "\\" + zx->opt.GSRom;
+			fpath = sets->opt.romDir + "\\" + zx->opt.GSRom;
 #endif
 			std::ifstream file(fpath.c_str());
 			if (file.good()) {
