@@ -23,6 +23,7 @@
 #define PR_DEBUG	0x08
 #define PR_QUIT		0x10
 #define PR_PAUSE	0x20
+#define PR_EXTRA	0x40
 
 // flags - emul mode / events
 #define FL_GRAB	0x00000001

@@ -164,7 +164,7 @@ int main(int ac,char** av) {
 		return 1;
 	}
 	catch (int i) {
-		QMessageBox mbx(QMessageBox::Warning,"Test",QString::number(i));
-		mbx.exec();
+		SDL_Quit();
+		return 1;
 	}
 }

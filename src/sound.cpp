@@ -55,7 +55,10 @@ void Sound::defpars() {
 }
 
 void Sound::setoutptr(std::string nam) {
-	if (outsys != NULL) outsys->close();
+	if (outsys != NULL) {
+		if (outsys->name == nam) return;
+		outsys->close();
+	}
 //	printf("Finding %s from %i elements\n",nam.c_str(),outsyslist.size());
 	outsys = NULL;
 //	beepvol = tapevol = ayvol = gsvol = 16;

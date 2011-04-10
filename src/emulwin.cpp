@@ -384,7 +384,14 @@ void EmulWin::SDLEventHandler() {
 				switch (ev.button.button) {
 					if (paused!=0) break;
 					case SDL_BUTTON_LEFT: if (flags & FL_GRAB) zx->mouse->buttons &= ~0x01; break;
-					case SDL_BUTTON_RIGHT: if (flags & FL_GRAB) zx->mouse->buttons &= ~0x02; break;
+					case SDL_BUTTON_RIGHT: if (flags & FL_GRAB) {
+							zx->mouse->buttons &= ~0x02;
+						} else {
+							repause(true,PR_MENU);
+							mainMenu->popup(pos() + QPoint(ev.button.x,ev.button.y+20));
+							mainMenu->setFocus();
+						}
+						break;	
 					case SDL_BUTTON_MIDDLE:
 						break;
 				}
@@ -617,12 +624,13 @@ void EmulWin::bookmarkSelected(QAction* act) {
 }
 
 void EmulWin::profileSelected(QAction* act) {
-//	printf("profile %s selected\n",act->text().toUtf8().data());
+	mwin->repause(true,PR_EXTRA);
 	sets->setProfile(std::string(act->text().toUtf8().data()));
 	sets->load(false);
 	mwin->updateWin();
 	sets->saveProfiles();
 	setFocus();
+	mwin->repause(false,PR_EXTRA);
 }
 
 void UserMenu::add(std::string name,std::string path) {
@@ -849,8 +857,15 @@ void Settings::save() {
 void Settings::loadProfiles() {
 	std::ifstream file(opt.profPath.c_str());
 	if (!file.good()) {
-		shithappens("Can't open main config");
-		throw(0);
+		shithappens("<b>Can't open main config</b><br>It seems, update needed<br>I will made it, don't worry");
+		load(false);
+		save();
+		file.open(opt.profPath.c_str());
+		if (!file.good()) {
+			shithappens("<b>Doh! Something going wrong</b><br>Now you can worry");
+			throw(0);
+		}
+//		shithappens("Done");
 	}
 	while (profs.size() > 1) profs.pop_back();		// delete all existing profiles except 'default'
 	umenu.data.clear();
