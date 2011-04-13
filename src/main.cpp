@@ -111,8 +111,8 @@ int main(int ac,char** av) {
 			if (std::string(av[i])=="-dev") dev=true;
 		}
 		if (dev) {
-			sets->load(true);
 			dwin = new DevelWin;
+			sets->load(true);
 			dwin->show();
 			return app.exec();
 		} else {
