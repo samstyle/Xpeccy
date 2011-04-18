@@ -1,13 +1,10 @@
 #include <fstream>
 #include <string.h>
 
-//#include "bdi.h"
 #include "hdd.h"
 #include "spectrum.h"
 
 extern ZXComp* zx;
-//extern IDE* ide;
-//extern BDI* bdi;
 
 // IDE controller
 
@@ -57,11 +54,19 @@ bool IDE::out(uint16_t port,uint8_t val) {
 }
 
 void IDE::reset() {
+	master.reset();
+	slave.reset();
+	cur = &master;
 }
 
 // ATA(PI) devices
 
 ATADev::ATADev() {
+}
+
+void ATADev::reset() {
+	reg.state = 0x50;
+	reg.err = 0x01;
 }
 
 // set REG value to bus (16bit for data, low for other)

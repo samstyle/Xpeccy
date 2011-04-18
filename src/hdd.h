@@ -64,7 +64,7 @@ class ATADev {
 		std::string mcver;	// microcode version
 		std::string model;	// model
 	} pass;			// passport
-//	void reset();
+	void reset();
 	void out(int32_t);
 	void in(int32_t);
 };
