@@ -4,7 +4,7 @@
 #include <string>
 #include <stdint.h>
 
-#define BUF_SIZE	512
+#define HDD_BUFSIZE	512
 
 #define IDE_NONE	0
 #define IDE_ATA		1
@@ -28,60 +28,87 @@
 #define HDD_ASTATE	0x3F6
 #define HDD_ADDR	0x3F7
 
+// state flags
+#define	HDF_BSY		0x80
+#define	HDF_DRDY	0x40
+#define	HDF_WFT		0x20
+#define	HDF_DSC		0x10
+#define HDF_DRQ		0x08
+#define	HDF_CORR	0x04
+#define	HDF_IDX		0x02
+#define HDF_ERR		0x01
+
+// error flags
+#define	HDF_BBK		0x80
+#define HDF_UNC		0x40
+#define	HDF_IDNF	0x10
+#define HDF_ABRT	0x04
+#define	HDF_T0NF	0x02
+#define HDF_AMNF	0x01
+
+// bufer mode
+#define HDB_IDLE	0x00
+#define HDB_READ	0x01
+#define HDB_WRITE	0x02
+
 class ATADev {
 	public:
-	ATADev();
-	std::string image;		// image file path
-	int32_t iface;
-	uint16_t trk;			// real track (head pos) ??
-	bool canlba;			// true if HDD can LBA addresation
-	uint32_t lba;			// internal absolute sector number
-	uint32_t maxlba;		// maximum lba (calculated)
-	bool wr;			// 1 on write commands
-	uint8_t buf[BUF_SIZE];		// buffer
-	int32_t pos;			// current buffer pos
-	struct {
-		uint8_t data;
-		uint8_t err;
-		uint8_t state;
-		uint8_t count;
-		uint8_t sec;
-		uint16_t cyl;
-		uint8_t head;
-		uint8_t com;
-	} reg;				// registers
-	struct {
-		uint16_t word;
-		uint16_t cyls;	// cylinders
-		uint16_t rsrvd;
-		uint16_t hds;	// heads
-		uint16_t bpt;	// bytes per track
-		uint16_t bps;	// bytes per sector
-		uint16_t spt;	// sectors per track
-		std::string serial;	// serial
-		uint16_t type;	// buffer type
-		uint16_t vol;	// buffer volume / 512
-		std::string mcver;	// microcode version
-		std::string model;	// model
-	} pass;			// passport
-	void reset();
-	void out(int32_t);
-	void in(int32_t);
+		ATADev();
+		std::string image;		// image file path
+		int32_t iface;
+		uint16_t trk;			// real track (head pos) ??
+		bool canlba;			// true if HDD can LBA addresation
+		uint32_t lba;			// internal absolute sector number
+		uint32_t maxlba;		// maximum lba (calculated)
+//		bool wr;			// 1 on write commands
+		struct {
+			uint8_t data[HDD_BUFSIZE];
+			uint32_t pos;
+			uint8_t mode;
+		} buf;
+		struct {
+			uint16_t data;
+			uint8_t err;
+			uint8_t state;
+			uint8_t count;
+			uint8_t sec;
+			uint16_t cyl;
+			uint8_t head;
+			uint8_t com;
+		} reg;				// registers
+		struct {
+			uint16_t word;
+			uint16_t cyls;	// cylinders
+			uint16_t rsrvd;
+			uint16_t hds;	// heads
+			uint16_t bpt;	// bytes per track
+			uint16_t bps;	// bytes per sector
+			uint16_t spt;	// sectors per track
+			std::string serial;	// serial
+			uint16_t type;	// buffer type
+			uint16_t vol;	// buffer volume / 512
+			std::string mcver;	// microcode version
+			std::string model;	// model
+		} pass;			// passport
+		void reset();
+		void out(int32_t,uint16_t);
+		uint16_t in(int32_t);
+		void exec(uint8_t);
+		void readSector();
+		void writeSector();
 };
 
 class IDE {
 	public:
-	IDE();
-	ATADev master;
-	ATADev slave;
-	ATADev *cur;
-	int32_t iface;		// none, nemo, ...
-	bool in(uint16_t, uint8_t*);		// return value is iorge (true on accepting)
-	bool out(uint16_t, uint8_t);
-	struct {uint8_t low,hi;} bus;
-	void reset();
+		IDE();
+		ATADev master;
+		ATADev slave;
+		ATADev *cur;
+		int32_t iface;		// none, nemo, ...
+		bool in(uint16_t, uint8_t*);		// return value is iorge (true on accepting)
+		bool out(uint16_t, uint8_t);
+		uint16_t bus;
+		void reset();
 };
-
-// extern IDE* ide;
 
 #endif
