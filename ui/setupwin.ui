@@ -1273,7 +1273,7 @@
        </widget>
        <widget class="QWidget" name="hddtab">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <attribute name="icon">
          <iconset resource="../xpeccy.qrc">
@@ -1754,7 +1754,7 @@
          <item>
           <widget class="QGroupBox" name="groupBox_2">
            <property name="title">
-            <string>User Menu</string>
+            <string>Bookmarks</string>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_12">
             <item>

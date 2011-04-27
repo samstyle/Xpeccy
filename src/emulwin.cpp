@@ -1107,6 +1107,7 @@ void Settings::load(bool dev) {
 	}
 	if (dev) return;
 	snd->defpars();
+	zx->ide->refresh();
 	zx->setHardware(zx->opt.hwName);
 	zx->sys->mem->setromptr(zx->opt.romsetName);
 	snd->setoutptr(mwin->opt.sndOutputName);

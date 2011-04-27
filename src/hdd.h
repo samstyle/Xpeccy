@@ -79,7 +79,7 @@ class ATADev {
 		struct {
 			uint16_t word;
 			uint16_t cyls;	// cylinders
-			uint16_t rsrvd;
+			uint16_t resrv;
 			uint16_t hds;	// heads
 			uint16_t bpt;	// bytes per track
 			uint16_t bps;	// bytes per sector
@@ -96,6 +96,9 @@ class ATADev {
 		void exec(uint8_t);
 		void readSector();
 		void writeSector();
+		void getSectorNumber();
+		void setSectorNumber();
+		void gotoNextSector();
 };
 
 class IDE {
@@ -109,6 +112,7 @@ class IDE {
 		bool out(uint16_t, uint8_t);
 		uint16_t bus;
 		void reset();
+		void refresh();
 };
 
 #endif
