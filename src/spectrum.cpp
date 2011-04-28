@@ -1,7 +1,6 @@
 #include "spectrum.h"
 #include "video.h"
 #include "settings.h"
-#include "bdi.h"
 
 #include "z80/tables.c"
 #include "z80/instr.c"
@@ -136,7 +135,9 @@ int32_t ZXComp::getPort(int32_t port) {
 uint8_t ZXComp::in(int32_t port) {
 	uint8_t res = 0xff;
 	gs->sync(vid->t);
-//	if (ide->in(port,&res)) return res;
+#if IDE_ENABLE
+	if (ide->in(port,&res)) return res;
+#endif
 	if (gs->in(port,&res)) return res;
 	if (bdi->in(port,&res)) return res;
 	port = getPort(port);
@@ -169,7 +170,9 @@ uint8_t ZXComp::in(int32_t port) {
 
 void ZXComp::out(int32_t port,uint8_t val) {
 	gs->sync(vid->t);
-//	if (ide->out(port,val)) return;
+#if IDE_ENABLE
+	if (ide->out(port,val)) return;
+#endif
 	if (gs->out(port,val)) return;
 	if (bdi->out(port,val)) return;
 	port = getPort(port);

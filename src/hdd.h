@@ -4,6 +4,8 @@
 #include <string>
 #include <stdint.h>
 
+#define IDE_ENABLE	1
+
 #define HDD_BUFSIZE	512
 
 #define IDE_NONE	0
@@ -56,7 +58,7 @@ class ATADev {
 		ATADev();
 		std::string image;		// image file path
 		int32_t iface;
-		uint16_t trk;			// real track (head pos) ??
+//		uint16_t trk;			// real track (head pos) ??
 		bool canlba;			// true if HDD can LBA addresation
 		uint32_t lba;			// internal absolute sector number
 		uint32_t maxlba;		// maximum lba (calculated)
@@ -67,7 +69,7 @@ class ATADev {
 			uint8_t mode;
 		} buf;
 		struct {
-			uint16_t data;
+//			uint16_t data;
 			uint8_t err;
 			uint8_t state;
 			uint8_t count;
@@ -94,6 +96,7 @@ class ATADev {
 		void out(int32_t,uint16_t);
 		uint16_t in(int32_t);
 		void exec(uint8_t);
+		void clearBuf();
 		void readSector();
 		void writeSector();
 		void getSectorNumber();

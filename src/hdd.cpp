@@ -32,7 +32,7 @@ bool IDE::in(uint16_t port,uint8_t* val) {
 			bus = cur->in(prt);
 			*val = (bus & 0x00ff);
 		}
-//		printf("ATA in\t%.4X (%.4X) = %.2X %.2X\n",prt,port,bus.hi,bus.low);
+//		printf("ATA in\t%.4X (%.4X) = %.4X\n",prt,port,bus);
 	}
 	return res;
 }
@@ -60,7 +60,7 @@ bool IDE::out(uint16_t port,uint8_t val) {
 			bus |= val;
 			cur->out(prt,bus);
 		}
-//		printf("ATA out\t%.4X (%.4X) = %.2X %.2X\n",prt,port,bus.hi,bus.low);
+//		printf("ATA out\t%.4X (%.4X) = %.4X\n",prt,port,bus);
 	}
 	return res;
 }
@@ -72,6 +72,18 @@ void IDE::reset() {
 }
 
 void IDE::refresh() {
+	if (master.canlba) {
+		master.pass.spt = 255;
+		master.pass.hds = 16;
+	} else {
+		master.maxlba = master.pass.cyls * master.pass.hds * master.pass.spt;
+	}
+	if (slave.canlba) {
+		slave.pass.spt = 255;
+		slave.pass.hds = 16;
+	} else {
+		slave.maxlba = slave.pass.cyls * slave.pass.hds * slave.pass.spt;
+	}
 	master.pass.bpt = master.pass.bps * master.pass.spt;
 	slave.pass.bpt = slave.pass.bps * slave.pass.spt;
 }
@@ -101,6 +113,7 @@ void ATADev::reset() {
 // set REG value to bus (16bit for data, low for other)
 uint16_t ATADev::in(int32_t prt) {
 	uint16_t res = 0xffff;
+	if ((iface != IDE_ATA) || (image == "")) return res;
 	if (prt == HDD_DATA) {
 		if ((buf.mode == HDB_READ) && (reg.state & HDF_DRQ)) {
 			res = (buf.data[buf.pos] << 8) | buf.data[buf.pos+1];
@@ -124,39 +137,39 @@ uint16_t ATADev::in(int32_t prt) {
 		}
 		return res;
 	}
-	if (~reg.state & HDF_BSY) {
-		switch (prt) {
-			case HDD_COUNT:
-				res = reg.count;
-				break;
-			case HDD_SECTOR:
-				res = reg.sec;
-				break;
-			case HDD_CYL_LOW:
-				res = reg.cyl & 0xff;
-				break;
-			case HDD_CYL_HI:
-				res = ((reg.cyl & 0xff00) >> 8);
-				break;
-			case HDD_HEAD:
-				res = reg.head;
-				break;
-			case HDD_ERROR:
-				res = reg.err;
-				break;
-			case HDD_STATE:
-			case HDD_ASTATE:
-				res = reg.state;
-				break;
-			default:
-				printf("HDD in: port %.3X isn't emulated\n",prt);
-				throw(0);
-		}
+//	if (reg.state & HDF_BSY) return res;
+	switch (prt) {
+		case HDD_COUNT:
+			res = reg.count;
+			break;
+		case HDD_SECTOR:
+			res = reg.sec;
+			break;
+		case HDD_CYL_LOW:
+			res = reg.cyl & 0xff;
+			break;
+		case HDD_CYL_HI:
+			res = ((reg.cyl & 0xff00) >> 8);
+			break;
+		case HDD_HEAD:
+			res = reg.head;
+			break;
+		case HDD_ERROR:
+			res = reg.err;
+			break;
+		case HDD_STATE:
+		case HDD_ASTATE:
+			res = reg.state;
+			break;
+		default:
+			printf("HDD in: port %.3X isn't emulated\n",prt);
+			throw(0);
 	}
 	return res;
 }
 
 void ATADev::out(int32_t prt, uint16_t val) {
+	if ((iface != IDE_ATA) || (image == "")) return;
 	if (prt == HDD_DATA) {
 		if ((buf.mode == HDB_WRITE) && (reg.state & HDF_DRQ)) {
 			buf.data[buf.pos++] = ((val & 0xff00) >> 8);
@@ -180,7 +193,7 @@ void ATADev::out(int32_t prt, uint16_t val) {
 		}
 		return;
 	}
-	if (reg.state & HDF_BSY) return;
+//	if (reg.state & HDF_BSY) return;
 	switch (prt) {
 		case HDD_COUNT:
 			reg.count = val & 0xff;
@@ -202,6 +215,9 @@ void ATADev::out(int32_t prt, uint16_t val) {
 		case HDD_COM:
 			reg.com = val & 0xff;
 			exec (reg.com);
+			break;
+		case HDD_ASTATE:
+			if (val & 0x04) reset();
 			break;
 		default:
 			printf("HDD out: port %.3X isn't emulated\n",prt);
@@ -237,22 +253,60 @@ void ATADev::gotoNextSector() {
 	setSectorNumber();
 }
 
+void shithappens(std::string);
+
 void ATADev::readSector() {
 	getSectorNumber();
+	if (lba > maxlba) {			// sector not found
+		reg.state &= ~HDF_BSY;
+		reg.state |= HDF_ERR;
+		reg.err |= (HDF_ABRT | HDF_IDNF);
+	} else {
+		std::ifstream file(image.c_str(),std::ios::binary);
+		if (!file.good()) {
+			std::ofstream fzk(image.c_str());
+			fzk.close();
+			file.open(image.c_str(),std::ios::binary);
+			if (!file.good()) {
+				shithappens("Can't create HDD image file");
+				iface = IDE_NONE;
+			}
+		} else {
+			file.seekg(0,std::ios::end);
+			size_t eps = file.tellg();
+			size_t nps = lba * pass.bps;
+			if (nps < eps) {
+				file.seekg(lba * pass.bps);
+				file.read((char*)&buf.data[0],pass.bps);
+			} else {
+				for (int i=0; i<pass.bps; i++) {
+					buf.data[i] = 0x00;
+				}
+			}
+			file.close();
+		}
+//		printf("NR: read sector %i\n",lba);
+	}
 }
 
 void ATADev::writeSector() {
 	getSectorNumber();
+	if (lba > maxlba) {			// sector not found
+		reg.state &= ~HDF_BSY;
+		reg.state |= HDF_ERR;
+		reg.err |= (HDF_ABRT | HDF_IDNF);
+	} else {
+		std::ofstream file(image.c_str(),std::ios::binary | std::ios::in | std::ios::out);
+		file.seekp(lba * pass.bps);
+		file.write((char*)&buf.data[0],pass.bps);
+		file.close();
+		printf("NR: write sector %i\n",lba);
+	}
 }
 
-// byte order in HDD bufer - HI-LOW
-void copyStringToBuffer(uint8_t* dst, const char* src, int num) {
-	while (num > 1) {
-		*(dst + 1) = *src;
-		*dst = *(src + 1);
-		dst += 2;
-		src += 2;
-		num -= 2;
+void ATADev::clearBuf() {
+	for (int i=0; i < HDD_BUFSIZE; i++) {
+		buf.data[i] = 0x00;
 	}
 }
 
@@ -287,18 +341,19 @@ void ATADev::exec(uint8_t cm) {
 			reg.state &= ~HDF_BSY;
 			break;
 		case 0xec:			// identification
+			clearBuf();
 			buf.data[0] = 0x00; buf.data[1] = 0x00;							// main word
-			buf.data[2] = ((pass.cyls & 0xff00) >> 8); buf.data[3] = pass.cyls & 0xff;		// cylinders
+			buf.data[2] = pass.cyls & 0xff; buf.data[3] = ((pass.cyls & 0xff00) >> 8);		// cylinders
 			buf.data[4] = 0x00; buf.data[5] = 0x00;							// reserved
-			buf.data[6] = ((pass.hds & 0xff00) >> 8); buf.data[7] = pass.hds & 0xff;		// heads
-			buf.data[8] = ((pass.bpt & 0xff00) >> 8); buf.data[9] = pass.bpt & 0xff;		// bytes per track
-			buf.data[10] = ((pass.bps & 0xff00) >> 8); buf.data[11] = pass.bps & 0xff;		// bytes per sector
-			buf.data[12] = ((pass.spt & 0xff00) >> 8); buf.data[13] = pass.spt & 0xff;		// sector per track
-			copyStringToBuffer(&buf.data[20],pass.serial.c_str(),20);				// serial
-			buf.data[40] = ((pass.type & 0xff00) >> 8); buf.data[41] = pass.type & 0xff;		// buffer type
-			buf.data[42] = ((pass.vol & 0xff00) >> 8); buf.data[43] = pass.vol & 0xff;		// buffer size
-			copyStringToBuffer(&buf.data[46],pass.mcver.c_str(),8);					// microcode version
-			copyStringToBuffer(&buf.data[54],pass.model.c_str(),40);				// model
+			buf.data[6] = pass.hds & 0xff; buf.data[7] = ((pass.hds & 0xff00) >> 8);		// heads
+			buf.data[8] = pass.bpt & 0xff; buf.data[9] = ((pass.bpt & 0xff00) >> 8);		// bytes per track
+			buf.data[10] = pass.bps & 0xff; buf.data[11] = ((pass.bps & 0xff00) >> 8);		// bytes per sector
+			buf.data[12] = pass.spt & 0xff; buf.data[13] = ((pass.spt & 0xff00) >> 8);		// sector per track
+			memcpy(&buf.data[20],pass.serial.c_str(),20);						// serial
+			buf.data[40] = pass.type & 0xff; buf.data[41] = ((pass.type & 0xff00) >> 8);		// buffer type
+			buf.data[42] = pass.vol & 0xff; buf.data[43] = ((pass.vol & 0xff00) >> 8);		// buffer size
+			memcpy(&buf.data[46],pass.mcver.c_str(),8);						// microcode version
+			memcpy(&buf.data[54],pass.model.c_str(),40);						// model
 			buf.pos = 0;
 			buf.mode = HDB_READ;
 			reg.state |= HDF_DRQ;
