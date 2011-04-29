@@ -114,31 +114,29 @@ void ATADev::reset() {
 uint16_t ATADev::in(int32_t prt) {
 	uint16_t res = 0xffff;
 	if ((iface != IDE_ATA) || (image == "")) return res;
-	if (prt == HDD_DATA) {
-		if ((buf.mode == HDB_READ) && (reg.state & HDF_DRQ)) {
-			res = (buf.data[buf.pos] << 8) | buf.data[buf.pos+1];
-			buf.pos += 2;
-			if (buf.pos >= HDD_BUFSIZE) {
-				buf.pos = 0;
-				if ((reg.com & 0xf0) == 0x20) {
-					reg.count--;
-					if (reg.count == 0) {
-						buf.mode = HDB_IDLE;
-						reg.state &= ~(HDF_BSY | HDF_DRQ);
+	switch (prt) {
+		case HDD_DATA:
+			if ((buf.mode == HDB_READ) && (reg.state & HDF_DRQ)) {
+				res = (buf.data[buf.pos] << 8) | buf.data[buf.pos+1];
+				buf.pos += 2;
+				if (buf.pos >= HDD_BUFSIZE) {
+					buf.pos = 0;
+					if ((reg.com & 0xf0) == 0x20) {
+						reg.count--;
+						if (reg.count == 0) {
+							buf.mode = HDB_IDLE;
+							reg.state &= ~HDF_DRQ;
+						} else {
+							gotoNextSector();
+							readSector();
+						}
 					} else {
-						gotoNextSector();
-						readSector();
+						buf.mode = HDB_IDLE;
+						reg.state &= ~HDF_DRQ;
 					}
-				} else {
-					buf.mode = HDB_IDLE;
-					reg.state &= ~(HDF_BSY | HDF_DRQ);
 				}
 			}
-		}
-		return res;
-	}
-//	if (reg.state & HDF_BSY) return res;
-	switch (prt) {
+			break;
 		case HDD_COUNT:
 			res = reg.count;
 			break;
@@ -170,31 +168,29 @@ uint16_t ATADev::in(int32_t prt) {
 
 void ATADev::out(int32_t prt, uint16_t val) {
 	if ((iface != IDE_ATA) || (image == "")) return;
-	if (prt == HDD_DATA) {
-		if ((buf.mode == HDB_WRITE) && (reg.state & HDF_DRQ)) {
-			buf.data[buf.pos++] = ((val & 0xff00) >> 8);
-			buf.data[buf.pos++] = (val & 0xff);
-			if (buf.pos >= HDD_BUFSIZE) {
-				buf.pos = 0;
-				if ((reg.com & 0xf0) == 0x30) {
-					writeSector();
-					reg.count--;
-					if (reg.count == 0) {
-						buf.mode = HDB_IDLE;
-						reg.state &= ~(HDF_BSY | HDF_DRQ);
+	switch (prt) {
+		case HDD_DATA:
+			if ((buf.mode == HDB_WRITE) && (reg.state & HDF_DRQ)) {
+				buf.data[buf.pos++] = ((val & 0xff00) >> 8);
+				buf.data[buf.pos++] = (val & 0xff);
+				if (buf.pos >= HDD_BUFSIZE) {
+					buf.pos = 0;
+					if ((reg.com & 0xf0) == 0x30) {
+						writeSector();
+						reg.count--;
+						if (reg.count == 0) {
+							buf.mode = HDB_IDLE;
+							reg.state &= ~HDF_DRQ;
+						} else {
+							gotoNextSector();
+						}
 					} else {
-						gotoNextSector();
+						buf.mode = HDB_IDLE;
+						reg.state &= ~HDF_DRQ;
 					}
-				} else {
-					buf.mode = HDB_IDLE;
-					reg.state &= ~(HDF_BSY | HDF_DRQ);
 				}
 			}
-		}
-		return;
-	}
-//	if (reg.state & HDF_BSY) return;
-	switch (prt) {
+			break;
 		case HDD_COUNT:
 			reg.count = val & 0xff;
 			break;
@@ -258,7 +254,6 @@ void shithappens(std::string);
 void ATADev::readSector() {
 	getSectorNumber();
 	if (lba > maxlba) {			// sector not found
-		reg.state &= ~HDF_BSY;
 		reg.state |= HDF_ERR;
 		reg.err |= (HDF_ABRT | HDF_IDNF);
 	} else {
@@ -292,7 +287,6 @@ void ATADev::readSector() {
 void ATADev::writeSector() {
 	getSectorNumber();
 	if (lba > maxlba) {			// sector not found
-		reg.state &= ~HDF_BSY;
 		reg.state |= HDF_ERR;
 		reg.err |= (HDF_ABRT | HDF_IDNF);
 	} else {
@@ -312,33 +306,26 @@ void ATADev::clearBuf() {
 
 void ATADev::exec(uint8_t cm) {
 	reg.state &= ~HDF_ERR;
-	reg.state |= HDF_BSY;
 	switch (cm) {
 		case 0x90:			// internal diagnostic
 			reg.err = 0x01;
-			reg.state &= ~HDF_BSY;
 			break;
 		case 0x10:			// positioning on cylinder 0
 			reg.cyl = 0x0000;
-			reg.state &= ~HDF_BSY;
 			break;
 		case 0xe4:			// prepare read buffer
 			buf.pos = 0;
 			buf.mode = HDB_READ;
 			reg.state |= HDF_DRQ;
-			reg.state &= ~HDF_BSY;
 			break;
 		case 0xe8:
 			buf.pos = 0;		// prepare write buffer
 			buf.mode = HDB_WRITE;
 			reg.state |= HDF_DRQ;
-			reg.state &= ~HDF_BSY;
 			break;
 		case 0x50:			// format track
-			reg.state &= ~HDF_BSY;
 			break;
 		case 0x70:			// positioning
-			reg.state &= ~HDF_BSY;
 			break;
 		case 0xec:			// identification
 			clearBuf();
@@ -357,7 +344,6 @@ void ATADev::exec(uint8_t cm) {
 			buf.pos = 0;
 			buf.mode = HDB_READ;
 			reg.state |= HDF_DRQ;
-			reg.state &= ~HDF_BSY;
 			break;
 		default:
 			switch (cm & 0xf0) {
@@ -373,7 +359,6 @@ void ATADev::exec(uint8_t cm) {
 					reg.state |= HDF_DRQ;
 					break;
 				default:
-					reg.state &= ~HDF_BSY;
 					reg.state |= HDF_ERR;
 					reg.err |= HDF_ABRT;
 					printf("HDD exec: command %.2X isn't emulated\n",cm);
