@@ -1427,7 +1427,7 @@
                   <number>1</number>
                  </property>
                  <property name="maximum">
-                  <number>15</number>
+                  <number>16</number>
                  </property>
                  <property name="value">
                   <number>15</number>
@@ -1613,7 +1613,7 @@
                   <number>1</number>
                  </property>
                  <property name="maximum">
-                  <number>15</number>
+                  <number>16</number>
                  </property>
                  <property name="value">
                   <number>15</number>

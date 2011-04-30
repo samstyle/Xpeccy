@@ -42,7 +42,7 @@ extern DebugWin* dbg;
 extern DevelWin* dwin;
 extern MFiler* filer;
 
-#define	XPTITLE	"Xpeccy 0.4.4"
+#define	XPTITLE	"Xpeccy 0.4.990"
 
 EmulWin::EmulWin() {
 	setcuricon(":/images/logo.png");

@@ -117,7 +117,7 @@ uint16_t ATADev::in(int32_t prt) {
 	switch (prt) {
 		case HDD_DATA:
 			if ((buf.mode == HDB_READ) && (reg.state & HDF_DRQ)) {
-				res = (buf.data[buf.pos] << 8) | buf.data[buf.pos+1];
+				res = buf.data[buf.pos] | (buf.data[buf.pos+1] << 8);
 				buf.pos += 2;
 				if (buf.pos >= HDD_BUFSIZE) {
 					buf.pos = 0;
@@ -171,8 +171,8 @@ void ATADev::out(int32_t prt, uint16_t val) {
 	switch (prt) {
 		case HDD_DATA:
 			if ((buf.mode == HDB_WRITE) && (reg.state & HDF_DRQ)) {
-				buf.data[buf.pos++] = ((val & 0xff00) >> 8);
 				buf.data[buf.pos++] = (val & 0xff);
+				buf.data[buf.pos++] = ((val & 0xff00) >> 8);
 				if (buf.pos >= HDD_BUFSIZE) {
 					buf.pos = 0;
 					if ((reg.com & 0xf0) == 0x30) {
@@ -291,15 +291,23 @@ void ATADev::readSector() {
 
 void ATADev::writeSector() {
 	getSectorNumber();
+//printf("WRITE: lba = %i (%i)\n",lba,maxlba);
 	if (lba > maxlba) {			// sector not found
 		reg.state |= HDF_ERR;
 		reg.err |= (HDF_ABRT | HDF_IDNF);
 	} else {
 		std::ofstream file(image.c_str(),std::ios::binary | std::ios::in | std::ios::out);
+		if (!file.good()) {
+			file.open(image.c_str(),std::ios::binary | std::ios::out);
+			if (!file.good()) {
+				shithappens("Can't write to HDD image file");
+				iface = IDE_NONE;
+			}
+		}
 		file.seekp(lba * pass.bps);
 		file.write((char*)&buf.data[0],pass.bps);
 		file.close();
-		printf("NR: write sector %i\n",lba);
+//		printf("NR: write sector %i\n",lba);
 	}
 }
 

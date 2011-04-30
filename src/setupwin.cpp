@@ -222,6 +222,7 @@ void SetupWin::start() {
 	ui.hm_gsec->setValue(zx->ide->master.pass.spt);
 	ui.hm_ghd->setValue(zx->ide->master.pass.hds);
 	ui.hm_gcyl->setValue(zx->ide->master.pass.cyls);
+	ui.hm_glba->setValue(zx->ide->master.maxlba);
 
 	ui.hs_type->setCurrentIndex(ui.hm_type->findData(QVariant(zx->ide->slave.iface)));
 	ui.hs_model->setText(QDialog::trUtf8(zx->ide->slave.pass.model.c_str()));
@@ -231,6 +232,7 @@ void SetupWin::start() {
 	ui.hs_gsec->setValue(zx->ide->slave.pass.spt);
 	ui.hs_ghd->setValue(zx->ide->slave.pass.hds);
 	ui.hs_gcyl->setValue(zx->ide->slave.pass.cyls);
+	ui.hs_glba->setValue(zx->ide->slave.maxlba);
 // tape
 	ui.tpathle->setText(QDialog::trUtf8(zx->tape->path.c_str()));
 	buildtapelist();
@@ -317,6 +319,7 @@ void SetupWin::apply() {
 	zx->ide->master.pass.spt = ui.hm_gsec->value();
 	zx->ide->master.pass.hds = ui.hm_ghd->value();
 	zx->ide->master.pass.cyls = ui.hm_gcyl->value();
+	zx->ide->master.maxlba = ui.hm_glba->value();
 	
 	zx->ide->slave.iface = ui.hs_type->itemData(ui.hs_type->currentIndex()).toInt();
 	zx->ide->slave.pass.model = std::string(ui.hs_model->text().toUtf8().data(),40);
@@ -326,6 +329,9 @@ void SetupWin::apply() {
 	zx->ide->slave.pass.spt = ui.hs_gsec->value();
 	zx->ide->slave.pass.hds = ui.hs_ghd->value();
 	zx->ide->slave.pass.cyls = ui.hs_gcyl->value();
+	zx->ide->slave.maxlba = ui.hs_glba->value();
+	
+	zx->ide->refresh();
 
 // tools
 	dwin->opt.asmPath = std::string(ui.sjpathle->text().toUtf8().data());
