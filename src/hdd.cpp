@@ -225,7 +225,11 @@ void ATADev::getSectorNumber() {
 	if (canlba && (reg.head & 0x40)) {
 		lba = reg.sec | (reg.cyl << 8) | ((reg.head & 0x0f) << 24);
 	} else {
-		lba = ((reg.cyl * pass.hds + (reg.head & 0x0f)) * pass.spt) + reg.sec - 1;
+		if ((reg.sec <= pass.spt) && (reg.cyl < pass.cyls) && ((reg.head & 15) < pass.hds)) {
+			lba = ((reg.cyl * pass.hds + (reg.head & 0x0f)) * pass.spt) + reg.sec - 1;
+		} else {
+			lba = maxlba + 1;
+		}
 	}
 }
 
@@ -236,16 +240,17 @@ void ATADev::setSectorNumber() {
 		reg.head &= 0xf0;
 		reg.head |= ((lba >> 24) & 0x0f);
 	} else {
-		reg.sec = int(lba / pass.spt) + 1;
-		reg.head &= 0xf0;
-		reg.head |= int((lba + 1 - reg.sec) / (pass.hds * pass.spt)) / pass.spt;
-		reg.cyl = (lba + 1 - reg.sec - pass.spt * (reg.head & 0x0f)) / (pass.hds * pass.spt);
+		if (lba < maxlba) {
+			reg.sec = int(lba / pass.spt) + 1;
+			reg.head &= 0xf0;
+			reg.head |= int((lba + 1 - reg.sec) / (pass.hds * pass.spt)) / pass.spt;
+			reg.cyl = (lba + 1 - reg.sec - pass.spt * (reg.head & 0x0f)) / (pass.hds * pass.spt);
+		}
 	}
 }
 
 void ATADev::gotoNextSector() {
-	lba++;
-	if (lba >= maxlba) lba--;
+	if (lba < (maxlba - 1)) lba++;
 	setSectorNumber();
 }
 
