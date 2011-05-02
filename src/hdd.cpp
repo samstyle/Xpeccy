@@ -317,6 +317,18 @@ void ATADev::clearBuf() {
 	}
 }
 
+void copyStringToBuffer(uint8_t* dst, std::string sst, int len) {
+	sst.resize(len, ' ');
+	const char* src = sst.c_str();
+	while (len > 1) {
+		*(dst+1) = *(src);
+		*(dst) = *(src+1);
+		dst += 2;
+		src += 2;
+		len -= 2;
+	}
+}
+
 void ATADev::exec(uint8_t cm) {
 	reg.state &= ~HDF_ERR;
 	switch (cm) {
@@ -349,11 +361,11 @@ void ATADev::exec(uint8_t cm) {
 			buf.data[8] = pass.bpt & 0xff; buf.data[9] = ((pass.bpt & 0xff00) >> 8);		// bytes per track
 			buf.data[10] = pass.bps & 0xff; buf.data[11] = ((pass.bps & 0xff00) >> 8);		// bytes per sector
 			buf.data[12] = pass.spt & 0xff; buf.data[13] = ((pass.spt & 0xff00) >> 8);		// sector per track
-			memcpy(&buf.data[20],pass.serial.c_str(),20);						// serial
+			copyStringToBuffer(&buf.data[20],pass.serial,20);				// serial (20 bytes)
 			buf.data[40] = pass.type & 0xff; buf.data[41] = ((pass.type & 0xff00) >> 8);		// buffer type
 			buf.data[42] = pass.vol & 0xff; buf.data[43] = ((pass.vol & 0xff00) >> 8);		// buffer size
-			memcpy(&buf.data[46],pass.mcver.c_str(),8);						// microcode version
-			memcpy(&buf.data[54],pass.model.c_str(),40);						// model
+			copyStringToBuffer(&buf.data[46],pass.mcver,8);					// microcode version (8 bytes)
+			copyStringToBuffer(&buf.data[54],pass.model,10);				// model (40 bytes)
 			buf.pos = 0;
 			buf.mode = HDB_READ;
 			reg.state |= HDF_DRQ;
