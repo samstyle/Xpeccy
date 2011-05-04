@@ -50,6 +50,14 @@ MFiler *filer;
 
 Settings *sets;
 
+void setFlagBit(bool cond, int32_t* val, int32_t mask) {
+	if (cond) {
+		*val |= mask;
+	} else {
+		*val &= ~mask;
+	}
+}
+
 void shithappens(std::string msg) {
 	QMessageBox mbx(QMessageBox::Critical,"Shit happens",QString(msg.c_str()),QMessageBox::Ok);
 	mbx.exec();

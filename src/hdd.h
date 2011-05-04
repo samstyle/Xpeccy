@@ -53,16 +53,22 @@
 #define HDB_READ	0x01
 #define HDB_WRITE	0x02
 
+// ata flags
+#define ATA_IDLE	0x01
+#define ATA_STANDBY	0x02
+#define ATA_SLEEP	0x04
+#define ATA_LBA		0x08
+#define ATA_DMA		0x10
+
 class ATADev {
 	public:
 		ATADev();
 		std::string image;		// image file path
 		int32_t iface;
-//		uint16_t trk;			// real track (head pos) ??
-		bool canlba;			// true if HDD can LBA addresation
+//		bool canlba;			// true if HDD can LBA addresation
 		uint32_t lba;			// internal absolute sector number
 		uint32_t maxlba;		// maximum lba (calculated)
-//		bool wr;			// 1 on write commands
+		int32_t flags;
 		struct {
 			uint8_t data[HDD_BUFSIZE];
 			uint32_t pos;
@@ -96,6 +102,7 @@ class ATADev {
 		void out(int32_t,uint16_t);
 		uint16_t in(int32_t);
 		void exec(uint8_t);
+		void abort();
 		void clearBuf();
 		void readSector();
 		void writeSector();

@@ -33,6 +33,7 @@ std::vector<std::string> splitstr(std::string,const char*);
 uint8_t zx_in(int);
 void zx_out(int,uint8_t);
 void shithappens(std::string);
+void setFlagBit(bool,int32_t*,int32_t);
 
 extern ZXComp* zx;
 extern Sound* snd;
@@ -800,14 +801,14 @@ void Settings::save() {
 	sfile<<"master.model = "<<zx->ide->master.pass.model.c_str()<<"\n";
 	sfile<<"master.serial = "<<zx->ide->master.pass.serial.c_str()<<"\n";
 	sfile<<"master.image = "<<zx->ide->master.image.c_str()<<"\n";
-	sfile<<"master.lba = "<<(zx->ide->master.canlba?"y":"n")<<"\n";
+	sfile<<"master.lba = "<<((zx->ide->master.flags & ATA_LBA) ? "y" : "n")<<"\n";
 	sfile<<"master.maxlba = "<<int2str(zx->ide->master.maxlba)<<"\n";
 	sfile<<"master.chs = "<<int2str(zx->ide->master.pass.spt)<<"/"<<int2str(zx->ide->master.pass.hds)<<"/"<<int2str(zx->ide->master.pass.cyls)<<"\n";
 	sfile<<"slave.type = "<<int2str(zx->ide->slave.iface)<<"\n";
 	sfile<<"slave.model = "<<zx->ide->slave.pass.model.c_str()<<"\n";
 	sfile<<"slave.serial = "<<zx->ide->slave.pass.serial.c_str()<<"\n";
 	sfile<<"slave.image = "<<zx->ide->slave.image.c_str()<<"\n";
-	sfile<<"slave.lba = "<<(zx->ide->slave.canlba?"y":"n")<<"\n";
+	sfile<<"slave.lba = "<<((zx->ide->slave.flags & ATA_LBA) ? "y" : "n")<<"\n";
 	sfile<<"slave.maxlba = "<<int2str(zx->ide->slave.maxlba)<<"\n";
 	sfile<<"slave.chs = "<<int2str(zx->ide->slave.pass.spt)<<"/"<<int2str(zx->ide->slave.pass.hds)<<"/"<<int2str(zx->ide->slave.pass.cyls)<<"\n";
 
@@ -1073,7 +1074,7 @@ void Settings::load(bool dev) {
 						if (pnam=="master.type") zx->ide->master.iface = atoi(pval.c_str());
 						if (pnam=="master.model") zx->ide->master.pass.model = std::string(pval,0,40);
 						if (pnam=="master.serial") zx->ide->master.pass.serial = std::string(pval,0,20);
-						if (pnam=="master.lba") zx->ide->master.canlba = str2bool(pval);
+						if (pnam=="master.lba") setFlagBit(str2bool(pval),&zx->ide->master.flags, ATA_LBA);
 						if (pnam=="master.maxlba") zx->ide->master.maxlba = atoi(pval.c_str());
 						if (pnam=="master.image") zx->ide->master.image = pval;
 						if (pnam=="master.chs") {
@@ -1087,7 +1088,7 @@ void Settings::load(bool dev) {
 						if (pnam=="slave.type") zx->ide->slave.iface = atoi(pval.c_str());
 						if (pnam=="slave.model") zx->ide->slave.pass.model = std::string(pval,0,40);
 						if (pnam=="slave.serial") zx->ide->slave.pass.serial = std::string(pval,0,20);
-						if (pnam=="slave.lba") zx->ide->slave.canlba = str2bool(pval);
+						if (pnam=="slave.lba") setFlagBit(str2bool(pval),&zx->ide->slave.flags, ATA_LBA);
 						if (pnam=="slave.maxlba") zx->ide->slave.maxlba = atoi(pval.c_str());
 						if (pnam=="slave.image") zx->ide->slave.image = pval;
 						if (pnam=="slave.chs") {

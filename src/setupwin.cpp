@@ -17,6 +17,8 @@ extern Sound* snd;
 extern DevelWin* dwin;
 extern ZXComp* zx;
 
+void setFlagBit(bool,int32_t*,int32_t);
+
 SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	setModal(true);
 	ui.setupUi(this);
@@ -218,7 +220,7 @@ void SetupWin::start() {
 	ui.hm_model->setText(QDialog::trUtf8(zx->ide->master.pass.model.c_str()));
 	ui.hm_ser->setText(QDialog::trUtf8(zx->ide->master.pass.serial.c_str()));
 	ui.hm_path->setText(QDialog::trUtf8(zx->ide->master.image.c_str()));
-	ui.hm_islba->setChecked(zx->ide->master.canlba);
+	ui.hm_islba->setChecked(zx->ide->master.flags & ATA_LBA);
 	ui.hm_gsec->setValue(zx->ide->master.pass.spt);
 	ui.hm_ghd->setValue(zx->ide->master.pass.hds);
 	ui.hm_gcyl->setValue(zx->ide->master.pass.cyls);
@@ -228,7 +230,7 @@ void SetupWin::start() {
 	ui.hs_model->setText(QDialog::trUtf8(zx->ide->slave.pass.model.c_str()));
 	ui.hs_ser->setText(QDialog::trUtf8(zx->ide->slave.pass.serial.c_str()));
 	ui.hs_path->setText(QDialog::trUtf8(zx->ide->slave.image.c_str()));
-	ui.hs_islba->setChecked(zx->ide->slave.canlba);
+	ui.hs_islba->setChecked(zx->ide->slave.flags & ATA_LBA);
 	ui.hs_gsec->setValue(zx->ide->slave.pass.spt);
 	ui.hs_ghd->setValue(zx->ide->slave.pass.hds);
 	ui.hs_gcyl->setValue(zx->ide->slave.pass.cyls);
@@ -315,7 +317,8 @@ void SetupWin::apply() {
 	zx->ide->master.pass.model = std::string(ui.hm_model->text().toUtf8().data(),40);
 	zx->ide->master.pass.serial = std::string(ui.hm_ser->text().toUtf8().data(),20);
 	zx->ide->master.image = std::string(ui.hm_path->text().toUtf8().data());
-	zx->ide->master.canlba = ui.hm_islba->isChecked();
+	setFlagBit(ui.hm_islba->isChecked(),&(zx->ide->master.flags),ATA_LBA);
+//	zx->ide->master.canlba = ui.hm_islba->isChecked();
 	zx->ide->master.pass.spt = ui.hm_gsec->value();
 	zx->ide->master.pass.hds = ui.hm_ghd->value();
 	zx->ide->master.pass.cyls = ui.hm_gcyl->value();
@@ -325,7 +328,8 @@ void SetupWin::apply() {
 	zx->ide->slave.pass.model = std::string(ui.hs_model->text().toUtf8().data(),40);
 	zx->ide->slave.pass.serial = std::string(ui.hs_ser->text().toUtf8().data(),20);
 	zx->ide->slave.image = std::string(ui.hs_path->text().toUtf8().data());
-	zx->ide->slave.canlba = ui.hs_islba->isChecked();
+	setFlagBit(ui.hs_islba->isChecked(),&zx->ide->master.flags,ATA_LBA);
+//	zx->ide->slave.canlba = ui.hs_islba->isChecked();
 	zx->ide->slave.pass.spt = ui.hs_gsec->value();
 	zx->ide->slave.pass.hds = ui.hs_ghd->value();
 	zx->ide->slave.pass.cyls = ui.hs_gcyl->value();

@@ -22,7 +22,7 @@ bool IDE::in(uint16_t port,uint8_t* val) {
 			if (((port & 6) != 0) || zx->bdi->active) return false;
 			prt = (((port & 0xe0) >> 5) | (((port & 0x18) ^ 0x18) << 5) | 0x00f0);
 			res = true;
-			ishi = (port & ((iface==IDE_NEMO) ? 0x01 : 0x80));
+			ishi = (port & ((iface==IDE_NEMO) ? 0x01 : 0x100));
 			break;
 	}
 	if (res) {
@@ -48,7 +48,7 @@ bool IDE::out(uint16_t port,uint8_t val) {
 			res = true;
 			prt = ((port & 0xe0) >> 5) | (((port & 0x18) ^ 0x18) << 5) | 0x00f0;
 			if (prt == HDD_HEAD) cur = (prt & 0x08) ? &slave : &master;	// write to head reg: select MASTER/SLAVE
-			ishi = (port & ((iface==IDE_NEMO) ? 0x01 : 0x80));
+			ishi = (port & ((iface==IDE_NEMO) ? 0x01 : 0x100));
 			break;
 	}
 	if (res) {
@@ -72,13 +72,13 @@ void IDE::reset() {
 }
 
 void IDE::refresh() {
-	if (master.canlba) {
+	if (master.flags & ATA_LBA) {
 		master.pass.spt = 255;
 		master.pass.hds = 16;
 	} else {
 		master.maxlba = master.pass.cyls * master.pass.hds * master.pass.spt;
 	}
-	if (slave.canlba) {
+	if (slave.flags & ATA_LBA) {
 		slave.pass.spt = 255;
 		slave.pass.hds = 16;
 	} else {
@@ -98,22 +98,28 @@ ATADev::ATADev() {
 	pass.spt = 255;
 	pass.bpt = pass.bps * pass.spt;
 	pass.type = 1;
-	pass.serial = std::string(20,' ');
-	pass.mcver = std::string(8,' ');
-	pass.model = std::string(40,' ');
+	pass.serial = "";
+	pass.mcver = "";
+	pass.model = "";
+	flags = 0x00;
 }
 
 void ATADev::reset() {
 	reg.state = HDF_DRDY | HDF_DSC;
 	reg.err = 0x01;
+	reg.count = 0x01;
+	reg.sec = 0x01;
+	reg.cyl = 0x0000;
+	reg.head = 0x00;
 	buf.mode = HDB_IDLE;
 	buf.pos = 0;
+	flags &= ~(ATA_IDLE | ATA_SLEEP | ATA_STANDBY);
 }
 
 // set REG value to bus (16bit for data, low for other)
 uint16_t ATADev::in(int32_t prt) {
 	uint16_t res = 0xffff;
-	if ((iface != IDE_ATA) || (image == "")) return res;
+	if ((iface != IDE_ATA) || (image == "") || (flags & ATA_SLEEP)) return res;
 	switch (prt) {
 		case HDD_DATA:
 			if ((buf.mode == HDB_READ) && (reg.state & HDF_DRQ)) {
@@ -167,7 +173,7 @@ uint16_t ATADev::in(int32_t prt) {
 }
 
 void ATADev::out(int32_t prt, uint16_t val) {
-	if ((iface != IDE_ATA) || (image == "")) return;
+	if ((iface != IDE_ATA) || (image == "") || (flags & ATA_SLEEP)) return;
 	switch (prt) {
 		case HDD_DATA:
 			if ((buf.mode == HDB_WRITE) && (reg.state & HDF_DRQ)) {
@@ -222,7 +228,7 @@ void ATADev::out(int32_t prt, uint16_t val) {
 }
 
 void ATADev::getSectorNumber() {
-	if (canlba && (reg.head & 0x40)) {
+	if ((flags & ATA_LBA) && (reg.head & 0x40)) {
 		lba = reg.sec | (reg.cyl << 8) | ((reg.head & 0x0f) << 24);
 	} else {
 		if ((reg.sec <= pass.spt) && (reg.cyl < pass.cyls) && ((reg.head & 15) < pass.hds)) {
@@ -234,7 +240,7 @@ void ATADev::getSectorNumber() {
 }
 
 void ATADev::setSectorNumber() {
-	if (canlba && (reg.head & 0x40)) {
+	if ((flags & ATA_LBA) && (reg.head & 0x40)) {
 		reg.sec = lba & 0xff;
 		reg.cyl = (lba >> 8) & 0xffff;
 		reg.head &= 0xf0;
@@ -329,63 +335,161 @@ void copyStringToBuffer(uint8_t* dst, std::string sst, int len) {
 	}
 }
 
+void ATADev::abort() {
+	reg.state |= HDF_ERR;
+	reg.err |= HDF_ABRT;
+}
+
 void ATADev::exec(uint8_t cm) {
 	reg.state &= ~HDF_ERR;
+	printf("command %.2X\n",cm);
 	switch (cm) {
-		case 0x90:			// internal diagnostic
+		case 0x00:			// NOP
+			break;
+		case 0x20:			// read sectors (w/retry)
+		case 0x21:			// read sectors (w/o retry)
+			readSector();
+			buf.pos = 0;
+			buf.mode = HDB_READ;
+			reg.state |= HDF_DRQ;
+			break;
+		case 0x22:			// read long (w/retry) TODO: read sector & ECC
+		case 0x23:			// read long (w/o retry)
+			abort();
+			break;
+		case 0x30:			// write sectors (w/retry)
+		case 0x31:			// write sectors (w/o retry)
+		case 0x3c:			// write verify
+			buf.pos = 0;
+			buf.mode = HDB_WRITE;
+			reg.state |= HDF_DRQ;
+			break;
+		case 0x32:			// write long (w/retry)
+		case 0x33:			// write long (w/o retry)
+			abort();
+			break;
+		case 0x40:			// verify sectors (w/retry)	TODO: is it just read sectors until error or count==0 w/o send buffer to host?
+		case 0x41:			// verify sectors (w/o retry)
+			do {
+				readSector();
+				if (reg.state & HDF_BSY) break;
+				reg.count--;
+			} while (reg.count != 0);
+			break;
+		case 0x50:			// format track; TODO: cyl = track; count = spt; drq=1; wait for buffer write, ignore(?) buffer; format track;
+			break;
+		case 0x90:			// execute drive diagnostic; FIXME: both drives must do this
 			reg.err = 0x01;
 			break;
-		case 0x10:			// positioning on cylinder 0
-			reg.cyl = 0x0000;
+		case 0x91:			// initialize drive parameters; TODO: pass.spt = reg.count; pass.heads = (reg.head & 15) + 1;
 			break;
-		case 0xe4:			// prepare read buffer
+		case 0x94:			// standby immediate; TODO: if reg.count!=0 in idle/standby commands, HDD power off
+		case 0xe0:
+			flags |= ATA_STANDBY;
+			break;
+		case 0x95:			// idle immediate
+		case 0xe1:
+			flags |= ATA_IDLE;
+			break;
+		case 0x96:			// standby
+		case 0xe2:
+			flags |= ATA_STANDBY;
+			break;
+		case 0x97:			// idle
+		case 0xe3:
+			flags |= ATA_IDLE;
+			break;
+		case 0x98:			// check power mode
+		case 0xe5:			// if drive is in, set sector count register to 0x00, if idle - to 0xff
+			reg.count = (flags & ATA_IDLE) ? 0xff : 0x00;
+			break;
+		case 0x99:			// sleep
+		case 0xe6:
+			flags |= ATA_SLEEP;
+			break;
+		case 0x9a:			// vendor unique
+		case 0xc0:
+		case 0xc1:
+		case 0xc2:
+		case 0xc3:
+			abort();
+			break;
+		case 0xc4:			// read multiple; NOTE: doesn't support for 1-sector buffer
+			abort();
+			break;
+		case 0xc5:			// write multiple; NOTE: doesn't support for 1-sector buffer
+			abort();
+			break;
+		case 0xc6:			// set multiple mode; NOTE: only 1-sector reading supported
+			abort();
+			break;
+		case 0xc8:			// read DMA (w/retry)
+		case 0xc9:			// read DMA (w/o retry)
+			abort();
+			break;
+		case 0xca:			// write DMA (w/retry)
+		case 0xcb:			// write DMA (w/o retry)
+			abort();
+			break;
+		case 0xdb:			// acknowledge media chge
+			reg.state |= HDF_ERR;	// NOTE: HDD isn't removable, return abort error
+			reg.err |= HDF_ABRT;
+			break;
+		case 0xdc:			// boot - post-boot; TODO: do nothing?
+			break;
+		case 0xdd:			// boot - pre-boot; TODO: do nothing?
+			break;
+		case 0xde:			// door lock
+			break;
+		case 0xdf:			// door unlock
+			break;
+		case 0xe4:			// read buffer
 			buf.pos = 0;
 			buf.mode = HDB_READ;
 			reg.state |= HDF_DRQ;
 			break;
 		case 0xe8:
-			buf.pos = 0;		// prepare write buffer
+			buf.pos = 0;		// write buffer
 			buf.mode = HDB_WRITE;
 			reg.state |= HDF_DRQ;
 			break;
-		case 0x50:			// format track
+		case 0xe9:			// write same
+			abort();
 			break;
-		case 0x70:			// positioning
-			break;
-		case 0xec:			// identification
+		case 0xec:			// identify drive
 			clearBuf();
-			buf.data[0] = 0x00; buf.data[1] = 0x00;							// main word
+			buf.data[0] = 0x04; buf.data[1] = 0x00;							// main word
 			buf.data[2] = pass.cyls & 0xff; buf.data[3] = ((pass.cyls & 0xff00) >> 8);		// cylinders
-			buf.data[4] = 0x00; buf.data[5] = 0x00;							// reserved
+//			buf.data[4] = 0x00; buf.data[5] = 0x00;							// reserved
 			buf.data[6] = pass.hds & 0xff; buf.data[7] = ((pass.hds & 0xff00) >> 8);		// heads
 			buf.data[8] = pass.bpt & 0xff; buf.data[9] = ((pass.bpt & 0xff00) >> 8);		// bytes per track
 			buf.data[10] = pass.bps & 0xff; buf.data[11] = ((pass.bps & 0xff00) >> 8);		// bytes per sector
 			buf.data[12] = pass.spt & 0xff; buf.data[13] = ((pass.spt & 0xff00) >> 8);		// sector per track
-			copyStringToBuffer(&buf.data[20],pass.serial,20);				// serial (20 bytes)
+			copyStringToBuffer(&buf.data[20],pass.serial,20);					// serial (20 bytes)
 			buf.data[40] = pass.type & 0xff; buf.data[41] = ((pass.type & 0xff00) >> 8);		// buffer type
 			buf.data[42] = pass.vol & 0xff; buf.data[43] = ((pass.vol & 0xff00) >> 8);		// buffer size
-			copyStringToBuffer(&buf.data[46],pass.mcver,8);					// microcode version (8 bytes)
-			copyStringToBuffer(&buf.data[54],pass.model,10);				// model (40 bytes)
+			copyStringToBuffer(&buf.data[46],pass.mcver,8);						// microcode version (8 bytes)
+			copyStringToBuffer(&buf.data[54],pass.model,10);					// model (40 bytes)
+			buf.data[99] = ((flags & ATA_DMA) ? 0x01 : 0x00) | ((flags & ATA_LBA) ? 0x02 : 0x00);	// lba/dma support
 			buf.pos = 0;
 			buf.mode = HDB_READ;
 			reg.state |= HDF_DRQ;
 			break;
+		case 0xef:			// set features
+			break;
 		default:
 			switch (cm & 0xf0) {
-				case 0x20:
-					readSector();
-					buf.pos = 0;
-					buf.mode = HDB_READ;
-					reg.state |= HDF_DRQ;
+				case 0x10:			// 0x1x: recalibrate
+					reg.cyl = 0x0000;
 					break;
-				case 0x30:
-					buf.pos = 0;
-					buf.mode = HDB_WRITE;
-					reg.state |= HDF_DRQ;
+				case 0x70:			// seek; TODO: if cylinder/head is out of range - must be an error?
+					break;
+				case 0x80:			// vendor unique
+				case 0xf0:
+					abort();
 					break;
 				default:
-					reg.state |= HDF_ERR;
-					reg.err |= HDF_ABRT;
+					abort();
 					printf("HDD exec: command %.2X isn't emulated\n",cm);
 					break;
 			}
