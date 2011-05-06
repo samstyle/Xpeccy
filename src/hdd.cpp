@@ -32,7 +32,7 @@ bool IDE::in(uint16_t port,uint8_t* val) {
 			bus = cur->in(prt);
 			*val = (bus & 0x00ff);
 		}
-//		printf("ATA in\t%.4X (%.4X) = %.4X\n",prt,port,bus);
+//printf("ATA in\t%.4X (%.4X) = %.4X\n",prt,port,bus);
 	}
 	return res;
 }
@@ -60,7 +60,7 @@ bool IDE::out(uint16_t port,uint8_t val) {
 			bus |= val;
 			cur->out(prt,bus);
 		}
-//		printf("ATA out\t%.4X (%.4X) = %.4X\n",prt,port,bus);
+//printf("ATA out\t%.4X (%.4X) = %.4X\n",prt,port,bus);
 	}
 	return res;
 }
@@ -342,6 +342,7 @@ void ATADev::abort() {
 
 void ATADev::exec(uint8_t cm) {
 	reg.state &= ~HDF_ERR;
+	reg.err = 0x00;
 	printf("command %.2X\n",cm);
 	switch (cm) {
 		case 0x00:			// NOP
