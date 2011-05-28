@@ -252,7 +252,7 @@ void EmulWin::updateWin() {
 	int szw = zx->vid->wsze.h;
 	int szh = zx->vid->wsze.v;
 	setFixedSize(szw,szh);
-	int sdlflg = SDL_HWSURFACE;	// | SDL_FULLSCREEN;
+	int sdlflg = SDL_SWSURFACE;	// | SDL_FULLSCREEN;
 	if ((zx->vid->flags & VF_FULLSCREEN) && !(zx->vid->flags & VF_BLOCKFULLSCREEN)) {
 		sdlflg |= SDL_FULLSCREEN;
 	}

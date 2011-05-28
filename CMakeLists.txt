@@ -45,3 +45,5 @@ target_link_libraries(xpeccy
 	${ALSA_LIBRARY}
 	${ZLIB_LIBRARY}
 )
+
+install_targets(/bin xpeccy)
