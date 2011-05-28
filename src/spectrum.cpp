@@ -12,6 +12,7 @@
 //uint8_t zx_in(int);
 //void zx_out(int,uint8_t);
 
+/*
 ZOp::ZOp(void(*fn)(ZXBase*),int32_t tks,int32_t cnd,int32_t t1,int32_t t0,const char* nm,int32_t fl) {
 	name = nm;
 	func = fn;
@@ -30,7 +31,7 @@ ZOp::ZOp(void(*fn)(ZXBase*),int32_t tks,const char* nm) {
 	tcn0 = tcn1 = 0;
 	flags = 0;
 }
-
+*/
 ZXComp::ZXComp() {
 	sys = new ZXBase;
 	sys->cpu = new Z80(3.5);
@@ -322,8 +323,8 @@ ZOpResult ZXBase::exec() {
 		cpu->cod = mem->rd(cpu->pc++);
 		res = &inst[cpu->mod][cpu->cod];
 		cpu->t += res->t;
-		if (res->flags & ZOP_PREFIX) res->func(this);
-	} while (res->flags & ZOP_PREFIX);
+		if (res->flags & ZPREF) res->func(this);
+	} while (res->flags & ZPREF);
 	switch (res->cond) {
 		case CND_NONE: break;
 		case CND_Z: cpu->t += (cpu->f & FZ) ? res->tcn1 : res->tcn0; break;
