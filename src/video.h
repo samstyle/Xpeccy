@@ -52,10 +52,11 @@ class Video {
 	public:
 		Video(Memory*);
 		int flags;
-//		SDL_Surface *surf;
-//		SDL_Color pal[256];
+		bool intSignal;
+		bool intStrobe;
 		uint8_t* scrptr;
-		VSize full,bord,scrn,curr,synh;
+		uint8_t* scrimg;
+		VSize full,bord,curr,synh;
 		VSize lcut,rcut,vsze,wsze;
 		uint32_t frmsz, t, intsz, intpos;
 		struct {
@@ -67,19 +68,15 @@ class Video {
 		int iacount;		// счетчик для ladrz
 		int32_t mode;
 		float zoom,brdsize, pxcnt;
-		bool intupt,flash,curscr;
+		bool flash,curscr;
 		uint8_t fcnt,brdcol,scrbyte,prescr,atrbyte,ink,pap;
 		std::vector<VidLayout> layout;	// screen layouts
 		std::string curlay;		// current layout name
 		void tick();
 		void sync(int,float);
 		bool setlayout(std::string);
-//	void setgeometry(int,int,int,int,int,int,int);
 		void setborder(float);
 		void update();
-//	void blockFullScreen(bool);
 };
-
-// extern Video *vid;
 
 #endif

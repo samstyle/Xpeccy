@@ -258,7 +258,7 @@ void EmulWin::updateWin() {
 	}
 #if SDLMAINWIN
 	surf = SDL_SetVideoMode(szw,szh,8,sdlflg);
-	SDL_WM_SetCaption(XPTITLE,"");
+	SDL_WM_SetCaption(XPTITLE,XPTITLE);
 #else
 	surf = SDL_SetVideoMode(szw,szh,8,sdlflg | SDL_NOFRAME);
 #ifdef WIN32
@@ -266,7 +266,8 @@ void EmulWin::updateWin() {
 #endif
 #endif
 	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
-	zx->vid->scrptr = (uint8_t*)mwin->surf->pixels;
+	zx->vid->scrimg = (uint8_t*)mwin->surf->pixels;
+	zx->vid->scrptr = zx->vid->scrimg;
 }
 
 void EmulWin::setcuricon(QString nam) {

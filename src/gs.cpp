@@ -7,8 +7,6 @@ GS::GS() {
 	sys->cpu = new Z80(GS_FRQ);
 	sys->mem = new Memory(MEM_GS);
 	sys->io = new IOSys(IO_GS);
-//	sys->io = new IOSys(&gs_in,&gs_out);
-//	sys->vid = NULL;
 	sys->mem->pt0 = &sys->mem->rom[0][0];
 	sys->mem->pt1 = &sys->mem->ram[0][0];
 	sys->mem->pt2 = &sys->mem->ram[0][0];
@@ -17,7 +15,6 @@ GS::GS() {
 	pstate = 0x7e;
 	flags = GS_ENABLE;
 	stereo = GS_12_34;
-//	rset = false;
 }
 
 void GS::reset() {
@@ -45,7 +42,7 @@ void GS::sync(uint32_t tk) {
 	t = tk;
 	if (~flags & GS_ENABLE) return;
 	while (ln > 0) {
-		res = sys->exec();
+		res = sys->fetch();
 		res.exec(sys);
 		ln -= res.ticks;
 		cnt += res.ticks;
@@ -104,7 +101,6 @@ uint8_t GS::intin(int32_t prt) {
 		case 10: if (rp0 & 0x01) pstate &= 0x7f; else pstate |= 0x80; break;
 		case 11: if (vol1 & 0x20) pstate |= 1; else pstate &= 0xfe; break;
 	}
-//printf("GS in %i = %.2X\n",prt,res);
 	return res;
 }
 
@@ -133,5 +129,4 @@ void GS::intout(int32_t prt,uint8_t val) {
 		case 10: if (rp0 & 1) pstate &= 0x7f; else pstate |= 0x80; break;
 		case 11: if (vol1 & 64) pstate |= 1; else pstate &= 0xfe; break;
 	}
-//printf("GS out %i,%.2X\n",prt,val);
 }

@@ -1,6 +1,8 @@
 #ifndef _Z80_H
 #define _Z80_H
 
+#include <stdint.h>
+
 #ifndef WIN32
 	#include "endian.h"
 #else

@@ -1,6 +1,4 @@
 #include "bdi.h"
-//#include "z80.h"
-#include "spectrum.h"
 
 #include <stdio.h>
 
@@ -11,16 +9,13 @@
 
 bool vgdebug = false;
 
-// extern BDI* bdi;
-extern ZXComp* zx;
-
 // BDI
 
 BDI::BDI() {
 	for (int32_t i=0; i<4; i++) flop[i].id = i;
 	vg93.fptr = &flop[0];
-	tf = tab = BYTEDELAY;
-	t = 0;
+	vg93.tf = tab = BYTEDELAY;
+	vg93.t = 0;
 }
 
 int32_t BDI::getport(int32_t p) {
@@ -74,21 +69,19 @@ bool BDI::in(int32_t port, uint8_t* val) {
 
 void BDI::sync(uint32_t tn) {
 	uint32_t tz;
-	uint32_t tk = tn - t;
-//printf("%i\t%i\t%i\n",tn,t,tk);// throw(0);
-//	t = tn;
+	uint32_t tk = tn - vg93.t;
 	while (tk > 0) {
-		if (tk < tf) {
+		if (tk < vg93.tf) {
 			tz = tk;
-			tf -= tk;
+			vg93.tf -= tk;
 		} else {
-			tz = tf;
-			tf = tab;
-			vg93.fptr->next();
+			tz = vg93.tf;
+			vg93.tf = tab;
+			vg93.fptr->next(vg93.side, vg93.t);
 		}
-		t += tz;
+		vg93.t += tz;
 		vg93.idxold = vg93.idx;
-		vg93.idx = ((t - vg93.fptr->ti) < IDXDELAY);
+		vg93.idx = ((vg93.t - vg93.fptr->ti) < IDXDELAY);
 		vg93.strb = (!vg93.idxold) && vg93.idx;
 		if (vg93.wptr != NULL) {
 			vg93.count -= tz;
@@ -532,8 +525,8 @@ void vA0(VG93* p) {p->sdir = false; p->fptr->step(false);}
 void vA1(VG93* p) {p->sdir = true; p->fptr->step(true);}
 void vA2(VG93* p) {p->fptr->step(p->sdir);}
 
-void vA8(VG93* p) {if (p->turbo) {zx->bdi->tf = BYTEDELAY; p->count = 0; p->fptr->next();} else {p->count += zx->bdi->tf;}}
-void vA9(VG93* p) {p->count += zx->bdi->tf;}
+void vA8(VG93* p) {if (p->turbo) {p->tf = BYTEDELAY; p->count = 0; p->fptr->next(p->side,p->t);} else {p->count += p->tf;}}
+void vA9(VG93* p) {p->count += p->tf;}
 void vAA(VG93* p) {p->side = !p->side;}
 
 void vB0(VG93* p) {p->ic = *(p->wptr++);}
@@ -550,7 +543,7 @@ void vD0(VG93* p) {p->crc = 0xcdb4; p->crchi = true;}
 void vD1(VG93* p) {p->addcrc(*(p->wptr++));}
 void vD2(VG93* p) {p->addcrc(p->data);}
 void vD3(VG93* p) {p->addcrc(p->bus);}
-void vD4(VG93* p) {p->fcrc = p->fptr->rd(); p->fptr->next(); p->fcrc |= (p->fptr->rd() << 8);}	// read crc from floppy
+void vD4(VG93* p) {p->fcrc = p->fptr->rd(); p->fptr->next(p->side,p->t); p->fcrc |= (p->fptr->rd() << 8);}	// read crc from floppy
 void vD5(VG93* p) {
 //	printf ("CC\tVG: %.8X\tFLP: %.8X\n",p->crc,p->fcrc);
 	dlt = *(p->wptr++); if (p->crc == p->fcrc) p->wptr += (int8_t)dlt;
@@ -647,7 +640,6 @@ uint8_t VG93::getflag() {
 
 void VG93::setmr(bool z) {
 	if (!mr && z) {		// 0->1 : execute com 3
-//		wnum=0xff;
 		command(0x03);	// restore
 		mr = z;
 		sec = 1;
@@ -659,7 +651,6 @@ void VG93::setmr(bool z) {
 void VG93::command(uint8_t val) {
 	if (!mr) return;			// no commands aviable during master reset
 	if (idle) {
-//		printf ("vg com: %.2X\n",val);
 		com=val;
 		wptr = NULL;
 		if ((val&0xf0) == 0x00) wptr = vgwork[0];	// restore		00..0f
@@ -685,13 +676,4 @@ void VG93::command(uint8_t val) {
 		irq = false;
 		drq = false;
 	}
-/*
-	if (vgdebug) {
-		if ((wptr == vgwork[5]) | (wptr == vgwork[6])) {
-			printf ("VGCOM %.2X (T:%i, Sc:%i)\n",val,trk,sec);
-		} else {
-			printf("VGCOM %.2X\n",val);
-		}
-	}
-*/
 }

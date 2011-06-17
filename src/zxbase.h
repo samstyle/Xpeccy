@@ -47,7 +47,7 @@ class ZXBase {
 //		Video* vid;
 		ZOp* inst[9];
 //		void nmihandle();
-		ZOpResult exec();
+		ZOpResult fetch();
 		int32_t interrupt();
 };
 

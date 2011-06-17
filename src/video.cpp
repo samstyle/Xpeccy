@@ -1,19 +1,12 @@
+#include <math.h>
 #include "video.h"
-//#include "memory.h"
-//#include "z80.h"
-#include "spectrum.h"
 #include "emulwin.h"
-
-//#include <QApplication>
-//#include <QDesktopWidget>
 
 #define NOVIDEO 0
 
 extern EmulWin* mwin;
-extern ZXComp* zx;
 
 Video::Video(Memory* me) {
-//	sys->mem = new Memory;
 	int i,j,k,l;
 	int idx=0;
 	int sadr=0x0000;
@@ -55,17 +48,14 @@ Video::Video(Memory* me) {
 	layout.push_back(VidLayout("default",448,320,138,80,64,32,64,0));	// add default (pentagon) layout
 	setlayout("default");
 
-//	setgeometry(448,320,136,80,64,32,64);
 	curr.h = curr.v = 0;
 	curscr = false;
 	t = 0;
 	fcnt = 0.0;
-//	mod = - synh.h - synh.v * full.h;	// VS + 1st HS
 }
 
 void Video::setborder(float prc) {
 	brdsize = prc;
-//	update();
 	mwin->updateWin();
 }
 
@@ -85,40 +75,16 @@ bool Video::setlayout(std::string nm) {
 	synh = lay->sync;
 	intsz = lay->intsz;
 	intpos = lay->intpos;
-	scrn.h = full.h - synh.h;		// full visible size (w/o sync)
-	scrn.v = full.v - synh.v;
 	frmsz = full.h * full.v;
 	update();
-//	mwin->updateWin();
 	return true;
 }
-/*
-void Video::setgeometry(int p1,int p2,int p3,int p4,int p5,int p6,int p7) {
-	full.h = p1; full.v = p2;	// full size (+sync)
-	bord.h = p3; bord.v = p4;	// border size
-	synh.h = p5; synh.v = p6;
-	intsz = p7;
-	frmsz = p1 * p2;
-	update();
-}
-*/
-
-/*
-void Video::blockFullScreen(bool p) {
-	if (p) {
-		flags |= VF_BLOCKFULLSCREEN;
-	} else {
-		flags &= ~VF_BLOCKFULLSCREEN;
-	}
-	update();
-}
-*/
 
 void Video::update() {
-	lcut.h = synh.h + (bord.h - synh.h) * (float)(1.0 - brdsize);
-	lcut.v = synh.v + (bord.v - synh.v) * (float)(1.0 - brdsize);
-	rcut.h = full.h - (float)(1.0 - brdsize)*(full.h - bord.h - 256);
-	rcut.v = full.v - (float)(1.0 - brdsize)*(full.v - bord.v - 192);
+	lcut.h = synh.h + floor((bord.h - synh.h) * (1.0 - brdsize));
+	lcut.v = synh.v + floor((bord.v - synh.v) * (1.0 - brdsize));
+	rcut.h = full.h - floor((1.0 - brdsize)*(full.h - bord.h - 256));
+	rcut.v = full.v - floor((1.0 - brdsize)*(full.v - bord.v - 192));
 	vsze.h = rcut.h - lcut.h;
 	vsze.v = rcut.v - lcut.v;
 	wsze.h = vsze.h * ((flags & VF_DOUBLE) ? 2 : 1);
@@ -126,15 +92,16 @@ void Video::update() {
 }
 
 void Video::sync(int tk,float fr) {
+	intStrobe = false;
 	pxcnt += 7.0 * tk / fr;
 	t += pxcnt;
-//	printf("+ %f = %i\n",pxcnt,t);
 	while (pxcnt > 0) {
 		tick();
 		pxcnt -= 1.0;
 	}
 }
 
+// drawing 1 pixel
 void Video::tick() {
 	bool onscr = (curr.v >= lcut.v) && (curr.v < rcut.v);
 #if !NOVIDEO
@@ -143,13 +110,11 @@ void Video::tick() {
 		if ((curr.h < bord.h) || (curr.h > bord.h + 255) || (curr.v < bord.v) || (curr.v > bord.v + 191)) {
 			col=brdcol;
 		} else {
-//			printf("%X / %X\n",ladrz[0].atr5,sys->mem->ram[5] + 0x1800); throw(0);
 			switch (mode) {
 				case VID_NORMAL:
 					if (((curr.h - bord.h) & 7) == 0) {
 						scrbyte = curscr ? (*ladrz[iacount].scr7) : (*ladrz[iacount].scr5);
 						atrbyte = curscr ? (*ladrz[iacount].atr7) : (*ladrz[iacount].atr5);
-//						printf("%.2X : %.2X\n",scrbyte,atrbyte);
 						if ((atrbyte & 0x80) && flash) scrbyte ^= 255;
 						ink=((atrbyte & 0x40)>>3) | (atrbyte&7);
 						pap=((atrbyte & 0x78)>>3);
@@ -175,8 +140,8 @@ void Video::tick() {
 		}
 		*(scrptr++)=col;
 		if (flags & VF_DOUBLE) {
-			*(scrptr + mwin->surf->w - 1) = col;
-			*(scrptr + mwin->surf->w) = col;
+			*(scrptr + wsze.h - 1) = col;
+			*(scrptr + wsze.h) = col;
 			*(scrptr++)=col;
 		}
 	}
@@ -184,19 +149,15 @@ void Video::tick() {
 	if (++curr.h >= full.h) {
 		curr.h = 0;
 		if (onscr) {
-			scrptr += mwin->surf->w - wsze.h;
-			if (flags & VF_DOUBLE) scrptr += mwin->surf->w;
+			if (flags & VF_DOUBLE) scrptr += wsze.h;
 		}
 		if (++curr.v >= full.v) {
 			curr.v = 0;
-//			intupt = true;
-//	printf("%i\n",sys->cpu->t - sys->cpu->tb);
-			zx->sys->cpu->tb = zx->sys->cpu->t;
 			fcnt++; flash = fcnt & 0x20;
-			scrptr = (uint8_t*)mwin->surf->pixels;
+			scrptr = scrimg;
 			iacount=0;
 		}
-		intupt = (curr.v==intpos) && (curr.h < intsz);
-		zx->sys->istrb |= intupt;
+		intSignal = (curr.v==intpos) && (curr.h < intsz);
+		intStrobe |= intSignal;
 	}
 }

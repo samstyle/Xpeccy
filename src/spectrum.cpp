@@ -137,7 +137,7 @@ uint8_t ZXComp::in(int32_t port) {
 	uint8_t res = 0xff;
 	gs->sync(vid->t);
 #if IDE_ENABLE
-	if (ide->in(port,&res)) return res;
+	if (ide->in(port,&res,bdi->active)) return res;
 #endif
 	if (gs->in(port,&res)) return res;
 	if (bdi->in(port,&res)) return res;
@@ -172,7 +172,7 @@ uint8_t ZXComp::in(int32_t port) {
 void ZXComp::out(int32_t port,uint8_t val) {
 	gs->sync(vid->t);
 #if IDE_ENABLE
-	if (ide->out(port,val)) return;
+	if (ide->out(port,val,bdi->active)) return;
 #endif
 	if (gs->out(port,val)) return;
 	if (bdi->out(port,val)) return;
@@ -222,8 +222,10 @@ void ZXComp::out(int32_t port,uint8_t val) {
 }
 
 void ZXComp::exec() {
-	ZOpResult res = sys->exec();
-	vid->sync(res.ticks,sys->cpu->frq);
+	ZOpResult res = sys->fetch();
+	vid->sync(res.ticks, sys->cpu->frq);
+	sys->istrb = vid->intStrobe;
+//	sys->istrb |= vid->intupt;
 	res.exec(sys);
 	if (bdi->enable) {
 		bdi->sync(vid->t);
@@ -305,9 +307,9 @@ ZXBase::ZXBase () {
 	nmi = false;
 }
 
-ZOpResult ZXBase::exec() {
+ZOpResult ZXBase::fetch() {
 	ZOpResult zres;
-	istrb = false;
+//	istrb = false;
 	cpu->err = false;
 //	uint32_t fcnt = cpu->t;
 //	if (cpu->block & !dbg->active) {sync(4); return;}

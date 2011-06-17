@@ -2,9 +2,9 @@
 #include <string.h>
 
 #include "hdd.h"
-#include "spectrum.h"
+//#include "spectrum.h"
 
-extern ZXComp* zx;
+//extern ZXComp* zx;
 
 // IDE controller
 
@@ -12,14 +12,14 @@ IDE::IDE() {
 	cur = &master;
 }
 
-bool IDE::in(uint16_t port,uint8_t* val) {
+bool IDE::in(uint16_t port,uint8_t* val,bool bdiActive) {
 	bool res = false;
 	bool ishi;
 	int prt = 0;
 	switch (iface) {
 		case IDE_NEMO:
 		case IDE_NEMOA8:
-			if (((port & 6) != 0) || zx->bdi->active) return false;
+			if (((port & 6) != 0) || bdiActive) return false;
 			prt = (((port & 0xe0) >> 5) | (((port & 0x18) ^ 0x18) << 5) | 0x00f0);
 			res = true;
 			ishi = (port & ((iface==IDE_NEMO) ? 0x01 : 0x100));
@@ -37,14 +37,14 @@ bool IDE::in(uint16_t port,uint8_t* val) {
 	return res;
 }
 
-bool IDE::out(uint16_t port,uint8_t val) {
+bool IDE::out(uint16_t port,uint8_t val,bool bdiActive) {
 	bool res = false;
 	bool ishi;
 	int prt;
 	switch (iface) {
 		case IDE_NEMO:
 		case IDE_NEMOA8:
-			if (((port & 6) != 0) || zx->bdi->active) return false;
+			if (((port & 6) != 0) || bdiActive) return false;
 			res = true;
 			prt = ((port & 0xe0) >> 5) | (((port & 0x18) ^ 0x18) << 5) | 0x00f0;
 			if (prt == HDD_HEAD) cur = (prt & 0x08) ? &slave : &master;	// write to head reg: select MASTER/SLAVE

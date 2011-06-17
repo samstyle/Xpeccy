@@ -52,7 +52,7 @@ class Floppy {
 	uint32_t ti;
 	std::string path;		// путь к файлу
 	TrackIMG data[256];		// disk data (full)
-	void next();		// NEW: move to next byte
+	void next(bool,uint32_t);		// NEW: move to next byte
 	void step(bool);
 	void format();
 	void formtrdtrack(uint8_t, uint8_t*);
@@ -91,6 +91,8 @@ class VG93 {
 		uint16_t ic;
 		uint16_t crc,fcrc;
 		int32_t count;			// задержка;
+		uint32_t t;
+		uint32_t tf;			// tf: countdown for ticks @ floppy byte;
 		Floppy* fptr;
 		void tick();
 		void command(uint8_t);
@@ -105,7 +107,7 @@ class BDI {
 		bool enable;		// есть-нет
 		bool active;		// активен дос
 		bool pcatch;		// порт перехвачен
-		uint32_t t,tf,tab;	// tab: ticks @ floppy byte; tf: countdown for it;
+		uint32_t tab;		// tab: ticks @ floppy byte
 		Floppy flop[4];
 		VG93 vg93;
 		void sync(uint32_t);

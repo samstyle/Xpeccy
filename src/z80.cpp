@@ -1,9 +1,10 @@
-#include "debuger.h"
-#include "spectrum.h"
-#include "video.h"
-#include "sound.h"
-#include "tape.h"
+//#include "debuger.h"
+//#include "spectrum.h"
+//#include "video.h"
+//#include "sound.h"
+//#include "tape.h"
 // #include "bdi.h"
+#include "z80.h"
 
 Z80::Z80(float fr) {
 	t = tb = 0;

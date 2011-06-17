@@ -118,8 +118,8 @@ class IDE {
 		ATADev slave;
 		ATADev *cur;
 		int32_t iface;		// none, nemo, ...
-		bool in(uint16_t, uint8_t*);		// return value is iorge (true on accepting)
-		bool out(uint16_t, uint8_t);
+		bool in(uint16_t, uint8_t*, bool);		// return value is iorge (true on accepting)
+		bool out(uint16_t, uint8_t, bool);
 		uint16_t bus;
 		void reset();
 		void refresh();
