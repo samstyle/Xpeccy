@@ -35,7 +35,10 @@ class Settings {
 		std::vector<Profile> profs;
 		Profile* cprof;
 		struct {
+			std::string sndOutputName;
+			std::string scrshotDir,scrshotFormat;
 			std::string workDir,romDir,profPath;
+			std::string asmPath,projectsDir;
 		} opt;
 		void addProfile(std::string,std::string);
 		bool setProfile(std::string);
@@ -44,6 +47,5 @@ class Settings {
 		void load(bool);
 		void save();
 };
-//extern Settings *sets;
 
 #endif

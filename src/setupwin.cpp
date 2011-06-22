@@ -172,8 +172,8 @@ void SetupWin::start() {
 	ui.dszchk->setChecked((zx->vid->flags & VF_DOUBLE));
 //	ui.fscchk->setChecked(vid->fscreen);
 	ui.bszsld->setValue((int)(zx->vid->brdsize * 100));
-	ui.pathle->setText(QDialog::trUtf8(mwin->opt.scrshotDir.c_str()));
-	ui.ssfbox->setCurrentIndex(ui.ssfbox->findText(QDialog::trUtf8(mwin->opt.scrshotFormat.c_str())));
+	ui.pathle->setText(QDialog::trUtf8(sets->opt.scrshotDir.c_str()));
+	ui.ssfbox->setCurrentIndex(ui.ssfbox->findText(QDialog::trUtf8(sets->opt.scrshotFormat.c_str())));
 	ui.scntbox->setValue(sets->sscnt);
 	ui.sintbox->setValue(sets->ssint);
 	ui.geombox->setCurrentIndex(ui.geombox->findText(QDialog::trUtf8(zx->vid->curlay.c_str())));
@@ -181,7 +181,7 @@ void SetupWin::start() {
 	ui.senbox->setChecked(snd->enabled);
 	ui.mutbox->setChecked(snd->mute);
 	ui.gsrbox->setChecked(zx->gs->flags & GS_RESET);
-	ui.outbox->setCurrentIndex(ui.outbox->findText(QDialog::trUtf8(mwin->opt.sndOutputName.c_str())));
+	ui.outbox->setCurrentIndex(ui.outbox->findText(QDialog::trUtf8(sets->opt.sndOutputName.c_str())));
 	ui.ratbox->setCurrentIndex(ui.ratbox->findText(QString::number(snd->rate)));
 	ui.bvsld->setValue(snd->beepvol);
 	ui.tvsld->setValue(snd->tapevol);
@@ -239,8 +239,8 @@ void SetupWin::start() {
 	ui.tpathle->setText(QDialog::trUtf8(zx->tape->path.c_str()));
 	buildtapelist();
 // tools
-	ui.sjpathle->setText(QDialog::trUtf8(dwin->opt.asmPath.c_str()));
-	ui.prjdirle->setText(QDialog::trUtf8(dwin->opt.projectsDir.c_str()));
+	ui.sjpathle->setText(QDialog::trUtf8(sets->opt.asmPath.c_str()));
+	ui.prjdirle->setText(QDialog::trUtf8(sets->opt.projectsDir.c_str()));
 	buildmenulist();
 
 	show();
@@ -252,7 +252,8 @@ void SetupWin::apply() {
 	zx->opt.hwName = std::string(ui.machbox->currentText().toUtf8().data());
 	zx->setHardware(zx->opt.hwName);
 	zx->opt.romsetName = std::string(ui.rsetbox->currentText().toUtf8().data());
-	zx->sys->mem->setromptr(zx->opt.romsetName); zx->sys->mem->loadromset();
+	zx->sys->mem->setromptr(zx->opt.romsetName);
+	zx->sys->mem->loadromset(sets->opt.romDir);
 	zx->sys->io->resafter = ui.reschk->isChecked();
 	zx->sys->mem->res = ui.resbox->currentIndex();
 	switch(ui.mszbox->currentIndex()) {
@@ -269,25 +270,25 @@ void SetupWin::apply() {
 	if (ui.dszchk->isChecked()) zx->vid->flags |= VF_DOUBLE; else zx->vid->flags &= ~VF_DOUBLE;
 //	vid->fscreen = ui.fscchk->isChecked();
 	zx->vid->brdsize = ui.bszsld->value()/100.0;
-	mwin->opt.scrshotDir = std::string(ui.pathle->text().toUtf8().data());
-	mwin->opt.scrshotFormat = std::string(ui.ssfbox->currentText().toUtf8().data());
+	sets->opt.scrshotDir = std::string(ui.pathle->text().toUtf8().data());
+	sets->opt.scrshotFormat = std::string(ui.ssfbox->currentText().toUtf8().data());
 	sets->sscnt = ui.scntbox->value();
 	sets->ssint = ui.sintbox->value();
 	zx->vid->setlayout(std::string(ui.geombox->currentText().toUtf8().data()));
 	mwin->updateWin();
 // sound
-	std::string oname = mwin->opt.sndOutputName;
+	std::string oname = sets->opt.sndOutputName;
 	int orate = snd->rate;
 	snd->enabled = ui.senbox->isChecked();
 	snd->mute = ui.mutbox->isChecked();
 	if (ui.gsrbox->isChecked()) zx->gs->flags |= GS_RESET; else zx->gs->flags &= ~GS_RESET;
-	mwin->opt.sndOutputName = std::string(ui.outbox->currentText().toUtf8().data());
+	sets->opt.sndOutputName = std::string(ui.outbox->currentText().toUtf8().data());
 	snd->rate = ui.ratbox->currentText().toInt();
 	snd->beepvol = ui.bvsld->value();
 	snd->tapevol = ui.tvsld->value();
 	snd->ayvol = ui.avsld->value();
 	snd->gsvol = ui.gvsld->value();
-	if ((oname != mwin->opt.sndOutputName) || (orate != snd->rate)) snd->setoutptr(mwin->opt.sndOutputName);
+	if ((oname != sets->opt.sndOutputName) || (orate != snd->rate)) snd->setoutptr(sets->opt.sndOutputName);
 	zx->aym->sc1->settype(ui.schip1box->itemData(ui.schip1box->currentIndex()).toInt());
 	zx->aym->sc2->settype(ui.schip2box->itemData(ui.schip2box->currentIndex()).toInt());
 	zx->aym->sc1->stereo = ui.stereo1box->itemData(ui.stereo1box->currentIndex()).toInt();
@@ -338,8 +339,8 @@ void SetupWin::apply() {
 	zx->ide->refresh();
 
 // tools
-	dwin->opt.asmPath = std::string(ui.sjpathle->text().toUtf8().data());
-	dwin->opt.projectsDir = std::string(ui.prjdirle->text().toUtf8().data());
+	sets->opt.asmPath = std::string(ui.sjpathle->text().toUtf8().data());
+	sets->opt.projectsDir = std::string(ui.prjdirle->text().toUtf8().data());
 
 	snd->defpars();
 	zx->vid->update();
@@ -472,7 +473,7 @@ void SetupWin::updfrq() {
 void SetupWin::chabsz() {ui.bszlab->setText(QString::number(ui.bszsld->value()).append("%"));}
 
 void SetupWin::selsspath() {
-	QString fpath = QFileDialog::getExistingDirectory(this,"Screenshots folder",QDialog::trUtf8(mwin->opt.scrshotDir.c_str()),QFileDialog::ShowDirsOnly);
+	QString fpath = QFileDialog::getExistingDirectory(this,"Screenshots folder",QDialog::trUtf8(sets->opt.scrshotDir.c_str()),QFileDialog::ShowDirsOnly);
 	if (fpath!="") ui.pathle->setText(fpath);
 }
 
@@ -576,7 +577,7 @@ void SetupWin::ssjapath() {
 }
 
 void SetupWin::sprjpath() {
-	QString fnam = QFileDialog::getExistingDirectory(this,"Projects file",QDialog::trUtf8(dwin->opt.projectsDir.c_str()),QFileDialog::ShowDirsOnly);
+	QString fnam = QFileDialog::getExistingDirectory(this,"Projects file",QDialog::trUtf8(sets->opt.projectsDir.c_str()),QFileDialog::ShowDirsOnly);
 	if (fnam!="") ui.prjdirle->setText(fnam);
 }
 

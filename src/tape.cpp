@@ -1,13 +1,10 @@
 #include "tape.h"
-//#include "video.h"
-//#include "z80.h"
 #include "spectrum.h"
 
 #include <QMessageBox>
 #include <QString>
 
 extern ZXComp* zx;
-//extern Tape* tape;
 
 Tape::Tape() {
 	flags = pos = block = lastick = 0;

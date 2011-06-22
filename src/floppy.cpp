@@ -6,10 +6,8 @@
 #include <QDebug>
 
 #include "bdi.h"
-//#include "spectrum.h"
 #include "filer.h"
 
-//extern ZXComp* zx;
 extern MFiler* filer;
 
 uint8_t trd_8e1[] = {

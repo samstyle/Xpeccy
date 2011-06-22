@@ -4,17 +4,8 @@
 
 #include <sstream>
 
-//#include "video.h"
-//#include "memory.h"
-//#include "iosys.h"
-//#include "z80.h"
-//#include "keyboard.h"
 #include "spectrum.h"
 #include "sound.h"
-//#include "bdi.h"
-//#include "tape.h"
-//#include "hdd.h"
-//#include "gs.h"
 
 #include "emulwin.h"
 #include "settings.h"
@@ -27,20 +18,8 @@
 	#include <direct.h>
 #endif
 
-//Video *vid;
-//Memory *mem;
-//IOSys *iosys;
-//HardWare *hw;
-//Z80 *cpu;
 ZXComp* zx;
-//Spec* sys;
 Sound *snd;
-//Keyboard *keyb;
-//BDI *bdi;
-//Tape *tape;
-//Mouse *mouse;
-//IDE *ide;
-//GS *gs;
 
 EmulWin *mwin;
 DebugWin *dbg;
@@ -142,6 +121,8 @@ int main(int ac,char** av) {
 			mwin->show();
 #endif
 			sets->load(false);
+			mwin->updateWin();
+			mwin->makeBookmarkMenu();
 			mwin->reset();
 
 			for(i=1;i<ac;i++) filer->loadsomefile(std::string(av[i]),0);
@@ -163,11 +144,6 @@ int main(int ac,char** av) {
 	}
 	catch (const char* s) {
 		shithappens(s);
-//		QMessageBox mbx;
-//		mbx.setIcon(QMessageBox::Critical);
-//		mbx.setWindowTitle("Shit happens");
-//		mbx.setText(QString(s));
-//		mbx.exec();
 		SDL_Quit();
 		return 1;
 	}

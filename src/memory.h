@@ -39,7 +39,7 @@ class Memory {
 	void save(std::string,int32_t,bool);
 	std::vector<RomSet> rsetlist;
 	RomSet *romset;
-	void loadromset();
+	void loadromset(std::string);
 	void setromptr(std::string);
 	void setram(uint8_t);
 	void setrom(uint8_t);

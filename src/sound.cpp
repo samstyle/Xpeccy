@@ -1,9 +1,5 @@
-//#include "video.h"
-//#include "tape.h"
-//#include "z80.h"
 #include "sound.h"
 #include "spectrum.h"
-//#include "gs.h"
 
 #include <iostream>
 #if HAVESDLSOUND
@@ -11,8 +7,6 @@
 #endif
 
 extern ZXComp* zx;
-//extern Tape* tape;
-//extern GS* gs;
 extern Sound* snd;
 
 bool noizes[0x20000];		// here iz noize values [generated at start]

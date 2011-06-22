@@ -5,33 +5,6 @@
 #include "z80/tables.c"
 #include "z80/instr.c"
 
-//extern Settings* sets;
-// extern BDI* bdi;
-//extern HardWare* hw;
-
-//uint8_t zx_in(int);
-//void zx_out(int,uint8_t);
-
-/*
-ZOp::ZOp(void(*fn)(ZXBase*),int32_t tks,int32_t cnd,int32_t t1,int32_t t0,const char* nm,int32_t fl) {
-	name = nm;
-	func = fn;
-	t = tks;
-	cond = cnd;
-	tcn0 = t0;
-	tcn1 = t1;
-	flags = fl;
-}
-
-ZOp::ZOp(void(*fn)(ZXBase*),int32_t tks,const char* nm) {
-	name = nm;
-	func = fn;
-	t = tks;
-	cond = CND_NONE;
-	tcn0 = tcn1 = 0;
-	flags = 0;
-}
-*/
 ZXComp::ZXComp() {
 	sys = new ZXBase;
 	sys->cpu = new Z80(3.5);
@@ -225,7 +198,6 @@ void ZXComp::exec() {
 	ZOpResult res = sys->fetch();
 	vid->sync(res.ticks, sys->cpu->frq);
 	sys->istrb = vid->intStrobe;
-//	sys->istrb |= vid->intupt;
 	res.exec(sys);
 	if (bdi->enable) {
 		bdi->sync(vid->t);
@@ -245,7 +217,6 @@ void ZXComp::exec() {
 
 void ZXComp::INTHandle() {
 	int32_t res = sys->interrupt();
-//printf("%i\n",res);
 	vid->sync(res,sys->cpu->frq);
 }
 
@@ -267,7 +238,6 @@ void ZXComp::setHardware(std::string nam) {
 		if (hwlist[i].name == nam) {
 			hw = &hwlist[i];
 			sys->hwflags = hw->flags;
-//			sys->mem->mask = hw->mask;
 			break;
 		}
 	}
@@ -282,20 +252,6 @@ void ZXComp::addHardware(std::string nam, int typ, int msk, int flg) {
 	hwlist.push_back(nhw);
 }
 
-/*
-void ZXComp::addHardware(std::string nam,int(*gpfnc)(int),void(*ofnc)(int,uint8_t),uint8_t(*ifnc)(int),void(*sfnc)(), int msk, int flg) {
-	HardWare newmac;
-	newmac.name = nam;
-	newmac.mask = msk;
-	newmac.getport = gpfnc;
-	newmac.out = ofnc;
-	newmac.in = ifnc;
-	newmac.setrom = sfnc;
-	newmac.flags = flg;
-	hwlist.push_back(newmac);
-}
-*/
-
 ZXBase::ZXBase () {
 	inst[0] = nopref;
 	inst[1] = ixpref;
@@ -309,10 +265,7 @@ ZXBase::ZXBase () {
 
 ZOpResult ZXBase::fetch() {
 	ZOpResult zres;
-//	istrb = false;
 	cpu->err = false;
-//	uint32_t fcnt = cpu->t;
-//	if (cpu->block & !dbg->active) {sync(4); return;}
 	if (cpu->nextei) {
 		cpu->iff1 = cpu->iff2 = true;
 		cpu->nextei = false;
@@ -338,13 +291,8 @@ ZOpResult ZXBase::fetch() {
 		case CND_CPIR: cpu->t += ((cpu->bc != 1) && (cpu->a != mem->rd(cpu->hl))) ? res->tcn1 : res->tcn0; break;
 		default: printf("undefined condition\n"); throw(0);
 	}
-//	if (vid != NULL) {vid->sync(cpu->t - cpu->ti, cpu->frq); fcnt = cpu->t;}
 	zres.exec = res->func;
-//	res->func(this);
 	if ((hwflags & IO_WAIT) && (hwflags & WAIT_ON) && (cpu->t & 1)) cpu->t++;		// WAIT
-//	if ((cpu->hpc > 0x3f) && nmi) nmihandle();					// NMI
-//	if ((vid != NULL) && (cpu->t > fcnt)) vid->sync(cpu->t - fcnt, cpu->frq);
-//	return (cpu->t - cpu->ti);
 	zres.ticks = cpu->t - cpu->ti;
 	return zres;
 }

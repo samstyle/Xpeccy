@@ -2,9 +2,6 @@
 #include <string.h>
 
 #include "hdd.h"
-//#include "spectrum.h"
-
-//extern ZXComp* zx;
 
 // IDE controller
 
