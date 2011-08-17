@@ -1,25 +1,11 @@
-#include "emulwin.h"
-#include "settings.h"
-#include "debuger.h"
 #include "memory.h"
-//#include "video.h"
-#include "sound.h"
 #include "spectrum.h"
-//#include "z80.h"
-//#include "iosys.h"
-//#include "bdi.h"
-//#include "gs.h"
 
 #include <QMessageBox>
 #include <string>
 #include <fstream>
 
-extern Settings* sets;
-//extern BDI* bdi;
-//extern GS* gs;
 extern ZXComp* zx;
-extern Sound* snd;
-extern EmulWin* mwin;
 
 Memory::Memory(int tp) {
 	type = tp;
@@ -355,7 +341,7 @@ void Memory::setromptr(std::string nam) {
 	}
 }
 
-void Memory::loadromset() {
+void Memory::loadromset(std::string romDir) {
 	int i,ad;
 	std::string fpath;
 	for (i=0; i<8; i++) {
@@ -363,9 +349,9 @@ void Memory::loadromset() {
 			for (ad=0;ad<0x4000;ad++) rom[i][ad]=0xff;
 		} else {
 #ifndef WIN32
-			fpath = sets->opt.romDir + "/" + romset->roms[i].path;
+			fpath = romDir + "/" + romset->roms[i].path;
 #else
-			fpath = sets->opt.romDir + "\\" + romset->roms[i].path;
+			fpath = romDir + "\\" + romset->roms[i].path;
 #endif
 			std::ifstream file(fpath.c_str());
 			if (file.good()) {
@@ -385,9 +371,9 @@ void Memory::loadromset() {
 		}
 	} else {
 #ifndef WIN32
-			fpath = sets->opt.romDir + "/" + zx->opt.GSRom;
+			fpath = romDir + "/" + zx->opt.GSRom;
 #else
-			fpath = sets->opt.romDir + "\\" + zx->opt.GSRom;
+			fpath = romDir + "\\" + zx->opt.GSRom;
 #endif
 			std::ifstream file(fpath.c_str());
 			if (file.good()) {

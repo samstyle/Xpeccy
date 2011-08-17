@@ -1,14 +1,9 @@
-//#include "video.h"
-//#include "memory.h"
-//#include "z80.h"
 #include "bdi.h"
 #include "spectrum.h"
 
 #include "debuger.h"
 #include "emulwin.h"
-// #include "dbg_mnem.h"
 
-//extern BDI* bdi;
 extern ZXComp* zx;
 extern EmulWin* mwin;
 

@@ -18,8 +18,6 @@
 
 class ZXBase;
 struct ZOp {
-//	ZOp(void(*)(ZXBase*),int32_t,int32_t,int32_t,int32_t,const char*,int32_t);
-//	ZOp(void(*)(ZXBase*),int32_t,const char*);
 	int32_t t;		// Z80 ticks on execution (base, w/o prefixes & conditions)
 	int32_t cond;		// condition type
 	int32_t tcn1;
@@ -44,9 +42,7 @@ class ZXBase {
 		Z80 *cpu;
 		Memory* mem;
 		IOSys* io;
-//		Video* vid;
 		ZOp* inst[9];
-//		void nmihandle();
 		ZOpResult fetch();
 		int32_t interrupt();
 };

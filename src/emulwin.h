@@ -52,8 +52,8 @@ struct RZXFrame {
 		SDL_Surface* surf;
 		SDL_Color zxpal[256];
 		struct {
-			std::string sndOutputName;
-			std::string scrshotDir,scrshotFormat;
+//			std::string sndOutputName;
+//			std::string scrshotDir,scrshotFormat;
 //			std::string workDir,romDir,optPath;
 		} opt;
 		void repause(bool,int);

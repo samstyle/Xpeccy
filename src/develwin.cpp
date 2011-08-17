@@ -58,14 +58,14 @@ void DevelWin::compile() {
 	if (prj.name=="" || prj.files.size()==0) return;
 	saveprj();
 	ui.ficons->clear();
-	QString sjap(opt.asmPath.c_str());
+	QString sjap(sets->opt.asmPath.c_str());
 	if (!QFile::exists(sjap)) {
 		shithappens("<b>SJAsm file doesn't exist</b>");
 		return;
 	}
 	QProcess proc;
 	proc.setWorkingDirectory(prjdir.absolutePath() + "/" + prj.name + "/");
-	proc.start(QString(opt.asmPath.c_str()),QStringList() << prj.files[0].name);
+	proc.start(QString(sets->opt.asmPath.c_str()),QStringList() << prj.files[0].name);
 	proc.waitForFinished(60000);			// 1 minute for finishing compilation
 	ui.ficons->setText(QDialog::trUtf8(proc.readAll()));
 	prj.build++;
@@ -210,12 +210,12 @@ void DevelWin::saveprj() {
 }
 
 void DevelWin::start() {
-	QDir dir(QString(opt.projectsDir.c_str()));
+	QDir dir(QString(sets->opt.projectsDir.c_str()));
 	if (!dir.exists()) {
 		shithappens("<b>Projects directory not exists</b><br>Select it correctly first");
 		return;
 	}
-	prjdir = QDir(QString(opt.projectsDir.c_str()));
+	prjdir = QDir(QString(sets->opt.projectsDir.c_str()));
 	makepmenu();
 	show();
 }

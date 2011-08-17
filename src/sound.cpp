@@ -1,9 +1,5 @@
-//#include "video.h"
-//#include "tape.h"
-//#include "z80.h"
 #include "sound.h"
 #include "spectrum.h"
-//#include "gs.h"
 
 #include <iostream>
 #if HAVESDLSOUND
@@ -11,8 +7,6 @@
 #endif
 
 extern ZXComp* zx;
-//extern Tape* tape;
-//extern GS* gs;
 extern Sound* snd;
 
 static uint8_t sndBuffer[0x2000];
