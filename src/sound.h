@@ -1,14 +1,11 @@
 #ifndef _SOUND_H
 #define _SOUND_H
 
-#define HAVESDLSOUND 0
+#define HAVESDLSOUND 1
 
 #include <vector>
 #include <string>
 #include <stdint.h>
-#if HAVESDLSOUND
-	#include <SDL_mixer.h>
-#endif
 
 #ifndef WIN32
 	#include <alsa/asoundlib.h>
@@ -92,8 +89,8 @@ class AYSys {
 struct Sound {
 	public:
 		Sound();
-		uint8_t sndbuf[4000];
-		uint8_t* sbptr;
+//		uint8_t sndbuf[4000];
+//		uint8_t* sbptr;
 		std::vector<OutSys> outsyslist;
 		OutSys *outsys;
 		void addoutsys(std::string, bool(*)(),void(*)(),void(*)());
@@ -112,9 +109,6 @@ struct Sound {
 		uint8_t lev,levr,levl;
 		uint8_t beepvol,tapevol,ayvol,gsvol;
 		uint32_t tatbyte;
-#if HAVESDLSOUND
-		Mix_Chunk *ch;
-#endif
 #ifndef WIN32
 		char *device;		// alsa
 		snd_output_t *output;

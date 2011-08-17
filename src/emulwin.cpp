@@ -178,7 +178,7 @@ void EmulWin::emulframe() {
 //			printf("%i\n",snd->sbptr - snd->sndbuf);
 			snd->outsys->play();
 		}
-		snd->sbptr = snd->sndbuf;
+//		snd->sbptr = snd->sndbuf;
 		snd->t = zx->vid->t;
 		do {
 			exec();

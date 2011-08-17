@@ -7,7 +7,7 @@
 
 #include <iostream>
 #if HAVESDLSOUND
-	#include <SDL_mixer.h>
+	#include <SDL/SDL_sound.h>
 #endif
 
 extern ZXComp* zx;
@@ -15,7 +15,13 @@ extern ZXComp* zx;
 //extern GS* gs;
 extern Sound* snd;
 
-bool noizes[0x20000];		// here iz noize values [generated at start]
+static uint8_t sndBuffer[0x2000];
+static uint8_t ringBuffer[0x4000];
+static bool noizes[0x20000];		// here iz noize values [generated at start]
+void shithappens(std::string);
+static int ringPos = 0;
+static int playPos = 0;
+static bool firstPass = true;
 
 uint8_t envforms[16][33]={
 /*	  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32	*/
@@ -71,11 +77,11 @@ void Sound::setoutptr(std::string nam) {
 		}
 	}
 	if (outsys == NULL) {
-		printf("Can't find sound system. Reset to NULL\n");
+		shithappens("Can't find sound system. Reset to NULL\n");
 		outsys = &outsyslist[0];
 	}
 	if (!outsys->open()) {
-		printf("Can't open sound system. Reset to NULL\n");
+		shithappens("Can't open sound system. Reset to NULL\n");
 		outsys = &outsyslist[0];
 	}
 }
@@ -102,9 +108,14 @@ void Sound::sync() {
 	levr += tmpl.r * ayvol / 16.0;
 	tmpl = zx->gs->getvol();
 	levl += tmpl.l * gsvol / 16.0;
-	levr += tmpl.r * gsvol / 16.0;	
-	*(sbptr++) = levl;
-	*(sbptr++) = levr;
+	levr += tmpl.r * gsvol / 16.0;
+	ringBuffer[ringPos] = levl;
+	ringPos++;
+	ringBuffer[ringPos] = levr;
+	ringPos++;
+	ringPos &= 0x3fff;
+	//	*(sbptr++) = levl;
+//	*(sbptr++) = levr;
 #endif
 //	if (sbptr - sndbuf > 1024) sbptr--;
 }
@@ -229,41 +240,59 @@ void AYProc::setreg(uint8_t value) {
 // Sound output
 //------------------------
 
+void fillBuffer(int len) {
+	int bufPos = 0;
+	while (len > 0) {
+		sndBuffer[bufPos] = ringBuffer[playPos];
+		bufPos++;
+		playPos++;
+		playPos &= 0x3fff;
+		len--;
+	}
+}
+
 bool null_open() {return true;}
 void null_play() {}
 void null_close() {}
 
 #if HAVESDLSOUND
 
+void sdlPlayAudio(void*,Uint8* stream, int len) {
+	fillBuffer(len);
+	if (firstPass) {
+		firstPass = false;
+	} else {
+		SDL_LockAudio();
+		SDL_MixAudio(stream,sndBuffer,len,SDL_MIX_MAXVOLUME);
+		SDL_UnlockAudio();
+	}
+}
+
 bool sdlopen() {
 	printf("Open SDL audio device...");
-	if (Mix_OpenAudio(snd->rate,AUDIO_S8,1,4096) < 0) {
-		printf("failed: %s\n",Mix_GetError());
+	SDL_AudioSpec* asp = new SDL_AudioSpec;
+	asp->freq = snd->rate;
+	asp->format = AUDIO_U8;
+	asp->channels = 2;
+//	asp->samples = 1024;
+	asp->callback = &sdlPlayAudio;
+	asp->userdata = NULL;
+	if (SDL_OpenAudio(asp,NULL) < 0) {
+		printf("failed\n");
 		return false;
 	}
-//	Mix_AllocateChannels(8);
-//	Mix_Volume(-1,MIX_MAX_VOLUME);
+	SDL_PauseAudio(0);
 	printf("OK\n");
 	return true;
 }
 
 void sdlplay() {
-	int len = snd->sbptr - snd->sndbuf;
-	if (len == 0) return;
-	Mix_Chunk *ch = Mix_QuickLoad_RAW(snd->sndbuf,len);
-//printf("chunk data:\n");
-//int i;
-//for (i=0;i<len;i++) printf("%.2X  ",*(ch->abuf + i));
-//printf("\n"); throw(0);
-	if (Mix_PlayChannel(-1,ch,0) < 0) {
-		printf("Mix_PlayChannel error: %s\n",Mix_GetError());
-	}
-	snd->sbptr = snd->sndbuf;
 }
 
 void sdlclose() {
 	printf("Close SDL audio device\n");
-	Mix_CloseAudio();
+	SDL_PauseAudio(1);
+	SDL_CloseAudio();
 }
 
 #endif
@@ -282,15 +311,16 @@ bool oss_open() {
 
 void oss_play() {
 	if (snd->audio < 0) return;
+//	fillBuffer(snd->bufsize);
+	uint8_t* ptr = ringBuffer;
+	int fsz = ringPos;
 	int res;
-	uint8_t* ptr = snd->sndbuf;
-	int fsz = snd->sbptr - ptr;
 	while (fsz > 0) {
-		res = write(snd->audio, ptr, fsz);
+		res = write(snd->audio,ptr,fsz);
+		ptr += res;
 		fsz -= res;
-		ptr += res;//  * snd->chans;
 	}
-	snd->sbptr = snd->sndbuf;
+	ringPos = 0;
 }
 
 void oss_close() {
@@ -325,9 +355,10 @@ bool alsa_open() {
 }
 
 void alsa_play() {
+//	fillBuffer(snd->bufsize);
 	snd_pcm_sframes_t res;
-	uint8_t* ptr = snd->sndbuf;
-	int fsz = (snd->sbptr - ptr) / snd->chans;
+	uint8_t* ptr = ringBuffer;
+	int fsz = ringPos / snd->chans;
 	while (fsz > 0) {
 		res = snd_pcm_writei(snd->ahandle, ptr, fsz);
 		if (res<0) res = snd_pcm_recover(snd->ahandle,res,1);
@@ -335,7 +366,7 @@ void alsa_play() {
 		fsz -= res;
 		ptr += res * snd->chans;
 	}
-	snd->sbptr = snd->sndbuf;
+	ringPos = 0;
 }
 
 void alsa_close() {printf("libasound: close device\n");snd_pcm_close(snd->ahandle);}
@@ -359,16 +390,16 @@ bool wave_open() {
 }
 
 void wave_play() {
+	fillBuffer(snd->bufsize);
 	if (snd->hwaveout!=NULL) {
 		snd->whdr.dwFlags = 0;
-		snd->whdr.lpData = (CHAR*)snd->sndbuf;
-		snd->whdr.dwBufferLength = snd->sbptr - snd->sndbuf;
+		snd->whdr.lpData = (CHAR*)sndBuffer;
+		snd->whdr.dwBufferLength = snd->bufsize;
 		snd->whdr.dwLoops = 0;
 		waveOutPrepareHeader(snd->hwaveout,&snd->whdr,sizeof(WAVEHDR));
 		waveOutWrite(snd->hwaveout,&snd->whdr,sizeof(WAVEHDR));
 		waveOutUnprepareHeader(snd->hwaveout,&snd->whdr,sizeof(WAVEHDR));
 	}
-	snd->sbptr = snd->sndbuf;
 }
 
 void wave_close() {
@@ -399,10 +430,11 @@ bool ds_open() {
 }
 
 void ds_play() {
+	fillBuffer(snd->bifsize);
 	void* zbuf;
 	DWORD sze;
 	snd->dsbuf->Lock(0,0,&zbuf,&sze,0,0,DSBLOCK_ENTIREBUFFER);
-	memcpy(zbuf,snd->sndbuf,snd->bufsize);
+	memcpy(zbuf,sndBuffer,snd->bufsize);
 	snd->dsbuf->Unlock(zbuf,sze,0,0);
 	snd->dsbuf->Play(0,0,0);
 	snd->sbptr = snd->sndbuf;
@@ -422,7 +454,7 @@ Sound::Sound() {
 	output = NULL;
 	sndformat = AFMT_U8;
 #endif
-	sbptr = &sndbuf[0];
+//	sbptr = &sndbuf[0];
 	rate = 44100;
 	chans = 2;
 //	ay.freq = 1774400;
@@ -431,7 +463,7 @@ Sound::Sound() {
 	outsys = NULL;
 	t = 0;
 	beepvol = tapevol = ayvol = 16;
-	sbptr = sndbuf;
+//	sbptr = sndbuf;
 
 //	sc1 = new AYProc(SND_AY);
 //	sc2 = new AYProc(SND_NONE);
