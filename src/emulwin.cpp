@@ -294,8 +294,14 @@ void EmulWin::repause(bool p, int msk) {
 	}
 	if (paused==0) {
 		setWindowIcon(curicon);
+		if (snd->outsys != NULL) {
+			if (snd->outsys->name == "SDL") SDL_PauseAudio(0);
+		}
 	} else {
 		setWindowIcon(QIcon(":/images/pause.png"));
+		if (snd->outsys != NULL) {
+			if (snd->outsys->name == "SDL") SDL_PauseAudio(1);
+		}
 	}
 	if (msk & PR_PAUSE) return;
 	if ((paused & ~PR_PAUSE) == 0) {

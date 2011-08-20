@@ -9,13 +9,14 @@
 extern ZXComp* zx;
 extern Sound* snd;
 
-static uint8_t sndBuffer[0x2000];
-static uint8_t ringBuffer[0x4000];
-static bool noizes[0x20000];		// here iz noize values [generated at start]
 void shithappens(std::string);
-static int ringPos = 0;
-static int playPos = 0;
-static bool firstPass = true;
+
+uint8_t sndBuffer[0x2000];
+uint8_t ringBuffer[0x4000];
+bool noizes[0x20000];		// here iz noize values [generated at start]
+int ringPos = 0;
+int playPos = 0;
+int pass = 0;
 
 uint8_t envforms[16][33]={
 /*	  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32	*/
@@ -49,9 +50,9 @@ AYSys::AYSys() {
 }
 
 void Sound::defpars() {
-	chunks = (int)(rate/50.0);
-	bufsize = (int)(rate*chans/50.0);
-	tatbyte = (int)(zx->vid->frmsz / ((float)chunks * 1.0));	// 2.0
+	chunks = (int)(rate / 50.0);				// samples played at 1/50 sec			882
+	bufsize = (int)(rate * chans / 50.0);			// buffer size for 1/50 sec play		1764
+	tatbyte = (448 * 320 / (double)chunks);			// count of 7MHz ticks between samples		162.54
 }
 
 void Sound::setoutptr(std::string nam) {
@@ -59,12 +60,9 @@ void Sound::setoutptr(std::string nam) {
 		if (outsys->name == nam) return;
 		outsys->close();
 	}
-//	printf("Finding %s from %i elements\n",nam.c_str(),outsyslist.size());
 	outsys = NULL;
-//	beepvol = tapevol = ayvol = gsvol = 16;
 	uint32_t i;
 	for (i=0; i<outsyslist.size();i++) {
-//		printf("'%s' - '%s'\n",nam.c_str(),outsyslist[i].name.c_str());
 		if (outsyslist[i].name == nam) {
 			outsys = &outsyslist[i];
 			break;
@@ -81,17 +79,11 @@ void Sound::setoutptr(std::string nam) {
 }
 
 void Sound::sync() {
-//	printf("%i + %i ? %i\n",t,tatbyte,sys->vid->t);
 	t += tatbyte;
 	zx->tape->sync();
 	zx->gs->sync(zx->vid->t);
 	lev = beeplev?beepvol:0;
 	if (zx->tape->flags & TAPE_ON) lev += (((zx->tape->outsig & 1)?tapevol:0) + ((zx->tape->signal & 1)?tapevol:0));
-#if 0
-	SndData tmpl = (sc1->getvol() + sc2->getvol()) * (ayvol / 16.0) + gs->getvol() * (gsvol / 16.0);
-	*(sbptr++) = lev + tmpl.l;
-	*(sbptr++) = lev + tmpl.r;
-#else
 	levl = lev;
 	levr = lev;
 	SndData tmpl = zx->aym->sc1->getvol();
@@ -108,10 +100,6 @@ void Sound::sync() {
 	ringBuffer[ringPos] = levr;
 	ringPos++;
 	ringPos &= 0x3fff;
-	//	*(sbptr++) = levl;
-//	*(sbptr++) = levr;
-#endif
-//	if (sbptr - sndbuf > 1024) sbptr--;
 }
 
 void Sound::addoutsys(std::string nam, bool (*opfunc)(), void (*pfunc)(), void (*clofunc)()) {
@@ -121,7 +109,6 @@ void Sound::addoutsys(std::string nam, bool (*opfunc)(), void (*pfunc)(), void (
  	newsys.play = pfunc;
 	newsys.close = clofunc;
 	outsyslist.push_back(newsys);
-//	printf("Added sound sys %s\n",nam.c_str());
 }
 
 AYProc::AYProc(int t) {
@@ -235,14 +222,14 @@ void AYProc::setreg(uint8_t value) {
 //------------------------
 
 void fillBuffer(int len) {
-	int bufPos = 0;
-	while (len > 0) {
+//printf("%i\t%i\t",len,playPos);
+//int z = playPos;
+	for (int bufPos=0; bufPos < len; bufPos++) {
 		sndBuffer[bufPos] = ringBuffer[playPos];
-		bufPos++;
 		playPos++;
 		playPos &= 0x3fff;
-		len--;
 	}
+//printf("%i\t%i\n",playPos,(z < playPos) ? playPos - z : 0x4000 - (z - playPos));
 }
 
 bool null_open() {return true;}
@@ -251,15 +238,26 @@ void null_close() {}
 
 #if HAVESDLSOUND
 
+// FIXME: something going wrong. sdlPlayAudio plays buffer faster than emulation fill it
 void sdlPlayAudio(void*,Uint8* stream, int len) {
-	fillBuffer(len);
-	if (firstPass) {
-		firstPass = false;
+	if (pass < 2) {
+		pass++;
 	} else {
-		SDL_LockAudio();
-		SDL_MixAudio(stream,sndBuffer,len,SDL_MIX_MAXVOLUME);
-		SDL_UnlockAudio();
+#if 0
+		int diff;
+		if (playPos < ringPos) {
+			diff = ringPos - playPos;
+		} else {
+			diff = 0x4000 - (ringPos - playPos);
+		}
+		if (diff > len) fillBuffer(len);
+#else
+		fillBuffer(len);
+#endif
 	}
+//	SDL_LockAudio();
+	SDL_MixAudio(stream,sndBuffer,len,SDL_MIX_MAXVOLUME);
+//	SDL_UnlockAudio();
 }
 
 bool sdlopen() {
@@ -267,7 +265,7 @@ bool sdlopen() {
 	SDL_AudioSpec* asp = new SDL_AudioSpec;
 	asp->freq = snd->rate;
 	asp->format = AUDIO_U8;
-	asp->channels = 2;
+	asp->channels = snd->chans;
 //	asp->samples = 1024;
 	asp->callback = &sdlPlayAudio;
 	asp->userdata = NULL;
@@ -352,7 +350,7 @@ void alsa_play() {
 //	fillBuffer(snd->bufsize);
 	snd_pcm_sframes_t res;
 	uint8_t* ptr = ringBuffer;
-	int fsz = ringPos / snd->chans;
+	int fsz = snd->bufsize / snd->chans;
 	while (fsz > 0) {
 		res = snd_pcm_writei(snd->ahandle, ptr, fsz);
 		if (res<0) res = snd_pcm_recover(snd->ahandle,res,1);

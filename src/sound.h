@@ -105,10 +105,10 @@ struct Sound {
 		int32_t chans;
 		int32_t bufsize,chunks;
 		bool beeplev;
-		uint32_t t;
+		double t;
 		uint8_t lev,levr,levl;
 		uint8_t beepvol,tapevol,ayvol,gsvol;
-		uint32_t tatbyte;
+		double tatbyte;
 #ifndef WIN32
 		char *device;		// alsa
 		snd_output_t *output;
