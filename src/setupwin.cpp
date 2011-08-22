@@ -156,7 +156,7 @@ void SetupWin::start() {
 	}
 	ui.machbox->setCurrentIndex(ui.machbox->findText(QDialog::trUtf8(zx->hw->name.c_str())));
 	ui.rsetbox->setCurrentIndex(ui.rsetbox->findText(QDialog::trUtf8(zx->sys->mem->romset->name.c_str())));
-	ui.reschk->setChecked(zx->sys->io->resafter);
+	ui.reschk->setChecked(mwin->flags & FL_RESET);
 	ui.resbox->setCurrentIndex(zx->sys->mem->res);
 	switch(zx->sys->mem->mask) {
 		case 0x00: ui.mszbox->setCurrentIndex(0); break;
@@ -254,7 +254,7 @@ void SetupWin::apply() {
 	zx->opt.romsetName = std::string(ui.rsetbox->currentText().toUtf8().data());
 	zx->sys->mem->setromptr(zx->opt.romsetName);
 	zx->sys->mem->loadromset(sets->opt.romDir);
-	zx->sys->io->resafter = ui.reschk->isChecked();
+	if (ui.reschk->isChecked()) mwin->flags |= FL_RESET; else mwin->flags &= ~FL_RESET;
 	zx->sys->mem->res = ui.resbox->currentIndex();
 	switch(ui.mszbox->currentIndex()) {
 		case 0: zx->sys->mem->mask = 0x00; break;

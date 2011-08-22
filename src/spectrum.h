@@ -13,7 +13,6 @@
 #include "hdd.h"
 
 #define TYP_RZX		0
-// conditions
 
 #define HW_NULL		0
 #define HW_ZX48		1
@@ -21,7 +20,18 @@
 #define	HW_P1024	3
 #define	HW_SCORP	4
 
-class ZXComp {
+#define	IO_WAIT		1
+#define WAIT_ON		2
+
+class HardWare {
+	public:
+		std::string name;
+		int mask;		// mem size mask (0:128, 1:256, 2:512, 3:1024); =0 for 48K
+		int flags;
+		int type;
+};
+
+class ZXComp : public ZXSystem {
 	public:
 		ZXComp();
 		HardWare *hw;
@@ -35,6 +45,7 @@ class ZXComp {
 		IDE* ide;
 		GS* gs;
 		AYSys* aym;
+		bool block7ffd;
 		struct {
 //			bool wait;
 			std::string GSRom;
@@ -50,8 +61,8 @@ class ZXComp {
 		void setHardware(std::string);
 		void mapMemory();
 		int32_t getPort(int32_t);
-		uint8_t in(int32_t);
-		void out(int32_t,uint8_t);
+		uint8_t in(uint16_t);
+		void out(uint16_t,uint8_t);
 		void INTHandle();
 		void NMIHandle();
 };

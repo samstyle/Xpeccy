@@ -3,10 +3,10 @@
 //extern GS* gs;
 
 GS::GS() {
-	sys = new ZXBase;
+	sys = new ZXBase(this);
 	sys->cpu = new Z80(GS_FRQ);
 	sys->mem = new Memory(MEM_GS);
-	sys->io = new IOSys(IO_GS);
+//	sys->io = new IOSys(IO_GS);
 	sys->mem->pt0 = &sys->mem->rom[0][0];
 	sys->mem->pt1 = &sys->mem->ram[0][0];
 	sys->mem->pt2 = &sys->mem->ram[0][0];
@@ -57,7 +57,7 @@ void GS::sync(uint32_t tk) {
 
 // external in/out
 
-bool GS::in(int prt,uint8_t* val) {
+bool GS::extin(int prt,uint8_t* val) {
 	if (~flags & GS_ENABLE) return false;	// gs disabled
 	if ((prt & 0x44) != 0) return false;	// port don't catched
 	if (prt & 8) {
@@ -69,7 +69,7 @@ bool GS::in(int prt,uint8_t* val) {
 	return true;
 }
 
-bool GS::out(int prt,uint8_t val) {
+bool GS::extout(int prt,uint8_t val) {
 	if (~flags & GS_ENABLE) return false;
 	if ((prt & 0x44) != 0) return false;
 	if (prt & 8) {
@@ -84,7 +84,7 @@ bool GS::out(int prt,uint8_t val) {
 
 // internal in/out
 
-uint8_t GS::intin(int32_t prt) {
+uint8_t GS::in(uint16_t prt) {
 	uint8_t res = 0xff;
 	prt &= 0x0f;
 	switch (prt) {
@@ -104,7 +104,7 @@ uint8_t GS::intin(int32_t prt) {
 	return res;
 }
 
-void GS::intout(int32_t prt,uint8_t val) {
+void GS::out(uint16_t prt,uint8_t val) {
 	prt &= 0x0f;
 	switch (prt) {
 		case 0: rp0 = val;

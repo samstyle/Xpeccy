@@ -3,7 +3,7 @@
 
 #include "z80.h"
 #include "memory.h"
-#include "iosys.h"
+//#include "iosys.h"
 
 #define CND_NONE	0
 #define	CND_Z		1
@@ -15,6 +15,12 @@
 #define CND_CPIR	7
 
 #define	ZPREF		1
+
+class ZXSystem {
+	public:
+		virtual uint8_t in(uint16_t) {return 0xff;};
+		virtual void out(uint16_t,uint8_t) {};
+};
 
 class ZXBase;
 struct ZOp {
@@ -34,17 +40,20 @@ struct ZOpResult {
 
 class ZXBase {
 	public:
-		ZXBase();
+		ZXBase(ZXSystem*);
+		ZXSystem* parent;
 		bool istrb;
 		bool fstrb;
 		bool nmi;
 		int32_t hwflags;
 		Z80 *cpu;
 		Memory* mem;
-		IOSys* io;
+//		IOSys* io;
 		ZOp* inst[9];
 		ZOpResult fetch();
 		int32_t interrupt();
+		uint8_t in(uint16_t);
+		void out(uint16_t,uint8_t);
 };
 
 #endif

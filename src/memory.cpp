@@ -155,10 +155,10 @@ void Memory::parse(std::ifstream* file,int typ) {
 				adr = tmp + (tmp2 << 8);
 				cpu->lpc = file->get(); cpu->hpc = file->get();
 				lst = file->get();			// 34: HW mode
-				tmp = file->get(); zx->sys->io->out(0x7ffd,tmp); // 35: 7FFD last out
+				tmp = file->get(); zx->sys->out(0x7ffd,tmp); // 35: 7FFD last out
 				tmp = file->get();			// 36: skip (IF1)
 				tmp = file->get();			// 37: skip (flags) TODO
-				tmp = file->get(); zx->sys->io->out(0xfffd,tmp); // 38: last out to fffd
+				tmp = file->get(); zx->sys->out(0xfffd,tmp); // 38: last out to fffd
 				for (tmp2=0; tmp2<16; tmp2++) {
 					tmp = file->get();
 					zx->aym->sc1->reg[tmp2] = tmp;
@@ -276,7 +276,7 @@ void Memory::parse(std::ifstream* file,int typ) {
 				cpu->hpc = rd(cpu->sp++);
 			} else {
 				cpu->lpc = file->get(); cpu->hpc = file->get();
-				tmp = file->get(); snabank = (tmp & 7); zx->sys->io->out(0x7ffd,tmp);
+				tmp = file->get(); snabank = (tmp & 7); zx->sys->out(0x7ffd,tmp);
 				zx->bdi->active = (file->get() & 1);
 				if (snabank!=0) file->read((char*)ram[0],0x4000);
 				if (snabank!=1) file->read((char*)ram[1],0x4000);

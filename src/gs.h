@@ -17,7 +17,7 @@
 //uint8_t gs_in(int32_t);
 //void gs_out(int32_t,uint8_t);
 
-class GS {
+class GS : public ZXSystem {
 	public:
 	GS();
 	int flags;
@@ -33,10 +33,10 @@ class GS {
 	int cnt;
 	int stereo;
 	void reset();
-	bool in(int,uint8_t*);
-	bool out(int,uint8_t);
-	uint8_t intin(int32_t);
-	void intout(int32_t,uint8_t);
+	bool extin(int,uint8_t*);
+	bool extout(int,uint8_t);
+	uint8_t in(uint16_t);
+	void out(uint16_t,uint8_t);
 	void sync(uint32_t);
 	SndData getvol();
 };

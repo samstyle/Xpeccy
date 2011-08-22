@@ -95,11 +95,13 @@ void Sound::sync() {
 	tmpl = zx->gs->getvol();
 	levl += tmpl.l * gsvol / 16.0;
 	levr += tmpl.r * gsvol / 16.0;
+	if (smpCount >= chunks) return;
 	ringBuffer[ringPos] = levl;
 	ringPos++;
 	ringBuffer[ringPos] = levr;
 	ringPos++;
 	ringPos &= 0x3fff;
+	smpCount++;
 }
 
 void Sound::addoutsys(std::string nam, bool (*opfunc)(), void (*pfunc)(), void (*clofunc)()) {

@@ -185,7 +185,8 @@ void EmulWin::emulframe() {
 			snd->outsys->play();
 		}
 //		snd->sbptr = snd->sndbuf;
-		snd->t = zx->vid->t;
+//		snd->t = zx->vid->t;
+		snd->smpCount = 0;
 		do {
 			exec();
 		} while (!zx->sys->cpu->err && !zx->sys->istrb);

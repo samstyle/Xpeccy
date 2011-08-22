@@ -334,8 +334,8 @@ void nprD9(ZXBase* p) {
 	p->cpu->adr = p->cpu->hl; p->cpu->hl = p->cpu->alt.hl; p->cpu->alt.hl = p->cpu->adr;}
 void nprEB(ZXBase* p) {p->cpu->adr = p->cpu->de; p->cpu->de = p->cpu->hl; p->cpu->hl = p->cpu->adr;}
 // other
-void nprD3(ZXBase* p) {p->cpu->hptr = p->cpu->a; p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->io->out(p->cpu->mptr,p->cpu->a); p->cpu->lptr++;}	// mptr = (a << 8) + ((n + 1) & FF)
-void nprDB(ZXBase* p) {p->cpu->hptr = p->cpu->a; p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->cpu->a = p->io->in(p->cpu->mptr); p->cpu->mptr++;}	// mptr = (a << 8) + n + 1
+void nprD3(ZXBase* p) {p->cpu->hptr = p->cpu->a; p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->out(p->cpu->mptr,p->cpu->a); p->cpu->lptr++;}	// mptr = (a << 8) + ((n + 1) & FF)
+void nprDB(ZXBase* p) {p->cpu->hptr = p->cpu->a; p->cpu->lptr = p->mem->rd(p->cpu->pc++); p->cpu->a = p->in(p->cpu->mptr); p->cpu->mptr++;}	// mptr = (a << 8) + n + 1
 void nprE3(ZXBase* p) {p->cpu->lptr = p->mem->rd(p->cpu->sp++); p->cpu->hptr = p->mem->rd(p->cpu->sp); p->mem->wr(p->cpu->sp--,p->cpu->h); p->mem->wr(p->cpu->sp,p->cpu->l); p->cpu->hl = p->cpu->mptr;}	// ex (sp),rp	mptr = rp after operation
 void nprE9(ZXBase* p) {p->cpu->pc = p->cpu->hl;}
 void nprF9(ZXBase* p) {p->cpu->sp = p->cpu->hl;}

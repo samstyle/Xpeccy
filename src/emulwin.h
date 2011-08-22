@@ -17,18 +17,19 @@
 #include "spectrum.h"
 
 // pause reasons
-#define PR_MENU		0x01
-#define PR_FILE		0x02
-#define PR_OPTS		0x04
-#define PR_DEBUG	0x08
-#define PR_QUIT		0x10
-#define PR_PAUSE	0x20
-#define PR_EXTRA	0x40
+#define PR_MENU		1
+#define PR_FILE		(1<<1)
+#define PR_OPTS		(1<<2)
+#define PR_DEBUG	(1<<3)
+#define PR_QUIT		(1<<4)
+#define PR_PAUSE	(1<<5)
+#define PR_EXTRA	(1<<6)
 
 // flags - emul mode / events
-#define FL_GRAB	0x00000001
-#define FL_RZX	0x00000002
-#define FL_SHOT	0x00000004
+#define FL_GRAB		1
+#define FL_RZX		(1<<1)
+#define FL_SHOT		(1<<2)
+#define FL_RESET	(1<<3)
 
 struct RZXFrame {
 	int fetches;		// fetches till next int

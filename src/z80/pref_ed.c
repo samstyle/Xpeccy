@@ -1,23 +1,23 @@
 // NOTE:ticks are NOT include ED prefix fetch. (-4)
 
 // in
-void edp40(ZXBase* p) {p->cpu->b = p->io->in(p->cpu->bc); p->cpu->f = flag[p->cpu->b].in | (p->cpu->f & FC);}
-void edp48(ZXBase* p) {p->cpu->c = p->io->in(p->cpu->bc); p->cpu->f = flag[p->cpu->c].in | (p->cpu->f & FC);}
-void edp50(ZXBase* p) {p->cpu->d = p->io->in(p->cpu->bc); p->cpu->f = flag[p->cpu->d].in | (p->cpu->f & FC);}
-void edp58(ZXBase* p) {p->cpu->e = p->io->in(p->cpu->bc); p->cpu->f = flag[p->cpu->e].in | (p->cpu->f & FC);}
-void edp60(ZXBase* p) {p->cpu->h = p->io->in(p->cpu->bc); p->cpu->f = flag[p->cpu->h].in | (p->cpu->f & FC);}
-void edp68(ZXBase* p) {p->cpu->l = p->io->in(p->cpu->bc); p->cpu->f = flag[p->cpu->l].in | (p->cpu->f & FC);}
-void edp70(ZXBase* p) {p->cpu->x = p->io->in(p->cpu->bc); p->cpu->f = flag[p->cpu->x].in | (p->cpu->f & FC);}
-void edp78(ZXBase* p) {p->cpu->a = p->io->in(p->cpu->bc); p->cpu->f = flag[p->cpu->a].in | (p->cpu->f & FC); p->cpu->mptr = p->cpu->bc + 1;}	// in a,(c)	mptr = bc + 1
+void edp40(ZXBase* p) {p->cpu->b = p->in(p->cpu->bc); p->cpu->f = flag[p->cpu->b].in | (p->cpu->f & FC);}
+void edp48(ZXBase* p) {p->cpu->c = p->in(p->cpu->bc); p->cpu->f = flag[p->cpu->c].in | (p->cpu->f & FC);}
+void edp50(ZXBase* p) {p->cpu->d = p->in(p->cpu->bc); p->cpu->f = flag[p->cpu->d].in | (p->cpu->f & FC);}
+void edp58(ZXBase* p) {p->cpu->e = p->in(p->cpu->bc); p->cpu->f = flag[p->cpu->e].in | (p->cpu->f & FC);}
+void edp60(ZXBase* p) {p->cpu->h = p->in(p->cpu->bc); p->cpu->f = flag[p->cpu->h].in | (p->cpu->f & FC);}
+void edp68(ZXBase* p) {p->cpu->l = p->in(p->cpu->bc); p->cpu->f = flag[p->cpu->l].in | (p->cpu->f & FC);}
+void edp70(ZXBase* p) {p->cpu->x = p->in(p->cpu->bc); p->cpu->f = flag[p->cpu->x].in | (p->cpu->f & FC);}
+void edp78(ZXBase* p) {p->cpu->a = p->in(p->cpu->bc); p->cpu->f = flag[p->cpu->a].in | (p->cpu->f & FC); p->cpu->mptr = p->cpu->bc + 1;}	// in a,(c)	mptr = bc + 1
 // out
-void edp41(ZXBase* p) {p->io->out(p->cpu->bc,p->cpu->b);}
-void edp49(ZXBase* p) {p->io->out(p->cpu->bc,p->cpu->c);}
-void edp51(ZXBase* p) {p->io->out(p->cpu->bc,p->cpu->d);}
-void edp59(ZXBase* p) {p->io->out(p->cpu->bc,p->cpu->e);}
-void edp61(ZXBase* p) {p->io->out(p->cpu->bc,p->cpu->h);}
-void edp69(ZXBase* p) {p->io->out(p->cpu->bc,p->cpu->l);}
-void edp71(ZXBase* p) {p->io->out(p->cpu->bc,0);}
-void edp79(ZXBase* p) {p->io->out(p->cpu->bc,p->cpu->a); p->cpu->mptr = p->cpu->bc + 1;}	// out (c),a	mptr = bc + 1
+void edp41(ZXBase* p) {p->out(p->cpu->bc,p->cpu->b);}
+void edp49(ZXBase* p) {p->out(p->cpu->bc,p->cpu->c);}
+void edp51(ZXBase* p) {p->out(p->cpu->bc,p->cpu->d);}
+void edp59(ZXBase* p) {p->out(p->cpu->bc,p->cpu->e);}
+void edp61(ZXBase* p) {p->out(p->cpu->bc,p->cpu->h);}
+void edp69(ZXBase* p) {p->out(p->cpu->bc,p->cpu->l);}
+void edp71(ZXBase* p) {p->out(p->cpu->bc,0);}
+void edp79(ZXBase* p) {p->out(p->cpu->bc,p->cpu->a); p->cpu->mptr = p->cpu->bc + 1;}	// out (c),a	mptr = bc + 1
 // sbc hl,rp
 void edp42(ZXBase* p) {rpSBC(p,p->cpu->bc);}
 void edp52(ZXBase* p) {rpSBC(p,p->cpu->de);}
@@ -86,15 +86,15 @@ void edpA0(ZXBase* p) {p->cpu->bc--; p->cpu->x = p->mem->rd(p->cpu->hl++); p->me
 		p->cpu->f = (p->cpu->f & (FS | FZ | FC)) | (p->cpu->x & F3) | ((p->cpu->x & 2)?F5:0) | ((p->cpu->bc != 0)?FP:0);}
 void edpA1(ZXBase* p) {p->cpu->bc--; p->cpu->x = p->mem->rd(p->cpu->hl++); p->cpu->f = (p->cpu->f & FC) | (flag[p->cpu->a].cp[p->cpu->x] & (FS | FZ | FH | FN)) | ((p->cpu->bc != 0)?FP:0);
 		p->cpu->x = p->cpu->a - p->cpu->x - ((p->cpu->f & FH)?1:0); p->cpu->f |= (p->cpu->x & F3) | ((p->cpu->x & 2)?F5:0); p->cpu->mptr++;}		// cpi	mptr++
-void edpA2(ZXBase* p) {p->cpu->mptr = p->cpu->bc + 1; p->mem->wr(p->cpu->hl++,p->io->in(p->cpu->bc)); p->cpu->b--; p->cpu->f = (p->cpu->f & ~(FZ | FN)) | ((p->cpu->b == 0)?FZ:0) | FN;}	// ini	mptr = bc.before + 1
-void edpA3(ZXBase* p) {p->io->out(p->cpu->bc,p->mem->rd(p->cpu->hl++)); p->cpu->b--; p->cpu->mptr = p->cpu->bc + 1; p->cpu->f = (p->cpu->f & ~(FZ | FN)) | ((p->cpu->b == 0)?FZ:0) | FN;}	// outi	mptr = bc.after + 1
+void edpA2(ZXBase* p) {p->cpu->mptr = p->cpu->bc + 1; p->mem->wr(p->cpu->hl++,p->in(p->cpu->bc)); p->cpu->b--; p->cpu->f = (p->cpu->f & ~(FZ | FN)) | ((p->cpu->b == 0)?FZ:0) | FN;}	// ini	mptr = bc.before + 1
+void edpA3(ZXBase* p) {p->out(p->cpu->bc,p->mem->rd(p->cpu->hl++)); p->cpu->b--; p->cpu->mptr = p->cpu->bc + 1; p->cpu->f = (p->cpu->f & ~(FZ | FN)) | ((p->cpu->b == 0)?FZ:0) | FN;}	// outi	mptr = bc.after + 1
 // [blk]d
 void edpA8(ZXBase* p) {p->cpu->bc--; p->cpu->x = p->mem->rd(p->cpu->hl--); p->mem->wr(p->cpu->de--,p->cpu->x); p->cpu->x += p->cpu->a;
 		p->cpu->f = (p->cpu->f & (FS | FZ | FC)) | (p->cpu->x & F3) | ((p->cpu->x & 2)?F5:0) | ((p->cpu->bc != 0)?FP:0);}
 void edpA9(ZXBase* p) {p->cpu->bc--; p->cpu->x = p->mem->rd(p->cpu->hl--); p->cpu->f = (p->cpu->f & FC) | (flag[p->cpu->a].cp[p->cpu->x] & (FS | FZ | FH | FN)) | ((p->cpu->bc != 0)?FP:0);
 		p->cpu->x = p->cpu->a - p->cpu->x - ((p->cpu->f & FH)?1:0); p->cpu->f |= (p->cpu->x & F3) | ((p->cpu->x & 2)?F5:0); p->cpu->mptr--;}		// cpd: mptr--
-void edpAA(ZXBase* p) {p->cpu->mptr = p->cpu->bc - 1; p->mem->wr(p->cpu->hl--,p->io->in(p->cpu->bc)); p->cpu->b--; p->cpu->f = (p->cpu->f & ~(FZ | FN)) | ((p->cpu->b == 0)?FZ:0) | FN;}	// ind	mptr = bc.before - 1
-void edpAB(ZXBase* p) {p->io->out(p->cpu->bc,p->mem->rd(p->cpu->hl--)); p->cpu->b--; p->cpu->mptr = p->cpu->bc - 1; p->cpu->f = (p->cpu->f & ~(FZ | FN)) | ((p->cpu->b == 0)?FZ:0) | FN;}	// outd	mptr = bc.after - 1
+void edpAA(ZXBase* p) {p->cpu->mptr = p->cpu->bc - 1; p->mem->wr(p->cpu->hl--,p->in(p->cpu->bc)); p->cpu->b--; p->cpu->f = (p->cpu->f & ~(FZ | FN)) | ((p->cpu->b == 0)?FZ:0) | FN;}	// ind	mptr = bc.before - 1
+void edpAB(ZXBase* p) {p->out(p->cpu->bc,p->mem->rd(p->cpu->hl--)); p->cpu->b--; p->cpu->mptr = p->cpu->bc - 1; p->cpu->f = (p->cpu->f & ~(FZ | FN)) | ((p->cpu->b == 0)?FZ:0) | FN;}	// outd	mptr = bc.after - 1
 // [blk]ir
 void edpB0(ZXBase* p) {edpA0(p); if (p->cpu->f & FP) {p->cpu->mptr = p->cpu->pc - 1; p->cpu->pc -= 2; /*p->cpu->t += 5;*/}}			// ldir: if (not over) mptr = instr.adr + 1
 void edpB1(ZXBase* p) {edpA1(p); if ((!(p->cpu->f & FZ)) && (p->cpu->f & FP)) {p->cpu->mptr = p->cpu->pc - 1; p->cpu->pc -= 2; /*p->cpu->t += 5;*/}}	// cpir: if (not over) mptr = instr.adr + 1

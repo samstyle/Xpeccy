@@ -5,11 +5,13 @@
 #include "z80/tables.c"
 #include "z80/instr.c"
 
+extern Sound* snd;
+
 ZXComp::ZXComp() {
-	sys = new ZXBase;
+	sys = new ZXBase(this);
 	sys->cpu = new Z80(3.5);
 	sys->mem = new Memory(MEM_ZX);
-	sys->io = new IOSys(IO_ZX);
+//	sys->io = new IOSys(IO_ZX);
 	vid = new Video(sys->mem);
 	keyb = new Keyboard;
 	mouse = new Mouse;
@@ -28,7 +30,7 @@ ZXComp::ZXComp() {
 }
 
 void ZXComp::reset() {
-	sys->io->block7ffd=false;
+	block7ffd=false;
 	sys->mem->prt1 = 0;
 	sys->mem->prt0 = ((sys->mem->res & 1) << 4);
 	sys->mem->setrom(sys->mem->res);
@@ -106,91 +108,134 @@ int32_t ZXComp::getPort(int32_t port) {
 	return port;
 }
 
-uint8_t ZXComp::in(int32_t port) {
+uint8_t ZXComp::in(uint16_t port) {
 	uint8_t res = 0xff;
 	gs->sync(vid->t);
 #if IDE_ENABLE
 	if (ide->in(port,&res,bdi->active)) return res;
 #endif
-	if (gs->in(port,&res)) return res;
+	if (gs->extin(port,&res)) return res;
 	if (bdi->in(port,&res)) return res;
 	port = getPort(port);
-	res = sys->io->iostdin(port);
-	switch (hw->type) {
-		case HW_ZX48:
+	switch (port) {
+		case 0xfbdf: res = mouse->xpos; break;
+		case 0xffdf: res = mouse->ypos; break;
+		case 0xfadf: res = mouse->buttons; break;
+		case 0xfffd:
+			if (aym->scc->curreg<14) {
+				res = aym->scc->reg[aym->scc->curreg];
+			} else {
+				if ((aym->scc->reg[7]&0x40) && (aym->scc->curreg == 14)) res = aym->scc->reg[14];
+				if ((aym->scc->reg[7]&0x80) && (aym->scc->curreg == 15)) res = aym->scc->reg[15];
+			}
 			break;
-		case HW_PENT:
-			break;
-		case HW_P1024:
-			break;
-		case HW_SCORP:
-			switch (port) {
-				case 0x7ffd:
-					sys->cpu->frq = 7.0;
-					break;
-				case 0x1ffd:
-					sys->cpu->frq = 3.5;
-					break;
-				case 0xff:
-					if (((vid->curr.h - vid->bord.h) < 256) && ((vid->curr.v - vid->bord.v) < 192)) {
-						res = vid->atrbyte;
-					}
-					break;
+		default:
+			if ((port & 0xff) == 0xfe) {
+				tape->sync();
+				res = keyb->getmap((port & 0xff00) >> 8) | (tape->signal ? 0x40 : 0x00);
+			} else {
+				switch (hw->type) {
+					case HW_ZX48:
+						break;
+					case HW_PENT:
+						break;
+					case HW_P1024:
+						break;
+					case HW_SCORP:
+						switch (port) {
+							case 0x7ffd:
+								sys->cpu->frq = 7.0;
+								break;
+							case 0x1ffd:
+								sys->cpu->frq = 3.5;
+								break;
+							case 0xff:
+								if (((vid->curr.h - vid->bord.h) < 256) && ((vid->curr.v - vid->bord.v) < 192)) {
+									res = vid->atrbyte;
+								} else {
+									res = 0xff;
+								}
+								break;
+						}
+						break;
+				}
 			}
 			break;
 	}
 	return res;
 }
 
-void ZXComp::out(int32_t port,uint8_t val) {
+void ZXComp::out(uint16_t port,uint8_t val) {
 	gs->sync(vid->t);
 #if IDE_ENABLE
 	if (ide->out(port,val,bdi->active)) return;
 #endif
-	if (gs->out(port,val)) return;
+	if (gs->extout(port,val)) return;
 	if (bdi->out(port,val)) return;
-	port = getPort(port);
-	sys->io->iostdout(port,val);
-	switch (hw->type) {
-		case HW_ZX48:
-			break;
-		case HW_PENT:
-			switch(port) {
-				case 0x7ffd:
-					sys->io->out7ffd(val);
-					mapMemory();
-					break;
+	port = getPort(port);	
+	switch (port) {
+		case 0xfffd: switch (val) {
+				case 0xfe: if (aym->tstype == TS_NEDOPC) aym->scc = aym->sc1; break;	// fe / ff - select sound chip in TS
+				case 0xff: if (aym->tstype == TS_NEDOPC) aym->scc = aym->sc2; break;
+				default: aym->scc->curreg = val; break;		// set sound chip register
 			}
 			break;
-		case HW_P1024:
-			switch(port) {
-				case 0x7ffd:
-					if (sys->io->block7ffd) break;
-					vid->curscr = val & 0x08;
-					sys->mem->prt0 = val;
-					sys->io->block7ffd = ((sys->mem->prt1 & 4) && (val & 0x20));
-					mapMemory();
-					break;
-				case 0xeff7:
-					sys->mem->prt1 = val;
-					vid->mode = (val & 1) ? VID_ALCO : VID_NORMAL;
-					sys->cpu->frq = (val & 16) ? 7.0 : 3.5;
-					mapMemory();
-					break;
-			}
-			break;
-		case HW_SCORP:
-			switch(port) {
-				case 0x7ffd:
-					sys->io->out7ffd(val);
-					mapMemory();
-					break;
-				case 0x1ffd:
-					sys->mem->prt1 = val;
-					mapMemory();
-					break;
-			}
-			break;
+		case 0xbffd: aym->scc->setreg(val); break;			// write in sound chip register
+		default:
+			if ((port&0xff) == 0xfe) {
+				vid->brdcol = val&0x07;
+				snd->beeplev = val&0x10;
+				tape->outsig = val&0x08;
+				tape->sync();
+			} else {
+				switch (hw->type) {
+					case HW_ZX48:
+						break;
+					case HW_PENT:
+						switch(port) {
+							case 0x7ffd:
+								if (block7ffd) break;
+								sys->mem->prt0 = val;
+								vid->curscr = val & 0x08;
+								block7ffd = val & 0x20;
+								mapMemory();
+								break;
+						}
+						break;
+					case HW_P1024:
+						switch(port) {
+							case 0x7ffd:
+								if (block7ffd) break;
+								vid->curscr = val & 0x08;
+								sys->mem->prt0 = val;
+								block7ffd = ((sys->mem->prt1 & 4) && (val & 0x20));
+								mapMemory();
+								break;
+							case 0xeff7:
+								sys->mem->prt1 = val;
+								vid->mode = (val & 1) ? VID_ALCO : VID_NORMAL;
+								sys->cpu->frq = (val & 16) ? 7.0 : 3.5;
+								mapMemory();
+								break;
+						}
+						break;
+					case HW_SCORP:
+						switch(port) {
+							case 0x7ffd:
+								if (block7ffd) break;
+								sys->mem->prt0 = val;
+								vid->curscr = val & 0x08;
+								block7ffd = val & 0x20;
+								mapMemory();
+								break;
+							case 0x1ffd:
+								sys->mem->prt1 = val;
+								mapMemory();
+								break;
+						}
+						break;
+				}
+		}
 	}
 }
 
@@ -252,7 +297,7 @@ void ZXComp::addHardware(std::string nam, int typ, int msk, int flg) {
 	hwlist.push_back(nhw);
 }
 
-ZXBase::ZXBase () {
+ZXBase::ZXBase (ZXSystem* par) {
 	inst[0] = nopref;
 	inst[1] = ixpref;
 	inst[2] = iypref;
@@ -260,7 +305,16 @@ ZXBase::ZXBase () {
 	inst[5] = cxpref;
 	inst[6] = cypref;
 	inst[8] = edpref;
+	parent = par;
 	nmi = false;
+}
+
+uint8_t ZXBase::in(uint16_t port) {
+	return parent->in(port);
+}
+
+void ZXBase::out(uint16_t port, uint8_t val) {
+	parent->out(port,val);
 }
 
 ZOpResult ZXBase::fetch() {

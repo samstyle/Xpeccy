@@ -109,6 +109,7 @@ struct Sound {
 		uint8_t lev,levr,levl;
 		uint8_t beepvol,tapevol,ayvol,gsvol;
 		double tatbyte;
+		int smpCount;
 #ifndef WIN32
 		char *device;		// alsa
 		snd_output_t *output;

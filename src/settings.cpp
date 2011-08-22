@@ -1,12 +1,12 @@
 #include "sound.h"
-//#include "emulwin.h"
+#include "emulwin.h"
 #include "settings.h"
 #include <QtCore>
 #include <sys/stat.h>
 #include <sys/types.h>
 
 extern ZXComp* zx;
-//extern EmulWin* mwin;
+extern EmulWin* mwin;
 extern Sound* snd;
 
 void shithappens(std::string);
@@ -181,7 +181,7 @@ void Settings::save() {
 		case 0x3f: sfile<<"1024\n"; break;
 		default: sfile<<"48\n"; break;
 	}
-	sfile<<"restart = "<<(zx->sys->io->resafter?"y":"n")<<"\n";
+	sfile<<"restart = "<<(mwin->flags & FL_RESET?"y":"n")<<"\n";
 	sfile << "scrp.wait = "<< ((zx->sys->hwflags & WAIT_ON) ? "y" : "n") << "\n";
 
 	sfile<<"\n[ROMSETS]\n\n";
@@ -415,7 +415,9 @@ void Settings::load(bool dev) {
 							if (pval=="512") {zx->sys->mem->mask = 0x1f; tmask = 4;}
 							if (pval=="1024") {zx->sys->mem->mask = 0x3f; tmask = 8;}
 						}
-						if (pnam=="restart") zx->sys->io->resafter = str2bool(pval);
+						if (pnam=="restart") {
+							if (str2bool(pval)) mwin->flags |= FL_RESET; else mwin->flags &= ~FL_RESET;
+						}
 						if (pnam=="scrp.wait") {
 							if (str2bool(pval)) zx->sys->hwflags |= WAIT_ON; else zx->sys->hwflags &= ~WAIT_ON;
 						}
