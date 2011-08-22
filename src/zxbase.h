@@ -49,7 +49,7 @@ class ZXBase {
 		Z80 *cpu;
 		Memory* mem;
 //		IOSys* io;
-		ZOp* inst[9];
+//		ZOp* inst[9];
 		ZOpResult fetch();
 		int32_t interrupt();
 		uint8_t in(uint16_t);

@@ -7,6 +7,18 @@
 
 extern Sound* snd;
 
+ZOp* inst[9] = {
+	nopref,
+	ixpref,
+	iypref,
+	NULL,
+	cbpref,
+	cxpref,
+	cypref,
+	NULL,
+	edpref
+};
+
 ZXComp::ZXComp() {
 	sys = new ZXBase(this);
 	sys->cpu = new Z80(3.5);
@@ -298,13 +310,13 @@ void ZXComp::addHardware(std::string nam, int typ, int msk, int flg) {
 }
 
 ZXBase::ZXBase (ZXSystem* par) {
-	inst[0] = nopref;
+/*	inst[0] = nopref;
 	inst[1] = ixpref;
 	inst[2] = iypref;
 	inst[4] = cbpref;
 	inst[5] = cxpref;
 	inst[6] = cypref;
-	inst[8] = edpref;
+	inst[8] = edpref;*/
 	parent = par;
 	nmi = false;
 }

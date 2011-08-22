@@ -6,6 +6,7 @@
 
 extern ZXComp* zx;
 extern EmulWin* mwin;
+extern ZOp* inst[9];
 
 void DebugWin::start() {
 	mwin->repause(true,PR_DEBUG);
@@ -258,7 +259,7 @@ DasmRow DebugWin::getdisasm() {
 		}
 	} while (prf);
 	if ((mde==5) || (mde==6)) {cde=zx->sys->mem->rd(adr++);}
-	res.dasm = QString(zx->sys->inst[mde][cde].name).toUpper();
+	res.dasm = QString(inst[mde][cde].name).toUpper();
 
 	QString nm;
 	signed char bt;

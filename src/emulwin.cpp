@@ -43,7 +43,7 @@ extern DebugWin* dbg;
 extern DevelWin* dwin;
 extern MFiler* filer;
 
-#define	XPTITLE	"Xpeccy 0.4.991"
+#define	XPTITLE	"Xpeccy 0.4.992"
 
 //== NEW SHIT IS HERE
 
