@@ -240,12 +240,12 @@ void null_close() {}
 
 #if HAVESDLSOUND
 
-// FIXME: something going wrong. sdlPlayAudio plays buffer faster than emulation fill it
+// FIXME: something going wrong. sdlPlayAudio plays buffer slower than emulation fill it
 void sdlPlayAudio(void*,Uint8* stream, int len) {
 	if (pass < 2) {
 		pass++;
 	} else {
-#if 0
+#if 1
 		int diff;
 		if (playPos < ringPos) {
 			diff = ringPos - playPos;

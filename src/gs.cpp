@@ -37,15 +37,15 @@ SndData GS::getvol() {
 }
 
 void GS::sync(uint32_t tk) {
-	ZOpResult res;
+	ZOp res;
 	int ln = (tk - t) * GS_FRQ / 7.0;		// scale to GS ticks;
 	t = tk;
 	if (~flags & GS_ENABLE) return;
 	while (ln > 0) {
 		res = sys->fetch();
-		res.exec(sys);
-		ln -= res.ticks;
-		cnt += res.ticks;
+		res.func(sys);
+		ln -= res.t;
+		cnt += res.t;
 		if (cnt > 320) {	// 12MHz CLK, 37.5KHz INT -> int in each 320 ticks
 			cnt -= 320;
 			tk = sys->interrupt();

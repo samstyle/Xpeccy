@@ -252,10 +252,10 @@ void ZXComp::out(uint16_t port,uint8_t val) {
 }
 
 void ZXComp::exec() {
-	ZOpResult res = sys->fetch();
-	vid->sync(res.ticks, sys->cpu->frq);
+	ZOp res = sys->fetch();
+	vid->sync(res.t, sys->cpu->frq);
 	sys->istrb = vid->intStrobe;
-	res.exec(sys);
+	res.func(sys);
 	if (bdi->enable) {
 		bdi->sync(vid->t);
 		if (bdi->active && (sys->cpu->hpc > 0x3f)) {
@@ -329,38 +329,36 @@ void ZXBase::out(uint16_t port, uint8_t val) {
 	parent->out(port,val);
 }
 
-ZOpResult ZXBase::fetch() {
-	ZOpResult zres;
+ZOp ZXBase::fetch() {
+	ZOp res;
 	cpu->err = false;
 	if (cpu->nextei) {
 		cpu->iff1 = cpu->iff2 = true;
 		cpu->nextei = false;
 	}
-	ZOp *res = NULL;
 	cpu->mod = 0;
 	cpu->ti = cpu->t;
 	do {
 		cpu->r = ((cpu->r + 1) & 0x7f) | (cpu->r & 0x80);
 		cpu->cod = mem->rd(cpu->pc++);
-		res = &inst[cpu->mod][cpu->cod];
-		cpu->t += res->t;
-		if (res->flags & ZPREF) res->func(this);
-	} while (res->flags & ZPREF);
-	switch (res->cond) {
+		res = inst[cpu->mod][cpu->cod];
+		cpu->t += res.t;
+		if (res.flags & ZPREF) res.func(this);
+	} while (res.flags & ZPREF);
+	switch (res.cond) {
 		case CND_NONE: break;
-		case CND_Z: cpu->t += (cpu->f & FZ) ? res->tcn1 : res->tcn0; break;
-		case CND_C: cpu->t += (cpu->f & FC) ? res->tcn1 : res->tcn0; break;
-		case CND_P: cpu->t += (cpu->f & FP) ? res->tcn1 : res->tcn0; break;
-		case CND_S: cpu->t += (cpu->f & FS) ? res->tcn1 : res->tcn0; break;
-		case CND_DJNZ: cpu->t += (cpu->b != 1) ? res->tcn1 : res->tcn0; break;
-		case CND_LDIR: cpu->t += (cpu->bc != 1) ? res->tcn1 : res->tcn0; break;
-		case CND_CPIR: cpu->t += ((cpu->bc != 1) && (cpu->a != mem->rd(cpu->hl))) ? res->tcn1 : res->tcn0; break;
+		case CND_Z: cpu->t += (cpu->f & FZ) ? res.tcn1 : res.tcn0; break;
+		case CND_C: cpu->t += (cpu->f & FC) ? res.tcn1 : res.tcn0; break;
+		case CND_P: cpu->t += (cpu->f & FP) ? res.tcn1 : res.tcn0; break;
+		case CND_S: cpu->t += (cpu->f & FS) ? res.tcn1 : res.tcn0; break;
+		case CND_DJNZ: cpu->t += (cpu->b != 1) ? res.tcn1 : res.tcn0; break;
+		case CND_LDIR: cpu->t += (cpu->bc != 1) ? res.tcn1 : res.tcn0; break;
+		case CND_CPIR: cpu->t += ((cpu->bc != 1) && (cpu->a != mem->rd(cpu->hl))) ? res.tcn1 : res.tcn0; break;
 		default: printf("undefined condition\n"); throw(0);
 	}
-	zres.exec = res->func;
 	if ((hwflags & IO_WAIT) && (hwflags & WAIT_ON) && (cpu->t & 1)) cpu->t++;		// WAIT
-	zres.ticks = cpu->t - cpu->ti;
-	return zres;
+	res.t = cpu->t - cpu->ti;
+	return res;
 }
 
 int32_t ZXBase::interrupt() {

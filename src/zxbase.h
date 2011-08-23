@@ -32,12 +32,12 @@ struct ZOp {
 	void (*func)(ZXBase*);	// execution func
 	const char *name;	// mnemonic
 };
-
+/*
 struct ZOpResult {
 	int ticks;
 	void(*exec)(ZXBase*);
 };
-
+*/
 class ZXBase {
 	public:
 		ZXBase(ZXSystem*);
@@ -50,7 +50,7 @@ class ZXBase {
 		Memory* mem;
 //		IOSys* io;
 //		ZOp* inst[9];
-		ZOpResult fetch();
+		ZOp fetch();
 		int32_t interrupt();
 		uint8_t in(uint16_t);
 		void out(uint16_t,uint8_t);
