@@ -359,8 +359,8 @@ void EmulWin::SDLEventHandler() {
 						case SDLK_ESCAPE: dbg->start(); break;
 						case SDLK_MENU: repause(true,PR_MENU); mainMenu->popup(pos() + QPoint(20,20)); break;
 						case SDLK_F1: emit(wannasetup()); break;
-						case SDLK_F2: filer->saveonf2(); break;
-						case SDLK_F3: filer->opensomewhat(); break;
+						case SDLK_F2: repause(true,PR_FILE); filer->saveonf2(); repause(false,PR_FILE); break;
+						case SDLK_F3: repause(true,PR_FILE); filer->opensomewhat(); repause(false,PR_FILE); break;
 						case SDLK_F4: if (zx->tape->flags & TAPE_ON) {
 									zx->tape->stop();
 									setcuricon(":/images/logo.png");
@@ -379,10 +379,12 @@ void EmulWin::SDLEventHandler() {
 								break;
 						case SDLK_F6: emit wannadevelop(); break;
 						case SDLK_F7: if (ssbcnt==0) {flags |= FL_SHOT;} else {flags &= ~FL_SHOT;} break;
-						case SDLK_F9: zx->bdi->flop[0].savecha();
+						case SDLK_F9: repause(true,PR_FILE);
+							zx->bdi->flop[0].savecha();
 							zx->bdi->flop[1].savecha();
 							zx->bdi->flop[2].savecha();
 							zx->bdi->flop[3].savecha();
+							repause(false,PR_FILE);
 							break;
 						case SDLK_F10:
 							zx->sys->nmi = true;
