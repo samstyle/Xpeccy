@@ -66,13 +66,20 @@ void MFiler::loadsomefile(std::string sfnam,uint8_t drv) {
 	if (fnam.endsWith(".scl",Qt::CaseInsensitive)) zx->bdi->flop[drv].load(sfnam,TYPE_SCL);
 	if (fnam.endsWith(".fdi",Qt::CaseInsensitive)) zx->bdi->flop[drv].load(sfnam,TYPE_FDI);
 	if (fnam.endsWith(".udi",Qt::CaseInsensitive)) zx->bdi->flop[drv].load(sfnam,TYPE_UDI);
+#ifdef HAVEZLIB
 	if (fnam.endsWith(".rzx",Qt::CaseInsensitive)) mwin->load(sfnam,TYP_RZX);
+#endif
 }
 
 void MFiler::opensomewhat() {
 	mwin->repause(true,PR_FILE);
 	QStringList filters;
-	filters<<"Known formats (*.sna *.z80 *.trd *.scl *.fdi *.udi *.tap *.tzx *.rzx)"<<"Disk B (*.trd *.scl *.fdi *.udi)"<<"Disk C (*.trd *.scl *.fdi *.udi)"<<"Disk D (*.trd *.scl *.fdi *.udi)";
+#ifdef HAVEZLIB
+	filters<<"Known formats (*.sna *.z80 *.trd *.scl *.fdi *.udi *.tap *.tzx *.rzx)";
+#else
+	filters<<"Known formats (*.sna *.z80 *.trd *.scl *.fdi *.udi *.tap *.tzx)";
+#endif
+	filters<<"Disk B (*.trd *.scl *.fdi *.udi)"<<"Disk C (*.trd *.scl *.fdi *.udi)"<<"Disk D (*.trd *.scl *.fdi *.udi)";
 	MFResult res = open(NULL,"Open somewhat","",filters);
 	if (res.selfile!="") {
 		std::string sfnam(res.selfile.toUtf8().data());

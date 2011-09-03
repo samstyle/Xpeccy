@@ -1,14 +1,14 @@
 #ifndef _SOUND_H
 #define _SOUND_H
 
-#define HAVESDLSOUND 1
-
 #include <vector>
 #include <string>
 #include <stdint.h>
 
 #ifndef WIN32
+#ifdef HAVEALSASOUND
 	#include <alsa/asoundlib.h>
+#endif
 	#include <sys/ioctl.h>
 	#include <sys/soundcard.h>
 	#include <fcntl.h>
@@ -111,10 +111,12 @@ struct Sound {
 		double tatbyte;
 		int smpCount;
 #ifndef WIN32
+#ifdef HAVEALSASOUND
 		char *device;		// alsa
 		snd_output_t *output;
 		snd_pcm_t *ahandle;
 		snd_pcm_sframes_t frames;
+#endif
 		int32_t audio;					// oss
 		int32_t sndformat;
 #else

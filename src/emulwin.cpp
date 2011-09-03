@@ -23,7 +23,9 @@
 	#include <SDL_syswm.h>
 #endif
 
-#include <zlib.h>
+#ifdef HAVEZLIB
+	#include <zlib.h>
+#endif
 #include <fstream>
 
 std::string int2str(int);
@@ -43,7 +45,7 @@ extern DebugWin* dbg;
 extern DevelWin* dwin;
 extern MFiler* filer;
 
-#define	XPTITLE	"Xpeccy 0.4.992"
+#define	XPTITLE	"Xpeccy 0.4.993"
 
 //== NEW SHIT IS HERE
 
@@ -460,6 +462,8 @@ uint32_t getint(std::ifstream* file) {
 	return wrd;
 }
 
+#ifdef HAVEZLIB
+
 int zlib_uncompress(uint8_t* in, int ilen, uint8_t* out, int olen) {
 	int ret;
 	z_stream strm;
@@ -601,6 +605,8 @@ void EmulWin::load(std::string fnam,int typ) {
 			break;
 	}
 }
+
+#endif
 
 //=====================
 // MENU

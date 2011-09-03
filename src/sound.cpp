@@ -2,7 +2,7 @@
 #include "spectrum.h"
 
 #include <iostream>
-#if HAVESDLSOUND
+#ifdef HAVESDLSOUND
 	#include <SDL/SDL_sound.h>
 #endif
 
@@ -238,7 +238,7 @@ bool null_open() {return true;}
 void null_play() {}
 void null_close() {}
 
-#if HAVESDLSOUND
+#ifdef HAVESDLSOUND
 
 // FIXME: something going wrong. sdlPlayAudio plays buffer slower than emulation fill it
 void sdlPlayAudio(void*,Uint8* stream, int len) {
@@ -323,6 +323,9 @@ void oss_close() {
 	close(snd->audio);
 }
 
+
+#ifdef HAVEALSASOUND
+
 bool alsa_open() {
 	int err;
 	bool res = true;
@@ -364,6 +367,8 @@ void alsa_play() {
 }
 
 void alsa_close() {printf("libasound: close device\n");snd_pcm_close(snd->ahandle);}
+
+#endif
 
 #else
 
@@ -443,7 +448,7 @@ void ds_close() {
 //=============
 
 Sound::Sound() {
-#ifndef WIN32
+#ifdef HAVEALSASOUND
 	device = (char*)"default";
 	output = NULL;
 	sndformat = AFMT_U8;
@@ -476,12 +481,14 @@ Sound::Sound() {
 	addoutsys("NULL",&null_open,&null_play,&null_close);
 #ifndef WIN32
 	addoutsys("OSS",&oss_open,&oss_play,&oss_close);
+#ifdef HAVEALSASOUND
 	addoutsys("ALSA",&alsa_open,&alsa_play,&alsa_close);
+#endif
 #else
 	addoutsys("WaveOut",&wave_open,&wave_play,&wave_close);
 	addoutsys("DirectSound",&ds_open,&ds_play,&ds_close);
 #endif
-#if HAVESDLSOUND
+#ifdef HAVESDLSOUND
 	addoutsys("SDL",&sdlopen,&sdlplay,&sdlclose);	// TODO: do something with SDL output
 #endif
 }

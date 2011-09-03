@@ -1,9 +1,11 @@
-cmake_minimum_required(VERSION 2.6)
 project(xpeccy)
+cmake_minimum_required(VERSION 2.6)
+
 find_package(Qt4 REQUIRED)
 find_package(SDL REQUIRED)
-find_package(ALSA REQUIRED)
-find_package(ZLIB REQUIRED)
+find_package(SDL_sound)
+find_package(ALSA)
+find_package(ZLIB)
 
 file(GLOB SOURCES ./src/*.cpp)
 file(GLOB HEADERS ./src/*.h)
@@ -17,6 +19,19 @@ set(MOCFILES
 )
 
 add_definitions(-O3 -Wall)
+
+if (SDL_SOUND_FOUND)
+	add_definitions(-DHAVESDLSOUND)
+endif()
+
+if (ALSA_FOUND)
+	add_definitions(-DHAVEALSASOUND)
+endif()
+
+if (ZLIB_FOUND)
+	add_definitions(-DHAVEZLIB)
+endif()
+
 qt4_add_resources(RESOURCES ${QRCFILES})
 qt4_wrap_ui(UIHEADERS ${UIFILES})
 qt4_wrap_cpp(MOCHEADERS ${MOCFILES})
