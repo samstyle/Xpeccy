@@ -125,7 +125,7 @@ int main(int ac,char** av) {
 			mwin->makeBookmarkMenu();
 			mwin->reset();
 
-			for(i=1;i<ac;i++) filer->loadsomefile(std::string(av[i]),0);
+			for(i=1;i<ac;i++) filer->loadFile(av[i],FT_ALL,0);
 
 			QObject::connect(mwin,SIGNAL(wannasetup()),swin,SLOT(start()));
 			QObject::connect(mwin,SIGNAL(wannadevelop()),dwin,SLOT(start()));

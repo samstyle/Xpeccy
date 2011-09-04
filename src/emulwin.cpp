@@ -362,7 +362,10 @@ void EmulWin::SDLEventHandler() {
 						case SDLK_MENU: repause(true,PR_MENU); mainMenu->popup(pos() + QPoint(20,20)); break;
 						case SDLK_F1: emit(wannasetup()); break;
 						case SDLK_F2: repause(true,PR_FILE); filer->saveonf2(); repause(false,PR_FILE); break;
-						case SDLK_F3: repause(true,PR_FILE); filer->opensomewhat(); repause(false,PR_FILE); break;
+						case SDLK_F3: repause(true,PR_FILE);
+							filer->loadFile("",FT_ALL,-1); // filer->opensomewhat();
+							repause(false,PR_FILE);
+							break;
 						case SDLK_F4: if (zx->tape->flags & TAPE_ON) {
 									zx->tape->stop();
 									setcuricon(":/images/logo.png");
@@ -635,7 +638,8 @@ void EmulWin::makeBookmarkMenu() {
 }
 
 void EmulWin::bookmarkSelected(QAction* act) {
-	filer->loadsomefile(std::string(act->toolTip().toUtf8().data()),0);
+//	filer->loadsomefile(std::string(act->toolTip().toUtf8().data()),0);
+	filer->loadFile(act->toolTip().toUtf8().data(),FT_ALL,0);
 	setFocus();
 }
 

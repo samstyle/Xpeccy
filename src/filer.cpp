@@ -1,16 +1,8 @@
 #include "filer.h"
-#include "bdi.h"
-#include "tape.h"
 #include "spectrum.h"
-//#include "memory.h"
-//#include "iosys.h"
 #include "emulwin.h"
-#include "settings.h"
 
-//extern Tape* tape;
-//extern BDI* bdi;
 extern ZXComp* zx;
-extern Settings* sets;
 extern EmulWin* mwin;
 
 #include <QDebug>
@@ -18,18 +10,88 @@ extern EmulWin* mwin;
 MFiler::MFiler(QWidget *pr):QFileDialog(pr) {
 	setWindowIcon(QIcon(":/images/logo.png"));
 	setWindowModality(Qt::ApplicationModal);
+	setNameFilterDetailsVisible(true);
 }
 
-void MFiler::loadtape(std::string sfnam,bool sel) {
-	QString fnam(sfnam.c_str());
-	if (sel) {
-		fnam = open(NULL,"Load tape","",QStringList()<<"Tape images (*.tap *.tzx)").selfile;
-		sfnam = std::string(fnam.toUtf8().data());
-	}
-	if (sfnam=="") return;
-	if (fnam.endsWith(".tap",Qt::CaseInsensitive)) zx->tape->load(sfnam,TYPE_TAP);
-	if (fnam.endsWith(".tzx",Qt::CaseInsensitive)) zx->tape->load(sfnam,TYPE_TZX);
+QString getFilter(int flags) {
+	QString res = "";
+	if (flags & FT_SNA) res.append(" *.sna");
+	if (flags & FT_Z80) res.append(" *.z80");
+	if (flags & FT_TAP) res.append(" *.tap");
+	if (flags & FT_TZX) res.append(" *.tzx");
+	if (flags & FT_SCL) res.append(" *.scl");
+	if (flags & FT_TRD) res.append(" *.trd");
+	if (flags & FT_FDI) res.append(" *.fdi");
+	if (flags & FT_UDI) res.append(" *.udi");
+#ifdef HAVEZLIB
+	if (flags & FT_RZX) res.append(" *.rzx");
+#endif
+	if (res.startsWith(" ")) res.remove(0,1);
+	return res;
 }
+
+int getFileType(QString path) {
+	if (path.endsWith(".sna",Qt::CaseInsensitive)) return FT_SNA;
+	if (path.endsWith(".z80",Qt::CaseInsensitive)) return FT_Z80;
+	if (path.endsWith(".tap",Qt::CaseInsensitive)) return FT_TAP;
+	if (path.endsWith(".tzx",Qt::CaseInsensitive)) return FT_TZX;
+	if (path.endsWith(".scl",Qt::CaseInsensitive)) return FT_SCL;
+	if (path.endsWith(".trd",Qt::CaseInsensitive)) return FT_TRD;
+	if (path.endsWith(".fdi",Qt::CaseInsensitive)) return FT_FDI;
+	if (path.endsWith(".udi",Qt::CaseInsensitive)) return FT_UDI;
+#ifdef HAVEZLIB
+	if (path.endsWith(".rzx",Qt::CaseInsensitive)) return FT_RZX;
+#endif
+	return FT_NONE;
+}
+
+void MFiler::loadFile(const char* name, int flags, int drv) {
+	QString path(name);
+	setDirectory(lastdir);
+	if (path == "") {
+		QString filters = QString("All known types (").append(getFilter(flags)).append(")");
+		if ((flags & FT_DISK) && (drv == -1)) {
+			filters.append(";;Disk A (").append(getFilter(flags & FT_DISK)).append(")");
+			filters.append(";;Disk B (").append(getFilter(flags & FT_DISK)).append(")");
+			filters.append(";;Disk C (").append(getFilter(flags & FT_DISK)).append(")");
+			filters.append(";;Disk D (").append(getFilter(flags & FT_DISK)).append(")");
+		}
+		if (flags & FT_SNAP) filters.append(";;Snapshot (").append(getFilter(flags & FT_SNAP)).append(")");
+		if (flags & FT_TAPE) filters.append(";;Tape (").append(getFilter(flags & FT_TAPE)).append(")");
+		if (flags & FT_RZX) filters.append(";;RZX file (").append(getFilter(flags & FT_RZX)).append(")");
+		setWindowTitle("Open file");
+		setNameFilter(filters);
+		setOptions(QFileDialog::DontUseNativeDialog);
+		setDirectory(lastdir);
+		setAcceptMode(QFileDialog::AcceptOpen);
+		if (!exec()) return;
+		filters = selectedNameFilter();
+		if (filters.contains("Disk A")) drv = 0;
+		if (filters.contains("Disk B")) drv = 1;
+		if (filters.contains("Disk C")) drv = 2;
+		if (filters.contains("Disk D")) drv = 3;
+		path = selectedFiles().first();
+		lastdir = directory().absolutePath();
+	}
+	if (drv == -1) drv = 0;
+	int type = getFileType(path);
+	std::string sfnam(path.toUtf8().data());
+	switch (type) {
+		case FT_SNA: zx->sys->mem->load(sfnam,TYP_SNA); break;
+		case FT_Z80: zx->sys->mem->load(sfnam,TYP_Z80); break;
+		case FT_TAP: zx->tape->load(sfnam,TYPE_TAP); break;
+		case FT_TZX: zx->tape->load(sfnam,TYPE_TZX); break;
+		case FT_SCL: zx->bdi->flop[drv].load(sfnam,TYPE_SCL); break;
+		case FT_TRD: zx->bdi->flop[drv].load(sfnam,TYPE_TRD); break;
+		case FT_FDI: zx->bdi->flop[drv].load(sfnam,TYPE_FDI); break;
+		case FT_UDI: zx->bdi->flop[drv].load(sfnam,TYPE_UDI); break;
+#if HAVEZLIB
+		case FT_RZX: mwin->load(sfnam,TYP_RZX); break;
+#endif
+	}
+}
+
+// SAVE
 
 void MFiler::savetape(std::string sfnam, bool sel=true) {
 	QString fnam(sfnam.c_str());
@@ -42,54 +104,6 @@ void MFiler::savetape(std::string sfnam, bool sel=true) {
 	zx->tape->save(sfnam,TYPE_TAP);
 	zx->tape->path=sfnam;
 }
-
-void MFiler::loaddisk(std::string sfnam, uint8_t drv=0,bool sel=true) {
-	QString fnam(sfnam.c_str());
-	if (sel) {
-		fnam = open(NULL,QString("Open disk %1:").arg(QChar('A'+drv)),"",QStringList()<<"Disk images (*.trd *.scl *.fdi *.udi)").selfile;
-		sfnam = std::string(fnam.toUtf8().data());
-	}
-	if (sfnam == "") return;
-	if (fnam.endsWith(".trd",Qt::CaseInsensitive)) zx->bdi->flop[drv].load(sfnam,TYPE_TRD);
-	if (fnam.endsWith(".scl",Qt::CaseInsensitive)) zx->bdi->flop[drv].load(sfnam,TYPE_SCL);
-	if (fnam.endsWith(".fdi",Qt::CaseInsensitive)) zx->bdi->flop[drv].load(sfnam,TYPE_FDI);
-	if (fnam.endsWith(".udi",Qt::CaseInsensitive)) zx->bdi->flop[drv].load(sfnam,TYPE_UDI);
-}
-
-void MFiler::loadsomefile(std::string sfnam,uint8_t drv) {
-	QString fnam = QDialog::trUtf8(sfnam.c_str());
-	if (fnam.endsWith(".sna",Qt::CaseInsensitive)) zx->sys->mem->load(sfnam,TYP_SNA);
-	if (fnam.endsWith(".z80",Qt::CaseInsensitive)) zx->sys->mem->load(sfnam,TYP_Z80);
-	if (fnam.endsWith(".tap",Qt::CaseInsensitive)) zx->tape->load(sfnam,TYPE_TAP);
-	if (fnam.endsWith(".tzx",Qt::CaseInsensitive)) zx->tape->load(sfnam,TYPE_TZX);
-	if (fnam.endsWith(".trd",Qt::CaseInsensitive)) zx->bdi->flop[drv].load(sfnam,TYPE_TRD);
-	if (fnam.endsWith(".scl",Qt::CaseInsensitive)) zx->bdi->flop[drv].load(sfnam,TYPE_SCL);
-	if (fnam.endsWith(".fdi",Qt::CaseInsensitive)) zx->bdi->flop[drv].load(sfnam,TYPE_FDI);
-	if (fnam.endsWith(".udi",Qt::CaseInsensitive)) zx->bdi->flop[drv].load(sfnam,TYPE_UDI);
-#ifdef HAVEZLIB
-	if (fnam.endsWith(".rzx",Qt::CaseInsensitive)) mwin->load(sfnam,TYP_RZX);
-#endif
-}
-
-void MFiler::opensomewhat() {
-	mwin->repause(true,PR_FILE);
-	QStringList filters;
-#ifdef HAVEZLIB
-	filters<<"Known formats (*.sna *.z80 *.trd *.scl *.fdi *.udi *.tap *.tzx *.rzx)";
-#else
-	filters<<"Known formats (*.sna *.z80 *.trd *.scl *.fdi *.udi *.tap *.tzx)";
-#endif
-	filters<<"Disk B (*.trd *.scl *.fdi *.udi)"<<"Disk C (*.trd *.scl *.fdi *.udi)"<<"Disk D (*.trd *.scl *.fdi *.udi)";
-	MFResult res = open(NULL,"Open somewhat","",filters);
-	if (res.selfile!="") {
-		std::string sfnam(res.selfile.toUtf8().data());
-		uchar drv = res.fidx;
-		loadsomefile(sfnam,drv);
-	}
-	mwin->repause(false,PR_FILE);
-}
-
-// SAVE
 
 bool MFiler::savedisk(std::string sfnam, uint8_t drv,bool sel) {
 	if (!zx->bdi->flop[drv].insert) return true;
@@ -132,11 +146,6 @@ MFResult MFiler::save(QWidget* par,QString name,QString fnam,QStringList filt) {
 	setAcceptMode(QFileDialog::AcceptSave);
 	setConfirmOverwrite(true);
 	return execute(par,name,fnam,filt);
-}
-
-MFResult MFiler::open(QWidget* par,QString name,QString,QStringList filt) {
-	setAcceptMode(QFileDialog::AcceptOpen);
-	return execute(par,name,"",filt);
 }
 
 MFResult MFiler::execute(QWidget* par,QString name,QString fnam,QStringList filt) {

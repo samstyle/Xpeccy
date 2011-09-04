@@ -503,10 +503,10 @@ void SetupWin::newb() {newdisk(1);}
 void SetupWin::newc() {newdisk(2);}
 void SetupWin::newd() {newdisk(3);}
 
-void SetupWin::loada() {filer->loaddisk("",0,true); updatedisknams();}
-void SetupWin::loadb() {filer->loaddisk("",1,true); updatedisknams();}
-void SetupWin::loadc() {filer->loaddisk("",2,true); updatedisknams();}
-void SetupWin::loadd() {filer->loaddisk("",3,true); updatedisknams();}
+void SetupWin::loada() {filer->loadFile("",FT_DISK,0); updatedisknams();}
+void SetupWin::loadb() {filer->loadFile("",FT_DISK,1); updatedisknams();}
+void SetupWin::loadc() {filer->loadFile("",FT_DISK,2); updatedisknams();}
+void SetupWin::loadd() {filer->loadFile("",FT_DISK,3); updatedisknams();}
 
 void SetupWin::savea() {filer->savedisk(zx->bdi->flop[0].path,0,true);}
 void SetupWin::saveb() {filer->savedisk(zx->bdi->flop[1].path,1,true);}
@@ -527,7 +527,7 @@ void SetupWin::updatedisknams() {
 
 // tape
 
-void SetupWin::loatape() {filer->loadtape("",true); ui.tpathle->setText(QDialog::trUtf8(zx->tape->path.c_str())); buildtapelist();}
+void SetupWin::loatape() {filer->loadFile("",FT_TAPE,-1); ui.tpathle->setText(QDialog::trUtf8(zx->tape->path.c_str())); buildtapelist();}
 void SetupWin::savtape() {filer->savetape(zx->tape->path,true);}
 void SetupWin::ejctape() {zx->tape->eject(); ui.tpathle->setText(QDialog::trUtf8(zx->tape->path.c_str())); buildtapelist();}
 void SetupWin::tblkup() {
@@ -572,7 +572,7 @@ void SetupWin::hddcap() {
 // tools
 
 void SetupWin::ssjapath() {
-	QString fnam = filer->open(NULL,"Select SJAsm executable","",QStringList()<<"All files (*)").selfile;
+	QString fnam = QFileDialog::getOpenFileName(NULL,"Select SJAsm executable","","All files (*)");
 	if (fnam!="") ui.sjpathle->setText(fnam);
 }
 
@@ -614,7 +614,7 @@ void SetupWin::umedit(QModelIndex idx) {
 }
 
 void SetupWin::umaselp() {
-	QString fpath = filer->open(NULL,"Select file","",QStringList()<<"Known formats (*.sna *.tap *.tzx *.trd *.scl)").selfile;
+	QString fpath = filer->getOpenFileName(NULL,"Select file","","Known formats (*.sna *.z80 *.tap *.tzx *.trd *.scl *.fdi *.udi)");
 	if (fpath!="") uia.pathle->setText(fpath);
 }
 
