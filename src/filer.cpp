@@ -11,6 +11,9 @@ MFiler::MFiler(QWidget *pr):QFileDialog(pr) {
 	setWindowIcon(QIcon(":/images/logo.png"));
 	setWindowModality(Qt::ApplicationModal);
 	setNameFilterDetailsVisible(true);
+	setConfirmOverwrite(true);
+	setOptions(QFileDialog::DontUseNativeDialog);
+	lastdir = QDir::home();
 }
 
 QString getFilter(int flags) {
@@ -61,7 +64,6 @@ void MFiler::loadFile(const char* name, int flags, int drv) {
 		if (flags & FT_RZX) filters.append(";;RZX file (").append(getFilter(flags & FT_RZX)).append(")");
 		setWindowTitle("Open file");
 		setNameFilter(filters);
-		setOptions(QFileDialog::DontUseNativeDialog);
 		setDirectory(lastdir);
 		setAcceptMode(QFileDialog::AcceptOpen);
 		if (!exec()) return;
@@ -91,91 +93,53 @@ void MFiler::loadFile(const char* name, int flags, int drv) {
 	}
 }
 
-// SAVE
-
-void MFiler::savetape(std::string sfnam, bool sel=true) {
-	QString fnam(sfnam.c_str());
-	if (sel) {
-		fnam = save(NULL,"Save tape",fnam,QStringList()<<"Tape image (*.tap)").selfile;
-		sfnam = std::string(fnam.toUtf8().data());
+bool MFiler::saveFile(const char* name,int flags,int drv) {
+	QString path(name);
+	QString filters = "";
+	if (flags & FT_DISK) {
+		if (((drv == -1) || (drv == 0)) && (zx->bdi->flop[0].insert)) filters.append(";;Disk A (*.scl *.trd *.udi)");
+		if ((drv == 1) && (zx->bdi->flop[1].insert)) filters.append(";;Disk B (*.scl *.trd *.udi)");
+		if ((drv == 2) && (zx->bdi->flop[2].insert)) filters.append(";;Disk C (*.scl *.trd *.udi)");
+		if ((drv == 3) && (zx->bdi->flop[3].insert)) filters.append(";;Disk D (*.scl *.trd *.udi)");
 	}
-	if (sfnam=="") return;
-	if (!fnam.endsWith(".tap",Qt::CaseInsensitive)) sfnam.append(".tap");
-	zx->tape->save(sfnam,TYPE_TAP);
-	zx->tape->path=sfnam;
-}
-
-bool MFiler::savedisk(std::string sfnam, uint8_t drv,bool sel) {
-	if (!zx->bdi->flop[drv].insert) return true;
-	QString fnam(sfnam.c_str());
-	if (sel) {
-		fnam = save(NULL,QString("Save disk %1:").arg(QChar('A'+drv)),fnam,QStringList()<<"Disk image (*.trd *.scl *.udi)").selfile;
-		sfnam = std::string(fnam.toUtf8().data());
-	}
-	if (sfnam!="") {
-		bool kformat=false;
-		if (fnam.endsWith(".trd",Qt::CaseInsensitive)) {zx->bdi->flop[drv].save(sfnam,TYPE_TRD); kformat=true;}
-		if (fnam.endsWith(".scl",Qt::CaseInsensitive)) {zx->bdi->flop[drv].save(sfnam,TYPE_SCL); kformat=true;}
-		if (fnam.endsWith(".udi",Qt::CaseInsensitive)) {zx->bdi->flop[drv].save(sfnam,TYPE_UDI); kformat=true;}
-		if (!kformat) {fnam.append(".trd"); zx->bdi->flop[drv].save(sfnam,TYPE_TRD);}
-		zx->bdi->flop[drv].path=sfnam;
-		zx->bdi->flop[drv].changed=false;
-	}
-	return (sfnam!="");
-}
-
-void MFiler::saveonf2() {
-	mwin->repause(true,PR_FILE);
-	QStringList filter;
-	std::string sfnam;
-	if (zx->bdi->flop[0].insert) {filter<<"Disk A (*.trd *.scl *.udi)"; sfnam = zx->bdi->flop[0].path;}
-	if (zx->tape->data.size()!=0) {filter<<"Tape (*.tap)"; if (sfnam=="") sfnam = zx->tape->path;}
-	filter<<"Snapshot (*.sna)"; if (sfnam=="") sfnam = "snapshot.sna";
-	MFResult res = save(0,"Save something",QString(sfnam.c_str()),filter);
-	if (res.selfile!="") {
-		sfnam = std::string(res.selfile.toUtf8().data());
-		QString filt = res.selfilt;
-		if (filt.indexOf("Snapshot")!=-1) zx->sys->mem->save(sfnam,TYP_SNA,zx->opt.hwName=="ZX48K");
-		if (filt.indexOf("Disk A")!=-1) savedisk(sfnam,0,false);
-		if (filt.indexOf("Tape")!=-1) savetape(sfnam,false);
-	}
-	mwin->repause(false,PR_FILE);
-}
-
-MFResult MFiler::save(QWidget* par,QString name,QString fnam,QStringList filt) {
+	if (flags & FT_SNAP) filters.append(";;Snapshot (*.sna)");
+	if ((flags & FT_TAPE) && (zx->tape->data.size()!=0)) filters.append(";;Tape (*.tap)");
+	if (filters.startsWith(";;")) filters.remove(0,2);
+	setWindowTitle("Save file");
+	setNameFilter(filters);
 	setAcceptMode(QFileDialog::AcceptSave);
-	setConfirmOverwrite(true);
-	return execute(par,name,fnam,filt);
-}
-
-MFResult MFiler::execute(QWidget* par,QString name,QString fnam,QStringList filt) {
-	MFResult res;
-	res.selfile = "";
-	res.selfilt = "";
-	res.fidx = -1;
-	setParent(par);
-	setWindowTitle(name);
-	if (fnam!="") {
-		lastdir = QFileInfo(fnam).absoluteDir();
-		if (acceptMode()==QFileDialog::AcceptSave) selectFile(fnam);
-	} else {
-		selectFile("");
-	}
 	setDirectory(lastdir);
-	setNameFilters(filt);
-	setOption(QFileDialog::DontUseNativeDialog,true);
-	if (exec()) {
-		res.selfilt = selectedNameFilter();
-		res.fidx = filt.indexOf(res.selfilt);
-		res.selfile = selectedFiles()[0];
-		if (fnam=="") lastdir = directory().absolutePath();
+	if (path != "") selectFile(path);
+	if (!exec()) return false;
+	filters = selectedNameFilter();
+	if (filters.contains("Disk A")) drv = 0;
+	if (filters.contains("Disk B")) drv = 1;
+	if (filters.contains("Disk C")) drv = 2;
+	if (filters.contains("Disk D")) drv = 3;
+	if (drv == -1) drv = 0;
+	path = selectedFiles().first();
+	lastdir = directory().absolutePath();
+	std::string sfnam(path.toUtf8().data());
+	int type = getFileType(path);
+	if (filters.contains("Disk")) {
+		switch (type) {
+			case FT_SCL: zx->bdi->flop[drv].save(sfnam,TYPE_SCL); break;
+			case FT_TRD: zx->bdi->flop[drv].save(sfnam,TYPE_TRD); break;
+			case FT_UDI: zx->bdi->flop[drv].save(sfnam,TYPE_UDI); break;
+			default: sfnam += ".trd"; zx->bdi->flop[drv].save(sfnam, TYPE_TRD); break;
+		}
 	}
-	return res;
-}
-
-void MFiler::savesnapshot(std::string sfnam,bool sna48=false) {
-	bool kformat=false;
-	QString fnam(sfnam.c_str());
-	if (fnam.endsWith(".sna",Qt::CaseInsensitive)) {zx->sys->mem->save(sfnam,TYP_SNA,sna48); kformat=true;}
-	if (!kformat) {sfnam.append(".sna"); zx->sys->mem->save(sfnam,TYP_SNA,sna48);}
+	if (filters.contains("Tape")) {
+		switch (type) {
+			case FT_TAP: zx->tape->save(sfnam,TYPE_TAP); break;
+			default: sfnam += ".tap"; zx->tape->save(sfnam,TYPE_TAP); break;
+		}
+	}
+	if (filters.contains("Snap")) {
+		switch (type) {
+			case FT_SNA: zx->sys->mem->save(sfnam,TYP_SNA,zx->opt.hwName=="ZX48K"); break;
+			default: sfnam += ".sna"; zx->sys->mem->save(sfnam,TYP_SNA,zx->opt.hwName=="ZX48K"); break;
+		}
+	}
+	return true;
 }

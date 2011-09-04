@@ -508,10 +508,10 @@ void SetupWin::loadb() {filer->loadFile("",FT_DISK,1); updatedisknams();}
 void SetupWin::loadc() {filer->loadFile("",FT_DISK,2); updatedisknams();}
 void SetupWin::loadd() {filer->loadFile("",FT_DISK,3); updatedisknams();}
 
-void SetupWin::savea() {filer->savedisk(zx->bdi->flop[0].path,0,true);}
-void SetupWin::saveb() {filer->savedisk(zx->bdi->flop[1].path,1,true);}
-void SetupWin::savec() {filer->savedisk(zx->bdi->flop[2].path,2,true);}
-void SetupWin::saved() {filer->savedisk(zx->bdi->flop[3].path,3,true);}
+void SetupWin::savea() {if (zx->bdi->flop[0].insert) filer->saveFile(zx->bdi->flop[0].path.c_str(),FT_DISK,0);}
+void SetupWin::saveb() {if (zx->bdi->flop[1].insert) filer->saveFile(zx->bdi->flop[1].path.c_str(),FT_DISK,1);}
+void SetupWin::savec() {if (zx->bdi->flop[2].insert) filer->saveFile(zx->bdi->flop[2].path.c_str(),FT_DISK,2);}
+void SetupWin::saved() {if (zx->bdi->flop[3].insert) filer->saveFile(zx->bdi->flop[3].path.c_str(),FT_DISK,3);}
 
 void SetupWin::ejcta() {zx->bdi->flop[0].eject(); updatedisknams();}
 void SetupWin::ejctb() {zx->bdi->flop[1].eject(); updatedisknams();}
@@ -528,7 +528,10 @@ void SetupWin::updatedisknams() {
 // tape
 
 void SetupWin::loatape() {filer->loadFile("",FT_TAPE,-1); ui.tpathle->setText(QDialog::trUtf8(zx->tape->path.c_str())); buildtapelist();}
-void SetupWin::savtape() {filer->savetape(zx->tape->path,true);}
+void SetupWin::savtape() {
+//	filer->savetape(zx->tape->path,true);
+	if (zx->tape->data.size()!=0) filer->saveFile(zx->tape->path.c_str(),FT_TAP,-1);
+}
 void SetupWin::ejctape() {zx->tape->eject(); ui.tpathle->setText(QDialog::trUtf8(zx->tape->path.c_str())); buildtapelist();}
 void SetupWin::tblkup() {
 	int ps = ui.tapelist->currentIndex().row();

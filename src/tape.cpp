@@ -428,6 +428,7 @@ void Tape::save(std::string fname, uint8_t type) {
 				file.write((char*)&lenh,1);
 				file.write((char*)&buf[0],buf.size());
 			}
+			path = fname;
 			break;
 	}
 	file.close();

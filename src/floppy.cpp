@@ -218,7 +218,7 @@ bool Floppy::savecha() {
 		mbox.setStandardButtons(QMessageBox::Yes|QMessageBox::Ignore|QMessageBox::Cancel);
 		mbox.setIcon(QMessageBox::Warning);
 		int32_t ret=mbox.exec();
-		if (ret==QMessageBox::Yes) {res = filer->savedisk(path,id,true);}	// save
+		if (ret==QMessageBox::Yes) {res = filer->saveFile(path.c_str(),FT_DISK,id);}	// save
 		if (ret==QMessageBox::Ignore) res=true;					// don't save
 		if (ret==QMessageBox::Cancel) res=false;				// cancel
 	}

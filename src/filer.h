@@ -19,30 +19,12 @@
 #define	FT_RZX		(1<<8)
 #define	FT_ALL		(FT_TAPE | FT_DISK | FT_SNAP | FT_RZX)
 
-struct MFResult {
-	QString selfile;
-	QString selfilt;
-	int fidx;
-};
-
 class MFiler : public QFileDialog {
 	public:
 		MFiler(QWidget*);
-//		MFResult open(QWidget*,QString,QString,QStringList);
-		MFResult save(QWidget*,QString,QString,QStringList);
 		QDir lastdir;
 		void loadFile(const char*,int,int);
-		
-//		void loadtape(std::string,bool);
-		void savetape(std::string,bool);
-//		void loaddisk(std::string,uint8_t,bool);
-		bool savedisk(std::string,uint8_t,bool);
-		void savesnapshot(std::string,bool);
-		void saveonf2();
-//		void opensomewhat();
-//		void loadsomefile(std::string,uint8_t);
-	private:
-		MFResult execute(QWidget*,QString,QString,QStringList);
+		bool saveFile(const char*,int,int);
 };
 
 #endif
