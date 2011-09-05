@@ -1,11 +1,19 @@
 #include "memory.h"
 #include "spectrum.h"
+#include "settings.h"
 
-#include <QMessageBox>
+//#include <QMessageBox>
 #include <string>
+#include <vector>
 #include <fstream>
+#ifdef HAVEZLIB
+	#include <zlib.h>
+#endif
 
 extern ZXComp* zx;
+extern Settings* sets;
+std::vector<RZXFrame> rzx;
+void shithappens(std::string);
 
 Memory::Memory(int tp) {
 	type = tp;
@@ -105,25 +113,125 @@ uint8_t z80readblock(std::ifstream* file,char* buf) {
 void Memory::load(std::string sfnam,int typ) {
 	std::ifstream file(sfnam.c_str(),std::ios::binary);
 	if (!file.good()) {
-		QMessageBox mbx(QMessageBox::Critical,"Shit happens","<b>Can't open file</b>",QMessageBox::Ok);
-		mbx.setInformativeText(sfnam.c_str());
-		mbx.exec();
+		shithappens("Can't open file");
 		return;
 	}
 	parse(&file,typ);
 }
 
+uint32_t getint(std::ifstream* file) {
+	uint32_t wrd = file->get();
+	wrd += (file->get() << 8);
+	wrd += (file->get() << 16);
+	wrd += (file->get() << 24);
+	return wrd;
+}
+
+int zlib_uncompress(char* in, int ilen, char* out, int olen) {
+	int ret;
+	z_stream strm;
+	strm.zalloc = Z_NULL;
+	strm.zfree = Z_NULL;
+	strm.opaque = Z_NULL;
+	ret = inflateInit(&strm);
+	if (ret!= Z_OK) {
+		printf("Inflate init error\n");
+		return 0;
+	}
+	strm.avail_in = ilen;		// full len
+	strm.next_in = (uint8_t*)in;
+	strm.avail_out = olen;
+	strm.next_out = (uint8_t*)out;
+	ret = inflate(&strm,Z_FINISH);
+	switch (ret) {
+		case Z_NEED_DICT:
+//			ret = Z_DATA_ERROR;  
+		case Z_DATA_ERROR:
+		case Z_MEM_ERROR:
+			inflateEnd(&strm);
+			return 0;
+	}
+	inflateEnd(&strm);
+	return (olen - strm.avail_out);
+}
+
 void Memory::parse(std::ifstream* file,int typ) {
 	uint8_t tmp,tmp2,lst;
 	uint8_t snabank;
+	uint32_t flg,len,len2;
 	int adr;
 	bool btm;
-	char* buf = new char[0x10000];
+	char* buf = new char[0x1000000];
+	char* zbuf;
+	std::string onam = sets->opt.workDir + "/lain.tmp";
+	std::ofstream ofile;
+	std::string tmpStr;
 	Z80* cpu = zx->sys->cpu;
 	file->seekg(0,std::ios_base::end);
 	size_t sz=file->tellg();
 	file->seekg(0);
 	switch (typ) {
+#if HAVEZLIB
+		case TYP_RZX:
+			file->read(buf,4);
+			if (std::string(buf,4) != "RZX!") {
+				shithappens("Wrong RZX signature");
+				break;
+			}
+			file->seekg(2,std::ios_base::cur);	// version
+			flg = getint(file);			// flags
+			if (flg & 1) {
+				shithappens("Xpeccy cannot into encrypted RZX :(");
+				break;
+			}
+			btm = true;
+			while (btm && (file->tellg() < sz)) {
+				tmp = file->get();	// block type
+				len = getint(file);	// block len;
+				switch (tmp) {
+					case 0x30:
+						flg = getint(file);
+						file->read(buf,4);
+						tmpStr = std::string(buf,3);
+						tmp = 0xff;
+						if ((tmpStr == "z80") || (tmpStr == "Z80")) tmp = TYP_Z80;
+						if ((tmpStr == "sna") || (tmpStr == "SNA")) tmp = TYP_SNA;
+						len2 = getint(file);	// data length;
+						if (flg & 1) {
+							printf("External snapshot");
+							file->seekg(4,std::ios_base::cur);	// checksum
+							file->read(buf,len - 21);		// snapshot file name
+							tmpStr = std::string(buf,len - 21);
+						} else {
+							if (flg & 2) {
+								if (buf) free(buf);	// free old buffer
+								buf = new char[len2];	// uncompressed data
+								zbuf = new char[len];	// compressed data
+								file->read(zbuf,len-17);
+								len2 = zlib_uncompress(zbuf,len-17,buf,len2);
+							} else {
+								file->read(buf,len2);
+							}
+							if (len2 == 0) {
+								shithappens("RZX unpack error");
+								btm = false;
+								break;
+							}
+							ofile.open(onam.c_str());
+							ofile.write(buf,len2);
+							ofile.close();
+							tmpStr = onam;
+						}
+						if (tmp != 0xff) load(tmpStr,tmp);		// load snapshot
+						btm = false;		// stop after 1st snapshot; TODO: multiple snapshots loading
+						break;
+					default:
+						file->seekg(len-5,std::ios_base::cur);	// skip block
+						break;
+				}
+			}
+			break;
+#endif
 		case TYP_Z80:
 			prt0 = 0x10;
 			prt1 = 0x00;
@@ -321,7 +429,7 @@ void Memory::save(std::string sfnam,int typ,bool sna48=false) {
 				file.put((char)cpu->lpc).put((char)cpu->hpc);	// pc
 				file.put((char)prt0);			// 7ffd
 				file.put((char)(zx->bdi->active?0xff:0x00));
-				uchar bnk = cram & 7;
+				uint8_t bnk = cram & 7;
 				if (bnk!=0) file.write((char*)ram[0],0x4000);
 				if (bnk!=1) file.write((char*)ram[1],0x4000);
 				if (bnk!=3) file.write((char*)ram[3],0x4000);

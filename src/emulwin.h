@@ -31,11 +31,6 @@
 #define FL_SHOT		(1<<2)
 #define FL_RESET	(1<<3)
 
-struct RZXFrame {
-	int fetches;		// fetches till next int
-	std::vector<uint8_t> in;
-};
-
 #ifndef WIN32
 	class EmulWin : public QX11EmbedContainer {
 #else
@@ -49,16 +44,9 @@ struct RZXFrame {
 		int flags;
 		uint32_t rfnum;
 		uint32_t rfpos;
-		std::vector<RZXFrame> rzx;
 		SDL_Surface* surf;
 		SDL_Color zxpal[256];
-		struct {
-//			std::string sndOutputName;
-//			std::string scrshotDir,scrshotFormat;
-//			std::string workDir,romDir,optPath;
-		} opt;
 		void repause(bool,int);
-		void load(std::string,int);
 		void updateWin();
 		void makeBookmarkMenu();
 		void makeProfileMenu();
@@ -92,7 +80,5 @@ struct RZXFrame {
 		void closeEvent(QCloseEvent*);
 		
 };
-
-// extern EmulWin *mwin;
 
 #endif

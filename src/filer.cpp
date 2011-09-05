@@ -1,11 +1,12 @@
 #include "filer.h"
 #include "spectrum.h"
-#include "emulwin.h"
+//#include "emulwin.h"
 
 extern ZXComp* zx;
-extern EmulWin* mwin;
+//extern EmulWin* mwin;
 
 #include <QDebug>
+#include <QIcon>
 
 MFiler::MFiler(QWidget *pr):QFileDialog(pr) {
 	setWindowIcon(QIcon(":/images/logo.png"));
@@ -88,7 +89,7 @@ void MFiler::loadFile(const char* name, int flags, int drv) {
 		case FT_FDI: zx->bdi->flop[drv].load(sfnam,TYPE_FDI); break;
 		case FT_UDI: zx->bdi->flop[drv].load(sfnam,TYPE_UDI); break;
 #if HAVEZLIB
-		case FT_RZX: mwin->load(sfnam,TYP_RZX); break;
+		case FT_RZX: zx->sys->mem->load(sfnam,TYP_RZX); break;
 #endif
 	}
 }

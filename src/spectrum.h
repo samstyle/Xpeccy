@@ -12,8 +12,6 @@
 #include "gs.h"
 #include "hdd.h"
 
-#define TYP_RZX		0
-
 #define HW_NULL		0
 #define HW_ZX48		1
 #define	HW_PENT		2

@@ -23,19 +23,10 @@
 	#include <SDL_syswm.h>
 #endif
 
-#ifdef HAVEZLIB
-	#include <zlib.h>
-#endif
 #include <fstream>
 
 std::string int2str(int);
-//bool str2bool(std::string);
-//void splitline(std::string,std::string*,std::string*);
-//std::vector<std::string> splitstr(std::string,const char*);
-//uint8_t zx_in(int);
-//void zx_out(int,uint8_t);
 void shithappens(std::string);
-//void setFlagBit(bool,int32_t*,int32_t);
 
 extern ZXComp* zx;
 extern Sound* snd;
@@ -455,162 +446,6 @@ void EmulWin::SDLEventHandler() {
 	if (!mainMenu->isVisible() && (paused & PR_MENU)) repause(false,PR_MENU);
 }
 
-// load rzx
-
-uint32_t getint(std::ifstream* file) {
-	uint32_t wrd = file->get();
-	wrd += (file->get() << 8);
-	wrd += (file->get() << 16);
-	wrd += (file->get() << 24);
-	return wrd;
-}
-
-#ifdef HAVEZLIB
-
-int zlib_uncompress(uint8_t* in, int ilen, uint8_t* out, int olen) {
-	int ret;
-	z_stream strm;
-	strm.zalloc = Z_NULL;
-	strm.zfree = Z_NULL;
-	strm.opaque = Z_NULL;
-	ret = inflateInit(&strm);
-	if (ret!= Z_OK) {
-		printf("Inflate init error\n");
-		return 0;
-	}
-	strm.avail_in = ilen;		// full len
-	strm.next_in = in;
-	strm.avail_out = olen;
-	strm.next_out = out;
-	ret = inflate(&strm,Z_FINISH);
-	switch (ret) {
-		case Z_NEED_DICT:
-//			ret = Z_DATA_ERROR;     /* and fall through */
-		case Z_DATA_ERROR:
-		case Z_MEM_ERROR:
-			inflateEnd(&strm);
-			return 0;
-	}
-	inflateEnd(&strm);
-	return (olen - strm.avail_out);
-}
-
-void EmulWin::load(std::string fnam,int typ) {
-	std::ifstream file(fnam.c_str());
-	std::string onam = sets->opt.workDir + "/lain.tmp";
-	std::string extn;
-	std::ofstream ofle(onam.c_str());
-	if (!file.good()) {
-		shithappens("Can't open file");
-		return;
-	}
-	uint8_t* buf = new uint8_t[0x1000000];
-	uint8_t* zbuf = new uint8_t[0x100000];
-//	uint8_t* bptr;
-//	uint32_t frm;
-	uint32_t len,wrd,flg;
-	uint8_t tmp=0,typz;
-	RZXFrame rzxfrm;
-	switch (typ) {
-		case TYP_RZX:
-			rzx.clear();
-			file.seekg(0,std::ios_base::end);
-			size_t sz = file.tellg();
-			file.seekg(0);
-			file.read((char*)buf,4);
-			if (std::string((char*)buf,4) != "RZX!") {
-				shithappens("Wrong signature");
-				return;
-			}
-			file.seekg(2,std::ios_base::cur);	// skip version
-			flg = getint(&file);
-			bool kk = true;
-			do {
-				typz = file.get();		// block id
-				len = getint(&file);		// block len
-				switch(typz) {
-					case 0x30:
-						flg = getint(&file);
-						file.read((char*)buf,4);
-						tmp = -1;
-						extn = std::string((char*)buf,3);
-						if ((extn == "z80") || (extn == "Z80")) tmp = TYP_Z80;
-						if ((extn == "sna") || (extn == "SNA")) tmp = TYP_SNA;
-						wrd = getint(&file);
-						if (flg & 1) {
-							printf("External snapshot\n");
-							wrd = getint(&file);
-							file.read((char*)zbuf,len-21);
-							fnam = std::string((char*)zbuf,len-21);
-						} else {
-							if (flg & 2) {
-								file.read((char*)zbuf,len-17);
-								wrd = zlib_uncompress(zbuf,len-17,buf,wrd);
-							} else {
-								file.read((char*)buf,len-17);
-								wrd = len-17;
-							}
-							if (wrd == 0) {
-								shithappens("Snapshot unpack error");
-								kk = false;
-							} else {
-								ofle.write((char*)buf,wrd);
-								ofle.close();
-								zx->sys->mem->load(onam,tmp);		// parse (unpacked) snapshot
-							}
-						}
-						break;
-/*					case 0x80:
-
-						kk = false;
-						frm = getint(&file);
-				printf("%i frames\n",frm);
-						tmp = file.get();
-						wrd = getint(&file);	// T-states @ begin
-						flg = getint(&file);
-						if (flg & 1) {
-							shithappens("Xpeccy cannot into<br>encrypted RZX frames");
-						} else {
-							if (flg & 2) {
-								file.read((char*)zbuf,len-18);
-								wrd = zlib_uncompress(zbuf,len-18,buf,0x1000000);
-							} else {
-								file.read((char*)buf,len-18);
-								wrd = len-18;
-							}
-							if (wrd == 0) {
-								shithappens("Frames unpack error");
-							} else {
-						//		ofle.open(onam.c_str());
-						//		ofle.write((char*)buf,wrd);
-						//		ofle.close();
-								bptr = buf;
-								while (frm > 0) {
-									wrd = *bptr + (*(bptr+1) << 8); bptr += 2;
-									rzxfrm.fetches = wrd;
-									wrd = *bptr + (*(bptr+1) << 8); bptr += 2;	// in count
-									if (wrd != 0xffff) {
-										rzxfrm.in.clear();
-										while (wrd > 0) {
-											rzxfrm.in.push_back(*bptr++);
-											wrd--;
-										}
-									}
-									rzx.push_back(rzxfrm);
-									frm--;
-								}
-							}
-						}
-						break; */
-					default: file.seekg(len-5,std::ios_base::cur); break;		// skip other blocks
-				}
-			} while ((file.tellg() < sz) && kk);
-			break;
-	}
-}
-
-#endif
-
 //=====================
 // MENU
 
@@ -638,7 +473,6 @@ void EmulWin::makeBookmarkMenu() {
 }
 
 void EmulWin::bookmarkSelected(QAction* act) {
-//	filer->loadsomefile(std::string(act->toolTip().toUtf8().data()),0);
 	filer->loadFile(act->toolTip().toUtf8().data(),FT_ALL,0);
 	setFocus();
 }
@@ -675,8 +509,3 @@ void UserMenu::swap(int ps1, int ps2) {
 	data[ps1] = data[ps2];
 	data[ps2] = ment;
 }
-
-//=====================
-// SETTINGS
-//=====================
-

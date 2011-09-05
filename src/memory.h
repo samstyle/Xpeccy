@@ -5,8 +5,9 @@
 #include <vector>
 #include <stdint.h>
 
-#define TYP_SNA	0
-#define TYP_Z80 1
+#define TYP_SNA		0
+#define TYP_Z80 	1
+#define TYP_RZX 	2
 
 #define MEM_ZX	0
 #define MEM_GS	1
@@ -18,6 +19,11 @@ class RomSet {
 		std::string path;
 		uint8_t part;
 	} roms[8];
+};
+
+struct RZXFrame {
+	int fetches;		// fetches till next int
+	std::vector<uint8_t> in;
 };
 
 class Memory {
@@ -44,7 +50,5 @@ class Memory {
 	void setram(uint8_t);
 	void setrom(uint8_t);
 };
-
-//extern Memory *mem;
 
 #endif
