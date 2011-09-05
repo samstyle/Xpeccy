@@ -1,9 +1,14 @@
 0.1 - 0.4.991
 Lost in time
 
-0.4.992: build 2011
+0.4.992
 New	SDL sound output. Works bad.
 
-0.4.993: build 20110904
+0.4.993
+build 20110904
 Fix	Ungrabbing mouse & keyboard on fast disk saving (F9)
 New	SDL sound, ALSA and Zlib libraries is not required from now
+
+build 20110905
+Fix	Saved disk wasn't marked as saved - it causes false questions on F9 and at exit
+Wrk	Loading snapshot from RZX restructurisation
