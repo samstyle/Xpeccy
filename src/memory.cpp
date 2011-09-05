@@ -127,6 +127,7 @@ uint32_t getint(std::ifstream* file) {
 	return wrd;
 }
 
+#ifdef HAVEZLIB
 int zlib_uncompress(char* in, int ilen, char* out, int olen) {
 	int ret;
 	z_stream strm;
@@ -154,6 +155,7 @@ int zlib_uncompress(char* in, int ilen, char* out, int olen) {
 	inflateEnd(&strm);
 	return (olen - strm.avail_out);
 }
+#endif
 
 void Memory::parse(std::ifstream* file,int typ) {
 	uint8_t tmp,tmp2,lst;
