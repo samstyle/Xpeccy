@@ -53,16 +53,18 @@ void MFiler::loadFile(const char* name, int flags, int drv) {
 	QString path(name);
 	setDirectory(lastdir);
 	if (path == "") {
-		QString filters = QString("All known types (").append(getFilter(flags)).append(")");
-		if ((flags & FT_DISK) && (drv == -1)) {
-			filters.append(";;Disk A (").append(getFilter(flags & FT_DISK)).append(")");
-			filters.append(";;Disk B (").append(getFilter(flags & FT_DISK)).append(")");
-			filters.append(";;Disk C (").append(getFilter(flags & FT_DISK)).append(")");
-			filters.append(";;Disk D (").append(getFilter(flags & FT_DISK)).append(")");
+		QString filters = "";
+		if (drv == -1) filters = QString("All known types (").append(getFilter(flags)).append(")");
+		if (flags & FT_DISK) {
+			if ((drv == -1) || (drv == 0)) filters.append(";;Disk A (").append(getFilter(flags & FT_DISK)).append(")");
+			if ((drv == -1) || (drv == 1)) filters.append(";;Disk B (").append(getFilter(flags & FT_DISK)).append(")");
+			if ((drv == -1) || (drv == 2)) filters.append(";;Disk C (").append(getFilter(flags & FT_DISK)).append(")");
+			if ((drv == -1) || (drv == 3)) filters.append(";;Disk D (").append(getFilter(flags & FT_DISK)).append(")");
 		}
 		if (flags & FT_SNAP) filters.append(";;Snapshot (").append(getFilter(flags & FT_SNAP)).append(")");
 		if (flags & FT_TAPE) filters.append(";;Tape (").append(getFilter(flags & FT_TAPE)).append(")");
 		if (flags & FT_RZX) filters.append(";;RZX file (").append(getFilter(flags & FT_RZX)).append(")");
+		if (filters.startsWith(";;")) filters.remove(0,2);
 		setWindowTitle("Open file");
 		setNameFilter(filters);
 		setDirectory(lastdir);
