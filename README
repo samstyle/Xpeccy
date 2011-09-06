@@ -4,7 +4,8 @@ How to compile
 	mkdir build
 	cd build
 	cmake ..
-If something going wrong, fix it - install qt4, sdl, alsa and zlib developement files
+If something going wrong, fix it - install qt4 and sdl libraries and headers
+Optionally you can install alsa, sdl sound and zlib libs and headers for more functional
 And...
 	make
 Result should be './build/xpeccy' executable file
