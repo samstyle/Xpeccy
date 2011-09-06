@@ -8,7 +8,11 @@ New	SDL sound output. Works bad.
 build 20110904
 Fix	Ungrabbing mouse & keyboard on fast disk saving (F9)
 New	SDL sound, ALSA and Zlib libraries is not required from now
+Wrk	Rewriting file dialog
 
 build 20110905
 Fix	Saved disk wasn't marked as saved - it causes false questions on F9 and at exit
 Wrk	Loading snapshot from RZX restructurisation
+
+build 20110906
+Fix	There was wrong filters for loading disks from Options window
