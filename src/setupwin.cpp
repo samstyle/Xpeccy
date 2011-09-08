@@ -527,7 +527,7 @@ void SetupWin::updatedisknams() {
 
 // tape
 
-void SetupWin::loatape() {filer->loadFile("",FT_TAPE,-1); ui.tpathle->setText(QDialog::trUtf8(zx->tape->path.c_str())); buildtapelist();}
+void SetupWin::loatape() {filer->loadFile("",FT_TAPE,1); ui.tpathle->setText(QDialog::trUtf8(zx->tape->path.c_str())); buildtapelist();}
 void SetupWin::savtape() {
 //	filer->savetape(zx->tape->path,true);
 	if (zx->tape->data.size()!=0) filer->saveFile(zx->tape->path.c_str(),FT_TAP,-1);
