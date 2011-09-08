@@ -87,14 +87,14 @@ void Sound::sync() {
 	levl = lev;
 	levr = lev;
 	SndData tmpl = zx->aym->sc1->getvol();
-	levl += tmpl.l * ayvol / 16.0;
-	levr += tmpl.r * ayvol / 16.0;
+	levl += tmpl.l * ayvol / 100.0;
+	levr += tmpl.r * ayvol / 100.0;
 	tmpl = zx->aym->sc2->getvol();
-	levl += tmpl.l * ayvol / 16.0;
-	levr += tmpl.r * ayvol / 16.0;
+	levl += tmpl.l * ayvol / 100.0;
+	levr += tmpl.r * ayvol / 100.0;
 	tmpl = zx->gs->getvol();
-	levl += tmpl.l * gsvol / 16.0;
-	levr += tmpl.r * gsvol / 16.0;
+	levl += tmpl.l * gsvol / 100.0;
+	levr += tmpl.r * gsvol / 100.0;
 	if (smpCount >= chunks) return;
 	ringBuffer[ringPos] = levl;
 	ringPos++;
@@ -461,7 +461,7 @@ Sound::Sound() {
 	mute = true;
 	outsys = NULL;
 	t = 0;
-	beepvol = tapevol = ayvol = 16;
+	beepvol = tapevol = ayvol = 100;
 //	sbptr = sndbuf;
 
 //	sc1 = new AYProc(SND_AY);
