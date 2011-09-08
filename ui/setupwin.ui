@@ -435,7 +435,10 @@
                 <item row="0" column="1">
                  <widget class="QSlider" name="bvsld">
                   <property name="maximum">
-                   <number>16</number>
+                   <number>100</number>
+                  </property>
+                  <property name="tracking">
+                   <bool>true</bool>
                   </property>
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
@@ -444,7 +447,7 @@
                    <enum>QSlider::TicksBelow</enum>
                   </property>
                   <property name="tickInterval">
-                   <number>1</number>
+                   <number>10</number>
                   </property>
                  </widget>
                 </item>
@@ -471,7 +474,7 @@
                 <item row="1" column="1">
                  <widget class="QSlider" name="tvsld">
                   <property name="maximum">
-                   <number>16</number>
+                   <number>100</number>
                   </property>
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
@@ -480,7 +483,7 @@
                    <enum>QSlider::TicksBelow</enum>
                   </property>
                   <property name="tickInterval">
-                   <number>1</number>
+                   <number>10</number>
                   </property>
                  </widget>
                 </item>
@@ -570,7 +573,7 @@
                 <item row="0" column="1">
                  <widget class="QSlider" name="avsld">
                   <property name="maximum">
-                   <number>16</number>
+                   <number>100</number>
                   </property>
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
@@ -579,7 +582,7 @@
                    <enum>QSlider::TicksBelow</enum>
                   </property>
                   <property name="tickInterval">
-                   <number>1</number>
+                   <number>10</number>
                   </property>
                  </widget>
                 </item>
@@ -587,12 +590,12 @@
                  <widget class="QLabel" name="avlab">
                   <property name="minimumSize">
                    <size>
-                    <width>20</width>
+                    <width>32</width>
                     <height>0</height>
                    </size>
                   </property>
                   <property name="text">
-                   <string>Volume</string>
+                   <string>1</string>
                   </property>
                  </widget>
                 </item>
@@ -685,7 +688,7 @@
                 <item row="0" column="1">
                  <widget class="QSlider" name="gvsld">
                   <property name="maximum">
-                   <number>16</number>
+                   <number>100</number>
                   </property>
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
@@ -694,12 +697,18 @@
                    <enum>QSlider::TicksBelow</enum>
                   </property>
                   <property name="tickInterval">
-                   <number>1</number>
+                   <number>10</number>
                   </property>
                  </widget>
                 </item>
                 <item row="0" column="2">
                  <widget class="QLabel" name="gslab">
+                  <property name="minimumSize">
+                   <size>
+                    <width>32</width>
+                    <height>0</height>
+                   </size>
+                  </property>
                   <property name="text">
                    <string>1</string>
                   </property>

@@ -361,16 +361,12 @@ void Settings::load(bool dev) {
 						if (pnam=="bordersize") {test = atoi(pval.c_str()); if ((test>-1) && (test<101)) zx->vid->brdsize = test/100.0;}
 						if (pnam=="layout") {
 							vect = splitstr(pval,":");
-//for(uint i=0;i<vect.size();i++) printf("%s\t",vect[i].c_str());
-//printf("\n");
 							if (vect.size() == 9) {
-//printf("oga 8\n");
 								vlay.name = vect[0];
 								vlay.full.h = atoi(vect[1].c_str()); vlay.full.v = atoi(vect[2].c_str());
 								vlay.bord.h = atoi(vect[3].c_str()); vlay.bord.v = atoi(vect[4].c_str());
 								vlay.sync.h = atoi(vect[5].c_str()); vlay.sync.v = atoi(vect[6].c_str());
 								vlay.intsz = atoi(vect[7].c_str()); vlay.intpos = atoi(vect[8].c_str());
-//printf("%s\t%i\t%i\t%i\t%i\t%i\t%i\t%i\n",vlay.name.c_str(),vlay.full.h,vlay.full.v,vlay.bord.h,vlay.bord.v,vlay.sync.h,vlay.sync.v,vlay.intsz);
 								if ((vlay.full.h > vlay.bord.h + 256) && (vlay.bord.h > vlay.sync.h) && (vlay.full.v > vlay.bord.v + 192) && (vlay.bord.v > vlay.sync.v)) {
 									zx->vid->layout.push_back(vlay);
 								}
@@ -387,10 +383,10 @@ void Settings::load(bool dev) {
 						if (pnam=="dontmute") snd->mute=str2bool(pval);
 						if (pnam=="soundsys") opt.sndOutputName = pval;
 						if (pnam=="rate") snd->rate = atoi(pval.c_str());
-						if (pnam=="volume.beep") {snd->beepvol=atoi(pval.c_str()); if (snd->beepvol > 16) snd->beepvol = 16;}
-						if (pnam=="volume.tape") {snd->tapevol = atoi(pval.c_str()); if (snd->tapevol > 16) snd->tapevol = 16;}
-						if (pnam=="volume.ay") {snd->ayvol = atoi(pval.c_str()); if (snd->ayvol > 16) snd->ayvol = 16;}
-						if (pnam=="volume.gs") {snd->gsvol = atoi(pval.c_str()); if (snd->gsvol > 16) snd->gsvol = 16;}
+						if (pnam=="volume.beep") {snd->beepvol=atoi(pval.c_str()); if (snd->beepvol > 100) snd->beepvol = 100;}
+						if (pnam=="volume.tape") {snd->tapevol = atoi(pval.c_str()); if (snd->tapevol > 100) snd->tapevol = 100;}
+						if (pnam=="volume.ay") {snd->ayvol = atoi(pval.c_str()); if (snd->ayvol > 100) snd->ayvol = 100;}
+						if (pnam=="volume.gs") {snd->gsvol = atoi(pval.c_str()); if (snd->gsvol > 100) snd->gsvol = 100;}
 						if (pnam=="chip1") {test = atoi(pval.c_str()); if (test < SND_END) zx->aym->sc1->settype(test);}
 						if (pnam=="chip2") {test = atoi(pval.c_str()); if (test < SND_END) zx->aym->sc2->settype(test);}
 						if (pnam=="chip1.stereo") zx->aym->sc1->stereo = atoi(pval.c_str());

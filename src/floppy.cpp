@@ -529,6 +529,7 @@ void Floppy::save(std::string fnam, uint8_t type) {
 			file.open(fnam.c_str(),std::ios::binary);
 			file.write((char*)img,dptr-img);
 			file.close();
+			changed = false;
 			break;
 		case TYPE_TRD:
 			for (i=0; i<160; i++) {
@@ -543,6 +544,7 @@ void Floppy::save(std::string fnam, uint8_t type) {
 				}
 			}
 			if (i<200) {file.open(fnam.c_str(),std::ios::binary); file.write((const char*)img,0xa0000);}
+			changed = false;
 			break;
 		case TYPE_SCL:
 			memcpy(img,sign,8);
@@ -583,6 +585,7 @@ void Floppy::save(std::string fnam, uint8_t type) {
 			file.open(fnam.c_str(),std::ios::binary);
 			file.write((char*)img,dptr-img);
 			file.close();
+			changed = false;
 			break;
 	}
 }

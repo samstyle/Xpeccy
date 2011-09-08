@@ -15,4 +15,8 @@ Fix	Saved disk wasn't marked as saved - it causes false questions on F9 and at e
 Wrk	Loading snapshot from RZX restructurisation
 
 build 20110906
-Fix	There was wrong filters for loading disks from Options window
+Fix	Fix name filters for loading disk images from Options window
+
+build 20110908
+Fix	Fix name filters for loading tape images from Options window
+Wrk	Sound volume max value is 100 from now

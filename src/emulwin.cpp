@@ -104,8 +104,8 @@ EmulWin::EmulWin() {
 	tim1 = new QTimer();
 	tim2 = new QTimer();
 	QObject::connect(tim1,SIGNAL(timeout()),this,SLOT(emulframe()));
-	QObject::connect(tim2,SIGNAL(timeout()),this,SLOT(updateframe()));
-	QObject::connect(tim1,SIGNAL(timeout()),this,SLOT(SDLEventHandler()));
+//	QObject::connect(tim1,SIGNAL(timeout()),this,SLOT(updateframe()));
+	QObject::connect(tim2,SIGNAL(timeout()),this,SLOT(SDLEventHandler()));
 	repause(false,-1);
 //	setAcceptDrops(true);
 }
@@ -160,6 +160,7 @@ void EmulWin::updateframe() {
 }
 
 void EmulWin::emulframe() {
+	SDL_UpdateRect(surf,0,0,0,0);		//SDL_UpdateRect(zx->vid->surf,0,0,0,0);
 //	if ((size().width() != (int)sys->vid->wsze.h) || (size().height() != (int)sys->vid->wsze.v)) {
 //		setFixedSize(sys->vid->wsze.h,sys->vid->wsze.v);
 //	}
