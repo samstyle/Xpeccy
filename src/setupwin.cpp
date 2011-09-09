@@ -12,7 +12,6 @@
 
 extern Settings* sets;
 extern EmulWin* mwin;
-extern MFiler* filer;
 extern Sound* snd;
 extern DevelWin* dwin;
 extern ZXComp* zx;
@@ -503,15 +502,15 @@ void SetupWin::newb() {newdisk(1);}
 void SetupWin::newc() {newdisk(2);}
 void SetupWin::newd() {newdisk(3);}
 
-void SetupWin::loada() {filer->loadFile("",FT_DISK,0); updatedisknams();}
-void SetupWin::loadb() {filer->loadFile("",FT_DISK,1); updatedisknams();}
-void SetupWin::loadc() {filer->loadFile("",FT_DISK,2); updatedisknams();}
-void SetupWin::loadd() {filer->loadFile("",FT_DISK,3); updatedisknams();}
+void SetupWin::loada() {loadFile("",FT_DISK,0); updatedisknams();}
+void SetupWin::loadb() {loadFile("",FT_DISK,1); updatedisknams();}
+void SetupWin::loadc() {loadFile("",FT_DISK,2); updatedisknams();}
+void SetupWin::loadd() {loadFile("",FT_DISK,3); updatedisknams();}
 
-void SetupWin::savea() {if (zx->bdi->flop[0].insert) filer->saveFile(zx->bdi->flop[0].path.c_str(),FT_DISK,0);}
-void SetupWin::saveb() {if (zx->bdi->flop[1].insert) filer->saveFile(zx->bdi->flop[1].path.c_str(),FT_DISK,1);}
-void SetupWin::savec() {if (zx->bdi->flop[2].insert) filer->saveFile(zx->bdi->flop[2].path.c_str(),FT_DISK,2);}
-void SetupWin::saved() {if (zx->bdi->flop[3].insert) filer->saveFile(zx->bdi->flop[3].path.c_str(),FT_DISK,3);}
+void SetupWin::savea() {if (zx->bdi->flop[0].insert) saveFile(zx->bdi->flop[0].path.c_str(),FT_DISK,0);}
+void SetupWin::saveb() {if (zx->bdi->flop[1].insert) saveFile(zx->bdi->flop[1].path.c_str(),FT_DISK,1);}
+void SetupWin::savec() {if (zx->bdi->flop[2].insert) saveFile(zx->bdi->flop[2].path.c_str(),FT_DISK,2);}
+void SetupWin::saved() {if (zx->bdi->flop[3].insert) saveFile(zx->bdi->flop[3].path.c_str(),FT_DISK,3);}
 
 void SetupWin::ejcta() {zx->bdi->flop[0].eject(); updatedisknams();}
 void SetupWin::ejctb() {zx->bdi->flop[1].eject(); updatedisknams();}
@@ -527,10 +526,9 @@ void SetupWin::updatedisknams() {
 
 // tape
 
-void SetupWin::loatape() {filer->loadFile("",FT_TAPE,1); ui.tpathle->setText(QDialog::trUtf8(zx->tape->path.c_str())); buildtapelist();}
+void SetupWin::loatape() {loadFile("",FT_TAPE,1); ui.tpathle->setText(QDialog::trUtf8(zx->tape->path.c_str())); buildtapelist();}
 void SetupWin::savtape() {
-//	filer->savetape(zx->tape->path,true);
-	if (zx->tape->data.size()!=0) filer->saveFile(zx->tape->path.c_str(),FT_TAP,-1);
+	if (zx->tape->data.size()!=0) saveFile(zx->tape->path.c_str(),FT_TAP,-1);
 }
 void SetupWin::ejctape() {zx->tape->eject(); ui.tpathle->setText(QDialog::trUtf8(zx->tape->path.c_str())); buildtapelist();}
 void SetupWin::tblkup() {
@@ -617,7 +615,7 @@ void SetupWin::umedit(QModelIndex idx) {
 }
 
 void SetupWin::umaselp() {
-	QString fpath = filer->getOpenFileName(NULL,"Select file","","Known formats (*.sna *.z80 *.tap *.tzx *.trd *.scl *.fdi *.udi)");
+	QString fpath = getFileName(NULL,"Select file","","Known formats (*.sna *.z80 *.tap *.tzx *.trd *.scl *.fdi *.udi)");
 	if (fpath!="") uia.pathle->setText(fpath);
 }
 

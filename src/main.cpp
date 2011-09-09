@@ -25,7 +25,6 @@ EmulWin *mwin;
 DebugWin *dbg;
 SetupWin *swin;
 DevelWin *dwin;
-MFiler *filer;
 
 Settings *sets;
 
@@ -107,13 +106,12 @@ int main(int ac,char** av) {
 			atexit(SDL_Quit);
 			
 			filltabs();
-//			zx = new ZXComp;
 			snd = new Sound();
 			mwin = new EmulWin();
 			dbg = new DebugWin((QWidget*)mwin);
 			dwin = new DevelWin();
 			swin = new SetupWin((QWidget*)mwin);
-			filer = new MFiler(NULL);
+			initFileDialog((QWidget*)mwin); // filer = new MFiler(NULL);
 			sets->loadProfiles();
 			mwin->makeProfileMenu();
 			mwin->updateWin();
@@ -125,7 +123,7 @@ int main(int ac,char** av) {
 			mwin->makeBookmarkMenu();
 			mwin->reset();
 
-			for(i=1;i<ac;i++) filer->loadFile(av[i],FT_ALL,0);
+			for(i=1;i<ac;i++) loadFile(av[i],FT_ALL,0);
 
 			QObject::connect(mwin,SIGNAL(wannasetup()),swin,SLOT(start()));
 			QObject::connect(mwin,SIGNAL(wannadevelop()),dwin,SLOT(start()));

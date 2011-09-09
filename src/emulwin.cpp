@@ -34,7 +34,6 @@ extern Settings* sets;
 extern EmulWin* mwin;
 extern DebugWin* dbg;
 extern DevelWin* dwin;
-extern MFiler* filer;
 
 #define	XPTITLE	"Xpeccy 0.4.993"
 
@@ -109,18 +108,6 @@ EmulWin::EmulWin() {
 	repause(false,-1);
 //	setAcceptDrops(true);
 }
-
-/*
-void EmulWin::dropEvent(QDropEvent* ev) {
-printf("Drop\n");
-	const QMimeData *mime = ev->mimeData();
-	if (!mime->hasUrls()) return;
-	QList<QUrl> urls = mime->urls();
-	int i; for(i=0;i<urls.size();i++) {
-		if (urls[i].isValid()) filer->loadsomefile(urls[i].path().toStdString(),0);
-	}
-}
-*/
 
 void EmulWin::closeEvent(QCloseEvent* ev) {
 		repause(true,PR_QUIT);
@@ -353,9 +340,9 @@ void EmulWin::SDLEventHandler() {
 						case SDLK_ESCAPE: dbg->start(); break;
 						case SDLK_MENU: repause(true,PR_MENU); mainMenu->popup(pos() + QPoint(20,20)); break;
 						case SDLK_F1: emit(wannasetup()); break;
-						case SDLK_F2: repause(true,PR_FILE); filer->saveFile("",FT_ALL,-1); repause(false,PR_FILE); break;
+						case SDLK_F2: repause(true,PR_FILE); saveFile("",FT_ALL,-1); repause(false,PR_FILE); break;
 						case SDLK_F3: repause(true,PR_FILE);
-							filer->loadFile("",FT_ALL,-1); // filer->opensomewhat();
+							loadFile("",FT_ALL,-1);
 							repause(false,PR_FILE);
 							break;
 						case SDLK_F4: if (zx->tape->flags & TAPE_ON) {
@@ -474,7 +461,7 @@ void EmulWin::makeBookmarkMenu() {
 }
 
 void EmulWin::bookmarkSelected(QAction* act) {
-	filer->loadFile(act->toolTip().toUtf8().data(),FT_ALL,0);
+	loadFile(act->toolTip().toUtf8().data(),FT_ALL,0);
 	setFocus();
 }
 

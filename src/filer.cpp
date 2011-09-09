@@ -4,17 +4,20 @@
 
 extern ZXComp* zx;
 //extern EmulWin* mwin;
+QFileDialog *filer;
+QDir lastDir;
 
 #include <QDebug>
 #include <QIcon>
 
-MFiler::MFiler(QWidget *pr):QFileDialog(pr) {
-	setWindowIcon(QIcon(":/images/logo.png"));
-	setWindowModality(Qt::ApplicationModal);
-	setNameFilterDetailsVisible(true);
-	setConfirmOverwrite(true);
-	setOptions(QFileDialog::DontUseNativeDialog);
-	lastdir = QDir::home();
+void initFileDialog(QWidget* par) {
+	filer = new QFileDialog(par);
+	filer->setWindowIcon(QIcon(":/images/logo.png"));
+	filer->setWindowModality(Qt::ApplicationModal);
+	filer->setNameFilterDetailsVisible(true);
+	filer->setConfirmOverwrite(true);
+	filer->setOptions(QFileDialog::DontUseNativeDialog);
+	lastDir = QDir::home();
 }
 
 QString getFilter(int flags) {
@@ -49,9 +52,13 @@ int getFileType(QString path) {
 	return FT_NONE;
 }
 
-void MFiler::loadFile(const char* name, int flags, int drv) {
+QString getFileName(QWidget* par,QString capt,QString dir,QString filt) {
+	return filer->getOpenFileName(par,capt,dir,filt);
+}
+
+void loadFile(const char* name, int flags, int drv) {
 	QString path(name);
-	setDirectory(lastdir);
+	filer->setDirectory(lastDir);
 	if (path == "") {
 		QString filters = "";
 		if (drv == -1) filters = QString("All known types (").append(getFilter(flags)).append(")");
@@ -65,18 +72,18 @@ void MFiler::loadFile(const char* name, int flags, int drv) {
 		if (flags & FT_TAPE) filters.append(";;Tape (").append(getFilter(flags & FT_TAPE)).append(")");
 		if (flags & FT_RZX) filters.append(";;RZX file (").append(getFilter(flags & FT_RZX)).append(")");
 		if (filters.startsWith(";;")) filters.remove(0,2);
-		setWindowTitle("Open file");
-		setNameFilter(filters);
-		setDirectory(lastdir);
-		setAcceptMode(QFileDialog::AcceptOpen);
-		if (!exec()) return;
-		filters = selectedNameFilter();
+		filer->setWindowTitle("Open file");
+		filer->setNameFilter(filters);
+		filer->setDirectory(lastDir);
+		filer->setAcceptMode(QFileDialog::AcceptOpen);
+		if (!filer->exec()) return;
+		filters = filer->selectedNameFilter();
 		if (filters.contains("Disk A")) drv = 0;
 		if (filters.contains("Disk B")) drv = 1;
 		if (filters.contains("Disk C")) drv = 2;
 		if (filters.contains("Disk D")) drv = 3;
-		path = selectedFiles().first();
-		lastdir = directory().absolutePath();
+		path = filer->selectedFiles().first();
+		lastDir = filer->directory().absolutePath();
 	}
 	if (drv == -1) drv = 0;
 	int type = getFileType(path);
@@ -96,7 +103,7 @@ void MFiler::loadFile(const char* name, int flags, int drv) {
 	}
 }
 
-bool MFiler::saveFile(const char* name,int flags,int drv) {
+bool saveFile(const char* name,int flags,int drv) {
 	QString path(name);
 	QString filters = "";
 	if (flags & FT_DISK) {
@@ -108,20 +115,20 @@ bool MFiler::saveFile(const char* name,int flags,int drv) {
 	if (flags & FT_SNAP) filters.append(";;Snapshot (*.sna)");
 	if ((flags & FT_TAPE) && (zx->tape->data.size()!=0)) filters.append(";;Tape (*.tap)");
 	if (filters.startsWith(";;")) filters.remove(0,2);
-	setWindowTitle("Save file");
-	setNameFilter(filters);
-	setAcceptMode(QFileDialog::AcceptSave);
-	setDirectory(lastdir);
-	if (path != "") selectFile(path);
-	if (!exec()) return false;
-	filters = selectedNameFilter();
+	filer->setWindowTitle("Save file");
+	filer->setNameFilter(filters);
+	filer->setAcceptMode(QFileDialog::AcceptSave);
+	filer->setDirectory(lastDir);
+	if (path != "") filer->selectFile(path);
+	if (!filer->exec()) return false;
+	filters = filer->selectedNameFilter();
 	if (filters.contains("Disk A")) drv = 0;
 	if (filters.contains("Disk B")) drv = 1;
 	if (filters.contains("Disk C")) drv = 2;
 	if (filters.contains("Disk D")) drv = 3;
 	if (drv == -1) drv = 0;
-	path = selectedFiles().first();
-	lastdir = directory().absolutePath();
+	path = filer->selectedFiles().first();
+	lastDir = filer->directory().absolutePath();
 	std::string sfnam(path.toUtf8().data());
 	int type = getFileType(path);
 	if (filters.contains("Disk")) {

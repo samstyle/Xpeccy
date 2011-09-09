@@ -8,8 +8,6 @@
 #include "bdi.h"
 #include "filer.h"
 
-extern MFiler* filer;
-
 uint8_t trd_8e1[] = {
 	0x00,0x00,0x01,0x16,0x00,0xf0,0x09,0x10,0x00,0x00,0x20,0x20,0x20,0x20,0x20,0x20,
 	0x20,0x20,0x20,0x00,0x00,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x00,0x00,0x00
@@ -218,7 +216,7 @@ bool Floppy::savecha() {
 		mbox.setStandardButtons(QMessageBox::Yes|QMessageBox::Ignore|QMessageBox::Cancel);
 		mbox.setIcon(QMessageBox::Warning);
 		int32_t ret=mbox.exec();
-		if (ret==QMessageBox::Yes) {res = filer->saveFile(path.c_str(),FT_DISK,id);}	// save
+		if (ret==QMessageBox::Yes) {res = saveFile(path.c_str(),FT_DISK,id);}	// save
 		if (ret==QMessageBox::Ignore) res=true;					// don't save
 		if (ret==QMessageBox::Cancel) res=false;				// cancel
 	}

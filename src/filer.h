@@ -19,12 +19,9 @@
 #define	FT_RZX		(1<<8)
 #define	FT_ALL		(FT_TAPE | FT_DISK | FT_SNAP | FT_RZX)
 
-class MFiler : public QFileDialog {
-	public:
-		MFiler(QWidget*);
-		QDir lastdir;
-		void loadFile(const char*,int,int);
-		bool saveFile(const char*,int,int);
-};
+void initFileDialog(QWidget*);
+QString getFileName(QWidget*,QString,QString,QString);
+void loadFile(const char*, int, int);
+bool saveFile(const char*, int, int);
 
 #endif
