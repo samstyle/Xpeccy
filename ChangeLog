@@ -20,3 +20,6 @@ Fix	Fix name filters for loading disk images from Options window
 build 20110908
 Fix	Fix name filters for loading tape images from Options window
 Wrk	Sound volume max value is 100 from now
+
+build 20110910
+Wrk	Rewriting user menu
