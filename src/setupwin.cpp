@@ -348,7 +348,8 @@ void SetupWin::apply() {
 
 void SetupWin::reject() {
 	hide();
-	mwin->makeBookmarkMenu();
+	fillBookmarkMenu();
+//	mwin->makeBookmarkMenu();
 	mwin->repause(false,PR_OPTS);
 }
 
@@ -446,16 +447,15 @@ void SetupWin::buildtapelist() {
 }
 
 void SetupWin::buildmenulist() {
-	QStandardItemModel *model = new QStandardItemModel(sets->umenu.data.size(),2);
-	QStandardItem *itm;
-	uint8_t i;
-	for(i=0;i<sets->umenu.data.size();i++) {
-		itm = new QStandardItem(QDialog::trUtf8(sets->umenu.data[i].name.c_str()));
-		model->setItem(i,0,itm);
-		itm = new QStandardItem(QDialog::trUtf8(sets->umenu.data[i].path.c_str()));
-		model->setItem(i,1,itm);
+	std::vector<XBookmark> bml = getBookmarkList();
+	ui.umlist->setRowCount(bml.size());
+	QTableWidgetItem* itm;
+	for (uint i=0; i<bml.size(); i++) {
+		itm = new QTableWidgetItem(QString(bml[i].name.c_str()));
+		ui.umlist->setItem(i,0,itm);
+		itm = new QTableWidgetItem(QString(bml[i].path.c_str()));
+		ui.umlist->setItem(i,1,itm);
 	}
-	ui.umlist->setModel(model);
 	ui.umlist->setColumnWidth(0,100);
 	ui.umlist->selectRow(0);
 };
@@ -573,7 +573,7 @@ void SetupWin::hddcap() {
 // tools
 
 void SetupWin::ssjapath() {
-	QString fnam = QFileDialog::getOpenFileName(NULL,"Select SJAsm executable","","All files (*)");
+	QString fnam = QFileDialog::getOpenFileName(NULL,"Select SJAsm executable",QDir::homePath(),"All files (*)");
 	if (fnam!="") ui.sjpathle->setText(fnam);
 }
 
@@ -583,20 +583,33 @@ void SetupWin::sprjpath() {
 }
 
 void SetupWin::umup() {
-	int ps = ui.umlist->currentIndex().row();
-	if (ps>0) {sets->umenu.swap(ps,ps-1); buildmenulist(); ui.umlist->selectRow(ps-1);}
+	int ps = ui.umlist->currentRow();
+	if (ps>0) {
+		swapBookmarks(ps,ps-1);
+		buildmenulist();
+		ui.umlist->selectRow(ps-1);
+	}
 }
 
 void SetupWin::umdn() {
 	int ps = ui.umlist->currentIndex().row();
-	if ((ps!=-1) && (ps < (int)sets->umenu.data.size()-1)) {sets->umenu.swap(ps,ps+1); buildmenulist(); ui.umlist->selectRow(ps+1);}
+	if ((ps!=-1) && (ps < getBookmarksCount()-1)) {
+		swapBookmarks(ps,ps+1);
+		buildmenulist();
+		ui.umlist->selectRow(ps+1);
+	}
 }
 
 void SetupWin::umdel() {
 	int ps = ui.umlist->currentIndex().row();
 	if (ps!=-1) {
-		sets->umenu.del(ps); buildmenulist();
-		if (ps==(int)sets->umenu.data.size()) ui.umlist->selectRow(ps-1); else ui.umlist->selectRow(ps);
+		delBookmark(ps);
+		buildmenulist();
+		if (ps == getBookmarksCount()) {
+			ui.umlist->selectRow(ps-1);
+		} else {
+			ui.umlist->selectRow(ps);
+		}
 	}
 }
 
@@ -609,24 +622,24 @@ void SetupWin::umadd() {
 
 void SetupWin::umedit(QModelIndex idx) {
 	umidx = idx.row();
-	uia.namele->setText(QDialog::trUtf8(sets->umenu.data[umidx].name.c_str()));
-	uia.pathle->setText(QDialog::trUtf8(sets->umenu.data[umidx].path.c_str()));
+	uia.namele->setText(ui.umlist->item(umidx,0)->text());
+	uia.pathle->setText(ui.umlist->item(umidx,1)->text());
 	umadial->show();
 }
 
 void SetupWin::umaselp() {
-	QString fpath = getFileName(NULL,"Select file","","Known formats (*.sna *.z80 *.tap *.tzx *.trd *.scl *.fdi *.udi)");
+	QString fpath = QFileDialog::getOpenFileName(NULL,"Select file","","Known formats (*.sna *.z80 *.tap *.tzx *.trd *.scl *.fdi *.udi)");
 	if (fpath!="") uia.pathle->setText(fpath);
 }
 
 void SetupWin::umaconf() {
 	if ((uia.namele->text()=="") || (uia.pathle->text()=="")) return;
 	if (umidx == -1) {
-		sets->umenu.add(std::string(uia.namele->text().toUtf8().data()),std::string(uia.pathle->text().toUtf8().data()));
+		addBookmark(std::string(uia.namele->text().toUtf8().data()),std::string(uia.pathle->text().toUtf8().data()));
 	} else {
-		sets->umenu.set(umidx,std::string(uia.namele->text().toUtf8().data()),std::string(uia.pathle->text().toUtf8().data()));
+		setBookmark(umidx,std::string(uia.namele->text().toUtf8().data()),std::string(uia.pathle->text().toUtf8().data()));
 	}
 	umadial->hide();
 	buildmenulist();
-	ui.umlist->selectRow(sets->umenu.data.size()-1);
+	ui.umlist->selectRow(ui.umlist->rowCount()-1);
 }

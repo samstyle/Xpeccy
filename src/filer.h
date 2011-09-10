@@ -20,7 +20,6 @@
 #define	FT_ALL		(FT_TAPE | FT_DISK | FT_SNAP | FT_RZX)
 
 void initFileDialog(QWidget*);
-QString getFileName(QWidget*,QString,QString,QString);
 void loadFile(const char*, int, int);
 bool saveFile(const char*, int, int);
 

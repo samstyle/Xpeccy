@@ -1,9 +1,7 @@
 #include "filer.h"
 #include "spectrum.h"
-//#include "emulwin.h"
 
 extern ZXComp* zx;
-//extern EmulWin* mwin;
 QFileDialog *filer;
 QDir lastDir;
 
@@ -50,10 +48,6 @@ int getFileType(QString path) {
 	if (path.endsWith(".rzx",Qt::CaseInsensitive)) return FT_RZX;
 #endif
 	return FT_NONE;
-}
-
-QString getFileName(QWidget* par,QString capt,QString dir,QString filt) {
-	return filer->getOpenFileName(par,capt,dir,filt);
 }
 
 void loadFile(const char* name, int flags, int drv) {

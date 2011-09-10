@@ -49,27 +49,6 @@ Settings::Settings() {
 #endif
 }
 
-void Settings::addProfile(std::string nm, std::string fn) {
-	Profile np;
-	np.name = nm;
-	np.file = fn;
-	np.zx = new ZXComp;
-	profs.push_back(np);
-}
-
-bool Settings::setProfile(std::string nm) {
-	cprof = NULL;
-	for(uint32_t i=0; i<profs.size(); i++) {
-		if (profs[i].name == nm) {
-			cprof = &profs[i];
-			break;
-		}
-	}
-	if (cprof == NULL) return false;
-	zx = cprof->zx;
-	return true;
-}
-
 void Settings::saveProfiles() {
 	std::string cfname = opt.workDir + "/config.conf";
 	std::ofstream cfile(cfname.c_str());
@@ -79,20 +58,22 @@ void Settings::saveProfiles() {
 	}
 	uint32_t i;
 	cfile << "[BOOKMARKS]\n\n";
-	for (i=0; i<umenu.data.size(); i++) {
-		cfile << umenu.data[i].name.c_str() << " = " << umenu.data[i].path.c_str() << "\n";
+	std::vector<XBookmark> bml = getBookmarkList();
+	for (i=0; i<bml.size(); i++) {
+		cfile << bml[i].name << " = " << bml[i].path << "\n";
 	}
 	cfile << "\n[PROFILES]\n\n";
-	for (i=1; i<profs.size(); i++) {			// nr.0 skipped ('default' profile)
-		cfile << profs[i].name.c_str() << " = " << profs[i].file.c_str() << "\n";
+	std::vector<XProfile> prl = getProfileList();
+	for (i=1; i<prl.size(); i++) {			// nr.0 skipped ('default' profile)
+		cfile << prl[i].name << " = " << prl[i].file << "\n";
 	}
-	cfile << "current = " << cprof->name.c_str() << "\n";
+	cfile << "current = " << getCurrentProfile()->name << "\n";
 	cfile.close();
 }
 
 void Settings::save() {
 	saveProfiles();
-	std::string cfname = opt.workDir + "/" + cprof->file;
+	std::string cfname = opt.workDir + "/" + getCurrentProfile()->file;
 	std::ofstream sfile(cfname.c_str());
 	if (!sfile.good()) {
 		shithappens("Can't write settings");
@@ -226,13 +207,15 @@ void Settings::loadProfiles() {
 		}
 //		shithappens("Done");
 	}
-	while (profs.size() > 1) profs.pop_back();		// delete all existing profiles except 'default'
-	umenu.data.clear();
+	clearProfiles();
+	clearBookmarks();
+//	while (profs.size() > 1) profs.pop_back();		// delete all existing profiles except 'default'
+//	umenu.data.clear();
 	char* buf = new char[0x4000];
 	std::string line,pnam,pval;
 	std::string pnm = "default";
 	int section = 0;
-	Profile prf;
+//	Profile prf;
 	while (!file.eof()) {
 		file.getline(buf,2048);
 		line = std::string(buf);
@@ -243,29 +226,26 @@ void Settings::loadProfiles() {
 		} else {
 			switch (section) {
 				case 1:
-					umenu.add(pnam,pval);
+					addBookmark(pnam,pval);
 					break;
 				case 2:
 					if (pnam == "current") {
 						pnm = pval;
 					} else {
-						prf.name = pnam;
-						prf.file = pval;
-						prf.zx = new ZXComp;
-						profs.push_back(prf);
+						addProfile(pnam,pval);
 					}
 					break;
 			}
 		}
 	}
-	if (!setProfile(pnm)) {
+	if (!setProfile(pnm.c_str())) {
 		shithappens("Cannot set current profile\nCheck it's name");
 		throw(0);
 	}
 }
 
 void Settings::load(bool dev) {
-	std::string cfname = opt.workDir + "/" + cprof->file;
+	std::string cfname = opt.workDir + "/" + getCurrentProfile()->file;
 	std::ifstream file(cfname.c_str());
 	std::string line,pnam,pval;
 	std::vector<std::string> vect;
@@ -421,7 +401,7 @@ void Settings::load(bool dev) {
 					case 7: if (pnam=="sjasm") opt.asmPath = pval;
 						if (pnam=="projectsdir") opt.projectsDir = pval;
 						break;
-					case 8: umenu.add(pnam,pval);
+					case 8: addBookmark(pnam.c_str(),pval.c_str());
 						break;
 					case 9:
 						if (pnam=="iface") zx->ide->iface = atoi(pval.c_str());

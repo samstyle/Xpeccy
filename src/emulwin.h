@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <QIcon>
-#include <QMenu>
+//#include <QMenu>
 #include <QTimer>
 #include <stdint.h>
 
@@ -31,6 +31,17 @@
 #define FL_SHOT		(1<<2)
 #define FL_RESET	(1<<3)
 
+struct XBookmark {
+	std::string name;
+	std::string path;
+};
+
+struct XProfile {
+	std::string name;
+	std::string file;
+	ZXComp* zx;
+};
+
 #ifndef WIN32
 	class EmulWin : public QX11EmbedContainer {
 #else
@@ -48,8 +59,8 @@
 		SDL_Color zxpal[256];
 		void repause(bool,int);
 		void updateWin();
-		void makeBookmarkMenu();
-		void makeProfileMenu();
+//		void makeBookmarkMenu();
+//		void makeProfileMenu();
 		void setcuricon(QString);
 		void reset();
 		void exec();
@@ -62,7 +73,6 @@
 		void wannasetup();
 		void wannadevelop();
 	private:
-		QMenu *mainMenu,*bookmarkMenu,*profileMenu;
 		QVector<QRgb> pal;
 		QIcon curicon;
 		void rmksize();
@@ -80,5 +90,23 @@
 		void closeEvent(QCloseEvent*);
 		
 };
+
+void initUserMenu(QWidget*);
+
+void fillBookmarkMenu();
+void addBookmark(std::string,std::string);
+void setBookmark(int,std::string,std::string);
+void delBookmark(int);
+void clearBookmarks();
+void swapBookmarks(int,int);
+std::vector<XBookmark> getBookmarkList();
+int getBookmarksCount();
+
+void fillProfileMenu();
+void addProfile(std::string,std::string);
+bool setProfile(std::string);
+void clearProfiles();
+std::vector<XProfile> getProfileList();
+XProfile* getCurrentProfile();
 
 #endif

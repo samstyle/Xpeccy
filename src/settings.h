@@ -7,6 +7,7 @@
 
 #include "spectrum.h"
 
+/*
 struct MenuEntry {
 	std::string name;
 	std::string path;
@@ -26,22 +27,24 @@ struct Profile {
 	std::string file;
 	ZXComp* zx;
 };
+*/
+
 
 class Settings {
 	public:
 		Settings();
 		int32_t sscnt,ssint;
-		UserMenu umenu;		// bookmarks
-		std::vector<Profile> profs;
-		Profile* cprof;
+//		UserMenu umenu;		// bookmarks
+//		std::vector<Profile> profs;
+//		Profile* cprof;
 		struct {
 			std::string sndOutputName;
 			std::string scrshotDir,scrshotFormat;
 			std::string workDir,romDir,profPath;
 			std::string asmPath,projectsDir;
 		} opt;
-		void addProfile(std::string,std::string);
-		bool setProfile(std::string);
+//		void addProfile(std::string,std::string);
+//		bool setProfile(std::string);
 		void loadProfiles();
 		void saveProfiles();
 		void load(bool);

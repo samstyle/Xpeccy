@@ -35,6 +35,13 @@ extern EmulWin* mwin;
 extern DebugWin* dbg;
 extern DevelWin* dwin;
 
+std::vector<XBookmark> bookmarkList;
+std::vector<XProfile> profileList;
+XProfile* currentProfile;
+QMenu* userMenu;
+QMenu* bookmarkMenu;
+QMenu* profileMenu;
+
 #define	XPTITLE	"Xpeccy 0.4.993"
 
 //== NEW SHIT IS HERE
@@ -64,14 +71,10 @@ EmulWin::EmulWin() {
 	ssnum = ssbcnt = ssbint = 0;
 	flags = 0;
 	
-	mainMenu = new QMenu("Main menu",this);
-	bookmarkMenu = new QMenu("Bookmarks",this);
-	profileMenu = new QMenu("Profiles",this);
-	mainMenu->addMenu(bookmarkMenu);
-	mainMenu->addMenu(profileMenu);
-
-//	setFixedSize(zx->vid->wsze.h,zx->vid->wsze.v);
-
+	initUserMenu((QWidget*)this);
+	QObject::connect(bookmarkMenu,SIGNAL(triggered(QAction*)),this,SLOT(bookmarkSelected(QAction*)));
+	QObject::connect(profileMenu,SIGNAL(triggered(QAction*)),this,SLOT(profileSelected(QAction*)));
+	
 	sets->opt.scrshotFormat = "png";
 	
 #ifndef WIN32
@@ -338,7 +341,7 @@ void EmulWin::SDLEventHandler() {
 					switch (ev.key.keysym.sym) {
 						case SDLK_PAUSE: if (paused == 0) repause(true,PR_PAUSE); else repause(false,PR_PAUSE); break;
 						case SDLK_ESCAPE: dbg->start(); break;
-						case SDLK_MENU: repause(true,PR_MENU); mainMenu->popup(pos() + QPoint(20,20)); break;
+						case SDLK_MENU: repause(true,PR_MENU); userMenu->popup(pos() + QPoint(20,20)); break;
 						case SDLK_F1: emit(wannasetup()); break;
 						case SDLK_F2: repause(true,PR_FILE); saveFile("",FT_ALL,-1); repause(false,PR_FILE); break;
 						case SDLK_F3: repause(true,PR_FILE);
@@ -389,8 +392,8 @@ void EmulWin::SDLEventHandler() {
 							zx->mouse->buttons &= ~0x02;
 						} else {
 							repause(true,PR_MENU);
-							mainMenu->popup(pos() + QPoint(ev.button.x,ev.button.y+20));
-							mainMenu->setFocus();
+							userMenu->popup(pos() + QPoint(ev.button.x,ev.button.y+20));
+							userMenu->setFocus();
 						}
 						break;	
 					case SDL_BUTTON_MIDDLE:
@@ -431,69 +434,125 @@ void EmulWin::SDLEventHandler() {
 				break;
 		}
 	}
-	if (!mainMenu->isVisible() && (paused & PR_MENU)) repause(false,PR_MENU);
+	if (!userMenu->isVisible() && (paused & PR_MENU)) {
+		setFocus();
+		repause(false,PR_MENU);
+	}
 }
 
 //=====================
-// MENU
+// PROFILES
 
-void EmulWin::makeProfileMenu() {
+void fillProfileMenu() {
 	profileMenu->clear();
-	uint32_t i;
-	for (i=0; i < sets->profs.size(); i++) {
-		profileMenu->addAction(QString(sets->profs[i].name.c_str()));
+	for(uint i=0; i < profileList.size(); i++) {
+		profileMenu->addAction(profileList[i].name.c_str());
 	}
-	QObject::connect(profileMenu,SIGNAL(triggered(QAction*)),this,SLOT(profileSelected(QAction*)));
 }
 
-void EmulWin::makeBookmarkMenu() {
-	bookmarkMenu->clear();
-	uint i;
-	QAction *act;
-	for (i=0; i<sets->umenu.data.size(); i++) {
-		act = bookmarkMenu->addAction(QString(sets->umenu.data[i].name.c_str()));
-		act->setToolTip(QString(sets->umenu.data[i].path.c_str()));
-	}
-	if (bookmarkMenu->isEmpty()) {
-		act = bookmarkMenu->addAction("None"); act->setEnabled(false);
-	}
-	QObject::connect(bookmarkMenu,SIGNAL(triggered(QAction*)),this,SLOT(bookmarkSelected(QAction*)));
+void addProfile(std::string nm, std::string fp) {
+	XProfile nprof;
+	nprof.name = nm;
+	nprof.file = fp;
+	nprof.zx = new ZXComp;
+	profileList.push_back(nprof);
 }
+
+bool setProfile(std::string nm) {
+	for (uint i=0; i<profileList.size(); i++) {
+		if (profileList[i].name == nm) {
+			currentProfile = &profileList[i];
+			zx = currentProfile->zx;
+			return true;
+		}
+	}
+	return false;
+}
+
+void clearProfiles() {
+	XProfile defprof = profileList[0];
+	profileList.clear();
+	profileList.push_back(defprof);
+}
+
+std::vector<XProfile> getProfileList() {
+	return profileList;
+}
+
+XProfile* getCurrentProfile() {
+	return currentProfile;
+}
+
+//=====================
+// USER MENU
+
+void initUserMenu(QWidget* par) {
+	userMenu = new QMenu(par);
+	bookmarkMenu = userMenu->addMenu("Bookmarks");
+	profileMenu = userMenu->addMenu("Profiles");
+}
+
+void addBookmark(std::string nm, std::string fp) {
+	XBookmark nbm;
+	nbm.name = nm;
+	nbm.path = fp;
+	bookmarkList.push_back(nbm);
+}
+
+void swapBookmarks(int p1, int p2) {
+	XBookmark bm = bookmarkList[p1];
+	bookmarkList[p1] = bookmarkList[p2];
+	bookmarkList[p2] = bm;
+}
+
+void setBookmark(int idx,std::string nm, std::string fp) {
+	bookmarkList[idx].name = nm;
+	bookmarkList[idx].path = fp;
+}
+
+void delBookmark(int idx) {
+	bookmarkList.erase(bookmarkList.begin() + idx);
+}
+
+void clearBookmarks() {
+	bookmarkList.clear();
+}
+
+int getBookmarksCount() {
+	return bookmarkList.size();
+}
+
+void fillBookmarkMenu() {
+	bookmarkMenu->clear();
+	QAction* act;
+	if (bookmarkList.size() == 0) {
+		bookmarkMenu->addAction("None")->setEnabled(false);
+	} else {
+		for(uint i=0; i<bookmarkList.size(); i++) {
+			act = bookmarkMenu->addAction(bookmarkList[i].name.c_str());
+			act->setData(QVariant(bookmarkList[i].path.c_str()));
+		}
+	}
+}
+
+std::vector<XBookmark> getBookmarkList() {
+	return bookmarkList;
+}
+
+// SLOTS
 
 void EmulWin::bookmarkSelected(QAction* act) {
-	loadFile(act->toolTip().toUtf8().data(),FT_ALL,0);
+	loadFile(act->data().toString().toUtf8().data(),FT_ALL,0);
 	setFocus();
 }
+
 
 void EmulWin::profileSelected(QAction* act) {
 	repause(true,PR_EXTRA);
-	sets->setProfile(std::string(act->text().toUtf8().data()));
+	setProfile(std::string(act->text().toUtf8().data()));
 	sets->load(false);
 	updateWin();
-	makeBookmarkMenu();
 	sets->saveProfiles();
 	setFocus();
 	repause(false,PR_EXTRA);
-}
-
-void UserMenu::add(std::string name,std::string path) {
-	MenuEntry ment;
-	ment.name = name;
-	ment.path = path;
-	data.push_back(ment);
-}
-
-void UserMenu::set(int idx,std::string name,std::string path) {
-	data[idx].name = name;
-	data[idx].path = path;
-}
-
-void UserMenu::del(int pos) {
-	data.erase(data.begin()+pos);
-}
-
-void UserMenu::swap(int ps1, int ps2) {
-	MenuEntry ment = data[ps1];
-	data[ps1] = data[ps2];
-	data[ps2] = ment;
 }

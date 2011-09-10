@@ -91,8 +91,8 @@ int main(int ac,char** av) {
 #endif
 		int i; bool dev = false;
 		sets = new Settings;
-		sets->addProfile("default","xpeccy.conf");
-		sets->setProfile("default");
+		addProfile("default","xpeccy.conf");
+		setProfile("default");
 		for (i=1; i<ac; i++) {
 			if (std::string(av[i])=="-dev") dev=true;
 		}
@@ -113,14 +113,14 @@ int main(int ac,char** av) {
 			swin = new SetupWin((QWidget*)mwin);
 			initFileDialog((QWidget*)mwin); // filer = new MFiler(NULL);
 			sets->loadProfiles();
-			mwin->makeProfileMenu();
+			fillProfileMenu(); //mwin->makeProfileMenu();
 			mwin->updateWin();
 #if !SDLMAINWIN
 			mwin->show();
 #endif
 			sets->load(false);
 			mwin->updateWin();
-			mwin->makeBookmarkMenu();
+			fillBookmarkMenu(); //mwin->makeBookmarkMenu();
 			mwin->reset();
 
 			for(i=1;i<ac;i++) loadFile(av[i],FT_ALL,0);

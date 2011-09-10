@@ -1769,7 +1769,7 @@
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_15">
               <item>
-               <widget class="QTableView" name="umlist">
+               <widget class="QTableWidget" name="umlist">
                 <property name="editTriggers">
                  <set>QAbstractItemView::NoEditTriggers</set>
                 </property>
@@ -1782,7 +1782,19 @@
                 <property name="gridStyle">
                  <enum>Qt::DotLine</enum>
                 </property>
+                <property name="rowCount">
+                 <number>0</number>
+                </property>
+                <property name="columnCount">
+                 <number>2</number>
+                </property>
                 <attribute name="horizontalHeaderVisible">
+                 <bool>false</bool>
+                </attribute>
+                <attribute name="horizontalHeaderMinimumSectionSize">
+                 <number>1</number>
+                </attribute>
+                <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
                  <bool>false</bool>
                 </attribute>
                 <attribute name="horizontalHeaderStretchLastSection">
@@ -1792,8 +1804,10 @@
                  <bool>false</bool>
                 </attribute>
                 <attribute name="verticalHeaderDefaultSectionSize">
-                 <number>18</number>
+                 <number>17</number>
                 </attribute>
+                <column/>
+                <column/>
                </widget>
               </item>
               <item>
