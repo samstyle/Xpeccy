@@ -12,7 +12,6 @@
 
 extern Settings* sets;
 extern EmulWin* mwin;
-extern Sound* snd;
 extern DevelWin* dwin;
 extern ZXComp* zx;
 
@@ -43,7 +42,8 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.ssfbox->addItems(QStringList()<<"bmp"<<"png"<<"jpg"<<"scr");
 	for (i=0;i<zx->vid->layout.size();i++) {ui.geombox->addItem(QDialog::trUtf8(zx->vid->layout[i].name.c_str()));}
 // sound
-	for (i=0;i<snd->outsyslist.size();i++) {ui.outbox->addItem(QDialog::trUtf8(snd->outsyslist[i].name.c_str()));}
+	std::vector<std::string> outputList = sndGetList();
+	for (i=0;i<outputList.size();i++) {ui.outbox->addItem(QDialog::trUtf8(outputList[i].c_str()));}
 	ui.ratbox->addItems(QStringList()<<"44100"<<"22050"<<"11025");
 	ui.schip1box->addItem(QIcon(":/images/cancel.png"),"none",QVariant(SND_NONE));
 	ui.schip1box->addItem(QIcon(":/images/MicrochipLogo.png"),"AY-3-8910",QVariant(SND_AY));
@@ -177,15 +177,15 @@ void SetupWin::start() {
 	ui.sintbox->setValue(sets->ssint);
 	ui.geombox->setCurrentIndex(ui.geombox->findText(QDialog::trUtf8(zx->vid->curlay.c_str())));
 // sound
-	ui.senbox->setChecked(snd->enabled);
-	ui.mutbox->setChecked(snd->mute);
+	ui.senbox->setChecked(sndGet(SND_ENABLE) != 0);
+	ui.mutbox->setChecked(sndGet(SND_MUTE) != 0);
 	ui.gsrbox->setChecked(zx->gs->flags & GS_RESET);
 	ui.outbox->setCurrentIndex(ui.outbox->findText(QDialog::trUtf8(sets->opt.sndOutputName.c_str())));
-	ui.ratbox->setCurrentIndex(ui.ratbox->findText(QString::number(snd->rate)));
-	ui.bvsld->setValue(snd->beepvol);
-	ui.tvsld->setValue(snd->tapevol);
-	ui.avsld->setValue(snd->ayvol);
-	ui.gvsld->setValue(snd->gsvol);
+	ui.ratbox->setCurrentIndex(ui.ratbox->findText(QString::number(sndGet(SND_RATE))));
+	ui.bvsld->setValue(sndGet(SND_BEEP));
+	ui.tvsld->setValue(sndGet(SND_TAPE));
+	ui.avsld->setValue(sndGet(SND_AYVL));
+	ui.gvsld->setValue(sndGet(SND_GSVL));
 	ui.schip1box->setCurrentIndex(ui.schip1box->findData(QVariant(zx->aym->sc1->type)));
 	ui.schip2box->setCurrentIndex(ui.schip2box->findData(QVariant(zx->aym->sc2->type)));
 	ui.stereo1box->setCurrentIndex(ui.stereo1box->findData(QVariant(zx->aym->sc1->stereo)));
@@ -262,7 +262,7 @@ void SetupWin::apply() {
 		case 3: zx->sys->mem->mask = 0x1f; break;
 		case 4: zx->sys->mem->mask = 0x3f; break;
 	}
-	if (zx->hw != oldmac) mwin->reset();
+	if (zx->hw != oldmac) zx->reset();
 	zx->sys->cpu->frq = ui.cpufrq->value() / 2.0;
 	if (ui.scrpwait->isChecked()) zx->sys->hwflags |= WAIT_ON; else zx->sys->hwflags &= ~WAIT_ON;
 // video
@@ -277,17 +277,17 @@ void SetupWin::apply() {
 	mwin->updateWin();
 // sound
 	std::string oname = sets->opt.sndOutputName;
-	int orate = snd->rate;
-	snd->enabled = ui.senbox->isChecked();
-	snd->mute = ui.mutbox->isChecked();
+	int orate = sndGet(SND_RATE);
+	sndSet(SND_ENABLE, ui.senbox->isChecked());
+	sndSet(SND_MUTE, ui.mutbox->isChecked());
 	if (ui.gsrbox->isChecked()) zx->gs->flags |= GS_RESET; else zx->gs->flags &= ~GS_RESET;
 	sets->opt.sndOutputName = std::string(ui.outbox->currentText().toUtf8().data());
-	snd->rate = ui.ratbox->currentText().toInt();
-	snd->beepvol = ui.bvsld->value();
-	snd->tapevol = ui.tvsld->value();
-	snd->ayvol = ui.avsld->value();
-	snd->gsvol = ui.gvsld->value();
-	if ((oname != sets->opt.sndOutputName) || (orate != snd->rate)) snd->setoutptr(sets->opt.sndOutputName);
+	sndSet(SND_RATE, ui.ratbox->currentText().toInt());
+	sndSet(SND_BEEP, ui.bvsld->value());
+	sndSet(SND_TAPE, ui.tvsld->value());
+	sndSet(SND_AYVL, ui.avsld->value());
+	sndSet(SND_GSVL, ui.gvsld->value());
+	if ((oname != sets->opt.sndOutputName) || (orate != sndGet(SND_RATE))) setOutput(sets->opt.sndOutputName);
 	zx->aym->sc1->settype(ui.schip1box->itemData(ui.schip1box->currentIndex()).toInt());
 	zx->aym->sc2->settype(ui.schip2box->itemData(ui.schip2box->currentIndex()).toInt());
 	zx->aym->sc1->stereo = ui.stereo1box->itemData(ui.stereo1box->currentIndex()).toInt();
@@ -341,7 +341,7 @@ void SetupWin::apply() {
 	sets->opt.asmPath = std::string(ui.sjpathle->text().toUtf8().data());
 	sets->opt.projectsDir = std::string(ui.prjdirle->text().toUtf8().data());
 
-	snd->defpars();
+	sndCalibrate();
 	zx->vid->update();
 	sets->save();
 }

@@ -14,8 +14,10 @@
 #define	GS_MONO		0
 #define	GS_12_34	1
 
-//uint8_t gs_in(int32_t);
-//void gs_out(int32_t,uint8_t);
+struct GSData {
+	int r;
+	int l;
+};
 
 class GS : public ZXSystem {
 	public:
@@ -32,13 +34,14 @@ class GS : public ZXSystem {
 	int ch1,ch2,ch3,ch4;
 	int cnt;
 	int stereo;
+	double counter;
 	void reset();
 	bool extin(int,uint8_t*);
 	bool extout(int,uint8_t);
 	uint8_t in(uint16_t);
 	void out(uint16_t,uint8_t);
 	void sync(uint32_t);
-	SndData getvol();
+	GSData getvol();
 };
 
 // extern GS *gs;

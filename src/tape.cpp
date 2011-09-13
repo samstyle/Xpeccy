@@ -95,7 +95,7 @@ void Tape::sync() {
 	}
 }
 
-void Tape::stop() {
+void Tape::stop(int tk) {
 	if (flags & TAPE_ON) {
 		flags &= ~TAPE_ON;
 		sync();

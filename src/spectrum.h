@@ -8,7 +8,7 @@
 #include "keyboard.h"
 #include "tape.h"
 #include "bdi.h"
-#include "sound.h"
+#include "ayym.h"		// sound
 #include "gs.h"
 #include "hdd.h"
 
@@ -21,12 +21,11 @@
 #define	IO_WAIT		1
 #define WAIT_ON		2
 
-class HardWare {
-	public:
-		std::string name;
-		int mask;		// mem size mask (0:128, 1:256, 2:512, 3:1024); =0 for 48K
-		int flags;
-		int type;
+struct HardWare {
+	std::string name;
+	int mask;		// mem size mask (0:128, 1:256, 2:512, 3:1024); =0 for 48K
+	int flags;
+	int type;
 };
 
 class ZXComp : public ZXSystem {
@@ -43,18 +42,15 @@ class ZXComp : public ZXSystem {
 		IDE* ide;
 		GS* gs;
 		AYSys* aym;
+		bool beeplev;
 		bool block7ffd;
 		struct {
-//			bool wait;
 			std::string GSRom;
 			std::string hwName;
 			std::string romsetName;
-//			std::string sndOutputName;
-//			std::string scrshotDir,scrshotFormat;
 		} opt;
-		void exec();
+		uint32_t exec();
 		void reset();
-//		void addHardware(std::string,int(*)(int),void(*)(int,uint8_t),uint8_t(*)(int),void(*)(),int,int);
 		void addHardware(std::string,int,int,int);
 		void setHardware(std::string);
 		void mapMemory();
@@ -64,7 +60,5 @@ class ZXComp : public ZXSystem {
 		void INTHandle();
 		void NMIHandle();
 };
-
-// extern Spec *sys;
 
 #endif

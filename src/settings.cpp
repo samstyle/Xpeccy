@@ -7,7 +7,6 @@
 
 extern ZXComp* zx;
 extern EmulWin* mwin;
-extern Sound* snd;
 
 void shithappens(std::string);
 std::string int2str(int);
@@ -15,6 +14,8 @@ bool str2bool(std::string);
 void splitline(std::string,std::string*,std::string*);
 std::vector<std::string> splitstr(std::string,const char*);
 void setFlagBit(bool,int32_t*,int32_t);
+
+
 
 Settings::Settings() {
 #ifndef WIN32
@@ -105,20 +106,21 @@ void Settings::save() {
 	sfile << "combo.interval = " << int2str(ssint).c_str() << "\n";
 
 	sfile << "\n[SOUND]\n\n";
-	sfile << "enabled = " << (snd->enabled ? "y" : "n") << "\n";
+	sfile << "enabled = " << ((sndGet(SND_ENABLE) != 0) ? "y" : "n") << "\n";
 	sfile<<"# possible sound systems are:";
-	for (i=0;i<snd->outsyslist.size();i++) {
+	std::vector<std::string> outputList = sndGetList();
+	for (i=0; i<outputList.size(); i++) {
 		if (i!=0) sfile<<", ";
-		sfile<<snd->outsyslist[i].name.c_str();
+		sfile << outputList[i].c_str();
 	}
 	sfile<<"\n";
-	sfile<<"soundsys = "<<snd->outsys->name.c_str()<<"\n";
-	sfile<<"dontmute = "<<(snd->mute?"y":"n")<<"\n";
-	sfile<<"rate = "<<int2str(snd->rate).c_str()<<"\n";
-	sfile<<"volume.beep = "<<int2str(snd->beepvol).c_str()<<"\n";
-	sfile<<"volume.tape = "<<int2str(snd->tapevol).c_str()<<"\n";
-	sfile<<"volume.ay = "<<int2str(snd->ayvol).c_str()<<"\n";
-	sfile<<"volume.gs = "<<int2str(snd->gsvol).c_str()<<"\n";
+	sfile<<"soundsys = " << sndGetName().c_str()<<"\n";
+	sfile<<"dontmute = "<<((sndGet(SND_MUTE) != 0) ? "y" : "n")<<"\n";
+	sfile<<"rate = "<<int2str(sndGet(SND_RATE)).c_str()<<"\n";
+	sfile<<"volume.beep = "<<int2str(sndGet(SND_BEEP)).c_str()<<"\n";
+	sfile<<"volume.tape = "<<int2str(sndGet(SND_TAPE)).c_str()<<"\n";
+	sfile<<"volume.ay = "<<int2str(sndGet(SND_AYVL)).c_str()<<"\n";
+	sfile<<"volume.gs = "<<int2str(sndGet(SND_GSVL)).c_str()<<"\n";
 	sfile<<"chip1 = "<<int2str(zx->aym->sc1->type)<<"\n";
 	sfile<<"chip2 = "<<int2str(zx->aym->sc2->type)<<"\n";
 	sfile<<"chip1.stereo = "<<int2str(zx->aym->sc1->stereo)<<"\n";
@@ -359,14 +361,14 @@ void Settings::load(bool dev) {
 						if (pnam=="combo.count") sscnt=atoi(pval.c_str());
 						if (pnam=="combo.interval") ssint=atoi(pval.c_str());
 						break;
-					case 4: if (pnam=="enabled") snd->enabled=str2bool(pval);
-						if (pnam=="dontmute") snd->mute=str2bool(pval);
+					case 4: if (pnam=="enabled") sndSet(SND_ENABLE, str2bool(pval));
+						if (pnam=="dontmute") sndSet(SND_MUTE, str2bool(pval));
 						if (pnam=="soundsys") opt.sndOutputName = pval;
-						if (pnam=="rate") snd->rate = atoi(pval.c_str());
-						if (pnam=="volume.beep") {snd->beepvol=atoi(pval.c_str()); if (snd->beepvol > 100) snd->beepvol = 100;}
-						if (pnam=="volume.tape") {snd->tapevol = atoi(pval.c_str()); if (snd->tapevol > 100) snd->tapevol = 100;}
-						if (pnam=="volume.ay") {snd->ayvol = atoi(pval.c_str()); if (snd->ayvol > 100) snd->ayvol = 100;}
-						if (pnam=="volume.gs") {snd->gsvol = atoi(pval.c_str()); if (snd->gsvol > 100) snd->gsvol = 100;}
+						if (pnam=="rate") sndSet(SND_RATE,atoi(pval.c_str()));
+						if (pnam=="volume.beep") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_BEEP,test);}
+						if (pnam=="volume.tape") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_TAPE,test);}
+						if (pnam=="volume.ay") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_AYVL,test);}
+						if (pnam=="volume.gs") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_GSVL,test);}
 						if (pnam=="chip1") {test = atoi(pval.c_str()); if (test < SND_END) zx->aym->sc1->settype(test);}
 						if (pnam=="chip2") {test = atoi(pval.c_str()); if (test < SND_END) zx->aym->sc2->settype(test);}
 						if (pnam=="chip1.stereo") zx->aym->sc1->stereo = atoi(pval.c_str());
@@ -445,11 +447,11 @@ void Settings::load(bool dev) {
 		}
 	}
 	if (dev) return;
-	snd->defpars();
+	sndCalibrate();
 	zx->ide->refresh();
 	zx->setHardware(zx->opt.hwName);
 	zx->sys->mem->setromptr(zx->opt.romsetName);
-	snd->setoutptr(opt.sndOutputName);
+	setOutput(opt.sndOutputName);
 	if (zx->hw==NULL) throw("Can't found current machine");
 	if (zx->sys->mem->romset==NULL) throw("Can't found current romset");
 	if (~zx->hw->mask & tmask) throw("Incorrect memory size for this machine");

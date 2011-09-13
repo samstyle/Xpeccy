@@ -19,7 +19,6 @@
 #endif
 
 ZXComp* zx;
-Sound *snd;
 
 EmulWin *mwin;
 DebugWin *dbg;
@@ -79,8 +78,6 @@ void splitline(std::string line, std::string* pnam, std::string* pval) {
 	}
 }
 
-//uint8_t zx_in(int);
-//void zx_out(int,uint8_t);
 void filltabs();
 
 int main(int ac,char** av) {
@@ -106,22 +103,22 @@ int main(int ac,char** av) {
 			atexit(SDL_Quit);
 			
 			filltabs();
-			snd = new Sound();
+			sndInit();
 			mwin = new EmulWin();
 			dbg = new DebugWin((QWidget*)mwin);
 			dwin = new DevelWin();
 			swin = new SetupWin((QWidget*)mwin);
-			initFileDialog((QWidget*)mwin); // filer = new MFiler(NULL);
+			initFileDialog((QWidget*)mwin);
 			sets->loadProfiles();
-			fillProfileMenu(); //mwin->makeProfileMenu();
+			fillProfileMenu();
 			mwin->updateWin();
 #if !SDLMAINWIN
 			mwin->show();
 #endif
 			sets->load(false);
 			mwin->updateWin();
-			fillBookmarkMenu(); //mwin->makeBookmarkMenu();
-			mwin->reset();
+			fillBookmarkMenu();
+			zx->reset();
 
 			for(i=1;i<ac;i++) loadFile(av[i],FT_ALL,0);
 
@@ -135,7 +132,7 @@ int main(int ac,char** av) {
 			mwin->tim1->start(20);
 			mwin->tim2->start(20);
 			app.exec();
-			snd->outsys->close();
+			sndClose();
 			SDL_Quit();
 			return 0;
 		}

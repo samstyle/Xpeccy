@@ -5,8 +5,6 @@
 #include "z80/tables.c"
 #include "z80/instr.c"
 
-extern Sound* snd;
-
 ZOp* inst[9] = {
 	nopref,
 	ixpref,
@@ -196,7 +194,7 @@ void ZXComp::out(uint16_t port,uint8_t val) {
 		default:
 			if ((port&0xff) == 0xfe) {
 				vid->brdcol = val&0x07;
-				snd->beeplev = val&0x10;
+				beeplev = val & 0x10;
 				tape->outsig = val&0x08;
 				tape->sync();
 			} else {
@@ -251,7 +249,8 @@ void ZXComp::out(uint16_t port,uint8_t val) {
 	}
 }
 
-void ZXComp::exec() {
+uint32_t ZXComp::exec() {
+	uint32_t ltk = vid->t;
 	ZOp res = sys->fetch();
 	vid->sync(res.t, sys->cpu->frq);
 	sys->istrb = vid->intStrobe;
@@ -270,6 +269,9 @@ void ZXComp::exec() {
 	if ((sys->cpu->hpc > 0x3f) && sys->nmi) {
 		NMIHandle();
 	}
+	ltk = vid->t - ltk;
+	gs->sync(vid->t);
+	return ltk;
 }
 
 void ZXComp::INTHandle() {
@@ -310,13 +312,6 @@ void ZXComp::addHardware(std::string nam, int typ, int msk, int flg) {
 }
 
 ZXBase::ZXBase (ZXSystem* par) {
-/*	inst[0] = nopref;
-	inst[1] = ixpref;
-	inst[2] = iypref;
-	inst[4] = cbpref;
-	inst[5] = cxpref;
-	inst[6] = cypref;
-	inst[8] = edpref;*/
 	parent = par;
 	nmi = false;
 }

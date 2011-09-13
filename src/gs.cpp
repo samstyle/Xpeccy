@@ -15,14 +15,16 @@ GS::GS() {
 	pstate = 0x7e;
 	flags = GS_ENABLE;
 	stereo = GS_12_34;
+	counter = 0;
 }
 
 void GS::reset() {
 	sys->cpu->reset();
 }
 
-SndData GS::getvol() {
-	SndData res; res.l = res.r = 0;
+GSData GS::getvol() {
+	GSData res;
+	res.l = res.r = 0;
 	if (~flags & GS_ENABLE) return res;
 	switch (stereo) {
 		case GS_MONO:
@@ -38,19 +40,20 @@ SndData GS::getvol() {
 
 void GS::sync(uint32_t tk) {
 	ZOp res;
-	int ln = (tk - t) * GS_FRQ / 7.0;		// scale to GS ticks;
+	double ln = (tk - t) * GS_FRQ / 7.0;		// scale to GS ticks;
+	counter += ln;
 	t = tk;
 	if (~flags & GS_ENABLE) return;
-	while (ln > 0) {
+	while (counter > 0) {
 		res = sys->fetch();
 		res.func(sys);
-		ln -= res.t;
+		counter -= res.t;
 		cnt += res.t;
 		if (cnt > 320) {	// 12MHz CLK, 37.5KHz INT -> int in each 320 ticks
 			cnt -= 320;
 			tk = sys->interrupt();
 			cnt += tk;
-			ln -= tk;
+			counter -= tk;
 		}
 	}
 }

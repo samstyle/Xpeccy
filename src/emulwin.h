@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <QIcon>
-//#include <QMenu>
 #include <QTimer>
 #include <stdint.h>
 
@@ -42,6 +41,8 @@ struct XProfile {
 	ZXComp* zx;
 };
 
+// TODO: kill EmulWin class?
+
 #ifndef WIN32
 	class EmulWin : public QX11EmbedContainer {
 #else
@@ -53,16 +54,11 @@ struct XProfile {
 		QTimer *tim1,*tim2;
 		bool fast;
 		int flags;
-		uint32_t rfnum;
-		uint32_t rfpos;
 		SDL_Surface* surf;
 		SDL_Color zxpal[256];
 		void repause(bool,int);
 		void updateWin();
-//		void makeBookmarkMenu();
-//		void makeProfileMenu();
 		void setcuricon(QString);
-		void reset();
 		void exec();
 #ifdef WIN32
 		SDL_SysWMinfo inf;
@@ -85,14 +81,14 @@ struct XProfile {
 		void profileSelected(QAction*);
 		void SDLEventHandler();
 		void emulframe();
-		void updateframe();
 	protected:
 		void closeEvent(QCloseEvent*);
 		
 };
 
+// USER MENU
 void initUserMenu(QWidget*);
-
+// bookmarks
 void fillBookmarkMenu();
 void addBookmark(std::string,std::string);
 void setBookmark(int,std::string,std::string);
@@ -101,7 +97,7 @@ void clearBookmarks();
 void swapBookmarks(int,int);
 std::vector<XBookmark> getBookmarkList();
 int getBookmarksCount();
-
+// profiles
 void fillProfileMenu();
 void addProfile(std::string,std::string);
 bool setProfile(std::string);

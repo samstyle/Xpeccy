@@ -29,12 +29,11 @@ std::string int2str(int);
 void shithappens(std::string);
 
 extern ZXComp* zx;
-extern Sound* snd;
 extern Settings* sets;
 extern EmulWin* mwin;
 extern DebugWin* dbg;
 extern DevelWin* dwin;
-
+// for user menu
 std::vector<XBookmark> bookmarkList;
 std::vector<XProfile> profileList;
 XProfile* currentProfile;
@@ -42,13 +41,7 @@ QMenu* userMenu;
 QMenu* bookmarkMenu;
 QMenu* profileMenu;
 
-#define	XPTITLE	"Xpeccy 0.4.993"
-
-//== NEW SHIT IS HERE
-
-// TODO: SOMETHING INSTEAD OLD SHIT
-
-//== OLD SHIT IS HERE
+#define	XPTITLE	"Xpeccy 0.4.994"
 
 EmulWin::EmulWin() {
 	setcuricon(":/images/logo.png");
@@ -93,7 +86,6 @@ EmulWin::EmulWin() {
 
 	SDL_VERSION(&inf.version);
 	SDL_GetWMInfo(&inf);
-//	SetWindowLong(inf.window,GWL_STYLE,GetWindowLong(inf.window,GWL_STYLE) | WS_CHILD);
 	SetParent(inf.window,winId());
 	
 #endif
@@ -106,10 +98,8 @@ EmulWin::EmulWin() {
 	tim1 = new QTimer();
 	tim2 = new QTimer();
 	QObject::connect(tim1,SIGNAL(timeout()),this,SLOT(emulframe()));
-//	QObject::connect(tim1,SIGNAL(timeout()),this,SLOT(updateframe()));
 	QObject::connect(tim2,SIGNAL(timeout()),this,SLOT(SDLEventHandler()));
 	repause(false,-1);
-//	setAcceptDrops(true);
 }
 
 void EmulWin::closeEvent(QCloseEvent* ev) {
@@ -122,7 +112,6 @@ void EmulWin::closeEvent(QCloseEvent* ev) {
 			ev->accept();
 		} else {
 			ev->ignore();
-//			sys->vid->update();
 			SDL_SysWMinfo inf;
 			SDL_VERSION(&inf.version);
 			SDL_GetWMInfo(&inf);
@@ -131,63 +120,24 @@ void EmulWin::closeEvent(QCloseEvent* ev) {
 		}
 }
 
-void EmulWin::updateframe() {
-/*
-	if ((sys->vid->flags & VF_FULLSCREEN) && !(sys->vid->flags & VF_BLOCKFULLSCREEN)) {
-		SDL_Surface* bsurf = SDL_CreateRGBSurface(SDL_HWSURFACE,sys->vid->wsze.h,sys->vid->wsze.v,8,0x03,0x0c,0x30,0xc0);
-		SDL_Rect rect;
-		rect.x = rect.y = 0;
-		rect.w = sys->vid->wsze.h;
-		rect.h = sys->vid->wsze.v;
-		SDL_BlitSurface(sys->vid->surf,&rect,bsurf,&rect);
-		double zoomx = sys->vid->surf->w / bsurf->w;
-		double zoomy = sys->vid->surf->h / bsurf->h;
-		SDL_Surface* csurf = zoomSurface(bsurf,zoomx,zoomy,1);
-		SDL_BlitSurface(csurf,NULL,sys->vid->surf,NULL);
-	}
-*/
-	SDL_UpdateRect(surf,0,0,0,0);		//SDL_UpdateRect(zx->vid->surf,0,0,0,0);
-}
-
 void EmulWin::emulframe() {
-	SDL_UpdateRect(surf,0,0,0,0);		//SDL_UpdateRect(zx->vid->surf,0,0,0,0);
-//	if ((size().width() != (int)sys->vid->wsze.h) || (size().height() != (int)sys->vid->wsze.v)) {
-//		setFixedSize(sys->vid->wsze.h,sys->vid->wsze.v);
-//	}
+	SDL_UpdateRect(surf,0,0,0,0);
 #if !SDLMAINWIN
 	if (!isActiveWindow()) {
-		zx->keyb->releaseall();		// в неактивном окне все кнопки отпущены и мышь не заграблена
+		zx->keyb->releaseall();
 		zx->mouse->buttons = 0xff;
-//		SDL_WM_GrabInput(SDL_GRAB_OFF);
-//		SDL_ShowCursor(SDL_ENABLE);
 	}
 #endif
-//	bool lint = vid->intupt;
-	if (paused==0) {
-		if (!fast && (snd->outsys!=NULL) && snd->enabled && (snd->mute || isActiveWindow())) {
-//			printf("%i\n",snd->sbptr - snd->sndbuf);
-			snd->outsys->play();
-		}
-//		snd->sbptr = snd->sndbuf;
-//		snd->t = zx->vid->t;
-		snd->smpCount = 0;
-		do {
-			exec();
-		} while (!zx->sys->cpu->err && !zx->sys->istrb);
-		zx->sys->nmi = false;
-//		if (flags & FL_RZX) {
-//			rfnum++; rfpos = 0;
-//			printf("=== Frame %i\n",rfnum);
-//			if (rfnum >= rzx.size()) flags &= ~FL_RZX;
-//		}
+	if (paused != 0) return;
 
-//		if (!(dbg->active || cpu->err)) cpu->interrupt();
+	if (!fast && sndGet(SND_ENABLE) && (sndGet(SND_MUTE) || isActiveWindow())) {
+		sndPlay();
 	}
-
-//	SDL_UpdateRect(sys->vid->surf,0,0,0,0);
-//	SDLEventHandler();
-
-	if (paused!=0) return;
+	sndSet(SND_COUNT,0);
+	do {
+		exec();
+	} while (!zx->sys->cpu->err && !zx->sys->istrb);
+	zx->sys->nmi = false;
 
 	if (ssbcnt!=0) {
 		if (ssbint==0) {
@@ -219,12 +169,8 @@ void EmulWin::emulframe() {
 }
 
 void EmulWin::exec() {
-	uint32_t ln = zx->vid->t;
-	zx->exec();
-	ln = zx->vid->t - ln;
-	if (zx->vid->t > snd->t) {
-		snd->sync();
-	}
+	uint32_t ln = zx->exec();
+	sndSync(ln);
 	if (!dbg->active) {
 		// somehow catch CPoint
 		if (dbg->findbp(BPoint((zx->sys->cpu->pc < 0x4000) ? zx->sys->mem->crom : zx->sys->mem->cram, zx->sys->cpu->pc)) != -1) {
@@ -233,7 +179,6 @@ void EmulWin::exec() {
 		}
 		if (!zx->sys->cpu->err && zx->sys->istrb) {
 			zx->INTHandle();
-//			zx->vid->sync(ln, zx->sys->cpu->frq);
 		}
 	}
 }
@@ -243,7 +188,7 @@ void EmulWin::updateWin() {
 	int szw = zx->vid->wsze.h;
 	int szh = zx->vid->wsze.v;
 	setFixedSize(szw,szh);
-	int sdlflg = SDL_SWSURFACE;	// | SDL_FULLSCREEN;
+	int sdlflg = SDL_SWSURFACE;
 	if ((zx->vid->flags & VF_FULLSCREEN) && !(zx->vid->flags & VF_BLOCKFULLSCREEN)) {
 		sdlflg |= SDL_FULLSCREEN;
 	}
@@ -279,14 +224,10 @@ void EmulWin::repause(bool p, int msk) {
 	}
 	if (paused==0) {
 		setWindowIcon(curicon);
-		if (snd->outsys != NULL) {
-			if (snd->outsys->name == "SDL") SDL_PauseAudio(0);
-		}
+		sndPause(false);
 	} else {
 		setWindowIcon(QIcon(":/images/pause.png"));
-		if (snd->outsys != NULL) {
-			if (snd->outsys->name == "SDL") SDL_PauseAudio(1);
-		}
+		sndPause(true);
 	}
 	if (msk & PR_PAUSE) return;
 	if ((paused & ~PR_PAUSE) == 0) {
@@ -296,14 +237,6 @@ void EmulWin::repause(bool p, int msk) {
 		zx->vid->flags |= VF_BLOCKFULLSCREEN;
 		if (zx->vid->flags & VF_FULLSCREEN) updateWin();
 	}
-}
-
-void EmulWin::reset() {
-	zx->reset();
-//	snd->sc1->reset();
-//	snd->sc2->reset();
-//	snd->scc = snd->sc1;
-//	ide->reset();
 }
 
 // keys
@@ -349,7 +282,7 @@ void EmulWin::SDLEventHandler() {
 							repause(false,PR_FILE);
 							break;
 						case SDLK_F4: if (zx->tape->flags & TAPE_ON) {
-									zx->tape->stop();
+									zx->tape->stop(zx->vid->t);
 									setcuricon(":/images/logo.png");
 								} else {
 									zx->tape->startplay();
@@ -357,7 +290,7 @@ void EmulWin::SDLEventHandler() {
 								}
 								break;
 						case SDLK_F5: if (zx->tape->flags & TAPE_ON) {
-									zx->tape->stop();
+									zx->tape->stop(zx->vid->t);
 									setcuricon(":/images/logo.png");
 								} else {
 									zx->tape->startrec();
@@ -376,7 +309,7 @@ void EmulWin::SDLEventHandler() {
 						case SDLK_F10:
 							zx->sys->nmi = true;
 							break;
-						case SDLK_F12: reset(); break;
+						case SDLK_F12: zx->reset(); break;
 						default: break;
 					}
 				}
@@ -393,7 +326,7 @@ void EmulWin::SDLEventHandler() {
 						} else {
 							repause(true,PR_MENU);
 							userMenu->popup(pos() + QPoint(ev.button.x,ev.button.y+20));
-							userMenu->setFocus();
+						//	userMenu->setFocus();
 						}
 						break;	
 					case SDL_BUTTON_MIDDLE:
