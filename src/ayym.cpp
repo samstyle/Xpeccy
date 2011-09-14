@@ -1,7 +1,4 @@
 #include "ayym.h"
-#include "spectrum.h"
-
-extern ZXComp* zx;
 
 bool noizes[0x20000];		// here iz noize values [generated at start]
 uint8_t envforms[16][33]={
@@ -24,8 +21,6 @@ uint8_t envforms[16][33]={
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,255}
 };
 
-// AY
-
 AYChan::AYChan() {
 	lev = false;
 	vol = lim = bgn = pos = cur = 0;
@@ -39,7 +34,6 @@ AYSys::AYSys() {
 
 AYProc::AYProc(int t) {
 	stereo = AY_MONO;
-	n.cur = 0xffff;
 	settype(t);
 }
 
@@ -60,24 +54,23 @@ void AYProc::settype(int t) {
 	aycoe = 400 * 448 * 320 / (float)freq;		// vid ticks in half-period of note 1 (400)	400 * zx->vid->frmsz / (float)freq
 }
 
-AYData AYProc::getvol() {
+AYData AYProc::getvol(uint32_t tk) {
 // calculating A,B,C,envelope & noise levels
 	AYData res;
 	res.l = res.r = 8;
-	Video* p = zx->vid;
 	if (type == SND_NONE) return res;
-	if (a.lim != 0) {if ((p->t - a.bgn) > a.lim) {a.lev = !a.lev; a.bgn += (uint32_t)a.lim;}} else {a.bgn = p->t;}
-	if (b.lim != 0) {if ((p->t - b.bgn) > b.lim) {b.lev = !b.lev; b.bgn += (uint32_t)b.lim;}} else {b.bgn = p->t;}
-	if (c.lim != 0) {if ((p->t - c.bgn) > c.lim) {c.lev = !c.lev; c.bgn += (uint32_t)c.lim;}} else {c.bgn = p->t;}
+	if (a.lim != 0) {if ((tk - a.bgn) > a.lim) {a.lev = !a.lev; a.bgn += (uint32_t)a.lim;}} else {a.bgn = tk;}
+	if (b.lim != 0) {if ((tk - b.bgn) > b.lim) {b.lev = !b.lev; b.bgn += (uint32_t)b.lim;}} else {b.bgn = tk;}
+	if (c.lim != 0) {if ((tk - c.bgn) > c.lim) {c.lev = !c.lev; c.bgn += (uint32_t)c.lim;}} else {c.bgn = tk;}
 	if (e.lim != 0) {
-		if ((p->t - e.bgn) > e.lim) {
+		if ((tk - e.bgn) > e.lim) {
 			e.pos++;
 			e.bgn += (uint32_t)e.lim;
 			if (envforms[e.cur][e.pos]==255) e.pos--;
 			if (envforms[e.cur][e.pos]==253) e.pos=0;
 		}
-	} else {e.bgn = p->t;}
-	if (n.lim != 0) {if ((p->t - n.bgn) > n.lim) {n.pos++; n.bgn += (uint32_t)n.lim;}} else {n.bgn = p->t;}
+	} else {e.bgn = tk;}
+	if (n.lim != 0) {if ((tk - n.bgn) > n.lim) {n.pos++; n.bgn += (uint32_t)n.lim;}} else {n.bgn = tk;}
 	n.lev = noizes[n.pos & 0x1ffff];
 // mix channels, envelope & noise
 	a.vol=(reg[8]&16)?envforms[e.cur][e.pos]:(reg[8]&15);
@@ -126,7 +119,7 @@ void AYProc::reset(uint32_t tk) {
 	a.lim = b.lim = c.lim = n.lim = e.lim = 0;
 }
 
-void AYProc::setreg(uint8_t value) {
+void AYProc::setreg(uint8_t value, uint32_t tk) {
 	if (curreg > 15) return;
 	if (curreg < 14) reg[curreg]=value;
 	switch (curreg) {
@@ -139,7 +132,7 @@ void AYProc::setreg(uint8_t value) {
 		case 0x06: n.lim = 2*aycoe*(value&31); break;
 		case 0x0b:
 		case 0x0c: e.lim = 2*aycoe*(reg[11]+(reg[12]<<8)); break;
-		case 0x0d: e.cur = value&15; e.pos = 0; e.bgn = zx->vid->t; break;
+		case 0x0d: e.cur = value&15; e.pos = 0; e.bgn = tk; break;
 		case 0x0e: if (reg[7]&0x40) reg[14]=value; break;
 		case 0x0f: if (reg[7]&0x80) reg[15]=value; break;
 	}

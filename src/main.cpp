@@ -83,9 +83,6 @@ void filltabs();
 int main(int ac,char** av) {
 	QApplication app(ac,av);
 	try {
-#if SDLMAINWIN
-		app.setQuitOnLastWindowClosed(true);
-#endif
 		int i; bool dev = false;
 		sets = new Settings;
 		addProfile("default","xpeccy.conf");
@@ -101,22 +98,20 @@ int main(int ac,char** av) {
 		} else {
 			SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 			atexit(SDL_Quit);
-			
 			filltabs();
 			sndInit();
+			emulInit();
 			mwin = new EmulWin();
-			dbg = new DebugWin((QWidget*)mwin);
+			dbg = new DebugWin(emulWidget());
 			dwin = new DevelWin();
-			swin = new SetupWin((QWidget*)mwin);
-			initFileDialog((QWidget*)mwin);
+			initFileDialog(emulWidget());
 			sets->loadProfiles();
 			fillProfileMenu();
-			mwin->updateWin();
-#if !SDLMAINWIN
-			mwin->show();
-#endif
+			swin = new SetupWin(emulWidget());
+			emulUpdateWindow();
+			emulShow();
 			sets->load(false);
-			mwin->updateWin();
+			emulUpdateWindow();
 			fillBookmarkMenu();
 			zx->reset();
 
@@ -124,14 +119,13 @@ int main(int ac,char** av) {
 
 			QObject::connect(mwin,SIGNAL(wannasetup()),swin,SLOT(start()));
 			QObject::connect(mwin,SIGNAL(wannadevelop()),dwin,SLOT(start()));
-#if SDLMAINWIN
-			QObject::connect(mwin,SIGNAL(icum()),&app,SLOT(quit()));
-#else
-//			mwin->show();
-#endif
+
 			mwin->tim1->start(20);
 			mwin->tim2->start(20);
-			app.exec();
+			do {
+				app.exec();
+				emulRestore();
+			} while(!emulSaveChanged());
 			sndClose();
 			SDL_Quit();
 			return 0;

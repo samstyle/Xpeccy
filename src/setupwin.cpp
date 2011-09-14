@@ -40,7 +40,8 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.mszbox->addItems(QStringList()<<"48K"<<"128K"<<"256K"<<"512K"<<"1024K");
 // video
 	ui.ssfbox->addItems(QStringList()<<"bmp"<<"png"<<"jpg"<<"scr");
-	for (i=0;i<zx->vid->layout.size();i++) {ui.geombox->addItem(QDialog::trUtf8(zx->vid->layout[i].name.c_str()));}
+	std::vector<VidLayout> lays = getLayoutList();
+	for (i=0; i<lays.size(); i++) {ui.geombox->addItem(QDialog::trUtf8(lays[i].name.c_str()));}
 // sound
 	std::vector<std::string> outputList = sndGetList();
 	for (i=0;i<outputList.size();i++) {ui.outbox->addItem(QDialog::trUtf8(outputList[i].c_str()));}
@@ -147,7 +148,7 @@ void SetupWin::okay() {apply();reject();}
 
 void SetupWin::start() {
 	uint32_t i;
-	mwin->repause(true,PR_OPTS);
+	emulPause(true,PR_OPTS);
 // machine
 	ui.rsetbox->clear();
 	for (i=0; i < zx->sys->mem->rsetlist.size(); i++) {
@@ -155,7 +156,7 @@ void SetupWin::start() {
 	}
 	ui.machbox->setCurrentIndex(ui.machbox->findText(QDialog::trUtf8(zx->hw->name.c_str())));
 	ui.rsetbox->setCurrentIndex(ui.rsetbox->findText(QDialog::trUtf8(zx->sys->mem->romset->name.c_str())));
-	ui.reschk->setChecked(mwin->flags & FL_RESET);
+	ui.reschk->setChecked(emulGetFlags() & FL_RESET);
 	ui.resbox->setCurrentIndex(zx->sys->mem->res);
 	switch(zx->sys->mem->mask) {
 		case 0x00: ui.mszbox->setCurrentIndex(0); break;
@@ -253,7 +254,7 @@ void SetupWin::apply() {
 	zx->opt.romsetName = std::string(ui.rsetbox->currentText().toUtf8().data());
 	zx->sys->mem->setromptr(zx->opt.romsetName);
 	zx->sys->mem->loadromset(sets->opt.romDir);
-	if (ui.reschk->isChecked()) mwin->flags |= FL_RESET; else mwin->flags &= ~FL_RESET;
+	emulSetFlag(FL_RESET, ui.reschk->isChecked());
 	zx->sys->mem->res = ui.resbox->currentIndex();
 	switch(ui.mszbox->currentIndex()) {
 		case 0: zx->sys->mem->mask = 0x00; break;
@@ -273,8 +274,8 @@ void SetupWin::apply() {
 	sets->opt.scrshotFormat = std::string(ui.ssfbox->currentText().toUtf8().data());
 	sets->sscnt = ui.scntbox->value();
 	sets->ssint = ui.sintbox->value();
-	zx->vid->setlayout(std::string(ui.geombox->currentText().toUtf8().data()));
-	mwin->updateWin();
+	zx->vid->setLayout(std::string(ui.geombox->currentText().toUtf8().data()));
+	emulUpdateWindow();
 // sound
 	std::string oname = sets->opt.sndOutputName;
 	int orate = sndGet(SND_RATE);
@@ -350,7 +351,7 @@ void SetupWin::reject() {
 	hide();
 	fillBookmarkMenu();
 //	mwin->makeBookmarkMenu();
-	mwin->repause(false,PR_OPTS);
+	emulPause(false,PR_OPTS);
 }
 
 // lists

@@ -9,7 +9,7 @@ extern EmulWin* mwin;
 extern ZOp* inst[9];
 
 void DebugWin::start() {
-	mwin->repause(true,PR_DEBUG);
+	emulPause(true,PR_DEBUG);
 	ledit->hide();
 	active = true;
 	upadr = zx->sys->cpu->pc;
@@ -23,7 +23,7 @@ void DebugWin::stop() {
 	mwin->exec();
 	hide();
 	active = false;
-	mwin->repause(false,PR_DEBUG);
+	emulPause(false,PR_DEBUG);
 }
 
 void DebugWin::reject() {stop();}

@@ -27,20 +27,6 @@
 #define	SND_ENABLE	6
 #define	SND_MUTE	7
 
-struct OutSys {
-	std::string name;
-	bool (*open)();
-	void (*play)();
-	void (*close)();
-};
-
-//struct Sound {
-//	public:
-//		Sound();
-//		bool enabled;
-//		bool mute;
-//};
-
 void sndInit();
 void sndCalibrate();
 void addOutput(std::string, bool(*)(),void(*)(),void(*)());
@@ -49,13 +35,11 @@ bool sndOpen();
 void sndPlay();
 void sndPause(bool);
 void sndClose();
-void sndSync(int);
+void sndSync(uint32_t);
 int sndGet(int);
 void sndSet(int,int);
 void sndSet(int,bool);
 std::vector<std::string> sndGetList();
 std::string sndGetName();
-
-// extern Sound *snd;
 
 #endif

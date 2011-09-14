@@ -8,6 +8,13 @@
 
 extern ZXComp* zx;
 
+struct OutSys {
+	std::string name;
+	bool (*open)();
+	void (*play)();
+	void (*close)();
+};
+
 void shithappens(std::string);
 
 bool sndEnabled;
@@ -48,9 +55,9 @@ uint8_t lev,levr,levl;
 
 // output
 
-void sndSync(int tk) {
-	tickCount -= tk;
-	if (tickCount > 0) return;
+void sndSync(uint32_t tk) {
+	if (tk < tickCount) return;
+//	if (tickCount > 0) return;
 	tickCount += tatbyte;
 	zx->tape->sync();
 	lev = zx->beeplev ? beepVolume : 0;
@@ -60,10 +67,10 @@ void sndSync(int tk) {
 	lev *= 0.16;
 	levl = lev;
 	levr = lev;
-	AYData tmpl = zx->aym->sc1->getvol();
+	AYData tmpl = zx->aym->sc1->getvol(tk);
 	levl += tmpl.l * ayVolume / 100.0;
 	levr += tmpl.r * ayVolume / 100.0;
-	tmpl = zx->aym->sc2->getvol();
+	tmpl = zx->aym->sc2->getvol(tk);
 	levl += tmpl.l * ayVolume / 100.0;
 	levr += tmpl.r * ayVolume / 100.0;
 	GSData tmpm = zx->gs->getvol();

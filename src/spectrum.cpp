@@ -190,7 +190,7 @@ void ZXComp::out(uint16_t port,uint8_t val) {
 				default: aym->scc->curreg = val; break;		// set sound chip register
 			}
 			break;
-		case 0xbffd: aym->scc->setreg(val); break;			// write in sound chip register
+		case 0xbffd: aym->scc->setreg(val,vid->t); break;			// write in sound chip register
 		default:
 			if ((port&0xff) == 0xfe) {
 				vid->brdcol = val&0x07;

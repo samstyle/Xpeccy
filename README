@@ -11,3 +11,5 @@ And...
 Result should be './build/xpeccy' executable file
 
 By default there is only ZX Spectrum 48K romset w/o TRDOS.
+
+PS: DON'T try to build it under Windows. I'm serious.

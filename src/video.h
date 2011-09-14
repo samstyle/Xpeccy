@@ -22,30 +22,23 @@
 #define	VID_NORMAL	0
 #define	VID_ALCO	1
 
-class VSize {
-	public:
-		uint32_t h;
-		uint32_t v;
-		bool operator =(VSize p) {
-			h = p.h;
-			v = p.v;
-			return true;
-		}
+struct VSize {
+	uint32_t h;
+	uint32_t v;
 };
 
-class VidLayout {
-	public:
-		VidLayout() {}
-		VidLayout(std::string nm,uint fh,uint fv,uint bh,uint bv,uint sh,uint sv,uint isz,uint ips) {
-			name = nm;
-			full.h = fh; full.v = fv;
-			bord.h = bh; bord.v = bv;
-			sync.h = sh; sync.v = sv;
-			intsz = isz; intpos = ips;
-		}
-		std::string name;
-		VSize full,sync,bord;
-		uint intsz,intpos;
+struct VidLayout {
+//		VidLayout() {}
+//		VidLayout(std::string nm,uint fh,uint fv,uint bh,uint bv,uint sh,uint sv,uint isz,uint ips) {
+//			name = nm;
+//			full.h = fh; full.v = fv;
+//			bord.h = bh; bord.v = bv;
+//			sync.h = sh; sync.v = sv;
+//			intsz = isz; intpos = ips;
+//		}
+	std::string name;
+	VSize full,sync,bord;
+	uint intsz,intpos;
 };
 
 class Video {
@@ -70,13 +63,16 @@ class Video {
 		float zoom,brdsize, pxcnt;
 		bool flash,curscr;
 		uint8_t fcnt,brdcol,scrbyte,prescr,atrbyte,ink,pap;
-		std::vector<VidLayout> layout;	// screen layouts
+//		std::vector<VidLayout> layout;	// screen layouts
 		std::string curlay;		// current layout name
 		void tick();
 		void sync(int,float);
-		bool setlayout(std::string);
-		void setborder(float);
+		bool setLayout(std::string);
 		void update();
 };
+
+void addLayout(std::string,int*);
+void addLayout(VidLayout);
+std::vector<VidLayout> getLayoutList();
 
 #endif

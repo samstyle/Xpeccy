@@ -1,4 +1,4 @@
-#include <QUrl>
+#include <QDebug>
 #include <QMessageBox>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -33,6 +33,17 @@ extern Settings* sets;
 extern EmulWin* mwin;
 extern DebugWin* dbg;
 extern DevelWin* dwin;
+// main
+QX11EmbedContainer* mainWin;
+QIcon curicon;
+SDL_Surface* surf;
+SDL_Color zxpal[256];
+SDL_SysWMinfo inf;
+uint32_t emulFlags;
+int pauseFlags;
+uint32_t scrNumber;
+uint32_t scrCounter;
+uint32_t scrInterval;
 // for user menu
 std::vector<XBookmark> bookmarkList;
 std::vector<XProfile> profileList;
@@ -43,67 +54,113 @@ QMenu* profileMenu;
 
 #define	XPTITLE	"Xpeccy 0.4.994"
 
-EmulWin::EmulWin() {
-	setcuricon(":/images/logo.png");
-	setWindowTitle(XPTITLE);
-	setMouseTracking(true);
-
+void emulInit() {
 	int i;
 	for (i=0; i<16; i++) {
-		zxpal[i].b = (i & 1)?((i & 8)?0xff:0xc0):0;
-		zxpal[i].r = (i & 2)?((i & 8)?0xff:0xc0):0;
-		zxpal[i].g = (i & 4)?((i & 8)?0xff:0xc0):0;
+		zxpal[i].b = (i & 1) ? ((i & 8) ? 0xff : 0xc0) : 0;
+		zxpal[i].r = (i & 2) ? ((i & 8) ? 0xff : 0xc0) : 0;
+		zxpal[i].g = (i & 4) ? ((i & 8) ? 0xff : 0xc0) : 0;
 	}
+	emulFlags = 0;
 
+	scrNumber = 0;
+	scrCounter = 0;
+	scrInterval = 0;
+	sets->opt.scrshotFormat = "png";
+
+	int par[] = {448,320,138,80,64,32,64,0};
+	addLayout("default",par);
+
+	mainWin = new QX11EmbedContainer;
+	mainWin->setWindowTitle(XPTITLE);
+	mainWin->setMouseTracking(true);
+
+	SDL_VERSION(&inf.version);
+	SDL_GetWMInfo(&inf);
+#ifndef WIN32
+	mainWin->embedClient(inf.info.x11.wmwindow);
+	sets->opt.scrshotDir = std::string(getenv("HOME"));
+#else
+	SetParent(inf.window,winId());
+	sets->opt.scrshotDir = std::string(getenv("HOMEPATH"));
+#endif
+	initUserMenu((QWidget*)mainWin);
+}
+
+void emulShow() {
+	mainWin->show();
+}
+
+QWidget* emulWidget() {
+	return (QWidget*)mainWin;
+}
+
+void emulUpdateWindow() {
+	zx->vid->update();
+	int szw = zx->vid->wsze.h;
+	int szh = zx->vid->wsze.v;
+	mainWin->setFixedSize(szw,szh);
+	int sdlflg = SDL_SWSURFACE;
+	if ((zx->vid->flags & VF_FULLSCREEN) && !(zx->vid->flags & VF_BLOCKFULLSCREEN)) {
+		sdlflg |= SDL_FULLSCREEN;
+	}
+	surf = SDL_SetVideoMode(szw,szh,8,sdlflg | SDL_NOFRAME);
+#ifdef WIN32
+	SetWindowPos(inf.window,HWND_TOP,0,0,szw,szh,0);
+#endif
+	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
+	zx->vid->scrimg = (uint8_t*)surf->pixels;
+	zx->vid->scrptr = zx->vid->scrimg;
+}
+
+// FIXME: it doesn't work!
+void emulRestore() {
+	emulUpdateWindow();
+	SDL_VERSION(&inf.version);
+	SDL_GetWMInfo(&inf);
+	mainWin->embedClient(inf.info.x11.wmwindow);
+	mainWin->show();
+}
+
+bool emulSaveChanged() {
+	bool yep = zx->bdi->flop[0].savecha();
+	yep &= zx->bdi->flop[1].savecha();
+	yep &= zx->bdi->flop[2].savecha();
+	yep &= zx->bdi->flop[3].savecha();
+	return yep;
+}
+
+int emulGetFlags() {return emulFlags;}
+void emulSetFlag(int msk,bool cnd) {
+	if (cnd) {
+		emulFlags |= msk;
+	} else {
+		emulFlags &= ~msk;
+	}
+}
+
+EmulWin::EmulWin() {
+	emulSetIcon(":/images/logo.png");
 	pal.clear(); pal.resize(256);
+	int i;
 	for (i=0; i<256; i++) {
 		pal[i] = qRgb(zxpal[i].r,zxpal[i].g,zxpal[i].b);
 	}
-
-	fast = false;
-	ssnum = ssbcnt = ssbint = 0;
-	flags = 0;
 	
-	initUserMenu((QWidget*)this);
 	QObject::connect(bookmarkMenu,SIGNAL(triggered(QAction*)),this,SLOT(bookmarkSelected(QAction*)));
 	QObject::connect(profileMenu,SIGNAL(triggered(QAction*)),this,SLOT(profileSelected(QAction*)));
-	
-	sets->opt.scrshotFormat = "png";
-	
-#ifndef WIN32
-
-	SDL_SysWMinfo inf;
-	SDL_VERSION(&inf.version);
-	SDL_GetWMInfo(&inf);
-	embedClient(inf.info.x11.wmwindow);
-
-	sets->opt.sndOutputName = "ALSA";
-	sets->opt.scrshotDir = std::string(getenv("HOME"));
-
-#else
-
-#if !SDLMAINWIN
-
-	SDL_VERSION(&inf.version);
-	SDL_GetWMInfo(&inf);
-	SetParent(inf.window,winId());
-	
-#endif
-
-	sets->opt.sndOutputName = "WaveOut";
-	sets->opt.scrshotDir = std::string(getenv("HOMEPATH"));
-
-#endif
 
 	tim1 = new QTimer();
 	tim2 = new QTimer();
 	QObject::connect(tim1,SIGNAL(timeout()),this,SLOT(emulframe()));
 	QObject::connect(tim2,SIGNAL(timeout()),this,SLOT(SDLEventHandler()));
-	repause(false,-1);
+
+	emulPause(false,-1);
 }
 
+/*
 void EmulWin::closeEvent(QCloseEvent* ev) {
-		repause(true,PR_QUIT);
+		emulPause(true,PR_QUIT);
 		bool yep = zx->bdi->flop[0].savecha();
 		yep &= zx->bdi->flop[1].savecha();
 		yep &= zx->bdi->flop[2].savecha();
@@ -115,22 +172,23 @@ void EmulWin::closeEvent(QCloseEvent* ev) {
 			SDL_SysWMinfo inf;
 			SDL_VERSION(&inf.version);
 			SDL_GetWMInfo(&inf);
-			embedClient(inf.info.x11.wmwindow);
-			repause(false,PR_QUIT);
+			mainWin->embedClient(inf.info.x11.wmwindow);
+			emulPause(false,PR_QUIT);
 		}
 }
+*/
 
 void EmulWin::emulframe() {
 	SDL_UpdateRect(surf,0,0,0,0);
 #if !SDLMAINWIN
-	if (!isActiveWindow()) {
+	if (!mainWin->isActiveWindow()) {
 		zx->keyb->releaseall();
 		zx->mouse->buttons = 0xff;
 	}
 #endif
-	if (paused != 0) return;
+	if (pauseFlags != 0) return;
 
-	if (!fast && sndGet(SND_ENABLE) && (sndGet(SND_MUTE) || isActiveWindow())) {
+	if (!(emulFlags & FL_FAST) && sndGet(SND_ENABLE) && (sndGet(SND_MUTE) || mainWin->isActiveWindow())) {
 		sndPlay();
 	}
 	sndSet(SND_COUNT,0);
@@ -139,18 +197,18 @@ void EmulWin::emulframe() {
 	} while (!zx->sys->cpu->err && !zx->sys->istrb);
 	zx->sys->nmi = false;
 
-	if (ssbcnt!=0) {
-		if (ssbint==0) {
-			flags |= FL_SHOT;
-			ssbcnt--;
-			ssbint = sets->ssint;
-			if (ssbcnt==0) printf("stop combo shots\n");
+	if (scrCounter !=0 ) {
+		if (scrInterval == 0) {
+			emulFlags |= FL_SHOT;
+			scrCounter--;
+			scrInterval = sets->ssint;
+			if (scrCounter == 0) printf("stop combo shots\n");
 		} else {
-			ssbint--;
+			scrInterval--;
 		}
 	}
-	if (flags & FL_SHOT) {
-		std::string fnam = sets->opt.scrshotDir + "/sshot" + int2str(ssnum) + "." + sets->opt.scrshotFormat;
+	if (emulFlags & FL_SHOT) {
+		std::string fnam = sets->opt.scrshotDir + "/sshot" + int2str(scrNumber) + "." + sets->opt.scrshotFormat;
 		if (sets->opt.scrshotFormat == "scr") {
 			std::ofstream file(fnam.c_str(),std::ios::binary);
 			file.write((char*)&zx->sys->mem->ram[zx->vid->curscr ? 7 : 5][0],0x1b00);
@@ -163,14 +221,14 @@ void EmulWin::emulframe() {
 				img->save(QString(fnam.c_str()),sets->opt.scrshotFormat.c_str());
 			}
 		}
-		flags &= ~FL_SHOT;
-		ssnum++;
+		emulFlags &= ~FL_SHOT;
+		scrNumber++;
 	}
 }
 
 void EmulWin::exec() {
-	uint32_t ln = zx->exec();
-	sndSync(ln);
+	zx->exec();
+	sndSync(zx->vid->t);
 	if (!dbg->active) {
 		// somehow catch CPoint
 		if (dbg->findbp(BPoint((zx->sys->cpu->pc < 0x4000) ? zx->sys->mem->crom : zx->sys->mem->cram, zx->sys->cpu->pc)) != -1) {
@@ -183,59 +241,45 @@ void EmulWin::exec() {
 	}
 }
 
-void EmulWin::updateWin() {
-	zx->vid->update();
-	int szw = zx->vid->wsze.h;
-	int szh = zx->vid->wsze.v;
-	setFixedSize(szw,szh);
-	int sdlflg = SDL_SWSURFACE;
-	if ((zx->vid->flags & VF_FULLSCREEN) && !(zx->vid->flags & VF_BLOCKFULLSCREEN)) {
-		sdlflg |= SDL_FULLSCREEN;
+void emulSetIcon(const char* inam) {
+	curicon = QIcon(QString(inam));
+	emulPause(true, 0);
+}
+
+//void EmulWin::setcuricon(QString nam) {
+//	curicon = QIcon(nam);
+//	emulPause(true,0);
+//}
+
+void emulPause(bool p, int msk) {
+	if (p) {
+		pauseFlags |= msk;
+	} else {
+		pauseFlags &= ~msk;
 	}
-#if SDLMAINWIN
-	surf = SDL_SetVideoMode(szw,szh,8,sdlflg);
-	SDL_WM_SetCaption(XPTITLE,XPTITLE);
-#else
-	surf = SDL_SetVideoMode(szw,szh,8,sdlflg | SDL_NOFRAME);
-#ifdef WIN32
-	SetWindowPos(inf.window,HWND_TOP,0,0,szw,szh,0);
-#endif
-#endif
-	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
-	zx->vid->scrimg = (uint8_t*)surf->pixels;
-	zx->vid->scrptr = zx->vid->scrimg;
-}
-
-void EmulWin::setcuricon(QString nam) {
-	curicon = QIcon(nam);
-	repause(true,0);
-}
-
-void EmulWin::repause(bool p, int msk) {
-	if (p) {paused |= msk;} else {paused &= ~msk;}
-	bool kk = flags & FL_GRAB;
-	if (!kk || ((paused!=0) && kk)) {
+	bool kk = emulFlags & FL_GRAB;
+	if (!kk || ((pauseFlags != 0) && kk)) {
 		SDL_WM_GrabInput(SDL_GRAB_OFF);
 		SDL_ShowCursor(SDL_ENABLE);
 	}
-	if ((paused==0) && kk) {
+	if ((pauseFlags == 0) && kk) {
 		SDL_WM_GrabInput(SDL_GRAB_ON);
 		SDL_ShowCursor(SDL_DISABLE);
 	}
-	if (paused==0) {
-		setWindowIcon(curicon);
+	if (pauseFlags == 0) {
+		mainWin->setWindowIcon(curicon);
 		sndPause(false);
 	} else {
-		setWindowIcon(QIcon(":/images/pause.png"));
+		mainWin->setWindowIcon(QIcon(":/images/pause.png"));
 		sndPause(true);
 	}
 	if (msk & PR_PAUSE) return;
-	if ((paused & ~PR_PAUSE) == 0) {
+	if ((pauseFlags & ~PR_PAUSE) == 0) {
 		zx->vid->flags &= ~VF_BLOCKFULLSCREEN;
-		if (zx->vid->flags & VF_FULLSCREEN) updateWin();
+		if (zx->vid->flags & VF_FULLSCREEN) emulUpdateWindow();
 	} else {
 		zx->vid->flags |= VF_BLOCKFULLSCREEN;
-		if (zx->vid->flags & VF_FULLSCREEN) updateWin();
+		if (zx->vid->flags & VF_FULLSCREEN) emulUpdateWindow();
 	}
 }
 
@@ -249,17 +293,17 @@ void EmulWin::SDLEventHandler() {
 				if (ev.key.keysym.mod & KMOD_ALT) {
 					switch(ev.key.keysym.sym) {
 						case SDLK_0: zx->vid->mode = (zx->vid->mode==VID_NORMAL)?VID_ALCO:VID_NORMAL; break;
-						case SDLK_1: zx->vid->flags &= ~VF_DOUBLE; updateWin(); sets->save(); break;
-						case SDLK_2: zx->vid->flags |= VF_DOUBLE; updateWin(); sets->save(); break;
-						case SDLK_3: fast = !fast;
-							tim1->start(fast?0:20);
+						case SDLK_1: zx->vid->flags &= ~VF_DOUBLE; emulUpdateWindow(); sets->save(); break;
+						case SDLK_2: zx->vid->flags |= VF_DOUBLE; emulUpdateWindow(); sets->save(); break;
+						case SDLK_3: emulFlags ^= FL_FAST;
+							tim1->start((emulFlags & FL_FAST) ? 0 : 20);
 							break;
-						case SDLK_F4: close(); break;
-						case SDLK_F7: ssbcnt = sets->sscnt; ssbint=0; break;	// ALT+F7 combo
-						case SDLK_RETURN: zx->vid->flags ^= VF_FULLSCREEN; updateWin(); sets->save(); break;
+						case SDLK_F4: mainWin->close(); break;
+						case SDLK_F7: scrCounter = sets->sscnt; scrInterval=0; break;	// ALT+F7 combo
+						case SDLK_RETURN: zx->vid->flags ^= VF_FULLSCREEN; emulUpdateWindow(); sets->save(); break;
 						case SDLK_c:
-							flags ^= FL_GRAB;
-							if (flags & FL_GRAB) {
+							emulFlags ^= FL_GRAB;
+							if (emulFlags & FL_GRAB) {
 								SDL_WM_GrabInput(SDL_GRAB_ON);
 								SDL_ShowCursor(SDL_DISABLE);
 							} else {
@@ -272,39 +316,39 @@ void EmulWin::SDLEventHandler() {
 				} else {
 					zx->keyb->press(ev.key.keysym.scancode);
 					switch (ev.key.keysym.sym) {
-						case SDLK_PAUSE: if (paused == 0) repause(true,PR_PAUSE); else repause(false,PR_PAUSE); break;
+						case SDLK_PAUSE: pauseFlags ^= PR_PAUSE; emulPause(true,0); break;
 						case SDLK_ESCAPE: dbg->start(); break;
-						case SDLK_MENU: repause(true,PR_MENU); userMenu->popup(pos() + QPoint(20,20)); break;
+						case SDLK_MENU: emulPause(true,PR_MENU); userMenu->popup(mainWin->pos() + QPoint(20,20)); break;
 						case SDLK_F1: emit(wannasetup()); break;
-						case SDLK_F2: repause(true,PR_FILE); saveFile("",FT_ALL,-1); repause(false,PR_FILE); break;
-						case SDLK_F3: repause(true,PR_FILE);
+						case SDLK_F2: emulPause(true,PR_FILE); saveFile("",FT_ALL,-1); emulPause(false,PR_FILE); break;
+						case SDLK_F3: emulPause(true,PR_FILE);
 							loadFile("",FT_ALL,-1);
-							repause(false,PR_FILE);
+							emulPause(false,PR_FILE);
 							break;
 						case SDLK_F4: if (zx->tape->flags & TAPE_ON) {
 									zx->tape->stop(zx->vid->t);
-									setcuricon(":/images/logo.png");
+									emulSetIcon(":/images/logo.png");
 								} else {
 									zx->tape->startplay();
-									setcuricon(":/images/play.png");
+									emulSetIcon(":/images/play.png");
 								}
 								break;
 						case SDLK_F5: if (zx->tape->flags & TAPE_ON) {
 									zx->tape->stop(zx->vid->t);
-									setcuricon(":/images/logo.png");
+									emulSetIcon(":/images/logo.png");
 								} else {
 									zx->tape->startrec();
-									setcuricon(":/images/rec.png");
+									emulSetIcon(":/images/rec.png");
 								}
 								break;
 						case SDLK_F6: emit wannadevelop(); break;
-						case SDLK_F7: if (ssbcnt==0) {flags |= FL_SHOT;} else {flags &= ~FL_SHOT;} break;
-						case SDLK_F9: repause(true,PR_FILE);
+						case SDLK_F7: if (scrCounter == 0) {emulFlags |= FL_SHOT;} else {emulFlags &= ~FL_SHOT;} break;
+						case SDLK_F9: emulPause(true,PR_FILE);
 							zx->bdi->flop[0].savecha();
 							zx->bdi->flop[1].savecha();
 							zx->bdi->flop[2].savecha();
 							zx->bdi->flop[3].savecha();
-							repause(false,PR_FILE);
+							emulPause(false,PR_FILE);
 							break;
 						case SDLK_F10:
 							zx->sys->nmi = true;
@@ -319,14 +363,13 @@ void EmulWin::SDLEventHandler() {
 				break;
 			case SDL_MOUSEBUTTONDOWN:
 				switch (ev.button.button) {
-					if (paused!=0) break;
-					case SDL_BUTTON_LEFT: if (flags & FL_GRAB) zx->mouse->buttons &= ~0x01; break;
-					case SDL_BUTTON_RIGHT: if (flags & FL_GRAB) {
+					if (pauseFlags != 0) break;
+					case SDL_BUTTON_LEFT: if (emulFlags & FL_GRAB) zx->mouse->buttons &= ~0x01; break;
+					case SDL_BUTTON_RIGHT: if (emulFlags & FL_GRAB) {
 							zx->mouse->buttons &= ~0x02;
 						} else {
-							repause(true,PR_MENU);
-							userMenu->popup(pos() + QPoint(ev.button.x,ev.button.y+20));
-						//	userMenu->setFocus();
+							emulPause(true,PR_MENU);
+							userMenu->popup(mainWin->pos() + QPoint(ev.button.x,ev.button.y+20));
 						}
 						break;	
 					case SDL_BUTTON_MIDDLE:
@@ -334,21 +377,21 @@ void EmulWin::SDLEventHandler() {
 				}
 				break;
 			case SDL_MOUSEBUTTONUP:
-				if (paused!=0) break;
+				if (pauseFlags != 0) break;
 				switch (ev.button.button) {
 					case SDL_BUTTON_LEFT:
-						if (flags & FL_GRAB) {
+						if (emulFlags & FL_GRAB) {
 							zx->mouse->buttons |= 0x01;
 						}
 						break;
 					case SDL_BUTTON_RIGHT:
-						if (flags & FL_GRAB) {
+						if (emulFlags & FL_GRAB) {
 							zx->mouse->buttons |= 0x02;
 						}
 						break;
 					case SDL_BUTTON_MIDDLE:
-						flags ^= FL_GRAB;
-						if (flags & FL_GRAB) {
+						emulFlags ^= FL_GRAB;
+						if (emulFlags & FL_GRAB) {
 							SDL_WM_GrabInput(SDL_GRAB_ON);
 							SDL_ShowCursor(SDL_DISABLE);
 						} else {
@@ -359,7 +402,7 @@ void EmulWin::SDLEventHandler() {
 				}
 				break;
 			case SDL_MOUSEMOTION:
-				if (!(flags & FL_GRAB) || (paused!=0)) break;
+				if ((~emulFlags & FL_GRAB) || (pauseFlags !=0 )) break;
 				zx->mouse->xpos = (ev.motion.x - 1)&0xff;
 				zx->mouse->ypos = (257 - ev.motion.y)&0xff;
 				SDL_WarpMouse(zx->mouse->xpos + 1, 257 - zx->mouse->ypos);
@@ -367,9 +410,9 @@ void EmulWin::SDLEventHandler() {
 				break;
 		}
 	}
-	if (!userMenu->isVisible() && (paused & PR_MENU)) {
-		setFocus();
-		repause(false,PR_MENU);
+	if (!userMenu->isVisible() && (pauseFlags & PR_MENU)) {
+		mainWin->setFocus();
+		emulPause(false,PR_MENU);
 	}
 }
 
@@ -416,7 +459,6 @@ XProfile* getCurrentProfile() {
 	return currentProfile;
 }
 
-//=====================
 // USER MENU
 
 void initUserMenu(QWidget* par) {
@@ -476,16 +518,16 @@ std::vector<XBookmark> getBookmarkList() {
 
 void EmulWin::bookmarkSelected(QAction* act) {
 	loadFile(act->data().toString().toUtf8().data(),FT_ALL,0);
-	setFocus();
+	mainWin->setFocus();
 }
 
 
 void EmulWin::profileSelected(QAction* act) {
-	repause(true,PR_EXTRA);
+	emulPause(true,PR_EXTRA);
 	setProfile(std::string(act->text().toUtf8().data()));
 	sets->load(false);
-	updateWin();
+	emulUpdateWindow();
 	sets->saveProfiles();
-	setFocus();
-	repause(false,PR_EXTRA);
+	mainWin->setFocus();
+	emulPause(false,PR_EXTRA);
 }

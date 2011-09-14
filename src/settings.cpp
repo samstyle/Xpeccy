@@ -15,8 +15,6 @@ void splitline(std::string,std::string*,std::string*);
 std::vector<std::string> splitstr(std::string,const char*);
 void setFlagBit(bool,int32_t*,int32_t);
 
-
-
 Settings::Settings() {
 #ifndef WIN32
 // move config dir to new place
@@ -69,6 +67,16 @@ void Settings::saveProfiles() {
 		cfile << prl[i].name << " = " << prl[i].file << "\n";
 	}
 	cfile << "current = " << getCurrentProfile()->name << "\n";
+	cfile << "\n[VIDEO]\n\n";
+	std::vector<VidLayout> lays = getLayoutList();
+	for (i=1; i < lays.size(); i++) {
+		cfile << "layout = ";
+		cfile << lays[i].name.c_str() << ":";
+		cfile << int2str(lays[i].full.h) << ":" << int2str(lays[i].full.v) << ":";
+		cfile << int2str(lays[i].bord.h) << ":" << int2str(lays[i].bord.v) << ":";
+		cfile << int2str(lays[i].sync.h) << ":" << int2str(lays[i].sync.v) << ":";
+		cfile << int2str(lays[i].intsz) << ":" << int2str(lays[i].intpos) << "\n";
+	}
 	cfile.close();
 }
 
@@ -84,19 +92,20 @@ void Settings::save() {
 	sfile<<"[CPU]\n\n";
 	sfile<<"# real cpu freq in MHz = this value / 2; correct range is 2 to 14 (1 to 7 MHz)\n";
 	sfile<<"cpu.frq = "<<int2str((int)(zx->sys->cpu->frq * 2.0)).c_str()<<"\n";
-	
+
 	sfile<<"\n[VIDEO]\n\n";
 	sfile<<"doublesize = "<<((zx->vid->flags & VF_DOUBLE)?"y":"n")<<"\n";
 	sfile<<"fullscreen = "<<((zx->vid->flags & VF_FULLSCREEN)?"y":"n")<<"\n";
 	sfile<<"bordersize = "<<int2str((int)(zx->vid->brdsize * 100)).c_str()<<"\n";
-	for (i=1; i < zx->vid->layout.size(); i++) {
-		sfile << "layout = ";
-		sfile << zx->vid->layout[i].name.c_str() << ":";
-		sfile << int2str(zx->vid->layout[i].full.h) << ":" << int2str(zx->vid->layout[i].full.v) << ":";
-		sfile << int2str(zx->vid->layout[i].bord.h) << ":" << int2str(zx->vid->layout[i].bord.v) << ":";
-		sfile << int2str(zx->vid->layout[i].sync.h) << ":" << int2str(zx->vid->layout[i].sync.v) << ":";
-		sfile << int2str(zx->vid->layout[i].intsz) << ":" << int2str(zx->vid->layout[i].intpos) << "\n";
-	}
+//	std::vector<VidLayout> lays = getLayoutList();
+//	for (i=1; i < lays.size(); i++) {
+//		sfile << "layout = ";
+//		sfile << lays[i].name.c_str() << ":";
+//		sfile << int2str(lays[i].full.h) << ":" << int2str(lays[i].full.v) << ":";
+//		sfile << int2str(lays[i].bord.h) << ":" << int2str(lays[i].bord.v) << ":";
+//		sfile << int2str(lays[i].sync.h) << ":" << int2str(lays[i].sync.v) << ":";
+//		sfile << int2str(lays[i].intsz) << ":" << int2str(lays[i].intpos) << "\n";
+//	}
 	sfile<<"geometry = "<<zx->vid->curlay.c_str()<<"\n";
 
 	sfile << "\n[SCREENSHOTS]\n\n";
@@ -164,7 +173,7 @@ void Settings::save() {
 		case 0x3f: sfile<<"1024\n"; break;
 		default: sfile<<"48\n"; break;
 	}
-	sfile<<"restart = "<<(mwin->flags & FL_RESET?"y":"n")<<"\n";
+	sfile<<"restart = "<<(emulGetFlags() & FL_RESET?"y":"n")<<"\n";
 	sfile << "scrp.wait = "<< ((zx->sys->hwflags & WAIT_ON) ? "y" : "n") << "\n";
 
 	sfile<<"\n[ROMSETS]\n\n";
@@ -217,6 +226,8 @@ void Settings::loadProfiles() {
 	std::string line,pnam,pval;
 	std::string pnm = "default";
 	int section = 0;
+	std::vector<std::string> vect;
+	VidLayout vlay;
 //	Profile prf;
 	while (!file.eof()) {
 		file.getline(buf,2048);
@@ -225,6 +236,7 @@ void Settings::loadProfiles() {
 		if (pval=="") {
 			if (pnam=="[BOOKMARKS]") section=1;
 			if (pnam=="[PROFILES]") section=2;
+			if (pnam=="[VIDEO]") section=3;
 		} else {
 			switch (section) {
 				case 1:
@@ -235,6 +247,21 @@ void Settings::loadProfiles() {
 						pnm = pval;
 					} else {
 						addProfile(pnam,pval);
+					}
+					break;
+				case 3:
+					if (pnam=="layout") {
+						vect = splitstr(pval,":");
+						if (vect.size() == 9) {
+							vlay.name = vect[0];
+							vlay.full.h = atoi(vect[1].c_str()); vlay.full.v = atoi(vect[2].c_str());
+							vlay.bord.h = atoi(vect[3].c_str()); vlay.bord.v = atoi(vect[4].c_str());
+							vlay.sync.h = atoi(vect[5].c_str()); vlay.sync.v = atoi(vect[6].c_str());
+							vlay.intsz = atoi(vect[7].c_str()); vlay.intpos = atoi(vect[8].c_str());
+							if ((vlay.full.h > vlay.bord.h + 256) && (vlay.bord.h > vlay.sync.h) && (vlay.full.v > vlay.bord.v + 192) && (vlay.bord.v > vlay.sync.v)) {
+								addLayout(vlay);
+							}
+						}
 					}
 					break;
 			}
@@ -350,7 +377,7 @@ void Settings::load(bool dev) {
 								vlay.sync.h = atoi(vect[5].c_str()); vlay.sync.v = atoi(vect[6].c_str());
 								vlay.intsz = atoi(vect[7].c_str()); vlay.intpos = atoi(vect[8].c_str());
 								if ((vlay.full.h > vlay.bord.h + 256) && (vlay.bord.h > vlay.sync.h) && (vlay.full.v > vlay.bord.v + 192) && (vlay.bord.v > vlay.sync.v)) {
-									zx->vid->layout.push_back(vlay);
+									addLayout(vlay);
 								}
 							}
 						}
@@ -394,7 +421,7 @@ void Settings::load(bool dev) {
 							if (pval=="1024") {zx->sys->mem->mask = 0x3f; tmask = 8;}
 						}
 						if (pnam=="restart") {
-							if (str2bool(pval)) mwin->flags |= FL_RESET; else mwin->flags &= ~FL_RESET;
+							emulSetFlag (FL_RESET, str2bool(pval));
 						}
 						if (pnam=="scrp.wait") {
 							if (str2bool(pval)) zx->sys->hwflags |= WAIT_ON; else zx->sys->hwflags &= ~WAIT_ON;
@@ -455,7 +482,7 @@ void Settings::load(bool dev) {
 	if (zx->hw==NULL) throw("Can't found current machine");
 	if (zx->sys->mem->romset==NULL) throw("Can't found current romset");
 	if (~zx->hw->mask & tmask) throw("Incorrect memory size for this machine");
-	if (!zx->vid->setlayout(zx->vid->curlay)) zx->vid->setlayout("default");
+	if (!zx->vid->setLayout(zx->vid->curlay)) zx->vid->setLayout("default");
 //	mwin->updateWin();
 //	zx->vid->update();
 	zx->sys->mem->loadromset(opt.romDir);

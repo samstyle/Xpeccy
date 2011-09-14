@@ -29,6 +29,7 @@
 #define FL_RZX		(1<<1)
 #define FL_SHOT		(1<<2)
 #define FL_RESET	(1<<3)
+#define	FL_FAST		(1<<4)
 
 struct XBookmark {
 	std::string name;
@@ -43,26 +44,12 @@ struct XProfile {
 
 // TODO: kill EmulWin class?
 
-#ifndef WIN32
-	class EmulWin : public QX11EmbedContainer {
-#else
-	class EmulWin : public QDialog {
-#endif
+class EmulWin : public QObject {
 	Q_OBJECT
 	public:
 		EmulWin();
 		QTimer *tim1,*tim2;
-		bool fast;
-		int flags;
-		SDL_Surface* surf;
-		SDL_Color zxpal[256];
-		void repause(bool,int);
-		void updateWin();
-		void setcuricon(QString);
 		void exec();
-#ifdef WIN32
-		SDL_SysWMinfo inf;
-#endif
 	signals:
 		void icum();
 		void onerror();
@@ -70,21 +57,24 @@ struct XProfile {
 		void wannadevelop();
 	private:
 		QVector<QRgb> pal;
-		QIcon curicon;
-		void rmksize();
-		void paintmain();
-		void emitSDLevents();
-		int paused;
-		int ssbcnt,ssbint,ssnum;
 	private slots:
 		void bookmarkSelected(QAction*);
 		void profileSelected(QAction*);
 		void SDLEventHandler();
-		void emulframe();
-	protected:
-		void closeEvent(QCloseEvent*);
-		
+		void emulframe();		
 };
+
+// main
+void emulInit();
+void emulShow();
+void emulRestore();
+void emulUpdateWindow();
+void emulSetIcon(const char*);
+void emulPause(bool, int);
+int emulGetFlags();
+void emulSetFlag(int,bool);
+bool emulSaveChanged();
+QWidget* emulWidget();
 
 // USER MENU
 void initUserMenu(QWidget*);

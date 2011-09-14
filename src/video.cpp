@@ -1,10 +1,8 @@
 #include <math.h>
 #include "video.h"
-#include "emulwin.h"
 
-#define NOVIDEO 0
-
-extern EmulWin* mwin;
+// video layouts
+std::vector<VidLayout> layoutList;
 
 Video::Video(Memory* me) {
 	int i,j,k,l;
@@ -43,41 +41,15 @@ Video::Video(Memory* me) {
 	zoom = 1.0;
 	brdsize = 1.0;
 	flags = 0;
-	layout.clear();
-	curlay = "default";
-	layout.push_back(VidLayout("default",448,320,138,80,64,32,64,0));	// add default (pentagon) layout
-	setlayout("default");
+//	layout.clear();
+//	curlay = "default";
+//	layout.push_back(VidLayout("default",448,320,138,80,64,32,64,0));	// add default (pentagon) layout
+	setLayout("default");
 
 	curr.h = curr.v = 0;
 	curscr = false;
 	t = 0;
 	fcnt = 0.0;
-}
-
-void Video::setborder(float prc) {
-	brdsize = prc;
-	mwin->updateWin();
-}
-
-bool Video::setlayout(std::string nm) {
-	uint i;
-	VidLayout* lay = NULL;
-	for (i=0; i<layout.size(); i++) {
-		if (layout[i].name == nm) {
-			lay = &layout[i];
-			break;
-		}
-	}
-	if (lay == NULL) return false;
-	curlay = lay->name;
-	full = lay->full;
-	bord = lay->bord;
-	synh = lay->sync;
-	intsz = lay->intsz;
-	intpos = lay->intpos;
-	frmsz = full.h * full.v;
-	update();
-	return true;
 }
 
 void Video::update() {
@@ -104,7 +76,6 @@ void Video::sync(int tk,float fr) {
 // drawing 1 pixel
 void Video::tick() {
 	bool onscr = (curr.v >= lcut.v) && (curr.v < rcut.v);
-#if !NOVIDEO
 	if ((curr.h >= lcut.h) && (curr.h < rcut.h) && onscr) {
 		uint8_t col = 5;
 		if ((curr.h < bord.h) || (curr.h > bord.h + 255) || (curr.v < bord.v) || (curr.v > bord.v + 191)) {
@@ -145,7 +116,6 @@ void Video::tick() {
 			*(scrptr++)=col;
 		}
 	}
-#endif
 	if (++curr.h >= full.h) {
 		curr.h = 0;
 		if (onscr) {
@@ -160,4 +130,53 @@ void Video::tick() {
 		intSignal = (curr.v==intpos) && (curr.h < intsz);
 		intStrobe |= intSignal;
 	}
+}
+
+// LAYOUTS
+
+void addLayout(VidLayout nlay) {
+printf("addLayout %s\n",nlay.name.c_str());
+	for(uint i=0; i<layoutList.size(); i++) {
+		if (layoutList[i].name == nlay.name) return;
+	}
+	layoutList.push_back(nlay);
+}
+
+void addLayout(std::string nm, int* par) {
+	for(uint i=0; i<layoutList.size(); i++) {
+		if (layoutList[i].name == nm) return;		// prevent layouts with same names
+	}
+	VidLayout nlay;
+	nlay.name = nm;
+	nlay.full.h = par[0];
+	nlay.full.v = par[1];
+	nlay.bord.h = par[2];
+	nlay.bord.v = par[3];
+	nlay.sync.h = par[4];
+	nlay.sync.v = par[5];
+	nlay.intsz = par[6];
+	nlay.intpos = par[7];
+	layoutList.push_back(nlay);
+}
+
+std::vector<VidLayout> getLayoutList() {
+	std::vector<VidLayout> res = layoutList;
+	return res;
+}
+
+bool Video::setLayout(std::string nm) {
+	for (uint i=0; i<layoutList.size(); i++) {
+		if (layoutList[i].name == nm) {
+			curlay = nm;
+			full = layoutList[i].full;
+			bord = layoutList[i].bord;
+			synh = layoutList[i].sync;
+			intsz = layoutList[i].intsz;
+			intpos = layoutList[i].intpos;
+			frmsz = full.h * full.v;
+			update();
+			return true;
+		}
+	}
+	return false;
 }

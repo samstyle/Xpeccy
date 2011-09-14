@@ -19,16 +19,6 @@
 #define	TS_NONE		0
 #define	TS_NEDOPC	1
 
-/*
-class SndData {
-	public:
-		int r;
-		int l;
-		friend SndData operator +(SndData p1, SndData p2) {p1.r += p2.r; p1.l += p2.l; return p1;}
-		friend SndData operator *(SndData p1, float mul) {p1.r *= mul; p1.l *= mul; return p1;}
-};
-*/
-
 struct AYData {
 	int r;
 	int l;
@@ -55,9 +45,9 @@ class AYProc {
 		uint8_t curreg;
 		float aycoe;
 		void reset(uint32_t);
-		void setreg(uint8_t);
+		void setreg(uint8_t,uint32_t);
 		void settype(int32_t);
-		AYData getvol();
+		AYData getvol(uint32_t);
 		void calculate();
 };
 

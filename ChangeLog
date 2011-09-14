@@ -27,3 +27,7 @@ Wrk	Rewriting user menu
 0.4.994
 build 20110913
 Wrk	Rewriting & reorganize sound
+
+build 20110914
+Fix	Video layouts list has doesn't display in Options window
+Wrk	Rewriting video layouts. All of them is defined in [VIDEO] section of config.conf
