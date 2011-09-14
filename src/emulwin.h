@@ -49,7 +49,7 @@ class EmulWin : public QObject {
 	public:
 		EmulWin();
 		QTimer *tim1,*tim2;
-		void exec();
+//		void exec();
 	signals:
 		void icum();
 		void onerror();
@@ -61,7 +61,7 @@ class EmulWin : public QObject {
 		void bookmarkSelected(QAction*);
 		void profileSelected(QAction*);
 		void SDLEventHandler();
-		void emulframe();		
+		void emulframe();
 };
 
 // main
@@ -74,6 +74,7 @@ void emulPause(bool, int);
 int emulGetFlags();
 void emulSetFlag(int,bool);
 bool emulSaveChanged();
+void emulExec();
 QWidget* emulWidget();
 
 // USER MENU

@@ -193,7 +193,7 @@ void EmulWin::emulframe() {
 	}
 	sndSet(SND_COUNT,0);
 	do {
-		exec();
+		emulExec();
 	} while (!zx->sys->cpu->err && !zx->sys->istrb);
 	zx->sys->nmi = false;
 
@@ -226,7 +226,7 @@ void EmulWin::emulframe() {
 	}
 }
 
-void EmulWin::exec() {
+void emulExec() {
 	zx->exec();
 	sndSync(zx->vid->t);
 	if (!dbg->active) {

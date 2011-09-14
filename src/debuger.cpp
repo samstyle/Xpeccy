@@ -20,7 +20,7 @@ void DebugWin::start() {
 
 void DebugWin::stop() {
 	ledit->hide();
-	mwin->exec();
+	emulExec();
 	hide();
 	active = false;
 	emulPause(false,PR_DEBUG);
@@ -428,7 +428,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					break;
 				case Qt::Key_F7:
 					t = zx->sys->cpu->t;
-					mwin->exec();
+					emulExec();
 					if (!fillall()) {upadr = zx->sys->cpu->pc; filldasm();}
 					break;
 				case Qt::Key_F8:
