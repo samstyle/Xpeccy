@@ -31,3 +31,4 @@ Wrk	Rewriting & reorganize sound
 build 20110914
 Fix	Video layouts list has doesn't display in Options window
 Wrk	Rewriting video layouts. All of them is defined in [VIDEO] section of config.conf
+Wrk	Start rewriting EmulWindow. Saving changed disks at exit doesn't work properly
