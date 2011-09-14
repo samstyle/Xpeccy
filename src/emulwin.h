@@ -64,6 +64,14 @@ class EmulWin : public QObject {
 		void emulframe();
 };
 
+class MainWin : public QX11EmbedContainer {
+	Q_OBJECT
+	public:
+		MainWin();
+	protected:
+		void closeEvent(QCloseEvent*);
+};
+
 // main
 void emulInit();
 void emulShow();

@@ -122,10 +122,9 @@ int main(int ac,char** av) {
 
 			mwin->tim1->start(20);
 			mwin->tim2->start(20);
-			do {
-				app.exec();
-				emulRestore();
-			} while(!emulSaveChanged());
+			app.exec();
+			mwin->tim1->stop();
+			mwin->tim2->stop();
 			sndClose();
 			SDL_Quit();
 			return 0;

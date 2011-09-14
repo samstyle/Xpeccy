@@ -34,7 +34,7 @@ extern EmulWin* mwin;
 extern DebugWin* dbg;
 extern DevelWin* dwin;
 // main
-QX11EmbedContainer* mainWin;
+MainWin* mainWin;
 QIcon curicon;
 SDL_Surface* surf;
 SDL_Color zxpal[256];
@@ -54,6 +54,36 @@ QMenu* profileMenu;
 
 #define	XPTITLE	"Xpeccy 0.4.994"
 
+void emulCreateWindow() {
+	mainWin = new MainWin;
+	mainWin->setWindowTitle(XPTITLE);
+	mainWin->setMouseTracking(true);
+	emulSetIcon(":/images/logo.png");
+	
+	SDL_VERSION(&inf.version);
+	SDL_GetWMInfo(&inf);
+#ifndef WIN32
+	mainWin->embedClient(inf.info.x11.wmwindow);
+	sets->opt.scrshotDir = std::string(getenv("HOME"));
+#else
+	SetParent(inf.window,winId());
+	sets->opt.scrshotDir = std::string(getenv("HOMEPATH"));
+#endif
+}
+
+MainWin::MainWin() {}
+
+void MainWin::closeEvent(QCloseEvent* ev) {
+	if (emulSaveChanged()) {
+		ev->accept();
+	} else {
+		ev->ignore();
+		SDL_VERSION(&inf.version);
+		SDL_GetWMInfo(&inf);
+		mainWin->embedClient(inf.info.x11.wmwindow);
+	}
+}
+
 void emulInit() {
 	int i;
 	for (i=0; i<16; i++) {
@@ -70,20 +100,7 @@ void emulInit() {
 
 	int par[] = {448,320,138,80,64,32,64,0};
 	addLayout("default",par);
-
-	mainWin = new QX11EmbedContainer;
-	mainWin->setWindowTitle(XPTITLE);
-	mainWin->setMouseTracking(true);
-
-	SDL_VERSION(&inf.version);
-	SDL_GetWMInfo(&inf);
-#ifndef WIN32
-	mainWin->embedClient(inf.info.x11.wmwindow);
-	sets->opt.scrshotDir = std::string(getenv("HOME"));
-#else
-	SetParent(inf.window,winId());
-	sets->opt.scrshotDir = std::string(getenv("HOMEPATH"));
-#endif
+	emulCreateWindow();
 	initUserMenu((QWidget*)mainWin);
 }
 
@@ -113,13 +130,10 @@ void emulUpdateWindow() {
 	zx->vid->scrptr = zx->vid->scrimg;
 }
 
-// FIXME: it doesn't work!
 void emulRestore() {
-	emulUpdateWindow();
-	SDL_VERSION(&inf.version);
-	SDL_GetWMInfo(&inf);
-	mainWin->embedClient(inf.info.x11.wmwindow);
+	emulCreateWindow();
 	mainWin->show();
+	emulUpdateWindow();
 }
 
 bool emulSaveChanged() {
@@ -139,8 +153,61 @@ void emulSetFlag(int msk,bool cnd) {
 	}
 }
 
+void emulExec() {
+	zx->exec();
+	sndSync(zx->vid->t);
+	if (!dbg->active) {
+		// somehow catch CPoint
+		if (dbg->findbp(BPoint((zx->sys->cpu->pc < 0x4000) ? zx->sys->mem->crom : zx->sys->mem->cram, zx->sys->cpu->pc)) != -1) {
+			dbg->start();
+			zx->sys->cpu->err = true;
+		}
+		if (!zx->sys->cpu->err && zx->sys->istrb) {
+			zx->INTHandle();
+		}
+	}
+}
+
+void emulSetIcon(const char* inam) {
+	curicon = QIcon(QString(inam));
+	emulPause(true, 0);
+}
+
+void emulPause(bool p, int msk) {
+	if (p) {
+		pauseFlags |= msk;
+	} else {
+		pauseFlags &= ~msk;
+	}
+	bool kk = emulFlags & FL_GRAB;
+	if (!kk || ((pauseFlags != 0) && kk)) {
+		SDL_WM_GrabInput(SDL_GRAB_OFF);
+		SDL_ShowCursor(SDL_ENABLE);
+	}
+	if ((pauseFlags == 0) && kk) {
+		SDL_WM_GrabInput(SDL_GRAB_ON);
+		SDL_ShowCursor(SDL_DISABLE);
+	}
+	if (pauseFlags == 0) {
+		mainWin->setWindowIcon(curicon);
+		sndPause(false);
+	} else {
+		mainWin->setWindowIcon(QIcon(":/images/pause.png"));
+		sndPause(true);
+	}
+	if (msk & PR_PAUSE) return;
+	if ((pauseFlags & ~PR_PAUSE) == 0) {
+		zx->vid->flags &= ~VF_BLOCKFULLSCREEN;
+		if (zx->vid->flags & VF_FULLSCREEN) emulUpdateWindow();
+	} else {
+		zx->vid->flags |= VF_BLOCKFULLSCREEN;
+		if (zx->vid->flags & VF_FULLSCREEN) emulUpdateWindow();
+	}
+}
+
+// OBJECT
+
 EmulWin::EmulWin() {
-	emulSetIcon(":/images/logo.png");
 	pal.clear(); pal.resize(256);
 	int i;
 	for (i=0; i<256; i++) {
@@ -157,26 +224,6 @@ EmulWin::EmulWin() {
 
 	emulPause(false,-1);
 }
-
-/*
-void EmulWin::closeEvent(QCloseEvent* ev) {
-		emulPause(true,PR_QUIT);
-		bool yep = zx->bdi->flop[0].savecha();
-		yep &= zx->bdi->flop[1].savecha();
-		yep &= zx->bdi->flop[2].savecha();
-		yep &= zx->bdi->flop[3].savecha();
-		if (yep) {
-			ev->accept();
-		} else {
-			ev->ignore();
-			SDL_SysWMinfo inf;
-			SDL_VERSION(&inf.version);
-			SDL_GetWMInfo(&inf);
-			mainWin->embedClient(inf.info.x11.wmwindow);
-			emulPause(false,PR_QUIT);
-		}
-}
-*/
 
 void EmulWin::emulframe() {
 	SDL_UpdateRect(surf,0,0,0,0);
@@ -223,63 +270,6 @@ void EmulWin::emulframe() {
 		}
 		emulFlags &= ~FL_SHOT;
 		scrNumber++;
-	}
-}
-
-void emulExec() {
-	zx->exec();
-	sndSync(zx->vid->t);
-	if (!dbg->active) {
-		// somehow catch CPoint
-		if (dbg->findbp(BPoint((zx->sys->cpu->pc < 0x4000) ? zx->sys->mem->crom : zx->sys->mem->cram, zx->sys->cpu->pc)) != -1) {
-			dbg->start();
-			zx->sys->cpu->err = true;
-		}
-		if (!zx->sys->cpu->err && zx->sys->istrb) {
-			zx->INTHandle();
-		}
-	}
-}
-
-void emulSetIcon(const char* inam) {
-	curicon = QIcon(QString(inam));
-	emulPause(true, 0);
-}
-
-//void EmulWin::setcuricon(QString nam) {
-//	curicon = QIcon(nam);
-//	emulPause(true,0);
-//}
-
-void emulPause(bool p, int msk) {
-	if (p) {
-		pauseFlags |= msk;
-	} else {
-		pauseFlags &= ~msk;
-	}
-	bool kk = emulFlags & FL_GRAB;
-	if (!kk || ((pauseFlags != 0) && kk)) {
-		SDL_WM_GrabInput(SDL_GRAB_OFF);
-		SDL_ShowCursor(SDL_ENABLE);
-	}
-	if ((pauseFlags == 0) && kk) {
-		SDL_WM_GrabInput(SDL_GRAB_ON);
-		SDL_ShowCursor(SDL_DISABLE);
-	}
-	if (pauseFlags == 0) {
-		mainWin->setWindowIcon(curicon);
-		sndPause(false);
-	} else {
-		mainWin->setWindowIcon(QIcon(":/images/pause.png"));
-		sndPause(true);
-	}
-	if (msk & PR_PAUSE) return;
-	if ((pauseFlags & ~PR_PAUSE) == 0) {
-		zx->vid->flags &= ~VF_BLOCKFULLSCREEN;
-		if (zx->vid->flags & VF_FULLSCREEN) emulUpdateWindow();
-	} else {
-		zx->vid->flags |= VF_BLOCKFULLSCREEN;
-		if (zx->vid->flags & VF_FULLSCREEN) emulUpdateWindow();
 	}
 }
 
