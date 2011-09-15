@@ -96,7 +96,7 @@ int main(int ac,char** av) {
 			dwin->show();
 			return app.exec();
 		} else {
-			SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
+			SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
 			atexit(SDL_Quit);
 			filltabs();
 			sndInit();
@@ -120,11 +120,13 @@ int main(int ac,char** av) {
 			QObject::connect(mwin,SIGNAL(wannasetup()),swin,SLOT(start()));
 			QObject::connect(mwin,SIGNAL(wannadevelop()),dwin,SLOT(start()));
 
-			mwin->tim1->start(20);
+			emulStartTimer(20);
+//			mwin->tim1->start(20);
 			mwin->tim2->start(20);
 			app.exec();
-			mwin->tim1->stop();
+//			mwin->tim1->stop();
 			mwin->tim2->stop();
+			emulStopTimer();
 			sndClose();
 			SDL_Quit();
 			return 0;

@@ -5,6 +5,7 @@
 
 #ifdef WIN32
 	#include <SDL.h>
+	#include <SDL_timer.h>
 	#include <SDL_syswm.h>
 	#include <windows.h>
 	#undef main
@@ -20,6 +21,7 @@
 
 #ifndef WIN32
 	#include <SDL.h>
+	#include <SDL_timer.h>
 	#include <SDL_syswm.h>
 #endif
 
@@ -39,6 +41,8 @@ QIcon curicon;
 SDL_Surface* surf;
 SDL_Color zxpal[256];
 SDL_SysWMinfo inf;
+SDL_TimerID tid,sid;
+QVector<QRgb> qPal;
 uint32_t emulFlags;
 int pauseFlags;
 uint32_t scrNumber;
@@ -71,25 +75,16 @@ void emulCreateWindow() {
 #endif
 }
 
-MainWin::MainWin() {}
-
-void MainWin::closeEvent(QCloseEvent* ev) {
-	if (emulSaveChanged()) {
-		ev->accept();
-	} else {
-		ev->ignore();
-		SDL_VERSION(&inf.version);
-		SDL_GetWMInfo(&inf);
-		mainWin->embedClient(inf.info.x11.wmwindow);
-	}
-}
-
 void emulInit() {
 	int i;
 	for (i=0; i<16; i++) {
 		zxpal[i].b = (i & 1) ? ((i & 8) ? 0xff : 0xc0) : 0;
 		zxpal[i].r = (i & 2) ? ((i & 8) ? 0xff : 0xc0) : 0;
 		zxpal[i].g = (i & 4) ? ((i & 8) ? 0xff : 0xc0) : 0;
+	}
+	qPal.clear(); qPal.resize(256);
+	for (i=0; i<256; i++) {
+		qPal[i] = qRgb(zxpal[i].r,zxpal[i].g,zxpal[i].b);
 	}
 	emulFlags = 0;
 
@@ -205,36 +200,41 @@ void emulPause(bool p, int msk) {
 	}
 }
 
+// Main window
+// It's full shit, but i need it because of closeEvent
+
+MainWin::MainWin() {}
+
+void MainWin::closeEvent(QCloseEvent* ev) {
+	if (emulSaveChanged()) {
+		ev->accept();
+	} else {
+		ev->ignore();
+		SDL_VERSION(&inf.version);
+		SDL_GetWMInfo(&inf);
+		mainWin->embedClient(inf.info.x11.wmwindow);
+	}
+}
+
 // OBJECT
 
-EmulWin::EmulWin() {
-	pal.clear(); pal.resize(256);
-	int i;
-	for (i=0; i<256; i++) {
-		pal[i] = qRgb(zxpal[i].r,zxpal[i].g,zxpal[i].b);
-	}
-	
+EmulWin::EmulWin() {	
 	QObject::connect(bookmarkMenu,SIGNAL(triggered(QAction*)),this,SLOT(bookmarkSelected(QAction*)));
 	QObject::connect(profileMenu,SIGNAL(triggered(QAction*)),this,SLOT(profileSelected(QAction*)));
 
-	tim1 = new QTimer();
 	tim2 = new QTimer();
-	QObject::connect(tim1,SIGNAL(timeout()),this,SLOT(emulframe()));
 	QObject::connect(tim2,SIGNAL(timeout()),this,SLOT(SDLEventHandler()));
 
 	emulPause(false,-1);
 }
 
-void EmulWin::emulframe() {
-	SDL_UpdateRect(surf,0,0,0,0);
-#if !SDLMAINWIN
+Uint32 emulFrame(Uint32 interval, void*) {
+	if (~emulFlags & FL_FAST) SDL_UpdateRect(surf,0,0,0,0);
 	if (!mainWin->isActiveWindow()) {
 		zx->keyb->releaseall();
 		zx->mouse->buttons = 0xff;
 	}
-#endif
-	if (pauseFlags != 0) return;
-
+	if (pauseFlags != 0) return interval;
 	if (!(emulFlags & FL_FAST) && sndGet(SND_ENABLE) && (sndGet(SND_MUTE) || mainWin->isActiveWindow())) {
 		sndPlay();
 	}
@@ -243,7 +243,6 @@ void EmulWin::emulframe() {
 		emulExec();
 	} while (!zx->sys->cpu->err && !zx->sys->istrb);
 	zx->sys->nmi = false;
-
 	if (scrCounter !=0 ) {
 		if (scrInterval == 0) {
 			emulFlags |= FL_SHOT;
@@ -261,7 +260,7 @@ void EmulWin::emulframe() {
 			file.write((char*)&zx->sys->mem->ram[zx->vid->curscr ? 7 : 5][0],0x1b00);
 		} else {
 			QImage *img = new QImage((uchar*)surf->pixels,surf->w,surf->h,QImage::Format_Indexed8);
-			img->setColorTable(pal);
+			img->setColorTable(qPal);
 			if (img==NULL) {
 				printf("NULL image\n");
 			} else {
@@ -271,6 +270,22 @@ void EmulWin::emulframe() {
 		emulFlags &= ~FL_SHOT;
 		scrNumber++;
 	}
+	return interval;
+}
+
+Uint32 onTimer(Uint32 iv,void*) {
+	if (emulFlags & FL_FAST) SDL_UpdateRect(surf,0,0,0,0);
+	return iv;
+}
+
+void emulStartTimer(int iv) {
+	tid = SDL_AddTimer(iv,&emulFrame,NULL);
+	sid = SDL_AddTimer(100,&onTimer,NULL);
+}
+
+void emulStopTimer() {
+	SDL_RemoveTimer(tid);
+	SDL_RemoveTimer(sid);
 }
 
 // keys
@@ -286,7 +301,9 @@ void EmulWin::SDLEventHandler() {
 						case SDLK_1: zx->vid->flags &= ~VF_DOUBLE; emulUpdateWindow(); sets->save(); break;
 						case SDLK_2: zx->vid->flags |= VF_DOUBLE; emulUpdateWindow(); sets->save(); break;
 						case SDLK_3: emulFlags ^= FL_FAST;
-							tim1->start((emulFlags & FL_FAST) ? 0 : 20);
+							emulStopTimer();
+							emulStartTimer((emulFlags & FL_FAST) ? 1 : 20);
+//							tim1->start();
 							break;
 						case SDLK_F4: mainWin->close(); break;
 						case SDLK_F7: scrCounter = sets->sscnt; scrInterval=0; break;	// ALT+F7 combo

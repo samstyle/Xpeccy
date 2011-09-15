@@ -48,20 +48,16 @@ class EmulWin : public QObject {
 	Q_OBJECT
 	public:
 		EmulWin();
-		QTimer *tim1,*tim2;
-//		void exec();
+		QTimer *tim2;
 	signals:
 		void icum();
 		void onerror();
 		void wannasetup();
 		void wannadevelop();
-	private:
-		QVector<QRgb> pal;
 	private slots:
 		void bookmarkSelected(QAction*);
 		void profileSelected(QAction*);
 		void SDLEventHandler();
-		void emulframe();
 };
 
 class MainWin : public QX11EmbedContainer {
@@ -83,6 +79,8 @@ int emulGetFlags();
 void emulSetFlag(int,bool);
 bool emulSaveChanged();
 void emulExec();
+void emulStartTimer(int);
+void emulStopTimer();
 QWidget* emulWidget();
 
 // USER MENU
