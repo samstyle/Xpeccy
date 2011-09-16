@@ -21,7 +21,6 @@ ZXComp::ZXComp() {
 	sys = new ZXBase(this);
 	sys->cpu = new Z80(3.5);
 	sys->mem = new Memory(MEM_ZX);
-//	sys->io = new IOSys(IO_ZX);
 	vid = new Video(sys->mem);
 	keyb = new Keyboard;
 	mouse = new Mouse;

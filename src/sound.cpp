@@ -1,3 +1,4 @@
+#include "common.h"
 #include "sound.h"
 #include "spectrum.h"
 
@@ -14,8 +15,6 @@ struct OutSys {
 	void (*play)();
 	void (*close)();
 };
-
-void shithappens(std::string);
 
 bool sndEnabled;
 bool sndMute;

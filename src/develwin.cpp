@@ -1,15 +1,22 @@
+#include "common.h"
 #include "develwin.h"
-//#include "emulwin.h"
 #include "settings.h"
 
 #include <QMessageBox>
 #include <QProcess>
 #include <QDir>
 
-void splitline(std::string,std::string*,std::string*);
-void shithappens(std::string);
-
 extern Settings* sets;
+
+DevelWin* devWin;
+
+void devInit() {
+	devWin = new DevelWin();
+}
+
+void devShow() {
+	devWin->show();
+}
 
 DevelWin::DevelWin() {
 	ui.setupUi(this);

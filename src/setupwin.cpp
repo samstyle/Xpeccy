@@ -1,21 +1,28 @@
-#include "setupwin.h"
-#include "emulwin.h"
-#include "develwin.h"
-#include "settings.h"
-#include "filer.h"
-
-#include "sound.h"
-#include "spectrum.h"
-
 #include <QStandardItemModel>
 #include <QFileDialog>
 
+#include "common.h"
+#include "sound.h"
+#include "spectrum.h"
+#include "setupwin.h"
+#include "emulwin.h"
+#include "settings.h"
+#include "filer.h"
+
 extern Settings* sets;
-extern EmulWin* mwin;
-extern DevelWin* dwin;
 extern ZXComp* zx;
 
-void setFlagBit(bool,int32_t*,int32_t);
+SetupWin* optWin;
+
+void optInit(QWidget* par) {
+	optWin = new SetupWin(par);
+}
+
+void optShow() {
+	optWin->start();
+}
+
+// OBJECT
 
 SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	setModal(true);
@@ -350,7 +357,6 @@ void SetupWin::apply() {
 void SetupWin::reject() {
 	hide();
 	fillBookmarkMenu();
-//	mwin->makeBookmarkMenu();
 	emulPause(false,PR_OPTS);
 }
 

@@ -103,11 +103,12 @@ void Tape::stop(int tk) {
 	}
 }
 
-void Tape::startplay() {
+bool Tape::startplay() {
 	if (block < data.size()) {
 		flags &= ~TAPE_REC;
 		flags |= TAPE_ON;
 	}
+	return (flags & TAPE_ON);
 }
 
 void Tape::startrec() {

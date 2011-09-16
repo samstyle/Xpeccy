@@ -6,7 +6,7 @@
 
 #include "spectrum.h"
 #include "sound.h"
-
+#include "common.h"
 #include "emulwin.h"
 #include "settings.h"
 #include "debuger.h"
@@ -21,9 +21,7 @@
 ZXComp* zx;
 
 EmulWin *mwin;
-DebugWin *dbg;
-SetupWin *swin;
-DevelWin *dwin;
+//DevelWin *dwin;
 
 Settings *sets;
 
@@ -40,7 +38,12 @@ void shithappens(std::string msg) {
 	mbx.exec();
 }
 
-std::string int2str(int num) {std::stringstream str; str<<num; return str.str();}
+std::string int2str(int num) {
+	std::stringstream str;
+	str<<num;
+	return str.str();
+}
+
 bool str2bool(std::string v) {
 	return (v=="y" || v=="Y" || v=="1" || v=="yes" || v=="YES" || v=="true" || v=="TRUE");
 }
@@ -78,10 +81,8 @@ void splitline(std::string line, std::string* pnam, std::string* pval) {
 	}
 }
 
-void filltabs();
-
 int main(int ac,char** av) {
-	QApplication app(ac,av);
+	QApplication app(ac,av,true);
 	try {
 		int i; bool dev = false;
 		sets = new Settings;
@@ -91,9 +92,9 @@ int main(int ac,char** av) {
 			if (std::string(av[i])=="-dev") dev=true;
 		}
 		if (dev) {
-			dwin = new DevelWin;
+			devInit();	// dwin = new DevelWin;
 			sets->load(true);
-			dwin->show();
+			devShow();	// dwin->show();
 			return app.exec();
 		} else {
 			SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
@@ -102,12 +103,12 @@ int main(int ac,char** av) {
 			sndInit();
 			emulInit();
 			mwin = new EmulWin();
-			dbg = new DebugWin(emulWidget());
-			dwin = new DevelWin();
+			dbgInit(emulWidget());	// dbg = new DebugWin(emulWidget());
+			devInit();		// dwin = new DevelWin();
 			initFileDialog(emulWidget());
 			sets->loadProfiles();
 			fillProfileMenu();
-			swin = new SetupWin(emulWidget());
+			optInit(emulWidget()); //swin = new SetupWin(emulWidget());
 			emulUpdateWindow();
 			emulShow();
 			sets->load(false);
@@ -117,15 +118,8 @@ int main(int ac,char** av) {
 
 			for(i=1;i<ac;i++) loadFile(av[i],FT_ALL,0);
 
-			QObject::connect(mwin,SIGNAL(wannasetup()),swin,SLOT(start()));
-			QObject::connect(mwin,SIGNAL(wannadevelop()),dwin,SLOT(start()));
-
 			emulStartTimer(20);
-//			mwin->tim1->start(20);
-			mwin->tim2->start(20);
 			app.exec();
-//			mwin->tim1->stop();
-			mwin->tim2->stop();
 			emulStopTimer();
 			sndClose();
 			SDL_Quit();

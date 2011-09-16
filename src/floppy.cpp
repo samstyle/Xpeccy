@@ -34,23 +34,7 @@ void Floppy::step(bool dir) {
 	if (dir) {if (trk < (trk80?86:43)) trk++;}
 	else {if (trk>0) trk--;}
 }
-/*
-void Floppy::tick() {
-	index=false;
-	rtrk = trk<<1; if (dblsid) rtrk += bdi->vg93.side;
-	if (insert) {
-		if (pos==0 && spin==0) iback=250;
-		if (iback>0) iback--;
-		index = (iback>0);
-		if (++spin > (bdi->turbo?(((bdi->vg93.cop & 0xf8)!=0x50)?3:95):112)) {
-			spin=0;
-			if (++pos>=TRACKLEN) pos=0;
-			field = fnext;
-			fnext = data[rtrk].field[pos+1];
-		}
-	}
-}
-*/
+
 void Floppy::next(bool bdiSide, uint32_t bdiTick) {
 	rtrk = trk<<1; if (dblsid) rtrk += bdiSide?0:1;		// bdiSide = zx->bdi->vg93.side
 	if (insert) {

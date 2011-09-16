@@ -1,19 +1,14 @@
-#include "sound.h"
-#include "emulwin.h"
-#include "settings.h"
-#include <QtCore>
 #include <sys/stat.h>
 #include <sys/types.h>
 
-extern ZXComp* zx;
-extern EmulWin* mwin;
+#include <QtCore>
 
-void shithappens(std::string);
-std::string int2str(int);
-bool str2bool(std::string);
-void splitline(std::string,std::string*,std::string*);
-std::vector<std::string> splitstr(std::string,const char*);
-void setFlagBit(bool,int32_t*,int32_t);
+#include "common.h"
+#include "sound.h"
+#include "emulwin.h"
+#include "settings.h"
+
+extern ZXComp* zx;
 
 Settings::Settings() {
 #ifndef WIN32
@@ -483,8 +478,5 @@ void Settings::load(bool dev) {
 	if (zx->sys->mem->romset==NULL) throw("Can't found current romset");
 	if (~zx->hw->mask & tmask) throw("Incorrect memory size for this machine");
 	if (!zx->vid->setLayout(zx->vid->curlay)) zx->vid->setLayout("default");
-//	mwin->updateWin();
-//	zx->vid->update();
 	zx->sys->mem->loadromset(opt.romDir);
-//	mwin->makeBookmarkMenu();
 }

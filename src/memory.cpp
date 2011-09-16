@@ -1,3 +1,4 @@
+#include "common.h"
 #include "memory.h"
 #include "spectrum.h"
 #include "settings.h"
@@ -13,7 +14,6 @@
 extern ZXComp* zx;
 extern Settings* sets;
 std::vector<RZXFrame> rzx;
-void shithappens(std::string);
 
 Memory::Memory(int tp) {
 	type = tp;

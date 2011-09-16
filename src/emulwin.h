@@ -48,12 +48,8 @@ class EmulWin : public QObject {
 	Q_OBJECT
 	public:
 		EmulWin();
-		QTimer *tim2;
-	signals:
-		void icum();
-		void onerror();
-		void wannasetup();
-		void wannadevelop();
+	private:
+		QTimer *timer;
 	private slots:
 		void bookmarkSelected(QAction*);
 		void profileSelected(QAction*);
@@ -64,6 +60,8 @@ class MainWin : public QX11EmbedContainer {
 	Q_OBJECT
 	public:
 		MainWin();
+	signals:
+		void mwsOptions();
 	protected:
 		void closeEvent(QCloseEvent*);
 };
@@ -71,7 +69,6 @@ class MainWin : public QX11EmbedContainer {
 // main
 void emulInit();
 void emulShow();
-void emulRestore();
 void emulUpdateWindow();
 void emulSetIcon(const char*);
 void emulPause(bool, int);

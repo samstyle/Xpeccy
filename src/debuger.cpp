@@ -5,8 +5,29 @@
 #include "emulwin.h"
 
 extern ZXComp* zx;
-extern EmulWin* mwin;
 extern ZOp* inst[9];
+
+DebugWin* dbgWin;
+
+void dbgInit(QWidget* par) {
+	dbgWin = new DebugWin(par);
+}
+
+// TODO: extract from DebugWindow almost all
+
+void dbgShow() {
+	dbgWin->start();
+}
+
+bool dbgIsActive() {
+	return dbgWin->active;
+}
+
+int dbgFindBreakpoint(BPoint bp) {
+	return dbgWin->findbp(bp);
+}
+
+// OBJECT
 
 void DebugWin::start() {
 	emulPause(true,PR_DEBUG);

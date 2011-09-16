@@ -57,4 +57,7 @@ class DevelWin : public QDialog {
 		void closeEvent(QCloseEvent*);
 };
 
+void devInit();
+void devShow();
+
 #endif

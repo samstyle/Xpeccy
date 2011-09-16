@@ -68,6 +68,9 @@ class DebugWin : public QDialog {
 		void keyPressEvent(QKeyEvent*);
 };
 
-// extern DebugWin *dbg;
+void dbgInit(QWidget*);
+void dbgShow();
+bool dbgIsActive();
+int dbgFindBreakpoint(BPoint);
 
 #endif

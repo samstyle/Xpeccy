@@ -45,7 +45,7 @@ class Tape {
 		std::vector<uint8_t> getdata(int32_t,int32_t,int32_t);
 		void eject();
 		void stop(int);
-		void startplay();
+		bool startplay();
 		void startrec();
 		void sync();
 		void storeblock();

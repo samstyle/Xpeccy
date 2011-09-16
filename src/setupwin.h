@@ -44,4 +44,7 @@ class SetupWin : public QDialog {
 		int umidx;
 };
 
+void optInit(QWidget*);
+void optShow();
+
 #endif
