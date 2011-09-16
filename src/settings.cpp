@@ -306,11 +306,13 @@ void Settings::load(bool dev) {
 				if (pnam=="[GENERAL]") {grp=pnam; tmp2=10;}
 				if (dev && (tmp2 != 7)) tmp2 = 0;
 			} else {
-				nent.group = grp;
-				nent.group.erase(grp.size()-1,1).erase(0,1);
-				nent.name = pnam;
-				nent.value = pval;
-				config.push_back(nent);
+				if (grp.size() > 2) {
+					nent.group = grp;
+					nent.group.erase(grp.size()-1,1).erase(0,1);
+					nent.name = pnam;
+					nent.value = pval;
+					config.push_back(nent);
+				}
 //printf("%s\t%s\t%s\n",config.back().group.c_str(),config.back().name.c_str(),config.back().value.c_str());
 				switch (tmp2) {
 					case 1:
