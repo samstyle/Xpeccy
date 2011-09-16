@@ -7,7 +7,7 @@
 
 #include "spectrum.h"
 
-struct IniEntry {
+struct setEntry {
 	std::string group;
 	std::string name;
 	std::string value;

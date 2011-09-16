@@ -21,7 +21,6 @@
 ZXComp* zx;
 
 EmulWin *mwin;
-//DevelWin *dwin;
 
 Settings *sets;
 

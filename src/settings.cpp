@@ -9,6 +9,7 @@
 #include "settings.h"
 
 extern ZXComp* zx;
+std::vector<setEntry> config;
 
 Settings::Settings() {
 #ifndef WIN32
@@ -84,23 +85,14 @@ void Settings::save() {
 		throw(0);
 	}
 	uint32_t i,j;
-	sfile<<"[CPU]\n\n";
-	sfile<<"# real cpu freq in MHz = this value / 2; correct range is 2 to 14 (1 to 7 MHz)\n";
+	sfile<<"[GENERAL]\n\n";
+	sfile<<"# real cpu freq in MHz is this value / 2; correct range is 2 to 14 (1 to 7 MHz)\n";
 	sfile<<"cpu.frq = "<<int2str((int)(zx->sys->cpu->frq * 2.0)).c_str()<<"\n";
 
 	sfile<<"\n[VIDEO]\n\n";
 	sfile<<"doublesize = "<<((zx->vid->flags & VF_DOUBLE)?"y":"n")<<"\n";
 	sfile<<"fullscreen = "<<((zx->vid->flags & VF_FULLSCREEN)?"y":"n")<<"\n";
 	sfile<<"bordersize = "<<int2str((int)(zx->vid->brdsize * 100)).c_str()<<"\n";
-//	std::vector<VidLayout> lays = getLayoutList();
-//	for (i=1; i < lays.size(); i++) {
-//		sfile << "layout = ";
-//		sfile << lays[i].name.c_str() << ":";
-//		sfile << int2str(lays[i].full.h) << ":" << int2str(lays[i].full.v) << ":";
-//		sfile << int2str(lays[i].bord.h) << ":" << int2str(lays[i].bord.v) << ":";
-//		sfile << int2str(lays[i].sync.h) << ":" << int2str(lays[i].sync.v) << ":";
-//		sfile << int2str(lays[i].intsz) << ":" << int2str(lays[i].intpos) << "\n";
-//	}
 	sfile<<"geometry = "<<zx->vid->curlay.c_str()<<"\n";
 
 	sfile << "\n[SCREENSHOTS]\n\n";
@@ -194,10 +186,6 @@ void Settings::save() {
 	sfile << "sjasm = "		<< opt.asmPath.c_str()	<< "\n";
 	sfile << "projectsdir = "	<< opt.projectsDir.c_str()<< "\n";
 
-//	sfile<<"\n[MENU]\n\n";
-//	for (i=0; i<umenu.data.size(); i++) {
-//		sfile<<umenu.data[i].name.c_str()<<" = "<<umenu.data[i].path.c_str()<<"\n";
-//	}
 }
 
 void Settings::loadProfiles() {
@@ -211,19 +199,15 @@ void Settings::loadProfiles() {
 			shithappens("<b>Doh! Something going wrong</b><br>Now you can worry");
 			throw(0);
 		}
-//		shithappens("Done");
 	}
 	clearProfiles();
 	clearBookmarks();
-//	while (profs.size() > 1) profs.pop_back();		// delete all existing profiles except 'default'
-//	umenu.data.clear();
 	char* buf = new char[0x4000];
 	std::string line,pnam,pval;
 	std::string pnm = "default";
 	int section = 0;
 	std::vector<std::string> vect;
 	VidLayout vlay;
-//	Profile prf;
 	while (!file.eof()) {
 		file.getline(buf,2048);
 		line = std::string(buf);
@@ -299,26 +283,37 @@ void Settings::load(bool dev) {
 		std::string fnam,tms;
 		int fprt;
 		zx->sys->mem->rsetlist.clear();
+		config.clear();
+		std::string grp = "";
+		setEntry nent;
 		while (!file.eof()) {
 			file.getline(buf,2048);
 			line = std::string(buf);
+			pos = line.find_first_of("#"); if (pos != std::string::npos) line.erase(pos);
+			pos = line.find_first_of(";"); if (pos != std::string::npos) line.erase(pos);
+			pos = line.find_first_of("//"); if (pos != std::string::npos) line.erase(pos);
 			splitline(line,&pnam,&pval);
 			if (pval=="") {
-				if (pnam=="[ROMSETS]") tmp2=1;
-				if (pnam=="[VIDEO]") tmp2=2;
-				if (pnam=="[SCREENSHOTS]") tmp2=3;
-				if (pnam=="[SOUND]") tmp2=4;
-				if (pnam=="[BETADISK]") tmp2=5;
-				if (pnam=="[MACHINE]") tmp2=6;
-				if (pnam=="[TOOLS]") tmp2=7;
-				if (pnam=="[MENU]") tmp2=8;
-				if (pnam=="[IDE]") tmp2=9;
-				if (pnam=="[GENERAL]") tmp2=10;
+				if (pnam=="[ROMSETS]") {grp=pnam; tmp2=1;}
+				if (pnam=="[VIDEO]") {grp=pnam; tmp2=2;}
+				if (pnam=="[SCREENSHOTS]") {grp=pnam; tmp2=3;}
+				if (pnam=="[SOUND]") {grp=pnam; tmp2=4;}
+				if (pnam=="[BETADISK]") {grp=pnam; tmp2=5;}
+				if (pnam=="[MACHINE]") {grp=pnam; tmp2=6;}
+				if (pnam=="[TOOLS]") {grp=pnam; tmp2=7;}
+				if (pnam=="[MENU]") {grp=pnam; tmp2=8;}
+				if (pnam=="[IDE]") {grp=pnam; tmp2=9;}
+				if (pnam=="[GENERAL]") {grp=pnam; tmp2=10;}
 				if (dev && (tmp2 != 7)) tmp2 = 0;
 			} else {
+				nent.group = grp;
+				nent.group.erase(grp.size()-1,1).erase(0,1);
+				nent.name = pnam;
+				nent.value = pval;
+				config.push_back(nent);
+//printf("%s\t%s\t%s\n",config.back().group.c_str(),config.back().name.c_str(),config.back().value.c_str());
 				switch (tmp2) {
 					case 1:
-						
 						pos = pval.find_last_of(":");
 						if (pos != std::string::npos) {
 							fnam = std::string(pval,0,pos);
