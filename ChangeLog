@@ -36,3 +36,7 @@ Wrk	Start rewriting EmulWindow. Saving changed disks at exit doesn't work proper
 build 20110915
 Wrk	Saving changed disks at exit return to normal
 Wrk	Rewriting one of main timers. Fast mode works at 10 fps.
+
+build 20110916
+Fix	CPU frequency didn't changed from config file
+Wrk	Start rewriting Settings part
