@@ -31,12 +31,10 @@
 
 extern ZXComp* zx;
 extern Settings* sets;
-//extern DebugWin* dbg;
-//extern DevelWin* dwin;
 // main
 MainWin* mainWin;
 QIcon curicon;
-SDL_Surface* surf;
+SDL_Surface* surf = NULL;
 SDL_Color zxpal[256];
 SDL_SysWMinfo inf;
 SDL_TimerID tid,sid;
@@ -106,15 +104,12 @@ void emulUpdateWindow() {
 	zx->vid->update();
 	int szw = zx->vid->wsze.h;
 	int szh = zx->vid->wsze.v;
-	mainWin->setFixedSize(szw,szh);
 	int sdlflg = SDL_SWSURFACE;
 	if ((zx->vid->flags & VF_FULLSCREEN) && !(zx->vid->flags & VF_BLOCKFULLSCREEN)) {
 		sdlflg |= SDL_FULLSCREEN;
 	}
+	mainWin->setFixedSize(szw,szh);
 	surf = SDL_SetVideoMode(szw,szh,8,sdlflg | SDL_NOFRAME);
-#ifdef WIN32
-	SetWindowPos(inf.window,HWND_TOP,0,0,szw,szh,0);
-#endif
 	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
 	zx->vid->scrimg = (uint8_t*)surf->pixels;
 	zx->vid->scrptr = zx->vid->scrimg;
@@ -213,41 +208,42 @@ Uint32 emulFrame(Uint32 interval, void*) {
 		zx->keyb->releaseall();
 		zx->mouse->buttons = 0xff;
 	}
-	if (pauseFlags != 0) return interval;
-	if (!(emulFlags & FL_FAST) && sndGet(SND_ENABLE) && (sndGet(SND_MUTE) || mainWin->isActiveWindow())) {
-		sndPlay();
-	}
-	sndSet(SND_COUNT,0);
-	do {
-		emulExec();
-	} while (!zx->sys->cpu->err && !zx->sys->istrb);
-	zx->sys->nmi = false;
-	if (scrCounter !=0 ) {
-		if (scrInterval == 0) {
-			emulFlags |= FL_SHOT;
-			scrCounter--;
-			scrInterval = sets->ssint;
-			if (scrCounter == 0) printf("stop combo shots\n");
-		} else {
-			scrInterval--;
+	if (pauseFlags == 0) {
+		if (!(emulFlags & FL_FAST) && sndGet(SND_ENABLE) && (sndGet(SND_MUTE) || mainWin->isActiveWindow())) {
+			sndPlay();
 		}
-	}
-	if (emulFlags & FL_SHOT) {
-		std::string fnam = sets->opt.scrshotDir + "/sshot" + int2str(scrNumber) + "." + sets->opt.scrshotFormat;
-		if (sets->opt.scrshotFormat == "scr") {
-			std::ofstream file(fnam.c_str(),std::ios::binary);
-			file.write((char*)&zx->sys->mem->ram[zx->vid->curscr ? 7 : 5][0],0x1b00);
-		} else {
-			QImage *img = new QImage((uchar*)surf->pixels,surf->w,surf->h,QImage::Format_Indexed8);
-			img->setColorTable(qPal);
-			if (img==NULL) {
-				printf("NULL image\n");
+		sndSet(SND_COUNT,0);
+		do {
+			emulExec();
+		} while (!zx->sys->cpu->err && !zx->sys->istrb);
+		zx->sys->nmi = false;
+		if (scrCounter !=0 ) {
+			if (scrInterval == 0) {
+				emulFlags |= FL_SHOT;
+				scrCounter--;
+				scrInterval = sets->ssint;
+				if (scrCounter == 0) printf("stop combo shots\n");
 			} else {
-				img->save(QString(fnam.c_str()),sets->opt.scrshotFormat.c_str());
+				scrInterval--;
 			}
 		}
-		emulFlags &= ~FL_SHOT;
-		scrNumber++;
+		if (emulFlags & FL_SHOT) {
+			std::string fnam = sets->opt.scrshotDir + "/sshot" + int2str(scrNumber) + "." + sets->opt.scrshotFormat;
+			if (sets->opt.scrshotFormat == "scr") {
+				std::ofstream file(fnam.c_str(),std::ios::binary);
+				file.write((char*)&zx->sys->mem->ram[zx->vid->curscr ? 7 : 5][0],0x1b00);
+			} else {
+				QImage *img = new QImage((uchar*)surf->pixels,surf->w,surf->h,QImage::Format_Indexed8);
+				img->setColorTable(qPal);
+				if (img==NULL) {
+					printf("NULL image\n");
+				} else {
+					img->save(QString(fnam.c_str()),sets->opt.scrshotFormat.c_str());
+				}
+			}
+			emulFlags &= ~FL_SHOT;
+			scrNumber++;
+		}
 	}
 	return interval;
 }
@@ -280,14 +276,25 @@ EmulWin::EmulWin() {
 
 void EmulWin::SDLEventHandler() {
 	SDL_Event ev;
+	bool resiz = false;
 	while (SDL_PollEvent(&ev)) {
 		switch (ev.type) {
 			case SDL_KEYDOWN:
 				if (ev.key.keysym.mod & KMOD_ALT) {
 					switch(ev.key.keysym.sym) {
 						case SDLK_0: zx->vid->mode = (zx->vid->mode==VID_NORMAL)?VID_ALCO:VID_NORMAL; break;
-						case SDLK_1: zx->vid->flags &= ~VF_DOUBLE; emulUpdateWindow(); sets->save(); break;
-						case SDLK_2: zx->vid->flags |= VF_DOUBLE; emulUpdateWindow(); sets->save(); break;
+						case SDLK_1: if (resiz) break;
+							resiz = true;
+							zx->vid->flags &= ~VF_DOUBLE;
+							emulUpdateWindow();
+							sets->save();
+							break;
+						case SDLK_2: if (resiz) break;
+							resiz = true;
+							zx->vid->flags |= VF_DOUBLE;
+							emulUpdateWindow();
+							sets->save();
+							break;
 						case SDLK_3: emulFlags ^= FL_FAST;
 							emulStopTimer();
 							emulStartTimer((emulFlags & FL_FAST) ? 1 : 20);

@@ -7,7 +7,7 @@
 
 #include "spectrum.h"
 
-struct setEntry {
+struct optEntry {
 	std::string group;
 	std::string name;
 	std::string value;

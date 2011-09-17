@@ -19,9 +19,7 @@
 #endif
 
 ZXComp* zx;
-
 EmulWin *mwin;
-
 Settings *sets;
 
 void setFlagBit(bool cond, int32_t* val, int32_t mask) {

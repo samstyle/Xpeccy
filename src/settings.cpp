@@ -9,7 +9,82 @@
 #include "settings.h"
 
 extern ZXComp* zx;
-std::vector<setEntry> config;
+std::vector<optEntry> config;
+
+// new
+
+std::vector<std::string> optGroupsList() {
+	std::vector<std::string> res;
+	std::string grp;
+	uint i,j;
+	bool prs;
+	for (i=0; i<config.size(); i++) {
+		grp = config[i].group;
+		prs = false;
+		for (j=0; j<res.size(); j++) {
+			if (res[j] == grp) {
+				prs = true;
+				break;
+			}
+		}
+		if (!prs) res.push_back(grp);
+	}
+	return res;
+}
+
+std::vector<optEntry> optGroupEntries(std::string grp) {
+	std::vector<optEntry> res;
+	for (uint i=0; i<config.size(); i++) {
+		if (config[i].group == grp) res.push_back(config[i]);
+	}
+	return res;
+}
+
+optEntry* optFindEntry(std::string grp, std::string nam) {
+	optEntry* res = NULL;
+	for (uint i=0; i<config.size(); i++) {
+		if ((config[i].group == grp) && (config[i].name == nam)) {
+			res = &config[i];
+			break;
+		}
+	}
+	return res;
+}
+
+optEntry* addOption(std::string grp, std::string nam) {
+	optEntry* res = optFindEntry(grp, nam);
+	if (res != NULL) return res;
+	optEntry nent;
+	nent.group = grp;
+	nent.name = nam;
+	nent.value = "";
+	config.push_back(nent);
+	return &config[config.size() - 1];
+}
+
+void optSetString(std::string grp, std::string nam, std::string val) {
+	optEntry* res = addOption(grp, nam);
+	res->value = val;
+}
+
+std::string optGetString(std::string grp, std::string nam) {
+	std::string res = "";
+	optEntry* ent = optFindEntry(grp,nam);
+	if (ent != NULL) res = ent->value;
+	return res;
+}
+
+int optGetInt(std::string grp, std::string nam) {
+	std::string res = optGetString(grp,nam);
+	return atoi(res.c_str());
+}
+
+bool optGetBool(std::string grp, std::string nam) {
+	std::string res = optGetString(grp,nam);
+	return str2bool(res);
+}
+
+// old
 
 Settings::Settings() {
 #ifndef WIN32
@@ -260,6 +335,7 @@ void Settings::load(bool dev) {
 	size_t pos;
 	char* buf = new char[0x4000];
 	int tmask = 0xff;
+	int tmp2=0;
 	if (!dev) zx->sys->mem->mask = 0;
 	if (!file.good()) {
 		shithappens(std::string("Can't find config file<br><b>") + cfname + std::string("</b><br>Default one will be created."));
@@ -278,20 +354,18 @@ void Settings::load(bool dev) {
 	} else {
 		RomSet newrs;
 		VidLayout vlay;
-		int tmp2=0;
-		int test;
+//		int test;
 		std::string fnam,tms;
 		int fprt;
 		zx->sys->mem->rsetlist.clear();
 		config.clear();
 		std::string grp = "";
-		setEntry nent;
+		optEntry nent;
 		while (!file.eof()) {
 			file.getline(buf,2048);
 			line = std::string(buf);
 			pos = line.find_first_of("#"); if (pos != std::string::npos) line.erase(pos);
 			pos = line.find_first_of(";"); if (pos != std::string::npos) line.erase(pos);
-			pos = line.find_first_of("//"); if (pos != std::string::npos) line.erase(pos);
 			splitline(line,&pnam,&pval);
 			if (pval=="") {
 				if (pnam=="[ROMSETS]") {grp=pnam; tmp2=1;}
@@ -307,13 +381,11 @@ void Settings::load(bool dev) {
 				if (dev && (tmp2 != 7)) tmp2 = 0;
 			} else {
 				if (grp.size() > 2) {
-					nent.group = grp;
-					nent.group.erase(grp.size()-1,1).erase(0,1);
-					nent.name = pnam;
-					nent.value = pval;
-					config.push_back(nent);
+					line = grp;
+					line.erase(line.size()-1,1).erase(0,1);		// remove [ and ] from group name
+					optSetString(line,pnam,pval);
 				}
-//printf("%s\t%s\t%s\n",config.back().group.c_str(),config.back().name.c_str(),config.back().value.c_str());
+printf("%s\t%s\t%s\n",config.back().group.c_str(),config.back().name.c_str(),config.back().value.c_str());
 				switch (tmp2) {
 					case 1:
 						pos = pval.find_last_of(":");
@@ -347,19 +419,20 @@ void Settings::load(bool dev) {
 						if (pnam=="current") zx->opt.romsetName = pval;
 						if (pnam=="gs") zx->opt.GSRom = pval;
 						break;
-					case 2: if (pnam=="doublesize") {
-							if (str2bool(pval))
-								zx->vid->flags |= VF_DOUBLE;
-							else
-								zx->vid->flags &= ~VF_DOUBLE;
-						}
-						if (pnam=="fullscreen") {
-							if (str2bool(pval))
-								zx->vid->flags |= VF_FULLSCREEN;
-							else
-								zx->vid->flags &= ~VF_FULLSCREEN;
-						}
-						if (pnam=="bordersize") {test = atoi(pval.c_str()); if ((test>-1) && (test<101)) zx->vid->brdsize = test/100.0;}
+					case 2: //setFlagBit(str2bool(pval),&zx->vid->flags, VF_DOUBLE);
+						//if (pnam=="doublesize") {
+						//	if (str2bool(pval))
+						//		zx->vid->flags |= VF_DOUBLE;
+						//	else
+						//		zx->vid->flags &= ~VF_DOUBLE;
+						//}
+						//if (pnam=="fullscreen") {
+						//	if (str2bool(pval))
+						//		zx->vid->flags |= VF_FULLSCREEN;
+						//	else
+						//		zx->vid->flags &= ~VF_FULLSCREEN;
+						//}
+						//if (pnam=="bordersize") {test = atoi(pval.c_str()); if ((test>-1) && (test<101)) zx->vid->brdsize = test/100.0;}
 						if (pnam=="layout") {
 							vect = splitstr(pval,":");
 							if (vect.size() == 9) {
@@ -373,38 +446,38 @@ void Settings::load(bool dev) {
 								}
 							}
 						}
-						if (pnam=="geometry") zx->vid->curlay = pval;
+						// if (pnam=="geometry") zx->vid->curlay = pval;
 						break;
-					case 3: if (pnam=="folder") opt.scrshotDir = pval;
-						if (pnam=="format") opt.scrshotFormat = pval;
-						if (pnam=="combo.count") sscnt=atoi(pval.c_str());
-						if (pnam=="combo.interval") ssint=atoi(pval.c_str());
-						break;
-					case 4: if (pnam=="enabled") sndSet(SND_ENABLE, str2bool(pval));
-						if (pnam=="dontmute") sndSet(SND_MUTE, str2bool(pval));
-						if (pnam=="soundsys") opt.sndOutputName = pval;
-						if (pnam=="rate") sndSet(SND_RATE,atoi(pval.c_str()));
-						if (pnam=="volume.beep") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_BEEP,test);}
-						if (pnam=="volume.tape") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_TAPE,test);}
-						if (pnam=="volume.ay") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_AYVL,test);}
-						if (pnam=="volume.gs") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_GSVL,test);}
-						if (pnam=="chip1") {test = atoi(pval.c_str()); if (test < SND_END) zx->aym->sc1->settype(test);}
-						if (pnam=="chip2") {test = atoi(pval.c_str()); if (test < SND_END) zx->aym->sc2->settype(test);}
-						if (pnam=="chip1.stereo") zx->aym->sc1->stereo = atoi(pval.c_str());
-						if (pnam=="chip2.stereo") zx->aym->sc2->stereo = atoi(pval.c_str());
-						if (pnam=="ts.type") zx->aym->tstype = atoi(pval.c_str());
-						if (pnam=="gs") {
-							if (str2bool(pval)) zx->gs->flags |= GS_ENABLE; else zx->gs->flags &= ~GS_ENABLE;
-						}
-						if (pnam=="gs.reset") {
-							if (str2bool(pval)) zx->gs->flags |= GS_RESET; else zx->gs->flags &= ~GS_RESET;
-						}
-						if (pnam=="gs.stereo") zx->gs->stereo = atoi(pval.c_str());
-						break;
-					case 5: if (pnam=="enabled") zx->bdi->enable=str2bool(pval);
-						if (pnam=="fast") zx->bdi->vg93.turbo=str2bool(pval);
-						break;
-					case 6: if (pnam=="current") zx->opt.hwName = pval;
+					//case 3: //if (pnam=="folder") opt.scrshotDir = pval;
+						//if (pnam=="format") opt.scrshotFormat = pval;
+						//if (pnam=="combo.count") sscnt=atoi(pval.c_str());
+						////if (pnam=="combo.interval") ssint=atoi(pval.c_str());
+						//break;
+					//case 4:// if (pnam=="enabled") sndSet(SND_ENABLE, str2bool(pval));
+						//if (pnam=="dontmute") sndSet(SND_MUTE, str2bool(pval));
+						//if (pnam=="soundsys") opt.sndOutputName = pval;
+						//if (pnam=="rate") sndSet(SND_RATE,atoi(pval.c_str()));
+						//if (pnam=="volume.beep") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_BEEP,test);}
+						//if (pnam=="volume.tape") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_TAPE,test);}
+						//if (pnam=="volume.ay") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_AYVL,test);}
+						//if (pnam=="volume.gs") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_GSVL,test);}
+						//if (pnam=="chip1") {test = atoi(pval.c_str()); if (test < SND_END) zx->aym->sc1->settype(test);}
+						//if (pnam=="chip2") {test = atoi(pval.c_str()); if (test < SND_END) zx->aym->sc2->settype(test);}
+						//if (pnam=="chip1.stereo") zx->aym->sc1->stereo = atoi(pval.c_str());
+						//if (pnam=="chip2.stereo") zx->aym->sc2->stereo = atoi(pval.c_str());
+						//if (pnam=="ts.type") zx->aym->tstype = atoi(pval.c_str());
+						//if (pnam=="gs") {
+						//	if (str2bool(pval)) zx->gs->flags |= GS_ENABLE; else zx->gs->flags &= ~GS_ENABLE;
+						//}
+						//if (pnam=="gs.reset") {
+						//	if (str2bool(pval)) zx->gs->flags |= GS_RESET; else zx->gs->flags &= ~GS_RESET;
+						//}
+						//if (pnam=="gs.stereo") zx->gs->stereo = atoi(pval.c_str());
+						//break;
+					//case 5: //if (pnam=="enabled") zx->bdi->enable=str2bool(pval);
+						//if (pnam=="fast") zx->bdi->vg93.turbo=str2bool(pval);
+						//break;
+					case 6: //if (pnam=="current") zx->opt.hwName = pval;
 						if (pnam=="memory") {
 							if (pval=="48") {zx->sys->mem->mask = 0x00; tmask = 0;}
 							if (pval=="128") {zx->sys->mem->mask = 0x07; tmask = 1;}
@@ -412,16 +485,16 @@ void Settings::load(bool dev) {
 							if (pval=="512") {zx->sys->mem->mask = 0x1f; tmask = 4;}
 							if (pval=="1024") {zx->sys->mem->mask = 0x3f; tmask = 8;}
 						}
-						if (pnam=="restart") {
-							emulSetFlag (FL_RESET, str2bool(pval));
-						}
-						if (pnam=="scrp.wait") {
-							if (str2bool(pval)) zx->sys->hwflags |= WAIT_ON; else zx->sys->hwflags &= ~WAIT_ON;
-						}
+						//if (pnam=="restart") {
+						//	emulSetFlag (FL_RESET, str2bool(pval));
+						//}
+						//if (pnam=="scrp.wait") {
+						//	if (str2bool(pval)) zx->sys->hwflags |= WAIT_ON; else zx->sys->hwflags &= ~WAIT_ON;
+						//}
 						break;
-					case 7: if (pnam=="sjasm") opt.asmPath = pval;
-						if (pnam=="projectsdir") opt.projectsDir = pval;
-						break;
+					//case 7: //if (pnam=="sjasm") opt.asmPath = pval;
+						//if (pnam=="projectsdir") opt.projectsDir = pval;
+						//break;
 					case 8: addBookmark(pnam.c_str(),pval.c_str());
 						break;
 					case 9:
@@ -455,17 +528,57 @@ void Settings::load(bool dev) {
 							}
 						}
 						break;
-					case 10:
-						if (pnam=="cpu.frq") {
-							fprt = atoi(pval.c_str());
-							if ((fprt > 0) && (fprt < 14)) zx->sys->cpu->frq = fprt / 2.0;
-						}
-						break;
+//					case 10:
+//						if (pnam=="cpu.frq") {
+//							fprt = atoi(pval.c_str());
+//							if ((fprt > 0) && (fprt < 14)) zx->sys->cpu->frq = fprt / 2.0;
+//						}
+//						break;
 				}
 			}
 		}
 	}
 	if (dev) return;
+
+	tmp2 = optGetInt("GENERAL","cpu.frq"); if ((tmp2 > 0) && (tmp2 <= 14)) zx->sys->cpu->frq = tmp2 / 2.0;
+
+	zx->vid->curlay = optGetString("VIDEO","geometry");
+	setFlagBit(optGetBool("VIDEO","doublesize"),&zx->vid->flags, VF_DOUBLE);
+	setFlagBit(optGetBool("VIDEO","fullscreen"),&zx->vid->flags, VF_FULLSCREEN);
+	tmp2 = optGetInt("VIDEO","bordersize"); if ((tmp2 >= 0) && (tmp2 <= 100)) zx->vid->brdsize = tmp2 / 100.0;
+	
+	opt.scrshotDir = optGetString("SCREENSHOTS","folder");
+	opt.scrshotFormat = optGetString("SCREENSHOTS","format");
+	sscnt = optGetInt("SCREENSHOTS","combo.count");
+	ssint = optGetInt("SCREENSHOTS","combo.interval");
+	
+	opt.sndOutputName = optGetString("SOUND","soundsys");
+	sndSet(SND_ENABLE, optGetBool("SOUND","enabled"));
+	sndSet(SND_MUTE, optGetBool("SOUND","dontmute"));
+	sndSet(SND_RATE,optGetInt("SOUND","rate"));
+	tmp2 = optGetInt("SOUND","volume.beep"); if (tmp2 > 100) {tmp2 = 100;} sndSet(SND_BEEP,tmp2);
+	tmp2 = optGetInt("SOUND","volume.tape"); if (tmp2 > 100) {tmp2 = 100;} sndSet(SND_TAPE,tmp2);
+	tmp2 = optGetInt("SOUND","volume.ay"); if (tmp2 > 100) {tmp2 = 100;} sndSet(SND_AYVL,tmp2);
+	tmp2 = optGetInt("SOUND","volume.gs"); if (tmp2 > 100) {tmp2 = 100;} sndSet(SND_GSVL,tmp2);
+	tmp2 = optGetInt("SOUND","chip1"); if (tmp2 < SND_END) zx->aym->sc1->settype(tmp2);
+	tmp2 = optGetInt("SOUND","chip2"); if (tmp2 < SND_END) zx->aym->sc2->settype(tmp2);
+	setFlagBit(optGetBool("SOUND","gs"),&zx->gs->flags,GS_ENABLE);
+	setFlagBit(optGetBool("SOUND","gs.reset"),&zx->gs->flags,GS_RESET);
+	zx->aym->sc1->stereo = optGetInt("SOUND","chip1.stereo");
+	zx->aym->sc2->stereo = optGetInt("SOUND","chip2.stereo");
+	zx->aym->tstype = optGetInt("SOUND","ts.type");
+	zx->gs->stereo = optGetInt("SOUND","gs.stereo");
+	
+	zx->bdi->enable = optGetBool("BETADISK","enabled");
+	zx->bdi->vg93.turbo = optGetBool("BETADISK","fast");
+	
+	zx->opt.hwName = optGetString("MACHINE","current");
+	emulSetFlag(FL_RESET,optGetBool("MACHINE","restart"));
+	setFlagBit(optGetBool("MACHINE","scrp.wait"),&zx->sys->hwflags,WAIT_ON);
+
+	opt.asmPath = optGetString("TOOLS","sjasm");
+	opt.projectsDir = optGetString("TOOLS","projectsdir");
+	
 	sndCalibrate();
 	zx->ide->refresh();
 	zx->setHardware(zx->opt.hwName);
