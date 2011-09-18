@@ -179,16 +179,16 @@ void SetupWin::start() {
 	ui.dszchk->setChecked((zx->vid->flags & VF_DOUBLE));
 //	ui.fscchk->setChecked(vid->fscreen);
 	ui.bszsld->setValue((int)(zx->vid->brdsize * 100));
-	ui.pathle->setText(QDialog::trUtf8(sets->opt.scrshotDir.c_str()));
-	ui.ssfbox->setCurrentIndex(ui.ssfbox->findText(QDialog::trUtf8(sets->opt.scrshotFormat.c_str())));
-	ui.scntbox->setValue(sets->sscnt);
-	ui.sintbox->setValue(sets->ssint);
+	ui.pathle->setText(QDialog::trUtf8(optGetString("SCREENSHOTS","folder").c_str()));
+	ui.ssfbox->setCurrentIndex(ui.ssfbox->findText(QDialog::trUtf8(optGetString("SCREENSHOTS","format").c_str())));
+	ui.scntbox->setValue(optGetInt("SCREENSHOTS","combo.count"));
+	ui.sintbox->setValue(optGetInt("SCREENSHOTS","combo.interval"));
 	ui.geombox->setCurrentIndex(ui.geombox->findText(QDialog::trUtf8(zx->vid->curlay.c_str())));
 // sound
 	ui.senbox->setChecked(sndGet(SND_ENABLE) != 0);
 	ui.mutbox->setChecked(sndGet(SND_MUTE) != 0);
 	ui.gsrbox->setChecked(zx->gs->flags & GS_RESET);
-	ui.outbox->setCurrentIndex(ui.outbox->findText(QDialog::trUtf8(sets->opt.sndOutputName.c_str())));
+	ui.outbox->setCurrentIndex(ui.outbox->findText(QDialog::trUtf8(optGetString("SOUND","soundsys").c_str())));
 	ui.ratbox->setCurrentIndex(ui.ratbox->findText(QString::number(sndGet(SND_RATE))));
 	ui.bvsld->setValue(sndGet(SND_BEEP));
 	ui.tvsld->setValue(sndGet(SND_TAPE));
@@ -246,8 +246,8 @@ void SetupWin::start() {
 	ui.tpathle->setText(QDialog::trUtf8(zx->tape->path.c_str()));
 	buildtapelist();
 // tools
-	ui.sjpathle->setText(QDialog::trUtf8(sets->opt.asmPath.c_str()));
-	ui.prjdirle->setText(QDialog::trUtf8(sets->opt.projectsDir.c_str()));
+	ui.sjpathle->setText(QDialog::trUtf8(optGetString("TOOLS","sjasm").c_str()));
+	ui.prjdirle->setText(QDialog::trUtf8(optGetString("TOOLS","projectsdir").c_str()));
 	buildmenulist();
 
 	show();
@@ -277,25 +277,25 @@ void SetupWin::apply() {
 	if (ui.dszchk->isChecked()) zx->vid->flags |= VF_DOUBLE; else zx->vid->flags &= ~VF_DOUBLE;
 //	vid->fscreen = ui.fscchk->isChecked();
 	zx->vid->brdsize = ui.bszsld->value()/100.0;
-	sets->opt.scrshotDir = std::string(ui.pathle->text().toUtf8().data());
-	sets->opt.scrshotFormat = std::string(ui.ssfbox->currentText().toUtf8().data());
-	sets->sscnt = ui.scntbox->value();
-	sets->ssint = ui.sintbox->value();
+	optSet("SCREENSHOTS","folder",std::string(ui.pathle->text().toUtf8().data()));
+	optSet("SCREENSHOTS","format",std::string(ui.ssfbox->currentText().toUtf8().data()));
+	optSet("SCREENSHOTS","combo.count",ui.scntbox->value());
+	optSet("SCREENSHOTS","combo.interval",ui.sintbox->value());
 	zx->vid->setLayout(std::string(ui.geombox->currentText().toUtf8().data()));
 	emulUpdateWindow();
 // sound
-	std::string oname = sets->opt.sndOutputName;
+	std::string oname = optGetString("SOUND","soundsys");
 	int orate = sndGet(SND_RATE);
 	sndSet(SND_ENABLE, ui.senbox->isChecked());
 	sndSet(SND_MUTE, ui.mutbox->isChecked());
 	if (ui.gsrbox->isChecked()) zx->gs->flags |= GS_RESET; else zx->gs->flags &= ~GS_RESET;
-	sets->opt.sndOutputName = std::string(ui.outbox->currentText().toUtf8().data());
+	optSet("SOUND","soundsys",std::string(ui.outbox->currentText().toUtf8().data()));
 	sndSet(SND_RATE, ui.ratbox->currentText().toInt());
 	sndSet(SND_BEEP, ui.bvsld->value());
 	sndSet(SND_TAPE, ui.tvsld->value());
 	sndSet(SND_AYVL, ui.avsld->value());
 	sndSet(SND_GSVL, ui.gvsld->value());
-	if ((oname != sets->opt.sndOutputName) || (orate != sndGet(SND_RATE))) setOutput(sets->opt.sndOutputName);
+	if ((oname != optGetString("SOUND","soundsys")) || (orate != sndGet(SND_RATE))) setOutput(optGetString("SOUND","soundsys"));
 	zx->aym->sc1->settype(ui.schip1box->itemData(ui.schip1box->currentIndex()).toInt());
 	zx->aym->sc2->settype(ui.schip2box->itemData(ui.schip2box->currentIndex()).toInt());
 	zx->aym->sc1->stereo = ui.stereo1box->itemData(ui.stereo1box->currentIndex()).toInt();
@@ -346,8 +346,8 @@ void SetupWin::apply() {
 	zx->ide->refresh();
 
 // tools
-	sets->opt.asmPath = std::string(ui.sjpathle->text().toUtf8().data());
-	sets->opt.projectsDir = std::string(ui.prjdirle->text().toUtf8().data());
+	optSet("TOOLS","sjasm",std::string(ui.sjpathle->text().toUtf8().data()));
+	optSet("TOOLS","projectsdir",std::string(ui.prjdirle->text().toUtf8().data()));
 
 	sndCalibrate();
 	zx->vid->update();
@@ -479,7 +479,7 @@ void SetupWin::updfrq() {
 void SetupWin::chabsz() {ui.bszlab->setText(QString::number(ui.bszsld->value()).append("%"));}
 
 void SetupWin::selsspath() {
-	QString fpath = QFileDialog::getExistingDirectory(this,"Screenshots folder",QDialog::trUtf8(sets->opt.scrshotDir.c_str()),QFileDialog::ShowDirsOnly);
+	QString fpath = QFileDialog::getExistingDirectory(this,"Screenshots folder",QDialog::trUtf8(optGetString("SCREENSHOTS","folder").c_str()),QFileDialog::ShowDirsOnly);
 	if (fpath!="") ui.pathle->setText(fpath);
 }
 
@@ -585,7 +585,7 @@ void SetupWin::ssjapath() {
 }
 
 void SetupWin::sprjpath() {
-	QString fnam = QFileDialog::getExistingDirectory(this,"Projects file",QDialog::trUtf8(sets->opt.projectsDir.c_str()),QFileDialog::ShowDirsOnly);
+	QString fnam = QFileDialog::getExistingDirectory(this,"Projects file",QDialog::trUtf8(optGetString("TOOLS","projectsdir").c_str()),QFileDialog::ShowDirsOnly);
 	if (fnam!="") ui.prjdirle->setText(fnam);
 }
 

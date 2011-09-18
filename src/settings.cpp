@@ -62,9 +62,19 @@ optEntry* addOption(std::string grp, std::string nam) {
 	return &config[config.size() - 1];
 }
 
-void optSetString(std::string grp, std::string nam, std::string val) {
+void optSet(std::string grp, std::string nam, std::string val) {
 	optEntry* res = addOption(grp, nam);
 	res->value = val;
+}
+
+void optSet(std::string grp, std::string nam, int val) {
+	optEntry* res = addOption(grp, nam);
+	res->value = int2str(val);
+}
+
+void optSet(std::string grp, std::string nam, bool val) {
+	optEntry* res = addOption(grp, nam);
+	res->value = val ? "yes" : "no";
 }
 
 std::string optGetString(std::string grp, std::string nam) {
@@ -151,7 +161,7 @@ void Settings::saveProfiles() {
 	cfile.close();
 }
 
-void Settings::save() {
+void Settings::save() {	
 	saveProfiles();
 	std::string cfname = opt.workDir + "/" + getCurrentProfile()->file;
 	std::ofstream sfile(cfname.c_str());
@@ -159,6 +169,18 @@ void Settings::save() {
 		shithappens("Can't write settings");
 		throw(0);
 	}
+	uint i,j;
+	std::vector<optEntry> ents;
+	std::vector<std::string> grps = optGroupsList();
+	for (i=0; i<grps.size(); i++) {
+		sfile << "[" << grps[i].c_str() << "]\n\n";
+		ents = optGroupEntries(grps[i]);
+		for (j=0; j<ents.size(); j++) {
+			sfile << ents[j].name.c_str() << " = " << ents[j].value.c_str() << "\n";
+		}
+		sfile << "\n";
+	}
+/*
 	uint32_t i,j;
 	sfile<<"[GENERAL]\n\n";
 	sfile<<"# real cpu freq in MHz is this value / 2; correct range is 2 to 14 (1 to 7 MHz)\n";
@@ -171,10 +193,10 @@ void Settings::save() {
 	sfile<<"geometry = "<<zx->vid->curlay.c_str()<<"\n";
 
 	sfile << "\n[SCREENSHOTS]\n\n";
-	sfile << "folder = " << opt.scrshotDir.c_str() << "\n";
-	sfile << "format = " << opt.scrshotFormat.c_str() << "\n";
-	sfile << "combo.count = " << int2str(sscnt).c_str() << "\n";
-	sfile << "combo.interval = " << int2str(ssint).c_str() << "\n";
+	sfile << "folder = " << optGetString("SCREENSHOTS","folder").c_str() << "\n";
+	sfile << "format = " << optGetString("SCREENSHOTS","format").c_str() << "\n";
+	sfile << "combo.count = " << int2str(optGetInt("SCREENSHOTS","combo.count")).c_str() << "\n";
+	sfile << "combo.interval = " << int2str(optGetInt("SCREENSHOTS","combo.interval")).c_str() << "\n";
 
 	sfile << "\n[SOUND]\n\n";
 	sfile << "enabled = " << ((sndGet(SND_ENABLE) != 0) ? "y" : "n") << "\n";
@@ -258,9 +280,9 @@ void Settings::save() {
 	sfile << "reset = "	<< rmnam[zx->sys->mem->res].c_str()	<< "\n";
 
 	sfile << "\n[TOOLS]\n\n";
-	sfile << "sjasm = "		<< opt.asmPath.c_str()	<< "\n";
-	sfile << "projectsdir = "	<< opt.projectsDir.c_str()<< "\n";
-
+	sfile << "sjasm = "		<< optGetString("TOOLS","sjasm").c_str()	<< "\n";
+	sfile << "projectsdir = "	<< optGetString("TOOLS","projectsdir").c_str()<< "\n";
+*/
 }
 
 void Settings::loadProfiles() {
@@ -383,9 +405,9 @@ void Settings::load(bool dev) {
 				if (grp.size() > 2) {
 					line = grp;
 					line.erase(line.size()-1,1).erase(0,1);		// remove [ and ] from group name
-					optSetString(line,pnam,pval);
+					optSet(line,pnam,pval);
 				}
-printf("%s\t%s\t%s\n",config.back().group.c_str(),config.back().name.c_str(),config.back().value.c_str());
+//printf("%s\t%s\t%s\n",config.back().group.c_str(),config.back().name.c_str(),config.back().value.c_str());
 				switch (tmp2) {
 					case 1:
 						pos = pval.find_last_of(":");
@@ -547,12 +569,12 @@ printf("%s\t%s\t%s\n",config.back().group.c_str(),config.back().name.c_str(),con
 	setFlagBit(optGetBool("VIDEO","fullscreen"),&zx->vid->flags, VF_FULLSCREEN);
 	tmp2 = optGetInt("VIDEO","bordersize"); if ((tmp2 >= 0) && (tmp2 <= 100)) zx->vid->brdsize = tmp2 / 100.0;
 	
-	opt.scrshotDir = optGetString("SCREENSHOTS","folder");
-	opt.scrshotFormat = optGetString("SCREENSHOTS","format");
-	sscnt = optGetInt("SCREENSHOTS","combo.count");
-	ssint = optGetInt("SCREENSHOTS","combo.interval");
+//	opt.scrshotDir = optGetString("SCREENSHOTS","folder");
+//	opt.scrshotFormat = optGetString("SCREENSHOTS","format");
+//	sscnt = optGetInt("SCREENSHOTS","combo.count");
+//	ssint = optGetInt("SCREENSHOTS","combo.interval");
 	
-	opt.sndOutputName = optGetString("SOUND","soundsys");
+//	opt.sndOutputName = optGetString("SOUND","soundsys");
 	sndSet(SND_ENABLE, optGetBool("SOUND","enabled"));
 	sndSet(SND_MUTE, optGetBool("SOUND","dontmute"));
 	sndSet(SND_RATE,optGetInt("SOUND","rate"));
@@ -576,14 +598,14 @@ printf("%s\t%s\t%s\n",config.back().group.c_str(),config.back().name.c_str(),con
 	emulSetFlag(FL_RESET,optGetBool("MACHINE","restart"));
 	setFlagBit(optGetBool("MACHINE","scrp.wait"),&zx->sys->hwflags,WAIT_ON);
 
-	opt.asmPath = optGetString("TOOLS","sjasm");
-	opt.projectsDir = optGetString("TOOLS","projectsdir");
+//	opt.asmPath = optGetString("TOOLS","sjasm");
+//	opt.projectsDir = optGetString("TOOLS","projectsdir");
 	
 	sndCalibrate();
 	zx->ide->refresh();
 	zx->setHardware(zx->opt.hwName);
 	zx->sys->mem->setromptr(zx->opt.romsetName);
-	setOutput(opt.sndOutputName);
+	setOutput(optGetString("SOUND","soundsys"));
 	if (zx->hw==NULL) throw("Can't found current machine");
 	if (zx->sys->mem->romset==NULL) throw("Can't found current romset");
 	if (~zx->hw->mask & tmask) throw("Incorrect memory size for this machine");

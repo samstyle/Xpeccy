@@ -16,17 +16,21 @@ struct optEntry {
 class Settings {
 	public:
 		Settings();
-		int32_t sscnt,ssint;
 		struct {
-			std::string sndOutputName;
-			std::string scrshotDir,scrshotFormat;
 			std::string workDir,romDir,profPath;
-			std::string asmPath,projectsDir;
 		} opt;
 		void loadProfiles();
 		void saveProfiles();
 		void load(bool);
 		void save();
 };
+
+bool optGetBool(std::string,std::string);
+int optGetInt(std::string,std::string);
+std::string optGetString(std::string,std::string);
+
+void optSet(std::string,std::string,bool);
+void optSet(std::string,std::string,int);
+void optSet(std::string,std::string,std::string);
 
 #endif

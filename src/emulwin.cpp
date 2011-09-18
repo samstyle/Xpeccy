@@ -70,7 +70,7 @@ void emulInit() {
 	scrNumber = 0;
 	scrCounter = 0;
 	scrInterval = 0;
-	sets->opt.scrshotFormat = "png";
+	optSet("SCREENSHOTS","format","png");
 
 	int par[] = {448,320,138,80,64,32,64,0};
 	addLayout("default",par);
@@ -84,10 +84,10 @@ void emulInit() {
 	SDL_GetWMInfo(&inf);
 #ifndef WIN32
 	mainWin->embedClient(inf.info.x11.wmwindow);
-	sets->opt.scrshotDir = std::string(getenv("HOME"));
+	optSet("SCREENSHOTS","folder",std::string(getenv("HOME")));
 #else
 	SetParent(inf.window,winId());
-	sets->opt.scrshotDir = std::string(getenv("HOMEPATH"));
+	optSet("SCREENSHOTS","folder",std::string(getenv("HOMEPATH")));
 #endif
 	initUserMenu((QWidget*)mainWin);
 }
@@ -190,6 +190,7 @@ void emulPause(bool p, int msk) {
 MainWin::MainWin() {}
 
 void MainWin::closeEvent(QCloseEvent* ev) {
+	emulStopTimer();
 	if (emulSaveChanged()) {
 		ev->accept();
 	} else {
@@ -197,6 +198,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		SDL_VERSION(&inf.version);
 		SDL_GetWMInfo(&inf);
 		mainWin->embedClient(inf.info.x11.wmwindow);
+		emulStartTimer(20);
 	}
 }
 
@@ -221,15 +223,15 @@ Uint32 emulFrame(Uint32 interval, void*) {
 			if (scrInterval == 0) {
 				emulFlags |= FL_SHOT;
 				scrCounter--;
-				scrInterval = sets->ssint;
+				scrInterval = optGetInt("SCREENSHOTS","combo.interval");
 				if (scrCounter == 0) printf("stop combo shots\n");
 			} else {
 				scrInterval--;
 			}
 		}
 		if (emulFlags & FL_SHOT) {
-			std::string fnam = sets->opt.scrshotDir + "/sshot" + int2str(scrNumber) + "." + sets->opt.scrshotFormat;
-			if (sets->opt.scrshotFormat == "scr") {
+			std::string fnam = optGetString("SCREENSHOTS","folder") + "/sshot" + int2str(scrNumber) + "." + optGetString("SCREENSHOTS","format");
+			if (optGetString("SCREENSHOTS","format") == "scr") {
 				std::ofstream file(fnam.c_str(),std::ios::binary);
 				file.write((char*)&zx->sys->mem->ram[zx->vid->curscr ? 7 : 5][0],0x1b00);
 			} else {
@@ -238,7 +240,7 @@ Uint32 emulFrame(Uint32 interval, void*) {
 				if (img==NULL) {
 					printf("NULL image\n");
 				} else {
-					img->save(QString(fnam.c_str()),sets->opt.scrshotFormat.c_str());
+					img->save(QString(fnam.c_str()),optGetString("SCREENSHOTS","format").c_str());
 				}
 			}
 			emulFlags &= ~FL_SHOT;
@@ -300,7 +302,7 @@ void EmulWin::SDLEventHandler() {
 							emulStartTimer((emulFlags & FL_FAST) ? 1 : 20);
 							break;
 						case SDLK_F4: mainWin->close(); break;
-						case SDLK_F7: scrCounter = sets->sscnt; scrInterval=0; break;	// ALT+F7 combo
+						case SDLK_F7: scrCounter = optGetInt("SCREENSHOTS","combo.count"); scrInterval=0; break;	// ALT+F7 combo
 						case SDLK_RETURN: zx->vid->flags ^= VF_FULLSCREEN; emulUpdateWindow(); sets->save(); break;
 						case SDLK_c:
 							emulFlags ^= FL_GRAB;
