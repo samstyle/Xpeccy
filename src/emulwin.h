@@ -25,12 +25,12 @@
 #define	PR_EXTRA	(1<<6)
 
 // flags - emul mode / events
-#define	FL_GRAB		1L
-#define	FL_RZX		(1L<<1)
-#define	FL_SHOT		(1L<<2)
-#define	FL_RESET	(1L<<3)
-#define	FL_FAST		(1L<<4)
-#define	FL_BLOCK	(1L<<5)
+#define	FL_GRAB		1
+#define	FL_RZX		(1<<1)
+#define	FL_SHOT		(1<<2)
+#define	FL_RESET	(1<<3)
+#define	FL_FAST		(1<<4)
+#define	FL_BLOCK	(1<<5)
 
 struct XBookmark {
 	std::string name;

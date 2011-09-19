@@ -46,3 +46,4 @@ Wrk	Rewriting of settings & profiles save/load
 Fix	Incorrect [ROMSETS] section loading from xpeccy.conf, because of parameters with same names. Your config files may be corrupted, sorry about that.
 Wrk	Parts of [SOUND] and [ROMSET] section moved from xpeccy.conf to config.conf
 !Bug	Xpeccy may crush when you change hardware/memsize/romset/reset-mempage in Options window and press OK
+Fix	I think, a bug above is closed. And some small bugs, which i done today, too.

@@ -256,7 +256,7 @@ void SetupWin::start() {
 }
 
 void SetupWin::apply() {
-	emulSetFlag(true,FL_BLOCK);
+//	emulSetFlag(true,FL_BLOCK);
 // machine
 	HardWare *oldmac = zx->hw;
 	zx->opt.hwName = std::string(ui.machbox->currentText().toUtf8().data());
@@ -352,10 +352,10 @@ void SetupWin::apply() {
 	optSet("TOOLS","sjasm",std::string(ui.sjpathle->text().toUtf8().data()));
 	optSet("TOOLS","projectsdir",std::string(ui.prjdirle->text().toUtf8().data()));
 
-	sndCalibrate();
-	zx->vid->update();
 	saveConfig();
-	emulSetFlag(false,FL_BLOCK);
+	sndCalibrate();
+	emulUpdateWindow();
+//	emulSetFlag(false,FL_BLOCK);
 }
 
 void SetupWin::reject() {

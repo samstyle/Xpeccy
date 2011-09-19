@@ -41,9 +41,6 @@ Video::Video(Memory* me) {
 	zoom = 1.0;
 	brdsize = 1.0;
 	flags = 0;
-//	layout.clear();
-//	curlay = "default";
-//	layout.push_back(VidLayout("default",448,320,138,80,64,32,64,0));	// add default (pentagon) layout
 	setLayout("default");
 
 	curr.h = curr.v = 0;

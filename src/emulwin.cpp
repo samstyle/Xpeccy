@@ -29,6 +29,11 @@
 
 #include <fstream>
 
+#define	RSZ_NONE	0
+#define	RSZ_SINGLE	1
+#define	RSZ_DOUBLE	2
+#define	RSZ_FULLSCR	3
+
 extern ZXComp* zx;
 // main
 MainWin* mainWin;
@@ -38,8 +43,9 @@ SDL_Color zxpal[256];
 SDL_SysWMinfo inf;
 SDL_TimerID tid,sid;
 QVector<QRgb> qPal;
-uint32_t emulFlags;
+int emulFlags;
 int pauseFlags;
+uint32_t resizeMode; 
 uint32_t scrNumber;
 uint32_t scrCounter;
 uint32_t scrInterval;
@@ -69,6 +75,7 @@ void emulInit() {
 		qPal[i] = qRgb(zxpal[i].r,zxpal[i].g,zxpal[i].b);
 	}
 	emulFlags = 0;
+	resizeMode = RSZ_NONE;
 
 	scrNumber = 0;
 	scrCounter = 0;
@@ -85,6 +92,8 @@ void emulInit() {
 
 	SDL_VERSION(&inf.version);
 	SDL_GetWMInfo(&inf);
+//	surf = SDL_SetVideoMode(1024, 768, 8, SDL_SWSURFACE | SDL_NOFRAME);
+//	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
 #ifndef WIN32
 	mainWin->embedClient(inf.info.x11.wmwindow);
 	optSet("SCREENSHOTS","folder",std::string(getenv("HOME")));
@@ -104,6 +113,7 @@ QWidget* emulWidget() {
 }
 
 void emulUpdateWindow() {
+	emulSetFlag(FL_BLOCK,true);
 	zx->vid->update();
 	int szw = zx->vid->wsze.h;
 	int szh = zx->vid->wsze.v;
@@ -111,11 +121,12 @@ void emulUpdateWindow() {
 	if ((zx->vid->flags & VF_FULLSCREEN) && !(zx->vid->flags & VF_BLOCKFULLSCREEN)) {
 		sdlflg |= SDL_FULLSCREEN;
 	}
+	mainWin->setFixedSize(szw,szh);
 	surf = SDL_SetVideoMode(szw,szh,8,sdlflg | SDL_NOFRAME);
 	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
 	zx->vid->scrimg = (uint8_t*)surf->pixels;
 	zx->vid->scrptr = zx->vid->scrimg;
-	mainWin->setFixedSize(szw,szh);
+	emulSetFlag(FL_BLOCK,false);
 }
 
 bool emulSaveChanged() {
@@ -161,7 +172,7 @@ void emulPause(bool p, int msk) {
 	} else {
 		pauseFlags &= ~msk;
 	}
-	bool kk = emulFlags & FL_GRAB;
+	bool kk = ((emulFlags & FL_GRAB) != 0);
 	if (!kk || ((pauseFlags != 0) && kk)) {
 		SDL_WM_GrabInput(SDL_GRAB_OFF);
 		SDL_ShowCursor(SDL_ENABLE);
@@ -251,6 +262,23 @@ Uint32 emulFrame(Uint32 interval, void*) {
 			scrNumber++;
 		}
 	}
+	switch (resizeMode) {
+		case RSZ_SINGLE:
+			zx->vid->flags &= ~VF_DOUBLE;
+			emulUpdateWindow();
+			resizeMode = RSZ_NONE;
+			break;
+		case RSZ_DOUBLE:
+			zx->vid->flags |= VF_DOUBLE;
+			emulUpdateWindow();
+			resizeMode = RSZ_NONE;
+			break;
+		case RSZ_FULLSCR:
+			zx->vid->flags ^= VF_FULLSCREEN;
+			emulUpdateWindow();
+			resizeMode = RSZ_NONE;
+			break;
+	}
 	return interval;
 }
 
@@ -282,42 +310,53 @@ EmulWin::EmulWin() {
 }
 
 void EmulWin::SDLEventHandler() {
+	if (emulFlags & FL_BLOCK) return;
 	SDL_Event ev;
-	bool resiz = false;
+//	bool resiz = false;
 	while (SDL_PollEvent(&ev)) {
 		switch (ev.type) {
 			case SDL_KEYDOWN:
 				if (ev.key.keysym.mod & KMOD_ALT) {
 					switch(ev.key.keysym.sym) {
 						case SDLK_0: zx->vid->mode = (zx->vid->mode==VID_NORMAL)?VID_ALCO:VID_NORMAL; break;
-						case SDLK_1: if (resiz) break;
-							resiz = true;
-							zx->vid->flags &= ~VF_DOUBLE;
-							emulUpdateWindow();
-							saveConfig();
+						case SDLK_1:
+							resizeMode = RSZ_SINGLE;
+// 							zx->vid->flags &= ~VF_DOUBLE;
+// 							emulUpdateWindow();
+//							saveConfig();
 							break;
-						case SDLK_2: if (resiz) break;
-							resiz = true;
-							zx->vid->flags |= VF_DOUBLE;
-							emulUpdateWindow();
-							saveConfig();
+						case SDLK_2:
+							resizeMode = RSZ_DOUBLE;
+//							zx->vid->flags |= VF_DOUBLE;
+//							emulUpdateWindow();
+//							saveConfig();
 							break;
 						case SDLK_3: emulFlags ^= FL_FAST;
 							emulStopTimer();
 							emulStartTimer((emulFlags & FL_FAST) ? 1 : 20);
 							break;
-						case SDLK_F4: mainWin->close(); break;
-						case SDLK_F7: scrCounter = optGetInt("SCREENSHOTS","combo.count"); scrInterval=0; break;	// ALT+F7 combo
-						case SDLK_RETURN: zx->vid->flags ^= VF_FULLSCREEN; emulUpdateWindow(); saveConfig(); break;
-						case SDLK_c:
-							emulFlags ^= FL_GRAB;
-							if (emulFlags & FL_GRAB) {
-								SDL_WM_GrabInput(SDL_GRAB_ON);
-								SDL_ShowCursor(SDL_DISABLE);
-							} else {
-								SDL_WM_GrabInput(SDL_GRAB_OFF);
-								SDL_ShowCursor(SDL_ENABLE);
-							}
+						case SDLK_F4:
+							mainWin->close();
+							break;
+						case SDLK_F7:
+							scrCounter = optGetInt("SCREENSHOTS","combo.count");
+							scrInterval=0;
+							break;	// ALT+F7 combo
+						case SDLK_RETURN:
+							resizeMode = RSZ_FULLSCR;
+//							zx->vid->flags ^= VF_FULLSCREEN;
+//							emulUpdateWindow();
+//							saveConfig();
+							break;
+//						case SDLK_c:
+//							emulFlags ^= FL_GRAB;
+//							if (emulFlags & FL_GRAB) {
+//								SDL_WM_GrabInput(SDL_GRAB_ON);
+//								SDL_ShowCursor(SDL_DISABLE);
+//							} else {
+//								SDL_WM_GrabInput(SDL_GRAB_OFF);
+//								SDL_ShowCursor(SDL_ENABLE);
+//							}
 							break;
 						default: break;
 					}
@@ -407,7 +446,7 @@ void EmulWin::SDLEventHandler() {
 				}
 				break;
 			case SDL_MOUSEMOTION:
-				if ((~emulFlags & FL_GRAB) || (pauseFlags !=0 )) break;
+				if (!(emulFlags & FL_GRAB) || (pauseFlags !=0 )) break;
 				zx->mouse->xpos = (ev.motion.x - 1)&0xff;
 				zx->mouse->ypos = (257 - ev.motion.y)&0xff;
 				SDL_WarpMouse(zx->mouse->xpos + 1, 257 - zx->mouse->ypos);
