@@ -256,6 +256,7 @@ void SetupWin::start() {
 }
 
 void SetupWin::apply() {
+	emulSetFlag(true,FL_BLOCK);
 // machine
 	HardWare *oldmac = zx->hw;
 	zx->opt.hwName = std::string(ui.machbox->currentText().toUtf8().data());
@@ -354,6 +355,7 @@ void SetupWin::apply() {
 	sndCalibrate();
 	zx->vid->update();
 	saveConfig();
+	emulSetFlag(false,FL_BLOCK);
 }
 
 void SetupWin::reject() {

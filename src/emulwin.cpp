@@ -208,6 +208,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 // ...
 
 Uint32 emulFrame(Uint32 interval, void*) {
+	if (emulFlags & FL_BLOCK) return interval;
 	if (~emulFlags & FL_FAST) SDL_UpdateRect(surf,0,0,0,0);
 	if (!mainWin->isActiveWindow()) {
 		zx->keyb->releaseall();
@@ -254,6 +255,7 @@ Uint32 emulFrame(Uint32 interval, void*) {
 }
 
 Uint32 onTimer(Uint32 iv,void*) {
+	if (emulFlags & FL_BLOCK) return iv;
 	SDL_UpdateRect(surf,0,0,0,0);
 	return iv;
 }

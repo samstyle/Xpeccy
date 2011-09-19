@@ -30,6 +30,7 @@
 #define	FL_SHOT		(1L<<2)
 #define	FL_RESET	(1L<<3)
 #define	FL_FAST		(1L<<4)
+#define	FL_BLOCK	(1L<<5)
 
 struct XBookmark {
 	std::string name;
