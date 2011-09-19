@@ -40,3 +40,9 @@ Wrk	Rewriting one of main timers. Fast mode works at 10 fps.
 build 20110916
 Fix	CPU frequency didn't changed from config file
 Wrk	Start rewriting Settings part
+
+build 20110919
+Wrk	Rewriting of settings & profiles save/load
+Fix	Incorrect [ROMSETS] section loading from xpeccy.conf, because of parameters with same names. Your config files may be corrupted, sorry about that.
+Wrk	Parts of [SOUND] and [ROMSET] section moved from xpeccy.conf to config.conf
+!Bug	Xpeccy may crush when you change hardware/memsize/romset/reset-mempage in Options window and press OK

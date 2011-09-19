@@ -9,7 +9,6 @@
 #include "settings.h"
 #include "filer.h"
 
-extern Settings* sets;
 extern ZXComp* zx;
 
 SetupWin* optWin;
@@ -33,9 +32,11 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	umadial->setModal(true);
 
 	uint32_t i;
+	std::vector<std::string> list;
 // machine
-	for (i=0; i < zx->hwlist.size(); i++) {
-		ui.machbox->addItem(QDialog::trUtf8(zx->hwlist[i].name.c_str()));
+	list = getHardwareNames();
+	for (i=0; i < list.size(); i++) {
+		ui.machbox->addItem(QDialog::trUtf8(list[i].c_str()));
 	}
 /*
 	ui.rsetbox->clear();
@@ -50,8 +51,8 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	std::vector<VidLayout> lays = getLayoutList();
 	for (i=0; i<lays.size(); i++) {ui.geombox->addItem(QDialog::trUtf8(lays[i].name.c_str()));}
 // sound
-	std::vector<std::string> outputList = sndGetList();
-	for (i=0;i<outputList.size();i++) {ui.outbox->addItem(QDialog::trUtf8(outputList[i].c_str()));}
+	list = sndGetList();
+	for (i=0;i<list.size();i++) {ui.outbox->addItem(QDialog::trUtf8(list[i].c_str()));}
 	ui.ratbox->addItems(QStringList()<<"44100"<<"22050"<<"11025");
 	ui.schip1box->addItem(QIcon(":/images/cancel.png"),"none",QVariant(SND_NONE));
 	ui.schip1box->addItem(QIcon(":/images/MicrochipLogo.png"),"AY-3-8910",QVariant(SND_AY));
@@ -158,8 +159,9 @@ void SetupWin::start() {
 	emulPause(true,PR_OPTS);
 // machine
 	ui.rsetbox->clear();
-	for (i=0; i < zx->sys->mem->rsetlist.size(); i++) {
-		ui.rsetbox->addItem(QDialog::trUtf8(zx->sys->mem->rsetlist[i].name.c_str()));
+	std::vector<RomSet> rsl = getRomsetList();
+	for (i=0; i < rsl.size(); i++) {
+		ui.rsetbox->addItem(QDialog::trUtf8(rsl[i].name.c_str()));
 	}
 	ui.machbox->setCurrentIndex(ui.machbox->findText(QDialog::trUtf8(zx->hw->name.c_str())));
 	ui.rsetbox->setCurrentIndex(ui.rsetbox->findText(QDialog::trUtf8(zx->sys->mem->romset->name.c_str())));
@@ -257,10 +259,10 @@ void SetupWin::apply() {
 // machine
 	HardWare *oldmac = zx->hw;
 	zx->opt.hwName = std::string(ui.machbox->currentText().toUtf8().data());
-	zx->setHardware(zx->opt.hwName);
+	setHardware(zx,zx->opt.hwName);
 	zx->opt.romsetName = std::string(ui.rsetbox->currentText().toUtf8().data());
-	zx->sys->mem->setromptr(zx->opt.romsetName);
-	zx->sys->mem->loadromset(sets->opt.romDir);
+	setRomset(zx, zx->opt.romsetName);
+	zx->sys->mem->loadromset(optGetPath(OPT_ROMDIR));
 	emulSetFlag(FL_RESET, ui.reschk->isChecked());
 	zx->sys->mem->res = ui.resbox->currentIndex();
 	switch(ui.mszbox->currentIndex()) {
@@ -351,7 +353,7 @@ void SetupWin::apply() {
 
 	sndCalibrate();
 	zx->vid->update();
-	sets->save();
+	saveConfig();
 }
 
 void SetupWin::reject() {
@@ -363,7 +365,9 @@ void SetupWin::reject() {
 // lists
 
 void SetupWin::okbuts() {
-	int t = zx->hwlist[ui.machbox->currentIndex()].mask;
+	std::vector<HardWare> list = getHardwareList();
+	int t = list[ui.machbox->currentIndex()].mask;
+	
 	if (t == 0x00) {
 		ui.okbut->setEnabled(ui.mszbox->currentIndex()==0);
 	} else {
@@ -373,7 +377,8 @@ void SetupWin::okbuts() {
 }
 
 void SetupWin::setmszbox(int idx) {
-	int t = zx->hwlist[idx].mask;
+	std::vector<HardWare> list = getHardwareList();
+	int t = list[idx].mask;
 	QIcon okicon = QIcon(":/images/ok-apply.png");
 	QIcon ericon = QIcon(":/images/cancel.png");
 	if (t == 0x00) {
@@ -400,7 +405,8 @@ void SetupWin::buildrsetlist() {
 	} else {
 		ui.rstab->setEnabled(true);
 	}
-	RomSet rset = zx->sys->mem->rsetlist[ui.rsetbox->currentIndex()];
+	std::vector<RomSet> rsl = getRomsetList();
+	RomSet rset = rsl[ui.rsetbox->currentIndex()];
 	QStringList lst = QStringList()<<"Basic128"<<"Basic48"<<"Shadow"<<"DOS"<<"ext0"<<"ext1"<<"ext2"<<"ext3";
 	QStandardItemModel *model = new QStandardItemModel(8,3);
 	QStandardItem *itm;

@@ -7,23 +7,21 @@
 
 #include "spectrum.h"
 
+#define	OPT_WORKDIR	0
+#define	OPT_ROMDIR	1
+
 struct optEntry {
 	std::string group;
 	std::string name;
 	std::string value;
 };
 
-class Settings {
-	public:
-		Settings();
-		struct {
-			std::string workDir,romDir,profPath;
-		} opt;
-		void loadProfiles();
-		void saveProfiles();
-		void load(bool);
-		void save();
-};
+void initPaths();
+void loadProfiles();
+void saveProfiles();
+void loadConfig(bool);
+void saveConfig();
+std::string optGetPath(int);
 
 bool optGetBool(std::string,std::string);
 int optGetInt(std::string,std::string);

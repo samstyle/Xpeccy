@@ -32,7 +32,7 @@ class ZXComp : public ZXSystem {
 	public:
 		ZXComp();
 		HardWare *hw;
-		std::vector<HardWare> hwlist;
+//		std::vector<HardWare> hwlist;
 		ZXBase* sys;
 		Video* vid;
 		Keyboard* keyb;
@@ -51,8 +51,8 @@ class ZXComp : public ZXSystem {
 		} opt;
 		uint32_t exec();
 		void reset();
-		void addHardware(std::string,int,int,int);
-		void setHardware(std::string);
+//		void addHardware(std::string,int,int,int);
+//		void setHardware(std::string);
 		void mapMemory();
 		int32_t getPort(int32_t);
 		uint8_t in(uint16_t);

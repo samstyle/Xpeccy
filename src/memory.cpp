@@ -1,9 +1,7 @@
 #include "common.h"
 #include "memory.h"
 #include "spectrum.h"
-#include "settings.h"
 
-//#include <QMessageBox>
 #include <string>
 #include <vector>
 #include <fstream>
@@ -12,7 +10,6 @@
 #endif
 
 extern ZXComp* zx;
-extern Settings* sets;
 std::vector<RZXFrame> rzx;
 
 Memory::Memory(int tp) {
@@ -165,7 +162,7 @@ void Memory::parse(std::ifstream* file,int typ) {
 	bool btm;
 	char* buf = new char[0x1000000];
 	char* zbuf;
-	std::string onam = sets->opt.workDir + "/lain.tmp";
+	std::string onam = "/tmp/lain.tmp";
 	std::ofstream ofile;
 	std::string tmpStr;
 	Z80* cpu = zx->sys->cpu;
@@ -443,13 +440,10 @@ void Memory::save(std::string sfnam,int typ,bool sna48=false) {
 	}
 }
 
-void Memory::setromptr(std::string nam) {
-	uint32_t i;
-	romset = NULL;
-	for (i=0;i<rsetlist.size();i++) {
-		if (rsetlist[i].name == nam) {romset = &rsetlist[i]; break;}
-	}
-}
+//void Memory::setromptr(std::string nam) {
+//	RomSet* res = findRomset(nam);
+//	if (res != NULL) romset = res;
+//}
 
 void Memory::loadromset(std::string romDir) {
 	int i,ad;

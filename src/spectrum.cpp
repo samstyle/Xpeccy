@@ -1,6 +1,4 @@
 #include "spectrum.h"
-#include "video.h"
-#include "settings.h"
 
 #include "z80/tables.c"
 #include "z80/instr.c"
@@ -29,10 +27,6 @@ ZXComp::ZXComp() {
 	ide = new IDE;
 	aym = new AYSys;
 	gs = new GS; gs->reset();
-	addHardware("ZX48K",HW_ZX48,0x00,0);
-	addHardware("Pentagon",HW_PENT,0x05,0);
-	addHardware("Pentagon1024SL",HW_P1024,0x08,0);
-	addHardware("Scorpion",HW_SCORP,0x0a,IO_WAIT);
 	opt.hwName = "ZX48K";
 	opt.romsetName = "ZX48";
 	reset();
@@ -290,25 +284,10 @@ void ZXComp::NMIHandle() {
 	vid->sync(11,sys->cpu->frq);
 }
 
-void ZXComp::setHardware(std::string nam) {
-	hw = NULL;
-	for (uint32_t i = 0; i < hwlist.size(); i++) {
-		if (hwlist[i].name == nam) {
-			hw = &hwlist[i];
-			sys->hwflags = hw->flags;
-			break;
-		}
-	}
-}
-
-void ZXComp::addHardware(std::string nam, int typ, int msk, int flg) {
-	HardWare nhw;
-	nhw.name = nam;
-	nhw.type = typ;
-	nhw.mask = msk;
-	nhw.flags = flg;
-	hwlist.push_back(nhw);
-}
+//void ZXComp::setHardware(std::string nm) {
+//	hw = getHardwarePtr(nm);
+//	if (hw != NULL) sys->hwflags = hw->flags;
+//}
 
 ZXBase::ZXBase (ZXSystem* par) {
 	parent = par;

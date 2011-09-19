@@ -6,8 +6,6 @@
 #include <QProcess>
 #include <QDir>
 
-extern Settings* sets;
-
 DevelWin* devWin;
 
 void devInit() {

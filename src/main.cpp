@@ -20,7 +20,7 @@
 
 ZXComp* zx;
 EmulWin *mwin;
-Settings *sets;
+//Settings *sets;
 
 void setFlagBit(bool cond, int32_t* val, int32_t mask) {
 	if (cond) {
@@ -82,7 +82,7 @@ int main(int ac,char** av) {
 	QApplication app(ac,av,true);
 	try {
 		int i; bool dev = false;
-		sets = new Settings;
+		initPaths();
 		addProfile("default","xpeccy.conf");
 		setProfile("default");
 		for (i=1; i<ac; i++) {
@@ -90,26 +90,26 @@ int main(int ac,char** av) {
 		}
 		if (dev) {
 			devInit();	// dwin = new DevelWin;
-			sets->load(true);
+			loadConfig(true);
 			devShow();	// dwin->show();
 			return app.exec();
 		} else {
-			SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
-			atexit(SDL_Quit);
 			filltabs();
+			initHardware();
 			sndInit();
+			SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
 			emulInit();
+			emulShow();
 			mwin = new EmulWin();
 			dbgInit(emulWidget());	// dbg = new DebugWin(emulWidget());
 			devInit();		// dwin = new DevelWin();
 			initFileDialog(emulWidget());
-			sets->loadProfiles();
+			loadProfiles();
 			fillProfileMenu();
 			optInit(emulWidget()); //swin = new SetupWin(emulWidget());
+			loadConfig(false);
 			emulUpdateWindow();
-			emulShow();
-			sets->load(false);
-			emulUpdateWindow();
+//			emulShow();
 			fillBookmarkMenu();
 			zx->reset();
 

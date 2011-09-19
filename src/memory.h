@@ -12,8 +12,7 @@
 #define MEM_ZX	0
 #define MEM_GS	1
 
-class RomSet {
-	public:
+struct RomSet {
 	std::string name;
 	struct {
 		std::string path;
@@ -43,10 +42,10 @@ class Memory {
 	void load(std::string,int32_t);
 	void parse(std::ifstream*,int32_t);
 	void save(std::string,int32_t,bool);
-	std::vector<RomSet> rsetlist;
+//	std::vector<RomSet> rsetlist;
 	RomSet *romset;
 	void loadromset(std::string);
-	void setromptr(std::string);
+//	void setromptr(std::string);
 	void setram(uint8_t);
 	void setrom(uint8_t);
 };

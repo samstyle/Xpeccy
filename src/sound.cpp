@@ -149,7 +149,7 @@ std::vector<std::string> sndGetList() {
 }
 
 std::string sndGetName() {
-	std::string res = "";
+	std::string res = "NULL";
 	if (sndOutput != NULL) {
 		res = sndOutput->name;
 	}

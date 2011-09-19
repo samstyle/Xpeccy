@@ -322,14 +322,14 @@ bool DebugWin::filldasm() {
 	fdasm.clear();
 	adr = upadr;
 	uchar i;
-	ushort oadr;
+//	ushort oadr;
 	int idx;
 	bool ispc = false;
 	BPoint bp;
 	DasmRow res;
 	QLabel *lab1,*lab2,*lab3;
 	for (i=0; i<DASMROW; i++) {
-		oadr = adr;
+//		oadr = adr;
 		bp.page = getbpage(adr);
 		bp.adr = adr;
 		idx = findbp(bp);

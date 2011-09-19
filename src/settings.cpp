@@ -10,8 +10,22 @@
 
 extern ZXComp* zx;
 std::vector<optEntry> config;
+std::string workDir;
+std::string romDir;
+std::string profPath;
+
+std::string rmnam[] = {"basic128","basic48","shadow","trdos","ext4","ext5","ext6","ext7"};
 
 // new
+
+std::string optGetPath(int wut) {
+	std::string res;
+	switch (wut) {
+		case OPT_WORKDIR: res = workDir; break;
+		case OPT_ROMDIR: res = romDir; break;
+	}
+	return res;
+}
 
 std::vector<std::string> optGroupsList() {
 	std::vector<std::string> res;
@@ -96,7 +110,7 @@ bool optGetBool(std::string grp, std::string nam) {
 
 // old
 
-Settings::Settings() {
+void initPaths() {
 #ifndef WIN32
 // move config dir to new place
 	QDir dir;
@@ -115,28 +129,28 @@ Settings::Settings() {
 //	ssdir = std::string(getenv("HOME"));
 //	std::string mydir = ssdir + "/.config/samstyle";
 
-	opt.workDir = std::string(getenv("HOME")) + "/.config/samstyle/xpeccy";
-	opt.romDir = opt.workDir + "/roms";
-	opt.profPath = opt.workDir + "/config.conf";
-	mkdir(opt.workDir.c_str(),0777);
-	mkdir(opt.romDir.c_str(),0777);
+	workDir = std::string(getenv("HOME")) + "/.config/samstyle/xpeccy";
+	romDir = workDir + "/roms";
+	profPath = workDir + "/config.conf";
+	mkdir(workDir.c_str(),0777);
+	mkdir(romDir.c_str(),0777);
 #else
-	opt.workDir = std::string(".\\config");
-	opt.romDir = opt.workDir + "\\roms";
-	opt.profPath = opt.workDir + "\\config.conf";
-	mkdir(opt.workDir.c_str());
-	mkdir(opt.romDir.c_str());
+	workDir = std::string(".\\config");
+	romDir = workDir + "\\roms";
+	profPath = workDir + "\\config.conf";
+	mkdir(workDir.c_str());
+	mkdir(romDir.c_str());
 #endif
 }
 
-void Settings::saveProfiles() {
-	std::string cfname = opt.workDir + "/config.conf";
+void saveProfiles() {
+	std::string cfname = workDir + "/config.conf";
 	std::ofstream cfile(cfname.c_str());
 	if (!cfile.good()) {
 		shithappens("Can't write main config");
 		throw(0);
 	}
-	uint32_t i;
+	uint i,j;
 	cfile << "[BOOKMARKS]\n\n";
 	std::vector<XBookmark> bml = getBookmarkList();
 	for (i=0; i<bml.size(); i++) {
@@ -158,12 +172,33 @@ void Settings::saveProfiles() {
 		cfile << int2str(lays[i].sync.h) << ":" << int2str(lays[i].sync.v) << ":";
 		cfile << int2str(lays[i].intsz) << ":" << int2str(lays[i].intpos) << "\n";
 	}
+	cfile << "\n[ROMSETS]\n";
+	std::vector<RomSet> rsl = getRomsetList();
+	for (i=0; i<rsl.size(); i++) {
+		cfile<< "\nname = " << rsl[i].name.c_str() << "\n";
+		for (j=0; j<8; j++) {
+			if (rsl[i].roms[j].path != "") {
+				cfile << rmnam[j].c_str()<<" = " << rsl[i].roms[j].path.c_str();
+				if (rsl[i].roms[j].part != 0) cfile << ":" << int2str(rsl[i].roms[j].part).c_str();
+				cfile << "\n";
+			}
+		}
+	}
+	cfile << "\n[SOUND]\n\n";
+	cfile << "enabled = " << ((sndGet(SND_ENABLE) != 0) ? "yes" : "no") << "\n";
+	cfile << "soundsys = " << sndGetName().c_str() << "\n";
+	cfile << "dontmute = " << ((sndGet(SND_MUTE) != 0) ? "yes" : "no") << "\n";
+	cfile << "rate = " << int2str(sndGet(SND_RATE)).c_str() << "\n";
+	cfile << "volume.beep = " << int2str(sndGet(SND_BEEP)).c_str() << "\n";
+	cfile << "volume.tape = " << int2str(sndGet(SND_TAPE)).c_str() << "\n";
+	cfile << "volume.ay = " << int2str(sndGet(SND_AYVL)).c_str() << "\n";
+	cfile << "volume.gs = " << int2str(sndGet(SND_GSVL)).c_str() << "\n";
 	cfile.close();
 }
 
-void Settings::save() {	
+void saveConfig() {
 	saveProfiles();
-	std::string cfname = opt.workDir + "/" + getCurrentProfile()->file;
+	std::string cfname = workDir + "/" + getCurrentProfile()->file;
 	std::ofstream sfile(cfname.c_str());
 	if (!sfile.good()) {
 		shithappens("Can't write settings");
@@ -285,15 +320,22 @@ void Settings::save() {
 */
 }
 
-void Settings::loadProfiles() {
-	std::ifstream file(opt.profPath.c_str());
+void loadProfiles() {
+	std::string soutnam = "NULL";
+	std::ifstream file(profPath.c_str());
 	if (!file.good()) {
-		shithappens("<b>Can't open main config</b><br>It seems, update needed<br>I will made it, don't worry");
-		load(false);
-		save();
-		file.open(opt.profPath.c_str());
+		printf("Main config is missing. Default files will be copied\n");
+		QFile fle(":/conf/config.conf");
+		fle.copy(QString(std::string(workDir + "/config.conf").c_str()));
+		fle.setFileName(":/conf/xpeccy.conf");
+		fle.copy(QString(std::string(workDir + "/xpeccy.conf").c_str()));
+		fle.setFileName(":/conf/1982.rom");
+		fle.copy(QString(std::string(romDir + "/1982.rom").c_str()));
+		fle.setPermissions(QString(std::string(workDir + "/config.conf").c_str()), QFile::ReadUser | QFile::WriteUser | QFile::ReadGroup | QFile::ReadOther);
+		fle.setPermissions(QString(std::string(workDir + "/xpeccy.conf").c_str()), QFile::ReadUser | QFile::WriteUser | QFile::ReadGroup | QFile::ReadOther);
+		file.open(profPath.c_str());
 		if (!file.good()) {
-			shithappens("<b>Doh! Something going wrong</b><br>Now you can worry");
+			shithappens("<b>Doh! Something going wrong</b>");
 			throw(0);
 		}
 	}
@@ -305,6 +347,11 @@ void Settings::loadProfiles() {
 	int section = 0;
 	std::vector<std::string> vect;
 	VidLayout vlay;
+	std::vector<RomSet> rslist;
+	RomSet newrs;
+	size_t pos;
+	std::string tms,fnam;
+	int test,fprt;
 	while (!file.eof()) {
 		file.getline(buf,2048);
 		line = std::string(buf);
@@ -313,6 +360,8 @@ void Settings::loadProfiles() {
 			if (pnam=="[BOOKMARKS]") section=1;
 			if (pnam=="[PROFILES]") section=2;
 			if (pnam=="[VIDEO]") section=3;
+			if (pnam=="[ROMSETS]") section=4;
+			if (pnam=="[SOUND]") section=5;
 		} else {
 			switch (section) {
 				case 1:
@@ -340,17 +389,64 @@ void Settings::loadProfiles() {
 						}
 					}
 					break;
+				case 4:
+					pos = pval.find_last_of(":");
+					if (pos != std::string::npos) {
+						fnam = std::string(pval,0,pos);
+						tms = std::string(pval,pos+1);
+						if (tms=="") {
+							fprt = 0;
+						} else {
+							fprt = atoi(tms.c_str());
+						}
+					} else {
+						fnam = pval;
+						fprt = 0;
+					}
+					if (pnam=="name") {
+						newrs.name = pval;
+						rslist.push_back(newrs);
+					}
+					if ((pnam=="basic128") || (pnam=="0")) {
+						rslist.back().roms[0].path=fnam;
+						rslist.back().roms[0].part=fprt;
+					}
+					if ((pnam=="basic48") || (pnam=="1")) {
+						rslist.back().roms[1].path=fnam;
+						rslist.back().roms[1].part=fprt;
+					}
+					if ((pnam=="shadow") || (pnam=="2")) {
+						rslist.back().roms[2].path=fnam;
+						rslist.back().roms[2].part=fprt;
+					}
+					if ((pnam=="trdos") || (pnam=="3")) {
+						rslist.back().roms[3].path=fnam;
+						rslist.back().roms[3].part=fprt;
+					}
+					break;
+				case 5:
+					if (pnam=="enabled") sndSet(SND_ENABLE, str2bool(pval));
+					if (pnam=="dontmute") sndSet(SND_MUTE, str2bool(pval));
+					if (pnam=="soundsys") soutnam = pval;
+					if (pnam=="rate") sndSet(SND_RATE,atoi(pval.c_str()));
+					if (pnam=="volume.beep") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_BEEP,test);}
+					if (pnam=="volume.tape") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_TAPE,test);}
+					if (pnam=="volume.ay") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_AYVL,test);}
+					if (pnam=="volume.gs") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_GSVL,test);}
+					break;
 			}
 		}
 	}
+	for (uint i=0; i<rslist.size(); i++) addRomset(rslist[i]);
+	setOutput(soutnam);
 	if (!setProfile(pnm.c_str())) {
 		shithappens("Cannot set current profile\nCheck it's name");
 		throw(0);
 	}
 }
 
-void Settings::load(bool dev) {
-	std::string cfname = opt.workDir + "/" + getCurrentProfile()->file;
+void loadConfig(bool dev) {
+	std::string cfname = workDir + "/" + getCurrentProfile()->file;
 	std::ifstream file(cfname.c_str());
 	std::string line,pnam,pval;
 	std::vector<std::string> vect;
@@ -360,14 +456,11 @@ void Settings::load(bool dev) {
 	int tmp2=0;
 	if (!dev) zx->sys->mem->mask = 0;
 	if (!file.good()) {
-		shithappens(std::string("Can't find config file<br><b>") + cfname + std::string("</b><br>Default one will be created."));
-		std::ofstream ofile(cfname.c_str());
-		ofile << "[MACHINE]\n\ncurrent = ZX48K\nmemory = 48\n\n";
-		ofile << "[BETADISK]\n\nenabled = n\n\n";
-		ofile << "[ROMSETS]\n\nname = ZX48\nbasic48 = 1982.rom\n\ncurrent = ZX48\nreset = basic48\n";
-		ofile.close();
-		QFile fle(":/rom/1982.rom");
-		fle.copy(QString(std::string(opt.romDir + "/1982.rom").c_str()));
+//		shithappens(std::string("Can't find config file<br><b>") + cfname + std::string("</b><br>Default one will be created."));
+		printf("Profile config is missing. Default one will be created\n");
+		QFile fle(":/conf/xpeccy.conf");
+		fle.copy(QString(cfname.c_str()));
+		fle.setPermissions(QFile::ReadUser | QFile::WriteUser | QFile::ReadGroup | QFile::ReadOther);
 		file.open(cfname.c_str(),std::ifstream::in);
 	}
 	if (!file.good()) {
@@ -378,8 +471,8 @@ void Settings::load(bool dev) {
 		VidLayout vlay;
 //		int test;
 		std::string fnam,tms;
-		int fprt;
-		zx->sys->mem->rsetlist.clear();
+//		int fprt;
+//		zx->sys->mem->rsetlist.clear();
 		config.clear();
 		std::string grp = "";
 		optEntry nent;
@@ -390,7 +483,7 @@ void Settings::load(bool dev) {
 			pos = line.find_first_of(";"); if (pos != std::string::npos) line.erase(pos);
 			splitline(line,&pnam,&pval);
 			if (pval=="") {
-				if (pnam=="[ROMSETS]") {grp=pnam; tmp2=1;}
+				if (pnam=="[ROMSET]") {grp=pnam; tmp2=1;}
 				if (pnam=="[VIDEO]") {grp=pnam; tmp2=2;}
 				if (pnam=="[SCREENSHOTS]") {grp=pnam; tmp2=3;}
 				if (pnam=="[SOUND]") {grp=pnam; tmp2=4;}
@@ -410,28 +503,6 @@ void Settings::load(bool dev) {
 //printf("%s\t%s\t%s\n",config.back().group.c_str(),config.back().name.c_str(),config.back().value.c_str());
 				switch (tmp2) {
 					case 1:
-						pos = pval.find_last_of(":");
-						if (pos != std::string::npos) {
-							fnam = std::string(pval,0,pos);
-							tms = std::string(pval,pos+1);
-							if (tms=="") {fprt = 0;} else {fprt = atoi(tms.c_str());}
-						} else {fnam = pval; fprt = 0;}
-						if (pnam=="name") {
-							newrs.name = pval;
-							zx->sys->mem->rsetlist.push_back(newrs);
-						}
-						if ((pnam=="basic128") || (pnam=="0")) {
-							zx->sys->mem->rsetlist.back().roms[0].path=fnam;
-							zx->sys->mem->rsetlist.back().roms[0].part=fprt;}
-						if ((pnam=="basic48") || (pnam=="1")) {
-							zx->sys->mem->rsetlist.back().roms[1].path=fnam;
-							zx->sys->mem->rsetlist.back().roms[1].part=fprt;}
-						if ((pnam=="shadow") || (pnam=="2")) {
-							zx->sys->mem->rsetlist.back().roms[2].path=fnam;
-							zx->sys->mem->rsetlist.back().roms[2].part=fprt;}
-						if ((pnam=="trdos") || (pnam=="3")) {
-							zx->sys->mem->rsetlist.back().roms[3].path=fnam;
-							zx->sys->mem->rsetlist.back().roms[3].part=fprt;}
 						if (pnam=="reset") {
 							if ((pval=="basic128") || (pval=="0")) zx->sys->mem->res = 0;
 							if ((pval=="basic48") || (pval=="1")) zx->sys->mem->res = 1;
@@ -441,65 +512,15 @@ void Settings::load(bool dev) {
 						if (pnam=="current") zx->opt.romsetName = pval;
 						if (pnam=="gs") zx->opt.GSRom = pval;
 						break;
-					case 2: //setFlagBit(str2bool(pval),&zx->vid->flags, VF_DOUBLE);
-						//if (pnam=="doublesize") {
-						//	if (str2bool(pval))
-						//		zx->vid->flags |= VF_DOUBLE;
-						//	else
-						//		zx->vid->flags &= ~VF_DOUBLE;
-						//}
-						//if (pnam=="fullscreen") {
-						//	if (str2bool(pval))
-						//		zx->vid->flags |= VF_FULLSCREEN;
-						//	else
-						//		zx->vid->flags &= ~VF_FULLSCREEN;
-						//}
-						//if (pnam=="bordersize") {test = atoi(pval.c_str()); if ((test>-1) && (test<101)) zx->vid->brdsize = test/100.0;}
-						if (pnam=="layout") {
-							vect = splitstr(pval,":");
-							if (vect.size() == 9) {
-								vlay.name = vect[0];
-								vlay.full.h = atoi(vect[1].c_str()); vlay.full.v = atoi(vect[2].c_str());
-								vlay.bord.h = atoi(vect[3].c_str()); vlay.bord.v = atoi(vect[4].c_str());
-								vlay.sync.h = atoi(vect[5].c_str()); vlay.sync.v = atoi(vect[6].c_str());
-								vlay.intsz = atoi(vect[7].c_str()); vlay.intpos = atoi(vect[8].c_str());
-								if ((vlay.full.h > vlay.bord.h + 256) && (vlay.bord.h > vlay.sync.h) && (vlay.full.v > vlay.bord.v + 192) && (vlay.bord.v > vlay.sync.v)) {
-									addLayout(vlay);
-								}
-							}
-						}
-						// if (pnam=="geometry") zx->vid->curlay = pval;
+					case 2: 
 						break;
-					//case 3: //if (pnam=="folder") opt.scrshotDir = pval;
-						//if (pnam=="format") opt.scrshotFormat = pval;
-						//if (pnam=="combo.count") sscnt=atoi(pval.c_str());
-						////if (pnam=="combo.interval") ssint=atoi(pval.c_str());
-						//break;
-					//case 4:// if (pnam=="enabled") sndSet(SND_ENABLE, str2bool(pval));
-						//if (pnam=="dontmute") sndSet(SND_MUTE, str2bool(pval));
-						//if (pnam=="soundsys") opt.sndOutputName = pval;
-						//if (pnam=="rate") sndSet(SND_RATE,atoi(pval.c_str()));
-						//if (pnam=="volume.beep") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_BEEP,test);}
-						//if (pnam=="volume.tape") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_TAPE,test);}
-						//if (pnam=="volume.ay") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_AYVL,test);}
-						//if (pnam=="volume.gs") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_GSVL,test);}
-						//if (pnam=="chip1") {test = atoi(pval.c_str()); if (test < SND_END) zx->aym->sc1->settype(test);}
-						//if (pnam=="chip2") {test = atoi(pval.c_str()); if (test < SND_END) zx->aym->sc2->settype(test);}
-						//if (pnam=="chip1.stereo") zx->aym->sc1->stereo = atoi(pval.c_str());
-						//if (pnam=="chip2.stereo") zx->aym->sc2->stereo = atoi(pval.c_str());
-						//if (pnam=="ts.type") zx->aym->tstype = atoi(pval.c_str());
-						//if (pnam=="gs") {
-						//	if (str2bool(pval)) zx->gs->flags |= GS_ENABLE; else zx->gs->flags &= ~GS_ENABLE;
-						//}
-						//if (pnam=="gs.reset") {
-						//	if (str2bool(pval)) zx->gs->flags |= GS_RESET; else zx->gs->flags &= ~GS_RESET;
-						//}
-						//if (pnam=="gs.stereo") zx->gs->stereo = atoi(pval.c_str());
-						//break;
-					//case 5: //if (pnam=="enabled") zx->bdi->enable=str2bool(pval);
-						//if (pnam=="fast") zx->bdi->vg93.turbo=str2bool(pval);
-						//break;
-					case 6: //if (pnam=="current") zx->opt.hwName = pval;
+					case 3:
+						break;
+					case 4:
+						break;
+					case 5:
+						break;
+					case 6:
 						if (pnam=="memory") {
 							if (pval=="48") {zx->sys->mem->mask = 0x00; tmask = 0;}
 							if (pval=="128") {zx->sys->mem->mask = 0x07; tmask = 1;}
@@ -507,16 +528,9 @@ void Settings::load(bool dev) {
 							if (pval=="512") {zx->sys->mem->mask = 0x1f; tmask = 4;}
 							if (pval=="1024") {zx->sys->mem->mask = 0x3f; tmask = 8;}
 						}
-						//if (pnam=="restart") {
-						//	emulSetFlag (FL_RESET, str2bool(pval));
-						//}
-						//if (pnam=="scrp.wait") {
-						//	if (str2bool(pval)) zx->sys->hwflags |= WAIT_ON; else zx->sys->hwflags &= ~WAIT_ON;
-						//}
 						break;
-					//case 7: //if (pnam=="sjasm") opt.asmPath = pval;
-						//if (pnam=="projectsdir") opt.projectsDir = pval;
-						//break;
+					case 7:
+						break;
 					case 8: addBookmark(pnam.c_str(),pval.c_str());
 						break;
 					case 9:
@@ -550,12 +564,8 @@ void Settings::load(bool dev) {
 							}
 						}
 						break;
-//					case 10:
-//						if (pnam=="cpu.frq") {
-//							fprt = atoi(pval.c_str());
-//							if ((fprt > 0) && (fprt < 14)) zx->sys->cpu->frq = fprt / 2.0;
-//						}
-//						break;
+					case 10:
+						break;
 				}
 			}
 		}
@@ -569,19 +579,6 @@ void Settings::load(bool dev) {
 	setFlagBit(optGetBool("VIDEO","fullscreen"),&zx->vid->flags, VF_FULLSCREEN);
 	tmp2 = optGetInt("VIDEO","bordersize"); if ((tmp2 >= 0) && (tmp2 <= 100)) zx->vid->brdsize = tmp2 / 100.0;
 	
-//	opt.scrshotDir = optGetString("SCREENSHOTS","folder");
-//	opt.scrshotFormat = optGetString("SCREENSHOTS","format");
-//	sscnt = optGetInt("SCREENSHOTS","combo.count");
-//	ssint = optGetInt("SCREENSHOTS","combo.interval");
-	
-//	opt.sndOutputName = optGetString("SOUND","soundsys");
-	sndSet(SND_ENABLE, optGetBool("SOUND","enabled"));
-	sndSet(SND_MUTE, optGetBool("SOUND","dontmute"));
-	sndSet(SND_RATE,optGetInt("SOUND","rate"));
-	tmp2 = optGetInt("SOUND","volume.beep"); if (tmp2 > 100) {tmp2 = 100;} sndSet(SND_BEEP,tmp2);
-	tmp2 = optGetInt("SOUND","volume.tape"); if (tmp2 > 100) {tmp2 = 100;} sndSet(SND_TAPE,tmp2);
-	tmp2 = optGetInt("SOUND","volume.ay"); if (tmp2 > 100) {tmp2 = 100;} sndSet(SND_AYVL,tmp2);
-	tmp2 = optGetInt("SOUND","volume.gs"); if (tmp2 > 100) {tmp2 = 100;} sndSet(SND_GSVL,tmp2);
 	tmp2 = optGetInt("SOUND","chip1"); if (tmp2 < SND_END) zx->aym->sc1->settype(tmp2);
 	tmp2 = optGetInt("SOUND","chip2"); if (tmp2 < SND_END) zx->aym->sc2->settype(tmp2);
 	setFlagBit(optGetBool("SOUND","gs"),&zx->gs->flags,GS_ENABLE);
@@ -597,18 +594,14 @@ void Settings::load(bool dev) {
 	zx->opt.hwName = optGetString("MACHINE","current");
 	emulSetFlag(FL_RESET,optGetBool("MACHINE","restart"));
 	setFlagBit(optGetBool("MACHINE","scrp.wait"),&zx->sys->hwflags,WAIT_ON);
-
-//	opt.asmPath = optGetString("TOOLS","sjasm");
-//	opt.projectsDir = optGetString("TOOLS","projectsdir");
 	
 	sndCalibrate();
 	zx->ide->refresh();
-	zx->setHardware(zx->opt.hwName);
-	zx->sys->mem->setromptr(zx->opt.romsetName);
-	setOutput(optGetString("SOUND","soundsys"));
+	setHardware(zx, zx->opt.hwName);
+	setRomset(zx, zx->opt.romsetName);
 	if (zx->hw==NULL) throw("Can't found current machine");
 	if (zx->sys->mem->romset==NULL) throw("Can't found current romset");
 	if (~zx->hw->mask & tmask) throw("Incorrect memory size for this machine");
 	if (!zx->vid->setLayout(zx->vid->curlay)) zx->vid->setLayout("default");
-	zx->sys->mem->loadromset(opt.romDir);
+	zx->sys->mem->loadromset(romDir);
 }

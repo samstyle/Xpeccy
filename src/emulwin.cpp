@@ -30,7 +30,6 @@
 #include <fstream>
 
 extern ZXComp* zx;
-extern Settings* sets;
 // main
 MainWin* mainWin;
 QIcon curicon;
@@ -44,6 +43,10 @@ int pauseFlags;
 uint32_t scrNumber;
 uint32_t scrCounter;
 uint32_t scrInterval;
+// hardwares
+std::vector<HardWare> hwList;
+// romsets
+std::vector<RomSet> rsList;
 // for user menu
 std::vector<XBookmark> bookmarkList;
 std::vector<XProfile> profileList;
@@ -79,7 +82,7 @@ void emulInit() {
 	mainWin->setWindowTitle(XPTITLE);
 	mainWin->setMouseTracking(true);
 	emulSetIcon(":/images/logo.png");
-	
+
 	SDL_VERSION(&inf.version);
 	SDL_GetWMInfo(&inf);
 #ifndef WIN32
@@ -108,11 +111,11 @@ void emulUpdateWindow() {
 	if ((zx->vid->flags & VF_FULLSCREEN) && !(zx->vid->flags & VF_BLOCKFULLSCREEN)) {
 		sdlflg |= SDL_FULLSCREEN;
 	}
-	mainWin->setFixedSize(szw,szh);
 	surf = SDL_SetVideoMode(szw,szh,8,sdlflg | SDL_NOFRAME);
 	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
 	zx->vid->scrimg = (uint8_t*)surf->pixels;
 	zx->vid->scrptr = zx->vid->scrimg;
+	mainWin->setFixedSize(szw,szh);
 }
 
 bool emulSaveChanged() {
@@ -289,13 +292,13 @@ void EmulWin::SDLEventHandler() {
 							resiz = true;
 							zx->vid->flags &= ~VF_DOUBLE;
 							emulUpdateWindow();
-							sets->save();
+							saveConfig();
 							break;
 						case SDLK_2: if (resiz) break;
 							resiz = true;
 							zx->vid->flags |= VF_DOUBLE;
 							emulUpdateWindow();
-							sets->save();
+							saveConfig();
 							break;
 						case SDLK_3: emulFlags ^= FL_FAST;
 							emulStopTimer();
@@ -303,7 +306,7 @@ void EmulWin::SDLEventHandler() {
 							break;
 						case SDLK_F4: mainWin->close(); break;
 						case SDLK_F7: scrCounter = optGetInt("SCREENSHOTS","combo.count"); scrInterval=0; break;	// ALT+F7 combo
-						case SDLK_RETURN: zx->vid->flags ^= VF_FULLSCREEN; emulUpdateWindow(); sets->save(); break;
+						case SDLK_RETURN: zx->vid->flags ^= VF_FULLSCREEN; emulUpdateWindow(); saveConfig(); break;
 						case SDLK_c:
 							emulFlags ^= FL_GRAB;
 							if (emulFlags & FL_GRAB) {
@@ -417,6 +420,74 @@ void EmulWin::SDLEventHandler() {
 }
 
 //=====================
+// ROMSETS
+
+RomSet* findRomset(std::string nm) {
+	RomSet* res = NULL;
+	for (uint i=0; i<rsList.size(); i++) {
+		if (rsList[i].name == nm) {
+			res = &rsList[i];
+		}
+	}
+	return res;
+}
+
+void addRomset(RomSet rs) {
+	if (findRomset(rs.name) != NULL) return;
+	rsList.push_back(rs);
+}
+
+void setRomset(ZXComp* comp, std::string nm) {
+	RomSet* res = findRomset(nm);
+	if (res != NULL) zx->sys->mem->romset = res;
+}
+
+std::vector<RomSet> getRomsetList() {
+	return rsList;
+}
+
+//=====================
+// HARDWARE
+
+void addHardware(std::string nam, int typ, int msk, int flg) {
+	HardWare nhw;
+	nhw.name = nam;
+	nhw.type = typ;
+	nhw.mask = msk;
+	nhw.flags = flg;
+	hwList.push_back(nhw);
+}
+
+void setHardware(ZXComp* comp, std::string nam) {
+	for (uint i = 0; i < hwList.size(); i++) {
+		if (hwList[i].name == nam) {
+			comp->hw = &hwList[i];
+			comp->sys->hwflags = comp->hw->flags;
+			break;
+		}
+	}
+}
+
+std::vector<std::string> getHardwareNames() {
+	std::vector<std::string> res;
+	for (uint i=0; i<hwList.size(); i++) {
+		res.push_back(hwList[i].name);
+	}
+	return res;
+}
+
+std::vector<HardWare> getHardwareList() {
+	return hwList;
+}
+
+void initHardware() {
+	addHardware("ZX48K",HW_ZX48,0x00,0);
+	addHardware("Pentagon",HW_PENT,0x05,0);
+	addHardware("Pentagon1024SL",HW_P1024,0x08,0);
+	addHardware("Scorpion",HW_SCORP,0x0a,IO_WAIT);
+}
+
+//=====================
 // PROFILES
 
 void fillProfileMenu() {
@@ -525,9 +596,9 @@ void EmulWin::bookmarkSelected(QAction* act) {
 void EmulWin::profileSelected(QAction* act) {
 	emulPause(true,PR_EXTRA);
 	setProfile(std::string(act->text().toUtf8().data()));
-	sets->load(false);
+	loadConfig(false);
 	emulUpdateWindow();
-	sets->saveProfiles();
+	saveProfiles();
 	mainWin->setFocus();
 	emulPause(false,PR_EXTRA);
 }
