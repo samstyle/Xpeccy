@@ -469,10 +469,7 @@ void loadConfig(bool dev) {
 	} else {
 		RomSet newrs;
 		VidLayout vlay;
-//		int test;
 		std::string fnam,tms;
-//		int fprt;
-//		zx->sys->mem->rsetlist.clear();
 		config.clear();
 		std::string grp = "";
 		optEntry nent;
