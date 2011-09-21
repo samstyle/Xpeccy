@@ -15,6 +15,10 @@
 
 #include "spectrum.h"
 
+// wanted windows
+#define	WW_NONE		0
+#define	WW_DEBUG	1
+
 // pause reasons
 #define	PR_MENU		1
 #define	PR_FILE		(1<<1)
@@ -31,6 +35,7 @@
 #define	FL_RESET	(1<<3)
 #define	FL_FAST		(1<<4)
 #define	FL_BLOCK	(1<<5)
+#define	FL_EXIT		(1<<6)
 
 struct XBookmark {
 	std::string name;
