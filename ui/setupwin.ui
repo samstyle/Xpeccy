@@ -751,9 +751,8 @@
        </widget>
        <widget class="QWidget" name="tab4">
         <attribute name="icon">
-         <iconset>
-          <normalon>:/images/terminal.png</normalon>
-         </iconset>
+         <iconset resource="../xpeccy.qrc">
+          <normaloff>:/images/floppy.png</normaloff>:/images/floppy.png</iconset>
         </attribute>
         <attribute name="title">
          <string>BDI</string>
