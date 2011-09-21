@@ -190,7 +190,7 @@ void SetupWin::start() {
 	ui.senbox->setChecked(sndGet(SND_ENABLE) != 0);
 	ui.mutbox->setChecked(sndGet(SND_MUTE) != 0);
 	ui.gsrbox->setChecked(zx->gs->flags & GS_RESET);
-	ui.outbox->setCurrentIndex(ui.outbox->findText(QDialog::trUtf8(optGetString("SOUND","soundsys").c_str())));
+	ui.outbox->setCurrentIndex(ui.outbox->findText(QDialog::trUtf8(sndGetOutputName().c_str())));
 	ui.ratbox->setCurrentIndex(ui.ratbox->findText(QString::number(sndGet(SND_RATE))));
 	ui.bvsld->setValue(sndGet(SND_BEEP));
 	ui.tvsld->setValue(sndGet(SND_TAPE));
@@ -259,10 +259,8 @@ void SetupWin::apply() {
 //	emulSetFlag(true,FL_BLOCK);
 // machine
 	HardWare *oldmac = zx->hw;
-	zx->opt.hwName = std::string(ui.machbox->currentText().toUtf8().data());
-	setHardware(zx,zx->opt.hwName);
-	zx->opt.romsetName = std::string(ui.rsetbox->currentText().toUtf8().data());
-	setRomset(zx, zx->opt.romsetName);
+	zx->opt.hwName = std::string(ui.machbox->currentText().toUtf8().data()); setHardware(zx,zx->opt.hwName);
+	zx->opt.rsName = std::string(ui.rsetbox->currentText().toUtf8().data()); setRomset(zx, zx->opt.rsName);
 	zx->sys->mem->loadromset(optGetPath(OPT_ROMDIR));
 	emulSetFlag(FL_RESET, ui.reschk->isChecked());
 	zx->sys->mem->res = ui.resbox->currentIndex();
@@ -275,38 +273,38 @@ void SetupWin::apply() {
 	}
 	if (zx->hw != oldmac) zx->reset();
 	zx->sys->cpu->frq = ui.cpufrq->value() / 2.0;
-	if (ui.scrpwait->isChecked()) zx->sys->hwflags |= WAIT_ON; else zx->sys->hwflags &= ~WAIT_ON;
+	setFlagBit(ui.scrpwait->isChecked(),&zx->sys->hwflags,WAIT_ON);
 // video
-	if (ui.dszchk->isChecked()) zx->vid->flags |= VF_DOUBLE; else zx->vid->flags &= ~VF_DOUBLE;
-//	vid->fscreen = ui.fscchk->isChecked();
+	setFlagBit(ui.dszchk->isChecked(),&zx->vid->flags,VF_DOUBLE);
 	zx->vid->brdsize = ui.bszsld->value()/100.0;
 	optSet("SCREENSHOTS","folder",std::string(ui.pathle->text().toUtf8().data()));
 	optSet("SCREENSHOTS","format",std::string(ui.ssfbox->currentText().toUtf8().data()));
 	optSet("SCREENSHOTS","combo.count",ui.scntbox->value());
 	optSet("SCREENSHOTS","combo.interval",ui.sintbox->value());
 	zx->vid->setLayout(std::string(ui.geombox->currentText().toUtf8().data()));
-	emulUpdateWindow();
+//	emulUpdateWindow();
 // sound
-	std::string oname = optGetString("SOUND","soundsys");
+	std::string oname = sndGetOutputName();
+	std::string nname(ui.outbox->currentText().toUtf8().data());
 	int orate = sndGet(SND_RATE);
 	sndSet(SND_ENABLE, ui.senbox->isChecked());
 	sndSet(SND_MUTE, ui.mutbox->isChecked());
 	if (ui.gsrbox->isChecked()) zx->gs->flags |= GS_RESET; else zx->gs->flags &= ~GS_RESET;
-	optSet("SOUND","soundsys",std::string(ui.outbox->currentText().toUtf8().data()));
 	sndSet(SND_RATE, ui.ratbox->currentText().toInt());
 	sndSet(SND_BEEP, ui.bvsld->value());
 	sndSet(SND_TAPE, ui.tvsld->value());
 	sndSet(SND_AYVL, ui.avsld->value());
 	sndSet(SND_GSVL, ui.gvsld->value());
-	if ((oname != optGetString("SOUND","soundsys")) || (orate != sndGet(SND_RATE))) setOutput(optGetString("SOUND","soundsys"));
+	if ((oname != nname) || (orate != sndGet(SND_RATE))) setOutput(nname);
 	zx->aym->sc1->settype(ui.schip1box->itemData(ui.schip1box->currentIndex()).toInt());
 	zx->aym->sc2->settype(ui.schip2box->itemData(ui.schip2box->currentIndex()).toInt());
 	zx->aym->sc1->stereo = ui.stereo1box->itemData(ui.stereo1box->currentIndex()).toInt();
 	zx->aym->sc2->stereo = ui.stereo2box->itemData(ui.stereo2box->currentIndex()).toInt();
 	zx->gs->stereo = ui.gstereobox->itemData(ui.gstereobox->currentIndex()).toInt();
-	if (ui.gsgroup->isChecked()) zx->gs->flags |= GS_ENABLE; else zx->gs->flags &= ~GS_ENABLE;
+	setFlagBit(ui.gsgroup->isChecked(),&zx->gs->flags,GS_ENABLE);
+	setFlagBit(ui.gsrbox->isChecked(),&zx->gs->flags,GS_RESET);
 	zx->aym->tstype = ui.tsbox->itemData(ui.tsbox->currentIndex()).toInt();
-// dos
+// bdi
 	zx->bdi->enable = ui.bdebox->isChecked();
 	zx->bdi->vg93.turbo = ui.bdtbox->isChecked();
 	zx->bdi->flop[0].trk80 = ui.a80box->isChecked();
@@ -423,7 +421,8 @@ void SetupWin::buildrsetlist() {
 		model->setItem(i,2,itm);
 	}
 	itm = new QStandardItem("GS"); model->setItem(i,0,itm);
-	itm = new QStandardItem(QDialog::trUtf8(zx->opt.GSRom.c_str())); model->setItem(i,1,itm);
+	itm = new QStandardItem(QDialog::trUtf8(optGetString("ROMSET","gs").c_str()));
+	model->setItem(i,1,itm);
 	ui.rstab->setModel(model);
 	ui.rstab->setColumnWidth(0,100);
 	ui.rstab->setColumnWidth(1,300);

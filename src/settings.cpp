@@ -204,6 +204,51 @@ void saveConfig() {
 		shithappens("Can't write settings");
 		throw(0);
 	}
+	optSet("MACHINE","current",zx->opt.hwName);
+	optSet("ROMSET","current",zx->opt.rsName);
+	optSet("MACHINE","restart",(emulGetFlags() & FL_RESET) != 0);
+	optSet("ROMSET","reset",rmnam[zx->sys->mem->res]);
+	switch(zx->sys->mem->mask) {
+		case 0x00: optSet("MACHINE","memory",48); break;
+		case 0x07: optSet("MACHINE","memory",128); break;
+		case 0x0f: optSet("MACHINE","memory",256); break;
+		case 0x1f: optSet("MACHINE","memory",512); break;
+		case 0x3f: optSet("MACHINE","memory",1024); break;
+	}
+	optSet("GENERAL","cpu.frq",int(zx->sys->cpu->frq * 2));
+	optSet("MACHINE","scrp.wait",(zx->sys->hwflags & WAIT_ON) != 0);
+	optSet("VIDEO","doublesize",(zx->vid->flags & VF_DOUBLE) != 0);
+	optSet("VIDEO","bordersize",int(zx->vid->brdsize * 100));
+	optSet("VIDEO","layout",zx->vid->curlay);
+	optSet("SOUND","chip1",zx->aym->sc1->type);
+	optSet("SOUND","chip2",zx->aym->sc2->type);
+	optSet("SOUND","chip1.stereo",zx->aym->sc1->stereo);
+	optSet("SOUND","chip2.stereo",zx->aym->sc2->stereo);
+	optSet("SOUND","ts.type",zx->aym->tstype);
+	optSet("SOUND","gs",(zx->gs->flags & GS_ENABLE) != 0);
+	optSet("SOUND","gs.reset",(zx->gs->flags & GS_RESET) != 0);
+	optSet("SOUND","gs.stereo",zx->gs->stereo);
+	optSet("BETADISK","enabled",zx->bdi->enable);
+	optSet("BETADISK","fast",zx->bdi->vg93.turbo);
+	optSet("BETADISK","A",zx->bdi->flop[0].getString());
+	optSet("BETADISK","B",zx->bdi->flop[1].getString());
+	optSet("BETADISK","C",zx->bdi->flop[2].getString());
+	optSet("BETADISK","D",zx->bdi->flop[3].getString());
+	optSet("IDE","iface",zx->ide->iface);
+	optSet("IDE","master.type",zx->ide->master.iface);
+	optSet("IDE","master.model",zx->ide->master.pass.model);
+	optSet("IDE","master.serial",zx->ide->master.pass.serial);
+	optSet("IDE","master.image",zx->ide->master.image);
+	optSet("IDE","master.lba",(zx->ide->master.flags & ATA_LBA) != 0);
+	optSet("IDE","master.maxlba",(int)zx->ide->master.maxlba);
+	optSet("IDE","master.chs",zx->ide->master.getCHS());
+	optSet("IDE","slave.type",zx->ide->slave.iface);
+	optSet("IDE","slave.model",zx->ide->slave.pass.model);
+	optSet("IDE","slave.serial",zx->ide->slave.pass.serial);
+	optSet("IDE","slave.image",zx->ide->slave.image);
+	optSet("IDE","slave.lba",(zx->ide->slave.flags & ATA_LBA) != 0);
+	optSet("IDE","slave.maxlba",(int)zx->ide->slave.maxlba);
+	optSet("IDE","slave.chs",zx->ide->slave.getCHS());
 	uint i,j;
 	std::vector<optEntry> ents;
 	std::vector<std::string> grps = optGroupsList();
@@ -506,8 +551,8 @@ void loadConfig(bool dev) {
 							if ((pval=="shadow") || (pval=="2")) zx->sys->mem->res = 2;
 							if ((pval=="trdos") || (pval=="3")) zx->sys->mem->res = 3;
 						}
-						if (pnam=="current") zx->opt.romsetName = pval;
-						if (pnam=="gs") zx->opt.GSRom = pval;
+//						if (pnam=="current") zx->opt.romsetName = pval;
+//						if (pnam=="gs") zx->opt.GSRom = pval;
 						break;
 					case 2: 
 						break;
@@ -516,6 +561,10 @@ void loadConfig(bool dev) {
 					case 4:
 						break;
 					case 5:
+						if (pnam=="A") zx->bdi->flop[0].setString(pval);
+						if (pnam=="B") zx->bdi->flop[1].setString(pval);
+						if (pnam=="C") zx->bdi->flop[2].setString(pval);
+						if (pnam=="D") zx->bdi->flop[3].setString(pval);
 						break;
 					case 6:
 						if (pnam=="memory") {
@@ -587,15 +636,14 @@ void loadConfig(bool dev) {
 	
 	zx->bdi->enable = optGetBool("BETADISK","enabled");
 	zx->bdi->vg93.turbo = optGetBool("BETADISK","fast");
-	
-	zx->opt.hwName = optGetString("MACHINE","current");
+//	zx->opt.hwName = optGetString("MACHINE","current");
 	emulSetFlag(FL_RESET,optGetBool("MACHINE","restart"));
 	setFlagBit(optGetBool("MACHINE","scrp.wait"),&zx->sys->hwflags,WAIT_ON);
 	
 	sndCalibrate();
 	zx->ide->refresh();
-	setHardware(zx, zx->opt.hwName);
-	setRomset(zx, zx->opt.romsetName);
+	setHardware(zx, optGetString("MACHINE","current"));
+	setRomset(zx, optGetString("ROMSET","current"));
 	if (zx->hw==NULL) throw("Can't found current machine");
 	if (zx->sys->mem->romset==NULL) throw("Can't found current romset");
 	if (~zx->hw->mask & tmask) throw("Incorrect memory size for this machine");

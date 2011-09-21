@@ -1,5 +1,6 @@
 #include "filer.h"
 #include "spectrum.h"
+#include "settings.h"
 
 extern ZXComp* zx;
 QFileDialog *filer;
@@ -140,9 +141,10 @@ bool saveFile(const char* name,int flags,int drv) {
 		}
 	}
 	if (filters.contains("Snap")) {
+		bool mt = (optGetString("MACHINE","current") == "ZX48K");
 		switch (type) {
-			case FT_SNA: zx->sys->mem->save(sfnam,TYP_SNA,zx->opt.hwName=="ZX48K"); break;
-			default: sfnam += ".sna"; zx->sys->mem->save(sfnam,TYP_SNA,zx->opt.hwName=="ZX48K"); break;
+			case FT_SNA: zx->sys->mem->save(sfnam,TYP_SNA,mt); break;
+			default: sfnam += ".sna"; zx->sys->mem->save(sfnam,TYP_SNA,mt); break;
 		}
 	}
 	return true;

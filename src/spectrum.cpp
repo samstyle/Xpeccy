@@ -27,8 +27,8 @@ ZXComp::ZXComp() {
 	ide = new IDE;
 	aym = new AYSys;
 	gs = new GS; gs->reset();
-	opt.hwName = "ZX48K";
-	opt.romsetName = "ZX48";
+//	opt.hwName = "ZX48K";
+//	opt.romsetName = "ZX48";
 	reset();
 }
 

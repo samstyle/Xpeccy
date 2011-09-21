@@ -109,6 +109,7 @@ class ATADev {
 		void getSectorNumber();
 		void setSectorNumber();
 		void gotoNextSector();
+		std::string getCHS();
 };
 
 class IDE {

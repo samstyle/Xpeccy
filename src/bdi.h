@@ -71,6 +71,8 @@ class Floppy {
 	uint8_t rd();
 	uint16_t getcrc(uint8_t*, int32_t);
 	std::vector<Sector> getsectors(uint8_t);
+	std::string getString();
+	void setString(std::string);
 };
 
 class VG93 {

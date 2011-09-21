@@ -1,6 +1,7 @@
 #include <fstream>
 #include <string.h>
 
+#include "common.h"
 #include "hdd.h"
 
 // IDE controller
@@ -111,6 +112,11 @@ void ATADev::reset() {
 	buf.mode = HDB_IDLE;
 	buf.pos = 0;
 	flags &= ~(ATA_IDLE | ATA_SLEEP | ATA_STANDBY);
+}
+
+std::string ATADev::getCHS() {
+	std::string res = int2str(pass.spt) + "/" + int2str(pass.hds) + "/" + int2str(pass.cyls);
+	return res;
 }
 
 // set REG value to bus (16bit for data, low for other)

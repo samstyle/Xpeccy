@@ -99,6 +99,14 @@ void addOutput(std::string nam, bool (*opf)(), void (*plf)(), void (*clf)()) {
 	sndOutputList.push_back(newsys);
 }
 
+std::string sndGetOutputName() {
+	std::string res = "NULL";
+	if (sndOutput != NULL) {
+		res = sndOutput->name;
+	}
+	return res;
+}
+
 void setOutput(std::string nam) {
 	if (sndOutput != NULL) {
 		if (sndOutput->name == nam) return;

@@ -1,6 +1,7 @@
 #include "common.h"
 #include "memory.h"
 #include "spectrum.h"
+#include "settings.h"
 
 #include <string>
 #include <vector>
@@ -468,23 +469,23 @@ void Memory::loadromset(std::string romDir) {
 			file.close();
 		}
 	}
-	if (zx->opt.GSRom == "") {
+	if (optGetString("ROMSET","gs") == "") {
 		for (ad=0;ad<0x4000;ad++) {
 			zx->gs->sys->mem->rom[0][ad]=0xff;
 			zx->gs->sys->mem->rom[1][ad]=0xff;
 		}
 	} else {
 #ifndef WIN32
-			fpath = romDir + "/" + zx->opt.GSRom;
+			fpath = romDir + "/" + optGetString("ROMSET","gs");
 #else
-			fpath = romDir + "\\" + zx->opt.GSRom;
+			fpath = romDir + "\\" + optGetString("ROMSET","gs");
 #endif
 			std::ifstream file(fpath.c_str());
 			if (file.good()) {
 				file.read((char*)&zx->gs->sys->mem->rom[0][0],0x4000);
 				file.read((char*)&zx->gs->sys->mem->rom[1][0],0x4000);
 			} else {
-				printf("Can't load gs rom '%s'\n",zx->opt.GSRom.c_str());
+				printf("Can't load gs rom '%s'\n",optGetString("ROMSET","gs").c_str());
 				for (ad=0;ad<0x4000;ad++) {
 					zx->gs->sys->mem->rom[0][ad]=0xff;
 					zx->gs->sys->mem->rom[1][ad]=0xff;

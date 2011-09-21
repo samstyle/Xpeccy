@@ -31,6 +31,7 @@ void sndInit();
 void sndCalibrate();
 void addOutput(std::string, bool(*)(),void(*)(),void(*)());
 void setOutput(std::string);
+std::string sndGetOutputName();
 bool sndOpen();
 void sndPlay();
 void sndPause(bool);

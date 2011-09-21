@@ -18,6 +18,21 @@ Floppy::Floppy() {
 	dblsid = true;
 }
 
+std::string Floppy::getString() {
+	std::string res = "80DW";
+	if (!trk80) res[0]='4';
+	if (!dblsid) res[2]='S';
+	if (protect) res[3]='R';
+	return res;
+}
+
+void Floppy::setString(std::string st) {
+	if (st.size() < 4) return;
+	trk80 = (st.substr(0,2) == "80");
+	dblsid = (st.substr(2,1) == "D");
+	protect = (st.substr(3,1) == "R");
+}
+
 void Floppy::wr(uint8_t val) {
 	data[rtrk].byte[pos] = val; changed=true;
 }
