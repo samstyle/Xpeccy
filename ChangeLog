@@ -47,3 +47,8 @@ Fix	Incorrect [ROMSETS] section loading from xpeccy.conf, because of parameters 
 Wrk	Parts of [SOUND] and [ROMSET] section moved from xpeccy.conf to config.conf
 !Bug	Xpeccy may crush when you change hardware/memsize/romset/reset-mempage in Options window and press OK
 Fix	I think, a bug above is closed. And some small bugs, which i done today, too.
+
+build 20110921
+Fix	RR [reg] was showing as SLA [reg] in debugger, but worked properly
+Fix	Breakpoints was working wrong way, emulator crushed when try to show debug window
+Bug	By the way, breakpoints still works strange, but it's not fatal

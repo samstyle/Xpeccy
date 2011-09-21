@@ -35,6 +35,7 @@
 #define	RSZ_FULLSCR	3
 
 extern ZXComp* zx;
+extern EmulWin* mwin;
 // main
 MainWin* mainWin;
 QIcon curicon;
@@ -45,6 +46,7 @@ SDL_TimerID tid,sid;
 QVector<QRgb> qPal;
 int emulFlags;
 int pauseFlags;
+int wantedWin;
 uint32_t resizeMode; 
 uint32_t scrNumber;
 uint32_t scrCounter;
@@ -75,6 +77,7 @@ void emulInit() {
 		qPal[i] = qRgb(zxpal[i].r,zxpal[i].g,zxpal[i].b);
 	}
 	emulFlags = 0;
+	wantedWin = WW_NONE;
 	resizeMode = RSZ_NONE;
 
 	scrNumber = 0;
@@ -113,7 +116,7 @@ QWidget* emulWidget() {
 }
 
 void emulUpdateWindow() {
-	emulSetFlag(FL_BLOCK,true);
+	emulFlags |= FL_BLOCK;
 	zx->vid->update();
 	int szw = zx->vid->wsze.h;
 	int szh = zx->vid->wsze.v;
@@ -126,7 +129,7 @@ void emulUpdateWindow() {
 	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
 	zx->vid->scrimg = (uint8_t*)surf->pixels;
 	zx->vid->scrptr = zx->vid->scrimg;
-	emulSetFlag(FL_BLOCK,false);
+	emulFlags &= ~FL_BLOCK;
 }
 
 bool emulSaveChanged() {
@@ -152,7 +155,7 @@ void emulExec() {
 	if (!dbgIsActive()) {
 		// somehow catch CPoint
 		if (dbgFindBreakpoint(BPoint((zx->sys->cpu->pc < 0x4000) ? zx->sys->mem->crom : zx->sys->mem->cram, zx->sys->cpu->pc)) != -1) {
-			dbgShow();
+			wantedWin = WW_DEBUG;
 			zx->sys->cpu->err = true;
 		}
 		if (!zx->sys->cpu->err && zx->sys->istrb) {
@@ -225,14 +228,14 @@ Uint32 emulFrame(Uint32 interval, void*) {
 		zx->keyb->releaseall();
 		zx->mouse->buttons = 0xff;
 	}
-	if (pauseFlags == 0) {
+	if ((wantedWin == WW_NONE) && (pauseFlags == 0)) {
 		if (!(emulFlags & FL_FAST) && sndGet(SND_ENABLE) && (sndGet(SND_MUTE) || mainWin->isActiveWindow())) {
 			sndPlay();
 		}
 		sndSet(SND_COUNT,0);
 		do {
 			emulExec();
-		} while (!zx->sys->cpu->err && !zx->sys->istrb);
+		} while ((wantedWin == WW_NONE) && !zx->sys->istrb);
 		zx->sys->nmi = false;
 		if (scrCounter !=0 ) {
 			if (scrInterval == 0) {
@@ -311,6 +314,9 @@ EmulWin::EmulWin() {
 
 void EmulWin::SDLEventHandler() {
 	if (emulFlags & FL_BLOCK) return;
+	switch (wantedWin) {
+		case WW_DEBUG: dbgShow(); wantedWin = WW_NONE; break;
+	}
 	SDL_Event ev;
 //	bool resiz = false;
 	while (SDL_PollEvent(&ev)) {
@@ -364,7 +370,7 @@ void EmulWin::SDLEventHandler() {
 					zx->keyb->press(ev.key.keysym.scancode);
 					switch (ev.key.keysym.sym) {
 						case SDLK_PAUSE: pauseFlags ^= PR_PAUSE; emulPause(true,0); break;
-						case SDLK_ESCAPE: dbgShow(); break;
+						case SDLK_ESCAPE: wantedWin = WW_DEBUG; break;
 						case SDLK_MENU: emulPause(true,PR_MENU); userMenu->popup(mainWin->pos() + QPoint(20,20)); break;
 						case SDLK_F1: optShow(); break;
 						case SDLK_F2: emulPause(true,PR_FILE); saveFile("",FT_ALL,-1); emulPause(false,PR_FILE); break;
