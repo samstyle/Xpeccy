@@ -6,7 +6,6 @@ GS::GS() {
 	sys = new ZXBase(this);
 	sys->cpu = new Z80(GS_FRQ);
 	sys->mem = new Memory(MEM_GS);
-//	sys->io = new IOSys(IO_GS);
 	sys->mem->pt0 = &sys->mem->rom[0][0];
 	sys->mem->pt1 = &sys->mem->ram[0][0];
 	sys->mem->pt2 = &sys->mem->ram[0][0];
@@ -16,6 +15,8 @@ GS::GS() {
 	flags = GS_ENABLE;
 	stereo = GS_12_34;
 	counter = 0;
+	ch1 = ch2 = ch3 = ch4 = 0;
+	vol1 = vol2 = vol3 = vol4 = 0;
 }
 
 void GS::reset() {

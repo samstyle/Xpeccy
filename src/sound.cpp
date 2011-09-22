@@ -73,6 +73,7 @@ void sndSync(uint32_t tk) {
 	levl += tmpl.l * ayVolume / 100.0;
 	levr += tmpl.r * ayVolume / 100.0;
 	GSData tmpm = zx->gs->getvol();
+//if ((levr != 0) || (levl != 0)) printf("%i : %i\t%i : %i\n",levl,levr,tmpm.l,tmpm.r);
 	levl += tmpm.l * gsVolume / 100.0;
 	levr += tmpm.r * gsVolume / 100.0;
 	if (smpCount >= sndChunks) return;
@@ -135,7 +136,9 @@ bool sndOpen() {
 }
 
 void sndPlay() {
-	if (sndOutput != NULL) sndOutput->play();
+	if (sndOutput != NULL) {
+		sndOutput->play();
+	}
 }
 
 void sndPause(bool b) {

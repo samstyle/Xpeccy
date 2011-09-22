@@ -219,7 +219,7 @@ void saveConfig() {
 	optSet("MACHINE","scrp.wait",(zx->sys->hwflags & WAIT_ON) != 0);
 	optSet("VIDEO","doublesize",(zx->vid->flags & VF_DOUBLE) != 0);
 	optSet("VIDEO","bordersize",int(zx->vid->brdsize * 100));
-	optSet("VIDEO","layout",zx->vid->curlay);
+	optSet("VIDEO","geometry",zx->vid->curlay);
 	optSet("SOUND","chip1",zx->aym->sc1->type);
 	optSet("SOUND","chip2",zx->aym->sc2->type);
 	optSet("SOUND","chip1.stereo",zx->aym->sc1->stereo);
@@ -636,7 +636,9 @@ void loadConfig(bool dev) {
 	
 	zx->bdi->enable = optGetBool("BETADISK","enabled");
 	zx->bdi->vg93.turbo = optGetBool("BETADISK","fast");
-//	zx->opt.hwName = optGetString("MACHINE","current");
+	zx->opt.hwName = optGetString("MACHINE","current");
+	zx->opt.rsName = optGetString("ROMSET","current");
+	zx->opt.GSRom = optGetString("ROMSET","gs");
 	emulSetFlag(FL_RESET,optGetBool("MACHINE","restart"));
 	setFlagBit(optGetBool("MACHINE","scrp.wait"),&zx->sys->hwflags,WAIT_ON);
 	
