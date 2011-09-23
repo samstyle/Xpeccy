@@ -121,11 +121,11 @@ void setOutput(std::string nam) {
 		}
 	}
 	if (sndOutput == NULL) {
-		shithappens("Can't find sound system. Reset to NULL\n");
+		printf("Can't find sound system. Reset to NULL\n");
 		setOutput("NULL");
 	}
 	if (!sndOutput->open()) {
-		shithappens("Can't open sound system. Reset to NULL\n");
+		printf("Can't open sound system. Reset to NULL\n");
 		setOutput("NULL");
 	}
 }

@@ -10,6 +10,11 @@ IDE::IDE() {
 	cur = &master;
 }
 
+/*
+ * SMUC: dos, a0=0,a1=a6=a7=a11=a12=1	xxx1 1xxx 11xx xx10
+ * 
+*/
+
 bool IDE::in(uint16_t port,uint8_t* val,bool bdiActive) {
 	bool res = false;
 	bool ishi;
@@ -48,6 +53,9 @@ bool IDE::out(uint16_t port,uint8_t val,bool bdiActive) {
 			if (prt == HDD_HEAD) cur = (prt & 0x08) ? &slave : &master;	// write to head reg: select MASTER/SLAVE
 			ishi = (port & ((iface==IDE_NEMO) ? 0x01 : 0x100));
 			break;
+//		case IDE_SMUC:
+//			if (!bdiActive || ((port & 0x18c3) != 0x18c2) return false;
+//			break;
 	}
 	if (res) {
 		if (ishi) {

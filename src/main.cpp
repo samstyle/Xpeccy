@@ -96,8 +96,8 @@ int main(int ac,char** av) {
 		} else {
 			filltabs();
 			initHardware();
-			sndInit();
 			SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
+			sndInit();
 			emulInit();
 			emulShow();
 			mwin = new EmulWin();
