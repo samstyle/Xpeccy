@@ -35,6 +35,11 @@ class SetupWin : public QDialog {
 		void updfrq();
 		void chablock(QModelIndex);
 		void hddcap();
+		void editrset(QModelIndex);
+		void setrpart();
+		void hidersedit();
+		void addNewRomset();
+		void rmRomset();
 	private:
 		Ui::SetupWin ui;
 		Ui::UmaDial uia;

@@ -441,32 +441,31 @@ void Memory::save(std::string sfnam,int typ,bool sna48=false) {
 	}
 }
 
-//void Memory::setromptr(std::string nam) {
-//	RomSet* res = findRomset(nam);
-//	if (res != NULL) romset = res;
-//}
-
 void Memory::loadromset(std::string romDir) {
 	int i,ad;
 	std::string fpath;
 	for (i=0; i<8; i++) {
-		if (romset->roms[i].path == "") {
+		if (romset == NULL) {
 			for (ad=0;ad<0x4000;ad++) rom[i][ad]=0xff;
 		} else {
-#ifndef WIN32
-			fpath = romDir + "/" + romset->roms[i].path;
-#else
-			fpath = romDir + "\\" + romset->roms[i].path;
-#endif
-			std::ifstream file(fpath.c_str());
-			if (file.good()) {
-				file.seekg(romset->roms[i].part<<14);
-				file.read((char*)&rom[i][0],0x4000);
-			} else {
-				printf("Can't load rom '%s:%i'\n",romset->roms[i].path.c_str(),romset->roms[i].part);
+			if (romset->roms[i].path == "") {
 				for (ad=0;ad<0x4000;ad++) rom[i][ad]=0xff;
+			} else {
+#ifndef WIN32
+				fpath = romDir + "/" + romset->roms[i].path;
+#else
+				fpath = romDir + "\\" + romset->roms[i].path;
+#endif
+				std::ifstream file(fpath.c_str());
+				if (file.good()) {
+					file.seekg(romset->roms[i].part<<14);
+					file.read((char*)&rom[i][0],0x4000);
+				} else {
+					printf("Can't load rom '%s:%i'\n",romset->roms[i].path.c_str(),romset->roms[i].part);
+					for (ad=0;ad<0x4000;ad++) rom[i][ad]=0xff;
+				}
+				file.close();
 			}
-			file.close();
 		}
 	}
 	if (zx->opt.GSRom == "") {

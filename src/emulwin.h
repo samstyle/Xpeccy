@@ -111,7 +111,8 @@ void setHardware(ZXComp*, std::string);
 std::vector<std::string> getHardwareNames();
 std::vector<HardWare> getHardwareList();
 // romset
-void addRomset(RomSet);
+bool addRomset(RomSet);
+void setRomsetList(std::vector<RomSet>);
 void setRomset(ZXComp*, std::string);
 std::vector<RomSet> getRomsetList();
 #endif

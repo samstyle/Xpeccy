@@ -6,6 +6,7 @@
 #include <vector>
 
 void shithappens(std::string);
+bool areSure(std::string);
 void filltabs();
 
 void setFlagBit(bool, int32_t*, int32_t);

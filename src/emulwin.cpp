@@ -29,6 +29,8 @@
 
 #include <fstream>
 
+#define	XPTITLE	"Xpeccy 0.4.995"
+
 #define	RSZ_NONE	0
 #define	RSZ_SINGLE	1
 #define	RSZ_DOUBLE	2
@@ -62,8 +64,6 @@ XProfile* currentProfile;
 QMenu* userMenu;
 QMenu* bookmarkMenu;
 QMenu* profileMenu;
-
-#define	XPTITLE	"Xpeccy 0.4.994"
 
 void emulInit() {
 	int i;
@@ -479,14 +479,26 @@ RomSet* findRomset(std::string nm) {
 	return res;
 }
 
-void addRomset(RomSet rs) {
-	if (findRomset(rs.name) != NULL) return;
+bool addRomset(RomSet rs) {
+	if (findRomset(rs.name) != NULL) return false;
 	rsList.push_back(rs);
+	return true;
+}
+
+void setRomsetList(std::vector<RomSet> rsl) {
+	rsList.clear();
+	uint i;
+	for (i=0; i<rsl.size(); i++) {
+		addRomset(rsl[i]);
+	}
+	for (i=0; i<profileList.size(); i++) {
+		profileList[i].zx->sys->mem->romset = findRomset(profileList[i].zx->opt.rsName);
+		profileList[i].zx->sys->mem->loadromset(optGetPath(OPT_ROMDIR));
+	}
 }
 
 void setRomset(ZXComp* comp, std::string nm) {
-	RomSet* res = findRomset(nm);
-	if (res != NULL) zx->sys->mem->romset = res;
+	zx->sys->mem->romset = findRomset(nm);
 }
 
 std::vector<RomSet> getRomsetList() {

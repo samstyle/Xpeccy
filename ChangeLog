@@ -52,3 +52,9 @@ build 20110921
 Fix	RR [reg] was showing as SLA [reg] in debugger, but worked properly
 Fix	Breakpoints was working wrong way, emulator crushed when try to show debug window
 Bug	By the way, breakpoints still works strange, but it's not fatal
+
+0.4.995
+build 20110924
+New	Now you can add/delete/edit romsets from Options window. To edit rompage doubleclick on the row in romset table
+Fix	Some fixes
+Bug	Damn, Xpeccy may crush at applying options and may cause segfault on exit

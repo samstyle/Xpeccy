@@ -31,8 +31,14 @@ void setFlagBit(bool cond, int32_t* val, int32_t mask) {
 }
 
 void shithappens(std::string msg) {
-	QMessageBox mbx(QMessageBox::Critical,"Shit happens",QString(msg.c_str()),QMessageBox::Ok);
+	QMessageBox mbx(QMessageBox::Critical,"Shit happens",QDialog::trUtf8(msg.c_str()),QMessageBox::Ok);
 	mbx.exec();
+}
+
+bool areSure(std::string msg) {
+	QMessageBox mbx(QMessageBox::Question,"R U Sure?",QDialog::trUtf8(msg.c_str()),QMessageBox::Yes | QMessageBox::No);
+	int res = mbx.exec();
+	return (res == QMessageBox::Yes);
 }
 
 std::string int2str(int num) {

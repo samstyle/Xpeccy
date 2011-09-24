@@ -1,5 +1,6 @@
 #include <QStandardItemModel>
 #include <QFileDialog>
+#include <QDebug>
 
 #include "common.h"
 #include "sound.h"
@@ -9,11 +10,22 @@
 #include "settings.h"
 #include "filer.h"
 
+#include "ui_selname.h"
+
 extern ZXComp* zx;
 
+Ui::IName nameui;
+
 SetupWin* optWin;
+QDialog* optName;
+
+std::vector<RomSet> rsl;
+std::string GSRom;
 
 void optInit(QWidget* par) {
+	optName = new QDialog((QWidget*)optWin);
+	nameui.setupUi(optName);
+	optName->setModal(true);
 	optWin = new SetupWin(par);
 }
 
@@ -38,14 +50,14 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	for (i=0; i < list.size(); i++) {
 		ui.machbox->addItem(QDialog::trUtf8(list[i].c_str()));
 	}
-/*
-	ui.rsetbox->clear();
-	for (i=0; i < zx->sys->mem->rsetlist.size(); i++) {
-		ui.rsetbox->addItem(QDialog::trUtf8(zx->sys->mem->rsetlist[i].name.c_str()));
-	}
-*/
 	ui.resbox->addItems(QStringList()<<"0:Basic 128"<<"1:Basic48"<<"2:Shadow"<<"3:DOS");
 	ui.mszbox->addItems(QStringList()<<"48K"<<"128K"<<"256K"<<"512K"<<"1024K");
+	ui.rssel->hide();
+	QTableWidgetItem* itm;
+	for (i=0; i<9; i++) {
+		itm = new QTableWidgetItem; ui.rstab->setItem(i,1,itm);
+		itm = new QTableWidgetItem; ui.rstab->setItem(i,2,itm);
+	}
 // video
 	ui.ssfbox->addItems(QStringList()<<"bmp"<<"png"<<"jpg"<<"scr");
 	std::vector<VidLayout> lays = getLayoutList();
@@ -91,6 +103,13 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	QObject::connect(ui.machbox,SIGNAL(currentIndexChanged(int)),this,SLOT(setmszbox(int)));
 	QObject::connect(ui.mszbox,SIGNAL(currentIndexChanged(int)),this,SLOT(okbuts()));
 	QObject::connect(ui.cpufrq,SIGNAL(valueChanged(int)),this,SLOT(updfrq()));
+	QObject::connect(ui.rstab,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(editrset(QModelIndex)));
+	QObject::connect(ui.rsselcan,SIGNAL(released()),this,SLOT(hidersedit()));
+	QObject::connect(ui.rsselok,SIGNAL(released()),this,SLOT(setrpart()));
+	QObject::connect(ui.addrset,SIGNAL(released()),optName,SLOT(show()));
+	QObject::connect(ui.rmrset,SIGNAL(released()),this,SLOT(rmRomset()));
+	QObject::connect(nameui.okbut,SIGNAL(released()),this,SLOT(addNewRomset()));
+	QObject::connect(nameui.cnbut,SIGNAL(released()),optName,SLOT(hide()));
 // video
 	QObject::connect(ui.pathtb,SIGNAL(released()),this,SLOT(selsspath()));
 	QObject::connect(ui.bszsld,SIGNAL(valueChanged(int)),this,SLOT(chabsz()));
@@ -158,8 +177,12 @@ void SetupWin::start() {
 	uint32_t i;
 	emulPause(true,PR_OPTS);
 // machine
+	ui.rstab->show();
+	ui.rssel->hide();
+	ui.rsetbox->setEnabled(true);
 	ui.rsetbox->clear();
-	std::vector<RomSet> rsl = getRomsetList();
+	rsl = getRomsetList();
+	GSRom = zx->opt.GSRom;
 	for (i=0; i < rsl.size(); i++) {
 		ui.rsetbox->addItem(QDialog::trUtf8(rsl[i].name.c_str()));
 	}
@@ -271,9 +294,13 @@ void SetupWin::apply() {
 		case 3: zx->sys->mem->mask = 0x1f; break;
 		case 4: zx->sys->mem->mask = 0x3f; break;
 	}
-	if (zx->hw != oldmac) zx->reset();
 	zx->sys->cpu->frq = ui.cpufrq->value() / 2.0;
 	setFlagBit(ui.scrpwait->isChecked(),&zx->sys->hwflags,WAIT_ON);
+	zx->opt.GSRom = GSRom;
+	setRomsetList(rsl);
+//	setRomset(zx, zx->opt.rsName);
+//	zx->sys->mem->loadromset(optGetPath(OPT_ROMDIR));
+	if (zx->hw != oldmac) zx->reset();
 // video
 	setFlagBit(ui.dszchk->isChecked(),&zx->vid->flags,VF_DOUBLE);
 	zx->vid->brdsize = ui.bszsld->value()/100.0;
@@ -362,6 +389,85 @@ void SetupWin::reject() {
 	emulPause(false,PR_OPTS);
 }
 
+void SetupWin::rmRomset() {
+	int idx = ui.rsetbox->currentIndex();
+	if (idx < 0) return;
+	if (areSure("Do you really want to delete this romset?")) {
+		rsl.erase(rsl.begin() + idx);
+		ui.rsetbox->removeItem(idx);
+	}
+}
+
+void SetupWin::addNewRomset() {
+	QString nam = nameui.namele->text();
+	if (nam == "") return;
+	RomSet nrs;
+	nrs.name = std::string(nam.toUtf8().data());
+	uint i;
+	for (i=0; i<8; i++) {
+		nrs.roms[i].path = "";
+		nrs.roms[i].part = 0;
+	}
+	for (i=0; i<rsl.size(); i++) {
+		if (rsl[i].name == nrs.name) return;
+	}
+	rsl.push_back(nrs);
+	ui.rsetbox->addItem(QDialog::trUtf8(nrs.name.c_str()));
+	ui.rsetbox->setCurrentIndex(ui.rsetbox->count() - 1);
+	optName->hide();
+}
+
+// machine
+
+void SetupWin::editrset(QModelIndex idx) {
+	QString rcur;
+	uint8_t pcur;
+	if (idx.row() < 8) {
+		RomSet rset = rsl[ui.rsetbox->currentIndex()];
+		rcur = QString(rset.roms[idx.row()].path.c_str());
+		if (rcur == "") rcur = "none";
+		pcur = rset.roms[idx.row()].part;
+	} else {
+		rcur = QString(GSRom.c_str());
+		pcur = 0;
+	}
+	std::string rpth = optGetPath(OPT_ROMDIR);
+	QDir rdir(QString(rpth.c_str()));
+	QStringList rlst = rdir.entryList(QStringList() << "*.rom",QDir::Files,QDir::Name);
+	ui.rsfiles->clear();
+	ui.rsfiles->addItem("none");
+	ui.rsfiles->addItems(rlst);
+	ui.rsfiles->setCurrentIndex(ui.rsfiles->findText(rcur));
+	ui.rsparts->setValue(pcur);
+	ui.rstab->hide();
+	ui.rsetbox->setEnabled(false);
+	ui.rssel->show();
+}
+
+void SetupWin::setrpart() {
+	QString rnew = ui.rsfiles->itemText(ui.rsfiles->currentIndex());
+	if (rnew == "none") rnew = "";
+	int pnew = ui.rsparts->value();
+	QModelIndex idx = ui.rstab->currentIndex();
+	if (idx.isValid()) {
+		int row = idx.row();
+		if (row < 8) {
+			rsl[ui.rsetbox->currentIndex()].roms[row].path = std::string(rnew.toUtf8().data());
+			rsl[ui.rsetbox->currentIndex()].roms[row].part = pnew;
+		} else {
+			GSRom = std::string(rnew.toUtf8().data());
+		}
+	}
+	buildrsetlist();
+	hidersedit();
+}
+
+void SetupWin::hidersedit() {
+	ui.rssel->hide();
+	ui.rstab->show();
+	ui.rsetbox->setEnabled(true);
+}
+
 // lists
 
 void SetupWin::okbuts() {
@@ -398,32 +504,25 @@ void SetupWin::setmszbox(int idx) {
 }
 
 void SetupWin::buildrsetlist() {
-	int i;
+//	int i;
 	if (ui.rsetbox->currentIndex() < 0) {
 		ui.rstab->setEnabled(false);
 		return;
-	} else {
-		ui.rstab->setEnabled(true);
 	}
-	std::vector<RomSet> rsl = getRomsetList();
+	ui.rstab->setEnabled(true);
 	RomSet rset = rsl[ui.rsetbox->currentIndex()];
-	QStringList lst = QStringList()<<"Basic128"<<"Basic48"<<"Shadow"<<"DOS"<<"ext0"<<"ext1"<<"ext2"<<"ext3";
-	QStandardItemModel *model = new QStandardItemModel(8,3);
-	QStandardItem *itm;
-	for (i=0; i<8; i++) {
-		itm = new QStandardItem(lst[i]); model->setItem(i,0,itm);
-		itm = new QStandardItem(QDialog::trUtf8(rset.roms[i].path.c_str())); model->setItem(i,1,itm);
-		if (rset.roms[i].path!="") {
-			itm = new QStandardItem(QString::number(rset.roms[i].part));
+	QString rsf;
+//	QStringList lst = QStringList()<<"Basic128"<<"Basic48"<<"Shadow"<<"DOS"<<"ext0"<<"ext1"<<"ext2"<<"ext3";
+	for (int i=0; i<8; i++) {
+		rsf = QDialog::trUtf8(rset.roms[i].path.c_str());
+		ui.rstab->item(i,1)->setText(rsf);
+		if (rsf != "") {
+			ui.rstab->item(i,2)->setText(QString::number(rset.roms[i].part));
 		} else {
-			itm = new QStandardItem();
+			ui.rstab->item(i,2)->setText("");
 		}
-		model->setItem(i,2,itm);
 	}
-	itm = new QStandardItem("GS"); model->setItem(i,0,itm);
-	itm = new QStandardItem(QDialog::trUtf8(optGetString("ROMSET","gs").c_str()));
-	model->setItem(i,1,itm);
-	ui.rstab->setModel(model);
+	ui.rstab->item(8,1)->setText(QDialog::trUtf8(GSRom.c_str()));
 	ui.rstab->setColumnWidth(0,100);
 	ui.rstab->setColumnWidth(1,300);
 	ui.rstab->setColumnWidth(2,50);
