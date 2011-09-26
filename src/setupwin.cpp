@@ -180,6 +180,8 @@ void SetupWin::start() {
 	ui.rstab->show();
 	ui.rssel->hide();
 	ui.rsetbox->setEnabled(true);
+	ui.addrset->setEnabled(true);
+	ui.rmrset->setEnabled(true);
 	ui.rsetbox->clear();
 	rsl = getRomsetList();
 	GSRom = zx->opt.GSRom;
@@ -441,6 +443,8 @@ void SetupWin::editrset(QModelIndex idx) {
 	ui.rsparts->setValue(pcur);
 	ui.rstab->hide();
 	ui.rsetbox->setEnabled(false);
+	ui.addrset->setEnabled(false);
+	ui.rmrset->setEnabled(false);
 	ui.rssel->show();
 }
 
@@ -466,6 +470,8 @@ void SetupWin::hidersedit() {
 	ui.rssel->hide();
 	ui.rstab->show();
 	ui.rsetbox->setEnabled(true);
+	ui.addrset->setEnabled(true);
+	ui.rmrset->setEnabled(true);
 }
 
 // lists
