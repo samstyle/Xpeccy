@@ -59,6 +59,6 @@ New	Now you can add/delete/edit romsets from Options window. To edit rompage dou
 Fix	Some fixes
 Bug	Damn, Xpeccy may crush at applying options and may cause segfault on exit
 
-build 201109
+build 20110927
 Wrk	[SCREENSHOTS] and [TOOLS] sections are moved to main config file.
 Bug	"[xcb] Unknown request in queue while dequeuing" crush is caused by Qt4.7
