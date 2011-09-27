@@ -206,10 +206,10 @@ void SetupWin::start() {
 	ui.dszchk->setChecked((zx->vid->flags & VF_DOUBLE));
 //	ui.fscchk->setChecked(vid->fscreen);
 	ui.bszsld->setValue((int)(zx->vid->brdsize * 100));
-	ui.pathle->setText(QDialog::trUtf8(optGetString("SCREENSHOTS","folder").c_str()));
-	ui.ssfbox->setCurrentIndex(ui.ssfbox->findText(QDialog::trUtf8(optGetString("SCREENSHOTS","format").c_str())));
-	ui.scntbox->setValue(optGetInt("SCREENSHOTS","combo.count"));
-	ui.sintbox->setValue(optGetInt("SCREENSHOTS","combo.interval"));
+	ui.pathle->setText(QDialog::trUtf8(optGetString(OPT_SHOTDIR).c_str()));
+	ui.ssfbox->setCurrentIndex(ui.ssfbox->findText(QDialog::trUtf8(optGetString(OPT_SHOTEXT).c_str())));
+	ui.scntbox->setValue(optGetInt(OPT_SHOTCNT));
+	ui.sintbox->setValue(optGetInt(OPT_SHOTINT));
 	ui.geombox->setCurrentIndex(ui.geombox->findText(QDialog::trUtf8(zx->vid->curlay.c_str())));
 // sound
 	ui.senbox->setChecked(sndGet(SND_ENABLE) != 0);
@@ -273,8 +273,8 @@ void SetupWin::start() {
 	ui.tpathle->setText(QDialog::trUtf8(zx->tape->path.c_str()));
 	buildtapelist();
 // tools
-	ui.sjpathle->setText(QDialog::trUtf8(optGetString("TOOLS","sjasm").c_str()));
-	ui.prjdirle->setText(QDialog::trUtf8(optGetString("TOOLS","projectsdir").c_str()));
+	ui.sjpathle->setText(QDialog::trUtf8(optGetString(OPT_ASMPATH).c_str()));
+	ui.prjdirle->setText(QDialog::trUtf8(optGetString(OPT_PROJDIR).c_str()));
 	buildmenulist();
 
 	show();
@@ -286,7 +286,7 @@ void SetupWin::apply() {
 	HardWare *oldmac = zx->hw;
 	zx->opt.hwName = std::string(ui.machbox->currentText().toUtf8().data()); setHardware(zx,zx->opt.hwName);
 	zx->opt.rsName = std::string(ui.rsetbox->currentText().toUtf8().data()); setRomset(zx, zx->opt.rsName);
-	zx->sys->mem->loadromset(optGetPath(OPT_ROMDIR));
+	zx->sys->mem->loadromset(optGetString(OPT_ROMDIR));
 	emulSetFlag(FL_RESET, ui.reschk->isChecked());
 	zx->sys->mem->res = ui.resbox->currentIndex();
 	switch(ui.mszbox->currentIndex()) {
@@ -306,10 +306,10 @@ void SetupWin::apply() {
 // video
 	setFlagBit(ui.dszchk->isChecked(),&zx->vid->flags,VF_DOUBLE);
 	zx->vid->brdsize = ui.bszsld->value()/100.0;
-	optSet("SCREENSHOTS","folder",std::string(ui.pathle->text().toUtf8().data()));
-	optSet("SCREENSHOTS","format",std::string(ui.ssfbox->currentText().toUtf8().data()));
-	optSet("SCREENSHOTS","combo.count",ui.scntbox->value());
-	optSet("SCREENSHOTS","combo.interval",ui.sintbox->value());
+	optSet(OPT_SHOTDIR,std::string(ui.pathle->text().toUtf8().data()));
+	optSet(OPT_SHOTEXT,std::string(ui.ssfbox->currentText().toUtf8().data()));
+	optSet(OPT_SHOTCNT,ui.scntbox->value());
+	optSet(OPT_SHOTINT,ui.sintbox->value());
 	zx->vid->setLayout(std::string(ui.geombox->currentText().toUtf8().data()));
 //	emulUpdateWindow();
 // sound
@@ -376,8 +376,8 @@ void SetupWin::apply() {
 	zx->ide->refresh();
 
 // tools
-	optSet("TOOLS","sjasm",std::string(ui.sjpathle->text().toUtf8().data()));
-	optSet("TOOLS","projectsdir",std::string(ui.prjdirle->text().toUtf8().data()));
+	optSet(OPT_ASMPATH,std::string(ui.sjpathle->text().toUtf8().data()));
+	optSet(OPT_PROJDIR,std::string(ui.prjdirle->text().toUtf8().data()));
 
 	saveConfig();
 	sndCalibrate();
@@ -433,7 +433,7 @@ void SetupWin::editrset(QModelIndex idx) {
 		rcur = QString(GSRom.c_str());
 		pcur = 0;
 	}
-	std::string rpth = optGetPath(OPT_ROMDIR);
+	std::string rpth = optGetString(OPT_ROMDIR);
 	QDir rdir(QString(rpth.c_str()));
 	QStringList rlst = rdir.entryList(QStringList() << "*.rom",QDir::Files,QDir::Name);
 	ui.rsfiles->clear();
@@ -591,7 +591,7 @@ void SetupWin::updfrq() {
 void SetupWin::chabsz() {ui.bszlab->setText(QString::number(ui.bszsld->value()).append("%"));}
 
 void SetupWin::selsspath() {
-	QString fpath = QFileDialog::getExistingDirectory(this,"Screenshots folder",QDialog::trUtf8(optGetString("SCREENSHOTS","folder").c_str()),QFileDialog::ShowDirsOnly);
+	QString fpath = QFileDialog::getExistingDirectory(this,"Screenshots folder",QDialog::trUtf8(optGetString(OPT_SHOTDIR).c_str()),QFileDialog::ShowDirsOnly);
 	if (fpath!="") ui.pathle->setText(fpath);
 }
 
@@ -697,7 +697,7 @@ void SetupWin::ssjapath() {
 }
 
 void SetupWin::sprjpath() {
-	QString fnam = QFileDialog::getExistingDirectory(this,"Projects file",QDialog::trUtf8(optGetString("TOOLS","projectsdir").c_str()),QFileDialog::ShowDirsOnly);
+	QString fnam = QFileDialog::getExistingDirectory(this,"Projects file",QDialog::trUtf8(optGetString(OPT_PROJDIR).c_str()),QFileDialog::ShowDirsOnly);
 	if (fnam!="") ui.prjdirle->setText(fnam);
 }
 

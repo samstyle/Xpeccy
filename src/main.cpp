@@ -107,16 +107,15 @@ int main(int ac,char** av) {
 			emulInit();
 			emulShow();
 			mwin = new EmulWin();
-			dbgInit(emulWidget());	// dbg = new DebugWin(emulWidget());
-			devInit();		// dwin = new DevelWin();
+			dbgInit(emulWidget());
+			optInit(emulWidget());
+			devInit();
 			initFileDialog(emulWidget());
 			loadProfiles();
-			fillProfileMenu();
-			optInit(emulWidget()); //swin = new SetupWin(emulWidget());
 			loadConfig(false);
-			emulUpdateWindow();
-//			emulShow();
+			fillProfileMenu();
 			fillBookmarkMenu();
+			emulUpdateWindow();
 			zx->reset();
 
 			for(i=1;i<ac;i++) loadFile(av[i],FT_ALL,0);

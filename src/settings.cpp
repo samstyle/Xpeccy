@@ -14,18 +14,56 @@ std::string workDir;
 std::string romDir;
 std::string profPath;
 
+std::string shotExt;
+std::string shotDir;
+int shotCount;
+int shotInterval;
+
+std::string projDir;
+std::string asmPath;
+
 std::string rmnam[] = {"basic128","basic48","shadow","trdos","ext4","ext5","ext6","ext7"};
 
 // new
-
-std::string optGetPath(int wut) {
+// static vars base
+std::string optGetString(int wut) {
 	std::string res;
 	switch (wut) {
 		case OPT_WORKDIR: res = workDir; break;
 		case OPT_ROMDIR: res = romDir; break;
+		case OPT_SHOTDIR: res = shotDir; break;
+		case OPT_SHOTEXT: res = shotExt; break;
+		case OPT_PROJDIR: res = projDir; break;
+		case OPT_ASMPATH: res = asmPath; break;
 	}
 	return res;
 }
+
+int optGetInt(int wut) {
+	int res = 0;
+	switch (wut) {
+		case OPT_SHOTINT: res = shotInterval; break;
+		case OPT_SHOTCNT: res = shotCount; break;
+	}
+	return res;
+}
+
+void optSet(int wut, std::string val) {
+	switch(wut) {
+		case OPT_SHOTDIR: shotDir = val; break;
+		case OPT_PROJDIR: projDir = val; break;
+		case OPT_ASMPATH: asmPath = val; break;
+	}
+}
+
+void optSet(int wut, int val) {
+	switch (wut) {
+		case OPT_SHOTINT: shotInterval = val; break;
+		case OPT_SHOTCNT: shotCount = val; break;
+	}
+}
+
+// group-name vars base
 
 std::vector<std::string> optGroupsList() {
 	std::vector<std::string> res;
@@ -172,6 +210,10 @@ void saveProfiles() {
 		cfile << int2str(lays[i].sync.h) << ":" << int2str(lays[i].sync.v) << ":";
 		cfile << int2str(lays[i].intsz) << ":" << int2str(lays[i].intpos) << "\n";
 	}
+	cfile << "scrDir = " << shotDir.c_str() << "\n";
+	cfile << "scrFormat = " << shotExt.c_str() << "\n";
+	cfile << "scrCount = " << int2str(shotCount) << "\n";
+	cfile << "scrInterval = " << int2str(shotInterval) << "\n";
 	cfile << "\n[ROMSETS]\n";
 	std::vector<RomSet> rsl = getRomsetList();
 	for (i=0; i<rsl.size(); i++) {
@@ -193,6 +235,9 @@ void saveProfiles() {
 	cfile << "volume.tape = " << int2str(sndGet(SND_TAPE)).c_str() << "\n";
 	cfile << "volume.ay = " << int2str(sndGet(SND_AYVL)).c_str() << "\n";
 	cfile << "volume.gs = " << int2str(sndGet(SND_GSVL)).c_str() << "\n";
+	cfile << "\n[TOOLS]\n\n";
+	cfile << "asmPath = " << asmPath.c_str() << "\n";
+	cfile << "projectsDir = " << projDir.c_str() << "\n";
 	cfile.close();
 }
 
@@ -407,6 +452,7 @@ void loadProfiles() {
 			if (pnam=="[VIDEO]") section=3;
 			if (pnam=="[ROMSETS]") section=4;
 			if (pnam=="[SOUND]") section=5;
+			if (pnam=="[TOOLS]") section=6;
 		} else {
 			switch (section) {
 				case 1:
@@ -433,6 +479,10 @@ void loadProfiles() {
 							}
 						}
 					}
+					if (pnam=="scrDir") shotDir = pval;
+					if (pnam=="scrFormat") shotExt = pval;
+					if (pnam=="scrCount") shotCount = atoi(pval.c_str());
+					if (pnam=="scrInterval") shotInterval = atoi(pval.c_str());
 					break;
 				case 4:
 					pos = pval.find_last_of(":");
@@ -479,6 +529,9 @@ void loadProfiles() {
 					if (pnam=="volume.ay") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_AYVL,test);}
 					if (pnam=="volume.gs") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_GSVL,test);}
 					break;
+				case 6:
+					if (pnam=="asmPath") asmPath = pval; break;
+					if (pnam=="projectsDir") projDir = pval; break;
 			}
 		}
 	}
@@ -527,11 +580,11 @@ void loadConfig(bool dev) {
 			if (pval=="") {
 				if (pnam=="[ROMSET]") {grp=pnam; tmp2=1;}
 				if (pnam=="[VIDEO]") {grp=pnam; tmp2=2;}
-				if (pnam=="[SCREENSHOTS]") {grp=pnam; tmp2=3;}
+				if (pnam=="[SCREENSHOTS]") {grp=""; tmp2=3;}
 				if (pnam=="[SOUND]") {grp=pnam; tmp2=4;}
 				if (pnam=="[BETADISK]") {grp=pnam; tmp2=5;}
 				if (pnam=="[MACHINE]") {grp=pnam; tmp2=6;}
-				if (pnam=="[TOOLS]") {grp=pnam; tmp2=7;}
+				if (pnam=="[TOOLS]") {grp=""; tmp2=7;}
 				if (pnam=="[MENU]") {grp=pnam; tmp2=8;}
 				if (pnam=="[IDE]") {grp=pnam; tmp2=9;}
 				if (pnam=="[GENERAL]") {grp=pnam; tmp2=10;}
@@ -557,6 +610,10 @@ void loadConfig(bool dev) {
 					case 2: 
 						break;
 					case 3:
+						if (pnam=="folder") shotDir = pval;
+						if (pnam=="format") shotExt = pval;
+						if (pnam=="combo.count") shotCount = atoi(pval.c_str());
+						if (pnam=="combo.interval") shotInterval = atoi(pval.c_str());
 						break;
 					case 4:
 						break;
@@ -576,6 +633,8 @@ void loadConfig(bool dev) {
 						}
 						break;
 					case 7:
+						if (pnam=="sjasm") asmPath = pval; break;
+						if (pnam=="projectsdir") projDir = pval; break;
 						break;
 					case 8: addBookmark(pnam.c_str(),pval.c_str());
 						break;

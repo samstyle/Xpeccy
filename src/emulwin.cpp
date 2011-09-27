@@ -83,7 +83,7 @@ void emulInit() {
 	scrNumber = 0;
 	scrCounter = 0;
 	scrInterval = 0;
-	optSet("SCREENSHOTS","format","png");
+	optSet(OPT_SHOTEXT,std::string("png"));
 
 	int par[] = {448,320,138,80,64,32,64,0};
 	addLayout("default",par);
@@ -99,10 +99,10 @@ void emulInit() {
 //	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
 #ifndef WIN32
 	mainWin->embedClient(inf.info.x11.wmwindow);
-	optSet("SCREENSHOTS","folder",std::string(getenv("HOME")));
+	optSet(OPT_SHOTDIR,std::string(getenv("HOME")));
 #else
 	SetParent(inf.window,winId());
-	optSet("SCREENSHOTS","folder",std::string(getenv("HOMEPATH")));
+	optSet(OPT_SHOTDIR,std::string(getenv("HOMEPATH")));
 #endif
 	initUserMenu((QWidget*)mainWin);
 }
@@ -241,15 +241,16 @@ Uint32 emulFrame(Uint32 interval, void*) {
 			if (scrInterval == 0) {
 				emulFlags |= FL_SHOT;
 				scrCounter--;
-				scrInterval = optGetInt("SCREENSHOTS","combo.interval");
+				scrInterval = optGetInt(OPT_SHOTINT);
 				if (scrCounter == 0) printf("stop combo shots\n");
 			} else {
 				scrInterval--;
 			}
 		}
 		if (emulFlags & FL_SHOT) {
-			std::string fnam = optGetString("SCREENSHOTS","folder") + "/sshot" + int2str(scrNumber) + "." + optGetString("SCREENSHOTS","format");
-			if (optGetString("SCREENSHOTS","format") == "scr") {
+			std::string fext = optGetString(OPT_SHOTEXT);
+			std::string fnam = optGetString(OPT_SHOTDIR) + "/sshot" + int2str(scrNumber) + "." + fext;
+			if (fext == "scr") {
 				std::ofstream file(fnam.c_str(),std::ios::binary);
 				file.write((char*)&zx->sys->mem->ram[zx->vid->curscr ? 7 : 5][0],0x1b00);
 			} else {
@@ -258,7 +259,7 @@ Uint32 emulFrame(Uint32 interval, void*) {
 				if (img==NULL) {
 					printf("NULL image\n");
 				} else {
-					img->save(QString(fnam.c_str()),optGetString("SCREENSHOTS","format").c_str());
+					img->save(QString(fnam.c_str()),fext.c_str());
 				}
 			}
 			emulFlags &= ~FL_SHOT;
@@ -345,7 +346,7 @@ void EmulWin::SDLEventHandler() {
 							mainWin->close();
 							break;
 						case SDLK_F7:
-							scrCounter = optGetInt("SCREENSHOTS","combo.count");
+							scrCounter = optGetInt(OPT_SHOTCNT);
 							scrInterval=0;
 							break;	// ALT+F7 combo
 						case SDLK_RETURN:
@@ -493,7 +494,7 @@ void setRomsetList(std::vector<RomSet> rsl) {
 	}
 	for (i=0; i<profileList.size(); i++) {
 		profileList[i].zx->sys->mem->romset = findRomset(profileList[i].zx->opt.rsName);
-		profileList[i].zx->sys->mem->loadromset(optGetPath(OPT_ROMDIR));
+		profileList[i].zx->sys->mem->loadromset(optGetString(OPT_ROMDIR));
 	}
 }
 
