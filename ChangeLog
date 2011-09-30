@@ -62,3 +62,6 @@ Bug	Damn, Xpeccy may crush at applying options and may cause segfault on exit
 build 20110927
 Wrk	[SCREENSHOTS] and [TOOLS] sections are moved to main config file.
 Bug	"[xcb] Unknown request in queue while dequeuing" crush is caused by Qt4.7
+
+build 20110930
+Fix	Fix tape loading

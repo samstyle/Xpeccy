@@ -9,6 +9,7 @@ extern ZXComp* zx;
 Tape::Tape() {
 	flags = pos = block = lastick = 0;
 	siglen = 1;
+	signal = true;
 }
 
 int TapeBlock::gettime(int p=-1) {

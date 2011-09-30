@@ -3,6 +3,7 @@
 #include <QTimer>
 
 #include <sstream>
+#include "getopt.h"
 
 #include "spectrum.h"
 #include "sound.h"
@@ -85,14 +86,20 @@ void splitline(std::string line, std::string* pnam, std::string* pval) {
 }
 
 int main(int ac,char** av) {
+	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
+	atexit(SDL_Quit);
 	QApplication app(ac,av,true);
 	try {
-		int i; bool dev = false;
+		int i;
+		int p=0;
+		bool dev = false;
 		initPaths();
 		addProfile("default","xpeccy.conf");
 		setProfile("default");
-		for (i=1; i<ac; i++) {
-			if (std::string(av[i])=="-dev") dev=true;
+		while ((p = getopt(ac,av,"d")) != -1) {
+			switch(p) {
+				case 'd': dev=true; break;
+			}
 		}
 		if (dev) {
 			devInit();	// dwin = new DevelWin;
@@ -102,7 +109,6 @@ int main(int ac,char** av) {
 		} else {
 			filltabs();
 			initHardware();
-			SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
 			sndInit();
 			emulInit();
 			emulShow();
@@ -118,7 +124,9 @@ int main(int ac,char** av) {
 			emulUpdateWindow();
 			zx->reset();
 
-			for(i=1;i<ac;i++) loadFile(av[i],FT_ALL,0);
+			for(i=1;i<ac;i++) {
+				loadFile(av[i],FT_ALL,0);
+			}
 
 			emulStartTimer(20);
 			app.exec();
