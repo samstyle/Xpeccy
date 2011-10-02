@@ -53,6 +53,8 @@ class Tape {
 		TapeBlock parse(std::ifstream*,uint32_t,std::vector<int32_t>);
 		void load(std::string,uint8_t);
 		void save(std::string,uint8_t);
+		void show();
+		void hide();
 };
 
 //extern Tape *tape;

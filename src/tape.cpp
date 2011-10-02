@@ -9,7 +9,7 @@ extern ZXComp* zx;
 Tape::Tape() {
 	flags = pos = block = lastick = 0;
 	siglen = 1;
-	signal = true;
+	signal = toutold = outsig = false;
 }
 
 int TapeBlock::gettime(int p=-1) {
@@ -101,6 +101,7 @@ void Tape::stop(int tk) {
 		flags &= ~TAPE_ON;
 		sync();
 		if (flags & TAPE_REC) storeblock();
+		pos = 0;
 	}
 }
 

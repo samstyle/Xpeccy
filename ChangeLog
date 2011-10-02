@@ -65,3 +65,6 @@ Bug	"[xcb] Unknown request in queue while dequeuing" crush is caused by Qt4.7
 
 build 20110930
 Fix	Fix tape loading
+
+boild 20111002
+New	F11 - show tape mini-window

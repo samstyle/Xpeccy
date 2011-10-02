@@ -59,6 +59,10 @@ class EmulWin : public QObject {
 	private slots:
 		void bookmarkSelected(QAction*);
 		void profileSelected(QAction*);
+		void tapePlay();
+		void tapeRec();
+		void tapeStop();
+		void tapeLoad();
 	public slots:
 		void SDLEventHandler();
 };
@@ -67,8 +71,6 @@ class MainWin : public QX11EmbedContainer {
 	Q_OBJECT
 	public:
 		MainWin();
-	signals:
-		void mwsOptions();
 	protected:
 		void closeEvent(QCloseEvent*);
 };

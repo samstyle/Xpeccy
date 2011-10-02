@@ -1,5 +1,6 @@
 #include <QDebug>
 #include <QMessageBox>
+#include <QProgressBar>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -53,6 +54,13 @@ uint32_t resizeMode;
 uint32_t scrNumber;
 uint32_t scrCounter;
 uint32_t scrInterval;
+// tape window
+QDialog* tapeWin;
+QToolButton* playBut;
+QToolButton* recBut;
+QToolButton* stopBut;
+QToolButton* loadBut;
+QProgressBar* tapeBar;
 // hardwares
 std::vector<HardWare> hwList;
 // romsets
@@ -105,6 +113,24 @@ void emulInit() {
 	optSet(OPT_SHOTDIR,std::string(getenv("HOMEPATH")));
 #endif
 	initUserMenu((QWidget*)mainWin);
+	
+	tapeWin = new QDialog((QWidget*)mainWin,Qt::Tool);
+	QVBoxLayout *vlay = new QVBoxLayout;
+	QHBoxLayout *tlay = new QHBoxLayout;
+	playBut = new QToolButton; playBut->setIcon(QIcon(":/images/play.png"));
+	recBut = new QToolButton; recBut->setIcon(QIcon(":/images/rec.png"));
+	stopBut = new QToolButton; stopBut->setIcon(QIcon(":/images/cancel.png")); stopBut->setEnabled(false);
+	loadBut = new QToolButton; loadBut->setIcon(QIcon(":/images/fileopen.png"));
+	tapeBar = new QProgressBar; tapeBar->setMaximum(100); tapeBar->setValue(0);
+	tlay->addWidget(playBut);
+	tlay->addWidget(recBut);
+	tlay->addWidget(stopBut);
+	tlay->addStretch();
+	tlay->addWidget(loadBut);
+	vlay->addWidget(tapeBar);
+	vlay->addLayout(tlay);
+	tapeWin->setLayout(vlay);
+	tapeWin->setWindowTitle("Tape");
 }
 
 void emulShow() {
@@ -310,13 +336,53 @@ EmulWin::EmulWin() {
 	timer = new QTimer;
 	QObject::connect(timer,SIGNAL(timeout()),this,SLOT(SDLEventHandler()));
 	timer->start(20);
+	QObject::connect(playBut,SIGNAL(released()),this,SLOT(tapePlay()));
+	QObject::connect(recBut,SIGNAL(released()),this,SLOT(tapeRec()));
+	QObject::connect(stopBut,SIGNAL(released()),this,SLOT(tapeStop()));
+	QObject::connect(loadBut,SIGNAL(released()),this,SLOT(tapeLoad()));
 	emulPause(false,-1);
+}
+
+void EmulWin::tapePlay() {
+	if (!zx->tape->startplay()) return;
+	emulSetIcon(":/images/play.png");
+	playBut->setEnabled(false);
+	recBut->setEnabled(false);
+	stopBut->setEnabled(true);
+}
+
+void EmulWin::tapeRec() {
+	zx->tape->startrec();
+	emulSetIcon(":/images/rec.png");
+	playBut->setEnabled(false);
+	recBut->setEnabled(false);
+	stopBut->setEnabled(true);
+	tapeBar->setValue(0);
+}
+
+void EmulWin::tapeStop() {
+	zx->tape->stop(zx->vid->t);
+	emulSetIcon(":/images/logo.png");
+	playBut->setEnabled(true);
+	recBut->setEnabled(true);
+	stopBut->setEnabled(false);
+	tapeBar->setValue(0);
+}
+
+void EmulWin::tapeLoad() {
+	emulPause(true,PR_FILE);
+	loadFile("",FT_TAPE,-1);
+	emulPause(false,PR_FILE);
 }
 
 void EmulWin::SDLEventHandler() {
 	if (emulFlags & FL_BLOCK) return;
 	switch (wantedWin) {
 		case WW_DEBUG: dbgShow(); wantedWin = WW_NONE; break;
+	}
+	if ((zx->tape->flags & TAPE_ON) && (~zx->tape->flags & TAPE_REC)) {
+		tapeBar->setMaximum(zx->tape->data[zx->tape->block].gettime(-1));			// total
+		tapeBar->setValue(zx->tape->data[zx->tape->block].gettime(zx->tape->pos));		// current
 	}
 	SDL_Event ev;
 //	bool resiz = false;
@@ -376,7 +442,8 @@ void EmulWin::SDLEventHandler() {
 						case SDLK_F1: optShow(); break;
 						case SDLK_F2: emulPause(true,PR_FILE); saveFile("",FT_ALL,-1); emulPause(false,PR_FILE); break;
 						case SDLK_F3: emulPause(true,PR_FILE); loadFile("",FT_ALL,-1); emulPause(false,PR_FILE); break;
-						case SDLK_F4: if (zx->tape->flags & TAPE_ON) {
+						case SDLK_F4:
+								if (zx->tape->flags & TAPE_ON) {
 									zx->tape->stop(zx->vid->t);
 									emulSetIcon(":/images/logo.png");
 								} else {
@@ -384,7 +451,8 @@ void EmulWin::SDLEventHandler() {
 									emulSetIcon(":/images/play.png");
 								}
 								break;
-						case SDLK_F5: if (zx->tape->flags & TAPE_ON) {
+						case SDLK_F5:
+								if (zx->tape->flags & TAPE_ON) {
 									zx->tape->stop(zx->vid->t);
 									emulSetIcon(":/images/logo.png");
 								} else {
@@ -403,6 +471,13 @@ void EmulWin::SDLEventHandler() {
 							break;
 						case SDLK_F10:
 							zx->sys->nmi = true;
+							break;
+						case SDLK_F11:			// TODO: when tapeWin will be working, move it to F4
+							if (tapeWin->isVisible()) {
+								tapeWin->hide();
+							} else {
+								tapeWin->show();
+							}
 							break;
 						case SDLK_F12: zx->reset(); break;
 						default: break;
