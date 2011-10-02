@@ -1,6 +1,7 @@
 #include <QDebug>
 #include <QMessageBox>
 #include <QProgressBar>
+#include <QTableWidget>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -22,6 +23,8 @@
 #include "develwin.h"
 #include "filer.h"
 
+#include "ui_tapewin.h"
+
 #ifndef WIN32
 	#include <SDL.h>
 	#include <SDL_timer.h>
@@ -39,13 +42,14 @@
 
 extern ZXComp* zx;
 extern EmulWin* mwin;
+extern SetupWin* swin;
 // main
 MainWin* mainWin;
 QIcon curicon;
 SDL_Surface* surf = NULL;
 SDL_Color zxpal[256];
 SDL_SysWMinfo inf;
-SDL_TimerID tid,sid;
+SDL_TimerID tid;
 QVector<QRgb> qPal;
 int emulFlags;
 int pauseFlags;
@@ -55,12 +59,8 @@ uint32_t scrNumber;
 uint32_t scrCounter;
 uint32_t scrInterval;
 // tape window
+Ui::TapeWin tapeUi;
 QDialog* tapeWin;
-QToolButton* playBut;
-QToolButton* recBut;
-QToolButton* stopBut;
-QToolButton* loadBut;
-QProgressBar* tapeBar;
 // hardwares
 std::vector<HardWare> hwList;
 // romsets
@@ -103,8 +103,6 @@ void emulInit() {
 
 	SDL_VERSION(&inf.version);
 	SDL_GetWMInfo(&inf);
-//	surf = SDL_SetVideoMode(1024, 768, 8, SDL_SWSURFACE | SDL_NOFRAME);
-//	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
 #ifndef WIN32
 	mainWin->embedClient(inf.info.x11.wmwindow);
 	optSet(OPT_SHOTDIR,std::string(getenv("HOME")));
@@ -115,22 +113,33 @@ void emulInit() {
 	initUserMenu((QWidget*)mainWin);
 	
 	tapeWin = new QDialog((QWidget*)mainWin,Qt::Tool);
-	QVBoxLayout *vlay = new QVBoxLayout;
-	QHBoxLayout *tlay = new QHBoxLayout;
-	playBut = new QToolButton; playBut->setIcon(QIcon(":/images/play.png"));
-	recBut = new QToolButton; recBut->setIcon(QIcon(":/images/rec.png"));
-	stopBut = new QToolButton; stopBut->setIcon(QIcon(":/images/cancel.png")); stopBut->setEnabled(false);
-	loadBut = new QToolButton; loadBut->setIcon(QIcon(":/images/fileopen.png"));
-	tapeBar = new QProgressBar; tapeBar->setMaximum(100); tapeBar->setValue(0);
-	tlay->addWidget(playBut);
-	tlay->addWidget(recBut);
-	tlay->addWidget(stopBut);
-	tlay->addStretch();
-	tlay->addWidget(loadBut);
-	vlay->addWidget(tapeBar);
-	vlay->addLayout(tlay);
-	tapeWin->setLayout(vlay);
-	tapeWin->setWindowTitle("Tape");
+	tapeUi.setupUi(tapeWin);
+	tapeUi.tapeList->setColumnWidth(0,20);
+	tapeUi.tapeList->setColumnWidth(1,50);
+}
+
+void setTapeCheck() {
+	QTableWidgetItem* itm;
+	for (uint i=0; i<zx->tape->data.size(); i++) {
+		itm = new QTableWidgetItem;
+		if (zx->tape->block == i) {
+			itm->setIcon(QIcon(":/images/checkbox.png"));
+		}
+		tapeUi.tapeList->setItem(i,0,itm);
+	}
+}
+
+void buildTapeList() {
+	std::vector<TapeBlockInfo> inf = zx->tape->getInfo();
+	tapeUi.tapeList->setRowCount(inf.size());
+	QTableWidgetItem* itm;
+	for (uint i=0; i<inf.size(); i++) {
+		itm = new QTableWidgetItem(QString::number(inf[i].size));
+		tapeUi.tapeList->setItem(i,1,itm);
+		itm = new QTableWidgetItem(QDialog::trUtf8(inf[i].name.c_str()));
+		tapeUi.tapeList->setItem(i,2,itm);
+	}
+	setTapeCheck();
 }
 
 void emulShow() {
@@ -249,7 +258,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 
 Uint32 emulFrame(Uint32 interval, void*) {
 	if (emulFlags & FL_BLOCK) return interval;
-	if (~emulFlags & FL_FAST) SDL_UpdateRect(surf,0,0,0,0);
+//	if (~emulFlags & FL_FAST) SDL_UpdateRect(surf,0,0,0,0);
 	if (!mainWin->isActiveWindow()) {
 		zx->keyb->releaseall();
 		zx->mouse->buttons = 0xff;
@@ -312,20 +321,20 @@ Uint32 emulFrame(Uint32 interval, void*) {
 	return interval;
 }
 
-Uint32 onTimer(Uint32 iv,void*) {
-	if (emulFlags & FL_BLOCK) return iv;
-	SDL_UpdateRect(surf,0,0,0,0);
-	return iv;
-}
+//Uint32 onTimer(Uint32 iv,void*) {
+//	if (emulFlags & FL_BLOCK) return iv;
+//	SDL_UpdateRect(surf,0,0,0,0);
+//	return iv;
+//}
 
 void emulStartTimer(int iv) {
 	tid = SDL_AddTimer(iv,&emulFrame,NULL);
-	if (emulFlags & FL_FAST) sid = SDL_AddTimer(100,&onTimer,NULL);
+//	if (emulFlags & FL_FAST) sid = SDL_AddTimer(100,&onTimer,NULL);
 }
 
 void emulStopTimer() {
 	SDL_RemoveTimer(tid);
-	SDL_RemoveTimer(sid);
+//	SDL_RemoveTimer(sid);
 }
 
 // OBJECT
@@ -336,56 +345,74 @@ EmulWin::EmulWin() {
 	timer = new QTimer;
 	QObject::connect(timer,SIGNAL(timeout()),this,SLOT(SDLEventHandler()));
 	timer->start(20);
-	QObject::connect(playBut,SIGNAL(released()),this,SLOT(tapePlay()));
-	QObject::connect(recBut,SIGNAL(released()),this,SLOT(tapeRec()));
-	QObject::connect(stopBut,SIGNAL(released()),this,SLOT(tapeStop()));
-	QObject::connect(loadBut,SIGNAL(released()),this,SLOT(tapeLoad()));
+	QObject::connect(tapeUi.playBut,SIGNAL(released()),this,SLOT(tapePlay()));
+	QObject::connect(tapeUi.recBut,SIGNAL(released()),this,SLOT(tapeRec()));
+	QObject::connect(tapeUi.stopBut,SIGNAL(released()),this,SLOT(tapeStop()));
+	QObject::connect(tapeUi.loadBut,SIGNAL(released()),this,SLOT(tapeLoad()));
+	QObject::connect(tapeUi.tapeList,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(tapeRewind(QModelIndex)));
 	emulPause(false,-1);
 }
 
 void EmulWin::tapePlay() {
 	if (!zx->tape->startplay()) return;
 	emulSetIcon(":/images/play.png");
-	playBut->setEnabled(false);
-	recBut->setEnabled(false);
-	stopBut->setEnabled(true);
+	tapeUi.playBut->setEnabled(false);
+	tapeUi.recBut->setEnabled(false);
+	tapeUi.stopBut->setEnabled(true);
 }
 
 void EmulWin::tapeRec() {
 	zx->tape->startrec();
 	emulSetIcon(":/images/rec.png");
-	playBut->setEnabled(false);
-	recBut->setEnabled(false);
-	stopBut->setEnabled(true);
-	tapeBar->setValue(0);
+	tapeUi.playBut->setEnabled(false);
+	tapeUi.recBut->setEnabled(false);
+	tapeUi.stopBut->setEnabled(true);
+	tapeUi.tapeBar->setValue(0);
 }
 
 void EmulWin::tapeStop() {
 	zx->tape->stop(zx->vid->t);
 	emulSetIcon(":/images/logo.png");
-	playBut->setEnabled(true);
-	recBut->setEnabled(true);
-	stopBut->setEnabled(false);
-	tapeBar->setValue(0);
+	tapeUi.playBut->setEnabled(true);
+	tapeUi.recBut->setEnabled(true);
+	tapeUi.stopBut->setEnabled(false);
+	tapeUi.tapeBar->setValue(0);
+}
+
+void EmulWin::tapeRewind(QModelIndex idx) {
+	if (!idx.isValid()) return;
+	zx->tape->block = idx.row();
+	zx->tape->pos = 0;
+	buildTapeList();
 }
 
 void EmulWin::tapeLoad() {
 	emulPause(true,PR_FILE);
 	loadFile("",FT_TAPE,-1);
+	buildTapeList();
 	emulPause(false,PR_FILE);
 }
 
 void EmulWin::SDLEventHandler() {
+	SDL_UpdateRect(surf,0,0,0,0);
 	if (emulFlags & FL_BLOCK) return;
 	switch (wantedWin) {
 		case WW_DEBUG: dbgShow(); wantedWin = WW_NONE; break;
 	}
-	if ((zx->tape->flags & TAPE_ON) && (~zx->tape->flags & TAPE_REC)) {
-		tapeBar->setMaximum(zx->tape->data[zx->tape->block].gettime(-1));			// total
-		tapeBar->setValue(zx->tape->data[zx->tape->block].gettime(zx->tape->pos));		// current
+	if (zx->tape->flags & TAPE_ON) {
+		if (~zx->tape->flags & TAPE_REC) {
+			tapeUi.tapeBar->setMaximum(zx->tape->data[zx->tape->block].gettime(-1));			// total
+			tapeUi.tapeBar->setValue(zx->tape->data[zx->tape->block].gettime(zx->tape->pos));		// current
+		}
+		setTapeCheck();
+	} else {
+		emulSetIcon(":/images/logo.png");
+		tapeUi.playBut->setEnabled(true);
+		tapeUi.recBut->setEnabled(true);
+		tapeUi.stopBut->setEnabled(false);
+		tapeUi.tapeBar->setValue(0);
 	}
 	SDL_Event ev;
-//	bool resiz = false;
 	while (SDL_PollEvent(&ev)) {
 		switch (ev.type) {
 			case SDL_KEYDOWN:
@@ -476,6 +503,7 @@ void EmulWin::SDLEventHandler() {
 							if (tapeWin->isVisible()) {
 								tapeWin->hide();
 							} else {
+								buildTapeList();
 								tapeWin->show();
 							}
 							break;

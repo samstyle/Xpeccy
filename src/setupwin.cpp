@@ -535,9 +535,48 @@ void SetupWin::buildrsetlist() {
 }
 
 void SetupWin::buildtapelist() {
-	int i,tm,ts;
-	QStandardItemModel *model = new QStandardItemModel(zx->tape->data.size(),5);
-	QStandardItem *itm;
+	buildTapeList();
+	std::vector<TapeBlockInfo> inf = zx->tape->getInfo();
+	QTableWidgetItem* itm;
+	ui.tapelist->setRowCount(inf.size());
+	uint tm,ts;
+	for (uint i=0; i<inf.size(); i++) {
+		if ((int)zx->tape->block == i) {
+			itm = new QTableWidgetItem(QIcon(":/images/checkbox.png"),"");
+			ui.tapelist->setItem(i,0,itm);
+			ts = inf[i].curtime;
+			tm = ts/60;
+			ts -= tm * 60;
+			itm = new QTableWidgetItem(QString::number(tm).append(":").append(QString::number(ts+100).right(2)));
+			ui.tapelist->setItem(i,2,itm);
+		} else {
+			itm = new QTableWidgetItem;
+			ui.tapelist->setItem(i,0,itm);
+			itm = new QTableWidgetItem;
+			ui.tapelist->setItem(i,2,itm);
+		}
+		ts = inf[i].time;
+		tm = ts/60;
+		ts -= tm * 60;
+		itm = new QTableWidgetItem(QString::number(tm).append(":").append(QString::number(ts+100).right(2)));
+		ui.tapelist->setItem(i,1,itm);
+		itm = new QTableWidgetItem(QString::number(inf[i].size));
+		ui.tapelist->setItem(i,3,itm);
+		itm = new QTableWidgetItem(QDialog::trUtf8(inf[i].name.c_str()));
+		ui.tapelist->setItem(i,4,itm);
+	}
+	ui.tapelist->setColumnWidth(0,20);
+	ui.tapelist->setColumnWidth(1,50);
+	ui.tapelist->setColumnWidth(2,50);
+	ui.tapelist->setColumnWidth(3,100);
+	ui.tapelist->selectRow(0);
+}
+
+/*
+//	int i,tm,ts;
+//	QStandardItemModel *model = new QStandardItemModel(zx->tape->data.size(),5);
+//	QStandardItem *itm;
+	
 	for(i=0;i<model->rowCount();i++) {
 		if ((int)zx->tape->block == i) {
 			itm = new QStandardItem(QIcon(":/images/checkbox.png"),"");
@@ -564,6 +603,7 @@ void SetupWin::buildtapelist() {
 	ui.tapelist->setColumnWidth(3,100);
 	ui.tapelist->selectRow(0);
 }
+*/
 
 void SetupWin::buildmenulist() {
 	std::vector<XBookmark> bml = getBookmarkList();

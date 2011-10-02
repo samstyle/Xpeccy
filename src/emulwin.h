@@ -4,6 +4,7 @@
 #include <vector>
 #include <QIcon>
 #include <QTimer>
+#include <QModelIndex>
 #include <stdint.h>
 
 #ifndef WIN32
@@ -63,6 +64,7 @@ class EmulWin : public QObject {
 		void tapeRec();
 		void tapeStop();
 		void tapeLoad();
+		void tapeRewind(QModelIndex);
 	public slots:
 		void SDLEventHandler();
 };
@@ -117,4 +119,6 @@ bool addRomset(RomSet);
 void setRomsetList(std::vector<RomSet>);
 void setRomset(ZXComp*, std::string);
 std::vector<RomSet> getRomsetList();
+// tape window
+void buildTapeList();
 #endif

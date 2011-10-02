@@ -12,6 +12,20 @@ Tape::Tape() {
 	signal = toutold = outsig = false;
 }
 
+std::vector<TapeBlockInfo> Tape::getInfo() {
+	std::vector<TapeBlockInfo> res;
+	TapeBlockInfo inf;
+	for (uint i=0; i<data.size(); i++) {
+		inf.name = data[i].getheader();
+		inf.type = (inf.name == "") ? TAPE_DATA : TAPE_HEAD;
+		inf.size = data[i].getsize();
+		inf.time = data[i].gettime(-1);
+		inf.curtime = (block == i) ? data[i].gettime(pos) : -1;
+		res.push_back(inf);
+	}
+	return res;
+}
+
 int TapeBlock::gettime(int p=-1) {
 	long totsz = 0;
 	if (p==-1) p=data.size();

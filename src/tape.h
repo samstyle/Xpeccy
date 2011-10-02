@@ -14,6 +14,17 @@
 #define TAPE_CANSAVE	0x00000004	// can be saved as tap
 #define TAPE_WAIT	0x00000008	// wait for 1st impulse (at save)
 
+#define	TAPE_HEAD	0
+#define	TAPE_DATA	1
+
+struct TapeBlockInfo {
+	int type;
+	std::string name;
+	int size;
+	int time;
+	int curtime;
+};
+
 class TapeBlock {
 	public:
 		int32_t pause;					// pause in ms after block
@@ -53,8 +64,7 @@ class Tape {
 		TapeBlock parse(std::ifstream*,uint32_t,std::vector<int32_t>);
 		void load(std::string,uint8_t);
 		void save(std::string,uint8_t);
-		void show();
-		void hide();
+		std::vector<TapeBlockInfo> getInfo();
 };
 
 //extern Tape *tape;
