@@ -135,6 +135,10 @@ QWidget* emulWidget() {
 }
 
 void emulUpdateWindow() {
+	mainWin->updateWindow();
+}
+
+void MainWin::updateWindow() {
 	emulFlags |= FL_BLOCK;
 	zx->vid->update();
 	int szw = zx->vid->wsze.h;
@@ -143,7 +147,7 @@ void emulUpdateWindow() {
 	if ((zx->vid->flags & VF_FULLSCREEN) && !(zx->vid->flags & VF_BLOCKFULLSCREEN)) {
 		sdlflg |= SDL_FULLSCREEN;
 	}
-	mainWin->setFixedSize(szw,szh);
+	setFixedSize(szw,szh);
 	surf = SDL_SetVideoMode(szw,szh,8,sdlflg | SDL_NOFRAME);
 	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
 	zx->vid->scrimg = (uint8_t*)surf->pixels;
@@ -426,16 +430,16 @@ void EmulWin::SDLEventHandler() {
 					switch(ev.key.keysym.sym) {
 						case SDLK_0: zx->vid->mode = (zx->vid->mode==VID_NORMAL)?VID_ALCO:VID_NORMAL; break;
 						case SDLK_1:
-							resizeMode = RSZ_SINGLE;
-// 							zx->vid->flags &= ~VF_DOUBLE;
-// 							emulUpdateWindow();
-//							saveConfig();
+//							resizeMode = RSZ_SINGLE;
+ 							zx->vid->flags &= ~VF_DOUBLE;
+ 							mainWin->updateWindow();
+							saveConfig();
 							break;
 						case SDLK_2:
-							resizeMode = RSZ_DOUBLE;
-//							zx->vid->flags |= VF_DOUBLE;
-//							emulUpdateWindow();
-//							saveConfig();
+//							resizeMode = RSZ_DOUBLE;
+							zx->vid->flags |= VF_DOUBLE;
+							mainWin->updateWindow();
+							saveConfig();
 							break;
 						case SDLK_3: emulFlags ^= FL_FAST;
 							mainWin->stopTimer();
@@ -449,10 +453,10 @@ void EmulWin::SDLEventHandler() {
 							scrInterval=0;
 							break;	// ALT+F7 combo
 						case SDLK_RETURN:
-							resizeMode = RSZ_FULLSCR;
-//							zx->vid->flags ^= VF_FULLSCREEN;
-//							emulUpdateWindow();
-//							saveConfig();
+//							resizeMode = RSZ_FULLSCR;
+							zx->vid->flags ^= VF_FULLSCREEN;
+							mainWin->updateWindow();
+							saveConfig();
 							break;
 //						case SDLK_c:
 //							emulFlags ^= FL_GRAB;
