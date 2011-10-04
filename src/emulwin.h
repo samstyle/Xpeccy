@@ -73,6 +73,13 @@ class MainWin : public QX11EmbedContainer {
 	Q_OBJECT
 	public:
 		MainWin();
+		void updateWindow();
+		void startTimer(int);
+		void stopTimer();
+	private:
+		QTimer* timer;
+	private slots:
+		void emulFrame();
 	protected:
 		void closeEvent(QCloseEvent*);
 };
@@ -87,8 +94,8 @@ int emulGetFlags();
 void emulSetFlag(int,bool);
 bool emulSaveChanged();
 void emulExec();
-void emulStartTimer(int);
-void emulStopTimer();
+//void emulStartTimer(int);
+//void emulStopTimer();
 QWidget* emulWidget();
 
 // USER MENU

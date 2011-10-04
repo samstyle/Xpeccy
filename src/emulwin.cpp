@@ -42,9 +42,8 @@
 
 extern ZXComp* zx;
 extern EmulWin* mwin;
-extern SetupWin* swin;
+extern MainWin* mainWin;
 // main
-MainWin* mainWin;
 QIcon curicon;
 SDL_Surface* surf = NULL;
 SDL_Color zxpal[256];
@@ -96,26 +95,11 @@ void emulInit() {
 	int par[] = {448,320,138,80,64,32,64,0};
 	addLayout("default",par);
 	
-	mainWin = new MainWin;
-	mainWin->setWindowTitle(XPTITLE);
-	mainWin->setMouseTracking(true);
-	emulSetIcon(":/images/logo.png");
-
-	SDL_VERSION(&inf.version);
-	SDL_GetWMInfo(&inf);
 #ifndef WIN32
-	mainWin->embedClient(inf.info.x11.wmwindow);
 	optSet(OPT_SHOTDIR,std::string(getenv("HOME")));
 #else
-	SetParent(inf.window,winId());
 	optSet(OPT_SHOTDIR,std::string(getenv("HOMEPATH")));
 #endif
-	initUserMenu((QWidget*)mainWin);
-	
-	tapeWin = new QDialog((QWidget*)mainWin,Qt::Tool);
-	tapeUi.setupUi(tapeWin);
-	tapeUi.tapeList->setColumnWidth(0,20);
-	tapeUi.tapeList->setColumnWidth(1,50);
 }
 
 void setTapeCheck() {
@@ -239,10 +223,29 @@ void emulPause(bool p, int msk) {
 // Main window
 // It's full shit, but i need it because of closeEvent
 
-MainWin::MainWin() {}
+MainWin::MainWin() {
+	setWindowTitle(XPTITLE);
+	setMouseTracking(true);
+	curicon = QIcon(":/images/logo.png");
+	setWindowIcon(curicon);
+	SDL_VERSION(&inf.version);
+	SDL_GetWMInfo(&inf);
+#ifndef WIN32
+	embedClient(inf.info.x11.wmwindow);
+#else
+	SetParent(inf.window,winId());
+#endif
+	initUserMenu((QWidget*)this);
+	tapeWin = new QDialog((QWidget*)this,Qt::Tool);
+	tapeUi.setupUi(tapeWin);
+	tapeUi.tapeList->setColumnWidth(0,20);
+	tapeUi.tapeList->setColumnWidth(1,50);
+	timer = new QTimer();
+	QObject::connect(timer,SIGNAL(timeout()),this,SLOT(emulFrame()));
+}
 
 void MainWin::closeEvent(QCloseEvent* ev) {
-	emulStopTimer();
+	timer->stop();
 	if (emulSaveChanged()) {
 		ev->accept();
 	} else {
@@ -250,14 +253,17 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		SDL_VERSION(&inf.version);
 		SDL_GetWMInfo(&inf);
 		mainWin->embedClient(inf.info.x11.wmwindow);
-		emulStartTimer(20);
+		timer->start(20);
 	}
 }
 
+void MainWin::startTimer(int iv) {timer->start(iv);}
+void MainWin::stopTimer() {timer->stop();}
+
 // ...
 
-Uint32 emulFrame(Uint32 interval, void*) {
-	if (emulFlags & FL_BLOCK) return interval;
+void MainWin::emulFrame() {
+	if (emulFlags & FL_BLOCK) return;
 //	if (~emulFlags & FL_FAST) SDL_UpdateRect(surf,0,0,0,0);
 	if (!mainWin->isActiveWindow()) {
 		zx->keyb->releaseall();
@@ -301,7 +307,7 @@ Uint32 emulFrame(Uint32 interval, void*) {
 			scrNumber++;
 		}
 	}
-	switch (resizeMode) {
+/*	switch (resizeMode) {
 		case RSZ_SINGLE:
 			zx->vid->flags &= ~VF_DOUBLE;
 			emulUpdateWindow();
@@ -317,8 +323,8 @@ Uint32 emulFrame(Uint32 interval, void*) {
 			emulUpdateWindow();
 			resizeMode = RSZ_NONE;
 			break;
-	}
-	return interval;
+	} */
+	return;
 }
 
 //Uint32 onTimer(Uint32 iv,void*) {
@@ -327,15 +333,15 @@ Uint32 emulFrame(Uint32 interval, void*) {
 //	return iv;
 //}
 
-void emulStartTimer(int iv) {
-	tid = SDL_AddTimer(iv,&emulFrame,NULL);
+//void emulStartTimer(int) {
+//	tid = SDL_AddTimer(iv,&emulFrame,NULL);
 //	if (emulFlags & FL_FAST) sid = SDL_AddTimer(100,&onTimer,NULL);
-}
+//}
 
-void emulStopTimer() {
-	SDL_RemoveTimer(tid);
+//void emulStopTimer() {
+//	SDL_RemoveTimer(tid);
 //	SDL_RemoveTimer(sid);
-}
+//}
 
 // OBJECT
 
@@ -432,8 +438,8 @@ void EmulWin::SDLEventHandler() {
 //							saveConfig();
 							break;
 						case SDLK_3: emulFlags ^= FL_FAST;
-							emulStopTimer();
-							emulStartTimer((emulFlags & FL_FAST) ? 1 : 20);
+							mainWin->stopTimer();
+							mainWin->startTimer((emulFlags & FL_FAST) ? 1 : 20);
 							break;
 						case SDLK_F4:
 							mainWin->close();
