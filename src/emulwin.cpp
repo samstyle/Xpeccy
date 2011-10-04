@@ -35,11 +35,6 @@
 
 #define	XPTITLE	"Xpeccy 0.4.995"
 
-#define	RSZ_NONE	0
-#define	RSZ_SINGLE	1
-#define	RSZ_DOUBLE	2
-#define	RSZ_FULLSCR	3
-
 extern ZXComp* zx;
 extern EmulWin* mwin;
 extern MainWin* mainWin;
@@ -53,7 +48,6 @@ QVector<QRgb> qPal;
 int emulFlags;
 int pauseFlags;
 int wantedWin;
-uint32_t resizeMode; 
 uint32_t scrNumber;
 uint32_t scrCounter;
 uint32_t scrInterval;
@@ -85,7 +79,6 @@ void emulInit() {
 	}
 	emulFlags = 0;
 	wantedWin = WW_NONE;
-	resizeMode = RSZ_NONE;
 
 	scrNumber = 0;
 	scrCounter = 0;
@@ -268,7 +261,6 @@ void MainWin::stopTimer() {timer->stop();}
 
 void MainWin::emulFrame() {
 	if (emulFlags & FL_BLOCK) return;
-//	if (~emulFlags & FL_FAST) SDL_UpdateRect(surf,0,0,0,0);
 	if (!mainWin->isActiveWindow()) {
 		zx->keyb->releaseall();
 		zx->mouse->buttons = 0xff;
@@ -311,41 +303,8 @@ void MainWin::emulFrame() {
 			scrNumber++;
 		}
 	}
-/*	switch (resizeMode) {
-		case RSZ_SINGLE:
-			zx->vid->flags &= ~VF_DOUBLE;
-			emulUpdateWindow();
-			resizeMode = RSZ_NONE;
-			break;
-		case RSZ_DOUBLE:
-			zx->vid->flags |= VF_DOUBLE;
-			emulUpdateWindow();
-			resizeMode = RSZ_NONE;
-			break;
-		case RSZ_FULLSCR:
-			zx->vid->flags ^= VF_FULLSCREEN;
-			emulUpdateWindow();
-			resizeMode = RSZ_NONE;
-			break;
-	} */
 	return;
 }
-
-//Uint32 onTimer(Uint32 iv,void*) {
-//	if (emulFlags & FL_BLOCK) return iv;
-//	SDL_UpdateRect(surf,0,0,0,0);
-//	return iv;
-//}
-
-//void emulStartTimer(int) {
-//	tid = SDL_AddTimer(iv,&emulFrame,NULL);
-//	if (emulFlags & FL_FAST) sid = SDL_AddTimer(100,&onTimer,NULL);
-//}
-
-//void emulStopTimer() {
-//	SDL_RemoveTimer(tid);
-//	SDL_RemoveTimer(sid);
-//}
 
 // OBJECT
 
@@ -430,13 +389,11 @@ void EmulWin::SDLEventHandler() {
 					switch(ev.key.keysym.sym) {
 						case SDLK_0: zx->vid->mode = (zx->vid->mode==VID_NORMAL)?VID_ALCO:VID_NORMAL; break;
 						case SDLK_1:
-//							resizeMode = RSZ_SINGLE;
  							zx->vid->flags &= ~VF_DOUBLE;
  							mainWin->updateWindow();
 							saveConfig();
 							break;
 						case SDLK_2:
-//							resizeMode = RSZ_DOUBLE;
 							zx->vid->flags |= VF_DOUBLE;
 							mainWin->updateWindow();
 							saveConfig();
@@ -453,20 +410,9 @@ void EmulWin::SDLEventHandler() {
 							scrInterval=0;
 							break;	// ALT+F7 combo
 						case SDLK_RETURN:
-//							resizeMode = RSZ_FULLSCR;
 							zx->vid->flags ^= VF_FULLSCREEN;
 							mainWin->updateWindow();
 							saveConfig();
-							break;
-//						case SDLK_c:
-//							emulFlags ^= FL_GRAB;
-//							if (emulFlags & FL_GRAB) {
-//								SDL_WM_GrabInput(SDL_GRAB_ON);
-//								SDL_ShowCursor(SDL_DISABLE);
-//							} else {
-//								SDL_WM_GrabInput(SDL_GRAB_OFF);
-//								SDL_ShowCursor(SDL_ENABLE);
-//							}
 							break;
 						default: break;
 					}
