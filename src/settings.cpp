@@ -172,12 +172,14 @@ void initPaths() {
 	profPath = workDir + "/config.conf";
 	mkdir(workDir.c_str(),0777);
 	mkdir(romDir.c_str(),0777);
+	optSet(OPT_SHOTDIR,std::string(getenv("HOME")));
 #else
 	workDir = std::string(".\\config");
 	romDir = workDir + "\\roms";
 	profPath = workDir + "\\config.conf";
 	mkdir(workDir.c_str());
 	mkdir(romDir.c_str());
+	optSet(OPT_SHOTDIR,std::string(getenv("HOMEPATH")));
 #endif
 }
 

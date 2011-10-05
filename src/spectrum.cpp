@@ -27,21 +27,26 @@ ZXComp::ZXComp() {
 	ide = new IDE;
 	aym = new AYSys;
 	gs = new GS; gs->reset();
-//	opt.hwName = "ZX48K";
-//	opt.romsetName = "ZX48";
-	reset();
+	reset(RES_DEFAULT);
 }
 
-void ZXComp::reset() {
+void ZXComp::reset(int wut) {
 	block7ffd=false;
+	int resbank = sys->mem->res;
+	switch (wut) {
+		case RES_48: resbank = 1; break;
+		case RES_128: resbank = 0; break;
+		case RES_DOS: resbank = 3; break;
+		case RES_SHADOW: resbank = 2; break;
+	}
 	sys->mem->prt1 = 0;
-	sys->mem->prt0 = ((sys->mem->res & 1) << 4);
-	sys->mem->setrom(sys->mem->res);
+	sys->mem->prt0 = ((resbank & 1) << 4);
+	sys->mem->setrom(resbank);
 	sys->mem->setram(0);
 	sys->cpu->reset();
 	vid->curscr = false;
 	vid->mode = VID_NORMAL;
-	bdi->active = (sys->mem->res == 3);
+	bdi->active = (resbank == 3);
 	bdi->vg93.count = 0;
 	bdi->vg93.setmr(false);
 	if (gs->flags & GS_RESET) gs->reset();

@@ -460,7 +460,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					stop();
 					break;
 				case Qt::Key_F12:
-					zx->reset();
+					zx->reset(RES_DEFAULT);
 					fillall();
 					break;
 				case Qt::Key_Left:

@@ -26,6 +26,19 @@ std::vector<TapeBlockInfo> Tape::getInfo() {
 	return res;
 }
 
+void TapeBlock::normSignals() {
+	uint32_t low,hi;
+	for (uint i=0; i<data.size(); i++) {
+		low = data[i] - 10;
+		hi = data[i] + 10;
+		if ((plen > low) && (plen < hi)) data[i] = plen;
+		if ((s1len > low) && (s1len < hi)) data[i] = s1len;
+		if ((s2len > low) && (s2len < hi)) data[i] = s2len;
+		if ((len0 > low) && (len0 < hi)) data[i] = len0;
+		if ((len1 > low) && (len1 < hi)) data[i] = len1;
+	}
+}
+
 int TapeBlock::gettime(int p=-1) {
 	long totsz = 0;
 	if (p==-1) p=data.size();
@@ -38,7 +51,7 @@ int TapeBlock::getsize() {return (((data.size() - datapos)>>4) - 2);}
 std::string TapeBlock::getheader() {
 	std::string res;
 	int i,pos = datapos+32;
-	if (getbyte(datapos)==0x00) {
+	if ((getsize() > 16) && (getbyte(datapos)==0x00)) {
 		if (getbyte(datapos+16)==0x00) res = "Prog:"; else res = "Code:";
 		for(i=0;i<10;i++) {
 			res += getbyte(pos);
@@ -49,12 +62,15 @@ std::string TapeBlock::getheader() {
 }
 
 uint8_t TapeBlock::getbyte(int pos) {
+printf("Signals: ");
 	uint8_t i,res=0,msk=0x80;
 	for (i=0;i<8;i++) {
+printf("%i,%i,",data[pos],data[pos+1]);
 		if ((data[pos] == len1) && (data[pos+1] == len1)) res |= msk;
 		msk >>= 1;
 		pos += 2;
 	}
+printf("res = %.2X\n",res);
 	return res;
 }
 
@@ -166,10 +182,6 @@ void Tape::storeblock() {
 			tmpblock.len0 = siglens[4];
 			tmpblock.len1 = siglens[3];
 		}
-		tmpblock.datapos=-1;
-		i=1;
-		while (tmpblock.data[i] != siglens[2]) i++;
-		tmpblock.datapos = i+1;
 	} else {
 		tmpblock.plen = 2168;
 		tmpblock.s1len = 667;
@@ -177,6 +189,11 @@ void Tape::storeblock() {
 		tmpblock.len0 = 855;
 		tmpblock.len1 = 1710;
 	}
+	tmpblock.datapos=-1;
+	i=1;
+	while (tmpblock.data[i] != tmpblock.s2len) i++;
+	tmpblock.datapos = i+1;
+	tmpblock.normSignals();
 	data.push_back(tmpblock);
 	tmpblock.data.clear();
 	flags |= TAPE_WAIT;
@@ -214,19 +231,22 @@ TapeBlock Tape::parse(std::ifstream *file, uint32_t len, std::vector<int> slens)
 	newb.s2len=slens[2];
 	newb.len0=slens[3];
 	newb.len1=slens[4];
-	newb.pdur = (slens[6]==-1)?((tmp&0x80)?3223:8063):slens[6];
+	newb.pdur = (slens[6] == -1) ? ((tmp == 0) ? 8063 : 3223) : slens[6];
 	newb.data.clear();
-	if (newb.pdur!=0) {
-		for (i=0;i<newb.pdur;i++) newb.data.push_back(newb.plen);
-	}
+	for (i=0; i<newb.pdur; i++) newb.data.push_back(newb.plen);
 	if (newb.s1len!=0) newb.data.push_back(newb.s1len);
 	if (newb.s2len!=0) newb.data.push_back(newb.s2len);
 	newb.datapos = newb.data.size();
 	for (i=0;i<len;i++) {
 		file->read((char*)&tmp,1);
 		for (j=0;j<8;j++) {
-			if (tmp & 0x80) {newb.data.push_back(newb.len1);newb.data.push_back(newb.len1);}
-				else {newb.data.push_back(newb.len0);newb.data.push_back(newb.len0);}
+			if (tmp & 0x80) {
+				newb.data.push_back(newb.len1);
+				newb.data.push_back(newb.len1);
+			} else {
+				newb.data.push_back(newb.len0);
+				newb.data.push_back(newb.len0);
+			}
 			tmp = (tmp<<1);
 		}
 	}
@@ -276,7 +296,6 @@ void Tape::load(std::string sfnam,uint8_t type) {
 			path=sfnam;
 			break;
 		case TYPE_TZX:
-//			printf("Loading TZX in under construction\n"); break;
 			file.read((char*)buf,10);
 			if ((std::string((char*)buf,7) != "ZXTape!") || (buf[7]!=0x1a)) {
 				mbx.setText("<b>Wrong TZX file</b>");

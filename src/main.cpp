@@ -21,7 +21,7 @@
 
 ZXComp* zx;
 EmulWin *mwin;
-MainWin* mainWin;
+extern MainWin* mainWin;
 
 void setFlagBit(bool cond, int32_t* val, int32_t mask) {
 	if (cond) {
@@ -110,7 +110,7 @@ int main(int ac,char** av) {
 			filltabs();
 			initHardware();
 			sndInit();
-			mainWin = new MainWin;
+//			mainWin = new MainWin;
 			emulInit();
 			mwin = new EmulWin();
 			dbgInit(emulWidget());
@@ -123,7 +123,7 @@ int main(int ac,char** av) {
 			fillBookmarkMenu();
 			emulShow();
 			emulUpdateWindow();
-			zx->reset();
+			zx->reset(RES_DEFAULT);
 
 			for(i=1;i<ac;i++) {
 				loadFile(av[i],FT_ALL,0);

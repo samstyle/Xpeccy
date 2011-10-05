@@ -37,8 +37,8 @@
 
 extern ZXComp* zx;
 extern EmulWin* mwin;
-extern MainWin* mainWin;
 // main
+MainWin* mainWin;
 QIcon curicon;
 SDL_Surface* surf = NULL;
 SDL_Color zxpal[256];
@@ -88,11 +88,7 @@ void emulInit() {
 	int par[] = {448,320,138,80,64,32,64,0};
 	addLayout("default",par);
 	
-#ifndef WIN32
-	optSet(OPT_SHOTDIR,std::string(getenv("HOME")));
-#else
-	optSet(OPT_SHOTDIR,std::string(getenv("HOMEPATH")));
-#endif
+	mainWin = new MainWin;
 }
 
 void setTapeCheck() {
@@ -463,7 +459,7 @@ void EmulWin::SDLEventHandler() {
 								tapeWin->show();
 							}
 							break;
-						case SDLK_F12: zx->reset(); break;
+						case SDLK_F12: zx->reset(RES_DEFAULT); break;
 						default: break;
 					}
 				}

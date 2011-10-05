@@ -302,7 +302,7 @@ void SetupWin::apply() {
 	setRomsetList(rsl);
 //	setRomset(zx, zx->opt.rsName);
 //	zx->sys->mem->loadromset(optGetPath(OPT_ROMDIR));
-	if (zx->hw != oldmac) zx->reset();
+	if (zx->hw != oldmac) zx->reset(RES_DEFAULT);
 // video
 	setFlagBit(ui.dszchk->isChecked(),&zx->vid->flags,VF_DOUBLE);
 	zx->vid->brdsize = ui.bszsld->value()/100.0;

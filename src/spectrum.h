@@ -21,6 +21,12 @@
 #define	IO_WAIT		1
 #define WAIT_ON		2
 
+#define	RES_DEFAULT	0
+#define	RES_48		1
+#define	RES_128		2
+#define	RES_DOS		3
+#define	RES_SHADOW	4
+
 struct HardWare {
 	std::string name;
 	int mask;		// mem size mask (0:128, 1:256, 2:512, 3:1024); =0 for 48K
@@ -50,7 +56,7 @@ class ZXComp : public ZXSystem {
 			std::string rsName;
 		} opt;
 		uint32_t exec();
-		void reset();
+		void reset(int);
 		void mapMemory();
 		int32_t getPort(int32_t);
 		uint8_t in(uint16_t);

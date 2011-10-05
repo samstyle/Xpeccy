@@ -36,6 +36,7 @@ class TapeBlock {
 		int32_t getsize();
 		uint8_t getbyte(int32_t);
 		std::string getheader();
+		void normSignals();
 };
 
 class Tape {
