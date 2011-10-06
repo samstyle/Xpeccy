@@ -34,6 +34,7 @@ class SetupWin : public QDialog {
 		void updvolumes();
 		void updfrq();
 		void chablock(QModelIndex);
+		void setTapeBreak(int,int);
 		void hddcap();
 		void editrset(QModelIndex);
 		void setrpart();

@@ -54,6 +54,8 @@ uint32_t scrInterval;
 // tape window
 Ui::TapeWin tapeUi;
 QDialog* tapeWin;
+int lastTapeFlags;
+uint lastTapeBlock;
 // hardwares
 std::vector<HardWare> hwList;
 // romsets
@@ -80,6 +82,9 @@ void emulInit() {
 	emulFlags = 0;
 	wantedWin = WW_NONE;
 
+	lastTapeFlags = 0;
+	lastTapeBlock = 0;
+	
 	scrNumber = 0;
 	scrCounter = 0;
 	scrInterval = 0;
@@ -95,22 +100,24 @@ void setTapeCheck() {
 	QTableWidgetItem* itm;
 	for (uint i=0; i<zx->tape->data.size(); i++) {
 		itm = new QTableWidgetItem;
-		if (zx->tape->block == i) {
-			itm->setIcon(QIcon(":/images/checkbox.png"));
-		}
+		if (zx->tape->block == i) itm->setIcon(QIcon(":/images/checkbox.png"));
 		tapeUi.tapeList->setItem(i,0,itm);
+		itm = new QTableWidgetItem;
+		if (zx->tape->data[i].flags & TBF_BREAK) itm->setIcon(QIcon(":/images/cancel.png"));
+		tapeUi.tapeList->setItem(i,1,itm);
 	}
 }
 
 void buildTapeList() {
-	std::vector<TapeBlockInfo> inf = zx->tape->getInfo();
-	tapeUi.tapeList->setRowCount(inf.size());
+	std::vector<TapeBlockInfo> tinf = zx->tape->getInfo();
+	tapeUi.tapeList->setRowCount(tinf.size());
 	QTableWidgetItem* itm;
-	for (uint i=0; i<inf.size(); i++) {
-		itm = new QTableWidgetItem(QString::number(inf[i].size));
-		tapeUi.tapeList->setItem(i,1,itm);
-		itm = new QTableWidgetItem(QDialog::trUtf8(inf[i].name.c_str()));
+	for (uint i=0; i<tinf.size(); i++) {
+		itm = new QTableWidgetItem;
+		itm = new QTableWidgetItem(QString::number(tinf[i].size));
 		tapeUi.tapeList->setItem(i,2,itm);
+		itm = new QTableWidgetItem(QDialog::trUtf8(tinf[i].name.c_str()));
+		tapeUi.tapeList->setItem(i,3,itm);
 	}
 	setTapeCheck();
 }
@@ -231,8 +238,10 @@ MainWin::MainWin() {
 	initUserMenu((QWidget*)this);
 	tapeWin = new QDialog((QWidget*)this,Qt::Tool);
 	tapeUi.setupUi(tapeWin);
+	tapeUi.stopBut->setEnabled(false);
 	tapeUi.tapeList->setColumnWidth(0,20);
-	tapeUi.tapeList->setColumnWidth(1,50);
+	tapeUi.tapeList->setColumnWidth(1,20);
+	tapeUi.tapeList->setColumnWidth(2,50);
 	timer = new QTimer();
 	QObject::connect(timer,SIGNAL(timeout()),this,SLOT(emulFrame()));
 }
@@ -270,7 +279,7 @@ void MainWin::emulFrame() {
 			emulExec();
 		} while ((wantedWin == WW_NONE) && !zx->sys->istrb);
 		zx->sys->nmi = false;
-		if (scrCounter !=0 ) {
+		if (scrCounter !=0) {
 			if (scrInterval == 0) {
 				emulFlags |= FL_SHOT;
 				scrCounter--;
@@ -314,7 +323,8 @@ EmulWin::EmulWin() {
 	QObject::connect(tapeUi.recBut,SIGNAL(released()),this,SLOT(tapeRec()));
 	QObject::connect(tapeUi.stopBut,SIGNAL(released()),this,SLOT(tapeStop()));
 	QObject::connect(tapeUi.loadBut,SIGNAL(released()),this,SLOT(tapeLoad()));
-	QObject::connect(tapeUi.tapeList,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(tapeRewind(QModelIndex)));
+	QObject::connect(tapeUi.tapeList,SIGNAL(cellDoubleClicked(int,int)),this,SLOT(tapeRewind(int,int)));
+	QObject::connect(tapeUi.tapeList,SIGNAL(cellClicked(int,int)),this,SLOT(setTapeStop(int,int)));
 	emulPause(false,-1);
 }
 
@@ -344,11 +354,17 @@ void EmulWin::tapeStop() {
 	tapeUi.tapeBar->setValue(0);
 }
 
-void EmulWin::tapeRewind(QModelIndex idx) {
-	if (!idx.isValid()) return;
-	zx->tape->block = idx.row();
+void EmulWin::tapeRewind(int row, int) {
+	if (row < 0) return;
+	zx->tape->block = row;
 	zx->tape->pos = 0;
-	buildTapeList();
+	setTapeCheck();
+}
+
+void EmulWin::setTapeStop(int row, int col) {
+	if ((row < 0) || (col != 1)) return;
+	zx->tape->data[row].flags ^= TBF_BREAK;
+	setTapeCheck();
 }
 
 void EmulWin::tapeLoad() {
@@ -364,18 +380,25 @@ void EmulWin::SDLEventHandler() {
 	switch (wantedWin) {
 		case WW_DEBUG: dbgShow(); wantedWin = WW_NONE; break;
 	}
-	if (zx->tape->flags & TAPE_ON) {
-		if (~zx->tape->flags & TAPE_REC) {
-			tapeUi.tapeBar->setMaximum(zx->tape->data[zx->tape->block].gettime(-1));			// total
-			tapeUi.tapeBar->setValue(zx->tape->data[zx->tape->block].gettime(zx->tape->pos));		// current
-		}
+	if (lastTapeBlock != zx->tape->block) {
+		lastTapeBlock = zx->tape->block;
 		setTapeCheck();
-	} else {
-		emulSetIcon(":/images/logo.png");
-		tapeUi.playBut->setEnabled(true);
-		tapeUi.recBut->setEnabled(true);
-		tapeUi.stopBut->setEnabled(false);
-		tapeUi.tapeBar->setValue(0);
+	}
+	if (lastTapeFlags != zx->tape->flags) {
+		lastTapeFlags = zx->tape->flags;
+		if (lastTapeFlags & TAPE_ON) {
+			if (lastTapeFlags & TAPE_REC) {
+				tapeUi.tapeBar->setValue(0);
+			} else {
+				tapeUi.tapeBar->setMaximum(zx->tape->data[zx->tape->block].gettime(-1));			// total
+				tapeUi.tapeBar->setValue(zx->tape->data[zx->tape->block].gettime(zx->tape->pos));		// current
+			}
+		} else {
+			tapeUi.playBut->setEnabled(true);
+			tapeUi.recBut->setEnabled(true);
+			tapeUi.stopBut->setEnabled(false);
+			tapeUi.tapeBar->setValue(0);
+		}
 	}
 	SDL_Event ev;
 	while (SDL_PollEvent(&ev)) {
@@ -405,6 +428,9 @@ void EmulWin::SDLEventHandler() {
 							scrCounter = optGetInt(OPT_SHOTCNT);
 							scrInterval=0;
 							break;	// ALT+F7 combo
+						case SDLK_F12:
+							zx->reset(RES_DOS);
+							break;
 						case SDLK_RETURN:
 							zx->vid->flags ^= VF_FULLSCREEN;
 							mainWin->updateWindow();
@@ -423,20 +449,16 @@ void EmulWin::SDLEventHandler() {
 						case SDLK_F3: emulPause(true,PR_FILE); loadFile("",FT_ALL,-1); emulPause(false,PR_FILE); break;
 						case SDLK_F4:
 								if (zx->tape->flags & TAPE_ON) {
-									zx->tape->stop(zx->vid->t);
-									emulSetIcon(":/images/logo.png");
+									mwin->tapeStop();
 								} else {
-									if (!zx->tape->startplay()) break;
-									emulSetIcon(":/images/play.png");
+									mwin->tapePlay();
 								}
 								break;
 						case SDLK_F5:
 								if (zx->tape->flags & TAPE_ON) {
-									zx->tape->stop(zx->vid->t);
-									emulSetIcon(":/images/logo.png");
+									mwin->tapeStop();
 								} else {
-									zx->tape->startrec();
-									emulSetIcon(":/images/rec.png");
+									mwin->tapeRec();
 								}
 								break;
 						case SDLK_F6: devShow(); break;

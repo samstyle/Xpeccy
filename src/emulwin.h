@@ -4,7 +4,7 @@
 #include <vector>
 #include <QIcon>
 #include <QTimer>
-#include <QModelIndex>
+//#include <QModelIndex>
 #include <stdint.h>
 
 #ifndef WIN32
@@ -57,14 +57,16 @@ class EmulWin : public QObject {
 		EmulWin();
 	private:
 		QTimer *timer;
-	private slots:
-		void bookmarkSelected(QAction*);
-		void profileSelected(QAction*);
+	public slots:
 		void tapePlay();
 		void tapeRec();
 		void tapeStop();
+	private slots:
+		void bookmarkSelected(QAction*);
+		void profileSelected(QAction*);
 		void tapeLoad();
-		void tapeRewind(QModelIndex);
+		void tapeRewind(int,int);
+		void setTapeStop(int,int);
 	public slots:
 		void SDLEventHandler();
 };

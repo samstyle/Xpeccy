@@ -9,16 +9,19 @@
 #define	TYPE_TAP	0
 #define	TYPE_TZX	1
 
-#define	TAPE_ON		0x00000001
-#define TAPE_REC	0x00000002
-#define TAPE_CANSAVE	0x00000004	// can be saved as tap
-#define TAPE_WAIT	0x00000008	// wait for 1st impulse (at save)
+#define	TAPE_ON		1
+#define TAPE_REC	(1<<1)
+#define TAPE_CANSAVE	(1<<2)	// can be saved as tap
+#define TAPE_WAIT	(1<<3)	// wait for 1st impulse (at save)
+
+#define	TBF_BREAK	1	// stop tape on start of this block
 
 #define	TAPE_HEAD	0
 #define	TAPE_DATA	1
 
 struct TapeBlockInfo {
 	int type;
+	int flags;
 	std::string name;
 	int size;
 	int time;
@@ -27,7 +30,9 @@ struct TapeBlockInfo {
 
 class TapeBlock {
 	public:
+		TapeBlock();
 		int32_t pause;					// pause in ms after block
+		int flags;
 		uint32_t plen,s1len,s2len,len0,len1;	// signals len
 		uint32_t pdur;				// pilot tone length
 		int32_t datapos;					// 1st data signal pos

@@ -21,9 +21,14 @@ std::vector<TapeBlockInfo> Tape::getInfo() {
 		inf.size = data[i].getsize();
 		inf.time = data[i].gettime(-1);
 		inf.curtime = (block == i) ? data[i].gettime(pos) : -1;
+		inf.flags = data[i].flags;
 		res.push_back(inf);
 	}
 	return res;
+}
+
+TapeBlock::TapeBlock() {
+	flags = 0;
 }
 
 void TapeBlock::normSignals() {
@@ -62,15 +67,12 @@ std::string TapeBlock::getheader() {
 }
 
 uint8_t TapeBlock::getbyte(int pos) {
-printf("Signals: ");
 	uint8_t i,res=0,msk=0x80;
 	for (i=0;i<8;i++) {
-printf("%i,%i,",data[pos],data[pos+1]);
 		if ((data[pos] == len1) && (data[pos+1] == len1)) res |= msk;
 		msk >>= 1;
 		pos += 2;
 	}
-printf("res = %.2X\n",res);
 	return res;
 }
 
@@ -112,7 +114,8 @@ void Tape::sync() {
 					pos = -1;
 					if (block >= data.size()) {
 						flags &= ~TAPE_ON;
-//						siglen = 945;
+					} else {
+						if (data[block].flags & TBF_BREAK) flags &= ~TAPE_ON;
 					}
 				}
 			}

@@ -83,6 +83,12 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.tsbox->addItem("NedoPC",QVariant(TS_NEDOPC));
 	ui.gstereobox->addItem("Mono",QVariant(GS_MONO));
 	ui.gstereobox->addItem("L:1,2; R:3,4",QVariant(GS_12_34));
+// tape
+	ui.tapelist->setColumnWidth(0,20);
+	ui.tapelist->setColumnWidth(1,20);
+	ui.tapelist->setColumnWidth(2,50);
+	ui.tapelist->setColumnWidth(3,50);
+	ui.tapelist->setColumnWidth(4,100);
 // hdd
 	ui.hiface->addItem("None",QVariant(IDE_NONE));
 	ui.hiface->addItem("Nemo",QVariant(IDE_NEMO));
@@ -140,6 +146,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	QObject::connect(ui.remodtb,SIGNAL(released()),this,SLOT(ejctd()));
 // tape
 	QObject::connect(ui.tapelist,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(chablock(QModelIndex)));
+	QObject::connect(ui.tapelist,SIGNAL(cellClicked(int,int)),this,SLOT(setTapeBreak(int,int)));
 	QObject::connect(ui.tloadtb,SIGNAL(released()),this,SLOT(loatape()));
 	QObject::connect(ui.tsavetb,SIGNAL(released()),this,SLOT(savtape()));
 	QObject::connect(ui.tremotb,SIGNAL(released()),this,SLOT(ejctape()));
@@ -548,27 +555,26 @@ void SetupWin::buildtapelist() {
 			tm = ts/60;
 			ts -= tm * 60;
 			itm = new QTableWidgetItem(QString::number(tm).append(":").append(QString::number(ts+100).right(2)));
-			ui.tapelist->setItem(i,2,itm);
+			ui.tapelist->setItem(i,3,itm);
 		} else {
 			itm = new QTableWidgetItem;
 			ui.tapelist->setItem(i,0,itm);
 			itm = new QTableWidgetItem;
-			ui.tapelist->setItem(i,2,itm);
+			ui.tapelist->setItem(i,3,itm);
 		}
+		itm = new QTableWidgetItem;
+		if (inf[i].flags & TBF_BREAK) itm->setIcon(QIcon(":/images/cancel.png"));
+		ui.tapelist->setItem(i,1,itm);
 		ts = inf[i].time;
 		tm = ts/60;
 		ts -= tm * 60;
 		itm = new QTableWidgetItem(QString::number(tm).append(":").append(QString::number(ts+100).right(2)));
-		ui.tapelist->setItem(i,1,itm);
+		ui.tapelist->setItem(i,2,itm);
 		itm = new QTableWidgetItem(QString::number(inf[i].size));
-		ui.tapelist->setItem(i,3,itm);
-		itm = new QTableWidgetItem(QDialog::trUtf8(inf[i].name.c_str()));
 		ui.tapelist->setItem(i,4,itm);
+		itm = new QTableWidgetItem(QDialog::trUtf8(inf[i].name.c_str()));
+		ui.tapelist->setItem(i,5,itm);
 	}
-	ui.tapelist->setColumnWidth(0,20);
-	ui.tapelist->setColumnWidth(1,50);
-	ui.tapelist->setColumnWidth(2,50);
-	ui.tapelist->setColumnWidth(3,100);
 	ui.tapelist->selectRow(0);
 }
 
@@ -707,6 +713,13 @@ void SetupWin::chablock(QModelIndex idx) {
 	int row = idx.row();
 	zx->tape->block = row;
 	zx->tape->pos = 0;
+	buildtapelist();
+	ui.tapelist->selectRow(row);
+}
+
+void SetupWin::setTapeBreak(int row,int col) {
+	if ((row < 0) || (col != 1)) return;
+	zx->tape->data[row].flags ^= TBF_BREAK;
 	buildtapelist();
 	ui.tapelist->selectRow(row);
 }
