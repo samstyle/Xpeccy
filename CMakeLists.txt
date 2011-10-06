@@ -61,4 +61,4 @@ target_link_libraries(xpeccy
 	${ZLIB_LIBRARY}
 )
 
-install_targets(/usr/local/bin xpeccy)
+install_targets(/bin xpeccy)
