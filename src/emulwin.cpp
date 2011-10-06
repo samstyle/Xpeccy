@@ -384,14 +384,15 @@ void EmulWin::SDLEventHandler() {
 		lastTapeBlock = zx->tape->block;
 		setTapeCheck();
 	}
+	if ((zx->tape->flags & (TAPE_ON | TAPE_REC)) == TAPE_ON) {
+		tapeUi.tapeBar->setMaximum(zx->tape->data[zx->tape->block].gettime(-1));			// total
+		tapeUi.tapeBar->setValue(zx->tape->data[zx->tape->block].gettime(zx->tape->pos));		// current
+	}
 	if (lastTapeFlags != zx->tape->flags) {
 		lastTapeFlags = zx->tape->flags;
 		if (lastTapeFlags & TAPE_ON) {
 			if (lastTapeFlags & TAPE_REC) {
 				tapeUi.tapeBar->setValue(0);
-			} else {
-				tapeUi.tapeBar->setMaximum(zx->tape->data[zx->tape->block].gettime(-1));			// total
-				tapeUi.tapeBar->setValue(zx->tape->data[zx->tape->block].gettime(zx->tape->pos));		// current
 			}
 		} else {
 			tapeUi.playBut->setEnabled(true);
