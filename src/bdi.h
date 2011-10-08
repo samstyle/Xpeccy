@@ -7,12 +7,18 @@
 
 #define TRACKLEN 6250
 
-#define INSTIME 1			// на будущее - время смены дискеты
+#define INSTIME		1			// на будущее - время смены дискеты
 
-#define TYPE_TRD 0
-#define TYPE_SCL 1
-#define TYPE_FDI 2
-#define TYPE_UDI 3
+#define TYPE_TRD	0
+#define TYPE_SCL	1
+#define TYPE_FDI	2
+#define TYPE_UDI	3
+#define TYPE_HOBETA	4
+
+#define	ERR_OK		0
+#define	ERR_MANYFILES	1
+#define	ERR_NOSPACE	2
+#define	ERR_SHIT	3
 
 struct TrackIMG {
 	uint8_t byte[TRACKLEN];
@@ -30,6 +36,16 @@ class Sector {
 	uint8_t* data;
 	uint8_t type;	// f8 / fb
 	int32_t crc;	// data crc (-1 = calculated)
+};
+
+struct TRFile {
+	uint8_t name[8];
+	uint8_t ext;
+	uint8_t lst,hst;
+	uint8_t llen,hlen;
+	uint8_t slen;
+	uint8_t sec;
+	uint8_t trk;
 };
 
 class Floppy {
@@ -65,7 +81,6 @@ class Floppy {
 	void getudibitfield(uint8_t, uint8_t*);
 	void wr(uint8_t);
 	bool savecha();
-	bool getsector(uint8_t, uint8_t, uint8_t*);
 	bool eject();
 	uint8_t getfield();
 	uint8_t rd();
@@ -73,6 +88,11 @@ class Floppy {
 	std::vector<Sector> getsectors(uint8_t);
 	std::string getString();
 	void setString(std::string);
+	int getDiskType();
+	int createFile(TRFile*);
+	uint8_t* getSectorDataPtr(uint8_t,uint8_t);
+	bool getSectorData(uint8_t, uint8_t, uint8_t*, int);
+	bool putSectorData(uint8_t, uint8_t, uint8_t*, int);
 };
 
 class VG93 {

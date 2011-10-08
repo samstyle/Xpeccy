@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <QFileDialog>
 
+#define	FT_ALL		-1
 #define	FT_NONE		0
 #define	FT_TAP		(1<<0)
 #define	FT_TZX		(1<<1)
@@ -17,7 +18,7 @@
 #define	FT_Z80		(1<<7)
 #define FT_SNAP		(FT_SNA | FT_Z80)
 #define	FT_RZX		(1<<8)
-#define	FT_ALL		(FT_TAPE | FT_DISK | FT_SNAP | FT_RZX)
+#define	FT_HOBETA	(1<<9)
 
 void initFileDialog(QWidget*);
 void loadFile(const char*, int, int);

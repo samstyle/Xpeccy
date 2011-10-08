@@ -75,3 +75,6 @@ Fix	Fix saving tape into *.tap
 build 20111006
 New	Click on 2nd column in tape blocks list to set/reset break point - tape will stop at start of this block
 New	Alt + F12 = reset to DOS (rompage 3)
+
+build 20111008
+New	Hobeta files supporting

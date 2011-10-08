@@ -5,8 +5,9 @@
 #include <QString>
 #include <QDebug>
 
+#include "common.h"
 #include "bdi.h"
-#include "filer.h"
+#include "filer.h"		// TODO get ::savecha out of here
 
 uint8_t trd_8e1[] = {
 	0x00,0x00,0x01,0x16,0x00,0xf0,0x09,0x10,0x00,0x00,0x20,0x20,0x20,0x20,0x20,0x20,
@@ -108,8 +109,8 @@ uint16_t Floppy::getcrc(uint8_t* ptr, int32_t len) {
 
 void Floppy::formtrack(uint8_t tr, std::vector<Sector> sdata) {
 	uint8_t *ppos = data[tr].byte;
-	uint8_t *cpos;
-	uint16_t crc;
+//	uint8_t *cpos;
+//	uint16_t crc;
 	int32_t i,ln;
 	uint32_t sc;
 	for (i=0; i<12; i++) *(ppos++) = 0x00;		// 12	space
@@ -121,13 +122,13 @@ void Floppy::formtrack(uint8_t tr, std::vector<Sector> sdata) {
 		*(ppos++) = 0xa1;				//	address mark
 		*(ppos++) = 0xa1;
 		*(ppos++) = 0xa1;
-		cpos = ppos;
+//		cpos = ppos;
 		*(ppos++) = 0xfe;
 		*(ppos++) = sdata[sc].cyl;			// 	addr field
 		*(ppos++) = sdata[sc].side;
 		*(ppos++) = sdata[sc].sec;
 		*(ppos++) = sdata[sc].len;
-		crc = getcrc(cpos,ppos - cpos);
+//		crc = getcrc(cpos,ppos - cpos);
 		*(ppos++) = 0xf7; *(ppos++) = 0xf7;
 //		*(ppos++) = ((crc & 0xff00) >> 8); *(ppos++) = (crc & 0xff);
 		for(i=0;i<22;i++) *(ppos++) = 0x4e;		// 22	sync
@@ -135,7 +136,7 @@ void Floppy::formtrack(uint8_t tr, std::vector<Sector> sdata) {
 		*(ppos++) = 0xa1;				//	data mark
 		*(ppos++) = 0xa1;
 		*(ppos++) = 0xa1;
-		cpos = ppos;
+//		cpos = ppos;
 		*(ppos++) = sdata[sc].type;
 		ln = (128 << sdata[sc].len);			//	data
 		for (i=0; i<ln; i++) *(ppos++) = sdata[sc].data[i];
@@ -251,16 +252,60 @@ void Floppy::loaduditrack(std::ifstream* file, uint8_t tr, bool sd) {
 	}
 }
 
+int Floppy::getDiskType() {
+	int res = -1;
+	uint8_t* buf = new uint8_t[0x100];
+	if (getSectorData(0,9,buf,0x100)) {
+		if (buf[0xe7] == 0x10) res = TYPE_TRD;
+	}
+	return res;
+}
+
+struct FilePos {
+	uint8_t trk;
+	uint8_t sec;
+	uint8_t slen;
+};
+
+int Floppy::createFile(TRFile* dsc) {
+	uint8_t* buf = new uint8_t[256];
+	if (!getSectorData(0,9,buf,256)) return ERR_SHIT;
+	dsc->sec = buf[0xe1];
+	dsc->trk = buf[0xe2];
+	uint8_t files = buf[0xe4];
+	if (files > 127) return ERR_MANYFILES;
+	files++;
+	buf[0xe4] = files;
+	uint16_t freesec = buf[0xe5] + (buf[0xe6] << 8);
+	if (freesec < dsc->slen) return ERR_NOSPACE;
+	freesec -= dsc->slen;
+	buf[0xe5] = freesec & 0xff;
+	buf[0xe6] = ((freesec & 0xff00) >> 8);
+	buf[0xe1] += (dsc->slen & 0x0f);
+	buf[0xe2] += ((dsc->slen & 0xf0) >> 4);
+	if (buf[0xe1] > 0x0f) {
+		buf[0xe1] -= 0x10;
+		buf[0xe2]++;
+	}
+	putSectorData(0,9,buf,256);
+	freesec = ((files & 0xf0) >> 4)+1;
+	if (!getSectorData(0,freesec,buf,256)) return ERR_SHIT;
+	memcpy(buf + (((files - 1) & 0x0f) << 4), (char*)dsc, 16);
+	putSectorData(0,freesec,buf,256);
+	changed = true;
+	return ERR_OK;
+}
+
 void Floppy::load(std::string sfnam, uint8_t type) {
-	if (!savecha()) return;
+	if (type != TYPE_HOBETA) {
+		if (!savecha()) return;
+	}
 	std::ifstream file(sfnam.c_str(),std::ios::binary);
-	QMessageBox mbx; mbx.setIcon(QMessageBox::Critical);
 	if (!file.good()) {
-		mbx.setText("Can't open file");
-		mbx.setInformativeText(sfnam.c_str());
-		mbx.exec();
+		shithappens("Can't open file '" + sfnam +"'");
 		return;
 	}
+	TRFile nfle;
 	int32_t i,j,scnt;
 	uint8_t* buf = new uint8_t[0x1000];
 	uint8_t* bptr;
@@ -272,14 +317,49 @@ void Floppy::load(std::string sfnam, uint8_t type) {
 	Sector sct;
 	std::vector<Sector> trkimg;
 	switch(type) {
+		case TYPE_HOBETA:
+			if (!insert) {
+				format();
+				insert = true;
+			}
+			if (getDiskType() != TYPE_TRD) {
+				shithappens("Can't add file to non-TRDOS disk");
+				break;
+			}
+			file.read((char*)buf,17);		// header
+			memcpy((char*)&nfle,buf,13);
+			nfle.slen = buf[14];
+			if (createFile(&nfle) != ERR_OK) {
+				shithappens("Can't create new file @ disk");
+				break;
+			}
+			for (i=0; i<nfle.slen; i++) {
+				file.read((char*)buf,256);
+				if (!putSectorData(nfle.trk, nfle.sec+1, buf, 256)) {
+					shithappens("Hobeta loading error:<br>Disk sector not found");
+					break;
+				}
+				nfle.sec++;
+				if (nfle.sec > 15) {
+					nfle.trk++;
+					nfle.sec -= 16;
+				}
+			}
+			for (i=0; i<256; i++) fillfields(i,true);
+			break;
 		case TYPE_FDI:
-			mbx.setText("Wrong FDI image");
 			file.read((char*)buf,14);
-			if (std::string((const char*)buf,3) != "FDI") {mbx.setInformativeText("Wrong signature"); mbx.exec(); break;}
+			if (std::string((const char*)buf,3) != "FDI") {
+				shithappens("Wrong FDI signature");
+				break;
+			}
 			err = (buf[3] != 0);			// write protect
 			tmpa = buf[4] + (buf[5] << 8);		// cylinders
 			tmpb = buf[6] + (buf[7] << 8);		// heads
-			if ((tmpb != 1) && (tmpb != 2)) {mbx.setInformativeText("Incorrect heads count"); mbx.exec(); break;}
+			if ((tmpb != 1) && (tmpb != 2)) {
+				shithappens("Incorrect FDI heads count");
+				break;
+			}
 			tmpd = buf[10] + (buf[11] << 8);	// sectors data pos
 			tmph = buf[12] + (buf[13] << 8) + 14;	// track headers data pos
 			file.seekg(tmph);			// read tracks data
@@ -307,13 +387,9 @@ void Floppy::load(std::string sfnam, uint8_t type) {
 						sct.data = new uint8_t[slen];
 						file.read((char*)sct.data,slen);	// read sector data
 						file.seekg(cpos);
-//printf("C H S L = %i %i %i %i; TYP %.2X; DATA:\n",sct.cyl,sct.side,sct.sec,sct.len,sct.type);
-//for (int k=0; k<slen; k++) printf("%.2X  ",*(sct.data + k));
-//printf("\n");
 						trkimg.push_back(sct);
 					}
 					formtrack((i << 1) + j, trkimg);
-//					throw(0);
 				}
 			}
 			insert = true;
@@ -321,10 +397,15 @@ void Floppy::load(std::string sfnam, uint8_t type) {
 			changed = false;
 			break;
 		case TYPE_UDI:
-			mbx.setText("Wrong UDI image");
 			file.read((char*)buf,16);
-			if (std::string((const char*)buf,4) != "UDI!") {mbx.setInformativeText("Wrong signature"); mbx.exec(); break;}
-			if (*(buf+8) != 0x00) {mbx.setInformativeText("Wrong version"); mbx.exec(); break;}
+			if (std::string((const char*)buf,4) != "UDI!") {
+				shithappens("Wrong UDI signature");
+				break;
+			}
+			if (*(buf+8) != 0x00) {
+				shithappens("Wrong UDI version");
+				break;
+			}
 			tmp = *(buf+9);			// max trk
 			err = (*(buf+10)==0x01);	// true if double side
 			for (i=0; i<tmp+1; i++) {
@@ -343,10 +424,11 @@ void Floppy::load(std::string sfnam, uint8_t type) {
 			file.seekg(0,std::ios::beg);
 			err = ((len&0xfff)!=0) || (len==0) || (len>0xa8000);
 			if (err || tmp!=0x10) {
-				mbx.setText("<b>Wrong TRD file</b>");
-				if (err) {mbx.setInformativeText("Incorrect lenght");}
-					else {mbx.setInformativeText("Not TRDos image");}
-				mbx.exec();
+				if (err) {
+					shithappens("Incorrect TRD lenght");
+				} else {
+					shithappens("Not TRD image");
+				}
 			} else {
 				format();
 				i=0;
@@ -362,9 +444,14 @@ void Floppy::load(std::string sfnam, uint8_t type) {
 			break;
 		case TYPE_SCL:
 			file.read((char*)buf,9);
-			mbx.setText("<b>Wrong SCL file</b>");
-			if (std::string((const char*)buf,8) != "SINCLAIR") {mbx.setInformativeText("Wrong signature"); mbx.exec(); break;}
-			if (buf[8]>0x80) {mbx.setInformativeText("More than 128 files inside"); mbx.exec(); break;}
+			if (std::string((const char*)buf,8) != "SINCLAIR") {
+				shithappens("Wrong SCL signature");
+				break;
+			}
+			if (buf[8]>0x80) {
+				shithappens("More than 128 files inside SCL file");
+				break;
+			}
 			format();
 			fcnt = buf[8];
 			for (i=0;i<0x1000;i++) buf[i]=0x00;
@@ -375,7 +462,6 @@ void Floppy::load(std::string sfnam, uint8_t type) {
 				*(bptr+14) = scnt & 0x0f;
 				*(bptr+15) = ((scnt & ~0x0f) >> 4);
 				scnt += *(bptr+13);
-//printf("%.8s.%.1s\t%.2X.%.2X/%.2X\n",bptr,bptr+8,*(bptr+13),*(bptr+14),*(bptr+15));
 				bptr += 16;
 			}
 			*(bptr)=0;
@@ -439,31 +525,51 @@ std::vector<Sector> Floppy::getsectors(uint8_t tr) {
 	return res;
 }
 
-bool Floppy::getsector(uint8_t tr,uint8_t sc,uint8_t* buf) {
+void printHexBlock(uint8_t* ptr) {
+	for (int i=0; i<256; i++) {
+		printf("%.2X ",*ptr);
+		ptr++;
+		if ((i & 15) == 15) printf("\n");
+	}
+}
+
+uint8_t* Floppy::getSectorDataPtr(uint8_t tr, uint8_t sc) {
+	if (!insert) return NULL;
 	int32_t tpos = 0;
 	bool fnd;
 	while (1) {
 		while (data[tr].field[tpos] != 1) {
-			if (++tpos >= TRACKLEN) return false;
+			if (++tpos >= TRACKLEN) return NULL;
 		}
 		fnd = (data[tr].byte[tpos+2] == sc);
 		tpos += 6;
 		while ((data[tr].field[tpos] != 2) && (data[tr].field[tpos] != 3)) {
-			if (++tpos >= TRACKLEN) return false;
+			if (++tpos >= TRACKLEN) return NULL;
 		}
 		if (fnd) {
-			for (uint32_t i=0;i<256;i++) *(buf++) = data[tr].byte[tpos++];
-			return true;
+			return data[tr].byte + tpos;
 		}
 		tpos += 0x102;
+		if (tpos >= TRACKLEN) return NULL;
 	}
 }
 
-struct FilePos {
-	uint8_t trk;
-	uint8_t sec;
-	uint8_t slen;
-};
+bool Floppy::putSectorData(uint8_t tr,uint8_t sc,uint8_t* buf,int len) {
+	uint8_t* ptr = getSectorDataPtr(tr,sc);
+	if (ptr == NULL) return false;
+	memcpy(ptr,buf,len);
+	uint16_t crc = getcrc(ptr-1,len+1);
+	*(ptr + len) = ((crc & 0xff00) >> 8);
+	*(ptr + len + 1) = (crc & 0x00ff);
+	return true;
+}
+
+bool Floppy::getSectorData(uint8_t tr,uint8_t sc,uint8_t* buf,int len) {
+	uint8_t* ptr = getSectorDataPtr(tr,sc);
+	if (ptr == NULL) return false;
+	memcpy(buf,ptr,len);
+	return true;
+}
 
 // crc32 for UDI, taken from Unreal 0.32.7
 void crc32(int &crc, uint8_t *buf, unsigned len) {
@@ -531,7 +637,7 @@ void Floppy::save(std::string fnam, uint8_t type) {
 		case TYPE_TRD:
 			for (i=0; i<160; i++) {
 				for (j=1; j<17; j++) {
-					if (!getsector(i,j,dptr)) {
+					if (!getSectorData(i,j,dptr,256)) {
 						mbx.setText(QString("<b>Error parsing disk</b><br>Sector %1:%2 not found").arg(i).arg(j));
 						mbx.exec();
 						i=j=200;
@@ -548,7 +654,7 @@ void Floppy::save(std::string fnam, uint8_t type) {
 			img[8]=0;
 			dptr = img+9;
 			for (i=1; i<9; i++) {
-				getsector(0,i,buf);
+				getSectorData(0,i,buf,256);
 				bptr = buf;
 				for (j=0; j<16; j++) {
 					if (*bptr == 0) {i=j=20;}
@@ -569,7 +675,7 @@ void Floppy::save(std::string fnam, uint8_t type) {
 				tr = fplist[i].trk;
 				sc = fplist[i].sec;
 				for(j=0;j<fplist[i].slen;j++) {
-					getsector(tr,sc+1,dptr);
+					getSectorData(tr,sc+1,dptr,256);
 					dptr+=256;
 					sc++; if (sc>15) {tr++; sc=0;}
 				}

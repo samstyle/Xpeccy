@@ -545,7 +545,7 @@ void vD2(VG93* p) {p->addcrc(p->data);}
 void vD3(VG93* p) {p->addcrc(p->bus);}
 void vD4(VG93* p) {p->fcrc = p->fptr->rd(); p->fptr->next(p->side,p->t); p->fcrc |= (p->fptr->rd() << 8);}	// read crc from floppy
 void vD5(VG93* p) {
-//	printf ("CC\tVG: %.8X\tFLP: %.8X\n",p->crc,p->fcrc);
+//	printf ("test crc @ %i,%i - VG: %.4X\tFLP: %.4X\n",p->trk,p->sec,p->crc,p->fcrc);
 	dlt = *(p->wptr++); if (p->crc == p->fcrc) p->wptr += (int8_t)dlt;
 }
 void vD7(VG93* p) {p->fcrc = (p->fptr->rd() << 8);}

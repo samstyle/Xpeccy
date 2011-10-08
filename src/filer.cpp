@@ -6,7 +6,6 @@ extern ZXComp* zx;
 QFileDialog *filer;
 QDir lastDir;
 
-#include <QDebug>
 #include <QIcon>
 
 void initFileDialog(QWidget* par) {
@@ -32,6 +31,7 @@ QString getFilter(int flags) {
 #ifdef HAVEZLIB
 	if (flags & FT_RZX) res.append(" *.rzx");
 #endif
+	if (flags & FT_HOBETA) res.append(" *.$?");
 	if (res.startsWith(" ")) res.remove(0,1);
 	return res;
 }
@@ -48,6 +48,10 @@ int getFileType(QString path) {
 #ifdef HAVEZLIB
 	if (path.endsWith(".rzx",Qt::CaseInsensitive)) return FT_RZX;
 #endif
+	QStringList pspl = path.split(".");
+	if (pspl.size() > 0) {
+		if (pspl.last().startsWith("$")) return FT_HOBETA;
+	}
 	return FT_NONE;
 }
 
@@ -58,10 +62,10 @@ void loadFile(const char* name, int flags, int drv) {
 		QString filters = "";
 		if (drv == -1) filters = QString("All known types (").append(getFilter(flags)).append(")");
 		if (flags & FT_DISK) {
-			if ((drv == -1) || (drv == 0)) filters.append(";;Disk A (").append(getFilter(flags & FT_DISK)).append(")");
-			if ((drv == -1) || (drv == 1)) filters.append(";;Disk B (").append(getFilter(flags & FT_DISK)).append(")");
-			if ((drv == -1) || (drv == 2)) filters.append(";;Disk C (").append(getFilter(flags & FT_DISK)).append(")");
-			if ((drv == -1) || (drv == 3)) filters.append(";;Disk D (").append(getFilter(flags & FT_DISK)).append(")");
+			if ((drv == -1) || (drv == 0)) filters.append(";;Disk A (").append(getFilter(flags & (FT_DISK | FT_HOBETA))).append(")");
+			if ((drv == -1) || (drv == 1)) filters.append(";;Disk B (").append(getFilter(flags & (FT_DISK | FT_HOBETA))).append(")");
+			if ((drv == -1) || (drv == 2)) filters.append(";;Disk C (").append(getFilter(flags & (FT_DISK | FT_HOBETA))).append(")");
+			if ((drv == -1) || (drv == 3)) filters.append(";;Disk D (").append(getFilter(flags & (FT_DISK | FT_HOBETA))).append(")");
 		}
 		if (flags & FT_SNAP) filters.append(";;Snapshot (").append(getFilter(flags & FT_SNAP)).append(")");
 		if (flags & FT_TAPE) filters.append(";;Tape (").append(getFilter(flags & FT_TAPE)).append(")");
@@ -92,6 +96,7 @@ void loadFile(const char* name, int flags, int drv) {
 		case FT_TRD: zx->bdi->flop[drv].load(sfnam,TYPE_TRD); break;
 		case FT_FDI: zx->bdi->flop[drv].load(sfnam,TYPE_FDI); break;
 		case FT_UDI: zx->bdi->flop[drv].load(sfnam,TYPE_UDI); break;
+		case FT_HOBETA: zx->bdi->flop[drv].load(sfnam,TYPE_HOBETA); break;
 #if HAVEZLIB
 		case FT_RZX: zx->sys->mem->load(sfnam,TYP_RZX); break;
 #endif
