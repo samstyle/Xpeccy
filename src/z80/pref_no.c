@@ -156,7 +156,7 @@ void npr6A(ZXBase* p) {p->cpu->l = p->cpu->d;}
 void npr6B(ZXBase* p) {p->cpu->l = p->cpu->e;}
 void npr6C(ZXBase* p) {p->cpu->l = p->cpu->h;}
 void npr6D(ZXBase*) {}
-void npr6E(ZXBase* p) {p->cpu->l = p->mem->rd(p->cpu->hl);}
+void npr6E(ZXBase* p) {p->cpu->adr = p->cpu->hl; p->cpu->l = p->mem->rd(p->cpu->adr);}
 void npr6F(ZXBase* p) {p->cpu->l = p->cpu->a;}
 // ld (hl),r
 void npr70(ZXBase* p) {p->mem->wr(p->cpu->hl,p->cpu->b);}

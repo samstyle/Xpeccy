@@ -23,6 +23,16 @@ ZXComp* zx;
 EmulWin *mwin;
 extern MainWin* mainWin;
 
+std::string getTimeString(int32_t tsec) {
+	int32_t tmin = tsec / 60;
+	tsec -= tmin * 60;
+	std::string res = int2str(tmin);
+	res += ":";
+	if (tsec < 10) res += "0";
+	res += int2str(tsec);
+	return res;
+}
+
 void setFlagBit(bool cond, int32_t* val, int32_t mask) {
 	if (cond) {
 		*val |= mask;

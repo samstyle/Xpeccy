@@ -163,10 +163,6 @@ void initPaths() {
 		dir.rename(oldpath + "/roms",newpath + "/roms");
 		dir.rmdir(oldpath);
 	}
-// set new paths
-//	ssdir = std::string(getenv("HOME"));
-//	std::string mydir = ssdir + "/.config/samstyle";
-
 	workDir = std::string(getenv("HOME")) + "/.config/samstyle/xpeccy";
 	romDir = workDir + "/roms";
 	profPath = workDir + "/config.conf";

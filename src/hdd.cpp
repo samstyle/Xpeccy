@@ -24,8 +24,14 @@ bool IDE::in(uint16_t port,uint8_t* val,bool bdiActive) {
 		case IDE_NEMOA8:
 			if (((port & 6) != 0) || bdiActive) return false;
 			prt = (((port & 0xe0) >> 5) | (((port & 0x18) ^ 0x18) << 5) | 0x00f0);
-			res = true;
 			ishi = (port & ((iface==IDE_NEMO) ? 0x01 : 0x100));
+			res = true;
+			break;
+		case IDE_SMUC:
+			if (((port & 0x18c3) != 0x18c2) || !bdiActive) return false;
+			prt = ((port & 0x0700) >> 8) | 0x1f0;		// TODO: o, rly?
+			ishi = ~port & 0x2000;
+			res = true;
 			break;
 	}
 	if (res) {
@@ -53,9 +59,10 @@ bool IDE::out(uint16_t port,uint8_t val,bool bdiActive) {
 			if (prt == HDD_HEAD) cur = (prt & 0x08) ? &slave : &master;	// write to head reg: select MASTER/SLAVE
 			ishi = (port & ((iface==IDE_NEMO) ? 0x01 : 0x100));
 			break;
-//		case IDE_SMUC:
-//			if (!bdiActive || ((port & 0x18c3) != 0x18c2) return false;
-//			break;
+			if (((port & 0x18c3) != 0x18c2) || !bdiActive) return false;
+			prt = ((port & 0x0700) >> 8) | 0x1f0;		// TODO: o, rly?
+			ishi = ~port & 0x2000;
+			res = true;
 	}
 	if (res) {
 		if (ishi) {

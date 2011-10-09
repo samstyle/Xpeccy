@@ -1,8 +1,10 @@
 #include "tape.h"
 #include "spectrum.h"
+#include "common.h"
 
-#include <QMessageBox>
 #include <QString>
+
+#define	STDFREQ	3584000
 
 extern ZXComp* zx;
 
@@ -44,11 +46,11 @@ void TapeBlock::normSignals() {
 	}
 }
 
-int TapeBlock::gettime(int p=-1) {
+int TapeBlock::gettime(int p) {
 	long totsz = 0;
 	if (p==-1) p=data.size();
 	int i; for(i=0; i<p; i++) totsz += data[i];
-	return (totsz / (zx->vid->frmsz * 25));
+	return (totsz / STDFREQ);
 }
 
 int TapeBlock::getsize() {return (((data.size() - datapos)>>4) - 2);}
@@ -101,7 +103,7 @@ void Tape::sync() {
 					toutold = outsig;
 					tmpblock.data.push_back(0);
 				}
-				if (tmpblock.data.back()>4000) storeblock();
+				if (tmpblock.data.back()>3000) storeblock();
 			}
 		} else {
 			siglen -= dlt;
@@ -109,7 +111,7 @@ void Tape::sync() {
 				signal = !signal;
 				siglen += data[block].data[pos++];
 				if (pos >= data[block].data.size()) {
-					siglen += data[block].pause;
+					siglen += data[block].pause * 7168;
 					block++;
 					pos = -1;
 					if (block >= data.size()) {
@@ -124,7 +126,7 @@ void Tape::sync() {
 		siglen -= dlt;
 		while (siglen < 1) {
 			signal = !signal;
-			siglen += zx->vid->frmsz*25;	// .5 sec
+			siglen += STDFREQ;	// .5 sec
 		}
 	}
 }
@@ -224,10 +226,11 @@ std::vector<uint8_t> Tape::getdata(int blk, int pos, int len) {
 }
 
 // переконвертить len байт из *file в сигналы мофона. длины сигналов в slens. на выходе - блок
-TapeBlock Tape::parse(std::ifstream *file, uint32_t len, std::vector<int> slens) {
+TapeBlock Tape::parse(std::ifstream *file, uint32_t len, std::vector<int> slens,uint8_t bits) {
 	TapeBlock newb;
 	uint32_t i;
 	uint32_t j;
+	if (bits > 8) bits = 8;
 	uint8_t tmp = file->peek();
 	newb.plen=slens[0];
 	newb.s1len=slens[1];
@@ -241,8 +244,8 @@ TapeBlock Tape::parse(std::ifstream *file, uint32_t len, std::vector<int> slens)
 	if (newb.s2len!=0) newb.data.push_back(newb.s2len);
 	newb.datapos = newb.data.size();
 	for (i=0;i<len;i++) {
-		file->read((char*)&tmp,1);
-		for (j=0;j<8;j++) {
+		tmp = file->get();
+		for (j=0; j < 8; j++) {
 			if (tmp & 0x80) {
 				newb.data.push_back(newb.len1);
 				newb.data.push_back(newb.len1);
@@ -253,7 +256,7 @@ TapeBlock Tape::parse(std::ifstream *file, uint32_t len, std::vector<int> slens)
 			tmp = (tmp<<1);
 		}
 	}
-	if (slens[5]!=0) newb.data.push_back(slens[5]);
+//	if (slens[5]!=0) newb.data.push_back(slens[5]);
 	return newb;
 }
 
@@ -268,31 +271,29 @@ uint32_t getlen(std::ifstream *file,uint8_t n) {
 }
 
 void Tape::load(std::string sfnam,uint8_t type) {
-	QMessageBox mbx; mbx.setIcon(QMessageBox::Critical); mbx.setWindowTitle("Error");
 	std::ifstream file(sfnam.c_str(),std::ios::binary);
 	if (!file.good()) {
-		mbx.setText("<b>Can't open file</b>");
-		mbx.setInformativeText(sfnam.c_str());
-		mbx.exec();
+		shithappens(std::string("Can't open file '" + sfnam + "'"));
 		return;
 	}
-	uint32_t len,paulen,loopc=0;
+	uint32_t i,len,paulen,loopc=0;
 	std::streampos loopos = 0;
 	int sd[] = {2168,667,735,855,1710,954,-1};	// длины сигналов (pilot,s1,s2,0,1,s3,pilotsize (-1==auto))
 	std::vector<int> slens = std::vector<int>(sd,sd + sizeof(sd) / sizeof(int));
 	std::vector<int> alens = slens;
 	uint8_t *buf = new uint8_t[256];
-	uint8_t tmp;
+	uint8_t tmp,bits;
 	bool err = true;
-	TapeBlock newb;
+	TapeBlock newb,altb;
 	eject();
 	switch (type) {
 		case TYPE_TAP:
 			while (!file.eof()) {
 				len = getlen(&file,2);
 				if (!file.eof()) {
-					newb = parse(&file,len,slens);
-					newb.pause = zx->vid->frmsz * ((newb.pdur==8063)?50:25);
+					newb = parse(&file,len,slens,8);
+					newb.pause = (newb.pdur==8063) ? 500 : 1000;
+					newb.data.push_back(slens[5]);
 					data.push_back(newb);
 				}
 			}
@@ -301,20 +302,22 @@ void Tape::load(std::string sfnam,uint8_t type) {
 		case TYPE_TZX:
 			file.read((char*)buf,10);
 			if ((std::string((char*)buf,7) != "ZXTape!") || (buf[7]!=0x1a)) {
-				mbx.setText("<b>Wrong TZX file</b>");
-				mbx.setInformativeText("Incorrect signature");
-				mbx.exec();
+				shithappens("Wrong TZX signature");
 				break;
 			}
 			file.read((char*)&tmp,1);
 			do {
+printf("TZX block %.2X @ %.8X\n",tmp,(int)file.tellg()-1);
 				switch (tmp) {
 					case 0x10:
 						paulen = getlen(&file,2);
 						len = getlen(&file,2);
-						newb = parse(&file,len,slens);
-						newb.data.push_back((zx->vid->frmsz/20)*paulen);
+						newb = parse(&file,len,slens,8);
+						newb.pause = paulen;
+						newb.data.push_back(slens[5]);
 						data.push_back(newb);
+						newb.data.clear();
+printf("add block\n");
 						break;
 					case 0x11:
 						alens[0] = getlen(&file,2);	// pilot
@@ -326,66 +329,82 @@ void Tape::load(std::string sfnam,uint8_t type) {
 						file.get();
 						paulen = getlen(&file,2);
 						len = getlen(&file,3);
-						newb = parse(&file,len,alens);
-						newb.data.push_back((zx->vid->frmsz/20)*paulen);
+						newb = parse(&file,len,alens,8);
+						newb.pause = paulen;
+						newb.data.push_back(slens[5]);
 						data.push_back(newb);
+						newb.data.clear();
+printf("add block\n");
 						flags &= ~TAPE_CANSAVE;
 						break;
 					case 0x12:
-						if (data.size()==0) {newb.data.clear(); data.push_back(newb);}
 						paulen = getlen(&file,2);
 						len = getlen(&file,2);
-						while (len>0) {data.back().data.push_back(paulen); len--;}
+						while (len>0) {
+							newb.data.push_back(paulen);
+							len--;
+						}
 						flags &= ~TAPE_CANSAVE;
 						break;
 					case 0x13:
-						if (data.size()==0) {newb.data.clear(); data.push_back(newb);}
 						len = file.get();
-						while (len>0) {data.back().data.push_back(file.get()); len--;}
+						while (len>0) {
+							paulen = getlen(&file,2);
+							newb.data.push_back(paulen);
+							len--;
+						}
 						flags &= ~TAPE_CANSAVE;
 						break;
 					case 0x14:
-						alens[1]=alens[2]=alens[6]=0;	// no pilot, sync1, sync2
+						alens[0] = alens[1] = alens[2] = alens[5] = alens[6] = 0;	// no pilot, sync1, sync2
 						alens[3]=getlen(&file,2);
 						alens[4]=getlen(&file,2);
-						file.get();
+						bits = file.get();
 						paulen = getlen(&file,2);
 						len = getlen(&file,3);
-						newb = parse(&file,len,alens);
-						newb.data.push_back((zx->vid->frmsz/20)*paulen);
-						data.push_back(newb);
+						altb = parse(&file,len,alens,bits);
+						newb.len0 = altb.len0;
+						newb.len1 = altb.len1;
+						newb.datapos = -1;
+						for (i=0; i<altb.data.size(); i++) newb.data.push_back(altb.data[i]);
+						newb.pause = paulen;
+//						data.push_back(newb);
+//						newb.data.clear();
+//printf("add block\n");
 						flags &= ~TAPE_CANSAVE;
 						break;
+/*
 					case 0x15:
-						printf("Block 0x15 skipped\n");
 						file.seekg(5,std::ios::cur);
 						len = getlen(&file,3);
 						file.seekg(len,std::ios::cur);
 						break;
 					case 0x18:
-						printf("Block 0x18 skipped\n");
 						len = getlen(&file,4);
 						file.seekg(len,std::ios::cur);
 						break;
 					case 0x19:
-						printf("Block 0x19 skipped\n");
 						len = getlen(&file,4);
 						file.seekg(len,std::ios::cur);
 						break;
+*/
 					case 0x20:
-						if (data.size()==0) {newb.data.clear(); data.push_back(newb);}
 						len = getlen(&file,2);
-						data.back().data.push_back(len);
+						newb.data.push_back(len);
 						break;
 					case 0x21:
-						printf("Block 0x21 skipped\n");
 						len = file.get();
 						file.seekg(len,std::ios::cur);
 						break;
 					case 0x22:
+						if (newb.data.size() != 0) {
+							newb.data.push_back(slens[5]);
+							data.push_back(newb);
+							newb.data.clear();
+printf("add block\n");
+						}
 						break;
 					case 0x23:
-						printf("Block 0x23 skipped\n");
 						file.seekg(2,std::ios::cur);
 						break;
 					case 0x24:
@@ -393,26 +412,25 @@ void Tape::load(std::string sfnam,uint8_t type) {
 						loopos = file.tellg();
 						break;
 					case 0x25:
-						if (loopc>0) {loopc--; if (loopc!=0) file.seekg(loopos,std::ios::beg);}
+						if (loopc>0) {
+							loopc--;
+							if (loopc!=0) file.seekg(loopos,std::ios::beg);
+						}
 						break;
 					case 0x26:
-						printf("Block 0x26 skipped\n");
 						len = getlen(&file,2);
 						file.seekg(len<<1,std::ios::cur);
 						break;
 					case 0x27:
 						break;
 					case 0x28:
-						printf("Block 0x28 skipped\n");
 						len = getlen(&file,2);
 						file.seekg(len<<1,std::ios::cur);
 						break;
 					case 0x2a:
-						printf("Block 0x2a skipped\n");
 						file.seekg(4,std::ios::cur);
 						break;
 					case 0x2b:
-						printf("Block 0x2b skipped\n");
 						file.seekg(5,std::ios::cur);
 						break;
 					case 0x30:
@@ -441,14 +459,16 @@ void Tape::load(std::string sfnam,uint8_t type) {
 						file.seekg(9,std::ios::cur);
 						break;
 					default:
-						mbx.setText("Unknown TZX block");
-						mbx.setDetailedText(QString("block type\t0x").append(QString::number(tmp,16)));
-						mbx.exec();
+						shithappens(std::string("Unknown TZX block") + int2str(tmp));
 						err = false;
 						break;
 				}
 				file.read((char*)&tmp,1);
 			} while (!file.eof() && err);
+			if (err && (newb.data.size() != 0)) {
+				newb.data.push_back(slens[5]);
+				data.push_back(newb);
+			}
 	}
 }
 

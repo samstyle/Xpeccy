@@ -93,6 +93,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.hiface->addItem("None",QVariant(IDE_NONE));
 	ui.hiface->addItem("Nemo",QVariant(IDE_NEMO));
 	ui.hiface->addItem("Nemo A8",QVariant(IDE_NEMOA8));
+	ui.hiface->addItem("SMUC",QVariant(IDE_SMUC));
 	ui.hm_type->addItem(QIcon(":/images/cancel.png"),"Not connected",QVariant(IDE_NONE));
 	ui.hm_type->addItem(QIcon(":/images/hdd.png"),"HDD (ATA)",QVariant(IDE_ATA));
 //	ui.hm_type->addItem(QIcon(":/images/cd.png"),"CD (ATAPI) not working yet",QVariant(IDE_ATAPI));
@@ -362,24 +363,21 @@ void SetupWin::apply() {
 	zx->ide->master.pass.model = std::string(ui.hm_model->text().toUtf8().data(),40);
 	zx->ide->master.pass.serial = std::string(ui.hm_ser->text().toUtf8().data(),20);
 	zx->ide->master.image = std::string(ui.hm_path->text().toUtf8().data());
-	setFlagBit(ui.hm_islba->isChecked(),&(zx->ide->master.flags),ATA_LBA);
-//	zx->ide->master.canlba = ui.hm_islba->isChecked();
+	setFlagBit(ui.hm_islba->isChecked(),&zx->ide->master.flags,ATA_LBA);
 	zx->ide->master.pass.spt = ui.hm_gsec->value();
 	zx->ide->master.pass.hds = ui.hm_ghd->value();
 	zx->ide->master.pass.cyls = ui.hm_gcyl->value();
 	zx->ide->master.maxlba = ui.hm_glba->value();
-	
+
 	zx->ide->slave.iface = ui.hs_type->itemData(ui.hs_type->currentIndex()).toInt();
 	zx->ide->slave.pass.model = std::string(ui.hs_model->text().toUtf8().data(),40);
 	zx->ide->slave.pass.serial = std::string(ui.hs_ser->text().toUtf8().data(),20);
 	zx->ide->slave.image = std::string(ui.hs_path->text().toUtf8().data());
-	setFlagBit(ui.hs_islba->isChecked(),&zx->ide->master.flags,ATA_LBA);
-//	zx->ide->slave.canlba = ui.hs_islba->isChecked();
+	setFlagBit(ui.hs_islba->isChecked(),&zx->ide->slave.flags,ATA_LBA);
 	zx->ide->slave.pass.spt = ui.hs_gsec->value();
 	zx->ide->slave.pass.hds = ui.hs_ghd->value();
 	zx->ide->slave.pass.cyls = ui.hs_gcyl->value();
 	zx->ide->slave.maxlba = ui.hs_glba->value();
-	
 	zx->ide->refresh();
 
 // tools
@@ -577,39 +575,6 @@ void SetupWin::buildtapelist() {
 	}
 	ui.tapelist->selectRow(0);
 }
-
-/*
-//	int i,tm,ts;
-//	QStandardItemModel *model = new QStandardItemModel(zx->tape->data.size(),5);
-//	QStandardItem *itm;
-	
-	for(i=0;i<model->rowCount();i++) {
-		if ((int)zx->tape->block == i) {
-			itm = new QStandardItem(QIcon(":/images/checkbox.png"),"");
-			model->setItem(i,0,itm);
-			ts = zx->tape->data[i].gettime(zx->tape->pos); tm = ts/60; ts -= tm*60;
-			itm = new QStandardItem(QString::number(tm).append(":").append(QString::number(ts+100).right(2)));
-			model->setItem(i,2,itm);
-		} else {
-			itm = new QStandardItem(); model->setItem(i,0,itm);
-			itm = new QStandardItem(); model->setItem(i,2,itm);
-		}
-		ts = zx->tape->data[i].gettime(-1); tm = ts/60; ts -= tm*60;
-		itm = new QStandardItem(QString::number(tm).append(":").append(QString::number(ts+100).right(2)));
-		model->setItem(i,1,itm);
-		itm = new QStandardItem(QString::number(zx->tape->data[i].getsize()));
-		model->setItem(i,3,itm);
-		itm = new QStandardItem(QDialog::trUtf8(zx->tape->data[i].getheader().c_str()));
-		model->setItem(i,4,itm);
-	}
-	ui.tapelist->setModel(model);
-	ui.tapelist->setColumnWidth(0,20);
-	ui.tapelist->setColumnWidth(1,50);
-	ui.tapelist->setColumnWidth(2,50);
-	ui.tapelist->setColumnWidth(3,100);
-	ui.tapelist->selectRow(0);
-}
-*/
 
 void SetupWin::buildmenulist() {
 	std::vector<XBookmark> bml = getBookmarkList();

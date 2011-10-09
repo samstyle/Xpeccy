@@ -19,6 +19,7 @@ Memory::Memory(int tp) {
 	pt1 = &ram[5][0];
 	pt2 = &ram[2][0];
 	pt3 = &ram[0][0];
+	prt0 = prt1 = prt2 = 0;
 }
 
 void Memory::setram(uint8_t p) {

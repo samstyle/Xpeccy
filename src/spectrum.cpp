@@ -39,6 +39,7 @@ void ZXComp::reset(int wut) {
 		case RES_DOS: resbank = 3; break;
 		case RES_SHADOW: resbank = 2; break;
 	}
+	sys->mem->prt2 = 0;
 	sys->mem->prt1 = 0;
 	sys->mem->prt0 = ((resbank & 1) << 4);
 	sys->mem->setrom(resbank);
@@ -247,12 +248,30 @@ void ZXComp::out(uint16_t port,uint8_t val) {
 	}
 }
 
+/*
+ * ProfROM switch:
+ * 	page 2,6,10,14
+ * 	PC = E4B5 : ld l,(hl)
+ * 	HL = 0110..0113
+ * ProfROM table :
+ *  adr | 0 1 2 3 <- current layer
+ * -----+---------
+ * 0110 | 0 1 2 3 <- result layers
+ * 0111 | 3 3 3 2
+ * 0112 | 2 2 0 1
+ * 0113 | 1 0 1 0
+ */
+
 uint32_t ZXComp::exec() {
 	uint32_t ltk = vid->t;
 	ZOp res = sys->fetch();
 	vid->sync(res.t, sys->cpu->frq);
 	sys->istrb = vid->intStrobe;
 	res.func(sys);
+// profROM pages switch
+	if ((hw->type == HW_SCORP) && ((sys->mem->crom & 3) == 2) && (sys->cpu->pc == 0xe4b6) && ((sys->cpu->adr & 0xfffc) == 0x110)) {
+		// TODO: switcher here
+	}
 	if (bdi->enable) {
 		bdi->sync(vid->t);
 		if (bdi->active && (sys->cpu->hpc > 0x3f)) {

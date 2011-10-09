@@ -31,7 +31,7 @@ struct TapeBlockInfo {
 class TapeBlock {
 	public:
 		TapeBlock();
-		int32_t pause;					// pause in ms after block
+		uint64_t pause;					// pause in ms after block
 		int flags;
 		uint32_t plen,s1len,s2len,len0,len1;	// signals len
 		uint32_t pdur;				// pilot tone length
@@ -55,7 +55,7 @@ class Tape {
 		bool toutold;
 		bool outsig;
 		int32_t lastick;		// cpu.tick at last sync
-		int32_t siglen;		// остаток длины текущего сигнала
+		int64_t siglen;		// остаток длины текущего сигнала
 		TapeBlock tmpblock;	// временный блок. сюда ведется запись
 		std::vector<TapeBlock> data;
 		uint8_t getbyte(int32_t,int32_t);
@@ -67,7 +67,7 @@ class Tape {
 		void sync();
 		void storeblock();
 		void swapblocks(int32_t,int32_t);
-		TapeBlock parse(std::ifstream*,uint32_t,std::vector<int32_t>);
+		TapeBlock parse(std::ifstream*,uint32_t,std::vector<int32_t>,uint8_t);
 		void load(std::string,uint8_t);
 		void save(std::string,uint8_t);
 		std::vector<TapeBlockInfo> getInfo();

@@ -78,3 +78,7 @@ New	Alt + F12 = reset to DOS (rompage 3)
 
 build 20111008
 New	Hobeta files supporting
+
+build 20111009
+Fix	Fix TZX loading. But supporting is still not full
+New	Added SMUC IDE sheme, not tested, use at your own risk

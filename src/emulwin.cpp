@@ -112,9 +112,11 @@ void buildTapeList() {
 	std::vector<TapeBlockInfo> tinf = zx->tape->getInfo();
 	tapeUi.tapeList->setRowCount(tinf.size());
 	QTableWidgetItem* itm;
+	std::string tims;
 	for (uint i=0; i<tinf.size(); i++) {
 		itm = new QTableWidgetItem;
-		itm = new QTableWidgetItem(QString::number(tinf[i].size));
+		tims = getTimeString(tinf[i].time);
+		itm = new QTableWidgetItem(QString(tims.c_str()));
 		tapeUi.tapeList->setItem(i,2,itm);
 		itm = new QTableWidgetItem(QDialog::trUtf8(tinf[i].name.c_str()));
 		tapeUi.tapeList->setItem(i,3,itm);
