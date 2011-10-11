@@ -216,11 +216,15 @@ void saveProfiles() {
 	std::vector<RomSet> rsl = getRomsetList();
 	for (i=0; i<rsl.size(); i++) {
 		cfile<< "\nname = " << rsl[i].name.c_str() << "\n";
-		for (j=0; j<8; j++) {
-			if (rsl[i].roms[j].path != "") {
-				cfile << rmnam[j].c_str()<<" = " << rsl[i].roms[j].path.c_str();
-				if (rsl[i].roms[j].part != 0) cfile << ":" << int2str(rsl[i].roms[j].part).c_str();
-				cfile << "\n";
+		if (rsl[i].file != "") {
+			cfile << "file = " << rsl[i].file.c_str() << "\n";
+		} else {
+			for (j=0; j<4; j++) {
+				if (rsl[i].roms[j].path != "") {
+					cfile << rmnam[j].c_str()<<" = " << rsl[i].roms[j].path.c_str();
+					if (rsl[i].roms[j].part != 0) cfile << ":" << int2str(rsl[i].roms[j].part).c_str();
+					cfile << "\n";
+				}
 			}
 		}
 	}
@@ -500,21 +504,26 @@ void loadProfiles() {
 						newrs.name = pval;
 						rslist.push_back(newrs);
 					}
-					if ((pnam=="basic128") || (pnam=="0")) {
-						rslist.back().roms[0].path=fnam;
-						rslist.back().roms[0].part=fprt;
-					}
-					if ((pnam=="basic48") || (pnam=="1")) {
-						rslist.back().roms[1].path=fnam;
-						rslist.back().roms[1].part=fprt;
-					}
-					if ((pnam=="shadow") || (pnam=="2")) {
-						rslist.back().roms[2].path=fnam;
-						rslist.back().roms[2].part=fprt;
-					}
-					if ((pnam=="trdos") || (pnam=="3")) {
-						rslist.back().roms[3].path=fnam;
-						rslist.back().roms[3].part=fprt;
+					if (rslist.size() != 0) {
+						if (pnam=="file") {
+							rslist.back().file = fnam;
+						}
+						if ((pnam=="basic128") || (pnam=="0")) {
+							rslist.back().roms[0].path=fnam;
+							rslist.back().roms[0].part=fprt;
+						}
+						if ((pnam=="basic48") || (pnam=="1")) {
+							rslist.back().roms[1].path=fnam;
+							rslist.back().roms[1].part=fprt;
+						}
+						if ((pnam=="shadow") || (pnam=="2")) {
+							rslist.back().roms[2].path=fnam;
+							rslist.back().roms[2].part=fprt;
+						}
+						if ((pnam=="trdos") || (pnam=="3")) {
+							rslist.back().roms[3].path=fnam;
+							rslist.back().roms[3].part=fprt;
+						}
 					}
 					break;
 				case 5:
@@ -701,8 +710,8 @@ void loadConfig(bool dev) {
 	
 	sndCalibrate();
 	zx->ide->refresh();
-	setHardware(zx, optGetString("MACHINE","current"));
-	setRomset(zx, optGetString("ROMSET","current"));
+	setHardware(zx, zx->opt.hwName);
+	setRomset(zx, zx->opt.rsName);
 	if (zx->hw==NULL) throw("Can't found current machine");
 	if (zx->sys->mem->romset==NULL) throw("Can't found current romset");
 	if (~zx->hw->mask & tmask) throw("Incorrect memory size for this machine");

@@ -41,6 +41,8 @@ class SetupWin : public QDialog {
 		void hidersedit();
 		void addNewRomset();
 		void rmRomset();
+		void recheck_single(bool);
+		void recheck_separate(bool);
 	private:
 		Ui::SetupWin ui;
 		Ui::UmaDial uia;

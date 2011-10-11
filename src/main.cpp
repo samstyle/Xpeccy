@@ -112,15 +112,14 @@ int main(int ac,char** av) {
 			}
 		}
 		if (dev) {
-			devInit();	// dwin = new DevelWin;
+			devInit();
 			loadConfig(true);
-			devShow();	// dwin->show();
+			devShow();
 			return app.exec();
 		} else {
 			filltabs();
 			initHardware();
 			sndInit();
-//			mainWin = new MainWin;
 			emulInit();
 			mwin = new EmulWin();
 			dbgInit(emulWidget());

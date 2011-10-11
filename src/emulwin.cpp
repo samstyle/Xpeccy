@@ -33,7 +33,7 @@
 
 #include <fstream>
 
-#define	XPTITLE	"Xpeccy 0.4.995"
+#define	XPTITLE	"Xpeccy 0.4.996"
 
 extern ZXComp* zx;
 extern EmulWin* mwin;

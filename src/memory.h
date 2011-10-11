@@ -14,10 +14,11 @@
 
 struct RomSet {
 	std::string name;
+	std::string file;	// set when romfile is single file
 	struct {
 		std::string path;
 		uint8_t part;
-	} roms[16];
+	} roms[32];
 };
 
 struct RZXFrame {
@@ -30,7 +31,7 @@ class Memory {
 	Memory(int32_t);
 	int type;
 	uint8_t ram[64][16384];
-	uint8_t rom[8][16384];
+	uint8_t rom[32][16384];
 	uint8_t *pt0,*pt1,*pt2,*pt3;
 	uint8_t cram,crom;
 	uint8_t prt0;		// 7ffd value
@@ -38,6 +39,8 @@ class Memory {
 	uint8_t prt2;		// scorpion ProfROM layer (0..3)
 	uint8_t res;		// rompart active after reset
 	int32_t	mask;
+	int32_t profMask;	// profrom (0 - 64K, 1 - 128K, 3 - 256K)
+	int16_t lastRdAdr;
 	uint8_t rd(uint16_t);
 	void wr(uint16_t, uint8_t);
 	void load(std::string,int32_t);

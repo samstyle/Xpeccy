@@ -58,6 +58,7 @@ void ZXComp::reset(int wut) {
 }
 
 void ZXComp::mapMemory() {
+	uint8_t rp;
 	switch (hw->type) {
 		case HW_ZX48:
 			sys->mem->setrom(bdi->active?3:1);
@@ -72,7 +73,9 @@ void ZXComp::mapMemory() {
 			sys->mem->setram((sys->mem->prt0 & 7) | ((sys->mem->prt1 & 4)?0:((sys->mem->prt0 & 0x20) | ((sys->mem->prt0 & 0xc0)>>3))));
 			break;
 		case HW_SCORP:
-			sys->mem->setrom((sys->mem->prt1 & 0x01)?0xff:((sys->mem->prt1 & 0x02)?2:((bdi->active)?3:((sys->mem->prt0 & 0x10)>>4))));
+			rp = (sys->mem->prt1 & 0x01) ? 0xff : ((sys->mem->prt1 & 0x02) ? 2 : ((bdi->active) ? 3 : ((sys->mem->prt0 & 0x10)>>4)));
+			rp |= ((sys->mem->prt2 & 3) << 2);
+			sys->mem->setrom(rp);
 			sys->mem->setram((sys->mem->prt0 & 7) | ((sys->mem->prt1 & 0x10)>>1) | ((sys->mem->prt1 & 0xc0)>>2));
 			break;
 	}
@@ -262,25 +265,34 @@ void ZXComp::out(uint16_t port,uint8_t val) {
  * 0113 | 1 0 1 0
  */
 
+uint8_t ZSLays[4][4] = {
+	{0,1,2,3},
+	{3,3,3,2},
+	{2,2,0,1},
+	{1,0,1,0}
+};
+
 uint32_t ZXComp::exec() {
 	uint32_t ltk = vid->t;
 	ZOp res = sys->fetch();
 	vid->sync(res.t, sys->cpu->frq);
 	sys->istrb = vid->intStrobe;
 	res.func(sys);
-// profROM pages switch
-	if ((hw->type == HW_SCORP) && ((sys->mem->crom & 3) == 2) && (sys->cpu->pc == 0xe4b6) && ((sys->cpu->adr & 0xfffc) == 0x110)) {
-		// TODO: switcher here
+// profROM pages switch: was ld l,(hl), rompage = 2|6|10|14, hl before = 0x0100,0x0104,0x0108,0x010c
+//printf("%c\t%i\t%.4X\n",(hw->type == HW_SCORP) ? 'Y' : 'n',sys->mem->crom & 3,sys->mem->lastRdAdr & 0xfff3);
+	if ((hw->type == HW_SCORP) && ((sys->mem->crom & 3) == 2) && ((sys->mem->lastRdAdr & 0xfff3) == 0x0100)) {
+		sys->mem->prt2 = ZSLays[(sys->mem->lastRdAdr & 0x000c) >> 2][sys->mem->prt2 & 3] & sys->mem->profMask;
+		mapMemory();
 	}
 	if (bdi->enable) {
 		bdi->sync(vid->t);
 		if (bdi->active && (sys->cpu->hpc > 0x3f)) {
 			bdi->active = false;
-			mapMemory();	//hw->setrom();
+			mapMemory();
 		}
 		if (!bdi->active && (sys->cpu->hpc == 0x3d) && (sys->mem->prt0 & 0x10)) {
 			bdi->active = true;
-			mapMemory();	//hw->setrom();
+			mapMemory();
 		}
 	}
 	if ((sys->cpu->hpc > 0x3f) && sys->nmi) {

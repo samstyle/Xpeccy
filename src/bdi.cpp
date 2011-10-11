@@ -5,7 +5,7 @@
 #define	BYTEDELAY	224
 #define IDXDELAY	600
 #define	MSDELAY		7160		// 1ms delay
-#define	TRBDELAY	MSDELAY/2
+#define	TRBDELAY	MSDELAY * 3
 
 bool vgdebug = false;
 

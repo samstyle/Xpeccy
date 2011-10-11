@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>507</width>
-    <height>466</height>
+    <height>451</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -76,7 +76,7 @@
         <attribute name="title">
          <string>Machine</string>
         </attribute>
-        <layout class="QVBoxLayout" name="verticalLayout_3">
+        <layout class="QVBoxLayout" name="verticalLayout_26">
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_9">
            <item>
@@ -194,9 +194,12 @@
           </layout>
          </item>
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_16">
+          <layout class="QHBoxLayout" name="horizontalLayout_19">
            <item>
             <widget class="QTableWidget" name="rstab">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
              <property name="editTriggers">
               <set>QAbstractItemView::NoEditTriggers</set>
              </property>
@@ -210,7 +213,7 @@
               <enum>Qt::DotLine</enum>
              </property>
              <property name="rowCount">
-              <number>9</number>
+              <number>6</number>
              </property>
              <property name="columnCount">
               <number>3</number>
@@ -233,9 +236,6 @@
              <attribute name="verticalHeaderDefaultSectionSize">
               <number>17</number>
              </attribute>
-             <row/>
-             <row/>
-             <row/>
              <row/>
              <row/>
              <row/>
@@ -267,25 +267,10 @@
              </item>
              <item row="4" column="0">
               <property name="text">
-               <string>ext4</string>
+               <string>File</string>
               </property>
              </item>
              <item row="5" column="0">
-              <property name="text">
-               <string>ext5</string>
-              </property>
-             </item>
-             <item row="6" column="0">
-              <property name="text">
-               <string>ext6</string>
-              </property>
-             </item>
-             <item row="7" column="0">
-              <property name="text">
-               <string>ext7</string>
-              </property>
-             </item>
-             <item row="8" column="0">
               <property name="text">
                <string>GS</string>
               </property>
@@ -297,61 +282,150 @@
              <property name="title">
               <string>ROMset editor</string>
              </property>
-             <layout class="QGridLayout" name="gridLayout_20">
-              <item row="0" column="0">
-               <widget class="QLabel" name="label_26">
-                <property name="text">
-                 <string>ROM file</string>
-                </property>
-               </widget>
+             <property name="alignment">
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+             </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_18">
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_25">
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_16">
+                  <item>
+                   <widget class="QGroupBox" name="rse_grp_single">
+                    <property name="title">
+                     <string>Single file</string>
+                    </property>
+                    <property name="checkable">
+                     <bool>true</bool>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_3">
+                     <item>
+                      <widget class="QComboBox" name="rse_singlefile"/>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QGroupBox" name="groupBox_5">
+                    <property name="title">
+                     <string>General Sound</string>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_5">
+                     <item>
+                      <widget class="QComboBox" name="rse_gsfile"/>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="rse_grp_separate">
+                  <property name="title">
+                   <string>Separate Files</string>
+                  </property>
+                  <property name="checkable">
+                   <bool>true</bool>
+                  </property>
+                  <property name="checked">
+                   <bool>false</bool>
+                  </property>
+                  <layout class="QGridLayout" name="gridLayout_20">
+                   <item row="3" column="2">
+                    <widget class="QSpinBox" name="rse_part3"/>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QComboBox" name="rse_file1"/>
+                   </item>
+                   <item row="1" column="2">
+                    <widget class="QSpinBox" name="rse_part1"/>
+                   </item>
+                   <item row="3" column="1">
+                    <widget class="QComboBox" name="rse_file3"/>
+                   </item>
+                   <item row="0" column="2">
+                    <widget class="QSpinBox" name="rse_part0"/>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QComboBox" name="rse_file0"/>
+                   </item>
+                   <item row="2" column="1">
+                    <widget class="QComboBox" name="rse_file2"/>
+                   </item>
+                   <item row="2" column="2">
+                    <widget class="QSpinBox" name="rse_part2"/>
+                   </item>
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="label_34">
+                     <property name="text">
+                      <string>Bas128</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="label_35">
+                     <property name="text">
+                      <string>Bas48</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="0">
+                    <widget class="QLabel" name="label_36">
+                     <property name="text">
+                      <string>Shadow</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="0">
+                    <widget class="QLabel" name="label_37">
+                     <property name="text">
+                      <string>DOS</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+               </layout>
               </item>
-              <item row="0" column="1">
-               <widget class="QLabel" name="label_34">
-                <property name="text">
-                 <string>File part</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="0">
-               <widget class="QComboBox" name="rsfiles"/>
-              </item>
-              <item row="1" column="1">
-               <widget class="QSpinBox" name="rsparts"/>
-              </item>
-              <item row="2" column="0">
-               <widget class="QPushButton" name="rsselok">
-                <property name="text">
-                 <string>Apply</string>
-                </property>
-                <property name="icon">
-                 <iconset resource="../xpeccy.qrc">
-                  <normaloff>:/images/ok-apply.png</normaloff>:/images/ok-apply.png</iconset>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="1">
-               <widget class="QPushButton" name="rsselcan">
-                <property name="text">
-                 <string>Cancel</string>
-                </property>
-                <property name="icon">
-                 <iconset resource="../xpeccy.qrc">
-                  <normaloff>:/images/cancel.png</normaloff>:/images/cancel.png</iconset>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="0">
-               <spacer name="verticalSpacer">
-                <property name="orientation">
-                 <enum>Qt::Vertical</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>20</width>
-                  <height>157</height>
-                 </size>
-                </property>
-               </spacer>
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_24">
+                <item>
+                 <widget class="QPushButton" name="rse_apply">
+                  <property name="text">
+                   <string>Apply</string>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="../xpeccy.qrc">
+                    <normaloff>:/images/ok-apply.png</normaloff>:/images/ok-apply.png</iconset>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="rse_cancel">
+                  <property name="text">
+                   <string>Cancel</string>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="../xpeccy.qrc">
+                    <normaloff>:/images/cancel.png</normaloff>:/images/cancel.png</iconset>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="verticalSpacer">
+                  <property name="orientation">
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>20</width>
+                    <height>40</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
               </item>
              </layout>
             </widget>
