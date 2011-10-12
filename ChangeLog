@@ -83,6 +83,10 @@ build 20111009
 Fix	Fix TZX loading. But supporting is still not full
 New	Added SMUC IDE sheme, not tested, use at your own risk
 
+0.4.996
 build 20111011
 New	config.conf, [ROMSETS] "file = file.rom" means solid romfile
 New	ZS Scorpion have now ProfROM rompages arbiter for 128K and 256K rom
+
+build 20111012
+New	New romset editor

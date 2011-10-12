@@ -444,6 +444,11 @@ void loadProfiles() {
 	size_t pos;
 	std::string tms,fnam;
 	int test,fprt;
+	newrs.file = "";
+	for (int i=0; i<32; i++) {
+		newrs.roms[i].path = "";
+		newrs.roms[i].part = 0;
+	}
 	while (!file.eof()) {
 		file.getline(buf,2048);
 		line = std::string(buf);

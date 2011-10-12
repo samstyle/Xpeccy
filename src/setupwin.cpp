@@ -112,7 +112,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	QObject::connect(ui.cpufrq,SIGNAL(valueChanged(int)),this,SLOT(updfrq()));
 	QObject::connect(ui.rstab,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(editrset(QModelIndex)));
 	QObject::connect(ui.rse_cancel,SIGNAL(released()),this,SLOT(hidersedit()));
-//	QObject::connect(ui.rsselok,SIGNAL(released()),this,SLOT(setrpart()));
+	QObject::connect(ui.rse_apply,SIGNAL(released()),this,SLOT(setrpart()));
 	QObject::connect(ui.rse_grp_single,SIGNAL(toggled(bool)),this,SLOT(recheck_separate(bool)));
 	QObject::connect(ui.rse_grp_separate,SIGNAL(toggled(bool)),this,SLOT(recheck_single(bool)));
 	QObject::connect(ui.addrset,SIGNAL(released()),optName,SLOT(show()));
@@ -181,7 +181,9 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	QObject::connect(uia.umacn,SIGNAL(released()),umadial,SLOT(hide()));
 }
 
-void SetupWin::recheck_single(bool st) {ui.rse_grp_single->setChecked(!st);}
+void SetupWin::recheck_single(bool st) {
+	ui.rse_grp_single->setChecked(!st);
+}
 void SetupWin::recheck_separate(bool st) {ui.rse_grp_separate->setChecked(!st);}
 
 void SetupWin::okay() {apply();reject();}
@@ -202,11 +204,9 @@ void SetupWin::start() {
 		ui.rsetbox->addItem(QDialog::trUtf8(rsl[i].name.c_str()));
 	}
 	ui.machbox->setCurrentIndex(ui.machbox->findText(QDialog::trUtf8(zx->hw->name.c_str())));
-	if (zx->sys->mem->romset == NULL) {
-		ui.rsetbox->setCurrentIndex(-1);
-	} else {
-		ui.rsetbox->setCurrentIndex(ui.rsetbox->findText(QDialog::trUtf8(zx->sys->mem->romset->name.c_str())));
-	}
+	int cbx = -1;
+	if (zx->sys->mem->romset != NULL) cbx = ui.rsetbox->findText(QDialog::trUtf8(zx->sys->mem->romset->name.c_str()));
+	ui.rsetbox->setCurrentIndex(cbx);
 	ui.reschk->setChecked(emulGetFlags() & FL_RESET);
 	ui.resbox->setCurrentIndex(zx->sys->mem->res);
 	switch(zx->sys->mem->mask) {
@@ -216,9 +216,8 @@ void SetupWin::start() {
 		case 0x1f: ui.mszbox->setCurrentIndex(3); break;
 		case 0x3f: ui.mszbox->setCurrentIndex(4); break;
 	}
-	ui.cpufrq->setValue(zx->sys->cpu->frq * 2);
+	ui.cpufrq->setValue(zx->sys->cpu->frq * 2); updfrq();
 	ui.scrpwait->setChecked(zx->sys->hwflags & WAIT_ON);
-	updfrq();
 // video
 	ui.dszchk->setChecked((zx->vid->flags & VF_DOUBLE));
 //	ui.fscchk->setChecked(vid->fscreen);
@@ -441,7 +440,15 @@ void fillRFBox(QComboBox* box, QStringList lst) {
 	box->addItems(lst);
 }
 
+std::string getRFText(QComboBox* box) {
+	QString res = "";
+	if (box->currentIndex() > 0) res = box->currentText();
+	return std::string(res.toUtf8().data());
+}
+
 void SetupWin::editrset(QModelIndex idx) {
+	int cbx = ui.rsetbox->currentIndex();
+	if (cbx < 0) return;
 	std::string rpth = optGetString(OPT_ROMDIR);
 	QDir rdir(QString(rpth.c_str()));
 	QStringList rlst = rdir.entryList(QStringList() << "*.rom",QDir::Files,QDir::Name);
@@ -451,6 +458,17 @@ void SetupWin::editrset(QModelIndex idx) {
 	fillRFBox(ui.rse_file2,rlst);
 	fillRFBox(ui.rse_file3,rlst);
 	fillRFBox(ui.rse_gsfile,rlst);
+	ui.rse_singlefile->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].file.c_str())) + 1);
+	ui.rse_file0->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].roms[0].path.c_str())) + 1);
+	ui.rse_file1->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].roms[1].path.c_str())) + 1);
+	ui.rse_file2->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].roms[2].path.c_str())) + 1);
+	ui.rse_file3->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].roms[3].path.c_str())) + 1);
+	ui.rse_part0->setValue(rsl[cbx].roms[0].part);
+	ui.rse_part1->setValue(rsl[cbx].roms[1].part);
+	ui.rse_part2->setValue(rsl[cbx].roms[2].part);
+	ui.rse_part3->setValue(rsl[cbx].roms[3].part);
+	ui.rse_gsfile->setCurrentIndex(rlst.indexOf(QString(GSRom.c_str())) + 1);
+	ui.rse_grp_single->setChecked(rsl[cbx].file != "");
 	ui.rstab->hide();
 	ui.rsetbox->setEnabled(false);
 	ui.addrset->setEnabled(false);
@@ -459,19 +477,17 @@ void SetupWin::editrset(QModelIndex idx) {
 }
 
 void SetupWin::setrpart() {
-/*	QString rnew = ui.rsfiles->itemText(ui.rsfiles->currentIndex());
-	if (rnew == "none") rnew = "";
-	int pnew = ui.rsparts->value();
-	QModelIndex idx = ui.rstab->currentIndex();
-	if (idx.isValid()) {
-		int row = idx.row();
-		if (row < 4) {
-			rsl[ui.rsetbox->currentIndex()].roms[row].path = std::string(rnew.toUtf8().data());
-			rsl[ui.rsetbox->currentIndex()].roms[row].part = pnew;
-		} else {
-			GSRom = std::string(rnew.toUtf8().data());
-		}
-	}*/
+	int cbx = ui.rsetbox->currentIndex();
+	GSRom = getRFText(ui.rse_gsfile);
+	if (ui.rse_grp_single->isChecked()) {
+		rsl[cbx].file = getRFText(ui.rse_singlefile);
+	} else {
+		rsl[cbx].file = "";
+	}
+	rsl[cbx].roms[0].path = getRFText(ui.rse_file0); rsl[cbx].roms[0].part = ui.rse_part0->value();
+	rsl[cbx].roms[1].path = getRFText(ui.rse_file1); rsl[cbx].roms[1].part = ui.rse_part1->value();
+	rsl[cbx].roms[2].path = getRFText(ui.rse_file2); rsl[cbx].roms[2].part = ui.rse_part2->value();
+	rsl[cbx].roms[3].path = getRFText(ui.rse_file3); rsl[cbx].roms[3].part = ui.rse_part3->value();
 	buildrsetlist();
 	hidersedit();
 }
