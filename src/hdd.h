@@ -19,7 +19,8 @@
 
 // hdd port = 0.0.0.0.0.0.CS1.CS0.1.1.1.1.1.HS2.HS1.HS0
 #define HDD_DATA	0x1F0		// 16 bit (!)
-#define HDD_ERROR	0x1F1
+#define HDD_ERROR	0x1F1		// in
+#define HDD_FEAT	HDD_ERROR	// out
 #define HDD_COUNT	0x1F2
 #define HDD_SECTOR	0x1F3
 #define HDD_CYL_LOW	0x1F4
@@ -119,9 +120,10 @@ class IDE {
 		ATADev slave;
 		ATADev *cur;
 		int32_t iface;		// none, nemo, ...
+		uint8_t smucSys;		// SMUC system register (FFBA)
+		uint16_t bus;
 		bool in(uint16_t, uint8_t*, bool);		// return value is iorge (true on accepting)
 		bool out(uint16_t, uint8_t, bool);
-		uint16_t bus;
 		void reset();
 		void refresh();
 };

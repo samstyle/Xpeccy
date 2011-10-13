@@ -11,13 +11,14 @@ IDE::IDE() {
 }
 
 /*
- * SMUC: dos, a0=0,a1=a6=a7=a11=a12=1	xxx1 1xxx 11xx xx10
+ * SMUC: dos, a0=0,a1=a5=a7=a11=a12=1	xxx1 1xxx 1x1x xx10
  * 
 */
 
 bool IDE::in(uint16_t port,uint8_t* val,bool bdiActive) {
 	bool res = false;
-	bool ishi;
+	bool ishdd = false;
+	bool ishi = false;
 	int prt = 0;
 	switch (iface) {
 		case IDE_NEMO:
@@ -25,46 +26,70 @@ bool IDE::in(uint16_t port,uint8_t* val,bool bdiActive) {
 			if (((port & 6) != 0) || bdiActive) return false;
 			prt = (((port & 0xe0) >> 5) | (((port & 0x18) ^ 0x18) << 5) | 0x00f0);
 			ishi = (port & ((iface==IDE_NEMO) ? 0x01 : 0x100));
+			ishdd = true;
 			res = true;
 			break;
 		case IDE_SMUC:
-			if (((port & 0x18c3) != 0x18c2) || !bdiActive) return false;
+			if (((port & 0x18a3) != 0x18a2) || !bdiActive) return false;
 			prt = ((port & 0x0700) >> 8) | 0x1f0;		// TODO: o, rly?
-			ishi = ~port & 0x2000;
-			res = true;
+			if (smucSys & 0x80) {
+				if (prt == HDD_HEAD) prt = HDD_ASTATE;
+			}
+			res = true;					// catched smuc port
+			ishi = (port == 0xd8be);
+			ishdd = (ishi || ((port & 0xf8ff) == 0xf8be));		// ide port (hdd itself)
+			switch (port) {
+				case 0x5fba:		// version
+					*val = 0x28;	// 1
+					break;
+				case 0x5fbe:		// revision
+					*val = 0x40;	// 2
+					break;
+				case 0xffba:		// system
+					*val = (cur->reg.state & HDF_BSY) ? 0x00 : 0x80;	// TODO: b7: IRQ
+					break;
+			}
 			break;
 	}
-	if (res) {
+	if (ishdd) {
 		if (ishi) {
 			*val = ((bus & 0xff00) >> 8);
 		} else {
 			bus = cur->in(prt);
 			*val = (bus & 0x00ff);
 		}
-//printf("ATA in\t%.4X (%.4X) = %.4X\n",prt,port,bus);
 	}
 	return res;
 }
 
 bool IDE::out(uint16_t port,uint8_t val,bool bdiActive) {
 	bool res = false;
-	bool ishi;
+	bool ishi = false;
+	bool ishdd = false;
 	int prt;
 	switch (iface) {
 		case IDE_NEMO:
 		case IDE_NEMOA8:
 			if (((port & 6) != 0) || bdiActive) return false;
 			res = true;
+			ishdd = true;
 			prt = ((port & 0xe0) >> 5) | (((port & 0x18) ^ 0x18) << 5) | 0x00f0;
 			if (prt == HDD_HEAD) cur = (prt & 0x08) ? &slave : &master;	// write to head reg: select MASTER/SLAVE
 			ishi = (port & ((iface==IDE_NEMO) ? 0x01 : 0x100));
 			break;
-			if (((port & 0x18c3) != 0x18c2) || !bdiActive) return false;
+		case IDE_SMUC:
+			if (((port & 0x18a3) != 0x18a2) || !bdiActive) return false;
 			prt = ((port & 0x0700) >> 8) | 0x1f0;		// TODO: o, rly?
-			ishi = ~port & 0x2000;
-			res = true;
+			ishi = ((port & 0x2000) == 0x0000);
+			res = true;					// catched smuc port
+			ishdd = ((port & 0xf8ff) == 0xf8be);		// ide port (hdd itself)
+			switch (port) {
+				case 0xffba:
+					smucSys = val;
+					break;
+			}
 	}
-	if (res) {
+	if (ishdd) {
 		if (ishi) {
 			bus &= 0x00ff;
 			bus |= (val << 8);
@@ -73,8 +98,8 @@ bool IDE::out(uint16_t port,uint8_t val,bool bdiActive) {
 			bus |= val;
 			cur->out(prt,bus);
 		}
-//printf("ATA out\t%.4X (%.4X) = %.4X\n",prt,port,bus);
 	}
+//if (iface == IDE_SMUC) printf("SMUC out\t%.4X (%.4X) = %.4X\n",prt,port,bus);
 	return res;
 }
 
@@ -185,7 +210,7 @@ uint16_t ATADev::in(int32_t prt) {
 			break;
 		default:
 			printf("HDD in: port %.3X isn't emulated\n",prt);
-			throw(0);
+//			throw(0);
 	}
 	return res;
 }
@@ -239,9 +264,11 @@ void ATADev::out(int32_t prt, uint16_t val) {
 		case HDD_ASTATE:
 			if (val & 0x04) reset();
 			break;
+		case HDD_FEAT:
+			break;
 		default:
 			printf("HDD out: port %.3X isn't emulated\n",prt);
-			throw(0);
+//			throw(0);
 	}
 }
 

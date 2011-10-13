@@ -162,11 +162,13 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	QObject::connect(ui.hm_gcyl,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
 	QObject::connect(ui.hm_ghd,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
 	QObject::connect(ui.hm_gsec,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	connect(ui.hm_pathtb,SIGNAL(released()),this,SLOT(hddMasterImg()));
 	QObject::connect(ui.hs_islba,SIGNAL(stateChanged(int)),this,SLOT(hddcap()));
 	QObject::connect(ui.hs_glba,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
 	QObject::connect(ui.hs_gcyl,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
 	QObject::connect(ui.hs_ghd,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
 	QObject::connect(ui.hs_gsec,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	connect(ui.hs_pathtb,SIGNAL(released()),this,SLOT(hddSlaveImg()));
 //tools
 	QObject::connect(ui.sjselptb,SIGNAL(released()),this,SLOT(ssjapath()));
 	QObject::connect(ui.pdselptb,SIGNAL(released()),this,SLOT(sprjpath()));
@@ -721,6 +723,16 @@ void SetupWin::setTapeBreak(int row,int col) {
 }
 
 // hdd
+
+void SetupWin::hddMasterImg() {
+	QString path = QFileDialog::getSaveFileName(this,"Image for master HDD",QDir::homePath(),"All files (*.*)",NULL,QFileDialog::DontConfirmOverwrite);
+	if (path != "") ui.hm_path->setText(path);
+}
+
+void SetupWin::hddSlaveImg() {
+	QString path = QFileDialog::getSaveFileName(this,"Image for slave HDD",QDir::homePath(),"All files (*.*)",NULL,QFileDialog::DontConfirmOverwrite);
+	if (path != "") ui.hs_path->setText(path);
+}
 
 void SetupWin::hddcap() {
 	uint32_t sz;

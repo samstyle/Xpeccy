@@ -90,3 +90,6 @@ New	ZS Scorpion have now ProfROM rompages arbiter for 128K and 256K rom
 
 build 20111012
 New	New romset editor
+
+build 20111013
+Fix	Fix SMUC HDD data-hi port(d8be), add SMUC system(ffba),version(5fba),release(5fbe) ports.

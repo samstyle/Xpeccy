@@ -27,6 +27,7 @@ class SetupWin : public QDialog {
 		void newa(); void newb(); void newc(); void newd(); void newdisk(int);
 		void loatape(); void savtape(); void ejctape();
 		void tblkup(); void tblkdn(); void tblkrm();
+		void hddMasterImg(); void hddSlaveImg();
 		void ssjapath(); void sprjpath();
 		void umadd(); void umdel(); void umup(); void umdn();
 		void umedit(QModelIndex);
