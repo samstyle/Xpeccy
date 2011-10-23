@@ -83,6 +83,12 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.tsbox->addItem("NedoPC",QVariant(TS_NEDOPC));
 	ui.gstereobox->addItem("Mono",QVariant(GS_MONO));
 	ui.gstereobox->addItem("L:1,2; R:3,4",QVariant(GS_12_34));
+// bdi
+// WTF? QtDesigner doesn't save this properties
+	ui.disklista->horizontalHeader()->setVisible(true);
+	ui.disklistb->horizontalHeader()->setVisible(true);
+	ui.disklistc->horizontalHeader()->setVisible(true);
+	ui.disklistd->horizontalHeader()->setVisible(true);
 // tape
 	ui.tapelist->setColumnWidth(0,20);
 	ui.tapelist->setColumnWidth(1,20);
@@ -265,6 +271,7 @@ void SetupWin::start() {
 		ui.d80box->setChecked(zx->bdi->flop[3].trk80);
 		ui.ddsbox->setChecked(zx->bdi->flop[3].dblsid);
 		ui.dwpbox->setChecked(zx->bdi->flop[3].protect);
+	fillDiskCat();
 // hdd
 	ui.hiface->setCurrentIndex(ui.hiface->findData(zx->ide->iface));
 	
@@ -623,6 +630,46 @@ void SetupWin::buildmenulist() {
 	ui.umlist->selectRow(0);
 };
 
+void fillCat(int dsk, QTableWidget* wid) {
+	wid->setColumnWidth(0,100);
+	wid->setColumnWidth(1,30);
+	wid->setColumnWidth(2,70);
+	wid->setColumnWidth(3,70);
+	wid->setColumnWidth(4,50);
+	wid->setColumnWidth(5,50);
+//	wid->setColumnWidth(6,40);
+	QTableWidgetItem* itm;
+	if (!zx->bdi->flop[dsk].insert) {
+		wid->setEnabled(false);
+		wid->setRowCount(0);
+	} else {
+		wid->setEnabled(true);
+		if (zx->bdi->flop[dsk].getDiskType() == TYPE_TRD) {
+			std::vector<TRFile> cat = zx->bdi->flop[dsk].getTRCatalog();
+			wid->setRowCount(cat.size());
+			for (uint i=0; i<cat.size(); i++) {
+				itm = new QTableWidgetItem(QString(std::string((char*)cat[i].name,8).c_str())); wid->setItem(i,0,itm);
+				itm = new QTableWidgetItem(QString(QChar(cat[i].ext))); wid->setItem(i,1,itm);
+				itm = new QTableWidgetItem(QString::number(cat[i].lst + (cat[i].hst << 8))); wid->setItem(i,2,itm);
+				itm = new QTableWidgetItem(QString::number(cat[i].llen + (cat[i].hlen << 8))); wid->setItem(i,3,itm);
+				itm = new QTableWidgetItem(QString::number(cat[i].slen)); wid->setItem(i,4,itm);
+				itm = new QTableWidgetItem(QString::number(cat[i].trk)); wid->setItem(i,5,itm);
+				itm = new QTableWidgetItem(QString::number(cat[i].sec)); wid->setItem(i,6,itm);
+			}
+		} else {
+			wid->setEnabled(false);
+			wid->setRowCount(0);
+		}
+	}
+}
+
+void SetupWin::fillDiskCat() {
+	fillCat(0,ui.disklista);
+	fillCat(1,ui.disklistb);
+	fillCat(2,ui.disklistc);
+	fillCat(3,ui.disklistd);
+}
+
 // machine
 
 void SetupWin::updfrq() {
@@ -685,6 +732,7 @@ void SetupWin::updatedisknams() {
 	ui.bpathle->setText(QDialog::trUtf8(zx->bdi->flop[1].path.c_str()));
 	ui.cpathle->setText(QDialog::trUtf8(zx->bdi->flop[2].path.c_str()));
 	ui.dpathle->setText(QDialog::trUtf8(zx->bdi->flop[3].path.c_str()));
+	fillDiskCat();
 }
 
 // tape

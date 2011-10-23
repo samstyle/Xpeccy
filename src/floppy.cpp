@@ -296,6 +296,33 @@ int Floppy::createFile(TRFile* dsc) {
 	return ERR_OK;
 }
 
+std::vector<TRFile> Floppy::getTRCatalog() {
+	std::vector<TRFile> res;
+	if (getDiskType() == TYPE_TRD) {
+		TRFile file;
+		uint8_t* buf = new uint8_t[256];
+		uint8_t* ptr;
+		int i,j;
+		for (i=1; i<9; i++) {
+			if (getSectorData(0,i,buf,256)) {
+				ptr = buf;
+				for (j=0; j<15; j++) {
+					if (*ptr == 0x00) break;
+					if (*ptr > 0x1f) {
+						memcpy((char*)&file,ptr,16);
+						res.push_back(file);
+					}
+					ptr += 0x10;
+				}
+				if (j<15) break;
+			} else {
+				break;
+			}
+		}
+	}
+	return res;
+}
+
 void Floppy::load(std::string sfnam, uint8_t type) {
 	if (type != TYPE_HOBETA) {
 		if (!savecha()) return;

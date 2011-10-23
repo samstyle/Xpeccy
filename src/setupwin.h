@@ -50,6 +50,7 @@ class SetupWin : public QDialog {
 		QDialog *umadial;
 		void buildtapelist();
 		void buildmenulist();
+		void fillDiskCat();
 		int umidx;
 };
 

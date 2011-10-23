@@ -1,5 +1,5 @@
-project(xpeccy)
 cmake_minimum_required(VERSION 2.8)
+project(xpeccy)
 
 find_package(Qt4 REQUIRED)
 find_package(SDL REQUIRED)

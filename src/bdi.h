@@ -90,6 +90,7 @@ class Floppy {
 	void setString(std::string);
 	int getDiskType();
 	int createFile(TRFile*);
+	std::vector<TRFile> getTRCatalog();
 	uint8_t* getSectorDataPtr(uint8_t,uint8_t);
 	bool getSectorData(uint8_t, uint8_t, uint8_t*, int);
 	bool putSectorData(uint8_t, uint8_t, uint8_t*, int);

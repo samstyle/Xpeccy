@@ -342,7 +342,7 @@ void ATADev::readSector() {
 
 void ATADev::writeSector() {
 	getSectorNumber();
-//printf("WRITE: lba = %i (%i)\n",lba,maxlba);
+printf("WRITE: lba = %i (%i)\n",lba,maxlba);
 	if (lba > maxlba) {			// sector not found
 		reg.state |= HDF_ERR;
 		reg.err |= (HDF_ABRT | HDF_IDNF);
