@@ -94,6 +94,7 @@ class Floppy {
 	uint8_t* getSectorDataPtr(uint8_t,uint8_t);
 	bool getSectorData(uint8_t, uint8_t, uint8_t*, int);
 	bool putSectorData(uint8_t, uint8_t, uint8_t*, int);
+	bool getSectorsData(uint8_t, uint8_t, uint8_t*, int);
 };
 
 class VG93 {

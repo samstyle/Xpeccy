@@ -85,16 +85,15 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.gstereobox->addItem("L:1,2; R:3,4",QVariant(GS_12_34));
 // bdi
 // WTF? QtDesigner doesn't save this properties
-	ui.disklista->horizontalHeader()->setVisible(true);
-	ui.disklistb->horizontalHeader()->setVisible(true);
-	ui.disklistc->horizontalHeader()->setVisible(true);
-	ui.disklistd->horizontalHeader()->setVisible(true);
+	ui.disklist->horizontalHeader()->setVisible(true);
+	ui.disklist->addAction(ui.actCopyToTape);
 // tape
 	ui.tapelist->setColumnWidth(0,20);
 	ui.tapelist->setColumnWidth(1,20);
 	ui.tapelist->setColumnWidth(2,50);
 	ui.tapelist->setColumnWidth(3,50);
 	ui.tapelist->setColumnWidth(4,100);
+	ui.tapelist->addAction(ui.actCopyToDisk);
 // hdd
 	ui.hiface->addItem("None",QVariant(IDE_NONE));
 	ui.hiface->addItem("Nemo",QVariant(IDE_NEMO));
@@ -153,6 +152,9 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	QObject::connect(ui.remobtb,SIGNAL(released()),this,SLOT(ejctb()));
 	QObject::connect(ui.remoctb,SIGNAL(released()),this,SLOT(ejctc()));
 	QObject::connect(ui.remodtb,SIGNAL(released()),this,SLOT(ejctd()));
+	
+	QObject::connect(ui.disktabs,SIGNAL(currentChanged(int)),this,SLOT(fillDiskCat()));
+	connect(ui.actCopyToTape,SIGNAL(triggered()),this,SLOT(copyToTape()));
 // tape
 	QObject::connect(ui.tapelist,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(chablock(QModelIndex)));
 	QObject::connect(ui.tapelist,SIGNAL(cellClicked(int,int)),this,SLOT(setTapeBreak(int,int)));
@@ -162,6 +164,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	QObject::connect(ui.blkuptb,SIGNAL(released()),this,SLOT(tblkup()));
 	QObject::connect(ui.blkdntb,SIGNAL(released()),this,SLOT(tblkdn()));
 	QObject::connect(ui.blkrmtb,SIGNAL(released()),this,SLOT(tblkrm()));
+	connect(ui.actCopyToDisk,SIGNAL(triggered()),this,SLOT(copyToDisk()));
 // hdd
 	QObject::connect(ui.hm_islba,SIGNAL(stateChanged(int)),this,SLOT(hddcap()));
 	QObject::connect(ui.hm_glba,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
@@ -582,8 +585,13 @@ void SetupWin::buildrsetlist() {
 void SetupWin::buildtapelist() {
 	buildTapeList();
 	std::vector<TapeBlockInfo> inf = zx->tape->getInfo();
-	QTableWidgetItem* itm;
 	ui.tapelist->setRowCount(inf.size());
+	if (inf.size() == 0) {
+		ui.tapelist->setEnabled(false);
+		return;
+	}
+	ui.tapelist->setEnabled(true);
+	QTableWidgetItem* itm;
 	uint tm,ts;
 	for (uint i=0; i<inf.size(); i++) {
 		if ((int)zx->tape->block == i) {
@@ -630,7 +638,135 @@ void SetupWin::buildmenulist() {
 	ui.umlist->selectRow(0);
 };
 
-void fillCat(int dsk, QTableWidget* wid) {
+void SetupWin::copyToTape() {
+	int dsk = ui.disktabs->currentIndex();
+	QModelIndexList idx = ui.disklist->selectionModel()->selectedRows();
+	std::vector<TRFile> cat = zx->bdi->flop[dsk].getTRCatalog();
+	int row;
+	uint8_t* buf = new uint8_t[0xffff];
+	uint16_t line,start,len;
+	std::string name;
+	for (int i=0; i<idx.size(); i++) {
+		row = idx[i].row();
+		if (zx->bdi->flop[dsk].getSectorsData(cat[row].trk, cat[row].sec+1, buf, cat[row].slen)) {
+			if (cat[row].slen == (cat[row].hlen + ((cat[row].llen == 0) ? 0 : 1))) {
+				start = (cat[row].hst << 8) + cat[row].lst;
+				len = (cat[row].hlen << 8) + cat[row].llen;
+				line = (cat[row].ext == 'B') ? (buf[start] + (buf[start+1] << 8)) : 0x8000;
+				name = std::string((char*)&cat[row].name[0],8) + std::string(".") + std::string((char*)&cat[row].ext,1);
+				zx->tape->addFile(name,(cat[row].ext == 'B') ? 0 : 3, start, len, line, buf,true);
+				buildtapelist();
+			} else {
+				shithappens("File seems to be joined, skip");
+			}
+		} else {
+			shithappens("Can't get file data, skip");
+		}
+		
+	}
+}
+
+TRFile getHeadInfo(int blk) {
+	TRFile res;
+	std::vector<uint8_t> dt = zx->tape->getdata(blk,-1,-1);
+	for (int i=0; i<8; i++) res.name[i] = dt[i+2];
+	switch (dt[1]) {
+		case 0:
+			res.ext = 'B';
+			res.lst = dt[12]; res.hst = dt[13];
+			res.llen = dt[16]; res.hlen = dt[17];
+			// autostart?
+			break;
+		case 3:
+			res.ext = 'C';
+			res.llen = dt[12]; res.hlen = dt[13];
+			res.lst = dt[14]; res.hst = dt[15];
+			break;
+		default:
+			res.ext = 0x00;
+	}
+	res.slen = res.hlen;
+	if (res.llen != 0) res.slen++;
+	return res;
+}
+
+void SetupWin::copyToDisk() {
+	int blk = ui.tapelist->currentRow();
+	if (blk < 0) return;
+	int dsk = ui.disktabs->currentIndex();
+	int headBlock = -1;
+	int dataBlock = -1;
+	if (~zx->tape->data[blk].flags & TBF_BYTES) {
+		shithappens("This is not standard block");
+		return;
+	}
+	if (zx->tape->data[blk].flags & TBF_HEAD) {
+		if ((int)zx->tape->data.size() == blk + 1) {
+			shithappens("Header without data? Hmm...");
+		} else {
+			if (~zx->tape->data[blk+1].flags & TBF_BYTES) {
+				shithappens("Data block is not standard");
+			} else {
+				headBlock = blk;
+				dataBlock = blk + 1;
+			}
+		}
+	} else {
+		dataBlock = blk;
+		if (blk != 0) {
+			if (zx->tape->data[blk-1].flags & TBF_HEAD) {
+				headBlock = blk - 1;
+			}
+		}
+	}
+	TRFile dsc;
+	if (headBlock < 0) {
+		const char* nm = "FILE    ";
+		memcpy(&dsc.name[0],nm,8);
+		dsc.ext = 'C';
+		dsc.lst = dsc.hst = 0;
+		int len = zx->tape->getInfo()[dataBlock].size;
+		if (len > 0xff00) {
+			shithappens("Too much data for TRDos file");
+			return;
+		}
+		dsc.llen = len & 0xff; dsc.hlen = ((len & 0xff00) >> 8);
+	} else {
+		dsc = getHeadInfo(headBlock);
+		if (dsc.ext == 0x00) {
+			shithappens("Yes, it happens");
+			return;
+		}
+	}
+	if (!zx->bdi->flop[dsk].insert) newdisk(dsk);
+	std::vector<uint8_t> dt = zx->tape->getdata(dataBlock,-1,-1);
+	uint8_t* buf = new uint8_t[256];
+	uint pos = 1;	// skip block type mark
+	switch(zx->bdi->flop[dsk].createFile(&dsc)) {
+		case ERR_SHIT: shithappens("Yes, it happens"); break;
+		case ERR_MANYFILES: shithappens("Too many files @ disk"); break;
+		case ERR_NOSPACE: shithappens("Not enough space @ disk"); break;
+		case ERR_OK:
+			while (pos < dt.size()) {
+				do {
+					buf[(pos-1) & 0xff] = (pos < dt.size()) ? dt[pos] : 0x00;
+					pos++;
+				} while ((pos & 0xff) != 1);
+				zx->bdi->flop[dsk].putSectorData(dsc.trk, dsc.sec+1, buf, 256);
+				dsc.sec++;
+				if (dsc.sec > 15) {
+					dsc.sec = 0;
+					dsc.trk++;
+				}
+			}
+			fillDiskCat();
+			break;
+	}
+}
+
+void SetupWin::fillDiskCat() {
+	int dsk = ui.disktabs->currentIndex();
+	QTableWidget* wid = ui.disklist;
 	wid->setColumnWidth(0,100);
 	wid->setColumnWidth(1,30);
 	wid->setColumnWidth(2,70);
@@ -661,13 +797,6 @@ void fillCat(int dsk, QTableWidget* wid) {
 			wid->setRowCount(0);
 		}
 	}
-}
-
-void SetupWin::fillDiskCat() {
-	fillCat(0,ui.disklista);
-	fillCat(1,ui.disklistb);
-	fillCat(2,ui.disklistc);
-	fillCat(3,ui.disklistd);
 }
 
 // machine
@@ -701,7 +830,7 @@ void SetupWin::newdisk(int idx) {
 	Floppy *flp = &zx->bdi->flop[idx & 3];
 	if (!flp->savecha()) return;
 	flp->format();
-	flp->path = std::string(QDir::homePath().toUtf8().data()) + "/disk.trd";
+	flp->path = "";
 	flp->insert = true;
 	flp->changed = true;
 	updatedisknams();

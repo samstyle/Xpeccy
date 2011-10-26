@@ -96,3 +96,11 @@ Fix	Fix SMUC HDD data-hi port(d8be), add SMUC system(ffba),version(5fba),release
 
 build 20111023
 New	Showing files on loaded TRDos disks in Options window
+
+build 20111026
+New	Copying files form TRDos disks to tape and back.
+	Disk->Tape copied as file with header and standard signals
+	Tape->Disk copy is enabled only if block is standard (loaded from .tap, blocks 0x10 and 0x11 from .tzx or saved with ROM-routine)
+		if you select header (Prog: or Code:), name, start and lenght will be taken from header, data - from next block
+		if you select data block and previous block is header, it will be same as above (header + data)
+		else case filename will be "FILE.C", start=0, lenght=data size

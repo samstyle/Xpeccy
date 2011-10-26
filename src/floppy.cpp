@@ -598,6 +598,20 @@ bool Floppy::getSectorData(uint8_t tr,uint8_t sc,uint8_t* buf,int len) {
 	return true;
 }
 
+bool Floppy::getSectorsData(uint8_t tr, uint8_t sc, uint8_t* ptr, int sl) {
+	while (sl > 0) {
+		if (!getSectorData(tr,sc,ptr,256)) return false;
+		ptr += 256;
+		sc++;
+		if (sc > 16) {
+			sc = 1;
+			tr++;
+		}
+		sl--;
+	}
+	return true;
+}
+
 // crc32 for UDI, taken from Unreal 0.32.7
 void crc32(int &crc, uint8_t *buf, unsigned len) {
 	while (len--) {

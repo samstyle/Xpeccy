@@ -44,13 +44,15 @@ class SetupWin : public QDialog {
 		void rmRomset();
 		void recheck_single(bool);
 		void recheck_separate(bool);
+		void fillDiskCat();
+		void copyToTape();
+		void copyToDisk();
 	private:
 		Ui::SetupWin ui;
 		Ui::UmaDial uia;
 		QDialog *umadial;
 		void buildtapelist();
 		void buildmenulist();
-		void fillDiskCat();
 		int umidx;
 };
 

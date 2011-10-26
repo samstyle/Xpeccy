@@ -170,9 +170,9 @@ void Tape::storeblock() {
 		}
 		if (!same) siglens.push_back(tmpblock.data[i]);
 	}
-	printf("size: %i\n",siglens.size());
-	for (i=0; i<siglens.size();i++) printf("\t%i",siglens[i]);
-	printf("\n");
+//	printf("size: %i\n",siglens.size());
+//	for (i=0; i<siglens.size();i++) printf("\t%i",siglens[i]);
+//	printf("\n");
 	if (siglens.size() == 5) {
 		if (siglens[3]>1000) siglens.insert(siglens.begin()+3,855); else siglens.insert(siglens.begin()+3,1710);
 	}
@@ -187,6 +187,7 @@ void Tape::storeblock() {
 			tmpblock.len0 = siglens[4];
 			tmpblock.len1 = siglens[3];
 		}
+		tmpblock.flags |= TBF_BYTES;
 	} else {
 		tmpblock.plen = 2168;
 		tmpblock.s1len = 667;
@@ -196,10 +197,14 @@ void Tape::storeblock() {
 	}
 	tmpblock.datapos=-1;
 	i=1;
-	while (tmpblock.data[i] != tmpblock.s2len) i++;
-	tmpblock.datapos = i+1;
+	while ((i < tmpblock.data.size()) && (tmpblock.data[i] != tmpblock.s2len)) i++;
+	if (i < tmpblock.data.size()) tmpblock.datapos = i+1;
 	tmpblock.normSignals();
 	data.push_back(tmpblock);
+	TapeBlock* blk = &data[data.size() - 1];
+	if (blk->datapos != -1) {
+		setFlagBit(getdata(data.size() - 1, -1, 1)[0] == 0, &blk->flags,TBF_HEAD);
+	}
 	tmpblock.data.clear();
 	flags |= TAPE_WAIT;
 }
@@ -225,11 +230,23 @@ std::vector<uint8_t> Tape::getdata(int blk, int pos, int len) {
 	return res;
 }
 
+void addBlockByte(TapeBlock* blk, uint8_t bt) {
+	for (int i=0; i < 8; i++) {
+		if (bt & 0x80) {
+			blk->data.push_back(blk->len1);
+			blk->data.push_back(blk->len1);
+		} else {
+			blk->data.push_back(blk->len0);
+			blk->data.push_back(blk->len0);
+		}
+		bt = (bt << 1);
+	}
+}
+
 // переконвертить len байт из *file в сигналы мофона. длины сигналов в slens. на выходе - блок
 TapeBlock Tape::parse(std::ifstream *file, uint32_t len, std::vector<int> slens,uint8_t bits) {
 	TapeBlock newb;
 	uint32_t i;
-	uint32_t j;
 	if (bits > 8) bits = 8;
 	uint8_t tmp = file->peek();
 	newb.plen=slens[0];
@@ -238,6 +255,7 @@ TapeBlock Tape::parse(std::ifstream *file, uint32_t len, std::vector<int> slens,
 	newb.len0=slens[3];
 	newb.len1=slens[4];
 	newb.pdur = (slens[6] == -1) ? ((tmp == 0) ? 8063 : 3223) : slens[6];
+	setFlagBit(tmp==0, &newb.flags, TBF_HEAD);
 	newb.data.clear();
 	for (i=0; i<newb.pdur; i++) newb.data.push_back(newb.plen);
 	if (newb.s1len!=0) newb.data.push_back(newb.s1len);
@@ -245,19 +263,42 @@ TapeBlock Tape::parse(std::ifstream *file, uint32_t len, std::vector<int> slens,
 	newb.datapos = newb.data.size();
 	for (i=0;i<len;i++) {
 		tmp = file->get();
-		for (j=0; j < 8; j++) {
-			if (tmp & 0x80) {
-				newb.data.push_back(newb.len1);
-				newb.data.push_back(newb.len1);
-			} else {
-				newb.data.push_back(newb.len0);
-				newb.data.push_back(newb.len0);
-			}
-			tmp = (tmp<<1);
-		}
+		addBlockByte(&newb,tmp);
 	}
+	newb.flags |= TBF_BYTES;
 //	if (slens[5]!=0) newb.data.push_back(slens[5]);
 	return newb;
+}
+
+void Tape::addBlock(uint8_t* ptr, int ln, bool hd) {
+	TapeBlock nblk;
+	uint i;
+	uint8_t tmp;
+	nblk.plen = 2168;
+	nblk.s1len = 667;
+	nblk.s2len = 735;
+	nblk.len0 = 855;
+	nblk.len1 = 1710;
+	nblk.pdur = hd ? 8063 : 3223;
+	nblk.pause = hd ? 1000 : 300;
+	setFlagBit(hd, &nblk.flags, TBF_HEAD);
+	nblk.data.clear();
+	for (i=0; i<nblk.pdur; i++) nblk.data.push_back(nblk.plen);
+	if (nblk.s1len != 0) nblk.data.push_back(nblk.s1len);
+	if (nblk.s2len != 0) nblk.data.push_back(nblk.s2len);
+	nblk.datapos = nblk.data.size();
+	uint8_t crc = hd ? 0x00 : 0xff;
+	addBlockByte(&nblk,crc);
+	for (i=0; i < (uint)ln; i++) {
+		tmp = *ptr;
+		crc ^= tmp;
+		addBlockByte(&nblk,tmp);
+		ptr++;
+	}
+	addBlockByte(&nblk,crc);
+	nblk.data.push_back(954);
+	nblk.flags |= TBF_BYTES;
+	data.push_back(nblk);
 }
 
 uint32_t getlen(std::ifstream *file,uint8_t n) {
@@ -368,9 +409,6 @@ printf("add block\n");
 						newb.datapos = -1;
 						for (i=0; i<altb.data.size(); i++) newb.data.push_back(altb.data[i]);
 						newb.pause = paulen;
-//						data.push_back(newb);
-//						newb.data.clear();
-//printf("add block\n");
 						flags &= ~TAPE_CANSAVE;
 						break;
 /*
@@ -399,6 +437,7 @@ printf("add block\n");
 					case 0x22:
 						if (newb.data.size() != 0) {
 							newb.data.push_back(slens[5]);
+							newb.flags &= ~TBF_BYTES;
 							data.push_back(newb);
 							newb.data.clear();
 printf("add block\n");
@@ -467,6 +506,7 @@ printf("add block\n");
 			} while (!file.eof() && err);
 			if (err && (newb.data.size() != 0)) {
 				newb.data.push_back(slens[5]);
+				newb.flags &= ~TBF_BYTES;
 				data.push_back(newb);
 			}
 	}
@@ -491,4 +531,23 @@ void Tape::save(std::string fname, uint8_t type) {
 			break;
 	}
 	file.close();
+}
+
+void Tape::addFile(std::string nm,int tp,uint16_t st,uint16_t ln,uint16_t as,uint8_t* ptr,bool hdr) {
+	if (hdr) {
+		uint8_t* hdbuf = new uint8_t[19];
+		hdbuf[0] = tp & 0xff;						// type (0:basic, 3:code)
+		memcpy(&hdbuf[1],nm.c_str(),10);				// name (10)
+		if (tp == 0) {
+			hdbuf[11] = st & 0xff; hdbuf[12] = ((st & 0xff00) >> 8);
+			hdbuf[13] = as & 0xff; hdbuf[14] = ((as & 0xff00) >> 8);
+			hdbuf[15] = ln & 0xff; hdbuf[16] = ((ln & 0xff00) >> 8);
+		} else {
+			hdbuf[11] = ln & 0xff; hdbuf[12] = ((ln & 0xff00) >> 8);
+			hdbuf[13] = st & 0xff; hdbuf[14] = ((st & 0xff00) >> 8);
+			hdbuf[15] = as & 0xff; hdbuf[16] = ((as & 0xff00) >> 8);
+		}
+		addBlock(hdbuf,17,true);
+	}
+	addBlock(ptr,ln,false);
 }

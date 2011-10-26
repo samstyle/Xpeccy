@@ -15,6 +15,8 @@
 #define TAPE_WAIT	(1<<3)	// wait for 1st impulse (at save)
 
 #define	TBF_BREAK	1	// stop tape on start of this block
+#define	TBF_BYTES	(1<<1)	// this is block of standard structure (pilot,sync1,sync2,1,0,sync3 is present)
+#define	TBF_HEAD	(1<<2)	// block is header
 
 #define	TAPE_HEAD	0
 #define	TAPE_DATA	1
@@ -71,6 +73,8 @@ class Tape {
 		void load(std::string,uint8_t);
 		void save(std::string,uint8_t);
 		std::vector<TapeBlockInfo> getInfo();
+		void addFile(std::string,int,uint16_t,uint16_t,uint16_t,uint8_t*,bool);
+		void addBlock(uint8_t*, int, bool);
 };
 
 //extern Tape *tape;

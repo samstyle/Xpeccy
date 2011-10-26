@@ -991,7 +991,7 @@
         <attribute name="title">
          <string>BDI</string>
         </attribute>
-        <layout class="QVBoxLayout" name="verticalLayout_6">
+        <layout class="QVBoxLayout" name="verticalLayout_6" stretch="0,0,10">
          <item>
           <layout class="QGridLayout" name="gridLayout_6">
            <item row="0" column="0">
@@ -1011,7 +1011,7 @@
           </layout>
          </item>
          <item>
-          <widget class="QTabWidget" name="tabWidget">
+          <widget class="QTabWidget" name="disktabs">
            <property name="currentIndex">
             <number>0</number>
            </property>
@@ -1096,79 +1096,6 @@
                </item>
               </layout>
              </item>
-             <item>
-              <widget class="QTableWidget" name="disklista">
-               <property name="editTriggers">
-                <set>QAbstractItemView::NoEditTriggers</set>
-               </property>
-               <property name="selectionMode">
-                <enum>QAbstractItemView::SingleSelection</enum>
-               </property>
-               <property name="selectionBehavior">
-                <enum>QAbstractItemView::SelectRows</enum>
-               </property>
-               <property name="gridStyle">
-                <enum>Qt::DotLine</enum>
-               </property>
-               <property name="rowCount">
-                <number>1</number>
-               </property>
-               <property name="columnCount">
-                <number>7</number>
-               </property>
-               <attribute name="horizontalHeaderVisible">
-                <bool>false</bool>
-               </attribute>
-               <attribute name="horizontalHeaderDefaultSectionSize">
-                <number>100</number>
-               </attribute>
-               <attribute name="horizontalHeaderStretchLastSection">
-                <bool>true</bool>
-               </attribute>
-               <attribute name="verticalHeaderVisible">
-                <bool>false</bool>
-               </attribute>
-               <attribute name="verticalHeaderDefaultSectionSize">
-                <number>17</number>
-               </attribute>
-               <row/>
-               <column>
-                <property name="text">
-                 <string>Name</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>Ext</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>Start</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>Length</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>SecLen</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>Trk</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>Sec</string>
-                </property>
-               </column>
-              </widget>
-             </item>
             </layout>
            </widget>
            <widget class="QWidget" name="tabb">
@@ -1251,73 +1178,6 @@
                 </widget>
                </item>
               </layout>
-             </item>
-             <item>
-              <widget class="QTableWidget" name="disklistb">
-               <property name="editTriggers">
-                <set>QAbstractItemView::NoEditTriggers</set>
-               </property>
-               <property name="selectionMode">
-                <enum>QAbstractItemView::SingleSelection</enum>
-               </property>
-               <property name="selectionBehavior">
-                <enum>QAbstractItemView::SelectRows</enum>
-               </property>
-               <property name="gridStyle">
-                <enum>Qt::DotLine</enum>
-               </property>
-               <property name="rowCount">
-                <number>1</number>
-               </property>
-               <attribute name="horizontalHeaderVisible">
-                <bool>false</bool>
-               </attribute>
-               <attribute name="horizontalHeaderStretchLastSection">
-                <bool>true</bool>
-               </attribute>
-               <attribute name="verticalHeaderVisible">
-                <bool>false</bool>
-               </attribute>
-               <attribute name="verticalHeaderDefaultSectionSize">
-                <number>17</number>
-               </attribute>
-               <row/>
-               <column>
-                <property name="text">
-                 <string>Name</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>Ext</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>Start</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>Length</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>SecLen</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>Trk</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>Sec</string>
-                </property>
-               </column>
-              </widget>
              </item>
             </layout>
            </widget>
@@ -1402,73 +1262,6 @@
                </item>
               </layout>
              </item>
-             <item>
-              <widget class="QTableWidget" name="disklistc">
-               <property name="editTriggers">
-                <set>QAbstractItemView::NoEditTriggers</set>
-               </property>
-               <property name="selectionMode">
-                <enum>QAbstractItemView::SingleSelection</enum>
-               </property>
-               <property name="selectionBehavior">
-                <enum>QAbstractItemView::SelectRows</enum>
-               </property>
-               <property name="gridStyle">
-                <enum>Qt::DotLine</enum>
-               </property>
-               <property name="rowCount">
-                <number>1</number>
-               </property>
-               <attribute name="horizontalHeaderVisible">
-                <bool>false</bool>
-               </attribute>
-               <attribute name="horizontalHeaderStretchLastSection">
-                <bool>true</bool>
-               </attribute>
-               <attribute name="verticalHeaderVisible">
-                <bool>false</bool>
-               </attribute>
-               <attribute name="verticalHeaderDefaultSectionSize">
-                <number>17</number>
-               </attribute>
-               <row/>
-               <column>
-                <property name="text">
-                 <string>Name</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>Ext</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>Start</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>Length</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>SecLen</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>Trk</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>Sec</string>
-                </property>
-               </column>
-              </widget>
-             </item>
             </layout>
            </widget>
            <widget class="QWidget" name="tabd">
@@ -1552,72 +1345,84 @@
                </item>
               </layout>
              </item>
-             <item>
-              <widget class="QTableWidget" name="disklistd">
-               <property name="editTriggers">
-                <set>QAbstractItemView::NoEditTriggers</set>
-               </property>
-               <property name="selectionMode">
-                <enum>QAbstractItemView::SingleSelection</enum>
-               </property>
-               <property name="selectionBehavior">
-                <enum>QAbstractItemView::SelectRows</enum>
-               </property>
-               <property name="gridStyle">
-                <enum>Qt::DotLine</enum>
-               </property>
-               <property name="rowCount">
-                <number>1</number>
-               </property>
-               <attribute name="horizontalHeaderStretchLastSection">
-                <bool>true</bool>
-               </attribute>
-               <attribute name="verticalHeaderVisible">
-                <bool>false</bool>
-               </attribute>
-               <attribute name="verticalHeaderDefaultSectionSize">
-                <number>17</number>
-               </attribute>
-               <row/>
-               <column>
-                <property name="text">
-                 <string>Name</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>Ext</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>Start</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>Length</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>SecLen</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>Trk</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>Sec</string>
-                </property>
-               </column>
-              </widget>
-             </item>
             </layout>
            </widget>
+          </widget>
+         </item>
+         <item>
+          <widget class="QTableWidget" name="disklist">
+           <property name="contextMenuPolicy">
+            <enum>Qt::ActionsContextMenu</enum>
+           </property>
+           <property name="editTriggers">
+            <set>QAbstractItemView::NoEditTriggers</set>
+           </property>
+           <property name="selectionMode">
+            <enum>QAbstractItemView::ExtendedSelection</enum>
+           </property>
+           <property name="selectionBehavior">
+            <enum>QAbstractItemView::SelectRows</enum>
+           </property>
+           <property name="gridStyle">
+            <enum>Qt::DotLine</enum>
+           </property>
+           <property name="rowCount">
+            <number>1</number>
+           </property>
+           <property name="columnCount">
+            <number>7</number>
+           </property>
+           <attribute name="horizontalHeaderVisible">
+            <bool>false</bool>
+           </attribute>
+           <attribute name="horizontalHeaderDefaultSectionSize">
+            <number>100</number>
+           </attribute>
+           <attribute name="horizontalHeaderStretchLastSection">
+            <bool>true</bool>
+           </attribute>
+           <attribute name="verticalHeaderVisible">
+            <bool>false</bool>
+           </attribute>
+           <attribute name="verticalHeaderDefaultSectionSize">
+            <number>17</number>
+           </attribute>
+           <row/>
+           <column>
+            <property name="text">
+             <string>Name</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Ext</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Start</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Length</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>SecLen</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Trk</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Sec</string>
+            </property>
+           </column>
           </widget>
          </item>
         </layout>
@@ -1684,6 +1489,9 @@
            <layout class="QHBoxLayout" name="horizontalLayout_8">
             <item>
              <widget class="QTableWidget" name="tapelist">
+              <property name="contextMenuPolicy">
+               <enum>Qt::ActionsContextMenu</enum>
+              </property>
               <property name="editTriggers">
                <set>QAbstractItemView::NoEditTriggers</set>
               </property>
@@ -2435,6 +2243,16 @@
     </layout>
    </item>
   </layout>
+  <action name="actCopyToTape">
+   <property name="text">
+    <string>Copy to tape</string>
+   </property>
+  </action>
+  <action name="actCopyToDisk">
+   <property name="text">
+    <string>Copy to disk</string>
+   </property>
+  </action>
  </widget>
  <resources>
   <include location="../xpeccy.qrc"/>
