@@ -3,14 +3,6 @@
 
 #include <stdint.h>
 
-#ifndef WIN32
-	#include "endian.h"
-#else
-	#define __BIG_ENDIAN 0
-	#define __LITTLE_ENDIAN 1
-	#define __BYTE_ORDER __LITTLE_ENDIAN
-#endif
-
 #define FS 0x80
 #define FZ 0x40
 #define F5 0x20
@@ -24,7 +16,7 @@
 
 struct Z80 {
 	Z80(float);
-#if __BYTE_ORDER == __LITTLE_ENDIAN
+#ifdef BO_LITTLEENDIAN
 	union {uint16_t bc; struct{uint8_t c,b;};};
 	union {uint16_t de; struct{uint8_t e,d;};};
 	union {uint16_t hl; struct{uint8_t l,h;};};
@@ -43,7 +35,7 @@ struct Z80 {
 	union {uint16_t mptr; struct {uint8_t lptr,hptr;};};
 	union {uint16_t adr; struct {uint8_t ladr,hadr;};};
 #endif
-#if __BYTE_ORDER == __BIG_ENDIAN
+#ifdef BO_BIGENDIAN
 	union {uint16_t bc; struct{uint8_t b,c;};};
 	union {uint16_t de; struct{uint8_t d,e;};};
 	union {uint16_t hl; struct{uint8_t h,l;};};

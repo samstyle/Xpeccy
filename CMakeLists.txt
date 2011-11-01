@@ -32,6 +32,15 @@ if (ZLIB_FOUND)
 	add_definitions(-DHAVEZLIB)
 endif()
 
+include (TestBigEndian)
+test_big_endian(BIG_ENDIAN)
+if (BIG_ENDIAN)
+	add_definitions(-DBO_BIGENDIAN)
+else ()
+	add_definitions(-DBO_LITTLEENDIAN)
+endif ()
+
+
 qt4_add_resources(RESOURCES ${QRCFILES})
 qt4_wrap_ui(UIHEADERS ${UIFILES})
 qt4_wrap_cpp(MOCHEADERS ${MOCFILES})

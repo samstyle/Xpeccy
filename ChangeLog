@@ -104,3 +104,6 @@ New	Copying files form TRDos disks to tape and back.
 		if you select header (Prog: or Code:), name, start and lenght will be taken from header, data - from next block
 		if you select data block and previous block is header, it will be same as above (header + data)
 		else case filename will be "FILE.C", start=0, lenght=data size
+
+build 20111101
+Blah	Leave endianness detect to cmake
