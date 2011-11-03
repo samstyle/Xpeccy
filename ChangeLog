@@ -106,4 +106,8 @@ New	Copying files form TRDos disks to tape and back.
 		else case filename will be "FILE.C", start=0, lenght=data size
 
 build 20111101
-Blah	Leave endianness detect to cmake
+Wrk	Leave endianness detect to cmake
+
+build 20111103
+Fix	Increase R register during INT and NMI handle
+Wrk	Change HALT command

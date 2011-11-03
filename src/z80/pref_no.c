@@ -165,7 +165,7 @@ void npr72(ZXBase* p) {p->mem->wr(p->cpu->hl,p->cpu->d);}
 void npr73(ZXBase* p) {p->mem->wr(p->cpu->hl,p->cpu->e);}
 void npr74(ZXBase* p) {p->mem->wr(p->cpu->hl,p->cpu->h);}
 void npr75(ZXBase* p) {p->mem->wr(p->cpu->hl,p->cpu->l);}
-void npr76(ZXBase* p) {if (!p->istrb) p->cpu->pc--;}
+void npr76(ZXBase* p) {p->cpu->halt = true;}
 void npr77(ZXBase* p) {p->mem->wr(p->cpu->hl,p->cpu->a);}
 // ld a,r
 void npr78(ZXBase* p) {p->cpu->a = p->cpu->b;}

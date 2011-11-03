@@ -274,10 +274,18 @@ uint8_t ZSLays[4][4] = {
 
 uint32_t ZXComp::exec() {
 	uint32_t ltk = vid->t;
-	ZOp res = sys->fetch();
-	vid->sync(res.t, sys->cpu->frq);
-	sys->istrb = vid->intStrobe;
-	res.func(sys);
+	if (sys->cpu->halt) {
+		vid->sync(4,sys->cpu->frq);
+		sys->istrb = vid->intStrobe;
+		if (sys->istrb) {
+			sys->cpu->halt = false;
+		}
+	} else {
+		ZOp res = sys->fetch();
+		vid->sync(res.t, sys->cpu->frq);
+		sys->istrb = vid->intStrobe;
+		res.func(sys);
+	}
 // profROM pages switch: was ld l,(hl), rompage = 2|6|10|14, hl before = 0x0100,0x0104,0x0108,0x010c
 //printf("%c\t%i\t%.4X\n",(hw->type == HW_SCORP) ? 'Y' : 'n',sys->mem->crom & 3,sys->mem->lastRdAdr & 0xfff3);
 	if ((hw->type == HW_SCORP) && ((sys->mem->crom & 3) == 2) && ((sys->mem->lastRdAdr & 0xfff3) == 0x0100)) {
@@ -315,15 +323,11 @@ void ZXComp::NMIHandle() {
 	sys->mem->wr(--sys->cpu->sp,sys->cpu->lpc);
 	sys->cpu->pc = 0x66;
 	bdi->active = true;
+	sys->cpu->r = ((sys->cpu->r + 1) & 0x7f) | (sys->cpu->r & 0x80);	// increase R
 	mapMemory();
 	sys->cpu->t += 11;
 	vid->sync(11,sys->cpu->frq);
 }
-
-//void ZXComp::setHardware(std::string nm) {
-//	hw = getHardwarePtr(nm);
-//	if (hw != NULL) sys->hwflags = hw->flags;
-//}
 
 ZXBase::ZXBase (ZXSystem* par) {
 	parent = par;
@@ -374,6 +378,7 @@ int32_t ZXBase::interrupt() {
 	if (!cpu->iff1) return 0;
 	cpu->iff1 = cpu->iff2 = false;
 	int32_t res = 0;
+	cpu->r = ((cpu->r + 1) & 0x7f) | (cpu->r & 0x80);	// increase R
 	switch (cpu->imode) {
 		case 0: mem->wr(--cpu->sp,cpu->hpc);
 			mem->wr(--cpu->sp,cpu->lpc);

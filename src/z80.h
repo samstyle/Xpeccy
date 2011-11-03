@@ -58,15 +58,13 @@ struct Z80 {
 	uint8_t imode;
 	bool iff1,iff2,nextei,onhalt;
 	bool block,err;
-	uint32_t t,tb,ti;			// счетчики тиков - всего, на начало тек.кадра, на начало M1
+	bool halt;			// true on HALT instruction execute
+	uint32_t t,tb,ti;		// счетчики тиков - всего, на начало тек.кадра, на начало M1
 	uint8_t speed;			// биты - распределение тиков на проц по ходу отрисовки байта (def: 0x55)
 	uint8_t mod,cod,dlt;		// mode (prefix) & current operation code & delta for CB[X|Y] coms
 	uint8_t x;			// temp
 	void reset();
 	int interrupt();
-//	void exec();
-//	void sync(int);
-//	ZOp* inst[9];
 };
 
 // extern Z80 *cpu;

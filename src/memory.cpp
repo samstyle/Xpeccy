@@ -119,6 +119,12 @@ void Memory::load(std::string sfnam,int typ) {
 	parse(&file,typ);
 }
 
+uint32_t getword(std::ifstream* file) {
+	uint32_t res = file->get();
+	res += (file->get() << 8);
+	return res;
+}
+
 uint32_t getint(std::ifstream* file) {
 	uint32_t wrd = file->get();
 	wrd += (file->get() << 8);
