@@ -47,6 +47,10 @@ class Memory {
 	void parse(std::ifstream*,int32_t);
 	void save(std::string,int32_t,bool);
 	RomSet *romset;
+	std::vector<RZXFrame> rzx;
+	int rzxFrame;
+	int rzxPos;
+	uint8_t getRZXIn();
 	void loadromset(std::string);
 	void setram(uint8_t);
 	void setrom(uint8_t);

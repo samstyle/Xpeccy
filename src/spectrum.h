@@ -38,7 +38,6 @@ class ZXComp : public ZXSystem {
 	public:
 		ZXComp();
 		HardWare *hw;
-//		std::vector<HardWare> hwlist;
 		ZXBase* sys;
 		Video* vid;
 		Keyboard* keyb;
@@ -48,6 +47,7 @@ class ZXComp : public ZXSystem {
 		IDE* ide;
 		GS* gs;
 		AYSys* aym;
+		bool rzxPlay;	// true if rzx playing now
 		bool beeplev;
 		bool block7ffd;
 		struct {

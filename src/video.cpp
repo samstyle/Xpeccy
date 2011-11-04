@@ -75,35 +75,39 @@ void Video::tick() {
 	bool onscr = (curr.v >= lcut.v) && (curr.v < rcut.v);
 	if ((curr.h >= lcut.h) && (curr.h < rcut.h) && onscr) {
 		uint8_t col = 5;
-		if ((curr.h < bord.h) || (curr.h > bord.h + 255) || (curr.v < bord.v) || (curr.v > bord.v + 191)) {
-			col=brdcol;
+		if ((curr.v < bord.v) || (curr.v > bord.v + 191)) {
+			col = brdcol;
 		} else {
-			switch (mode) {
-				case VID_NORMAL:
-					if (((curr.h - bord.h) & 7) == 0) {
-						scrbyte = curscr ? (*ladrz[iacount].scr7) : (*ladrz[iacount].scr5);
-						atrbyte = curscr ? (*ladrz[iacount].atr7) : (*ladrz[iacount].atr5);
-						if ((atrbyte & 0x80) && flash) scrbyte ^= 255;
-						ink=((atrbyte & 0x40)>>3) | (atrbyte&7);
-						pap=((atrbyte & 0x78)>>3);
-						iacount++;
-					}
-					col = (scrbyte & 0x80) ? ink : pap;
-					scrbyte <<= 1;
-					break;
-				case VID_ALCO:
-					if (((curr.h - bord.h) & 1) == 0) {
-						switch ((curr.h - bord.h) & 0x06) {
-							case 0x00: scrbyte = curscr ? (*ladrz[iacount].ac10) : (*ladrz[iacount].ac00); break;
-							case 0x02: scrbyte = curscr ? (*ladrz[iacount].ac11) : (*ladrz[iacount].ac01); break;
-							case 0x04: scrbyte = curscr ? (*ladrz[iacount].ac12) : (*ladrz[iacount].ac02); break;
-							case 0x06: scrbyte = curscr ? (*ladrz[iacount].ac13) : (*ladrz[iacount].ac03); iacount++; break;
+			if ((curr.h < bord.h) || (curr.h > bord.h + 255)) {
+				col = brdcol;
+			} else {
+				switch (mode) {
+					case VID_NORMAL:
+						if (((curr.h - bord.h) & 7) == 0) {
+							scrbyte = curscr ? (*ladrz[iacount].scr7) : (*ladrz[iacount].scr5);
+							atrbyte = curscr ? (*ladrz[iacount].atr7) : (*ladrz[iacount].atr5);
+							if ((atrbyte & 0x80) && flash) scrbyte ^= 255;
+							ink=((atrbyte & 0x40)>>3) | (atrbyte&7);
+							pap=((atrbyte & 0x78)>>3);
+							iacount++;
 						}
-						col = ((scrbyte & 0x07) | ((scrbyte & 0x40)>>3));
-					} else {
-						col = ((scrbyte & 0x38)>>3) | ((scrbyte & 0x80)>>4);
-					}
-					break;
+						col = (scrbyte & 0x80) ? ink : pap;
+						scrbyte <<= 1;
+						break;
+					case VID_ALCO:
+						if (((curr.h - bord.h) & 1) == 0) {
+							switch ((curr.h - bord.h) & 0x06) {
+								case 0x00: scrbyte = curscr ? (*ladrz[iacount].ac10) : (*ladrz[iacount].ac00); break;
+								case 0x02: scrbyte = curscr ? (*ladrz[iacount].ac11) : (*ladrz[iacount].ac01); break;
+								case 0x04: scrbyte = curscr ? (*ladrz[iacount].ac12) : (*ladrz[iacount].ac02); break;
+								case 0x06: scrbyte = curscr ? (*ladrz[iacount].ac13) : (*ladrz[iacount].ac03); iacount++; break;
+							}
+							col = ((scrbyte & 0x07) | ((scrbyte & 0x40)>>3));
+						} else {
+							col = ((scrbyte & 0x38)>>3) | ((scrbyte & 0x80)>>4);
+						}
+						break;
+				}
 			}
 		}
 		*(scrptr++)=col;

@@ -280,6 +280,10 @@ void MainWin::emulFrame() {
 		do {
 			emulExec();
 		} while ((wantedWin == WW_NONE) && !zx->sys->istrb);
+		if (zx->rzxPlay) {
+			zx->sys->mem->rzxFrame++;
+			zx->sys->mem->rzxPos = 0;
+		}
 		zx->sys->nmi = false;
 		if (scrCounter !=0) {
 			if (scrInterval == 0) {

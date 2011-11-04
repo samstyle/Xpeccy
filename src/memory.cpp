@@ -1,7 +1,7 @@
 #include "common.h"
 #include "memory.h"
 #include "spectrum.h"
-//#include "settings.h"
+#include "emulwin.h"
 
 #include <string>
 #include <vector>
@@ -11,7 +11,6 @@
 #endif
 
 extern ZXComp* zx;
-std::vector<RZXFrame> rzx;
 
 Memory::Memory(int tp) {
 	type = tp;
@@ -161,19 +160,34 @@ int zlib_uncompress(char* in, int ilen, char* out, int olen) {
 	inflateEnd(&strm);
 	return (olen - strm.avail_out);
 }
+
 #endif
+
+uint8_t Memory::getRZXIn() {
+	uint8_t res = 0xff;
+	if (rzxFrame < rzx.size()) {
+		if (rzxPos < rzx[rzxFrame].in.size()) {
+			res = rzx[rzxFrame].in[rzxPos];
+			rzxPos++;
+		}
+	} else {
+		zx->rzxPlay = false;
+	}
+	return res;
+}
 
 void Memory::parse(std::ifstream* file,int typ) {
 	uint8_t tmp,tmp2,lst;
 	uint8_t snabank;
-	uint32_t flg,len,len2;
+	uint32_t flg,len,len2,len3;
 	int adr;
 	bool btm;
 	char* buf = new char[0x1000000];
-	char* zbuf;
+	char* zbuf = NULL;
 	std::string onam = "/tmp/lain.tmp";
 	std::ofstream ofile;
 	std::string tmpStr;
+	RZXFrame rzxf;
 	Z80* cpu = zx->sys->cpu;
 	file->seekg(0,std::ios_base::end);
 	size_t sz=file->tellg();
@@ -192,6 +206,7 @@ void Memory::parse(std::ifstream* file,int typ) {
 				shithappens("Xpeccy cannot into encrypted RZX :(");
 				break;
 			}
+			rzx.clear();
 			btm = true;
 			while (btm && (file->tellg() < sz)) {
 				tmp = file->get();	// block type
@@ -211,9 +226,10 @@ void Memory::parse(std::ifstream* file,int typ) {
 							file->read(buf,len - 21);		// snapshot file name
 							tmpStr = std::string(buf,len - 21);
 						} else {
+//							if (buf) free(buf);	// free old buffer
+							buf = new char[len2];	// uncompressed data
 							if (flg & 2) {
-								if (buf) free(buf);	// free old buffer
-								buf = new char[len2];	// uncompressed data
+//								if (zbuf) free(zbuf);
 								zbuf = new char[len];	// compressed data
 								file->read(zbuf,len-17);
 								len2 = zlib_uncompress(zbuf,len-17,buf,len2);
@@ -231,7 +247,53 @@ void Memory::parse(std::ifstream* file,int typ) {
 							tmpStr = onam;
 						}
 						if (tmp != 0xff) load(tmpStr,tmp);		// load snapshot
-						btm = false;		// stop after 1st snapshot; TODO: multiple snapshots loading
+					//	btm = false;		// stop after 1st snapshot; TODO: multiple snapshots loading
+						break;
+					case 0x80:
+						len2 = getint(file);	// number of frames
+						file->get();		// reserved
+						getint(file);		// TStates @ beginning
+						flg = getint(file);	// flags
+						if (flg & 1) {
+							shithappens("Crypted RZX input block");
+							btm = false;
+							break;
+						}
+						len3 = len - 18;
+						if (flg & 2) {			// get data in buf, uncompress if need
+							buf = new char[0x7ffffff];
+							zbuf = new char[len3];	// compressed data
+							file->read(zbuf,len3);
+							len3 = zlib_uncompress(zbuf,len3,buf,0x7ffffff);
+						} else {
+							buf = new char[len3];
+							file->read(buf, len3);
+						}
+						if (len3 == 0) {
+							shithappens("RZX unpack error");
+							btm = false;
+							break;
+						}
+						flg = 0;
+						while (len2 > 0) {
+							rzxf.fetches = (uint8_t)buf[flg] + ((uint8_t)buf[flg+1] << 8); flg += 2;
+							len3 = (uint8_t)buf[flg] + ((uint8_t)buf[flg+1] << 8); flg += 2;
+							if (len3 != 0xffff) {
+								rzxf.in.clear();
+								while (len3 > 0) {
+									rzxf.in.push_back((uint8_t)buf[flg]);
+									flg++;
+									len3--;
+								}
+							}
+							rzx.push_back(rzxf);
+							len2--;
+						}
+						rzxFrame = 0;
+						rzxPos = 0;
+//						zx->rzxPlay = true;	// TODO: it will not start until 3000AC :)
+						emulUpdateWindow();
+						btm = false;
 						break;
 					default:
 						file->seekg(len-5,std::ios_base::cur);	// skip block

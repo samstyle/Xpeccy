@@ -31,6 +31,7 @@ ZXComp::ZXComp() {
 }
 
 void ZXComp::reset(int wut) {
+	rzxPlay = false;
 	block7ffd=false;
 	int resbank = sys->mem->res;
 	switch (wut) {
@@ -142,35 +143,41 @@ uint8_t ZXComp::in(uint16_t port) {
 			}
 			break;
 		default:
-			if ((port & 0xff) == 0xfe) {
-				tape->sync();
-				res = keyb->getmap((port & 0xff00) >> 8) | (tape->signal ? 0x40 : 0x00);
-			} else {
-				switch (hw->type) {
-					case HW_ZX48:
-						break;
-					case HW_PENT:
-						break;
-					case HW_P1024:
-						break;
-					case HW_SCORP:
-						switch (port) {
-							case 0x7ffd:
-								sys->cpu->frq = 7.0;
-								break;
-							case 0x1ffd:
-								sys->cpu->frq = 3.5;
-								break;
-							case 0xff:
-								if (((vid->curr.h - vid->bord.h) < 256) && ((vid->curr.v - vid->bord.v) < 192)) {
-									res = vid->atrbyte;
-								} else {
-									res = 0xff;
-								}
-								break;
-						}
-						break;
-				}
+			switch (port & 0xff) {
+				case 0xfe:
+					tape->sync();
+					res = rzxPlay ? sys->mem->getRZXIn() : keyb->getmap((port & 0xff00) >> 8) | (tape->signal ? 0x40 : 0x00);
+					break;
+				case 0x1f:
+					res = rzxPlay ? sys->mem->getRZXIn() : 0xe0;		// TODO: kempston joystick
+					break;
+				default:
+					switch (hw->type) {
+						case HW_ZX48:
+							break;
+						case HW_PENT:
+							break;
+						case HW_P1024:
+							break;
+						case HW_SCORP:
+							switch (port) {
+								case 0x7ffd:
+									sys->cpu->frq = 7.0;
+									break;
+								case 0x1ffd:
+									sys->cpu->frq = 3.5;
+									break;
+								case 0xff:
+									if (((vid->curr.h - vid->bord.h) < 256) && ((vid->curr.v - vid->bord.v) < 192)) {
+										res = vid->atrbyte;
+									} else {
+										res = 0xff;
+									}
+									break;
+							}
+							break;
+					}
+					break;
 			}
 			break;
 	}
