@@ -239,6 +239,7 @@ void SetupWin::start() {
 	ui.scntbox->setValue(optGetInt(OPT_SHOTCNT));
 	ui.sintbox->setValue(optGetInt(OPT_SHOTINT));
 	ui.geombox->setCurrentIndex(ui.geombox->findText(QDialog::trUtf8(zx->vid->curlay.c_str())));
+	ui.brgslide->setValue(optGetInt(OPT_BRGLEV));
 // sound
 	ui.senbox->setChecked(sndGet(SND_ENABLE) != 0);
 	ui.mutbox->setChecked(sndGet(SND_MUTE) != 0);
