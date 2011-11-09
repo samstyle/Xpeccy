@@ -111,3 +111,7 @@ Wrk	Leave endianness detect to cmake
 build 20111103
 Fix	Increase R register during INT and NMI handle
 Wrk	Change HALT command
+
+build 20111109
+Fix	Fix screenshot format saving on OK/Apply in Options window
+New	Ability to set bright of not-bright color - new slider in Video tab of Options window

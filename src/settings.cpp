@@ -14,6 +14,8 @@ std::string workDir;
 std::string romDir;
 std::string profPath;
 
+int brgLevel = 192;
+
 std::string shotExt;
 std::string shotDir;
 int shotCount;
@@ -44,12 +46,14 @@ int optGetInt(int wut) {
 	switch (wut) {
 		case OPT_SHOTINT: res = shotInterval; break;
 		case OPT_SHOTCNT: res = shotCount; break;
+		case OPT_BRGLEV: res = brgLevel; break;
 	}
 	return res;
 }
 
 void optSet(int wut, std::string val) {
 	switch(wut) {
+		case OPT_SHOTEXT: shotExt = val; break;
 		case OPT_SHOTDIR: shotDir = val; break;
 		case OPT_PROJDIR: projDir = val; break;
 		case OPT_ASMPATH: asmPath = val; break;
@@ -60,6 +64,7 @@ void optSet(int wut, int val) {
 	switch (wut) {
 		case OPT_SHOTINT: shotInterval = val; break;
 		case OPT_SHOTCNT: shotCount = val; break;
+		case OPT_BRGLEV: brgLevel = val; break;
 	}
 }
 
@@ -212,6 +217,7 @@ void saveProfiles() {
 	cfile << "scrFormat = " << shotExt.c_str() << "\n";
 	cfile << "scrCount = " << int2str(shotCount) << "\n";
 	cfile << "scrInterval = " << int2str(shotInterval) << "\n";
+	cfile << "colorLevel = " << int2str(brgLevel) << "\n";
 	cfile << "\n[ROMSETS]\n";
 	std::vector<RomSet> rsl = getRomsetList();
 	for (i=0; i<rsl.size(); i++) {
@@ -490,6 +496,11 @@ void loadProfiles() {
 					if (pnam=="scrFormat") shotExt = pval;
 					if (pnam=="scrCount") shotCount = atoi(pval.c_str());
 					if (pnam=="scrInterval") shotInterval = atoi(pval.c_str());
+					if (pnam=="colorLevel") {
+						test=atoi(pval.c_str());
+						if ((test < 50) || (test > 250)) test=192;
+						brgLevel = test;
+					}
 					break;
 				case 4:
 					pos = pval.find_last_of(":");
@@ -553,6 +564,7 @@ void loadProfiles() {
 		shithappens("Cannot set current profile\nCheck it's name");
 		throw(0);
 	}
+	emulSetColor(brgLevel);
 }
 
 void loadConfig(bool dev) {

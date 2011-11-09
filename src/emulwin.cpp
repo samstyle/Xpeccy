@@ -69,16 +69,6 @@ QMenu* bookmarkMenu;
 QMenu* profileMenu;
 
 void emulInit() {
-	int i;
-	for (i=0; i<16; i++) {
-		zxpal[i].b = (i & 1) ? ((i & 8) ? 0xff : 0xc0) : 0;
-		zxpal[i].r = (i & 2) ? ((i & 8) ? 0xff : 0xc0) : 0;
-		zxpal[i].g = (i & 4) ? ((i & 8) ? 0xff : 0xc0) : 0;
-	}
-	qPal.clear(); qPal.resize(256);
-	for (i=0; i<256; i++) {
-		qPal[i] = qRgb(zxpal[i].r,zxpal[i].g,zxpal[i].b);
-	}
 	emulFlags = 0;
 	wantedWin = WW_NONE;
 
@@ -93,6 +83,7 @@ void emulInit() {
 	int par[] = {448,320,138,80,64,32,64,0};
 	addLayout("default",par);
 	
+	emulSetColor(0xc0);
 	mainWin = new MainWin;
 }
 
@@ -130,6 +121,20 @@ void emulShow() {
 
 QWidget* emulWidget() {
 	return (QWidget*)mainWin;
+}
+
+void emulSetColor(int brl) {
+	int i;
+	for (i=0; i<16; i++) {
+		zxpal[i].b = (i & 1) ? ((i & 8) ? 0xff : brl) : 0;
+		zxpal[i].r = (i & 2) ? ((i & 8) ? 0xff : brl) : 0;
+		zxpal[i].g = (i & 4) ? ((i & 8) ? 0xff : brl) : 0;
+	}
+	qPal.clear(); qPal.resize(256);
+	for (i=0; i<256; i++) {
+		qPal[i] = qRgb(zxpal[i].r,zxpal[i].g,zxpal[i].b);
+	}
+//	if (surf != NULL) SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
 }
 
 void emulUpdateWindow() {

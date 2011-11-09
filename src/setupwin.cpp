@@ -127,6 +127,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 // video
 	QObject::connect(ui.pathtb,SIGNAL(released()),this,SLOT(selsspath()));
 	QObject::connect(ui.bszsld,SIGNAL(valueChanged(int)),this,SLOT(chabsz()));
+	QObject::connect(ui.brgslide,SIGNAL(valueChanged(int)),this,SLOT(chabrg()));
 // sound
 	QObject::connect(ui.bvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
 	QObject::connect(ui.tvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
@@ -339,6 +340,7 @@ void SetupWin::apply() {
 	optSet(OPT_SHOTCNT,ui.scntbox->value());
 	optSet(OPT_SHOTINT,ui.sintbox->value());
 	zx->vid->setLayout(std::string(ui.geombox->currentText().toUtf8().data()));
+	optSet(OPT_BRGLEV,ui.brgslide->value());
 //	emulUpdateWindow();
 // sound
 	std::string oname = sndGetOutputName();
@@ -406,6 +408,7 @@ void SetupWin::apply() {
 
 	saveConfig();
 	sndCalibrate();
+	emulSetColor(ui.brgslide->value());
 	emulUpdateWindow();
 //	emulSetFlag(false,FL_BLOCK);
 }
@@ -809,6 +812,7 @@ void SetupWin::updfrq() {
 // video
 
 void SetupWin::chabsz() {ui.bszlab->setText(QString::number(ui.bszsld->value()).append("%"));}
+void SetupWin::chabrg() {ui.brglab->setText(QString::number(ui.brgslide->value()));}
 
 void SetupWin::selsspath() {
 	QString fpath = QFileDialog::getExistingDirectory(this,"Screenshots folder",QDialog::trUtf8(optGetString(OPT_SHOTDIR).c_str()),QFileDialog::ShowDirsOnly);

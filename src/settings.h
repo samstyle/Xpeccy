@@ -13,6 +13,7 @@
 #define OPT_SHOTEXT	0x11
 #define	OPT_SHOTINT	0x12
 #define	OPT_SHOTCNT	0x13
+#define	OPT_BRGLEV	0x14
 #define	OPT_PROJDIR	0x20
 #define	OPT_ASMPATH	0x21
 

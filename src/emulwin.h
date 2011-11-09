@@ -96,9 +96,8 @@ int emulGetFlags();
 void emulSetFlag(int,bool);
 bool emulSaveChanged();
 void emulExec();
-//void emulStartTimer(int);
-//void emulStopTimer();
 QWidget* emulWidget();
+void emulSetColor(int);
 
 // USER MENU
 void initUserMenu(QWidget*);
