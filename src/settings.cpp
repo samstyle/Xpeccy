@@ -16,7 +16,7 @@ std::string profPath;
 
 int brgLevel = 192;
 
-std::string shotExt;
+int shotExt;
 std::string shotDir;
 int shotCount;
 int shotInterval;
@@ -26,6 +26,8 @@ std::string asmPath;
 
 std::string rmnam[] = {"basic128","basic48","shadow","trdos","ext4","ext5","ext6","ext7"};
 
+OptName fexts[] = {{SCR_BMP,"bmp"},{SCR_PNG,"png"},{SCR_JPG,"jpg"},{SCR_SCR,"scr"},{SCR_HOB,"hobeta"},{-1,""}};
+
 // new
 // static vars base
 std::string optGetString(int wut) {
@@ -34,10 +36,48 @@ std::string optGetString(int wut) {
 		case OPT_WORKDIR: res = workDir; break;
 		case OPT_ROMDIR: res = romDir; break;
 		case OPT_SHOTDIR: res = shotDir; break;
-		case OPT_SHOTEXT: res = shotExt; break;
+//		case OPT_SHOTEXT: res = shotExt; break;
 		case OPT_PROJDIR: res = projDir; break;
 		case OPT_ASMPATH: res = asmPath; break;
 	}
+	return res;
+}
+
+OptName* getGetPtr(int prt) {
+	OptName* res = NULL;
+	switch (prt) {
+		case OPT_SHOTFRM: res = fexts; break;
+	}
+	return res;
+}
+
+int optGetId(int prt,std::string nam) {
+	int res = -1;
+	OptName* ptr = getGetPtr(prt);
+	if (ptr == NULL) return res;
+	int i = -1;
+	do {
+		i++;
+		if ((ptr[i].id == -1) || (ptr[i].name == nam)) {
+			res = ptr[i].id;
+			break;
+		}
+	} while ((ptr[i].id != -1) && (res == -1));
+	return res;
+}
+
+std::string optGetName(int prt, int id) {
+	std::string res = "";
+	OptName* ptr = getGetPtr(prt);
+	if (ptr == NULL) return res;
+	int i = -1;
+	do {
+		i++;
+		if ((ptr[i].id == -1) || (ptr[i].id == id)) {
+			res = ptr[i].name;
+			break;
+		}
+	} while ((ptr[i].id != -1) && (res == ""));
 	return res;
 }
 
@@ -47,13 +87,14 @@ int optGetInt(int wut) {
 		case OPT_SHOTINT: res = shotInterval; break;
 		case OPT_SHOTCNT: res = shotCount; break;
 		case OPT_BRGLEV: res = brgLevel; break;
+		case OPT_SHOTFRM: res = shotExt; break;
 	}
 	return res;
 }
 
 void optSet(int wut, std::string val) {
 	switch(wut) {
-		case OPT_SHOTEXT: shotExt = val; break;
+//		case OPT_SHOTEXT: shotExt = val; break;
 		case OPT_SHOTDIR: shotDir = val; break;
 		case OPT_PROJDIR: projDir = val; break;
 		case OPT_ASMPATH: asmPath = val; break;
@@ -64,6 +105,7 @@ void optSet(int wut, int val) {
 	switch (wut) {
 		case OPT_SHOTINT: shotInterval = val; break;
 		case OPT_SHOTCNT: shotCount = val; break;
+		case OPT_SHOTFRM: shotExt = val; break;
 		case OPT_BRGLEV: brgLevel = val; break;
 	}
 }
@@ -214,7 +256,7 @@ void saveProfiles() {
 		cfile << int2str(lays[i].intsz) << ":" << int2str(lays[i].intpos) << "\n";
 	}
 	cfile << "scrDir = " << shotDir.c_str() << "\n";
-	cfile << "scrFormat = " << shotExt.c_str() << "\n";
+	cfile << "scrFormat = " << optGetName(OPT_SHOTFRM,shotExt).c_str() << "\n";
 	cfile << "scrCount = " << int2str(shotCount) << "\n";
 	cfile << "scrInterval = " << int2str(shotInterval) << "\n";
 	cfile << "colorLevel = " << int2str(brgLevel) << "\n";
@@ -493,7 +535,9 @@ void loadProfiles() {
 						}
 					}
 					if (pnam=="scrDir") shotDir = pval;
-					if (pnam=="scrFormat") shotExt = pval;
+					if (pnam=="scrFormat") {
+						shotExt = optGetId(OPT_SHOTFRM,pval);
+					}
 					if (pnam=="scrCount") shotCount = atoi(pval.c_str());
 					if (pnam=="scrInterval") shotInterval = atoi(pval.c_str());
 					if (pnam=="colorLevel") {
@@ -635,7 +679,7 @@ void loadConfig(bool dev) {
 						break;
 					case 3:
 						if (pnam=="folder") shotDir = pval;
-						if (pnam=="format") shotExt = pval;
+						if (pnam=="format") shotExt = optGetId(OPT_SHOTFRM,pval);
 						if (pnam=="combo.count") shotCount = atoi(pval.c_str());
 						if (pnam=="combo.interval") shotInterval = atoi(pval.c_str());
 						break;

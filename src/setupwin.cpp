@@ -59,7 +59,11 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 		itm = new QTableWidgetItem; ui.rstab->setItem(i,2,itm);
 	}
 // video
-	ui.ssfbox->addItems(QStringList()<<"bmp"<<"png"<<"jpg"<<"scr");
+	OptName* ptr = getGetPtr(OPT_SHOTFRM);
+	i = 0; while (ptr[i].id != -1) {
+		ui.ssfbox->addItem(QString(ptr[i].name.c_str()),QVariant(ptr[i].id));
+		i++;
+	}
 	std::vector<VidLayout> lays = getLayoutList();
 	for (i=0; i<lays.size(); i++) {ui.geombox->addItem(QDialog::trUtf8(lays[i].name.c_str()));}
 // sound
@@ -235,7 +239,7 @@ void SetupWin::start() {
 //	ui.fscchk->setChecked(vid->fscreen);
 	ui.bszsld->setValue((int)(zx->vid->brdsize * 100));
 	ui.pathle->setText(QDialog::trUtf8(optGetString(OPT_SHOTDIR).c_str()));
-	ui.ssfbox->setCurrentIndex(ui.ssfbox->findText(QDialog::trUtf8(optGetString(OPT_SHOTEXT).c_str())));
+	ui.ssfbox->setCurrentIndex(ui.ssfbox->findData(optGetInt(OPT_SHOTFRM)));
 	ui.scntbox->setValue(optGetInt(OPT_SHOTCNT));
 	ui.sintbox->setValue(optGetInt(OPT_SHOTINT));
 	ui.geombox->setCurrentIndex(ui.geombox->findText(QDialog::trUtf8(zx->vid->curlay.c_str())));
@@ -337,7 +341,7 @@ void SetupWin::apply() {
 	setFlagBit(ui.dszchk->isChecked(),&zx->vid->flags,VF_DOUBLE);
 	zx->vid->brdsize = ui.bszsld->value()/100.0;
 	optSet(OPT_SHOTDIR,std::string(ui.pathle->text().toUtf8().data()));
-	optSet(OPT_SHOTEXT,std::string(ui.ssfbox->currentText().toUtf8().data()));
+	optSet(OPT_SHOTFRM,ui.ssfbox->itemData(ui.ssfbox->currentIndex()).toInt());
 	optSet(OPT_SHOTCNT,ui.scntbox->value());
 	optSet(OPT_SHOTINT,ui.sintbox->value());
 	zx->vid->setLayout(std::string(ui.geombox->currentText().toUtf8().data()));

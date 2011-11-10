@@ -78,7 +78,7 @@ void emulInit() {
 	scrNumber = 0;
 	scrCounter = 0;
 	scrInterval = 0;
-	optSet(OPT_SHOTEXT,std::string("png"));
+	optSet(OPT_SHOTFRM,SCR_PNG);
 
 	int par[] = {448,320,138,80,64,32,64,0};
 	addLayout("default",par);
@@ -271,6 +271,8 @@ void MainWin::stopTimer() {timer->stop();}
 
 // ...
 
+char hobHead[] = {'s','c','r','e','e','e','n',' ','C',0,0,0,0x1b,0,0x1b,0xe7,0x81};	// last 2 bytes is crc
+
 void MainWin::emulFrame() {
 	if (emulFlags & FL_BLOCK) return;
 	if (!mainWin->isActiveWindow()) {
@@ -301,19 +303,36 @@ void MainWin::emulFrame() {
 			}
 		}
 		if (emulFlags & FL_SHOT) {
-			std::string fext = optGetString(OPT_SHOTEXT);
+			int frm = optGetInt(OPT_SHOTFRM);
+			std::string fext;
+			switch (frm) {
+				case SCR_BMP: fext = "bmp"; break;
+				case SCR_JPG: fext = "jpg"; break;
+				case SCR_PNG: fext = "png"; break;
+				case SCR_SCR: fext = "scr"; break;
+				case SCR_HOB: fext = "$C"; break;
+			};
 			std::string fnam = optGetString(OPT_SHOTDIR) + "/sshot" + int2str(scrNumber) + "." + fext;
-			if (fext == "scr") {
-				std::ofstream file(fnam.c_str(),std::ios::binary);
-				file.write((char*)&zx->sys->mem->ram[zx->vid->curscr ? 7 : 5][0],0x1b00);
-			} else {
-				QImage *img = new QImage((uchar*)surf->pixels,surf->w,surf->h,QImage::Format_Indexed8);
-				img->setColorTable(qPal);
-				if (img==NULL) {
-					printf("NULL image\n");
-				} else {
-					img->save(QString(fnam.c_str()),fext.c_str());
-				}
+			std::ofstream file;
+			QImage *img = new QImage((uchar*)surf->pixels,surf->w,surf->h,QImage::Format_Indexed8);
+			img->setColorTable(qPal);
+			switch (frm) {
+				case SCR_HOB:
+					file.open(fnam.c_str(),std::ios::binary);
+					file.write((char*)hobHead,17);
+					file.write((char*)&zx->sys->mem->ram[zx->vid->curscr ? 7 : 5][0],0x1b00);
+					file.close();
+					break;
+				case SCR_SCR:
+					file.open(fnam.c_str(),std::ios::binary);
+					file.write((char*)&zx->sys->mem->ram[zx->vid->curscr ? 7 : 5][0],0x1b00);
+					file.close();
+					break;
+				case SCR_BMP:
+				case SCR_JPG:
+				case SCR_PNG:
+					if (img != NULL) img->save(QString(fnam.c_str()),fext.c_str());
+					break;
 			}
 			emulFlags &= ~FL_SHOT;
 			scrNumber++;

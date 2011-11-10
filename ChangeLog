@@ -115,3 +115,6 @@ Wrk	Change HALT command
 build 20111109
 Fix	Fix screenshot format saving on OK/Apply in Options window
 New	Ability to set bright of not-bright color - new slider in Video tab of Options window
+
+build 20111110
+New	Saving screenshots to hobeta files with standard screen inside
