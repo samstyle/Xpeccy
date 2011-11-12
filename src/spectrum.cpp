@@ -1,5 +1,6 @@
 #include "spectrum.h"
 
+/*
 #include "z80/tables.c"
 #include "z80/instr.c"
 
@@ -14,12 +15,39 @@ ZOp* inst[9] = {
 	NULL,
 	edpref
 };
+*/
+
+Z80EX_BYTE memrd(Z80EX_CONTEXT*,Z80EX_WORD adr,int,void* ptr) {
+	ZXComp* comp = (ZXComp*)ptr;
+	return comp->mem->rd(adr);
+}
+
+void memwr(Z80EX_CONTEXT*,Z80EX_WORD adr,Z80EX_BYTE val,void* ptr) {
+	ZXComp* comp = (ZXComp*)ptr;
+	comp->mem->wr(adr,val);
+}
+
+Z80EX_BYTE iord(Z80EX_CONTEXT*,Z80EX_WORD port,void* ptr) {
+	ZXComp* comp = (ZXComp*)ptr;
+	return comp->in(port);
+}
+
+void iowr(Z80EX_CONTEXT*,Z80EX_WORD port,Z80EX_BYTE val,void* ptr) {
+	ZXComp* comp = (ZXComp*)ptr;
+	comp->out(port,val);
+}
+
+Z80EX_BYTE intrq(Z80EX_CONTEXT*,void*) {
+	return 0xff;
+}
 
 ZXComp::ZXComp() {
-	sys = new ZXBase(this);
-	sys->cpu = new Z80(3.5);
-	sys->mem = new Memory(MEM_ZX);
-	vid = new Video(sys->mem);
+//	sys = new ZXBase(this);
+	void* ptr = (void*)this;
+	cpu = z80ex_create(&memrd,ptr,&memwr,ptr,&iord,ptr,&iowr,ptr,&intrq,ptr);
+	cpuFreq = 3.5;
+	mem = new Memory(MEM_ZX);
+	vid = new Video(mem);
 	keyb = new Keyboard;
 	mouse = new Mouse;
 	tape = new Tape;
@@ -33,19 +61,19 @@ ZXComp::ZXComp() {
 void ZXComp::reset(int wut) {
 	rzxPlay = false;
 	block7ffd=false;
-	int resbank = sys->mem->res;
+	int resbank = mem->res;
 	switch (wut) {
 		case RES_48: resbank = 1; break;
 		case RES_128: resbank = 0; break;
 		case RES_DOS: resbank = 3; break;
 		case RES_SHADOW: resbank = 2; break;
 	}
-	sys->mem->prt2 = 0;
-	sys->mem->prt1 = 0;
-	sys->mem->prt0 = ((resbank & 1) << 4);
-	sys->mem->setrom(resbank);
-	sys->mem->setram(0);
-	sys->cpu->reset();
+	mem->prt2 = 0;
+	mem->prt1 = 0;
+	mem->prt0 = ((resbank & 1) << 4);
+	mem->setrom(resbank);
+	mem->setram(0);
+	z80ex_reset(cpu);
 	vid->curscr = false;
 	vid->mode = VID_NORMAL;
 	bdi->active = (resbank == 3);
@@ -62,22 +90,22 @@ void ZXComp::mapMemory() {
 	uint8_t rp;
 	switch (hw->type) {
 		case HW_ZX48:
-			sys->mem->setrom(bdi->active?3:1);
-			sys->mem->setram(0);
+			mem->setrom(bdi->active?3:1);
+			mem->setram(0);
 			break;
 		case HW_PENT:
-			sys->mem->setrom((bdi->active) ? 3 : ((sys->mem->prt0 & 0x10)>>4));
-			sys->mem->setram((sys->mem->prt0 & 7) | ((sys->mem->prt0 & 0xc0)>>3));
+			mem->setrom((bdi->active) ? 3 : ((mem->prt0 & 0x10)>>4));
+			mem->setram((mem->prt0 & 7) | ((mem->prt0 & 0xc0)>>3));
 			break;
 		case HW_P1024:
-			sys->mem->setrom(bdi->active ? 3 : ((sys->mem->prt1 & 8) ? 0xff : ((sys->mem->prt0 & 0x10)>>4)));
-			sys->mem->setram((sys->mem->prt0 & 7) | ((sys->mem->prt1 & 4)?0:((sys->mem->prt0 & 0x20) | ((sys->mem->prt0 & 0xc0)>>3))));
+			mem->setrom(bdi->active ? 3 : ((mem->prt1 & 8) ? 0xff : ((mem->prt0 & 0x10)>>4)));
+			mem->setram((mem->prt0 & 7) | ((mem->prt1 & 4)?0:((mem->prt0 & 0x20) | ((mem->prt0 & 0xc0)>>3))));
 			break;
 		case HW_SCORP:
-			rp = (sys->mem->prt1 & 0x01) ? 0xff : ((sys->mem->prt1 & 0x02) ? 2 : ((bdi->active) ? 3 : ((sys->mem->prt0 & 0x10)>>4)));
-			rp |= ((sys->mem->prt2 & 3) << 2);
-			sys->mem->setrom(rp);
-			sys->mem->setram((sys->mem->prt0 & 7) | ((sys->mem->prt1 & 0x10)>>1) | ((sys->mem->prt1 & 0xc0)>>2));
+			rp = (mem->prt1 & 0x01) ? 0xff : ((mem->prt1 & 0x02) ? 2 : ((bdi->active) ? 3 : ((mem->prt0 & 0x10)>>4)));
+			rp |= ((mem->prt2 & 3) << 2);
+			mem->setrom(rp);
+			mem->setram((mem->prt0 & 7) | ((mem->prt1 & 0x10)>>1) | ((mem->prt1 & 0xc0)>>2));
 			break;
 	}
 }
@@ -146,10 +174,10 @@ uint8_t ZXComp::in(uint16_t port) {
 			switch (port & 0xff) {
 				case 0xfe:
 					tape->sync();
-					res = rzxPlay ? sys->mem->getRZXIn() : keyb->getmap((port & 0xff00) >> 8) | (tape->signal ? 0x40 : 0x00);
+					res = rzxPlay ? mem->getRZXIn() : keyb->getmap((port & 0xff00) >> 8) | (tape->signal ? 0x40 : 0x00);
 					break;
 				case 0x1f:
-					res = rzxPlay ? sys->mem->getRZXIn() : 0xe0;		// TODO: kempston joystick
+					res = rzxPlay ? mem->getRZXIn() : 0xe0;		// TODO: kempston joystick
 					break;
 				default:
 					switch (hw->type) {
@@ -162,10 +190,10 @@ uint8_t ZXComp::in(uint16_t port) {
 						case HW_SCORP:
 							switch (port) {
 								case 0x7ffd:
-									sys->cpu->frq = 7.0;
+									cpuFreq = 7.0;
 									break;
 								case 0x1ffd:
-									sys->cpu->frq = 3.5;
+									cpuFreq = 3.5;
 									break;
 								case 0xff:
 									if (((vid->curr.h - vid->bord.h) < 256) && ((vid->curr.v - vid->bord.v) < 192)) {
@@ -214,7 +242,7 @@ void ZXComp::out(uint16_t port,uint8_t val) {
 						switch(port) {
 							case 0x7ffd:
 								if (block7ffd) break;
-								sys->mem->prt0 = val;
+								mem->prt0 = val;
 								vid->curscr = val & 0x08;
 								block7ffd = val & 0x20;
 								mapMemory();
@@ -226,14 +254,14 @@ void ZXComp::out(uint16_t port,uint8_t val) {
 							case 0x7ffd:
 								if (block7ffd) break;
 								vid->curscr = val & 0x08;
-								sys->mem->prt0 = val;
-								block7ffd = ((sys->mem->prt1 & 4) && (val & 0x20));
+								mem->prt0 = val;
+								block7ffd = ((mem->prt1 & 4) && (val & 0x20));
 								mapMemory();
 								break;
 							case 0xeff7:
-								sys->mem->prt1 = val;
+								mem->prt1 = val;
 								vid->mode = (val & 1) ? VID_ALCO : VID_NORMAL;
-								sys->cpu->frq = (val & 16) ? 7.0 : 3.5;
+								cpuFreq = (val & 16) ? 7.0 : 3.5;
 								mapMemory();
 								break;
 						}
@@ -242,13 +270,13 @@ void ZXComp::out(uint16_t port,uint8_t val) {
 						switch(port) {
 							case 0x7ffd:
 								if (block7ffd) break;
-								sys->mem->prt0 = val;
+								mem->prt0 = val;
 								vid->curscr = val & 0x08;
 								block7ffd = val & 0x20;
 								mapMemory();
 								break;
 							case 0x1ffd:
-								sys->mem->prt1 = val;
+								mem->prt1 = val;
 								mapMemory();
 								break;
 						}
@@ -281,36 +309,46 @@ uint8_t ZSLays[4][4] = {
 
 uint32_t ZXComp::exec() {
 	uint32_t ltk = vid->t;
+/*
 	if (sys->cpu->halt) {
-		vid->sync(4,sys->cpu->frq);
+		vid->sync(4,cpuFreq);
 		sys->istrb = vid->intStrobe;
 		if (sys->istrb) {
 			sys->cpu->halt = false;
 		}
 	} else {
 		ZOp res = sys->fetch();
-		vid->sync(res.t, sys->cpu->frq);
+		vid->sync(res.t, cpuFreq);
 		sys->istrb = vid->intStrobe;
 		res.func(sys);
 	}
+*/
+	int res = 0;
+	do {
+		res += z80ex_step(cpu);
+	} while (z80ex_last_op_type(cpu) != 0);
+	vid->sync(res,cpuFreq);
+	intStrobe = vid->intStrobe;
+	
 // profROM pages switch: was ld l,(hl), rompage = 2|6|10|14, hl before = 0x0100,0x0104,0x0108,0x010c
-//printf("%c\t%i\t%.4X\n",(hw->type == HW_SCORP) ? 'Y' : 'n',sys->mem->crom & 3,sys->mem->lastRdAdr & 0xfff3);
-	if ((hw->type == HW_SCORP) && ((sys->mem->crom & 3) == 2) && ((sys->mem->lastRdAdr & 0xfff3) == 0x0100)) {
-		sys->mem->prt2 = ZSLays[(sys->mem->lastRdAdr & 0x000c) >> 2][sys->mem->prt2 & 3] & sys->mem->profMask;
+//printf("%c\t%i\t%.4X\n",(hw->type == HW_SCORP) ? 'Y' : 'n',mem->crom & 3,mem->lastRdAdr & 0xfff3);
+	if ((hw->type == HW_SCORP) && ((mem->crom & 3) == 2) && ((mem->lastRdAdr & 0xfff3) == 0x0100)) {
+		mem->prt2 = ZSLays[(mem->lastRdAdr & 0x000c) >> 2][mem->prt2 & 3] & mem->profMask;
 		mapMemory();
 	}
+	Z80EX_WORD pc = z80ex_get_reg(cpu,regPC);
 	if (bdi->enable) {
 		bdi->sync(vid->t);
-		if (bdi->active && (sys->cpu->hpc > 0x3f)) {
+		if (bdi->active && (pc > 0x3fff)) {
 			bdi->active = false;
 			mapMemory();
 		}
-		if (!bdi->active && (sys->cpu->hpc == 0x3d) && (sys->mem->prt0 & 0x10)) {
+		if (!bdi->active && ((pc & 0xff00) == 0x3d00) && (mem->prt0 & 0x10)) {
 			bdi->active = true;
 			mapMemory();
 		}
 	}
-	if ((sys->cpu->hpc > 0x3f) && sys->nmi) {
+	if ((pc > 0x3fff) && nmiRequest) {
 		NMIHandle();
 	}
 	ltk = vid->t - ltk;
@@ -319,23 +357,19 @@ uint32_t ZXComp::exec() {
 }
 
 void ZXComp::INTHandle() {
-	int32_t res = sys->interrupt();
-	vid->sync(res,sys->cpu->frq);
+	int32_t res = z80ex_int(cpu);
+	vid->sync(res,cpuFreq);
 }
 
 void ZXComp::NMIHandle() {
-	sys->cpu->iff2 = sys->cpu->iff1;
-	sys->cpu->iff1 = false;
-	sys->mem->wr(--sys->cpu->sp,sys->cpu->hpc);
-	sys->mem->wr(--sys->cpu->sp,sys->cpu->lpc);
-	sys->cpu->pc = 0x66;
+	int res = z80ex_nmi(cpu);
+	if (res == 0) return;
 	bdi->active = true;
-	sys->cpu->r = ((sys->cpu->r + 1) & 0x7f) | (sys->cpu->r & 0x80);	// increase R
 	mapMemory();
-	sys->cpu->t += 11;
-	vid->sync(11,sys->cpu->frq);
+	vid->sync(res,cpuFreq);
 }
 
+/*
 ZXBase::ZXBase (ZXSystem* par) {
 	parent = par;
 	nmi = false;
@@ -412,3 +446,4 @@ int32_t ZXBase::interrupt() {
 	cpu->t += res;
 	return res;
 }
+*/

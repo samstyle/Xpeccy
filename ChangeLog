@@ -118,3 +118,8 @@ New	Ability to set bright of not-bright color - new slider in Video tab of Optio
 
 build 20111110
 New	Saving screenshots to hobeta files with standard screen inside
+
+0.4.998 (pre-0.5)
+build 20111112
+New	Migration to libz80ex library for cpu emulation. You need to compile and/or install it.
+	Unfortunaly, cmake doesn't have module for libz80ex search.

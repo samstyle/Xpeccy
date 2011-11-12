@@ -117,7 +117,7 @@ int main(int ac,char** av) {
 			devShow();
 			return app.exec();
 		} else {
-			filltabs();
+//			filltabs();
 			initHardware();
 			sndInit();
 			emulInit();

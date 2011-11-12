@@ -3,7 +3,8 @@
 
 #include <stdint.h>
 
-#include "zxbase.h"
+#include "z80ex.h"
+#include "memory.h"
 #include "sound.h"
 
 #define GS_FRQ		12.0
@@ -19,11 +20,12 @@ struct GSData {
 	int l;
 };
 
-class GS : public ZXSystem {
+class GS {
 	public:
 	GS();
 	int flags;
-	ZXBase* sys;
+	Z80EX_CONTEXT* cpu;
+	Memory* mem;
 	uint32_t t;
 	uint8_t pb3_gs;	// gs -> zx
 	uint8_t pb3_zx;	// zx -> gs

@@ -2,14 +2,39 @@
 
 //extern GS* gs;
 
+Z80EX_BYTE gsmemrd(Z80EX_CONTEXT*,Z80EX_WORD adr,int,void* ptr) {
+	GS* comp = (GS*)ptr;
+	return comp->mem->rd(adr);
+}
+
+void gsmemwr(Z80EX_CONTEXT*,Z80EX_WORD adr,Z80EX_BYTE val,void* ptr) {
+	GS* comp = (GS*)ptr;
+	comp->mem->wr(adr,val);
+}
+
+Z80EX_BYTE gsiord(Z80EX_CONTEXT*,Z80EX_WORD port,void* ptr) {
+	GS* comp = (GS*)ptr;
+	return comp->in(port);
+}
+
+void gsiowr(Z80EX_CONTEXT*,Z80EX_WORD port,Z80EX_BYTE val,void* ptr) {
+	GS* comp = (GS*)ptr;
+	comp->out(port,val);
+}
+
+Z80EX_BYTE gsintrq(Z80EX_CONTEXT*,void*) {
+	return 0xff;
+}
+
 GS::GS() {
-	sys = new ZXBase(this);
-	sys->cpu = new Z80(GS_FRQ);
-	sys->mem = new Memory(MEM_GS);
-	sys->mem->pt0 = &sys->mem->rom[0][0];
-	sys->mem->pt1 = &sys->mem->ram[0][0];
-	sys->mem->pt2 = &sys->mem->ram[0][0];
-	sys->mem->pt3 = &sys->mem->ram[1][0];
+//	sys = new ZXBase(this);
+	void* ptr = (void*)this;
+	cpu = z80ex_create(&gsmemrd,ptr,&gsmemwr,ptr,&gsiord,ptr,&gsiowr,ptr,&gsintrq,ptr);
+	mem = new Memory(MEM_GS);
+	mem->pt0 = &mem->rom[0][0];
+	mem->pt1 = &mem->ram[0][0];
+	mem->pt2 = &mem->ram[0][0];
+	mem->pt3 = &mem->ram[1][0];
 	t = cnt = 0;
 	pstate = 0x7e;
 	flags = GS_ENABLE;
@@ -20,7 +45,7 @@ GS::GS() {
 }
 
 void GS::reset() {
-	sys->cpu->reset();
+	z80ex_reset(cpu);
 }
 
 GSData GS::getvol() {
@@ -40,21 +65,23 @@ GSData GS::getvol() {
 }
 
 void GS::sync(uint32_t tk) {
-	ZOp res;
+	int res;
 	double ln = (tk - t) * GS_FRQ / 7.0;		// scale to GS ticks;
 	counter += ln;
 	t = tk;
 	if (~flags & GS_ENABLE) return;
 	while (counter > 0) {
-		res = sys->fetch();
-		res.func(sys);
-		counter -= res.t;
-		cnt += res.t;
+		res = 0;
+		do {
+			res += z80ex_step(cpu);
+		} while (z80ex_last_op_type(cpu) != 0);
+		counter -= res;
+		cnt += res;
 		if (cnt > 320) {	// 12MHz CLK, 37.5KHz INT -> int in each 320 ticks
 			cnt -= 320;
-			tk = sys->interrupt();
-			cnt += tk;
-			counter -= tk;
+			res = z80ex_int(cpu);
+			cnt += res;
+			counter -= res;
 		}
 	}
 }
@@ -114,11 +141,11 @@ void GS::out(uint16_t prt,uint8_t val) {
 		case 0: rp0 = val;
 			val &= 7;
 			if ((val & 7) == 0) {
-				sys->mem->pt2 = &sys->mem->rom[0][0];
-				sys->mem->pt3 = &sys->mem->rom[1][0];
+				mem->pt2 = &mem->rom[0][0];
+				mem->pt3 = &mem->rom[1][0];
 			} else {
-				sys->mem->pt2 = &sys->mem->ram[val*2 - 2][0];
-				sys->mem->pt3 = &sys->mem->ram[val*2 - 1][0];
+				mem->pt2 = &mem->ram[val*2 - 2][0];
+				mem->pt3 = &mem->ram[val*2 - 1][0];
 			}
 			break;
 		case 1: break;

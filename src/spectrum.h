@@ -3,7 +3,8 @@
 
 #include <stdint.h>
 
-#include "zxbase.h"
+#include "z80ex.h"
+#include "memory.h"
 #include "video.h"
 #include "keyboard.h"
 #include "tape.h"
@@ -34,11 +35,12 @@ struct HardWare {
 	int type;
 };
 
-class ZXComp : public ZXSystem {
+class ZXComp {
 	public:
 		ZXComp();
 		HardWare *hw;
-		ZXBase* sys;
+		Z80EX_CONTEXT* cpu;
+		Memory* mem;
 		Video* vid;
 		Keyboard* keyb;
 		Mouse* mouse;
@@ -47,9 +49,13 @@ class ZXComp : public ZXSystem {
 		IDE* ide;
 		GS* gs;
 		AYSys* aym;
+		bool intStrobe;
+		bool nmiRequest;
 		bool rzxPlay;	// true if rzx playing now
 		bool beeplev;
 		bool block7ffd;
+		float cpuFreq;
+		int hwFlags;
 		struct {
 			std::string GSRom;
 			std::string hwName;

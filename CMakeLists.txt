@@ -52,6 +52,8 @@ include_directories(
 	${ZLIB_INCLUDE_DIRS}
 	${ALSA_INCLUDE_DIR}
 	${CMAKE_BINARY_DIR}
+	/usr/local/include/z80ex
+	/usr/include/z80ex
 )
 
 add_executable(xpeccy
@@ -68,6 +70,8 @@ target_link_libraries(xpeccy
 	${SDL_LIBRARY}
 	${ALSA_LIBRARY}
 	${ZLIB_LIBRARY}
+	z80ex
+	z80ex_dasm
 )
 
 install_targets(/bin xpeccy)

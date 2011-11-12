@@ -221,19 +221,19 @@ void SetupWin::start() {
 	}
 	ui.machbox->setCurrentIndex(ui.machbox->findText(QDialog::trUtf8(zx->hw->name.c_str())));
 	int cbx = -1;
-	if (zx->sys->mem->romset != NULL) cbx = ui.rsetbox->findText(QDialog::trUtf8(zx->sys->mem->romset->name.c_str()));
+	if (zx->mem->romset != NULL) cbx = ui.rsetbox->findText(QDialog::trUtf8(zx->mem->romset->name.c_str()));
 	ui.rsetbox->setCurrentIndex(cbx);
 	ui.reschk->setChecked(emulGetFlags() & FL_RESET);
-	ui.resbox->setCurrentIndex(zx->sys->mem->res);
-	switch(zx->sys->mem->mask) {
+	ui.resbox->setCurrentIndex(zx->mem->res);
+	switch(zx->mem->mask) {
 		case 0x00: ui.mszbox->setCurrentIndex(0); break;
 		case 0x07: ui.mszbox->setCurrentIndex(1); break;
 		case 0x0f: ui.mszbox->setCurrentIndex(2); break;
 		case 0x1f: ui.mszbox->setCurrentIndex(3); break;
 		case 0x3f: ui.mszbox->setCurrentIndex(4); break;
 	}
-	ui.cpufrq->setValue(zx->sys->cpu->frq * 2); updfrq();
-	ui.scrpwait->setChecked(zx->sys->hwflags & WAIT_ON);
+	ui.cpufrq->setValue(zx->cpuFreq * 2); updfrq();
+	ui.scrpwait->setChecked(zx->hwFlags & WAIT_ON);
 // video
 	ui.dszchk->setChecked((zx->vid->flags & VF_DOUBLE));
 //	ui.fscchk->setChecked(vid->fscreen);
@@ -320,22 +320,20 @@ void SetupWin::apply() {
 	HardWare *oldmac = zx->hw;
 	zx->opt.hwName = std::string(ui.machbox->currentText().toUtf8().data()); setHardware(zx,zx->opt.hwName);
 	zx->opt.rsName = std::string(ui.rsetbox->currentText().toUtf8().data()); setRomset(zx, zx->opt.rsName);
-	zx->sys->mem->loadromset(optGetString(OPT_ROMDIR));
+	zx->mem->loadromset(optGetString(OPT_ROMDIR));
 	emulSetFlag(FL_RESET, ui.reschk->isChecked());
-	zx->sys->mem->res = ui.resbox->currentIndex();
+	zx->mem->res = ui.resbox->currentIndex();
 	switch(ui.mszbox->currentIndex()) {
-		case 0: zx->sys->mem->mask = 0x00; break;
-		case 1: zx->sys->mem->mask = 0x07; break;
-		case 2: zx->sys->mem->mask = 0x0f; break;
-		case 3: zx->sys->mem->mask = 0x1f; break;
-		case 4: zx->sys->mem->mask = 0x3f; break;
+		case 0: zx->mem->mask = 0x00; break;
+		case 1: zx->mem->mask = 0x07; break;
+		case 2: zx->mem->mask = 0x0f; break;
+		case 3: zx->mem->mask = 0x1f; break;
+		case 4: zx->mem->mask = 0x3f; break;
 	}
-	zx->sys->cpu->frq = ui.cpufrq->value() / 2.0;
-	setFlagBit(ui.scrpwait->isChecked(),&zx->sys->hwflags,WAIT_ON);
+	zx->cpuFreq = ui.cpufrq->value() / 2.0;
+	setFlagBit(ui.scrpwait->isChecked(),&zx->hwFlags,WAIT_ON);
 	zx->opt.GSRom = GSRom;
 	setRomsetList(rsl);
-//	setRomset(zx, zx->opt.rsName);
-//	zx->sys->mem->loadromset(optGetPath(OPT_ROMDIR));
 	if (zx->hw != oldmac) zx->reset(RES_DEFAULT);
 // video
 	setFlagBit(ui.dszchk->isChecked(),&zx->vid->flags,VF_DOUBLE);

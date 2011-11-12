@@ -302,16 +302,16 @@ void saveConfig() {
 	optSet("MACHINE","current",zx->opt.hwName);
 	optSet("ROMSET","current",zx->opt.rsName);
 	optSet("MACHINE","restart",(emulGetFlags() & FL_RESET) != 0);
-	optSet("ROMSET","reset",rmnam[zx->sys->mem->res]);
-	switch(zx->sys->mem->mask) {
+	optSet("ROMSET","reset",rmnam[zx->mem->res]);
+	switch(zx->mem->mask) {
 		case 0x00: optSet("MACHINE","memory",48); break;
 		case 0x07: optSet("MACHINE","memory",128); break;
 		case 0x0f: optSet("MACHINE","memory",256); break;
 		case 0x1f: optSet("MACHINE","memory",512); break;
 		case 0x3f: optSet("MACHINE","memory",1024); break;
 	}
-	optSet("GENERAL","cpu.frq",int(zx->sys->cpu->frq * 2));
-	optSet("MACHINE","scrp.wait",(zx->sys->hwflags & WAIT_ON) != 0);
+	optSet("GENERAL","cpu.frq",int(zx->cpuFreq * 2));
+	optSet("MACHINE","scrp.wait",(zx->hwFlags & WAIT_ON) != 0);
 	optSet("VIDEO","doublesize",(zx->vid->flags & VF_DOUBLE) != 0);
 	optSet("VIDEO","bordersize",int(zx->vid->brdsize * 100));
 	optSet("VIDEO","geometry",zx->vid->curlay);
@@ -620,7 +620,7 @@ void loadConfig(bool dev) {
 	char* buf = new char[0x4000];
 	int tmask = 0xff;
 	int tmp2=0;
-	if (!dev) zx->sys->mem->mask = 0;
+	if (!dev) zx->mem->mask = 0;
 	if (!file.good()) {
 //		shithappens(std::string("Can't find config file<br><b>") + cfname + std::string("</b><br>Default one will be created."));
 		printf("Profile config is missing. Default one will be created\n");
@@ -667,10 +667,10 @@ void loadConfig(bool dev) {
 				switch (tmp2) {
 					case 1:
 						if (pnam=="reset") {
-							if ((pval=="basic128") || (pval=="0")) zx->sys->mem->res = 0;
-							if ((pval=="basic48") || (pval=="1")) zx->sys->mem->res = 1;
-							if ((pval=="shadow") || (pval=="2")) zx->sys->mem->res = 2;
-							if ((pval=="trdos") || (pval=="3")) zx->sys->mem->res = 3;
+							if ((pval=="basic128") || (pval=="0")) zx->mem->res = 0;
+							if ((pval=="basic48") || (pval=="1")) zx->mem->res = 1;
+							if ((pval=="shadow") || (pval=="2")) zx->mem->res = 2;
+							if ((pval=="trdos") || (pval=="3")) zx->mem->res = 3;
 						}
 //						if (pnam=="current") zx->opt.romsetName = pval;
 //						if (pnam=="gs") zx->opt.GSRom = pval;
@@ -693,11 +693,11 @@ void loadConfig(bool dev) {
 						break;
 					case 6:
 						if (pnam=="memory") {
-							if (pval=="48") {zx->sys->mem->mask = 0x00; tmask = 0;}
-							if (pval=="128") {zx->sys->mem->mask = 0x07; tmask = 1;}
-							if (pval=="256") {zx->sys->mem->mask = 0x0f; tmask = 2;}
-							if (pval=="512") {zx->sys->mem->mask = 0x1f; tmask = 4;}
-							if (pval=="1024") {zx->sys->mem->mask = 0x3f; tmask = 8;}
+							if (pval=="48") {zx->mem->mask = 0x00; tmask = 0;}
+							if (pval=="128") {zx->mem->mask = 0x07; tmask = 1;}
+							if (pval=="256") {zx->mem->mask = 0x0f; tmask = 2;}
+							if (pval=="512") {zx->mem->mask = 0x1f; tmask = 4;}
+							if (pval=="1024") {zx->mem->mask = 0x3f; tmask = 8;}
 						}
 						break;
 					case 7:
@@ -745,7 +745,7 @@ void loadConfig(bool dev) {
 	}
 	if (dev) return;
 
-	tmp2 = optGetInt("GENERAL","cpu.frq"); if ((tmp2 > 0) && (tmp2 <= 14)) zx->sys->cpu->frq = tmp2 / 2.0;
+	tmp2 = optGetInt("GENERAL","cpu.frq"); if ((tmp2 > 0) && (tmp2 <= 14)) zx->cpuFreq = tmp2 / 2.0;
 
 	zx->vid->curlay = optGetString("VIDEO","geometry");
 	setFlagBit(optGetBool("VIDEO","doublesize"),&zx->vid->flags, VF_DOUBLE);
@@ -767,15 +767,15 @@ void loadConfig(bool dev) {
 	zx->opt.rsName = optGetString("ROMSET","current");
 	zx->opt.GSRom = optGetString("ROMSET","gs");
 	emulSetFlag(FL_RESET,optGetBool("MACHINE","restart"));
-	setFlagBit(optGetBool("MACHINE","scrp.wait"),&zx->sys->hwflags,WAIT_ON);
+	setFlagBit(optGetBool("MACHINE","scrp.wait"),&zx->hwFlags,WAIT_ON);
 	
 	sndCalibrate();
 	zx->ide->refresh();
 	setHardware(zx, zx->opt.hwName);
 	setRomset(zx, zx->opt.rsName);
 	if (zx->hw==NULL) throw("Can't found current machine");
-	if (zx->sys->mem->romset==NULL) throw("Can't found current romset");
+	if (zx->mem->romset==NULL) throw("Can't found current romset");
 	if (~zx->hw->mask & tmask) throw("Incorrect memory size for this machine");
 	if (!zx->vid->setLayout(zx->vid->curlay)) zx->vid->setLayout("default");
-	zx->sys->mem->loadromset(romDir);
+	zx->mem->loadromset(romDir);
 }

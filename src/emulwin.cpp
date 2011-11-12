@@ -33,7 +33,7 @@
 
 #include <fstream>
 
-#define	XPTITLE	"Xpeccy 0.4.996"
+#define	XPTITLE	"Xpeccy 0.4.998 (pre-0.5)"
 
 extern ZXComp* zx;
 extern EmulWin* mwin;
@@ -51,6 +51,7 @@ int wantedWin;
 uint32_t scrNumber;
 uint32_t scrCounter;
 uint32_t scrInterval;
+bool breakFrame = false;
 // tape window
 Ui::TapeWin tapeUi;
 QDialog* tapeWin;
@@ -180,11 +181,12 @@ void emulExec() {
 	sndSync(zx->vid->t);
 	if (!dbgIsActive()) {
 		// somehow catch CPoint
-		if (dbgFindBreakpoint(BPoint((zx->sys->cpu->pc < 0x4000) ? zx->sys->mem->crom : zx->sys->mem->cram, zx->sys->cpu->pc)) != -1) {
+		Z80EX_WORD pc = z80ex_get_reg(zx->cpu,regPC);
+		if (dbgFindBreakpoint(BPoint((pc < 0x4000) ? zx->mem->crom : zx->mem->cram, pc)) != -1) {
 			wantedWin = WW_DEBUG;
-			zx->sys->cpu->err = true;
+			breakFrame = true;
 		}
-		if (!zx->sys->cpu->err && zx->sys->istrb) {
+		if (!breakFrame && zx->intStrobe) {
 			zx->INTHandle();
 		}
 	}
@@ -275,6 +277,7 @@ char hobHead[] = {'s','c','r','e','e','e','n',' ','C',0,0,0,0x1b,0,0x1b,0xe7,0x8
 
 void MainWin::emulFrame() {
 	if (emulFlags & FL_BLOCK) return;
+	breakFrame = false;
 	if (!mainWin->isActiveWindow()) {
 		zx->keyb->releaseall();
 		zx->mouse->buttons = 0xff;
@@ -286,12 +289,12 @@ void MainWin::emulFrame() {
 		sndSet(SND_COUNT,0);
 		do {
 			emulExec();
-		} while ((wantedWin == WW_NONE) && !zx->sys->istrb);
+		} while ((wantedWin == WW_NONE) && !zx->intStrobe);
 		if (zx->rzxPlay) {
-			zx->sys->mem->rzxFrame++;
-			zx->sys->mem->rzxPos = 0;
+			zx->mem->rzxFrame++;
+			zx->mem->rzxPos = 0;
 		}
-		zx->sys->nmi = false;
+		zx->nmiRequest = false;
 		if (scrCounter !=0) {
 			if (scrInterval == 0) {
 				emulFlags |= FL_SHOT;
@@ -320,12 +323,12 @@ void MainWin::emulFrame() {
 				case SCR_HOB:
 					file.open(fnam.c_str(),std::ios::binary);
 					file.write((char*)hobHead,17);
-					file.write((char*)&zx->sys->mem->ram[zx->vid->curscr ? 7 : 5][0],0x1b00);
+					file.write((char*)&zx->mem->ram[zx->vid->curscr ? 7 : 5][0],0x1b00);
 					file.close();
 					break;
 				case SCR_SCR:
 					file.open(fnam.c_str(),std::ios::binary);
-					file.write((char*)&zx->sys->mem->ram[zx->vid->curscr ? 7 : 5][0],0x1b00);
+					file.write((char*)&zx->mem->ram[zx->vid->curscr ? 7 : 5][0],0x1b00);
 					file.close();
 					break;
 				case SCR_BMP:
@@ -502,7 +505,7 @@ void EmulWin::SDLEventHandler() {
 							emulPause(false,PR_FILE);
 							break;
 						case SDLK_F10:
-							zx->sys->nmi = true;
+							zx->nmiRequest = true;
 							break;
 						case SDLK_F11:			// TODO: when tapeWin will be working, move it to F4
 							if (tapeWin->isVisible()) {
@@ -601,13 +604,13 @@ void setRomsetList(std::vector<RomSet> rsl) {
 		addRomset(rsl[i]);
 	}
 	for (i=0; i<profileList.size(); i++) {
-		profileList[i].zx->sys->mem->romset = findRomset(profileList[i].zx->opt.rsName);
-		profileList[i].zx->sys->mem->loadromset(optGetString(OPT_ROMDIR));
+		profileList[i].zx->mem->romset = findRomset(profileList[i].zx->opt.rsName);
+		profileList[i].zx->mem->loadromset(optGetString(OPT_ROMDIR));
 	}
 }
 
 void setRomset(ZXComp* comp, std::string nm) {
-	zx->sys->mem->romset = findRomset(nm);
+	zx->mem->romset = findRomset(nm);
 }
 
 std::vector<RomSet> getRomsetList() {
@@ -630,7 +633,7 @@ void setHardware(ZXComp* comp, std::string nam) {
 	for (uint i = 0; i < hwList.size(); i++) {
 		if (hwList[i].name == nam) {
 			comp->hw = &hwList[i];
-			comp->sys->hwflags = comp->hw->flags;
+			comp->hwFlags = comp->hw->flags;
 			break;
 		}
 	}

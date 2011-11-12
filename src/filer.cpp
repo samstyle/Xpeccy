@@ -88,8 +88,8 @@ void loadFile(const char* name, int flags, int drv) {
 	int type = getFileType(path);
 	std::string sfnam(path.toUtf8().data());
 	switch (type) {
-		case FT_SNA: zx->sys->mem->load(sfnam,TYP_SNA); break;
-		case FT_Z80: zx->sys->mem->load(sfnam,TYP_Z80); break;
+		case FT_SNA: zx->mem->load(sfnam,TYP_SNA); break;
+		case FT_Z80: zx->mem->load(sfnam,TYP_Z80); break;
 		case FT_TAP: zx->tape->load(sfnam,TYPE_TAP); break;
 		case FT_TZX: zx->tape->load(sfnam,TYPE_TZX); break;
 		case FT_SCL: zx->bdi->flop[drv].load(sfnam,TYPE_SCL); break;
@@ -98,7 +98,7 @@ void loadFile(const char* name, int flags, int drv) {
 		case FT_UDI: zx->bdi->flop[drv].load(sfnam,TYPE_UDI); break;
 		case FT_HOBETA: zx->bdi->flop[drv].load(sfnam,TYPE_HOBETA); break;
 #if HAVEZLIB
-		case FT_RZX: zx->sys->mem->load(sfnam,TYP_RZX); break;
+		case FT_RZX: zx->mem->load(sfnam,TYP_RZX); break;
 #endif
 	}
 }
@@ -148,8 +148,8 @@ bool saveFile(const char* name,int flags,int drv) {
 	if (filters.contains("Snap")) {
 		bool mt = (zx->opt.hwName == "ZX48K");
 		switch (type) {
-			case FT_SNA: zx->sys->mem->save(sfnam,TYP_SNA,mt); break;
-			default: sfnam += ".sna"; zx->sys->mem->save(sfnam,TYP_SNA,mt); break;
+			case FT_SNA: zx->mem->save(sfnam,TYP_SNA,mt); break;
+			default: sfnam += ".sna"; zx->mem->save(sfnam,TYP_SNA,mt); break;
 		}
 	}
 	return true;

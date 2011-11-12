@@ -4,8 +4,10 @@
 #include "debuger.h"
 #include "emulwin.h"
 
+#include <z80ex_dasm.h>
+
 extern ZXComp* zx;
-extern ZOp* inst[9];
+//extern ZOp* inst[9];
 
 DebugWin* dbgWin;
 
@@ -33,7 +35,7 @@ void DebugWin::start() {
 	emulPause(true,PR_DEBUG);
 	ledit->hide();
 	active = true;
-	upadr = zx->sys->cpu->pc;
+	upadr = z80ex_get_reg(zx->cpu,regPC);
 	curcol = 3; currow = 0;
 	fillall();
 	show();
@@ -212,7 +214,7 @@ void DebugWin::fillrays() {
 		} else {
 			lab->setText(QString::number(zx->vid->curr.v - zx->vid->synh.v));
 		}
-	tlab->setText(QString("tick:").append(QString::number(zx->sys->cpu->t - t)).append(" (").append(QString::number(zx->sys->cpu->t - zx->sys->cpu->tb)).append(")"));
+	// tlab->setText(QString("tick:").append(QString::number(zx->sys->cpu->t - t)).append(" (").append(QString::number(zx->sys->cpu->t - zx->sys->cpu->tb)).append(")"));
 }
 
 void DebugWin::filldump() {
@@ -223,7 +225,8 @@ void DebugWin::filldump() {
 		lab = (QLabel*)dmplay->itemAtPosition(i,0)->widget(); lab->setText(gethexword(adr));
 		lab->setBackgroundRole((curcol==4 && currow==i)?QPalette::Highlight:QPalette::Window);
 		for (j=1; j<9; j++) {
-			lab = (QLabel*)dmplay->itemAtPosition(i,j)->widget(); lab->setText(gethexbyte(zx->sys->mem->rd(adr++)));
+			lab = (QLabel*)dmplay->itemAtPosition(i,j)->widget();
+			lab->setText(gethexbyte(zx->mem->rd(adr++)));
 			lab->setBackgroundRole((curcol==4+j && currow==i)?QPalette::Highlight:QPalette::Window);
 		}
 	}
@@ -231,47 +234,63 @@ void DebugWin::filldump() {
 
 void DebugWin::fillregz() {
 	QLabel *lab;
-	lab = (QLabel*)rglay->itemAtPosition(0,1)->widget(); lab->setText(gethexword(zx->sys->cpu->af));	// af
+	lab = (QLabel*)rglay->itemAtPosition(0,1)->widget(); lab->setText(gethexword(z80ex_get_reg(zx->cpu,regAF)));	// af
 		lab->setBackgroundRole((curcol==0 && currow==0)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(1,1)->widget(); lab->setText(gethexword(zx->sys->cpu->bc));	// bc
+	lab = (QLabel*)rglay->itemAtPosition(1,1)->widget(); lab->setText(gethexword(z80ex_get_reg(zx->cpu,regBC)));	// bc
 		lab->setBackgroundRole((curcol==0 && currow==1)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(2,1)->widget(); lab->setText(gethexword(zx->sys->cpu->de));	// de
+	lab = (QLabel*)rglay->itemAtPosition(2,1)->widget(); lab->setText(gethexword(z80ex_get_reg(zx->cpu,regDE)));	// de
 		lab->setBackgroundRole((curcol==0 && currow==2)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(3,1)->widget(); lab->setText(gethexword(zx->sys->cpu->hl));	// hl
+	lab = (QLabel*)rglay->itemAtPosition(3,1)->widget(); lab->setText(gethexword(z80ex_get_reg(zx->cpu,regHL)));	// hl
 		lab->setBackgroundRole((curcol==0 && currow==3)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(4,1)->widget(); lab->setText(gethexword(zx->sys->cpu->alt.af));	// af'
+	lab = (QLabel*)rglay->itemAtPosition(4,1)->widget(); lab->setText(gethexword(z80ex_get_reg(zx->cpu,regAF_)));	// af'
 		lab->setBackgroundRole((curcol==0 && currow==4)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(5,1)->widget(); lab->setText(gethexword(zx->sys->cpu->alt.bc));	// bc'
+	lab = (QLabel*)rglay->itemAtPosition(5,1)->widget(); lab->setText(gethexword(z80ex_get_reg(zx->cpu,regBC_)));	// bc'
 		lab->setBackgroundRole((curcol==0 && currow==5)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(6,1)->widget(); lab->setText(gethexword(zx->sys->cpu->alt.de));	// de'
+	lab = (QLabel*)rglay->itemAtPosition(6,1)->widget(); lab->setText(gethexword(z80ex_get_reg(zx->cpu,regDE_)));	// de'
 		lab->setBackgroundRole((curcol==0 && currow==6)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(7,1)->widget(); lab->setText(gethexword(zx->sys->cpu->alt.hl));	// hl'
+	lab = (QLabel*)rglay->itemAtPosition(7,1)->widget(); lab->setText(gethexword(z80ex_get_reg(zx->cpu,regHL_)));	// hl'
 		lab->setBackgroundRole((curcol==0 && currow==7)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(8,1)->widget(); lab->setText(gethexword(zx->sys->cpu->ix));	// ix
+	lab = (QLabel*)rglay->itemAtPosition(8,1)->widget(); lab->setText(gethexword(z80ex_get_reg(zx->cpu,regIX)));	// ix
 		lab->setBackgroundRole((curcol==0 && currow==8)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(9,1)->widget(); lab->setText(gethexword(zx->sys->cpu->iy));	// iy
+	lab = (QLabel*)rglay->itemAtPosition(9,1)->widget(); lab->setText(gethexword(z80ex_get_reg(zx->cpu,regIY)));	// iy
 		lab->setBackgroundRole((curcol==0 && currow==9)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(10,1)->widget(); lab->setText(gethexword(zx->sys->cpu->ir));	// ir
+	Z80EX_WORD ir = (z80ex_get_reg(zx->cpu,regI) << 8) | (z80ex_get_reg(zx->cpu,regR) & 0x7f) | (z80ex_get_reg(zx->cpu,regR7) & 0x80);
+	lab = (QLabel*)rglay->itemAtPosition(10,1)->widget(); lab->setText(gethexword(ir));	// ir
 		lab->setBackgroundRole((curcol==0 && currow==10)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(11,1)->widget(); lab->setText(gethexword(zx->sys->cpu->pc));		// pc
+	lab = (QLabel*)rglay->itemAtPosition(11,1)->widget(); lab->setText(gethexword(z80ex_get_reg(zx->cpu,regPC)));		// pc
 		lab->setBackgroundRole((curcol==0 && currow==11)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(12,1)->widget(); lab->setText(gethexword(zx->sys->cpu->sp));	// sp
+	lab = (QLabel*)rglay->itemAtPosition(12,1)->widget(); lab->setText(gethexword(z80ex_get_reg(zx->cpu,regSP)));	// sp
 		lab->setBackgroundRole((curcol==0 && currow==12)?QPalette::Highlight:QPalette::Window);
-	lab = (QLabel*)rglay->itemAtPosition(13,1)->widget(); lab->setText(QString::number(zx->sys->cpu->imode).append(" ").append(QString::number(zx->sys->cpu->iff1)).append(QString::number(zx->sys->cpu->iff2)));
+	lab = (QLabel*)rglay->itemAtPosition(13,1)->widget(); lab->setText(QString::number(z80ex_get_reg(zx->cpu,regIM)).append(" ").append(QString::number(z80ex_get_reg(zx->cpu,regIFF1))).append(QString::number(z80ex_get_reg(zx->cpu,regIFF2))));
 		lab->setBackgroundRole((curcol==0 && currow==13)?QPalette::Highlight:QPalette::Window);
 }
 
+Z80EX_BYTE rdbyte(Z80EX_WORD adr,void*) {
+	return zx->mem->rd(adr);
+}
+
 DasmRow DebugWin::getdisasm() {
-	uchar cde,mde=0;
-	bool prf;
+//	uchar cde,mde=0;
+	int t1,t2,clen;
+//	bool prf;
 	DasmRow res;
-	ushort ddz;
+//	ushort ddz;
 	res.adr = adr;
 	res.bytes = "";
 	res.dasm = "";
+	char* buf = new char[256];
+	clen = z80ex_dasm(buf,256,0,&t1,&t2,&rdbyte,adr,NULL);
+	if (clen > 4) clen=4;		// FIXME: z80ex_dasm bug? for DDCB instructions length
+	res.dasm = QString(buf);
+	while (clen > 0) {
+		res.bytes.append(gethexbyte(zx->mem->rd(adr)));
+		clen--;
+		adr++;
+	}
+/*
 	do {
 		prf = false;
-		cde = zx->sys->mem->rd(adr++);
+		cde = zx->mem->rd(adr++);
 		if (!(mde & 12)) {
 			if (cde==0xdd) {mde = 1; prf=true;}
 			if (cde==0xfd) {mde = 2; prf=true;}
@@ -279,42 +298,42 @@ DasmRow DebugWin::getdisasm() {
 			if (cde==0xed) {mde = 8; prf=true;}
 		}
 	} while (prf);
-	if ((mde==5) || (mde==6)) {cde=zx->sys->mem->rd(adr++);}
+	if ((mde==5) || (mde==6)) {cde=zx->mem->rd(adr++);}
 	res.dasm = QString(inst[mde][cde].name).toUpper();
-
 	QString nm;
 	signed char bt;
 	if (res.dasm.indexOf(":4")!=-1) {
-		bt = (signed char)zx->sys->mem->rd(adr++);
+		bt = (signed char)zx->mem->rd(adr++);
 		if (bt < 0) {nm=QString("-").append(QString::number(512-bt,16).right(2));}
 			else {nm=QString("+").append(QString::number(256+bt,16).right(2));}
 		res.dasm.replace(":4",nm);
 	}
 	if (res.dasm.indexOf(":5")!=-1) {
-		bt = (signed char)zx->sys->mem->rd(adr-2);
+		bt = (signed char)zx->mem->rd(adr-2);
 		if (bt < 0) {nm=QString("-").append(QString::number(512-bt,16).right(2));}
 			else {nm=QString("+").append(QString::number(256+bt,16).right(2));}
 		res.dasm.replace(":5",nm);
 	}
-	if (res.dasm.indexOf(":1")!=-1) res.dasm.replace(":1",QString::number(zx->sys->mem->rd(adr++)+0x100,16).right(2).toUpper());
+	if (res.dasm.indexOf(":1")!=-1) res.dasm.replace(":1",QString::number(zx->mem->rd(adr++)+0x100,16).right(2).toUpper());
 	if (res.dasm.indexOf(":2")!=-1) {
-		res.dasm.replace(":2",gethexword(zx->sys->mem->rd(adr) + (zx->sys->mem->rd(adr+1)<<8)));
+		res.dasm.replace(":2",gethexword(zx->mem->rd(adr) + (zx->mem->rd(adr+1)<<8)));
 		adr += 2;
 	}
 	if (res.dasm.indexOf(":3")!=-1) {
-		res.dasm.replace(":3",gethexword(adr + (signed char)zx->sys->mem->rd(adr) + 1));
+		res.dasm.replace(":3",gethexword(adr + (signed char)zx->mem->rd(adr) + 1));
 		adr++;
 	}
 
-	for (ddz=res.adr; ddz<adr; ddz++) {res.bytes.append(gethexbyte(zx->sys->mem->rd(ddz)));}
+	for (ddz=res.adr; ddz<adr; ddz++) {res.bytes.append(gethexbyte(zx->mem->rd(ddz)));}
 	if (res.bytes.size()>10) res.bytes = res.bytes.left(2).append("..").append(res.bytes.right(6));
+*/
 	return res;
 }
 
 uint8_t DebugWin::getbpage(uint16_t ad) {
 	uchar res = 0;
-	if (ad<0x4000) {res = zx->sys->mem->crom;}
-		else {if (ad>0xbfff) res = zx->sys->mem->cram;}
+	if (ad<0x4000) {res = zx->mem->crom;}
+		else {if (ad>0xbfff) res = zx->mem->cram;}
 	return res;
 }
 
@@ -328,18 +347,19 @@ bool DebugWin::filldasm() {
 	BPoint bp;
 	DasmRow res;
 	QLabel *lab1,*lab2,*lab3;
+	Z80EX_WORD pc = z80ex_get_reg(zx->cpu,regPC);
 	for (i=0; i<DASMROW; i++) {
 //		oadr = adr;
 		bp.page = getbpage(adr);
 		bp.adr = adr;
 		idx = findbp(bp);
-		if (adr==zx->sys->cpu->pc) ispc=true;
+		if (adr == pc) ispc=true;
 		lab1 = (QLabel*)asmlay->itemAtPosition(i,0)->widget();
 		lab2 = (QLabel*)asmlay->itemAtPosition(i,1)->widget();
 		lab3 = (QLabel*)asmlay->itemAtPosition(i,2)->widget();
-		lab1->setBackgroundRole((zx->sys->cpu->pc==adr)?QPalette::ToolTipBase:QPalette::Window);
-		lab2->setBackgroundRole((zx->sys->cpu->pc==adr)?QPalette::ToolTipBase:QPalette::Window);
-		lab3->setBackgroundRole((zx->sys->cpu->pc==adr)?QPalette::ToolTipBase:QPalette::Window);
+		lab1->setBackgroundRole((pc == adr)?QPalette::ToolTipBase:QPalette::Window);
+		lab2->setBackgroundRole((pc == adr)?QPalette::ToolTipBase:QPalette::Window);
+		lab3->setBackgroundRole((pc == adr)?QPalette::ToolTipBase:QPalette::Window);
 		lab1->setForegroundRole((idx==-1)?QPalette::WindowText:QPalette::ToolTipText);
 		lab2->setForegroundRole((idx==-1)?QPalette::WindowText:QPalette::ToolTipText);
 		lab3->setForegroundRole((idx==-1)?QPalette::WindowText:QPalette::ToolTipText);
@@ -404,14 +424,14 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 		switch (ev->modifiers()) {
 		case Qt::AltModifier:
 			switch (cod) {
-				case Qt::Key_A: dmpadr = zx->sys->cpu->af; filldump(); break;
-				case Qt::Key_B: dmpadr = zx->sys->cpu->bc; filldump(); break;
-				case Qt::Key_D: dmpadr = zx->sys->cpu->de; filldump(); break;
-				case Qt::Key_H: dmpadr = zx->sys->cpu->hl; filldump(); break;
-				case Qt::Key_X: dmpadr = zx->sys->cpu->ix; filldump(); break;
-				case Qt::Key_Y: dmpadr = zx->sys->cpu->iy; filldump(); break;
-				case Qt::Key_S: dmpadr = zx->sys->cpu->sp; filldump(); break;
-				case Qt::Key_P: dmpadr = zx->sys->cpu->pc; filldump(); break;
+				case Qt::Key_A: dmpadr = z80ex_get_reg(zx->cpu,regAF); filldump(); break;
+				case Qt::Key_B: dmpadr = z80ex_get_reg(zx->cpu,regBC); filldump(); break;
+				case Qt::Key_D: dmpadr = z80ex_get_reg(zx->cpu,regDE); filldump(); break;
+				case Qt::Key_H: dmpadr = z80ex_get_reg(zx->cpu,regHL); filldump(); break;
+				case Qt::Key_X: dmpadr = z80ex_get_reg(zx->cpu,regIX); filldump(); break;
+				case Qt::Key_Y: dmpadr = z80ex_get_reg(zx->cpu,regIY); filldump(); break;
+				case Qt::Key_S: dmpadr = z80ex_get_reg(zx->cpu,regSP); filldump(); break;
+				case Qt::Key_P: dmpadr = z80ex_get_reg(zx->cpu,regPC); filldump(); break;
 			}
 			break;
 		case Qt::NoModifier:
@@ -443,19 +463,22 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					break;
 				case Qt::Key_Z:
 					if (curcol>0 && curcol<4) {
-						zx->sys->cpu->pc = fdasm[currow].adr;
+						z80ex_set_reg(zx->cpu,regPC,fdasm[currow].adr);
 						filldasm();
 					}
 					break;
 				case Qt::Key_F7:
-					t = zx->sys->cpu->t;
+					//t = zx->sys->cpu->t;
 					emulExec();
-					if (!fillall()) {upadr = zx->sys->cpu->pc; filldasm();}
+					if (!fillall()) {
+						upadr = z80ex_get_reg(zx->cpu,regPC);
+						filldasm();
+					}
 					break;
 				case Qt::Key_F8:
-					t = zx->sys->cpu->t;
-					cpoint.adr = zx->sys->cpu->pc;
-					cpoint.sp = zx->sys->cpu->sp;
+					//t = zx->sys->cpu->t;
+					cpoint.adr = z80ex_get_reg(zx->cpu,regPC);
+					cpoint.sp = z80ex_get_reg(zx->cpu,regSP);
 					cpoint.active = true;
 					stop();
 					break;
@@ -520,7 +543,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					}
 					break;
 				case Qt::Key_Home:
-					upadr = zx->sys->cpu->pc;
+					upadr = z80ex_get_reg(zx->cpu,regPC);
 					filldasm();
 					break;
 			}
@@ -538,23 +561,28 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					case 0: idx = ledit->text().toUShort(&tmpb,16);
 						if (!tmpb) break;
 						switch (currow) {
-							case 0: zx->sys->cpu->af = idx; break;
-							case 1: zx->sys->cpu->bc = idx; break;
-							case 2: zx->sys->cpu->de = idx; break;
-							case 3: zx->sys->cpu->hl = idx; break;
-							case 4: zx->sys->cpu->alt.af = idx; break;
-							case 5: zx->sys->cpu->alt.bc = idx; break;
-							case 6: zx->sys->cpu->alt.de = idx; break;
-							case 7: zx->sys->cpu->alt.hl = idx; break;
-							case 8: zx->sys-> cpu->ix = idx; break;
-							case 9: zx->sys-> cpu->iy = idx; break;
-							case 10: zx->sys->cpu->ir = idx; break;
-							case 11: zx->sys->cpu->pc = idx; break;
-							case 12: zx->sys->cpu->sp = idx; break;
-							case 13: if ((idx & 0xf00)>0x200) {tmpb = false;} else {
-									zx->sys->cpu->imode = ((idx & 0xf00)>>8);
-									zx->sys->cpu->iff1 = (idx & 0xf0);
-									zx->sys->cpu->iff2 = (idx & 0x0f);
+							case 0: z80ex_set_reg(zx->cpu,regAF,idx); break;
+							case 1: z80ex_set_reg(zx->cpu,regBC,idx); break;
+							case 2: z80ex_set_reg(zx->cpu,regDE,idx); break;
+							case 3: z80ex_set_reg(zx->cpu,regHL,idx); break;
+							case 4: z80ex_set_reg(zx->cpu,regAF_,idx); break;
+							case 5: z80ex_set_reg(zx->cpu,regBC_,idx); break;
+							case 6: z80ex_set_reg(zx->cpu,regDE_,idx); break;
+							case 7: z80ex_set_reg(zx->cpu,regHL_,idx); break;
+							case 8: z80ex_set_reg(zx->cpu,regIX,idx); break;
+							case 9: z80ex_set_reg(zx->cpu,regIY,idx); break;
+							case 10: z80ex_set_reg(zx->cpu,regI,(idx & 0xff00) >> 8);
+								z80ex_set_reg(zx->cpu,regR,idx & 0xff);
+								z80ex_set_reg(zx->cpu,regR7,idx & 0x80);
+								break;
+							case 11: z80ex_set_reg(zx->cpu,regPC,idx); break;
+							case 12: z80ex_set_reg(zx->cpu,regSP,idx); break;
+							case 13: if ((idx & 0xf00)>0x200) {
+									tmpb = false;
+								} else {
+									z80ex_set_reg(zx->cpu,regIM,(idx & 0xf00)>>8);
+									z80ex_set_reg(zx->cpu,regIFF1,idx & 0xf0);
+									z80ex_set_reg(zx->cpu,regIFF2,idx & 0x0f);
 								}
 								break;
 						}
@@ -582,7 +610,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					case 12: idx = ledit->text().toShort(&tmpb,16);
 						tmpb &= (idx<0x100);
 						if (!tmpb) break;
-						zx->sys->mem->wr(dmpadr+(currow<<3)+curcol-5,idx&0xff);
+						zx->mem->wr(dmpadr+(currow<<3)+curcol-5,idx&0xff);
 						curcol++;
 						if (curcol > 12) {
 							curcol=5; currow++;
