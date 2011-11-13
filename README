@@ -5,6 +5,7 @@ How to compile
 	cd build
 	cmake ..
 If something going wrong, fix it - install qt4 and sdl libraries and headers
+Additionally you need install libz80ex.
 Optionally you can install alsa, sdl sound and zlib libs and headers for more functional
 And...
 	make
