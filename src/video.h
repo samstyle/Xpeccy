@@ -45,13 +45,14 @@ class Video {
 	public:
 		Video(Memory*);
 		int flags;
-		bool intSignal;
+//		bool intSignal;
 		bool intStrobe;
 		uint8_t* scrptr;
 		uint8_t* scrimg;
 		VSize full,bord,curr,synh;
 		VSize lcut,rcut,vsze,wsze;
-		uint32_t frmsz, t, intsz, intpos;
+		int frmsz;
+		uint32_t t, intsz, intpos;
 		struct {
 			uint8_t *scr5,*atr5;		// screen 0
 			uint8_t *scr7,*atr7;		// screen 1
@@ -69,6 +70,9 @@ class Video {
 		void sync(int,float);
 		bool setLayout(std::string);
 		void update();
+		int dotCount;
+		int16_t* matrix;
+		void fillMatrix();
 };
 
 void addLayout(std::string,int*);
