@@ -4,10 +4,6 @@
 // video layouts
 std::vector<VidLayout> layoutList;
 
-#define	VM_INVIS	1
-#define	VM_BORDER	2
-#define	VM_SCREEN	3
-
 unsigned char inkTab[] = {
   0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
   0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
@@ -39,17 +35,17 @@ Video::Video(Memory* me) {
 		for (j=0;j<8;j++) {
 			for (k=0;k<8;k++) {
 				for (l=0;l<32;l++) {
-					ladrz[idx].scr5 = me->ram[5] + sadr;
-					ladrz[idx].atr5 = me->ram[5] + aadr;
-					ladrz[idx].scr7 = me->ram[7] + sadr;
-					ladrz[idx].atr7 = me->ram[7] + aadr;
+					scr5pix[idx] = me->ram[5] + sadr;// ladrz[idx].scr5 = me->ram[5] + sadr;
+					scr5atr[idx] = me->ram[5] + aadr;// ladrz[idx].atr5 = me->ram[5] + aadr;
+					scr7pix[idx] = me->ram[7] + sadr;//ladrz[idx].scr7 = me->ram[7] + sadr;
+					scr7atr[idx] = me->ram[7] + aadr;//ladrz[idx].atr7 = me->ram[7] + aadr;
 					ladrz[idx].ac00 = me->ram[4] + sadr;
-					ladrz[idx].ac10 = me->ram[6] + sadr;
 					ladrz[idx].ac01 = me->ram[5] + sadr;
-					ladrz[idx].ac11 = me->ram[7] + sadr;
 					ladrz[idx].ac02 = me->ram[4] + sadr + 0x2000;
-					ladrz[idx].ac12 = me->ram[6] + sadr + 0x2000;
 					ladrz[idx].ac03 = me->ram[5] + sadr + 0x2000;
+					ladrz[idx].ac10 = me->ram[6] + sadr;
+					ladrz[idx].ac11 = me->ram[7] + sadr;
+					ladrz[idx].ac12 = me->ram[6] + sadr + 0x2000;
 					ladrz[idx].ac13 = me->ram[7] + sadr + 0x2000;
 					idx++;
 					sadr++;
@@ -75,12 +71,16 @@ Video::Video(Memory* me) {
 	fcnt = 0.0;
 	
 	matrix = new int16_t[512 * 512];
+	nextBorder = 0xff;
 }
 
 #define	MTRX_INVIS	-1		// invisible: blank spaces
 #define	MTRX_BORDER	-2		// border
-#define	MTRX_SHIFT	-3		// screen dots except each 8th. on each 8th is reading of screen byte and attributes
-#define	MTRX_ZERO	-4		// 
+#define	MTRX_ZERO	-3		// screen dots except each 8th. on each 8th is reading of screen byte and attributes
+#define	MTRX_SHIFT	-4
+#define	MTRX_DOT2	-5
+#define	MTRX_DOT4	-6
+#define	MTRX_DOT6	-7
 
 void Video::fillMatrix() {
 	uint x,y,i,adr;
@@ -94,11 +94,12 @@ void Video::fillMatrix() {
 				if ((y < bord.v) || (y > bord.v + 191) || (x < bord.h) || (x > bord.h + 255)) {
 					matrix[i] = MTRX_BORDER;
 				} else {
-					if (((x - bord.h) & 7) == 0) {
-						matrix[i] = adr;
-						adr++;
-					} else {
-						matrix[i] = MTRX_SHIFT;
+					switch ((x - bord.h) & 7) {
+						case 0: matrix[i] = adr; adr++; break;
+						case 2: matrix[i] = MTRX_DOT2; break;
+						case 4: matrix[i] = MTRX_DOT4; break;
+						case 6: matrix[i] = MTRX_DOT6; break;
+						default: matrix[i] = MTRX_SHIFT; break;
 					}
 				}
 			}
@@ -194,26 +195,69 @@ void Video::sync(int tk,float fr) {
 			mtx = MTRX_INVIS;
 		}
 		if (mtx != MTRX_INVIS) {
-			switch (mtx) {
-				case MTRX_BORDER:
-					col = brdcol;
-					break;
-				case MTRX_SHIFT:
-					scrbyte<<=1;
-					col = (scrbyte & 0x80) ? ink : pap;
-					break;
-				default:
-					if (curscr) {
-						scrbyte = *(ladrz[mtx].scr7);
-						atrbyte = *(ladrz[mtx].atr7);
-					} else {
-						scrbyte = *(ladrz[mtx].scr5);
-						atrbyte = *(ladrz[mtx].atr5);
+			switch (mode) {
+				case VID_NORMAL:
+					switch(mtx) {
+						case MTRX_BORDER:
+							col = brdcol;
+							break;
+						case MTRX_DOT2:
+						case MTRX_DOT4:
+						case MTRX_DOT6:
+						case MTRX_SHIFT:
+							scrbyte<<=1;
+							col = (scrbyte & 0x80) ? ink : pap;
+							break;
+						default:
+							if (curscr) {
+								scrbyte = *(scr7pix[mtx]);
+								atrbyte = *(scr7atr[mtx]);
+							} else {
+								scrbyte = *(scr5pix[mtx]);
+								atrbyte = *(scr5atr[mtx]);
+							}
+							if ((atrbyte & 0x80) && flash) scrbyte ^= 255;
+							ink = inkTab[atrbyte & 0x7f];
+							pap = papTab[atrbyte & 0x7f];
+							col = (scrbyte & 0x80) ? ink : pap;
+							break;
 					}
-					if ((atrbyte & 0x80) && flash) scrbyte ^= 255;
-					ink = inkTab[atrbyte & 0x7f];
-					pap = papTab[atrbyte & 0x7f];
-					col = (scrbyte & 0x80) ? ink : pap;
+					break;
+				case VID_ALCO:
+					switch (mtx) {
+						case MTRX_BORDER:
+							col = brdcol;
+							break;
+						case MTRX_SHIFT:
+							col = ((scrbyte & 0x38)>>3) | ((scrbyte & 0x80)>>4);
+							break;
+						case MTRX_DOT2:
+							scrbyte = alscr2;
+							col = inkTab[scrbyte & 0x7f];
+							break;
+						case MTRX_DOT4:
+							scrbyte = alscr4;
+							col = inkTab[scrbyte & 0x7f];
+							break;
+						case MTRX_DOT6:
+							scrbyte = alscr6;
+							col = inkTab[scrbyte & 0x7f];
+							break;
+						default:
+							if (curscr) {
+								scrbyte = *(ladrz[mtx].ac10);
+								alscr2 = *(ladrz[mtx].ac11);
+								alscr4 = *(ladrz[mtx].ac12);
+								alscr6 = *(ladrz[mtx].ac13);
+							} else {
+								scrbyte = *(ladrz[mtx].ac00);
+								alscr2 = *(ladrz[mtx].ac01);
+								alscr4 = *(ladrz[mtx].ac02);
+								alscr6 = *(ladrz[mtx].ac03);
+							}
+							col = inkTab[scrbyte & 0x7f];
+							break;
+					}
 					break;
 			}
 			*(scrptr++) = col;
@@ -223,7 +267,7 @@ void Video::sync(int tk,float fr) {
 				*(scrptr++)=col;
 			}
 		}
-		pxcnt -= 1.0;
+		pxcnt--;
 		if (++dotCount >= frmsz) {
 			dotCount = 0;
 			fcnt++;
@@ -231,6 +275,10 @@ void Video::sync(int tk,float fr) {
 			scrptr = scrimg;
 			intStrobe = true;
 		}
+	}
+	if (nextBorder < 8) {
+		brdcol = nextBorder;
+		nextBorder = 0xff;
 	}
 #endif
 }

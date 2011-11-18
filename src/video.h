@@ -54,16 +54,22 @@ class Video {
 		int frmsz;
 		uint32_t t, intsz, intpos;
 		struct {
-			uint8_t *scr5,*atr5;		// screen 0
-			uint8_t *scr7,*atr7;		// screen 1
+//			uint8_t *scr5,*atr5;		// screen 0
+//			uint8_t *scr7,*atr7;		// screen 1
 			uint8_t *ac00,*ac01,*ac02,*ac03;	// alco parts (screen 0)
 			uint8_t *ac10,*ac11,*ac12,*ac13;	// alco parts (screen 1)
 		} ladrz[0x1800];	// адреса на экране
+		uint8_t alscr2,alscr4,alscr6;
+		uint8_t* scr5pix[0x1800];
+		uint8_t* scr5atr[0x1800];
+		uint8_t* scr7pix[0x1800];
+		uint8_t* scr7atr[0x1800];
 		int iacount;		// счетчик для ladrz
 		int32_t mode;
 		float zoom,brdsize, pxcnt;
 		bool flash,curscr;
-		uint8_t fcnt,brdcol,scrbyte,prescr,atrbyte,ink,pap;
+		uint8_t brdcol,nextBorder;
+		uint8_t fcnt,scrbyte,prescr,atrbyte,ink,pap;
 //		std::vector<VidLayout> layout;	// screen layouts
 		std::string curlay;		// current layout name
 		void tick();

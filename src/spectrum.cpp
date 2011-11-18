@@ -41,10 +41,17 @@ Z80EX_BYTE intrq(Z80EX_CONTEXT*,void*) {
 	return 0xff;
 }
 
+// void tcall(Z80EX_CONTEXT*,void* ptr) {
+// 	ZXComp* comp = (ZXComp*)ptr;
+// 	comp->vid->sync(1,comp->cpuFreq);
+// 	comp->intStrobe |= comp->vid->intStrobe;
+// }
+
 ZXComp::ZXComp() {
 //	sys = new ZXBase(this);
 	void* ptr = (void*)this;
 	cpu = z80ex_create(&memrd,ptr,&memwr,ptr,&iord,ptr,&iowr,ptr,&intrq,ptr);
+//	z80ex_set_tstate_callback(cpu,&tcall,ptr);
 	cpuFreq = 3.5;
 	mem = new Memory(MEM_ZX);
 	vid = new Video(mem);
@@ -230,9 +237,9 @@ void ZXComp::out(uint16_t port,uint8_t val) {
 		case 0xbffd: aym->scc->setreg(val,vid->t); break;			// write in sound chip register
 		default:
 			if ((port&0xff) == 0xfe) {
-				vid->brdcol = val&0x07;
+				vid->nextBorder = val & 0x07;
 				beeplev = val & 0x10;
-				tape->outsig = val&0x08;
+				tape->outsig = val & 0x08;
 				tape->sync();
 			} else {
 				switch (hw->type) {
@@ -309,20 +316,6 @@ uint8_t ZSLays[4][4] = {
 
 uint32_t ZXComp::exec() {
 	uint32_t ltk = vid->t;
-/*
-	if (sys->cpu->halt) {
-		vid->sync(4,cpuFreq);
-		sys->istrb = vid->intStrobe;
-		if (sys->istrb) {
-			sys->cpu->halt = false;
-		}
-	} else {
-		ZOp res = sys->fetch();
-		vid->sync(res.t, cpuFreq);
-		sys->istrb = vid->intStrobe;
-		res.func(sys);
-	}
-*/
 	int res = 0;
 	do {
 		res += z80ex_step(cpu);
@@ -357,7 +350,7 @@ uint32_t ZXComp::exec() {
 }
 
 void ZXComp::INTHandle() {
-	int32_t res = z80ex_int(cpu);
+	int res = z80ex_int(cpu);
 	vid->sync(res,cpuFreq);
 }
 
