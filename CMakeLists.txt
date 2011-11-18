@@ -18,7 +18,7 @@ set(MOCFILES
 	./src/setupwin.h
 )
 
-add_definitions(-O3 -Wall)
+add_definitions(-Wall -O3)
 
 if (SDL_SOUND_FOUND)
 	add_definitions(-DHAVESDLSOUND)

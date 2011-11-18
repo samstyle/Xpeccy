@@ -151,9 +151,12 @@ void MainWin::updateWindow() {
 	if ((zx->vid->flags & VF_FULLSCREEN) && !(zx->vid->flags & VF_BLOCKFULLSCREEN)) {
 		sdlflg |= SDL_FULLSCREEN;
 	}
+//printf("szw.h.v = %i\t%i\n",szw,szh);
 	setFixedSize(szw,szh);
 	surf = SDL_SetVideoMode(szw,szh,8,sdlflg | SDL_NOFRAME);
 	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
+//printf("surface size = %i\t%i\t%i\n",surf->w,surf->h,surf->pitch);
+//printf("window size = %i\t%i\n",size().width(),size().height());
 	zx->vid->scrimg = (uint8_t*)surf->pixels;
 	zx->vid->scrptr = zx->vid->scrimg;
 	emulFlags &= ~FL_BLOCK;

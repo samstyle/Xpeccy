@@ -77,7 +77,7 @@ class Video {
 		bool setLayout(std::string);
 		void update();
 		int dotCount;
-		int16_t* matrix;
+		uint16_t matrix[512 * 512];
 		void fillMatrix();
 };
 

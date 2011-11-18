@@ -70,17 +70,18 @@ Video::Video(Memory* me) {
 	t = 0;
 	fcnt = 0.0;
 	
-	matrix = new int16_t[512 * 512];
 	nextBorder = 0xff;
+	dotCount = 0;
+	pxcnt = 0;
 }
 
-#define	MTRX_INVIS	-1		// invisible: blank spaces
-#define	MTRX_BORDER	-2		// border
-#define	MTRX_ZERO	-3		// screen dots except each 8th. on each 8th is reading of screen byte and attributes
-#define	MTRX_SHIFT	-4
-#define	MTRX_DOT2	-5
-#define	MTRX_DOT4	-6
-#define	MTRX_DOT6	-7
+#define	MTRX_INVIS	0x4000		// invisible: blank spaces
+#define	MTRX_BORDER	0x4001		// border
+#define	MTRX_ZERO	0x4002		// screen dots except each 8th. on each 8th is reading of screen byte and attributes
+#define	MTRX_SHIFT	0x4003
+#define	MTRX_DOT2	0x4004
+#define	MTRX_DOT4	0x4005
+#define	MTRX_DOT6	0x4006
 
 void Video::fillMatrix() {
 	uint x,y,i,adr;
@@ -89,7 +90,7 @@ void Video::fillMatrix() {
 	for (y = 0; y < full.v; y++) {
 		for (x = 0; x < full.h; x++) {
 			if ((y < lcut.v) || (y >= rcut.v) || (x < lcut.h) || (x >= rcut.h)) {
-				matrix[i] = MTRX_INVIS;
+				matrix[i] = ((x==0) && (y > lcut.v) && (y < rcut.v)) ? MTRX_ZERO : MTRX_INVIS;
 			} else {
 				if ((y < bord.v) || (y > bord.v + 191) || (x < bord.h) || (x > bord.h + 255)) {
 					matrix[i] = MTRX_BORDER;
@@ -103,32 +104,41 @@ void Video::fillMatrix() {
 					}
 				}
 			}
-			if ((y >= lcut.v) && (x == full.h - 1)) matrix[i] = MTRX_ZERO;
 			i++;
 		}
+//		if (y >= lcut.v) matrix[i-1] = MTRX_ZERO;
 	}
+/*
+	FILE* file = fopen("matrix","w");
+	fwrite((char*)&matrix[0],512 * 512,sizeof(int),file);
+	fclose(file);
+	throw(0);
+*/
 }
 
 void Video::update() {
-	lcut.h = synh.h + floor((bord.h - synh.h) * (1.0 - brdsize));
-	lcut.v = synh.v + floor((bord.v - synh.v) * (1.0 - brdsize));
-	rcut.h = full.h - floor((1.0 - brdsize)*(full.h - bord.h - 256));
-	rcut.v = full.v - floor((1.0 - brdsize)*(full.v - bord.v - 192));
+	lcut.h = synh.h + (bord.h - synh.h) * (1.0 - brdsize);
+	lcut.v = synh.v + (bord.v - synh.v) * (1.0 - brdsize);
+	rcut.h = full.h - (1.0 - brdsize)*(full.h - bord.h - 256);
+	rcut.v = full.v - (1.0 - brdsize)*(full.v - bord.v - 192);
 	vsze.h = rcut.h - lcut.h;
 	vsze.v = rcut.v - lcut.v;
 	wsze.h = vsze.h * ((flags & VF_DOUBLE) ? 2 : 1);
 	wsze.v = vsze.v * ((flags & VF_DOUBLE) ? 2 : 1);
 	fillMatrix();
+	dotCount = 0;
+	pxcnt = 0;
+	scrptr = scrimg;
 }
 
 //bool onscr = false;
 uint8_t col = 0;
-int16_t mtx = 0;
+uint16_t mtx = 0;
 
 void Video::sync(int tk,float fr) {
 	intStrobe = false;
 	pxcnt += 7.0 * tk / fr;
-	t += pxcnt;
+	t += (int)pxcnt;
 #if 0
 	while (pxcnt > 0) {
 		pxcnt -= 1.0;
@@ -188,87 +198,91 @@ void Video::sync(int tk,float fr) {
 		}
 	}
 #else
-	while (pxcnt > 0) {
+	while (pxcnt >= 1) {
 		mtx = matrix[dotCount];
-		if (mtx == MTRX_ZERO) {
-			if (flags & VF_DOUBLE) scrptr += wsze.h;
-			mtx = MTRX_INVIS;
+		switch (mtx) {
+			case MTRX_ZERO:
+				if (flags & VF_DOUBLE) scrptr += wsze.h;
+				break;
+			case MTRX_INVIS:
+				break;
+			default:
+				switch (mode) {
+					case VID_NORMAL:
+						switch(mtx) {
+							case MTRX_BORDER:
+								col = brdcol;
+								break;
+							case MTRX_DOT2:
+							case MTRX_DOT4:
+							case MTRX_DOT6:
+							case MTRX_SHIFT:
+								scrbyte<<=1;
+								col = (scrbyte & 0x80) ? ink : pap;
+								break;
+							default:
+								if (curscr) {
+									scrbyte = *(scr7pix[mtx]);
+									atrbyte = *(scr7atr[mtx]);
+								} else {
+									scrbyte = *(scr5pix[mtx]);
+									atrbyte = *(scr5atr[mtx]);
+								}
+								if ((atrbyte & 0x80) && flash) scrbyte ^= 255;
+								ink = inkTab[atrbyte & 0x7f];
+								pap = papTab[atrbyte & 0x7f];
+								col = (scrbyte & 0x80) ? ink : pap;
+								break;
+						}
+						break;
+					case VID_ALCO:
+						switch (mtx) {
+							case MTRX_BORDER:
+								col = brdcol;
+								break;
+							case MTRX_SHIFT:
+								col = ((scrbyte & 0x38)>>3) | ((scrbyte & 0x80)>>4);
+								break;
+							case MTRX_DOT2:
+								scrbyte = alscr2;
+								col = inkTab[scrbyte & 0x7f];
+								break;
+							case MTRX_DOT4:
+								scrbyte = alscr4;
+								col = inkTab[scrbyte & 0x7f];
+								break;
+							case MTRX_DOT6:
+								scrbyte = alscr6;
+								col = inkTab[scrbyte & 0x7f];
+								break;
+							default:
+								if (curscr) {
+									scrbyte = *(ladrz[mtx].ac10);
+									alscr2 = *(ladrz[mtx].ac11);
+									alscr4 = *(ladrz[mtx].ac12);
+									alscr6 = *(ladrz[mtx].ac13);
+								} else {
+									scrbyte = *(ladrz[mtx].ac00);
+									alscr2 = *(ladrz[mtx].ac01);
+									alscr4 = *(ladrz[mtx].ac02);
+									alscr6 = *(ladrz[mtx].ac03);
+								}
+								col = inkTab[scrbyte & 0x7f];
+								break;
+						}
+						break;
+				}
+				*(scrptr++) = col;
+				if (flags & VF_DOUBLE) {
+					*(scrptr + wsze.h - 1) = col;
+					*(scrptr + wsze.h) = col;
+					*(scrptr++)=col;
+				}
+				break;
 		}
-		if (mtx != MTRX_INVIS) {
-			switch (mode) {
-				case VID_NORMAL:
-					switch(mtx) {
-						case MTRX_BORDER:
-							col = brdcol;
-							break;
-						case MTRX_DOT2:
-						case MTRX_DOT4:
-						case MTRX_DOT6:
-						case MTRX_SHIFT:
-							scrbyte<<=1;
-							col = (scrbyte & 0x80) ? ink : pap;
-							break;
-						default:
-							if (curscr) {
-								scrbyte = *(scr7pix[mtx]);
-								atrbyte = *(scr7atr[mtx]);
-							} else {
-								scrbyte = *(scr5pix[mtx]);
-								atrbyte = *(scr5atr[mtx]);
-							}
-							if ((atrbyte & 0x80) && flash) scrbyte ^= 255;
-							ink = inkTab[atrbyte & 0x7f];
-							pap = papTab[atrbyte & 0x7f];
-							col = (scrbyte & 0x80) ? ink : pap;
-							break;
-					}
-					break;
-				case VID_ALCO:
-					switch (mtx) {
-						case MTRX_BORDER:
-							col = brdcol;
-							break;
-						case MTRX_SHIFT:
-							col = ((scrbyte & 0x38)>>3) | ((scrbyte & 0x80)>>4);
-							break;
-						case MTRX_DOT2:
-							scrbyte = alscr2;
-							col = inkTab[scrbyte & 0x7f];
-							break;
-						case MTRX_DOT4:
-							scrbyte = alscr4;
-							col = inkTab[scrbyte & 0x7f];
-							break;
-						case MTRX_DOT6:
-							scrbyte = alscr6;
-							col = inkTab[scrbyte & 0x7f];
-							break;
-						default:
-							if (curscr) {
-								scrbyte = *(ladrz[mtx].ac10);
-								alscr2 = *(ladrz[mtx].ac11);
-								alscr4 = *(ladrz[mtx].ac12);
-								alscr6 = *(ladrz[mtx].ac13);
-							} else {
-								scrbyte = *(ladrz[mtx].ac00);
-								alscr2 = *(ladrz[mtx].ac01);
-								alscr4 = *(ladrz[mtx].ac02);
-								alscr6 = *(ladrz[mtx].ac03);
-							}
-							col = inkTab[scrbyte & 0x7f];
-							break;
-					}
-					break;
-			}
-			*(scrptr++) = col;
-			if (flags & VF_DOUBLE) {
-				*(scrptr + wsze.h - 1) = col;
-				*(scrptr + wsze.h) = col;
-				*(scrptr++)=col;
-			}
-		}
-		pxcnt--;
-		if (++dotCount >= frmsz) {
+		pxcnt -= 1.0;
+		dotCount++;
+		if (dotCount >= frmsz) {
 			dotCount = 0;
 			fcnt++;
 			flash = fcnt & 0x20;
