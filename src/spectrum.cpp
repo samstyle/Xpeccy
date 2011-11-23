@@ -323,8 +323,8 @@ uint32_t ZXComp::exec() {
 	}
 	ltk = vid->t - ltk;
 	gsSync(gs,ltk);
-	aym->sc1->sync(ltk);
-	aym->sc2->sync(ltk);
+//	aym->sc1->sync(ltk);
+//	aym->sc2->sync(ltk);
 	return ltk;
 }
 

@@ -66,6 +66,8 @@ void sndSync(uint32_t tk) {
 	lev *= 0.16;
 	levl = lev;
 	levr = lev;
+	zx->aym->sc1->sync(tatbyte);
+	zx->aym->sc2->sync(tatbyte);
 	AYData tmpl = zx->aym->sc1->getvol();
 	levl += tmpl.l * ayVolume / 100.0;
 	levr += tmpl.r * ayVolume / 100.0;
