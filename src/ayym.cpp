@@ -23,7 +23,9 @@ uint8_t envforms[16][33]={
 
 AYChan::AYChan() {
 	lev = false;
-	vol = lim = bgn = pos = cur = 0;
+	vol = 0;//lim = bgn = pos = cur = 0;
+	period = 0;
+	counter = 0;
 }
 
 AYSys::AYSys() {
@@ -54,31 +56,61 @@ void AYProc::settype(int t) {
 	aycoe = 400 * 448 * 320 / (float)freq;		// vid ticks in half-period of note 1 (400)	400 * zx->vid->frmsz / (float)freq
 }
 
-AYData AYProc::getvol(uint32_t tk) {
-// calculating A,B,C,envelope & noise levels
+void AYProc::sync(int tk) {
+	if (type == SND_NONE) return;
+	if (a.period != 0) {
+		a.counter -= tk;
+		while (a.counter < 0) {
+			a.lev = !a.lev;
+			a.counter += a.period;
+		}
+	}
+	if (b.period != 0) {
+		b.counter -= tk;
+		while (b.counter < 0) {
+			b.lev = !b.lev;
+			b.counter += b.period;
+		}
+	}
+	if (c.period != 0) {
+		c.counter -= tk;
+		while (c.counter < 0) {
+			c.lev = !c.lev;
+			c.counter += c.period;
+		}
+	}
+	if (n.period != 0) {
+		n.counter -= tk;
+		while (n.counter < 0) {
+			n.counter += n.period;
+			nPos++;
+		}
+		n.lev = noizes[nPos & 0x1ffff];
+	}
+	if (e.period != 0) {
+		e.counter -= tk;
+		while (e.counter < 0) {
+			e.counter += e.period;
+			ePos++;
+			switch (envforms[eCur][ePos]) {
+				case 255: ePos--; break;
+				case 253: ePos = 0; break;
+			}
+		}
+	}
+}
+
+AYData AYProc::getvol() {
 	AYData res;
 	res.l = res.r = 8;
 	if (type == SND_NONE) return res;
-	if (a.lim != 0) {if ((tk - a.bgn) > a.lim) {a.lev = !a.lev; a.bgn += (uint32_t)a.lim;}} else {a.bgn = tk;}
-	if (b.lim != 0) {if ((tk - b.bgn) > b.lim) {b.lev = !b.lev; b.bgn += (uint32_t)b.lim;}} else {b.bgn = tk;}
-	if (c.lim != 0) {if ((tk - c.bgn) > c.lim) {c.lev = !c.lev; c.bgn += (uint32_t)c.lim;}} else {c.bgn = tk;}
-	if (e.lim != 0) {
-		if ((tk - e.bgn) > e.lim) {
-			e.pos++;
-			e.bgn += (uint32_t)e.lim;
-			if (envforms[e.cur][e.pos]==255) e.pos--;
-			if (envforms[e.cur][e.pos]==253) e.pos=0;
-		}
-	} else {e.bgn = tk;}
-	if (n.lim != 0) {if ((tk - n.bgn) > n.lim) {n.pos++; n.bgn += (uint32_t)n.lim;}} else {n.bgn = tk;}
-	n.lev = noizes[n.pos & 0x1ffff];
 // mix channels, envelope & noise
-	a.vol=(reg[8]&16)?envforms[e.cur][e.pos]:(reg[8]&15);
-	b.vol=(reg[9]&16)?envforms[e.cur][e.pos]:(reg[9]&15);
-	c.vol=(reg[10]&16)?envforms[e.cur][e.pos]:(reg[10]&15);
-	if ((reg[7]&0x09)!=0x09) {a.vol *= ((reg[7]&1)?0:a.lev)+((reg[7]&8)?0:n.lev);}
-	if ((reg[7]&0x12)!=0x12) {b.vol *= ((reg[7]&2)?0:b.lev)+((reg[7]&16)?0:n.lev);}
-	if ((reg[7]&0x24)!=0x24) {c.vol *= ((reg[7]&4)?0:c.lev)+((reg[7]&32)?0:n.lev);}
+	a.vol = (reg[8] & 16) ? envforms[eCur][ePos] : (reg[8] & 15);
+	b.vol = (reg[9] & 16) ? envforms[eCur][ePos] : (reg[9] & 15);
+	c.vol = (reg[10] & 16) ? envforms[eCur][ePos] : (reg[10] & 15);
+	if ((reg[7] & 0x09) != 0x09) {a.vol *= ((reg[7] & 1) ? 0 : a.lev) + ((reg[7] & 8) ? 0 : n.lev);}
+	if ((reg[7] & 0x12) != 0x12) {b.vol *= ((reg[7] & 2) ? 0 : b.lev) + ((reg[7] & 16) ? 0 : n.lev);}
+	if ((reg[7] & 0x24) != 0x24) {c.vol *= ((reg[7] & 4) ? 0 : c.lev) + ((reg[7] & 32) ? 0 : n.lev);}
 	switch (stereo) {
 		case AY_ABC:
 			res.l = a.vol + 0.7 * b.vol;
@@ -111,30 +143,31 @@ AYData AYProc::getvol(uint32_t tk) {
 	return res;
 }
 
-void AYProc::reset(uint32_t tk) {
+void AYProc::reset() {
 	int i; for (i = 0;i < 16;i++) reg[i] = 0;
-	n.cur = 0xffff; e.cur = 0;
-	n.pos = e.pos = 0;
-	a.bgn = b.bgn = c.bgn = n.bgn = e.bgn = tk;
-	a.lim = b.lim = c.lim = n.lim = e.lim = 0;
+	eCur = 0;
+	nPos = 0;
+	ePos = 0;
+	a.period = b.period = c.period = n.period = e.period = 0;
+	a.counter = b.counter = c.counter = n.counter = e.counter = 0;
 }
 
-void AYProc::setreg(uint8_t value, uint32_t tk) {
+void AYProc::setreg(uint8_t value) {
 	if (curreg > 15) return;
 	if (curreg < 14) reg[curreg]=value;
 	switch (curreg) {
 		case 0x00:
-		case 0x01: a.lim = aycoe*(reg[0]+((reg[1]&0x0f)<<8)); break;
+		case 0x01: a.period = aycoe * (reg[0] + ((reg[1] & 0x0f) << 8)); break;
 		case 0x02:
-		case 0x03: b.lim = aycoe*(reg[2]+((reg[3]&0x0f)<<8)); break;
+		case 0x03: b.period = aycoe * (reg[2] + ((reg[3] & 0x0f) << 8)); break;
 		case 0x04:
-		case 0x05: c.lim = aycoe*(reg[4]+((reg[5]&0x0f)<<8)); break;
-		case 0x06: n.lim = 2*aycoe*(value&31); break;
+		case 0x05: c.period = aycoe * (reg[4] + ((reg[5] & 0x0f) << 8)); break;
+		case 0x06: n.period = 2 * aycoe * (value & 0x1f); break;
 		case 0x0b:
-		case 0x0c: e.lim = 2*aycoe*(reg[11]+(reg[12]<<8)); break;
-		case 0x0d: e.cur = value&15; e.pos = 0; e.bgn = tk; break;
-		case 0x0e: if (reg[7]&0x40) reg[14]=value; break;
-		case 0x0f: if (reg[7]&0x80) reg[15]=value; break;
+		case 0x0c: e.period = 2 * aycoe * (reg[11] + (reg[12] << 8)); break;
+		case 0x0d: eCur = value & 0x0f; ePos = 0; e.counter = 0; break;
+		case 0x0e: if (reg[7] & 0x40) reg[14] = value; break;
+		case 0x0f: if (reg[7] & 0x80) reg[15] = value; break;
 	}
 }
 

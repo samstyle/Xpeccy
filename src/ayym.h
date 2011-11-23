@@ -27,11 +27,10 @@ struct AYData {
 class AYChan {
 	public:
 		AYChan();
-		bool lev;		// for A,B,C,noise : signal level
-		uint8_t vol;		// volume
-		float lim;		// period
-		uint32_t bgn;		// 1st tick (for tickless snd)
-		uint32_t pos,cur;	// for envelope; noise.cur = nvalue
+		bool lev;
+		uint8_t vol;
+		int period;
+		int counter;
 };
 
 class AYProc {
@@ -40,15 +39,18 @@ class AYProc {
 		int32_t type;
 		int32_t stereo;
 		uint8_t reg[16];
+		int nPos;
+		int ePos;
+		int eCur;
 		AYChan a,b,c,e,n;
 		int32_t freq;
 		uint8_t curreg;
 		float aycoe;
-		void reset(uint32_t);
-		void setreg(uint8_t,uint32_t);
+		void reset();
+		void setreg(uint8_t);
 		void settype(int32_t);
-		AYData getvol(uint32_t);
-		void calculate();
+		AYData getvol();
+		void sync(int);
 };
 
 class AYSys {

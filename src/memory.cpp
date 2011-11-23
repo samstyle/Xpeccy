@@ -12,8 +12,7 @@
 
 extern ZXComp* zx;
 
-Memory::Memory(int tp) {
-	type = tp;
+Memory::Memory() {
 	pt0 = &rom[0][0];
 	pt1 = &ram[5][0];
 	pt2 = &ram[2][0];
@@ -37,20 +36,11 @@ void Memory::setrom(uint8_t p) {
 
 uint8_t Memory::rd(uint16_t adr) {
 	uint8_t res;
-	lastRdAdr = adr;
 	switch (adr & 0xc000) {
 		case 0x0000: res = *(pt0 + (adr & 0x3fff)); break;
 		case 0x4000: res = *(pt1 + (adr & 0x3fff)); break;
 		case 0x8000: res = *(pt2 + (adr & 0x3fff)); break;
 		default: res = *(pt3 + (adr & 0x3fff)); break;
-	}
-	if (type == MEM_GS) {
-		switch (adr & 0xe300) {
-			case 0x6000: zx->gs->ch1 = res; break;
-			case 0x6100: zx->gs->ch2 = res; break;
-			case 0x6200: zx->gs->ch3 = res; break;
-			case 0x6300: zx->gs->ch4 = res; break;
-		}
 	}
 	return res;
 }
@@ -304,7 +294,7 @@ void Memory::parse(std::ifstream* file,int typ) {
 						}
 						rzxFrame = 0;
 						rzxPos = 0;
-//						zx->rzxPlay = true;	// TODO: it will not start until 3000AC :)
+						zx->rzxPlay = true;	// TODO: it will not start until 3000AC :)
 						emulUpdateWindow();
 						btm = false;
 						break;
@@ -605,11 +595,11 @@ void Memory::loadromset(std::string romDir) {
 			}
 		}
 	}
+	char* buf = (char*)malloc(0x4000 * sizeof(char));
+	for (ad = 0; ad < 0x4000; ad++) buf[ad] = 0xff;
 	if (zx->opt.GSRom == "") {
-		for (ad=0;ad<0x4000;ad++) {
-			zx->gs->mem->rom[0][ad]=0xff;
-			zx->gs->mem->rom[1][ad]=0xff;
-		}
+		gsSetRom(zx->gs,0,buf);
+		gsSetRom(zx->gs,1,buf);
 	} else {
 #ifndef WIN32
 			fpath = romDir + "/" + zx->opt.GSRom;
@@ -618,14 +608,14 @@ void Memory::loadromset(std::string romDir) {
 #endif
 			file.open(fpath.c_str());
 			if (file.good()) {
-				file.read((char*)&zx->gs->mem->rom[0][0],0x4000);
-				file.read((char*)&zx->gs->mem->rom[1][0],0x4000);
+				file.read(buf,0x4000);
+				gsSetRom(zx->gs,0,buf);
+				file.read(buf,0x4000);
+				gsSetRom(zx->gs,1,buf);
 			} else {
 				printf("Can't load gs rom '%s'\n",zx->opt.GSRom.c_str());
-				for (ad=0;ad<0x4000;ad++) {
-					zx->gs->mem->rom[0][ad]=0xff;
-					zx->gs->mem->rom[1][ad]=0xff;
-				}
+				gsSetRom(zx->gs,0,buf);
+				gsSetRom(zx->gs,1,buf);
 			}
 			file.close();
 	}

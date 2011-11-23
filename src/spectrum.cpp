@@ -1,25 +1,34 @@
 #include "spectrum.h"
 
 /*
-#include "z80/tables.c"
-#include "z80/instr.c"
+ * ProfROM switch:
+ * 	page 2,6,10,14
+ * 	PC = E4B5 : ld l,(hl)
+ * 	HL = 0110..0113
+ * ProfROM table :
+ *  adr | 0 1 2 3 <- current layer
+ * -----+---------
+ * 0110 | 0 1 2 3 <- result layers
+ * 0111 | 3 3 3 2
+ * 0112 | 2 2 0 1
+ * 0113 | 1 0 1 0
+ */
 
-ZOp* inst[9] = {
-	nopref,
-	ixpref,
-	iypref,
-	NULL,
-	cbpref,
-	cxpref,
-	cypref,
-	NULL,
-	edpref
+uint8_t ZSLays[4][4] = {
+	{0,1,2,3},
+	{3,3,3,2},
+	{2,2,0,1},
+	{1,0,1,0}
 };
-*/
 
 Z80EX_BYTE memrd(Z80EX_CONTEXT*,Z80EX_WORD adr,int,void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
-	return comp->mem->rd(adr);
+	Z80EX_BYTE res = comp->mem->rd(adr);
+	if ((comp->hw->type == HW_SCORP) && ((comp->mem->crom & 3) == 2) && ((adr & 0xfff3) == 0x0100)) {
+		comp->mem->prt2 = ZSLays[(adr & 0x000c) >> 2][comp->mem->prt2 & 3] & comp->mem->profMask;
+		comp->mapMemory();
+	}
+	return res;
 }
 
 void memwr(Z80EX_CONTEXT*,Z80EX_WORD adr,Z80EX_BYTE val,void* ptr) {
@@ -41,19 +50,11 @@ Z80EX_BYTE intrq(Z80EX_CONTEXT*,void*) {
 	return 0xff;
 }
 
-// void tcall(Z80EX_CONTEXT*,void* ptr) {
-// 	ZXComp* comp = (ZXComp*)ptr;
-// 	comp->vid->sync(1,comp->cpuFreq);
-// 	comp->intStrobe |= comp->vid->intStrobe;
-// }
-
 ZXComp::ZXComp() {
-//	sys = new ZXBase(this);
 	void* ptr = (void*)this;
 	cpu = z80ex_create(&memrd,ptr,&memwr,ptr,&iord,ptr,&iowr,ptr,&intrq,ptr);
-//	z80ex_set_tstate_callback(cpu,&tcall,ptr);
 	cpuFreq = 3.5;
-	mem = new Memory(MEM_ZX);
+	mem = new Memory();
 	vid = new Video(mem);
 	keyb = new Keyboard;
 	mouse = new Mouse;
@@ -61,7 +62,8 @@ ZXComp::ZXComp() {
 	bdi = new BDI;
 	ide = new IDE;
 	aym = new AYSys;
-	gs = new GS; gs->reset();
+	gs = gsCreate();
+	gsReset(gs);
 	reset(RES_DEFAULT);
 }
 
@@ -86,9 +88,9 @@ void ZXComp::reset(int wut) {
 	bdi->active = (resbank == 3);
 	bdi->vg93.count = 0;
 	bdi->vg93.setmr(false);
-	if (gs->flags & GS_RESET) gs->reset();
-	aym->sc1->reset(vid->t);
-	aym->sc2->reset(vid->t);
+	if (gsGetFlag(gs) & GS_RESET) gsReset(gs);
+	aym->sc1->reset();
+	aym->sc2->reset();
 	aym->scc = aym->sc1;
 	ide->reset();
 }
@@ -158,13 +160,14 @@ int32_t ZXComp::getPort(int32_t port) {
 
 uint8_t ZXComp::in(uint16_t port) {
 	uint8_t res = 0xff;
-	gs->sync(vid->t);
+//	gsSync(gs,vid->t);
 #if IDE_ENABLE
 	if (ide->in(port,&res,bdi->active)) return res;
 #endif
-	if (gs->extin(port,&res)) return res;
+	if (gsIn(gs,port,&res) == GS_OK) return res;
 	if (bdi->in(port,&res)) return res;
 	port = getPort(port);
+	if (rzxPlay) return mem->getRZXIn();
 	switch (port) {
 		case 0xfbdf: res = mouse->xpos; break;
 		case 0xffdf: res = mouse->ypos; break;
@@ -181,10 +184,9 @@ uint8_t ZXComp::in(uint16_t port) {
 			switch (port & 0xff) {
 				case 0xfe:
 					tape->sync();
-					res = rzxPlay ? mem->getRZXIn() : keyb->getmap((port & 0xff00) >> 8) | (tape->signal ? 0x40 : 0x00);
+					res = keyb->getmap((port & 0xff00) >> 8) | (tape->signal ? 0x40 : 0x00);
 					break;
 				case 0x1f:
-					res = rzxPlay ? mem->getRZXIn() : 0xe0;		// TODO: kempston joystick
 					break;
 				default:
 					switch (hw->type) {
@@ -220,11 +222,11 @@ uint8_t ZXComp::in(uint16_t port) {
 }
 
 void ZXComp::out(uint16_t port,uint8_t val) {
-	gs->sync(vid->t);
+//	gsSync(gs,vid->t);
 #if IDE_ENABLE
 	if (ide->out(port,val,bdi->active)) return;
 #endif
-	if (gs->extout(port,val)) return;
+	if (gsOut(gs,port,val) == GS_OK) return;
 	if (bdi->out(port,val)) return;
 	port = getPort(port);	
 	switch (port) {
@@ -234,7 +236,7 @@ void ZXComp::out(uint16_t port,uint8_t val) {
 				default: aym->scc->curreg = val; break;		// set sound chip register
 			}
 			break;
-		case 0xbffd: aym->scc->setreg(val,vid->t); break;			// write in sound chip register
+		case 0xbffd: aym->scc->setreg(val); break;			// write in sound chip register
 		default:
 			if ((port&0xff) == 0xfe) {
 				vid->nextBorder = val & 0x07;
@@ -293,27 +295,6 @@ void ZXComp::out(uint16_t port,uint8_t val) {
 	}
 }
 
-/*
- * ProfROM switch:
- * 	page 2,6,10,14
- * 	PC = E4B5 : ld l,(hl)
- * 	HL = 0110..0113
- * ProfROM table :
- *  adr | 0 1 2 3 <- current layer
- * -----+---------
- * 0110 | 0 1 2 3 <- result layers
- * 0111 | 3 3 3 2
- * 0112 | 2 2 0 1
- * 0113 | 1 0 1 0
- */
-
-uint8_t ZSLays[4][4] = {
-	{0,1,2,3},
-	{3,3,3,2},
-	{2,2,0,1},
-	{1,0,1,0}
-};
-
 uint32_t ZXComp::exec() {
 	uint32_t ltk = vid->t;
 	int res = 0;
@@ -322,13 +303,9 @@ uint32_t ZXComp::exec() {
 	} while (z80ex_last_op_type(cpu) != 0);
 	vid->sync(res,cpuFreq);
 	intStrobe = vid->intStrobe;
-	
+
 // profROM pages switch: was ld l,(hl), rompage = 2|6|10|14, hl before = 0x0100,0x0104,0x0108,0x010c
 //printf("%c\t%i\t%.4X\n",(hw->type == HW_SCORP) ? 'Y' : 'n',mem->crom & 3,mem->lastRdAdr & 0xfff3);
-	if ((hw->type == HW_SCORP) && ((mem->crom & 3) == 2) && ((mem->lastRdAdr & 0xfff3) == 0x0100)) {
-		mem->prt2 = ZSLays[(mem->lastRdAdr & 0x000c) >> 2][mem->prt2 & 3] & mem->profMask;
-		mapMemory();
-	}
 	Z80EX_WORD pc = z80ex_get_reg(cpu,regPC);
 	if (bdi->enable) {
 		bdi->sync(vid->t);
@@ -345,7 +322,9 @@ uint32_t ZXComp::exec() {
 		NMIHandle();
 	}
 	ltk = vid->t - ltk;
-	gs->sync(vid->t);
+	gsSync(gs,ltk);
+	aym->sc1->sync(ltk);
+	aym->sc2->sync(ltk);
 	return ltk;
 }
 

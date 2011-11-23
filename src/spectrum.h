@@ -47,7 +47,7 @@ class ZXComp {
 		Tape* tape;
 		BDI* bdi;
 		IDE* ide;
-		GS* gs;
+		GSound* gs;
 		AYSys* aym;
 		bool intStrobe;
 		bool nmiRequest;

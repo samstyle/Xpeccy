@@ -66,13 +66,13 @@ void sndSync(uint32_t tk) {
 	lev *= 0.16;
 	levl = lev;
 	levr = lev;
-	AYData tmpl = zx->aym->sc1->getvol(tk);
+	AYData tmpl = zx->aym->sc1->getvol();
 	levl += tmpl.l * ayVolume / 100.0;
 	levr += tmpl.r * ayVolume / 100.0;
-	tmpl = zx->aym->sc2->getvol(tk);
+	tmpl = zx->aym->sc2->getvol();
 	levl += tmpl.l * ayVolume / 100.0;
 	levr += tmpl.r * ayVolume / 100.0;
-	GSData tmpm = zx->gs->getvol();
+	GSData tmpm = gsGetVolume(zx->gs);
 //if ((levr != 0) || (levl != 0)) printf("%i : %i\t%i : %i\n",levl,levr,tmpm.l,tmpm.r);
 	levl += tmpm.l * gsVolume / 100.0;
 	levr += tmpm.r * gsVolume / 100.0;

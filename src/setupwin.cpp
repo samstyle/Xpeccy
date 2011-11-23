@@ -247,7 +247,7 @@ void SetupWin::start() {
 // sound
 	ui.senbox->setChecked(sndGet(SND_ENABLE) != 0);
 	ui.mutbox->setChecked(sndGet(SND_MUTE) != 0);
-	ui.gsrbox->setChecked(zx->gs->flags & GS_RESET);
+	ui.gsrbox->setChecked(gsGetFlag(zx->gs) & GS_RESET);
 	ui.outbox->setCurrentIndex(ui.outbox->findText(QDialog::trUtf8(sndGetOutputName().c_str())));
 	ui.ratbox->setCurrentIndex(ui.ratbox->findText(QString::number(sndGet(SND_RATE))));
 	ui.bvsld->setValue(sndGet(SND_BEEP));
@@ -258,8 +258,8 @@ void SetupWin::start() {
 	ui.schip2box->setCurrentIndex(ui.schip2box->findData(QVariant(zx->aym->sc2->type)));
 	ui.stereo1box->setCurrentIndex(ui.stereo1box->findData(QVariant(zx->aym->sc1->stereo)));
 	ui.stereo2box->setCurrentIndex(ui.stereo2box->findData(QVariant(zx->aym->sc2->stereo)));
-	ui.gstereobox->setCurrentIndex(ui.gstereobox->findData(QVariant(zx->gs->stereo)));
-	ui.gsgroup->setChecked(zx->gs->flags & GS_ENABLE);
+	ui.gstereobox->setCurrentIndex(ui.gstereobox->findData(QVariant(gsGetParam(zx->gs,GS_STEREO))));
+	ui.gsgroup->setChecked(gsGetFlag(zx->gs) & GS_ENABLE);
 	ui.tsbox->setCurrentIndex(ui.tsbox->findData(QVariant(zx->aym->tstype)));
 // dos
 	ui.bdebox->setChecked(zx->bdi->enable);
@@ -351,7 +351,10 @@ void SetupWin::apply() {
 	int orate = sndGet(SND_RATE);
 	sndSet(SND_ENABLE, ui.senbox->isChecked());
 	sndSet(SND_MUTE, ui.mutbox->isChecked());
-	if (ui.gsrbox->isChecked()) zx->gs->flags |= GS_RESET; else zx->gs->flags &= ~GS_RESET;
+	int gsf = 0;
+	if (ui.gsgroup->isChecked()) gsf |= GS_ENABLE;
+	if (ui.gsrbox->isChecked()) gsf |= GS_RESET;
+	gsSetFlag(zx->gs,gsf);
 	sndSet(SND_RATE, ui.ratbox->currentText().toInt());
 	sndSet(SND_BEEP, ui.bvsld->value());
 	sndSet(SND_TAPE, ui.tvsld->value());
@@ -362,9 +365,7 @@ void SetupWin::apply() {
 	zx->aym->sc2->settype(ui.schip2box->itemData(ui.schip2box->currentIndex()).toInt());
 	zx->aym->sc1->stereo = ui.stereo1box->itemData(ui.stereo1box->currentIndex()).toInt();
 	zx->aym->sc2->stereo = ui.stereo2box->itemData(ui.stereo2box->currentIndex()).toInt();
-	zx->gs->stereo = ui.gstereobox->itemData(ui.gstereobox->currentIndex()).toInt();
-	setFlagBit(ui.gsgroup->isChecked(),&zx->gs->flags,GS_ENABLE);
-	setFlagBit(ui.gsrbox->isChecked(),&zx->gs->flags,GS_RESET);
+	gsSetParam(zx->gs,GS_STEREO,ui.gstereobox->itemData(ui.gstereobox->currentIndex()).toInt());
 	zx->aym->tstype = ui.tsbox->itemData(ui.tsbox->currentIndex()).toInt();
 // bdi
 	zx->bdi->enable = ui.bdebox->isChecked();

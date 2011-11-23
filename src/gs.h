@@ -3,49 +3,33 @@
 
 #include <stdint.h>
 
-#include "z80ex.h"
-#include "memory.h"
-#include "sound.h"
-
-#define GS_FRQ		12.0
-
 #define GS_ENABLE	1
 #define GS_RESET	2
 
+#define	GS_STEREO	0
 #define	GS_MONO		0
 #define	GS_12_34	1
 
-struct GSData {
+#define	GS_OK	0
+#define	GS_ERR	1
+
+struct GSound;
+typedef struct {
 	int r;
 	int l;
-};
+} GSData;
 
-class GS {
-	public:
-	GS();
-	int flags;
-	Z80EX_CONTEXT* cpu;
-	Memory* mem;
-	uint32_t t;
-	uint8_t pb3_gs;	// gs -> zx
-	uint8_t pb3_zx;	// zx -> gs
-	uint8_t pbb_zx;
-	uint8_t rp0;
-	uint8_t pstate;	// state register (d0, d7)
-	int vol1,vol2,vol3,vol4;
-	int ch1,ch2,ch3,ch4;
-	int cnt;
-	int stereo;
-	double counter;
-	void reset();
-	bool extin(int,uint8_t*);
-	bool extout(int,uint8_t);
-	uint8_t in(uint16_t);
-	void out(uint16_t,uint8_t);
-	void sync(uint32_t);
-	GSData getvol();
-};
-
-// extern GS *gs;
+GSound* gsCreate();
+void gsDestroy(GSound*);
+int gsGetFlag(GSound*);
+void gsSetFlag(GSound*,int);
+int gsGetParam(GSound*,int);
+void gsSetParam(GSound*,int,int);
+void gsSetRom(GSound*,int,char*);
+void gsReset(GSound*);
+GSData gsGetVolume(GSound*);
+void gsSync(GSound*, uint32_t);
+int gsIn(GSound*, int, uint8_t*);
+int gsOut(GSound*, int, uint8_t);
 
 #endif

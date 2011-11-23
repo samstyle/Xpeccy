@@ -320,9 +320,9 @@ void saveConfig() {
 	optSet("SOUND","chip1.stereo",zx->aym->sc1->stereo);
 	optSet("SOUND","chip2.stereo",zx->aym->sc2->stereo);
 	optSet("SOUND","ts.type",zx->aym->tstype);
-	optSet("SOUND","gs",(zx->gs->flags & GS_ENABLE) != 0);
-	optSet("SOUND","gs.reset",(zx->gs->flags & GS_RESET) != 0);
-	optSet("SOUND","gs.stereo",zx->gs->stereo);
+	optSet("SOUND","gs",(gsGetFlag(zx->gs) & GS_ENABLE) != 0);
+	optSet("SOUND","gs.reset",(gsGetFlag(zx->gs) & GS_RESET) != 0);
+	optSet("SOUND","gs.stereo",gsGetParam(zx->gs,GS_STEREO));
 	optSet("BETADISK","enabled",zx->bdi->enable);
 	optSet("BETADISK","fast",zx->bdi->vg93.turbo);
 	optSet("BETADISK","A",zx->bdi->flop[0].getString());
@@ -355,109 +355,6 @@ void saveConfig() {
 		}
 		sfile << "\n";
 	}
-/*
-	uint32_t i,j;
-	sfile<<"[GENERAL]\n\n";
-	sfile<<"# real cpu freq in MHz is this value / 2; correct range is 2 to 14 (1 to 7 MHz)\n";
-	sfile<<"cpu.frq = "<<int2str((int)(zx->sys->cpu->frq * 2.0)).c_str()<<"\n";
-
-	sfile<<"\n[VIDEO]\n\n";
-	sfile<<"doublesize = "<<((zx->vid->flags & VF_DOUBLE)?"y":"n")<<"\n";
-	sfile<<"fullscreen = "<<((zx->vid->flags & VF_FULLSCREEN)?"y":"n")<<"\n";
-	sfile<<"bordersize = "<<int2str((int)(zx->vid->brdsize * 100)).c_str()<<"\n";
-	sfile<<"geometry = "<<zx->vid->curlay.c_str()<<"\n";
-
-	sfile << "\n[SCREENSHOTS]\n\n";
-	sfile << "folder = " << optGetString("SCREENSHOTS","folder").c_str() << "\n";
-	sfile << "format = " << optGetString("SCREENSHOTS","format").c_str() << "\n";
-	sfile << "combo.count = " << int2str(optGetInt("SCREENSHOTS","combo.count")).c_str() << "\n";
-	sfile << "combo.interval = " << int2str(optGetInt("SCREENSHOTS","combo.interval")).c_str() << "\n";
-
-	sfile << "\n[SOUND]\n\n";
-	sfile << "enabled = " << ((sndGet(SND_ENABLE) != 0) ? "y" : "n") << "\n";
-	sfile<<"# possible sound systems are:";
-	std::vector<std::string> outputList = sndGetList();
-	for (i=0; i<outputList.size(); i++) {
-		if (i!=0) sfile<<", ";
-		sfile << outputList[i].c_str();
-	}
-	sfile<<"\n";
-	sfile<<"soundsys = " << sndGetName().c_str()<<"\n";
-	sfile<<"dontmute = "<<((sndGet(SND_MUTE) != 0) ? "y" : "n")<<"\n";
-	sfile<<"rate = "<<int2str(sndGet(SND_RATE)).c_str()<<"\n";
-	sfile<<"volume.beep = "<<int2str(sndGet(SND_BEEP)).c_str()<<"\n";
-	sfile<<"volume.tape = "<<int2str(sndGet(SND_TAPE)).c_str()<<"\n";
-	sfile<<"volume.ay = "<<int2str(sndGet(SND_AYVL)).c_str()<<"\n";
-	sfile<<"volume.gs = "<<int2str(sndGet(SND_GSVL)).c_str()<<"\n";
-	sfile<<"chip1 = "<<int2str(zx->aym->sc1->type)<<"\n";
-	sfile<<"chip2 = "<<int2str(zx->aym->sc2->type)<<"\n";
-	sfile<<"chip1.stereo = "<<int2str(zx->aym->sc1->stereo)<<"\n";
-	sfile<<"chip2.stereo = "<<int2str(zx->aym->sc2->stereo)<<"\n";
-	sfile<<"ts.type = "<<int2str(zx->aym->tstype)<<"\n";
-	sfile<<"gs = "<<((zx->gs->flags & GS_ENABLE)?"y":"n")<<"\n";
-	sfile<<"gs.reset = "<<((zx->gs->flags & GS_RESET)?"y":"n")<<"\n";
-	sfile<<"gs.stereo = "<<int2str(zx->gs->stereo)<<"\n";
-
-	sfile<<"\n[BETADISK]\n\n";
-	sfile<<"enabled = "<<(zx->bdi->enable?"y":"n")<<"\n";
-	sfile<<"fast = "<<(zx->bdi->vg93.turbo?"y":"n")<<"\n";
-
-	sfile<<"\n[IDE]\n\n";
-	sfile<<"iface = "<<int2str(zx->ide->iface)<<"\n";
-	sfile<<"master.type = "<<int2str(zx->ide->master.iface)<<"\n";
-	sfile<<"master.model = "<<zx->ide->master.pass.model.c_str()<<"\n";
-	sfile<<"master.serial = "<<zx->ide->master.pass.serial.c_str()<<"\n";
-	sfile<<"master.image = "<<zx->ide->master.image.c_str()<<"\n";
-	sfile<<"master.lba = "<<((zx->ide->master.flags & ATA_LBA) ? "y" : "n")<<"\n";
-	sfile<<"master.maxlba = "<<int2str(zx->ide->master.maxlba)<<"\n";
-	sfile<<"master.chs = "<<int2str(zx->ide->master.pass.spt)<<"/"<<int2str(zx->ide->master.pass.hds)<<"/"<<int2str(zx->ide->master.pass.cyls)<<"\n";
-	sfile<<"slave.type = "<<int2str(zx->ide->slave.iface)<<"\n";
-	sfile<<"slave.model = "<<zx->ide->slave.pass.model.c_str()<<"\n";
-	sfile<<"slave.serial = "<<zx->ide->slave.pass.serial.c_str()<<"\n";
-	sfile<<"slave.image = "<<zx->ide->slave.image.c_str()<<"\n";
-	sfile<<"slave.lba = "<<((zx->ide->slave.flags & ATA_LBA) ? "y" : "n")<<"\n";
-	sfile<<"slave.maxlba = "<<int2str(zx->ide->slave.maxlba)<<"\n";
-	sfile<<"slave.chs = "<<int2str(zx->ide->slave.pass.spt)<<"/"<<int2str(zx->ide->slave.pass.hds)<<"/"<<int2str(zx->ide->slave.pass.cyls)<<"\n";
-
-	sfile<<"\n[MACHINE]\n\n";
-	sfile<<"# possible values:";
-	for (i=0; i < zx->hwlist.size(); i++) {if (i!=0) sfile<<", "; sfile << zx->hwlist[i].name.c_str();}
-	sfile<<"\n";
-	sfile<<"current = "<<zx->hw->name.c_str()<<"\n";
-	sfile<<"memory = ";
-	switch (zx->sys->mem->mask) {
-		case 0x07: sfile<<"128\n"; break;
-		case 0x0f: sfile<<"256\n"; break;
-		case 0x1f: sfile<<"512\n"; break;
-		case 0x3f: sfile<<"1024\n"; break;
-		default: sfile<<"48\n"; break;
-	}
-	sfile<<"restart = "<<(emulGetFlags() & FL_RESET?"y":"n")<<"\n";
-	sfile << "scrp.wait = "<< ((zx->sys->hwflags & WAIT_ON) ? "y" : "n") << "\n";
-
-	sfile<<"\n[ROMSETS]\n\n";
-	std::vector<std::string> rmnam;
-	rmnam.push_back("basic128"); rmnam.push_back("basic48"); rmnam.push_back("shadow"); rmnam.push_back("trdos");
-	rmnam.push_back("ext4"); rmnam.push_back("ext5"); rmnam.push_back("ext6"); rmnam.push_back("ext7");
-	for (i=0;i < zx->sys->mem->rsetlist.size();i++) {
-		sfile<<"name = " << zx->sys->mem->rsetlist[i].name.c_str()<<"\n";
-		for (j=0;j<8;j++) {
-			if (zx->sys->mem->rsetlist[i].roms[j].path!="") {
-				sfile<<rmnam[j].c_str()<<" = " << zx->sys->mem->rsetlist[i].roms[j].path.c_str();
-				if (zx->sys->mem->rsetlist[i].roms[j].part!=0) sfile<<":"<<int2str(zx->sys->mem->rsetlist[i].roms[j].part).c_str();
-				sfile<<"\n";
-			}
-		}
-		sfile<<"\n";
-	}
-	sfile << "gs = "	<< zx->opt.GSRom.c_str()		<< "\n";
-	sfile << "current = "	<< zx->sys->mem->romset->name.c_str()	<< "\n";
-	sfile << "reset = "	<< rmnam[zx->sys->mem->res].c_str()	<< "\n";
-
-	sfile << "\n[TOOLS]\n\n";
-	sfile << "sjasm = "		<< optGetString("TOOLS","sjasm").c_str()	<< "\n";
-	sfile << "projectsdir = "	<< optGetString("TOOLS","projectsdir").c_str()<< "\n";
-*/
 }
 
 void loadProfiles() {
@@ -754,12 +651,14 @@ void loadConfig(bool dev) {
 	
 	tmp2 = optGetInt("SOUND","chip1"); if (tmp2 < SND_END) zx->aym->sc1->settype(tmp2);
 	tmp2 = optGetInt("SOUND","chip2"); if (tmp2 < SND_END) zx->aym->sc2->settype(tmp2);
-	setFlagBit(optGetBool("SOUND","gs"),&zx->gs->flags,GS_ENABLE);
-	setFlagBit(optGetBool("SOUND","gs.reset"),&zx->gs->flags,GS_RESET);
+	int gsf = 0;
+	if (optGetBool("SOUND","gs")) gsf |= GS_ENABLE;
+	if (optGetBool("SOUND","gs.reset")) gsf |= GS_RESET;
+	gsSetFlag(zx->gs,gsf);
 	zx->aym->sc1->stereo = optGetInt("SOUND","chip1.stereo");
 	zx->aym->sc2->stereo = optGetInt("SOUND","chip2.stereo");
 	zx->aym->tstype = optGetInt("SOUND","ts.type");
-	zx->gs->stereo = optGetInt("SOUND","gs.stereo");
+	gsSetParam(zx->gs,GS_STEREO,optGetInt("SOUND","gs.stereo"));
 	
 	zx->bdi->enable = optGetBool("BETADISK","enabled");
 	zx->bdi->vg93.turbo = optGetBool("BETADISK","fast");

@@ -9,9 +9,6 @@
 #define TYP_Z80 	1
 #define TYP_RZX 	2
 
-#define MEM_ZX	0
-#define MEM_GS	1
-
 struct RomSet {
 	std::string name;
 	std::string file;	// set when romfile is single file
@@ -28,8 +25,7 @@ struct RZXFrame {
 
 class Memory {
 	public:
-	Memory(int32_t);
-	int type;
+	Memory();
 	uint8_t ram[64][16384];
 	uint8_t rom[32][16384];
 	uint8_t *pt0,*pt1,*pt2,*pt3;
@@ -40,7 +36,6 @@ class Memory {
 	uint8_t res;		// rompart active after reset
 	int32_t	mask;
 	int32_t profMask;	// profrom (0 - 64K, 1 - 128K, 3 - 256K)
-	int16_t lastRdAdr;
 	uint8_t rd(uint16_t);
 	void wr(uint16_t, uint8_t);
 	void load(std::string,int32_t);
