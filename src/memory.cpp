@@ -182,7 +182,7 @@ Z80EX_WORD getBEWord(std::ifstream* file) {
 void Memory::parse(std::ifstream* file,int typ) {
 	uint8_t tmp,tmp2,lst;
 	uint8_t snabank;
-	uint32_t flg,len,len2,len3;
+	uint32_t flg,len,len2;//,len3;
 	int adr;
 	bool btm;
 	char* buf = new char[0x1000000];
@@ -229,10 +229,10 @@ void Memory::parse(std::ifstream* file,int typ) {
 							file->read(buf,len - 21);		// snapshot file name
 							tmpStr = std::string(buf,len - 21);
 						} else {
-//							if (buf) free(buf);	// free old buffer
+							if (buf) free(buf);	// free old buffer
 							buf = new char[len2];	// uncompressed data
 							if (flg & 2) {
-//								if (zbuf) free(zbuf);
+								if (zbuf) free(zbuf);
 								zbuf = new char[len];	// compressed data
 								file->read(zbuf,len-17);
 								len2 = zlib_uncompress(zbuf,len-17,buf,len2);
@@ -252,6 +252,7 @@ void Memory::parse(std::ifstream* file,int typ) {
 						if (tmp != 0xff) load(tmpStr,tmp);		// load snapshot
 					//	btm = false;		// stop after 1st snapshot; TODO: multiple snapshots loading
 						break;
+/*
 					case 0x80:
 						len2 = getint(file);	// number of frames
 						file->get();		// reserved
@@ -298,6 +299,7 @@ void Memory::parse(std::ifstream* file,int typ) {
 						emulUpdateWindow();
 						btm = false;
 						break;
+*/
 					default:
 						file->seekg(len-5,std::ios_base::cur);	// skip block
 						break;
@@ -345,7 +347,8 @@ void Memory::parse(std::ifstream* file,int typ) {
 				tmp = file->get(); zx->out(0xfffd,tmp); // 38: last out to fffd
 				for (tmp2=0; tmp2<16; tmp2++) {
 					tmp = file->get();
-					zx->aym->sc1->reg[tmp2] = tmp;
+					tsSet(zx->ts,CHIP_A_REG,tmp2,tmp);
+//					zx->aym->sc1->reg[tmp2] = tmp;
 				}
 				if (adr > 23) {
 		printf(".z80 version 3\n");
@@ -481,6 +484,8 @@ void Memory::parse(std::ifstream* file,int typ) {
 			memcpy(ram[snabank],buf,0x4000);
 			break;
 	}
+	if (buf) free(buf);
+	if (zbuf) free(zbuf);
 }
 
 void putLEWord(std::ofstream* file, Z80EX_WORD wrd) {

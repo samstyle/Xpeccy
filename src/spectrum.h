@@ -48,7 +48,7 @@ class ZXComp {
 		BDI* bdi;
 		IDE* ide;
 		GSound* gs;
-		AYSys* aym;
+		TSound* ts;
 		bool intStrobe;
 		bool nmiRequest;
 		bool rzxPlay;	// true if rzx playing now

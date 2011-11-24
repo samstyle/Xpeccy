@@ -61,7 +61,7 @@ ZXComp::ZXComp() {
 	tape = new Tape;
 	bdi = new BDI;
 	ide = new IDE;
-	aym = new AYSys;
+	ts = tsCreate(TS_NONE,SND_AY,SND_NONE);
 	gs = gsCreate();
 	gsReset(gs);
 	reset(RES_DEFAULT);
@@ -82,6 +82,7 @@ void ZXComp::reset(int wut) {
 	mem->prt0 = ((resbank & 1) << 4);
 	mem->setrom(resbank);
 	mem->setram(0);
+	mem->rzx.clear();
 	z80ex_reset(cpu);
 	vid->curscr = false;
 	vid->mode = VID_NORMAL;
@@ -89,9 +90,7 @@ void ZXComp::reset(int wut) {
 	bdi->vg93.count = 0;
 	bdi->vg93.setmr(false);
 	if (gsGetFlag(gs) & GS_RESET) gsReset(gs);
-	aym->sc1->reset();
-	aym->sc2->reset();
-	aym->scc = aym->sc1;
+	tsReset(ts);
 	ide->reset();
 }
 
@@ -161,9 +160,7 @@ int32_t ZXComp::getPort(int32_t port) {
 uint8_t ZXComp::in(uint16_t port) {
 	uint8_t res = 0xff;
 //	gsSync(gs,vid->t);
-#if IDE_ENABLE
 	if (ide->in(port,&res,bdi->active)) return res;
-#endif
 	if (gsIn(gs,port,&res) == GS_OK) return res;
 	if (bdi->in(port,&res)) return res;
 	port = getPort(port);
@@ -173,12 +170,7 @@ uint8_t ZXComp::in(uint16_t port) {
 		case 0xffdf: res = mouse->ypos; break;
 		case 0xfadf: res = mouse->buttons; break;
 		case 0xfffd:
-			if (aym->scc->curreg<14) {
-				res = aym->scc->reg[aym->scc->curreg];
-			} else {
-				if ((aym->scc->reg[7]&0x40) && (aym->scc->curreg == 14)) res = aym->scc->reg[14];
-				if ((aym->scc->reg[7]&0x80) && (aym->scc->curreg == 15)) res = aym->scc->reg[15];
-			}
+			res = tsIn(ts,port);
 			break;
 		default:
 			switch (port & 0xff) {
@@ -223,20 +215,15 @@ uint8_t ZXComp::in(uint16_t port) {
 
 void ZXComp::out(uint16_t port,uint8_t val) {
 //	gsSync(gs,vid->t);
-#if IDE_ENABLE
 	if (ide->out(port,val,bdi->active)) return;
-#endif
 	if (gsOut(gs,port,val) == GS_OK) return;
 	if (bdi->out(port,val)) return;
 	port = getPort(port);	
 	switch (port) {
-		case 0xfffd: switch (val) {
-				case 0xfe: if (aym->tstype == TS_NEDOPC) aym->scc = aym->sc1; break;	// fe / ff - select sound chip in TS
-				case 0xff: if (aym->tstype == TS_NEDOPC) aym->scc = aym->sc2; break;
-				default: aym->scc->curreg = val; break;		// set sound chip register
-			}
+		case 0xfffd:
+		case 0xbffd:
+			tsOut(ts,port,val);
 			break;
-		case 0xbffd: aym->scc->setreg(val); break;			// write in sound chip register
 		default:
 			if ((port&0xff) == 0xfe) {
 				vid->nextBorder = val & 0x07;

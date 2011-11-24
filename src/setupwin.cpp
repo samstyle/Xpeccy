@@ -254,13 +254,13 @@ void SetupWin::start() {
 	ui.tvsld->setValue(sndGet(SND_TAPE));
 	ui.avsld->setValue(sndGet(SND_AYVL));
 	ui.gvsld->setValue(sndGet(SND_GSVL));
-	ui.schip1box->setCurrentIndex(ui.schip1box->findData(QVariant(zx->aym->sc1->type)));
-	ui.schip2box->setCurrentIndex(ui.schip2box->findData(QVariant(zx->aym->sc2->type)));
-	ui.stereo1box->setCurrentIndex(ui.stereo1box->findData(QVariant(zx->aym->sc1->stereo)));
-	ui.stereo2box->setCurrentIndex(ui.stereo2box->findData(QVariant(zx->aym->sc2->stereo)));
+	ui.schip1box->setCurrentIndex(ui.schip1box->findData(QVariant(tsGet(zx->ts,AY_TYPE,0))));
+	ui.schip2box->setCurrentIndex(ui.schip2box->findData(QVariant(tsGet(zx->ts,AY_TYPE,1))));
+	ui.stereo1box->setCurrentIndex(ui.stereo1box->findData(QVariant(tsGet(zx->ts,AY_STEREO,0))));
+	ui.stereo2box->setCurrentIndex(ui.stereo2box->findData(QVariant(tsGet(zx->ts,AY_STEREO,1))));
 	ui.gstereobox->setCurrentIndex(ui.gstereobox->findData(QVariant(gsGetParam(zx->gs,GS_STEREO))));
 	ui.gsgroup->setChecked(gsGetFlag(zx->gs) & GS_ENABLE);
-	ui.tsbox->setCurrentIndex(ui.tsbox->findData(QVariant(zx->aym->tstype)));
+	ui.tsbox->setCurrentIndex(ui.tsbox->findData(QVariant(tsGet(zx->ts,TS_TYPE,0))));
 // dos
 	ui.bdebox->setChecked(zx->bdi->enable);
 	ui.bdtbox->setChecked(zx->bdi->vg93.turbo);
@@ -361,12 +361,12 @@ void SetupWin::apply() {
 	sndSet(SND_AYVL, ui.avsld->value());
 	sndSet(SND_GSVL, ui.gvsld->value());
 	if ((oname != nname) || (orate != sndGet(SND_RATE))) setOutput(nname);
-	zx->aym->sc1->settype(ui.schip1box->itemData(ui.schip1box->currentIndex()).toInt());
-	zx->aym->sc2->settype(ui.schip2box->itemData(ui.schip2box->currentIndex()).toInt());
-	zx->aym->sc1->stereo = ui.stereo1box->itemData(ui.stereo1box->currentIndex()).toInt();
-	zx->aym->sc2->stereo = ui.stereo2box->itemData(ui.stereo2box->currentIndex()).toInt();
+	tsSet(zx->ts,AY_TYPE,0,ui.schip1box->itemData(ui.schip1box->currentIndex()).toInt());
+	tsSet(zx->ts,AY_TYPE,1,ui.schip2box->itemData(ui.schip2box->currentIndex()).toInt());
+	tsSet(zx->ts,AY_STEREO,0,ui.stereo1box->itemData(ui.stereo1box->currentIndex()).toInt());
+	tsSet(zx->ts,AY_STEREO,1,ui.stereo2box->itemData(ui.stereo2box->currentIndex()).toInt());
+	tsSet(zx->ts,TS_TYPE,0,ui.tsbox->itemData(ui.tsbox->currentIndex()).toInt());
 	gsSetParam(zx->gs,GS_STEREO,ui.gstereobox->itemData(ui.gstereobox->currentIndex()).toInt());
-	zx->aym->tstype = ui.tsbox->itemData(ui.tsbox->currentIndex()).toInt();
 // bdi
 	zx->bdi->enable = ui.bdebox->isChecked();
 	zx->bdi->vg93.turbo = ui.bdtbox->isChecked();

@@ -66,14 +66,10 @@ void sndSync(uint32_t tk) {
 	lev *= 0.16;
 	levl = lev;
 	levr = lev;
-	zx->aym->sc1->sync(tatbyte);
-	zx->aym->sc2->sync(tatbyte);
-	AYData tmpl = zx->aym->sc1->getvol();
-	levl += tmpl.l * ayVolume / 100.0;
-	levr += tmpl.r * ayVolume / 100.0;
-	tmpl = zx->aym->sc2->getvol();
-	levl += tmpl.l * ayVolume / 100.0;
-	levr += tmpl.r * ayVolume / 100.0;
+	tsSync(zx->ts,tatbyte);
+	std::pair<uint8_t,uint8_t> tmpl = tsGetVolume(zx->ts);
+	levl += tmpl.first * ayVolume / 100.0;
+	levr += tmpl.second * ayVolume / 100.0;
 	GSData tmpm = gsGetVolume(zx->gs);
 //if ((levr != 0) || (levl != 0)) printf("%i : %i\t%i : %i\n",levl,levr,tmpm.l,tmpm.r);
 	levl += tmpm.l * gsVolume / 100.0;

@@ -2,12 +2,18 @@
 #define _XPAYYM
 
 #include <stdint.h>
+#include <utility>
 
+#define AY_TYPE		0
+#define	AY_STEREO	1
+#define	TS_TYPE		2
+#define	CHIP_A_REG	3
+// ay_type
 #define	SND_NONE	0
 #define	SND_AY		1
 #define	SND_YM		2
 #define	SND_END		3
-
+// ay_stereo
 #define	AY_MONO		0
 #define	AY_ABC		1
 #define	AY_ACB		2
@@ -15,53 +21,23 @@
 #define	AY_BCA		4
 #define	AY_CAB		5
 #define	AY_CBA		6
-
+// ts_type
 #define	TS_NONE		0
 #define	TS_NEDOPC	1
 
-struct AYData {
-	int r;
-	int l;
-};
-
-class AYChan {
-	public:
-		AYChan();
-		bool lev;
-		uint8_t vol;
-		int period;
-		int counter;
-};
-
-class AYProc {
-	public:
-		AYProc(int32_t);
-		int32_t type;
-		int32_t stereo;
-		uint8_t reg[16];
-		int nPos;
-		int ePos;
-		int eCur;
-		AYChan a,b,c,e,n;
-		int32_t freq;
-		uint8_t curreg;
-		float aycoe;
-		void reset();
-		void setreg(uint8_t);
-		void settype(int32_t);
-		AYData getvol();
-		void sync(int);
-};
-
-class AYSys {
-	public:
-		AYSys();
-		AYProc* sc1;
-		AYProc* sc2;
-		AYProc* scc;
-		int32_t tstype;
-};
+struct TSound;
 
 void initNoise();
+
+TSound* tsCreate(int,int,int);
+void tsDestroy(TSound*);
+void tsReset(TSound*);
+uint8_t tsIn(TSound*,int);
+void tsOut(TSound*,int,uint8_t);
+void tsSync(TSound*,int);
+std::pair<uint8_t,uint8_t> tsGetVolume(TSound*);
+
+int tsGet(TSound*,int,int);
+void tsSet(TSound*,int,int,int);
 
 #endif

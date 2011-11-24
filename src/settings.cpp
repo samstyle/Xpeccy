@@ -315,11 +315,11 @@ void saveConfig() {
 	optSet("VIDEO","doublesize",(zx->vid->flags & VF_DOUBLE) != 0);
 	optSet("VIDEO","bordersize",int(zx->vid->brdsize * 100));
 	optSet("VIDEO","geometry",zx->vid->curlay);
-	optSet("SOUND","chip1",zx->aym->sc1->type);
-	optSet("SOUND","chip2",zx->aym->sc2->type);
-	optSet("SOUND","chip1.stereo",zx->aym->sc1->stereo);
-	optSet("SOUND","chip2.stereo",zx->aym->sc2->stereo);
-	optSet("SOUND","ts.type",zx->aym->tstype);
+	optSet("SOUND","chip1",tsGet(zx->ts,AY_TYPE,0));
+	optSet("SOUND","chip2",tsGet(zx->ts,AY_TYPE,1));
+	optSet("SOUND","chip1.stereo",tsGet(zx->ts,AY_STEREO,0));
+	optSet("SOUND","chip2.stereo",tsGet(zx->ts,AY_STEREO,1));
+	optSet("SOUND","ts.type",tsGet(zx->ts,TS_TYPE,0));
 	optSet("SOUND","gs",(gsGetFlag(zx->gs) & GS_ENABLE) != 0);
 	optSet("SOUND","gs.reset",(gsGetFlag(zx->gs) & GS_RESET) != 0);
 	optSet("SOUND","gs.stereo",gsGetParam(zx->gs,GS_STEREO));
@@ -649,15 +649,15 @@ void loadConfig(bool dev) {
 	setFlagBit(optGetBool("VIDEO","fullscreen"),&zx->vid->flags, VF_FULLSCREEN);
 	tmp2 = optGetInt("VIDEO","bordersize"); if ((tmp2 >= 0) && (tmp2 <= 100)) zx->vid->brdsize = tmp2 / 100.0;
 	
-	tmp2 = optGetInt("SOUND","chip1"); if (tmp2 < SND_END) zx->aym->sc1->settype(tmp2);
-	tmp2 = optGetInt("SOUND","chip2"); if (tmp2 < SND_END) zx->aym->sc2->settype(tmp2);
+	tmp2 = optGetInt("SOUND","chip1"); if (tmp2 < SND_END) tsSet(zx->ts,AY_TYPE,0,tmp2);
+	tmp2 = optGetInt("SOUND","chip2"); if (tmp2 < SND_END) tsSet(zx->ts,AY_TYPE,1,tmp2);
 	int gsf = 0;
 	if (optGetBool("SOUND","gs")) gsf |= GS_ENABLE;
 	if (optGetBool("SOUND","gs.reset")) gsf |= GS_RESET;
 	gsSetFlag(zx->gs,gsf);
-	zx->aym->sc1->stereo = optGetInt("SOUND","chip1.stereo");
-	zx->aym->sc2->stereo = optGetInt("SOUND","chip2.stereo");
-	zx->aym->tstype = optGetInt("SOUND","ts.type");
+	tsSet(zx->ts,AY_STEREO,0,optGetInt("SOUND","chip1.stereo"));
+	tsSet(zx->ts,AY_STEREO,1,optGetInt("SOUND","chip2.stereo"));
+	tsSet(zx->ts,TS_TYPE,0,optGetInt("SOUND","ts.type"));
 	gsSetParam(zx->gs,GS_STEREO,optGetInt("SOUND","gs.stereo"));
 	
 	zx->bdi->enable = optGetBool("BETADISK","enabled");
