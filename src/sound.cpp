@@ -3,9 +3,9 @@
 #include "spectrum.h"
 
 #include <iostream>
-#ifdef HAVESDLSOUND
-	#include <SDL/SDL_sound.h>
-#endif
+//#ifdef HAVESDLSOUND
+//	#include <SDL/SDL_sound.h>
+//#endif
 
 extern ZXComp* zx;
 
@@ -56,7 +56,6 @@ uint8_t lev,levr,levl;
 
 void sndSync(uint32_t tk) {
 	if (tk < tickCount) return;
-//	if (tickCount > 0) return;
 	tickCount += tatbyte;
 	zx->tape->sync();
 	lev = zx->beeplev ? beepVolume : 0;
@@ -67,13 +66,15 @@ void sndSync(uint32_t tk) {
 	levl = lev;
 	levr = lev;
 	tsSync(zx->ts,tatbyte);
+	
 	std::pair<uint8_t,uint8_t> tmpl = tsGetVolume(zx->ts);
 	levl += tmpl.first * ayVolume / 100.0;
 	levr += tmpl.second * ayVolume / 100.0;
-	GSData tmpm = gsGetVolume(zx->gs);
-//if ((levr != 0) || (levl != 0)) printf("%i : %i\t%i : %i\n",levl,levr,tmpm.l,tmpm.r);
-	levl += tmpm.l * gsVolume / 100.0;
-	levr += tmpm.r * gsVolume / 100.0;
+	
+	tmpl = gsGetVolume(zx->gs);
+	levl += tmpl.first * gsVolume / 100.0;
+	levr += tmpl.second * gsVolume / 100.0;
+	
 	if (smpCount >= sndChunks) return;
 	ringBuffer[ringPos] = levl;
 	ringPos++;
@@ -358,11 +359,13 @@ void alsa_close() {
 // init
 	
 void sndInit() {
+#ifndef WIN32
 #ifdef HAVEALSASOUND
 	alsaDevice = (char*)"default";
 	alsaOutput = NULL;
 #endif
 	sndFormat = AFMT_U8;
+#endif
 	sndRate = 44100;
 	sndChans = 2;
 	sndEnabled = true;

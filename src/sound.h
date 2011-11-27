@@ -15,7 +15,7 @@
 #else
 	#include <windef.h>
 	#include <mmsystem.h>
-	#include <dsound.h>
+//	#include <dsound.h>
 #endif
 
 #define	SND_RATE	0

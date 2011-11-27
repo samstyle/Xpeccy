@@ -11,8 +11,8 @@
 	#include <SDL_syswm.h>
 	#include <windows.h>
 	#undef main
-	extern HWND wid;
 #endif
+
 #include "common.h"
 #include "sound.h"
 #include "spectrum.h"
@@ -24,6 +24,11 @@
 #include "filer.h"
 
 #include "ui_tapewin.h"
+
+#ifdef XQTPAINT
+	#include <QPainter>
+	QImage scrImg(100,100,QImage::Format_Indexed8);
+#endif
 
 #ifndef WIN32
 	#include <SDL.h>
@@ -40,10 +45,12 @@ extern EmulWin* mwin;
 // main
 MainWin* mainWin;
 QIcon curicon;
-SDL_Surface* surf = NULL;
-SDL_Color zxpal[256];
-SDL_SysWMinfo inf;
-SDL_TimerID tid;
+#ifndef XQTPAINT
+	SDL_Surface* surf = NULL;
+	SDL_Color zxpal[256];
+	SDL_SysWMinfo inf;
+	SDL_TimerID tid;
+#endif
 QVector<QRgb> qPal;
 int emulFlags;
 int pauseFlags;
@@ -126,16 +133,26 @@ QWidget* emulWidget() {
 
 void emulSetColor(int brl) {
 	int i;
+	qPal.clear(); qPal.resize(256);
+#ifndef XQTPAINT
 	for (i=0; i<16; i++) {
 		zxpal[i].b = (i & 1) ? ((i & 8) ? 0xff : brl) : 0;
 		zxpal[i].r = (i & 2) ? ((i & 8) ? 0xff : brl) : 0;
 		zxpal[i].g = (i & 4) ? ((i & 8) ? 0xff : brl) : 0;
 	}
-	qPal.clear(); qPal.resize(256);
 	for (i=0; i<256; i++) {
 		qPal[i] = qRgb(zxpal[i].r,zxpal[i].g,zxpal[i].b);
 	}
-//	if (surf != NULL) SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
+#else
+	uint8_t r,g,b;
+	for (i=0; i<16; i++) {
+		b = (i & 1) ? ((i & 8) ? 0xff : brl) : 0;
+		r = (i & 2) ? ((i & 8) ? 0xff : brl) : 0;
+		g = (i & 4) ? ((i & 8) ? 0xff : brl) : 0;
+		qPal[i] = qRgb(r,g,b);
+	}
+	scrImg.setColorTable(qPal);
+#endif
 }
 
 void emulUpdateWindow() {
@@ -147,17 +164,24 @@ void MainWin::updateWindow() {
 	zx->vid->update();
 	int szw = zx->vid->wsze.h;
 	int szh = zx->vid->wsze.v;
+#ifndef XQTPAINT
 	int sdlflg = SDL_SWSURFACE;
 	if ((zx->vid->flags & VF_FULLSCREEN) && !(zx->vid->flags & VF_BLOCKFULLSCREEN)) {
 		sdlflg |= SDL_FULLSCREEN;
 	}
+#endif
 //printf("szw.h.v = %i\t%i\n",szw,szh);
 	setFixedSize(szw,szh);
+#ifdef XQTPAINT
+	scrImg = scrImg.scaled(szw,szh);
+	zx->vid->scrimg = scrImg.bits();
+#else
 	surf = SDL_SetVideoMode(szw,szh,8,sdlflg | SDL_NOFRAME);
 	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
 //printf("surface size = %i\t%i\t%i\n",surf->w,surf->h,surf->pitch);
 //printf("window size = %i\t%i\n",size().width(),size().height());
 	zx->vid->scrimg = (uint8_t*)surf->pixels;
+#endif
 	zx->vid->scrptr = zx->vid->scrimg;
 	emulFlags &= ~FL_BLOCK;
 }
@@ -189,9 +213,6 @@ void emulExec() {
 			wantedWin = WW_DEBUG;
 			breakFrame = true;
 		}
-		if (!breakFrame && zx->intStrobe) {
-			zx->INTHandle();
-		}
 	}
 }
 
@@ -208,12 +229,20 @@ void emulPause(bool p, int msk) {
 	}
 	bool kk = ((emulFlags & FL_GRAB) != 0);
 	if (!kk || ((pauseFlags != 0) && kk)) {
+#ifdef XQTPAINT
+		mainWin->releaseMouse();
+#else
 		SDL_WM_GrabInput(SDL_GRAB_OFF);
 		SDL_ShowCursor(SDL_ENABLE);
+#endif
 	}
 	if ((pauseFlags == 0) && kk) {
+#ifdef XQTPAINT
+		mainWin->grabMouse(QCursor(Qt::BlankCursor));
+#else
 		SDL_WM_GrabInput(SDL_GRAB_ON);
 		SDL_ShowCursor(SDL_DISABLE);
+#endif
 	}
 	if (pauseFlags == 0) {
 		mainWin->setWindowIcon(curicon);
@@ -240,12 +269,10 @@ MainWin::MainWin() {
 	setMouseTracking(true);
 	curicon = QIcon(":/images/logo.png");
 	setWindowIcon(curicon);
+#ifndef XQTPAINT
 	SDL_VERSION(&inf.version);
 	SDL_GetWMInfo(&inf);
-#ifndef WIN32
 	embedClient(inf.info.x11.wmwindow);
-#else
-	SetParent(inf.window,winId());
 #endif
 	initUserMenu((QWidget*)this);
 	tapeWin = new QDialog((QWidget*)this,Qt::Tool);
@@ -258,15 +285,151 @@ MainWin::MainWin() {
 	QObject::connect(timer,SIGNAL(timeout()),this,SLOT(emulFrame()));
 }
 
+#ifdef XQTPAINT
+void MainWin::paintEvent(QPaintEvent *ev) {
+	QPainter pnt;
+	pnt.begin(this);
+	pnt.drawImage(0,0,scrImg);
+}
+
+void MainWin::keyPressEvent(QKeyEvent *ev) {
+	if (ev->modifiers() & Qt::AltModifier) {
+		switch(ev->key()) {
+			case Qt::Key_0: zx->vid->mode = (zx->vid->mode==VID_NORMAL)?VID_ALCO:VID_NORMAL; break;
+			case Qt::Key_1:
+				zx->vid->flags &= ~VF_DOUBLE;
+				mainWin->updateWindow();
+				saveConfig();
+				break;
+			case Qt::Key_2:
+				zx->vid->flags |= VF_DOUBLE;
+				mainWin->updateWindow();
+				saveConfig();
+				break;
+			case Qt::Key_3: emulFlags ^= FL_FAST;
+				mainWin->stopTimer();
+				mainWin->startTimer((emulFlags & FL_FAST) ? 1 : 20);
+				break;
+			case Qt::Key_F4:
+				mainWin->close();
+				break;
+			case Qt::Key_F7:
+				scrCounter = optGetInt(OPT_SHOTCNT);
+				scrInterval=0;
+				break;	// ALT+F7 combo
+			case Qt::Key_F12:
+				zx->reset(RES_DOS);
+				break;
+		}
+	} else {
+		zx->keyb->press(ev->nativeScanCode());
+		switch(ev->key()) {
+			case Qt::Key_Pause: pauseFlags ^= PR_PAUSE; emulPause(true,0); break;
+			case Qt::Key_Escape: wantedWin = WW_DEBUG; break;
+			case Qt::Key_Menu: emulPause(true,PR_MENU); userMenu->popup(mainWin->pos() + QPoint(20,20)); break;
+			case Qt::Key_F1: optShow(); break;
+			case Qt::Key_F2: emulPause(true,PR_FILE); saveFile("",FT_ALL,-1); emulPause(false,PR_FILE); break;
+			case Qt::Key_F3: emulPause(true,PR_FILE); loadFile("",FT_ALL,-1); emulPause(false,PR_FILE); break;
+			case Qt::Key_F4:
+					if (zx->tape->flags & TAPE_ON) {
+						mwin->tapeStop();
+					} else {
+						mwin->tapePlay();
+					}
+					break;
+			case Qt::Key_F5:
+					if (zx->tape->flags & TAPE_ON) {
+						mwin->tapeStop();
+					} else {
+						mwin->tapeRec();
+					}
+					break;
+			case Qt::Key_F6: devShow(); break;
+			case Qt::Key_F7: if (scrCounter == 0) {emulFlags |= FL_SHOT;} else {emulFlags &= ~FL_SHOT;} break;
+			case Qt::Key_F9: emulPause(true,PR_FILE);
+				zx->bdi->flop[0].savecha();
+				zx->bdi->flop[1].savecha();
+				zx->bdi->flop[2].savecha();
+				zx->bdi->flop[3].savecha();
+				emulPause(false,PR_FILE);
+				break;
+			case Qt::Key_F10:
+				zx->nmiRequest = true;
+				break;
+			case Qt::Key_F11:			// TODO: when tapeWin will be working, move it to F4
+				if (tapeWin->isVisible()) {
+					tapeWin->hide();
+				} else {
+					buildTapeList();
+					tapeWin->show();
+				}
+				break;
+			case Qt::Key_F12: zx->reset(RES_DEFAULT); break;
+		}
+	}
+}
+
+void MainWin::keyReleaseEvent(QKeyEvent *ev) {
+	zx->keyb->release(ev->nativeScanCode());
+}
+
+void MainWin::mousePressEvent(QMouseEvent *ev){
+	switch (ev->button()) {
+		case Qt::LeftButton:
+			if (emulFlags & FL_GRAB) zx->mouse->buttons &= ~0x01;
+			break;
+		case Qt::RightButton:
+			if (emulFlags & FL_GRAB) {
+				zx->mouse->buttons &= ~0x02;
+			} else {
+				emulPause(true,PR_MENU);
+				userMenu->popup(QPoint(ev->globalX(),ev->globalY()));
+			}
+			break;
+		default: break;
+	}
+}
+
+void MainWin::mouseReleaseEvent(QMouseEvent *ev) {
+	if (pauseFlags != 0) return;
+	switch (ev->button()) {
+		case Qt::LeftButton:
+			if (emulFlags & FL_GRAB) zx->mouse->buttons |= 0x01;
+			break;
+		case Qt::RightButton:
+			if (emulFlags & FL_GRAB) zx->mouse->buttons |= 0x02;
+			break;
+		case Qt::MidButton:
+			emulFlags ^= FL_GRAB;
+			if (emulFlags & FL_GRAB) {
+				grabMouse(QCursor(Qt::BlankCursor));
+			} else {
+				releaseMouse();
+			}
+			break;
+		default: break;
+	}
+}
+
+void MainWin::mouseMoveEvent(QMouseEvent *ev) {
+	if (!(emulFlags & FL_GRAB) || (pauseFlags !=0 )) return;
+	zx->mouse->xpos = ev->globalX() & 0xff;
+	zx->mouse->ypos = 256 - (ev->globalY() & 0xff);
+}
+
+#endif
+
 void MainWin::closeEvent(QCloseEvent* ev) {
 	timer->stop();
 	if (emulSaveChanged()) {
 		ev->accept();
 	} else {
 		ev->ignore();
+#ifndef XQTPAINT
 		SDL_VERSION(&inf.version);
 		SDL_GetWMInfo(&inf);
 		mainWin->embedClient(inf.info.x11.wmwindow);
+#endif
 		timer->start(20);
 	}
 }
@@ -320,7 +483,11 @@ void MainWin::emulFrame() {
 			};
 			std::string fnam = optGetString(OPT_SHOTDIR) + "/sshot" + int2str(scrNumber) + "." + fext;
 			std::ofstream file;
+#ifdef XQTPAINT
+			QImage *img = new QImage(scrImg);
+#else
 			QImage *img = new QImage((uchar*)surf->pixels,surf->w,surf->h,QImage::Format_Indexed8);
+#endif
 			img->setColorTable(qPal);
 			switch (frm) {
 				case SCR_HOB:
@@ -411,7 +578,11 @@ void EmulWin::tapeLoad() {
 }
 
 void EmulWin::SDLEventHandler() {
+#ifndef XQTPAINT
 	SDL_UpdateRect(surf,0,0,0,0);
+#else
+	mainWin->update();
+#endif
 	if (emulFlags & FL_BLOCK) return;
 	switch (wantedWin) {
 		case WW_DEBUG: dbgShow(); wantedWin = WW_NONE; break;
@@ -437,6 +608,7 @@ void EmulWin::SDLEventHandler() {
 			tapeUi.tapeBar->setValue(0);
 		}
 	}
+#ifndef XQTPAINT
 	SDL_Event ev;
 	while (SDL_PollEvent(&ev)) {
 		switch (ev.type) {
@@ -575,6 +747,7 @@ void EmulWin::SDLEventHandler() {
 				break;
 		}
 	}
+#endif
 	if (!userMenu->isVisible() && (pauseFlags & PR_MENU)) {
 		mainWin->setFocus();
 		emulPause(false,PR_MENU);

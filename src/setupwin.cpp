@@ -601,7 +601,7 @@ void SetupWin::buildtapelist() {
 	QTableWidgetItem* itm;
 	uint tm,ts;
 	for (uint i=0; i<inf.size(); i++) {
-		if ((int)zx->tape->block == i) {
+		if (zx->tape->block == i) {
 			itm = new QTableWidgetItem(QIcon(":/images/checkbox.png"),"");
 			ui.tapelist->setItem(i,0,itm);
 			ts = inf[i].curtime;

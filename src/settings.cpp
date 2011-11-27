@@ -8,6 +8,10 @@
 #include "emulwin.h"
 #include "settings.h"
 
+#ifdef WIN32
+#include <direct.h>
+#endif
+
 extern ZXComp* zx;
 std::vector<optEntry> config;
 std::string workDir;

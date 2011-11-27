@@ -67,11 +67,11 @@ bool BDI::in(int32_t port, uint8_t* val) {
 	return true;
 }
 
-void BDI::sync(uint32_t tn) {
+void BDI::sync(int tk) {
 	uint32_t tz;
-	uint32_t tk = tn - vg93.t;
+//	uint32_t tk = tn - vg93.t;
 	while (tk > 0) {
-		if (tk < vg93.tf) {
+		if (tk < (int)vg93.tf) {
 			tz = tk;
 			vg93.tf -= tk;
 		} else {

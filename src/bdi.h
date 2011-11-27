@@ -134,7 +134,7 @@ class BDI {
 		uint32_t tab;		// tab: ticks @ floppy byte
 		Floppy flop[4];
 		VG93 vg93;
-		void sync(uint32_t);
+		void sync(int);
 		bool out(int32_t, uint8_t);
 		bool in(int32_t, uint8_t*);
 		int32_t getport(int);

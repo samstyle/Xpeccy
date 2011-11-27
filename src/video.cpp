@@ -84,7 +84,7 @@ Video::Video(Memory* me) {
 #define	MTRX_DOT6	0x4006
 
 void Video::fillMatrix() {
-	uint x,y,i,adr;
+	uint32_t x,y,i,adr;
 	i = 0;
 	adr = 0;
 	for (y = 0; y < full.v; y++) {
@@ -139,65 +139,6 @@ void Video::sync(int tk,float fr) {
 	intStrobe = false;
 	pxcnt += 7.0 * tk / fr;
 	t += (int)pxcnt;
-#if 0
-	while (pxcnt > 0) {
-		pxcnt -= 1.0;
-		onscr = (curr.v >= lcut.v) && (curr.v < rcut.v);
-		if ((curr.h >= lcut.h) && (curr.h < rcut.h) && onscr) {
-			if ((curr.v < bord.v) || (curr.v > bord.v + 191) || (curr.h < bord.h) || (curr.h > bord.h + 255)) {
-				col = brdcol;
-			} else {
-				switch (mode) {
-					case VID_NORMAL:
-						if (((curr.h - bord.h) & 7) == 0) {
-							scrbyte = curscr ? (*ladrz[iacount].scr7) : (*ladrz[iacount].scr5);
-							atrbyte = curscr ? (*ladrz[iacount].atr7) : (*ladrz[iacount].atr5);
-							if ((atrbyte & 0x80) && flash) scrbyte ^= 255;
-							ink = inkTab[atrbyte & 0x7f];
-							pap = papTab[atrbyte & 0x7f];
-							iacount++;
-						}
-						col = (scrbyte & 0x80) ? ink : pap;
-						scrbyte<<= 1;
-						break;
-					case VID_ALCO:
-						if (((curr.h - bord.h) & 1) == 0) {
-							switch ((curr.h - bord.h) & 0x06) {
-								case 0x00: scrbyte = curscr ? (*ladrz[iacount].ac10) : (*ladrz[iacount].ac00); break;
-								case 0x02: scrbyte = curscr ? (*ladrz[iacount].ac11) : (*ladrz[iacount].ac01); break;
-								case 0x04: scrbyte = curscr ? (*ladrz[iacount].ac12) : (*ladrz[iacount].ac02); break;
-								case 0x06: scrbyte = curscr ? (*ladrz[iacount].ac13) : (*ladrz[iacount].ac03); iacount++; break;
-							}
-							col = ((scrbyte & 0x07) | ((scrbyte & 0x40)>>3));
-						} else {
-							col = ((scrbyte & 0x38)>>3) | ((scrbyte & 0x80)>>4);
-						}
-						break;
-				}
-			}
-			*(scrptr++)=col;
-			if (flags & VF_DOUBLE) {
-				*(scrptr + wsze.h - 1) = col;
-				*(scrptr + wsze.h) = col;
-				*(scrptr++)=col;
-			}
-		}
-		if (++curr.h >= full.h) {
-			curr.h = 0;
-			if (onscr) {
-				if (flags & VF_DOUBLE) scrptr += wsze.h;
-			}
-			if (++curr.v >= full.v) {
-				curr.v = 0;
-				fcnt++; flash = fcnt & 0x20;
-				scrptr = scrimg;
-				iacount=0;
-			}
-			intSignal = (curr.v==intpos) && (curr.h < intsz);
-			intStrobe |= intSignal;
-		}
-	}
-#else
 	while (pxcnt >= 1) {
 		mtx = matrix[dotCount];
 		switch (mtx) {
@@ -294,21 +235,20 @@ void Video::sync(int tk,float fr) {
 		brdcol = nextBorder;
 		nextBorder = 0xff;
 	}
-#endif
 }
 
 // LAYOUTS
 
 void addLayout(VidLayout nlay) {
 printf("addLayout %s\n",nlay.name.c_str());
-	for(uint i=0; i<layoutList.size(); i++) {
+	for(uint32_t i=0; i<layoutList.size(); i++) {
 		if (layoutList[i].name == nlay.name) return;
 	}
 	layoutList.push_back(nlay);
 }
 
 void addLayout(std::string nm, int* par) {
-	for(uint i=0; i<layoutList.size(); i++) {
+	for(uint32_t i=0; i<layoutList.size(); i++) {
 		if (layoutList[i].name == nm) return;		// prevent layouts with same names
 	}
 	VidLayout nlay;
@@ -330,7 +270,7 @@ std::vector<VidLayout> getLayoutList() {
 }
 
 bool Video::setLayout(std::string nm) {
-	for (uint i=0; i<layoutList.size(); i++) {
+	for (uint32_t i=0; i<layoutList.size(); i++) {
 		if (layoutList[i].name == nm) {
 			curlay = nm;
 			full = layoutList[i].full;

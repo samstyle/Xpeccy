@@ -7,11 +7,16 @@
 //#include <QModelIndex>
 #include <stdint.h>
 
-#ifndef WIN32
+#ifdef WIN32
+#define XQTPAINT
+#else
+#undef XQTPAINT
+#endif
+
+#ifndef XQTPAINT
 	#include <QX11EmbedContainer>
 #else
-	#include <QDialog>
-	#include <SDL_syswm.h>
+	#include <QWidget>
 #endif
 
 #include "spectrum.h"
@@ -71,7 +76,11 @@ class EmulWin : public QObject {
 		void SDLEventHandler();
 };
 
+#ifdef XQTPAINT
+class MainWin : public QWidget {
+#else
 class MainWin : public QX11EmbedContainer {
+#endif
 	Q_OBJECT
 	public:
 		MainWin();
@@ -84,6 +93,14 @@ class MainWin : public QX11EmbedContainer {
 		void emulFrame();
 	protected:
 		void closeEvent(QCloseEvent*);
+#ifdef XQTPAINT
+		void paintEvent(QPaintEvent*);
+		void keyPressEvent(QKeyEvent*);
+		void keyReleaseEvent(QKeyEvent*);
+		void mousePressEvent(QMouseEvent*);
+		void mouseReleaseEvent(QMouseEvent*);
+		void mouseMoveEvent(QMouseEvent*);
+#endif
 };
 
 // main

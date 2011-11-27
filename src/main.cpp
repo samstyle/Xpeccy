@@ -96,10 +96,17 @@ void splitline(std::string line, std::string* pnam, std::string* pval) {
 }
 
 int main(int ac,char** av) {
+	SDL_version sdlver;
+	SDL_VERSION(&sdlver);
+	printf("Using SDL ver %u.%u.%u\n", sdlver.major, sdlver.minor, sdlver.patch);
+	Z80EX_VERSION* ver = z80ex_get_version();
+	printf("Using z80ex ver %d.%d\n",ver->major, ver->minor);
+	
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
 	atexit(SDL_Quit);
 	QApplication app(ac,av,true);
 	try {
+		       
 		int i;
 		int p=0;
 		bool dev = false;

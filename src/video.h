@@ -38,7 +38,7 @@ struct VidLayout {
 //		}
 	std::string name;
 	VSize full,sync,bord;
-	uint intsz,intpos;
+	uint32_t intsz,intpos;
 };
 
 class Video {

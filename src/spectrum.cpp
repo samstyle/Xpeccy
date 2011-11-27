@@ -282,6 +282,8 @@ void ZXComp::out(uint16_t port,uint8_t val) {
 	}
 }
 
+double tk;
+
 uint32_t ZXComp::exec() {
 	uint32_t ltk = vid->t;
 	int res = 0;
@@ -291,11 +293,15 @@ uint32_t ZXComp::exec() {
 	vid->sync(res,cpuFreq);
 	intStrobe = vid->intStrobe;
 
-// profROM pages switch: was ld l,(hl), rompage = 2|6|10|14, hl before = 0x0100,0x0104,0x0108,0x010c
-//printf("%c\t%i\t%.4X\n",(hw->type == HW_SCORP) ? 'Y' : 'n',mem->crom & 3,mem->lastRdAdr & 0xfff3);
 	Z80EX_WORD pc = z80ex_get_reg(cpu,regPC);
+
+	if ((pc > 0x3fff) && nmiRequest) NMIHandle();
+	if (intStrobe) INTHandle();
+
+	ltk = vid->t - ltk;
+
 	if (bdi->enable) {
-		bdi->sync(vid->t);
+		bdi->sync(ltk);
 		if (bdi->active && (pc > 0x3fff)) {
 			bdi->active = false;
 			mapMemory();
@@ -305,13 +311,7 @@ uint32_t ZXComp::exec() {
 			mapMemory();
 		}
 	}
-	if ((pc > 0x3fff) && nmiRequest) {
-		NMIHandle();
-	}
-	ltk = vid->t - ltk;
 	gsSync(gs,ltk);
-//	aym->sc1->sync(ltk);
-//	aym->sc2->sync(ltk);
 	return ltk;
 }
 

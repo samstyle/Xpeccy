@@ -11,7 +11,6 @@ struct GSound {
 	int flags;
 	Z80EX_CONTEXT* cpu;
 	Memory* mem;
-//	uint32_t t;
 	uint8_t pb3_gs;	// gs -> zx
 	uint8_t pb3_zx;	// zx -> gs
 	uint8_t pbb_zx;
@@ -155,21 +154,22 @@ void gsReset(GSound* gs) {
 	z80ex_reset(gs->cpu);
 }
 
-GSData gsGetVolume(GSound* gs) {
-	GSData res;
-	res.l = res.r = 0;
+std::pair<uint8_t,uint8_t> gsGetVolume(GSound* gs) {
+	std::pair<uint8_t,uint8_t> res;
+	res.first = 0;
+	res.second = 0;
 	if (~gs->flags & GS_ENABLE) return res;
 	switch (gs->stereo) {
 		case GS_MONO:
-			res.l = ((gs->ch1 * gs->vol1 + \
+			res.first = ((gs->ch1 * gs->vol1 + \
 				gs->ch2 * gs->vol2 + \
 				gs->ch3 * gs->vol3 + \
 				gs->ch4 * gs->vol4) >> 9);
-			res.r = res.l;
+			res.second = res.first;
 			break;
 		case GS_12_34:
-			res.l = ((gs->ch1 * gs->vol1 + gs->ch2 * gs->vol2) >> 8);
-			res.r = ((gs->ch3 * gs->vol3 + gs->ch4 * gs->vol4) >> 8);
+			res.first = ((gs->ch1 * gs->vol1 + gs->ch2 * gs->vol2) >> 8);
+			res.second = ((gs->ch3 * gs->vol3 + gs->ch4 * gs->vol4) >> 8);
 			break;
 	}
 	return res;
