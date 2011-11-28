@@ -1,6 +1,8 @@
 #include "filer.h"
 #include "spectrum.h"
-//#include "settings.h"
+#include "common.h"
+
+#include "filetypes/filetypes.h"
 
 extern ZXComp* zx;
 QFileDialog *filer;
@@ -87,19 +89,28 @@ void loadFile(const char* name, int flags, int drv) {
 	if (drv == -1) drv = 0;
 	int type = getFileType(path);
 	std::string sfnam(path.toUtf8().data());
+	int err = ERR_OK;
 	switch (type) {
-		case FT_SNA: zx->mem->load(sfnam,TYP_SNA); break;
-		case FT_Z80: zx->mem->load(sfnam,TYP_Z80); break;
-		case FT_TAP: zx->tape->load(sfnam,TYPE_TAP); break;
-		case FT_TZX: zx->tape->load(sfnam,TYPE_TZX); break;
+		case FT_SNA: err = loadSNA(zx,sfnam.c_str()); break;
+		case FT_Z80: err = loadZ80(zx,sfnam.c_str()); break;
+		case FT_TAP: err = loadTAP(zx,sfnam.c_str()); break;	// zx->tape->load(sfnam,TYPE_TAP);
+		case FT_TZX: err = loadTZX(zx,sfnam.c_str()); break;
 		case FT_SCL: zx->bdi->flop[drv].load(sfnam,TYPE_SCL); break;
 		case FT_TRD: zx->bdi->flop[drv].load(sfnam,TYPE_TRD); break;
 		case FT_FDI: zx->bdi->flop[drv].load(sfnam,TYPE_FDI); break;
 		case FT_UDI: zx->bdi->flop[drv].load(sfnam,TYPE_UDI); break;
 		case FT_HOBETA: zx->bdi->flop[drv].load(sfnam,TYPE_HOBETA); break;
 #if HAVEZLIB
-		case FT_RZX: zx->mem->load(sfnam,TYP_RZX); break;
+		case FT_RZX: err = loadRZX(zx,sfnam.c_str()); break;
 #endif
+	}
+	switch (err) {
+		case ERR_CANT_OPEN: shithappens("Can't open file"); break;
+		case ERR_RZX_SIGN: shithappens("Wrong RZX signature"); break;
+		case ERR_RZX_CRYPT: shithappens("Xpeccy cannot into crypted RZX"); break;
+		case ERR_RZX_UNPACK: shithappens("RZX unpack error"); break;
+		case ERR_TZX_SIGN: shithappens("Wrong TZX signature"); break;
+		case ERR_TZX_UNKNOWN: shithappens("Unknown TZX block"); break;
 	}
 }
 
@@ -148,8 +159,8 @@ bool saveFile(const char* name,int flags,int drv) {
 	if (filters.contains("Snap")) {
 		bool mt = (zx->opt.hwName == "ZX48K");
 		switch (type) {
-			case FT_SNA: zx->mem->save(sfnam,TYP_SNA,mt); break;
-			default: sfnam += ".sna"; zx->mem->save(sfnam,TYP_SNA,mt); break;
+			case FT_SNA: saveSNA(zx,sfnam.c_str(),mt); break;
+			default: sfnam += ".sna"; saveSNA(zx,sfnam.c_str(),mt); break;
 		}
 	}
 	return true;

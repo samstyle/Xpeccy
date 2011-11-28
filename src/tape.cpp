@@ -243,6 +243,7 @@ void addBlockByte(TapeBlock* blk, uint8_t bt) {
 	}
 }
 
+/*
 // переконвертить len байт из *file в сигналы мофона. длины сигналов в slens. на выходе - блок
 TapeBlock Tape::parse(std::ifstream *file, uint32_t len, std::vector<int> slens,uint8_t bits) {
 	TapeBlock newb;
@@ -269,6 +270,7 @@ TapeBlock Tape::parse(std::ifstream *file, uint32_t len, std::vector<int> slens,
 //	if (slens[5]!=0) newb.data.push_back(slens[5]);
 	return newb;
 }
+*/
 
 void Tape::addBlock(uint8_t* ptr, int ln, bool hd) {
 	TapeBlock nblk;
@@ -301,6 +303,8 @@ void Tape::addBlock(uint8_t* ptr, int ln, bool hd) {
 	data.push_back(nblk);
 }
 
+/*
+
 uint32_t getlen(std::ifstream *file,uint8_t n) {
 	uint32_t len;
 	uint8_t tm;
@@ -329,16 +333,16 @@ void Tape::load(std::string sfnam,uint8_t type) {
 	eject();
 	switch (type) {
 		case TYPE_TAP:
-			while (!file.eof()) {
-				len = getlen(&file,2);
-				if (!file.eof()) {
-					newb = parse(&file,len,slens,8);
-					newb.pause = (newb.pdur==8063) ? 500 : 1000;
-					newb.data.push_back(slens[5]);
-					data.push_back(newb);
-				}
-			}
-			path=sfnam;
+//			while (!file.eof()) {
+//				len = getlen(&file,2);
+//				if (!file.eof()) {
+//					newb = parse(&file,len,slens,8);
+//					newb.pause = (newb.pdur==8063) ? 500 : 1000;
+//					newb.data.push_back(slens[5]);
+//					data.push_back(newb);
+//				}
+//			}
+//			path=sfnam;
 			break;
 		case TYPE_TZX:
 			file.read((char*)buf,10);
@@ -411,7 +415,6 @@ printf("add block\n");
 						newb.pause = paulen;
 						flags &= ~TAPE_CANSAVE;
 						break;
-/*
 					case 0x15:
 						file.seekg(5,std::ios::cur);
 						len = getlen(&file,3);
@@ -425,7 +428,6 @@ printf("add block\n");
 						len = getlen(&file,4);
 						file.seekg(len,std::ios::cur);
 						break;
-*/
 					case 0x20:
 						len = getlen(&file,2);
 						newb.data.push_back(len);
@@ -511,6 +513,8 @@ printf("add block\n");
 			}
 	}
 }
+
+*/
 
 void Tape::save(std::string fname, uint8_t type) {
 	std::ofstream file(fname.c_str(),std::ios::binary);

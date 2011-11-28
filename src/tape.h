@@ -69,8 +69,8 @@ class Tape {
 		void sync();
 		void storeblock();
 		void swapblocks(int32_t,int32_t);
-		TapeBlock parse(std::ifstream*,uint32_t,std::vector<int32_t>,uint8_t);
-		void load(std::string,uint8_t);
+//		TapeBlock parse(std::ifstream*,uint32_t,std::vector<int32_t>,uint8_t);
+//		void load(std::string,uint8_t);
 		void save(std::string,uint8_t);
 		std::vector<TapeBlockInfo> getInfo();
 		void addFile(std::string,int,uint16_t,uint16_t,uint16_t,uint8_t*,bool);

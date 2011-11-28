@@ -5,9 +5,12 @@
 #include <vector>
 #include <stdint.h>
 
-#define TYP_SNA		0
-#define TYP_Z80 	1
-#define TYP_RZX 	2
+#define	TYP_SNA		0
+#define	TYP_Z80 	1
+#define	TYP_RZX 	2
+
+#define	MEM_ROM		0
+#define	MEM_RAM		1
 
 struct RomSet {
 	std::string name;
@@ -38,9 +41,9 @@ class Memory {
 	int32_t profMask;	// profrom (0 - 64K, 1 - 128K, 3 - 256K)
 	uint8_t rd(uint16_t);
 	void wr(uint16_t, uint8_t);
-	void load(std::string,int32_t);
-	void parse(std::ifstream*,int32_t);
-	void save(std::string,int32_t,bool);
+//	void load(std::string,int32_t);
+//	void parse(std::ifstream*,int32_t);
+//	void save(std::string,int32_t,bool);
 	RomSet *romset;
 	std::vector<RZXFrame> rzx;
 	int rzxFrame;
@@ -50,5 +53,9 @@ class Memory {
 	void setram(uint8_t);
 	void setrom(uint8_t);
 };
+
+// copy mempages to/from memory
+void memSetPage(Memory*,int,int,char*);
+void memGetPage(Memory*,int,int,char*);
 
 #endif

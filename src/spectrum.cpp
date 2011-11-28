@@ -164,7 +164,7 @@ uint8_t ZXComp::in(uint16_t port) {
 	if (gsIn(gs,port,&res) == GS_OK) return res;
 	if (bdi->in(port,&res)) return res;
 	port = getPort(port);
-	if (rzxPlay) return mem->getRZXIn();
+//	if (rzxPlay) return mem->getRZXIn();
 	switch (port) {
 		case 0xfbdf: res = mouse->xpos; break;
 		case 0xffdf: res = mouse->ypos; break;
