@@ -9,7 +9,6 @@
 	#include <SDL.h>
 	#include <SDL_timer.h>
 	#include <SDL_syswm.h>
-	#include <windows.h>
 	#undef main
 #endif
 
@@ -209,7 +208,7 @@ void emulExec() {
 	if (!dbgIsActive()) {
 		// somehow catch CPoint
 		Z80EX_WORD pc = z80ex_get_reg(zx->cpu,regPC);
-		if (dbgFindBreakpoint(BPoint((pc < 0x4000) ? zx->mem->crom : zx->mem->cram, pc)) != -1) {
+		if (dbgFindBreakpoint(BPoint(memGet(zx->mem,(pc < 0x4000) ? MEM_ROM : MEM_RAM), pc)) != -1) {
 			wantedWin = WW_DEBUG;
 			breakFrame = true;
 		}
@@ -456,10 +455,10 @@ void MainWin::emulFrame() {
 		do {
 			emulExec();
 		} while ((wantedWin == WW_NONE) && !zx->intStrobe);
-		if (zx->rzxPlay) {
-			zx->mem->rzxFrame++;
-			zx->mem->rzxPos = 0;
-		}
+//		if (zx->rzxPlay) {
+//			zx->mem->rzxFrame++;
+//			zx->mem->rzxPos = 0;
+//		}
 		zx->nmiRequest = false;
 		if (scrCounter !=0) {
 			if (scrInterval == 0) {
@@ -489,16 +488,18 @@ void MainWin::emulFrame() {
 			QImage *img = new QImage((uchar*)surf->pixels,surf->w,surf->h,QImage::Format_Indexed8);
 #endif
 			img->setColorTable(qPal);
+			char* pageBuf = new char[0x4000];
+			memGetPage(zx->mem,MEM_RAM,zx->vid->curscr ? 7 : 5,pageBuf);
 			switch (frm) {
 				case SCR_HOB:
 					file.open(fnam.c_str(),std::ios::binary);
 					file.write((char*)hobHead,17);
-					file.write((char*)&zx->mem->ram[zx->vid->curscr ? 7 : 5][0],0x1b00);
+					file.write(pageBuf,0x1b00);
 					file.close();
 					break;
 				case SCR_SCR:
 					file.open(fnam.c_str(),std::ios::binary);
-					file.write((char*)&zx->mem->ram[zx->vid->curscr ? 7 : 5][0],0x1b00);
+					file.write(pageBuf,0x1b00);
 					file.close();
 					break;
 				case SCR_BMP:
@@ -507,6 +508,7 @@ void MainWin::emulFrame() {
 					if (img != NULL) img->save(QString(fnam.c_str()),fext.c_str());
 					break;
 			}
+			free(pageBuf);
 			emulFlags &= ~FL_SHOT;
 			scrNumber++;
 		}
@@ -773,6 +775,98 @@ bool addRomset(RomSet rs) {
 	return true;
 }
 
+#ifdef WIN32
+#define	SLASHES "\\"
+#else
+#define	SLASHES "/"
+#endif
+
+// set and load memory romset. if rset is NULL, just load
+void emulSetRomset(Memory* mem, RomSet* rset) {
+	int i,ad;
+	std::string romDir = optGetString(OPT_ROMDIR);
+	std::string fpath = "";
+	std::ifstream file;
+	char* pageBuf = new char[0x4000];
+	int prts = 0;
+	int profMask = 0;
+	if (rset == NULL) {
+		rset = memGetRomset(mem);
+	} else {
+		memSetRomset(mem,rset);
+	}
+	if (rset == NULL) {
+		for (i=0; i<16; i++) {
+			for (ad=0; ad<0x4000; ad++) pageBuf[i] = 0xff;
+			memSetPage(mem,MEM_ROM,i,pageBuf);
+		}
+	} else {
+		if (rset->file != "") {
+			fpath = romDir + SLASHES + rset->file;
+			file.open(fpath.c_str(),std::ios::binary);
+			if (file.good()) {
+				file.seekg(0,std::ios_base::end);
+				prts = file.tellg() / 0x4000;
+				profMask = 3;
+				if (prts < 9) profMask = 1;
+				if (prts < 5) profMask = 0;
+				if (prts > 16) prts = 16;
+				file.seekg(0,std::ios_base::beg);
+				memSet(mem,MEM_PROFMASK,profMask);
+				for (i = 0; i < prts; i++) {
+					file.read(pageBuf,0x4000);
+					memSetPage(mem,MEM_ROM,i,pageBuf);
+				}
+				for (ad = 0; ad < 0x4000; ad++) pageBuf[ad] = 0xff;
+				for (i=prts; i<16; i++) memSetPage(mem,MEM_ROM,i,pageBuf);
+			} else {
+				printf("Can't open single rom '%s'\n",rset->file.c_str());
+				for (ad = 0; ad < 0x4000; ad++) pageBuf[ad] = 0xff;
+				for (i = 0; i < 16; i++) memSetPage(mem,MEM_ROM,i,pageBuf);
+			}
+			file.close();
+		} else {
+			for (i = 0; i < 4; i++) {
+				if (rset->roms[i].path == "") {
+					for (ad = 0; ad < 0x4000; ad++) pageBuf[ad]=0xff;
+				} else {
+					fpath = romDir + SLASHES + rset->roms[i].path;
+					file.open(fpath.c_str(),std::ios::binary);
+					if (file.good()) {
+						file.seekg(rset->roms[i].part<<14);
+						file.read(pageBuf,0x4000);
+					} else {
+						printf("Can't open rom '%s:%i'\n",rset->roms[i].path.c_str(),rset->roms[i].part);
+						for (ad=0;ad<0x4000;ad++) pageBuf[ad]=0xff;
+					}
+					file.close();
+				}
+				memSetPage(mem,MEM_ROM,i,pageBuf);
+			}
+		}
+	}
+	for (ad = 0; ad < 0x4000; ad++) pageBuf[ad] = 0xff;
+	if (zx->opt.GSRom == "") {
+		gsSetRom(zx->gs,0,pageBuf);
+		gsSetRom(zx->gs,1,pageBuf);
+	} else {
+			fpath = romDir + SLASHES + zx->opt.GSRom;
+			file.open(fpath.c_str(),std::ios::binary);
+			if (file.good()) {
+				file.read(pageBuf,0x4000);
+				gsSetRom(zx->gs,0,pageBuf);
+				file.read(pageBuf,0x4000);
+				gsSetRom(zx->gs,1,pageBuf);
+			} else {
+				printf("Can't load gs rom '%s'\n",zx->opt.GSRom.c_str());
+				gsSetRom(zx->gs,0,pageBuf);
+				gsSetRom(zx->gs,1,pageBuf);
+			}
+			file.close();
+	}
+	free(pageBuf);
+}
+
 void setRomsetList(std::vector<RomSet> rsl) {
 	rsList.clear();
 	uint i;
@@ -780,13 +874,13 @@ void setRomsetList(std::vector<RomSet> rsl) {
 		addRomset(rsl[i]);
 	}
 	for (i=0; i<profileList.size(); i++) {
-		profileList[i].zx->mem->romset = findRomset(profileList[i].zx->opt.rsName);
-		profileList[i].zx->mem->loadromset(optGetString(OPT_ROMDIR));
+		emulSetRomset(profileList[i].zx->mem, findRomset(profileList[i].zx->opt.rsName));
+//		profileList[i].zx->mem->loadromset(optGetString(OPT_ROMDIR));
 	}
 }
 
 void setRomset(ZXComp* comp, std::string nm) {
-	zx->mem->romset = findRomset(nm);
+	emulSetRomset(zx->mem, findRomset(nm));
 }
 
 std::vector<RomSet> getRomsetList() {

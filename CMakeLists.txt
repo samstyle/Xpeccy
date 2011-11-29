@@ -3,7 +3,6 @@ project(xpeccy)
 
 find_package(Qt4 REQUIRED)
 find_package(SDL REQUIRED)
-find_package(SDL_sound)
 find_package(ALSA)
 find_package(ZLIB)
 
@@ -20,7 +19,7 @@ set(MOCFILES
 
 add_definitions(-Wall -O3)
 
-if (SDL_SOUND_FOUND)
+if (SDL_FOUND)
 	add_definitions(-DHAVESDLSOUND)
 endif()
 

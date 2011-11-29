@@ -4,7 +4,7 @@
 
 #include <iostream>
 //#ifdef HAVESDLSOUND
-//	#include <SDL/SDL_sound.h>
+//	#include <SDL/SDL.h>
 //#endif
 
 extern ZXComp* zx;

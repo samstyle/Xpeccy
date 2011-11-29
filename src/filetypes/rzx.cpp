@@ -59,7 +59,7 @@ int loadRZX(ZXComp* zx, const char* name) {
 	file.seekg(2,std::ios_base::cur);	// version
 	flg = getint(&file);			// flags
 	if (flg & 1) return ERR_RZX_CRYPT;	
-	zx->mem->rzx.clear();
+//	zx->mem->rzx.clear();
 	btm = true;
 	while (btm && (file.tellg() < fileSize)) {
 		tmp = file.get();	// block type

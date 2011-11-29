@@ -35,18 +35,18 @@ Video::Video(Memory* me) {
 		for (j=0;j<8;j++) {
 			for (k=0;k<8;k++) {
 				for (l=0;l<32;l++) {
-					scr5pix[idx] = me->ram[5] + sadr;// ladrz[idx].scr5 = me->ram[5] + sadr;
-					scr5atr[idx] = me->ram[5] + aadr;// ladrz[idx].atr5 = me->ram[5] + aadr;
-					scr7pix[idx] = me->ram[7] + sadr;//ladrz[idx].scr7 = me->ram[7] + sadr;
-					scr7atr[idx] = me->ram[7] + aadr;//ladrz[idx].atr7 = me->ram[7] + aadr;
-					ladrz[idx].ac00 = me->ram[4] + sadr;
-					ladrz[idx].ac01 = me->ram[5] + sadr;
-					ladrz[idx].ac02 = me->ram[4] + sadr + 0x2000;
-					ladrz[idx].ac03 = me->ram[5] + sadr + 0x2000;
-					ladrz[idx].ac10 = me->ram[6] + sadr;
-					ladrz[idx].ac11 = me->ram[7] + sadr;
-					ladrz[idx].ac12 = me->ram[6] + sadr + 0x2000;
-					ladrz[idx].ac13 = me->ram[7] + sadr + 0x2000;
+					scr5pix[idx] = memGetPagePtr(me,MEM_RAM,5) + sadr;
+					scr5atr[idx] = memGetPagePtr(me,MEM_RAM,5) + aadr;
+					scr7pix[idx] = memGetPagePtr(me,MEM_RAM,7) + sadr;
+					scr7atr[idx] = memGetPagePtr(me,MEM_RAM,7) + aadr;
+					ladrz[idx].ac00 = memGetPagePtr(me,MEM_RAM,4) + sadr;
+					ladrz[idx].ac01 = memGetPagePtr(me,MEM_RAM,5) + sadr;
+					ladrz[idx].ac02 = memGetPagePtr(me,MEM_RAM,4) + sadr + 0x2000;
+					ladrz[idx].ac03 = memGetPagePtr(me,MEM_RAM,5) + sadr + 0x2000;
+					ladrz[idx].ac10 = memGetPagePtr(me,MEM_RAM,6) + sadr;
+					ladrz[idx].ac11 = memGetPagePtr(me,MEM_RAM,7) + sadr;
+					ladrz[idx].ac12 = memGetPagePtr(me,MEM_RAM,6) + sadr + 0x2000;
+					ladrz[idx].ac13 = memGetPagePtr(me,MEM_RAM,7) + sadr + 0x2000;
 					idx++;
 					sadr++;
 					aadr++;

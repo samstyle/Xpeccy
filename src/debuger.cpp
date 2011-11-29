@@ -6,6 +6,8 @@
 
 #include "z80ex_dasm.h"
 
+#include <QDebug>
+
 extern ZXComp* zx;
 //extern ZOp* inst[9];
 
@@ -192,7 +194,6 @@ void DebugWin::fillvg() {
 	lab = (QLabel*)vglay->itemAtPosition(3,1)->widget();
 	if (zx->bdi->vg93.wptr == NULL) {lab->setText("NULL");} else {lab->setText(QString::number(zx->bdi->vg93.cop,16));}
 	lab = (QLabel*)vglay->itemAtPosition(4,1)->widget(); lab->setText(QString::number(zx->bdi->vg93.count));
-	
 	lab = (QLabel*)vglay->itemAtPosition(0,3)->widget(); lab->setText(QString::number(zx->bdi->vg93.fptr->trk));
 	lab = (QLabel*)vglay->itemAtPosition(1,3)->widget(); lab->setText(zx->bdi->vg93.side?"1":"0");
 	lab = (QLabel*)vglay->itemAtPosition(2,3)->widget(); lab->setText(QString::number(zx->bdi->vg93.fptr->pos));
@@ -226,7 +227,8 @@ void DebugWin::filldump() {
 		lab->setBackgroundRole((curcol==4 && currow==i)?QPalette::Highlight:QPalette::Window);
 		for (j=1; j<9; j++) {
 			lab = (QLabel*)dmplay->itemAtPosition(i,j)->widget();
-			lab->setText(gethexbyte(zx->mem->rd(adr++)));
+			lab->setText(gethexbyte(memRd(zx->mem,adr)));
+			adr++;
 			lab->setBackgroundRole((curcol==4+j && currow==i)?QPalette::Highlight:QPalette::Window);
 		}
 	}
@@ -266,7 +268,7 @@ void DebugWin::fillregz() {
 }
 
 Z80EX_BYTE rdbyte(Z80EX_WORD adr,void*) {
-	return zx->mem->rd(adr);
+	return memRd(zx->mem,adr);
 }
 
 DasmRow DebugWin::getdisasm() {
@@ -283,7 +285,7 @@ DasmRow DebugWin::getdisasm() {
 	if (clen > 4) clen=4;		// FIXME: z80ex_dasm bug? for DDCB instructions length
 	res.dasm = QString(buf);
 	while (clen > 0) {
-		res.bytes.append(gethexbyte(zx->mem->rd(adr)));
+		res.bytes.append(gethexbyte(memRd(zx->mem,adr)));
 		clen--;
 		adr++;
 	}
@@ -332,8 +334,11 @@ DasmRow DebugWin::getdisasm() {
 
 uint8_t DebugWin::getbpage(uint16_t ad) {
 	uchar res = 0;
-	if (ad<0x4000) {res = zx->mem->crom;}
-		else {if (ad>0xbfff) res = zx->mem->cram;}
+	if (ad < 0x4000) {
+		res = memGet(zx->mem,MEM_ROM);
+	} else {
+		if (ad > 0xbfff) res = memGet(zx->mem,MEM_RAM);
+	}
 	return res;
 }
 
@@ -610,7 +615,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					case 12: idx = ledit->text().toShort(&tmpb,16);
 						tmpb &= (idx<0x100);
 						if (!tmpb) break;
-						zx->mem->wr(dmpadr+(currow<<3)+curcol-5,idx&0xff);
+						memWr(zx->mem, dmpadr + (currow << 3) + curcol - 5, idx & 0xff);
 						curcol++;
 						if (curcol > 12) {
 							curcol=5; currow++;

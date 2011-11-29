@@ -8,7 +8,6 @@
 	#undef main
 	#include <SDL.h>
 	#undef main
-	#define SDLMAINWIN 1
 #else
 	#include <SDL.h>
 #endif

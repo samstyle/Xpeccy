@@ -8,7 +8,7 @@ uint32_t getlen(std::ifstream *file,uint8_t n) {
 	return len;
 }
 
-int loadTZX(ZXComp* zx, const char* name) {
+int loadTZX(Tape* tape, const char* name) {
 	std::ifstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
 
@@ -24,7 +24,11 @@ int loadTZX(ZXComp* zx, const char* name) {
 	
 	file.read((char*)buf,10);
 	if ((std::string((char*)buf,7) != "ZXTape!") || (buf[7]!=0x1a)) return ERR_TZX_SIGN;
-	
+
+	tape->eject();
+	tape->path = std::string(name);
+	tape->flags |= TAPE_CANSAVE;
+
 	while (!file.eof()) {
 		tmp = file.get();		// block type (will be FF @ eof)
 		if (file.eof()) break;		// is it the end?
@@ -38,7 +42,7 @@ int loadTZX(ZXComp* zx, const char* name) {
 				block = tapDataToBlock(blockBuf,len,sigLens);
 				block.pause = paulen;
 				block.data.push_back(sigLens[5]);
-				zx->tape->data.push_back(block);
+				tape->data.push_back(block);
 				block.data.clear();
 				break;
 			case 0x11:
@@ -57,9 +61,9 @@ int loadTZX(ZXComp* zx, const char* name) {
 				block = tapDataToBlock(blockBuf,len,altLens);
 				block.pause = paulen;
 				block.data.push_back(sigLens[5]);
-				zx->tape->data.push_back(block);
+				tape->data.push_back(block);
 				block.data.clear();
-				zx->tape->flags &= ~TAPE_CANSAVE;
+				tape->flags &= ~TAPE_CANSAVE;
 				break;
 			case 0x12:
 				paulen = getlen(&file,2);
@@ -68,7 +72,7 @@ int loadTZX(ZXComp* zx, const char* name) {
 					block.data.push_back(paulen);
 					len--;
 				}
-				zx->tape->flags &= ~TAPE_CANSAVE;
+				tape->flags &= ~TAPE_CANSAVE;
 				break;
 			case 0x13:
 				len = file.get();
@@ -77,7 +81,7 @@ int loadTZX(ZXComp* zx, const char* name) {
 					block.data.push_back(paulen);
 					len--;
 				}
-				zx->tape->flags &= ~TAPE_CANSAVE;
+				tape->flags &= ~TAPE_CANSAVE;
 				break;
 			case 0x14:
 				altLens[0] = 0;
@@ -99,7 +103,7 @@ int loadTZX(ZXComp* zx, const char* name) {
 				block.datapos = -1;
 				for (i = 0; i < altBlock.data.size(); i++) block.data.push_back(altBlock.data[i]);
 				block.pause = paulen;
-				zx->tape->flags &= ~TAPE_CANSAVE;
+				tape->flags &= ~TAPE_CANSAVE;
 				break;
 /*
 			case 0x15:
@@ -128,7 +132,7 @@ int loadTZX(ZXComp* zx, const char* name) {
 				if (block.data.size() != 0) {
 					block.data.push_back(sigLens[5]);
 					block.flags &= ~TBF_BYTES;
-					zx->tape->data.push_back(block);
+					tape->data.push_back(block);
 					block.data.clear();
 				}
 				break;
@@ -194,7 +198,7 @@ int loadTZX(ZXComp* zx, const char* name) {
 	if (block.data.size() != 0) {
 		block.data.push_back(sigLens[5]);
 		block.flags &= ~TBF_BYTES;
-		zx->tape->data.push_back(block);
+		tape->data.push_back(block);
 	}
 	return ERR_OK;
 }

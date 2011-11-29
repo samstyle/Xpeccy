@@ -30,8 +30,8 @@ uint8_t envforms[16][33]={
 
 struct aymChan {
 	bool lev;
-	int period;
-	int count;
+	double period;
+	double count;
 };
 
 struct aymChip {
@@ -167,7 +167,7 @@ void aymSync(aymChip* ay, int tk) {
 	}
 }
 
-uint8_t volA,volB,volC;
+int volA,volB,volC;
 
 std::pair<uint8_t,uint8_t> aymGetVolume(aymChip* ay) {
 	std::pair<uint8_t,uint8_t> res;
@@ -340,8 +340,8 @@ void initNoise() {
 	uint32_t cur = 0xffff;
 	bool lev;
 	for (int i=0; i<0x20000; i++) {
-		lev = cur & 0x10000;
+		lev = ((cur & 0x10000) == 0) ? false : true;
 		noizes[i] = lev;
-		cur = ((cur << 1) + ((lev == ((cur & 0x2000) == 0x2000)) ? 0 : 1)) & 0x1ffff;
+		cur = ((cur << 1) + ((lev == ((cur & 0x2000) == 0x2000)) ? false : true)) & 0x1ffff;
 	}
 }

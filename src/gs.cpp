@@ -25,7 +25,7 @@ struct GSound {
 
 Z80EX_BYTE gsmemrd(Z80EX_CONTEXT*,Z80EX_WORD adr,int,void* ptr) {
 	GSound* gs = (GSound*)ptr;
-	Z80EX_BYTE res = gs->mem->rd(adr);
+	Z80EX_BYTE res = memRd(gs->mem,adr);
 	switch (adr & 0xe300) {
 		case 0x6000: gs->ch1 = res; break;
 		case 0x6100: gs->ch2 = res; break;
@@ -37,7 +37,7 @@ Z80EX_BYTE gsmemrd(Z80EX_CONTEXT*,Z80EX_WORD adr,int,void* ptr) {
 
 void gsmemwr(Z80EX_CONTEXT*,Z80EX_WORD adr,Z80EX_BYTE val,void* ptr) {
 	GSound* gs = (GSound*)ptr;
-	gs->mem->wr(adr,val);
+	memWr(gs->mem,adr,val);
 }
 
 // internal IN
@@ -69,11 +69,11 @@ void gsiowr(Z80EX_CONTEXT*,Z80EX_WORD port,Z80EX_BYTE val,void* ptr) {
 		case 0: gs->rp0 = val;
 			val &= 7;
 			if (val == 0) {
-				gs->mem->pt2 = &gs->mem->rom[0][0];
-				gs->mem->pt3 = &gs->mem->rom[1][0];
+				memSetBank(gs->mem,MEM_BANK2,MEM_ROM,0);	// gs->mem->pt2 = &gs->mem->rom[0][0];
+				memSetBank(gs->mem,MEM_BANK3,MEM_ROM,1);	// gs->mem->pt3 = &gs->mem->rom[1][0];
 			} else {
-				gs->mem->pt2 = &gs->mem->ram[(val << 1) - 2][0];
-				gs->mem->pt3 = &gs->mem->ram[(val << 1) - 1][0];
+				memSetBank(gs->mem,MEM_BANK2,MEM_RAM,(val << 1) - 2);	// gs->mem->pt2 = &gs->mem->ram[(val << 1) - 2][0];
+				memSetBank(gs->mem,MEM_BANK3,MEM_RAM,(val << 1) - 1);	// gs->mem->pt3 = &gs->mem->ram[(val << 1) - 1][0];
 			}
 			break;
 		case 1: break;
@@ -117,19 +117,19 @@ void gsSetParam(GSound* gs, int tp, int val) {
 }
 
 void gsSetRom(GSound* gs, int part, char* buf) {
-	memcpy((char*)gs->mem->rom[part],buf,0x4000);
+	memSetPage(gs->mem,MEM_ROM,part,buf);
 }
 
 GSound* gsCreate() {
 	GSound* res = (GSound*)malloc(sizeof(GSound));
 	void* ptr = (void*)res;
 	res->cpu = z80ex_create(&gsmemrd,ptr,&gsmemwr,ptr,&gsiord,ptr,&gsiowr,ptr,&gsintrq,ptr);
-	res->mem = new Memory();
-	res->mem->pt0 = &res->mem->rom[0][0];
-	res->mem->pt1 = &res->mem->ram[0][0];
-	res->mem->pt2 = &res->mem->ram[0][0];
-	res->mem->pt3 = &res->mem->ram[1][0];
-//	res->t = 0;
+	res->mem = memCreate();	// new Memory();
+	memSet(res->mem,MEM_MEMSIZE,512);
+	memSetBank(res->mem,MEM_BANK0,MEM_ROM,0);
+	memSetBank(res->mem,MEM_BANK1,MEM_RAM,0);
+	memSetBank(res->mem,MEM_BANK2,MEM_RAM,0);
+	memSetBank(res->mem,MEM_BANK3,MEM_RAM,1);
 	res->cnt = 0;
 	res->pstate = 0x7e;
 	res->flags = GS_ENABLE;

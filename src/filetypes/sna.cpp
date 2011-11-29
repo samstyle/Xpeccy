@@ -42,14 +42,14 @@ int loadSNA(ZXComp* zx, const char* name) {
 	memSetPage(zx->mem,MEM_RAM,2,pageBuf);
 	file.read(tmpgBuf,0x4000);
 	if (fileSize < 49180) {
-		zx->mem->prt0 = 0x10;
-		zx->mem->prt1 = 0x00;
-		zx->mem->setrom(1);
-		zx->mem->setram(0);
+		zx->prt0 = 0x10;
+		zx->prt1 = 0x00;
+		memSetBank(zx->mem,MEM_BANK0,MEM_ROM,1);
+		memSetBank(zx->mem,MEM_BANK3,MEM_RAM,0);
 		zx->vid->curscr = false;
 		adr = z80ex_get_reg(cpu,regSP);
-		tmp = zx->mem->rd(adr++);
-		tmp2 = zx->mem->rd(adr++);
+		tmp = memRd(zx->mem,adr++);
+		tmp2 = memRd(zx->mem,adr++);
 		z80ex_set_reg(cpu,regSP,adr);
 		z80ex_set_reg(cpu,regPC,tmp | (tmp2 << 8));
 		memSetPage(zx->mem,MEM_RAM,0,tmpgBuf);
@@ -87,8 +87,8 @@ int saveSNA(ZXComp* zx, const char* name,bool sna48) {
 	Z80EX_WORD pc = z80ex_get_reg(cpu,regPC);
 	Z80EX_WORD sp = z80ex_get_reg(cpu,regSP);
 	if (sna48) {
-		zx->mem->wr(--sp,(pc & 0xff00) >> 8);
-		zx->mem->wr(--sp,pc & 0x00ff);
+		memWr(zx->mem,--sp,(pc & 0xff00) >> 8);
+		memWr(zx->mem,--sp,pc & 0x00ff);
 		z80ex_set_reg(cpu,regSP,sp);
 	}
 	file.put((char)z80ex_get_reg(cpu,regI));
@@ -117,12 +117,12 @@ int saveSNA(ZXComp* zx, const char* name,bool sna48) {
 		memGetPage(zx->mem,MEM_RAM,0,pageBuf);		// 0xc000 - 0xffff (48K: bank 0)
 		file.write(pageBuf,0x4000);
 	} else {
-		memGetPage(zx->mem,MEM_RAM,zx->mem->cram & 7,pageBuf);	// current bank
+		bnk = memGet(zx->mem,MEM_RAM) & 7;
+		memGetPage(zx->mem,MEM_RAM,bnk,pageBuf);	// current bank
 		file.write(pageBuf,0x4000);
 		putLEWord(&file,z80ex_get_reg(cpu,regPC));
-		file.put((char)zx->mem->prt0);
+		file.put((char)zx->prt0);
 		file.put((char)(zx->bdi->active?0xff:0x00));
-		bnk = zx->mem->cram & 7;
 		for (i = 0; i < 8; i++) {
 			if ((i == 2) || (i == 5)) i++;
 			if (i != bnk) {

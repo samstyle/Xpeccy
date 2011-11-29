@@ -7,8 +7,6 @@
 
 #define TRACKLEN 6250
 
-#define INSTIME		1			// на будущее - время смены дискеты
-
 #define TYPE_TRD	0
 #define TYPE_SCL	1
 #define TYPE_FDI	2
@@ -32,10 +30,10 @@ class Sector {
 	uint8_t cyl;
 	uint8_t side;
 	uint8_t sec;
-	uint8_t len;	// 0..6 = 128,256,512,1024,2048,4096
+	uint8_t len;
 	uint8_t* data;
-	uint8_t type;	// f8 / fb
-	int32_t crc;	// data crc (-1 = calculated)
+	uint8_t type;
+	int32_t crc;
 };
 
 struct TRFile {
@@ -51,24 +49,24 @@ struct TRFile {
 class Floppy {
 	public:
 	Floppy();
-	bool insert;		// disk inserted
-	bool protect;		// write protected
-	bool trk80;		// drive have 80 tracks
-	bool dblsid;		// drive have 2 heads (DS)
-	bool index;		// index pulse
-	bool motor;		// motor on/off
-	bool head;		// head load/unload
-	bool changed;		// disk changed
-	bool side;		// side signal from FDC
-	uint8_t id;	// 0..3 = A..D
-	uint8_t iback;	// countdown for index (250);
-	uint8_t trk,rtrk;	// physic, logic track number
-	uint8_t field; //,fnext;	// текущее и следующее поле (0:none; 1:address; 2:data-FB; 3:data-F8
-	int32_t pos;		// 0..TRACKLEN-1	current byte position
+	bool insert;
+	bool protect;
+	bool trk80;
+	bool dblsid;
+	bool index;
+	bool motor;
+	bool head;
+	bool changed;
+	bool side;
+	uint8_t id;
+	uint8_t iback;
+	uint8_t trk,rtrk;
+	uint8_t field;
+	int32_t pos;
 	uint32_t ti;
-	std::string path;		// путь к файлу
-	TrackIMG data[256];		// disk data (full)
-	void next(bool,uint32_t);		// NEW: move to next byte
+	std::string path;
+	TrackIMG data[256];
+	void next(bool,uint32_t);
 	void step(bool);
 	void format();
 	void formtrdtrack(uint8_t, uint8_t*);
@@ -100,23 +98,23 @@ class Floppy {
 class VG93 {
 	public:
 		VG93();
-		bool turbo;		// турбо
+		bool turbo;
 		bool idle;
-		bool mr;			// master reset
+		bool mr;
 		bool crchi;
 		bool block,mfm,irq,drq,sdir;
 		bool idxold,idx,strb;
-		uint8_t com,cop; //,fld;//,lop
-		uint8_t trk,sec,side,data,flag,bus;	// ,drv
+		uint8_t com,cop;
+		uint8_t trk,sec,side,data,flag,bus;
 		uint8_t buf[6];
 		uint8_t dpos;
 		uint8_t mode,sc;
 		uint8_t *wptr, *sp;
 		uint16_t ic;
 		uint16_t crc,fcrc;
-		int32_t count;			// задержка;
+		int32_t count;
 		uint32_t t;
-		uint32_t tf;			// tf: countdown for ticks @ floppy byte;
+		uint32_t tf;
 		Floppy* fptr;
 		void tick();
 		void command(uint8_t);
@@ -128,10 +126,10 @@ class VG93 {
 class BDI {
 	public:
 		BDI();
-		bool enable;		// есть-нет
-		bool active;		// активен дос
-		bool pcatch;		// порт перехвачен
-		uint32_t tab;		// tab: ticks @ floppy byte
+		bool enable;
+		bool active;
+		bool pcatch;
+		uint32_t tab;
 		Floppy flop[4];
 		VG93 vg93;
 		void sync(int);
@@ -140,7 +138,6 @@ class BDI {
 		int32_t getport(int);
 };
 
-// extern BDI *bdi;
 typedef void(*VGOp)(VG93*);
 
 #endif

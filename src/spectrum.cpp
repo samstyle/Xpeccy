@@ -23,9 +23,9 @@ uint8_t ZSLays[4][4] = {
 
 Z80EX_BYTE memrd(Z80EX_CONTEXT*,Z80EX_WORD adr,int,void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
-	Z80EX_BYTE res = comp->mem->rd(adr);
-	if ((comp->hw->type == HW_SCORP) && ((comp->mem->crom & 3) == 2) && ((adr & 0xfff3) == 0x0100)) {
-		comp->mem->prt2 = ZSLays[(adr & 0x000c) >> 2][comp->mem->prt2 & 3] & comp->mem->profMask;
+	Z80EX_BYTE res = memRd(comp->mem,adr);
+	if ((comp->hw->type == HW_SCORP) && ((memGet(comp->mem,MEM_ROM) & 3) == 2) && ((adr & 0xfff3) == 0x0100)) {
+		comp->prt2 = ZSLays[(adr & 0x000c) >> 2][comp->prt2 & 3] & memGet(comp->mem,MEM_PROFMASK);
 		comp->mapMemory();
 	}
 	return res;
@@ -33,7 +33,7 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT*,Z80EX_WORD adr,int,void* ptr) {
 
 void memwr(Z80EX_CONTEXT*,Z80EX_WORD adr,Z80EX_BYTE val,void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
-	comp->mem->wr(adr,val);
+	memWr(comp->mem,adr,val);
 }
 
 Z80EX_BYTE iord(Z80EX_CONTEXT*,Z80EX_WORD port,void* ptr) {
@@ -54,7 +54,7 @@ ZXComp::ZXComp() {
 	void* ptr = (void*)this;
 	cpu = z80ex_create(&memrd,ptr,&memwr,ptr,&iord,ptr,&iowr,ptr,&intrq,ptr);
 	cpuFreq = 3.5;
-	mem = new Memory();
+	mem = memCreate();
 	vid = new Video(mem);
 	keyb = new Keyboard;
 	mouse = new Mouse;
@@ -70,19 +70,19 @@ ZXComp::ZXComp() {
 void ZXComp::reset(int wut) {
 	rzxPlay = false;
 	block7ffd=false;
-	int resbank = mem->res;
+	int resbank = res;
 	switch (wut) {
 		case RES_48: resbank = 1; break;
 		case RES_128: resbank = 0; break;
 		case RES_DOS: resbank = 3; break;
 		case RES_SHADOW: resbank = 2; break;
 	}
-	mem->prt2 = 0;
-	mem->prt1 = 0;
-	mem->prt0 = ((resbank & 1) << 4);
-	mem->setrom(resbank);
-	mem->setram(0);
-	mem->rzx.clear();
+	prt2 = 0;
+	prt1 = 0;
+	prt0 = ((resbank & 1) << 4);
+	memSetBank(mem,MEM_BANK0,MEM_ROM,resbank);
+	memSetBank(mem,MEM_BANK3,MEM_RAM,0);
+//	mem->rzx.clear();
 	z80ex_reset(cpu);
 	vid->curscr = false;
 	vid->mode = VID_NORMAL;
@@ -98,22 +98,22 @@ void ZXComp::mapMemory() {
 	uint8_t rp;
 	switch (hw->type) {
 		case HW_ZX48:
-			mem->setrom(bdi->active?3:1);
-			mem->setram(0);
+			memSetBank(mem,MEM_BANK0,MEM_ROM,bdi->active?3:1);
+			memSetBank(mem,MEM_BANK3,MEM_RAM,0);
 			break;
 		case HW_PENT:
-			mem->setrom((bdi->active) ? 3 : ((mem->prt0 & 0x10)>>4));
-			mem->setram((mem->prt0 & 7) | ((mem->prt0 & 0xc0)>>3));
+			memSetBank(mem,MEM_BANK0,MEM_ROM,(bdi->active) ? 3 : ((prt0 & 0x10) >> 4));
+			memSetBank(mem,MEM_BANK3,MEM_RAM,(prt0 & 7) | ((prt0 & 0xc0) >> 3));
 			break;
 		case HW_P1024:
-			mem->setrom(bdi->active ? 3 : ((mem->prt1 & 8) ? 0xff : ((mem->prt0 & 0x10)>>4)));
-			mem->setram((mem->prt0 & 7) | ((mem->prt1 & 4)?0:((mem->prt0 & 0x20) | ((mem->prt0 & 0xc0)>>3))));
+			memSetBank(mem,MEM_BANK0,MEM_ROM,bdi->active ? 3 : ((prt1 & 8) ? 0xff : ((prt0 & 0x10) >> 4)));
+			memSetBank(mem,MEM_BANK3,MEM_RAM,(prt0 & 7) | ((prt1 & 4) ? 0 : ((prt0 & 0x20) | ((prt0 & 0xc0) >> 3))));
 			break;
 		case HW_SCORP:
-			rp = (mem->prt1 & 0x01) ? 0xff : ((mem->prt1 & 0x02) ? 2 : ((bdi->active) ? 3 : ((mem->prt0 & 0x10)>>4)));
-			rp |= ((mem->prt2 & 3) << 2);
-			mem->setrom(rp);
-			mem->setram((mem->prt0 & 7) | ((mem->prt1 & 0x10)>>1) | ((mem->prt1 & 0xc0)>>2));
+			rp = (prt1 & 0x01) ? 0xff : ((prt1 & 0x02) ? 2 : ((bdi->active) ? 3 : ((prt0 & 0x10) >> 4)));
+			rp |= ((prt2 & 3) << 2);
+			memSetBank(mem,MEM_BANK0,MEM_ROM,rp);
+			memSetBank(mem,MEM_BANK3,MEM_RAM,(prt0 & 7) | ((prt1 & 0x10) >> 1) | ((prt1 & 0xc0) >> 2));
 			break;
 	}
 }
@@ -238,7 +238,7 @@ void ZXComp::out(uint16_t port,uint8_t val) {
 						switch(port) {
 							case 0x7ffd:
 								if (block7ffd) break;
-								mem->prt0 = val;
+								prt0 = val;
 								vid->curscr = val & 0x08;
 								block7ffd = val & 0x20;
 								mapMemory();
@@ -250,12 +250,12 @@ void ZXComp::out(uint16_t port,uint8_t val) {
 							case 0x7ffd:
 								if (block7ffd) break;
 								vid->curscr = val & 0x08;
-								mem->prt0 = val;
-								block7ffd = ((mem->prt1 & 4) && (val & 0x20));
+								prt0 = val;
+								block7ffd = ((prt1 & 4) && (val & 0x20));
 								mapMemory();
 								break;
 							case 0xeff7:
-								mem->prt1 = val;
+								prt1 = val;
 								vid->mode = (val & 1) ? VID_ALCO : VID_NORMAL;
 								cpuFreq = (val & 16) ? 7.0 : 3.5;
 								mapMemory();
@@ -266,13 +266,13 @@ void ZXComp::out(uint16_t port,uint8_t val) {
 						switch(port) {
 							case 0x7ffd:
 								if (block7ffd) break;
-								mem->prt0 = val;
+								prt0 = val;
 								vid->curscr = val & 0x08;
 								block7ffd = val & 0x20;
 								mapMemory();
 								break;
 							case 0x1ffd:
-								mem->prt1 = val;
+								prt1 = val;
 								mapMemory();
 								break;
 						}
@@ -306,7 +306,7 @@ uint32_t ZXComp::exec() {
 			bdi->active = false;
 			mapMemory();
 		}
-		if (!bdi->active && ((pc & 0xff00) == 0x3d00) && (mem->prt0 & 0x10)) {
+		if (!bdi->active && ((pc & 0xff00) == 0x3d00) && (prt0 & 0x10)) {
 			bdi->active = true;
 			mapMemory();
 		}

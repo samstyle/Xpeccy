@@ -12,6 +12,7 @@
 
 #define	ERR_TZX_SIGN	0x40	// tzx signature error
 #define	ERR_TZX_UNKNOWN	0x41	// tzx unsupported block
+#define	ERR_TAP_DATA	0x50	// can't save tap because of not-standart blocks
 
 uint16_t getLEWord(std::ifstream*);
 uint16_t getBEWord(std::ifstream*);
@@ -29,6 +30,7 @@ int loadRZX(ZXComp*,const char*);
 
 TapeBlock tapDataToBlock(char*,int,int*);
 
-int loadTAP(ZXComp*,const char*);
+int loadTAP(Tape*,const char*);
+int saveTAP(Tape*,const char*);
 
-int loadTZX(ZXComp*,const char*);
+int loadTZX(Tape*,const char*);

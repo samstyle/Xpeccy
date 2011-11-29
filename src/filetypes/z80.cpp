@@ -1,5 +1,17 @@
 #include "filetypes.h"
 
+uint16_t getLEWord(std::ifstream* file) {
+	uint16_t res = file->get();
+	res += (file->get() << 8);
+	return res;
+}
+
+uint16_t getBEWord(std::ifstream* file) {
+	uint16_t res = file->get();
+	res = (res << 8) + file->get();
+	return res;
+}
+
 void z80uncompress(std::ifstream* file,char* buf,int maxlen) {
 	char *ptr = buf;
 	uint8_t tmp,tmp2;
@@ -55,10 +67,10 @@ int loadZ80(ZXComp* zx, const char* name) {
 	Z80EX_CONTEXT* cpu = zx->cpu;
 	char* pageBuf = new char[0xc000];
 	
-	zx->mem->prt0 = 0x10;
-	zx->mem->prt1 = 0x00;
-	zx->mem->setrom(1);
-	zx->mem->setram(0);
+	zx->prt0 = 0x10;
+	zx->prt1 = 0x00;
+	memSetBank(zx->mem,MEM_BANK0,MEM_ROM,1);
+	memSetBank(zx->mem,MEM_BANK3,MEM_RAM,0);
 	zx->vid->curscr = false;
 	z80ex_set_reg(cpu,regAF,getBEWord(&file));
 	z80ex_set_reg(cpu,regBC,getLEWord(&file));

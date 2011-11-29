@@ -45,7 +45,7 @@ TapeBlock tapDataToBlock(char* data,int len,int* sigLens) {
 	return block;
 }
 
-int loadTAP(ZXComp* zx, const char* name) {
+int loadTAP(Tape* tape, const char* name) {
 	std::ifstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
 
@@ -54,7 +54,7 @@ int loadTAP(ZXComp* zx, const char* name) {
 	TapeBlock block;
 	int sigLens[] = {2168,667,735,855,1710,954,-1};
 
-	zx->tape->eject();
+	tape->eject();
 
 	while (!file.eof()) {
 		len = getLEWord(&file);
@@ -67,10 +67,31 @@ int loadTAP(ZXComp* zx, const char* name) {
 			block = tapDataToBlock(blockBuf,len,sigLens);
 			block.pause = (block.pdur == 8063) ? 500 : 1000;
 			block.data.push_back(sigLens[5]);
-			zx->tape->data.push_back(block);
+			tape->data.push_back(block);
 		}
 	}
-	zx->tape->path = std::string(name);
+	tape->flags |= TAPE_CANSAVE;
+	tape->path = std::string(name);
 	if (blockBuf != NULL) free(blockBuf);
+	return ERR_OK;
+}
+
+int saveTAP(Tape* tape, const char* name) {
+	if (!(tape->flags & TAPE_CANSAVE)) return ERR_TAP_DATA;
+	std::ofstream file(name,std::ios::binary);
+	if (!file.good()) return ERR_CANT_OPEN;
+	
+	std::vector<uint8_t> blockData;
+	uint32_t len;
+	
+	for (uint32_t i = 0; i < tape->data.size(); i++) {
+		blockData = tapGetBlockData(tape,i);
+		len = blockData.size();
+		file.put(len & 0xff);
+		file.put((len & 0xff00) >> 8);
+		file.write((char*)&blockData[0],blockData.size());
+	}
+	tape->path = std::string(name);
+
 	return ERR_OK;
 }

@@ -221,16 +221,17 @@ void SetupWin::start() {
 	}
 	ui.machbox->setCurrentIndex(ui.machbox->findText(QDialog::trUtf8(zx->hw->name.c_str())));
 	int cbx = -1;
-	if (zx->mem->romset != NULL) cbx = ui.rsetbox->findText(QDialog::trUtf8(zx->mem->romset->name.c_str()));
+	RomSet* rset = memGetRomset(zx->mem);
+	if (rset != NULL) cbx = ui.rsetbox->findText(QDialog::trUtf8(rset->name.c_str()));
 	ui.rsetbox->setCurrentIndex(cbx);
 	ui.reschk->setChecked(emulGetFlags() & FL_RESET);
-	ui.resbox->setCurrentIndex(zx->mem->res);
-	switch(zx->mem->mask) {
-		case 0x00: ui.mszbox->setCurrentIndex(0); break;
-		case 0x07: ui.mszbox->setCurrentIndex(1); break;
-		case 0x0f: ui.mszbox->setCurrentIndex(2); break;
-		case 0x1f: ui.mszbox->setCurrentIndex(3); break;
-		case 0x3f: ui.mszbox->setCurrentIndex(4); break;
+	ui.resbox->setCurrentIndex(zx->res);
+	switch(memGet(zx->mem,MEM_MEMSIZE)) {
+		case 48: ui.mszbox->setCurrentIndex(0); break;
+		case 128: ui.mszbox->setCurrentIndex(1); break;
+		case 256: ui.mszbox->setCurrentIndex(2); break;
+		case 512: ui.mszbox->setCurrentIndex(3); break;
+		case 1024: ui.mszbox->setCurrentIndex(4); break;
 	}
 	ui.cpufrq->setValue(zx->cpuFreq * 2); updfrq();
 	ui.scrpwait->setChecked(zx->hwFlags & WAIT_ON);
@@ -320,15 +321,15 @@ void SetupWin::apply() {
 	HardWare *oldmac = zx->hw;
 	zx->opt.hwName = std::string(ui.machbox->currentText().toUtf8().data()); setHardware(zx,zx->opt.hwName);
 	zx->opt.rsName = std::string(ui.rsetbox->currentText().toUtf8().data()); setRomset(zx, zx->opt.rsName);
-	zx->mem->loadromset(optGetString(OPT_ROMDIR));
+//	zx->mem->loadromset(optGetString(OPT_ROMDIR));
 	emulSetFlag(FL_RESET, ui.reschk->isChecked());
-	zx->mem->res = ui.resbox->currentIndex();
+	zx->res = ui.resbox->currentIndex();
 	switch(ui.mszbox->currentIndex()) {
-		case 0: zx->mem->mask = 0x00; break;
-		case 1: zx->mem->mask = 0x07; break;
-		case 2: zx->mem->mask = 0x0f; break;
-		case 3: zx->mem->mask = 0x1f; break;
-		case 4: zx->mem->mask = 0x3f; break;
+		case 0: memSet(zx->mem,MEM_MEMSIZE,48); break;
+		case 1: memSet(zx->mem,MEM_MEMSIZE,128); break;
+		case 2: memSet(zx->mem,MEM_MEMSIZE,256); break;
+		case 3: memSet(zx->mem,MEM_MEMSIZE,512); break;
+		case 4: memSet(zx->mem,MEM_MEMSIZE,1024); break;
 	}
 	zx->cpuFreq = ui.cpufrq->value() / 2.0;
 	setFlagBit(ui.scrpwait->isChecked(),&zx->hwFlags,WAIT_ON);

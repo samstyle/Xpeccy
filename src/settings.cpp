@@ -306,14 +306,8 @@ void saveConfig() {
 	optSet("MACHINE","current",zx->opt.hwName);
 	optSet("ROMSET","current",zx->opt.rsName);
 	optSet("MACHINE","restart",(emulGetFlags() & FL_RESET) != 0);
-	optSet("ROMSET","reset",rmnam[zx->mem->res]);
-	switch(zx->mem->mask) {
-		case 0x00: optSet("MACHINE","memory",48); break;
-		case 0x07: optSet("MACHINE","memory",128); break;
-		case 0x0f: optSet("MACHINE","memory",256); break;
-		case 0x1f: optSet("MACHINE","memory",512); break;
-		case 0x3f: optSet("MACHINE","memory",1024); break;
-	}
+	optSet("ROMSET","reset",rmnam[zx->res]);
+	optSet("MACHINE","memory",memGet(zx->mem,MEM_MEMSIZE));
 	optSet("GENERAL","cpu.frq",int(zx->cpuFreq * 2));
 	optSet("MACHINE","scrp.wait",(zx->hwFlags & WAIT_ON) != 0);
 	optSet("VIDEO","doublesize",(zx->vid->flags & VF_DOUBLE) != 0);
@@ -376,6 +370,7 @@ void loadProfiles() {
 		fle.setPermissions(QString(std::string(workDir + "/xpeccy.conf").c_str()), QFile::ReadUser | QFile::WriteUser | QFile::ReadGroup | QFile::ReadOther);
 		file.open(profPath.c_str());
 		if (!file.good()) {
+			printf("%s\n",profPath.c_str());
 			shithappens("<b>Doh! Something going wrong</b>");
 			throw(0);
 		}
@@ -520,8 +515,9 @@ void loadConfig(bool dev) {
 	size_t pos;
 	char* buf = new char[0x4000];
 	int tmask = 0xff;
+	int tmp;
 	int tmp2=0;
-	if (!dev) zx->mem->mask = 0;
+	if (!dev) memSet(zx->mem,MEM_MEMSIZE,48);
 	if (!file.good()) {
 //		shithappens(std::string("Can't find config file<br><b>") + cfname + std::string("</b><br>Default one will be created."));
 		printf("Profile config is missing. Default one will be created\n");
@@ -568,10 +564,10 @@ void loadConfig(bool dev) {
 				switch (tmp2) {
 					case 1:
 						if (pnam=="reset") {
-							if ((pval=="basic128") || (pval=="0")) zx->mem->res = 0;
-							if ((pval=="basic48") || (pval=="1")) zx->mem->res = 1;
-							if ((pval=="shadow") || (pval=="2")) zx->mem->res = 2;
-							if ((pval=="trdos") || (pval=="3")) zx->mem->res = 3;
+							if ((pval=="basic128") || (pval=="0")) zx->res = 0;
+							if ((pval=="basic48") || (pval=="1")) zx->res = 1;
+							if ((pval=="shadow") || (pval=="2")) zx->res = 2;
+							if ((pval=="trdos") || (pval=="3")) zx->res = 3;
 						}
 //						if (pnam=="current") zx->opt.romsetName = pval;
 //						if (pnam=="gs") zx->opt.GSRom = pval;
@@ -594,11 +590,14 @@ void loadConfig(bool dev) {
 						break;
 					case 6:
 						if (pnam=="memory") {
-							if (pval=="48") {zx->mem->mask = 0x00; tmask = 0;}
-							if (pval=="128") {zx->mem->mask = 0x07; tmask = 1;}
-							if (pval=="256") {zx->mem->mask = 0x0f; tmask = 2;}
-							if (pval=="512") {zx->mem->mask = 0x1f; tmask = 4;}
-							if (pval=="1024") {zx->mem->mask = 0x3f; tmask = 8;}
+							tmp = atoi(pval.c_str());
+							memSet(zx->mem,MEM_MEMSIZE,tmp);
+							switch (tmp) {
+								case 128: tmask = 1; break;
+								case 256: tmask = 2; break;
+								case 512: tmask = 4; break;
+								case 1024: tmask = 8; break;
+							}
 						}
 						break;
 					case 7:
@@ -677,8 +676,7 @@ void loadConfig(bool dev) {
 	setHardware(zx, zx->opt.hwName);
 	setRomset(zx, zx->opt.rsName);
 	if (zx->hw==NULL) throw("Can't found current machine");
-	if (zx->mem->romset==NULL) throw("Can't found current romset");
+	if (memGetRomset(zx->mem) == NULL) throw("Can't found current romset");
 	if (~zx->hw->mask & tmask) throw("Incorrect memory size for this machine");
 	if (!zx->vid->setLayout(zx->vid->curlay)) zx->vid->setLayout("default");
-	zx->mem->loadromset(romDir);
 }

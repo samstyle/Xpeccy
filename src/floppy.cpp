@@ -17,6 +17,11 @@ uint8_t trd_8e1[] = {
 Floppy::Floppy() {
 	trk80 = true;
 	dblsid = true;
+	changed = false;
+	protect = false;
+	trk = 0;
+	rtrk = 0;
+	pos = 0;
 }
 
 std::string Floppy::getString() {
@@ -340,7 +345,7 @@ void Floppy::load(std::string sfnam, uint8_t type) {
 	uint16_t tmpa,tmpb,slen;
 	size_t tmpd,tmph,tmpt,tmps,cpos;
 	bool err;
-	uint64_t len;
+	unsigned long len;
 	Sector sct;
 	std::vector<Sector> trkimg;
 	switch(type) {

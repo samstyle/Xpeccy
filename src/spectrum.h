@@ -56,6 +56,10 @@ class ZXComp {
 		bool block7ffd;
 		float cpuFreq;
 		int hwFlags;
+		uint8_t prt0;		// 7ffd value
+		uint8_t prt1;		// extend port value
+		uint8_t prt2;		// scorpion ProfROM layer (0..3)
+		uint8_t res;		// rompart active after reset
 		struct {
 			std::string GSRom;
 			std::string hwName;

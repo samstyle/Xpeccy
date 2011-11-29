@@ -58,7 +58,7 @@ int getFileType(QString path) {
 }
 
 void loadFile(const char* name, int flags, int drv) {
-	QString path(name);
+	QString path = QDialog::trUtf8(name);
 	filer->setDirectory(lastDir);
 	if (path == "") {
 		QString filters = "";
@@ -93,8 +93,8 @@ void loadFile(const char* name, int flags, int drv) {
 	switch (type) {
 		case FT_SNA: err = loadSNA(zx,sfnam.c_str()); break;
 		case FT_Z80: err = loadZ80(zx,sfnam.c_str()); break;
-		case FT_TAP: err = loadTAP(zx,sfnam.c_str()); break;	// zx->tape->load(sfnam,TYPE_TAP);
-		case FT_TZX: err = loadTZX(zx,sfnam.c_str()); break;
+		case FT_TAP: err = loadTAP(zx->tape,sfnam.c_str()); break;
+		case FT_TZX: err = loadTZX(zx->tape,sfnam.c_str()); break;
 		case FT_SCL: zx->bdi->flop[drv].load(sfnam,TYPE_SCL); break;
 		case FT_TRD: zx->bdi->flop[drv].load(sfnam,TYPE_TRD); break;
 		case FT_FDI: zx->bdi->flop[drv].load(sfnam,TYPE_FDI); break;
@@ -152,8 +152,8 @@ bool saveFile(const char* name,int flags,int drv) {
 	}
 	if (filters.contains("Tape")) {
 		switch (type) {
-			case FT_TAP: zx->tape->save(sfnam,TYPE_TAP); break;
-			default: sfnam += ".tap"; zx->tape->save(sfnam,TYPE_TAP); break;
+			case FT_TAP: saveTAP(zx->tape,sfnam.c_str()); break;
+			default: sfnam += ".tap"; saveTAP(zx->tape,sfnam.c_str()); break;
 		}
 	}
 	if (filters.contains("Snap")) {
