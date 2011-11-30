@@ -305,7 +305,7 @@ void SetupWin::start() {
 	ui.hs_gcyl->setValue(zx->ide->slave.pass.cyls);
 	ui.hs_glba->setValue(zx->ide->slave.maxlba);
 // tape
-	ui.tpathle->setText(QDialog::trUtf8(zx->tape->path.c_str()));
+	ui.tpathle->setText(QDialog::trUtf8(tapGetPath(zx->tape).c_str()));
 	buildtapelist();
 // tools
 	ui.sjpathle->setText(QDialog::trUtf8(optGetString(OPT_ASMPATH).c_str()));
@@ -592,7 +592,7 @@ void SetupWin::buildrsetlist() {
 
 void SetupWin::buildtapelist() {
 	buildTapeList();
-	std::vector<TapeBlockInfo> inf = zx->tape->getInfo();
+	std::vector<TapeBlockInfo> inf = tapGetBlocksInfo(zx->tape);
 	ui.tapelist->setRowCount(inf.size());
 	if (inf.size() == 0) {
 		ui.tapelist->setEnabled(false);
@@ -601,8 +601,8 @@ void SetupWin::buildtapelist() {
 	ui.tapelist->setEnabled(true);
 	QTableWidgetItem* itm;
 	uint tm,ts;
-	for (uint i=0; i<inf.size(); i++) {
-		if (zx->tape->block == i) {
+	for (int i=0; i < (int)inf.size(); i++) {
+		if (tapGet(zx->tape,TAPE_BLOCK) == i) {
 			itm = new QTableWidgetItem(QIcon(":/images/checkbox.png"),"");
 			ui.tapelist->setItem(i,0,itm);
 			ts = inf[i].curtime;
@@ -662,7 +662,7 @@ void SetupWin::copyToTape() {
 				len = (cat[row].hlen << 8) + cat[row].llen;
 				line = (cat[row].ext == 'B') ? (buf[start] + (buf[start+1] << 8)) : 0x8000;
 				name = std::string((char*)&cat[row].name[0],8) + std::string(".") + std::string((char*)&cat[row].ext,1);
-				zx->tape->addFile(name,(cat[row].ext == 'B') ? 0 : 3, start, len, line, buf,true);
+				tapAddFile(zx->tape,name,(cat[row].ext == 'B') ? 0 : 3, start, len, line, buf,true);
 				buildtapelist();
 			} else {
 				shithappens("File seems to be joined, skip");
@@ -676,7 +676,7 @@ void SetupWin::copyToTape() {
 
 TRFile getHeadInfo(int blk) {
 	TRFile res;
-	std::vector<uint8_t> dt = zx->tape->getdata(blk,-1,-1);
+	std::vector<uint8_t> dt = tapGetBlockData(zx->tape,blk);
 	for (int i=0; i<8; i++) res.name[i] = dt[i+2];
 	switch (dt[1]) {
 		case 0:
@@ -704,15 +704,15 @@ void SetupWin::copyToDisk() {
 	int dsk = ui.disktabs->currentIndex();
 	int headBlock = -1;
 	int dataBlock = -1;
-	if (~zx->tape->data[blk].flags & TBF_BYTES) {
+	if (~tapGet(zx->tape,blk,TAPE_BFLAG) & TBF_BYTES) {
 		shithappens("This is not standard block");
 		return;
 	}
-	if (zx->tape->data[blk].flags & TBF_HEAD) {
-		if ((int)zx->tape->data.size() == blk + 1) {
+	if (tapGet(zx->tape,blk,TAPE_BFLAG) & TBF_HEAD) {
+		if (tapGet(zx->tape,TAPE_BLOCKS) == blk + 1) {
 			shithappens("Header without data? Hmm...");
 		} else {
-			if (~zx->tape->data[blk+1].flags & TBF_BYTES) {
+			if (~tapGet(zx->tape,blk + 1,TAPE_BFLAG) & TBF_BYTES) {
 				shithappens("Data block is not standard");
 			} else {
 				headBlock = blk;
@@ -722,7 +722,7 @@ void SetupWin::copyToDisk() {
 	} else {
 		dataBlock = blk;
 		if (blk != 0) {
-			if (zx->tape->data[blk-1].flags & TBF_HEAD) {
+			if (tapGet(zx->tape,blk - 1,TAPE_BFLAG) & TBF_HEAD) {
 				headBlock = blk - 1;
 			}
 		}
@@ -733,12 +733,14 @@ void SetupWin::copyToDisk() {
 		memcpy(&dsc.name[0],nm,8);
 		dsc.ext = 'C';
 		dsc.lst = dsc.hst = 0;
-		int len = zx->tape->getInfo()[dataBlock].size;
+		TapeBlockInfo binf = tapGetBlockInfo(zx->tape,dataBlock);
+		int len = binf.size;
 		if (len > 0xff00) {
 			shithappens("Too much data for TRDos file");
 			return;
 		}
-		dsc.llen = len & 0xff; dsc.hlen = ((len & 0xff00) >> 8);
+		dsc.llen = len & 0xff;
+		dsc.hlen = ((len & 0xff00) >> 8);
 	} else {
 		dsc = getHeadInfo(headBlock);
 		if (dsc.ext == 0x00) {
@@ -747,7 +749,7 @@ void SetupWin::copyToDisk() {
 		}
 	}
 	if (!zx->bdi->flop[dsk].insert) newdisk(dsk);
-	std::vector<uint8_t> dt = zx->tape->getdata(dataBlock,-1,-1);
+	std::vector<uint8_t> dt = tapGetBlockData(zx->tape,dataBlock);
 	uint8_t* buf = new uint8_t[256];
 	uint pos = 1;	// skip block type mark
 	switch(zx->bdi->flop[dsk].createFile(&dsc)) {
@@ -875,35 +877,61 @@ void SetupWin::updatedisknams() {
 
 // tape
 
-void SetupWin::loatape() {loadFile("",FT_TAPE,1); ui.tpathle->setText(QDialog::trUtf8(zx->tape->path.c_str())); buildtapelist();}
-void SetupWin::savtape() {
-	if (zx->tape->data.size()!=0) saveFile(zx->tape->path.c_str(),FT_TAP,-1);
+void SetupWin::loatape() {
+	loadFile("",FT_TAPE,1);
+	ui.tpathle->setText(QDialog::trUtf8(tapGetPath(zx->tape).c_str()));
+	buildtapelist();
 }
-void SetupWin::ejctape() {zx->tape->eject(); ui.tpathle->setText(QDialog::trUtf8(zx->tape->path.c_str())); buildtapelist();}
+
+void SetupWin::savtape() {
+	if (tapGet(zx->tape,TAPE_BLOCKS) != 0) saveFile(tapGetPath(zx->tape).c_str(),FT_TAP,-1);
+}
+
+void SetupWin::ejctape() {
+	tapEject(zx->tape);
+	ui.tpathle->setText(QDialog::trUtf8(tapGetPath(zx->tape).c_str()));
+	buildtapelist();
+}
+
 void SetupWin::tblkup() {
 	int ps = ui.tapelist->currentIndex().row();
-	if (ps>0) {zx->tape->swapblocks(ps,ps-1); buildtapelist(); ui.tapelist->selectRow(ps-1);}
+	if (ps > 0) {
+		tapSwapBlocks(zx->tape,ps,ps-1);
+		buildtapelist();
+		ui.tapelist->selectRow(ps-1);
+	}
 }
+
 void SetupWin::tblkdn() {
 	int ps = ui.tapelist->currentIndex().row();
-	if ((ps!=-1) && (ps<(int)zx->tape->data.size()-1)) {zx->tape->swapblocks(ps,ps+1); buildtapelist(); ui.tapelist->selectRow(ps+1);}
+	if ((ps != -1) && (ps < tapGet(zx->tape,TAPE_BLOCKS) - 1)) {
+		tapSwapBlocks(zx->tape,ps,ps+1);
+		buildtapelist();
+		ui.tapelist->selectRow(ps+1);
+	}
 }
+
 void SetupWin::tblkrm() {
 	int ps = ui.tapelist->currentIndex().row();
-	if (ps!=-1) {zx->tape->data.erase(zx->tape->data.begin()+ps); buildtapelist(); ui.tapelist->selectRow(ps);}
+	if (ps != -1) {
+		tapDelBlock(zx->tape,ps);
+		buildtapelist();
+		ui.tapelist->selectRow(ps);
+	}
 }
 
 void SetupWin::chablock(QModelIndex idx) {
 	int row = idx.row();
-	zx->tape->block = row;
-	zx->tape->pos = 0;
+	tapRewind(zx->tape,row);
 	buildtapelist();
 	ui.tapelist->selectRow(row);
 }
 
 void SetupWin::setTapeBreak(int row,int col) {
 	if ((row < 0) || (col != 1)) return;
-	zx->tape->data[row].flags ^= TBF_BREAK;
+	int flg = tapGet(zx->tape,row,TAPE_BFLAG);
+	flg ^= TBF_BREAK;
+	tapSet(zx->tape,row,TAPE_BFLAG,flg);
 	buildtapelist();
 	ui.tapelist->selectRow(row);
 }

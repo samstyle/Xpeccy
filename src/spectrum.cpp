@@ -58,7 +58,7 @@ ZXComp::ZXComp() {
 	vid = new Video(mem);
 	keyb = new Keyboard;
 	mouse = new Mouse;
-	tape = new Tape;
+	tape = tapCreate();
 	bdi = new BDI;
 	ide = new IDE;
 	ts = tsCreate(TS_NONE,SND_AY,SND_NONE);
@@ -175,8 +175,8 @@ uint8_t ZXComp::in(uint16_t port) {
 		default:
 			switch (port & 0xff) {
 				case 0xfe:
-					tape->sync();
-					res = keyb->getmap((port & 0xff00) >> 8) | (tape->signal ? 0x40 : 0x00);
+//					tape->sync();
+					res = keyb->getmap((port & 0xff00) >> 8) | (tapGetSignal(tape) ? 0x40 : 0x00);
 					break;
 				case 0x1f:
 					break;
@@ -228,8 +228,8 @@ void ZXComp::out(uint16_t port,uint8_t val) {
 			if ((port&0xff) == 0xfe) {
 				vid->nextBorder = val & 0x07;
 				beeplev = val & 0x10;
-				tape->outsig = val & 0x08;
-				tape->sync();
+				tapSetSignal(tape, (val & 0x08) ? true : false);
+//				tape->sync();
 			} else {
 				switch (hw->type) {
 					case HW_ZX48:
@@ -312,6 +312,7 @@ uint32_t ZXComp::exec() {
 		}
 	}
 	gsSync(gs,ltk);
+	tapSync(tape,ltk);
 	return ltk;
 }
 

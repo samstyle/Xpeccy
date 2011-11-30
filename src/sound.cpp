@@ -57,10 +57,10 @@ uint8_t lev,levr,levl;
 void sndSync(uint32_t tk) {
 	if (tk < tickCount) return;
 	tickCount += tatbyte;
-	zx->tape->sync();
+//	zx->tape->sync();
 	lev = zx->beeplev ? beepVolume : 0;
-	if (zx->tape->flags & TAPE_ON) {
-		lev += (((zx->tape->outsig & 1) ? tapeVolume : 0) + ((zx->tape->signal & 1) ? tapeVolume : 0));
+	if (tapGet(zx->tape,TAPE_FLAGS) & TAPE_ON) {
+		lev += ((tapGetOutsig(zx->tape) ? tapeVolume : 0) + ((tapGetSignal(zx->tape) ? tapeVolume : 0)));
 	}
 	lev *= 0.16;
 	levl = lev;

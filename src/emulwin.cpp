@@ -62,7 +62,7 @@ bool breakFrame = false;
 Ui::TapeWin tapeUi;
 QDialog* tapeWin;
 int lastTapeFlags;
-uint lastTapeBlock;
+int lastTapeBlock;
 // hardwares
 std::vector<HardWare> hwList;
 // romsets
@@ -96,18 +96,18 @@ void emulInit() {
 
 void setTapeCheck() {
 	QTableWidgetItem* itm;
-	for (uint i=0; i<zx->tape->data.size(); i++) {
+	for (int i=0; i < tapGet(zx->tape, TAPE_BLOCKS); i++) {
 		itm = new QTableWidgetItem;
-		if (zx->tape->block == i) itm->setIcon(QIcon(":/images/checkbox.png"));
+		if (tapGet(zx->tape,TAPE_BLOCK) == i) itm->setIcon(QIcon(":/images/checkbox.png"));
 		tapeUi.tapeList->setItem(i,0,itm);
 		itm = new QTableWidgetItem;
-		if (zx->tape->data[i].flags & TBF_BREAK) itm->setIcon(QIcon(":/images/cancel.png"));
+		if (tapGet(zx->tape,i,TAPE_BFLAG) & TBF_BREAK) itm->setIcon(QIcon(":/images/cancel.png"));
 		tapeUi.tapeList->setItem(i,1,itm);
 	}
 }
 
 void buildTapeList() {
-	std::vector<TapeBlockInfo> tinf = zx->tape->getInfo();
+	std::vector<TapeBlockInfo> tinf = tapGetBlocksInfo(zx->tape);
 	tapeUi.tapeList->setRowCount(tinf.size());
 	QTableWidgetItem* itm;
 	std::string tims;
@@ -534,7 +534,7 @@ EmulWin::EmulWin() {
 }
 
 void EmulWin::tapePlay() {
-	if (!zx->tape->startplay()) return;
+	if (!tapPlay(zx->tape)) return;
 	emulSetIcon(":/images/play.png");
 	tapeUi.playBut->setEnabled(false);
 	tapeUi.recBut->setEnabled(false);
@@ -542,7 +542,7 @@ void EmulWin::tapePlay() {
 }
 
 void EmulWin::tapeRec() {
-	zx->tape->startrec();
+	tapRec(zx->tape);
 	emulSetIcon(":/images/rec.png");
 	tapeUi.playBut->setEnabled(false);
 	tapeUi.recBut->setEnabled(false);
@@ -551,7 +551,7 @@ void EmulWin::tapeRec() {
 }
 
 void EmulWin::tapeStop() {
-	zx->tape->stop(zx->vid->t);
+	tapStop(zx->tape);
 	emulSetIcon(":/images/logo.png");
 	tapeUi.playBut->setEnabled(true);
 	tapeUi.recBut->setEnabled(true);
@@ -561,14 +561,17 @@ void EmulWin::tapeStop() {
 
 void EmulWin::tapeRewind(int row, int) {
 	if (row < 0) return;
-	zx->tape->block = row;
-	zx->tape->pos = 0;
+	tapRewind(zx->tape, row);
+//	zx->tape->block = row;
+//	zx->tape->pos = 0;
 	setTapeCheck();
 }
 
 void EmulWin::setTapeStop(int row, int col) {
 	if ((row < 0) || (col != 1)) return;
-	zx->tape->data[row].flags ^= TBF_BREAK;
+	int flg = tapGet(zx->tape,row,TAPE_BFLAG);
+	flg ^= TBF_BREAK;
+	tapSet(zx->tape,row,TAPE_BFLAG,flg);
 	setTapeCheck();
 }
 
@@ -589,16 +592,18 @@ void EmulWin::SDLEventHandler() {
 	switch (wantedWin) {
 		case WW_DEBUG: dbgShow(); wantedWin = WW_NONE; break;
 	}
-	if (lastTapeBlock != zx->tape->block) {
-		lastTapeBlock = zx->tape->block;
+	int blk = tapGet(zx->tape,TAPE_BLOCK);
+	int flg = tapGet(zx->tape,TAPE_FLAGS);
+	if (lastTapeBlock != blk) {
+		lastTapeBlock = blk;
 		setTapeCheck();
 	}
-	if ((zx->tape->flags & (TAPE_ON | TAPE_REC)) == TAPE_ON) {
-		tapeUi.tapeBar->setMaximum(zx->tape->data[zx->tape->block].gettime(-1));			// total
-		tapeUi.tapeBar->setValue(zx->tape->data[zx->tape->block].gettime(zx->tape->pos));		// current
+	if ((tapGet(zx->tape,TAPE_FLAGS) & (TAPE_ON | TAPE_REC)) == TAPE_ON) {
+		tapeUi.tapeBar->setMaximum(tapGet(zx->tape,blk,TAPE_BFTIME));			// total
+		tapeUi.tapeBar->setValue(tapGet(zx->tape,blk,TAPE_BCTIME));			// current
 	}
-	if (lastTapeFlags != zx->tape->flags) {
-		lastTapeFlags = zx->tape->flags;
+	if (lastTapeFlags != flg) {
+		lastTapeFlags = flg;
 		if (lastTapeFlags & TAPE_ON) {
 			if (lastTapeFlags & TAPE_REC) {
 				tapeUi.tapeBar->setValue(0);
@@ -659,14 +664,14 @@ void EmulWin::SDLEventHandler() {
 						case SDLK_F2: emulPause(true,PR_FILE); saveFile("",FT_ALL,-1); emulPause(false,PR_FILE); break;
 						case SDLK_F3: emulPause(true,PR_FILE); loadFile("",FT_ALL,-1); emulPause(false,PR_FILE); break;
 						case SDLK_F4:
-								if (zx->tape->flags & TAPE_ON) {
+								if (tapGet(zx->tape,TAPE_FLAGS) & TAPE_ON) {
 									mwin->tapeStop();
 								} else {
 									mwin->tapePlay();
 								}
 								break;
 						case SDLK_F5:
-								if (zx->tape->flags & TAPE_ON) {
+								if (tapGet(zx->tape,TAPE_FLAGS) & TAPE_ON) {
 									mwin->tapeStop();
 								} else {
 									mwin->tapeRec();

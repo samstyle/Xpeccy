@@ -3,8 +3,14 @@
 
 #include <vector>
 #include <string>
-#include <fstream>
 #include <stdint.h>
+
+#define	PILOTLEN	2168
+#define	SYNC1LEN	667
+#define	SYNC2LEN	735
+#define	SIGN0LEN	855
+#define	SIGN1LEN	1710
+#define	SYNC3LEN	954
 
 #define	TYPE_TAP	0
 #define	TYPE_TZX	1
@@ -21,6 +27,13 @@
 #define	TAPE_HEAD	0
 #define	TAPE_DATA	1
 
+#define	TAPE_FLAGS	0
+#define TAPE_BLOCKS	1
+#define	TAPE_BLOCK	2
+#define	TAPE_BFLAG	3
+#define	TAPE_BFTIME	4
+#define	TAPE_BCTIME	5
+
 struct TapeBlockInfo {
 	int type;
 	int flags;
@@ -30,22 +43,20 @@ struct TapeBlockInfo {
 	int curtime;
 };
 
-class TapeBlock {
-	public:
-		TapeBlock();
-		unsigned long pause;					// pause in ms after block
-		int flags;
-		uint32_t plen,s1len,s2len,len0,len1;	// signals len
-		uint32_t pdur;				// pilot tone length
-		int32_t datapos;					// 1st data signal pos
-		std::vector<uint32_t> data;			// signals
-		int32_t gettime(int32_t);
-		int32_t getsize();
-		uint8_t getbyte(int32_t);
-		std::string getheader();
-		void normSignals();
+struct TapeBlock {
+	int pause;
+	int flags;
+	int plen;
+	int s1len;
+	int s2len;
+	int len0;
+	int len1;
+	int pdur;
+	int dataPos;
+	std::vector<int> data;
 };
 
+/*
 class Tape {
 	public:
 		Tape();
@@ -73,7 +84,39 @@ class Tape {
 		void addFile(std::string,int,uint16_t,uint16_t,uint16_t,uint8_t*,bool);
 		void addBlock(uint8_t*, int, bool);
 };
+*/
 
-std::vector<uint8_t> tapGetBlockData(Tape* tape, int blockNum);
+struct Tape;
+
+Tape* tapCreate();
+void tapDestroy(Tape*);
+
+void tapEject(Tape*);
+bool tapPlay(Tape*);
+void tapRec(Tape*);
+void tapStop(Tape*);
+void tapRewind(Tape*,int);
+
+bool tapGetSignal(Tape*);
+bool tapGetOutsig(Tape*);
+void tapSetSignal(Tape*,bool);
+void tapSync(Tape*,int);
+int tapGet(Tape*,int);
+std::string tapGetPath(Tape*);
+void tapSetPath(Tape*,const char*);
+int tapGet(Tape*,int,int);
+void tapSet(Tape*,int,int,int);
+
+void tapSetFlag(Tape*,int,bool);
+
+TapeBlockInfo tapGetBlockInfo(Tape*,int);
+std::vector<TapeBlockInfo> tapGetBlocksInfo(Tape*);
+std::vector<uint8_t> tapGetBlockData(Tape*,int);
+
+void tapAddBlock(Tape*,TapeBlock);
+void tapDelBlock(Tape*,int);
+void tapSwapBlocks(Tape*,int,int);
+
+void tapAddFile(Tape*,std::string,int,uint16_t,uint16_t,uint16_t,uint8_t*,bool);
 
 #endif
