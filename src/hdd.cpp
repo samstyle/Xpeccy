@@ -4,6 +4,21 @@
 #include "common.h"
 #include "hdd.h"
 
+// new stuff
+
+/*
+
+struct HHDrive {
+	int type;		// none / ata / atapi
+	int flags;
+	uint8_t bufData[HDD_BUFSIZE];
+	int bufMode;		// idle / read / write
+	int bufPos;
+	
+};
+
+*/
+
 // IDE controller
 
 IDE::IDE() {

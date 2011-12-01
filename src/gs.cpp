@@ -154,31 +154,10 @@ void gsReset(GSound* gs) {
 	z80ex_reset(gs->cpu);
 }
 
-std::pair<uint8_t,uint8_t> gsGetVolume(GSound* gs) {
-	std::pair<uint8_t,uint8_t> res;
-	res.first = 0;
-	res.second = 0;
-	if (~gs->flags & GS_ENABLE) return res;
-	switch (gs->stereo) {
-		case GS_MONO:
-			res.first = ((gs->ch1 * gs->vol1 + \
-				gs->ch2 * gs->vol2 + \
-				gs->ch3 * gs->vol3 + \
-				gs->ch4 * gs->vol4) >> 9);
-			res.second = res.first;
-			break;
-		case GS_12_34:
-			res.first = ((gs->ch1 * gs->vol1 + gs->ch2 * gs->vol2) >> 8);
-			res.second = ((gs->ch3 * gs->vol3 + gs->ch4 * gs->vol4) >> 8);
-			break;
-	}
-	return res;
-}
-
-void gsSync(GSound* gs, uint32_t tk) {
+void gsFlush(GSound* gs) {
 	int res;
-	double ln = tk * GS_FRQ / 7.0;		// scale to GS ticks;
-	gs->counter += ln;
+//	double ln = tk * GS_FRQ / 7.0;		// scale to GS ticks;
+//	gs->counter += ln;
 //	gs->t = tk;
 	if (~gs->flags & GS_ENABLE) return;
 	while (gs->counter > 0) {
@@ -197,11 +176,39 @@ void gsSync(GSound* gs, uint32_t tk) {
 	}
 }
 
+std::pair<uint8_t,uint8_t> gsGetVolume(GSound* gs) {
+	std::pair<uint8_t,uint8_t> res;
+	res.first = 0;
+	res.second = 0;
+	if (~gs->flags & GS_ENABLE) return res;
+	gsFlush(gs);
+	switch (gs->stereo) {
+		case GS_MONO:
+			res.first = ((gs->ch1 * gs->vol1 + \
+				gs->ch2 * gs->vol2 + \
+				gs->ch3 * gs->vol3 + \
+				gs->ch4 * gs->vol4) >> 9);
+			res.second = res.first;
+			break;
+		case GS_12_34:
+			res.first = ((gs->ch1 * gs->vol1 + gs->ch2 * gs->vol2) >> 8);
+			res.second = ((gs->ch3 * gs->vol3 + gs->ch4 * gs->vol4) >> 8);
+			break;
+	}
+	return res;
+}
+
+void gsSync(GSound* gs, uint32_t tk) {
+	if (~gs->flags & GS_ENABLE) return;
+	gs->counter += tk * GS_FRQ / 7.0;
+}
+
 // external in/out
 
 int gsIn(GSound* gs, int prt, uint8_t* val) {
 	if (~gs->flags & GS_ENABLE) return GS_ERR;	// gs disabled
 	if ((prt & 0x44) != 0) return GS_ERR;		// port don't catched
+	gsFlush(gs);
 	if (prt & 8) {
 		*val = gs->pstate;
 	} else {
@@ -214,6 +221,7 @@ int gsIn(GSound* gs, int prt, uint8_t* val) {
 int gsOut(GSound* gs, int prt,uint8_t val) {
 	if (~gs->flags & GS_ENABLE) return GS_ERR;
 	if ((prt & 0x44) != 0) return GS_ERR;
+	gsFlush(gs);
 	if (prt & 8) {
 		gs->pbb_zx = val;
 		gs->pstate |= 1;

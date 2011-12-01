@@ -18,6 +18,7 @@ struct Tape {
 	bool toutold;
 	bool outsig;
 	int sigLen;
+	double sigCount;
 	std::string path;
 	TapeBlock tmpBlock;
 	std::vector<TapeBlock> data;
@@ -30,6 +31,8 @@ Tape* tapCreate() {
 	tap->pos = 0;
 	tap->sigLen = 0;
 	tap->signal = false;
+	tap->sigLen = 0;
+	tap->sigCount = 0;
 	tap->toutold = false;
 	tap->outsig = false;
 	tap->path = "";
@@ -211,7 +214,6 @@ void tapStoreBlock(Tape* tap) {
 
 void tapEject(Tape* tap) {
 	tap->flags &= ~(TAPE_ON | TAPE_REC);
-//	tap->flags |= TAPE_CANSAVE;
 	tap->block = 0;
 	tap->pos = 0;
 	tap->path = "";
@@ -221,7 +223,6 @@ void tapEject(Tape* tap) {
 void tapStop(Tape* tap) {
 	if (tap->flags & TAPE_ON) {
 		tap->flags &= ~TAPE_ON;
-//		sync();
 		if (tap->flags & TAPE_REC) tapStoreBlock(tap);
 		tap->pos = 0;
 	}
@@ -251,7 +252,12 @@ void tapRewind(Tape* tap, int blk) {
 }
 
 void tapSync(Tape* tap, int tk) {
-	tk = (tk >> 1);		// scale: dots -> cpu ticks @ 3.5
+	tap->sigCount += tk / 2.0;
+}
+
+void tapFlush(Tape* tap) {
+	int tk = (int)tap->sigCount;
+	tap->sigCount -= tk;
 	if (tap->flags & TAPE_ON) {
 		if (tap->flags & TAPE_REC) {
 			if (tap->flags & TAPE_WAIT) {
@@ -296,10 +302,12 @@ void tapSync(Tape* tap, int tk) {
 }
 
 bool tapGetSignal(Tape* tap) {
+	tapFlush(tap);
 	return tap->signal;
 }
 
 bool tapGetOutsig(Tape* tap) {
+	tapFlush(tap);
 	return tap->outsig;
 }
 
@@ -312,6 +320,7 @@ void tapSetPath(Tape* tap,const char* nm) {
 }
 
 void tapSetSignal(Tape* tap, bool sig) {
+	tapFlush(tap);
 	tap->outsig = sig;
 }
 
