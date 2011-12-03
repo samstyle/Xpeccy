@@ -9,6 +9,7 @@
 #include "emulwin.h"
 #include "settings.h"
 #include "filer.h"
+#include "filetypes/filetypes.h"
 
 #include "ui_selname.h"
 
@@ -248,7 +249,7 @@ void SetupWin::start() {
 // sound
 	ui.senbox->setChecked(sndGet(SND_ENABLE) != 0);
 	ui.mutbox->setChecked(sndGet(SND_MUTE) != 0);
-	ui.gsrbox->setChecked(gsGetFlag(zx->gs) & GS_RESET);
+	ui.gsrbox->setChecked(gsGet(zx->gs,GS_FLAG) & GS_RESET);
 	ui.outbox->setCurrentIndex(ui.outbox->findText(QDialog::trUtf8(sndGetOutputName().c_str())));
 	ui.ratbox->setCurrentIndex(ui.ratbox->findText(QString::number(sndGet(SND_RATE))));
 	ui.bvsld->setValue(sndGet(SND_BEEP));
@@ -259,8 +260,8 @@ void SetupWin::start() {
 	ui.schip2box->setCurrentIndex(ui.schip2box->findData(QVariant(tsGet(zx->ts,AY_TYPE,1))));
 	ui.stereo1box->setCurrentIndex(ui.stereo1box->findData(QVariant(tsGet(zx->ts,AY_STEREO,0))));
 	ui.stereo2box->setCurrentIndex(ui.stereo2box->findData(QVariant(tsGet(zx->ts,AY_STEREO,1))));
-	ui.gstereobox->setCurrentIndex(ui.gstereobox->findData(QVariant(gsGetParam(zx->gs,GS_STEREO))));
-	ui.gsgroup->setChecked(gsGetFlag(zx->gs) & GS_ENABLE);
+	ui.gstereobox->setCurrentIndex(ui.gstereobox->findData(QVariant(gsGet(zx->gs,GS_STEREO))));
+	ui.gsgroup->setChecked(gsGet(zx->gs,GS_FLAG) & GS_ENABLE);
 	ui.tsbox->setCurrentIndex(ui.tsbox->findData(QVariant(tsGet(zx->ts,TS_TYPE,0))));
 // dos
 	ui.bdebox->setChecked(zx->bdi->enable);
@@ -283,27 +284,29 @@ void SetupWin::start() {
 		ui.dwpbox->setChecked(zx->bdi->flop[3].protect);
 	fillDiskCat();
 // hdd
-	ui.hiface->setCurrentIndex(ui.hiface->findData(zx->ide->iface));
+	ui.hiface->setCurrentIndex(ui.hiface->findData(ideGet(zx->ide,IDE_NONE,IDE_TYPE)));
 	
-	ui.hm_type->setCurrentIndex(ui.hm_type->findData(QVariant(zx->ide->master.iface)));
-	ui.hm_model->setText(QDialog::trUtf8(zx->ide->master.pass.model.c_str()));
-	ui.hm_ser->setText(QDialog::trUtf8(zx->ide->master.pass.serial.c_str()));
-	ui.hm_path->setText(QDialog::trUtf8(zx->ide->master.image.c_str()));
-	ui.hm_islba->setChecked(zx->ide->master.flags & ATA_LBA);
-	ui.hm_gsec->setValue(zx->ide->master.pass.spt);
-	ui.hm_ghd->setValue(zx->ide->master.pass.hds);
-	ui.hm_gcyl->setValue(zx->ide->master.pass.cyls);
-	ui.hm_glba->setValue(zx->ide->master.maxlba);
+	ui.hm_type->setCurrentIndex(ui.hm_type->findData(ideGet(zx->ide,IDE_MASTER,IDE_TYPE)));
+	ATAPassport pass = ideGetPassport(zx->ide,IDE_MASTER);
+	ui.hm_model->setText(QDialog::trUtf8(pass.model.c_str()));
+	ui.hm_ser->setText(QDialog::trUtf8(pass.serial.c_str()));
+	ui.hm_path->setText(QDialog::trUtf8(ideGetPath(zx->ide,IDE_MASTER).c_str()));
+	ui.hm_islba->setChecked(ideGet(zx->ide,IDE_MASTER,IDE_FLAG) & ATA_LBA);
+	ui.hm_gsec->setValue(pass.spt);
+	ui.hm_ghd->setValue(pass.hds);
+	ui.hm_gcyl->setValue(pass.cyls);
+	ui.hm_glba->setValue(ideGet(zx->ide,IDE_MASTER,IDE_MAXLBA));
 
-	ui.hs_type->setCurrentIndex(ui.hm_type->findData(QVariant(zx->ide->slave.iface)));
-	ui.hs_model->setText(QDialog::trUtf8(zx->ide->slave.pass.model.c_str()));
-	ui.hs_ser->setText(QDialog::trUtf8(zx->ide->slave.pass.serial.c_str()));
-	ui.hs_path->setText(QDialog::trUtf8(zx->ide->slave.image.c_str()));
-	ui.hs_islba->setChecked(zx->ide->slave.flags & ATA_LBA);
-	ui.hs_gsec->setValue(zx->ide->slave.pass.spt);
-	ui.hs_ghd->setValue(zx->ide->slave.pass.hds);
-	ui.hs_gcyl->setValue(zx->ide->slave.pass.cyls);
-	ui.hs_glba->setValue(zx->ide->slave.maxlba);
+	ui.hs_type->setCurrentIndex(ui.hm_type->findData(ideGet(zx->ide,IDE_SLAVE,IDE_TYPE)));
+	pass = ideGetPassport(zx->ide,IDE_SLAVE);
+	ui.hs_model->setText(QDialog::trUtf8(pass.model.c_str()));
+	ui.hs_ser->setText(QDialog::trUtf8(pass.serial.c_str()));
+	ui.hs_path->setText(QDialog::trUtf8(ideGetPath(zx->ide,IDE_SLAVE).c_str()));
+	ui.hs_islba->setChecked(ideGet(zx->ide,IDE_SLAVE,IDE_FLAG) & ATA_LBA);
+	ui.hs_gsec->setValue(pass.spt);
+	ui.hs_ghd->setValue(pass.hds);
+	ui.hs_gcyl->setValue(pass.cyls);
+	ui.hs_glba->setValue(ideGet(zx->ide,IDE_SLAVE,IDE_MAXLBA));
 // tape
 	ui.tpathle->setText(QDialog::trUtf8(tapGetPath(zx->tape).c_str()));
 	buildtapelist();
@@ -352,10 +355,6 @@ void SetupWin::apply() {
 	int orate = sndGet(SND_RATE);
 	sndSet(SND_ENABLE, ui.senbox->isChecked());
 	sndSet(SND_MUTE, ui.mutbox->isChecked());
-	int gsf = 0;
-	if (ui.gsgroup->isChecked()) gsf |= GS_ENABLE;
-	if (ui.gsrbox->isChecked()) gsf |= GS_RESET;
-	gsSetFlag(zx->gs,gsf);
 	sndSet(SND_RATE, ui.ratbox->currentText().toInt());
 	sndSet(SND_BEEP, ui.bvsld->value());
 	sndSet(SND_TAPE, ui.tvsld->value());
@@ -367,7 +366,11 @@ void SetupWin::apply() {
 	tsSet(zx->ts,AY_STEREO,0,ui.stereo1box->itemData(ui.stereo1box->currentIndex()).toInt());
 	tsSet(zx->ts,AY_STEREO,1,ui.stereo2box->itemData(ui.stereo2box->currentIndex()).toInt());
 	tsSet(zx->ts,TS_TYPE,0,ui.tsbox->itemData(ui.tsbox->currentIndex()).toInt());
-	gsSetParam(zx->gs,GS_STEREO,ui.gstereobox->itemData(ui.gstereobox->currentIndex()).toInt());
+	int gsf = 0;
+	if (ui.gsgroup->isChecked()) gsf |= GS_ENABLE;
+	if (ui.gsrbox->isChecked()) gsf |= GS_RESET;
+	gsSet(zx->gs,GS_FLAG,gsf);
+	gsSet(zx->gs,GS_STEREO,ui.gstereobox->itemData(ui.gstereobox->currentIndex()).toInt());
 // bdi
 	zx->bdi->enable = ui.bdebox->isChecked();
 	zx->bdi->vg93.turbo = ui.bdtbox->isChecked();
@@ -384,28 +387,35 @@ void SetupWin::apply() {
 		zx->bdi->flop[3].dblsid = ui.ddsbox->isChecked();
 		zx->bdi->flop[3].protect = ui.dwpbox->isChecked();
 // hdd
-	zx->ide->iface = ui.hiface->itemData(ui.hiface->currentIndex()).toInt();
+	ideSet(zx->ide,IDE_NONE,IDE_TYPE,ui.hiface->itemData(ui.hiface->currentIndex()).toInt());
 
-	zx->ide->master.iface = ui.hm_type->itemData(ui.hm_type->currentIndex()).toInt();
-	zx->ide->master.pass.model = std::string(ui.hm_model->text().toUtf8().data(),40);
-	zx->ide->master.pass.serial = std::string(ui.hm_ser->text().toUtf8().data(),20);
-	zx->ide->master.image = std::string(ui.hm_path->text().toUtf8().data());
-	setFlagBit(ui.hm_islba->isChecked(),&zx->ide->master.flags,ATA_LBA);
-	zx->ide->master.pass.spt = ui.hm_gsec->value();
-	zx->ide->master.pass.hds = ui.hm_ghd->value();
-	zx->ide->master.pass.cyls = ui.hm_gcyl->value();
-	zx->ide->master.maxlba = ui.hm_glba->value();
+	int flg = ideGet(zx->ide,IDE_MASTER,IDE_FLAG);
+	ATAPassport pass = ideGetPassport(zx->ide,IDE_MASTER);
+	ideSet(zx->ide,IDE_MASTER,IDE_TYPE,ui.hm_type->itemData(ui.hm_type->currentIndex()).toInt());
+	pass.model = std::string(ui.hm_model->text().toUtf8().data(),40);
+	pass.serial = std::string(ui.hm_ser->text().toUtf8().data(),20);
+	ideSetPath(zx->ide,IDE_MASTER,std::string(ui.hm_path->text().toUtf8().data()));
+	setFlagBit(ui.hm_islba->isChecked(),&flg,ATA_LBA);
+	ideSet(zx->ide,IDE_MASTER,IDE_FLAG,flg);
+	pass.spt = ui.hm_gsec->value();
+	pass.hds = ui.hm_ghd->value();
+	pass.cyls = ui.hm_gcyl->value();
+	ideSet(zx->ide,IDE_MASTER,IDE_MAXLBA,ui.hm_glba->value());
+	ideSetPassport(zx->ide,IDE_MASTER,pass);
 
-	zx->ide->slave.iface = ui.hs_type->itemData(ui.hs_type->currentIndex()).toInt();
-	zx->ide->slave.pass.model = std::string(ui.hs_model->text().toUtf8().data(),40);
-	zx->ide->slave.pass.serial = std::string(ui.hs_ser->text().toUtf8().data(),20);
-	zx->ide->slave.image = std::string(ui.hs_path->text().toUtf8().data());
-	setFlagBit(ui.hs_islba->isChecked(),&zx->ide->slave.flags,ATA_LBA);
-	zx->ide->slave.pass.spt = ui.hs_gsec->value();
-	zx->ide->slave.pass.hds = ui.hs_ghd->value();
-	zx->ide->slave.pass.cyls = ui.hs_gcyl->value();
-	zx->ide->slave.maxlba = ui.hs_glba->value();
-	zx->ide->refresh();
+	pass = ideGetPassport(zx->ide,IDE_SLAVE);
+	flg = ideGet(zx->ide,IDE_SLAVE,IDE_FLAG);
+	ideSet(zx->ide,IDE_SLAVE,IDE_TYPE,ui.hs_type->itemData(ui.hs_type->currentIndex()).toInt());
+	pass.model = std::string(ui.hs_model->text().toUtf8().data(),40);
+	pass.serial = std::string(ui.hs_ser->text().toUtf8().data(),20);
+	ideSetPath(zx->ide,IDE_SLAVE,std::string(ui.hs_path->text().toUtf8().data()));
+	setFlagBit(ui.hs_islba->isChecked(),&flg,ATA_LBA);
+	ideSet(zx->ide,IDE_SLAVE,IDE_FLAG,flg);
+	pass.spt = ui.hs_gsec->value();
+	pass.hds = ui.hs_ghd->value();
+	pass.cyls = ui.hs_gcyl->value();
+	ideSet(zx->ide,IDE_SLAVE,IDE_MAXLBA,ui.hs_glba->value());
+	ideSetPassport(zx->ide,IDE_SLAVE,pass);
 
 // tools
 	optSet(OPT_ASMPATH,std::string(ui.sjpathle->text().toUtf8().data()));

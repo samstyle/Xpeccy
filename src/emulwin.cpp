@@ -321,7 +321,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;
 		}
 	} else {
-		zx->keyb->press(ev->nativeScanCode());
+		keyPress(zx->keyb,ev->nativeScanCode());
 		switch(ev->key()) {
 			case Qt::Key_Pause: pauseFlags ^= PR_PAUSE; emulPause(true,0); break;
 			case Qt::Key_Escape: wantedWin = WW_DEBUG; break;
@@ -330,14 +330,14 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			case Qt::Key_F2: emulPause(true,PR_FILE); saveFile("",FT_ALL,-1); emulPause(false,PR_FILE); break;
 			case Qt::Key_F3: emulPause(true,PR_FILE); loadFile("",FT_ALL,-1); emulPause(false,PR_FILE); break;
 			case Qt::Key_F4:
-					if (zx->tape->flags & TAPE_ON) {
+				if (tapGet(zx->tape,TAPE_FLAGS) & TAPE_ON) {
 						mwin->tapeStop();
 					} else {
 						mwin->tapePlay();
 					}
 					break;
 			case Qt::Key_F5:
-					if (zx->tape->flags & TAPE_ON) {
+					if (tapGet(zx->tape,TAPE_FLAGS) & TAPE_ON) {
 						mwin->tapeStop();
 					} else {
 						mwin->tapeRec();
@@ -369,7 +369,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 }
 
 void MainWin::keyReleaseEvent(QKeyEvent *ev) {
-	zx->keyb->release(ev->nativeScanCode());
+	keyRelease(zx->keyb,ev->nativeScanCode());
 }
 
 void MainWin::mousePressEvent(QMouseEvent *ev){
@@ -444,7 +444,7 @@ void MainWin::emulFrame() {
 	if (emulFlags & FL_BLOCK) return;
 	breakFrame = false;
 	if (!mainWin->isActiveWindow()) {
-		zx->keyb->releaseall();
+		keyRelease(zx->keyb,0);
 		zx->mouse->buttons = 0xff;
 	}
 	if ((wantedWin == WW_NONE) && (pauseFlags == 0)) {
@@ -655,7 +655,7 @@ void EmulWin::SDLEventHandler() {
 						default: break;
 					}
 				} else {
-					zx->keyb->press(ev.key.keysym.scancode);
+					keyPress(zx->keyb,ev.key.keysym.scancode);
 					switch (ev.key.keysym.sym) {
 						case SDLK_PAUSE: pauseFlags ^= PR_PAUSE; emulPause(true,0); break;
 						case SDLK_ESCAPE: wantedWin = WW_DEBUG; break;
@@ -703,7 +703,7 @@ void EmulWin::SDLEventHandler() {
 				}
 				break;
 			case SDL_KEYUP:
-				zx->keyb->release(ev.key.keysym.scancode);
+				keyRelease(zx->keyb,ev.key.keysym.scancode);
 				break;
 			case SDL_MOUSEBUTTONDOWN:
 				switch (ev.button.button) {

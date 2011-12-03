@@ -3,6 +3,17 @@
 
 #include "../spectrum.h"
 
+#define	TYP_SNA		0
+#define	TYP_Z80 	1
+#define	TYP_RZX 	2
+#define TYPE_TRD	3
+#define TYPE_SCL	4
+#define TYPE_FDI	5
+#define TYPE_UDI	6
+#define TYPE_HOBETA	7
+#define	TYPE_TAP	8
+#define	TYPE_TZX	9
+
 #define	ERR_OK		0
 #define	ERR_CANT_OPEN	1	// can't open file
 

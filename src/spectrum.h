@@ -6,7 +6,7 @@
 #include "z80ex.h"
 #include "memory.h"
 #include "video.h"
-#include "keyboard.h"
+#include "input.h"
 #include "tape.h"
 #include "bdi.h"
 #include "ayym.h"		// sound
@@ -73,6 +73,8 @@ class ZXComp {
 		void out(uint16_t,uint8_t);
 		void INTHandle();
 		void NMIHandle();
+		int gsCount;
+		int tapCount;
 };
 
 #endif

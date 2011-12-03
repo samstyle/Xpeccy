@@ -1,11 +1,11 @@
 #include <stdlib.h>
 #include <string.h>
+
 #include "z80ex.h"
 #include "memory.h"
-
-#define GS_SELF_INCLUDE
 #include "gs.h"
-#define GS_FRQ		12.0
+
+#define	GS_FRQ	12.0
 
 struct GSound {
 	int flags;
@@ -94,24 +94,18 @@ Z80EX_BYTE gsintrq(Z80EX_CONTEXT*,void*) {
 	return 0xff;
 }
 
-int gsGetFlag(GSound* gs) {
-	return gs->flags;
-}
-
-void gsSetFlag(GSound* gs, int fl) {
-	gs->flags = fl;
-}
-
-int gsGetParam(GSound* gs, int tp) {
+int gsGet(GSound* gs, int tp) {
 	int res = 0;
 	switch (tp) {
+		case GS_FLAG: res = gs->flags; break;
 		case GS_STEREO: res = gs->stereo; break;
 	}
 	return res;
 }
 
-void gsSetParam(GSound* gs, int tp, int val) {
+void gsSet(GSound* gs, int tp, int val) {
 	switch(tp) {
+		case GS_FLAG: gs->flags = val; break;
 		case GS_STEREO: gs->stereo = val; break;
 	}
 }
@@ -154,12 +148,10 @@ void gsReset(GSound* gs) {
 	z80ex_reset(gs->cpu);
 }
 
-void gsFlush(GSound* gs) {
-	int res;
-//	double ln = tk * GS_FRQ / 7.0;		// scale to GS ticks;
-//	gs->counter += ln;
-//	gs->t = tk;
+void gsSync(GSound* gs, int tk) {
 	if (~gs->flags & GS_ENABLE) return;
+	int res;
+	gs->counter += tk * GS_FRQ / 7.0;
 	while (gs->counter > 0) {
 		res = 0;
 		do {
@@ -181,7 +173,6 @@ std::pair<uint8_t,uint8_t> gsGetVolume(GSound* gs) {
 	res.first = 0;
 	res.second = 0;
 	if (~gs->flags & GS_ENABLE) return res;
-	gsFlush(gs);
 	switch (gs->stereo) {
 		case GS_MONO:
 			res.first = ((gs->ch1 * gs->vol1 + \
@@ -198,17 +189,11 @@ std::pair<uint8_t,uint8_t> gsGetVolume(GSound* gs) {
 	return res;
 }
 
-void gsSync(GSound* gs, uint32_t tk) {
-	if (~gs->flags & GS_ENABLE) return;
-	gs->counter += tk * GS_FRQ / 7.0;
-}
-
 // external in/out
 
 int gsIn(GSound* gs, int prt, uint8_t* val) {
 	if (~gs->flags & GS_ENABLE) return GS_ERR;	// gs disabled
 	if ((prt & 0x44) != 0) return GS_ERR;		// port don't catched
-	gsFlush(gs);
 	if (prt & 8) {
 		*val = gs->pstate;
 	} else {
@@ -221,7 +206,6 @@ int gsIn(GSound* gs, int prt, uint8_t* val) {
 int gsOut(GSound* gs, int prt,uint8_t val) {
 	if (~gs->flags & GS_ENABLE) return GS_ERR;
 	if ((prt & 0x44) != 0) return GS_ERR;
-	gsFlush(gs);
 	if (prt & 8) {
 		gs->pbb_zx = val;
 		gs->pstate |= 1;

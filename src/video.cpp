@@ -106,14 +106,7 @@ void Video::fillMatrix() {
 			}
 			i++;
 		}
-//		if (y >= lcut.v) matrix[i-1] = MTRX_ZERO;
 	}
-/*
-	FILE* file = fopen("matrix","w");
-	fwrite((char*)&matrix[0],512 * 512,sizeof(int),file);
-	fclose(file);
-	throw(0);
-*/
 }
 
 void Video::update() {
@@ -131,7 +124,6 @@ void Video::update() {
 	scrptr = scrimg;
 }
 
-//bool onscr = false;
 uint8_t col = 0;
 uint16_t mtx = 0;
 

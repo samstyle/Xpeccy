@@ -56,15 +56,17 @@ ZXComp::ZXComp() {
 	cpuFreq = 3.5;
 	mem = memCreate();
 	vid = new Video(mem);
-	keyb = new Keyboard;
-	mouse = new Mouse;
+	keyb = keyCreate();
+	mouse = mouseCreate();
 	tape = tapCreate();
 	bdi = new BDI;
-	ide = new IDE;
+	ide = ideCreate(IDE_NONE);
 	ts = tsCreate(TS_NONE,SND_AY,SND_NONE);
 	gs = gsCreate();
 	gsReset(gs);
 	reset(RES_DEFAULT);
+	gsCount = 0;
+	tapCount = 0;
 }
 
 void ZXComp::reset(int wut) {
@@ -89,9 +91,9 @@ void ZXComp::reset(int wut) {
 	bdi->active = (resbank == 3);
 	bdi->vg93.count = 0;
 	bdi->vg93.setmr(false);
-	if (gsGetFlag(gs) & GS_RESET) gsReset(gs);
+	if (gsGet(gs,GS_FLAG) & GS_RESET) gsReset(gs);
 	tsReset(ts);
-	ide->reset();
+	ideReset(ide);
 }
 
 void ZXComp::mapMemory() {
@@ -159,8 +161,8 @@ int32_t ZXComp::getPort(int32_t port) {
 
 uint8_t ZXComp::in(uint16_t port) {
 	uint8_t res = 0xff;
-//	gsSync(gs,vid->t);
-	if (ide->in(port,&res,bdi->active)) return res;
+	gsSync(gs,gsCount); gsCount = 0;
+	if (ideIn(ide,port,&res,bdi->active)) return res;
 	if (gsIn(gs,port,&res) == GS_OK) return res;
 	if (bdi->in(port,&res)) return res;
 	port = getPort(port);
@@ -175,8 +177,8 @@ uint8_t ZXComp::in(uint16_t port) {
 		default:
 			switch (port & 0xff) {
 				case 0xfe:
-//					tape->sync();
-					res = keyb->getmap((port & 0xff00) >> 8) | (tapGetSignal(tape) ? 0x40 : 0x00);
+					tapSync(tape,tapCount); tapCount = 0;
+					res = keyInput(keyb, (port & 0xff00) >> 8) | (tapGetSignal(tape) ? 0x40 : 0x00);
 					break;
 				case 0x1f:
 					break;
@@ -214,8 +216,8 @@ uint8_t ZXComp::in(uint16_t port) {
 }
 
 void ZXComp::out(uint16_t port,uint8_t val) {
-//	gsSync(gs,vid->t);
-	if (ide->out(port,val,bdi->active)) return;
+	gsSync(gs,gsCount); gsCount = 0;
+	if (ideOut(ide,port,val,bdi->active)) return;
 	if (gsOut(gs,port,val) == GS_OK) return;
 	if (bdi->out(port,val)) return;
 	port = getPort(port);	
@@ -228,8 +230,8 @@ void ZXComp::out(uint16_t port,uint8_t val) {
 			if ((port&0xff) == 0xfe) {
 				vid->nextBorder = val & 0x07;
 				beeplev = val & 0x10;
+				tapSync(tape,tapCount); tapCount = 0;
 				tapSetSignal(tape, (val & 0x08) ? true : false);
-//				tape->sync();
 			} else {
 				switch (hw->type) {
 					case HW_ZX48:
@@ -311,8 +313,8 @@ uint32_t ZXComp::exec() {
 			mapMemory();
 		}
 	}
-	gsSync(gs,ltk);
-	tapSync(tape,ltk);
+	gsCount += ltk;
+	if (tapGet(tape,TAPE_FLAGS) & TAPE_ON) tapCount += ltk;
 	return ltk;
 }
 
@@ -328,82 +330,3 @@ void ZXComp::NMIHandle() {
 	mapMemory();
 	vid->sync(res,cpuFreq);
 }
-
-/*
-ZXBase::ZXBase (ZXSystem* par) {
-	parent = par;
-	nmi = false;
-}
-
-uint8_t ZXBase::in(uint16_t port) {
-	return parent->in(port);
-}
-
-void ZXBase::out(uint16_t port, uint8_t val) {
-	parent->out(port,val);
-}
-
-ZOp ZXBase::fetch() {
-	ZOp res;
-	cpu->err = false;
-	if (cpu->nextei) {
-		cpu->iff1 = cpu->iff2 = true;
-		cpu->nextei = false;
-	}
-	cpu->mod = 0;
-	cpu->ti = cpu->t;
-	do {
-		cpu->r = ((cpu->r + 1) & 0x7f) | (cpu->r & 0x80);
-		cpu->cod = mem->rd(cpu->pc++);
-		res = inst[cpu->mod][cpu->cod];
-		cpu->t += res.t;
-		if (res.flags & ZPREF) res.func(this);
-	} while (res.flags & ZPREF);
-	switch (res.cond) {
-		case CND_NONE: break;
-		case CND_Z: cpu->t += (cpu->f & FZ) ? res.tcn1 : res.tcn0; break;
-		case CND_C: cpu->t += (cpu->f & FC) ? res.tcn1 : res.tcn0; break;
-		case CND_P: cpu->t += (cpu->f & FP) ? res.tcn1 : res.tcn0; break;
-		case CND_S: cpu->t += (cpu->f & FS) ? res.tcn1 : res.tcn0; break;
-		case CND_DJNZ: cpu->t += (cpu->b != 1) ? res.tcn1 : res.tcn0; break;
-		case CND_LDIR: cpu->t += (cpu->bc != 1) ? res.tcn1 : res.tcn0; break;
-		case CND_CPIR: cpu->t += ((cpu->bc != 1) && (cpu->a != mem->rd(cpu->hl))) ? res.tcn1 : res.tcn0; break;
-		default: printf("undefined condition\n"); throw(0);
-	}
-	if ((hwflags & IO_WAIT) && (hwflags & WAIT_ON) && (cpu->t & 1)) cpu->t++;		// WAIT
-	res.t = cpu->t - cpu->ti;
-	return res;
-}
-
-int32_t ZXBase::interrupt() {
-	if (!cpu->iff1) return 0;
-	cpu->iff1 = cpu->iff2 = false;
-	int32_t res = 0;
-	cpu->r = ((cpu->r + 1) & 0x7f) | (cpu->r & 0x80);	// increase R
-	switch (cpu->imode) {
-		case 0: mem->wr(--cpu->sp,cpu->hpc);
-			mem->wr(--cpu->sp,cpu->lpc);
-			cpu->pc = 0x38;
-			cpu->mptr = cpu->pc;
-			res = 12;
-			break;
-		case 1: mem->wr(--cpu->sp,cpu->hpc);
-			mem->wr(--cpu->sp,cpu->lpc);
-			cpu->pc = 0x38;
-			cpu->mptr = cpu->pc;
-			res = 13;
-			break;
-		case 2: mem->wr(--cpu->sp,cpu->hpc);
-			mem->wr(--cpu->sp,cpu->lpc);
-			cpu->adr = (cpu->i << 8) | 0xff;
-			cpu->lpc = mem->rd(cpu->adr);
-			cpu->hpc = mem->rd(cpu->adr+1);
-			cpu->mptr = cpu->pc;
-			res = 19;
-			break;
-	}
-	if ((hwflags & IO_WAIT) && (hwflags & WAIT_ON) && (cpu->t & 1)) res++;		// TODO: is INT handle is WAIT'ing too?
-	cpu->t += res;
-	return res;
-}
-*/

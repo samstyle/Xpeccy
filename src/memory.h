@@ -5,10 +5,6 @@
 #include <vector>
 #include <stdint.h>
 
-#define	TYP_SNA		0
-#define	TYP_Z80 	1
-#define	TYP_RZX 	2
-
 #define	MEM_PROFMASK	0
 #define	MEM_RAM		1
 #define	MEM_ROM		2

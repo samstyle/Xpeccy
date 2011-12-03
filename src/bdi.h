@@ -7,12 +7,6 @@
 
 #define TRACKLEN 6250
 
-#define TYPE_TRD	0
-#define TYPE_SCL	1
-#define TYPE_FDI	2
-#define TYPE_UDI	3
-#define TYPE_HOBETA	4
-
 #define	ERR_OK		0
 #define	ERR_MANYFILES	1
 #define	ERR_NOSPACE	2

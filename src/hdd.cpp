@@ -1,387 +1,77 @@
 #include <fstream>
 #include <string.h>
 
-#include "common.h"
 #include "hdd.h"
 
-// new stuff
+#define HDD_BUFSIZE	512
 
-/*
+// hdd port = 0.0.0.0.0.0.CS1.CS0.1.1.1.1.1.HS2.HS1.HS0
+#define HDD_DATA	0x1F0		// 16 bit (!)
+#define HDD_ERROR	0x1F1		// in
+#define HDD_FEAT	HDD_ERROR	// out
+#define HDD_COUNT	0x1F2
+#define HDD_SECTOR	0x1F3
+#define HDD_CYL_LOW	0x1F4
+#define HDD_CYL_HI	0x1F5
+#define HDD_HEAD	0x1F6
+#define	HDD_STATE	0x1F7		// in
+#define	HDD_COM		HDD_STATE	// out
+#define HDD_ASTATE	0x3F6
+#define HDD_ADDR	0x3F7
+// state flags
+#define	HDF_BSY		(1 << 7)
+#define	HDF_DRDY	(1 << 6)
+#define	HDF_WFT		(1 << 5)
+#define	HDF_DSC		(1 << 4)
+#define HDF_DRQ		(1 << 3)
+#define	HDF_CORR	(1 << 2)
+#define	HDF_IDX		(1 << 1)
+#define HDF_ERR		1
+// error flags
+#define	HDF_BBK		(1 << 7)
+#define HDF_UNC		(1 << 6)
+#define	HDF_IDNF	(1 << 4)
+#define HDF_ABRT	(1 << 2)
+#define	HDF_T0NF	(1 << 1)
+#define HDF_AMNF	1
+// bufer mode
+#define HDB_IDLE	0
+#define HDB_READ	1
+#define HDB_WRITE	2
 
-struct HHDrive {
+struct ATADev {
 	int type;		// none / ata / atapi
 	int flags;
-	uint8_t bufData[HDD_BUFSIZE];
-	int bufMode;		// idle / read / write
-	int bufPos;
-	
+	int lba;
+	int maxlba;
+	std::string image;
+	struct {
+		uint8_t data[HDD_BUFSIZE];
+		uint32_t pos;
+		uint8_t mode;
+	} buf;
+	struct {
+		uint8_t err;
+		uint8_t state;
+		uint8_t count;
+		uint8_t sec;
+		uint16_t cyl;
+		uint8_t head;
+		uint8_t com;
+	} reg;				// registers
+	ATAPassport pass;
 };
 
-*/
+struct IDE {
+	int type;
+	ATADev* master;
+	ATADev* slave;
+	ATADev* curDev;
+	uint16_t bus;
+	uint8_t smucSys;
+};
 
-// IDE controller
-
-IDE::IDE() {
-	cur = &master;
-}
-
-/*
- * SMUC: dos, a0=0,a1=a5=a7=a11=a12=1	xxx1 1xxx 1x1x xx10
- * 
-*/
-
-bool IDE::in(uint16_t port,uint8_t* val,bool bdiActive) {
-	bool res = false;
-	bool ishdd = false;
-	bool ishi = false;
-	int prt = 0;
-	switch (iface) {
-		case IDE_NEMO:
-		case IDE_NEMOA8:
-			if (((port & 6) != 0) || bdiActive) return false;
-			prt = (((port & 0xe0) >> 5) | (((port & 0x18) ^ 0x18) << 5) | 0x00f0);
-			ishi = (port & ((iface==IDE_NEMO) ? 0x01 : 0x100));
-			ishdd = true;
-			res = true;
-			break;
-		case IDE_SMUC:
-			if (((port & 0x18a3) != 0x18a2) || !bdiActive) return false;
-			prt = ((port & 0x0700) >> 8) | 0x1f0;		// TODO: o, rly?
-			if (smucSys & 0x80) {
-				if (prt == HDD_HEAD) prt = HDD_ASTATE;
-			}
-			res = true;					// catched smuc port
-			ishi = (port == 0xd8be);
-			ishdd = (ishi || ((port & 0xf8ff) == 0xf8be));		// ide port (hdd itself)
-			switch (port) {
-				case 0x5fba:		// version
-					*val = 0x28;	// 1
-					break;
-				case 0x5fbe:		// revision
-					*val = 0x40;	// 2
-					break;
-				case 0xffba:		// system
-					*val = (cur->reg.state & HDF_BSY) ? 0x00 : 0x80;	// TODO: b7: IRQ
-					break;
-			}
-			break;
-	}
-	if (ishdd) {
-		if (ishi) {
-			*val = ((bus & 0xff00) >> 8);
-		} else {
-			bus = cur->in(prt);
-			*val = (bus & 0x00ff);
-		}
-	}
-	return res;
-}
-
-bool IDE::out(uint16_t port,uint8_t val,bool bdiActive) {
-	bool res = false;
-	bool ishi = false;
-	bool ishdd = false;
-	int prt;
-	switch (iface) {
-		case IDE_NEMO:
-		case IDE_NEMOA8:
-			if (((port & 6) != 0) || bdiActive) return false;
-			res = true;
-			ishdd = true;
-			prt = ((port & 0xe0) >> 5) | (((port & 0x18) ^ 0x18) << 5) | 0x00f0;
-			if (prt == HDD_HEAD) cur = (prt & 0x08) ? &slave : &master;	// write to head reg: select MASTER/SLAVE
-			ishi = (port & ((iface==IDE_NEMO) ? 0x01 : 0x100));
-			break;
-		case IDE_SMUC:
-			if (((port & 0x18a3) != 0x18a2) || !bdiActive) return false;
-			prt = ((port & 0x0700) >> 8) | 0x1f0;		// TODO: o, rly?
-			ishi = ((port & 0x2000) == 0x0000);
-			res = true;					// catched smuc port
-			ishdd = ((port & 0xf8ff) == 0xf8be);		// ide port (hdd itself)
-			switch (port) {
-				case 0xffba:
-					smucSys = val;
-					break;
-			}
-	}
-	if (ishdd) {
-		if (ishi) {
-			bus &= 0x00ff;
-			bus |= (val << 8);
-		} else {
-			bus &= 0xff00;
-			bus |= val;
-			cur->out(prt,bus);
-		}
-	}
-//if (iface == IDE_SMUC) printf("SMUC out\t%.4X (%.4X) = %.4X\n",prt,port,bus);
-	return res;
-}
-
-void IDE::reset() {
-	master.reset();
-	slave.reset();
-	cur = &master;
-}
-
-void IDE::refresh() {
-	if (master.flags & ATA_LBA) {
-		master.pass.spt = 255;
-		master.pass.hds = 16;
-	} else {
-		master.maxlba = master.pass.cyls * master.pass.hds * master.pass.spt;
-	}
-	if (slave.flags & ATA_LBA) {
-		slave.pass.spt = 255;
-		slave.pass.hds = 16;
-	} else {
-		slave.maxlba = slave.pass.cyls * slave.pass.hds * slave.pass.spt;
-	}
-	master.pass.bpt = master.pass.bps * master.pass.spt;
-	slave.pass.bpt = slave.pass.bps * slave.pass.spt;
-}
-
-// ATA(PI) devices
-
-ATADev::ATADev() {
-	pass.cyls = 1024;
-	pass.hds = 16;
-	pass.vol = 1;
-	pass.bps = 512 * pass.vol;
-	pass.spt = 255;
-	pass.bpt = pass.bps * pass.spt;
-	pass.type = 1;
-	pass.serial = "";
-	pass.mcver = "";
-	pass.model = "";
-	flags = 0x00;
-}
-
-void ATADev::reset() {
-	reg.state = HDF_DRDY | HDF_DSC;
-	reg.err = 0x01;
-	reg.count = 0x01;
-	reg.sec = 0x01;
-	reg.cyl = 0x0000;
-	reg.head = 0x00;
-	buf.mode = HDB_IDLE;
-	buf.pos = 0;
-	flags &= ~(ATA_IDLE | ATA_SLEEP | ATA_STANDBY);
-}
-
-std::string ATADev::getCHS() {
-	std::string res = int2str(pass.spt) + "/" + int2str(pass.hds) + "/" + int2str(pass.cyls);
-	return res;
-}
-
-// set REG value to bus (16bit for data, low for other)
-uint16_t ATADev::in(int32_t prt) {
-	uint16_t res = 0xffff;
-	if ((iface != IDE_ATA) || (image == "") || (flags & ATA_SLEEP)) return res;
-	switch (prt) {
-		case HDD_DATA:
-			if ((buf.mode == HDB_READ) && (reg.state & HDF_DRQ)) {
-				res = buf.data[buf.pos] | (buf.data[buf.pos+1] << 8);
-				buf.pos += 2;
-				if (buf.pos >= HDD_BUFSIZE) {
-					buf.pos = 0;
-					if ((reg.com & 0xf0) == 0x20) {
-						reg.count--;
-						if (reg.count == 0) {
-							buf.mode = HDB_IDLE;
-							reg.state &= ~HDF_DRQ;
-						} else {
-							gotoNextSector();
-							readSector();
-						}
-					} else {
-						buf.mode = HDB_IDLE;
-						reg.state &= ~HDF_DRQ;
-					}
-				}
-			}
-			break;
-		case HDD_COUNT:
-			res = reg.count;
-			break;
-		case HDD_SECTOR:
-			res = reg.sec;
-			break;
-		case HDD_CYL_LOW:
-			res = reg.cyl & 0xff;
-			break;
-		case HDD_CYL_HI:
-			res = ((reg.cyl & 0xff00) >> 8);
-			break;
-		case HDD_HEAD:
-			res = reg.head;
-			break;
-		case HDD_ERROR:
-			res = reg.err;
-			break;
-		case HDD_STATE:
-		case HDD_ASTATE:
-			res = reg.state;
-			break;
-		default:
-			printf("HDD in: port %.3X isn't emulated\n",prt);
-//			throw(0);
-	}
-	return res;
-}
-
-void ATADev::out(int32_t prt, uint16_t val) {
-	if ((iface != IDE_ATA) || (image == "") || (flags & ATA_SLEEP)) return;
-	switch (prt) {
-		case HDD_DATA:
-			if ((buf.mode == HDB_WRITE) && (reg.state & HDF_DRQ)) {
-				buf.data[buf.pos++] = (val & 0xff);
-				buf.data[buf.pos++] = ((val & 0xff00) >> 8);
-				if (buf.pos >= HDD_BUFSIZE) {
-					buf.pos = 0;
-					if ((reg.com & 0xf0) == 0x30) {
-						writeSector();
-						reg.count--;
-						if (reg.count == 0) {
-							buf.mode = HDB_IDLE;
-							reg.state &= ~HDF_DRQ;
-						} else {
-							gotoNextSector();
-						}
-					} else {
-						buf.mode = HDB_IDLE;
-						reg.state &= ~HDF_DRQ;
-					}
-				}
-			}
-			break;
-		case HDD_COUNT:
-			reg.count = val & 0xff;
-			break;
-		case HDD_SECTOR:
-			reg.sec = val & 0xff;
-			break;
-		case HDD_CYL_LOW:
-			reg.cyl &= 0xff00;
-			reg.cyl |= (val & 0xff);
-			break;
-		case HDD_CYL_HI:
-			reg.cyl &= 0x00ff;
-			reg.cyl |= ((val & 0xff) << 8);
-			break;
-		case HDD_HEAD:
-			reg.head = val & 0xff;
-			break;
-		case HDD_COM:
-			reg.com = val & 0xff;
-			exec (reg.com);
-			break;
-		case HDD_ASTATE:
-			if (val & 0x04) reset();
-			break;
-		case HDD_FEAT:
-			break;
-		default:
-			printf("HDD out: port %.3X isn't emulated\n",prt);
-//			throw(0);
-	}
-}
-
-void ATADev::getSectorNumber() {
-	if ((flags & ATA_LBA) && (reg.head & 0x40)) {
-		lba = reg.sec | (reg.cyl << 8) | ((reg.head & 0x0f) << 24);
-	} else {
-		if ((reg.sec <= pass.spt) && (reg.cyl < pass.cyls) && ((reg.head & 15) < pass.hds)) {
-			lba = ((reg.cyl * pass.hds + (reg.head & 0x0f)) * pass.spt) + reg.sec - 1;
-		} else {
-			lba = maxlba + 1;
-		}
-	}
-}
-
-void ATADev::setSectorNumber() {
-	if ((flags & ATA_LBA) && (reg.head & 0x40)) {
-		reg.sec = lba & 0xff;
-		reg.cyl = (lba >> 8) & 0xffff;
-		reg.head &= 0xf0;
-		reg.head |= ((lba >> 24) & 0x0f);
-	} else {
-		if (lba < maxlba) {
-			reg.sec = int(lba / pass.spt) + 1;
-			reg.head &= 0xf0;
-			reg.head |= int((lba + 1 - reg.sec) / (pass.hds * pass.spt)) / pass.spt;
-			reg.cyl = (lba + 1 - reg.sec - pass.spt * (reg.head & 0x0f)) / (pass.hds * pass.spt);
-		}
-	}
-}
-
-void ATADev::gotoNextSector() {
-	if (lba < (maxlba - 1)) lba++;
-	setSectorNumber();
-}
-
-void shithappens(std::string);
-
-void ATADev::readSector() {
-	getSectorNumber();
-	if (lba > maxlba) {			// sector not found
-		reg.state |= HDF_ERR;
-		reg.err |= (HDF_ABRT | HDF_IDNF);
-	} else {
-		std::ifstream file(image.c_str(),std::ios::binary);
-		if (!file.good()) {
-			std::ofstream fzk(image.c_str());
-			fzk.close();
-			file.open(image.c_str(),std::ios::binary);
-			if (!file.good()) {
-				shithappens("Can't create HDD image file");
-				iface = IDE_NONE;
-			}
-		} else {
-			file.seekg(0,std::ios::end);
-			size_t eps = file.tellg();
-			size_t nps = lba * pass.bps;
-			if (nps < eps) {
-				file.seekg(lba * pass.bps);
-				file.read((char*)&buf.data[0],pass.bps);
-			} else {
-				for (int i=0; i<pass.bps; i++) {
-					buf.data[i] = 0x00;
-				}
-			}
-			file.close();
-		}
-//		printf("NR: read sector %i\n",lba);
-	}
-}
-
-void ATADev::writeSector() {
-	getSectorNumber();
-printf("WRITE: lba = %i (%i)\n",lba,maxlba);
-	if (lba > maxlba) {			// sector not found
-		reg.state |= HDF_ERR;
-		reg.err |= (HDF_ABRT | HDF_IDNF);
-	} else {
-		std::ofstream file(image.c_str(),std::ios::binary | std::ios::in | std::ios::out);
-		if (!file.good()) {
-			file.open(image.c_str(),std::ios::binary | std::ios::out);
-			if (!file.good()) {
-				shithappens("Can't write to HDD image file");
-				iface = IDE_NONE;
-			}
-		}
-		file.seekp(lba * pass.bps);
-		file.write((char*)&buf.data[0],pass.bps);
-		file.close();
-//		printf("NR: write sector %i\n",lba);
-	}
-}
-
-void ATADev::clearBuf() {
-	for (int i=0; i < HDD_BUFSIZE; i++) {
-		buf.data[i] = 0x00;
-	}
-}
+// overall
 
 void copyStringToBuffer(uint8_t* dst, std::string sst, int len) {
 	sst.resize(len, ' ');
@@ -395,108 +85,242 @@ void copyStringToBuffer(uint8_t* dst, std::string sst, int len) {
 	}
 }
 
-void ATADev::abort() {
-	reg.state |= HDF_ERR;
-	reg.err |= HDF_ABRT;
+// ATA device
+
+ATADev* ataCreate(int tp) {
+	ATADev* ata = new ATADev;
+	ata->type = tp;
+	ata->pass.cyls = 1024;
+	ata->pass.hds = 16;
+	ata->pass.vol = 1;
+	ata->pass.bps = 512 * ata->pass.vol;
+	ata->pass.spt = 255;
+	ata->pass.bpt = ata->pass.bps * ata->pass.spt;
+	ata->pass.type = 1;
+	ata->pass.serial = "";
+	ata->pass.mcver = "";
+	ata->pass.model = "";
+	ata->flags = 0x00;
+	return ata;
 }
 
-void ATADev::exec(uint8_t cm) {
-	reg.state &= ~HDF_ERR;
-	reg.err = 0x00;
-//	printf("command %.2X\n",cm);
-	switch (iface) {
+void ataDestroy(ATADev* ata) {
+	delete(ata);
+}
+
+void ataReset(ATADev* ata) {
+	ata->reg.state = HDF_DRDY | HDF_DSC;
+	ata->reg.err = 0x01;
+	ata->reg.count = 0x01;
+	ata->reg.sec = 0x01;
+	ata->reg.cyl = 0x0000;
+	ata->reg.head = 0x00;
+	ata->buf.mode = HDB_IDLE;
+	ata->buf.pos = 0;
+	ata->flags &= ~(ATA_IDLE | ATA_SLEEP | ATA_STANDBY);
+}
+
+void ataClearBuf(ATADev* dev) {
+	for (int i=0; i < HDD_BUFSIZE; i++) {
+		dev->buf.data[i] = 0x00;
+	}
+}
+
+void ataRefresh(ATADev* dev) {
+	if (dev->flags & ATA_LBA) {
+		dev->pass.spt = 255;
+		dev->pass.hds = 16;
+	} else {
+		dev->maxlba = dev->pass.cyls * dev->pass.hds * dev->pass.spt;
+	}
+	dev->pass.bpt = dev->pass.bps * dev->pass.spt;
+}
+
+void ataSetSector(ATADev* dev, int nr) {
+	dev->lba = nr;
+	if ((dev->flags & ATA_LBA) && (dev->reg.head & 0x40)) {
+		dev->reg.sec = nr & 0xff;
+		dev->reg.cyl = (nr >> 8) & 0xffff;
+		dev->reg.head &= 0xf0;
+		dev->reg.head |= ((nr >> 24) & 0x0f);
+	} else {
+		if (nr < dev->maxlba) {
+			dev->reg.sec = int(nr / dev->pass.spt) + 1;
+			dev->reg.head &= 0xf0;
+			dev->reg.head |= int((nr + 1 - dev->reg.sec) / (dev->pass.hds * dev->pass.spt)) / dev->pass.spt;
+			dev->reg.cyl = (nr + 1 - dev->reg.sec - dev->pass.spt * (dev->reg.head & 0x0f)) / (dev->pass.hds * dev->pass.spt);
+		}
+	}
+}
+
+void ataNextSector(ATADev* dev) {
+	if (dev->lba < (dev->maxlba - 1)) dev->lba++;
+	ataSetSector(dev,dev->lba);
+}
+
+void ataSetLBA(ATADev* dev) {
+	if ((dev->flags & ATA_LBA) && (dev->reg.head & 0x40)) {
+		dev->lba = dev->reg.sec | (dev->reg.cyl << 8) | ((dev->reg.head & 0x0f) << 24);
+	} else {
+		if ((dev->reg.sec <= dev->pass.spt) && (dev->reg.cyl < dev->pass.cyls) && ((dev->reg.head & 15) < dev->pass.hds)) {
+			dev->lba = ((dev->reg.cyl * dev->pass.hds + (dev->reg.head & 0x0f)) * dev->pass.spt) + dev->reg.sec - 1;
+		} else {
+			dev->lba = dev->maxlba + 1;
+		}
+	}
+}
+
+void ataReadSector(ATADev* dev) {
+	ataSetLBA(dev);
+	if (dev->lba > dev->maxlba) {			// sector not found
+		dev->reg.state |= HDF_ERR;
+		dev->reg.err |= (HDF_ABRT | HDF_IDNF);
+	} else {
+		std::ifstream file(dev->image.c_str(),std::ios::binary);
+		if (!file.good()) {
+			std::ofstream fzk(dev->image.c_str());
+			fzk.close();
+			file.open(dev->image.c_str(),std::ios::binary);
+			if (!file.good()) {
+				printf("Can't create HDD image file");
+				dev->type = IDE_NONE;
+			}
+		} else {
+			file.seekg(0,std::ios::end);
+			size_t eps = file.tellg();
+			size_t nps = dev->lba * dev->pass.bps;
+			if (nps < eps) {
+				file.seekg(dev->lba * dev->pass.bps);
+				file.read((char*)&dev->buf.data[0],dev->pass.bps);
+			} else {
+				ataClearBuf(dev);
+			}
+			file.close();
+		}
+	}
+}
+
+void ataWriteSector(ATADev* dev) {
+	ataSetLBA(dev);
+	if (dev->lba > dev->maxlba) {			// sector not found
+		dev->reg.state |= HDF_ERR;
+		dev->reg.err |= (HDF_ABRT | HDF_IDNF);
+	} else {
+		std::ofstream file(dev->image.c_str(),std::ios::binary | std::ios::in | std::ios::out);
+		if (!file.good()) {
+			file.open(dev->image.c_str(),std::ios::binary | std::ios::out);
+			if (!file.good()) {
+				printf("Can't write to HDD image file");
+				dev->type = IDE_NONE;
+			}
+		}
+		file.seekp(dev->lba * dev->pass.bps);
+		file.write((char*)&dev->buf.data[0],dev->pass.bps);
+		file.close();
+	}
+}
+
+void ataAbort(ATADev* dev) {
+	dev->reg.state |= HDF_ERR;
+	dev->reg.err |= HDF_ABRT;
+}
+
+void ataExec(ATADev* dev, uint8_t cm) {
+	dev->reg.state &= ~HDF_ERR;
+	dev->reg.err = 0x00;
+	switch (dev->type) {
 	case IDE_ATA:
 		switch (cm) {
 			case 0x00:			// NOP
 				break;
 			case 0x20:			// read sectors (w/retry)
 			case 0x21:			// read sectors (w/o retry)
-				readSector();
-				buf.pos = 0;
-				buf.mode = HDB_READ;
-				reg.state |= HDF_DRQ;
+				ataReadSector(dev);
+				dev->buf.pos = 0;
+				dev->buf.mode = HDB_READ;
+				dev->reg.state |= HDF_DRQ;
 				break;
 			case 0x22:			// read long (w/retry) TODO: read sector & ECC
 			case 0x23:			// read long (w/o retry)
-				abort();
+				ataAbort(dev);
 				break;
 			case 0x30:			// write sectors (w/retry)
 			case 0x31:			// write sectors (w/o retry)
 			case 0x3c:			// write verify
-				buf.pos = 0;
-				buf.mode = HDB_WRITE;
-				reg.state |= HDF_DRQ;
+				dev->buf.pos = 0;
+				dev->buf.mode = HDB_WRITE;
+				dev->reg.state |= HDF_DRQ;
 				break;
 			case 0x32:			// write long (w/retry)
 			case 0x33:			// write long (w/o retry)
-				abort();
+				ataAbort(dev);
 				break;
 			case 0x40:			// verify sectors (w/retry)	TODO: is it just read sectors until error or count==0 w/o send buffer to host?
 			case 0x41:			// verify sectors (w/o retry)
 				do {
-					readSector();
-					if (reg.state & HDF_BSY) break;
-					reg.count--;
-				} while (reg.count != 0);
+					ataReadSector(dev);
+					if (dev->reg.state & HDF_BSY) break;
+					dev->reg.count--;
+				} while (dev->reg.count != 0);
 				break;
 			case 0x50:			// format track; TODO: cyl = track; count = spt; drq=1; wait for buffer write, ignore(?) buffer; format track;
 				break;
 			case 0x90:			// execute drive diagnostic; FIXME: both drives must do this
-				reg.err = 0x01;
+				dev->reg.err = 0x01;
 				break;
 			case 0x91:			// initialize drive parameters; TODO: pass.spt = reg.count; pass.heads = (reg.head & 15) + 1;
 				break;
 			case 0x94:			// standby immediate; TODO: if reg.count!=0 in idle/standby commands, HDD power off
 			case 0xe0:
-				flags |= ATA_STANDBY;
+				dev->flags |= ATA_STANDBY;
 				break;
 			case 0x95:			// idle immediate
 			case 0xe1:
-				flags |= ATA_IDLE;
+				dev->flags |= ATA_IDLE;
 				break;
 			case 0x96:			// standby
 			case 0xe2:
-				flags |= ATA_STANDBY;
+				dev->flags |= ATA_STANDBY;
 				break;
 			case 0x97:			// idle
 			case 0xe3:
-				flags |= ATA_IDLE;
+				dev->flags |= ATA_IDLE;
 				break;
 			case 0x98:			// check power mode
 			case 0xe5:			// if drive is in, set sector count register to 0x00, if idle - to 0xff
-				reg.count = (flags & ATA_IDLE) ? 0xff : 0x00;
+				dev->reg.count = (dev->flags & ATA_IDLE) ? 0xff : 0x00;
 				break;
 			case 0x99:			// sleep
 			case 0xe6:
-				flags |= ATA_SLEEP;
+				dev->flags |= ATA_SLEEP;
 				break;
 			case 0x9a:			// vendor unique
 			case 0xc0:
 			case 0xc1:
 			case 0xc2:
 			case 0xc3:
-				abort();
+				ataAbort(dev);
 				break;
 			case 0xc4:			// read multiple; NOTE: doesn't support for 1-sector buffer
-				abort();
+				ataAbort(dev);
 				break;
 			case 0xc5:			// write multiple; NOTE: doesn't support for 1-sector buffer
-				abort();
+				ataAbort(dev);
 				break;
 			case 0xc6:			// set multiple mode; NOTE: only 1-sector reading supported
-				abort();
+				ataAbort(dev);
 				break;
 			case 0xc8:			// read DMA (w/retry)
 			case 0xc9:			// read DMA (w/o retry)
-				abort();
+				ataAbort(dev);
 				break;
 			case 0xca:			// write DMA (w/retry)
 			case 0xcb:			// write DMA (w/o retry)
-				abort();
+				ataAbort(dev);
 				break;
 			case 0xdb:			// acknowledge media chge
-				reg.state |= HDF_ERR;	// NOTE: HDD isn't removable, return abort error
-				reg.err |= HDF_ABRT;
+				dev->reg.state |= HDF_ERR;	// NOTE: HDD isn't removable, return abort error
+				dev->reg.err |= HDF_ABRT;
 				break;
 			case 0xdc:			// boot - post-boot; TODO: do nothing?
 				break;
@@ -507,52 +331,59 @@ void ATADev::exec(uint8_t cm) {
 			case 0xdf:			// door unlock
 				break;
 			case 0xe4:			// read buffer
-				buf.pos = 0;
-				buf.mode = HDB_READ;
-				reg.state |= HDF_DRQ;
+				dev->buf.pos = 0;
+				dev->buf.mode = HDB_READ;
+				dev->reg.state |= HDF_DRQ;
 				break;
 			case 0xe8:
-				buf.pos = 0;		// write buffer
-				buf.mode = HDB_WRITE;
-				reg.state |= HDF_DRQ;
+				dev->buf.pos = 0;		// write buffer
+				dev->buf.mode = HDB_WRITE;
+				dev->reg.state |= HDF_DRQ;
 				break;
 			case 0xe9:			// write same
-				abort();
+				ataAbort(dev);
 				break;
 			case 0xec:			// identify drive
-				clearBuf();
-				buf.data[0] = 0x04; buf.data[1] = 0x00;							// main word
-				buf.data[2] = pass.cyls & 0xff; buf.data[3] = ((pass.cyls & 0xff00) >> 8);		// cylinders
-//				buf.data[4] = 0x00; buf.data[5] = 0x00;							// reserved
-				buf.data[6] = pass.hds & 0xff; buf.data[7] = ((pass.hds & 0xff00) >> 8);		// heads
-				buf.data[8] = pass.bpt & 0xff; buf.data[9] = ((pass.bpt & 0xff00) >> 8);		// bytes per track
-				buf.data[10] = pass.bps & 0xff; buf.data[11] = ((pass.bps & 0xff00) >> 8);		// bytes per sector
-				buf.data[12] = pass.spt & 0xff; buf.data[13] = ((pass.spt & 0xff00) >> 8);		// sector per track
-				copyStringToBuffer(&buf.data[20],pass.serial,20);					// serial (20 bytes)
-				buf.data[40] = pass.type & 0xff; buf.data[41] = ((pass.type & 0xff00) >> 8);		// buffer type
-				buf.data[42] = pass.vol & 0xff; buf.data[43] = ((pass.vol & 0xff00) >> 8);		// buffer size
-				copyStringToBuffer(&buf.data[46],pass.mcver,8);						// microcode version (8 bytes)
-				copyStringToBuffer(&buf.data[54],pass.model,10);					// model (40 bytes)
-				buf.data[99] = ((flags & ATA_DMA) ? 0x01 : 0x00) | ((flags & ATA_LBA) ? 0x02 : 0x00);	// lba/dma support
-				buf.pos = 0;
-				buf.mode = HDB_READ;
-				reg.state |= HDF_DRQ;
+				ataClearBuf(dev);
+				dev->buf.data[0] = 0x04;
+				dev->buf.data[1] = 0x00;							// main word
+				dev->buf.data[2] = dev->pass.cyls & 0xff;
+				dev->buf.data[3] = ((dev->pass.cyls & 0xff00) >> 8);		// cylinders
+				dev->buf.data[6] = dev->pass.hds & 0xff;
+				dev->buf.data[7] = ((dev->pass.hds & 0xff00) >> 8);		// heads
+				dev->buf.data[8] = dev->pass.bpt & 0xff;
+				dev->buf.data[9] = ((dev->pass.bpt & 0xff00) >> 8);		// bytes per track
+				dev->buf.data[10] = dev->pass.bps & 0xff;
+				dev->buf.data[11] = ((dev->pass.bps & 0xff00) >> 8);		// bytes per sector
+				dev->buf.data[12] = dev->pass.spt & 0xff;
+				dev->buf.data[13] = ((dev->pass.spt & 0xff00) >> 8);		// sector per track
+				copyStringToBuffer(&dev->buf.data[20],dev->pass.serial,20);	// serial (20 bytes)
+				dev->buf.data[40] = dev->pass.type & 0xff;
+				dev->buf.data[41] = ((dev->pass.type & 0xff00) >> 8);		// buffer type
+				dev->buf.data[42] = dev->pass.vol & 0xff;
+				dev->buf.data[43] = ((dev->pass.vol & 0xff00) >> 8);		// buffer size
+				copyStringToBuffer(&dev->buf.data[46],dev->pass.mcver,8);	// microcode version (8 bytes)
+				copyStringToBuffer(&dev->buf.data[54],dev->pass.model,10);	// model (40 bytes)
+				dev->buf.data[99] = ((dev->flags & ATA_DMA) ? 0x01 : 0x00) | ((dev->flags & ATA_LBA) ? 0x02 : 0x00);	// lba/dma support
+				dev->buf.pos = 0;
+				dev->buf.mode = HDB_READ;
+				dev->reg.state |= HDF_DRQ;
 				break;
 			case 0xef:			// set features
 				break;
 			default:
 				switch (cm & 0xf0) {
 					case 0x10:			// 0x1x: recalibrate
-						reg.cyl = 0x0000;
+						dev->reg.cyl = 0x0000;
 						break;
 					case 0x70:			// seek; TODO: if cylinder/head is out of range - must be an error?
 						break;
 					case 0x80:			// vendor unique
 					case 0xf0:
-						abort();
+						ataAbort(dev);
 						break;
 					default:
-						abort();
+						ataAbort(dev);
 						printf("HDD exec: command %.2X isn't emulated\n",cm);
 						break;
 				}
@@ -560,4 +391,349 @@ void ATADev::exec(uint8_t cm) {
 		}
 		break;
 	}
+}
+
+uint16_t ataIn(ATADev* dev,int prt) {
+	uint16_t res = 0xffff;
+	if ((dev->type != IDE_ATA) || (dev->image == "") || (dev->flags & ATA_SLEEP)) return res;
+	switch (prt) {
+		case HDD_DATA:
+			if ((dev->buf.mode == HDB_READ) && (dev->reg.state & HDF_DRQ)) {
+				res = dev->buf.data[dev->buf.pos] | (dev->buf.data[dev->buf.pos + 1] << 8);
+				dev->buf.pos += 2;
+				if (dev->buf.pos >= HDD_BUFSIZE) {
+					dev->buf.pos = 0;
+					if ((dev->reg.com & 0xf0) == 0x20) {
+						dev->reg.count--;
+						if (dev->reg.count == 0) {
+							dev->buf.mode = HDB_IDLE;
+							dev->reg.state &= ~HDF_DRQ;
+						} else {
+							ataNextSector(dev);
+							ataReadSector(dev);
+						}
+					} else {
+						dev->buf.mode = HDB_IDLE;
+						dev->reg.state &= ~HDF_DRQ;
+					}
+				}
+			}
+			break;
+		case HDD_COUNT:
+			res = dev->reg.count;
+			break;
+		case HDD_SECTOR:
+			res = dev->reg.sec;
+			break;
+		case HDD_CYL_LOW:
+			res = dev->reg.cyl & 0xff;
+			break;
+		case HDD_CYL_HI:
+			res = ((dev->reg.cyl & 0xff00) >> 8);
+			break;
+		case HDD_HEAD:
+			res = dev->reg.head;
+			break;
+		case HDD_ERROR:
+			res = dev->reg.err;
+			break;
+		case HDD_STATE:
+		case HDD_ASTATE:
+			res = dev->reg.state;
+			break;
+		default:
+			printf("HDD in: port %.3X isn't emulated\n",prt);
+//			throw(0);
+	}
+	return res;
+}
+
+void ataOut(ATADev* dev, int prt, uint16_t val) {
+	if ((dev->type != IDE_ATA) || (dev->image == "") || (dev->flags & ATA_SLEEP)) return;
+	switch (prt) {
+		case HDD_DATA:
+			if ((dev->buf.mode == HDB_WRITE) && (dev->reg.state & HDF_DRQ)) {
+				dev->buf.data[dev->buf.pos++] = (val & 0xff);
+				dev->buf.data[dev->buf.pos++] = ((val & 0xff00) >> 8);
+				if (dev->buf.pos >= HDD_BUFSIZE) {
+					dev->buf.pos = 0;
+					if ((dev->reg.com & 0xf0) == 0x30) {
+						ataWriteSector(dev);
+						dev->reg.count--;
+						if (dev->reg.count == 0) {
+							dev->buf.mode = HDB_IDLE;
+							dev->reg.state &= ~HDF_DRQ;
+						} else {
+							ataNextSector(dev);
+						}
+					} else {
+						dev->buf.mode = HDB_IDLE;
+						dev->reg.state &= ~HDF_DRQ;
+					}
+				}
+			}
+			break;
+		case HDD_COUNT:
+			dev->reg.count = val & 0xff;
+			break;
+		case HDD_SECTOR:
+			dev->reg.sec = val & 0xff;
+			break;
+		case HDD_CYL_LOW:
+			dev->reg.cyl &= 0xff00;
+			dev->reg.cyl |= (val & 0xff);
+			break;
+		case HDD_CYL_HI:
+			dev->reg.cyl &= 0x00ff;
+			dev->reg.cyl |= ((val & 0xff) << 8);
+			break;
+		case HDD_HEAD:
+			dev->reg.head = val & 0xff;
+			break;
+		case HDD_COM:
+			dev->reg.com = val & 0xff;
+			ataExec(dev,dev->reg.com);
+			break;
+		case HDD_ASTATE:
+			if (val & 0x04) ataReset(dev);
+			break;
+		case HDD_FEAT:
+			break;
+		default:
+			printf("HDD out: port %.3X isn't emulated\n",prt);
+//			throw(0);
+	}
+}
+
+// IDE interface
+
+IDE* ideCreate(int tp) {
+	IDE* ide = new IDE;
+	ide->type = tp;
+	ide->master = ataCreate(IDE_NONE);
+	ide->slave = ataCreate(IDE_NONE);
+	ide->curDev = ide->master;
+	return ide;
+}
+
+void ideDestroy(IDE* ide) {
+	ataDestroy(ide->master);
+	ataDestroy(ide->slave);
+	delete(ide);
+}
+
+int ideGet(IDE* ide, int iface, int wut) {
+	ATADev* ata = NULL;
+	int res = 0;
+	switch (iface) {
+		case IDE_MASTER:
+			ata = ide->master;
+			break;
+		case IDE_SLAVE:
+			ata = ide->slave;
+			break;
+	}
+	if (ata == NULL) {
+		switch (wut) {
+			case IDE_TYPE:
+				res = ide->type;
+				break;
+		}
+	} else {
+		switch (wut) {
+			case IDE_TYPE:
+				res = ata->type;
+				break;
+			case IDE_FLAG:
+				res = ata->flags;
+				break;
+			case IDE_MAXLBA:
+				res = ata->maxlba;
+				break;
+		}
+	}
+	return res;
+}
+
+void ideSet(IDE* ide, int iface, int wut, int val) {
+	ATADev* ata = NULL;
+	switch (iface) {
+		case IDE_MASTER:
+			ata = ide->master;
+			break;
+		case IDE_SLAVE:
+			ata = ide->slave;
+			break;
+	}
+	if (ata == NULL) {
+		switch (wut) {
+			case IDE_TYPE:
+				ide->type = val;
+				break;
+		}
+	} else {
+		switch (wut) {
+			case IDE_TYPE:
+				ata->type = val;
+				break;
+			case IDE_FLAG:
+				ata->flags = val;
+				break;
+			case IDE_MAXLBA:
+				ata->maxlba = val;
+				break;
+		}
+	}
+}
+
+std::string ideGetPath(IDE* ide,int iface) {
+	std::string res = "";
+	switch(iface) {
+		case IDE_MASTER:
+			res = ide->master->image;
+			break;
+		case IDE_SLAVE:
+			res = ide->slave->image;
+			break;
+	}
+	return res;
+}
+
+void ideSetPath(IDE* ide,int iface,std::string path) {
+	switch(iface) {
+		case IDE_MASTER:
+			ide->master->image = path;
+			break;
+		case IDE_SLAVE:
+			ide->slave->image = path;
+			break;
+	}
+}
+
+ATAPassport ideGetPassport(IDE* ide, int iface) {
+	ATAPassport res;
+	switch(iface) {
+		case IDE_MASTER:
+			res = ide->master->pass;
+			break;
+		case IDE_SLAVE:
+			res = ide->slave->pass;
+			break;
+	}
+	return res;
+}
+
+void ideSetPassport(IDE* ide, int iface, ATAPassport pass) {
+	pass.vol = 1;
+	pass.bps = 512 * pass.vol;
+	pass.bpt = pass.bps * pass.spt;
+	pass.type = 1;
+	pass.mcver = "";
+	switch(iface) {
+		case IDE_MASTER:
+			ide->master->pass = pass;
+			ataRefresh(ide->master);
+			break;
+		case IDE_SLAVE:
+			ide->slave->pass = pass;
+			ataRefresh(ide->slave);
+			break;
+	}
+}
+
+// IDE controller
+
+// SMUC: dos, a0=0,a1=a5=a7=a11=a12=1	xxx1 1xxx 1x1x xx10
+
+bool ideIn(IDE* ide,uint16_t port,uint8_t* val,bool bdiActive) {
+	bool res = false;
+	bool ishdd = false;
+	bool ishi = false;
+	int prt = 0;
+	switch (ide->type) {
+		case IDE_NEMO:
+		case IDE_NEMOA8:
+			if (((port & 6) != 0) || bdiActive) return false;
+			prt = (((port & 0xe0) >> 5) | (((port & 0x18) ^ 0x18) << 5) | 0x00f0);
+			ishi = (port & ((ide->type == IDE_NEMO) ? 0x01 : 0x100));
+			ishdd = true;
+			res = true;
+			break;
+		case IDE_SMUC:
+			if (((port & 0x18a3) != 0x18a2) || !bdiActive) return false;
+			prt = ((port & 0x0700) >> 8) | 0x1f0;		// TODO: o, rly?
+			if (ide->smucSys & 0x80) {
+				if (prt == HDD_HEAD) prt = HDD_ASTATE;
+			}
+			res = true;					// catched smuc port
+			ishi = (port == 0xd8be);
+			ishdd = (ishi || ((port & 0xf8ff) == 0xf8be));		// ide port (hdd itself)
+			switch (port) {
+				case 0x5fba:		// version
+					*val = 0x28;	// 1
+					break;
+				case 0x5fbe:		// revision
+					*val = 0x40;	// 2
+					break;
+				case 0xffba:		// system
+					*val = (ide->curDev->reg.state & HDF_BSY) ? 0x00 : 0x80;	// TODO: b7: IRQ
+					break;
+			}
+			break;
+	}
+	if (ishdd) {
+		if (ishi) {
+			*val = ((ide->bus & 0xff00) >> 8);
+		} else {
+			ide->bus = ataIn(ide->curDev,prt);
+			*val = (ide->bus & 0x00ff);
+		}
+	}
+	return res;
+}
+
+bool ideOut(IDE* ide,uint16_t port,uint8_t val,bool bdiActive) {
+	bool res = false;
+	bool ishi = false;
+	bool ishdd = false;
+	int prt;
+	switch (ide->type) {
+		case IDE_NEMO:
+		case IDE_NEMOA8:
+			if (((port & 6) != 0) || bdiActive) return false;
+			res = true;
+			ishdd = true;
+			prt = ((port & 0xe0) >> 5) | (((port & 0x18) ^ 0x18) << 5) | 0x00f0;
+			if (prt == HDD_HEAD) ide->curDev = (prt & 0x08) ? ide->slave : ide->master;	// write to head reg: select MASTER/SLAVE
+			ishi = (port & ((ide->type==IDE_NEMO) ? 0x01 : 0x100));
+			break;
+		case IDE_SMUC:
+			if (((port & 0x18a3) != 0x18a2) || !bdiActive) return false;
+			prt = ((port & 0x0700) >> 8) | 0x1f0;		// TODO: o, rly?
+			ishi = ((port & 0x2000) == 0x0000);
+			res = true;					// catched smuc port
+			ishdd = ((port & 0xf8ff) == 0xf8be);		// ide port (hdd itself)
+			switch (port) {
+				case 0xffba:
+					ide->smucSys = val;
+					break;
+			}
+	}
+	if (ishdd) {
+		if (ishi) {
+			ide->bus &= 0x00ff;
+			ide->bus |= (val << 8);
+		} else {
+			ide->bus &= 0xff00;
+			ide->bus |= val;
+			ataOut(ide->curDev,prt,ide->bus);
+		}
+	}
+	return res;
+}
+
+void ideReset(IDE* ide) {
+	ataReset(ide->master);
+	ataReset(ide->slave);
+	ide->curDev = ide->master;
 }

@@ -12,9 +12,6 @@
 #define	SIGN1LEN	1710
 #define	SYNC3LEN	954
 
-#define	TYPE_TAP	0
-#define	TYPE_TZX	1
-
 #define	TAPE_ON		1
 #define TAPE_REC	(1<<1)
 #define TAPE_CANSAVE	(1<<2)	// can be saved as tap

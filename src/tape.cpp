@@ -61,7 +61,7 @@ uint8_t tapGetBlockByte(TapeBlock* block, int bytePos) {
 	int sigPos = block->dataPos + (bytePos << 4);
 	for (int i = 0; i < 8; i++) {
 		res = res << 1;
-		if (sigPos < (block->data.size() - 1)) {
+		if (sigPos < (int)(block->data.size() - 1)) {
 			if ((block->data[sigPos] == block->len1) && (block->data[sigPos + 1] == block->len1)) {
 				res |= 1;
 			}
@@ -121,7 +121,7 @@ std::vector<TapeBlockInfo> tapGetBlocksInfo(Tape* tap) {
 
 void tapNormSignals(TapeBlock* block) {
 	int low,hi;
-	for (uint i=0; i < block->data.size(); i++) {
+	for (int i=0; i < (int)block->data.size(); i++) {
 		low = block->data[i] - 10;
 		hi = block->data[i] + 10;
 		if ((block->plen > low) && (block->plen < hi)) block->data[i] = block->plen;
@@ -251,11 +251,8 @@ void tapRewind(Tape* tap, int blk) {
 	}
 }
 
-void tapSync(Tape* tap, int tk) {
-	tap->sigCount += tk / 2.0;
-}
-
-void tapFlush(Tape* tap) {
+void tapSync(Tape* tap,int tks) {
+	tap->sigCount += tks / 2.0;
 	int tk = (int)tap->sigCount;
 	tap->sigCount -= tk;
 	if (tap->flags & TAPE_ON) {
@@ -302,12 +299,10 @@ void tapFlush(Tape* tap) {
 }
 
 bool tapGetSignal(Tape* tap) {
-	tapFlush(tap);
 	return tap->signal;
 }
 
 bool tapGetOutsig(Tape* tap) {
-	tapFlush(tap);
 	return tap->outsig;
 }
 
@@ -320,7 +315,6 @@ void tapSetPath(Tape* tap,const char* nm) {
 }
 
 void tapSetSignal(Tape* tap, bool sig) {
-	tapFlush(tap);
 	tap->outsig = sig;
 }
 
@@ -400,7 +394,7 @@ TapeBlock makeTapeBlock(uint8_t* ptr, int ln, bool hd) {
 	if (nblk.s2len != 0) nblk.data.push_back(nblk.s2len);
 	nblk.dataPos = nblk.data.size();
 	addBlockByte(&nblk,crc);
-	for (i=0; i < (uint)ln; i++) {
+	for (i=0; i < ln; i++) {
 		tmp = *ptr;
 		crc ^= tmp;
 		addBlockByte(&nblk,tmp);

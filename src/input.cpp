@@ -1,7 +1,7 @@
 #include <SDL_keysym.h>
 #include <stdint.h>
 
-#include "keyboard.h"
+#include "input.h"
 
 struct ZXKey {
 	uint8_t row;
@@ -72,37 +72,56 @@ uint8_t keys[256][2][2]={
 
 #endif
 
-Keyboard::Keyboard() {
-	releaseall();
+// keyboard
+
+struct Keyboard {
+	uint8_t map[8];
+};
+
+Keyboard* keyCreate() {
+	Keyboard* keyb = new Keyboard;
+	keyRelease(keyb,0);
+	return keyb;
 }
 
-Mouse::Mouse() {
-	buttons = 0xff;
-	xpos = ypos = 0;
-	enable = true;
+void keyDestroy(Keyboard* keyb) {
+	delete(keyb);
 }
 
-void Keyboard::press(uint8_t cod) {
-	map[keys[cod][0][0]] &= ~keys[cod][0][1];
-	map[keys[cod][1][0]] &= ~keys[cod][1][1];
+void keyPress(Keyboard* keyb, uint8_t cod) {
+	keyb->map[keys[cod][0][0]] &= ~keys[cod][0][1];
+	keyb->map[keys[cod][1][0]] &= ~keys[cod][1][1];
 }
 
-void Keyboard::release(uint8_t cod) {
-	map[keys[cod][0][0]] |= keys[cod][0][1];
-	map[keys[cod][1][0]] |= keys[cod][1][1];
+void keyRelease(Keyboard* keyb, uint8_t cod) {
+	if (cod == 0) {
+		for (int i=0; i<8; i++) keyb->map[i] = 0x1f;
+	} else {
+		keyb->map[keys[cod][0][0]] |= keys[cod][0][1];
+		keyb->map[keys[cod][1][0]] |= keys[cod][1][1];
+	}
 }
 
-void Keyboard::releaseall() {
-	map[0] = map[1] = map[2] = map[3] = 0x1f;
-	map[4] = map[5] = map[6] = map[7] = 0x1f;
-}
-
-uint8_t Keyboard::getmap(uint8_t prt) {
+uint8_t keyInput(Keyboard* keyb, uint8_t prt) {
 	uint8_t res = 0x1f;
-	int i;
-	for (i=0;i<8;i++) {
-		if (~prt & 0x80) res &= map[i];
+	for (int i = 0; i < 8; i++) {
+		if (~prt & 0x80) res &= keyb->map[i];
 		prt <<= 1;
 	}
 	return res;
+}
+
+// mouse
+
+Mouse* mouseCreate() {
+	Mouse* mou = new Mouse;
+	mou->buttons = 0xff;
+	mou->xpos = 0;
+	mou->ypos = 0;
+	mou->enable = true;
+	return mou;
+}
+
+void mouseDestroy(Mouse* mou) {
+	delete(mou);
 }

@@ -319,30 +319,38 @@ void saveConfig() {
 	optSet("SOUND","chip1.stereo",tsGet(zx->ts,AY_STEREO,0));
 	optSet("SOUND","chip2.stereo",tsGet(zx->ts,AY_STEREO,1));
 	optSet("SOUND","ts.type",tsGet(zx->ts,TS_TYPE,0));
-	optSet("SOUND","gs",(gsGetFlag(zx->gs) & GS_ENABLE) != 0);
-	optSet("SOUND","gs.reset",(gsGetFlag(zx->gs) & GS_RESET) != 0);
-	optSet("SOUND","gs.stereo",gsGetParam(zx->gs,GS_STEREO));
+	optSet("SOUND","gs",(gsGet(zx->gs,GS_FLAG) & GS_ENABLE) != 0);
+	optSet("SOUND","gs.reset",(gsGet(zx->gs,GS_FLAG) & GS_RESET) != 0);
+	optSet("SOUND","gs.stereo",gsGet(zx->gs,GS_STEREO));
 	optSet("BETADISK","enabled",zx->bdi->enable);
 	optSet("BETADISK","fast",zx->bdi->vg93.turbo);
 	optSet("BETADISK","A",zx->bdi->flop[0].getString());
 	optSet("BETADISK","B",zx->bdi->flop[1].getString());
 	optSet("BETADISK","C",zx->bdi->flop[2].getString());
 	optSet("BETADISK","D",zx->bdi->flop[3].getString());
-	optSet("IDE","iface",zx->ide->iface);
-	optSet("IDE","master.type",zx->ide->master.iface);
-	optSet("IDE","master.model",zx->ide->master.pass.model);
-	optSet("IDE","master.serial",zx->ide->master.pass.serial);
-	optSet("IDE","master.image",zx->ide->master.image);
-	optSet("IDE","master.lba",(zx->ide->master.flags & ATA_LBA) != 0);
-	optSet("IDE","master.maxlba",(int)zx->ide->master.maxlba);
-	optSet("IDE","master.chs",zx->ide->master.getCHS());
-	optSet("IDE","slave.type",zx->ide->slave.iface);
-	optSet("IDE","slave.model",zx->ide->slave.pass.model);
-	optSet("IDE","slave.serial",zx->ide->slave.pass.serial);
-	optSet("IDE","slave.image",zx->ide->slave.image);
-	optSet("IDE","slave.lba",(zx->ide->slave.flags & ATA_LBA) != 0);
-	optSet("IDE","slave.maxlba",(int)zx->ide->slave.maxlba);
-	optSet("IDE","slave.chs",zx->ide->slave.getCHS());
+	
+	optSet("IDE","iface",ideGet(zx->ide,IDE_NONE,IDE_TYPE));
+	
+	optSet("IDE","master.type",ideGet(zx->ide,IDE_MASTER,IDE_TYPE));
+	ATAPassport pass = ideGetPassport(zx->ide,IDE_MASTER);
+	optSet("IDE","master.model",pass.model);
+	optSet("IDE","master.serial",pass.serial);
+	optSet("IDE","master.image",ideGetPath(zx->ide,IDE_MASTER));
+	optSet("IDE","master.lba",(ideGet(zx->ide,IDE_MASTER,IDE_FLAG) & ATA_LBA) != 0);
+	optSet("IDE","master.maxlba",ideGet(zx->ide,IDE_MASTER,IDE_MAXLBA));
+	std::string chs = int2str(pass.spt) + "/" + int2str(pass.hds) + "/" + int2str(pass.cyls);
+	optSet("IDE","master.chs",chs);
+	
+	optSet("IDE","slave.type",ideGet(zx->ide,IDE_SLAVE,IDE_TYPE));
+	pass = ideGetPassport(zx->ide,IDE_MASTER);
+	optSet("IDE","slave.model",pass.model);
+	optSet("IDE","slave.serial",pass.serial);
+	optSet("IDE","slave.image",ideGetPath(zx->ide,IDE_SLAVE));
+	optSet("IDE","slave.lba",(ideGet(zx->ide,IDE_MASTER,IDE_FLAG) & ATA_LBA) != 0);
+	optSet("IDE","slave.maxlba",ideGet(zx->ide,IDE_MASTER,IDE_MAXLBA));
+	chs = int2str(pass.spt) + "/" + int2str(pass.hds) + "/" + int2str(pass.cyls);
+	optSet("IDE","slave.chs",chs);
+	
 	uint i,j;
 	std::vector<optEntry> ents;
 	std::vector<std::string> grps = optGroupsList();
@@ -518,6 +526,9 @@ void loadConfig(bool dev) {
 	int tmask = 0xff;
 	int tmp;
 	int tmp2=0;
+	ATAPassport masterPass = ideGetPassport(zx->ide,IDE_MASTER);
+	ATAPassport slavePass = ideGetPassport(zx->ide,IDE_SLAVE);
+	int flg;
 	if (!dev) memSet(zx->mem,MEM_MEMSIZE,48);
 	if (!file.good()) {
 //		shithappens(std::string("Can't find config file<br><b>") + cfname + std::string("</b><br>Default one will be created."));
@@ -608,33 +619,41 @@ void loadConfig(bool dev) {
 					case 8: addBookmark(pnam.c_str(),pval.c_str());
 						break;
 					case 9:
-						if (pnam=="iface") zx->ide->iface = atoi(pval.c_str());
-						if (pnam=="master.type") zx->ide->master.iface = atoi(pval.c_str());
-						if (pnam=="master.model") zx->ide->master.pass.model = std::string(pval,0,40);
-						if (pnam=="master.serial") zx->ide->master.pass.serial = std::string(pval,0,20);
-						if (pnam=="master.lba") setFlagBit(str2bool(pval),&zx->ide->master.flags, ATA_LBA);
-						if (pnam=="master.maxlba") zx->ide->master.maxlba = atoi(pval.c_str());
-						if (pnam=="master.image") zx->ide->master.image = pval;
+						if (pnam=="iface") ideSet(zx->ide,IDE_NONE,IDE_TYPE,atoi(pval.c_str()));
+						if (pnam=="master.type") ideSet(zx->ide,IDE_MASTER,IDE_TYPE,atoi(pval.c_str()));
+						if (pnam=="master.model") masterPass.model = std::string(pval,0,40);
+						if (pnam=="master.serial") masterPass.serial = std::string(pval,0,20);
+						if (pnam=="master.lba") {
+							flg = ideGet(zx->ide,IDE_MASTER,IDE_FLAG);
+							setFlagBit(str2bool(pval),&flg, ATA_LBA);
+							ideSet(zx->ide,IDE_MASTER,IDE_FLAG,flg);
+						}
+						if (pnam=="master.maxlba") ideSet(zx->ide,IDE_MASTER,IDE_MAXLBA,atoi(pval.c_str()));
+						if (pnam=="master.image") ideSetPath(zx->ide,IDE_MASTER,pval);
 						if (pnam=="master.chs") {
 							vect = splitstr(pval,"/");
 							if (vect.size() > 2) {
-								zx->ide->master.pass.spt = atoi(vect.at(0).c_str());
-								zx->ide->master.pass.hds = atoi(vect.at(1).c_str());
-								zx->ide->master.pass.cyls = atoi(vect.at(2).c_str());
+								masterPass.spt = atoi(vect.at(0).c_str());
+								masterPass.hds = atoi(vect.at(1).c_str());
+								masterPass.cyls = atoi(vect.at(2).c_str());
 							}
 						}
-						if (pnam=="slave.type") zx->ide->slave.iface = atoi(pval.c_str());
-						if (pnam=="slave.model") zx->ide->slave.pass.model = std::string(pval,0,40);
-						if (pnam=="slave.serial") zx->ide->slave.pass.serial = std::string(pval,0,20);
-						if (pnam=="slave.lba") setFlagBit(str2bool(pval),&zx->ide->slave.flags, ATA_LBA);
-						if (pnam=="slave.maxlba") zx->ide->slave.maxlba = atoi(pval.c_str());
-						if (pnam=="slave.image") zx->ide->slave.image = pval;
+						if (pnam=="slave.type") ideSet(zx->ide,IDE_SLAVE,IDE_TYPE,atoi(pval.c_str()));
+						if (pnam=="slave.model") slavePass.model = std::string(pval,0,40);
+						if (pnam=="slave.serial") slavePass.serial = std::string(pval,0,20);
+						if (pnam=="slave.lba") {
+							flg = ideGet(zx->ide,IDE_SLAVE,IDE_FLAG);
+							setFlagBit(str2bool(pval),&flg, ATA_LBA);
+							ideSet(zx->ide,IDE_SLAVE,IDE_FLAG,flg);
+						}
+						if (pnam=="slave.maxlba") ideSet(zx->ide,IDE_SLAVE,IDE_MAXLBA,atoi(pval.c_str()));
+						if (pnam=="slave.image") ideSetPath(zx->ide,IDE_SLAVE,pval);
 						if (pnam=="slave.chs") {
 							vect = splitstr(pval,"/");
 							if (vect.size() > 2) {
-								zx->ide->slave.pass.spt = atoi(vect.at(0).c_str());
-								zx->ide->slave.pass.hds = atoi(vect.at(1).c_str());
-								zx->ide->slave.pass.cyls = atoi(vect.at(2).c_str());
+								slavePass.spt = atoi(vect.at(0).c_str());
+								slavePass.hds = atoi(vect.at(1).c_str());
+								slavePass.cyls = atoi(vect.at(2).c_str());
 							}
 						}
 						break;
@@ -655,14 +674,15 @@ void loadConfig(bool dev) {
 	
 	tmp2 = optGetInt("SOUND","chip1"); if (tmp2 < SND_END) tsSet(zx->ts,AY_TYPE,0,tmp2);
 	tmp2 = optGetInt("SOUND","chip2"); if (tmp2 < SND_END) tsSet(zx->ts,AY_TYPE,1,tmp2);
-	int gsf = 0;
-	if (optGetBool("SOUND","gs")) gsf |= GS_ENABLE;
-	if (optGetBool("SOUND","gs.reset")) gsf |= GS_RESET;
-	gsSetFlag(zx->gs,gsf);
 	tsSet(zx->ts,AY_STEREO,0,optGetInt("SOUND","chip1.stereo"));
 	tsSet(zx->ts,AY_STEREO,1,optGetInt("SOUND","chip2.stereo"));
 	tsSet(zx->ts,TS_TYPE,0,optGetInt("SOUND","ts.type"));
-	gsSetParam(zx->gs,GS_STEREO,optGetInt("SOUND","gs.stereo"));
+	
+	int gsf = 0;
+	if (optGetBool("SOUND","gs")) gsf |= GS_ENABLE;
+	if (optGetBool("SOUND","gs.reset")) gsf |= GS_RESET;
+	gsSet(zx->gs,GS_FLAG,gsf);
+	gsSet(zx->gs,GS_STEREO,optGetInt("SOUND","gs.stereo"));
 	
 	zx->bdi->enable = optGetBool("BETADISK","enabled");
 	zx->bdi->vg93.turbo = optGetBool("BETADISK","fast");
@@ -673,7 +693,9 @@ void loadConfig(bool dev) {
 	setFlagBit(optGetBool("MACHINE","scrp.wait"),&zx->hwFlags,WAIT_ON);
 	
 	sndCalibrate();
-	zx->ide->refresh();
+//	zx->ide->refresh();
+	ideSetPassport(zx->ide,IDE_MASTER,masterPass);
+	ideSetPassport(zx->ide,IDE_SLAVE,slavePass);
 	setHardware(zx, zx->opt.hwName);
 	setRomset(zx, zx->opt.rsName);
 	if (zx->hw==NULL) throw("Can't found current machine");
