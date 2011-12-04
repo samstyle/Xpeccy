@@ -126,12 +126,14 @@ class BDI {
 		uint32_t tab;
 		Floppy flop[4];
 		VG93 vg93;
-		void sync(int);
+//		void sync(int);
 		bool out(int32_t, uint8_t);
 		bool in(int32_t, uint8_t*);
 		int32_t getport(int);
 };
 
 typedef void(*VGOp)(VG93*);
+
+void bdiSync(BDI*,int);
 
 #endif

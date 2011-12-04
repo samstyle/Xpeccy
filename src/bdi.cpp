@@ -67,25 +67,24 @@ bool BDI::in(int32_t port, uint8_t* val) {
 	return true;
 }
 
-void BDI::sync(int tk) {
+void bdiSync(BDI* bdi,int tk) {
 	uint32_t tz;
-//	uint32_t tk = tn - vg93.t;
 	while (tk > 0) {
-		if (tk < (int)vg93.tf) {
+		if (tk < (int)bdi->vg93.tf) {
 			tz = tk;
-			vg93.tf -= tk;
+			bdi->vg93.tf -= tk;
 		} else {
-			tz = vg93.tf;
-			vg93.tf = tab;
-			vg93.fptr->next(vg93.side, vg93.t);
+			tz = bdi->vg93.tf;
+			bdi->vg93.tf = bdi->tab;
+			bdi->vg93.fptr->next(bdi->vg93.side, bdi->vg93.t);
 		}
-		vg93.t += tz;
-		vg93.idxold = vg93.idx;
-		vg93.idx = ((vg93.t - vg93.fptr->ti) < IDXDELAY);
-		vg93.strb = (!vg93.idxold) && vg93.idx;
-		if (vg93.wptr != NULL) {
-			vg93.count -= tz;
-			while ((vg93.wptr != NULL) && (vg93.count < 0)) vg93.tick();
+		bdi->vg93.t += tz;
+		bdi->vg93.idxold = bdi->vg93.idx;
+		bdi->vg93.idx = ((bdi->vg93.t - bdi->vg93.fptr->ti) < IDXDELAY);
+		bdi->vg93.strb = (!bdi->vg93.idxold) && bdi->vg93.idx;
+		if (bdi->vg93.wptr != NULL) {
+			bdi->vg93.count -= tz;
+			while ((bdi->vg93.wptr != NULL) && (bdi->vg93.count < 0)) bdi->vg93.tick();
 		}
 		tk -= tz;
 	}

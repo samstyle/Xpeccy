@@ -27,58 +27,48 @@ struct VSize {
 };
 
 struct VidLayout {
-//		VidLayout() {}
-//		VidLayout(std::string nm,uint fh,uint fv,uint bh,uint bv,uint sh,uint sv,uint isz,uint ips) {
-//			name = nm;
-//			full.h = fh; full.v = fv;
-//			bord.h = bh; bord.v = bv;
-//			sync.h = sh; sync.v = sv;
-//			intsz = isz; intpos = ips;
-//		}
 	std::string name;
 	VSize full,sync,bord;
 	uint32_t intsz,intpos;
 };
 
-class Video {
-	public:
-		Video(Memory*);
-		int flags;
-//		bool intSignal;
-		bool intStrobe;
-		uint8_t* scrptr;
-		uint8_t* scrimg;
-		VSize full,bord,curr,synh;
-		VSize lcut,rcut,vsze,wsze;
-		int frmsz;
-		uint32_t t, intsz, intpos;
-		struct {
-//			uint8_t *scr5,*atr5;		// screen 0
-//			uint8_t *scr7,*atr7;		// screen 1
-			uint8_t *ac00,*ac01,*ac02,*ac03;	// alco parts (screen 0)
-			uint8_t *ac10,*ac11,*ac12,*ac13;	// alco parts (screen 1)
-		} ladrz[0x1800];	// адреса на экране
-		uint8_t alscr2,alscr4,alscr6;
-		uint8_t* scr5pix[0x1800];
-		uint8_t* scr5atr[0x1800];
-		uint8_t* scr7pix[0x1800];
-		uint8_t* scr7atr[0x1800];
-		int iacount;		// счетчик для ladrz
-		int32_t mode;
-		float zoom,brdsize, pxcnt;
-		bool flash,curscr;
-		uint8_t brdcol,nextBorder;
-		uint8_t fcnt,scrbyte,prescr,atrbyte,ink,pap;
-//		std::vector<VidLayout> layout;	// screen layouts
-		std::string curlay;		// current layout name
-		void tick();
-		void sync(int,float);
-		bool setLayout(std::string);
-		void update();
-		int dotCount;
-		uint16_t matrix[512 * 512];
-		void fillMatrix();
+struct Video {
+	int flags;
+	bool intStrobe;
+	uint8_t* scrptr;
+	uint8_t* scrimg;
+	VSize full,bord,curr,synh;
+	VSize lcut,rcut,vsze,wsze;
+	int frmsz;
+	uint32_t t, intsz, intpos;
+	struct {
+		uint8_t *ac00,*ac01,*ac02,*ac03;	// alco parts (screen 0)
+		uint8_t *ac10,*ac11,*ac12,*ac13;	// alco parts (screen 1)
+	} ladrz[0x1800];
+	uint8_t* scr5pix[0x1800];
+	uint8_t* scr5atr[0x1800];
+	uint8_t* scr7pix[0x1800];
+	uint8_t* scr7atr[0x1800];
+	int32_t mode;
+	float zoom,brdsize, pxcnt;
+	bool flash,curscr;
+	uint8_t brdcol,nextBorder;
+	uint8_t fcnt,atrbyte;
+	std::string curlay;		// current layout name
+//	void sync(int,float);
+//	bool setLayout(std::string);
+//	void update();
+	int dotCount;
+	uint16_t matrix[512 * 512];
+//	void fillMatrix();
 };
+
+Video* vidCreate(Memory*);
+void vidDestroy(Video*);
+
+void vidSync(Video*,int,float);
+bool vidSetLayout(Video*,std::string);
+void vidUpdate(Video*);
 
 void addLayout(std::string,int*);
 void addLayout(VidLayout);

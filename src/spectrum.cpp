@@ -21,13 +21,23 @@ uint8_t ZSLays[4][4] = {
 	{1,0,1,0}
 };
 
-Z80EX_BYTE memrd(Z80EX_CONTEXT*,Z80EX_WORD adr,int,void* ptr) {
+Z80EX_BYTE memrd(Z80EX_CONTEXT*,Z80EX_WORD adr,int m1,void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
-	Z80EX_BYTE res = memRd(comp->mem,adr);
 	if ((comp->hw->type == HW_SCORP) && ((memGet(comp->mem,MEM_ROM) & 3) == 2) && ((adr & 0xfff3) == 0x0100)) {
 		comp->prt2 = ZSLays[(adr & 0x000c) >> 2][comp->prt2 & 3] & memGet(comp->mem,MEM_PROFMASK);
 		comp->mapMemory();
 	}
+	if ((m1 != 0) && comp->bdi->enable) {
+		if (!comp->bdi->active && ((adr & 0xff00) == 0x3d00) && (comp->prt0 & 0x10)) {
+			comp->bdi->active = true;
+			comp->mapMemory();
+		}
+		if (comp->bdi->active && (adr > 0x3fff)) {
+			comp->bdi->active = false;
+			comp->mapMemory();
+		}
+	}
+	Z80EX_BYTE res = memRd(comp->mem,adr);
 	return res;
 }
 
@@ -55,7 +65,7 @@ ZXComp::ZXComp() {
 	cpu = z80ex_create(&memrd,ptr,&memwr,ptr,&iord,ptr,&iowr,ptr,&intrq,ptr);
 	cpuFreq = 3.5;
 	mem = memCreate();
-	vid = new Video(mem);
+	vid = vidCreate(mem);
 	keyb = keyCreate();
 	mouse = mouseCreate();
 	tape = tapCreate();
@@ -292,7 +302,7 @@ uint32_t ZXComp::exec() {
 	do {
 		res += z80ex_step(cpu);
 	} while (z80ex_last_op_type(cpu) != 0);
-	vid->sync(res,cpuFreq);
+	vidSync(vid,res,cpuFreq);
 	intStrobe = vid->intStrobe;
 
 	Z80EX_WORD pc = z80ex_get_reg(cpu,regPC);
@@ -302,25 +312,15 @@ uint32_t ZXComp::exec() {
 
 	ltk = vid->t - ltk;
 
-	if (bdi->enable) {
-		bdi->sync(ltk);
-		if (bdi->active && (pc > 0x3fff)) {
-			bdi->active = false;
-			mapMemory();
-		}
-		if (!bdi->active && ((pc & 0xff00) == 0x3d00) && (prt0 & 0x10)) {
-			bdi->active = true;
-			mapMemory();
-		}
-	}
 	gsCount += ltk;
 	if (tapGet(tape,TAPE_FLAGS) & TAPE_ON) tapCount += ltk;
+	if (bdi->enable) bdiSync(bdi,ltk);
 	return ltk;
 }
 
 void ZXComp::INTHandle() {
 	int res = z80ex_int(cpu);
-	vid->sync(res,cpuFreq);
+	vidSync(vid,res,cpuFreq);
 }
 
 void ZXComp::NMIHandle() {
@@ -328,5 +328,5 @@ void ZXComp::NMIHandle() {
 	if (res == 0) return;
 	bdi->active = true;
 	mapMemory();
-	vid->sync(res,cpuFreq);
+	vidSync(vid,res,cpuFreq);
 }

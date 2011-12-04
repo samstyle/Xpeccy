@@ -26,7 +26,8 @@ unsigned char papTab[] = {
   0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f,
 };
 
-Video::Video(Memory* me) {
+Video* vidCreate(Memory* me) {
+	Video* vid = new Video;
 	int i,j,k,l;
 	int idx=0;
 	int sadr=0x0000;
@@ -35,18 +36,18 @@ Video::Video(Memory* me) {
 		for (j=0;j<8;j++) {
 			for (k=0;k<8;k++) {
 				for (l=0;l<32;l++) {
-					scr5pix[idx] = memGetPagePtr(me,MEM_RAM,5) + sadr;
-					scr5atr[idx] = memGetPagePtr(me,MEM_RAM,5) + aadr;
-					scr7pix[idx] = memGetPagePtr(me,MEM_RAM,7) + sadr;
-					scr7atr[idx] = memGetPagePtr(me,MEM_RAM,7) + aadr;
-					ladrz[idx].ac00 = memGetPagePtr(me,MEM_RAM,4) + sadr;
-					ladrz[idx].ac01 = memGetPagePtr(me,MEM_RAM,5) + sadr;
-					ladrz[idx].ac02 = memGetPagePtr(me,MEM_RAM,4) + sadr + 0x2000;
-					ladrz[idx].ac03 = memGetPagePtr(me,MEM_RAM,5) + sadr + 0x2000;
-					ladrz[idx].ac10 = memGetPagePtr(me,MEM_RAM,6) + sadr;
-					ladrz[idx].ac11 = memGetPagePtr(me,MEM_RAM,7) + sadr;
-					ladrz[idx].ac12 = memGetPagePtr(me,MEM_RAM,6) + sadr + 0x2000;
-					ladrz[idx].ac13 = memGetPagePtr(me,MEM_RAM,7) + sadr + 0x2000;
+					vid->scr5pix[idx] = memGetPagePtr(me,MEM_RAM,5) + sadr;
+					vid->scr5atr[idx] = memGetPagePtr(me,MEM_RAM,5) + aadr;
+					vid->scr7pix[idx] = memGetPagePtr(me,MEM_RAM,7) + sadr;
+					vid->scr7atr[idx] = memGetPagePtr(me,MEM_RAM,7) + aadr;
+					vid->ladrz[idx].ac00 = memGetPagePtr(me,MEM_RAM,4) + sadr;
+					vid->ladrz[idx].ac01 = memGetPagePtr(me,MEM_RAM,5) + sadr;
+					vid->ladrz[idx].ac02 = memGetPagePtr(me,MEM_RAM,4) + sadr + 0x2000;
+					vid->ladrz[idx].ac03 = memGetPagePtr(me,MEM_RAM,5) + sadr + 0x2000;
+					vid->ladrz[idx].ac10 = memGetPagePtr(me,MEM_RAM,6) + sadr;
+					vid->ladrz[idx].ac11 = memGetPagePtr(me,MEM_RAM,7) + sadr;
+					vid->ladrz[idx].ac12 = memGetPagePtr(me,MEM_RAM,6) + sadr + 0x2000;
+					vid->ladrz[idx].ac13 = memGetPagePtr(me,MEM_RAM,7) + sadr + 0x2000;
 					idx++;
 					sadr++;
 					aadr++;
@@ -59,20 +60,26 @@ Video::Video(Memory* me) {
 		}
 		sadr += 0x700;			// -#100 +#800
 	}
-	iacount=0;
-	zoom = 1.0;
-	brdsize = 1.0;
-	flags = 0;
-	setLayout("default");
+	vid->zoom = 1.0;
+	vid->brdsize = 1.0;
+	vid->flags = 0;
+	vidSetLayout(vid,"default");
 
-	curr.h = curr.v = 0;
-	curscr = false;
-	t = 0;
-	fcnt = 0.0;
+	vid->curr.h = 0;
+	vid->curr.v = 0;
+	vid->curscr = false;
+	vid->t = 0;
+	vid->fcnt = 0;
 	
-	nextBorder = 0xff;
-	dotCount = 0;
-	pxcnt = 0;
+	vid->nextBorder = 0xff;
+	vid->dotCount = 0;
+	vid->pxcnt = 0;
+	
+	return vid;
+}
+
+void vidDestroy(Video* vid) {
+	delete(vid);
 }
 
 #define	MTRX_INVIS	0x4000		// invisible: blank spaces
@@ -83,24 +90,24 @@ Video::Video(Memory* me) {
 #define	MTRX_DOT4	0x4005
 #define	MTRX_DOT6	0x4006
 
-void Video::fillMatrix() {
+void vidFillMatrix(Video* vid) {
 	uint32_t x,y,i,adr;
 	i = 0;
 	adr = 0;
-	for (y = 0; y < full.v; y++) {
-		for (x = 0; x < full.h; x++) {
-			if ((y < lcut.v) || (y >= rcut.v) || (x < lcut.h) || (x >= rcut.h)) {
-				matrix[i] = ((x==0) && (y > lcut.v) && (y < rcut.v)) ? MTRX_ZERO : MTRX_INVIS;
+	for (y = 0; y < vid->full.v; y++) {
+		for (x = 0; x < vid->full.h; x++) {
+			if ((y < vid->lcut.v) || (y >= vid->rcut.v) || (x < vid->lcut.h) || (x >= vid->rcut.h)) {
+				vid->matrix[i] = ((x==0) && (y > vid->lcut.v) && (y < vid->rcut.v)) ? MTRX_ZERO : MTRX_INVIS;
 			} else {
-				if ((y < bord.v) || (y > bord.v + 191) || (x < bord.h) || (x > bord.h + 255)) {
-					matrix[i] = MTRX_BORDER;
+				if ((y < vid->bord.v) || (y > vid->bord.v + 191) || (x < vid->bord.h) || (x > vid->bord.h + 255)) {
+					vid->matrix[i] = MTRX_BORDER;
 				} else {
-					switch ((x - bord.h) & 7) {
-						case 0: matrix[i] = adr; adr++; break;
-						case 2: matrix[i] = MTRX_DOT2; break;
-						case 4: matrix[i] = MTRX_DOT4; break;
-						case 6: matrix[i] = MTRX_DOT6; break;
-						default: matrix[i] = MTRX_SHIFT; break;
+					switch ((x - vid->bord.h) & 7) {
+						case 0: vid->matrix[i] = adr; adr++; break;
+						case 2: vid->matrix[i] = MTRX_DOT2; break;
+						case 4: vid->matrix[i] = MTRX_DOT4; break;
+						case 6: vid->matrix[i] = MTRX_DOT6; break;
+						default: vid->matrix[i] = MTRX_SHIFT; break;
 					}
 				}
 			}
@@ -109,42 +116,46 @@ void Video::fillMatrix() {
 	}
 }
 
-void Video::update() {
-	lcut.h = synh.h + (bord.h - synh.h) * (1.0 - brdsize);
-	lcut.v = synh.v + (bord.v - synh.v) * (1.0 - brdsize);
-	rcut.h = full.h - (1.0 - brdsize)*(full.h - bord.h - 256);
-	rcut.v = full.v - (1.0 - brdsize)*(full.v - bord.v - 192);
-	vsze.h = rcut.h - lcut.h;
-	vsze.v = rcut.v - lcut.v;
-	wsze.h = vsze.h * ((flags & VF_DOUBLE) ? 2 : 1);
-	wsze.v = vsze.v * ((flags & VF_DOUBLE) ? 2 : 1);
-	fillMatrix();
-	dotCount = 0;
-	pxcnt = 0;
-	scrptr = scrimg;
+void vidUpdate(Video* vid) {
+	vid->lcut.h = vid->synh.h + (vid->bord.h - vid->synh.h) * (1.0 - vid->brdsize);
+	vid->lcut.v = vid->synh.v + (vid->bord.v - vid->synh.v) * (1.0 - vid->brdsize);
+	vid->rcut.h = vid->full.h - (1.0 - vid->brdsize) * (vid->full.h - vid->bord.h - 256);
+	vid->rcut.v = vid->full.v - (1.0 - vid->brdsize) * (vid->full.v - vid->bord.v - 192);
+	vid->vsze.h = vid->rcut.h - vid->lcut.h;
+	vid->vsze.v = vid->rcut.v - vid->lcut.v;
+	vid->wsze.h = vid->vsze.h * ((vid->flags & VF_DOUBLE) ? 2 : 1);
+	vid->wsze.v = vid->vsze.v * ((vid->flags & VF_DOUBLE) ? 2 : 1);
+	vidFillMatrix(vid);
+	vid->dotCount = 0;
+	vid->pxcnt = 0;
+	vid->scrptr = vid->scrimg;
 }
 
 uint8_t col = 0;
 uint16_t mtx = 0;
+uint8_t ink = 0;
+uint8_t pap = 0;
+uint8_t scrbyte = 0;
+uint8_t alscr2,alscr4,alscr6;
 
-void Video::sync(int tk,float fr) {
-	intStrobe = false;
-	pxcnt += 7.0 * tk / fr;
-	t += (int)pxcnt;
-	while (pxcnt >= 1) {
-		mtx = matrix[dotCount];
+void vidSync(Video* vid,int tk,float fr) {
+	vid->intStrobe = false;
+	vid->pxcnt += 7.0 * tk / fr;
+	vid->t += (int)vid->pxcnt;
+	while (vid->pxcnt >= 1) {
+		mtx = vid->matrix[vid->dotCount];
 		switch (mtx) {
 			case MTRX_ZERO:
-				if (flags & VF_DOUBLE) scrptr += wsze.h;
+				if (vid->flags & VF_DOUBLE) vid->scrptr += vid->wsze.h;
 				break;
 			case MTRX_INVIS:
 				break;
 			default:
-				switch (mode) {
+				switch (vid->mode) {
 					case VID_NORMAL:
 						switch(mtx) {
 							case MTRX_BORDER:
-								col = brdcol;
+								col = vid->brdcol;
 								break;
 							case MTRX_DOT2:
 							case MTRX_DOT4:
@@ -154,16 +165,16 @@ void Video::sync(int tk,float fr) {
 								col = (scrbyte & 0x80) ? ink : pap;
 								break;
 							default:
-								if (curscr) {
-									scrbyte = *(scr7pix[mtx]);
-									atrbyte = *(scr7atr[mtx]);
+								if (vid->curscr) {
+									scrbyte = *(vid->scr7pix[mtx]);
+									vid->atrbyte = *(vid->scr7atr[mtx]);
 								} else {
-									scrbyte = *(scr5pix[mtx]);
-									atrbyte = *(scr5atr[mtx]);
+									scrbyte = *(vid->scr5pix[mtx]);
+									vid->atrbyte = *(vid->scr5atr[mtx]);
 								}
-								if ((atrbyte & 0x80) && flash) scrbyte ^= 255;
-								ink = inkTab[atrbyte & 0x7f];
-								pap = papTab[atrbyte & 0x7f];
+								if ((vid->atrbyte & 0x80) && vid->flash) scrbyte ^= 255;
+								ink = inkTab[vid->atrbyte & 0x7f];
+								pap = papTab[vid->atrbyte & 0x7f];
 								col = (scrbyte & 0x80) ? ink : pap;
 								break;
 						}
@@ -171,7 +182,7 @@ void Video::sync(int tk,float fr) {
 					case VID_ALCO:
 						switch (mtx) {
 							case MTRX_BORDER:
-								col = brdcol;
+								col = vid->brdcol;
 								break;
 							case MTRX_SHIFT:
 								col = ((scrbyte & 0x38)>>3) | ((scrbyte & 0x80)>>4);
@@ -189,43 +200,43 @@ void Video::sync(int tk,float fr) {
 								col = inkTab[scrbyte & 0x7f];
 								break;
 							default:
-								if (curscr) {
-									scrbyte = *(ladrz[mtx].ac10);
-									alscr2 = *(ladrz[mtx].ac11);
-									alscr4 = *(ladrz[mtx].ac12);
-									alscr6 = *(ladrz[mtx].ac13);
+								if (vid->curscr) {
+									scrbyte = *(vid->ladrz[mtx].ac10);
+									alscr2 = *(vid->ladrz[mtx].ac11);
+									alscr4 = *(vid->ladrz[mtx].ac12);
+									alscr6 = *(vid->ladrz[mtx].ac13);
 								} else {
-									scrbyte = *(ladrz[mtx].ac00);
-									alscr2 = *(ladrz[mtx].ac01);
-									alscr4 = *(ladrz[mtx].ac02);
-									alscr6 = *(ladrz[mtx].ac03);
+									scrbyte = *(vid->ladrz[mtx].ac00);
+									alscr2 = *(vid->ladrz[mtx].ac01);
+									alscr4 = *(vid->ladrz[mtx].ac02);
+									alscr6 = *(vid->ladrz[mtx].ac03);
 								}
 								col = inkTab[scrbyte & 0x7f];
 								break;
 						}
 						break;
 				}
-				*(scrptr++) = col;
-				if (flags & VF_DOUBLE) {
-					*(scrptr + wsze.h - 1) = col;
-					*(scrptr + wsze.h) = col;
-					*(scrptr++)=col;
+				*(vid->scrptr++) = col;
+				if (vid->flags & VF_DOUBLE) {
+					*(vid->scrptr + vid->wsze.h - 1) = col;
+					*(vid->scrptr + vid->wsze.h) = col;
+					*(vid->scrptr++)=col;
 				}
 				break;
 		}
-		pxcnt -= 1.0;
-		dotCount++;
-		if (dotCount >= frmsz) {
-			dotCount = 0;
-			fcnt++;
-			flash = fcnt & 0x20;
-			scrptr = scrimg;
-			intStrobe = true;
+		vid->pxcnt -= 1.0;
+		vid->dotCount++;
+		if (vid->dotCount >= vid->frmsz) {
+			vid->dotCount = 0;
+			vid->fcnt++;
+			vid->flash = vid->fcnt & 0x20;
+			vid->scrptr = vid->scrimg;
+			vid->intStrobe = true;
 		}
 	}
-	if (nextBorder < 8) {
-		brdcol = nextBorder;
-		nextBorder = 0xff;
+	if (vid->nextBorder < 8) {
+		vid->brdcol = vid->nextBorder;
+		vid->nextBorder = 0xff;
 	}
 }
 
@@ -261,17 +272,17 @@ std::vector<VidLayout> getLayoutList() {
 	return res;
 }
 
-bool Video::setLayout(std::string nm) {
-	for (uint32_t i=0; i<layoutList.size(); i++) {
+bool vidSetLayout(Video* vid,std::string nm) {
+	for (uint32_t i=0; i < layoutList.size(); i++) {
 		if (layoutList[i].name == nm) {
-			curlay = nm;
-			full = layoutList[i].full;
-			bord = layoutList[i].bord;
-			synh = layoutList[i].sync;
-			intsz = layoutList[i].intsz;
-			intpos = layoutList[i].intpos;
-			frmsz = full.h * full.v;
-			update();
+			vid->curlay = nm;
+			vid->full = layoutList[i].full;
+			vid->bord = layoutList[i].bord;
+			vid->synh = layoutList[i].sync;
+			vid->intsz = layoutList[i].intsz;
+			vid->intpos = layoutList[i].intpos;
+			vid->frmsz = vid->full.h * vid->full.v;
+			vidUpdate(vid);
 			return true;
 		}
 	}

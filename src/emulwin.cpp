@@ -160,7 +160,7 @@ void emulUpdateWindow() {
 
 void MainWin::updateWindow() {
 	emulFlags |= FL_BLOCK;
-	zx->vid->update();
+	vidUpdate(zx->vid);
 	int szw = zx->vid->wsze.h;
 	int szh = zx->vid->wsze.v;
 #ifndef XQTPAINT

@@ -701,5 +701,5 @@ void loadConfig(bool dev) {
 	if (zx->hw==NULL) throw("Can't found current machine");
 	if (memGetRomset(zx->mem) == NULL) throw("Can't found current romset");
 	if (~zx->hw->mask & tmask) throw("Incorrect memory size for this machine");
-	if (!zx->vid->setLayout(zx->vid->curlay)) zx->vid->setLayout("default");
+	if (!vidSetLayout(zx->vid,zx->vid->curlay)) vidSetLayout(zx->vid,"default");
 }

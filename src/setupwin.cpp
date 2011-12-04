@@ -346,7 +346,7 @@ void SetupWin::apply() {
 	optSet(OPT_SHOTFRM,ui.ssfbox->itemData(ui.ssfbox->currentIndex()).toInt());
 	optSet(OPT_SHOTCNT,ui.scntbox->value());
 	optSet(OPT_SHOTINT,ui.sintbox->value());
-	zx->vid->setLayout(std::string(ui.geombox->currentText().toUtf8().data()));
+	vidSetLayout(zx->vid,std::string(ui.geombox->currentText().toUtf8().data()));
 	optSet(OPT_BRGLEV,ui.brgslide->value());
 //	emulUpdateWindow();
 // sound
