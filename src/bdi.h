@@ -122,18 +122,20 @@ class BDI {
 		BDI();
 		bool enable;
 		bool active;
-		bool pcatch;
+//		bool pcatch;
 		uint32_t tab;
 		Floppy flop[4];
 		VG93 vg93;
 //		void sync(int);
-		bool out(int32_t, uint8_t);
-		bool in(int32_t, uint8_t*);
-		int32_t getport(int);
+//		bool out(int32_t, uint8_t);
+//		bool in(int32_t, uint8_t*);
+//		int32_t getport(int);
 };
 
 typedef void(*VGOp)(VG93*);
 
 void bdiSync(BDI*,int);
+bool bdiIn(BDI*,int, uint8_t*);
+bool bdiOut(BDI*,int, uint8_t);
 
 #endif

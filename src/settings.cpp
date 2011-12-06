@@ -304,13 +304,14 @@ void saveConfig() {
 		shithappens("Can't write settings");
 		throw(0);
 	}
-	optSet("MACHINE","current",zx->opt.hwName);
-	optSet("ROMSET","current",zx->opt.rsName);
-	optSet("MACHINE","restart",(emulGetFlags() & FL_RESET) != 0);
-	optSet("ROMSET","reset",rmnam[zx->res]);
-	optSet("MACHINE","memory",memGet(zx->mem,MEM_MEMSIZE));
 	optSet("GENERAL","cpu.frq",int(zx->cpuFreq * 2));
+	optSet("MACHINE","current",zx->opt.hwName);
+	optSet("MACHINE","restart",(emulGetFlags() & FL_RESET) != 0);
+	optSet("MACHINE","memory",memGet(zx->mem,MEM_MEMSIZE));
 	optSet("MACHINE","scrp.wait",(zx->hwFlags & WAIT_ON) != 0);
+	optSet("ROMSET","gs",zx->opt.GSRom);
+	optSet("ROMSET","current",zx->opt.rsName);
+	optSet("ROMSET","reset",rmnam[zx->res]);
 	optSet("VIDEO","doublesize",(zx->vid->flags & VF_DOUBLE) != 0);
 	optSet("VIDEO","bordersize",int(zx->vid->brdsize * 100));
 	optSet("VIDEO","geometry",zx->vid->curlay);

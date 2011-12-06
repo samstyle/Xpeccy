@@ -54,9 +54,9 @@ uint8_t lev,levr,levl;
 
 // output
 
-void sndSync(uint32_t tk) {
-	if (tk < tickCount) return;
-	tickCount += tatbyte;
+double sndSync(double tk) {
+	if (tk < tatbyte) return tk;
+	tk -= tatbyte;
 	tapSync(zx->tape,zx->tapCount); zx->tapCount = 0;
 	gsSync(zx->gs,zx->gsCount); zx->gsCount = 0;
 	lev = zx->beeplev ? beepVolume : 0;
@@ -76,13 +76,14 @@ void sndSync(uint32_t tk) {
 	levl += tmpl.first * gsVolume / 100.0;
 	levr += tmpl.second * gsVolume / 100.0;
 	
-	if (smpCount >= sndChunks) return;
+	if (smpCount >= sndChunks) return tk;
 	ringBuffer[ringPos] = levl;
 	ringPos++;
 	ringBuffer[ringPos] = levr;
 	ringPos++;
 	ringPos &= 0x3fff;
 	smpCount++;
+	return tk;
 }
 
 void sndCalibrate() {

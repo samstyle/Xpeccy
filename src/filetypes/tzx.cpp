@@ -36,8 +36,7 @@ int loadTZX(Tape* tape, const char* name) {
 			case 0x10:
 				paulen = getlen(&file,2);
 				len = getlen(&file,2);
-				if (blockBuf != NULL) free(blockBuf);
-				blockBuf = new char[len];
+				blockBuf = (char*)realloc(blockBuf,len * sizeof(char));
 				file.read(blockBuf,len);
 				block = tapDataToBlock(blockBuf,len,sigLens);
 				block.pause = paulen;
@@ -55,8 +54,7 @@ int loadTZX(Tape* tape, const char* name) {
 				file.get();
 				paulen = getlen(&file,2);
 				len = getlen(&file,3);
-				if (blockBuf != NULL) free(blockBuf);
-				blockBuf = new char[len];
+				blockBuf = (char*)realloc(blockBuf,len * sizeof(char));
 				file.read(blockBuf,len);
 				block = tapDataToBlock(blockBuf,len,altLens);
 				block.pause = paulen;
@@ -94,8 +92,7 @@ int loadTZX(Tape* tape, const char* name) {
 				file.get();
 				paulen = getlen(&file,2);
 				len = getlen(&file,3);
-				if (blockBuf != NULL) free(blockBuf);
-				blockBuf = new char[len];
+				blockBuf = (char*)realloc(blockBuf,len * sizeof(char));
 				file.read(blockBuf,len);
 				altBlock = tapDataToBlock(blockBuf,len,altLens);
 				block.len0 = altBlock.len0;
@@ -200,5 +197,6 @@ int loadTZX(Tape* tape, const char* name) {
 		block.flags &= ~TBF_BYTES;
 		tapAddBlock(tape,block);
 	}
+	if (blockBuf != NULL) free(blockBuf);
 	return ERR_OK;
 }

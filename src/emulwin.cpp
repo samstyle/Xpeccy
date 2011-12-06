@@ -202,9 +202,11 @@ void emulSetFlag(int msk,bool cnd) {
 	}
 }
 
+double tks = 0;
+
 void emulExec() {
-	zx->exec();
-	sndSync(zx->vid->t);
+	tks += zx->exec();
+	tks = sndSync(tks);
 	if (!dbgIsActive()) {
 		// somehow catch CPoint
 		Z80EX_WORD pc = z80ex_get_reg(zx->cpu,regPC);

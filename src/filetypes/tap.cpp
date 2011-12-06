@@ -56,10 +56,7 @@ int loadTAP(Tape* tape, const char* name) {
 	while (!file.eof()) {
 		len = getLEWord(&file);
 		if (!file.eof()) {
-			if (blockBuf != NULL) {
-				free(blockBuf);
-			}
-			blockBuf = new char[len];
+			blockBuf = (char*)realloc(blockBuf,len * sizeof(char));
 			file.read(blockBuf,len);
 			block = tapDataToBlock(blockBuf,len,sigLens);
 			block.pause = (block.pdur == 8063) ? 500 : 1000;

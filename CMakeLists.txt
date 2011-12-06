@@ -2,9 +2,18 @@ cmake_minimum_required(VERSION 2.8)
 project(xpeccy)
 
 find_package(Qt4 REQUIRED)
-find_package(SDL REQUIRED)
-find_package(ALSA)
 find_package(ZLIB)
+
+if (WIN32)
+	find_package(SDL)
+else(WIN32)
+	find_package(SDL REQUIRED)
+	find_package(ALSA)
+	if (ALSA_FOUND)
+		add_definitions(-DHAVEALSASOUND)
+	endif(ALSA_FOUND)
+endif(WIN32)
+
 
 file(GLOB SOURCES ./src/*.cpp ./src/filetypes/*.cpp)
 file(GLOB HEADERS ./src/*.h ./src/filetypes/*.h)
@@ -21,21 +30,44 @@ add_definitions(-Wall -O3)
 
 if (SDL_FOUND)
 	add_definitions(-DHAVESDLSOUND)
-endif()
-
-if (ALSA_FOUND)
-	add_definitions(-DHAVEALSASOUND)
-endif()
+endif(SDL_FOUND)
 
 if (ZLIB_FOUND)
 	add_definitions(-DHAVEZLIB)
-endif()
+endif(ZLIB_FOUND)
 
 qt4_add_resources(RESOURCES ${QRCFILES})
 qt4_wrap_ui(UIHEADERS ${UIFILES})
 qt4_wrap_cpp(MOCHEADERS ${MOCFILES})
 
 include(${QT_USE_FILE})
+
+if (WIN32)
+
+include_directories(
+	${SDL_INCLUDE_DIR}
+	${ZLIB_INCLUDE_DIRS}
+	${CMAKE_BINARY_DIR}
+	F:/developement/include/
+)
+
+add_executable(xpeccy WIN32
+	${SOURCES}
+	${HEADERS}
+	${UIHEADERS}
+	${RESOURCES}
+	${MOCHEADERS}
+)
+
+target_link_libraries(xpeccy
+	${QT_LIBRARIES}
+	${SDL_LIBRARY}
+	${ZLIB_LIBRARY}
+	libz80ex.dll
+	libz80ex_dasm.dll
+)
+
+else(WIN32)
 
 include_directories(
 	${SDL_INCLUDE_DIR}
@@ -65,3 +97,5 @@ target_link_libraries(xpeccy
 )
 
 install_targets(/bin xpeccy)
+
+endif(WIN32)

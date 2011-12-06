@@ -65,14 +65,14 @@ class ZXComp {
 			std::string hwName;
 			std::string rsName;
 		} opt;
-		uint32_t exec();
+		double exec();
 		void reset(int);
 		void mapMemory();
 		int32_t getPort(int32_t);
 		uint8_t in(uint16_t);
 		void out(uint16_t,uint8_t);
-		void INTHandle();
-		void NMIHandle();
+		int INTHandle();
+		int NMIHandle();
 		int gsCount;
 		int tapCount;
 };

@@ -8,6 +8,7 @@
 #define	TRBDELAY	MSDELAY * 3
 
 bool vgdebug = false;
+bool pcatch = false;	// true when bdi takes i/o request
 
 // BDI
 
@@ -18,10 +19,10 @@ BDI::BDI() {
 	vg93.t = 0;
 }
 
-int32_t BDI::getport(int32_t p) {
-	int32_t port = p;
+int bdiGetPort(BDI* bdi,int p) {
+	int port = p;
 	pcatch = false;
-	if (enable && active && (p & 0x03)==0x03) {
+	if (bdi->enable && bdi->active && (p & 0x03)==0x03) {
 		if ((p & 0x82) == 0x82) port=0xff;
 		if ((p & 0xe2) == 0x02) port=0x1f;
 		if ((p & 0xe2) == 0x22) port=0x3f;
@@ -32,37 +33,37 @@ int32_t BDI::getport(int32_t p) {
 	return port;
 }
 
-bool BDI::out(int32_t port,uint8_t val) {
-	port = getport(port);
+bool bdiOut(BDI* bdi,int port,uint8_t val) {
+	port = bdiGetPort(bdi,port);
 	if (!pcatch) return false;
 	switch (port) {
-		case 0x1f: vg93.command(val); break;
-		case 0x3f: vg93.trk = val; break;
-		case 0x5f: vg93.sec = val; break;
-		case 0x7f: vg93.data = val;
-			vg93.drq = false;
+		case 0x1f: bdi->vg93.command(val); break;
+		case 0x3f: bdi->vg93.trk = val; break;
+		case 0x5f: bdi->vg93.sec = val; break;
+		case 0x7f: bdi->vg93.data = val;
+			bdi->vg93.drq = false;
 			break;
 		case 0xff: // vg93.drv = val&0x03;
-			vg93.fptr = &flop[val&0x03];	// selet floppy
-			vg93.setmr(val&0x04);		// master reset
-			vg93.block = val&0x08;
-			vg93.side = (val&0x10)?1:0;
-			vg93.mfm = val&0x40;
+			bdi->vg93.fptr = &bdi->flop[val&0x03];	// selet floppy
+			bdi->vg93.setmr(val&0x04);		// master reset
+			bdi->vg93.block = val&0x08;
+			bdi->vg93.side = (val&0x10)?1:0;
+			bdi->vg93.mfm = val&0x40;
 			break;
 	}
 	return true;
 }
 
-bool BDI::in(int32_t port, uint8_t* val) {
-	port = getport(port);
+bool bdiIn(BDI* bdi,int port,uint8_t* val) {
+	port = bdiGetPort(bdi,port);
 	if (!pcatch) return false;
 	*val = 0xff;
 	switch (port) {
-		case 0x1f: *val = vg93.getflag(); vg93.irq = false; break;
-		case 0x3f: *val = vg93.trk; break;
-		case 0x5f: *val = vg93.sec; break;
-		case 0x7f: *val = vg93.data; vg93.drq = false; break;
-		case 0xff: *val = (vg93.irq << 7) | (vg93.drq << 6); break;
+		case 0x1f: *val = bdi->vg93.getflag(); bdi->vg93.irq = false; break;
+		case 0x3f: *val = bdi->vg93.trk; break;
+		case 0x5f: *val = bdi->vg93.sec; break;
+		case 0x7f: *val = bdi->vg93.data; bdi->vg93.drq = false; break;
+		case 0xff: *val = (bdi->vg93.irq ? 0x80 : 0x00) | (bdi->vg93.drq ? 0x40 : 0x00); break;
 	}
 	return true;
 }

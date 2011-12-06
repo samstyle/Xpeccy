@@ -27,7 +27,7 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT*,Z80EX_WORD adr,int m1,void* ptr) {
 		comp->prt2 = ZSLays[(adr & 0x000c) >> 2][comp->prt2 & 3] & memGet(comp->mem,MEM_PROFMASK);
 		comp->mapMemory();
 	}
-	if ((m1 != 0) && comp->bdi->enable) {
+	if ((m1 == 1) && comp->bdi->enable) {
 		if (!comp->bdi->active && ((adr & 0xff00) == 0x3d00) && (comp->prt0 & 0x10)) {
 			comp->bdi->active = true;
 			comp->mapMemory();
@@ -110,7 +110,7 @@ void ZXComp::mapMemory() {
 	uint8_t rp;
 	switch (hw->type) {
 		case HW_ZX48:
-			memSetBank(mem,MEM_BANK0,MEM_ROM,bdi->active?3:1);
+			memSetBank(mem,MEM_BANK0,MEM_ROM,bdi->active ? 3 : 1);
 			memSetBank(mem,MEM_BANK3,MEM_RAM,0);
 			break;
 		case HW_PENT:
@@ -130,8 +130,8 @@ void ZXComp::mapMemory() {
 	}
 }
 
-int32_t ZXComp::getPort(int32_t port) {
-	switch (hw->type) {
+int zxGetPort(int port, int hardware) {
+	switch (hardware) {
 		case HW_ZX48:
 			if ((port & 0x01) == 0) {
 				port = (port & 0xff00) | 0xfe;
@@ -174,8 +174,8 @@ uint8_t ZXComp::in(uint16_t port) {
 	gsSync(gs,gsCount); gsCount = 0;
 	if (ideIn(ide,port,&res,bdi->active)) return res;
 	if (gsIn(gs,port,&res) == GS_OK) return res;
-	if (bdi->in(port,&res)) return res;
-	port = getPort(port);
+	if (bdiIn(bdi,port,&res)) return res;
+	port = zxGetPort(port,hw->type);
 //	if (rzxPlay) return mem->getRZXIn();
 	switch (port) {
 		case 0xfbdf: res = mouse->xpos; break;
@@ -229,8 +229,8 @@ void ZXComp::out(uint16_t port,uint8_t val) {
 	gsSync(gs,gsCount); gsCount = 0;
 	if (ideOut(ide,port,val,bdi->active)) return;
 	if (gsOut(gs,port,val) == GS_OK) return;
-	if (bdi->out(port,val)) return;
-	port = getPort(port);	
+	if (bdiOut(bdi,port,val)) return;
+	port = zxGetPort(port,hw->type);	
 	switch (port) {
 		case 0xfffd:
 		case 0xbffd:
@@ -294,10 +294,10 @@ void ZXComp::out(uint16_t port,uint8_t val) {
 	}
 }
 
-double tk;
+double ltk;
 
-uint32_t ZXComp::exec() {
-	uint32_t ltk = vid->t;
+double ZXComp::exec() {
+//	uint32_t ltk = vid->t;
 	int res = 0;
 	do {
 		res += z80ex_step(cpu);
@@ -307,26 +307,29 @@ uint32_t ZXComp::exec() {
 
 	Z80EX_WORD pc = z80ex_get_reg(cpu,regPC);
 
-	if ((pc > 0x3fff) && nmiRequest) NMIHandle();
-	if (intStrobe) INTHandle();
+	if ((pc > 0x3fff) && nmiRequest) res += NMIHandle();
+	if (intStrobe) res += INTHandle();
 
-	ltk = vid->t - ltk;
+	ltk = res * 7.0 / cpuFreq;
 
-	gsCount += ltk;
-	if (tapGet(tape,TAPE_FLAGS) & TAPE_ON) tapCount += ltk;
+	if (gsGet(gs,GS_FLAG) & GS_ENABLE) gsCount += ltk;
+	tapCount += ltk;
 	if (bdi->enable) bdiSync(bdi,ltk);
 	return ltk;
 }
 
-void ZXComp::INTHandle() {
+int ZXComp::INTHandle() {
 	int res = z80ex_int(cpu);
 	vidSync(vid,res,cpuFreq);
+	return res;
 }
 
-void ZXComp::NMIHandle() {
+int ZXComp::NMIHandle() {
 	int res = z80ex_nmi(cpu);
-	if (res == 0) return;
-	bdi->active = true;
-	mapMemory();
-	vidSync(vid,res,cpuFreq);
+	if (res != 0) {
+		bdi->active = true;
+		mapMemory();
+		vidSync(vid,res,cpuFreq);
+	}
+	return res;
 }
