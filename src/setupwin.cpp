@@ -226,7 +226,7 @@ void SetupWin::start() {
 	if (rset != NULL) cbx = ui.rsetbox->findText(QDialog::trUtf8(rset->name.c_str()));
 	ui.rsetbox->setCurrentIndex(cbx);
 	ui.reschk->setChecked(emulGetFlags() & FL_RESET);
-	ui.resbox->setCurrentIndex(zx->res);
+	ui.resbox->setCurrentIndex(zx->resbank);
 	switch(memGet(zx->mem,MEM_MEMSIZE)) {
 		case 48: ui.mszbox->setCurrentIndex(0); break;
 		case 128: ui.mszbox->setCurrentIndex(1); break;
@@ -326,7 +326,7 @@ void SetupWin::apply() {
 	zx->opt.rsName = std::string(ui.rsetbox->currentText().toUtf8().data()); setRomset(zx, zx->opt.rsName);
 //	zx->mem->loadromset(optGetString(OPT_ROMDIR));
 	emulSetFlag(FL_RESET, ui.reschk->isChecked());
-	zx->res = ui.resbox->currentIndex();
+	zx->resbank = ui.resbox->currentIndex();
 	switch(ui.mszbox->currentIndex()) {
 		case 0: memSet(zx->mem,MEM_MEMSIZE,48); break;
 		case 1: memSet(zx->mem,MEM_MEMSIZE,128); break;

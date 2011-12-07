@@ -298,12 +298,6 @@ void saveProfiles() {
 
 void saveConfig() {
 	saveProfiles();
-	std::string cfname = workDir + "/" + getCurrentProfile()->file;
-	std::ofstream sfile(cfname.c_str());
-	if (!sfile.good()) {
-		shithappens("Can't write settings");
-		throw(0);
-	}
 	optSet("GENERAL","cpu.frq",int(zx->cpuFreq * 2));
 	optSet("MACHINE","current",zx->opt.hwName);
 	optSet("MACHINE","restart",(emulGetFlags() & FL_RESET) != 0);
@@ -311,7 +305,7 @@ void saveConfig() {
 	optSet("MACHINE","scrp.wait",(zx->hwFlags & WAIT_ON) != 0);
 	optSet("ROMSET","gs",zx->opt.GSRom);
 	optSet("ROMSET","current",zx->opt.rsName);
-	optSet("ROMSET","reset",rmnam[zx->res]);
+	optSet("ROMSET","reset",rmnam[zx->resbank]);
 	optSet("VIDEO","doublesize",(zx->vid->flags & VF_DOUBLE) != 0);
 	optSet("VIDEO","bordersize",int(zx->vid->brdsize * 100));
 	optSet("VIDEO","geometry",zx->vid->curlay);
@@ -329,7 +323,7 @@ void saveConfig() {
 	optSet("BETADISK","B",zx->bdi->flop[1].getString());
 	optSet("BETADISK","C",zx->bdi->flop[2].getString());
 	optSet("BETADISK","D",zx->bdi->flop[3].getString());
-	
+
 	optSet("IDE","iface",ideGet(zx->ide,IDE_NONE,IDE_TYPE));
 	
 	optSet("IDE","master.type",ideGet(zx->ide,IDE_MASTER,IDE_TYPE));
@@ -351,7 +345,14 @@ void saveConfig() {
 	optSet("IDE","slave.maxlba",ideGet(zx->ide,IDE_MASTER,IDE_MAXLBA));
 	chs = int2str(pass.spt) + "/" + int2str(pass.hds) + "/" + int2str(pass.cyls);
 	optSet("IDE","slave.chs",chs);
-	
+
+	std::string cfname = workDir + "/" + getCurrentProfile()->file;
+	std::ofstream sfile(cfname.c_str());
+	if (!sfile.good()) {
+		shithappens("Can't write settings");
+		throw(0);
+	}
+
 	uint i,j;
 	std::vector<optEntry> ents;
 	std::vector<std::string> grps = optGroupsList();
@@ -576,11 +577,12 @@ void loadConfig(bool dev) {
 //printf("%s\t%s\t%s\n",config.back().group.c_str(),config.back().name.c_str(),config.back().value.c_str());
 				switch (tmp2) {
 					case 1:
+						zx->resbank = 1;
 						if (pnam=="reset") {
-							if ((pval=="basic128") || (pval=="0")) zx->res = 0;
-							if ((pval=="basic48") || (pval=="1")) zx->res = 1;
-							if ((pval=="shadow") || (pval=="2")) zx->res = 2;
-							if ((pval=="trdos") || (pval=="3")) zx->res = 3;
+							if ((pval=="basic128") || (pval=="0")) zx->resbank = 0;
+							if ((pval=="basic48") || (pval=="1")) zx->resbank = 1;
+							if ((pval=="shadow") || (pval=="2")) zx->resbank = 2;
+							if ((pval=="trdos") || (pval=="3")) zx->resbank = 3;
 						}
 //						if (pnam=="current") zx->opt.romsetName = pval;
 //						if (pnam=="gs") zx->opt.GSRom = pval;

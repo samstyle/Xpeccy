@@ -82,17 +82,17 @@ ZXComp::ZXComp() {
 void ZXComp::reset(int wut) {
 	rzxPlay = false;
 	block7ffd=false;
-	int resbank = res;
+	int resto = resbank;
 	switch (wut) {
-		case RES_48: resbank = 1; break;
-		case RES_128: resbank = 0; break;
-		case RES_DOS: resbank = 3; break;
-		case RES_SHADOW: resbank = 2; break;
+		case RES_48: resto = 1; break;
+		case RES_128: resto = 0; break;
+		case RES_DOS: resto = 3; break;
+		case RES_SHADOW: resto = 2; break;
 	}
 	prt2 = 0;
 	prt1 = 0;
 	prt0 = ((resbank & 1) << 4);
-	memSetBank(mem,MEM_BANK0,MEM_ROM,resbank);
+	memSetBank(mem,MEM_BANK0,MEM_ROM,resto);
 	memSetBank(mem,MEM_BANK3,MEM_RAM,0);
 //	mem->rzx.clear();
 	z80ex_reset(cpu);
