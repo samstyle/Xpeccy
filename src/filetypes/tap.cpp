@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "filetypes.h"
 
 void tapAddByte(TapeBlock* block, char val) {

@@ -3,9 +3,9 @@
 #include "spectrum.h"
 
 #include <iostream>
-//#ifdef HAVESDLSOUND
-//	#include <SDL/SDL.h>
-//#endif
+#ifdef HAVESDLSOUND
+	#include <SDL/SDL.h>
+#endif
 
 extern ZXComp* zx;
 

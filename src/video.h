@@ -4,14 +4,6 @@
 #include <vector>
 #include <string>
 
-#ifdef WIN32
-	#undef main
-	#include <SDL.h>
-	#undef main
-#else
-	#include <SDL.h>
-#endif
-
 #include "memory.h"
 
 #define VF_FULLSCREEN		1
@@ -40,7 +32,7 @@ struct Video {
 	VSize full,bord,curr,synh;
 	VSize lcut,rcut,vsze,wsze;
 	int frmsz;
-	uint32_t t, intsz, intpos;
+	uint32_t intsz, intpos;
 	struct {
 		uint8_t *ac00,*ac01,*ac02,*ac03;	// alco parts (screen 0)
 		uint8_t *ac10,*ac11,*ac12,*ac13;	// alco parts (screen 1)
@@ -55,12 +47,8 @@ struct Video {
 	uint8_t brdcol,nextBorder;
 	uint8_t fcnt,atrbyte;
 	std::string curlay;		// current layout name
-//	void sync(int,float);
-//	bool setLayout(std::string);
-//	void update();
 	int dotCount;
 	uint16_t matrix[512 * 512];
-//	void fillMatrix();
 };
 
 Video* vidCreate(Memory*);

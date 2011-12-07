@@ -117,23 +117,18 @@ class VG93 {
 		uint8_t getflag();
 };
 
-class BDI {
-	public:
-		BDI();
-		bool enable;
-		bool active;
-//		bool pcatch;
-		uint32_t tab;
-		Floppy flop[4];
-		VG93 vg93;
-//		void sync(int);
-//		bool out(int32_t, uint8_t);
-//		bool in(int32_t, uint8_t*);
-//		int32_t getport(int);
+struct BDI {
+	bool enable;
+	bool active;
+	uint32_t tab;
+	Floppy flop[4];
+	VG93 vg93;
 };
 
 typedef void(*VGOp)(VG93*);
 
+BDI* bdiCreate();
+void bdiDestroy(BDI*);
 void bdiSync(BDI*,int);
 bool bdiIn(BDI*,int, uint8_t*);
 bool bdiOut(BDI*,int, uint8_t);

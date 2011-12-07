@@ -69,7 +69,7 @@ ZXComp::ZXComp() {
 	keyb = keyCreate();
 	mouse = mouseCreate();
 	tape = tapCreate();
-	bdi = new BDI;
+	bdi = bdiCreate();
 	ide = ideCreate(IDE_NONE);
 	ts = tsCreate(TS_NONE,SND_AY,SND_NONE);
 	gs = gsCreate();
@@ -295,10 +295,11 @@ void ZXComp::out(uint16_t port,uint8_t val) {
 }
 
 double ltk;
+int res = 0;
+int res2 = 0;
 
 double ZXComp::exec() {
-//	uint32_t ltk = vid->t;
-	int res = 0;
+	res = 0;
 	do {
 		res += z80ex_step(cpu);
 	} while (z80ex_last_op_type(cpu) != 0);
@@ -307,8 +308,19 @@ double ZXComp::exec() {
 
 	Z80EX_WORD pc = z80ex_get_reg(cpu,regPC);
 
-	if ((pc > 0x3fff) && nmiRequest) res += NMIHandle();
-	if (intStrobe) res += INTHandle();
+	if ((pc > 0x3fff) && nmiRequest) {
+		res2 = z80ex_nmi(cpu);
+		res += res2;
+		if (res2 != 0) {
+			bdi->active = true;
+			mapMemory();
+			vidSync(vid,res2,cpuFreq);
+		}
+	}
+	if (intStrobe) {
+		res += z80ex_int(cpu);
+		vidSync(vid,res,cpuFreq);
+	}
 
 	ltk = res * 7.0 / cpuFreq;
 
@@ -316,20 +328,4 @@ double ZXComp::exec() {
 	tapCount += ltk;
 	if (bdi->enable) bdiSync(bdi,ltk);
 	return ltk;
-}
-
-int ZXComp::INTHandle() {
-	int res = z80ex_int(cpu);
-	vidSync(vid,res,cpuFreq);
-	return res;
-}
-
-int ZXComp::NMIHandle() {
-	int res = z80ex_nmi(cpu);
-	if (res != 0) {
-		bdi->active = true;
-		mapMemory();
-		vidSync(vid,res,cpuFreq);
-	}
-	return res;
 }

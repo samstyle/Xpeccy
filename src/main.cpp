@@ -1,9 +1,9 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QTimer>
-
+#include <SDL/SDL.h>
 #include <sstream>
-#include "getopt.h"
+#include <getopt.h>
 
 #include "spectrum.h"
 #include "sound.h"

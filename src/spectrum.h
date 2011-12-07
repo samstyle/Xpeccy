@@ -68,11 +68,8 @@ class ZXComp {
 		double exec();
 		void reset(int);
 		void mapMemory();
-		int32_t getPort(int32_t);
 		uint8_t in(uint16_t);
 		void out(uint16_t,uint8_t);
-		int INTHandle();
-		int NMIHandle();
 		int gsCount;
 		int tapCount;
 };

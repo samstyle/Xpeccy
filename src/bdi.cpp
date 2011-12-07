@@ -12,11 +12,20 @@ bool pcatch = false;	// true when bdi takes i/o request
 
 // BDI
 
-BDI::BDI() {
-	for (int32_t i=0; i<4; i++) flop[i].id = i;
-	vg93.fptr = &flop[0];
-	vg93.tf = tab = BYTEDELAY;
-	vg93.t = 0;
+BDI* bdiCreate() {
+	BDI* bdi = new BDI;
+	for (int i=0; i<4; i++) {
+		bdi->flop[i].id = i;
+	}
+	bdi->vg93.fptr = &bdi->flop[0];
+	bdi->vg93.tf = BYTEDELAY;
+	bdi->tab = BYTEDELAY;
+	bdi->vg93.t = 0;
+	return bdi;
+}
+
+void bdiDestroy(BDI* bdi) {
+	delete(bdi);
 }
 
 int bdiGetPort(BDI* bdi,int p) {

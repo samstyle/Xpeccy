@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdio.h>
 #include "video.h"
 
 // video layouts
@@ -68,7 +69,6 @@ Video* vidCreate(Memory* me) {
 	vid->curr.h = 0;
 	vid->curr.v = 0;
 	vid->curscr = false;
-	vid->t = 0;
 	vid->fcnt = 0;
 	
 	vid->nextBorder = 0xff;
@@ -141,7 +141,6 @@ uint8_t alscr2,alscr4,alscr6;
 void vidSync(Video* vid,int tk,float fr) {
 	vid->intStrobe = false;
 	vid->pxcnt += 7.0 * tk / fr;
-	vid->t += (int)vid->pxcnt;
 	while (vid->pxcnt >= 1) {
 		mtx = vid->matrix[vid->dotCount];
 		switch (mtx) {

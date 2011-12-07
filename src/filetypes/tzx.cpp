@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "filetypes.h"
 
 uint32_t getlen(std::ifstream *file,uint8_t n) {
