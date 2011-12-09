@@ -19,9 +19,12 @@
 #define FT_SNAP		(FT_SNA | FT_Z80)
 #define	FT_RZX		(1<<8)
 #define	FT_HOBETA	(1<<9)
+#define	FT_RAW		(1<<10)
 
 void initFileDialog(QWidget*);
 void loadFile(const char*, int, int);
 bool saveFile(const char*, int, int);
+
+bool saveChangedDisk(int);
 
 #endif

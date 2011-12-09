@@ -267,21 +267,21 @@ void SetupWin::start() {
 	ui.bdebox->setChecked(zx->bdi->enable);
 	ui.bdtbox->setChecked(zx->bdi->vg93.turbo);
 	ui.apathle->setText(QDialog::trUtf8(zx->bdi->flop[0].path.c_str()));
-		ui.a80box->setChecked(zx->bdi->flop[0].trk80);
-		ui.adsbox->setChecked(zx->bdi->flop[0].dblsid);
-		ui.awpbox->setChecked(zx->bdi->flop[0].protect);
+		ui.a80box->setChecked(flpGetFlag(&zx->bdi->flop[0],FLP_TRK80));
+		ui.adsbox->setChecked(flpGetFlag(&zx->bdi->flop[0],FLP_DS));
+		ui.awpbox->setChecked(flpGetFlag(&zx->bdi->flop[0],FLP_PROTECT));
 	ui.bpathle->setText(QDialog::trUtf8(zx->bdi->flop[1].path.c_str()));
-		ui.b80box->setChecked(zx->bdi->flop[1].trk80);
-		ui.bdsbox->setChecked(zx->bdi->flop[1].dblsid);
-		ui.bwpbox->setChecked(zx->bdi->flop[1].protect);
+		ui.b80box->setChecked(flpGetFlag(&zx->bdi->flop[1],FLP_TRK80));
+		ui.bdsbox->setChecked(flpGetFlag(&zx->bdi->flop[1],FLP_DS));
+		ui.bwpbox->setChecked(flpGetFlag(&zx->bdi->flop[1],FLP_PROTECT));
 	ui.cpathle->setText(QDialog::trUtf8(zx->bdi->flop[2].path.c_str()));
-		ui.c80box->setChecked(zx->bdi->flop[2].trk80);
-		ui.cdsbox->setChecked(zx->bdi->flop[2].dblsid);
-		ui.cwpbox->setChecked(zx->bdi->flop[2].protect);
+		ui.c80box->setChecked(flpGetFlag(&zx->bdi->flop[2],FLP_TRK80));
+		ui.cdsbox->setChecked(flpGetFlag(&zx->bdi->flop[2],FLP_DS));
+		ui.cwpbox->setChecked(flpGetFlag(&zx->bdi->flop[2],FLP_PROTECT));
 	ui.dpathle->setText(QDialog::trUtf8(zx->bdi->flop[3].path.c_str()));
-		ui.d80box->setChecked(zx->bdi->flop[3].trk80);
-		ui.ddsbox->setChecked(zx->bdi->flop[3].dblsid);
-		ui.dwpbox->setChecked(zx->bdi->flop[3].protect);
+		ui.d80box->setChecked(flpGetFlag(&zx->bdi->flop[3],FLP_TRK80));
+		ui.ddsbox->setChecked(flpGetFlag(&zx->bdi->flop[3],FLP_DS));
+		ui.dwpbox->setChecked(flpGetFlag(&zx->bdi->flop[3],FLP_PROTECT));
 	fillDiskCat();
 // hdd
 	ui.hiface->setCurrentIndex(ui.hiface->findData(ideGet(zx->ide,IDE_NONE,IDE_TYPE)));
@@ -374,18 +374,23 @@ void SetupWin::apply() {
 // bdi
 	zx->bdi->enable = ui.bdebox->isChecked();
 	zx->bdi->vg93.turbo = ui.bdtbox->isChecked();
-	zx->bdi->flop[0].trk80 = ui.a80box->isChecked();
-		zx->bdi->flop[0].dblsid = ui.adsbox->isChecked();
-		zx->bdi->flop[0].protect = ui.awpbox->isChecked();
-	zx->bdi->flop[1].trk80 = ui.b80box->isChecked();
-		zx->bdi->flop[1].dblsid = ui.bdsbox->isChecked();
-		zx->bdi->flop[1].protect = ui.bwpbox->isChecked();
-	zx->bdi->flop[2].trk80 = ui.c80box->isChecked();
-		zx->bdi->flop[2].dblsid = ui.cdsbox->isChecked();
-		zx->bdi->flop[2].protect = ui.cwpbox->isChecked();
-	zx->bdi->flop[3].trk80 = ui.d80box->isChecked();
-		zx->bdi->flop[3].dblsid = ui.ddsbox->isChecked();
-		zx->bdi->flop[3].protect = ui.dwpbox->isChecked();
+	
+	flpSetFlag(&zx->bdi->flop[0],FLP_TRK80,ui.a80box->isChecked());
+	flpSetFlag(&zx->bdi->flop[0],FLP_DS,ui.adsbox->isChecked());
+	flpSetFlag(&zx->bdi->flop[0],FLP_PROTECT,ui.awpbox->isChecked());
+
+	flpSetFlag(&zx->bdi->flop[1],FLP_TRK80,ui.b80box->isChecked());
+	flpSetFlag(&zx->bdi->flop[1],FLP_DS,ui.bdsbox->isChecked());
+	flpSetFlag(&zx->bdi->flop[1],FLP_PROTECT,ui.bwpbox->isChecked());
+
+	flpSetFlag(&zx->bdi->flop[2],FLP_TRK80,ui.c80box->isChecked());
+	flpSetFlag(&zx->bdi->flop[2],FLP_DS,ui.cdsbox->isChecked());
+	flpSetFlag(&zx->bdi->flop[2],FLP_PROTECT,ui.cwpbox->isChecked());
+
+	flpSetFlag(&zx->bdi->flop[3],FLP_TRK80,ui.d80box->isChecked());
+	flpSetFlag(&zx->bdi->flop[3],FLP_DS,ui.ddsbox->isChecked());
+	flpSetFlag(&zx->bdi->flop[3],FLP_PROTECT,ui.dwpbox->isChecked());
+
 // hdd
 	ideSet(zx->ide,IDE_NONE,IDE_TYPE,ui.hiface->itemData(ui.hiface->currentIndex()).toInt());
 
@@ -758,7 +763,7 @@ void SetupWin::copyToDisk() {
 			return;
 		}
 	}
-	if (!zx->bdi->flop[dsk].insert) newdisk(dsk);
+	if (!flpGetFlag(&zx->bdi->flop[dsk],FLP_INSERT)) newdisk(dsk);
 	std::vector<uint8_t> dt = tapGetBlockData(zx->tape,dataBlock);
 	uint8_t* buf = new uint8_t[256];
 	uint pos = 1;	// skip block type mark
@@ -795,7 +800,7 @@ void SetupWin::fillDiskCat() {
 	wid->setColumnWidth(5,50);
 //	wid->setColumnWidth(6,40);
 	QTableWidgetItem* itm;
-	if (!zx->bdi->flop[dsk].insert) {
+	if (!flpGetFlag(&zx->bdi->flop[dsk],FLP_INSERT)) {
 		wid->setEnabled(false);
 		wid->setRowCount(0);
 	} else {
@@ -849,11 +854,10 @@ void SetupWin::updvolumes() {
 
 void SetupWin::newdisk(int idx) {
 	Floppy *flp = &zx->bdi->flop[idx & 3];
-	if (!flp->savecha()) return;
-	flp->format();
+	if (!saveChangedDisk(idx & 3)) return;
+	flpFormat(flp);
 	flp->path = "";
-	flp->insert = true;
-	flp->changed = true;
+	flpSetFlag(flp,FLP_INSERT | FLP_CHANGED,true);
 	updatedisknams();
 }
 
@@ -867,15 +871,15 @@ void SetupWin::loadb() {loadFile("",FT_DISK,1); updatedisknams();}
 void SetupWin::loadc() {loadFile("",FT_DISK,2); updatedisknams();}
 void SetupWin::loadd() {loadFile("",FT_DISK,3); updatedisknams();}
 
-void SetupWin::savea() {if (zx->bdi->flop[0].insert) saveFile(zx->bdi->flop[0].path.c_str(),FT_DISK,0);}
-void SetupWin::saveb() {if (zx->bdi->flop[1].insert) saveFile(zx->bdi->flop[1].path.c_str(),FT_DISK,1);}
-void SetupWin::savec() {if (zx->bdi->flop[2].insert) saveFile(zx->bdi->flop[2].path.c_str(),FT_DISK,2);}
-void SetupWin::saved() {if (zx->bdi->flop[3].insert) saveFile(zx->bdi->flop[3].path.c_str(),FT_DISK,3);}
+void SetupWin::savea() {if (flpGetFlag(&zx->bdi->flop[0],FLP_INSERT)) saveFile(zx->bdi->flop[0].path.c_str(),FT_DISK,0);}
+void SetupWin::saveb() {if (flpGetFlag(&zx->bdi->flop[1],FLP_INSERT)) saveFile(zx->bdi->flop[1].path.c_str(),FT_DISK,1);}
+void SetupWin::savec() {if (flpGetFlag(&zx->bdi->flop[2],FLP_INSERT)) saveFile(zx->bdi->flop[2].path.c_str(),FT_DISK,2);}
+void SetupWin::saved() {if (flpGetFlag(&zx->bdi->flop[3],FLP_INSERT)) saveFile(zx->bdi->flop[3].path.c_str(),FT_DISK,3);}
 
-void SetupWin::ejcta() {zx->bdi->flop[0].eject(); updatedisknams();}
-void SetupWin::ejctb() {zx->bdi->flop[1].eject(); updatedisknams();}
-void SetupWin::ejctc() {zx->bdi->flop[2].eject(); updatedisknams();}
-void SetupWin::ejctd() {zx->bdi->flop[3].eject(); updatedisknams();}
+void SetupWin::ejcta() {saveChangedDisk(0); zx->bdi->flop[0].eject(); updatedisknams();}
+void SetupWin::ejctb() {saveChangedDisk(1); zx->bdi->flop[1].eject(); updatedisknams();}
+void SetupWin::ejctc() {saveChangedDisk(2); zx->bdi->flop[2].eject(); updatedisknams();}
+void SetupWin::ejctd() {saveChangedDisk(3); zx->bdi->flop[3].eject(); updatedisknams();}
 
 void SetupWin::updatedisknams() {
 	ui.apathle->setText(QDialog::trUtf8(zx->bdi->flop[0].path.c_str()));

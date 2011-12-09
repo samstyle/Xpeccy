@@ -98,7 +98,7 @@ void ZXComp::reset(int wut) {
 	z80ex_reset(cpu);
 	vid->curscr = false;
 	vid->mode = VID_NORMAL;
-	bdi->active = (resbank == 3);
+	bdi->active = (resto == 3);
 	bdi->vg93.count = 0;
 	bdi->vg93.setmr(false);
 	if (gsGet(gs,GS_FLAG) & GS_RESET) gsReset(gs);

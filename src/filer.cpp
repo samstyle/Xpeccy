@@ -9,15 +9,33 @@ QFileDialog *filer;
 QDir lastDir;
 
 #include <QIcon>
+#include <QMessageBox>
 
-void initFileDialog(QWidget* par) {
-	filer = new QFileDialog(par);
+void initFileDialog(QWidget*) {
+	filer = new QFileDialog();
 	filer->setWindowIcon(QIcon(":/images/logo.png"));
 	filer->setWindowModality(Qt::ApplicationModal);
 	filer->setNameFilterDetailsVisible(true);
 	filer->setConfirmOverwrite(true);
 	filer->setOptions(QFileDialog::DontUseNativeDialog);
 	lastDir = QDir::home();
+}
+
+bool saveChangedDisk(int id) {
+	bool res=true;
+	if (flpGetFlag(&zx->bdi->flop[id],FLP_CHANGED)) {
+		QMessageBox mbox;
+		mbox.setText(QString("<b>Disk ").append(QChar('A'+id)).append(": has been changed</b>"));
+		mbox.setInformativeText("Do you want to save it?");
+		mbox.setStandardButtons(QMessageBox::Yes|QMessageBox::Ignore|QMessageBox::Cancel);
+		mbox.setIcon(QMessageBox::Warning);
+		switch (mbox.exec()) {
+			case QMessageBox::Yes: res = saveFile(zx->bdi->flop[id].path.c_str(),FT_DISK,id); break;		// save
+			case QMessageBox::Ignore: res=true; break;					// don't save
+			case QMessageBox::Cancel: res=false; break;					// cancel
+		}
+	}
+	return res;
 }
 
 QString getFilter(int flags) {
@@ -58,9 +76,9 @@ int getFileType(QString path) {
 }
 
 void loadFile(const char* name, int flags, int drv) {
-	QString path = QDialog::trUtf8(name);
+	QString opath = QDialog::trUtf8(name);
 	filer->setDirectory(lastDir);
-	if (path == "") {
+	if (opath == "") {
 		QString filters = "";
 		if (drv == -1) filters = QString("All known types (").append(getFilter(flags)).append(")");
 		if (flags & FT_DISK) {
@@ -72,6 +90,7 @@ void loadFile(const char* name, int flags, int drv) {
 		if (flags & FT_SNAP) filters.append(";;Snapshot (").append(getFilter(flags & FT_SNAP)).append(")");
 		if (flags & FT_TAPE) filters.append(";;Tape (").append(getFilter(flags & FT_TAPE)).append(")");
 		if (flags & FT_RZX) filters.append(";;RZX file (").append(getFilter(flags & FT_RZX)).append(")");
+		if (flags & FT_RAW) filters.append(";;Raw file to disk A (*.*)");
 		if (filters.startsWith(";;")) filters.remove(0,2);
 		filer->setWindowTitle("Open file");
 		filer->setNameFilter(filters);
@@ -83,34 +102,51 @@ void loadFile(const char* name, int flags, int drv) {
 		if (filters.contains("Disk B")) drv = 1;
 		if (filters.contains("Disk C")) drv = 2;
 		if (filters.contains("Disk D")) drv = 3;
-		path = filer->selectedFiles().first();
+		if (filters.contains("Raw")) drv = 10;
+		opath = filer->selectedFiles().first();
 		lastDir = filer->directory().absolutePath();
 	}
 	if (drv == -1) drv = 0;
-	int type = getFileType(path);
-	std::string sfnam(path.toUtf8().data());
-	int err = ERR_OK;
+	int type;
+	if (drv == 10) {
+		type = FT_RAW;
+		drv = 0;
+	} else {
+		type = getFileType(opath);
+	}
+	std::string sfnam(opath.toUtf8().data());
+	int ferr = ERR_OK;
 	switch (type) {
-		case FT_SNA: err = loadSNA(zx,sfnam.c_str()); break;
-		case FT_Z80: err = loadZ80(zx,sfnam.c_str()); break;
-		case FT_TAP: err = loadTAP(zx->tape,sfnam.c_str()); break;
-		case FT_TZX: err = loadTZX(zx->tape,sfnam.c_str()); break;
-		case FT_SCL: zx->bdi->flop[drv].load(sfnam,TYPE_SCL); break;
-		case FT_TRD: zx->bdi->flop[drv].load(sfnam,TYPE_TRD); break;
-		case FT_FDI: zx->bdi->flop[drv].load(sfnam,TYPE_FDI); break;
-		case FT_UDI: zx->bdi->flop[drv].load(sfnam,TYPE_UDI); break;
-		case FT_HOBETA: zx->bdi->flop[drv].load(sfnam,TYPE_HOBETA); break;
+		case FT_SNA: ferr = loadSNA(zx,sfnam.c_str()); break;
+		case FT_Z80: ferr = loadZ80(zx,sfnam.c_str()); break;
+		case FT_TAP: ferr = loadTAP(zx->tape,sfnam.c_str()); break;
+		case FT_TZX: ferr = loadTZX(zx->tape,sfnam.c_str()); break;
+		case FT_SCL: if (saveChangedDisk(drv)) {ferr = loadSCL(&zx->bdi->flop[drv],sfnam.c_str());} break;
+		case FT_TRD: if (saveChangedDisk(drv)) {printf("%s\n",sfnam.c_str());ferr = loadTRD(&zx->bdi->flop[drv],sfnam.c_str());} break;
+		case FT_FDI: if (saveChangedDisk(drv)) {ferr = loadFDI(&zx->bdi->flop[drv],sfnam.c_str());} break;
+		case FT_UDI: if (saveChangedDisk(drv)) {ferr = loadUDI(&zx->bdi->flop[drv],sfnam.c_str());} break;
+		case FT_HOBETA: ferr = loadHobeta(&zx->bdi->flop[drv],sfnam.c_str()); break;
+		case FT_RAW: ferr = loadRaw(&zx->bdi->flop[drv],sfnam.c_str()); break;
 #if HAVEZLIB
-		case FT_RZX: err = loadRZX(zx,sfnam.c_str()); break;
+		case FT_RZX: ferr = loadRZX(zx,sfnam.c_str()); break;
 #endif
 	}
-	switch (err) {
+	switch (ferr) {
 		case ERR_CANT_OPEN: shithappens("Can't open file"); break;
 		case ERR_RZX_SIGN: shithappens("Wrong RZX signature"); break;
 		case ERR_RZX_CRYPT: shithappens("Xpeccy cannot into crypted RZX"); break;
 		case ERR_RZX_UNPACK: shithappens("RZX unpack error"); break;
 		case ERR_TZX_SIGN: shithappens("Wrong TZX signature"); break;
 		case ERR_TZX_UNKNOWN: shithappens("Unknown TZX block"); break;
+		case ERR_TRD_LEN: shithappens("Incorrect TRD size"); break;
+		case ERR_TRD_SIGN: shithappens("Not TRDOS disk"); break;
+		case ERR_UDI_SIGN: shithappens("Wrong UDI signature"); break;
+		case ERR_FDI_SIGN: shithappens("Wrong FDI signature"); break;
+		case ERR_FDI_HEAD: shithappens("Wrong FDI heads count"); break;
+		case ERR_HOB_CANT: shithappens("Can't create file at disk"); break;
+		case ERR_SCL_SIGN: shithappens("Wrong SCL signature"); break;
+		case ERR_SCL_MANY: shithappens("Too many files in SCL"); break;
+		case ERR_RAW_LONG: shithappens("File is too big"); break;
 	}
 }
 
@@ -118,10 +154,10 @@ bool saveFile(const char* name,int flags,int drv) {
 	QString path(name);
 	QString filters = "";
 	if (flags & FT_DISK) {
-		if (((drv == -1) || (drv == 0)) && (zx->bdi->flop[0].insert)) filters.append(";;Disk A (*.scl *.trd *.udi)");
-		if ((drv == 1) && (zx->bdi->flop[1].insert)) filters.append(";;Disk B (*.scl *.trd *.udi)");
-		if ((drv == 2) && (zx->bdi->flop[2].insert)) filters.append(";;Disk C (*.scl *.trd *.udi)");
-		if ((drv == 3) && (zx->bdi->flop[3].insert)) filters.append(";;Disk D (*.scl *.trd *.udi)");
+		if (((drv == -1) || (drv == 0)) && (flpGetFlag(&zx->bdi->flop[0],FLP_INSERT))) filters.append(";;Disk A (*.scl *.trd *.udi)");
+		if ((drv == 1) && (flpGetFlag(&zx->bdi->flop[1],FLP_INSERT))) filters.append(";;Disk B (*.scl *.trd *.udi)");
+		if ((drv == 2) && (flpGetFlag(&zx->bdi->flop[2],FLP_INSERT))) filters.append(";;Disk C (*.scl *.trd *.udi)");
+		if ((drv == 3) && (flpGetFlag(&zx->bdi->flop[3],FLP_INSERT))) filters.append(";;Disk D (*.scl *.trd *.udi)");
 	}
 	if (flags & FT_SNAP) filters.append(";;Snapshot (*.sna)");
 	if ((flags & FT_TAPE) && (tapGet(zx->tape,TAPE_BLOCKS) != 0)) filters.append(";;Tape (*.tap)");
@@ -142,26 +178,31 @@ bool saveFile(const char* name,int flags,int drv) {
 	lastDir = filer->directory().absolutePath();
 	std::string sfnam(path.toUtf8().data());
 	int type = getFileType(path);
+	int err = ERR_OK;
 	if (filters.contains("Disk")) {
 		switch (type) {
-			case FT_SCL: zx->bdi->flop[drv].save(sfnam,TYPE_SCL); break;
-			case FT_TRD: zx->bdi->flop[drv].save(sfnam,TYPE_TRD); break;
-			case FT_UDI: zx->bdi->flop[drv].save(sfnam,TYPE_UDI); break;
-			default: sfnam += ".trd"; zx->bdi->flop[drv].save(sfnam, TYPE_TRD); break;
+			case FT_SCL: err = saveSCL(&zx->bdi->flop[drv],sfnam.c_str()); break;
+			case FT_TRD: err = saveTRD(&zx->bdi->flop[drv],sfnam.c_str()); break;
+			case FT_UDI: err = saveUDI(&zx->bdi->flop[drv],sfnam.c_str()); break;
+			default: sfnam += ".trd"; err = saveTRD(&zx->bdi->flop[drv],sfnam.c_str()); break;
 		}
 	}
 	if (filters.contains("Tape")) {
 		switch (type) {
-			case FT_TAP: saveTAP(zx->tape,sfnam.c_str()); break;
-			default: sfnam += ".tap"; saveTAP(zx->tape,sfnam.c_str()); break;
+			case FT_TAP: err = saveTAP(zx->tape,sfnam.c_str()); break;
+			default: sfnam += ".tap"; err = saveTAP(zx->tape,sfnam.c_str()); break;
 		}
 	}
 	if (filters.contains("Snap")) {
 		bool mt = (zx->opt.hwName == "ZX48K");
 		switch (type) {
-			case FT_SNA: saveSNA(zx,sfnam.c_str(),mt); break;
-			default: sfnam += ".sna"; saveSNA(zx,sfnam.c_str(),mt); break;
+			case FT_SNA: err = saveSNA(zx,sfnam.c_str(),mt); break;
+			default: sfnam += ".sna"; err = saveSNA(zx,sfnam.c_str(),mt); break;
 		}
+	}
+	switch (err) {
+		case ERR_CANT_OPEN: shithappens("Can't open file"); break;
+		case ERR_TRD_SNF: shithappens("Wrong disk structure for TRD file"); break;
 	}
 	return true;
 }

@@ -37,7 +37,7 @@
 
 #include <fstream>
 
-#define	XPTITLE	"Xpeccy 0.4.998 (pre-0.5)"
+#define	XPTITLE	"Xpeccy 0.4.999"
 
 extern ZXComp* zx;
 extern EmulWin* mwin;
@@ -186,10 +186,10 @@ void MainWin::updateWindow() {
 }
 
 bool emulSaveChanged() {
-	bool yep = zx->bdi->flop[0].savecha();
-	yep &= zx->bdi->flop[1].savecha();
-	yep &= zx->bdi->flop[2].savecha();
-	yep &= zx->bdi->flop[3].savecha();
+	bool yep = saveChangedDisk(0);
+	yep &= saveChangedDisk(1);
+	yep &= saveChangedDisk(2);
+	yep &= saveChangedDisk(3);
 	return yep;
 }
 
@@ -348,10 +348,11 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			case Qt::Key_F6: devShow(); break;
 			case Qt::Key_F7: if (scrCounter == 0) {emulFlags |= FL_SHOT;} else {emulFlags &= ~FL_SHOT;} break;
 			case Qt::Key_F9: emulPause(true,PR_FILE);
-				zx->bdi->flop[0].savecha();
-				zx->bdi->flop[1].savecha();
-				zx->bdi->flop[2].savecha();
-				zx->bdi->flop[3].savecha();
+				emulSaveChanged();
+//				zx->bdi->flop[0].savecha();
+//				zx->bdi->flop[1].savecha();
+//				zx->bdi->flop[2].savecha();
+//				zx->bdi->flop[3].savecha();
 				emulPause(false,PR_FILE);
 				break;
 			case Qt::Key_F10:
@@ -682,10 +683,11 @@ void EmulWin::SDLEventHandler() {
 						case SDLK_F6: devShow(); break;
 						case SDLK_F7: if (scrCounter == 0) {emulFlags |= FL_SHOT;} else {emulFlags &= ~FL_SHOT;} break;
 						case SDLK_F9: emulPause(true,PR_FILE);
-							zx->bdi->flop[0].savecha();
-							zx->bdi->flop[1].savecha();
-							zx->bdi->flop[2].savecha();
-							zx->bdi->flop[3].savecha();
+							emulSaveChanged();
+//							zx->bdi->flop[0].savecha();
+//							zx->bdi->flop[1].savecha();
+//							zx->bdi->flop[2].savecha();
+//							zx->bdi->flop[3].savecha();
 							emulPause(false,PR_FILE);
 							break;
 						case SDLK_F10:
@@ -763,7 +765,6 @@ void EmulWin::SDLEventHandler() {
 	}
 }
 
-//=====================
 // ROMSETS
 
 RomSet* findRomset(std::string nm) {
@@ -788,7 +789,7 @@ bool addRomset(RomSet rs) {
 #define	SLASHES "/"
 #endif
 
-// set and load memory romset. if rset is NULL, just load
+// set and load memory romset. if rset is NULL, just load current
 void emulSetRomset(Memory* mem, RomSet* rset) {
 	int i,ad;
 	std::string romDir = optGetString(OPT_ROMDIR);
@@ -894,7 +895,6 @@ std::vector<RomSet> getRomsetList() {
 	return rsList;
 }
 
-//=====================
 // HARDWARE
 
 void addHardware(std::string nam, int typ, int msk, int flg) {
@@ -935,7 +935,6 @@ void initHardware() {
 	addHardware("Scorpion",HW_SCORP,0x0a,IO_WAIT);
 }
 
-//=====================
 // PROFILES
 
 void fillProfileMenu() {
@@ -1050,3 +1049,5 @@ void EmulWin::profileSelected(QAction* act) {
 	mainWin->setFocus();
 	emulPause(false,PR_EXTRA);
 }
+
+// OVERALL

@@ -40,18 +40,20 @@ struct TRFile {
 	uint8_t trk;
 };
 
+#define	FLP_INSERT	1
+#define	FLP_PROTECT	(1<<1)
+#define	FLP_TRK80	(1<<2)
+#define	FLP_DS		(1<<3)
+#define	FLP_INDEX	(1<<4)
+#define	FLP_MOTOR	(1<<5)
+#define	FLP_HEAD	(1<<6)
+#define	FLP_CHANGED	(1<<7)
+#define	FLP_SIDE	(1<<8)
+
 class Floppy {
 	public:
 	Floppy();
-	bool insert;
-	bool protect;
-	bool trk80;
-	bool dblsid;
-	bool index;
-	bool motor;
-	bool head;
-	bool changed;
-	bool side;
+	int flag;
 	uint8_t id;
 	uint8_t iback;
 	uint8_t trk,rtrk;
@@ -60,23 +62,12 @@ class Floppy {
 	uint32_t ti;
 	std::string path;
 	TrackIMG data[256];
-	void next(bool,uint32_t);
-	void step(bool);
-	void format();
-	void formtrdtrack(uint8_t, uint8_t*);
-	void formtrack(uint8_t, std::vector<Sector>);
-	void nulltrack(uint8_t);
-	void fillfields(uint8_t, bool);
-	void load(std::string, uint8_t);
-	void save(std::string, uint8_t);
-	void loaduditrack(std::ifstream*, uint8_t, bool);
-	void getudibitfield(uint8_t, uint8_t*);
+//	void next(bool,uint32_t);
+//	void step(bool);
+	uint8_t rd();
 	void wr(uint8_t);
-	bool savecha();
 	bool eject();
 	uint8_t getfield();
-	uint8_t rd();
-	uint16_t getcrc(uint8_t*, int32_t);
 	std::vector<Sector> getsectors(uint8_t);
 	std::string getString();
 	void setString(std::string);
@@ -132,5 +123,16 @@ void bdiDestroy(BDI*);
 void bdiSync(BDI*,int);
 bool bdiIn(BDI*,int, uint8_t*);
 bool bdiOut(BDI*,int, uint8_t);
+
+void flpSetFlag(Floppy*,int,bool);
+bool flpGetFlag(Floppy*,int);
+
+void flpNext(Floppy*,bool,uint32_t);
+void flpStep(Floppy*,bool);
+
+void flpFormat(Floppy*);
+void flpFormTrack(Floppy*,int,std::vector<Sector>);
+void flpFormTRDTrack(Floppy*,int,uint8_t*);
+void flpFillFields(Floppy*,int,bool);
 
 #endif
