@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "spectrum.h"
 
 /*
@@ -27,14 +28,17 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT*,Z80EX_WORD adr,int m1,void* ptr) {
 		comp->prt2 = ZSLays[(adr & 0x000c) >> 2][comp->prt2 & 3] & memGet(comp->mem,MEM_PROFMASK);
 		comp->mapMemory();
 	}
-	if ((m1 == 1) && comp->bdi->enable) {
-		if (!comp->bdi->active && ((adr & 0xff00) == 0x3d00) && (comp->prt0 & 0x10)) {
-			comp->bdi->active = true;
-			comp->mapMemory();
-		}
-		if (comp->bdi->active && (adr > 0x3fff)) {
-			comp->bdi->active = false;
-			comp->mapMemory();
+	if (m1 == 1) {
+		if (comp->rzxPlay) comp->rzxFetches--;
+		if (comp->bdi->enable) {
+			if (!comp->bdi->active && ((adr & 0xff00) == 0x3d00) && (comp->prt0 & 0x10)) {
+				comp->bdi->active = true;
+				comp->mapMemory();
+			}
+			if (comp->bdi->active && (adr > 0x3fff)) {
+				comp->bdi->active = false;
+				comp->mapMemory();
+			}
 		}
 	}
 	Z80EX_BYTE res = memRd(comp->mem,adr);
@@ -94,7 +98,8 @@ void ZXComp::reset(int wut) {
 	prt0 = ((resbank & 1) << 4);
 	memSetBank(mem,MEM_BANK0,MEM_ROM,resto);
 	memSetBank(mem,MEM_BANK3,MEM_RAM,0);
-//	mem->rzx.clear();
+	rzx.clear();
+	rzxPlay = false;
 	z80ex_reset(cpu);
 	vid->curscr = false;
 	vid->mode = VID_NORMAL;
@@ -176,7 +181,16 @@ uint8_t ZXComp::in(uint16_t port) {
 	if (gsIn(gs,port,&res) == GS_OK) return res;
 	if (bdiIn(bdi,port,&res)) return res;
 	port = zxGetPort(port,hw->type);
-//	if (rzxPlay) return mem->getRZXIn();
+	if (rzxPlay) {
+		if (rzxPos < rzx[rzxFrame].in.size()) {
+			res = rzx[rzxFrame].in[rzxPos];
+			rzxPos++;
+			return res;
+		} else {
+//			printf("RZX: too many IN for frame %lu\n",(long unsigned int)rzxFrame);
+			return 0xff;
+		}
+	}
 	switch (port) {
 		case 0xfbdf: res = mouse->xpos; break;
 		case 0xffdf: res = mouse->ypos; break;
@@ -304,11 +318,14 @@ double ZXComp::exec() {
 		res1 += z80ex_step(cpu);
 	} while (z80ex_last_op_type(cpu) != 0);
 	vidSync(vid,res1,cpuFreq);
-	intStrobe = vid->intStrobe;
-
 	Z80EX_WORD pc = z80ex_get_reg(cpu,regPC);
+	if (rzxPlay) {
+		intStrobe = (rzxFetches < 1);
+	} else {
+		intStrobe = vid->intStrobe;
+	}
 
-	if ((pc > 0x3fff) && nmiRequest) {
+	if ((pc > 0x3fff) && nmiRequest && !rzxPlay) {
 		res2 = z80ex_nmi(cpu);
 		res1 += res2;
 		if (res2 != 0) {
@@ -321,6 +338,15 @@ double ZXComp::exec() {
 		res2 = z80ex_int(cpu);
 		res1 += res2;
 		vidSync(vid,res2,cpuFreq);
+		if (rzxPlay) {
+			rzxFrame++;
+			if (rzxFrame >= rzx.size()) {
+				rzxPlay = false;
+			} else {
+				rzxFetches = rzx[rzxFrame].fetches;
+				rzxPos = 0;
+			}
+		}
 	}
 
 	ltk = res1 * 7.0 / cpuFreq;

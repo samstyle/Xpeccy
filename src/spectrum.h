@@ -35,6 +35,11 @@ struct HardWare {
 	int type;
 };
 
+struct RZXFrame {
+	int fetches;
+	std::vector<uint8_t> in;
+};
+
 class ZXComp {
 	public:
 		ZXComp();
@@ -49,9 +54,13 @@ class ZXComp {
 		IDE* ide;
 		GSound* gs;
 		TSound* ts;
+		std::vector<RZXFrame> rzx;
+		uint64_t rzxFrame;
+		uint32_t rzxPos;
+		int rzxFetches;
+		bool rzxPlay;	// true if rzx playing now
 		bool intStrobe;
 		bool nmiRequest;
-		bool rzxPlay;	// true if rzx playing now
 		bool beeplev;
 		bool block7ffd;
 		float cpuFreq;

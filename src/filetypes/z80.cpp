@@ -57,6 +57,18 @@ uint8_t z80readblock(std::ifstream* file,char* buf) {
 	return tmp;
 }
 
+const char* v2hardware[16] = {
+	"48k","48k + If.1","SamRam","128k","128k + If.1","unknown","unknown",
+	"Spectrum +3","unknown","Pentagon 128K","Scorpion 256K","Didaktik",
+	"Spectrum +2","Spectrum +2A","TC1048","TC2068"
+};
+
+const char* v3hardware[16] = {
+	"48k","48k + If.1","SamRam","48k + M.G.T","128k","128k + If.1","128k + M.G.T.",
+	"Spectrum +3","unknown","Pentagon 128K","Scorpion 256K","Didaktik",
+	"Spectrum +2","Spectrum +2A","TC1048","TC2068"
+};
+
 int loadZ80(ZXComp* zx, const char* name) {
 	std::ifstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
@@ -112,13 +124,10 @@ int loadZ80(ZXComp* zx, const char* name) {
 		}
 		if (adr > 23) {
 printf(".z80 version 3\n");
+			if (lst < 16) printf("Hardware: %s\n",v3hardware[lst]);
 			switch (lst) {
-				case 0:
-				case 1:
-				case 3: lst = 1; break;		// 48K
-				case 4:
-				case 5:
-				case 6:
+				case 0: lst = 1; break;		// 48K
+				case 4: lst = 2; break;
 				case 9: lst = 2; break;		// 128K
 				case 10: lst = 3; break;	// 256K
 				default: lst = 0; break;	// undef
@@ -126,11 +135,10 @@ printf(".z80 version 3\n");
 			file.seekg(adr-23,std::ios_base::cur);	// skip all other bytes
 		} else {
 printf(".z80 version 2\n");
+			if (lst < 16) printf("Hardware: %s\n",v2hardware[lst]);
 			switch (lst) {
-				case 0:
-				case 1: lst = 1; break;		// 48K
-				case 3:
-				case 4:
+				case 0: lst = 1; break;
+				case 3: lst = 2; break;
 				case 9: lst = 2; break;		// 128K
 				case 10: lst = 3; break;	// 256K
 				default: lst = 0; break;	// undef
@@ -172,7 +180,7 @@ printf(".z80 version 2\n");
 				} while (btm && !file.eof());
 				break;
 			default:
-				printf("Hardware mode %i not supported. reset\n",lst);
+				printf("Hardware mode not supported. reset\n");
 				z80ex_reset(cpu);
 				break;
 		}

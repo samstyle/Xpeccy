@@ -458,10 +458,6 @@ void MainWin::emulFrame() {
 		do {
 			emulExec();
 		} while ((wantedWin == WW_NONE) && !zx->intStrobe);
-//		if (zx->rzxPlay) {
-//			zx->mem->rzxFrame++;
-//			zx->mem->rzxPos = 0;
-//		}
 		zx->nmiRequest = false;
 		if (scrCounter !=0) {
 			if (scrInterval == 0) {
@@ -565,8 +561,6 @@ void EmulWin::tapeStop() {
 void EmulWin::tapeRewind(int row, int) {
 	if (row < 0) return;
 	tapRewind(zx->tape, row);
-//	zx->tape->block = row;
-//	zx->tape->pos = 0;
 	setTapeCheck();
 }
 
@@ -594,6 +588,12 @@ void EmulWin::SDLEventHandler() {
 	if (emulFlags & FL_BLOCK) return;
 	switch (wantedWin) {
 		case WW_DEBUG: dbgShow(); wantedWin = WW_NONE; break;
+	}
+	if (zx->rzxPlay) {
+		double prc = 100 * zx->rzxFrame / zx->rzx.size();
+		mainWin->setWindowTitle(QString(XPTITLE).append(" (rzx play: ").append(QString::number(prc,'f',0)).append("%)"));
+	} else {
+		mainWin->setWindowTitle(XPTITLE);
 	}
 	int blk = tapGet(zx->tape,TAPE_BLOCK);
 	int flg = tapGet(zx->tape,TAPE_FLAGS);
