@@ -11,7 +11,7 @@ int loadRaw(Floppy* flp, const char* name) {
 		flpFormat(flp);
 		flpSetFlag(flp,FLP_INSERT,true);
 	}
-	if (flp->getDiskType() != TYPE_TRD) return ERR_NOTRD;
+	if (flpGet(flp,FLP_DISKTYPE) != TYPE_TRD) return ERR_NOTRD;
 	file.seekg(0,std::ios::beg);
 	TRFile nfle;
 	
@@ -30,12 +30,12 @@ int loadRaw(Floppy* flp, const char* name) {
 	nfle.hlen = (len & 0xff00) >> 8;
 	nfle.slen = nfle.hlen;
 	if (nfle.llen != 0) nfle.slen++;
-	if (flp->createFile(&nfle) != ERR_OK) return ERR_HOB_CANT;
+	if (flpCreateFile(flp,&nfle) != ERR_OK) return ERR_HOB_CANT;
 	int i;
 	uint8_t* buf = new uint8_t[256];
 	for (i = 0; i < nfle.slen; i++) {
 		file.read((char*)buf,256);;;
-		if (!flp->putSectorData(nfle.trk, nfle.sec + 1, buf, 256)) return ERR_HOB_CANT;
+		if (!flpPutSectorData(flp, nfle.trk, nfle.sec + 1, buf, 256)) return ERR_HOB_CANT;
 		nfle.sec++;
 		if (nfle.sec > 15) {
 			nfle.trk++;

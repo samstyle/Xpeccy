@@ -295,22 +295,22 @@ void ZXComp::out(uint16_t port,uint8_t val) {
 }
 
 double ltk;
-int res = 0;
+int res1 = 0;
 int res2 = 0;
 
 double ZXComp::exec() {
-	res = 0;
+	res1 = 0;
 	do {
-		res += z80ex_step(cpu);
+		res1 += z80ex_step(cpu);
 	} while (z80ex_last_op_type(cpu) != 0);
-	vidSync(vid,res,cpuFreq);
+	vidSync(vid,res1,cpuFreq);
 	intStrobe = vid->intStrobe;
 
 	Z80EX_WORD pc = z80ex_get_reg(cpu,regPC);
 
 	if ((pc > 0x3fff) && nmiRequest) {
 		res2 = z80ex_nmi(cpu);
-		res += res2;
+		res1 += res2;
 		if (res2 != 0) {
 			bdi->active = true;
 			mapMemory();
@@ -318,11 +318,12 @@ double ZXComp::exec() {
 		}
 	}
 	if (intStrobe) {
-		res += z80ex_int(cpu);
-		vidSync(vid,res,cpuFreq);
+		res2 = z80ex_int(cpu);
+		res1 += res2;
+		vidSync(vid,res2,cpuFreq);
 	}
 
-	ltk = res * 7.0 / cpuFreq;
+	ltk = res1 * 7.0 / cpuFreq;
 
 	if (gsGet(gs,GS_FLAG) & GS_ENABLE) gsCount += ltk;
 	tapCount += ltk;

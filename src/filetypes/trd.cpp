@@ -18,7 +18,7 @@ int loadTRD(Floppy* flp, const char* name) {
 		i++;
 	} while  (!file.eof());
 	delete(trackBuf);
-	flp->path = std::string(name);
+	flpSetPath(flp,name);
 	flpSetFlag(flp,FLP_INSERT,true);
 	flpSetFlag(flp,FLP_CHANGED,false);
 	return ERR_OK;
@@ -29,7 +29,7 @@ int saveTRD(Floppy* flp, const char* name) {
 	uint8_t* dptr = img;
 	for (int i = 0; i < 160; i++) {
 		for (int j = 1; j < 17; j++) {
-			if (!flp->getSectorData(i,j,dptr,256)) {
+			if (!flpGetSectorData(flp,i,j,dptr,256)) {
 				delete(img);
 				return ERR_TRD_SNF;
 			}

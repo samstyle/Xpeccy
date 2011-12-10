@@ -5,6 +5,9 @@
 #include <iostream>
 #ifdef HAVESDLSOUND
 	#include <SDL/SDL.h>
+#ifdef WIN32
+	#undef main
+#endif
 #endif
 
 extern ZXComp* zx;

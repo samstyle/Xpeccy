@@ -50,7 +50,7 @@ int loadSCL(Floppy* flp,const char* name) {
 		flpFormTRDTrack(flp,i,buf);
 		i++;
 	}
-	flp->path = std::string(name);
+	flpSetPath(flp,name);
 	flpSetFlag(flp,FLP_INSERT,true);
 	flpSetFlag(flp,FLP_CHANGED,false);
 	return ERR_OK;
@@ -71,7 +71,7 @@ int saveSCL(Floppy* flp,const char* name) {
 	img[8] = 0;
 	dptr = img + 9;
 	for (i = 1; i < 9; i++) {
-		flp->getSectorData(0,i,buf,256);
+		flpGetSectorData(flp,0,i,buf,256);
 		bptr = buf;
 		for (j = 0; j < 16; j++) {
 			if (*bptr == 0) {
@@ -95,7 +95,7 @@ int saveSCL(Floppy* flp,const char* name) {
 		tr = fplist[i].trk;
 		sc = fplist[i].sec;
 		for(j = 0; j < fplist[i].slen; j++) {
-			flp->getSectorData(tr, sc + 1, dptr, 256);
+			flpGetSectorData(flp,tr, sc + 1, dptr, 256);
 			dptr += 256;
 			sc++;
 			if (sc > 15) {

@@ -1,53 +1,55 @@
 #include <fstream>
-
-#include <QMessageBox>
-#include <QChar>
-#include <QString>
-#include <QDebug>
+#include <string.h>
 
 #include "common.h"
-#include "bdi.h"
+#include "floppy.h"
 #include "filetypes/filetypes.h"
+
+struct Floppy {
+	int flag;
+	uint8_t id;
+	uint8_t iback;
+	uint8_t trk,rtrk;
+	uint8_t field;
+	int32_t pos;
+	uint32_t ti;
+	std::string path;
+	struct {
+		uint8_t byte[TRACKLEN];
+		uint8_t field[TRACKLEN];
+	} data[256];
+};
 
 uint8_t trd_8e1[] = {
 	0x00,0x00,0x01,0x16,0x00,0xf0,0x09,0x10,0x00,0x00,0x20,0x20,0x20,0x20,0x20,0x20,
 	0x20,0x20,0x20,0x00,0x00,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x00,0x00,0x00
 };
 
-Floppy::Floppy() {
-	flag = FLP_TRK80 | FLP_DS;
-	trk = 0;
-	rtrk = 0;
-	pos = 0;
+Floppy* flpCreate(int id) {
+	Floppy* flp = new Floppy;
+	flp->id = id;
+	flp->flag = FLP_TRK80 | FLP_DS;
+	flp->trk = 0;
+	flp->rtrk = 0;
+	flp->pos = 0;
+	return flp;
 }
 
-std::string Floppy::getString() {
-	std::string res = "80DW";
-	if (~flag & FLP_TRK80) res[0]='4';
-	if (~flag & FLP_DS) res[2]='S';
-	if (flag & FLP_PROTECT) res[3]='R';
-	return res;
+void flpDestroy(Floppy* flp) {
+	delete(flp);
 }
 
-void Floppy::setString(std::string st) {
-	if (st.size() < 4) return;
-	flag &= ~(FLP_TRK80 | FLP_DS | FLP_PROTECT);
-	if (st.substr(0,2) == "80") flag |= FLP_TRK80;
-	if (st.substr(2,1) == "D") flag |= FLP_DS;
-	if (st.substr(3,1) == "R") flag |= FLP_PROTECT;
+void flpWr(Floppy* flp,uint8_t val) {
+	flp->data[flp->rtrk].byte[flp->pos] = val;
+	flp->flag |= FLP_CHANGED;
 }
 
-void Floppy::wr(uint8_t val) {
-	data[rtrk].byte[pos] = val;
-	flag |= FLP_CHANGED;
+uint8_t flpRd(Floppy* flp) {
+	return flp->data[flp->rtrk].byte[flp->pos];
 }
 
-uint8_t Floppy::rd() {
-	return data[rtrk].byte[pos];
-}
-
-uint8_t Floppy::getfield() {
-	return data[rtrk].field[pos];
+uint8_t flpGetField(Floppy* flp) {
+	return flp->data[flp->rtrk].field[flp->pos];
 }
 
 void flpStep(Floppy* flp,bool dir) {
@@ -58,19 +60,21 @@ void flpStep(Floppy* flp,bool dir) {
 	}
 }
 
-void flpNext(Floppy* flp, bool bdiSide, uint32_t bdiTick) {
+bool flpNext(Floppy* flp, bool bdiSide) {
+	bool res = false;
 	flp->rtrk = flp->trk << 1;
 	if (flp->flag & FLP_DS) flp->rtrk += bdiSide ? 0 : 1;		// bdiSide = zx->bdi->vg93.side
 	if (flp->flag & FLP_INSERT) {
 		flp->pos++;
 		if (flp->pos >= TRACKLEN) {
 			flp->pos = 0;
-			flp->ti = bdiTick;		// tick of index begin = zx->bdi->t
+			res = true;					// tick of index begin = zx->bdi->t
 		}
 		flp->field = flp->data[flp->rtrk].field[flp->pos];
 	} else {
 		flp->field = 0;
 	}
+	return res;
 }
 
 void flpSetFlag(Floppy* flp,int mask,bool state) {
@@ -83,6 +87,13 @@ void flpSetFlag(Floppy* flp,int mask,bool state) {
 
 bool flpGetFlag(Floppy* flp,int mask) {
 	return ((flp->flag & mask) ? true : false);
+}
+
+void flpClearTrack(Floppy* flp,int tr) {
+	for (int i = 0; i < TRACKLEN; i++) {
+		flp->data[tr].byte[i] = 0x00;
+		flp->data[tr].field[i] = 0x00;
+	}
 }
 
 void flpFormat(Floppy* flp) {
@@ -131,7 +142,7 @@ void flpFillFields(Floppy* flp,int tr, bool fcrc) {
 	uint8_t fld = 0;
 	uint8_t* cpos = flp->data[tr].byte;
 	uint8_t* bpos = cpos;
-	ushort crc;
+	uint16_t crc;
 	for (i=0;i<TRACKLEN;i++) {
 		flp->data[tr].field[i] = fld;
 		if (fcrc) {
@@ -215,24 +226,36 @@ void flpFormTrack(Floppy* flp, int tr, std::vector<Sector> sdata) {
 	flpFillFields(flp,tr,true);
 }
 
-bool Floppy::eject() {
-	path = "";
-	flag &= ~(FLP_INSERT | FLP_CHANGED);
+bool flpEject(Floppy* flp) {
+	flp->path = "";
+	flp->flag &= ~(FLP_INSERT | FLP_CHANGED);
 	return true;
 }
 
-int Floppy::getDiskType() {
+int flpGet(Floppy* flp, int wut) {
 	int res = -1;
 	uint8_t* buf = new uint8_t[0x100];
-	if (getSectorData(0,9,buf,0x100)) {
-		if (buf[0xe7] == 0x10) res = TYPE_TRD;
+	switch (wut) {
+		case FLP_DISKTYPE:
+			if (flpGetSectorData(flp,0,9,buf,0x100)) {
+				if (buf[0xe7] == 0x10) res = TYPE_TRD;
+			}
+			break;
+		case FLP_TRK: res = flp->trk; break;
+		case FLP_RTRK: res = flp->rtrk; break;
+		case FLP_FIELD: res = flp->field; break;
+		case FLP_POS: res = flp->pos; break;
 	}
+	delete(buf);
 	return res;
 }
 
-int Floppy::createFile(TRFile* dsc) {
+std::string flpGetPath(Floppy* flp) {return flp->path;}
+void flpSetPath(Floppy* flp,const char* pth) {flp->path = std::string(pth);}
+
+int flpCreateFile(Floppy* flp,TRFile* dsc) {
 	uint8_t* buf = new uint8_t[256];
-	if (!getSectorData(0,9,buf,256)) return ERR_SHIT;
+	if (!flpGetSectorData(flp,0,9,buf,256)) return ERR_SHIT;
 	dsc->sec = buf[0xe1];
 	dsc->trk = buf[0xe2];
 	uint8_t files = buf[0xe4];
@@ -250,24 +273,24 @@ int Floppy::createFile(TRFile* dsc) {
 		buf[0xe1] -= 0x10;
 		buf[0xe2]++;
 	}
-	putSectorData(0,9,buf,256);
+	flpPutSectorData(flp,0,9,buf,256);
 	freesec = ((files & 0xf0) >> 4)+1;
-	if (!getSectorData(0,freesec,buf,256)) return ERR_SHIT;
+	if (!flpGetSectorData(flp,0,freesec,buf,256)) return ERR_SHIT;
 	memcpy(buf + (((files - 1) & 0x0f) << 4), (char*)dsc, 16);
-	putSectorData(0,freesec,buf,256);
-	flag |= FLP_CHANGED;
+	flpPutSectorData(flp,0,freesec,buf,256);
+	flp->flag |= FLP_CHANGED;
 	return ERR_OK;
 }
 
-std::vector<TRFile> Floppy::getTRCatalog() {
+std::vector<TRFile> flpGetTRCatalog(Floppy* flp) {
 	std::vector<TRFile> res;
-	if (getDiskType() == TYPE_TRD) {
+	if (flpGet(flp,FLP_DISKTYPE) == TYPE_TRD) {
 		TRFile file;
 		uint8_t* buf = new uint8_t[256];
 		uint8_t* ptr;
 		int i,j;
 		for (i=1; i<9; i++) {
-			if (getSectorData(0,i,buf,256)) {
+			if (flpGetSectorData(flp,0,i,buf,256)) {
 				ptr = buf;
 				for (j=0; j<15; j++) {
 					if (*ptr == 0x00) break;
@@ -286,66 +309,29 @@ std::vector<TRFile> Floppy::getTRCatalog() {
 	return res;
 }
 
-std::vector<Sector> Floppy::getsectors(uint8_t tr) {
-	std::vector<Sector> res;
-	Sector sec;
-	int32_t len,p = 0;
-	do {
-		if (data[tr].field[p] == 1) {
-			sec.cyl = data[tr].field[p++];
-			sec.side = data[tr].field[p++];
-			sec.sec = data[tr].field[p++];
-			sec.len = data[tr].field[p];
-			do {
-				p++;
-			} while ((p < TRACKLEN) && (data[tr].field[p] != 2) && (data[tr].field[p] != 3));
-			if (p < TRACKLEN) {
-				sec.type = data[tr].field[p-1];
-				len = (128 << sec.len);
-				sec.data = new uint8_t[len];
-				memcpy(sec.data, &data[tr].byte[p],len);
-				p += len;
-				sec.crc = (data[tr].byte[p] << 8) + data[tr].byte[p+1]; p += 2;
-				res.push_back(sec);
-			}
-		}
-	} while (p < TRACKLEN);
-	return res;
-}
-
-/*
-void printHexBlock(uint8_t* ptr) {
-	for (int i=0; i<256; i++) {
-		printf("%.2X ",*ptr);
-		ptr++;
-		if ((i & 15) == 15) printf("\n");
-	}
-}
-*/
-
-uint8_t* Floppy::getSectorDataPtr(uint8_t tr, uint8_t sc) {
-	if (~flag & FLP_INSERT) return NULL;
+uint8_t* flpGetSectorDataPtr(Floppy* flp, uint8_t tr, uint8_t sc) {
+	if (~flp->flag & FLP_INSERT) return NULL;
 	int32_t tpos = 0;
 	bool fnd;
 	while (1) {
-		while (data[tr].field[tpos] != 1) {
+		while (flp->data[tr].field[tpos] != 1) {
 			if (++tpos >= TRACKLEN) return NULL;
 		}
-		fnd = (data[tr].byte[tpos+2] == sc);
+		fnd = (flp->data[tr].byte[tpos+2] == sc);
 		tpos += 6;
-		while ((data[tr].field[tpos] != 2) && (data[tr].field[tpos] != 3)) {
+		while ((flp->data[tr].field[tpos] != 2) && (flp->data[tr].field[tpos] != 3)) {
 			if (++tpos >= TRACKLEN) return NULL;
 		}
 		if (fnd) {
-			return data[tr].byte + tpos;
+			return flp->data[tr].byte + tpos;
 		}
 		tpos += 0x102;
 		if (tpos >= TRACKLEN) return NULL;
 	}
 }
 
-bool Floppy::putSectorData(uint8_t tr,uint8_t sc,uint8_t* buf,int len) {
-	uint8_t* ptr = getSectorDataPtr(tr,sc);
+bool flpPutSectorData(Floppy* flp, uint8_t tr,uint8_t sc,uint8_t* buf,int len) {
+	uint8_t* ptr = flpGetSectorDataPtr(flp,tr,sc);
 	if (ptr == NULL) return false;
 	memcpy(ptr,buf,len);
 	uint16_t crc = getCrc(ptr-1,len+1);
@@ -354,16 +340,16 @@ bool Floppy::putSectorData(uint8_t tr,uint8_t sc,uint8_t* buf,int len) {
 	return true;
 }
 
-bool Floppy::getSectorData(uint8_t tr,uint8_t sc,uint8_t* buf,int len) {
-	uint8_t* ptr = getSectorDataPtr(tr,sc);
+bool flpGetSectorData(Floppy* flp, uint8_t tr,uint8_t sc,uint8_t* buf,int len) {
+	uint8_t* ptr = flpGetSectorDataPtr(flp,tr,sc);
 	if (ptr == NULL) return false;
 	memcpy(buf,ptr,len);
 	return true;
 }
 
-bool Floppy::getSectorsData(uint8_t tr, uint8_t sc, uint8_t* ptr, int sl) {
+bool flpGetSectorsData(Floppy* flp, uint8_t tr, uint8_t sc, uint8_t* ptr, int sl) {
 	while (sl > 0) {
-		if (!getSectorData(tr,sc,ptr,256)) return false;
+		if (!flpGetSectorData(flp,tr,sc,ptr,256)) return false;
 		ptr += 256;
 		sc++;
 		if (sc > 16) {
@@ -373,6 +359,15 @@ bool Floppy::getSectorsData(uint8_t tr, uint8_t sc, uint8_t* ptr, int sl) {
 		sl--;
 	}
 	return true;
+}
+
+void flpGetTrack(Floppy* flp,int tr,uint8_t* dst) {memcpy(dst,flp->data[tr].byte,TRACKLEN);}
+void flpGetTrackFields(Floppy* flp,int tr,uint8_t* dst) {memcpy(dst,flp->data[tr].field,TRACKLEN);}
+
+void flpPutTrack(Floppy* flp,int tr,uint8_t* src,int len) {
+	flpClearTrack(flp,tr);
+	memcpy(flp->data[tr].byte,src,len);
+	flpFillFields(flp,tr,false);
 }
 
 Sector::Sector() {

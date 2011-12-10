@@ -7,7 +7,6 @@
 #define	MSDELAY		7160		// 1ms delay
 #define	TRBDELAY	MSDELAY * 3
 
-bool vgdebug = false;
 bool pcatch = false;	// true when bdi takes i/o request
 
 // BDI
@@ -15,12 +14,13 @@ bool pcatch = false;	// true when bdi takes i/o request
 BDI* bdiCreate() {
 	BDI* bdi = new BDI;
 	for (int i=0; i<4; i++) {
-		bdi->flop[i].id = i;
+		bdi->flop[i] = flpCreate(i);
 	}
-	bdi->vg93.fptr = &bdi->flop[0];
+	bdi->vg93.fptr = bdi->flop[0];
 	bdi->vg93.tf = BYTEDELAY;
 	bdi->tab = BYTEDELAY;
 	bdi->vg93.t = 0;
+	bdi->vg93.ti = 0;
 	return bdi;
 }
 
@@ -54,7 +54,7 @@ bool bdiOut(BDI* bdi,int port,uint8_t val) {
 			bdi->vg93.drq = false;
 			break;
 		case 0xff: // vg93.drv = val&0x03;
-			bdi->vg93.fptr = &bdi->flop[val & 0x03];	// selet floppy
+			bdi->vg93.fptr = bdi->flop[val & 0x03];	// selet floppy
 			bdi->vg93.setmr(val & 0x04);		// master reset
 			bdi->vg93.block = val & 0x08;
 			bdi->vg93.side = (val & 0x10) ? 1 : 0;
@@ -88,11 +88,11 @@ void bdiSync(BDI* bdi,int tk) {
 		} else {
 			tz = bdi->vg93.tf;
 			bdi->vg93.tf = bdi->tab;
-			flpNext(bdi->vg93.fptr,bdi->vg93.side, bdi->vg93.t);
+			if (flpNext(bdi->vg93.fptr,bdi->vg93.side)) bdi->vg93.ti = bdi->vg93.t;
 		}
 		bdi->vg93.t += tz;
 		bdi->vg93.idxold = bdi->vg93.idx;
-		bdi->vg93.idx = ((bdi->vg93.t - bdi->vg93.fptr->ti) < IDXDELAY);
+		bdi->vg93.idx = ((bdi->vg93.t - bdi->vg93.ti) < IDXDELAY);
 		bdi->vg93.strb = (!bdi->vg93.idxold) && bdi->vg93.idx;
 		if (bdi->vg93.wptr != NULL) {
 			bdi->vg93.count -= tz;
@@ -313,7 +313,6 @@ uint8_t vgwork[16][256] = {
 	},
 // 9: write track
 	{
-//	0x00,1,
 		0x20,1,			// set flag mode 1
 		0xc0,0x83,0x00,		// res b2-6 in flag
 		0xf9,1,0xff,		// ifn flp.ready END
@@ -494,8 +493,6 @@ uint8_t vgwork[16][256] = {
 uint8_t p1,dlt;
 int32_t delays[6]={6 * MSDELAY,12 * MSDELAY,24 * MSDELAY,32 * MSDELAY,15 * MSDELAY, 50 * MSDELAY};	// 6, 12, 20, 32, 15, 50ms (hlt-hld)
 
-void v00(VG93* p) {p1 = *(p->wptr++); vgdebug = (p!=0); printf("== DEBUG\n");}
-
 void v01(VG93* p) {p1 = *(p->wptr++); p->wptr = vgwork[p1];}
 void v02(VG93* p) {p1 = *(p->wptr++); p->sp = p->wptr; p->wptr = vgwork[p1];}
 void v03(VG93* p) {p->wptr = p->sp;}
@@ -512,7 +509,7 @@ void v32(VG93* p) {dlt = *(p->wptr++); if (!p->drq) p->wptr += (int8_t)dlt;}
 void v80(VG93* p) {p->trk = *(p->wptr++);}
 void v81(VG93* p) {p->trk--;}
 void v82(VG93* p) {p->trk++;}
-void v83(VG93* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (p->fptr->trk == p1) p->wptr += (int8_t)dlt;}
+void v83(VG93* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (flpGet(p->fptr,FLP_TRK) == p1) p->wptr += (int8_t)dlt;}
 void v84(VG93* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (p->trk == p1) p->wptr += (int8_t)dlt;}
 void v85(VG93* p) {dlt = *(p->wptr++); if (p->buf[0] == p->trk) p->wptr += (int8_t)dlt;}
 void v86(VG93* p) {dlt = *(p->wptr++); if (p->trk == p->data) p->wptr += (int8_t)dlt;}
@@ -526,17 +523,25 @@ void v8D(VG93* p) {p->sec++;}
 void v8E(VG93* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (p->bus == p1) p->wptr += (int8_t)dlt;}
 void v8F(VG93* p) {p->bus = *(p->wptr++);}
 
-void v90(VG93* p) {p1 = *(p->wptr++); p->buf[p1] = p->fptr->rd(); p->bus = p->buf[p1];}
-void v91(VG93* p) {p->data = p->fptr->rd();}
-void v92(VG93* p) {p->bus = p->fptr->rd();}
-void v93(VG93* p) {p->fptr->wr(p->data);}
-void v94(VG93* p) {p->fptr->wr(p->bus);}
+void v90(VG93* p) {p1 = *(p->wptr++); p->buf[p1] = flpRd(p->fptr); p->bus = p->buf[p1];}
+void v91(VG93* p) {p->data = flpRd(p->fptr);}
+void v92(VG93* p) {p->bus = flpRd(p->fptr);}
+void v93(VG93* p) {flpWr(p->fptr,p->data);}
+void v94(VG93* p) {flpWr(p->fptr,p->bus);}
 
 void vA0(VG93* p) {p->sdir = false; flpStep(p->fptr,false);}
 void vA1(VG93* p) {p->sdir = true; flpStep(p->fptr,true);}
 void vA2(VG93* p) {flpStep(p->fptr,p->sdir);}
 
-void vA8(VG93* p) {if (p->turbo) {p->tf = BYTEDELAY; p->count = 0; flpNext(p->fptr,p->side,p->t);} else {p->count += p->tf;}}
+void vA8(VG93* p) {
+	if (p->turbo) {
+		p->tf = BYTEDELAY;
+		p->count = 0;
+		if (flpNext(p->fptr,p->side)) p->ti = p->t;
+	} else {
+		p->count += p->tf;
+	}
+}
 void vA9(VG93* p) {p->count += p->tf;}
 void vAA(VG93* p) {p->side = !p->side;}
 
@@ -548,25 +553,28 @@ void vB4(VG93* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (p->ic != p1) p->wp
 void vB5(VG93* p) {p->ic = (128 << (p->buf[0] & 3));}				// 128,256,512,1024
 
 void vC0(VG93* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); p->flag &= p1; p->flag |= dlt;}
-void vC1(VG93* p) {flpFillFields(p->fptr,p->fptr->rtrk,true);}
+void vC1(VG93* p) {flpFillFields(p->fptr,flpGet(p->fptr,FLP_RTRK),true);}
 
 void vD0(VG93* p) {p->crc = 0xcdb4; p->crchi = true;}
 void vD1(VG93* p) {p->addcrc(*(p->wptr++));}
 void vD2(VG93* p) {p->addcrc(p->data);}
 void vD3(VG93* p) {p->addcrc(p->bus);}
-void vD4(VG93* p) {p->fcrc = p->fptr->rd(); flpNext(p->fptr,p->side,p->t); p->fcrc |= (p->fptr->rd() << 8);}	// read crc from floppy
+void vD4(VG93* p) {
+	p->fcrc = flpRd(p->fptr);
+	if (flpNext(p->fptr,p->side)) p->ti = p->t;
+	p->fcrc |= (flpRd(p->fptr) << 8);
+}	// read crc from floppy
 void vD5(VG93* p) {
-//	printf ("test crc @ %i,%i - VG: %.4X\tFLP: %.4X\n",p->trk,p->sec,p->crc,p->fcrc);
 	dlt = *(p->wptr++); if (p->crc == p->fcrc) p->wptr += (int8_t)dlt;
 }
-void vD7(VG93* p) {p->fcrc = (p->fptr->rd() << 8);}
-void vD8(VG93* p) {p->fcrc |= p->fptr->rd();}
-void vD9(VG93* p) {p->fptr->wr((p->crc & 0xff00) >> 8);}
-void vDA(VG93* p) {p->fptr->wr(p->crc & 0xff);}
+void vD7(VG93* p) {p->fcrc = (flpRd(p->fptr) << 8);}
+void vD8(VG93* p) {p->fcrc |= flpRd(p->fptr);}
+void vD9(VG93* p) {flpWr(p->fptr,(p->crc & 0xff00) >> 8);}
+void vDA(VG93* p) {flpWr(p->fptr,p->crc & 0xff);}
 void vDF(VG93* p) {if (p->crchi) {
-			p->fptr->wr((p->crc & 0xff00) >> 8);
+			flpWr(p->fptr,(p->crc & 0xff00) >> 8);
 		} else {
-			p->fptr->wr(p->crc & 0xff);
+			flpWr(p->fptr,p->crc & 0xff);
 		}
 		p->crchi = !p->crchi;
 }
@@ -586,14 +594,14 @@ void vF1(VG93* p) {p->wptr = NULL; p->count = 0;}
 void vF8(VG93* p) {dlt = *(p->wptr++); if (flpGetFlag(p->fptr,FLP_PROTECT)) p->wptr += (int8_t)dlt;}
 void vF9(VG93* p) {dlt = *(p->wptr++); if (flpGetFlag(p->fptr,FLP_INSERT)) p->wptr += (int8_t)dlt;}	// READY
 void vFA(VG93* p) {dlt = *(p->wptr++); if (p->sdir) p->wptr += (int8_t)dlt;}
-void vFB(VG93* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (p->fptr->field == p1) p->wptr += (int8_t)dlt;}
+void vFB(VG93* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (flpGet(p->fptr,FLP_FIELD) == p1) p->wptr += (int8_t)dlt;}
 void vFC(VG93* p) {dlt = *(p->wptr++); if (p->strb) p->wptr += (int8_t)dlt;}
 void vFD(VG93* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if ((p->com & p1) == 0) p->wptr += (int8_t)dlt;}
 void vFE(VG93* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if ((p->com & p1) != 0) p->wptr += (int8_t)dlt;}
-void vFF(VG93* p) {p->irq = true; p->idle = true; p->wptr = &vgidle[0]; vgdebug = false;}
+void vFF(VG93* p) {p->irq = true; p->idle = true; p->wptr = &vgidle[0];}
 
 VGOp vgfunc[256] = {
-	&v00,&v01,&v02,&v03,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+	NULL,&v01,&v02,&v03,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 	&v10,&v11,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 	&v20,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 	&v30,&v31,&v32,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
@@ -623,14 +631,6 @@ void VG93::addcrc(uint8_t val) {
 
 void VG93::tick() {
 	cop = *(wptr++);
-	if (vgdebug) {
-		switch (cop) {
-			case 0xfb: printf("%.2X (fptr.fld = %i)\n",cop,fptr->field); break;
-			case 0x91: printf("%.2X (rd = %.2X, pos %i)\n",cop,fptr->rd(),fptr->pos); break;
-			case 0x93: printf("%.2X (wr %.2X, pos %i)\n",cop,data,fptr->pos); break;
-			default: printf("%.2X\n",cop); break;
-		}
-	}
 	if (vgfunc[cop] == NULL) {printf("VGcom: %.2X\n",cop); throw(1);}
 	vgfunc[cop](this);
 }
@@ -638,12 +638,11 @@ void VG93::tick() {
 uint8_t VG93::getflag() {
 	uint8_t res = ((flpGetFlag(fptr,FLP_INSERT)) ? 0 : 128) | (idle ? 0 : 1);
 	switch (mode) {
-		case 0: res |= ((flpGetFlag(fptr,FLP_PROTECT)) ? 0x40 : 0) | 0x20 | (flag & 0x18) | ((fptr->trk==0)?4:0) | (idx ? 2 : 0); break;
+		case 0: res |= ((flpGetFlag(fptr,FLP_PROTECT)) ? 0x40 : 0) | 0x20 | (flag & 0x18) | ((flpGet(fptr,FLP_TRK) == 0) ? 4 : 0) | (idx ? 2 : 0); break;
 		case 1:
 		case 2: res |= (flag & 0x7c) | (drq ? 2 : 0); break;
 		default: printf("Flag mode\n"); throw(0);
 	}
-	if (vgdebug) printf("read FLAG %.2X\n",res);
 	return res;
 }
 

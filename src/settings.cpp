@@ -296,6 +296,22 @@ void saveProfiles() {
 	cfile.close();
 }
 
+std::string getDiskString(Floppy* flp) {
+	std::string res = "80DW";
+	if (!flpGetFlag(flp,FLP_TRK80)) res[0]='4';
+	if (!flpGetFlag(flp,FLP_DS)) res[2]='S';
+	if (flpGetFlag(flp,FLP_PROTECT)) res[3]='R';
+	return res;
+}
+
+void setDiskString(Floppy* flp,std::string st) {
+	if (st.size() < 4) return;
+	flpSetFlag(flp,FLP_TRK80 | FLP_DS | FLP_PROTECT,false);
+	if (st.substr(0,2) == "80") flpSetFlag(flp,FLP_TRK80,true);
+	if (st.substr(2,1) == "D") flpSetFlag(flp,FLP_DS,true);
+	if (st.substr(3,1) == "R") flpSetFlag(flp,FLP_PROTECT,true);
+}
+
 void saveConfig() {
 	saveProfiles();
 	optSet("GENERAL","cpu.frq",int(zx->cpuFreq * 2));
@@ -319,10 +335,10 @@ void saveConfig() {
 	optSet("SOUND","gs.stereo",gsGet(zx->gs,GS_STEREO));
 	optSet("BETADISK","enabled",zx->bdi->enable);
 	optSet("BETADISK","fast",zx->bdi->vg93.turbo);
-	optSet("BETADISK","A",zx->bdi->flop[0].getString());
-	optSet("BETADISK","B",zx->bdi->flop[1].getString());
-	optSet("BETADISK","C",zx->bdi->flop[2].getString());
-	optSet("BETADISK","D",zx->bdi->flop[3].getString());
+	optSet("BETADISK","A",getDiskString(zx->bdi->flop[0]));
+	optSet("BETADISK","B",getDiskString(zx->bdi->flop[1]));
+	optSet("BETADISK","C",getDiskString(zx->bdi->flop[2]));
+	optSet("BETADISK","D",getDiskString(zx->bdi->flop[3]));
 
 	optSet("IDE","iface",ideGet(zx->ide,IDE_NONE,IDE_TYPE));
 	
@@ -598,10 +614,10 @@ void loadConfig(bool dev) {
 					case 4:
 						break;
 					case 5:
-						if (pnam=="A") zx->bdi->flop[0].setString(pval);
-						if (pnam=="B") zx->bdi->flop[1].setString(pval);
-						if (pnam=="C") zx->bdi->flop[2].setString(pval);
-						if (pnam=="D") zx->bdi->flop[3].setString(pval);
+						if (pnam=="A") setDiskString(zx->bdi->flop[0],pval);
+						if (pnam=="B") setDiskString(zx->bdi->flop[1],pval);
+						if (pnam=="C") setDiskString(zx->bdi->flop[2],pval);
+						if (pnam=="D") setDiskString(zx->bdi->flop[3],pval);
 						break;
 					case 6:
 						if (pnam=="memory") {

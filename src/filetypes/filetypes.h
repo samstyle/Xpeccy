@@ -46,33 +46,29 @@ void putint(uint8_t*, uint32_t);
 // snapshot
 
 int loadSNA(ZXComp*,const char*);
-int saveSNA(ZXComp*,const char*,bool);
-
 int loadZ80(ZXComp*,const char*);
-
 int loadRZX(ZXComp*,const char*);
+
+int saveSNA(ZXComp*,const char*,bool);
 
 // tape
 
 TapeBlock tapDataToBlock(char*,int,int*);
 
 int loadTAP(Tape*,const char*);
-int saveTAP(Tape*,const char*);
-
 int loadTZX(Tape*,const char*);
+
+int saveTAP(Tape*,const char*);
 
 // disk
 
-int loadTRD(Floppy*,const char*);
-int saveTRD(Floppy*,const char*);
-
-int loadUDI(Floppy*,const char*);
-int saveUDI(Floppy*,const char*);
-
+int loadRaw(Floppy*,const char*);
+int loadHobeta(Floppy*,const char*);
 int loadSCL(Floppy*,const char*);
-int saveSCL(Floppy*,const char*);
-
+int loadTRD(Floppy*,const char*);
+int loadUDI(Floppy*,const char*);
 int loadFDI(Floppy*,const char*);
 
-int loadHobeta(Floppy*,const char*);
-int loadRaw(Floppy*,const char*);
+int saveSCL(Floppy*,const char*);
+int saveTRD(Floppy*,const char*);
+int saveUDI(Floppy*,const char*);

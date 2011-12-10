@@ -2,6 +2,9 @@
 #include <QMessageBox>
 #include <QTimer>
 #include <SDL/SDL.h>
+#ifdef WIN32
+	#undef main
+#endif
 #include <sstream>
 #include <getopt.h>
 

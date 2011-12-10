@@ -24,7 +24,8 @@ void loadUDITrack(Floppy* flp,std::ifstream* file, uint8_t tr, bool sd) {
 	int rt = (tr << 1) + (sd ? 1 : 0);
 	uint8_t type = file->get();
 	uint32_t len;
-	int i;
+//	int i;
+	uint8_t* trackBuf = new uint8_t[TRACKLEN];
 	if (type != 0x00) {
 		printf("TRK %i: unknown format %.2X\n",rt,type);
 		len = getlen(file,4);							// field len
@@ -37,10 +38,11 @@ void loadUDITrack(Floppy* flp,std::ifstream* file, uint8_t tr, bool sd) {
 			len = (len >> 3) + (((len & 7) == 0) ? 0 : 1);	// and bit field
 			file->seekg(len,std::ios_base::cur);
 		} else {
-			for (i = 0; i < TRACKLEN; i++) flp->data[tr].byte[i] = 0x00;
-			//flp->nulltrack(rt);
-			file->read((char*)flp->data[rt].byte,len);		// read track
-			flpFillFields(flp,rt,false);
+//			flpClearTrack(flp,tr);
+			file->read((char*)trackBuf,len);
+			flpPutTrack(flp,rt,trackBuf,len);
+//			file->read((char*)flp->data[rt].byte,len);		// read track
+//			flpFillFields(flp,rt,false);
 			len = (len >> 3) + (((len & 7) == 0)?0:1);	// skip bit field
 			file->seekg(len,std::ios_base::cur);
 		}
@@ -50,12 +52,16 @@ void loadUDITrack(Floppy* flp,std::ifstream* file, uint8_t tr, bool sd) {
 void getUDIBitField(Floppy* flp,uint8_t tr, uint8_t* buf) {
 	int i;
 	int msk=0x01;
+	uint8_t* fieldBuf = new uint8_t[TRACKLEN];
+	uint8_t* trackBuf = new uint8_t[TRACKLEN];
+	flpGetTrack(flp,tr,trackBuf);
+	flpGetTrackFields(flp,tr,fieldBuf);
 	for (i = 0; i < TRACKLEN; i++) {
 		if (msk == 0x100) {
 			msk = 0x01;
 			*(++buf)=0x00;
 		}
-		if ((flp->data[tr].field[i] == 0) && (flp->data[tr].byte[i] == 0xa1)) *buf |= msk;
+		if ((fieldBuf[i] == 0) && (trackBuf[i] == 0xa1)) *buf |= msk;
 		msk <<= 1;
 	}
 	buf++;
@@ -76,7 +82,7 @@ int loadUDI(Floppy* flp, const char* name) {
 		loadUDITrack(flp,&file,i,false);
 		if (sides) loadUDITrack(flp,&file,i,true);
 	}
-	flp->path = std::string(name);
+	flpSetPath(flp,name);
 	flpSetFlag(flp,FLP_INSERT,true);
 	flpSetFlag(flp,FLP_CHANGED,false);
 	return ERR_OK;
@@ -104,7 +110,7 @@ int saveUDI(Floppy* flp, const char* name) {
 		*(dptr++) = 0x00;		// MFM
 		*(dptr++) = (TRACKLEN & 0xff);	// track len
 		*(dptr++) = ((TRACKLEN & 0xff00) >> 8);
-		memcpy((char*)dptr,(char*)flp->data[i].byte,TRACKLEN);	// track image
+		flpPutTrack(flp,i,dptr,TRACKLEN); // memcpy((char*)dptr,(char*)flp->data[i].byte,TRACKLEN);	// track image
 		dptr += TRACKLEN;
 		getUDIBitField(flp,i,dptr);
 		dptr += 782;			// 6250 / 8 + 1
