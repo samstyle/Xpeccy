@@ -593,8 +593,8 @@ void loadConfig(bool dev) {
 //printf("%s\t%s\t%s\n",config.back().group.c_str(),config.back().name.c_str(),config.back().value.c_str());
 				switch (tmp2) {
 					case 1:
-						zx->resbank = 1;
 						if (pnam=="reset") {
+							zx->resbank = 1;
 							if ((pval=="basic128") || (pval=="0")) zx->resbank = 0;
 							if ((pval=="basic48") || (pval=="1")) zx->resbank = 1;
 							if ((pval=="shadow") || (pval=="2")) zx->resbank = 2;
@@ -719,6 +719,6 @@ void loadConfig(bool dev) {
 	setRomset(zx, zx->opt.rsName);
 	if (zx->hw==NULL) throw("Can't found current machine");
 	if (memGetRomset(zx->mem) == NULL) throw("Can't found current romset");
-	if (~zx->hw->mask & tmask) throw("Incorrect memory size for this machine");
+	if ((zx->hw->mask != 0) && (~zx->hw->mask & tmask)) throw("Incorrect memory size for this machine");
 	if (!vidSetLayout(zx->vid,zx->vid->curlay)) vidSetLayout(zx->vid,"default");
 }

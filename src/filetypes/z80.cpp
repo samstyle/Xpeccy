@@ -126,8 +126,12 @@ int loadZ80(ZXComp* zx, const char* name) {
 printf(".z80 version 3\n");
 			if (lst < 16) printf("Hardware: %s\n",v3hardware[lst]);
 			switch (lst) {
-				case 0: lst = 1; break;		// 48K
-				case 4: lst = 2; break;
+				case 0:
+				case 1:
+				case 2: lst = 1; break;		// 48K
+				case 4:
+				case 5:
+				case 6:
 				case 9: lst = 2; break;		// 128K
 				case 10: lst = 3; break;	// 256K
 				default: lst = 0; break;	// undef
@@ -137,8 +141,10 @@ printf(".z80 version 3\n");
 printf(".z80 version 2\n");
 			if (lst < 16) printf("Hardware: %s\n",v2hardware[lst]);
 			switch (lst) {
-				case 0: lst = 1; break;
-				case 3: lst = 2; break;
+				case 0:
+				case 1: lst = 1; break;
+				case 3:
+				case 4:
 				case 9: lst = 2; break;		// 128K
 				case 10: lst = 3; break;	// 256K
 				default: lst = 0; break;	// undef

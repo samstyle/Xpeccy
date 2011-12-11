@@ -62,4 +62,6 @@ void addLayout(std::string,int*);
 void addLayout(VidLayout);
 std::vector<VidLayout> getLayoutList();
 
+uint8_t* vidGetScreen();
+
 #endif

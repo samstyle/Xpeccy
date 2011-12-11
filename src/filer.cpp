@@ -116,6 +116,7 @@ void loadFile(const char* name, int flags, int drv) {
 	}
 	std::string sfnam(opath.toUtf8().data());
 	int ferr = ERR_OK;
+	zx->rzxPlay = false;
 	switch (type) {
 		case FT_SNA: ferr = loadSNA(zx,sfnam.c_str()); break;
 		case FT_Z80: ferr = loadZ80(zx,sfnam.c_str()); break;

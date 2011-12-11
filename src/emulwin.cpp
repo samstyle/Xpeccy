@@ -26,7 +26,7 @@
 
 #ifdef XQTPAINT
 	#include <QPainter>
-	QImage scrImg(100,100,QImage::Format_Indexed8);
+	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
 #ifndef WIN32
@@ -163,25 +163,24 @@ void MainWin::updateWindow() {
 	vidUpdate(zx->vid);
 	int szw = zx->vid->wsze.h;
 	int szh = zx->vid->wsze.v;
-#ifndef XQTPAINT
-	int sdlflg = SDL_SWSURFACE;
-	if ((zx->vid->flags & VF_FULLSCREEN) && !(zx->vid->flags & VF_BLOCKFULLSCREEN)) {
-		sdlflg |= SDL_FULLSCREEN;
-	}
-#endif
-//printf("szw.h.v = %i\t%i\n",szw,szh);
 	setFixedSize(szw,szh);
 #ifdef XQTPAINT
 	scrImg = scrImg.scaled(szw,szh);
 	zx->vid->scrimg = scrImg.bits();
+	zx->vid->scrptr = scrImg.bits();
 #else
+	int sdlflg = SDL_SWSURFACE;
+	if ((zx->vid->flags & VF_FULLSCREEN) && !(zx->vid->flags & VF_BLOCKFULLSCREEN)) {
+		sdlflg |= SDL_FULLSCREEN;
+	}
+	if (surf != NULL) {
+		surf->pixels = NULL;		// else creating new surface will destroy screenBuf
+	}
 	surf = SDL_SetVideoMode(szw,szh,8,sdlflg | SDL_NOFRAME);
 	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
-//printf("surface size = %i\t%i\t%i\n",surf->w,surf->h,surf->pitch);
-//printf("window size = %i\t%i\n",size().width(),size().height());
-	zx->vid->scrimg = (uint8_t*)surf->pixels;
+	delete((uint8_t*)surf->pixels);			// free default pixels
+	surf->pixels = vidGetScreen();
 #endif
-	zx->vid->scrptr = zx->vid->scrimg;
 	emulFlags &= ~FL_BLOCK;
 }
 
@@ -288,9 +287,10 @@ MainWin::MainWin() {
 
 #ifdef XQTPAINT
 void MainWin::paintEvent(QPaintEvent *ev) {
-	QPainter pnt;
-	pnt.begin(this);
+	if (emulFlags & FL_BLOCK) return;
+	QPainter pnt(this);
 	pnt.drawImage(0,0,scrImg);
+	pnt.end();
 }
 
 void MainWin::keyPressEvent(QKeyEvent *ev) {

@@ -4,6 +4,7 @@
 
 // video layouts
 std::vector<VidLayout> layoutList;
+uint8_t* screenBuf = new uint8_t[1024 * 1024];
 
 unsigned char inkTab[] = {
   0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
@@ -75,11 +76,18 @@ Video* vidCreate(Memory* me) {
 	vid->dotCount = 0;
 	vid->pxcnt = 0;
 	
+	vid->scrimg = screenBuf;
+	vid->scrptr = vid->scrimg;
+	
 	return vid;
 }
 
 void vidDestroy(Video* vid) {
 	delete(vid);
+}
+
+uint8_t* vidGetScreen() {
+	return screenBuf;
 }
 
 #define	MTRX_INVIS	0x4000		// invisible: blank spaces
@@ -126,9 +134,6 @@ void vidUpdate(Video* vid) {
 	vid->wsze.h = vid->vsze.h * ((vid->flags & VF_DOUBLE) ? 2 : 1);
 	vid->wsze.v = vid->vsze.v * ((vid->flags & VF_DOUBLE) ? 2 : 1);
 	vidFillMatrix(vid);
-	vid->dotCount = 0;
-	vid->pxcnt = 0;
-	vid->scrptr = vid->scrimg;
 }
 
 uint8_t col = 0;

@@ -42,9 +42,14 @@ int zlib_uncompress(char* in, int ilen, char* out, int olen) {
 int loadRZX(ZXComp* zx, const char* name) {
 	std::ifstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
-	
+#ifdef WIN32
+	std::string tmpName = std::string(getenv("TEMP"))+"\\lain.tmp";
+#else
+	std::string tmpName = "/tmp/lain.tmp";
+#endif
 	bool btm;
 	uint8_t tmp;
+	int err;
 	int flg,len,len2,len3;//,tstates;
 	std::string tmpStr;
 	char* buf = new char[16];
@@ -95,20 +100,22 @@ int loadRZX(ZXComp* zx, const char* name) {
 						if (zbuf != NULL) delete(zbuf);
 						return ERR_RZX_UNPACK;
 					}
-					ofile.open("/tmp/lain.tmp");
+					ofile.open(tmpName.c_str(),std::ios::binary);
 					ofile.write(buf,len2);
 					ofile.close();
-					tmpStr = "/tmp/lain.tmp";
+					tmpStr = tmpName;
 				}
+				err = ERR_CANT_OPEN;
+				printf("path = %s\n",tmpStr.c_str());
 				switch (tmp) {
 					case TYP_SNA:
-						loadSNA(zx,tmpStr.c_str());
+						err = loadSNA(zx,tmpStr.c_str());
 						break;
 					case TYP_Z80:
-						loadZ80(zx,tmpStr.c_str());
+						err = loadZ80(zx,tmpStr.c_str());
 						break;
 				}
-				//btm = true;
+				if (err != ERR_OK) btm = false;
 				break;
 			case 0x80:
 				len2 = getint(&file);	// number of frames
