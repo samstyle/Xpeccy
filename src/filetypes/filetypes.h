@@ -21,22 +21,27 @@
 #define	ERR_RZX_CRYPT	0x11	// rzx is crypted
 #define	ERR_RZX_UNPACK	0x12	// rzx unpacking error
 
-#define	ERR_TRD_LEN	0x20	// incorrect trd lenght
-#define	ERR_TRD_SIGN	0x21	// not trd image
-#define	ERR_TRD_SNF	0x22	// can't save trd: wrong disk structure
-#define	ERR_NOTRD	0x23	// this is not trd disk
-#define	ERR_HOB_CANT	0x28	// can't create hobeta @ disk
-#define	ERR_UDI_SIGN	0x30	// udi signature errror
-#define	ERR_FDI_SIGN	0x38	// fdi signature error
-#define	ERR_FDI_HEAD	0x39	// wrong fdi heads count
-#define	ERR_SCL_SIGN	0x40	// scl signature error
-#define	ERR_SCL_MANY	0x41	// too many files in scl
-#define	ERR_RAW_LONG	0x48	// raw file too long
+#define	ERR_TAP_DATA	0x20	// can't save tap because of not-standart blocks
 
-#define	ERR_TZX_SIGN	0x50	// tzx signature error
-#define	ERR_TZX_UNKNOWN	0x51	// tzx unsupported block
-#define	ERR_TAP_DATA	0x58	// can't save tap because of not-standart blocks
+#define	ERR_TZX_SIGN	0x30	// tzx signature error
+#define	ERR_TZX_UNKNOWN	0x31	// tzx unsupported block
 
+#define	ERR_TRD_LEN	0x40	// incorrect trd lenght
+#define	ERR_TRD_SIGN	0x41	// not trd image
+#define	ERR_TRD_SNF	0x42	// can't save trd: wrong disk structure
+#define	ERR_NOTRD	0x43	// this is not trd disk
+
+#define	ERR_HOB_CANT	0x50	// can't create hobeta @ disk
+
+#define	ERR_UDI_SIGN	0x60	// udi signature errror
+
+#define	ERR_FDI_SIGN	0x70	// fdi signature error
+#define	ERR_FDI_HEAD	0x71	// wrong fdi heads count
+
+#define	ERR_SCL_SIGN	0x80	// scl signature error
+#define	ERR_SCL_MANY	0x81	// too many files in scl
+
+#define	ERR_RAW_LONG	0x90	// raw file too long
 
 uint16_t getLEWord(std::ifstream*);
 uint16_t getBEWord(std::ifstream*);

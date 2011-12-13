@@ -240,8 +240,8 @@ void tsSync(TSound* ts, int tk) {
 std::pair<uint8_t,uint8_t> tsGetVolume(TSound* ts) {
 	std::pair<uint8_t,uint8_t> res = aymGetVolume(ts->chipA);
 	std::pair<uint8_t,uint8_t> tmp = aymGetVolume(ts->chipB);
-	res.first = res.first + tmp.first;
-	res.second = res.second + tmp.second;
+	res.first += tmp.first;
+	res.second += tmp.second;
 	return res;
 }
 

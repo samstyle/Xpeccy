@@ -130,3 +130,6 @@ build 20111209
 New	Ability to load raw files (as it is) to TRDos disk A. File lenght must be not greater then 0xff00
 Wrk	Many rewritings, lower CPU usage
 Fix	Long AY playing was incorrect (counter goes out of range)
+
+build 20111213
+New	F8 - RZX player mini-window

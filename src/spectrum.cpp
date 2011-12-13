@@ -140,6 +140,8 @@ int zxGetPort(int port, int hardware) {
 		case HW_ZX48:
 			if ((port & 0x01) == 0) {
 				port = (port & 0xff00) | 0xfe;
+			} else {
+				port = 0x1f;
 			}
 			break;
 		case HW_PENT:
@@ -342,6 +344,7 @@ double ZXComp::exec() {
 			rzxFrame++;
 			if (rzxFrame >= rzx.size()) {
 				rzxPlay = false;
+				rzx.clear();
 			} else {
 				rzxFetches = rzx[rzxFrame].fetches;
 				rzxPos = 0;

@@ -34,7 +34,7 @@ int loadRaw(Floppy* flp, const char* name) {
 	int i;
 	uint8_t* buf = new uint8_t[256];
 	for (i = 0; i < nfle.slen; i++) {
-		file.read((char*)buf,256);;;
+		file.read((char*)buf,256);
 		if (!flpPutSectorData(flp, nfle.trk, nfle.sec + 1, buf, 256)) return ERR_HOB_CANT;
 		nfle.sec++;
 		if (nfle.sec > 15) {

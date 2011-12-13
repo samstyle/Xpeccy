@@ -33,6 +33,7 @@
 #define	PR_QUIT		(1<<4)
 #define	PR_PAUSE	(1<<5)
 #define	PR_EXTRA	(1<<6)
+#define PR_RZX		(1<<7)
 
 // flags - emul mode / events
 #define	FL_GRAB		1
@@ -91,6 +92,9 @@ class MainWin : public QX11EmbedContainer {
 		QTimer* timer;
 	private slots:
 		void emulFrame();
+		void rzxPlayPause();
+		void rzxStop();
+		void rzxOpen();
 	protected:
 		void closeEvent(QCloseEvent*);
 #ifdef XQTPAINT

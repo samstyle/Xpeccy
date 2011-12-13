@@ -23,6 +23,7 @@
 #include "filer.h"
 
 #include "ui_tapewin.h"
+#include "ui_rzxplayer.h"
 
 #ifdef XQTPAINT
 	#include <QPainter>
@@ -63,6 +64,9 @@ Ui::TapeWin tapeUi;
 QDialog* tapeWin;
 int lastTapeFlags;
 int lastTapeBlock;
+// rzx player
+Ui::rzxPlayer rzxUi;
+QDialog* rzxWin;
 // hardwares
 std::vector<HardWare> hwList;
 // romsets
@@ -222,11 +226,7 @@ void emulSetIcon(const char* inam) {
 }
 
 void emulPause(bool p, int msk) {
-	if (p) {
-		pauseFlags |= msk;
-	} else {
-		pauseFlags &= ~msk;
-	}
+	setFlagBit(p,&pauseFlags,msk);
 	bool kk = ((emulFlags & FL_GRAB) != 0);
 	if (!kk || ((pauseFlags != 0) && kk)) {
 #ifdef XQTPAINT
@@ -281,8 +281,44 @@ MainWin::MainWin() {
 	tapeUi.tapeList->setColumnWidth(0,20);
 	tapeUi.tapeList->setColumnWidth(1,20);
 	tapeUi.tapeList->setColumnWidth(2,50);
+	rzxWin = new QDialog((QWidget*)this,Qt::Tool);
+	rzxUi.setupUi(rzxWin);
 	timer = new QTimer();
 	QObject::connect(timer,SIGNAL(timeout()),this,SLOT(emulFrame()));
+
+	connect(rzxUi.ppButton,SIGNAL(released()),this,SLOT(rzxPlayPause()));
+	connect(rzxUi.stopButton,SIGNAL(released()),this,SLOT(rzxStop()));
+	connect(rzxUi.openButton,SIGNAL(released()),this,SLOT(rzxOpen()));
+}
+
+void MainWin::rzxPlayPause() {
+	if (pauseFlags & PR_RZX) {
+		emulPause(false,PR_RZX);
+		rzxUi.ppButton->setIcon(QIcon(":/images/pause.png"));
+	} else {
+		emulPause(true,PR_RZX);
+		rzxUi.ppButton->setIcon(QIcon(":/images/play.png"));
+	}
+}
+
+void MainWin::rzxStop() {
+	zx->rzxPlay = false;
+	zx->rzx.clear();
+	emulPause(false,PR_RZX);
+	rzxUi.ppButton->setEnabled(false);
+	rzxUi.stopButton->setEnabled(false);
+	rzxUi.progress->setValue(0);
+}
+
+void MainWin::rzxOpen() {
+	emulPause(true,PR_RZX);
+	loadFile("",FT_RZX,0);
+	if (zx->rzx.size() != 0) {
+		rzxUi.ppButton->setEnabled(true);
+		rzxUi.stopButton->setEnabled(true);
+		rzxUi.progress->setValue(0);
+	}
+	emulPause(false,PR_RZX);
 }
 
 #ifdef XQTPAINT
@@ -347,12 +383,9 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 					break;
 			case Qt::Key_F6: devShow(); break;
 			case Qt::Key_F7: if (scrCounter == 0) {emulFlags |= FL_SHOT;} else {emulFlags &= ~FL_SHOT;} break;
+			case Qt::Key_F8: if (rzxWin->isVisible()) {rzxWin->hide();} else {rzxWin->show();} break;
 			case Qt::Key_F9: emulPause(true,PR_FILE);
 				emulSaveChanged();
-//				zx->bdi->flop[0].savecha();
-//				zx->bdi->flop[1].savecha();
-//				zx->bdi->flop[2].savecha();
-//				zx->bdi->flop[3].savecha();
 				emulPause(false,PR_FILE);
 				break;
 			case Qt::Key_F10:
@@ -579,6 +612,8 @@ void EmulWin::tapeLoad() {
 	emulPause(false,PR_FILE);
 }
 
+double prc;
+
 void EmulWin::SDLEventHandler() {
 #ifndef XQTPAINT
 	SDL_UpdateRect(surf,0,0,0,0);
@@ -589,11 +624,21 @@ void EmulWin::SDLEventHandler() {
 	switch (wantedWin) {
 		case WW_DEBUG: dbgShow(); wantedWin = WW_NONE; break;
 	}
-	if (zx->rzxPlay) {
-		double prc = 100 * zx->rzxFrame / zx->rzx.size();
-		mainWin->setWindowTitle(QString(XPTITLE).append(" (rzx play: ").append(QString::number(prc,'f',0)).append("%)"));
+	if ((zx->rzx.size() == 0) || (pauseFlags & ~PR_RZX)) {
+		rzxUi.ppButton->setEnabled(false);
+		rzxUi.stopButton->setEnabled(false);
 	} else {
-		mainWin->setWindowTitle(XPTITLE);
+		if (pauseFlags & PR_RZX) {
+			rzxUi.ppButton->setIcon(QIcon(":/images/play.png"));
+		} else {
+			rzxUi.ppButton->setIcon(QIcon(":/images/pause.png"));
+		}
+		rzxUi.ppButton->setEnabled(true);
+		rzxUi.stopButton->setEnabled(true);
+		if (zx->rzxPlay) {
+			prc = 100 * zx->rzxFrame / zx->rzx.size();
+			rzxUi.progress->setValue(prc);
+		}
 	}
 	int blk = tapGet(zx->tape,TAPE_BLOCK);
 	int flg = tapGet(zx->tape,TAPE_FLAGS);
@@ -682,6 +727,7 @@ void EmulWin::SDLEventHandler() {
 								break;
 						case SDLK_F6: devShow(); break;
 						case SDLK_F7: if (scrCounter == 0) {emulFlags |= FL_SHOT;} else {emulFlags &= ~FL_SHOT;} break;
+						case SDLK_F8: if (rzxWin->isVisible()) {rzxWin->hide();} else {rzxWin->show();}
 						case SDLK_F9: emulPause(true,PR_FILE);
 							emulSaveChanged();
 //							zx->bdi->flop[0].savecha();

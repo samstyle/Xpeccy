@@ -106,7 +106,7 @@ int loadRZX(ZXComp* zx, const char* name) {
 					tmpStr = tmpName;
 				}
 				err = ERR_CANT_OPEN;
-				printf("path = %s\n",tmpStr.c_str());
+//				printf("path = %s\n",tmpStr.c_str());
 				switch (tmp) {
 					case TYP_SNA:
 						err = loadSNA(zx,tmpStr.c_str());
