@@ -57,7 +57,7 @@ int loadSNA(ZXComp* zx, const char* name) {
 		z80ex_set_reg(cpu,regPC,getLEWord(&file));
 		tmp = file.get();
 		zx->out(0x7ffd, tmp);
-		zx->bdi->active = (file.get() & 1);
+		bdiSetFlag(zx->bdi,BDI_ACTIVE,file.get() & 1);
 		for (tmp2 = 0; tmp2 < 8; tmp2++) {
 			if ((tmp2 == 2) || (tmp2 == 5)) tmp2++;
 			if ((tmp & 7) != tmp2) {
@@ -80,7 +80,7 @@ void putLEWord(std::ofstream* file, Z80EX_WORD wrd) {
 int saveSNA(ZXComp* zx, const char* name,bool sna48) {
 	std::ofstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
-	
+
 	uint8_t bnk,i;
 	char* pageBuf = new char[0x4000];
 	Z80EX_CONTEXT* cpu = zx->cpu;
@@ -112,7 +112,7 @@ int saveSNA(ZXComp* zx, const char* name,bool sna48) {
 	file.write(pageBuf,0x4000);
 	memGetPage(zx->mem,MEM_RAM,2,pageBuf);
 	file.write(pageBuf,0x4000);
-	
+
 	if (sna48) {
 		memGetPage(zx->mem,MEM_RAM,0,pageBuf);		// 0xc000 - 0xffff (48K: bank 0)
 		file.write(pageBuf,0x4000);
@@ -122,7 +122,7 @@ int saveSNA(ZXComp* zx, const char* name,bool sna48) {
 		file.write(pageBuf,0x4000);
 		putLEWord(&file,z80ex_get_reg(cpu,regPC));
 		file.put((char)zx->prt0);
-		file.put((char)(zx->bdi->active?0xff:0x00));
+		file.put((char)(bdiGetFlag(zx->bdi,BDI_ACTIVE) ? 0xff : 0x00));
 		for (i = 0; i < 8; i++) {
 			if ((i == 2) || (i == 5)) i++;
 			if (i != bnk) {

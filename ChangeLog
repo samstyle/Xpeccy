@@ -133,3 +133,6 @@ Fix	Long AY playing was incorrect (counter goes out of range)
 
 build 20111213
 New	F8 - RZX player mini-window
+
+build 20111315
+Wrk	Reorganize BDI & FDC structures

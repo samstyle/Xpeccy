@@ -187,6 +187,7 @@ bool DebugWin::fillall() {
 }
 
 void DebugWin::fillvg() {
+/*
 	QLabel* lab;
 	lab = (QLabel*)vglay->itemAtPosition(0,1)->widget(); lab->setText(QString::number(zx->bdi->vg93.trk));
 	lab = (QLabel*)vglay->itemAtPosition(1,1)->widget(); lab->setText(QString::number(zx->bdi->vg93.sec));
@@ -199,6 +200,7 @@ void DebugWin::fillvg() {
 	lab = (QLabel*)vglay->itemAtPosition(2,3)->widget(); lab->setText(QString::number(flpGet(zx->bdi->vg93.fptr,FLP_POS)));
 	lab = (QLabel*)vglay->itemAtPosition(3,3)->widget(); lab->setText(QString::number(flpRd(zx->bdi->vg93.fptr),16));
 	lab = (QLabel*)vglay->itemAtPosition(4,3)->widget(); lab->setText(QString::number(flpGetField(zx->bdi->vg93.fptr)));
+*/
 }
 
 void DebugWin::fillrays() {

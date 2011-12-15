@@ -30,13 +30,13 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT*,Z80EX_WORD adr,int m1,void* ptr) {
 	}
 	if (m1 == 1) {
 		if (comp->rzxPlay) comp->rzxFetches--;
-		if (comp->bdi->enable) {
-			if (!comp->bdi->active && ((adr & 0xff00) == 0x3d00) && (comp->prt0 & 0x10)) {
-				comp->bdi->active = true;
+		if (bdiGetFlag(comp->bdi,BDI_ENABLE)) {
+			if (!bdiGetFlag(comp->bdi,BDI_ACTIVE) && ((adr & 0xff00) == 0x3d00) && (comp->prt0 & 0x10)) {
+				bdiSetFlag(comp->bdi,BDI_ACTIVE,true);
 				comp->mapMemory();
 			}
-			if (comp->bdi->active && (adr > 0x3fff)) {
-				comp->bdi->active = false;
+			if (bdiGetFlag(comp->bdi,BDI_ACTIVE) && (adr > 0x3fff)) {
+				bdiSetFlag(comp->bdi,BDI_ACTIVE,false);
 				comp->mapMemory();
 			}
 		}
@@ -103,9 +103,8 @@ void ZXComp::reset(int wut) {
 	z80ex_reset(cpu);
 	vid->curscr = false;
 	vid->mode = VID_NORMAL;
-	bdi->active = (resto == 3);
-	bdi->vg93.count = 0;
-	bdi->vg93.setmr(false);
+	bdiSetFlag(bdi,BDI_ACTIVE,resto == 3);
+	bdiReset(bdi);
 	if (gsGet(gs,GS_FLAG) & GS_RESET) gsReset(gs);
 	tsReset(ts);
 	ideReset(ide);
@@ -115,19 +114,19 @@ void ZXComp::mapMemory() {
 	uint8_t rp;
 	switch (hw->type) {
 		case HW_ZX48:
-			memSetBank(mem,MEM_BANK0,MEM_ROM,bdi->active ? 3 : 1);
+			memSetBank(mem,MEM_BANK0,MEM_ROM,bdiGetFlag(bdi,BDI_ACTIVE) ? 3 : 1);
 			memSetBank(mem,MEM_BANK3,MEM_RAM,0);
 			break;
 		case HW_PENT:
-			memSetBank(mem,MEM_BANK0,MEM_ROM,(bdi->active) ? 3 : ((prt0 & 0x10) >> 4));
+			memSetBank(mem,MEM_BANK0,MEM_ROM,bdiGetFlag(bdi,BDI_ACTIVE) ? 3 : ((prt0 & 0x10) >> 4));
 			memSetBank(mem,MEM_BANK3,MEM_RAM,(prt0 & 7) | ((prt0 & 0xc0) >> 3));
 			break;
 		case HW_P1024:
-			memSetBank(mem,MEM_BANK0,MEM_ROM,bdi->active ? 3 : ((prt1 & 8) ? 0xff : ((prt0 & 0x10) >> 4)));
+			memSetBank(mem,MEM_BANK0,MEM_ROM,bdiGetFlag(bdi,BDI_ACTIVE) ? 3 : ((prt1 & 8) ? 0xff : ((prt0 & 0x10) >> 4)));
 			memSetBank(mem,MEM_BANK3,MEM_RAM,(prt0 & 7) | ((prt1 & 4) ? 0 : ((prt0 & 0x20) | ((prt0 & 0xc0) >> 3))));
 			break;
 		case HW_SCORP:
-			rp = (prt1 & 0x01) ? 0xff : ((prt1 & 0x02) ? 2 : ((bdi->active) ? 3 : ((prt0 & 0x10) >> 4)));
+			rp = (prt1 & 0x01) ? 0xff : ((prt1 & 0x02) ? 2 : (bdiGetFlag(bdi,BDI_ACTIVE) ? 3 : ((prt0 & 0x10) >> 4)));
 			rp |= ((prt2 & 3) << 2);
 			memSetBank(mem,MEM_BANK0,MEM_ROM,rp);
 			memSetBank(mem,MEM_BANK3,MEM_RAM,(prt0 & 7) | ((prt1 & 0x10) >> 1) | ((prt1 & 0xc0) >> 2));
@@ -179,7 +178,7 @@ int zxGetPort(int port, int hardware) {
 uint8_t ZXComp::in(uint16_t port) {
 	uint8_t res = 0xff;
 	gsSync(gs,gsCount); gsCount = 0;
-	if (ideIn(ide,port,&res,bdi->active)) return res;
+	if (ideIn(ide,port,&res,bdiGetFlag(bdi,BDI_ACTIVE))) return res;
 	if (gsIn(gs,port,&res) == GS_OK) return res;
 	if (bdiIn(bdi,port,&res)) return res;
 	port = zxGetPort(port,hw->type);
@@ -243,10 +242,10 @@ uint8_t ZXComp::in(uint16_t port) {
 
 void ZXComp::out(uint16_t port,uint8_t val) {
 	gsSync(gs,gsCount); gsCount = 0;
-	if (ideOut(ide,port,val,bdi->active)) return;
+	if (ideOut(ide,port,val,bdiGetFlag(bdi,BDI_ACTIVE))) return;
 	if (gsOut(gs,port,val) == GS_OK) return;
 	if (bdiOut(bdi,port,val)) return;
-	port = zxGetPort(port,hw->type);	
+	port = zxGetPort(port,hw->type);
 	switch (port) {
 		case 0xfffd:
 		case 0xbffd:
@@ -331,7 +330,7 @@ double ZXComp::exec() {
 		res2 = z80ex_nmi(cpu);
 		res1 += res2;
 		if (res2 != 0) {
-			bdi->active = true;
+			bdiSetFlag(bdi,BDI_ACTIVE,true);
 			mapMemory();
 			vidSync(vid,res2,cpuFreq);
 		}
@@ -356,6 +355,6 @@ double ZXComp::exec() {
 
 	if (gsGet(gs,GS_FLAG) & GS_ENABLE) gsCount += ltk;
 	tapCount += ltk;
-	if (bdi->enable) bdiSync(bdi,ltk);
+	if (bdiGetFlag(bdi,BDI_ENABLE)) bdiSync(bdi,ltk);
 	return ltk;
 }

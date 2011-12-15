@@ -9,6 +9,21 @@
 #define	FLP_POS		3
 #define	FLP_DISKTYPE	10
 
+#define	ERR_OK		0
+#define	ERR_MANYFILES	1
+#define	ERR_NOSPACE	2
+#define	ERR_SHIT	3
+
+#define	FLP_INSERT	1
+#define	FLP_PROTECT	(1<<1)
+#define	FLP_TRK80	(1<<2)
+#define	FLP_DS		(1<<3)
+#define	FLP_INDEX	(1<<4)
+#define	FLP_MOTOR	(1<<5)
+#define	FLP_HEAD	(1<<6)
+#define	FLP_CHANGED	(1<<7)
+#define	FLP_SIDE	(1<<8)
+
 class Sector {
 	public:
 	Sector();

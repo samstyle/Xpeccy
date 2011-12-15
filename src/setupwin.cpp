@@ -158,7 +158,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	QObject::connect(ui.remobtb,SIGNAL(released()),this,SLOT(ejctb()));
 	QObject::connect(ui.remoctb,SIGNAL(released()),this,SLOT(ejctc()));
 	QObject::connect(ui.remodtb,SIGNAL(released()),this,SLOT(ejctd()));
-	
+
 	QObject::connect(ui.disktabs,SIGNAL(currentChanged(int)),this,SLOT(fillDiskCat()));
 	connect(ui.actCopyToTape,SIGNAL(triggered()),this,SLOT(copyToTape()));
 // tape
@@ -264,28 +264,32 @@ void SetupWin::start() {
 	ui.gsgroup->setChecked(gsGet(zx->gs,GS_FLAG) & GS_ENABLE);
 	ui.tsbox->setCurrentIndex(ui.tsbox->findData(QVariant(tsGet(zx->ts,TS_TYPE,0))));
 // dos
-	ui.bdebox->setChecked(zx->bdi->enable);
-	ui.bdtbox->setChecked(zx->bdi->vg93.turbo);
-	ui.apathle->setText(QDialog::trUtf8(flpGetPath(zx->bdi->flop[0]).c_str()));
-		ui.a80box->setChecked(flpGetFlag(zx->bdi->flop[0],FLP_TRK80));
-		ui.adsbox->setChecked(flpGetFlag(zx->bdi->flop[0],FLP_DS));
-		ui.awpbox->setChecked(flpGetFlag(zx->bdi->flop[0],FLP_PROTECT));
-	ui.bpathle->setText(QDialog::trUtf8(flpGetPath(zx->bdi->flop[1]).c_str()));
-		ui.b80box->setChecked(flpGetFlag(zx->bdi->flop[1],FLP_TRK80));
-		ui.bdsbox->setChecked(flpGetFlag(zx->bdi->flop[1],FLP_DS));
-		ui.bwpbox->setChecked(flpGetFlag(zx->bdi->flop[1],FLP_PROTECT));
-	ui.cpathle->setText(QDialog::trUtf8(flpGetPath(zx->bdi->flop[2]).c_str()));
-		ui.c80box->setChecked(flpGetFlag(zx->bdi->flop[2],FLP_TRK80));
-		ui.cdsbox->setChecked(flpGetFlag(zx->bdi->flop[2],FLP_DS));
-		ui.cwpbox->setChecked(flpGetFlag(zx->bdi->flop[2],FLP_PROTECT));
-	ui.dpathle->setText(QDialog::trUtf8(flpGetPath(zx->bdi->flop[3]).c_str()));
-		ui.d80box->setChecked(flpGetFlag(zx->bdi->flop[3],FLP_TRK80));
-		ui.ddsbox->setChecked(flpGetFlag(zx->bdi->flop[3],FLP_DS));
-		ui.dwpbox->setChecked(flpGetFlag(zx->bdi->flop[3],FLP_PROTECT));
+	ui.bdebox->setChecked(bdiGetFlag(zx->bdi,BDI_ENABLE));
+	ui.bdtbox->setChecked(bdiGetFlag(zx->bdi,BDI_TURBO));
+	Floppy* flp = bdiGetFloppy(zx->bdi,0);
+	ui.apathle->setText(QDialog::trUtf8(flpGetPath(flp).c_str()));
+		ui.a80box->setChecked(flpGetFlag(flp,FLP_TRK80));
+		ui.adsbox->setChecked(flpGetFlag(flp,FLP_DS));
+		ui.awpbox->setChecked(flpGetFlag(flp,FLP_PROTECT));
+	flp = bdiGetFloppy(zx->bdi,1);
+	ui.bpathle->setText(QDialog::trUtf8(flpGetPath(flp).c_str()));
+		ui.b80box->setChecked(flpGetFlag(flp,FLP_TRK80));
+		ui.bdsbox->setChecked(flpGetFlag(flp,FLP_DS));
+		ui.bwpbox->setChecked(flpGetFlag(flp,FLP_PROTECT));
+	flp = bdiGetFloppy(zx->bdi,2);
+	ui.cpathle->setText(QDialog::trUtf8(flpGetPath(flp).c_str()));
+		ui.c80box->setChecked(flpGetFlag(flp,FLP_TRK80));
+		ui.cdsbox->setChecked(flpGetFlag(flp,FLP_DS));
+		ui.cwpbox->setChecked(flpGetFlag(flp,FLP_PROTECT));
+	flp = bdiGetFloppy(zx->bdi,3);
+	ui.dpathle->setText(QDialog::trUtf8(flpGetPath(flp).c_str()));
+		ui.d80box->setChecked(flpGetFlag(flp,FLP_TRK80));
+		ui.ddsbox->setChecked(flpGetFlag(flp,FLP_DS));
+		ui.dwpbox->setChecked(flpGetFlag(flp,FLP_PROTECT));
 	fillDiskCat();
 // hdd
 	ui.hiface->setCurrentIndex(ui.hiface->findData(ideGet(zx->ide,IDE_NONE,IDE_TYPE)));
-	
+
 	ui.hm_type->setCurrentIndex(ui.hm_type->findData(ideGet(zx->ide,IDE_MASTER,IDE_TYPE)));
 	ATAPassport pass = ideGetPassport(zx->ide,IDE_MASTER);
 	ui.hm_model->setText(QDialog::trUtf8(pass.model.c_str()));
@@ -372,24 +376,28 @@ void SetupWin::apply() {
 	gsSet(zx->gs,GS_FLAG,gsf);
 	gsSet(zx->gs,GS_STEREO,ui.gstereobox->itemData(ui.gstereobox->currentIndex()).toInt());
 // bdi
-	zx->bdi->enable = ui.bdebox->isChecked();
-	zx->bdi->vg93.turbo = ui.bdtbox->isChecked();
-	
-	flpSetFlag(zx->bdi->flop[0],FLP_TRK80,ui.a80box->isChecked());
-	flpSetFlag(zx->bdi->flop[0],FLP_DS,ui.adsbox->isChecked());
-	flpSetFlag(zx->bdi->flop[0],FLP_PROTECT,ui.awpbox->isChecked());
+	bdiSetFlag(zx->bdi,BDI_ENABLE,ui.bdebox->isChecked());
+	bdiSetFlag(zx->bdi,BDI_TURBO,ui.bdtbox->isChecked());
 
-	flpSetFlag(zx->bdi->flop[1],FLP_TRK80,ui.b80box->isChecked());
-	flpSetFlag(zx->bdi->flop[1],FLP_DS,ui.bdsbox->isChecked());
-	flpSetFlag(zx->bdi->flop[1],FLP_PROTECT,ui.bwpbox->isChecked());
+	Floppy* flp = bdiGetFloppy(zx->bdi,0);
+	flpSetFlag(flp,FLP_TRK80,ui.a80box->isChecked());
+	flpSetFlag(flp,FLP_DS,ui.adsbox->isChecked());
+	flpSetFlag(flp,FLP_PROTECT,ui.awpbox->isChecked());
 
-	flpSetFlag(zx->bdi->flop[2],FLP_TRK80,ui.c80box->isChecked());
-	flpSetFlag(zx->bdi->flop[2],FLP_DS,ui.cdsbox->isChecked());
-	flpSetFlag(zx->bdi->flop[2],FLP_PROTECT,ui.cwpbox->isChecked());
+	flp = bdiGetFloppy(zx->bdi,1);
+	flpSetFlag(flp,FLP_TRK80,ui.b80box->isChecked());
+	flpSetFlag(flp,FLP_DS,ui.bdsbox->isChecked());
+	flpSetFlag(flp,FLP_PROTECT,ui.bwpbox->isChecked());
 
-	flpSetFlag(zx->bdi->flop[3],FLP_TRK80,ui.d80box->isChecked());
-	flpSetFlag(zx->bdi->flop[3],FLP_DS,ui.ddsbox->isChecked());
-	flpSetFlag(zx->bdi->flop[3],FLP_PROTECT,ui.dwpbox->isChecked());
+	flp = bdiGetFloppy(zx->bdi,2);
+	flpSetFlag(flp,FLP_TRK80,ui.c80box->isChecked());
+	flpSetFlag(flp,FLP_DS,ui.cdsbox->isChecked());
+	flpSetFlag(flp,FLP_PROTECT,ui.cwpbox->isChecked());
+
+	flp = bdiGetFloppy(zx->bdi,3);
+	flpSetFlag(flp,FLP_TRK80,ui.d80box->isChecked());
+	flpSetFlag(flp,FLP_DS,ui.ddsbox->isChecked());
+	flpSetFlag(flp,FLP_PROTECT,ui.dwpbox->isChecked());
 
 // hdd
 	ideSet(zx->ide,IDE_NONE,IDE_TYPE,ui.hiface->itemData(ui.hiface->currentIndex()).toInt());
@@ -540,7 +548,7 @@ void SetupWin::hidersedit() {
 void SetupWin::okbuts() {
 	std::vector<HardWare> list = getHardwareList();
 	int t = list[ui.machbox->currentIndex()].mask;
-	
+
 	if (t == 0x00) {
 		ui.okbut->setEnabled(ui.mszbox->currentIndex()==0);
 	} else {
@@ -664,14 +672,14 @@ void SetupWin::buildmenulist() {
 void SetupWin::copyToTape() {
 	int dsk = ui.disktabs->currentIndex();
 	QModelIndexList idx = ui.disklist->selectionModel()->selectedRows();
-	std::vector<TRFile> cat = flpGetTRCatalog(zx->bdi->flop[dsk]);
+	std::vector<TRFile> cat = flpGetTRCatalog(bdiGetFloppy(zx->bdi,dsk));
 	int row;
 	uint8_t* buf = new uint8_t[0xffff];
 	uint16_t line,start,len;
 	std::string name;
 	for (int i=0; i<idx.size(); i++) {
 		row = idx[i].row();
-		if (flpGetSectorsData(zx->bdi->flop[dsk],cat[row].trk, cat[row].sec+1, buf, cat[row].slen)) {
+		if (flpGetSectorsData(bdiGetFloppy(zx->bdi,dsk),cat[row].trk, cat[row].sec+1, buf, cat[row].slen)) {
 			if (cat[row].slen == (cat[row].hlen + ((cat[row].llen == 0) ? 0 : 1))) {
 				start = (cat[row].hst << 8) + cat[row].lst;
 				len = (cat[row].hlen << 8) + cat[row].llen;
@@ -685,7 +693,7 @@ void SetupWin::copyToTape() {
 		} else {
 			shithappens("Can't get file data, skip");
 		}
-		
+
 	}
 }
 
@@ -763,11 +771,11 @@ void SetupWin::copyToDisk() {
 			return;
 		}
 	}
-	if (!flpGetFlag(zx->bdi->flop[dsk],FLP_INSERT)) newdisk(dsk);
+	if (!flpGetFlag(bdiGetFloppy(zx->bdi,dsk),FLP_INSERT)) newdisk(dsk);
 	std::vector<uint8_t> dt = tapGetBlockData(zx->tape,dataBlock);
 	uint8_t* buf = new uint8_t[256];
 	uint pos = 1;	// skip block type mark
-	switch(flpCreateFile(zx->bdi->flop[dsk],&dsc)) {
+	switch(flpCreateFile(bdiGetFloppy(zx->bdi,dsk),&dsc)) {
 		case ERR_SHIT: shithappens("Yes, it happens"); break;
 		case ERR_MANYFILES: shithappens("Too many files @ disk"); break;
 		case ERR_NOSPACE: shithappens("Not enough space @ disk"); break;
@@ -777,7 +785,7 @@ void SetupWin::copyToDisk() {
 					buf[(pos-1) & 0xff] = (pos < dt.size()) ? dt[pos] : 0x00;
 					pos++;
 				} while ((pos & 0xff) != 1);
-				flpPutSectorData(zx->bdi->flop[dsk],dsc.trk, dsc.sec+1, buf, 256);
+				flpPutSectorData(bdiGetFloppy(zx->bdi,dsk),dsc.trk, dsc.sec+1, buf, 256);
 				dsc.sec++;
 				if (dsc.sec > 15) {
 					dsc.sec = 0;
@@ -800,13 +808,13 @@ void SetupWin::fillDiskCat() {
 	wid->setColumnWidth(5,50);
 //	wid->setColumnWidth(6,40);
 	QTableWidgetItem* itm;
-	if (!flpGetFlag(zx->bdi->flop[dsk],FLP_INSERT)) {
+	if (!flpGetFlag(bdiGetFloppy(zx->bdi,dsk),FLP_INSERT)) {
 		wid->setEnabled(false);
 		wid->setRowCount(0);
 	} else {
 		wid->setEnabled(true);
-		if (flpGet(zx->bdi->flop[dsk],FLP_DISKTYPE) == TYPE_TRD) {
-			std::vector<TRFile> cat = flpGetTRCatalog(zx->bdi->flop[dsk]);
+		if (flpGet(bdiGetFloppy(zx->bdi,dsk),FLP_DISKTYPE) == TYPE_TRD) {
+			std::vector<TRFile> cat = flpGetTRCatalog(bdiGetFloppy(zx->bdi,dsk));
 			wid->setRowCount(cat.size());
 			for (uint i=0; i<cat.size(); i++) {
 				itm = new QTableWidgetItem(QString(std::string((char*)cat[i].name,8).c_str())); wid->setItem(i,0,itm);
@@ -853,7 +861,7 @@ void SetupWin::updvolumes() {
 // disk
 
 void SetupWin::newdisk(int idx) {
-	Floppy *flp = zx->bdi->flop[idx & 3];
+	Floppy *flp = bdiGetFloppy(zx->bdi,idx);
 	if (!saveChangedDisk(idx & 3)) return;
 	flpFormat(flp);
 	flpSetPath(flp,"");
@@ -871,21 +879,21 @@ void SetupWin::loadb() {loadFile("",FT_DISK,1); updatedisknams();}
 void SetupWin::loadc() {loadFile("",FT_DISK,2); updatedisknams();}
 void SetupWin::loadd() {loadFile("",FT_DISK,3); updatedisknams();}
 
-void SetupWin::savea() {if (flpGetFlag(zx->bdi->flop[0],FLP_INSERT)) saveFile(flpGetPath(zx->bdi->flop[0]).c_str(),FT_DISK,0);}
-void SetupWin::saveb() {if (flpGetFlag(zx->bdi->flop[1],FLP_INSERT)) saveFile(flpGetPath(zx->bdi->flop[1]).c_str(),FT_DISK,1);}
-void SetupWin::savec() {if (flpGetFlag(zx->bdi->flop[2],FLP_INSERT)) saveFile(flpGetPath(zx->bdi->flop[2]).c_str(),FT_DISK,2);}
-void SetupWin::saved() {if (flpGetFlag(zx->bdi->flop[3],FLP_INSERT)) saveFile(flpGetPath(zx->bdi->flop[3]).c_str(),FT_DISK,3);}
+void SetupWin::savea() {Floppy* flp = bdiGetFloppy(zx->bdi,0); if (flpGetFlag(flp,FLP_INSERT)) saveFile(flpGetPath(flp).c_str(),FT_DISK,0);}
+void SetupWin::saveb() {Floppy* flp = bdiGetFloppy(zx->bdi,1); if (flpGetFlag(flp,FLP_INSERT)) saveFile(flpGetPath(flp).c_str(),FT_DISK,1);}
+void SetupWin::savec() {Floppy* flp = bdiGetFloppy(zx->bdi,2); if (flpGetFlag(flp,FLP_INSERT)) saveFile(flpGetPath(flp).c_str(),FT_DISK,2);}
+void SetupWin::saved() {Floppy* flp = bdiGetFloppy(zx->bdi,3); if (flpGetFlag(flp,FLP_INSERT)) saveFile(flpGetPath(flp).c_str(),FT_DISK,3);}
 
-void SetupWin::ejcta() {saveChangedDisk(0); flpEject(zx->bdi->flop[0]); updatedisknams();}
-void SetupWin::ejctb() {saveChangedDisk(1); flpEject(zx->bdi->flop[1]); updatedisknams();}
-void SetupWin::ejctc() {saveChangedDisk(2); flpEject(zx->bdi->flop[2]); updatedisknams();}
-void SetupWin::ejctd() {saveChangedDisk(3); flpEject(zx->bdi->flop[3]); updatedisknams();}
+void SetupWin::ejcta() {saveChangedDisk(0); flpEject(bdiGetFloppy(zx->bdi,0)); updatedisknams();}
+void SetupWin::ejctb() {saveChangedDisk(1); flpEject(bdiGetFloppy(zx->bdi,1)); updatedisknams();}
+void SetupWin::ejctc() {saveChangedDisk(2); flpEject(bdiGetFloppy(zx->bdi,2)); updatedisknams();}
+void SetupWin::ejctd() {saveChangedDisk(3); flpEject(bdiGetFloppy(zx->bdi,3)); updatedisknams();}
 
 void SetupWin::updatedisknams() {
-	ui.apathle->setText(QDialog::trUtf8(flpGetPath(zx->bdi->flop[0]).c_str()));
-	ui.bpathle->setText(QDialog::trUtf8(flpGetPath(zx->bdi->flop[1]).c_str()));
-	ui.cpathle->setText(QDialog::trUtf8(flpGetPath(zx->bdi->flop[2]).c_str()));
-	ui.dpathle->setText(QDialog::trUtf8(flpGetPath(zx->bdi->flop[3]).c_str()));
+	ui.apathle->setText(QDialog::trUtf8(flpGetPath(bdiGetFloppy(zx->bdi,0)).c_str()));
+	ui.bpathle->setText(QDialog::trUtf8(flpGetPath(bdiGetFloppy(zx->bdi,1)).c_str()));
+	ui.cpathle->setText(QDialog::trUtf8(flpGetPath(bdiGetFloppy(zx->bdi,2)).c_str()));
+	ui.dpathle->setText(QDialog::trUtf8(flpGetPath(bdiGetFloppy(zx->bdi,3)).c_str()));
 	fillDiskCat();
 }
 

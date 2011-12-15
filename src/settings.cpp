@@ -333,15 +333,15 @@ void saveConfig() {
 	optSet("SOUND","gs",(gsGet(zx->gs,GS_FLAG) & GS_ENABLE) != 0);
 	optSet("SOUND","gs.reset",(gsGet(zx->gs,GS_FLAG) & GS_RESET) != 0);
 	optSet("SOUND","gs.stereo",gsGet(zx->gs,GS_STEREO));
-	optSet("BETADISK","enabled",zx->bdi->enable);
-	optSet("BETADISK","fast",zx->bdi->vg93.turbo);
-	optSet("BETADISK","A",getDiskString(zx->bdi->flop[0]));
-	optSet("BETADISK","B",getDiskString(zx->bdi->flop[1]));
-	optSet("BETADISK","C",getDiskString(zx->bdi->flop[2]));
-	optSet("BETADISK","D",getDiskString(zx->bdi->flop[3]));
+	optSet("BETADISK","enabled",bdiGetFlag(zx->bdi,BDI_ENABLE));
+	optSet("BETADISK","fast",bdiGetFlag(zx->bdi,BDI_TURBO));
+	optSet("BETADISK","A",getDiskString(bdiGetFloppy(zx->bdi,0)));
+	optSet("BETADISK","B",getDiskString(bdiGetFloppy(zx->bdi,1)));
+	optSet("BETADISK","C",getDiskString(bdiGetFloppy(zx->bdi,2)));
+	optSet("BETADISK","D",getDiskString(bdiGetFloppy(zx->bdi,3)));
 
 	optSet("IDE","iface",ideGet(zx->ide,IDE_NONE,IDE_TYPE));
-	
+
 	optSet("IDE","master.type",ideGet(zx->ide,IDE_MASTER,IDE_TYPE));
 	ATAPassport pass = ideGetPassport(zx->ide,IDE_MASTER);
 	optSet("IDE","master.model",pass.model);
@@ -351,7 +351,7 @@ void saveConfig() {
 	optSet("IDE","master.maxlba",ideGet(zx->ide,IDE_MASTER,IDE_MAXLBA));
 	std::string chs = int2str(pass.spt) + "/" + int2str(pass.hds) + "/" + int2str(pass.cyls);
 	optSet("IDE","master.chs",chs);
-	
+
 	optSet("IDE","slave.type",ideGet(zx->ide,IDE_SLAVE,IDE_TYPE));
 	pass = ideGetPassport(zx->ide,IDE_MASTER);
 	optSet("IDE","slave.model",pass.model);
@@ -603,7 +603,7 @@ void loadConfig(bool dev) {
 //						if (pnam=="current") zx->opt.romsetName = pval;
 //						if (pnam=="gs") zx->opt.GSRom = pval;
 						break;
-					case 2: 
+					case 2:
 						break;
 					case 3:
 						if (pnam=="folder") shotDir = pval;
@@ -614,10 +614,10 @@ void loadConfig(bool dev) {
 					case 4:
 						break;
 					case 5:
-						if (pnam=="A") setDiskString(zx->bdi->flop[0],pval);
-						if (pnam=="B") setDiskString(zx->bdi->flop[1],pval);
-						if (pnam=="C") setDiskString(zx->bdi->flop[2],pval);
-						if (pnam=="D") setDiskString(zx->bdi->flop[3],pval);
+						if (pnam=="A") setDiskString(bdiGetFloppy(zx->bdi,0),pval);
+						if (pnam=="B") setDiskString(bdiGetFloppy(zx->bdi,1),pval);
+						if (pnam=="C") setDiskString(bdiGetFloppy(zx->bdi,2),pval);
+						if (pnam=="D") setDiskString(bdiGetFloppy(zx->bdi,3),pval);
 						break;
 					case 6:
 						if (pnam=="memory") {
@@ -690,27 +690,27 @@ void loadConfig(bool dev) {
 	setFlagBit(optGetBool("VIDEO","doublesize"),&zx->vid->flags, VF_DOUBLE);
 	setFlagBit(optGetBool("VIDEO","fullscreen"),&zx->vid->flags, VF_FULLSCREEN);
 	tmp2 = optGetInt("VIDEO","bordersize"); if ((tmp2 >= 0) && (tmp2 <= 100)) zx->vid->brdsize = tmp2 / 100.0;
-	
+
 	tmp2 = optGetInt("SOUND","chip1"); if (tmp2 < SND_END) tsSet(zx->ts,AY_TYPE,0,tmp2);
 	tmp2 = optGetInt("SOUND","chip2"); if (tmp2 < SND_END) tsSet(zx->ts,AY_TYPE,1,tmp2);
 	tsSet(zx->ts,AY_STEREO,0,optGetInt("SOUND","chip1.stereo"));
 	tsSet(zx->ts,AY_STEREO,1,optGetInt("SOUND","chip2.stereo"));
 	tsSet(zx->ts,TS_TYPE,0,optGetInt("SOUND","ts.type"));
-	
+
 	int gsf = 0;
 	if (optGetBool("SOUND","gs")) gsf |= GS_ENABLE;
 	if (optGetBool("SOUND","gs.reset")) gsf |= GS_RESET;
 	gsSet(zx->gs,GS_FLAG,gsf);
 	gsSet(zx->gs,GS_STEREO,optGetInt("SOUND","gs.stereo"));
-	
-	zx->bdi->enable = optGetBool("BETADISK","enabled");
-	zx->bdi->vg93.turbo = optGetBool("BETADISK","fast");
+
+	bdiSetFlag(zx->bdi,BDI_ENABLE,optGetBool("BETADISK","enabled"));
+	bdiSetFlag(zx->bdi,BDI_TURBO,optGetBool("BETADISK","fast"));
 	zx->opt.hwName = optGetString("MACHINE","current");
 	zx->opt.rsName = optGetString("ROMSET","current");
 	zx->opt.GSRom = optGetString("ROMSET","gs");
 	emulSetFlag(FL_RESET,optGetBool("MACHINE","restart"));
 	setFlagBit(optGetBool("MACHINE","scrp.wait"),&zx->hwFlags,WAIT_ON);
-	
+
 	sndCalibrate();
 //	zx->ide->refresh();
 	ideSetPassport(zx->ide,IDE_MASTER,masterPass);
