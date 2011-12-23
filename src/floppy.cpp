@@ -374,9 +374,3 @@ Sector::Sector() {
 	type = 0xfb;
 	crc = -1;
 }
-
-Sector::Sector(uint8_t p1,uint8_t p2,uint8_t p3,uint8_t p4,uint8_t* p5) {
-	cyl = p1; side = p2; sec = p3; len = p4; data = p5;
-	type = 0xfb;
-	crc = -1;
-}

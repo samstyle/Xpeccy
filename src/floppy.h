@@ -27,7 +27,6 @@
 class Sector {
 	public:
 	Sector();
-	Sector(uint8_t,uint8_t,uint8_t,uint8_t,uint8_t*);
 	uint8_t cyl;
 	uint8_t side;
 	uint8_t sec;

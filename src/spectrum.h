@@ -81,6 +81,7 @@ class ZXComp {
 		void out(uint16_t,uint8_t);
 		int gsCount;
 		int tapCount;
+//		int bdiCount;
 };
 
 #endif

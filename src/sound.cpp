@@ -70,15 +70,15 @@ double sndSync(double tk) {
 	levl = lev;
 	levr = lev;
 	tsSync(zx->ts,tatbyte);
-	
+
 	std::pair<uint8_t,uint8_t> tmpl = tsGetVolume(zx->ts);
 	levl += tmpl.first * ayVolume / 100.0;
 	levr += tmpl.second * ayVolume / 100.0;
-	
+
 	tmpl = gsGetVolume(zx->gs);
 	levl += tmpl.first * gsVolume / 100.0;
 	levr += tmpl.second * gsVolume / 100.0;
-	
+
 	if (smpCount >= sndChunks) return tk;
 	ringBuffer[ringPos] = levl;
 	ringPos++;
@@ -99,7 +99,7 @@ void addOutput(std::string nam, bool (*opf)(), void (*plf)(), void (*clf)()) {
 	OutSys newsys;
 	newsys.name = nam;
 	newsys.open = opf;
- 	newsys.play = plf;
+	newsys.play = plf;
 	newsys.close = clf;
 	sndOutputList.push_back(newsys);
 }
@@ -362,7 +362,7 @@ void alsa_close() {
 #endif
 
 // init
-	
+
 void sndInit() {
 #ifndef WIN32
 #ifdef HAVEALSASOUND
