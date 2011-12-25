@@ -36,7 +36,7 @@ bool sndOpen();
 void sndPlay();
 void sndPause(bool);
 void sndClose();
-double sndSync(double);
+double sndSync(double,int);
 int sndGet(int);
 void sndSet(int,int);
 void sndSet(int,bool);

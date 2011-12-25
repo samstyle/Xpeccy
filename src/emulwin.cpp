@@ -209,7 +209,7 @@ double tks = 0;
 
 void emulExec() {
 	tks += zx->exec();
-	tks = sndSync(tks);
+	tks = sndSync(tks,emulFlags & FL_FAST);
 	if (!dbgIsActive()) {
 		// somehow catch CPoint
 		Z80EX_WORD pc = z80ex_get_reg(zx->cpu,regPC);
@@ -346,6 +346,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			case Qt::Key_3: emulFlags ^= FL_FAST;
 				mainWin->stopTimer();
 				mainWin->startTimer((emulFlags & FL_FAST) ? 1 : 20);
+				sndPause((emulFlags & FL_FAST) ? true : false);
 				break;
 			case Qt::Key_F4:
 				mainWin->close();
@@ -684,6 +685,7 @@ void EmulWin::SDLEventHandler() {
 						case SDLK_3: emulFlags ^= FL_FAST;
 							mainWin->stopTimer();
 							mainWin->startTimer((emulFlags & FL_FAST) ? 1 : 20);
+							sndPause((emulFlags & FL_FAST) ? true : false);
 							break;
 						case SDLK_F4:
 							mainWin->close();

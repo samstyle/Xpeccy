@@ -7,6 +7,7 @@
 	#include <SDL/SDL.h>
 #ifdef WIN32
 	#undef main
+	#include <mmsystem.h>
 #endif
 #endif
 
@@ -53,15 +54,21 @@ uint8_t lev,levr,levl;
 	snd_pcm_t *alsaHandle;
 	snd_pcm_sframes_t alsaFrames;
 #endif
+#else
+	WAVEFORMATEX wf;
+	WAVEHDR whdr;
+	HWAVEOUT wout;
 #endif
 
 // output
 
-double sndSync(double tk) {
+double sndSync(double tk,int fast) {
 	if (tk < tatbyte) return tk;
 	tk -= tatbyte;
 	tapSync(zx->tape,zx->tapCount); zx->tapCount = 0;
 	gsSync(zx->gs,zx->gsCount); zx->gsCount = 0;
+	tsSync(zx->ts,tatbyte);
+	if (fast != 0) return tk;
 	lev = zx->beeplev ? beepVolume : 0;
 	if (tapGet(zx->tape,TAPE_FLAGS) & TAPE_ON) {
 		lev += ((tapGetOutsig(zx->tape) ? tapeVolume : 0) + ((tapGetSignal(zx->tape) ? tapeVolume : 0)));
@@ -69,7 +76,6 @@ double sndSync(double tk) {
 	lev *= 0.16;
 	levl = lev;
 	levr = lev;
-	tsSync(zx->ts,tatbyte);
 
 	std::pair<uint8_t,uint8_t> tmpl = tsGetVolume(zx->ts);
 	levl += tmpl.first * ayVolume / 100.0;
@@ -79,19 +85,19 @@ double sndSync(double tk) {
 	levl += tmpl.first * gsVolume / 100.0;
 	levr += tmpl.second * gsVolume / 100.0;
 
-	if (smpCount >= sndChunks) return tk;
+//	if (smpCount >= sndChunks) return tk;
 	ringBuffer[ringPos] = levl;
 	ringPos++;
 	ringBuffer[ringPos] = levr;
 	ringPos++;
 	ringPos &= 0x3fff;
-	smpCount++;
+//	smpCount++;
 	return tk;
 }
 
 void sndCalibrate() {
 	sndChunks = (int)(sndRate / 50.0);			// samples played at 1/50 sec			882
-	sndBufSize = (int)(sndRate * sndChans / 50.0);		// buffer size for 1/50 sec play		1764
+	sndBufSize = sndChans * sndChunks;			// buffer size for 1/50 sec play		1764
 	tatbyte = (448 * 320 / (double)sndChunks);		// count of 7MHz ticks between samples		162.54
 }
 
@@ -252,7 +258,7 @@ bool sdlopen() {
 	asp->freq = sndRate;
 	asp->format = AUDIO_U8;
 	asp->channels = sndChans;
-//	asp->samples = 1024;
+	asp->samples = sndChunks;
 	asp->callback = &sdlPlayAudio;
 	asp->userdata = NULL;
 	if (SDL_OpenAudio(asp,NULL) < 0) {
@@ -359,6 +365,38 @@ void alsa_close() {
 
 // TODO: Windows sound output would be here... someday
 
+bool wave_open() {
+	wf.wFormatTag = WAVE_FORMAT_PCM;
+	wf.nChannels = sndChans;
+	wf.nSamplesPerSec = sndRate;
+	wf.nAvgBytesPerSec = sndRate * sndChans;
+	wf.wBitsPerSample = 8;
+	wf.nBlockAlign = sndChans;
+	MMRESULT res = waveOutOpen(&wout,0,&wf,NULL,NULL,CALLBACK_NULL);
+	return (res == MMSYSERR_NOERROR);
+}
+
+void wave_play() {
+	whdr.lpData = (LPSTR)ringBuffer;
+	whdr.dwBufferLength = sndBufSize;
+	whdr.dwBytesRecorded = 0;
+	whdr.dwUser = 0;
+	whdr.dwFlags = 0;
+	whdr.dwLoops = 0;
+	whdr.lpNext = 0;
+	whdr.reserved = 0;
+	waveOutPrepareHeader(wout,&whdr,sizeof(WAVEHDR));
+	waveOutWrite(wout,&whdr,sizeof(WAVEHDR));
+	waveOutUnprepareHeader(wout,&whdr,sizeof(WAVEHDR));
+	ringPos = 0;
+}
+
+void wave_close() {
+	waveOutReset(wout);
+	waveOutUnprepareHeader(wout,&whdr,sizeof(WAVEHDR));
+	waveOutClose(wout);
+}
+
 #endif
 
 // init
@@ -386,6 +424,8 @@ void sndInit() {
 #ifdef HAVEALSASOUND
 	addOutput("ALSA",&alsa_open,&alsa_play,&alsa_close);
 #endif
+#else
+	addOutput("WaveOut",&wave_open,&wave_play,&wave_close);
 #endif
 #ifdef HAVESDLSOUND
 	addOutput("SDL",&sdlopen,&sdlplay,&sdlclose);	// TODO: do something with SDL output
