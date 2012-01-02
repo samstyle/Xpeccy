@@ -142,7 +142,7 @@ int main(int ac,char** av) {
 			fillBookmarkMenu();
 			emulShow();
 			emulUpdateWindow();
-			zx->reset(RES_DEFAULT);
+			zxReset(zx,RES_DEFAULT);
 
 			for(i=1;i<ac;i++) {
 				loadFile(av[i],FT_ALL,0);

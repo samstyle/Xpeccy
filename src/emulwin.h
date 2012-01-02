@@ -8,9 +8,9 @@
 #include <stdint.h>
 
 #ifdef WIN32
-#define XQTPAINT
+	#define XQTPAINT
 #else
-#undef XQTPAINT
+	#undef XQTPAINT
 #endif
 
 #ifndef XQTPAINT

@@ -56,7 +56,7 @@ int loadSNA(ZXComp* zx, const char* name) {
 	} else {
 		z80ex_set_reg(cpu,regPC,getLEWord(&file));
 		tmp = file.get();
-		zx->out(0x7ffd, tmp);
+		zxOut(zx,0x7ffd, tmp);
 		bdiSetFlag(zx->bdi,BDI_ACTIVE,file.get() & 1);
 		for (tmp2 = 0; tmp2 < 8; tmp2++) {
 			if ((tmp2 == 2) || (tmp2 == 5)) tmp2++;

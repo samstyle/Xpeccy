@@ -208,7 +208,7 @@ void emulSetFlag(int msk,bool cnd) {
 double tks = 0;
 
 void emulExec() {
-	tks += zx->exec();
+	tks += zxExec(zx);
 	tks = sndSync(tks,emulFlags & FL_FAST);
 	if (!dbgIsActive()) {
 		// somehow catch CPoint
@@ -356,7 +356,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				scrInterval=0;
 				break;	// ALT+F7 combo
 			case Qt::Key_F12:
-				zx->reset(RES_DOS);
+				zxReset(zx,RES_DOS);
 				break;
 		}
 	} else {
@@ -400,7 +400,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 					tapeWin->show();
 				}
 				break;
-			case Qt::Key_F12: zx->reset(RES_DEFAULT); break;
+			case Qt::Key_F12: zxReset(zx,RES_DEFAULT); break;
 		}
 	}
 }
@@ -695,7 +695,7 @@ void EmulWin::SDLEventHandler() {
 							scrInterval=0;
 							break;	// ALT+F7 combo
 						case SDLK_F12:
-							zx->reset(RES_DOS);
+							zxReset(zx,RES_DOS);
 							break;
 						case SDLK_RETURN:
 							zx->vid->flags ^= VF_FULLSCREEN;
@@ -749,7 +749,7 @@ void EmulWin::SDLEventHandler() {
 								tapeWin->show();
 							}
 							break;
-						case SDLK_F12: zx->reset(RES_DEFAULT); break;
+						case SDLK_F12: zxReset(zx,RES_DEFAULT); break;
 						default: break;
 					}
 				}
@@ -832,9 +832,9 @@ bool addRomset(RomSet rs) {
 }
 
 #ifdef WIN32
-#define	SLASHES "\\"
+	#define	SLASHES "\\"
 #else
-#define	SLASHES "/"
+	#define	SLASHES "/"
 #endif
 
 // set and load memory romset. if rset is NULL, just load current
@@ -996,7 +996,7 @@ void addProfile(std::string nm, std::string fp) {
 	XProfile nprof;
 	nprof.name = nm;
 	nprof.file = fp;
-	nprof.zx = new ZXComp;
+	nprof.zx = zxCreate();
 	profileList.push_back(nprof);
 }
 

@@ -30,7 +30,7 @@
 
 struct HardWare {
 	std::string name;
-	int mask;		// mem size mask (0:128, 1:256, 2:512, 3:1024); =0 for 48K
+	int mask;		// mem size mask (b0:128, b1:256, b2:512, b3:1024); =0 for 48K
 	int flags;
 	int type;
 };
@@ -40,48 +40,47 @@ struct RZXFrame {
 	std::vector<uint8_t> in;
 };
 
-class ZXComp {
-	public:
-		ZXComp();
-		HardWare *hw;
-		Z80EX_CONTEXT* cpu;
-		Memory* mem;
-		Video* vid;
-		Keyboard* keyb;
-		Mouse* mouse;
-		Tape* tape;
-		BDI* bdi;
-		IDE* ide;
-		GSound* gs;
-		TSound* ts;
-		std::vector<RZXFrame> rzx;
-		uint64_t rzxFrame;
-		uint32_t rzxPos;
-		int rzxFetches;
-		bool rzxPlay;	// true if rzx playing now
-		bool intStrobe;
-		bool nmiRequest;
-		bool beeplev;
-		bool block7ffd;
-		float cpuFreq;
-		int hwFlags;
-		uint8_t prt0;		// 7ffd value
-		uint8_t prt1;		// extend port value
-		uint8_t prt2;		// scorpion ProfROM layer (0..3)
-		int resbank;		// rompart active after reset
-		struct {
-			std::string GSRom;
-			std::string hwName;
-			std::string rsName;
-		} opt;
-		double exec();
-		void reset(int);
-		void mapMemory();
-		uint8_t in(uint16_t);
-		void out(uint16_t,uint8_t);
-		int gsCount;
-		int tapCount;
-//		int bdiCount;
+struct ZXComp {
+	HardWare *hw;
+	Z80EX_CONTEXT* cpu;
+	Memory* mem;
+	Video* vid;
+	Keyboard* keyb;
+	Mouse* mouse;
+	Tape* tape;
+	BDI* bdi;
+	IDE* ide;
+	GSound* gs;
+	TSound* ts;
+	std::vector<RZXFrame> rzx;
+	uint64_t rzxFrame;
+	uint32_t rzxPos;
+	int rzxFetches;
+	bool rzxPlay;	// true if rzx playing now
+	bool intStrobe;
+	bool nmiRequest;
+	bool beeplev;
+	bool block7ffd;
+	float cpuFreq;
+	int hwFlags;
+	uint8_t prt0;		// 7ffd value
+	uint8_t prt1;		// extend port value
+	uint8_t prt2;		// scorpion ProfROM layer (0..3)
+	int resbank;		// rompart active after reset
+	struct {
+		std::string GSRom;
+		std::string hwName;
+		std::string rsName;
+	} opt;
+	int gsCount;
+	int tapCount;
+//	int bdiCount;
 };
+
+ZXComp* zxCreate();
+void zxDestroy(ZXComp*);
+void zxReset(ZXComp*,int);
+void zxOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
+double zxExec(ZXComp*);
 
 #endif

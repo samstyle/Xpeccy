@@ -20,6 +20,9 @@ bool pcatch = false;	// true when bdi takes i/o request
 #define	FDC_TRK		0x3f
 #define	FDC_SEC		0x5f
 #define	FDC_DATA	0x7f
+#define BDI_SYS		0xff
+
+#define BDITEST	0
 
 struct FDC {
 	bool turbo;
@@ -585,6 +588,10 @@ void vA1(FDC* p) {p->sdir = true; flpStep(p->fptr,true);}
 void vA2(FDC* p) {flpStep(p->fptr,p->sdir);}
 
 void vA8(FDC* p) {
+#if BDITEST
+	if (flpNext(p->fptr,p->side)) p->t = 0;
+	if (!p->turbo) p->count += BYTEDELAY;
+#else
 	if (p->turbo) {
 		p->tf = BYTEDELAY;
 		p->count = 0;
@@ -592,9 +599,15 @@ void vA8(FDC* p) {
 	} else {
 		p->count += p->tf;
 	}
+#endif
 }
 void vA9(FDC* p) {
+#if BDITEST
+	if (flpNext(p->fptr,p->side)) p->t = 0;
+	p->count += BYTEDELAY;
+#else
 	p->count += p->tf;
+#endif
 }
 void vAA(FDC* p) {p->side = !p->side;}
 
@@ -723,7 +736,7 @@ int bdiGetPort(int p) {
 	int port = p;
 	pcatch = false;
 	if ((p & 0x03)==0x03) {
-		if ((p & 0x82) == 0x82) port=0xff;
+		if ((p & 0x82) == 0x82) port=BDI_SYS;
 		if ((p & 0xe2) == 0x02) port=FDC_COM;
 		if ((p & 0xe2) == 0x22) port=FDC_TRK;
 		if ((p & 0xe2) == 0x42) port=FDC_SEC;
@@ -745,7 +758,7 @@ bool bdiOut(BDI* bdi,int port,uint8_t val) {
 		case FDC_DATA:
 			fdcWr(bdi->fdc,port,val);
 			break;
-		case 0xff:
+		case BDI_SYS:
 			bdi->fdc->fptr = bdi->flop[val & 0x03];	// selet floppy
 			fdcSetMr(bdi->fdc,(val & 0x04) ? true : false);		// master reset
 			bdi->fdc->block = val & 0x08;
@@ -769,7 +782,7 @@ bool bdiIn(BDI* bdi,int port,uint8_t* val) {
 		case FDC_DATA:
 			*val = fdcRd(bdi->fdc,port);
 			break;
-		case 0xff:
+		case BDI_SYS:
 			*val = (bdi->fdc->irq ? 0x80 : 0x00) | (bdi->fdc->drq ? 0x40 : 0x00);
 			break;
 	}
@@ -777,26 +790,26 @@ bool bdiIn(BDI* bdi,int port,uint8_t* val) {
 }
 
 void bdiSync(BDI* bdi,int tk) {
-#if 0
-	bdi->fdc->tf -= tk;
-	if (bdi->fdc->tf < 0) {
-		while (bdi->fdc->tf < 0) {
-			bdi->fdc->tf += BYTEDELAY;
-			bdi->fdc->t += BYTEDELAY;
-			if (flpNext(bdi->fdc->fptr,bdi->fdc->side)) bdi->fdc->t = 0;
-			bdi->fdc->count -= BYTEDELAY;
-			while ((bdi->fdc->wptr != NULL) && (bdi->fdc->count < 0)) {
-				bdi->fdc->cop = *(bdi->fdc->wptr++);
-				vgfunc[bdi->fdc->cop](bdi->fdc);
-			}
-		}
-	} else {
+#if BDITEST
+//	bdi->fdc->tf -= tk;
+//	if (bdi->fdc->tf < 0) {
+//		while (bdi->fdc->tf < 0) {
+//			bdi->fdc->tf += BYTEDELAY;
+//			bdi->fdc->t += BYTEDELAY;
+//			if (flpNext(bdi->fdc->fptr,bdi->fdc->side)) bdi->fdc->t = 0;
+//			bdi->fdc->count -= BYTEDELAY;
+//			while ((bdi->fdc->wptr != NULL) && (bdi->fdc->count < 0)) {
+//				bdi->fdc->cop = *(bdi->fdc->wptr++);
+//				vgfunc[bdi->fdc->cop](bdi->fdc);
+//			}
+//		}
+//	} else {
 		bdi->fdc->count += tk;
 		while ((bdi->fdc->wptr != NULL) && (bdi->fdc->count < 0)) {
 			bdi->fdc->cop = *(bdi->fdc->wptr++);
 			vgfunc[bdi->fdc->cop](bdi->fdc);
 		}
-	}
+//	}
 #else
 	uint32_t tz;
 	while (tk > 0) {

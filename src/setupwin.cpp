@@ -323,12 +323,10 @@ void SetupWin::start() {
 }
 
 void SetupWin::apply() {
-//	emulSetFlag(true,FL_BLOCK);
 // machine
 	HardWare *oldmac = zx->hw;
 	zx->opt.hwName = std::string(ui.machbox->currentText().toUtf8().data()); setHardware(zx,zx->opt.hwName);
 	zx->opt.rsName = std::string(ui.rsetbox->currentText().toUtf8().data()); setRomset(zx, zx->opt.rsName);
-//	zx->mem->loadromset(optGetString(OPT_ROMDIR));
 	emulSetFlag(FL_RESET, ui.reschk->isChecked());
 	zx->resbank = ui.resbox->currentIndex();
 	switch(ui.mszbox->currentIndex()) {
@@ -342,7 +340,7 @@ void SetupWin::apply() {
 	setFlagBit(ui.scrpwait->isChecked(),&zx->hwFlags,WAIT_ON);
 	zx->opt.GSRom = GSRom;
 	setRomsetList(rsl);
-	if (zx->hw != oldmac) zx->reset(RES_DEFAULT);
+	if (zx->hw != oldmac) zxReset(zx,RES_DEFAULT);
 // video
 	setFlagBit(ui.dszchk->isChecked(),&zx->vid->flags,VF_DOUBLE);
 	zx->vid->brdsize = ui.bszsld->value()/100.0;
@@ -352,7 +350,6 @@ void SetupWin::apply() {
 	optSet(OPT_SHOTINT,ui.sintbox->value());
 	vidSetLayout(zx->vid,std::string(ui.geombox->currentText().toUtf8().data()));
 	optSet(OPT_BRGLEV,ui.brgslide->value());
-//	emulUpdateWindow();
 // sound
 	std::string oname = sndGetOutputName();
 	std::string nname(ui.outbox->currentText().toUtf8().data());
@@ -438,7 +435,6 @@ void SetupWin::apply() {
 	sndCalibrate();
 	emulSetColor(ui.brgslide->value());
 	emulUpdateWindow();
-//	emulSetFlag(false,FL_BLOCK);
 }
 
 void SetupWin::reject() {

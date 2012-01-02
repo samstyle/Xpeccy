@@ -4,15 +4,15 @@ project(xpeccy)
 find_package(Qt4 REQUIRED)
 find_package(ZLIB)
 
-if (WIN32)
+if (Q_WS_WIN)
 	find_package(SDL)
-else(WIN32)
+else(Q_WS_WIN)
 	find_package(SDL REQUIRED)
 	find_package(ALSA)
 	if (ALSA_FOUND)
 		add_definitions(-DHAVEALSASOUND)
 	endif(ALSA_FOUND)
-endif(WIN32)
+endif(Q_WS_WIN)
 
 
 file(GLOB SOURCES ./src/*.cpp ./src/filetypes/*.cpp)
@@ -42,7 +42,7 @@ qt4_wrap_cpp(MOCHEADERS ${MOCFILES})
 
 include(${QT_USE_FILE})
 
-if (WIN32)
+if (Q_WS_WIN)
 
 include_directories(
 	${SDL_INCLUDE_DIR}
@@ -51,7 +51,7 @@ include_directories(
 	F:/developement/include/
 )
 
-add_executable(xpeccy WIN32
+add_executable(xpeccy Q_WS_WIN
 	${SOURCES}
 	${HEADERS}
 	${UIHEADERS}
@@ -67,7 +67,7 @@ target_link_libraries(xpeccy
 	libz80ex_dasm.dll
 )
 
-else(WIN32)
+else(Q_WS_WIN)
 
 include_directories(
 	${SDL_INCLUDE_DIR}
@@ -98,4 +98,4 @@ target_link_libraries(xpeccy
 
 install_targets(/bin xpeccy)
 
-endif(WIN32)
+endif(Q_WS_WIN)

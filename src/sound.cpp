@@ -258,7 +258,7 @@ bool sdlopen() {
 	asp->freq = sndRate;
 	asp->format = AUDIO_U8;
 	asp->channels = sndChans;
-	asp->samples = sndChunks;
+	asp->samples = sndChunks + 1;
 	asp->callback = &sdlPlayAudio;
 	asp->userdata = NULL;
 	if (SDL_OpenAudio(asp,NULL) < 0) {
