@@ -4,15 +4,14 @@ project(xpeccy)
 find_package(Qt4 REQUIRED)
 find_package(ZLIB)
 
-if (Q_WS_WIN)
-	find_package(SDL)
-else(Q_WS_WIN)
-	find_package(SDL REQUIRED)
+find_package(SDL)
+
+if (Q_WS_X11)
 	find_package(ALSA)
 	if (ALSA_FOUND)
 		add_definitions(-DHAVEALSASOUND)
 	endif(ALSA_FOUND)
-endif(Q_WS_WIN)
+endif(Q_WS_X11)
 
 
 file(GLOB SOURCES ./src/*.cpp ./src/filetypes/*.cpp)
@@ -30,6 +29,11 @@ add_definitions(-Wall -O3)
 
 if (SDL_FOUND)
 	add_definitions(-DHAVESDLSOUND)
+	if (QTDRAWING OR Q_WS_WIN)
+		add_definitions(-DXQTPAINT)
+	endif (QTDRAWING OR Q_WS_WIN)
+else(SDL_SOUND)
+	add_definitions(-DXQTPAINT)
 endif(SDL_FOUND)
 
 if (ZLIB_FOUND)
@@ -51,7 +55,7 @@ include_directories(
 	F:/developement/include/
 )
 
-add_executable(xpeccy Q_WS_WIN
+add_executable(xpeccy WIN32
 	${SOURCES}
 	${HEADERS}
 	${UIHEADERS}
@@ -63,8 +67,9 @@ target_link_libraries(xpeccy
 	${QT_LIBRARIES}
 	${SDL_LIBRARY}
 	${ZLIB_LIBRARY}
-	libz80ex.dll
-	libz80ex_dasm.dll
+	F:/developement/lib/libz80ex.dll
+	F:/developement/lib/libz80ex_dasm.dll
+	winmm.dll
 )
 
 else(Q_WS_WIN)

@@ -7,12 +7,6 @@
 //#include <QModelIndex>
 #include <stdint.h>
 
-#ifdef WIN32
-	#define XQTPAINT
-#else
-	#undef XQTPAINT
-#endif
-
 #ifndef XQTPAINT
 	#include <QX11EmbedContainer>
 #else
