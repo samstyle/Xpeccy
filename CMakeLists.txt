@@ -32,7 +32,7 @@ if (SDL_FOUND)
 	if (QTDRAWING OR Q_WS_WIN)
 		add_definitions(-DXQTPAINT)
 	endif (QTDRAWING OR Q_WS_WIN)
-else(SDL_SOUND)
+else(SDL_FOUND)
 	add_definitions(-DXQTPAINT)
 endif(SDL_FOUND)
 
