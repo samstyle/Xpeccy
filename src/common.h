@@ -5,9 +5,8 @@
 #include <string>
 #include <vector>
 
-void shithappens(std::string);
-bool areSure(std::string);
-//void filltabs();
+void shitHappens(const char*);
+bool areSure(const char*);
 
 void setFlagBit(bool, int32_t*, int32_t);
 std::string int2str(int);
@@ -15,6 +14,6 @@ bool str2bool(std::string);
 std::string getTimeString(int32_t);
 
 std::vector<std::string> splitstr(std::string,const char*);
-void splitline(std::string, std::string*, std::string*);
+std::pair<std::string,std::string> splitline(std::string);
 
 #endif

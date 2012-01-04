@@ -65,7 +65,7 @@ void DevelWin::compile() {
 	ui.ficons->clear();
 	QString sjap(optGetString(OPT_ASMPATH).c_str());
 	if (!QFile::exists(sjap)) {
-		shithappens("<b>SJAsm file doesn't exist</b>");
+		shitHappens("<b>SJAsm file doesn't exist</b>");
 		return;
 	}
 	QProcess proc;
@@ -160,11 +160,14 @@ void DevelWin::openprj(QString nam) {
 	prj.clear();
 	prj.name = nam;
 	int mod = 0;
+	std::pair<std::string,std::string> spl;
 	std::string line,pnam,pval;
 	ProjectFile nfile;
 	while (!file.atEnd()) {
 		line = std::string(QDialog::trUtf8(file.readLine()).toUtf8().data());
-		splitline(line,&pnam,&pval);
+		spl = splitline(line);
+		pnam = spl.first;
+		pval = spl.second;
 		if (pval=="") {
 			if (mod==2 && pnam!="") {
 				nfile.name = QString(pnam.c_str());
@@ -217,7 +220,7 @@ void DevelWin::saveprj() {
 void DevelWin::start() {
 	QDir dir(QString(optGetString(OPT_PROJDIR).c_str()));
 	if (!dir.exists()) {
-		shithappens("<b>Projects directory not exists</b><br>Select it correctly first");
+		shitHappens("<b>Projects directory not exists</b><br>Select it correctly first");
 		return;
 	}
 	prjdir = QDir(QString(optGetString(OPT_PROJDIR).c_str()));

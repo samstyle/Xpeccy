@@ -44,13 +44,13 @@ void setFlagBit(bool cond, int32_t* val, int32_t mask) {
 	}
 }
 
-void shithappens(std::string msg) {
-	QMessageBox mbx(QMessageBox::Critical,"Shit happens",QDialog::trUtf8(msg.c_str()),QMessageBox::Ok);
+void shitHappens(const char* msg) {
+	QMessageBox mbx(QMessageBox::Critical,"Shit happens",QDialog::trUtf8(msg),QMessageBox::Ok);
 	mbx.exec();
 }
 
-bool areSure(std::string msg) {
-	QMessageBox mbx(QMessageBox::Question,"R U Sure?",QDialog::trUtf8(msg.c_str()),QMessageBox::Yes | QMessageBox::No);
+bool areSure(const char* msg) {
+	QMessageBox mbx(QMessageBox::Question,"R U Sure?",QDialog::trUtf8(msg),QMessageBox::Yes | QMessageBox::No);
 	int res = mbx.exec();
 	return (res == QMessageBox::Yes);
 }
@@ -79,23 +79,26 @@ std::vector<std::string> splitstr(std::string str,const char* spl) {
 	
 }
 
-void splitline(std::string line, std::string* pnam, std::string* pval) {
+std::pair<std::string,std::string> splitline(std::string line) {
 	size_t pos;
+	std::pair<std::string,std::string> res;
 	do {pos = line.find("\r"); if (pos!=std::string::npos) line.erase(pos);} while (pos!=std::string::npos);
 	do {pos = line.find("\n"); if (pos!=std::string::npos) line.erase(pos);} while (pos!=std::string::npos);
-	*pnam = "";
-	*pval = "";
+	res.first = "";
+	res.second = "";
 	pos = line.find("=");
 	if (pos!=std::string::npos) {
-		*pnam = std::string(line,0,pos);
-		*pval = std::string(line,pos+1);
-		pos = pnam->find_last_not_of(" ");
-		if (pos!=std::string::npos) *pnam = std::string(*pnam,0,pos+1);	// delete last spaces
-		pos = pval->find_first_not_of(" ");
-		if (pos!=std::string::npos) *pval = std::string(*pval,pos);	// delete first spaces
+		res.first = std::string(line,0,pos);
+		res.second = std::string(line,pos+1);
+		pos = res.first.find_last_not_of(" ");
+		if (pos != std::string::npos) res.first = std::string(res.first,0,pos+1);	// delete last spaces
+		pos = res.second.find_first_not_of(" ");
+		if (pos != std::string::npos) res.second = std::string(res.second,pos);		// delete first spaces
 	} else {
-		*pnam = line;
+		res.first = line;
+		res.second = "";
 	}
+	return res;
 }
 
 int main(int ac,char** av) {
@@ -127,7 +130,6 @@ int main(int ac,char** av) {
 			devShow();
 			return app.exec();
 		} else {
-//			filltabs();
 			initHardware();
 			sndInit();
 			emulInit();
@@ -157,7 +159,7 @@ int main(int ac,char** av) {
 		}
 	}
 	catch (const char* s) {
-		shithappens(s);
+		shitHappens(s);
 		SDL_Quit();
 		return 1;
 	}

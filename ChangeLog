@@ -134,5 +134,9 @@ Fix	Long AY playing was incorrect (counter goes out of range)
 build 20111213
 New	F8 - RZX player mini-window
 
-build 20111315
+build 20111215
 Wrk	Reorganize BDI & FDC structures
+
+build 20120104
+New	Automaticly adding boot.B to TRDos disks
+Wrk	Some rewritings

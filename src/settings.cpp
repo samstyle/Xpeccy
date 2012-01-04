@@ -235,7 +235,7 @@ void saveProfiles() {
 	std::string cfname = workDir + "/config.conf";
 	std::ofstream cfile(cfname.c_str());
 	if (!cfile.good()) {
-		shithappens("Can't write main config");
+		shitHappens("Can't write main config");
 		throw(0);
 	}
 	uint i,j;
@@ -365,7 +365,7 @@ void saveConfig() {
 	std::string cfname = workDir + "/" + getCurrentProfile()->file;
 	std::ofstream sfile(cfname.c_str());
 	if (!sfile.good()) {
-		shithappens("Can't write settings");
+		shitHappens("Can't write settings");
 		throw(0);
 	}
 
@@ -398,13 +398,14 @@ void loadProfiles() {
 		file.open(profPath.c_str());
 		if (!file.good()) {
 			printf("%s\n",profPath.c_str());
-			shithappens("<b>Doh! Something going wrong</b>");
+			shitHappens("<b>Doh! Something going wrong</b>");
 			throw(0);
 		}
 	}
 	clearProfiles();
 	clearBookmarks();
 	char* buf = new char[0x4000];
+	std::pair<std::string,std::string> spl;
 	std::string line,pnam,pval;
 	std::string pnm = "default";
 	int section = 0;
@@ -423,7 +424,9 @@ void loadProfiles() {
 	while (!file.eof()) {
 		file.getline(buf,2048);
 		line = std::string(buf);
-		splitline(line,&pnam,&pval);
+		spl = splitline(line);
+		pnam = spl.first;
+		pval = spl.second;
 		if (pval=="") {
 			if (pnam=="[BOOKMARKS]") section=1;
 			if (pnam=="[PROFILES]") section=2;
@@ -528,7 +531,7 @@ void loadProfiles() {
 	for (uint i=0; i<rslist.size(); i++) addRomset(rslist[i]);
 	setOutput(soutnam);
 	if (!setProfile(pnm.c_str())) {
-		shithappens("Cannot set current profile\nCheck it's name");
+		shitHappens("Cannot set current profile\nCheck it's name");
 		throw(0);
 	}
 	emulSetColor(brgLevel);
@@ -537,6 +540,7 @@ void loadProfiles() {
 void loadConfig(bool dev) {
 	std::string cfname = workDir + "/" + getCurrentProfile()->file;
 	std::ifstream file(cfname.c_str());
+	std::pair<std::string,std::string> spl;
 	std::string line,pnam,pval;
 	std::vector<std::string> vect;
 	size_t pos;
@@ -557,7 +561,7 @@ void loadConfig(bool dev) {
 		file.open(cfname.c_str(),std::ifstream::in);
 	}
 	if (!file.good()) {
-		shithappens("Damn! I can't open config file<br>Zetsuboushita!");
+		shitHappens("Damn! I can't open config file<br>Zetsuboushita!");
 		throw(0);
 	} else {
 		RomSet newrs;
@@ -571,7 +575,9 @@ void loadConfig(bool dev) {
 			line = std::string(buf);
 			pos = line.find_first_of("#"); if (pos != std::string::npos) line.erase(pos);
 			pos = line.find_first_of(";"); if (pos != std::string::npos) line.erase(pos);
-			splitline(line,&pnam,&pval);
+			spl = splitline(line);
+			pnam = spl.first;
+			pval = spl.second;
 			if (pval=="") {
 				if (pnam=="[ROMSET]") {grp=pnam; tmp2=1;}
 				if (pnam=="[VIDEO]") {grp=pnam; tmp2=2;}

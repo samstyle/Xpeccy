@@ -67,6 +67,8 @@ int saveTAP(Tape*,const char*);
 
 // disk
 
+void loadBoot(Floppy*);
+
 int loadRaw(Floppy*,const char*);
 int loadHobeta(Floppy*,const char*);
 int loadSCL(Floppy*,const char*);

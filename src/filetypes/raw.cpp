@@ -1,6 +1,12 @@
 #include <string.h>
 #include "filetypes.h"
 
+#ifdef WIN32
+#define SLASH "\\"
+#else
+#define SLASH "/"
+#endif
+
 int loadRaw(Floppy* flp, const char* name) {
 	std::ifstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
@@ -16,7 +22,7 @@ int loadRaw(Floppy* flp, const char* name) {
 	TRFile nfle;
 	
 	std::string fnam(name);
-	size_t pos = fnam.find_last_of("/");
+	size_t pos = fnam.find_last_of(SLASH);
 	if (pos != std::string::npos) fnam = fnam.substr(pos+1);		// get filename
 	pos = fnam.find_last_of(".");
 	if (pos != std::string::npos) fnam = fnam.substr(0,pos);		// cut extension

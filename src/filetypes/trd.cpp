@@ -1,4 +1,23 @@
 #include "filetypes.h"
+#include "../settings.h"
+
+void loadBoot(Floppy* flp) {
+	if (flpGet(flp,FLP_DISKTYPE) == TYPE_TRD) {
+		std::vector<TRFile> cat = flpGetTRCatalog(flp);
+		bool gotBoot = false;
+		for (unsigned int i=0; i < cat.size();i++) {
+			if (std::string((const char*)&cat[i].name[0],8) == "boot    ") gotBoot = true;
+		}
+		if (!gotBoot) {
+#ifdef WIN32
+			std::string path = optGetString(OPT_WORKDIR) + "\\boot.$B";
+#else
+			std::string path = optGetString(OPT_WORKDIR) + "/boot.$B";
+#endif
+			loadHobeta(flp,path.c_str());
+		}
+	}
+}
 
 int loadTRD(Floppy* flp, const char* name) {
 	std::ifstream file(name,std::ios::binary);
@@ -20,6 +39,7 @@ int loadTRD(Floppy* flp, const char* name) {
 	delete(trackBuf);
 	flpSetPath(flp,name);
 	flpSetFlag(flp,FLP_INSERT,true);
+	loadBoot(flp);
 	flpSetFlag(flp,FLP_CHANGED,false);
 	return ERR_OK;
 }

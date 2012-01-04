@@ -684,10 +684,10 @@ void SetupWin::copyToTape() {
 				tapAddFile(zx->tape,name,(cat[row].ext == 'B') ? 0 : 3, start, len, line, buf,true);
 				buildtapelist();
 			} else {
-				shithappens("File seems to be joined, skip");
+				shitHappens("File seems to be joined, skip");
 			}
 		} else {
-			shithappens("Can't get file data, skip");
+			shitHappens("Can't get file data, skip");
 		}
 
 	}
@@ -724,15 +724,15 @@ void SetupWin::copyToDisk() {
 	int headBlock = -1;
 	int dataBlock = -1;
 	if (~tapGet(zx->tape,blk,TAPE_BFLAG) & TBF_BYTES) {
-		shithappens("This is not standard block");
+		shitHappens("This is not standard block");
 		return;
 	}
 	if (tapGet(zx->tape,blk,TAPE_BFLAG) & TBF_HEAD) {
 		if (tapGet(zx->tape,TAPE_BLOCKS) == blk + 1) {
-			shithappens("Header without data? Hmm...");
+			shitHappens("Header without data? Hmm...");
 		} else {
 			if (~tapGet(zx->tape,blk + 1,TAPE_BFLAG) & TBF_BYTES) {
-				shithappens("Data block is not standard");
+				shitHappens("Data block is not standard");
 			} else {
 				headBlock = blk;
 				dataBlock = blk + 1;
@@ -755,7 +755,7 @@ void SetupWin::copyToDisk() {
 		TapeBlockInfo binf = tapGetBlockInfo(zx->tape,dataBlock);
 		int len = binf.size;
 		if (len > 0xff00) {
-			shithappens("Too much data for TRDos file");
+			shitHappens("Too much data for TRDos file");
 			return;
 		}
 		dsc.llen = len & 0xff;
@@ -763,7 +763,7 @@ void SetupWin::copyToDisk() {
 	} else {
 		dsc = getHeadInfo(headBlock);
 		if (dsc.ext == 0x00) {
-			shithappens("Yes, it happens");
+			shitHappens("Yes, it happens");
 			return;
 		}
 	}
@@ -772,9 +772,9 @@ void SetupWin::copyToDisk() {
 	uint8_t* buf = new uint8_t[256];
 	uint pos = 1;	// skip block type mark
 	switch(flpCreateFile(bdiGetFloppy(zx->bdi,dsk),&dsc)) {
-		case ERR_SHIT: shithappens("Yes, it happens"); break;
-		case ERR_MANYFILES: shithappens("Too many files @ disk"); break;
-		case ERR_NOSPACE: shithappens("Not enough space @ disk"); break;
+		case ERR_SHIT: shitHappens("Yes, it happens"); break;
+		case ERR_MANYFILES: shitHappens("Too many files @ disk"); break;
+		case ERR_NOSPACE: shitHappens("Not enough space @ disk"); break;
 		case ERR_OK:
 			while (pos < dt.size()) {
 				do {

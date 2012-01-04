@@ -52,6 +52,7 @@ int loadSCL(Floppy* flp,const char* name) {
 	}
 	flpSetPath(flp,name);
 	flpSetFlag(flp,FLP_INSERT,true);
+	loadBoot(flp);
 	flpSetFlag(flp,FLP_CHANGED,false);
 	return ERR_OK;
 }

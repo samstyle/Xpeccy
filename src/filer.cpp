@@ -135,21 +135,21 @@ void loadFile(const char* name, int flags, int drv) {
 #endif
 	}
 	switch (ferr) {
-		case ERR_CANT_OPEN: shithappens("Can't open file"); break;
-		case ERR_RZX_SIGN: shithappens("Wrong RZX signature"); break;
-		case ERR_RZX_CRYPT: shithappens("Xpeccy cannot into crypted RZX"); break;
-		case ERR_RZX_UNPACK: shithappens("RZX unpack error"); break;
-		case ERR_TZX_SIGN: shithappens("Wrong TZX signature"); break;
-		case ERR_TZX_UNKNOWN: shithappens("Unknown TZX block"); break;
-		case ERR_TRD_LEN: shithappens("Incorrect TRD size"); break;
-		case ERR_TRD_SIGN: shithappens("Not TRDOS disk"); break;
-		case ERR_UDI_SIGN: shithappens("Wrong UDI signature"); break;
-		case ERR_FDI_SIGN: shithappens("Wrong FDI signature"); break;
-		case ERR_FDI_HEAD: shithappens("Wrong FDI heads count"); break;
-		case ERR_HOB_CANT: shithappens("Can't create file at disk"); break;
-		case ERR_SCL_SIGN: shithappens("Wrong SCL signature"); break;
-		case ERR_SCL_MANY: shithappens("Too many files in SCL"); break;
-		case ERR_RAW_LONG: shithappens("File is too big"); break;
+		case ERR_CANT_OPEN: shitHappens("Can't open file"); break;
+		case ERR_RZX_SIGN: shitHappens("Wrong RZX signature"); break;
+		case ERR_RZX_CRYPT: shitHappens("Xpeccy cannot into crypted RZX"); break;
+		case ERR_RZX_UNPACK: shitHappens("RZX unpack error"); break;
+		case ERR_TZX_SIGN: shitHappens("Wrong TZX signature"); break;
+		case ERR_TZX_UNKNOWN: shitHappens("Unknown TZX block"); break;
+		case ERR_TRD_LEN: shitHappens("Incorrect TRD size"); break;
+		case ERR_TRD_SIGN: shitHappens("Not TRDOS disk"); break;
+		case ERR_UDI_SIGN: shitHappens("Wrong UDI signature"); break;
+		case ERR_FDI_SIGN: shitHappens("Wrong FDI signature"); break;
+		case ERR_FDI_HEAD: shitHappens("Wrong FDI heads count"); break;
+		case ERR_HOB_CANT: shitHappens("Can't create file at disk"); break;
+		case ERR_SCL_SIGN: shitHappens("Wrong SCL signature"); break;
+		case ERR_SCL_MANY: shitHappens("Too many files in SCL"); break;
+		case ERR_RAW_LONG: shitHappens("File is too big"); break;
 	}
 }
 
@@ -205,8 +205,8 @@ bool saveFile(const char* name,int flags,int drv) {
 		}
 	}
 	switch (err) {
-		case ERR_CANT_OPEN: shithappens("Can't open file"); break;
-		case ERR_TRD_SNF: shithappens("Wrong disk structure for TRD file"); break;
+		case ERR_CANT_OPEN: shitHappens("Can't open file"); break;
+		case ERR_TRD_SNF: shitHappens("Wrong disk structure for TRD file"); break;
 	}
 	return true;
 }

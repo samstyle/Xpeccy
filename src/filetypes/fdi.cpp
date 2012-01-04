@@ -48,6 +48,7 @@ int loadFDI(Floppy* flp,const char* name) {
 	}
 	flpSetFlag(flp,FLP_PROTECT,err);
 	flpSetFlag(flp,FLP_INSERT,true);
+	loadBoot(flp);
 	flpSetFlag(flp,FLP_CHANGED,false);
 	flpSetPath(flp,name);
 	
