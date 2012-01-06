@@ -60,6 +60,9 @@ int saveHobetaFile(Floppy* flp,int num,const char* dir) {
 	TRFile dsc = flpGetCatalogEntry(flp,num);
 	uint8_t* buf = new uint8_t[0xffff];
 	if (!flpGetSectorsData(flp,dsc.trk, dsc.sec+1, buf, dsc.slen)) return ERR_TRD_SNF;	// get file data
-	std::string name = std::string(dir) + std::string(SLASH) + std::string((char*)&dsc.name[0],8) + std::string(".$") + std::string((char*)&dsc.ext,1);
+	std::string name((char*)&dsc.name[0],8);
+	size_t pos = name.find_last_not_of(' ');
+	if (pos != std::string::npos) name = name.substr(0,pos+1);
+	name = std::string(dir) + std::string(SLASH) + name + std::string(".$") + std::string((char*)&dsc.ext,1);
 	return saveHobeta(dsc,(char*)buf,name.c_str());
 }
