@@ -53,3 +53,22 @@ int loadRaw(Floppy* flp, const char* name) {
 
 	return ERR_OK;
 }
+
+int saveRawFile(Floppy* flp, int num, const char* dir) {
+	TRFile dsc = flpGetCatalogEntry(flp,num);
+	uint8_t* buf = new uint8_t[0xffff];
+	if (!flpGetSectorsData(flp,dsc.trk, dsc.sec+1, buf, dsc.slen)) return ERR_TRD_SNF;
+	std::string name = std::string(dir) + std::string(SLASH) + std::string((char*)&dsc.name[0],8) + std::string(".") + std::string((char*)&dsc.ext,1);
+	std::ofstream file(name.c_str(),std::ios::binary);
+	if (!file.good()) return ERR_CANT_OPEN;
+	int len;
+	if (dsc.slen == (dsc.hlen + ((dsc.llen == 0) ? 0 : 1))) {
+		len = (dsc.hlen << 8) + dsc.llen;
+	} else {
+		len = (dsc.slen << 8);
+	}
+	file.write((char*)buf,len);
+	file.close();
+	delete(buf);
+	return ERR_OK;
+}

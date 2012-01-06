@@ -377,15 +377,15 @@ TapeBlock makeTapeBlock(uint8_t* ptr, int ln, bool hd) {
 	nblk.s2len = SYNC2LEN;
 	nblk.len0 = SIGN0LEN;
 	nblk.len1 = SIGN1LEN;
+	nblk.flags = TBF_BYTES;
 	if (hd) {
 		nblk.pdur = 8063;
-		nblk.pause = 1000;
+		nblk.pause = 500;
 		nblk.flags |= TBF_HEAD;
 		crc = 0x00;
 	} else {
 		nblk.pdur = 3223;
-		nblk.pause = 300;
-		nblk.flags &= ~TBF_HEAD;
+		nblk.pause = 1000;
 		crc = 0xff;
 	}	
 	nblk.data.clear();
@@ -402,7 +402,6 @@ TapeBlock makeTapeBlock(uint8_t* ptr, int ln, bool hd) {
 	}
 	addBlockByte(&nblk,crc);
 	nblk.data.push_back(SYNC3LEN);
-	nblk.flags |= TBF_BYTES;
 	return nblk;
 }
 

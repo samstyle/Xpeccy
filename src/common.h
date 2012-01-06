@@ -7,6 +7,7 @@
 
 void shitHappens(const char*);
 bool areSure(const char*);
+void showInfo(const char*);
 
 void setFlagBit(bool, int32_t*, int32_t);
 std::string int2str(int);

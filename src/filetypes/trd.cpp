@@ -5,8 +5,8 @@ void loadBoot(Floppy* flp) {
 	if (flpGet(flp,FLP_DISKTYPE) == TYPE_TRD) {
 		std::vector<TRFile> cat = flpGetTRCatalog(flp);
 		bool gotBoot = false;
-		for (unsigned int i=0; i < cat.size();i++) {
-			if (std::string((const char*)&cat[i].name[0],8) == "boot    ") gotBoot = true;
+		for (unsigned int i=0; i < cat.size(); i++) {
+			if (std::string((const char*)&cat[i].name[0],9) == "boot    B") gotBoot = true;
 		}
 		if (!gotBoot) {
 #ifdef WIN32

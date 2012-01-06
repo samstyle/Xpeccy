@@ -92,6 +92,8 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 // WTF? QtDesigner doesn't save this properties
 	ui.disklist->horizontalHeader()->setVisible(true);
 	ui.disklist->addAction(ui.actCopyToTape);
+	ui.disklist->addAction(ui.actSaveHobeta); // ui.actSaveHobeta->setEnabled(false);
+	ui.disklist->addAction(ui.actSaveRaw);
 // tape
 	ui.tapelist->setColumnWidth(0,20);
 	ui.tapelist->setColumnWidth(1,20);
@@ -161,6 +163,11 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 
 	QObject::connect(ui.disktabs,SIGNAL(currentChanged(int)),this,SLOT(fillDiskCat()));
 	connect(ui.actCopyToTape,SIGNAL(triggered()),this,SLOT(copyToTape()));
+	connect(ui.actSaveHobeta,SIGNAL(triggered()),this,SLOT(diskToHobeta()));
+	connect(ui.actSaveRaw,SIGNAL(triggered()),this,SLOT(diskToRaw()));
+	connect(ui.tbToTape,SIGNAL(released()),this,SLOT(copyToTape()));
+	connect(ui.tbToHobeta,SIGNAL(released()),this,SLOT(diskToHobeta()));
+	connect(ui.tbToRaw,SIGNAL(released()),this,SLOT(diskToRaw()));
 // tape
 	QObject::connect(ui.tapelist,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(chablock(QModelIndex)));
 	QObject::connect(ui.tapelist,SIGNAL(cellClicked(int,int)),this,SLOT(setTapeBreak(int,int)));
@@ -171,6 +178,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	QObject::connect(ui.blkdntb,SIGNAL(released()),this,SLOT(tblkdn()));
 	QObject::connect(ui.blkrmtb,SIGNAL(released()),this,SLOT(tblkrm()));
 	connect(ui.actCopyToDisk,SIGNAL(triggered()),this,SLOT(copyToDisk()));
+	connect(ui.tbToDisk,SIGNAL(released()),this,SLOT(copyToDisk()));
 // hdd
 	QObject::connect(ui.hm_islba,SIGNAL(stateChanged(int)),this,SLOT(hddcap()));
 	QObject::connect(ui.hm_glba,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
@@ -668,11 +676,13 @@ void SetupWin::buildmenulist() {
 void SetupWin::copyToTape() {
 	int dsk = ui.disktabs->currentIndex();
 	QModelIndexList idx = ui.disklist->selectionModel()->selectedRows();
+	if (idx.size() == 0) return;
 	std::vector<TRFile> cat = flpGetTRCatalog(bdiGetFloppy(zx->bdi,dsk));
 	int row;
 	uint8_t* buf = new uint8_t[0xffff];
 	uint16_t line,start,len;
 	std::string name;
+	int savedFiles = 0;
 	for (int i=0; i<idx.size(); i++) {
 		row = idx[i].row();
 		if (flpGetSectorsData(bdiGetFloppy(zx->bdi,dsk),cat[row].trk, cat[row].sec+1, buf, cat[row].slen)) {
@@ -682,15 +692,55 @@ void SetupWin::copyToTape() {
 				line = (cat[row].ext == 'B') ? (buf[start] + (buf[start+1] << 8)) : 0x8000;
 				name = std::string((char*)&cat[row].name[0],8) + std::string(".") + std::string((char*)&cat[row].ext,1);
 				tapAddFile(zx->tape,name,(cat[row].ext == 'B') ? 0 : 3, start, len, line, buf,true);
-				buildtapelist();
+				savedFiles++;
 			} else {
 				shitHappens("File seems to be joined, skip");
 			}
 		} else {
 			shitHappens("Can't get file data, skip");
 		}
-
 	}
+	buildtapelist();
+	std::string msg = int2str(savedFiles) + std::string(" of ") + int2str(idx.size()) + " files copied";
+	showInfo(msg.c_str());
+}
+
+#ifdef WIN32
+#define SLASH "\\"
+#else
+#define SLASH "/"
+#endif
+
+// hobeta header crc = ((105 + 257 * std::accumulate(data, data + 15, 0u)) & 0xffff))
+
+void SetupWin::diskToHobeta() {
+	QModelIndexList idx = ui.disklist->selectionModel()->selectedRows();
+	if (idx.size() == 0) return;
+	QString dir = QFileDialog::getExistingDirectory(this,"Save file(s) to...",QDir::homePath());
+	if (dir == "") return;
+	std::string sdir = std::string(dir.toUtf8().data()) + std::string(SLASH);
+	Floppy* flp = bdiGetFloppy(zx->bdi,ui.disktabs->currentIndex());		// selected floppy
+	int savedFiles = 0;
+	for (int i=0; i<idx.size(); i++) {
+		if (saveHobetaFile(flp,idx[i].row(),sdir.c_str()) == ERR_OK) savedFiles++;
+	}
+	std::string msg = int2str(savedFiles) + std::string(" of ") + int2str(idx.size()) + " files saved";
+	showInfo(msg.c_str());
+}
+
+void SetupWin::diskToRaw() {
+	QModelIndexList idx = ui.disklist->selectionModel()->selectedRows();
+	if (idx.size() == 0) return;
+	QString dir = QFileDialog::getExistingDirectory(this,"Save file(s) to...",QDir::homePath());
+	if (dir == "") return;
+	std::string sdir = std::string(dir.toUtf8().data()) + std::string(SLASH);
+	Floppy* flp = bdiGetFloppy(zx->bdi,ui.disktabs->currentIndex());
+	int savedFiles = 0;
+	for (int i=0; i<idx.size(); i++) {
+		if (saveRawFile(flp,idx[i].row(),sdir.c_str()) == ERR_OK) savedFiles++;
+	}
+	std::string msg = int2str(savedFiles) + std::string(" of ") + int2str(idx.size()) + " files saved";
+	showInfo(msg.c_str());
 }
 
 TRFile getHeadInfo(int blk) {
@@ -789,6 +839,7 @@ void SetupWin::copyToDisk() {
 				}
 			}
 			fillDiskCat();
+			showInfo("File was copied");
 			break;
 	}
 }
@@ -820,6 +871,7 @@ void SetupWin::fillDiskCat() {
 				itm = new QTableWidgetItem(QString::number(cat[i].slen)); wid->setItem(i,4,itm);
 				itm = new QTableWidgetItem(QString::number(cat[i].trk)); wid->setItem(i,5,itm);
 				itm = new QTableWidgetItem(QString::number(cat[i].sec)); wid->setItem(i,6,itm);
+				wid->setRowHidden(i, cat[i].name[0] < 0x20);
 			}
 		} else {
 			wid->setEnabled(false);

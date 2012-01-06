@@ -81,5 +81,6 @@ void flpGetTrackFields(Floppy*,int,uint8_t*);
 
 int flpCreateFile(Floppy*,TRFile*);
 std::vector<TRFile> flpGetTRCatalog(Floppy*);
+TRFile flpGetCatalogEntry(Floppy*, int);
 
 #endif

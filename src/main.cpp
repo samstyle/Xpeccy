@@ -55,6 +55,11 @@ bool areSure(const char* msg) {
 	return (res == QMessageBox::Yes);
 }
 
+void showInfo(const char* msg) {
+	QMessageBox mbx(QMessageBox::Information,"Message",QDialog::trUtf8(msg),QMessageBox::Ok);
+	mbx.exec();
+}
+
 std::string int2str(int num) {
 	std::stringstream str;
 	str<<num;
@@ -107,6 +112,11 @@ int main(int ac,char** av) {
 	printf("Using SDL ver %u.%u.%u\n", sdlver.major, sdlver.minor, sdlver.patch);
 	Z80EX_VERSION* ver = z80ex_get_version();
 	printf("Using z80ex ver %d.%d\n",ver->major, ver->minor);
+#ifdef XQTPAINT
+	printf("Using Qt painter\n");
+#else
+	printf("Using SDL surface\n");
+#endif
 	
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
 	atexit(SDL_Quit);

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>507</width>
-    <height>451</height>
+    <width>505</width>
+    <height>449</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -1027,7 +1027,7 @@
         <attribute name="title">
          <string>BDI</string>
         </attribute>
-        <layout class="QVBoxLayout" name="verticalLayout_6" stretch="0,0,10">
+        <layout class="QVBoxLayout" name="verticalLayout_27" stretch="0,0,10">
          <item>
           <layout class="QGridLayout" name="gridLayout_6">
            <item row="0" column="0">
@@ -1386,80 +1386,143 @@
           </widget>
          </item>
          <item>
-          <widget class="QTableWidget" name="disklist">
-           <property name="contextMenuPolicy">
-            <enum>Qt::ActionsContextMenu</enum>
-           </property>
-           <property name="editTriggers">
-            <set>QAbstractItemView::NoEditTriggers</set>
-           </property>
-           <property name="selectionMode">
-            <enum>QAbstractItemView::ExtendedSelection</enum>
-           </property>
-           <property name="selectionBehavior">
-            <enum>QAbstractItemView::SelectRows</enum>
-           </property>
-           <property name="gridStyle">
-            <enum>Qt::DotLine</enum>
-           </property>
-           <property name="rowCount">
-            <number>1</number>
-           </property>
-           <property name="columnCount">
-            <number>7</number>
-           </property>
-           <attribute name="horizontalHeaderVisible">
-            <bool>false</bool>
-           </attribute>
-           <attribute name="horizontalHeaderDefaultSectionSize">
-            <number>100</number>
-           </attribute>
-           <attribute name="horizontalHeaderStretchLastSection">
-            <bool>true</bool>
-           </attribute>
-           <attribute name="verticalHeaderVisible">
-            <bool>false</bool>
-           </attribute>
-           <attribute name="verticalHeaderDefaultSectionSize">
-            <number>17</number>
-           </attribute>
-           <row/>
-           <column>
-            <property name="text">
-             <string>Name</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>Ext</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>Start</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>Length</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>SecLen</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>Trk</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>Sec</string>
-            </property>
-           </column>
-          </widget>
+          <layout class="QHBoxLayout" name="horizontalLayout_20">
+           <item>
+            <widget class="QTableWidget" name="disklist">
+             <property name="contextMenuPolicy">
+              <enum>Qt::ActionsContextMenu</enum>
+             </property>
+             <property name="editTriggers">
+              <set>QAbstractItemView::NoEditTriggers</set>
+             </property>
+             <property name="selectionMode">
+              <enum>QAbstractItemView::ExtendedSelection</enum>
+             </property>
+             <property name="selectionBehavior">
+              <enum>QAbstractItemView::SelectRows</enum>
+             </property>
+             <property name="gridStyle">
+              <enum>Qt::DotLine</enum>
+             </property>
+             <property name="rowCount">
+              <number>1</number>
+             </property>
+             <property name="columnCount">
+              <number>7</number>
+             </property>
+             <attribute name="horizontalHeaderVisible">
+              <bool>false</bool>
+             </attribute>
+             <attribute name="horizontalHeaderDefaultSectionSize">
+              <number>100</number>
+             </attribute>
+             <attribute name="horizontalHeaderStretchLastSection">
+              <bool>true</bool>
+             </attribute>
+             <attribute name="verticalHeaderVisible">
+              <bool>false</bool>
+             </attribute>
+             <attribute name="verticalHeaderDefaultSectionSize">
+              <number>17</number>
+             </attribute>
+             <row/>
+             <column>
+              <property name="text">
+               <string>Name</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Ext</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Start</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Length</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>SecLen</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Trk</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Sec</string>
+              </property>
+             </column>
+            </widget>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_6">
+             <item>
+              <widget class="QToolButton" name="tbToTape">
+               <property name="toolTip">
+                <string>Copy to tape</string>
+               </property>
+               <property name="text">
+                <string>...</string>
+               </property>
+               <property name="icon">
+                <iconset resource="../xpeccy.qrc">
+                 <normaloff>:/images/tape.png</normaloff>:/images/tape.png</iconset>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QToolButton" name="tbToHobeta">
+               <property name="toolTip">
+                <string>Save as hobeta</string>
+               </property>
+               <property name="text">
+                <string>...</string>
+               </property>
+               <property name="icon">
+                <iconset resource="../xpeccy.qrc">
+                 <normaloff>:/images/dollar.png</normaloff>:/images/dollar.png</iconset>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QToolButton" name="tbToRaw">
+               <property name="toolTip">
+                <string>Save as raw</string>
+               </property>
+               <property name="text">
+                <string>...</string>
+               </property>
+               <property name="icon">
+                <iconset resource="../xpeccy.qrc">
+                 <normaloff>:/images/filebin.png</normaloff>:/images/filebin.png</iconset>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="verticalSpacer_3">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+          </layout>
          </item>
         </layout>
        </widget>
@@ -1571,6 +1634,20 @@
             </item>
             <item>
              <layout class="QVBoxLayout" name="verticalLayout_10">
+              <item>
+               <widget class="QToolButton" name="tbToDisk">
+                <property name="toolTip">
+                 <string>Copy to disk</string>
+                </property>
+                <property name="text">
+                 <string>...</string>
+                </property>
+                <property name="icon">
+                 <iconset resource="../xpeccy.qrc">
+                  <normaloff>:/images/floppy.png</normaloff>:/images/floppy.png</iconset>
+                </property>
+               </widget>
+              </item>
               <item>
                <widget class="QToolButton" name="blkuptb">
                 <property name="text">
@@ -2280,13 +2357,39 @@
    </item>
   </layout>
   <action name="actCopyToTape">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/tape.png</normaloff>:/images/tape.png</iconset>
+   </property>
    <property name="text">
     <string>Copy to tape</string>
    </property>
   </action>
   <action name="actCopyToDisk">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/floppy.png</normaloff>:/images/floppy.png</iconset>
+   </property>
    <property name="text">
     <string>Copy to disk</string>
+   </property>
+  </action>
+  <action name="actSaveHobeta">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/dollar.png</normaloff>:/images/dollar.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save as hobeta</string>
+   </property>
+  </action>
+  <action name="actSaveRaw">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/filebin.png</normaloff>:/images/filebin.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save as raw</string>
    </property>
   </action>
  </widget>

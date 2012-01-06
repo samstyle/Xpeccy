@@ -48,6 +48,8 @@ class SetupWin : public QDialog {
 		void fillDiskCat();
 		void copyToTape();
 		void copyToDisk();
+		void diskToHobeta();
+		void diskToRaw();
 	private:
 		Ui::SetupWin ui;
 		Ui::UmaDial uia;

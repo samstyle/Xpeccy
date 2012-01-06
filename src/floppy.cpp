@@ -282,6 +282,11 @@ int flpCreateFile(Floppy* flp,TRFile* dsc) {
 	return ERR_OK;
 }
 
+TRFile flpGetCatalogEntry(Floppy* flp, int num) {
+	std::vector<TRFile> cat = flpGetTRCatalog(flp);
+	return cat[num];
+}
+
 std::vector<TRFile> flpGetTRCatalog(Floppy* flp) {
 	std::vector<TRFile> res;
 	if (flpGet(flp,FLP_DISKTYPE) == TYPE_TRD) {
@@ -294,10 +299,8 @@ std::vector<TRFile> flpGetTRCatalog(Floppy* flp) {
 				ptr = buf;
 				for (j=0; j<15; j++) {
 					if (*ptr == 0x00) break;
-					if (*ptr > 0x1f) {
-						memcpy((char*)&file,ptr,16);
-						res.push_back(file);
-					}
+					memcpy((char*)&file,ptr,16);
+					res.push_back(file);
 					ptr += 0x10;
 				}
 				if (j<15) break;

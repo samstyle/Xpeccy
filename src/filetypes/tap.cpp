@@ -25,11 +25,8 @@ TapeBlock tapDataToBlock(char* data,int len,int* sigLens) {
 	block.len0 = sigLens[3];
 	block.len1 = sigLens[4];
 	block.pdur = (sigLens[6] == -1) ? ((tmp == 0) ? 8063 : 3223) : sigLens[6];
-	if (tmp == 0) {
-		block.flags |= TBF_HEAD;
-	} else {
-		block.flags &= ~TBF_HEAD;
-	}
+	block.flags = TBF_BYTES;
+	if (tmp == 0) block.flags |= TBF_HEAD;
 	block.data.clear();
 	for (i = 0; i < (int)block.pdur; i++)
 		block.data.push_back(block.plen);
@@ -42,7 +39,6 @@ TapeBlock tapDataToBlock(char* data,int len,int* sigLens) {
 		tapAddByte(&block,*ptr);
 		ptr++;
 	}
-	block.flags |= TBF_BYTES;
 	return block;
 }
 
