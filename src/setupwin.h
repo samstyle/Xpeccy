@@ -2,8 +2,7 @@
 #define _SETWIN_H
 
 #include <QDialog>
-#include "ui_setupwin.h"
-#include "ui_umadial.h"
+#include <QModelIndex>
 
 class SetupWin : public QDialog {
 	Q_OBJECT
@@ -16,6 +15,7 @@ class SetupWin : public QDialog {
 		void apply();
 		void okay();
 		void buildrsetlist();
+		void buildjmaplist();
 		void setmszbox(int);
 		void okbuts();
 		void selsspath();
@@ -50,9 +50,10 @@ class SetupWin : public QDialog {
 		void copyToDisk();
 		void diskToHobeta();
 		void diskToRaw();
+		void addJoyBind();
+		void delJoyBind();
+		void scanJoyBind();
 	private:
-		Ui::SetupWin ui;
-		Ui::UmaDial uia;
 		QDialog *umadial;
 		void buildtapelist();
 		void buildmenulist();

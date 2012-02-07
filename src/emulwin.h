@@ -144,4 +144,9 @@ void setRomset(ZXComp*, std::string);
 std::vector<RomSet> getRomsetList();
 // tape window
 void buildTapeList();
+// joystick
+void emulOpenJoystick(std::string);
+void emulCloseJoystick();
+bool emulIsJoystickOpened();
+
 #endif

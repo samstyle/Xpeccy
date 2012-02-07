@@ -46,6 +46,7 @@ struct ZXComp {
 	Memory* mem;
 	Video* vid;
 	Keyboard* keyb;
+	Joystick* joy;
 	Mouse* mouse;
 	Tape* tape;
 	BDI* bdi;

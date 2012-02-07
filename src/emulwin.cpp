@@ -50,6 +50,7 @@ QIcon curicon;
 	SDL_Color zxpal[256];
 	SDL_SysWMinfo inf;
 	SDL_TimerID tid;
+	SDL_Joystick* joy = NULL;
 #endif
 QVector<QRgb> qPal;
 int emulFlags;
@@ -666,6 +667,8 @@ void EmulWin::SDLEventHandler() {
 	}
 #ifndef XQTPAINT
 	SDL_Event ev;
+	intButton intb;
+	extButton extb;
 	while (SDL_PollEvent(&ev)) {
 		switch (ev.type) {
 			case SDL_KEYDOWN:
@@ -732,10 +735,6 @@ void EmulWin::SDLEventHandler() {
 						case SDLK_F8: if (rzxWin->isVisible()) {rzxWin->hide();} else {rzxWin->show();}
 						case SDLK_F9: emulPause(true,PR_FILE);
 							emulSaveChanged();
-//							zx->bdi->flop[0].savecha();
-//							zx->bdi->flop[1].savecha();
-//							zx->bdi->flop[2].savecha();
-//							zx->bdi->flop[3].savecha();
 							emulPause(false,PR_FILE);
 							break;
 						case SDLK_F10:
@@ -804,6 +803,56 @@ void EmulWin::SDLEventHandler() {
 				SDL_WarpMouse(zx->mouse->xpos + 1, 257 - zx->mouse->ypos);
 				SDL_PeepEvents(&ev,1,SDL_GETEVENT,SDL_EVENTMASK(SDL_MOUSEMOTION));
 				break;
+			case SDL_JOYBUTTONDOWN:
+				extb.type = XJ_BUTTON;
+				extb.num = ev.jbutton.button;
+				extb.dir = true;
+				intb = optGetJMap(extb);
+				switch (intb.dev) {
+					case XJ_KEY: keyPress(zx->keyb,intb.value); break;
+					case XJ_JOY: joyPress(zx->joy,intb.value); break;
+				}
+				break;
+			case SDL_JOYBUTTONUP:
+				extb.type = XJ_BUTTON;
+				extb.num = ev.jbutton.button;
+				extb.dir = true;
+				intb = optGetJMap(extb);
+				switch (intb.dev) {
+					case XJ_KEY: keyRelease(zx->keyb,intb.value); break;
+					case XJ_JOY: joyRelease(zx->joy,intb.value); break;
+				}
+				break;
+			case SDL_JOYAXISMOTION:
+				extb.type = XJ_AXIS;
+				extb.num = ev.jaxis.axis;
+				extb.dir = false;
+				intb = optGetJMap(extb);
+				if (ev.jaxis.value < -5000) {
+					switch (intb.dev) {
+						case XJ_KEY: keyPress(zx->keyb,intb.value); break;
+						case XJ_JOY: joyPress(zx->joy,intb.value); break;
+					}
+				} else {
+					switch (intb.dev) {
+						case XJ_KEY: keyRelease(zx->keyb,intb.value); break;
+						case XJ_JOY: joyRelease(zx->joy,intb.value); break;
+					}
+				}
+				extb.dir = true;
+				intb = optGetJMap(extb);
+				if (ev.jaxis.value > 5000) {
+					switch (intb.dev) {
+						case XJ_KEY: keyPress(zx->keyb,intb.value); break;
+						case XJ_JOY: joyPress(zx->joy,intb.value); break;
+					}
+				} else {
+					switch (intb.dev) {
+						case XJ_KEY: keyRelease(zx->keyb,intb.value); break;
+						case XJ_JOY: joyRelease(zx->joy,intb.value); break;
+					}
+				}
+				break;
 		}
 	}
 #endif
@@ -811,6 +860,33 @@ void EmulWin::SDLEventHandler() {
 		mainWin->setFocus();
 		emulPause(false,PR_MENU);
 	}
+}
+
+// JOYSTICK
+
+bool emulIsJoystickOpened() {
+	return (joy != NULL);
+}
+
+void emulOpenJoystick(std::string name) {
+#ifndef XQTPAINT
+	emulCloseJoystick();
+	int jnums = SDL_NumJoysticks();
+	for (int i=0; i<jnums; i++) {
+		if (std::string(SDL_JoystickName(i)) == name) {
+			joy = SDL_JoystickOpen(i);
+			break;
+		}
+	}
+#endif
+}
+
+void emulCloseJoystick() {
+#ifndef XQTPAINT
+	if (joy == NULL) return;
+	SDL_JoystickClose(joy);
+	joy = NULL;
+#endif
 }
 
 // ROMSETS
@@ -1097,5 +1173,3 @@ void EmulWin::profileSelected(QAction* act) {
 	mainWin->setFocus();
 	emulPause(false,PR_EXTRA);
 }
-
-// OVERALL

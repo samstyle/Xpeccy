@@ -1,18 +1,6 @@
-#include <SDL_keysym.h>
 #include <stdint.h>
 
 #include "input.h"
-
-struct ZXKey {
-	uint8_t row;
-	uint8_t mask;
-};
-
-struct XPKey {
-	SDLKey key;
-	ZXKey zxkey1;
-	ZXKey zxkey2;
-};
 
 #define ZK(p1,p2,p3,p4) {{p1,p2},{p3,p4}}
 
@@ -107,6 +95,42 @@ uint8_t keyInput(Keyboard* keyb, uint8_t prt) {
 	for (int i = 0; i < 8; i++) {
 		if (~prt & 0x80) res &= keyb->map[i];
 		prt <<= 1;
+	}
+	return res;
+}
+
+// joystick
+
+struct Joystick {
+	int type;
+	uint8_t state;
+};
+
+Joystick* joyCreate() {
+	Joystick* joy = new Joystick;
+	joy->type = XJ_KEMPSTON;
+	joy->state = 0;
+	return joy;
+}
+
+void joyDestroy(Joystick* joy) {
+	delete(joy);
+}
+
+void joyPress(Joystick* joy, uint8_t mask) {
+	joy->state |= mask;
+}
+
+void joyRelease(Joystick* joy,uint8_t mask) {
+	joy->state &= ~mask;
+}
+
+uint8_t joyInput(Joystick* joy) {
+	uint8_t res = 0xff;
+	switch (joy->type) {
+		case XJ_KEMPSTON:
+			res = (joy->state & 0x1f) | 0xe0;	// high 3 bits is set
+			break;
 	}
 	return res;
 }

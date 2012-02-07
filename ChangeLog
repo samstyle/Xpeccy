@@ -138,5 +138,9 @@ build 20111215
 Wrk	Reorganize BDI & FDC structures
 
 build 20120104
-New	Automaticly adding boot.B to TRDos disks
+New	Automaticly adding boot.B to TRDos disks from ${CONFIG_DIR}/boot.$B hobeta file
 Wrk	Some rewritings
+
+build 20120106
+New	Ability to save files from TRDos disks to hobeta or raw files
+Fix	Remove random breakpoints from tape

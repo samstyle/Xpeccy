@@ -18,6 +18,7 @@ std::vector<optEntry> config;
 std::string workDir;
 std::string romDir;
 std::string profPath;
+std::string joyName;
 
 int brgLevel = 192;
 
@@ -30,10 +31,61 @@ std::string projDir;
 std::string asmPath;
 
 std::string rmnam[] = {"basic128","basic48","shadow","trdos","ext4","ext5","ext6","ext7"};
-
 OptName fexts[] = {{SCR_BMP,"bmp"},{SCR_PNG,"png"},{SCR_JPG,"jpg"},{SCR_SCR,"scr"},{SCR_HOB,"hobeta"},{-1,""}};
+OptName jdirs[] = {{XJ_LEFT,"left"},{XJ_RIGHT,"right"},{XJ_UP,"up"},{XJ_DOWN,"down"},{XJ_FIRE,"fire"},{-1,""}};
+
+std::vector<joyPair> joyMap;
 
 // new
+
+bool extButton::operator ==(extButton b1) {
+	return ((type == b1.type) && (num == b1.num) && (dir == b1.dir));
+}
+
+std::vector<joyPair> getJMap() {
+	return joyMap;
+}
+
+void setJMap(std::vector<joyPair> newmap) {
+	joyMap = newmap;
+}
+
+intButton optGetJMap(extButton extb) {
+	intButton res = {XJ_NONE,XJ_NONE};
+	for (uint32_t i=0; i<joyMap.size(); i++) {
+		if (joyMap[i].first == extb) {
+			res = joyMap[i].second;
+			break;
+		}
+	}
+	return res;
+}
+
+void optSetJMap(extButton extb,intButton intb) {
+	bool exist = false;
+	for (uint32_t i=0; i<joyMap.size(); i++) {
+		if (joyMap[i].first == extb) {
+			joyMap[i].second = intb;
+			exist = true;
+			break;
+		}
+	}
+	if (!exist) {
+		joyPair jpair;
+		jpair.first = extb;
+		jpair.second = intb;
+		joyMap.push_back(jpair);
+	}
+}
+
+void optDelJMap(extButton extb) {
+	for (uint32_t i=0; i<joyMap.size(); i++) {
+		if (joyMap[i].first == extb) {
+			joyMap.erase(joyMap.begin() + i);
+		}
+	}
+}
+
 // static vars base
 std::string optGetString(int wut) {
 	std::string res;
@@ -44,6 +96,7 @@ std::string optGetString(int wut) {
 //		case OPT_SHOTEXT: res = shotExt; break;
 		case OPT_PROJDIR: res = projDir; break;
 		case OPT_ASMPATH: res = asmPath; break;
+		case OPT_JOYNAME: res = joyName; break;
 	}
 	return res;
 }
@@ -52,6 +105,7 @@ OptName* getGetPtr(int prt) {
 	OptName* res = NULL;
 	switch (prt) {
 		case OPT_SHOTFRM: res = fexts; break;
+		case OPT_JOYDIRS: res = jdirs; break;
 	}
 	return res;
 }
@@ -103,6 +157,7 @@ void optSet(int wut, std::string val) {
 		case OPT_SHOTDIR: shotDir = val; break;
 		case OPT_PROJDIR: projDir = val; break;
 		case OPT_ASMPATH: asmPath = val; break;
+		case OPT_JOYNAME: joyName = val; break;
 	}
 }
 
@@ -231,6 +286,22 @@ void initPaths() {
 #endif
 }
 
+std::string getJValue(int type,int val) {
+	std::string res = "";
+	switch (type) {
+		case XJ_JOY:
+			switch (val) {
+				case XJ_UP: res = "up"; break;
+				case XJ_DOWN: res = "down"; break;
+				case XJ_LEFT: res = "left"; break;
+				case XJ_RIGHT: res = "right"; break;
+				case XJ_FIRE: res = "fire"; break;
+			}
+			break;
+	}
+	return res;
+}
+
 void saveProfiles() {
 	std::string cfname = workDir + "/config.conf";
 	std::ofstream cfile(cfname.c_str());
@@ -293,6 +364,26 @@ void saveProfiles() {
 	cfile << "\n[TOOLS]\n\n";
 	cfile << "asmPath = " << asmPath.c_str() << "\n";
 	cfile << "projectsDir = " << projDir.c_str() << "\n";
+
+	cfile << "\n[JOYSTICK]\n\n";
+	cfile << "device = " << joyName.c_str() << "\n";
+	for (i=0; i<joyMap.size(); i++) {
+		switch(joyMap[i].first.type) {
+			case XJ_BUTTON:
+				cfile << "button = ";
+				cfile << int2str(joyMap[i].first.num).c_str() << ":";
+				cfile << ((joyMap[i].second.dev == XJ_JOY) ? "J:" : "K:");
+				cfile << getJValue(joyMap[i].second.dev,joyMap[i].second.value).c_str() << "\n";
+				break;
+			case XJ_AXIS:
+				cfile << "axis = ";
+				cfile << int2str(joyMap[i].first.num).c_str() << ":";
+				cfile << (joyMap[i].first.dir ? "+:" : "-:");
+				cfile << ((joyMap[i].second.dev == XJ_JOY) ? "J:" : "K:");
+				cfile << getJValue(joyMap[i].second.dev,joyMap[i].second.value).c_str() << "\n";
+				break;
+		}
+	}
 	cfile.close();
 }
 
@@ -416,6 +507,8 @@ void loadProfiles() {
 	size_t pos;
 	std::string tms,fnam;
 	int test,fprt;
+	extButton extb;
+	intButton intb;
 	newrs.file = "";
 	for (int i=0; i<32; i++) {
 		newrs.roms[i].path = "";
@@ -434,6 +527,7 @@ void loadProfiles() {
 			if (pnam=="[ROMSETS]") section=4;
 			if (pnam=="[SOUND]") section=5;
 			if (pnam=="[TOOLS]") section=6;
+			if (pnam=="[JOYSTICK]") section=7;
 		} else {
 			switch (section) {
 				case 1:
@@ -525,6 +619,50 @@ void loadProfiles() {
 				case 6:
 					if (pnam=="asmPath") asmPath = pval; break;
 					if (pnam=="projectsDir") projDir = pval; break;
+				case 7:
+					if (pnam=="device") joyName = pval;
+					if (pnam=="button") {			// button = num:J:{up,down,left,right,fire}
+						vect = splitstr(pval,":");	// TODO: button = num:K:keyName
+						if (vect.size() > 2) {
+							if (vect[1] == "J") {
+								fprt = 0;
+								if (vect[2] == "up") fprt = XJ_UP;
+								if (vect[2] == "down") fprt = XJ_DOWN;
+								if (vect[2] == "left") fprt = XJ_LEFT;
+								if (vect[2] == "right") fprt = XJ_RIGHT;
+								if (vect[2] == "fire") fprt = XJ_FIRE;
+								if (fprt != 0) {
+									extb.type = XJ_BUTTON;
+									extb.num = atoi(vect[0].c_str());
+									extb.dir = true;
+									intb.dev  =XJ_JOY;
+									intb.value = fprt;
+									optSetJMap(extb,intb);
+								}
+							}
+						}
+					}
+					if (pnam=="axis") {			// axis = num:{+,-},J:{up,down,left,right,fire}
+						vect = splitstr(pval,":");
+						if (vect.size() > 3) {
+							if (vect[2] == "J") {
+								fprt = 0;
+								if (vect[3] == "up") fprt = XJ_UP;
+								if (vect[3] == "down") fprt = XJ_DOWN;
+								if (vect[3] == "left") fprt = XJ_LEFT;
+								if (vect[3] == "right") fprt = XJ_RIGHT;
+								if (vect[3] == "fire") fprt = XJ_FIRE;
+								if (fprt != 0) {
+									extb.type = XJ_AXIS;
+									extb.num = atoi(vect[0].c_str());
+									extb.dir = (vect[1] == "+");
+									intb.dev  =XJ_JOY;
+									intb.value = fprt;
+									optSetJMap(extb,intb);
+								}
+							}
+						}
+					}
 			}
 		}
 	}
@@ -535,6 +673,7 @@ void loadProfiles() {
 		throw(0);
 	}
 	emulSetColor(brgLevel);
+	emulOpenJoystick(joyName);
 }
 
 void loadConfig(bool dev) {

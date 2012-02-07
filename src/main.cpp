@@ -118,7 +118,7 @@ int main(int ac,char** av) {
 	printf("Using SDL surface\n");
 #endif
 	
-	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
+	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK);
 	atexit(SDL_Quit);
 	QApplication app(ac,av,true);
 	try {
@@ -160,6 +160,7 @@ int main(int ac,char** av) {
 				loadFile(av[i],FT_ALL,0);
 			}
 
+			SDL_JoystickOpen(1);
 			mainWin->startTimer(20);
 			app.exec();
 			mainWin->stopTimer();

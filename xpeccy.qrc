@@ -34,5 +34,6 @@
         <file>images/YamahaLogo.png</file>
         <file>images/dollar.png</file>
         <file>images/filebin.png</file>
+        <file>images/keyboard.png</file>
     </qresource>
 </RCC>

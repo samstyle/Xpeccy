@@ -16,6 +16,8 @@
 #define	OPT_BRGLEV	0x14
 #define	OPT_PROJDIR	0x20
 #define	OPT_ASMPATH	0x21
+#define OPT_JOYNAME	0x30
+#define OPT_JOYDIRS	0x31
 
 //screenshot format
 #define	SCR_BMP		1
@@ -31,10 +33,30 @@ struct optEntry {
 	std::string value;
 };
 
-typedef struct {
+struct OptName {
 	int id;
 	std::string name;
-} OptName;
+};
+
+#define XJ_NONE		0
+#define	XJ_BUTTON	1
+#define	XJ_AXIS		2
+#define	XJ_KEY		3
+#define	XJ_JOY		4
+
+struct extButton {
+	int type;		// button / axis
+	int num;		// number of button or axis
+	bool dir;		// direction of axis
+	bool operator == (extButton);
+};
+
+struct intButton {
+	int dev;		// keyboard / joystick
+	uint8_t value;		// keycode / joystick direction
+};
+
+typedef std::pair<extButton,intButton> joyPair;
 
 void initPaths();
 void loadProfiles();
@@ -46,6 +68,12 @@ int optGetInt(int);
 void optSet(int,std::string);
 void optSet(int,int);
 void optSet(int,bool);
+
+std::vector<joyPair> getJMap();
+void setJMap(std::vector<joyPair>);
+intButton optGetJMap(extButton);
+void optSetJMap(extButton,intButton);
+void optDelJMap(extButton);
 
 std::string optGetName(int,int);
 int optGetId(int,std::string);
