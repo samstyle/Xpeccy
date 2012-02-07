@@ -18,6 +18,7 @@
 #define	OPT_ASMPATH	0x21
 #define OPT_JOYNAME	0x30
 #define OPT_JOYDIRS	0x31
+#define	OPT_KEYNAME	0x40
 
 //screenshot format
 #define	SCR_BMP		1
@@ -63,6 +64,8 @@ void loadProfiles();
 void saveProfiles();
 void loadConfig(bool);
 void saveConfig();
+void loadKeys();
+
 std::string optGetString(int);
 int optGetInt(int);
 void optSet(int,std::string);

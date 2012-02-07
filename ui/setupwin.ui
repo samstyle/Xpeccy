@@ -1036,11 +1036,14 @@
            <property name="title">
             <string>Keyboard</string>
            </property>
-           <layout class="QVBoxLayout" name="verticalLayout_29">
-            <item>
+           <layout class="QGridLayout" name="gridLayout_21" columnstretch="0,10">
+            <item row="1" column="1">
+             <widget class="QComboBox" name="keyMapBox"/>
+            </item>
+            <item row="1" column="0">
              <widget class="QLabel" name="label_39">
               <property name="text">
-               <string>Nothing here</string>
+               <string>Keys Map</string>
               </property>
              </widget>
             </item>

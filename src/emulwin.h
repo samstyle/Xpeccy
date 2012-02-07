@@ -115,6 +115,7 @@ QWidget* emulWidget();
 void emulSetColor(int);
 
 // keys
+void initKeyMap();
 void setKey(const char*,const char,const char);
 // USER MENU
 void initUserMenu(QWidget*);

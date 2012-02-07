@@ -15,7 +15,6 @@ class SetupWin : public QDialog {
 		void apply();
 		void okay();
 		void buildrsetlist();
-		void buildjmaplist();
 		void setmszbox(int);
 		void okbuts();
 		void selsspath();
@@ -57,6 +56,8 @@ class SetupWin : public QDialog {
 		QDialog *umadial;
 		void buildtapelist();
 		void buildmenulist();
+		void buildkeylist();
+		void buildjmaplist();
 		int umidx;
 };
 

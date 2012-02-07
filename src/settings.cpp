@@ -101,6 +101,7 @@ std::string optGetString(int wut) {
 		case OPT_PROJDIR: res = projDir; break;
 		case OPT_ASMPATH: res = asmPath; break;
 		case OPT_JOYNAME: res = joyName; break;
+		case OPT_KEYNAME: res = keyFileName; break;
 	}
 	return res;
 }
@@ -162,6 +163,7 @@ void optSet(int wut, std::string val) {
 		case OPT_PROJDIR: projDir = val; break;
 		case OPT_ASMPATH: asmPath = val; break;
 		case OPT_JOYNAME: joyName = val; break;
+		case OPT_KEYNAME: keyFileName = val; break;
 	}
 }
 
@@ -485,6 +487,8 @@ void saveConfig() {
 
 void loadKeys() {
 	std::string sfnam = workDir + SLASH + keyFileName;
+	initKeyMap();
+	if ((keyFileName == "") || (keyFileName == "default")) return;
 	std::ifstream file(sfnam.c_str());
 	if (!file.good()) {
 		printf("Can't open keyboard layout. Default one will be used\n");
@@ -508,7 +512,6 @@ void loadKeys() {
 		}
 	}
 	free(buf);
-	file.close();
 }
 
 void loadProfiles() {

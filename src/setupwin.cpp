@@ -40,6 +40,18 @@ void optShow() {
 	optWin->start();
 }
 
+void fillRFBox(QComboBox* box, QStringList lst) {
+	box->clear();
+	box->addItem("none");
+	box->addItems(lst);
+}
+
+std::string getRFText(QComboBox* box) {
+	QString res = "";
+	if (box->currentIndex() > 0) res = box->currentText();
+	return std::string(res.toUtf8().data());
+}
+
 // OBJECT
 
 SetupWin::SetupWin(QWidget* par):QDialog(par) {
@@ -281,7 +293,12 @@ void SetupWin::start() {
 	ui.gsgroup->setChecked(gsGet(zx->gs,GS_FLAG) & GS_ENABLE);
 	ui.tsbox->setCurrentIndex(ui.tsbox->findData(QVariant(tsGet(zx->ts,TS_TYPE,0))));
 // input
+	buildkeylist();
 	buildjmaplist();
+	std::string kmname = optGetString(OPT_KEYNAME);
+	int idx = ui.keyMapBox->findText(QString(kmname.c_str()));
+	if (idx < 1) idx = 0;
+	ui.keyMapBox->setCurrentIndex(idx);
 #ifdef XQTPAINT
 	ui.joyBox->setEnabled(false);
 #else
@@ -293,7 +310,7 @@ void SetupWin::start() {
 	for (int cnt=0; cnt<jnum; cnt++) {
 		ui.inpDevice->addItem(QString(SDL_JoystickName(cnt)));
 	}
-	int idx = ui.inpDevice->findText(QString(optGetString(OPT_JOYNAME).c_str()));
+	idx = ui.inpDevice->findText(QString(optGetString(OPT_JOYNAME).c_str()));
 	if (idx < 0) idx = 0;
 	ui.inpDevice->setCurrentIndex(idx);
 #endif
@@ -412,6 +429,10 @@ void SetupWin::apply() {
 	} else {
 		optSet(OPT_JOYNAME,std::string(ui.inpDevice->currentText().toUtf8().data()));
 	}
+	std::string kmname = getRFText(ui.keyMapBox);
+	if (kmname == "none") kmname = "default";
+	optSet(OPT_KEYNAME,kmname);
+	loadKeys();
 // bdi
 	bdiSetFlag(zx->bdi,BDI_ENABLE,ui.bdebox->isChecked());
 	bdiSetFlag(zx->bdi,BDI_TURBO,ui.bdtbox->isChecked());
@@ -514,18 +535,6 @@ void SetupWin::addNewRomset() {
 
 // machine
 
-void fillRFBox(QComboBox* box, QStringList lst) {
-	box->clear();
-	box->addItem("none");
-	box->addItems(lst);
-}
-
-std::string getRFText(QComboBox* box) {
-	QString res = "";
-	if (box->currentIndex() > 0) res = box->currentText();
-	return std::string(res.toUtf8().data());
-}
-
 void SetupWin::editrset(QModelIndex idx) {
 	int cbx = ui.rsetbox->currentIndex();
 	if (cbx < 0) return;
@@ -581,6 +590,13 @@ void SetupWin::hidersedit() {
 }
 
 // lists
+
+void SetupWin::buildkeylist() {
+	std::string wdir = optGetString(OPT_WORKDIR);
+	QDir dir(wdir.c_str());
+	QStringList lst = dir.entryList(QStringList() << "*.map",QDir::Files,QDir::Name);
+	fillRFBox(ui.keyMapBox,lst);
+}
 
 void SetupWin::buildjmaplist() {
 	std::vector<joyPair> jmap = getJMap();
