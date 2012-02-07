@@ -931,7 +931,7 @@ void EmulWin::SDLEventHandler() {
 				extb.dir = true;
 				intb = optGetJMap(extb);
 				switch (intb.dev) {
-					case XJ_KEY: keyPress(zx->keyb,intb.value); break;
+//					case XJ_KEY: keyPress(zx->keyb,intb.value); break;
 					case XJ_JOY: joyPress(zx->joy,intb.value); break;
 				}
 				break;
@@ -941,7 +941,7 @@ void EmulWin::SDLEventHandler() {
 				extb.dir = true;
 				intb = optGetJMap(extb);
 				switch (intb.dev) {
-					case XJ_KEY: keyRelease(zx->keyb,intb.value); break;
+//					case XJ_KEY: keyRelease(zx->keyb,intb.value); break;
 					case XJ_JOY: joyRelease(zx->joy,intb.value); break;
 				}
 				break;
@@ -952,12 +952,12 @@ void EmulWin::SDLEventHandler() {
 				intb = optGetJMap(extb);
 				if (ev.jaxis.value < -5000) {
 					switch (intb.dev) {
-						case XJ_KEY: keyPress(zx->keyb,intb.value); break;
+//						case XJ_KEY: keyPress(zx->keyb,intb.value); break;
 						case XJ_JOY: joyPress(zx->joy,intb.value); break;
 					}
 				} else {
 					switch (intb.dev) {
-						case XJ_KEY: keyRelease(zx->keyb,intb.value); break;
+//						case XJ_KEY: keyRelease(zx->keyb,intb.value); break;
 						case XJ_JOY: joyRelease(zx->joy,intb.value); break;
 					}
 				}
@@ -965,12 +965,12 @@ void EmulWin::SDLEventHandler() {
 				intb = optGetJMap(extb);
 				if (ev.jaxis.value > 5000) {
 					switch (intb.dev) {
-						case XJ_KEY: keyPress(zx->keyb,intb.value); break;
+//						case XJ_KEY: keyPress(zx->keyb,intb.value); break;
 						case XJ_JOY: joyPress(zx->joy,intb.value); break;
 					}
 				} else {
 					switch (intb.dev) {
-						case XJ_KEY: keyRelease(zx->keyb,intb.value); break;
+//						case XJ_KEY: keyRelease(zx->keyb,intb.value); break;
 						case XJ_JOY: joyRelease(zx->joy,intb.value); break;
 					}
 				}

@@ -21,11 +21,8 @@ std::vector<optEntry> config;
 std::string workDir;
 std::string romDir;
 std::string profPath;
-<<<<<<< HEAD
 std::string joyName;
-=======
 std::string keyFileName;
->>>>>>> c82a6a983a155192b6238d6c69034689b0c53679
 
 int brgLevel = 192;
 
@@ -568,11 +565,8 @@ void loadProfiles() {
 			if (pnam=="[ROMSETS]") section=4;
 			if (pnam=="[SOUND]") section=5;
 			if (pnam=="[TOOLS]") section=6;
-<<<<<<< HEAD
-			if (pnam=="[JOYSTICK]") section=7;
-=======
+			if (pnam=="[JOYSTICK]") section=8;
 			if (pnam=="[GENERAL]") section=7;
->>>>>>> c82a6a983a155192b6238d6c69034689b0c53679
 		} else {
 			switch (section) {
 				case 1:
@@ -662,10 +656,9 @@ void loadProfiles() {
 					if (pnam=="volume.gs") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_GSVL,test);}
 					break;
 				case 6:
-<<<<<<< HEAD
 					if (pnam=="asmPath") asmPath = pval; break;
 					if (pnam=="projectsDir") projDir = pval; break;
-				case 7:
+				case 8:
 					if (pnam=="device") joyName = pval;
 					if (pnam=="button") {			// button = num:J:{up,down,left,right,fire}
 						vect = splitstr(pval,":");	// TODO: button = num:K:keyName
@@ -709,17 +702,12 @@ void loadProfiles() {
 							}
 						}
 					}
-=======
-					if (pnam=="asmPath") asmPath = pval;
-					if (pnam=="projectsDir") projDir = pval;
-					break;
 				case 7:
 					if (pnam=="keys") {
 						keyFileName = pval;
 						loadKeys();
 					}
 					break;
->>>>>>> c82a6a983a155192b6238d6c69034689b0c53679
 			}
 		}
 	}
