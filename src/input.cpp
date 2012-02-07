@@ -1,7 +1,7 @@
 #include <stdint.h>
-
 #include "input.h"
 
+<<<<<<< HEAD
 #define ZK(p1,p2,p3,p4) {{p1,p2},{p3,p4}}
 
 #ifndef WIN32
@@ -56,9 +56,20 @@ uint8_t keys[256][2][2]={
 	ZK(0,2,5,1),ZK(7,1,3,8),ZK(7,1,4,4),ZK(0,0,0,0),ZK(7,1,4,16),		// 71 : hm up pu    lf
 	ZK(0,0,0,0),ZK(7,1,3,4),ZK(0,0,0,0),ZK(0,2,5,4),ZK(7,1,3,16),		// 76 :    rg    ed dn
 	ZK(7,1,4,8),ZK(0,2,5,2),ZK(7,1,3,2)					// 81 : pd in dl
+=======
+struct keyScan {
+	char key;
+	uint8_t row;
+	uint8_t mask;
 };
 
-#endif
+keyScan keyTab[40] = {
+	{'1',4,1},{'2',4,2},{'3',4,4},{'4',4,8},{'5',4,16},{'6',3,16},{'7',3,8},{'8',3,4},{'9',3,2},{'0',3,1},
+	{'q',5,1},{'w',5,2},{'e',5,4},{'r',5,8},{'t',5,16},{'y',2,16},{'u',2,8},{'i',2,4},{'o',2,2},{'p',2,1},
+	{'a',6,1},{'s',6,2},{'d',6,4},{'f',6,8},{'g',6,16},{'h',1,16},{'j',1,8},{'k',1,4},{'l',1,2},{'E',1,1},
+	{'C',7,1},{'z',7,2},{'x',7,4},{'c',7,8},{'v',7,16},{'b',0,16},{'n',0,8},{'m',0,4},{'S',0,2},{' ',0,1}
+>>>>>>> c82a6a983a155192b6238d6c69034689b0c53679
+};
 
 // keyboard
 
@@ -68,7 +79,7 @@ struct Keyboard {
 
 Keyboard* keyCreate() {
 	Keyboard* keyb = new Keyboard;
-	keyRelease(keyb,0);
+	keyRelease(keyb,0,0);
 	return keyb;
 }
 
@@ -76,17 +87,23 @@ void keyDestroy(Keyboard* keyb) {
 	delete(keyb);
 }
 
-void keyPress(Keyboard* keyb, uint8_t cod) {
-	keyb->map[keys[cod][0][0]] &= ~keys[cod][0][1];
-	keyb->map[keys[cod][1][0]] &= ~keys[cod][1][1];
+void keyPress(Keyboard* keyb,char key1,char key2) {
+	for (int i=0; i<40; i++) {
+		if ((keyTab[i].key == key1) || (keyTab[i].key == key2)) {
+			keyb->map[keyTab[i].row] &= ~keyTab[i].mask;
+		}
+	}
 }
 
-void keyRelease(Keyboard* keyb, uint8_t cod) {
-	if (cod == 0) {
+void keyRelease(Keyboard* keyb,char key1,char key2) {
+	if ((key1 == 0) && (key2 == 0)) {
 		for (int i=0; i<8; i++) keyb->map[i] = 0x1f;
 	} else {
-		keyb->map[keys[cod][0][0]] |= keys[cod][0][1];
-		keyb->map[keys[cod][1][0]] |= keys[cod][1][1];
+		for (int i=0; i<40; i++) {
+			if ((keyTab[i].key == key1) || (keyTab[i].key == key2)) {
+				keyb->map[keyTab[i].row] |= keyTab[i].mask;
+			}
+		}
 	}
 }
 

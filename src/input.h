@@ -27,8 +27,9 @@ struct Joystick;
 
 Keyboard* keyCreate();
 void keyDestroy(Keyboard*);
-void keyPress(Keyboard*,uint8_t);
-void keyRelease(Keyboard*,uint8_t);
+
+void keyPress(Keyboard*,char,char);
+void keyRelease(Keyboard*,char,char);
 uint8_t keyInput(Keyboard*,uint8_t);
 
 Mouse* mouseCreate();
