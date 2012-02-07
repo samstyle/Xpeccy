@@ -11,8 +11,29 @@ if (Q_WS_X11)
 	if (ALSA_FOUND)
 		add_definitions(-DHAVEALSASOUND)
 	endif(ALSA_FOUND)
+	set(INC_PATHS local/include local/include/z80ex /include/z80ex include)
+	set(LIB_PATHS lib lib64 local/lib local/lib64)
+else (Q_WS_X11)
+	set(INC_PATHS c:\\WINDOWS\\system32)
+	set(LIB_PATHS c:\\WINDOWS\\system32)
 endif(Q_WS_X11)
 
+find_path(Z80EX_INCLUDE_PATH NAMES z80ex.h PATH_SUFFIXES ${INC_PATHS} DOC "z80ex include directory")
+find_library(Z80EX_LIBRARY NAMES z80ex PATH_SUFFIXES ${LIB_PATHS} DOC "z80ex library")
+
+find_path(Z80EX_DASM_INCLUDE_PATH NAMES z80ex_dasm.h PATH_SUFFIXES local/include local/include/z80ex include/z80ex include DOC "z80ex include directory")
+find_library(Z80EX_DASM_LIBRARY NAMES z80ex_dasm PATH_SUFFIXES lib lib64 local/lib local/lib64 DOC "z80ex_dasm library")
+
+# include(/usr/share/cmake-2.8/Modules/FindPackageHandleStandardArgs.cmake)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(Z80EX DEFAULT_MSG Z80EX_LIBRARY Z80EX_INCLUDE_PATH)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(Z80EX_DASM DEFAULT_MSG Z80EX_DASM_LIBRARY Z80EX_DASM_INCLUDE_PATH)
+
+if (Z80EX_FOUND AND Z80EX_DASM_FOUND)
+	set(Z80EX_LIBRARIES ${Z80EX_LIBRARY} ${Z80EX_DASM_LIBRARY})
+	set(Z80EX_INCLUDE_DIR ${Z80EX_INCLUDE_PATH} ${Z80EX_DASM_INCLUDE_PATH})
+else ()
+	message(FATAL ERROR "Could not find z80ex and/or z80ex_dasm")
+endif()
 
 file(GLOB SOURCES ./src/*.cpp ./src/filetypes/*.cpp)
 file(GLOB HEADERS ./src/*.h ./src/filetypes/*.h)
@@ -52,7 +73,7 @@ include_directories(
 	${SDL_INCLUDE_DIR}
 	${ZLIB_INCLUDE_DIRS}
 	${CMAKE_BINARY_DIR}
-	F:/developement/include/
+	${Z80EX_INCLUDE_DIR}
 )
 
 add_executable(xpeccy WIN32
@@ -67,8 +88,7 @@ target_link_libraries(xpeccy
 	${QT_LIBRARIES}
 	${SDL_LIBRARY}
 	${ZLIB_LIBRARY}
-	F:/developement/lib/libz80ex.dll
-	F:/developement/lib/libz80ex_dasm.dll
+	${Z80EX_LIBRARIES}
 	winmm.dll
 )
 
@@ -79,8 +99,7 @@ include_directories(
 	${ZLIB_INCLUDE_DIRS}
 	${ALSA_INCLUDE_DIR}
 	${CMAKE_BINARY_DIR}
-	/usr/local/include/z80ex
-	/usr/include/z80ex
+	${Z80EX_INCLUDE_DIR}
 )
 
 add_executable(xpeccy
@@ -97,8 +116,7 @@ target_link_libraries(xpeccy
 	${SDL_LIBRARY}
 	${ALSA_LIBRARY}
 	${ZLIB_LIBRARY}
-	z80ex
-	z80ex_dasm
+	${Z80EX_LIBRARIES}
 )
 
 install_targets(/bin xpeccy)

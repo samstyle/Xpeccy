@@ -10,7 +10,10 @@
 #include "settings.h"
 
 #ifdef WIN32
-#include <direct.h>
+	#include <direct.h>
+	#define SLASH "\\"
+#else
+	#define SLASH "/"
 #endif
 
 extern ZXComp* zx;
@@ -18,6 +21,7 @@ std::vector<optEntry> config;
 std::string workDir;
 std::string romDir;
 std::string profPath;
+std::string keyFileName;
 
 int brgLevel = 192;
 
@@ -232,13 +236,19 @@ void initPaths() {
 }
 
 void saveProfiles() {
-	std::string cfname = workDir + "/config.conf";
+	std::string cfname = workDir + SLASH + "config.conf";
 	std::ofstream cfile(cfname.c_str());
 	if (!cfile.good()) {
 		shitHappens("Can't write main config");
 		throw(0);
 	}
 	uint i,j;
+
+	cfile << "[GENERAL]\n\n";
+	if ((keyFileName != "default") && (keyFileName != "")) {
+		cfile << "keys = " << keyFileName.c_str() << "\n";
+	}
+
 	cfile << "[BOOKMARKS]\n\n";
 	std::vector<XBookmark> bml = getBookmarkList();
 	for (i=0; i<bml.size(); i++) {
@@ -362,7 +372,7 @@ void saveConfig() {
 	chs = int2str(pass.spt) + "/" + int2str(pass.hds) + "/" + int2str(pass.cyls);
 	optSet("IDE","slave.chs",chs);
 
-	std::string cfname = workDir + "/" + getCurrentProfile()->file;
+	std::string cfname = workDir + SLASH + getCurrentProfile()->file;
 	std::ofstream sfile(cfname.c_str());
 	if (!sfile.good()) {
 		shitHappens("Can't write settings");
@@ -382,19 +392,47 @@ void saveConfig() {
 	}
 }
 
+void loadKeys() {
+	std::string sfnam = workDir + SLASH + keyFileName;
+	std::ifstream file(sfnam.c_str());
+	if (!file.good()) {
+		printf("Can't open keyboard layout. Default one will be used\n");
+		return;
+	}
+	char* buf = new char[1024];
+	std::pair<std::string,std::string> spl;
+	std::string line;
+	std::vector<std::string> vec;
+	char key1;
+	char key2;
+	while (!file.eof()) {
+		file.getline(buf,1023);
+		line = std::string(buf);
+		vec = splitstr(line,"\t");
+		if (vec.size() > 1) {
+			if (vec.size() == 2) vec.push_back("");
+			key1 = (vec[1].size() > 0) ? vec[1].at(0) : 0;
+			key2 = (vec[2].size() > 0) ? vec[2].at(0) : 0;
+			setKey(vec[0].c_str(),key1,key2);
+		}
+	}
+	free(buf);
+	file.close();
+}
+
 void loadProfiles() {
 	std::string soutnam = "NULL";
 	std::ifstream file(profPath.c_str());
 	if (!file.good()) {
 		printf("Main config is missing. Default files will be copied\n");
 		QFile fle(":/conf/config.conf");
-		fle.copy(QString(std::string(workDir + "/config.conf").c_str()));
+		fle.copy(QString(std::string(workDir + SLASH + "config.conf").c_str()));
 		fle.setFileName(":/conf/xpeccy.conf");
-		fle.copy(QString(std::string(workDir + "/xpeccy.conf").c_str()));
+		fle.copy(QString(std::string(workDir + SLASH + "xpeccy.conf").c_str()));
 		fle.setFileName(":/conf/1982.rom");
 		fle.copy(QString(std::string(romDir + "/1982.rom").c_str()));
-		fle.setPermissions(QString(std::string(workDir + "/config.conf").c_str()), QFile::ReadUser | QFile::WriteUser | QFile::ReadGroup | QFile::ReadOther);
-		fle.setPermissions(QString(std::string(workDir + "/xpeccy.conf").c_str()), QFile::ReadUser | QFile::WriteUser | QFile::ReadGroup | QFile::ReadOther);
+		fle.setPermissions(QString(std::string(workDir + SLASH + "config.conf").c_str()), QFile::ReadUser | QFile::WriteUser | QFile::ReadGroup | QFile::ReadOther);
+		fle.setPermissions(QString(std::string(workDir + SLASH + "xpeccy.conf").c_str()), QFile::ReadUser | QFile::WriteUser | QFile::ReadGroup | QFile::ReadOther);
 		file.open(profPath.c_str());
 		if (!file.good()) {
 			printf("%s\n",profPath.c_str());
@@ -434,6 +472,7 @@ void loadProfiles() {
 			if (pnam=="[ROMSETS]") section=4;
 			if (pnam=="[SOUND]") section=5;
 			if (pnam=="[TOOLS]") section=6;
+			if (pnam=="[GENERAL]") section=7;
 		} else {
 			switch (section) {
 				case 1:
@@ -523,8 +562,15 @@ void loadProfiles() {
 					if (pnam=="volume.gs") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_GSVL,test);}
 					break;
 				case 6:
-					if (pnam=="asmPath") asmPath = pval; break;
-					if (pnam=="projectsDir") projDir = pval; break;
+					if (pnam=="asmPath") asmPath = pval;
+					if (pnam=="projectsDir") projDir = pval;
+					break;
+				case 7:
+					if (pnam=="keys") {
+						keyFileName = pval;
+						loadKeys();
+					}
+					break;
 			}
 		}
 	}
@@ -538,7 +584,7 @@ void loadProfiles() {
 }
 
 void loadConfig(bool dev) {
-	std::string cfname = workDir + "/" + getCurrentProfile()->file;
+	std::string cfname = workDir + SLASH + getCurrentProfile()->file;
 	std::ifstream file(cfname.c_str());
 	std::pair<std::string,std::string> spl;
 	std::string line,pnam,pval;
