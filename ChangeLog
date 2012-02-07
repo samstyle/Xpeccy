@@ -140,3 +140,7 @@ Wrk	Reorganize BDI & FDC structures
 build 20120104
 New	Automaticly adding boot.B to TRDos disks
 Wrk	Some rewritings
+
+build 20120207
+New	New parameter in config.conf: [GENERAL] section, 'keys = filename' - this is keymap file. See keymap file to get more info
+Wrk	Rewrite keyboard work
