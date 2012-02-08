@@ -25,11 +25,8 @@ uint8_t ZSLays[4][4] = {
 int zxGetPort(int port, int hardware) {
 	switch (hardware) {
 		case HW_ZX48:
-			if ((port & 0x01) == 0) {
-				port = (port & 0xff00) | 0xfe;
-			} else {
-				port = 0x1f;
-			}
+			if ((port & 0x01) == 0) port = (port & 0xff00) | 0xfe;
+			if ((port & 0x21) == 1) port = 0x1f;
 			break;
 		case HW_PENT:
 			if ((port & 0x8002) == 0x0000) port = 0x7ffd;

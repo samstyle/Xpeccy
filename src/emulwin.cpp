@@ -103,13 +103,6 @@ void emulInit() {
 
 #ifndef XQTPAINT
 
-struct keyEntry {
-	const char* name;
-	SDLKey key;
-	char key1;
-	char key2;
-};
-
 // nums & small letters = keys
 // capital letters:
 // E = enter	C = CapsShift	S = SymShift	' ' = Space
@@ -174,33 +167,9 @@ keyEntry getKeyEntry(SDLKey skey) {
 	return keyMap[idx];
 }
 
-void setKey(const char* key,const char key1,const char key2) {
-	int idx = 0;
-	while (keyMap[idx].key != SDLK_LAST) {
-		if (strcmp(key,keyMap[idx].name) == 0) {
-			keyMap[idx].key1 = key1;
-			keyMap[idx].key2 = key2;
-		}
-		idx++;
-	}
-}
-
-void initKeyMap() {
-	int idx = 0;
-	while (keyMapInit[idx].key != SDLK_LAST) {
-		keyMap[idx] = keyMapInit[idx];
-		idx++;
-	}
-}
+#define ENDKEY	SDLK_LAST
 
 #else
-
-struct keyEntry {
-	const char* name;
-	Qt::Key key;
-	char key1;
-	char key2;
-};
 
 keyEntry keyMapInit[] = {
 	{"1",Qt::Key_1,'1',0},{"2",Qt::Key_2,'2',0},{"3",Qt::Key_3,'3',0},{"4",Qt::Key_4,'4',0},{"5",Qt::Key_5,'5',0},
@@ -256,9 +225,13 @@ keyEntry getKeyEntry(int qkey) {
 	return keyMap[idx];
 }
 
+#define ENDKEY Qt::Key_unknown
+
+#endif
+
 void setKey(const char* key,const char key1,const char key2) {
 	int idx = 0;
-	while (keyMap[idx].key != Qt::Key_unknown) {
+	while (keyMap[idx].key != ENDKEY) {
 		if (strcmp(key,keyMap[idx].name) == 0) {
 			keyMap[idx].key1 = key1;
 			keyMap[idx].key2 = key2;
@@ -268,13 +241,19 @@ void setKey(const char* key,const char key1,const char key2) {
 
 void initKeyMap() {
 	int idx = 0;
-	while (keyMapInit[idx].key != Qt::Key_unknown) {
+	while (keyMapInit[idx].key != ENDKEY) {
 		keyMap[idx] = keyMapInit[idx];
 		idx++;
 	}
 }
 
-#endif
+keyEntry getKeyEntry(const char* name) {
+	int idx = 0;
+	while ((keyMap[idx].key != ENDKEY) && (strcmp(keyMap[idx].name,name) != 0)) {
+		idx++;
+	}
+	return keyMap[idx];
+}
 
 // TODO: SORT THIS
 
@@ -849,6 +828,7 @@ void EmulWin::SDLEventHandler() {
 	}
 #ifndef XQTPAINT
 	keyEntry kent;
+	int jdir;
 	SDL_Event ev;
 	intButton intb;
 	extButton extb;
@@ -996,8 +976,14 @@ void EmulWin::SDLEventHandler() {
 				extb.dir = true;
 				intb = optGetJMap(extb);
 				switch (intb.dev) {
-//					case XJ_KEY: keyPress(zx->keyb,intb.value); break;
-					case XJ_JOY: joyPress(zx->joy,intb.value); break;
+					case XJ_KEY:
+						kent = getKeyEntry(intb.name);
+						keyPress(zx->keyb,kent.key1,kent.key2);
+						break;
+					case XJ_JOY:
+						jdir = optGetId(OPT_JOYDIRS,intb.name);
+						joyPress(zx->joy,jdir);
+						break;
 				}
 				break;
 			case SDL_JOYBUTTONUP:
@@ -1006,8 +992,14 @@ void EmulWin::SDLEventHandler() {
 				extb.dir = true;
 				intb = optGetJMap(extb);
 				switch (intb.dev) {
-//					case XJ_KEY: keyRelease(zx->keyb,intb.value); break;
-					case XJ_JOY: joyRelease(zx->joy,intb.value); break;
+					case XJ_KEY:
+						kent = getKeyEntry(intb.name);
+						keyRelease(zx->keyb,kent.key1,kent.key2);
+						break;
+					case XJ_JOY:
+						jdir = optGetId(OPT_JOYDIRS,intb.name);
+						joyRelease(zx->joy,jdir);
+						break;
 				}
 				break;
 			case SDL_JOYAXISMOTION:
@@ -1017,26 +1009,50 @@ void EmulWin::SDLEventHandler() {
 				intb = optGetJMap(extb);
 				if (ev.jaxis.value < -5000) {
 					switch (intb.dev) {
-//						case XJ_KEY: keyPress(zx->keyb,intb.value); break;
-						case XJ_JOY: joyPress(zx->joy,intb.value); break;
+						case XJ_KEY:
+							kent = getKeyEntry(intb.name);
+							keyPress(zx->keyb,kent.key1,kent.key2);
+							break;
+						case XJ_JOY:
+							jdir = optGetId(OPT_JOYDIRS,intb.name);
+							joyPress(zx->joy,jdir);
+							break;
 					}
 				} else {
 					switch (intb.dev) {
-//						case XJ_KEY: keyRelease(zx->keyb,intb.value); break;
-						case XJ_JOY: joyRelease(zx->joy,intb.value); break;
+						case XJ_KEY:
+							kent = getKeyEntry(intb.name);
+							keyRelease(zx->keyb,kent.key1,kent.key2);
+							break;
+						case XJ_JOY:
+							jdir = optGetId(OPT_JOYDIRS,intb.name);
+							joyRelease(zx->joy,jdir);
+							break;
 					}
 				}
 				extb.dir = true;
 				intb = optGetJMap(extb);
 				if (ev.jaxis.value > 5000) {
 					switch (intb.dev) {
-//						case XJ_KEY: keyPress(zx->keyb,intb.value); break;
-						case XJ_JOY: joyPress(zx->joy,intb.value); break;
+						case XJ_KEY:
+							kent = getKeyEntry(intb.name);
+							keyPress(zx->keyb,kent.key1,kent.key2);
+							break;
+						case XJ_JOY:
+							jdir = optGetId(OPT_JOYDIRS,intb.name);
+							joyPress(zx->joy,jdir);
+							break;
 					}
 				} else {
 					switch (intb.dev) {
-//						case XJ_KEY: keyRelease(zx->keyb,intb.value); break;
-						case XJ_JOY: joyRelease(zx->joy,intb.value); break;
+						case XJ_KEY:
+							kent = getKeyEntry(intb.name);
+							keyRelease(zx->keyb,kent.key1,kent.key2);
+							break;
+						case XJ_JOY:
+							jdir = optGetId(OPT_JOYDIRS,intb.name);
+							joyRelease(zx->joy,jdir);
+							break;
 					}
 				}
 				break;
@@ -1052,7 +1068,11 @@ void EmulWin::SDLEventHandler() {
 // JOYSTICK
 
 bool emulIsJoystickOpened() {
+#ifdef XQTPAINT
+	return false;
+#else
 	return (joy != NULL);
+#endif
 }
 
 void emulOpenJoystick(std::string name) {

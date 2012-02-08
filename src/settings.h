@@ -54,7 +54,7 @@ struct extButton {
 
 struct intButton {
 	int dev;		// keyboard / joystick
-	uint8_t value;		// keycode / joystick direction
+	const char* name;	// key name / joystick direction
 };
 
 typedef std::pair<extButton,intButton> joyPair;

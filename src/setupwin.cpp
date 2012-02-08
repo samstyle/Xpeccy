@@ -608,7 +608,7 @@ void SetupWin::buildjmaplist() {
 		it = new QTableWidgetItem;
 		switch(jmap[i].second.dev) {
 			case XJ_JOY:
-				it->setText(QString("Kempston ").append(QString(optGetName(OPT_JOYDIRS,jmap[i].second.value).c_str())));
+				it->setText(QString("Kempston ").append(QString(jmap[i].second.name)));
 				break;
 			case XJ_KEY:
 				it->setText("Key");
@@ -994,30 +994,30 @@ void SetupWin::updvolumes() {
 
 // input
 
-QDialog* dia;
+QWidget* dia;
 QComboBox* box;
 
 void SetupWin::addJoyBind() {
 	if (!emulIsJoystickOpened()) return;
-	dia = new QDialog(this);
+	dia = new QWidget(this);
 	QHBoxLayout* lay = new QHBoxLayout;
 	box = new QComboBox;
-	box->addItem("Kempston up",XJ_UP);
-	box->addItem("Kempston down",XJ_DOWN);
-	box->addItem("Kempston left",XJ_LEFT);
-	box->addItem("Kempston right",XJ_RIGHT);
-	box->addItem("Kempston fire",XJ_FIRE);
+	box->addItem("Kempston up","up");
+	box->addItem("Kempston down","down");
+	box->addItem("Kempston left","left");
+	box->addItem("Kempston right","right");
+	box->addItem("Kempston fire","fire");
 	QPushButton* but = new QPushButton("Scan");
 	lay->addWidget(box);
 	lay->addWidget(but);
 	dia->setLayout(lay);
 	connect (but,SIGNAL(released()),this,SLOT(scanJoyBind()));
-	dia->layout()->setEnabled(true);
+	dia->setEnabled(true);
 	dia->show();
 }
 
 void SetupWin::scanJoyBind() {
-	dia->layout()->setEnabled(false);
+	dia->setEnabled(false);
 	SDL_Event ev;
 	bool doWork = true;
 	extButton extb;
@@ -1031,7 +1031,7 @@ void SetupWin::scanJoyBind() {
 					extb.num = ev.jbutton.button;
 					extb.dir = true;
 					intb.dev = XJ_JOY;
-					intb.value = box->itemData(box->currentIndex()).toInt();
+					intb.name = box->itemData(box->currentIndex()).toString().toUtf8().data();
 					optSetJMap(extb,intb);
 					doWork = false;
 					break;
@@ -1041,12 +1041,10 @@ void SetupWin::scanJoyBind() {
 						extb.num = ev.jaxis.axis;
 						extb.dir = (ev.jaxis.value > 0);
 						intb.dev = XJ_JOY;
-						intb.value = box->itemData(box->currentIndex()).toInt();
+						intb.name = box->itemData(box->currentIndex()).toString().toUtf8().data();
 						optSetJMap(extb,intb);
 						doWork = false;
 					}
-					break;
-				case SDL_KEYDOWN:
 					break;
 			}
 		}

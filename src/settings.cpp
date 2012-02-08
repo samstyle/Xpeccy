@@ -16,6 +16,21 @@
 	#define SLASH "/"
 #endif
 
+#define	SECT_NONE	0
+#define SECT_BOOKMARK	1
+#define	SECT_PROFILES	2
+#define	SECT_VIDEO	3
+#define	SECT_ROMSETS	4
+#define	SECT_SOUND	5
+#define	SECT_TOOLS	6
+#define	SECT_JOYSTICK	7
+#define	SECT_GENERAL	8
+#define	SECT_SCRSHOT	9
+#define	SECT_BDI	10
+#define	SECT_IDE	11
+#define	SECT_MACHINE	12
+#define	SECT_MENU	13
+
 extern ZXComp* zx;
 std::vector<optEntry> config;
 std::string workDir;
@@ -385,14 +400,14 @@ void saveProfiles() {
 				cfile << "button = ";
 				cfile << int2str(joyMap[i].first.num).c_str() << ":";
 				cfile << ((joyMap[i].second.dev == XJ_JOY) ? "J:" : "K:");
-				cfile << getJValue(joyMap[i].second.dev,joyMap[i].second.value).c_str() << "\n";
+				cfile << joyMap[i].second.name << "\n";
 				break;
 			case XJ_AXIS:
 				cfile << "axis = ";
 				cfile << int2str(joyMap[i].first.num).c_str() << ":";
 				cfile << (joyMap[i].first.dir ? "+:" : "-:");
 				cfile << ((joyMap[i].second.dev == XJ_JOY) ? "J:" : "K:");
-				cfile << getJValue(joyMap[i].second.dev,joyMap[i].second.value).c_str() << "\n";
+				cfile << joyMap[i].second.name << "\n";
 				break;
 		}
 	}
@@ -540,7 +555,7 @@ void loadProfiles() {
 	std::pair<std::string,std::string> spl;
 	std::string line,pnam,pval;
 	std::string pnm = "default";
-	int section = 0;
+	int section = SECT_NONE;
 	std::vector<std::string> vect;
 	VidLayout vlay;
 	std::vector<RomSet> rslist;
@@ -562,27 +577,27 @@ void loadProfiles() {
 		pnam = spl.first;
 		pval = spl.second;
 		if (pval=="") {
-			if (pnam=="[BOOKMARKS]") section=1;
-			if (pnam=="[PROFILES]") section=2;
-			if (pnam=="[VIDEO]") section=3;
-			if (pnam=="[ROMSETS]") section=4;
-			if (pnam=="[SOUND]") section=5;
-			if (pnam=="[TOOLS]") section=6;
-			if (pnam=="[JOYSTICK]") section=8;
-			if (pnam=="[GENERAL]") section=7;
+			if (pnam=="[BOOKMARKS]") section = SECT_BOOKMARK;
+			if (pnam=="[PROFILES]") section = SECT_PROFILES;
+			if (pnam=="[VIDEO]") section = SECT_VIDEO;
+			if (pnam=="[ROMSETS]") section = SECT_ROMSETS;
+			if (pnam=="[SOUND]") section = SECT_SOUND;
+			if (pnam=="[TOOLS]") section = SECT_TOOLS;
+			if (pnam=="[JOYSTICK]") section = SECT_JOYSTICK;
+			if (pnam=="[GENERAL]") section = SECT_GENERAL;
 		} else {
 			switch (section) {
-				case 1:
+				case SECT_BOOKMARK:
 					addBookmark(pnam,pval);
 					break;
-				case 2:
+				case SECT_PROFILES:
 					if (pnam == "current") {
 						pnm = pval;
 					} else {
 						addProfile(pnam,pval);
 					}
 					break;
-				case 3:
+				case SECT_VIDEO:
 					if (pnam=="layout") {
 						vect = splitstr(pval,":");
 						if (vect.size() == 9) {
@@ -608,7 +623,7 @@ void loadProfiles() {
 						brgLevel = test;
 					}
 					break;
-				case 4:
+				case SECT_ROMSETS:
 					pos = pval.find_last_of(":");
 					if (pos != std::string::npos) {
 						fnam = std::string(pval,0,pos);
@@ -648,7 +663,7 @@ void loadProfiles() {
 						}
 					}
 					break;
-				case 5:
+				case SECT_SOUND:
 					if (pnam=="enabled") sndSet(SND_ENABLE, str2bool(pval));
 					if (pnam=="dontmute") sndSet(SND_MUTE, str2bool(pval));
 					if (pnam=="soundsys") soutnam = pval;
@@ -658,54 +673,38 @@ void loadProfiles() {
 					if (pnam=="volume.ay") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_AYVL,test);}
 					if (pnam=="volume.gs") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_GSVL,test);}
 					break;
-				case 6:
+				case SECT_TOOLS:
 					if (pnam=="asmPath") asmPath = pval; break;
 					if (pnam=="projectsDir") projDir = pval; break;
-				case 8:
+				case SECT_JOYSTICK:
 					if (pnam=="device") joyName = pval;
-					if (pnam=="button") {			// button = num:J:{up,down,left,right,fire}
-						vect = splitstr(pval,":");	// TODO: button = num:K:keyName
+					if (pnam=="button") {			// button = num:J:{up|down|left|right|fire}
+						vect = splitstr(pval,":");	// button = num:K:keyName
 						if (vect.size() > 2) {
-							if (vect[1] == "J") {
-								fprt = 0;
-								if (vect[2] == "up") fprt = XJ_UP;
-								if (vect[2] == "down") fprt = XJ_DOWN;
-								if (vect[2] == "left") fprt = XJ_LEFT;
-								if (vect[2] == "right") fprt = XJ_RIGHT;
-								if (vect[2] == "fire") fprt = XJ_FIRE;
-								if (fprt != 0) {
-									extb.type = XJ_BUTTON;
-									extb.num = atoi(vect[0].c_str());
-									extb.dir = true;
-									intb.dev  =XJ_JOY;
-									intb.value = fprt;
-									optSetJMap(extb,intb);
-								}
+							extb.type = XJ_BUTTON;
+							extb.num = atoi(vect[0].c_str());
+							extb.dir = true;
+							intb.name = vect[2].c_str();
+							if ((vect[1] == "J") || (vect[1] == "K")) {
+								intb.dev = (vect[1] == "J") ? XJ_JOY : XJ_KEY;
+								optSetJMap(extb,intb);
 							}
 						}
 					}
-					if (pnam=="axis") {			// axis = num:{+,-},J:{up,down,left,right,fire}
-						vect = splitstr(pval,":");
+					if (pnam=="axis") {			// axis = num:{+|-}:J:{up|down|left|right|fire}
+						vect = splitstr(pval,":");	// axis = num:{+|-}:K:keyName
 						if (vect.size() > 3) {
-							if (vect[2] == "J") {
-								fprt = 0;
-								if (vect[3] == "up") fprt = XJ_UP;
-								if (vect[3] == "down") fprt = XJ_DOWN;
-								if (vect[3] == "left") fprt = XJ_LEFT;
-								if (vect[3] == "right") fprt = XJ_RIGHT;
-								if (vect[3] == "fire") fprt = XJ_FIRE;
-								if (fprt != 0) {
-									extb.type = XJ_AXIS;
-									extb.num = atoi(vect[0].c_str());
-									extb.dir = (vect[1] == "+");
-									intb.dev  =XJ_JOY;
-									intb.value = fprt;
-									optSetJMap(extb,intb);
-								}
+							extb.type = XJ_AXIS;
+							extb.num = atoi(vect[0].c_str());
+							extb.dir = (vect[1] == "+");
+							intb.name = vect[2].c_str();
+							if ((vect[1] == "J") || (vect[1] == "K")) {
+								intb.dev = (vect[1] == "J") ? XJ_JOY : XJ_KEY;
+								optSetJMap(extb,intb);
 							}
 						}
 					}
-				case 7:
+				case SECT_GENERAL:
 					if (pnam=="keys") {
 						keyFileName = pval;
 						loadKeys();
@@ -733,8 +732,8 @@ void loadConfig(bool dev) {
 	size_t pos;
 	char* buf = new char[0x4000];
 	int tmask = 0xff;
-	int tmp;
-	int tmp2=0;
+	int tmp,tmp2;
+	int section = SECT_NONE;
 	ATAPassport masterPass = ideGetPassport(zx->ide,IDE_MASTER);
 	ATAPassport slavePass = ideGetPassport(zx->ide,IDE_SLAVE);
 	int flg;
@@ -766,17 +765,17 @@ void loadConfig(bool dev) {
 			pnam = spl.first;
 			pval = spl.second;
 			if (pval=="") {
-				if (pnam=="[ROMSET]") {grp=pnam; tmp2=1;}
-				if (pnam=="[VIDEO]") {grp=pnam; tmp2=2;}
-				if (pnam=="[SCREENSHOTS]") {grp=""; tmp2=3;}
-				if (pnam=="[SOUND]") {grp=pnam; tmp2=4;}
-				if (pnam=="[BETADISK]") {grp=pnam; tmp2=5;}
-				if (pnam=="[MACHINE]") {grp=pnam; tmp2=6;}
-				if (pnam=="[TOOLS]") {grp=""; tmp2=7;}
-				if (pnam=="[MENU]") {grp=pnam; tmp2=8;}
-				if (pnam=="[IDE]") {grp=pnam; tmp2=9;}
-				if (pnam=="[GENERAL]") {grp=pnam; tmp2=10;}
-				if (dev && (tmp2 != 7)) tmp2 = 0;
+				if (pnam=="[ROMSET]") {grp = pnam; section = SECT_ROMSETS;}
+				if (pnam=="[VIDEO]") {grp = pnam; section = SECT_VIDEO;}
+				if (pnam=="[SCREENSHOTS]") {grp = ""; section = SECT_SCRSHOT;}
+				if (pnam=="[SOUND]") {grp = pnam; section = SECT_SOUND;}
+				if (pnam=="[BETADISK]") {grp = pnam; section = SECT_BDI;}
+				if (pnam=="[MACHINE]") {grp = pnam; section = SECT_MACHINE;}
+				if (pnam=="[TOOLS]") {grp = ""; section = SECT_TOOLS;}
+				if (pnam=="[MENU]") {grp = pnam; section = SECT_MENU;}
+				if (pnam=="[IDE]") {grp = pnam; section = SECT_IDE;}
+				if (pnam=="[GENERAL]") {grp = pnam; section = SECT_GENERAL;}
+				if (dev && (section != SECT_TOOLS)) section = SECT_NONE;
 			} else {
 				if (grp.size() > 2) {
 					line = grp;
@@ -784,8 +783,8 @@ void loadConfig(bool dev) {
 					optSet(line,pnam,pval);
 				}
 //printf("%s\t%s\t%s\n",config.back().group.c_str(),config.back().name.c_str(),config.back().value.c_str());
-				switch (tmp2) {
-					case 1:
+				switch (section) {
+					case SECT_ROMSETS:
 						if (pnam=="reset") {
 							zx->resbank = 1;
 							if ((pval=="basic128") || (pval=="0")) zx->resbank = 0;
@@ -796,23 +795,23 @@ void loadConfig(bool dev) {
 //						if (pnam=="current") zx->opt.romsetName = pval;
 //						if (pnam=="gs") zx->opt.GSRom = pval;
 						break;
-					case 2:
+					case SECT_VIDEO:
 						break;
-					case 3:
+					case SECT_SCRSHOT:
 						if (pnam=="folder") shotDir = pval;
 						if (pnam=="format") shotExt = optGetId(OPT_SHOTFRM,pval);
 						if (pnam=="combo.count") shotCount = atoi(pval.c_str());
 						if (pnam=="combo.interval") shotInterval = atoi(pval.c_str());
 						break;
-					case 4:
+					case SECT_SOUND:
 						break;
-					case 5:
+					case SECT_BDI:
 						if (pnam=="A") setDiskString(bdiGetFloppy(zx->bdi,0),pval);
 						if (pnam=="B") setDiskString(bdiGetFloppy(zx->bdi,1),pval);
 						if (pnam=="C") setDiskString(bdiGetFloppy(zx->bdi,2),pval);
 						if (pnam=="D") setDiskString(bdiGetFloppy(zx->bdi,3),pval);
 						break;
-					case 6:
+					case SECT_MACHINE:
 						if (pnam=="memory") {
 							tmp = atoi(pval.c_str());
 							memSet(zx->mem,MEM_MEMSIZE,tmp);
@@ -824,13 +823,14 @@ void loadConfig(bool dev) {
 							}
 						}
 						break;
-					case 7:
+					case SECT_TOOLS:
 						if (pnam=="sjasm") asmPath = pval; break;
 						if (pnam=="projectsdir") projDir = pval; break;
 						break;
-					case 8: addBookmark(pnam.c_str(),pval.c_str());
+					case SECT_MENU:
+						addBookmark(pnam.c_str(),pval.c_str());
 						break;
-					case 9:
+					case SECT_IDE:
 						if (pnam=="iface") ideSet(zx->ide,IDE_NONE,IDE_TYPE,atoi(pval.c_str()));
 						if (pnam=="master.type") ideSet(zx->ide,IDE_MASTER,IDE_TYPE,atoi(pval.c_str()));
 						if (pnam=="master.model") masterPass.model = std::string(pval,0,40);
@@ -869,7 +869,7 @@ void loadConfig(bool dev) {
 							}
 						}
 						break;
-					case 10:
+					case SECT_GENERAL:
 						break;
 				}
 			}

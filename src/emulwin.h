@@ -6,6 +6,7 @@
 #include <QTimer>
 //#include <QModelIndex>
 #include <stdint.h>
+#include <SDL.h>
 
 #ifndef XQTPAINT
 	#include <QX11EmbedContainer>
@@ -47,6 +48,17 @@ struct XProfile {
 	std::string name;
 	std::string file;
 	ZXComp* zx;
+};
+
+struct keyEntry {
+	const char* name;
+#ifdef XQTPAINT
+	Qt::Key key;
+#else
+	SDLKey key;
+#endif
+	char key1;
+	char key2;
 };
 
 // TODO: kill EmulWin class?
@@ -117,6 +129,9 @@ void emulSetColor(int);
 // keys
 void initKeyMap();
 void setKey(const char*,const char,const char);
+#ifndef XQTPAINT
+	keyEntry getKeyEntry(SDLKey);
+#endif
 // USER MENU
 void initUserMenu(QWidget*);
 // bookmarks
