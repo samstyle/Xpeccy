@@ -230,12 +230,14 @@ keyEntry getKeyEntry(int qkey) {
 #endif
 
 void setKey(const char* key,const char key1,const char key2) {
+	printf("set key\n");
 	int idx = 0;
 	while (keyMap[idx].key != ENDKEY) {
 		if (strcmp(key,keyMap[idx].name) == 0) {
 			keyMap[idx].key1 = key1;
 			keyMap[idx].key2 = key2;
 		}
+		idx++;
 	}
 }
 
