@@ -353,7 +353,11 @@ void tapSetFlag(Tape* tap, int mask, bool set) {
 }
 
 void tapNextBlock(Tape* tap) {
-	if (tap->block < tap->data.size()) tap->block++;
+	tap->block++;
+	if (tap->block < (int)tap->data.size()) return;
+	tap->block = 0;
+	tapStop(tap);
+
 }
 
 // add file to tape
