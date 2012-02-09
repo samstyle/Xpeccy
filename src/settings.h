@@ -9,6 +9,7 @@
 
 #define	OPT_WORKDIR	0
 #define	OPT_ROMDIR	1
+#define	OPT_FLAG	8
 #define	OPT_SHOTDIR	0x10
 #define OPT_SHOTFRM	0x11
 #define	OPT_SHOTINT	0x12
@@ -27,6 +28,10 @@
 #define	SCR_SCR		4
 #define	SCR_HOB		5
 #define	SCR_DISK	6
+
+// flags
+#define	OF_TAPEAUTO	1
+#define	OF_TAPEFAST	(1<<1)
 
 struct optEntry {
 	std::string group;
@@ -71,6 +76,9 @@ int optGetInt(int);
 void optSet(int,std::string);
 void optSet(int,int);
 void optSet(int,bool);
+
+void optSetFlag(int,bool);
+bool optGetFlag(int);
 
 std::vector<joyPair> getJMap();
 void setJMap(std::vector<joyPair>);

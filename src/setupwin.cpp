@@ -363,6 +363,8 @@ void SetupWin::start() {
 	ui.hs_gcyl->setValue(pass.cyls);
 	ui.hs_glba->setValue(ideGet(zx->ide,IDE_SLAVE,IDE_MAXLBA));
 // tape
+	ui.cbTapeAuto->setChecked(optGetFlag(OF_TAPEAUTO));
+	ui.cbTapeFast->setChecked(optGetFlag(OF_TAPEFAST));
 	ui.tpathle->setText(QDialog::trUtf8(tapGetPath(zx->tape).c_str()));
 	buildtapelist();
 // tools
@@ -487,7 +489,9 @@ void SetupWin::apply() {
 	pass.cyls = ui.hs_gcyl->value();
 	ideSet(zx->ide,IDE_SLAVE,IDE_MAXLBA,ui.hs_glba->value());
 	ideSetPassport(zx->ide,IDE_SLAVE,pass);
-
+// tape
+	optSetFlag(OF_TAPEAUTO,ui.cbTapeAuto->isChecked());
+	optSetFlag(OF_TAPEFAST,ui.cbTapeFast->isChecked());
 // tools
 	optSet(OPT_ASMPATH,std::string(ui.sjpathle->text().toUtf8().data()));
 	optSet(OPT_PROJDIR,std::string(ui.prjdirle->text().toUtf8().data()));

@@ -1677,6 +1677,24 @@
         </attribute>
         <layout class="QVBoxLayout" name="verticalLayout_11">
          <item>
+          <layout class="QGridLayout" name="gridLayout_22">
+           <item row="0" column="0">
+            <widget class="QCheckBox" name="cbTapeAuto">
+             <property name="text">
+              <string>Autoplay</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QCheckBox" name="cbTapeFast">
+             <property name="text">
+              <string>Fast loading</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
           <layout class="QHBoxLayout" name="horizontalLayout_7">
            <item>
             <widget class="QLineEdit" name="tpathle">

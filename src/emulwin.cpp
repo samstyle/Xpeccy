@@ -639,7 +639,9 @@ void MainWin::stopTimer() {timer->stop();}
 
 // ...
 
-char hobHead[] = {'s','c','r','e','e','e','n',' ','C',0,0,0,0x1b,0,0x1b,0xe7,0x81};	// last 2 bytes is crc
+char hobHead[] = {'s','c','r','e','e','n',' ',' ','C',0,0,0,0x1b,0,0x1b,0xe7,0x81};	// last 2 bytes is crc
+
+Z80EX_WORD pc,af,de,ix;
 
 void MainWin::emulFrame() {
 	if (emulFlags & FL_BLOCK) return;
@@ -655,9 +657,43 @@ void MainWin::emulFrame() {
 		sndSet(SND_COUNT,0);
 		do {
 			emulExec();
+			std::vector<uint8_t> blkData;
+			int blk = tapGet(zx->tape,TAPE_BLOCK);
+			pc = z80ex_get_reg(zx->cpu,regPC);
+			af = z80ex_get_reg(zx->cpu,regAF);
+			de = z80ex_get_reg(zx->cpu,regDE);
+			ix = z80ex_get_reg(zx->cpu,regIX);
+			switch (pc) {
+				case 0x56b:			// 0x556: load block procedure
+					if (memGet(zx->mem,MEM_ROM) != 1) break;		// not in 48K basic
+					if (optGetFlag(OF_TAPEFAST) && (tapGet(zx->tape,blk,TAPE_BFLAG) & TBF_BYTES)) {
+						blkData = tapGetBlockData(zx->tape,blk);
+						if (blkData.size() == (de + 2)) {
+							for (int i = 1; i < (de + 1); i++) {
+								memWr(zx->mem,ix,blkData[i]);
+								ix++;
+							}
+							z80ex_set_reg(zx->cpu,regIX,ix);
+							z80ex_set_reg(zx->cpu,regDE,0);
+							z80ex_set_reg(zx->cpu,regHL,0);
+							tapNextBlock(zx->tape);
+						} else {
+							z80ex_set_reg(zx->cpu,regHL,0xff00);
+						}
+						z80ex_set_reg(zx->cpu,regAF,af);
+						z80ex_set_reg(zx->cpu,regPC,0x5df);	// to exit
+					} else {
+						if (optGetFlag(OF_TAPEAUTO)) mwin->tapePlay();
+					}
+					break;
+				case 0x5e2:			// success exit from load procedure
+					if (memGet(zx->mem,MEM_ROM) != 1) break;		// not in 48K basic
+					if (optGetFlag(OF_TAPEAUTO)) mwin->tapeStop();
+					break;
+			}
 		} while ((wantedWin == WW_NONE) && !zx->intStrobe);
 		zx->nmiRequest = false;
-		if (scrCounter !=0) {
+		if (scrCounter != 0) {
 			if (scrInterval == 0) {
 				emulFlags |= FL_SHOT;
 				scrCounter--;

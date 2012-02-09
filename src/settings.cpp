@@ -30,6 +30,7 @@
 #define	SECT_IDE	11
 #define	SECT_MACHINE	12
 #define	SECT_MENU	13
+#define	SECT_TAPE	14
 
 extern ZXComp* zx;
 std::vector<optEntry> config;
@@ -40,6 +41,7 @@ std::string joyName;
 std::string keyFileName;
 
 int brgLevel = 192;
+int flag = 0;
 
 int shotExt;
 std::string shotDir;
@@ -257,6 +259,18 @@ void optSet(std::string grp, std::string nam, bool val) {
 	res->value = val ? "yes" : "no";
 }
 
+void optSetFlag(int mask, bool wut) {
+	if (wut) {
+		flag |= mask;
+	} else {
+		flag &= ~mask;
+	}
+}
+
+bool optGetFlag(int mask) {
+	return ((flag & mask) != 0);
+}
+
 std::string optGetString(std::string grp, std::string nam) {
 	std::string res = "";
 	optEntry* ent = optFindEntry(grp,nam);
@@ -391,6 +405,10 @@ void saveProfiles() {
 	cfile << "\n[TOOLS]\n\n";
 	cfile << "asmPath = " << asmPath.c_str() << "\n";
 	cfile << "projectsDir = " << projDir.c_str() << "\n";
+
+	cfile << "\n[TAPE]\n\n";
+	cfile << "autoplay = " << ((flag & OF_TAPEAUTO) ? "yes" : "no") << "\n";
+	cfile << "fast = " << ((flag & OF_TAPEFAST) ? "yes" : "no") << "\n";
 
 	cfile << "\n[JOYSTICK]\n\n";
 	cfile << "device = " << joyName.c_str() << "\n";
@@ -585,6 +603,7 @@ void loadProfiles() {
 			if (pnam=="[TOOLS]") section = SECT_TOOLS;
 			if (pnam=="[JOYSTICK]") section = SECT_JOYSTICK;
 			if (pnam=="[GENERAL]") section = SECT_GENERAL;
+			if (pnam=="[TAPE]") section = SECT_TAPE;
 		} else {
 			switch (section) {
 				case SECT_BOOKMARK:
@@ -709,6 +728,10 @@ void loadProfiles() {
 						keyFileName = pval;
 						loadKeys();
 					}
+					break;
+				case SECT_TAPE:
+					if (pnam=="autoplay") optSetFlag(OF_TAPEAUTO,str2bool(pval));
+					if (pnam=="fast") optSetFlag(OF_TAPEFAST,str2bool(pval));
 					break;
 			}
 		}
