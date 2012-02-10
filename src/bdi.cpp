@@ -32,6 +32,7 @@ struct FDC {
 	bool block,mfm,irq,drq,sdir;
 	bool idxold,idx,strb;
 	int type;
+	int status;
 	uint8_t com,cop;
 	uint8_t trk,sec,side,data,flag,bus;
 	uint8_t buf[6];
@@ -53,6 +54,7 @@ FDC* fdcCreate(int tp) {
 	fdc->wptr = NULL;
 	fdc->count = 0;
 	fdc->idle = true;
+	fdc->status = FDC_IDLE;
 	return fdc;
 }
 
@@ -484,11 +486,26 @@ void fdcExec(FDC* fdc, uint8_t val) {
 		if ((val & 0xe0) == 0x20) fdc->wptr = vgwork[2];	// step			20..3f
 		if ((val & 0xe0) == 0x40) fdc->wptr = vgwork[3];	// step in		40..5f
 		if ((val & 0xe0) == 0x60) fdc->wptr = vgwork[4];	// step out		60..7f
-		if ((val & 0xe1) == 0x80) fdc->wptr = vgwork[5];	// read sector
-		if ((val & 0xe0) == 0xa0) fdc->wptr = vgwork[6];	// write sector
-		if ((val & 0xfb) == 0xc0) fdc->wptr = vgwork[7];	// read address
-		if ((val & 0xfb) == 0xe0) fdc->wptr = vgwork[8];	// read track
-		if ((val & 0xfb) == 0xf0) fdc->wptr = vgwork[9];	// write track
+		if ((val & 0xe1) == 0x80) {
+			fdc->wptr = vgwork[5];	// read sector
+			fdc->status = FDC_READ;
+		}
+		if ((val & 0xe0) == 0xa0) {
+			fdc->wptr = vgwork[6];	// write sector
+			fdc->status = FDC_WRITE;
+		}
+		if ((val & 0xfb) == 0xc0) {
+			fdc->wptr = vgwork[7];	// read address
+			fdc->status = FDC_READ;
+		}
+		if ((val & 0xfb) == 0xe0) {
+			fdc->wptr = vgwork[8];	// read track
+			fdc->status = FDC_READ;
+		}
+		if ((val & 0xfb) == 0xf0) {
+			fdc->wptr = vgwork[9];	// write track
+			fdc->status = FDC_WRITE;
+		}
 		if (fdc->wptr == NULL) fdc->wptr = vgwork[11];
 		fdc->count = -1;
 		fdc->idle = false;
@@ -656,7 +673,7 @@ void vE0(FDC* p) {
 }
 
 void vF0(FDC* p) {dlt = *(p->wptr++); p->wptr += (int8_t)dlt;}
-void vF1(FDC* p) {p->wptr = NULL; p->count = 0;}
+void vF1(FDC* p) {p->wptr = NULL; p->count = 0; p->status = FDC_IDLE;}
 void vF8(FDC* p) {dlt = *(p->wptr++); if (flpGetFlag(p->fptr,FLP_PROTECT)) p->wptr += (int8_t)dlt;}
 void vF9(FDC* p) {dlt = *(p->wptr++); if (flpGetFlag(p->fptr,FLP_INSERT)) p->wptr += (int8_t)dlt;}	// READY
 void vFA(FDC* p) {dlt = *(p->wptr++); if (p->sdir) p->wptr += (int8_t)dlt;}
@@ -664,7 +681,7 @@ void vFB(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (flpGet(p->fptr,FLP_
 void vFC(FDC* p) {dlt = *(p->wptr++); if (p->strb) p->wptr += (int8_t)dlt;}
 void vFD(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if ((p->com & p1) == 0) p->wptr += (int8_t)dlt;}
 void vFE(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if ((p->com & p1) != 0) p->wptr += (int8_t)dlt;}
-void vFF(FDC* p) {p->irq = true; p->idle = true; p->wptr = &vgidle[0];}
+void vFF(FDC* p) {p->irq = true; p->idle = true; p->wptr = &vgidle[0]; p->status = FDC_IDLE;}
 
 VGOp vgfunc[256] = {
 	NULL,&v01,&v02,&v03,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
@@ -720,6 +737,14 @@ void bdiSetFlag(BDI* bdi, int msk, bool state) {
 		bdi->flag &= ~msk;
 	}
 	bdi->fdc->turbo = (bdi->flag & BDI_TURBO) ? true : false;
+}
+
+int bdiGet(BDI* bdi, int wut) {
+	int res = -1;
+	switch (wut) {
+		case FDC_STATUS: res = bdi->fdc->status; break;
+	}
+	return res;
 }
 
 Floppy* bdiGetFloppy(BDI* bdi,int idx) {

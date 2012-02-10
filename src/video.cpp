@@ -71,14 +71,14 @@ Video* vidCreate(Memory* me) {
 	vid->curr.v = 0;
 	vid->curscr = false;
 	vid->fcnt = 0;
-	
+
 	vid->nextBorder = 0xff;
 	vid->dotCount = 0;
 	vid->pxcnt = 0;
-	
+
 	vid->scrimg = screenBuf;
 	vid->scrptr = vid->scrimg;
-	
+
 	return vid;
 }
 
@@ -142,10 +142,12 @@ uint8_t ink = 0;
 uint8_t pap = 0;
 uint8_t scrbyte = 0;
 uint8_t alscr2,alscr4,alscr6;
+float dotDraw = 0;
 
 void vidSync(Video* vid,int tk,float fr) {
 	vid->intStrobe = false;
-	vid->pxcnt += 7.0 * tk / fr;
+	dotDraw = 7.0 * tk / fr;
+	vid->pxcnt += dotDraw;
 	while (vid->pxcnt >= 1) {
 		mtx = vid->matrix[vid->dotCount];
 		switch (mtx) {

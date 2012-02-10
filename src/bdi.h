@@ -10,6 +10,12 @@
 #define BDI_ENABLE	1
 #define	BDI_ACTIVE	(1<<1)
 #define BDI_TURBO	(1<<2)
+// bdi get
+#define	FDC_STATUS	0
+// fdc mode
+#define FDC_IDLE	0
+#define	FDC_READ	1
+#define	FDC_WRITE	2
 
 struct BDI;
 
@@ -22,6 +28,7 @@ bool bdiOut(BDI*,int, uint8_t);
 
 bool bdiGetFlag(BDI*,int);
 void bdiSetFlag(BDI*,int,bool);
+int bdiGet(BDI*,int);
 Floppy* bdiGetFloppy(BDI*,int);
 
 #endif
