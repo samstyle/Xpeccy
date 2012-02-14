@@ -35,5 +35,6 @@
         <file>images/dollar.png</file>
         <file>images/filebin.png</file>
         <file>images/keyboard.png</file>
+        <file>images/lamp.png</file>
     </qresource>
 </RCC>
