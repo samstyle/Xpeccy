@@ -144,12 +144,15 @@ uint8_t scrbyte = 0;
 uint8_t alscr2,alscr4,alscr6;
 float dotDraw = 0;
 
+uint8_t pixBuffer[8];
+uint8_t bitMask[8] = {0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
+
 void vidSync(Video* vid,int tk,float fr) {
 	vid->intStrobe = false;
 	dotDraw = 7.0 * tk / fr;
 	vid->pxcnt += dotDraw;
 	while (vid->pxcnt >= 1) {
-		mtx = vid->matrix[vid->dotCount];
+		mtx = vid->matrix[vid->dotCount++];
 		switch (mtx) {
 			case MTRX_ZERO:
 				if (vid->flags & VF_DOUBLE) vid->scrptr += vid->wsze.h;
@@ -167,8 +170,7 @@ void vidSync(Video* vid,int tk,float fr) {
 							case MTRX_DOT4:
 							case MTRX_DOT6:
 							case MTRX_SHIFT:
-								scrbyte<<=1;
-								col = (scrbyte & 0x80) ? ink : pap;
+								col = pixBuffer[ink++];
 								break;
 							default:
 								if (vid->curscr) {
@@ -181,7 +183,11 @@ void vidSync(Video* vid,int tk,float fr) {
 								if ((vid->atrbyte & 0x80) && vid->flash) scrbyte ^= 255;
 								ink = inkTab[vid->atrbyte & 0x7f];
 								pap = papTab[vid->atrbyte & 0x7f];
-								col = (scrbyte & 0x80) ? ink : pap;
+								for (col = 0; col < 8; col++) {
+									pixBuffer[col] = (scrbyte & bitMask[col]) ? ink : pap;
+								}
+								ink = 1;
+								col = pixBuffer[0];
 								break;
 						}
 						break;
@@ -230,8 +236,7 @@ void vidSync(Video* vid,int tk,float fr) {
 				}
 				break;
 		}
-		vid->pxcnt -= 1.0;
-		vid->dotCount++;
+		vid->pxcnt--;
 		if (vid->dotCount >= vid->frmsz) {
 			vid->dotCount = 0;
 			vid->fcnt++;
