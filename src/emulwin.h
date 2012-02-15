@@ -38,6 +38,8 @@
 #define	FL_FAST		(1<<4)
 #define	FL_BLOCK	(1<<5)
 #define	FL_EXIT		(1<<6)
+#define	FL_LED_DISK	(1<<7)
+#define	FL_LED_SHOT	(1<<8)
 
 struct XBookmark {
 	std::string name;

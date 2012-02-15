@@ -860,10 +860,12 @@ void drawIcon(SDL_Surface* srf,int x,int y,uint8_t* data) {
 
 void EmulWin::SDLEventHandler() {
 #ifndef XQTPAINT
-	int fst = bdiGet(zx->bdi,FDC_STATUS);
-	switch (fst) {
-		case FDC_READ: drawIcon(surf,4,4,icoBlueDisk); break;
-		case FDC_WRITE: drawIcon(surf,4,4,icoRedDisk); break;
+	if (emulFlags & FL_LED_DISK) {
+		int fst = bdiGet(zx->bdi,FDC_STATUS);
+		switch (fst) {
+			case FDC_READ: drawIcon(surf,4,4,icoBlueDisk); break;
+			case FDC_WRITE: drawIcon(surf,4,4,icoRedDisk); break;
+		}
 	}
 	SDL_UpdateRect(surf,0,0,0,0);
 #else

@@ -31,6 +31,7 @@
 #define	SECT_MACHINE	12
 #define	SECT_MENU	13
 #define	SECT_TAPE	14
+#define	SECT_LEDS	15
 
 extern ZXComp* zx;
 std::vector<optEntry> config;
@@ -351,7 +352,7 @@ void saveProfiles() {
 		cfile << "keys = " << keyFileName.c_str() << "\n";
 	}
 
-	cfile << "[BOOKMARKS]\n\n";
+	cfile << "\n[BOOKMARKS]\n\n";
 	std::vector<XBookmark> bml = getBookmarkList();
 	for (i=0; i<bml.size(); i++) {
 		cfile << bml[i].name << " = " << bml[i].path << "\n";
@@ -429,6 +430,10 @@ void saveProfiles() {
 				break;
 		}
 	}
+
+	cfile << "\n[LEDS]\n\n";
+	cfile << "disk = " << ((emulGetFlags() & FL_LED_DISK) ? "yes" : "no") << "\n";
+	cfile << "scrshot = " << ((emulGetFlags() & FL_LED_SHOT) ? "yes" : "no") << "\n";
 	cfile.close();
 }
 
@@ -604,6 +609,7 @@ void loadProfiles() {
 			if (pnam=="[JOYSTICK]") section = SECT_JOYSTICK;
 			if (pnam=="[GENERAL]") section = SECT_GENERAL;
 			if (pnam=="[TAPE]") section = SECT_TAPE;
+			if (pnam=="[LEDS]") section = SECT_LEDS;
 		} else {
 			switch (section) {
 				case SECT_BOOKMARK:
@@ -732,6 +738,10 @@ void loadProfiles() {
 				case SECT_TAPE:
 					if (pnam=="autoplay") optSetFlag(OF_TAPEAUTO,str2bool(pval));
 					if (pnam=="fast") optSetFlag(OF_TAPEFAST,str2bool(pval));
+					break;
+				case SECT_LEDS:
+					if (pnam=="disk") emulSetFlag(FL_LED_DISK,str2bool(pval));
+					if (pnam=="scrshot") emulSetFlag(FL_LED_SHOT,str2bool(pval));
 					break;
 			}
 		}

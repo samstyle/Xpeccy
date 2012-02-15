@@ -371,6 +371,9 @@ void SetupWin::start() {
 	ui.sjpathle->setText(QDialog::trUtf8(optGetString(OPT_ASMPATH).c_str()));
 	ui.prjdirle->setText(QDialog::trUtf8(optGetString(OPT_PROJDIR).c_str()));
 	buildmenulist();
+// leds
+	ui.diskLed->setChecked(emulGetFlags() & FL_LED_DISK);
+	ui.shotLed->setChecked(emulGetFlags() & FL_LED_SHOT);
 
 	show();
 }
@@ -495,6 +498,9 @@ void SetupWin::apply() {
 // tools
 	optSet(OPT_ASMPATH,std::string(ui.sjpathle->text().toUtf8().data()));
 	optSet(OPT_PROJDIR,std::string(ui.prjdirle->text().toUtf8().data()));
+// leds
+	emulSetFlag(FL_LED_DISK,ui.diskLed->isChecked());
+	emulSetFlag(FL_LED_SHOT,ui.shotLed->isChecked());
 
 	saveConfig();
 	sndCalibrate();
