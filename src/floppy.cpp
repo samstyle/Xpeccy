@@ -232,13 +232,15 @@ bool flpEject(Floppy* flp) {
 	return true;
 }
 
+uint8_t fbuf[0x100];
+
 int flpGet(Floppy* flp, int wut) {
 	int res = -1;
-	uint8_t* buf = new uint8_t[0x100];
+//	uint8_t* buf = new uint8_t[0x100];
 	switch (wut) {
 		case FLP_DISKTYPE:
-			if (flpGetSectorData(flp,0,9,buf,0x100)) {
-				if (buf[0xe7] == 0x10) res = TYPE_TRD;
+			if (flpGetSectorData(flp,0,9,fbuf,0x100)) {
+				if (fbuf[0xe7] == 0x10) res = TYPE_TRD;
 			}
 			break;
 		case FLP_TRK: res = flp->trk; break;
@@ -246,7 +248,7 @@ int flpGet(Floppy* flp, int wut) {
 		case FLP_FIELD: res = flp->field; break;
 		case FLP_POS: res = flp->pos; break;
 	}
-	delete(buf);
+//	delete(buf);
 	return res;
 }
 

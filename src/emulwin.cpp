@@ -866,10 +866,18 @@ void EmulWin::SDLEventHandler() {
 			case FDC_READ: drawIcon(surf,4,4,icoBlueDisk); break;
 			case FDC_WRITE: drawIcon(surf,4,4,icoRedDisk); break;
 		}
+		SDL_UpdateRect(surf,0,0,0,0);
+	} else {
+		if (zx->vid->flags & VF_CHANGED) {
+			SDL_UpdateRect(surf,0,0,0,0);
+			zx->vid->flags &= ~VF_CHANGED;
+		}
 	}
-	SDL_UpdateRect(surf,0,0,0,0);
 #else
-	mainWin->update();
+	if (zx->vid->flags & VF_CHANGED) {
+		mainWin->update();
+		zx->vid->flags &= ~VF_CHANGED;
+	}
 #endif
 	if (emulFlags & FL_BLOCK) return;
 	switch (wantedWin) {

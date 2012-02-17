@@ -148,3 +148,8 @@ Fix	Remove random breakpoints from tape
 build 20120207
 New	New parameter in config.conf: [GENERAL] section, 'keys = filename' - this is keymap file. See keymap file to get more info
 Wrk	Rewrite keyboard work
+
+build 20120217
+New	Auto start/stop tape. Fast loading tape data
+New	Disk read/write led
+Wrk	Rewrite screen drawing - it must eat less cpu

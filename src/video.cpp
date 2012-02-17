@@ -92,21 +92,24 @@ uint8_t* vidGetScreen() {
 
 #define	MTRX_INVIS	0x4000		// invisible: blank spaces
 #define	MTRX_BORDER	0x4001		// border
-#define	MTRX_ZERO	0x4002		// screen dots except each 8th. on each 8th is reading of screen byte and attributes
-#define	MTRX_SHIFT	0x4003
-#define	MTRX_DOT2	0x4004
-#define	MTRX_DOT4	0x4005
-#define	MTRX_DOT6	0x4006
+#define	MTRX_ZERO	0x4002		// "line feed"
+#define	MTRX_SHIFT	0x4003		// 1,3,5,7 dots in byte
+#define	MTRX_DOT2	0x4004		// 2nd dot
+#define	MTRX_DOT4	0x4005		// 4th dot
+#define	MTRX_DOT6	0x4006		// 6th dot
+// all other numbers is index of memaddr in 0-dot
 
 void vidFillMatrix(Video* vid) {
 	uint32_t x,y,i,adr;
 	i = 0;
 	adr = 0;
+	uint8_t* ptr = vid->scrimg;
 	for (y = 0; y < vid->full.v; y++) {
 		for (x = 0; x < vid->full.h; x++) {
 			if ((y < vid->lcut.v) || (y >= vid->rcut.v) || (x < vid->lcut.h) || (x >= vid->rcut.h)) {
 				vid->matrix[i] = ((x==0) && (y > vid->lcut.v) && (y < vid->rcut.v)) ? MTRX_ZERO : MTRX_INVIS;
 			} else {
+				*(ptr++) = 0xff;
 				if ((y < vid->bord.v) || (y > vid->bord.v + 191) || (x < vid->bord.h) || (x > vid->bord.h + 255)) {
 					vid->matrix[i] = MTRX_BORDER;
 				} else {
@@ -228,11 +231,17 @@ void vidSync(Video* vid,int tk,float fr) {
 						}
 						break;
 				}
-				*(vid->scrptr++) = col;
-				if (vid->flags & VF_DOUBLE) {
-					*(vid->scrptr + vid->wsze.h - 1) = col;
-					*(vid->scrptr + vid->wsze.h) = col;
-					*(vid->scrptr++)=col;
+				if (*vid->scrptr != col) {
+					*(vid->scrptr++) = col;
+					if (vid->flags & VF_DOUBLE) {
+						*(vid->scrptr + vid->wsze.h - 1) = col;
+						*(vid->scrptr + vid->wsze.h) = col;
+						*(vid->scrptr++)=col;
+					}
+					vid->flags |= VF_CHANGED;
+				} else {
+					vid->scrptr++;
+					if (vid->flags & VF_DOUBLE) vid->scrptr++;
 				}
 				break;
 		}
