@@ -1,9 +1,7 @@
 #include <fstream>
 #include <string.h>
 
-#include "common.h"
 #include "floppy.h"
-#include "filetypes/filetypes.h"
 
 struct Floppy {
 	int flag;
@@ -240,7 +238,7 @@ int flpGet(Floppy* flp, int wut) {
 	switch (wut) {
 		case FLP_DISKTYPE:
 			if (flpGetSectorData(flp,0,9,fbuf,0x100)) {
-				if (fbuf[0xe7] == 0x10) res = TYPE_TRD;
+				if (fbuf[0xe7] == 0x10) res = DISK_TYPE_TRD;
 			}
 			break;
 		case FLP_TRK: res = flp->trk; break;
@@ -291,7 +289,7 @@ TRFile flpGetCatalogEntry(Floppy* flp, int num) {
 
 std::vector<TRFile> flpGetTRCatalog(Floppy* flp) {
 	std::vector<TRFile> res;
-	if (flpGet(flp,FLP_DISKTYPE) == TYPE_TRD) {
+	if (flpGet(flp,FLP_DISKTYPE) == DISK_TYPE_TRD) {
 		TRFile file;
 		uint8_t* buf = new uint8_t[256];
 		uint8_t* ptr;

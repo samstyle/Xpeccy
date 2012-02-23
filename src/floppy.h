@@ -1,7 +1,12 @@
 #ifndef _FLOPPY_H
 #define	_FLOPPY_H
 
+#include <stdint.h>
+#include <vector>
+
 #define TRACKLEN 6250
+
+#define DISK_TYPE_TRD	1
 
 #define	FLP_TRK		0
 #define	FLP_RTRK	1
