@@ -79,6 +79,10 @@ XProfile* currentProfile;
 QMenu* userMenu;
 QMenu* bookmarkMenu;
 QMenu* profileMenu;
+// temp emulation
+Z80EX_WORD pc,af,de,ix;
+std::vector<uint8_t> blkData;
+int blk;
 
 void emulInit() {
 	emulFlags = 0;
@@ -413,7 +417,7 @@ void emulExec() {
 	tks = sndSync(tks,emulFlags & FL_FAST);
 	if (!dbgIsActive()) {
 		// somehow catch CPoint
-		Z80EX_WORD pc = z80ex_get_reg(zx->cpu,regPC);
+		pc = z80ex_get_reg(zx->cpu,regPC);
 		if (dbgFindBreakpoint(BPoint(memGet(zx->mem,(pc < 0x4000) ? MEM_ROM : MEM_RAM), pc)) != -1) {
 			wantedWin = WW_DEBUG;
 			breakFrame = true;
@@ -681,8 +685,6 @@ void MainWin::stopTimer() {timer->stop();}
 
 char hobHead[] = {'s','c','r','e','e','n',' ',' ','C',0,0,0,0x1b,0,0x1b,0xe7,0x81};	// last 2 bytes is crc
 
-Z80EX_WORD pc,af,de,ix;
-
 void MainWin::emulFrame() {
 	if (emulFlags & FL_BLOCK) return;
 	breakFrame = false;
@@ -697,10 +699,9 @@ void MainWin::emulFrame() {
 		sndSet(SND_COUNT,0);
 		do {
 			emulExec();
-			std::vector<uint8_t> blkData;
-			int blk = tapGet(zx->tape,TAPE_BLOCK);
 			pc = z80ex_get_reg(zx->cpu,regPC);
 			if ((pc == 0x56b) && (memGet(zx->mem,MEM_ROM) == 1)) {
+				blk = tapGet(zx->tape,TAPE_BLOCK);
 				if (optGetFlag(OF_TAPEFAST) && (tapGet(zx->tape,blk,TAPE_BFLAG) & TBF_BYTES)) {
 					de = z80ex_get_reg(zx->cpu,regDE);
 					ix = z80ex_get_reg(zx->cpu,regIX);

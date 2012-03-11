@@ -325,6 +325,7 @@ void zxOut(ZXComp* comp, Z80EX_WORD port,Z80EX_BYTE val) {
 double ltk;
 int res1 = 0;
 int res2 = 0;
+Z80EX_WORD pcreg;
 
 double zxExec(ZXComp* comp) {
 	res1 = 0;
@@ -332,14 +333,14 @@ double zxExec(ZXComp* comp) {
 		res1 += z80ex_step(comp->cpu);
 	} while (z80ex_last_op_type(comp->cpu) != 0);
 	vidSync(comp->vid,res1,comp->cpuFreq);
-	Z80EX_WORD pc = z80ex_get_reg(comp->cpu,regPC);
+	pcreg = z80ex_get_reg(comp->cpu,regPC);
 	if (comp->rzxPlay) {
 		comp->intStrobe = (comp->rzxFetches < 1);
 	} else {
 		comp->intStrobe = comp->vid->intStrobe;
 	}
 
-	if ((pc > 0x3fff) && comp->nmiRequest && !comp->rzxPlay) {
+	if ((pcreg > 0x3fff) && comp->nmiRequest && !comp->rzxPlay) {
 		res2 = z80ex_nmi(comp->cpu);
 		res1 += res2;
 		if (res2 != 0) {
