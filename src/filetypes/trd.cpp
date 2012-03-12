@@ -2,7 +2,7 @@
 #include "../settings.h"
 
 void loadBoot(Floppy* flp) {
-	if (flpGet(flp,FLP_DISKTYPE) == TYPE_TRD) {
+	if (flpGet(flp,FLP_DISKTYPE) == DISK_TYPE_TRD) {
 		std::vector<TRFile> cat = flpGetTRCatalog(flp);
 		bool gotBoot = false;
 		for (unsigned int i=0; i < cat.size(); i++) {

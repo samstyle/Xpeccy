@@ -153,3 +153,6 @@ build 20120217
 New	Auto start/stop tape. Fast loading tape data
 New	Disk read/write led
 Wrk	Rewrite screen drawing - it must eat less cpu
+
+build 20120312
+Fix	Fixing disk type detection

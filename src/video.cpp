@@ -79,6 +79,8 @@ Video* vidCreate(Memory* me) {
 	vid->scrimg = screenBuf;
 	vid->scrptr = vid->scrimg;
 
+	vid->firstFrame = true;
+
 	return vid;
 }
 
@@ -103,13 +105,11 @@ void vidFillMatrix(Video* vid) {
 	uint32_t x,y,i,adr;
 	i = 0;
 	adr = 0;
-	uint8_t* ptr = vid->scrimg;
 	for (y = 0; y < vid->full.v; y++) {
 		for (x = 0; x < vid->full.h; x++) {
 			if ((y < vid->lcut.v) || (y >= vid->rcut.v) || (x < vid->lcut.h) || (x >= vid->rcut.h)) {
 				vid->matrix[i] = ((x==0) && (y > vid->lcut.v) && (y < vid->rcut.v)) ? MTRX_ZERO : MTRX_INVIS;
 			} else {
-				*(ptr++) = 0xff;
 				if ((y < vid->bord.v) || (y > vid->bord.v + 191) || (x < vid->bord.h) || (x > vid->bord.h + 255)) {
 					vid->matrix[i] = MTRX_BORDER;
 				} else {
@@ -231,7 +231,7 @@ void vidSync(Video* vid,int tk,float fr) {
 						}
 						break;
 				}
-				if (*vid->scrptr != col) {
+				if (vid->firstFrame || (*vid->scrptr != col)) {
 					*(vid->scrptr++) = col;
 					if (vid->flags & VF_DOUBLE) {
 						*(vid->scrptr + vid->wsze.h - 1) = col;
@@ -252,6 +252,7 @@ void vidSync(Video* vid,int tk,float fr) {
 			vid->flash = vid->fcnt & 0x20;
 			vid->scrptr = vid->scrimg;
 			vid->intStrobe = true;
+			vid->firstFrame = false;
 		}
 	}
 	if (vid->nextBorder < 8) {

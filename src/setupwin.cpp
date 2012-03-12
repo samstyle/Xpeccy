@@ -956,7 +956,7 @@ void SetupWin::fillDiskCat() {
 		wid->setRowCount(0);
 	} else {
 		wid->setEnabled(true);
-		if (flpGet(bdiGetFloppy(zx->bdi,dsk),FLP_DISKTYPE) == TYPE_TRD) {
+		if (flpGet(bdiGetFloppy(zx->bdi,dsk),FLP_DISKTYPE) == DISK_TYPE_TRD) {
 			std::vector<TRFile> cat = flpGetTRCatalog(bdiGetFloppy(zx->bdi,dsk));
 			wid->setRowCount(cat.size());
 			for (uint i=0; i<cat.size(); i++) {

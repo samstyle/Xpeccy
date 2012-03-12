@@ -387,9 +387,12 @@ void MainWin::updateWindow() {
 	}
 	surf = SDL_SetVideoMode(szw,szh,8,sdlflg | SDL_NOFRAME);
 	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
-	delete((uint8_t*)surf->pixels);			// free default pixels
+	// delete((uint8_t*)surf->pixels);			// free default pixels
 	surf->pixels = vidGetScreen();
+	zx->vid->scrimg = (uint8_t*)surf->pixels;
+	zx->vid->scrptr = zx->vid->scrimg;
 #endif
+	zx->vid->firstFrame = true;
 	emulFlags &= ~FL_BLOCK;
 }
 

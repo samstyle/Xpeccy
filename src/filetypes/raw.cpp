@@ -17,17 +17,17 @@ int loadRaw(Floppy* flp, const char* name) {
 		flpFormat(flp);
 		flpSetFlag(flp,FLP_INSERT,true);
 	}
-	if (flpGet(flp,FLP_DISKTYPE) != TYPE_TRD) return ERR_NOTRD;
+	if (flpGet(flp,FLP_DISKTYPE) != DISK_TYPE_TRD) return ERR_NOTRD;
 	file.seekg(0,std::ios::beg);
 	TRFile nfle;
-	
+
 	std::string fnam(name);
 	size_t pos = fnam.find_last_of(SLASH);
 	if (pos != std::string::npos) fnam = fnam.substr(pos+1);		// get filename
 	pos = fnam.find_last_of(".");
 	if (pos != std::string::npos) fnam = fnam.substr(0,pos);		// cut extension
 	fnam.resize(8,' ');
-		
+
 	memcpy((char*)&nfle.name[0],fnam.c_str(),8);
 	nfle.ext = 'C';
 	nfle.lst = 0;

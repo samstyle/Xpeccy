@@ -14,13 +14,13 @@ int loadHobeta(Floppy* flp,const char* name) {
 	uint8_t* buf = new uint8_t[256];
 	TRFile nfle;
 	int i;
-	
+
 	if (!flpGetFlag(flp,FLP_INSERT)) {
 		flpFormat(flp);
 		flpSetFlag(flp,FLP_INSERT,true);
 	}
-	if (flpGet(flp,FLP_DISKTYPE) != TYPE_TRD) return ERR_NOTRD;
-	
+	if (flpGet(flp,FLP_DISKTYPE) != DISK_TYPE_TRD) return ERR_NOTRD;
+
 	file.read((char*)buf,17);		// header
 	memcpy((char*)&nfle,buf,13);
 	nfle.slen = buf[14];

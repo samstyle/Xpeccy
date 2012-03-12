@@ -28,6 +28,7 @@ struct VidLayout {
 struct Video {
 	int flags;
 	bool intStrobe;
+	bool firstFrame;
 	uint8_t* scrptr;
 	uint8_t* scrimg;
 	VSize full,bord,curr,synh;
