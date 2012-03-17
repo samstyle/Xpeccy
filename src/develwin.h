@@ -2,7 +2,6 @@
 #define _DEVWIN_H
 
 #include "ui_develwin.h"
-#include "ui_selname.h"
 
 #include <QCloseEvent>
 #include <QDialog>
@@ -33,17 +32,15 @@ class DevelWin : public QDialog {
 	public slots:
 		void start();
 	private slots:
-		void newproj(); void cnfnewprj();
-		void newfile(); void cnfnewfile();
+		void newproj();
+		void newfile(QString nam="");
 		void changeprj(QAction*);
 		void removefile(int);
 		void compile();
 	private:
 		Project prj;
 		QMenu *pmenu;
-		QDialog *adpwid,*adfwid;
 		Ui::DevelWin ui;
-		Ui::IName adpui,adfui;
 		QDir prjdir;
 		void makepmenu();
 		void createprj(QString);

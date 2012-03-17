@@ -2,6 +2,7 @@
 #include "develwin.h"
 #include "settings.h"
 
+#include <QInputDialog>
 #include <QMessageBox>
 #include <QProcess>
 #include <QDir>
@@ -19,10 +20,7 @@ void devShow() {
 DevelWin::DevelWin() {
 	ui.setupUi(this);
 	ui.ptabs->clear();
-	
-	adpwid = new QDialog; adpui.setupUi(adpwid); adpwid->setModal(true); adpwid->setWindowTitle("New project name");
-	adfwid = new QDialog; adfui.setupUi(adfwid); adfwid->setModal(true); adfwid->setWindowTitle("New file name");
-	
+
 	pmenu = new QMenu(); ui.opnptb->setMenu(pmenu);		// list of projects
 
 	QObject::connect(pmenu,SIGNAL(triggered(QAction*)),this,SLOT(changeprj(QAction*)));
@@ -30,9 +28,7 @@ DevelWin::DevelWin() {
 
 	QObject::connect(ui.newptb,SIGNAL(released()),this,SLOT(newproj()));
 	QObject::connect(ui.newpftb,SIGNAL(released()),this,SLOT(newfile()));
-	QObject::connect(adpui.okbut,SIGNAL(released()),this,SLOT(cnfnewprj()));
-	QObject::connect(adfui.okbut,SIGNAL(released()),this,SLOT(cnfnewfile()));
-	
+
 	QObject::connect(ui.comptb,SIGNAL(released()),this,SLOT(compile()));
 }
 
@@ -95,16 +91,10 @@ void DevelWin::removefile(int idx) {
 	}
 }
 
-void DevelWin::newfile() {
+void DevelWin::newfile(QString nam) {
 	if (prj.name=="") return;
-	adfui.namele->clear();
-	adfwid->show();
-}
-
-void DevelWin::cnfnewfile() {
-	QString nam = adfui.namele->text();
-	if (nam=="") return;
-	adfwid->hide();
+	if (nam.isEmpty()) nam = QInputDialog::getText(this,"Enter...","Input new file name");
+	if (nam.isEmpty()) return;
 	ProjectFile nfile;
 	if (prj.havefile(nam)) {
 		QMessageBox mbx;
@@ -120,11 +110,9 @@ void DevelWin::cnfnewfile() {
 	}
 }
 
-void DevelWin::newproj() {adpui.namele->clear(); adpwid->show();}
-void DevelWin::cnfnewprj() {
-	QString nam = adpui.namele->text();
+void DevelWin::newproj() {
+	QString nam = QInputDialog::getText(this,"Enter...","Input new project name");
 	if (nam=="") return;
-	adpwid->hide();
 	if (prjdir.entryList(QDir::AllDirs, QDir::Name).indexOf(nam)<0) {
 		createprj(nam);
 	} else {
@@ -142,8 +130,7 @@ void DevelWin::createprj(QString nam) {
 	prj.clear();
 	prj.name = nam;
 	prjdir.mkdir(nam);
-	adfui.namele->setText("main.asm");
-	cnfnewfile();
+	newfile("main.asm");
 	saveprj();
 	makepmenu();
 	setWindowTitle(prj.name + " (build " + QString::number(prj.build) + ")");

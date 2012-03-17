@@ -1,4 +1,5 @@
 #include <QStandardItemModel>
+#include <QInputDialog>
 #include <QFileDialog>
 #include <QVector3D>
 #include <QDebug>
@@ -13,26 +14,21 @@
 #include "filer.h"
 #include "filetypes/filetypes.h"
 
-#include "ui_selname.h"
+//#include "ui_selname.h"
 #include "ui_setupwin.h"
 #include "ui_umadial.h"
 
 extern ZXComp* zx;
 
-Ui::IName nameui;
 Ui::SetupWin ui;
 Ui::UmaDial uia;
 
 SetupWin* optWin;
-QDialog* optName;
 
 std::vector<RomSet> rsl;
 std::string GSRom;
 
 void optInit(QWidget* par) {
-	optName = new QDialog((QWidget*)optWin);
-	nameui.setupUi(optName);
-	optName->setModal(true);
 	optWin = new SetupWin(par);
 }
 
@@ -145,10 +141,8 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	QObject::connect(ui.rse_apply,SIGNAL(released()),this,SLOT(setrpart()));
 	QObject::connect(ui.rse_grp_single,SIGNAL(toggled(bool)),this,SLOT(recheck_separate(bool)));
 	QObject::connect(ui.rse_grp_separate,SIGNAL(toggled(bool)),this,SLOT(recheck_single(bool)));
-	QObject::connect(ui.addrset,SIGNAL(released()),optName,SLOT(show()));
+	QObject::connect(ui.addrset,SIGNAL(released()),this,SLOT(addNewRomset()));
 	QObject::connect(ui.rmrset,SIGNAL(released()),this,SLOT(rmRomset()));
-	QObject::connect(nameui.okbut,SIGNAL(released()),this,SLOT(addNewRomset()));
-	QObject::connect(nameui.cnbut,SIGNAL(released()),optName,SLOT(hide()));
 // video
 	QObject::connect(ui.pathtb,SIGNAL(released()),this,SLOT(selsspath()));
 	QObject::connect(ui.bszsld,SIGNAL(valueChanged(int)),this,SLOT(chabsz()));
@@ -525,8 +519,9 @@ void SetupWin::rmRomset() {
 }
 
 void SetupWin::addNewRomset() {
-	QString nam = nameui.namele->text();
-	if (nam == "") return;
+//	bool ok = false;
+	QString nam = QInputDialog::getText(this,"Enter...","Input romset name"); //,QLineEdit::Normal,"",&ok);
+	if (nam.isEmpty()) return;
 	RomSet nrs;
 	nrs.name = std::string(nam.toUtf8().data());
 	uint i;
@@ -540,7 +535,6 @@ void SetupWin::addNewRomset() {
 	rsl.push_back(nrs);
 	ui.rsetbox->addItem(QDialog::trUtf8(nrs.name.c_str()));
 	ui.rsetbox->setCurrentIndex(ui.rsetbox->count() - 1);
-	optName->hide();
 }
 
 // machine
