@@ -167,10 +167,10 @@ Z80EX_BYTE iord(Z80EX_CONTEXT*,Z80EX_WORD port,void* ptr) {
 						case HW_SCORP:
 							switch (port) {
 								case 0x7ffd:
-									comp->cpuFreq = 7.0;
+									zxSetFrq(comp,7.0);
 									break;
 								case 0x1ffd:
-									comp->cpuFreq = 3.5;
+									zxSetFrq(comp,3.5);
 									break;
 								case 0xff:
 									if (((comp->vid->curr.h - comp->vid->bord.h) < 256) && ((comp->vid->curr.v - comp->vid->bord.v) < 192)) {
@@ -236,7 +236,7 @@ void iowr(Z80EX_CONTEXT*,Z80EX_WORD port,Z80EX_BYTE val,void* ptr) {
 							case 0xeff7:
 								comp->prt1 = val;
 								comp->vid->mode = (val & 1) ? VID_ALCO : VID_NORMAL;
-								comp->cpuFreq = (val & 16) ? 7.0 : 3.5;
+								zxSetFrq(comp, (val & 16) ? 7.0 : 3.5);
 								zxMapMemory(comp);
 								break;
 						}
@@ -269,7 +269,7 @@ ZXComp* zxCreate() {
 	ZXComp* comp = new ZXComp;
 	void* ptr = (void*)comp;
 	comp->cpu = z80ex_create(&memrd,ptr,&memwr,ptr,&iord,ptr,&iowr,ptr,&intrq,ptr);
-	comp->cpuFreq = 3.5;
+	zxSetFrq(comp,3.5);
 	comp->mem = memCreate();
 	comp->vid = vidCreate(comp->mem);
 	comp->keyb = keyCreate();
@@ -318,6 +318,11 @@ void zxReset(ZXComp* comp,int wut) {
 	ideReset(comp->ide);
 }
 
+void zxSetFrq(ZXComp* comp, float frq) {
+	comp->cpuFrq = frq;
+	comp->dotPerTick = 7.0 / frq;
+}
+
 void zxOut(ZXComp* comp, Z80EX_WORD port,Z80EX_BYTE val) {
 	iowr(NULL,port,val,(void*)comp);
 }
@@ -332,7 +337,7 @@ double zxExec(ZXComp* comp) {
 	do {
 		res1 += z80ex_step(comp->cpu);
 	} while (z80ex_last_op_type(comp->cpu) != 0);
-	vidSync(comp->vid,res1,comp->cpuFreq);
+	vidSync(comp->vid,res1 * comp->dotPerTick);
 	pcreg = z80ex_get_reg(comp->cpu,regPC);
 	if (comp->rzxPlay) {
 		comp->intStrobe = (comp->rzxFetches < 1);
@@ -346,13 +351,13 @@ double zxExec(ZXComp* comp) {
 		if (res2 != 0) {
 			bdiSetFlag(comp->bdi,BDI_ACTIVE,true);
 			zxMapMemory(comp);
-			vidSync(comp->vid,res2,comp->cpuFreq);
+			vidSync(comp->vid,res2 * comp->dotPerTick);
 		}
 	}
 	if (comp->intStrobe) {
 		res2 = z80ex_int(comp->cpu);
 		res1 += res2;
-		vidSync(comp->vid,res2,comp->cpuFreq);
+		vidSync(comp->vid,res2 * comp->dotPerTick);
 		if (comp->rzxPlay) {
 			comp->rzxFrame++;
 			if (comp->rzxFrame >= comp->rzx.size()) {
@@ -365,7 +370,7 @@ double zxExec(ZXComp* comp) {
 		}
 	}
 
-	ltk = res1 * 7.0 / comp->cpuFreq;
+	ltk = res1 * comp->dotPerTick;
 
 	if (gsGet(comp->gs,GS_FLAG) & GS_ENABLE) comp->gsCount += ltk;
 	comp->tapCount += ltk;

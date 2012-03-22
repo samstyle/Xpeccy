@@ -145,14 +145,12 @@ uint8_t ink = 0;
 uint8_t pap = 0;
 uint8_t scrbyte = 0;
 uint8_t alscr2,alscr4,alscr6;
-float dotDraw = 0;
 
 uint8_t pixBuffer[8];
 uint8_t bitMask[8] = {0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
 
-void vidSync(Video* vid,int tk,float fr) {
+void vidSync(Video* vid, float dotDraw) {
 	vid->intStrobe = false;
-	dotDraw = 7.0 * tk / fr;
 	vid->pxcnt += dotDraw;
 	while (vid->pxcnt >= 1) {
 		mtx = vid->matrix[vid->dotCount++];

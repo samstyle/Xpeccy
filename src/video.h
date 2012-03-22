@@ -56,7 +56,7 @@ struct Video {
 Video* vidCreate(Memory*);
 void vidDestroy(Video*);
 
-void vidSync(Video*,int,float);
+void vidSync(Video*,float);
 bool vidSetLayout(Video*,std::string);
 void vidUpdate(Video*);
 

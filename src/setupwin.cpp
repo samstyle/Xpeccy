@@ -257,7 +257,7 @@ void SetupWin::start() {
 		case 512: ui.mszbox->setCurrentIndex(3); break;
 		case 1024: ui.mszbox->setCurrentIndex(4); break;
 	}
-	ui.cpufrq->setValue(zx->cpuFreq * 2); updfrq();
+	ui.cpufrq->setValue(zx->cpuFrq * 2); updfrq();
 	ui.scrpwait->setChecked(zx->hwFlags & WAIT_ON);
 // video
 	ui.dszchk->setChecked((zx->vid->flags & VF_DOUBLE));
@@ -386,7 +386,7 @@ void SetupWin::apply() {
 		case 3: memSet(zx->mem,MEM_MEMSIZE,512); break;
 		case 4: memSet(zx->mem,MEM_MEMSIZE,1024); break;
 	}
-	zx->cpuFreq = ui.cpufrq->value() / 2.0;
+	zxSetFrq(zx,ui.cpufrq->value() / 2.0);
 	setFlagBit(ui.scrpwait->isChecked(),&zx->hwFlags,WAIT_ON);
 	zx->opt.GSRom = GSRom;
 	setRomsetList(rsl);

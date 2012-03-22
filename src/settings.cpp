@@ -455,7 +455,7 @@ void setDiskString(Floppy* flp,std::string st) {
 
 void saveConfig() {
 	saveProfiles();
-	optSet("GENERAL","cpu.frq",int(zx->cpuFreq * 2));
+	optSet("GENERAL","cpu.frq",int(zx->cpuFrq * 2));
 	optSet("MACHINE","current",zx->opt.hwName);
 	optSet("MACHINE","restart",(emulGetFlags() & FL_RESET) != 0);
 	optSet("MACHINE","memory",memGet(zx->mem,MEM_MEMSIZE));
@@ -910,7 +910,7 @@ void loadConfig(bool dev) {
 	}
 	if (dev) return;
 
-	tmp2 = optGetInt("GENERAL","cpu.frq"); if ((tmp2 > 0) && (tmp2 <= 14)) zx->cpuFreq = tmp2 / 2.0;
+	tmp2 = optGetInt("GENERAL","cpu.frq"); if ((tmp2 > 0) && (tmp2 <= 14)) zxSetFrq(zx,tmp2 / 2.0);
 
 	zx->vid->curlay = optGetString("VIDEO","geometry");
 	setFlagBit(optGetBool("VIDEO","doublesize"),&zx->vid->flags, VF_DOUBLE);

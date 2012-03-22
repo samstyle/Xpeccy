@@ -62,7 +62,8 @@ struct ZXComp {
 	bool nmiRequest;
 	bool beeplev;
 	bool block7ffd;
-	float cpuFreq;
+	float cpuFrq;
+	float dotPerTick;
 	int hwFlags;
 	uint8_t prt0;		// 7ffd value
 	uint8_t prt1;		// extend port value
@@ -83,5 +84,6 @@ void zxDestroy(ZXComp*);
 void zxReset(ZXComp*,int);
 void zxOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
 double zxExec(ZXComp*);
+void zxSetFrq(ZXComp*,float);
 
 #endif
