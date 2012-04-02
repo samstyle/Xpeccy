@@ -6,17 +6,17 @@ find_package(ZLIB)
 
 find_package(SDL)
 
-if (Q_WS_X11)
+if (UNIX)
 	find_package(ALSA)
 	if (ALSA_FOUND)
 		add_definitions(-DHAVEALSASOUND)
 	endif(ALSA_FOUND)
-	set(INC_PATHS local/include local/include/z80ex /include/z80ex include)
+	set(INC_PATHS local/include local/include/z80ex include/z80ex include)
 	set(LIB_PATHS lib lib64 local/lib local/lib64)
-else (Q_WS_X11)
+elseif(WIN32)
 	set(INC_PATHS C:\\WINDOWS\\system32)
 	set(LIB_PATHS C:\\WINDOWS\\system32)
-endif(Q_WS_X11)
+endif()
 
 find_path(Z80EX_INCLUDE_PATH NAMES z80ex.h PATH_SUFFIXES ${INC_PATHS} DOC "z80ex include directory")
 find_library(Z80EX_LIBRARY NAMES z80ex PATH_SUFFIXES ${LIB_PATHS} DOC "z80ex library")
@@ -24,7 +24,7 @@ find_library(Z80EX_LIBRARY NAMES z80ex PATH_SUFFIXES ${LIB_PATHS} DOC "z80ex lib
 find_path(Z80EX_DASM_INCLUDE_PATH NAMES z80ex_dasm.h PATH_SUFFIXES local/include local/include/z80ex include/z80ex include DOC "z80ex include directory")
 find_library(Z80EX_DASM_LIBRARY NAMES z80ex_dasm PATH_SUFFIXES lib lib64 local/lib local/lib64 DOC "z80ex_dasm library")
 
-# include(/usr/share/cmake-2.8/Modules/FindPackageHandleStandardArgs.cmake)
+include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(Z80EX DEFAULT_MSG Z80EX_LIBRARY Z80EX_INCLUDE_PATH)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(Z80EX_DASM DEFAULT_MSG Z80EX_DASM_LIBRARY Z80EX_DASM_INCLUDE_PATH)
 
@@ -50,9 +50,9 @@ add_definitions(-Wall -O3)
 
 if (SDL_FOUND)
 	add_definitions(-DHAVESDLSOUND)
-	if (QTDRAWING OR Q_WS_WIN)
+	if (QTDRAWING OR WIN32)
 		add_definitions(-DXQTPAINT)
-	endif (QTDRAWING OR Q_WS_WIN)
+	endif ()
 else(SDL_FOUND)
 	add_definitions(-DXQTPAINT)
 endif(SDL_FOUND)
@@ -67,7 +67,7 @@ qt4_wrap_cpp(MOCHEADERS ${MOCFILES})
 
 include(${QT_USE_FILE})
 
-if (Q_WS_WIN)
+if (WIN32)
 
 include_directories(
 	${SDL_INCLUDE_DIR}
@@ -92,7 +92,7 @@ target_link_libraries(xpeccy
 	winmm.dll
 )
 
-else(Q_WS_WIN)
+elseif(UNIX)
 
 include_directories(
 	${SDL_INCLUDE_DIR}
@@ -121,4 +121,4 @@ target_link_libraries(xpeccy
 
 install_targets(/bin xpeccy)
 
-endif(Q_WS_WIN)
+endif()
