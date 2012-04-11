@@ -482,7 +482,6 @@ MainWin::MainWin() {
 	SDL_GetWMInfo(&inf);
 	embedClient(inf.info.x11.wmwindow);
 #endif
-	initUserMenu((QWidget*)this);
 	tapeWin = new QDialog((QWidget*)this,Qt::Tool);
 	tapeUi.setupUi(tapeWin);
 	tapeUi.stopBut->setEnabled(false);
@@ -491,6 +490,7 @@ MainWin::MainWin() {
 	tapeUi.tapeList->setColumnWidth(2,50);
 	rzxWin = new QDialog((QWidget*)this,Qt::Tool);
 	rzxUi.setupUi(rzxWin);
+	initUserMenu((QWidget*)this);
 	timer = new QTimer();
 	QObject::connect(timer,SIGNAL(timeout()),this,SLOT(emulFrame()));
 
@@ -1414,6 +1414,9 @@ void initUserMenu(QWidget* par) {
 	userMenu = new QMenu(par);
 	bookmarkMenu = userMenu->addMenu("Bookmarks");
 	profileMenu = userMenu->addMenu("Profiles");
+	userMenu->addSeparator();
+	userMenu->addAction("Tape window",tapeWin,SLOT(show()));
+	userMenu->addAction("RZX player",rzxWin,SLOT(show()));
 }
 
 void addBookmark(std::string nm, std::string fp) {
