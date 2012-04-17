@@ -1,27 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "z80ex.h"
-#include "memory.h"
 #include "gs.h"
-
-#define	GS_FRQ	12.0
-
-struct GSound {
-	int flags;
-	Z80EX_CONTEXT* cpu;
-	Memory* mem;
-	uint8_t pb3_gs;	// gs -> zx
-	uint8_t pb3_zx;	// zx -> gs
-	uint8_t pbb_zx;
-	uint8_t rp0;
-	uint8_t pstate;	// state register (d0, d7)
-	int vol1,vol2,vol3,vol4;
-	int ch1,ch2,ch3,ch4;
-	int cnt;
-	int stereo;
-	double counter;
-};
 
 Z80EX_BYTE gsmemrd(Z80EX_CONTEXT*,Z80EX_WORD adr,int,void* ptr) {
 	GSound* gs = (GSound*)ptr;
@@ -94,22 +74,6 @@ Z80EX_BYTE gsintrq(Z80EX_CONTEXT*,void*) {
 	return 0xff;
 }
 
-int gsGet(GSound* gs, int tp) {
-	int res = 0;
-	switch (tp) {
-		case GS_FLAG: res = gs->flags; break;
-		case GS_STEREO: res = gs->stereo; break;
-	}
-	return res;
-}
-
-void gsSet(GSound* gs, int tp, int val) {
-	switch(tp) {
-		case GS_FLAG: gs->flags = val; break;
-		case GS_STEREO: gs->stereo = val; break;
-	}
-}
-
 void gsSetRom(GSound* gs, int part, char* buf) {
 	memSetPage(gs->mem,MEM_ROM,part,buf);
 }
@@ -126,7 +90,7 @@ GSound* gsCreate() {
 	memSetBank(res->mem,MEM_BANK3,MEM_RAM,1);
 	res->cnt = 0;
 	res->pstate = 0x7e;
-	res->flags = GS_ENABLE;
+	res->flag = GS_ENABLE;
 	res->stereo = GS_12_34;
 	res->counter = 0;
 	res->ch1 = 0;
@@ -149,7 +113,7 @@ void gsReset(GSound* gs) {
 }
 
 void gsSync(GSound* gs, int tk) {
-	if (~gs->flags & GS_ENABLE) return;
+	if (~gs->flag & GS_ENABLE) return;
 	int res;
 	gs->counter += tk * GS_FRQ / 7.0;
 	while (gs->counter > 0) {
@@ -172,7 +136,7 @@ std::pair<uint8_t,uint8_t> gsGetVolume(GSound* gs) {
 	std::pair<uint8_t,uint8_t> res;
 	res.first = 0;
 	res.second = 0;
-	if (~gs->flags & GS_ENABLE) return res;
+	if (~gs->flag & GS_ENABLE) return res;
 	switch (gs->stereo) {
 		case GS_MONO:
 			res.first = ((gs->ch1 * gs->vol1 + \
@@ -192,7 +156,7 @@ std::pair<uint8_t,uint8_t> gsGetVolume(GSound* gs) {
 // external in/out
 
 int gsIn(GSound* gs, int prt, uint8_t* val) {
-	if (~gs->flags & GS_ENABLE) return GS_ERR;	// gs disabled
+	if (~gs->flag & GS_ENABLE) return GS_ERR;	// gs disabled
 	if ((prt & 0x44) != 0) return GS_ERR;		// port don't catched
 	if (prt & 8) {
 		*val = gs->pstate;
@@ -204,7 +168,7 @@ int gsIn(GSound* gs, int prt, uint8_t* val) {
 }
 
 int gsOut(GSound* gs, int prt,uint8_t val) {
-	if (~gs->flags & GS_ENABLE) return GS_ERR;
+	if (~gs->flag & GS_ENABLE) return GS_ERR;
 	if ((prt & 0x44) != 0) return GS_ERR;
 	if (prt & 8) {
 		gs->pbb_zx = val;

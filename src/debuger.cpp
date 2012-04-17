@@ -188,7 +188,7 @@ bool DebugWin::fillall() {
 
 void DebugWin::fillvg() {
 	QLabel* lab;
-	Floppy* flp = bdiGetFloppy(zx->bdi,-1);	// current floppy
+	Floppy* flp = zx->bdi->fdc->fptr;	// current floppy
 //	lab = (QLabel*)vglay->itemAtPosition(0,1)->widget(); lab->setText(QString::number(zx->bdi->vg93.trk));
 //	lab = (QLabel*)vglay->itemAtPosition(1,1)->widget(); lab->setText(QString::number(zx->bdi->vg93.sec));
 //	lab = (QLabel*)vglay->itemAtPosition(2,1)->widget(); lab->setText(QString::number(zx->bdi->vg93.data));

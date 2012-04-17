@@ -22,8 +22,14 @@ struct Mouse {
 	uint8_t buttons;	// b0=LMB; b1=RMB;
 };
 
-struct Keyboard;
-struct Joystick;
+typedef struct {
+	uint8_t map[8];
+} Keyboard;
+
+typedef struct {
+	int type;
+	uint8_t state;
+} Joystick;
 
 Keyboard* keyCreate();
 void keyDestroy(Keyboard*);

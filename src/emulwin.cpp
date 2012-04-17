@@ -305,12 +305,12 @@ keyEntry getKeyEntry(const char* name) {
 
 void setTapeCheck() {
 	QTableWidgetItem* itm;
-	for (int i=0; i < tapGet(zx->tape, TAPE_BLOCKS); i++) {
+	for (int i=0; i < (int)zx->tape->data.size(); i++) {
 		itm = new QTableWidgetItem;
-		if (tapGet(zx->tape,TAPE_BLOCK) == i) itm->setIcon(QIcon(":/images/checkbox.png"));
+		if (zx->tape->block == i) itm->setIcon(QIcon(":/images/checkbox.png"));
 		tapeUi.tapeList->setItem(i,0,itm);
 		itm = new QTableWidgetItem;
-		if (tapGet(zx->tape,i,TAPE_BFLAG) & TBF_BREAK) itm->setIcon(QIcon(":/images/cancel.png"));
+		if (zx->tape->data[i].flag & TBF_BREAK) itm->setIcon(QIcon(":/images/cancel.png"));
 		tapeUi.tapeList->setItem(i,1,itm);
 	}
 }
@@ -379,7 +379,7 @@ void MainWin::updateWindow() {
 	zx->vid->scrptr = scrImg.bits();
 #else
 	int sdlflg = SDL_SWSURFACE;
-	if ((zx->vid->flags & VF_FULLSCREEN) && !(zx->vid->flags & VF_BLOCKFULLSCREEN)) {
+	if ((zx->vid->flag & VF_FULLSCREEN) && !(zx->vid->flag & VF_BLOCKFULLSCREEN)) {
 		sdlflg |= SDL_FULLSCREEN;
 	}
 	if (surf != NULL) {
@@ -461,11 +461,11 @@ void emulPause(bool p, int msk) {
 	}
 	if (msk & PR_PAUSE) return;
 	if ((pauseFlags & ~PR_PAUSE) == 0) {
-		zx->vid->flags &= ~VF_BLOCKFULLSCREEN;
-		if (zx->vid->flags & VF_FULLSCREEN) emulUpdateWindow();
+		zx->vid->flag &= ~VF_BLOCKFULLSCREEN;
+		if (zx->vid->flag & VF_FULLSCREEN) emulUpdateWindow();
 	} else {
-		zx->vid->flags |= VF_BLOCKFULLSCREEN;
-		if (zx->vid->flags & VF_FULLSCREEN) emulUpdateWindow();
+		zx->vid->flag |= VF_BLOCKFULLSCREEN;
+		if (zx->vid->flag & VF_FULLSCREEN) emulUpdateWindow();
 	}
 }
 
@@ -704,8 +704,8 @@ void MainWin::emulFrame() {
 			emulExec();
 			pc = z80ex_get_reg(zx->cpu,regPC);
 			if ((pc == 0x56b) && (memGet(zx->mem,MEM_ROM) == 1)) {
-				blk = tapGet(zx->tape,TAPE_BLOCK);
-				if (optGetFlag(OF_TAPEFAST) && (tapGet(zx->tape,blk,TAPE_BFLAG) & TBF_BYTES)) {
+				blk = zx->tape->block;
+				if (optGetFlag(OF_TAPEFAST) && (zx->tape->data[blk].flag & TBF_BYTES)) {
 					de = z80ex_get_reg(zx->cpu,regDE);
 					ix = z80ex_get_reg(zx->cpu,regIX);
 					blkData = tapGetBlockData(zx->tape,blk);
@@ -836,9 +836,7 @@ void EmulWin::tapeRewind(int row, int) {
 
 void EmulWin::setTapeStop(int row, int col) {
 	if ((row < 0) || (col != 1)) return;
-	int flg = tapGet(zx->tape,row,TAPE_BFLAG);
-	flg ^= TBF_BREAK;
-	tapSet(zx->tape,row,TAPE_BFLAG,flg);
+	zx->tape->data[row].flag ^= TBF_BREAK;
 	setTapeCheck();
 }
 
@@ -865,16 +863,16 @@ void drawIcon(SDL_Surface* srf,int x,int y,uint8_t* data) {
 void EmulWin::SDLEventHandler() {
 #ifndef XQTPAINT
 	if (emulFlags & FL_LED_DISK) {
-		int fst = bdiGet(zx->bdi,FDC_STATUS);
+		int fst = zx->bdi->fdc->status;
 		switch (fst) {
 			case FDC_READ: drawIcon(surf,4,4,icoBlueDisk); break;
 			case FDC_WRITE: drawIcon(surf,4,4,icoRedDisk); break;
 		}
 		SDL_UpdateRect(surf,0,0,0,0);
 	} else {
-		if (zx->vid->flags & VF_CHANGED) {
+		if (zx->vid->flag & VF_CHANGED) {
 			SDL_UpdateRect(surf,0,0,0,0);
-			zx->vid->flags &= ~VF_CHANGED;
+			zx->vid->flag &= ~VF_CHANGED;
 		}
 	}
 #else
@@ -903,15 +901,15 @@ void EmulWin::SDLEventHandler() {
 			rzxUi.progress->setValue(prc);
 		}
 	}
-	int blk = tapGet(zx->tape,TAPE_BLOCK);
-	int flg = tapGet(zx->tape,TAPE_FLAGS);
+	int blk = zx->tape->block;
+	int flg = zx->tape->flag;
 	if (lastTapeBlock != blk) {
 		lastTapeBlock = blk;
 		setTapeCheck();
 	}
-	if ((tapGet(zx->tape,TAPE_FLAGS) & (TAPE_ON | TAPE_REC)) == TAPE_ON) {
-		tapeUi.tapeBar->setMaximum(tapGet(zx->tape,blk,TAPE_BFTIME));			// total
-		tapeUi.tapeBar->setValue(tapGet(zx->tape,blk,TAPE_BCTIME));			// current
+	if ((zx->tape->flag & (TAPE_ON | TAPE_REC)) == TAPE_ON) {
+		tapeUi.tapeBar->setMaximum(tapGetBlockTime(zx->tape,blk,-1));			// total
+		tapeUi.tapeBar->setValue(tapGetBlockTime(zx->tape,blk,zx->tape->pos));		// current
 	}
 	if (lastTapeFlags != flg) {
 		lastTapeFlags = flg;
@@ -939,12 +937,12 @@ void EmulWin::SDLEventHandler() {
 					switch(ev.key.keysym.sym) {
 						case SDLK_0: zx->vid->mode = (zx->vid->mode==VID_NORMAL)?VID_ALCO:VID_NORMAL; break;
 						case SDLK_1:
-							zx->vid->flags &= ~VF_DOUBLE;
+							zx->vid->flag &= ~VF_DOUBLE;
 							mainWin->updateWindow();
 							saveConfig();
 							break;
 						case SDLK_2:
-							zx->vid->flags |= VF_DOUBLE;
+							zx->vid->flag |= VF_DOUBLE;
 							mainWin->updateWindow();
 							saveConfig();
 							break;
@@ -964,7 +962,7 @@ void EmulWin::SDLEventHandler() {
 							zxReset(zx,RES_DOS);
 							break;
 						case SDLK_RETURN:
-							zx->vid->flags ^= VF_FULLSCREEN;
+							zx->vid->flag ^= VF_FULLSCREEN;
 							mainWin->updateWindow();
 							saveConfig();
 							break;
@@ -982,14 +980,14 @@ void EmulWin::SDLEventHandler() {
 						case SDLK_F2: emulPause(true,PR_FILE); saveFile("",FT_ALL,-1); emulPause(false,PR_FILE); break;
 						case SDLK_F3: emulPause(true,PR_FILE); loadFile("",FT_ALL,-1); emulPause(false,PR_FILE); break;
 						case SDLK_F4:
-								if (tapGet(zx->tape,TAPE_FLAGS) & TAPE_ON) {
+								if (zx->tape->flag & TAPE_ON) {
 									mwin->tapeStop();
 								} else {
 									mwin->tapePlay();
 								}
 								break;
 						case SDLK_F5:
-								if (tapGet(zx->tape,TAPE_FLAGS) & TAPE_ON) {
+								if (zx->tape->flag & TAPE_ON) {
 									mwin->tapeStop();
 								} else {
 									mwin->tapeRec();
@@ -1230,9 +1228,10 @@ void emulSetRomset(Memory* mem, RomSet* rset) {
 	int prts = 0;
 	int profMask = 0;
 	if (rset == NULL) {
-		rset = memGetRomset(mem);
+		rset = currentProfile->rset;	// memGetRomset(mem);
 	} else {
-		memSetRomset(mem,rset);
+		currentProfile->rset = rset;
+//		memSetRomset(mem,rset);
 	}
 	if (rset == NULL) {
 		for (i=0; i<16; i++) {
@@ -1333,7 +1332,7 @@ void addHardware(std::string nam, int typ, int msk, int flg) {
 	nhw.name = nam;
 	nhw.type = typ;
 	nhw.mask = msk;
-	nhw.flags = flg;
+	nhw.flag = flg;
 	hwList.push_back(nhw);
 }
 
@@ -1341,7 +1340,7 @@ void setHardware(ZXComp* comp, std::string nam) {
 	for (uint i = 0; i < hwList.size(); i++) {
 		if (hwList[i].name == nam) {
 			comp->hw = &hwList[i];
-			comp->hwFlags = comp->hw->flags;
+			comp->hwFlags = comp->hw->flag;
 			break;
 		}
 	}

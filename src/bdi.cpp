@@ -13,39 +13,6 @@ bool pcatch = false;	// true when bdi takes i/o request
 
 // FDC
 
-#define	FDC_NONE	0
-#define	FDC_VG93	1
-
-#define	FDC_COM		0x1f
-#define	FDC_TRK		0x3f
-#define	FDC_SEC		0x5f
-#define	FDC_DATA	0x7f
-#define BDI_SYS		0xff
-
-#define BDITEST	0
-
-struct FDC {
-	bool turbo;
-	bool idle;
-	bool mr;
-	bool crchi;
-	bool block,mfm,irq,drq,sdir;
-	bool idxold,idx,strb;
-	int type;
-	int status;
-	uint8_t com,cop;
-	uint8_t trk,sec,side,data,flag,bus;
-	uint8_t buf[6];
-	uint8_t mode;
-	uint8_t *wptr, *sp;
-	uint16_t ic;
-	uint16_t crc,fcrc;
-	int count;
-	int t;
-	int tf;
-	Floppy* fptr;		// pointer to current floppy
-};
-
 FDC* fdcCreate(int tp) {
 	FDC* fdc = new FDC;
 	fdc->type = tp;
@@ -446,10 +413,10 @@ uint8_t fdcRd(FDC* fdc,int port) {
 	uint8_t res = 0xff;
 	switch(port) {
 		case FDC_COM:
-			res = ((flpGetFlag(fdc->fptr,FLP_INSERT)) ? 0 : 128) | (fdc->idle ? 0 : 1);
+			res = ((fdc->fptr->flag & FLP_INSERT) ? 0 : 128) | (fdc->idle ? 0 : 1);
 			switch (fdc->mode) {
 				case 0:
-					res |= ((flpGetFlag(fdc->fptr,FLP_PROTECT)) ? 0x40 : 0)\
+					res |= ((fdc->fptr->flag & FLP_PROTECT) ? 0x40 : 0)\
 						| 0x20\
 						| (fdc->flag & 0x18)\
 						| ((flpGet(fdc->fptr,FLP_TRK) == 0) ? 4 : 0)\
@@ -605,10 +572,6 @@ void vA1(FDC* p) {p->sdir = true; flpStep(p->fptr,true);}
 void vA2(FDC* p) {flpStep(p->fptr,p->sdir);}
 
 void vA8(FDC* p) {
-#if BDITEST
-	if (flpNext(p->fptr,p->side)) p->t = 0;
-	if (!p->turbo) p->count += BYTEDELAY;
-#else
 	if (p->turbo) {
 		p->tf = BYTEDELAY;
 		p->count = 0;
@@ -616,15 +579,9 @@ void vA8(FDC* p) {
 	} else {
 		p->count += p->tf;
 	}
-#endif
 }
 void vA9(FDC* p) {
-#if BDITEST
-	if (flpNext(p->fptr,p->side)) p->t = 0;
-	p->count += BYTEDELAY;
-#else
 	p->count += p->tf;
-#endif
 }
 void vAA(FDC* p) {p->side = !p->side;}
 
@@ -665,17 +622,17 @@ void vDF(FDC* p) {if (p->crchi) {
 void vE0(FDC* p) {
 	p1 = *(p->wptr++);
 	if (p1 == 0) {
-		flpSetFlag(p->fptr,FLP_MOTOR | FLP_HEAD,false);
+		p->fptr->flag &= ~(FLP_MOTOR | FLP_HEAD);
 	} else {
-		if (!flpGetFlag(p->fptr,FLP_HEAD)) p->count += p->turbo ? TRBDELAY : delays[5];
-		flpSetFlag(p->fptr,FLP_MOTOR | FLP_HEAD,true);
+		if (!(p->fptr->flag & FLP_HEAD)) p->count += p->turbo ? TRBDELAY : delays[5];
+		p->fptr->flag |= (FLP_MOTOR | FLP_HEAD);
 	}
 }
 
 void vF0(FDC* p) {dlt = *(p->wptr++); p->wptr += (int8_t)dlt;}
 void vF1(FDC* p) {p->wptr = NULL; p->count = 0; p->status = FDC_IDLE;}
-void vF8(FDC* p) {dlt = *(p->wptr++); if (flpGetFlag(p->fptr,FLP_PROTECT)) p->wptr += (int8_t)dlt;}
-void vF9(FDC* p) {dlt = *(p->wptr++); if (flpGetFlag(p->fptr,FLP_INSERT)) p->wptr += (int8_t)dlt;}	// READY
+void vF8(FDC* p) {dlt = *(p->wptr++); if (p->fptr->flag & FLP_PROTECT) p->wptr += (int8_t)dlt;}
+void vF9(FDC* p) {dlt = *(p->wptr++); if (p->fptr->flag & FLP_INSERT) p->wptr += (int8_t)dlt;}	// READY
 void vFA(FDC* p) {dlt = *(p->wptr++); if (p->sdir) p->wptr += (int8_t)dlt;}
 void vFB(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (flpGet(p->fptr,FLP_FIELD) == p1) p->wptr += (int8_t)dlt;}
 void vFC(FDC* p) {dlt = *(p->wptr++); if (p->strb) p->wptr += (int8_t)dlt;}
@@ -704,13 +661,6 @@ VGOp vgfunc[256] = {
 
 // BDI
 
-struct BDI {
-	int flag;
-//	uint32_t tab;
-	Floppy* flop[4];
-	FDC* fdc;
-};
-
 BDI* bdiCreate() {
 	BDI* bdi = new BDI;
 	for (int i=0; i<4; i++) {
@@ -726,6 +676,7 @@ void bdiDestroy(BDI* bdi) {
 	delete(bdi);
 }
 
+/*
 bool bdiGetFlag(BDI *bdi, int msk) {
 	return ((bdi->flag & msk) ? true : false);
 }
@@ -751,6 +702,7 @@ Floppy* bdiGetFloppy(BDI* bdi,int idx) {
 	if (idx < 0) return bdi->fdc->fptr;
 	return bdi->flop[idx & 3];
 }
+*/
 
 void bdiReset(BDI* bdi) {
 	bdi->fdc->count = 0;
@@ -815,27 +767,6 @@ bool bdiIn(BDI* bdi,int port,uint8_t* val) {
 }
 
 void bdiSync(BDI* bdi,int tk) {
-#if BDITEST
-//	bdi->fdc->tf -= tk;
-//	if (bdi->fdc->tf < 0) {
-//		while (bdi->fdc->tf < 0) {
-//			bdi->fdc->tf += BYTEDELAY;
-//			bdi->fdc->t += BYTEDELAY;
-//			if (flpNext(bdi->fdc->fptr,bdi->fdc->side)) bdi->fdc->t = 0;
-//			bdi->fdc->count -= BYTEDELAY;
-//			while ((bdi->fdc->wptr != NULL) && (bdi->fdc->count < 0)) {
-//				bdi->fdc->cop = *(bdi->fdc->wptr++);
-//				vgfunc[bdi->fdc->cop](bdi->fdc);
-//			}
-//		}
-//	} else {
-		bdi->fdc->count += tk;
-		while ((bdi->fdc->wptr != NULL) && (bdi->fdc->count < 0)) {
-			bdi->fdc->cop = *(bdi->fdc->wptr++);
-			vgfunc[bdi->fdc->cop](bdi->fdc);
-		}
-//	}
-#else
 	uint32_t tz;
 	while (tk > 0) {
 		if (tk < (int)bdi->fdc->tf) {
@@ -859,5 +790,4 @@ void bdiSync(BDI* bdi,int tk) {
 		}
 		tk -= tz;
 	}
-#endif
 }

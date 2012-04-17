@@ -57,7 +57,8 @@ int loadSNA(ZXComp* zx, const char* name) {
 		z80ex_set_reg(cpu,regPC,getLEWord(&file));
 		tmp = file.get();
 		zxOut(zx,0x7ffd, tmp);
-		bdiSetFlag(zx->bdi,BDI_ACTIVE,file.get() & 1);
+		tmp2 = file.get();
+		if (tmp2 & 1) zx->bdi->flag |= BDI_ACTIVE; else zx->bdi->flag &= ~BDI_ACTIVE;
 		for (tmp2 = 0; tmp2 < 8; tmp2++) {
 			if ((tmp2 == 2) || (tmp2 == 5)) tmp2++;
 			if ((tmp & 7) != tmp2) {
@@ -122,7 +123,7 @@ int saveSNA(ZXComp* zx, const char* name,bool sna48) {
 		file.write(pageBuf,0x4000);
 		putLEWord(&file,z80ex_get_reg(cpu,regPC));
 		file.put((char)zx->prt0);
-		file.put((char)(bdiGetFlag(zx->bdi,BDI_ACTIVE) ? 0xff : 0x00));
+		file.put((char)((zx->bdi->flag & BDI_ACTIVE) ? 0xff : 0x00));
 		for (i = 0; i < 8; i++) {
 			if ((i == 2) || (i == 5)) i++;
 			if (i != bnk) {

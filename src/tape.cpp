@@ -10,23 +10,9 @@
 
 // NEW STUFF
 
-struct Tape {
-	int flags;
-	int block;
-	int pos;
-	bool signal;
-	bool toutold;
-	bool outsig;
-	int sigLen;
-	double sigCount;
-	std::string path;
-	TapeBlock tmpBlock;
-	std::vector<TapeBlock> data;
-};
-
 Tape* tapCreate() {
 	Tape* tap = new Tape;
-	tap->flags = 0;
+	tap->flag = 0;
 	tap->block = 0;
 	tap->pos = 0;
 	tap->sigLen = 0;
@@ -45,10 +31,10 @@ void tapDestroy(Tape* tap) {
 
 // blocks
 
-int tapGetBlockTime(TapeBlock* block, int pos) {
+int tapGetBlockTime(Tape* tape, int blk, int pos) {
 	long totsz = 0;
-	if (pos == -1) pos = block->data.size();
-	for (int i = 0; i < pos; i++) totsz += block->data[i];
+	if (pos == -1) pos = tape->data[blk].data.size();
+	for (int i = 0; i < pos; i++) totsz += tape->data[blk].data[i];
 	return (totsz / SECDOTS);
 }
 
@@ -88,7 +74,7 @@ std::string tapGetBlockHeader(Tape* tap, int blk) {
 	std::string res;
 	TapeBlock* block = &tap->data[blk];
 	int i;
-	if (block->flags & TBF_HEAD) {
+	if (block->flag & TBF_HEAD) {
 		if (tapGetBlockByte(block, 1)==0x00) res = "Prog:"; else res = "Code:";
 		for(i = 2; i < 12; i++) {
 			res += tapGetBlockByte(block,i);
@@ -103,9 +89,9 @@ TapeBlockInfo tapGetBlockInfo(Tape* tap, int blk) {
 	inf.name = tapGetBlockHeader(tap,blk);
 	inf.type = (inf.name == "") ? TAPE_DATA : TAPE_HEAD;
 	inf.size = tapGetBlockSize(block);
-	inf.time = tapGetBlockTime(block,-1);
-	inf.curtime = (tap->block == blk) ? tapGetBlockTime(block,tap->pos) : -1;
-	inf.flags = block->flags;
+	inf.time = tapGetBlockTime(tap,blk,-1);
+	inf.curtime = (tap->block == blk) ? tapGetBlockTime(tap,blk,tap->pos) : -1;
+	inf.flag = block->flag;
 	return inf;
 }
 
@@ -186,7 +172,7 @@ void tapStoreBlock(Tape* tap) {
 			tap->tmpBlock.len0 = siglens[4];
 			tap->tmpBlock.len1 = siglens[3];
 		}
-		tap->tmpBlock.flags |= TBF_BYTES;
+		tap->tmpBlock.flag |= TBF_BYTES;
 	} else {
 		tap->tmpBlock.plen = PILOTLEN;
 		tap->tmpBlock.s1len = SYNC1LEN;
@@ -201,19 +187,19 @@ void tapStoreBlock(Tape* tap) {
 	tapNormSignals(&tap->tmpBlock);
 	if (tap->tmpBlock.dataPos != -1) {
 		if (tapGetBlockByte(&tap->tmpBlock,0) == 0) {
-			tap->tmpBlock.flags |= TBF_HEAD;
+			tap->tmpBlock.flag |= TBF_HEAD;
 		} else {
-			tap->tmpBlock.flags &= ~TBF_HEAD;
+			tap->tmpBlock.flag &= ~TBF_HEAD;
 		}
 	}
 	tap->data.push_back(tap->tmpBlock);
 		
 	tap->tmpBlock.data.clear();
-	tap->flags |= TAPE_WAIT;
+	tap->flag |= TAPE_WAIT;
 }
 
 void tapEject(Tape* tap) {
-	tap->flags &= ~(TAPE_ON | TAPE_REC);
+	tap->flag &= ~(TAPE_ON | TAPE_REC);
 	tap->block = 0;
 	tap->pos = 0;
 	tap->path = "";
@@ -221,23 +207,23 @@ void tapEject(Tape* tap) {
 }
 
 void tapStop(Tape* tap) {
-	if (tap->flags & TAPE_ON) {
-		tap->flags &= ~TAPE_ON;
-		if (tap->flags & TAPE_REC) tapStoreBlock(tap);
+	if (tap->flag & TAPE_ON) {
+		tap->flag &= ~TAPE_ON;
+		if (tap->flag & TAPE_REC) tapStoreBlock(tap);
 		tap->pos = 0;
 	}
 }
 
 bool tapPlay(Tape* tap) {
 	if (tap->block < (int)tap->data.size()) {
-		tap->flags &= ~TAPE_REC;
-		tap->flags |= TAPE_ON;
+		tap->flag &= ~TAPE_REC;
+		tap->flag |= TAPE_ON;
 	}
-	return (tap->flags & TAPE_ON);
+	return (tap->flag & TAPE_ON);
 }
 
 void tapRec(Tape* tap) {
-	tap->flags |= (TAPE_ON | TAPE_REC | TAPE_WAIT);
+	tap->flag |= (TAPE_ON | TAPE_REC | TAPE_WAIT);
 	tap->toutold = tap->outsig;
 	tap->tmpBlock.data.clear();
 }
@@ -247,7 +233,7 @@ void tapRewind(Tape* tap, int blk) {
 		tap->block = blk;
 		tap->pos = 0;
 	} else {
-		tap->flags &= ~TAPE_ON;
+		tap->flag &= ~TAPE_ON;
 	}
 }
 
@@ -255,12 +241,12 @@ void tapSync(Tape* tap,int tks) {
 	tap->sigCount += tks / 2.0;
 	int tk = (int)tap->sigCount;
 	tap->sigCount -= tk;
-	if (tap->flags & TAPE_ON) {
-		if (tap->flags & TAPE_REC) {
-			if (tap->flags & TAPE_WAIT) {
+	if (tap->flag & TAPE_ON) {
+		if (tap->flag & TAPE_REC) {
+			if (tap->flag & TAPE_WAIT) {
 				if (tap->toutold != tap->outsig) {
 					tap->toutold = tap->outsig;
-					tap->flags &= ~TAPE_WAIT;
+					tap->flag &= ~TAPE_WAIT;
 					tap->tmpBlock.data.push_back(0);
 				}
 			} else {
@@ -282,9 +268,9 @@ void tapSync(Tape* tap,int tks) {
 					tap->block++;
 					tap->pos = 0;
 					if (tap->block >= (int)tap->data.size()) {
-						tap->flags &= ~TAPE_ON;
+						tap->flag &= ~TAPE_ON;
 					} else {
-						if (tap->data[tap->block].flags & TBF_BREAK) tap->flags &= ~TAPE_ON;
+						if (tap->data[tap->block].flag & TBF_BREAK) tap->flag &= ~TAPE_ON;
 					}
 				}
 			}
@@ -295,60 +281,6 @@ void tapSync(Tape* tap,int tks) {
 			tap->signal = !tap->signal;
 			tap->sigLen += FRAMEDOTS * 25;	// .5 sec
 		}
-	}
-}
-
-bool tapGetSignal(Tape* tap) {
-	return tap->signal;
-}
-
-bool tapGetOutsig(Tape* tap) {
-	return tap->outsig;
-}
-
-std::string tapGetPath(Tape* tap) {
-	return tap->path;
-}
-
-void tapSetPath(Tape* tap,const char* nm) {
-	tap->path = std::string(nm);
-}
-
-void tapSetSignal(Tape* tap, bool sig) {
-	tap->outsig = sig;
-}
-
-int tapGet(Tape* tap, int wut) {
-	int res = 0;
-	switch (wut) {
-		case TAPE_FLAGS: res = tap->flags; break;
-		case TAPE_BLOCKS: res = tap->data.size(); break;
-		case TAPE_BLOCK: res = tap->block; break;
-	}
-	return res;
-}
-
-int tapGet(Tape* tap, int blk, int wut) {
-	int res = 0;
-	switch (wut) {
-		case TAPE_BFLAG: res = tap->data[blk].flags; break;
-		case TAPE_BFTIME: res = tapGetBlockTime(&tap->data[blk],-1); break;
-		case TAPE_BCTIME: res = tapGetBlockTime(&tap->data[blk],tap->pos); break;
-	}
-	return res;
-}
-
-void tapSet(Tape* tap, int blk, int wut, int val) {
-	switch (wut) {
-		case TAPE_BFLAG: tap->data[blk].flags = val; break;
-	}
-}
-
-void tapSetFlag(Tape* tap, int mask, bool set) {
-	if (set) {
-		tap->flags |= mask;
-	} else {
-		tap->flags &= ~mask;
 	}
 }
 
@@ -385,11 +317,11 @@ TapeBlock makeTapeBlock(uint8_t* ptr, int ln, bool hd) {
 	nblk.s2len = SYNC2LEN;
 	nblk.len0 = SIGN0LEN;
 	nblk.len1 = SIGN1LEN;
-	nblk.flags = TBF_BYTES;
+	nblk.flag = TBF_BYTES;
 	if (hd) {
 		nblk.pdur = 8063;
 		nblk.pause = 500;
-		nblk.flags |= TBF_HEAD;
+		nblk.flag |= TBF_HEAD;
 		crc = 0x00;
 	} else {
 		nblk.pdur = 3223;

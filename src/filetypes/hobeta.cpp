@@ -15,9 +15,9 @@ int loadHobeta(Floppy* flp,const char* name) {
 	TRFile nfle;
 	int i;
 
-	if (!flpGetFlag(flp,FLP_INSERT)) {
+	if (!(flp->flag & FLP_INSERT)) {
 		flpFormat(flp);
-		flpSetFlag(flp,FLP_INSERT,true);
+		flp->flag |= FLP_INSERT;
 	}
 	if (flpGet(flp,FLP_DISKTYPE) != DISK_TYPE_TRD) return ERR_NOTRD;
 

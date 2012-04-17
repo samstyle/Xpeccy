@@ -31,7 +31,7 @@
 struct HardWare {
 	std::string name;
 	int mask;		// mem size mask (b0:128, b1:256, b2:512, b3:1024); =0 for 48K
-	int flags;
+	int flag;
 	int type;
 };
 

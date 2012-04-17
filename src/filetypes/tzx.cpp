@@ -27,8 +27,8 @@ int loadTZX(Tape* tape, const char* name) {
 	if ((std::string((char*)buf,7) != "ZXTape!") || (buf[7]!=0x1a)) return ERR_TZX_SIGN;
 
 	tapEject(tape);
-	tapSetPath(tape,name);
-	tapSetFlag(tape,TAPE_CANSAVE,true);
+	tape->path = name;
+	tape->flag |= TAPE_CANSAVE;
 
 	while (!file.eof()) {
 		tmp = file.get();		// block type (will be FF @ eof)
@@ -62,7 +62,7 @@ int loadTZX(Tape* tape, const char* name) {
 				block.data.push_back(sigLens[5]);
 				tapAddBlock(tape,block);
 				block.data.clear();
-				tapSetFlag(tape,TAPE_CANSAVE,false);
+				tape->flag &= ~TAPE_CANSAVE;
 				break;
 			case 0x12:
 				paulen = getlen(&file,2);
@@ -71,7 +71,7 @@ int loadTZX(Tape* tape, const char* name) {
 					block.data.push_back(paulen);
 					len--;
 				}
-				tapSetFlag(tape,TAPE_CANSAVE,false);
+				tape->flag &= ~TAPE_CANSAVE;
 				break;
 			case 0x13:
 				len = file.get();
@@ -80,7 +80,7 @@ int loadTZX(Tape* tape, const char* name) {
 					block.data.push_back(paulen);
 					len--;
 				}
-				tapSetFlag(tape,TAPE_CANSAVE,false);
+				tape->flag &= ~TAPE_CANSAVE;
 				break;
 			case 0x14:
 				altLens[0] = 0;
@@ -101,7 +101,7 @@ int loadTZX(Tape* tape, const char* name) {
 				block.dataPos = -1;
 				for (i = 0; i < altBlock.data.size(); i++) block.data.push_back(altBlock.data[i]);
 				block.pause = paulen;
-				tapSetFlag(tape,TAPE_CANSAVE,false);
+				tape->flag &= ~TAPE_CANSAVE;
 				break;
 /*
 			case 0x15:
@@ -129,7 +129,7 @@ int loadTZX(Tape* tape, const char* name) {
 			case 0x22:
 				if (block.data.size() != 0) {
 					block.data.push_back(sigLens[5]);
-					block.flags &= ~TBF_BYTES;
+					block.flag &= ~TBF_BYTES;
 					tapAddBlock(tape,block);
 					block.data.clear();
 				}
@@ -195,7 +195,7 @@ int loadTZX(Tape* tape, const char* name) {
 	}
 	if (block.data.size() != 0) {
 		block.data.push_back(sigLens[5]);
-		block.flags &= ~TBF_BYTES;
+		block.flag &= ~TBF_BYTES;
 		tapAddBlock(tape,block);
 	}
 	if (blockBuf != NULL) free(blockBuf);

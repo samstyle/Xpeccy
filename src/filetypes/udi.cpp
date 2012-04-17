@@ -82,10 +82,10 @@ int loadUDI(Floppy* flp, const char* name) {
 		loadUDITrack(flp,&file,i,false);
 		if (sides) loadUDITrack(flp,&file,i,true);
 	}
-	flpSetPath(flp,name);
-	flpSetFlag(flp,FLP_INSERT,true);
+	flp->path = name;
+	flp->flag |= FLP_INSERT;
 	loadBoot(flp);
-	flpSetFlag(flp,FLP_CHANGED,false);
+	flp->flag &= ~FLP_CHANGED;
 	return ERR_OK;
 }
 
@@ -100,14 +100,14 @@ int saveUDI(Floppy* flp, const char* name) {
 	bptr = img + 4;
 	dptr += 8;
 	*(dptr++) = 0x00;			// version
-	*(dptr++) = flpGetFlag(flp,FLP_TRK80) ? 79 : 39;		// maximun track number
-	*(dptr++) = flpGetFlag(flp,FLP_DS) ? 1 : 0;		// double side (due to floppy property)
+	*(dptr++) = (flp->flag & FLP_TRK80) ? 79 : 39;		// maximun track number
+	*(dptr++) = (flp->flag & FLP_DS) ? 1 : 0;		// double side (due to floppy property)
 	*(dptr++) = 0x00;
 	*(dptr++) = 0x00;
 	*(dptr++) = 0x00;
 	*(dptr++) = 0x00;
 	*(dptr++) = 0x00;
-	for (i = 0; i < (flpGetFlag(flp,FLP_TRK80) ? 160 : 80); i++) {
+	for (i = 0; i < ((flp->flag & FLP_TRK80) ? 160 : 80); i++) {
 		*(dptr++) = 0x00;		// MFM
 		*(dptr++) = (TRACKLEN & 0xff);	// track len
 		*(dptr++) = ((TRACKLEN & 0xff00) >> 8);
@@ -115,7 +115,7 @@ int saveUDI(Floppy* flp, const char* name) {
 		dptr += TRACKLEN;
 		getUDIBitField(flp,i,dptr);
 		dptr += 782;			// 6250 / 8 + 1
-		if (!flpGetFlag(flp,FLP_DS)) i++;		// if single-side skip 
+		if (!(flp->flag & FLP_DS)) i++;		// if single-side skip
 	}
 	i = dptr - img;
 	putint(bptr,i);
@@ -128,6 +128,6 @@ int saveUDI(Floppy* flp, const char* name) {
 	if (!file.good()) return ERR_CANT_OPEN;
 	file.write((char*)img,dptr-img);
 	file.close();
-	flpSetFlag(flp,FLP_CHANGED,false);
+	flp->flag &= ~FLP_CHANGED;
 	return ERR_OK;
 }

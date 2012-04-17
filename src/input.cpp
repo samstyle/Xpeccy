@@ -16,10 +16,6 @@ keyScan keyTab[40] = {
 
 // keyboard
 
-struct Keyboard {
-	uint8_t map[8];
-};
-
 Keyboard* keyCreate() {
 	Keyboard* keyb = new Keyboard;
 	keyRelease(keyb,0,0);
@@ -60,11 +56,6 @@ uint8_t keyInput(Keyboard* keyb, uint8_t prt) {
 }
 
 // joystick
-
-struct Joystick {
-	int type;
-	uint8_t state;
-};
 
 Joystick* joyCreate() {
 	Joystick* joy = new Joystick;

@@ -25,8 +25,8 @@ TapeBlock tapDataToBlock(char* data,int len,int* sigLens) {
 	block.len0 = sigLens[3];
 	block.len1 = sigLens[4];
 	block.pdur = (sigLens[6] == -1) ? ((tmp == 0) ? 8063 : 3223) : sigLens[6];
-	block.flags = TBF_BYTES;
-	if (tmp == 0) block.flags |= TBF_HEAD;
+	block.flag = TBF_BYTES;
+	if (tmp == 0) block.flag |= TBF_HEAD;
 	block.data.clear();
 	for (i = 0; i < (int)block.pdur; i++)
 		block.data.push_back(block.plen);
@@ -61,28 +61,28 @@ int loadTAP(Tape* tape, const char* name) {
 			tapAddBlock(tape,block);
 		}
 	}
-	tapSetFlag(tape,TAPE_CANSAVE,true);
-	tapSetPath(tape,name);
+	tape->flag |= TAPE_CANSAVE;
+	tape->path = name;
 	if (blockBuf != NULL) free(blockBuf);
 	return ERR_OK;
 }
 
 int saveTAP(Tape* tape, const char* name) {
-	if (!(tapGet(tape,TAPE_FLAGS) & TAPE_CANSAVE)) return ERR_TAP_DATA;
+	if (!(tape->flag & TAPE_CANSAVE)) return ERR_TAP_DATA;
 	std::ofstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
 	
 	std::vector<uint8_t> blockData;
 	uint32_t len;
 	
-	for (int i = 0; i < tapGet(tape,TAPE_BLOCKS); i++) {
+	for (uint32_t i = 0; i < tape->data.size(); i++) {
 		blockData = tapGetBlockData(tape,i);
 		len = blockData.size();
 		file.put(len & 0xff);
 		file.put((len & 0xff00) >> 8);
 		file.write((char*)&blockData[0],blockData.size());
 	}
-	tapSetPath(tape,name);
+	tape->path = name;
 
 	return ERR_OK;
 }

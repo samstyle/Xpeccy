@@ -24,25 +24,18 @@
 #define	TAPE_HEAD	0
 #define	TAPE_DATA	1
 
-#define	TAPE_FLAGS	0
-#define TAPE_BLOCKS	1
-#define	TAPE_BLOCK	2
-#define	TAPE_BFLAG	3
-#define	TAPE_BFTIME	4
-#define	TAPE_BCTIME	5
-
-struct TapeBlockInfo {
+typedef struct {
 	int type;
-	int flags;
+	int flag;
 	std::string name;
 	int size;
 	int time;
 	int curtime;
-};
+} TapeBlockInfo;
 
-struct TapeBlock {
+typedef struct {
 	int pause;
-	int flags;
+	int flag;
 	int plen;
 	int s1len;
 	int s2len;
@@ -51,9 +44,21 @@ struct TapeBlock {
 	int pdur;
 	int dataPos;
 	std::vector<int> data;
-};
+} TapeBlock;
 
-struct Tape;
+typedef struct {
+	int flag;
+	int block;
+	int pos;
+	bool signal;
+	bool toutold;
+	bool outsig;
+	int sigLen;
+	double sigCount;
+	std::string path;
+	TapeBlock tmpBlock;
+	std::vector<TapeBlock> data;
+} Tape;
 
 Tape* tapCreate();
 void tapDestroy(Tape*);
@@ -64,22 +69,15 @@ void tapRec(Tape*);
 void tapStop(Tape*);
 void tapRewind(Tape*,int);
 
-bool tapGetSignal(Tape*);
-bool tapGetOutsig(Tape*);
-void tapSetSignal(Tape*,bool);
 void tapSync(Tape*,int);
-int tapGet(Tape*,int);
-std::string tapGetPath(Tape*);
-void tapSetPath(Tape*,const char*);
-int tapGet(Tape*,int,int);
-void tapSet(Tape*,int,int,int);
+//int tapGet(Tape*,int);
+//int tapGet(Tape*,int,int);
 void tapNextBlock(Tape*);
-
-void tapSetFlag(Tape*,int,bool);
 
 TapeBlockInfo tapGetBlockInfo(Tape*,int);
 std::vector<TapeBlockInfo> tapGetBlocksInfo(Tape*);
 std::vector<uint8_t> tapGetBlockData(Tape*,int);
+int tapGetBlockTime(Tape* tape, int blk, int pos);
 
 void tapAddBlock(Tape*,TapeBlock);
 void tapDelBlock(Tape*,int);

@@ -70,8 +70,8 @@ double sndSync(double tk,int fast) {
 	tsSync(zx->ts,tatbyte);
 	if (fast != 0) return tk;
 	lev = zx->beeplev ? beepVolume : 0;
-	if (tapGet(zx->tape,TAPE_FLAGS) & TAPE_ON) {
-		lev += ((tapGetOutsig(zx->tape) ? tapeVolume : 0) + ((tapGetSignal(zx->tape) ? tapeVolume : 0)));
+	if (zx->tape->flag & TAPE_ON) {
+		lev += (zx->tape->outsig ? tapeVolume : 0) + (zx->tape->signal ? tapeVolume : 0);
 	}
 	lev *= 0.16;
 	levl = lev;

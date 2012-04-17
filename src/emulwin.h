@@ -41,18 +41,28 @@
 #define	FL_LED_DISK	(1<<7)
 #define	FL_LED_SHOT	(1<<8)
 
-struct XBookmark {
+typedef struct {
 	std::string name;
 	std::string path;
-};
+} XBookmark;
 
-struct XProfile {
+typedef struct {
+	std::string name;
+	std::string file;	// set when romfile is single file
+	struct {
+		std::string path;
+		uint8_t part;
+	} roms[32];
+} RomSet;
+
+typedef struct {
 	std::string name;
 	std::string file;
 	ZXComp* zx;
-};
+	RomSet* rset;
+} XProfile;
 
-struct keyEntry {
+typedef struct {
 	const char* name;
 #ifdef XQTPAINT
 	Qt::Key key;
@@ -61,7 +71,7 @@ struct keyEntry {
 #endif
 	char key1;
 	char key2;
-};
+} keyEntry;
 
 // TODO: kill EmulWin class?
 

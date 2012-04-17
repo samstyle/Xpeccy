@@ -37,10 +37,10 @@ int loadTRD(Floppy* flp, const char* name) {
 		i++;
 	} while  (!file.eof());
 	delete(trackBuf);
-	flpSetPath(flp,name);
-	flpSetFlag(flp,FLP_INSERT,true);
+	flp->path = name;
+	flp->flag |= FLP_INSERT;
 	loadBoot(flp);
-	flpSetFlag(flp,FLP_CHANGED,false);
+	flp->flag &= ~FLP_CHANGED;
 	return ERR_OK;
 }
 
@@ -63,7 +63,7 @@ int saveTRD(Floppy* flp, const char* name) {
 	}
 	file.write((char*)img,0xa0000);
 	file.close();
-	flpSetFlag(flp,FLP_CHANGED,false);
+	flp->flag &= ~FLP_CHANGED;
 	delete(img);
 	return ERR_OK;
 }

@@ -50,10 +50,10 @@ int loadSCL(Floppy* flp,const char* name) {
 		flpFormTRDTrack(flp,i,buf);
 		i++;
 	}
-	flpSetPath(flp,name);
-	flpSetFlag(flp,FLP_INSERT,true);
+	flp->path = name;
+	flp->flag |= FLP_INSERT;
 	loadBoot(flp);
-	flpSetFlag(flp,FLP_CHANGED,false);
+	flp->flag &= ~FLP_CHANGED;
 	return ERR_OK;
 }
 
@@ -117,7 +117,7 @@ int saveSCL(Floppy* flp,const char* name) {
 	file.write((char*)img,dptr-img);
 	file.close();
 
-	flpSetFlag(flp,FLP_CHANGED,false);
+	flp->flag &= ~FLP_CHANGED;
 	
 	return ERR_OK;
 }

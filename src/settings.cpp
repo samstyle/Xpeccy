@@ -16,6 +16,8 @@
 	#define SLASH "/"
 #endif
 
+extern XProfile* currentProfile;
+
 #define	SECT_NONE	0
 #define SECT_BOOKMARK	1
 #define	SECT_PROFILES	2
@@ -439,18 +441,18 @@ void saveProfiles() {
 
 std::string getDiskString(Floppy* flp) {
 	std::string res = "80DW";
-	if (!flpGetFlag(flp,FLP_TRK80)) res[0]='4';
-	if (!flpGetFlag(flp,FLP_DS)) res[2]='S';
-	if (flpGetFlag(flp,FLP_PROTECT)) res[3]='R';
+	if (!(flp->flag & FLP_TRK80)) res[0]='4';
+	if (!(flp->flag & FLP_DS)) res[2]='S';
+	if (flp->flag & FLP_PROTECT) res[3]='R';
 	return res;
 }
 
 void setDiskString(Floppy* flp,std::string st) {
 	if (st.size() < 4) return;
-	flpSetFlag(flp,FLP_TRK80 | FLP_DS | FLP_PROTECT,false);
-	if (st.substr(0,2) == "80") flpSetFlag(flp,FLP_TRK80,true);
-	if (st.substr(2,1) == "D") flpSetFlag(flp,FLP_DS,true);
-	if (st.substr(3,1) == "R") flpSetFlag(flp,FLP_PROTECT,true);
+	flp->flag &= ~(FLP_TRK80 | FLP_DS | FLP_PROTECT);
+	if (st.substr(0,2) == "80") flp->flag |= FLP_TRK80;
+	if (st.substr(2,1) == "D") flp->flag |= FLP_DS;
+	if (st.substr(3,1) == "R") flp->flag |= FLP_PROTECT;
 }
 
 void saveConfig() {
@@ -463,23 +465,23 @@ void saveConfig() {
 	optSet("ROMSET","gs",zx->opt.GSRom);
 	optSet("ROMSET","current",zx->opt.rsName);
 	optSet("ROMSET","reset",rmnam[zx->resbank]);
-	optSet("VIDEO","doublesize",(zx->vid->flags & VF_DOUBLE) != 0);
+	optSet("VIDEO","doublesize",(zx->vid->flag & VF_DOUBLE) != 0);
 	optSet("VIDEO","bordersize",int(zx->vid->brdsize * 100));
 	optSet("VIDEO","geometry",zx->vid->curlay);
-	optSet("SOUND","chip1",tsGet(zx->ts,AY_TYPE,0));
-	optSet("SOUND","chip2",tsGet(zx->ts,AY_TYPE,1));
-	optSet("SOUND","chip1.stereo",tsGet(zx->ts,AY_STEREO,0));
-	optSet("SOUND","chip2.stereo",tsGet(zx->ts,AY_STEREO,1));
-	optSet("SOUND","ts.type",tsGet(zx->ts,TS_TYPE,0));
-	optSet("SOUND","gs",(gsGet(zx->gs,GS_FLAG) & GS_ENABLE) != 0);
-	optSet("SOUND","gs.reset",(gsGet(zx->gs,GS_FLAG) & GS_RESET) != 0);
-	optSet("SOUND","gs.stereo",gsGet(zx->gs,GS_STEREO));
-	optSet("BETADISK","enabled",bdiGetFlag(zx->bdi,BDI_ENABLE));
-	optSet("BETADISK","fast",bdiGetFlag(zx->bdi,BDI_TURBO));
-	optSet("BETADISK","A",getDiskString(bdiGetFloppy(zx->bdi,0)));
-	optSet("BETADISK","B",getDiskString(bdiGetFloppy(zx->bdi,1)));
-	optSet("BETADISK","C",getDiskString(bdiGetFloppy(zx->bdi,2)));
-	optSet("BETADISK","D",getDiskString(bdiGetFloppy(zx->bdi,3)));
+	optSet("SOUND","chip1",zx->ts->chipA->type);
+	optSet("SOUND","chip2",zx->ts->chipB->type);
+	optSet("SOUND","chip1.stereo",zx->ts->chipA->stereo);
+	optSet("SOUND","chip2.stereo",zx->ts->chipB->stereo);
+	optSet("SOUND","ts.type",zx->ts->type);
+	optSet("SOUND","gs",(zx->gs->flag & GS_ENABLE) != 0);
+	optSet("SOUND","gs.reset",(zx->gs->flag & GS_RESET) != 0);
+	optSet("SOUND","gs.stereo",zx->gs->stereo);
+	optSet("BETADISK","enabled",zx->bdi->flag & BDI_ENABLE);
+	optSet("BETADISK","fast",zx->bdi->flag & BDI_TURBO);
+	optSet("BETADISK","A",getDiskString(zx->bdi->flop[0]));
+	optSet("BETADISK","B",getDiskString(zx->bdi->flop[1]));
+	optSet("BETADISK","C",getDiskString(zx->bdi->flop[2]));
+	optSet("BETADISK","D",getDiskString(zx->bdi->flop[3]));
 
 	optSet("IDE","iface",ideGet(zx->ide,IDE_NONE,IDE_TYPE));
 
@@ -839,10 +841,10 @@ void loadConfig(bool dev) {
 					case SECT_SOUND:
 						break;
 					case SECT_BDI:
-						if (pnam=="A") setDiskString(bdiGetFloppy(zx->bdi,0),pval);
-						if (pnam=="B") setDiskString(bdiGetFloppy(zx->bdi,1),pval);
-						if (pnam=="C") setDiskString(bdiGetFloppy(zx->bdi,2),pval);
-						if (pnam=="D") setDiskString(bdiGetFloppy(zx->bdi,3),pval);
+						if (pnam=="A") setDiskString(zx->bdi->flop[0],pval);
+						if (pnam=="B") setDiskString(zx->bdi->flop[1],pval);
+						if (pnam=="C") setDiskString(zx->bdi->flop[2],pval);
+						if (pnam=="D") setDiskString(zx->bdi->flop[3],pval);
 						break;
 					case SECT_MACHINE:
 						if (pnam=="memory") {
@@ -913,24 +915,24 @@ void loadConfig(bool dev) {
 	tmp2 = optGetInt("GENERAL","cpu.frq"); if ((tmp2 > 0) && (tmp2 <= 14)) zxSetFrq(zx,tmp2 / 2.0);
 
 	zx->vid->curlay = optGetString("VIDEO","geometry");
-	setFlagBit(optGetBool("VIDEO","doublesize"),&zx->vid->flags, VF_DOUBLE);
-	setFlagBit(optGetBool("VIDEO","fullscreen"),&zx->vid->flags, VF_FULLSCREEN);
+	setFlagBit(optGetBool("VIDEO","doublesize"),&zx->vid->flag, VF_DOUBLE);
+	setFlagBit(optGetBool("VIDEO","fullscreen"),&zx->vid->flag, VF_FULLSCREEN);
 	tmp2 = optGetInt("VIDEO","bordersize"); if ((tmp2 >= 0) && (tmp2 <= 100)) zx->vid->brdsize = tmp2 / 100.0;
 
-	tmp2 = optGetInt("SOUND","chip1"); if (tmp2 < SND_END) tsSet(zx->ts,AY_TYPE,0,tmp2);
-	tmp2 = optGetInt("SOUND","chip2"); if (tmp2 < SND_END) tsSet(zx->ts,AY_TYPE,1,tmp2);
-	tsSet(zx->ts,AY_STEREO,0,optGetInt("SOUND","chip1.stereo"));
-	tsSet(zx->ts,AY_STEREO,1,optGetInt("SOUND","chip2.stereo"));
-	tsSet(zx->ts,TS_TYPE,0,optGetInt("SOUND","ts.type"));
+	tmp2 = optGetInt("SOUND","chip1"); if (tmp2 < SND_END) aymSetType(zx->ts->chipA,tmp2);
+	tmp2 = optGetInt("SOUND","chip2"); if (tmp2 < SND_END) aymSetType(zx->ts->chipB,tmp2);
+	zx->ts->chipA->stereo = optGetInt("SOUND","chip1.stereo");
+	zx->ts->chipB->stereo = optGetInt("SOUND","chip2.stereo");
+	zx->ts->type = optGetInt("SOUND","ts.type");
 
-	int gsf = 0;
-	if (optGetBool("SOUND","gs")) gsf |= GS_ENABLE;
-	if (optGetBool("SOUND","gs.reset")) gsf |= GS_RESET;
-	gsSet(zx->gs,GS_FLAG,gsf);
-	gsSet(zx->gs,GS_STEREO,optGetInt("SOUND","gs.stereo"));
+	zx->gs->flag = 0;
+	if (optGetBool("SOUND","gs")) zx->gs->flag |= GS_ENABLE;
+	if (optGetBool("SOUND","gs.reset")) zx->gs->flag |= GS_RESET;
+	zx->gs->stereo = optGetInt("SOUND","gs.stereo");
 
-	bdiSetFlag(zx->bdi,BDI_ENABLE,optGetBool("BETADISK","enabled"));
-	bdiSetFlag(zx->bdi,BDI_TURBO,optGetBool("BETADISK","fast"));
+	zx->bdi->flag &= ~(BDI_ENABLE | BDI_TURBO);
+	if (optGetBool("BETADISK","enabled")) zx->bdi->flag |= BDI_ENABLE;
+	if (optGetBool("BETADISK","fast")) zx->bdi->flag |= BDI_TURBO;
 	zx->opt.hwName = optGetString("MACHINE","current");
 	zx->opt.rsName = optGetString("ROMSET","current");
 	zx->opt.GSRom = optGetString("ROMSET","gs");
@@ -944,7 +946,7 @@ void loadConfig(bool dev) {
 	setHardware(zx, zx->opt.hwName);
 	setRomset(zx, zx->opt.rsName);
 	if (zx->hw==NULL) throw("Can't found current machine");
-	if (memGetRomset(zx->mem) == NULL) throw("Can't found current romset");
+	if (currentProfile->rset == NULL) throw("Can't found current romset");
 	if ((zx->hw->mask != 0) && (~zx->hw->mask & tmask)) throw("Incorrect memory size for this machine");
 	if (!vidSetLayout(zx->vid,zx->vid->curlay)) vidSetLayout(zx->vid,"default");
 }

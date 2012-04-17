@@ -1,8 +1,6 @@
 #ifndef _MEMOR_H
 #define _MEMOR_H
 
-#include <string>
-#include <vector>
 #include <stdint.h>
 
 #define	MEM_PROFMASK	0
@@ -15,16 +13,14 @@
 #define	MEM_BANK2	2
 #define	MEM_BANK3	3
 
-struct RomSet {
-	std::string name;
-	std::string file;	// set when romfile is single file
-	struct {
-		std::string path;
-		uint8_t part;
-	} roms[32];
-};
-
-struct Memory;
+typedef struct {
+	uint8_t ram[64][16384];
+	uint8_t rom[32][16384];
+	uint8_t *pt0,*pt1,*pt2,*pt3;
+	uint8_t cram,crom;
+	int32_t	mask;
+	int32_t profMask;	// profrom (0 - 64K, 1 - 128K, 3 - 256K)
+} Memory;
 
 Memory* memCreate();
 void memDestroy(Memory*);
@@ -36,9 +32,6 @@ void memSetBank(Memory*,int,int,int);
 
 void memSetPage(Memory*,int,int,char*);
 void memGetPage(Memory*,int,int,char*);
-
-void memSetRomset(Memory*,RomSet*);
-RomSet* memGetRomset(Memory*);
 
 int memGet(Memory*,int);
 void memSet(Memory*,int,int);

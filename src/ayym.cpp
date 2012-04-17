@@ -26,38 +26,6 @@ uint8_t envforms[16][33]={
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,255}
 };
 
-// structures
-
-struct aymChan {
-	bool lev;
-	double period;
-	double count;
-};
-
-struct aymChip {
-	int type;
-	int stereo;
-	aymChan chanA;
-	aymChan chanB;
-	aymChan chanC;
-	aymChan chanN;
-	aymChan chanE;
-	int eCur;
-	int ePos;
-	int nPos;
-	int freq;
-	double aycoe;
-	uint8_t curReg;
-	uint8_t reg[16];
-};
-
-struct TSound {
-	int type;
-	aymChip* chipA;
-	aymChip* chipB;
-	aymChip* curChip;
-};
-
 // AY/YM sound chip
 
 void aymSetType(aymChip* ay, int tp) {
@@ -286,49 +254,6 @@ void tsOut(TSound* ts, int port, unsigned char val) {
 				default:
 					ts->curChip->curReg = val;
 					break;
-			}
-			break;
-	}
-}
-
-int tsGet(TSound* ts,int tp,int chp) {
-	int res = 0;
-	switch(tp) {
-		case TS_TYPE: res = ts->type; break;
-		case AY_TYPE:
-			switch (chp) {
-				case 0: res = ts->chipA->type; break;
-				case 1: res = ts->chipB->type; break;
-			}
-			break;
-		case AY_STEREO:
-			switch (chp) {
-				case 0: res = ts->chipA->stereo; break;
-				case 1: res = ts->chipB->stereo; break;
-			}
-			break;
-	}
-	return res;
-}
-
-void tsSet(TSound* ts,int tp,int chp,int val) {
-	switch(tp) {
-		case TS_TYPE:
-			ts->type = val;
-			break;
-		case CHIP_A_REG:
-			if (chp < 16) ts->chipA->reg[chp] = val;
-			break;
-		case AY_TYPE:
-			switch (chp) {
-				case 0: aymSetType(ts->chipA,val); break;
-				case 1: aymSetType(ts->chipB,val); break;
-			}
-			break;
-		case AY_STEREO:
-			switch (chp) {
-				case 0: ts->chipA->stereo = val; break;
-				case 1: ts->chipB->stereo = val; break;
 			}
 			break;
 	}

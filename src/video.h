@@ -26,7 +26,7 @@ struct VidLayout {
 };
 
 struct Video {
-	int flags;
+	int flag;
 	bool intStrobe;
 	bool firstFrame;
 	uint8_t* scrptr;

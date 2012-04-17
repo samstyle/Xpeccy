@@ -46,11 +46,12 @@ int loadFDI(Floppy* flp,const char* name) {
 			flpFormTrack(flp, (i << 1) + j, trkimg);
 		}
 	}
-	flpSetFlag(flp,FLP_PROTECT,err);
-	flpSetFlag(flp,FLP_INSERT,true);
+	flp->flag &= ~FLP_PROTECT;
+	if (err) flp->flag |= FLP_PROTECT;
+	flp->flag |= FLP_INSERT;
 	loadBoot(flp);
-	flpSetFlag(flp,FLP_CHANGED,false);
-	flpSetPath(flp,name);
+	flp->flag &= ~FLP_CHANGED;
+	flp->path = name;
 	
 	return ERR_OK;
 }

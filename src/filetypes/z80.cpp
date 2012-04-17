@@ -120,7 +120,7 @@ int loadZ80(ZXComp* zx, const char* name) {
 		tmp = file.get(); zxOut(zx,0xfffd,tmp);	// 38: last out to fffd
 		for (tmp2 = 0; tmp2 < 16; tmp2++) {
 			tmp = file.get();
-			tsSet(zx->ts,CHIP_A_REG,tmp2,tmp);
+			zx->ts->chipA->reg[tmp2] = tmp;
 		}
 		if (adr > 23) {
 printf(".z80 version 3\n");

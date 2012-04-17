@@ -29,9 +29,7 @@
 #define	FLP_CHANGED	(1<<7)
 #define	FLP_SIDE	(1<<8)
 
-class Sector {
-	public:
-	Sector();
+typedef struct {
 	uint8_t cyl;
 	uint8_t side;
 	uint8_t sec;
@@ -39,9 +37,9 @@ class Sector {
 	uint8_t* data;
 	uint8_t type;
 	int32_t crc;
-};
+} Sector;
 
-struct TRFile {
+typedef struct {
 	uint8_t name[8];
 	uint8_t ext;
 	uint8_t lst,hst;
@@ -49,15 +47,25 @@ struct TRFile {
 	uint8_t slen;
 	uint8_t sec;
 	uint8_t trk;
-};
+} TRFile;
 
-struct Floppy;
+typedef struct {
+	int flag;
+	uint8_t id;
+	uint8_t iback;
+	uint8_t trk,rtrk;
+	uint8_t field;
+	int32_t pos;
+	uint32_t ti;
+	std::string path;
+	struct {
+		uint8_t byte[TRACKLEN];
+		uint8_t field[TRACKLEN];
+	} data[256];
+} Floppy;
 
 Floppy* flpCreate(int);
 void flpDestroy(Floppy*);
-
-void flpSetFlag(Floppy*,int,bool);
-bool flpGetFlag(Floppy*,int);
 
 uint8_t flpRd(Floppy*);
 void flpWr(Floppy*,uint8_t);
@@ -68,8 +76,6 @@ void flpStep(Floppy*,bool);
 
 int flpGet(Floppy*,int);
 void flpSet(Floppy*,int,int);
-std::string flpGetPath(Floppy*);
-void flpSetPath(Floppy*,const char*);
 
 void flpFormat(Floppy*);
 void flpFormTrack(Floppy*,int,std::vector<Sector>);

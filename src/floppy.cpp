@@ -3,21 +3,6 @@
 
 #include "floppy.h"
 
-struct Floppy {
-	int flag;
-	uint8_t id;
-	uint8_t iback;
-	uint8_t trk,rtrk;
-	uint8_t field;
-	int32_t pos;
-	uint32_t ti;
-	std::string path;
-	struct {
-		uint8_t byte[TRACKLEN];
-		uint8_t field[TRACKLEN];
-	} data[256];
-};
-
 uint8_t trd_8e1[] = {
 	0x00,0x00,0x01,0x16,0x00,0xf0,0x09,0x10,0x00,0x00,0x20,0x20,0x20,0x20,0x20,0x20,
 	0x20,0x20,0x20,0x00,0x00,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x00,0x00,0x00
@@ -75,6 +60,7 @@ bool flpNext(Floppy* flp, bool bdiSide) {
 	return res;
 }
 
+/*
 void flpSetFlag(Floppy* flp,int mask,bool state) {
 	if (state) {
 		flp->flag |= mask;
@@ -86,6 +72,7 @@ void flpSetFlag(Floppy* flp,int mask,bool state) {
 bool flpGetFlag(Floppy* flp,int mask) {
 	return ((flp->flag & mask) ? true : false);
 }
+*/
 
 void flpClearTrack(Floppy* flp,int tr) {
 	for (int i = 0; i < TRACKLEN; i++) {
@@ -107,6 +94,8 @@ void flpFormat(Floppy* flp) {
 void flpFormTRDTrack(Floppy* flp, int tr, uint8_t* bpos) {
 	std::vector<Sector> lst;
 	Sector sct;
+	sct.type = 0xfb;
+	sct.crc = -1;
 	uint8_t* ppos = bpos;
 	sct.cyl = ((tr & 0xfe) >> 1);
 	sct.side = (tr & 0x01) ? 1 : 0;
@@ -250,8 +239,8 @@ int flpGet(Floppy* flp, int wut) {
 	return res;
 }
 
-std::string flpGetPath(Floppy* flp) {return flp->path;}
-void flpSetPath(Floppy* flp,const char* pth) {flp->path = std::string(pth);}
+//std::string flpGetPath(Floppy* flp) {return flp->path;}
+//void flpSetPath(Floppy* flp,const char* pth) {flp->path = std::string(pth);}
 
 int flpCreateFile(Floppy* flp,TRFile* dsc) {
 	uint8_t* buf = new uint8_t[256];
@@ -371,9 +360,4 @@ void flpPutTrack(Floppy* flp,int tr,uint8_t* src,int len) {
 	flpClearTrack(flp,tr);
 	memcpy(flp->data[tr].byte,src,len);
 	flpFillFields(flp,tr,false);
-}
-
-Sector::Sector() {
-	type = 0xfb;
-	crc = -1;
 }

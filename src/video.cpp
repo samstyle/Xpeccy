@@ -64,7 +64,7 @@ Video* vidCreate(Memory* me) {
 	}
 	vid->zoom = 1.0;
 	vid->brdsize = 1.0;
-	vid->flags = 0;
+	vid->flag = 0;
 	vidSetLayout(vid,"default");
 
 	vid->curr.h = 0;
@@ -134,8 +134,8 @@ void vidUpdate(Video* vid) {
 	vid->rcut.v = vid->full.v - (1.0 - vid->brdsize) * (vid->full.v - vid->bord.v - 192);
 	vid->vsze.h = vid->rcut.h - vid->lcut.h;
 	vid->vsze.v = vid->rcut.v - vid->lcut.v;
-	vid->wsze.h = vid->vsze.h * ((vid->flags & VF_DOUBLE) ? 2 : 1);
-	vid->wsze.v = vid->vsze.v * ((vid->flags & VF_DOUBLE) ? 2 : 1);
+	vid->wsze.h = vid->vsze.h * ((vid->flag & VF_DOUBLE) ? 2 : 1);
+	vid->wsze.v = vid->vsze.v * ((vid->flag & VF_DOUBLE) ? 2 : 1);
 	vidFillMatrix(vid);
 }
 
@@ -156,7 +156,7 @@ void vidSync(Video* vid, float dotDraw) {
 		mtx = vid->matrix[vid->dotCount++];
 		switch (mtx) {
 			case MTRX_ZERO:
-				if (vid->flags & VF_DOUBLE) vid->scrptr += vid->wsze.h;
+				if (vid->flag & VF_DOUBLE) vid->scrptr += vid->wsze.h;
 				break;
 			case MTRX_INVIS:
 				break;
@@ -231,15 +231,15 @@ void vidSync(Video* vid, float dotDraw) {
 				}
 				if (vid->firstFrame || (*vid->scrptr != col)) {
 					*(vid->scrptr++) = col;
-					if (vid->flags & VF_DOUBLE) {
+					if (vid->flag & VF_DOUBLE) {
 						*(vid->scrptr + vid->wsze.h - 1) = col;
 						*(vid->scrptr + vid->wsze.h) = col;
 						*(vid->scrptr++)=col;
 					}
-					vid->flags |= VF_CHANGED;
+					vid->flag |= VF_CHANGED;
 				} else {
 					vid->scrptr++;
-					if (vid->flags & VF_DOUBLE) vid->scrptr++;
+					if (vid->flag & VF_DOUBLE) vid->scrptr++;
 				}
 				break;
 		}

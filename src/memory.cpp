@@ -5,16 +5,6 @@
 
 // NEW
 
-struct Memory {
-	uint8_t ram[64][16384];
-	uint8_t rom[32][16384];
-	uint8_t *pt0,*pt1,*pt2,*pt3;
-	uint8_t cram,crom;
-	int32_t	mask;
-	int32_t profMask;	// profrom (0 - 64K, 1 - 128K, 3 - 256K)
-	RomSet *romset;
-};
-
 Memory* memCreate() {
 	Memory* mem = (Memory*)malloc(sizeof(Memory));
 	mem->pt0 = mem->rom[0];
@@ -24,7 +14,6 @@ Memory* memCreate() {
 	mem->cram = 0;
 	mem->crom = 0;
 	mem->mask = 0;
-	mem->romset = NULL;
 	return mem;
 }
 
@@ -89,6 +78,7 @@ void memSet(Memory* mem, int wut, int val) {
 	}
 }
 
+/*
 void memSetRomset(Memory* mem, RomSet* rs) {
 	mem->romset = rs;
 }
@@ -96,6 +86,7 @@ void memSetRomset(Memory* mem, RomSet* rs) {
 RomSet* memGetRomset(Memory* mem) {
 	return mem->romset;
 }
+*/
 
 void memSetBank(Memory* mem, int bank, int wut, int nr) {
 	switch (bank) {

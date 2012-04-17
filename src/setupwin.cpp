@@ -18,6 +18,7 @@
 #include "ui_setupwin.h"
 #include "ui_umadial.h"
 
+extern XProfile* currentProfile;
 extern ZXComp* zx;
 
 Ui::SetupWin ui;
@@ -245,7 +246,7 @@ void SetupWin::start() {
 	}
 	ui.machbox->setCurrentIndex(ui.machbox->findText(QDialog::trUtf8(zx->hw->name.c_str())));
 	int cbx = -1;
-	RomSet* rset = memGetRomset(zx->mem);
+	RomSet* rset = currentProfile->rset;	// memGetRomset(zx->mem);
 	if (rset != NULL) cbx = ui.rsetbox->findText(QDialog::trUtf8(rset->name.c_str()));
 	ui.rsetbox->setCurrentIndex(cbx);
 	ui.reschk->setChecked(emulGetFlags() & FL_RESET);
@@ -260,7 +261,7 @@ void SetupWin::start() {
 	ui.cpufrq->setValue(zx->cpuFrq * 2); updfrq();
 	ui.scrpwait->setChecked(zx->hwFlags & WAIT_ON);
 // video
-	ui.dszchk->setChecked((zx->vid->flags & VF_DOUBLE));
+	ui.dszchk->setChecked((zx->vid->flag & VF_DOUBLE));
 //	ui.fscchk->setChecked(vid->fscreen);
 	ui.bszsld->setValue((int)(zx->vid->brdsize * 100));
 	ui.pathle->setText(QDialog::trUtf8(optGetString(OPT_SHOTDIR).c_str()));
@@ -272,20 +273,20 @@ void SetupWin::start() {
 // sound
 	ui.senbox->setChecked(sndGet(SND_ENABLE) != 0);
 	ui.mutbox->setChecked(sndGet(SND_MUTE) != 0);
-	ui.gsrbox->setChecked(gsGet(zx->gs,GS_FLAG) & GS_RESET);
+	ui.gsrbox->setChecked(zx->gs->flag & GS_RESET);
 	ui.outbox->setCurrentIndex(ui.outbox->findText(QDialog::trUtf8(sndGetOutputName().c_str())));
 	ui.ratbox->setCurrentIndex(ui.ratbox->findText(QString::number(sndGet(SND_RATE))));
 	ui.bvsld->setValue(sndGet(SND_BEEP));
 	ui.tvsld->setValue(sndGet(SND_TAPE));
 	ui.avsld->setValue(sndGet(SND_AYVL));
 	ui.gvsld->setValue(sndGet(SND_GSVL));
-	ui.schip1box->setCurrentIndex(ui.schip1box->findData(QVariant(tsGet(zx->ts,AY_TYPE,0))));
-	ui.schip2box->setCurrentIndex(ui.schip2box->findData(QVariant(tsGet(zx->ts,AY_TYPE,1))));
-	ui.stereo1box->setCurrentIndex(ui.stereo1box->findData(QVariant(tsGet(zx->ts,AY_STEREO,0))));
-	ui.stereo2box->setCurrentIndex(ui.stereo2box->findData(QVariant(tsGet(zx->ts,AY_STEREO,1))));
-	ui.gstereobox->setCurrentIndex(ui.gstereobox->findData(QVariant(gsGet(zx->gs,GS_STEREO))));
-	ui.gsgroup->setChecked(gsGet(zx->gs,GS_FLAG) & GS_ENABLE);
-	ui.tsbox->setCurrentIndex(ui.tsbox->findData(QVariant(tsGet(zx->ts,TS_TYPE,0))));
+	ui.schip1box->setCurrentIndex(ui.schip1box->findData(QVariant(zx->ts->chipA->type)));
+	ui.schip2box->setCurrentIndex(ui.schip2box->findData(QVariant(zx->ts->chipB->type)));
+	ui.stereo1box->setCurrentIndex(ui.stereo1box->findData(QVariant(zx->ts->chipA->stereo)));
+	ui.stereo2box->setCurrentIndex(ui.stereo2box->findData(QVariant(zx->ts->chipB->stereo)));
+	ui.gstereobox->setCurrentIndex(ui.gstereobox->findData(QVariant(zx->gs->stereo)));
+	ui.gsgroup->setChecked(zx->gs->flag & GS_ENABLE);
+	ui.tsbox->setCurrentIndex(ui.tsbox->findData(QVariant(zx->ts->type)));
 // input
 	buildkeylist();
 	buildjmaplist();
@@ -309,28 +310,28 @@ void SetupWin::start() {
 	ui.inpDevice->setCurrentIndex(idx);
 #endif
 // dos
-	ui.bdebox->setChecked(bdiGetFlag(zx->bdi,BDI_ENABLE));
-	ui.bdtbox->setChecked(bdiGetFlag(zx->bdi,BDI_TURBO));
-	Floppy* flp = bdiGetFloppy(zx->bdi,0);
-	ui.apathle->setText(QDialog::trUtf8(flpGetPath(flp).c_str()));
-		ui.a80box->setChecked(flpGetFlag(flp,FLP_TRK80));
-		ui.adsbox->setChecked(flpGetFlag(flp,FLP_DS));
-		ui.awpbox->setChecked(flpGetFlag(flp,FLP_PROTECT));
-	flp = bdiGetFloppy(zx->bdi,1);
-	ui.bpathle->setText(QDialog::trUtf8(flpGetPath(flp).c_str()));
-		ui.b80box->setChecked(flpGetFlag(flp,FLP_TRK80));
-		ui.bdsbox->setChecked(flpGetFlag(flp,FLP_DS));
-		ui.bwpbox->setChecked(flpGetFlag(flp,FLP_PROTECT));
-	flp = bdiGetFloppy(zx->bdi,2);
-	ui.cpathle->setText(QDialog::trUtf8(flpGetPath(flp).c_str()));
-		ui.c80box->setChecked(flpGetFlag(flp,FLP_TRK80));
-		ui.cdsbox->setChecked(flpGetFlag(flp,FLP_DS));
-		ui.cwpbox->setChecked(flpGetFlag(flp,FLP_PROTECT));
-	flp = bdiGetFloppy(zx->bdi,3);
-	ui.dpathle->setText(QDialog::trUtf8(flpGetPath(flp).c_str()));
-		ui.d80box->setChecked(flpGetFlag(flp,FLP_TRK80));
-		ui.ddsbox->setChecked(flpGetFlag(flp,FLP_DS));
-		ui.dwpbox->setChecked(flpGetFlag(flp,FLP_PROTECT));
+	ui.bdebox->setChecked(zx->bdi->flag & BDI_ENABLE);
+	ui.bdtbox->setChecked(zx->bdi->flag & BDI_TURBO);
+	Floppy* flp = zx->bdi->flop[0];
+	ui.apathle->setText(QDialog::trUtf8(flp->path.c_str()));
+		ui.a80box->setChecked(flp->flag & FLP_TRK80);
+		ui.adsbox->setChecked(flp->flag & FLP_DS);
+		ui.awpbox->setChecked(flp->flag & FLP_PROTECT);
+	flp = zx->bdi->flop[1];
+	ui.bpathle->setText(QDialog::trUtf8(flp->path.c_str()));
+		ui.b80box->setChecked(flp->flag & FLP_TRK80);
+		ui.bdsbox->setChecked(flp->flag & FLP_DS);
+		ui.bwpbox->setChecked(flp->flag & FLP_PROTECT);
+	flp = zx->bdi->flop[2];
+	ui.cpathle->setText(QDialog::trUtf8(flp->path.c_str()));
+		ui.c80box->setChecked(flp->flag & FLP_TRK80);
+		ui.cdsbox->setChecked(flp->flag & FLP_DS);
+		ui.cwpbox->setChecked(flp->flag & FLP_PROTECT);
+	flp = zx->bdi->flop[3];
+	ui.dpathle->setText(QDialog::trUtf8(flp->path.c_str()));
+		ui.d80box->setChecked(flp->flag & FLP_TRK80);
+		ui.ddsbox->setChecked(flp->flag & FLP_DS);
+		ui.dwpbox->setChecked(flp->flag & FLP_PROTECT);
 	fillDiskCat();
 // hdd
 	ui.hiface->setCurrentIndex(ui.hiface->findData(ideGet(zx->ide,IDE_NONE,IDE_TYPE)));
@@ -359,7 +360,7 @@ void SetupWin::start() {
 // tape
 	ui.cbTapeAuto->setChecked(optGetFlag(OF_TAPEAUTO));
 	ui.cbTapeFast->setChecked(optGetFlag(OF_TAPEFAST));
-	ui.tpathle->setText(QDialog::trUtf8(tapGetPath(zx->tape).c_str()));
+	ui.tpathle->setText(QDialog::trUtf8(zx->tape->path.c_str()));
 	buildtapelist();
 // tools
 	ui.sjpathle->setText(QDialog::trUtf8(optGetString(OPT_ASMPATH).c_str()));
@@ -392,7 +393,7 @@ void SetupWin::apply() {
 	setRomsetList(rsl);
 	if (zx->hw != oldmac) zxReset(zx,RES_DEFAULT);
 // video
-	setFlagBit(ui.dszchk->isChecked(),&zx->vid->flags,VF_DOUBLE);
+	setFlagBit(ui.dszchk->isChecked(),&zx->vid->flag,VF_DOUBLE);
 	zx->vid->brdsize = ui.bszsld->value()/100.0;
 	optSet(OPT_SHOTDIR,std::string(ui.pathle->text().toUtf8().data()));
 	optSet(OPT_SHOTFRM,ui.ssfbox->itemData(ui.ssfbox->currentIndex()).toInt());
@@ -412,16 +413,15 @@ void SetupWin::apply() {
 	sndSet(SND_AYVL, ui.avsld->value());
 	sndSet(SND_GSVL, ui.gvsld->value());
 	if ((oname != nname) || (orate != sndGet(SND_RATE))) setOutput(nname);
-	tsSet(zx->ts,AY_TYPE,0,ui.schip1box->itemData(ui.schip1box->currentIndex()).toInt());
-	tsSet(zx->ts,AY_TYPE,1,ui.schip2box->itemData(ui.schip2box->currentIndex()).toInt());
-	tsSet(zx->ts,AY_STEREO,0,ui.stereo1box->itemData(ui.stereo1box->currentIndex()).toInt());
-	tsSet(zx->ts,AY_STEREO,1,ui.stereo2box->itemData(ui.stereo2box->currentIndex()).toInt());
-	tsSet(zx->ts,TS_TYPE,0,ui.tsbox->itemData(ui.tsbox->currentIndex()).toInt());
-	int gsf = 0;
-	if (ui.gsgroup->isChecked()) gsf |= GS_ENABLE;
-	if (ui.gsrbox->isChecked()) gsf |= GS_RESET;
-	gsSet(zx->gs,GS_FLAG,gsf);
-	gsSet(zx->gs,GS_STEREO,ui.gstereobox->itemData(ui.gstereobox->currentIndex()).toInt());
+	aymSetType(zx->ts->chipA,ui.schip1box->itemData(ui.schip1box->currentIndex()).toInt());
+	aymSetType(zx->ts->chipB,ui.schip2box->itemData(ui.schip2box->currentIndex()).toInt());
+	zx->ts->chipA->stereo = ui.stereo1box->itemData(ui.stereo1box->currentIndex()).toInt();
+	zx->ts->chipB->stereo = ui.stereo2box->itemData(ui.stereo2box->currentIndex()).toInt();
+	zx->ts->type = ui.tsbox->itemData(ui.tsbox->currentIndex()).toInt();
+	zx->gs->flag = 0;
+	if (ui.gsgroup->isChecked()) zx->gs->flag |= GS_ENABLE;
+	if (ui.gsrbox->isChecked()) zx->gs->flag |= GS_RESET;
+	zx->gs->stereo = ui.gstereobox->itemData(ui.gstereobox->currentIndex()).toInt();
 // input
 	if (ui.inpDevice->currentIndex() < 1) {
 		optSet(OPT_JOYNAME,std::string(""));
@@ -433,28 +433,33 @@ void SetupWin::apply() {
 	optSet(OPT_KEYNAME,kmname);
 	loadKeys();
 // bdi
-	bdiSetFlag(zx->bdi,BDI_ENABLE,ui.bdebox->isChecked());
-	bdiSetFlag(zx->bdi,BDI_TURBO,ui.bdtbox->isChecked());
+	zx->bdi->flag &= (BDI_ENABLE | BDI_TURBO);
+	if (ui.bdebox->isChecked()) zx->bdi->flag |= BDI_ENABLE;
+	if (ui.bdtbox->isChecked()) zx->bdi->flag |= BDI_TURBO;
 
-	Floppy* flp = bdiGetFloppy(zx->bdi,0);
-	flpSetFlag(flp,FLP_TRK80,ui.a80box->isChecked());
-	flpSetFlag(flp,FLP_DS,ui.adsbox->isChecked());
-	flpSetFlag(flp,FLP_PROTECT,ui.awpbox->isChecked());
+	Floppy* flp = zx->bdi->flop[0];
+	flp->flag &= ~(FLP_TRK80 | FLP_DS | FLP_PROTECT);
+	if (ui.a80box->isChecked()) flp->flag |= FLP_TRK80;
+	if (ui.adsbox->isChecked()) flp->flag |= FLP_DS;
+	if (ui.awpbox->isChecked()) flp->flag |= FLP_PROTECT;
 
-	flp = bdiGetFloppy(zx->bdi,1);
-	flpSetFlag(flp,FLP_TRK80,ui.b80box->isChecked());
-	flpSetFlag(flp,FLP_DS,ui.bdsbox->isChecked());
-	flpSetFlag(flp,FLP_PROTECT,ui.bwpbox->isChecked());
+	flp = zx->bdi->flop[1];
+	flp->flag &= ~(FLP_TRK80 | FLP_DS | FLP_PROTECT);
+	if (ui.b80box->isChecked()) flp->flag |= FLP_TRK80;
+	if (ui.bdsbox->isChecked()) flp->flag |= FLP_DS;
+	if (ui.bwpbox->isChecked()) flp->flag |= FLP_PROTECT;
 
-	flp = bdiGetFloppy(zx->bdi,2);
-	flpSetFlag(flp,FLP_TRK80,ui.c80box->isChecked());
-	flpSetFlag(flp,FLP_DS,ui.cdsbox->isChecked());
-	flpSetFlag(flp,FLP_PROTECT,ui.cwpbox->isChecked());
+	flp = zx->bdi->flop[2];
+	flp->flag &= ~(FLP_TRK80 | FLP_DS | FLP_PROTECT);
+	if (ui.c80box->isChecked()) flp->flag |= FLP_TRK80;
+	if (ui.cdsbox->isChecked()) flp->flag |= FLP_DS;
+	if (ui.cwpbox->isChecked()) flp->flag |= FLP_PROTECT;
 
-	flp = bdiGetFloppy(zx->bdi,3);
-	flpSetFlag(flp,FLP_TRK80,ui.d80box->isChecked());
-	flpSetFlag(flp,FLP_DS,ui.ddsbox->isChecked());
-	flpSetFlag(flp,FLP_PROTECT,ui.dwpbox->isChecked());
+	flp = zx->bdi->flop[3];
+	flp->flag &= ~(FLP_TRK80 | FLP_DS | FLP_PROTECT);
+	if (ui.d80box->isChecked()) flp->flag |= FLP_TRK80;
+	if (ui.ddsbox->isChecked()) flp->flag |= FLP_DS;
+	if (ui.dwpbox->isChecked()) flp->flag |= FLP_PROTECT;
 
 // hdd
 	ideSet(zx->ide,IDE_NONE,IDE_TYPE,ui.hiface->itemData(ui.hiface->currentIndex()).toInt());
@@ -719,7 +724,7 @@ void SetupWin::buildtapelist() {
 	QTableWidgetItem* itm;
 	uint tm,ts;
 	for (int i=0; i < (int)inf.size(); i++) {
-		if (tapGet(zx->tape,TAPE_BLOCK) == i) {
+		if (zx->tape->block == i) {
 			itm = new QTableWidgetItem(QIcon(":/images/checkbox.png"),"");
 			ui.tapelist->setItem(i,0,itm);
 			ts = inf[i].curtime;
@@ -734,7 +739,7 @@ void SetupWin::buildtapelist() {
 			ui.tapelist->setItem(i,3,itm);
 		}
 		itm = new QTableWidgetItem;
-		if (inf[i].flags & TBF_BREAK) itm->setIcon(QIcon(":/images/cancel.png"));
+		if (inf[i].flag & TBF_BREAK) itm->setIcon(QIcon(":/images/cancel.png"));
 		ui.tapelist->setItem(i,1,itm);
 		ts = inf[i].time;
 		tm = ts/60;
@@ -767,7 +772,7 @@ void SetupWin::copyToTape() {
 	int dsk = ui.disktabs->currentIndex();
 	QModelIndexList idx = ui.disklist->selectionModel()->selectedRows();
 	if (idx.size() == 0) return;
-	std::vector<TRFile> cat = flpGetTRCatalog(bdiGetFloppy(zx->bdi,dsk));
+	std::vector<TRFile> cat = flpGetTRCatalog(zx->bdi->flop[dsk]);
 	int row;
 	uint8_t* buf = new uint8_t[0xffff];
 	uint16_t line,start,len;
@@ -775,7 +780,7 @@ void SetupWin::copyToTape() {
 	int savedFiles = 0;
 	for (int i=0; i<idx.size(); i++) {
 		row = idx[i].row();
-		if (flpGetSectorsData(bdiGetFloppy(zx->bdi,dsk),cat[row].trk, cat[row].sec+1, buf, cat[row].slen)) {
+		if (flpGetSectorsData(zx->bdi->flop[dsk],cat[row].trk, cat[row].sec+1, buf, cat[row].slen)) {
 			if (cat[row].slen == (cat[row].hlen + ((cat[row].llen == 0) ? 0 : 1))) {
 				start = (cat[row].hst << 8) + cat[row].lst;
 				len = (cat[row].hlen << 8) + cat[row].llen;
@@ -809,7 +814,7 @@ void SetupWin::diskToHobeta() {
 	QString dir = QFileDialog::getExistingDirectory(this,"Save file(s) to...",QDir::homePath());
 	if (dir == "") return;
 	std::string sdir = std::string(dir.toUtf8().data()) + std::string(SLASH);
-	Floppy* flp = bdiGetFloppy(zx->bdi,ui.disktabs->currentIndex());		// selected floppy
+	Floppy* flp = zx->bdi->flop[ui.disktabs->currentIndex()];		// selected floppy
 	int savedFiles = 0;
 	for (int i=0; i<idx.size(); i++) {
 		if (saveHobetaFile(flp,idx[i].row(),sdir.c_str()) == ERR_OK) savedFiles++;
@@ -824,7 +829,7 @@ void SetupWin::diskToRaw() {
 	QString dir = QFileDialog::getExistingDirectory(this,"Save file(s) to...",QDir::homePath());
 	if (dir == "") return;
 	std::string sdir = std::string(dir.toUtf8().data()) + std::string(SLASH);
-	Floppy* flp = bdiGetFloppy(zx->bdi,ui.disktabs->currentIndex());
+	Floppy* flp = zx->bdi->flop[ui.disktabs->currentIndex()];
 	int savedFiles = 0;
 	for (int i=0; i<idx.size(); i++) {
 		if (saveRawFile(flp,idx[i].row(),sdir.c_str()) == ERR_OK) savedFiles++;
@@ -863,15 +868,15 @@ void SetupWin::copyToDisk() {
 	int dsk = ui.disktabs->currentIndex();
 	int headBlock = -1;
 	int dataBlock = -1;
-	if (~tapGet(zx->tape,blk,TAPE_BFLAG) & TBF_BYTES) {
+	if (~zx->tape->data[blk].flag & TBF_BYTES) {
 		shitHappens("This is not standard block");
 		return;
 	}
-	if (tapGet(zx->tape,blk,TAPE_BFLAG) & TBF_HEAD) {
-		if (tapGet(zx->tape,TAPE_BLOCKS) == blk + 1) {
+	if (zx->tape->data[blk].flag & TBF_HEAD) {
+		if ((int)zx->tape->data.size() == blk + 1) {
 			shitHappens("Header without data? Hmm...");
 		} else {
-			if (~tapGet(zx->tape,blk + 1,TAPE_BFLAG) & TBF_BYTES) {
+			if (~zx->tape->data[blk+1].flag & TBF_BYTES) {
 				shitHappens("Data block is not standard");
 			} else {
 				headBlock = blk;
@@ -881,7 +886,7 @@ void SetupWin::copyToDisk() {
 	} else {
 		dataBlock = blk;
 		if (blk != 0) {
-			if (tapGet(zx->tape,blk - 1,TAPE_BFLAG) & TBF_HEAD) {
+			if (zx->tape->data[blk-1].flag & TBF_HEAD) {
 				headBlock = blk - 1;
 			}
 		}
@@ -907,11 +912,11 @@ void SetupWin::copyToDisk() {
 			return;
 		}
 	}
-	if (!flpGetFlag(bdiGetFloppy(zx->bdi,dsk),FLP_INSERT)) newdisk(dsk);
+	if (!(zx->bdi->flop[dsk]->flag & FLP_INSERT)) newdisk(dsk);
 	std::vector<uint8_t> dt = tapGetBlockData(zx->tape,dataBlock);
 	uint8_t* buf = new uint8_t[256];
 	uint pos = 1;	// skip block type mark
-	switch(flpCreateFile(bdiGetFloppy(zx->bdi,dsk),&dsc)) {
+	switch(flpCreateFile(zx->bdi->flop[dsk],&dsc)) {
 		case ERR_SHIT: shitHappens("Yes, it happens"); break;
 		case ERR_MANYFILES: shitHappens("Too many files @ disk"); break;
 		case ERR_NOSPACE: shitHappens("Not enough space @ disk"); break;
@@ -921,7 +926,7 @@ void SetupWin::copyToDisk() {
 					buf[(pos-1) & 0xff] = (pos < dt.size()) ? dt[pos] : 0x00;
 					pos++;
 				} while ((pos & 0xff) != 1);
-				flpPutSectorData(bdiGetFloppy(zx->bdi,dsk),dsc.trk, dsc.sec+1, buf, 256);
+				flpPutSectorData(zx->bdi->flop[dsk],dsc.trk, dsc.sec+1, buf, 256);
 				dsc.sec++;
 				if (dsc.sec > 15) {
 					dsc.sec = 0;
@@ -945,13 +950,13 @@ void SetupWin::fillDiskCat() {
 	wid->setColumnWidth(5,50);
 //	wid->setColumnWidth(6,40);
 	QTableWidgetItem* itm;
-	if (!flpGetFlag(bdiGetFloppy(zx->bdi,dsk),FLP_INSERT)) {
+	if (!(zx->bdi->flop[dsk]->flag & FLP_INSERT)) {
 		wid->setEnabled(false);
 		wid->setRowCount(0);
 	} else {
 		wid->setEnabled(true);
-		if (flpGet(bdiGetFloppy(zx->bdi,dsk),FLP_DISKTYPE) == DISK_TYPE_TRD) {
-			std::vector<TRFile> cat = flpGetTRCatalog(bdiGetFloppy(zx->bdi,dsk));
+		if (flpGet(zx->bdi->flop[dsk],FLP_DISKTYPE) == DISK_TYPE_TRD) {
+			std::vector<TRFile> cat = flpGetTRCatalog(zx->bdi->flop[dsk]);
 			wid->setRowCount(cat.size());
 			for (uint i=0; i<cat.size(); i++) {
 				itm = new QTableWidgetItem(QString(std::string((char*)cat[i].name,8).c_str())); wid->setItem(i,0,itm);
@@ -1073,11 +1078,11 @@ void SetupWin::delJoyBind() {
 // disk
 
 void SetupWin::newdisk(int idx) {
-	Floppy *flp = bdiGetFloppy(zx->bdi,idx);
+	Floppy *flp = zx->bdi->flop[idx];
 	if (!saveChangedDisk(idx & 3)) return;
 	flpFormat(flp);
-	flpSetPath(flp,"");
-	flpSetFlag(flp,FLP_INSERT | FLP_CHANGED,true);
+	flp->path = "";
+	flp->flag |= (FLP_INSERT | FLP_CHANGED);
 	updatedisknams();
 }
 
@@ -1091,21 +1096,21 @@ void SetupWin::loadb() {loadFile("",FT_DISK,1); updatedisknams();}
 void SetupWin::loadc() {loadFile("",FT_DISK,2); updatedisknams();}
 void SetupWin::loadd() {loadFile("",FT_DISK,3); updatedisknams();}
 
-void SetupWin::savea() {Floppy* flp = bdiGetFloppy(zx->bdi,0); if (flpGetFlag(flp,FLP_INSERT)) saveFile(flpGetPath(flp).c_str(),FT_DISK,0);}
-void SetupWin::saveb() {Floppy* flp = bdiGetFloppy(zx->bdi,1); if (flpGetFlag(flp,FLP_INSERT)) saveFile(flpGetPath(flp).c_str(),FT_DISK,1);}
-void SetupWin::savec() {Floppy* flp = bdiGetFloppy(zx->bdi,2); if (flpGetFlag(flp,FLP_INSERT)) saveFile(flpGetPath(flp).c_str(),FT_DISK,2);}
-void SetupWin::saved() {Floppy* flp = bdiGetFloppy(zx->bdi,3); if (flpGetFlag(flp,FLP_INSERT)) saveFile(flpGetPath(flp).c_str(),FT_DISK,3);}
+void SetupWin::savea() {Floppy* flp = zx->bdi->flop[0]; if (flp->flag & FLP_INSERT) saveFile(flp->path.c_str(),FT_DISK,0);}
+void SetupWin::saveb() {Floppy* flp = zx->bdi->flop[1]; if (flp->flag & FLP_INSERT) saveFile(flp->path.c_str(),FT_DISK,1);}
+void SetupWin::savec() {Floppy* flp = zx->bdi->flop[2]; if (flp->flag & FLP_INSERT) saveFile(flp->path.c_str(),FT_DISK,2);}
+void SetupWin::saved() {Floppy* flp = zx->bdi->flop[3]; if (flp->flag & FLP_INSERT) saveFile(flp->path.c_str(),FT_DISK,3);}
 
-void SetupWin::ejcta() {saveChangedDisk(0); flpEject(bdiGetFloppy(zx->bdi,0)); updatedisknams();}
-void SetupWin::ejctb() {saveChangedDisk(1); flpEject(bdiGetFloppy(zx->bdi,1)); updatedisknams();}
-void SetupWin::ejctc() {saveChangedDisk(2); flpEject(bdiGetFloppy(zx->bdi,2)); updatedisknams();}
-void SetupWin::ejctd() {saveChangedDisk(3); flpEject(bdiGetFloppy(zx->bdi,3)); updatedisknams();}
+void SetupWin::ejcta() {saveChangedDisk(0); flpEject(zx->bdi->flop[0]); updatedisknams();}
+void SetupWin::ejctb() {saveChangedDisk(1); flpEject(zx->bdi->flop[1]); updatedisknams();}
+void SetupWin::ejctc() {saveChangedDisk(2); flpEject(zx->bdi->flop[2]); updatedisknams();}
+void SetupWin::ejctd() {saveChangedDisk(3); flpEject(zx->bdi->flop[3]); updatedisknams();}
 
 void SetupWin::updatedisknams() {
-	ui.apathle->setText(QDialog::trUtf8(flpGetPath(bdiGetFloppy(zx->bdi,0)).c_str()));
-	ui.bpathle->setText(QDialog::trUtf8(flpGetPath(bdiGetFloppy(zx->bdi,1)).c_str()));
-	ui.cpathle->setText(QDialog::trUtf8(flpGetPath(bdiGetFloppy(zx->bdi,2)).c_str()));
-	ui.dpathle->setText(QDialog::trUtf8(flpGetPath(bdiGetFloppy(zx->bdi,3)).c_str()));
+	ui.apathle->setText(QDialog::trUtf8(zx->bdi->flop[0]->path.c_str()));
+	ui.bpathle->setText(QDialog::trUtf8(zx->bdi->flop[1]->path.c_str()));
+	ui.cpathle->setText(QDialog::trUtf8(zx->bdi->flop[2]->path.c_str()));
+	ui.dpathle->setText(QDialog::trUtf8(zx->bdi->flop[3]->path.c_str()));
 	fillDiskCat();
 }
 
@@ -1113,17 +1118,17 @@ void SetupWin::updatedisknams() {
 
 void SetupWin::loatape() {
 	loadFile("",FT_TAPE,1);
-	ui.tpathle->setText(QDialog::trUtf8(tapGetPath(zx->tape).c_str()));
+	ui.tpathle->setText(QDialog::trUtf8(zx->tape->path.c_str()));
 	buildtapelist();
 }
 
 void SetupWin::savtape() {
-	if (tapGet(zx->tape,TAPE_BLOCKS) != 0) saveFile(tapGetPath(zx->tape).c_str(),FT_TAP,-1);
+	if (zx->tape->data.size() != 0) saveFile(zx->tape->path.c_str(),FT_TAP,-1);
 }
 
 void SetupWin::ejctape() {
 	tapEject(zx->tape);
-	ui.tpathle->setText(QDialog::trUtf8(tapGetPath(zx->tape).c_str()));
+	ui.tpathle->setText(QDialog::trUtf8(zx->tape->path.c_str()));
 	buildtapelist();
 }
 
@@ -1138,7 +1143,7 @@ void SetupWin::tblkup() {
 
 void SetupWin::tblkdn() {
 	int ps = ui.tapelist->currentIndex().row();
-	if ((ps != -1) && (ps < tapGet(zx->tape,TAPE_BLOCKS) - 1)) {
+	if ((ps != -1) && (ps < (int)zx->tape->data.size() - 1)) {
 		tapSwapBlocks(zx->tape,ps,ps+1);
 		buildtapelist();
 		ui.tapelist->selectRow(ps+1);
@@ -1163,9 +1168,7 @@ void SetupWin::chablock(QModelIndex idx) {
 
 void SetupWin::setTapeBreak(int row,int col) {
 	if ((row < 0) || (col != 1)) return;
-	int flg = tapGet(zx->tape,row,TAPE_BFLAG);
-	flg ^= TBF_BREAK;
-	tapSet(zx->tape,row,TAPE_BFLAG,flg);
+	zx->tape->data[row].flag ^= TBF_BREAK;
 	buildtapelist();
 	ui.tapelist->selectRow(row);
 }
