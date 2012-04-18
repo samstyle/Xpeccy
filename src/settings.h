@@ -5,7 +5,7 @@
 #include <vector>
 #include <stdint.h>
 
-#include "spectrum.h"
+#include "libxpeccy/spectrum.h"
 
 #define	OPT_WORKDIR	0
 #define	OPT_ROMDIR	1

@@ -14,7 +14,7 @@
 	#include <QWidget>
 #endif
 
-#include "spectrum.h"
+#include "libxpeccy/spectrum.h"
 
 // wanted windows
 #define	WW_NONE		0

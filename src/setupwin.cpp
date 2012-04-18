@@ -7,7 +7,7 @@
 
 #include "common.h"
 #include "sound.h"
-#include "spectrum.h"
+#include "libxpeccy/spectrum.h"
 #include "setupwin.h"
 #include "emulwin.h"
 #include "settings.h"

@@ -8,7 +8,7 @@
 #include <sstream>
 #include <getopt.h>
 
-#include "spectrum.h"
+#include "libxpeccy/spectrum.h"
 #include "sound.h"
 #include "common.h"
 #include "emulwin.h"

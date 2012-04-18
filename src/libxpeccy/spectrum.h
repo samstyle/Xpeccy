@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include "z80ex.h"
+#include <z80ex.h>
 #include "memory.h"
 #include "video.h"
 #include "input.h"

@@ -1,5 +1,5 @@
 #include "filer.h"
-#include "spectrum.h"
+#include "libxpeccy/spectrum.h"
 #include "common.h"
 
 #include "filetypes/filetypes.h"

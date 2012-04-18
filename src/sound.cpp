@@ -1,6 +1,6 @@
 #include "common.h"
 #include "sound.h"
-#include "spectrum.h"
+#include "libxpeccy/spectrum.h"
 
 #include <iostream>
 #ifdef HAVESDLSOUND

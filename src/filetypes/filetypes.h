@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <fstream>
 
-#include "../spectrum.h"
+#include "../libxpeccy/spectrum.h"
 
 #define	TYP_SNA		0
 #define	TYP_Z80 	1

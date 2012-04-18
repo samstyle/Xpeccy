@@ -35,8 +35,14 @@ else ()
 	message(FATAL ERROR "Could not find z80ex and/or z80ex_dasm")
 endif()
 
-file(GLOB SOURCES ./src/*.cpp ./src/filetypes/*.cpp)
-file(GLOB HEADERS ./src/*.h ./src/filetypes/*.h)
+file(GLOB SOURCES
+	./src/*.cpp
+	./src/libxpeccy/*.cpp
+	./src/filetypes/*.cpp)
+file(GLOB HEADERS
+	./src/*.h
+	./src/libxpeccy/*.h
+	./src/filetypes/*.h)
 file(GLOB UIFILES ./ui/*.ui)
 set(QRCFILES ./xpeccy.qrc)
 set(MOCFILES

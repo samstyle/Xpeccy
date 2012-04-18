@@ -1,5 +1,4 @@
-#include "bdi.h"
-#include "spectrum.h"
+#include "libxpeccy/spectrum.h"
 
 #include "debuger.h"
 #include "emulwin.h"
