@@ -544,12 +544,12 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 		switch(ev->key()) {
 			case Qt::Key_0: zx->vid->mode = (zx->vid->mode==VID_NORMAL)?VID_ALCO:VID_NORMAL; break;
 			case Qt::Key_1:
-				zx->vid->flags &= ~VF_DOUBLE;
+				zx->vid->flag &= ~VF_DOUBLE;
 				mainWin->updateWindow();
 				saveConfig();
 				break;
 			case Qt::Key_2:
-				zx->vid->flags |= VF_DOUBLE;
+				zx->vid->flag |= VF_DOUBLE;
 				mainWin->updateWindow();
 				saveConfig();
 				break;
@@ -878,9 +878,9 @@ void EmulWin::SDLEventHandler() {
 		}
 	}
 #else
-	if (zx->vid->flags & VF_CHANGED) {
+	if (zx->vid->flag & VF_CHANGED) {
 		mainWin->update();
-		zx->vid->flags &= ~VF_CHANGED;
+		zx->vid->flag &= ~VF_CHANGED;
 	}
 #endif
 	if (emulFlags & FL_BLOCK) return;
