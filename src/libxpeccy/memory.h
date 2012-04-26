@@ -1,7 +1,9 @@
 #ifndef _MEMOR_H
 #define _MEMOR_H
 
-#include <stdint.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define	MEM_PROFMASK	0
 #define	MEM_RAM		1
@@ -13,20 +15,31 @@
 #define	MEM_BANK2	2
 #define	MEM_BANK3	3
 
+#define	MEM_RDONLY	1
+
 typedef struct {
-	uint8_t ram[64][16384];
-	uint8_t rom[32][16384];
-	uint8_t *pt0,*pt1,*pt2,*pt3;
-	uint8_t cram,crom;
-	int32_t	mask;
-	int32_t profMask;	// profrom (0 - 64K, 1 - 128K, 3 - 256K)
+	int flags;
+	unsigned char data[0x4000];
+} MemPage;
+
+typedef struct {
+	MemPage ram[64];
+	MemPage rom[32];
+	MemPage* pt0;
+	MemPage* pt1;
+	MemPage* pt2;
+	MemPage* pt3;
+	unsigned char cram;
+	unsigned char crom;
+	int mask;
+	int profMask;	// profrom (0 - 64K, 1 - 128K, 3 - 256K)
 } Memory;
 
 Memory* memCreate();
 void memDestroy(Memory*);
 
-uint8_t memRd(Memory*,uint16_t);
-void memWr(Memory*,uint16_t,uint8_t);
+unsigned char memRd(Memory*,unsigned short);
+void memWr(Memory*,unsigned short,unsigned char);
 
 void memSetBank(Memory*,int,int,int);
 
@@ -36,6 +49,10 @@ void memGetPage(Memory*,int,int,char*);
 int memGet(Memory*,int);
 void memSet(Memory*,int,int);
 
-uint8_t* memGetPagePtr(Memory*,int,int);
+unsigned char* memGetPagePtr(Memory*,int,int);
+
+#if __cplusplus
+}
+#endif
 
 #endif

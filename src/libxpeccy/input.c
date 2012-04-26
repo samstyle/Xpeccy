@@ -1,11 +1,11 @@
-#include <stdint.h>
+#include <stdlib.h>
 #include "input.h"
 
-struct keyScan {
+typedef struct {
 	char key;
-	uint8_t row;
-	uint8_t mask;
-};
+	unsigned char row;
+	unsigned char mask;
+} keyScan;
 
 keyScan keyTab[40] = {
 	{'1',4,1},{'2',4,2},{'3',4,4},{'4',4,8},{'5',4,16},{'6',3,16},{'7',3,8},{'8',3,4},{'9',3,2},{'0',3,1},
@@ -17,13 +17,13 @@ keyScan keyTab[40] = {
 // keyboard
 
 Keyboard* keyCreate() {
-	Keyboard* keyb = new Keyboard;
+	Keyboard* keyb = (Keyboard*)malloc(sizeof(Keyboard));
 	keyRelease(keyb,0,0);
 	return keyb;
 }
 
 void keyDestroy(Keyboard* keyb) {
-	delete(keyb);
+	free(keyb);
 }
 
 void keyPress(Keyboard* keyb,char key1,char key2) {
@@ -46,8 +46,8 @@ void keyRelease(Keyboard* keyb,char key1,char key2) {
 	}
 }
 
-uint8_t keyInput(Keyboard* keyb, uint8_t prt) {
-	uint8_t res = 0x1f;
+unsigned char keyInput(Keyboard* keyb, unsigned char prt) {
+	unsigned char res = 0x1f;
 	for (int i = 0; i < 8; i++) {
 		if (~prt & 0x80) res &= keyb->map[i];
 		prt <<= 1;
@@ -58,26 +58,26 @@ uint8_t keyInput(Keyboard* keyb, uint8_t prt) {
 // joystick
 
 Joystick* joyCreate() {
-	Joystick* joy = new Joystick;
+	Joystick* joy = (Joystick*)malloc(sizeof(Joystick));
 	joy->type = XJ_KEMPSTON;
 	joy->state = 0;
 	return joy;
 }
 
 void joyDestroy(Joystick* joy) {
-	delete(joy);
+	free(joy);
 }
 
-void joyPress(Joystick* joy, uint8_t mask) {
+void joyPress(Joystick* joy, unsigned char mask) {
 	joy->state |= mask;
 }
 
-void joyRelease(Joystick* joy,uint8_t mask) {
+void joyRelease(Joystick* joy, unsigned char mask) {
 	joy->state &= ~mask;
 }
 
-uint8_t joyInput(Joystick* joy) {
-	uint8_t res = 0xff;
+unsigned char joyInput(Joystick* joy) {
+	unsigned char res = 0xff;
 	switch (joy->type) {
 		case XJ_KEMPSTON:
 			res = (joy->state & 0x1f) | 0xe0;	// high 3 bits is set
@@ -89,14 +89,14 @@ uint8_t joyInput(Joystick* joy) {
 // mouse
 
 Mouse* mouseCreate() {
-	Mouse* mou = new Mouse;
+	Mouse* mou = (Mouse*)malloc(sizeof(Mouse));
 	mou->buttons = 0xff;
 	mou->xpos = 0;
 	mou->ypos = 0;
-	mou->enable = true;
+	mou->flags = INF_ENABLED;
 	return mou;
 }
 
 void mouseDestroy(Mouse* mou) {
-	delete(mou);
+	free(mou);
 }

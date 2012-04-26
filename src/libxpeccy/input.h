@@ -1,8 +1,11 @@
 #ifndef _KEYB_H
 #define _KEYB_H
 
-#include <stdint.h>
-
+#ifdef __cplusplus
+extern "C" {
+#endif
+// flags
+#define	INF_ENABLED	1
 // joystick type
 #define XJ_NONE		0
 #define XJ_KEMPSTON	1
@@ -15,20 +18,21 @@
 #define	XJ_DOWN		(1<<3)
 #define	XJ_FIRE		(1<<4)
 
-struct Mouse {
-	bool enable;
-	uint8_t xpos;
-	uint8_t ypos;
-	uint8_t buttons;	// b0=LMB; b1=RMB;
-};
+typedef struct {
+	int flags;
+	unsigned char xpos;
+	unsigned char ypos;
+	unsigned char buttons;	// b0=LMB; b1=RMB;
+} Mouse;
 
 typedef struct {
-	uint8_t map[8];
+	int flags;
+	unsigned char map[8];
 } Keyboard;
 
 typedef struct {
 	int type;
-	uint8_t state;
+	unsigned char state;
 } Joystick;
 
 Keyboard* keyCreate();
@@ -36,15 +40,19 @@ void keyDestroy(Keyboard*);
 
 void keyPress(Keyboard*,char,char);
 void keyRelease(Keyboard*,char,char);
-uint8_t keyInput(Keyboard*,uint8_t);
+unsigned char keyInput(Keyboard*,unsigned char);
 
 Mouse* mouseCreate();
 void mouseDestroy(Mouse*);
 
 Joystick* joyCreate();
 void joyDestroy(Joystick*);
-void joyPress(Joystick*,uint8_t);
-void joyRelease(Joystick*,uint8_t);
-uint8_t joyInput(Joystick*);
+void joyPress(Joystick*,unsigned char);
+void joyRelease(Joystick*,unsigned char);
+unsigned char joyInput(Joystick*);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -373,7 +373,7 @@ void saveProfiles() {
 		cfile << int2str(lays[i].full.h) << ":" << int2str(lays[i].full.v) << ":";
 		cfile << int2str(lays[i].bord.h) << ":" << int2str(lays[i].bord.v) << ":";
 		cfile << int2str(lays[i].sync.h) << ":" << int2str(lays[i].sync.v) << ":";
-		cfile << int2str(lays[i].intsz) << ":" << int2str(lays[i].intpos) << "\n";
+		cfile << int2str(lays[i].intsz) << ":" << int2str(lays[i].intpos.v) << "\n";
 	}
 	cfile << "scrDir = " << shotDir.c_str() << "\n";
 	cfile << "scrFormat = " << optGetName(OPT_SHOTFRM,shotExt).c_str() << "\n";
@@ -467,7 +467,7 @@ void saveConfig() {
 	optSet("ROMSET","reset",rmnam[zx->resbank]);
 	optSet("VIDEO","doublesize",(zx->vid->flag & VF_DOUBLE) != 0);
 	optSet("VIDEO","bordersize",int(zx->vid->brdsize * 100));
-	optSet("VIDEO","geometry",zx->vid->curlay);
+	optSet("VIDEO","geometry",currentProfile->layName);
 	optSet("SOUND","chip1",zx->ts->chipA->type);
 	optSet("SOUND","chip2",zx->ts->chipB->type);
 	optSet("SOUND","chip1.stereo",zx->ts->chipA->stereo);
@@ -632,7 +632,7 @@ void loadProfiles() {
 							vlay.full.h = atoi(vect[1].c_str()); vlay.full.v = atoi(vect[2].c_str());
 							vlay.bord.h = atoi(vect[3].c_str()); vlay.bord.v = atoi(vect[4].c_str());
 							vlay.sync.h = atoi(vect[5].c_str()); vlay.sync.v = atoi(vect[6].c_str());
-							vlay.intsz = atoi(vect[7].c_str()); vlay.intpos = atoi(vect[8].c_str());
+							vlay.intsz = atoi(vect[7].c_str()); vlay.intpos.v = atoi(vect[8].c_str()); vlay.intpos.h = 0;
 							if ((vlay.full.h > vlay.bord.h + 256) && (vlay.bord.h > vlay.sync.h) && (vlay.full.v > vlay.bord.v + 192) && (vlay.bord.v > vlay.sync.v)) {
 								addLayout(vlay);
 							}
@@ -914,7 +914,7 @@ void loadConfig(bool dev) {
 
 	tmp2 = optGetInt("GENERAL","cpu.frq"); if ((tmp2 > 0) && (tmp2 <= 14)) zxSetFrq(zx,tmp2 / 2.0);
 
-	zx->vid->curlay = optGetString("VIDEO","geometry");
+	currentProfile->layName = optGetString("VIDEO","geometry");
 	setFlagBit(optGetBool("VIDEO","doublesize"),&zx->vid->flag, VF_DOUBLE);
 	setFlagBit(optGetBool("VIDEO","fullscreen"),&zx->vid->flag, VF_FULLSCREEN);
 	tmp2 = optGetInt("VIDEO","bordersize"); if ((tmp2 >= 0) && (tmp2 <= 100)) zx->vid->brdsize = tmp2 / 100.0;
@@ -948,5 +948,5 @@ void loadConfig(bool dev) {
 	if (zx->hw==NULL) throw("Can't found current machine");
 	if (currentProfile->rset == NULL) throw("Can't found current romset");
 	if ((zx->hw->mask != 0) && (~zx->hw->mask & tmask)) throw("Incorrect memory size for this machine");
-	if (!vidSetLayout(zx->vid,zx->vid->curlay)) vidSetLayout(zx->vid,"default");
+	if (!emulSetLayout(zx->vid,currentProfile->layName)) emulSetLayout(zx->vid,"default");
 }

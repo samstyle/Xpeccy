@@ -80,8 +80,6 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 		ui.ssfbox->addItem(QString(ptr[i].name.c_str()),QVariant(ptr[i].id));
 		i++;
 	}
-	std::vector<VidLayout> lays = getLayoutList();
-	for (i=0; i<lays.size(); i++) {ui.geombox->addItem(QDialog::trUtf8(lays[i].name.c_str()));}
 // sound
 	list = sndGetList();
 	for (i=0;i<list.size();i++) {ui.outbox->addItem(QDialog::trUtf8(list[i].c_str()));}
@@ -268,8 +266,11 @@ void SetupWin::start() {
 	ui.ssfbox->setCurrentIndex(ui.ssfbox->findData(optGetInt(OPT_SHOTFRM)));
 	ui.scntbox->setValue(optGetInt(OPT_SHOTCNT));
 	ui.sintbox->setValue(optGetInt(OPT_SHOTINT));
-	ui.geombox->setCurrentIndex(ui.geombox->findText(QDialog::trUtf8(zx->vid->curlay.c_str())));
 	ui.brgslide->setValue(optGetInt(OPT_BRGLEV));
+	std::vector<VidLayout> lays = getLayoutList();
+	ui.geombox->clear();
+	for (i=0; i<lays.size(); i++) {ui.geombox->addItem(QDialog::trUtf8(lays[i].name.c_str()));}
+	ui.geombox->setCurrentIndex(ui.geombox->findText(QDialog::trUtf8(currentProfile->layName.c_str())));
 // sound
 	ui.senbox->setChecked(sndGet(SND_ENABLE) != 0);
 	ui.mutbox->setChecked(sndGet(SND_MUTE) != 0);
@@ -399,7 +400,7 @@ void SetupWin::apply() {
 	optSet(OPT_SHOTFRM,ui.ssfbox->itemData(ui.ssfbox->currentIndex()).toInt());
 	optSet(OPT_SHOTCNT,ui.scntbox->value());
 	optSet(OPT_SHOTINT,ui.sintbox->value());
-	vidSetLayout(zx->vid,std::string(ui.geombox->currentText().toUtf8().data()));
+	emulSetLayout(zx->vid,std::string(ui.geombox->currentText().toUtf8().data()));
 	optSet(OPT_BRGLEV,ui.brgslide->value());
 // sound
 	std::string oname = sndGetOutputName();

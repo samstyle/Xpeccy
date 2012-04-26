@@ -98,7 +98,7 @@ double sndSync(double tk,int fast) {
 void sndCalibrate() {
 	sndChunks = (int)(sndRate / 50.0);			// samples played at 1/50 sec			882
 	sndBufSize = sndChans * sndChunks;			// buffer size for 1/50 sec play		1764
-	tatbyte = (448 * 320 / (double)sndChunks);		// count of 7MHz ticks between samples		162.54
+	tatbyte = (zx->vid->frmsz / (double)sndChunks);		// count of 7MHz ticks between samples		162.54 ?
 }
 
 void addOutput(std::string nam, bool (*opf)(), void (*plf)(), void (*clf)()) {

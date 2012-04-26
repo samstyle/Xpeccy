@@ -1,10 +1,10 @@
+#include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
+
 #include "video.h"
 
-// video layouts
-std::vector<VidLayout> layoutList;
-uint8_t* screenBuf = new uint8_t[1024 * 1024];
+unsigned char* screenBuf = NULL;
 
 unsigned char inkTab[] = {
   0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
@@ -29,7 +29,10 @@ unsigned char papTab[] = {
 };
 
 Video* vidCreate(Memory* me) {
-	Video* vid = new Video;
+	if (screenBuf == NULL) {
+		screenBuf = (unsigned char*)malloc(1024 * 1024 * sizeof(unsigned char));
+	}
+	Video* vid = (Video*)malloc(sizeof(Video));
 	int i,j,k,l;
 	int idx=0;
 	int sadr=0x0000;
@@ -65,11 +68,11 @@ Video* vidCreate(Memory* me) {
 	vid->zoom = 1.0;
 	vid->brdsize = 1.0;
 	vid->flag = 0;
-	vidSetLayout(vid,"default");
+	vidSetLayout(vid,448,320,138,80,64,32,0,64,0);
 
 	vid->curr.h = 0;
 	vid->curr.v = 0;
-	vid->curscr = false;
+	vid->curscr = 0;
 	vid->fcnt = 0;
 
 	vid->nextBorder = 0xff;
@@ -79,16 +82,16 @@ Video* vidCreate(Memory* me) {
 	vid->scrimg = screenBuf;
 	vid->scrptr = vid->scrimg;
 
-	vid->firstFrame = true;
+	vid->firstFrame = 1;
 
 	return vid;
 }
 
 void vidDestroy(Video* vid) {
-	delete(vid);
+	free(vid);
 }
 
-uint8_t* vidGetScreen() {
+unsigned char* vidGetScreen() {
 	return screenBuf;
 }
 
@@ -102,7 +105,7 @@ uint8_t* vidGetScreen() {
 // all other numbers is index of memaddr in 0-dot
 
 void vidFillMatrix(Video* vid) {
-	uint32_t x,y,i,adr;
+	int x,y,i,adr;
 	i = 0;
 	adr = 0;
 	for (y = 0; y < vid->full.v; y++) {
@@ -128,8 +131,8 @@ void vidFillMatrix(Video* vid) {
 }
 
 void vidUpdate(Video* vid) {
-	vid->lcut.h = vid->synh.h + (vid->bord.h - vid->synh.h) * (1.0 - vid->brdsize);
-	vid->lcut.v = vid->synh.v + (vid->bord.v - vid->synh.v) * (1.0 - vid->brdsize);
+	vid->lcut.h = vid->sync.h + (vid->bord.h - vid->sync.h) * (1.0 - vid->brdsize);
+	vid->lcut.v = vid->sync.v + (vid->bord.v - vid->sync.v) * (1.0 - vid->brdsize);
 	vid->rcut.h = vid->full.h - (1.0 - vid->brdsize) * (vid->full.h - vid->bord.h - 256);
 	vid->rcut.v = vid->full.v - (1.0 - vid->brdsize) * (vid->full.v - vid->bord.v - 192);
 	vid->vsze.h = vid->rcut.h - vid->lcut.h;
@@ -139,18 +142,18 @@ void vidUpdate(Video* vid) {
 	vidFillMatrix(vid);
 }
 
-uint8_t col = 0;
-uint16_t mtx = 0;
-uint8_t ink = 0;
-uint8_t pap = 0;
-uint8_t scrbyte = 0;
-uint8_t alscr2,alscr4,alscr6;
+unsigned char col = 0;
+unsigned short mtx = 0;
+unsigned char ink = 0;
+unsigned char pap = 0;
+unsigned char scrbyte = 0;
+unsigned char alscr2,alscr4,alscr6;
 
-uint8_t pixBuffer[8];
-uint8_t bitMask[8] = {0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
+unsigned char pixBuffer[8];
+unsigned char bitMask[8] = {0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
 
 void vidSync(Video* vid, float dotDraw) {
-	vid->intStrobe = false;
+	vid->intStrobe = 0;
 	vid->pxcnt += dotDraw;
 	while (vid->pxcnt >= 1) {
 		mtx = vid->matrix[vid->dotCount++];
@@ -249,8 +252,8 @@ void vidSync(Video* vid, float dotDraw) {
 			vid->fcnt++;
 			vid->flash = vid->fcnt & 0x20;
 			vid->scrptr = vid->scrimg;
-			vid->intStrobe = true;
-			vid->firstFrame = false;
+			vid->intStrobe = 1;
+			vid->firstFrame = 0;
 		}
 	}
 	if (vid->nextBorder < 8) {
@@ -261,49 +264,15 @@ void vidSync(Video* vid, float dotDraw) {
 
 // LAYOUTS
 
-void addLayout(VidLayout nlay) {
-printf("addLayout %s\n",nlay.name.c_str());
-	for(uint32_t i=0; i<layoutList.size(); i++) {
-		if (layoutList[i].name == nlay.name) return;
-	}
-	layoutList.push_back(nlay);
-}
-
-void addLayout(std::string nm, int* par) {
-	for(uint32_t i=0; i<layoutList.size(); i++) {
-		if (layoutList[i].name == nm) return;		// prevent layouts with same names
-	}
-	VidLayout nlay;
-	nlay.name = nm;
-	nlay.full.h = par[0];
-	nlay.full.v = par[1];
-	nlay.bord.h = par[2];
-	nlay.bord.v = par[3];
-	nlay.sync.h = par[4];
-	nlay.sync.v = par[5];
-	nlay.intsz = par[6];
-	nlay.intpos = par[7];
-	layoutList.push_back(nlay);
-}
-
-std::vector<VidLayout> getLayoutList() {
-	std::vector<VidLayout> res = layoutList;
-	return res;
-}
-
-bool vidSetLayout(Video* vid,std::string nm) {
-	for (uint32_t i=0; i < layoutList.size(); i++) {
-		if (layoutList[i].name == nm) {
-			vid->curlay = nm;
-			vid->full = layoutList[i].full;
-			vid->bord = layoutList[i].bord;
-			vid->synh = layoutList[i].sync;
-			vid->intsz = layoutList[i].intsz;
-			vid->intpos = layoutList[i].intpos;
-			vid->frmsz = vid->full.h * vid->full.v;
-			vidUpdate(vid);
-			return true;
-		}
-	}
-	return false;
+void vidSetLayout(Video *vid, int fh, int fv, int bh, int bv, int sh, int sv, int ih, int iv, int is) {
+	vid->full.h = fh;
+	vid->full.v = fv;
+	vid->bord.h = bh;
+	vid->bord.v = bv;
+	vid->sync.h = sh;
+	vid->sync.v = sv;
+	vid->intpos = iv;
+	vid->intsz = is;
+	vid->frmsz = fh * fv;
+	vidUpdate(vid);
 }

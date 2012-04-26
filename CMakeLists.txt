@@ -38,6 +38,7 @@ endif()
 file(GLOB SOURCES
 	./src/*.cpp
 	./src/libxpeccy/*.cpp
+	./src/libxpeccy/*.c
 	./src/filetypes/*.cpp)
 file(GLOB HEADERS
 	./src/*.h
@@ -53,6 +54,8 @@ set(MOCFILES
 )
 
 add_definitions(-Wall -O3)
+
+set(CMAKE_C_FLAGS -std=c99)
 
 if (SDL_FOUND)
 	add_definitions(-DHAVESDLSOUND)

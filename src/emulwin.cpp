@@ -72,6 +72,8 @@ QDialog* rzxWin;
 std::vector<HardWare> hwList;
 // romsets
 std::vector<RomSet> rsList;
+// layouts
+std::vector<VidLayout> layList;
 // for user menu
 std::vector<XBookmark> bookmarkList;
 std::vector<XProfile> profileList;
@@ -96,8 +98,8 @@ void emulInit() {
 	scrInterval = 0;
 	optSet(OPT_SHOTFRM,SCR_PNG);
 
-	int par[] = {448,320,138,80,64,32,64,0};
-	addLayout("default",par);
+//	int par[] = {448,320,138,80,64,32,64,0};
+	addLayout("default",448,320,138,80,64,32,0,64,0);
 
 	emulSetColor(0xc0);
 	mainWin = new MainWin;
@@ -1192,6 +1194,57 @@ void emulCloseJoystick() {
 	SDL_JoystickClose(joy);
 	joy = NULL;
 #endif
+}
+
+// LAYOUTS
+
+bool addLayout(std::string nm,int fh,int fv,int bh,int bv,int sh,int sv,int ih,int iv,int is) {
+	printf("add Layout %s\n",nm.c_str());
+	for (uint i = 0; i < layList.size(); i++) {
+		if (layList[i].name == nm) return false;
+	}
+	VidLayout nlay;
+	nlay.name = nm;
+	nlay.full.h = fh;
+	nlay.full.v = fv;
+	nlay.bord.h = bh;
+	nlay.bord.v = bv;
+	nlay.sync.h = sh;
+	nlay.sync.v = sv;
+	nlay.intpos.h = ih;
+	nlay.intpos.v = iv;
+	nlay.intsz = is;
+	layList.push_back(nlay);
+	return true;
+}
+
+bool addLayout(VidLayout lay) {
+	printf("add Layout %s\n",lay.name.c_str());
+	for (uint i = 0; i < layList.size(); i++) {
+		if (layList[i].name == lay.name) return false;
+	}
+	layList.push_back(lay);
+	return true;
+}
+
+std::vector<VidLayout> getLayoutList() {
+	return layList;
+}
+
+bool emulSetLayout(Video* vid, std::string nm) {
+	for (uint i = 0; i < layList.size(); i++) {
+		if (layList[i].name == nm) {
+			currentProfile->layName = nm;
+			vidSetLayout(vid,
+				     layList[i].full.h, layList[i].full.v,
+				     layList[i].bord.h, layList[i].bord.v,
+				     layList[i].sync.h, layList[i].sync.v,
+				     layList[i].intpos.h, layList[i].intpos.v, layList[i].intsz);
+			sndCalibrate();
+			return true;
+		}
+	}
+	return false;
 }
 
 // ROMSETS

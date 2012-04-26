@@ -204,16 +204,16 @@ void DebugWin::fillvg() {
 void DebugWin::fillrays() {
 	QLabel *lab;
 	lab = (QLabel*)raylay->itemAtPosition(0,1)->widget();
-		if (zx->vid->curr.h < zx->vid->synh.h) {
+		if (zx->vid->curr.h < zx->vid->sync.h) {
 			lab->setText("HS");
 		} else {
-			lab->setText(QString::number(zx->vid->curr.h - zx->vid->synh.h));
+			lab->setText(QString::number(zx->vid->curr.h - zx->vid->sync.h));
 		}
 	lab = (QLabel*)raylay->itemAtPosition(1,1)->widget();
-		if (zx->vid->curr.v < zx->vid->synh.v) {
+		if (zx->vid->curr.v < zx->vid->sync.v) {
 			lab->setText("VS");
 		} else {
-			lab->setText(QString::number(zx->vid->curr.v - zx->vid->synh.v));
+			lab->setText(QString::number(zx->vid->curr.v - zx->vid->sync.v));
 		}
 	// tlab->setText(QString("tick:").append(QString::number(zx->sys->cpu->t - t)).append(" (").append(QString::number(zx->sys->cpu->t - zx->sys->cpu->tb)).append(")"));
 }

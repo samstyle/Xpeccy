@@ -58,9 +58,19 @@ typedef struct {
 typedef struct {
 	std::string name;
 	std::string file;
+	std::string layName;
 	ZXComp* zx;
 	RomSet* rset;
 } XProfile;
+
+typedef struct {
+	std::string name;
+	VSize full;
+	VSize sync;
+	VSize bord;
+	VSize intpos;
+	int intsz;
+} VidLayout;
 
 typedef struct {
 	const char* name;
@@ -172,6 +182,11 @@ bool addRomset(RomSet);
 void setRomsetList(std::vector<RomSet>);
 void setRomset(ZXComp*, std::string);
 std::vector<RomSet> getRomsetList();
+// layouts
+bool addLayout(std::string,int,int,int,int,int,int,int,int,int);
+bool addLayout(VidLayout);
+std::vector<VidLayout> getLayoutList();
+bool emulSetLayout(Video*, std::string);
 // tape window
 void buildTapeList();
 // joystick
