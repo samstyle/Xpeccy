@@ -77,13 +77,13 @@ double sndSync(double tk,int fast) {
 	levl = lev;
 	levr = lev;
 
-	std::pair<uint8_t,uint8_t> tmpl = tsGetVolume(zx->ts);
-	levl += tmpl.first * ayVolume / 100.0;
-	levr += tmpl.second * ayVolume / 100.0;
+	tsPair tsvol = tsGetVolume(zx->ts);
+	levl += tsvol.left * ayVolume / 100.0;
+	levr += tsvol.right * ayVolume / 100.0;
 
-	tmpl = gsGetVolume(zx->gs);
-	levl += tmpl.first * gsVolume / 100.0;
-	levr += tmpl.second * gsVolume / 100.0;
+	gsPair gsvol = gsGetVolume(zx->gs);
+	levl += gsvol.left * gsVolume / 100.0;
+	levr += gsvol.right * gsVolume / 100.0;
 
 //	if (smpCount >= sndChunks) return tk;
 	ringBuffer[ringPos] = levl;

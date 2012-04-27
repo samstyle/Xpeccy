@@ -1,8 +1,9 @@
 #ifndef _XPAYYM
 #define _XPAYYM
 
-#include <stdint.h>
-#include <utility>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // ay_type
 #define	SND_NONE	0
@@ -24,7 +25,12 @@
 // structures
 
 typedef struct {
-	bool lev;
+	unsigned char left;
+	unsigned char right;
+} tsPair;
+
+typedef struct {
+	int lev;
 	double period;
 	double count;
 } aymChan;
@@ -42,8 +48,8 @@ typedef struct {
 	int nPos;
 	int freq;
 	double aycoe;
-	uint8_t curReg;
-	uint8_t reg[16];
+	unsigned char curReg;
+	unsigned char reg[16];
 } aymChip;
 
 typedef struct {
@@ -60,9 +66,13 @@ void aymSetType(aymChip*, int);
 TSound* tsCreate(int,int,int);
 void tsDestroy(TSound*);
 void tsReset(TSound*);
-uint8_t tsIn(TSound*,int);
-void tsOut(TSound*,int,uint8_t);
+unsigned char tsIn(TSound*,int);
+void tsOut(TSound*,int,unsigned char);
 void tsSync(TSound*,int);
-std::pair<uint8_t,uint8_t> tsGetVolume(TSound*);
+tsPair tsGetVolume(TSound*);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
