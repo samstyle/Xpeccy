@@ -160,3 +160,6 @@ Fix	Fixing disk type detection
 build 20120426
 Wrk	Separate emulation code to libxpeccy - you can compile it by yourself and use as shared library
 Wrk	Some code rewriting, no new functional added
+
+build 20110510
+Wrk	Attempt to rewrite emulation core in C. Almost ready. Bugs is possible.
