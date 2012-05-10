@@ -67,7 +67,7 @@ std::string int2str(int num) {
 }
 
 bool str2bool(std::string v) {
-	return (v=="y" || v=="Y" || v=="1" || v=="yes" || v=="YES" || v=="true" || v=="TRUE");
+	return !(v=="n" || v=="N" || v=="0" || v=="no" || v=="NO" || v=="false" || v=="FALSE");
 }
 
 std::vector<std::string> splitstr(std::string str,const char* spl) {
@@ -81,7 +81,7 @@ std::vector<std::string> splitstr(std::string str,const char* spl) {
 	}
 	res.push_back(str);
 	return res;
-	
+
 }
 
 std::pair<std::string,std::string> splitline(std::string line) {
@@ -117,12 +117,12 @@ int main(int ac,char** av) {
 #else
 	printf("Using SDL surface\n");
 #endif
-	
+
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK);
 	atexit(SDL_Quit);
 	QApplication app(ac,av,true);
 	try {
-		       
+
 		int i;
 		int p=0;
 		bool dev = false;

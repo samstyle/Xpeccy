@@ -1,7 +1,10 @@
 #ifndef _XSP_HDD
 #define _XSP_HDD
 
-#include <string>
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 #define IDE_NEMO	1
@@ -23,9 +26,9 @@
 #define ATA_LBA		(1 << 3)
 #define ATA_DMA		(1 << 4)
 // get/set type
-#define	IDE_TYPE	0
-#define	IDE_FLAG	1
-#define	IDE_MAXLBA	2
+//#define	IDE_TYPE	0
+//#define	IDE_FLAG	1
+//#define	IDE_MAXLBA	2
 
 #define HDD_BUFSIZE	512
 
@@ -71,11 +74,11 @@ typedef struct {
 	uint16_t bpt;	// bytes per track
 	uint16_t bps;	// bytes per sector		512
 	uint16_t spt;	// sectors per track
-	std::string serial;	// serial
+	char serial[20];	// serial
 	uint16_t type;	// buffer type
 	uint16_t vol;	// buffer volume / 512		1
-	std::string mcver;	// microcode version
-	std::string model;	// model
+	char mcver[8];	// microcode version
+	char model[40];	// model
 } ATAPassport;
 
 typedef struct {
@@ -83,7 +86,7 @@ typedef struct {
 	int flags;
 	int lba;
 	int maxlba;
-	std::string image;
+	char* image;
 	struct {
 		uint8_t data[HDD_BUFSIZE];
 		uint32_t pos;
@@ -112,15 +115,16 @@ typedef struct {
 
 IDE* ideCreate(int);
 void ideDestroy(IDE*);
-bool ideIn(IDE*,uint16_t,uint8_t*,bool);
-bool ideOut(IDE*,uint16_t,uint8_t,bool);
+int ideIn(IDE*,uint16_t,uint8_t*,int);
+int ideOut(IDE*,uint16_t,uint8_t,int);
 void ideReset(IDE*);
 
-int ideGet(IDE*,int,int);
-void ideSet(IDE*,int,int,int);
-std::string ideGetPath(IDE*,int);
-void ideSetPath(IDE*,int,std::string);
+void ideSetImage(IDE*,int,const char*);
 ATAPassport ideGetPassport(IDE*,int);
 void ideSetPassport(IDE*,int,ATAPassport);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

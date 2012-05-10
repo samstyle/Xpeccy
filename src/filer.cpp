@@ -31,7 +31,7 @@ bool saveChangedDisk(int id) {
 		mbox.setStandardButtons(QMessageBox::Yes|QMessageBox::Ignore|QMessageBox::Cancel);
 		mbox.setIcon(QMessageBox::Warning);
 		switch (mbox.exec()) {
-			case QMessageBox::Yes: res = saveFile(flp->path.c_str(),FT_DISK,id); break;		// save
+			case QMessageBox::Yes: res = saveFile(flp->path,FT_DISK,id); break;		// save
 			case QMessageBox::Ignore: res=true; break;					// don't save
 			case QMessageBox::Cancel: res=false; break;					// cancel
 		}

@@ -22,7 +22,7 @@ else ()
 	message(FATAL ERROR "Could not find z80ex and/or z80ex_dasm")
 endif()
 
-file(GLOB SOURCES ./*.cpp)
+file(GLOB SOURCES ./*.cpp ./*.c)
 file(GLOB HEADERS ./*.h)
 
 add_definitions(-Wall -O3)

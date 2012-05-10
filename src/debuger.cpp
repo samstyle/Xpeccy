@@ -194,11 +194,11 @@ void DebugWin::fillvg() {
 //	lab = (QLabel*)vglay->itemAtPosition(3,1)->widget();
 //	if (zx->bdi->vg93.wptr == NULL) {lab->setText("NULL");} else {lab->setText(QString::number(zx->bdi->vg93.cop,16));}
 //	lab = (QLabel*)vglay->itemAtPosition(4,1)->widget(); lab->setText(QString::number(zx->bdi->vg93.count));
-	lab = (QLabel*)vglay->itemAtPosition(0,3)->widget(); lab->setText(QString::number(flpGet(flp,FLP_TRK)));
+	lab = (QLabel*)vglay->itemAtPosition(0,3)->widget(); lab->setText(QString::number(flp->trk));
 //	lab = (QLabel*)vglay->itemAtPosition(1,3)->widget(); lab->setText(zx->bdi->vg93.side?"1":"0");
-	lab = (QLabel*)vglay->itemAtPosition(2,3)->widget(); lab->setText(QString::number(flpGet(flp,FLP_POS)));
+	lab = (QLabel*)vglay->itemAtPosition(2,3)->widget(); lab->setText(QString::number(flp->pos));
 	lab = (QLabel*)vglay->itemAtPosition(3,3)->widget(); lab->setText(QString::number(flpRd(flp),16));
-	lab = (QLabel*)vglay->itemAtPosition(4,3)->widget(); lab->setText(QString::number(flpGetField(flp)));
+	lab = (QLabel*)vglay->itemAtPosition(4,3)->widget(); lab->setText(QString::number(flp->field));
 }
 
 void DebugWin::fillrays() {

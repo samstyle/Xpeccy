@@ -3,9 +3,11 @@
 
 void loadBoot(Floppy* flp) {
 	if (flpGet(flp,FLP_DISKTYPE) == DISK_TYPE_TRD) {
-		std::vector<TRFile> cat = flpGetTRCatalog(flp);
+		TRFile cat[128];
+		int catSize = flpGetTRCatalog(flp,cat);
+//		std::vector<TRFile> cat = flpGetTRCatalog(flp);
 		bool gotBoot = false;
-		for (unsigned int i=0; i < cat.size(); i++) {
+		for (int i=0; i < catSize; i++) {
 			if (std::string((const char*)&cat[i].name[0],9) == "boot    B") gotBoot = true;
 		}
 		if (!gotBoot) {
@@ -37,7 +39,8 @@ int loadTRD(Floppy* flp, const char* name) {
 		i++;
 	} while  (!file.eof());
 	delete(trackBuf);
-	flp->path = name;
+	flp->path = (char*)realloc(flp->path,strlen(name) + 1);
+	strcpy(flp->path,name);
 	flp->flag |= FLP_INSERT;
 	loadBoot(flp);
 	flp->flag &= ~FLP_CHANGED;

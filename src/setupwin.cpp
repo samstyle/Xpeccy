@@ -4,6 +4,7 @@
 #include <QVector3D>
 #include <QDebug>
 #include <SDL.h>
+#include <stdlib.h>
 
 #include "common.h"
 #include "sound.h"
@@ -314,50 +315,50 @@ void SetupWin::start() {
 	ui.bdebox->setChecked(zx->bdi->flag & BDI_ENABLE);
 	ui.bdtbox->setChecked(zx->bdi->flag & BDI_TURBO);
 	Floppy* flp = zx->bdi->flop[0];
-	ui.apathle->setText(QDialog::trUtf8(flp->path.c_str()));
+	ui.apathle->setText(QDialog::trUtf8(flp->path));
 		ui.a80box->setChecked(flp->flag & FLP_TRK80);
 		ui.adsbox->setChecked(flp->flag & FLP_DS);
 		ui.awpbox->setChecked(flp->flag & FLP_PROTECT);
 	flp = zx->bdi->flop[1];
-	ui.bpathle->setText(QDialog::trUtf8(flp->path.c_str()));
+	ui.bpathle->setText(QDialog::trUtf8(flp->path));
 		ui.b80box->setChecked(flp->flag & FLP_TRK80);
 		ui.bdsbox->setChecked(flp->flag & FLP_DS);
 		ui.bwpbox->setChecked(flp->flag & FLP_PROTECT);
 	flp = zx->bdi->flop[2];
-	ui.cpathle->setText(QDialog::trUtf8(flp->path.c_str()));
+	ui.cpathle->setText(QDialog::trUtf8(flp->path));
 		ui.c80box->setChecked(flp->flag & FLP_TRK80);
 		ui.cdsbox->setChecked(flp->flag & FLP_DS);
 		ui.cwpbox->setChecked(flp->flag & FLP_PROTECT);
 	flp = zx->bdi->flop[3];
-	ui.dpathle->setText(QDialog::trUtf8(flp->path.c_str()));
+	ui.dpathle->setText(QDialog::trUtf8(flp->path));
 		ui.d80box->setChecked(flp->flag & FLP_TRK80);
 		ui.ddsbox->setChecked(flp->flag & FLP_DS);
 		ui.dwpbox->setChecked(flp->flag & FLP_PROTECT);
 	fillDiskCat();
 // hdd
-	ui.hiface->setCurrentIndex(ui.hiface->findData(ideGet(zx->ide,IDE_NONE,IDE_TYPE)));
+	ui.hiface->setCurrentIndex(ui.hiface->findData(zx->ide->type));
 
-	ui.hm_type->setCurrentIndex(ui.hm_type->findData(ideGet(zx->ide,IDE_MASTER,IDE_TYPE)));
+	ui.hm_type->setCurrentIndex(ui.hm_type->findData(zx->ide->master->type));
 	ATAPassport pass = ideGetPassport(zx->ide,IDE_MASTER);
-	ui.hm_model->setText(QDialog::trUtf8(pass.model.c_str()));
-	ui.hm_ser->setText(QDialog::trUtf8(pass.serial.c_str()));
-	ui.hm_path->setText(QDialog::trUtf8(ideGetPath(zx->ide,IDE_MASTER).c_str()));
-	ui.hm_islba->setChecked(ideGet(zx->ide,IDE_MASTER,IDE_FLAG) & ATA_LBA);
+	ui.hm_model->setText(QDialog::trUtf8(pass.model,NULL,40));
+	ui.hm_ser->setText(QDialog::trUtf8(pass.serial,NULL,20));
+	ui.hm_path->setText(QDialog::trUtf8(zx->ide->master->image));
+	ui.hm_islba->setChecked(zx->ide->master->flags & ATA_LBA);
 	ui.hm_gsec->setValue(pass.spt);
 	ui.hm_ghd->setValue(pass.hds);
 	ui.hm_gcyl->setValue(pass.cyls);
-	ui.hm_glba->setValue(ideGet(zx->ide,IDE_MASTER,IDE_MAXLBA));
+	ui.hm_glba->setValue(zx->ide->master->maxlba);
 
-	ui.hs_type->setCurrentIndex(ui.hm_type->findData(ideGet(zx->ide,IDE_SLAVE,IDE_TYPE)));
+	ui.hs_type->setCurrentIndex(ui.hm_type->findData(zx->ide->slave->type));
 	pass = ideGetPassport(zx->ide,IDE_SLAVE);
-	ui.hs_model->setText(QDialog::trUtf8(pass.model.c_str()));
-	ui.hs_ser->setText(QDialog::trUtf8(pass.serial.c_str()));
-	ui.hs_path->setText(QDialog::trUtf8(ideGetPath(zx->ide,IDE_SLAVE).c_str()));
-	ui.hs_islba->setChecked(ideGet(zx->ide,IDE_SLAVE,IDE_FLAG) & ATA_LBA);
+	ui.hs_model->setText(QDialog::trUtf8(pass.model,NULL,40));
+	ui.hs_ser->setText(QDialog::trUtf8(pass.serial,NULL,20));
+	ui.hs_path->setText(QDialog::trUtf8(zx->ide->slave->image));
+	ui.hs_islba->setChecked(zx->ide->slave->flags & ATA_LBA);
 	ui.hs_gsec->setValue(pass.spt);
 	ui.hs_ghd->setValue(pass.hds);
 	ui.hs_gcyl->setValue(pass.cyls);
-	ui.hs_glba->setValue(ideGet(zx->ide,IDE_SLAVE,IDE_MAXLBA));
+	ui.hs_glba->setValue(zx->ide->slave->maxlba);
 // tape
 	ui.cbTapeAuto->setChecked(optGetFlag(OF_TAPEAUTO));
 	ui.cbTapeFast->setChecked(optGetFlag(OF_TAPEFAST));
@@ -463,34 +464,35 @@ void SetupWin::apply() {
 	if (ui.dwpbox->isChecked()) flp->flag |= FLP_PROTECT;
 
 // hdd
-	ideSet(zx->ide,IDE_NONE,IDE_TYPE,ui.hiface->itemData(ui.hiface->currentIndex()).toInt());
+	zx->ide->type = ui.hiface->itemData(ui.hiface->currentIndex()).toInt();
 
-	int flg = ideGet(zx->ide,IDE_MASTER,IDE_FLAG);
+	int flg = zx->ide->master->flags;
 	ATAPassport pass = ideGetPassport(zx->ide,IDE_MASTER);
-	ideSet(zx->ide,IDE_MASTER,IDE_TYPE,ui.hm_type->itemData(ui.hm_type->currentIndex()).toInt());
-	pass.model = std::string(ui.hm_model->text().toUtf8().data(),40);
-	pass.serial = std::string(ui.hm_ser->text().toUtf8().data(),20);
-	ideSetPath(zx->ide,IDE_MASTER,std::string(ui.hm_path->text().toUtf8().data()));
+
+	zx->ide->master->type = ui.hm_type->itemData(ui.hm_type->currentIndex()).toInt();
+	memcpy(pass.model,std::string(ui.hm_model->text().toUtf8().data(),40).c_str(),40);
+	memcpy(pass.serial,std::string(ui.hm_ser->text().toUtf8().data(),20).c_str(),20);
+	ideSetImage(zx->ide,IDE_MASTER,ui.hm_path->text().toUtf8().data());
 	setFlagBit(ui.hm_islba->isChecked(),&flg,ATA_LBA);
-	ideSet(zx->ide,IDE_MASTER,IDE_FLAG,flg);
+	zx->ide->master->flags = flg;
 	pass.spt = ui.hm_gsec->value();
 	pass.hds = ui.hm_ghd->value();
 	pass.cyls = ui.hm_gcyl->value();
-	ideSet(zx->ide,IDE_MASTER,IDE_MAXLBA,ui.hm_glba->value());
+	zx->ide->master->maxlba = ui.hm_glba->value();
 	ideSetPassport(zx->ide,IDE_MASTER,pass);
 
 	pass = ideGetPassport(zx->ide,IDE_SLAVE);
-	flg = ideGet(zx->ide,IDE_SLAVE,IDE_FLAG);
-	ideSet(zx->ide,IDE_SLAVE,IDE_TYPE,ui.hs_type->itemData(ui.hs_type->currentIndex()).toInt());
-	pass.model = std::string(ui.hs_model->text().toUtf8().data(),40);
-	pass.serial = std::string(ui.hs_ser->text().toUtf8().data(),20);
-	ideSetPath(zx->ide,IDE_SLAVE,std::string(ui.hs_path->text().toUtf8().data()));
+	flg = zx->ide->slave->flags;
+	zx->ide->slave->type = ui.hs_type->itemData(ui.hs_type->currentIndex()).toInt();
+	memcpy(pass.model,std::string(ui.hs_model->text().toUtf8().data(),40).c_str(),40);
+	memcpy(pass.serial,std::string(ui.hs_ser->text().toUtf8().data(),20).c_str(),20);
+	ideSetImage(zx->ide,IDE_SLAVE,ui.hm_path->text().toUtf8().data());
 	setFlagBit(ui.hs_islba->isChecked(),&flg,ATA_LBA);
-	ideSet(zx->ide,IDE_SLAVE,IDE_FLAG,flg);
+	zx->ide->slave->flags = flg;
 	pass.spt = ui.hs_gsec->value();
 	pass.hds = ui.hs_ghd->value();
 	pass.cyls = ui.hs_gcyl->value();
-	ideSet(zx->ide,IDE_SLAVE,IDE_MAXLBA,ui.hs_glba->value());
+	zx->ide->slave->maxlba = ui.hs_glba->value();
 	ideSetPassport(zx->ide,IDE_SLAVE,pass);
 // tape
 	optSetFlag(OF_TAPEAUTO,ui.cbTapeAuto->isChecked());
@@ -773,7 +775,9 @@ void SetupWin::copyToTape() {
 	int dsk = ui.disktabs->currentIndex();
 	QModelIndexList idx = ui.disklist->selectionModel()->selectedRows();
 	if (idx.size() == 0) return;
-	std::vector<TRFile> cat = flpGetTRCatalog(zx->bdi->flop[dsk]);
+	TRFile cat[128];
+	flpGetTRCatalog(zx->bdi->flop[dsk],cat);
+	// std::vector<TRFile> cat = flpGetTRCatalog(zx->bdi->flop[dsk]);
 	int row;
 	uint8_t* buf = new uint8_t[0xffff];
 	uint16_t line,start,len;
@@ -957,9 +961,11 @@ void SetupWin::fillDiskCat() {
 	} else {
 		wid->setEnabled(true);
 		if (flpGet(zx->bdi->flop[dsk],FLP_DISKTYPE) == DISK_TYPE_TRD) {
-			std::vector<TRFile> cat = flpGetTRCatalog(zx->bdi->flop[dsk]);
-			wid->setRowCount(cat.size());
-			for (uint i=0; i<cat.size(); i++) {
+			TRFile cat[128];
+			int catSize = flpGetTRCatalog(zx->bdi->flop[dsk],cat);
+			// std::vector<TRFile> cat = flpGetTRCatalog(zx->bdi->flop[dsk]);
+			wid->setRowCount(catSize);
+			for (int i=0; i<catSize; i++) {
 				itm = new QTableWidgetItem(QString(std::string((char*)cat[i].name,8).c_str())); wid->setItem(i,0,itm);
 				itm = new QTableWidgetItem(QString(QChar(cat[i].ext))); wid->setItem(i,1,itm);
 				itm = new QTableWidgetItem(QString::number(cat[i].lst + (cat[i].hst << 8))); wid->setItem(i,2,itm);
@@ -1082,7 +1088,7 @@ void SetupWin::newdisk(int idx) {
 	Floppy *flp = zx->bdi->flop[idx];
 	if (!saveChangedDisk(idx & 3)) return;
 	flpFormat(flp);
-	flp->path = "";
+	memset(flp->path,'\0',1);
 	flp->flag |= (FLP_INSERT | FLP_CHANGED);
 	updatedisknams();
 }
@@ -1097,10 +1103,10 @@ void SetupWin::loadb() {loadFile("",FT_DISK,1); updatedisknams();}
 void SetupWin::loadc() {loadFile("",FT_DISK,2); updatedisknams();}
 void SetupWin::loadd() {loadFile("",FT_DISK,3); updatedisknams();}
 
-void SetupWin::savea() {Floppy* flp = zx->bdi->flop[0]; if (flp->flag & FLP_INSERT) saveFile(flp->path.c_str(),FT_DISK,0);}
-void SetupWin::saveb() {Floppy* flp = zx->bdi->flop[1]; if (flp->flag & FLP_INSERT) saveFile(flp->path.c_str(),FT_DISK,1);}
-void SetupWin::savec() {Floppy* flp = zx->bdi->flop[2]; if (flp->flag & FLP_INSERT) saveFile(flp->path.c_str(),FT_DISK,2);}
-void SetupWin::saved() {Floppy* flp = zx->bdi->flop[3]; if (flp->flag & FLP_INSERT) saveFile(flp->path.c_str(),FT_DISK,3);}
+void SetupWin::savea() {Floppy* flp = zx->bdi->flop[0]; if (flp->flag & FLP_INSERT) saveFile(flp->path,FT_DISK,0);}
+void SetupWin::saveb() {Floppy* flp = zx->bdi->flop[1]; if (flp->flag & FLP_INSERT) saveFile(flp->path,FT_DISK,1);}
+void SetupWin::savec() {Floppy* flp = zx->bdi->flop[2]; if (flp->flag & FLP_INSERT) saveFile(flp->path,FT_DISK,2);}
+void SetupWin::saved() {Floppy* flp = zx->bdi->flop[3]; if (flp->flag & FLP_INSERT) saveFile(flp->path,FT_DISK,3);}
 
 void SetupWin::ejcta() {saveChangedDisk(0); flpEject(zx->bdi->flop[0]); updatedisknams();}
 void SetupWin::ejctb() {saveChangedDisk(1); flpEject(zx->bdi->flop[1]); updatedisknams();}
@@ -1108,10 +1114,10 @@ void SetupWin::ejctc() {saveChangedDisk(2); flpEject(zx->bdi->flop[2]); updatedi
 void SetupWin::ejctd() {saveChangedDisk(3); flpEject(zx->bdi->flop[3]); updatedisknams();}
 
 void SetupWin::updatedisknams() {
-	ui.apathle->setText(QDialog::trUtf8(zx->bdi->flop[0]->path.c_str()));
-	ui.bpathle->setText(QDialog::trUtf8(zx->bdi->flop[1]->path.c_str()));
-	ui.cpathle->setText(QDialog::trUtf8(zx->bdi->flop[2]->path.c_str()));
-	ui.dpathle->setText(QDialog::trUtf8(zx->bdi->flop[3]->path.c_str()));
+	ui.apathle->setText(QDialog::trUtf8(zx->bdi->flop[0]->path));
+	ui.bpathle->setText(QDialog::trUtf8(zx->bdi->flop[1]->path));
+	ui.cpathle->setText(QDialog::trUtf8(zx->bdi->flop[2]->path));
+	ui.dpathle->setText(QDialog::trUtf8(zx->bdi->flop[3]->path));
 	fillDiskCat();
 }
 

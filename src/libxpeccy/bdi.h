@@ -1,8 +1,10 @@
 #ifndef _BDI_H
 #define _BDI_H
 
-#include <string>
-#include <vector>
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 #include "floppy.h"
@@ -27,12 +29,12 @@
 #define BDI_SYS		0xff
 
 typedef struct {
-	bool turbo;
-	bool idle;
-	bool mr;
-	bool crchi;
-	bool block,mfm,irq,drq,sdir;
-	bool idxold,idx,strb;
+	int turbo;
+	int idle;
+	int mr;
+	int crchi;
+	int block,mfm,irq,drq,sdir;
+	int idxold,idx,strb;
 	int type;
 	int status;
 	uint8_t com,cop;
@@ -58,12 +60,11 @@ BDI* bdiCreate();
 void bdiDestroy(BDI*);
 void bdiReset(BDI*);
 void bdiSync(BDI*,int);
-bool bdiIn(BDI*,int, uint8_t*);
-bool bdiOut(BDI*,int, uint8_t);
+int bdiIn(BDI*,int, uint8_t*);
+int bdiOut(BDI*,int, uint8_t);
 
-//bool bdiGetFlag(BDI*,int);
-//void bdiSetFlag(BDI*,int,bool);
-//int bdiGet(BDI*,int);
-//Floppy* bdiGetFloppy(BDI*,int);
+#ifdef __cplusplus
+}
+#endif
 
 #endif

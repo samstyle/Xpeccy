@@ -1,17 +1,21 @@
 #ifndef _FLOPPY_H
 #define	_FLOPPY_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
-#include <vector>
+//#include <vector>
 
 #define TRACKLEN 6250
 
 #define DISK_TYPE_TRD	1
 
-#define	FLP_TRK		0
-#define	FLP_RTRK	1
-#define	FLP_FIELD	2
-#define	FLP_POS		3
+//#define	FLP_TRK		0
+//#define	FLP_RTRK	1
+//#define	FLP_FIELD	2
+//#define	FLP_POS		3
 #define	FLP_DISKTYPE	10
 
 #define	ERR_OK		0
@@ -57,7 +61,7 @@ typedef struct {
 	uint8_t field;
 	int32_t pos;
 	uint32_t ti;
-	std::string path;
+	char* path;
 	struct {
 		uint8_t byte[TRACKLEN];
 		uint8_t field[TRACKLEN];
@@ -69,29 +73,33 @@ void flpDestroy(Floppy*);
 
 uint8_t flpRd(Floppy*);
 void flpWr(Floppy*,uint8_t);
-bool flpEject(Floppy*);
+int flpEject(Floppy*);
 uint8_t flpGetField(Floppy*);
-bool flpNext(Floppy*,bool);		// return true on index strobe
-void flpStep(Floppy*,bool);
+int flpNext(Floppy*,int);		// return 1 if index strobe
+void flpStep(Floppy*,int);
 
 int flpGet(Floppy*,int);
 void flpSet(Floppy*,int,int);
 
 void flpFormat(Floppy*);
-void flpFormTrack(Floppy*,int,std::vector<Sector>);
+void flpFormTrack(Floppy*,int,Sector*,int);
 void flpFormTRDTrack(Floppy*,int,uint8_t*);
 void flpClearTrack(Floppy*,int);
-void flpFillFields(Floppy*,int,bool);
+void flpFillFields(Floppy*,int,int);
 
-bool flpGetSectorData(Floppy*,uint8_t,uint8_t,uint8_t*,int);
-bool flpGetSectorsData(Floppy*,uint8_t,uint8_t,uint8_t*,int);
-bool flpPutSectorData(Floppy*,uint8_t,uint8_t,uint8_t*,int);
+int flpGetSectorData(Floppy*,uint8_t,uint8_t,uint8_t*,int);
+int flpGetSectorsData(Floppy*,uint8_t,uint8_t,uint8_t*,int);
+int flpPutSectorData(Floppy*,uint8_t,uint8_t,uint8_t*,int);
 void flpPutTrack(Floppy*,int,uint8_t*,int);
 void flpGetTrack(Floppy*,int,uint8_t*);
 void flpGetTrackFields(Floppy*,int,uint8_t*);
 
 int flpCreateFile(Floppy*,TRFile*);
-std::vector<TRFile> flpGetTRCatalog(Floppy*);
+int flpGetTRCatalog(Floppy*,TRFile*);
 TRFile flpGetCatalogEntry(Floppy*, int);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -3,15 +3,15 @@
 int loadFDI(Floppy* flp,const char* name) {
 	std::ifstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
-	
+
 	uint8_t* buf = new uint8_t[14];
 	Sector sct;
-	std::vector<Sector> trkimg;
+	Sector trkimg[256];
 	int i,j,scnt;
 	uint8_t fcnt,tmp;
 	uint16_t tmpa,tmpb,slen;
 	size_t tmpd,tmph,tmpt,tmps,cpos;
-	
+
 	file.read((char*)buf,14);
 	if (std::string((char*)buf,3) != "FDI") return ERR_FDI_SIGN;
 	bool err = (buf[3] != 0);
@@ -23,7 +23,7 @@ int loadFDI(Floppy* flp,const char* name) {
 	file.seekg(tmph);				// read tracks data
 	for (i = 0; i < tmpa; i++) {
 		for (j = 0; j < tmpb; j++) {
-			trkimg.clear();
+//			trkimg.clear();
 			tmpt = tmpd + getlen(&file,4);
 			file.seekg(2,std::ios_base::cur);		// skip 2 bytes
 			tmp = file.get();			// sectors in disk;
@@ -41,9 +41,10 @@ int loadFDI(Floppy* flp,const char* name) {
 				sct.data = new uint8_t[slen];
 				file.read((char*)sct.data,slen);	// read sector data
 				file.seekg(cpos);
-				trkimg.push_back(sct);
+				trkimg[scnt] = sct;
+				//trkimg.push_back(sct);
 			}
-			flpFormTrack(flp, (i << 1) + j, trkimg);
+			flpFormTrack(flp, (i << 1) + j, trkimg, tmp);
 		}
 	}
 	flp->flag &= ~FLP_PROTECT;
@@ -51,7 +52,8 @@ int loadFDI(Floppy* flp,const char* name) {
 	flp->flag |= FLP_INSERT;
 	loadBoot(flp);
 	flp->flag &= ~FLP_CHANGED;
-	flp->path = name;
-	
+	flp->path = (char*)realloc(flp->path,strlen(name) + 1);
+	strcpy(flp->path,name);
+
 	return ERR_OK;
 }

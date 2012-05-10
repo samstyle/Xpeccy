@@ -17,7 +17,7 @@ int loadSCL(Floppy* flp,const char* name) {
 	uint16_t tmpa;
 	int scnt;
 	int i;
-	
+
 	file.read((char*)buf,9);
 	if (std::string((const char*)buf,8) != "SINCLAIR") return ERR_SCL_SIGN;
 	if (buf[8] > 0x80) return ERR_SCL_MANY;
@@ -50,7 +50,8 @@ int loadSCL(Floppy* flp,const char* name) {
 		flpFormTRDTrack(flp,i,buf);
 		i++;
 	}
-	flp->path = name;
+	flp->path = (char*)realloc(flp->path,strlen(name) + 1);
+	strcpy(flp->path,name);
 	flp->flag |= FLP_INSERT;
 	loadBoot(flp);
 	flp->flag &= ~FLP_CHANGED;
@@ -67,7 +68,7 @@ int saveSCL(Floppy* flp,const char* name) {
 	std::vector<FilePos> fplist;
 	int i,j;
 	uint8_t tr,sc;
-	
+
 	memcpy(img,sign,8);
 	img[8] = 0;
 	dptr = img + 9;
@@ -111,13 +112,13 @@ int saveSCL(Floppy* flp,const char* name) {
 	}
 	putint(dptr, j);
 	dptr += 4;
-	
+
 	std::ofstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
 	file.write((char*)img,dptr-img);
 	file.close();
 
 	flp->flag &= ~FLP_CHANGED;
-	
+
 	return ERR_OK;
 }

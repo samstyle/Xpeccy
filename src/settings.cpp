@@ -483,25 +483,25 @@ void saveConfig() {
 	optSet("BETADISK","C",getDiskString(zx->bdi->flop[2]));
 	optSet("BETADISK","D",getDiskString(zx->bdi->flop[3]));
 
-	optSet("IDE","iface",ideGet(zx->ide,IDE_NONE,IDE_TYPE));
+	optSet("IDE","iface",zx->ide->type);
 
-	optSet("IDE","master.type",ideGet(zx->ide,IDE_MASTER,IDE_TYPE));
+	optSet("IDE","master.type",zx->ide->master->type);
 	ATAPassport pass = ideGetPassport(zx->ide,IDE_MASTER);
-	optSet("IDE","master.model",pass.model);
-	optSet("IDE","master.serial",pass.serial);
-	optSet("IDE","master.image",ideGetPath(zx->ide,IDE_MASTER));
-	optSet("IDE","master.lba",(ideGet(zx->ide,IDE_MASTER,IDE_FLAG) & ATA_LBA) != 0);
-	optSet("IDE","master.maxlba",ideGet(zx->ide,IDE_MASTER,IDE_MAXLBA));
+	optSet("IDE","master.model",std::string(pass.model,40));
+	optSet("IDE","master.serial",std::string(pass.serial,20));
+	optSet("IDE","master.image",std::string(zx->ide->master->image));
+	optSet("IDE","master.lba",(zx->ide->master->flags & ATA_LBA) != 0);
+	optSet("IDE","master.maxlba",zx->ide->master->maxlba);
 	std::string chs = int2str(pass.spt) + "/" + int2str(pass.hds) + "/" + int2str(pass.cyls);
 	optSet("IDE","master.chs",chs);
 
-	optSet("IDE","slave.type",ideGet(zx->ide,IDE_SLAVE,IDE_TYPE));
-	pass = ideGetPassport(zx->ide,IDE_MASTER);
-	optSet("IDE","slave.model",pass.model);
-	optSet("IDE","slave.serial",pass.serial);
-	optSet("IDE","slave.image",ideGetPath(zx->ide,IDE_SLAVE));
-	optSet("IDE","slave.lba",(ideGet(zx->ide,IDE_MASTER,IDE_FLAG) & ATA_LBA) != 0);
-	optSet("IDE","slave.maxlba",ideGet(zx->ide,IDE_MASTER,IDE_MAXLBA));
+	optSet("IDE","slave.type",zx->ide->slave->type);
+	pass = ideGetPassport(zx->ide,IDE_SLAVE);
+	optSet("IDE","slave.model",std::string(pass.model,40));
+	optSet("IDE","slave.serial",std::string(pass.serial,20));
+	optSet("IDE","slave.image",std::string(zx->ide->slave->image));
+	optSet("IDE","slave.lba",(zx->ide->slave->flags & ATA_LBA) != 0);
+	optSet("IDE","slave.maxlba",zx->ide->slave->maxlba);
 	chs = int2str(pass.spt) + "/" + int2str(pass.hds) + "/" + int2str(pass.cyls);
 	optSet("IDE","slave.chs",chs);
 
@@ -771,7 +771,7 @@ void loadConfig(bool dev) {
 	int section = SECT_NONE;
 	ATAPassport masterPass = ideGetPassport(zx->ide,IDE_MASTER);
 	ATAPassport slavePass = ideGetPassport(zx->ide,IDE_SLAVE);
-	int flg;
+//	int flg;
 	if (!dev) memSet(zx->mem,MEM_MEMSIZE,48);
 	if (!file.good()) {
 //		shithappens(std::string("Can't find config file<br><b>") + cfname + std::string("</b><br>Default one will be created."));
@@ -866,17 +866,17 @@ void loadConfig(bool dev) {
 						addBookmark(pnam.c_str(),pval.c_str());
 						break;
 					case SECT_IDE:
-						if (pnam=="iface") ideSet(zx->ide,IDE_NONE,IDE_TYPE,atoi(pval.c_str()));
-						if (pnam=="master.type") ideSet(zx->ide,IDE_MASTER,IDE_TYPE,atoi(pval.c_str()));
-						if (pnam=="master.model") masterPass.model = std::string(pval,0,40);
-						if (pnam=="master.serial") masterPass.serial = std::string(pval,0,20);
+						if (pnam=="iface") zx->ide->type = atoi(pval.c_str());
+						if (pnam=="master.type") zx->ide->master->type = atoi(pval.c_str());
+						if (pnam=="master.model") memcpy(masterPass.model,std::string(pval,0,40).c_str(),40);
+						if (pnam=="master.serial") memcpy(masterPass.serial,std::string(pval,0,20).c_str(),20);
 						if (pnam=="master.lba") {
-							flg = ideGet(zx->ide,IDE_MASTER,IDE_FLAG);
-							setFlagBit(str2bool(pval),&flg, ATA_LBA);
-							ideSet(zx->ide,IDE_MASTER,IDE_FLAG,flg);
+							//flg = ideGet(zx->ide,IDE_MASTER,IDE_FLAG);
+							setFlagBit(str2bool(pval),&zx->ide->master->flags, ATA_LBA);
+							//ideSet(zx->ide,IDE_MASTER,IDE_FLAG,flg);
 						}
-						if (pnam=="master.maxlba") ideSet(zx->ide,IDE_MASTER,IDE_MAXLBA,atoi(pval.c_str()));
-						if (pnam=="master.image") ideSetPath(zx->ide,IDE_MASTER,pval);
+						if (pnam=="master.maxlba") zx->ide->master->maxlba = atoi(pval.c_str());
+						if (pnam=="master.image") ideSetImage(zx->ide,IDE_MASTER,pval.c_str());
 						if (pnam=="master.chs") {
 							vect = splitstr(pval,"/");
 							if (vect.size() > 2) {
@@ -885,16 +885,16 @@ void loadConfig(bool dev) {
 								masterPass.cyls = atoi(vect.at(2).c_str());
 							}
 						}
-						if (pnam=="slave.type") ideSet(zx->ide,IDE_SLAVE,IDE_TYPE,atoi(pval.c_str()));
-						if (pnam=="slave.model") slavePass.model = std::string(pval,0,40);
-						if (pnam=="slave.serial") slavePass.serial = std::string(pval,0,20);
+						if (pnam=="slave.type") zx->ide->slave->type = atoi(pval.c_str());
+						if (pnam=="slave.model") memcpy(slavePass.model,std::string(pval,0,40).c_str(),40);
+						if (pnam=="slave.serial") memcpy(slavePass.serial,std::string(pval,0,20).c_str(),20);
 						if (pnam=="slave.lba") {
-							flg = ideGet(zx->ide,IDE_SLAVE,IDE_FLAG);
-							setFlagBit(str2bool(pval),&flg, ATA_LBA);
-							ideSet(zx->ide,IDE_SLAVE,IDE_FLAG,flg);
+							//flg = ideGet(zx->ide,IDE_SLAVE,IDE_FLAG);
+							setFlagBit(str2bool(pval),&zx->ide->slave->flags, ATA_LBA);
+							//ideSet(zx->ide,IDE_SLAVE,IDE_FLAG,flg);
 						}
-						if (pnam=="slave.maxlba") ideSet(zx->ide,IDE_SLAVE,IDE_MAXLBA,atoi(pval.c_str()));
-						if (pnam=="slave.image") ideSetPath(zx->ide,IDE_SLAVE,pval);
+						if (pnam=="slave.maxlba") zx->ide->slave->maxlba = atoi(pval.c_str());
+						if (pnam=="slave.image") ideSetImage(zx->ide,IDE_SLAVE,pval.c_str());
 						if (pnam=="slave.chs") {
 							vect = splitstr(pval,"/");
 							if (vect.size() > 2) {

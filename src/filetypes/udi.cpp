@@ -82,7 +82,8 @@ int loadUDI(Floppy* flp, const char* name) {
 		loadUDITrack(flp,&file,i,false);
 		if (sides) loadUDITrack(flp,&file,i,true);
 	}
-	flp->path = name;
+	flp->path = (char*)realloc(flp->path,strlen(name) + 1);
+	strcpy(flp->path,name);
 	flp->flag |= FLP_INSERT;
 	loadBoot(flp);
 	flp->flag &= ~FLP_CHANGED;
@@ -95,7 +96,7 @@ int saveUDI(Floppy* flp, const char* name) {
 	uint8_t* dptr = img;
 	uint8_t* bptr;
 	int i,j;
-	
+
 	memcpy(dptr,sign,4);
 	bptr = img + 4;
 	dptr += 8;
