@@ -1,8 +1,10 @@
 #ifndef _TAPE_H
 #define _TAPE_H
 
-#include <vector>
-#include <string>
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 #define	PILOTLEN	2168
@@ -27,7 +29,7 @@
 typedef struct {
 	int type;
 	int flag;
-	std::string name;
+	const char* name;
 	int size;
 	int time;
 	int curtime;
@@ -43,46 +45,53 @@ typedef struct {
 	int len1;
 	int pdur;
 	int dataPos;
-	std::vector<int> data;
+	int sigCount;
+	int* sigData;
 } TapeBlock;
 
 typedef struct {
 	int flag;
 	int block;
 	int pos;
-	bool signal;
-	bool toutold;
-	bool outsig;
+	int signal;
+	int toutold;
+	int outsig;
 	int sigLen;
 	double sigCount;
-	std::string path;
+	char* path;
 	TapeBlock tmpBlock;
-	std::vector<TapeBlock> data;
+	int blkCount;
+	TapeBlock* blkData;
 } Tape;
 
 Tape* tapCreate();
 void tapDestroy(Tape*);
 
 void tapEject(Tape*);
-bool tapPlay(Tape*);
+int tapPlay(Tape*);
 void tapRec(Tape*);
 void tapStop(Tape*);
 void tapRewind(Tape*,int);
 
 void tapSync(Tape*,int);
-//int tapGet(Tape*,int);
-//int tapGet(Tape*,int,int);
 void tapNextBlock(Tape*);
 
 TapeBlockInfo tapGetBlockInfo(Tape*,int);
-std::vector<TapeBlockInfo> tapGetBlocksInfo(Tape*);
-std::vector<uint8_t> tapGetBlockData(Tape*,int);
-int tapGetBlockTime(Tape* tape, int blk, int pos);
+int tapGetBlocksInfo(Tape*,TapeBlockInfo*);
+int tapGetBlockData(Tape*,int,unsigned char*);
+int tapGetBlockTime(Tape*,int,int);
 
 void tapAddBlock(Tape*,TapeBlock);
 void tapDelBlock(Tape*,int);
 void tapSwapBlocks(Tape*,int,int);
 
-void tapAddFile(Tape*,std::string,int,uint16_t,uint16_t,uint16_t,uint8_t*,bool);
+void tapAddFile(Tape*,const char*,int,uint16_t,uint16_t,uint16_t,uint8_t*,int);
+void addBlockByte(TapeBlock*, uint8_t);
+void blkClear(TapeBlock*);
+void blkAddSignal(TapeBlock*, int);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

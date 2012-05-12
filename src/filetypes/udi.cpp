@@ -82,7 +82,7 @@ int loadUDI(Floppy* flp, const char* name) {
 		loadUDITrack(flp,&file,i,false);
 		if (sides) loadUDITrack(flp,&file,i,true);
 	}
-	flp->path = (char*)realloc(flp->path,strlen(name) + 1);
+	flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
 	strcpy(flp->path,name);
 	flp->flag |= FLP_INSERT;
 	loadBoot(flp);
@@ -129,6 +129,8 @@ int saveUDI(Floppy* flp, const char* name) {
 	if (!file.good()) return ERR_CANT_OPEN;
 	file.write((char*)img,dptr-img);
 	file.close();
+	flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
+	strcpy(flp->path,name);
 	flp->flag &= ~FLP_CHANGED;
 	return ERR_OK;
 }

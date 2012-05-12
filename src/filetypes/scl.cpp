@@ -50,7 +50,7 @@ int loadSCL(Floppy* flp,const char* name) {
 		flpFormTRDTrack(flp,i,buf);
 		i++;
 	}
-	flp->path = (char*)realloc(flp->path,strlen(name) + 1);
+	flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
 	strcpy(flp->path,name);
 	flp->flag |= FLP_INSERT;
 	loadBoot(flp);
@@ -118,6 +118,8 @@ int saveSCL(Floppy* flp,const char* name) {
 	file.write((char*)img,dptr-img);
 	file.close();
 
+	flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
+	strcpy(flp->path,name);
 	flp->flag &= ~FLP_CHANGED;
 
 	return ERR_OK;

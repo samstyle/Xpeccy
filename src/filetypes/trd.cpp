@@ -39,7 +39,7 @@ int loadTRD(Floppy* flp, const char* name) {
 		i++;
 	} while  (!file.eof());
 	delete(trackBuf);
-	flp->path = (char*)realloc(flp->path,strlen(name) + 1);
+	flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
 	strcpy(flp->path,name);
 	flp->flag |= FLP_INSERT;
 	loadBoot(flp);
@@ -66,6 +66,8 @@ int saveTRD(Floppy* flp, const char* name) {
 	}
 	file.write((char*)img,0xa0000);
 	file.close();
+	flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
+	strcpy(flp->path,name);
 	flp->flag &= ~FLP_CHANGED;
 	delete(img);
 	return ERR_OK;

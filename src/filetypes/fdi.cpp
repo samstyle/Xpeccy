@@ -52,7 +52,7 @@ int loadFDI(Floppy* flp,const char* name) {
 	flp->flag |= FLP_INSERT;
 	loadBoot(flp);
 	flp->flag &= ~FLP_CHANGED;
-	flp->path = (char*)realloc(flp->path,strlen(name) + 1);
+	flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
 	strcpy(flp->path,name);
 
 	return ERR_OK;

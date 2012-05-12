@@ -163,7 +163,7 @@ bool saveFile(const char* name,int flags,int drv) {
 		if ((drv == 3) && (zx->bdi->flop[3]->flag & FLP_INSERT)) filters.append(";;Disk D (*.scl *.trd *.udi)");
 	}
 	if (flags & FT_SNAP) filters.append(";;Snapshot (*.sna)");
-	if ((flags & FT_TAPE) && (zx->tape->data.size() != 0)) filters.append(";;Tape (*.tap)");
+	if ((flags & FT_TAPE) && (zx->tape->blkCount != 0)) filters.append(";;Tape (*.tap)");
 	if (filters.startsWith(";;")) filters.remove(0,2);
 	filer->setWindowTitle("Save file");
 	filer->setNameFilter(filters);

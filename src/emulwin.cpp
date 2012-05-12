@@ -83,7 +83,8 @@ QMenu* bookmarkMenu;
 QMenu* profileMenu;
 // temp emulation
 Z80EX_WORD pc,af,de,ix;
-std::vector<uint8_t> blkData;
+int blkDataSize = 0;
+uint8_t* blkData = NULL;
 int blk;
 
 void emulInit() {
@@ -307,27 +308,28 @@ keyEntry getKeyEntry(const char* name) {
 
 void setTapeCheck() {
 	QTableWidgetItem* itm;
-	for (int i=0; i < (int)zx->tape->data.size(); i++) {
+	for (int i=0; i < (int)zx->tape->blkCount; i++) {
 		itm = new QTableWidgetItem;
 		if (zx->tape->block == i) itm->setIcon(QIcon(":/images/checkbox.png"));
 		tapeUi.tapeList->setItem(i,0,itm);
 		itm = new QTableWidgetItem;
-		if (zx->tape->data[i].flag & TBF_BREAK) itm->setIcon(QIcon(":/images/cancel.png"));
+		if (zx->tape->blkData[i].flag & TBF_BREAK) itm->setIcon(QIcon(":/images/cancel.png"));
 		tapeUi.tapeList->setItem(i,1,itm);
 	}
 }
 
 void buildTapeList() {
-	std::vector<TapeBlockInfo> tinf = tapGetBlocksInfo(zx->tape);
-	tapeUi.tapeList->setRowCount(tinf.size());
+	TapeBlockInfo tinf[zx->tape->blkCount];
+	tapGetBlocksInfo(zx->tape,tinf);
+	tapeUi.tapeList->setRowCount(zx->tape->blkCount);
 	QTableWidgetItem* itm;
 	std::string tims;
-	for (uint i=0; i<tinf.size(); i++) {
+	for (int i=0; i < zx->tape->blkCount; i++) {
 		itm = new QTableWidgetItem;
 		tims = getTimeString(tinf[i].time);
 		itm = new QTableWidgetItem(QString(tims.c_str()));
 		tapeUi.tapeList->setItem(i,2,itm);
-		itm = new QTableWidgetItem(QDialog::trUtf8(tinf[i].name.c_str()));
+		itm = new QTableWidgetItem(QDialog::trUtf8(tinf[i].name));
 		tapeUi.tapeList->setItem(i,3,itm);
 	}
 	setTapeCheck();
@@ -707,12 +709,14 @@ void MainWin::emulFrame() {
 			pc = z80ex_get_reg(zx->cpu,regPC);
 			if ((pc == 0x56b) && (memGet(zx->mem,MEM_ROM) == 1)) {
 				blk = zx->tape->block;
-				if (optGetFlag(OF_TAPEFAST) && (zx->tape->data[blk].flag & TBF_BYTES)) {
+				if (optGetFlag(OF_TAPEFAST) && (zx->tape->blkData[blk].flag & TBF_BYTES)) {
 					de = z80ex_get_reg(zx->cpu,regDE);
 					ix = z80ex_get_reg(zx->cpu,regIX);
-					blkData = tapGetBlockData(zx->tape,blk);
-					if (blkData.size() == (de + 2)) {
-						for (int i = 1; i < (de + 1); i++) {
+					TapeBlockInfo inf = tapGetBlockInfo(zx->tape,blk);
+					blkData = (uint8_t*)realloc(blkData,inf.size);
+					tapGetBlockData(zx->tape,blk,blkData);
+					if (inf.size == de) {
+						for (int i = 0; i < de; i++) {
 							memWr(zx->mem,ix,blkData[i]);
 							ix++;
 						}
@@ -838,7 +842,7 @@ void EmulWin::tapeRewind(int row, int) {
 
 void EmulWin::setTapeStop(int row, int col) {
 	if ((row < 0) || (col != 1)) return;
-	zx->tape->data[row].flag ^= TBF_BREAK;
+	zx->tape->blkData[row].flag ^= TBF_BREAK;
 	setTapeCheck();
 }
 

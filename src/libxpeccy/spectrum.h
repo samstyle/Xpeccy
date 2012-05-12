@@ -2,6 +2,8 @@
 #define _XPECTR
 
 #include <stdint.h>
+#include <string>
+#include <vector>
 
 #include <z80ex.h>
 #include "memory.h"
@@ -75,8 +77,6 @@ struct ZXComp {
 		std::string rsName;
 	} opt;
 	int gsCount;
-	int tapCount;
-//	int bdiCount;
 };
 
 ZXComp* zxCreate();

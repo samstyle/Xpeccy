@@ -1,24 +1,11 @@
 #include <stdlib.h>
 #include "filetypes.h"
 
-void tapAddByte(TapeBlock* block, char val) {
-	for (int i = 0; i < 8; i++) {
-		if (val & 0x80) {
-			block->data.push_back(block->len1);
-			block->data.push_back(block->len1);
-		} else {
-			block->data.push_back(block->len0);
-			block->data.push_back(block->len0);
-		}
-		val = (val << 1);
-	}
-}
-
 TapeBlock tapDataToBlock(char* data,int len,int* sigLens) {
 	TapeBlock block;
 	int i;
 	char* ptr = data;
-	char tmp = *(data);		// block type
+	char tmp = data[0];		// block type
 	block.plen = sigLens[0];
 	block.s1len = sigLens[1];
 	block.s2len = sigLens[2];
@@ -27,16 +14,18 @@ TapeBlock tapDataToBlock(char* data,int len,int* sigLens) {
 	block.pdur = (sigLens[6] == -1) ? ((tmp == 0) ? 8063 : 3223) : sigLens[6];
 	block.flag = TBF_BYTES;
 	if (tmp == 0) block.flag |= TBF_HEAD;
-	block.data.clear();
+	block.sigCount = 0;
+	block.sigData = NULL;
+	//block.data.clear();
 	for (i = 0; i < (int)block.pdur; i++)
-		block.data.push_back(block.plen);
+		blkAddSignal(&block,block.plen);
 	if (block.s1len != 0)
-		block.data.push_back(block.s1len);
+		blkAddSignal(&block,block.s1len);
 	if (block.s2len != 0)
-		block.data.push_back(block.s2len);
-	block.dataPos = block.data.size();
+		blkAddSignal(&block,block.s2len);
+	block.dataPos = block.sigCount;
 	for (i = 0; i < len; i++) {
-		tapAddByte(&block,*ptr);
+		addBlockByte(&block,*ptr);
 		ptr++;
 	}
 	return block;
@@ -57,12 +46,13 @@ int loadTAP(Tape* tape, const char* name) {
 			file.read(blockBuf,len);
 			block = tapDataToBlock(blockBuf,len,sigLens);
 			block.pause = (block.pdur == 8063) ? 500 : 1000;
-			block.data.push_back(sigLens[5]);
+			blkAddSignal(&block,sigLens[5]);
 			tapAddBlock(tape,block);
 		}
 	}
 	tape->flag |= TAPE_CANSAVE;
-	tape->path = name;
+	tape->path = (char*)realloc(tape->path,sizeof(char) * (strlen(name) + 1));
+	strcpy(tape->path,name);
 	if (blockBuf != NULL) free(blockBuf);
 	return ERR_OK;
 }
@@ -71,18 +61,22 @@ int saveTAP(Tape* tape, const char* name) {
 	if (!(tape->flag & TAPE_CANSAVE)) return ERR_TAP_DATA;
 	std::ofstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
-	
-	std::vector<uint8_t> blockData;
-	uint32_t len;
-	
-	for (uint32_t i = 0; i < tape->data.size(); i++) {
-		blockData = tapGetBlockData(tape,i);
-		len = blockData.size();
-		file.put(len & 0xff);
-		file.put((len & 0xff00) >> 8);
-		file.write((char*)&blockData[0],blockData.size());
+
+	TapeBlockInfo inf;
+	uint8_t* blockData = NULL;
+
+	for (int i = 0; i < tape->blkCount; i++) {
+		inf = tapGetBlockInfo(tape, i);
+		inf.size += 2;	// +flag +crc
+		blockData = (uint8_t*)realloc(blockData,inf.size);
+		tapGetBlockData(tape,i,blockData);
+		file.put(inf.size & 0xff);
+		file.put((inf.size & 0xff00) >> 8);
+		file.write((char*)blockData,inf.size);
 	}
-	tape->path = name;
+	tape->path = (char*)realloc(tape->path,sizeof(char) * (strlen(name) + 1));
+	strcpy(tape->path,name);
+	if (blockData) free(blockData);
 
 	return ERR_OK;
 }

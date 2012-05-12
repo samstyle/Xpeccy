@@ -65,7 +65,6 @@ uint8_t lev,levr,levl;
 double sndSync(double tk,int fast) {
 	if (tk < tatbyte) return tk;
 	tk -= tatbyte;
-	tapSync(zx->tape,zx->tapCount); zx->tapCount = 0;
 	gsSync(zx->gs,zx->gsCount); zx->gsCount = 0;
 	tsSync(zx->ts,tatbyte);
 	if (fast != 0) return tk;

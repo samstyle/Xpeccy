@@ -161,5 +161,9 @@ build 20120426
 Wrk	Separate emulation code to libxpeccy - you can compile it by yourself and use as shared library
 Wrk	Some code rewriting, no new functional added
 
-build 20110510
+build 20120510
 Wrk	Attempt to rewrite emulation core in C. Almost ready. Bugs is possible.
+
+build 20120512
+Wrk	Rewriting tape on pure C
+Fix	Incorrect sectors size during copying file w/o header from tape to disk

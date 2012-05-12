@@ -149,8 +149,6 @@ Z80EX_BYTE iord(Z80EX_CONTEXT*,Z80EX_WORD port,void* ptr) {
 		default:
 			switch (port & 0xff) {
 				case 0xfe:
-					tapSync(comp->tape,comp->tapCount);
-					comp->tapCount = 0;
 					res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00);
 					break;
 				case 0x1f:
@@ -206,8 +204,6 @@ void iowr(Z80EX_CONTEXT*,Z80EX_WORD port,Z80EX_BYTE val,void* ptr) {
 			if ((port & 0xff) == 0xfe) {
 				comp->vid->nextBorder = val & 0x07;
 				comp->beeplev = val & 0x10;
-				tapSync(comp->tape,comp->tapCount);
-				comp->tapCount = 0;
 				comp->tape->outsig = (val & 0x08) ? true : false;
 			} else {
 				switch (comp->hw->type) {
@@ -283,7 +279,6 @@ ZXComp* zxCreate() {
 	gsReset(comp->gs);
 	zxReset(comp,RES_DEFAULT);
 	comp->gsCount = 0;
-	comp->tapCount = 0;
 	return comp;
 }
 
@@ -372,9 +367,9 @@ double zxExec(ZXComp* comp) {
 	}
 
 	ltk = res1 * comp->dotPerTick;
+	tapSync(comp->tape,ltk);
 
 	if (comp->gs->flag & GS_ENABLE) comp->gsCount += ltk;
-	comp->tapCount += ltk;
 	if (comp->bdi->flag & BDI_ENABLE) bdiSync(comp->bdi,ltk);
 	return ltk;
 }
