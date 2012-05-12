@@ -458,12 +458,12 @@ void setDiskString(Floppy* flp,std::string st) {
 void saveConfig() {
 	saveProfiles();
 	optSet("GENERAL","cpu.frq",int(zx->cpuFrq * 2));
-	optSet("MACHINE","current",zx->opt.hwName);
+	optSet("MACHINE","current",std::string(zx->opt.hwName));
 	optSet("MACHINE","restart",(emulGetFlags() & FL_RESET) != 0);
 	optSet("MACHINE","memory",memGet(zx->mem,MEM_MEMSIZE));
 	optSet("MACHINE","scrp.wait",(zx->hwFlags & WAIT_ON) != 0);
-	optSet("ROMSET","gs",zx->opt.GSRom);
-	optSet("ROMSET","current",zx->opt.rsName);
+	optSet("ROMSET","gs",std::string(zx->opt.GSRom));
+	optSet("ROMSET","current",std::string(zx->opt.rsName));
 	optSet("ROMSET","reset",rmnam[zx->resbank]);
 	optSet("VIDEO","doublesize",(zx->vid->flag & VF_DOUBLE) != 0);
 	optSet("VIDEO","bordersize",int(zx->vid->brdsize * 100));
@@ -933,9 +933,9 @@ void loadConfig(bool dev) {
 	zx->bdi->flag &= ~(BDI_ENABLE | BDI_TURBO);
 	if (optGetBool("BETADISK","enabled")) zx->bdi->flag |= BDI_ENABLE;
 	if (optGetBool("BETADISK","fast")) zx->bdi->flag |= BDI_TURBO;
-	strcat(zx->opt.hwName,optGetString("MACHINE","current").c_str());
-	strcat(zx->opt.rsName,optGetString("ROMSET","current").c_str());
-	strcat(zx->opt.GSRom,optGetString("ROMSET","gs").c_str());
+	strcpy(zx->opt.hwName,optGetString("MACHINE","current").c_str());
+	strcpy(zx->opt.rsName,optGetString("ROMSET","current").c_str());
+	strcpy(zx->opt.GSRom,optGetString("ROMSET","gs").c_str());
 	emulSetFlag(FL_RESET,optGetBool("MACHINE","restart"));
 	setFlagBit(optGetBool("MACHINE","scrp.wait"),&zx->hwFlags,WAIT_ON);
 

@@ -378,9 +378,9 @@ void SetupWin::start() {
 void SetupWin::apply() {
 // machine
 	HardWare *oldmac = zx->hw;
-	strcat(zx->opt.hwName,ui.machbox->currentText().toUtf8().data());
+	strcpy(zx->opt.hwName,ui.machbox->currentText().toUtf8().data());
 	setHardware(zx,zx->opt.hwName);
-	strcat(zx->opt.rsName,ui.rsetbox->currentText().toUtf8().data());
+	strcpy(zx->opt.rsName,ui.rsetbox->currentText().toUtf8().data());
 	setRomset(zx, zx->opt.rsName);
 	emulSetFlag(FL_RESET, ui.reschk->isChecked());
 	zx->resbank = ui.resbox->currentIndex();
@@ -393,7 +393,7 @@ void SetupWin::apply() {
 	}
 	zxSetFrq(zx,ui.cpufrq->value() / 2.0);
 	setFlagBit(ui.scrpwait->isChecked(),&zx->hwFlags,WAIT_ON);
-	strcat(zx->opt.GSRom,GSRom.c_str());
+	strcpy(zx->opt.GSRom,GSRom.c_str());
 	setRomsetList(rsl);
 	if (zx->hw != oldmac) zxReset(zx,RES_DEFAULT);
 // video
