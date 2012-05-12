@@ -243,7 +243,7 @@ void SetupWin::start() {
 	for (i=0; i < rsl.size(); i++) {
 		ui.rsetbox->addItem(QDialog::trUtf8(rsl[i].name.c_str()));
 	}
-	ui.machbox->setCurrentIndex(ui.machbox->findText(QDialog::trUtf8(zx->hw->name.c_str())));
+	ui.machbox->setCurrentIndex(ui.machbox->findText(QDialog::trUtf8(zx->hw->name)));
 	int cbx = -1;
 	RomSet* rset = currentProfile->rset;	// memGetRomset(zx->mem);
 	if (rset != NULL) cbx = ui.rsetbox->findText(QDialog::trUtf8(rset->name.c_str()));
@@ -378,8 +378,10 @@ void SetupWin::start() {
 void SetupWin::apply() {
 // machine
 	HardWare *oldmac = zx->hw;
-	zx->opt.hwName = std::string(ui.machbox->currentText().toUtf8().data()); setHardware(zx,zx->opt.hwName);
-	zx->opt.rsName = std::string(ui.rsetbox->currentText().toUtf8().data()); setRomset(zx, zx->opt.rsName);
+	strcat(zx->opt.hwName,ui.machbox->currentText().toUtf8().data());
+	setHardware(zx,zx->opt.hwName);
+	strcat(zx->opt.rsName,ui.rsetbox->currentText().toUtf8().data());
+	setRomset(zx, zx->opt.rsName);
 	emulSetFlag(FL_RESET, ui.reschk->isChecked());
 	zx->resbank = ui.resbox->currentIndex();
 	switch(ui.mszbox->currentIndex()) {
@@ -391,7 +393,7 @@ void SetupWin::apply() {
 	}
 	zxSetFrq(zx,ui.cpufrq->value() / 2.0);
 	setFlagBit(ui.scrpwait->isChecked(),&zx->hwFlags,WAIT_ON);
-	zx->opt.GSRom = GSRom;
+	strcat(zx->opt.GSRom,GSRom.c_str());
 	setRomsetList(rsl);
 	if (zx->hw != oldmac) zxReset(zx,RES_DEFAULT);
 // video

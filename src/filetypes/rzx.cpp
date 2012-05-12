@@ -4,12 +4,33 @@
 //#include <string>
 #include <zlib.h>
 
+int eatsize = 0;
+
 uint32_t getint(std::ifstream* file) {
 	uint32_t res = file->get();
 	res += (file->get() << 8);
 	res += (file->get() << 16);
 	res += (file->get() << 24);
 	return res;
+}
+
+void frmAddValue(RZXFrame* frm, uint8_t val) {
+	if ((frm->frmSize & 0xff) == 0) {
+		frm->frmData = (uint8_t*)realloc(frm->frmData, (frm->frmSize + 0x100) * sizeof(uint8_t));
+	}
+	frm->frmData[frm->frmSize] = val;
+	frm->frmSize++;
+}
+
+void rzxAddFrame(ZXComp* zx, RZXFrame* frm) {
+	RZXFrame nfrm = *frm;
+	nfrm.frmData = (uint8_t*)malloc(frm->frmSize * sizeof(uint8_t));		// THIS IS MEMORY EATER
+	memcpy(nfrm.frmData, frm->frmData, frm->frmSize * sizeof(uint8_t));
+	zx->rzxData = (RZXFrame*)realloc(zx->rzxData,(zx->rzxSize + 1) * sizeof(RZXFrame));
+	zx->rzxData[zx->rzxSize] = nfrm;
+	zx->rzxSize++;
+
+	eatsize += nfrm.frmSize;
 }
 
 int zlib_uncompress(char* in, int ilen, char* out, int olen) {
@@ -56,6 +77,7 @@ int loadRZX(ZXComp* zx, const char* name) {
 	char* zbuf = NULL;
 	std::ofstream ofile;
 	RZXFrame rzxf;
+	rzxf.frmData = NULL;
 
 	file.seekg(0,std::ios_base::end);	// get filesize
 	size_t fileSize = file.tellg();
@@ -65,9 +87,12 @@ int loadRZX(ZXComp* zx, const char* name) {
 	if (std::string(buf,4) != "RZX!") return ERR_RZX_SIGN;
 	file.seekg(2,std::ios_base::cur);	// version
 	flg = getint(&file);			// flags
-	if (flg & 1) return ERR_RZX_CRYPT;	
-	zx->rzx.clear();
+	if (flg & 1) return ERR_RZX_CRYPT;
+	rzxClear(zx);
 	btm = true;
+
+	eatsize = 0;
+
 	while (btm && (file.tellg() < fileSize)) {
 		tmp = file.get();	// block type
 		len = getint(&file);	// block len;
@@ -116,6 +141,8 @@ int loadRZX(ZXComp* zx, const char* name) {
 						break;
 				}
 				if (err != ERR_OK) btm = false;
+				if (buf) free(buf);
+				buf = NULL;
 				break;
 			case 0x80:
 				len2 = getint(&file);	// number of frames
@@ -129,40 +156,54 @@ int loadRZX(ZXComp* zx, const char* name) {
 					zbuf = (char*)realloc(zbuf,sizeof(char) * len3);	// compressed data
 					file.read(zbuf,len3);
 					len3 = zlib_uncompress(zbuf,len3,buf,0x7ffffff);
+					//printf("%i\n",len3);
 				} else {
 					buf = (char*)realloc(buf,sizeof(char) * len3);
 					file.read(buf, len3);
 				}
 				if (len3 == 0) {
-					delete(buf);
-					if (zbuf != NULL) delete(zbuf);
+					free(buf);
+					if (zbuf) free(zbuf);
 					return ERR_RZX_UNPACK;
 				}
 				flg = 0;
+
 				while (len2 > 0) {
 					rzxf.fetches = (uint8_t)buf[flg] + ((uint8_t)buf[flg+1] << 8);
 					flg += 2;
 					len3 = (uint8_t)buf[flg] + ((uint8_t)buf[flg+1] << 8);
 					flg += 2;
 					if (len3 != 0xffff) {
-						rzxf.in.clear();
+						rzxf.frmSize = 0;
+						if (rzxf.frmData) free(rzxf.frmData);
+						rzxf.frmData = NULL;
 						while (len3 > 0) {
-							rzxf.in.push_back((uint8_t)buf[flg]);
+							frmAddValue(&rzxf,buf[flg]);
+							//rzxf.in.push_back((uint8_t)buf[flg]);
 							flg++;
 							len3--;
 						}
 					}
-					zx->rzx.push_back(rzxf);
+					rzxAddFrame(zx,&rzxf);
+					free(rzxf.frmData);
+					rzxf.frmData = NULL;
+					rzxf.frmSize = 0;
+					//zx->rzx.push_back(rzxf);
 					len2--;
 				}
+
 				zx->rzxFrame = 0;
 				zx->rzxPos = 0;
-				if (zx->rzx.size() != 0) {
-					zx->rzxPlay = true;
-					zx->rzxFetches = zx->rzx.front().fetches;
+				if (zx->rzxSize != 0) {
+					zx->rzxPlay = 1;
+					zx->rzxFetches = zx->rzxData[0].fetches;
 				} else {
-					zx->rzxPlay = false;
+					zx->rzxPlay = 0;
 				}
+				free(buf);
+				buf = NULL;
+				if (zbuf) free(zbuf);
+				zbuf = NULL;
 				btm = false;
 				break;
 			default:
@@ -170,8 +211,7 @@ int loadRZX(ZXComp* zx, const char* name) {
 				break;
 		}
 	}
-	delete(buf);
-	if (zbuf != NULL) delete(zbuf);
+	printf("Memory eated for RZX: %i\n",eatsize);
 	return ERR_OK;
 }
 

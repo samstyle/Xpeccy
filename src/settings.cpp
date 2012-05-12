@@ -933,9 +933,9 @@ void loadConfig(bool dev) {
 	zx->bdi->flag &= ~(BDI_ENABLE | BDI_TURBO);
 	if (optGetBool("BETADISK","enabled")) zx->bdi->flag |= BDI_ENABLE;
 	if (optGetBool("BETADISK","fast")) zx->bdi->flag |= BDI_TURBO;
-	zx->opt.hwName = optGetString("MACHINE","current");
-	zx->opt.rsName = optGetString("ROMSET","current");
-	zx->opt.GSRom = optGetString("ROMSET","gs");
+	strcat(zx->opt.hwName,optGetString("MACHINE","current").c_str());
+	strcat(zx->opt.rsName,optGetString("ROMSET","current").c_str());
+	strcat(zx->opt.GSRom,optGetString("ROMSET","gs").c_str());
 	emulSetFlag(FL_RESET,optGetBool("MACHINE","restart"));
 	setFlagBit(optGetBool("MACHINE","scrp.wait"),&zx->hwFlags,WAIT_ON);
 

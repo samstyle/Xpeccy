@@ -198,7 +198,7 @@ bool saveFile(const char* name,int flags,int drv) {
 		}
 	}
 	if (filters.contains("Snap")) {
-		bool mt = (zx->opt.hwName == "ZX48K");
+		bool mt = (strcmp(zx->opt.hwName,"ZX48K") == 0);
 		switch (type) {
 			case FT_SNA: err = saveSNA(zx,sfnam.c_str(),mt); break;
 			default: sfnam += ".sna"; err = saveSNA(zx,sfnam.c_str(),mt); break;

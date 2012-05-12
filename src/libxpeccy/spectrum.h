@@ -1,9 +1,13 @@
 #ifndef _XPECTR
 #define _XPECTR
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
-#include <string>
-#include <vector>
+//#include <string>
+//#include <vector>
 
 #include <z80ex.h>
 #include "memory.h"
@@ -30,19 +34,20 @@
 #define	RES_DOS		3
 #define	RES_SHADOW	4
 
-struct HardWare {
-	std::string name;
+typedef struct {
+	const char* name;
 	int mask;		// mem size mask (b0:128, b1:256, b2:512, b3:1024); =0 for 48K
 	int flag;
 	int type;
-};
+} HardWare;
 
-struct RZXFrame {
+typedef struct {
 	int fetches;
-	std::vector<uint8_t> in;
-};
+	int frmSize;
+	uint8_t* frmData;
+} RZXFrame;
 
-struct ZXComp {
+typedef struct {
 	HardWare *hw;
 	Z80EX_CONTEXT* cpu;
 	Memory* mem;
@@ -55,15 +60,17 @@ struct ZXComp {
 	IDE* ide;
 	GSound* gs;
 	TSound* ts;
-	std::vector<RZXFrame> rzx;
+	int rzxSize;
+	RZXFrame* rzxData;
+	// std::vector<RZXFrame> rzx;
 	uint64_t rzxFrame;
 	uint32_t rzxPos;
 	int rzxFetches;
-	bool rzxPlay;	// true if rzx playing now
-	bool intStrobe;
-	bool nmiRequest;
-	bool beeplev;
-	bool block7ffd;
+	int rzxPlay;	// true if rzx playing now
+	int intStrobe;
+	int nmiRequest;
+	int beeplev;
+	int block7ffd;
 	float cpuFrq;
 	float dotPerTick;
 	int hwFlags;
@@ -72,12 +79,12 @@ struct ZXComp {
 	uint8_t prt2;		// scorpion ProfROM layer (0..3)
 	int resbank;		// rompart active after reset
 	struct {
-		std::string GSRom;
-		std::string hwName;
-		std::string rsName;
+		char GSRom[256];
+		char hwName[256];
+		char rsName[256];
 	} opt;
 	int gsCount;
-};
+} ZXComp;
 
 ZXComp* zxCreate();
 void zxDestroy(ZXComp*);
@@ -85,5 +92,11 @@ void zxReset(ZXComp*,int);
 void zxOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
 double zxExec(ZXComp*);
 void zxSetFrq(ZXComp*,float);
+
+void rzxClear(ZXComp*);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

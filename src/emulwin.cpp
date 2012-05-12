@@ -515,7 +515,7 @@ void MainWin::rzxPlayPause() {
 
 void MainWin::rzxStop() {
 	zx->rzxPlay = false;
-	zx->rzx.clear();
+	rzxClear(zx);
 	emulPause(false,PR_RZX);
 	rzxUi.ppButton->setEnabled(false);
 	rzxUi.stopButton->setEnabled(false);
@@ -525,7 +525,7 @@ void MainWin::rzxStop() {
 void MainWin::rzxOpen() {
 	emulPause(true,PR_RZX);
 	loadFile("",FT_RZX,0);
-	if (zx->rzx.size() != 0) {
+	if (zx->rzxSize != 0) {
 		rzxUi.ppButton->setEnabled(true);
 		rzxUi.stopButton->setEnabled(true);
 		rzxUi.progress->setValue(0);
@@ -891,7 +891,7 @@ void EmulWin::SDLEventHandler() {
 	switch (wantedWin) {
 		case WW_DEBUG: dbgShow(); wantedWin = WW_NONE; break;
 	}
-	if ((zx->rzx.size() == 0) || (pauseFlags & ~PR_RZX)) {
+	if ((zx->rzxSize == 0) || (pauseFlags & ~PR_RZX)) {
 		rzxUi.ppButton->setEnabled(false);
 		rzxUi.stopButton->setEnabled(false);
 	} else {
@@ -903,7 +903,7 @@ void EmulWin::SDLEventHandler() {
 		rzxUi.ppButton->setEnabled(true);
 		rzxUi.stopButton->setEnabled(true);
 		if (zx->rzxPlay) {
-			prc = 100 * zx->rzxFrame / zx->rzx.size();
+			prc = 100 * zx->rzxFrame / zx->rzxSize;
 			rzxUi.progress->setValue(prc);
 		}
 	}
@@ -1341,7 +1341,7 @@ void emulSetRomset(Memory* mem, RomSet* rset) {
 		}
 	}
 	for (ad = 0; ad < 0x4000; ad++) pageBuf[ad] = 0xff;
-	if (zx->opt.GSRom == "") {
+	if (strcmp(zx->opt.GSRom,"") == 0) {
 		gsSetRom(zx->gs,0,pageBuf);
 		gsSetRom(zx->gs,1,pageBuf);
 	} else {
@@ -1353,7 +1353,7 @@ void emulSetRomset(Memory* mem, RomSet* rset) {
 				file.read(pageBuf,0x4000);
 				gsSetRom(zx->gs,1,pageBuf);
 			} else {
-				printf("Can't load gs rom '%s'\n",zx->opt.GSRom.c_str());
+				printf("Can't load gs rom '%s'\n",zx->opt.GSRom);
 				gsSetRom(zx->gs,0,pageBuf);
 				gsSetRom(zx->gs,1,pageBuf);
 			}
@@ -1384,7 +1384,7 @@ std::vector<RomSet> getRomsetList() {
 
 // HARDWARE
 
-void addHardware(std::string nam, int typ, int msk, int flg) {
+void addHardware(const char* nam, int typ, int msk, int flg) {
 	HardWare nhw;
 	nhw.name = nam;
 	nhw.type = typ;

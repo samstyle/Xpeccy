@@ -1,5 +1,6 @@
 #include "filetypes.h"
 #include <string.h>
+#include <vector>
 
 struct FilePos {
 	uint8_t trk;
