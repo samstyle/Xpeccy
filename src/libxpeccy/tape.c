@@ -154,6 +154,13 @@ void tapSwapBlocks(Tape* tap, int b1, int b2) {
 
 void tapDelBlock(Tape* tap, int blk) {
 	if (blk < tap->blkCount) {
+		int idx = blk;
+		free(tap->blkData[idx].sigData);
+		while (idx < tap->blkCount - 1) {
+			tap->blkData[idx] = tap->blkData[idx+1];
+			idx++;
+		}
+		tap->blkCount--;
 //		tap->data.erase(tap->data.begin() + blk);		// TODO: do
 	}
 }
