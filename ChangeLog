@@ -171,3 +171,6 @@ Fix	Incorrect sectors size during copying file w/o header from tape to disk
 build 20120513
 Wrk	Rewrite libxpeccy on C
 Fix	Memory eating by each RZX loading
+
+build 20120514
+Fix	Fixing fast tape loading

@@ -713,11 +713,11 @@ void MainWin::emulFrame() {
 					de = z80ex_get_reg(zx->cpu,regDE);
 					ix = z80ex_get_reg(zx->cpu,regIX);
 					TapeBlockInfo inf = tapGetBlockInfo(zx->tape,blk);
-					blkData = (uint8_t*)realloc(blkData,inf.size);
+					blkData = (uint8_t*)realloc(blkData,inf.size + 2);
 					tapGetBlockData(zx->tape,blk,blkData);
 					if (inf.size == de) {
 						for (int i = 0; i < de; i++) {
-							memWr(zx->mem,ix,blkData[i]);
+							memWr(zx->mem,ix,blkData[i + 1]);
 							ix++;
 						}
 						z80ex_set_reg(zx->cpu,regIX,ix);
