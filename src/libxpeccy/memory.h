@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#define	MEM_PROFMASK	0
+//#define	MEM_PROFMASK	0
 #define	MEM_RAM		1
 #define	MEM_ROM		2
 #define	MEM_MEMSIZE	3

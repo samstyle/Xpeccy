@@ -53,7 +53,7 @@ set(MOCFILES
 	./src/setupwin.h
 )
 
-add_definitions(-Wall -O3)
+add_definitions(-Wall -O2)
 
 set(CMAKE_C_FLAGS -std=c99)
 

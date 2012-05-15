@@ -96,8 +96,8 @@ void zxMapMemory(ZXComp* comp) {
 
 Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
-	if ((comp->hw->type == HW_SCORP) && ((memGet(comp->mem,MEM_ROM) & 3) == 2) && ((adr & 0xfff3) == 0x0100)) {
-		comp->prt2 = ZSLays[(adr & 0x000c) >> 2][comp->prt2 & 3] & memGet(comp->mem,MEM_PROFMASK);
+	if ((comp->hw->type == HW_SCORP) && ((comp->mem->crom & 3) == 2) && ((adr & 0xfff3) == 0x0100)) {
+		comp->prt2 = ZSLays[(adr & 0x000c) >> 2][comp->prt2 & 3] & comp->mem->profMask;
 		zxMapMemory(comp);
 	}
 	if (m1 == 1) {

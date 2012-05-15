@@ -19,13 +19,13 @@ if (Z80EX_FOUND)
 	set(Z80EX_LIBRARIES ${Z80EX_LIBRARY})
 	set(Z80EX_INCLUDE_DIR ${Z80EX_INCLUDE_PATH})
 else ()
-	message(FATAL ERROR "Could not find z80ex and/or z80ex_dasm")
+	message(FATAL ERROR "...Could not find z80ex...")
 endif()
 
 file(GLOB SOURCES ./*.c)
 file(GLOB HEADERS ./*.h)
 
-add_definitions(-Wall -O3 -std=gnu99)
+add_definitions(-Wall -O2 -std=gnu99)
 
 include_directories(
 	${CMAKE_BINARY_DIR}

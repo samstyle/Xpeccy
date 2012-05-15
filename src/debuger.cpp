@@ -335,9 +335,9 @@ DasmRow DebugWin::getdisasm() {
 uint8_t DebugWin::getbpage(uint16_t ad) {
 	uchar res = 0;
 	if (ad < 0x4000) {
-		res = memGet(zx->mem,MEM_ROM);
+		res = zx->mem->crom;
 	} else {
-		if (ad > 0xbfff) res = memGet(zx->mem,MEM_RAM);
+		if (ad > 0xbfff) res = zx->mem->cram;
 	}
 	return res;
 }

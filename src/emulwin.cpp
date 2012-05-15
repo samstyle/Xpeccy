@@ -707,7 +707,7 @@ void MainWin::emulFrame() {
 		do {
 			emulExec();
 			pc = z80ex_get_reg(zx->cpu,regPC);
-			if ((pc == 0x56b) && (memGet(zx->mem,MEM_ROM) == 1)) {
+			if ((pc == 0x56b) && (zx->mem->crom == 1)) {
 				blk = zx->tape->block;
 				if (optGetFlag(OF_TAPEFAST) && (zx->tape->blkData[blk].flag & TBF_BYTES)) {
 					de = z80ex_get_reg(zx->cpu,regDE);
@@ -732,7 +732,7 @@ void MainWin::emulFrame() {
 					if (optGetFlag(OF_TAPEAUTO)) mwin->tapePlay();
 				}
 			}
-			if ((pc == 0x5e2) && (memGet(zx->mem,MEM_ROM) == 1) && (optGetFlag(OF_TAPEAUTO))) mwin->tapeStop();
+			if ((pc == 0x5e2) && (zx->mem->crom == 1) && (optGetFlag(OF_TAPEAUTO))) mwin->tapeStop();
 		} while ((wantedWin == WW_NONE) && !zx->intStrobe);
 		zx->nmiRequest = false;
 		if (scrCounter != 0) {
@@ -1307,7 +1307,8 @@ void emulSetRomset(Memory* mem, RomSet* rset) {
 				if (prts < 5) profMask = 0;
 				if (prts > 16) prts = 16;
 				file.seekg(0,std::ios_base::beg);
-				memSet(mem,MEM_PROFMASK,profMask);
+				mem->profMask = profMask;
+				// memSet(mem,MEM_PROFMASK,profMask);
 				for (i = 0; i < prts; i++) {
 					file.read(pageBuf,0x4000);
 					memSetPage(mem,MEM_ROM,i,pageBuf);

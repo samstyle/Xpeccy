@@ -118,7 +118,7 @@ int saveSNA(ZXComp* zx, const char* name,bool sna48) {
 		memGetPage(zx->mem,MEM_RAM,0,pageBuf);		// 0xc000 - 0xffff (48K: bank 0)
 		file.write(pageBuf,0x4000);
 	} else {
-		bnk = memGet(zx->mem,MEM_RAM) & 7;
+		bnk = zx->mem->cram & 7;
 		memGetPage(zx->mem,MEM_RAM,bnk,pageBuf);	// current bank
 		file.write(pageBuf,0x4000);
 		putLEWord(&file,z80ex_get_reg(cpu,regPC));

@@ -54,9 +54,9 @@ void memWr(Memory* mem, unsigned short adr, unsigned char val) {
 int memGet(Memory* mem, int wut) {
 	int res = 0;
 	switch (wut) {
-		case MEM_PROFMASK: res = mem->profMask; break;
-		case MEM_ROM: res = mem->crom; break;
-		case MEM_RAM: res = mem->cram; break;
+//		case MEM_PROFMASK: res = mem->profMask; break;
+//		case MEM_ROM: res = mem->crom; break;
+//		case MEM_RAM: res = mem->cram; break;
 		case MEM_MEMSIZE:
 			switch (mem->mask) {
 				case 0x00: res = 48; break;
@@ -72,7 +72,7 @@ int memGet(Memory* mem, int wut) {
 
 void memSet(Memory* mem, int wut, int val) {
 	switch (wut) {
-		case MEM_PROFMASK: mem->profMask = val; break;
+//		case MEM_PROFMASK: mem->profMask = val; break;
 		case MEM_MEMSIZE:
 			switch (val) {
 				case 48: mem->mask = 0x00; break;
