@@ -582,14 +582,14 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			case Qt::Key_F2: emulPause(true,PR_FILE); saveFile("",FT_ALL,-1); emulPause(false,PR_FILE); break;
 			case Qt::Key_F3: emulPause(true,PR_FILE); loadFile("",FT_ALL,-1); emulPause(false,PR_FILE); break;
 			case Qt::Key_F4:
-				if (tapGet(zx->tape,TAPE_FLAGS) & TAPE_ON) {
+				if (zx->tape->flag & TAPE_ON) {
 						mwin->tapeStop();
 					} else {
 						mwin->tapePlay();
 					}
 					break;
 			case Qt::Key_F5:
-					if (tapGet(zx->tape,TAPE_FLAGS) & TAPE_ON) {
+					if (zx->tape->flag & TAPE_ON) {
 						mwin->tapeStop();
 					} else {
 						mwin->tapeRec();
