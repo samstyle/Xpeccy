@@ -380,6 +380,7 @@ void saveProfiles() {
 	cfile << "scrCount = " << int2str(shotCount) << "\n";
 	cfile << "scrInterval = " << int2str(shotInterval) << "\n";
 	cfile << "colorLevel = " << int2str(brgLevel) << "\n";
+	cfile << "fullscreen = " << ((zx->vid->flag & VF_FULLSCREEN) ? "yes" : "no") << "\n";
 	cfile << "\n[ROMSETS]\n";
 	std::vector<RomSet> rsl = getRomsetList();
 	for (i=0; i<rsl.size(); i++) {
@@ -649,6 +650,7 @@ void loadProfiles() {
 						if ((test < 50) || (test > 250)) test=192;
 						brgLevel = test;
 					}
+					if (pnam=="fullscreen") setFlagBit(str2bool(pval),&zx->vid->flag,VF_FULLSCREEN);
 					break;
 				case SECT_ROMSETS:
 					pos = pval.find_last_of(":");

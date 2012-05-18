@@ -261,7 +261,7 @@ void SetupWin::start() {
 	setupUi.scrpwait->setChecked(zx->hwFlags & WAIT_ON);
 // video
 	setupUi.dszchk->setChecked((zx->vid->flag & VF_DOUBLE));
-//	setupUi.fscchk->setChecked(vid->fscreen);
+	setupUi.fscchk->setChecked(zx->vid->flag & VF_FULLSCREEN);
 	setupUi.bszsld->setValue((int)(zx->vid->brdsize * 100));
 	setupUi.pathle->setText(QDialog::trUtf8(optGetString(OPT_SHOTDIR).c_str()));
 	setupUi.ssfbox->setCurrentIndex(setupUi.ssfbox->findData(optGetInt(OPT_SHOTFRM)));
@@ -399,6 +399,11 @@ void SetupWin::apply() {
 // video
 	setFlagBit(setupUi.dszchk->isChecked(),&zx->vid->flag,VF_DOUBLE);
 	zx->vid->brdsize = setupUi.bszsld->value()/100.0;
+	if (setupUi.fscchk->isChecked()) {
+		zx->vid->flag |= VF_FULLSCREEN;
+	} else {
+		zx->vid->flag &= ~VF_FULLSCREEN;
+	}
 	optSet(OPT_SHOTDIR,std::string(setupUi.pathle->text().toUtf8().data()));
 	optSet(OPT_SHOTFRM,setupUi.ssfbox->itemData(setupUi.ssfbox->currentIndex()).toInt());
 	optSet(OPT_SHOTCNT,setupUi.scntbox->value());
