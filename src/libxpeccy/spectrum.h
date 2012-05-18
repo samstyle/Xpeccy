@@ -34,6 +34,8 @@ extern "C" {
 #define	RES_DOS		3
 #define	RES_SHADOW	4
 
+#define	ZX_BREAK	1
+
 typedef struct {
 	const char* name;
 	int mask;		// mem size mask (b0:128, b1:256, b2:512, b3:1024); =0 for 48K
@@ -48,6 +50,7 @@ typedef struct {
 } RZXFrame;
 
 typedef struct {
+	int flags;
 	HardWare *hw;
 	Z80EX_CONTEXT* cpu;
 	Memory* mem;

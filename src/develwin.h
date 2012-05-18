@@ -29,6 +29,7 @@ class DevelWin : public QDialog {
 	Q_OBJECT
 	public:
 		DevelWin();
+		QDir prjdir;
 	public slots:
 		void start();
 	private slots:
@@ -41,7 +42,6 @@ class DevelWin : public QDialog {
 		Project prj;
 		QMenu *pmenu;
 		Ui::DevelWin ui;
-		QDir prjdir;
 		void makepmenu();
 		void createprj(QString);
 		void openprj(QString);

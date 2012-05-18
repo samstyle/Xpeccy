@@ -17,9 +17,11 @@ Memory* memCreate() {
 	int i;
 	for (i = 0; i < 32; i++) {
 		mem->rom[i].flags |= MEM_RDONLY;
+		memset(mem->rom[i].flag,0x00,0x4000 * sizeof(unsigned char));
 	}
 	for (i = 0; i < 64; i++) {
 		mem->ram[i].flags = 0;
+		memset(mem->ram[i].flag,0x00,0x4000 * sizeof(unsigned char));
 	}
 	return mem;
 }
@@ -28,18 +30,7 @@ void memDestroy(Memory* mem) {
 	free(mem);
 }
 
-unsigned char memRd(Memory* mem, unsigned short adr) {
-	unsigned char res;
-	switch (adr & 0xc000) {
-		case 0x0000: res = mem->pt0->data[adr & 0x3fff]; break;
-		case 0x4000: res = mem->pt1->data[adr & 0x3fff]; break;
-		case 0x8000: res = mem->pt2->data[adr & 0x3fff]; break;
-		default: res = mem->pt3->data[adr & 0x3fff]; break;
-	}
-	return res;
-}
-
-void memWr(Memory* mem, unsigned short adr, unsigned char val) {
+MemPage* memGetBankPtr(Memory* mem, unsigned short adr) {
 	MemPage* ptr;
 	switch (adr & 0xc000) {
 		case 0x0000: ptr = mem->pt0; break;
@@ -47,16 +38,37 @@ void memWr(Memory* mem, unsigned short adr, unsigned char val) {
 		case 0x8000: ptr = mem->pt2; break;
 		default: ptr = mem->pt3; break;
 	}
+	return ptr;
+}
+
+unsigned char memRd(Memory* mem, unsigned short adr) {
+	unsigned char res;
+	MemPage* ptr = memGetBankPtr(mem,adr);
+	res = ptr->data[adr & 0x3fff];
+	mem->flags = ptr->flag[adr & 0x3fff];
+	return res;
+}
+
+void memWr(Memory* mem, unsigned short adr, unsigned char val) {
+	MemPage* ptr = memGetBankPtr(mem,adr);
+	mem->flags = ptr->flag[adr & 0x3fff];
 	if (ptr->flags & MEM_RDONLY) return;
 	ptr->data[adr & 0x3fff] = val;
+}
+
+unsigned char memGetCellFlags(Memory* mem, unsigned short adr) {
+	MemPage* ptr = memGetBankPtr(mem,adr);
+	return (ptr->flag[adr & 0x3fff]);
+}
+
+void memSwitchCellFlags(Memory* mem, unsigned short adr, unsigned char msk) {
+	MemPage* ptr = memGetBankPtr(mem,adr);
+	ptr->flag[adr & 0x3fff] ^= msk;
 }
 
 int memGet(Memory* mem, int wut) {
 	int res = 0;
 	switch (wut) {
-//		case MEM_PROFMASK: res = mem->profMask; break;
-//		case MEM_ROM: res = mem->crom; break;
-//		case MEM_RAM: res = mem->cram; break;
 		case MEM_MEMSIZE:
 			switch (mem->mask) {
 				case 0x00: res = 48; break;
@@ -72,7 +84,6 @@ int memGet(Memory* mem, int wut) {
 
 void memSet(Memory* mem, int wut, int val) {
 	switch (wut) {
-//		case MEM_PROFMASK: mem->profMask = val; break;
 		case MEM_MEMSIZE:
 			switch (val) {
 				case 48: mem->mask = 0x00; break;

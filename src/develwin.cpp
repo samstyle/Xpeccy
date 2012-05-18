@@ -15,6 +15,7 @@ void devInit() {
 
 void devShow() {
 	devWin->show();
+	devWin->prjdir = QDir(QString(optGetString(OPT_PROJDIR).c_str()));
 }
 
 DevelWin::DevelWin() {

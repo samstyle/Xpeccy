@@ -120,6 +120,9 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 void memwr(Z80EX_CONTEXT* cpu, Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
 	memWr(comp->mem,adr,val);
+	if (comp->mem->flags & MEM_BRK_WRITE) {
+		comp->flags |= ZX_BREAK;
+	}
 }
 
 Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
@@ -276,6 +279,7 @@ void rzxClear(ZXComp* zx) {
 ZXComp* zxCreate() {
 	ZXComp* comp = (ZXComp*)malloc(sizeof(ZXComp));
 	void* ptr = (void*)comp;
+	comp->flags = 0;
 	comp->cpu = z80ex_create(&memrd,ptr,&memwr,ptr,&iord,ptr,&iowr,ptr,&intrq,ptr);
 	zxSetFrq(comp,3.5);
 	comp->mem = memCreate();
@@ -380,6 +384,10 @@ double zxExec(ZXComp* comp) {
 				comp->rzxPos = 0;
 			}
 		}
+	}
+	pcreg = z80ex_get_reg(comp->cpu,regPC);
+	if (memGetCellFlags(comp->mem,pcreg) & MEM_BRK_FETCH) {
+		comp->flags |= ZX_BREAK;
 	}
 
 	ltk = res1 * comp->dotPerTick;

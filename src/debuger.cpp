@@ -26,9 +26,9 @@ bool dbgIsActive() {
 	return dbgWin->active;
 }
 
-int dbgFindBreakpoint(BPoint bp) {
-	return dbgWin->findbp(bp);
-}
+//int dbgFindBreakpoint(BPoint bp) {
+//	return dbgWin->findbp(bp);
+//}
 
 // OBJECT
 
@@ -272,11 +272,8 @@ Z80EX_BYTE rdbyte(Z80EX_WORD adr,void*) {
 }
 
 DasmRow DebugWin::getdisasm() {
-//	uchar cde,mde=0;
 	int t1,t2,clen;
-//	bool prf;
 	DasmRow res;
-//	ushort ddz;
 	res.adr = adr;
 	res.bytes = "";
 	res.dasm = "";
@@ -289,46 +286,6 @@ DasmRow DebugWin::getdisasm() {
 		clen--;
 		adr++;
 	}
-/*
-	do {
-		prf = false;
-		cde = zx->mem->rd(adr++);
-		if (!(mde & 12)) {
-			if (cde==0xdd) {mde = 1; prf=true;}
-			if (cde==0xfd) {mde = 2; prf=true;}
-			if (cde==0xcb) {mde |= 4; prf=true;}
-			if (cde==0xed) {mde = 8; prf=true;}
-		}
-	} while (prf);
-	if ((mde==5) || (mde==6)) {cde=zx->mem->rd(adr++);}
-	res.dasm = QString(inst[mde][cde].name).toUpper();
-	QString nm;
-	signed char bt;
-	if (res.dasm.indexOf(":4")!=-1) {
-		bt = (signed char)zx->mem->rd(adr++);
-		if (bt < 0) {nm=QString("-").append(QString::number(512-bt,16).right(2));}
-			else {nm=QString("+").append(QString::number(256+bt,16).right(2));}
-		res.dasm.replace(":4",nm);
-	}
-	if (res.dasm.indexOf(":5")!=-1) {
-		bt = (signed char)zx->mem->rd(adr-2);
-		if (bt < 0) {nm=QString("-").append(QString::number(512-bt,16).right(2));}
-			else {nm=QString("+").append(QString::number(256+bt,16).right(2));}
-		res.dasm.replace(":5",nm);
-	}
-	if (res.dasm.indexOf(":1")!=-1) res.dasm.replace(":1",QString::number(zx->mem->rd(adr++)+0x100,16).right(2).toUpper());
-	if (res.dasm.indexOf(":2")!=-1) {
-		res.dasm.replace(":2",gethexword(zx->mem->rd(adr) + (zx->mem->rd(adr+1)<<8)));
-		adr += 2;
-	}
-	if (res.dasm.indexOf(":3")!=-1) {
-		res.dasm.replace(":3",gethexword(adr + (signed char)zx->mem->rd(adr) + 1));
-		adr++;
-	}
-
-	for (ddz=res.adr; ddz<adr; ddz++) {res.bytes.append(gethexbyte(zx->mem->rd(ddz)));}
-	if (res.bytes.size()>10) res.bytes = res.bytes.left(2).append("..").append(res.bytes.right(6));
-*/
 	return res;
 }
 
@@ -346,28 +303,23 @@ bool DebugWin::filldasm() {
 	fdasm.clear();
 	adr = upadr;
 	uchar i;
-//	ushort oadr;
-	int idx;
+	unsigned char idx;
 	bool ispc = false;
-	BPoint bp;
 	DasmRow res;
 	QLabel *lab1,*lab2,*lab3;
 	Z80EX_WORD pc = z80ex_get_reg(zx->cpu,regPC);
 	for (i=0; i<DASMROW; i++) {
-//		oadr = adr;
-		bp.page = getbpage(adr);
-		bp.adr = adr;
-		idx = findbp(bp);
 		if (adr == pc) ispc=true;
+		idx = memGetCellFlags(zx->mem,adr);
 		lab1 = (QLabel*)asmlay->itemAtPosition(i,0)->widget();
 		lab2 = (QLabel*)asmlay->itemAtPosition(i,1)->widget();
 		lab3 = (QLabel*)asmlay->itemAtPosition(i,2)->widget();
-		lab1->setBackgroundRole((pc == adr)?QPalette::ToolTipBase:QPalette::Window);
-		lab2->setBackgroundRole((pc == adr)?QPalette::ToolTipBase:QPalette::Window);
-		lab3->setBackgroundRole((pc == adr)?QPalette::ToolTipBase:QPalette::Window);
-		lab1->setForegroundRole((idx==-1)?QPalette::WindowText:QPalette::ToolTipText);
-		lab2->setForegroundRole((idx==-1)?QPalette::WindowText:QPalette::ToolTipText);
-		lab3->setForegroundRole((idx==-1)?QPalette::WindowText:QPalette::ToolTipText);
+		lab1->setBackgroundRole((pc == adr) ? QPalette::ToolTipBase : QPalette::Window);
+		lab2->setBackgroundRole((pc == adr) ? QPalette::ToolTipBase : QPalette::Window);
+		lab3->setBackgroundRole((pc == adr) ? QPalette::ToolTipBase : QPalette::Window);
+		lab1->setForegroundRole((idx == 0) ? QPalette::WindowText : QPalette::ToolTipText);
+		lab2->setForegroundRole((idx == 0) ? QPalette::WindowText : QPalette::ToolTipText);
+		lab3->setForegroundRole((idx == 0) ? QPalette::WindowText : QPalette::ToolTipText);
 		if (curcol==1 && currow==i) lab1->setBackgroundRole(QPalette::Highlight);
 		if (curcol==2 && currow==i) lab2->setBackgroundRole(QPalette::Highlight);
 		if (curcol==3 && currow==i) lab3->setBackgroundRole(QPalette::Highlight);
@@ -390,18 +342,6 @@ ushort DebugWin::getprevadr(ushort ad) {
 	return (ad-1);
 }
 
-// FIXME: pages in break points
-
-int DebugWin::findbp(BPoint bp) {
-	int idx = -1,i;
-	for (i = 0; i < bpoint.size(); i++) {
-		if ((bpoint[i].adr == bp.adr) && ((bpoint[i].page == bp.page) || ((bp.adr > 0x3fff) && (bp.adr < 0xc000)))) {
-			idx=i; break;
-		}
-	}
-	return idx;
-}
-
 void DebugWin::showedit(QLabel* lab,QString imsk) {
 	ledit->resize(lab->size() + QSize(10,10));
 	ledit->setParent(lab->parentWidget());
@@ -413,16 +353,14 @@ void DebugWin::showedit(QLabel* lab,QString imsk) {
 	ledit->setFocus();
 }
 
-void DebugWin::switchbp(BPoint bp) {
-	int idx = findbp(bp);
-	if (idx==-1) bpoint.append(bp); else bpoint.removeAt(idx);
-//	if (bpoint.size()!=0) printf("last BP: %.4X @ %.2X\n",bpoint.last().adr,bpoint.last().page);
-}
+//void DebugWin::switchbp(unsigned short adr, int mask) {
+//	memSwitchCellFlags(zx->mem,adr,mask);
+//}
 
 void DebugWin::keyPressEvent(QKeyEvent* ev) {
 	qint32 cod = ev->key();
 	QLabel *lab = NULL;
-	BPoint bp;
+//	BPoint bp;
 	uchar i;
 	int idx;
 	if (!ledit->isVisible()) {
@@ -462,7 +400,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					break;
 				case Qt::Key_Space:
 					if (!ev->isAutoRepeat() && curcol>0 && curcol<4) {
-						switchbp(BPoint(getbpage(fdasm[currow].adr),fdasm[currow].adr));
+						memSwitchCellFlags(zx->mem,fdasm[currow].adr,MEM_BRK_FETCH);
 						filldasm();
 					}
 					break;

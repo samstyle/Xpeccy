@@ -1,4 +1,5 @@
 #include <QDebug>
+#include <QMenu>
 #include <QMessageBox>
 #include <QProgressBar>
 #include <QTableWidget>
@@ -408,7 +409,10 @@ bool emulSaveChanged() {
 	return yep;
 }
 
-int emulGetFlags() {return emulFlags;}
+int emulGetFlags() {
+	return emulFlags;
+}
+
 void emulSetFlag(int msk,bool cnd) {
 	if (cnd) {
 		emulFlags |= msk;
@@ -422,14 +426,6 @@ double tks = 0;
 void emulExec() {
 	tks += zxExec(zx);
 	tks = sndSync(tks,emulFlags & FL_FAST);
-	if (!dbgIsActive()) {
-		// somehow catch CPoint
-		pc = z80ex_get_reg(zx->cpu,regPC);
-		if (dbgFindBreakpoint(BPoint(memGet(zx->mem,(pc < 0x4000) ? MEM_ROM : MEM_RAM), pc)) != -1) {
-			wantedWin = WW_DEBUG;
-			breakFrame = true;
-		}
-	}
 }
 
 void emulSetIcon(const char* inam) {
@@ -699,6 +695,7 @@ void MainWin::emulFrame() {
 		keyRelease(zx->keyb,0,0);
 		zx->mouse->buttons = 0xff;
 	}
+	zx->flags = 0;
 	if ((wantedWin == WW_NONE) && (pauseFlags == 0)) {
 		if (!(emulFlags & FL_FAST) && sndGet(SND_ENABLE) && (sndGet(SND_MUTE) || mainWin->isActiveWindow())) {
 			sndPlay();
@@ -733,6 +730,10 @@ void MainWin::emulFrame() {
 				}
 			}
 			if ((pc == 0x5e2) && (zx->mem->crom == 1) && (optGetFlag(OF_TAPEAUTO))) mwin->tapeStop();
+			if (zx->flags & ZX_BREAK) {
+				wantedWin = WW_DEBUG;
+				zx->flags = 0;
+			}
 		} while ((wantedWin == WW_NONE) && !zx->intStrobe);
 		zx->nmiRequest = false;
 		if (scrCounter != 0) {

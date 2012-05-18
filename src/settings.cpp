@@ -701,8 +701,9 @@ void loadProfiles() {
 					if (pnam=="volume.gs") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_GSVL,test);}
 					break;
 				case SECT_TOOLS:
-					if (pnam=="asmPath") asmPath = pval; break;
-					if (pnam=="projectsDir") projDir = pval; break;
+					if (pnam=="asmPath") asmPath = pval;
+					if (pnam=="projectsDir") projDir = pval;
+					break;
 				case SECT_JOYSTICK:
 					if (pnam=="device") joyName = pval;
 					if (pnam=="button") {			// button = num:J:{up|down|left|right|fire}
@@ -931,8 +932,12 @@ void loadConfig(bool dev) {
 	zx->gs->stereo = optGetInt("SOUND","gs.stereo");
 
 	zx->bdi->flag &= ~(BDI_ENABLE | BDI_TURBO);
+	zx->bdi->fdc->turbo = 0;
 	if (optGetBool("BETADISK","enabled")) zx->bdi->flag |= BDI_ENABLE;
-	if (optGetBool("BETADISK","fast")) zx->bdi->flag |= BDI_TURBO;
+	if (optGetBool("BETADISK","fast")) {
+		zx->bdi->flag |= BDI_TURBO;
+		zx->bdi->fdc->turbo = 1;
+	}
 	strcpy(zx->opt.hwName,optGetString("MACHINE","current").c_str());
 	strcpy(zx->opt.rsName,optGetString("ROMSET","current").c_str());
 	strcpy(zx->opt.GSRom,optGetString("ROMSET","gs").c_str());

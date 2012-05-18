@@ -5,7 +5,6 @@
 extern "C" {
 #endif
 
-//#define	MEM_PROFMASK	0
 #define	MEM_RAM		1
 #define	MEM_ROM		2
 #define	MEM_MEMSIZE	3
@@ -14,15 +13,23 @@ extern "C" {
 #define	MEM_BANK1	1
 #define	MEM_BANK2	2
 #define	MEM_BANK3	3
-
+// memory flags
+#define	MEM_BREAK	1
+// mempage flags
 #define	MEM_RDONLY	1
+// membyte flags
+#define	MEM_BRK_FETCH	1
+#define	MEM_BRK_READ	(1<<1)
+#define	MEM_BRK_WRITE	(1<<2)
 
 typedef struct {
 	int flags;
 	unsigned char data[0x4000];
+	unsigned char flag[0x4000];
 } MemPage;
 
 typedef struct {
+	int flags;
 	MemPage ram[64];
 	MemPage rom[32];
 	MemPage* pt0;
@@ -50,6 +57,9 @@ int memGet(Memory*,int);
 void memSet(Memory*,int,int);
 
 unsigned char* memGetPagePtr(Memory*,int,int);
+
+unsigned char memGetCellFlags(Memory*, unsigned short);
+void memSwitchCellFlags(Memory*,unsigned short,unsigned char);
 
 #if __cplusplus
 }
