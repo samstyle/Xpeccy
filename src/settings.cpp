@@ -1,9 +1,12 @@
+// TODO: rewrite this shit
+
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fstream>
 
 #include <QtCore>
 
+#include "xcore/xcore.h"
 #include "common.h"
 #include "sound.h"
 #include "emulwin.h"
@@ -11,9 +14,6 @@
 
 #ifdef WIN32
 	#include <direct.h>
-	#define SLASH "\\"
-#else
-	#define SLASH "/"
 #endif
 
 extern XProfile* currentProfile;
@@ -381,6 +381,8 @@ void saveProfiles() {
 	cfile << "scrInterval = " << int2str(shotInterval) << "\n";
 	cfile << "colorLevel = " << int2str(brgLevel) << "\n";
 	cfile << "fullscreen = " << ((zx->vid->flag & VF_FULLSCREEN) ? "yes" : "no") << "\n";
+	cfile << "doublesize = " << ((zx->vid->flag & VF_DOUBLE) ? "yes" : "no") << "\n";
+	cfile << "bordersize = " << int2str(zx->vid->brdsize * 100) << "\n";
 	cfile << "\n[ROMSETS]\n";
 	std::vector<RomSet> rsl = getRomsetList();
 	for (i=0; i<rsl.size(); i++) {
@@ -466,8 +468,8 @@ void saveConfig() {
 	optSet("ROMSET","gs",std::string(zx->opt.GSRom));
 	optSet("ROMSET","current",std::string(zx->opt.rsName));
 	optSet("ROMSET","reset",rmnam[zx->resbank]);
-	optSet("VIDEO","doublesize",(zx->vid->flag & VF_DOUBLE) != 0);
-	optSet("VIDEO","bordersize",int(zx->vid->brdsize * 100));
+//	optSet("VIDEO","doublesize",(zx->vid->flag & VF_DOUBLE) != 0);
+//	optSet("VIDEO","bordersize",int(zx->vid->brdsize * 100));
 	optSet("VIDEO","geometry",currentProfile->layName);
 	optSet("SOUND","chip1",zx->ts->chipA->type);
 	optSet("SOUND","chip2",zx->ts->chipB->type);
@@ -651,6 +653,11 @@ void loadProfiles() {
 						brgLevel = test;
 					}
 					if (pnam=="fullscreen") setFlagBit(str2bool(pval),&zx->vid->flag,VF_FULLSCREEN);
+					if (pnam=="bordersize") {
+						test=atoi(pval.c_str());
+						if ((test >= 0) && (test <= 100)) zx->vid->brdsize = test / 100.0;
+					}
+					if (pnam=="doublesize") setFlagBit(str2bool(pval),&zx->vid->flag,VF_DOUBLE);
 					break;
 				case SECT_ROMSETS:
 					pos = pval.find_last_of(":");
@@ -918,9 +925,9 @@ void loadConfig(bool dev) {
 	tmp2 = optGetInt("GENERAL","cpu.frq"); if ((tmp2 > 0) && (tmp2 <= 14)) zxSetFrq(zx,tmp2 / 2.0);
 
 	currentProfile->layName = optGetString("VIDEO","geometry");
-	setFlagBit(optGetBool("VIDEO","doublesize"),&zx->vid->flag, VF_DOUBLE);
-	setFlagBit(optGetBool("VIDEO","fullscreen"),&zx->vid->flag, VF_FULLSCREEN);
-	tmp2 = optGetInt("VIDEO","bordersize"); if ((tmp2 >= 0) && (tmp2 <= 100)) zx->vid->brdsize = tmp2 / 100.0;
+//	setFlagBit(optGetBool("VIDEO","doublesize"),&zx->vid->flag, VF_DOUBLE);
+//	setFlagBit(optGetBool("VIDEO","fullscreen"),&zx->vid->flag, VF_FULLSCREEN);
+//	tmp2 = optGetInt("VIDEO","bordersize"); if ((tmp2 >= 0) && (tmp2 <= 100)) zx->vid->brdsize = tmp2 / 100.0;
 
 	tmp2 = optGetInt("SOUND","chip1"); if (tmp2 < SND_END) aymSetType(zx->ts->chipA,tmp2);
 	tmp2 = optGetInt("SOUND","chip2"); if (tmp2 < SND_END) aymSetType(zx->ts->chipB,tmp2);

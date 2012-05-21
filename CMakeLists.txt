@@ -39,11 +39,15 @@ file(GLOB SOURCES
 	./src/*.cpp
 	./src/libxpeccy/*.cpp
 	./src/libxpeccy/*.c
-	./src/filetypes/*.cpp)
+	./src/filetypes/*.cpp
+	./src/xcore/*.cpp
+)
 file(GLOB HEADERS
 	./src/*.h
 	./src/libxpeccy/*.h
-	./src/filetypes/*.h)
+	./src/filetypes/*.h
+	./src/xcore/*.h
+)
 file(GLOB UIFILES ./ui/*.ui)
 set(QRCFILES ./xpeccy.qrc)
 set(MOCFILES

@@ -6,6 +6,7 @@
 #include <SDL.h>
 #include <stdlib.h>
 
+#include "xcore/xcore.h"
 #include "common.h"
 #include "sound.h"
 #include "libxpeccy/spectrum.h"

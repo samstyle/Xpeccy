@@ -8,9 +8,10 @@
 #include <sstream>
 #include <getopt.h>
 
+#include "xcore/xcore.h"
+#include "common.h"
 #include "libxpeccy/spectrum.h"
 #include "sound.h"
-#include "common.h"
 #include "emulwin.h"
 #include "settings.h"
 #include "debuger.h"

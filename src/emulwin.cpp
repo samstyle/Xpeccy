@@ -13,6 +13,7 @@
 	#undef main
 #endif
 
+#include "xcore/xcore.h"
 #include "common.h"
 #include "sound.h"
 #include "libxpeccy/spectrum.h"
@@ -70,15 +71,10 @@ int lastTapeBlock;
 Ui::rzxPlayer rzxUi;
 QDialog* rzxWin;
 // hardwares
-std::vector<HardWare> hwList;
 // romsets
-std::vector<RomSet> rsList;
 // layouts
-std::vector<VidLayout> layList;
 // for user menu
-std::vector<XBookmark> bookmarkList;
-std::vector<XProfile> profileList;
-XProfile* currentProfile;
+//XProfile* currentProfile;
 QMenu* userMenu;
 QMenu* bookmarkMenu;
 QMenu* profileMenu;
@@ -1203,267 +1199,17 @@ void emulCloseJoystick() {
 
 // LAYOUTS
 
-bool addLayout(std::string nm,int fh,int fv,int bh,int bv,int sh,int sv,int ih,int iv,int is) {
-	printf("add Layout %s\n",nm.c_str());
-	for (uint i = 0; i < layList.size(); i++) {
-		if (layList[i].name == nm) return false;
-	}
-	VidLayout nlay;
-	nlay.name = nm;
-	nlay.full.h = fh;
-	nlay.full.v = fv;
-	nlay.bord.h = bh;
-	nlay.bord.v = bv;
-	nlay.sync.h = sh;
-	nlay.sync.v = sv;
-	nlay.intpos.h = ih;
-	nlay.intpos.v = iv;
-	nlay.intsz = is;
-	layList.push_back(nlay);
-	return true;
-}
-
-bool addLayout(VidLayout lay) {
-	printf("add Layout %s\n",lay.name.c_str());
-	for (uint i = 0; i < layList.size(); i++) {
-		if (layList[i].name == lay.name) return false;
-	}
-	layList.push_back(lay);
-	return true;
-}
-
-std::vector<VidLayout> getLayoutList() {
-	return layList;
-}
-
-bool emulSetLayout(Video* vid, std::string nm) {
-	for (uint i = 0; i < layList.size(); i++) {
-		if (layList[i].name == nm) {
-			currentProfile->layName = nm;
-			vidSetLayout(vid,
-				     layList[i].full.h, layList[i].full.v,
-				     layList[i].bord.h, layList[i].bord.v,
-				     layList[i].sync.h, layList[i].sync.v,
-				     layList[i].intpos.h, layList[i].intpos.v, layList[i].intsz);
-			sndCalibrate();
-			return true;
-		}
-	}
-	return false;
-}
-
-// ROMSETS
-
-RomSet* findRomset(std::string nm) {
-	RomSet* res = NULL;
-	for (uint i=0; i<rsList.size(); i++) {
-		if (rsList[i].name == nm) {
-			res = &rsList[i];
-		}
-	}
-	return res;
-}
-
-bool addRomset(RomSet rs) {
-	if (findRomset(rs.name) != NULL) return false;
-	rsList.push_back(rs);
-	return true;
-}
-
-#ifdef WIN32
-	#define	SLASHES "\\"
-#else
-	#define	SLASHES "/"
-#endif
-
-// set and load memory romset. if rset is NULL, just load current
-void emulSetRomset(Memory* mem, RomSet* rset) {
-	int i,ad;
-	std::string romDir = optGetString(OPT_ROMDIR);
-	std::string fpath = "";
-	std::ifstream file;
-	char* pageBuf = new char[0x4000];
-	int prts = 0;
-	int profMask = 0;
-	if (rset == NULL) {
-		rset = currentProfile->rset;	// memGetRomset(mem);
-	} else {
-		currentProfile->rset = rset;
-//		memSetRomset(mem,rset);
-	}
-	if (rset == NULL) {
-		for (i=0; i<16; i++) {
-			for (ad=0; ad<0x4000; ad++) pageBuf[i] = 0xff;
-			memSetPage(mem,MEM_ROM,i,pageBuf);
-		}
-	} else {
-		if (rset->file != "") {
-			fpath = romDir + SLASHES + rset->file;
-			file.open(fpath.c_str(),std::ios::binary);
-			if (file.good()) {
-				file.seekg(0,std::ios_base::end);
-				prts = file.tellg() / 0x4000;
-				profMask = 3;
-				if (prts < 9) profMask = 1;
-				if (prts < 5) profMask = 0;
-				if (prts > 16) prts = 16;
-				file.seekg(0,std::ios_base::beg);
-				mem->profMask = profMask;
-				// memSet(mem,MEM_PROFMASK,profMask);
-				for (i = 0; i < prts; i++) {
-					file.read(pageBuf,0x4000);
-					memSetPage(mem,MEM_ROM,i,pageBuf);
-				}
-				for (ad = 0; ad < 0x4000; ad++) pageBuf[ad] = 0xff;
-				for (i=prts; i<16; i++) memSetPage(mem,MEM_ROM,i,pageBuf);
-			} else {
-				printf("Can't open single rom '%s'\n",rset->file.c_str());
-				for (ad = 0; ad < 0x4000; ad++) pageBuf[ad] = 0xff;
-				for (i = 0; i < 16; i++) memSetPage(mem,MEM_ROM,i,pageBuf);
-			}
-			file.close();
-		} else {
-			for (i = 0; i < 4; i++) {
-				if (rset->roms[i].path == "") {
-					for (ad = 0; ad < 0x4000; ad++) pageBuf[ad]=0xff;
-				} else {
-					fpath = romDir + SLASHES + rset->roms[i].path;
-					file.open(fpath.c_str(),std::ios::binary);
-					if (file.good()) {
-						file.seekg(rset->roms[i].part<<14);
-						file.read(pageBuf,0x4000);
-					} else {
-						printf("Can't open rom '%s:%i'\n",rset->roms[i].path.c_str(),rset->roms[i].part);
-						for (ad=0;ad<0x4000;ad++) pageBuf[ad]=0xff;
-					}
-					file.close();
-				}
-				memSetPage(mem,MEM_ROM,i,pageBuf);
-			}
-		}
-	}
-	for (ad = 0; ad < 0x4000; ad++) pageBuf[ad] = 0xff;
-	if (strcmp(zx->opt.GSRom,"") == 0) {
-		gsSetRom(zx->gs,0,pageBuf);
-		gsSetRom(zx->gs,1,pageBuf);
-	} else {
-			fpath = romDir + SLASHES + zx->opt.GSRom;
-			file.open(fpath.c_str(),std::ios::binary);
-			if (file.good()) {
-				file.read(pageBuf,0x4000);
-				gsSetRom(zx->gs,0,pageBuf);
-				file.read(pageBuf,0x4000);
-				gsSetRom(zx->gs,1,pageBuf);
-			} else {
-				printf("Can't load gs rom '%s'\n",zx->opt.GSRom);
-				gsSetRom(zx->gs,0,pageBuf);
-				gsSetRom(zx->gs,1,pageBuf);
-			}
-			file.close();
-	}
-	free(pageBuf);
-}
-
-void setRomsetList(std::vector<RomSet> rsl) {
-	rsList.clear();
-	uint i;
-	for (i=0; i<rsl.size(); i++) {
-		addRomset(rsl[i]);
-	}
-	for (i=0; i<profileList.size(); i++) {
-		emulSetRomset(profileList[i].zx->mem, findRomset(profileList[i].zx->opt.rsName));
-//		profileList[i].zx->mem->loadromset(optGetString(OPT_ROMDIR));
-	}
-}
-
-void setRomset(ZXComp* comp, std::string nm) {
-	emulSetRomset(zx->mem, findRomset(nm));
-}
-
-std::vector<RomSet> getRomsetList() {
-	return rsList;
-}
 
 // HARDWARE
-
-void addHardware(const char* nam, int typ, int msk, int flg) {
-	HardWare nhw;
-	nhw.name = nam;
-	nhw.type = typ;
-	nhw.mask = msk;
-	nhw.flag = flg;
-	hwList.push_back(nhw);
-}
-
-void setHardware(ZXComp* comp, std::string nam) {
-	for (uint i = 0; i < hwList.size(); i++) {
-		if (hwList[i].name == nam) {
-			comp->hw = &hwList[i];
-			comp->hwFlags = comp->hw->flag;
-			break;
-		}
-	}
-}
-
-std::vector<std::string> getHardwareNames() {
-	std::vector<std::string> res;
-	for (uint i=0; i<hwList.size(); i++) {
-		res.push_back(hwList[i].name);
-	}
-	return res;
-}
-
-std::vector<HardWare> getHardwareList() {
-	return hwList;
-}
-
-void initHardware() {
-	addHardware("ZX48K",HW_ZX48,0x00,0);
-	addHardware("Pentagon",HW_PENT,0x05,0);
-	addHardware("Pentagon1024SL",HW_P1024,0x08,0);
-	addHardware("Scorpion",HW_SCORP,0x0a,IO_WAIT);
-}
 
 // PROFILES
 
 void fillProfileMenu() {
 	profileMenu->clear();
+	std::vector<XProfile> profileList = getProfileList();
 	for(uint i=0; i < profileList.size(); i++) {
 		profileMenu->addAction(profileList[i].name.c_str());
 	}
-}
-
-void addProfile(std::string nm, std::string fp) {
-	XProfile nprof;
-	nprof.name = nm;
-	nprof.file = fp;
-	nprof.zx = zxCreate();
-	profileList.push_back(nprof);
-}
-
-bool setProfile(std::string nm) {
-	for (uint i=0; i<profileList.size(); i++) {
-		if (profileList[i].name == nm) {
-			currentProfile = &profileList[i];
-			zx = currentProfile->zx;
-			return true;
-		}
-	}
-	return false;
-}
-
-void clearProfiles() {
-	XProfile defprof = profileList[0];
-	profileList.clear();
-	profileList.push_back(defprof);
-}
-
-std::vector<XProfile> getProfileList() {
-	return profileList;
-}
-
-XProfile* getCurrentProfile() {
-	return currentProfile;
 }
 
 // USER MENU
@@ -1477,39 +1223,10 @@ void initUserMenu(QWidget* par) {
 	userMenu->addAction("RZX player",rzxWin,SLOT(show()));
 }
 
-void addBookmark(std::string nm, std::string fp) {
-	XBookmark nbm;
-	nbm.name = nm;
-	nbm.path = fp;
-	bookmarkList.push_back(nbm);
-}
-
-void swapBookmarks(int p1, int p2) {
-	XBookmark bm = bookmarkList[p1];
-	bookmarkList[p1] = bookmarkList[p2];
-	bookmarkList[p2] = bm;
-}
-
-void setBookmark(int idx,std::string nm, std::string fp) {
-	bookmarkList[idx].name = nm;
-	bookmarkList[idx].path = fp;
-}
-
-void delBookmark(int idx) {
-	bookmarkList.erase(bookmarkList.begin() + idx);
-}
-
-void clearBookmarks() {
-	bookmarkList.clear();
-}
-
-int getBookmarksCount() {
-	return bookmarkList.size();
-}
-
 void fillBookmarkMenu() {
 	bookmarkMenu->clear();
 	QAction* act;
+	std::vector<XBookmark> bookmarkList = getBookmarkList();
 	if (bookmarkList.size() == 0) {
 		bookmarkMenu->addAction("None")->setEnabled(false);
 	} else {
@@ -1518,10 +1235,6 @@ void fillBookmarkMenu() {
 			act->setData(QVariant(bookmarkList[i].path.c_str()));
 		}
 	}
-}
-
-std::vector<XBookmark> getBookmarkList() {
-	return bookmarkList;
 }
 
 // SLOTS

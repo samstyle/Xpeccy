@@ -42,37 +42,6 @@
 #define	FL_LED_SHOT	(1<<8)
 
 typedef struct {
-	std::string name;
-	std::string path;
-} XBookmark;
-
-typedef struct {
-	std::string name;
-	std::string file;	// set when romfile is single file
-	struct {
-		std::string path;
-		uint8_t part;
-	} roms[32];
-} RomSet;
-
-typedef struct {
-	std::string name;
-	std::string file;
-	std::string layName;
-	ZXComp* zx;
-	RomSet* rset;
-} XProfile;
-
-typedef struct {
-	std::string name;
-	VSize full;
-	VSize sync;
-	VSize bord;
-	VSize intpos;
-	int intsz;
-} VidLayout;
-
-typedef struct {
 	const char* name;
 #ifdef XQTPAINT
 	Qt::Key key;
@@ -156,37 +125,13 @@ void setKey(const char*,const char,const char);
 #endif
 // USER MENU
 void initUserMenu(QWidget*);
-// bookmarks
 void fillBookmarkMenu();
-void addBookmark(std::string,std::string);
-void setBookmark(int,std::string,std::string);
-void delBookmark(int);
-void clearBookmarks();
-void swapBookmarks(int,int);
-std::vector<XBookmark> getBookmarkList();
-int getBookmarksCount();
-// profiles
 void fillProfileMenu();
-void addProfile(std::string,std::string);
-bool setProfile(std::string);
-void clearProfiles();
-std::vector<XProfile> getProfileList();
-XProfile* getCurrentProfile();
-// hardware
-void initHardware();
-void setHardware(ZXComp*, std::string);
-std::vector<std::string> getHardwareNames();
-std::vector<HardWare> getHardwareList();
-// romset
-bool addRomset(RomSet);
-void setRomsetList(std::vector<RomSet>);
-void setRomset(ZXComp*, std::string);
-std::vector<RomSet> getRomsetList();
-// layouts
-bool addLayout(std::string,int,int,int,int,int,int,int,int,int);
-bool addLayout(VidLayout);
-std::vector<VidLayout> getLayoutList();
-bool emulSetLayout(Video*, std::string);
+// bookmarks : moved to xcore/bookmarks
+// profiles : moved to xcore/profiles
+// hardware : moved to xcore/hardwares
+// romset : moved to xcore/romsets
+// layouts : moved to xcore/layouts
 // tape window
 void buildTapeList();
 // joystick
