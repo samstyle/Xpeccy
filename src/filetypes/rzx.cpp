@@ -23,7 +23,9 @@ void frmAddValue(RZXFrame* frm, uint8_t val) {
 }
 
 void rzxAddFrame(ZXComp* zx, RZXFrame* frm) {
-	RZXFrame nfrm = *frm;
+	RZXFrame nfrm;
+	nfrm.fetches = frm->fetches;
+	nfrm.frmSize = frm->frmSize;
 	nfrm.frmData = (uint8_t*)malloc(frm->frmSize * sizeof(uint8_t));		// THIS IS MEMORY EATER
 	memcpy(nfrm.frmData, frm->frmData, frm->frmSize * sizeof(uint8_t));
 	zx->rzxData = (RZXFrame*)realloc(zx->rzxData,(zx->rzxSize + 1) * sizeof(RZXFrame));
@@ -174,9 +176,9 @@ int loadRZX(ZXComp* zx, const char* name) {
 					len3 = (uint8_t)buf[flg] + ((uint8_t)buf[flg+1] << 8);
 					flg += 2;
 					if (len3 != 0xffff) {
-						rzxf.frmSize = 0;
 						if (rzxf.frmData) free(rzxf.frmData);
 						rzxf.frmData = NULL;
+						rzxf.frmSize = 0;
 						while (len3 > 0) {
 							frmAddValue(&rzxf,buf[flg]);
 							//rzxf.in.push_back((uint8_t)buf[flg]);
@@ -185,10 +187,6 @@ int loadRZX(ZXComp* zx, const char* name) {
 						}
 					}
 					rzxAddFrame(zx,&rzxf);
-					free(rzxf.frmData);
-					rzxf.frmData = NULL;
-					rzxf.frmSize = 0;
-					//zx->rzx.push_back(rzxf);
 					len2--;
 				}
 
@@ -200,6 +198,7 @@ int loadRZX(ZXComp* zx, const char* name) {
 				} else {
 					zx->rzxPlay = 0;
 				}
+				if (rzxf.frmData) free(rzxf.frmData);			// fuuuuuck!
 				free(buf);
 				buf = NULL;
 				if (zbuf) free(zbuf);

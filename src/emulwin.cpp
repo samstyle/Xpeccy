@@ -14,6 +14,7 @@
 #endif
 
 #include "xcore/xcore.h"
+#include "xgui/xgui.h"
 #include "common.h"
 #include "sound.h"
 #include "libxpeccy/spectrum.h"

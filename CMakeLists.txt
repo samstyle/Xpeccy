@@ -41,12 +41,14 @@ file(GLOB SOURCES
 	./src/libxpeccy/*.c
 	./src/filetypes/*.cpp
 	./src/xcore/*.cpp
+	./src/xgui/*.cpp
 )
 file(GLOB HEADERS
 	./src/*.h
 	./src/libxpeccy/*.h
 	./src/filetypes/*.h
 	./src/xcore/*.h
+	./src/xgui/*.h
 )
 file(GLOB UIFILES ./ui/*.ui)
 set(QRCFILES ./xpeccy.qrc)

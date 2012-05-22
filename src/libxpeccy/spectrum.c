@@ -130,10 +130,6 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 	Z80EX_BYTE res = 0xff;
 	gsSync(comp->gs,comp->gsCount);
 	comp->gsCount = 0;
-	if (ideIn(comp->ide,port,&res,comp->bdi->flag & BDI_ACTIVE)) return res;
-	if (gsIn(comp->gs,port,&res) == GS_OK) return res;
-	if (bdiIn(comp->bdi,port,&res)) return res;
-	port = zxGetPort(port,comp->hw->type);
 	if (comp->rzxPlay) {
 		if (comp->rzxPos < comp->rzxData[comp->rzxFrame].frmSize) {
 			res = comp->rzxData[comp->rzxFrame].frmData[comp->rzxPos];
@@ -144,6 +140,10 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 			return 0xff;
 		}
 	}
+	if (ideIn(comp->ide,port,&res,comp->bdi->flag & BDI_ACTIVE)) return res;
+	if (gsIn(comp->gs,port,&res) == GS_OK) return res;
+	if (bdiIn(comp->bdi,port,&res)) return res;
+	port = zxGetPort(port,comp->hw->type);
 	switch (port) {
 		case 0xfbdf: res = comp->mouse->xpos; break;
 		case 0xffdf: res = comp->mouse->ypos; break;
