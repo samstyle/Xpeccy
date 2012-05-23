@@ -89,9 +89,10 @@ class MainWin : public QX11EmbedContainer {
 		QTimer* timer;
 	private slots:
 		void emulFrame();
-		void rzxPlayPause();
-		void rzxStop();
-		void rzxOpen();
+		void rzxStateChanged(int);
+//		void rzxPlayPause();
+//		void rzxStop();
+//		void rzxOpen();
 	protected:
 		void closeEvent(QCloseEvent*);
 #ifdef XQTPAINT

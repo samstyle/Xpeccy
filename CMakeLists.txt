@@ -57,6 +57,7 @@ set(MOCFILES
 	./src/develwin.h
 	./src/debuger.h
 	./src/setupwin.h
+	./src/xgui/xgui.h
 )
 
 add_definitions(-Wall -O2)

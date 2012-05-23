@@ -26,7 +26,6 @@
 #include "filer.h"
 
 #include "ui_tapewin.h"
-#include "ui_rzxplayer.h"
 
 #ifdef XQTPAINT
 	#include <QPainter>
@@ -69,13 +68,8 @@ QDialog* tapeWin;
 int lastTapeFlags;
 int lastTapeBlock;
 // rzx player
-Ui::rzxPlayer rzxUi;
-QDialog* rzxWin;
-// hardwares
-// romsets
-// layouts
+RZXWin* rzxWin;
 // for user menu
-//XProfile* currentProfile;
 QMenu* userMenu;
 QMenu* bookmarkMenu;
 QMenu* profileMenu;
@@ -485,24 +479,47 @@ MainWin::MainWin() {
 	tapeUi.tapeList->setColumnWidth(0,20);
 	tapeUi.tapeList->setColumnWidth(1,20);
 	tapeUi.tapeList->setColumnWidth(2,50);
-	rzxWin = new QDialog((QWidget*)this,Qt::Tool);
-	rzxUi.setupUi(rzxWin);
+
+	rzxWin = new RZXWin(this);
+	connect(rzxWin,SIGNAL(stateChanged(int)),this,SLOT(rzxStateChanged(int)));
+
 	initUserMenu((QWidget*)this);
 	timer = new QTimer();
-	QObject::connect(timer,SIGNAL(timeout()),this,SLOT(emulFrame()));
-
-	connect(rzxUi.ppButton,SIGNAL(released()),this,SLOT(rzxPlayPause()));
-	connect(rzxUi.stopButton,SIGNAL(released()),this,SLOT(rzxStop()));
-	connect(rzxUi.openButton,SIGNAL(released()),this,SLOT(rzxOpen()));
+	connect(timer,SIGNAL(timeout()),this,SLOT(emulFrame()));
 }
 
+void MainWin::rzxStateChanged(int state) {
+	switch(state) {
+		case RWS_PLAY:
+			emulPause(false,PR_RZX);
+			break;
+		case RWS_PAUSE:
+			emulPause(true,PR_RZX);
+			break;
+		case RWS_STOP:
+			zx->rzxPlay = false;
+			rzxClear(zx);
+			emulPause(false,PR_RZX);
+			break;
+		case RWS_OPEN:
+			emulPause(true,PR_RZX);
+			loadFile("",FT_RZX,0);
+			if (zx->rzxSize != 0) {
+				rzxWin->startPlay();
+			}
+			emulPause(false,PR_RZX);
+			break;
+	}
+}
+
+/*
 void MainWin::rzxPlayPause() {
 	if (pauseFlags & PR_RZX) {
 		emulPause(false,PR_RZX);
-		rzxUi.ppButton->setIcon(QIcon(":/images/pause.png"));
+		rzxWin->setState(RWS_PLAY);
 	} else {
 		emulPause(true,PR_RZX);
-		rzxUi.ppButton->setIcon(QIcon(":/images/play.png"));
+		rzxWin->setState(RWS_PAUSE);
 	}
 }
 
@@ -510,21 +527,16 @@ void MainWin::rzxStop() {
 	zx->rzxPlay = false;
 	rzxClear(zx);
 	emulPause(false,PR_RZX);
-	rzxUi.ppButton->setEnabled(false);
-	rzxUi.stopButton->setEnabled(false);
-	rzxUi.progress->setValue(0);
+	rzxWin->setState(RWS_STOP);
 }
 
 void MainWin::rzxOpen() {
 	emulPause(true,PR_RZX);
 	loadFile("",FT_RZX,0);
-	if (zx->rzxSize != 0) {
-		rzxUi.ppButton->setEnabled(true);
-		rzxUi.stopButton->setEnabled(true);
-		rzxUi.progress->setValue(0);
-	}
+	if (zx->rzxSize != 0) rzxWin->setState(RWS_START);
 	emulPause(false,PR_RZX);
 }
+*/
 
 #ifdef XQTPAINT
 void MainWin::paintEvent(QPaintEvent *ev) {
@@ -562,6 +574,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;	// ALT+F7 combo
 			case Qt::Key_F12:
 				zxReset(zx,RES_DOS);
+				rzxWin->stop();
 				break;
 		}
 	} else {
@@ -606,7 +619,10 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 					tapeWin->show();
 				}
 				break;
-			case Qt::Key_F12: zxReset(zx,RES_DEFAULT); break;
+			case Qt::Key_F12:
+				zxReset(zx,RES_DEFAULT);
+				rzxWin->stop();
+				break;
 		}
 	}
 }
@@ -865,6 +881,7 @@ void drawIcon(SDL_Surface* srf,int x,int y,uint8_t* data) {
 #endif
 
 void EmulWin::SDLEventHandler() {
+	// leds
 #ifndef XQTPAINT
 	if (emulFlags & FL_LED_DISK) {
 		int fst = zx->bdi->fdc->status;
@@ -872,12 +889,11 @@ void EmulWin::SDLEventHandler() {
 			case FDC_READ: drawIcon(surf,4,4,icoBlueDisk); break;
 			case FDC_WRITE: drawIcon(surf,4,4,icoRedDisk); break;
 		}
+		SDL_UpdateRect(surf,3,3,18,18);
+	}
+	if (zx->vid->flag & VF_CHANGED) {
 		SDL_UpdateRect(surf,0,0,0,0);
-	} else {
-		if (zx->vid->flag & VF_CHANGED) {
-			SDL_UpdateRect(surf,0,0,0,0);
-			zx->vid->flag &= ~VF_CHANGED;
-		}
+		zx->vid->flag &= ~VF_CHANGED;
 	}
 #else
 	if (zx->vid->flag & VF_CHANGED) {
@@ -886,25 +902,16 @@ void EmulWin::SDLEventHandler() {
 	}
 #endif
 	if (emulFlags & FL_BLOCK) return;
+	// wanted windows
 	switch (wantedWin) {
 		case WW_DEBUG: dbgShow(); wantedWin = WW_NONE; break;
 	}
-	if ((zx->rzxSize == 0) || (pauseFlags & ~PR_RZX)) {
-		rzxUi.ppButton->setEnabled(false);
-		rzxUi.stopButton->setEnabled(false);
-	} else {
-		if (pauseFlags & PR_RZX) {
-			rzxUi.ppButton->setIcon(QIcon(":/images/play.png"));
-		} else {
-			rzxUi.ppButton->setIcon(QIcon(":/images/pause.png"));
-		}
-		rzxUi.ppButton->setEnabled(true);
-		rzxUi.stopButton->setEnabled(true);
-		if (zx->rzxPlay) {
-			prc = 100 * zx->rzxFrame / zx->rzxSize;
-			rzxUi.progress->setValue(prc);
-		}
+	// rzx window
+	if (zx->rzxPlay) {
+		prc = 100 * zx->rzxFrame / zx->rzxSize;
+		rzxWin->setProgress(prc);
 	}
+	// tape window
 	int blk = zx->tape->block;
 	int flg = zx->tape->flag;
 	if (lastTapeBlock != blk) {
@@ -929,6 +936,7 @@ void EmulWin::SDLEventHandler() {
 		}
 	}
 #ifndef XQTPAINT
+	// sdl events
 	keyEntry kent;
 	int jdir;
 	SDL_Event ev;
@@ -964,6 +972,7 @@ void EmulWin::SDLEventHandler() {
 							break;	// ALT+F7 combo
 						case SDLK_F12:
 							zxReset(zx,RES_DOS);
+							rzxWin->stop();
 							break;
 						case SDLK_RETURN:
 							zx->vid->flag ^= VF_FULLSCREEN;
@@ -1015,7 +1024,10 @@ void EmulWin::SDLEventHandler() {
 								tapeWin->show();
 							}
 							break;
-						case SDLK_F12: zxReset(zx,RES_DEFAULT); break;
+						case SDLK_F12:
+							zxReset(zx,RES_DEFAULT);
+							rzxWin->stop();
+							break;
 						default: break;
 					}
 				}
