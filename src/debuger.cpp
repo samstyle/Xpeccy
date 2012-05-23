@@ -5,6 +5,7 @@
 
 #include <z80ex_dasm.h>
 
+#include <QIcon>
 #include <QDebug>
 
 extern ZXComp* zx;
@@ -25,10 +26,6 @@ void dbgShow() {
 bool dbgIsActive() {
 	return dbgWin->active;
 }
-
-//int dbgFindBreakpoint(BPoint bp) {
-//	return dbgWin->findbp(bp);
-//}
 
 // OBJECT
 

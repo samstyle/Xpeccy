@@ -724,7 +724,7 @@ void SetupWin::buildrsetlist() {
 }
 
 void SetupWin::buildtapelist() {
-	buildTapeList();
+//	buildTapeList();
 	TapeBlockInfo inf[zx->tape->blkCount];
 	tapGetBlocksInfo(zx->tape,inf);
 	setupUi.tapelist->setRowCount(zx->tape->blkCount);

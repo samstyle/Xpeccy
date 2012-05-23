@@ -12,6 +12,11 @@
 	#define	SLASH "/"
 #endif
 
+// common
+
+std::string getTimeString(int);
+std::string int2str(int);
+
 // bookmarks
 
 typedef struct {

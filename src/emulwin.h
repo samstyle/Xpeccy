@@ -1,10 +1,9 @@
 #ifndef _EMULWIN_H
 #define _EMULWIN_H
 
-#include <vector>
-#include <QIcon>
+//#include <vector>
+//#include <QIcon>
 #include <QTimer>
-//#include <QModelIndex>
 #include <stdint.h>
 #include <SDL.h>
 
@@ -19,6 +18,8 @@
 // wanted windows
 #define	WW_NONE		0
 #define	WW_DEBUG	1
+#define WW_OPTIONS	2
+#define	WW_DEVEL	3
 
 // pause reasons
 #define	PR_MENU		1
@@ -61,15 +62,9 @@ class EmulWin : public QObject {
 	private:
 		QTimer *timer;
 	public slots:
-		void tapePlay();
-		void tapeRec();
-		void tapeStop();
 	private slots:
 		void bookmarkSelected(QAction*);
 		void profileSelected(QAction*);
-		void tapeLoad();
-		void tapeRewind(int,int);
-		void setTapeStop(int,int);
 	public slots:
 		void SDLEventHandler();
 };
@@ -87,12 +82,11 @@ class MainWin : public QX11EmbedContainer {
 		void stopTimer();
 	private:
 		QTimer* timer;
+	public slots:
+		void tapStateChanged(int,int);
 	private slots:
 		void emulFrame();
 		void rzxStateChanged(int);
-//		void rzxPlayPause();
-//		void rzxStop();
-//		void rzxOpen();
 	protected:
 		void closeEvent(QCloseEvent*);
 #ifdef XQTPAINT
@@ -133,8 +127,7 @@ void fillProfileMenu();
 // hardware : moved to xcore/hardwares
 // romset : moved to xcore/romsets
 // layouts : moved to xcore/layouts
-// tape window
-void buildTapeList();
+// tape window : moved to xgui/tapewin
 // joystick
 void emulOpenJoystick(std::string);
 void emulCloseJoystick();

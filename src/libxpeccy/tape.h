@@ -14,10 +14,12 @@ extern "C" {
 #define	SIGN1LEN	1710
 #define	SYNC3LEN	954
 
-#define	TAPE_ON		1
-#define TAPE_REC	(1<<1)
-#define TAPE_CANSAVE	(1<<2)	// can be saved as tap
-#define TAPE_WAIT	(1<<3)	// wait for 1st impulse (at save)
+#define	TAPE_ON			1
+#define TAPE_REC		(1<<1)
+#define TAPE_CANSAVE		(1<<2)	// can be saved as tap
+#define TAPE_WAIT		(1<<3)	// wait for 1st impulse (rec)
+#define	TAPE_BLOCK_CHANGED	(1<<4)	// move to next block (play)
+#define	TAPE_NEW_BLOCK		(1<<5)	// new block added (rec)
 
 #define	TBF_BREAK	1	// stop tape on start of this block
 #define	TBF_BYTES	(1<<1)	// this is block of standard structure (pilot,sync1,sync2,1,0,sync3 is present)

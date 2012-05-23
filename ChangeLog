@@ -174,3 +174,10 @@ Fix	Memory eating by each RZX loading
 
 build 20120514
 Fix	Fixing fast tape loading
+
+build 20120523
+Fix	RZX repeated frames wasn't loaded correctly
+Fix	Fix forced fullscreen in some cases
+Wrk	Fix needless CPU eating with led showing
+Wrk	Separating RZX-player and Tape-player from main window (see xgui dir)
+Wrk	Fixing some bugs, adding new bugs :)

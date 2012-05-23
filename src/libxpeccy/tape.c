@@ -54,7 +54,7 @@ void blkAddSignal(TapeBlock* blk, int sig) {
 
 int tapGetBlockTime(Tape* tape, int blk, int pos) {
 	long totsz = 0;
-	if (pos == -1) pos = tape->blkData[blk].sigCount;
+	if (pos < 0) pos = tape->blkData[blk].sigCount;
 	for (int i = 0; i < pos; i++) totsz += tape->blkData[blk].sigData[i];
 	return (totsz / SECDOTS);
 }
@@ -309,6 +309,7 @@ void tapSync(Tape* tap,int tks) {
 				tap->pos++;
 				if (tap->pos >= (int)tap->blkData[tap->block].sigCount) {
 					tap->sigLen += tap->blkData[tap->block].pause * MSDOTS;
+					tap->flag |= TAPE_BLOCK_CHANGED;
 					tap->block++;
 					tap->pos = 0;
 					if (tap->block >= (int)tap->blkCount) {
@@ -330,6 +331,7 @@ void tapSync(Tape* tap,int tks) {
 
 void tapNextBlock(Tape* tap) {
 	tap->block++;
+	tap->flag |= TAPE_BLOCK_CHANGED;
 	if (tap->block < tap->blkCount) return;
 	tap->block = 0;
 	tapStop(tap);
@@ -426,4 +428,6 @@ void tapAddBlock(Tape* tap, TapeBlock block) {
 	tap->blkCount++;
 	tap->blkData = (TapeBlock*)realloc(tap->blkData,tap->blkCount * sizeof(TapeBlock));
 	tap->blkData[tap->blkCount - 1] = blk;
+
+	tap->flag |= TAPE_NEW_BLOCK;
 }

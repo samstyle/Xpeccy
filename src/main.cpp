@@ -5,7 +5,6 @@
 #ifdef WIN32
 	#undef main
 #endif
-#include <sstream>
 #include <getopt.h>
 
 #include "xcore/xcore.h"
@@ -26,16 +25,6 @@
 ZXComp* zx;
 EmulWin *mwin;
 extern MainWin* mainWin;
-
-std::string getTimeString(int32_t tsec) {
-	int32_t tmin = tsec / 60;
-	tsec -= tmin * 60;
-	std::string res = int2str(tmin);
-	res += ":";
-	if (tsec < 10) res += "0";
-	res += int2str(tsec);
-	return res;
-}
 
 void setFlagBit(bool cond, int32_t* val, int32_t mask) {
 	if (cond) {
@@ -59,12 +48,6 @@ bool areSure(const char* msg) {
 void showInfo(const char* msg) {
 	QMessageBox mbx(QMessageBox::Information,"Message",QDialog::trUtf8(msg),QMessageBox::Ok);
 	mbx.exec();
-}
-
-std::string int2str(int num) {
-	std::stringstream str;
-	str<<num;
-	return str.str();
 }
 
 bool str2bool(std::string v) {

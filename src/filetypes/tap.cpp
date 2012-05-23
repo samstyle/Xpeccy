@@ -28,6 +28,7 @@ TapeBlock tapDataToBlock(char* data,int len,int* sigLens) {
 		addBlockByte(&block,*ptr);
 		ptr++;
 	}
+//	printf("tapDataToBlock: %i bytes -> %i signals\t datapos = %i\n",len,block.sigCount,block.dataPos);
 	return block;
 }
 
