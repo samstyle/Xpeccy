@@ -1,4 +1,5 @@
-#include "common.h"
+#include "xcore/xcore.h"
+#include "xgui/xgui.h"
 #include "develwin.h"
 #include "settings.h"
 

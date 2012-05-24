@@ -1,6 +1,6 @@
 #include "filer.h"
 #include "libxpeccy/spectrum.h"
-#include "common.h"
+#include "xgui/xgui.h"
 
 #include "filetypes/filetypes.h"
 

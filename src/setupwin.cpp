@@ -7,7 +7,7 @@
 #include <stdlib.h>
 
 #include "xcore/xcore.h"
-#include "common.h"
+#include "xgui/xgui.h"
 #include "sound.h"
 #include "libxpeccy/spectrum.h"
 #include "setupwin.h"

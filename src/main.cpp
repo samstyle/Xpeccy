@@ -8,7 +8,7 @@
 #include <getopt.h>
 
 #include "xcore/xcore.h"
-#include "common.h"
+#include "xgui/xgui.h"
 #include "libxpeccy/spectrum.h"
 #include "sound.h"
 #include "emulwin.h"
@@ -25,70 +25,6 @@
 ZXComp* zx;
 EmulWin *mwin;
 extern MainWin* mainWin;
-
-void setFlagBit(bool cond, int32_t* val, int32_t mask) {
-	if (cond) {
-		*val |= mask;
-	} else {
-		*val &= ~mask;
-	}
-}
-
-void shitHappens(const char* msg) {
-	QMessageBox mbx(QMessageBox::Critical,"Shit happens",QDialog::trUtf8(msg),QMessageBox::Ok);
-	mbx.exec();
-}
-
-bool areSure(const char* msg) {
-	QMessageBox mbx(QMessageBox::Question,"R U Sure?",QDialog::trUtf8(msg),QMessageBox::Yes | QMessageBox::No);
-	int res = mbx.exec();
-	return (res == QMessageBox::Yes);
-}
-
-void showInfo(const char* msg) {
-	QMessageBox mbx(QMessageBox::Information,"Message",QDialog::trUtf8(msg),QMessageBox::Ok);
-	mbx.exec();
-}
-
-bool str2bool(std::string v) {
-	return !(v=="n" || v=="N" || v=="0" || v=="no" || v=="NO" || v=="false" || v=="FALSE");
-}
-
-std::vector<std::string> splitstr(std::string str,const char* spl) {
-	size_t pos;
-	std::vector<std::string> res;
-	pos = str.find_first_of(spl);
-	while (pos != std::string::npos) {
-		res.push_back(str.substr(0,pos));
-		str = str.substr(pos+1);
-		pos = str.find_first_of(spl);
-	}
-	res.push_back(str);
-	return res;
-
-}
-
-std::pair<std::string,std::string> splitline(std::string line) {
-	size_t pos;
-	std::pair<std::string,std::string> res;
-	do {pos = line.find("\r"); if (pos!=std::string::npos) line.erase(pos);} while (pos!=std::string::npos);
-	do {pos = line.find("\n"); if (pos!=std::string::npos) line.erase(pos);} while (pos!=std::string::npos);
-	res.first = "";
-	res.second = "";
-	pos = line.find("=");
-	if (pos!=std::string::npos) {
-		res.first = std::string(line,0,pos);
-		res.second = std::string(line,pos+1);
-		pos = res.first.find_last_not_of(" ");
-		if (pos != std::string::npos) res.first = std::string(res.first,0,pos+1);	// delete last spaces
-		pos = res.second.find_first_not_of(" ");
-		if (pos != std::string::npos) res.second = std::string(res.second,pos);		// delete first spaces
-	} else {
-		res.first = line;
-		res.second = "";
-	}
-	return res;
-}
 
 int main(int ac,char** av) {
 	SDL_version sdlver;

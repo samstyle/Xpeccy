@@ -1,4 +1,3 @@
-#include "common.h"
 #include "sound.h"
 #include "libxpeccy/spectrum.h"
 

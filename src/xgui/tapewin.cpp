@@ -1,4 +1,5 @@
 #include "xgui.h"
+#include "../xcore/xcore.h"
 
 TapeWin::TapeWin(QWidget *par):QDialog(par) {
 	ui.setupUi(this);

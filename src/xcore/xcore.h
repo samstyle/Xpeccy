@@ -16,6 +16,10 @@
 
 std::string getTimeString(int);
 std::string int2str(int);
+void setFlagBit(bool, int32_t*, int32_t);
+bool str2bool(std::string);
+std::vector<std::string> splitstr(std::string,const char*);
+std::pair<std::string,std::string> splitline(std::string);
 
 // bookmarks
 

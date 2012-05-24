@@ -7,7 +7,7 @@
 #include <QtCore>
 
 #include "xcore/xcore.h"
-#include "common.h"
+#include "xgui/xgui.h"
 #include "sound.h"
 #include "emulwin.h"
 #include "settings.h"

@@ -2,7 +2,12 @@
 #define _XGUI_H
 
 #include <QDialog>
-#include "../xcore/xcore.h"
+
+// common
+
+void shitHappens(const char*);
+bool areSure(const char*);
+void showInfo(const char*);
 
 // tape player
 
