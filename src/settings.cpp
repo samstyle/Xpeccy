@@ -28,7 +28,7 @@ extern XProfile* currentProfile;
 #define	SECT_JOYSTICK	7
 #define	SECT_GENERAL	8
 #define	SECT_SCRSHOT	9
-#define	SECT_BDI	10
+#define	SECT_DISK	10
 #define	SECT_IDE	11
 #define	SECT_MACHINE	12
 #define	SECT_MENU	13
@@ -234,6 +234,13 @@ optEntry* optFindEntry(std::string grp, std::string nam) {
 		}
 	}
 	return res;
+}
+
+void delOption(std::string grp, std::string nam) {
+	uint i;
+	for (i = 0; i < config.size(); i++) {
+		if ((config[i].group == grp) && (config[i].name == nam)) config.erase(config.begin() + i);
+	}
 }
 
 optEntry* addOption(std::string grp, std::string nam) {
@@ -468,8 +475,6 @@ void saveConfig() {
 	optSet("ROMSET","gs",std::string(zx->opt.GSRom));
 	optSet("ROMSET","current",std::string(zx->opt.rsName));
 	optSet("ROMSET","reset",rmnam[zx->resbank]);
-//	optSet("VIDEO","doublesize",(zx->vid->flag & VF_DOUBLE) != 0);
-//	optSet("VIDEO","bordersize",int(zx->vid->brdsize * 100));
 	optSet("VIDEO","geometry",currentProfile->layName);
 	optSet("SOUND","chip1",zx->ts->chipA->type);
 	optSet("SOUND","chip2",zx->ts->chipB->type);
@@ -479,12 +484,12 @@ void saveConfig() {
 	optSet("SOUND","gs",(zx->gs->flag & GS_ENABLE) != 0);
 	optSet("SOUND","gs.reset",(zx->gs->flag & GS_RESET) != 0);
 	optSet("SOUND","gs.stereo",zx->gs->stereo);
-	optSet("BETADISK","enabled",zx->bdi->flag & BDI_ENABLE);
-	optSet("BETADISK","fast",zx->bdi->flag & BDI_TURBO);
-	optSet("BETADISK","A",getDiskString(zx->bdi->flop[0]));
-	optSet("BETADISK","B",getDiskString(zx->bdi->flop[1]));
-	optSet("BETADISK","C",getDiskString(zx->bdi->flop[2]));
-	optSet("BETADISK","D",getDiskString(zx->bdi->flop[3]));
+	optSet("DISK","type",zx->bdi->type);
+	optSet("DISK","fast",(zx->bdi->flag & BDI_TURBO) ? "yes" : "no");
+	optSet("DISK","A",getDiskString(zx->bdi->flop[0]));
+	optSet("DISK","B",getDiskString(zx->bdi->flop[1]));
+	optSet("DISK","C",getDiskString(zx->bdi->flop[2]));
+	optSet("DISK","D",getDiskString(zx->bdi->flop[3]));
 
 	optSet("IDE","iface",zx->ide->type);
 
@@ -814,7 +819,7 @@ void loadConfig(bool dev) {
 				if (pnam=="[VIDEO]") {grp = pnam; section = SECT_VIDEO;}
 				if (pnam=="[SCREENSHOTS]") {grp = ""; section = SECT_SCRSHOT;}
 				if (pnam=="[SOUND]") {grp = pnam; section = SECT_SOUND;}
-				if (pnam=="[BETADISK]") {grp = pnam; section = SECT_BDI;}
+				if ((pnam=="[DISK]") || (pnam=="[BETADISK]")) {grp = "[DISK]"; section = SECT_DISK;}
 				if (pnam=="[MACHINE]") {grp = pnam; section = SECT_MACHINE;}
 				if (pnam=="[TOOLS]") {grp = ""; section = SECT_TOOLS;}
 				if (pnam=="[MENU]") {grp = pnam; section = SECT_MENU;}
@@ -850,11 +855,16 @@ void loadConfig(bool dev) {
 						break;
 					case SECT_SOUND:
 						break;
-					case SECT_BDI:
+					case SECT_DISK:
 						if (pnam=="A") setDiskString(zx->bdi->flop[0],pval);
 						if (pnam=="B") setDiskString(zx->bdi->flop[1],pval);
 						if (pnam=="C") setDiskString(zx->bdi->flop[2],pval);
 						if (pnam=="D") setDiskString(zx->bdi->flop[3],pval);
+						if (pnam=="enabled") {
+							zx->bdi->type = str2bool(pval) ? DISK_BDI : DISK_NONE;
+							delOption("DISK","enabled");
+						}
+						if (pnam=="type") zx->bdi->type = atoi(pval.c_str());
 						break;
 					case SECT_MACHINE:
 						if (pnam=="memory") {
@@ -920,14 +930,15 @@ void loadConfig(bool dev) {
 			}
 		}
 	}
+
 	if (dev) return;
+
+	delOption("VIDEO","fullscreen");
+	delOption("VIDEO","doublesize");
 
 	tmp2 = optGetInt("GENERAL","cpu.frq"); if ((tmp2 > 0) && (tmp2 <= 14)) zxSetFrq(zx,tmp2 / 2.0);
 
 	currentProfile->layName = optGetString("VIDEO","geometry");
-//	setFlagBit(optGetBool("VIDEO","doublesize"),&zx->vid->flag, VF_DOUBLE);
-//	setFlagBit(optGetBool("VIDEO","fullscreen"),&zx->vid->flag, VF_FULLSCREEN);
-//	tmp2 = optGetInt("VIDEO","bordersize"); if ((tmp2 >= 0) && (tmp2 <= 100)) zx->vid->brdsize = tmp2 / 100.0;
 
 	tmp2 = optGetInt("SOUND","chip1"); if (tmp2 < SND_END) aymSetType(zx->ts->chipA,tmp2);
 	tmp2 = optGetInt("SOUND","chip2"); if (tmp2 < SND_END) aymSetType(zx->ts->chipB,tmp2);
@@ -940,10 +951,10 @@ void loadConfig(bool dev) {
 	if (optGetBool("SOUND","gs.reset")) zx->gs->flag |= GS_RESET;
 	zx->gs->stereo = optGetInt("SOUND","gs.stereo");
 
-	zx->bdi->flag &= ~(BDI_ENABLE | BDI_TURBO);
+	zx->bdi->flag = 0;
 	zx->bdi->fdc->turbo = 0;
-	if (optGetBool("BETADISK","enabled")) zx->bdi->flag |= BDI_ENABLE;
-	if (optGetBool("BETADISK","fast")) {
+//	zx->bdi->type = atoi(optGetString("DISK","type").c_str());
+	if (optGetBool("DISK","fast")) {
 		zx->bdi->flag |= BDI_TURBO;
 		zx->bdi->fdc->turbo = 1;
 	}

@@ -1378,19 +1378,39 @@
               <normaloff>:/images/floppy.png</normaloff>:/images/floppy.png</iconset>
             </attribute>
             <attribute name="title">
-             <string>BDI</string>
+             <string>Disk</string>
             </attribute>
-            <layout class="QVBoxLayout" name="verticalLayout_27" stretch="0,0,10">
+            <layout class="QVBoxLayout" name="verticalLayout_19">
              <item>
-              <layout class="QGridLayout" name="gridLayout_6">
-               <item row="0" column="0">
-                <widget class="QCheckBox" name="bdebox">
+              <layout class="QHBoxLayout" name="horizontalLayout_21">
+               <item>
+                <widget class="QLabel" name="label_38">
                  <property name="text">
-                  <string>Enabled</string>
+                  <string>Interface</string>
                  </property>
                 </widget>
                </item>
-               <item row="0" column="1">
+               <item>
+                <widget class="QComboBox" name="diskTypeBox"/>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_4">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QGridLayout" name="gridLayout_6">
+               <item row="0" column="0">
                 <widget class="QCheckBox" name="bdtbox">
                  <property name="text">
                   <string>Turbo</string>

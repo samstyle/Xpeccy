@@ -134,7 +134,7 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 	}
 	if (m1 == 1) {
 		if (comp->rzxPlay) comp->rzxFetches--;
-		if (comp->bdi->flag & BDI_ENABLE) {
+		if (comp->bdi->type == DISK_BDI) {
 			if (!(comp->bdi->flag & BDI_ACTIVE) && ((adr & 0xff00) == 0x3d00) && (comp->prt0 & 0x10)) {
 				comp->bdi->flag |= BDI_ACTIVE;
 				zxMapMemory(comp);
@@ -447,6 +447,6 @@ double zxExec(ZXComp* comp) {
 	tapSync(comp->tape,ltk);
 
 	if (comp->gs->flag & GS_ENABLE) comp->gsCount += ltk;
-	if (comp->bdi->flag & BDI_ENABLE) bdiSync(comp->bdi,ltk);
+	if (comp->bdi->type != DISK_NONE) bdiSync(comp->bdi,ltk);
 	return ltk;
 }

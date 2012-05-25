@@ -6,14 +6,15 @@ extern "C" {
 #endif
 
 #include <stdint.h>
-
 #include "floppy.h"
 
-#define BDI_ENABLE	1
+// disk interface type
+#define	DISK_NONE	0
+#define	DISK_BDI	1
+#define	DISK_PLUS3	2
+// bdi flags
 #define	BDI_ACTIVE	(1<<1)
 #define BDI_TURBO	(1<<2)
-// bdi get
-#define	FDC_STATUS	0
 // fdc mode
 #define FDC_IDLE	0
 #define	FDC_READ	1
@@ -51,6 +52,7 @@ typedef struct {
 } FDC;
 
 typedef struct {
+	int type;
 	int flag;
 	Floppy* flop[4];
 	FDC* fdc;

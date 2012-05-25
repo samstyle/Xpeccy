@@ -106,6 +106,9 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 // bdi
 // WTF? QtDesigner doesn't save this properties
 	setupUi.disklist->horizontalHeader()->setVisible(true);
+	setupUi.diskTypeBox->addItem("None",QVariant(DISK_NONE));
+	setupUi.diskTypeBox->addItem("Beta disk",QVariant(DISK_BDI));
+	//setupUi.diskTypeBox->addItem("+3 DOS",QVariant(DISK_PLUS3));
 	setupUi.disklist->addAction(setupUi.actCopyToTape);
 	setupUi.disklist->addAction(setupUi.actSaveHobeta);
 	setupUi.disklist->addAction(setupUi.actSaveRaw);
@@ -313,7 +316,7 @@ void SetupWin::start() {
 	setupUi.inpDevice->setCurrentIndex(idx);
 #endif
 // dos
-	setupUi.bdebox->setChecked(zx->bdi->flag & BDI_ENABLE);
+	setupUi.diskTypeBox->setCurrentIndex(setupUi.diskTypeBox->findData(zx->bdi->type));
 	setupUi.bdtbox->setChecked(zx->bdi->flag & BDI_TURBO);
 	Floppy* flp = zx->bdi->flop[0];
 	setupUi.apathle->setText(QDialog::trUtf8(flp->path));
@@ -443,8 +446,8 @@ void SetupWin::apply() {
 	optSet(OPT_KEYNAME,kmname);
 	loadKeys();
 // bdi
-	zx->bdi->flag &= (BDI_ENABLE | BDI_TURBO);
-	if (setupUi.bdebox->isChecked()) zx->bdi->flag |= BDI_ENABLE;
+	zx->bdi->flag &= ~BDI_TURBO;
+	zx->bdi->type = setupUi.diskTypeBox->itemData(setupUi.diskTypeBox->currentIndex()).toInt();
 	if (setupUi.bdtbox->isChecked()) zx->bdi->flag |= BDI_TURBO;
 
 	Floppy* flp = zx->bdi->flop[0];

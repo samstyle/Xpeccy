@@ -669,6 +669,8 @@ BDI* bdiCreate() {
 	}
 	bdi->fdc = fdcCreate(FDC_VG93);
 	bdi->fdc->fptr = bdi->flop[0];
+	bdi->type = DISK_NONE;
+	bdi->flag = 0;
 //	bdi->tab = BYTEDELAY;
 	return bdi;
 }
@@ -697,46 +699,60 @@ int bdiGetPort(int p) {
 }
 
 int bdiOut(BDI* bdi,int port,uint8_t val) {
-	if (~bdi->flag & BDI_ENABLE) return 0;
-	if (~bdi->flag & BDI_ACTIVE) return 0;
-	port = bdiGetPort(port);
-	if (!pcatch) return 0;
-	switch (port) {
-		case FDC_COM:
-		case FDC_TRK:
-		case FDC_SEC:
-		case FDC_DATA:
-			fdcWr(bdi->fdc,port,val);
+	int res = 0;
+	switch (bdi->type) {
+		case DISK_BDI:
+			if (~bdi->flag & BDI_ACTIVE) break;
+			port = bdiGetPort(port);
+			if (!pcatch) break;
+			switch (port) {
+				case FDC_COM:
+				case FDC_TRK:
+				case FDC_SEC:
+				case FDC_DATA:
+					fdcWr(bdi->fdc,port,val);
+					break;
+				case BDI_SYS:
+					bdi->fdc->fptr = bdi->flop[val & 0x03];	// selet floppy
+					fdcSetMr(bdi->fdc,(val & 0x04) ? 1 : 0);		// master reset
+					bdi->fdc->block = val & 0x08;
+					bdi->fdc->side = (val & 0x10) ? 1 : 0;
+					bdi->fdc->mfm = val & 0x40;
+					break;
+			}
+			res = 1;
 			break;
-		case BDI_SYS:
-			bdi->fdc->fptr = bdi->flop[val & 0x03];	// selet floppy
-			fdcSetMr(bdi->fdc,(val & 0x04) ? 1 : 0);		// master reset
-			bdi->fdc->block = val & 0x08;
-			bdi->fdc->side = (val & 0x10) ? 1 : 0;
-			bdi->fdc->mfm = val & 0x40;
+		default:
 			break;
 	}
-	return 1;
+	return res;
 }
 
 int bdiIn(BDI* bdi,int port,uint8_t* val) {
-	if (~bdi->flag & BDI_ENABLE) return 0;
-	if (~bdi->flag & BDI_ACTIVE) return 0;
-	port = bdiGetPort(port);
-	if (!pcatch) return 0;
-	*val = 0xff;
-	switch (port) {
-		case FDC_COM:
-		case FDC_TRK:
-		case FDC_SEC:
-		case FDC_DATA:
-			*val = fdcRd(bdi->fdc,port);
+	int res = 0;
+	switch (bdi->type) {
+		case DISK_BDI:
+			if (~bdi->flag & BDI_ACTIVE) break;
+			port = bdiGetPort(port);
+			if (!pcatch) break;
+			*val = 0xff;
+			switch (port) {
+				case FDC_COM:
+				case FDC_TRK:
+				case FDC_SEC:
+				case FDC_DATA:
+					*val = fdcRd(bdi->fdc,port);
+					break;
+				case BDI_SYS:
+					*val = (bdi->fdc->irq ? 0x80 : 0x00) | (bdi->fdc->drq ? 0x40 : 0x00);
+					break;
+			}
+			res = 1;
 			break;
-		case BDI_SYS:
-			*val = (bdi->fdc->irq ? 0x80 : 0x00) | (bdi->fdc->drq ? 0x40 : 0x00);
+		default:
 			break;
 	}
-	return 1;
+	return res;
 }
 
 void bdiSync(BDI* bdi,int tk) {
