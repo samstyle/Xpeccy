@@ -861,10 +861,10 @@ void loadConfig(bool dev) {
 							tmp = atoi(pval.c_str());
 							memSet(zx->mem,MEM_MEMSIZE,tmp);
 							switch (tmp) {
-								case 128: tmask = 1; break;
-								case 256: tmask = 2; break;
-								case 512: tmask = 4; break;
-								case 1024: tmask = 8; break;
+								case 128: tmask = MEM_128; break;
+								case 256: tmask = MEM_256; break;
+								case 512: tmask = MEM_512; break;
+								case 1024: tmask = MEM_1M; break;
 							}
 						}
 						break;

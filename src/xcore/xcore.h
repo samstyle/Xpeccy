@@ -54,6 +54,12 @@ std::vector<RomSet> getRomsetList();
 
 // hardwares
 
+#define	MEM_48	0
+#define	MEM_128	1
+#define	MEM_256 (1<<1)
+#define	MEM_512	(1<<2)
+#define	MEM_1M	(1<<3)
+
 void initHardware();
 void setHardware(ZXComp*, std::string);
 std::vector<std::string> getHardwareNames();

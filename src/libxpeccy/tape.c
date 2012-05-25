@@ -12,7 +12,7 @@
 
 Tape* tapCreate() {
 	Tape* tap = (Tape*)malloc(sizeof(Tape));
-	tap->flag = 0;
+	tap->flag = TAPE_CANSAVE;
 	tap->block = 0;
 	tap->pos = 0;
 	tap->sigLen = 0;
@@ -238,7 +238,7 @@ void tapStoreBlock(Tape* tap) {
 }
 
 void tapEject(Tape* tap) {
-	tap->flag &= ~(TAPE_ON | TAPE_REC);
+	tap->flag = TAPE_CANSAVE;
 	tap->block = 0;
 	tap->pos = 0;
 	tap->path = NULL;

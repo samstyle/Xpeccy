@@ -34,8 +34,9 @@ std::vector<HardWare> getHardwareList() {
 }
 
 void initHardware() {
-	addHardware("ZX48K",HW_ZX48,0x00,0);
-	addHardware("Pentagon",HW_PENT,0x05,0);
-	addHardware("Pentagon1024SL",HW_P1024,0x08,0);
-	addHardware("Scorpion",HW_SCORP,0x0a,IO_WAIT);
+	addHardware("ZX48K", HW_ZX48, MEM_48, 0);
+	addHardware("Pentagon", HW_PENT, MEM_128 | MEM_512, 0);
+	addHardware("Pentagon1024SL", HW_P1024, MEM_1M, 0);
+	addHardware("Scorpion", HW_SCORP, MEM_256 | MEM_1M, IO_WAIT);
+	addHardware("Spectrum +2a", HW_PLUS2A, MEM_128, 0);
 }

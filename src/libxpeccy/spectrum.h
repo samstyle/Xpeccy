@@ -24,6 +24,8 @@ extern "C" {
 #define	HW_PENT		2
 #define	HW_P1024	3
 #define	HW_SCORP	4
+#define	HW_PLUS2A	5
+#define	HW_PLUS3	6
 
 #define	IO_WAIT		1
 #define WAIT_ON		2

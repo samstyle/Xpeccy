@@ -185,14 +185,18 @@ bool DebugWin::fillall() {
 void DebugWin::fillvg() {
 	QLabel* lab;
 	Floppy* flp = zx->bdi->fdc->fptr;	// current floppy
-//	lab = (QLabel*)vglay->itemAtPosition(0,1)->widget(); lab->setText(QString::number(zx->bdi->vg93.trk));
-//	lab = (QLabel*)vglay->itemAtPosition(1,1)->widget(); lab->setText(QString::number(zx->bdi->vg93.sec));
-//	lab = (QLabel*)vglay->itemAtPosition(2,1)->widget(); lab->setText(QString::number(zx->bdi->vg93.data));
-//	lab = (QLabel*)vglay->itemAtPosition(3,1)->widget();
-//	if (zx->bdi->vg93.wptr == NULL) {lab->setText("NULL");} else {lab->setText(QString::number(zx->bdi->vg93.cop,16));}
-//	lab = (QLabel*)vglay->itemAtPosition(4,1)->widget(); lab->setText(QString::number(zx->bdi->vg93.count));
+	lab = (QLabel*)vglay->itemAtPosition(0,1)->widget(); lab->setText(QString::number(zx->bdi->fdc->trk));
+	lab = (QLabel*)vglay->itemAtPosition(1,1)->widget(); lab->setText(QString::number(zx->bdi->fdc->sec));
+	lab = (QLabel*)vglay->itemAtPosition(2,1)->widget(); lab->setText(QString::number(zx->bdi->fdc->data));
+	lab = (QLabel*)vglay->itemAtPosition(3,1)->widget();
+	if (zx->bdi->fdc->wptr == NULL) {
+		lab->setText("NULL");
+	} else {
+		lab->setText(QString::number(zx->bdi->fdc->cop,16));
+	}
+	lab = (QLabel*)vglay->itemAtPosition(4,1)->widget(); lab->setText(QString::number(zx->bdi->fdc->count));
 	lab = (QLabel*)vglay->itemAtPosition(0,3)->widget(); lab->setText(QString::number(flp->trk));
-//	lab = (QLabel*)vglay->itemAtPosition(1,3)->widget(); lab->setText(zx->bdi->vg93.side?"1":"0");
+	lab = (QLabel*)vglay->itemAtPosition(1,3)->widget(); lab->setText(zx->bdi->fdc->side ? "1" : "0");
 	lab = (QLabel*)vglay->itemAtPosition(2,3)->widget(); lab->setText(QString::number(flp->pos));
 	lab = (QLabel*)vglay->itemAtPosition(3,3)->widget(); lab->setText(QString::number(flpRd(flp),16));
 	lab = (QLabel*)vglay->itemAtPosition(4,3)->widget(); lab->setText(QString::number(flp->field));
@@ -286,16 +290,6 @@ DasmRow DebugWin::getdisasm() {
 	return res;
 }
 
-uint8_t DebugWin::getbpage(uint16_t ad) {
-	uchar res = 0;
-	if (ad < 0x4000) {
-		res = zx->mem->crom;
-	} else {
-		if (ad > 0xbfff) res = zx->mem->cram;
-	}
-	return res;
-}
-
 bool DebugWin::filldasm() {
 	fdasm.clear();
 	adr = upadr;
@@ -350,14 +344,9 @@ void DebugWin::showedit(QLabel* lab,QString imsk) {
 	ledit->setFocus();
 }
 
-//void DebugWin::switchbp(unsigned short adr, int mask) {
-//	memSwitchCellFlags(zx->mem,adr,mask);
-//}
-
 void DebugWin::keyPressEvent(QKeyEvent* ev) {
 	qint32 cod = ev->key();
 	QLabel *lab = NULL;
-//	BPoint bp;
 	uchar i;
 	int idx;
 	if (!ledit->isVisible()) {

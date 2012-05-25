@@ -17,11 +17,20 @@
  * 0113 | 1 0 1 0
  */
 
-uint8_t ZSLays[4][4] = {
+unsigned char ZSLays[4][4] = {
 	{0,1,2,3},
 	{3,3,3,2},
 	{2,2,0,1},
 	{1,0,1,0}
+};
+
+// layout for +2a extend memory mode
+
+unsigned char plus2Lays[4][4] = {
+	{0,1,2,3},
+	{4,5,6,7},
+	{4,5,6,3},
+	{4,7,6,3}
 };
 
 int zxGetPort(int port, int hardware) {
@@ -61,6 +70,13 @@ int zxGetPort(int port, int hardware) {
 			if ((port & 0x0023) == 0xc023) port = 0x00ff;		// ff
 			if ((port & 0x00ff) == 0x001f) port = 0x1f;		// TODO: orly
 			break;
+		case HW_PLUS2A:
+			if ((port & 0x0003) == 0x0002) port = (port & 0xff00) | 0xfe;	// TODO: check it
+			if ((port & 0xc002) == 0x4000) port = 0x7ffd;		// mem
+			if ((port & 0xf002) == 0x1000) port = 0x1ffd;
+			if ((port & 0xc002) == 0x8000) port = 0xbffd;		// ay
+			if ((port & 0xc002) == 0xc000) port = 0xfffd;
+			break;
 	}
 	return port;
 }
@@ -90,6 +106,22 @@ void zxMapMemory(ZXComp* comp) {
 			rp |= ((prt2 & 3) << 2);
 			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,rp);
 			memSetBank(comp->mem,MEM_BANK3,MEM_RAM,(prt0 & 7) | ((prt1 & 0x10) >> 1) | ((prt1 & 0xc0) >> 2));
+			break;
+		case HW_PLUS2A:
+			if (prt1 & 1) {
+				// extend mem mode
+				rp = ((prt1 & 0x60) >> 1);	// b1,2 of 1ffd
+				memSetBank(comp->mem,MEM_BANK0,MEM_RAM,plus2Lays[rp][0]);
+				memSetBank(comp->mem,MEM_BANK1,MEM_RAM,plus2Lays[rp][1]);
+				memSetBank(comp->mem,MEM_BANK2,MEM_RAM,plus2Lays[rp][2]);
+				memSetBank(comp->mem,MEM_BANK3,MEM_RAM,plus2Lays[rp][3]);
+			} else {
+				// normal mem mode
+				memSetBank(comp->mem,MEM_BANK0,MEM_ROM,((prt0 & 0x10) >> 4) | ((prt1 & 0x04) >> 1));
+				memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5);
+				memSetBank(comp->mem,MEM_BANK2,MEM_RAM,2);
+				memSetBank(comp->mem,MEM_BANK3,MEM_RAM,prt0 & 7);
+			}
 			break;
 	}
 }
@@ -184,6 +216,8 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 									break;
 							}
 							break;
+						case HW_PLUS2A:
+							break;
 					}
 					break;
 				}
@@ -257,6 +291,23 @@ void iowr(Z80EX_CONTEXT*cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 								break;
 						}
 						break;
+					case HW_PLUS2A:
+						switch (port) {
+							case 0x7ffd:
+								if (comp->block7ffd) break;
+								comp->prt0 = val;
+								comp->vid->curscr = val & 0x08;
+								comp->block7ffd = val & 0x20;
+								zxMapMemory(comp);
+								break;
+							case 0x1ffd:
+								comp->prt1 = val;
+								zxMapMemory(comp);
+								break;
+						}
+
+						break;
+
 				}
 			}
 	}
@@ -318,6 +369,8 @@ void zxReset(ZXComp* comp,int wut) {
 	comp->prt1 = 0;
 	comp->prt0 = ((resto & 1) << 4);
 	memSetBank(comp->mem,MEM_BANK0,MEM_ROM,resto);
+	memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5);
+	memSetBank(comp->mem,MEM_BANK2,MEM_RAM,2);
 	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0);
 	rzxClear(comp);
 	comp->rzxPlay = 0;
