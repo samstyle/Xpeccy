@@ -36,5 +36,7 @@
         <file>images/filebin.png</file>
         <file>images/keyboard.png</file>
         <file>images/lamp.png</file>
+        <file>images/star.png</file>
+        <file>images/video.png</file>
     </qresource>
 </RCC>

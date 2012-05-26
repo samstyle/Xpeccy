@@ -671,7 +671,6 @@ BDI* bdiCreate() {
 	bdi->fdc->fptr = bdi->flop[0];
 	bdi->type = DISK_NONE;
 	bdi->flag = 0;
-//	bdi->tab = BYTEDELAY;
 	return bdi;
 }
 
@@ -722,6 +721,16 @@ int bdiOut(BDI* bdi,int port,uint8_t val) {
 			}
 			res = 1;
 			break;
+		case DISK_PLUS3:
+			switch (port) {
+				case 0xfa7e:		// motor control
+					res = 1;
+					break;
+				case 0xfb7f:		// write data
+					res = 1;
+					break;
+			}
+			break;
 		default:
 			break;
 	}
@@ -749,6 +758,18 @@ int bdiIn(BDI* bdi,int port,uint8_t* val) {
 			}
 			res = 1;
 			break;
+		case DISK_PLUS3:
+			switch (port) {
+				case 0xfb7f:		// read data
+					res = 1;
+					*val = 0xff;
+					break;
+				case 0xfb7e:		// read main status register
+					res = 1;
+					*val = 0xff;
+					break;
+			}
+			break;
 		default:
 			break;
 	}
@@ -756,6 +777,7 @@ int bdiIn(BDI* bdi,int port,uint8_t* val) {
 }
 
 void bdiSync(BDI* bdi,int tk) {
+	if (bdi->type != DISK_BDI) return;
 	uint32_t tz;
 	while (tk > 0) {
 		if (tk < (int)bdi->fdc->tf) {

@@ -108,7 +108,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	setupUi.disklist->horizontalHeader()->setVisible(true);
 	setupUi.diskTypeBox->addItem("None",QVariant(DISK_NONE));
 	setupUi.diskTypeBox->addItem("Beta disk",QVariant(DISK_BDI));
-	//setupUi.diskTypeBox->addItem("+3 DOS",QVariant(DISK_PLUS3));
+	setupUi.diskTypeBox->addItem("+3 DOS",QVariant(DISK_PLUS3));
 	setupUi.disklist->addAction(setupUi.actCopyToTape);
 	setupUi.disklist->addAction(setupUi.actSaveHobeta);
 	setupUi.disklist->addAction(setupUi.actSaveRaw);

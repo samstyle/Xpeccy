@@ -1210,11 +1210,11 @@ void emulCloseJoystick() {
 
 void initUserMenu(QWidget* par) {
 	userMenu = new QMenu(par);
-	bookmarkMenu = userMenu->addMenu("Bookmarks");
+	bookmarkMenu = userMenu->addMenu(QIcon(":/images/star.png"),"Bookmarks");
 	profileMenu = userMenu->addMenu("Profiles");
 	userMenu->addSeparator();
-	userMenu->addAction("Tape window",tapeWin,SLOT(show()));
-	userMenu->addAction("RZX player",rzxWin,SLOT(show()));
+	userMenu->addAction(QIcon(":/images/tape.png"),"Tape window",tapeWin,SLOT(show()));
+	userMenu->addAction(QIcon(":/images/video.png"),"RZX player",rzxWin,SLOT(show()));
 }
 
 void fillBookmarkMenu() {
