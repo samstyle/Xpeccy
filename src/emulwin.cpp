@@ -622,7 +622,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				if (tapeWin->isVisible()) {
 					tapeWin->hide();
 				} else {
-					buildTapeList();
+					tapeWin->buildList(zx->tape);
 					tapeWin->show();
 				}
 				break;
