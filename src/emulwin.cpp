@@ -622,7 +622,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				if (tapeWin->isVisible()) {
 					tapeWin->hide();
 				} else {
-					buildTapeList();
+					tapeWin->buildList(zx->tape);
 					tapeWin->show();
 				}
 				break;
@@ -786,7 +786,7 @@ void MainWin::emulFrame() {
 #endif
 			img->setColorTable(qPal);
 			char* pageBuf = new char[0x4000];
-			memGetPage(zx->mem,MEM_RAM,zx->vid->curscr ? 7 : 5,pageBuf);
+			memGetPage(zx->mem,MEM_RAM,(zx->vid->curscr == 0) ? 5 : 7,pageBuf);
 			switch (frm) {
 				case SCR_HOB:
 					file.open(fnam.c_str(),std::ios::binary);

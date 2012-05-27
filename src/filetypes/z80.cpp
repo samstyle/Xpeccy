@@ -83,7 +83,7 @@ int loadZ80(ZXComp* zx, const char* name) {
 	zx->prt1 = 0x00;
 	memSetBank(zx->mem,MEM_BANK0,MEM_ROM,1);
 	memSetBank(zx->mem,MEM_BANK3,MEM_RAM,0);
-	zx->vid->curscr = false;
+	zx->vid->curscr = 0;
 	z80ex_set_reg(cpu,regAF,getBEWord(&file));
 	z80ex_set_reg(cpu,regBC,getLEWord(&file));
 	z80ex_set_reg(cpu,regHL,getLEWord(&file));

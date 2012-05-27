@@ -178,7 +178,7 @@ void vidSync(Video* vid, float dotDraw) {
 								col = pixBuffer[ink++];
 								break;
 							default:
-								if (vid->curscr) {
+								if (vid->curscr != 0) {
 									scrbyte = *(vid->scr7pix[mtx]);
 									vid->atrbyte = *(vid->scr7atr[mtx]);
 								} else {
@@ -217,7 +217,7 @@ void vidSync(Video* vid, float dotDraw) {
 								col = inkTab[scrbyte & 0x7f];
 								break;
 							default:
-								if (vid->curscr) {
+								if (vid->curscr != 0) {
 									scrbyte = *(vid->ladrz[mtx].ac10);
 									alscr2 = *(vid->ladrz[mtx].ac11);
 									alscr4 = *(vid->ladrz[mtx].ac12);

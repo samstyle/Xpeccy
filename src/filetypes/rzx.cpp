@@ -79,6 +79,7 @@ int loadRZX(ZXComp* zx, const char* name) {
 	char* zbuf = NULL;
 	std::ofstream ofile;
 	RZXFrame rzxf;
+	rzxf.frmSize = 0;
 	rzxf.frmData = NULL;
 
 	file.seekg(0,std::ios_base::end);	// get filesize

@@ -253,7 +253,7 @@ void iowr(Z80EX_CONTEXT*cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 							case 0x7ffd:
 								if (comp->block7ffd) break;
 								comp->prt0 = val;
-								comp->vid->curscr = val & 0x08;
+								comp->vid->curscr = (val & 0x08) ? 1 : 0;
 								comp->block7ffd = val & 0x20;
 								zxMapMemory(comp);
 								break;
@@ -263,7 +263,7 @@ void iowr(Z80EX_CONTEXT*cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 						switch(port) {
 							case 0x7ffd:
 								if (comp->block7ffd) break;
-								comp->vid->curscr = val & 0x08;
+								comp->vid->curscr = (val & 0x08) ? 1 : 0;
 								comp->prt0 = val;
 								comp->block7ffd = ((comp->prt1 & 4) && (val & 0x20));
 								zxMapMemory(comp);
@@ -281,7 +281,7 @@ void iowr(Z80EX_CONTEXT*cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 							case 0x7ffd:
 								if (comp->block7ffd) break;
 								comp->prt0 = val;
-								comp->vid->curscr = val & 0x08;
+								comp->vid->curscr = (val & 0x08) ? 1 : 0;
 								comp->block7ffd = val & 0x20;
 								zxMapMemory(comp);
 								break;
@@ -296,7 +296,7 @@ void iowr(Z80EX_CONTEXT*cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 							case 0x7ffd:
 								if (comp->block7ffd) break;
 								comp->prt0 = val;
-								comp->vid->curscr = val & 0x08;
+								comp->vid->curscr = (val & 0x08) ? 1 : 0;
 								comp->block7ffd = val & 0x20;
 								zxMapMemory(comp);
 								break;
