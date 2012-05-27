@@ -69,6 +69,7 @@ Video* vidCreate(Memory* me) {
 	vid->brdsize = 1.0;
 	vid->flag = 0;
 	vidSetLayout(vid,448,320,138,80,64,32,0,64,0);
+	vid->mode = VID_NORMAL;
 
 	vid->curr.h = 0;
 	vid->curr.v = 0;
