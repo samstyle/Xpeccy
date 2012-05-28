@@ -83,7 +83,7 @@ GSound* gsCreate() {
 	void* ptr = (void*)res;
 	res->cpu = z80ex_create(&gsmemrd,ptr,&gsmemwr,ptr,&gsiord,ptr,&gsiowr,ptr,&gsintrq,ptr);
 	res->mem = memCreate();	// new Memory();
-	memSet(res->mem,MEM_MEMSIZE,512);
+	memSetSize(res->mem,512);
 	memSetBank(res->mem,MEM_BANK0,MEM_ROM,0);
 	memSetBank(res->mem,MEM_BANK1,MEM_RAM,0);
 	memSetBank(res->mem,MEM_BANK2,MEM_RAM,0);

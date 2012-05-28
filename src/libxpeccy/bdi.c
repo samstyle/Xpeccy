@@ -667,20 +667,41 @@ BDI* bdiCreate() {
 	for (int i=0; i<4; i++) {
 		bdi->flop[i] = flpCreate(i);
 	}
+
 	bdi->fdc = fdcCreate(FDC_VG93);
 	bdi->fdc->fptr = bdi->flop[0];
 	bdi->type = DISK_NONE;
 	bdi->flag = 0;
+
+	bdi->fdc765 = fdc_new();
+	bdi->drive_a = fd_newdsk();
+	bdi->drive_b = fd_newdsk();
+
+	fd_settype(bdi->drive_a,FD_35);
+	fd_setheads(bdi->drive_a,2);
+	fd_setcyls(bdi->drive_a,80);
+
+	fd_settype(bdi->drive_b,FD_35);
+	fd_setheads(bdi->drive_b,2);
+	fd_setcyls(bdi->drive_b,80);
+
 	return bdi;
 }
 
 void bdiDestroy(BDI* bdi) {
+	fdc_destroy(&bdi->fdc765);
+	fd_destroy(&bdi->drive_a);
+	fd_destroy(&bdi->drive_b);
 	free(bdi);
 }
 
 void bdiReset(BDI* bdi) {
 	bdi->fdc->count = 0;
 	fdcSetMr(bdi->fdc,0);
+	fdc_reset(bdi->fdc765);
+	fdc_setisr(bdi->fdc765,NULL);
+	fdc_setdrive(bdi->fdc765,0,bdi->drive_a);
+	fdc_setdrive(bdi->fdc765,1,bdi->drive_b);
 }
 
 int bdiGetPort(int p) {
@@ -721,16 +742,6 @@ int bdiOut(BDI* bdi,int port,uint8_t val) {
 			}
 			res = 1;
 			break;
-		case DISK_PLUS3:
-			switch (port) {
-				case 0xfa7e:		// motor control
-					res = 1;
-					break;
-				case 0xfb7f:		// write data
-					res = 1;
-					break;
-			}
-			break;
 		default:
 			break;
 	}
@@ -757,18 +768,6 @@ int bdiIn(BDI* bdi,int port,uint8_t* val) {
 					break;
 			}
 			res = 1;
-			break;
-		case DISK_PLUS3:
-			switch (port) {
-				case 0xfb7f:		// read data
-					res = 1;
-					*val = 0xff;
-					break;
-				case 0xfb7e:		// read main status register
-					res = 1;
-					*val = 0xff;
-					break;
-			}
 			break;
 		default:
 			break;

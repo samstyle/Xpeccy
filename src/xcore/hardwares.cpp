@@ -38,5 +38,6 @@ void initHardware() {
 	addHardware("Pentagon", HW_PENT, MEM_128 | MEM_512, 0);
 	addHardware("Pentagon1024SL", HW_P1024, MEM_1M, 0);
 	addHardware("Scorpion", HW_SCORP, MEM_256 | MEM_1M, IO_WAIT);
-	addHardware("Spectrum +2a", HW_PLUS2A, MEM_128, 0);
+	addHardware("Spectrum +2", HW_PLUS2, MEM_128, 0);
+	addHardware("Spectrum +3",HW_PLUS3,MEM_128,0);
 }

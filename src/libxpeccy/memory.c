@@ -13,7 +13,7 @@ Memory* memCreate() {
 	mem->pt3 = &mem->ram[0];
 	mem->cram = 0;
 	mem->crom = 0;
-	mem->mask = 0;
+	memSetSize(mem,48);
 	int i;
 	for (i = 0; i < 32; i++) {
 		mem->rom[i].flags |= MEM_RDONLY;
@@ -42,11 +42,9 @@ MemPage* memGetBankPtr(Memory* mem, unsigned short adr) {
 }
 
 unsigned char memRd(Memory* mem, unsigned short adr) {
-	unsigned char res;
 	MemPage* ptr = memGetBankPtr(mem,adr);
-	res = ptr->data[adr & 0x3fff];
 	mem->flags = ptr->flag[adr & 0x3fff];
-	return res;
+	return ptr->data[adr & 0x3fff];
 }
 
 void memWr(Memory* mem, unsigned short adr, unsigned char val) {
@@ -66,32 +64,27 @@ void memSwitchCellFlags(Memory* mem, unsigned short adr, unsigned char msk) {
 	ptr->flag[adr & 0x3fff] ^= msk;
 }
 
-int memGet(Memory* mem, int wut) {
-	int res = 0;
-	switch (wut) {
-		case MEM_MEMSIZE:
-			switch (mem->mask) {
-				case 0x00: res = 48; break;
-				case 0x07: res = 128; break;
-				case 0x0f: res = 256; break;
-				case 0x1f: res = 512; break;
-				case 0x3f: res = 1024; break;
-			}
+void memSetSize(Memory* mem, int val) {
+	mem->memSize = val;
+	switch (val) {
+		case 48:
+			mem->memMask = 0x07;
 			break;
-	}
-	return res;
-}
-
-void memSet(Memory* mem, int wut, int val) {
-	switch (wut) {
-		case MEM_MEMSIZE:
-			switch (val) {
-				case 48: mem->mask = 0x00; break;
-				case 128: mem->mask = 0x07; break;
-				case 256: mem->mask = 0x0f; break;
-				case 512: mem->mask = 0x1f; break;
-				case 1024: mem->mask = 0x3f; break;
-			}
+		case 128:
+			mem->memMask = 0x07;
+			break;
+		case 256:
+			mem->memMask = 0x0f;
+			break;
+		case 512:
+			mem->memMask = 0x1f;
+			break;
+		case 1024:
+			mem->memMask = 0x3f;
+			break;
+		default:
+			mem->memMask = 0x00;
+			break;
 	}
 }
 
@@ -104,20 +97,20 @@ void memSetBank(Memory* mem, int bank, int wut, int nr) {
 					mem->pt0 = (nr == 0xff) ? &mem->ram[0] : &mem->rom[nr];
 					break;
 				case MEM_RAM:
-					mem->pt0 = &mem->ram[nr & mem->mask];
+					mem->pt0 = &mem->ram[nr & mem->memMask];
 					break;
 			}
 			break;
 		case MEM_BANK1:
 			switch (wut) {
 				case MEM_ROM: mem->pt1 = &mem->rom[nr]; break;
-				case MEM_RAM: mem->pt1 = &mem->ram[nr & mem->mask]; break;
+				case MEM_RAM: mem->pt1 = &mem->ram[nr & mem->memMask]; break;
 			}
 			break;
 		case MEM_BANK2:
 			switch (wut) {
 				case MEM_ROM: mem->pt2 = &mem->rom[nr]; break;
-				case MEM_RAM: mem->pt2 = &mem->ram[nr & mem->mask]; break;
+				case MEM_RAM: mem->pt2 = &mem->ram[nr & mem->memMask]; break;
 			}
 			break;
 		case MEM_BANK3:
@@ -125,7 +118,7 @@ void memSetBank(Memory* mem, int bank, int wut, int nr) {
 				case MEM_ROM: mem->pt3 = &mem->rom[nr]; break;
 				case MEM_RAM:
 					mem->cram = nr;
-					mem->pt3 = &mem->ram[nr & mem->mask];
+					mem->pt3 = &mem->ram[nr & mem->memMask];
 					break;
 			}
 			break;

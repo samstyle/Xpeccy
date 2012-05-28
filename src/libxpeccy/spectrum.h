@@ -18,24 +18,24 @@ extern "C" {
 #include "ayym.h"		// sound
 #include "gs.h"
 #include "hdd.h"
-
+// hw type
 #define HW_NULL		0
 #define HW_ZX48		1
 #define	HW_PENT		2
 #define	HW_P1024	3
 #define	HW_SCORP	4
-#define	HW_PLUS2A	5
+#define	HW_PLUS2	5
 #define	HW_PLUS3	6
-
+// hw flags
 #define	IO_WAIT		1
-#define WAIT_ON		2
-
+#define WAIT_ON		(1<<1)
+// hw reset rompage
 #define	RES_DEFAULT	0
 #define	RES_48		1
 #define	RES_128		2
 #define	RES_DOS		3
 #define	RES_SHADOW	4
-
+// zx flags
 #define	ZX_BREAK	1
 
 typedef struct {

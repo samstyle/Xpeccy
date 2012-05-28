@@ -42,6 +42,7 @@ file(GLOB SOURCES
 	./src/filetypes/*.cpp
 	./src/xcore/*.cpp
 	./src/xgui/*.cpp
+	./src/lib765/*.c
 )
 file(GLOB HEADERS
 	./src/*.h
@@ -49,6 +50,7 @@ file(GLOB HEADERS
 	./src/filetypes/*.h
 	./src/xcore/*.h
 	./src/xgui/*.h
+	./src/lib765/*.h
 )
 file(GLOB UIFILES ./ui/*.ui)
 set(QRCFILES ./xpeccy.qrc)
@@ -62,7 +64,7 @@ set(MOCFILES
 
 add_definitions(-Wall -O2)
 
-set(CMAKE_C_FLAGS -std=c99)
+set(CMAKE_C_FLAGS -std=gnu99)
 
 if (SDL_FOUND)
 	add_definitions(-DHAVESDLSOUND)

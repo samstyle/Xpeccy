@@ -36,8 +36,8 @@ unsigned char plus2Lays[4][4] = {
 int zxGetPort(int port, int hardware) {
 	switch (hardware) {
 		case HW_ZX48:
-			if ((port & 0x01) == 0) port = (port & 0xff00) | 0xfe;
-			if ((port & 0x21) == 1) port = 0x1f;
+			if ((port & 0x01) == 0) {port = (port & 0xff00) | 0xfe; break;}
+			if ((port & 0x21) == 1) {port = 0x1f; break;}
 			break;
 		case HW_PENT:
 			if ((port & 0x8002) == 0x0000) port = 0x7ffd;
@@ -70,7 +70,17 @@ int zxGetPort(int port, int hardware) {
 			if ((port & 0x0023) == 0xc023) port = 0x00ff;		// ff
 			if ((port & 0x00ff) == 0x001f) port = 0x1f;		// TODO: orly
 			break;
-		case HW_PLUS2A:
+		case HW_PLUS3:
+			if ((port & 0x0003) == 0x0002) port = (port & 0xff00) | 0xfe;
+			if ((port & 0xf002) == 0x0000) port = 0x0ffd;	// ? printer
+			if ((port & 0xf002) == 0x1000) port = 0x1ffd;
+			if ((port & 0xf002) == 0x2000) port = 0x2ffd;	// TODO: 8272status
+			if ((port & 0xf002) == 0x3000) port = 0x3ffd;	// TODO: 8272data
+			if ((port & 0xc002) == 0x4000) port = 0x7ffd;	// 7ffd
+			if ((port & 0xc002) == 0x8000) port = 0xbffd;		// ay
+			if ((port & 0xc002) == 0xc000) port = 0xfffd;
+			break;
+		case HW_PLUS2:
 			if ((port & 0x0003) == 0x0002) port = (port & 0xff00) | 0xfe;	// TODO: check it
 			if ((port & 0xc002) == 0x4000) port = 0x7ffd;		// mem
 			if ((port & 0xf002) == 0x1000) port = 0x1ffd;
@@ -107,7 +117,8 @@ void zxMapMemory(ZXComp* comp) {
 			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,rp);
 			memSetBank(comp->mem,MEM_BANK3,MEM_RAM,(prt0 & 7) | ((prt1 & 0x10) >> 1) | ((prt1 & 0xc0) >> 2));
 			break;
-		case HW_PLUS2A:
+		case HW_PLUS3:
+		case HW_PLUS2:
 			if (prt1 & 1) {
 				// extend mem mode
 				rp = ((prt1 & 0x60) >> 1);	// b1,2 of 1ffd
@@ -216,7 +227,16 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 									break;
 							}
 							break;
-						case HW_PLUS2A:
+						case HW_PLUS3:
+							switch (port) {
+								case 0x2ffd:		// read main status register
+									res = fdc_read_ctrl(comp->bdi->fdc765);
+									break;
+								case 0x3ffd:		// read data
+									res = fdc_read_data(comp->bdi->fdc765);
+									break;
+							}
+						case HW_PLUS2:
 							break;
 					}
 					break;
@@ -291,7 +311,16 @@ void iowr(Z80EX_CONTEXT*cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 								break;
 						}
 						break;
-					case HW_PLUS2A:
+					case HW_PLUS3:
+						switch (port) {
+							case 0x2ffd:		// motor control
+								fdc_set_motor(comp->bdi->fdc765, val & 0x0F);
+								break;
+							case 0x3ffd:		// write data
+								fdc_write_data(comp->bdi->fdc765, val);
+								break;
+						}
+					case HW_PLUS2:
 						switch (port) {
 							case 0x7ffd:
 								if (comp->block7ffd) break;

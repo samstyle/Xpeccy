@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include "../lib765/765.h"
 #include "floppy.h"
 
 // disk interface type
@@ -54,8 +55,11 @@ typedef struct {
 typedef struct {
 	int type;
 	int flag;
-	Floppy* flop[4];
+	Floppy* flop[4];	// this is for VG93
 	FDC* fdc;
+	FDC_PTR fdc765;		// this is for 765FDC
+	FDRV_PTR drive_a;
+	FDRV_PTR drive_b;
 } BDI;
 
 BDI* bdiCreate();

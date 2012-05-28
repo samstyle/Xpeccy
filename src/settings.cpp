@@ -470,7 +470,7 @@ void saveConfig() {
 	optSet("GENERAL","cpu.frq",int(zx->cpuFrq * 2));
 	optSet("MACHINE","current",std::string(zx->opt.hwName));
 	optSet("MACHINE","restart",(emulGetFlags() & FL_RESET) != 0);
-	optSet("MACHINE","memory",memGet(zx->mem,MEM_MEMSIZE));
+	optSet("MACHINE","memory",zx->mem->memSize);
 	optSet("MACHINE","scrp.wait",(zx->hwFlags & WAIT_ON) != 0);
 	optSet("ROMSET","gs",std::string(zx->opt.GSRom));
 	optSet("ROMSET","current",std::string(zx->opt.rsName));
@@ -787,7 +787,7 @@ void loadConfig(bool dev) {
 	ATAPassport masterPass = ideGetPassport(zx->ide,IDE_MASTER);
 	ATAPassport slavePass = ideGetPassport(zx->ide,IDE_SLAVE);
 //	int flg;
-	if (!dev) memSet(zx->mem,MEM_MEMSIZE,48);
+	if (!dev) memSetSize(zx->mem,48);
 	if (!file.good()) {
 //		shithappens(std::string("Can't find config file<br><b>") + cfname + std::string("</b><br>Default one will be created."));
 		printf("Profile config is missing. Default one will be created\n");
@@ -869,7 +869,7 @@ void loadConfig(bool dev) {
 					case SECT_MACHINE:
 						if (pnam=="memory") {
 							tmp = atoi(pval.c_str());
-							memSet(zx->mem,MEM_MEMSIZE,tmp);
+							memSetSize(zx->mem,tmp);
 							switch (tmp) {
 								case 128: tmask = MEM_128; break;
 								case 256: tmask = MEM_256; break;

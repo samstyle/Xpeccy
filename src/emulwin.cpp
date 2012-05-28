@@ -846,11 +846,12 @@ void EmulWin::SDLEventHandler() {
 			case FDC_READ: drawIcon(surf,4,4,icoBlueDisk); break;
 			case FDC_WRITE: drawIcon(surf,4,4,icoRedDisk); break;
 		}
-		SDL_UpdateRect(surf,3,3,18,18);
 	}
 	if (zx->vid->flag & VF_CHANGED) {
 		SDL_UpdateRect(surf,0,0,0,0);
 		zx->vid->flag &= ~VF_CHANGED;
+	} else {
+		SDL_UpdateRect(surf,3,3,18,18);
 	}
 #else
 	if (zx->vid->flag & VF_CHANGED) {

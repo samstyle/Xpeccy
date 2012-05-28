@@ -254,7 +254,7 @@ void SetupWin::start() {
 	setupUi.rsetbox->setCurrentIndex(cbx);
 	setupUi.reschk->setChecked(emulGetFlags() & FL_RESET);
 	setupUi.resbox->setCurrentIndex(zx->resbank);
-	switch(memGet(zx->mem,MEM_MEMSIZE)) {
+	switch(zx->mem->memSize) {
 		case 48: setupUi.mszbox->setCurrentIndex(0); break;
 		case 128: setupUi.mszbox->setCurrentIndex(1); break;
 		case 256: setupUi.mszbox->setCurrentIndex(2); break;
@@ -389,11 +389,11 @@ void SetupWin::apply() {
 	emulSetFlag(FL_RESET, setupUi.reschk->isChecked());
 	zx->resbank = setupUi.resbox->currentIndex();
 	switch(setupUi.mszbox->currentIndex()) {
-		case 0: memSet(zx->mem,MEM_MEMSIZE,48); break;
-		case 1: memSet(zx->mem,MEM_MEMSIZE,128); break;
-		case 2: memSet(zx->mem,MEM_MEMSIZE,256); break;
-		case 3: memSet(zx->mem,MEM_MEMSIZE,512); break;
-		case 4: memSet(zx->mem,MEM_MEMSIZE,1024); break;
+		case 0: memSetSize(zx->mem,48); break;
+		case 1: memSetSize(zx->mem,128); break;
+		case 2: memSetSize(zx->mem,256); break;
+		case 3: memSetSize(zx->mem,512); break;
+		case 4: memSetSize(zx->mem,1024); break;
 	}
 	zxSetFrq(zx,setupUi.cpufrq->value() / 2.0);
 	setFlagBit(setupUi.scrpwait->isChecked(),&zx->hwFlags,WAIT_ON);

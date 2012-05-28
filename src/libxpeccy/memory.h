@@ -7,7 +7,6 @@ extern "C" {
 
 #define	MEM_RAM		1
 #define	MEM_ROM		2
-#define	MEM_MEMSIZE	3
 
 #define	MEM_BANK0	0
 #define	MEM_BANK1	1
@@ -38,7 +37,8 @@ typedef struct {
 	MemPage* pt3;
 	unsigned char cram;
 	unsigned char crom;
-	int mask;
+	int memSize;
+	int memMask;
 	int profMask;	// profrom (0 - 64K, 1 - 128K, 3 - 256K)
 } Memory;
 
@@ -48,13 +48,12 @@ void memDestroy(Memory*);
 unsigned char memRd(Memory*,unsigned short);
 void memWr(Memory*,unsigned short,unsigned char);
 
+void memSetSize(Memory*,int);
 void memSetBank(Memory*,int,int,int);
 
 void memSetPage(Memory*,int,int,char*);
 void memGetPage(Memory*,int,int,char*);
 
-int memGet(Memory*,int);
-void memSet(Memory*,int,int);
 
 unsigned char* memGetPagePtr(Memory*,int,int);
 
