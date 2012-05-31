@@ -43,6 +43,7 @@ file(GLOB SOURCES
 	./src/xcore/*.cpp
 	./src/xgui/*.cpp
 	./src/lib765/*.c
+	./src/libdsk/*.c
 )
 file(GLOB HEADERS
 	./src/*.h
@@ -51,6 +52,7 @@ file(GLOB HEADERS
 	./src/xcore/*.h
 	./src/xgui/*.h
 	./src/lib765/*.h
+	./src/libdsk/*.h
 )
 file(GLOB UIFILES ./ui/*.ui)
 set(QRCFILES ./xpeccy.qrc)

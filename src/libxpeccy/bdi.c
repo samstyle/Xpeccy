@@ -1,9 +1,9 @@
 // NOTE: FF is BDI-port, but 1F,3F,5F,7F belongs to FDC (VG93)
 
-#include "bdi.h"
-
 #include <stdlib.h>
 #include <stdio.h>
+
+#include "bdi.h"
 
 #define	BYTEDELAY	224
 #define IDXDELAY	600
@@ -16,6 +16,10 @@ int pcatch = 0;	// 1 when bdi takes i/o request
 
 FDC* fdcCreate(int tp) {
 	FDC* fdc = (FDC*)malloc(sizeof(FDC));
+	for (int i=0; i<4; i++) {
+		fdc->flop[i] = flpCreate(i);
+	}
+	fdc->fptr = fdc->flop[0];
 	fdc->type = tp;
 	fdc->t = 0;
 	fdc->tf = 0;
@@ -28,7 +32,7 @@ FDC* fdcCreate(int tp) {
 
 // VG93
 
-// THIS IS BYTECODE FOR VG93 COMMANDS EXECUTION
+// THIS IS BYTECODE FOR FDC COMMANDS EXECUTION
 
 /*
 01,n	jump to work n
@@ -40,6 +44,29 @@ FDC* fdcCreate(int tp) {
 
 30	drq = 0
 31	drq = 1
+32,d	if (drq == 0) jr d
+33	dio = 0 (cpu -> fdc)
+34	dio = 1 (fdc -> cpu)
+
+40	wait for drq == 0 (cpu give Rdat)
+41	wait for drq == 0 (cpu take Rdat)
+42,n	Rdat = ? (3:S3)
+
+50	get Rdat as HU
+51	TP
+52	TR
+53	HD
+54	SC
+55	SZ
+56	LS
+57	GP
+58	SL
+59	FB
+5a	NM
+
+60,n,a,o	S0 = S0 & a | o
+61,n,a,o	S1 = S1 & a | o
+62,n,a,o	S2 = S2 & a | o
 
 80,n	Rtr = n
 81	Rtr--
@@ -92,8 +119,11 @@ D7	read fcrc.hi
 D8	read fcrc.low
 
 E0,n	n: 0 - stop motor/unload head; 1 - start motor/load head
+E1,n	set status n
+E2,d	if (side = 0) jr d
 
 F0,d	jr d
+F7,d	if (flp.DS) jr d
 F8,d	if (flp.wprt) jr d
 F9,d	if (flp.ready (insert)) jr d
 FA,d	if (sdir = out (1)) jr d
@@ -103,6 +133,8 @@ FD,n,d	if (com & n == 0) jr d
 FE,n,d	if (com & n != 0) jr d
 FF	end
 */
+
+// VG93 (WD1793) FDC section
 
 uint8_t vgidle[256] = {
 	0xb0,15,
@@ -115,7 +147,7 @@ uint8_t vgidle[256] = {
 	0xf1
 };
 
-uint8_t vgwork[16][256] = {
+uint8_t vgwork[32][256] = {
 // 0: restore
 	{
 		0x20,0,			// flag mode 0
@@ -410,83 +442,330 @@ uint8_t vgwork[16][256] = {
 	}
 };
 
-uint8_t fdcRd(FDC* fdc,int port) {
-	uint8_t res = 0xff;
-	switch(port) {
-		case FDC_COM:
-			res = ((fdc->fptr->flag & FLP_INSERT) ? 0 : 128) | (fdc->idle ? 0 : 1);
-			switch (fdc->mode) {
-				case 0:
-					res |= ((fdc->fptr->flag & FLP_PROTECT) ? 0x40 : 0)\
-						| 0x20\
-						| (fdc->flag & 0x18)\
-						| ((fdc->fptr->trk == 0) ? 4 : 0)\
-						| (fdc->idx ? 2 : 0);
-					break;
-				case 1:
-				case 2:
-					res |= (fdc->flag & 0x7c) | (fdc->drq ? 2 : 0);
-					break;
-			}
-			fdc->irq = 0;
-			break;
-		case FDC_TRK:
-			res = fdc->trk;
-			break;
-		case FDC_SEC:
-			res = fdc->sec;
-			break;
-		case FDC_DATA:
-			res = fdc->data;
-			fdc->drq = 0;
-			break;
-	}
-	return res;
-}
+// uPD765 FDC section
+/*
+
+MT  Bit7  Multi Track (continue multi-sector-function on other head)
+MF  Bit6  MFM-Mode-Bit (Default 1=Double Density)
+SK  Bit5  Skip-Bit (set if secs with deleted DAM shall be skipped)
+
+HU  b0,1=Unit/Drive Number, b2=Physical Head Number, other bits zero
+TP  Physical Track Number
+TR  Track-ID (usually same value as TP)
+HD  Head-ID
+SC  First Sector-ID (sector you want to read)
+SZ  Sector Size (80h shl n) (default=02h for 200h bytes)
+LS  Last Sector-ID (should be same as SC when reading a single sector)
+GP  Gap (default=2Ah except command 0D: default=52h)
+SL  Sectorlen if SZ=0 (default=FFh)
+Sn  Status Register 0..3
+FB  Fillbyte (for the sector data areas) (default=E5h)
+NM  Number of Sectors (default=09h)
+XX  b0..3=headunload n*32ms (8" only), b4..7=steprate (16-n)*2ms
+YY  b0=DMA_disable, b1-7=headload n*4ms (8" only)
+*/
+
+// XX	-	80	invalid operation
+uint8_t	op765_no[] = {
+	0xe1,FDC_EXEC,
+	0x60,0x00,0x80,
+	0x42,0,
+	0xe1,FDC_OUTPUT,
+	0x34,
+	0x31,0x41,
+	0xf1
+};
+
+// 02+MF+SK    HU TR HD ?? SZ NM GP SL <R> S0 S1 S2 TR HD NM SZ read track
+uint8_t op765_02[] = {
+	0xe1,FDC_INPUT,
+	0x33,
+	0x31,0x40,0x50,	// HU
+	0x31,0x40,0x52,	// TR
+	0x31,0x40,0x53,	// HD
+	0x31,0x40,	// ??
+	0x31,0x40,0x55,	// SZ
+	0x31,0x40,0x5A,	// NM
+	0x31,0x40,0x57,	// GP
+	0x31,0x40,0x58,	// SL
+	0xe1,FDC_EXEC,
+	0xf1
+};
+
+// 03          XX YY                    -                       specify spd/dma
+uint8_t op765_03[] = {
+	0xe1,FDC_INPUT,	// status = input
+	0x33,		// dir = cpu->fdc
+	0x31,0x40,
+	0x31,0x40,
+	0xe1,FDC_EXEC,	// status = exec
+	0xf1		// end
+};
+
+// 04          HU                       -  S3                   sense drive state
+uint8_t op765_04[] = {
+	0xe1,FDC_INPUT,
+	0x33,		// dir = cpu->fdc
+	0x31,0x40,0x50,	// HU
+	0xe1,FDC_EXEC,
+	0x42,3,		// Rdat = s3 (build s3 first)
+	0x34,		// dir = fdc->cpu
+	0x31,		// drq = 1
+	0x41,		// wait for reading
+	0xf1		// end
+};
+
+// 05+MT+MF    HU TR HD SC SZ LS GP SL <W> S0 S1 S2 TR HD LS SZ write sector(s)
+uint8_t op765_05[] = {
+	0xe1,FDC_INPUT,
+	0x33,
+	0x31,0x40,0x50,	// HU
+	0x31,0x40,0x52,	// TR
+	0x31,0x40,0x53,	// HD
+	0x31,0x40,0x54,	// SC
+	0x31,0x40,0x55,	// SZ
+	0x31,0x40,0x56,	// LS
+	0x31,0x40,0x57,	// GP
+	0x31,0x40,0x58,	// SL
+	0xe1,FDC_EXEC,
+	0xf1
+};
+
+// 06+MT+MF+SK HU TR HD SC SZ LS GP SL <R> S0 S1 S2 TR HD LS SZ read sector(s)
+uint8_t op765_06[] = {
+	0xe1,FDC_INPUT,
+	0x33,
+	0x31,0x40,0x50,	// HU
+	0x31,0x40,0x52,	// TR
+	0x31,0x40,0x53,	// HD
+	0x31,0x40,0x54,	// SC
+	0x31,0x40,0x55,	// SZ
+	0x31,0x40,0x56,	// LS
+	0x31,0x40,0x57,	// GP
+	0x31,0x40,0x58,	// SL
+	0xe1,FDC_EXEC,
+	0xf1
+};
+
+// 07          HU                       -                       recalib.seek TP=0
+uint8_t op765_07[] = {
+	0xe1,FDC_INPUT,
+	0x60,0x00,0x00,		// sr0 = 0
+	0x33,
+	0x31,0x40,0x50,	// HU
+	0xe1,FDC_EXEC,
+	0xb0,77,	// ic = 77
+	0xb3,0,11,	// if (ic == 0)
+	0x83,0,4,	// if (flp.trk == 0)
+	0xa0,		// step in
+	0xb1,		// ic--
+	0xf0,-10,	// jr @b3
+	0x60,0x00,FDC_SE,	// sr0: SE, IC=00 (success)
+	0xf1,
+	0x60,0x00,FDC_SE | FDC_EC | 0x40,	// sr0: SE, EC, IC=01 (errors)
+	0xf1
+};
+
+// 08          -                        -  S0 TP                sense int.state
+uint8_t op765_08[] = {
+	0xe1,FDC_EXEC,			// no pars
+	0x34,
+	0x42,0,		// Rdat = sr0
+	0x31,0x41,	// wait for reading
+	0x42,11,	// Rdat = flp.trk
+	0x31,0x41,	// wait for reading
+	0xf1
+};
+
+// 09+MT+MF    HU TR HD SC SZ LS GP SL <W> S0 S1 S2 TR HD LS SZ wr deleted sec(s)
+uint8_t op765_09[] = {
+	0xe1,FDC_INPUT,
+	0x33,
+	0x31,0x40,0x50,	// HU
+	0x31,0x40,0x52,	// TR
+	0x31,0x40,0x53,	// HD
+	0x31,0x40,0x54,	// SC
+	0x31,0x40,0x55,	// SZ
+	0x31,0x40,0x56,	// LS
+	0x31,0x40,0x57,	// GP
+	0x31,0x40,0x58,	// SL
+	0xe1,FDC_EXEC,
+	0xf1
+};
+
+// 0A+MF       HU                       -  S0 S1 S2 TR HD LS SZ read ID
+uint8_t op765_0A[] = {
+	0xe1,FDC_INPUT,
+	0x33,
+	0x31,0x40,0x50,	// HU
+	0xe1,FDC_EXEC,
+	0xf1
+};
+
+// 0C+MT+MF+SK HU TR HD SC SZ LS GP SL <R> S0 S1 S2 TR HD LS SZ rd deleted sec(s)
+uint8_t op765_0C[] = {
+	0xe1,FDC_INPUT,
+	0x33,
+	0x31,0x40,0x50,	// HU
+	0x31,0x40,0x52,	// TR
+	0x31,0x40,0x53,	// HD
+	0x31,0x40,0x54,	// SC
+	0x31,0x40,0x55,	// SZ
+	0x31,0x40,0x56,	// LS
+	0x31,0x40,0x57,	// GP
+	0x31,0x40,0x58,	// SL
+	0xe1,FDC_EXEC,
+	0xf1
+};
+
+// 0D+MF       HU SZ NM GP FB          <W> S0 S1 S2 TR HD LS SZ format track
+uint8_t op765_0D[] = {
+	0xe1,FDC_INPUT,
+	0x33,
+	0x31,0x40,0x50,	// HU
+	0x31,0x40,0x55,	// SZ
+	0x31,0x40,0x5a,	// NM
+	0x31,0x40,0x57,	// GP
+	0x31,0x40,0x59,	// FB
+	0xe1,FDC_EXEC,
+	0xf1
+};
+
+// 0F          HU TP                    -                       seek track n
+uint8_t op765_0F[] = {
+	0xe1,FDC_INPUT,
+	0x60,0x00,0x03,	// all drives is busy
+	0x33,
+	0x31,0x40,0x50,	// HU
+	0x31,0x40,	// TP (Rdat)
+	0xe1,FDC_EXEC,
+	0x60,0x00,0x00,	// all drives is not-busy
+	0x42,10,	// Rtrk = flp::trk
+	0x86,10,	// if (Rtr = Rdat)
+	0x87,4,		// if (Rtr < Rdat)
+	0x81,		// Rtr--
+	0xa0,		// step in
+	0xf0,-8,	// @86
+	0x82,		// Rtr++
+	0xa1,		// step out
+	0xf0,-6,	// @f0
+	0x60,0x00,FDC_SE,	// SE,IC=0 (success)
+	0xf1
+};
+
+// 11+MT+MF+SK HU TR HD SC SZ LS GP SL <W> S0 S1 S2 TR HD LS SZ scan equal
+uint8_t op765_11[] = {
+	0xe1,FDC_INPUT,
+	0x33,
+	0x31,0x40,0x50,	// HU
+	0x31,0x40,0x52,	// TR
+	0x31,0x40,0x53,	// HD
+	0x31,0x40,0x54,	// SC
+	0x31,0x40,0x55,	// SZ
+	0x31,0x40,0x56,	// LS
+	0x31,0x40,0x57,	// GP
+	0x31,0x40,0x58,	// SL
+	0xe1,FDC_EXEC,
+	0xf1
+};
+
+// 19+MT+MF+SK HU TR HD SC SZ LS GP SL <W> S0 S1 S2 TR HD LS SZ scan low or equal
+uint8_t op765_19[] = {
+	0xe1,FDC_INPUT,
+	0x33,
+	0x31,0x40,0x50,	// HU
+	0x31,0x40,0x52,	// TR
+	0x31,0x40,0x53,	// HD
+	0x31,0x40,0x54,	// SC
+	0x31,0x40,0x55,	// SZ
+	0x31,0x40,0x56,	// LS
+	0x31,0x40,0x57,	// GP
+	0x31,0x40,0x58,	// SL
+	0xe1,FDC_EXEC,
+	0xf1
+};
+
+// 1D+MT+MF+SK HU TR HD SC SZ LS GP SL <W> S0 S1 S2 TR HD LS SZ scan high or equal
+uint8_t op765_1D[] = {
+	0xe1,FDC_INPUT,
+	0x33,
+	0x31,0x40,0x50,	// HU
+	0x31,0x40,0x52,	// TR
+	0x31,0x40,0x53,	// HD
+	0x31,0x40,0x54,	// SC
+	0x31,0x40,0x55,	// SZ
+	0x31,0x40,0x56,	// LS
+	0x31,0x40,0x57,	// GP
+	0x31,0x40,0x58,	// SL
+	0xe1,FDC_EXEC,
+	0xf1
+};
+
+typedef uint8_t* f765wptr;
+f765wptr fdc765workTab[32] = {
+	op765_no,op765_no,op765_02,op765_03,op765_04,op765_05,op765_06,op765_07,
+	op765_08,op765_09,op765_0A,op765_no,op765_0C,op765_0D,op765_no,op765_0F,
+	op765_no,op765_11,op765_no,op765_no,op765_no,op765_no,op765_no,op765_no,
+	op765_no,op765_19,op765_no,op765_no,op765_no,op765_1D,op765_no,op765_no
+};
 
 void fdcExec(FDC* fdc, uint8_t val) {
-	if (!fdc->mr) return;			// no commands aviable during master reset
-	if (fdc->idle) {
-		fdc->com = val;
-		fdc->wptr = NULL;
-		if ((val & 0xf0) == 0x00) fdc->wptr = vgwork[0];	// restore		00..0f
-		if ((val & 0xf0) == 0x10) fdc->wptr = vgwork[1];	// seek			10..1f
-		if ((val & 0xe0) == 0x20) fdc->wptr = vgwork[2];	// step			20..3f
-		if ((val & 0xe0) == 0x40) fdc->wptr = vgwork[3];	// step in		40..5f
-		if ((val & 0xe0) == 0x60) fdc->wptr = vgwork[4];	// step out		60..7f
-		if ((val & 0xe1) == 0x80) {
-			fdc->wptr = vgwork[5];	// read sector
-			fdc->status = FDC_READ;
-		}
-		if ((val & 0xe0) == 0xa0) {
-			fdc->wptr = vgwork[6];	// write sector
-			fdc->status = FDC_WRITE;
-		}
-		if ((val & 0xfb) == 0xc0) {
-			fdc->wptr = vgwork[7];	// read address
-			fdc->status = FDC_READ;
-		}
-		if ((val & 0xfb) == 0xe0) {
-			fdc->wptr = vgwork[8];	// read track
-			fdc->status = FDC_READ;
-		}
-		if ((val & 0xfb) == 0xf0) {
-			fdc->wptr = vgwork[9];	// write track
-			fdc->status = FDC_WRITE;
-		}
-		if (fdc->wptr == NULL) fdc->wptr = vgwork[11];
-		fdc->count = -1;
-		fdc->idle = 0;
-		fdc->irq = 0;
-		fdc->drq = 0;
+	switch (fdc->type) {
+		case FDC_93:
+			if (!fdc->mr) break;			// no commands aviable during master reset
+			if (fdc->idle) {
+				fdc->com = val;
+				fdc->wptr = NULL;
+				if ((val & 0xf0) == 0x00) fdc->wptr = vgwork[0];	// restore		00..0f
+				if ((val & 0xf0) == 0x10) fdc->wptr = vgwork[1];	// seek			10..1f
+				if ((val & 0xe0) == 0x20) fdc->wptr = vgwork[2];	// step			20..3f
+				if ((val & 0xe0) == 0x40) fdc->wptr = vgwork[3];	// step in		40..5f
+				if ((val & 0xe0) == 0x60) fdc->wptr = vgwork[4];	// step out		60..7f
+				if ((val & 0xe1) == 0x80) {
+					fdc->wptr = vgwork[5];	// read sector
+					fdc->status = FDC_READ;
+				}
+				if ((val & 0xe0) == 0xa0) {
+					fdc->wptr = vgwork[6];	// write sector
+					fdc->status = FDC_WRITE;
+				}
+				if ((val & 0xfb) == 0xc0) {
+					fdc->wptr = vgwork[7];	// read address
+					fdc->status = FDC_READ;
+				}
+				if ((val & 0xfb) == 0xe0) {
+					fdc->wptr = vgwork[8];	// read track
+					fdc->status = FDC_READ;
+				}
+				if ((val & 0xfb) == 0xf0) {
+					fdc->wptr = vgwork[9];	// write track
+					fdc->status = FDC_WRITE;
+				}
+				if (fdc->wptr == NULL) fdc->wptr = vgwork[11];
+				fdc->count = -1;
+				fdc->idle = 0;
+				fdc->irq = 0;
+				fdc->drq = 0;
+			}
+			if ((val & 0xf0) == 0xd0) {
+				fdc->wptr = vgwork[10];		// interrupt
+				fdc->count = -1;
+				fdc->idle = 0;
+				fdc->irq = 0;
+				fdc->drq = 0;
+			}
+			break;
+		case FDC_765:
+			printf("DEBUG: uPD765 exec %.2X\n",val);
+			fdc->wptr = fdc765workTab[val & 0x1f];
+			fdc->idle = 0;
+			fdc->irq = 0;
+			fdc->drq = 0;
+			fdc->count = -1;
+			fdc->com = val;
+			break;
 	}
-	if ((val & 0xf0) == 0xd0) {
-		fdc->wptr = vgwork[10];		// interrupt
-		fdc->count = -1;
-		fdc->idle = 0;
-		fdc->irq = 0;
-		fdc->drq = 0;
-	}
+
 }
 
 void fdcSetMr(FDC* fdc,int z) {
@@ -499,20 +778,105 @@ void fdcSetMr(FDC* fdc,int z) {
 	}
 }
 
+uint8_t fdcRd(FDC* fdc,int port) {
+	uint8_t res = 0xff;
+	switch (fdc->type) {
+		case FDC_93:
+			switch(port) {
+				case FDC_STATE:
+					res = ((fdc->fptr->flag & FLP_INSERT) ? 0 : 128) | (fdc->idle ? 0 : 1);
+					switch (fdc->mode) {
+						case 0:
+							res |= ((fdc->fptr->flag & FLP_PROTECT) ? 0x40 : 0)\
+								| 0x20\
+								| (fdc->flag & 0x18)\
+								| ((fdc->fptr->trk == 0) ? 4 : 0)\
+								| (fdc->idx ? 2 : 0);
+							break;
+						case 1:
+						case 2:
+							res |= (fdc->flag & 0x7c) | (fdc->drq ? 2 : 0);
+							break;
+					}
+					fdc->irq = 0;
+					break;
+				case FDC_TRK:
+					res = fdc->trk;
+					break;
+				case FDC_SEC:
+					res = fdc->sec;
+					break;
+				case FDC_DATA:
+					res = fdc->data;
+					fdc->drq = 0;
+					break;
+			}
+			break;
+		case FDC_765:
+			switch (port) {
+				case FDC_STATE:
+					if (fdc->idle) {
+						res = FDC_RQM;
+					} else {
+						res = (fdc->drq ? FDC_RQM : 0) | \
+							(fdc->ioDir ? FDC_DIO : 0) | \
+							((fdc->status == FDC_EXEC) ? FDC_EXM : 0) | \
+							((fdc->idle) ? 0 : FDC_BSY);
+					}
+					printf("state: %.2X\n",res);
+					break;
+				case FDC_DATA:
+					if (fdc->ioDir && fdc->drq) {
+						res = fdc->data;
+						fdc->drq = 0;
+					} else {
+						res = 0xff;
+					}
+			}
+			break;
+	}
+	return res;
+}
+
 void fdcWr(FDC* fdc,int port,uint8_t val) {
-	switch (port) {
-		case FDC_COM:
-			fdcExec(fdc,val);
+	switch (fdc->type) {
+		case FDC_93:
+			switch (port) {
+				case FDC_COM:
+					fdcExec(fdc,val);
+					break;
+				case FDC_TRK:
+					fdc->trk = val;
+					break;
+				case FDC_SEC:
+					fdc->sec = val;
+					break;
+				case FDC_DATA:
+					fdc->data = val;
+					fdc->drq = 0;
+					break;
+			}
 			break;
-		case FDC_TRK:
-			fdc->trk = val;
-			break;
-		case FDC_SEC:
-			fdc->sec = val;
-			break;
-		case FDC_DATA:
-			fdc->data = val;
-			fdc->drq = 0;
+		case FDC_765:
+			switch (port) {
+				case FDC_DATA:
+					switch (fdc->status) {
+						case FDC_IDLE:
+							fdc->com = val;
+							fdcExec(fdc,val);
+							break;
+						case FDC_INPUT:
+						case FDC_EXEC:
+							if (fdc->drq & !fdc->ioDir) {
+								fdc->data = val;
+								fdc->drq = 0;
+							}
+							break;
+					}
+
+					break;
+			}
+
 			break;
 	}
 }
@@ -526,10 +890,7 @@ void fdcAddCrc(FDC* fdc,uint8_t val) {
 	fdc->crc = tkk & 0xffff;
 }
 
-typedef void(*VGOp)(FDC*);
-
-
-uint8_t p1,dlt;
+uint8_t p1,p2,dlt;
 int32_t delays[6]={6 * MSDELAY,12 * MSDELAY,24 * MSDELAY,32 * MSDELAY,15 * MSDELAY, 50 * MSDELAY};	// 6, 12, 20, 32, 15, 50ms (hlt-hld)
 
 void v01(FDC* p) {p1 = *(p->wptr++); p->wptr = vgwork[p1];}
@@ -544,6 +905,44 @@ void v20(FDC* p) {p->mode = *(p->wptr++);}
 void v30(FDC* p) {p->drq = 0;}
 void v31(FDC* p) {p->drq = 1;}
 void v32(FDC* p) {dlt = *(p->wptr++); if (!p->drq) p->wptr += (int8_t)dlt;}
+void v33(FDC* p) {p->ioDir = 0;}
+void v34(FDC* p) {p->ioDir = 1;}
+
+void v40(FDC* p) {if (p->drq) {p->wptr--;p->count = 0;} else {printf("In : %.2X\n",p->data);}}
+void v41(FDC* p) {if (p->drq) {p->wptr--;p->count = 0;} else {printf("Out: %.2X\n",p->data);}}
+void v42(FDC *p) {
+	p1 = *(p->wptr++);
+	switch (p1) {
+		case 0: p->data = p->sr0; break;
+		case 1: p->data = p->sr1; break;
+		case 2: p->data = p->sr2; break;
+		case 3: p->data = (p->fptr->id & 3) |\
+				((p->side) ? FDC_HD : 0) |\
+				((p->fptr->flag & FLP_DS) ? 0 : FDC_DS) |\
+				((p->fptr->trk == 0) ? FDC_T0 : 0) |\
+				((p->fptr->flag & FLP_INSERT) ? FDC_RY : 0) |\
+				((p->fptr->flag & FLP_PROTECT) ? FDC_WP : 0);
+			break;
+		case 10: p->trk = p->fptr->trk; break;
+		case 11: p->data = p->fptr->trk; break;
+	}
+}
+
+void v50(FDC* p) {p->fptr = p->flop[p->data & 3]; p->side = (p->data & 4) ? 1 : 0;}	// HU: b0,1:drive; b2: head
+void v51(FDC* p) {p->trk = p->data;}							// TP: physical track
+void v52(FDC* p) {p->trk = p->data;}							// TR: track id
+void v53(FDC* p) {p->side = p->data;}							// HD: head id
+void v54(FDC* p) {p->sec = p->data;}							// SC: first sector
+void v55(FDC* p) {p->sz = p->data;}							// SZ: sector size code
+void v56(FDC* p) {p->ls = p->data;}							// LS: last sector
+void v57(FDC* p) {p->gp = p->data;}							// GP: gap
+void v58(FDC* p) {p->sl = p->data;}							// SL: sector len if SZ = 0
+void v59(FDC* p) {p->fb = p->data;}							// FB: fill byte
+void v5A(FDC* p) {p->nm = p->data;}							// NM: number of sectors
+
+void v60(FDC* p) {p1 = *(p->wptr++); p2 = *(p->wptr++); p->sr0 &= p1; p->sr0 |= p2;}
+void v61(FDC* p) {p1 = *(p->wptr++); p2 = *(p->wptr++); p->sr1 &= p1; p->sr1 |= p2;}
+void v62(FDC* p) {p1 = *(p->wptr++); p2 = *(p->wptr++); p->sr2 &= p1; p->sr2 |= p2;}
 
 void v80(FDC* p) {p->trk = *(p->wptr++);}
 void v81(FDC* p) {p->trk--;}
@@ -629,11 +1028,14 @@ void vE0(FDC* p) {
 		p->fptr->flag |= (FLP_MOTOR | FLP_HEAD);
 	}
 }
+void vE1(FDC* p) {p->status = *(p->wptr++);}
+void vE2(FDC* p) {dlt = *(p->wptr++); if (p->side == 0) p->wptr += (char)dlt;}
 
 void vF0(FDC* p) {dlt = *(p->wptr++); p->wptr += (int8_t)dlt;}
-void vF1(FDC* p) {p->wptr = NULL; p->count = 0; p->status = FDC_IDLE;}
-void vF8(FDC* p) {dlt = *(p->wptr++); if (p->fptr->flag & FLP_PROTECT) p->wptr += (int8_t)dlt;}
-void vF9(FDC* p) {dlt = *(p->wptr++); if (p->fptr->flag & FLP_INSERT) p->wptr += (int8_t)dlt;}	// READY
+void vF1(FDC* p) {p->wptr = NULL; p->irq = 1; p->idle = 1; p->drq = 0; p->count = 0; p->status = FDC_IDLE;}
+void vF7(FDC* p) {dlt = *(p->wptr++); if (p->fptr->flag & FLP_DS) p->wptr += (char)dlt;}	// DS
+void vF8(FDC* p) {dlt = *(p->wptr++); if (p->fptr->flag & FLP_PROTECT) p->wptr += (int8_t)dlt;}	// PROTECT
+void vF9(FDC* p) {dlt = *(p->wptr++); if (p->fptr->flag & FLP_INSERT) p->wptr += (int8_t)dlt;}	// INSERT
 void vFA(FDC* p) {dlt = *(p->wptr++); if (p->sdir) p->wptr += (int8_t)dlt;}
 void vFB(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (p->fptr->field == p1) p->wptr += (int8_t)dlt;}
 void vFC(FDC* p) {dlt = *(p->wptr++); if (p->strb) p->wptr += (int8_t)dlt;}
@@ -641,14 +1043,15 @@ void vFD(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if ((p->com & p1) == 0)
 void vFE(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if ((p->com & p1) != 0) p->wptr += (int8_t)dlt;}
 void vFF(FDC* p) {p->irq = 1; p->idle = 1; p->wptr = &vgidle[0]; p->status = FDC_IDLE;}
 
+typedef void(*VGOp)(FDC*);
 VGOp vgfunc[256] = {
 	NULL,&v01,&v02,&v03,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 	&v10,&v11,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 	&v20,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
-	&v30,&v31,&v32,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
-	NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
-	NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
-	NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+	&v30,&v31,&v32,&v33,&v34,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+	&v40,&v41,&v42,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+	&v50,&v51,&v52,&v53,&v54,&v55,&v56,&v57,&v58,&v59,&v5A,NULL,NULL,NULL,NULL,NULL,
+	&v60,&v61,&v62,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 	NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 	&v80,&v81,&v82,&v83,&v84,&v85,&v86,&v87,&v88,&v89,&v8A,&v8B,&v8C,&v8D,&v8E,&v8F,
 	&v90,&v91,&v92,&v93,&v94,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
@@ -656,52 +1059,27 @@ VGOp vgfunc[256] = {
 	&vB0,&vB1,&vB2,&vB3,&vB4,&vB5,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 	&vC0,&vC1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 	&vD0,&vD1,&vD2,&vD3,&vD4,&vD5,NULL,&vD7,&vD8,&vD9,&vDA,NULL,NULL,NULL,NULL,&vDF,
-	&vE0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
-	&vF0,&vF1,NULL,NULL,NULL,NULL,NULL,NULL,&vF8,&vF9,&vFA,&vFB,&vFC,&vFD,&vFE,&vFF
+	&vE0,&vE1,&vE2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+	&vF0,&vF1,NULL,NULL,NULL,NULL,NULL,&vF7,&vF8,&vF9,&vFA,&vFB,&vFC,&vFD,&vFE,&vFF
 };
 
 // BDI
 
 BDI* bdiCreate() {
 	BDI* bdi = (BDI*)malloc(sizeof(BDI));
-	for (int i=0; i<4; i++) {
-		bdi->flop[i] = flpCreate(i);
-	}
-
-	bdi->fdc = fdcCreate(FDC_VG93);
-	bdi->fdc->fptr = bdi->flop[0];
-	bdi->type = DISK_NONE;
+	bdi->fdc = fdcCreate(FDC_93);
 	bdi->flag = 0;
-
-	bdi->fdc765 = fdc_new();
-	bdi->drive_a = fd_newdsk();
-	bdi->drive_b = fd_newdsk();
-
-	fd_settype(bdi->drive_a,FD_35);
-	fd_setheads(bdi->drive_a,2);
-	fd_setcyls(bdi->drive_a,80);
-
-	fd_settype(bdi->drive_b,FD_35);
-	fd_setheads(bdi->drive_b,2);
-	fd_setcyls(bdi->drive_b,80);
 
 	return bdi;
 }
 
 void bdiDestroy(BDI* bdi) {
-	fdc_destroy(&bdi->fdc765);
-	fd_destroy(&bdi->drive_a);
-	fd_destroy(&bdi->drive_b);
 	free(bdi);
 }
 
 void bdiReset(BDI* bdi) {
 	bdi->fdc->count = 0;
 	fdcSetMr(bdi->fdc,0);
-	fdc_reset(bdi->fdc765);
-	fdc_setisr(bdi->fdc765,NULL);
-	fdc_setdrive(bdi->fdc765,0,bdi->drive_a);
-	fdc_setdrive(bdi->fdc765,1,bdi->drive_b);
 }
 
 int bdiGetPort(int p) {
@@ -719,64 +1097,49 @@ int bdiGetPort(int p) {
 }
 
 int bdiOut(BDI* bdi,int port,uint8_t val) {
-	int res = 0;
-	switch (bdi->type) {
-		case DISK_BDI:
-			if (~bdi->flag & BDI_ACTIVE) break;
-			port = bdiGetPort(port);
-			if (!pcatch) break;
-			switch (port) {
-				case FDC_COM:
-				case FDC_TRK:
-				case FDC_SEC:
-				case FDC_DATA:
-					fdcWr(bdi->fdc,port,val);
-					break;
-				case BDI_SYS:
-					bdi->fdc->fptr = bdi->flop[val & 0x03];	// selet floppy
-					fdcSetMr(bdi->fdc,(val & 0x04) ? 1 : 0);		// master reset
-					bdi->fdc->block = val & 0x08;
-					bdi->fdc->side = (val & 0x10) ? 1 : 0;
-					bdi->fdc->mfm = val & 0x40;
-					break;
-			}
-			res = 1;
+	if (bdi->fdc->type != FDC_93) return 0;
+	if (~bdi->flag & BDI_ACTIVE) return 0;
+	port = bdiGetPort(port);
+	if (!pcatch) return 0;
+	switch (port) {
+		case FDC_COM:
+		case FDC_TRK:
+		case FDC_SEC:
+		case FDC_DATA:
+			fdcWr(bdi->fdc,port,val);
 			break;
-		default:
+		case BDI_SYS:
+			bdi->fdc->fptr = bdi->fdc->flop[val & 0x03];	// selet floppy
+			fdcSetMr(bdi->fdc,(val & 0x04) ? 1 : 0);		// master reset
+			bdi->fdc->block = val & 0x08;
+			bdi->fdc->side = (val & 0x10) ? 1 : 0;
+			bdi->fdc->mfm = val & 0x40;
 			break;
 	}
-	return res;
+	return 1;
 }
 
 int bdiIn(BDI* bdi,int port,uint8_t* val) {
-	int res = 0;
-	switch (bdi->type) {
-		case DISK_BDI:
-			if (~bdi->flag & BDI_ACTIVE) break;
-			port = bdiGetPort(port);
-			if (!pcatch) break;
-			*val = 0xff;
-			switch (port) {
-				case FDC_COM:
-				case FDC_TRK:
-				case FDC_SEC:
-				case FDC_DATA:
-					*val = fdcRd(bdi->fdc,port);
-					break;
-				case BDI_SYS:
-					*val = (bdi->fdc->irq ? 0x80 : 0x00) | (bdi->fdc->drq ? 0x40 : 0x00);
-					break;
-			}
-			res = 1;
+	if (bdi->fdc->type != FDC_93) return 0;
+	if (~bdi->flag & BDI_ACTIVE) return 0;
+	port = bdiGetPort(port);
+	if (!pcatch) return 0;
+	*val = 0xff;
+	switch (port) {
+		case FDC_COM:
+		case FDC_TRK:
+		case FDC_SEC:
+		case FDC_DATA:
+			*val = fdcRd(bdi->fdc,port);
 			break;
-		default:
+		case BDI_SYS:
+			*val = (bdi->fdc->irq ? 0x80 : 0x00) | (bdi->fdc->drq ? 0x40 : 0x00);
 			break;
 	}
-	return res;
+	return 1;
 }
 
 void bdiSync(BDI* bdi,int tk) {
-	if (bdi->type != DISK_BDI) return;
 	uint32_t tz;
 	while (tk > 0) {
 		if (tk < (int)bdi->fdc->tf) {

@@ -44,6 +44,8 @@
 #define	ERR_SCL_SIGN	0x80	// scl signature error
 #define	ERR_SCL_MANY	0x81	// too many files in scl
 
+#define	ERR_DSK_SIGN	0x88	// dsk signature error
+
 #define	ERR_RAW_LONG	0x90	// raw file too long
 
 uint16_t getLEWord(std::ifstream*);
@@ -85,3 +87,5 @@ int saveHobetaFile(Floppy*,int,const char*);
 int saveSCL(Floppy*,const char*);
 int saveTRD(Floppy*,const char*);
 int saveUDI(Floppy*,const char*);
+
+int loadDsk(Floppy*,const char*);

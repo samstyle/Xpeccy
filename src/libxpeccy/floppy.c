@@ -229,10 +229,6 @@ int flpGet(Floppy* flp, int wut) {
 				if (fbuf[0xe7] == 0x10) res = DISK_TYPE_TRD;
 			}
 			break;
-//		case FLP_TRK: res = flp->trk; break;
-//		case FLP_RTRK: res = flp->rtrk; break;
-//		case FLP_FIELD: res = flp->field; break;
-//		case FLP_POS: res = flp->pos; break;
 	}
 	return res;
 }

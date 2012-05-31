@@ -13,13 +13,14 @@
 #define	FT_TRD		(1<<3)
 #define	FT_FDI		(1<<4)
 #define	FT_UDI		(1<<5)
-#define	FT_DISK		(FT_SCL | FT_TRD | FT_FDI | FT_UDI)
-#define	FT_SNA		(1<<6)
-#define	FT_Z80		(1<<7)
+#define	FT_DSK		(1<<6)
+#define	FT_DISK		(FT_SCL | FT_TRD | FT_FDI | FT_UDI | FT_DSK)
+#define	FT_SNA		(1<<7)
+#define	FT_Z80		(1<<8)
 #define FT_SNAP		(FT_SNA | FT_Z80)
-#define	FT_RZX		(1<<8)
-#define	FT_HOBETA	(1<<9)
-#define	FT_RAW		(1<<10)
+#define	FT_RZX		(1<<9)
+#define	FT_HOBETA	(1<<10)
+#define	FT_RAW		(1<<11)
 
 void initFileDialog(QWidget*);
 void loadFile(const char*, int, int);

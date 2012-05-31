@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>507</width>
-    <height>494</height>
+    <width>505</width>
+    <height>490</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -1380,7 +1380,7 @@
             <attribute name="title">
              <string>Disk</string>
             </attribute>
-            <layout class="QVBoxLayout" name="verticalLayout_19">
+            <layout class="QVBoxLayout" name="verticalLayout_19" stretch="0,0,0,10">
              <item>
               <layout class="QHBoxLayout" name="horizontalLayout_21">
                <item>
@@ -1409,15 +1409,11 @@
               </layout>
              </item>
              <item>
-              <layout class="QGridLayout" name="gridLayout_6">
-               <item row="0" column="0">
-                <widget class="QCheckBox" name="bdtbox">
-                 <property name="text">
-                  <string>Turbo</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
+              <widget class="QCheckBox" name="bdtbox">
+               <property name="text">
+                <string>Turbo</string>
+               </property>
+              </widget>
              </item>
              <item>
               <widget class="QTabWidget" name="disktabs">

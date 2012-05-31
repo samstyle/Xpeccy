@@ -484,12 +484,12 @@ void saveConfig() {
 	optSet("SOUND","gs",(zx->gs->flag & GS_ENABLE) != 0);
 	optSet("SOUND","gs.reset",(zx->gs->flag & GS_RESET) != 0);
 	optSet("SOUND","gs.stereo",zx->gs->stereo);
-	optSet("DISK","type",zx->bdi->type);
+	optSet("DISK","type",zx->bdi->fdc->type);
 	optSet("DISK","fast",(zx->bdi->flag & BDI_TURBO) ? "yes" : "no");
-	optSet("DISK","A",getDiskString(zx->bdi->flop[0]));
-	optSet("DISK","B",getDiskString(zx->bdi->flop[1]));
-	optSet("DISK","C",getDiskString(zx->bdi->flop[2]));
-	optSet("DISK","D",getDiskString(zx->bdi->flop[3]));
+	optSet("DISK","A",getDiskString(zx->bdi->fdc->flop[0]));
+	optSet("DISK","B",getDiskString(zx->bdi->fdc->flop[1]));
+	optSet("DISK","C",getDiskString(zx->bdi->fdc->flop[2]));
+	optSet("DISK","D",getDiskString(zx->bdi->fdc->flop[3]));
 
 	optSet("IDE","iface",zx->ide->type);
 
@@ -856,15 +856,15 @@ void loadConfig(bool dev) {
 					case SECT_SOUND:
 						break;
 					case SECT_DISK:
-						if (pnam=="A") setDiskString(zx->bdi->flop[0],pval);
-						if (pnam=="B") setDiskString(zx->bdi->flop[1],pval);
-						if (pnam=="C") setDiskString(zx->bdi->flop[2],pval);
-						if (pnam=="D") setDiskString(zx->bdi->flop[3],pval);
+						if (pnam=="A") setDiskString(zx->bdi->fdc->flop[0],pval);
+						if (pnam=="B") setDiskString(zx->bdi->fdc->flop[1],pval);
+						if (pnam=="C") setDiskString(zx->bdi->fdc->flop[2],pval);
+						if (pnam=="D") setDiskString(zx->bdi->fdc->flop[3],pval);
 						if (pnam=="enabled") {
-							zx->bdi->type = str2bool(pval) ? DISK_BDI : DISK_NONE;
+							zx->bdi->fdc->type = str2bool(pval) ? FDC_93 : FDC_NONE;
 							delOption("DISK","enabled");
 						}
-						if (pnam=="type") zx->bdi->type = atoi(pval.c_str());
+						if (pnam=="type") zx->bdi->fdc->type = atoi(pval.c_str());
 						break;
 					case SECT_MACHINE:
 						if (pnam=="memory") {

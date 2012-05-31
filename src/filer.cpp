@@ -23,7 +23,7 @@ void initFileDialog(QWidget*) {
 
 bool saveChangedDisk(int id) {
 	bool res=true;
-	Floppy* flp = zx->bdi->flop[id];
+	Floppy* flp = zx->bdi->fdc->flop[id];
 	if (flp->flag & FLP_CHANGED) {
 		QMessageBox mbox;
 		mbox.setText(QString("<b>Disk ").append(QChar('A'+id)).append(": has been changed</b>"));
@@ -49,6 +49,7 @@ QString getFilter(int flags) {
 	if (flags & FT_TRD) res.append(" *.trd");
 	if (flags & FT_FDI) res.append(" *.fdi");
 	if (flags & FT_UDI) res.append(" *.udi");
+	if (flags & FT_DSK) res.append(" *.dsk");
 #ifdef HAVEZLIB
 	if (flags & FT_RZX) res.append(" *.rzx");
 #endif
@@ -66,6 +67,7 @@ int getFileType(QString path) {
 	if (path.endsWith(".trd",Qt::CaseInsensitive)) return FT_TRD;
 	if (path.endsWith(".fdi",Qt::CaseInsensitive)) return FT_FDI;
 	if (path.endsWith(".udi",Qt::CaseInsensitive)) return FT_UDI;
+	if (path.endsWith(".dsk",Qt::CaseInsensitive)) return FT_DSK;
 #ifdef HAVEZLIB
 	if (path.endsWith(".rzx",Qt::CaseInsensitive)) return FT_RZX;
 #endif
@@ -88,6 +90,7 @@ void loadFile(const char* name, int flags, int drv) {
 			if ((drv == -1) || (drv == 2)) filters.append(";;Disk C (").append(getFilter(flags & (FT_DISK | FT_HOBETA))).append(")");
 			if ((drv == -1) || (drv == 3)) filters.append(";;Disk D (").append(getFilter(flags & (FT_DISK | FT_HOBETA))).append(")");
 		}
+		if (flags & FT_DSK) filters.append(";;DSK fuke (").append(getFilter(flags & FT_DSK)).append(")");
 		if (flags & FT_SNAP) filters.append(";;Snapshot (").append(getFilter(flags & FT_SNAP)).append(")");
 		if (flags & FT_TAPE) filters.append(";;Tape (").append(getFilter(flags & FT_TAPE)).append(")");
 		if (flags & FT_RZX) filters.append(";;RZX file (").append(getFilter(flags & FT_RZX)).append(")");
@@ -118,7 +121,7 @@ void loadFile(const char* name, int flags, int drv) {
 	std::string sfnam(opath.toUtf8().data());
 	int ferr = ERR_OK;
 	zx->rzxPlay = false;
-	Floppy* flp = zx->bdi->flop[drv];
+	Floppy* flp = zx->bdi->fdc->flop[drv];
 	switch (type) {
 		case FT_SNA: ferr = loadSNA(zx,sfnam.c_str()); break;
 		case FT_Z80: ferr = loadZ80(zx,sfnam.c_str()); break;
@@ -130,6 +133,7 @@ void loadFile(const char* name, int flags, int drv) {
 		case FT_UDI: if (saveChangedDisk(drv)) {ferr = loadUDI(flp,sfnam.c_str());} break;
 		case FT_HOBETA: ferr = loadHobeta(flp,sfnam.c_str()); break;
 		case FT_RAW: ferr = loadRaw(flp,sfnam.c_str()); break;
+		case FT_DSK: ferr = loadDsk(flp,sfnam.c_str()); break;
 #if HAVEZLIB
 		case FT_RZX: ferr = loadRZX(zx,sfnam.c_str()); break;
 #endif
@@ -150,6 +154,7 @@ void loadFile(const char* name, int flags, int drv) {
 		case ERR_SCL_SIGN: shitHappens("Wrong SCL signature"); break;
 		case ERR_SCL_MANY: shitHappens("Too many files in SCL"); break;
 		case ERR_RAW_LONG: shitHappens("File is too big"); break;
+		case ERR_DSK_SIGN: shitHappens("Wrong DSK signature"); break;
 	}
 }
 
@@ -157,10 +162,10 @@ bool saveFile(const char* name,int flags,int drv) {
 	QString path(name);
 	QString filters = "";
 	if (flags & FT_DISK) {
-		if (((drv == -1) || (drv == 0)) && (zx->bdi->flop[0]->flag & FLP_INSERT)) filters.append(";;Disk A (*.scl *.trd *.udi)");
-		if ((drv == 1) && (zx->bdi->flop[1]->flag & FLP_INSERT)) filters.append(";;Disk B (*.scl *.trd *.udi)");
-		if ((drv == 2) && (zx->bdi->flop[2]->flag & FLP_INSERT)) filters.append(";;Disk C (*.scl *.trd *.udi)");
-		if ((drv == 3) && (zx->bdi->flop[3]->flag & FLP_INSERT)) filters.append(";;Disk D (*.scl *.trd *.udi)");
+		if (((drv == -1) || (drv == 0)) && (zx->bdi->fdc->flop[0]->flag & FLP_INSERT)) filters.append(";;Disk A (*.scl *.trd *.udi)");
+		if ((drv == 1) && (zx->bdi->fdc->flop[1]->flag & FLP_INSERT)) filters.append(";;Disk B (*.scl *.trd *.udi)");
+		if ((drv == 2) && (zx->bdi->fdc->flop[2]->flag & FLP_INSERT)) filters.append(";;Disk C (*.scl *.trd *.udi)");
+		if ((drv == 3) && (zx->bdi->fdc->flop[3]->flag & FLP_INSERT)) filters.append(";;Disk D (*.scl *.trd *.udi)");
 	}
 	if (flags & FT_SNAP) filters.append(";;Snapshot (*.sna)");
 	if ((flags & FT_TAPE) && (zx->tape->blkCount != 0)) filters.append(";;Tape (*.tap)");
@@ -183,7 +188,7 @@ bool saveFile(const char* name,int flags,int drv) {
 	int type = getFileType(path);
 	int err = ERR_OK;
 	if (filters.contains("Disk")) {
-		Floppy* flp = zx->bdi->flop[drv];
+		Floppy* flp = zx->bdi->fdc->flop[drv];
 		switch (type) {
 			case FT_SCL: err = saveSCL(flp,sfnam.c_str()); break;
 			case FT_TRD: err = saveTRD(flp,sfnam.c_str()); break;

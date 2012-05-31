@@ -145,7 +145,7 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 	}
 	if (m1 == 1) {
 		if (comp->rzxPlay) comp->rzxFetches--;
-		if (comp->bdi->type == DISK_BDI) {
+		if (comp->bdi->fdc->type == FDC_93) {
 			if (!(comp->bdi->flag & BDI_ACTIVE) && ((adr & 0xff00) == 0x3d00) && (comp->prt0 & 0x10)) {
 				comp->bdi->flag |= BDI_ACTIVE;
 				zxMapMemory(comp);
@@ -228,13 +228,15 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 							}
 							break;
 						case HW_PLUS3:
-							switch (port) {
-								case 0x2ffd:		// read main status register
-									res = fdc_read_ctrl(comp->bdi->fdc765);
-									break;
-								case 0x3ffd:		// read data
-									res = fdc_read_data(comp->bdi->fdc765);
-									break;
+							if (comp->bdi->fdc->type == FDC_765) {
+								switch (port) {
+									case 0x2ffd:		// read main status register
+										res = fdcRd(comp->bdi->fdc,FDC_STATE);
+										break;
+									case 0x3ffd:		// read data
+										res = fdcRd(comp->bdi->fdc,FDC_DATA);
+										break;
+								}
 							}
 						case HW_PLUS2:
 							break;
@@ -312,13 +314,18 @@ void iowr(Z80EX_CONTEXT*cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 						}
 						break;
 					case HW_PLUS3:
-						switch (port) {
-							case 0x2ffd:		// motor control
-								fdc_set_motor(comp->bdi->fdc765, val & 0x0F);
-								break;
-							case 0x3ffd:		// write data
-								fdc_write_data(comp->bdi->fdc765, val);
-								break;
+						if (comp->bdi->fdc->type == FDC_765) {
+							switch (port) {
+								case 0x2ffd:		// motor control
+									if (val & 1) comp->bdi->fdc->flop[0]->flag |= FLP_MOTOR; else comp->bdi->fdc->flop[0]->flag &= ~FLP_MOTOR;
+									if (val & 2) comp->bdi->fdc->flop[1]->flag |= FLP_MOTOR; else comp->bdi->fdc->flop[1]->flag &= ~FLP_MOTOR;
+									if (val & 4) comp->bdi->fdc->flop[2]->flag |= FLP_MOTOR; else comp->bdi->fdc->flop[2]->flag &= ~FLP_MOTOR;
+									if (val & 8) comp->bdi->fdc->flop[3]->flag |= FLP_MOTOR; else comp->bdi->fdc->flop[3]->flag &= ~FLP_MOTOR;
+									break;
+								case 0x3ffd:		// write data
+									fdcWr(comp->bdi->fdc,FDC_DATA,val);
+									break;
+							}
 						}
 					case HW_PLUS2:
 						switch (port) {
@@ -476,6 +483,6 @@ double zxExec(ZXComp* comp) {
 	tapSync(comp->tape,ltk);
 
 	if (comp->gs->flag & GS_ENABLE) comp->gsCount += ltk;
-	if (comp->bdi->type != DISK_NONE) bdiSync(comp->bdi,ltk);
+	if (comp->bdi->fdc->type != FDC_NONE) bdiSync(comp->bdi,ltk);
 	return ltk;
 }
