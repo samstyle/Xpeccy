@@ -36,11 +36,14 @@ FDC* fdcCreate(int tp) {
 
 /*
 01,n	jump to work n
+02,n	call work n
+03	return after 02,n
 
 10	pause (com & 3)
 11,n	pause (n)
 
-20,n	set flag mode n
+20,n	set mode n
+21,n,d	if (mode == n) jr d
 
 30	drq = 0
 31	drq = 1
@@ -499,6 +502,7 @@ uint8_t op765_03[] = {
 	0x31,0x40,
 	0x31,0x40,
 	0xe1,FDC_EXEC,	// status = exec
+	0xe1,FDC_IDLE,
 	0xf1		// end
 };
 
@@ -512,6 +516,7 @@ uint8_t op765_04[] = {
 	0x34,		// dir = fdc->cpu
 	0x31,		// drq = 1
 	0x41,		// wait for reading
+	0xe1,FDC_IDLE,
 	0xf1		// end
 };
 
@@ -528,6 +533,7 @@ uint8_t op765_05[] = {
 	0x31,0x40,0x57,	// GP
 	0x31,0x40,0x58,	// SL
 	0xe1,FDC_EXEC,
+	0xe1,FDC_IDLE,
 	0xf1
 };
 
@@ -544,6 +550,7 @@ uint8_t op765_06[] = {
 	0x31,0x40,0x57,	// GP
 	0x31,0x40,0x58,	// SL
 	0xe1,FDC_EXEC,
+	0xe1,FDC_IDLE,
 	0xf1
 };
 
@@ -551,29 +558,46 @@ uint8_t op765_06[] = {
 uint8_t op765_07[] = {
 	0xe1,FDC_INPUT,
 	0x60,0x00,0x00,		// sr0 = 0
+	0x61,0x00,0x00,		// sr1 = 0
+	0x62,0x00,0x00,		// sr2 = 0
 	0x33,
 	0x31,0x40,0x50,	// HU
 	0xe1,FDC_EXEC,
 	0xb0,77,	// ic = 77
-	0xb3,0,11,	// if (ic == 0)
+	0xb3,0,15,	// if (ic == 0)
 	0x83,0,4,	// if (flp.trk == 0)
 	0xa0,		// step in
 	0xb1,		// ic--
 	0xf0,-10,	// jr @b3
 	0x60,0x00,FDC_SE,	// sr0: SE, IC=00 (success)
+	0xe1,FDC_IDLE,
+	0x20,4,
 	0xf1,
 	0x60,0x00,FDC_SE | FDC_EC | 0x40,	// sr0: SE, EC, IC=01 (errors)
+	0xe1,FDC_IDLE,
+	0x20,4,		// mode = 4
 	0xf1
 };
 
 // 08          -                        -  S0 TP                sense int.state
 uint8_t op765_08[] = {
-	0xe1,FDC_EXEC,			// no pars
+//	0xe1,FDC_EXEC,			// remove status change 'cuz it affect mode
+//	0xe1,FDC_OUTPUT,
+	0x21,4,13,	// if int.mode = 4 (seek, recalib) @34
+	0x60,0x00,0x80,	// st0 = 0x80
+	0x34,		// fdc->cpu
+	0x42,0,		// data = st0
+	0x31,0x41,	// wait reading
+	0xe1,FDC_IDLE,	// end
+	0x20,0,		// mode = 0
+	0xf1,
 	0x34,
 	0x42,0,		// Rdat = sr0
 	0x31,0x41,	// wait for reading
 	0x42,11,	// Rdat = flp.trk
 	0x31,0x41,	// wait for reading
+	0xe1,FDC_IDLE,
+	0x20,0,		// mode = 0
 	0xf1
 };
 
@@ -590,15 +614,26 @@ uint8_t op765_09[] = {
 	0x31,0x40,0x57,	// GP
 	0x31,0x40,0x58,	// SL
 	0xe1,FDC_EXEC,
+	0xe1,FDC_IDLE,
 	0xf1
 };
 
-// 0A+MF       HU                       -  S0 S1 S2 TR HD LS SZ read ID
+// 0A+MF       HU                       -  S0 S1 S2 TR HD LS SZ		 read ID
 uint8_t op765_0A[] = {
 	0xe1,FDC_INPUT,
 	0x33,
 	0x31,0x40,0x50,	// HU
 	0xe1,FDC_EXEC,
+	0xe1,FDC_OUTPUT,
+	0x34,			// result phase
+	0x42,0,0x31,0x41,	// s0
+	0x42,1,0x31,0x41,	// s1
+	0x42,2,0x31,0x41,	// s2
+	0x42,20,0x31,0x41,	// buf[0]: tr
+	0x42,21,0x31,0x41,	// buf[1]: hd
+	0x42,22,0x31,0x41,	// buf[2]: sc
+	0x42,23,0x31,0x41,	// buf[3]: sz
+	0xe1,FDC_IDLE,
 	0xf1
 };
 
@@ -615,6 +650,7 @@ uint8_t op765_0C[] = {
 	0x31,0x40,0x57,	// GP
 	0x31,0x40,0x58,	// SL
 	0xe1,FDC_EXEC,
+	0xe1,FDC_IDLE,
 	0xf1
 };
 
@@ -628,6 +664,7 @@ uint8_t op765_0D[] = {
 	0x31,0x40,0x57,	// GP
 	0x31,0x40,0x59,	// FB
 	0xe1,FDC_EXEC,
+	0xe1,FDC_IDLE,
 	0xf1
 };
 
@@ -650,6 +687,7 @@ uint8_t op765_0F[] = {
 	0xa1,		// step out
 	0xf0,-6,	// @f0
 	0x60,0x00,FDC_SE,	// SE,IC=0 (success)
+	0xe1,FDC_IDLE,
 	0xf1
 };
 
@@ -666,6 +704,7 @@ uint8_t op765_11[] = {
 	0x31,0x40,0x57,	// GP
 	0x31,0x40,0x58,	// SL
 	0xe1,FDC_EXEC,
+	0xe1,FDC_IDLE,
 	0xf1
 };
 
@@ -682,6 +721,7 @@ uint8_t op765_19[] = {
 	0x31,0x40,0x57,	// GP
 	0x31,0x40,0x58,	// SL
 	0xe1,FDC_EXEC,
+	0xe1,FDC_IDLE,
 	0xf1
 };
 
@@ -698,6 +738,7 @@ uint8_t op765_1D[] = {
 	0x31,0x40,0x57,	// GP
 	0x31,0x40,0x58,	// SL
 	0xe1,FDC_EXEC,
+	0xe1,FDC_IDLE,
 	0xf1
 };
 
@@ -901,6 +942,7 @@ void v10(FDC* p) {p->count += p->turbo ? TRBDELAY : delays[p->com & 3];}
 void v11(FDC* p) {p1 = *(p->wptr++); p->count += p->turbo ? TRBDELAY : delays[p1];}
 
 void v20(FDC* p) {p->mode = *(p->wptr++);}
+void v21(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (p->mode == p1) p->wptr += (char)dlt;}
 
 void v30(FDC* p) {p->drq = 0;}
 void v31(FDC* p) {p->drq = 1;}
@@ -925,10 +967,22 @@ void v42(FDC *p) {
 			break;
 		case 10: p->trk = p->fptr->trk; break;
 		case 11: p->data = p->fptr->trk; break;
+		case 20: p->data = p->buf[0]; break;
+		case 21: p->data = p->buf[1]; break;
+		case 22: p->data = p->buf[2]; break;
+		case 23: p->data = p->buf[3]; break;
+		default:
+			printf("FDC 42,%.2X is unknown\n",p1);
+			break;
 	}
 }
 
-void v50(FDC* p) {p->fptr = p->flop[p->data & 3]; p->side = (p->data & 4) ? 1 : 0;}	// HU: b0,1:drive; b2: head
+void v50(FDC* p) {
+	p->fptr = p->flop[p->data & 3];
+	p->side = (p->data & 4) ? 1 : 0;
+	p->sr0 &= 0xf8;
+	p->sr0 |= (p->data & 7);
+}	// HU: b0,1:drive; b2: head
 void v51(FDC* p) {p->trk = p->data;}							// TP: physical track
 void v52(FDC* p) {p->trk = p->data;}							// TR: track id
 void v53(FDC* p) {p->side = p->data;}							// HD: head id
@@ -940,9 +994,9 @@ void v58(FDC* p) {p->sl = p->data;}							// SL: sector len if SZ = 0
 void v59(FDC* p) {p->fb = p->data;}							// FB: fill byte
 void v5A(FDC* p) {p->nm = p->data;}							// NM: number of sectors
 
-void v60(FDC* p) {p1 = *(p->wptr++); p2 = *(p->wptr++); p->sr0 &= p1; p->sr0 |= p2;}
-void v61(FDC* p) {p1 = *(p->wptr++); p2 = *(p->wptr++); p->sr1 &= p1; p->sr1 |= p2;}
-void v62(FDC* p) {p1 = *(p->wptr++); p2 = *(p->wptr++); p->sr2 &= p1; p->sr2 |= p2;}
+void v60(FDC* p) {p1 = *(p->wptr++); p2 = *(p->wptr++); p->sr0 &= p1; p->sr0 |= p2; printf("sr0 & %.2X | %.2X\n",p1,p2);}
+void v61(FDC* p) {p1 = *(p->wptr++); p2 = *(p->wptr++); p->sr1 &= p1; p->sr1 |= p2; printf("sr1 & %.2X | %.2X\n",p1,p2);}
+void v62(FDC* p) {p1 = *(p->wptr++); p2 = *(p->wptr++); p->sr2 &= p1; p->sr2 |= p2; printf("sr2 & %.2X | %.2X\n",p1,p2);}
 
 void v80(FDC* p) {p->trk = *(p->wptr++);}
 void v81(FDC* p) {p->trk--;}
@@ -1028,7 +1082,14 @@ void vE0(FDC* p) {
 		p->fptr->flag |= (FLP_MOTOR | FLP_HEAD);
 	}
 }
-void vE1(FDC* p) {p->status = *(p->wptr++);}
+void vE1(FDC* p) {
+	p->status = *(p->wptr++);
+	switch(p->status) {
+		case FDC_EXEC: p->mode = 2; break;
+		case FDC_OUTPUT: p->mode = 1; break;
+		case FDC_IDLE: if (p->mode < 3) p->mode = 0; break;
+	}
+}
 void vE2(FDC* p) {dlt = *(p->wptr++); if (p->side == 0) p->wptr += (char)dlt;}
 
 void vF0(FDC* p) {dlt = *(p->wptr++); p->wptr += (int8_t)dlt;}
@@ -1047,7 +1108,7 @@ typedef void(*VGOp)(FDC*);
 VGOp vgfunc[256] = {
 	NULL,&v01,&v02,&v03,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 	&v10,&v11,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
-	&v20,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+	&v20,&v21,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 	&v30,&v31,&v32,&v33,&v34,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 	&v40,&v41,&v42,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 	&v50,&v51,&v52,&v53,&v54,&v55,&v56,&v57,&v58,&v59,&v5A,NULL,NULL,NULL,NULL,NULL,
@@ -1158,7 +1219,11 @@ void bdiSync(BDI* bdi,int tk) {
 			bdi->fdc->count -= tz;
 			while ((bdi->fdc->wptr != NULL) && (bdi->fdc->count < 0)) {
 				bdi->fdc->cop = *(bdi->fdc->wptr++);
-				vgfunc[bdi->fdc->cop](bdi->fdc);
+				if (vgfunc[bdi->fdc->cop] == NULL) {
+					printf("unknown cop %.2X\n",bdi->fdc->cop);
+				} else {
+					vgfunc[bdi->fdc->cop](bdi->fdc);
+				}
 			}
 		}
 		tk -= tz;

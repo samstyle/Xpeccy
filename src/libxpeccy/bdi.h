@@ -34,12 +34,15 @@ extern "C" {
 // 765 flags
 #define	FDC_BSY		(1<<4)	// srm: fdc is busy (irq = 0)
 #define	FDC_EXM		(1<<5)	// srm: fdc in execution mode
-#define	FDC_DIO		(1<<6)	// srm: i/o direction: 0:cpu->fdc; 1:fdc->cpu
+#define	FDC_DIO		(1<<6)	// srm: i/o direction fdc->cpu: 0:cpu->fdc; 1:fdc->cpu
 #define	FDC_RQM		(1<<7)	// srm: data request (drq = 1)
 
 #define	FDC_NR		(1<<3)	// s0: not ready (drive not ready or non-existing head selected)
 #define	FDC_EC		(1<<4)	// s0: recalibrate fails
 #define	FDC_SE		(1<<5)	// s0: seek end
+
+#define	FDC_MA		1	// s1: missing address
+#define	FDC_ND		(1<<2)	// s1: no data
 
 #define	FDC_HD		(1<<2)	// s3: head
 #define	FDC_DS		(1<<3)	// s3: two side (0=yes)
