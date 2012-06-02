@@ -43,6 +43,7 @@ int loadDsk(Floppy* flp, const char *name) {
 	DiskInfBlock dib;
 	file.read((char*)&dib,sizeof(DiskInfBlock));
 	if (strncmp(dib.signature,"EXTENDED CPC DSK File\r\nDisk-Info\r\n",34) != 0) return ERR_DSK_SIGN;
+	flpClearDisk(flp);
 	TrackInfBlock tib;
 	SectorInfBlock* sib;
 	int tr = 0;

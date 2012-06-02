@@ -81,10 +81,12 @@ void flpStep(Floppy*,int);
 int flpGet(Floppy*,int);
 void flpSet(Floppy*,int,int);
 
+void flpClearTrack(Floppy*,int);
+void flpClearDisk(Floppy*);
+
 void flpFormat(Floppy*);
 void flpFormTrack(Floppy*,int,Sector*,int);
 void flpFormTRDTrack(Floppy*,int,uint8_t*);
-void flpClearTrack(Floppy*,int);
 void flpFillFields(Floppy*,int,int);
 
 int flpGetSectorData(Floppy*,uint8_t,uint8_t,uint8_t*,int);

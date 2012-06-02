@@ -71,7 +71,7 @@ typedef struct {
 	uint8_t sr0,sr1,sr2;		// status registers for uPD765
 	uint8_t comBuf[7];		// command parameters
 	unsigned char ioDir;		// i/o direction = FDC_DIO bit
-	unsigned char sz,ls,gp,sl,fb,nm;	// parameters for uPD765 commands
+	unsigned char hd,sz,ls,gp,sl,fb,nm;	// parameters for uPD765 commands
 
 	int count;
 	int t;

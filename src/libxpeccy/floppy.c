@@ -74,6 +74,10 @@ bool flpGetFlag(Floppy* flp,int mask) {
 }
 */
 
+void flpClearDisk(Floppy* flp) {
+	for (int i = 0; i < 160; i++) flpClearTrack(flp,i);
+}
+
 void flpClearTrack(Floppy* flp,int tr) {
 	for (int i = 0; i < TRACKLEN; i++) {
 		flp->data[tr].byte[i] = 0x00;
