@@ -179,7 +179,6 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 			comp->rzxPos++;
 			return res;
 		} else {
-	//		printf("RZX: too many IN for frame %lu\n",(long unsigned int)rzxFrame);
 			return 0xff;
 		}
 	}

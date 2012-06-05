@@ -483,6 +483,9 @@ IDE* ideCreate(int tp) {
 	ide->master = ataCreate(IDE_NONE);
 	ide->slave = ataCreate(IDE_NONE);
 	ide->curDev = ide->master;
+	ide->smucFdd = 0xc0;
+	ide->smucSys = 0x00;
+	ide->cmosAdr = 0;
 	return ide;
 }
 
@@ -572,7 +575,13 @@ int ideIn(IDE* ide,uint16_t port,uint8_t* val,int bdiActive) {
 					*val = 0x40;	// 2
 					break;
 				case 0xffba:		// system
-					*val = (ide->curDev->reg.state & HDF_BSY) ? 0x00 : 0x80;	// TODO: b7: IRQ
+					*val = 0x00;	// TODO: b7: INTRQ from HDD/CF, b6:SDA?
+					break;
+				case 0x7fba:		// virtual fdd
+					*val = ide->smucFdd;
+					break;
+				case 0xdfba:		// cmos
+					*val = (ide->smucSys & 0x80) ? 0xff : ide->cmosMem[ide->cmosAdr & 0x7f];
 					break;
 			}
 			break;
@@ -610,10 +619,21 @@ int ideOut(IDE* ide,uint16_t port,uint8_t val,int bdiActive) {
 			res = 1;					// catched smuc port
 			ishdd = ((port & 0xf8ff) == 0xf8be) ? 1 : 0;		// ide port (hdd itself)
 			switch (port) {
-				case 0xffba:
+				case 0xffba:			// system
 					ide->smucSys = val;
 					break;
+				case 0x7fba:			// virtual fdd
+					ide->smucFdd = val;
+					break;
+				case 0xdfba:			// cmos
+					if (ide->smucSys & 0x80) {
+						if ((ide->smucSys & 0x20) == 0) ide->cmosMem[ide->cmosAdr & 0x7f] = val;	// check cmos write protect
+					} else {
+						ide->cmosAdr = val;
+					}
+					break;
 			}
+			break;
 	}
 	if (ishdd) {
 		if (ishi) {

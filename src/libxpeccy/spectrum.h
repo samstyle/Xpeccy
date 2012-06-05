@@ -6,8 +6,7 @@ extern "C" {
 #endif
 
 #include <stdint.h>
-//#include <string>
-//#include <vector>
+#include <assert.h>	// for debug
 
 #include <z80ex.h>
 #include "memory.h"

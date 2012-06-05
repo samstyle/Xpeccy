@@ -111,6 +111,9 @@ typedef struct {
 	ATADev* curDev;
 	uint16_t bus;
 	uint8_t smucSys;
+	uint8_t smucFdd;
+	uint8_t cmosAdr;
+	uint8_t cmosMem[256];
 } IDE;
 
 IDE* ideCreate(int);
