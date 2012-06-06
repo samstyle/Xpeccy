@@ -12,7 +12,7 @@ extern "C" {
 
 // bdi flags
 #define	BDI_ACTIVE	(1<<1)
-#define BDI_TURBO	(1<<2)
+//#define BDI_TURBO	(1<<2)
 // fdc status
 #define FDC_IDLE	0
 #define	FDC_READ	1

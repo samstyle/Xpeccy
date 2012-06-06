@@ -181,3 +181,7 @@ Fix	Fix forced fullscreen in some cases
 Wrk	Fix needless CPU eating with led showing
 Wrk	Separating RZX-player and Tape-player from main window (see xgui dir)
 Wrk	Fixing some bugs, adding new bugs :)
+
+build 20120606
+Fix	Crash on playing empty tape
+Wrk	Small rewrite WD93 read/write/seek. It should be faster now.

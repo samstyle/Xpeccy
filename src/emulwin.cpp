@@ -725,28 +725,30 @@ void MainWin::emulFrame() {
 			pc = z80ex_get_reg(zx->cpu,regPC);
 			if ((pc == 0x56b) && (zx->mem->crom == 1)) {
 				blk = zx->tape->block;
-				if (optGetFlag(OF_TAPEFAST) && (zx->tape->blkData[blk].flag & TBF_BYTES)) {
-					de = z80ex_get_reg(zx->cpu,regDE);
-					ix = z80ex_get_reg(zx->cpu,regIX);
-					TapeBlockInfo inf = tapGetBlockInfo(zx->tape,blk);
-					blkData = (uint8_t*)realloc(blkData,inf.size + 2);
-					tapGetBlockData(zx->tape,blk,blkData);
-					if (inf.size == de) {
-						for (int i = 0; i < de; i++) {
-							memWr(zx->mem,ix,blkData[i + 1]);
-							ix++;
+				if (blk < zx->tape->blkCount) {
+					if (optGetFlag(OF_TAPEFAST) && (zx->tape->blkData[blk].flag & TBF_BYTES)) {
+						de = z80ex_get_reg(zx->cpu,regDE);
+						ix = z80ex_get_reg(zx->cpu,regIX);
+						TapeBlockInfo inf = tapGetBlockInfo(zx->tape,blk);
+						blkData = (uint8_t*)realloc(blkData,inf.size + 2);
+						tapGetBlockData(zx->tape,blk,blkData);
+						if (inf.size == de) {
+							for (int i = 0; i < de; i++) {
+								memWr(zx->mem,ix,blkData[i + 1]);
+								ix++;
+							}
+							z80ex_set_reg(zx->cpu,regIX,ix);
+							z80ex_set_reg(zx->cpu,regDE,0);
+							z80ex_set_reg(zx->cpu,regHL,0);
+							tapNextBlock(zx->tape);
+						} else {
+							z80ex_set_reg(zx->cpu,regHL,0xff00);
 						}
-						z80ex_set_reg(zx->cpu,regIX,ix);
-						z80ex_set_reg(zx->cpu,regDE,0);
-						z80ex_set_reg(zx->cpu,regHL,0);
-						tapNextBlock(zx->tape);
+						z80ex_set_reg(zx->cpu,regPC,0x5df);	// to exit
 					} else {
-						z80ex_set_reg(zx->cpu,regHL,0xff00);
+						if (optGetFlag(OF_TAPEAUTO))
+							mainWin->tapStateChanged(TW_STATE,TWS_PLAY);
 					}
-					z80ex_set_reg(zx->cpu,regPC,0x5df);	// to exit
-				} else {
-					if (optGetFlag(OF_TAPEAUTO))
-						mainWin->tapStateChanged(TW_STATE,TWS_PLAY);
 				}
 			}
 			if ((pc == 0x5e2) && (zx->mem->crom == 1) && (optGetFlag(OF_TAPEAUTO)))

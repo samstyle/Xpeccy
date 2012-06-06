@@ -244,12 +244,12 @@ uint8_t vgwork[32][256] = {
 		0xb0,6,			// ic = 6
 		0x02,13,		// CALL WORK 13 (wait for address field)
 		0xd0,0xd1,0xfe,		// init CRC, CRC << 0xfe (address marker)
-		0x91,0xd2,0x88,0x31,0xa9,	// read byte, add to crc, Rsec = byte, drq=1, next(slow)
-		0x91,0xd2,0x31,0xa9,	// read byte, add to crc, drq=1, next(slow)
-		0x91,0xd2,0x31,0xa9,
-		0x91,0xd2,0x31,0xa9,
-		0x91,0xd7,0x31,0xa9,	// read byte, read fcrc.low, drq=1, next(slow)
-		0x91,0xd8,0x31,0xa9,	// read byte, read fcrc.hi, drq=1, next(slow)
+		0x91,0xd2,0x88,0x31,0x41,0xa8,	// read byte, add to crc, Rsec = byte, drq=1, next(slow)
+		0x91,0xd2,0x31,0x41,0xa8,	// read byte, add to crc, drq=1, next(slow)
+		0x91,0xd2,0x31,0x41,0xa8,
+		0x91,0xd2,0x31,0x41,0xa8,
+		0x91,0xd7,0x31,0x41,0xa8,	// read byte, read fcrc.low, drq=1, next(slow)
+		0x91,0xd8,0x31,0x41,	// read byte, read fcrc.hi, drq=1, next(slow)
 		0xc0,0xf7,0x00,		// reset CRC ERROR
 		0xd5,3,			// if crc == fcrc, jr +3 (end)
 		0xc0,0xf7,0x08,		// set CRC ERROR (08)
@@ -264,11 +264,8 @@ uint8_t vgwork[32][256] = {
 		0xe0,1,
 		0x30,			// drq = 0
 		0xfc,3,0xa8,0xf0,-5,	// wait for STRB
-		0x32,5,			// if (drq=0) jr +3
-		0xc0,0xfb,0x04,0xf0,2,	// DATA LOST
-		0x91,0x31,		// read byte in Rdat, drq=1
-		0xa9,			// next (fast)
-		0xfc,2,0xf0,-14,	// ifn STRB jr -14 (@ 32)
+		0x91,0x31,0x41,0xa8,	// Rdat = flpRd, drq=1, wait for cpu rd, next
+		0xfc,2,0xf0,-8,		// ifn STRB jr -14 (@ 91)
 		0xff			// END
 	},
 // 9: write track
@@ -282,18 +279,14 @@ uint8_t vgwork[32][256] = {
 		0xf0,4,			// jr +4 (@ 31)
 		0xc0,0xbf,0x40,0xff,	// WRITE PROTECT, END
 		0x31,			// drq = 1
-//		0xa9,0xa9,0xa9,		// wait 3 bytes (slow)
-//		0x32,4,			// if (drq == 0) jr +4
-//		0xc0,0xfb,0x04,0xff,	// DATA LOST, END
-		0xfc,3,0xa9,0xf0,-5,	// wait for STRB (slow)
-		0x32,5,			// if (drq == 0) jr +5
-		0xc0,0xfb,0x04,		// DATA LOST
-		0xf0,2,			// jr +2
-		0x93,			// write Rdat
+		0xfc,4,			// if strb, jr @40 (skip 31, cuz drq is already 1)
+		0xa8,			// next
+		0xf0,-5,		// jr @fc
 		0x31,			// drq = 1
-		0xa9,			// next (slow)
-		0xfc,2,			// if STRB jr +2 (@ C1)
-		0xf0,-14,		// jr -14 (@ 32)
+		0x40,			// wait cpu wr
+		0x93,			// write Rdat
+		0xa8,			// next
+		0xfc,2,0xf0,-8,		// if !strb jr @31
 		0xc1,			// fill fields (change F5,F6,F7)
 		0xff
 	},
@@ -337,18 +330,9 @@ uint8_t vgwork[32][256] = {
 	},
 // 13: [CALL] wait for address field, in: ic=X (X IDX during execution = END with SEEK ERROR, or RETURN if succes)
 	{
-		0xfb,0,5,		// wait for field 0 or IDX
-		0xa8,
-		0xfc,2,
-		0xf0,-8,
-		0xfb,1,13,		// if fptr.field = 1 (header) jr +13 (@ 03)
-		0xa8,			// next (fast)
-		0xfc,2,			// if STRB jr +2
-		0xf0,-8,		// jr -8 (@ FB)
-		0xb1,			// ic--
-		0xb4,0,-6,		// if (ic!=0) jr -6 (@ jr -8 @ FB)
-		0xc0,0xef,0x10,0xff,	// SEEK ERROR, END
-		0x03			// RET
+		0xab,4,			// wait for field 1 during IC spins, jr +4 on success
+		0xc0,0xef,0x10,0xff,	// SEEK ERROR, end
+		0x03			// return
 	},
 // 14: sector read [main]
 	{
@@ -371,7 +355,7 @@ uint8_t vgwork[32][256] = {
 		0xb0,22,
 		0xa8,0xb1,0xb4,0,-5,	// skip 22 bytes (space)
 		0xb0,30,
-		0x91,0xa9,		// read byte in Rdat, next (slow)
+		0x91,0xa8,		// read byte in Rdat, next (slow)
 		0x8c,0xf8,11,		// if Rdat = F8 jr @(set b5,flag)
 		0x8c,0xfb,13,		// if Rdat = FB jr @(res b5,flag)
 		0xb1,0xb4,0,-12,	// F8 | FB must be in next 30(?) bytes
@@ -379,20 +363,16 @@ uint8_t vgwork[32][256] = {
 		0xc0,0xbf,0x20,		// F8: set b5,flag
 		0xf0,3,			// jr +3
 		0xc0,0xbf,0x00,		// FB: res b5,flag
-//	0,1,
 		0xd0,0xd2,		// init crc, CRC << Rdat (F8 or FB)
 		0xb5,			// ic = sector len
 		0x30,			// drq=0
-		0x32,5,			// if (drq=0) jr +5
-		0xc0,0xfb,0x04,		// set DATA LOST
-		0xf0,3,
-		0x91,0xd2,0x31,		// read byte in Rdat, CRC << Rdat, drq=1
-		0xa9,			// next (fast)
-		0xb1,0xb4,0,-15,	// ic--; if ic!=0 jr -(@ 32)
-		0xd7,0xa8,0xd8,0xa8,	// read fptr.crc
-		0xd5,4,
+		0x91,0xd2,0x31,0x41,	// read byte in Rdat, CRC << Rdat, drq=1, wait for cpu rd
+		0xa8,			// next
+		0xb1,			// ic--
+		0xb4,0,-9,		// if ic!=0 jr -(@ 32)
+		0xd7,0xa8,0xd8,0xa8,	// read fcrc
+		0xd5,4,			// if fcrc == crc jr +4
 		0xc0,0xf7,0x08,0xff,	// set CRC ERROR, END
-//	0,0,
 		0xfd,16,0xff,		// ifn (bit 4,com) END [multisector]
 		0x8d,			// Rsec++
 		0x01,14			// back to start (WORK 14)
@@ -424,26 +404,22 @@ uint8_t vgwork[32][256] = {
 		0x92,			// read in Rbus
 		0x8e,0xf8,12,		// if Rbus = F8
 		0x8e,0xfB,9,		// 	or = FB jr +9 (@ 8f)
-		0xa9,			// next (slow)
+		0xa8,			// next (slow)
 		0xb1,			// ic--
 		0xb4,0,-12,		// if ic!=0 jr -11 (@ 92)
 		0xc0,0xef,0x10,0xff,	// ARRAY NOT FOUND, END
 		0x8f,0xf8,		// Rbus = F8
 		0xfe,1,2,0x8f,0xfb,	// ifn (b0,com) Rbus = FB
 		0xd0,0xd3,		// init crc, add Rbus (F8 | FB) to crc
-		0x94,			// write Rbus (F8 or FB) (add to crc automaticly)
-		0xa9,			// next (slow)
+		0x94,			// write Rbus (F8 or FB)
+		0xa8,			// next (fast)
 		0xb5,			// ic = sec.len
-		0x32,5,			// if (drq = 0) jr +5
-		0xc0,0xfb,0x04,		// DATA LOST
-		0xf0,3,			// jr +3
-		0x93,0xd2,0x31,		// write Rdat, add Rdat to CRC, drq = 1
-		0xa9,			// next (0)
+		0xf0,2,			// skip waiting 1st byte, cuz it already in Rdat
+		0x31,0x40,		// drq=1, wait data from cpu (yes, it's lame, but...)
+		0x93,0xd2,0xa8,		// write Rdat, add Rdat to CRC, flpNext
 		0xb1,			// ic--
-		0xb4,0,-15,		// if (ic != 0) jr -(@ 32)
-
+		0xb4,0,-9,		// if (ic != 0) jr @31
 		0xd9,0xa8,0xda,		// write (crc.hi, crc.low) - crc
-
 		0xfd,16,0xff,		// ifn (bit 4,com) END [multisector]
 		0x8d,			// Rsec++
 		0x01,15			// back to start (WORK 15)
@@ -973,8 +949,8 @@ void v32(FDC* p) {dlt = *(p->wptr++); if (!p->drq) p->wptr += (int8_t)dlt;}
 void v33(FDC* p) {p->ioDir = 0;}
 void v34(FDC* p) {p->ioDir = 1;}
 
-void v40(FDC* p) {if (p->drq) {p->wptr--;p->count = 0;} else {printf("In : %.2X\n",p->data);}}
-void v41(FDC* p) {if (p->drq) {p->wptr--;p->count = 0;} else {printf("Out: %.2X\n",p->data);}}
+void v40(FDC* p) {if (p->drq) {p->wptr--;p->count = 0;}}
+void v41(FDC* p) {if (p->drq) {p->wptr--;p->count = 0;}}
 void v42(FDC *p) {
 	p1 = *(p->wptr++);
 	switch (p1) {
@@ -1052,26 +1028,33 @@ void vA1(FDC* p) {p->sdir = 1; flpStep(p->fptr,1);}
 void vA2(FDC* p) {flpStep(p->fptr,p->sdir);}
 
 void vA8(FDC* p) {
+	p->t += BYTEDELAY;
+	p->strb = 0;
+	if (flpNext(p->fptr,p->side)) {p->t = 0; p->strb = 1;}
 	if (p->turbo) {
 		p->tf = BYTEDELAY;
 		p->count = 0;
-		if (flpNext(p->fptr,p->side)) p->t = 0;
 	} else {
 		p->count += p->tf;
 	}
 }
 void vA9(FDC* p) {
+	p->t += BYTEDELAY;
+	p->strb = 0;
+	if (flpNext(p->fptr,p->side)) {p->t = 0; p->strb = 1;}
 	p->count += p->tf;
 }
 void vAA(FDC* p) {p->side = !p->side;}
 void vAB(FDC* p) {
 	dlt = *(p->wptr++);
 	while (p->fptr->field != 0) {
-		if (flpNext(p->fptr,p->side)) p->ic--;
+		if (flpNext(p->fptr,p->side)) {p->ic--; p->t = 0;}
+//		if (!p->turbo) p->count += BYTEDELAY;		// hmmm... it's too slow
 		if (p->ic == 0) return;
 	}
 	while (p->fptr->field != 1) {
-		if (flpNext(p->fptr,p->side)) p->ic--;
+		if (flpNext(p->fptr,p->side)) {p->ic--; p->t = 0;}
+//		if (!p->turbo) p->count += BYTEDELAY;
 		if (p->ic == 0) return;
 	}
 	p->wptr += (char)dlt;	// success
@@ -1259,12 +1242,11 @@ void bdiSync(BDI* bdi,int tk) {
 		} else {
 			tz = bdi->fdc->tf;
 			bdi->fdc->tf = BYTEDELAY;
-			if (flpNext(bdi->fdc->fptr,bdi->fdc->side)) bdi->fdc->t = 0;
 		}
 		bdi->fdc->t += tz;
 		bdi->fdc->idxold = bdi->fdc->idx;
-		bdi->fdc->idx = (bdi->fdc->t < IDXDELAY);
-		bdi->fdc->strb = (!bdi->fdc->idxold) && bdi->fdc->idx;
+		bdi->fdc->idx = (bdi->fdc->t < IDXDELAY) ? 1 : 0;
+		bdi->fdc->strb = (!bdi->fdc->idxold && bdi->fdc->idx) ? 1 : 0;
 		if (bdi->fdc->wptr != NULL) {
 			bdi->fdc->count -= tz;
 			while ((bdi->fdc->wptr != NULL) && (bdi->fdc->count < 0)) {

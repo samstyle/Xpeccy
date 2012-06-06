@@ -485,7 +485,7 @@ void saveConfig() {
 	optSet("SOUND","gs.reset",(zx->gs->flag & GS_RESET) != 0);
 	optSet("SOUND","gs.stereo",zx->gs->stereo);
 	optSet("DISK","type",zx->bdi->fdc->type);
-	optSet("DISK","fast",(zx->bdi->flag & BDI_TURBO) ? "yes" : "no");
+	optSet("DISK","fast",std::string((zx->bdi->fdc->turbo) ? "yes" : "no"));
 	optSet("DISK","A",getDiskString(zx->bdi->fdc->flop[0]));
 	optSet("DISK","B",getDiskString(zx->bdi->fdc->flop[1]));
 	optSet("DISK","C",getDiskString(zx->bdi->fdc->flop[2]));
@@ -954,10 +954,7 @@ void loadConfig(bool dev) {
 	zx->bdi->flag = 0;
 	zx->bdi->fdc->turbo = 0;
 //	zx->bdi->type = atoi(optGetString("DISK","type").c_str());
-	if (optGetBool("DISK","fast")) {
-		zx->bdi->flag |= BDI_TURBO;
-		zx->bdi->fdc->turbo = 1;
-	}
+	zx->bdi->fdc->turbo = optGetBool("DISK","fast") ? 1 : 0;
 	strcpy(zx->opt.hwName,optGetString("MACHINE","current").c_str());
 	strcpy(zx->opt.rsName,optGetString("ROMSET","current").c_str());
 	strcpy(zx->opt.GSRom,optGetString("ROMSET","gs").c_str());

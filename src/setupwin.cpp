@@ -317,7 +317,7 @@ void SetupWin::start() {
 #endif
 // dos
 	setupUi.diskTypeBox->setCurrentIndex(setupUi.diskTypeBox->findData(zx->bdi->fdc->type));
-	setupUi.bdtbox->setChecked(zx->bdi->flag & BDI_TURBO);
+	setupUi.bdtbox->setChecked(zx->bdi->fdc->turbo != 0);
 	Floppy* flp = zx->bdi->fdc->flop[0];
 	setupUi.apathle->setText(QDialog::trUtf8(flp->path));
 		setupUi.a80box->setChecked(flp->flag & FLP_TRK80);
@@ -446,9 +446,8 @@ void SetupWin::apply() {
 	optSet(OPT_KEYNAME,kmname);
 	loadKeys();
 // bdi
-	zx->bdi->flag &= ~BDI_TURBO;
 	zx->bdi->fdc->type = setupUi.diskTypeBox->itemData(setupUi.diskTypeBox->currentIndex()).toInt();
-	if (setupUi.bdtbox->isChecked()) zx->bdi->flag |= BDI_TURBO;
+	zx->bdi->fdc->turbo = setupUi.bdtbox->isChecked() ? 1 : 0;
 
 	Floppy* flp = zx->bdi->fdc->flop[0];
 	flp->flag &= ~(FLP_TRK80 | FLP_DS | FLP_PROTECT);
