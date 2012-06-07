@@ -37,9 +37,6 @@ typedef struct {
 int loadDsk(Floppy* flp, const char *name) {
 	std::ifstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
-	printf("size of DiskInfBlock = %i\n",sizeof(DiskInfBlock));
-	printf("size of TrackInfBlock = %i\n",sizeof(TrackInfBlock));
-	printf("size of SectorInfBlock = %i\n",sizeof(SectorInfBlock));
 	DiskInfBlock dib;
 	file.read((char*)&dib,sizeof(DiskInfBlock));
 	if (strncmp(dib.signature,"EXTENDED CPC DSK File\r\nDisk-Info\r\n",34) != 0) return ERR_DSK_SIGN;

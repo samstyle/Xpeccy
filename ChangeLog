@@ -185,3 +185,6 @@ Wrk	Fixing some bugs, adding new bugs :)
 build 20120606
 Fix	Crash on playing empty tape
 Wrk	Small rewrite WD93 read/write/seek. It should be faster now.
+
+build 20120607
+New	Basic work of uPD765 - recalibrate, seek, read id, read sector

@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "bdi.h"
 
@@ -500,6 +501,8 @@ uint8_t op765_02[] = {
 	0x31,0x40,0x57,	// GP
 	0x31,0x40,0x58,	// SL
 	0xe1,FDC_EXEC,
+	0xe1,FDC_OUTPUT,
+	0xe1,FDC_IDLE,
 	0xf1
 };
 
@@ -532,6 +535,17 @@ uint8_t op765_04[] = {
 uint8_t op765_05[] = {
 	0x02,17,	// hu tr hd sc sz ls gp sl
 	0xe1,FDC_EXEC,
+	0x60,0,0x40,	// error
+	0x61,0,2,	// write protect
+	0x62,0,0,
+	0xe1,FDC_OUTPUT,
+	0x42,0,0x31,0x41,	// sr0
+	0x42,1,0x31,0x41,	// sr1
+	0x42,2,0x31,0x41,	// sr2
+	0x42,11,0x31,0x41,	// flp:trk	// TODO: do it right way
+	0x42,12,0x31,0x41,	// Rsec
+	0x42,13,0x31,0x41,	// side
+	0x42,14,0x31,0x41,	// SZ
 	0xe1,FDC_IDLE,
 	0xf1
 };
@@ -549,6 +563,7 @@ uint8_t op765_06[] = {
 	0xe1,FDC_IDLE,
 	0xf1,
 	0xb0,2,			// ic = 2
+
 	0xab,11,		// seek address mark, jr @91 if success
 	0x60,0x3f,0x40,		// st0: IC = 40
 	0x61,~FDC_ND,FDC_ND,	// st1: ND (no data)
@@ -560,28 +575,32 @@ uint8_t op765_06[] = {
 	0x91,0xa8,		// Rdat = SC, next
 	0x90,0,			// buf[0] = SZ (for bytes counting)
 	0x8a,-21,		// if Rsec != Rdat jr @ab
+
 	0xac,11,		// seek data field (success - @b5)
 	0x60,0x3f,0x40,		// st0: IC = 40
 	0x61,~FDC_ND,FDC_ND,	// st1: ND (no data found)
 	0x02,16,		// s0 s1 s2 b0 b1 b2 b3
 	0xe1,FDC_IDLE,
 	0xf1,
-				// TODO: if field=3 and com&0x20==0 then sr2,6=1, read sector, stop; if (com&0x20==1), go next sector
+
+		// TODO: if field=3 and com&0x20==0 then sr2,6=1, read sector, stop; if (com&0x20==1), go next sector
 	0xb5,		// ic = sector size in bytes (from buf[0])
 	0x34,		// fdc->cpu
 	0x91,0x31,0x41,	// Rdat = flpRd,drq=1,wait for byte reading
-	0xa8,		// next (fast, cuz' we waiting until cpu reads byte)
+	0xa8,		// next
 	0xb1,		// ic--;
 	0xb4,0,-8,	// if (ic != 0) jr @91
 	0x8d,		// Rsec++
-	0x5d,-49,	// if (Rsec < LS) jr @b0,2
-	0xb0,2,
-	0xab,0,
-	0x90,0,0xa8,
-	0x90,0,0xa8,
-	0x90,0,0xa8,
-	0x90,0,0xa8,
+//	0x5d,-49,	// if (Rsec < LS) jr @b0,2
 	0xe1,FDC_OUTPUT,
+	0x34,
+	0x42,0,0x31,0x41,	// s0
+	0x42,1,0x31,0x41,	// s1
+	0x42,2,0x31,0x41,	// s2
+	0x42,11,0x31,0x41,	// flp:trk	// TODO: return right
+	0x42,12,0x31,0x41,	// Rsec
+	0x42,13,0x31,0x41,	// side
+	0x42,14,0x31,0x41,	// SZ
 	0xe1,FDC_IDLE,
 	0xf1
 };
@@ -637,6 +656,17 @@ uint8_t op765_08[] = {
 uint8_t op765_09[] = {
 	0x02,17,	// hu tr hd sc sz ls gp sl
 	0xe1,FDC_EXEC,
+	0x60,0,0x40,	// error
+	0x61,0,2,	// write protect
+	0x62,0,0,
+	0xe1,FDC_OUTPUT,
+	0x42,0,0x31,0x41,	// sr0
+	0x42,1,0x31,0x41,	// sr1
+	0x42,2,0x31,0x41,	// sr2
+	0x42,11,0x31,0x41,	// flp:trk	// TODO: do it right way
+	0x42,12,0x31,0x41,	// Rsec
+	0x42,13,0x31,0x41,	// side
+	0x42,14,0x31,0x41,	// SZ
 	0xe1,FDC_IDLE,
 	0xf1
 };
@@ -689,6 +719,17 @@ uint8_t op765_0D[] = {
 	0x31,0x40,0x57,	// GP
 	0x31,0x40,0x59,	// FB
 	0xe1,FDC_EXEC,
+	0x60,0,0x40,	// error
+	0x61,0,2,	// write protect
+	0x62,0,0,
+	0xe1,FDC_OUTPUT,
+	0x42,0,0x31,0x41,	// sr0
+	0x42,1,0x31,0x41,	// sr1
+	0x42,2,0x31,0x41,	// sr2
+	0x42,11,0x31,0x41,	// flp:trk	// TODO: do it right way
+	0x42,12,0x31,0x41,	// Rsec
+	0x42,13,0x31,0x41,	// side
+	0x42,14,0x31,0x41,	// SZ
 	0xe1,FDC_IDLE,
 	0xf1
 };
@@ -796,7 +837,7 @@ void fdcExec(FDC* fdc, uint8_t val) {
 			}
 			break;
 		case FDC_765:
-			printf("DEBUG: uPD765 exec %.2X\n",val);
+//			printf("DEBUG: uPD765 exec %.2X\n",val);
 			fdc->wptr = fdc765workTab[val & 0x1f];
 			fdc->idle = 0;
 			fdc->irq = 0;
@@ -805,7 +846,6 @@ void fdcExec(FDC* fdc, uint8_t val) {
 			fdc->com = val;
 			break;
 	}
-
 }
 
 void fdcSetMr(FDC* fdc,int z) {
@@ -966,6 +1006,9 @@ void v42(FDC *p) {
 			break;
 		case 10: p->trk = p->fptr->trk; break;
 		case 11: p->data = p->fptr->trk; break;
+		case 12: p->data = p->sec; break;
+		case 13: p->data = p->side; break;
+		case 14: p->data = p->sz; break;
 		case 20: p->data = p->buf[0]; break;
 		case 21: p->data = p->buf[1]; break;
 		case 22: p->data = p->buf[2]; break;
@@ -978,7 +1021,7 @@ void v42(FDC *p) {
 
 void v50(FDC* p) {
 	p->fptr = p->flop[p->data & 3];
-	p->side = (p->data & 4) ? 1 : 0;
+	p->side = (p->data & 4) ? 0 : 1;
 	p->sr0 &= 0xf8;
 	p->sr0 |= (p->data & 7);
 }	// HU: b0,1:drive; b2: side
@@ -996,9 +1039,9 @@ void v5B(FDC* p) {dlt = *(p->wptr++); if (p->hd != p->data) p->wptr += (char)dlt
 void v5C(FDC* p) {dlt = *(p->wptr++); if (p->sz != p->data) p->wptr += (char)dlt;}	// if Rdat != SZ jr
 void v5D(FDC* p) {dlt = *(p->wptr++); if (p->sec < p->ls) p->wptr += (char)dlt;}	// if Rsec < LS jr
 
-void v60(FDC* p) {p1 = *(p->wptr++); p2 = *(p->wptr++); p->sr0 &= p1; p->sr0 |= p2; printf("sr0 & %.2X | %.2X\n",p1,p2);}
-void v61(FDC* p) {p1 = *(p->wptr++); p2 = *(p->wptr++); p->sr1 &= p1; p->sr1 |= p2; printf("sr1 & %.2X | %.2X\n",p1,p2);}
-void v62(FDC* p) {p1 = *(p->wptr++); p2 = *(p->wptr++); p->sr2 &= p1; p->sr2 |= p2; printf("sr2 & %.2X | %.2X\n",p1,p2);}
+void v60(FDC* p) {p1 = *(p->wptr++); p2 = *(p->wptr++); p->sr0 &= p1; p->sr0 |= p2;}
+void v61(FDC* p) {p1 = *(p->wptr++); p2 = *(p->wptr++); p->sr1 &= p1; p->sr1 |= p2;}
+void v62(FDC* p) {p1 = *(p->wptr++); p2 = *(p->wptr++); p->sr2 &= p1; p->sr2 |= p2;}
 
 void v80(FDC* p) {p->trk = *(p->wptr++);}
 void v81(FDC* p) {p->trk--;}
@@ -1062,11 +1105,11 @@ void vAB(FDC* p) {
 void vAC(FDC* p) {
 	dlt = *(p->wptr++);
 	while (p->fptr->field != 0) {
-		if (flpNext(p->fptr,p->side)) p->ic--;
+		if (flpNext(p->fptr,p->side)) {p->ic--; p->t = 0;}
 		if (p->ic == 0) return;
 	}
 	while ((p->fptr->field != 2) && (p->fptr->field != 3)) {
-		if (flpNext(p->fptr,p->side)) p->ic--;
+		if (flpNext(p->fptr,p->side)) {p->ic--; p->t = 0;}
 		if (p->ic == 0) return;
 	}
 	p->wptr += (char)dlt;	// success
@@ -1206,7 +1249,7 @@ int bdiOut(BDI* bdi,int port,uint8_t val) {
 			bdi->fdc->fptr = bdi->fdc->flop[val & 0x03];	// selet floppy
 			fdcSetMr(bdi->fdc,(val & 0x04) ? 1 : 0);		// master reset
 			bdi->fdc->block = val & 0x08;
-			bdi->fdc->side = (val & 0x10) ? 1 : 0;
+			bdi->fdc->side = (val & 0x10) ? 1 : 0;		// side
 			bdi->fdc->mfm = val & 0x40;
 			break;
 	}
@@ -1253,6 +1296,7 @@ void bdiSync(BDI* bdi,int tk) {
 				bdi->fdc->cop = *(bdi->fdc->wptr++);
 				if (vgfunc[bdi->fdc->cop] == NULL) {
 					printf("unknown cop %.2X\n",bdi->fdc->cop);
+					assert(vgfunc[bdi->fdc->cop] != NULL);		// for debug
 				} else {
 					vgfunc[bdi->fdc->cop](bdi->fdc);
 				}

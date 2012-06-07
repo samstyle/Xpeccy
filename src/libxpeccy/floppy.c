@@ -45,8 +45,8 @@ void flpStep(Floppy* flp,int dir) {
 
 int flpNext(Floppy* flp, int bdiSide) {
 	int res = 0;
-	flp->rtrk = flp->trk << 1;
-	if (flp->flag & FLP_DS) flp->rtrk += bdiSide ? 0 : 1;		// bdiSide = zx->bdi->vg93.side
+	flp->rtrk = (flp->trk << 1);
+	if (flp->flag & FLP_DS) flp->rtrk += (bdiSide ? 0 : 1);		// /SIDE1 = 0 when upper head (1) selected
 	if (flp->flag & FLP_INSERT) {
 		flp->pos++;
 		if (flp->pos >= TRACKLEN) {
@@ -59,20 +59,6 @@ int flpNext(Floppy* flp, int bdiSide) {
 	}
 	return res;
 }
-
-/*
-void flpSetFlag(Floppy* flp,int mask,bool state) {
-	if (state) {
-		flp->flag |= mask;
-	} else {
-		flp->flag &= ~mask;
-	}
-}
-
-bool flpGetFlag(Floppy* flp,int mask) {
-	return ((flp->flag & mask) ? true : false);
-}
-*/
 
 void flpClearDisk(Floppy* flp) {
 	for (int i = 0; i < 160; i++) flpClearTrack(flp,i);
