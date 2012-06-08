@@ -69,7 +69,6 @@ FDC* fdcCreate(int tp) {
 5a	NM
 5b,d	if (HD != Rdat)
 5c,d	if (SZ != Rdat)
-5d,d	id (Rsec < LS)
 
 60,a,o	S0 = S0 & a | o
 61,a,o	S1 = S1 & a | o
@@ -117,6 +116,7 @@ B5	ic = buf[0]:128,256,512,1024
 
 C0,a,b	flag & a | b
 C1	fill fields @ curr.flp.trk
+C2	next sector (uPD765)
 
 D0	init CRC
 D1,n	add byte n to CRC
@@ -451,6 +451,33 @@ uint8_t vgwork[32][256] = {
 		0x31,0x40,0x57,	// GP
 		0x31,0x40,0x58,	// SL
 		0x03
+	},
+// 18 [CALL]: uPD765: find sector SC data
+	{
+		0xb0,2,
+		0xab,9,		// find AM (succes - @a8)
+		0x60,0x3f,0x40,
+		0x61,~FDC_ND,FDC_ND,
+		0x20,FDC_OUTPUT,
+		0x03,
+		0xa8,		// skip TR
+		0xa8,		// skip HD
+		0x91,0xa8,	// Rdat = SC
+		0x90,0,		// buf0 = SZ
+		0x8a,-19,	// if Rdat != Rsec jr back @ab
+		0xb5,		// if = sec.size(buf0)
+		0xac,8,		// find DM (succes - @03)
+		0x60,0x3f,0x40,
+		0x61,~FDC_ND,FDC_ND,
+		0x20,FDC_OUTPUT,
+		0x03
+	},
+// 19 [CALL]: uPD765: read ic bytes fdc->cpu
+	{
+		0x34,			// fdc->cpu
+		0x91,0x31,0x41,0xa8,	// Rdat = flpRd, drq=1, wait for cpu rd, next
+		0xb1,0xb4,0,-8,		// ic--; if (ic != 0) jr @91
+		0x03			// ret
 	}
 };
 
@@ -542,7 +569,7 @@ uint8_t op765_05[] = {
 	0x42,0,0x31,0x41,	// sr0
 	0x42,1,0x31,0x41,	// sr1
 	0x42,2,0x31,0x41,	// sr2
-	0x42,11,0x31,0x41,	// flp:trk	// TODO: do it right way
+	0x42,11,0x31,0x41,	// Rtrk
 	0x42,12,0x31,0x41,	// Rsec
 	0x42,13,0x31,0x41,	// side
 	0x42,14,0x31,0x41,	// SZ
@@ -557,47 +584,33 @@ uint8_t op765_06[] = {
 	0x60,0x00,0x00,		// sr0 = 0
 	0x61,0x00,0x00,		// sr1 = 0
 	0x62,0x00,0x00,		// sr2 = 0
-	0xf9,8,			// if drive is ready @b0
+	0x8f,0,			// Rbus = 0 (counter of EOT)
+	0xf9,8,			// if drive is ready @02,18
 	0x60,0x37,0x48,		// s0 |= 48 (drive not ready)
 	0x02,16,
 	0xe1,FDC_IDLE,
 	0xf1,
-	0xb0,2,			// ic = 2
 
-	0xab,11,		// seek address mark, jr @91 if success
-	0x60,0x3f,0x40,		// st0: IC = 40
-	0x61,~FDC_ND,FDC_ND,	// st1: ND (no data)
-	0x02,16,		// s0 s1 s2 b0 b1 b2 b3
-	0xe1,FDC_IDLE,
-	0xf1,
-	0xa8,			// skip TR		// TODO: is uFD765 check sector number only?
-	0xa8,			// skip HD
-	0x91,0xa8,		// Rdat = SC, next
-	0x90,0,			// buf[0] = SZ (for bytes counting)
-	0x8a,-21,		// if Rsec != Rdat jr @ab
-
-	0xac,11,		// seek data field (success - @b5)
-	0x60,0x3f,0x40,		// st0: IC = 40
-	0x61,~FDC_ND,FDC_ND,	// st1: ND (no data found)
-	0x02,16,		// s0 s1 s2 b0 b1 b2 b3
-	0xe1,FDC_IDLE,
-	0xf1,
-
-		// TODO: if field=3 and com&0x20==0 then sr2,6=1, read sector, stop; if (com&0x20==1), go next sector
-	0xb5,		// ic = sector size in bytes (from buf[0])
-	0x34,		// fdc->cpu
-	0x91,0x31,0x41,	// Rdat = flpRd,drq=1,wait for byte reading
-	0xa8,		// next
-	0xb1,		// ic--;
-	0xb4,0,-8,	// if (ic != 0) jr @91
-	0x8d,		// Rsec++
-//	0x5d,-49,	// if (Rsec < LS) jr @b0,2
+	0x02,18,		// find sector SN (ic = sec.len)
+	0x21,FDC_OUTPUT,20,	// if error - jr to output
+	0xfb,2,11,		// if field = 2 (normal sec) jr @b5
+	0xfd,FDC_SK,4,		// if !com:SK jr @20
+	0xc2,			// com:SK & del.sec - next sector
+	0x21,FDC_EXEC,-15,	// if still exec, jr back @02
+	// sec:del + com:SK
+	0x02,19,		// ic bytes fdd->cpu
+	0xf0,6,
+	// sec:norm
+	0x02,19,		// ic bytes fdd->cpu
+	0xc2,			// next sector
+	0x21,FDC_EXEC,-25,	// if still exec jr @02
+	// result phase
 	0xe1,FDC_OUTPUT,
 	0x34,
 	0x42,0,0x31,0x41,	// s0
 	0x42,1,0x31,0x41,	// s1
 	0x42,2,0x31,0x41,	// s2
-	0x42,11,0x31,0x41,	// flp:trk	// TODO: return right
+	0x42,11,0x31,0x41,	// Rtrk
 	0x42,12,0x31,0x41,	// Rsec
 	0x42,13,0x31,0x41,	// side
 	0x42,14,0x31,0x41,	// SZ
@@ -645,7 +658,7 @@ uint8_t op765_08[] = {
 	0x34,
 	0x42,0,		// Rdat = sr0
 	0x31,0x41,	// wait for reading
-	0x42,11,	// Rdat = flp.trk
+	0x42,11,	// Rdat = Rtrk
 	0x31,0x41,	// wait for reading
 	0xe1,FDC_IDLE,
 	0x20,0,		// mode = 0
@@ -663,7 +676,7 @@ uint8_t op765_09[] = {
 	0x42,0,0x31,0x41,	// sr0
 	0x42,1,0x31,0x41,	// sr1
 	0x42,2,0x31,0x41,	// sr2
-	0x42,11,0x31,0x41,	// flp:trk	// TODO: do it right way
+	0x42,11,0x31,0x41,	// Rtrk
 	0x42,12,0x31,0x41,	// Rsec
 	0x42,13,0x31,0x41,	// side
 	0x42,14,0x31,0x41,	// SZ
@@ -726,7 +739,7 @@ uint8_t op765_0D[] = {
 	0x42,0,0x31,0x41,	// sr0
 	0x42,1,0x31,0x41,	// sr1
 	0x42,2,0x31,0x41,	// sr2
-	0x42,11,0x31,0x41,	// flp:trk	// TODO: do it right way
+	0x42,11,0x31,0x41,	// Rtrk
 	0x42,12,0x31,0x41,	// Rsec
 	0x42,13,0x31,0x41,	// side
 	0x42,14,0x31,0x41,	// SZ
@@ -1005,7 +1018,7 @@ void v42(FDC *p) {
 				((p->fptr->flag & FLP_PROTECT) ? FDC_WP : 0);
 			break;
 		case 10: p->trk = p->fptr->trk; break;
-		case 11: p->data = p->fptr->trk; break;
+		case 11: p->data = p->trk; break;
 		case 12: p->data = p->sec; break;
 		case 13: p->data = p->side; break;
 		case 14: p->data = p->sz; break;
@@ -1037,7 +1050,6 @@ void v59(FDC* p) {p->fb = p->data;}							// FB: fill byte
 void v5A(FDC* p) {p->nm = p->data;}							// NM: number of sectors
 void v5B(FDC* p) {dlt = *(p->wptr++); if (p->hd != p->data) p->wptr += (char)dlt;}	// if Rdat != HD jr
 void v5C(FDC* p) {dlt = *(p->wptr++); if (p->sz != p->data) p->wptr += (char)dlt;}	// if Rdat != SZ jr
-void v5D(FDC* p) {dlt = *(p->wptr++); if (p->sec < p->ls) p->wptr += (char)dlt;}	// if Rsec < LS jr
 
 void v60(FDC* p) {p1 = *(p->wptr++); p2 = *(p->wptr++); p->sr0 &= p1; p->sr0 |= p2;}
 void v61(FDC* p) {p1 = *(p->wptr++); p2 = *(p->wptr++); p->sr1 &= p1; p->sr1 |= p2;}
@@ -1066,8 +1078,8 @@ void v92(FDC* p) {p->bus = flpRd(p->fptr);}
 void v93(FDC* p) {flpWr(p->fptr,p->data);}
 void v94(FDC* p) {flpWr(p->fptr,p->bus);}
 
-void vA0(FDC* p) {p->sdir = 0; flpStep(p->fptr,0);}
-void vA1(FDC* p) {p->sdir = 1; flpStep(p->fptr,1);}
+void vA0(FDC* p) {p->sdir = FLP_BACK; flpStep(p->fptr,p->sdir);}
+void vA1(FDC* p) {p->sdir = FLP_FORWARD; flpStep(p->fptr,p->sdir);}
 void vA2(FDC* p) {flpStep(p->fptr,p->sdir);}
 
 void vA8(FDC* p) {
@@ -1124,6 +1136,24 @@ void vB5(FDC* p) {p->ic = (128 << (p->buf[0] & 3));}				// 128,256,512,1024
 
 void vC0(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); p->flag &= p1; p->flag |= dlt;}
 void vC1(FDC* p) {flpFillFields(p->fptr,p->fptr->rtrk,1);}
+void vC2(FDC* p) {
+	if (p->sec < p->ls) {		// if SC < EOT
+		p->sec++;
+		p->sr1 &= ~FDC_EN;
+	} else {
+		p->sr1 |= FDC_EN;
+		p->sec = 1;
+		if (p->com & FDC_MT) {
+			p->side = !p->side;
+			p->bus++;
+			if (!p->side) p->trk++;
+			if (p->bus > 1) p->mode = FDC_BREAK;
+		} else {
+			p->trk++;
+			p->mode = FDC_BREAK;
+		}
+	}
+}
 
 void vD0(FDC* p) {p->crc = 0xcdb4; p->crchi = 1;}
 void vD1(FDC* p) {fdcAddCrc(p,*(p->wptr++));}
@@ -1187,14 +1217,14 @@ VGOp vgfunc[256] = {
 	&v20,&v21,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 	&v30,&v31,&v32,&v33,&v34,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 	&v40,&v41,&v42,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
-	&v50,&v51,&v52,&v53,&v54,&v55,&v56,&v57,&v58,&v59,&v5A,&v5B,&v5C,&v5D,NULL,NULL,
+	&v50,&v51,&v52,&v53,&v54,&v55,&v56,&v57,&v58,&v59,&v5A,&v5B,&v5C,NULL,NULL,NULL,
 	&v60,&v61,&v62,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 	NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 	&v80,&v81,&v82,&v83,&v84,&v85,&v86,&v87,&v88,&v89,&v8A,&v8B,&v8C,&v8D,&v8E,&v8F,
 	&v90,&v91,&v92,&v93,&v94,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 	&vA0,&vA1,&vA2,NULL,NULL,NULL,NULL,NULL,&vA8,&vA9,&vAA,&vAB,&vAC,NULL,NULL,NULL,
 	&vB0,&vB1,&vB2,&vB3,&vB4,&vB5,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
-	&vC0,&vC1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+	&vC0,&vC1,&vC2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 	&vD0,&vD1,&vD2,&vD3,&vD4,&vD5,NULL,&vD7,&vD8,&vD9,&vDA,NULL,NULL,NULL,NULL,&vDF,
 	&vE0,&vE1,&vE2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 	&vF0,&vF1,NULL,NULL,NULL,NULL,NULL,&vF7,&vF8,&vF9,&vFA,&vFB,&vFC,&vFD,&vFE,&vFF

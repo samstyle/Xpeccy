@@ -36,10 +36,13 @@ uint8_t flpGetField(Floppy* flp) {
 }
 
 void flpStep(Floppy* flp,int dir) {
-	if (dir) {
-		if (flp->trk < ((flp->flag & FLP_TRK80) ? 86 : 43)) flp->trk++;
-	} else {
-		if (flp->trk > 0) flp->trk--;
+	switch (dir) {
+		case FLP_FORWARD:
+			if (flp->trk < ((flp->flag & FLP_TRK80) ? 86 : 43)) flp->trk++;
+			break;
+		case FLP_BACK:
+			if (flp->trk > 0) flp->trk--;
+			break;
 	}
 }
 

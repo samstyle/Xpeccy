@@ -17,21 +17,26 @@ extern "C" {
 #define FDC_IDLE	0
 #define	FDC_READ	1
 #define	FDC_WRITE	2
-#define	FDC_INPUT	3	// wait for command
-#define	FDC_OUTPUT	4	// wait for result
-#define	FDC_EXEC	5	// command execution
+#define	FDC_INPUT	3	// command (uPD765)
+#define	FDC_OUTPUT	4	// result (uPD765)
+#define	FDC_EXEC	5	// command execution (uPD765)
+#define	FDC_BREAK	6	// signal to break rd/wr operation (uPD765)
 // fdc type
 #define	FDC_NONE	0	// no disk interface at all
-#define	FDC_93		1	// KR1818VG93 (FDC1793 clone)
+#define	FDC_93		1	// KR1818VG93 (WD1793 clone)
 #define	FDC_765		2	// uPD765
 // fdc registers
 #define	FDC_COM		0	// 93:1f(reg0)
 #define	FDC_STATE	FDC_COM	// 93:1f(reg0),765:reg0 (ro)
 #define	FDC_TRK		1	// 93:3f(reg1)
 #define	FDC_SEC		2	// 93:5f(reg2)
-#define	FDC_DATA	3	// 93:7f(reg3),765:reg3 (rw)
+#define	FDC_DATA	3	// 93:7f(reg3),765:reg1 (rw)
 #define BDI_SYS		0xff	// bdi:ff(sys)
 // 765 flags
+#define	FDC_MT		(1<<7)	// com: multitrack
+#define	FDC_MF		(1<<6)	// com: mfm
+#define	FDC_SK		(1<<5)	// com: skip deleted
+
 #define	FDC_BSY		(1<<4)	// srm: fdc is busy (irq = 0)
 #define	FDC_EXM		(1<<5)	// srm: fdc in execution mode
 #define	FDC_DIO		(1<<6)	// srm: i/o direction fdc->cpu: 0:cpu->fdc; 1:fdc->cpu
@@ -43,6 +48,10 @@ extern "C" {
 
 #define	FDC_MA		1	// s1: missing address
 #define	FDC_ND		(1<<2)	// s1: no data
+#define	FDC_EN		(1<<7)	// s1: EOT detected
+
+#define	FDC_SN		(1<<2)	// s2: scan meet
+#define	FDC_SH		(1<<3)	// s2: scan equal
 
 #define	FDC_HD		(1<<2)	// s3: head
 #define	FDC_DS		(1<<3)	// s3: two side (0=yes)

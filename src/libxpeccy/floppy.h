@@ -9,20 +9,19 @@ extern "C" {
 //#include <vector>
 
 #define TRACKLEN 6250
-
+// disk type
 #define DISK_TYPE_TRD	1
-
-//#define	FLP_TRK		0
-//#define	FLP_RTRK	1
-//#define	FLP_FIELD	2
-//#define	FLP_POS		3
+// get
 #define	FLP_DISKTYPE	10
-
+// error
 #define	ERR_OK		0
 #define	ERR_MANYFILES	1
 #define	ERR_NOSPACE	2
 #define	ERR_SHIT	3
-
+// step direction
+#define	FLP_BACK	0
+#define	FLP_FORWARD	1
+// flags
 #define	FLP_INSERT	1
 #define	FLP_PROTECT	(1<<1)
 #define	FLP_TRK80	(1<<2)
