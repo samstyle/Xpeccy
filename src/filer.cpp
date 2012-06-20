@@ -1,10 +1,9 @@
 #include "filer.h"
-#include "libxpeccy/spectrum.h"
+#include "xcore/xcore.h"
 #include "xgui/xgui.h"
 
 #include "filetypes/filetypes.h"
 
-extern ZXComp* zx;
 QFileDialog *filer;
 QDir lastDir;
 
@@ -202,10 +201,15 @@ bool saveFile(const char* name,int flags,int drv) {
 		}
 	}
 	if (filters.contains("Snap")) {
-		bool mt = (strcmp(zx->opt.hwName,"ZX48K") == 0);
+		bool mt = (getCurrentProfile()->hwName == "ZX48K");
 		switch (type) {
-			case FT_SNA: err = saveSNA(zx,sfnam.c_str(),mt); break;
-			default: sfnam += ".sna"; err = saveSNA(zx,sfnam.c_str(),mt); break;
+			case FT_SNA:
+				err = saveSNA(zx,sfnam.c_str(),mt);
+				break;
+			default:
+				sfnam += ".sna";
+				err = saveSNA(zx,sfnam.c_str(),mt);
+				break;
 		}
 	}
 	switch (err) {

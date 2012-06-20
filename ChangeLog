@@ -188,3 +188,10 @@ Wrk	Small rewrite WD93 read/write/seek. It should be faster now.
 
 build 20120607
 New	Basic work of uPD765 - recalibrate, seek, read id, read sector
+
+build 20120620
+New	Add/Delete profiles in options window (Options->Xpeccy->Profiles)
+Fix	RZX-player buttons wasn't active if rzx file was loading through command line
+Wrk	Memory size combobox is changed
+Wrk	Multisector & multitrack sector reading for uPD765
+Wrk	Deleted sectors reading for uPD765

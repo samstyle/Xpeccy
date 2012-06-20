@@ -67,7 +67,7 @@ set(MOCFILES
 add_definitions(-Wall -O2)
 
 set(CMAKE_C_FLAGS -std=gnu99)
-set(CMAKE_C_FLAGS_DEBUG -DISDEBUG)
+set(CMAKE_C_FLAGS_DEBUG -g)
 
 if (SDL_FOUND)
 	add_definitions(-DHAVESDLSOUND)

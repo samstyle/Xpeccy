@@ -365,7 +365,7 @@ void rzxClear(ZXComp* zx) {
 ZXComp* zxCreate() {
 	ZXComp* comp = (ZXComp*)malloc(sizeof(ZXComp));
 	void* ptr = (void*)comp;
-	comp->flags = 0;
+	comp->flags = ZX_JUSTBORN;
 	comp->cpu = z80ex_create(&memrd,ptr,&memwr,ptr,&iord,ptr,&iowr,ptr,&intrq,ptr);
 	zxSetFrq(comp,3.5);
 	comp->mem = memCreate();
@@ -380,9 +380,10 @@ ZXComp* zxCreate() {
 	comp->gs = gsCreate();
 	comp->rzxSize = 0;
 	comp->rzxData = NULL;
+	comp->gsCount = 0;
+	comp->resbank = RES_48;
 	gsReset(comp->gs);
 	zxReset(comp,RES_DEFAULT);
-	comp->gsCount = 0;
 	return comp;
 }
 

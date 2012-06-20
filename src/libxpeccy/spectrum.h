@@ -36,6 +36,7 @@ extern "C" {
 #define	RES_SHADOW	4
 // zx flags
 #define	ZX_BREAK	1
+#define	ZX_JUSTBORN	(1<<1)	// just created zx. need to reset after selection
 
 typedef struct {
 	const char* name;
@@ -66,7 +67,6 @@ typedef struct {
 	TSound* ts;
 	int rzxSize;
 	RZXFrame* rzxData;
-	// std::vector<RZXFrame> rzx;
 	uint64_t rzxFrame;
 	uint32_t rzxPos;
 	int rzxFetches;
@@ -82,11 +82,6 @@ typedef struct {
 	uint8_t prt1;		// extend port value
 	uint8_t prt2;		// scorpion ProfROM layer (0..3)
 	int resbank;		// rompart active after reset
-	struct {
-		char GSRom[256];
-		char hwName[256];
-		char rsName[256];
-	} opt;
 	int gsCount;
 } ZXComp;
 

@@ -1,5 +1,5 @@
 #include "sound.h"
-#include "libxpeccy/spectrum.h"
+#include "xcore/xcore.h"
 
 #include <iostream>
 #ifdef HAVESDLSOUND
@@ -9,8 +9,6 @@
 	#include <mmsystem.h>
 #endif
 #endif
-
-extern ZXComp* zx;
 
 struct OutSys {
 	std::string name;

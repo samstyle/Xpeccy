@@ -30,12 +30,13 @@ void setRomsetList(std::vector<RomSet> rsl) {
 	}
 	std::vector<XProfile> profileList = getProfileList();
 	for (i=0; i<profileList.size(); i++) {
-		setRomset(profileList[i].zx, profileList[i].zx->opt.rsName);
+		setRomset(profileList[i].zx, profileList[i].rsName);
 //		profileList[i].zx->mem->loadromset(optGetString(OPT_ROMDIR));
 	}
 }
 
 void setRomset(ZXComp* comp, std::string nm) {
+	XProfile* curProf = getCurrentProfile();
 	RomSet* rset = findRomset(nm);
 	int i,ad;
 #ifdef WIN32
@@ -48,11 +49,10 @@ void setRomset(ZXComp* comp, std::string nm) {
 	char* pageBuf = new char[0x4000];
 	int prts = 0;
 	int profMask = 0;
-	XProfile* currentProfile = getCurrentProfile();
 	if (rset == NULL) {
-		rset = currentProfile->rset;
+		rset = findRomset(curProf->rsName);
 	} else {
-		currentProfile->rset = rset;
+		curProf->rsName = rset->name;
 	}
 	if (rset == NULL) {
 		for (i=0; i<16; i++) {
@@ -60,7 +60,7 @@ void setRomset(ZXComp* comp, std::string nm) {
 			memSetPage(comp->mem,MEM_ROM,i,pageBuf);
 		}
 	} else {
-		if (rset->file != "") {
+		if (rset->file.size() != 0) {
 			fpath = romDir + SLASH + rset->file;
 			file.open(fpath.c_str(),std::ios::binary);
 			if (file.good()) {
@@ -105,11 +105,11 @@ void setRomset(ZXComp* comp, std::string nm) {
 		}
 	}
 	for (ad = 0; ad < 0x4000; ad++) pageBuf[ad] = 0xff;
-	if (strcmp(comp->opt.GSRom,"") == 0) {
+	if (curProf->gsFile.empty()) {
 		gsSetRom(comp->gs,0,pageBuf);
 		gsSetRom(comp->gs,1,pageBuf);
 	} else {
-		fpath = romDir + SLASH + comp->opt.GSRom;
+		fpath = romDir + SLASH + curProf->gsFile;
 		file.open(fpath.c_str(),std::ios::binary);
 		if (file.good()) {
 			file.read(pageBuf,0x4000);
@@ -117,7 +117,7 @@ void setRomset(ZXComp* comp, std::string nm) {
 			file.read(pageBuf,0x4000);
 			gsSetRom(comp->gs,1,pageBuf);
 		} else {
-			printf("Can't load gs rom '%s'\n",comp->opt.GSRom);
+			printf("Can't load gs rom '%s'\n",curProf->gsFile.c_str());
 			gsSetRom(comp->gs,0,pageBuf);
 			gsSetRom(comp->gs,1,pageBuf);
 		}

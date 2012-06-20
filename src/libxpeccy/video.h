@@ -8,7 +8,7 @@ extern "C" {
 #include "memory.h"
 
 #define VF_FULLSCREEN		1
-#define	VF_DOUBLE		(1<<1)
+#define VF_DOUBLE		(1<<1)
 #define VF_BLOCKFULLSCREEN	(1<<2)
 #define VF_CHANGED		(1<<3)
 
@@ -21,7 +21,7 @@ typedef struct {
 } VSize;
 
 typedef struct {
-	int flag;
+//	int flag;
 	int intStrobe;
 	int firstFrame;
 	int flash;
@@ -37,7 +37,7 @@ typedef struct {
 	int intpos;
 	int mode;
 	float zoom;
-	float brdsize;
+//	float brdsize;
 	float pxcnt;
 	int dotCount;
 	VSize full;
@@ -64,6 +64,9 @@ typedef struct {
 	unsigned char* scr7atr[0x1800];
 	unsigned short matrix[512 * 512];
 } Video;
+
+extern int vidFlag;
+extern float brdsize;
 
 Video* vidCreate(Memory*);
 void vidDestroy(Video*);

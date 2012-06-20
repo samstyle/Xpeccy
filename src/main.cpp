@@ -81,6 +81,7 @@ int main(int ac,char** av) {
 			}
 
 			SDL_JoystickOpen(1);
+			mainWin->checkState();
 			mainWin->startTimer(20);
 			app.exec();
 			mainWin->stopTimer();

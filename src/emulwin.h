@@ -80,6 +80,7 @@ class MainWin : public QX11EmbedContainer {
 		void updateWindow();
 		void startTimer(int);
 		void stopTimer();
+		void checkState();
 	private:
 		QTimer* timer;
 	public slots:

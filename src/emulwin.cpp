@@ -41,7 +41,6 @@
 
 #define	XPTITLE	"Xpeccy 0.4.999"
 
-extern ZXComp* zx;
 extern EmulWin* mwin;
 // main
 MainWin* mainWin;
@@ -337,7 +336,7 @@ void MainWin::updateWindow() {
 	zx->vid->scrptr = scrImg.bits();
 #else
 	int sdlflg = SDL_SWSURFACE;
-	if ((zx->vid->flag & VF_FULLSCREEN) && !(zx->vid->flag & VF_BLOCKFULLSCREEN)) {
+	if ((vidFlag & VF_FULLSCREEN) && !(vidFlag & VF_BLOCKFULLSCREEN)) {
 		sdlflg |= SDL_FULLSCREEN;
 	}
 	if (surf != NULL) {
@@ -413,11 +412,11 @@ void emulPause(bool p, int msk) {
 	}
 	if (msk & PR_PAUSE) return;
 	if ((pauseFlags & ~PR_PAUSE) == 0) {
-		zx->vid->flag &= ~VF_BLOCKFULLSCREEN;
-		if (zx->vid->flag & VF_FULLSCREEN) emulUpdateWindow();
+		vidFlag &= ~VF_BLOCKFULLSCREEN;
+		if (vidFlag & VF_FULLSCREEN) emulUpdateWindow();
 	} else {
-		zx->vid->flag |= VF_BLOCKFULLSCREEN;
-		if (zx->vid->flag & VF_FULLSCREEN) emulUpdateWindow();
+		vidFlag |= VF_BLOCKFULLSCREEN;
+		if (vidFlag & VF_FULLSCREEN) emulUpdateWindow();
 	}
 }
 
@@ -575,9 +574,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				emulPause(true,PR_FILE);
 				loadFile("",FT_ALL,-1);
 				emulPause(false,PR_FILE);
-				if (zx->rzxPlay) rzxWin->startPlay();
-				tapeWin->buildList(zx->tape);
-				tapeWin->setCheck(zx->tape->block);
+				checkState();
 				break;
 			case Qt::Key_F4:
 				if (zx->tape->flag & TAPE_ON) {
@@ -702,6 +699,12 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 
 void MainWin::startTimer(int iv) {timer->start(iv);}
 void MainWin::stopTimer() {timer->stop();}
+
+void MainWin::checkState() {
+	if (zx->rzxPlay) rzxWin->startPlay();
+	tapeWin->buildList(zx->tape);
+	tapeWin->setCheck(zx->tape->block);
+}
 
 // ...
 
@@ -849,9 +852,9 @@ void EmulWin::SDLEventHandler() {
 			case FDC_WRITE: drawIcon(surf,4,4,icoRedDisk); break;
 		}
 	}
-	if (zx->vid->flag & VF_CHANGED) {
+	if (vidFlag & VF_CHANGED) {
 		SDL_UpdateRect(surf,0,0,0,0);
-		zx->vid->flag &= ~VF_CHANGED;
+		vidFlag &= ~VF_CHANGED;
 	} else {
 		SDL_UpdateRect(surf,3,3,18,18);
 	}
@@ -911,12 +914,12 @@ void EmulWin::SDLEventHandler() {
 					switch(ev.key.keysym.sym) {
 						case SDLK_0: zx->vid->mode = (zx->vid->mode==VID_NORMAL)?VID_ALCO:VID_NORMAL; break;
 						case SDLK_1:
-							zx->vid->flag &= ~VF_DOUBLE;
+							vidFlag &= ~VF_DOUBLE;
 							mainWin->updateWindow();
 							saveConfig();
 							break;
 						case SDLK_2:
-							zx->vid->flag |= VF_DOUBLE;
+							vidFlag |= VF_DOUBLE;
 							mainWin->updateWindow();
 							saveConfig();
 							break;
@@ -937,7 +940,7 @@ void EmulWin::SDLEventHandler() {
 							rzxWin->stop();
 							break;
 						case SDLK_RETURN:
-							zx->vid->flag ^= VF_FULLSCREEN;
+							vidFlag ^= VF_FULLSCREEN;
 							mainWin->updateWindow();
 							saveConfig();
 							break;
@@ -971,9 +974,7 @@ void EmulWin::SDLEventHandler() {
 							emulPause(true,PR_FILE);
 							loadFile("",FT_ALL,-1);
 							emulPause(false,PR_FILE);
-							if (zx->rzxPlay) rzxWin->startPlay();
-							tapeWin->buildList(zx->tape);
-							tapeWin->setCheck(zx->tape->block);
+							mainWin->checkState();
 							break;
 						case SDLK_F4:
 							if (zx->tape->flag & TAPE_ON) {
@@ -1214,7 +1215,7 @@ void emulCloseJoystick() {
 void initUserMenu(QWidget* par) {
 	userMenu = new QMenu(par);
 	bookmarkMenu = userMenu->addMenu(QIcon(":/images/star.png"),"Bookmarks");
-	profileMenu = userMenu->addMenu("Profiles");
+	profileMenu = userMenu->addMenu(QIcon(":/images/profile.png"),"Profiles");
 	userMenu->addSeparator();
 	userMenu->addAction(QIcon(":/images/tape.png"),"Tape window",tapeWin,SLOT(show()));
 	userMenu->addAction(QIcon(":/images/video.png"),"RZX player",rzxWin,SLOT(show()));
@@ -1228,8 +1229,8 @@ void fillBookmarkMenu() {
 		bookmarkMenu->addAction("None")->setEnabled(false);
 	} else {
 		for(uint i=0; i<bookmarkList.size(); i++) {
-			act = bookmarkMenu->addAction(bookmarkList[i].name.c_str());
-			act->setData(QVariant(bookmarkList[i].path.c_str()));
+			act = bookmarkMenu->addAction(QDialog::trUtf8(bookmarkList[i].name.c_str()));
+			act->setData(QVariant(QDialog::trUtf8(bookmarkList[i].path.c_str())));
 		}
 	}
 }
@@ -1249,13 +1250,13 @@ void EmulWin::bookmarkSelected(QAction* act) {
 	mainWin->setFocus();
 }
 
-
 void EmulWin::profileSelected(QAction* act) {
 	emulPause(true,PR_EXTRA);
 	setProfile(std::string(act->text().toUtf8().data()));
 	loadConfig(false);
 	emulUpdateWindow();
 	saveProfiles();
+	if (zx->flags & ZX_JUSTBORN) zxReset(zx,RES_DEFAULT);
 	mainWin->setFocus();
 	emulPause(false,PR_EXTRA);
 }

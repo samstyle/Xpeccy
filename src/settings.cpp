@@ -16,8 +16,6 @@
 	#include <direct.h>
 #endif
 
-extern XProfile* currentProfile;
-
 #define	SECT_NONE	0
 #define SECT_BOOKMARK	1
 #define	SECT_PROFILES	2
@@ -35,7 +33,6 @@ extern XProfile* currentProfile;
 #define	SECT_TAPE	14
 #define	SECT_LEDS	15
 
-extern ZXComp* zx;
 std::vector<optEntry> config;
 std::string workDir;
 std::string romDir;
@@ -387,9 +384,9 @@ void saveProfiles() {
 	cfile << "scrCount = " << int2str(shotCount) << "\n";
 	cfile << "scrInterval = " << int2str(shotInterval) << "\n";
 	cfile << "colorLevel = " << int2str(brgLevel) << "\n";
-	cfile << "fullscreen = " << ((zx->vid->flag & VF_FULLSCREEN) ? "yes" : "no") << "\n";
-	cfile << "doublesize = " << ((zx->vid->flag & VF_DOUBLE) ? "yes" : "no") << "\n";
-	cfile << "bordersize = " << int2str(zx->vid->brdsize * 100) << "\n";
+	cfile << "fullscreen = " << ((vidFlag & VF_FULLSCREEN) ? "yes" : "no") << "\n";
+	cfile << "doublesize = " << ((vidFlag & VF_DOUBLE) ? "yes" : "no") << "\n";
+	cfile << "bordersize = " << int2str(brdsize * 100) << "\n";
 	cfile << "\n[ROMSETS]\n";
 	std::vector<RomSet> rsl = getRomsetList();
 	for (i=0; i<rsl.size(); i++) {
@@ -467,15 +464,16 @@ void setDiskString(Floppy* flp,std::string st) {
 
 void saveConfig() {
 	saveProfiles();
+	XProfile* curProf = getCurrentProfile();
 	optSet("GENERAL","cpu.frq",int(zx->cpuFrq * 2));
-	optSet("MACHINE","current",std::string(zx->opt.hwName));
+	optSet("MACHINE","current",curProf->hwName);
 	optSet("MACHINE","restart",(emulGetFlags() & FL_RESET) != 0);
 	optSet("MACHINE","memory",zx->mem->memSize);
 	optSet("MACHINE","scrp.wait",(zx->hwFlags & WAIT_ON) != 0);
-	optSet("ROMSET","gs",std::string(zx->opt.GSRom));
-	optSet("ROMSET","current",std::string(zx->opt.rsName));
+	optSet("ROMSET","gs",curProf->gsFile);
+	optSet("ROMSET","current",curProf->rsName);
 	optSet("ROMSET","reset",rmnam[zx->resbank]);
-	optSet("VIDEO","geometry",currentProfile->layName);
+	optSet("VIDEO","geometry",curProf->layName);
 	optSet("SOUND","chip1",zx->ts->chipA->type);
 	optSet("SOUND","chip2",zx->ts->chipB->type);
 	optSet("SOUND","chip1.stereo",zx->ts->chipA->stereo);
@@ -517,19 +515,18 @@ void saveConfig() {
 	std::ofstream sfile(cfname.c_str());
 	if (!sfile.good()) {
 		shitHappens("Can't write settings");
-		throw(0);
-	}
-
-	uint i,j;
-	std::vector<optEntry> ents;
-	std::vector<std::string> grps = optGroupsList();
-	for (i=0; i<grps.size(); i++) {
-		sfile << "[" << grps[i].c_str() << "]\n\n";
-		ents = optGroupEntries(grps[i]);
-		for (j=0; j<ents.size(); j++) {
-			sfile << ents[j].name.c_str() << " = " << ents[j].value.c_str() << "\n";
+	} else {
+		uint i,j;
+		std::vector<optEntry> ents;
+		std::vector<std::string> grps = optGroupsList();
+		for (i=0; i<grps.size(); i++) {
+			sfile << "[" << grps[i].c_str() << "]\n\n";
+			ents = optGroupEntries(grps[i]);
+			for (j=0; j<ents.size(); j++) {
+				sfile << ents[j].name.c_str() << " = " << ents[j].value.c_str() << "\n";
+			}
+			sfile << "\n";
 		}
-		sfile << "\n";
 	}
 }
 
@@ -562,19 +559,26 @@ void loadKeys() {
 	free(buf);
 }
 
+void copyFile(const char* src, const char* dst) {
+	QFile fle(src);
+	fle.open(QFile::ReadOnly);
+	QByteArray fdata = fle.readAll();
+	fle.close();
+	fle.setFileName(dst);
+	if (fle.open(QFile::WriteOnly)) {
+		fle.write(fdata);
+		fle.close();
+	}
+}
+
 void loadProfiles() {
 	std::string soutnam = "NULL";
 	std::ifstream file(profPath.c_str());
 	if (!file.good()) {
 		printf("Main config is missing. Default files will be copied\n");
-		QFile fle(":/conf/config.conf");
-		fle.copy(QString(std::string(workDir + SLASH + "config.conf").c_str()));
-		fle.setFileName(":/conf/xpeccy.conf");
-		fle.copy(QString(std::string(workDir + SLASH + "xpeccy.conf").c_str()));
-		fle.setFileName(":/conf/1982.rom");
-		fle.copy(QString(std::string(romDir + "/1982.rom").c_str()));
-		fle.setPermissions(QString(std::string(workDir + SLASH + "config.conf").c_str()), QFile::ReadUser | QFile::WriteUser | QFile::ReadGroup | QFile::ReadOther);
-		fle.setPermissions(QString(std::string(workDir + SLASH + "xpeccy.conf").c_str()), QFile::ReadUser | QFile::WriteUser | QFile::ReadGroup | QFile::ReadOther);
+		copyFile(":/conf/config.conf",std::string(workDir + SLASH + "config.conf").c_str());
+		copyFile(":/conf/xpeccy.conf",std::string(workDir + SLASH + "xpeccy.conf").c_str());
+		copyFile(":/conf/1982.rom",std::string(romDir + SLASH + "1982.rom").c_str());
 		file.open(profPath.c_str());
 		if (!file.good()) {
 			printf("%s\n",profPath.c_str());
@@ -657,12 +661,12 @@ void loadProfiles() {
 						if ((test < 50) || (test > 250)) test=192;
 						brgLevel = test;
 					}
-					if (pnam=="fullscreen") setFlagBit(str2bool(pval),&zx->vid->flag,VF_FULLSCREEN);
+					if (pnam=="fullscreen") setFlagBit(str2bool(pval),&vidFlag,VF_FULLSCREEN);
 					if (pnam=="bordersize") {
 						test=atoi(pval.c_str());
-						if ((test >= 0) && (test <= 100)) zx->vid->brdsize = test / 100.0;
+						if ((test >= 0) && (test <= 100)) brdsize = test / 100.0;
 					}
-					if (pnam=="doublesize") setFlagBit(str2bool(pval),&zx->vid->flag,VF_DOUBLE);
+					if (pnam=="doublesize") setFlagBit(str2bool(pval),&vidFlag,VF_DOUBLE);
 					break;
 				case SECT_ROMSETS:
 					pos = pval.find_last_of(":");
@@ -763,18 +767,23 @@ void loadProfiles() {
 			}
 		}
 	}
-	for (uint i=0; i<rslist.size(); i++) addRomset(rslist[i]);
+	uint i;
+	for (i=0; i<rslist.size(); i++) addRomset(rslist[i]);
 	setOutput(soutnam);
 	if (!setProfile(pnm.c_str())) {
-		shitHappens("Cannot set current profile\nCheck it's name");
-		throw(0);
+		shitHappens("Cannot set current profile\nDefault will be used");
+		if (!setProfile("default")) {
+			shitHappens("...and default too?\nReally, shit happens");
+			throw(0);
+		}
 	}
 	emulSetColor(brgLevel);
 	emulOpenJoystick(joyName);
 }
 
 void loadConfig(bool dev) {
-	std::string cfname = workDir + SLASH + getCurrentProfile()->file;
+	XProfile* curProf = getCurrentProfile();
+	std::string cfname = workDir + SLASH + curProf->file;
 	std::ifstream file(cfname.c_str());
 	std::pair<std::string,std::string> spl;
 	std::string line,pnam,pval;
@@ -791,9 +800,7 @@ void loadConfig(bool dev) {
 	if (!file.good()) {
 //		shithappens(std::string("Can't find config file<br><b>") + cfname + std::string("</b><br>Default one will be created."));
 		printf("Profile config is missing. Default one will be created\n");
-		QFile fle(":/conf/xpeccy.conf");
-		fle.copy(QString(cfname.c_str()));
-		fle.setPermissions(QFile::ReadUser | QFile::WriteUser | QFile::ReadGroup | QFile::ReadOther);
+		copyFile(":/conf/xpeccy.conf",cfname.c_str());
 		file.open(cfname.c_str(),std::ifstream::in);
 	}
 	if (!file.good()) {
@@ -842,10 +849,11 @@ void loadConfig(bool dev) {
 							if ((pval=="shadow") || (pval=="2")) zx->resbank = 2;
 							if ((pval=="trdos") || (pval=="3")) zx->resbank = 3;
 						}
-//						if (pnam=="current") zx->opt.romsetName = pval;
+						if (pnam=="current") curProf->rsName = pval;
 //						if (pnam=="gs") zx->opt.GSRom = pval;
 						break;
 					case SECT_VIDEO:
+						if (pnam == "geometry") curProf->layName = pval;
 						break;
 					case SECT_SCRSHOT:
 						if (pnam=="folder") shotDir = pval;
@@ -938,8 +946,6 @@ void loadConfig(bool dev) {
 
 	tmp2 = optGetInt("GENERAL","cpu.frq"); if ((tmp2 > 0) && (tmp2 <= 14)) zxSetFrq(zx,tmp2 / 2.0);
 
-	currentProfile->layName = optGetString("VIDEO","geometry");
-
 	tmp2 = optGetInt("SOUND","chip1"); if (tmp2 < SND_END) aymSetType(zx->ts->chipA,tmp2);
 	tmp2 = optGetInt("SOUND","chip2"); if (tmp2 < SND_END) aymSetType(zx->ts->chipB,tmp2);
 	zx->ts->chipA->stereo = optGetInt("SOUND","chip1.stereo");
@@ -955,9 +961,9 @@ void loadConfig(bool dev) {
 	zx->bdi->fdc->turbo = 0;
 //	zx->bdi->type = atoi(optGetString("DISK","type").c_str());
 	zx->bdi->fdc->turbo = optGetBool("DISK","fast") ? 1 : 0;
-	strcpy(zx->opt.hwName,optGetString("MACHINE","current").c_str());
-	strcpy(zx->opt.rsName,optGetString("ROMSET","current").c_str());
-	strcpy(zx->opt.GSRom,optGetString("ROMSET","gs").c_str());
+	curProf->hwName = optGetString("MACHINE","current");
+	curProf->rsName = optGetString("ROMSET","current");
+	curProf->gsFile = optGetString("ROMSET","gs");
 	emulSetFlag(FL_RESET,optGetBool("MACHINE","restart"));
 	setFlagBit(optGetBool("MACHINE","scrp.wait"),&zx->hwFlags,WAIT_ON);
 
@@ -965,10 +971,10 @@ void loadConfig(bool dev) {
 //	zx->ide->refresh();
 	ideSetPassport(zx->ide,IDE_MASTER,masterPass);
 	ideSetPassport(zx->ide,IDE_SLAVE,slavePass);
-	setHardware(zx, zx->opt.hwName);
-	setRomset(zx, zx->opt.rsName);
+	setHardware(zx, curProf->hwName);
+	setRomset(zx, curProf->rsName);
 	if (zx->hw==NULL) throw("Can't found current machine");
-	if (currentProfile->rset == NULL) throw("Can't found current romset");
+	if (findRomset(curProf->rsName) == NULL) throw("Can't found current romset");
 	if ((zx->hw->mask != 0) && (~zx->hw->mask & tmask)) throw("Incorrect memory size for this machine");
-	if (!emulSetLayout(zx->vid,currentProfile->layName)) emulSetLayout(zx->vid,"default");
+	if (!emulSetLayout(zx->vid, curProf->layName)) emulSetLayout(zx->vid,"default");
 }

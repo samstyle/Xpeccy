@@ -5,6 +5,8 @@
 #include "video.h"
 
 unsigned char* screenBuf = NULL;
+int vidFlag = 0;
+float brdsize = 1.0;
 
 unsigned char inkTab[] = {
   0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
@@ -66,8 +68,6 @@ Video* vidCreate(Memory* me) {
 		sadr += 0x700;			// -#100 +#800
 	}
 	vid->zoom = 1.0;
-	vid->brdsize = 1.0;
-	vid->flag = 0;
 	vidSetLayout(vid,448,320,138,80,64,32,0,64,0);
 	vid->mode = VID_NORMAL;
 
@@ -132,14 +132,14 @@ void vidFillMatrix(Video* vid) {
 }
 
 void vidUpdate(Video* vid) {
-	vid->lcut.h = vid->sync.h + (vid->bord.h - vid->sync.h) * (1.0 - vid->brdsize);
-	vid->lcut.v = vid->sync.v + (vid->bord.v - vid->sync.v) * (1.0 - vid->brdsize);
-	vid->rcut.h = vid->full.h - (1.0 - vid->brdsize) * (vid->full.h - vid->bord.h - 256);
-	vid->rcut.v = vid->full.v - (1.0 - vid->brdsize) * (vid->full.v - vid->bord.v - 192);
+	vid->lcut.h = vid->sync.h + (vid->bord.h - vid->sync.h) * (1.0 - brdsize);
+	vid->lcut.v = vid->sync.v + (vid->bord.v - vid->sync.v) * (1.0 - brdsize);
+	vid->rcut.h = vid->full.h - (1.0 - brdsize) * (vid->full.h - vid->bord.h - 256);
+	vid->rcut.v = vid->full.v - (1.0 - brdsize) * (vid->full.v - vid->bord.v - 192);
 	vid->vsze.h = vid->rcut.h - vid->lcut.h;
 	vid->vsze.v = vid->rcut.v - vid->lcut.v;
-	vid->wsze.h = vid->vsze.h * ((vid->flag & VF_DOUBLE) ? 2 : 1);
-	vid->wsze.v = vid->vsze.v * ((vid->flag & VF_DOUBLE) ? 2 : 1);
+	vid->wsze.h = vid->vsze.h * ((vidFlag & VF_DOUBLE) ? 2 : 1);
+	vid->wsze.v = vid->vsze.v * ((vidFlag & VF_DOUBLE) ? 2 : 1);
 	vidFillMatrix(vid);
 }
 
@@ -160,7 +160,7 @@ void vidSync(Video* vid, float dotDraw) {
 		mtx = vid->matrix[vid->dotCount++];
 		switch (mtx) {
 			case MTRX_ZERO:
-				if (vid->flag & VF_DOUBLE) vid->scrptr += vid->wsze.h;
+				if (vidFlag & VF_DOUBLE) vid->scrptr += vid->wsze.h;
 				break;
 			case MTRX_INVIS:
 				break;
@@ -235,15 +235,15 @@ void vidSync(Video* vid, float dotDraw) {
 				}
 				if (vid->firstFrame || (*vid->scrptr != col)) {
 					*(vid->scrptr++) = col;
-					if (vid->flag & VF_DOUBLE) {
+					if (vidFlag & VF_DOUBLE) {
 						*(vid->scrptr + vid->wsze.h - 1) = col;
 						*(vid->scrptr + vid->wsze.h) = col;
 						*(vid->scrptr++)=col;
 					}
-					vid->flag |= VF_CHANGED;
+					vidFlag |= VF_CHANGED;
 				} else {
 					vid->scrptr++;
-					if (vid->flag & VF_DOUBLE) vid->scrptr++;
+					if (vidFlag & VF_DOUBLE) vid->scrptr++;
 				}
 				break;
 		}

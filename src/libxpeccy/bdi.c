@@ -580,7 +580,7 @@ uint8_t op765_05[] = {
 // 06+MT+MF+SK HU TR HD SC SZ LS GP SL <R> S0 S1 S2 TR HD LS SZ read sector(s)
 uint8_t op765_06[] = {
 	0x02,17,	// hu tr hd sc sz ls gp sl
-	0xe1,FDC_EXEC,
+	0xe1,FDC_READ,
 	0x60,0x00,0x00,		// sr0 = 0
 	0x61,0x00,0x00,		// sr1 = 0
 	0x62,0x00,0x00,		// sr2 = 0
@@ -594,10 +594,10 @@ uint8_t op765_06[] = {
 	0x02,18,		// find sector SN (ic = sec.len)
 	0x21,FDC_OUTPUT,20,	// if error - jr to output
 	0xfb,2,11,		// if field = 2 (normal sec) jr @b5
-	0xfd,FDC_SK,4,		// if !com:SK jr @20
+	0xfd,FDC_SK,4,		// if !com:SK jr @02
 	0xc2,			// com:SK & del.sec - next sector
-	0x21,FDC_EXEC,-15,	// if still exec, jr back @02
-	// sec:del + com:SK
+	0x21,FDC_READ,-15,	// if still exec, jr back @02
+	// sec:del + !com:SK
 	0x02,19,		// ic bytes fdd->cpu
 	0xf0,6,
 	// sec:norm
@@ -717,7 +717,40 @@ uint8_t op765_0A[] = {
 // 0C+MT+MF+SK HU TR HD SC SZ LS GP SL <R> S0 S1 S2 TR HD LS SZ rd deleted sec(s)
 uint8_t op765_0C[] = {
 	0x02,17,	// hu tr hd sc sz ls gp sl
-	0xe1,FDC_EXEC,
+	0xe1,FDC_READ,
+	0x60,0x00,0x00,		// sr0 = 0
+	0x61,0x00,0x00,		// sr1 = 0
+	0x62,0x00,0x00,		// sr2 = 0
+	0x8f,0,			// Rbus = 0 (counter of EOT)
+	0xf9,8,			// if drive is ready @02,18
+	0x60,0x37,0x48,		// s0 |= 48 (drive not ready)
+	0x02,16,
+	0xe1,FDC_IDLE,
+	0xf1,
+
+	0x02,18,		// find sector SN (ic = sec.len)
+	0x21,FDC_OUTPUT,20,	// if error - jr to output
+	0xfb,3,11,		// if field = 3 (deleted sec) jr @b5
+	0xfd,FDC_SK,4,		// if !com:SK jr @02
+	0xc2,			// com:SK & del.sec - next sector
+	0x21,FDC_READ,-15,	// if still exec, jr back @02
+	// sec:del + !com:SK
+	0x02,19,		// ic bytes fdd->cpu
+	0xf0,6,
+	// sec:del
+	0x02,19,		// ic bytes fdd->cpu
+	0xc2,			// next sector
+	0x21,FDC_EXEC,-25,	// if still exec jr @02
+	// result phase
+	0xe1,FDC_OUTPUT,
+	0x34,
+	0x42,0,0x31,0x41,	// s0
+	0x42,1,0x31,0x41,	// s1
+	0x42,2,0x31,0x41,	// s2
+	0x42,11,0x31,0x41,	// Rtrk
+	0x42,12,0x31,0x41,	// Rsec
+	0x42,13,0x31,0x41,	// side
+	0x42,14,0x31,0x41,	// SZ
 	0xe1,FDC_IDLE,
 	0xf1
 };
@@ -913,7 +946,7 @@ uint8_t fdcRd(FDC* fdc,int port) {
 					} else {
 						res = (fdc->drq ? FDC_RQM : 0) | \
 							(fdc->ioDir ? FDC_DIO : 0) | \
-							((fdc->status == FDC_EXEC) ? FDC_EXM : 0) | \
+							(((fdc->status == FDC_EXEC) || (fdc->status == FDC_READ) || (fdc->status == FDC_WRITE)) ? FDC_EXM : 0) | \
 							((fdc->idle) ? 0 : FDC_BSY);
 					}
 //					printf("state: %.2X\n",res);
@@ -1191,6 +1224,8 @@ void vE0(FDC* p) {
 void vE1(FDC* p) {
 	p->status = *(p->wptr++);
 	switch(p->status) {
+		case FDC_READ:
+		case FDC_WRITE:
 		case FDC_EXEC: p->mode = 2; break;
 		case FDC_OUTPUT: p->mode = 1; break;
 		case FDC_IDLE: if (p->mode < 3) p->mode = 0; break;

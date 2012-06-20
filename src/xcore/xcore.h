@@ -14,6 +14,8 @@
 
 // common
 
+extern ZXComp* zx;
+
 std::string getTimeString(int);
 std::string int2str(int);
 void setFlagBit(bool, int32_t*, int32_t);
@@ -50,6 +52,7 @@ typedef struct {
 bool addRomset(RomSet);
 void setRomsetList(std::vector<RomSet>);
 void setRomset(ZXComp*, std::string);
+RomSet* findRomset(std::string);
 std::vector<RomSet> getRomsetList();
 
 // hardwares
@@ -71,11 +74,18 @@ typedef struct {
 	std::string name;
 	std::string file;
 	std::string layName;
+	std::string hwName;
+	std::string rsName;
+	std::string gsFile;
 	ZXComp* zx;
-	RomSet* rset;
 } XProfile;
 
-void addProfile(std::string,std::string);
+#define	DELP_ERR	-1
+#define	DELP_OK		0
+#define	DELP_OK_CURR	1
+
+bool addProfile(std::string,std::string);
+int delProfile(std::string);
 bool setProfile(std::string);
 void clearProfiles();
 std::vector<XProfile> getProfileList();

@@ -1,4 +1,4 @@
-#include "libxpeccy/spectrum.h"
+#include "xcore/xcore.h"
 
 #include "debuger.h"
 #include "emulwin.h"
@@ -7,9 +7,6 @@
 
 #include <QIcon>
 #include <QDebug>
-
-extern ZXComp* zx;
-//extern ZOp* inst[9];
 
 DebugWin* dbgWin;
 

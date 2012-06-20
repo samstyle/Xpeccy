@@ -20,9 +20,6 @@
 #include "ui_setupwin.h"
 #include "ui_umadial.h"
 
-extern XProfile* currentProfile;
-extern ZXComp* zx;
-
 Ui::SetupWin setupUi;
 Ui::UmaDial uia;
 
@@ -69,7 +66,6 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 		setupUi.machbox->addItem(QDialog::trUtf8(list[i].c_str()));
 	}
 	setupUi.resbox->addItems(QStringList()<<"0:Basic 128"<<"1:Basic48"<<"2:Shadow"<<"3:DOS");
-	setupUi.mszbox->addItems(QStringList()<<"48K"<<"128K"<<"256K"<<"512K"<<"1024K");
 	setupUi.rssel->hide();
 	QTableWidgetItem* itm;
 	for (i=0; i<6; i++) {
@@ -138,7 +134,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 // machine
 	QObject::connect(setupUi.rsetbox,SIGNAL(currentIndexChanged(int)),this,SLOT(buildrsetlist()));
 	QObject::connect(setupUi.machbox,SIGNAL(currentIndexChanged(int)),this,SLOT(setmszbox(int)));
-	QObject::connect(setupUi.mszbox,SIGNAL(currentIndexChanged(int)),this,SLOT(okbuts()));
+//	QObject::connect(setupUi.mszbox,SIGNAL(currentIndexChanged(int)),this,SLOT(okbuts()));
 	QObject::connect(setupUi.cpufrq,SIGNAL(valueChanged(int)),this,SLOT(updfrq()));
 	QObject::connect(setupUi.rstab,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(editrset(QModelIndex)));
 	QObject::connect(setupUi.rse_cancel,SIGNAL(released()),this,SLOT(hidersedit()));
@@ -219,10 +215,13 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	QObject::connect(setupUi.umdeltb,SIGNAL(released()),this,SLOT(umdel()));
 	QObject::connect(setupUi.umuptb,SIGNAL(released()),this,SLOT(umup()));
 	QObject::connect(setupUi.umdntb,SIGNAL(released()),this,SLOT(umdn()));
-//usermenu add dialog
+// bookmark add dialog
 	QObject::connect(uia.umasptb,SIGNAL(released()),this,SLOT(umaselp()));
 	QObject::connect(uia.umaok,SIGNAL(released()),this,SLOT(umaconf()));
 	QObject::connect(uia.umacn,SIGNAL(released()),umadial,SLOT(hide()));
+// profiles manager
+	connect(setupUi.tbNewProfile,SIGNAL(released()),this,SLOT(newProfile()));
+	connect(setupUi.tbDelProfile,SIGNAL(released()),this,SLOT(rmProfile()));
 }
 
 void SetupWin::recheck_single(bool st) {
@@ -235,6 +234,7 @@ void SetupWin::okay() {apply();reject();}
 void SetupWin::start() {
 	uint32_t i;
 	emulPause(true,PR_OPTS);
+	XProfile* curProf = getCurrentProfile();
 // machine
 	setupUi.rstab->show();
 	setupUi.rssel->hide();
@@ -243,30 +243,26 @@ void SetupWin::start() {
 	setupUi.rmrset->setEnabled(true);
 	setupUi.rsetbox->clear();
 	rsl = getRomsetList();
-	GSRom = zx->opt.GSRom;
+	GSRom = curProf->gsFile;
 	for (i=0; i < rsl.size(); i++) {
 		setupUi.rsetbox->addItem(QDialog::trUtf8(rsl[i].name.c_str()));
 	}
 	setupUi.machbox->setCurrentIndex(setupUi.machbox->findText(QDialog::trUtf8(zx->hw->name)));
 	int cbx = -1;
-	RomSet* rset = currentProfile->rset;	// memGetRomset(zx->mem);
+	RomSet* rset = findRomset(curProf->rsName);
 	if (rset != NULL) cbx = setupUi.rsetbox->findText(QDialog::trUtf8(rset->name.c_str()));
 	setupUi.rsetbox->setCurrentIndex(cbx);
 	setupUi.reschk->setChecked(emulGetFlags() & FL_RESET);
 	setupUi.resbox->setCurrentIndex(zx->resbank);
-	switch(zx->mem->memSize) {
-		case 48: setupUi.mszbox->setCurrentIndex(0); break;
-		case 128: setupUi.mszbox->setCurrentIndex(1); break;
-		case 256: setupUi.mszbox->setCurrentIndex(2); break;
-		case 512: setupUi.mszbox->setCurrentIndex(3); break;
-		case 1024: setupUi.mszbox->setCurrentIndex(4); break;
-	}
+	setmszbox(setupUi.machbox->currentIndex());
+	setupUi.mszbox->setCurrentIndex(setupUi.mszbox->findData(zx->mem->memSize));
+	if (setupUi.mszbox->currentIndex() < 0) setupUi.mszbox->setCurrentIndex(setupUi.mszbox->count() - 1);
 	setupUi.cpufrq->setValue(zx->cpuFrq * 2); updfrq();
 	setupUi.scrpwait->setChecked(zx->hwFlags & WAIT_ON);
 // video
-	setupUi.dszchk->setChecked((zx->vid->flag & VF_DOUBLE));
-	setupUi.fscchk->setChecked(zx->vid->flag & VF_FULLSCREEN);
-	setupUi.bszsld->setValue((int)(zx->vid->brdsize * 100));
+	setupUi.dszchk->setChecked((vidFlag & VF_DOUBLE));
+	setupUi.fscchk->setChecked(vidFlag & VF_FULLSCREEN);
+	setupUi.bszsld->setValue((int)(brdsize * 100));
 	setupUi.pathle->setText(QDialog::trUtf8(optGetString(OPT_SHOTDIR).c_str()));
 	setupUi.ssfbox->setCurrentIndex(setupUi.ssfbox->findData(optGetInt(OPT_SHOTFRM)));
 	setupUi.scntbox->setValue(optGetInt(OPT_SHOTCNT));
@@ -275,7 +271,7 @@ void SetupWin::start() {
 	std::vector<VidLayout> lays = getLayoutList();
 	setupUi.geombox->clear();
 	for (i=0; i<lays.size(); i++) {setupUi.geombox->addItem(QDialog::trUtf8(lays[i].name.c_str()));}
-	setupUi.geombox->setCurrentIndex(setupUi.geombox->findText(QDialog::trUtf8(currentProfile->layName.c_str())));
+	setupUi.geombox->setCurrentIndex(setupUi.geombox->findText(QDialog::trUtf8(getCurrentProfile()->layName.c_str())));
 // sound
 	setupUi.senbox->setChecked(sndGet(SND_ENABLE) != 0);
 	setupUi.mutbox->setChecked(sndGet(SND_MUTE) != 0);
@@ -375,39 +371,33 @@ void SetupWin::start() {
 // leds
 	setupUi.diskLed->setChecked(emulGetFlags() & FL_LED_DISK);
 	setupUi.shotLed->setChecked(emulGetFlags() & FL_LED_SHOT);
+// profiles
+	buildproflist();
 
 	show();
 }
 
 void SetupWin::apply() {
+	XProfile* curProf = getCurrentProfile();
 // machine
 	HardWare *oldmac = zx->hw;
-	strcpy(zx->opt.hwName,setupUi.machbox->currentText().toUtf8().data());
-	setHardware(zx,zx->opt.hwName);
-	strcpy(zx->opt.rsName,setupUi.rsetbox->currentText().toUtf8().data());
-	setRomset(zx, zx->opt.rsName);
+	curProf->hwName = std::string(setupUi.machbox->currentText().toUtf8().data());
+	setHardware(zx,curProf->hwName);
+	curProf->rsName = std::string(setupUi.rsetbox->currentText().toUtf8().data());
+	setRomset(zx, curProf->rsName);
 	emulSetFlag(FL_RESET, setupUi.reschk->isChecked());
 	zx->resbank = setupUi.resbox->currentIndex();
-	switch(setupUi.mszbox->currentIndex()) {
-		case 0: memSetSize(zx->mem,48); break;
-		case 1: memSetSize(zx->mem,128); break;
-		case 2: memSetSize(zx->mem,256); break;
-		case 3: memSetSize(zx->mem,512); break;
-		case 4: memSetSize(zx->mem,1024); break;
-	}
+
+	memSetSize(zx->mem,setupUi.mszbox->itemData(setupUi.mszbox->currentIndex()).toInt());
 	zxSetFrq(zx,setupUi.cpufrq->value() / 2.0);
 	setFlagBit(setupUi.scrpwait->isChecked(),&zx->hwFlags,WAIT_ON);
-	strcpy(zx->opt.GSRom,GSRom.c_str());
+	curProf->gsFile = GSRom;
 	setRomsetList(rsl);
 	if (zx->hw != oldmac) zxReset(zx,RES_DEFAULT);
 // video
-	setFlagBit(setupUi.dszchk->isChecked(),&zx->vid->flag,VF_DOUBLE);
-	zx->vid->brdsize = setupUi.bszsld->value()/100.0;
-	if (setupUi.fscchk->isChecked()) {
-		zx->vid->flag |= VF_FULLSCREEN;
-	} else {
-		zx->vid->flag &= ~VF_FULLSCREEN;
-	}
+	setFlagBit(setupUi.dszchk->isChecked(),&vidFlag,VF_DOUBLE);
+	setFlagBit(setupUi.fscchk->isChecked(),&vidFlag,VF_FULLSCREEN);
+	brdsize = setupUi.bszsld->value()/100.0;
 	optSet(OPT_SHOTDIR,std::string(setupUi.pathle->text().toUtf8().data()));
 	optSet(OPT_SHOTFRM,setupUi.ssfbox->itemData(setupUi.ssfbox->currentIndex()).toInt());
 	optSet(OPT_SHOTCNT,setupUi.scntbox->value());
@@ -657,37 +647,21 @@ void SetupWin::buildjmaplist() {
 	}
 }
 
-void SetupWin::okbuts() {
-	std::vector<HardWare> list = getHardwareList();
-	int t = list[setupUi.machbox->currentIndex()].mask;
-
-	if (t == 0x00) {
-		setupUi.okbut->setEnabled(setupUi.mszbox->currentIndex()==0);
-	} else {
-		setupUi.okbut->setEnabled((1<<(setupUi.mszbox->currentIndex()-1)) & t);
-	}
-	setupUi.apbut->setEnabled(setupUi.okbut->isEnabled());
-}
-
 void SetupWin::setmszbox(int idx) {
 	std::vector<HardWare> list = getHardwareList();
 	int t = list[idx].mask;
-	QIcon okicon = QIcon(":/images/ok-apply.png");
-	QIcon ericon = QIcon(":/images/cancel.png");
+	QString oldText = setupUi.mszbox->currentText();
+	setupUi.mszbox->clear();
 	if (t == 0x00) {
-		setupUi.mszbox->setItemIcon(0,okicon);
-		setupUi.mszbox->setItemIcon(1,ericon);
-		setupUi.mszbox->setItemIcon(2,ericon);
-		setupUi.mszbox->setItemIcon(3,ericon);
-		setupUi.mszbox->setItemIcon(4,ericon);
+		setupUi.mszbox->addItem("48K",48);
 	} else {
-		setupUi.mszbox->setItemIcon(0,ericon);
-		setupUi.mszbox->setItemIcon(1,(t & 1)?okicon:ericon);
-		setupUi.mszbox->setItemIcon(2,(t & 2)?okicon:ericon);
-		setupUi.mszbox->setItemIcon(3,(t & 4)?okicon:ericon);
-		setupUi.mszbox->setItemIcon(4,(t & 8)?okicon:ericon);
+		if (t & 1) setupUi.mszbox->addItem("128K",128);
+		if (t & 2) setupUi.mszbox->addItem("256K",256);
+		if (t & 4) setupUi.mszbox->addItem("512K",512);
+		if (t & 8) setupUi.mszbox->addItem("1024K",1024);
 	}
-	okbuts();
+	setupUi.mszbox->setCurrentIndex(setupUi.mszbox->findText(oldText));
+	if (setupUi.mszbox->currentIndex() < 0) setupUi.mszbox->setCurrentIndex(setupUi.mszbox->count() - 1);
 }
 
 void SetupWin::buildrsetlist() {
@@ -781,6 +755,18 @@ void SetupWin::buildmenulist() {
 	setupUi.umlist->setColumnWidth(0,100);
 	setupUi.umlist->selectRow(0);
 };
+
+void SetupWin::buildproflist() {
+	std::vector<XProfile> prList = getProfileList();
+	setupUi.twProfileList->setRowCount(prList.size());
+	QTableWidgetItem* itm;
+	for (uint i=0; i<prList.size(); i++) {
+		itm = new QTableWidgetItem(QDialog::trUtf8(prList[i].name.c_str()));
+		setupUi.twProfileList->setItem(i,0,itm);
+		itm = new QTableWidgetItem(QDialog::trUtf8(prList[i].file.c_str()));
+		setupUi.twProfileList->setItem(i,1,itm);
+	}
+}
 
 void SetupWin::copyToTape() {
 	int dsk = setupUi.disktabs->currentIndex();
@@ -1301,4 +1287,34 @@ void SetupWin::umaconf() {
 	umadial->hide();
 	buildmenulist();
 	setupUi.umlist->selectRow(setupUi.umlist->rowCount()-1);
+}
+
+// profiles
+
+void SetupWin::newProfile() {
+	QString nam = QInputDialog::getText(this,"Enter...","New profile name");
+	if (nam.isEmpty()) return;
+	std::string nm = std::string(nam.toUtf8().data());
+	std::string fp = nm + ".conf";
+	if (!addProfile(nm,fp)) shitHappens("Can't add such profile");
+	buildproflist();
+	fillProfileMenu();
+}
+
+void SetupWin::rmProfile() {
+	int idx = setupUi.twProfileList->currentRow();
+	if (idx < 0) return;
+	if (!areSure("Do you really want to delete this profile?")) return;
+	std::string pnam(setupUi.twProfileList->item(idx,0)->text().toUtf8().data());
+	idx = delProfile(pnam);
+	switch(idx) {
+		case DELP_OK_CURR:
+			start();
+			break;
+		case DELP_ERR:
+			shitHappens("Sorry, i can't delete this profile");
+			break;
+	}
+	buildproflist();
+	fillProfileMenu();
 }
