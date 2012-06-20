@@ -1256,7 +1256,10 @@ void EmulWin::profileSelected(QAction* act) {
 	loadConfig(false);
 	emulUpdateWindow();
 	saveProfiles();
-	if (zx->flags & ZX_JUSTBORN) zxReset(zx,RES_DEFAULT);
+	if (zx->flags & ZX_JUSTBORN) {
+		zxReset(zx,RES_DEFAULT);
+		zx->flags &= ~ZX_JUSTBORN;
+	}
 	mainWin->setFocus();
 	emulPause(false,PR_EXTRA);
 }
