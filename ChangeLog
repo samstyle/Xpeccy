@@ -195,3 +195,6 @@ Fix	RZX-player buttons wasn't active if rzx file was loading through command lin
 Wrk	Memory size combobox is changed
 Wrk	Multisector & multitrack sector reading for uPD765
 Wrk	Deleted sectors reading for uPD765
+
+build 20120622
+New	Show current profile in window header

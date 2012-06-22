@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>304</width>
-    <height>97</height>
+    <width>302</width>
+    <height>95</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -90,7 +90,7 @@
        </property>
        <property name="icon">
         <iconset resource="../xpeccy.qrc">
-         <normaloff>:/images/remove.png</normaloff>:/images/remove.png</iconset>
+         <normaloff>:/images/cancel.png</normaloff>:/images/cancel.png</iconset>
        </property>
       </widget>
      </item>

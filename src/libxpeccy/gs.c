@@ -90,7 +90,7 @@ GSound* gsCreate() {
 	memSetBank(res->mem,MEM_BANK3,MEM_RAM,1);
 	res->cnt = 0;
 	res->pstate = 0x7e;
-	res->flag = GS_ENABLE;
+	res->flag = 0;
 	res->stereo = GS_12_34;
 	res->counter = 0;
 	res->ch1 = 0;

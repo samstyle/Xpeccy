@@ -53,7 +53,7 @@
        </property>
        <property name="icon">
         <iconset resource="../xpeccy.qrc">
-         <normaloff>:/images/remove.png</normaloff>:/images/remove.png</iconset>
+         <normaloff>:/images/cancel.png</normaloff>:/images/cancel.png</iconset>
        </property>
       </widget>
      </item>

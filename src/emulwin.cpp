@@ -349,6 +349,12 @@ void MainWin::updateWindow() {
 	zx->vid->scrptr = zx->vid->scrimg;
 #endif
 	zx->vid->firstFrame = true;
+	QString title(XPTITLE);
+	XProfile* curProf = getCurrentProfile();
+	if (curProf != NULL) {
+		title.append(" | ").append(QDialog::trUtf8(curProf->name.c_str()));
+	}
+	setWindowTitle(title);
 	emulFlags &= ~FL_BLOCK;
 }
 
