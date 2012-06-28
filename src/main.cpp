@@ -1,7 +1,9 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QTimer>
-#include <SDL/SDL.h>
+#ifdef HAVESDLSOUND
+#include <SDL.h>
+#endif
 #ifdef WIN32
 	#undef main
 #endif
@@ -27,19 +29,21 @@ EmulWin *mwin;
 extern MainWin* mainWin;
 
 int main(int ac,char** av) {
-	SDL_version sdlver;
-	SDL_VERSION(&sdlver);
-	printf("Using SDL ver %u.%u.%u\n", sdlver.major, sdlver.minor, sdlver.patch);
 	Z80EX_VERSION* ver = z80ex_get_version();
 	printf("Using z80ex ver %d.%d\n",ver->major, ver->minor);
 #ifdef XQTPAINT
 	printf("Using Qt painter\n");
 #else
+	SDL_version sdlver;
+	SDL_VERSION(&sdlver);
+	printf("Using SDL ver %u.%u.%u\n", sdlver.major, sdlver.minor, sdlver.patch);
 	printf("Using SDL surface\n");
 #endif
 
+#ifdef HAVESDLSOUND
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK);
 	atexit(SDL_Quit);
+#endif
 	QApplication app(ac,av,true);
 	try {
 
@@ -80,23 +84,31 @@ int main(int ac,char** av) {
 				loadFile(av[i],FT_ALL,0);
 			}
 
+#ifdef HAVESDLSOUND
 			SDL_JoystickOpen(1);
+#endif
 			mainWin->checkState();
 			mainWin->startTimer(20);
 			app.exec();
 			mainWin->stopTimer();
 			sndClose();
+#ifdef HAVESDLSOUND
 			SDL_Quit();
+#endif
 			return 0;
 		}
 	}
 	catch (const char* s) {
 		shitHappens(s);
+#ifdef HAVESDLSOUND
 		SDL_Quit();
+#endif
 		return 1;
 	}
 	catch (int i) {
+#ifdef HAVESDLSOUND
 		SDL_Quit();
+#endif
 		return 1;
 	}
 }

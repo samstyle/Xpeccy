@@ -5,7 +5,9 @@
 //#include <QIcon>
 #include <QTimer>
 #include <stdint.h>
+#ifdef HAVESDLSOUND
 #include <SDL.h>
+#endif
 
 #ifndef XQTPAINT
 	#include <QX11EmbedContainer>
@@ -81,7 +83,6 @@ class MainWin : public QX11EmbedContainer {
 		void startTimer(int);
 		void stopTimer();
 		void checkState();
-		void updateHeader();
 	private:
 		QTimer* timer;
 	public slots:

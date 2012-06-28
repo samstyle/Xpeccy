@@ -527,8 +527,21 @@ uint8_t op765_02[] = {
 	0x31,0x40,0x5A,	// NM
 	0x31,0x40,0x57,	// GP
 	0x31,0x40,0x58,	// SL
-	0xe1,FDC_EXEC,
+	0xe1,FDC_READ,
+	0xf9,8,			// if flp.ready
+	0x60,0x37,0x48,		// s0 |= 48 (drive not ready)
+	0xf0,13,		// @e1 (@output)
+	0xfc,3,0xa8,0xf0,-5,	// wait for IDX
+	0x91,0x31,0x41,0xa8,	// Rdat = flpRd, drq=1, wait for rd, next
+	0xfc,2,0xf0,-8,		// if !IDX jr @91
 	0xe1,FDC_OUTPUT,
+	0x42,0,0x31,0x41,	// sr0
+	0x42,1,0x31,0x41,	// sr1
+	0x42,2,0x31,0x41,	// sr2
+	0x42,11,0x31,0x41,	// Rtrk
+	0x42,13,0x31,0x41,	// side
+	0x42,15,0x31,0x41,	// nm
+	0x42,16,0x31,0x41,	// sl
 	0xe1,FDC_IDLE,
 	0xf1
 };
@@ -1055,6 +1068,8 @@ void v42(FDC *p) {
 		case 12: p->data = p->sec; break;
 		case 13: p->data = p->side; break;
 		case 14: p->data = p->sz; break;
+		case 15: p->data = p->nm; break;
+		case 16: p->data = p->sl; break;
 		case 20: p->data = p->buf[0]; break;
 		case 21: p->data = p->buf[1]; break;
 		case 22: p->data = p->buf[2]; break;
@@ -1070,6 +1085,7 @@ void v50(FDC* p) {
 	p->side = (p->data & 4) ? 0 : 1;
 	p->sr0 &= 0xf8;
 	p->sr0 |= (p->data & 7);
+//	printf("unit %i, side %i\n",p->data & 3, p->side);
 }	// HU: b0,1:drive; b2: side
 void v51(FDC* p) {p->trk = p->data;}							// TP: physical track
 void v52(FDC* p) {p->trk = p->data;}							// TR: track id

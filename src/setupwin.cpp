@@ -3,8 +3,10 @@
 #include <QFileDialog>
 #include <QVector3D>
 #include <QDebug>
-#include <SDL.h>
 #include <stdlib.h>
+#ifdef HAVESDLSOUND
+#include <SDL.h>
+#endif
 
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
@@ -1039,6 +1041,7 @@ void SetupWin::addJoyBind() {
 }
 
 void SetupWin::scanJoyBind() {
+#ifndef XQTPAINT
 	dia->setEnabled(false);
 	SDL_Event ev;
 	bool doWork = true;
@@ -1073,6 +1076,7 @@ void SetupWin::scanJoyBind() {
 	} while (doWork);
 	dia->hide();
 	buildjmaplist();
+#endif
 }
 
 void SetupWin::delJoyBind() {

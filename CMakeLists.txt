@@ -3,7 +3,6 @@ project(xpeccy)
 
 find_package(Qt4 REQUIRED)
 find_package(ZLIB)
-
 find_package(SDL)
 
 if (UNIX)
@@ -37,13 +36,13 @@ endif()
 
 file(GLOB SOURCES
 	./src/*.cpp
-	./src/libxpeccy/*.cpp
 	./src/libxpeccy/*.c
 	./src/filetypes/*.cpp
 	./src/xcore/*.cpp
 	./src/xgui/*.cpp
-	./src/lib765/*.c
-	./src/libdsk/*.c
+if(WIN32)
+	./src/xpeccy.rc
+endif(WIN32)
 )
 file(GLOB HEADERS
 	./src/*.h
@@ -51,8 +50,6 @@ file(GLOB HEADERS
 	./src/filetypes/*.h
 	./src/xcore/*.h
 	./src/xgui/*.h
-	./src/lib765/*.h
-	./src/libdsk/*.h
 )
 file(GLOB UIFILES ./ui/*.ui)
 set(QRCFILES ./xpeccy.qrc)
@@ -64,10 +61,9 @@ set(MOCFILES
 	./src/xgui/xgui.h
 )
 
-add_definitions(-Wall -O2)
-
-set(CMAKE_C_FLAGS -std=gnu99)
-set(CMAKE_C_FLAGS_DEBUG -g)
+set(CMAKE_C_FLAGS "-std=gnu99 -Wall -O2")
+set(CMAKE_CXX_FLAGS "-Wall -O2")
+set(CMAKE_C_FLAGS_DEBUG "-g")
 
 if (SDL_FOUND)
 	add_definitions(-DHAVESDLSOUND)

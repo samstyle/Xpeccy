@@ -7,10 +7,12 @@
 #include <sys/types.h>
 
 #ifdef WIN32
+#ifdef HAVESDLSOUND
 	#include <SDL.h>
 	#include <SDL_timer.h>
 	#include <SDL_syswm.h>
 	#undef main
+#endif
 #endif
 
 #include "xcore/xcore.h"
@@ -32,9 +34,11 @@
 #endif
 
 #ifndef WIN32
+#ifdef HAVESDLSOUND
 	#include <SDL.h>
 	#include <SDL_timer.h>
 	#include <SDL_syswm.h>
+#endif
 #endif
 
 #include <fstream>

@@ -3,7 +3,7 @@
 
 #include <iostream>
 #ifdef HAVESDLSOUND
-	#include <SDL/SDL.h>
+	#include <SDL.h>
 #ifdef WIN32
 	#undef main
 	#include <mmsystem.h>
@@ -148,9 +148,11 @@ void sndPlay() {
 }
 
 void sndPause(bool b) {
+#ifdef HAVESDLSOUND
 	if (sndOutput == NULL) return;
 	if (sndOutput->name != "SDL") return;
 	SDL_PauseAudio(b ? 1 : 0);
+#endif
 }
 
 void sndClose() {

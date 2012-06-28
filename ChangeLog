@@ -198,3 +198,7 @@ Wrk	Deleted sectors reading for uPD765
 
 build 20120622
 New	Show current profile in window header
+
+build 20120628
+New	Icon for windows .exe file
+Wrk	Fix many errors during building Xpeccy w/o SDL

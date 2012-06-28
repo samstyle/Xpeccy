@@ -21,7 +21,7 @@ typedef struct {
 	unsigned char secCount;
 	unsigned char gap3Size;
 	unsigned char filler;
-	char sectorInfo[0x100 - 0x18];
+	char sectorInfo[0x100 - 0x18];	// max 29 (x 8 bytes)
 } TrackInfBlock;
 
 typedef struct {
@@ -32,7 +32,7 @@ typedef struct {
 	unsigned char sr1;
 	unsigned char sr2;
 	unsigned short bytesSize;
-} SectorInfBlock;
+} SectorInfBlock;	// 8 bytes
 
 int loadDsk(Floppy* flp, const char *name) {
 	std::ifstream file(name,std::ios::binary);
@@ -40,7 +40,6 @@ int loadDsk(Floppy* flp, const char *name) {
 	DiskInfBlock dib;
 	file.read((char*)&dib,sizeof(DiskInfBlock));
 	if (strncmp(dib.signature,"EXTENDED CPC DSK File\r\nDisk-Info\r\n",34) != 0) return ERR_DSK_SIGN;
-	flpClearDisk(flp);
 	TrackInfBlock tib;
 	SectorInfBlock* sib;
 	int tr = 0;
