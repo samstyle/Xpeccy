@@ -5,8 +5,8 @@
 //#include <QIcon>
 #include <QTimer>
 #include <stdint.h>
-#ifdef HAVESDLSOUND
-#include <SDL.h>
+#ifdef HAVESDL
+	#include <SDL/SDL.h>
 #endif
 
 #ifndef XQTPAINT

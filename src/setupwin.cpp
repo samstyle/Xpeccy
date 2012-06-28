@@ -4,8 +4,8 @@
 #include <QVector3D>
 #include <QDebug>
 #include <stdlib.h>
-#ifdef HAVESDLSOUND
-#include <SDL.h>
+#ifdef HAVESDL
+#include <SDL/SDL.h>
 #endif
 
 #include "xcore/xcore.h"

@@ -5,16 +5,6 @@
 #include <QTableWidget>
 #include <sys/stat.h>
 #include <sys/types.h>
-
-#ifdef WIN32
-#ifdef HAVESDLSOUND
-	#include <SDL.h>
-	#include <SDL_timer.h>
-	#include <SDL_syswm.h>
-	#undef main
-#endif
-#endif
-
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
 #include "libxpeccy/spectrum.h"
@@ -26,19 +16,17 @@
 #include "develwin.h"
 #include "filer.h"
 
+#ifdef HAVESDL
+	#include <SDL/SDL.h>
+	#include <SDL/SDL_timer.h>
+	#include <SDL/SDL_syswm.h>
+#endif
+
 //#include "ui_tapewin.h"
 
 #ifdef XQTPAINT
 	#include <QPainter>
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
-#endif
-
-#ifndef WIN32
-#ifdef HAVESDLSOUND
-	#include <SDL.h>
-	#include <SDL_timer.h>
-	#include <SDL_syswm.h>
-#endif
 #endif
 
 #include <fstream>

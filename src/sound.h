@@ -6,7 +6,7 @@
 #include <stdint.h>
 
 #ifndef WIN32
-#ifdef HAVEALSASOUND
+#ifdef HAVEALSA
 	#include <alsa/asoundlib.h>
 #endif
 	#include <sys/ioctl.h>

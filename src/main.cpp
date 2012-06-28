@@ -1,12 +1,6 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QTimer>
-#ifdef HAVESDLSOUND
-#include <SDL.h>
-#endif
-#ifdef WIN32
-	#undef main
-#endif
 #include <getopt.h>
 
 #include "xcore/xcore.h"
@@ -20,8 +14,12 @@
 #include "develwin.h"
 #include "filer.h"
 
+#ifdef HAVESDL
+	#include <SDL/SDL.h>
+#endif
 #ifdef WIN32
-	#include <direct.h>
+	#undef main
+#include <direct.h>
 #endif
 
 ZXComp* zx;
@@ -34,13 +32,13 @@ int main(int ac,char** av) {
 #ifdef XQTPAINT
 	printf("Using Qt painter\n");
 #else
-	SDL_version sdlver;
-	SDL_VERSION(&sdlver);
-	printf("Using SDL ver %u.%u.%u\n", sdlver.major, sdlver.minor, sdlver.patch);
 	printf("Using SDL surface\n");
 #endif
 
-#ifdef HAVESDLSOUND
+#ifdef HAVESDL
+	SDL_version sdlver;
+	SDL_VERSION(&sdlver);
+	printf("Using SDL ver %u.%u.%u\n", sdlver.major, sdlver.minor, sdlver.patch);
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK);
 	atexit(SDL_Quit);
 #endif
@@ -84,7 +82,7 @@ int main(int ac,char** av) {
 				loadFile(av[i],FT_ALL,0);
 			}
 
-#ifdef HAVESDLSOUND
+#ifdef HAVESDL
 			SDL_JoystickOpen(1);
 #endif
 			mainWin->checkState();
@@ -92,7 +90,7 @@ int main(int ac,char** av) {
 			app.exec();
 			mainWin->stopTimer();
 			sndClose();
-#ifdef HAVESDLSOUND
+#ifdef HAVESDLS
 			SDL_Quit();
 #endif
 			return 0;
@@ -100,13 +98,13 @@ int main(int ac,char** av) {
 	}
 	catch (const char* s) {
 		shitHappens(s);
-#ifdef HAVESDLSOUND
+#ifdef HAVESDL
 		SDL_Quit();
 #endif
 		return 1;
 	}
 	catch (int i) {
-#ifdef HAVESDLSOUND
+#ifdef HAVESDL
 		SDL_Quit();
 #endif
 		return 1;

@@ -1,13 +1,14 @@
 #include "sound.h"
 #include "xcore/xcore.h"
+#include <stdio.h>
 
 #include <iostream>
-#ifdef HAVESDLSOUND
-	#include <SDL.h>
+#ifdef HAVESDL
+	#include <SDL/SDL.h>
+#endif
 #ifdef WIN32
 	#undef main
 	#include <mmsystem.h>
-#endif
 #endif
 
 struct OutSys {
@@ -45,7 +46,7 @@ uint8_t lev,levr,levl;
 #ifndef WIN32
 	int32_t ossHandle;			// oss
 	int32_t sndFormat;
-#ifdef HAVEALSASOUND
+#ifdef HAVEALSA
 	char *alsaDevice;			// alsa
 	snd_output_t *alsaOutput;
 	snd_pcm_t *alsaHandle;
@@ -148,7 +149,7 @@ void sndPlay() {
 }
 
 void sndPause(bool b) {
-#ifdef HAVESDLSOUND
+#ifdef HAVESDL
 	if (sndOutput == NULL) return;
 	if (sndOutput->name != "SDL") return;
 	SDL_PauseAudio(b ? 1 : 0);
@@ -226,7 +227,7 @@ bool null_open() {return true;}
 void null_play() {}
 void null_close() {}
 
-#ifdef HAVESDLSOUND
+#ifdef HAVESDL
 
 // FIXME: something going wrong. sdlPlayAudio plays buffer slower than emulation fill it
 void sdlPlayAudio(void*,Uint8* stream, int len) {
@@ -311,7 +312,7 @@ void oss_close() {
 }
 
 
-#ifdef HAVEALSASOUND
+#ifdef HAVEALSA
 
 bool alsa_open() {
 	int err;
@@ -401,7 +402,7 @@ void wave_close() {
 
 void sndInit() {
 #ifndef WIN32
-#ifdef HAVEALSASOUND
+#ifdef HAVEALSA
 	alsaDevice = (char*)"default";
 	alsaOutput = NULL;
 #endif
@@ -419,13 +420,13 @@ void sndInit() {
 	addOutput("NULL",&null_open,&null_play,&null_close);
 #ifndef WIN32
 	addOutput("OSS",&oss_open,&oss_play,&oss_close);
-#ifdef HAVEALSASOUND
+#ifdef HAVEALSA
 	addOutput("ALSA",&alsa_open,&alsa_play,&alsa_close);
 #endif
 #else
 	addOutput("WaveOut",&wave_open,&wave_play,&wave_close);
 #endif
-#ifdef HAVESDLSOUND
+#ifdef HAVESDL
 	addOutput("SDL",&sdlopen,&sdlplay,&sdlclose);	// TODO: do something with SDL output
 #endif
 }
