@@ -17,7 +17,11 @@ void initFileDialog(QWidget*) {
 	filer->setNameFilterDetailsVisible(true);
 	filer->setConfirmOverwrite(true);
 	filer->setOptions(QFileDialog::DontUseNativeDialog);
+#ifdef WIN32
+	lastDir = ".";
+#else
 	lastDir = QDir::home();
+#endif
 }
 
 bool saveChangedDisk(int id) {

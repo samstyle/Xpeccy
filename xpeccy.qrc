@@ -38,5 +38,6 @@
         <file>images/star.png</file>
         <file>images/video.png</file>
         <file>images/profile.png</file>
+        <file>images/question.png</file>
     </qresource>
 </RCC>

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>505</width>
-    <height>488</height>
+    <height>476</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -2667,6 +2667,315 @@
                 </size>
                </property>
               </spacer>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QWidget" name="tab_12">
+            <attribute name="icon">
+             <iconset resource="../xpeccy.qrc">
+              <normaloff>:/images/question.png</normaloff>:/images/question.png</iconset>
+            </attribute>
+            <attribute name="title">
+             <string>Help</string>
+            </attribute>
+            <layout class="QVBoxLayout" name="verticalLayout_36">
+             <item>
+              <widget class="QGroupBox" name="groupBox_6">
+               <property name="title">
+                <string>Hot keys</string>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_37">
+                <item>
+                 <widget class="QTableWidget" name="tableWidget">
+                  <property name="editTriggers">
+                   <set>QAbstractItemView::NoEditTriggers</set>
+                  </property>
+                  <property name="selectionMode">
+                   <enum>QAbstractItemView::SingleSelection</enum>
+                  </property>
+                  <property name="selectionBehavior">
+                   <enum>QAbstractItemView::SelectRows</enum>
+                  </property>
+                  <property name="gridStyle">
+                   <enum>Qt::DotLine</enum>
+                  </property>
+                  <property name="rowCount">
+                   <number>23</number>
+                  </property>
+                  <property name="columnCount">
+                   <number>2</number>
+                  </property>
+                  <attribute name="horizontalHeaderVisible">
+                   <bool>false</bool>
+                  </attribute>
+                  <attribute name="horizontalHeaderStretchLastSection">
+                   <bool>true</bool>
+                  </attribute>
+                  <attribute name="verticalHeaderVisible">
+                   <bool>false</bool>
+                  </attribute>
+                  <attribute name="verticalHeaderDefaultSectionSize">
+                   <number>17</number>
+                  </attribute>
+                  <row/>
+                  <row/>
+                  <row/>
+                  <row/>
+                  <row/>
+                  <row/>
+                  <row/>
+                  <row/>
+                  <row/>
+                  <row/>
+                  <row/>
+                  <row/>
+                  <row/>
+                  <row/>
+                  <row/>
+                  <row/>
+                  <row/>
+                  <row/>
+                  <row/>
+                  <row/>
+                  <row/>
+                  <row/>
+                  <row/>
+                  <column/>
+                  <column/>
+                  <item row="0" column="0">
+                   <property name="text">
+                    <string>F1</string>
+                   </property>
+                  </item>
+                  <item row="0" column="1">
+                   <property name="text">
+                    <string>Options</string>
+                   </property>
+                  </item>
+                  <item row="1" column="0">
+                   <property name="text">
+                    <string>F2</string>
+                   </property>
+                  </item>
+                  <item row="1" column="1">
+                   <property name="text">
+                    <string>Save...</string>
+                   </property>
+                  </item>
+                  <item row="2" column="0">
+                   <property name="text">
+                    <string>F3</string>
+                   </property>
+                  </item>
+                  <item row="2" column="1">
+                   <property name="text">
+                    <string>Open...</string>
+                   </property>
+                  </item>
+                  <item row="3" column="0">
+                   <property name="text">
+                    <string>F4</string>
+                   </property>
+                  </item>
+                  <item row="3" column="1">
+                   <property name="text">
+                    <string>Play / stop tape</string>
+                   </property>
+                  </item>
+                  <item row="4" column="0">
+                   <property name="text">
+                    <string>F5</string>
+                   </property>
+                  </item>
+                  <item row="4" column="1">
+                   <property name="text">
+                    <string>Rec / stop tape</string>
+                   </property>
+                  </item>
+                  <item row="5" column="0">
+                   <property name="text">
+                    <string>F6</string>
+                   </property>
+                  </item>
+                  <item row="5" column="1">
+                   <property name="text">
+                    <string>Developer tool</string>
+                   </property>
+                  </item>
+                  <item row="6" column="0">
+                   <property name="text">
+                    <string>F7</string>
+                   </property>
+                  </item>
+                  <item row="6" column="1">
+                   <property name="text">
+                    <string>Screenshot</string>
+                   </property>
+                  </item>
+                  <item row="7" column="0">
+                   <property name="text">
+                    <string>Alt + F7</string>
+                   </property>
+                  </item>
+                  <item row="7" column="1">
+                   <property name="text">
+                    <string>Screenshot combo</string>
+                   </property>
+                  </item>
+                  <item row="8" column="0">
+                   <property name="text">
+                    <string>F8</string>
+                   </property>
+                  </item>
+                  <item row="8" column="1">
+                   <property name="text">
+                    <string>RZX player</string>
+                   </property>
+                  </item>
+                  <item row="9" column="0">
+                   <property name="text">
+                    <string>F9</string>
+                   </property>
+                  </item>
+                  <item row="9" column="1">
+                   <property name="text">
+                    <string>Save changed disks</string>
+                   </property>
+                  </item>
+                  <item row="10" column="0">
+                   <property name="text">
+                    <string>F10</string>
+                   </property>
+                  </item>
+                  <item row="10" column="1">
+                   <property name="text">
+                    <string>NMI</string>
+                   </property>
+                  </item>
+                  <item row="11" column="0">
+                   <property name="text">
+                    <string>F11</string>
+                   </property>
+                  </item>
+                  <item row="11" column="1">
+                   <property name="text">
+                    <string>Tape window</string>
+                   </property>
+                  </item>
+                  <item row="12" column="0">
+                   <property name="text">
+                    <string>F12</string>
+                   </property>
+                  </item>
+                  <item row="12" column="1">
+                   <property name="text">
+                    <string>Reset</string>
+                   </property>
+                  </item>
+                  <item row="13" column="0">
+                   <property name="text">
+                    <string>Alt + F12</string>
+                   </property>
+                  </item>
+                  <item row="13" column="1">
+                   <property name="text">
+                    <string>Reset to ROM3 (TRDOS)</string>
+                   </property>
+                  </item>
+                  <item row="14" column="0">
+                   <property name="text">
+                    <string>Alt + 0</string>
+                   </property>
+                  </item>
+                  <item row="14" column="1">
+                   <property name="text">
+                    <string>Switch video mode</string>
+                   </property>
+                  </item>
+                  <item row="15" column="0">
+                   <property name="text">
+                    <string>Alt + 1</string>
+                   </property>
+                  </item>
+                  <item row="15" column="1">
+                   <property name="text">
+                    <string>Normal size</string>
+                   </property>
+                  </item>
+                  <item row="16" column="0">
+                   <property name="text">
+                    <string>Alt + 2</string>
+                   </property>
+                  </item>
+                  <item row="16" column="1">
+                   <property name="text">
+                    <string>Double size</string>
+                   </property>
+                  </item>
+                  <item row="17" column="0">
+                   <property name="text">
+                    <string>Alt + 3</string>
+                   </property>
+                  </item>
+                  <item row="17" column="1">
+                   <property name="text">
+                    <string>Maximum speed on / off</string>
+                   </property>
+                  </item>
+                  <item row="18" column="0">
+                   <property name="text">
+                    <string>Alt + Enter</string>
+                   </property>
+                  </item>
+                  <item row="18" column="1">
+                   <property name="text">
+                    <string>Fullscreen (SDL build only)</string>
+                   </property>
+                  </item>
+                  <item row="19" column="0">
+                   <property name="text">
+                    <string>Pause</string>
+                   </property>
+                  </item>
+                  <item row="19" column="1">
+                   <property name="text">
+                    <string>Pause</string>
+                   </property>
+                  </item>
+                  <item row="20" column="0">
+                   <property name="text">
+                    <string>Escape</string>
+                   </property>
+                  </item>
+                  <item row="20" column="1">
+                   <property name="text">
+                    <string>DeBUGa</string>
+                   </property>
+                  </item>
+                  <item row="21" column="0">
+                   <property name="text">
+                    <string>Menu, RMB</string>
+                   </property>
+                  </item>
+                  <item row="21" column="1">
+                   <property name="text">
+                    <string>Quick menu</string>
+                   </property>
+                  </item>
+                  <item row="22" column="0">
+                   <property name="text">
+                    <string>MMB</string>
+                   </property>
+                  </item>
+                  <item row="22" column="1">
+                   <property name="text">
+                    <string>Lock / unlock mouse</string>
+                   </property>
+                  </item>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
              </item>
             </layout>
            </widget>

@@ -132,10 +132,10 @@ void vidFillMatrix(Video* vid) {
 }
 
 void vidUpdate(Video* vid) {
-	vid->lcut.h = vid->sync.h + (vid->bord.h - vid->sync.h) * (1.0 - brdsize);
-	vid->lcut.v = vid->sync.v + (vid->bord.v - vid->sync.v) * (1.0 - brdsize);
-	vid->rcut.h = vid->full.h - (1.0 - brdsize) * (vid->full.h - vid->bord.h - 256);
-	vid->rcut.v = vid->full.v - (1.0 - brdsize) * (vid->full.v - vid->bord.v - 192);
+	vid->lcut.h = (int)floor(vid->sync.h + ((vid->bord.h - vid->sync.h) * (1.0 - brdsize))) & 0xfffe;
+	vid->lcut.v = (int)floor(vid->sync.v + ((vid->bord.v - vid->sync.v) * (1.0 - brdsize))) & 0xfffe;
+	vid->rcut.h = (int)floor(vid->full.h - ((1.0 - brdsize) * (vid->full.h - vid->bord.h - 256))) & 0xfffe;
+	vid->rcut.v = (int)floor(vid->full.v - ((1.0 - brdsize) * (vid->full.v - vid->bord.v - 192))) & 0xfffe;
 	vid->vsze.h = vid->rcut.h - vid->lcut.h;
 	vid->vsze.v = vid->rcut.v - vid->lcut.v;
 	vid->wsze.h = vid->vsze.h * ((vidFlag & VF_DOUBLE) ? 2 : 1);
@@ -256,10 +256,10 @@ void vidSync(Video* vid, float dotDraw) {
 			vid->intStrobe = 1;
 			vid->firstFrame = 0;
 		}
-	}
-	if (vid->nextBorder < 8) {
-		vid->brdcol = vid->nextBorder;
-		vid->nextBorder = 0xff;
+		if ((vid->pxcnt <= 2.0) && (vid->nextBorder < 8)) {
+			vid->brdcol = vid->nextBorder;
+			vid->nextBorder = 0xff;
+		}
 	}
 }
 
