@@ -93,6 +93,8 @@ class MainWin : public QX11EmbedContainer {
 	protected:
 		void closeEvent(QCloseEvent*);
 #ifdef XQTPAINT
+		void dragEnterEvent(QDragEnterEvent*);
+		void dropEvent(QDropEvent*);
 		void paintEvent(QPaintEvent*);
 		void keyPressEvent(QKeyEvent*);
 		void keyReleaseEvent(QKeyEvent*);

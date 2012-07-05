@@ -205,7 +205,7 @@ keyEntry keyMapInit[] = {
 	{"B",Qt::Key_B,'b',0},{"N",Qt::Key_N,'n',0},{"M",Qt::Key_M,'m',0},{"LC",Qt::Key_Control,'S',0},{"SPC",Qt::Key_Space,' ',0},
 
 	{"`",Qt::Key_Ampersand,'C','S'},{"\\",Qt::Key_Backslash,'C','S'},
-	{";",Qt::Key_Semicolon,'S','o'},{"\"",Qt::Key_QuoteLeft,'S','p'},
+	{";",Qt::Key_Semicolon,'S','o'},{"\"",Qt::Key_Apostrophe,'S','p'},
 	{"TAB",Qt::Key_Tab,'C',' '},{"CAPS",Qt::Key_CapsLock,'C','2'},
 	{"PGDN",Qt::Key_PageDown,'C','3'},{"PGUP",Qt::Key_PageUp,'C','4'},{"BSP",Qt::Key_Backspace,'C','0'},
 	{"DEL",Qt::Key_Delete,'C','9'},{"INS",Qt::Key_Insert,'S','w'},{"HOME",Qt::Key_Home,'S','q'},{"END",Qt::Key_End,'S','e'},
@@ -228,7 +228,7 @@ keyEntry keyMap[] = {
 	{"B",Qt::Key_B,'b',0},{"N",Qt::Key_N,'n',0},{"M",Qt::Key_M,'m',0},{"LC",Qt::Key_Control,'S',0},{"SPC",Qt::Key_Space,' ',0},
 
 	{"`",Qt::Key_Ampersand,'C','S'},{"\\",Qt::Key_Backslash,'C','S'},
-	{";",Qt::Key_Semicolon,'S','o'},{"\"",Qt::Key_QuoteLeft,'S','p'},
+	{";",Qt::Key_Semicolon,'S','o'},{"\"",Qt::Key_Apostrophe,'S','p'},
 	{"TAB",Qt::Key_Tab,'C',' '},{"CAPS",Qt::Key_CapsLock,'C','2'},
 	{"PGDN",Qt::Key_PageDown,'C','3'},{"PGUP",Qt::Key_PageUp,'C','4'},{"BSP",Qt::Key_Backspace,'C','0'},
 	{"DEL",Qt::Key_Delete,'C','9'},{"INS",Qt::Key_Insert,'S','w'},{"HOME",Qt::Key_Home,'S','q'},{"END",Qt::Key_End,'S','e'},
@@ -425,6 +425,7 @@ MainWin::MainWin() {
 	setMouseTracking(true);
 	curicon = QIcon(":/images/logo.png");
 	setWindowIcon(curicon);
+	setAcceptDrops(true);
 #ifndef XQTPAINT
 	SDL_VERSION(&inf.version);
 	SDL_GetWMInfo(&inf);
@@ -695,6 +696,21 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 	}
 }
 
+#ifdef XQTPAINT
+void MainWin::dragEnterEvent(QDragEnterEvent* ev) {
+	if (ev->mimeData()->hasUrls()) {
+		ev->acceptProposedAction();
+	}
+}
+
+void MainWin::dropEvent(QDropEvent* ev) {
+	QList<QUrl> urls = ev->mimeData()->urls();
+	for (int i = 0; i < urls.size(); i++) {
+		loadFile(urls.at(i).path().toUtf8().data(),FT_ALL,0);
+	}
+}
+#endif
+
 void MainWin::startTimer(int iv) {timer->start(iv);}
 void MainWin::stopTimer() {timer->stop();}
 
@@ -706,7 +722,7 @@ void MainWin::checkState() {
 
 // ...
 
-char hobHead[] = {'s','c','r','e','e','n',' ',' ','C',0,0,0,0x1b,0,0x1b,0xe7,0x81};	// last 2 bytes is crc
+uchar hobHead[] = {'s','c','r','e','e','n',' ',' ','C',0,0,0,0x1b,0,0x1b,0xe7,0x81};	// last 2 bytes is crc
 
 void MainWin::emulFrame() {
 	if (emulFlags & FL_BLOCK) return;
@@ -907,6 +923,11 @@ void EmulWin::SDLEventHandler() {
 	extButton extb;
 	while (SDL_PollEvent(&ev)) {
 		switch (ev.type) {
+			/*
+		// BAD NEWS, EVERYONE. SDL 1.2 Hasn't drop event, it appears in SDL 2.0
+			case SDL_DROPFILE:
+				break;
+			*/
 			case SDL_KEYDOWN:
 				if (ev.key.keysym.mod & KMOD_ALT) {
 					switch(ev.key.keysym.sym) {
