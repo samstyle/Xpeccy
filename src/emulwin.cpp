@@ -316,6 +316,18 @@ void emulUpdateWindow() {
 	mainWin->updateWindow();
 }
 
+void MainWin::updateHead() {
+	QString title(XPTITLE);
+	XProfile* curProf = getCurrentProfile();
+	if (curProf != NULL) {
+		title.append(" | ").append(QDialog::trUtf8(curProf->name.c_str()));
+	}
+	if (emulFlags & FL_FAST) {
+		title.append(" | fast");
+	}
+	setWindowTitle(title);
+}
+
 void MainWin::updateWindow() {
 	emulFlags |= FL_BLOCK;
 	vidUpdate(zx->vid);
@@ -341,12 +353,7 @@ void MainWin::updateWindow() {
 	zx->vid->scrptr = zx->vid->scrimg;
 #endif
 	zx->vid->firstFrame = true;
-	QString title(XPTITLE);
-	XProfile* curProf = getCurrentProfile();
-	if (curProf != NULL) {
-		title.append(" | ").append(QDialog::trUtf8(curProf->name.c_str()));
-	}
-	setWindowTitle(title);
+	updateHead();
 	emulFlags &= ~FL_BLOCK;
 }
 
@@ -532,6 +539,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			case Qt::Key_3: emulFlags ^= FL_FAST;
 				mainWin->stopTimer();
 				mainWin->startTimer((emulFlags & FL_FAST) ? 1 : 20);
+				mainWin->updateHead();
 				sndPause((emulFlags & FL_FAST) ? true : false);
 				break;
 			case Qt::Key_F4:
@@ -679,6 +687,27 @@ void MainWin::mouseMoveEvent(QMouseEvent *ev) {
 	zx->mouse->ypos = 256 - (ev->globalY() & 0xff);
 }
 
+void MainWin::dragEnterEvent(QDragEnterEvent* ev) {
+	if (ev->mimeData()->hasUrls()) {
+		ev->acceptProposedAction();
+	}
+}
+
+void MainWin::dropEvent(QDropEvent* ev) {
+	QList<QUrl> urls = ev->mimeData()->urls();
+	QString path;
+	mainWin->raise();
+	mainWin->activateWindow();
+	for (int i = 0; i < urls.size(); i++) {
+		path = urls.at(i).path();
+#ifdef WIN32
+		path.remove(0,1);	// by some reason path will start with /
+#endif
+//		printf("%s\n",path.toUtf8().data());
+		loadFile(path.toUtf8().data(),FT_ALL,0);
+	}
+}
+
 #endif
 
 void MainWin::closeEvent(QCloseEvent* ev) {
@@ -695,21 +724,6 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		timer->start(20);
 	}
 }
-
-#ifdef XQTPAINT
-void MainWin::dragEnterEvent(QDragEnterEvent* ev) {
-	if (ev->mimeData()->hasUrls()) {
-		ev->acceptProposedAction();
-	}
-}
-
-void MainWin::dropEvent(QDropEvent* ev) {
-	QList<QUrl> urls = ev->mimeData()->urls();
-	for (int i = 0; i < urls.size(); i++) {
-		loadFile(urls.at(i).path().toUtf8().data(),FT_ALL,0);
-	}
-}
-#endif
 
 void MainWin::startTimer(int iv) {timer->start(iv);}
 void MainWin::stopTimer() {timer->stop();}
@@ -945,6 +959,7 @@ void EmulWin::SDLEventHandler() {
 						case SDLK_3: emulFlags ^= FL_FAST;
 							mainWin->stopTimer();
 							mainWin->startTimer((emulFlags & FL_FAST) ? 1 : 20);
+							mainWin->updateHead();
 							sndPause((emulFlags & FL_FAST) ? true : false);
 							break;
 						case SDLK_F4:
