@@ -158,12 +158,12 @@ keyEntry keyMapInit[] = {
 	{"[",SDLK_LEFTBRACKET,'S','8'},{"]",SDLK_RIGHTBRACKET,'S','9'},
 	{"k/",SDLK_KP_DIVIDE,'S','v'},{"k*",SDLK_KP_MULTIPLY,'S','b'},{"k-",SDLK_KP_MINUS,'S','j'},
 	{"k+",SDLK_KP_PLUS,'S','k'},{"kENT",SDLK_KP_ENTER,'E',0},{"k.",SDLK_KP_PERIOD,'S','m'},
-	{"",ENDKEY,0,0}
+	{"",SDLK_LAST,0,0}
 };
 
 keyEntry getKeyEntry(SDLKey skey) {
 	int idx = 0;
-	while ((keyMap[idx].key != SDLK_LAST) && (keyMap[idx].key != skey)) {
+	while ((keyMap[idx].key != ENDKEY) && (keyMap[idx].key != skey)) {
 		idx++;
 	}
 	return keyMap[idx];
@@ -198,7 +198,7 @@ keyEntry keyMapInit[] = {
 
 keyEntry getKeyEntry(qint32 qkey) {
 	int idx = 0;
-	while ((keyMap[idx].key != 0) && (keyMap[idx].key != qkey)) {
+	while ((keyMap[idx].key != ENDKEY) && (keyMap[idx].key != qkey)) {
 		idx++;
 	}
 	return keyMap[idx];
@@ -207,7 +207,6 @@ keyEntry getKeyEntry(qint32 qkey) {
 #endif
 
 void setKey(const char* key,const char key1,const char key2) {
-	printf("set key\n");
 	int idx = 0;
 	while (keyMap[idx].key != ENDKEY) {
 		if (strcmp(key,keyMap[idx].name) == 0) {
@@ -219,11 +218,11 @@ void setKey(const char* key,const char key1,const char key2) {
 }
 
 void initKeyMap() {
-	int idx = 0;
-	while (keyMapInit[idx].key != ENDKEY) {
-		keyMap[idx] = keyMapInit[idx];
+	int idx = -1;
+	do {
 		idx++;
-	}
+		keyMap[idx] = keyMapInit[idx];
+	} while (keyMapInit[idx].key != ENDKEY);
 }
 
 keyEntry getKeyEntry(const char* name) {
@@ -937,7 +936,6 @@ void EmulWin::SDLEventHandler() {
 				} else {
 					kent = getKeyEntry(ev.key.keysym.sym);
 					keyPress(zx->keyb,kent.key1,kent.key2);
-					//keyPress(zx->keyb,ev.key.keysym.scancode);
 					switch (ev.key.keysym.sym) {
 						case SDLK_PAUSE:
 							pauseFlags ^= PR_PAUSE;
