@@ -120,7 +120,7 @@ void loadFile(const char* name, int flags, int drv) {
 	} else {
 		type = getFileType(opath);
 	}
-	std::string sfnam(opath.toUtf8().data());
+	std::string sfnam(opath.toLocal8Bit().data());
 	int ferr = ERR_OK;
 	zx->rzxPlay = false;
 	Floppy* flp = zx->bdi->fdc->flop[drv];

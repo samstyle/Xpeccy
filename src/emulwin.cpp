@@ -68,6 +68,7 @@ uint8_t* blkData = NULL;
 int blk;
 
 void emulInit() {
+	initKeyMap();
 	emulFlags = 0;
 	wantedWin = WW_NONE;
 
@@ -124,11 +125,15 @@ uint8_t icoRedDisk[256] = {
 
 // KEYMAPS
 
+keyEntry keyMap[256];	// current keymap (init at start from keyMapInit[]
+
 #ifndef XQTPAINT
 
 // nums & small letters = keys
 // capital letters:
 // E = enter	C = CapsShift	S = SymShift	' ' = Space
+
+#define ENDKEY	SDLK_LAST
 
 keyEntry keyMapInit[] = {
 	{"1",SDLK_1,'1',0},{"2",SDLK_2,'2',0},{"3",SDLK_3,'3',0},{"4",SDLK_4,'4',0},{"5",SDLK_5,'5',0},
@@ -153,33 +158,7 @@ keyEntry keyMapInit[] = {
 	{"[",SDLK_LEFTBRACKET,'S','8'},{"]",SDLK_RIGHTBRACKET,'S','9'},
 	{"k/",SDLK_KP_DIVIDE,'S','v'},{"k*",SDLK_KP_MULTIPLY,'S','b'},{"k-",SDLK_KP_MINUS,'S','j'},
 	{"k+",SDLK_KP_PLUS,'S','k'},{"kENT",SDLK_KP_ENTER,'E',0},{"k.",SDLK_KP_PERIOD,'S','m'},
-	{"",SDLK_LAST,0,0}
-};
-
-keyEntry keyMap[] = {
-	{"1",SDLK_1,'1',0},{"2",SDLK_2,'2',0},{"3",SDLK_3,'3',0},{"4",SDLK_4,'4',0},{"5",SDLK_5,'5',0},
-	{"6",SDLK_6,'6',0},{"7",SDLK_7,'7',0},{"8",SDLK_8,'8',0},{"9",SDLK_9,'9',0},{"0",SDLK_0,'0',0},
-	{"Q",SDLK_q,'q',0},{"W",SDLK_w,'w',0},{"E",SDLK_e,'e',0},{"R",SDLK_r,'r',0},{"T",SDLK_t,'t',0},
-	{"Y",SDLK_y,'y',0},{"U",SDLK_u,'u',0},{"I",SDLK_i,'i',0},{"O",SDLK_o,'o',0},{"P",SDLK_p,'p',0},
-	{"A",SDLK_a,'a',0},{"S",SDLK_s,'s',0},{"D",SDLK_d,'d',0},{"F",SDLK_f,'f',0},{"G",SDLK_g,'g',0},
-	{"H",SDLK_h,'h',0},{"J",SDLK_j,'j',0},{"K",SDLK_k,'k',0},{"L",SDLK_l,'l',0},{"ENT",SDLK_RETURN,'E',0},
-	{"LS",SDLK_LSHIFT,'C',0},{"Z",SDLK_z,'z',0},{"X",SDLK_x,'x',0},{"C",SDLK_c,'c',0},{"V",SDLK_v,'v',0},
-	{"B",SDLK_b,'b',0},{"N",SDLK_n,'n',0},{"M",SDLK_m,'m',0},{"LC",SDLK_LCTRL,'S',0},{"SPC",SDLK_SPACE,' ',0},
-
-	{"RS",SDLK_RSHIFT,'C',0},{"RC",SDLK_RCTRL,'S',0},
-
-	{"`",SDLK_BACKQUOTE,'C','S'},{"\\",SDLK_BACKSLASH,'C','S'},
-	{";",SDLK_SEMICOLON,'S','o'},{"\"",SDLK_QUOTE,'S','p'},
-	{"TAB",SDLK_TAB,'C',' '},{"CAPS",SDLK_CAPSLOCK,'C','2'},
-	{"PGDN",SDLK_PAGEDOWN,'C','3'},{"PGUP",SDLK_PAGEUP,'C','4'},{"BSP",SDLK_BACKSPACE,'C','0'},
-	{"DEL",SDLK_DELETE,'C','9'},{"INS",SDLK_INSERT,'S','w'},{"HOME",SDLK_HOME,'S','q'},{"END",SDLK_END,'S','e'},
-	{"LEFT",SDLK_LEFT,'C','5'},{"DOWN",SDLK_DOWN,'C','6'},{"UP",SDLK_UP,'C','7'},{"RIGHT",SDLK_RIGHT,'C','8'},
-	{"-",SDLK_MINUS,'S','j'},{"+",SDLK_PLUS,'S','k'},{"=",SDLK_EQUALS,'S','l'},
-	{",",SDLK_COMMA,'S','n'},{".",SDLK_PERIOD,'S','m'},{"/",SDLK_SLASH,'S','c'},
-	{"[",SDLK_LEFTBRACKET,'S','8'},{"]",SDLK_RIGHTBRACKET,'S','9'},
-	{"k/",SDLK_KP_DIVIDE,'S','v'},{"k*",SDLK_KP_MULTIPLY,'S','b'},{"k-",SDLK_KP_MINUS,'S','j'},
-	{"k+",SDLK_KP_PLUS,'S','k'},{"kENT",SDLK_KP_ENTER,'E',0},{"k.",SDLK_KP_PERIOD,'S','m'},
-	{"",SDLK_LAST,0,0}
+	{"",ENDKEY,0,0}
 };
 
 keyEntry getKeyEntry(SDLKey skey) {
@@ -190,65 +169,40 @@ keyEntry getKeyEntry(SDLKey skey) {
 	return keyMap[idx];
 }
 
-#define ENDKEY	SDLK_LAST
-
 #else
 
+#define ENDKEY 0
+
 keyEntry keyMapInit[] = {
-	{"1",Qt::Key_1,'1',0},{"2",Qt::Key_2,'2',0},{"3",Qt::Key_3,'3',0},{"4",Qt::Key_4,'4',0},{"5",Qt::Key_5,'5',0},
-	{"6",Qt::Key_6,'6',0},{"7",Qt::Key_7,'7',0},{"8",Qt::Key_8,'8',0},{"9",Qt::Key_9,'9',0},{"0",Qt::Key_0,'0',0},
-	{"Q",Qt::Key_Q,'q',0},{"W",Qt::Key_W,'w',0},{"E",Qt::Key_E,'e',0},{"R",Qt::Key_R,'r',0},{"T",Qt::Key_T,'t',0},
-	{"Y",Qt::Key_Y,'y',0},{"U",Qt::Key_U,'u',0},{"I",Qt::Key_I,'i',0},{"O",Qt::Key_O,'o',0},{"P",Qt::Key_P,'p',0},
-	{"A",Qt::Key_A,'a',0},{"S",Qt::Key_S,'s',0},{"D",Qt::Key_D,'d',0},{"F",Qt::Key_F,'f',0},{"G",Qt::Key_G,'g',0},
-	{"H",Qt::Key_H,'h',0},{"J",Qt::Key_J,'j',0},{"K",Qt::Key_K,'k',0},{"L",Qt::Key_L,'l',0},{"ENT",Qt::Key_Return,'E',0},
-	{"LS",Qt::Key_Shift,'C',0},{"Z",Qt::Key_Z,'z',0},{"X",Qt::Key_X,'x',0},{"C",Qt::Key_C,'c',0},{"V",Qt::Key_V,'v',0},
-	{"B",Qt::Key_B,'b',0},{"N",Qt::Key_N,'n',0},{"M",Qt::Key_M,'m',0},{"LC",Qt::Key_Control,'S',0},{"SPC",Qt::Key_Space,' ',0},
+	{"1",XKEY_1,'1',0},{"2",XKEY_2,'2',0},{"3",XKEY_3,'3',0},{"4",XKEY_4,'4',0},{"5",XKEY_5,'5',0},
+	{"6",XKEY_6,'6',0},{"7",XKEY_7,'7',0},{"8",XKEY_8,'8',0},{"9",XKEY_9,'9',0},{"0",XKEY_0,'0',0},
+	{"Q",XKEY_Q,'q',0},{"W",XKEY_W,'w',0},{"E",XKEY_E,'e',0},{"R",XKEY_R,'r',0},{"T",XKEY_T,'t',0},
+	{"Y",XKEY_Y,'y',0},{"U",XKEY_U,'u',0},{"I",XKEY_I,'i',0},{"O",XKEY_O,'o',0},{"P",XKEY_P,'p',0},
+	{"A",XKEY_A,'a',0},{"S",XKEY_S,'s',0},{"D",XKEY_D,'d',0},{"F",XKEY_F,'f',0},{"G",XKEY_G,'g',0},
+	{"H",XKEY_H,'h',0},{"J",XKEY_J,'j',0},{"K",XKEY_K,'k',0},{"L",XKEY_L,'l',0},{"ENT",XKEY_ENTER,'E',0},
+	{"LS",XKEY_LSHIFT,'C',0},{"Z",XKEY_Z,'z',0},{"X",XKEY_X,'x',0},{"C",XKEY_C,'c',0},{"V",XKEY_V,'v',0},
+	{"B",XKEY_B,'b',0},{"N",XKEY_N,'n',0},{"M",XKEY_M,'m',0},{"LC",XKEY_LCTRL,'S',0},{"SPC",XKEY_SPACE,' ',0},
 
-	{"`",Qt::Key_Ampersand,'C','S'},{"\\",Qt::Key_Backslash,'C','S'},
-	{";",Qt::Key_Semicolon,'S','o'},{"\"",Qt::Key_Apostrophe,'S','p'},
-	{"TAB",Qt::Key_Tab,'C',' '},{"CAPS",Qt::Key_CapsLock,'C','2'},
-	{"PGDN",Qt::Key_PageDown,'C','3'},{"PGUP",Qt::Key_PageUp,'C','4'},{"BSP",Qt::Key_Backspace,'C','0'},
-	{"DEL",Qt::Key_Delete,'C','9'},{"INS",Qt::Key_Insert,'S','w'},{"HOME",Qt::Key_Home,'S','q'},{"END",Qt::Key_End,'S','e'},
-	{"LEFT",Qt::Key_Left,'C','5'},{"DOWN",Qt::Key_Down,'C','6'},{"UP",Qt::Key_Up,'C','7'},{"RIGHT",Qt::Key_Right,'C','8'},
-	{"-",Qt::Key_Minus,'S','j'},{"+",Qt::Key_Plus,'S','k'},{"=",Qt::Key_Equal,'S','l'},
-	{",",Qt::Key_Comma,'S','n'},{".",Qt::Key_Period,'S','m'},{"/",Qt::Key_Slash,'S','c'},
-	{"[",Qt::Key_BracketLeft,'S','8'},{"]",Qt::Key_BracketRight,'S','9'},
+	{"`",XKEY_TILDA,'C','S'},{"\\",XKEY_SLASH,'C','S'},
+	{";",XKEY_DOTCOM,'S','o'},{"\"",XKEY_QUOTE,'S','p'},
+	{"TAB",XKEY_TAB,'C',' '},{"CAPS",XKEY_CAPS,'C','2'},
+	{"PGDN",XKEY_PGDN,'C','3'},{"PGUP",XKEY_PGUP,'C','4'},{"BSP",XKEY_BSP,'C','0'},
+	{"DEL",XKEY_DEL,'C','9'},{"INS",XKEY_INS,'S','w'},{"HOME",XKEY_HOME,'S','q'},{"END",XKEY_END,'S','e'},
+	{"LEFT",XKEY_LEFT,'C','5'},{"DOWN",XKEY_DOWN,'C','6'},{"UP",XKEY_UP,'C','7'},{"RIGHT",XKEY_RIGHT,'C','8'},
+	{"-",XKEY_MINUS,'S','j'},{"+",XKEY_PLUS,'S','k'},
+	{",",XKEY_PERIOD,'S','n'},{".",XKEY_COMMA,'S','m'},{"/",XKEY_BSLASH,'S','c'},
+	{"[",XKEY_LBRACE,'S','8'},{"]",XKEY_RBRACE,'S','9'},
 
-	{"",Qt::Key_unknown,0,0}
+	{"",ENDKEY,0,0}
 };
 
-keyEntry keyMap[] = {
-	{"1",Qt::Key_1,'1',0},{"2",Qt::Key_2,'2',0},{"3",Qt::Key_3,'3',0},{"4",Qt::Key_4,'4',0},{"5",Qt::Key_5,'5',0},
-	{"6",Qt::Key_6,'6',0},{"7",Qt::Key_7,'7',0},{"8",Qt::Key_8,'8',0},{"9",Qt::Key_9,'9',0},{"0",Qt::Key_0,'0',0},
-	{"Q",Qt::Key_Q,'q',0},{"W",Qt::Key_W,'w',0},{"E",Qt::Key_E,'e',0},{"R",Qt::Key_R,'r',0},{"T",Qt::Key_T,'t',0},
-	{"Y",Qt::Key_Y,'y',0},{"U",Qt::Key_U,'u',0},{"I",Qt::Key_I,'i',0},{"O",Qt::Key_O,'o',0},{"P",Qt::Key_P,'p',0},
-	{"A",Qt::Key_A,'a',0},{"S",Qt::Key_S,'s',0},{"D",Qt::Key_D,'d',0},{"F",Qt::Key_F,'f',0},{"G",Qt::Key_G,'g',0},
-	{"H",Qt::Key_H,'h',0},{"J",Qt::Key_J,'j',0},{"K",Qt::Key_K,'k',0},{"L",Qt::Key_L,'l',0},{"ENT",Qt::Key_Return,'E',0},
-	{"LS",Qt::Key_Shift,'C',0},{"Z",Qt::Key_Z,'z',0},{"X",Qt::Key_X,'x',0},{"C",Qt::Key_C,'c',0},{"V",Qt::Key_V,'v',0},
-	{"B",Qt::Key_B,'b',0},{"N",Qt::Key_N,'n',0},{"M",Qt::Key_M,'m',0},{"LC",Qt::Key_Control,'S',0},{"SPC",Qt::Key_Space,' ',0},
-
-	{"`",Qt::Key_Ampersand,'C','S'},{"\\",Qt::Key_Backslash,'C','S'},
-	{";",Qt::Key_Semicolon,'S','o'},{"\"",Qt::Key_Apostrophe,'S','p'},
-	{"TAB",Qt::Key_Tab,'C',' '},{"CAPS",Qt::Key_CapsLock,'C','2'},
-	{"PGDN",Qt::Key_PageDown,'C','3'},{"PGUP",Qt::Key_PageUp,'C','4'},{"BSP",Qt::Key_Backspace,'C','0'},
-	{"DEL",Qt::Key_Delete,'C','9'},{"INS",Qt::Key_Insert,'S','w'},{"HOME",Qt::Key_Home,'S','q'},{"END",Qt::Key_End,'S','e'},
-	{"LEFT",Qt::Key_Left,'C','5'},{"DOWN",Qt::Key_Down,'C','6'},{"UP",Qt::Key_Up,'C','7'},{"RIGHT",Qt::Key_Right,'C','8'},
-	{"-",Qt::Key_Minus,'S','j'},{"+",Qt::Key_Plus,'S','k'},{"=",Qt::Key_Equal,'S','l'},
-	{",",Qt::Key_Comma,'S','n'},{".",Qt::Key_Period,'S','m'},{"/",Qt::Key_Slash,'S','c'},
-	{"[",Qt::Key_BracketLeft,'S','8'},{"]",Qt::Key_BracketRight,'S','9'},
-
-	{"",Qt::Key_unknown,0,0}
-};
-
-keyEntry getKeyEntry(int qkey) {
+keyEntry getKeyEntry(qint32 qkey) {
 	int idx = 0;
-	while ((keyMap[idx].key != Qt::Key_unknown) && (keyMap[idx].key != qkey)) {
+	while ((keyMap[idx].key != 0) && (keyMap[idx].key != qkey)) {
 		idx++;
 	}
 	return keyMap[idx];
 }
-
-#define ENDKEY Qt::Key_unknown
 
 #endif
 
@@ -320,7 +274,7 @@ void MainWin::updateHead() {
 	QString title(XPTITLE);
 	XProfile* curProf = getCurrentProfile();
 	if (curProf != NULL) {
-		title.append(" | ").append(QDialog::trUtf8(curProf->name.c_str()));
+		title.append(" | ").append(QString::fromLocal8Bit(curProf->name.c_str()));
 	}
 	if (emulFlags & FL_FAST) {
 		title.append(" | fast");
@@ -555,7 +509,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;
 		}
 	} else {
-		keyEntry kent = getKeyEntry(ev->key());
+		keyEntry kent = getKeyEntry(ev->nativeScanCode());
 		keyPress(zx->keyb,kent.key1,kent.key2);
 		switch(ev->key()) {
 			case Qt::Key_Pause:
@@ -639,7 +593,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 }
 
 void MainWin::keyReleaseEvent(QKeyEvent *ev) {
-	keyEntry kent = getKeyEntry(ev->key());
+	keyEntry kent = getKeyEntry(ev->nativeScanCode());
 	keyRelease(zx->keyb,kent.key1,kent.key2);
 }
 
@@ -695,16 +649,15 @@ void MainWin::dragEnterEvent(QDragEnterEvent* ev) {
 
 void MainWin::dropEvent(QDropEvent* ev) {
 	QList<QUrl> urls = ev->mimeData()->urls();
-	QString path;
+	QString fpath;
 	mainWin->raise();
 	mainWin->activateWindow();
 	for (int i = 0; i < urls.size(); i++) {
-		path = urls.at(i).path();
+		fpath = urls.at(i).path();
 #ifdef WIN32
-		path.remove(0,1);	// by some reason path will start with /
+		fpath.remove(0,1);	// by some reason path will start with /
 #endif
-//		printf("%s\n",path.toUtf8().data());
-		loadFile(path.toUtf8().data(),FT_ALL,0);
+		loadFile(fpath.toUtf8().data(),FT_ALL,0);
 	}
 }
 
@@ -727,6 +680,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 
 void MainWin::startTimer(int iv) {timer->start(iv);}
 void MainWin::stopTimer() {timer->stop();}
+void MainWin::doOptions() {wantedWin = WW_OPTIONS;}
 
 void MainWin::checkState() {
 	if (zx->rzxPlay) rzxWin->startPlay();
@@ -859,27 +813,25 @@ EmulWin::EmulWin() {
 
 int prc;
 
-#ifndef XQTPAINT
-void drawIcon(SDL_Surface* srf,int x,int y,uint8_t* data) {
-	uint8_t* ptr = (uint8_t*)srf->pixels + x + y * (srf->w);
-	for (int i=0; i<16; i++) {
+void putIcon(Video* vid, int x, int y, uint8_t* data) {
+	uint8_t* ptr = vid->scrimg + x + y * (vid->wsze.h);
+	for (int i = 0; i < 16; i++) {
 		memcpy(ptr,data,16);
-		ptr += (srf->w) * sizeof(uint8_t);
-		data += 16 * sizeof(uint8_t);
+		ptr += vid->wsze.h;
+		data += 16;
 	}
 }
-#endif
 
 void EmulWin::SDLEventHandler() {
 	// leds
-#ifndef XQTPAINT
 	if (emulFlags & FL_LED_DISK) {
 		int fst = zx->bdi->fdc->status;
 		switch (fst) {
-			case FDC_READ: drawIcon(surf,4,4,icoBlueDisk); break;
-			case FDC_WRITE: drawIcon(surf,4,4,icoRedDisk); break;
+			case FDC_READ: putIcon(zx->vid,4,4,icoBlueDisk); break;
+			case FDC_WRITE: putIcon(zx->vid,4,4,icoRedDisk); break;
 		}
 	}
+#ifndef XQTPAINT
 	if (vidFlag & VF_CHANGED) {
 		SDL_UpdateRect(surf,0,0,0,0);
 		vidFlag &= ~VF_CHANGED;
@@ -890,6 +842,8 @@ void EmulWin::SDLEventHandler() {
 	if (vidFlag & VF_CHANGED) {
 		mainWin->update();
 		vidFlag &= ~VF_CHANGED;
+	} else {
+		mainWin->update(3,3,18,18);
 	}
 #endif
 	if (emulFlags & FL_BLOCK) return;
@@ -1253,6 +1207,8 @@ void initUserMenu(QWidget* par) {
 	userMenu->addSeparator();
 	userMenu->addAction(QIcon(":/images/tape.png"),"Tape window",tapeWin,SLOT(show()));
 	userMenu->addAction(QIcon(":/images/video.png"),"RZX player",rzxWin,SLOT(show()));
+	userMenu->addSeparator();
+	userMenu->addAction(QIcon(":/images/other.png"),"Options",par,SLOT(doOptions()));
 }
 
 void fillBookmarkMenu() {
@@ -1263,8 +1219,8 @@ void fillBookmarkMenu() {
 		bookmarkMenu->addAction("None")->setEnabled(false);
 	} else {
 		for(uint i=0; i<bookmarkList.size(); i++) {
-			act = bookmarkMenu->addAction(QDialog::trUtf8(bookmarkList[i].name.c_str()));
-			act->setData(QVariant(QDialog::trUtf8(bookmarkList[i].path.c_str())));
+			act = bookmarkMenu->addAction(QString::fromLocal8Bit(bookmarkList[i].name.c_str()));
+			act->setData(QVariant(QString::fromLocal8Bit(bookmarkList[i].path.c_str())));
 		}
 	}
 }
@@ -1280,13 +1236,13 @@ void fillProfileMenu() {
 // SLOTS
 
 void EmulWin::bookmarkSelected(QAction* act) {
-	loadFile(act->data().toString().toUtf8().data(),FT_ALL,0);
+	loadFile(act->data().toString().toLocal8Bit().data(),FT_ALL,0);
 	mainWin->setFocus();
 }
 
 void EmulWin::profileSelected(QAction* act) {
 	emulPause(true,PR_EXTRA);
-	setProfile(std::string(act->text().toUtf8().data()));
+	setProfile(std::string(act->text().toLocal8Bit().data()));
 	loadConfig(false);
 	emulUpdateWindow();
 	saveProfiles();

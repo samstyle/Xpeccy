@@ -47,7 +47,7 @@ void fillRFBox(QComboBox* box, QStringList lst) {
 std::string getRFText(QComboBox* box) {
 	QString res = "";
 	if (box->currentIndex() > 0) res = box->currentText();
-	return std::string(res.toUtf8().data());
+	return std::string(res.toLocal8Bit().data());
 }
 
 // OBJECT
@@ -65,7 +65,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 // machine
 	list = getHardwareNames();
 	for (i=0; i < list.size(); i++) {
-		setupUi.machbox->addItem(QDialog::trUtf8(list[i].c_str()));
+		setupUi.machbox->addItem(QString::fromLocal8Bit(list[i].c_str()));
 	}
 	setupUi.resbox->addItems(QStringList()<<"0:Basic 128"<<"1:Basic48"<<"2:Shadow"<<"3:DOS");
 	setupUi.rssel->hide();
@@ -82,7 +82,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	}
 // sound
 	list = sndGetList();
-	for (i=0;i<list.size();i++) {setupUi.outbox->addItem(QDialog::trUtf8(list[i].c_str()));}
+	for (i=0;i<list.size();i++) {setupUi.outbox->addItem(QString::fromLocal8Bit(list[i].c_str()));}
 	setupUi.ratbox->addItems(QStringList()<<"44100"<<"22050"<<"11025");
 	setupUi.schip1box->addItem(QIcon(":/images/cancel.png"),"none",QVariant(SND_NONE));
 	setupUi.schip1box->addItem(QIcon(":/images/MicrochipLogo.png"),"AY-3-8910",QVariant(SND_AY));
@@ -247,12 +247,12 @@ void SetupWin::start() {
 	rsl = getRomsetList();
 	GSRom = curProf->gsFile;
 	for (i=0; i < rsl.size(); i++) {
-		setupUi.rsetbox->addItem(QDialog::trUtf8(rsl[i].name.c_str()));
+		setupUi.rsetbox->addItem(QString::fromLocal8Bit(rsl[i].name.c_str()));
 	}
-	setupUi.machbox->setCurrentIndex(setupUi.machbox->findText(QDialog::trUtf8(zx->hw->name)));
+	setupUi.machbox->setCurrentIndex(setupUi.machbox->findText(QString::fromLocal8Bit(zx->hw->name)));
 	int cbx = -1;
 	RomSet* rset = findRomset(curProf->rsName);
-	if (rset != NULL) cbx = setupUi.rsetbox->findText(QDialog::trUtf8(rset->name.c_str()));
+	if (rset != NULL) cbx = setupUi.rsetbox->findText(QString::fromLocal8Bit(rset->name.c_str()));
 	setupUi.rsetbox->setCurrentIndex(cbx);
 	setupUi.reschk->setChecked(emulGetFlags() & FL_RESET);
 	setupUi.resbox->setCurrentIndex(zx->resbank);
@@ -265,20 +265,20 @@ void SetupWin::start() {
 	setupUi.dszchk->setChecked((vidFlag & VF_DOUBLE));
 	setupUi.fscchk->setChecked(vidFlag & VF_FULLSCREEN);
 	setupUi.bszsld->setValue((int)(brdsize * 100));
-	setupUi.pathle->setText(QDialog::trUtf8(optGetString(OPT_SHOTDIR).c_str()));
+	setupUi.pathle->setText(QString::fromLocal8Bit(optGetString(OPT_SHOTDIR).c_str()));
 	setupUi.ssfbox->setCurrentIndex(setupUi.ssfbox->findData(optGetInt(OPT_SHOTFRM)));
 	setupUi.scntbox->setValue(optGetInt(OPT_SHOTCNT));
 	setupUi.sintbox->setValue(optGetInt(OPT_SHOTINT));
 	setupUi.brgslide->setValue(optGetInt(OPT_BRGLEV));
 	std::vector<VidLayout> lays = getLayoutList();
 	setupUi.geombox->clear();
-	for (i=0; i<lays.size(); i++) {setupUi.geombox->addItem(QDialog::trUtf8(lays[i].name.c_str()));}
-	setupUi.geombox->setCurrentIndex(setupUi.geombox->findText(QDialog::trUtf8(getCurrentProfile()->layName.c_str())));
+	for (i=0; i<lays.size(); i++) {setupUi.geombox->addItem(QString::fromLocal8Bit(lays[i].name.c_str()));}
+	setupUi.geombox->setCurrentIndex(setupUi.geombox->findText(QString::fromLocal8Bit(getCurrentProfile()->layName.c_str())));
 // sound
 	setupUi.senbox->setChecked(sndGet(SND_ENABLE) != 0);
 	setupUi.mutbox->setChecked(sndGet(SND_MUTE) != 0);
 	setupUi.gsrbox->setChecked(zx->gs->flag & GS_RESET);
-	setupUi.outbox->setCurrentIndex(setupUi.outbox->findText(QDialog::trUtf8(sndGetOutputName().c_str())));
+	setupUi.outbox->setCurrentIndex(setupUi.outbox->findText(QString::fromLocal8Bit(sndGetOutputName().c_str())));
 	setupUi.ratbox->setCurrentIndex(setupUi.ratbox->findText(QString::number(sndGet(SND_RATE))));
 	setupUi.bvsld->setValue(sndGet(SND_BEEP));
 	setupUi.tvsld->setValue(sndGet(SND_TAPE));
@@ -317,22 +317,22 @@ void SetupWin::start() {
 	setupUi.diskTypeBox->setCurrentIndex(setupUi.diskTypeBox->findData(zx->bdi->fdc->type));
 	setupUi.bdtbox->setChecked(zx->bdi->fdc->turbo != 0);
 	Floppy* flp = zx->bdi->fdc->flop[0];
-	setupUi.apathle->setText(QDialog::trUtf8(flp->path));
+	setupUi.apathle->setText(QString::fromLocal8Bit(flp->path));
 		setupUi.a80box->setChecked(flp->flag & FLP_TRK80);
 		setupUi.adsbox->setChecked(flp->flag & FLP_DS);
 		setupUi.awpbox->setChecked(flp->flag & FLP_PROTECT);
 	flp = zx->bdi->fdc->flop[1];
-	setupUi.bpathle->setText(QDialog::trUtf8(flp->path));
+	setupUi.bpathle->setText(QString::fromLocal8Bit(flp->path));
 		setupUi.b80box->setChecked(flp->flag & FLP_TRK80);
 		setupUi.bdsbox->setChecked(flp->flag & FLP_DS);
 		setupUi.bwpbox->setChecked(flp->flag & FLP_PROTECT);
 	flp = zx->bdi->fdc->flop[2];
-	setupUi.cpathle->setText(QDialog::trUtf8(flp->path));
+	setupUi.cpathle->setText(QString::fromLocal8Bit(flp->path));
 		setupUi.c80box->setChecked(flp->flag & FLP_TRK80);
 		setupUi.cdsbox->setChecked(flp->flag & FLP_DS);
 		setupUi.cwpbox->setChecked(flp->flag & FLP_PROTECT);
 	flp = zx->bdi->fdc->flop[3];
-	setupUi.dpathle->setText(QDialog::trUtf8(flp->path));
+	setupUi.dpathle->setText(QString::fromLocal8Bit(flp->path));
 		setupUi.d80box->setChecked(flp->flag & FLP_TRK80);
 		setupUi.ddsbox->setChecked(flp->flag & FLP_DS);
 		setupUi.dwpbox->setChecked(flp->flag & FLP_PROTECT);
@@ -342,9 +342,9 @@ void SetupWin::start() {
 
 	setupUi.hm_type->setCurrentIndex(setupUi.hm_type->findData(zx->ide->master->type));
 	ATAPassport pass = ideGetPassport(zx->ide,IDE_MASTER);
-	setupUi.hm_model->setText(QDialog::trUtf8(pass.model,NULL,40));
-	setupUi.hm_ser->setText(QDialog::trUtf8(pass.serial,NULL,20));
-	setupUi.hm_path->setText(QDialog::trUtf8(zx->ide->master->image));
+	setupUi.hm_model->setText(QString::fromLocal8Bit(pass.model));
+	setupUi.hm_ser->setText(QString::fromLocal8Bit(pass.serial));
+	setupUi.hm_path->setText(QString::fromLocal8Bit(zx->ide->master->image));
 	setupUi.hm_islba->setChecked(zx->ide->master->flags & ATA_LBA);
 	setupUi.hm_gsec->setValue(pass.spt);
 	setupUi.hm_ghd->setValue(pass.hds);
@@ -353,9 +353,9 @@ void SetupWin::start() {
 
 	setupUi.hs_type->setCurrentIndex(setupUi.hm_type->findData(zx->ide->slave->type));
 	pass = ideGetPassport(zx->ide,IDE_SLAVE);
-	setupUi.hs_model->setText(QDialog::trUtf8(pass.model,NULL,40));
-	setupUi.hs_ser->setText(QDialog::trUtf8(pass.serial,NULL,20));
-	setupUi.hs_path->setText(QDialog::trUtf8(zx->ide->slave->image));
+	setupUi.hs_model->setText(QString::fromLocal8Bit(pass.model));
+	setupUi.hs_ser->setText(QString::fromLocal8Bit(pass.serial));
+	setupUi.hs_path->setText(QString::fromLocal8Bit(zx->ide->slave->image));
 	setupUi.hs_islba->setChecked(zx->ide->slave->flags & ATA_LBA);
 	setupUi.hs_gsec->setValue(pass.spt);
 	setupUi.hs_ghd->setValue(pass.hds);
@@ -364,11 +364,11 @@ void SetupWin::start() {
 // tape
 	setupUi.cbTapeAuto->setChecked(optGetFlag(OF_TAPEAUTO));
 	setupUi.cbTapeFast->setChecked(optGetFlag(OF_TAPEFAST));
-	setupUi.tpathle->setText(QDialog::trUtf8(zx->tape->path));
+	setupUi.tpathle->setText(QString::fromLocal8Bit(zx->tape->path));
 	buildtapelist();
 // tools
-	setupUi.sjpathle->setText(QDialog::trUtf8(optGetString(OPT_ASMPATH).c_str()));
-	setupUi.prjdirle->setText(QDialog::trUtf8(optGetString(OPT_PROJDIR).c_str()));
+	setupUi.sjpathle->setText(QString::fromLocal8Bit(optGetString(OPT_ASMPATH).c_str()));
+	setupUi.prjdirle->setText(QString::fromLocal8Bit(optGetString(OPT_PROJDIR).c_str()));
 	buildmenulist();
 // leds
 	setupUi.diskLed->setChecked(emulGetFlags() & FL_LED_DISK);
@@ -383,9 +383,9 @@ void SetupWin::apply() {
 	XProfile* curProf = getCurrentProfile();
 // machine
 	HardWare *oldmac = zx->hw;
-	curProf->hwName = std::string(setupUi.machbox->currentText().toUtf8().data());
+	curProf->hwName = std::string(setupUi.machbox->currentText().toLocal8Bit().data());
 	setHardware(zx,curProf->hwName);
-	curProf->rsName = std::string(setupUi.rsetbox->currentText().toUtf8().data());
+	curProf->rsName = std::string(setupUi.rsetbox->currentText().toLocal8Bit().data());
 	setRomset(zx, curProf->rsName);
 	emulSetFlag(FL_RESET, setupUi.reschk->isChecked());
 	zx->resbank = setupUi.resbox->currentIndex();
@@ -400,15 +400,15 @@ void SetupWin::apply() {
 	setFlagBit(setupUi.dszchk->isChecked(),&vidFlag,VF_DOUBLE);
 	setFlagBit(setupUi.fscchk->isChecked(),&vidFlag,VF_FULLSCREEN);
 	brdsize = setupUi.bszsld->value()/100.0;
-	optSet(OPT_SHOTDIR,std::string(setupUi.pathle->text().toUtf8().data()));
+	optSet(OPT_SHOTDIR,std::string(setupUi.pathle->text().toLocal8Bit().data()));
 	optSet(OPT_SHOTFRM,setupUi.ssfbox->itemData(setupUi.ssfbox->currentIndex()).toInt());
 	optSet(OPT_SHOTCNT,setupUi.scntbox->value());
 	optSet(OPT_SHOTINT,setupUi.sintbox->value());
-	emulSetLayout(zx->vid,std::string(setupUi.geombox->currentText().toUtf8().data()));
+	emulSetLayout(zx->vid,std::string(setupUi.geombox->currentText().toLocal8Bit().data()));
 	optSet(OPT_BRGLEV,setupUi.brgslide->value());
 // sound
 	std::string oname = sndGetOutputName();
-	std::string nname(setupUi.outbox->currentText().toUtf8().data());
+	std::string nname(setupUi.outbox->currentText().toLocal8Bit().data());
 	int orate = sndGet(SND_RATE);
 	sndSet(SND_ENABLE, setupUi.senbox->isChecked());
 	sndSet(SND_MUTE, setupUi.mutbox->isChecked());
@@ -431,7 +431,7 @@ void SetupWin::apply() {
 	if (setupUi.inpDevice->currentIndex() < 1) {
 		optSet(OPT_JOYNAME,std::string(""));
 	} else {
-		optSet(OPT_JOYNAME,std::string(setupUi.inpDevice->currentText().toUtf8().data()));
+		optSet(OPT_JOYNAME,std::string(setupUi.inpDevice->currentText().toLocal8Bit().data()));
 	}
 	std::string kmname = getRFText(setupUi.keyMapBox);
 	if (kmname == "none") kmname = "default";
@@ -472,9 +472,9 @@ void SetupWin::apply() {
 	ATAPassport pass = ideGetPassport(zx->ide,IDE_MASTER);
 
 	zx->ide->master->type = setupUi.hm_type->itemData(setupUi.hm_type->currentIndex()).toInt();
-	memcpy(pass.model,std::string(setupUi.hm_model->text().toUtf8().data(),40).c_str(),40);
-	memcpy(pass.serial,std::string(setupUi.hm_ser->text().toUtf8().data(),20).c_str(),20);
-	ideSetImage(zx->ide,IDE_MASTER,setupUi.hm_path->text().toUtf8().data());
+	memcpy(pass.model,std::string(setupUi.hm_model->text().toLocal8Bit().data(),40).c_str(),40);
+	memcpy(pass.serial,std::string(setupUi.hm_ser->text().toLocal8Bit().data(),20).c_str(),20);
+	ideSetImage(zx->ide,IDE_MASTER,setupUi.hm_path->text().toLocal8Bit().data());
 	setFlagBit(setupUi.hm_islba->isChecked(),&flg,ATA_LBA);
 	zx->ide->master->flags = flg;
 	pass.spt = setupUi.hm_gsec->value();
@@ -486,9 +486,9 @@ void SetupWin::apply() {
 	pass = ideGetPassport(zx->ide,IDE_SLAVE);
 	flg = zx->ide->slave->flags;
 	zx->ide->slave->type = setupUi.hs_type->itemData(setupUi.hs_type->currentIndex()).toInt();
-	memcpy(pass.model,std::string(setupUi.hs_model->text().toUtf8().data(),40).c_str(),40);
-	memcpy(pass.serial,std::string(setupUi.hs_ser->text().toUtf8().data(),20).c_str(),20);
-	ideSetImage(zx->ide,IDE_SLAVE,setupUi.hm_path->text().toUtf8().data());
+	memcpy(pass.model,std::string(setupUi.hs_model->text().toLocal8Bit().data(),40).c_str(),40);
+	memcpy(pass.serial,std::string(setupUi.hs_ser->text().toLocal8Bit().data(),20).c_str(),20);
+	ideSetImage(zx->ide,IDE_SLAVE,setupUi.hm_path->text().toLocal8Bit().data());
 	setFlagBit(setupUi.hs_islba->isChecked(),&flg,ATA_LBA);
 	zx->ide->slave->flags = flg;
 	pass.spt = setupUi.hs_gsec->value();
@@ -500,8 +500,8 @@ void SetupWin::apply() {
 	optSetFlag(OF_TAPEAUTO,setupUi.cbTapeAuto->isChecked());
 	optSetFlag(OF_TAPEFAST,setupUi.cbTapeFast->isChecked());
 // tools
-	optSet(OPT_ASMPATH,std::string(setupUi.sjpathle->text().toUtf8().data()));
-	optSet(OPT_PROJDIR,std::string(setupUi.prjdirle->text().toUtf8().data()));
+	optSet(OPT_ASMPATH,std::string(setupUi.sjpathle->text().toLocal8Bit().data()));
+	optSet(OPT_PROJDIR,std::string(setupUi.prjdirle->text().toLocal8Bit().data()));
 // leds
 	emulSetFlag(FL_LED_DISK,setupUi.diskLed->isChecked());
 	emulSetFlag(FL_LED_SHOT,setupUi.shotLed->isChecked());
@@ -533,7 +533,7 @@ void SetupWin::addNewRomset() {
 	QString nam = QInputDialog::getText(this,"Enter...","Input romset name"); //,QLineEdit::Normal,"",&ok);
 	if (nam.isEmpty()) return;
 	RomSet nrs;
-	nrs.name = std::string(nam.toUtf8().data());
+	nrs.name = std::string(nam.toLocal8Bit().data());
 	uint i;
 	for (i=0; i<8; i++) {
 		nrs.roms[i].path = "";
@@ -543,7 +543,7 @@ void SetupWin::addNewRomset() {
 		if (rsl[i].name == nrs.name) return;
 	}
 	rsl.push_back(nrs);
-	setupUi.rsetbox->addItem(QDialog::trUtf8(nrs.name.c_str()));
+	setupUi.rsetbox->addItem(QString::fromLocal8Bit(nrs.name.c_str()));
 	setupUi.rsetbox->setCurrentIndex(setupUi.rsetbox->count() - 1);
 }
 
@@ -678,7 +678,7 @@ void SetupWin::buildrsetlist() {
 		setupUi.rstab->hideRow(4);
 		for (int i=0; i<4; i++) {
 			setupUi.rstab->showRow(i);
-			QString rsf = QDialog::trUtf8(rset.roms[i].path.c_str());
+			QString rsf = QString::fromLocal8Bit(rset.roms[i].path.c_str());
 			setupUi.rstab->item(i,1)->setText(rsf);
 			if (rsf != "") {
 				setupUi.rstab->item(i,2)->setText(QString::number(rset.roms[i].part));
@@ -692,10 +692,10 @@ void SetupWin::buildrsetlist() {
 		setupUi.rstab->hideRow(2);
 		setupUi.rstab->hideRow(3);
 		setupUi.rstab->showRow(4);
-		setupUi.rstab->item(4,1)->setText(QDialog::trUtf8(rset.file.c_str()));
+		setupUi.rstab->item(4,1)->setText(QString::fromLocal8Bit(rset.file.c_str()));
 		setupUi.rstab->item(4,2)->setText("");
 	}
-	setupUi.rstab->item(5,1)->setText(QDialog::trUtf8(GSRom.c_str()));
+	setupUi.rstab->item(5,1)->setText(QString::fromLocal8Bit(GSRom.c_str()));
 	setupUi.rstab->setColumnWidth(0,100);
 	setupUi.rstab->setColumnWidth(1,300);
 	setupUi.rstab->setColumnWidth(2,50);
@@ -738,7 +738,7 @@ void SetupWin::buildtapelist() {
 		setupUi.tapelist->setItem(i,2,itm);
 		itm = new QTableWidgetItem(QString::number(inf[i].size));
 		setupUi.tapelist->setItem(i,4,itm);
-		itm = new QTableWidgetItem(QDialog::trUtf8(inf[i].name));
+		itm = new QTableWidgetItem(QString::fromLocal8Bit(inf[i].name));
 		setupUi.tapelist->setItem(i,5,itm);
 	}
 	setupUi.tapelist->selectRow(0);
@@ -763,9 +763,9 @@ void SetupWin::buildproflist() {
 	setupUi.twProfileList->setRowCount(prList.size());
 	QTableWidgetItem* itm;
 	for (uint i=0; i<prList.size(); i++) {
-		itm = new QTableWidgetItem(QDialog::trUtf8(prList[i].name.c_str()));
+		itm = new QTableWidgetItem(QString::fromLocal8Bit(prList[i].name.c_str()));
 		setupUi.twProfileList->setItem(i,0,itm);
-		itm = new QTableWidgetItem(QDialog::trUtf8(prList[i].file.c_str()));
+		itm = new QTableWidgetItem(QString::fromLocal8Bit(prList[i].file.c_str()));
 		setupUi.twProfileList->setItem(i,1,itm);
 	}
 }
@@ -820,7 +820,7 @@ void SetupWin::diskToHobeta() {
 	if (idx.size() == 0) return;
 	QString dir = QFileDialog::getExistingDirectory(this,"Save file(s) to...",QDir::homePath());
 	if (dir == "") return;
-	std::string sdir = std::string(dir.toUtf8().data()) + std::string(SLASH);
+	std::string sdir = std::string(dir.toLocal8Bit().data()) + std::string(SLASH);
 	Floppy* flp = zx->bdi->fdc->flop[setupUi.disktabs->currentIndex()];		// selected floppy
 	int savedFiles = 0;
 	for (int i=0; i<idx.size(); i++) {
@@ -835,7 +835,7 @@ void SetupWin::diskToRaw() {
 	if (idx.size() == 0) return;
 	QString dir = QFileDialog::getExistingDirectory(this,"Save file(s) to...",QDir::homePath());
 	if (dir == "") return;
-	std::string sdir = std::string(dir.toUtf8().data()) + std::string(SLASH);
+	std::string sdir = std::string(dir.toLocal8Bit().data()) + std::string(SLASH);
 	Floppy* flp = zx->bdi->fdc->flop[setupUi.disktabs->currentIndex()];
 	int savedFiles = 0;
 	for (int i=0; i<idx.size(); i++) {
@@ -1003,7 +1003,7 @@ void SetupWin::chabsz() {setupUi.bszlab->setText(QString::number(setupUi.bszsld-
 void SetupWin::chabrg() {setupUi.brglab->setText(QString::number(setupUi.brgslide->value()));}
 
 void SetupWin::selsspath() {
-	QString fpath = QFileDialog::getExistingDirectory(this,"Screenshots folder",QDialog::trUtf8(optGetString(OPT_SHOTDIR).c_str()),QFileDialog::ShowDirsOnly);
+	QString fpath = QFileDialog::getExistingDirectory(this,"Screenshots folder",QString::fromLocal8Bit(optGetString(OPT_SHOTDIR).c_str()),QFileDialog::ShowDirsOnly);
 	if (fpath!="") setupUi.pathle->setText(fpath);
 }
 
@@ -1056,7 +1056,7 @@ void SetupWin::scanJoyBind() {
 					extb.num = ev.jbutton.button;
 					extb.dir = true;
 					intb.dev = XJ_JOY;
-					intb.name = box->itemData(box->currentIndex()).toString().toUtf8().data();
+					intb.name = box->itemData(box->currentIndex()).toString().toLocal8Bit().data();
 					optSetJMap(extb,intb);
 					doWork = false;
 					break;
@@ -1066,7 +1066,7 @@ void SetupWin::scanJoyBind() {
 						extb.num = ev.jaxis.axis;
 						extb.dir = (ev.jaxis.value > 0);
 						intb.dev = XJ_JOY;
-						intb.name = box->itemData(box->currentIndex()).toString().toUtf8().data();
+						intb.name = box->itemData(box->currentIndex()).toString().toLocal8Bit().data();
 						optSetJMap(extb,intb);
 						doWork = false;
 					}
@@ -1125,10 +1125,10 @@ void SetupWin::ejctc() {saveChangedDisk(2); flpEject(zx->bdi->fdc->flop[2]); upd
 void SetupWin::ejctd() {saveChangedDisk(3); flpEject(zx->bdi->fdc->flop[3]); updatedisknams();}
 
 void SetupWin::updatedisknams() {
-	setupUi.apathle->setText(QDialog::trUtf8(zx->bdi->fdc->flop[0]->path));
-	setupUi.bpathle->setText(QDialog::trUtf8(zx->bdi->fdc->flop[1]->path));
-	setupUi.cpathle->setText(QDialog::trUtf8(zx->bdi->fdc->flop[2]->path));
-	setupUi.dpathle->setText(QDialog::trUtf8(zx->bdi->fdc->flop[3]->path));
+	setupUi.apathle->setText(QString::fromLocal8Bit(zx->bdi->fdc->flop[0]->path));
+	setupUi.bpathle->setText(QString::fromLocal8Bit(zx->bdi->fdc->flop[1]->path));
+	setupUi.cpathle->setText(QString::fromLocal8Bit(zx->bdi->fdc->flop[2]->path));
+	setupUi.dpathle->setText(QString::fromLocal8Bit(zx->bdi->fdc->flop[3]->path));
 	fillDiskCat();
 }
 
@@ -1136,7 +1136,7 @@ void SetupWin::updatedisknams() {
 
 void SetupWin::loatape() {
 	loadFile("",FT_TAPE,1);
-	setupUi.tpathle->setText(QDialog::trUtf8(zx->tape->path));
+	setupUi.tpathle->setText(QString::fromLocal8Bit(zx->tape->path));
 	buildtapelist();
 }
 
@@ -1146,7 +1146,7 @@ void SetupWin::savtape() {
 
 void SetupWin::ejctape() {
 	tapEject(zx->tape);
-	setupUi.tpathle->setText(QDialog::trUtf8(zx->tape->path));
+	setupUi.tpathle->setText(QString::fromLocal8Bit(zx->tape->path));
 	buildtapelist();
 }
 
@@ -1227,7 +1227,7 @@ void SetupWin::ssjapath() {
 }
 
 void SetupWin::sprjpath() {
-	QString fnam = QFileDialog::getExistingDirectory(this,"Projects file",QDialog::trUtf8(optGetString(OPT_PROJDIR).c_str()),QFileDialog::ShowDirsOnly);
+	QString fnam = QFileDialog::getExistingDirectory(this,"Projects file",QString::fromLocal8Bit(optGetString(OPT_PROJDIR).c_str()),QFileDialog::ShowDirsOnly);
 	if (fnam!="") setupUi.prjdirle->setText(fnam);
 }
 
@@ -1284,9 +1284,9 @@ void SetupWin::umaselp() {
 void SetupWin::umaconf() {
 	if ((uia.namele->text()=="") || (uia.pathle->text()=="")) return;
 	if (umidx == -1) {
-		addBookmark(std::string(uia.namele->text().toUtf8().data()),std::string(uia.pathle->text().toUtf8().data()));
+		addBookmark(std::string(uia.namele->text().toLocal8Bit().data()),std::string(uia.pathle->text().toLocal8Bit().data()));
 	} else {
-		setBookmark(umidx,std::string(uia.namele->text().toUtf8().data()),std::string(uia.pathle->text().toUtf8().data()));
+		setBookmark(umidx,std::string(uia.namele->text().toLocal8Bit().data()),std::string(uia.pathle->text().toLocal8Bit().data()));
 	}
 	umadial->hide();
 	buildmenulist();
@@ -1298,7 +1298,7 @@ void SetupWin::umaconf() {
 void SetupWin::newProfile() {
 	QString nam = QInputDialog::getText(this,"Enter...","New profile name");
 	if (nam.isEmpty()) return;
-	std::string nm = std::string(nam.toUtf8().data());
+	std::string nm = std::string(nam.toLocal8Bit().data());
 	std::string fp = nm + ".conf";
 	if (!addProfile(nm,fp)) shitHappens("Can't add such profile");
 	buildproflist();
@@ -1309,7 +1309,7 @@ void SetupWin::rmProfile() {
 	int idx = setupUi.twProfileList->currentRow();
 	if (idx < 0) return;
 	if (!areSure("Do you really want to delete this profile?")) return;
-	std::string pnam(setupUi.twProfileList->item(idx,0)->text().toUtf8().data());
+	std::string pnam(setupUi.twProfileList->item(idx,0)->text().toLocal8Bit().data());
 	idx = delProfile(pnam);
 	switch(idx) {
 		case DELP_OK_CURR:
