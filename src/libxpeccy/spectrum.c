@@ -3,6 +3,14 @@
 
 #include "spectrum.h"
 
+double ltk;
+int res1 = 0;
+int res2 = 0;
+int res3 = 0;	// tick in op, wich has last OUT/MWR (and vidSync)
+int res4 = 0;	// save last res3 (vidSync on OUT/MWR process do res3-res4 ticks)
+int vflg = 0;
+Z80EX_WORD pcreg;
+
 /*
  * ProfROM switch:
  * 	page 2,6,10,14
@@ -160,8 +168,14 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 	return res;
 }
 
+// NOTE (2012.07.14)
+// real OUT or MWR must be AFTER vidSync()
+
 void memwr(Z80EX_CONTEXT* cpu, Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
+	res3 = z80ex_op_tstate(cpu);
+	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
+	res4 = res3;
 	memWr(comp->mem,adr,val);
 	if (comp->mem->flags & MEM_BRK_WRITE) {
 		comp->flags |= ZX_BREAK;
@@ -247,8 +261,7 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 		return res;
 }
 
-void iowr(Z80EX_CONTEXT*cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
-	ZXComp* comp = (ZXComp*)ptr;
+void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	gsSync(comp->gs,comp->gsCount);
 	comp->gsCount = 0;
 	if (ideOut(comp->ide,port,val,comp->bdi->flag & BDI_ACTIVE)) return;
@@ -262,7 +275,7 @@ void iowr(Z80EX_CONTEXT*cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 			break;
 		default:
 			if ((port & 0xff) == 0xfe) {
-				comp->vid->nextBorder = val & 0x07;
+				comp->vid->brdcol = val & 0x07;
 				comp->beeplev = val & 0x10;
 				comp->tape->outsig = (val & 0x08) ? 1 : 0;
 			} else {
@@ -348,6 +361,14 @@ void iowr(Z80EX_CONTEXT*cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 	}
 }
 
+void iowr(Z80EX_CONTEXT* cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
+	ZXComp* comp = (ZXComp*)ptr;
+	res3 = z80ex_op_tstate(cpu) + 1;	// +1? WTF?
+	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
+	res4 = res3;
+	zxOut(comp,port,val);
+}
+
 Z80EX_BYTE intrq(Z80EX_CONTEXT* cpu, void* ptr) {
 	return 0xff;
 }
@@ -382,6 +403,7 @@ ZXComp* zxCreate() {
 	comp->rzxData = NULL;
 	comp->gsCount = 0;
 	comp->resbank = RES_48;
+	comp->aeOp = ZX_NONE;
 	gsReset(comp->gs);
 	zxReset(comp,RES_DEFAULT);
 	return comp;
@@ -426,41 +448,34 @@ void zxSetFrq(ZXComp* comp, float frq) {
 	comp->dotPerTick = 7.0 / frq;
 }
 
-void zxOut(ZXComp* comp, Z80EX_WORD port,Z80EX_BYTE val) {
-	iowr(NULL,port,val,(void*)comp);
-}
-
-double ltk;
-int res1 = 0;
-int res2 = 0;
-Z80EX_WORD pcreg;
-
 double zxExec(ZXComp* comp) {
-	res1 = 0;
+	res1 = res3 = res4 = 0;
+	vflg = 0;
 	do {
 		res1 += z80ex_step(comp->cpu);
 	} while (z80ex_last_op_type(comp->cpu) != 0);
-	vidSync(comp->vid,res1 * comp->dotPerTick);
+	vflg |= vidSync(comp->vid,(res1 - res3) * comp->dotPerTick);
 	pcreg = z80ex_get_reg(comp->cpu,regPC);
 	if (comp->rzxPlay) {
 		comp->intStrobe = (comp->rzxFetches < 1);
 	} else {
-		comp->intStrobe = comp->vid->intStrobe;
+		comp->intStrobe = (vflg & VID_INT) ? 1 : 0;
 	}
-
 	if ((pcreg > 0x3fff) && comp->nmiRequest && !comp->rzxPlay) {
+		res3 = res4 = 0;
 		res2 = z80ex_nmi(comp->cpu);
 		res1 += res2;
 		if (res2 != 0) {
 			comp->bdi->flag |= BDI_ACTIVE;
 			zxMapMemory(comp);
-			vidSync(comp->vid,res2 * comp->dotPerTick);
+			vidSync(comp->vid,(res2 - res3) * comp->dotPerTick);
 		}
 	}
 	if (comp->intStrobe) {
+		res3 = res4 = 0;
 		res2 = z80ex_int(comp->cpu);
 		res1 += res2;
-		vidSync(comp->vid,res2 * comp->dotPerTick);
+		vidSync(comp->vid,(res2 - res3) * comp->dotPerTick);
 		if (comp->rzxPlay) {
 			comp->rzxFrame++;
 			if (comp->rzxFrame >= comp->rzxSize) {

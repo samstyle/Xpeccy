@@ -67,8 +67,7 @@ Video* vidCreate(Memory* me) {
 		}
 		sadr += 0x700;			// -#100 +#800
 	}
-	vid->zoom = 1.0;
-	vidSetLayout(vid,448,320,138,80,64,32,0,64,0);
+	vidSetLayout(vid,448,320,138,80,64,32,0,0,64);
 	vid->mode = VID_NORMAL;
 
 	vid->curr.h = 0;
@@ -76,7 +75,6 @@ Video* vidCreate(Memory* me) {
 	vid->curscr = 0;
 	vid->fcnt = 0;
 
-	vid->nextBorder = 0xff;
 	vid->dotCount = 0;
 	vid->pxcnt = 0;
 
@@ -84,6 +82,7 @@ Video* vidCreate(Memory* me) {
 	vid->scrptr = vid->scrimg;
 
 	vid->firstFrame = 1;
+	vid->intSignal = 0;
 
 	return vid;
 }
@@ -96,14 +95,18 @@ unsigned char* vidGetScreen() {
 	return screenBuf;
 }
 
-#define	MTRX_INVIS	0x4000		// invisible: blank spaces
-#define	MTRX_BORDER	0x4001		// border
-#define	MTRX_ZERO	0x4002		// "line feed"
-#define	MTRX_SHIFT	0x4003		// 1,3,5,7 dots in byte
-#define	MTRX_DOT2	0x4004		// 2nd dot
-#define	MTRX_DOT4	0x4005		// 4th dot
-#define	MTRX_DOT6	0x4006		// 6th dot
-// all other numbers is index of memaddr in 0-dot
+#define	MTF_LINEND	1
+#define	MTF_FRMEND	(1<<1)
+#define	MTF_INT		(1<<2)
+
+#define MTT_INVIS	0
+#define	MTT_BORDER	1
+#define	MTT_PT0		2
+#define	MTT_PT2		3
+#define	MTT_PT4		4
+#define	MTT_PT6		5
+#define	MTT_PTX		6
+#define	MTT_BRDATR	7	// this is same MTT_PT4, but 4 pix before screen. actual color = border. action = get 1st attribute byte
 
 void vidFillMatrix(Video* vid) {
 	int x,y,i,adr;
@@ -111,23 +114,61 @@ void vidFillMatrix(Video* vid) {
 	adr = 0;
 	for (y = 0; y < vid->full.v; y++) {
 		for (x = 0; x < vid->full.h; x++) {
+			vid->matrix[i].flag = 0;
 			if ((y < vid->lcut.v) || (y >= vid->rcut.v) || (x < vid->lcut.h) || (x >= vid->rcut.h)) {
-				vid->matrix[i] = ((x==0) && (y > vid->lcut.v) && (y < vid->rcut.v)) ? MTRX_ZERO : MTRX_INVIS;
+				vid->matrix[i].type = MTT_INVIS;
 			} else {
 				if ((y < vid->bord.v) || (y > vid->bord.v + 191) || (x < vid->bord.h) || (x > vid->bord.h + 255)) {
-					vid->matrix[i] = MTRX_BORDER;
+					vid->matrix[i].type = MTT_BORDER;
 				} else {
 					switch ((x - vid->bord.h) & 7) {
-						case 0: vid->matrix[i] = adr; adr++; break;
-						case 2: vid->matrix[i] = MTRX_DOT2; break;
-						case 4: vid->matrix[i] = MTRX_DOT4; break;
-						case 6: vid->matrix[i] = MTRX_DOT6; break;
-						default: vid->matrix[i] = MTRX_SHIFT; break;
+						case 0:
+							vid->matrix[i].type = MTT_PT0;
+							vid->matrix[i].scr5ptr = vid->scr5pix[adr];
+							vid->matrix[i].scr7ptr = vid->scr7pix[adr];
+							vid->matrix[i].alco5ptr = vid->ladrz[adr].ac00;
+							vid->matrix[i].alco7ptr = vid->ladrz[adr].ac10;
+							if (i > 3) {
+								if (vid->matrix[i-4].type == MTT_BORDER)
+									vid->matrix[i-4].type = MTT_BRDATR;
+								vid->matrix[i-4].atr5ptr = vid->scr5atr[adr];
+								vid->matrix[i-4].atr7ptr = vid->scr7atr[adr];
+							}
+							break;
+						case 2:
+							vid->matrix[i].type = MTT_PT2;
+							vid->matrix[i].alco5ptr = vid->ladrz[adr].ac01;
+							vid->matrix[i].alco7ptr = vid->ladrz[adr].ac11;
+							break;
+						case 4:
+							vid->matrix[i].type = MTT_PT4;
+							vid->matrix[i].atr5ptr = vid->scr5atr[adr];
+							vid->matrix[i].atr7ptr = vid->scr7atr[adr];
+							vid->matrix[i].alco5ptr = vid->ladrz[adr].ac02;
+							vid->matrix[i].alco7ptr = vid->ladrz[adr].ac12;
+							break;
+						case 6:
+							vid->matrix[i].alco5ptr = vid->ladrz[adr].ac03;
+							vid->matrix[i].alco7ptr = vid->ladrz[adr].ac13;
+							vid->matrix[i].type = MTT_PT6;
+							break;
+						case 7:
+							adr++;
+						default:
+							vid->matrix[i].type = MTT_PTX;
+							break;
 					}
 				}
 			}
 			i++;
 		}
+		if ((y >= vid->lcut.v) && (y < vid->rcut.v)) vid->matrix[i-1].flag |= MTF_LINEND;
+	}
+	vid->matrix[i-1].flag |= MTF_FRMEND;
+	adr = vid->intpos.v * vid->full.h + vid->intpos.h;
+	for (i = 0; i < vid->intsz; i++) {
+		vid->matrix[adr].flag |= MTF_INT;
+		adr++;
 	}
 }
 
@@ -144,123 +185,95 @@ void vidUpdate(Video* vid) {
 }
 
 unsigned char col = 0;
-unsigned short mtx = 0;
 unsigned char ink = 0;
 unsigned char pap = 0;
 unsigned char scrbyte = 0;
-unsigned char alscr2,alscr4,alscr6;
+unsigned char nextAtr = 0;
+mtrxItem mtx;
 
 unsigned char pixBuffer[8];
 unsigned char bitMask[8] = {0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
 
-void vidSync(Video* vid, float dotDraw) {
-	vid->intStrobe = 0;
+int vidSync(Video* vid, float dotDraw) {
+	int res = 0;
 	vid->pxcnt += dotDraw;
 	while (vid->pxcnt >= 1) {
-		mtx = vid->matrix[vid->dotCount++];
-		switch (mtx) {
-			case MTRX_ZERO:
-				if (vidFlag & VF_DOUBLE) vid->scrptr += vid->wsze.h;
-				break;
-			case MTRX_INVIS:
-				break;
-			default:
-				switch (vid->mode) {
-					case VID_NORMAL:
-						switch(mtx) {
-							case MTRX_BORDER:
-								col = vid->brdcol;
-								break;
-							case MTRX_DOT2:
-							case MTRX_DOT4:
-							case MTRX_DOT6:
-							case MTRX_SHIFT:
-								col = pixBuffer[ink++];
-								break;
-							default:
-								if (vid->curscr != 0) {
-									scrbyte = *(vid->scr7pix[mtx]);
-									vid->atrbyte = *(vid->scr7atr[mtx]);
-								} else {
-									scrbyte = *(vid->scr5pix[mtx]);
-									vid->atrbyte = *(vid->scr5atr[mtx]);
-								}
-								if ((vid->atrbyte & 0x80) && vid->flash) scrbyte ^= 255;
-								ink = inkTab[vid->atrbyte & 0x7f];
-								pap = papTab[vid->atrbyte & 0x7f];
-								for (col = 0; col < 8; col++) {
-									pixBuffer[col] = (scrbyte & bitMask[col]) ? ink : pap;
-								}
-								ink = 1;
-								col = pixBuffer[0];
-								break;
-						}
-						break;
-					case VID_ALCO:
-						switch (mtx) {
-							case MTRX_BORDER:
-								col = vid->brdcol;
-								break;
-							case MTRX_SHIFT:
-								col = ((scrbyte & 0x38)>>3) | ((scrbyte & 0x80)>>4);
-								break;
-							case MTRX_DOT2:
-								scrbyte = alscr2;
-								col = inkTab[scrbyte & 0x7f];
-								break;
-							case MTRX_DOT4:
-								scrbyte = alscr4;
-								col = inkTab[scrbyte & 0x7f];
-								break;
-							case MTRX_DOT6:
-								scrbyte = alscr6;
-								col = inkTab[scrbyte & 0x7f];
-								break;
-							default:
-								if (vid->curscr != 0) {
-									scrbyte = *(vid->ladrz[mtx].ac10);
-									alscr2 = *(vid->ladrz[mtx].ac11);
-									alscr4 = *(vid->ladrz[mtx].ac12);
-									alscr6 = *(vid->ladrz[mtx].ac13);
-								} else {
-									scrbyte = *(vid->ladrz[mtx].ac00);
-									alscr2 = *(vid->ladrz[mtx].ac01);
-									alscr4 = *(vid->ladrz[mtx].ac02);
-									alscr6 = *(vid->ladrz[mtx].ac03);
-								}
-								col = inkTab[scrbyte & 0x7f];
-								break;
-						}
-						break;
-				}
-				if (vid->firstFrame || (*vid->scrptr != col)) {
-					*(vid->scrptr++) = col;
-					if (vidFlag & VF_DOUBLE) {
-						*(vid->scrptr + vid->wsze.h - 1) = col;
-						*(vid->scrptr + vid->wsze.h) = col;
-						*(vid->scrptr++)=col;
+		mtx = vid->matrix[vid->dotCount];
+		vid->dotCount++;
+		if ((mtx.flag & MTF_INT) && (vid->intSignal == 0)) res |= VID_INT;
+		vid->intSignal = (mtx.flag & MTF_INT) ? 1 : 0;
+		if (mtx.type != MTT_INVIS) {
+			switch (vid->mode) {
+				case VID_NORMAL:
+					switch(mtx.type) {
+						case MTT_BRDATR:
+							nextAtr = vid->curscr ? *(mtx.atr7ptr) : *(mtx.atr5ptr);
+						case MTT_BORDER:
+							col = vid->brdcol;
+							break;
+						case MTT_PT0:
+							vid->atrbyte = nextAtr;
+							scrbyte = vid->curscr ? *(mtx.scr7ptr) : *(mtx.scr5ptr);
+							if ((nextAtr & 0x80) && vid->flash) scrbyte ^= 255;
+							ink = inkTab[nextAtr & 0x7f];
+							pap = papTab[nextAtr & 0x7f];
+							for (col = 0; col < 8; col++) {
+								pixBuffer[col] = (scrbyte & bitMask[col]) ? ink : pap;
+							}
+							ink = 1;
+							col = pixBuffer[0];
+							break;
+						case MTT_PT4:
+							nextAtr = vid->curscr ? *(mtx.atr7ptr) : *(mtx.atr5ptr);
+						default:
+							col = pixBuffer[ink++];
+							break;
 					}
-					vidFlag |= VF_CHANGED;
-				} else {
-					vid->scrptr++;
-					if (vidFlag & VF_DOUBLE) vid->scrptr++;
+					break;
+				case VID_ALCO:
+					switch(mtx.type) {
+						case MTT_BRDATR:
+						case MTT_BORDER:
+							col = vid->brdcol;
+							break;
+						case MTT_PT0:
+						case MTT_PT2:
+						case MTT_PT4:
+						case MTT_PT6:
+							scrbyte = vid->curscr ? *(mtx.alco7ptr) : *(mtx.alco5ptr);
+							col = inkTab[scrbyte & 0x7f];
+							break;
+						default:
+							col = ((scrbyte & 0x38)>>3) | ((scrbyte & 0x80)>>4);
+							break;
+					}
+					break;
+			}
+			if (vid->firstFrame || (*vid->scrptr != col)) {
+				*(vid->scrptr++) = col;
+				if (vidFlag & VF_DOUBLE) {
+					*(vid->scrptr + vid->wsze.h - 1) = col;
+					*(vid->scrptr + vid->wsze.h) = col;
+					*(vid->scrptr++)=col;
 				}
-				break;
+				vidFlag |= VF_CHANGED;
+			} else {
+				vid->scrptr++;
+				if (vidFlag & VF_DOUBLE) vid->scrptr++;
+			}
 		}
-		vid->pxcnt--;
-		if (vid->dotCount >= vid->frmsz) {
+		if ((mtx.flag & MTF_LINEND) && (vidFlag & VF_DOUBLE)) vid->scrptr += vid->wsze.h;
+		if (mtx.flag & MTF_FRMEND) {
+			res |= VID_FRM;
 			vid->dotCount = 0;
 			vid->fcnt++;
 			vid->flash = vid->fcnt & 0x20;
 			vid->scrptr = vid->scrimg;
-			vid->intStrobe = 1;
 			vid->firstFrame = 0;
 		}
-		if ((vid->pxcnt <= 2.0) && (vid->nextBorder < 8)) {
-			vid->brdcol = vid->nextBorder;
-			vid->nextBorder = 0xff;
-		}
+		vid->pxcnt--;
 	}
+	return res;
 }
 
 // LAYOUTS
@@ -272,7 +285,8 @@ void vidSetLayout(Video *vid, int fh, int fv, int bh, int bv, int sh, int sv, in
 	vid->bord.v = bv;
 	vid->sync.h = sh;
 	vid->sync.v = sv;
-	vid->intpos = iv;
+	vid->intpos.h = ih;
+	vid->intpos.v = iv;
 	vid->intsz = is;
 	vid->frmsz = fh * fv;
 	vidUpdate(vid);

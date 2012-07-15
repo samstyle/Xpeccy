@@ -13,6 +13,12 @@ int findProfile(std::string nm) {
 	return -1;
 }
 
+XProfile* getProfile(std::string nm) {
+	int idx = findProfile(nm);
+	if (idx < 0) return NULL;
+	return &profileList[idx];
+}
+
 bool addProfile(std::string nm, std::string fp) {
 	printf("addProfile: %s : %s\n",nm.c_str(),fp.c_str());
 	int idx = findProfile(nm);

@@ -37,6 +37,10 @@ extern "C" {
 // zx flags
 #define	ZX_BREAK	1
 #define	ZX_JUSTBORN	(1<<1)	// just created zx. need to reset after selection
+// zx after-effect ops
+#define	ZX_NONE		0
+#define	ZX_OUT		1	// last op was OUT: real out must be after vidSync
+#define	ZX_MWR		2	// last op has memWr: real writing must be after vidSync
 
 typedef struct {
 	const char* name;
@@ -83,6 +87,9 @@ typedef struct {
 	uint8_t prt2;		// scorpion ProfROM layer (0..3)
 	int resbank;		// rompart active after reset
 	int gsCount;
+	int aeOp;		// after-effect op type
+	unsigned short adr;	// remember it for out or mwr
+	unsigned char value;
 } ZXComp;
 
 ZXComp* zxCreate();

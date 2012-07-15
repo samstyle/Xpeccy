@@ -206,3 +206,7 @@ Wrk	Fix many errors during building Xpeccy w/o SDL
 build 20120704
 New	Showing hotkeys table (options-xpeccy-help)
 Fix	Incorrect picture on some border sizes is fixed now
+
+build 20120715
+Fix	More accurate screen timings. "default" is now true-Pentagon
+Fix	Incorrect romset saving while using two and more profiles

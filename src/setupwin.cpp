@@ -249,10 +249,10 @@ void SetupWin::start() {
 	for (i=0; i < rsl.size(); i++) {
 		setupUi.rsetbox->addItem(QString::fromLocal8Bit(rsl[i].name.c_str()));
 	}
-	setupUi.machbox->setCurrentIndex(setupUi.machbox->findText(QString::fromLocal8Bit(zx->hw->name)));
+	setupUi.machbox->setCurrentIndex(setupUi.machbox->findText(QString::fromUtf8(zx->hw->name)));
 	int cbx = -1;
 	RomSet* rset = findRomset(curProf->rsName);
-	if (rset != NULL) cbx = setupUi.rsetbox->findText(QString::fromLocal8Bit(rset->name.c_str()));
+	if (rset != NULL) cbx = setupUi.rsetbox->findText(QString::fromUtf8(rset->name.c_str()));
 	setupUi.rsetbox->setCurrentIndex(cbx);
 	setupUi.reschk->setChecked(emulGetFlags() & FL_RESET);
 	setupUi.resbox->setCurrentIndex(zx->resbank);
@@ -383,10 +383,10 @@ void SetupWin::apply() {
 	XProfile* curProf = getCurrentProfile();
 // machine
 	HardWare *oldmac = zx->hw;
-	curProf->hwName = std::string(setupUi.machbox->currentText().toLocal8Bit().data());
-	setHardware(zx,curProf->hwName);
-	curProf->rsName = std::string(setupUi.rsetbox->currentText().toLocal8Bit().data());
-	setRomset(zx, curProf->rsName);
+	curProf->hwName = std::string(setupUi.machbox->currentText().toUtf8().data());
+	setHardware(curProf->zx,curProf->hwName);
+	curProf->rsName = std::string(setupUi.rsetbox->currentText().toUtf8().data());
+	setRomset(curProf->name, curProf->rsName);
 	emulSetFlag(FL_RESET, setupUi.reschk->isChecked());
 	zx->resbank = setupUi.resbox->currentIndex();
 

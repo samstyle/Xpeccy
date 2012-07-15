@@ -51,7 +51,7 @@ typedef struct {
 
 bool addRomset(RomSet);
 void setRomsetList(std::vector<RomSet>);
-void setRomset(ZXComp*, std::string);
+void setRomset(std::string, std::string);
 RomSet* findRomset(std::string);
 std::vector<RomSet> getRomsetList();
 
@@ -90,8 +90,9 @@ bool setProfile(std::string);
 void clearProfiles();
 std::vector<XProfile> getProfileList();
 XProfile* getCurrentProfile();
+XProfile* getProfile(std::string);
 
-// liayouts
+// layouts
 
 typedef struct {
 	std::string name;

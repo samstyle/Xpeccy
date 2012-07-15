@@ -639,12 +639,17 @@ void loadProfiles() {
 				case SECT_VIDEO:
 					if (pnam=="layout") {
 						vect = splitstr(pval,":");
-						if (vect.size() == 9) {
+						if (vect.size() > 8) {
 							vlay.name = vect[0];
 							vlay.full.h = atoi(vect[1].c_str()); vlay.full.v = atoi(vect[2].c_str());
 							vlay.bord.h = atoi(vect[3].c_str()); vlay.bord.v = atoi(vect[4].c_str());
 							vlay.sync.h = atoi(vect[5].c_str()); vlay.sync.v = atoi(vect[6].c_str());
-							vlay.intsz = atoi(vect[7].c_str()); vlay.intpos.v = atoi(vect[8].c_str()); vlay.intpos.h = 0;
+							vlay.intsz = atoi(vect[7].c_str()); vlay.intpos.v = atoi(vect[8].c_str());
+							if (vect.size() > 9) {
+								vlay.intpos.h = atoi(vect[9].c_str());
+							} else {
+								vlay.intpos.h = 0;
+							}
 							if ((vlay.full.h > vlay.bord.h + 256) && (vlay.bord.h > vlay.sync.h) && (vlay.full.v > vlay.bord.v + 192) && (vlay.bord.v > vlay.sync.v)) {
 								addLayout(vlay);
 							}
@@ -972,7 +977,7 @@ void loadConfig(bool dev) {
 	ideSetPassport(zx->ide,IDE_MASTER,masterPass);
 	ideSetPassport(zx->ide,IDE_SLAVE,slavePass);
 	setHardware(zx, curProf->hwName);
-	setRomset(zx, curProf->rsName);
+	setRomset(curProf->name, curProf->rsName);
 	if (zx->hw==NULL) throw("Can't found current machine");
 	if (findRomset(curProf->rsName) == NULL) throw("Can't found current romset");
 	if ((zx->hw->mask != 0) && (~zx->hw->mask & tmask)) throw("Incorrect memory size for this machine");
