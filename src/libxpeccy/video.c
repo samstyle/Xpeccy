@@ -106,7 +106,7 @@ unsigned char* vidGetScreen() {
 #define	MTT_PT4		4
 #define	MTT_PT6		5
 #define	MTT_PTX		6
-#define	MTT_BRDATR	7	// this is same MTT_PT4, but 4 pix before screen. actual color = border. action = get 1st attribute byte
+#define	MTT_BRDATR	7	// this is same MTT_PT4, but 4 pix before screen. actual color = border. action = get 1st pixels byte
 
 void vidFillMatrix(Video* vid) {
 	int x,y,i,adr;
@@ -124,15 +124,15 @@ void vidFillMatrix(Video* vid) {
 					switch ((x - vid->bord.h) & 7) {
 						case 0:
 							vid->matrix[i].type = MTT_PT0;
-							vid->matrix[i].scr5ptr = vid->scr5pix[adr];
-							vid->matrix[i].scr7ptr = vid->scr7pix[adr];
+							vid->matrix[i].atr5ptr = vid->scr5atr[adr];
+							vid->matrix[i].atr7ptr = vid->scr7atr[adr];
 							vid->matrix[i].alco5ptr = vid->ladrz[adr].ac00;
 							vid->matrix[i].alco7ptr = vid->ladrz[adr].ac10;
 							if (i > 3) {
 								if (vid->matrix[i-4].type == MTT_BORDER)
 									vid->matrix[i-4].type = MTT_BRDATR;
-								vid->matrix[i-4].atr5ptr = vid->scr5atr[adr];
-								vid->matrix[i-4].atr7ptr = vid->scr7atr[adr];
+								vid->matrix[i-4].scr5ptr = vid->scr5pix[adr];
+								vid->matrix[i-4].scr7ptr = vid->scr7pix[adr];
 							}
 							break;
 						case 2:
@@ -142,8 +142,8 @@ void vidFillMatrix(Video* vid) {
 							break;
 						case 4:
 							vid->matrix[i].type = MTT_PT4;
-							vid->matrix[i].atr5ptr = vid->scr5atr[adr];
-							vid->matrix[i].atr7ptr = vid->scr7atr[adr];
+							vid->matrix[i].scr5ptr = vid->scr5pix[adr];
+							vid->matrix[i].scr7ptr = vid->scr7pix[adr];
 							vid->matrix[i].alco5ptr = vid->ladrz[adr].ac02;
 							vid->matrix[i].alco7ptr = vid->ladrz[adr].ac12;
 							break;
@@ -188,7 +188,6 @@ unsigned char col = 0;
 unsigned char ink = 0;
 unsigned char pap = 0;
 unsigned char scrbyte = 0;
-unsigned char nextAtr = 0;
 mtrxItem mtx;
 
 unsigned char pixBuffer[8];
@@ -207,16 +206,15 @@ int vidSync(Video* vid, float dotDraw) {
 				case VID_NORMAL:
 					switch(mtx.type) {
 						case MTT_BRDATR:
-							nextAtr = vid->curscr ? *(mtx.atr7ptr) : *(mtx.atr5ptr);
+							scrbyte = vid->curscr ? *(mtx.scr7ptr) : *(mtx.scr5ptr);
 						case MTT_BORDER:
 							col = vid->brdcol;
 							break;
 						case MTT_PT0:
-							vid->atrbyte = nextAtr;
-							scrbyte = vid->curscr ? *(mtx.scr7ptr) : *(mtx.scr5ptr);
-							if ((nextAtr & 0x80) && vid->flash) scrbyte ^= 255;
-							ink = inkTab[nextAtr & 0x7f];
-							pap = papTab[nextAtr & 0x7f];
+							vid->atrbyte = vid->curscr ? *(mtx.atr7ptr) : *(mtx.atr5ptr);
+							if ((vid->atrbyte & 0x80) && vid->flash) scrbyte ^= 255;
+							ink = inkTab[vid->atrbyte & 0x7f];
+							pap = papTab[vid->atrbyte & 0x7f];
 							for (col = 0; col < 8; col++) {
 								pixBuffer[col] = (scrbyte & bitMask[col]) ? ink : pap;
 							}
@@ -224,7 +222,7 @@ int vidSync(Video* vid, float dotDraw) {
 							col = pixBuffer[0];
 							break;
 						case MTT_PT4:
-							nextAtr = vid->curscr ? *(mtx.atr7ptr) : *(mtx.atr5ptr);
+							scrbyte = vid->curscr ? *(mtx.scr7ptr) : *(mtx.scr5ptr);
 						default:
 							col = pixBuffer[ink++];
 							break;
