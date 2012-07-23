@@ -188,7 +188,7 @@ unsigned char col = 0;
 unsigned char ink = 0;
 unsigned char pap = 0;
 unsigned char scrbyte = 0;
-mtrxItem mtx;
+mtrxItem* mtx;
 
 unsigned char pixBuffer[8];
 unsigned char bitMask[8] = {0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
@@ -197,21 +197,21 @@ int vidSync(Video* vid, float dotDraw) {
 	int res = 0;
 	vid->pxcnt += dotDraw;
 	while (vid->pxcnt >= 1) {
-		mtx = vid->matrix[vid->dotCount];
+		mtx = &vid->matrix[vid->dotCount];
 		vid->dotCount++;
-		if ((mtx.flag & MTF_INT) && (vid->intSignal == 0)) res |= VID_INT;
-		vid->intSignal = (mtx.flag & MTF_INT) ? 1 : 0;
-		if (mtx.type != MTT_INVIS) {
+		if ((mtx->flag & MTF_INT) && (vid->intSignal == 0)) res |= VID_INT;
+		vid->intSignal = (mtx->flag & MTF_INT) ? 1 : 0;
+		if (mtx->type != MTT_INVIS) {
 			switch (vid->mode) {
 				case VID_NORMAL:
-					switch(mtx.type) {
+					switch(mtx->type) {
 						case MTT_BRDATR:
-							scrbyte = vid->curscr ? *(mtx.scr7ptr) : *(mtx.scr5ptr);
+							scrbyte = vid->curscr ? *(mtx->scr7ptr) : *(mtx->scr5ptr);
 						case MTT_BORDER:
 							col = vid->brdcol;
 							break;
 						case MTT_PT0:
-							vid->atrbyte = vid->curscr ? *(mtx.atr7ptr) : *(mtx.atr5ptr);
+							vid->atrbyte = vid->curscr ? *(mtx->atr7ptr) : *(mtx->atr5ptr);
 							if ((vid->atrbyte & 0x80) && vid->flash) scrbyte ^= 255;
 							ink = inkTab[vid->atrbyte & 0x7f];
 							pap = papTab[vid->atrbyte & 0x7f];
@@ -222,14 +222,14 @@ int vidSync(Video* vid, float dotDraw) {
 							col = pixBuffer[0];
 							break;
 						case MTT_PT4:
-							scrbyte = vid->curscr ? *(mtx.scr7ptr) : *(mtx.scr5ptr);
+							scrbyte = vid->curscr ? *(mtx->scr7ptr) : *(mtx->scr5ptr);
 						default:
 							col = pixBuffer[ink++];
 							break;
 					}
 					break;
 				case VID_ALCO:
-					switch(mtx.type) {
+					switch(mtx->type) {
 						case MTT_BRDATR:
 						case MTT_BORDER:
 							col = vid->brdcol;
@@ -238,7 +238,7 @@ int vidSync(Video* vid, float dotDraw) {
 						case MTT_PT2:
 						case MTT_PT4:
 						case MTT_PT6:
-							scrbyte = vid->curscr ? *(mtx.alco7ptr) : *(mtx.alco5ptr);
+							scrbyte = vid->curscr ? *(mtx->alco7ptr) : *(mtx->alco5ptr);
 							col = inkTab[scrbyte & 0x7f];
 							break;
 						default:
@@ -260,14 +260,17 @@ int vidSync(Video* vid, float dotDraw) {
 				if (vidFlag & VF_DOUBLE) vid->scrptr++;
 			}
 		}
-		if ((mtx.flag & MTF_LINEND) && (vidFlag & VF_DOUBLE)) vid->scrptr += vid->wsze.h;
-		if (mtx.flag & MTF_FRMEND) {
+		if ((mtx->flag & MTF_LINEND) && (vidFlag & VF_DOUBLE)) vid->scrptr += vid->wsze.h;
+		if (mtx->flag & MTF_FRMEND) {
 			res |= VID_FRM;
 			vid->dotCount = 0;
 			vid->fcnt++;
 			vid->flash = vid->fcnt & 0x20;
 			vid->scrptr = vid->scrimg;
 			vid->firstFrame = 0;
+			if (vidFlag & VF_FRAMEDBG) {
+				for(int i = 0; i < (vid->wsze.h * vid->vsze.v); i++) vid->scrimg[i] = (vid->scrimg[i] & 0x0f) | 0xe0;
+			}
 		}
 		vid->pxcnt--;
 	}

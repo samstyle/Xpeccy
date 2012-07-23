@@ -49,12 +49,13 @@ int loadTAP(Tape* tape, const char* name) {
 			block.pause = (block.pdur == 8063) ? 500 : 1000;
 			blkAddSignal(&block,sigLens[5]);
 			tapAddBlock(tape,block);
+			blkClear(&block);
 		}
 	}
 	tape->flag |= TAPE_CANSAVE;
 	tape->path = (char*)realloc(tape->path,sizeof(char) * (strlen(name) + 1));
 	strcpy(tape->path,name);
-	if (blockBuf != NULL) free(blockBuf);
+	if (blockBuf) free(blockBuf);
 	return ERR_OK;
 }
 

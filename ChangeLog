@@ -210,3 +210,9 @@ Fix	Incorrect picture on some border sizes is fixed now
 build 20120715
 Fix	More accurate screen timings. "default" is now true-Pentagon
 Fix	Incorrect romset saving while using two and more profiles
+
+build 20120723
+New	Visualisation of tv-ray when debugging
+Fix	Crush on copying files from TRDOS disk to tape
+Fix	Memory leak on .tap loading (and found other leaks)
+Wrk	Back to normal data reading for VG93

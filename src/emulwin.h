@@ -39,10 +39,11 @@
 #define	FL_SHOT		(1<<2)
 #define	FL_RESET	(1<<3)
 #define	FL_FAST		(1<<4)
-#define	FL_BLOCK	(1<<5)
-#define	FL_EXIT		(1<<6)
-#define	FL_LED_DISK	(1<<7)
-#define	FL_LED_SHOT	(1<<8)
+#define FL_FAST_RQ	(1<<5)
+#define	FL_BLOCK	(1<<6)
+#define	FL_EXIT		(1<<7)
+#define	FL_LED_DISK	(1<<8)
+#define	FL_LED_SHOT	(1<<9)
 
 // Qt nativeScanCode
 
@@ -202,20 +203,6 @@ typedef struct {
 
 // TODO: kill EmulWin class?
 
-class EmulWin : public QObject {
-	Q_OBJECT
-	public:
-		EmulWin();
-	private:
-		QTimer *timer;
-	public slots:
-	private slots:
-		void bookmarkSelected(QAction*);
-		void profileSelected(QAction*);
-	public slots:
-		void SDLEventHandler();
-};
-
 #ifdef XQTPAINT
 class MainWin : public QWidget {
 #else
@@ -225,18 +212,22 @@ class MainWin : public QX11EmbedContainer {
 	public:
 		MainWin();
 		void updateWindow();
-		void startTimer(int);
-		void stopTimer();
+		void start();
+		void stop();
 		void checkState();
 		void updateHead();
 	private:
 		QTimer* timer;
+		QTimer* etimer;
 	public slots:
-		void tapStateChanged(int,int);
 		void doOptions();
+		void tapStateChanged(int,int);
 	private slots:
 		void emulFrame();
+		void processFrame();
 		void rzxStateChanged(int);
+		void bookmarkSelected(QAction*);
+		void profileSelected(QAction*);
 	protected:
 		void closeEvent(QCloseEvent*);
 #ifdef XQTPAINT

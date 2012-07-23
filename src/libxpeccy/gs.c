@@ -105,6 +105,8 @@ GSound* gsCreate() {
 }
 
 void gsDestroy(GSound* gs) {
+	z80ex_destroy(gs->cpu);
+	memDestroy(gs->mem);
 	free(gs);
 }
 

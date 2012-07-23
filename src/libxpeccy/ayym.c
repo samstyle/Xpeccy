@@ -55,6 +55,10 @@ aymChip* aymCreate(int tp) {
 	return ay;
 }
 
+void aymDestroy(aymChip* ay) {
+	free(ay);
+}
+
 void aymReset(aymChip* ay) {
 	for (int i = 0; i < 16; i++) ay->reg[i] = 0;
 	ay->eCur = 0;
@@ -195,8 +199,8 @@ TSound* tsCreate(int tp,int tpA,int tpB) {
 }
 
 void tsDestroy(TSound* ts) {
-	free(ts->chipA);
-	free(ts->chipB);
+	aymDestroy(ts->chipA);
+	aymDestroy(ts->chipB);
 	free(ts);
 }
 

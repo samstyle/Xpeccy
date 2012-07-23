@@ -3,7 +3,7 @@
 #include "debuger.h"
 #include "emulwin.h"
 
-#include <z80ex_dasm.h>
+#include "z80ex_dasm.h"
 
 #include <QIcon>
 #include <QDebug>
@@ -34,9 +34,13 @@ void DebugWin::start() {
 	curcol = 3; currow = 0;
 	fillall();
 	show();
+	vidFlag |= VF_FRAMEDBG;
+	for (uint8_t* ptr = zx->vid->scrptr; (ptr - zx->vid->scrimg) < (zx->vid->wsze.h * zx->vid->wsze.v); ptr++)
+		*(ptr) = *(ptr) | 0xe0;
 }
 
 void DebugWin::stop() {
+	vidFlag &= ~VF_FRAMEDBG;
 	ledit->hide();
 	emulExec();
 	hide();
@@ -76,10 +80,10 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 					rglay->setRowStretch(100,10);
 					rowincol[0] = 13;
 				regbox->setLayout(rglay);
-			QGroupBox *raybox = new QGroupBox("Ray");
+			QGroupBox *raybox = new QGroupBox("Mem");
 				raylay = new QGridLayout;
-					lab = new QLabel("Horz"); raylay->addWidget(lab,0,0); lab = new QLabel; raylay->addWidget(lab,0,1);
-					lab = new QLabel("Vert"); raylay->addWidget(lab,1,0); lab = new QLabel; raylay->addWidget(lab,1,1);
+					lab = new QLabel("RAM"); raylay->addWidget(lab,0,0); lab = new QLabel; raylay->addWidget(lab,0,1);
+					lab = new QLabel("ROM"); raylay->addWidget(lab,1,0); lab = new QLabel; raylay->addWidget(lab,1,1);
 				raybox->setLayout(raylay);
 			llay->addWidget(regbox);
 			llay->addWidget(raybox);
@@ -125,6 +129,8 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 				lab = new QLabel("VG.DAT"); vglay->addWidget(lab,2,0); lab = new QLabel; vglay->addWidget(lab,2,1);
 				lab = new QLabel("EmulVG.Com"); vglay->addWidget(lab,3,0); lab = new QLabel; vglay->addWidget(lab,3,1);
 				lab = new QLabel("EmulVG.Wait"); vglay->addWidget(lab,4,0); lab = new QLabel; vglay->addWidget(lab,4,1);
+				lab = new QLabel("VG.floppy"); vglay->addWidget(lab,5,0); lab = new QLabel; vglay->addWidget(lab,5,1);
+				lab = new QLabel("VG.com"); vglay->addWidget(lab,6,0); lab = new QLabel; vglay->addWidget(lab,6,1);
 				lab = new QLabel("FLP.TRK"); vglay->addWidget(lab,0,2); lab = new QLabel; vglay->addWidget(lab,0,3);
 				lab = new QLabel("FLP.SID"); vglay->addWidget(lab,1,2); lab = new QLabel; vglay->addWidget(lab,1,3);
 				lab = new QLabel("FLP.POS"); vglay->addWidget(lab,2,2); lab = new QLabel; vglay->addWidget(lab,2,3);
@@ -192,6 +198,8 @@ void DebugWin::fillvg() {
 		lab->setText(QString::number(zx->bdi->fdc->cop,16));
 	}
 	lab = (QLabel*)vglay->itemAtPosition(4,1)->widget(); lab->setText(QString::number(zx->bdi->fdc->count));
+	lab = (QLabel*)vglay->itemAtPosition(5,1)->widget(); lab->setText(QString::number(zx->bdi->fdc->fptr->id));
+	lab = (QLabel*)vglay->itemAtPosition(6,1)->widget(); lab->setText(QString::number(zx->bdi->fdc->com,16));
 	lab = (QLabel*)vglay->itemAtPosition(0,3)->widget(); lab->setText(QString::number(flp->trk));
 	lab = (QLabel*)vglay->itemAtPosition(1,3)->widget(); lab->setText(zx->bdi->fdc->side ? "1" : "0");
 	lab = (QLabel*)vglay->itemAtPosition(2,3)->widget(); lab->setText(QString::number(flp->pos));
@@ -202,18 +210,9 @@ void DebugWin::fillvg() {
 void DebugWin::fillrays() {
 	QLabel *lab;
 	lab = (QLabel*)raylay->itemAtPosition(0,1)->widget();
-		if (zx->vid->curr.h < zx->vid->sync.h) {
-			lab->setText("HS");
-		} else {
-			lab->setText(QString::number(zx->vid->curr.h - zx->vid->sync.h));
-		}
+	lab->setText(QString::number(zx->mem->cram));
 	lab = (QLabel*)raylay->itemAtPosition(1,1)->widget();
-		if (zx->vid->curr.v < zx->vid->sync.v) {
-			lab->setText("VS");
-		} else {
-			lab->setText(QString::number(zx->vid->curr.v - zx->vid->sync.v));
-		}
-	// tlab->setText(QString("tick:").append(QString::number(zx->sys->cpu->t - t)).append(" (").append(QString::number(zx->sys->cpu->t - zx->sys->cpu->tb)).append(")"));
+	lab->setText(QString::number(zx->mem->crom));
 }
 
 void DebugWin::filldump() {

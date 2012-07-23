@@ -410,6 +410,18 @@ ZXComp* zxCreate() {
 }
 
 void zxDestroy(ZXComp* comp) {
+	z80ex_destroy(comp->cpu);
+	memDestroy(comp->mem);
+	vidDestroy(comp->vid);
+	keyDestroy(comp->keyb);
+	joyDestroy(comp->joy);
+	mouseDestroy(comp->mouse);
+	tapDestroy(comp->tape);
+	bdiDestroy(comp->bdi);
+	ideDestroy(comp->ide);
+	tsDestroy(comp->ts);
+	gsDestroy(comp->gs);
+	if (comp->rzxData) free(comp->rzxData);
 	free(comp);
 }
 
@@ -461,6 +473,7 @@ double zxExec(ZXComp* comp) {
 	} else {
 		comp->intStrobe = (vflg & VID_INT) ? 1 : 0;
 	}
+	comp->frmStrobe = (vflg & VID_FRM) ? 1 : 0;
 	if ((pcreg > 0x3fff) && comp->nmiRequest && !comp->rzxPlay) {
 		res3 = res4 = 0;
 		res2 = z80ex_nmi(comp->cpu);

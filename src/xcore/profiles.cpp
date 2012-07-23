@@ -20,7 +20,7 @@ XProfile* getProfile(std::string nm) {
 }
 
 bool addProfile(std::string nm, std::string fp) {
-	printf("addProfile: %s : %s\n",nm.c_str(),fp.c_str());
+	printf("add Profile: %s : %s\n",nm.c_str(),fp.c_str());
 	int idx = findProfile(nm);
 	if (idx > -1) return false;
 	XProfile nprof;
@@ -44,6 +44,7 @@ int delProfile(std::string nm) {
 	int idx = findProfile(nm);
 	if (idx < 0) return DELP_ERR;				// no such profile
 	int res = DELP_OK;
+	zxDestroy(profileList[idx].zx);
 	if (currentProfile->name == nm) {
 		setProfile("default");	// if current profile deleted, set default
 		res = DELP_OK_CURR;

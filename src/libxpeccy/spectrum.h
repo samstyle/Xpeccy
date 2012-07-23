@@ -8,7 +8,7 @@ extern "C" {
 #include <stdint.h>
 #include <assert.h>	// for debug
 
-#include <z80ex.h>
+#include "z80ex.h"
 #include "memory.h"
 #include "video.h"
 #include "input.h"
@@ -76,6 +76,7 @@ typedef struct {
 	int rzxFetches;
 	int rzxPlay;	// true if rzx playing now
 	int intStrobe;
+	int frmStrobe;
 	int nmiRequest;
 	int beeplev;
 	int block7ffd;

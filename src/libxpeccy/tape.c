@@ -33,6 +33,9 @@ Tape* tapCreate() {
 }
 
 void tapDestroy(Tape* tap) {
+	if (tap->path) free(tap->path);
+	tapEject(tap);
+	if (tap->tmpBlock.sigData) free(tap->tmpBlock.sigData);
 	free(tap);
 }
 
@@ -242,8 +245,13 @@ void tapEject(Tape* tap) {
 	tap->block = 0;
 	tap->pos = 0;
 	tap->path = NULL;
+	if (tap->blkData) {
+		for (int i = 0; i < tap->blkCount; i++) {
+			if (tap->blkData[i].sigData) free(tap->blkData[i].sigData);
+		}
+		free(tap->blkData);
+	}
 	tap->blkCount = 0;
-	if (tap->blkData) free(tap->blkData);
 	tap->blkData = NULL;
 }
 
@@ -414,10 +422,11 @@ void tapAddFile(Tape* tap, const char* nm, int tp, uint16_t st, uint16_t ln, uin
 		}
 		block = makeTapeBlock(hdbuf,17,1);
 		tapAddBlock(tap,block);
-		free(hdbuf);
+		blkClear(&block);
 	}
 	block = makeTapeBlock(ptr,ln,0);
 	tapAddBlock(tap,block);
+	blkClear(&block);
 }
 
 void tapAddBlock(Tape* tap, TapeBlock block) {

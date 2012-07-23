@@ -6,7 +6,7 @@
 std::vector<VidLayout> layList;
 
 bool addLayout(std::string nm,int fh,int fv,int bh,int bv,int sh,int sv,int ih,int iv,int is) {
-	printf("add Layout %s",nm.c_str());
+	printf("add Layout: %s\n",nm.c_str());
 	for (unsigned int i = 0; i < layList.size(); i++) {
 		if (layList[i].name == nm) return false;
 	}
@@ -30,7 +30,7 @@ bool addLayout(std::string nm,int fh,int fv,int bh,int bv,int sh,int sv,int ih,i
 }
 
 bool addLayout(VidLayout lay) {
-	printf("add Layout %s\n",lay.name.c_str());
+	printf("add Layout: %s\n",lay.name.c_str());
 	for (unsigned int i = 0; i < layList.size(); i++) {
 		if (layList[i].name == lay.name) return false;
 	}

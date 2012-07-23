@@ -33,7 +33,7 @@
 
 #define	XPTITLE	"Xpeccy 0.4.999"
 
-extern EmulWin* mwin;
+// extern EmulWin* mwin;
 // main
 MainWin* mainWin;
 QIcon curicon;
@@ -244,22 +244,31 @@ QWidget* emulWidget() {
 void emulSetColor(int brl) {
 	int i;
 	qPal.clear(); qPal.resize(256);
+	uint8_t r,g,b;
 #ifndef XQTPAINT
 	for (i=0; i<16; i++) {
-		zxpal[i].b = (i & 1) ? ((i & 8) ? 0xff : brl) : 0;
-		zxpal[i].r = (i & 2) ? ((i & 8) ? 0xff : brl) : 0;
-		zxpal[i].g = (i & 4) ? ((i & 8) ? 0xff : brl) : 0;
+		b = (i & 1) ? ((i & 8) ? 0xff : brl) : 0;
+		r = (i & 2) ? ((i & 8) ? 0xff : brl) : 0;
+		g = (i & 4) ? ((i & 8) ? 0xff : brl) : 0;
+		zxpal[i].b = b;
+		zxpal[i].r = r;
+		zxpal[i].g = g;
+		if ((i & 7) == 0) b = r = g = 0x20;
+		zxpal[i + 0xe0].b = (b >> 2);
+		zxpal[i + 0xe0].r = (r >> 2);
+		zxpal[i + 0xe0].g = (g >> 2);
 	}
 	for (i=0; i<256; i++) {
 		qPal[i] = qRgb(zxpal[i].r,zxpal[i].g,zxpal[i].b);
 	}
 #else
-	uint8_t r,g,b;
 	for (i=0; i<16; i++) {
 		b = (i & 1) ? ((i & 8) ? 0xff : brl) : 0;
 		r = (i & 2) ? ((i & 8) ? 0xff : brl) : 0;
 		g = (i & 4) ? ((i & 8) ? 0xff : brl) : 0;
 		qPal[i] = qRgb(r,g,b);
+		if ((i & 7) == 0) b = r = g = 0x20;
+		qPal[i + 0xe0] = qRgb(r >> 2, g >> 2, b >> 2);
 	}
 	scrImg.setColorTable(qPal);
 #endif
@@ -399,7 +408,24 @@ MainWin::MainWin() {
 
 	initUserMenu((QWidget*)this);
 	timer = new QTimer();
+	etimer = new QTimer();
+	timer->setInterval(20);	// common
+	etimer->setInterval(1);	// fast
 	connect(timer,SIGNAL(timeout()),this,SLOT(emulFrame()));
+	connect(etimer,SIGNAL(timeout()),this,SLOT(processFrame()));
+
+	connect(bookmarkMenu,SIGNAL(triggered(QAction*)),this,SLOT(bookmarkSelected(QAction*)));
+	connect(profileMenu,SIGNAL(triggered(QAction*)),this,SLOT(profileSelected(QAction*)));
+}
+
+void MainWin::start() {
+	etimer->stop();	// fast timer
+	timer->start();	// common timer
+}
+
+void MainWin::stop() {
+	etimer->stop();
+	timer->stop();
 }
 
 void MainWin::tapStateChanged(int wut, int val) {
@@ -489,18 +515,15 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				mainWin->updateWindow();
 				saveConfig();
 				break;
-			case Qt::Key_3: emulFlags ^= FL_FAST;
-				mainWin->stopTimer();
-				mainWin->startTimer((emulFlags & FL_FAST) ? 1 : 20);
-				mainWin->updateHead();
-				sndPause((emulFlags & FL_FAST) ? true : false);
+			case Qt::Key_3:
+				emulFlags ^= FL_FAST_RQ;
 				break;
 			case Qt::Key_F4:
 				mainWin->close();
 				break;
 			case Qt::Key_F7:
 				scrCounter = optGetInt(OPT_SHOTCNT);
-				scrInterval=0;
+				scrInterval = 0;
 				break;	// ALT+F7 combo
 			case Qt::Key_F12:
 				zxReset(zx,RES_DOS);
@@ -521,6 +544,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			case Qt::Key_Menu:
 				emulPause(true,PR_MENU);
 				userMenu->popup(mainWin->pos() + QPoint(20,20));
+				userMenu->setFocus();
 				break;
 			case Qt::Key_F1:
 				wantedWin = WW_OPTIONS;
@@ -575,7 +599,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			case Qt::Key_F10:
 				zx->nmiRequest = true;
 				break;
-			case Qt::Key_F11:			// TODO: when tapeWin will be working, move it to F4
+			case Qt::Key_F11:
 				if (tapeWin->isVisible()) {
 					tapeWin->hide();
 				} else {
@@ -607,6 +631,7 @@ void MainWin::mousePressEvent(QMouseEvent *ev){
 			} else {
 				emulPause(true,PR_MENU);
 				userMenu->popup(QPoint(ev->globalX(),ev->globalY()));
+				userMenu->setFocus();
 			}
 			break;
 		default: break;
@@ -660,229 +685,9 @@ void MainWin::dropEvent(QDropEvent* ev) {
 	}
 }
 
-#endif
-
-void MainWin::closeEvent(QCloseEvent* ev) {
-	timer->stop();
-	if (emulSaveChanged()) {
-		ev->accept();
-	} else {
-		ev->ignore();
-#ifndef XQTPAINT
-		SDL_VERSION(&inf.version);
-		SDL_GetWMInfo(&inf);
-		mainWin->embedClient(inf.info.x11.wmwindow);
-#endif
-		timer->start(20);
-	}
-}
-
-void MainWin::startTimer(int iv) {timer->start(iv);}
-void MainWin::stopTimer() {timer->stop();}
-void MainWin::doOptions() {wantedWin = WW_OPTIONS;}
-
-void MainWin::checkState() {
-	if (zx->rzxPlay) rzxWin->startPlay();
-	tapeWin->buildList(zx->tape);
-	tapeWin->setCheck(zx->tape->block);
-}
-
-// ...
-
-uchar hobHead[] = {'s','c','r','e','e','n',' ',' ','C',0,0,0,0x1b,0,0x1b,0xe7,0x81};	// last 2 bytes is crc
-
-void MainWin::emulFrame() {
-	if (emulFlags & FL_BLOCK) return;
-	breakFrame = false;
-	if (!mainWin->isActiveWindow()) {
-		keyRelease(zx->keyb,0,0);
-		zx->mouse->buttons = 0xff;
-	}
-	zx->flags = 0;
-	if ((wantedWin == WW_NONE) && (pauseFlags == 0)) {
-		if (!(emulFlags & FL_FAST) && sndGet(SND_ENABLE) && (sndGet(SND_MUTE) || mainWin->isActiveWindow())) {
-			sndPlay();
-		}
-		sndSet(SND_COUNT,0);
-		do {
-			emulExec();
-			pc = z80ex_get_reg(zx->cpu,regPC);
-			if ((pc == 0x56b) && (zx->mem->crom == 1)) {
-				blk = zx->tape->block;
-				if (blk < zx->tape->blkCount) {
-					if (optGetFlag(OF_TAPEFAST) && (zx->tape->blkData[blk].flag & TBF_BYTES)) {
-						de = z80ex_get_reg(zx->cpu,regDE);
-						ix = z80ex_get_reg(zx->cpu,regIX);
-						TapeBlockInfo inf = tapGetBlockInfo(zx->tape,blk);
-						blkData = (uint8_t*)realloc(blkData,inf.size + 2);
-						tapGetBlockData(zx->tape,blk,blkData);
-						if (inf.size == de) {
-							for (int i = 0; i < de; i++) {
-								memWr(zx->mem,ix,blkData[i + 1]);
-								ix++;
-							}
-							z80ex_set_reg(zx->cpu,regIX,ix);
-							z80ex_set_reg(zx->cpu,regDE,0);
-							z80ex_set_reg(zx->cpu,regHL,0);
-							tapNextBlock(zx->tape);
-						} else {
-							z80ex_set_reg(zx->cpu,regHL,0xff00);
-						}
-						z80ex_set_reg(zx->cpu,regPC,0x5df);	// to exit
-					} else {
-						if (optGetFlag(OF_TAPEAUTO))
-							mainWin->tapStateChanged(TW_STATE,TWS_PLAY);
-					}
-				}
-			}
-			if ((pc == 0x5e2) && (zx->mem->crom == 1) && (optGetFlag(OF_TAPEAUTO)))
-				mainWin->tapStateChanged(TW_STATE,TWS_STOP);
-			if (zx->flags & ZX_BREAK) {
-				wantedWin = WW_DEBUG;
-				zx->flags = 0;
-			}
-		} while ((wantedWin == WW_NONE) && !zx->intStrobe);
-		zx->nmiRequest = false;
-		if (scrCounter != 0) {
-			if (scrInterval == 0) {
-				emulFlags |= FL_SHOT;
-				scrCounter--;
-				scrInterval = optGetInt(OPT_SHOTINT);
-				if (scrCounter == 0) printf("stop combo shots\n");
-			} else {
-				scrInterval--;
-			}
-		}
-		if (emulFlags & FL_SHOT) {
-			int frm = optGetInt(OPT_SHOTFRM);
-			std::string fext;
-			switch (frm) {
-				case SCR_BMP: fext = "bmp"; break;
-				case SCR_JPG: fext = "jpg"; break;
-				case SCR_PNG: fext = "png"; break;
-				case SCR_SCR: fext = "scr"; break;
-				case SCR_HOB: fext = "$C"; break;
-			};
-			std::string fnam = optGetString(OPT_SHOTDIR) + "/sshot" + int2str(scrNumber) + "." + fext;
-			std::ofstream file;
-#ifdef XQTPAINT
-			QImage *img = new QImage(scrImg);
 #else
-			QImage *img = new QImage((uchar*)surf->pixels,surf->w,surf->h,QImage::Format_Indexed8);
-#endif
-			img->setColorTable(qPal);
-			char* pageBuf = new char[0x4000];
-			memGetPage(zx->mem,MEM_RAM,(zx->vid->curscr == 0) ? 5 : 7,pageBuf);
-			switch (frm) {
-				case SCR_HOB:
-					file.open(fnam.c_str(),std::ios::binary);
-					file.write((char*)hobHead,17);
-					file.write(pageBuf,0x1b00);
-					file.close();
-					break;
-				case SCR_SCR:
-					file.open(fnam.c_str(),std::ios::binary);
-					file.write(pageBuf,0x1b00);
-					file.close();
-					break;
-				case SCR_BMP:
-				case SCR_JPG:
-				case SCR_PNG:
-					if (img != NULL) img->save(QString(fnam.c_str()),fext.c_str());
-					break;
-			}
-			free(pageBuf);
-			emulFlags &= ~FL_SHOT;
-			scrNumber++;
-		}
-	}
-	return;
-}
 
-// OBJECT
-
-EmulWin::EmulWin() {
-	QObject::connect(bookmarkMenu,SIGNAL(triggered(QAction*)),this,SLOT(bookmarkSelected(QAction*)));
-	QObject::connect(profileMenu,SIGNAL(triggered(QAction*)),this,SLOT(profileSelected(QAction*)));
-	timer = new QTimer;
-	QObject::connect(timer,SIGNAL(timeout()),this,SLOT(SDLEventHandler()));
-	timer->start(20);
-	emulPause(false,-1);
-}
-
-int prc;
-
-void putIcon(Video* vid, int x, int y, uint8_t* data) {
-	uint8_t* ptr = vid->scrimg + x + y * (vid->wsze.h);
-	for (int i = 0; i < 16; i++) {
-		memcpy(ptr,data,16);
-		ptr += vid->wsze.h;
-		data += 16;
-	}
-}
-
-void EmulWin::SDLEventHandler() {
-	// leds
-	if (emulFlags & FL_LED_DISK) {
-		int fst = zx->bdi->fdc->status;
-		switch (fst) {
-			case FDC_READ: putIcon(zx->vid,4,4,icoBlueDisk); break;
-			case FDC_WRITE: putIcon(zx->vid,4,4,icoRedDisk); break;
-		}
-	}
-#ifndef XQTPAINT
-	if (vidFlag & VF_CHANGED) {
-		SDL_UpdateRect(surf,0,0,0,0);
-		vidFlag &= ~VF_CHANGED;
-	} else {
-		SDL_UpdateRect(surf,3,3,18,18);
-	}
-#else
-	if (vidFlag & VF_CHANGED) {
-		mainWin->update();
-		vidFlag &= ~VF_CHANGED;
-	} else {
-		mainWin->update(3,3,18,18);
-	}
-#endif
-	if (emulFlags & FL_BLOCK) return;
-	// wanted windows
-	switch (wantedWin) {
-		case WW_DEBUG:
-			dbgShow();
-			wantedWin = WW_NONE;
-			break;
-		case WW_OPTIONS:
-			optShow();
-			wantedWin = WW_NONE;
-			break;
-		case WW_DEVEL:
-			devShow();
-			wantedWin = WW_NONE;
-			break;
-	}
-	// rzx window
-	if (zx->rzxPlay) {
-		prc = 100 * zx->rzxFrame / zx->rzxSize;
-		rzxWin->setProgress(prc);
-	}
-	// tape window
-	if ((zx->tape->flag & (TAPE_ON | TAPE_REC)) == TAPE_ON) {
-		tapeWin->setProgress(tapGetBlockTime(zx->tape,zx->tape->block,zx->tape->pos),tapGetBlockTime(zx->tape,zx->tape->block,-1));
-	}
-	if (zx->tape->flag & TAPE_BLOCK_CHANGED) {
-		if (!(zx->tape->flag & TAPE_ON)) {
-			mainWin->tapStateChanged(TW_STATE,TWS_STOP);
-		}
-		tapeWin->setCheck(zx->tape->block);
-		zx->tape->flag &= ~TAPE_BLOCK_CHANGED;
-	}
-	if (zx->tape->flag & TAPE_NEW_BLOCK) {
-		tapeWin->buildList(zx->tape);
-		zx->tape->flag &= ~TAPE_NEW_BLOCK;
-	}
-#ifndef XQTPAINT
-	// sdl events
+void doSDLEvents() {
 	keyEntry kent;
 	int jdir;
 	SDL_Event ev;
@@ -890,11 +695,7 @@ void EmulWin::SDLEventHandler() {
 	extButton extb;
 	while (SDL_PollEvent(&ev)) {
 		switch (ev.type) {
-			/*
-		// BAD NEWS, EVERYONE. SDL 1.2 Hasn't drop event, it appears in SDL 2.0
-			case SDL_DROPFILE:
-				break;
-			*/
+			// BAD NEWS, EVERYONE. SDL 1.2 Hasn't drop event, it appears in SDL 2.0
 			case SDL_KEYDOWN:
 				if (ev.key.keysym.mod & KMOD_ALT) {
 					switch(ev.key.keysym.sym) {
@@ -909,18 +710,15 @@ void EmulWin::SDLEventHandler() {
 							mainWin->updateWindow();
 							saveConfig();
 							break;
-						case SDLK_3: emulFlags ^= FL_FAST;
-							mainWin->stopTimer();
-							mainWin->startTimer((emulFlags & FL_FAST) ? 1 : 20);
-							mainWin->updateHead();
-							sndPause((emulFlags & FL_FAST) ? true : false);
+						case SDLK_3:
+							emulFlags ^= FL_FAST_RQ;
 							break;
 						case SDLK_F4:
 							mainWin->close();
 							break;
 						case SDLK_F7:
 							scrCounter = optGetInt(OPT_SHOTCNT);
-							scrInterval=0;
+							scrInterval = 0;
 							break;	// ALT+F7 combo
 						case SDLK_F12:
 							zxReset(zx,RES_DOS);
@@ -947,6 +745,7 @@ void EmulWin::SDLEventHandler() {
 						case SDLK_MENU:
 							emulPause(true,PR_MENU);
 							userMenu->popup(mainWin->pos() + QPoint(20,20));
+							userMenu->setFocus();
 							break;
 						case SDLK_F1:
 							wantedWin = WW_OPTIONS;
@@ -999,7 +798,7 @@ void EmulWin::SDLEventHandler() {
 						case SDLK_F10:
 							zx->nmiRequest = true;
 							break;
-						case SDLK_F11:			// TODO: when tapeWin will be working, move it to F4
+						case SDLK_F11:
 							if (tapeWin->isVisible()) {
 								tapeWin->hide();
 							} else {
@@ -1032,6 +831,7 @@ void EmulWin::SDLEventHandler() {
 						} else {
 							emulPause(true,PR_MENU);
 							userMenu->popup(mainWin->pos() + QPoint(ev.button.x,ev.button.y+20));
+							userMenu->setFocus();
 						}
 						break;
 					case SDL_BUTTON_MIDDLE:
@@ -1158,10 +958,234 @@ void EmulWin::SDLEventHandler() {
 				break;
 		}
 	}
+}
+
 #endif
-	if (!userMenu->isVisible() && (pauseFlags & PR_MENU)) {
-		mainWin->setFocus();
+
+void MainWin::closeEvent(QCloseEvent* ev) {
+	timer->stop();
+	if (emulSaveChanged()) {
+		ev->accept();
+	} else {
+		ev->ignore();
+#ifndef XQTPAINT
+		SDL_VERSION(&inf.version);
+		SDL_GetWMInfo(&inf);
+		mainWin->embedClient(inf.info.x11.wmwindow);
+#endif
+		start();
+	}
+}
+
+void MainWin::checkState() {
+	if (zx->rzxPlay) rzxWin->startPlay();
+	tapeWin->buildList(zx->tape);
+	tapeWin->setCheck(zx->tape->block);
+}
+
+// ...
+
+uchar hobHead[] = {'s','c','r','e','e','n',' ',' ','C',0,0,0,0x1b,0,0x1b,0xe7,0x81};	// last 2 bytes is crc
+
+void doScreenShot() {
+	int frm = optGetInt(OPT_SHOTFRM);
+	std::string fext;
+	switch (frm) {
+		case SCR_BMP: fext = "bmp"; break;
+		case SCR_JPG: fext = "jpg"; break;
+		case SCR_PNG: fext = "png"; break;
+		case SCR_SCR: fext = "scr"; break;
+		case SCR_HOB: fext = "$C"; break;
+	};
+	std::string fnam = optGetString(OPT_SHOTDIR) + "/sshot" + int2str(scrNumber) + "." + fext;
+	std::ofstream file;
+#ifdef XQTPAINT
+	QImage *img = new QImage(scrImg);
+#else
+	QImage *img = new QImage((uchar*)surf->pixels,surf->w,surf->h,QImage::Format_Indexed8);
+#endif
+	img->setColorTable(qPal);
+	char* pageBuf = new char[0x4000];
+	memGetPage(zx->mem,MEM_RAM,(zx->vid->curscr == 0) ? 5 : 7,pageBuf);
+	switch (frm) {
+		case SCR_HOB:
+			file.open(fnam.c_str(),std::ios::binary);
+			file.write((char*)hobHead,17);
+			file.write(pageBuf,0x1b00);
+			file.close();
+			break;
+		case SCR_SCR:
+			file.open(fnam.c_str(),std::ios::binary);
+			file.write(pageBuf,0x1b00);
+			file.close();
+			break;
+		case SCR_BMP:
+		case SCR_JPG:
+		case SCR_PNG:
+			if (img != NULL) img->save(QString(fnam.c_str()),fext.c_str());
+			break;
+	}
+	free(pageBuf);
+	emulFlags &= ~FL_SHOT;
+	scrNumber++;
+}
+
+void putIcon(Video* vid, int x, int y, uint8_t* data) {
+	uint8_t* ptr = vid->scrimg + x + y * (vid->wsze.h);
+	for (int i = 0; i < 16; i++) {
+		memcpy(ptr,data,16);
+		ptr += vid->wsze.h;
+		data += 16;
+	}
+}
+
+int prc;
+
+void MainWin::emulFrame() {
+	if (emulFlags & FL_BLOCK) return;
+// if !active window release keys & buttons
+	if (!isActiveWindow()) {
+		keyRelease(zx->keyb,0,0);
+		zx->mouse->buttons = 0xff;
+	}
+// check if menu isn't visible anymore (QMenu doesn't have signals on show/hide events)
+	if (userMenu->isHidden() && (pauseFlags & PR_MENU)) {
+		setFocus();
 		emulPause(false,PR_MENU);
+	}
+// if not paused play sound buffer
+	if ((wantedWin == WW_NONE) && (pauseFlags == 0) && (~emulFlags & FL_FAST) && sndGet(SND_ENABLE) && (sndGet(SND_MUTE) || isActiveWindow()))
+			sndPlay();
+// update rzx window
+	if ((zx->rzxPlay) && rzxWin->isVisible()) {
+		prc = 100 * zx->rzxFrame / zx->rzxSize;
+		rzxWin->setProgress(prc);
+	}
+// update tape window
+	if (tapeWin->isVisible()) {
+		if ((zx->tape->flag & (TAPE_ON | TAPE_REC)) == TAPE_ON) {
+			tapeWin->setProgress(tapGetBlockTime(zx->tape,zx->tape->block,zx->tape->pos),tapGetBlockTime(zx->tape,zx->tape->block,-1));
+		}
+		if (zx->tape->flag & TAPE_BLOCK_CHANGED) {
+			if (!(zx->tape->flag & TAPE_ON)) {
+				tapStateChanged(TW_STATE,TWS_STOP);
+			}
+			tapeWin->setCheck(zx->tape->block);
+			zx->tape->flag &= ~TAPE_BLOCK_CHANGED;
+		}
+		if (zx->tape->flag & TAPE_NEW_BLOCK) {
+			tapeWin->buildList(zx->tape);
+			zx->tape->flag &= ~TAPE_NEW_BLOCK;
+		}
+	}
+// show wanted window if any
+	switch(wantedWin) {
+		case WW_DEBUG:
+			dbgShow();
+			wantedWin = WW_NONE;
+			break;
+		case WW_DEVEL:
+			devShow();
+			wantedWin = WW_NONE;
+			break;
+		case WW_OPTIONS:
+			optShow();
+			wantedWin = WW_NONE;
+			break;
+	}
+// put icons
+	if (emulFlags & FL_LED_DISK) {
+		int fst = zx->bdi->fdc->status;
+		switch (fst) {
+			case FDC_READ: putIcon(zx->vid,4,4,icoBlueDisk); break;
+			case FDC_WRITE: putIcon(zx->vid,4,4,icoRedDisk); break;
+		}
+	}
+// update picture && process SDL events
+#ifndef XQTPAINT
+	SDL_UpdateRect(surf,0,0,0,0);
+	doSDLEvents();
+#else
+	update();
+#endif
+// if request speed change, do it
+	if (emulFlags & FL_FAST_RQ) {
+		emulFlags ^= FL_FAST;
+		updateHead();
+		if (emulFlags & FL_FAST) {
+			etimer->start();
+			sndPause(true);
+		} else {
+			etimer->stop();
+			sndPause(false);
+		}
+		emulFlags &= ~FL_FAST_RQ;
+	}
+// if speed == normal: call processFrame
+	sndSet(SND_COUNT,0);
+	if (~emulFlags & FL_FAST)
+		processFrame();
+}
+
+void emulTapeCatch() {
+	blk = zx->tape->block;
+	if (blk >= zx->tape->blkCount) return;
+	if (optGetFlag(OF_TAPEFAST) && (zx->tape->blkData[blk].flag & TBF_BYTES)) {
+		de = z80ex_get_reg(zx->cpu,regDE);
+		ix = z80ex_get_reg(zx->cpu,regIX);
+		TapeBlockInfo inf = tapGetBlockInfo(zx->tape,blk);
+		blkData = (uint8_t*)realloc(blkData,inf.size + 2);
+		tapGetBlockData(zx->tape,blk,blkData);
+		if (inf.size == de) {
+			for (int i = 0; i < de; i++) {
+				memWr(zx->mem,ix,blkData[i + 1]);
+				ix++;
+			}
+			z80ex_set_reg(zx->cpu,regIX,ix);
+			z80ex_set_reg(zx->cpu,regDE,0);
+			z80ex_set_reg(zx->cpu,regHL,0);
+			tapNextBlock(zx->tape);
+		} else {
+			z80ex_set_reg(zx->cpu,regHL,0xff00);
+		}
+		z80ex_set_reg(zx->cpu,regPC,0x5df);	// to exit
+	} else {
+		if (optGetFlag(OF_TAPEAUTO))
+			mainWin->tapStateChanged(TW_STATE,TWS_PLAY);
+	}
+}
+
+void MainWin::processFrame() {
+// if screenshot requested do it
+	zx->flags = 0;
+	if (emulFlags & FL_SHOT) doScreenShot();
+// if paused, return
+	if ((pauseFlags != 0) || (wantedWin != WW_NONE)) return;
+// emul ZX until FRM
+	do {
+		emulExec();
+		pc = z80ex_get_reg(zx->cpu,regPC);
+		if (zx->mem->crom == 1) {
+			if (pc == 0x56b) emulTapeCatch();
+			if ((pc == 0x5e2) && optGetFlag(OF_TAPEAUTO))
+				tapStateChanged(TW_STATE,TWS_STOP);
+		}
+		if (zx->flags & ZX_BREAK) {
+			wantedWin = WW_DEBUG;
+			zx->flags = 0;
+		}
+	} while ((wantedWin == WW_NONE) && (zx->frmStrobe == 0));
+	zx->nmiRequest = 0;
+// decrease frames & screenshot counter (if any), request screenshot (if needed)
+	if (scrCounter != 0) {
+		if (scrInterval == 0) {
+			emulFlags |= FL_SHOT;
+			scrCounter--;
+			scrInterval = optGetInt(OPT_SHOTINT);
+			if (scrCounter == 0) printf("stop combo shots\n");
+		} else {
+			scrInterval--;
+		}
 	}
 }
 
@@ -1233,12 +1257,14 @@ void fillProfileMenu() {
 
 // SLOTS
 
-void EmulWin::bookmarkSelected(QAction* act) {
+void MainWin::doOptions() {wantedWin = WW_OPTIONS;}
+
+void MainWin::bookmarkSelected(QAction* act) {
 	loadFile(act->data().toString().toLocal8Bit().data(),FT_ALL,0);
-	mainWin->setFocus();
+	setFocus();
 }
 
-void EmulWin::profileSelected(QAction* act) {
+void MainWin::profileSelected(QAction* act) {
 	emulPause(true,PR_EXTRA);
 	setProfile(std::string(act->text().toLocal8Bit().data()));
 	loadConfig(false);
@@ -1248,6 +1274,6 @@ void EmulWin::profileSelected(QAction* act) {
 		zxReset(zx,RES_DEFAULT);
 		zx->flags &= ~ZX_JUSTBORN;
 	}
-	mainWin->setFocus();
+	setFocus();
 	emulPause(false,PR_EXTRA);
 }

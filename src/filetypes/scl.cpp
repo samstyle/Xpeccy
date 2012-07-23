@@ -15,35 +15,35 @@ int loadSCL(Floppy* flp,const char* name) {
 	uint8_t* buf = new uint8_t[0x1000];
 	uint8_t* bptr;
 	uint8_t fcnt;
-	uint16_t tmpa;
+	int tmpa;
 	int scnt;
-	int i;
+	unsigned int i;
 
 	file.read((char*)buf,9);
-	if (std::string((const char*)buf,8) != "SINCLAIR") return ERR_SCL_SIGN;
+	if (strncmp((char*)buf,"SINCLAIR",8) != 0) return ERR_SCL_SIGN;
 	if (buf[8] > 0x80) return ERR_SCL_MANY;
 	flpFormat(flp);
-	fcnt = buf[8];
-	for (i=0;i<0x1000;i++) buf[i]=0x00;
+	fcnt = buf[8];		// files total
+	for (i = 0; i < 0x1000; i++) buf[i]=0x00;	// TRK0 in buf (clear)
 	scnt = 0x10;
-	bptr = buf;
-	for (i=0;i<fcnt;i++) {
-		file.read((char*)bptr,14);
-		*(bptr + 14) = scnt & 0x0f;
-		*(bptr + 15) = ((scnt & ~0x0f) >> 4);
-		scnt += *(bptr + 13);
-		bptr += 16;
+	bptr = buf;		// start of TRK0
+	for (i = 0; i < fcnt; i++) {		// make catalog
+		file.read((char*)bptr,14);		// file dsc
+		bptr[14] = scnt & 0x0f;			// sector
+		bptr[15] = ((scnt & 0x3f0) >> 4);	// track
+		scnt += bptr[13];			// +sectors size
+		bptr += 16;				// next file
 	}
-	*(bptr)=0;
+	bptr[0] = 0;				// mark last file
 	buf[0x800] = 0;
-	buf[0x8e1] = scnt & 0x0f;
-	buf[0x8e2] = ((scnt & 0xf0) >> 4);
-	buf[0x8e3] = 0x16;
-	buf[0x8e4] = fcnt;
-	tmpa = 0xa00 - scnt;
+	buf[0x8e1] = scnt & 0x0f;		// free sector
+	buf[0x8e2] = ((scnt & 0x3f0) >> 4);	// free track
+	buf[0x8e3] = 0x16;			// 80DS
+	buf[0x8e4] = fcnt;			// files total
+	tmpa = 0x9f0 - scnt;			// sectors free (0x9f0)	// FIXED: not 0xa00!
 	buf[0x8e5] = (tmpa & 0xff);
 	buf[0x8e6] = ((tmpa & 0xff00) >> 8);
-	buf[0x8e7] = 0x10;
+	buf[0x8e7] = 0x10;			// trdos code
 	flpFormTRDTrack(flp,0,buf);
 	i = 1;
 	while (!file.eof()) {

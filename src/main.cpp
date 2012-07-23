@@ -23,12 +23,10 @@
 #endif
 
 ZXComp* zx;
-EmulWin *mwin;
+//EmulWin *mwin;
 extern MainWin* mainWin;
 
 int main(int ac,char** av) {
-	Z80EX_VERSION* ver = z80ex_get_version();
-	printf("Using z80ex ver %d.%d\n",ver->major, ver->minor);
 #ifdef XQTPAINT
 	printf("Using Qt painter\n");
 #else
@@ -42,6 +40,9 @@ int main(int ac,char** av) {
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK);
 	atexit(SDL_Quit);
 #endif
+	printf("Using Qt ver %s\n",qVersion());
+	Z80EX_VERSION* ver = z80ex_get_version();
+	printf("Using z80ex ver %d.%d\n",ver->major, ver->minor);
 	QApplication app(ac,av,true);
 	try {
 
@@ -65,7 +66,7 @@ int main(int ac,char** av) {
 			initHardware();
 			sndInit();
 			emulInit();
-			mwin = new EmulWin();
+//			mwin = new EmulWin();
 			dbgInit(emulWidget());
 			optInit(emulWidget());
 			devInit();
@@ -86,9 +87,9 @@ int main(int ac,char** av) {
 			SDL_JoystickOpen(1);
 #endif
 			mainWin->checkState();
-			mainWin->startTimer(20);
+			mainWin->start();
 			app.exec();
-			mainWin->stopTimer();
+			mainWin->stop();
 			sndClose();
 #ifdef HAVESDLS
 			SDL_Quit();

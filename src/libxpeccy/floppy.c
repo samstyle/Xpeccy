@@ -3,7 +3,7 @@
 
 #include "floppy.h"
 
-uint8_t trd_8e1[] = {
+uint8_t trd_8e0[] = {
 	0x00,0x00,0x01,0x16,0x00,0xf0,0x09,0x10,0x00,0x00,0x20,0x20,0x20,0x20,0x20,0x20,
 	0x20,0x20,0x20,0x00,0x00,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x00,0x00,0x00
 };
@@ -79,7 +79,7 @@ void flpFormat(Floppy* flp) {
 	uint8_t *buf = (uint8_t*)malloc(0x1000 * sizeof(uint8_t));
 	for (i = 0; i < 0x1000; i++) buf[i]=0x00;
 	for (i = 1;i < 168; i++) flpFormTRDTrack(flp,i,buf);
-	memcpy(buf + 0x8e0, trd_8e1, 0x20);
+	memcpy(buf + 0x8e0, trd_8e0, 0x20);
 	flpFormTRDTrack(flp,0,buf);
 	free(buf);
 }
@@ -94,10 +94,10 @@ void flpFormTRDTrack(Floppy* flp, int tr, uint8_t* bpos) {
 	sct.side = (tr & 0x01) ? 1 : 0;
 	sct.len = 1;
 	int32_t sc;
-	for (sc = 1; sc < 17; sc++) {
-		sct.sec = sc;
+	for (sc = 0; sc < 16; sc++) {
+		sct.sec = sc + 1;
 		sct.data = ppos;
-		lst[sc - 1] = sct;
+		lst[sc] = sct;
 		ppos += 256;
 	}
 	flpFormTrack(flp,tr,lst,16);
@@ -174,7 +174,7 @@ void flpFillFields(Floppy* flp,int tr, int fcrc) {
 void flpFormTrack(Floppy* flp, int tr, Sector* sdata, int scount) {
 	if (tr > 255) return;
 	uint8_t *ppos = flp->data[tr].byte;
-	int32_t i,ln;
+	int i,ln;
 	uint32_t sc;
 	for (i=0; i<12; i++) *(ppos++) = 0x00;		// 12	space
 	*(ppos++) = 0xc2; *(ppos++) = 0xc2;		// 	track mark

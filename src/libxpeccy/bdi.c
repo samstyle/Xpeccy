@@ -17,9 +17,10 @@ int pcatch = 0;	// 1 when bdi takes i/o request
 
 FDC* fdcCreate(int tp) {
 	FDC* fdc = (FDC*)malloc(sizeof(FDC));
-	for (int i=0; i<4; i++) {
-		fdc->flop[i] = flpCreate(i);
-	}
+	fdc->flop[0] = flpCreate(0);
+	fdc->flop[1] = flpCreate(1);
+	fdc->flop[2] = flpCreate(2);
+	fdc->flop[3] = flpCreate(3);
 	fdc->fptr = fdc->flop[0];
 	fdc->type = tp;
 	fdc->t = 0;
@@ -29,6 +30,14 @@ FDC* fdcCreate(int tp) {
 	fdc->idle = 1;
 	fdc->status = FDC_IDLE;
 	return fdc;
+}
+
+void fdcDestroy(FDC* fdc) {
+	flpDestroy(fdc->flop[0]);
+	flpDestroy(fdc->flop[1]);
+	flpDestroy(fdc->flop[2]);
+	flpDestroy(fdc->flop[3]);
+	free(fdc);
 }
 
 // VG93
@@ -366,11 +375,15 @@ uint8_t vgwork[32][256] = {
 		0xc0,0xbf,0x00,		// FB: res b5,flag
 		0xd0,0xd2,		// init crc, CRC << Rdat (F8 or FB)
 		0xb5,			// ic = sector len
+
+		0x02,20,		// call READ_IC_BYTES
+/*
 		0x30,			// drq=0
 		0x91,0xd2,0x31,0x41,	// read byte in Rdat, CRC << Rdat, drq=1, wait for cpu rd
 		0xa8,			// next
 		0xb1,			// ic--
 		0xb4,0,-9,		// if ic!=0 jr -(@ 32)
+*/
 		0xd7,0xa8,0xd8,0xa8,	// read fcrc
 		0xd5,4,			// if fcrc == crc jr +4
 		0xc0,0xf7,0x08,0xff,	// set CRC ERROR, END
@@ -475,8 +488,21 @@ uint8_t vgwork[32][256] = {
 // 19 [CALL]: uPD765: read ic bytes fdc->cpu
 	{
 		0x34,			// fdc->cpu
-		0x91,0x31,0x41,0xa8,	// Rdat = flpRd, drq=1, wait for cpu rd, next
-		0xb1,0xb4,0,-8,		// ic--; if (ic != 0) jr @91
+		0x91,0xd2,		// Rdat = flpRd, CRC << Rdat
+		0x31,0x41,0xa8,		// drq=1, wait for cpu rd, next
+		0xb1,0xb4,0,-9,		// ic--; if (ic != 0) jr @91
+		0x03			// ret
+	},
+// 20 [CALL]: WD1793: read ic bytes fdc->cpu (old version, with data lost)
+	{
+		0x30,			// drq=0
+		0x32,5,			// if (drq=0) jr +5
+		0xc0,0xfb,0x04,		// set DATA LOST
+		0xf0,3,			// jr +3
+		0x91,0xd2,0x31,		// read byte in Rdat, CRC << Rdat, drq=1
+		0xa8,			// next
+		0xb1,			// ic--
+		0xb4,0,-15,		// if ic!=0 jr (@ 32)
 		0x03			// ret
 	}
 };
@@ -923,7 +949,7 @@ uint8_t fdcRd(FDC* fdc,int port) {
 		case FDC_93:
 			switch(port) {
 				case FDC_STATE:
-					res = ((fdc->fptr->flag & FLP_INSERT) ? 0 : 128) | (fdc->idle ? 0 : 1);
+					res = ((fdc->fptr->flag & FLP_INSERT) ? 0 : 0x80) | (fdc->idle ? 0 : 1);
 					switch (fdc->mode) {
 						case 0:
 							res |= ((fdc->fptr->flag & FLP_PROTECT) ? 0x40 : 0)\
@@ -1135,12 +1161,7 @@ void vA8(FDC* p) {
 	p->t += BYTEDELAY;
 	p->strb = 0;
 	if (flpNext(p->fptr,p->side)) {p->t = 0; p->strb = 1;}
-	if (p->turbo) {
-		p->tf = BYTEDELAY;
-		p->count = 0;
-	} else {
-		p->count += p->tf;
-	}
+	p->count += p->tf;
 }
 void vA9(FDC* p) {
 	p->t += BYTEDELAY;
@@ -1292,6 +1313,7 @@ BDI* bdiCreate() {
 }
 
 void bdiDestroy(BDI* bdi) {
+	fdcDestroy(bdi->fdc);
 	free(bdi);
 }
 

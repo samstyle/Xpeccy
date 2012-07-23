@@ -202,6 +202,7 @@ int loadTZX(Tape* tape, const char* name) {
 //		blkAddSignal(&block,sigLens[5]);		// FIXME: not really
 		block.flag &= ~TBF_BYTES;
 		tapAddBlock(tape,block);
+		blkClear(&block);
 	}
 	if (blockBuf != NULL) free(blockBuf);
 	return ERR_OK;
