@@ -49,7 +49,7 @@ void flpStep(Floppy* flp,int dir) {
 int flpNext(Floppy* flp, int fdcSide) {
 	int res = 0;
 	flp->rtrk = (flp->trk << 1);
-	if ((flp->flag & FLP_DS) && ~fdcSide) flp->rtrk++;		// /SIDE1 = 0 when upper head (1) selected
+	if ((flp->flag & FLP_DS) && !fdcSide) flp->rtrk++;		// /SIDE1 = 0 when upper head (1) selected
 	if (flp->flag & FLP_INSERT) {
 		flp->pos++;
 		if (flp->pos >= TRACKLEN) {
@@ -65,7 +65,7 @@ int flpNext(Floppy* flp, int fdcSide) {
 
 void flpPrev(Floppy* flp, int fdcSide) {
 	flp->rtrk = (flp->trk << 1);
-	if ((flp->flag & FLP_DS) && ~fdcSide) flp->rtrk++;
+	if ((flp->flag & FLP_DS) && !fdcSide) flp->rtrk++;
 	if (flp->flag & FLP_INSERT) {
 		if (flp->pos > 0) {
 			flp->pos--;
