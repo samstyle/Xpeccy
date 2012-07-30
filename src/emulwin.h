@@ -6,7 +6,7 @@
 #include <QTimer>
 #include <stdint.h>
 #ifdef HAVESDL
-	#include <SDL/SDL.h>
+	#include <SDL.h>
 #endif
 
 #ifndef XQTPAINT

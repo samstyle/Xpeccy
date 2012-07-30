@@ -269,7 +269,7 @@ int vidSync(Video* vid, float dotDraw) {
 			vid->scrptr = vid->scrimg;
 			vid->firstFrame = 0;
 			if (vidFlag & VF_FRAMEDBG) {
-				for(int i = 0; i < (vid->wsze.h * vid->vsze.v); i++) vid->scrimg[i] = (vid->scrimg[i] & 0x0f) | 0xe0;
+				for(int i = 0; i < (vid->wsze.h * vid->wsze.v); i++) vid->scrimg[i] = (vid->scrimg[i] & 0x0f) | 0xe0;
 			}
 		}
 		vid->pxcnt--;

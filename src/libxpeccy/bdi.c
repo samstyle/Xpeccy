@@ -115,6 +115,7 @@ A9	next byte (rd/wr)
 AA	change floppy side
 AB,d	seek field 1 while ic spins; if found - jr d
 AC,d	seek field (2|3) while ic spins; if found - jr d
+AD	prev byte
 
 B0,n	icnt = n
 B1	icnt--
@@ -504,6 +505,29 @@ uint8_t vgwork[32][256] = {
 		0xb1,			// ic--
 		0xb4,0,-15,		// if ic!=0 jr (@ 32)
 		0x03			// ret
+	},
+// 21 [CALL]: uPD765 output phase (2)
+	{
+		0xe1,FDC_OUTPUT,
+		0x34,
+		0x42,0,0x31,0x41,	// sr0
+		0x42,1,0x31,0x41,	// sr1
+		0x42,2,0x31,0x41,	// sr2
+		0x42,11,0x31,0x41,	// Rtrk
+		0x42,12,0x31,0x41,	// Rsec
+		0x42,13,0x31,0x41,	// side
+		0x42,14,0x31,0x41,	// SZ
+		0x03			// ret
+	},
+// 22 [CALL]: uPD765: write ic bytes cpu->fdc
+	{
+		0x33,		// cpu->fdc
+		0x31,0x41,	// drq = 1; wait for drq = 0
+		0xd2,		// CRC << Rdat
+		0x93,0xa8,	// write Rdat, next
+		0xb1,		// ic--
+		0xb4,0,-8,	// if (ic != 0) jr @31
+		0x03,
 	}
 };
 
@@ -600,18 +624,32 @@ uint8_t op765_04[] = {
 // 05+MT+MF    HU TR HD SC SZ LS GP SL <W> S0 S1 S2 TR HD LS SZ write sector(s)
 uint8_t op765_05[] = {
 	0x02,17,	// hu tr hd sc sz ls gp sl
-	0xe1,FDC_EXEC,
-	0x60,0,0x40,	// error
-	0x61,0,2,	// write protect
-	0x62,0,0,
-	0xe1,FDC_OUTPUT,
-	0x42,0,0x31,0x41,	// sr0
-	0x42,1,0x31,0x41,	// sr1
-	0x42,2,0x31,0x41,	// sr2
-	0x42,11,0x31,0x41,	// Rtrk
-	0x42,12,0x31,0x41,	// Rsec
-	0x42,13,0x31,0x41,	// side
-	0x42,14,0x31,0x41,	// SZ
+	0xe1,FDC_WRITE,
+	0x60,0x00,0x00,		// sr0 = 0
+	0x61,0x00,0x00,		// sr1 = 0
+	0x62,0x00,0x00,		// sr2 = 0
+	0xf9,8,16,		// if drive is ready @f8
+	0x60,0x37,0x48,		// s0 |= 0x48 (drive not ready)
+	0x02,21,		// result phase
+	0xe1,FDC_IDLE,
+	0xf1,
+	0x60,0x00,0x40,		// WPRT ERROR
+	0x61,0x00,0x02,
+	0xf0,-13,
+	0xf8,-10,		// if write protect, jr back WPRT ERROR
+
+	0x02,18,		// find sector SN (ic = sec.len)
+	0x21,FDC_OUTPUT,-20,	// if error jr @02,21 (result phase)
+	0xd0,			// init CRC
+	0xad,			// prev byte
+	0x8f,0xfb,0x94,0xa8,	// write FB (data mark)
+	0xd1,0xfb,		// CRC << FB
+	0x02,22,		// write IC bytes
+	0xd9,0xa8,0xda,		// write CRC
+	0xc2,			// next sector
+	0x21,FDC_EXEC,-22,	// if still exec jr @02,18
+
+	0x02,21,
 	0xe1,FDC_IDLE,
 	0xf1
 };
@@ -644,15 +682,7 @@ uint8_t op765_06[] = {
 	0xc2,			// next sector
 	0x21,FDC_EXEC,-25,	// if still exec jr @02
 	// result phase
-	0xe1,FDC_OUTPUT,
-	0x34,
-	0x42,0,0x31,0x41,	// s0
-	0x42,1,0x31,0x41,	// s1
-	0x42,2,0x31,0x41,	// s2
-	0x42,11,0x31,0x41,	// Rtrk
-	0x42,12,0x31,0x41,	// Rsec
-	0x42,13,0x31,0x41,	// side
-	0x42,14,0x31,0x41,	// SZ
+	0x02,21,
 	0xe1,FDC_IDLE,
 	0xf1
 };
@@ -1196,6 +1226,7 @@ void vAC(FDC* p) {
 	}
 	p->wptr += (char)dlt;	// success
 }
+void vAD(FDC* p) {flpPrev(p->fptr,p->side);}
 
 void vB0(FDC* p) {p->ic = *(p->wptr++);}
 void vB1(FDC* p) {p->ic--;}
@@ -1294,7 +1325,7 @@ VGOp vgfunc[256] = {
 	NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 	&v80,&v81,&v82,&v83,&v84,&v85,&v86,&v87,&v88,&v89,&v8A,&v8B,&v8C,&v8D,&v8E,&v8F,
 	&v90,&v91,&v92,&v93,&v94,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
-	&vA0,&vA1,&vA2,NULL,NULL,NULL,NULL,NULL,&vA8,&vA9,&vAA,&vAB,&vAC,NULL,NULL,NULL,
+	&vA0,&vA1,&vA2,NULL,NULL,NULL,NULL,NULL,&vA8,&vA9,&vAA,&vAB,&vAC,&vAD,NULL,NULL,
 	&vB0,&vB1,&vB2,&vB3,&vB4,&vB5,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 	&vC0,&vC1,&vC2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 	&vD0,&vD1,&vD2,&vD3,&vD4,&vD5,NULL,&vD7,&vD8,&vD9,&vDA,NULL,NULL,NULL,NULL,&vDF,

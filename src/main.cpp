@@ -15,7 +15,7 @@
 #include "filer.h"
 
 #ifdef HAVESDL
-	#include <SDL/SDL.h>
+	#include <SDL.h>
 #endif
 #ifdef WIN32
 	#undef main

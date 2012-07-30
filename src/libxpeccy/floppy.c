@@ -46,21 +46,37 @@ void flpStep(Floppy* flp,int dir) {
 	}
 }
 
-int flpNext(Floppy* flp, int bdiSide) {
+int flpNext(Floppy* flp, int fdcSide) {
 	int res = 0;
 	flp->rtrk = (flp->trk << 1);
-	if (flp->flag & FLP_DS) flp->rtrk += (bdiSide ? 0 : 1);		// /SIDE1 = 0 when upper head (1) selected
+	if ((flp->flag & FLP_DS) && ~fdcSide) flp->rtrk++;		// /SIDE1 = 0 when upper head (1) selected
 	if (flp->flag & FLP_INSERT) {
 		flp->pos++;
 		if (flp->pos >= TRACKLEN) {
 			flp->pos = 0;
-			res = 1;					// tick of index begin = zx->bdi->t
+			res = 1;
 		}
 		flp->field = flp->data[flp->rtrk].field[flp->pos];
 	} else {
 		flp->field = 0;
 	}
 	return res;
+}
+
+void flpPrev(Floppy* flp, int fdcSide) {
+	flp->rtrk = (flp->trk << 1);
+	if ((flp->flag & FLP_DS) && ~fdcSide) flp->rtrk++;
+	if (flp->flag & FLP_INSERT) {
+		if (flp->pos > 0) {
+			flp->pos--;
+		} else {
+			flp->pos = TRACKLEN - 1;
+		}
+		flp->field = flp->data[flp->rtrk].field[flp->pos];
+	} else {
+		flp->field = 0;
+	}
+
 }
 
 void flpClearDisk(Floppy* flp) {

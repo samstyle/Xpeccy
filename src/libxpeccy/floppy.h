@@ -75,6 +75,7 @@ void flpWr(Floppy*,uint8_t);
 int flpEject(Floppy*);
 uint8_t flpGetField(Floppy*);
 int flpNext(Floppy*,int);		// return 1 if index strobe
+void flpPrev(Floppy*,int);
 void flpStep(Floppy*,int);
 
 int flpGet(Floppy*,int);

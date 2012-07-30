@@ -17,9 +17,9 @@
 #include "filer.h"
 
 #ifdef HAVESDL
-	#include <SDL/SDL.h>
-	#include <SDL/SDL_timer.h>
-	#include <SDL/SDL_syswm.h>
+	#include <SDL.h>
+	#include <SDL_timer.h>
+	#include <SDL_syswm.h>
 #endif
 
 //#include "ui_tapewin.h"

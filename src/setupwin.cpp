@@ -5,7 +5,7 @@
 #include <QDebug>
 #include <stdlib.h>
 #ifdef HAVESDL
-#include <SDL/SDL.h>
+	#include <SDL.h>
 #endif
 
 #include "xcore/xcore.h"
