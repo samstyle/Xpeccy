@@ -46,13 +46,13 @@ int loadSNA(ZXComp* zx, const char* name) {
 		zx->prt1 = 0x00;
 		memSetBank(zx->mem,MEM_BANK0,MEM_ROM,1);
 		memSetBank(zx->mem,MEM_BANK3,MEM_RAM,0);
+		memSetPage(zx->mem,MEM_RAM,0,tmpgBuf);
 		zx->vid->curscr = 0;
 		adr = z80ex_get_reg(cpu,regSP);
 		tmp = memRd(zx->mem,adr++);
 		tmp2 = memRd(zx->mem,adr++);
 		z80ex_set_reg(cpu,regSP,adr);
 		z80ex_set_reg(cpu,regPC,tmp | (tmp2 << 8));
-		memSetPage(zx->mem,MEM_RAM,0,tmpgBuf);
 	} else {
 		z80ex_set_reg(cpu,regPC,getLEWord(&file));
 		tmp = file.get();

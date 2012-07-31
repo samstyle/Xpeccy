@@ -650,9 +650,11 @@ void loadProfiles() {
 							} else {
 								vlay.intpos.h = 0;
 							}
-							if ((vlay.full.h > vlay.bord.h + 256) && (vlay.bord.h > vlay.sync.h) && (vlay.full.v > vlay.bord.v + 192) && (vlay.bord.v > vlay.sync.v)) {
-								addLayout(vlay);
-							}
+							if (vlay.full.h < vlay.bord.h + 256) vlay.full.h = vlay.bord.h + 256;
+							if (vlay.sync.h > vlay.bord.h) vlay.sync.h = vlay.bord.h;
+							if (vlay.full.v < vlay.bord.v + 192) vlay.full.v = vlay.bord.v + 256;
+							if (vlay.sync.v > vlay.bord.v) vlay.sync.v = vlay.bord.v;
+							addLayout(vlay);
 						}
 					}
 					if (pnam=="scrDir") shotDir = pval;

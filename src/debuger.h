@@ -48,6 +48,7 @@ class DebugWin : public QDialog {
 		void filldump();
 		void fillrays();
 		void fillvg();
+		void filltick();
 		void showedit(QLabel*,QString);
 		ushort getprevadr(ushort);
 		DasmRow getdisasm();

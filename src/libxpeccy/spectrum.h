@@ -88,9 +88,7 @@ typedef struct {
 	uint8_t prt2;		// scorpion ProfROM layer (0..3)
 	int resbank;		// rompart active after reset
 	int gsCount;
-	int aeOp;		// after-effect op type
-	unsigned short adr;	// remember it for out or mwr
-	unsigned char value;
+	unsigned long tickCount;
 } ZXComp;
 
 ZXComp* zxCreate();

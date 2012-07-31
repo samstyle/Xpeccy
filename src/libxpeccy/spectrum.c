@@ -164,6 +164,10 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 			}
 		}
 	}
+	res3 = z80ex_op_tstate(cpu);
+	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
+	res4 = res3;
+	if ((adr & 0xc000) == 0x4000) vidWaitSlow(comp->vid);
 	Z80EX_BYTE res = memRd(comp->mem,adr);
 	return res;
 }
@@ -176,6 +180,7 @@ void memwr(Z80EX_CONTEXT* cpu, Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 	res3 = z80ex_op_tstate(cpu);
 	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
 	res4 = res3;
+	if ((adr & 0xc000) == 0x4000) vidWaitSlow(comp->vid);
 	memWr(comp->mem,adr,val);
 	if (comp->mem->flags & MEM_BRK_WRITE) {
 		comp->flags |= ZX_BREAK;
@@ -403,7 +408,7 @@ ZXComp* zxCreate() {
 	comp->rzxData = NULL;
 	comp->gsCount = 0;
 	comp->resbank = RES_48;
-	comp->aeOp = ZX_NONE;
+	comp->tickCount = 0;
 	gsReset(comp->gs);
 	zxReset(comp,RES_DEFAULT);
 	return comp;
@@ -466,8 +471,8 @@ double zxExec(ZXComp* comp) {
 	do {
 		res1 += z80ex_step(comp->cpu);
 	} while (z80ex_last_op_type(comp->cpu) != 0);
-	vflg |= vidSync(comp->vid,(res1 - res3) * comp->dotPerTick);
 	pcreg = z80ex_get_reg(comp->cpu,regPC);
+	vflg |= vidSync(comp->vid,(res1 - res3) * comp->dotPerTick);
 	if (comp->rzxPlay) {
 		comp->intStrobe = (comp->rzxFetches < 1);
 	} else {
@@ -508,6 +513,7 @@ double zxExec(ZXComp* comp) {
 	}
 
 	ltk = res1 * comp->dotPerTick;
+	comp->tickCount += res1;
 	tapSync(comp->tape,ltk);
 
 	if (comp->gs->flag & GS_ENABLE) comp->gsCount += ltk;

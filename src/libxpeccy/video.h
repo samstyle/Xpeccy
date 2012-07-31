@@ -7,12 +7,14 @@ extern "C" {
 
 #include "memory.h"
 
-// vidFlags
+// vidFlags (emul)
 #define VF_FULLSCREEN		1
 #define VF_DOUBLE		(1<<1)
 #define VF_BLOCKFULLSCREEN	(1<<2)
 #define VF_CHANGED		(1<<3)
 #define	VF_FRAMEDBG		(1<<4)
+// vid->flags (vid)
+#define	VID_SLOWMEM		1
 // screen drawing mode
 #define	VID_NORMAL	0
 #define	VID_ALCO	1
@@ -28,6 +30,7 @@ typedef struct {
 typedef struct {
 	int flag;
 	int type;
+	int wait;		// dot's (ticks * 2) to be drawing on slow mem WAIT
 	unsigned char* scr5ptr;
 	unsigned char* atr5ptr;
 	unsigned char* scr7ptr;
@@ -37,7 +40,8 @@ typedef struct {
 } mtrxItem;
 
 typedef struct {
-	char intSignal;
+	int flags;
+	int intSignal;
 	int firstFrame;
 	int flash;
 	int curscr;
@@ -84,6 +88,9 @@ Video* vidCreate(Memory*);
 void vidDestroy(Video*);
 
 int vidSync(Video*,float);
+void vidWaitSlow(Video*);
+void vidDarkTail(Video*);
+
 void vidSetLayout(Video*, int, int, int, int, int, int, int, int, int);
 void vidUpdate(Video*);
 

@@ -10,6 +10,8 @@
 
 DebugWin* dbgWin;
 
+unsigned long lastDbgTicks = 0;
+
 void dbgInit(QWidget* par) {
 	dbgWin = new DebugWin(par);
 }
@@ -31,12 +33,13 @@ void DebugWin::start() {
 	ledit->hide();
 	active = true;
 	upadr = z80ex_get_reg(zx->cpu,regPC);
-	curcol = 3; currow = 0;
+	curcol = 3;
+	currow = 0;
 	fillall();
 	show();
+	lastDbgTicks = zx->tickCount;
 	vidFlag |= VF_FRAMEDBG;
-	for (uint8_t* ptr = zx->vid->scrptr; (ptr - zx->vid->scrimg) < (zx->vid->wsze.h * zx->vid->wsze.v); ptr++)
-		*(ptr) = *(ptr) | 0xe0;
+	vidDarkTail(zx->vid);
 }
 
 void DebugWin::stop() {
@@ -182,7 +185,12 @@ bool DebugWin::fillall() {
 	filldump();
 	fillrays();
 	fillvg();
+	filltick();
 	return filldasm();
+}
+
+void DebugWin::filltick() {
+	tlab->setText(QString::number(zx->tickCount - lastDbgTicks));
 }
 
 void DebugWin::fillvg() {
@@ -393,7 +401,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					}
 					break;
 				case Qt::Key_F7:
-					//t = zx->sys->cpu->t;
+					lastDbgTicks = zx->tickCount;
 					emulExec();
 					if (!fillall()) {
 						upadr = z80ex_get_reg(zx->cpu,regPC);
@@ -401,7 +409,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					}
 					break;
 				case Qt::Key_F8:
-					//t = zx->sys->cpu->t;
+					lastDbgTicks = zx->tickCount;
 					cpoint.adr = z80ex_get_reg(zx->cpu,regPC);
 					cpoint.sp = z80ex_get_reg(zx->cpu,regSP);
 					cpoint.active = true;

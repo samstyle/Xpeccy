@@ -66,8 +66,7 @@ int main(int ac,char** av) {
 			initHardware();
 			sndInit();
 			emulInit();
-//			mwin = new EmulWin();
-			dbgInit(emulWidget());
+			dbgInit(NULL);// emulWidget());
 			optInit(emulWidget());
 			devInit();
 			initFileDialog(emulWidget());

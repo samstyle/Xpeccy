@@ -81,6 +81,7 @@ Video* vidCreate(Memory* me) {
 	vid->scrimg = screenBuf;
 	vid->scrptr = vid->scrimg;
 
+	vid->flags = 0;	// VID_SLOWMEM;
 	vid->firstFrame = 1;
 	vid->intSignal = 0;
 
@@ -108,13 +109,34 @@ unsigned char* vidGetScreen() {
 #define	MTT_PTX		6
 #define	MTT_BRDATR	7	// this is same MTT_PT4, but 4 pix before screen. actual color = border. action = get 1st pixels byte
 
+/*
+waits for 128K, +2
+	--wwwwww wwwwww-- : 16-dots cycle, start on border 8 dots before screen
+waits for +2a, +3
+	ww--wwww wwwwwwww : same
+*/
+
+int waitsTab_A[16] = {0,0,12,12,10,10,8,8,6,6,4,4,2,2,0,0};
+int waitsTab_B[16] = {2,2,0,0,14,14,12,12,10,10,8,8,6,6,4,4};
+
 void vidFillMatrix(Video* vid) {
-	int x,y,i,adr;
+	int x,y,i,nya = 0,adr;
 	i = 0;
 	adr = 0;
 	for (y = 0; y < vid->full.v; y++) {
 		for (x = 0; x < vid->full.h; x++) {
 			vid->matrix[i].flag = 0;
+			vid->matrix[i].wait = 0;
+
+			if ((x >= vid->bord.h) && (x < (vid->bord.h + 256)) && (y >= vid->bord.v) && (y < (vid->bord.v + 192))) {	// on screen
+				if (x == vid->bord.h) {
+					vid->matrix[i - 1].wait = 12;
+					vid->matrix[i - 2].wait = 12;
+					nya = 4;
+				}
+				vid->matrix[i].wait = waitsTab_A[nya & 15];
+				nya++;
+			}
 			if ((y < vid->lcut.v) || (y >= vid->rcut.v) || (x < vid->lcut.h) || (x >= vid->rcut.h)) {
 				vid->matrix[i].type = MTT_INVIS;
 			} else {
@@ -128,17 +150,22 @@ void vidFillMatrix(Video* vid) {
 							vid->matrix[i].atr7ptr = vid->scr7atr[adr];
 							vid->matrix[i].alco5ptr = vid->ladrz[adr].ac00;
 							vid->matrix[i].alco7ptr = vid->ladrz[adr].ac10;
-							if (i > 3) {
-								if (vid->matrix[i-4].type == MTT_BORDER)
-									vid->matrix[i-4].type = MTT_BRDATR;
-								vid->matrix[i-4].scr5ptr = vid->scr5pix[adr];
-								vid->matrix[i-4].scr7ptr = vid->scr7pix[adr];
+							if (vid->matrix[i-4].type == MTT_BORDER) {
+								vid->matrix[i-4].type = MTT_BRDATR;
 							}
+							vid->matrix[i-4].scr5ptr = vid->scr5pix[adr];
+							vid->matrix[i-4].scr7ptr = vid->scr7pix[adr];
+							break;
+						case 1:
+							vid->matrix[i].type = MTT_PTX;
 							break;
 						case 2:
 							vid->matrix[i].type = MTT_PT2;
 							vid->matrix[i].alco5ptr = vid->ladrz[adr].ac01;
 							vid->matrix[i].alco7ptr = vid->ladrz[adr].ac11;
+							break;
+						case 3:
+							vid->matrix[i].type = MTT_PTX;
 							break;
 						case 4:
 							vid->matrix[i].type = MTT_PT4;
@@ -147,6 +174,9 @@ void vidFillMatrix(Video* vid) {
 							vid->matrix[i].alco5ptr = vid->ladrz[adr].ac02;
 							vid->matrix[i].alco7ptr = vid->ladrz[adr].ac12;
 							break;
+						case 5:
+							vid->matrix[i].type = MTT_PTX;
+							break;
 						case 6:
 							vid->matrix[i].alco5ptr = vid->ladrz[adr].ac03;
 							vid->matrix[i].alco7ptr = vid->ladrz[adr].ac13;
@@ -154,7 +184,6 @@ void vidFillMatrix(Video* vid) {
 							break;
 						case 7:
 							adr++;
-						default:
 							vid->matrix[i].type = MTT_PTX;
 							break;
 					}
@@ -192,6 +221,29 @@ mtrxItem* mtx;
 
 unsigned char pixBuffer[8];
 unsigned char bitMask[8] = {0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
+
+void vidDarkTail(Video* vid) {
+	unsigned char* ptr = vid->scrptr;
+	int idx = vid->dotCount;
+	do {
+		mtx = &vid->matrix[idx];
+		idx++;
+		if (mtx->type != MTT_INVIS) {
+			*(ptr++) |= 0xe0;
+			if (vidFlag & VF_DOUBLE) {
+				*(ptr + vid->wsze.h - 1) |= 0xe0;
+				*(ptr + vid->wsze.h) |= 0xe0;
+				*(ptr++) |= 0xe0;
+			}
+		}
+		if ((mtx->flag & MTF_LINEND) && (vidFlag & VF_DOUBLE)) ptr += vid->wsze.h;
+	} while (~mtx->flag & MTF_FRMEND);
+}
+
+void vidWaitSlow(Video* vid) {
+	if (~vid->flags & VID_SLOWMEM) return;
+	if (vid->matrix[vid->dotCount].wait != 0) vidSync(vid,vid->matrix[vid->dotCount].wait);
+}
 
 int vidSync(Video* vid, float dotDraw) {
 	int res = 0;
