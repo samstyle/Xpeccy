@@ -71,8 +71,8 @@ typedef struct {
 	TSound* ts;
 	int rzxSize;
 	RZXFrame* rzxData;
-	uint64_t rzxFrame;
-	uint32_t rzxPos;
+	unsigned long rzxFrame;
+	unsigned int rzxPos;
 	int rzxFetches;
 	int rzxPlay;	// true if rzx playing now
 	int intStrobe;
@@ -83,9 +83,9 @@ typedef struct {
 	float cpuFrq;
 	float dotPerTick;
 	int hwFlags;
-	uint8_t prt0;		// 7ffd value
-	uint8_t prt1;		// extend port value
-	uint8_t prt2;		// scorpion ProfROM layer (0..3)
+	unsigned char prt0;		// 7ffd value
+	unsigned char prt1;		// extend port value
+	unsigned char prt2;		// scorpion ProfROM layer (0..3)
 	int resbank;		// rompart active after reset
 	int gsCount;
 	unsigned long tickCount;

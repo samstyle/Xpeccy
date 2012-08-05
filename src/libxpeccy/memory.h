@@ -35,8 +35,8 @@ typedef struct {
 	MemPage* pt1;
 	MemPage* pt2;
 	MemPage* pt3;
-	unsigned char cram;
-	unsigned char crom;
+	int cram;
+	int crom;
 	int memSize;
 	int memMask;
 	int profMask;	// profrom (0 - 64K, 1 - 128K, 3 - 256K)
@@ -49,7 +49,7 @@ unsigned char memRd(Memory*,unsigned short);
 void memWr(Memory*,unsigned short,unsigned char);
 
 void memSetSize(Memory*,int);
-void memSetBank(Memory*,int,int,int);
+void memSetBank(Memory*,int,int,unsigned char);
 
 void memSetPage(Memory*,int,int,char*);
 void memGetPage(Memory*,int,int,char*);

@@ -88,7 +88,7 @@ void memSetSize(Memory* mem, int val) {
 	}
 }
 
-void memSetBank(Memory* mem, int bank, int wut, int nr) {
+void memSetBank(Memory* mem, int bank, int wut, unsigned char nr) {
 	switch (bank) {
 		case MEM_BANK0:
 			switch (wut) {

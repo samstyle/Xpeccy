@@ -99,47 +99,46 @@ int zxGetPort(int port, int hardware) {
 	return port;
 }
 
-uint8_t prt0,prt1,prt2;
+#define PRT0	comp->prt0
+#define	PRT1	comp->prt1
+#define	PRT2	comp->prt2
 
 void zxMapMemory(ZXComp* comp) {
-	uint8_t rp;
-	prt0 = comp->prt0;
-	prt1 = comp->prt1;
-	prt2 = comp->prt2;
+	Z80EX_BYTE rp;
 	switch (comp->hw->type) {
 		case HW_ZX48:
 			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,(comp->bdi->flag & BDI_ACTIVE) ? 3 : 1);
 			memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0);
 			break;
 		case HW_PENT:
-			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,(comp->bdi->flag & BDI_ACTIVE) ? 3 : ((prt0 & 0x10) >> 4));
-			memSetBank(comp->mem,MEM_BANK3,MEM_RAM,(prt0 & 7) | ((prt0 & 0xc0) >> 3));
+			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,(comp->bdi->flag & BDI_ACTIVE) ? 3 : ((PRT0 & 0x10) >> 4));
+			memSetBank(comp->mem,MEM_BANK3,MEM_RAM,(PRT0 & 7) | ((PRT0 & 0xc0) >> 3));
 			break;
 		case HW_P1024:
-			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,(comp->bdi->flag & BDI_ACTIVE) ? 3 : ((prt1 & 8) ? 0xff : ((prt0 & 0x10) >> 4)));
-			memSetBank(comp->mem,MEM_BANK3,MEM_RAM,(prt0 & 7) | ((prt1 & 4) ? 0 : ((prt0 & 0x20) | ((prt0 & 0xc0) >> 3))));
+			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,(comp->bdi->flag & BDI_ACTIVE) ? 3 : ((PRT1 & 8) ? 0xff : ((PRT0 & 0x10) >> 4)));
+			memSetBank(comp->mem,MEM_BANK3,MEM_RAM,(PRT0 & 7) | ((PRT1 & 4) ? 0 : ((PRT0 & 0x20) | ((PRT0 & 0xc0) >> 3))));
 			break;
 		case HW_SCORP:
-			rp = (prt1 & 0x01) ? 0xff : ((prt1 & 0x02) ? 2 : ((comp->bdi->flag & BDI_ACTIVE) ? 3 : ((prt0 & 0x10) >> 4)));
-			rp |= ((prt2 & 3) << 2);
+			rp = (PRT1 & 0x01) ? 0xff : ((PRT1 & 0x02) ? 2 : ((comp->bdi->flag & BDI_ACTIVE) ? 3 : ((PRT0 & 0x10) >> 4)));
+			rp |= ((PRT2 & 3) << 2);
 			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,rp);
-			memSetBank(comp->mem,MEM_BANK3,MEM_RAM,(prt0 & 7) | ((prt1 & 0x10) >> 1) | ((prt1 & 0xc0) >> 2));
+			memSetBank(comp->mem,MEM_BANK3,MEM_RAM,(PRT0 & 7) | ((PRT1 & 0x10) >> 1) | ((PRT1 & 0xc0) >> 2));
 			break;
 		case HW_PLUS3:
 		case HW_PLUS2:
-			if (prt1 & 1) {
+			if (PRT1 & 1) {
 				// extend mem mode
-				rp = ((prt1 & 0x60) >> 1);	// b1,2 of 1ffd
+				rp = ((PRT1 & 0x60) >> 1);	// b1,2 of 1ffd
 				memSetBank(comp->mem,MEM_BANK0,MEM_RAM,plus2Lays[rp][0]);
 				memSetBank(comp->mem,MEM_BANK1,MEM_RAM,plus2Lays[rp][1]);
 				memSetBank(comp->mem,MEM_BANK2,MEM_RAM,plus2Lays[rp][2]);
 				memSetBank(comp->mem,MEM_BANK3,MEM_RAM,plus2Lays[rp][3]);
 			} else {
 				// normal mem mode
-				memSetBank(comp->mem,MEM_BANK0,MEM_ROM,((prt0 & 0x10) >> 4) | ((prt1 & 0x04) >> 1));
+				memSetBank(comp->mem,MEM_BANK0,MEM_ROM,((PRT0 & 0x10) >> 4) | ((PRT1 & 0x04) >> 1));
 				memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5);
 				memSetBank(comp->mem,MEM_BANK2,MEM_RAM,2);
-				memSetBank(comp->mem,MEM_BANK3,MEM_RAM,prt0 & 7);
+				memSetBank(comp->mem,MEM_BANK3,MEM_RAM,PRT0 & 7);
 			}
 			break;
 	}
