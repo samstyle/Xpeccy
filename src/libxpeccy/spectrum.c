@@ -163,7 +163,7 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 			}
 		}
 	}
-	res3 = z80ex_op_tstate(cpu);
+	res3 = res2 + z80ex_op_tstate(cpu);
 	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
 	res4 = res3;
 	if ((adr & 0xc000) == 0x4000) vidWaitSlow(comp->vid);
@@ -176,7 +176,7 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 
 void memwr(Z80EX_CONTEXT* cpu, Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
-	res3 = z80ex_op_tstate(cpu);
+	res3 = res2 + z80ex_op_tstate(cpu);
 	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
 	res4 = res3;
 	if ((adr & 0xc000) == 0x4000) vidWaitSlow(comp->vid);
@@ -367,7 +367,7 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 
 void iowr(Z80EX_CONTEXT* cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
-	res3 = z80ex_op_tstate(cpu) + 1;	// +1? WTF?
+	res3 = res2 + z80ex_op_tstate(cpu) - 3;
 	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
 	res4 = res3;
 	zxOut(comp,port,val);
@@ -465,13 +465,14 @@ void zxSetFrq(ZXComp* comp, float frq) {
 }
 
 double zxExec(ZXComp* comp) {
-	res1 = res3 = res4 = 0;
+	res1 = res2 = res3 = res4 = 0;
 	vflg = 0;
 	do {
-		res1 += z80ex_step(comp->cpu);
+		res2 += z80ex_step(comp->cpu);
 	} while (z80ex_last_op_type(comp->cpu) != 0);
 	pcreg = z80ex_get_reg(comp->cpu,regPC);
-	vflg |= vidSync(comp->vid,(res1 - res3) * comp->dotPerTick);
+	vflg |= vidSync(comp->vid,(res2 - res4) * comp->dotPerTick);
+	res1 = res2;
 	if (comp->rzxPlay) {
 		comp->intStrobe = (comp->rzxFetches < 1);
 	} else {
@@ -485,14 +486,14 @@ double zxExec(ZXComp* comp) {
 		if (res2 != 0) {
 			comp->bdi->flag |= BDI_ACTIVE;
 			zxMapMemory(comp);
-			vidSync(comp->vid,(res2 - res3) * comp->dotPerTick);
+			vidSync(comp->vid,(res2 - res4) * comp->dotPerTick);
 		}
 	}
 	if (comp->intStrobe) {
 		res3 = res4 = 0;
 		res2 = z80ex_int(comp->cpu);
 		res1 += res2;
-		vidSync(comp->vid,(res2 - res3) * comp->dotPerTick);
+		vidSync(comp->vid,(res2 - res4) * comp->dotPerTick);
 		if (comp->rzxPlay) {
 			comp->rzxFrame++;
 			if (comp->rzxFrame >= comp->rzxSize) {
