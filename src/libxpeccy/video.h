@@ -13,6 +13,7 @@ extern "C" {
 #define VF_BLOCKFULLSCREEN	(1<<2)
 #define VF_CHANGED		(1<<3)
 #define	VF_FRAMEDBG		(1<<4)
+#define VF_NOFLIC		(1<<5)
 // vid->flags (vid)
 #define	VID_SLOWMEM		1
 // screen drawing mode

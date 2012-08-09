@@ -387,6 +387,7 @@ void saveProfiles() {
 	cfile << "fullscreen = " << ((vidFlag & VF_FULLSCREEN) ? "yes" : "no") << "\n";
 	cfile << "doublesize = " << ((vidFlag & VF_DOUBLE) ? "yes" : "no") << "\n";
 	cfile << "bordersize = " << int2str(brdsize * 100) << "\n";
+	cfile << "noflic = " << ((vidFlag & VF_NOFLIC) ? "yes" : "no") << "\n";
 	cfile << "\n[ROMSETS]\n";
 	std::vector<RomSet> rsl = getRomsetList();
 	for (i=0; i<rsl.size(); i++) {
@@ -674,6 +675,7 @@ void loadProfiles() {
 						if ((test >= 0) && (test <= 100)) brdsize = test / 100.0;
 					}
 					if (pnam=="doublesize") setFlagBit(str2bool(pval),&vidFlag,VF_DOUBLE);
+					if (pnam=="noflic") setFlagBit(str2bool(pval),&vidFlag,VF_NOFLIC);
 					break;
 				case SECT_ROMSETS:
 					pos = pval.find_last_of(":");

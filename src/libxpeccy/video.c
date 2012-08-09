@@ -229,11 +229,11 @@ void vidDarkTail(Video* vid) {
 		mtx = &vid->matrix[idx];
 		idx++;
 		if (mtx->type != MTT_INVIS) {
-			*(ptr++) |= 0xe0;
+			*(ptr++) &= 0x0f;
 			if (vidFlag & VF_DOUBLE) {
-				*(ptr + vid->wsze.h - 1) |= 0xe0;
-				*(ptr + vid->wsze.h) |= 0xe0;
-				*(ptr++) |= 0xe0;
+				*(ptr + vid->wsze.h - 1) &= 0x0f;
+				*(ptr + vid->wsze.h) &= 0x0f;
+				*(ptr++) &= 0x0f;
 			}
 		}
 		if ((mtx->flag & MTF_LINEND) && (vidFlag & VF_DOUBLE)) ptr += vid->wsze.h;
@@ -299,18 +299,18 @@ int vidSync(Video* vid, float dotDraw) {
 					}
 					break;
 			}
-			if (vid->firstFrame || (*vid->scrptr != col)) {
-				*(vid->scrptr++) = col;
-				if (vidFlag & VF_DOUBLE) {
-					*(vid->scrptr + vid->wsze.h - 1) = col;
-					*(vid->scrptr + vid->wsze.h) = col;
-					*(vid->scrptr++)=col;
-				}
-				vidFlag |= VF_CHANGED;
+			if ((vidFlag & (VF_NOFLIC | VF_FRAMEDBG)) == VF_NOFLIC) {
+				col = (((*vid->scrptr) & 0x0f) << 4) | (col & 0x0f);
 			} else {
-				vid->scrptr++;
-				if (vidFlag & VF_DOUBLE) vid->scrptr++;
+				col |= (col << 4);
 			}
+			*(vid->scrptr++) = col;
+			if (vidFlag & VF_DOUBLE) {
+				*(vid->scrptr + vid->wsze.h - 1) = col;
+				*(vid->scrptr + vid->wsze.h) = col;
+				*(vid->scrptr++)=col;
+			}
+			vidFlag |= VF_CHANGED;
 		}
 		if ((mtx->flag & MTF_LINEND) && (vidFlag & VF_DOUBLE)) vid->scrptr += vid->wsze.h;
 		if (mtx->flag & MTF_FRMEND) {
@@ -321,7 +321,7 @@ int vidSync(Video* vid, float dotDraw) {
 			vid->scrptr = vid->scrimg;
 			vid->firstFrame = 0;
 			if (vidFlag & VF_FRAMEDBG) {
-				for(int i = 0; i < (vid->wsze.h * vid->wsze.v); i++) vid->scrimg[i] = (vid->scrimg[i] & 0x0f) | 0xe0;
+				for(int i = 0; i < (vid->wsze.h * vid->wsze.v); i++) vid->scrimg[i] &= 0x0f;
 			}
 		}
 		vid->pxcnt--;

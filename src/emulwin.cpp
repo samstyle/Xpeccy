@@ -243,33 +243,26 @@ QWidget* emulWidget() {
 
 void emulSetColor(int brl) {
 	int i;
-	qPal.clear(); qPal.resize(256);
-	uint8_t r,g,b;
-#ifndef XQTPAINT
-	for (i=0; i<16; i++) {
-		b = (i & 1) ? ((i & 8) ? 0xff : brl) : 0;
-		r = (i & 2) ? ((i & 8) ? 0xff : brl) : 0;
-		g = (i & 4) ? ((i & 8) ? 0xff : brl) : 0;
-		zxpal[i].b = b;
-		zxpal[i].r = r;
-		zxpal[i].g = g;
-		if ((i & 7) == 0) b = r = g = 0x20;
-		zxpal[i + 0xe0].b = (b >> 2);
-		zxpal[i + 0xe0].r = (r >> 2);
-		zxpal[i + 0xe0].g = (g >> 2);
+	uint8_t r[16],g[16],b[16];	// common zx-colors
+	qPal.clear();
+	qPal.resize(256);
+	for(i = 0; i < 16; i++) {
+		b[i] = (i & 1) ? ((i & 8) ? 0xf0 : brl) : 0;
+		r[i] = (i & 2) ? ((i & 8) ? 0xf0 : brl) : 0;
+		g[i] = (i & 4) ? ((i & 8) ? 0xf0 : brl) : 0;
 	}
+	for(i = 0; i < 256; i++) {
+		qPal[i] = qRgb((r[i & 0x0f] * 0.5) + (r[(i & 0xf0) >> 4] * 0.5),
+				(g[i & 0x0f] * 0.5) + (g[(i & 0xf0) >> 4] * 0.5),
+				(b[i & 0x0f] * 0.5) + (b[(i & 0xf0) >> 4] * 0.5));
+	}
+#ifndef XQTPAINT
 	for (i=0; i<256; i++) {
-		qPal[i] = qRgb(zxpal[i].r,zxpal[i].g,zxpal[i].b);
+		zxpal[i].b = qBlue(qPal[i]);
+		zxpal[i].r = qRed(qPal[i]);
+		zxpal[i].g = qGreen(qPal[i]);
 	}
 #else
-	for (i=0; i<16; i++) {
-		b = (i & 1) ? ((i & 8) ? 0xff : brl) : 0;
-		r = (i & 2) ? ((i & 8) ? 0xff : brl) : 0;
-		g = (i & 4) ? ((i & 8) ? 0xff : brl) : 0;
-		qPal[i] = qRgb(r,g,b);
-		if ((i & 7) == 0) b = r = g = 0x20;
-		qPal[i + 0xe0] = qRgb(r >> 2, g >> 2, b >> 2);
-	}
 	scrImg.setColorTable(qPal);
 #endif
 }

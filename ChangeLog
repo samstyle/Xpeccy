@@ -222,3 +222,6 @@ Fix	Ticks counter returned to debugger
 Fix	Incorrect frame drawing while debugging at end of frame
 New	By default z80ex 1.19 is compiled inside binary. Use cmake with -DZ80EX_BUILD="external" to link shared libs
 New	By default picture drawing used Qt. It works slower, but have more features. Use -DDRAWING="SDL" to build Xpeccy with SDLSurface
+
+build 20120809
+New	Noflic video filter.

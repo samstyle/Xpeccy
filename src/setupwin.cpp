@@ -264,6 +264,7 @@ void SetupWin::start() {
 // video
 	setupUi.dszchk->setChecked((vidFlag & VF_DOUBLE));
 	setupUi.fscchk->setChecked(vidFlag & VF_FULLSCREEN);
+	setupUi.noflichk->setChecked(vidFlag & VF_NOFLIC);
 	setupUi.bszsld->setValue((int)(brdsize * 100));
 	setupUi.pathle->setText(QString::fromLocal8Bit(optGetString(OPT_SHOTDIR).c_str()));
 	setupUi.ssfbox->setCurrentIndex(setupUi.ssfbox->findData(optGetInt(OPT_SHOTFRM)));
@@ -399,6 +400,7 @@ void SetupWin::apply() {
 // video
 	setFlagBit(setupUi.dszchk->isChecked(),&vidFlag,VF_DOUBLE);
 	setFlagBit(setupUi.fscchk->isChecked(),&vidFlag,VF_FULLSCREEN);
+	setFlagBit(setupUi.noflichk->isChecked(),&vidFlag,VF_NOFLIC);
 	brdsize = setupUi.bszsld->value()/100.0;
 	optSet(OPT_SHOTDIR,std::string(setupUi.pathle->text().toLocal8Bit().data()));
 	optSet(OPT_SHOTFRM,setupUi.ssfbox->itemData(setupUi.ssfbox->currentIndex()).toInt());
