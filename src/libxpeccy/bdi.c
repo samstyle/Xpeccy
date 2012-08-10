@@ -1421,9 +1421,7 @@ void bdiSync(BDI* bdi,int tk) {
 			bdi->fdc->tf = BYTEDELAY;
 		}
 		bdi->fdc->t += tz;
-		bdi->fdc->idxold = bdi->fdc->idx;
 		bdi->fdc->idx = (bdi->fdc->t < IDXDELAY) ? 1 : 0;
-		bdi->fdc->strb = (!bdi->fdc->idxold && bdi->fdc->idx) ? 1 : 0;
 		if (bdi->fdc->wptr != NULL) {
 			bdi->fdc->count -= tz;
 			while ((bdi->fdc->wptr != NULL) && (bdi->fdc->count < 0)) {

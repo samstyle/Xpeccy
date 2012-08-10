@@ -81,7 +81,7 @@ Video* vidCreate(Memory* me) {
 	vid->scrimg = screenBuf;
 	vid->scrptr = vid->scrimg;
 
-	vid->flags = 0;	// VID_SLOWMEM;
+	vid->flags = 0; // VID_SLOWMEM;
 	vid->firstFrame = 1;
 	vid->intSignal = 0;
 
