@@ -965,8 +965,8 @@ void fdcExec(FDC* fdc, uint8_t val) {
 
 void fdcSetMr(FDC* fdc,int z) {
 	if (!fdc->mr && z) {		// 0->1 : execute com 3
-		fdcExec(fdc,0x03);	// restore
 		fdc->mr = z;
+		fdcExec(fdc,0x03);	// restore
 		fdc->sec = 1;
 	} else {
 		fdc->mr = z;
@@ -1204,12 +1204,12 @@ void vAB(FDC* p) {
 	dlt = *(p->wptr++);
 	while (p->fptr->field != 0) {
 		if (flpNext(p->fptr,p->side)) {p->ic--; p->t = 0;}
-//		if (!p->turbo) p->count += BYTEDELAY;		// hmmm... it's too slow
+		if (!p->turbo) p->count += BYTEDELAY;
 		if (p->ic == 0) return;
 	}
 	while (p->fptr->field != 1) {
 		if (flpNext(p->fptr,p->side)) {p->ic--; p->t = 0;}
-//		if (!p->turbo) p->count += BYTEDELAY;
+		if (!p->turbo) p->count += BYTEDELAY;
 		if (p->ic == 0) return;
 	}
 	p->wptr += (char)dlt;	// success
@@ -1218,10 +1218,12 @@ void vAC(FDC* p) {
 	dlt = *(p->wptr++);
 	while (p->fptr->field != 0) {
 		if (flpNext(p->fptr,p->side)) {p->ic--; p->t = 0;}
+		if (!p->turbo) p->count += BYTEDELAY;
 		if (p->ic == 0) return;
 	}
 	while ((p->fptr->field != 2) && (p->fptr->field != 3)) {
 		if (flpNext(p->fptr,p->side)) {p->ic--; p->t = 0;}
+		if (!p->turbo) p->count += BYTEDELAY;
 		if (p->ic == 0) return;
 	}
 	p->wptr += (char)dlt;	// success
