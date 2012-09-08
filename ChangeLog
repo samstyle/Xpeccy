@@ -225,3 +225,7 @@ New	By default picture drawing used Qt. It works slower, but have more features.
 
 build 20120809
 New	Noflic video filter.
+
+build 20120908
+New	Covox. It works on port FB at Pentagon (but not Pentagon1024) and port DD at Scorpion
+Fix	PageUp/PageDown incorrect working

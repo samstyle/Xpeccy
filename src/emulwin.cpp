@@ -1150,7 +1150,7 @@ void emulTapeCatch() {
 
 void MainWin::processFrame() {
 // if screenshot requested do it
-	zx->flags = 0;
+	zx->flags &= ~(ZX_BREAK | ZX_JUSTBORN);
 	if (emulFlags & FL_SHOT) doScreenShot();
 // if paused, return
 	if ((pauseFlags != 0) || (wantedWin != WW_NONE)) return;

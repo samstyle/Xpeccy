@@ -292,6 +292,7 @@ void SetupWin::start() {
 	setupUi.gstereobox->setCurrentIndex(setupUi.gstereobox->findData(QVariant(zx->gs->stereo)));
 	setupUi.gsgroup->setChecked(zx->gs->flag & GS_ENABLE);
 	setupUi.tsbox->setCurrentIndex(setupUi.tsbox->findData(QVariant(zx->ts->type)));
+	setupUi.covoxBox->setChecked(zx->flags & ZX_COVOX);
 // input
 	buildkeylist();
 	buildjmaplist();
@@ -429,6 +430,7 @@ void SetupWin::apply() {
 	if (setupUi.gsgroup->isChecked()) zx->gs->flag |= GS_ENABLE;
 	if (setupUi.gsrbox->isChecked()) zx->gs->flag |= GS_RESET;
 	zx->gs->stereo = setupUi.gstereobox->itemData(setupUi.gstereobox->currentIndex()).toInt();
+	if (setupUi.covoxBox->isChecked()) zx->flags |= ZX_COVOX; else zx->flags &= ~ZX_COVOX;
 // input
 	if (setupUi.inpDevice->currentIndex() < 1) {
 		optSet(OPT_JOYNAME,std::string(""));

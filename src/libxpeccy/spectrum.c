@@ -41,7 +41,7 @@ unsigned char plus2Lays[4][4] = {
 	{4,7,6,3}
 };
 
-int zxGetPort(int port, int hardware) {
+Z80EX_WORD zxGetPort(Z80EX_WORD port, int hardware) {
 	switch (hardware) {
 		case HW_ZX48:
 			if ((port & 0x01) == 0) {port = (port & 0xff00) | 0xfe; break;}
@@ -56,6 +56,7 @@ int zxGetPort(int port, int hardware) {
 			if ((port & 0x05a1) == 0x0581) port = 0xffdf;
 			if ((port & 0x0003) == 0x0002) port = (port & 0xff00) | 0xfe;	// TODO: orly
 			if ((port & 0x00ff) == 0x001f) port = 0x1f;			// TODO: orly
+			if ((port & 0xff) == 0x00fb) port = 0x00fb;			// FB: covox
 			break;
 		case HW_P1024:
 			if ((port & 0x8002) == 0x0000) port = 0x7ffd;
@@ -66,7 +67,7 @@ int zxGetPort(int port, int hardware) {
 			// if ((port & 0x00ff) == 0x001f) port = 0x1f;			// TODO: P1024 doesn't have Kempston
 			break;
 		case HW_SCORP:
-			if ((port & 0x0023) == 0x0001) port = 0x00dd;		// printer
+			if ((port & 0x0023) == 0x0001) port = 0x00dd;		// printer (covox)
 			if ((port & 0x0523) == 0x0003) port = 0xfadf;		// mouse
 			if ((port & 0x0523) == 0x0103) port = 0xfbdf;
 			if ((port & 0x0523) == 0x0503) port = 0xffdf;
@@ -295,6 +296,9 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 								comp->block7ffd = val & 0x20;
 								zxMapMemory(comp);
 								break;
+							case 0x00fb:
+								comp->covox = val;
+								break;
 						}
 						break;
 					case HW_P1024:
@@ -326,6 +330,9 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 							case 0x1ffd:
 								comp->prt1 = val;
 								zxMapMemory(comp);
+								break;
+							case 0x00dd:
+								comp->covox = val;
 								break;
 						}
 						break;

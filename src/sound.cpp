@@ -41,7 +41,7 @@ int sndChunks = 882;
 int sndBufSize = 1764;
 double tatbyte = 162;
 double tickCount = 162;
-uint8_t lev,levr,levl;
+int lev,levr,levl;
 
 #ifndef WIN32
 	int32_t ossHandle;			// oss
@@ -70,6 +70,8 @@ double sndSync(double tk,int fast) {
 	if (zx->tape->flag & TAPE_ON) {
 		lev += (zx->tape->outsig ? tapeVolume : 0) + (zx->tape->signal ? tapeVolume : 0);
 	}
+	if (zx->flags & ZX_COVOX) lev += zx->covox;
+
 	lev *= 0.16;
 	levl = lev;
 	levr = lev;
@@ -82,10 +84,13 @@ double sndSync(double tk,int fast) {
 	levl += gsvol.left * gsVolume / 100.0;
 	levr += gsvol.right * gsVolume / 100.0;
 
+	if (levl > 0xff) levl = 0xff;
+	if (levr > 0xff) levr = 0xff;
+
 //	if (smpCount >= sndChunks) return tk;
-	ringBuffer[ringPos] = levl;
+	ringBuffer[ringPos] = (levl & 0xff);
 	ringPos++;
-	ringBuffer[ringPos] = levr;
+	ringBuffer[ringPos] = (levr & 0xff);
 	ringPos++;
 	ringPos &= 0x3fff;
 //	smpCount++;

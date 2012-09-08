@@ -37,10 +37,7 @@ extern "C" {
 // zx flags
 #define	ZX_BREAK	1
 #define	ZX_JUSTBORN	(1<<1)	// just created zx. need to reset after selection
-// zx after-effect ops
-#define	ZX_NONE		0
-#define	ZX_OUT		1	// last op was OUT: real out must be after vidSync
-#define	ZX_MWR		2	// last op has memWr: real writing must be after vidSync
+#define	ZX_COVOX	(1<<2)	// have covox
 
 typedef struct {
 	const char* name;
@@ -69,6 +66,7 @@ typedef struct {
 	IDE* ide;
 	GSound* gs;
 	TSound* ts;
+	uint8_t covox;
 	int rzxSize;
 	RZXFrame* rzxData;
 	unsigned long rzxFrame;
