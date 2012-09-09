@@ -14,7 +14,8 @@ extern "C" {
 #include "input.h"
 #include "tape.h"
 #include "bdi.h"
-#include "ayym.h"		// sound
+#include "ayym.h"		// AY/YM/TS sound
+#include "soundrive.h"		// covox/soundrive
 #include "gs.h"
 #include "hdd.h"
 // hw type
@@ -37,7 +38,6 @@ extern "C" {
 // zx flags
 #define	ZX_BREAK	1
 #define	ZX_JUSTBORN	(1<<1)	// just created zx. need to reset after selection
-#define	ZX_COVOX	(1<<2)	// have covox
 
 typedef struct {
 	const char* name;
@@ -66,7 +66,7 @@ typedef struct {
 	IDE* ide;
 	GSound* gs;
 	TSound* ts;
-	uint8_t covox;
+	SDrive* sdrv;
 	int rzxSize;
 	RZXFrame* rzxData;
 	unsigned long rzxFrame;

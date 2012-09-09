@@ -56,7 +56,6 @@ Z80EX_WORD zxGetPort(Z80EX_WORD port, int hardware) {
 			if ((port & 0x05a1) == 0x0581) port = 0xffdf;
 			if ((port & 0x0003) == 0x0002) port = (port & 0xff00) | 0xfe;	// TODO: orly
 			if ((port & 0x00ff) == 0x001f) port = 0x1f;			// TODO: orly
-			if ((port & 0xff) == 0x00fb) port = 0x00fb;			// FB: covox
 			break;
 		case HW_P1024:
 			if ((port & 0x8002) == 0x0000) port = 0x7ffd;
@@ -288,6 +287,7 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 					case HW_ZX48:
 						break;
 					case HW_PENT:
+						sdrvOut(comp->sdrv,port & 0x00ff,val);
 						switch(port) {
 							case 0x7ffd:
 								if (comp->block7ffd) break;
@@ -295,9 +295,6 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 								comp->vid->curscr = (val & 0x08) ? 1 : 0;
 								comp->block7ffd = val & 0x20;
 								zxMapMemory(comp);
-								break;
-							case 0x00fb:
-								comp->covox = val;
 								break;
 						}
 						break;
@@ -332,7 +329,7 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 								zxMapMemory(comp);
 								break;
 							case 0x00dd:
-								comp->covox = val;
+								sdrvOut(comp->sdrv,0xfb,val);
 								break;
 						}
 						break;
@@ -410,6 +407,7 @@ ZXComp* zxCreate() {
 	comp->ide = ideCreate(IDE_NONE);
 	comp->ts = tsCreate(TS_NONE,SND_AY,SND_NONE);
 	comp->gs = gsCreate();
+	comp->sdrv = sdrvCreate(SDRV_105_2);
 	comp->rzxSize = 0;
 	comp->rzxData = NULL;
 	comp->gsCount = 0;
@@ -432,6 +430,7 @@ void zxDestroy(ZXComp* comp) {
 	ideDestroy(comp->ide);
 	tsDestroy(comp->ts);
 	gsDestroy(comp->gs);
+	sdrvDestroy(comp->sdrv);
 	if (comp->rzxData) free(comp->rzxData);
 	free(comp);
 }

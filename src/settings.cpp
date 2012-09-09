@@ -483,7 +483,8 @@ void saveConfig() {
 	optSet("SOUND","gs",(zx->gs->flag & GS_ENABLE) != 0);
 	optSet("SOUND","gs.reset",(zx->gs->flag & GS_RESET) != 0);
 	optSet("SOUND","gs.stereo",zx->gs->stereo);
-	optSet("SOUND","covox",(zx->flags & ZX_COVOX) != 0);
+//	optSet("SOUND","covox",(zx->flags & ZX_COVOX) != 0);
+	optSet("SOUND","soundrive_type",zx->sdrv->type);
 
 	optSet("DISK","type",zx->bdi->fdc->type);
 	optSet("DISK","fast",std::string((zx->bdi->fdc->turbo) ? "yes" : "no"));
@@ -873,7 +874,10 @@ void loadConfig(bool dev) {
 						if (pnam=="combo.interval") shotInterval = atoi(pval.c_str());
 						break;
 					case SECT_SOUND:
-						setFlagBit(str2bool(pval),&zx->flags,ZX_COVOX);
+						if ((pnam=="covox") || (pnam=="soundrive_type")) {
+							zx->sdrv->type = atoi(pval.c_str());
+							delOption("SOUND","covox");
+						}
 						break;
 					case SECT_DISK:
 						if (pnam=="A") setDiskString(zx->bdi->fdc->flop[0],pval);

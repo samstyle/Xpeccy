@@ -101,6 +101,10 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	setupUi.tsbox->addItem("NedoPC",QVariant(TS_NEDOPC));
 	setupUi.gstereobox->addItem("Mono",QVariant(GS_MONO));
 	setupUi.gstereobox->addItem("L:1,2; R:3,4",QVariant(GS_12_34));
+	setupUi.sdrvBox->addItem("none",QVariant(SDRV_NONE));
+	setupUi.sdrvBox->addItem("Covox only",QVariant(SDRV_COVOX));
+	setupUi.sdrvBox->addItem("Soundrive 1.05 mode 1",QVariant(SDRV_105_1));
+	setupUi.sdrvBox->addItem("Soundrive 1.05 mode 2",QVariant(SDRV_105_2));
 // bdi
 // WTF? QtDesigner doesn't save this properties
 	setupUi.disklist->horizontalHeader()->setVisible(true);
@@ -292,7 +296,7 @@ void SetupWin::start() {
 	setupUi.gstereobox->setCurrentIndex(setupUi.gstereobox->findData(QVariant(zx->gs->stereo)));
 	setupUi.gsgroup->setChecked(zx->gs->flag & GS_ENABLE);
 	setupUi.tsbox->setCurrentIndex(setupUi.tsbox->findData(QVariant(zx->ts->type)));
-	setupUi.covoxBox->setChecked(zx->flags & ZX_COVOX);
+	setupUi.sdrvBox->setCurrentIndex(setupUi.sdrvBox->findData(QVariant(zx->sdrv->type)));
 // input
 	buildkeylist();
 	buildjmaplist();
@@ -430,7 +434,7 @@ void SetupWin::apply() {
 	if (setupUi.gsgroup->isChecked()) zx->gs->flag |= GS_ENABLE;
 	if (setupUi.gsrbox->isChecked()) zx->gs->flag |= GS_RESET;
 	zx->gs->stereo = setupUi.gstereobox->itemData(setupUi.gstereobox->currentIndex()).toInt();
-	if (setupUi.covoxBox->isChecked()) zx->flags |= ZX_COVOX; else zx->flags &= ~ZX_COVOX;
+	zx->sdrv->type = setupUi.sdrvBox->itemData(setupUi.sdrvBox->currentIndex()).toInt();
 // input
 	if (setupUi.inpDevice->currentIndex() < 1) {
 		optSet(OPT_JOYNAME,std::string(""));

@@ -70,7 +70,6 @@ double sndSync(double tk,int fast) {
 	if (zx->tape->flag & TAPE_ON) {
 		lev += (zx->tape->outsig ? tapeVolume : 0) + (zx->tape->signal ? tapeVolume : 0);
 	}
-	if (zx->flags & ZX_COVOX) lev += zx->covox;
 
 	lev *= 0.16;
 	levl = lev;
@@ -83,6 +82,10 @@ double sndSync(double tk,int fast) {
 	gsPair gsvol = gsGetVolume(zx->gs);
 	levl += gsvol.left * gsVolume / 100.0;
 	levr += gsvol.right * gsVolume / 100.0;
+
+	sdrvPair sdvol = sdrvGetVolume(zx->sdrv);
+	levl += sdvol.left * beepVolume / 100.0;
+	levr += sdvol.right * beepVolume / 100.0;
 
 	if (levl > 0xff) levl = 0xff;
 	if (levr > 0xff) levr = 0xff;
