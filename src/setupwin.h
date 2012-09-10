@@ -36,7 +36,7 @@ class SetupWin : public QDialog {
 		void chablock(QModelIndex);
 		void setTapeBreak(int,int);
 		void hddcap();
-		void editrset(QModelIndex);
+        void editrset();
 		void setrpart();
 		void hidersedit();
 		void addNewRomset();

@@ -142,7 +142,8 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	QObject::connect(setupUi.machbox,SIGNAL(currentIndexChanged(int)),this,SLOT(setmszbox(int)));
 //	QObject::connect(setupUi.mszbox,SIGNAL(currentIndexChanged(int)),this,SLOT(okbuts()));
 	QObject::connect(setupUi.cpufrq,SIGNAL(valueChanged(int)),this,SLOT(updfrq()));
-	QObject::connect(setupUi.rstab,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(editrset(QModelIndex)));
+    QObject::connect(setupUi.rstab,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(editrset()));
+    connect(setupUi.rsedit,SIGNAL(released()),this,SLOT(editrset()));
 	QObject::connect(setupUi.rse_cancel,SIGNAL(released()),this,SLOT(hidersedit()));
 	QObject::connect(setupUi.rse_apply,SIGNAL(released()),this,SLOT(setrpart()));
 	QObject::connect(setupUi.rse_grp_single,SIGNAL(toggled(bool)),this,SLOT(recheck_separate(bool)));
@@ -557,7 +558,7 @@ void SetupWin::addNewRomset() {
 
 // machine
 
-void SetupWin::editrset(QModelIndex idx) {
+void SetupWin::editrset() {
 	int cbx = setupUi.rsetbox->currentIndex();
 	if (cbx < 0) return;
 	std::string rpth = optGetString(OPT_ROMDIR);

@@ -229,3 +229,6 @@ New	Noflic video filter.
 build 20120908
 New	Covox. It works on port FB at Pentagon (but not Pentagon1024) and port DD at Scorpion
 Fix	PageUp/PageDown incorrect working
+
+build 20120909
+New	Soundrive. 1.05mode1, 1.05mode2 or Covox only.
