@@ -279,7 +279,10 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 			break;
 		default:
 			if ((port & 0xff) == 0xfe) {
-				comp->vid->brdcol = val & 0x07;
+				comp->vid->nextbrd = val & 0x07;
+				if (!(comp->vid->flags & VID_BORDER_4T)) {
+					comp->vid->brdcol = val & 0x07;
+				}
 				comp->beeplev = val & 0x10;
 				comp->tape->outsig = (val & 0x08) ? 1 : 0;
 			} else {

@@ -99,6 +99,7 @@ unsigned char* vidGetScreen() {
 #define	MTF_LINEND	1
 #define	MTF_FRMEND	(1<<1)
 #define	MTF_INT		(1<<2)
+#define	MTF_4T		(1<<3)
 
 #define MTT_INVIS	0
 #define	MTT_BORDER	1
@@ -140,6 +141,9 @@ void vidFillMatrix(Video* vid) {
 			if ((y < vid->lcut.v) || (y >= vid->rcut.v) || (x < vid->lcut.h) || (x >= vid->rcut.h)) {
 				vid->matrix[i].type = MTT_INVIS;
 			} else {
+				if ((x & 7) == 0) {
+					vid->matrix[i].flag |= MTF_4T;
+				}
 				if ((y < vid->bord.v) || (y > vid->bord.v + 191) || (x < vid->bord.h) || (x > vid->bord.h + 255)) {
 					vid->matrix[i].type = MTT_BORDER;
 				} else {
@@ -252,6 +256,7 @@ int vidSync(Video* vid, float dotDraw) {
 		mtx = &vid->matrix[vid->dotCount];
 		vid->dotCount++;
 		if ((mtx->flag & MTF_INT) && (vid->intSignal == 0)) res |= VID_INT;
+		if (mtx->flag & MTF_4T) vid->brdcol = vid->nextbrd;
 		vid->intSignal = (mtx->flag & MTF_INT) ? 1 : 0;
 		if (mtx->type != MTT_INVIS) {
 			switch (vid->mode) {

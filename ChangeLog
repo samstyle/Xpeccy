@@ -234,4 +234,5 @@ build 20120909
 New	Soundrive. 1.05mode1, 1.05mode2 or Covox only.
 
 build 20120916
+New	Checkbox for update border every 4T, as classic ZX does
 Fix	Horizontal position of INT didn't saved to config file

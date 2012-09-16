@@ -377,7 +377,7 @@ void saveProfiles() {
 		cfile << int2str(lays[i].full.h) << ":" << int2str(lays[i].full.v) << ":";
 		cfile << int2str(lays[i].bord.h) << ":" << int2str(lays[i].bord.v) << ":";
 		cfile << int2str(lays[i].sync.h) << ":" << int2str(lays[i].sync.v) << ":";
-		cfile << int2str(lays[i].intsz) << ":" << int2str(lays[i].intpos.v) << int2str(lays[i].intpos.h) << "\n";
+		cfile << int2str(lays[i].intsz) << ":" << int2str(lays[i].intpos.v) << ":" << int2str(lays[i].intpos.h) << "\n";
 	}
 	cfile << "scrDir = " << shotDir.c_str() << "\n";
 	cfile << "scrFormat = " << optGetName(OPT_SHOTFRM,shotExt).c_str() << "\n";
@@ -474,7 +474,10 @@ void saveConfig() {
 	optSet("ROMSET","gs",curProf->gsFile);
 	optSet("ROMSET","current",curProf->rsName);
 	optSet("ROMSET","reset",rmnam[zx->resbank]);
+
 	optSet("VIDEO","geometry",curProf->layName);
+	optSet("VIDEO","4t-border",(zx->vid->flags & VID_BORDER_4T) ? "yes" : "no");
+
 	optSet("SOUND","chip1",zx->ts->chipA->type);
 	optSet("SOUND","chip2",zx->ts->chipB->type);
 	optSet("SOUND","chip1.stereo",zx->ts->chipA->stereo);
@@ -866,6 +869,7 @@ void loadConfig(bool dev) {
 						break;
 					case SECT_VIDEO:
 						if (pnam == "geometry") curProf->layName = pval;
+						if (pnam == "4t-border") setFlagBit(str2bool(pval),&zx->vid->flags,VID_BORDER_4T);
 						break;
 					case SECT_SCRSHOT:
 						if (pnam=="folder") shotDir = pval;

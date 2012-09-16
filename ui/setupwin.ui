@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>505</width>
-    <height>464</height>
+    <height>460</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -457,6 +457,13 @@
         <layout class="QVBoxLayout" name="verticalLayout_23">
          <item>
           <layout class="QGridLayout" name="gridLayout_2">
+           <item row="0" column="2">
+            <widget class="QCheckBox" name="noflichk">
+             <property name="text">
+              <string>Noflic</string>
+             </property>
+            </widget>
+           </item>
            <item row="0" column="1">
             <widget class="QCheckBox" name="fscchk">
              <property name="text">
@@ -471,10 +478,10 @@
              </property>
             </widget>
            </item>
-           <item row="0" column="2">
-            <widget class="QCheckBox" name="noflichk">
+           <item row="1" column="0">
+            <widget class="QCheckBox" name="border4T">
              <property name="text">
-              <string>Noflic</string>
+              <string>4T border</string>
              </property>
             </widget>
            </item>

@@ -16,6 +16,7 @@ extern "C" {
 #define VF_NOFLIC		(1<<5)
 // vid->flags (vid)
 #define	VID_SLOWMEM		1
+#define	VID_BORDER_4T		(1<<1)
 // screen drawing mode
 #define	VID_NORMAL	0
 #define	VID_ALCO	1
@@ -47,6 +48,7 @@ typedef struct {
 	int flash;
 	int curscr;
 	unsigned char brdcol;
+	unsigned char nextbrd;
 	unsigned char fcnt;
 	unsigned char atrbyte;
 	unsigned char* scrptr;
