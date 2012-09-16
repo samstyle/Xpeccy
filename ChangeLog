@@ -232,3 +232,6 @@ Fix	PageUp/PageDown incorrect working
 
 build 20120909
 New	Soundrive. 1.05mode1, 1.05mode2 or Covox only.
+
+build 20120916
+Fix	Horizontal position of INT didn't saved to config file

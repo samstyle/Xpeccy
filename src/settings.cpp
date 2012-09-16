@@ -377,7 +377,7 @@ void saveProfiles() {
 		cfile << int2str(lays[i].full.h) << ":" << int2str(lays[i].full.v) << ":";
 		cfile << int2str(lays[i].bord.h) << ":" << int2str(lays[i].bord.v) << ":";
 		cfile << int2str(lays[i].sync.h) << ":" << int2str(lays[i].sync.v) << ":";
-		cfile << int2str(lays[i].intsz) << ":" << int2str(lays[i].intpos.v) << "\n";
+		cfile << int2str(lays[i].intsz) << ":" << int2str(lays[i].intpos.v) << int2str(lays[i].intpos.h) << "\n";
 	}
 	cfile << "scrDir = " << shotDir.c_str() << "\n";
 	cfile << "scrFormat = " << optGetName(OPT_SHOTFRM,shotExt).c_str() << "\n";
