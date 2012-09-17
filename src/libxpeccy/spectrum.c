@@ -166,7 +166,8 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 	res3 = res2 + z80ex_op_tstate(cpu);
 	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
 	res4 = res3;
-	if ((adr & 0xc000) == 0x4000) vidWaitSlow(comp->vid);
+	if (((adr & 0xc000) == 0x4000) && (comp->vid->flags & VID_SLOWMEM))
+		vidWaitSlow(comp->vid);
 	Z80EX_BYTE res = memRd(comp->mem,adr);
 	return res;
 }
@@ -179,7 +180,8 @@ void memwr(Z80EX_CONTEXT* cpu, Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 	res3 = res2 + z80ex_op_tstate(cpu);
 	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
 	res4 = res3;
-	if ((adr & 0xc000) == 0x4000) vidWaitSlow(comp->vid);
+	if (((adr & 0xc000) == 0x4000) && (comp->vid->flags & VID_SLOWMEM))
+		vidWaitSlow(comp->vid);
 	memWr(comp->mem,adr,val);
 	if (comp->mem->flags & MEM_BRK_WRITE) {
 		comp->flags |= ZX_BREAK;

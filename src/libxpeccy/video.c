@@ -67,7 +67,7 @@ Video* vidCreate(Memory* me) {
 		}
 		sadr += 0x700;			// -#100 +#800
 	}
-	vidSetLayout(vid,448,320,138,80,64,32,0,0,64);
+	vidSetLayout(vid,448,320,128,80,80,32,0,0,64);
 	vid->mode = VID_NORMAL;
 
 	vid->curr.h = 0;
@@ -117,11 +117,11 @@ waits for +2a, +3
 	ww--wwww wwwwwwww : same
 */
 
-int waitsTab_A[16] = {0,0,12,12,10,10,8,8,6,6,4,4,2,2,0,0};
-int waitsTab_B[16] = {2,2,0,0,14,14,12,12,10,10,8,8,6,6,4,4};
+int waitsTab_A[16] = {10,9,8,7,6,5,4,3,2,1,0,0,0,0,12,11};
+int waitsTab_B[16] = {2,1,0,0,14,13,12,11,10,9,8,7,6,5,4,3};
 
 void vidFillMatrix(Video* vid) {
-	int x,y,i,nya = 0,adr;
+	int x,y,i,adr,nya=0;
 	i = 0;
 	adr = 0;
 	for (y = 0; y < vid->full.v; y++) {
@@ -131,9 +131,9 @@ void vidFillMatrix(Video* vid) {
 
 			if ((x >= vid->bord.h) && (x < (vid->bord.h + 256)) && (y >= vid->bord.v) && (y < (vid->bord.v + 192))) {	// on screen
 				if (x == vid->bord.h) {
-					vid->matrix[i - 1].wait = 12;
-					vid->matrix[i - 2].wait = 12;
-					nya = 4;
+				//	vid->matrix[i - 1].wait = 12;
+				//	vid->matrix[i - 2].wait = 11;
+					nya = 0;
 				}
 				vid->matrix[i].wait = waitsTab_A[nya & 15];
 				nya++;
@@ -203,6 +203,16 @@ void vidFillMatrix(Video* vid) {
 		vid->matrix[adr].flag |= MTF_INT;
 		adr++;
 	}
+
+	adr = vid->intpos.v * vid->full.h + vid->intpos.h;
+	int tk = 0;
+	while (adr < (vid->full.h * vid->full.v)) {
+		vid->matrix[adr].tick = tk;
+		vid->matrix[adr+1].tick = tk;
+		adr += 2;
+		tk++;
+	}
+	printf("%i T before screen\n",(vid->full.h * (vid->bord.v - vid->intpos.v) + (vid->bord.h - vid->intpos.h)) >> 1);
 }
 
 void vidUpdate(Video* vid) {
@@ -245,8 +255,10 @@ void vidDarkTail(Video* vid) {
 }
 
 void vidWaitSlow(Video* vid) {
-	if (~vid->flags & VID_SLOWMEM) return;
-	if (vid->matrix[vid->dotCount].wait != 0) vidSync(vid,vid->matrix[vid->dotCount].wait);
+	if (vid->matrix[vid->dotCount].wait != 0) {
+		vidSync(vid,vid->matrix[vid->dotCount].wait);
+//		printf("wait...%i T on %i\n",vid->matrix[vid->dotCount].wait >> 1,vid->matrix[vid->dotCount].tick);
+	}
 }
 
 int vidSync(Video* vid, float dotDraw) {

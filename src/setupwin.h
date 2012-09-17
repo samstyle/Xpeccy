@@ -38,7 +38,7 @@ class SetupWin : public QDialog {
 		void hddcap();
         void editrset();
 		void setrpart();
-		void hidersedit();
+//		void hidersedit();
 		void addNewRomset();
 		void rmRomset();
 		void recheck_single(bool);

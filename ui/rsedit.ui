@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>RSEdialog</class>
+ <widget class="QDialog" name="RSEdialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>385</width>
+    <height>244</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Romset editor</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout" stretch="0,10,0">
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_16">
+     <item>
+      <widget class="QGroupBox" name="rse_grp_single">
+       <property name="title">
+        <string>Single file</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="QComboBox" name="rse_singlefile"/>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="groupBox_5">
+       <property name="title">
+        <string>General Sound</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_5">
+        <item>
+         <widget class="QComboBox" name="rse_gsfile"/>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="rse_grp_separate">
+     <property name="title">
+      <string>Separate Files</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_20" columnstretch="0,10,0">
+      <item row="3" column="2">
+       <widget class="QSpinBox" name="rse_part3"/>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="rse_file1"/>
+      </item>
+      <item row="1" column="2">
+       <widget class="QSpinBox" name="rse_part1"/>
+      </item>
+      <item row="3" column="1">
+       <widget class="QComboBox" name="rse_file3"/>
+      </item>
+      <item row="0" column="2">
+       <widget class="QSpinBox" name="rse_part0"/>
+      </item>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="rse_file0"/>
+      </item>
+      <item row="2" column="1">
+       <widget class="QComboBox" name="rse_file2"/>
+      </item>
+      <item row="2" column="2">
+       <widget class="QSpinBox" name="rse_part2"/>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_34">
+        <property name="text">
+         <string>Basic128</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_35">
+        <property name="text">
+         <string>Basic48</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_36">
+        <property name="text">
+         <string>Shadow</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_37">
+        <property name="text">
+         <string>DOS</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QPushButton" name="rse_cancel">
+       <property name="text">
+        <string>Cancel</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../xpeccy.qrc">
+         <normaloff>:/images/cancel.png</normaloff>:/images/cancel.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="rse_apply">
+       <property name="text">
+        <string>OK</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../xpeccy.qrc">
+         <normaloff>:/images/ok-apply.png</normaloff>:/images/ok-apply.png</iconset>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../xpeccy.qrc"/>
+ </resources>
+ <connections/>
+</ui>

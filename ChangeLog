@@ -236,3 +236,7 @@ New	Soundrive. 1.05mode1, 1.05mode2 or Covox only.
 build 20120916
 New	Checkbox for update border every 4T, as classic ZX does
 Fix	Horizontal position of INT didn't saved to config file
+
+build 20120917
+Wrk	Romset editor showing in separate window
+Wrk	Trying to implement contended memory, but it doesn't work properly. Alpha version, don't touch this.

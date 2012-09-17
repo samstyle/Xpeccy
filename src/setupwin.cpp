@@ -18,14 +18,16 @@
 #include "filer.h"
 #include "filetypes/filetypes.h"
 
-//#include "ui_selname.h"
+#include "ui_rsedit.h"
 #include "ui_setupwin.h"
 #include "ui_umadial.h"
 
 Ui::SetupWin setupUi;
 Ui::UmaDial uia;
+Ui::RSEdialog rseUi;
 
 SetupWin* optWin;
+QDialog* rseditor;
 
 std::vector<RomSet> rsl;
 std::string GSRom;
@@ -60,6 +62,10 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	uia.setupUi(umadial);
 	umadial->setModal(true);
 
+	rseditor = new QDialog(this);
+	rseUi.setupUi(rseditor);
+	rseditor->setModal(true);
+
 	uint32_t i;
 	std::vector<std::string> list;
 // machine
@@ -68,7 +74,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 		setupUi.machbox->addItem(QString::fromLocal8Bit(list[i].c_str()));
 	}
 	setupUi.resbox->addItems(QStringList()<<"0:Basic 128"<<"1:Basic48"<<"2:Shadow"<<"3:DOS");
-	setupUi.rssel->hide();
+//	setupUi.rssel->hide();
 	QTableWidgetItem* itm;
 	for (i=0; i<6; i++) {
 		itm = new QTableWidgetItem; setupUi.rstab->setItem(i,1,itm);
@@ -140,16 +146,16 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 // machine
 	QObject::connect(setupUi.rsetbox,SIGNAL(currentIndexChanged(int)),this,SLOT(buildrsetlist()));
 	QObject::connect(setupUi.machbox,SIGNAL(currentIndexChanged(int)),this,SLOT(setmszbox(int)));
-//	QObject::connect(setupUi.mszbox,SIGNAL(currentIndexChanged(int)),this,SLOT(okbuts()));
 	QObject::connect(setupUi.cpufrq,SIGNAL(valueChanged(int)),this,SLOT(updfrq()));
     QObject::connect(setupUi.rstab,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(editrset()));
-    connect(setupUi.rsedit,SIGNAL(released()),this,SLOT(editrset()));
-	QObject::connect(setupUi.rse_cancel,SIGNAL(released()),this,SLOT(hidersedit()));
-	QObject::connect(setupUi.rse_apply,SIGNAL(released()),this,SLOT(setrpart()));
-	QObject::connect(setupUi.rse_grp_single,SIGNAL(toggled(bool)),this,SLOT(recheck_separate(bool)));
-	QObject::connect(setupUi.rse_grp_separate,SIGNAL(toggled(bool)),this,SLOT(recheck_single(bool)));
 	QObject::connect(setupUi.addrset,SIGNAL(released()),this,SLOT(addNewRomset()));
 	QObject::connect(setupUi.rmrset,SIGNAL(released()),this,SLOT(rmRomset()));
+	connect(setupUi.rsedit,SIGNAL(released()),this,SLOT(editrset()));
+
+	connect(rseUi.rse_cancel,SIGNAL(released()),rseditor,SLOT(hide()));
+	connect(rseUi.rse_apply,SIGNAL(released()),this,SLOT(setrpart()));
+	connect(rseUi.rse_grp_single,SIGNAL(toggled(bool)),this,SLOT(recheck_separate(bool)));
+	connect(rseUi.rse_grp_separate,SIGNAL(toggled(bool)),this,SLOT(recheck_single(bool)));
 // video
 	QObject::connect(setupUi.pathtb,SIGNAL(released()),this,SLOT(selsspath()));
 	QObject::connect(setupUi.bszsld,SIGNAL(valueChanged(int)),this,SLOT(chabsz()));
@@ -232,22 +238,27 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 }
 
 void SetupWin::recheck_single(bool st) {
-	setupUi.rse_grp_single->setChecked(!st);
+	rseUi.rse_grp_single->setChecked(!st);
 }
-void SetupWin::recheck_separate(bool st) {setupUi.rse_grp_separate->setChecked(!st);}
+void SetupWin::recheck_separate(bool st) {
+	rseUi.rse_grp_separate->setChecked(!st);
+}
 
-void SetupWin::okay() {apply();reject();}
+void SetupWin::okay() {
+	apply();
+	reject();
+}
 
 void SetupWin::start() {
 	uint32_t i;
 	emulPause(true,PR_OPTS);
 	XProfile* curProf = getCurrentProfile();
 // machine
-	setupUi.rstab->show();
-	setupUi.rssel->hide();
-	setupUi.rsetbox->setEnabled(true);
-	setupUi.addrset->setEnabled(true);
-	setupUi.rmrset->setEnabled(true);
+//	setupUi.rstab->show();
+//	setupUi.rssel->hide();
+//	setupUi.rsetbox->setEnabled(true);
+//	setupUi.addrset->setEnabled(true);
+//	setupUi.rmrset->setEnabled(true);
 	setupUi.rsetbox->clear();
 	rsl = getRomsetList();
 	GSRom = curProf->gsFile;
@@ -269,8 +280,9 @@ void SetupWin::start() {
 // video
 	setupUi.dszchk->setChecked((vidFlag & VF_DOUBLE));
 	setupUi.fscchk->setChecked(vidFlag & VF_FULLSCREEN);
-	setupUi.border4T->setChecked(zx->vid->flags & VID_BORDER_4T);
-	setupUi.noflichk->setChecked(vidFlag & VF_NOFLIC);
+    setupUi.noflichk->setChecked(vidFlag & VF_NOFLIC);
+    setupUi.border4T->setChecked(zx->vid->flags & VID_BORDER_4T);
+    setupUi.contMem->setChecked(zx->vid->flags & VID_SLOWMEM);
 	setupUi.bszsld->setValue((int)(brdsize * 100));
 	setupUi.pathle->setText(QString::fromLocal8Bit(optGetString(OPT_SHOTDIR).c_str()));
 	setupUi.ssfbox->setCurrentIndex(setupUi.ssfbox->findData(optGetInt(OPT_SHOTFRM)));
@@ -407,9 +419,10 @@ void SetupWin::apply() {
 // video
 	setFlagBit(setupUi.dszchk->isChecked(),&vidFlag,VF_DOUBLE);
 	setFlagBit(setupUi.fscchk->isChecked(),&vidFlag,VF_FULLSCREEN);
-	setFlagBit(setupUi.border4T->isChecked(),&zx->vid->flags,VID_BORDER_4T);
 	setFlagBit(setupUi.noflichk->isChecked(),&vidFlag,VF_NOFLIC);
-	brdsize = setupUi.bszsld->value()/100.0;
+    setFlagBit(setupUi.border4T->isChecked(),&zx->vid->flags,VID_BORDER_4T);
+    setFlagBit(setupUi.contMem->isChecked(),&zx->vid->flags,VID_SLOWMEM);
+    brdsize = setupUi.bszsld->value()/100.0;
 	optSet(OPT_SHOTDIR,std::string(setupUi.pathle->text().toLocal8Bit().data()));
 	optSet(OPT_SHOTFRM,setupUi.ssfbox->itemData(setupUi.ssfbox->currentIndex()).toInt());
 	optSet(OPT_SHOTCNT,setupUi.scntbox->value());
@@ -566,53 +579,60 @@ void SetupWin::editrset() {
 	std::string rpth = optGetString(OPT_ROMDIR);
 	QDir rdir(QString(rpth.c_str()));
 	QStringList rlst = rdir.entryList(QStringList() << "*.rom",QDir::Files,QDir::Name);
-	fillRFBox(setupUi.rse_singlefile,rlst);
-	fillRFBox(setupUi.rse_file0,rlst);
-	fillRFBox(setupUi.rse_file1,rlst);
-	fillRFBox(setupUi.rse_file2,rlst);
-	fillRFBox(setupUi.rse_file3,rlst);
-	fillRFBox(setupUi.rse_gsfile,rlst);
-	setupUi.rse_singlefile->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].file.c_str())) + 1);
-	setupUi.rse_file0->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].roms[0].path.c_str())) + 1);
-	setupUi.rse_file1->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].roms[1].path.c_str())) + 1);
-	setupUi.rse_file2->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].roms[2].path.c_str())) + 1);
-	setupUi.rse_file3->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].roms[3].path.c_str())) + 1);
-	setupUi.rse_part0->setValue(rsl[cbx].roms[0].part);
-	setupUi.rse_part1->setValue(rsl[cbx].roms[1].part);
-	setupUi.rse_part2->setValue(rsl[cbx].roms[2].part);
-	setupUi.rse_part3->setValue(rsl[cbx].roms[3].part);
-	setupUi.rse_gsfile->setCurrentIndex(rlst.indexOf(QString(GSRom.c_str())) + 1);
-	setupUi.rse_grp_single->setChecked(rsl[cbx].file != "");
-	setupUi.rstab->hide();
-	setupUi.rsetbox->setEnabled(false);
-	setupUi.addrset->setEnabled(false);
-	setupUi.rmrset->setEnabled(false);
-	setupUi.rssel->show();
+	fillRFBox(rseUi.rse_singlefile,rlst);
+	fillRFBox(rseUi.rse_file0,rlst);
+	fillRFBox(rseUi.rse_file1,rlst);
+	fillRFBox(rseUi.rse_file2,rlst);
+	fillRFBox(rseUi.rse_file3,rlst);
+	fillRFBox(rseUi.rse_gsfile,rlst);
+	rseUi.rse_singlefile->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].file.c_str())) + 1);
+	rseUi.rse_file0->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].roms[0].path.c_str())) + 1);
+	rseUi.rse_file1->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].roms[1].path.c_str())) + 1);
+	rseUi.rse_file2->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].roms[2].path.c_str())) + 1);
+	rseUi.rse_file3->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].roms[3].path.c_str())) + 1);
+	rseUi.rse_part0->setValue(rsl[cbx].roms[0].part);
+	rseUi.rse_part1->setValue(rsl[cbx].roms[1].part);
+	rseUi.rse_part2->setValue(rsl[cbx].roms[2].part);
+	rseUi.rse_part3->setValue(rsl[cbx].roms[3].part);
+	rseUi.rse_gsfile->setCurrentIndex(rlst.indexOf(QString(GSRom.c_str())) + 1);
+	rseUi.rse_grp_single->setChecked(rsl[cbx].file != "");
+
+//	setupUi.rstab->hide();
+//	setupUi.rsetbox->setEnabled(false);
+//	setupUi.addrset->setEnabled(false);
+//	setupUi.rmrset->setEnabled(false);
+//	setupUi.rssel->show();
+	rseditor->show();
 }
 
 void SetupWin::setrpart() {
 	int cbx = setupUi.rsetbox->currentIndex();
-	GSRom = getRFText(setupUi.rse_gsfile);
-	if (setupUi.rse_grp_single->isChecked()) {
-		rsl[cbx].file = getRFText(setupUi.rse_singlefile);
+	GSRom = getRFText(rseUi.rse_gsfile);
+	if (rseUi.rse_grp_single->isChecked()) {
+		rsl[cbx].file = getRFText(rseUi.rse_singlefile);
 	} else {
 		rsl[cbx].file = "";
 	}
-	rsl[cbx].roms[0].path = getRFText(setupUi.rse_file0); rsl[cbx].roms[0].part = setupUi.rse_part0->value();
-	rsl[cbx].roms[1].path = getRFText(setupUi.rse_file1); rsl[cbx].roms[1].part = setupUi.rse_part1->value();
-	rsl[cbx].roms[2].path = getRFText(setupUi.rse_file2); rsl[cbx].roms[2].part = setupUi.rse_part2->value();
-	rsl[cbx].roms[3].path = getRFText(setupUi.rse_file3); rsl[cbx].roms[3].part = setupUi.rse_part3->value();
+	rsl[cbx].roms[0].path = getRFText(rseUi.rse_file0);
+	rsl[cbx].roms[0].part = rseUi.rse_part0->value();
+	rsl[cbx].roms[1].path = getRFText(rseUi.rse_file1);
+	rsl[cbx].roms[1].part = rseUi.rse_part1->value();
+	rsl[cbx].roms[2].path = getRFText(rseUi.rse_file2);
+	rsl[cbx].roms[2].part = rseUi.rse_part2->value();
+	rsl[cbx].roms[3].path = getRFText(rseUi.rse_file3);
+	rsl[cbx].roms[3].part = rseUi.rse_part3->value();
 	buildrsetlist();
-	hidersedit();
+	rseditor->hide();
+//	hidersedit();
 }
 
-void SetupWin::hidersedit() {
-	setupUi.rssel->hide();
-	setupUi.rstab->show();
-	setupUi.rsetbox->setEnabled(true);
-	setupUi.addrset->setEnabled(true);
-	setupUi.rmrset->setEnabled(true);
-}
+//void SetupWin::hidersedit() {
+//	setupUi.rssel->hide();
+//	setupUi.rstab->show();
+//	setupUi.rsetbox->setEnabled(true);
+//	setupUi.addrset->setEnabled(true);
+//	setupUi.rmrset->setEnabled(true);
+//}
 
 // lists
 

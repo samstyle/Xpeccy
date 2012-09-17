@@ -477,6 +477,7 @@ void saveConfig() {
 
 	optSet("VIDEO","geometry",curProf->layName);
 	optSet("VIDEO","4t-border",(zx->vid->flags & VID_BORDER_4T) ? "yes" : "no");
+    optSet("VIDEO","contmem",(zx->vid->flags & VID_SLOWMEM) ? "yes" : "no");
 
 	optSet("SOUND","chip1",zx->ts->chipA->type);
 	optSet("SOUND","chip2",zx->ts->chipB->type);
@@ -870,6 +871,7 @@ void loadConfig(bool dev) {
 					case SECT_VIDEO:
 						if (pnam == "geometry") curProf->layName = pval;
 						if (pnam == "4t-border") setFlagBit(str2bool(pval),&zx->vid->flags,VID_BORDER_4T);
+                        if (pnam == "contmem") setFlagBit(str2bool(pval),&zx->vid->flags,VID_SLOWMEM);
 						break;
 					case SECT_SCRSHOT:
 						if (pnam=="folder") shotDir = pval;
