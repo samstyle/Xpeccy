@@ -476,8 +476,8 @@ void saveConfig() {
 	optSet("ROMSET","reset",rmnam[zx->resbank]);
 
 	optSet("VIDEO","geometry",curProf->layName);
-	optSet("VIDEO","4t-border",(zx->vid->flags & VID_BORDER_4T) ? "yes" : "no");
-    optSet("VIDEO","contmem",(zx->vid->flags & VID_SLOWMEM) ? "yes" : "no");
+	optSet("VIDEO","4t-border",(zx->vid->flags & VID_BORDER_4T) != 0);
+	optSet("VIDEO","contmem",(zx->vid->flags & VID_SLOWMEM) != 0);
 
 	optSet("SOUND","chip1",zx->ts->chipA->type);
 	optSet("SOUND","chip2",zx->ts->chipB->type);
