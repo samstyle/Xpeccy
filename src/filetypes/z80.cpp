@@ -97,6 +97,7 @@ int loadZ80(ZXComp* zx, const char* name) {
 	z80ex_set_reg(cpu,regR,tmp);
 	z80ex_set_reg(cpu,regR7,tmp);
 	zx->vid->brdcol = (tmp >> 1) & 7;
+	zx->vid->nextbrd = zx->vid->brdcol;
 	z80ex_set_reg(cpu,regDE,getLEWord(&file));
 	z80ex_set_reg(cpu,regBC_,getLEWord(&file));
 	z80ex_set_reg(cpu,regDE_,getLEWord(&file));

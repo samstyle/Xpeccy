@@ -36,6 +36,7 @@ int loadSNA(ZXComp* zx, const char* name) {
 	z80ex_set_reg(cpu,regIM,tmp);
 	tmp = file.get();
 	zx->vid->brdcol = tmp & 7;
+	zx->vid->nextbrd = tmp & 7;
 	file.read(pageBuf,0x4000);
 	memSetPage(zx->mem,MEM_RAM,5,pageBuf);
 	file.read(pageBuf,0x4000);
