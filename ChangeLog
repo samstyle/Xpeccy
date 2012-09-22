@@ -243,3 +243,6 @@ Wrk	Trying to implement contended memory, but it doesn't work properly. Alpha ve
 
 build 20120920
 Fix	Restore border color when loading .sna or .z80 (appeared in build 20120916)
+
+build 20120922
+Fix	Fixing +2/+3 extend memory paging
