@@ -47,21 +47,26 @@ int loadDsk(Floppy* flp, const char *name) {
 	Sector secs[256];
 	for (i = 0; i < 256; i++) secs[i].data = NULL;
 	for (i = 0; i < dib.tracks * dib.sides; i++) {
+	//	printf("%X : track %i\n",(int)file.tellg(),i);
 		if (!file.eof()) {
 			file.read((char*)&tib,sizeof(TrackInfBlock));
 			sib = (SectorInfBlock*)&tib.sectorInfo;
-			for (sc = 0; sc < tib.secCount; sc++) {
-				secs[sc].cyl = sib[sc].track;
-				secs[sc].side = sib[sc].side;
-				secs[sc].sec = sib[sc].sector;
-				secs[sc].len = sib[sc].size;
-				secs[sc].data = (uint8_t*)realloc(secs[sc].data,sib[sc].bytesSize * sizeof(char));
-				secs[sc].type = 0xfb;
-				file.read((char*)secs[sc].data,sib[sc].bytesSize);
+			if (strncmp(tib.signature,"Track-Info",10) == 0) {
+				for (sc = 0; sc < tib.secCount; sc++) {
+		//			printf("  sector %i\n",sc);
+					secs[sc].cyl = sib[sc].track;
+					secs[sc].side = sib[sc].side;
+					secs[sc].sec = sib[sc].sector;
+					secs[sc].len = sib[sc].size;
+					secs[sc].data = (uint8_t*)realloc(secs[sc].data,sib[sc].bytesSize * sizeof(char));
+					secs[sc].type = 0xfb;
+					file.read((char*)secs[sc].data,sib[sc].bytesSize);
+				}
+//				printf("form track\n");
+				flpFormTrack(flp,tr,secs,tib.secCount);
+				tr++;
+				if (dib.sides == 1) tr++;
 			}
-			flpFormTrack(flp,tr,secs,tib.secCount);
-			tr++;
-			if (dib.sides == 1) tr++;
 		}
 	}
 	file.close();

@@ -212,7 +212,7 @@ void vidFillMatrix(Video* vid) {
 		adr += 2;
 		tk++;
 	}
-	printf("%i T before screen\n",(vid->full.h * (vid->bord.v - vid->intpos.v) + (vid->bord.h - vid->intpos.h)) >> 1);
+//	printf("%i T before screen\n",(vid->full.h * (vid->bord.v - vid->intpos.v) + (vid->bord.h - vid->intpos.h)) >> 1);
 }
 
 void vidUpdate(Video* vid) {

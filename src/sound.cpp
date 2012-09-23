@@ -376,22 +376,26 @@ bool wave_open() {
 	wf.wFormatTag = WAVE_FORMAT_PCM;
 	wf.nChannels = sndChans;
 	wf.nSamplesPerSec = sndRate;
-	wf.nAvgBytesPerSec = sndRate * sndChans;
 	wf.wBitsPerSample = 8;
-	wf.nBlockAlign = sndChans;
-	MMRESULT res = waveOutOpen(&wout,0,&wf,NULL,NULL,CALLBACK_NULL);
-	return (res == MMSYSERR_NOERROR);
-}
+	wf.nBlockAlign = (sndChans * wf.wBitsPerSample) >> 3;
+	wf.nAvgBytesPerSec = wf.nSamplesPerSec * wf.nBlockAlign;
+	wf.cbSize = 0;
 
-void wave_play() {
 	whdr.lpData = (LPSTR)ringBuffer;
 	whdr.dwBufferLength = sndBufSize;
 	whdr.dwBytesRecorded = 0;
 	whdr.dwUser = 0;
-	whdr.dwFlags = 0;
 	whdr.dwLoops = 0;
-	whdr.lpNext = 0;
+	whdr.lpNext = NULL;
 	whdr.reserved = 0;
+
+	MMRESULT res = waveOutOpen(&wout,WAVE_MAPPER,&wf,NULL,NULL,CALLBACK_NULL);
+	return (res == MMSYSERR_NOERROR);
+}
+
+void wave_play() {
+	whdr.dwFlags = 0;
+	whdr.dwBufferLength = ringPos - 1;
 	waveOutPrepareHeader(wout,&whdr,sizeof(WAVEHDR));
 	waveOutWrite(wout,&whdr,sizeof(WAVEHDR));
 	waveOutUnprepareHeader(wout,&whdr,sizeof(WAVEHDR));
