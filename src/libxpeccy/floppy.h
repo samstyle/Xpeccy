@@ -40,6 +40,7 @@ typedef struct {
 	uint8_t* data;
 	uint8_t type;
 	int32_t crc;
+	int flag;
 } Sector;
 
 typedef struct {

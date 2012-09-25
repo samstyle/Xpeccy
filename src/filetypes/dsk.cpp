@@ -11,7 +11,7 @@ typedef struct {
 } DiskInfBlock;
 
 typedef struct {
-	char signature[13];
+//	char signature[13];
 	char byte0d0f[3];	// unused
 	unsigned char track;
 	unsigned char side;
@@ -34,26 +34,30 @@ typedef struct {
 	unsigned short bytesSize;
 } SectorInfBlock;	// 8 bytes
 
+char sigBuf[256];
+
 int loadDsk(Floppy* flp, const char *name) {
 	std::ifstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
 	DiskInfBlock dib;
 	file.read((char*)&dib,sizeof(DiskInfBlock));
 	if (strncmp(dib.signature,"EXTENDED CPC DSK File\r\nDisk-Info\r\n",34) != 0) return ERR_DSK_SIGN;
+	memset(sigBuf,0,256);
 	TrackInfBlock tib;
 	SectorInfBlock* sib;
 	int tr = 0;
 	int i,sc;
 	Sector secs[256];
-	for (i = 0; i < 256; i++) secs[i].data = NULL;
+	for (i = 0; i < 256; i++) {
+		secs[i].data = NULL;
+	}
 	for (i = 0; i < dib.tracks * dib.sides; i++) {
-	//	printf("%X : track %i\n",(int)file.tellg(),i);
 		if (!file.eof()) {
-			file.read((char*)&tib,sizeof(TrackInfBlock));
-			sib = (SectorInfBlock*)&tib.sectorInfo;
-			if (strncmp(tib.signature,"Track-Info",10) == 0) {
+			file.getline(sigBuf,255,0);								// read block signature (till byte 0x00)
+			if (strncmp(sigBuf,"Track-Info\r\n",12) == 0) {			// track-info
+				file.read((char*)&tib,sizeof(TrackInfBlock));
+				sib = (SectorInfBlock*)&tib.sectorInfo;
 				for (sc = 0; sc < tib.secCount; sc++) {
-		//			printf("  sector %i\n",sc);
 					secs[sc].cyl = sib[sc].track;
 					secs[sc].side = sib[sc].side;
 					secs[sc].sec = sib[sc].sector;
@@ -62,10 +66,11 @@ int loadDsk(Floppy* flp, const char *name) {
 					secs[sc].type = 0xfb;
 					file.read((char*)secs[sc].data,sib[sc].bytesSize);
 				}
-//				printf("form track\n");
 				flpFormTrack(flp,tr,secs,tib.secCount);
 				tr++;
 				if (dib.sides == 1) tr++;
+			} else {
+				break;
 			}
 		}
 	}
