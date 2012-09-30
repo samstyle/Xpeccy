@@ -5,9 +5,6 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
-#include <assert.h>	// for debug
-
 #include "z80ex.h"
 #include "memory.h"
 #include "video.h"
@@ -18,6 +15,7 @@ extern "C" {
 #include "soundrive.h"		// covox/soundrive
 #include "gs.h"
 #include "hdd.h"
+
 // hw type
 #define HW_NULL		0
 #define HW_ZX48		1
@@ -49,7 +47,7 @@ typedef struct {
 typedef struct {
 	int fetches;
 	int frmSize;
-	uint8_t* frmData;
+	unsigned char* frmData;
 } RZXFrame;
 
 typedef struct {

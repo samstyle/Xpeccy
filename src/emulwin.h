@@ -4,9 +4,14 @@
 //#include <vector>
 //#include <QIcon>
 #include <QTimer>
-#include <stdint.h>
+//#include <stdint.h>
+//#ifdef HAVESDL
+//	#include <SDL.h>
+//#endif
+
 #ifdef HAVESDL
 	#include <SDL.h>
+	#undef main
 #endif
 
 #ifndef XQTPAINT
@@ -118,7 +123,7 @@
 #define	XKEY_DEL	119
 #define	XKEY_MENU	135
 
-#elif WIN32
+#elif _WIN32
 
 #define	XKEY_1	2
 #define	XKEY_2	3
@@ -239,6 +244,7 @@ class MainWin : public QX11EmbedContainer {
 		void mousePressEvent(QMouseEvent*);
 		void mouseReleaseEvent(QMouseEvent*);
 		void mouseMoveEvent(QMouseEvent*);
+		void wheelEvent(QWheelEvent*);
 #endif
 };
 

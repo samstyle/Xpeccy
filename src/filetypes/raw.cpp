@@ -1,12 +1,6 @@
 #include <string.h>
 #include "filetypes.h"
 
-#ifdef WIN32
-#define SLASH "\\"
-#else
-#define SLASH "/"
-#endif
-
 int loadRaw(Floppy* flp, const char* name) {
 	std::ifstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
@@ -38,7 +32,7 @@ int loadRaw(Floppy* flp, const char* name) {
 	if (nfle.llen != 0) nfle.slen++;
 	if (flpCreateFile(flp,&nfle) != ERR_OK) return ERR_HOB_CANT;
 	int i;
-	uint8_t* buf = new uint8_t[256];
+	unsigned char* buf = new unsigned char[256];
 	for (i = 0; i < nfle.slen; i++) {
 		file.read((char*)buf,256);
 		if (!flpPutSectorData(flp, nfle.trk, nfle.sec + 1, buf, 256)) return ERR_HOB_CANT;
@@ -56,12 +50,12 @@ int loadRaw(Floppy* flp, const char* name) {
 
 int saveRawFile(Floppy* flp, int num, const char* dir) {
 	TRFile dsc = flpGetCatalogEntry(flp,num);
-	uint8_t* buf = new uint8_t[0xffff];
+	unsigned char* buf = new unsigned char[0xffff];
 	if (!flpGetSectorsData(flp,dsc.trk, dsc.sec+1, buf, dsc.slen)) return ERR_TRD_SNF;
 	std::string name((char*)&dsc.name[0],8);
 	size_t pos = name.find_last_not_of(' ');
 	if (pos != std::string::npos) name = name.substr(0,pos+1);
-	name = std::string(dir) + std::string(SLASH) + name + std::string(".") + std::string((char*)&dsc.ext,1);
+	name = std::string(dir).append(std::string(SLASH)).append(name).append(std::string(".")).append(std::string((char*)&dsc.ext,1));
 	std::ofstream file(name.c_str(),std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
 	int len;

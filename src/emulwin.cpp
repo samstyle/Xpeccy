@@ -10,14 +10,13 @@
 #include "libxpeccy/spectrum.h"
 #include "sound.h"
 #include "settings.h"
-#include "setupwin.h"
 #include "emulwin.h"
+#include "setupwin.h"
 #include "debuger.h"
 #include "develwin.h"
 #include "filer.h"
 
 #ifdef HAVESDL
-	#include <SDL.h>
 	#include <SDL_timer.h>
 	#include <SDL_syswm.h>
 #endif
@@ -48,9 +47,9 @@ QVector<QRgb> qPal;
 int emulFlags;
 int pauseFlags;
 int wantedWin;
-uint32_t scrNumber;
-uint32_t scrCounter;
-uint32_t scrInterval;
+unsigned int scrNumber;
+unsigned int scrCounter;
+unsigned int scrInterval;
 bool breakFrame = false;
 
 // tape player
@@ -64,7 +63,7 @@ QMenu* profileMenu;
 // temp emulation
 Z80EX_WORD pc,af,de,ix;
 int blkDataSize = 0;
-uint8_t* blkData = NULL;
+unsigned char* blkData = NULL;
 int blk;
 
 void emulInit() {
@@ -85,7 +84,7 @@ void emulInit() {
 
 // leds
 
-uint8_t icoBlueDisk[256] = {
+unsigned char icoBlueDisk[256] = {
 	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 	0x00,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x00,
 	0x00,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x00,
@@ -104,7 +103,7 @@ uint8_t icoBlueDisk[256] = {
 	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 };
 
-uint8_t icoRedDisk[256] = {
+unsigned char icoRedDisk[256] = {
 	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 	0x00,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x00,
 	0x00,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x00,
@@ -243,7 +242,7 @@ QWidget* emulWidget() {
 
 void emulSetColor(int brl) {
 	int i;
-	uint8_t r[16],g[16],b[16];	// common zx-colors
+	unsigned char r[16],g[16],b[16];	// common zx-colors
 	qPal.clear();
 	qPal.resize(256);
 	for(i = 0; i < 16; i++) {
@@ -304,7 +303,7 @@ void MainWin::updateWindow() {
 	surf = SDL_SetVideoMode(szw,szh,8,sdlflg | SDL_NOFRAME);
 	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
 	surf->pixels = vidGetScreen();
-	zx->vid->scrimg = (uint8_t*)surf->pixels;
+	zx->vid->scrimg = (unsigned char*)surf->pixels;
 	zx->vid->scrptr = zx->vid->scrimg;
 #endif
 	zx->vid->firstFrame = true;
@@ -652,6 +651,12 @@ void MainWin::mouseReleaseEvent(QMouseEvent *ev) {
 	}
 }
 
+void MainWin::wheelEvent(QWheelEvent* ev) {
+	if (zx->mouse->flags & INF_WHEEL) {
+		mouseWheel(zx->mouse,(ev->delta() < 0) ? XM_WHEELDN : XM_WHEELUP);
+	}
+}
+
 void MainWin::mouseMoveEvent(QMouseEvent *ev) {
 	if (!(emulFlags & FL_GRAB) || (pauseFlags !=0 )) return;
 	zx->mouse->xpos = ev->globalX() & 0xff;
@@ -671,7 +676,7 @@ void MainWin::dropEvent(QDropEvent* ev) {
 	mainWin->activateWindow();
 	for (int i = 0; i < urls.size(); i++) {
 		fpath = urls.at(i).path();
-#ifdef WIN32
+#ifdef _WIN32
 		fpath.remove(0,1);	// by some reason path will start with /
 #endif
 		loadFile(fpath.toUtf8().data(),FT_ALL,0);
@@ -828,6 +833,12 @@ void doSDLEvents() {
 						}
 						break;
 					case SDL_BUTTON_MIDDLE:
+						break;
+					case SDL_BUTTON_WHEELUP:
+						if (zx->mouse->flags & INF_WHEEL) mouseWheel(zx->mouse,XM_WHEELUP);
+						break;
+					case SDL_BUTTON_WHEELDOWN:
+						if (zx->mouse->flags & INF_WHEEL) mouseWheel(zx->mouse,XM_WHEELDN);
 						break;
 				}
 				break;
@@ -1023,8 +1034,8 @@ void doScreenShot() {
 	scrNumber++;
 }
 
-void putIcon(Video* vid, int x, int y, uint8_t* data) {
-	uint8_t* ptr = vid->scrimg + x + y * (vid->wsze.h);
+void putIcon(Video* vid, int x, int y, unsigned char* data) {
+	unsigned char* ptr = vid->scrimg + x + y * (vid->wsze.h);
 	for (int i = 0; i < 16; i++) {
 		memcpy(ptr,data,16);
 		ptr += vid->wsze.h;
@@ -1127,7 +1138,7 @@ void emulTapeCatch() {
 		de = z80ex_get_reg(zx->cpu,regDE);
 		ix = z80ex_get_reg(zx->cpu,regIX);
 		TapeBlockInfo inf = tapGetBlockInfo(zx->tape,blk);
-		blkData = (uint8_t*)realloc(blkData,inf.size + 2);
+		blkData = (unsigned char*)realloc(blkData,inf.size + 2);
 		tapGetBlockData(zx->tape,blk,blkData);
 		if (inf.size == de) {
 			for (int i = 0; i < de; i++) {

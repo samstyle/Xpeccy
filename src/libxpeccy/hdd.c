@@ -7,7 +7,7 @@
 
 // overall
 
-void copyStringToBuffer(uint8_t* dst, const char* src, int len) {
+void copyStringToBuffer(unsigned char* dst, const char* src, int len) {
 	while (len > 1) {
 		*(dst+1) = *(src);
 		*(dst) = *(src+1);
@@ -54,7 +54,8 @@ void ataReset(ATADev* ata) {
 }
 
 void ataClearBuf(ATADev* dev) {
-	for (int i=0; i < HDD_BUFSIZE; i++) {
+	int i;
+	for (i = 0; i < HDD_BUFSIZE; i++) {
 		dev->buf.data[i] = 0x00;
 	}
 }
@@ -87,7 +88,9 @@ void ataSetSector(ATADev* dev, int nr) {
 }
 
 void ataNextSector(ATADev* dev) {
-	if (dev->lba < (dev->maxlba - 1)) dev->lba++;
+	if (dev->lba < (dev->maxlba - 1)) {
+		dev->lba++;
+	}
 	ataSetSector(dev,dev->lba);
 }
 
@@ -104,6 +107,7 @@ void ataSetLBA(ATADev* dev) {
 }
 
 void ataReadSector(ATADev* dev) {
+	long eps,nps;
 	ataSetLBA(dev);
 	if (dev->lba > dev->maxlba) {			// sector not found
 		dev->reg.state |= HDF_ERR;
@@ -120,8 +124,8 @@ void ataReadSector(ATADev* dev) {
 			}
 		} else {
 			fseek(file,0,SEEK_END);
-			size_t eps = ftell(file);
-			size_t nps = dev->lba * dev->pass.bps;
+			eps = ftell(file);
+			nps = dev->lba * dev->pass.bps;
 			if (nps < eps) {
 				fseek(file,dev->lba * dev->pass.bps,SEEK_SET);
 				fread((char*)dev->buf.data,dev->pass.bps,1,file);
@@ -195,7 +199,7 @@ void ataAbort(ATADev* dev) {
 	dev->reg.err |= HDF_ABRT;
 }
 
-void ataExec(ATADev* dev, uint8_t cm) {
+void ataExec(ATADev* dev, unsigned char cm) {
 	dev->reg.state &= ~HDF_ERR;
 	dev->reg.err = 0x00;
 	switch (dev->type) {
@@ -363,8 +367,8 @@ void ataExec(ATADev* dev, uint8_t cm) {
 	}
 }
 
-uint16_t ataIn(ATADev* dev,int prt) {
-	uint16_t res = 0xffff;
+unsigned short ataIn(ATADev* dev,int prt) {
+	unsigned short res = 0xffff;
 	if ((dev->type != IDE_ATA) || (strcmp(dev->image,"") == 0) || (dev->flags & ATA_SLEEP)) return res;
 	switch (prt) {
 		case HDD_DATA:
@@ -418,7 +422,7 @@ uint16_t ataIn(ATADev* dev,int prt) {
 	return res;
 }
 
-void ataOut(ATADev* dev, int prt, uint16_t val) {
+void ataOut(ATADev* dev, int prt, unsigned short val) {
 	if ((dev->type != IDE_ATA) || (strcmp(dev->image,"") == 0) || (dev->flags & ATA_SLEEP)) return;
 	switch (prt) {
 		case HDD_DATA:
@@ -544,7 +548,7 @@ void ideSetPassport(IDE* ide, int iface, ATAPassport pass) {
 
 // SMUC: dos, a0=0,a1=a5=a7=a11=a12=1	xxx1 1xxx 1x1x xx10
 
-int ideIn(IDE* ide,uint16_t port,uint8_t* val,int bdiActive) {
+int ideIn(IDE* ide,unsigned short port,unsigned char* val,int bdiActive) {
 	int res = 0;
 	int ishdd = 0;
 	int ishi = 0;
@@ -597,7 +601,7 @@ int ideIn(IDE* ide,uint16_t port,uint8_t* val,int bdiActive) {
 	return res;
 }
 
-int ideOut(IDE* ide,uint16_t port,uint8_t val,int bdiActive) {
+int ideOut(IDE* ide,unsigned short port,unsigned char val,int bdiActive) {
 	int res = 0;
 	int ishi = 0;
 	int ishdd = 0;

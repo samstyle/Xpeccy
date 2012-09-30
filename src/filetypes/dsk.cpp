@@ -62,7 +62,7 @@ int loadDsk(Floppy* flp, const char *name) {
 					secs[sc].side = sib[sc].side;
 					secs[sc].sec = sib[sc].sector;
 					secs[sc].len = sib[sc].size;
-					secs[sc].data = (uint8_t*)realloc(secs[sc].data,sib[sc].bytesSize * sizeof(char));
+					secs[sc].data = (unsigned char*)realloc(secs[sc].data,sib[sc].bytesSize * sizeof(char));
 					secs[sc].type = 0xfb;
 					file.read((char*)secs[sc].data,sib[sc].bytesSize);
 				}

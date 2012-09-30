@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
+//#include <stdint.h>
 #include <stdlib.h>
 
 #include "floppy.h"
@@ -69,16 +69,16 @@ typedef struct {
 	int block,mfm,irq,drq,sdir;
 	int idxold,idx,strb;
 	int status;
-	uint8_t com,cop;
-	uint8_t trk,sec,side,data,flag,bus;
-	uint8_t buf[6];
-	uint8_t mode;
-	uint8_t *wptr, *sp;
-	uint16_t ic;
-	uint16_t crc,fcrc;
+	unsigned char com,cop;
+	unsigned char trk,sec,side,data,flag,bus;
+	unsigned char buf[6];
+	unsigned char mode;
+	unsigned char *wptr, *sp;
+	unsigned short ic;
+	unsigned short crc,fcrc;
 
-	uint8_t sr0,sr1,sr2;		// status registers for uPD765
-	uint8_t comBuf[7];		// command parameters
+	unsigned char sr0,sr1,sr2;		// status registers for uPD765
+	unsigned char comBuf[7];		// command parameters
 	unsigned char ioDir;		// i/o direction = FDC_DIO bit
 	unsigned char hd,sz,ls,gp,sl,fb,nm;	// parameters for uPD765 commands
 
@@ -100,8 +100,8 @@ BDI* bdiCreate();
 void bdiDestroy(BDI*);
 void bdiReset(BDI*);
 void bdiSync(BDI*,int);
-int bdiIn(BDI*,int, uint8_t*);
-int bdiOut(BDI*,int, uint8_t);
+int bdiIn(BDI*,int, unsigned char*);
+int bdiOut(BDI*,int, unsigned char);
 
 unsigned char fdcRd(FDC*,int);
 void fdcWr(FDC*,int,unsigned char);

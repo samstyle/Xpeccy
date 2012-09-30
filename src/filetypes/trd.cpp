@@ -11,7 +11,7 @@ void loadBoot(Floppy* flp) {
 			if (std::string((const char*)&cat[i].name[0],9) == "boot    B") gotBoot = true;
 		}
 		if (!gotBoot) {
-#ifdef WIN32
+#ifdef _WIN32
 			std::string path = optGetString(OPT_WORKDIR) + "\\boot.$B";
 #else
 			std::string path = optGetString(OPT_WORKDIR) + "/boot.$B";
@@ -32,7 +32,7 @@ int loadTRD(Floppy* flp, const char* name) {
 	file.seekg(0);
 	flpFormat(flp);
 	int i=0;
-	uint8_t* trackBuf = new uint8_t[0x1000];
+	unsigned char* trackBuf = new unsigned char[0x1000];
 	do {
 		file.read((char*)trackBuf,0x1000);
 		flpFormTRDTrack(flp,i,trackBuf);
@@ -48,8 +48,8 @@ int loadTRD(Floppy* flp, const char* name) {
 }
 
 int saveTRD(Floppy* flp, const char* name) {
-	uint8_t* img = new uint8_t[0xa0000];
-	uint8_t* dptr = img;
+	unsigned char* img = new unsigned char[0xa0000];
+	unsigned char* dptr = img;
 	for (int i = 0; i < 160; i++) {
 		for (int j = 1; j < 17; j++) {
 			if (!flpGetSectorData(flp,i,j,dptr,256)) {

@@ -5,9 +5,10 @@
 #include <iostream>
 #ifdef HAVESDL
 	#include <SDL.h>
-#endif
-#ifdef WIN32
 	#undef main
+#endif
+
+#ifdef _WIN32
 	#include <mmsystem.h>
 #endif
 
@@ -21,8 +22,8 @@ struct OutSys {
 bool sndEnabled;
 bool sndMute;
 
-uint8_t sndBuffer[0x2000];
-uint8_t ringBuffer[0x4000];
+unsigned char sndBuffer[0x2000];
+unsigned char ringBuffer[0x4000];
 int ringPos = 0;
 int playPos = 0;
 int pass = 0;
@@ -43,7 +44,7 @@ double tatbyte = 162;
 double tickCount = 162;
 int lev,levr,levl;
 
-#ifndef WIN32
+#ifdef __linux__
 	int32_t ossHandle;			// oss
 	int32_t sndFormat;
 #ifdef HAVEALSA
@@ -52,7 +53,7 @@ int lev,levr,levl;
 	snd_pcm_t *alsaHandle;
 	snd_pcm_sframes_t alsaFrames;
 #endif
-#else
+#elif _WIN32
 	WAVEFORMATEX wf;
 	WAVEHDR whdr;
 	HWAVEOUT wout;
@@ -129,7 +130,7 @@ void setOutput(std::string nam) {
 		sndOutput->close();
 	}
 	sndOutput = NULL;
-	for (uint32_t i=0; i<sndOutputList.size(); i++) {
+	for (unsigned int i=0; i<sndOutputList.size(); i++) {
 		if (sndOutputList[i].name == nam) {
 			sndOutput = &sndOutputList[i];
 			break;
@@ -170,7 +171,7 @@ void sndClose() {
 
 std::vector<std::string> sndGetList() {
 	std::vector<std::string> res;
-	for (uint32_t i=0; i<sndOutputList.size(); i++) {
+	for (unsigned int i=0; i<sndOutputList.size(); i++) {
 		res.push_back(sndOutputList[i].name);
 	}
 	return res;
@@ -288,7 +289,7 @@ void sdlclose() {
 
 #endif
 
-#ifndef WIN32
+#ifdef __linux__
 
 bool oss_open() {
 	printf("Open OSS audio device\n");
@@ -302,7 +303,7 @@ bool oss_open() {
 
 void oss_play() {
 	if (ossHandle < 0) return;
-	uint8_t* ptr = ringBuffer;
+	unsigned char* ptr = ringBuffer;
 	int fsz = ringPos;
 	int res;
 	while (fsz > 0) {
@@ -349,7 +350,7 @@ bool alsa_open() {
 
 void alsa_play() {
 	snd_pcm_sframes_t res;
-	uint8_t* ptr = ringBuffer;
+	unsigned char* ptr = ringBuffer;
 	int fsz = sndBufSize / sndChans;
 	while (fsz > 0) {
 		res = snd_pcm_writei(alsaHandle, ptr, fsz);
@@ -368,7 +369,7 @@ void alsa_close() {
 
 #endif
 
-#else
+#elif _WIN32
 
 // TODO: Windows sound output would be here... someday
 
@@ -413,7 +414,7 @@ void wave_close() {
 // init
 
 void sndInit() {
-#ifndef WIN32
+#ifdef __linux__
 #ifdef HAVEALSA
 	alsaDevice = (char*)"default";
 	alsaOutput = NULL;
@@ -430,12 +431,12 @@ void sndInit() {
 //	zx->aym->sc2->n.cur = zx->aym->sc1->n.cur = 0xffff;
 
 	addOutput("NULL",&null_open,&null_play,&null_close);
-#ifndef WIN32
+#ifdef __linux__
 	addOutput("OSS",&oss_open,&oss_play,&oss_close);
 #ifdef HAVEALSA
 	addOutput("ALSA",&alsa_open,&alsa_play,&alsa_close);
 #endif
-#else
+#elif _WIN32
 	addOutput("WaveOut",&wave_open,&wave_play,&wave_close);
 #endif
 #ifdef HAVESDL

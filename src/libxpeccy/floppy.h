@@ -5,8 +5,7 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
-//#include <vector>
+//#include <stdint.h>
 
 #define TRACKLEN 6250
 // disk type
@@ -33,48 +32,48 @@ extern "C" {
 #define	FLP_SIDE	(1<<8)
 
 typedef struct {
-	uint8_t cyl;
-	uint8_t side;
-	uint8_t sec;
-	uint8_t len;
-	uint8_t* data;
-	uint8_t type;
-	int32_t crc;
+	unsigned char cyl;
+	unsigned char side;
+	unsigned char sec;
+	unsigned char len;
+	unsigned char* data;
+	unsigned char type;
+	int crc;
 	int flag;
 } Sector;
 
 typedef struct {
-	uint8_t name[8];
-	uint8_t ext;
-	uint8_t lst,hst;
-	uint8_t llen,hlen;
-	uint8_t slen;
-	uint8_t sec;
-	uint8_t trk;
+	unsigned char name[8];
+	unsigned char ext;
+	unsigned char lst,hst;
+	unsigned char llen,hlen;
+	unsigned char slen;
+	unsigned char sec;
+	unsigned char trk;
 } TRFile;
 
 typedef struct {
 	int flag;
-	uint8_t id;
-	uint8_t iback;
-	uint8_t trk,rtrk;
-	uint8_t field;
-	int32_t pos;
-	uint32_t ti;
+	unsigned char id;
+	unsigned char iback;
+	unsigned char trk,rtrk;
+	unsigned char field;
+	int pos;
+	unsigned int ti;
 	char* path;
 	struct {
-		uint8_t byte[TRACKLEN];
-		uint8_t field[TRACKLEN];
+		unsigned char byte[TRACKLEN];
+		unsigned char field[TRACKLEN];
 	} data[256];
 } Floppy;
 
 Floppy* flpCreate(int);
 void flpDestroy(Floppy*);
 
-uint8_t flpRd(Floppy*);
-void flpWr(Floppy*,uint8_t);
+unsigned char flpRd(Floppy*);
+void flpWr(Floppy*,unsigned char);
 int flpEject(Floppy*);
-uint8_t flpGetField(Floppy*);
+unsigned char flpGetField(Floppy*);
 int flpNext(Floppy*,int);		// return 1 if index strobe
 void flpPrev(Floppy*,int);
 void flpStep(Floppy*,int);
@@ -87,15 +86,15 @@ void flpClearDisk(Floppy*);
 
 void flpFormat(Floppy*);
 void flpFormTrack(Floppy*,int,Sector*,int);
-void flpFormTRDTrack(Floppy*,int,uint8_t*);
+void flpFormTRDTrack(Floppy*,int,unsigned char*);
 void flpFillFields(Floppy*,int,int);
 
-int flpGetSectorData(Floppy*,uint8_t,uint8_t,uint8_t*,int);
-int flpGetSectorsData(Floppy*,uint8_t,uint8_t,uint8_t*,int);
-int flpPutSectorData(Floppy*,uint8_t,uint8_t,uint8_t*,int);
-void flpPutTrack(Floppy*,int,uint8_t*,int);
-void flpGetTrack(Floppy*,int,uint8_t*);
-void flpGetTrackFields(Floppy*,int,uint8_t*);
+int flpGetSectorData(Floppy*,unsigned char,unsigned char,unsigned char*,int);
+int flpGetSectorsData(Floppy*,unsigned char,unsigned char,unsigned char*,int);
+int flpPutSectorData(Floppy*,unsigned char,unsigned char,unsigned char*,int);
+void flpPutTrack(Floppy*,int,unsigned char*,int);
+void flpGetTrack(Floppy*,int,unsigned char*);
+void flpGetTrackFields(Floppy*,int,unsigned char*);
 
 int flpCreateFile(Floppy*,TRFile*);
 int flpGetTRCatalog(Floppy*,TRFile*);

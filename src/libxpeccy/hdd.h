@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
+//#include <stdint.h>
 
 #define IDE_NEMO	1
 #define IDE_NEMOA8	2
@@ -67,16 +67,16 @@ extern "C" {
 #define HDB_WRITE	2
 
 typedef struct {
-	uint16_t word;
-	uint16_t cyls;	// cylinders
-	uint16_t resrv;
-	uint16_t hds;	// heads
-	uint16_t bpt;	// bytes per track
-	uint16_t bps;	// bytes per sector		512
-	uint16_t spt;	// sectors per track
+	unsigned short word;
+	unsigned short cyls;	// cylinders
+	unsigned short resrv;
+	unsigned short hds;	// heads
+	unsigned short bpt;	// bytes per track
+	unsigned short bps;	// bytes per sector		512
+	unsigned short spt;	// sectors per track
 	char serial[20];	// serial
-	uint16_t type;	// buffer type
-	uint16_t vol;	// buffer volume / 512		1
+	unsigned short type;	// buffer type
+	unsigned short vol;	// buffer volume / 512		1
 	char mcver[8];	// microcode version
 	char model[40];	// model
 } ATAPassport;
@@ -88,18 +88,18 @@ typedef struct {
 	int maxlba;
 	char* image;
 	struct {
-		uint8_t data[HDD_BUFSIZE];
-		uint32_t pos;
-		uint8_t mode;
+		unsigned char data[HDD_BUFSIZE];
+		unsigned int pos;
+		unsigned char mode;
 	} buf;
 	struct {
-		uint8_t err;
-		uint8_t state;
-		uint8_t count;
-		uint8_t sec;
-		uint16_t cyl;
-		uint8_t head;
-		uint8_t com;
+		unsigned char err;
+		unsigned char state;
+		unsigned char count;
+		unsigned char sec;
+		unsigned short cyl;
+		unsigned char head;
+		unsigned char com;
 	} reg;				// registers
 	ATAPassport pass;
 } ATADev;
@@ -109,17 +109,17 @@ typedef struct {
 	ATADev* master;
 	ATADev* slave;
 	ATADev* curDev;
-	uint16_t bus;
-	uint8_t smucSys;
-	uint8_t smucFdd;
-	uint8_t cmosAdr;
-	uint8_t cmosMem[256];
+	unsigned short bus;
+	unsigned char smucSys;
+	unsigned char smucFdd;
+	unsigned char cmosAdr;
+	unsigned char cmosMem[256];
 } IDE;
 
 IDE* ideCreate(int);
 void ideDestroy(IDE*);
-int ideIn(IDE*,uint16_t,uint8_t*,int);
-int ideOut(IDE*,uint16_t,uint8_t,int);
+int ideIn(IDE*,unsigned short,unsigned char*,int);
+int ideOut(IDE*,unsigned short,unsigned char,int);
 void ideReset(IDE*);
 
 void ideSetImage(IDE*,int,const char*);

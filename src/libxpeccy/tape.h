@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
+//#include <stdint.h>
 
 #define	PILOTLEN	2168
 #define	SYNC1LEN	667
@@ -87,8 +87,8 @@ void tapAddBlock(Tape*,TapeBlock);
 void tapDelBlock(Tape*,int);
 void tapSwapBlocks(Tape*,int,int);
 
-void tapAddFile(Tape*,const char*,int,uint16_t,uint16_t,uint16_t,uint8_t*,int);
-void addBlockByte(TapeBlock*, uint8_t);
+void tapAddFile(Tape*,const char*,int,unsigned short,unsigned short,unsigned short,unsigned char*,int);
+void addBlockByte(TapeBlock*, unsigned char);
 void blkClear(TapeBlock*);
 void blkAddSignal(TapeBlock*, int);
 

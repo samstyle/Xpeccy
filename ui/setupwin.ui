@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>505</width>
-    <height>480</height>
+    <height>476</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -1065,25 +1065,52 @@
         <attribute name="title">
          <string>Input</string>
         </attribute>
-        <layout class="QVBoxLayout" name="verticalLayout_30">
+        <layout class="QVBoxLayout" name="verticalLayout_5">
          <item>
-          <widget class="QGroupBox" name="groupBox_4">
-           <property name="title">
-            <string>Keyboard</string>
-           </property>
-           <layout class="QGridLayout" name="gridLayout_21" columnstretch="0,10">
-            <item row="1" column="1">
-             <widget class="QComboBox" name="keyMapBox"/>
-            </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="label_39">
-              <property name="text">
-               <string>Keys Map</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
+          <layout class="QHBoxLayout" name="horizontalLayout_16">
+           <item>
+            <widget class="QGroupBox" name="groupBox_4">
+             <property name="title">
+              <string>Keyboard</string>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_21" columnstretch="0,0">
+              <item row="1" column="1">
+               <widget class="QComboBox" name="keyMapBox"/>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_39">
+                <property name="text">
+                 <string>Keys Map</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="groupBox_5">
+             <property name="title">
+              <string>Kempston mouse</string>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_3">
+              <item>
+               <widget class="QCheckBox" name="ratEnable">
+                <property name="text">
+                 <string>Enabled</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="ratWheel">
+                <property name="text">
+                 <string>Wheel</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+          </layout>
          </item>
          <item>
           <widget class="QGroupBox" name="joyBox">

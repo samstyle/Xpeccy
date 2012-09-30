@@ -155,7 +155,7 @@ FF	end
 
 // VG93 (WD1793) FDC section
 
-uint8_t vgidle[256] = {
+unsigned char vgidle[256] = {
 	0xb0,15,
 	0xa8,
 	0xfc,2,
@@ -166,7 +166,7 @@ uint8_t vgidle[256] = {
 	0xf1
 };
 
-uint8_t vgwork[32][256] = {
+unsigned char vgwork[32][256] = {
 // 0: restore
 	{
 		0x20,0,			// flag mode 0
@@ -555,7 +555,7 @@ YY  b0=DMA_disable, b1-7=headload n*4ms (8" only)
 */
 
 // XX	-	80	invalid operation
-uint8_t	op765_no[] = {
+unsigned char	op765_no[] = {
 	0xe1,FDC_EXEC,
 	0x60,0x00,0x80,	// sr0 = 0x80
 	0xe1,FDC_OUTPUT,
@@ -566,7 +566,7 @@ uint8_t	op765_no[] = {
 };
 
 // 02+MF+SK    HU TR HD ?? SZ NM GP SL <R> S0 S1 S2 TR HD NM SZ read track
-uint8_t op765_02[] = {
+unsigned char op765_02[] = {
 	0xe1,FDC_INPUT,
 	0x33,
 	0x31,0x40,0x50,	// HU
@@ -597,7 +597,7 @@ uint8_t op765_02[] = {
 };
 
 // 03          XX YY                    -                       specify spd/dma
-uint8_t op765_03[] = {
+unsigned char op765_03[] = {
 	0xe1,FDC_INPUT,	// status = input
 	0x33,		// dir = cpu->fdc
 	0x31,0x40,
@@ -608,7 +608,7 @@ uint8_t op765_03[] = {
 };
 
 // 04          HU                       -  S3                   sense drive state
-uint8_t op765_04[] = {
+unsigned char op765_04[] = {
 	0xe1,FDC_INPUT,
 	0x33,		// cpu->fdc
 	0x31,0x40,0x50,	// HU
@@ -622,7 +622,7 @@ uint8_t op765_04[] = {
 };
 
 // 05+MT+MF    HU TR HD SC SZ LS GP SL <W> S0 S1 S2 TR HD LS SZ write sector(s)
-uint8_t op765_05[] = {
+unsigned char op765_05[] = {
 	0x02,17,	// hu tr hd sc sz ls gp sl
 	0xe1,FDC_WRITE,
 	0x60,0x00,0x00,		// sr0 = 0
@@ -655,7 +655,7 @@ uint8_t op765_05[] = {
 };
 
 // 06+MT+MF+SK HU TR HD SC SZ LS GP SL <R> S0 S1 S2 TR HD LS SZ read sector(s)
-uint8_t op765_06[] = {
+unsigned char op765_06[] = {
 	0x02,17,	// hu tr hd sc sz ls gp sl
 	0xe1,FDC_READ,
 	0x60,0x00,0x00,		// sr0 = 0
@@ -688,7 +688,7 @@ uint8_t op765_06[] = {
 };
 
 // 07          HU                       -                       recalib.seek TP=0
-uint8_t op765_07[] = {
+unsigned char op765_07[] = {
 	0xe1,FDC_INPUT,
 	0x33,
 	0x31,0x40,0x50,	// HU
@@ -713,7 +713,7 @@ uint8_t op765_07[] = {
 };
 
 // 08          -                        -  S0 TP                sense int.state
-uint8_t op765_08[] = {
+unsigned char op765_08[] = {
 //	0xe1,FDC_EXEC,			// remove status change 'cuz it affect mode
 //	0xe1,FDC_OUTPUT,
 	0x21,4,13,	// if int.mode = 4 (seek, recalib) @34
@@ -735,7 +735,7 @@ uint8_t op765_08[] = {
 };
 
 // 09+MT+MF    HU TR HD SC SZ LS GP SL <W> S0 S1 S2 TR HD LS SZ wr deleted sec(s)
-uint8_t op765_09[] = {
+unsigned char op765_09[] = {
 	0x02,17,	// hu tr hd sc sz ls gp sl
 	0xe1,FDC_EXEC,
 	0x60,0,0x40,	// error
@@ -754,7 +754,7 @@ uint8_t op765_09[] = {
 };
 
 // 0A+MF       HU                       -  S0 S1 S2 TR HD LS SZ		 read ID
-uint8_t op765_0A[] = {
+unsigned char op765_0A[] = {
 	0xe1,FDC_INPUT,
 	0x33,
 	0x31,0x40,0x50,	// HU
@@ -784,7 +784,7 @@ uint8_t op765_0A[] = {
 };
 
 // 0C+MT+MF+SK HU TR HD SC SZ LS GP SL <R> S0 S1 S2 TR HD LS SZ rd deleted sec(s)
-uint8_t op765_0C[] = {
+unsigned char op765_0C[] = {
 	0x02,17,	// hu tr hd sc sz ls gp sl
 	0xe1,FDC_READ,
 	0x60,0x00,0x00,		// sr0 = 0
@@ -825,7 +825,7 @@ uint8_t op765_0C[] = {
 };
 
 // 0D+MF       HU SZ NM GP FB          <W> S0 S1 S2 TR HD LS SZ format track
-uint8_t op765_0D[] = {
+unsigned char op765_0D[] = {
 	0xe1,FDC_INPUT,
 	0x33,
 	0x31,0x40,0x50,	// HU
@@ -850,7 +850,7 @@ uint8_t op765_0D[] = {
 };
 
 // 0F          HU TP                    -                       seek track n
-uint8_t op765_0F[] = {
+unsigned char op765_0F[] = {
 	0xe1,FDC_INPUT,
 	0x60,0x00,0x03,	// all drives is busy
 	0x33,
@@ -874,7 +874,7 @@ uint8_t op765_0F[] = {
 };
 
 // 11+MT+MF+SK HU TR HD SC SZ LS GP SL <W> S0 S1 S2 TR HD LS SZ scan equal
-uint8_t op765_11[] = {
+unsigned char op765_11[] = {
 	0x02,17,	// hu tr hd sc sz ls gp sl
 	0xe1,FDC_EXEC,
 	0xe1,FDC_IDLE,
@@ -882,7 +882,7 @@ uint8_t op765_11[] = {
 };
 
 // 19+MT+MF+SK HU TR HD SC SZ LS GP SL <W> S0 S1 S2 TR HD LS SZ scan low or equal
-uint8_t op765_19[] = {
+unsigned char op765_19[] = {
 	0x02,17,	// hu tr hd sc sz ls gp sl
 	0xe1,FDC_EXEC,
 	0xe1,FDC_IDLE,
@@ -890,14 +890,14 @@ uint8_t op765_19[] = {
 };
 
 // 1D+MT+MF+SK HU TR HD SC SZ LS GP SL <W> S0 S1 S2 TR HD LS SZ scan high or equal
-uint8_t op765_1D[] = {
+unsigned char op765_1D[] = {
 	0x02,17,	// hu tr hd sc sz ls gp sl
 	0xe1,FDC_EXEC,
 	0xe1,FDC_IDLE,
 	0xf1
 };
 
-typedef uint8_t* f765wptr;
+typedef unsigned char* f765wptr;
 f765wptr fdc765workTab[32] = {
 	op765_no,op765_no,op765_02,op765_03,op765_04,op765_05,op765_06,op765_07,
 	op765_08,op765_09,op765_0A,op765_no,op765_0C,op765_0D,op765_no,op765_0F,
@@ -905,7 +905,7 @@ f765wptr fdc765workTab[32] = {
 	op765_no,op765_19,op765_no,op765_no,op765_no,op765_1D,op765_no,op765_no
 };
 
-void fdcExec(FDC* fdc, uint8_t val) {
+void fdcExec(FDC* fdc, unsigned char val) {
 	switch (fdc->type) {
 		case FDC_93:
 			if (!fdc->mr) break;			// no commands aviable during master reset
@@ -973,8 +973,8 @@ void fdcSetMr(FDC* fdc,int z) {
 	}
 }
 
-uint8_t fdcRd(FDC* fdc,int port) {
-	uint8_t res = 0xff;
+unsigned char fdcRd(FDC* fdc,int port) {
+	unsigned char res = 0xff;
 	switch (fdc->type) {
 		case FDC_93:
 			switch(port) {
@@ -1033,7 +1033,7 @@ uint8_t fdcRd(FDC* fdc,int port) {
 	return res;
 }
 
-void fdcWr(FDC* fdc,int port,uint8_t val) {
+void fdcWr(FDC* fdc,int port,unsigned char val) {
 	switch (fdc->type) {
 		case FDC_93:
 			switch (port) {
@@ -1076,17 +1076,18 @@ void fdcWr(FDC* fdc,int port,uint8_t val) {
 	}
 }
 
-void fdcAddCrc(FDC* fdc,uint8_t val) {
-	uint32_t tkk = fdc->crc;
+void fdcAddCrc(FDC* fdc,unsigned char val) {
+	unsigned int tkk = fdc->crc;
+	int i;
 	tkk ^= val << 8;
-	for (int i = 8; i; i--) {
+	for (i = 8; i; i--) {
 		if ((tkk *= 2) & 0x10000) tkk ^= 0x1021;
 	}
 	fdc->crc = tkk & 0xffff;
 }
 
-uint8_t p1,p2,dlt;
-int32_t delays[6]={6 * MSDELAY,12 * MSDELAY,24 * MSDELAY,32 * MSDELAY,15 * MSDELAY, 50 * MSDELAY};	// 6, 12, 20, 32, 15, 50ms (hlt-hld)
+unsigned char p1,p2,dlt;
+int delays[6]={6 * MSDELAY,12 * MSDELAY,24 * MSDELAY,32 * MSDELAY,15 * MSDELAY, 50 * MSDELAY};	// 6, 12, 20, 32, 15, 50ms (hlt-hld)
 
 void v01(FDC* p) {p1 = *(p->wptr++); p->wptr = vgwork[p1];}
 void v02(FDC* p) {p1 = *(p->wptr++); p->sp = p->wptr; p->wptr = vgwork[p1];}
@@ -1100,7 +1101,7 @@ void v21(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (p->mode == p1) p->w
 
 void v30(FDC* p) {p->drq = 0;}
 void v31(FDC* p) {p->drq = 1;}
-void v32(FDC* p) {dlt = *(p->wptr++); if (!p->drq) p->wptr += (int8_t)dlt;}
+void v32(FDC* p) {dlt = *(p->wptr++); if (!p->drq) p->wptr += (signed char)dlt;}
 void v33(FDC* p) {p->ioDir = 0;}
 void v34(FDC* p) {p->ioDir = 1;}
 
@@ -1163,18 +1164,18 @@ void v62(FDC* p) {p1 = *(p->wptr++); p2 = *(p->wptr++); p->sr2 &= p1; p->sr2 |= 
 void v80(FDC* p) {p->trk = *(p->wptr++);}
 void v81(FDC* p) {p->trk--;}
 void v82(FDC* p) {p->trk++;}
-void v83(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (p->fptr->trk == p1) p->wptr += (int8_t)dlt;}
-void v84(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (p->trk == p1) p->wptr += (int8_t)dlt;}
-void v85(FDC* p) {dlt = *(p->wptr++); if (p->buf[0] == p->trk) p->wptr += (int8_t)dlt;}
-void v86(FDC* p) {dlt = *(p->wptr++); if (p->trk == p->data) p->wptr += (int8_t)dlt;}
-void v87(FDC* p) {dlt = *(p->wptr++); if (p->trk < p->data) p->wptr += (int8_t)dlt;}
+void v83(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (p->fptr->trk == p1) p->wptr += (signed char)dlt;}
+void v84(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (p->trk == p1) p->wptr += (signed char)dlt;}
+void v85(FDC* p) {dlt = *(p->wptr++); if (p->buf[0] == p->trk) p->wptr += (signed char)dlt;}
+void v86(FDC* p) {dlt = *(p->wptr++); if (p->trk == p->data) p->wptr += (signed char)dlt;}
+void v87(FDC* p) {dlt = *(p->wptr++); if (p->trk < p->data) p->wptr += (signed char)dlt;}
 void v88(FDC* p) {p->sec = p->data;}
-void v89(FDC* p) {dlt = *(p->wptr++); if (p->trk != p->data) p->wptr += (int8_t)dlt;}
-void v8A(FDC* p) {dlt = *(p->wptr++); if (p->sec != p->data) p->wptr += (int8_t)dlt;}
-void v8B(FDC* p) {dlt = *(p->wptr++); if (((p->com & 8)?0:1) != p->data) p->wptr += (int8_t)dlt;}
-void v8C(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (p->data == p1) p->wptr += (int8_t)dlt;}
+void v89(FDC* p) {dlt = *(p->wptr++); if (p->trk != p->data) p->wptr += (signed char)dlt;}
+void v8A(FDC* p) {dlt = *(p->wptr++); if (p->sec != p->data) p->wptr += (signed char)dlt;}
+void v8B(FDC* p) {dlt = *(p->wptr++); if (((p->com & 8)?0:1) != p->data) p->wptr += (signed char)dlt;}
+void v8C(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (p->data == p1) p->wptr += (signed char)dlt;}
 void v8D(FDC* p) {p->sec++;}
-void v8E(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (p->bus == p1) p->wptr += (int8_t)dlt;}
+void v8E(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (p->bus == p1) p->wptr += (signed char)dlt;}
 void v8F(FDC* p) {p->bus = *(p->wptr++);}
 
 void v90(FDC* p) {p1 = *(p->wptr++); p->buf[p1] = flpRd(p->fptr); p->bus = p->buf[p1];}
@@ -1233,8 +1234,8 @@ void vAD(FDC* p) {flpPrev(p->fptr,p->side);}
 void vB0(FDC* p) {p->ic = *(p->wptr++);}
 void vB1(FDC* p) {p->ic--;}
 void vB2(FDC* p) {p->ic++;}
-void vB3(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (p->ic == p1) p->wptr += (int8_t)dlt;}
-void vB4(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (p->ic != p1) p->wptr += (int8_t)dlt;}
+void vB3(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (p->ic == p1) p->wptr += (signed char)dlt;}
+void vB4(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (p->ic != p1) p->wptr += (signed char)dlt;}
 void vB5(FDC* p) {p->ic = (128 << (p->buf[0] & 3));}				// 128,256,512,1024
 
 void vC0(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); p->flag &= p1; p->flag |= dlt;}
@@ -1268,7 +1269,7 @@ void vD4(FDC* p) {
 	p->fcrc |= (flpRd(p->fptr) << 8);
 }	// read crc from floppy
 void vD5(FDC* p) {
-	dlt = *(p->wptr++); if (p->crc == p->fcrc) p->wptr += (int8_t)dlt;
+	dlt = *(p->wptr++); if (p->crc == p->fcrc) p->wptr += (signed char)dlt;
 }
 void vD7(FDC* p) {p->fcrc = (flpRd(p->fptr) << 8);}
 void vD8(FDC* p) {p->fcrc |= flpRd(p->fptr);}
@@ -1303,16 +1304,16 @@ void vE1(FDC* p) {
 }
 void vE2(FDC* p) {dlt = *(p->wptr++); if (p->side == 0) p->wptr += (char)dlt;}
 
-void vF0(FDC* p) {dlt = *(p->wptr++); p->wptr += (int8_t)dlt;}
+void vF0(FDC* p) {dlt = *(p->wptr++); p->wptr += (signed char)dlt;}
 void vF1(FDC* p) {p->wptr = NULL; p->irq = 1; p->idle = 1; p->drq = 0; p->count = 0; p->status = FDC_IDLE;}
 void vF7(FDC* p) {dlt = *(p->wptr++); if (p->fptr->flag & FLP_DS) p->wptr += (char)dlt;}	// DS
-void vF8(FDC* p) {dlt = *(p->wptr++); if (p->fptr->flag & FLP_PROTECT) p->wptr += (int8_t)dlt;}	// PROTECT
-void vF9(FDC* p) {dlt = *(p->wptr++); if (p->fptr->flag & FLP_INSERT) p->wptr += (int8_t)dlt;}	// INSERT
-void vFA(FDC* p) {dlt = *(p->wptr++); if (p->sdir) p->wptr += (int8_t)dlt;}
-void vFB(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (p->fptr->field == p1) p->wptr += (int8_t)dlt;}
-void vFC(FDC* p) {dlt = *(p->wptr++); if (p->strb) p->wptr += (int8_t)dlt;}
-void vFD(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if ((p->com & p1) == 0) p->wptr += (int8_t)dlt;}
-void vFE(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if ((p->com & p1) != 0) p->wptr += (int8_t)dlt;}
+void vF8(FDC* p) {dlt = *(p->wptr++); if (p->fptr->flag & FLP_PROTECT) p->wptr += (signed char)dlt;}	// PROTECT
+void vF9(FDC* p) {dlt = *(p->wptr++); if (p->fptr->flag & FLP_INSERT) p->wptr += (signed char)dlt;}	// INSERT
+void vFA(FDC* p) {dlt = *(p->wptr++); if (p->sdir) p->wptr += (signed char)dlt;}
+void vFB(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (p->fptr->field == p1) p->wptr += (signed char)dlt;}
+void vFC(FDC* p) {dlt = *(p->wptr++); if (p->strb) p->wptr += (signed char)dlt;}
+void vFD(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if ((p->com & p1) == 0) p->wptr += (signed char)dlt;}
+void vFE(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if ((p->com & p1) != 0) p->wptr += (signed char)dlt;}
 void vFF(FDC* p) {p->irq = 1; p->idle = 1; p->wptr = &vgidle[0]; p->status = FDC_IDLE;}
 
 typedef void(*VGOp)(FDC*);
@@ -1369,7 +1370,7 @@ int bdiGetPort(int p) {
 	return port;
 }
 
-int bdiOut(BDI* bdi,int port,uint8_t val) {
+int bdiOut(BDI* bdi,int port,unsigned char val) {
 	if (bdi->fdc->type != FDC_93) return 0;
 	if (~bdi->flag & BDI_ACTIVE) return 0;
 	port = bdiGetPort(port);
@@ -1392,7 +1393,7 @@ int bdiOut(BDI* bdi,int port,uint8_t val) {
 	return 1;
 }
 
-int bdiIn(BDI* bdi,int port,uint8_t* val) {
+int bdiIn(BDI* bdi,int port,unsigned char* val) {
 	if (bdi->fdc->type != FDC_93) return 0;
 	if (~bdi->flag & BDI_ACTIVE) return 0;
 	port = bdiGetPort(port);
@@ -1413,7 +1414,7 @@ int bdiIn(BDI* bdi,int port,uint8_t* val) {
 }
 
 void bdiSync(BDI* bdi,int tk) {
-	uint32_t tz;
+	unsigned int tz;
 	while (tk > 0) {
 		if (tk < (int)bdi->fdc->tf) {
 			tz = tk;

@@ -60,7 +60,8 @@ void aymDestroy(aymChip* ay) {
 }
 
 void aymReset(aymChip* ay) {
-	for (int i = 0; i < 16; i++) ay->reg[i] = 0;
+	int i;
+	for (i = 0; i < 16; i++) ay->reg[i] = 0;
 	ay->eCur = 0;
 	ay->nPos = 0;
 	ay->ePos = 0;
@@ -268,7 +269,8 @@ void tsOut(TSound* ts, int port, unsigned char val) {
 void initNoise() {
 	int cur = 0xffff;
 	int lev;
-	for (int i=0; i<0x20000; i++) {
+	int i;
+	for (i=0; i<0x20000; i++) {
 		lev = ((cur & 0x10000) == 0) ? 0 : 1;
 		noizes[i] = lev;
 		cur = ((cur << 1) + ((lev == (((cur & 0x2000) == 0x2000) ? 1 : 0)) ? 0 : 1)) & 0x1ffff;

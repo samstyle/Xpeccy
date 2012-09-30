@@ -41,8 +41,8 @@ unsigned char plus2Lays[4][4] = {
 	{4,7,6,3}
 };
 
-Z80EX_WORD zxGetPort(Z80EX_WORD port, int hardware) {
-	switch (hardware) {
+Z80EX_WORD zxGetPort(ZXComp* comp, Z80EX_WORD port) {
+	switch (comp->hw->type) {
 		case HW_ZX48:
 			if ((port & 0x01) == 0) {port = (port & 0xff00) | 0xfe; break;}
 			if ((port & 0x21) == 1) {port = 0x1f; break;}
@@ -51,9 +51,11 @@ Z80EX_WORD zxGetPort(Z80EX_WORD port, int hardware) {
 			if ((port & 0x8002) == 0x0000) port = 0x7ffd;
 			if ((port & 0xc002) == 0x8000) port = 0xbffd;
 			if ((port & 0xc002) == 0xc000) port = 0xfffd;
-			if ((port & 0x05a1) == 0x0081) port = 0xfadf;
-			if ((port & 0x05a1) == 0x0181) port = 0xfbdf;
-			if ((port & 0x05a1) == 0x0581) port = 0xffdf;
+			if (comp->mouse->flags & INF_ENABLED) {
+				if ((port & 0x05a1) == 0x0081) port = 0xfadf;		// mouse
+				if ((port & 0x05a1) == 0x0181) port = 0xfbdf;
+				if ((port & 0x05a1) == 0x0581) port = 0xffdf;
+			}
 			if ((port & 0x0003) == 0x0002) port = (port & 0xff00) | 0xfe;	// TODO: orly
 			if ((port & 0x00ff) == 0x001f) port = 0x1f;			// TODO: orly
 			break;
@@ -63,13 +65,20 @@ Z80EX_WORD zxGetPort(Z80EX_WORD port, int hardware) {
 			if ((port & 0xc002) == 0xc000) port = 0xfffd;
 			if ((port & 0xf008) == 0xe000) port = 0xeff7;
 			if ((port & 0x0003) == 0x0002) port = (port & 0xff00) | 0xfe;	// TODO: orly
+			if (comp->mouse->flags & INF_ENABLED) {				// mouse
+				if ((port & 0x05a1) == 0x0081) port = 0xfadf;		// TODO: orly
+				if ((port & 0x05a1) == 0x0181) port = 0xfbdf;
+				if ((port & 0x05a1) == 0x0581) port = 0xffdf;
+			}
 			// if ((port & 0x00ff) == 0x001f) port = 0x1f;			// TODO: P1024 doesn't have Kempston
 			break;
 		case HW_SCORP:
 			if ((port & 0x0023) == 0x0001) port = 0x00dd;		// printer (covox)
-			if ((port & 0x0523) == 0x0003) port = 0xfadf;		// mouse
-			if ((port & 0x0523) == 0x0103) port = 0xfbdf;
-			if ((port & 0x0523) == 0x0503) port = 0xffdf;
+			if (comp->mouse->flags & INF_ENABLED) {
+				if ((port & 0x0523) == 0x0003) port = 0xfadf;		// mouse
+				if ((port & 0x0523) == 0x0103) port = 0xfbdf;
+				if ((port & 0x0523) == 0x0503) port = 0xffdf;
+			}
 			if ((port & 0xc023) == 0x0021) port = 0x1ffd;		// mem
 			if ((port & 0xc023) == 0x4021) port = 0x7ffd;
 			if ((port & 0xc023) == 0x8021) port = 0xbffd;		// ay
@@ -145,6 +154,7 @@ void zxMapMemory(ZXComp* comp) {
 }
 
 Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
+	Z80EX_BYTE res;
 	ZXComp* comp = (ZXComp*)ptr;
 	if ((comp->hw->type == HW_SCORP) && ((comp->mem->crom & 3) == 2) && ((adr & 0xfff3) == 0x0100)) {
 		comp->prt2 = ZSLays[(adr & 0x000c) >> 2][comp->prt2 & 3] & comp->mem->profMask;
@@ -168,7 +178,7 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 	res4 = res3;
 	if (((adr & 0xc000) == 0x4000) && (comp->vid->flags & VID_SLOWMEM))
 		vidWaitSlow(comp->vid);
-	Z80EX_BYTE res = memRd(comp->mem,adr);
+	res = memRd(comp->mem,adr);
 	return res;
 }
 
@@ -205,7 +215,7 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 	if (ideIn(comp->ide,port,&res,comp->bdi->flag & BDI_ACTIVE)) return res;
 	if (gsIn(comp->gs,port,&res) == GS_OK) return res;
 	if (bdiIn(comp->bdi,port,&res)) return res;
-	port = zxGetPort(port,comp->hw->type);
+	port = zxGetPort(comp,port);
 	switch (port) {
 		case 0xfbdf: res = comp->mouse->xpos; break;
 		case 0xffdf: res = comp->mouse->ypos; break;
@@ -273,7 +283,7 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	if (ideOut(comp->ide,port,val,comp->bdi->flag & BDI_ACTIVE)) return;
 	if (gsOut(comp->gs,port,val) == GS_OK) return;
 	if (bdiOut(comp->bdi,port,val)) return;
-	port = zxGetPort(port,comp->hw->type);
+	port = zxGetPort(comp,port);
 	switch (port) {
 		case 0xfffd:
 		case 0xbffd:
@@ -441,9 +451,9 @@ void zxDestroy(ZXComp* comp) {
 }
 
 void zxReset(ZXComp* comp,int wut) {
+	int resto = comp->resbank;
 	comp->rzxPlay = 0;
 	comp->block7ffd = 0;
-	int resto = comp->resbank;
 	switch (wut) {
 		case RES_48: resto = 1; break;
 		case RES_128: resto = 0; break;

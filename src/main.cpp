@@ -1,7 +1,7 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QTimer>
-#include <getopt.h>
+//#include <getopt.h>
 
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
@@ -16,10 +16,10 @@
 
 #ifdef HAVESDL
 	#include <SDL.h>
-#endif
-#ifdef WIN32
 	#undef main
-#include <direct.h>
+#endif
+#ifdef _WIN32
+	#include <direct.h>
 #endif
 
 ZXComp* zx;
@@ -47,14 +47,15 @@ int main(int ac,char** av) {
 	try {
 
 		int i;
-		int p=0;
+//		int p=0;
 		bool dev = false;
 		initPaths();
 		addProfile("default","xpeccy.conf");
 		setProfile("default");
-		while ((p = getopt(ac,av,"d")) != -1) {
-			switch(p) {
-				case 'd': dev=true; break;
+		for (int i = 1; i < ac; i++) {
+			if (strcmp(av[i],"-d") == 0) {
+				dev = true;
+				break;
 			}
 		}
 		if (dev) {

@@ -17,7 +17,7 @@ void initFileDialog(QWidget*) {
 	filer->setNameFilterDetailsVisible(true);
 	filer->setConfirmOverwrite(true);
 	filer->setOptions(QFileDialog::DontUseNativeDialog);
-#ifdef WIN32
+#ifdef _WIN32
 	lastDir = ".";
 #else
 	lastDir = QDir::home();
@@ -123,7 +123,7 @@ void loadFile(const char* name, int flags, int drv) {
 	std::string sfnam(opath.toLocal8Bit().data());
 	int ferr = ERR_OK;
 	zx->rzxPlay = false;
-	Floppy* flp = zx->bdi->fdc->flop[drv];
+	Floppy* flp = zx->bdi->fdc->flop[drv & 3];
 	switch (type) {
 		case FT_SNA: ferr = loadSNA(zx,sfnam.c_str()); break;
 		case FT_Z80: ferr = loadZ80(zx,sfnam.c_str()); break;

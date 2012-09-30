@@ -1,21 +1,21 @@
 #include "filetypes.h"
 
-uint16_t getLEWord(std::ifstream* file) {
-	uint16_t res = file->get();
+unsigned short getLEWord(std::ifstream* file) {
+	unsigned short res = file->get();
 	res += (file->get() << 8);
 	return res;
 }
 
-uint16_t getBEWord(std::ifstream* file) {
-	uint16_t res = file->get();
+unsigned short getBEWord(std::ifstream* file) {
+	unsigned short res = file->get();
 	res = (res << 8) + file->get();
 	return res;
 }
 
 void z80uncompress(std::ifstream* file,char* buf,int maxlen) {
 	char *ptr = buf;
-	uint8_t tmp,tmp2;
-	uint8_t lst = 0xed;
+	unsigned char tmp,tmp2;
+	unsigned char lst = 0xed;
 	bool btm = true;
 	do {
 		tmp = file->get();
@@ -44,8 +44,8 @@ void z80uncompress(std::ifstream* file,char* buf,int maxlen) {
 	} while (btm && !file->eof() && (ptr - buf < maxlen));
 }
 
-uint8_t z80readblock(std::ifstream* file,char* buf) {
-	uint8_t tmp,tmp2;
+unsigned char z80readblock(std::ifstream* file,char* buf) {
+	unsigned char tmp,tmp2;
 	int adr;
 	tmp = file->get(); tmp2 = file->get(); adr = tmp + (tmp2 << 8);	// compr.page size
 	tmp = file->get();						// page num
@@ -74,11 +74,11 @@ int loadZ80(ZXComp* zx, const char* name) {
 	if (!file.good()) return ERR_CANT_OPEN;
 
 	bool btm;
-	uint8_t tmp,tmp2,lst;
-	uint16_t adr;
+	unsigned char tmp,tmp2,lst;
+	unsigned short adr;
 	Z80EX_CONTEXT* cpu = zx->cpu;
 	char* pageBuf = new char[0xc000];
-	
+
 	zx->prt0 = 0x10;
 	zx->prt1 = 0x00;
 	memSetBank(zx->mem,MEM_BANK0,MEM_ROM,1);

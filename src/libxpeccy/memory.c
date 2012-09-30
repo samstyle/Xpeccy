@@ -6,6 +6,7 @@
 // NEW
 
 Memory* memCreate() {
+	int i;
 	Memory* mem = (Memory*)malloc(sizeof(Memory));
 	mem->pt0 = &mem->rom[0];
 	mem->pt1 = &mem->ram[5];
@@ -14,7 +15,6 @@ Memory* memCreate() {
 	mem->cram = 0;
 	mem->crom = 0;
 	memSetSize(mem,48);
-	int i;
 	for (i = 0; i < 32; i++) {
 		mem->rom[i].flags |= MEM_RDONLY;
 		memset(mem->rom[i].flag,0x00,0x4000 * sizeof(unsigned char));

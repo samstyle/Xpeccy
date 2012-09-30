@@ -1,7 +1,7 @@
 #ifndef _FILER_H
 #define _FILER_H
 
-#include <stdint.h>
+//#include <stdint.h>
 #include <QFileDialog>
 
 #define	FT_ALL		-1

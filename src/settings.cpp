@@ -12,7 +12,7 @@
 #include "emulwin.h"
 #include "settings.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 	#include <direct.h>
 #endif
 
@@ -32,6 +32,7 @@
 #define	SECT_MENU	13
 #define	SECT_TAPE	14
 #define	SECT_LEDS	15
+#define	SECT_INPUT	16
 
 std::vector<optEntry> config;
 std::string workDir;
@@ -72,8 +73,9 @@ void setJMap(std::vector<joyPair> newmap) {
 }
 
 intButton optGetJMap(extButton extb) {
+	unsigned int i;
 	intButton res = {XJ_NONE,XJ_NONE};
-	for (uint32_t i=0; i<joyMap.size(); i++) {
+	for (i = 0; i < joyMap.size(); i++) {
 		if (joyMap[i].first == extb) {
 			res = joyMap[i].second;
 			break;
@@ -84,7 +86,8 @@ intButton optGetJMap(extButton extb) {
 
 void optSetJMap(extButton extb,intButton intb) {
 	bool exist = false;
-	for (uint32_t i=0; i<joyMap.size(); i++) {
+	unsigned int i;
+	for (i = 0; i < joyMap.size(); i++) {
 		if (joyMap[i].first == extb) {
 			joyMap[i].second = intb;
 			exist = true;
@@ -100,7 +103,7 @@ void optSetJMap(extButton extb,intButton intb) {
 }
 
 void optDelJMap(extButton extb) {
-	for (uint32_t i=0; i<joyMap.size(); i++) {
+	for (unsigned int i=0; i<joyMap.size(); i++) {
 		if (joyMap[i].first == extb) {
 			joyMap.erase(joyMap.begin() + i);
 		}
@@ -298,7 +301,7 @@ bool optGetBool(std::string grp, std::string nam) {
 // old
 
 void initPaths() {
-#ifndef WIN32
+#ifndef _WIN32
 // move config dir to new place
 	QDir dir;
 	QString newpath = QDir::homePath() + "/.config/samstyle/xpeccy";
@@ -518,6 +521,9 @@ void saveConfig() {
 	optSet("IDE","slave.maxlba",zx->ide->slave->maxlba);
 	chs = int2str(pass.spt) + "/" + int2str(pass.hds) + "/" + int2str(pass.cyls);
 	optSet("IDE","slave.chs",chs);
+
+	optSet("INPUT","mouse",(zx->mouse->flags & INF_ENABLED) != 0);
+	optSet("INPUT","mouse.wheel",(zx->mouse->flags & INF_WHEEL) != 0);
 
 	std::string cfname = workDir + SLASH + getCurrentProfile()->file;
 	std::ofstream sfile(cfname.c_str());
@@ -848,6 +854,7 @@ void loadConfig(bool dev) {
 				if (pnam=="[MENU]") {grp = pnam; section = SECT_MENU;}
 				if (pnam=="[IDE]") {grp = pnam; section = SECT_IDE;}
 				if (pnam=="[GENERAL]") {grp = pnam; section = SECT_GENERAL;}
+				if (pnam=="[INPUT]") {grp = pnam; section = SECT_INPUT;}
 				if (dev && (section != SECT_TOOLS)) section = SECT_NONE;
 			} else {
 				if (grp.size() > 2) {
@@ -871,7 +878,7 @@ void loadConfig(bool dev) {
 					case SECT_VIDEO:
 						if (pnam == "geometry") curProf->layName = pval;
 						if (pnam == "4t-border") setFlagBit(str2bool(pval),&zx->vid->flags,VID_BORDER_4T);
-                        if (pnam == "contmem") setFlagBit(str2bool(pval),&zx->vid->flags,VID_SLOWMEM);
+						if (pnam == "contmem") setFlagBit(str2bool(pval),&zx->vid->flags,VID_SLOWMEM);
 						break;
 					case SECT_SCRSHOT:
 						if (pnam=="folder") shotDir = pval;
@@ -955,6 +962,10 @@ void loadConfig(bool dev) {
 						}
 						break;
 					case SECT_GENERAL:
+						break;
+					case SECT_INPUT:
+						if (pnam=="mouse") setFlagBit(str2bool(pval),&zx->mouse->flags,INF_ENABLED);
+						if (pnam=="mouse.wheel") setFlagBit(str2bool(pval),&zx->mouse->flags,INF_WHEEL);
 						break;
 				}
 			}

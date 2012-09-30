@@ -57,19 +57,21 @@ void blkAddSignal(TapeBlock* blk, int sig) {
 
 int tapGetBlockTime(Tape* tape, int blk, int pos) {
 	long totsz = 0;
+	int i;
 	if (pos < 0) pos = tape->blkData[blk].sigCount;
-	for (int i = 0; i < pos; i++) totsz += tape->blkData[blk].sigData[i];
+	for (i = 0; i < pos; i++) totsz += tape->blkData[blk].sigData[i];
 	return (totsz / SECDOTS);
 }
 
-inline int tapGetBlockSize(TapeBlock* block) {
+int tapGetBlockSize(TapeBlock* block) {
 	return (((block->sigCount - block->dataPos) >> 4) - 2);
 }
 
-uint8_t tapGetBlockByte(TapeBlock* block, int bytePos) {
-	uint8_t res = 0x00;
+unsigned char tapGetBlockByte(TapeBlock* block, int bytePos) {
+	unsigned char res = 0x00;
+	int i;
 	int sigPos = block->dataPos + (bytePos << 4);
-	for (int i = 0; i < 8; i++) {
+	for (i = 0; i < 8; i++) {
 		res = res << 1;
 		if (sigPos < (int)(block->sigCount - 1)) {
 			if ((block->sigData[sigPos] == block->len1) && (block->sigData[sigPos + 1] == block->len1)) {
@@ -83,7 +85,7 @@ uint8_t tapGetBlockByte(TapeBlock* block, int bytePos) {
 
 int tapGetBlockData(Tape* tape, int blockNum, unsigned char* dst) {
 	TapeBlock* block = &tape->blkData[blockNum];
-	uint32_t pos = block->dataPos;
+	unsigned int pos = block->dataPos;
 	int bytePos = 0;
 	do {
 		dst[bytePos] = tapGetBlockByte(block,bytePos);
@@ -127,7 +129,8 @@ TapeBlockInfo tapGetBlockInfo(Tape* tap, int blk) {
 
 int tapGetBlocksInfo(Tape* tap, TapeBlockInfo* dst) {
 	int cnt = 0;
-	for (int i=0; i < (int)tap->blkCount; i++) {
+	int i;
+	for (i=0; i < (int)tap->blkCount; i++) {
 		dst[cnt] = tapGetBlockInfo(tap,i);
 		cnt++;
 	}
@@ -136,7 +139,8 @@ int tapGetBlocksInfo(Tape* tap, TapeBlockInfo* dst) {
 
 void tapNormSignals(TapeBlock* block) {
 	int low,hi;
-	for (int i=0; i < (int)block->sigCount; i++) {
+	int i;
+	for (i = 0; i < (int)block->sigCount; i++) {
 		low = block->sigData[i] - 10;
 		hi = block->sigData[i] + 10;
 		if ((block->plen > low) && (block->plen < hi)) block->sigData[i] = block->plen;
@@ -171,16 +175,16 @@ void tapDelBlock(Tape* tap, int blk) {
 // tape
 
 void tapStoreBlock(Tape* tap) {
+	unsigned int i,j;
+	int same;
+	int diff;
+	int siglens[10];
+	int cnt = 0;
 	if (tap->tmpBlock.sigCount > 0) {
 		tap->tmpBlock.pause = 1000;
 		tap->tmpBlock.sigCount--;
 	}
 	if (tap->tmpBlock.sigCount == 0) return;
-	uint32_t i,j;
-	int same;
-	int diff;
-	int siglens[10];
-	int cnt = 0;
 	for (i=0; i < tap->tmpBlock.sigCount; i++) {
 		same = 0;
 		for (j = 0; j < cnt; j++) {
@@ -241,12 +245,13 @@ void tapStoreBlock(Tape* tap) {
 }
 
 void tapEject(Tape* tap) {
+	int i;
 	tap->flag = TAPE_CANSAVE;
 	tap->block = 0;
 	tap->pos = 0;
 	tap->path = NULL;
 	if (tap->blkData) {
-		for (int i = 0; i < tap->blkCount; i++) {
+		for (i = 0; i < tap->blkCount; i++) {
 			if (tap->blkData[i].sigData) free(tap->blkData[i].sigData);
 		}
 		free(tap->blkData);
@@ -288,8 +293,9 @@ void tapRewind(Tape* tap, int blk) {
 }
 
 void tapSync(Tape* tap,int tks) {
+	int tk;
 	tap->sigCount += tks / 2.0;
-	int tk = tap->sigCount;
+	tk = tap->sigCount;
 	tap->sigCount -= tk;
 	if (tap->flag & TAPE_ON) {
 		if (tap->flag & TAPE_REC) {
@@ -348,8 +354,9 @@ void tapNextBlock(Tape* tap) {
 
 // add file to tape
 
-void addBlockByte(TapeBlock* blk, uint8_t bt) {
-	for (int i=0; i < 8; i++) {
+void addBlockByte(TapeBlock* blk, unsigned char bt) {
+	int i;
+	for (i = 0; i < 8; i++) {
 		if (bt & 0x80) {
 			blkAddSignal(blk,blk->len1);
 			blkAddSignal(blk,blk->len1);
@@ -361,11 +368,11 @@ void addBlockByte(TapeBlock* blk, uint8_t bt) {
 	}
 }
 
-TapeBlock makeTapeBlock(uint8_t* ptr, int ln, int hd) {
+TapeBlock makeTapeBlock(unsigned char* ptr, int ln, int hd) {
 	TapeBlock nblk;
 	int i;
-	uint8_t tmp;
-	uint8_t crc;
+	unsigned char tmp;
+	unsigned char crc;
 	nblk.plen = PILOTLEN;
 	nblk.s1len = SYNC1LEN;
 	nblk.s2len = SYNC2LEN;
@@ -404,10 +411,10 @@ TapeBlock makeTapeBlock(uint8_t* ptr, int ln, int hd) {
 }
 
 // tapeAddFile(tape, filename, type(0,3 = basic,code), start, lenght, autostart, pointer to data, is header)
-void tapAddFile(Tape* tap, const char* nm, int tp, uint16_t st, uint16_t ln, uint16_t as, uint8_t* ptr, int hdr) {
+void tapAddFile(Tape* tap, const char* nm, int tp, unsigned short st, unsigned short ln, unsigned short as, unsigned char* ptr, int hdr) {
 	TapeBlock block;
 	if (hdr) {
-		uint8_t* hdbuf = (uint8_t*)malloc(19 * sizeof(uint8_t));
+		unsigned char* hdbuf = (unsigned char*)malloc(19 * sizeof(unsigned char));
 		hdbuf[0] = tp & 0xff;						// type (0:basic, 3:code)
 		memset(&hdbuf[1],10,' ');
 		memcpy(&hdbuf[1],nm,(strlen(nm) < 10) ? strlen(nm) : 10);

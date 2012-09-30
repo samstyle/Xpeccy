@@ -115,8 +115,8 @@ void gsReset(GSound* gs) {
 }
 
 void gsSync(GSound* gs, int tk) {
-	if (~gs->flag & GS_ENABLE) return;
 	int res;
+	if (~gs->flag & GS_ENABLE) return;
 	gs->counter += tk * GS_FRQ / 7.0;
 	while (gs->counter > 0) {
 		res = 0;
@@ -157,7 +157,7 @@ gsPair gsGetVolume(GSound* gs) {
 
 // external in/out
 
-int gsIn(GSound* gs, int prt, uint8_t* val) {
+int gsIn(GSound* gs, int prt, unsigned char* val) {
 	if (~gs->flag & GS_ENABLE) return GS_ERR;	// gs disabled
 	if ((prt & 0x44) != 0) return GS_ERR;		// port don't catched
 	if (prt & 8) {
@@ -169,7 +169,7 @@ int gsIn(GSound* gs, int prt, uint8_t* val) {
 	return GS_OK;
 }
 
-int gsOut(GSound* gs, int prt,uint8_t val) {
+int gsOut(GSound* gs, int prt,unsigned char val) {
 	if (~gs->flag & GS_ENABLE) return GS_ERR;
 	if ((prt & 0x44) != 0) return GS_ERR;
 	if (prt & 8) {

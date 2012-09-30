@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #ifdef HAVESDL
 	#include <SDL.h>
+	#undef main
 #endif
 
 #include "xcore/xcore.h"
@@ -66,7 +67,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	rseUi.setupUi(rseditor);
 	rseditor->setModal(true);
 
-	uint32_t i;
+	unsigned int i;
 	std::vector<std::string> list;
 // machine
 	list = getHardwareNames();
@@ -147,7 +148,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	QObject::connect(setupUi.rsetbox,SIGNAL(currentIndexChanged(int)),this,SLOT(buildrsetlist()));
 	QObject::connect(setupUi.machbox,SIGNAL(currentIndexChanged(int)),this,SLOT(setmszbox(int)));
 	QObject::connect(setupUi.cpufrq,SIGNAL(valueChanged(int)),this,SLOT(updfrq()));
-    QObject::connect(setupUi.rstab,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(editrset()));
+	QObject::connect(setupUi.rstab,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(editrset()));
 	QObject::connect(setupUi.addrset,SIGNAL(released()),this,SLOT(addNewRomset()));
 	QObject::connect(setupUi.rmrset,SIGNAL(released()),this,SLOT(rmRomset()));
 	connect(setupUi.rsedit,SIGNAL(released()),this,SLOT(editrset()));
@@ -250,15 +251,10 @@ void SetupWin::okay() {
 }
 
 void SetupWin::start() {
-	uint32_t i;
+	unsigned int i;
 	emulPause(true,PR_OPTS);
 	XProfile* curProf = getCurrentProfile();
 // machine
-//	setupUi.rstab->show();
-//	setupUi.rssel->hide();
-//	setupUi.rsetbox->setEnabled(true);
-//	setupUi.addrset->setEnabled(true);
-//	setupUi.rmrset->setEnabled(true);
 	setupUi.rsetbox->clear();
 	rsl = getRomsetList();
 	GSRom = curProf->gsFile;
@@ -280,9 +276,9 @@ void SetupWin::start() {
 // video
 	setupUi.dszchk->setChecked((vidFlag & VF_DOUBLE));
 	setupUi.fscchk->setChecked(vidFlag & VF_FULLSCREEN);
-    setupUi.noflichk->setChecked(vidFlag & VF_NOFLIC);
-    setupUi.border4T->setChecked(zx->vid->flags & VID_BORDER_4T);
-    setupUi.contMem->setChecked(zx->vid->flags & VID_SLOWMEM);
+	setupUi.noflichk->setChecked(vidFlag & VF_NOFLIC);
+	setupUi.border4T->setChecked(zx->vid->flags & VID_BORDER_4T);
+	setupUi.contMem->setChecked(zx->vid->flags & VID_SLOWMEM);
 	setupUi.bszsld->setValue((int)(brdsize * 100));
 	setupUi.pathle->setText(QString::fromLocal8Bit(optGetString(OPT_SHOTDIR).c_str()));
 	setupUi.ssfbox->setCurrentIndex(setupUi.ssfbox->findData(optGetInt(OPT_SHOTFRM)));
@@ -319,9 +315,9 @@ void SetupWin::start() {
 	if (idx < 1) idx = 0;
 	setupUi.keyMapBox->setCurrentIndex(idx);
 #ifdef XQTPAINT
-	setupUi.joyBox->setEnabled(false);
+	setupUi.joyBox->setVisible(false);
 #else
-	setupUi.joyBox->setEnabled(true);
+	setupUi.joyBox->setVisible(true);
 	setupUi.inpDevice->clear();
 	setupUi.inpDevice->addItem("None");
 
@@ -332,6 +328,8 @@ void SetupWin::start() {
 	idx = setupUi.inpDevice->findText(QString(optGetString(OPT_JOYNAME).c_str()));
 	if (idx < 0) idx = 0;
 	setupUi.inpDevice->setCurrentIndex(idx);
+	setupUi.ratEnable->setChecked(zx->mouse->flags & INF_ENABLED);
+	setupUi.ratWheel->setChecked(zx->mouse->flags & INF_WHEEL);
 #endif
 // dos
 	setupUi.diskTypeBox->setCurrentIndex(setupUi.diskTypeBox->findData(zx->bdi->fdc->type));
@@ -420,9 +418,9 @@ void SetupWin::apply() {
 	setFlagBit(setupUi.dszchk->isChecked(),&vidFlag,VF_DOUBLE);
 	setFlagBit(setupUi.fscchk->isChecked(),&vidFlag,VF_FULLSCREEN);
 	setFlagBit(setupUi.noflichk->isChecked(),&vidFlag,VF_NOFLIC);
-    setFlagBit(setupUi.border4T->isChecked(),&zx->vid->flags,VID_BORDER_4T);
-    setFlagBit(setupUi.contMem->isChecked(),&zx->vid->flags,VID_SLOWMEM);
-    brdsize = setupUi.bszsld->value()/100.0;
+	setFlagBit(setupUi.border4T->isChecked(),&zx->vid->flags,VID_BORDER_4T);
+	setFlagBit(setupUi.contMem->isChecked(),&zx->vid->flags,VID_SLOWMEM);
+	brdsize = setupUi.bszsld->value()/100.0;
 	optSet(OPT_SHOTDIR,std::string(setupUi.pathle->text().toLocal8Bit().data()));
 	optSet(OPT_SHOTFRM,setupUi.ssfbox->itemData(setupUi.ssfbox->currentIndex()).toInt());
 	optSet(OPT_SHOTCNT,setupUi.scntbox->value());
@@ -452,6 +450,8 @@ void SetupWin::apply() {
 	zx->gs->stereo = setupUi.gstereobox->itemData(setupUi.gstereobox->currentIndex()).toInt();
 	zx->sdrv->type = setupUi.sdrvBox->itemData(setupUi.sdrvBox->currentIndex()).toInt();
 // input
+	setFlagBit(setupUi.ratEnable->isChecked(),&zx->mouse->flags,INF_ENABLED);
+	setFlagBit(setupUi.ratWheel->isChecked(),&zx->mouse->flags,INF_WHEEL);
 	if (setupUi.inpDevice->currentIndex() < 1) {
 		optSet(OPT_JOYNAME,std::string(""));
 	} else {
@@ -734,7 +734,7 @@ void SetupWin::buildrsetlist() {
 
 void SetupWin::buildtapelist() {
 //	buildTapeList();
-	TapeBlockInfo inf[zx->tape->blkCount];
+	TapeBlockInfo* inf = new TapeBlockInfo[zx->tape->blkCount];
 	tapGetBlocksInfo(zx->tape,inf);
 	setupUi.tapelist->setRowCount(zx->tape->blkCount);
 	if (zx->tape->blkCount == 0) {
@@ -809,8 +809,8 @@ void SetupWin::copyToTape() {
 	flpGetTRCatalog(zx->bdi->fdc->flop[dsk],cat);
 	// std::vector<TRFile> cat = flpGetTRCatalog(zx->bdi->flop[dsk]);
 	int row;
-	uint8_t* buf = new uint8_t[0xffff];
-	uint16_t line,start,len;
+	unsigned char* buf = new unsigned char[0xffff];
+	unsigned short line,start,len;
 	char name[10];
 	int savedFiles = 0;
 	for (int i=0; i<idx.size(); i++) {
@@ -837,12 +837,6 @@ void SetupWin::copyToTape() {
 	std::string msg = int2str(savedFiles) + std::string(" of ") + int2str(idx.size()) + " files copied";
 	showInfo(msg.c_str());
 }
-
-#ifdef WIN32
-#define SLASH "\\"
-#else
-#define SLASH "/"
-#endif
 
 // hobeta header crc = ((105 + 257 * std::accumulate(data, data + 15, 0u)) & 0xffff))
 
@@ -879,7 +873,7 @@ void SetupWin::diskToRaw() {
 TRFile getHeadInfo(int blk) {
 	TRFile res;
 	TapeBlockInfo inf = tapGetBlockInfo(zx->tape,blk);
-	uint8_t dt[inf.size];
+	unsigned char* dt = new unsigned char[inf.size];
 	tapGetBlockData(zx->tape,blk,dt);
 	for (int i=0; i<8; i++) res.name[i] = dt[i+2];
 	switch (dt[1]) {
@@ -956,9 +950,9 @@ void SetupWin::copyToDisk() {
 	}
 	if (!(zx->bdi->fdc->flop[dsk]->flag & FLP_INSERT)) newdisk(dsk);
 	TapeBlockInfo inf = tapGetBlockInfo(zx->tape,dataBlock);
-	uint8_t dt[inf.size];
+	unsigned char* dt = new unsigned char[inf.size];
 	tapGetBlockData(zx->tape,dataBlock,dt);
-	uint8_t* buf = new uint8_t[256];
+	unsigned char* buf = new unsigned char[256];
 	int pos = 1;	// skip block type mark
 	switch(flpCreateFile(zx->bdi->fdc->flop[dsk],&dsc)) {
 		case ERR_SHIT: shitHappens("Yes, it happens"); break;
@@ -1235,7 +1229,7 @@ void SetupWin::hddSlaveImg() {
 }
 
 void SetupWin::hddcap() {
-	uint32_t sz;
+	unsigned int sz;
 	if (setupUi.hm_islba->checkState() == Qt::Checked) {
 		sz = (setupUi.hm_glba->value() >> 11);
 	} else {

@@ -6,6 +6,10 @@ extern "C" {
 #endif
 // flags
 #define	INF_ENABLED	1
+#define	INF_WHEEL	(1<<1)
+// mouse
+#define	XM_WHEELUP	0
+#define	XM_WHEELDN	1
 // joystick type
 #define XJ_NONE		0
 #define XJ_KEMPSTON	1
@@ -23,6 +27,7 @@ typedef struct {
 	unsigned char xpos;
 	unsigned char ypos;
 	unsigned char buttons;	// b0=LMB; b1=RMB;
+	unsigned char wheel;
 } Mouse;
 
 typedef struct {
@@ -44,6 +49,7 @@ unsigned char keyInput(Keyboard*,unsigned char);
 
 Mouse* mouseCreate();
 void mouseDestroy(Mouse*);
+void mouseWheel(Mouse*, int);
 
 Joystick* joyCreate();
 void joyDestroy(Joystick*);

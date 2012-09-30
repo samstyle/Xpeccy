@@ -6,17 +6,17 @@
 
 int eatsize = 0;
 
-uint32_t getint(std::ifstream* file) {
-	uint32_t res = file->get();
+unsigned int getint(std::ifstream* file) {
+	unsigned int res = file->get();
 	res += (file->get() << 8);
 	res += (file->get() << 16);
 	res += (file->get() << 24);
 	return res;
 }
 
-void frmAddValue(RZXFrame* frm, uint8_t val) {
+void frmAddValue(RZXFrame* frm, unsigned char val) {
 	if ((frm->frmSize & 0xff) == 0) {
-		frm->frmData = (uint8_t*)realloc(frm->frmData, (frm->frmSize + 0x100) * sizeof(uint8_t));
+		frm->frmData = (unsigned char*)realloc(frm->frmData, (frm->frmSize + 0x100) * sizeof(unsigned char));
 	}
 	frm->frmData[frm->frmSize] = val;
 	frm->frmSize++;
@@ -26,8 +26,8 @@ void rzxAddFrame(ZXComp* zx, RZXFrame* frm) {
 	RZXFrame nfrm;
 	nfrm.fetches = frm->fetches;
 	nfrm.frmSize = frm->frmSize;
-	nfrm.frmData = (uint8_t*)malloc(frm->frmSize * sizeof(uint8_t));		// THIS IS MEMORY EATER
-	memcpy(nfrm.frmData, frm->frmData, frm->frmSize * sizeof(uint8_t));
+	nfrm.frmData = (unsigned char*)malloc(frm->frmSize * sizeof(unsigned char));		// THIS IS MEMORY EATER
+	memcpy(nfrm.frmData, frm->frmData, frm->frmSize * sizeof(unsigned char));
 	zx->rzxData = (RZXFrame*)realloc(zx->rzxData,(zx->rzxSize + 1) * sizeof(RZXFrame));
 	zx->rzxData[zx->rzxSize] = nfrm;
 	zx->rzxSize++;
@@ -47,9 +47,9 @@ int zlib_uncompress(char* in, int ilen, char* out, int olen) {
 		return 0;
 	}
 	strm.avail_in = ilen;
-	strm.next_in = (uint8_t*)in;
+	strm.next_in = (unsigned char*)in;
 	strm.avail_out = olen;
-	strm.next_out = (uint8_t*)out;
+	strm.next_out = (unsigned char*)out;
 	ret = inflate(&strm,Z_FINISH);
 	switch (ret) {
 		case Z_NEED_DICT:
@@ -65,13 +65,13 @@ int zlib_uncompress(char* in, int ilen, char* out, int olen) {
 int loadRZX(ZXComp* zx, const char* name) {
 	std::ifstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
-#ifdef WIN32
+#ifdef _WIN32
 	std::string tmpName = std::string(getenv("TEMP"))+"\\lain.tmp";
 #else
 	std::string tmpName = "/tmp/lain.tmp";
 #endif
 	bool btm;
-	uint8_t tmp;
+	unsigned char tmp;
 	int err;
 	int flg,len,len2,len3;//,tstates;
 	std::string tmpStr;
@@ -172,9 +172,9 @@ int loadRZX(ZXComp* zx, const char* name) {
 				flg = 0;
 
 				while (len2 > 0) {
-					rzxf.fetches = (uint8_t)buf[flg] + ((uint8_t)buf[flg+1] << 8);
+					rzxf.fetches = (unsigned char)buf[flg] + ((unsigned char)buf[flg+1] << 8);
 					flg += 2;
-					len3 = (uint8_t)buf[flg] + ((uint8_t)buf[flg+1] << 8);
+					len3 = (unsigned char)buf[flg] + ((unsigned char)buf[flg+1] << 8);
 					flg += 2;
 					if (len3 != 0xffff) {
 						if (rzxf.frmData) free(rzxf.frmData);
@@ -182,7 +182,7 @@ int loadRZX(ZXComp* zx, const char* name) {
 						rzxf.frmSize = 0;
 						while (len3 > 0) {
 							frmAddValue(&rzxf,buf[flg]);
-							//rzxf.in.push_back((uint8_t)buf[flg]);
+							//rzxf.in.push_back((unsigned char)buf[flg]);
 							flg++;
 							len3--;
 						}

@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include "filetypes.h"
 
-uint32_t getlen(std::ifstream *file,uint8_t n) {
-	uint32_t len = (unsigned)(file->get());
+unsigned int getlen(std::ifstream *file,unsigned char n) {
+	unsigned int len = (unsigned)(file->get());
 	if (n > 1) len |= (file->get() << 8);
 	if (n > 2) len |= (file->get() << 16);
 	if (n > 3) len |= (file->get() << 24);
@@ -15,17 +15,17 @@ int loadTZX(Tape* tape, const char* name) {
 
 	int sigLens[] = {PILOTLEN,SYNC1LEN,SYNC2LEN,SIGN0LEN,SIGN1LEN,SYNC3LEN,-1};
 	int altLens[] = {PILOTLEN,SYNC1LEN,SYNC2LEN,SIGN0LEN,SIGN1LEN,SYNC3LEN,-1};
-	unsigned char* buf = new uint8_t[256];
-	uint8_t tmp;
-	uint32_t paulen,len;
+	unsigned char* buf = new unsigned char[256];
+	unsigned char tmp;
+	unsigned int paulen,len;
 	int i;
-	uint32_t loopc = 0;
+	unsigned int loopc = 0;
 	TapeBlock block,altBlock;
 	char* blockBuf = NULL;
 	std::streampos loopos = 0;
 
 	file.read((char*)buf,10);
-	if ((std::string((char*)buf,7) != "ZXTape!") || (buf[7]!=0x1a)) return ERR_TZX_SIGN;
+	if ((strncmp((const char*)buf,"ZXTape!",7) != 0) || (buf[7]!=0x1a)) return ERR_TZX_SIGN;
 
 	tapEject(tape);
 	tape->path = (char*)realloc(tape->path,sizeof(char) * (strlen(name) + 1));

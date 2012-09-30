@@ -27,7 +27,8 @@ void keyDestroy(Keyboard* keyb) {
 }
 
 void keyPress(Keyboard* keyb,char key1,char key2) {
-	for (int i=0; i<40; i++) {
+	int i;
+	for (i=0; i<40; i++) {
 		if ((keyTab[i].key == key1) || (keyTab[i].key == key2)) {
 			keyb->map[keyTab[i].row] &= ~keyTab[i].mask;
 		}
@@ -35,10 +36,11 @@ void keyPress(Keyboard* keyb,char key1,char key2) {
 }
 
 void keyRelease(Keyboard* keyb,char key1,char key2) {
+	int i;
 	if ((key1 == 0) && (key2 == 0)) {
-		for (int i=0; i<8; i++) keyb->map[i] = 0x1f;
+		for (i = 0; i < 8; i++) keyb->map[i] = 0x1f;
 	} else {
-		for (int i=0; i<40; i++) {
+		for (i = 0; i < 40; i++) {
 			if ((keyTab[i].key == key1) || (keyTab[i].key == key2)) {
 				keyb->map[keyTab[i].row] |= keyTab[i].mask;
 			}
@@ -48,7 +50,8 @@ void keyRelease(Keyboard* keyb,char key1,char key2) {
 
 unsigned char keyInput(Keyboard* keyb, unsigned char prt) {
 	unsigned char res = 0x1f;
-	for (int i = 0; i < 8; i++) {
+	int i;
+	for (i = 0; i < 8; i++) {
 		if (~prt & 0x80) res &= keyb->map[i];
 		prt <<= 1;
 	}
@@ -93,10 +96,21 @@ Mouse* mouseCreate() {
 	mou->buttons = 0xff;
 	mou->xpos = 0;
 	mou->ypos = 0;
-	mou->flags = INF_ENABLED;
+	mou->flags = INF_ENABLED | INF_WHEEL;
 	return mou;
 }
 
 void mouseDestroy(Mouse* mou) {
 	free(mou);
+}
+
+void mouseWheel(Mouse* mou, int dir) {
+	switch (dir) {
+		case XM_WHEELDN:
+			mou->buttons -= 0x10;
+			break;
+		case XM_WHEELUP:
+			mou->buttons += 0x10;
+			break;
+	}
 }

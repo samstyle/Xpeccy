@@ -3,7 +3,7 @@
 
 #include "floppy.h"
 
-uint8_t trd_8e0[] = {
+unsigned char trd_8e0[] = {
 	0x00,0x00,0x01,0x16,0x00,0xf0,0x09,0x10,0x00,0x00,0x20,0x20,0x20,0x20,0x20,0x20,
 	0x20,0x20,0x20,0x00,0x00,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x00,0x00,0x00
 };
@@ -15,6 +15,7 @@ Floppy* flpCreate(int id) {
 	flp->trk = 0;
 	flp->rtrk = 0;
 	flp->pos = 0;
+	flp->path = NULL;
 	return flp;
 }
 
@@ -22,16 +23,16 @@ void flpDestroy(Floppy* flp) {
 	free(flp);
 }
 
-void flpWr(Floppy* flp,uint8_t val) {
+void flpWr(Floppy* flp,unsigned char val) {
 	flp->data[flp->rtrk].byte[flp->pos] = val;
 	flp->flag |= FLP_CHANGED;
 }
 
-uint8_t flpRd(Floppy* flp) {
+unsigned char flpRd(Floppy* flp) {
 	return flp->data[flp->rtrk].byte[flp->pos];
 }
 
-uint8_t flpGetField(Floppy* flp) {
+unsigned char flpGetField(Floppy* flp) {
 	return flp->data[flp->rtrk].field[flp->pos];
 }
 
@@ -80,11 +81,13 @@ void flpPrev(Floppy* flp, int fdcSide) {
 }
 
 void flpClearDisk(Floppy* flp) {
-	for (int i = 0; i < 160; i++) flpClearTrack(flp,i);
+	int i;
+	for (i = 0; i < 160; i++) flpClearTrack(flp,i);
 }
 
 void flpClearTrack(Floppy* flp,int tr) {
-	for (int i = 0; i < TRACKLEN; i++) {
+	int i;
+	for (i = 0; i < TRACKLEN; i++) {
 		flp->data[tr].byte[i] = 0x00;
 		flp->data[tr].field[i] = 0x00;
 	}
@@ -92,7 +95,7 @@ void flpClearTrack(Floppy* flp,int tr) {
 
 void flpFormat(Floppy* flp) {
 	int i;
-	uint8_t *buf = (uint8_t*)malloc(0x1000 * sizeof(uint8_t));
+	unsigned char *buf = (unsigned char*)malloc(0x1000 * sizeof(unsigned char));
 	for (i = 0; i < 0x1000; i++) buf[i]=0x00;
 	for (i = 1;i < 168; i++) flpFormTRDTrack(flp,i,buf);
 	memcpy(buf + 0x8e0, trd_8e0, 0x20);
@@ -100,16 +103,16 @@ void flpFormat(Floppy* flp) {
 	free(buf);
 }
 
-void flpFormTRDTrack(Floppy* flp, int tr, uint8_t* bpos) {
+void flpFormTRDTrack(Floppy* flp, int tr, unsigned char* bpos) {
 	Sector lst[16];
 	Sector sct;
+	int sc;
+	unsigned char* ppos = bpos;
 	sct.type = 0xfb;
 	sct.crc = -1;
-	uint8_t* ppos = bpos;
 	sct.cyl = ((tr & 0xfe) >> 1);
 	sct.side = (tr & 0x01) ? 1 : 0;
 	sct.len = 1;
-	int32_t sc;
 	for (sc = 0; sc < 16; sc++) {
 		sct.sec = sc + 1;
 		sct.data = ppos;
@@ -119,9 +122,9 @@ void flpFormTRDTrack(Floppy* flp, int tr, uint8_t* bpos) {
 	flpFormTrack(flp,tr,lst,16);
 }
 
-uint16_t getCrc(uint8_t* ptr, int32_t len) {
-	uint32_t crc = 0xcdb4;
-	int32_t i;
+unsigned short getCrc(unsigned char* ptr, int len) {
+	unsigned int crc = 0xcdb4;
+	int i;
 	while (len--) {
 		crc ^= *ptr << 8;
 		for (i = 0; i<8 ; i++) {
@@ -133,13 +136,13 @@ uint16_t getCrc(uint8_t* ptr, int32_t len) {
 }
 
 void flpFillFields(Floppy* flp,int tr, int fcrc) {
-	if (tr > 255) return;
 	int i, bcnt = 0, sct = 1;
-	uint8_t fld = 0;
-	uint8_t* cpos = flp->data[tr].byte;
-	uint8_t* bpos = cpos;
-	uint16_t crc;
-	for (i=0;i<TRACKLEN;i++) {
+	unsigned char fld = 0;
+	unsigned char* cpos = flp->data[tr].byte;
+	unsigned char* bpos = cpos;
+	unsigned short crc;
+	if (tr > 255) return;
+	for (i = 0; i < TRACKLEN; i++) {
 		flp->data[tr].field[i] = fld;
 		if (fcrc) {
 			switch (fld) {
@@ -188,10 +191,10 @@ void flpFillFields(Floppy* flp,int tr, int fcrc) {
 }
 
 void flpFormTrack(Floppy* flp, int tr, Sector* sdata, int scount) {
-	if (tr > 255) return;
-	uint8_t *ppos = flp->data[tr].byte;
+	unsigned char *ppos = flp->data[tr].byte;
 	int i,ln;
-	uint32_t sc;
+	unsigned int sc;
+	if (tr > 255) return;
 	for (i=0; i<12; i++) *(ppos++) = 0x00;		// 12	space
 	*(ppos++) = 0xc2; *(ppos++) = 0xc2;		// 	track mark
 	*(ppos++) = 0xc2; *(ppos++) = 0xfc;
@@ -228,7 +231,7 @@ int flpEject(Floppy* flp) {
 	return 1;
 }
 
-uint8_t fbuf[0x100];
+unsigned char fbuf[0x100];
 
 int flpGet(Floppy* flp, int wut) {
 	int res = -1;
@@ -246,15 +249,17 @@ int flpGet(Floppy* flp, int wut) {
 //void flpSetPath(Floppy* flp,const char* pth) {flp->path = std::string(pth);}
 
 int flpCreateFile(Floppy* flp,TRFile* dsc) {
-//	uint8_t* buf = new uint8_t[256];
+//	unsigned char* buf = new unsigned char[256];
+	unsigned char files;
+	unsigned short freesec;
 	if (!flpGetSectorData(flp,0,9,fbuf,256)) return ERR_SHIT;
 	dsc->sec = fbuf[0xe1];
 	dsc->trk = fbuf[0xe2];
-	uint8_t files = fbuf[0xe4];
+	files = fbuf[0xe4];
 	if (files > 127) return ERR_MANYFILES;
 	files++;
 	fbuf[0xe4] = files;
-	uint16_t freesec = fbuf[0xe5] + (fbuf[0xe6] << 8);
+	freesec = fbuf[0xe5] + (fbuf[0xe6] << 8);
 	if (freesec < dsc->slen) return ERR_NOSPACE;
 	freesec -= dsc->slen;
 	fbuf[0xe5] = freesec & 0xff;
@@ -276,10 +281,11 @@ int flpCreateFile(Floppy* flp,TRFile* dsc) {
 
 TRFile flpGetCatalogEntry(Floppy* flp, int num) {
 	TRFile res;
+	int sec,pos;
 	if (flpGet(flp,FLP_DISKTYPE) != DISK_TYPE_TRD) return res;
 	if (num > 127) return res;
-	int sec = ((num & 0xf0) >> 4);	// sector
-	int pos = ((num & 0x0f) << 4);	// file number inside sector
+	sec = ((num & 0xf0) >> 4);	// sector
+	pos = ((num & 0x0f) << 4);	// file number inside sector
 	if (!flpGetSectorData(flp,0,sec + 1,fbuf,256)) return res;
 	memcpy((char*)&res,fbuf + pos,16);
 	return res;
@@ -290,8 +296,8 @@ int flpGetTRCatalog(Floppy *flp, TRFile *dst) {
 	if (flpGet(flp,FLP_DISKTYPE) == DISK_TYPE_TRD) {
 		int sc;
 		int fc;
-		uint8_t* ptr;
-		uint8_t* dpt = (uint8_t*)dst;
+		unsigned char* ptr;
+		unsigned char* dpt = (unsigned char*)dst;
 		for (sc = 1; sc < 9; sc++) {
 			if (flpGetSectorData(flp,0,sc,fbuf,256)) {
 				ptr = fbuf;
@@ -316,8 +322,8 @@ std::vector<TRFile> flpGetTRCatalog(Floppy* flp) {
 	std::vector<TRFile> res;
 	if (flpGet(flp,FLP_DISKTYPE) == DISK_TYPE_TRD) {
 		TRFile file;
-		uint8_t* buf = new uint8_t[256];
-		uint8_t* ptr;
+		unsigned char* buf = new unsigned char[256];
+		unsigned char* ptr;
 		int i,j;
 		for (i=1; i<9; i++) {
 			if (flpGetSectorData(flp,0,i,buf,256)) {
@@ -338,10 +344,10 @@ std::vector<TRFile> flpGetTRCatalog(Floppy* flp) {
 }
 */
 
-uint8_t* flpGetSectorDataPtr(Floppy* flp, uint8_t tr, uint8_t sc) {
-	if (~flp->flag & FLP_INSERT) return NULL;
-	int32_t tpos = 0;
+unsigned char* flpGetSectorDataPtr(Floppy* flp, unsigned char tr, unsigned char sc) {
+	int tpos = 0;
 	int fnd;
+	if (~flp->flag & FLP_INSERT) return NULL;
 	while (1) {
 		while (flp->data[tr].field[tpos] != 1) {
 			if (++tpos >= TRACKLEN) return NULL;
@@ -359,24 +365,25 @@ uint8_t* flpGetSectorDataPtr(Floppy* flp, uint8_t tr, uint8_t sc) {
 	}
 }
 
-int flpPutSectorData(Floppy* flp, uint8_t tr,uint8_t sc,uint8_t* buf,int len) {
-	uint8_t* ptr = flpGetSectorDataPtr(flp,tr,sc);
+int flpPutSectorData(Floppy* flp, unsigned char tr,unsigned char sc,unsigned char* buf,int len) {
+	unsigned short crc;
+	unsigned char* ptr = flpGetSectorDataPtr(flp,tr,sc);
 	if (ptr == NULL) return 0;
 	memcpy(ptr,buf,len);
-	uint16_t crc = getCrc(ptr-1,len+1);
+	crc = getCrc(ptr-1,len+1);
 	*(ptr + len) = ((crc & 0xff00) >> 8);
 	*(ptr + len + 1) = (crc & 0x00ff);
 	return 1;
 }
 
-int flpGetSectorData(Floppy* flp, uint8_t tr,uint8_t sc,uint8_t* buf,int len) {
-	uint8_t* ptr = flpGetSectorDataPtr(flp,tr,sc);
+int flpGetSectorData(Floppy* flp, unsigned char tr,unsigned char sc,unsigned char* buf,int len) {
+	unsigned char* ptr = flpGetSectorDataPtr(flp,tr,sc);
 	if (ptr == NULL) return 0;
 	memcpy(buf,ptr,len);
 	return 1;
 }
 
-int flpGetSectorsData(Floppy* flp, uint8_t tr, uint8_t sc, uint8_t* ptr, int sl) {
+int flpGetSectorsData(Floppy* flp, unsigned char tr, unsigned char sc, unsigned char* ptr, int sl) {
 	while (sl > 0) {
 		if (!flpGetSectorData(flp,tr,sc,ptr,256)) return 0;
 		ptr += 256;
@@ -390,15 +397,15 @@ int flpGetSectorsData(Floppy* flp, uint8_t tr, uint8_t sc, uint8_t* ptr, int sl)
 	return 1;
 }
 
-void flpGetTrack(Floppy* flp,int tr,uint8_t* dst) {
+void flpGetTrack(Floppy* flp,int tr,unsigned char* dst) {
 	memcpy(dst,flp->data[tr].byte,TRACKLEN);
 }
 
-void flpGetTrackFields(Floppy* flp,int tr,uint8_t* dst) {
+void flpGetTrackFields(Floppy* flp,int tr,unsigned char* dst) {
 	memcpy(dst,flp->data[tr].field,TRACKLEN);
 }
 
-void flpPutTrack(Floppy* flp,int tr,uint8_t* src,int len) {
+void flpPutTrack(Floppy* flp,int tr,unsigned char* src,int len) {
 	flpClearTrack(flp,tr);
 	memcpy(flp->data[tr].byte,src,len);
 	flpFillFields(flp,tr,0);

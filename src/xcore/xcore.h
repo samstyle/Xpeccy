@@ -6,7 +6,7 @@
 
 #include "../libxpeccy/spectrum.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 	#define	SLASH "\\"
 #else
 	#define	SLASH "/"
@@ -18,7 +18,7 @@ extern ZXComp* zx;
 
 std::string getTimeString(int);
 std::string int2str(int);
-void setFlagBit(bool, int32_t*, int32_t);
+void setFlagBit(bool, int*, int);
 bool str2bool(std::string);
 std::vector<std::string> splitstr(std::string,const char*);
 std::pair<std::string,std::string> splitline(std::string);
@@ -45,7 +45,7 @@ typedef struct {
 	std::string file;	// set when romfile is single file
 	struct {
 		std::string path;
-		uint8_t part;
+		unsigned char part;
 	} roms[32];
 } RomSet;
 

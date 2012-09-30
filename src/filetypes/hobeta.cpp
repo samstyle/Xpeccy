@@ -2,16 +2,10 @@
 #include <string.h>
 #include <numeric>
 
-#ifdef WIN32
-#define SLASH "\\"
-#else
-#define SLASH "/"
-#endif
-
 int loadHobeta(Floppy* flp,const char* name) {
 	std::ifstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
-	uint8_t* buf = new uint8_t[256];
+	unsigned char* buf = new unsigned char[256];
 	TRFile nfle;
 	int i;
 
@@ -41,8 +35,8 @@ int loadHobeta(Floppy* flp,const char* name) {
 int saveHobeta(TRFile dsc,char* data,const char* name) {
 	std::ofstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
-	uint16_t crc;
-	uint8_t* buf = new uint8_t[17];	// header
+	unsigned short crc;
+	unsigned char* buf = new unsigned char[17];	// header
 	memcpy((char*)buf,(char*)&dsc.name[0],13);
 	buf[13] = 0x00;
 	buf[14] = dsc.slen;
@@ -58,11 +52,11 @@ int saveHobeta(TRFile dsc,char* data,const char* name) {
 
 int saveHobetaFile(Floppy* flp,int num,const char* dir) {
 	TRFile dsc = flpGetCatalogEntry(flp,num);
-	uint8_t* buf = new uint8_t[0xffff];
+	unsigned char* buf = new unsigned char[0xffff];
 	if (!flpGetSectorsData(flp,dsc.trk, dsc.sec+1, buf, dsc.slen)) return ERR_TRD_SNF;	// get file data
 	std::string name((char*)&dsc.name[0],8);
 	size_t pos = name.find_last_not_of(' ');
 	if (pos != std::string::npos) name = name.substr(0,pos+1);
-	name = std::string(dir) + std::string(SLASH) + name + std::string(".$") + std::string((char*)&dsc.ext,1);
+	name = std::string(dir).append(std::string(SLASH)).append(name).append(std::string(".$")).append(std::string((char*)&dsc.ext,1));
 	return saveHobeta(dsc,(char*)buf,name.c_str());
 }

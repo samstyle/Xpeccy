@@ -3,9 +3,9 @@
 
 #include <vector>
 #include <string>
-#include <stdint.h>
+//#include <stdint.h>
 
-#ifndef WIN32
+#ifndef _WIN32
 #ifdef HAVEALSA
 	#include <alsa/asoundlib.h>
 #endif
@@ -13,6 +13,7 @@
 	#include <sys/soundcard.h>
 	#include <fcntl.h>
 #else
+	#include <windows.h>
 	#include <windef.h>
 	#include <mmsystem.h>
 //	#include <dsound.h>

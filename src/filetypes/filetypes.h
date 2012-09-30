@@ -1,10 +1,18 @@
-#include <stdint.h>
+//#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <fstream>
 
 #include "../libxpeccy/spectrum.h"
+
+#ifdef _WIN32
+#define SLASH "\\"
+#endif
+
+#ifdef __linux__
+#define SLASH "/"
+#endif
 
 #define	TYP_SNA		0
 #define	TYP_Z80 	1
@@ -48,10 +56,10 @@
 
 #define	ERR_RAW_LONG	0x90	// raw file too long
 
-uint16_t getLEWord(std::ifstream*);
-uint16_t getBEWord(std::ifstream*);
-uint32_t getlen(std::ifstream*,uint8_t);
-void putint(uint8_t*, uint32_t);
+unsigned short getLEWord(std::ifstream*);
+unsigned short getBEWord(std::ifstream*);
+unsigned int getlen(std::ifstream*,unsigned char);
+void putint(unsigned char*, unsigned int);
 
 // snapshot
 

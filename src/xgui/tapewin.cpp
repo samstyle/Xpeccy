@@ -38,7 +38,7 @@ void TapeWin::setState(int st) {
 }
 
 void TapeWin::buildList(Tape *tape) {
-	TapeBlockInfo tinf[tape->blkCount];
+	TapeBlockInfo* tinf = new TapeBlockInfo[tape->blkCount];
 	tapGetBlocksInfo(tape,tinf);
 	ui.tapeList->setRowCount(tape->blkCount);
 	QTableWidgetItem* itm;

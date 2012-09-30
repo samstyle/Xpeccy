@@ -4,8 +4,8 @@ int loadSNA(ZXComp* zx, const char* name) {
 	std::ifstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
 
-	uint8_t tmp,tmp2;
-	uint16_t adr;
+	unsigned char tmp,tmp2;
+	unsigned short adr;
 	char* pageBuf = new char[0x4000];
 	char* tmpgBuf = new char[0x4000];
 	Z80EX_CONTEXT* cpu = zx->cpu;
@@ -83,7 +83,7 @@ int saveSNA(ZXComp* zx, const char* name,bool sna48) {
 	std::ofstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
 
-	uint8_t bnk,i;
+	unsigned char bnk,i;
 	char* pageBuf = new char[0x4000];
 	Z80EX_CONTEXT* cpu = zx->cpu;
 	Z80EX_WORD pc = z80ex_get_reg(cpu,regPC);

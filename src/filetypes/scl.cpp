@@ -3,22 +3,20 @@
 #include <vector>
 
 struct FilePos {
-	uint8_t trk;
-	uint8_t sec;
-	uint8_t slen;
+	unsigned char trk;
+	unsigned char sec;
+	unsigned char slen;
 };
 
 int loadSCL(Floppy* flp,const char* name) {
 	std::ifstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
-
-	uint8_t* buf = new uint8_t[0x1000];
-	uint8_t* bptr;
-	uint8_t fcnt;
+	unsigned char* buf = new unsigned char[0x1000];
+	unsigned char* bptr;
+	unsigned char fcnt;
 	int tmpa;
 	int scnt;
 	unsigned int i;
-
 	file.read((char*)buf,9);
 	if (strncmp((char*)buf,"SINCLAIR",8) != 0) return ERR_SCL_SIGN;
 	if (buf[8] > 0x80) return ERR_SCL_MANY;
@@ -61,14 +59,14 @@ int loadSCL(Floppy* flp,const char* name) {
 
 int saveSCL(Floppy* flp,const char* name) {
 	const char* sign = "SINCLAIR";
-	uint8_t* img = new uint8_t[0xA0000];
-	uint8_t* buf = new uint8_t[256];
-	uint8_t* dptr = img;
-	uint8_t* bptr;
+	unsigned char* img = new unsigned char[0xA0000];
+	unsigned char* buf = new unsigned char[256];
+	unsigned char* dptr = img;
+	unsigned char* bptr;
 	FilePos newfp;
 	std::vector<FilePos> fplist;
 	int i,j;
-	uint8_t tr,sc;
+	unsigned char tr,sc;
 
 	memcpy(img,sign,8);
 	img[8] = 0;

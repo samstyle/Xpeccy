@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-void putint(uint8_t* ptr, uint32_t val) {
+void putint(unsigned char* ptr, unsigned int val) {
 	*ptr++ = val & 0xff;
 	*ptr++ = (val & 0xff00) >> 8;
 	*ptr++ = (val & 0xff0000) >> 16;
@@ -10,7 +10,7 @@ void putint(uint8_t* ptr, uint32_t val) {
 }
 
 // crc32 for UDI, taken from Unreal 0.32.7
-void crc32(int &crc, uint8_t *buf, unsigned len) {
+void crc32(int &crc, unsigned char *buf, unsigned len) {
 	while (len--) {
 		crc ^= -1 ^ *buf++;
 		for(int k = 8; k--; ) {
@@ -20,12 +20,12 @@ void crc32(int &crc, uint8_t *buf, unsigned len) {
 	}
 }
 
-void loadUDITrack(Floppy* flp,std::ifstream* file, uint8_t tr, bool sd) {
+void loadUDITrack(Floppy* flp,std::ifstream* file, unsigned char tr, bool sd) {
 	int rt = (tr << 1) + (sd ? 1 : 0);
-	uint8_t type = file->get();
-	uint32_t len;
+	unsigned char type = file->get();
+	unsigned int len;
 //	int i;
-	uint8_t* trackBuf = new uint8_t[TRACKLEN];
+	unsigned char* trackBuf = new unsigned char[TRACKLEN];
 	if (type != 0x00) {
 		printf("TRK %i: unknown format %.2X\n",rt,type);
 		len = getlen(file,4);							// field len
@@ -49,11 +49,11 @@ void loadUDITrack(Floppy* flp,std::ifstream* file, uint8_t tr, bool sd) {
 	}
 }
 
-void getUDIBitField(Floppy* flp,uint8_t tr, uint8_t* buf) {
+void getUDIBitField(Floppy* flp,unsigned char tr, unsigned char* buf) {
 	int i;
 	int msk=0x01;
-	uint8_t* fieldBuf = new uint8_t[TRACKLEN];
-	uint8_t* trackBuf = new uint8_t[TRACKLEN];
+	unsigned char* fieldBuf = new unsigned char[TRACKLEN];
+	unsigned char* trackBuf = new unsigned char[TRACKLEN];
 	flpGetTrack(flp,tr,trackBuf);
 	flpGetTrackFields(flp,tr,fieldBuf);
 	for (i = 0; i < TRACKLEN; i++) {
@@ -71,10 +71,10 @@ int loadUDI(Floppy* flp, const char* name) {
 	std::ifstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
 	char* buf = new char[16];
-	uint8_t tmp;
+	unsigned char tmp;
 	bool sides;
 	file.read(buf,16);
-	if (std::string(buf,4) != "UDI!") return ERR_UDI_SIGN;
+	if (strncmp((const char*)buf,"UDI!",4) != 0) return ERR_UDI_SIGN;
 	if (*(buf + 8) != 0x00) return ERR_UDI_SIGN;
 	tmp = *(buf + 9);		// max track;
 	sides = (*(buf + 10) == 0x01);	// true if double side
@@ -92,9 +92,9 @@ int loadUDI(Floppy* flp, const char* name) {
 
 int saveUDI(Floppy* flp, const char* name) {
 	const char* sign = "UDI!";
-	uint8_t* img = new uint8_t[0x112cf4];	// 0x112cf4 for 160 tracks in UDI
-	uint8_t* dptr = img;
-	uint8_t* bptr;
+	unsigned char* img = new unsigned char[0x112cf4];	// 0x112cf4 for 160 tracks in UDI
+	unsigned char* dptr = img;
+	unsigned char* bptr;
 	int i,j;
 
 	memcpy(dptr,sign,4);

@@ -31,14 +31,14 @@ unsigned char papTab[] = {
 };
 
 Video* vidCreate(Memory* me) {
-	if (screenBuf == NULL) {
-		screenBuf = (unsigned char*)malloc(1024 * 1024 * sizeof(unsigned char));
-	}
 	Video* vid = (Video*)malloc(sizeof(Video));
 	int i,j,k,l;
 	int idx=0;
 	int sadr=0x0000;
 	int aadr=0x1800;
+	if (screenBuf == NULL) {
+		screenBuf = (unsigned char*)malloc(1024 * 1024 * sizeof(unsigned char));
+	}
 	for (i=0;i<3;i++) {
 		for (j=0;j<8;j++) {
 			for (k=0;k<8;k++) {
@@ -122,6 +122,7 @@ int waitsTab_B[16] = {2,1,0,0,14,13,12,11,10,9,8,7,6,5,4,3};
 
 void vidFillMatrix(Video* vid) {
 	int x,y,i,adr,nya=0;
+	int tk = 0;
 	i = 0;
 	adr = 0;
 	for (y = 0; y < vid->full.v; y++) {
@@ -205,7 +206,6 @@ void vidFillMatrix(Video* vid) {
 	}
 
 	adr = vid->intpos.v * vid->full.h + vid->intpos.h;
-	int tk = 0;
 	while (adr < (vid->full.h * vid->full.v)) {
 		vid->matrix[adr].tick = tk;
 		vid->matrix[adr+1].tick = tk;
@@ -262,6 +262,7 @@ void vidWaitSlow(Video* vid) {
 }
 
 int vidSync(Video* vid, float dotDraw) {
+	int i;
 	int res = 0;
 	vid->pxcnt += dotDraw;
 	while (vid->pxcnt >= 1) {
@@ -338,7 +339,7 @@ int vidSync(Video* vid, float dotDraw) {
 			vid->scrptr = vid->scrimg;
 			vid->firstFrame = 0;
 			if (vidFlag & VF_FRAMEDBG) {
-				for(int i = 0; i < (vid->wsze.h * vid->wsze.v); i++) vid->scrimg[i] &= 0x0f;
+				for(i = 0; i < (vid->wsze.h * vid->wsze.v); i++) vid->scrimg[i] &= 0x0f;
 			}
 		}
 		vid->pxcnt--;

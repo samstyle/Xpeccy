@@ -39,7 +39,7 @@ void setRomset(std::string pn, std::string nm) {
 	if (prof == NULL) return;
 	RomSet* rset = findRomset(nm);
 	int i,ad;
-#ifdef WIN32
+#ifdef _WIN32
 	std::string romDir = std::string(".\\config\\roms");
 #else
 	std::string romDir = std::string(getenv("HOME")) + "/.config/samstyle/xpeccy/roms";

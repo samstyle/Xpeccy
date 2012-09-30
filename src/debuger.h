@@ -8,7 +8,7 @@
 #include <QLabel>
 #include <QKeyEvent>
 
-#include <stdint.h>
+//#include <stdint.h>
 
 #define DASMROW 25
 #define DMPSIZE 16
@@ -53,7 +53,7 @@ class DebugWin : public QDialog {
 		ushort getprevadr(ushort);
 		DasmRow getdisasm();
 		bool tmpb;
-		uint32_t t;
+		unsigned int t;
 	protected:
 		void keyPressEvent(QKeyEvent*);
 };

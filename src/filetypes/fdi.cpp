@@ -4,16 +4,16 @@ int loadFDI(Floppy* flp,const char* name) {
 	std::ifstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
 
-	uint8_t* buf = new uint8_t[14];
+	unsigned char* buf = new unsigned char[14];
 	Sector sct;
 	Sector trkimg[256];
 	int i,j,scnt;
-	uint8_t fcnt,tmp;
-	uint16_t tmpa,tmpb,slen;
+	unsigned char fcnt,tmp;
+	unsigned short tmpa,tmpb,slen;
 	size_t tmpd,tmph,tmpt,tmps,cpos;
 
 	file.read((char*)buf,14);
-	if (std::string((char*)buf,3) != "FDI") return ERR_FDI_SIGN;
+	if (strncmp((const char*)buf,"FDI",3) != 0) return ERR_FDI_SIGN;
 	bool err = (buf[3] != 0);
 	tmpa = buf[4] + (buf[5] << 8);		// cylinders
 	tmpb = buf[6] + (buf[7] << 8);		// heads
@@ -38,7 +38,7 @@ int loadFDI(Floppy* flp,const char* name) {
 				cpos = file.tellg();			// remember current pos
 				file.seekg(tmps);
 				slen = (128 << sct.len);		// sector len
-				sct.data = new uint8_t[slen];
+				sct.data = new unsigned char[slen];
 				file.read((char*)sct.data,slen);	// read sector data
 				file.seekg(cpos);
 				trkimg[scnt] = sct;

@@ -35,7 +35,7 @@ TapeBlock tapDataToBlock(char* data,int len,int* sigLens) {
 int loadTAP(Tape* tape, const char* name) {
 	std::ifstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
-	uint16_t len;
+	unsigned short len;
 	char* blockBuf = NULL;
 	TapeBlock block;
 	int sigLens[] = {PILOTLEN,SYNC1LEN,SYNC2LEN,SIGN0LEN,SIGN1LEN,SYNC3LEN,-1};
@@ -65,12 +65,12 @@ int saveTAP(Tape* tape, const char* name) {
 	if (!file.good()) return ERR_CANT_OPEN;
 
 	TapeBlockInfo inf;
-	uint8_t* blockData = NULL;
+	unsigned char* blockData = NULL;
 
 	for (int i = 0; i < tape->blkCount; i++) {
 		inf = tapGetBlockInfo(tape, i);
 		inf.size += 2;	// +flag +crc
-		blockData = (uint8_t*)realloc(blockData,inf.size);
+		blockData = (unsigned char*)realloc(blockData,inf.size);
 		tapGetBlockData(tape,i,blockData);
 		file.put(inf.size & 0xff);
 		file.put((inf.size & 0xff00) >> 8);
