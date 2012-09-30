@@ -96,7 +96,7 @@ Mouse* mouseCreate() {
 	mou->buttons = 0xff;
 	mou->xpos = 0;
 	mou->ypos = 0;
-	mou->flags = INF_ENABLED | INF_WHEEL;
+	mou->flags = 0;	// INF_ENABLED | INF_WHEEL;
 	return mou;
 }
 
@@ -107,10 +107,10 @@ void mouseDestroy(Mouse* mou) {
 void mouseWheel(Mouse* mou, int dir) {
 	switch (dir) {
 		case XM_WHEELDN:
-			mou->buttons -= 0x10;
+			mou->buttons += 0x10;
 			break;
 		case XM_WHEELUP:
-			mou->buttons += 0x10;
+			mou->buttons -= 0x10;
 			break;
 	}
 }

@@ -217,9 +217,9 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 	if (bdiIn(comp->bdi,port,&res)) return res;
 	port = zxGetPort(comp,port);
 	switch (port) {
-		case 0xfbdf: res = comp->mouse->xpos; break;
-		case 0xffdf: res = comp->mouse->ypos; break;
-		case 0xfadf: res = comp->mouse->buttons; break;
+		case 0xfbdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->xpos : 0xff; break;
+		case 0xffdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->ypos : 0xff; break;
+		case 0xfadf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->buttons : 0xff; break;
 		case 0xfffd:
 			res = tsIn(comp->ts,port);
 			break;
