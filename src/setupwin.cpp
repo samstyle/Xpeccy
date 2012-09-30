@@ -314,6 +314,8 @@ void SetupWin::start() {
 	int idx = setupUi.keyMapBox->findText(QString(kmname.c_str()));
 	if (idx < 1) idx = 0;
 	setupUi.keyMapBox->setCurrentIndex(idx);
+	setupUi.ratEnable->setChecked(zx->mouse->flags & INF_ENABLED);
+	setupUi.ratWheel->setChecked(zx->mouse->flags & INF_WHEEL);
 #ifdef XQTPAINT
 	setupUi.joyBox->setVisible(false);
 #else
@@ -328,8 +330,6 @@ void SetupWin::start() {
 	idx = setupUi.inpDevice->findText(QString(optGetString(OPT_JOYNAME).c_str()));
 	if (idx < 0) idx = 0;
 	setupUi.inpDevice->setCurrentIndex(idx);
-	setupUi.ratEnable->setChecked(zx->mouse->flags & INF_ENABLED);
-	setupUi.ratWheel->setChecked(zx->mouse->flags & INF_WHEEL);
 #endif
 // dos
 	setupUi.diskTypeBox->setCurrentIndex(setupUi.diskTypeBox->findData(zx->bdi->fdc->type));

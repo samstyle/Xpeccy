@@ -652,7 +652,7 @@ void MainWin::mouseReleaseEvent(QMouseEvent *ev) {
 }
 
 void MainWin::wheelEvent(QWheelEvent* ev) {
-	if (zx->mouse->flags & INF_WHEEL) {
+	if ((emulFlags & FL_GRAB) && (zx->mouse->flags & INF_WHEEL)) {
 		mouseWheel(zx->mouse,(ev->delta() < 0) ? XM_WHEELDN : XM_WHEELUP);
 	}
 }
@@ -835,10 +835,12 @@ void doSDLEvents() {
 					case SDL_BUTTON_MIDDLE:
 						break;
 					case SDL_BUTTON_WHEELUP:
-						if (zx->mouse->flags & INF_WHEEL) mouseWheel(zx->mouse,XM_WHEELUP);
+						if ((emulFlags & FL_GRAB) && (zx->mouse->flags & INF_WHEEL))
+							mouseWheel(zx->mouse,XM_WHEELUP);
 						break;
 					case SDL_BUTTON_WHEELDOWN:
-						if (zx->mouse->flags & INF_WHEEL) mouseWheel(zx->mouse,XM_WHEELDN);
+						if ((emulFlags & FL_GRAB) && (zx->mouse->flags & INF_WHEEL))
+							mouseWheel(zx->mouse,XM_WHEELDN);
 						break;
 				}
 				break;

@@ -851,7 +851,7 @@ void loadConfig(bool dev) {
 				if ((pnam=="[DISK]") || (pnam=="[BETADISK]")) {grp = "[DISK]"; section = SECT_DISK;}
 				if (pnam=="[MACHINE]") {grp = pnam; section = SECT_MACHINE;}
 				if (pnam=="[TOOLS]") {grp = ""; section = SECT_TOOLS;}
-				if (pnam=="[MENU]") {grp = pnam; section = SECT_MENU;}
+				if (pnam=="[MENU]") {grp = ""; section = SECT_MENU;}
 				if (pnam=="[IDE]") {grp = pnam; section = SECT_IDE;}
 				if (pnam=="[GENERAL]") {grp = pnam; section = SECT_GENERAL;}
 				if (pnam=="[INPUT]") {grp = pnam; section = SECT_INPUT;}
