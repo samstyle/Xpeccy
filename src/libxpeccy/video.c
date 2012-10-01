@@ -254,11 +254,14 @@ void vidDarkTail(Video* vid) {
 	} while (~mtx->flag & MTF_FRMEND);
 }
 
-void vidWaitSlow(Video* vid) {
+int vidWaitSlow(Video* vid) {
+	int res = 0;
 	if (vid->matrix[vid->dotCount].wait != 0) {
-		vidSync(vid,vid->matrix[vid->dotCount].wait);
+		res = vid->matrix[vid->dotCount].wait;
+		vidSync(vid,res);
 //		printf("wait...%i T on %i\n",vid->matrix[vid->dotCount].wait >> 1,vid->matrix[vid->dotCount].tick);
 	}
+	return res;
 }
 
 int vidSync(Video* vid, float dotDraw) {

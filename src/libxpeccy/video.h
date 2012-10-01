@@ -92,7 +92,7 @@ Video* vidCreate(Memory*);
 void vidDestroy(Video*);
 
 int vidSync(Video*,float);
-void vidWaitSlow(Video*);
+int vidWaitSlow(Video*);
 void vidDarkTail(Video*);
 
 void vidSetLayout(Video*, int, int, int, int, int, int, int, int, int);

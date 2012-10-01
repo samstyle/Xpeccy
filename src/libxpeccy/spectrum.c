@@ -8,6 +8,7 @@ int res1 = 0;
 int res2 = 0;
 int res3 = 0;	// tick in op, wich has last OUT/MWR (and vidSync)
 int res4 = 0;	// save last res3 (vidSync on OUT/MWR process do res3-res4 ticks)
+int res5 = 0;	// ticks ated by slow mem?
 int vflg = 0;
 Z80EX_WORD pcreg;
 
@@ -177,7 +178,7 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
 	res4 = res3;
 	if (((adr & 0xc000) == 0x4000) && (comp->vid->flags & VID_SLOWMEM))
-		vidWaitSlow(comp->vid);
+		res5 = (vidWaitSlow(comp->vid) / 2);
 	res = memRd(comp->mem,adr);
 	return res;
 }
@@ -191,7 +192,7 @@ void memwr(Z80EX_CONTEXT* cpu, Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
 	res4 = res3;
 	if (((adr & 0xc000) == 0x4000) && (comp->vid->flags & VID_SLOWMEM))
-		vidWaitSlow(comp->vid);
+		res5 = vidWaitSlow(comp->vid);
 	memWr(comp->mem,adr,val);
 	if (comp->mem->flags & MEM_BRK_WRITE) {
 		comp->flags |= ZX_BREAK;
@@ -486,14 +487,14 @@ void zxSetFrq(ZXComp* comp, float frq) {
 }
 
 double zxExec(ZXComp* comp) {
-	res1 = res2 = res3 = res4 = 0;
+	res1 = res2 = res3 = res4 = res5 = 0;
 	vflg = 0;
 	do {
 		res2 += z80ex_step(comp->cpu);
 	} while (z80ex_last_op_type(comp->cpu) != 0);
 	pcreg = z80ex_get_reg(comp->cpu,regPC);
 	vflg |= vidSync(comp->vid,(res2 - res4) * comp->dotPerTick);
-	res1 = res2;
+	res1 = res2 + res5;
 	if (comp->rzxPlay) {
 		comp->intStrobe = (comp->rzxFetches < 1);
 	} else {
