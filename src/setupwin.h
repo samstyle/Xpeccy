@@ -53,6 +53,12 @@ class SetupWin : public QDialog {
 		void scanJoyBind();
 		void newProfile();
 		void rmProfile();
+
+		void editLayout();
+		void addNewLayout();
+		void delLayout();
+		void layEditorChanged();
+		void layEditorOK();
 	private:
 		QDialog *umadial;
 		void buildtapelist();

@@ -38,6 +38,10 @@ bool addLayout(VidLayout lay) {
 	return true;
 }
 
+void setLayoutList(std::vector<VidLayout> lst) {
+	layList = lst;
+}
+
 std::vector<VidLayout> getLayoutList() {
 	return layList;
 }

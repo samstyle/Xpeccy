@@ -117,7 +117,7 @@ void setRomset(std::string pn, std::string nm) {
 			file.read(pageBuf,0x4000);
 			gsSetRom(prof->zx->gs,1,pageBuf);
 		} else {
-			printf("Can't load gs rom '%s'\n",prof->gsFile.c_str());
+//			printf("Can't load gs rom '%s'\n",prof->gsFile.c_str());
 			gsSetRom(prof->zx->gs,0,pageBuf);
 			gsSetRom(prof->zx->gs,1,pageBuf);
 		}

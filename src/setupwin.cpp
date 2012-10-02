@@ -2,6 +2,7 @@
 #include <QInputDialog>
 #include <QFileDialog>
 #include <QVector3D>
+#include <QPainter>
 #include <QDebug>
 #include <stdlib.h>
 #ifdef HAVESDL
@@ -22,14 +23,18 @@
 #include "ui_rsedit.h"
 #include "ui_setupwin.h"
 #include "ui_umadial.h"
+#include "ui_layedit.h"
 
 Ui::SetupWin setupUi;
 Ui::UmaDial uia;
 Ui::RSEdialog rseUi;
+Ui::LayEditor layUi;
 
 SetupWin* optWin;
 QDialog* rseditor;
+QDialog* layeditor;
 
+std::vector<VidLayout> lays;
 std::vector<RomSet> rsl;
 std::string GSRom;
 
@@ -66,6 +71,10 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	rseditor = new QDialog(this);
 	rseUi.setupUi(rseditor);
 	rseditor->setModal(true);
+
+	layeditor = new QDialog(this);
+	layUi.setupUi(layeditor);
+	layeditor->setModal(true);
 
 	unsigned int i;
 	std::vector<std::string> list;
@@ -161,6 +170,22 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	QObject::connect(setupUi.pathtb,SIGNAL(released()),this,SLOT(selsspath()));
 	QObject::connect(setupUi.bszsld,SIGNAL(valueChanged(int)),this,SLOT(chabsz()));
 	QObject::connect(setupUi.brgslide,SIGNAL(valueChanged(int)),this,SLOT(chabrg()));
+
+	connect(setupUi.layEdit,SIGNAL(released()),this,SLOT(editLayout()));
+	connect(setupUi.layAdd,SIGNAL(released()),this,SLOT(addNewLayout()));
+	connect(setupUi.layDel,SIGNAL(released()),this,SLOT(delLayout()));
+
+	connect(layUi.lineBox,SIGNAL(valueChanged(int)),this,SLOT(layEditorChanged()));
+	connect(layUi.rowsBox,SIGNAL(valueChanged(int)),this,SLOT(layEditorChanged()));
+	connect(layUi.brdLBox,SIGNAL(valueChanged(int)),this,SLOT(layEditorChanged()));
+	connect(layUi.brdUBox,SIGNAL(valueChanged(int)),this,SLOT(layEditorChanged()));
+	connect(layUi.hsyncBox,SIGNAL(valueChanged(int)),this,SLOT(layEditorChanged()));
+	connect(layUi.vsyncBox,SIGNAL(valueChanged(int)),this,SLOT(layEditorChanged()));
+	connect(layUi.intLenBox,SIGNAL(valueChanged(int)),this,SLOT(layEditorChanged()));
+	connect(layUi.intPosBox,SIGNAL(valueChanged(int)),this,SLOT(layEditorChanged()));
+	connect(layUi.intRowBox,SIGNAL(valueChanged(int)),this,SLOT(layEditorChanged()));
+	connect(layUi.okButton,SIGNAL(released()),this,SLOT(layEditorOK()));
+	connect(layUi.cnButton,SIGNAL(released()),layeditor,SLOT(hide()));
 // sound
 	QObject::connect(setupUi.bvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
 	QObject::connect(setupUi.tvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
@@ -255,8 +280,8 @@ void SetupWin::start() {
 	emulPause(true,PR_OPTS);
 	XProfile* curProf = getCurrentProfile();
 // machine
-	setupUi.rsetbox->clear();
 	rsl = getRomsetList();
+	setupUi.rsetbox->clear();
 	GSRom = curProf->gsFile;
 	for (i=0; i < rsl.size(); i++) {
 		setupUi.rsetbox->addItem(QString::fromLocal8Bit(rsl[i].name.c_str()));
@@ -274,6 +299,7 @@ void SetupWin::start() {
 	setupUi.cpufrq->setValue(zx->cpuFrq * 2); updfrq();
 	setupUi.scrpwait->setChecked(zx->hwFlags & WAIT_ON);
 // video
+	lays = getLayoutList();
 	setupUi.dszchk->setChecked((vidFlag & VF_DOUBLE));
 	setupUi.fscchk->setChecked(vidFlag & VF_FULLSCREEN);
 	setupUi.noflichk->setChecked(vidFlag & VF_NOFLIC);
@@ -285,7 +311,6 @@ void SetupWin::start() {
 	setupUi.scntbox->setValue(optGetInt(OPT_SHOTCNT));
 	setupUi.sintbox->setValue(optGetInt(OPT_SHOTINT));
 	setupUi.brgslide->setValue(optGetInt(OPT_BRGLEV));
-	std::vector<VidLayout> lays = getLayoutList();
 	setupUi.geombox->clear();
 	for (i=0; i<lays.size(); i++) {setupUi.geombox->addItem(QString::fromLocal8Bit(lays[i].name.c_str()));}
 	setupUi.geombox->setCurrentIndex(setupUi.geombox->findText(QString::fromLocal8Bit(getCurrentProfile()->layName.c_str())));
@@ -400,6 +425,7 @@ void SetupWin::start() {
 void SetupWin::apply() {
 	XProfile* curProf = getCurrentProfile();
 // machine
+	setRomsetList(rsl);
 	HardWare *oldmac = zx->hw;
 	curProf->hwName = std::string(setupUi.machbox->currentText().toUtf8().data());
 	setHardware(curProf->zx,curProf->hwName);
@@ -412,9 +438,9 @@ void SetupWin::apply() {
 	zxSetFrq(zx,setupUi.cpufrq->value() / 2.0);
 	setFlagBit(setupUi.scrpwait->isChecked(),&zx->hwFlags,WAIT_ON);
 	curProf->gsFile = GSRom;
-	setRomsetList(rsl);
 	if (zx->hw != oldmac) zxReset(zx,RES_DEFAULT);
 // video
+	setLayoutList(lays);
 	setFlagBit(setupUi.dszchk->isChecked(),&vidFlag,VF_DOUBLE);
 	setFlagBit(setupUi.fscchk->isChecked(),&vidFlag,VF_FULLSCREEN);
 	setFlagBit(setupUi.noflichk->isChecked(),&vidFlag,VF_NOFLIC);
@@ -542,6 +568,112 @@ void SetupWin::reject() {
 	fillBookmarkMenu();
 	emulPause(false,PR_OPTS);
 }
+
+// LAYOUTS
+
+void SetupWin::editLayout() {
+	int idx = setupUi.geombox->currentIndex();
+	if (idx < 1) {
+		shitHappens("You can't edit built-in layout");
+		return;
+	}
+	VidLayout lay = lays[idx];
+	layUi.lineBox->setValue(lay.full.h);
+	layUi.rowsBox->setValue(lay.full.v);
+	layUi.hsyncBox->setValue(lay.sync.h);
+	layUi.vsyncBox->setValue(lay.sync.v);
+	layUi.brdLBox->setValue(lay.bord.h - lay.sync.h);
+	layUi.brdUBox->setValue(lay.bord.v - lay.sync.v);
+	layUi.intRowBox->setValue(lay.intpos.v);
+	layUi.intPosBox->setValue(lay.intpos.h);
+	layUi.intLenBox->setValue(lay.intsz);
+	layeditor->show();
+}
+
+void SetupWin::delLayout() {
+	int idx = setupUi.geombox->currentIndex();
+	if (idx < 1) {
+		shitHappens("You can't delete this layout");
+		return;
+	}
+	if (areSure("Do you really want to delete this layout?")) {
+		lays.erase(lays.begin() + idx);
+		setupUi.geombox->removeItem(idx);
+	}
+}
+
+void SetupWin::addNewLayout() {
+	QString nam = QInputDialog::getText(this,"Enter...","Input layout name"); //,QLineEdit::Normal,"",&ok);
+	if (nam.isEmpty()) return;
+	VidLayout lay = lays[0];		// default
+	lay.name = std::string(nam.toLocal8Bit().data());
+	for (uint i = 0; i < lays.size(); i++) {
+		if (lays[i].name == lay.name) {
+			shitHappens("Already have this layout name");
+			return;
+		}
+	}
+	lays.push_back(lay);
+	setupUi.geombox->addItem(nam);
+	setupUi.geombox->setCurrentIndex(setupUi.geombox->count() - 1);
+}
+
+void SetupWin::layEditorChanged() {
+	layUi.brdLBox->setMaximum(layUi.lineBox->value() - layUi.hsyncBox->value() - 256);
+	layUi.brdUBox->setMaximum(layUi.rowsBox->value() - layUi.vsyncBox->value() - 192);
+	layUi.hsyncBox->setMaximum(layUi.lineBox->value() - 256);
+	layUi.vsyncBox->setMaximum(layUi.rowsBox->value() - 192);
+	layUi.lineBox->setMinimum(layUi.brdLBox->value() + layUi.hsyncBox->value() + 256);
+	layUi.rowsBox->setMinimum(layUi.brdUBox->value() + layUi.vsyncBox->value() + 192);
+	layUi.intRowBox->setMaximum(layUi.rowsBox->value());
+	layUi.intPosBox->setMaximum(layUi.lineBox->value());
+
+	QString infText = QString::number((layUi.lineBox->value() >> 1)).append(" / ");
+	int toscr = layUi.hsyncBox->value() + layUi.brdLBox->value() - layUi.intPosBox->value() +
+			(layUi.vsyncBox->value() + layUi.brdUBox->value() - layUi.intRowBox->value()) * layUi.lineBox->value();
+	infText.append(QString::number(toscr >> 1)).append(" / ");
+	infText.append(QString::number((layUi.rowsBox->value() * layUi.lineBox->value()) >> 1));
+	layUi.infLabel->setText(infText);
+
+	layUi.showField->setFixedSize(layUi.lineBox->value(),layUi.rowsBox->value());
+	QPixmap pix(layUi.lineBox->value(),layUi.rowsBox->value());
+	pix.fill(Qt::black);
+	layUi.showField->setPixmap(pix);
+	QPainter pnt;
+	pnt.begin(&pix);
+	pnt.fillRect(layUi.hsyncBox->value(),
+				 layUi.vsyncBox->value(),
+				 layUi.lineBox->value() - layUi.hsyncBox->value(),
+				 layUi.rowsBox->value() - layUi.vsyncBox->value(),
+				 Qt::blue);
+	pnt.fillRect(layUi.hsyncBox->value() + layUi.brdLBox->value(),
+				 layUi.vsyncBox->value() + layUi.brdUBox->value(),
+				 256,192,Qt::gray);
+	pnt.setPen(Qt::red);
+	pnt.drawLine(layUi.intPosBox->value(),
+				 layUi.intRowBox->value(),
+				 layUi.intPosBox->value() + layUi.intLenBox->value(),
+				 layUi.intRowBox->value());
+	pnt.end();
+	layUi.showField->setPixmap(pix);
+}
+
+void SetupWin::layEditorOK() {
+	int idx = setupUi.geombox->currentIndex();
+	if (idx < 1) return;
+	lays[idx].full.h = layUi.lineBox->value();
+	lays[idx].full.v = layUi.rowsBox->value();
+	lays[idx].bord.h = layUi.hsyncBox->value() + layUi.brdLBox->value();
+	lays[idx].bord.v = layUi.vsyncBox->value() + layUi.brdUBox->value();
+	lays[idx].sync.h = layUi.hsyncBox->value();
+	lays[idx].sync.v = layUi.vsyncBox->value();
+	lays[idx].intpos.h = layUi.intPosBox->value();
+	lays[idx].intpos.v = layUi.intRowBox->value();
+	lays[idx].intsz = layUi.intLenBox->value();
+	layeditor->hide();
+}
+
+// ROMSETS
 
 void SetupWin::rmRomset() {
 	int idx = setupUi.rsetbox->currentIndex();

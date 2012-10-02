@@ -250,3 +250,9 @@ Fix	Fixing +2/+3 extend memory paging
 build 20120930
 New	Mouse wheel emulation
 New	Kempston mouse settings
+
+build 20120902
+New	Screen layouts managment from options window
+Fix	Incorrect mouse settings
+Fix	Mouse wheel acting even without mouse grab
+Fix	Bad sound while using contended memory (by the way, it still not working)
