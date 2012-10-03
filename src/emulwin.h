@@ -233,6 +233,7 @@ class MainWin : public QX11EmbedContainer {
 		void rzxStateChanged(int);
 		void bookmarkSelected(QAction*);
 		void profileSelected(QAction*);
+		void reset(QAction*);
 	protected:
 		void closeEvent(QCloseEvent*);
 #ifdef XQTPAINT

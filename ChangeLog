@@ -256,3 +256,7 @@ New	Screen layouts managment from options window
 Fix	Incorrect mouse settings
 Fix	Mouse wheel acting even without mouse grab
 Fix	Bad sound while using contended memory (by the way, it still not working)
+
+build 20120903
+New	Reset submenu in popup-menu
+Fix	Incorrect .z80 file was founded. Emulator crushed because of it.

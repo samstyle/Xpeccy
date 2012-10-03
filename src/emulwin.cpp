@@ -1229,9 +1229,18 @@ void emulCloseJoystick() {
 // USER MENU
 
 void initUserMenu(QWidget* par) {
+	QMenu* resMenu;
 	userMenu = new QMenu(par);
 	bookmarkMenu = userMenu->addMenu(QIcon(":/images/star.png"),"Bookmarks");
 	profileMenu = userMenu->addMenu(QIcon(":/images/profile.png"),"Profiles");
+	resMenu = userMenu->addMenu(QIcon(":/images/shutdown.png"),"Reset...");
+	QObject::connect(resMenu,SIGNAL(triggered(QAction*)),par,SLOT(reset(QAction*)));
+	resMenu->addAction("default")->setData(RES_DEFAULT);
+	resMenu->addSeparator();
+	resMenu->addAction("ROMpage0")->setData(RES_128);
+	resMenu->addAction("ROMpage1")->setData(RES_48);
+	resMenu->addAction("ROMpage2")->setData(RES_SHADOW);
+	resMenu->addAction("ROMpage3")->setData(RES_DOS);
 	userMenu->addSeparator();
 	userMenu->addAction(QIcon(":/images/tape.png"),"Tape window",tapeWin,SLOT(show()));
 	userMenu->addAction(QIcon(":/images/video.png"),"RZX player",rzxWin,SLOT(show()));
@@ -1282,4 +1291,9 @@ void MainWin::profileSelected(QAction* act) {
 	}
 	setFocus();
 	emulPause(false,PR_EXTRA);
+}
+
+void MainWin::reset(QAction* act) {
+	zxReset(zx,act->data().toInt());
+	rzxWin->stop();
 }

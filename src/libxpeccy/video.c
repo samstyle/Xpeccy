@@ -77,6 +77,7 @@ Video* vidCreate(Memory* me) {
 
 	vid->dotCount = 0;
 	vid->pxcnt = 0;
+	vid->drawed = 0;
 
 	vid->scrimg = screenBuf;
 	vid->scrptr = vid->scrimg;
@@ -268,6 +269,7 @@ int vidSync(Video* vid, float dotDraw) {
 	int i;
 	int res = 0;
 	vid->pxcnt += dotDraw;
+	vid->drawed += dotDraw;
 	while (vid->pxcnt >= 1) {
 		mtx = &vid->matrix[vid->dotCount];
 		vid->dotCount++;

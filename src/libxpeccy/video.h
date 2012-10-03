@@ -57,6 +57,7 @@ typedef struct {
 	int frmsz;
 	int mode;
 	float pxcnt;
+	float drawed;
 	int dotCount;
 	VSize full;
 	VSize bord;

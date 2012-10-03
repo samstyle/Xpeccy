@@ -39,5 +39,6 @@
         <file>images/video.png</file>
         <file>images/profile.png</file>
         <file>images/question.png</file>
+        <file>images/shutdown.png</file>
     </qresource>
 </RCC>

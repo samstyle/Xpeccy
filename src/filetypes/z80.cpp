@@ -1,5 +1,17 @@
 #include "filetypes.h"
 
+typedef struct {
+	unsigned char a,f,c,b,l,h;
+	unsigned char pcl,pch;
+	unsigned char spl,sph;
+	unsigned char i,r7,flag12;
+	unsigned char e,d;
+	unsigned char _c,_b,_e,_d,_l,_h,_a,_f;
+	unsigned char iyl,iyh;
+	unsigned char ixl,ixh;
+	unsigned char iff1,iff2,flag29;
+} z80v1Header;
+
 unsigned short getLEWord(std::ifstream* file) {
 	unsigned short res = file->get();
 	res += (file->get() << 8);
@@ -30,11 +42,11 @@ void z80uncompress(std::ifstream* file,char* buf,int maxlen) {
 					do {
 						*(ptr++) = tmp;
 						tmp2--;
-					} while (tmp2);
+					} while (tmp2 && (ptr - buf < maxlen));
 				}
 			} else {
 				*(ptr++) = 0xed;
-				*(ptr++) = tmp;
+				if (ptr - buf < maxlen) *(ptr++) = tmp;
 				lst = tmp;
 			}
 		} else {
@@ -78,37 +90,43 @@ int loadZ80(ZXComp* zx, const char* name) {
 	unsigned short adr;
 	Z80EX_CONTEXT* cpu = zx->cpu;
 	char* pageBuf = new char[0xc000];
-
+	z80v1Header head;
 	zx->prt0 = 0x10;
 	zx->prt1 = 0x00;
 	memSetBank(zx->mem,MEM_BANK0,MEM_ROM,1);
 	memSetBank(zx->mem,MEM_BANK3,MEM_RAM,0);
 	zx->vid->curscr = 0;
-	z80ex_set_reg(cpu,regAF,getBEWord(&file));
-	z80ex_set_reg(cpu,regBC,getLEWord(&file));
-	z80ex_set_reg(cpu,regHL,getLEWord(&file));
-	z80ex_set_reg(cpu,regPC,getLEWord(&file));
-	z80ex_set_reg(cpu,regSP,getLEWord(&file));
-	z80ex_set_reg(cpu,regI,file.get());
-	tmp2 = file.get() & 0x7f;
-	tmp = file.get();
-	if (tmp == 0xff) tmp = 0x01;
-	if (tmp & 1) tmp2 |= 0x80;
-	z80ex_set_reg(cpu,regR,tmp);
-	z80ex_set_reg(cpu,regR7,tmp);
-	zx->vid->brdcol = (tmp >> 1) & 7;
+
+	file.read((char*)&head,sizeof(z80v1Header));
+	if (head.flag12 == 0xff) head.flag12 = 0x01;	// Because of compatibility, if byte 12 is 255, it has to be regarded as being 1.
+
+	z80ex_set_reg(cpu,regAF,(head.a << 8) + head.f);
+	z80ex_set_reg(cpu,regBC,(head.b << 8) + head.c);
+	z80ex_set_reg(cpu,regDE,(head.d << 8) + head.e);
+	z80ex_set_reg(cpu,regHL,(head.h << 8) + head.l);
+
+	z80ex_set_reg(cpu,regAF_,(head._a << 8) + head._f);
+	z80ex_set_reg(cpu,regBC_,(head._b << 8) + head._c);
+	z80ex_set_reg(cpu,regDE_,(head._d << 8) + head._e);
+	z80ex_set_reg(cpu,regHL_,(head._h << 8) + head._l);
+
+	z80ex_set_reg(cpu,regPC,(head.pch << 8) + head.pcl);
+	z80ex_set_reg(cpu,regSP,(head.sph << 8) + head.spl);
+	z80ex_set_reg(cpu,regI,head.i);
+	z80ex_set_reg(cpu,regR7,head.r7 & 0x7f);
+	z80ex_set_reg(cpu,regR,(head.r7 & 0x7f) | ((head.flag12 & 0x01) ? 0x80 : 0x00));
+	z80ex_set_reg(cpu,regIM,head.flag29 & 3);
+	z80ex_set_reg(cpu,regIFF1,head.iff1);
+	z80ex_set_reg(cpu,regIFF2,head.iff2);
+
+	zx->vid->brdcol = (head.flag12 >> 1) & 7;
 	zx->vid->nextbrd = zx->vid->brdcol;
-	z80ex_set_reg(cpu,regDE,getLEWord(&file));
-	z80ex_set_reg(cpu,regBC_,getLEWord(&file));
-	z80ex_set_reg(cpu,regDE_,getLEWord(&file));
-	z80ex_set_reg(cpu,regHL_,getLEWord(&file));
-	z80ex_set_reg(cpu,regAF_,getBEWord(&file));
-	z80ex_set_reg(cpu,regIY,getLEWord(&file));
-	z80ex_set_reg(cpu,regIX,getLEWord(&file));
-	z80ex_set_reg(cpu,regIFF1,file.get());
-	z80ex_set_reg(cpu,regIFF2,file.get());
-	tmp2 = file.get();
-	z80ex_set_reg(cpu,regIM,tmp2 & 3);
+
+// unsupported things list
+	if (head.flag12 & 0x10) printf("...flag 12.bit 4.Basic SamRom switched in\n");
+	if (head.flag29 & 0x04) printf("...flag 29.bit 2.Issue 2 emulation\n");
+	if (head.flag29 & 0x08) printf("...flag 29.bit 3.Double interrupt frequency\n");
+// continued
 	if (z80ex_get_reg(cpu,regPC) == 0) {
 		tmp = file.get();
 		tmp2 = file.get();
@@ -193,12 +211,14 @@ printf(".z80 version 2\n");
 		}
 	} else {			// version 1
 printf(".z80 version 1\n");
-		if (tmp & 0x20) {
+		if (head.flag12 & 0x20) {
+			printf("data is compressed\n");
 			z80uncompress(&file,pageBuf,0xc000);
 			memSetPage(zx->mem,MEM_RAM,5,pageBuf);
 			memSetPage(zx->mem,MEM_RAM,2,pageBuf + 0x4000);
 			memSetPage(zx->mem,MEM_RAM,0,pageBuf + 0x8000);
 		} else {
+			printf("data is not compressed\n");
 			file.read(pageBuf,0x4000);
 			memSetPage(zx->mem,MEM_RAM,5,pageBuf);
 			file.read(pageBuf,0x4000);
