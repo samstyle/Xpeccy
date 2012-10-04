@@ -118,11 +118,11 @@ waits for +2a, +3
 	ww--wwww wwwwwwww : same
 */
 
-int waitsTab_A[16] = {10,9,8,7,6,5,4,3,2,1,0,0,0,0,12,11};
-int waitsTab_B[16] = {2,1,0,0,14,13,12,11,10,9,8,7,6,5,4,3};
+int waitsTab_A[16] = {5,5,4,4,3,3,2,2,1,1,0,0,0,0,6,6};	// 48K
+int waitsTab_B[16] = {1,1,0,0,7,7,6,6,5,5,4,4,3,3,2,2};	// +2A,+3
 
 void vidFillMatrix(Video* vid) {
-	int x,y,i,adr,nya=0;
+	int x,y,i,adr; // nya=0;
 	int tk = 0;
 	i = 0;
 	adr = 0;
@@ -131,15 +131,10 @@ void vidFillMatrix(Video* vid) {
 			vid->matrix[i].flag = 0;
 			vid->matrix[i].wait = 0;
 
-			if ((x >= vid->bord.h) && (x < (vid->bord.h + 256)) && (y >= vid->bord.v) && (y < (vid->bord.v + 192))) {	// on screen
-				if (x == vid->bord.h) {
-				//	vid->matrix[i - 1].wait = 12;
-				//	vid->matrix[i - 2].wait = 11;
-					nya = 0;
-				}
-				vid->matrix[i].wait = waitsTab_A[nya & 15];
-				nya++;
+			if ((x >= (vid->bord.h - 1)) && (x < (vid->bord.h + 254)) && (y >= vid->bord.v) && (y < (vid->bord.v + 192))) {	// on screen
+				vid->matrix[i].wait = waitsTab_A[(x - vid->bord.h + 1) & 15];
 			}
+
 			if ((y < vid->lcut.v) || (y >= vid->rcut.v) || (x < vid->lcut.h) || (x >= vid->rcut.h)) {
 				vid->matrix[i].type = MTT_INVIS;
 			} else {
@@ -255,6 +250,11 @@ void vidDarkTail(Video* vid) {
 	} while (~mtx->flag & MTF_FRMEND);
 }
 
+int vidGetWait(Video* vid) {
+	return vid->matrix[vid->dotCount].wait;
+}
+
+/*
 int vidWaitSlow(Video* vid) {
 	int res = 0;
 	if (vid->matrix[vid->dotCount].wait != 0) {
@@ -264,6 +264,7 @@ int vidWaitSlow(Video* vid) {
 	}
 	return res;
 }
+*/
 
 int vidSync(Video* vid, float dotDraw) {
 	int i;

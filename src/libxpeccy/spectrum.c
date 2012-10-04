@@ -175,10 +175,10 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 		}
 	}
 	res3 = res2 + z80ex_op_tstate(cpu);
+//	if (((adr & 0xc000) == 0x4000) && (comp->vid->flags & VID_SLOWMEM))
+//		res4 -= vidGetWait(comp->vid);
 	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
 	res4 = res3;
-	if (((adr & 0xc000) == 0x4000) && (comp->vid->flags & VID_SLOWMEM))
-		res5 = (vidWaitSlow(comp->vid) / 2);
 	res = memRd(comp->mem,adr);
 	return res;
 }
@@ -189,10 +189,10 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 void memwr(Z80EX_CONTEXT* cpu, Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
 	res3 = res2 + z80ex_op_tstate(cpu);
+//	if (((adr & 0xc000) == 0x4000) && (comp->vid->flags & VID_SLOWMEM))
+//		res4 -= vidGetWait(comp->vid);
 	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
 	res4 = res3;
-	if (((adr & 0xc000) == 0x4000) && (comp->vid->flags & VID_SLOWMEM))
-		res5 = vidWaitSlow(comp->vid);
 	memWr(comp->mem,adr,val);
 	if (comp->mem->flags & MEM_BRK_WRITE) {
 		comp->flags |= ZX_BREAK;
@@ -385,9 +385,13 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	}
 }
 
+#include <assert.h>
 void iowr(Z80EX_CONTEXT* cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
 	res3 = res2 + z80ex_op_tstate(cpu) - 3;
+	if (comp->vid->flags & VID_SLOWMEM) {
+		res4 -= vidGetWait(comp->vid);
+	}
 	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
 	res4 = res3;
 	zxOut(comp,port,val);
@@ -505,7 +509,7 @@ double zxExec(ZXComp* comp) {
 	if ((pcreg > 0x3fff) && comp->nmiRequest && !comp->rzxPlay) {
 		res3 = res4 = 0;
 		res2 = z80ex_nmi(comp->cpu);
-//		res1 += res2;
+		res1 += res2;
 		if (res2 != 0) {
 			comp->bdi->flag |= BDI_ACTIVE;
 			zxMapMemory(comp);
@@ -515,7 +519,7 @@ double zxExec(ZXComp* comp) {
 	if (comp->intStrobe) {
 		res3 = res4 = 0;
 		res2 = z80ex_int(comp->cpu);
-//		res1 += res2;
+		res1 += res2;
 		vidSync(comp->vid,(res2 - res4) * comp->dotPerTick);
 		if (comp->rzxPlay) {
 			comp->rzxFrame++;
@@ -535,7 +539,7 @@ double zxExec(ZXComp* comp) {
 		comp->flags |= ZX_BREAK;
 	}
 
-	ltk = comp->vid->drawed;
+	ltk = res1 * comp->dotPerTick;
 	comp->tickCount += res1;
 	tapSync(comp->tape,ltk);
 
