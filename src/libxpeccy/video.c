@@ -126,13 +126,14 @@ void vidFillMatrix(Video* vid) {
 	int tk = 0;
 	i = 0;
 	adr = 0;
+	int scrShift = vid->bord.h + 8;		// by some steet magic screen shifted in 8 pixels from border
 	for (y = 0; y < vid->full.v; y++) {
 		for (x = 0; x < vid->full.h; x++) {
 			vid->matrix[i].flag = 0;
 			vid->matrix[i].wait = 0;
-
-			if ((x >= (vid->bord.h - 1)) && (x < (vid->bord.h + 254)) && (y >= vid->bord.v) && (y < (vid->bord.v + 192))) {	// on screen
-				vid->matrix[i].wait = waitsTab_A[(x - vid->bord.h + 1) & 15];
+// waits: dots from -2 dots to +253 (254 is already non-wait)
+			if ((x > (vid->bord.h - 3)) && (x < (vid->bord.h + 254)) && (y >= vid->bord.v) && (y < (vid->bord.v + 192))) {	// on screen
+				vid->matrix[i].wait = waitsTab_A[(x - vid->bord.h) & 15];
 			}
 
 			if ((y < vid->lcut.v) || (y >= vid->rcut.v) || (x < vid->lcut.h) || (x >= vid->rcut.h)) {
@@ -141,10 +142,10 @@ void vidFillMatrix(Video* vid) {
 				if ((x & 7) == 0) {
 					vid->matrix[i].flag |= MTF_4T;
 				}
-				if ((y < vid->bord.v) || (y > vid->bord.v + 191) || (x < vid->bord.h) || (x > vid->bord.h + 255)) {
+				if ((y < vid->bord.v) || (y > vid->bord.v + 191) || (x < scrShift) || (x > scrShift + 255)) {
 					vid->matrix[i].type = MTT_BORDER;
 				} else {
-					switch ((x - vid->bord.h) & 7) {
+					switch ((x - scrShift) & 7) {
 						case 0:
 							vid->matrix[i].type = MTT_PT0;
 							vid->matrix[i].atr5ptr = vid->scr5atr[adr];
@@ -195,20 +196,24 @@ void vidFillMatrix(Video* vid) {
 		if ((y >= vid->lcut.v) && (y < vid->rcut.v)) vid->matrix[i-1].flag |= MTF_LINEND;
 	}
 	vid->matrix[i-1].flag |= MTF_FRMEND;
-	adr = vid->intpos.v * vid->full.h + vid->intpos.h;
+	adr = vid->intpos.v * vid->full.h + vid->intpos.h - 1;
+	if (adr < 0) adr += vid->full.h * vid->full.v;
 	for (i = 0; i < vid->intsz; i++) {
 		vid->matrix[adr].flag |= MTF_INT;
 		adr++;
+		if (adr >= vid->full.h * vid->full.v) adr = 0;
 	}
 
 	adr = vid->intpos.v * vid->full.h + vid->intpos.h;
-	while (adr < (vid->full.h * vid->full.v)) {
-		vid->matrix[adr].tick = tk;
-		vid->matrix[adr+1].tick = tk;
-		adr += 2;
+	tk = 0;
+	for (i = 0; i < vid->full.h * vid->full.v; i++) {
+		if (tk < adr) {
+			vid->matrix[i].tick = (tk + vid->full.h * vid->full.v - adr) / 2;
+		} else {
+			vid->matrix[i].tick = (tk - adr) / 2;
+		}
 		tk++;
 	}
-//	printf("%i T before screen\n",(vid->full.h * (vid->bord.v - vid->intpos.v) + (vid->bord.h - vid->intpos.h)) >> 1);
 }
 
 void vidUpdate(Video* vid) {
@@ -275,8 +280,8 @@ int vidSync(Video* vid, float dotDraw) {
 		mtx = &vid->matrix[vid->dotCount];
 		vid->dotCount++;
 		if ((mtx->flag & MTF_INT) && (vid->intSignal == 0)) res |= VID_INT;
-		if (mtx->flag & MTF_4T) vid->brdcol = vid->nextbrd;
 		vid->intSignal = (mtx->flag & MTF_INT) ? 1 : 0;
+		if (mtx->flag & MTF_4T) vid->brdcol = vid->nextbrd;
 		if (mtx->type != MTT_INVIS) {
 			switch (vid->mode) {
 				case VID_NORMAL:
