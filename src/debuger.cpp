@@ -37,7 +37,6 @@ void DebugWin::start() {
 	currow = 0;
 	fillall();
 	show();
-	lastDbgTicks = zx->tickCount;
 	vidFlag |= VF_FRAMEDBG;
 	vidDarkTail(zx->vid);
 }
@@ -48,6 +47,7 @@ void DebugWin::stop() {
 	emulExec();
 	hide();
 	active = false;
+	lastDbgTicks = zx->tickCount;
 	emulPause(false,PR_DEBUG);
 }
 

@@ -15,7 +15,6 @@ extern "C" {
 #define	VF_FRAMEDBG		(1<<4)
 #define VF_NOFLIC		(1<<5)
 // vid->flags (vid)
-#define	VID_SLOWMEM		1
 #define	VID_BORDER_4T		(1<<1)
 // screen drawing mode
 #define	VID_NORMAL	0

@@ -206,14 +206,7 @@
            </item>
            <item>
             <widget class="QGroupBox" name="archOptGBox">
-             <layout class="QVBoxLayout" name="verticalLayout_26" stretch="0,0,0">
-              <item>
-               <widget class="QCheckBox" name="reschk">
-                <property name="text">
-                 <string>Reset after change</string>
-                </property>
-               </widget>
-              </item>
+             <layout class="QVBoxLayout" name="verticalLayout_26" stretch="0,0,0,0">
               <item>
                <widget class="QCheckBox" name="scrpwait">
                 <property name="enabled">
@@ -224,6 +217,25 @@
                 </property>
                 <property name="checkable">
                  <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="contIO">
+                <property name="text">
+                 <string>Contended I/O</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="contMem">
+                <property name="font">
+                 <font>
+                  <strikeout>true</strikeout>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Contended memory</string>
                 </property>
                </widget>
               </item>
@@ -538,18 +550,6 @@
                <widget class="QCheckBox" name="border4T">
                 <property name="text">
                  <string>4T border</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="contMem">
-                <property name="font">
-                 <font>
-                  <strikeout>true</strikeout>
-                 </font>
-                </property>
-                <property name="text">
-                 <string>Contended memory</string>
                 </property>
                </widget>
               </item>

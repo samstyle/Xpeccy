@@ -251,12 +251,15 @@ build 20120930
 New	Mouse wheel emulation
 New	Kempston mouse settings
 
-build 20120902
+build 20121002
 New	Screen layouts managment from options window
 Fix	Incorrect mouse settings
 Fix	Mouse wheel acting even without mouse grab
 Fix	Bad sound while using contended memory (by the way, it still not working)
 
-build 20120903
+build 20121003
 New	Reset submenu in popup-menu
 Fix	Incorrect .z80 file was founded. Emulator crushed because of it.
+
+build 20121011
+New	Contended I/O. Working. No, really working!

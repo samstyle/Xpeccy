@@ -471,16 +471,19 @@ void saveConfig() {
 	XProfile* curProf = getCurrentProfile();
 	optSet("GENERAL","cpu.frq",int(zx->cpuFrq * 2));
 	optSet("MACHINE","current",curProf->hwName);
-	optSet("MACHINE","restart",(emulGetFlags() & FL_RESET) != 0);
+//	optSet("MACHINE","restart",(emulGetFlags() & FL_RESET) != 0);
 	optSet("MACHINE","memory",zx->mem->memSize);
 	optSet("MACHINE","scrp.wait",(zx->hwFlags & WAIT_ON) != 0);
+	optSet("MACHINE","contmem",(zx->flags & ZX_CONTMEM) != 0);
+	optSet("MACHINE","contio",(zx->flags & ZX_CONTIO) != 0);
+
 	optSet("ROMSET","gs",curProf->gsFile);
 	optSet("ROMSET","current",curProf->rsName);
 	optSet("ROMSET","reset",rmnam[zx->resbank]);
 
 	optSet("VIDEO","geometry",curProf->layName);
 	optSet("VIDEO","4t-border",(zx->vid->flags & VID_BORDER_4T) != 0);
-	optSet("VIDEO","contmem",(zx->vid->flags & VID_SLOWMEM) != 0);
+//	optSet("VIDEO","contmem",(zx->vid->flags & VID_SLOWMEM) != 0);
 
 	optSet("SOUND","chip1",zx->ts->chipA->type);
 	optSet("SOUND","chip2",zx->ts->chipB->type);
@@ -878,7 +881,6 @@ void loadConfig(bool dev) {
 					case SECT_VIDEO:
 						if (pnam == "geometry") curProf->layName = pval;
 						if (pnam == "4t-border") setFlagBit(str2bool(pval),&zx->vid->flags,VID_BORDER_4T);
-						if (pnam == "contmem") setFlagBit(str2bool(pval),&zx->vid->flags,VID_SLOWMEM);
 						break;
 					case SECT_SCRSHOT:
 						if (pnam=="folder") shotDir = pval;
@@ -914,6 +916,8 @@ void loadConfig(bool dev) {
 								case 1024: tmask = MEM_1M; break;
 							}
 						}
+						if (pnam == "contmem") setFlagBit(str2bool(pval),&zx->flags,ZX_CONTMEM);
+						if (pnam == "contio") setFlagBit(str2bool(pval),&zx->flags,ZX_CONTIO);
 						break;
 					case SECT_TOOLS:
 						if (pnam=="sjasm") asmPath = pval; break;
@@ -976,6 +980,8 @@ void loadConfig(bool dev) {
 
 	delOption("VIDEO","fullscreen");
 	delOption("VIDEO","doublesize");
+	delOption("VIDEO","contmem");
+	delOption("MACHINE","restart");
 
 	tmp2 = optGetInt("GENERAL","cpu.frq"); if ((tmp2 > 0) && (tmp2 <= 14)) zxSetFrq(zx,tmp2 / 2.0);
 
@@ -997,7 +1003,7 @@ void loadConfig(bool dev) {
 	curProf->hwName = optGetString("MACHINE","current");
 	curProf->rsName = optGetString("ROMSET","current");
 	curProf->gsFile = optGetString("ROMSET","gs");
-	emulSetFlag(FL_RESET,optGetBool("MACHINE","restart"));
+//	emulSetFlag(FL_RESET,optGetBool("MACHINE","restart"));
 	setFlagBit(optGetBool("MACHINE","scrp.wait"),&zx->hwFlags,WAIT_ON);
 
 	sndCalibrate();

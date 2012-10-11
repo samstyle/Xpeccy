@@ -36,6 +36,8 @@ extern "C" {
 // zx flags
 #define	ZX_BREAK	1
 #define	ZX_JUSTBORN	(1<<1)	// just created zx. need to reset after selection
+#define	ZX_CONTMEM	(1<<2)
+#define	ZX_CONTIO	(1<<3)
 
 typedef struct {
 	const char* name;

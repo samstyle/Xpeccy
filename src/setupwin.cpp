@@ -291,7 +291,7 @@ void SetupWin::start() {
 	RomSet* rset = findRomset(curProf->rsName);
 	if (rset != NULL) cbx = setupUi.rsetbox->findText(QString::fromUtf8(rset->name.c_str()));
 	setupUi.rsetbox->setCurrentIndex(cbx);
-	setupUi.reschk->setChecked(emulGetFlags() & FL_RESET);
+//	setupUi.reschk->setChecked(emulGetFlags() & FL_RESET);
 	setupUi.resbox->setCurrentIndex(zx->resbank);
 	setmszbox(setupUi.machbox->currentIndex());
 	setupUi.mszbox->setCurrentIndex(setupUi.mszbox->findData(zx->mem->memSize));
@@ -304,7 +304,8 @@ void SetupWin::start() {
 	setupUi.fscchk->setChecked(vidFlag & VF_FULLSCREEN);
 	setupUi.noflichk->setChecked(vidFlag & VF_NOFLIC);
 	setupUi.border4T->setChecked(zx->vid->flags & VID_BORDER_4T);
-	setupUi.contMem->setChecked(zx->vid->flags & VID_SLOWMEM);
+	setupUi.contMem->setChecked(zx->flags & ZX_CONTMEM);
+	setupUi.contIO->setChecked(zx->flags & ZX_CONTIO);
 	setupUi.bszsld->setValue((int)(brdsize * 100));
 	setupUi.pathle->setText(QString::fromLocal8Bit(optGetString(OPT_SHOTDIR).c_str()));
 	setupUi.ssfbox->setCurrentIndex(setupUi.ssfbox->findData(optGetInt(OPT_SHOTFRM)));
@@ -431,7 +432,7 @@ void SetupWin::apply() {
 	setHardware(curProf->zx,curProf->hwName);
 	curProf->rsName = std::string(setupUi.rsetbox->currentText().toUtf8().data());
 	setRomset(curProf->name, curProf->rsName);
-	emulSetFlag(FL_RESET, setupUi.reschk->isChecked());
+//	emulSetFlag(FL_RESET, setupUi.reschk->isChecked());
 	zx->resbank = setupUi.resbox->currentIndex();
 
 	memSetSize(zx->mem,setupUi.mszbox->itemData(setupUi.mszbox->currentIndex()).toInt());
@@ -445,7 +446,8 @@ void SetupWin::apply() {
 	setFlagBit(setupUi.fscchk->isChecked(),&vidFlag,VF_FULLSCREEN);
 	setFlagBit(setupUi.noflichk->isChecked(),&vidFlag,VF_NOFLIC);
 	setFlagBit(setupUi.border4T->isChecked(),&zx->vid->flags,VID_BORDER_4T);
-	setFlagBit(setupUi.contMem->isChecked(),&zx->vid->flags,VID_SLOWMEM);
+	setFlagBit(setupUi.contMem->isChecked(),&zx->flags,ZX_CONTMEM);
+	setFlagBit(setupUi.contIO->isChecked(),&zx->flags,ZX_CONTIO);
 	brdsize = setupUi.bszsld->value()/100.0;
 	optSet(OPT_SHOTDIR,std::string(setupUi.pathle->text().toLocal8Bit().data()));
 	optSet(OPT_SHOTFRM,setupUi.ssfbox->itemData(setupUi.ssfbox->currentIndex()).toInt());

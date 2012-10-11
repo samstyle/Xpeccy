@@ -82,7 +82,7 @@ Video* vidCreate(Memory* me) {
 	vid->scrimg = screenBuf;
 	vid->scrptr = vid->scrimg;
 
-	vid->flags = 0; // VID_SLOWMEM;
+	vid->flags = 0;
 	vid->firstFrame = 1;
 	vid->intSignal = 0;
 
@@ -196,8 +196,7 @@ void vidFillMatrix(Video* vid) {
 		if ((y >= vid->lcut.v) && (y < vid->rcut.v)) vid->matrix[i-1].flag |= MTF_LINEND;
 	}
 	vid->matrix[i-1].flag |= MTF_FRMEND;
-	adr = vid->intpos.v * vid->full.h + vid->intpos.h - 1;
-	if (adr < 0) adr += vid->full.h * vid->full.v;
+	adr = vid->intpos.v * vid->full.h + vid->intpos.h;
 	for (i = 0; i < vid->intsz; i++) {
 		vid->matrix[adr].flag |= MTF_INT;
 		adr++;
@@ -232,7 +231,8 @@ unsigned char col = 0;
 unsigned char ink = 0;
 unsigned char pap = 0;
 unsigned char scrbyte = 0;
-mtrxItem* mtx;
+mtrxItem* mtx = NULL;
+mtrxItem* nmtx = NULL;
 
 unsigned char pixBuffer[8];
 unsigned char bitMask[8] = {0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
@@ -259,18 +259,6 @@ int vidGetWait(Video* vid) {
 	return vid->matrix[vid->dotCount].wait;
 }
 
-/*
-int vidWaitSlow(Video* vid) {
-	int res = 0;
-	if (vid->matrix[vid->dotCount].wait != 0) {
-		res = vid->matrix[vid->dotCount].wait;
-		vidSync(vid,res);
-//		printf("wait...%i T on %i\n",vid->matrix[vid->dotCount].wait >> 1,vid->matrix[vid->dotCount].tick);
-	}
-	return res;
-}
-*/
-
 int vidSync(Video* vid, float dotDraw) {
 	int i;
 	int res = 0;
@@ -279,9 +267,12 @@ int vidSync(Video* vid, float dotDraw) {
 	while (vid->pxcnt >= 1) {
 		mtx = &vid->matrix[vid->dotCount];
 		vid->dotCount++;
-		if ((mtx->flag & MTF_INT) && (vid->intSignal == 0)) res |= VID_INT;
+		if (mtx->flag & MTF_FRMEND) vid->dotCount = 0;
+		nmtx = &vid->matrix[vid->dotCount];
+		if ((nmtx->flag & MTF_INT) && (!(mtx->flag & MTF_INT))) res |= VID_INT;
 		vid->intSignal = (mtx->flag & MTF_INT) ? 1 : 0;
 		if (mtx->flag & MTF_4T) vid->brdcol = vid->nextbrd;
+
 		if (mtx->type != MTT_INVIS) {
 			switch (vid->mode) {
 				case VID_NORMAL:
@@ -344,7 +335,7 @@ int vidSync(Video* vid, float dotDraw) {
 		if ((mtx->flag & MTF_LINEND) && (vidFlag & VF_DOUBLE)) vid->scrptr += vid->wsze.h;
 		if (mtx->flag & MTF_FRMEND) {
 			res |= VID_FRM;
-			vid->dotCount = 0;
+//			vid->dotCount = 0;
 			vid->fcnt++;
 			vid->flash = vid->fcnt & 0x20;
 			vid->scrptr = vid->scrimg;
