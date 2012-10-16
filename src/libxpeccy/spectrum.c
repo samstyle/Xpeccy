@@ -404,15 +404,18 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 #include <assert.h>
 void iowr(Z80EX_CONTEXT* cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
-	res3 = res2 + z80ex_op_tstate(cpu);
+	res3 = res2 + z80ex_op_tstate(cpu);		// here is start of OUT cycle (4T)
 	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
-	res4 = res3;
 	// if there is contended io, get wait and wait :)
 	if (comp->flags & ZX_CONTIO) {
 		res5 = vidGetWait(comp->vid);
 		vflg |= vidSync(comp->vid,comp->dotPerTick * res5);
 		res1 += res5;
 	}
+	// draw 4T of OUT cycle
+	vflg |= vidSync(comp->vid,comp->dotPerTick * 4);
+	res4 = res3 + 4;
+	// and do out
 	zxOut(comp,port,val);
 }
 

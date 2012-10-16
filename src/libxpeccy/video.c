@@ -126,7 +126,7 @@ void vidFillMatrix(Video* vid) {
 	int tk = 0;
 	i = 0;
 	adr = 0;
-	int scrShift = vid->bord.h + 8;		// by some steet magic screen shifted in 8 pixels from border
+	int scrShift = vid->bord.h;
 	for (y = 0; y < vid->full.v; y++) {
 		for (x = 0; x < vid->full.h; x++) {
 			vid->matrix[i].flag = 0;
