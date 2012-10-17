@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+//#include <assert.h>
 
 #include "spectrum.h"
 
@@ -178,9 +179,11 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
 	res4 = res3;
 	if (((adr & 0xc000) == 0x4000) && (comp->flags & ZX_CONTMEM)) {
-			res5 = vidGetWait(comp->vid);
+		res5 = vidGetWait(comp->vid);
+		if (res5 != 0) {
 			vflg |= vidSync(comp->vid, comp->dotPerTick * res5);
 			res1 += res5;
+		}
 	}
 	res = memRd(comp->mem,adr);
 	return res;
@@ -196,8 +199,10 @@ void memwr(Z80EX_CONTEXT* cpu, Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 	res4 = res3;
 	if (((adr & 0xc000) == 0x4000) && (comp->flags & ZX_CONTMEM)) {
 		res5 = vidGetWait(comp->vid);
-		vflg |= vidSync(comp->vid,comp->dotPerTick * res5);
-		res1 += res5;
+		if (res5 != 0) {
+			vflg |= vidSync(comp->vid,comp->dotPerTick * res5);
+			res1 += res5;
+		}
 	}
 	memWr(comp->mem,adr,val);
 	if (comp->mem->flags & MEM_BRK_WRITE) {
@@ -214,8 +219,10 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 	res4 = res3;
 	if (comp->flags & ZX_CONTIO) {
 		res5 = vidGetWait(comp->vid);
-		vflg |= vidSync(comp->vid,comp->dotPerTick * res5);
-		res1 += res5;
+		if (res5 != 0) {
+			vflg |= vidSync(comp->vid,comp->dotPerTick * res5);
+			res1 += res5;
+		}
 	}
 
 	gsSync(comp->gs,comp->gsCount);
@@ -401,7 +408,6 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	}
 }
 
-#include <assert.h>
 void iowr(Z80EX_CONTEXT* cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
 	res3 = res2 + z80ex_op_tstate(cpu);		// here is start of OUT cycle (4T)
@@ -409,12 +415,14 @@ void iowr(Z80EX_CONTEXT* cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 	// if there is contended io, get wait and wait :)
 	if (comp->flags & ZX_CONTIO) {
 		res5 = vidGetWait(comp->vid);
-		vflg |= vidSync(comp->vid,comp->dotPerTick * res5);
-		res1 += res5;
+		if (res5 != 0) {
+			vflg |= vidSync(comp->vid,comp->dotPerTick * res5);
+			res1 += res5;
+		}
 	}
-	// draw 4T of OUT cycle
-	vflg |= vidSync(comp->vid,comp->dotPerTick * 4);
-	res4 = res3 + 4;
+	// draw 2T of OUT cycle ?
+	vflg |= vidSync(comp->vid,comp->dotPerTick * 2.0);
+	res4 = res3 + 2;
 	// and do out
 	zxOut(comp,port,val);
 }
@@ -529,7 +537,7 @@ double zxExec(ZXComp* comp) {
 	}
 	comp->frmStrobe = (vflg & VID_FRM) ? 1 : 0;
 	if ((pcreg > 0x3fff) && comp->nmiRequest && !comp->rzxPlay) {
-		res3 = res4 = res5 = 0;
+		res2 = res3 = res4 = res5 = 0;
 		res2 = z80ex_nmi(comp->cpu);
 		res1 += res2;
 		if (res2 != 0) {
@@ -539,7 +547,7 @@ double zxExec(ZXComp* comp) {
 		}
 	}
 	if (comp->intStrobe) {
-		res3 = res4 = res5 = 0;
+		res2 = res3 = res4 = res5 = 0;
 		res2 = z80ex_int(comp->cpu);
 		res1 += res2;
 		vidSync(comp->vid,(res2 - res4) * comp->dotPerTick);

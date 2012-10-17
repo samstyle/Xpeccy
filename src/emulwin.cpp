@@ -76,7 +76,7 @@ void emulInit() {
 	scrInterval = 0;
 	optSet(OPT_SHOTFRM,SCR_PNG);
 
-	addLayout("default",448,320,128,80,64,32,0,0,64);
+	addLayout("default",448,320,136,80,64,32,0,0,64);
 
 	emulSetColor(0xc0);
 	mainWin = new MainWin;
@@ -1178,7 +1178,7 @@ void MainWin::processFrame() {
 		}
 		if (zx->flags & ZX_BREAK) {
 			wantedWin = WW_DEBUG;
-			zx->flags = 0;
+			zx->flags &= ~ZX_BREAK;
 		}
 	} while ((wantedWin == WW_NONE) && (zx->frmStrobe == 0));
 	zx->nmiRequest = 0;
