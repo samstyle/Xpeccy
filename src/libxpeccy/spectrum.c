@@ -408,23 +408,52 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	}
 }
 
+void iowait(ZXComp* comp, int ticks) {
+	res5 = vidGetWait(comp->vid);
+	if (res5 != 0) {
+		vflg |= vidSync(comp->vid, comp->dotPerTick * res5);
+		res1 += res5;
+	}
+	if (ticks != 0)
+		vflg |= vidSync(comp->vid, comp->dotPerTick * ticks);
+}
+
 void iowr(Z80EX_CONTEXT* cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
-	res3 = res2 + z80ex_op_tstate(cpu);		// here is start of OUT cycle (4T)
+	res3 = res2 + z80ex_op_tstate(cpu) - 1;		// start of OUT cycle
 	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
+	res4 = res3;
 	// if there is contended io, get wait and wait :)
 	if (comp->flags & ZX_CONTIO) {
-		res5 = vidGetWait(comp->vid);
-		if (res5 != 0) {
-			vflg |= vidSync(comp->vid,comp->dotPerTick * res5);
-			res1 += res5;
+		switch(port & 0x4001) {
+			case 0x0000:
+				zxOut(comp,port,val);
+				vflg |= vidSync(comp->vid,comp->dotPerTick);	// N:1
+				iowait(comp,3);					// C:3
+				break;
+			case 0x0001:
+				zxOut(comp,port,val);
+				vflg |= vidSync(comp->vid, comp->dotPerTick * 4);	// N:4
+				break;
+			case 0x4000:
+				zxOut(comp,port,val);
+				iowait(comp,1);			// C:1
+				iowait(comp,3);			// C:3
+				break;
+			case 0x4001:
+				zxOut(comp,port,val);
+				iowait(comp,1);			// C:1	4 times
+				iowait(comp,1);
+				iowait(comp,1);
+				iowait(comp,1);
+				break;
 		}
+		res4 += 4;
+	} else {
+		vflg |= vidSync(comp->vid, comp->dotPerTick * 3);
+		zxOut(comp,port,val);
+		res4 += 3;
 	}
-	// draw 2T of OUT cycle ?
-	vflg |= vidSync(comp->vid,comp->dotPerTick * 2.0);
-	res4 = res3 + 2;
-	// and do out
-	zxOut(comp,port,val);
 }
 
 Z80EX_BYTE intrq(Z80EX_CONTEXT* cpu, void* ptr) {
