@@ -458,7 +458,6 @@ void SetupWin::apply() {
 // sound
 	std::string oname = sndGetOutputName();
 	std::string nname(setupUi.outbox->currentText().toLocal8Bit().data());
-	int orate = sndGet(SND_RATE);
 	sndSet(SND_ENABLE, setupUi.senbox->isChecked());
 	sndSet(SND_MUTE, setupUi.mutbox->isChecked());
 	sndSet(SND_RATE, setupUi.ratbox->currentText().toInt());
@@ -466,7 +465,7 @@ void SetupWin::apply() {
 	sndSet(SND_TAPE, setupUi.tvsld->value());
 	sndSet(SND_AYVL, setupUi.avsld->value());
 	sndSet(SND_GSVL, setupUi.gvsld->value());
-	if ((oname != nname) || (orate != sndGet(SND_RATE))) setOutput(nname);
+	setOutput(nname);
 	aymSetType(zx->ts->chipA,setupUi.schip1box->itemData(setupUi.schip1box->currentIndex()).toInt());
 	aymSetType(zx->ts->chipB,setupUi.schip2box->itemData(setupUi.schip2box->currentIndex()).toInt());
 	zx->ts->chipA->stereo = setupUi.stereo1box->itemData(setupUi.stereo1box->currentIndex()).toInt();

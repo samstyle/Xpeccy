@@ -126,7 +126,7 @@ std::string sndGetOutputName() {
 
 void setOutput(std::string nam) {
 	if (sndOutput != NULL) {
-		if (sndOutput->name == nam) return;
+//		if (sndOutput->name == nam) return;
 		sndOutput->close();
 	}
 	sndOutput = NULL;
@@ -144,6 +144,7 @@ void setOutput(std::string nam) {
 		printf("Can't open sound system. Reset to NULL\n");
 		setOutput("NULL");
 	}
+	sndCalibrate();
 }
 
 bool sndOpen() {
@@ -261,7 +262,7 @@ void sdlPlayAudio(void*,Uint8* stream, int len) {
 }
 
 bool sdlopen() {
-	printf("Open SDL audio device...");
+//	printf("Open SDL audio device...");
 	SDL_AudioSpec* asp = new SDL_AudioSpec;
 	asp->freq = sndRate;
 	asp->format = AUDIO_U8;
@@ -270,11 +271,11 @@ bool sdlopen() {
 	asp->callback = &sdlPlayAudio;
 	asp->userdata = NULL;
 	if (SDL_OpenAudio(asp,NULL) < 0) {
-		printf("failed\n");
+		printf("SDL audio device opening...failed\n");
 		return false;
 	}
 	SDL_PauseAudio(0);
-	printf("OK\n");
+//	printf("OK\n");
 	return true;
 }
 
@@ -282,7 +283,7 @@ void sdlplay() {
 }
 
 void sdlclose() {
-	printf("Close SDL audio device\n");
+//	printf("Close SDL audio device\n");
 	SDL_PauseAudio(1);
 	SDL_CloseAudio();
 }
@@ -292,7 +293,7 @@ void sdlclose() {
 #ifdef __linux__
 
 bool oss_open() {
-	printf("Open OSS audio device\n");
+//	printf("Open OSS audio device\n");
 	ossHandle = open("/dev/dsp",O_WRONLY,0777);
 	if (ossHandle < 0) return false;
 	ioctl(ossHandle,SNDCTL_DSP_SETFMT,&sndFormat);
@@ -316,7 +317,7 @@ void oss_play() {
 
 void oss_close() {
 	if (ossHandle < 0) return;
-	printf("Close OSS audio device\n");
+//	printf("Close OSS audio device\n");
 	close(ossHandle);
 }
 
@@ -326,17 +327,17 @@ void oss_close() {
 bool alsa_open() {
 	int err;
 	bool res = true;
-	printf("libasound: open audio device... ");
+//	printf("libasound: open audio device... ");
 	if ((err = snd_pcm_open(&alsaHandle,alsaDevice,SND_PCM_STREAM_PLAYBACK,0))<0) {
 		printf("playback open error: %s\n",snd_strerror(err));
 		res=false;
 	} else {
 		if (alsaHandle == NULL) {
-			printf("shit happens\n");
+			printf("ALSA device open...shit happens\n");
 			res = false;
 		} else {
 			printf("OK\n");
-			printf("libasound: set audio paramz...");
+//			printf("libasound: set audio paramz...");
 			if ((err = snd_pcm_set_params(alsaHandle,SND_PCM_FORMAT_U8,SND_PCM_ACCESS_RW_INTERLEAVED,sndChans,sndRate,1,100000)) < 0) {
 				printf("playback open error: %s\n",snd_strerror(err));
 				res=false;
@@ -363,7 +364,7 @@ void alsa_play() {
 }
 
 void alsa_close() {
-	printf("libasound: close device\n");
+//	printf("libasound: close device\n");
 	snd_pcm_close(alsaHandle);
 }
 
