@@ -11,7 +11,7 @@ struct FilePos {
 int loadSCL(Floppy* flp,const char* name) {
 	std::ifstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
-	unsigned char* buf = new unsigned char[0x1000];
+	unsigned char* buf = new unsigned char[0x1000];		// track 0 image
 	unsigned char* bptr;
 	unsigned char fcnt;
 	int tmpa;
@@ -28,14 +28,14 @@ int loadSCL(Floppy* flp,const char* name) {
 	for (i = 0; i < fcnt; i++) {		// make catalog
 		file.read((char*)bptr,14);		// file dsc
 		bptr[14] = scnt & 0x0f;			// sector
-		bptr[15] = ((scnt & 0x3f0) >> 4);	// track
+		bptr[15] = ((scnt & 0xff0) >> 4);	// track
 		scnt += bptr[13];			// +sectors size
 		bptr += 16;				// next file
 	}
 	bptr[0] = 0;				// mark last file
 	buf[0x800] = 0;
 	buf[0x8e1] = scnt & 0x0f;		// free sector
-	buf[0x8e2] = ((scnt & 0x3f0) >> 4);	// free track
+	buf[0x8e2] = ((scnt & 0xff0) >> 4);	// free track
 	buf[0x8e3] = 0x16;			// 80DS
 	buf[0x8e4] = fcnt;			// files total
 	tmpa = 0x9f0 - scnt;			// sectors free (0x9f0)	// FIXED: not 0xa00!

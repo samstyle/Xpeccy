@@ -329,20 +329,20 @@ bool alsa_open() {
 	bool res = true;
 //	printf("libasound: open audio device... ");
 	if ((err = snd_pcm_open(&alsaHandle,alsaDevice,SND_PCM_STREAM_PLAYBACK,0))<0) {
-		printf("playback open error: %s\n",snd_strerror(err));
+		printf("ALSA playback open error: %s\n",snd_strerror(err));
 		res=false;
 	} else {
 		if (alsaHandle == NULL) {
 			printf("ALSA device open...shit happens\n");
 			res = false;
 		} else {
-			printf("OK\n");
+//			printf("OK\n");
 //			printf("libasound: set audio paramz...");
 			if ((err = snd_pcm_set_params(alsaHandle,SND_PCM_FORMAT_U8,SND_PCM_ACCESS_RW_INTERLEAVED,sndChans,sndRate,1,100000)) < 0) {
-				printf("playback open error: %s\n",snd_strerror(err));
+				printf("ALSA playback open error: %s\n",snd_strerror(err));
 				res=false;
 			} else {
-				printf("OK\n");
+//				printf("OK\n");
 			}
 		}
 	}
