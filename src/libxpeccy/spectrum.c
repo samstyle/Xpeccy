@@ -43,69 +43,108 @@ unsigned char plus2Lays[4][4] = {
 	{4,7,6,3}
 };
 
+#include <assert.h>
+
+// port decoding tables
+
+typedef struct {
+	Z80EX_WORD mask;
+	Z80EX_WORD value;
+	Z80EX_WORD port;
+} portDecode;
+
+portDecode p48[] = {
+	{0x01,0x00,0xfe},	// FE
+	{0x21,0x01,0x1f},	// kempston
+	{0,0,0xff}
+};
+portDecode pPent[] = {
+	{0x0003,0x0002,0xfe},	// FE
+	{0x00ff,0x001f,0x001f},	// kempston
+	{0x8002,0x0000,0x7ffd},	// mem
+	{0xc002,0x8000,0xbffd},	// ay
+	{0xc002,0xc000,0xfffd},
+	{0x05a1,0x0081,0xfadf},	// mouse
+	{0x05a1,0x0181,0xfbdf},
+	{0x05a1,0x0581,0xffdf},
+	{0,0,0xff}
+};
+portDecode pP1M[] = {
+	{0x0003,0x0002,0xfe},	// FE
+	{0x8002,0x0000,0x7ffd},	// mem
+	{0xc002,0x8000,0xbffd},	// ay
+	{0xc002,0xc000,0xfffd},
+	{0x05a1,0x0081,0xfadf},	// mouse
+	{0x05a1,0x0181,0xfadf},
+	{0x05a1,0x0581,0xfadf},
+	{0xf008,0xe000,0xeff7},	// system
+	{0,0,0xff}
+};
+portDecode pScorp[] = {
+	{0x0023,0x0022,0xfe},	// FE
+	{0x00ff,0x001f,0x1f},	// kempston
+	{0xc023,0x0021,0x1ffd},	// mem
+	{0xc023,0x4021,0x7ffd},
+	{0xc023,0x8021,0xbffd},	// ay
+	{0xc023,0xc021,0xfffd},
+	{0x0523,0x0003,0xfadf},	// mouse
+	{0x0523,0x0103,0xfbdf},
+	{0x0523,0x0503,0xffdf},
+	{0x0023,0x0001,0x00dd},	// printer / covox
+	{0,0,0xff}
+};
+portDecode pPlus3[] = {
+	{0x0003,0x0002,0xfe},	// FE
+	{0xc002,0x4000,0x7ffd},	// mem
+	{0xc002,0x8000,0xbffd},	// ay
+	{0xc002,0xc000,0xfffd},
+	{0xf002,0x0000,0x0ffd},	// printer
+	{0xf002,0x1000,0x1ffd},	// system
+	{0xf002,0x2000,0x2ffd},	// 8272 status
+	{0xf002,0x3000,0x3ffd},	// 8272 data
+	{0,0,0xff}
+};
+portDecode pPlus2[] = {
+	{0x0003,0x0002,0xfe},	// FE
+	{0xc002,0x4000,0x7ffd},	// mem
+	{0xf002,0x1000,0x1ffd},
+	{0xc002,0x8000,0xbffd},	// ay
+	{0xc002,0xc000,0xfffd},
+	{0,0,0xff}
+};
+
 Z80EX_WORD zxGetPort(ZXComp* comp, Z80EX_WORD port) {
+	portDecode* ptr = NULL;
 	switch (comp->hw->type) {
-		case HW_ZX48:
-			if ((port & 0x01) == 0) {port = (port & 0xff00) | 0xfe; break;}
-			if ((port & 0x21) == 1) {port = 0x1f; break;}
+		case HW_ZX48: ptr = p48; break;
+		case HW_PENT: ptr = pPent; break;
+		case HW_P1024: ptr = pP1M; break;
+		case HW_SCORP: ptr = pScorp; break;
+		case HW_PLUS2: ptr = pPlus2; break;
+		case HW_PLUS3: ptr = pPlus3; break;
+		case HW_ATM1:
+			printf("ATM1: Request port %.4X\n",port);
+			assert(0);
 			break;
-		case HW_PENT:
-			if ((port & 0x8002) == 0x0000) port = 0x7ffd;
-			if ((port & 0xc002) == 0x8000) port = 0xbffd;
-			if ((port & 0xc002) == 0xc000) port = 0xfffd;
-			if (comp->mouse->flags & INF_ENABLED) {
-				if ((port & 0x05a1) == 0x0081) port = 0xfadf;		// mouse
-				if ((port & 0x05a1) == 0x0181) port = 0xfbdf;
-				if ((port & 0x05a1) == 0x0581) port = 0xffdf;
-			}
-			if ((port & 0x0003) == 0x0002) port = (port & 0xff00) | 0xfe;	// TODO: orly
-			if ((port & 0x00ff) == 0x001f) port = 0x1f;			// TODO: orly
+		case HW_ATM2:
+			printf("ATM2: Request port %.4X\n",port);
+			assert(0);
 			break;
-		case HW_P1024:
-			if ((port & 0x8002) == 0x0000) port = 0x7ffd;
-			if ((port & 0xc002) == 0x8000) port = 0xbffd;
-			if ((port & 0xc002) == 0xc000) port = 0xfffd;
-			if ((port & 0xf008) == 0xe000) port = 0xeff7;
-			if ((port & 0x0003) == 0x0002) port = (port & 0xff00) | 0xfe;	// TODO: orly
-			if (comp->mouse->flags & INF_ENABLED) {				// mouse
-				if ((port & 0x05a1) == 0x0081) port = 0xfadf;		// TODO: orly
-				if ((port & 0x05a1) == 0x0181) port = 0xfbdf;
-				if ((port & 0x05a1) == 0x0581) port = 0xffdf;
-			}
-			// if ((port & 0x00ff) == 0x001f) port = 0x1f;			// TODO: P1024 doesn't have Kempston
+		default:
+			printf("zxGetPort : unknown hardware type %i\n",comp->hw->type);
+			assert(0);
 			break;
-		case HW_SCORP:
-			if ((port & 0x0023) == 0x0001) port = 0x00dd;		// printer (covox)
-			if (comp->mouse->flags & INF_ENABLED) {
-				if ((port & 0x0523) == 0x0003) port = 0xfadf;		// mouse
-				if ((port & 0x0523) == 0x0103) port = 0xfbdf;
-				if ((port & 0x0523) == 0x0503) port = 0xffdf;
-			}
-			if ((port & 0xc023) == 0x0021) port = 0x1ffd;		// mem
-			if ((port & 0xc023) == 0x4021) port = 0x7ffd;
-			if ((port & 0xc023) == 0x8021) port = 0xbffd;		// ay
-			if ((port & 0xc023) == 0xc021) port = 0xfffd;
-			if ((port & 0x0023) == 0x0022) port = (port & 0xff00) | 0xfe;	// fe
-			if ((port & 0x0023) == 0xc023) port = 0x00ff;		// ff
-			if ((port & 0x00ff) == 0x001f) port = 0x1f;		// TODO: orly
+	}
+	int idx = 0;
+	while (1) {
+		if ((port & ptr[idx].mask) == ptr[idx].value) {
+			if (ptr[idx].port == 0xfe)
+				port = (port & 0xff00) | 0xfe;
+			else
+				port = ptr[idx].port;
 			break;
-		case HW_PLUS3:
-			if ((port & 0x0003) == 0x0002) port = (port & 0xff00) | 0xfe;
-			if ((port & 0xf002) == 0x0000) port = 0x0ffd;	// ? printer
-			if ((port & 0xf002) == 0x1000) port = 0x1ffd;
-			if ((port & 0xf002) == 0x2000) port = 0x2ffd;	// TODO: 8272status
-			if ((port & 0xf002) == 0x3000) port = 0x3ffd;	// TODO: 8272data
-			if ((port & 0xc002) == 0x4000) port = 0x7ffd;	// 7ffd
-			if ((port & 0xc002) == 0x8000) port = 0xbffd;		// ay
-			if ((port & 0xc002) == 0xc000) port = 0xfffd;
-			break;
-		case HW_PLUS2:
-			if ((port & 0x0003) == 0x0002) port = (port & 0xff00) | 0xfe;	// TODO: check it
-			if ((port & 0xc002) == 0x4000) port = 0x7ffd;		// mem
-			if ((port & 0xf002) == 0x1000) port = 0x1ffd;
-			if ((port & 0xc002) == 0x8000) port = 0xbffd;		// ay
-			if ((port & 0xc002) == 0xc000) port = 0xfffd;
-			break;
+		}
+		idx++;
 	}
 	return port;
 }

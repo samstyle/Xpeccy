@@ -566,7 +566,7 @@ void SetupWin::apply() {
 
 void SetupWin::reject() {
 	hide();
-	fillBookmarkMenu();
+	fillUserMenu();
 	emulPause(false,PR_OPTS);
 }
 

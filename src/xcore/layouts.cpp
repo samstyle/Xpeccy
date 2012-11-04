@@ -46,6 +46,7 @@ std::vector<VidLayout> getLayoutList() {
 	return layList;
 }
 
+// stop, shit here!
 bool emulSetLayout(Video* vid, std::string nm) {
 	XProfile* currentProfile = getCurrentProfile();
 	for (unsigned int i = 0; i < layList.size(); i++) {

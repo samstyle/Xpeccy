@@ -73,8 +73,7 @@ int main(int ac,char** av) {
 			initFileDialog(emulWidget());
 			loadProfiles();
 			loadConfig(false);
-			fillProfileMenu();
-			fillBookmarkMenu();
+			fillUserMenu();
 			emulShow();
 			emulUpdateWindow();
 			zxReset(zx,RES_DEFAULT);

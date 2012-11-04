@@ -60,6 +60,7 @@ RZXWin* rzxWin;
 QMenu* userMenu;
 QMenu* bookmarkMenu;
 QMenu* profileMenu;
+QMenu* layoutMenu;
 // temp emulation
 Z80EX_WORD pc,af,de,ix;
 int blkDataSize = 0;
@@ -274,7 +275,8 @@ void MainWin::updateHead() {
 	QString title(XPTITLE);
 	XProfile* curProf = getCurrentProfile();
 	if (curProf != NULL) {
-		title.append(" | ").append(QString::fromLocal8Bit(curProf->name.c_str()));
+		title.append(" | HW:").append(QString::fromLocal8Bit(curProf->name.c_str()));
+		title.append(" | LAY:").append(QString::fromLocal8Bit(curProf->layName.c_str()));
 	}
 	if (emulFlags & FL_FAST) {
 		title.append(" | fast");
@@ -405,9 +407,6 @@ MainWin::MainWin() {
 	etimer->setInterval(1);	// fast
 	connect(timer,SIGNAL(timeout()),this,SLOT(emulFrame()));
 	connect(etimer,SIGNAL(timeout()),this,SLOT(processFrame()));
-
-	connect(bookmarkMenu,SIGNAL(triggered(QAction*)),this,SLOT(bookmarkSelected(QAction*)));
-	connect(profileMenu,SIGNAL(triggered(QAction*)),this,SLOT(profileSelected(QAction*)));
 }
 
 void MainWin::start() {
@@ -520,6 +519,10 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			case Qt::Key_F12:
 				zxReset(zx,RES_DOS);
 				rzxWin->stop();
+				break;
+			case Qt::Key_N:
+				vidFlag ^= VF_NOFLIC;
+				saveConfig();
 				break;
 		}
 	} else {
@@ -725,6 +728,10 @@ void doSDLEvents() {
 						case SDLK_RETURN:
 							vidFlag ^= VF_FULLSCREEN;
 							mainWin->updateWindow();
+							saveConfig();
+							break;
+						case SDLK_N:
+							vidFlag ^= VF_NOFLIC;
 							saveConfig();
 							break;
 						default: break;
@@ -969,6 +976,7 @@ void doSDLEvents() {
 #endif
 
 void MainWin::closeEvent(QCloseEvent* ev) {
+	sndPause(true);
 	timer->stop();
 	if (emulSaveChanged()) {
 		ev->accept();
@@ -979,6 +987,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		SDL_GetWMInfo(&inf);
 		mainWin->embedClient(inf.info.x11.wmwindow);
 #endif
+		sndPause(false);
 		start();
 	}
 }
@@ -1231,8 +1240,16 @@ void emulCloseJoystick() {
 void initUserMenu(QWidget* par) {
 	QMenu* resMenu;
 	userMenu = new QMenu(par);
+
 	bookmarkMenu = userMenu->addMenu(QIcon(":/images/star.png"),"Bookmarks");
+	QObject::connect(bookmarkMenu,SIGNAL(triggered(QAction*)),par,SLOT(bookmarkSelected(QAction*)));
+
 	profileMenu = userMenu->addMenu(QIcon(":/images/profile.png"),"Profiles");
+	QObject::connect(profileMenu,SIGNAL(triggered(QAction*)),par,SLOT(profileSelected(QAction*)));
+
+	layoutMenu = userMenu->addMenu(QIcon(":/images/display.png"),"Layout");
+	QObject::connect(layoutMenu,SIGNAL(triggered(QAction*)),par,SLOT(chLayout(QAction*)));
+
 	resMenu = userMenu->addMenu(QIcon(":/images/shutdown.png"),"Reset...");
 	QObject::connect(resMenu,SIGNAL(triggered(QAction*)),par,SLOT(reset(QAction*)));
 	resMenu->addAction("default")->setData(RES_DEFAULT);
@@ -1241,6 +1258,7 @@ void initUserMenu(QWidget* par) {
 	resMenu->addAction("ROMpage1")->setData(RES_48);
 	resMenu->addAction("ROMpage2")->setData(RES_SHADOW);
 	resMenu->addAction("ROMpage3")->setData(RES_DOS);
+
 	userMenu->addSeparator();
 	userMenu->addAction(QIcon(":/images/tape.png"),"Tape window",tapeWin,SLOT(show()));
 	userMenu->addAction(QIcon(":/images/video.png"),"RZX player",rzxWin,SLOT(show()));
@@ -1270,6 +1288,20 @@ void fillProfileMenu() {
 	}
 }
 
+void fillLayoutMenu() {
+	layoutMenu->clear();
+	std::vector<VidLayout> layoutList = getLayoutList();
+	for (uint i = 0; i < layoutList.size(); i++) {
+		layoutMenu->addAction(layoutList[i].name.c_str());
+	}
+}
+
+void fillUserMenu() {
+	fillBookmarkMenu();
+	fillProfileMenu();
+	fillLayoutMenu();
+}
+
 // SLOTS
 
 void MainWin::doOptions() {wantedWin = WW_OPTIONS;}
@@ -1296,4 +1328,13 @@ void MainWin::profileSelected(QAction* act) {
 void MainWin::reset(QAction* act) {
 	zxReset(zx,act->data().toInt());
 	rzxWin->stop();
+}
+
+void MainWin::chLayout(QAction* act) {
+	emulPause(true,PR_EXTRA);
+	emulSetLayout(zx->vid,std::string(act->text().toLocal8Bit().data()));
+	saveConfig();
+	emulUpdateWindow();
+	setFocus();
+	emulPause(false,PR_EXTRA);
 }

@@ -24,6 +24,8 @@ extern "C" {
 #define	HW_SCORP	4
 #define	HW_PLUS2	5
 #define	HW_PLUS3	6
+#define	HW_ATM1		7
+#define	HW_ATM2		8
 // hw flags
 #define	IO_WAIT		1
 #define WAIT_ON		(1<<1)

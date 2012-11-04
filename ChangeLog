@@ -263,3 +263,7 @@ Fix	Incorrect .z80 file was founded. Emulator crushed because of it.
 
 build 20121011
 New	Contended I/O. Working. No, really working!
+
+build 20121105
+New	Alt+N changes noflic on the fly
+New	Layout submenu in user-menu to fast screen layout changing

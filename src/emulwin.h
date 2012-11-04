@@ -234,6 +234,7 @@ class MainWin : public QX11EmbedContainer {
 		void bookmarkSelected(QAction*);
 		void profileSelected(QAction*);
 		void reset(QAction*);
+		void chLayout(QAction*);
 	protected:
 		void closeEvent(QCloseEvent*);
 #ifdef XQTPAINT
@@ -270,7 +271,7 @@ void setKey(const char*,const char,const char);
 #endif
 // USER MENU
 void initUserMenu(QWidget*);
-void fillBookmarkMenu();
+void fillUserMenu();
 void fillProfileMenu();
 // bookmarks : moved to xcore/bookmarks
 // profiles : moved to xcore/profiles
