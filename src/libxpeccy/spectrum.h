@@ -79,7 +79,6 @@ typedef struct {
 	int frmStrobe;
 	int nmiRequest;
 	int beeplev;
-	int block7ffd;
 	float cpuFrq;
 	float dotPerTick;
 	int hwFlags;

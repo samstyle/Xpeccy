@@ -368,10 +368,9 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 						sdrvOut(comp->sdrv,port & 0x00ff,val);
 						switch(port) {
 							case 0x7ffd:
-								if (comp->block7ffd) break;
+								if (comp->prt0 & 0x20) break;
 								comp->prt0 = val;
 								comp->vid->curscr = (val & 0x08) ? 1 : 0;
-								comp->block7ffd = val & 0x20;
 								zxMapMemory(comp);
 								break;
 						}
@@ -379,10 +378,9 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 					case HW_P1024:
 						switch(port) {
 							case 0x7ffd:
-								if (comp->block7ffd) break;
-								comp->vid->curscr = (val & 0x08) ? 1 : 0;
+								if ((comp->prt1 & 4) && (comp->prt0 & 0x20)) break;
 								comp->prt0 = val;
-								comp->block7ffd = ((comp->prt1 & 4) && (val & 0x20));
+								comp->vid->curscr = (val & 0x08) ? 1 : 0;
 								zxMapMemory(comp);
 								break;
 							case 0xeff7:
@@ -396,10 +394,9 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 					case HW_SCORP:
 						switch(port) {
 							case 0x7ffd:
-								if (comp->block7ffd) break;
+								if (comp->prt0 & 0x20) break;
 								comp->prt0 = val;
 								comp->vid->curscr = (val & 0x08) ? 1 : 0;
-								comp->block7ffd = val & 0x20;
 								zxMapMemory(comp);
 								break;
 							case 0x1ffd:
@@ -428,10 +425,9 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 					case HW_PLUS2:
 						switch (port) {
 							case 0x7ffd:
-								if (comp->block7ffd) break;
+								if (comp->prt0 & 0x20) break;
 								comp->prt0 = val;
 								comp->vid->curscr = (val & 0x08) ? 1 : 0;
-								comp->block7ffd = val & 0x20;
 								zxMapMemory(comp);
 								break;
 							case 0x1ffd:
@@ -556,7 +552,6 @@ void zxDestroy(ZXComp* comp) {
 void zxReset(ZXComp* comp,int wut) {
 	int resto = comp->resbank;
 	comp->rzxPlay = 0;
-	comp->block7ffd = 0;
 	switch (wut) {
 		case RES_48: resto = 1; break;
 		case RES_128: resto = 0; break;

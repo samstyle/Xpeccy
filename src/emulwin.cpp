@@ -494,7 +494,17 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 	if (ev->modifiers() & Qt::AltModifier) {
 		switch(ev->key()) {
 			case Qt::Key_0:
-				zx->vid->mode = (zx->vid->mode == VID_NORMAL) ? VID_ALCO : VID_NORMAL;
+				switch (zx->vid->mode) {
+					case VID_NORMAL:
+						zx->vid->mode = VID_ALCO;
+						break;
+					case VID_ALCO:
+						zx->vid->mode = VID_ATM_EGA;
+						break;
+					case VID_ATM_EGA:
+						zx->vid->mode = VID_NORMAL;
+						break;
+				}
 				break;
 			case Qt::Key_1:
 				vidFlag &= ~VF_DOUBLE;
@@ -700,7 +710,19 @@ void doSDLEvents() {
 			case SDL_KEYDOWN:
 				if (ev.key.keysym.mod & KMOD_ALT) {
 					switch(ev.key.keysym.sym) {
-						case SDLK_0: zx->vid->mode = (zx->vid->mode==VID_NORMAL)?VID_ALCO:VID_NORMAL; break;
+						case SDLK_0:
+							switch (zx->vid->mode) {
+								case VID_NORMAL:
+									zx->vid->mode = VID_ALCO;
+									break;
+								case VID_ALCO:
+									zx->vid->mode = VID_ATM_EGA;
+									break;
+								case VID_ATM_EGA:
+									zx->vid->mode = VID_NORMAL;
+									break;
+							}
+							break;
 						case SDLK_1:
 							vidFlag &= ~VF_DOUBLE;
 							mainWin->updateWindow();

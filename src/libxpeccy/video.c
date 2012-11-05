@@ -39,6 +39,7 @@ Video* vidCreate(Memory* me) {
 	if (screenBuf == NULL) {
 		screenBuf = (unsigned char*)malloc(1024 * 1024 * sizeof(unsigned char));
 	}
+	vid->mem = me;
 	for (i=0;i<3;i++) {
 		for (j=0;j<8;j++) {
 			for (k=0;k<8;k++) {
@@ -96,12 +97,13 @@ void vidDestroy(Video* vid) {
 unsigned char* vidGetScreen() {
 	return screenBuf;
 }
-
+// dot flags
 #define	MTF_LINEND	1
 #define	MTF_FRMEND	(1<<1)
 #define	MTF_INT		(1<<2)
 #define	MTF_4T		(1<<3)
-
+#define MTF_ATM_TXT	(1<<4)	// each 8th dot from 320x200 screen edge in each 8th line (meaning: take symbol and color)
+// dot type (for ZX 256 x 192)
 #define MTT_INVIS	0
 #define	MTT_BORDER	1
 #define	MTT_PT0		2
@@ -110,6 +112,13 @@ unsigned char* vidGetScreen() {
 #define	MTT_PT6		5
 #define	MTT_PTX		6
 #define	MTT_BRDATR	7	// this is same MTT_PT4, but 4 pix before screen. actual color = border. action = get 1st pixels byte
+// dot type (for ATM 320 x 200)
+#define	MTT_ATM_NONE	0	// none: for dot outside 320x200 screen
+#define	MTT_ATM_0	1
+#define	MTT_ATM_2	2
+#define	MTT_ATM_4	3
+#define	MTT_ATM_6	4
+#define	MTT_ATM_DOT	5
 
 /*
 waits for 128K, +2
@@ -122,20 +131,68 @@ int waitsTab_A[16] = {5,5,4,4,3,3,2,2,1,1,0,0,0,0,6,6};	// 48K
 int waitsTab_B[16] = {1,1,0,0,7,7,6,6,5,5,4,4,3,3,2,2};	// +2A,+3
 
 void vidFillMatrix(Video* vid) {
-	int x,y,i,adr; // nya=0;
+	int x,y,i,adr,atmadr,atmTadr;
 	int tk = 0;
 	i = 0;
+	atmadr = 0;
+	atmTadr = 0x01c0;
 	adr = 0;
 	int scrShift = vid->bord.h;
 	for (y = 0; y < vid->full.v; y++) {
 		for (x = 0; x < vid->full.h; x++) {
 			vid->matrix[i].flag = 0;
 			vid->matrix[i].wait = 0;
+			vid->matrix[i].atmType = MTT_ATM_NONE;
 // waits: dots from -2 dots to +253 (254 is already non-wait)
 			if ((x > (vid->bord.h - 3)) && (x < (vid->bord.h + 254)) && (y >= vid->bord.v) && (y < (vid->bord.v + 192))) {	// on screen
 				vid->matrix[i].wait = waitsTab_A[(x - vid->bord.h) & 15];
 			}
-
+// atm ega & text mode
+			if ((y > 75) && (y < 276) && (x > 95) && (x < 416)) {
+				switch ((x - 96) & 7) {
+					case 0:
+						vid->matrix[i].atmType = MTT_ATM_0;
+						vid->matrix[i].atm5.egaptr = memGetPagePtr(vid->mem,MEM_RAM,1) + atmadr;
+						vid->matrix[i].atm7.egaptr = memGetPagePtr(vid->mem,MEM_RAM,3) + atmadr;
+						if (((y - 76) & 7) == 0) {
+							vid->matrix[i].flag |= MTF_ATM_TXT;
+							if ((x - 76) & 8) {
+								vid->matrix[i].atm5.txtptr = memGetPagePtr(vid->mem,MEM_RAM,5) + atmTadr + 0x2000;
+								vid->matrix[i].atm7.txtptr = memGetPagePtr(vid->mem,MEM_RAM,7) + atmTadr + 0x2000;
+								vid->matrix[i].atm5.txtatrptr = memGetPagePtr(vid->mem,MEM_RAM,1) + atmTadr + 0x2000;
+								vid->matrix[i].atm7.txtatrptr = memGetPagePtr(vid->mem,MEM_RAM,3) + atmTadr + 0x2000;
+								atmTadr++;
+								if (x == 0x198) atmTadr += 14;	// 40 to 64
+							} else {
+								vid->matrix[i].atm5.txtptr = memGetPagePtr(vid->mem,MEM_RAM,5) + atmTadr;
+								vid->matrix[i].atm7.txtptr = memGetPagePtr(vid->mem,MEM_RAM,7) + atmTadr;
+								vid->matrix[i].atm5.txtatrptr = memGetPagePtr(vid->mem,MEM_RAM,1) + atmTadr;
+								vid->matrix[i].atm7.txtatrptr = memGetPagePtr(vid->mem,MEM_RAM,3) + atmTadr;
+							}
+						}
+						break;
+					case 2:
+						vid->matrix[i].atmType = MTT_ATM_2;
+						vid->matrix[i].atm5.egaptr = memGetPagePtr(vid->mem,MEM_RAM,5) + atmadr;
+						vid->matrix[i].atm7.egaptr = memGetPagePtr(vid->mem,MEM_RAM,7) + atmadr;
+						break;
+					case 4:
+						vid->matrix[i].atmType = MTT_ATM_4;
+						vid->matrix[i].atm5.egaptr = memGetPagePtr(vid->mem,MEM_RAM,1) + atmadr + 0x2000;
+						vid->matrix[i].atm7.egaptr = memGetPagePtr(vid->mem,MEM_RAM,3) + atmadr + 0x2000;
+						break;
+					case 6:
+						vid->matrix[i].atmType = MTT_ATM_6;
+						vid->matrix[i].atm5.egaptr = memGetPagePtr(vid->mem,MEM_RAM,5) + atmadr + 0x2000;
+						vid->matrix[i].atm7.egaptr = memGetPagePtr(vid->mem,MEM_RAM,7) + atmadr + 0x2000;
+						atmadr++;
+						break;
+					default:
+						vid->matrix[i].atmType = MTT_ATM_DOT;
+						break;
+				}
+			}
+// common screen | alco mode
 			if ((y < vid->lcut.v) || (y >= vid->rcut.v) || (x < vid->lcut.h) || (x >= vid->rcut.h)) {
 				vid->matrix[i].type = MTT_INVIS;
 			} else {
@@ -275,6 +332,35 @@ int vidSync(Video* vid, float dotDraw) {
 
 		if (mtx->type != MTT_INVIS) {
 			switch (vid->mode) {
+				case VID_ATM_EGA:
+					switch (mtx->atmType) {
+						case MTT_ATM_NONE:
+							col = vid->brdcol;
+							break;
+						case MTT_ATM_0:
+						case MTT_ATM_2:
+						case MTT_ATM_4:
+						case MTT_ATM_6:
+							scrbyte = vid->curscr ? *(mtx->atm7.egaptr) : *(mtx->atm5.egaptr);
+							col = inkTab[scrbyte & 0x7f];
+							break;
+						default:
+							col = ((scrbyte & 0x38)>>3) | ((scrbyte & 0x80)>>4);
+							break;
+					}
+					break;
+				case VID_ATM_TEXT:
+					switch (mtx->atmType) {
+						case MTT_ATM_NONE:
+							col = vid->brdcol;
+							break;
+						case MTT_ATM_0:
+							if (mtx->flag & MTF_ATM_TXT) {
+								// get symbol, color, symbol address and draw "8" x 8 matrix
+							}
+							break;
+					}
+					break;
 				case VID_NORMAL:
 					switch(mtx->type) {
 						case MTT_BRDATR:
@@ -319,18 +405,20 @@ int vidSync(Video* vid, float dotDraw) {
 					}
 					break;
 			}
-			if ((vidFlag & (VF_NOFLIC | VF_FRAMEDBG)) == VF_NOFLIC) {
-				col = (((*vid->scrptr) & 0x0f) << 4) | (col & 0x0f);
-			} else {
-				col |= (col << 4);
+			if ((vid->mode != VID_ATM_TEXT) || (mtx->atmType == MTT_ATM_NONE)) {
+				if ((vidFlag & (VF_NOFLIC | VF_FRAMEDBG)) == VF_NOFLIC) {
+					col = (((*vid->scrptr) & 0x0f) << 4) | (col & 0x0f);
+				} else {
+					col |= (col << 4);
+				}
+				*(vid->scrptr++) = col;
+				if (vidFlag & VF_DOUBLE) {
+					*(vid->scrptr + vid->wsze.h - 1) = col;
+					*(vid->scrptr + vid->wsze.h) = col;
+					*(vid->scrptr++)=col;
+				}
+				vidFlag |= VF_CHANGED;
 			}
-			*(vid->scrptr++) = col;
-			if (vidFlag & VF_DOUBLE) {
-				*(vid->scrptr + vid->wsze.h - 1) = col;
-				*(vid->scrptr + vid->wsze.h) = col;
-				*(vid->scrptr++)=col;
-			}
-			vidFlag |= VF_CHANGED;
 		}
 		if ((mtx->flag & MTF_LINEND) && (vidFlag & VF_DOUBLE)) vid->scrptr += vid->wsze.h;
 		if (mtx->flag & MTF_FRMEND) {

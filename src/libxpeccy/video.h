@@ -19,6 +19,8 @@ extern "C" {
 // screen drawing mode
 #define	VID_NORMAL	0
 #define	VID_ALCO	1
+#define	VID_ATM_EGA	2
+#define	VID_ATM_TEXT	3
 // flags returned by vidSync
 #define	VID_INT		1
 #define	VID_FRM		(1<<1)
@@ -29,8 +31,15 @@ typedef struct {
 } VSize;
 
 typedef struct {
+	unsigned char* egaptr;
+	unsigned char* txtptr;
+	unsigned char* txtatrptr;
+} atmItem;
+
+typedef struct {
 	int flag;
 	int type;
+	int atmType;
 	int wait;		// dot's (ticks * 2) to be drawing on contended memory WAIT
 	int tick;		// tick NR (just for debug)
 	unsigned char* scr5ptr;
@@ -39,6 +48,8 @@ typedef struct {
 	unsigned char* atr7ptr;
 	unsigned char* alco5ptr;
 	unsigned char* alco7ptr;
+	atmItem atm5;
+	atmItem atm7;
 } mtrxItem;
 
 typedef struct {
@@ -67,6 +78,7 @@ typedef struct {
 	VSize vsze;
 	VSize wsze;
 	VSize intpos;
+	Memory* mem;
 	int intsz;
 	mtrxItem matrix[512 * 512];
 	struct {
