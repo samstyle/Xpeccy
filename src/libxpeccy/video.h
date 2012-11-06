@@ -80,6 +80,7 @@ typedef struct {
 	VSize intpos;
 	Memory* mem;
 	int intsz;
+	unsigned char font[0x800];	// ATM text mode font
 	mtrxItem matrix[512 * 512];
 	struct {
 		unsigned char *ac00;
@@ -112,6 +113,7 @@ void vidSetLayout(Video*, int, int, int, int, int, int, int, int, int);
 void vidUpdate(Video*);
 
 unsigned char* vidGetScreen();
+void vidSetFont(Video*,char*);
 
 #ifdef __cplusplus
 }

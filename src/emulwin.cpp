@@ -502,6 +502,9 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 						zx->vid->mode = VID_ATM_EGA;
 						break;
 					case VID_ATM_EGA:
+						zx->vid->mode = VID_ATM_TEXT;
+						break;
+					case VID_ATM_TEXT:
 						zx->vid->mode = VID_NORMAL;
 						break;
 				}
@@ -719,6 +722,9 @@ void doSDLEvents() {
 									zx->vid->mode = VID_ATM_EGA;
 									break;
 								case VID_ATM_EGA:
+									zx->vid->mode = VID_ATM_TEXT;
+									break;
+								case VID_ATM_TEXT:
 									zx->vid->mode = VID_NORMAL;
 									break;
 							}

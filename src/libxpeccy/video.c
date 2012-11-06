@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <stdio.h>
 
@@ -127,6 +128,8 @@ waits for +2a, +3
 	ww--wwww wwwwwwww : same
 */
 
+#include <assert.h>
+
 int waitsTab_A[16] = {5,5,4,4,3,3,2,2,1,1,0,0,0,0,6,6};	// 48K
 int waitsTab_B[16] = {1,1,0,0,7,7,6,6,5,5,4,4,3,3,2,2};	// +2A,+3
 
@@ -156,19 +159,10 @@ void vidFillMatrix(Video* vid) {
 						vid->matrix[i].atm7.egaptr = memGetPagePtr(vid->mem,MEM_RAM,3) + atmadr;
 						if (((y - 76) & 7) == 0) {
 							vid->matrix[i].flag |= MTF_ATM_TXT;
-							if ((x - 76) & 8) {
-								vid->matrix[i].atm5.txtptr = memGetPagePtr(vid->mem,MEM_RAM,5) + atmTadr + 0x2000;
-								vid->matrix[i].atm7.txtptr = memGetPagePtr(vid->mem,MEM_RAM,7) + atmTadr + 0x2000;
-								vid->matrix[i].atm5.txtatrptr = memGetPagePtr(vid->mem,MEM_RAM,1) + atmTadr + 0x2000;
-								vid->matrix[i].atm7.txtatrptr = memGetPagePtr(vid->mem,MEM_RAM,3) + atmTadr + 0x2000;
-								atmTadr++;
-								if (x == 0x198) atmTadr += 14;	// 40 to 64
-							} else {
-								vid->matrix[i].atm5.txtptr = memGetPagePtr(vid->mem,MEM_RAM,5) + atmTadr;
-								vid->matrix[i].atm7.txtptr = memGetPagePtr(vid->mem,MEM_RAM,7) + atmTadr;
-								vid->matrix[i].atm5.txtatrptr = memGetPagePtr(vid->mem,MEM_RAM,1) + atmTadr;
-								vid->matrix[i].atm7.txtatrptr = memGetPagePtr(vid->mem,MEM_RAM,3) + atmTadr;
-							}
+							vid->matrix[i].atm5.txtptr = memGetPagePtr(vid->mem,MEM_RAM,5) + atmTadr;
+							vid->matrix[i].atm7.txtptr = memGetPagePtr(vid->mem,MEM_RAM,7) + atmTadr;
+							vid->matrix[i].atm5.txtatrptr = memGetPagePtr(vid->mem,MEM_RAM,1) + atmTadr + 0x2000;
+							vid->matrix[i].atm7.txtatrptr = memGetPagePtr(vid->mem,MEM_RAM,3) + atmTadr + 0x2000;
 						}
 						break;
 					case 2:
@@ -180,6 +174,15 @@ void vidFillMatrix(Video* vid) {
 						vid->matrix[i].atmType = MTT_ATM_4;
 						vid->matrix[i].atm5.egaptr = memGetPagePtr(vid->mem,MEM_RAM,1) + atmadr + 0x2000;
 						vid->matrix[i].atm7.egaptr = memGetPagePtr(vid->mem,MEM_RAM,3) + atmadr + 0x2000;
+						if (((y - 76) & 7) == 0) {
+							vid->matrix[i].flag |= MTF_ATM_TXT;
+							vid->matrix[i].atm5.txtptr = memGetPagePtr(vid->mem,MEM_RAM,5) + atmTadr + 0x2000;
+							vid->matrix[i].atm7.txtptr = memGetPagePtr(vid->mem,MEM_RAM,7) + atmTadr + 0x2000;
+							vid->matrix[i].atm5.txtatrptr = memGetPagePtr(vid->mem,MEM_RAM,1) + atmTadr;
+							vid->matrix[i].atm7.txtatrptr = memGetPagePtr(vid->mem,MEM_RAM,3) + atmTadr;
+							atmTadr++;
+							if (x == 412) atmTadr += 24;	// 40 to 64
+						}
 						break;
 					case 6:
 						vid->matrix[i].atmType = MTT_ATM_6;
@@ -288,6 +291,8 @@ unsigned char col = 0;
 unsigned char ink = 0;
 unsigned char pap = 0;
 unsigned char scrbyte = 0;
+int adr;
+unsigned char* fntptr;
 mtrxItem* mtx = NULL;
 mtrxItem* nmtx = NULL;
 
@@ -314,6 +319,10 @@ void vidDarkTail(Video* vid) {
 
 int vidGetWait(Video* vid) {
 	return vid->matrix[vid->dotCount].wait;
+}
+
+void vidSetFont(Video* vid, char* src) {
+	memcpy(vid->font,src,0x800);
 }
 
 int vidSync(Video* vid, float dotDraw) {
@@ -354,10 +363,40 @@ int vidSync(Video* vid, float dotDraw) {
 						case MTT_ATM_NONE:
 							col = vid->brdcol;
 							break;
-						case MTT_ATM_0:
+						default:
 							if (mtx->flag & MTF_ATM_TXT) {
 								// get symbol, color, symbol address and draw "8" x 8 matrix
+								scrbyte = vid->curscr ? *(mtx->atm7.txtptr) : *(mtx->atm5.txtptr);
+								col = vid->curscr ? *(mtx->atm7.txtatrptr) : *(mtx->atm5.txtatrptr);
+								ink = (col & 7) | ((col & 0x40) >> 3);
+								pap = ((col & 0x38) >> 3) | ((col & 0x80) >> 4);
+								adr = (scrbyte << 3);
+								fntptr = vid->scrptr;
+								for (col = 0; col < 8; col++) {
+									scrbyte = vid->font[adr];
+									if (vidFlag & VF_DOUBLE) {
+										*(fntptr) = (scrbyte & 0x80) ? ink : pap;
+										*(fntptr+1) = (scrbyte & 0x40) ? ink : pap;
+										*(fntptr+2) = (scrbyte & 0x20) ? ink : pap;
+										*(fntptr+3) = (scrbyte & 0x10) ? ink : pap;
+										*(fntptr+4) = (scrbyte & 0x08) ? ink : pap;
+										*(fntptr+5) = (scrbyte & 0x04) ? ink : pap;
+										*(fntptr+6) = (scrbyte & 0x02) ? ink : pap;
+										*(fntptr+7) = (scrbyte & 0x01) ? ink : pap;
+										memcpy(fntptr + vid->wsze.h, fntptr, 8);
+										fntptr += vid->wsze.h;
+									} else {
+										*(fntptr) = (scrbyte & 0xc0) ? ink : pap;
+										*(fntptr+1) = (scrbyte & 0x30) ? ink : pap;
+										*(fntptr+2) = (scrbyte & 0x0c) ? ink : pap;
+										*(fntptr+3) = (scrbyte & 0x03) ? ink : pap;
+									}
+									fntptr += vid->wsze.h;
+									adr++;
+								}
 							}
+							vid->scrptr++;
+							if (vidFlag & VF_DOUBLE) vid->scrptr++;
 							break;
 					}
 					break;
@@ -420,7 +459,9 @@ int vidSync(Video* vid, float dotDraw) {
 				vidFlag |= VF_CHANGED;
 			}
 		}
-		if ((mtx->flag & MTF_LINEND) && (vidFlag & VF_DOUBLE)) vid->scrptr += vid->wsze.h;
+		if ((mtx->flag & MTF_LINEND) && (vidFlag & VF_DOUBLE)) {
+			vid->scrptr += vid->wsze.h;
+		}
 		if (mtx->flag & MTF_FRMEND) {
 			res |= VID_FRM;
 //			vid->dotCount = 0;

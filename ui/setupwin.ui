@@ -277,7 +277,7 @@
               <enum>Qt::DotLine</enum>
              </property>
              <property name="rowCount">
-              <number>6</number>
+              <number>7</number>
              </property>
              <property name="columnCount">
               <number>3</number>
@@ -300,6 +300,7 @@
              <attribute name="verticalHeaderDefaultSectionSize">
               <number>17</number>
              </attribute>
+             <row/>
              <row/>
              <row/>
              <row/>
@@ -337,6 +338,11 @@
              <item row="5" column="0">
               <property name="text">
                <string>GS</string>
+              </property>
+             </item>
+             <item row="6" column="0">
+              <property name="text">
+               <string>Font</string>
               </property>
              </item>
             </widget>

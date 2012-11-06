@@ -103,25 +103,33 @@ void setRomset(std::string pn, std::string nm) {
 				memSetPage(prof->zx->mem,MEM_ROM,i,pageBuf);
 			}
 		}
-	}
-	for (ad = 0; ad < 0x4000; ad++) pageBuf[ad] = 0xff;
-	if (prof->gsFile.empty()) {
-		gsSetRom(prof->zx->gs,0,pageBuf);
-		gsSetRom(prof->zx->gs,1,pageBuf);
-	} else {
-		fpath = romDir + SLASH + prof->gsFile;
-		file.open(fpath.c_str(),std::ios::binary);
-		if (file.good()) {
-			file.read(pageBuf,0x4000);
+		for (ad = 0; ad < 0x4000; ad++) pageBuf[ad] = 0xff;
+		if (rset->gsFile.empty()) {
 			gsSetRom(prof->zx->gs,0,pageBuf);
-			file.read(pageBuf,0x4000);
 			gsSetRom(prof->zx->gs,1,pageBuf);
 		} else {
-//			printf("Can't load gs rom '%s'\n",prof->gsFile.c_str());
-			gsSetRom(prof->zx->gs,0,pageBuf);
-			gsSetRom(prof->zx->gs,1,pageBuf);
+			fpath = romDir + SLASH + rset->gsFile;
+			file.open(fpath.c_str(),std::ios::binary);
+			if (file.good()) {
+				file.read(pageBuf,0x4000);
+				gsSetRom(prof->zx->gs,0,pageBuf);
+				file.read(pageBuf,0x4000);
+				gsSetRom(prof->zx->gs,1,pageBuf);
+			} else {
+	//			printf("Can't load gs rom '%s'\n",prof->gsFile.c_str());
+				gsSetRom(prof->zx->gs,0,pageBuf);
+				gsSetRom(prof->zx->gs,1,pageBuf);
+			}
+			file.close();
 		}
-		file.close();
+		if (!rset->fntFile.empty()) {
+			fpath = romDir + SLASH + rset->fntFile;
+			file.open(fpath.c_str(),std::ios::binary);
+			if (file.good()) {
+				file.read(pageBuf,0x800);
+				vidSetFont(prof->zx->vid,pageBuf);
+			}
+		}
 	}
 	free(pageBuf);
 }

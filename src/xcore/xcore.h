@@ -43,6 +43,8 @@ int getBookmarksCount();
 typedef struct {
 	std::string name;
 	std::string file;	// set when romfile is single file
+	std::string gsFile;
+	std::string fntFile;
 	struct {
 		std::string path;
 		unsigned char part;
@@ -76,7 +78,7 @@ typedef struct {
 	std::string layName;
 	std::string hwName;
 	std::string rsName;
-	std::string gsFile;
+//	std::string gsFile;
 	ZXComp* zx;
 } XProfile;
 

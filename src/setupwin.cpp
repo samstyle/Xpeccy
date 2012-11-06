@@ -36,7 +36,6 @@ QDialog* layeditor;
 
 std::vector<VidLayout> lays;
 std::vector<RomSet> rsl;
-std::string GSRom;
 
 void optInit(QWidget* par) {
 	optWin = new SetupWin(par);
@@ -86,13 +85,14 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	setupUi.resbox->addItems(QStringList()<<"0:Basic 128"<<"1:Basic48"<<"2:Shadow"<<"3:DOS");
 //	setupUi.rssel->hide();
 	QTableWidgetItem* itm;
-	for (i=0; i<6; i++) {
+	for (i = 0; i < (unsigned)setupUi.rstab->rowCount(); i++) {
 		itm = new QTableWidgetItem; setupUi.rstab->setItem(i,1,itm);
 		itm = new QTableWidgetItem; setupUi.rstab->setItem(i,2,itm);
 	}
 // video
 	OptName* ptr = getGetPtr(OPT_SHOTFRM);
-	i = 0; while (ptr[i].id != -1) {
+	i = 0;
+	while (ptr[i].id != -1) {
 		setupUi.ssfbox->addItem(QString(ptr[i].name.c_str()),QVariant(ptr[i].id));
 		i++;
 	}
@@ -279,17 +279,17 @@ void SetupWin::start() {
 	unsigned int i;
 	emulPause(true,PR_OPTS);
 	XProfile* curProf = getCurrentProfile();
+	RomSet* rset = findRomset(curProf->rsName);
 // machine
 	rsl = getRomsetList();
 	setupUi.rsetbox->clear();
-	GSRom = curProf->gsFile;
 	for (i=0; i < rsl.size(); i++) {
 		setupUi.rsetbox->addItem(QString::fromLocal8Bit(rsl[i].name.c_str()));
 	}
 	setupUi.machbox->setCurrentIndex(setupUi.machbox->findText(QString::fromUtf8(zx->hw->name)));
 	int cbx = -1;
-	RomSet* rset = findRomset(curProf->rsName);
-	if (rset != NULL) cbx = setupUi.rsetbox->findText(QString::fromUtf8(rset->name.c_str()));
+	if (rset != NULL)
+		cbx = setupUi.rsetbox->findText(QString::fromUtf8(rset->name.c_str()));
 	setupUi.rsetbox->setCurrentIndex(cbx);
 //	setupUi.reschk->setChecked(emulGetFlags() & FL_RESET);
 	setupUi.resbox->setCurrentIndex(zx->resbank);
@@ -432,13 +432,13 @@ void SetupWin::apply() {
 	setHardware(curProf->zx,curProf->hwName);
 	curProf->rsName = std::string(setupUi.rsetbox->currentText().toUtf8().data());
 	setRomset(curProf->name, curProf->rsName);
+//	RomSet* rset = findRomset(curProf->rsName);
 //	emulSetFlag(FL_RESET, setupUi.reschk->isChecked());
 	zx->resbank = setupUi.resbox->currentIndex();
 
 	memSetSize(zx->mem,setupUi.mszbox->itemData(setupUi.mszbox->currentIndex()).toInt());
 	zxSetFrq(zx,setupUi.cpufrq->value() / 2.0);
 	setFlagBit(setupUi.scrpwait->isChecked(),&zx->hwFlags,WAIT_ON);
-	curProf->gsFile = GSRom;
 	if (zx->hw != oldmac) zxReset(zx,RES_DEFAULT);
 // video
 	setLayoutList(lays);
@@ -718,6 +718,7 @@ void SetupWin::editrset() {
 	fillRFBox(rseUi.rse_file2,rlst);
 	fillRFBox(rseUi.rse_file3,rlst);
 	fillRFBox(rseUi.rse_gsfile,rlst);
+	fillRFBox(rseUi.rse_fntfile,rlst);
 	rseUi.rse_singlefile->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].file.c_str())) + 1);
 	rseUi.rse_file0->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].roms[0].path.c_str())) + 1);
 	rseUi.rse_file1->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].roms[1].path.c_str())) + 1);
@@ -727,7 +728,8 @@ void SetupWin::editrset() {
 	rseUi.rse_part1->setValue(rsl[cbx].roms[1].part);
 	rseUi.rse_part2->setValue(rsl[cbx].roms[2].part);
 	rseUi.rse_part3->setValue(rsl[cbx].roms[3].part);
-	rseUi.rse_gsfile->setCurrentIndex(rlst.indexOf(QString(GSRom.c_str())) + 1);
+	rseUi.rse_gsfile->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].gsFile.c_str())) + 1);
+	rseUi.rse_fntfile->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].fntFile.c_str())) + 1);
 	rseUi.rse_grp_single->setChecked(rsl[cbx].file != "");
 
 //	setupUi.rstab->hide();
@@ -740,7 +742,6 @@ void SetupWin::editrset() {
 
 void SetupWin::setrpart() {
 	int cbx = setupUi.rsetbox->currentIndex();
-	GSRom = getRFText(rseUi.rse_gsfile);
 	if (rseUi.rse_grp_single->isChecked()) {
 		rsl[cbx].file = getRFText(rseUi.rse_singlefile);
 	} else {
@@ -754,6 +755,8 @@ void SetupWin::setrpart() {
 	rsl[cbx].roms[2].part = rseUi.rse_part2->value();
 	rsl[cbx].roms[3].path = getRFText(rseUi.rse_file3);
 	rsl[cbx].roms[3].part = rseUi.rse_part3->value();
+	rsl[cbx].gsFile = getRFText(rseUi.rse_gsfile);
+	rsl[cbx].fntFile = getRFText(rseUi.rse_fntfile);
 	buildrsetlist();
 	rseditor->hide();
 //	hidersedit();
@@ -859,7 +862,8 @@ void SetupWin::buildrsetlist() {
 		setupUi.rstab->item(4,1)->setText(QString::fromLocal8Bit(rset.file.c_str()));
 		setupUi.rstab->item(4,2)->setText("");
 	}
-	setupUi.rstab->item(5,1)->setText(QString::fromLocal8Bit(GSRom.c_str()));
+	setupUi.rstab->item(5,1)->setText(QString::fromLocal8Bit(rset.gsFile.c_str()));
+	setupUi.rstab->item(6,1)->setText(QString::fromLocal8Bit(rset.fntFile.c_str()));
 	setupUi.rstab->setColumnWidth(0,100);
 	setupUi.rstab->setColumnWidth(1,300);
 	setupUi.rstab->setColumnWidth(2,50);

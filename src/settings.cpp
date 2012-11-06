@@ -406,6 +406,8 @@ void saveProfiles() {
 				}
 			}
 		}
+		if (!rsl[i].gsFile.empty()) cfile << "gs = " << rsl[i].gsFile.c_str() << "\n";
+		if (!rsl[i].fntFile.empty()) cfile << "font = " << rsl[i].fntFile.c_str() << "\n";
 	}
 	cfile << "\n[SOUND]\n\n";
 	cfile << "enabled = " << ((sndGet(SND_ENABLE) != 0) ? "yes" : "no") << "\n";
@@ -477,7 +479,8 @@ void saveConfig() {
 	optSet("MACHINE","contmem",(zx->flags & ZX_CONTMEM) != 0);
 	optSet("MACHINE","contio",(zx->flags & ZX_CONTIO) != 0);
 
-	optSet("ROMSET","gs",curProf->gsFile);
+//	optSet("ROMSET","gs",curProf->gsFile);
+	delOption("ROMSET","gs");
 	optSet("ROMSET","current",curProf->rsName);
 	optSet("ROMSET","reset",rmnam[zx->resbank]);
 
@@ -588,6 +591,8 @@ void copyFile(const char* src, const char* dst) {
 	}
 }
 
+// load main config
+
 void loadProfiles() {
 	std::string soutnam = "NULL";
 	std::ifstream file(profPath.c_str());
@@ -619,7 +624,8 @@ void loadProfiles() {
 	int test,fprt;
 	extButton extb;
 	intButton intb;
-	newrs.file = "";
+	newrs.file.clear();
+	newrs.gsFile.clear();
 	for (int i=0; i<32; i++) {
 		newrs.roms[i].path = "";
 		newrs.roms[i].part = 0;
@@ -731,6 +737,8 @@ void loadProfiles() {
 							rslist.back().roms[3].path=fnam;
 							rslist.back().roms[3].part=fprt;
 						}
+						if (pnam=="gs") rslist.back().gsFile=fnam;
+						if (pnam=="font") rslist.back().fntFile=fnam;
 					}
 					break;
 				case SECT_SOUND:
@@ -982,6 +990,7 @@ void loadConfig(bool dev) {
 	delOption("VIDEO","doublesize");
 	delOption("VIDEO","contmem");
 	delOption("MACHINE","restart");
+	delOption("ROMSET","gs");
 
 	tmp2 = optGetInt("GENERAL","cpu.frq"); if ((tmp2 > 0) && (tmp2 <= 14)) zxSetFrq(zx,tmp2 / 2.0);
 
@@ -1002,7 +1011,7 @@ void loadConfig(bool dev) {
 	zx->bdi->fdc->turbo = optGetBool("DISK","fast") ? 1 : 0;
 	curProf->hwName = optGetString("MACHINE","current");
 	curProf->rsName = optGetString("ROMSET","current");
-	curProf->gsFile = optGetString("ROMSET","gs");
+//	curProf->gsFile = optGetString("ROMSET","gs");
 //	emulSetFlag(FL_RESET,optGetBool("MACHINE","restart"));
 	setFlagBit(optGetBool("MACHINE","scrp.wait"),&zx->hwFlags,WAIT_ON);
 
