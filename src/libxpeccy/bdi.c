@@ -1371,10 +1371,6 @@ int bdiGetPort(int p) {
 }
 
 int bdiOut(BDI* bdi,int port,unsigned char val) {
-	if (bdi->fdc->type != FDC_93) return 0;
-	if (~bdi->flag & BDI_ACTIVE) return 0;
-	port = bdiGetPort(port);
-	if (!pcatch) return 0;
 	switch (port) {
 		case FDC_COM:
 		case FDC_TRK:
@@ -1393,24 +1389,20 @@ int bdiOut(BDI* bdi,int port,unsigned char val) {
 	return 1;
 }
 
-int bdiIn(BDI* bdi,int port,unsigned char* val) {
-	if (bdi->fdc->type != FDC_93) return 0;
-	if (~bdi->flag & BDI_ACTIVE) return 0;
-	port = bdiGetPort(port);
-	if (!pcatch) return 0;
-	*val = 0xff;
+unsigned char bdiIn(BDI* bdi,int port) {
+	unsigned char res = 0xff;
 	switch (port) {
 		case FDC_COM:
 		case FDC_TRK:
 		case FDC_SEC:
 		case FDC_DATA:
-			*val = fdcRd(bdi->fdc,port);
+			res = fdcRd(bdi->fdc,port);
 			break;
 		case BDI_SYS:
-			*val = (bdi->fdc->irq ? 0x80 : 0x00) | (bdi->fdc->drq ? 0x40 : 0x00);
+			res = (bdi->fdc->irq ? 0x80 : 0x00) | (bdi->fdc->drq ? 0x40 : 0x00);
 			break;
 	}
-	return 1;
+	return res;
 }
 
 void bdiSync(BDI* bdi,int tk) {

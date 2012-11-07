@@ -100,7 +100,7 @@ BDI* bdiCreate();
 void bdiDestroy(BDI*);
 void bdiReset(BDI*);
 void bdiSync(BDI*,int);
-int bdiIn(BDI*,int, unsigned char*);
+unsigned char bdiIn(BDI*,int);
 int bdiOut(BDI*,int, unsigned char);
 
 unsigned char fdcRd(FDC*,int);
