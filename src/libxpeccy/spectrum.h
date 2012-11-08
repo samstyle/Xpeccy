@@ -82,9 +82,11 @@ typedef struct {
 	float cpuFrq;
 	float dotPerTick;
 	int hwFlags;
+	unsigned char memMap[16];	// memory map for ATM2
 	unsigned char prt0;		// 7ffd value
 	unsigned char prt1;		// extend port value
 	unsigned char prt2;		// scorpion ProfROM layer (0..3)
+	unsigned char dosen;		// active trdos (dosen and b4,prt0 sets rompart)
 	int resbank;		// rompart active after reset
 	int gsCount;
 	unsigned long tickCount;

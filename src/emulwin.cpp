@@ -275,8 +275,8 @@ void MainWin::updateHead() {
 	QString title(XPTITLE);
 	XProfile* curProf = getCurrentProfile();
 	if (curProf != NULL) {
-		title.append(" | HW:").append(QString::fromLocal8Bit(curProf->name.c_str()));
-		title.append(" | LAY:").append(QString::fromLocal8Bit(curProf->layName.c_str()));
+		title.append(" | ").append(QString::fromLocal8Bit(curProf->name.c_str()));
+		title.append(" | ").append(QString::fromLocal8Bit(curProf->layName.c_str()));
 	}
 	if (emulFlags & FL_FAST) {
 		title.append(" | fast");

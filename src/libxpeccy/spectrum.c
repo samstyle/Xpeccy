@@ -47,11 +47,11 @@ unsigned char plus2Lays[4][4] = {
 
 // port decoding tables
 
-Z80EX_WORD zxGetPort(ZXComp* comp, Z80EX_WORD port) {
+int zxGetPort(ZXComp* comp, Z80EX_WORD port) {
 	switch (comp->hw->type) {
 		case HW_ZX48:
-			if ((port & 0x0001) == 0x0000) return (port & 0xff00) | 0xfe;
-			if (comp->bdi->flag & BDI_ACTIVE) {
+			if ((port & 0x0001) == 0x0000) return 0xfe;
+			if (comp->dosen & 1) {
 				if ((port & 0x0083) == 0x0083) return 0xff;
 				if ((port & 0x00e3) == 0x0003) return 0x1f;
 				if ((port & 0x00e3) == 0x0023) return 0x3f;
@@ -62,12 +62,12 @@ Z80EX_WORD zxGetPort(ZXComp* comp, Z80EX_WORD port) {
 			}
 			break;
 		case HW_PENT:
-			if ((port & 0x0003) == 0x0002) return (port & 0xff00) | 0xfe;
+			if ((port & 0x0003) == 0x0002) return 0xfe;
 			if ((port & 0x00ff) == 0x001f) return 0x1f;
 			if ((port & 0x8002) == 0x0000) return 0x7ffd;
 			if ((port & 0xc002) == 0x8000) return 0xbffd;
 			if ((port & 0xc002) == 0xc000) return 0xfffd;
-			if (comp->bdi->flag & BDI_ACTIVE) {
+			if (comp->dosen & 1) {
 				if ((port & 0x0083) == 0x0083) return 0xff;
 				if ((port & 0x00e3) == 0x0003) return 0x1f;
 				if ((port & 0x00e3) == 0x0023) return 0x3f;
@@ -80,12 +80,12 @@ Z80EX_WORD zxGetPort(ZXComp* comp, Z80EX_WORD port) {
 			}
 			break;
 		case HW_P1024:
-			if ((port & 0x0003) == 0x0002) return (port & 0xff00) | 0xfe;
+			if ((port & 0x0003) == 0x0002) return 0xfe;
 			if ((port & 0xf008) == 0xe008) return 0xeff7;
 			if ((port & 0x8002) == 0x0000) return 0x7ffd;
 			if ((port & 0xc002) == 0x8000) return 0xbffd;
 			if ((port & 0xc002) == 0xc000) return 0xfffd;
-			if (comp->bdi->flag & BDI_ACTIVE) {
+			if (comp->dosen & 1) {
 				if ((port & 0x0083) == 0x0083) return 0xff;
 				if ((port & 0x00e3) == 0x0003) return 0x1f;
 				if ((port & 0x00e3) == 0x0023) return 0x3f;
@@ -98,13 +98,13 @@ Z80EX_WORD zxGetPort(ZXComp* comp, Z80EX_WORD port) {
 			}
 			break;
 		case HW_SCORP:
-			if ((port & 0x0023) == 0x0022) return (port & 0xff00) | 0xfe;
+			if ((port & 0x0023) == 0x0022) return 0xfe;
 			if ((port & 0xc023) == 0x0021) return 0x1ffd;
 			if ((port & 0xc023) == 0x4021) return 0x7ffd;
 			if ((port & 0xc023) == 0x8021) return 0xbffd;
 			if ((port & 0xc023) == 0xc021) return 0xfffd;
 			if ((port & 0x0023) == 0x0001) return 0xdd;
-			if (comp->bdi->flag & BDI_ACTIVE) {
+			if (comp->dosen & 1) {
 				if ((port & 0x0083) == 0x0083) return 0xff;
 				if ((port & 0x00e3) == 0x0003) return 0x1f;
 				if ((port & 0x00e3) == 0x0023) return 0x3f;
@@ -118,14 +118,14 @@ Z80EX_WORD zxGetPort(ZXComp* comp, Z80EX_WORD port) {
 			}
 			break;
 		case HW_PLUS2:
-			if ((port & 0x0003) == 0x0002) return (port & 0xff00) | 0xfe;
+			if ((port & 0x0003) == 0x0002) return 0xfe;
 			if ((port & 0xc002) == 0x4000) return 0x7ffd;
 			if ((port & 0xf002) == 0x1000) return 0x1ffd;
 			if ((port & 0xc002) == 0x8000) return 0xbffd;
 			if ((port & 0xc002) == 0xc000) return 0xfffd;
 			break;
 		case HW_PLUS3:
-			if ((port & 0x0003) == 0x0002) return (port & 0xff00) | 0xfe;
+			if ((port & 0x0003) == 0x0002) return 0xfe;
 			if ((port & 0xc002) == 0x4000) return 0x7ffd;
 			if ((port & 0xf002) == 0x1000) return 0x1ffd;
 			if ((port & 0xf002) == 0x0000) return 0x0ffd;
@@ -135,7 +135,7 @@ Z80EX_WORD zxGetPort(ZXComp* comp, Z80EX_WORD port) {
 			if ((port & 0xc002) == 0xc000) return 0xfffd;
 			break;
 		case HW_ATM1:
-			if ((port & 0x0007) == 0x0006) return (port & 0xff00) | 0xfe;	// SHIT HERE (to read: a8..15, to write: a3.5.6.7)
+			if ((port & 0x0007) == 0x0006) return 0xfe;	// (to read: a8..15, to write: a3.5.6.7)
 			if ((port & 0x8202) == 0x8000) return 0xfdfd;	// mem.ext
 			if ((port & 0x8202) == 0x0200) return 0x7ffd;	// mem
 			if ((port & 0x8202) == 0x0000) return 0x7dfd;	// digital.rd / palete.wr
@@ -143,23 +143,31 @@ Z80EX_WORD zxGetPort(ZXComp* comp, Z80EX_WORD port) {
 			if ((port & 0xc202) == 0xc200) return 0xfffd;
 			if ((port & 0x0007) == 0x0002) return 0xfa;	// interface port
 			if ((port & 0x0007) == 0x0003) return 0xfb;	// digital.wr/printer
-			printf("ATM1: Request port %.4X\n",port);
-			assert(0);
+			if (comp->dosen & 1) {
+				if ((port & 0x009f) == 0x009f) return 0xff;				// bdi: ff
+				if ((port & 0x00ff) == 0x001f) return 0x1f;
+				if ((port & 0x00ff) == 0x003f) return 0x3f;
+				if ((port & 0x00ff) == 0x005f) return 0x5f;
+				if ((port & 0x00ff) == 0x007f) return 0x7f;
+			}
 			break;
 		case HW_ATM2:
-			if ((port & 0x0007) == 0x0006) return (port & 0xff00) | 0xfe;
+			if ((port & 0x0007) == 0x0006) return 0xfe;
 			if ((port & 0x0007) == 0x0002) return 0xfa;	// interface port
 			if ((port & 0x0007) == 0x0003) return 0xfb;	// covox
 			if ((port & 0x8202) == 0x0200) return 0x7ffd;	// mem.main
 			if ((port & 0x8202) == 0x0000) return 0x7dfd;	// digital.rd
 			if ((port & 0xc202) == 0x8200) return 0xbffd;	// ay
 			if ((port & 0xc202) == 0xc200) return 0xfffd;
-			if (comp->bdi->flag & BDI_ACTIVE) {
+			if (comp->dosen & 1) {
 				if ((port & 0x009f) == 0x009f) return 0xff;				// bdi: ff
-				if ((port & 0x009f) == 0x001f) return port;				// bdi: 1f,3f,5f,7f
-				if ((port & 0x009f) == 0x0097) return (port & 0xff00) | 0xf7;		// F7: mem.manager (a14.15)
-				if ((port & 0x009f) == 0x0017) return (port & 0xff00) | 0x77;		// 77: system (a8.a9.a14)
-				if ((port & 0x001f) == 0x000f) return ((port & 0x01e0) << 3) | 0xef;	// EF: hdd (a8..11)
+				if ((port & 0x00ff) == 0x001f) return 0x1f;
+				if ((port & 0x00ff) == 0x003f) return 0x3f;
+				if ((port & 0x00ff) == 0x005f) return 0x5f;
+				if ((port & 0x00ff) == 0x007f) return 0x7f;
+				if ((port & 0x009f) == 0x0097) return 0xf7;				// F7: mem.manager (a14.15)
+				if ((port & 0x009f) == 0x0017) return 0x77;				// 77: system (a8.a9.a14)
+				if ((port & 0x001f) == 0x000f) return 0xef;				// EF: hdd (a8..11)
 			}
 			break;
 		default:
@@ -174,25 +182,41 @@ Z80EX_WORD zxGetPort(ZXComp* comp, Z80EX_WORD port) {
 #define	PRT1	comp->prt1
 #define	PRT2	comp->prt2
 
+void atmSetBank(ZXComp* comp, int bank, unsigned char val) {
+	unsigned char page = ~val & 0x3f;	// inversed b0..5
+	if (val & 0x80) page = (page & 0x38) | (PRT0 & 7);	// mix with 7FFD bank
+	if (~val & 0x40) page &= 3;
+	memSetBank(comp->mem,bank,(val & 0x40) ? MEM_RAM : MEM_ROM, page);
+}
+
 void zxMapMemory(ZXComp* comp) {
 	Z80EX_BYTE rp;
+	int adr;
 	switch (comp->hw->type) {
 		case HW_ZX48:
-			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,(comp->bdi->flag & BDI_ACTIVE) ? 3 : 1);
+			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,(comp->dosen) ? 3 : 1);
 			memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0);
 			break;
 		case HW_PENT:
-			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,(comp->bdi->flag & BDI_ACTIVE) ? 3 : ((PRT0 & 0x10) >> 4));
+			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,((comp->dosen & 1) << 1) | ((PRT0 & 0x10) >> 4));
 			memSetBank(comp->mem,MEM_BANK3,MEM_RAM,(PRT0 & 7) | ((PRT0 & 0xc0) >> 3));
 			break;
 		case HW_P1024:
-			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,(comp->bdi->flag & BDI_ACTIVE) ? 3 : ((PRT1 & 8) ? 0xff : ((PRT0 & 0x10) >> 4)));
+			if (PRT1 & 8) {
+				memSetBank(comp->mem,MEM_BANK0,MEM_RAM,0);
+			} else {
+				memSetBank(comp->mem,MEM_BANK0,MEM_ROM,((comp->dosen & 1) << 1) | ((PRT0 & 0x10) >> 4));
+			}
 			memSetBank(comp->mem,MEM_BANK3,MEM_RAM,(PRT0 & 7) | ((PRT1 & 4) ? 0 : ((PRT0 & 0x20) | ((PRT0 & 0xc0) >> 3))));
 			break;
 		case HW_SCORP:
-			rp = (PRT1 & 0x01) ? 0xff : ((PRT1 & 0x02) ? 2 : ((comp->bdi->flag & BDI_ACTIVE) ? 3 : ((PRT0 & 0x10) >> 4)));
-			rp |= ((PRT2 & 3) << 2);
-			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,rp);
+			if (PRT1 & 0x01) {
+				memSetBank(comp->mem,MEM_BANK0,MEM_RAM,0);
+			} else {
+				rp = (PRT1 & 0x02) ? 2 : (((comp->dosen & 1) << 1) | ((PRT0 & 0x10) >> 4));
+				rp |= ((PRT2 & 3) << 2);
+				memSetBank(comp->mem,MEM_BANK0,MEM_ROM,rp);
+			}
 			memSetBank(comp->mem,MEM_BANK3,MEM_RAM,(PRT0 & 7) | ((PRT1 & 0x10) >> 1) | ((PRT1 & 0xc0) >> 2));
 			break;
 		case HW_PLUS3:
@@ -212,6 +236,21 @@ void zxMapMemory(ZXComp* comp) {
 				memSetBank(comp->mem,MEM_BANK3,MEM_RAM,PRT0 & 7);
 			}
 			break;
+		case HW_ATM2:
+			if (~PRT1 & 1) {			// pen = 0: last rom page in every bank
+				memSetBank(comp->mem,MEM_BANK0,MEM_ROM,3);
+				memSetBank(comp->mem,MEM_BANK1,MEM_ROM,3);
+				memSetBank(comp->mem,MEM_BANK2,MEM_ROM,3);
+				memSetBank(comp->mem,MEM_BANK3,MEM_ROM,3);
+			} else {
+				adr = (PRT0 & 0x10) ? 4 : 0;
+				atmSetBank(comp,MEM_BANK0,comp->memMap[adr]);
+				atmSetBank(comp,MEM_BANK1,comp->memMap[adr+1]);
+				atmSetBank(comp,MEM_BANK2,comp->memMap[adr+2]);
+				atmSetBank(comp,MEM_BANK3,comp->memMap[adr+3]);
+
+			}
+			break;
 	}
 }
 
@@ -225,12 +264,14 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 	if (m1 == 1) {
 		if (comp->rzxPlay) comp->rzxFetches--;
 		if (comp->bdi->fdc->type == FDC_93) {
-			if (!(comp->bdi->flag & BDI_ACTIVE) && ((adr & 0xff00) == 0x3d00) && (comp->prt0 & 0x10)) {
-				comp->bdi->flag |= BDI_ACTIVE;
+			if ((comp->dosen == 0) && ((adr & 0xff00) == 0x3d00) && (comp->prt0 & 0x10)) {
+				comp->dosen = 1;
 				zxMapMemory(comp);
 			}
-			if ((comp->bdi->flag & BDI_ACTIVE) && (adr > 0x3fff)) {
-				comp->bdi->flag &= ~BDI_ACTIVE;
+			if ((comp->dosen == 1) && (adr > 0x3fff)
+					&& !((comp->hw->type == HW_ATM2) && (~PRT1 & 2))		// ATM2 cpm mode - don't off dosen
+					) {
+				comp->dosen = 0;
 				zxMapMemory(comp);
 			}
 		}
@@ -273,7 +314,7 @@ void memwr(Z80EX_CONTEXT* cpu, Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
 	Z80EX_BYTE res = 0xff;
-// vide sync
+// video sync
 	res3 = res2 + z80ex_op_tstate(cpu);
 	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
 	res4 = res3;
@@ -298,108 +339,320 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 		}
 	}
 // request to external devices
-	if (ideIn(comp->ide,port,&res,comp->bdi->flag & BDI_ACTIVE)) return res;
+	if (ideIn(comp->ide,port,&res,comp->dosen & 1)) return res;
 	if (gsIn(comp->gs,port,&res) == GS_OK) return res;
 // request to internal devices
-	int bdiz = ((comp->bdi->flag & BDI_ACTIVE) && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
-	port = zxGetPort(comp,port);
-	switch (port) {
-		case 0x1f: res = bdiz ? bdiIn(comp->bdi,FDC_STATE) : joyInput(comp->joy); break;		// bdi.state / kempston
-		case 0x3f: res = bdiz ? bdiIn(comp->bdi,FDC_TRK) : 0xff; break;					// bdi.trk
-		case 0x5f: res = bdiz ? bdiIn(comp->bdi,FDC_SEC) : 0xff; break;					// bdi.sec
-		case 0x7f: res = bdiz ? bdiIn(comp->bdi,FDC_DATA) : 0xff; break;				// bdi.data
-		case 0xff: res = bdiz ? bdiIn(comp->bdi,BDI_SYS) : 0xff; break;					// bdi.sys
-		case 0xfadf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->buttons : 0xff; break;	// mouse.buttons
-		case 0xfbdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->xpos : 0xff; break;	// mouse.x
-		case 0xffdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->ypos : 0xff; break;	// mouse.y
-		case 0xfffd: res = tsIn(comp->ts,port); break;							// ay
-		case 0x1ffd:
-			if (comp->hw->type == HW_SCORP) {zxSetFrq(comp,3.5);}					// SCRP: turbo.off
+	int bdiz = ((comp->dosen & 1) && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
+	int ptype = zxGetPort(comp,port);
+	switch (comp->hw->type) {
+		case HW_ZX48:
+			switch (ptype) {
+				case 0x1f: res = bdiz ? bdiIn(comp->bdi,FDC_STATE) : joyInput(comp->joy); break;
+				case 0x3f: res = bdiz ? bdiIn(comp->bdi,FDC_TRK) : 0xff; break;
+				case 0x5f: res = bdiz ? bdiIn(comp->bdi,FDC_SEC) : 0xff; break;
+				case 0x7f: res = bdiz ? bdiIn(comp->bdi,FDC_DATA) : 0xff; break;
+				case 0xff: res = bdiz ? bdiIn(comp->bdi,BDI_SYS) : 0xff; break;
+				case 0xfe: res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00); break;
+			}
 			break;
-		case 0x7ffd:
-			if (comp->hw->type == HW_SCORP) {zxSetFrq(comp,7.0);}					// SCRP: turbo.on
+		case HW_PENT:
+			switch (ptype) {
+				case 0x1f: res = bdiz ? bdiIn(comp->bdi,FDC_STATE) : joyInput(comp->joy); break;
+				case 0x3f: res = bdiz ? bdiIn(comp->bdi,FDC_TRK) : 0xff; break;
+				case 0x5f: res = bdiz ? bdiIn(comp->bdi,FDC_SEC) : 0xff; break;
+				case 0x7f: res = bdiz ? bdiIn(comp->bdi,FDC_DATA) : 0xff; break;
+				case 0xff: res = bdiz ? bdiIn(comp->bdi,BDI_SYS) : 0xff; break;
+				case 0xfe: res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00); break;
+				case 0xfadf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->buttons : 0xff; break;
+				case 0xfbdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->xpos : 0xff; break;
+				case 0xffdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->ypos : 0xff; break;
+				case 0xfffd: res = tsIn(comp->ts,port); break;
+			}
 			break;
-		case 0x2ffd:
-			if (comp->hw->type == HW_PLUS3) {res = fdcRd(comp->bdi->fdc,FDC_STATE);}		// +3: uPD765.state
+		case HW_P1024:
+			switch (ptype) {
+				case 0x1f: res = bdiz ? bdiIn(comp->bdi,FDC_STATE) : 0xff; break;
+				case 0x3f: res = bdiz ? bdiIn(comp->bdi,FDC_TRK) : 0xff; break;
+				case 0x5f: res = bdiz ? bdiIn(comp->bdi,FDC_SEC) : 0xff; break;
+				case 0x7f: res = bdiz ? bdiIn(comp->bdi,FDC_DATA) : 0xff; break;
+				case 0xff: res = bdiz ? bdiIn(comp->bdi,BDI_SYS) : 0xff; break;
+				case 0xfe: res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00); break;
+				case 0xfadf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->buttons : 0xff; break;
+				case 0xfbdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->xpos : 0xff; break;
+				case 0xffdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->ypos : 0xff; break;
+				case 0xfffd: res = tsIn(comp->ts,port); break;
+			}
 			break;
-		case 0x3ffd:
-			if (comp->hw->type == HW_PLUS3) {res = fdcRd(comp->bdi->fdc,FDC_DATA);}			// +3: uPD765.data
+		case HW_SCORP:
+			switch (ptype) {
+				case 0x1f: res = bdiz ? bdiIn(comp->bdi,FDC_STATE) : 0xff; break;
+				case 0x3f: res = bdiz ? bdiIn(comp->bdi,FDC_TRK) : 0xff; break;
+				case 0x5f: res = bdiz ? bdiIn(comp->bdi,FDC_SEC) : 0xff; break;
+				case 0x7f: res = bdiz ? bdiIn(comp->bdi,FDC_DATA) : 0xff; break;
+				case 0xff: res = bdiz ? bdiIn(comp->bdi,BDI_SYS) : 0xff; break;
+				case 0xfe: res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00); break;
+				case 0x1ffd: zxSetFrq(comp,3.5); break;
+				case 0x7ffd: zxSetFrq(comp,7.0); break;
+				case 0xfadf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->buttons : 0xff; break;
+				case 0xfbdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->xpos : 0xff; break;
+				case 0xffdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->ypos : 0xff; break;
+				case 0xfffd: res = tsIn(comp->ts,port); break;
+			}
 			break;
-		default:
-			switch (port & 0x00ff) {
-				case 0xfe:									// keyboard.tape
-					res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00);
+		case HW_PLUS2:
+			switch (ptype) {
+				case 0xfe: res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00); break;
+				case 0xfffd: res = tsIn(comp->ts,port); break;
+			}
+			break;
+		case HW_PLUS3:
+			switch (ptype) {
+				case 0xfe: res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00); break;
+				case 0x2ffd: res = fdcRd(comp->bdi->fdc,FDC_STATE); break;
+				case 0x3ffd: res = fdcRd(comp->bdi->fdc,FDC_DATA); break;
+				case 0xfffd: res = tsIn(comp->ts,port); break;
+			}
+			break;
+		case HW_ATM2:
+			switch (ptype) {
+				case 0x1f: res = bdiz ? bdiIn(comp->bdi,FDC_STATE) : 0xff; break;
+				case 0x3f: res = bdiz ? bdiIn(comp->bdi,FDC_TRK) : 0xff; break;
+				case 0x5f: res = bdiz ? bdiIn(comp->bdi,FDC_SEC) : 0xff; break;
+				case 0x7f: res = bdiz ? bdiIn(comp->bdi,FDC_DATA) : 0xff; break;
+				case 0xef: res = 0xff; break;
+				case 0xff: res = bdiz ? bdiIn(comp->bdi,BDI_SYS) : 0xff; break;
+				case 0xfe: res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00); break;
+				case 0x7ffd: res = 0xc0; break;
+				case 0x7dfd: res = 0xff; break;
+				default:
+					printf("ATM2: in %.4X (%.4X)\n",port,ptype);
+					assert(0);
 					break;
 			}
+			break;
+		default:
+			printf("iord: unknown hardware id %i\n",comp->hw->type);
+			assert(0);
 			break;
 	}
 	return res;
 }
 
-void zxOut(ZXComp *comp, Z80EX_WORD sport, Z80EX_BYTE val) {
+void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	gsSync(comp->gs,comp->gsCount);
 	comp->gsCount = 0;
 // request to external devices
-	if (ideOut(comp->ide,sport,val,comp->bdi->flag & BDI_ACTIVE)) return;
-	if (gsOut(comp->gs,sport,val) == GS_OK) return;
+	if (ideOut(comp->ide,port,val,comp->dosen & 1)) return;
+	if (gsOut(comp->gs,port,val) == GS_OK) return;
 // request to internal devices
-	sdrvOut(comp->sdrv,sport & 0x00ff,val);
-	Z80EX_WORD port = zxGetPort(comp,sport);
-	int bdiz = ((comp->bdi->flag & BDI_ACTIVE) && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
-	switch (port) {
-		case 0x1f: if (bdiz) bdiOut(comp->bdi,FDC_COM,val); break;		// bdi.com
-		case 0x3f: if (bdiz) bdiOut(comp->bdi,FDC_TRK,val); break;		// bdi.trk
-		case 0x5f: if (bdiz) bdiOut(comp->bdi,FDC_SEC,val); break;		// bdi.sec
-		case 0x7f: if (bdiz) bdiOut(comp->bdi,FDC_DATA,val); break;		// bdi.data
-		case 0xff: if (bdiz) bdiOut(comp->bdi,BDI_SYS,val); break;		// bdi.sys
-		case 0xfffd:
-		case 0xbffd:
-			tsOut(comp->ts,port,val);					// ay.reg, ay.data
-			break;
-		case 0xdd:
-			if (comp->hw->type == HW_SCORP) sdrvOut(comp->sdrv,0xfb,val);	// SCRP: covox
-			break;
-		case 0x7ffd:								// mem.common
-			if (comp->prt0 & 0x20) break;
-			comp->prt0 = val;
-			comp->vid->curscr = (val & 0x08) ? 1 : 0;
-			zxMapMemory(comp);
-			break;
-		case 0x1ffd:								// SCRP,+2,+3: mem.extend
-			if (comp->hw->type == HW_SCORP) {comp->prt1 = val; zxMapMemory(comp);}
-			if (comp->hw->type == HW_PLUS2) {comp->prt1 = val; zxMapMemory(comp);}
-			if (comp->hw->type == HW_PLUS3) {comp->prt1 = val; zxMapMemory(comp);}
-			break;
-		case 0x2ffd:								// +3: disk.motors
-			if ((comp->hw->type == HW_PLUS3) && (comp->bdi->fdc->type == FDC_765)) {
-				if (val & 1) comp->bdi->fdc->flop[0]->flag |= FLP_MOTOR; else comp->bdi->fdc->flop[0]->flag &= ~FLP_MOTOR;
-				if (val & 2) comp->bdi->fdc->flop[1]->flag |= FLP_MOTOR; else comp->bdi->fdc->flop[1]->flag &= ~FLP_MOTOR;
-				if (val & 4) comp->bdi->fdc->flop[2]->flag |= FLP_MOTOR; else comp->bdi->fdc->flop[2]->flag &= ~FLP_MOTOR;
-				if (val & 8) comp->bdi->fdc->flop[3]->flag |= FLP_MOTOR; else comp->bdi->fdc->flop[3]->flag &= ~FLP_MOTOR;
-			}
-			break;
-		case 0x3ffd:								// +3: uPD765.data
-			if ((comp->hw->type == HW_PLUS3) && (comp->bdi->fdc->type == FDC_765)) fdcWr(comp->bdi->fdc,FDC_DATA,val);
-			break;
-		case 0xeff7:								// P1024: sys
-			if (comp->hw->type == HW_P1024) {
-				comp->prt1 = val;
-				comp->vid->mode = (val & 1) ? VID_ALCO : VID_NORMAL;
-				zxSetFrq(comp, (val & 16) ? 7.0 : 3.5);
-				zxMapMemory(comp);
-			}
-			break;
-		default:
-			switch (port & 0xff) {
+	int ptype = zxGetPort(comp,port);
+	int bdiz = ((comp->dosen & 1) && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
+	int adr = 0;
+	switch (comp->hw->type) {
+		case HW_ZX48:
+			switch (ptype) {
+				case 0x1f: if (bdiz) bdiOut(comp->bdi,FDC_COM,val); break;
+				case 0x3f: if (bdiz) bdiOut(comp->bdi,FDC_TRK,val); break;
+				case 0x5f: if (bdiz) bdiOut(comp->bdi,FDC_SEC,val); break;
+				case 0x7f: if (bdiz) bdiOut(comp->bdi,FDC_DATA,val); break;
+				case 0xff: if (bdiz) bdiOut(comp->bdi,BDI_SYS,val); break;
 				case 0xfe:
 					comp->vid->nextbrd = val & 0x07;
-					if (!(comp->vid->flags & VID_BORDER_4T)) {
-						comp->vid->brdcol = val & 0x07;
-					}
+					if (!(comp->vid->flags & VID_BORDER_4T)) comp->vid->brdcol = val & 0x07;
 					comp->beeplev = val & 0x10;
 					comp->tape->outsig = (val & 0x08) ? 1 : 0;
 					break;
 			}
+			break;
+		case HW_PENT:
+			sdrvOut(comp->sdrv,port & 0x00ff,val);
+			switch (ptype) {
+				case 0x1f: if (bdiz) bdiOut(comp->bdi,FDC_COM,val); break;
+				case 0x3f: if (bdiz) bdiOut(comp->bdi,FDC_TRK,val); break;
+				case 0x5f: if (bdiz) bdiOut(comp->bdi,FDC_SEC,val); break;
+				case 0x7f: if (bdiz) bdiOut(comp->bdi,FDC_DATA,val); break;
+				case 0xff: if (bdiz) bdiOut(comp->bdi,BDI_SYS,val); break;
+				case 0xfe:
+					comp->vid->nextbrd = val & 0x07;
+					if (!(comp->vid->flags & VID_BORDER_4T)) comp->vid->brdcol = val & 0x07;
+					comp->beeplev = val & 0x10;
+					comp->tape->outsig = (val & 0x08) ? 1 : 0;
+					break;
+				case 0x7ffd:
+					if (comp->prt0 & 0x20) break;
+					comp->prt0 = val;
+					comp->vid->curscr = (val & 0x08) ? 1 : 0;
+					zxMapMemory(comp);
+					break;
+				case 0xbffd:
+				case 0xfffd: tsOut(comp->ts,ptype,val); break;
+			}
+			break;
+		case HW_P1024:
+			switch (ptype) {
+				case 0x1f: if (bdiz) bdiOut(comp->bdi,FDC_COM,val); break;
+				case 0x3f: if (bdiz) bdiOut(comp->bdi,FDC_TRK,val); break;
+				case 0x5f: if (bdiz) bdiOut(comp->bdi,FDC_SEC,val); break;
+				case 0x7f: if (bdiz) bdiOut(comp->bdi,FDC_DATA,val); break;
+				case 0xff: if (bdiz) bdiOut(comp->bdi,BDI_SYS,val); break;
+				case 0xfe:
+					comp->vid->nextbrd = val & 0x07;
+					if (!(comp->vid->flags & VID_BORDER_4T)) comp->vid->brdcol = val & 0x07;
+					comp->beeplev = val & 0x10;
+					comp->tape->outsig = (val & 0x08) ? 1 : 0;
+					break;
+				case 0x7ffd:
+					if (comp->prt0 & 0x20) break;
+					comp->prt0 = val;
+					comp->vid->curscr = (val & 0x08) ? 1 : 0;
+					zxMapMemory(comp);
+					break;
+				case 0xeff7:
+					comp->prt1 = val;
+					comp->vid->mode = (val & 0x01) ? VID_ALCO : VID_NORMAL;
+					zxSetFrq(comp, (val & 0x10) ? 7.0 : 3.5);
+					zxMapMemory(comp);
+					break;
+				case 0xbffd:
+				case 0xfffd: tsOut(comp->ts,ptype,val); break;
+			}
+			break;
+		case HW_SCORP:
+			switch (ptype) {
+				case 0x1f: if (bdiz) bdiOut(comp->bdi,FDC_COM,val); break;
+				case 0x3f: if (bdiz) bdiOut(comp->bdi,FDC_TRK,val); break;
+				case 0x5f: if (bdiz) bdiOut(comp->bdi,FDC_SEC,val); break;
+				case 0x7f: if (bdiz) bdiOut(comp->bdi,FDC_DATA,val); break;
+				case 0xff: if (bdiz) bdiOut(comp->bdi,BDI_SYS,val); break;
+				case 0xdd: sdrvOut(comp->sdrv,0xfb,val); break;
+				case 0xfe:
+					comp->vid->nextbrd = val & 0x07;
+					if (!(comp->vid->flags & VID_BORDER_4T)) comp->vid->brdcol = val & 0x07;
+					comp->beeplev = val & 0x10;
+					comp->tape->outsig = (val & 0x08) ? 1 : 0;
+					break;
+				case 0x7ffd:
+					if (comp->prt0 & 0x20) break;
+					comp->prt0 = val;
+					comp->vid->curscr = (val & 0x08) ? 1 : 0;
+					zxMapMemory(comp);
+					break;
+				case 0x1ffd:
+					comp->prt1 = val;
+					zxMapMemory(comp);
+					break;
+				case 0xbffd:
+				case 0xfffd: tsOut(comp->ts,ptype,val); break;
+			}
+			break;
+		case HW_PLUS2:
+			switch (ptype) {
+				case 0xfe:
+					comp->vid->nextbrd = val & 0x07;
+					if (!(comp->vid->flags & VID_BORDER_4T)) comp->vid->brdcol = val & 0x07;
+					comp->beeplev = val & 0x10;
+					comp->tape->outsig = (val & 0x08) ? 1 : 0;
+					break;
+				case 0x7ffd:
+					if (comp->prt0 & 0x20) break;
+					comp->prt0 = val;
+					comp->vid->curscr = (val & 0x08) ? 1 : 0;
+					zxMapMemory(comp);
+					break;
+				case 0x1ffd:
+					comp->prt1 = val;
+					zxMapMemory(comp);
+					break;
+				case 0xbffd:
+				case 0xfffd: tsOut(comp->ts,ptype,val); break;
+			}
+			break;
+		case HW_PLUS3:
+			switch (ptype) {
+				case 0xfe:
+					comp->vid->nextbrd = val & 0x07;
+					if (!(comp->vid->flags & VID_BORDER_4T)) comp->vid->brdcol = val & 0x07;
+					comp->beeplev = val & 0x10;
+					comp->tape->outsig = (val & 0x08) ? 1 : 0;
+					break;
+				case 0x7ffd:
+					if (comp->prt0 & 0x20) break;
+					comp->prt0 = val;
+					comp->vid->curscr = (val & 0x08) ? 1 : 0;
+					zxMapMemory(comp);
+					break;
+				case 0x1ffd:
+					comp->prt1 = val;
+					zxMapMemory(comp);
+					break;
+				case 0x2ffd:
+					if (comp->bdi->fdc->type != FDC_765) break;
+					if (val & 1) comp->bdi->fdc->flop[0]->flag |= FLP_MOTOR; else comp->bdi->fdc->flop[0]->flag &= ~FLP_MOTOR;
+					if (val & 2) comp->bdi->fdc->flop[1]->flag |= FLP_MOTOR; else comp->bdi->fdc->flop[1]->flag &= ~FLP_MOTOR;
+					if (val & 4) comp->bdi->fdc->flop[2]->flag |= FLP_MOTOR; else comp->bdi->fdc->flop[2]->flag &= ~FLP_MOTOR;
+					if (val & 8) comp->bdi->fdc->flop[3]->flag |= FLP_MOTOR; else comp->bdi->fdc->flop[3]->flag &= ~FLP_MOTOR;
+					break;
+				case 0x3ffd:
+					if (comp->bdi->fdc->type == FDC_765) fdcWr(comp->bdi->fdc,FDC_DATA,val);
+					break;
+				case 0xbffd:
+				case 0xfffd: tsOut(comp->ts,ptype,val); break;
+			}
+			break;
+		case HW_ATM2:
+			switch (ptype) {
+				case 0x1f: if (bdiz) bdiOut(comp->bdi,FDC_COM,val); break;
+				case 0x3f: if (bdiz) bdiOut(comp->bdi,FDC_TRK,val); break;
+				case 0x5f: if (bdiz) bdiOut(comp->bdi,FDC_SEC,val); break;
+				case 0x7f: if (bdiz) bdiOut(comp->bdi,FDC_DATA,val); break;
+				case 0xff: if (bdiz) {
+						bdiOut(comp->bdi,BDI_SYS,val);
+						if (comp->prt1 & 0x40) {
+							// write palette item
+						}
+					}
+				case 0xfe:
+					comp->vid->nextbrd = (val & 0x07) | (~port & 8);
+					if (!(comp->vid->flags & VID_BORDER_4T)) comp->vid->brdcol = comp->vid->nextbrd;
+					comp->beeplev = val & 0x10;
+					comp->tape->outsig = (val & 0x08) ? 1 : 0;
+					break;
+				case 0x77:
+					switch (val & 7) {
+						case 0: comp->vid->mode = VID_ATM_EGA; break;
+						case 2: comp->vid->mode = VID_ATM_HWM; break;
+						case 3: comp->vid->mode = VID_NORMAL; break;
+						case 6: comp->vid->mode = VID_ATM_TEXT; break;
+						default: comp->vid->mode = VID_ATM_UNDEF; break;
+					}
+					zxSetFrq(comp,(val & 0x08) ? 7.0 : 3.5);
+					comp->prt1 = (port >> 8) & 0xff;
+					zxMapMemory(comp);
+					break;
+				case 0xf7:
+					adr = ((comp->prt0 & 0x10) ? 4 : 0) | ((port & 0xc000) >> 14);	// rom2.a15.a14
+					comp->memMap[adr] = val;
+					zxMapMemory(comp);
+					break;
+				case 0xef:
+					break;
+				case 0x7ffd:
+					if (comp->prt0 & 0x20) break;
+					comp->prt0 = val;
+					comp->vid->curscr = (val & 0x08) ? 1 : 0;
+					zxMapMemory(comp);
+					break;
+				case 0xbffd:
+				case 0xfffd: tsOut(comp->ts,ptype,val); break;
+				default:
+					printf("ATM2: out %.4X (%.4X.%i),%.2X\n",port,ptype,bdiz,val);
+					assert(0);
+					break;
+			}
+			break;
+		default:
+			printf("zxOut: unknown hardware type %i\n",comp->hw->type);
+			assert(0);
 			break;
 	}
 }
@@ -489,7 +742,6 @@ ZXComp* zxCreate() {
 	comp->resbank = RES_48;
 	comp->tickCount = 0;
 	gsReset(comp->gs);
-	zxReset(comp,RES_DEFAULT);
 	return comp;
 }
 
@@ -531,8 +783,17 @@ void zxReset(ZXComp* comp,int wut) {
 	z80ex_reset(comp->cpu);
 	comp->vid->curscr = 0;
 	comp->vid->mode = VID_NORMAL;
-	comp->bdi->flag &= ~BDI_ACTIVE;
-	if (resto == 3) comp->bdi->flag |= BDI_ACTIVE;
+	comp->dosen = 0;
+	switch (comp->hw->type) {
+		case HW_ATM2:
+			if (resto & 1) comp->dosen = 1;
+			comp->prt1 = 1;		// PEN (memory manager off)
+			break;
+		default:
+			if (resto & 2) comp->dosen = 1;
+			break;
+	}
+//	if (resto == 3) comp->bdi->flag |= BDI_ACTIVE;
 	bdiReset(comp->bdi);
 	if (comp->gs->flag & GS_RESET) gsReset(comp->gs);
 	tsReset(comp->ts);
@@ -565,7 +826,8 @@ double zxExec(ZXComp* comp) {
 		res2 = z80ex_nmi(comp->cpu);
 		res1 += res2;
 		if (res2 != 0) {
-			comp->bdi->flag |= BDI_ACTIVE;
+			comp->dosen = 1;
+			comp->prt0 |= 0x10;
 			zxMapMemory(comp);
 			vidSync(comp->vid,(res2 - res4) * comp->dotPerTick);
 		}

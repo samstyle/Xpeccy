@@ -181,7 +181,7 @@ void vidFillMatrix(Video* vid) {
 							vid->matrix[i].atm5.txtatrptr = memGetPagePtr(vid->mem,MEM_RAM,1) + atmTadr;
 							vid->matrix[i].atm7.txtatrptr = memGetPagePtr(vid->mem,MEM_RAM,3) + atmTadr;
 							atmTadr++;
-							if (x == 412) atmTadr += 24;	// 40 to 64
+							if ((atmTadr & 0x3f) == 40) atmTadr = (atmTadr & 0x3fc0) + 0x40;	// next 64
 						}
 						break;
 					case 6:
@@ -341,6 +341,10 @@ int vidSync(Video* vid, float dotDraw) {
 
 		if (mtx->type != MTT_INVIS) {
 			switch (vid->mode) {
+				case VID_ATM_UNDEF:
+				case VID_ATM_HWM:
+					col = 2;
+					break;
 				case VID_ATM_EGA:
 					switch (mtx->atmType) {
 						case MTT_ATM_NONE:

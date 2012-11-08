@@ -21,6 +21,8 @@ extern "C" {
 #define	VID_ALCO	1
 #define	VID_ATM_EGA	2
 #define	VID_ATM_TEXT	3
+#define	VID_ATM_HWM	4
+#define	VID_ATM_UNDEF	5
 // flags returned by vidSync
 #define	VID_INT		1
 #define	VID_FRM		(1<<1)

@@ -11,7 +11,7 @@ extern "C" {
 #include "floppy.h"
 
 // bdi flags
-#define	BDI_ACTIVE	(1<<1)
+//#define	BDI_ACTIVE	(1<<1)
 //#define BDI_TURBO	(1<<2)
 // fdc status
 #define FDC_IDLE	0
