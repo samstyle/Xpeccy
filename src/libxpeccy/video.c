@@ -178,8 +178,8 @@ void vidFillMatrix(Video* vid) {
 							vid->matrix[i].flag |= MTF_ATM_TXT;
 							vid->matrix[i].atm5.txtptr = memGetPagePtr(vid->mem,MEM_RAM,5) + atmTadr + 0x2000;
 							vid->matrix[i].atm7.txtptr = memGetPagePtr(vid->mem,MEM_RAM,7) + atmTadr + 0x2000;
-							vid->matrix[i].atm5.txtatrptr = memGetPagePtr(vid->mem,MEM_RAM,1) + atmTadr;
-							vid->matrix[i].atm7.txtatrptr = memGetPagePtr(vid->mem,MEM_RAM,3) + atmTadr;
+							vid->matrix[i].atm5.txtatrptr = memGetPagePtr(vid->mem,MEM_RAM,1) + atmTadr + 1;
+							vid->matrix[i].atm7.txtatrptr = memGetPagePtr(vid->mem,MEM_RAM,3) + atmTadr + 1;
 							atmTadr++;
 							if ((atmTadr & 0x3f) == 40) atmTadr = (atmTadr & 0x3fc0) + 0x40;	// next 64
 						}
