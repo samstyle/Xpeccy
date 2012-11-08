@@ -85,8 +85,10 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 				regbox->setLayout(rglay);
 			QGroupBox *raybox = new QGroupBox("Mem");
 				raylay = new QGridLayout;
-					lab = new QLabel("RAM"); raylay->addWidget(lab,0,0); lab = new QLabel; raylay->addWidget(lab,0,1);
-					lab = new QLabel("ROM"); raylay->addWidget(lab,1,0); lab = new QLabel; raylay->addWidget(lab,1,1);
+					lab = new QLabel("Pg0"); raylay->addWidget(lab,0,0); lab = new QLabel; raylay->addWidget(lab,0,1);
+					lab = new QLabel("Pg1"); raylay->addWidget(lab,1,0); lab = new QLabel; raylay->addWidget(lab,1,1);
+					lab = new QLabel("Pg2"); raylay->addWidget(lab,2,0); lab = new QLabel; raylay->addWidget(lab,2,1);
+					lab = new QLabel("Pg3"); raylay->addWidget(lab,3,0); lab = new QLabel; raylay->addWidget(lab,3,1);
 				raybox->setLayout(raylay);
 			llay->addWidget(regbox);
 			llay->addWidget(raybox);
@@ -220,9 +222,13 @@ void DebugWin::fillvg() {
 void DebugWin::fillrays() {
 	QLabel *lab;
 	lab = (QLabel*)raylay->itemAtPosition(0,1)->widget();
-	lab->setText(QString::number(zx->mem->cram));
+	lab->setText(QString((zx->mem->pt0->type == MEM_ROM) ? "ROM-" : "RAM-").append(QString::number(zx->mem->pt0->num)));
 	lab = (QLabel*)raylay->itemAtPosition(1,1)->widget();
-	lab->setText(QString::number(zx->mem->crom));
+	lab->setText(QString((zx->mem->pt1->type == MEM_ROM) ? "ROM-" : "RAM-").append(QString::number(zx->mem->pt1->num)));
+	lab = (QLabel*)raylay->itemAtPosition(2,1)->widget();
+	lab->setText(QString((zx->mem->pt2->type == MEM_ROM) ? "ROM-" : "RAM-").append(QString::number(zx->mem->pt2->num)));
+	lab = (QLabel*)raylay->itemAtPosition(3,1)->widget();
+	lab->setText(QString((zx->mem->pt3->type == MEM_ROM) ? "ROM-" : "RAM-").append(QString::number(zx->mem->pt3->num)));
 }
 
 void DebugWin::filldump() {

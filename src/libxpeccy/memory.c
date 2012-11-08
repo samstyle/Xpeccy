@@ -16,10 +16,14 @@ Memory* memCreate() {
 	mem->crom = 0;
 	memSetSize(mem,48);
 	for (i = 0; i < 32; i++) {
+		mem->rom[i].type = MEM_ROM;
+		mem->rom[i].num = i;
 		mem->rom[i].flags |= MEM_RDONLY;
 		memset(mem->rom[i].flag,0x00,0x4000 * sizeof(unsigned char));
 	}
 	for (i = 0; i < 64; i++) {
+		mem->ram[i].type = MEM_RAM;
+		mem->ram[i].num = i;
 		mem->ram[i].flags = 0;
 		memset(mem->ram[i].flag,0x00,0x4000 * sizeof(unsigned char));
 	}
