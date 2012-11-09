@@ -40,6 +40,7 @@ extern "C" {
 #define	ZX_JUSTBORN	(1<<1)	// just created zx. need to reset after selection
 #define	ZX_CONTMEM	(1<<2)
 #define	ZX_CONTIO	(1<<3)
+#define	ZX_PALCHAN	(1<<4)	// signal: palete changed
 
 typedef struct {
 	const char* name;
@@ -83,6 +84,7 @@ typedef struct {
 	float dotPerTick;
 	int hwFlags;
 	unsigned char memMap[16];	// memory map for ATM2
+	unsigned char colMap[16];	// color map (--GgRrBb)
 	unsigned char prt0;		// 7ffd value
 	unsigned char prt1;		// extend port value
 	unsigned char prt2;		// scorpion ProfROM layer (0..3)

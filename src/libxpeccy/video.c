@@ -325,6 +325,10 @@ void vidSetFont(Video* vid, char* src) {
 	memcpy(vid->font,src,0x800);
 }
 
+unsigned char vidGetAttr(Video* vid) {
+	return (mtx->type == MTT_BORDER) ? vid->brdcol : vid->atrbyte;
+}
+
 int vidSync(Video* vid, float dotDraw) {
 	int i;
 	int res = 0;

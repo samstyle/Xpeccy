@@ -184,8 +184,13 @@ int zxGetPort(ZXComp* comp, Z80EX_WORD port) {
 
 void atmSetBank(ZXComp* comp, int bank, unsigned char val) {
 	unsigned char page = ~val & 0x3f;	// inversed b0..5
-	if (val & 0x80) page = (page & 0x38) | (PRT0 & 7);	// mix with 7FFD bank
-	if (~val & 0x40) page &= 3;
+	if (val & 0x80) {
+		if (val & 0x40) {
+			page = (page & 0x38) | (PRT0 & 7);	// mix with 7FFD bank;
+		} else {
+			page = (page & 0x3e) | (comp->dosen ? 1 : 0);	// mix with dosen
+		}
+	}
 	memSetBank(comp->mem,bank,(val & 0x40) ? MEM_RAM : MEM_ROM, page);
 }
 
@@ -237,18 +242,17 @@ void zxMapMemory(ZXComp* comp) {
 			}
 			break;
 		case HW_ATM2:
-			if (~PRT1 & 1) {			// pen = 0: last rom page in every bank
-				memSetBank(comp->mem,MEM_BANK0,MEM_ROM,3);
-				memSetBank(comp->mem,MEM_BANK1,MEM_ROM,3);
-				memSetBank(comp->mem,MEM_BANK2,MEM_ROM,3);
-				memSetBank(comp->mem,MEM_BANK3,MEM_ROM,3);
-			} else {
+			if (PRT1 & 1) {			// pen = 0: last rom page in every bank
 				adr = (PRT0 & 0x10) ? 4 : 0;
 				atmSetBank(comp,MEM_BANK0,comp->memMap[adr]);
 				atmSetBank(comp,MEM_BANK1,comp->memMap[adr+1]);
 				atmSetBank(comp,MEM_BANK2,comp->memMap[adr+2]);
 				atmSetBank(comp,MEM_BANK3,comp->memMap[adr+3]);
-
+			} else {
+				memSetBank(comp->mem,MEM_BANK0,MEM_ROM,0xff);
+				memSetBank(comp->mem,MEM_BANK1,MEM_ROM,0xff);
+				memSetBank(comp->mem,MEM_BANK2,MEM_ROM,0xff);
+				memSetBank(comp->mem,MEM_BANK3,MEM_ROM,0xff);
 			}
 			break;
 	}
@@ -257,8 +261,8 @@ void zxMapMemory(ZXComp* comp) {
 Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 	Z80EX_BYTE res;
 	ZXComp* comp = (ZXComp*)ptr;
-	if ((comp->hw->type == HW_SCORP) && ((comp->mem->crom & 3) == 2) && ((adr & 0xfff3) == 0x0100)) {
-		comp->prt2 = ZSLays[(adr & 0x000c) >> 2][comp->prt2 & 3] & comp->mem->profMask;
+	if ((comp->hw->type == HW_SCORP) && ((comp->mem->pt0->num & 3) == 2) && ((adr & 0xfff3) == 0x0100)) {
+		comp->prt2 = ZSLays[(adr & 0x000c) >> 2][comp->prt2 & 3];
 		zxMapMemory(comp);
 	}
 	if (m1 == 1) {
@@ -419,15 +423,14 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 				case 0x3f: res = bdiz ? bdiIn(comp->bdi,FDC_TRK) : 0xff; break;
 				case 0x5f: res = bdiz ? bdiIn(comp->bdi,FDC_SEC) : 0xff; break;
 				case 0x7f: res = bdiz ? bdiIn(comp->bdi,FDC_DATA) : 0xff; break;
-				case 0xef: res = 0xff; break;
-				case 0xff: res = bdiz ? bdiIn(comp->bdi,BDI_SYS) : 0xff; break;
+				case 0xff: res = bdiz ? bdiIn(comp->bdi,BDI_SYS) : vidGetAttr(comp->vid); break;
 				case 0xfe: res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00); break;
 				case 0x7ffd: res = 0xc0; break;
 				case 0x7dfd: res = 0xff; break;
-				default:
-					printf("ATM2: in %.4X (%.4X)\n",port,ptype);
-					assert(0);
-					break;
+				case 0xfffd: res = tsIn(comp->ts,port); break;
+//				default:
+//					printf("ATM2: in %.4X (%.4X)\n",port,ptype);
+//					break;
 			}
 			break;
 		default:
@@ -607,10 +610,16 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 				case 0x7f: if (bdiz) bdiOut(comp->bdi,FDC_DATA,val); break;
 				case 0xff: if (bdiz) {
 						bdiOut(comp->bdi,BDI_SYS,val);
-						if (comp->prt1 & 0x40) {
-							// write palette item
+						val ^= 0xff;	// inverse colors
+						if (~comp->prt1 & 0x40) {
+							val = ((val & 0x01) << 1) | ((val & 0x20) >> 5) |
+								((val & 0x02) << 2) | ((val & 0x40) >> 4) |
+								((val & 0x10) << 1) | ((val & 0x80) >> 3);	// grbG--RB to --GgRrBb
+							comp->colMap[comp->vid->brdcol & 0x0f] = val;
+							comp->flags |= ZX_PALCHAN;
 						}
 					}
+					break;
 				case 0xfe:
 					comp->vid->nextbrd = (val & 0x07) | (~port & 8);
 					if (!(comp->vid->flags & VID_BORDER_4T)) comp->vid->brdcol = comp->vid->nextbrd;
@@ -634,8 +643,8 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 					comp->memMap[adr] = val;
 					zxMapMemory(comp);
 					break;
-				case 0xef:
-					break;
+//				case 0xef:
+//					break;
 				case 0x7ffd:
 					if (comp->prt0 & 0x20) break;
 					comp->prt0 = val;
@@ -644,10 +653,9 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 					break;
 				case 0xbffd:
 				case 0xfffd: tsOut(comp->ts,ptype,val); break;
-				default:
-					printf("ATM2: out %.4X (%.4X.%i),%.2X\n",port,ptype,bdiz,val);
-					assert(0);
-					break;
+//				default:
+//					printf("ATM2: out %.4X (%.4X) %.2X\n",port,ptype,val);
+//					break;
 			}
 			break;
 		default:
@@ -719,6 +727,13 @@ void rzxClear(ZXComp* zx) {
 	zx->rzxData = NULL;
 }
 
+// --543210
+// --GgRrBb
+const unsigned char defPalete[16] = {
+	0x00,0x02,0x08,0x0a,0x20,0x22,0x28,0x2a,
+	0x00,0x03,0x0c,0x0f,0x30,0x33,0x3c,0x3f
+};
+
 ZXComp* zxCreate() {
 	ZXComp* comp = (ZXComp*)malloc(sizeof(ZXComp));
 	void* ptr = (void*)comp;
@@ -742,6 +757,8 @@ ZXComp* zxCreate() {
 	comp->resbank = RES_48;
 	comp->tickCount = 0;
 	gsReset(comp->gs);
+	int i;
+	for (i = 0; i < 16; i++) comp->colMap[i] = defPalete[i];
 	return comp;
 }
 
@@ -773,7 +790,6 @@ void zxReset(ZXComp* comp,int wut) {
 	}
 	comp->prt2 = 0;
 	comp->prt1 = 0;
-	comp->prt0 = ((resto & 1) << 4);
 	memSetBank(comp->mem,MEM_BANK0,MEM_ROM,resto);
 	memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5);
 	memSetBank(comp->mem,MEM_BANK2,MEM_RAM,2);
@@ -787,17 +803,18 @@ void zxReset(ZXComp* comp,int wut) {
 	switch (comp->hw->type) {
 		case HW_ATM2:
 			if (resto & 1) comp->dosen = 1;
-			comp->prt1 = 1;		// PEN (memory manager off)
+			comp->prt0 = ((~resto & 2) << 4);
 			break;
 		default:
+			comp->prt0 = ((resto & 1) << 4);
 			if (resto & 2) comp->dosen = 1;
 			break;
 	}
-//	if (resto == 3) comp->bdi->flag |= BDI_ACTIVE;
 	bdiReset(comp->bdi);
 	if (comp->gs->flag & GS_RESET) gsReset(comp->gs);
 	tsReset(comp->ts);
 	ideReset(comp->ide);
+	zxMapMemory(comp);
 }
 
 void zxSetFrq(ZXComp* comp, float frq) {

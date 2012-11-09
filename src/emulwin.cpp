@@ -30,7 +30,7 @@
 
 #include <fstream>
 
-#define	XPTITLE	"Xpeccy 0.4.999"
+#define	XPTITLE	"Xpeccy 0.5 (20121109)"
 
 // extern EmulWin* mwin;
 // main
@@ -79,7 +79,7 @@ void emulInit() {
 
 	addLayout("default",448,320,136,80,64,32,0,0,64);
 
-	emulSetColor(0xc0);
+//	emulSetColor(0xc0);
 	mainWin = new MainWin;
 }
 
@@ -241,15 +241,18 @@ QWidget* emulWidget() {
 	return (QWidget*)mainWin;
 }
 
-void emulSetColor(int brl) {
+void emulSetPalette(ZXComp* comp,unsigned char lev) {
 	int i;
+	unsigned char col;
 	unsigned char r[16],g[16],b[16];	// common zx-colors
+	if (lev == 0) lev = optGetInt(OPT_BRGLEV);
 	qPal.clear();
 	qPal.resize(256);
 	for(i = 0; i < 16; i++) {
-		b[i] = (i & 1) ? ((i & 8) ? 0xf0 : brl) : 0;
-		r[i] = (i & 2) ? ((i & 8) ? 0xf0 : brl) : 0;
-		g[i] = (i & 4) ? ((i & 8) ? 0xf0 : brl) : 0;
+		col = comp->colMap[i];
+		b[i] = ((col & 0x01) ? (0xff - lev) : 0x00) + ((col & 0x02) ? lev : 0x00);
+		r[i] = ((col & 0x04) ? (0xff - lev) : 0x00) + ((col & 0x08) ? lev : 0x00);
+		g[i] = ((col & 0x10) ? (0xff - lev) : 0x00) + ((col & 0x20) ? lev : 0x00);
 	}
 	for(i = 0; i < 256; i++) {
 		qPal[i] = qRgb((r[i & 0x0f] * 0.5) + (r[(i & 0xf0) >> 4] * 0.5),
@@ -262,6 +265,7 @@ void emulSetColor(int brl) {
 		zxpal[i].r = qRed(qPal[i]);
 		zxpal[i].g = qGreen(qPal[i]);
 	}
+	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
 #else
 	scrImg.setColorTable(qPal);
 #endif
@@ -338,6 +342,10 @@ double tks = 0;
 void emulExec() {
 	tks += zxExec(zx);
 	tks = sndSync(tks,emulFlags & FL_FAST);
+	if (zx->flags & ZX_PALCHAN) {
+		emulSetPalette(zx,optGetInt(OPT_BRGLEV));
+		zx->flags &= ~ZX_PALCHAN;
+	}
 }
 
 void emulSetIcon(const char* inam) {
@@ -1208,7 +1216,7 @@ void MainWin::processFrame() {
 	do {
 		emulExec();
 		pc = z80ex_get_reg(zx->cpu,regPC);
-		if (zx->mem->crom == 1) {
+		if ((zx->mem->pt0->type == MEM_ROM) && (zx->mem->pt0->num == 1)) {
 			if (pc == 0x56b) emulTapeCatch();
 			if ((pc == 0x5e2) && optGetFlag(OF_TAPEAUTO))
 				tapStateChanged(TW_STATE,TWS_STOP);

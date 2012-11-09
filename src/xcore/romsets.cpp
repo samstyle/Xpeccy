@@ -48,7 +48,6 @@ void setRomset(std::string pn, std::string nm) {
 	std::ifstream file;
 	char* pageBuf = new char[0x4000];
 	int prts = 0;
-	int profMask = 0;
 	if (rset == NULL) {
 		rset = findRomset(prof->rsName);
 	} else {
@@ -66,12 +65,12 @@ void setRomset(std::string pn, std::string nm) {
 			if (file.good()) {
 				file.seekg(0,std::ios_base::end);
 				prts = file.tellg() / 0x4000;
-				profMask = 3;
-				if (prts < 9) profMask = 1;
-				if (prts < 5) profMask = 0;
-				if (prts > 16) prts = 16;
+				prof->zx->mem->romMask = 3;
+				if (prts > 4) prof->zx->mem->romMask = 7;
+				if (prts > 8) prof->zx->mem->romMask = 15;
+				if (prts > 16) prof->zx->mem->romMask = 31;
+				if (prts > 32) prof->zx->mem->romMask = 32;
 				file.seekg(0,std::ios_base::beg);
-				prof->zx->mem->profMask = profMask;
 				for (i = 0; i < prts; i++) {
 					file.read(pageBuf,0x4000);
 					memSetPage(prof->zx->mem,MEM_ROM,i,pageBuf);

@@ -27,8 +27,8 @@ int loadTRD(Floppy* flp, const char* name) {
 	file.seekg(0,std::ios::end);
 	size_t len = file.tellg();
 	if (((len & 0xfff) != 0) || (len == 0) || (len > 0xa8000)) return ERR_TRD_LEN;
-	file.seekg(0x8e7,std::ios::beg);
-	if (file.peek() != 0x10) return ERR_TRD_SIGN;
+//	file.seekg(0x8e7,std::ios::beg);
+//	if (file.peek() != 0x10) return ERR_TRD_SIGN;
 	file.seekg(0);
 	flpFormat(flp);
 	int i=0;

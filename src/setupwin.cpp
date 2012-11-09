@@ -142,6 +142,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	setupUi.hiface->addItem("Nemo",QVariant(IDE_NEMO));
 	setupUi.hiface->addItem("Nemo A8",QVariant(IDE_NEMOA8));
 	setupUi.hiface->addItem("SMUC",QVariant(IDE_SMUC));
+	setupUi.hiface->addItem("ATM",QVariant(IDE_ATM));
 	setupUi.hm_type->addItem(QIcon(":/images/cancel.png"),"Not connected",QVariant(IDE_NONE));
 	setupUi.hm_type->addItem(QIcon(":/images/hdd.png"),"HDD (ATA)",QVariant(IDE_ATA));
 //	setupUi.hm_type->addItem(QIcon(":/images/cd.png"),"CD (ATAPI) not working yet",QVariant(IDE_ATAPI));
@@ -559,7 +560,7 @@ void SetupWin::apply() {
 
 	saveConfig();
 	sndCalibrate();
-	emulSetColor(setupUi.brgslide->value());
+	emulSetPalette(zx,setupUi.brgslide->value());
 	emulOpenJoystick(optGetString(OPT_JOYNAME));
 	emulUpdateWindow();
 }

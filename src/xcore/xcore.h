@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "../libxpeccy/spectrum.h"
+#include "../emulwin.h"
 
 #ifdef _WIN32
 	#define	SLASH "\\"
@@ -45,6 +46,7 @@ typedef struct {
 	std::string file;	// set when romfile is single file
 	std::string gsFile;
 	std::string fntFile;
+	int mask;
 	struct {
 		std::string path;
 		unsigned char part;

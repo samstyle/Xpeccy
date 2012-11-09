@@ -45,9 +45,7 @@ int main(int ac,char** av) {
 	printf("Using z80ex ver %d.%d\n",ver->major, ver->minor);
 	QApplication app(ac,av,true);
 	try {
-
 		int i;
-//		int p=0;
 		bool dev = false;
 		initPaths();
 		addProfile("default","xpeccy.conf");

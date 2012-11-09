@@ -62,6 +62,7 @@ typedef struct {
 	int curscr;
 	unsigned char brdcol;
 	unsigned char nextbrd;
+	unsigned char curCol;
 	unsigned char fcnt;
 	unsigned char atrbyte;
 	unsigned char* scrptr;
@@ -115,6 +116,7 @@ void vidSetLayout(Video*, int, int, int, int, int, int, int, int, int);
 void vidUpdate(Video*);
 
 unsigned char* vidGetScreen();
+unsigned char vidGetAttr(Video*);
 void vidSetFont(Video*,char*);
 
 #ifdef __cplusplus

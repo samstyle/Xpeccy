@@ -810,7 +810,7 @@ void loadProfiles() {
 			throw(0);
 		}
 	}
-	emulSetColor(brgLevel);
+	emulSetPalette(zx,brgLevel);
 	emulOpenJoystick(joyName);
 }
 

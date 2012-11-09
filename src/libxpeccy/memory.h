@@ -37,11 +37,11 @@ typedef struct {
 	MemPage* pt1;
 	MemPage* pt2;
 	MemPage* pt3;
-	int cram;
-	int crom;
+//	int cram;
+//	int crom;
 	int memSize;
 	int memMask;
-	int profMask;	// profrom (0 - 64K, 1 - 128K, 3 - 256K)
+	int romMask;	// 0:16K, 1:32K, 3:64K, 7:128K, 15:256K, 31:512K
 } Memory;
 
 Memory* memCreate();

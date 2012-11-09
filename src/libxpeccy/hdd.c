@@ -554,6 +554,13 @@ int ideIn(IDE* ide,unsigned short port,unsigned char* val,int bdiActive) {
 	int ishi = 0;
 	int prt = 0;
 	switch (ide->type) {
+		case IDE_ATM:
+			if (((port & 0x001f) != 0x000f) || (!bdiActive)) return 0;
+			prt = ((port & 0xe0) >> 5) | 0x1f0;
+			ishi = (port & 0x100) ? 1 : 0;
+			ishdd = 1;
+			res = 1;
+			break;
 		case IDE_NEMO:
 		case IDE_NEMOA8:
 			if (((port & 6) != 0) || bdiActive) return 0;
@@ -607,13 +614,19 @@ int ideOut(IDE* ide,unsigned short port,unsigned char val,int bdiActive) {
 	int ishdd = 0;
 	int prt;
 	switch (ide->type) {
+		case IDE_ATM:
+			if (((port & 0x001f) != 0x000f) || (!bdiActive)) return 0;
+			prt = ((port & 0xe0) >> 5) | 0x1f0;
+			ishi = (port & 0x100) ? 1 : 0;
+			ishdd = 1;
+			res = 1;
+			break;
 		case IDE_NEMO:
 		case IDE_NEMOA8:
 			if (((port & 6) != 0) || bdiActive) return 0;
 			res = 1;
 			ishdd = 1;
 			prt = ((port & 0xe0) >> 5) | (((port & 0x18) ^ 0x18) << 5) | 0x00f0;
-			if (prt == HDD_HEAD) ide->curDev = (prt & 0x08) ? ide->slave : ide->master;	// write to head reg: select MASTER/SLAVE
 			ishi = (port & ((ide->type==IDE_NEMO) ? 0x01 : 0x100)) ? 1 : 0;
 			break;
 		case IDE_SMUC:
@@ -640,6 +653,7 @@ int ideOut(IDE* ide,unsigned short port,unsigned char val,int bdiActive) {
 			break;
 	}
 	if (ishdd) {
+		if (prt == HDD_HEAD) ide->curDev = (val & 0x08) ? ide->slave : ide->master;	// write to head reg: select MASTER/SLAVE
 		if (ishi) {
 			ide->bus &= 0x00ff;
 			ide->bus |= (val << 8);

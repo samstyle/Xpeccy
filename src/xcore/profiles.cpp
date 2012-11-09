@@ -65,6 +65,7 @@ bool setProfile(std::string nm) {
 	currentProfile = &profileList[idx];
 	zx = currentProfile->zx;
 	vidUpdate(zx->vid);
+	emulSetPalette(zx,0);
 	return true;
 }
 

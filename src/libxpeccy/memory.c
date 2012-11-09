@@ -12,8 +12,6 @@ Memory* memCreate() {
 	mem->pt1 = &mem->ram[5];
 	mem->pt2 = &mem->ram[2];
 	mem->pt3 = &mem->ram[0];
-	mem->cram = 0;
-	mem->crom = 0;
 	memSetSize(mem,48);
 	for (i = 0; i < 32; i++) {
 		mem->rom[i].type = MEM_ROM;
@@ -93,37 +91,31 @@ void memSetSize(Memory* mem, int val) {
 }
 
 void memSetBank(Memory* mem, int bank, int wut, unsigned char nr) {
+	if (wut == MEM_ROM) nr &= mem->romMask;
+	if (wut == MEM_RAM) nr &= mem->memMask;
 	switch (bank) {
 		case MEM_BANK0:
 			switch (wut) {
-				case MEM_ROM:
-					mem->crom = nr;
-					mem->pt0 = (nr == 0xff) ? &mem->ram[0] : &mem->rom[nr];
-					break;
-				case MEM_RAM:
-					mem->pt0 = &mem->ram[nr & mem->memMask];
-					break;
+				case MEM_ROM: mem->pt0 = (nr == 0xff) ? &mem->ram[0] : &mem->rom[nr]; break;
+				case MEM_RAM: mem->pt0 = &mem->ram[nr]; break;
 			}
 			break;
 		case MEM_BANK1:
 			switch (wut) {
 				case MEM_ROM: mem->pt1 = &mem->rom[nr]; break;
-				case MEM_RAM: mem->pt1 = &mem->ram[nr & mem->memMask]; break;
+				case MEM_RAM: mem->pt1 = &mem->ram[nr]; break;
 			}
 			break;
 		case MEM_BANK2:
 			switch (wut) {
 				case MEM_ROM: mem->pt2 = &mem->rom[nr]; break;
-				case MEM_RAM: mem->pt2 = &mem->ram[nr & mem->memMask]; break;
+				case MEM_RAM: mem->pt2 = &mem->ram[nr]; break;
 			}
 			break;
 		case MEM_BANK3:
 			switch (wut) {
 				case MEM_ROM: mem->pt3 = &mem->rom[nr]; break;
-				case MEM_RAM:
-					mem->cram = nr;
-					mem->pt3 = &mem->ram[nr & mem->memMask];
-					break;
+				case MEM_RAM: mem->pt3 = &mem->ram[nr]; break;
 			}
 			break;
 	}
@@ -132,10 +124,10 @@ void memSetBank(Memory* mem, int bank, int wut, unsigned char nr) {
 void memSetPage(Memory* mem, int type, int page, char* src) {
 	switch(type) {
 		case MEM_ROM:
-			memcpy(mem->rom[page].data,src,0x4000);
+			memcpy(mem->rom[page & 31].data,src,0x4000);
 			break;
 		case MEM_RAM:
-			memcpy(mem->ram[page].data,src,0x4000);
+			memcpy(mem->ram[page & 63].data,src,0x4000);
 			break;
 	}
 }
@@ -143,10 +135,10 @@ void memSetPage(Memory* mem, int type, int page, char* src) {
 void memGetPage(Memory* mem, int type, int page, char* dst) {
 	switch(type) {
 		case MEM_ROM:
-			memcpy(dst,mem->rom[page].data,0x4000);
+			memcpy(dst,mem->rom[page & 31].data,0x4000);
 			break;
 		case MEM_RAM:
-			memcpy(dst,mem->ram[page].data,0x4000);
+			memcpy(dst,mem->ram[page & 63].data,0x4000);
 			break;
 	}
 }
@@ -155,10 +147,10 @@ unsigned char* memGetPagePtr(Memory* mem, int type, int page) {
 	unsigned char* res = NULL;
 	switch (type) {
 		case MEM_ROM:
-			res = &mem->rom[page].data[0];
+			res = &mem->rom[page & 31].data[0];
 			break;
 		case MEM_RAM:
-			res = &mem->ram[page].data[0];
+			res = &mem->ram[page & 63].data[0];
 			break;
 	}
 	return res;
