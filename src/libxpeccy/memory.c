@@ -12,6 +12,7 @@ Memory* memCreate() {
 	mem->pt1 = &mem->ram[5];
 	mem->pt2 = &mem->ram[2];
 	mem->pt3 = &mem->ram[0];
+	mem->romMask = 0x03;
 	memSetSize(mem,48);
 	for (i = 0; i < 32; i++) {
 		mem->rom[i].type = MEM_ROM;
