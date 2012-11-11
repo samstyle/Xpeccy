@@ -513,6 +513,9 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 						zx->vid->mode = VID_ATM_TEXT;
 						break;
 					case VID_ATM_TEXT:
+						zx->vid->mode = VID_ATM_HWM;
+						break;
+					case VID_ATM_HWM:
 						zx->vid->mode = VID_NORMAL;
 						break;
 				}
@@ -733,6 +736,9 @@ void doSDLEvents() {
 									zx->vid->mode = VID_ATM_TEXT;
 									break;
 								case VID_ATM_TEXT:
+									zx->vid->mode = VID_ATM_HWM;
+									break;
+								case VID_ATM_HWM:
 									zx->vid->mode = VID_NORMAL;
 									break;
 							}
@@ -766,7 +772,7 @@ void doSDLEvents() {
 							mainWin->updateWindow();
 							saveConfig();
 							break;
-						case SDLK_N:
+						case SDLK_n:
 							vidFlag ^= VF_NOFLIC;
 							saveConfig();
 							break;

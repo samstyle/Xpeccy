@@ -312,22 +312,22 @@
              <column/>
              <item row="0" column="0">
               <property name="text">
-               <string>Basic128</string>
+               <string>Page 0</string>
               </property>
              </item>
              <item row="1" column="0">
               <property name="text">
-               <string>Basic48</string>
+               <string>Page 1</string>
               </property>
              </item>
              <item row="2" column="0">
               <property name="text">
-               <string>Shadow</string>
+               <string>Page 2</string>
               </property>
              </item>
              <item row="3" column="0">
               <property name="text">
-               <string>DOS</string>
+               <string>Page 3</string>
               </property>
              </item>
              <item row="4" column="0">

@@ -65,6 +65,13 @@ if(WIN32)
 	./xpeccy.rc
 endif(WIN32)
 )
+file(GLOB HEADERS
+	./src/*.h
+	./src/libxpeccy/*.h
+	./src/filetypes/*.h
+	./src/xcore/*.h
+	./src/xgui/*.h
+)
 file(GLOB UIFILES ./ui/*.ui)
 set(QRCFILES ./xpeccy.qrc)
 set(MOCFILES
@@ -133,6 +140,7 @@ include_directories(${INCLUDIRS})
 
 add_executable(xpeccy WIN32
 	${SOURCES}
+	${HEADERS}
 	${UIHEADERS}
 	${RESOURCES}
 	${MOCHEADERS}

@@ -82,7 +82,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	for (i=0; i < list.size(); i++) {
 		setupUi.machbox->addItem(QString::fromLocal8Bit(list[i].c_str()));
 	}
-	setupUi.resbox->addItems(QStringList()<<"0:Basic 128"<<"1:Basic48"<<"2:Shadow"<<"3:DOS");
+	setupUi.resbox->addItems(QStringList()<<"ROMPage0"<<"ROMPage1"<<"ROMPage2"<<"ROMPage3");
 //	setupUi.rssel->hide();
 	QTableWidgetItem* itm;
 	for (i = 0; i < (unsigned)setupUi.rstab->rowCount(); i++) {
