@@ -966,6 +966,7 @@ void fdcExec(FDC* fdc, unsigned char val) {
 void fdcSetMr(FDC* fdc,int z) {
 	if (!fdc->mr && z) {		// 0->1 : execute com 3
 		fdc->mr = z;
+		fdc->idle = 1;
 		fdcExec(fdc,0x03);	// restore
 		fdc->sec = 1;
 	} else {
@@ -1353,7 +1354,7 @@ void bdiDestroy(BDI* bdi) {
 
 void bdiReset(BDI* bdi) {
 	bdi->fdc->count = 0;
-	fdcSetMr(bdi->fdc,0);
+	bdiOut(bdi,BDI_SYS,0);
 }
 
 int bdiGetPort(int p) {
@@ -1371,6 +1372,7 @@ int bdiGetPort(int p) {
 }
 
 int bdiOut(BDI* bdi,int port,unsigned char val) {
+//	printf("bdiOut(%.4X,%.2X)\n",port,val);
 	switch (port) {
 		case FDC_COM:
 		case FDC_TRK:
@@ -1402,6 +1404,7 @@ unsigned char bdiIn(BDI* bdi,int port) {
 			res = (bdi->fdc->irq ? 0x80 : 0x00) | (bdi->fdc->drq ? 0x40 : 0x00);
 			break;
 	}
+//	printf("bdiIn(%.4X) = %.2X\n",port,res);
 	return res;
 }
 

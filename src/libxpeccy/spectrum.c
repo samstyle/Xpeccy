@@ -63,7 +63,6 @@ int zxGetPort(ZXComp* comp, Z80EX_WORD port) {
 			break;
 		case HW_PENT:
 			if ((port & 0x0003) == 0x0002) return 0xfe;
-			if ((port & 0x00ff) == 0x001f) return 0x1f;
 			if ((port & 0x8002) == 0x0000) return 0x7ffd;
 			if ((port & 0xc002) == 0x8000) return 0xbffd;
 			if ((port & 0xc002) == 0xc000) return 0xfffd;
@@ -74,6 +73,7 @@ int zxGetPort(ZXComp* comp, Z80EX_WORD port) {
 				if ((port & 0x00e3) == 0x0043) return 0x5f;
 				if ((port & 0x00e3) == 0x0063) return 0x7f;
 			} else {
+				if ((port & 0x00ff) == 0x001f) return 0x1f;
 				if ((port & 0x05a3) == 0x0083) return 0xfadf;
 				if ((port & 0x05a3) == 0x0183) return 0xfbdf;
 				if ((port & 0x05a3) == 0x0583) return 0xffdf;
@@ -242,13 +242,14 @@ void zxMapMemory(ZXComp* comp) {
 			}
 			break;
 		case HW_ATM2:
-			if (PRT1 & 1) {			// pen = 0: last rom page in every bank
+			if (PRT1 & 1) {			// pen = 0: last rom page in every bank && dosen on
 				adr = (PRT0 & 0x10) ? 4 : 0;
 				atmSetBank(comp,MEM_BANK0,comp->memMap[adr]);
 				atmSetBank(comp,MEM_BANK1,comp->memMap[adr+1]);
 				atmSetBank(comp,MEM_BANK2,comp->memMap[adr+2]);
 				atmSetBank(comp,MEM_BANK3,comp->memMap[adr+3]);
 			} else {
+				comp->dosen = 1;
 				memSetBank(comp->mem,MEM_BANK0,MEM_ROM,0xff);
 				memSetBank(comp->mem,MEM_BANK1,MEM_ROM,0xff);
 				memSetBank(comp->mem,MEM_BANK2,MEM_ROM,0xff);
@@ -432,6 +433,7 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 //					printf("ATM2: in %.4X (%.4X)\n",port,ptype);
 //					break;
 			}
+//			if ((ptype & 0x1f) == 0x1f) printf("in %.4X = %.2X (dosen %i)\n",ptype,res,comp->dosen);
 			break;
 		default:
 			printf("iord: unknown hardware id %i\n",comp->hw->type);
@@ -643,8 +645,6 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 					comp->memMap[adr] = val;
 					zxMapMemory(comp);
 					break;
-//				case 0xef:
-//					break;
 				case 0x7ffd:
 					if (comp->prt0 & 0x20) break;
 					comp->prt0 = val;
@@ -735,6 +735,7 @@ const unsigned char defPalete[16] = {
 };
 
 ZXComp* zxCreate() {
+	int i;
 	ZXComp* comp = (ZXComp*)malloc(sizeof(ZXComp));
 	void* ptr = (void*)comp;
 	comp->flags = ZX_JUSTBORN;
@@ -757,7 +758,6 @@ ZXComp* zxCreate() {
 	comp->resbank = RES_48;
 	comp->tickCount = 0;
 	gsReset(comp->gs);
-	int i;
 	for (i = 0; i < 16; i++) comp->colMap[i] = defPalete[i];
 	return comp;
 }
@@ -780,7 +780,10 @@ void zxDestroy(ZXComp* comp) {
 }
 
 void zxReset(ZXComp* comp,int wut) {
+	int i;
 	int resto = comp->resbank;
+	for (i = 0; i < 16; i++) comp->colMap[i] = defPalete[i];	// reset palete to default
+	comp->flags |= ZX_PALCHAN;
 	comp->rzxPlay = 0;
 	switch (wut) {
 		case RES_48: resto = 1; break;
@@ -790,7 +793,6 @@ void zxReset(ZXComp* comp,int wut) {
 	}
 	comp->prt2 = 0;
 	comp->prt1 = 0;
-	memSetBank(comp->mem,MEM_BANK0,MEM_ROM,resto);
 	memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5);
 	memSetBank(comp->mem,MEM_BANK2,MEM_RAM,2);
 	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0);
@@ -802,8 +804,8 @@ void zxReset(ZXComp* comp,int wut) {
 	comp->dosen = 0;
 	switch (comp->hw->type) {
 		case HW_ATM2:
-			if (resto & 1) comp->dosen = 1;
-			comp->prt0 = ((~resto & 2) << 4);
+			comp->dosen = 1;
+			comp->prt0 = 0;
 			break;
 		default:
 			comp->prt0 = ((resto & 1) << 4);

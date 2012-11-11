@@ -26,11 +26,11 @@ extern "C" {
 #define	FDC_93		1	// KR1818VG93 (WD1793 clone)
 #define	FDC_765		2	// uPD765
 // fdc registers
-#define	FDC_COM		0	// 93:1f(reg0)
+#define	FDC_COM		0x1f	// 93:1f(reg0)
 #define	FDC_STATE	FDC_COM	// 93:1f(reg0),765:reg0 (ro)
-#define	FDC_TRK		1	// 93:3f(reg1)
-#define	FDC_SEC		2	// 93:5f(reg2)
-#define	FDC_DATA	3	// 93:7f(reg3),765:reg1 (rw)
+#define	FDC_TRK		0x3f	// 93:3f(reg1)
+#define	FDC_SEC		0x5f	// 93:5f(reg2)
+#define	FDC_DATA	0x7f	// 93:7f(reg3),765:reg1 (rw)
 #define BDI_SYS		0xff	// bdi:ff(sys)
 // 765 flags
 #define	FDC_MT		(1<<7)	// com: multitrack

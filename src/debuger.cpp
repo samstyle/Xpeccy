@@ -89,6 +89,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 					lab = new QLabel("Pg1"); raylay->addWidget(lab,1,0); lab = new QLabel; raylay->addWidget(lab,1,1);
 					lab = new QLabel("Pg2"); raylay->addWidget(lab,2,0); lab = new QLabel; raylay->addWidget(lab,2,1);
 					lab = new QLabel("Pg3"); raylay->addWidget(lab,3,0); lab = new QLabel; raylay->addWidget(lab,3,1);
+					lab = new QLabel("DOSEN"); raylay->addWidget(lab,4,0); lab = new QLabel; raylay->addWidget(lab,4,1);
 				raybox->setLayout(raylay);
 			llay->addWidget(regbox);
 			llay->addWidget(raybox);
@@ -229,6 +230,8 @@ void DebugWin::fillrays() {
 	lab->setText(QString((zx->mem->pt2->type == MEM_ROM) ? "ROM-" : "RAM-").append(QString::number(zx->mem->pt2->num)));
 	lab = (QLabel*)raylay->itemAtPosition(3,1)->widget();
 	lab->setText(QString((zx->mem->pt3->type == MEM_ROM) ? "ROM-" : "RAM-").append(QString::number(zx->mem->pt3->num)));
+	lab = (QLabel*)raylay->itemAtPosition(4,1)->widget();
+	lab->setText((zx->dosen & 1) ? "1" : "0");
 }
 
 void DebugWin::filldump() {

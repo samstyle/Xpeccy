@@ -36,6 +36,8 @@ typedef struct {
 	unsigned char* egaptr;
 	unsigned char* txtptr;
 	unsigned char* txtatrptr;
+	unsigned char* hwmpix;
+	unsigned char* hwmatr;
 } atmItem;
 
 typedef struct {
