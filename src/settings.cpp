@@ -922,6 +922,8 @@ void loadConfig(bool dev) {
 								case 256: tmask = MEM_256; break;
 								case 512: tmask = MEM_512; break;
 								case 1024: tmask = MEM_1M; break;
+								case 2048: tmask = MEM_2M; break;
+								case 4096: tmask = MEM_4M; break;
 							}
 						}
 						if (pnam == "contmem") setFlagBit(str2bool(pval),&zx->hwFlag,HW_CONTMEM);

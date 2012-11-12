@@ -829,6 +829,8 @@ void SetupWin::setmszbox(int idx) {
 		if (t & 2) setupUi.mszbox->addItem("256K",256);
 		if (t & 4) setupUi.mszbox->addItem("512K",512);
 		if (t & 8) setupUi.mszbox->addItem("1024K",1024);
+		if (t & 16) setupUi.mszbox->addItem("2048K",2048);
+		if (t & 32) setupUi.mszbox->addItem("4096K",4096);
 	}
 	setupUi.mszbox->setCurrentIndex(setupUi.mszbox->findText(oldText));
 	if (setupUi.mszbox->currentIndex() < 0) setupUi.mszbox->setCurrentIndex(setupUi.mszbox->count() - 1);
