@@ -22,7 +22,9 @@ extern "C" {
 #define	VID_ATM_EGA	2
 #define	VID_ATM_TEXT	3
 #define	VID_ATM_HWM	4
-#define	VID_ATM_UNDEF	5
+#define	VID_HWMC	5
+#define	VID_EVO_TEXT	6
+#define	VID_UNKNOWN	0xff
 // flags returned by vidSync
 #define	VID_INT		1
 #define	VID_FRM		(1<<1)

@@ -66,6 +66,8 @@ void setRomsetList(std::vector<RomSet>);
 #define	MEM_256 (1<<1)
 #define	MEM_512	(1<<2)
 #define	MEM_1M	(1<<3)
+#define	MEM_2M	(1<<4)
+#define	MEM_4M	(1<<5)
 
 void initHardware();
 void setHardware(ZXComp*, std::string);

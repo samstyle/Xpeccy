@@ -26,26 +26,25 @@ extern "C" {
 #define	HW_PLUS3	6
 #define	HW_ATM1		7
 #define	HW_ATM2		8
-// hw flags
-#define	IO_WAIT		1
-#define WAIT_ON		(1<<1)
+#define	HW_PENTEVO	9
+// zx flag
+#define	ZX_BREAK	1	// breakpoint reached
+#define	ZX_JUSTBORN	(1<<1)	// just created zx. need to reset after selection
+#define	ZX_PALCHAN	(1<<2)	// signal: palete changed
+// hwFlag
+#define HW_WAIT		1	// scorpion wait
+#define	HW_CONTMEM	(1<<1)	// contended mem
+#define	HW_CONTIO	(1<<2)	// contended io
 // hw reset rompage
 #define	RES_DEFAULT	0
 #define	RES_48		1
 #define	RES_128		2
 #define	RES_DOS		3
 #define	RES_SHADOW	4
-// zx flags
-#define	ZX_BREAK	1
-#define	ZX_JUSTBORN	(1<<1)	// just created zx. need to reset after selection
-#define	ZX_CONTMEM	(1<<2)
-#define	ZX_CONTIO	(1<<3)
-#define	ZX_PALCHAN	(1<<4)	// signal: palete changed
 
 typedef struct {
 	const char* name;
-	int mask;		// mem size mask (b0:128, b1:256, b2:512, b3:1024); =0 for 48K
-	int flag;
+	int mask;		// mem size bits (b0:128, b1:256, b2:512, b3:1M, b4:2M, b5:4M); =0 for 48K
 	int type;
 } HardWare;
 
@@ -56,7 +55,13 @@ typedef struct {
 } RZXFrame;
 
 typedef struct {
-	int flags;
+	unsigned char flag;
+	unsigned char page;
+} memEntry;
+
+typedef struct {
+	int flag;		// states
+	int hwFlag;		// hardware properties
 	HardWare *hw;
 	Z80EX_CONTEXT* cpu;
 	Memory* mem;
@@ -82,12 +87,18 @@ typedef struct {
 	int beeplev;
 	float cpuFrq;
 	float dotPerTick;
-	int hwFlags;
-	unsigned char memMap[16];	// memory map for ATM2
+	memEntry memMap[16];		// memory map for ATM2, PentEvo
 	unsigned char colMap[16];	// color map (--GgRrBb)
 	unsigned char prt0;		// 7ffd value
 	unsigned char prt1;		// extend port value
 	unsigned char prt2;		// scorpion ProfROM layer (0..3)
+	struct {
+		unsigned char evoBF;		// PentEvo rw ports
+		unsigned char evo2F;
+		unsigned char evo4F;
+		unsigned char evo6F;
+		unsigned char evo8F;
+	} evo;
 	unsigned char dosen;		// active trdos (dosen and b4,prt0 sets rompart)
 	int resbank;		// rompart active after reset
 	int gsCount;

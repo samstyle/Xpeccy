@@ -337,6 +337,20 @@ unsigned char vidGetAttr(Video* vid) {
 	return (mtx->type == MTT_BORDER) ? vid->brdcol : vid->atrbyte;
 }
 
+void vidPutDot(Video* vid, unsigned char col) {
+	if ((vidFlag & (VF_NOFLIC | VF_FRAMEDBG)) == VF_NOFLIC) {
+		col = (((*vid->scrptr) & 0x0f) << 4) | (col & 0x0f);
+	} else {
+		col |= (col << 4);
+	}
+	*(vid->scrptr++) = col;
+	if (vidFlag & VF_DOUBLE) {
+		*(vid->scrptr + vid->wsze.h - 1) = col;
+		*(vid->scrptr + vid->wsze.h) = col;
+		*(vid->scrptr++)=col;
+	}
+}
+
 int vidSync(Video* vid, float dotDraw) {
 	int i;
 	int res = 0;
@@ -353,20 +367,23 @@ int vidSync(Video* vid, float dotDraw) {
 
 		if (mtx->type != MTT_INVIS) {
 			switch (vid->mode) {
-				case VID_ATM_UNDEF:
-					col = 2;
+				case VID_EVO_TEXT:
+				case VID_UNKNOWN:
+					col = 0;
+					vidPutDot(vid,col);
 					break;
 				case VID_ATM_HWM:
 					switch (mtx->atmType) {
 						case MTT_ATM_NONE:
 							col = vid->brdcol;
+							vidPutDot(vid,col);
 							break;
 						case MTT_ATM_0:
 						case MTT_ATM_4:
 							scrbyte = vid->curscr ? *(mtx->atm7.hwmpix) : *(mtx->atm5.hwmpix);
 							col = vid->curscr ? *(mtx->atm7.hwmatr) : *(mtx->atm5.hwmatr);
 							ink = inkTab[col & 0x7f];
-							pap = papTab[col & 0x7f] | ((col & 0x80) >> 4);
+							pap = papTab[col & 0x3f] | ((col & 0x80) >> 4);
 							fntptr = vid->scrptr;
 							if (vidFlag & VF_DOUBLE) {
 								for (col = 0; col < 8; col++) {
@@ -402,11 +419,13 @@ int vidSync(Video* vid, float dotDraw) {
 							col = ((scrbyte & 0x38)>>3) | ((scrbyte & 0x80)>>4);
 							break;
 					}
+					vidPutDot(vid,col);
 					break;
 				case VID_ATM_TEXT:
 					switch (mtx->atmType) {
 						case MTT_ATM_NONE:
 							col = vid->brdcol;
+							vidPutDot(vid,col);
 							break;
 						default:
 							if (mtx->flag & MTF_ATM_TXT) {
@@ -414,7 +433,7 @@ int vidSync(Video* vid, float dotDraw) {
 								scrbyte = vid->curscr ? *(mtx->atm7.txtptr) : *(mtx->atm5.txtptr);
 								col = vid->curscr ? *(mtx->atm7.txtatrptr) : *(mtx->atm5.txtatrptr);
 								ink = inkTab[col & 0x7f];
-								pap = papTab[col & 0x7f] | ((col & 0x80) >> 4);
+								pap = papTab[col & 0x3f] | ((col & 0x80) >> 4);
 								adr = (scrbyte << 3);
 								fntptr = vid->scrptr;
 								for (col = 0; col < 8; col++) {
@@ -445,6 +464,31 @@ int vidSync(Video* vid, float dotDraw) {
 							break;
 					}
 					break;
+				case VID_HWMC:
+					switch (mtx->type) {
+						case MTT_BRDATR:
+							scrbyte = vid->curscr ? *(mtx->scr7ptr) : *(mtx->scr5ptr);
+						case MTT_BORDER:
+							col = vid->brdcol;
+							break;
+						case MTT_PT0:
+							vid->atrbyte = vid->curscr ? *(mtx->scr7ptr + 0x2000) : *(mtx->scr5ptr + 0x2000);
+							ink = inkTab[vid->atrbyte & 0x7f];
+							pap = papTab[vid->atrbyte & 0x7f];
+							for (col = 0; col < 8; col++) {
+								pixBuffer[col] = (scrbyte & bitMask[col]) ? ink : pap;
+							}
+							ink = 1;
+							col = pixBuffer[0];
+							break;
+						case MTT_PT4:
+							scrbyte = vid->curscr ? *(mtx->scr7ptr) : *(mtx->scr5ptr);
+						default:
+							col = pixBuffer[ink++];
+							break;
+					}
+					vidPutDot(vid,col);
+					break;
 				case VID_NORMAL:
 					switch(mtx->type) {
 						case MTT_BRDATR:
@@ -469,6 +513,7 @@ int vidSync(Video* vid, float dotDraw) {
 							col = pixBuffer[ink++];
 							break;
 					}
+					vidPutDot(vid,col);
 					break;
 				case VID_ALCO:
 					switch(mtx->type) {
@@ -487,26 +532,11 @@ int vidSync(Video* vid, float dotDraw) {
 							col = ((scrbyte & 0x38)>>3) | ((scrbyte & 0x80)>>4);
 							break;
 					}
+					vidPutDot(vid,col);
 					break;
 			}
-			if (((vid->mode != VID_ATM_TEXT) && (vid->mode != VID_ATM_HWM)) || (mtx->atmType == MTT_ATM_NONE)) {
-				if ((vidFlag & (VF_NOFLIC | VF_FRAMEDBG)) == VF_NOFLIC) {
-					col = (((*vid->scrptr) & 0x0f) << 4) | (col & 0x0f);
-				} else {
-					col |= (col << 4);
-				}
-				*(vid->scrptr++) = col;
-				if (vidFlag & VF_DOUBLE) {
-					*(vid->scrptr + vid->wsze.h - 1) = col;
-					*(vid->scrptr + vid->wsze.h) = col;
-					*(vid->scrptr++)=col;
-				}
-				vidFlag |= VF_CHANGED;
-			}
 		}
-		if ((mtx->flag & MTF_LINEND) && (vidFlag & VF_DOUBLE)) {
-			vid->scrptr += vid->wsze.h;
-		}
+		if ((mtx->flag & MTF_LINEND) && (vidFlag & VF_DOUBLE)) vid->scrptr += vid->wsze.h;
 		if (mtx->flag & MTF_FRMEND) {
 			res |= VID_FRM;
 //			vid->dotCount = 0;

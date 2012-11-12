@@ -250,9 +250,9 @@ void emulSetPalette(ZXComp* comp,unsigned char lev) {
 	qPal.resize(256);
 	for(i = 0; i < 16; i++) {
 		col = comp->colMap[i];
-		b[i] = ((col & 0x01) ? (0xff - lev) : 0x00) + ((col & 0x02) ? lev : 0x00);
-		r[i] = ((col & 0x04) ? (0xff - lev) : 0x00) + ((col & 0x08) ? lev : 0x00);
-		g[i] = ((col & 0x10) ? (0xff - lev) : 0x00) + ((col & 0x20) ? lev : 0x00);
+		b[i] = ((col & 0x10) ? (0xff - lev) : 0x00) + ((col & 0x01) ? lev : 0x00);
+		r[i] = ((col & 0x20) ? (0xff - lev) : 0x00) + ((col & 0x02) ? lev : 0x00);
+		g[i] = ((col & 0x40) ? (0xff - lev) : 0x00) + ((col & 0x04) ? lev : 0x00);
 	}
 	for(i = 0; i < 256; i++) {
 		qPal[i] = qRgb((r[i & 0x0f] * 0.5) + (r[(i & 0xf0) >> 4] * 0.5),
@@ -342,9 +342,9 @@ double tks = 0;
 void emulExec() {
 	tks += zxExec(zx);
 	tks = sndSync(tks,emulFlags & FL_FAST);
-	if (zx->flags & ZX_PALCHAN) {
+	if (zx->flag & ZX_PALCHAN) {
 		emulSetPalette(zx,optGetInt(OPT_BRGLEV));
-		zx->flags &= ~ZX_PALCHAN;
+		zx->flag &= ~ZX_PALCHAN;
 	}
 }
 
@@ -1214,7 +1214,7 @@ void emulTapeCatch() {
 
 void MainWin::processFrame() {
 // if screenshot requested do it
-	zx->flags &= ~(ZX_BREAK | ZX_JUSTBORN);
+	zx->flag = 0;
 	if (emulFlags & FL_SHOT) doScreenShot();
 // if paused, return
 	if ((pauseFlags != 0) || (wantedWin != WW_NONE)) return;
@@ -1227,9 +1227,9 @@ void MainWin::processFrame() {
 			if ((pc == 0x5e2) && optGetFlag(OF_TAPEAUTO))
 				tapStateChanged(TW_STATE,TWS_STOP);
 		}
-		if (zx->flags & ZX_BREAK) {
+		if (zx->flag & ZX_BREAK) {
 			wantedWin = WW_DEBUG;
-			zx->flags &= ~ZX_BREAK;
+			zx->flag &= ~ZX_BREAK;
 		}
 	} while ((wantedWin == WW_NONE) && (zx->frmStrobe == 0));
 	zx->nmiRequest = 0;
@@ -1359,9 +1359,9 @@ void MainWin::profileSelected(QAction* act) {
 	loadConfig(false);
 	emulUpdateWindow();
 	saveProfiles();
-	if (zx->flags & ZX_JUSTBORN) {
+	if (zx->flag & ZX_JUSTBORN) {
 		zxReset(zx,RES_DEFAULT);
-		zx->flags &= ~ZX_JUSTBORN;
+		zx->flag &= ~ZX_JUSTBORN;
 	}
 	setFocus();
 	emulPause(false,PR_EXTRA);

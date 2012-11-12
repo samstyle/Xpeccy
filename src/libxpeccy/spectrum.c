@@ -170,6 +170,40 @@ int zxGetPort(ZXComp* comp, Z80EX_WORD port) {
 				if ((port & 0x001f) == 0x000f) return 0xef;				// EF: hdd (a8..11)
 			}
 			break;
+		case HW_PENTEVO:
+			if ((port & 0x00f7) == 0x00f6) return 0xfe;	// FE, A3 = border bright
+			if ((port & 0x00ff) == 0x00bf) return 0xbf;
+			if ((port & 0x00ff) == 0x00be) return 0xbe;	// configuration read
+			if ((port & 0x00ff) == 0x00fb) return 0xfb;	// covox
+			if (port == 0x7ffd) return 0x7ffd;	// std.mem
+			if (port == 0xbffd) return 0xbffd;	// ay
+			if (port == 0xfffd) return 0xfffd;
+			if (port == 0xfadf) return 0xfadf;	// mouse
+			if (port == 0xfbdf) return 0xfbdf;
+			if (port == 0xffdf) return 0xffdf;
+			if ((comp->evo.evoBF & 1) || (comp->dosen == 1)) {
+				if ((port & 0x00ff) == 0x001f) return 0x1f;	// bdi
+				if ((port & 0x00ff) == 0x003f) return 0x3f;
+				if ((port & 0x00ff) == 0x005f) return 0x5f;
+				if ((port & 0x00ff) == 0x007f) return 0x7f;
+				if ((port & 0x00ff) == 0x00ff) return 0xff;	// bdi.sys / palette
+				if ((port & 0x00ff) == 0x002f) return 0x2f;	// extend bdi ports
+				if ((port & 0x00ff) == 0x004f) return 0x4f;
+				if ((port & 0x00ff) == 0x006f) return 0x6f;
+				if ((port & 0x00ff) == 0x008f) return 0x8f;
+				if ((port & 0x00ff) == 0x0077) return 0x77;	// xx77
+				if ((port & 0x07f7) == 0x07f7) return 0xf7;	// xxF7, A11 = 1:ATM2 / 0:PentEvo
+				if (port == 0xdff7) return 0xdff7;
+				if (port == 0xbff7) return 0xdff7;
+			} else {
+				if ((port & 0xff) == 0x001f) return 0x1f;	// kempston
+				if (port == 0xeff7) return 0xeff7;
+				if (comp->prt2 & 0x80) {			// access to NVRAM
+					if (port == 0xdff7) return 0xdff7;
+					if (port == 0xbff7) return 0xdff7;
+				}
+			}
+			break;
 		default:
 			printf("zxGetPort : unknown hardware type %i\n",comp->hw->type);
 			assert(0);
@@ -182,16 +216,30 @@ int zxGetPort(ZXComp* comp, Z80EX_WORD port) {
 #define	PRT1	comp->prt1
 #define	PRT2	comp->prt2
 
-void atmSetBank(ZXComp* comp, int bank, unsigned char val) {
-	unsigned char page = ~val & 0x3f;	// inversed b0..5
-	if (val & 0x80) {
-		if (val & 0x40) {
+void evoSetVideoMode(ZXComp* comp) {
+	int mode = ((comp->prt2 & 0x20) >> 4) | (comp->prt2 & 0x01) | (comp->prt1 & 0x1c);	// b2.b1.b0.z5.z0	b:FF77, z:eff7
+	switch (mode) {
+		case 0x0c: comp->vid->mode = VID_NORMAL; break;		// common
+		case 0x0d: comp->vid->mode = VID_ALCO; break;		// alco 16c
+		case 0x0e: comp->vid->mode = VID_HWMC; break;		// zx hardware multicolor
+		case 0x08: comp->vid->mode = VID_ATM_HWM; break;	// atm hardware multicolor
+		case 0x00: comp->vid->mode = VID_ATM_EGA; break;	// atm ega
+		case 0x18: comp->vid->mode = VID_ATM_TEXT; break;	// atm text
+		case 0x1c: comp->vid->mode = VID_EVO_TEXT; break;	// pentevo text
+		default: comp->vid->mode = VID_UNKNOWN; break;
+	}
+}
+
+void atmSetBank(ZXComp* comp, int bank, memEntry me) {
+	unsigned char page = me.page ^ 0xff;
+	if (me.flag & 0x80) {
+		if (me.flag & 0x40) {
 			page = (page & 0x38) | (PRT0 & 7);	// mix with 7FFD bank;
 		} else {
 			page = (page & 0x3e) | (comp->dosen ? 1 : 0);	// mix with dosen
 		}
 	}
-	memSetBank(comp->mem,bank,(val & 0x40) ? MEM_RAM : MEM_ROM, page);
+	memSetBank(comp->mem,bank,(me.flag & 0x40) ? MEM_RAM : MEM_ROM, page);
 }
 
 void zxMapMemory(ZXComp* comp) {
@@ -284,7 +332,7 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 	res3 = res2 + z80ex_op_tstate(cpu);
 	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
 	res4 = res3;
-	if (((adr & 0xc000) == 0x4000) && (comp->flags & ZX_CONTMEM)) {
+	if (((adr & 0xc000) == 0x4000) && (comp->hwFlag & HW_CONTMEM)) {
 		res5 = vidGetWait(comp->vid);
 		if (res5 != 0) {
 			vflg |= vidSync(comp->vid, comp->dotPerTick * res5);
@@ -303,7 +351,7 @@ void memwr(Z80EX_CONTEXT* cpu, Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 	res3 = res2 + z80ex_op_tstate(cpu);
 	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
 	res4 = res3;
-	if (((adr & 0xc000) == 0x4000) && (comp->flags & ZX_CONTMEM)) {
+	if (((adr & 0xc000) == 0x4000) && (comp->hwFlag & HW_CONTMEM)) {
 		res5 = vidGetWait(comp->vid);
 		if (res5 != 0) {
 			vflg |= vidSync(comp->vid,comp->dotPerTick * res5);
@@ -312,7 +360,7 @@ void memwr(Z80EX_CONTEXT* cpu, Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 	}
 	memWr(comp->mem,adr,val);
 	if (comp->mem->flags & MEM_BRK_WRITE) {
-		comp->flags |= ZX_BREAK;
+		comp->flag |= ZX_BREAK;
 	}
 }
 
@@ -323,7 +371,7 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 	res3 = res2 + z80ex_op_tstate(cpu);
 	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
 	res4 = res3;
-	if (comp->flags & ZX_CONTIO) {
+	if (comp->hwFlag & HW_CONTIO) {
 		res5 = vidGetWait(comp->vid);
 		if (res5 != 0) {
 			vflg |= vidSync(comp->vid,comp->dotPerTick * res5);
@@ -507,7 +555,7 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 					comp->tape->outsig = (val & 0x08) ? 1 : 0;
 					break;
 				case 0x7ffd:
-					if (comp->prt0 & 0x20) break;
+					if ((comp->prt1 & 4) && (comp->prt0 & 0x20)) break;
 					comp->prt0 = val;
 					comp->vid->curscr = (val & 0x08) ? 1 : 0;
 					zxMapMemory(comp);
@@ -612,13 +660,11 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 				case 0x7f: if (bdiz) bdiOut(comp->bdi,FDC_DATA,val); break;
 				case 0xff: if (bdiz) {
 						bdiOut(comp->bdi,BDI_SYS,val);
-						val ^= 0xff;	// inverse colors
-						if (~comp->prt1 & 0x40) {
-							val = ((val & 0x01) << 1) | ((val & 0x20) >> 5) |
-								((val & 0x02) << 2) | ((val & 0x40) >> 4) |
-								((val & 0x10) << 1) | ((val & 0x80) >> 3);	// grbG--RB to --GgRrBb
-							comp->colMap[comp->vid->brdcol & 0x0f] = val;
-							comp->flags |= ZX_PALCHAN;
+						if (!(comp->prt1 & 0x40)) {
+							val ^= 0xff;	// inverse colors
+							comp->colMap[comp->vid->brdcol & 0x0f] =		// grbG--RB to -grb-GRB
+								(val & 0x03) | ((val & 0x10) >> 2) | ((val & 0xe0) >> 1);
+							comp->flag |= ZX_PALCHAN;
 						}
 					}
 					break;
@@ -634,15 +680,16 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 						case 2: comp->vid->mode = VID_ATM_HWM; break;
 						case 3: comp->vid->mode = VID_NORMAL; break;
 						case 6: comp->vid->mode = VID_ATM_TEXT; break;
-						default: comp->vid->mode = VID_ATM_UNDEF; break;
+						default: comp->vid->mode = VID_UNKNOWN; break;
 					}
 					zxSetFrq(comp,(val & 0x08) ? 7.0 : 3.5);
-					comp->prt1 = (port >> 8) & 0xff;
+					comp->prt1 = (port & 0xff00) >> 8;
 					zxMapMemory(comp);
 					break;
 				case 0xf7:
 					adr = ((comp->prt0 & 0x10) ? 4 : 0) | ((port & 0xc000) >> 14);	// rom2.a15.a14
-					comp->memMap[adr] = val;
+					comp->memMap[adr].flag = val & 0xc0;		// copy b6,7 to flag
+					comp->memMap[adr].page = (val & 0x3f) | 0xc0;	// set b6,7 for PentEvo capability
 					zxMapMemory(comp);
 					break;
 				case 0x7ffd:
@@ -656,6 +703,78 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 //				default:
 //					printf("ATM2: out %.4X (%.4X) %.2X\n",port,ptype,val);
 //					break;
+			}
+			break;
+		case HW_PENTEVO:
+			if (comp->evo.evoBF & 0x01) bdiz = 1;
+			switch (ptype) {
+				case 0xbf: comp->evo.evoBF = val; break;
+				case 0x2f: comp->evo.evo2F = val; break;
+				case 0x4f: comp->evo.evo4F = val; break;
+				case 0x6f: comp->evo.evo6F = val; break;
+				case 0x8f: comp->evo.evo8F = val; break;
+				case 0x1f: if (bdiz) bdiOut(comp->bdi,FDC_COM,val); break;
+				case 0x3f: bdiOut(comp->bdi,FDC_TRK,val); break;
+				case 0x5f: bdiOut(comp->bdi,FDC_SEC,val); break;
+				case 0x7f: bdiOut(comp->bdi,FDC_DATA,val); break;
+				case 0xff: if (bdiz) {
+						bdiOut(comp->bdi,BDI_SYS,val);
+						if (!(comp->prt1 & 0x40)) {
+							val ^= 0xff;	// inverse colors
+							comp->colMap[comp->vid->brdcol & 0x0f] =		// grbG--RB to -grb-GRB
+								(val & 0x03) | ((val & 0x10) >> 2) | ((val & 0xe0) >> 1);
+							comp->flag |= ZX_PALCHAN;
+						}
+					}
+					break;
+				case 0xfe:
+					comp->vid->nextbrd = (val & 0x07) | (~port & 8);
+					if (!(comp->vid->flags & VID_BORDER_4T)) comp->vid->brdcol = comp->vid->nextbrd;
+					comp->beeplev = val & 0x10;
+					comp->tape->outsig = (val & 0x08) ? 1 : 0;
+					break;
+				case 0x57:
+					if (bdiz) {
+						// control sdcard CS
+					} else {
+						// write sdcard data
+					}
+					break;
+				case 0x77:
+					if (bdiz) {
+						comp->prt1 = ((val & 0x0f) << 2) | (port & 0x4300) >> 8;	// -.A14.b3.b2.b1.b0.A9.A8
+						zxSetFrq(comp,(val & 0x08) ? 14.0 : ((comp->prt2 & 0x10) ? 3.5 : 7.0));
+						evoSetVideoMode(comp);
+						zxMapMemory(comp);
+					} else {
+						// control sdcard CS
+					}
+					break;
+				case 0xf7:
+					adr = ((comp->prt0 & 0x10) ? 4 : 0) | ((port & 0xc000) >> 14);	// rom2.a15.a14
+					if (port & 0x0800) {
+						comp->memMap[adr].flag = val & 0xc0;			// xFF7: like ATM2, 64 pages
+						comp->memMap[adr].page = (val & 0x3f) | 0xc0;
+					} else {
+						comp->memMap[adr].flag |= 0x40;				// b6=1:RAM
+						comp->memMap[adr].page = val;				// 256 pages
+					}
+					zxMapMemory(comp);
+					break;
+				case 0x7ffd:
+					if ((comp->prt2 & 4) && (comp->prt0 & 0x20)) break;		// 128-mode and 7ffd blocked
+					comp->prt0 = val;
+					comp->vid->curscr = (val & 0x08) ? 1 : 0;
+					zxMapMemory(comp);
+					break;
+				case 0xeff7:
+					comp->prt2 = val;
+					zxSetFrq(comp,(comp->prt1 & 0x20) ? 14.0 : ((val & 0x10) ? 3.5 : 7.0));
+					evoSetVideoMode(comp);
+					zxMapMemory(comp);
+					break;
+				case 0xbffd:
+				case 0xfffd: tsOut(comp->ts,ptype,val); break;
 			}
 			break;
 		default:
@@ -681,7 +800,7 @@ void iowr(Z80EX_CONTEXT* cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
 	res4 = res3;
 	// if there is contended io, get wait and wait :)
-	if (comp->flags & ZX_CONTIO) {
+	if (comp->hwFlag & HW_CONTIO) {
 		switch(port & 0x4001) {
 			case 0x0000:
 				zxOut(comp,port,val);
@@ -727,18 +846,19 @@ void rzxClear(ZXComp* zx) {
 	zx->rzxData = NULL;
 }
 
-// --543210
-// --GgRrBb
+// 76543210
+// -grb-GRB
 const unsigned char defPalete[16] = {
-	0x00,0x02,0x08,0x0a,0x20,0x22,0x28,0x2a,
-	0x00,0x03,0x0c,0x0f,0x30,0x33,0x3c,0x3f
+	0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
+	0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77
 };
 
 ZXComp* zxCreate() {
 	int i;
 	ZXComp* comp = (ZXComp*)malloc(sizeof(ZXComp));
 	void* ptr = (void*)comp;
-	comp->flags = ZX_JUSTBORN;
+	comp->flag = ZX_JUSTBORN | ZX_PALCHAN;
+	comp->hwFlag = 0;
 	comp->cpu = z80ex_create(&memrd,ptr,&memwr,ptr,&iord,ptr,&iowr,ptr,&intrq,ptr);
 	zxSetFrq(comp,3.5);
 	comp->mem = memCreate();
@@ -783,7 +903,7 @@ void zxReset(ZXComp* comp,int wut) {
 	int i;
 	int resto = comp->resbank;
 	for (i = 0; i < 16; i++) comp->colMap[i] = defPalete[i];	// reset palete to default
-	comp->flags |= ZX_PALCHAN;
+	comp->flag |= ZX_PALCHAN;
 	comp->rzxPlay = 0;
 	switch (wut) {
 		case RES_48: resto = 1; break;
@@ -875,7 +995,7 @@ double zxExec(ZXComp* comp) {
 	}
 	pcreg = z80ex_get_reg(comp->cpu,regPC);
 	if (memGetCellFlags(comp->mem,pcreg) & MEM_BRK_FETCH) {
-		comp->flags |= ZX_BREAK;
+		comp->flag |= ZX_BREAK;
 	}
 
 	ltk = comp->vid->drawed; // res1 * comp->dotPerTick;

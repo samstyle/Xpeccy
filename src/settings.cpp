@@ -475,9 +475,9 @@ void saveConfig() {
 	optSet("MACHINE","current",curProf->hwName);
 //	optSet("MACHINE","restart",(emulGetFlags() & FL_RESET) != 0);
 	optSet("MACHINE","memory",zx->mem->memSize);
-	optSet("MACHINE","scrp.wait",(zx->hwFlags & WAIT_ON) != 0);
-	optSet("MACHINE","contmem",(zx->flags & ZX_CONTMEM) != 0);
-	optSet("MACHINE","contio",(zx->flags & ZX_CONTIO) != 0);
+	optSet("MACHINE","scrp.wait",(zx->hwFlag & HW_WAIT) != 0);
+	optSet("MACHINE","contmem",(zx->hwFlag & HW_CONTMEM) != 0);
+	optSet("MACHINE","contio",(zx->hwFlag & HW_CONTIO) != 0);
 
 //	optSet("ROMSET","gs",curProf->gsFile);
 	delOption("ROMSET","gs");
@@ -924,8 +924,8 @@ void loadConfig(bool dev) {
 								case 1024: tmask = MEM_1M; break;
 							}
 						}
-						if (pnam == "contmem") setFlagBit(str2bool(pval),&zx->flags,ZX_CONTMEM);
-						if (pnam == "contio") setFlagBit(str2bool(pval),&zx->flags,ZX_CONTIO);
+						if (pnam == "contmem") setFlagBit(str2bool(pval),&zx->hwFlag,HW_CONTMEM);
+						if (pnam == "contio") setFlagBit(str2bool(pval),&zx->hwFlag,HW_CONTIO);
 						break;
 					case SECT_TOOLS:
 						if (pnam=="sjasm") asmPath = pval; break;
@@ -1013,7 +1013,7 @@ void loadConfig(bool dev) {
 	curProf->rsName = optGetString("ROMSET","current");
 //	curProf->gsFile = optGetString("ROMSET","gs");
 //	emulSetFlag(FL_RESET,optGetBool("MACHINE","restart"));
-	setFlagBit(optGetBool("MACHINE","scrp.wait"),&zx->hwFlags,WAIT_ON);
+	setFlagBit(optGetBool("MACHINE","scrp.wait"),&zx->hwFlag,HW_WAIT);
 
 	sndCalibrate();
 //	zx->ide->refresh();

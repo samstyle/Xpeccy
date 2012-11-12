@@ -71,7 +71,7 @@ void memSetSize(Memory* mem, int val) {
 	mem->memSize = val;
 	switch (val) {
 		case 48:
-			mem->memMask = 0x07;
+			mem->memMask = 0x07;	// need 7, cuz it uses pages 2,5,0
 			break;
 		case 128:
 			mem->memMask = 0x07;
@@ -85,8 +85,15 @@ void memSetSize(Memory* mem, int val) {
 		case 1024:
 			mem->memMask = 0x3f;
 			break;
+		case 2048:
+			mem->memMask = 0x7f;
+			break;
+		case 4096:
+			mem->memMask = 0xff;
+			break;
 		default:
-			mem->memMask = 0x00;
+			mem->memMask = 0x07;
+			mem->memSize = 48;
 			break;
 	}
 }

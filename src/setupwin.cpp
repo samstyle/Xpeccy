@@ -298,15 +298,15 @@ void SetupWin::start() {
 	setupUi.mszbox->setCurrentIndex(setupUi.mszbox->findData(zx->mem->memSize));
 	if (setupUi.mszbox->currentIndex() < 0) setupUi.mszbox->setCurrentIndex(setupUi.mszbox->count() - 1);
 	setupUi.cpufrq->setValue(zx->cpuFrq * 2); updfrq();
-	setupUi.scrpwait->setChecked(zx->hwFlags & WAIT_ON);
+	setupUi.scrpwait->setChecked(zx->hwFlag & HW_WAIT);
 // video
 	lays = getLayoutList();
 	setupUi.dszchk->setChecked((vidFlag & VF_DOUBLE));
 	setupUi.fscchk->setChecked(vidFlag & VF_FULLSCREEN);
 	setupUi.noflichk->setChecked(vidFlag & VF_NOFLIC);
 	setupUi.border4T->setChecked(zx->vid->flags & VID_BORDER_4T);
-	setupUi.contMem->setChecked(zx->flags & ZX_CONTMEM);
-	setupUi.contIO->setChecked(zx->flags & ZX_CONTIO);
+	setupUi.contMem->setChecked(zx->hwFlag & HW_CONTMEM);
+	setupUi.contIO->setChecked(zx->hwFlag & HW_CONTIO);
 	setupUi.bszsld->setValue((int)(brdsize * 100));
 	setupUi.pathle->setText(QString::fromLocal8Bit(optGetString(OPT_SHOTDIR).c_str()));
 	setupUi.ssfbox->setCurrentIndex(setupUi.ssfbox->findData(optGetInt(OPT_SHOTFRM)));
@@ -439,7 +439,7 @@ void SetupWin::apply() {
 
 	memSetSize(zx->mem,setupUi.mszbox->itemData(setupUi.mszbox->currentIndex()).toInt());
 	zxSetFrq(zx,setupUi.cpufrq->value() / 2.0);
-	setFlagBit(setupUi.scrpwait->isChecked(),&zx->hwFlags,WAIT_ON);
+	setFlagBit(setupUi.scrpwait->isChecked(),&zx->hwFlag,HW_WAIT);
 	if (zx->hw != oldmac) zxReset(zx,RES_DEFAULT);
 // video
 	setLayoutList(lays);
@@ -447,8 +447,8 @@ void SetupWin::apply() {
 	setFlagBit(setupUi.fscchk->isChecked(),&vidFlag,VF_FULLSCREEN);
 	setFlagBit(setupUi.noflichk->isChecked(),&vidFlag,VF_NOFLIC);
 	setFlagBit(setupUi.border4T->isChecked(),&zx->vid->flags,VID_BORDER_4T);
-	setFlagBit(setupUi.contMem->isChecked(),&zx->flags,ZX_CONTMEM);
-	setFlagBit(setupUi.contIO->isChecked(),&zx->flags,ZX_CONTIO);
+	setFlagBit(setupUi.contMem->isChecked(),&zx->hwFlag,HW_CONTMEM);
+	setFlagBit(setupUi.contIO->isChecked(),&zx->hwFlag,HW_CONTIO);
 	brdsize = setupUi.bszsld->value()/100.0;
 	optSet(OPT_SHOTDIR,std::string(setupUi.pathle->text().toLocal8Bit().data()));
 	optSet(OPT_SHOTFRM,setupUi.ssfbox->itemData(setupUi.ssfbox->currentIndex()).toInt());

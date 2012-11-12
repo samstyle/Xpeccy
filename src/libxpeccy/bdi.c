@@ -1355,6 +1355,11 @@ void bdiDestroy(BDI* bdi) {
 void bdiReset(BDI* bdi) {
 	bdi->fdc->count = 0;
 	bdiOut(bdi,BDI_SYS,0);
+	bdi->fdc->trk = 0;
+	bdi->fdc->flop[0]->trk = 0;
+	bdi->fdc->flop[1]->trk = 0;
+	bdi->fdc->flop[2]->trk = 0;
+	bdi->fdc->flop[3]->trk = 0;
 }
 
 int bdiGetPort(int p) {
