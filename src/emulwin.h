@@ -224,12 +224,14 @@ class MainWin : public QX11EmbedContainer {
 	private:
 		QTimer* timer;
 		QTimer* etimer;
+		QTimer* cmosTimer;
 	public slots:
 		void doOptions();
 		void tapStateChanged(int,int);
 	private slots:
 		void emulFrame();
 		void processFrame();
+		void cmosTick();
 		void rzxStateChanged(int);
 		void bookmarkSelected(QAction*);
 		void profileSelected(QAction*);

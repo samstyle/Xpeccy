@@ -411,10 +411,13 @@ MainWin::MainWin() {
 	initUserMenu((QWidget*)this);
 	timer = new QTimer();
 	etimer = new QTimer();
+	cmosTimer = new QTimer();
 	timer->setInterval(20);	// common
 	etimer->setInterval(1);	// fast
 	connect(timer,SIGNAL(timeout()),this,SLOT(emulFrame()));
 	connect(etimer,SIGNAL(timeout()),this,SLOT(processFrame()));
+	connect(cmosTimer,SIGNAL(timeout()),this,SLOT(cmosTick()));
+	cmosTimer->start(1000);
 }
 
 void MainWin::start() {
@@ -425,6 +428,37 @@ void MainWin::start() {
 void MainWin::stop() {
 	etimer->stop();
 	timer->stop();
+}
+
+unsigned char incBCDbyte(unsigned char val) {
+	val++;
+	if ((val & 0x0f) < 0x0a) return val;
+	val += 0x10;
+	val &= 0xf0;
+	return val;
+}
+
+void MainWin::cmosTick() {
+	unsigned int i;
+	ZXComp* comp;
+	std::vector<XProfile> plist = getProfileList();
+	for (i = 0; i < plist.size(); i++) {
+		comp = plist[i].zx;
+		if (comp != NULL) {
+			comp->cmos.data[0] = incBCDbyte(comp->cmos.data[0]);			// sec
+			if (comp->cmos.data[0] > 0x59) {
+				comp->cmos.data[0] = 0x00;
+				comp->cmos.data[2] = incBCDbyte(comp->cmos.data[2]);		// min
+				if (comp->cmos.data[2] > 0x59) {
+					comp->cmos.data[2] = 0x00;
+					comp->cmos.data[4] = incBCDbyte(comp->cmos.data[4]);	// hour
+					if (comp->cmos.data[4] > 0x23) {
+						comp->cmos.data[4] = 0x00;
+					}
+				}
+			}
+		}
+	}
 }
 
 void MainWin::tapStateChanged(int wut, int val) {

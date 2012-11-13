@@ -994,7 +994,7 @@ void loadConfig(bool dev) {
 	delOption("MACHINE","restart");
 	delOption("ROMSET","gs");
 
-	tmp2 = optGetInt("GENERAL","cpu.frq"); if ((tmp2 > 0) && (tmp2 <= 14)) zxSetFrq(zx,tmp2 / 2.0);
+	tmp2 = optGetInt("GENERAL","cpu.frq"); if ((tmp2 > 0) && (tmp2 <= 28)) zxSetFrq(zx,tmp2 / 2.0);
 
 	tmp2 = optGetInt("SOUND","chip1"); if (tmp2 < SND_END) aymSetType(zx->ts->chipA,tmp2);
 	tmp2 = optGetInt("SOUND","chip2"); if (tmp2 < SND_END) aymSetType(zx->ts->chipB,tmp2);

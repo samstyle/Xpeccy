@@ -79,7 +79,6 @@ int zxGetPort(ZXComp* comp, Z80EX_WORD port) {
 			break;
 		case HW_P1024:
 			if ((port & 0x0003) == 0x0002) return 0xfe;
-			if ((port & 0xf008) == 0xe008) return 0xeff7;
 			if ((port & 0x8002) == 0x0000) return 0x7ffd;
 			if ((port & 0xc002) == 0x8000) return 0xbffd;
 			if ((port & 0xc002) == 0xc000) return 0xfffd;
@@ -94,6 +93,9 @@ int zxGetPort(ZXComp* comp, Z80EX_WORD port) {
 				if ((port & 0x05a3) == 0x0183) return 0xfbdf;
 				if ((port & 0x05a3) == 0x0583) return 0xffdf;
 			}
+			if ((port & 0xf008) == 0xe000) return 0xeff7;
+			if ((port & 0xf008) == 0xb000) return 0xbff7;	// cmos
+			if ((port & 0xf008) == 0xd000) return 0xdff7;
 			break;
 		case HW_SCORP:
 			if ((port & 0x0023) == 0x0022) return 0xfe;
@@ -169,16 +171,17 @@ int zxGetPort(ZXComp* comp, Z80EX_WORD port) {
 			}
 			break;
 		case HW_PENTEVO:
-			if ((port & 0x00f7) == 0x00f6) return 0xfe;	// FE, A3 = border bright
-			if ((port & 0x00ff) == 0x00bf) return 0xbf;
 			if ((port & 0x00ff) == 0x00be) return 0xbe;	// configuration read
+			if ((port & 0x00f7) == 0x00f6) return 0xfe;		// FE, A3 = border bright
+			if ((port & 0x00ff) == 0x00bf) return 0xbf;
 			if ((port & 0x00ff) == 0x00fb) return 0xfb;	// covox
 			if (port == 0x7ffd) return 0x7ffd;	// std.mem
-			if (port == 0xbffd) return 0xbffd;	// ay
-			if (port == 0xfffd) return 0xfffd;
 			if (port == 0xfadf) return 0xfadf;	// mouse
 			if (port == 0xfbdf) return 0xfbdf;
 			if (port == 0xffdf) return 0xffdf;
+			if (port == 0xbffd) return 0xbffd;	// ay
+			if (port == 0xbefd) return 0xbffd;	// WUUUUUT?
+			if (port == 0xfffd) return 0xfffd;
 			if ((comp->evo.evoBF & 1) || (comp->dosen == 1)) {
 				if ((port & 0x00ff) == 0x001f) return 0x1f;	// bdi
 				if ((port & 0x00ff) == 0x003f) return 0x3f;
@@ -192,7 +195,7 @@ int zxGetPort(ZXComp* comp, Z80EX_WORD port) {
 				if ((port & 0x00ff) == 0x0077) return 0x77;	// xx77
 				if (port == 0xdef7) return 0xdef7;		// nvram
 				if (port == 0xbef7) return 0xbef7;
-				if ((port & 0x00f7) == 0x00f7) return 0xf7;	// xxF7, A11 = 1:ATM2 / 0:PentEvo
+				if ((port & 0x07f7) == 0x07f7) return 0xf7;	// xxF7, A11 = 1:ATM2 / 0:PentEvo
 			} else {
 				if ((port & 0x00ff) == 0x001f) return 0x1f;	// kempston
 				if ((port & 0x00ff) == 0x0057) return 0x57;	// 57,77 - SD-card ports
@@ -207,7 +210,8 @@ int zxGetPort(ZXComp* comp, Z80EX_WORD port) {
 			assert(0);
 			break;
 	}
-	return 0xff;
+//	printf("Unimplemented port %.4X (hw = %.2X)\n",port,comp->hw->type);
+	return 0x0000;		// no port
 }
 
 #define PRT0	comp->prt0
@@ -523,6 +527,7 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 				case 0xfadf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->buttons : 0xff; break;
 				case 0xfbdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->xpos : 0xff; break;
 				case 0xffdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->ypos : 0xff; break;
+				case 0xbff7:res = (PRT1 & 0x80) ? comp->cmos.data[comp->cmos.adr] : 0xff; break;
 				case 0xfffd: res = tsIn(comp->ts,port); break;
 			}
 			break;
@@ -633,6 +638,8 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 						comp->memMap[adr].page = val;
 					}
 					zxMapMemory(comp);
+					break;
+				case 0xfb: sdrvOut(comp->sdrv,0xfb,val);
 					break;
 				case 0xfe:
 					comp->vid->nextbrd = (val & 0x07) | (~port & 8);
@@ -745,6 +752,8 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 					zxSetFrq(comp, (val & 0x10) ? 7.0 : 3.5);
 					zxMapMemory(comp);
 					break;
+				case 0xbff7: if (PRT1 & 0x80) comp->cmos.data[comp->cmos.adr] = val; break;
+				case 0xdff7: if (PRT1 & 0x80) comp->cmos.adr = val; break;
 				case 0xbffd:
 				case 0xfffd: tsOut(comp->ts,ptype,val); break;
 			}
@@ -986,6 +995,9 @@ ZXComp* zxCreate() {
 	comp->tickCount = 0;
 	gsReset(comp->gs);
 	for (i = 0; i < 16; i++) comp->colMap[i] = defPalete[i];
+	comp->cmos.adr = 0;
+	for (i = 0; i < 256; i++) comp->cmos.data[i] = 0x00;
+	comp->cmos.data[17] = 0xaa;
 	return comp;
 }
 

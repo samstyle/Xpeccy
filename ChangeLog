@@ -270,4 +270,10 @@ New	Layout submenu in user-menu to fast screen layout changing
 
 0.5
 build 20121109
-New	ATM Turbo 2+. Bugs is possible. CP/M disks not working.
+New	ATM Turbo 2+. Bugs is possible.
+
+build 20121113
+New	Start of PentEvo emulation
+New	CMOS clock for Pent1024SL and PentEvo
+Wrk	Maximum CPU freq up to 14MHz
+Fix	Ports conflict in Pent1024SL

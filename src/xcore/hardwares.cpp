@@ -37,10 +37,10 @@ void initHardware() {
 	addHardware("Pentagon1024SL", HW_P1024, MEM_1M);
 	addHardware("Scorpion", HW_SCORP, MEM_256 | MEM_1M);
 //	addHardware("ATM 1",HW_ATM1,MEM_512);
-	addHardware("ATM 2",HW_ATM2,MEM_1M);
+	addHardware("ATM 2",HW_ATM2,MEM_128 | MEM_256 | MEM_512 | MEM_1M);
 	addHardware("Spectrum +2", HW_PLUS2, MEM_128);
 	addHardware("Spectrum +3",HW_PLUS3,MEM_128);
-#ifdef ISDEBUG
+//#ifdef ISDEBUG
 	addHardware("PentEvo",HW_PENTEVO,MEM_4M);
-#endif
+//#endif
 }

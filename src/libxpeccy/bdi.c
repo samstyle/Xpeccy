@@ -908,7 +908,7 @@ f765wptr fdc765workTab[32] = {
 void fdcExec(FDC* fdc, unsigned char val) {
 	switch (fdc->type) {
 		case FDC_93:
-			if (!fdc->mr) break;			// no commands aviable during master reset
+			if (fdc->mr == 0) break;			// no commands aviable during master reset
 			if (fdc->idle) {
 				fdc->com = val;
 				fdc->wptr = NULL;
@@ -942,6 +942,7 @@ void fdcExec(FDC* fdc, unsigned char val) {
 				fdc->idle = 0;
 				fdc->irq = 0;
 				fdc->drq = 0;
+				fdc->flag = 0;
 			}
 			if ((val & 0xf0) == 0xd0) {
 				fdc->wptr = vgwork[10];		// interrupt
@@ -949,6 +950,7 @@ void fdcExec(FDC* fdc, unsigned char val) {
 				fdc->idle = 0;
 				fdc->irq = 0;
 				fdc->drq = 0;
+				fdc->flag = 0;
 			}
 			break;
 		case FDC_765:
@@ -964,10 +966,11 @@ void fdcExec(FDC* fdc, unsigned char val) {
 }
 
 void fdcSetMr(FDC* fdc,int z) {
-	if (!fdc->mr && z) {		// 0->1 : execute com 3
+	if (z == 0) {
 		fdc->mr = z;
-		fdc->idle = 1;
 		fdcExec(fdc,0x03);	// restore
+		fdc->idle = 1;
+		fdc->status = FDC_IDLE;
 		fdc->sec = 1;
 	} else {
 		fdc->mr = z;
@@ -980,7 +983,7 @@ unsigned char fdcRd(FDC* fdc,int port) {
 		case FDC_93:
 			switch(port) {
 				case FDC_STATE:
-					res = ((fdc->fptr->flag & FLP_INSERT) ? 0 : 0x80) | (fdc->idle ? 0 : 1);
+					res = ((fdc->fptr->flag & FLP_INSERT) ? 0 : 0x80) | ((fdc->idle == 0) ? 1 : 0);
 					switch (fdc->mode) {
 						case 0:
 							res |= ((fdc->fptr->flag & FLP_PROTECT) ? 0x40 : 0)\
@@ -1355,11 +1358,6 @@ void bdiDestroy(BDI* bdi) {
 void bdiReset(BDI* bdi) {
 	bdi->fdc->count = 0;
 	bdiOut(bdi,BDI_SYS,0);
-	bdi->fdc->trk = 0;
-	bdi->fdc->flop[0]->trk = 0;
-	bdi->fdc->flop[1]->trk = 0;
-	bdi->fdc->flop[2]->trk = 0;
-	bdi->fdc->flop[3]->trk = 0;
 }
 
 int bdiGetPort(int p) {
@@ -1377,7 +1375,7 @@ int bdiGetPort(int p) {
 }
 
 int bdiOut(BDI* bdi,int port,unsigned char val) {
-//	printf("bdiOut(%.4X,%.2X)\n",port,val);
+//	if ((port == FDC_COM) || (port == BDI_SYS)) printf("bdiOut(%.4X,%.2X)\n",port,val);
 	switch (port) {
 		case FDC_COM:
 		case FDC_TRK:
@@ -1409,7 +1407,7 @@ unsigned char bdiIn(BDI* bdi,int port) {
 			res = (bdi->fdc->irq ? 0x80 : 0x00) | (bdi->fdc->drq ? 0x40 : 0x00);
 			break;
 	}
-//	printf("bdiIn(%.4X) = %.2X\n",port,res);
+//	if (port == FDC_COM) printf("bdiIn(%.4X) = %.2X\n",port,res);
 	return res;
 }
 
