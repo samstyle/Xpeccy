@@ -90,6 +90,9 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 					lab = new QLabel("Pg2"); raylay->addWidget(lab,2,0); lab = new QLabel; raylay->addWidget(lab,2,1);
 					lab = new QLabel("Pg3"); raylay->addWidget(lab,3,0); lab = new QLabel; raylay->addWidget(lab,3,1);
 					lab = new QLabel("DOSEN"); raylay->addWidget(lab,4,0); lab = new QLabel; raylay->addWidget(lab,4,1);
+					lab = new QLabel("PRT0"); raylay->addWidget(lab,5,0); lab = new QLabel; raylay->addWidget(lab,5,1);
+					lab = new QLabel("PRT1"); raylay->addWidget(lab,6,0); lab = new QLabel; raylay->addWidget(lab,6,1);
+					lab = new QLabel("PRT2"); raylay->addWidget(lab,7,0); lab = new QLabel; raylay->addWidget(lab,7,1);
 				raybox->setLayout(raylay);
 			llay->addWidget(regbox);
 			llay->addWidget(raybox);
@@ -182,6 +185,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 QString gethexword(int num) {return QString::number(num+0x10000,16).right(4).toUpper();}
 QString gethexbyte(uchar num) {return QString::number(num+0x100,16).right(2).toUpper();}
+QString getbinbyte(uchar num) {return QString::number(num+0x100,2).right(8).toUpper();}
 
 bool DebugWin::fillall() {
 	fillregz();
@@ -232,6 +236,9 @@ void DebugWin::fillrays() {
 	lab->setText(QString((zx->mem->pt3->type == MEM_ROM) ? "ROM-" : "RAM-").append(QString::number(zx->mem->pt3->num)));
 	lab = (QLabel*)raylay->itemAtPosition(4,1)->widget();
 	lab->setText((zx->dosen & 1) ? "1" : "0");
+	lab = (QLabel*)raylay->itemAtPosition(5,1)->widget(); lab->setText(getbinbyte(zx->prt0));
+	lab = (QLabel*)raylay->itemAtPosition(6,1)->widget(); lab->setText(getbinbyte(zx->prt1));
+	lab = (QLabel*)raylay->itemAtPosition(7,1)->widget(); lab->setText(getbinbyte(zx->prt2));
 }
 
 void DebugWin::filldump() {

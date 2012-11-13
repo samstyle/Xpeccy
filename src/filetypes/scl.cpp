@@ -44,7 +44,7 @@ int loadSCL(Floppy* flp,const char* name) {
 	buf[0x8e7] = 0x10;			// trdos code
 	flpFormTRDTrack(flp,0,buf);
 	i = 1;
-	while (!file.eof()) {
+	while (!file.eof() && (i<168)) {
 		file.read((char*)buf,0x1000);
 		flpFormTRDTrack(flp,i,buf);
 		i++;

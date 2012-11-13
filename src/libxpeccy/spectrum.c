@@ -190,18 +190,16 @@ int zxGetPort(ZXComp* comp, Z80EX_WORD port) {
 				if ((port & 0x00ff) == 0x006f) return 0x6f;
 				if ((port & 0x00ff) == 0x008f) return 0x8f;
 				if ((port & 0x00ff) == 0x0077) return 0x77;	// xx77
-				if ((port & 0x07f7) == 0x07f7) return 0xf7;	// xxF7, A11 = 1:ATM2 / 0:PentEvo
-				if (port == 0xdef7) return 0xdef7;
+				if (port == 0xdef7) return 0xdef7;		// nvram
 				if (port == 0xbef7) return 0xbef7;
+				if ((port & 0x00f7) == 0x00f7) return 0xf7;	// xxF7, A11 = 1:ATM2 / 0:PentEvo
 			} else {
-				if ((port & 0xff) == 0x001f) return 0x1f;	// kempston
+				if ((port & 0x00ff) == 0x001f) return 0x1f;	// kempston
+				if ((port & 0x00ff) == 0x0057) return 0x57;	// 57,77 - SD-card ports
+				if ((port & 0x00ff) == 0x0077) return 0x77;
 				if (port == 0xeff7) return 0xeff7;
-				if (port == 0xdff7) return 0xdff7;
+				if (port == 0xdff7) return 0xdff7;		// nvram
 				if (port == 0xbff7) return 0xbff7;
-				if (comp->prt2 & 0x80) {			// access to NVRAM
-					if (port == 0xdff7) return 0xdff7;
-					if (port == 0xbff7) return 0xdff7;
-				}
 			}
 			break;
 		default:
@@ -217,15 +215,15 @@ int zxGetPort(ZXComp* comp, Z80EX_WORD port) {
 #define	PRT2	comp->prt2
 
 void evoSetVideoMode(ZXComp* comp) {
-	int mode = ((PRT2 & 0x20) >> 4) | (PRT2 & 0x01) | (PRT1 & 0x1c);	// b2.b1.b0.z5.z0	b:FF77, z:eff7
+	int mode = (PRT2 & 0x20) | ((PRT2 & 0x01) << 1) | (PRT1 & 0x07);	// z5.z0.0.b2.b1.b0	b:FF77, z:eff7
 	switch (mode) {
-		case 0x0c: comp->vid->mode = VID_NORMAL; break;		// common
-		case 0x0d: comp->vid->mode = VID_ALCO; break;		// alco 16c
-		case 0x0e: comp->vid->mode = VID_HWMC; break;		// zx hardware multicolor
-		case 0x08: comp->vid->mode = VID_ATM_HWM; break;	// atm hardware multicolor
+		case 0x03: comp->vid->mode = VID_NORMAL; break;		// common
+		case 0x13: comp->vid->mode = VID_ALCO; break;		// alco 16c
+		case 0x23: comp->vid->mode = VID_HWMC; break;		// zx hardware multicolor
+		case 0x02: comp->vid->mode = VID_ATM_HWM; break;	// atm hardware multicolor
 		case 0x00: comp->vid->mode = VID_ATM_EGA; break;	// atm ega
-		case 0x18: comp->vid->mode = VID_ATM_TEXT; break;	// atm text
-		case 0x1c: comp->vid->mode = VID_EVO_TEXT; break;	// pentevo text
+		case 0x06: comp->vid->mode = VID_ATM_TEXT; break;	// atm text
+		case 0x07: comp->vid->mode = VID_EVO_TEXT; break;	// pentevo text
 		default: comp->vid->mode = VID_UNKNOWN; break;
 	}
 }
@@ -321,7 +319,7 @@ void zxMapMemory(ZXComp* comp) {
 			}
 			break;
 		case HW_PENTEVO:
-			if (comp->prt1 & 0x80) {
+			if (PRT1 & 0x20) {		// A8.xx77
 				adr = (PRT0 & 0x10) ? 4 : 0;
 				evoSetBank(comp,MEM_BANK0,comp->memMap[adr]);
 				evoSetBank(comp,MEM_BANK1,comp->memMap[adr+1]);
@@ -334,7 +332,7 @@ void zxMapMemory(ZXComp* comp) {
 				memSetBank(comp->mem,MEM_BANK2,MEM_ROM,0xff);
 				memSetBank(comp->mem,MEM_BANK3,MEM_ROM,0xff);
 			}
-			if (comp->prt2 & 8) memSetBank(comp->mem,MEM_BANK0,MEM_RAM,0x00);	// ram0 @ 0x0000 : high priority
+			if (PRT2 & 8) memSetBank(comp->mem,MEM_BANK0,MEM_RAM,0x00);	// b3.EFF7: ram0 @ 0x0000 : high priority
 			break;
 	}
 }
@@ -355,7 +353,7 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 			}
 			if ((comp->dosen == 1) && (memGetBankPtr(comp->mem,adr)->type == MEM_RAM)	// off when fetch in ram
 					&& !((comp->hw->type == HW_ATM2) && (~PRT1 & 2))		// but not ATM2 cpm mode
-					//&& !((comp->hw->type == HW_PENTEVO && (~PRT1 & 2)))		// and not PentEvo keep dos alive
+					&& !((comp->hw->type == HW_PENTEVO && (~PRT1 & 0x40)))		// and not PentEvo keep dos alive
 					) {
 				comp->dosen = 0;
 				zxMapMemory(comp);
@@ -431,6 +429,65 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 	int bdiz = ((comp->dosen & 1) && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
 	int ptype = zxGetPort(comp,port);
 	switch (comp->hw->type) {
+		case HW_PENTEVO:
+			if (comp->evo.evoBF & 1) bdiz = 1;
+			switch (ptype) {
+				case 0x1f: res = bdiz ? bdiIn(comp->bdi,FDC_STATE) : joyInput(comp->joy); break;
+				case 0x3f: res = bdiz ? bdiIn(comp->bdi,FDC_TRK) : 0xff; break;
+				case 0x5f: res = bdiz ? bdiIn(comp->bdi,FDC_SEC) : 0xff; break;
+				case 0x7f: res = bdiz ? bdiIn(comp->bdi,FDC_DATA) : 0xff; break;
+				case 0xff: res = bdiz ? bdiIn(comp->bdi,BDI_SYS) : 0xff; break;
+
+				case 0x2f: res = bdiz ? comp->evo.evo2F : 0xff; break;
+				case 0x4f: res = bdiz ? comp->evo.evo4F : 0xff; break;
+				case 0x6f: res = bdiz ? comp->evo.evo6F : 0xff; break;
+				case 0x8f: res = bdiz ? comp->evo.evo8F : 0xff; break;
+
+				case 0x57:			// TODO: sdcard data rd
+					if (!bdiz) res = 0xff;
+					break;
+				case 0xbe:
+					if ((port & 0xf800) == 0x0000) {
+						res = comp->memMap[(port & 0x0700) >> 8].page;
+					} else {
+						switch (port & 0xff00) {
+							case 0x0800:
+								res = 0;
+								for (bdiz = 0; bdiz < 8; bdiz++) {
+									res = (res >> 1);
+									if (comp->memMap[bdiz].flag & 0x40) res |= 0x80;
+								}
+								break;
+							case 0x0900:
+								res = 0;
+								for (bdiz = 0; bdiz < 8; bdiz++) {
+									res = (res >> 1);
+									if (comp->memMap[bdiz].flag & 0x80) res |= 0x80;
+								}
+								break;
+							case 0x0a00: res = PRT0; break;
+							case 0x0b00: res = PRT2; break;
+							case 0x0c00: res = PRT1 | ((comp->dosen & 1) ? 0x10 : 0x00); break;
+							default:
+								printf("PentEvo\tin %.4X.%i\n",port,bdiz);
+								assert(0);
+						}
+					}
+					break;
+				case 0xbf: res = comp->evo.evoBF; break;
+				case 0xfe: res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00); break;
+				case 0xbef7: res = (bdiz) ? comp->cmos.data[comp->cmos.adr] : 0xff; break;
+				case 0xbff7: res = (!bdiz && (PRT2 & 0x80)) ? comp->cmos.data[comp->cmos.adr] : 0xff; break;
+				case 0xfffd: res = tsIn(comp->ts,ptype); break;
+				case 0xfadf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->buttons : 0xff; break;
+				case 0xfbdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->xpos : 0xff; break;
+				case 0xffdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->ypos : 0xff; break;
+				default:
+					if ((port & 0x001e) == 0x0010) break;	// nemo
+					printf("Pentevo: in %.4X (%.4X.%i)\n",port,ptype,bdiz);
+					assert(0);
+			}
+			break;
 		case HW_ZX48:
 			switch (ptype) {
 				case 0x1f: res = bdiz ? bdiIn(comp->bdi,FDC_STATE) : joyInput(comp->joy); break;
@@ -514,19 +571,10 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 //					printf("ATM2: in %.4X (%.4X)\n",port,ptype);
 //					break;
 			}
-//			if ((ptype & 0x1f) == 0x1f) printf("in %.4X = %.2X (dosen %i)\n",ptype,res,comp->dosen);
-			break;
-		case HW_PENTEVO:
-			if (comp->evo.evoBF & 1) bdiz = 1;
-			switch (ptype) {
-				default:
-					printf("Pentevo: in %.4X (%.4X.%i)\n",port,ptype,bdiz);
-					assert(0);
-			}
 			break;
 		default:
 			printf("iord: unknown hardware id %i\n",comp->hw->type);
-			assert(1 != 0);
+			assert(0);
 			break;
 	}
 	return res;
@@ -543,6 +591,96 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	int bdiz = ((comp->dosen & 1) && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
 	int adr = 0;
 	switch (comp->hw->type) {
+		case HW_PENTEVO:
+			if (comp->evo.evoBF & 0x01) bdiz = 1;
+			switch (ptype) {
+				case 0x1f: if (bdiz) bdiOut(comp->bdi,FDC_COM,val); break;
+				case 0x3f: if (bdiz) bdiOut(comp->bdi,FDC_TRK,val); break;
+				case 0x5f: if (bdiz) bdiOut(comp->bdi,FDC_SEC,val); break;
+				case 0x7f: if (bdiz) bdiOut(comp->bdi,FDC_DATA,val); break;
+
+				case 0x2f: if (bdiz) comp->evo.evo2F = val; break;
+				case 0x4f: if (bdiz) comp->evo.evo4F = val; break;
+				case 0x6f: if (bdiz) comp->evo.evo6F = val; break;
+				case 0x8f: if (bdiz) comp->evo.evo8F = val; break;
+
+				case 0x57:
+					if (bdiz) {
+						// SDcard CS control
+					} else {
+						// SDcard data write
+					}
+					break;
+				case 0x77:
+					if (bdiz) {
+						PRT1 = ((port & 0x4000) >> 7) | ((port & 0x0300) >> 3) | (val & 0x0f);	// a14.a9.a8.0.b3.b2.b1.b0
+						zxSetFrq(comp,(val & 0x08) ? 14.0 : ((PRT2 & 0x10) ? 3.5 : 7.0));
+						evoSetVideoMode(comp);
+						zxMapMemory(comp);
+					} else {
+						// SDcard CS control
+					}
+					break;
+				case 0xbf: comp->evo.evoBF = val; break;
+				case 0xf7:
+					if (!bdiz) break;
+					adr = ((PRT0 & 0x10) ? 4 : 0) | ((port & 0xc000) >> 14);
+					if (port & 0x0800) {
+						comp->memMap[adr].flag = val & 0xc0;
+						comp->memMap[adr].page = val | 0xc0;
+					} else {
+						comp->memMap[adr].flag |= 0x40;		// ram
+						comp->memMap[adr].page = val;
+					}
+					zxMapMemory(comp);
+					break;
+				case 0xfe:
+					comp->vid->nextbrd = (val & 0x07) | (~port & 8);
+					if (!(comp->vid->flags & VID_BORDER_4T)) comp->vid->brdcol = comp->vid->nextbrd;
+					comp->beeplev = val & 0x10;
+					comp->tape->outsig = (val & 0x08) ? 1 : 0;
+					break;
+				case 0xff:
+					if (!bdiz) break;
+					bdiOut(comp->bdi,BDI_SYS,val);
+					if (~PRT1 & 0x80) {
+						val ^= 0xff;	// inverse colors
+						comp->colMap[comp->vid->brdcol & 0x0f] =		// grbG--RB to -grb-GRB
+							(val & 0x03) | ((val & 0x10) >> 2) | ((val & 0xe0) >> 1);
+						comp->flag |= ZX_PALCHAN;
+					}
+					break;
+				case 0x7ffd:
+					if ((PRT2 & 4) && (PRT0 & 0x20)) break;
+					PRT0 = val;
+					comp->vid->curscr = (val & 0x08) ? 1 : 0;
+					zxMapMemory(comp);
+					break;
+				case 0xbef7: if (bdiz) comp->cmos.data[comp->cmos.adr] = val; break;
+				case 0xdef7: if (bdiz) comp->cmos.adr = val; break;
+				case 0xdff7:
+					if (!bdiz && (PRT2 & 0x80)) comp->cmos.adr = val; break;
+					break;
+				case 0xbff7:
+					if (!bdiz && (PRT2 & 0x80)) comp->cmos.data[comp->cmos.adr] = val; break;
+					break;
+				case 0xeff7: if (bdiz) break;
+					PRT2 = val;
+					zxSetFrq(comp,(PRT1 & 0x08) ? 14.0 : (val & 0x08) ? 7.0 : 3.5);
+					evoSetVideoMode(comp);
+					zxMapMemory(comp);
+					break;
+				case 0xbffd:
+				case 0xfffd:
+					tsOut(comp->ts,ptype,val);
+					break;
+				default:
+					if ((port & 0x001e) == 0x0010) break;	// nemo
+					printf("PentEvo out %.4X (%.4X.%i),%.2X\n",port,ptype,bdiz,val);
+					assert(0);
+					break;
+			}
+			break;
 		case HW_ZX48:
 			switch (ptype) {
 				case 0x1f: if (bdiz) bdiOut(comp->bdi,FDC_COM,val); break;
@@ -746,22 +884,6 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 //					break;
 			}
 			break;
-		case HW_PENTEVO:
-			if (comp->evo.evoBF & 0x01) bdiz = 1;
-			switch (ptype) {
-				case 0xbf: comp->evo.evoBF = val; break;
-				case 0xfe:
-					comp->vid->nextbrd = (val & 0x07) | (~port & 8);
-					if (!(comp->vid->flags & VID_BORDER_4T)) comp->vid->brdcol = comp->vid->nextbrd;
-					comp->beeplev = val & 0x10;
-					comp->tape->outsig = (val & 0x08) ? 1 : 0;
-					break;
-				default:
-					printf("PentEvo out %.4X (%.4X.%i),%.2X\n",port,ptype,bdiz,val);
-					assert(0);
-					break;
-			}
-			break;
 		default:
 			printf("zxOut: unknown hardware type %i\n",comp->hw->type);
 			assert(0);
@@ -918,7 +1040,7 @@ void zxReset(ZXComp* comp,int wut) {
 			break;
 		case HW_PENTEVO:
 			comp->dosen = 1;
-			comp->prt1 = 0x0c;	// vid.mode 011
+			comp->prt1 = 0x03;	// vid.mode 011
 			break;
 		default:
 			comp->prt0 = ((resto & 1) << 4);

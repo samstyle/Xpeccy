@@ -253,11 +253,11 @@ void tsOut(TSound* ts, int port, unsigned char val) {
 					switch (val) {
 						case 0xfe: ts->curChip = ts->chipA; break;
 						case 0xff: ts->curChip = ts->chipB; break;
-						default: ts->curChip->curReg = val; break;
+						default: ts->curChip->curReg = val & 0x0f; break;
 					}
 					break;
 				default:
-					ts->curChip->curReg = val;
+					ts->curChip->curReg = val & 0x0f;
 					break;
 			}
 			break;

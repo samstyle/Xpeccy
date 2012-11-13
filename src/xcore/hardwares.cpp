@@ -40,5 +40,7 @@ void initHardware() {
 	addHardware("ATM 2",HW_ATM2,MEM_1M);
 	addHardware("Spectrum +2", HW_PLUS2, MEM_128);
 	addHardware("Spectrum +3",HW_PLUS3,MEM_128);
-//	addHardware("PentEvo",HW_PENTEVO,MEM_4M);
+#ifdef ISDEBUG
+	addHardware("PentEvo",HW_PENTEVO,MEM_4M);
+#endif
 }

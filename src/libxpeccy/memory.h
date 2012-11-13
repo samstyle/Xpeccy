@@ -31,7 +31,7 @@ typedef struct {
 
 typedef struct {
 	int flags;
-	MemPage ram[64];
+	MemPage ram[256];
 	MemPage rom[32];
 	MemPage* pt0;
 	MemPage* pt1;
