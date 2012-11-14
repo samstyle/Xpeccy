@@ -81,8 +81,8 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 				comp->hw->mapMem(comp);
 			}
 			if ((comp->dosen == 1) && (memGetBankPtr(comp->mem,adr)->type == MEM_RAM)	// off when fetch in ram
-					&& !((comp->hw->type == HW_ATM2) && (~PRT1 & 2))		// but not ATM2 cpm mode
-					&& !((comp->hw->type == HW_PENTEVO && (~PRT1 & 0x40)))		// and not PentEvo keep dos alive
+					&& !((comp->hw->type == HW_ATM2) && (~comp->prt1 & 2))		// but not ATM2 cpm mode
+					&& !((comp->hw->type == HW_PENTEVO && (~comp->prt1 & 0x40)))		// and not PentEvo keep dos alive
 					) {
 				comp->dosen = 0;
 				comp->hw->mapMem(comp);
