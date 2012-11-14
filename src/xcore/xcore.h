@@ -82,7 +82,6 @@ typedef struct {
 	std::string layName;
 	std::string hwName;
 	std::string rsName;
-//	std::string gsFile;
 	ZXComp* zx;
 } XProfile;
 

@@ -16,17 +16,6 @@ extern "C" {
 #include "gs.h"
 #include "hdd.h"
 
-// hw type
-#define HW_NULL		0
-#define HW_ZX48		1
-#define	HW_PENT		2
-#define	HW_P1024	3
-#define	HW_SCORP	4
-#define	HW_PLUS2	5
-#define	HW_PLUS3	6
-#define	HW_ATM1		7
-#define	HW_ATM2		8
-#define	HW_PENTEVO	9
 // zx flag
 #define	ZX_BREAK	1	// breakpoint reached
 #define	ZX_JUSTBORN	(1<<1)	// just created zx. need to reset after selection
@@ -43,12 +32,6 @@ extern "C" {
 #define	RES_SHADOW	4
 
 typedef struct {
-	const char* name;
-	int mask;		// mem size bits (b0:128, b1:256, b2:512, b3:1M, b4:2M, b5:4M); =0 for 48K
-	int type;
-} HardWare;
-
-typedef struct {
 	int fetches;
 	int frmSize;
 	unsigned char* frmData;
@@ -62,7 +45,7 @@ typedef struct {
 typedef struct {
 	int flag;		// states
 	int hwFlag;		// hardware properties
-	HardWare *hw;
+	struct HardWare *hw;
 	Z80EX_CONTEXT* cpu;
 	Memory* mem;
 	Video* vid;
@@ -108,6 +91,17 @@ typedef struct {
 	int gsCount;
 	unsigned long tickCount;
 } ZXComp;
+
+struct HardWare {
+	const char* name;
+	int mask;		// mem size bits (b0:128, b1:256, b2:512, b3:1M, b4:2M, b5:4M); =0 for 48K
+	int type;
+	void (*mapMem)(ZXComp*);
+	void (*out)(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
+	Z80EX_BYTE (*in)(ZXComp*,Z80EX_WORD,int);
+};
+
+#include "hardware/hardware.h"
 
 ZXComp* zxCreate();
 void zxDestroy(ZXComp*);

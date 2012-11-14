@@ -58,6 +58,7 @@ endif()
 file(GLOB SOURCES
 	./src/*.cpp
 	./src/libxpeccy/*.c
+	./src/libxpeccy/hardware/*.c
 	./src/filetypes/*.cpp
 	./src/xcore/*.cpp
 	./src/xgui/*.cpp
@@ -68,6 +69,7 @@ endif(WIN32)
 file(GLOB HEADERS
 	./src/*.h
 	./src/libxpeccy/*.h
+	./src/libxpeccy/hardware/*.h
 	./src/filetypes/*.h
 	./src/xcore/*.h
 	./src/xgui/*.h
