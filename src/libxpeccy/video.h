@@ -44,9 +44,7 @@ typedef struct {
 
 typedef struct {
 	int flag;
-	int type;
-	int atmType;
-	int wait;		// dot's (ticks * 2) to be drawing on contended memory WAIT
+	int wait;
 	int tick;		// tick NR (just for debug)
 	unsigned char* scr5ptr;
 	unsigned char* atr5ptr;

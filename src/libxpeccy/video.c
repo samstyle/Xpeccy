@@ -102,6 +102,16 @@ unsigned char* vidGetScreen() {
 #define	MTF_LINEND	1
 #define	MTF_FRMEND	(1<<1)
 #define	MTF_INT		(1<<2)
+#define MTF_2P		(1<<3)
+#define MTF_4P		(1<<4)
+#define MTF_8P		(1<<5)
+#define	MTF_VISIBLE	(1<<6)
+#define MTF_SCREEN	(1<<7)
+#define	MTF_PIX		(1<<8)
+#define	MTF_ATR		(1<<10)
+#define MTF_ATMSCR	(1<<11)
+#define	MTF_ATMTXT	(1<<12)
+/*
 #define	MTF_4T		(1<<3)
 #define MTF_ATM_TXT	(1<<4)	// each 8th dot from 320x200 screen edge in each 8th line (meaning: take symbol and color)
 // dot type (for ZX 256 x 192)
@@ -120,6 +130,7 @@ unsigned char* vidGetScreen() {
 #define	MTT_ATM_4	3
 #define	MTT_ATM_6	4
 #define	MTT_ATM_DOT	5
+*/
 
 /*
 waits for 128K, +2
@@ -144,17 +155,19 @@ void vidFillMatrix(Video* vid) {
 	for (y = 0; y < vid->full.v; y++) {
 		for (x = 0; x < vid->full.h; x++) {
 			vid->matrix[i].flag = 0;
+			if ((x & 1) == 0) vid->matrix[i].flag |= MTF_2P;
+			if ((x & 3) == 0) vid->matrix[i].flag |= MTF_4P;
+			if ((x & 7) == 0) vid->matrix[i].flag |= MTF_8P;
 			vid->matrix[i].wait = 0;
-			vid->matrix[i].atmType = MTT_ATM_NONE;
 // waits: dots from -2 dots to +253 (254 is already non-wait)
-			if ((x > (vid->bord.h - 3)) && (x < (vid->bord.h + 254)) && (y >= vid->bord.v) && (y < (vid->bord.v + 192))) {	// on screen
+			if ((x > (vid->bord.h - 3)) && (x < (vid->bord.h + 254)) && (y >= vid->bord.v) && (y < (vid->bord.v + 192))) {
 				vid->matrix[i].wait = waitsTab_A[(x - vid->bord.h) & 15];
 			}
 // atm ega & text mode
 			if ((y > 75) && (y < 276) && (x > 95) && (x < 416)) {
+				vid->matrix[i].flag |= MTF_ATMSCR;
 				switch ((x - 96) & 7) {
 					case 0:
-						vid->matrix[i].atmType = MTT_ATM_0;
 						vid->matrix[i].atm5.egaptr = memGetPagePtr(vid->mem,MEM_RAM,1) + atmadr;
 						vid->matrix[i].atm7.egaptr = memGetPagePtr(vid->mem,MEM_RAM,3) + atmadr;
 						vid->matrix[i].atm5.hwmpix = memGetPagePtr(vid->mem,MEM_RAM,5) + atmadr;
@@ -162,7 +175,7 @@ void vidFillMatrix(Video* vid) {
 						vid->matrix[i].atm7.hwmpix = memGetPagePtr(vid->mem,MEM_RAM,7) + atmadr;
 						vid->matrix[i].atm7.hwmatr = memGetPagePtr(vid->mem,MEM_RAM,3) + atmadr;
 						if (((y - 76) & 7) == 0) {
-							vid->matrix[i].flag |= MTF_ATM_TXT;
+							vid->matrix[i].flag |= MTF_ATMTXT;
 							vid->matrix[i].atm5.txtptr = memGetPagePtr(vid->mem,MEM_RAM,5) + atmTadr;
 							vid->matrix[i].atm7.txtptr = memGetPagePtr(vid->mem,MEM_RAM,7) + atmTadr;
 							vid->matrix[i].atm5.txtatrptr = memGetPagePtr(vid->mem,MEM_RAM,1) + atmTadr + 0x2000;
@@ -170,12 +183,10 @@ void vidFillMatrix(Video* vid) {
 						}
 						break;
 					case 2:
-						vid->matrix[i].atmType = MTT_ATM_2;
 						vid->matrix[i].atm5.egaptr = memGetPagePtr(vid->mem,MEM_RAM,5) + atmadr;
 						vid->matrix[i].atm7.egaptr = memGetPagePtr(vid->mem,MEM_RAM,7) + atmadr;
 						break;
 					case 4:
-						vid->matrix[i].atmType = MTT_ATM_4;
 						vid->matrix[i].atm5.egaptr = memGetPagePtr(vid->mem,MEM_RAM,1) + atmadr + 0x2000;
 						vid->matrix[i].atm7.egaptr = memGetPagePtr(vid->mem,MEM_RAM,3) + atmadr + 0x2000;
 						vid->matrix[i].atm5.hwmpix = memGetPagePtr(vid->mem,MEM_RAM,5) + atmadr + 0x2000;
@@ -183,7 +194,7 @@ void vidFillMatrix(Video* vid) {
 						vid->matrix[i].atm7.hwmpix = memGetPagePtr(vid->mem,MEM_RAM,7) + atmadr + 0x2000;
 						vid->matrix[i].atm7.hwmatr = memGetPagePtr(vid->mem,MEM_RAM,3) + atmadr + 0x2000;
 						if (((y - 76) & 7) == 0) {
-							vid->matrix[i].flag |= MTF_ATM_TXT;
+							vid->matrix[i].flag |= MTF_ATMTXT;
 							vid->matrix[i].atm5.txtptr = memGetPagePtr(vid->mem,MEM_RAM,5) + atmTadr + 0x2000;
 							vid->matrix[i].atm7.txtptr = memGetPagePtr(vid->mem,MEM_RAM,7) + atmTadr + 0x2000;
 							vid->matrix[i].atm5.txtatrptr = memGetPagePtr(vid->mem,MEM_RAM,1) + atmTadr + 1;
@@ -193,68 +204,48 @@ void vidFillMatrix(Video* vid) {
 						}
 						break;
 					case 6:
-						vid->matrix[i].atmType = MTT_ATM_6;
 						vid->matrix[i].atm5.egaptr = memGetPagePtr(vid->mem,MEM_RAM,5) + atmadr + 0x2000;
 						vid->matrix[i].atm7.egaptr = memGetPagePtr(vid->mem,MEM_RAM,7) + atmadr + 0x2000;
 						atmadr++;
-						break;
-					default:
-						vid->matrix[i].atmType = MTT_ATM_DOT;
 						break;
 				}
 			}
 // common screen | alco mode
 			if ((y < vid->lcut.v) || (y >= vid->rcut.v) || (x < vid->lcut.h) || (x >= vid->rcut.h)) {
-				vid->matrix[i].type = MTT_INVIS;
+				// vid->matrix[i].type = MTT_INVIS;
 			} else {
-				if ((x & 7) == 0) {
-					vid->matrix[i].flag |= MTF_4T;
-				}
+				vid->matrix[i].flag |= MTF_VISIBLE;
 				if ((y < vid->bord.v) || (y > vid->bord.v + 191) || (x < scrShift) || (x > scrShift + 255)) {
-					vid->matrix[i].type = MTT_BORDER;
+					// vid->matrix[i].type = MTT_BORDER;
 				} else {
+					vid->matrix[i].flag |= MTF_SCREEN;
 					switch ((x - scrShift) & 7) {
 						case 0:
-							vid->matrix[i].type = MTT_PT0;
+							vid->matrix[i].flag |= MTF_ATR;
 							vid->matrix[i].atr5ptr = vid->scr5atr[adr];
 							vid->matrix[i].atr7ptr = vid->scr7atr[adr];
 							vid->matrix[i].alco5ptr = vid->ladrz[adr].ac00;
 							vid->matrix[i].alco7ptr = vid->ladrz[adr].ac10;
-							if (vid->matrix[i-4].type == MTT_BORDER) {
-								vid->matrix[i-4].type = MTT_BRDATR;
-							}
+							vid->matrix[i-4].flag |= MTF_PIX;
 							vid->matrix[i-4].scr5ptr = vid->scr5pix[adr];
 							vid->matrix[i-4].scr7ptr = vid->scr7pix[adr];
 							break;
-						case 1:
-							vid->matrix[i].type = MTT_PTX;
-							break;
 						case 2:
-							vid->matrix[i].type = MTT_PT2;
 							vid->matrix[i].alco5ptr = vid->ladrz[adr].ac01;
 							vid->matrix[i].alco7ptr = vid->ladrz[adr].ac11;
 							break;
-						case 3:
-							vid->matrix[i].type = MTT_PTX;
-							break;
 						case 4:
-							vid->matrix[i].type = MTT_PT4;
-							vid->matrix[i].scr5ptr = vid->scr5pix[adr];
-							vid->matrix[i].scr7ptr = vid->scr7pix[adr];
+//							vid->matrix[i].scr5ptr = vid->scr5pix[adr];
+//							vid->matrix[i].scr7ptr = vid->scr7pix[adr];
 							vid->matrix[i].alco5ptr = vid->ladrz[adr].ac02;
 							vid->matrix[i].alco7ptr = vid->ladrz[adr].ac12;
-							break;
-						case 5:
-							vid->matrix[i].type = MTT_PTX;
 							break;
 						case 6:
 							vid->matrix[i].alco5ptr = vid->ladrz[adr].ac03;
 							vid->matrix[i].alco7ptr = vid->ladrz[adr].ac13;
-							vid->matrix[i].type = MTT_PT6;
 							break;
 						case 7:
 							adr++;
-							vid->matrix[i].type = MTT_PTX;
 							break;
 					}
 				}
@@ -313,7 +304,7 @@ void vidDarkTail(Video* vid) {
 	do {
 		mtx = &vid->matrix[idx];
 		idx++;
-		if (mtx->type != MTT_INVIS) {
+		if (mtx->flag & MTF_VISIBLE) {
 			*(ptr++) &= 0x0f;
 			if (vidFlag & VF_DOUBLE) {
 				*(ptr + vid->wsze.h - 1) &= 0x0f;
@@ -334,7 +325,7 @@ void vidSetFont(Video* vid, char* src) {
 }
 
 unsigned char vidGetAttr(Video* vid) {
-	return (mtx->type == MTT_BORDER) ? vid->brdcol : vid->atrbyte;
+	return (mtx->flag & MTF_SCREEN) ? vid->atrbyte : vid->brdcol;
 }
 
 void vidPutDot(Video* vid, unsigned char col) {
@@ -363,9 +354,9 @@ int vidSync(Video* vid, float dotDraw) {
 		nmtx = &vid->matrix[vid->dotCount];
 		if ((nmtx->flag & MTF_INT) && (!(mtx->flag & MTF_INT))) res |= VID_INT;
 		vid->intSignal = (mtx->flag & MTF_INT) ? 1 : 0;
-		if (mtx->flag & MTF_4T) vid->brdcol = vid->nextbrd;
+		if (mtx->flag & MTF_8P) vid->brdcol = vid->nextbrd;
 
-		if (mtx->type != MTT_INVIS) {
+		if (mtx->flag & MTF_VISIBLE) {
 			switch (vid->mode) {
 				case VID_EVO_TEXT:
 				case VID_UNKNOWN:
@@ -373,13 +364,8 @@ int vidSync(Video* vid, float dotDraw) {
 					vidPutDot(vid,col);
 					break;
 				case VID_ATM_HWM:
-					switch (mtx->atmType) {
-						case MTT_ATM_NONE:
-							col = vid->brdcol;
-							vidPutDot(vid,col);
-							break;
-						case MTT_ATM_0:
-						case MTT_ATM_4:
+					if (mtx->flag & MTF_ATMSCR) {
+						if (mtx->flag & MTF_4P) {
 							scrbyte = vid->curscr ? *(mtx->atm7.hwmpix) : *(mtx->atm5.hwmpix);
 							col = vid->curscr ? *(mtx->atm7.hwmatr) : *(mtx->atm5.hwmatr);
 							ink = inkTab[col & 0x7f];
@@ -397,140 +383,104 @@ int vidSync(Video* vid, float dotDraw) {
 									scrbyte <<= 2;
 								}
 							}
-						default:
+						} else {
 							vid->scrptr++;
 							if (vidFlag & VF_DOUBLE) vid->scrptr++;
-							break;
+						}
+					} else {
+						vidPutDot(vid,vid->brdcol);
 					}
 					break;
 				case VID_ATM_EGA:
-					switch (mtx->atmType) {
-						case MTT_ATM_NONE:
-							col = vid->brdcol;
-							break;
-						case MTT_ATM_0:
-						case MTT_ATM_2:
-						case MTT_ATM_4:
-						case MTT_ATM_6:
+					if (mtx->flag & MTF_ATMSCR) {
+						if (mtx->flag & MTF_2P) {
 							scrbyte = vid->curscr ? *(mtx->atm7.egaptr) : *(mtx->atm5.egaptr);
 							col = inkTab[scrbyte & 0x7f];
-							break;
-						default:
+						} else {
 							col = ((scrbyte & 0x38)>>3) | ((scrbyte & 0x80)>>4);
-							break;
+						}
+					} else {
+						col = vid->brdcol;
 					}
 					vidPutDot(vid,col);
 					break;
 				case VID_ATM_TEXT:
-					switch (mtx->atmType) {
-						case MTT_ATM_NONE:
-							col = vid->brdcol;
-							vidPutDot(vid,col);
-							break;
-						default:
-							if (mtx->flag & MTF_ATM_TXT) {
-								// get symbol, color, symbol address and draw "8" x 8 matrix
-								scrbyte = vid->curscr ? *(mtx->atm7.txtptr) : *(mtx->atm5.txtptr);
-								col = vid->curscr ? *(mtx->atm7.txtatrptr) : *(mtx->atm5.txtatrptr);
-								ink = inkTab[col & 0x7f];
-								pap = papTab[col & 0x3f] | ((col & 0x80) >> 4);
-								adr = (scrbyte << 3);
-								fntptr = vid->scrptr;
-								for (col = 0; col < 8; col++) {
-									scrbyte = vid->font[adr];
-									if (vidFlag & VF_DOUBLE) {
-										*(fntptr) = (scrbyte & 0x80) ? ink : pap;
-										*(fntptr+1) = (scrbyte & 0x40) ? ink : pap;
-										*(fntptr+2) = (scrbyte & 0x20) ? ink : pap;
-										*(fntptr+3) = (scrbyte & 0x10) ? ink : pap;
-										*(fntptr+4) = (scrbyte & 0x08) ? ink : pap;
-										*(fntptr+5) = (scrbyte & 0x04) ? ink : pap;
-										*(fntptr+6) = (scrbyte & 0x02) ? ink : pap;
-										*(fntptr+7) = (scrbyte & 0x01) ? ink : pap;
-										memcpy(fntptr + vid->wsze.h, fntptr, 8);
-										fntptr += vid->wsze.h;
-									} else {
-										*(fntptr) = (scrbyte & 0xc0) ? ink : pap;
-										*(fntptr+1) = (scrbyte & 0x30) ? ink : pap;
-										*(fntptr+2) = (scrbyte & 0x0c) ? ink : pap;
-										*(fntptr+3) = (scrbyte & 0x03) ? ink : pap;
-									}
+					if (mtx->flag & MTF_ATMSCR) {
+						if (mtx->flag & MTF_ATMTXT) {
+							scrbyte = vid->curscr ? *(mtx->atm7.txtptr) : *(mtx->atm5.txtptr);
+							col = vid->curscr ? *(mtx->atm7.txtatrptr) : *(mtx->atm5.txtatrptr);
+							ink = inkTab[col & 0x7f];
+							pap = papTab[col & 0x3f] | ((col & 0x80) >> 4);
+							adr = (scrbyte << 3);
+							fntptr = vid->scrptr;
+							for (col = 0; col < 8; col++) {
+								scrbyte = vid->font[adr];
+								if (vidFlag & VF_DOUBLE) {
+									*(fntptr) = (scrbyte & 0x80) ? ink : pap;
+									*(fntptr+1) = (scrbyte & 0x40) ? ink : pap;
+									*(fntptr+2) = (scrbyte & 0x20) ? ink : pap;
+									*(fntptr+3) = (scrbyte & 0x10) ? ink : pap;
+									*(fntptr+4) = (scrbyte & 0x08) ? ink : pap;
+									*(fntptr+5) = (scrbyte & 0x04) ? ink : pap;
+									*(fntptr+6) = (scrbyte & 0x02) ? ink : pap;
+									*(fntptr+7) = (scrbyte & 0x01) ? ink : pap;
+									memcpy(fntptr + vid->wsze.h, fntptr, 8);
 									fntptr += vid->wsze.h;
-									adr++;
+								} else {
+									*(fntptr) = (scrbyte & 0xc0) ? ink : pap;
+									*(fntptr+1) = (scrbyte & 0x30) ? ink : pap;
+									*(fntptr+2) = (scrbyte & 0x0c) ? ink : pap;
+									*(fntptr+3) = (scrbyte & 0x03) ? ink : pap;
 								}
+								fntptr += vid->wsze.h;
+								adr++;
 							}
-							vid->scrptr++;
-							if (vidFlag & VF_DOUBLE) vid->scrptr++;
-							break;
+						}
+						vid->scrptr++;
+						if (vidFlag & VF_DOUBLE) vid->scrptr++;
+					} else {
+						vidPutDot(vid,vid->brdcol);
 					}
 					break;
 				case VID_HWMC:
-					switch (mtx->type) {
-						case MTT_BRDATR:
-							scrbyte = vid->curscr ? *(mtx->scr7ptr) : *(mtx->scr5ptr);
-						case MTT_BORDER:
-							col = vid->brdcol;
-							break;
-						case MTT_PT0:
-							vid->atrbyte = vid->curscr ? *(mtx->scr7ptr + 0x2000) : *(mtx->scr5ptr + 0x2000);
-							ink = inkTab[vid->atrbyte & 0x7f];
-							pap = papTab[vid->atrbyte & 0x7f];
-							for (col = 0; col < 8; col++) {
-								pixBuffer[col] = (scrbyte & bitMask[col]) ? ink : pap;
-							}
-							ink = 1;
-							col = pixBuffer[0];
-							break;
-						case MTT_PT4:
-							scrbyte = vid->curscr ? *(mtx->scr7ptr) : *(mtx->scr5ptr);
-						default:
-							col = pixBuffer[ink++];
-							break;
+					if (mtx->flag & MTF_PIX) scrbyte = vid->curscr ? *(mtx->scr7ptr) : *(mtx->scr5ptr);
+					if (mtx->flag & MTF_ATR) {
+						vid->atrbyte = vid->curscr ? *(mtx->scr7ptr + 0x2000) : *(mtx->scr5ptr + 0x2000);
+						ink = inkTab[vid->atrbyte & 0x7f];
+						pap = papTab[vid->atrbyte & 0x7f];
+						for (col = 0; col < 8; col++) {
+							pixBuffer[col] = (scrbyte & bitMask[col]) ? ink : pap;
+						}
+						ink = 0;
 					}
+					col = (mtx->flag & MTF_SCREEN) ? pixBuffer[ink++] : vid->brdcol;
 					vidPutDot(vid,col);
 					break;
 				case VID_NORMAL:
-					switch(mtx->type) {
-						case MTT_BRDATR:
-							scrbyte = vid->curscr ? *(mtx->scr7ptr) : *(mtx->scr5ptr);
-						case MTT_BORDER:
-							col = vid->brdcol;
-							break;
-						case MTT_PT0:
-							vid->atrbyte = vid->curscr ? *(mtx->atr7ptr) : *(mtx->atr5ptr);
-							if ((vid->atrbyte & 0x80) && vid->flash) scrbyte ^= 255;
-							ink = inkTab[vid->atrbyte & 0x7f];
-							pap = papTab[vid->atrbyte & 0x7f];
-							for (col = 0; col < 8; col++) {
-								pixBuffer[col] = (scrbyte & bitMask[col]) ? ink : pap;
-							}
-							ink = 1;
-							col = pixBuffer[0];
-							break;
-						case MTT_PT4:
-							scrbyte = vid->curscr ? *(mtx->scr7ptr) : *(mtx->scr5ptr);
-						default:
-							col = pixBuffer[ink++];
-							break;
+					if (mtx->flag & MTF_PIX) scrbyte = vid->curscr ? *(mtx->scr7ptr) : *(mtx->scr5ptr);
+					if (mtx->flag & MTF_ATR) {
+						vid->atrbyte = vid->curscr ? *(mtx->atr7ptr) : *(mtx->atr5ptr);
+						if ((vid->atrbyte & 0x80) && vid->flash) scrbyte ^= 255;
+						ink = inkTab[vid->atrbyte & 0x7f];
+						pap = papTab[vid->atrbyte & 0x7f];
+						for (col = 0; col < 8; col++) {
+							pixBuffer[col] = (scrbyte & bitMask[col]) ? ink : pap;
+						}
+						ink = 0;
 					}
+					col = (mtx->flag & MTF_SCREEN) ? pixBuffer[ink++] : vid->brdcol;
 					vidPutDot(vid,col);
 					break;
 				case VID_ALCO:
-					switch(mtx->type) {
-						case MTT_BRDATR:
-						case MTT_BORDER:
-							col = vid->brdcol;
-							break;
-						case MTT_PT0:
-						case MTT_PT2:
-						case MTT_PT4:
-						case MTT_PT6:
+					if (mtx->flag & MTF_SCREEN) {
+						if (mtx->flag & MTF_2P) {
 							scrbyte = vid->curscr ? *(mtx->alco7ptr) : *(mtx->alco5ptr);
 							col = inkTab[scrbyte & 0x7f];
-							break;
-						default:
+						} else {
 							col = ((scrbyte & 0x38)>>3) | ((scrbyte & 0x80)>>4);
-							break;
+						}
+					} else {
+						col = vid->brdcol;
 					}
 					vidPutDot(vid,col);
 					break;
