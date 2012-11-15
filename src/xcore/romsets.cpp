@@ -53,23 +53,23 @@ void setRomset(std::string pn, std::string nm) {
 	} else {
 		prof->rsName = rset->name;
 	}
-	prof->zx->mem->romMask = 3;
 	if (rset == NULL) {
+		prof->zx->mem->romMask = 0x03;
 		for (i=0; i<16; i++) {
 			for (ad=0; ad<0x4000; ad++) pageBuf[i] = 0xff;
 			memSetPage(prof->zx->mem,MEM_ROM,i,pageBuf);
 		}
 	} else {
-		prof->zx->mem->romMask = 3;
+		prof->zx->mem->romMask = 0x03;
 		if (rset->file.size() != 0) {
 			fpath = romDir + SLASH + rset->file;
 			file.open(fpath.c_str(),std::ios::binary);
 			if (file.good()) {
 				file.seekg(0,std::ios_base::end);
 				prts = file.tellg() / 0x4000;
-				if (prts > 4) prof->zx->mem->romMask = 7;
-				if (prts > 8) prof->zx->mem->romMask = 15;
-				if (prts > 16) prof->zx->mem->romMask = 31;
+				if (prts > 4) prof->zx->mem->romMask = 0x07;
+				if (prts > 8) prof->zx->mem->romMask = 0x0f;
+				if (prts > 16) prof->zx->mem->romMask = 0x1f;
 				if (prts > 32) prts = 32;
 				file.seekg(0,std::ios_base::beg);
 				for (i = 0; i < prts; i++) {

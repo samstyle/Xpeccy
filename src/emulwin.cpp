@@ -536,22 +536,12 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 	if (ev->modifiers() & Qt::AltModifier) {
 		switch(ev->key()) {
 			case Qt::Key_0:
-				switch (zx->vid->mode) {
-					case VID_NORMAL:
-						zx->vid->mode = VID_ALCO;
-						break;
-					case VID_ALCO:
-						zx->vid->mode = VID_ATM_EGA;
-						break;
-					case VID_ATM_EGA:
-						zx->vid->mode = VID_ATM_TEXT;
-						break;
-					case VID_ATM_TEXT:
-						zx->vid->mode = VID_ATM_HWM;
-						break;
-					case VID_ATM_HWM:
-						zx->vid->mode = VID_NORMAL;
-						break;
+				switch (zx->vid->vmode) {
+					case VID_NORMAL: vidSetMode(zx->vid,VID_ALCO); break;
+					case VID_ALCO: vidSetMode(zx->vid,VID_ATM_EGA); break;
+					case VID_ATM_EGA: vidSetMode(zx->vid,VID_ATM_TEXT); break;
+					case VID_ATM_TEXT: vidSetMode(zx->vid,VID_ATM_HWM); break;
+					case VID_ATM_HWM: vidSetMode(zx->vid,VID_NORMAL); break;
 				}
 				break;
 			case Qt::Key_1:
@@ -759,22 +749,12 @@ void doSDLEvents() {
 				if (ev.key.keysym.mod & KMOD_ALT) {
 					switch(ev.key.keysym.sym) {
 						case SDLK_0:
-							switch (zx->vid->mode) {
-								case VID_NORMAL:
-									zx->vid->mode = VID_ALCO;
-									break;
-								case VID_ALCO:
-									zx->vid->mode = VID_ATM_EGA;
-									break;
-								case VID_ATM_EGA:
-									zx->vid->mode = VID_ATM_TEXT;
-									break;
-								case VID_ATM_TEXT:
-									zx->vid->mode = VID_ATM_HWM;
-									break;
-								case VID_ATM_HWM:
-									zx->vid->mode = VID_NORMAL;
-									break;
+							switch (zx->vid->vmode) {
+								case VID_NORMAL: vidSetMode(zx->vid,VID_ALCO); break;
+								case VID_ALCO: vidSetMode(zx->vid,VID_ATM_EGA); break;
+								case VID_ATM_EGA: vidSetMode(zx->vid,VID_ATM_TEXT); break;
+								case VID_ATM_TEXT: vidSetMode(zx->vid,VID_ATM_HWM); break;
+								case VID_ATM_HWM: vidSetMode(zx->vid,VID_NORMAL); break;
 							}
 							break;
 						case SDLK_1:

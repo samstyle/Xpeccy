@@ -311,7 +311,7 @@ void zxReset(ZXComp* comp,int wut) {
 	comp->rzxPlay = 0;
 	z80ex_reset(comp->cpu);
 	comp->vid->curscr = 0;
-	comp->vid->mode = VID_NORMAL;
+	vidSetMode(comp->vid,VID_NORMAL);
 	comp->dosen = 0;
 	switch (comp->hw->type) {
 		case HW_ZX48:

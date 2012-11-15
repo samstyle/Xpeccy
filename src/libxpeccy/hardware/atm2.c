@@ -85,11 +85,11 @@ void atm2Out(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 			break;
 		case 0x77:
 			switch (val & 7) {
-				case 0: comp->vid->mode = VID_ATM_EGA; break;
-				case 2: comp->vid->mode = VID_ATM_HWM; break;
-				case 3: comp->vid->mode = VID_NORMAL; break;
-				case 6: comp->vid->mode = VID_ATM_TEXT; break;
-				default: comp->vid->mode = VID_UNKNOWN; break;
+				case 0: vidSetMode(comp->vid,VID_ATM_EGA); break;
+				case 2: vidSetMode(comp->vid,VID_ATM_HWM); break;
+				case 3: vidSetMode(comp->vid,VID_NORMAL); break;
+				case 6: vidSetMode(comp->vid,VID_ATM_TEXT); break;
+				default: vidSetMode(comp->vid,VID_UNKNOWN); break;
 			}
 			zxSetFrq(comp,(val & 0x08) ? 7.0 : 3.5);
 			comp->prt1 = (port & 0xff00) >> 8;

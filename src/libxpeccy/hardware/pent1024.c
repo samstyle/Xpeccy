@@ -63,7 +63,7 @@ void p1mOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 			break;
 		case 0xeff7:
 			comp->prt1 = val;
-			comp->vid->mode = (val & 0x01) ? VID_ALCO : VID_NORMAL;
+			vidSetMode(comp->vid,(val & 0x01) ? VID_ALCO : VID_NORMAL);
 			zxSetFrq(comp, (val & 0x10) ? 7.0 : 3.5);
 			p1mMapMem(comp);
 			break;
