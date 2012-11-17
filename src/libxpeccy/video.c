@@ -102,35 +102,16 @@ unsigned char* vidGetScreen() {
 #define	MTF_LINEND	1
 #define	MTF_FRMEND	(1<<1)
 #define	MTF_INT		(1<<2)
-#define MTF_2P		(1<<3)
-#define MTF_4P		(1<<4)
-#define MTF_8P		(1<<5)
-#define	MTF_VISIBLE	(1<<6)
-#define MTF_SCREEN	(1<<7)
-#define	MTF_PIX		(1<<8)
+#define	MTF_INTSTRB	(1<<3)
+#define MTF_2P		(1<<4)
+#define MTF_4P		(1<<5)
+#define MTF_8P		(1<<6)
+#define	MTF_VISIBLE	(1<<7)
+#define MTF_SCREEN	(1<<8)
+#define	MTF_PIX		(1<<9)
 #define	MTF_ATR		(1<<10)
 #define MTF_ATMSCR	(1<<11)
 #define	MTF_ATMTXT	(1<<12)
-/*
-#define	MTF_4T		(1<<3)
-#define MTF_ATM_TXT	(1<<4)	// each 8th dot from 320x200 screen edge in each 8th line (meaning: take symbol and color)
-// dot type (for ZX 256 x 192)
-#define MTT_INVIS	0
-#define	MTT_BORDER	1
-#define	MTT_PT0		2
-#define	MTT_PT2		3
-#define	MTT_PT4		4
-#define	MTT_PT6		5
-#define	MTT_PTX		6
-#define	MTT_BRDATR	7	// this is same MTT_PT4, but 4 pix before screen. actual color = border. action = get 1st pixels byte
-// dot type (for ATM 320 x 200)
-#define	MTT_ATM_NONE	0	// none: for dot outside 320x200 screen
-#define	MTT_ATM_0	1
-#define	MTT_ATM_2	2
-#define	MTT_ATM_4	3
-#define	MTT_ATM_6	4
-#define	MTT_ATM_DOT	5
-*/
 
 /*
 waits for 128K, +2
@@ -141,8 +122,8 @@ waits for +2a, +3
 
 #include <assert.h>
 
-int waitsTab_A[16] = {5,5,4,4,3,3,2,2,1,1,0,0,0,0,6,6};	// 48K
-int waitsTab_B[16] = {1,1,0,0,7,7,6,6,5,5,4,4,3,3,2,2};	// +2A,+3
+unsigned char waitsTab_A[16] = {5,5,4,4,3,3,2,2,1,1,0,0,0,0,6,6};	// 48K
+unsigned char waitsTab_B[16] = {1,1,0,0,7,7,6,6,5,5,4,4,3,3,2,2};	// +2A,+3
 
 void vidFillMatrix(Video* vid) {
 	int x,y,i,adr,atmadr,atmTadr;
@@ -221,6 +202,7 @@ void vidFillMatrix(Video* vid) {
 					vid->matrix[i].flag |= MTF_SCREEN;
 					switch ((x - scrShift) & 7) {
 						case 0:
+							vid->matrix[i].dotMask = 0x80;
 							vid->matrix[i].flag |= MTF_ATR;
 							vid->matrix[i].atr5ptr = vid->scr5atr[adr];
 							vid->matrix[i].atr7ptr = vid->scr7atr[adr];
@@ -230,21 +212,32 @@ void vidFillMatrix(Video* vid) {
 							vid->matrix[i-4].scr5ptr = vid->scr5pix[adr];
 							vid->matrix[i-4].scr7ptr = vid->scr7pix[adr];
 							break;
+						case 1:
+							vid->matrix[i].dotMask = 0x40;
+							break;
 						case 2:
+							vid->matrix[i].dotMask = 0x20;
 							vid->matrix[i].alco5ptr = vid->ladrz[adr].ac01;
 							vid->matrix[i].alco7ptr = vid->ladrz[adr].ac11;
 							break;
+						case 3:
+							vid->matrix[i].dotMask = 0x10;
+							break;
 						case 4:
-//							vid->matrix[i].scr5ptr = vid->scr5pix[adr];
-//							vid->matrix[i].scr7ptr = vid->scr7pix[adr];
+							vid->matrix[i].dotMask = 0x08;
 							vid->matrix[i].alco5ptr = vid->ladrz[adr].ac02;
 							vid->matrix[i].alco7ptr = vid->ladrz[adr].ac12;
 							break;
+						case 5:
+							vid->matrix[i].dotMask = 0x04;
+							break;
 						case 6:
+							vid->matrix[i].dotMask = 0x02;
 							vid->matrix[i].alco5ptr = vid->ladrz[adr].ac03;
 							vid->matrix[i].alco7ptr = vid->ladrz[adr].ac13;
 							break;
 						case 7:
+							vid->matrix[i].dotMask = 0x01;
 							adr++;
 							break;
 					}
@@ -256,6 +249,7 @@ void vidFillMatrix(Video* vid) {
 	}
 	vid->matrix[i-1].flag |= MTF_FRMEND;
 	adr = vid->intpos.v * vid->full.h + vid->intpos.h;
+	vid->matrix[adr].flag |= MTF_INTSTRB;
 	for (i = 0; i < vid->intsz; i++) {
 		vid->matrix[adr].flag |= MTF_INT;
 		adr++;
@@ -290,13 +284,13 @@ unsigned char col = 0;
 unsigned char ink = 0;
 unsigned char pap = 0;
 unsigned char scrbyte = 0;
+unsigned char nxtbyte = 0;
 int adr;
 unsigned char* fntptr;
 mtrxItem* mtx = NULL;
-mtrxItem* nmtx = NULL;
 
-unsigned char pixBuffer[8];
-unsigned char bitMask[8] = {0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
+//unsigned char pixBuffer[8];
+//unsigned char bitMask[8] = {0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
 
 void vidDarkTail(Video* vid) {
 	unsigned char* ptr = vid->scrptr;
@@ -349,18 +343,15 @@ void vidDrawUnknown(Video* vid) {
 }
 
 void vidDrawNormal(Video* vid) {
-	if (mtx->flag & MTF_PIX) scrbyte = vid->curscr ? *(mtx->scr7ptr) : *(mtx->scr5ptr);
+	if (mtx->flag & MTF_PIX) nxtbyte = vid->curscr ? *(mtx->scr7ptr) : *(mtx->scr5ptr);
 	if (mtx->flag & MTF_ATR) {
+		scrbyte = nxtbyte;
 		vid->atrbyte = vid->curscr ? *(mtx->atr7ptr) : *(mtx->atr5ptr);
 		if ((vid->atrbyte & 0x80) && vid->flash) scrbyte ^= 255;
 		ink = inkTab[vid->atrbyte & 0x7f];
 		pap = papTab[vid->atrbyte & 0x7f];
-		for (col = 0; col < 8; col++) {
-			pixBuffer[col] = (scrbyte & bitMask[col]) ? ink : pap;
-		}
-		ink = 0;
 	}
-	col = (mtx->flag & MTF_SCREEN) ? pixBuffer[ink++] : vid->brdcol;
+	col = (mtx->flag & MTF_SCREEN) ? ((scrbyte & mtx->dotMask) ? ink : pap) : vid->brdcol;
 	vidPutDot(vid,col);
 }
 
@@ -379,17 +370,14 @@ void vidDrawAlco(Video* vid) {
 }
 
 void vidDrawHwmc(Video* vid) {
-	if (mtx->flag & MTF_PIX) scrbyte = vid->curscr ? *(mtx->scr7ptr) : *(mtx->scr5ptr);
+	if (mtx->flag & MTF_PIX) nxtbyte = vid->curscr ? *(mtx->scr7ptr) : *(mtx->scr5ptr);
 	if (mtx->flag & MTF_ATR) {
+		scrbyte = nxtbyte;
 		vid->atrbyte = vid->curscr ? *(mtx->scr7ptr + 0x2000) : *(mtx->scr5ptr + 0x2000);
 		ink = inkTab[vid->atrbyte & 0x7f];
 		pap = papTab[vid->atrbyte & 0x7f];
-		for (col = 0; col < 8; col++) {
-			pixBuffer[col] = (scrbyte & bitMask[col]) ? ink : pap;
-		}
-		ink = 0;
 	}
-	col = (mtx->flag & MTF_SCREEN) ? pixBuffer[ink++] : vid->brdcol;
+	col = (mtx->flag & MTF_SCREEN) ? ((scrbyte & mtx->dotMask) ? ink : pap) : vid->brdcol;
 	vidPutDot(vid,col);
 }
 
@@ -498,9 +486,7 @@ int vidSync(Video* vid, float dotDraw) {
 	while (vid->pxcnt >= 1) {
 		mtx = &vid->matrix[vid->dotCount];
 		vid->dotCount++;
-		if (mtx->flag & MTF_FRMEND) vid->dotCount = 0;
-		nmtx = &vid->matrix[vid->dotCount];
-		if ((nmtx->flag & MTF_INT) && (!(mtx->flag & MTF_INT))) res |= VID_INT;
+		if (mtx->flag & MTF_INTSTRB) res |= VID_INT;
 		vid->intSignal = (mtx->flag & MTF_INT) ? 1 : 0;
 		if (mtx->flag & MTF_8P) vid->brdcol = vid->nextbrd;
 
@@ -509,6 +495,7 @@ int vidSync(Video* vid, float dotDraw) {
 		if ((mtx->flag & MTF_LINEND) && (vidFlag & VF_DOUBLE)) vid->scrptr += vid->wsze.h;
 		if (mtx->flag & MTF_FRMEND) {
 			res |= VID_FRM;
+			vid->dotCount = 0;
 			vid->fcnt++;
 			vid->flash = vid->fcnt & 0x20;
 			vid->scrptr = vid->scrimg;

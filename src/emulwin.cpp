@@ -30,7 +30,7 @@
 
 #include <fstream>
 
-#define	XPTITLE	"Xpeccy 0.5 (20121115)"
+#define	XPTITLE	"Xpeccy 0.5 (20121117)"
 
 // extern EmulWin* mwin;
 // main

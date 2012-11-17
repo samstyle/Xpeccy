@@ -44,8 +44,9 @@ typedef struct {
 
 typedef struct {
 	int flag;
-	int wait;
 	int tick;		// tick NR (just for debug)
+	unsigned char wait;
+	unsigned char dotMask;
 	unsigned char* scr5ptr;
 	unsigned char* atr5ptr;
 	unsigned char* scr7ptr;
