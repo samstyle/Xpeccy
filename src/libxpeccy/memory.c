@@ -5,31 +5,49 @@
 
 // NEW
 
+#include <stdio.h>
+
 Memory* memCreate() {
 	int i;
 	Memory* mem = (Memory*)malloc(sizeof(Memory));
-	mem->pt0 = &mem->rom[0];
-	mem->pt1 = &mem->ram[5];
-	mem->pt2 = &mem->ram[2];
-	mem->pt3 = &mem->ram[0];
 	mem->romMask = 0x03;
-	memSetSize(mem,48);
 	for (i = 0; i < 32; i++) {
 		mem->rom[i].type = MEM_ROM;
 		mem->rom[i].num = i & 0xff;
 		mem->rom[i].flags |= MEM_RDONLY;
+		mem->rom[i].data = malloc(0x4000 * sizeof(unsigned char));
+		mem->rom[i].flag = malloc(0x4000 * sizeof(unsigned char));
 		memset(mem->rom[i].flag,0x00,0x4000 * sizeof(unsigned char));
 	}
 	for (i = 0; i < 256; i++) {
 		mem->ram[i].type = MEM_RAM;
 		mem->ram[i].num = i & 0xff;
 		mem->ram[i].flags = 0;
-		memset(mem->ram[i].flag,0x00,0x4000 * sizeof(unsigned char));
+		mem->ram[i].data = NULL;
+		mem->ram[i].flag = NULL;
 	}
+	memSetSize(mem,48);
+	mem->pt0 = &mem->rom[0];
+	mem->pt1 = &mem->ram[5];
+	mem->pt2 = &mem->ram[2];
+	mem->pt3 = &mem->ram[0];
 	return mem;
 }
 
 void memDestroy(Memory* mem) {
+	int i;
+	for (i = 0; i < 32; i++) {
+		if (mem->rom[i].data != NULL) {
+			free(mem->rom[i].data);
+			free(mem->rom[i].flag);
+		}
+	}
+	for (i = 0; i < 256; i++) {
+		if (mem->ram[i].data != NULL) {
+			free(mem->ram[i].data);
+			free(mem->ram[i].flag);
+		}
+	}
 	free(mem);
 }
 
@@ -95,6 +113,25 @@ void memSetSize(Memory* mem, int val) {
 			mem->memMask = 0x07;
 			mem->memSize = 48;
 			break;
+	}
+	for (int i = 0; i < 256; i++) {
+		if (i <= mem->memMask) {
+			if (mem->ram[i].data == NULL) {
+				mem->ram[i].data = malloc(0x4000 * sizeof(unsigned char));
+				mem->ram[i].flag = malloc(0x4000 * sizeof(unsigned char));
+				memset(mem->ram[i].data,0x00,0x4000 * sizeof(unsigned char));
+				memset(mem->ram[i].flag,0x00,0x4000 * sizeof(unsigned char));
+			}
+		} else {
+			if (mem->ram[i].data != NULL) {
+				free(mem->ram[i].data);
+				mem->ram[i].data = NULL;
+			}
+			if (mem->ram[i].flag != NULL) {
+				free(mem->ram[i].flag);
+				mem->ram[i].flag = NULL;
+			}
+		}
 	}
 }
 

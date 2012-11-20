@@ -25,8 +25,8 @@ typedef struct {
 	int type;
 	int num;
 	int flags;
-	unsigned char data[0x4000];
-	unsigned char flag[0x4000];
+	unsigned char* data;
+	unsigned char* flag;
 } MemPage;
 
 typedef struct {
