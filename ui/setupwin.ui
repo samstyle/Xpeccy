@@ -229,10 +229,8 @@
               </item>
               <item>
                <widget class="QCheckBox" name="contMem">
-                <property name="font">
-                 <font>
-                  <strikeout>true</strikeout>
-                 </font>
+                <property name="enabled">
+                 <bool>false</bool>
                 </property>
                 <property name="text">
                  <string>Contended memory</string>

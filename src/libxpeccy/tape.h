@@ -59,7 +59,6 @@ typedef struct {
 	int toutold;
 	int outsig;
 	int sigLen;
-	double sigCount;
 	char* path;
 	TapeBlock tmpBlock;
 	int blkCount;
