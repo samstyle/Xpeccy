@@ -89,6 +89,7 @@ typedef struct {
 	unsigned char dosen;		// active trdos (dosen and b4,prt0 sets rompart)
 	int resbank;		// rompart active after reset
 	int gsCount;
+	int tapCount;
 	unsigned long tickCount;
 } ZXComp;
 

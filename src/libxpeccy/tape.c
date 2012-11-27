@@ -18,7 +18,7 @@ Tape* tapCreate() {
 	tap->sigLen = 0;
 	tap->signal = 0;
 	tap->sigLen = 0;
-	tap->sigCount = 0;
+//	tap->sigCount = 0;
 	tap->toutold = 0;
 	tap->outsig = 0;
 	tap->path = NULL;
@@ -189,7 +189,7 @@ void tapStoreBlock(Tape* tap) {
 		same = 0;
 		for (j = 0; j < cnt; j++) {
 			diff = tap->tmpBlock.sigData[i] - siglens[j];
-			if ((diff > -11) && (diff < 11)) {
+			if ((diff > -20) && (diff < 20)) {
 				same = 1;
 			}
 		}
@@ -199,8 +199,8 @@ void tapStoreBlock(Tape* tap) {
 		}
 	}
 
-//	printf("size: %i\n",siglens.size());
-//	for (i=0; i<siglens.size();i++) printf("\t%i",siglens[i]);
+//	printf("size: %i\n",cnt);
+//	for (i=0; i<cnt;i++) printf("\t%i",siglens[i]);
 //	printf("\n");
 
 	if (cnt == 5) {
@@ -293,10 +293,7 @@ void tapRewind(Tape* tap, int blk) {
 }
 
 void tapSync(Tape* tap,int tks) {
-	int tk;
-	tap->sigCount += tks / 2.0;
-	tk = tap->sigCount;
-	tap->sigCount -= tk;
+	tks >>= 1;
 	if (tap->flag & TAPE_ON) {
 		if (tap->flag & TAPE_REC) {
 			if (tap->flag & TAPE_WAIT) {
@@ -306,17 +303,19 @@ void tapSync(Tape* tap,int tks) {
 					blkAddSignal(&tap->tmpBlock,0);
 				}
 			} else {
-				tap->tmpBlock.sigData[tap->tmpBlock.sigCount - 1] += tk;
+
 				if (tap->toutold != tap->outsig) {
 					tap->toutold = tap->outsig;
-					blkAddSignal(&tap->tmpBlock,0);
+					blkAddSignal(&tap->tmpBlock,tks);
+				} else {
+					tap->tmpBlock.sigData[tap->tmpBlock.sigCount - 1] += tks;
 				}
 				if (tap->tmpBlock.sigData[tap->tmpBlock.sigCount - 1] > FRAMEDOTS) {
 					tapStoreBlock(tap);
 				}
 			}
 		} else {
-			tap->sigLen -= tk;
+			tap->sigLen -= tks;
 			while (tap->sigLen < 1) {
 				tap->signal = !tap->signal;
 				tap->sigLen += tap->blkData[tap->block].sigData[tap->pos];
@@ -335,7 +334,7 @@ void tapSync(Tape* tap,int tks) {
 			}
 		}
 	} else {
-		tap->sigLen -= tk;
+		tap->sigLen -= tks;
 		while (tap->sigLen < 1) {
 			tap->signal = !tap->signal;
 			tap->sigLen += FRAMEDOTS * 25;	// .5 sec

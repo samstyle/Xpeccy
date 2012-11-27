@@ -139,6 +139,8 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 		}
 	}
 
+	tapSync(comp->tape,comp->tapCount);
+	comp->tapCount = 0;
 	gsSync(comp->gs,comp->gsCount);
 	comp->gsCount = 0;
 // play rzx
@@ -161,6 +163,8 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 }
 
 void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
+	tapSync(comp->tape,comp->tapCount);
+	comp->tapCount = 0;
 	gsSync(comp->gs,comp->gsCount);
 	comp->gsCount = 0;
 // request to external devices
@@ -262,6 +266,7 @@ ZXComp* zxCreate() {
 	comp->rzxSize = 0;
 	comp->rzxData = NULL;
 	comp->gsCount = 0;
+	comp->tapCount = 0;
 	comp->resbank = RES_48;
 	comp->tickCount = 0;
 	gsReset(comp->gs);
@@ -392,10 +397,10 @@ double zxExec(ZXComp* comp) {
 		comp->flag |= ZX_BREAK;
 	}
 
-	ltk = comp->vid->drawed; // res1 * comp->dotPerTick;
 	comp->tickCount += res1;
-	tapSync(comp->tape,ltk);
 
+	ltk = comp->vid->drawed; // res1 * comp->dotPerTick;
+	comp->tapCount += ltk;
 	if (comp->gs->flag & GS_ENABLE) comp->gsCount += ltk;
 	if (comp->bdi->fdc->type != FDC_NONE) bdiSync(comp->bdi,ltk);
 	return ltk;
