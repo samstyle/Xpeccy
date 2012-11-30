@@ -30,9 +30,8 @@
 
 #include <fstream>
 
-#define	XPTITLE	"Xpeccy 0.5 (20121126)"
+#define	XPTITLE	"Xpeccy 0.5 (20121129)"
 
-// extern EmulWin* mwin;
 // main
 MainWin* mainWin;
 QIcon curicon;

@@ -300,13 +300,12 @@ void vidDarkTail(Video* vid) {
 		idx++;
 		if (mtx->flag & MTF_VISIBLE) {
 			*(ptr++) &= 0x0f;
-			if (vidFlag & VF_DOUBLE) {
-				*(ptr + vid->wsze.h - 1) &= 0x0f;
-				*(ptr + vid->wsze.h) &= 0x0f;
-				*(ptr++) &= 0x0f;
-			}
+			if (vidFlag & VF_DOUBLE) *(ptr++) &= 0x0f;
 		}
-		if ((mtx->flag & MTF_LINEND) && (vidFlag & VF_DOUBLE)) ptr += vid->wsze.h;
+		if ((mtx->flag & MTF_LINEND) && (vidFlag & VF_DOUBLE)) {
+			memcpy(ptr,ptr - vid->wsze.h,vid->wsze.h);
+			ptr += vid->wsze.h;
+		}
 	} while (~mtx->flag & MTF_FRMEND);
 }
 
@@ -330,8 +329,8 @@ void vidPutDot(Video* vid, unsigned char col) {
 	}
 	*(vid->scrptr++) = col;
 	if (vidFlag & VF_DOUBLE) {
-		*(vid->scrptr + vid->wsze.h - 1) = col;
-		*(vid->scrptr + vid->wsze.h) = col;
+//		*(vid->scrptr + vid->wsze.h - 1) = col;
+//		*(vid->scrptr + vid->wsze.h) = col;
 		*(vid->scrptr++)=col;
 	}
 }
@@ -492,7 +491,10 @@ int vidSync(Video* vid, float dotDraw) {
 
 		if (mtx->flag & MTF_VISIBLE) vid->draw(vid);
 
-		if ((mtx->flag & MTF_LINEND) && (vidFlag & VF_DOUBLE)) vid->scrptr += vid->wsze.h;
+		if ((mtx->flag & MTF_LINEND) && (vidFlag & VF_DOUBLE)) {
+			memcpy(vid->scrptr, vid->scrptr - vid->wsze.h, vid->wsze.h);
+			vid->scrptr += vid->wsze.h;
+		}
 		if (mtx->flag & MTF_FRMEND) {
 			res |= VID_FRM;
 			vid->dotCount = 0;

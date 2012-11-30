@@ -89,16 +89,16 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 			}
 		}
 	}
-	res3 = res2 + z80ex_op_tstate(cpu);
-	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
-	res4 = res3;
-	if (((adr & 0xc000) == 0x4000) && (comp->hwFlag & HW_CONTMEM)) {
-		res5 = vidGetWait(comp->vid);
-		if (res5 != 0) {
-			vflg |= vidSync(comp->vid, comp->dotPerTick * res5);
-			res1 += res5;
-		}
-	}
+//	res3 = res2 + z80ex_op_tstate(cpu);
+//	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
+//	res4 = res3;
+//	if (((adr & 0xc000) == 0x4000) && (comp->hwFlag & HW_CONTMEM)) {
+//		res5 = vidGetWait(comp->vid);
+//		if (res5 != 0) {
+//			vflg |= vidSync(comp->vid, comp->dotPerTick * res5);
+//			res1 += res5;
+//		}
+//	}
 	res = memRd(comp->mem,adr);
 	return res;
 }
@@ -128,16 +128,16 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
 	Z80EX_BYTE res = 0xff;
 // video sync
-	res3 = res2 + z80ex_op_tstate(cpu);
-	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
-	res4 = res3;
-	if (comp->hwFlag & HW_CONTIO) {
-		res5 = vidGetWait(comp->vid);
-		if (res5 != 0) {
-			vflg |= vidSync(comp->vid,comp->dotPerTick * res5);
-			res1 += res5;
-		}
-	}
+//	res3 = res2 + z80ex_op_tstate(cpu);
+//	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
+//	res4 = res3;
+//	if (comp->hwFlag & HW_CONTIO) {
+//		res5 = vidGetWait(comp->vid);
+//		if (res5 != 0) {
+//			vflg |= vidSync(comp->vid,comp->dotPerTick * res5);
+//			res1 += res5;
+//		}
+//	}
 
 	tapSync(comp->tape,comp->tapCount);
 	comp->tapCount = 0;
