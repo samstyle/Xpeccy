@@ -15,6 +15,7 @@ extern "C" {
 #include "soundrive.h"		// covox/soundrive
 #include "gs.h"
 #include "hdd.h"
+#include "sdcard.h"
 
 // zx flag
 #define	ZX_BREAK	1	// breakpoint reached
@@ -55,6 +56,7 @@ typedef struct {
 	Tape* tape;
 	BDI* bdi;
 	IDE* ide;
+	SDCard* sdc;
 	GSound* gs;
 	TSound* ts;
 	SDrive* sdrv;

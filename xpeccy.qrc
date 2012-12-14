@@ -40,5 +40,7 @@
         <file>images/profile.png</file>
         <file>images/question.png</file>
         <file>images/shutdown.png</file>
+        <file>images/mouse.png</file>
+        <file>images/sdcard.png</file>
     </qresource>
 </RCC>

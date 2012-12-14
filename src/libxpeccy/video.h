@@ -57,9 +57,7 @@ typedef struct {
 	atmItem atm7;
 } mtrxItem;
 
-typedef struct _video Video;
-
-struct _video {
+typedef struct {
 	int flags;
 	int intSignal;
 	int firstFrame;
@@ -87,7 +85,6 @@ struct _video {
 	VSize wsze;
 	VSize intpos;
 	Memory* mem;
-	void(*draw)(Video*);
 	int intsz;
 	unsigned char font[0x800];	// ATM text mode font
 	mtrxItem matrix[512 * 512];
@@ -105,7 +102,7 @@ struct _video {
 	unsigned char* scr5atr[0x1800];
 	unsigned char* scr7pix[0x1800];
 	unsigned char* scr7atr[0x1800];
-};
+} Video;
 
 extern int vidFlag;
 extern float brdsize;
@@ -124,6 +121,7 @@ void vidUpdate(Video*);
 unsigned char* vidGetScreen();
 unsigned char vidGetAttr(Video*);
 void vidSetFont(Video*,char*);
+void vidSetCallback(Video*);
 
 #ifdef __cplusplus
 }

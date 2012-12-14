@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 
 #include "spectrum.h"
@@ -108,13 +109,13 @@ void memwr(Z80EX_CONTEXT* cpu, Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 	res3 = res2 + z80ex_op_tstate(cpu);
 	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
 	res4 = res3;
-	if (((adr & 0xc000) == 0x4000) && (comp->hwFlag & HW_CONTMEM)) {
-		res5 = vidGetWait(comp->vid);
-		if (res5 != 0) {
-			vflg |= vidSync(comp->vid,comp->dotPerTick * res5);
-			res1 += res5;
-		}
-	}
+//	if (((adr & 0xc000) == 0x4000) && (comp->hwFlag & HW_CONTMEM)) {
+//		res5 = vidGetWait(comp->vid);
+//		if (res5 != 0) {
+//			vflg |= vidSync(comp->vid,comp->dotPerTick * res5);
+//			res1 += res5;
+//		}
+//	}
 	if ((comp->hw->type == HW_PENTEVO) && (comp->evo.evoBF & 4)) {		// PentEvo: write font byte
 		comp->vid->font[adr & 0x7ff] = val;
 	}
@@ -128,16 +129,16 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
 	Z80EX_BYTE res = 0xff;
 // video sync
-//	res3 = res2 + z80ex_op_tstate(cpu);
-//	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
-//	res4 = res3;
-//	if (comp->hwFlag & HW_CONTIO) {
-//		res5 = vidGetWait(comp->vid);
-//		if (res5 != 0) {
-//			vflg |= vidSync(comp->vid,comp->dotPerTick * res5);
-//			res1 += res5;
-//		}
-//	}
+	res3 = res2 + z80ex_op_tstate(cpu);
+	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
+	res4 = res3;
+	if (comp->hwFlag & HW_CONTIO) {
+		res5 = vidGetWait(comp->vid);
+		if (res5 != 0) {
+			vflg |= vidSync(comp->vid,comp->dotPerTick * res5);
+			res1 += res5;
+		}
+	}
 
 	tapSync(comp->tape,comp->tapCount);
 	comp->tapCount = 0;
@@ -248,21 +249,33 @@ ZXComp* zxCreate() {
 	int i;
 	ZXComp* comp = (ZXComp*)malloc(sizeof(ZXComp));
 	void* ptr = (void*)comp;
+	memset(ptr,0,sizeof(ZXComp));
 	comp->flag = ZX_JUSTBORN | ZX_PALCHAN;
 	comp->hwFlag = 0;
+
 	comp->cpu = z80ex_create(&memrd,ptr,&memwr,ptr,&iord,ptr,&iowr,ptr,&intrq,ptr);
 	zxSetFrq(comp,3.5);
 	comp->mem = memCreate();
 	comp->vid = vidCreate(comp->mem);
+// input
 	comp->keyb = keyCreate();
 	comp->joy = joyCreate();
 	comp->mouse = mouseCreate();
+// storage
 	comp->tape = tapCreate();
 	comp->bdi = bdiCreate();
 	comp->ide = ideCreate(IDE_NONE);
+	comp->sdc = sdcCreate();
+// sound
 	comp->ts = tsCreate(TS_NONE,SND_AY,SND_NONE);
 	comp->gs = gsCreate();
-	comp->sdrv = sdrvCreate(SDRV_105_2);
+	comp->sdrv = sdrvCreate(SDRV_NONE);
+// evo
+	comp->evo.evo2F = 0;
+	comp->evo.evo4F = 0;
+	comp->evo.evo6F = 0;
+	comp->evo.evo8F = 0;
+
 	comp->rzxSize = 0;
 	comp->rzxData = NULL;
 	comp->gsCount = 0;

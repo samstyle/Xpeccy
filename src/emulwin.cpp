@@ -30,7 +30,7 @@
 
 #include <fstream>
 
-#define	XPTITLE	"Xpeccy 0.5 (20121129)"
+#define	XPTITLE	"Xpeccy 0.5 (20121214)"
 
 // main
 MainWin* mainWin;
@@ -1377,6 +1377,7 @@ void MainWin::profileSelected(QAction* act) {
 		zx->flag &= ~ZX_JUSTBORN;
 	}
 	setFocus();
+	vidSetCallback(zx->vid);
 	emulPause(false,PR_EXTRA);
 }
 

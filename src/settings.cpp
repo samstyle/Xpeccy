@@ -472,6 +472,8 @@ void saveConfig() {
 	saveProfiles();
 	XProfile* curProf = getCurrentProfile();
 	optSet("GENERAL","cpu.frq",int(zx->cpuFrq * 2));
+	optSet("GENERAL","sdcimage",std::string(zx->sdc->image ? zx->sdc->image : ""));
+
 	optSet("MACHINE","current",curProf->hwName);
 //	optSet("MACHINE","restart",(emulGetFlags() & FL_RESET) != 0);
 	optSet("MACHINE","memory",zx->mem->memSize);
@@ -591,7 +593,7 @@ void copyFile(const char* src, const char* dst) {
 	}
 }
 
-// load main config
+// emulator config
 
 void loadProfiles() {
 	std::string soutnam = "NULL";
@@ -814,6 +816,8 @@ void loadProfiles() {
 	emulOpenJoystick(joyName);
 }
 
+// profile config
+
 void loadConfig(bool dev) {
 	XProfile* curProf = getCurrentProfile();
 	std::string cfname = workDir + SLASH + curProf->file;
@@ -976,6 +980,7 @@ void loadConfig(bool dev) {
 						}
 						break;
 					case SECT_GENERAL:
+						if (pnam=="sdcimage") sdcSetImage(zx->sdc,pval.c_str());
 						break;
 					case SECT_INPUT:
 						if (pnam=="mouse") setFlagBit(str2bool(pval),&zx->mouse->flags,INF_ENABLED);

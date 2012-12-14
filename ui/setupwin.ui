@@ -1129,7 +1129,7 @@
         </property>
         <attribute name="icon">
          <iconset resource="../xpeccy.qrc">
-          <normaloff>:/images/keyboard.png</normaloff>:/images/keyboard.png</iconset>
+          <normaloff>:/images/mouse.png</normaloff>:/images/mouse.png</iconset>
         </attribute>
         <attribute name="title">
          <string>Input</string>
@@ -2429,6 +2429,62 @@
                 </layout>
                </widget>
               </widget>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QWidget" name="sdcTab">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <attribute name="icon">
+             <iconset resource="../xpeccy.qrc">
+              <normaloff>:/images/sdcard.png</normaloff>:/images/sdcard.png</iconset>
+            </attribute>
+            <attribute name="title">
+             <string>SDCard</string>
+            </attribute>
+            <layout class="QVBoxLayout" name="verticalLayout_25">
+             <item>
+              <layout class="QGridLayout" name="gridLayout_4">
+               <item row="0" column="0">
+                <widget class="QLabel" name="label_35">
+                 <property name="text">
+                  <string>Image</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1">
+                <widget class="QLineEdit" name="sdPath">
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="2">
+                <widget class="QToolButton" name="tbSDCimg">
+                 <property name="text">
+                  <string>...</string>
+                 </property>
+                 <property name="icon">
+                  <iconset resource="../xpeccy.qrc">
+                   <normaloff>:/images/fileopen.png</normaloff>:/images/fileopen.png</iconset>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <spacer name="verticalSpacer">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>304</height>
+                </size>
+               </property>
+              </spacer>
              </item>
             </layout>
            </widget>

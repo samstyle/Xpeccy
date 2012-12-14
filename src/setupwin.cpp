@@ -262,6 +262,11 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 // profiles manager
 	connect(setupUi.tbNewProfile,SIGNAL(released()),this,SLOT(newProfile()));
 	connect(setupUi.tbDelProfile,SIGNAL(released()),this,SLOT(rmProfile()));
+
+#ifdef ISDEBUG
+	setupUi.sdcTab->setEnabled(true);
+	connect(setupUi.tbSDCimg,SIGNAL(released()),this,SLOT(selSDCimg()));
+#endif
 }
 
 void SetupWin::recheck_single(bool st) {
@@ -406,6 +411,8 @@ void SetupWin::start() {
 	setupUi.hs_ghd->setValue(pass.hds);
 	setupUi.hs_gcyl->setValue(pass.cyls);
 	setupUi.hs_glba->setValue(zx->ide->slave->maxlba);
+// sdcard
+	setupUi.sdPath->setText(QString::fromLocal8Bit(zx->sdc->image));
 // tape
 	setupUi.cbTapeAuto->setChecked(optGetFlag(OF_TAPEAUTO));
 	setupUi.cbTapeFast->setChecked(optGetFlag(OF_TAPEFAST));
@@ -548,6 +555,8 @@ void SetupWin::apply() {
 	pass.cyls = setupUi.hs_gcyl->value();
 	zx->ide->slave->maxlba = setupUi.hs_glba->value();
 	ideSetPassport(zx->ide,IDE_SLAVE,pass);
+// sdcard
+	sdcSetImage(zx->sdc,setupUi.sdPath->text().toLocal8Bit().data());
 // tape
 	optSetFlag(OF_TAPEAUTO,setupUi.cbTapeAuto->isChecked());
 	optSetFlag(OF_TAPEFAST,setupUi.cbTapeFast->isChecked());
@@ -1382,6 +1391,13 @@ void SetupWin::hddcap() {
 		sz = ((setupUi.hs_gsec->value() * (setupUi.hs_ghd->value() + 1) * (setupUi.hs_gcyl->value() + 1)) >> 11);
 	}
 	setupUi.hs_capacity->setValue(sz);
+}
+
+// sdc
+
+void SetupWin::selSDCimg() {
+	QString fnam = QFileDialog::getOpenFileName(this,"Image for SD card","","All files (*.*)");
+	if (!fnam.isEmpty()) setupUi.sdPath->setText(fnam);
 }
 
 // tools

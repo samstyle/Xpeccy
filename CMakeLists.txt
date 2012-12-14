@@ -174,4 +174,6 @@ if(Z80EX_INTERNAL)
 else()
 	message(STATUS "libz80ex : external")
 endif()
+
+message(STATUS "Build type : ${CMAKE_BUILD_TYPE}")
 message(STATUS "\n")

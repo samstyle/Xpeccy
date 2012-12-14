@@ -464,16 +464,22 @@ void vidDrawATMhwmc(Video* vid) {
 
 // weiter
 
+void(*vidCallback)(Video*) = &vidDrawNormal;
+
 void vidSetMode(Video* vid, int mode) {
 	vid->vmode = mode;
-	switch (mode) {
-		case VID_NORMAL: vid->draw = &vidDrawNormal; break;
-		case VID_ALCO: vid->draw = &vidDrawAlco; break;
-		case VID_HWMC: vid->draw = &vidDrawHwmc; break;
-		case VID_ATM_EGA: vid->draw = &vidDrawATMega; break;
-		case VID_ATM_TEXT: vid->draw = &vidDrawATMtext; break;
-		case VID_ATM_HWM: vid->draw = &vidDrawATMhwmc; break;
-		default: vid->draw = &vidDrawUnknown; break;
+	vidSetCallback(vid);
+}
+
+void vidSetCallback(Video* vid) {
+	switch (vid->vmode) {
+		case VID_NORMAL: vidCallback = &vidDrawNormal; break;
+		case VID_ALCO: vidCallback = &vidDrawAlco; break;
+		case VID_HWMC: vidCallback = &vidDrawHwmc; break;
+		case VID_ATM_EGA: vidCallback = &vidDrawATMega; break;
+		case VID_ATM_TEXT: vidCallback = &vidDrawATMtext; break;
+		case VID_ATM_HWM: vidCallback = &vidDrawATMhwmc; break;
+		default: vidCallback = &vidDrawUnknown; break;
 	}
 }
 
@@ -489,7 +495,7 @@ int vidSync(Video* vid, float dotDraw) {
 		vid->intSignal = (mtx->flag & MTF_INT) ? 1 : 0;
 		if (mtx->flag & MTF_8P) vid->brdcol = vid->nextbrd;
 
-		if (mtx->flag & MTF_VISIBLE) vid->draw(vid);
+		if (mtx->flag & MTF_VISIBLE) vidCallback(vid);
 
 		if ((mtx->flag & MTF_LINEND) && (vidFlag & VF_DOUBLE)) {
 			memcpy(vid->scrptr, vid->scrptr - vid->wsze.h, vid->wsze.h);
