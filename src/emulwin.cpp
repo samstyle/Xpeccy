@@ -252,6 +252,10 @@ void emulSetPalette(ZXComp* comp,unsigned char lev) {
 		b[i] = ((col & 0x10) ? (0xff - lev) : 0x00) + ((col & 0x01) ? lev : 0x00);
 		r[i] = ((col & 0x20) ? (0xff - lev) : 0x00) + ((col & 0x02) ? lev : 0x00);
 		g[i] = ((col & 0x40) ? (0xff - lev) : 0x00) + ((col & 0x04) ? lev : 0x00);
+		if (vidFlag & VF_GREY) {
+			col = 0.299 * r[i] + 0.587 * g[i] + 0.114 * b[i];
+			r[i] = b[i] = g[i] = col;
+		}
 	}
 	for(i = 0; i < 256; i++) {
 		qPal[i] = qRgb((r[i & 0x0f] * 0.5) + (r[(i & 0xf0) >> 4] * 0.5),

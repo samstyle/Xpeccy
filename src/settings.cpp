@@ -389,6 +389,7 @@ void saveProfiles() {
 	cfile << "colorLevel = " << int2str(brgLevel) << "\n";
 	cfile << "fullscreen = " << ((vidFlag & VF_FULLSCREEN) ? "yes" : "no") << "\n";
 	cfile << "doublesize = " << ((vidFlag & VF_DOUBLE) ? "yes" : "no") << "\n";
+	cfile << "greyscale = " << ((vidFlag & VF_GREY) ? "yes" : "no") << "\n";
 	cfile << "bordersize = " << int2str(brdsize * 100) << "\n";
 	cfile << "noflic = " << ((vidFlag & VF_NOFLIC) ? "yes" : "no") << "\n";
 	cfile << "\n[ROMSETS]\n";
@@ -700,6 +701,7 @@ void loadProfiles() {
 					}
 					if (pnam=="doublesize") setFlagBit(str2bool(pval),&vidFlag,VF_DOUBLE);
 					if (pnam=="noflic") setFlagBit(str2bool(pval),&vidFlag,VF_NOFLIC);
+					if (pnam=="greyscale") setFlagBit(str2bool(pval),&vidFlag,VF_GREY);
 					break;
 				case SECT_ROMSETS:
 					pos = pval.find_last_of(":");

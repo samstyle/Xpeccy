@@ -544,6 +544,13 @@
                </widget>
               </item>
               <item>
+               <widget class="QCheckBox" name="grayscale">
+                <property name="text">
+                 <string>Gray scale</string>
+                </property>
+               </widget>
+              </item>
+              <item>
                <widget class="QCheckBox" name="noflichk">
                 <property name="text">
                  <string>Noflic</string>

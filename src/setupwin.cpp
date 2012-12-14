@@ -309,6 +309,7 @@ void SetupWin::start() {
 	setupUi.dszchk->setChecked((vidFlag & VF_DOUBLE));
 	setupUi.fscchk->setChecked(vidFlag & VF_FULLSCREEN);
 	setupUi.noflichk->setChecked(vidFlag & VF_NOFLIC);
+	setupUi.grayscale->setChecked(vidFlag & VF_GREY);
 	setupUi.border4T->setChecked(zx->vid->flags & VID_BORDER_4T);
 	setupUi.contMem->setChecked(zx->hwFlag & HW_CONTMEM);
 	setupUi.contIO->setChecked(zx->hwFlag & HW_CONTIO);
@@ -456,6 +457,7 @@ void SetupWin::apply() {
 	setFlagBit(setupUi.border4T->isChecked(),&zx->vid->flags,VID_BORDER_4T);
 	setFlagBit(setupUi.contMem->isChecked(),&zx->hwFlag,HW_CONTMEM);
 	setFlagBit(setupUi.contIO->isChecked(),&zx->hwFlag,HW_CONTIO);
+	setFlagBit(setupUi.grayscale->isChecked(),&vidFlag,VF_GREY);
 	brdsize = setupUi.bszsld->value()/100.0;
 	optSet(OPT_SHOTDIR,std::string(setupUi.pathle->text().toLocal8Bit().data()));
 	optSet(OPT_SHOTFRM,setupUi.ssfbox->itemData(setupUi.ssfbox->currentIndex()).toInt());

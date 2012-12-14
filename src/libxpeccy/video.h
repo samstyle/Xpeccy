@@ -14,6 +14,7 @@ extern "C" {
 #define VF_CHANGED		(1<<3)
 #define	VF_FRAMEDBG		(1<<4)
 #define VF_NOFLIC		(1<<5)
+#define	VF_GREY			(1<<6)
 // vid->flags (vid)
 #define	VID_BORDER_4T		(1<<1)
 // screen drawing mode
