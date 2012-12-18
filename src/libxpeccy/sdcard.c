@@ -29,9 +29,9 @@ void sdcSetImage(SDCard* sdc, const char* name) {
 // io operations
 
 unsigned char sdcRead(SDCard* sdc) {
-#ifndef ISDEBUG
-	return 0xff;
-#endif
+
+	return 0xff;		// blocked until it start to work
+
 	if (!sdc->image || ((sdc->flag & 3) != SDC_ON)) return 0xff;	// no image or OFF or !CS
 	unsigned char res = 0xff;
 	switch (sdc->state) {
