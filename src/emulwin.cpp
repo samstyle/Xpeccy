@@ -1248,7 +1248,7 @@ void MainWin::processFrame() {
 			wantedWin = WW_DEBUG;
 			zx->flag &= ~ZX_BREAK;
 		}
-	} while ((wantedWin == WW_NONE) && (zx->frmStrobe == 0));
+	} while ((wantedWin == WW_NONE) && (zx->intStrobe == 0));
 	zx->nmiRequest = 0;
 // decrease frames & screenshot counter (if any), request screenshot (if needed)
 	if (scrCounter != 0) {
