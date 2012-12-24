@@ -101,11 +101,12 @@ void evoOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 
 		case 0x57:
 			if (bdiz) {
-				comp->sdc->flag = val;
+				comp->sdc->flag &= ~0x03;
+				comp->sdc->flag |= val;
 				// SDcard CS control
 			} else {
 				sdcWrite(comp->sdc,val);
-				//comp->flag |= ZX_BREAK;
+				// if (val == 0x52) comp->flag |= ZX_BREAK;
 				// SDcard data write
 			}
 			break;
@@ -116,7 +117,8 @@ void evoOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 				evoSetVideoMode(comp);
 				evoMapMem(comp);
 			} else {
-				comp->sdc->flag = val;
+				comp->sdc->flag &= ~0x03;
+				comp->sdc->flag |= val;
 				// SDcard CS control
 			}
 			break;
