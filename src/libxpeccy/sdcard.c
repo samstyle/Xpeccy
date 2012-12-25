@@ -5,18 +5,18 @@
 #include <string.h>
 
 // commands
-#define	CMD00		0x00	// soft reset
+#define	CMD00		0x00	// + soft reset
 #define	CMD01		0x01	// out of idle state
-#define	CMD08		0x08
+#define	CMD08		0x08	// +
 #define	CMD09		0x09	// ask card to send card speficic data (CSD)
 #define	CMD10		0x0a	// ask card to send card identification (CID)
 #define	CMD12		0x0c	// stop transmission on multiple block read
 #define	CMD13		0x0d	// ask the card to send it's status register
-#define	CMD16		0x10    // sets the block length used by the memory card
-#define	CMD17		0x11	// read single block
-#define	CMD18		0x12	// read multiple block
-#define	CMD24		0x18	// writes a single block
-#define	CMD25		0x19	// writes multiple blocks
+#define	CMD16		0x10    // + sets the block length used by the memory card
+#define	CMD17		0x11	// + read single block
+#define	CMD18		0x12	// + read multiple block
+#define	CMD24		0x18	// + writes a single block
+#define	CMD25		0x19	// + writes multiple blocks
 #define	CMD27		0x1B	// change the bits in CSD
 #define	CMD28		0x1C	// sets the write protection bit
 #define	CMD29		0x1D    // clears the write protection bit
@@ -28,11 +28,11 @@
 #define	CMD36		0x24	// Sets the address of the last erase group
 #define	CMD37		0x25	// removes a group from the selected section
 #define	CMD38		0x26	// erase all selected groups
-#define	ACMD41		0x29
+#define	ACMD41		0x29	// +
 #define	CMD42		0x2A	// locks a block
-#define	CMD55		0x37	// ACMD prefix
+#define	CMD55		0x37	// + ACMD prefix
 #define	CMD58		0x3A	// reads the OCR register
-#define	CMD59		0x3B	// turn CRC
+#define	CMD59		0x3B	// + turn CRC
 
 SDCard* sdcCreate() {
 	SDCard* sdc = (SDCard*)malloc(sizeof(SDCard));
@@ -43,6 +43,7 @@ SDCard* sdcCreate() {
 	sdc->buf.pos = 0;
 	sdc->image = NULL;
 	sdc->blkSize = 512;
+	sdcSetCapacity(sdc,SDC_DEFAULT);
 	sdcReset(sdc);
 	return sdc;
 }
@@ -61,22 +62,42 @@ void sdcSetImage(SDCard* sdc, const char* name) {
 	strcpy(sdc->image,name);
 }
 
+void sdcSetCapacity(SDCard* sdc, int cpc) {
+	if (cpc < SDC_32M) cpc = SDC_32M;
+	if (cpc > SDC_1G) cpc = SDC_1G;
+	sdc->capacity = cpc;
+	sdc->maxlba = cpc * 1024 * 2;	// sec x 2 = 1K x 1024 = 1M
+}
+
 // file operation
 
 void sdcRdSector(SDCard* sdc) {
 //	printf("SDC read sector %i\n",sdc->addr);
-	FILE* file = fopen(sdc->image,"rb");
-	fseek(file,sdc->addr * 512,SEEK_SET);
-	fread((void*)&sdc->buf.data[1],512,1,file);
-	fclose(file);
+	if (sdc->addr < sdc->maxlba) {
+		FILE* file = fopen(sdc->image,"rb");
+		if (file) {
+			fseek(file,sdc->addr * 512,SEEK_SET);
+			fread((void*)&sdc->buf.data[1],512,1,file);
+			fclose(file);
+		}
+	} else {
+		memset((void*)&sdc->buf.data[1],512,0xff);
+	}
+}
+
+void sdcWrSector(SDCard* sdc) {
+	if (sdc->addr >= sdc->maxlba) return;
+	FILE* file = fopen(sdc->image,"wb");
+	if (file) {
+		fseek(file,sdc->addr * 512,SEEK_SET);
+		fwrite((void*)&sdc->buf.data[1],512,1,file);
+		fclose(file);
+	}
 }
 
 // io operations
 
 unsigned char sdcRead(SDCard* sdc) {
-#ifndef ISDEBUG
-	return 0xff;		// blocked until it start to work
-#endif
 	if (!sdc->image || ((sdc->flag & 3) != SDC_ON)) return 0xff;	// no image or OFF or !CS
 	unsigned char res = 0xff;
 	if (sdc->respCnt > 0) {			// if have response
@@ -139,7 +160,7 @@ void sdcExec(SDCard* sdc) {
 					sdcR1(sdc,0);
 					break;
 				default:
-//					printf("undef sdcard com");
+					printf("undef ACMD%.2i\n",sdc->arg[0] & 0x3f);
 					assert(0);
 					break;
 			}
@@ -160,20 +181,40 @@ void sdcExec(SDCard* sdc) {
 					break;
 				case CMD12:				// stop multiple block rd/wr
 					sdc->flag &= ~SDC_CONT;
-					if (sdc->buf.pos < 0) sdc->state = SDC_FREE;
 					sdcR1(sdc,0);
+					if (sdc->buf.pos < 0) sdc->state = SDC_FREE;
 					break;
 				case CMD16:
 					sdc->blkSize = sdcGetArg(sdc,0xffffffff);
 					sdcR1(sdc,0);
 					break;
-				case CMD18:
-					sdcR1(sdc,0);
-					sdc->addr = sdcGetArg(sdc,0xffffffff);
-//					printf("CMD18 addr %i\n",sdc->addr);
-					sdc->state = SDC_READ;
+				case CMD18:				// read multiple block
 					sdc->flag |= SDC_CONT;
-					sdc->buf.pos = -1;
+				case CMD17:				// read block
+					sdc->addr = sdcGetArg(sdc,0xffffffff);
+					if (sdc->addr < sdc->maxlba) {
+						sdcR1(sdc,0);
+						sdc->state = SDC_READ;
+						sdc->buf.pos = -1;
+					} else {
+						sdcR1(sdc,R1_ADDRESS_ERR);
+						sdc->flag &= ~SDC_CONT;
+						sdc->state = SDC_FREE;
+					}
+					break;
+				case CMD25:				// write multiple block
+					sdc->flag |= SDC_CONT;
+				case CMD24:				// write block
+					sdc->addr = sdcGetArg(sdc,0xffffffff);
+					if (sdc->addr < sdc->maxlba) {
+						sdcR1(sdc,0);
+						sdc->state = SDC_WRITE;
+						sdc->buf.pos = 0;
+					} else {
+						sdcR1(sdc,R1_ADDRESS_ERR);
+						sdc->flag &= ~SDC_CONT;
+						sdc->state = SDC_FREE;
+					}
 					break;
 				case CMD55:
 					sdc->flag |= SDC_ACMD;		// next command is ACMD
@@ -197,7 +238,7 @@ void sdcExec(SDCard* sdc) {
 					sdcR1(sdc,0);
 					break;
 				default:
-//					printf("undef sdcard com");
+					printf("undef CMD%.2i\n",sdc->arg[0] & 0x3f);
 					assert(0);
 					break;
 			}
@@ -208,13 +249,25 @@ void sdcExec(SDCard* sdc) {
 }
 
 void sdcWrite(SDCard* sdc, unsigned char val) {
-#ifndef ISDEBUG
-	return;
-#endif
 	if (!sdc->image || ((sdc->flag & 3) != SDC_ON)) return;
 //	printf("SD out %.2X\n",val);
 	if (sdc->state == SDC_WRITE) {
-
+		sdc->buf.data[sdc->buf.pos] = val;
+		sdc->buf.pos++;
+		if (sdc->buf.pos > 514) {	// 0..514 = 515 bytes = {1token,512data,2crc}
+			if (sdc->flag & SDC_LOCK) {
+				sdcR1(sdc,0x1d);	// xxx01101 - data rejected due write error
+				sdc->state = SDC_FREE;
+			} else {
+				sdcR1(sdc,0x05);	// xxx00101 - data accepted
+				sdcWrSector(sdc);
+				if (sdc->flag & SDC_CONT) {
+					sdc->buf.pos = 0;
+				} else {
+					sdc->state = SDC_FREE;
+				}
+			}
+		}
 	} else {
 		sdc->arg[6 - sdc->argCnt] = val;
 		sdc->argCnt--;

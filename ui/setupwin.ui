@@ -1319,65 +1319,106 @@
             <attribute name="title">
              <string>Tape</string>
             </attribute>
-            <layout class="QVBoxLayout" name="verticalLayout_34" stretch="0,0,10">
-             <item>
-              <layout class="QGridLayout" name="gridLayout_22">
-               <item row="0" column="0">
-                <widget class="QCheckBox" name="cbTapeAuto">
-                 <property name="text">
-                  <string>Autoplay</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="0" column="1">
-                <widget class="QCheckBox" name="cbTapeFast">
-                 <property name="text">
-                  <string>Fast loading</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
+            <layout class="QVBoxLayout" name="verticalLayout_38">
              <item>
               <layout class="QHBoxLayout" name="horizontalLayout_7">
                <item>
-                <widget class="QLineEdit" name="tpathle">
-                 <property name="readOnly">
-                  <bool>true</bool>
-                 </property>
-                </widget>
+                <layout class="QGridLayout" name="gridLayout_19">
+                 <item row="0" column="3">
+                  <widget class="QToolButton" name="tremotb">
+                   <property name="text">
+                    <string>Eject</string>
+                   </property>
+                   <property name="icon">
+                    <iconset resource="../xpeccy.qrc">
+                     <normaloff>:/images/cancel.png</normaloff>:/images/cancel.png</iconset>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="2">
+                  <widget class="QToolButton" name="tsavetb">
+                   <property name="text">
+                    <string>Save</string>
+                   </property>
+                   <property name="icon">
+                    <iconset resource="../xpeccy.qrc">
+                     <normaloff>:/images/save_all.png</normaloff>:/images/save_all.png</iconset>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="0">
+                  <widget class="QLineEdit" name="tpathle">
+                   <property name="readOnly">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QToolButton" name="tloadtb">
+                   <property name="text">
+                    <string>Load</string>
+                   </property>
+                   <property name="icon">
+                    <iconset resource="../xpeccy.qrc">
+                     <normaloff>:/images/fileopen.png</normaloff>:/images/fileopen.png</iconset>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <spacer name="verticalSpacer_27">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeType">
+                    <enum>QSizePolicy::Minimum</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>0</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
                </item>
                <item>
-                <widget class="QToolButton" name="tloadtb">
-                 <property name="text">
-                  <string>Load</string>
+                <widget class="QGroupBox" name="groupBox_9">
+                 <property name="title">
+                  <string>GroupBox</string>
                  </property>
-                 <property name="icon">
-                  <iconset resource="../xpeccy.qrc">
-                   <normaloff>:/images/fileopen.png</normaloff>:/images/fileopen.png</iconset>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QToolButton" name="tsavetb">
-                 <property name="text">
-                  <string>Save</string>
-                 </property>
-                 <property name="icon">
-                  <iconset resource="../xpeccy.qrc">
-                   <normaloff>:/images/save_all.png</normaloff>:/images/save_all.png</iconset>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QToolButton" name="tremotb">
-                 <property name="text">
-                  <string>Eject</string>
-                 </property>
-                 <property name="icon">
-                  <iconset resource="../xpeccy.qrc">
-                   <normaloff>:/images/cancel.png</normaloff>:/images/cancel.png</iconset>
-                 </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_34">
+                  <item>
+                   <widget class="QCheckBox" name="cbTapeAuto">
+                    <property name="text">
+                     <string>Autoplay</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QCheckBox" name="cbTapeFast">
+                    <property name="text">
+                     <string>Fast loading</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <spacer name="verticalSpacer_28">
+                    <property name="orientation">
+                     <enum>Qt::Vertical</enum>
+                    </property>
+                    <property name="sizeType">
+                     <enum>QSizePolicy::Minimum</enum>
+                    </property>
+                    <property name="sizeHint" stdset="0">
+                     <size>
+                      <width>0</width>
+                      <height>0</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                 </layout>
                 </widget>
                </item>
               </layout>
@@ -2441,7 +2482,7 @@
            </widget>
            <widget class="QWidget" name="sdcTab">
             <property name="enabled">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <attribute name="icon">
              <iconset resource="../xpeccy.qrc">
@@ -2450,32 +2491,108 @@
             <attribute name="title">
              <string>SDCard</string>
             </attribute>
-            <layout class="QVBoxLayout" name="verticalLayout_25">
+            <layout class="QVBoxLayout" name="verticalLayout_30">
              <item>
-              <layout class="QGridLayout" name="gridLayout_4">
-               <item row="0" column="0">
-                <widget class="QLabel" name="label_35">
-                 <property name="text">
-                  <string>Image</string>
-                 </property>
-                </widget>
+              <layout class="QHBoxLayout" name="horizontalLayout_28">
+               <item>
+                <layout class="QGridLayout" name="gridLayout_4">
+                 <item row="2" column="1">
+                  <spacer name="verticalSpacer_26">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>40</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="label_35">
+                   <property name="enabled">
+                    <bool>true</bool>
+                   </property>
+                   <property name="text">
+                    <string>Image</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QLineEdit" name="sdPath">
+                   <property name="enabled">
+                    <bool>true</bool>
+                   </property>
+                   <property name="readOnly">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="2">
+                  <widget class="QToolButton" name="tbSDCimg">
+                   <property name="enabled">
+                    <bool>true</bool>
+                   </property>
+                   <property name="text">
+                    <string>...</string>
+                   </property>
+                   <property name="icon">
+                    <iconset resource="../xpeccy.qrc">
+                     <normaloff>:/images/fileopen.png</normaloff>:/images/fileopen.png</iconset>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="label_36">
+                   <property name="text">
+                    <string>Capacity</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QComboBox" name="sdcapbox"/>
+                 </item>
+                 <item row="0" column="3">
+                  <widget class="QToolButton" name="tbsdcfree">
+                   <property name="text">
+                    <string>...</string>
+                   </property>
+                   <property name="icon">
+                    <iconset resource="../xpeccy.qrc">
+                     <normaloff>:/images/cancel.png</normaloff>:/images/cancel.png</iconset>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
                </item>
-               <item row="0" column="1">
-                <widget class="QLineEdit" name="sdPath">
-                 <property name="readOnly">
-                  <bool>true</bool>
+               <item>
+                <widget class="QGroupBox" name="groupBox_8">
+                 <property name="title">
+                  <string/>
                  </property>
-                </widget>
-               </item>
-               <item row="0" column="2">
-                <widget class="QToolButton" name="tbSDCimg">
-                 <property name="text">
-                  <string>...</string>
-                 </property>
-                 <property name="icon">
-                  <iconset resource="../xpeccy.qrc">
-                   <normaloff>:/images/fileopen.png</normaloff>:/images/fileopen.png</iconset>
-                 </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_25">
+                  <item>
+                   <widget class="QCheckBox" name="sdlock">
+                    <property name="text">
+                     <string>Locked</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <spacer name="verticalSpacer_25">
+                    <property name="orientation">
+                     <enum>Qt::Vertical</enum>
+                    </property>
+                    <property name="sizeHint" stdset="0">
+                     <size>
+                      <width>20</width>
+                      <height>40</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                 </layout>
                 </widget>
                </item>
               </layout>

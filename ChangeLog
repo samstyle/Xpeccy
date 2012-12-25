@@ -277,3 +277,6 @@ New	Start of PentEvo emulation
 New	CMOS clock for Pent1024SL and PentEvo
 Wrk	Maximum CPU freq up to 14MHz
 Fix	Ports conflict in Pent1024SL
+
+build 20121225
+New	Basic SD-card functions on PentEvo

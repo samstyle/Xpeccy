@@ -33,6 +33,7 @@
 #define	SECT_TAPE	14
 #define	SECT_LEDS	15
 #define	SECT_INPUT	16
+#define	SECT_SDC	17
 
 std::vector<optEntry> config;
 std::string workDir;
@@ -473,7 +474,11 @@ void saveConfig() {
 	saveProfiles();
 	XProfile* curProf = getCurrentProfile();
 	optSet("GENERAL","cpu.frq",int(zx->cpuFrq * 2));
-	optSet("GENERAL","sdcimage",std::string(zx->sdc->image ? zx->sdc->image : ""));
+	delOption("GENERAL","sdcimage");
+
+	optSet("SDC","sdcimage",std::string(zx->sdc->image ? zx->sdc->image : ""));
+	optSet("SDC","sdclock",std::string((zx->sdc->flag & SDC_LOCK) ? "yes" : "no"));
+	optSet("SDC","capacity",zx->sdc->capacity);
 
 	optSet("MACHINE","current",curProf->hwName);
 //	optSet("MACHINE","restart",(emulGetFlags() & FL_RESET) != 0);
@@ -872,6 +877,7 @@ void loadConfig(bool dev) {
 				if (pnam=="[IDE]") {grp = pnam; section = SECT_IDE;}
 				if (pnam=="[GENERAL]") {grp = pnam; section = SECT_GENERAL;}
 				if (pnam=="[INPUT]") {grp = pnam; section = SECT_INPUT;}
+				if (pnam=="[SDC]") {grp = pnam; section = SECT_SDC;}
 				if (dev && (section != SECT_TOOLS)) section = SECT_NONE;
 			} else {
 				if (grp.size() > 2) {
@@ -987,6 +993,11 @@ void loadConfig(bool dev) {
 					case SECT_INPUT:
 						if (pnam=="mouse") setFlagBit(str2bool(pval),&zx->mouse->flags,INF_ENABLED);
 						if (pnam=="mouse.wheel") setFlagBit(str2bool(pval),&zx->mouse->flags,INF_WHEEL);
+						break;
+					case SECT_SDC:
+						if (pnam=="sdcimage") sdcSetImage(zx->sdc,pval.c_str());
+						if (pnam=="sdclock") setFlagBit(str2bool(pval),&zx->sdc->flag,SDC_LOCK);
+						if (pnam=="capacity") sdcSetCapacity(zx->sdc,atoi(pval.c_str()));
 						break;
 				}
 			}

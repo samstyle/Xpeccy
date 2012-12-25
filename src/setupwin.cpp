@@ -149,6 +149,13 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	setupUi.hs_type->addItem(QIcon(":/images/cancel.png"),"Not connected",QVariant(IDE_NONE));
 	setupUi.hs_type->addItem(QIcon(":/images/hdd.png"),"HDD (ATA)",QVariant(IDE_ATA));
 //	setupUi.hs_type->addItem(QIcon(":/images/cd.png"),"CD (ATAPI) not working yet",QVariant(IDE_ATAPI));
+// sdcard
+	setupUi.sdcapbox->addItem("32 M",SDC_32M);
+	setupUi.sdcapbox->addItem("64 M",SDC_64M);
+	setupUi.sdcapbox->addItem("128 M",SDC_128M);
+	setupUi.sdcapbox->addItem("256 M",SDC_256M);
+	setupUi.sdcapbox->addItem("512 M",SDC_512M);
+	setupUi.sdcapbox->addItem("1024 M",SDC_1G);
 
 // all
 	QObject::connect(setupUi.okbut,SIGNAL(released()),this,SLOT(okay()));
@@ -247,6 +254,9 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	QObject::connect(setupUi.hs_ghd,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
 	QObject::connect(setupUi.hs_gsec,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
 	connect(setupUi.hs_pathtb,SIGNAL(released()),this,SLOT(hddSlaveImg()));
+// sdc
+	connect(setupUi.tbSDCimg,SIGNAL(released()),this,SLOT(selSDCimg()));
+	connect(setupUi.tbsdcfree,SIGNAL(released()),setupUi.sdPath,SLOT(clear()));
 //tools
 	QObject::connect(setupUi.sjselptb,SIGNAL(released()),this,SLOT(ssjapath()));
 	QObject::connect(setupUi.pdselptb,SIGNAL(released()),this,SLOT(sprjpath()));
@@ -265,7 +275,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 
 #ifdef ISDEBUG
 	setupUi.sdcTab->setEnabled(true);
-	connect(setupUi.tbSDCimg,SIGNAL(released()),this,SLOT(selSDCimg()));
+
 #endif
 }
 
@@ -414,6 +424,9 @@ void SetupWin::start() {
 	setupUi.hs_glba->setValue(zx->ide->slave->maxlba);
 // sdcard
 	setupUi.sdPath->setText(QString::fromLocal8Bit(zx->sdc->image));
+	setupUi.sdcapbox->setCurrentIndex(setupUi.sdcapbox->findData(zx->sdc->capacity));
+	if (setupUi.sdcapbox->currentIndex() < 0) setupUi.sdcapbox->setCurrentIndex(2);	// 128M
+	setupUi.sdlock->setChecked(zx->sdc->flag & SDC_LOCK);
 // tape
 	setupUi.cbTapeAuto->setChecked(optGetFlag(OF_TAPEAUTO));
 	setupUi.cbTapeFast->setChecked(optGetFlag(OF_TAPEFAST));
@@ -558,7 +571,9 @@ void SetupWin::apply() {
 	zx->ide->slave->maxlba = setupUi.hs_glba->value();
 	ideSetPassport(zx->ide,IDE_SLAVE,pass);
 // sdcard
-	sdcSetImage(zx->sdc,setupUi.sdPath->text().toLocal8Bit().data());
+	sdcSetImage(zx->sdc,setupUi.sdPath->text().isEmpty() ? NULL : setupUi.sdPath->text().toLocal8Bit().data());
+	sdcSetCapacity(zx->sdc,setupUi.sdcapbox->itemData(setupUi.sdcapbox->currentIndex()).toInt());
+	setFlagBit(setupUi.sdlock->isChecked(),&zx->sdc->flag,SDC_LOCK);
 // tape
 	optSetFlag(OF_TAPEAUTO,setupUi.cbTapeAuto->isChecked());
 	optSetFlag(OF_TAPEFAST,setupUi.cbTapeFast->isChecked());
