@@ -263,6 +263,7 @@ void sdcWrite(SDCard* sdc, unsigned char val) {
 				sdcWrSector(sdc);
 				if (sdc->flag & SDC_CONT) {
 					sdc->buf.pos = 0;
+					sdc->addr++;
 				} else {
 					sdc->state = SDC_FREE;
 				}
