@@ -1,5 +1,7 @@
 #include "xcore.h"
+#include "../settings.h"
 #include <stdio.h>
+#include <fstream>
 
 XProfile* currentProfile = NULL;
 std::vector<XProfile> profileList;
@@ -28,6 +30,9 @@ bool addProfile(std::string nm, std::string fp) {
 	nprof.file = fp;
 	nprof.layName = std::string("default");
 	nprof.zx = zxCreate();
+	std::string cmosFile = optGetString(OPT_WORKDIR) + std::string(SLASH) + nprof.name + std::string(".cmos");
+	std::ifstream file(cmosFile.c_str());
+	if (file.good()) file.read((char*)nprof.zx->cmos.data,256);
 	setHardware(nprof.zx,"ZX48K");
 	if (currentProfile != NULL) {
 		nm = currentProfile->name;

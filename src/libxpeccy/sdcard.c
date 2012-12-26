@@ -58,8 +58,13 @@ void sdcReset(SDCard* sdc) {
 }
 
 void sdcSetImage(SDCard* sdc, const char* name) {
-	sdc->image = realloc(sdc->image, strlen(name) + 1);
-	strcpy(sdc->image,name);
+	if (strlen(name) == 0) {
+		if (sdc->image) free(sdc->image);
+		sdc->image = NULL;
+	} else {
+		sdc->image = realloc(sdc->image, strlen(name) + 1);
+		strcpy(sdc->image,name);
+	}
 }
 
 void sdcSetCapacity(SDCard* sdc, int cpc) {
@@ -75,10 +80,20 @@ void sdcRdSector(SDCard* sdc) {
 //	printf("SDC read sector %i\n",sdc->addr);
 	if (sdc->addr < sdc->maxlba) {
 		FILE* file = fopen(sdc->image,"rb");
+		if (!file) {			// if can't open then try to touch file and reopen it
+			file = fopen(sdc->image,"wb");
+			if (file) {
+				fclose(file);
+				file = fopen(sdc->image,"rb");
+			}
+		}
 		if (file) {
 			fseek(file,sdc->addr * 512,SEEK_SET);
 			fread((void*)&sdc->buf.data[1],512,1,file);
 			fclose(file);
+		} else {
+			memset((void*)&sdc->buf.data[1],512,0xff);
+			sdc->image = NULL;
 		}
 	} else {
 		memset((void*)&sdc->buf.data[1],512,0xff);
@@ -87,7 +102,7 @@ void sdcRdSector(SDCard* sdc) {
 
 void sdcWrSector(SDCard* sdc) {
 	if (sdc->addr >= sdc->maxlba) return;
-	FILE* file = fopen(sdc->image,"wb");
+	FILE* file = fopen(sdc->image,"r+b");
 	if (file) {
 		fseek(file,sdc->addr * 512,SEEK_SET);
 		fwrite((void*)&sdc->buf.data[1],512,1,file);

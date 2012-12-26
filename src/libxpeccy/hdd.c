@@ -487,9 +487,8 @@ IDE* ideCreate(int tp) {
 	ide->master = ataCreate(IDE_NONE);
 	ide->slave = ataCreate(IDE_NONE);
 	ide->curDev = ide->master;
-	ide->smucFdd = 0xc0;
-	ide->smucSys = 0x00;
-	ide->cmosAdr = 0;
+	ide->smuc.fdd = 0xc0;
+	ide->smuc.sys = 0x00;
 	return ide;
 }
 
@@ -563,6 +562,7 @@ int ideIn(IDE* ide,unsigned short port,unsigned char* val,int bdiActive) {
 			break;
 		case IDE_NEMO:
 		case IDE_NEMOA8:
+//printf("NEMO in %.4X\n",port);
 			if (((port & 6) != 0) || bdiActive) return 0;
 			prt = (((port & 0xe0) >> 5) | (((port & 0x18) ^ 0x18) << 5) | 0x00f0);
 			ishi = (port & ((ide->type == IDE_NEMO) ? 0x01 : 0x100)) ? 1 : 0;
@@ -571,8 +571,9 @@ int ideIn(IDE* ide,unsigned short port,unsigned char* val,int bdiActive) {
 			break;
 		case IDE_SMUC:
 			if (((port & 0x18a3) != 0x18a2) || !bdiActive) return 0;
+//printf("SMUC in %.4X\n",port);
 			prt = ((port & 0x0700) >> 8) | 0x1f0;		// TODO: o, rly?
-			if (ide->smucSys & 0x80) {
+			if (ide->smuc.sys & 0x80) {
 				if (prt == HDD_HEAD) prt = HDD_ASTATE;
 			}
 			res = 1;					// catched smuc port
@@ -589,10 +590,10 @@ int ideIn(IDE* ide,unsigned short port,unsigned char* val,int bdiActive) {
 					*val = 0x00;	// TODO: b7: INTRQ from HDD/CF, b6:SDA?
 					break;
 				case 0x7fba:		// virtual fdd
-					*val = ide->smucFdd;
+					*val = ide->smuc.fdd | 0x3f;
 					break;
 				case 0xdfba:		// cmos
-					*val = (ide->smucSys & 0x80) ? 0xff : ide->cmosMem[ide->cmosAdr & 0x7f];
+					*val = (ide->smuc.sys & 0x80) ? 0xff : ide->smuc.cmos->data[ide->smuc.cmos->adr];
 					break;
 			}
 			break;
@@ -623,6 +624,7 @@ int ideOut(IDE* ide,unsigned short port,unsigned char val,int bdiActive) {
 			break;
 		case IDE_NEMO:
 		case IDE_NEMOA8:
+// printf("NEMO out %.4X,%.2X\n",port,val);
 			if (((port & 6) != 0) || bdiActive) return 0;
 			res = 1;
 			ishdd = 1;
@@ -634,19 +636,20 @@ int ideOut(IDE* ide,unsigned short port,unsigned char val,int bdiActive) {
 			prt = ((port & 0x0700) >> 8) | 0x1f0;		// TODO: o, rly?
 			ishi = ((port & 0x2000) == 0x0000) ? 1 : 0;
 			res = 1;					// catched smuc port
-			ishdd = ((port & 0xf8ff) == 0xf8be) ? 1 : 0;		// ide port (hdd itself)
+			ishdd = ((port & 0xf8ff) == 0xf8be) ? 1 : 0;	// ide port (hdd itself)
+//printf("SMUC out %.4X,%.2X\n",port,val);
 			switch (port) {
 				case 0xffba:			// system
-					ide->smucSys = val;
+					ide->smuc.sys = val;
 					break;
 				case 0x7fba:			// virtual fdd
-					ide->smucFdd = val;
+					ide->smuc.fdd = val & 0xc0;
 					break;
 				case 0xdfba:			// cmos
-					if (ide->smucSys & 0x80) {
-						if ((ide->smucSys & 0x20) == 0) ide->cmosMem[ide->cmosAdr & 0x7f] = val;	// check cmos write protect
+					if (ide->smuc.sys & 0x80) {
+						ide->smuc.cmos->data[ide->smuc.cmos->adr] = val;
 					} else {
-						ide->cmosAdr = val;
+						ide->smuc.cmos->adr = val;
 					}
 					break;
 			}

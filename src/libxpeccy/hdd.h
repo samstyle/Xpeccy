@@ -105,15 +105,21 @@ typedef struct {
 } ATADev;
 
 typedef struct {
+	unsigned char adr;
+	unsigned char data[256];
+} CMOS;
+
+typedef struct {
 	int type;
 	ATADev* master;
 	ATADev* slave;
 	ATADev* curDev;
 	unsigned short bus;
-	unsigned char smucSys;
-	unsigned char smucFdd;
-	unsigned char cmosAdr;
-	unsigned char cmosMem[256];
+	struct {
+		unsigned char sys;
+		unsigned char fdd;
+		CMOS* cmos;		// for SMUC: it's pointer to ZXComp::CMOS
+	} smuc;
 } IDE;
 
 IDE* ideCreate(int);

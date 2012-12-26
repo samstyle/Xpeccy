@@ -265,6 +265,7 @@ ZXComp* zxCreate() {
 	comp->tape = tapCreate();
 	comp->bdi = bdiCreate();
 	comp->ide = ideCreate(IDE_NONE);
+	comp->ide->smuc.cmos = &comp->cmos;
 	comp->sdc = sdcCreate();
 // sound
 	comp->ts = tsCreate(TS_NONE,SND_AY,SND_NONE);

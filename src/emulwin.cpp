@@ -1035,8 +1035,20 @@ void doSDLEvents() {
 #endif
 
 void MainWin::closeEvent(QCloseEvent* ev) {
+	unsigned int i;
+	std::string cmosFile;
+	std::vector<XProfile> plist = getProfileList();
 	sndPause(true);
 	timer->stop();
+	for (i = 0; i < plist.size(); i++) {
+		cmosFile = optGetString(OPT_WORKDIR) + std::string(SLASH) + plist[i].name + std::string(".cmos");
+		std::ofstream file(cmosFile.c_str());
+		if (file.good()) {
+			file.write((const char*)plist[i].zx->cmos.data,256);
+			file.close();
+		}
+	}
+
 	if (emulSaveChanged()) {
 		ev->accept();
 	} else {

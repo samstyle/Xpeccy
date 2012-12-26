@@ -84,10 +84,7 @@ typedef struct {
 		unsigned char evo6F;
 		unsigned char evo8F;
 	} evo;
-	struct {
-		unsigned char adr;
-		unsigned char data[256];
-	} cmos;
+	CMOS cmos;
 	unsigned char dosen;		// active trdos (dosen and b4,prt0 sets rompart)
 	int resbank;		// rompart active after reset
 	int gsCount;
