@@ -359,9 +359,10 @@ void zxReset(ZXComp* comp,int wut) {
 void zxSetFrq(ZXComp* comp, float frq) {
 	comp->cpuFrq = frq;
 	comp->dotPerTick = 7.0 / frq;
+	comp->nsPerTick = 1000.0 / frq;
 }
 
-double zxExec(ZXComp* comp) {
+int zxExec(ZXComp* comp) {
 	res1 = res2 = res3 = res4 = res5 = 0;
 	comp->vid->drawed = 0;
 	vflg = 0;
@@ -417,5 +418,6 @@ double zxExec(ZXComp* comp) {
 	comp->tapCount += ltk;
 	if (comp->gs->flag & GS_ENABLE) comp->gsCount += ltk;
 	if (comp->bdi->fdc->type != FDC_NONE) bdiSync(comp->bdi,ltk);
-	return ltk;
+
+	return res1 * comp->nsPerTick;
 }

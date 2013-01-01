@@ -1,13 +1,8 @@
 #ifndef _EMULWIN_H
 #define _EMULWIN_H
 
-//#include <vector>
-//#include <QIcon>
 #include <QTimer>
-//#include <stdint.h>
-//#ifdef HAVESDL
-//	#include <SDL.h>
-//#endif
+#include <QThread>
 
 #ifdef HAVESDL
 	#include <SDL.h>
@@ -206,8 +201,6 @@ typedef struct {
 	char key2;
 } keyEntry;
 
-// TODO: kill EmulWin class?
-
 #ifdef XQTPAINT
 class MainWin : public QWidget {
 #else
@@ -221,6 +214,8 @@ class MainWin : public QX11EmbedContainer {
 		void stop();
 		void checkState();
 		void updateHead();
+	signals:
+		void sigSndUpdate();
 	private:
 		QTimer* timer;
 		QTimer* etimer;
@@ -229,6 +224,8 @@ class MainWin : public QX11EmbedContainer {
 		void doOptions();
 		void tapStateChanged(int,int);
 	private slots:
+		void emuSndUpdate();
+
 		void emulFrame();
 		void processFrame();
 		void cmosTick();

@@ -88,7 +88,7 @@ int main(int ac,char** av) {
 			app.exec();
 			mainWin->stop();
 			sndClose();
-#ifdef HAVESDLS
+#ifdef HAVESDL
 			SDL_Quit();
 #endif
 			return 0;

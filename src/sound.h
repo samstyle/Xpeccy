@@ -28,6 +28,17 @@
 #define	SND_ENABLE	6
 #define	SND_MUTE	7
 
+extern bool sndEnabled;
+extern bool sndMute;
+extern int smpCount;
+extern int beepVolume;
+extern int tapeVolume;
+extern int ayVolume;
+extern int gsVolume;
+extern int sndRate;
+
+extern int nsPerByte;
+
 void sndInit();
 void sndCalibrate();
 void addOutput(std::string, bool(*)(),void(*)(),void(*)());
@@ -38,9 +49,6 @@ void sndPlay();
 void sndPause(bool);
 void sndClose();
 double sndSync(double,int);
-int sndGet(int);
-void sndSet(int,int);
-void sndSet(int,bool);
 std::vector<std::string> sndGetList();
 std::string sndGetName();
 

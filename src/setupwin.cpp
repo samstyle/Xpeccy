@@ -333,15 +333,15 @@ void SetupWin::start() {
 	for (i=0; i<lays.size(); i++) {setupUi.geombox->addItem(QString::fromLocal8Bit(lays[i].name.c_str()));}
 	setupUi.geombox->setCurrentIndex(setupUi.geombox->findText(QString::fromLocal8Bit(getCurrentProfile()->layName.c_str())));
 // sound
-	setupUi.senbox->setChecked(sndGet(SND_ENABLE) != 0);
-	setupUi.mutbox->setChecked(sndGet(SND_MUTE) != 0);
+	setupUi.senbox->setChecked(sndEnabled);
+	setupUi.mutbox->setChecked(sndMute);
 	setupUi.gsrbox->setChecked(zx->gs->flag & GS_RESET);
 	setupUi.outbox->setCurrentIndex(setupUi.outbox->findText(QString::fromLocal8Bit(sndGetOutputName().c_str())));
-	setupUi.ratbox->setCurrentIndex(setupUi.ratbox->findText(QString::number(sndGet(SND_RATE))));
-	setupUi.bvsld->setValue(sndGet(SND_BEEP));
-	setupUi.tvsld->setValue(sndGet(SND_TAPE));
-	setupUi.avsld->setValue(sndGet(SND_AYVL));
-	setupUi.gvsld->setValue(sndGet(SND_GSVL));
+	setupUi.ratbox->setCurrentIndex(setupUi.ratbox->findText(QString::number(sndRate)));
+	setupUi.bvsld->setValue(beepVolume);
+	setupUi.tvsld->setValue(tapeVolume);
+	setupUi.avsld->setValue(ayVolume);
+	setupUi.gvsld->setValue(gsVolume);
 	setupUi.schip1box->setCurrentIndex(setupUi.schip1box->findData(QVariant(zx->ts->chipA->type)));
 	setupUi.schip2box->setCurrentIndex(setupUi.schip2box->findData(QVariant(zx->ts->chipB->type)));
 	setupUi.stereo1box->setCurrentIndex(setupUi.stereo1box->findData(QVariant(zx->ts->chipA->stereo)));
@@ -481,13 +481,13 @@ void SetupWin::apply() {
 // sound
 	std::string oname = sndGetOutputName();
 	std::string nname(setupUi.outbox->currentText().toLocal8Bit().data());
-	sndSet(SND_ENABLE, setupUi.senbox->isChecked());
-	sndSet(SND_MUTE, setupUi.mutbox->isChecked());
-	sndSet(SND_RATE, setupUi.ratbox->currentText().toInt());
-	sndSet(SND_BEEP, setupUi.bvsld->value());
-	sndSet(SND_TAPE, setupUi.tvsld->value());
-	sndSet(SND_AYVL, setupUi.avsld->value());
-	sndSet(SND_GSVL, setupUi.gvsld->value());
+	sndEnabled = setupUi.senbox->isChecked();
+	sndMute = setupUi.mutbox->isChecked();
+	sndRate = setupUi.ratbox->currentText().toInt();
+	beepVolume = setupUi.bvsld->value();
+	tapeVolume = setupUi.tvsld->value();
+	ayVolume = setupUi.avsld->value();
+	gsVolume = setupUi.gvsld->value();
 	setOutput(nname);
 	aymSetType(zx->ts->chipA,setupUi.schip1box->itemData(setupUi.schip1box->currentIndex()).toInt());
 	aymSetType(zx->ts->chipB,setupUi.schip2box->itemData(setupUi.schip2box->currentIndex()).toInt());

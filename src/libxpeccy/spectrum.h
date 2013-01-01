@@ -72,6 +72,7 @@ typedef struct {
 	int beeplev;
 	float cpuFrq;
 	float dotPerTick;
+	int nsPerTick;
 	memEntry memMap[16];		// memory map for ATM2, PentEvo
 	unsigned char colMap[16];	// color map (--GgRrBb)
 	unsigned char prt0;		// 7ffd value
@@ -107,7 +108,7 @@ ZXComp* zxCreate();
 void zxDestroy(ZXComp*);
 void zxReset(ZXComp*,int);
 void zxOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
-double zxExec(ZXComp*);
+int zxExec(ZXComp*);
 void zxSetFrq(ZXComp*,float);
 
 void rzxClear(ZXComp*);

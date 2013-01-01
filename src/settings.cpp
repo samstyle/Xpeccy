@@ -412,14 +412,14 @@ void saveProfiles() {
 		if (!rsl[i].fntFile.empty()) cfile << "font = " << rsl[i].fntFile.c_str() << "\n";
 	}
 	cfile << "\n[SOUND]\n\n";
-	cfile << "enabled = " << ((sndGet(SND_ENABLE) != 0) ? "yes" : "no") << "\n";
+	cfile << "enabled = " << (sndEnabled ? "yes" : "no") << "\n";
 	cfile << "soundsys = " << sndGetName().c_str() << "\n";
-	cfile << "dontmute = " << ((sndGet(SND_MUTE) != 0) ? "yes" : "no") << "\n";
-	cfile << "rate = " << int2str(sndGet(SND_RATE)).c_str() << "\n";
-	cfile << "volume.beep = " << int2str(sndGet(SND_BEEP)).c_str() << "\n";
-	cfile << "volume.tape = " << int2str(sndGet(SND_TAPE)).c_str() << "\n";
-	cfile << "volume.ay = " << int2str(sndGet(SND_AYVL)).c_str() << "\n";
-	cfile << "volume.gs = " << int2str(sndGet(SND_GSVL)).c_str() << "\n";
+	cfile << "dontmute = " << (sndMute ? "yes" : "no") << "\n";
+	cfile << "rate = " << int2str(sndRate).c_str() << "\n";
+	cfile << "volume.beep = " << int2str(beepVolume).c_str() << "\n";
+	cfile << "volume.tape = " << int2str(tapeVolume).c_str() << "\n";
+	cfile << "volume.ay = " << int2str(ayVolume).c_str() << "\n";
+	cfile << "volume.gs = " << int2str(gsVolume).c_str() << "\n";
 	cfile << "\n[TOOLS]\n\n";
 	cfile << "asmPath = " << asmPath.c_str() << "\n";
 	cfile << "projectsDir = " << projDir.c_str() << "\n";
@@ -751,14 +751,34 @@ void loadProfiles() {
 					}
 					break;
 				case SECT_SOUND:
-					if (pnam=="enabled") sndSet(SND_ENABLE, str2bool(pval));
-					if (pnam=="dontmute") sndSet(SND_MUTE, str2bool(pval));
+					if (pnam=="enabled") sndEnabled = str2bool(pval);
+					if (pnam=="dontmute") sndMute = str2bool(pval);
 					if (pnam=="soundsys") soutnam = pval;
-					if (pnam=="rate") sndSet(SND_RATE,atoi(pval.c_str()));
-					if (pnam=="volume.beep") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_BEEP,test);}
-					if (pnam=="volume.tape") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_TAPE,test);}
-					if (pnam=="volume.ay") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_AYVL,test);}
-					if (pnam=="volume.gs") {test = atoi(pval.c_str()); if (test > 100) test = 100; sndSet(SND_GSVL,test);}
+					if (pnam=="rate") sndRate = atoi(pval.c_str());
+					if (pnam=="volume.beep") {
+						test = atoi(pval.c_str());
+						if (test > 100) test = 100;
+						if (test < 0) test = 0;
+						beepVolume = test;
+					}
+					if (pnam=="volume.tape") {
+						test = atoi(pval.c_str());
+						if (test > 100) test = 100;
+						if (test < 0) test = 0;
+						tapeVolume = test;
+					}
+					if (pnam=="volume.ay") {
+						test = atoi(pval.c_str());
+						if (test > 100) test = 100;
+						if (test < 0) test = 0;
+						ayVolume = test;
+					}
+					if (pnam=="volume.gs") {
+						test = atoi(pval.c_str());
+						if (test > 100) test = 100;
+						if (test < 0) test = 0;
+						gsVolume = test;
+					}
 					break;
 				case SECT_TOOLS:
 					if (pnam=="asmPath") asmPath = pval;

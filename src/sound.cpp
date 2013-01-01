@@ -27,6 +27,7 @@ unsigned char ringBuffer[0x4000];
 int ringPos = 0;
 int playPos = 0;
 int pass = 0;
+
 int smpCount = 0;
 
 int beepVolume = 100;
@@ -41,6 +42,7 @@ int sndChans = 2;
 int sndChunks = 882;
 int sndBufSize = 1764;
 double tatbyte = 162;
+int nsPerByte = 23143;
 double tickCount = 162;
 int lev,levr,levl;
 
@@ -62,8 +64,8 @@ int lev,levr,levl;
 // output
 
 double sndSync(double tk,int fast) {
-	if (tk < tatbyte) return tk;
-	tk -= tatbyte;
+//	if (tk < tatbyte) return tk;
+//	tk -= tatbyte;
 	tapSync(zx->tape,zx->tapCount); zx->tapCount = 0;
 	gsSync(zx->gs,zx->gsCount); zx->gsCount = 0;
 	tsSync(zx->ts,tatbyte);
@@ -106,6 +108,7 @@ void sndCalibrate() {
 	sndChunks = (int)(sndRate / 50.0);			// samples played at 1/50 sec			882
 	sndBufSize = sndChans * sndChunks;			// buffer size for 1/50 sec play		1764
 	tatbyte = (zx->vid->frmsz / (double)sndChunks);		// count of 7MHz ticks between samples		162.54 ?
+	nsPerByte = tatbyte * 1000 / 7.0;			// ns per sample
 }
 
 void addOutput(std::string nam, bool (*opf)(), void (*plf)(), void (*clf)()) {
@@ -185,38 +188,6 @@ std::string sndGetName() {
 		res = sndOutput->name;
 	}
 	return res;
-}
-
-int sndGet(int wut) {
-	int res = 0;
-	switch (wut) {
-		case SND_RATE: res = sndRate; break;
-		case SND_BEEP: res = beepVolume; break;
-		case SND_TAPE: res = tapeVolume; break;
-		case SND_AYVL: res = ayVolume; break;
-		case SND_GSVL: res = gsVolume; break;
-		case SND_ENABLE: res = sndEnabled ? 1 : 0; break;
-		case SND_MUTE: res = sndMute ? 1 : 0; break;
-	}
-	return res;
-}
-
-void sndSet(int wut,int val) {
-	switch (wut) {
-		case SND_RATE: sndRate = val; break;
-		case SND_COUNT: smpCount = val; break;
-		case SND_BEEP: beepVolume = val; break;
-		case SND_TAPE: tapeVolume = val; break;
-		case SND_AYVL: ayVolume = val; break;
-		case SND_GSVL: gsVolume = val; break;
-	}
-}
-
-void sndSet(int wut, bool val) {
-	switch(wut) {
-		case SND_ENABLE: sndEnabled = val; break;
-		case SND_MUTE: sndMute = val; break;
-	}
 }
 
 //------------------------
@@ -439,7 +410,7 @@ void sndInit() {
 	addOutput("ALSA",&alsa_open,&alsa_play,&alsa_close);
 #endif
 #elif _WIN32
-	addOutput("WaveOut",&wave_open,&wave_play,&wave_close);
+//	addOutput("WaveOut",&wave_open,&wave_play,&wave_close);
 #endif
 #ifdef HAVESDL
 	addOutput("SDL",&sdlopen,&sdlplay,&sdlclose);	// TODO: do something with SDL output

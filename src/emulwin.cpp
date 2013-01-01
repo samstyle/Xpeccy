@@ -3,6 +3,7 @@
 #include <QMessageBox>
 #include <QProgressBar>
 #include <QTableWidget>
+#include <QTime>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "xcore/xcore.h"
@@ -39,7 +40,7 @@ QIcon curicon;
 	SDL_Surface* surf = NULL;
 	SDL_Color zxpal[256];
 	SDL_SysWMinfo inf;
-	SDL_TimerID tid;
+//	SDL_TimerID tid;
 	SDL_Joystick* joy = NULL;
 #endif
 QVector<QRgb> qPal;
@@ -65,6 +66,9 @@ Z80EX_WORD pc,af,de,ix;
 int blkDataSize = 0;
 unsigned char* blkData = NULL;
 int blk;
+
+int prc;
+int tks = 0;				// ns counter
 
 void emulInit() {
 	initKeyMap();
@@ -340,11 +344,9 @@ void emulSetFlag(int msk,bool cnd) {
 	}
 }
 
-double tks = 0;
 
 void emulExec() {
 	tks += zxExec(zx);
-	tks = sndSync(tks,emulFlags & FL_FAST);
 	if (zx->flag & ZX_PALCHAN) {
 		emulSetPalette(zx,optGetInt(OPT_BRGLEV));
 		zx->flag &= ~ZX_PALCHAN;
@@ -421,6 +423,12 @@ MainWin::MainWin() {
 	connect(etimer,SIGNAL(timeout()),this,SLOT(processFrame()));
 	connect(cmosTimer,SIGNAL(timeout()),this,SLOT(cmosTick()));
 	cmosTimer->start(1000);
+
+	connect(this,SIGNAL(sigSndUpdate()),SLOT(emuSndUpdate()));
+}
+
+void MainWin::emuSndUpdate() {
+	sndSync(0,emulFlags & FL_FAST);
 }
 
 void MainWin::start() {
@@ -1083,7 +1091,9 @@ void doScreenShot() {
 		case SCR_SCR: fext = "scr"; break;
 		case SCR_HOB: fext = "$C"; break;
 	};
-	std::string fnam = optGetString(OPT_SHOTDIR) + "/sshot" + int2str(scrNumber) + "." + fext;
+	QString fnams = QString(optGetString(OPT_SHOTDIR).c_str()).append(SLASH);
+	fnams.append(QTime::currentTime().toString("HHmmss_zzz")).append(".").append(QString(fext.c_str()));
+	std::string fnam(fnams.toUtf8().data());
 	std::ofstream file;
 #ifdef XQTPAINT
 	QImage *img = new QImage(scrImg);
@@ -1125,8 +1135,6 @@ void putIcon(Video* vid, int x, int y, unsigned char* data) {
 	}
 }
 
-int prc;
-
 void MainWin::emulFrame() {
 	if (emulFlags & FL_BLOCK) return;
 // if !active window release keys & buttons
@@ -1140,7 +1148,7 @@ void MainWin::emulFrame() {
 		emulPause(false,PR_MENU);
 	}
 // if not paused play sound buffer
-	if ((wantedWin == WW_NONE) && (pauseFlags == 0) && (~emulFlags & FL_FAST) && sndGet(SND_ENABLE) && (sndGet(SND_MUTE) || isActiveWindow()))
+	if ((wantedWin == WW_NONE) && (pauseFlags == 0) && (~emulFlags & FL_FAST) && sndEnabled && (sndMute || isActiveWindow()))
 			sndPlay();
 // update rzx window
 	if ((zx->rzxPlay) && rzxWin->isVisible()) {
@@ -1187,13 +1195,6 @@ void MainWin::emulFrame() {
 			case FDC_WRITE: putIcon(zx->vid,4,4,icoRedDisk); break;
 		}
 	}
-// update picture && process SDL events
-#ifndef XQTPAINT
-	SDL_UpdateRect(surf,0,0,0,0);
-	doSDLEvents();
-#else
-	update();
-#endif
 // if request speed change, do it
 	if (emulFlags & FL_FAST_RQ) {
 		emulFlags ^= FL_FAST;
@@ -1207,8 +1208,15 @@ void MainWin::emulFrame() {
 		}
 		emulFlags &= ~FL_FAST_RQ;
 	}
+	// update picture && process SDL events
+#ifndef XQTPAINT
+	SDL_UpdateRect(surf,0,0,0,0);
+//	doSDLEvents();
+#else
+	update();
+#endif
 // if speed == normal: call processFrame
-	sndSet(SND_COUNT,0);
+	smpCount = 0;
 	if (~emulFlags & FL_FAST)
 		processFrame();
 }
@@ -1241,6 +1249,7 @@ void emulTapeCatch() {
 	}
 }
 
+
 void MainWin::processFrame() {
 // if screenshot requested do it
 	zx->flag = 0;
@@ -1250,6 +1259,10 @@ void MainWin::processFrame() {
 // emul ZX until FRM
 	do {
 		emulExec();
+		if (tks > nsPerByte) {
+			emit sigSndUpdate();
+			tks -= nsPerByte;
+		}
 		pc = z80ex_get_reg(zx->cpu,regPC);
 		if ((zx->mem->pt0->type == MEM_ROM) && (zx->mem->pt0->num == 1)) {
 			if (pc == 0x56b) emulTapeCatch();

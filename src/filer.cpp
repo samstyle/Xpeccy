@@ -31,11 +31,11 @@ bool saveChangedDisk(int id) {
 		QMessageBox mbox;
 		mbox.setText(QString("<b>Disk ").append(QChar('A'+id)).append(": has been changed</b>"));
 		mbox.setInformativeText("Do you want to save it?");
-		mbox.setStandardButtons(QMessageBox::Yes|QMessageBox::Ignore|QMessageBox::Cancel);
+		mbox.setStandardButtons(QMessageBox::Yes|QMessageBox::No|QMessageBox::Cancel);
 		mbox.setIcon(QMessageBox::Warning);
 		switch (mbox.exec()) {
 			case QMessageBox::Yes: res = saveFile(flp->path,FT_DISK,id); break;		// save
-			case QMessageBox::Ignore: res=true; break;					// don't save
+			case QMessageBox::No: res=true; break;						// don't save
 			case QMessageBox::Cancel: res=false; break;					// cancel
 		}
 	}
