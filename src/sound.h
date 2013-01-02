@@ -37,7 +37,7 @@ extern int ayVolume;
 extern int gsVolume;
 extern int sndRate;
 
-extern int nsPerByte;
+extern double tatbyte;
 
 void sndInit();
 void sndCalibrate();
@@ -48,8 +48,10 @@ bool sndOpen();
 void sndPlay();
 void sndPause(bool);
 void sndClose();
-double sndSync(double,int);
+void sndSync(int);
 std::vector<std::string> sndGetList();
 std::string sndGetName();
+
+void sndFillToEnd();
 
 #endif

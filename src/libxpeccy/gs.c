@@ -88,6 +88,7 @@ GSound* gsCreate() {
 	memSetBank(res->mem,MEM_BANK1,MEM_RAM,0);
 	memSetBank(res->mem,MEM_BANK2,MEM_RAM,0);
 	memSetBank(res->mem,MEM_BANK3,MEM_RAM,1);
+	res->sync = 0;
 	res->cnt = 0;
 	res->pstate = 0x7e;
 	res->flag = 0;
@@ -114,10 +115,10 @@ void gsReset(GSound* gs) {
 	z80ex_reset(gs->cpu);
 }
 
-void gsSync(GSound* gs, int tk) {
+void gsSync(GSound* gs) {
 	int res;
 	if (~gs->flag & GS_ENABLE) return;
-	gs->counter += tk * GS_FRQ / 7.0;
+	gs->counter += gs->sync * GS_FRQ / 7.0;
 	while (gs->counter > 0) {
 		res = 0;
 		do {
@@ -132,6 +133,7 @@ void gsSync(GSound* gs, int tk) {
 			gs->counter -= res;
 		}
 	}
+	gs->sync = 0;
 }
 
 gsPair gsGetVolume(GSound* gs) {
@@ -160,6 +162,7 @@ gsPair gsGetVolume(GSound* gs) {
 int gsIn(GSound* gs, int prt, unsigned char* val) {
 	if (~gs->flag & GS_ENABLE) return GS_ERR;	// gs disabled
 	if ((prt & 0x44) != 0) return GS_ERR;		// port don't catched
+	gsSync(gs);
 	if (prt & 8) {
 		*val = gs->pstate;
 	} else {
@@ -172,6 +175,7 @@ int gsIn(GSound* gs, int prt, unsigned char* val) {
 int gsOut(GSound* gs, int prt,unsigned char val) {
 	if (~gs->flag & GS_ENABLE) return GS_ERR;
 	if ((prt & 0x44) != 0) return GS_ERR;
+	gsSync(gs);
 	if (prt & 8) {
 		gs->pbb_zx = val;
 		gs->pstate |= 1;

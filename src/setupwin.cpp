@@ -571,7 +571,7 @@ void SetupWin::apply() {
 	zx->ide->slave->maxlba = setupUi.hs_glba->value();
 	ideSetPassport(zx->ide,IDE_SLAVE,pass);
 // sdcard
-	sdcSetImage(zx->sdc,setupUi.sdPath->text().isEmpty() ? NULL : setupUi.sdPath->text().toLocal8Bit().data());
+	sdcSetImage(zx->sdc,setupUi.sdPath->text().isEmpty() ? "" : setupUi.sdPath->text().toLocal8Bit().data());
 	sdcSetCapacity(zx->sdc,setupUi.sdcapbox->itemData(setupUi.sdcapbox->currentIndex()).toInt());
 	setFlagBit(setupUi.sdlock->isChecked(),&zx->sdc->flag,SDC_LOCK);
 // tape

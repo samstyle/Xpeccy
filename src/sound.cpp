@@ -45,6 +45,7 @@ double tatbyte = 162;
 int nsPerByte = 23143;
 double tickCount = 162;
 int lev,levr,levl;
+int lastL,lastR;
 
 #ifdef __linux__
 	int32_t ossHandle;			// oss
@@ -63,13 +64,13 @@ int lev,levr,levl;
 
 // output
 
-double sndSync(double tk,int fast) {
+void sndSync(int fast) {
 //	if (tk < tatbyte) return tk;
 //	tk -= tatbyte;
 	tapSync(zx->tape,zx->tapCount); zx->tapCount = 0;
-	gsSync(zx->gs,zx->gsCount); zx->gsCount = 0;
+	gsSync(zx->gs);
 	tsSync(zx->ts,tatbyte);
-	if (fast != 0) return tk;
+	if (fast != 0) return;
 	lev = zx->beeplev ? beepVolume : 0;
 	if (zx->tape->flag & TAPE_ON) {
 		lev += (zx->tape->outsig ? tapeVolume : 0) + (zx->tape->signal ? tapeVolume : 0);
@@ -95,20 +96,34 @@ double sndSync(double tk,int fast) {
 	if (levr > 0xff) levr = 0xff;
 
 //	if (smpCount >= sndChunks) return tk;
-	ringBuffer[ringPos] = (levl & 0xff);
+	lastL = levl & 0xff;
+	lastR = levr & 0xff;
+	ringBuffer[ringPos] = lastL;
 	ringPos++;
-	ringBuffer[ringPos] = (levr & 0xff);
+	ringBuffer[ringPos] = lastR;
 	ringPos++;
 	ringPos &= 0x3fff;
-//	smpCount++;
-	return tk;
+	smpCount++;
+//	return tk;
+}
+
+void sndFillToEnd() {
+//	printf("tail: %i\n",sndChunks - smpCount);
+	while (smpCount < sndChunks) {
+		ringBuffer[ringPos] = lastL;
+		ringPos++;
+		ringBuffer[ringPos] = lastR;
+		ringPos++;
+		ringPos &= 0x3fff;
+		smpCount++;
+	}
 }
 
 void sndCalibrate() {
 	sndChunks = (int)(sndRate / 50.0);			// samples played at 1/50 sec			882
 	sndBufSize = sndChans * sndChunks;			// buffer size for 1/50 sec play		1764
 	tatbyte = (zx->vid->frmsz / (double)sndChunks);		// count of 7MHz ticks between samples		162.54 ?
-	nsPerByte = tatbyte * 1000 / 7.0;			// ns per sample
+	nsPerByte = tatbyte * 1000 / 7.0;			// ns per sample		FIXME
 }
 
 void addOutput(std::string nam, bool (*opf)(), void (*plf)(), void (*clf)()) {
@@ -277,7 +292,7 @@ bool oss_open() {
 void oss_play() {
 	if (ossHandle < 0) return;
 	unsigned char* ptr = ringBuffer;
-	int fsz = ringPos;
+	int fsz = sndBufSize;
 	int res;
 	while (fsz > 0) {
 		res = write(ossHandle,ptr,fsz);
@@ -324,11 +339,11 @@ bool alsa_open() {
 void alsa_play() {
 	snd_pcm_sframes_t res;
 	unsigned char* ptr = ringBuffer;
-	int fsz = sndBufSize / sndChans;
+	int fsz = sndChunks;
 	while (fsz > 0) {
 		res = snd_pcm_writei(alsaHandle, ptr, fsz);
-		if (res<0) res = snd_pcm_recover(alsaHandle, res, 1);
-		if (res<0) break;
+		if (res < 0) res = snd_pcm_recover(alsaHandle, res, 1);
+		if (res < 0) break;
 		fsz -= res;
 		ptr += res * sndChans;
 	}

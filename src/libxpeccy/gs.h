@@ -38,13 +38,14 @@ typedef struct {
 	int ch1,ch2,ch3,ch4;
 	int cnt;
 	int stereo;
+	int sync;
 	double counter;
 } GSound;
 
 GSound* gsCreate();
 void gsDestroy(GSound*);
 void gsReset(GSound*);
-void gsSync(GSound*, int);
+void gsSync(GSound*);
 gsPair gsGetVolume(GSound*);
 
 int gsIn(GSound*, int, unsigned char*);

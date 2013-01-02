@@ -31,7 +31,7 @@
 
 #include <fstream>
 
-#define	XPTITLE	"Xpeccy 0.5 (20121225)"
+#define	XPTITLE	"Xpeccy 0.5 (20130102)"
 
 // main
 MainWin* mainWin;
@@ -68,7 +68,7 @@ unsigned char* blkData = NULL;
 int blk;
 
 int prc;
-int tks = 0;				// ns counter
+double tks = 0;				// ns counter
 
 void emulInit() {
 	initKeyMap();
@@ -418,22 +418,23 @@ MainWin::MainWin() {
 	etimer = new QTimer();
 	cmosTimer = new QTimer();
 	timer->setInterval(20);	// common
-	etimer->setInterval(1);	// fast
+	etimer->setInterval(1);	// for fast emulation
 	connect(timer,SIGNAL(timeout()),this,SLOT(emulFrame()));
-	connect(etimer,SIGNAL(timeout()),this,SLOT(processFrame()));
+	connect(etimer,SIGNAL(timeout()),this,SLOT(emuFrame()));
 	connect(cmosTimer,SIGNAL(timeout()),this,SLOT(cmosTick()));
 	cmosTimer->start(1000);
 
 	connect(this,SIGNAL(sigSndUpdate()),SLOT(emuSndUpdate()));
+	connect(this,SIGNAL(sigGoEmulate()),SLOT(emuFrame()));
 }
 
 void MainWin::emuSndUpdate() {
-	sndSync(0,emulFlags & FL_FAST);
+	sndSync(emulFlags & FL_FAST);
 }
 
 void MainWin::start() {
-	etimer->stop();	// fast timer
-	timer->start();	// common timer
+	etimer->stop();
+	timer->start();
 }
 
 void MainWin::stop() {
@@ -1137,10 +1138,16 @@ void putIcon(Video* vid, int x, int y, unsigned char* data) {
 
 void MainWin::emulFrame() {
 	if (emulFlags & FL_BLOCK) return;
+
+	sndFillToEnd();
+
+	if ((pauseFlags == 0) && (~emulFlags & FL_EMULATION))
+		emit sigGoEmulate();		// signal to start frame emulation till next INT
+
 // if !active window release keys & buttons
 	if (!isActiveWindow()) {
 		keyRelease(zx->keyb,0,0);
-		zx->mouse->buttons = 0xff;
+		zx->mouse->buttons = 0xff;		
 	}
 // check if menu isn't visible anymore (QMenu doesn't have signals on show/hide events)
 	if (userMenu->isHidden() && (pauseFlags & PR_MENU)) {
@@ -1208,7 +1215,7 @@ void MainWin::emulFrame() {
 		}
 		emulFlags &= ~FL_FAST_RQ;
 	}
-	// update picture && process SDL events
+// update picture && process SDL events
 #ifndef XQTPAINT
 	SDL_UpdateRect(surf,0,0,0,0);
 	doSDLEvents();
@@ -1216,9 +1223,8 @@ void MainWin::emulFrame() {
 	update();
 #endif
 // if speed == normal: call processFrame
-	smpCount = 0;
-	if (~emulFlags & FL_FAST)
-		processFrame();
+//	if (~emulFlags & FL_FAST)
+//		processFrame();
 }
 
 void emulTapeCatch() {
@@ -1249,13 +1255,52 @@ void emulTapeCatch() {
 	}
 }
 
+void MainWin::emuFrame() {
+	emulFlags |= FL_EMULATION;		// frame emulation started
+	zx->flag = 0;
+	smpCount = 0;
+	// take screenshot
+	if (emulFlags & FL_SHOT) doScreenShot();
+	// emulate frame
+	do {
+		// exec 1 opcode (+ INT, NMI)
+		emulExec();
+		// if need - request sound buffer update
+		if (tks > tatbyte) {
+			emit sigSndUpdate();
+			tks -= tatbyte;
+		}
+		// tape trap
+		pc = z80ex_get_reg(zx->cpu,regPC);
+		if ((zx->mem->pt0->type == MEM_ROM) && (zx->mem->pt0->num == 1)) {
+			if (pc == 0x56b) emulTapeCatch();
+			if ((pc == 0x5e2) && optGetFlag(OF_TAPEAUTO))
+				tapStateChanged(TW_STATE,TWS_STOP);
+		}
+	} while (!(zx->flag & ZX_BREAK) && (zx->intStrobe == 0));		// exec until breakpoint or INT
+	if (zx->flag & ZX_BREAK) {						// request debug window on breakpoint
+		wantedWin = WW_DEBUG;
+		zx->flag &= ~ZX_BREAK;
+	}
+	zx->nmiRequest = 0;
+	// decrease frames & screenshot counter (if any), request screenshot (if needed)
+	if (scrCounter != 0) {
+		if (scrInterval == 0) {
+			emulFlags |= FL_SHOT;
+			scrCounter--;
+			scrInterval = optGetInt(OPT_SHOTINT);
+			if (scrCounter == 0) printf("stop combo shots\n");
+		} else {
+			scrInterval--;
+		}
+	}
+	emulFlags &= ~FL_EMULATION;		// frame emulation finished
+}
 
+/*
 void MainWin::processFrame() {
 // if screenshot requested do it
-	zx->flag = 0;
 	if (emulFlags & FL_SHOT) doScreenShot();
-// if paused, return
-	if ((pauseFlags != 0) || (wantedWin != WW_NONE)) return;
 // emul ZX until FRM
 	do {
 		emulExec();
@@ -1287,6 +1332,7 @@ void MainWin::processFrame() {
 		}
 	}
 }
+*/
 
 // JOYSTICK
 

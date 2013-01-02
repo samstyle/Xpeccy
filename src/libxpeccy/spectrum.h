@@ -88,7 +88,7 @@ typedef struct {
 	CMOS cmos;
 	unsigned char dosen;		// active trdos (dosen and b4,prt0 sets rompart)
 	int resbank;		// rompart active after reset
-	int gsCount;
+//	int gsCount;
 	int tapCount;
 	unsigned long tickCount;
 } ZXComp;
@@ -108,7 +108,7 @@ ZXComp* zxCreate();
 void zxDestroy(ZXComp*);
 void zxReset(ZXComp*,int);
 void zxOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
-int zxExec(ZXComp*);
+double zxExec(ZXComp*);
 void zxSetFrq(ZXComp*,float);
 
 void rzxClear(ZXComp*);
