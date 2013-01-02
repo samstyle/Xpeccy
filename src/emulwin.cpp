@@ -1211,7 +1211,7 @@ void MainWin::emulFrame() {
 	// update picture && process SDL events
 #ifndef XQTPAINT
 	SDL_UpdateRect(surf,0,0,0,0);
-//	doSDLEvents();
+	doSDLEvents();
 #else
 	update();
 #endif
