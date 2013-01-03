@@ -426,6 +426,7 @@ MainWin::MainWin() {
 
 	connect(this,SIGNAL(sigSndUpdate()),SLOT(emuSndUpdate()));
 	connect(this,SIGNAL(sigGoEmulate()),SLOT(emuFrame()));
+	connect(this,SIGNAL(sigDraw()),SLOT(emuDraw()));
 }
 
 void MainWin::emuSndUpdate() {
@@ -1139,24 +1140,68 @@ void putIcon(Video* vid, int x, int y, unsigned char* data) {
 void MainWin::emulFrame() {
 	if (emulFlags & FL_BLOCK) return;
 
+// fill buffer 'til end (maybe)
 	sndFillToEnd();
-
-	if ((pauseFlags == 0) && (~emulFlags & FL_EMULATION))
-		emit sigGoEmulate();		// signal to start frame emulation till next INT
+// if not paused play sound buffer
+	if ((wantedWin == WW_NONE) && (pauseFlags == 0) && (~emulFlags & FL_FAST) && sndEnabled && (sndMute || isActiveWindow()))
+		sndPlay();
+// request window(s) update
+	if ((~emulFlags & FL_DRAWING))
+		emit sigDraw();			// signal for update window
 
 // if !active window release keys & buttons
 	if (!isActiveWindow()) {
 		keyRelease(zx->keyb,0,0);
 		zx->mouse->buttons = 0xff;		
 	}
+
+	if ((pauseFlags == 0) && (~emulFlags & FL_EMULATION))
+		emit sigGoEmulate();		// signal to start frame emulation till next INT
+
 // check if menu isn't visible anymore (QMenu doesn't have signals on show/hide events)
 	if (userMenu->isHidden() && (pauseFlags & PR_MENU)) {
 		setFocus();
 		emulPause(false,PR_MENU);
 	}
-// if not paused play sound buffer
-	if ((wantedWin == WW_NONE) && (pauseFlags == 0) && (~emulFlags & FL_FAST) && sndEnabled && (sndMute || isActiveWindow()))
-			sndPlay();
+// show wanted window if any
+	switch(wantedWin) {
+		case WW_DEBUG:
+			dbgShow();
+			wantedWin = WW_NONE;
+			break;
+		case WW_DEVEL:
+			devShow();
+			wantedWin = WW_NONE;
+			break;
+		case WW_OPTIONS:
+			optShow();
+			wantedWin = WW_NONE;
+			break;
+	}
+// if request speed change, do it
+	if (emulFlags & FL_FAST_RQ) {
+		emulFlags ^= FL_FAST;
+		updateHead();
+		if (emulFlags & FL_FAST) {
+			etimer->start();
+			sndPause(true);
+		} else {
+			etimer->stop();
+			sndPause(false);
+		}
+		emulFlags &= ~FL_FAST_RQ;
+	}
+// process SDL events
+#ifndef XQTPAINT
+	doSDLEvents();
+#endif
+// if speed == normal: call processFrame
+//	if (~emulFlags & FL_FAST)
+//		processFrame();
+}
+
+void MainWin::emuDraw() {
+	emulFlags |= FL_DRAWING;
 // update rzx window
 	if ((zx->rzxPlay) && rzxWin->isVisible()) {
 		prc = 100 * zx->rzxFrame / zx->rzxSize;
@@ -1179,21 +1224,6 @@ void MainWin::emulFrame() {
 			zx->tape->flag &= ~TAPE_NEW_BLOCK;
 		}
 	}
-// show wanted window if any
-	switch(wantedWin) {
-		case WW_DEBUG:
-			dbgShow();
-			wantedWin = WW_NONE;
-			break;
-		case WW_DEVEL:
-			devShow();
-			wantedWin = WW_NONE;
-			break;
-		case WW_OPTIONS:
-			optShow();
-			wantedWin = WW_NONE;
-			break;
-	}
 // put icons
 	if (emulFlags & FL_LED_DISK) {
 		int fst = zx->bdi->fdc->status;
@@ -1202,29 +1232,13 @@ void MainWin::emulFrame() {
 			case FDC_WRITE: putIcon(zx->vid,4,4,icoRedDisk); break;
 		}
 	}
-// if request speed change, do it
-	if (emulFlags & FL_FAST_RQ) {
-		emulFlags ^= FL_FAST;
-		updateHead();
-		if (emulFlags & FL_FAST) {
-			etimer->start();
-			sndPause(true);
-		} else {
-			etimer->stop();
-			sndPause(false);
-		}
-		emulFlags &= ~FL_FAST_RQ;
-	}
-// update picture && process SDL events
-#ifndef XQTPAINT
-	SDL_UpdateRect(surf,0,0,0,0);
-	doSDLEvents();
-#else
+#ifdef XQTPAINT
 	update();
+#else
+	SDL_UpdateRect(surf,0,0,0,0);
 #endif
-// if speed == normal: call processFrame
-//	if (~emulFlags & FL_FAST)
-//		processFrame();
+	emulFlags &= ~FL_DRAWING;
+
 }
 
 void emulTapeCatch() {

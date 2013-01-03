@@ -99,7 +99,11 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 // sound
 	list = sndGetList();
 	for (i=0;i<list.size();i++) {setupUi.outbox->addItem(QString::fromLocal8Bit(list[i].c_str()));}
-	setupUi.ratbox->addItems(QStringList()<<"44100"<<"22050"<<"11025");
+	setupUi.ratbox->addItem("48000",48000);
+	setupUi.ratbox->addItem("44100",44100);
+	setupUi.ratbox->addItem("22050",22050);
+	setupUi.ratbox->addItem("11025",11025);
+//	setupUi.ratbox->addItems(QStringList()<<"48000"<<"44100"<<"22050"<<"11025");
 	setupUi.schip1box->addItem(QIcon(":/images/cancel.png"),"none",QVariant(SND_NONE));
 	setupUi.schip1box->addItem(QIcon(":/images/MicrochipLogo.png"),"AY-3-8910",QVariant(SND_AY));
 	setupUi.schip1box->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2149",QVariant(SND_YM));
@@ -337,7 +341,7 @@ void SetupWin::start() {
 	setupUi.mutbox->setChecked(sndMute);
 	setupUi.gsrbox->setChecked(zx->gs->flag & GS_RESET);
 	setupUi.outbox->setCurrentIndex(setupUi.outbox->findText(QString::fromLocal8Bit(sndGetOutputName().c_str())));
-	setupUi.ratbox->setCurrentIndex(setupUi.ratbox->findText(QString::number(sndRate)));
+	setupUi.ratbox->setCurrentIndex(setupUi.ratbox->findData(QVariant(sndRate)));
 	setupUi.bvsld->setValue(beepVolume);
 	setupUi.tvsld->setValue(tapeVolume);
 	setupUi.avsld->setValue(ayVolume);
@@ -483,7 +487,7 @@ void SetupWin::apply() {
 	std::string nname(setupUi.outbox->currentText().toLocal8Bit().data());
 	sndEnabled = setupUi.senbox->isChecked();
 	sndMute = setupUi.mutbox->isChecked();
-	sndRate = setupUi.ratbox->currentText().toInt();
+	sndRate = setupUi.ratbox->itemData(setupUi.ratbox->currentIndex()).toInt();
 	beepVolume = setupUi.bvsld->value();
 	tapeVolume = setupUi.tvsld->value();
 	ayVolume = setupUi.avsld->value();
