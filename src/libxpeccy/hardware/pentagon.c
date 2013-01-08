@@ -28,6 +28,12 @@ int penGetPort(Z80EX_WORD port, int bdiz) {
 void penOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 	int ptype = penGetPort(port,bdiz);
 	sdrvOut(comp->sdrv,port & 0x00ff,val);
+	if ((port & 0x0001) == 0x0000) {
+		comp->vid->nextbrd = val & 0x07;
+		if (!(comp->vid->flags & VID_BORDER_4T)) comp->vid->brdcol = val & 0x07;
+		comp->beeplev = val & 0x10;
+		comp->tape->outsig = (val & 0x08) ? 1 : 0;
+	}
 	switch (ptype) {
 		case 0x1f:
 			if (bdiz) bdiOut(comp->bdi,FDC_COM,val);
@@ -45,10 +51,6 @@ void penOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 			if (bdiz) bdiOut(comp->bdi,BDI_SYS,val);
 			break;
 		case 0xfe:
-			comp->vid->nextbrd = val & 0x07;
-			if (!(comp->vid->flags & VID_BORDER_4T)) comp->vid->brdcol = val & 0x07;
-			comp->beeplev = val & 0x10;
-			comp->tape->outsig = (val & 0x08) ? 1 : 0;
 			break;
 		case 0x7ffd:
 			if (comp->prt0 & 0x20) break;

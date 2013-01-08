@@ -444,6 +444,7 @@ void SetupWin::start() {
 	setupUi.diskLed->setChecked(emulGetFlags() & FL_LED_DISK);
 	setupUi.shotLed->setChecked(emulGetFlags() & FL_LED_SHOT);
 // profiles
+	setupUi.defstart->setChecked(optGetFlag(OF_DEFAULT));
 	buildproflist();
 
 	show();
@@ -587,6 +588,8 @@ void SetupWin::apply() {
 // leds
 	emulSetFlag(FL_LED_DISK,setupUi.diskLed->isChecked());
 	emulSetFlag(FL_LED_SHOT,setupUi.shotLed->isChecked());
+// profiles
+	optSetFlag(OF_DEFAULT,setupUi.defstart->isChecked());
 
 	saveConfig();
 	sndCalibrate();

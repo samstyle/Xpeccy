@@ -31,7 +31,7 @@
 
 #include <fstream>
 
-#define	XPTITLE	"Xpeccy 0.5 (20130102)"
+#define	XPTITLE	"Xpeccy 0.5 (20130108)"
 
 // main
 MainWin* mainWin;

@@ -361,6 +361,7 @@ void saveProfiles() {
 	if ((keyFileName != "default") && (keyFileName != "")) {
 		cfile << "keys = " << keyFileName.c_str() << "\n";
 	}
+	cfile << "startdefault = " << ((flag & OF_DEFAULT) ? "yes" : "no") << "\n";
 
 	cfile << "\n[BOOKMARKS]\n\n";
 	std::vector<XBookmark> bml = getBookmarkList();
@@ -817,6 +818,9 @@ void loadProfiles() {
 						keyFileName = pval;
 						loadKeys();
 					}
+					if (pnam=="startdefault") {
+						optSetFlag(OF_DEFAULT,str2bool(pval));
+					}
 					break;
 				case SECT_TAPE:
 					if (pnam=="autoplay") optSetFlag(OF_TAPEAUTO,str2bool(pval));
@@ -832,11 +836,18 @@ void loadProfiles() {
 	uint i;
 	for (i=0; i<rslist.size(); i++) addRomset(rslist[i]);
 	setOutput(soutnam);
-	if (!setProfile(pnm.c_str())) {
-		shitHappens("Cannot set current profile\nDefault will be used");
+	if (flag & OF_DEFAULT) {
 		if (!setProfile("default")) {
-			shitHappens("...and default too?\nReally, shit happens");
+			printf("Can't set default profile. GRR!\n");
 			throw(0);
+		}
+	} else {
+		if (!setProfile(pnm.c_str())) {
+			shitHappens("Cannot set current profile\nDefault will be used");
+			if (!setProfile("default")) {
+				shitHappens("...and default too?\nReally, shit happens");
+				throw(0);
+			}
 		}
 	}
 	emulSetPalette(zx,brgLevel);

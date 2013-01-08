@@ -292,7 +292,7 @@ bool oss_open() {
 void oss_play() {
 	if (ossHandle < 0) return;
 	unsigned char* ptr = ringBuffer;
-	int fsz = sndBufSize;
+	int fsz = smpCount * sndChans;
 	int res;
 	while (fsz > 0) {
 		res = write(ossHandle,ptr,fsz);
@@ -339,7 +339,7 @@ bool alsa_open() {
 void alsa_play() {
 	snd_pcm_sframes_t res;
 	unsigned char* ptr = ringBuffer;
-	int fsz = sndChunks;
+	int fsz = smpCount;
 	while (fsz > 0) {
 		res = snd_pcm_writei(alsaHandle, ptr, fsz);
 		if (res < 0) res = snd_pcm_recover(alsaHandle, res, 1);

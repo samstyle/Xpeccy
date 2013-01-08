@@ -32,6 +32,7 @@
 // flags
 #define	OF_TAPEAUTO	1
 #define	OF_TAPEFAST	(1<<1)
+#define	OF_DEFAULT	(1<<2)
 
 struct optEntry {
 	std::string group;
