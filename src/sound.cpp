@@ -95,7 +95,8 @@ void sndSync(int fast) {
 	if (levl > 0xff) levl = 0xff;
 	if (levr > 0xff) levr = 0xff;
 
-//	if (smpCount >= sndChunks) return tk;
+	if (smpCount >= sndChunks) return;		// don't overfill buffer!
+
 	lastL = levl & 0xff;
 	lastR = levr & 0xff;
 	ringBuffer[ringPos] = lastL;
@@ -123,7 +124,7 @@ void sndCalibrate() {
 	sndChunks = (int)(sndRate / 50.0);			// samples played at 1/50 sec			882
 	sndBufSize = sndChans * sndChunks;			// buffer size for 1/50 sec play		1764
 	tatbyte = (zx->vid->frmsz / (double)sndChunks);		// count of 7MHz ticks between samples		162.54 ?
-	nsPerByte = tatbyte * 1000 / 7.0;			// ns per sample		FIXME
+	nsPerByte = 1000000000/(double)sndRate;			// ns per sample		FIXME
 }
 
 void addOutput(std::string nam, bool (*opf)(), void (*plf)(), void (*clf)()) {
@@ -244,7 +245,8 @@ void sdlPlayAudio(void*,Uint8* stream, int len) {
 #endif
 	}
 //	SDL_LockAudio();
-	SDL_MixAudio(stream,sndBuffer,len,SDL_MIX_MAXVOLUME);
+//	SDL_MixAudio(stream,sndBuffer,len,SDL_MIX_MAXVOLUME);
+	memcpy(stream,sndBuffer,len);
 //	SDL_UnlockAudio();
 }
 
@@ -291,15 +293,16 @@ bool oss_open() {
 
 void oss_play() {
 	if (ossHandle < 0) return;
-	unsigned char* ptr = ringBuffer;
-	int fsz = smpCount * sndChans;
+	fillBuffer(sndBufSize);
+	unsigned char* ptr = sndBuffer;
+	int fsz = sndBufSize;	// smpCount * sndChans;
 	int res;
 	while (fsz > 0) {
 		res = write(ossHandle,ptr,fsz);
 		ptr += res;
 		fsz -= res;
 	}
-	ringPos = 0;
+	// ringPos = 0;
 }
 
 void oss_close() {
@@ -338,7 +341,8 @@ bool alsa_open() {
 
 void alsa_play() {
 	snd_pcm_sframes_t res;
-	unsigned char* ptr = ringBuffer;
+	fillBuffer(sndBufSize);
+	unsigned char* ptr = sndBuffer;
 	int fsz = smpCount;
 	while (fsz > 0) {
 		res = snd_pcm_writei(alsaHandle, ptr, fsz);
@@ -347,7 +351,7 @@ void alsa_play() {
 		fsz -= res;
 		ptr += res * sndChans;
 	}
-	ringPos = 0;
+//	ringPos = 0;
 }
 
 void alsa_close() {
