@@ -866,12 +866,13 @@ void loadConfig(bool dev) {
 	size_t pos;
 	char* buf = new char[0x4000];
 	int tmask = 0xff;
-	int tmp,tmp2;
+	int tmp2;	// ,tmp;
 	int section = SECT_NONE;
+	int memsz = 48;
 	ATAPassport masterPass = ideGetPassport(zx->ide,IDE_MASTER);
 	ATAPassport slavePass = ideGetPassport(zx->ide,IDE_SLAVE);
 //	int flg;
-	if (!dev) memSetSize(zx->mem,48);
+//	if (!dev) memSetSize(zx->mem,48);
 	if (!file.good()) {
 //		shithappens(std::string("Can't find config file<br><b>") + cfname + std::string("</b><br>Default one will be created."));
 		printf("Profile config is missing. Default one will be created\n");
@@ -958,9 +959,9 @@ void loadConfig(bool dev) {
 						break;
 					case SECT_MACHINE:
 						if (pnam=="memory") {
-							tmp = atoi(pval.c_str());
-							memSetSize(zx->mem,tmp);
-							switch (tmp) {
+							memsz = atoi(pval.c_str());
+							// memSetSize(zx->mem,tmp);
+							switch (memsz) {
 								case 128: tmask = MEM_128; break;
 								case 256: tmask = MEM_256; break;
 								case 512: tmask = MEM_512; break;
@@ -1075,5 +1076,6 @@ void loadConfig(bool dev) {
 	if (zx->hw==NULL) throw("Can't found current machine");
 	if (findRomset(curProf->rsName) == NULL) throw("Can't found current romset");
 	if ((zx->hw->mask != 0) && (~zx->hw->mask & tmask)) throw("Incorrect memory size for this machine");
+	memSetSize(zx->mem,memsz);
 	if (!emulSetLayout(zx->vid, curProf->layName)) emulSetLayout(zx->vid,"default");
 }

@@ -86,6 +86,7 @@ void memSwitchCellFlags(Memory* mem, unsigned short adr, unsigned char msk) {
 }
 
 void memSetSize(Memory* mem, int val) {
+	if (mem->memSize == val) return;
 	mem->memSize = val;
 	switch (val) {
 		case 48:
