@@ -31,7 +31,7 @@
 
 #include <fstream>
 
-#define	XPTITLE	"Xpeccy 0.5 (20130108)"
+#define	XPTITLE	"Xpeccy 0.5 (20130113)"
 
 // main
 MainWin* mainWin;
@@ -424,14 +424,14 @@ MainWin::MainWin() {
 	connect(cmosTimer,SIGNAL(timeout()),this,SLOT(cmosTick()));
 	cmosTimer->start(1000);
 
-	connect(this,SIGNAL(sigSndUpdate()),SLOT(emuSndUpdate()));
+//	connect(this,SIGNAL(sigSndUpdate()),SLOT(emuSndUpdate()));
 	connect(this,SIGNAL(sigGoEmulate()),SLOT(emuFrame()));
 	connect(this,SIGNAL(sigDraw()),SLOT(emuDraw()));
 }
 
-void MainWin::emuSndUpdate() {
-	sndSync(emulFlags & FL_FAST);
-}
+//void MainWin::emuSndUpdate() {
+//	sndSync(emulFlags & FL_FAST);
+//}
 
 void MainWin::start() {
 	etimer->stop();
@@ -1048,7 +1048,9 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 	unsigned int i;
 	std::string cmosFile;
 	std::vector<XProfile> plist = getProfileList();
-	sndPause(true);
+	smpCount = 0;
+	sndFillToEnd();
+//	sndPause(true);
 	timer->stop();
 	for (i = 0; i < plist.size(); i++) {
 		cmosFile = optGetString(OPT_WORKDIR) + std::string(SLASH) + plist[i].name + std::string(".cmos");
@@ -1068,7 +1070,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		SDL_GetWMInfo(&inf);
 		mainWin->embedClient(inf.info.x11.wmwindow);
 #endif
-		sndPause(false);
+//		sndPause(false);
 		start();
 	}
 }
@@ -1140,10 +1142,9 @@ void putIcon(Video* vid, int x, int y, unsigned char* data) {
 void MainWin::emulFrame() {
 	if (emulFlags & FL_BLOCK) return;
 
-// fill buffer 'til end (maybe)
-	sndFillToEnd();
 // if not paused play sound buffer
-	if ((wantedWin == WW_NONE) && (pauseFlags == 0) && (~emulFlags & FL_FAST) && sndEnabled && (sndMute || isActiveWindow()))
+	//if ((wantedWin == WW_NONE) && (pauseFlags == 0) && (~emulFlags & FL_FAST) && sndEnabled && (sndMute || isActiveWindow()))
+	if (sndEnabled && (sndMute || isActiveWindow()))
 		sndPlay();
 // request window(s) update
 	if ((~emulFlags & FL_DRAWING))
@@ -1272,7 +1273,6 @@ void emulTapeCatch() {
 void MainWin::emuFrame() {
 	emulFlags |= FL_EMULATION;		// frame emulation started
 	zx->flag = 0;
-	smpCount = 0;
 	// take screenshot
 	if (emulFlags & FL_SHOT) doScreenShot();
 	// emulate frame
@@ -1281,7 +1281,8 @@ void MainWin::emuFrame() {
 		emulExec();
 		// if need - request sound buffer update
 		if (tks > tatbyte) {
-			emit sigSndUpdate();
+			//emit sigSndUpdate();
+			sndSync(emulFlags & FL_FAST);
 			tks -= tatbyte;
 		}
 		// tape trap

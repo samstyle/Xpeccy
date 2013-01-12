@@ -173,16 +173,18 @@ bool sndOpen() {
 }
 
 void sndPlay() {
+	sndFillToEnd();
 	if (sndOutput != NULL) {
 		sndOutput->play();
 	}
+	smpCount = 0;
 }
 
 void sndPause(bool b) {
 #ifdef HAVESDL
 	if (sndOutput == NULL) return;
 	if (sndOutput->name != "SDL") return;
-	SDL_PauseAudio(b ? 1 : 0);
+//	SDL_PauseAudio(b ? 1 : 0);
 #endif
 }
 

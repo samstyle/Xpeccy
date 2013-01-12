@@ -216,7 +216,7 @@ class MainWin : public QX11EmbedContainer {
 		void checkState();
 		void updateHead();
 	signals:
-		void sigSndUpdate();
+//		void sigSndUpdate();
 		void sigGoEmulate();
 		void sigDraw();
 	private:
@@ -227,7 +227,7 @@ class MainWin : public QX11EmbedContainer {
 		void doOptions();
 		void tapStateChanged(int,int);
 	private slots:
-		void emuSndUpdate();
+//		void emuSndUpdate();
 		void emuFrame();
 		void emuDraw();
 
