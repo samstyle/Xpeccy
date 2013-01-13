@@ -45,7 +45,7 @@ double tatbyte = 162;
 int nsPerByte = 23143;
 double tickCount = 162;
 int lev,levr,levl;
-int lastL,lastR;
+unsigned char lastL,lastR;
 
 #ifdef __linux__
 	int32_t ossHandle;			// oss

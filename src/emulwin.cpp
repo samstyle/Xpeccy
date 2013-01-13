@@ -379,10 +379,10 @@ void emulPause(bool p, int msk) {
 	}
 	if (pauseFlags == 0) {
 		mainWin->setWindowIcon(curicon);
-		sndPause(false);
+//		sndPause(false);
 	} else {
 		mainWin->setWindowIcon(QIcon(":/images/pause.png"));
-		sndPause(true);
+//		sndPause(true);
 	}
 	if (msk & PR_PAUSE) return;
 	if ((pauseFlags & ~PR_PAUSE) == 0) {
