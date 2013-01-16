@@ -31,7 +31,7 @@
 
 #include <fstream>
 
-#define	XPTITLE	"Xpeccy 0.5 (20130113)"
+#define	XPTITLE	"Xpeccy 0.5 (20130115)"
 
 // main
 MainWin* mainWin;
@@ -44,7 +44,7 @@ QIcon curicon;
 	SDL_Joystick* joy = NULL;
 #endif
 QVector<QRgb> qPal;
-int emulFlags;
+volatile int emulFlags;
 int pauseFlags;
 int wantedWin;
 unsigned int scrNumber;
@@ -70,6 +70,10 @@ int blk;
 int prc;
 double tks = 0;				// ns counter
 
+pthread_t vidThread;
+
+void* vidThreadMain(void*);
+
 void emulInit() {
 	initKeyMap();
 	emulFlags = 0;
@@ -84,6 +88,7 @@ void emulInit() {
 
 //	emulSetColor(0xc0);
 	mainWin = new MainWin;
+	pthread_create(&vidThread,NULL,&vidThreadMain,NULL);		// thread waits for FL_DODRAW signal and update screen
 }
 
 // leds
@@ -426,7 +431,7 @@ MainWin::MainWin() {
 
 //	connect(this,SIGNAL(sigSndUpdate()),SLOT(emuSndUpdate()));
 	connect(this,SIGNAL(sigGoEmulate()),SLOT(emuFrame()));
-	connect(this,SIGNAL(sigDraw()),SLOT(emuDraw()));
+//	connect(this,SIGNAL(sigDraw()),SLOT(emuDraw()));
 }
 
 //void MainWin::emuSndUpdate() {
@@ -1147,8 +1152,10 @@ void MainWin::emulFrame() {
 	if (sndEnabled && (sndMute || isActiveWindow()))
 		sndPlay();
 // request window(s) update
-	if ((~emulFlags & FL_DRAWING))
-		emit sigDraw();			// signal for update window
+	if ((~emulFlags & FL_DRAWING)) {
+		// emit sigDraw();			// signal for update window
+		emulFlags |= FL_DODRAW;
+	}
 
 // if !active window release keys & buttons
 	if (!isActiveWindow()) {
@@ -1156,7 +1163,7 @@ void MainWin::emulFrame() {
 		zx->mouse->buttons = 0xff;		
 	}
 
-	if ((pauseFlags == 0) && (~emulFlags & FL_EMULATION))
+	if ((pauseFlags == 0) && (~emulFlags & (FL_EMULATION | FL_FAST)))
 		emit sigGoEmulate();		// signal to start frame emulation till next INT
 
 // check if menu isn't visible anymore (QMenu doesn't have signals on show/hide events)
@@ -1185,10 +1192,10 @@ void MainWin::emulFrame() {
 		updateHead();
 		if (emulFlags & FL_FAST) {
 			etimer->start();
-			sndPause(true);
+//			sndPause(true);
 		} else {
 			etimer->stop();
-			sndPause(false);
+//			sndPause(false);
 		}
 		emulFlags &= ~FL_FAST_RQ;
 	}
@@ -1199,6 +1206,17 @@ void MainWin::emulFrame() {
 // if speed == normal: call processFrame
 //	if (~emulFlags & FL_FAST)
 //		processFrame();
+}
+
+void* vidThreadMain(void*) {
+	while (1) {
+		if (emulFlags & FL_DODRAW) {
+			mainWin->emuDraw();
+			emulFlags &= ~FL_DODRAW;
+		}
+		usleep(15000);	// wait 15ms
+	}
+	return NULL;
 }
 
 void MainWin::emuDraw() {

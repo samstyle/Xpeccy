@@ -45,6 +45,7 @@
 #define	FL_LED_DISK	(1<<8)
 #define	FL_LED_SHOT	(1<<9)
 #define	FL_DRAWING	(1<<10)
+#define FL_DODRAW	(1<<11)
 
 // Qt nativeScanCode
 
@@ -215,10 +216,11 @@ class MainWin : public QX11EmbedContainer {
 		void stop();
 		void checkState();
 		void updateHead();
+		void emuDraw();
 	signals:
 //		void sigSndUpdate();
 		void sigGoEmulate();
-		void sigDraw();
+//		void sigDraw();
 	private:
 		QTimer* timer;
 		QTimer* etimer;
@@ -229,7 +231,6 @@ class MainWin : public QX11EmbedContainer {
 	private slots:
 //		void emuSndUpdate();
 		void emuFrame();
-		void emuDraw();
 
 		void emulFrame();
 //		void processFrame();
