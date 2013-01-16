@@ -6,6 +6,8 @@
 #include <QTime>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <pthread.h>
+#include <unistd.h>
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
 #include "libxpeccy/spectrum.h"
@@ -31,7 +33,7 @@
 
 #include <fstream>
 
-#define	XPTITLE	"Xpeccy 0.5 (20130115)"
+#define	XPTITLE	"Xpeccy 0.5 (20130116)"
 
 // main
 MainWin* mainWin;

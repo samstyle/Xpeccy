@@ -47,7 +47,7 @@ void gsiowr(Z80EX_CONTEXT* cpu,Z80EX_WORD port,Z80EX_BYTE val,void* ptr) {
 	port &= 0x0f;
 	switch (port) {
 		case 0: gs->rp0 = val;
-			val &= 7;
+			val &= 0x1f;
 			if (val == 0) {
 				memSetBank(gs->mem,MEM_BANK2,MEM_ROM,0);	// gs->mem->pt2 = &gs->mem->rom[0][0];
 				memSetBank(gs->mem,MEM_BANK3,MEM_ROM,1);	// gs->mem->pt3 = &gs->mem->rom[1][0];
@@ -83,7 +83,7 @@ GSound* gsCreate() {
 	void* ptr = (void*)res;
 	res->cpu = z80ex_create(&gsmemrd,ptr,&gsmemwr,ptr,&gsiord,ptr,&gsiowr,ptr,&gsintrq,ptr);
 	res->mem = memCreate();	// new Memory();
-	memSetSize(res->mem,512);
+	memSetSize(res->mem,2048);
 	memSetBank(res->mem,MEM_BANK0,MEM_ROM,0);
 	memSetBank(res->mem,MEM_BANK1,MEM_RAM,0);
 	memSetBank(res->mem,MEM_BANK2,MEM_RAM,0);
