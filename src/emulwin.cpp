@@ -4,10 +4,12 @@
 #include <QProgressBar>
 #include <QTableWidget>
 #include <QTime>
+#include <fstream>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <pthread.h>
 #include <unistd.h>
+
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
 #include "libxpeccy/spectrum.h"
@@ -31,8 +33,6 @@
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#include <fstream>
-
 #define	XPTITLE	"Xpeccy 0.5 (20130117)"
 
 // main
@@ -48,10 +48,8 @@ QVector<QRgb> qPal;
 static int emulFlags;
 int pauseFlags;
 int wantedWin;
-unsigned int scrNumber;
 unsigned int scrCounter;
 unsigned int scrInterval;
-bool breakFrame = false;
 
 // tape player
 TapeWin* tapeWin;
@@ -80,7 +78,6 @@ void emulInit() {
 	emulFlags = 0;
 	wantedWin = WW_NONE;
 
-	scrNumber = 0;
 	scrCounter = 0;
 	scrInterval = 0;
 	optSet(OPT_SHOTFRM,SCR_PNG);
@@ -1115,7 +1112,6 @@ void doScreenShot() {
 	}
 	free(pageBuf);
 	emulFlags &= ~FL_SHOT;
-	scrNumber++;
 }
 
 void putIcon(Video* vid, int x, int y, unsigned char* data) {

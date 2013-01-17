@@ -182,8 +182,10 @@ void evoOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 			tsOut(comp->ts,ptype,val);
 			break;
 		default:
-//			printf("PentEvo out %.4X (%.4X.%i),%.2X\n",port,ptype,bdiz,val);
+#ifdef ISDEBUG
+			printf("PentEvo out %.4X (%.4X.%i),%.2X\n",port,ptype,bdiz,val);
 //			assert(0);
+#endif
 			break;
 	}
 }
@@ -238,9 +240,10 @@ Z80EX_BYTE evoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 					case 0x0a00: res = comp->prt0; break;
 					case 0x0b00: res = comp->prt2; break;
 					case 0x0c00: res = comp->prt1 | ((comp->dosen & 1) ? 0x10 : 0x00); break;
-//					default:
+					default:
 //						printf("PentEvo\tin %.4X.%i\n",port,bdiz);
 //						assert(0);
+						break;
 				}
 			}
 			break;
@@ -253,8 +256,10 @@ Z80EX_BYTE evoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 		case 0xfbdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->xpos : 0xff; break;
 		case 0xffdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->ypos : 0xff; break;
 		default:
-//			printf("Pentevo: in %.4X (%.4X.%i)\n",port,ptype,bdiz);
+#ifdef ISDEBUG
+			printf("Pentevo: in %.4X (%.4X.%i)\n",port,ptype,bdiz);
 //			assert(0);
+#endif
 			break;
 	}
 	return res;
