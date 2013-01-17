@@ -593,7 +593,8 @@ void SetupWin::apply() {
 
 	saveConfig();
 	sndCalibrate();
-	emulSetPalette(zx,setupUi.brgslide->value());
+	zx->flag |= ZX_PALCHAN;
+	// emulSetPalette(zx,setupUi.brgslide->value());
 	emulOpenJoystick(optGetString(OPT_JOYNAME));
 	emulUpdateWindow();
 }

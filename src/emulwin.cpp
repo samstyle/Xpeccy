@@ -33,7 +33,7 @@
 
 #include <fstream>
 
-#define	XPTITLE	"Xpeccy 0.5 (20130116)"
+#define	XPTITLE	"Xpeccy 0.5 (20130117)"
 
 // main
 MainWin* mainWin;
@@ -42,11 +42,10 @@ QIcon curicon;
 	SDL_Surface* surf = NULL;
 	SDL_Color zxpal[256];
 	SDL_SysWMinfo inf;
-//	SDL_TimerID tid;
 	SDL_Joystick* joy = NULL;
 #endif
 QVector<QRgb> qPal;
-volatile int emulFlags;
+static int emulFlags;
 int pauseFlags;
 int wantedWin;
 unsigned int scrNumber;
@@ -88,7 +87,6 @@ void emulInit() {
 
 	addLayout("default",448,320,136,80,64,32,0,0,64);
 
-//	emulSetColor(0xc0);
 	mainWin = new MainWin;
 	pthread_create(&vidThread,NULL,&vidThreadMain,NULL);		// thread waits for FL_DODRAW signal and update screen
 }
@@ -351,15 +349,6 @@ void emulSetFlag(int msk,bool cnd) {
 	}
 }
 
-
-void emulExec() {
-	tks += zxExec(zx);
-	if (zx->flag & ZX_PALCHAN) {
-		emulSetPalette(zx,optGetInt(OPT_BRGLEV));
-		zx->flag &= ~ZX_PALCHAN;
-	}
-}
-
 void emulSetIcon(const char* inam) {
 	curicon = QIcon(QString(inam));
 	emulPause(true, 0);
@@ -386,10 +375,8 @@ void emulPause(bool p, int msk) {
 	}
 	if (pauseFlags == 0) {
 		mainWin->setWindowIcon(curicon);
-//		sndPause(false);
 	} else {
 		mainWin->setWindowIcon(QIcon(":/images/pause.png"));
-//		sndPause(true);
 	}
 	if (msk & PR_PAUSE) return;
 	if ((pauseFlags & ~PR_PAUSE) == 0) {
@@ -431,14 +418,8 @@ MainWin::MainWin() {
 	connect(cmosTimer,SIGNAL(timeout()),this,SLOT(cmosTick()));
 	cmosTimer->start(1000);
 
-//	connect(this,SIGNAL(sigSndUpdate()),SLOT(emuSndUpdate()));
 	connect(this,SIGNAL(sigGoEmulate()),SLOT(emuFrame()));
-//	connect(this,SIGNAL(sigDraw()),SLOT(emuDraw()));
 }
-
-//void MainWin::emuSndUpdate() {
-//	sndSync(emulFlags & FL_FAST);
-//}
 
 void MainWin::start() {
 	etimer->stop();
@@ -1162,7 +1143,7 @@ void MainWin::emulFrame() {
 // if !active window release keys & buttons
 	if (!isActiveWindow()) {
 		keyRelease(zx->keyb,0,0);
-		zx->mouse->buttons = 0xff;		
+		zx->mouse->buttons = 0xff;
 	}
 
 	if ((pauseFlags == 0) && (~emulFlags & (FL_EMULATION | FL_FAST)))
@@ -1205,23 +1186,26 @@ void MainWin::emulFrame() {
 #ifndef XQTPAINT
 	doSDLEvents();
 #endif
-// if speed == normal: call processFrame
-//	if (~emulFlags & FL_FAST)
-//		processFrame();
 }
 
 void* vidThreadMain(void*) {
 	while (1) {
-		if (emulFlags & FL_DODRAW) {
+		if ((emulFlags & FL_DODRAW) && (~emulFlags & FL_EMULATION)) {
+			if (zx->flag & ZX_PALCHAN) {
+				emulSetPalette(zx,optGetInt(OPT_BRGLEV));
+				zx->flag &= ~ZX_PALCHAN;
+			}
 			mainWin->emuDraw();
 			emulFlags &= ~FL_DODRAW;
+		} else {
+			usleep(1000);	// wait
 		}
-		usleep(15000);	// wait 15ms
 	}
 	return NULL;
 }
 
 void MainWin::emuDraw() {
+	if (emulFlags & FL_BLOCK) return;
 	emulFlags |= FL_DRAWING;
 // update rzx window
 	if ((zx->rzxPlay) && rzxWin->isVisible()) {
@@ -1259,7 +1243,6 @@ void MainWin::emuDraw() {
 	SDL_UpdateRect(surf,0,0,0,0);
 #endif
 	emulFlags &= ~FL_DRAWING;
-
 }
 
 void emulTapeCatch() {
@@ -1292,13 +1275,13 @@ void emulTapeCatch() {
 
 void MainWin::emuFrame() {
 	emulFlags |= FL_EMULATION;		// frame emulation started
-	zx->flag = 0;
+//	zx->flag = 0;
 	// take screenshot
 	if (emulFlags & FL_SHOT) doScreenShot();
 	// emulate frame
 	do {
 		// exec 1 opcode (+ INT, NMI)
-		emulExec();
+		tks += zxExec(zx);
 		// if need - request sound buffer update
 		if (tks > tatbyte) {
 			//emit sigSndUpdate();
@@ -1331,43 +1314,6 @@ void MainWin::emuFrame() {
 	}
 	emulFlags &= ~FL_EMULATION;		// frame emulation finished
 }
-
-/*
-void MainWin::processFrame() {
-// if screenshot requested do it
-	if (emulFlags & FL_SHOT) doScreenShot();
-// emul ZX until FRM
-	do {
-		emulExec();
-		if (tks > nsPerByte) {
-			emit sigSndUpdate();
-			tks -= nsPerByte;
-		}
-		pc = z80ex_get_reg(zx->cpu,regPC);
-		if ((zx->mem->pt0->type == MEM_ROM) && (zx->mem->pt0->num == 1)) {
-			if (pc == 0x56b) emulTapeCatch();
-			if ((pc == 0x5e2) && optGetFlag(OF_TAPEAUTO))
-				tapStateChanged(TW_STATE,TWS_STOP);
-		}
-		if (zx->flag & ZX_BREAK) {
-			wantedWin = WW_DEBUG;
-			zx->flag &= ~ZX_BREAK;
-		}
-	} while ((wantedWin == WW_NONE) && (zx->intStrobe == 0));
-	zx->nmiRequest = 0;
-// decrease frames & screenshot counter (if any), request screenshot (if needed)
-	if (scrCounter != 0) {
-		if (scrInterval == 0) {
-			emulFlags |= FL_SHOT;
-			scrCounter--;
-			scrInterval = optGetInt(OPT_SHOTINT);
-			if (scrCounter == 0) printf("stop combo shots\n");
-		} else {
-			scrInterval--;
-		}
-	}
-}
-*/
 
 // JOYSTICK
 

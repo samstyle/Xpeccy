@@ -1,5 +1,8 @@
 #include "../spectrum.h"
 
+#include <stdio.h>
+#include <assert.h>
+
 void evoSetVideoMode(ZXComp* comp) {
 	int mode = (comp->prt2 & 0x20) | ((comp->prt2 & 0x01) << 1) | (comp->prt1 & 0x07);	// z5.z0.0.b2.b1.b0	b:FF77, z:eff7
 	switch (mode) {
@@ -59,6 +62,7 @@ int evoGetPort(Z80EX_WORD port, int bdiz) {
 	if (port == 0xbffd) return 0xbffd;	// ay
 	if (port == 0xbefd) return 0xbffd;	// WUUUUUT?
 	if (port == 0xfffd) return 0xfffd;
+	if (((port & 0x1f) == 0x10) || ((port & 0xff) == 0x11) || ((port & 0xff) == 0xc8)) return port;	// nemo
 	if (bdiz) {
 		if ((port & 0x00ff) == 0x001f) return 0x1f;	// bdi
 		if ((port & 0x00ff) == 0x003f) return 0x3f;
@@ -177,11 +181,10 @@ void evoOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 		case 0xfffd:
 			tsOut(comp->ts,ptype,val);
 			break;
-//		default:
-//			if ((port & 0x001e) == 0x0010) break;	// nemo
+		default:
 //			printf("PentEvo out %.4X (%.4X.%i),%.2X\n",port,ptype,bdiz,val);
 //			assert(0);
-//			break;
+			break;
 	}
 }
 
@@ -249,10 +252,10 @@ Z80EX_BYTE evoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 		case 0xfadf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->buttons : 0xff; break;
 		case 0xfbdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->xpos : 0xff; break;
 		case 0xffdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->ypos : 0xff; break;
-//		default:
-//			if ((port & 0x001e) == 0x0010) break;	// nemo
+		default:
 //			printf("Pentevo: in %.4X (%.4X.%i)\n",port,ptype,bdiz);
 //			assert(0);
+			break;
 	}
 	return res;
 }

@@ -106,7 +106,7 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 
 void memwr(Z80EX_CONTEXT* cpu, Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
-	res3 = res2 + z80ex_op_tstate(cpu);
+	res3 = res2 + z80ex_op_tstate(cpu) + 1;
 	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
 	res4 = res3;
 //	if (((adr & 0xc000) == 0x4000) && (comp->hwFlag & HW_CONTMEM)) {
@@ -214,9 +214,9 @@ void iowr(Z80EX_CONTEXT* cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 		}
 		res4 += 4;
 	} else {
-		vflg |= vidSync(comp->vid, comp->dotPerTick * 3);
+		vflg |= vidSync(comp->vid, comp->dotPerTick * 2);
 		zxOut(comp,port,val);
-		res4 += 3;
+		res4 += 2;
 	}
 }
 

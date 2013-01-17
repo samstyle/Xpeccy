@@ -264,9 +264,9 @@ void emulPause(bool, int);
 int emulGetFlags();
 void emulSetFlag(int,bool);
 bool emulSaveChanged();
-void emulExec();
+//void emulExec();
 QWidget* emulWidget();
-void emulSetPalette(ZXComp*,unsigned char);
+// void emulSetPalette(ZXComp*,unsigned char);
 
 // keys
 void initKeyMap();

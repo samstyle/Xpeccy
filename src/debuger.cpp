@@ -44,7 +44,7 @@ void DebugWin::start() {
 void DebugWin::stop() {
 	vidFlag &= ~VF_FRAMEDBG;
 	ledit->hide();
-	emulExec();
+	zxExec(zx);
 	hide();
 	active = false;
 	lastDbgTicks = zx->tickCount;
@@ -420,7 +420,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					break;
 				case Qt::Key_F7:
 					lastDbgTicks = zx->tickCount;
-					emulExec();
+					zxExec(zx);
 					if (!fillall()) {
 						upadr = z80ex_get_reg(zx->cpu,regPC);
 						filldasm();

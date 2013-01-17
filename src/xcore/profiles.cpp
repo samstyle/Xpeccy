@@ -68,9 +68,11 @@ bool setProfile(std::string nm) {
 	int idx = findProfile(nm);
 	if (idx < 0) return false;
 	currentProfile = &profileList[idx];
+	printf("set profile %s\n",currentProfile->name.c_str());
 	zx = currentProfile->zx;
 	vidUpdate(zx->vid);
-	emulSetPalette(zx,0);
+	zx->flag |= ZX_PALCHAN;
+	// emulSetPalette(zx,0);
 	return true;
 }
 
