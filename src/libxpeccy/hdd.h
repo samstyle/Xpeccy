@@ -33,18 +33,18 @@ extern "C" {
 #define HDD_BUFSIZE	512
 
 // hdd port = 0.0.0.0.0.0.CS1.CS0.1.1.1.1.1.HS2.HS1.HS0
-#define HDD_DATA	0x1F0		// 16 bit (!)
-#define HDD_ERROR	0x1F1		// in
+#define HDD_DATA	0x00		// 16 bit (!)
+#define HDD_ERROR	0x01		// in
 #define HDD_FEAT	HDD_ERROR	// out
-#define HDD_COUNT	0x1F2
-#define HDD_SECTOR	0x1F3
-#define HDD_CYL_LOW	0x1F4
-#define HDD_CYL_HI	0x1F5
-#define HDD_HEAD	0x1F6
-#define	HDD_STATE	0x1F7		// in
+#define HDD_COUNT	0x02
+#define HDD_SECTOR	0x03
+#define HDD_CYL_LOW	0x04
+#define HDD_CYL_HI	0x05
+#define HDD_HEAD	0x06
+#define	HDD_STATE	0x07		// in
 #define	HDD_COM		HDD_STATE	// out
-#define HDD_ASTATE	0x3F6
-#define HDD_ADDR	0x3F7
+#define HDD_ASTATE	0x16
+#define HDD_ADDR	0x17
 // state flags
 #define	HDF_BSY		(1 << 7)
 #define	HDF_DRDY	(1 << 6)

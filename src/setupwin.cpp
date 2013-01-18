@@ -567,7 +567,7 @@ void SetupWin::apply() {
 	zx->ide->slave->type = setupUi.hs_type->itemData(setupUi.hs_type->currentIndex()).toInt();
 	memcpy(pass.model,std::string(setupUi.hs_model->text().toLocal8Bit().data(),40).c_str(),40);
 	memcpy(pass.serial,std::string(setupUi.hs_ser->text().toLocal8Bit().data(),20).c_str(),20);
-	ideSetImage(zx->ide,IDE_SLAVE,setupUi.hm_path->text().toLocal8Bit().data());
+	ideSetImage(zx->ide,IDE_SLAVE,setupUi.hs_path->text().toLocal8Bit().data());
 	setFlagBit(setupUi.hs_islba->isChecked(),&flg,ATA_LBA);
 	zx->ide->slave->flags = flg;
 	pass.spt = setupUi.hs_gsec->value();

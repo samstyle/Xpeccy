@@ -547,40 +547,57 @@ void ideSetPassport(IDE* ide, int iface, ATAPassport pass) {
 
 // SMUC: dos, a0=0,a1=a5=a7=a11=a12=1	xxx1 1xxx 1x1x xx10
 
-int ideIn(IDE* ide,unsigned short port,unsigned char* val,int bdiActive) {
-	int res = 0;
-	int ishdd = 0;
-	int ishi = 0;
-	int prt = 0;
+typedef struct {
+	unsigned char port;
+	unsigned char flags;
+} ataAddr;
+
+#define IDE_CATCH	1
+#define	IDE_HIGH	(1<<1)
+#define	IDE_HDD		(1<<2)
+
+ataAddr ideDecoder(IDE* ide, unsigned short port, int dosen) {
+	ataAddr res;
+	res.port = 0xff;
+	res.flags = 0x00;
 	switch (ide->type) {
 		case IDE_ATM:
-			if (((port & 0x001f) != 0x000f) || (!bdiActive)) return 0;
-			prt = ((port & 0xe0) >> 5) | 0x1f0;
-			ishi = (port & 0x100) ? 1 : 0;
-			ishdd = 1;
-			res = 1;
+			if (((port & 0x001f) != 0x000f) || !dosen) break;
+			res.flags = IDE_CATCH | IDE_HDD;
+			res.port = (port & 0xe0) >> 5;
+			if (port & 0x100) res.flags |= IDE_HIGH;
 			break;
 		case IDE_NEMO:
 		case IDE_NEMOA8:
-#ifdef ISDEBUG
-printf("NEMO in %.4X\n",port);
-#endif
-			if (((port & 6) != 0) || bdiActive) return 0;
-			prt = (((port & 0xe0) >> 5) | (((port & 0x18) ^ 0x18) << 5) | 0x00f0);
-			ishi = (port & ((ide->type == IDE_NEMO) ? 0x01 : 0x100)) ? 1 : 0;
-			ishdd = 1;
-			res = 1;
+			if (((port & 6) != 0) || dosen) break;
+			res.flags = IDE_CATCH | IDE_HDD;
+			res.port = (port & 0xe0) >> 5;		//  | (((port & 0x18) ^ 0x18) << 5) | 0x00f0);
+			if (port & ((ide->type == IDE_NEMO) ? 0x01 : 0x100)) res.flags |= IDE_HIGH;
 			break;
 		case IDE_SMUC:
-			if (((port & 0x18a3) != 0x18a2) || !bdiActive) return 0;
-//printf("SMUC in %.4X\n",port);
-			prt = ((port & 0x0700) >> 8) | 0x1f0;		// TODO: o, rly?
-			if (ide->smuc.sys & 0x80) {
-				if (prt == HDD_HEAD) prt = HDD_ASTATE;
-			}
-			res = 1;					// catched smuc port
-			ishi = (port == 0xd8be) ? 1 : 0;
-			ishdd = (ishi || ((port & 0xf8ff) == 0xf8be)) ? 1 : 0;		// ide port (hdd itself)
+			if (((port & 0x18a3) != 0x18a2) || !dosen) break;
+			res.flags = IDE_CATCH;
+			res.port = (port & 0x700) >> 8;
+//			if (ide->smuc.sys & 0x80) && (prt == HDD_HEAD)) prt = HDD_ASTATE;
+			if (port == 0xd8be) res.flags |= (IDE_HIGH | IDE_HDD);
+			if ((port & 0xf8ff) == 0xf8be) res.flags |= IDE_HDD;
+			break;
+	}
+	return res;
+}
+
+int ideIn(IDE* ide,unsigned short port,unsigned char* val,int dosen) {
+	ataAddr adr = ideDecoder(ide,port,dosen);
+	if (~adr.flags & IDE_CATCH) return 0;
+	if (adr.flags & IDE_HDD) {
+		if (adr.flags & IDE_HIGH) {
+			*val = ((ide->bus & 0xff00) >> 8);
+		} else {
+			ide->bus = ataIn(ide->curDev,adr.port);
+			*val = (ide->bus & 0x00ff);
+		}
+	} else {
+		if (ide->type == IDE_SMUC) {
 			switch (port) {
 				case 0x5fba:		// version
 					*val = 0x28;	// 1
@@ -598,50 +615,27 @@ printf("NEMO in %.4X\n",port);
 					*val = (ide->smuc.sys & 0x80) ? 0xff : ide->smuc.cmos->data[ide->smuc.cmos->adr];
 					break;
 			}
-			break;
-	}
-	if (ishdd) {
-		if (ishi) {
-			*val = ((ide->bus & 0xff00) >> 8);
-		} else {
-			ide->bus = ataIn(ide->curDev,prt);
-			*val = (ide->bus & 0x00ff);
 		}
 	}
-	return res;
+	return 1;
 }
 
-int ideOut(IDE* ide,unsigned short port,unsigned char val,int bdiActive) {
-	int res = 0;
-	int ishi = 0;
-	int ishdd = 0;
-	int prt;
-	switch (ide->type) {
-		case IDE_ATM:
-			if (((port & 0x001f) != 0x000f) || (!bdiActive)) return 0;
-			prt = ((port & 0xe0) >> 5) | 0x1f0;
-			ishi = (port & 0x100) ? 1 : 0;
-			ishdd = 1;
-			res = 1;
-			break;
-		case IDE_NEMO:
-		case IDE_NEMOA8:
-#ifdef ISDEBUG
-printf("NEMO out %.4X,%.2X\n",port,val);
-#endif
-			if (((port & 6) != 0) || bdiActive) return 0;
-			res = 1;
-			ishdd = 1;
-			prt = ((port & 0xe0) >> 5) | (((port & 0x18) ^ 0x18) << 5) | 0x00f0;
-			ishi = (port & ((ide->type==IDE_NEMO) ? 0x01 : 0x100)) ? 1 : 0;
-			break;
-		case IDE_SMUC:
-			if (((port & 0x18a3) != 0x18a2) || !bdiActive) return 0;
-			prt = ((port & 0x0700) >> 8) | 0x1f0;		// TODO: o, rly?
-			ishi = ((port & 0x2000) == 0x0000) ? 1 : 0;
-			res = 1;					// catched smuc port
-			ishdd = ((port & 0xf8ff) == 0xf8be) ? 1 : 0;	// ide port (hdd itself)
-//printf("SMUC out %.4X,%.2X\n",port,val);
+int ideOut(IDE* ide,unsigned short port,unsigned char val,int dosen) {
+	ataAddr adr = ideDecoder(ide,port,dosen);
+	if (~adr.flags & IDE_CATCH) return 0;
+	if (adr.flags & IDE_HDD) {
+		if (adr.port == HDD_HEAD)
+			ide->curDev = (val & 0x08) ? ide->slave : ide->master;	// write to head reg: select MASTER/SLAVE
+		if (adr.flags & IDE_HIGH) {
+			ide->bus &= 0x00ff;
+			ide->bus |= (val << 8);
+		} else {
+			ide->bus &= 0xff00;
+			ide->bus |= val;
+			ataOut(ide->curDev,adr.port,ide->bus);
+		}
+	} else {
+		if (ide->type == IDE_SMUC) {
 			switch (port) {
 				case 0xffba:			// system
 					ide->smuc.sys = val;
@@ -657,20 +651,9 @@ printf("NEMO out %.4X,%.2X\n",port,val);
 					}
 					break;
 			}
-			break;
-	}
-	if (ishdd) {
-		if (prt == HDD_HEAD) ide->curDev = (val & 0x08) ? ide->slave : ide->master;	// write to head reg: select MASTER/SLAVE
-		if (ishi) {
-			ide->bus &= 0x00ff;
-			ide->bus |= (val << 8);
-		} else {
-			ide->bus &= 0xff00;
-			ide->bus |= val;
-			ataOut(ide->curDev,prt,ide->bus);
 		}
 	}
-	return res;
+	return 1;
 }
 
 void ideReset(IDE* ide) {
