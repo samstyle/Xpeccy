@@ -42,7 +42,8 @@ int loadSNA(ZXComp* zx, const char* name) {
 	z80ex_set_reg(cpu,regI,hd.i);
 	z80ex_set_reg(cpu,regR,hd.r);
 	z80ex_set_reg(cpu,regIM,hd.imod & 3);
-	z80ex_set_reg(cpu,regIFF2,(hd.flag19 & 4) ? 1 : 0);
+//	z80ex_set_reg(cpu,regIFF2,(hd.flag19 & 4) ? 1 : 0);
+	z80ex_set_reg(cpu,regIFF1,(hd.flag19 & 4) ? 1 : 0);
 	zx->vid->brdcol = hd.border & 7;
 	zx->vid->nextbrd = hd.border & 7;
 

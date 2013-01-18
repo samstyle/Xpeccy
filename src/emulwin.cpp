@@ -1186,7 +1186,7 @@ void MainWin::emulFrame() {
 
 void* vidThreadMain(void*) {
 	while (1) {
-		if ((emulFlags & FL_DODRAW) && (~emulFlags & FL_EMULATION)) {
+		if ((emulFlags & FL_DODRAW) && ((~emulFlags & FL_EMULATION) || (emulFlags & FL_FAST))) {
 			if (zx->flag & ZX_PALCHAN) {
 				emulSetPalette(zx,optGetInt(OPT_BRGLEV));
 				zx->flag &= ~ZX_PALCHAN;

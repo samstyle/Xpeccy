@@ -62,7 +62,7 @@ int evoGetPort(Z80EX_WORD port, int bdiz) {
 	if (port == 0xbffd) return 0xbffd;	// ay
 	if (port == 0xbefd) return 0xbffd;	// WUUUUUT?
 	if (port == 0xfffd) return 0xfffd;
-	if (((port & 0x1f) == 0x10) || ((port & 0xff) == 0x11) || ((port & 0xff) == 0xc8)) return port;	// nemo
+	if (((port & 0x1f) == 0x10) || ((port & 0xff) == 0x11) || ((port & 0xff) == 0xc8)) return (port & 0xff);	// nemo
 	if (bdiz) {
 		if ((port & 0x00ff) == 0x001f) return 0x1f;	// bdi
 		if ((port & 0x00ff) == 0x003f) return 0x3f;
@@ -93,6 +93,23 @@ void evoOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 	if (comp->evo.evoBF & 0x01) bdiz = 1;
 	int ptype = evoGetPort(port,bdiz);
 	switch (ptype) {
+		case 0x10:
+		case 0x30:
+		case 0x50:
+		case 0x70:
+		case 0x90:
+		case 0xB0:
+		case 0xD0:
+		case 0xF0:
+			ideOut(comp->ide,port,val,0);
+#ifdef ISDEBUG
+			comp->flag |= ZX_BREAK;
+			printf("PentEvo: Nemo out %.2X, %.2X\n",ptype,val);
+#endif
+			break;
+		case 0xC8:
+			ideOut(comp->ide,0xc0,val,0);
+			break;
 		case 0x1f: if (bdiz) bdiOut(comp->bdi,FDC_COM,val); break;
 		case 0x3f: if (bdiz) bdiOut(comp->bdi,FDC_TRK,val); break;
 		case 0x5f: if (bdiz) bdiOut(comp->bdi,FDC_SEC,val); break;
@@ -110,7 +127,6 @@ void evoOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 				// SDcard CS control
 			} else {
 				sdcWrite(comp->sdc,val);
-				// if (val == 0x52) comp->flag |= ZX_BREAK;
 				// SDcard data write
 			}
 			break;
@@ -182,6 +198,8 @@ void evoOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 			tsOut(comp->ts,ptype,val);
 			break;
 		default:
+			if (ideOut(comp->ide,port,val,comp->dosen & 1)) break;
+			if (gsOut(comp->gs,port,val) == GS_OK) break;
 #ifdef ISDEBUG
 			printf("PentEvo out %.4X (%.4X.%i),%.2X\n",port,ptype,bdiz,val);
 //			assert(0);
@@ -195,6 +213,23 @@ Z80EX_BYTE evoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 	if (comp->evo.evoBF & 1) bdiz = 1;
 	int ptype = evoGetPort(port,bdiz);
 	switch (ptype) {
+		case 0x10:
+		case 0x30:
+		case 0x50:
+		case 0x70:
+		case 0x90:
+		case 0xB0:
+		case 0xD0:
+		case 0xF0:
+			ideIn(comp->ide,port,&res,0);
+#ifdef ISDEBUG
+			printf("PentEvo: Nemo in %.2X\n",ptype);
+			comp->flag |= ZX_BREAK;
+#endif
+			break;
+		case 0xC8:
+			ideIn(comp->ide,0xc0,&res,0);
+			break;
 		case 0x1f: res = bdiz ? bdiIn(comp->bdi,FDC_STATE) : joyInput(comp->joy); break;
 		case 0x3f: res = bdiz ? bdiIn(comp->bdi,FDC_TRK) : 0xff; break;
 		case 0x5f: res = bdiz ? bdiIn(comp->bdi,FDC_SEC) : 0xff; break;
@@ -208,7 +243,6 @@ Z80EX_BYTE evoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 
 		case 0x57:			// TODO: sdcard data rd
 			res = bdiz ? 0xff : sdcRead(comp->sdc);
-//			comp->flag |= ZX_BREAK;
 			break;
 		case 0x77:
 			if (bdiz) {
@@ -256,6 +290,8 @@ Z80EX_BYTE evoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 		case 0xfbdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->xpos : 0xff; break;
 		case 0xffdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->ypos : 0xff; break;
 		default:
+			if (ideIn(comp->ide,port,&res,comp->dosen & 1)) break;
+			if (gsIn(comp->gs,port,&res) == GS_OK) break;
 #ifdef ISDEBUG
 			printf("Pentevo: in %.4X (%.4X.%i)\n",port,ptype,bdiz);
 //			assert(0);

@@ -562,7 +562,9 @@ int ideIn(IDE* ide,unsigned short port,unsigned char* val,int bdiActive) {
 			break;
 		case IDE_NEMO:
 		case IDE_NEMOA8:
-//printf("NEMO in %.4X\n",port);
+#ifdef ISDEBUG
+printf("NEMO in %.4X\n",port);
+#endif
 			if (((port & 6) != 0) || bdiActive) return 0;
 			prt = (((port & 0xe0) >> 5) | (((port & 0x18) ^ 0x18) << 5) | 0x00f0);
 			ishi = (port & ((ide->type == IDE_NEMO) ? 0x01 : 0x100)) ? 1 : 0;
@@ -624,7 +626,9 @@ int ideOut(IDE* ide,unsigned short port,unsigned char val,int bdiActive) {
 			break;
 		case IDE_NEMO:
 		case IDE_NEMOA8:
-// printf("NEMO out %.4X,%.2X\n",port,val);
+#ifdef ISDEBUG
+printf("NEMO out %.4X,%.2X\n",port,val);
+#endif
 			if (((port & 6) != 0) || bdiActive) return 0;
 			res = 1;
 			ishdd = 1;

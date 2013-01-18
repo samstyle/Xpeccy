@@ -106,7 +106,7 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 
 void memwr(Z80EX_CONTEXT* cpu, Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
-	res3 = res2 + z80ex_op_tstate(cpu) + 1;
+	res3 = res2 + z80ex_op_tstate(cpu) + 4;
 	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
 	res4 = res3;
 //	if (((adr & 0xc000) == 0x4000) && (comp->hwFlag & HW_CONTMEM)) {
@@ -124,6 +124,8 @@ void memwr(Z80EX_CONTEXT* cpu, Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 		comp->flag |= ZX_BREAK;
 	}
 }
+
+int bdiz;
 
 Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
@@ -152,11 +154,12 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 			return 0xff;
 		}
 	}
+	bdiz = ((comp->dosen & 1) && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
 // request to external devices
-	if (ideIn(comp->ide,port,&res,comp->dosen & 1)) return res;
-	if (gsIn(comp->gs,port,&res) == GS_OK) return res;
-// request to internal devices
-	int bdiz = ((comp->dosen & 1) && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
+	if (comp->hw->type != HW_PENTEVO) {
+		if (ideIn(comp->ide,port,&res,comp->dosen & 1)) return res;
+		if (gsIn(comp->gs,port,&res) == GS_OK) return res;
+	}
 	res = comp->hw->in(comp,port,bdiz);
 	return res;
 }
@@ -164,11 +167,12 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	tapSync(comp->tape,comp->tapCount);
 	comp->tapCount = 0;
+	bdiz = ((comp->dosen & 1) && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
 // request to external devices
-	if (ideOut(comp->ide,port,val,comp->dosen & 1)) return;
-	if (gsOut(comp->gs,port,val) == GS_OK) return;
-// request to internal devices
-	int bdiz = ((comp->dosen & 1) && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
+	if (comp->hw->type != HW_PENTEVO) {
+		if (ideOut(comp->ide,port,val,comp->dosen & 1)) return;
+		if (gsOut(comp->gs,port,val) == GS_OK) return;
+	}
 	comp->hw->out(comp,port,val,bdiz);
 }
 
