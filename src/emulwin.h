@@ -37,15 +37,16 @@
 #define	FL_GRAB		1
 #define	FL_RZX		(1<<1)
 #define	FL_SHOT		(1<<2)
-#define	FL_EMULATION	(1<<3)
+#define	FL_EMUL		(1<<3)
 #define	FL_FAST		(1<<4)
 #define FL_FAST_RQ	(1<<5)
 #define	FL_BLOCK	(1<<6)
 #define	FL_EXIT		(1<<7)
 #define	FL_LED_DISK	(1<<8)
 #define	FL_LED_SHOT	(1<<9)
-#define	FL_DRAWING	(1<<10)
-#define FL_DODRAW	(1<<11)
+//#define	FL_DRAWING	(1<<10)
+//#define FL_DODRAW	(1<<11)
+#define	FL_WORK		(1<<12)
 
 // Qt nativeScanCode
 
@@ -219,7 +220,7 @@ class MainWin : public QX11EmbedContainer {
 		void emuDraw();
 	signals:
 //		void sigSndUpdate();
-		void sigGoEmulate();
+//		void sigGoEmulate();
 //		void sigDraw();
 	private:
 		QTimer* timer;
@@ -228,9 +229,9 @@ class MainWin : public QX11EmbedContainer {
 	public slots:
 		void doOptions();
 		void tapStateChanged(int,int);
+		void emuFrame();
 	private slots:
 //		void emuSndUpdate();
-		void emuFrame();
 
 		void emulFrame();
 //		void processFrame();

@@ -33,7 +33,7 @@
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#define	XPTITLE	"Xpeccy 0.5 (20130117)"
+#define	XPTITLE	"Xpeccy 0.5 (20130125)"
 
 // main
 MainWin* mainWin;
@@ -46,7 +46,7 @@ QIcon curicon;
 #endif
 QVector<QRgb> qPal;
 static int emulFlags;
-int pauseFlags;
+static int pauseFlags;
 int wantedWin;
 unsigned int scrCounter;
 unsigned int scrInterval;
@@ -70,8 +70,10 @@ int prc;
 double tks = 0;				// ns counter
 
 pthread_t vidThread;
+// pthread_t emuThread;
 
 void* vidThreadMain(void*);
+// void* emuThreadMain(void*);
 
 void emulInit() {
 	initKeyMap();
@@ -85,7 +87,6 @@ void emulInit() {
 	addLayout("default",448,320,136,80,64,32,0,0,64);
 
 	mainWin = new MainWin;
-	pthread_create(&vidThread,NULL,&vidThreadMain,NULL);		// thread waits for FL_DODRAW signal and update screen
 }
 
 // leds
@@ -415,15 +416,21 @@ MainWin::MainWin() {
 	connect(cmosTimer,SIGNAL(timeout()),this,SLOT(cmosTick()));
 	cmosTimer->start(1000);
 
-	connect(this,SIGNAL(sigGoEmulate()),SLOT(emuFrame()));
+//	connect(this,SIGNAL(sigGoEmulate()),SLOT(emuFrame()));
 }
 
 void MainWin::start() {
+	emulFlags |= FL_WORK;
+	pthread_create(&vidThread,NULL,&vidThreadMain,NULL);		// screen update thread
+//	pthread_create(&emuThread,NULL,&emuThreadMain,NULL);		// emulation thread
 	etimer->stop();
 	timer->start();
 }
 
 void MainWin::stop() {
+	emulFlags &= ~FL_WORK;
+	pthread_join(vidThread,NULL);
+//	pthread_join(emuThread,NULL);
 	etimer->stop();
 	timer->stop();
 }
@@ -1131,10 +1138,10 @@ void MainWin::emulFrame() {
 	if (sndEnabled && (sndMute || isActiveWindow()))
 		sndPlay();
 // request window(s) update
-	if ((~emulFlags & FL_DRAWING)) {
+//	if ((~emulFlags & FL_DRAWING)) {
 		// emit sigDraw();			// signal for update window
-		emulFlags |= FL_DODRAW;
-	}
+//		emulFlags |= FL_DODRAW;
+//	}
 
 // if !active window release keys & buttons
 	if (!isActiveWindow()) {
@@ -1142,8 +1149,8 @@ void MainWin::emulFrame() {
 		zx->mouse->buttons = 0xff;
 	}
 
-	if ((pauseFlags == 0) && (~emulFlags & (FL_EMULATION | FL_FAST)))
-		emit sigGoEmulate();		// signal to start frame emulation till next INT
+	if ((pauseFlags == 0) && (~emulFlags & FL_FAST))
+		emuFrame();		// frame emulation till next INT
 
 // check if menu isn't visible anymore (QMenu doesn't have signals on show/hide events)
 	if (userMenu->isHidden() && (pauseFlags & PR_MENU)) {
@@ -1174,6 +1181,7 @@ void MainWin::emulFrame() {
 //			sndPause(true);
 		} else {
 			etimer->stop();
+			do {} while (emulFlags & FL_EMUL);
 //			sndPause(false);
 		}
 		emulFlags &= ~FL_FAST_RQ;
@@ -1184,25 +1192,52 @@ void MainWin::emulFrame() {
 #endif
 }
 
-void* vidThreadMain(void*) {
-	while (1) {
-		if ((emulFlags & FL_DODRAW) && ((~emulFlags & FL_EMULATION) || (emulFlags & FL_FAST))) {
-			if (zx->flag & ZX_PALCHAN) {
-				emulSetPalette(zx,optGetInt(OPT_BRGLEV));
-				zx->flag &= ~ZX_PALCHAN;
-			}
-			mainWin->emuDraw();
-			emulFlags &= ~FL_DODRAW;
-		} else {
-			usleep(1000);	// wait
-		}
+// video thread
+
+Uint32 vidThreadOnTimer(Uint32 interval, void*) {
+	if (emulFlags & FL_BLOCK) return interval;
+	if (zx->flag & ZX_PALCHAN) {
+		emulSetPalette(zx,optGetInt(OPT_BRGLEV));
+		zx->flag &= ~ZX_PALCHAN;
 	}
+	mainWin->emuDraw();
+	return interval;
+}
+
+void* vidThreadMain(void*) {
+	SDL_TimerID vtid = SDL_AddTimer(20,&vidThreadOnTimer,NULL);
+	while (emulFlags & FL_WORK) {
+		usleep(10000);
+	}
+	SDL_RemoveTimer(vtid);
 	return NULL;
 }
 
+/*
+Uint32 emuThreadOnTimer(Uint32 interval, void*) {
+	if (pauseFlags != 0) return interval;
+	if (emulFlags & FL_BLOCK) return interval;
+	emulFlags |= FL_EMUL;
+	mainWin->emuFrame();
+	emulFlags &= ~FL_EMUL;
+	return (emulFlags & FL_FAST) ? 1 : 20;
+}
+
+void* emuThreadMain(void*) {
+	SDL_TimerID etid = SDL_AddTimer(20,&emuThreadOnTimer,NULL);
+	while (emulFlags & FL_WORK) {
+		usleep(10000);
+	}
+	SDL_RemoveTimer(etid);
+	return NULL;
+}
+*/
+
+// weiter
+
 void MainWin::emuDraw() {
 	if (emulFlags & FL_BLOCK) return;
-	emulFlags |= FL_DRAWING;
+//	emulFlags |= FL_DRAWING;
 // update rzx window
 	if ((zx->rzxPlay) && rzxWin->isVisible()) {
 		prc = 100 * zx->rzxFrame / zx->rzxSize;
@@ -1238,7 +1273,7 @@ void MainWin::emuDraw() {
 #else
 	SDL_UpdateRect(surf,0,0,0,0);
 #endif
-	emulFlags &= ~FL_DRAWING;
+//	emulFlags &= ~FL_DRAWING;
 }
 
 void emulTapeCatch() {
@@ -1270,7 +1305,7 @@ void emulTapeCatch() {
 }
 
 void MainWin::emuFrame() {
-	emulFlags |= FL_EMULATION;		// frame emulation started
+//	emulFlags |= FL_EMULATION;		// frame emulation started
 //	zx->flag = 0;
 	// take screenshot
 	if (emulFlags & FL_SHOT) doScreenShot();
@@ -1308,7 +1343,7 @@ void MainWin::emuFrame() {
 			scrInterval--;
 		}
 	}
-	emulFlags &= ~FL_EMULATION;		// frame emulation finished
+//	emulFlags &= ~FL_EMULATION;		// frame emulation finished
 }
 
 // JOYSTICK

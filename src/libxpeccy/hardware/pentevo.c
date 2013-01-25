@@ -62,7 +62,8 @@ int evoGetPort(Z80EX_WORD port, int bdiz) {
 	if (port == 0xbffd) return 0xbffd;	// ay
 	if (port == 0xbefd) return 0xbffd;	// WUUUUUT?
 	if (port == 0xfffd) return 0xfffd;
-	if (((port & 0x1f) == 0x10) || ((port & 0xff) == 0x11) || ((port & 0xff) == 0xc8)) return (port & 0xff);	// nemo
+	if ((port & 0x1ff) == 0x110) return 0x110;
+	if (((port & 0x1f) == 0x10) || ((port & 0xff) == 0xc8)) return (port & 0xff);	// nemo
 	if (bdiz) {
 		if ((port & 0x00ff) == 0x001f) return 0x1f;	// bdi
 		if ((port & 0x00ff) == 0x003f) return 0x3f;
@@ -94,6 +95,7 @@ void evoOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 	int ptype = evoGetPort(port,bdiz);
 	switch (ptype) {
 		case 0x10:
+		case 0x110:
 		case 0x30:
 		case 0x50:
 		case 0x70:
@@ -101,7 +103,7 @@ void evoOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 		case 0xB0:
 		case 0xD0:
 		case 0xF0:
-			ideOut(comp->ide,port,val,0);
+			ideOut(comp->ide,ptype,val,0);
 #ifdef ISDEBUG
 			comp->flag |= ZX_BREAK;
 			printf("PentEvo: Nemo out %.2X, %.2X\n",ptype,val);
@@ -214,6 +216,7 @@ Z80EX_BYTE evoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 	int ptype = evoGetPort(port,bdiz);
 	switch (ptype) {
 		case 0x10:
+		case 0x110:
 		case 0x30:
 		case 0x50:
 		case 0x70:
@@ -221,7 +224,7 @@ Z80EX_BYTE evoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 		case 0xB0:
 		case 0xD0:
 		case 0xF0:
-			ideIn(comp->ide,port,&res,0);
+			ideIn(comp->ide,ptype,&res,0);
 #ifdef ISDEBUG
 			printf("PentEvo: Nemo in %.2X\n",ptype);
 			comp->flag |= ZX_BREAK;
