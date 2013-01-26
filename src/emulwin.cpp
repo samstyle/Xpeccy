@@ -45,8 +45,8 @@ QIcon curicon;
 	SDL_Joystick* joy = NULL;
 #endif
 QVector<QRgb> qPal;
-static int emulFlags;
-static int pauseFlags;
+volatile int emulFlags = FL_BLOCK;
+volatile int pauseFlags;
 int wantedWin;
 unsigned int scrCounter;
 unsigned int scrInterval;
@@ -70,10 +70,7 @@ int prc;
 double tks = 0;				// ns counter
 
 pthread_t vidThread;
-// pthread_t emuThread;
-
 void* vidThreadMain(void*);
-// void* emuThreadMain(void*);
 
 void emulInit() {
 	initKeyMap();
@@ -353,7 +350,11 @@ void emulSetIcon(const char* inam) {
 }
 
 void emulPause(bool p, int msk) {
-	setFlagBit(p,&pauseFlags,msk);
+	if (p) {
+		pauseFlags |= msk;
+	} else {
+		pauseFlags &= ~msk;
+	}
 	bool kk = ((emulFlags & FL_GRAB) != 0);
 	if (!kk || ((pauseFlags != 0) && kk)) {
 #ifdef XQTPAINT
@@ -416,13 +417,11 @@ MainWin::MainWin() {
 	connect(cmosTimer,SIGNAL(timeout()),this,SLOT(cmosTick()));
 	cmosTimer->start(1000);
 
-//	connect(this,SIGNAL(sigGoEmulate()),SLOT(emuFrame()));
 }
 
 void MainWin::start() {
 	emulFlags |= FL_WORK;
 	pthread_create(&vidThread,NULL,&vidThreadMain,NULL);		// screen update thread
-//	pthread_create(&emuThread,NULL,&emuThreadMain,NULL);		// emulation thread
 	etimer->stop();
 	timer->start();
 }
@@ -430,7 +429,6 @@ void MainWin::start() {
 void MainWin::stop() {
 	emulFlags &= ~FL_WORK;
 	pthread_join(vidThread,NULL);
-//	pthread_join(emuThread,NULL);
 	etimer->stop();
 	timer->stop();
 }
@@ -1134,9 +1132,9 @@ void MainWin::emulFrame() {
 	if (emulFlags & FL_BLOCK) return;
 
 // if not paused play sound buffer
-	//if ((wantedWin == WW_NONE) && (pauseFlags == 0) && (~emulFlags & FL_FAST) && sndEnabled && (sndMute || isActiveWindow()))
 	if (sndEnabled && (sndMute || isActiveWindow()))
 		sndPlay();
+
 // request window(s) update
 //	if ((~emulFlags & FL_DRAWING)) {
 		// emit sigDraw();			// signal for update window
@@ -1148,7 +1146,6 @@ void MainWin::emulFrame() {
 		keyRelease(zx->keyb,0,0);
 		zx->mouse->buttons = 0xff;
 	}
-
 	if ((pauseFlags == 0) && (~emulFlags & FL_FAST))
 		emuFrame();		// frame emulation till next INT
 
@@ -1181,7 +1178,6 @@ void MainWin::emulFrame() {
 //			sndPause(true);
 		} else {
 			etimer->stop();
-			do {} while (emulFlags & FL_EMUL);
 //			sndPause(false);
 		}
 		emulFlags &= ~FL_FAST_RQ;
@@ -1212,26 +1208,6 @@ void* vidThreadMain(void*) {
 	SDL_RemoveTimer(vtid);
 	return NULL;
 }
-
-/*
-Uint32 emuThreadOnTimer(Uint32 interval, void*) {
-	if (pauseFlags != 0) return interval;
-	if (emulFlags & FL_BLOCK) return interval;
-	emulFlags |= FL_EMUL;
-	mainWin->emuFrame();
-	emulFlags &= ~FL_EMUL;
-	return (emulFlags & FL_FAST) ? 1 : 20;
-}
-
-void* emuThreadMain(void*) {
-	SDL_TimerID etid = SDL_AddTimer(20,&emuThreadOnTimer,NULL);
-	while (emulFlags & FL_WORK) {
-		usleep(10000);
-	}
-	SDL_RemoveTimer(etid);
-	return NULL;
-}
-*/
 
 // weiter
 
