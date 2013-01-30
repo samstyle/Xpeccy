@@ -386,9 +386,9 @@ double zxExec(ZXComp* comp) {
 	do {
 		res2 += z80ex_step(comp->cpu);
 	} while (z80ex_last_op_type(comp->cpu) != 0);
-
+#ifdef ISDEBUG
 	comp->frmDot += res2 * comp->dotPerTick;
-
+#endif
 	pcreg = z80ex_get_reg(comp->cpu,regPC);
 	vflg |= vidSync(comp->vid,(res2 - res4) * comp->dotPerTick);
 	res1 += res2;
@@ -416,9 +416,9 @@ double zxExec(ZXComp* comp) {
 		res2 = res3 = res4 = res5 = 0;
 		res2 = z80ex_nmi(comp->cpu);
 		res1 += res2;
-
+#ifdef ISDEBUG
 		comp->frmDot += res2 * comp->dotPerTick;
-
+#endif
 		if (res2 != 0) {
 			comp->dosen = 1;
 			comp->prt0 |= 0x10;
@@ -430,9 +430,9 @@ double zxExec(ZXComp* comp) {
 		res2 = res3 = res4 = res5 = 0;
 		res2 = z80ex_int(comp->cpu);
 		res1 += res2;
-
+#ifdef ISDEBUG
 		comp->frmDot += res2 * comp->dotPerTick;
-
+#endif
 		vidSync(comp->vid,(res2 - res4) * comp->dotPerTick);
 		if (comp->rzxPlay) {
 			comp->rzxFrame++;
