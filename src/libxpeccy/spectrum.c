@@ -188,7 +188,7 @@ void iowait(ZXComp* comp, int ticks) {
 
 void iowr(Z80EX_CONTEXT* cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
-	res3 = res2 + z80ex_op_tstate(cpu) - 1;		// start of OUT cycle
+	res3 = res2 + z80ex_op_tstate(cpu);		// start of OUT cycle
 	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
 	res4 = res3;
 // if there is contended io, get wait and wait :)
@@ -254,9 +254,9 @@ ZXComp* zxCreate() {
 	comp->hwFlag = 0;
 
 	comp->cpu = z80ex_create(&memrd,ptr,&memwr,ptr,&iord,ptr,&iowr,ptr,&intrq,ptr);
-	zxSetFrq(comp,3.5);
 	comp->mem = memCreate();
 	comp->vid = vidCreate(comp->mem);
+	zxSetFrq(comp,3.5);
 // input
 	comp->keyb = keyCreate();
 	comp->joy = joyCreate();
@@ -282,6 +282,8 @@ ZXComp* zxCreate() {
 	comp->tapCount = 0;
 	comp->resbank = RES_48;
 	comp->tickCount = 0;
+	comp->frmDot = 0;
+	comp->syncTick = 0;
 	gsReset(comp->gs);
 	for (i = 0; i < 16; i++) comp->colMap[i] = defPalete[i];
 	comp->cmos.adr = 0;
@@ -355,10 +357,26 @@ void zxReset(ZXComp* comp,int wut) {
 	comp->hw->mapMem(comp);
 }
 
+void zxSetLayout(ZXComp *comp, int fh, int fv, int bh, int bv, int sh, int sv, int ih, int iv, int is) {
+	comp->vid->full.h = fh;
+	comp->vid->full.v = fv;
+	comp->vid->bord.h = bh;
+	comp->vid->bord.v = bv;
+	comp->vid->sync.h = sh;
+	comp->vid->sync.v = sv;
+	comp->vid->intpos.h = ih;
+	comp->vid->intpos.v = iv;
+	comp->vid->intsz = is;
+	comp->vid->frmsz = fh * fv;
+	vidUpdate(comp->vid);
+	comp->tickPerFrame = comp->vid->frmsz / comp->dotPerTick;
+}
+
 void zxSetFrq(ZXComp* comp, float frq) {
 	comp->cpuFrq = frq;
 	comp->dotPerTick = 7.0 / frq;
 	comp->nsPerTick = 1000.0 / frq;
+	comp->tickPerFrame = comp->vid->frmsz / comp->dotPerTick;
 }
 
 double zxExec(ZXComp* comp) {
@@ -368,19 +386,39 @@ double zxExec(ZXComp* comp) {
 	do {
 		res2 += z80ex_step(comp->cpu);
 	} while (z80ex_last_op_type(comp->cpu) != 0);
+
+	comp->frmDot += res2 * comp->dotPerTick;
+
 	pcreg = z80ex_get_reg(comp->cpu,regPC);
 	vflg |= vidSync(comp->vid,(res2 - res4) * comp->dotPerTick);
 	res1 += res2;
 	if (comp->rzxPlay) {
 		comp->intStrobe = (comp->rzxFetches < 1);
 	} else {
+#ifdef ISDEBUG
+		if (comp->frmDot >= comp->vid->frmsz) {
+			comp->intStrobe = 1;
+			comp->frmDot -= comp->vid->frmsz;
+		} else {
+			comp->intStrobe = 0;
+		}
+#else
 		comp->intStrobe = (vflg & VID_INT) ? 1 : 0;
+#endif
 	}
-	comp->frmStrobe = (vflg & VID_FRM) ? 1 : 0;
+//	comp->frmStrobe = (vflg & VID_FRM) ? 1 : 0;
+#ifdef ISDEBUG
+//	if (vflg & VID_FRM) {
+//		printf("frame end @ tick %f of %i\n",comp->frmDot,comp->vid->frmsz);
+//	}
+#endif
 	if ((pcreg > 0x3fff) && comp->nmiRequest && !comp->rzxPlay) {
 		res2 = res3 = res4 = res5 = 0;
 		res2 = z80ex_nmi(comp->cpu);
 		res1 += res2;
+
+		comp->frmDot += res2 * comp->dotPerTick;
+
 		if (res2 != 0) {
 			comp->dosen = 1;
 			comp->prt0 |= 0x10;
@@ -392,6 +430,9 @@ double zxExec(ZXComp* comp) {
 		res2 = res3 = res4 = res5 = 0;
 		res2 = z80ex_int(comp->cpu);
 		res1 += res2;
+
+		comp->frmDot += res2 * comp->dotPerTick;
+
 		vidSync(comp->vid,(res2 - res4) * comp->dotPerTick);
 		if (comp->rzxPlay) {
 			comp->rzxFrame++;

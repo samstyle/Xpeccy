@@ -47,12 +47,12 @@ std::vector<VidLayout> getLayoutList() {
 }
 
 // stop, shit here!
-bool emulSetLayout(Video* vid, std::string nm) {
+bool emulSetLayout(ZXComp* comp, std::string nm) {
 	XProfile* currentProfile = getCurrentProfile();
 	for (unsigned int i = 0; i < layList.size(); i++) {
 		if (layList[i].name == nm) {
 			currentProfile->layName = nm;
-			vidSetLayout(vid,
+			zxSetLayout(comp,
 				     layList[i].full.h, layList[i].full.v,
 				     layList[i].bord.h, layList[i].bord.v,
 				     layList[i].sync.h, layList[i].sync.v,

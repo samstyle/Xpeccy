@@ -61,7 +61,7 @@ typedef struct {
 typedef struct {
 	int flags;
 	int intSignal;
-	int firstFrame;
+//	int firstFrame;
 	int flash;
 	int curscr;
 	unsigned char brdcol;
@@ -78,7 +78,6 @@ typedef struct {
 	int dotCount;
 	VSize full;
 	VSize bord;
-	VSize curr;
 	VSize sync;
 	VSize lcut;
 	VSize rcut;
@@ -116,7 +115,6 @@ void vidSetMode(Video*,int);
 int vidGetWait(Video*);
 void vidDarkTail(Video*);
 
-void vidSetLayout(Video*, int, int, int, int, int, int, int, int, int);
 void vidUpdate(Video*);
 
 unsigned char* vidGetScreen();

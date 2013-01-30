@@ -1078,5 +1078,5 @@ void loadConfig(bool dev) {
 	if (findRomset(curProf->rsName) == NULL) throw("Can't found current romset");
 	if ((zx->hw->mask != 0) && (~zx->hw->mask & tmask)) throw("Incorrect memory size for this machine");
 	memSetSize(zx->mem,memsz);
-	if (!emulSetLayout(zx->vid, curProf->layName)) emulSetLayout(zx->vid,"default");
+	if (!emulSetLayout(zx, curProf->layName)) emulSetLayout(zx,"default");
 }

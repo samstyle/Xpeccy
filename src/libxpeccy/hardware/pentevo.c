@@ -105,7 +105,7 @@ void evoOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 		case 0xF0:
 			ideOut(comp->ide,ptype,val,0);
 #ifdef ISDEBUG
-			comp->flag |= ZX_BREAK;
+//			comp->flag |= ZX_BREAK;
 			printf("PentEvo: Nemo out %.2X, %.2X\n",ptype,val);
 #endif
 			break;
@@ -227,7 +227,7 @@ Z80EX_BYTE evoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 			ideIn(comp->ide,ptype,&res,0);
 #ifdef ISDEBUG
 			printf("PentEvo: Nemo in %.2X\n",ptype);
-			comp->flag |= ZX_BREAK;
+//			comp->flag |= ZX_BREAK;
 #endif
 			break;
 		case 0xC8:

@@ -481,7 +481,7 @@ void SetupWin::apply() {
 	optSet(OPT_SHOTFRM,setupUi.ssfbox->itemData(setupUi.ssfbox->currentIndex()).toInt());
 	optSet(OPT_SHOTCNT,setupUi.scntbox->value());
 	optSet(OPT_SHOTINT,setupUi.sintbox->value());
-	emulSetLayout(zx->vid,std::string(setupUi.geombox->currentText().toLocal8Bit().data()));
+	emulSetLayout(zx,std::string(setupUi.geombox->currentText().toLocal8Bit().data()));
 	optSet(OPT_BRGLEV,setupUi.brgslide->value());
 // sound
 	std::string oname = sndGetOutputName();

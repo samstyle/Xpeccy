@@ -69,11 +69,21 @@ Video* vidCreate(Memory* me) {
 		}
 		sadr += 0x700;			// -#100 +#800
 	}
-	vidSetLayout(vid,448,320,128,80,80,32,0,0,64);
+
+	vid->full.h = 448;
+	vid->full.v = 320;
+	vid->bord.h = 128;
+	vid->bord.v = 80;
+	vid->sync.h = 80;
+	vid->sync.v = 32;
+	vid->intpos.h = 0;
+	vid->intpos.v = 0;
+	vid->intsz = 64;
+	vid->frmsz = vid->full.h * vid->full.v;
+	vidUpdate(vid);
+
 	vidSetMode(vid,VID_NORMAL);
 
-	vid->curr.h = 0;
-	vid->curr.v = 0;
 	vid->curscr = 0;
 	vid->fcnt = 0;
 
@@ -85,7 +95,7 @@ Video* vidCreate(Memory* me) {
 	vid->scrptr = vid->scrimg;
 
 	vid->flags = 0;
-	vid->firstFrame = 1;
+//	vid->firstFrame = 1;
 	vid->intSignal = 0;
 
 	return vid;
@@ -507,7 +517,7 @@ int vidSync(Video* vid, float dotDraw) {
 			vid->fcnt++;
 			vid->flash = vid->fcnt & 0x20;
 			vid->scrptr = vid->scrimg;
-			vid->firstFrame = 0;
+//			vid->firstFrame = 0;
 			if (vidFlag & VF_FRAMEDBG) {
 				for(i = 0; i < (vid->wsze.h * vid->wsze.v); i++) vid->scrimg[i] &= 0x0f;
 			}
@@ -518,17 +528,3 @@ int vidSync(Video* vid, float dotDraw) {
 }
 
 // LAYOUTS
-
-void vidSetLayout(Video *vid, int fh, int fv, int bh, int bv, int sh, int sv, int ih, int iv, int is) {
-	vid->full.h = fh;
-	vid->full.v = fv;
-	vid->bord.h = bh;
-	vid->bord.v = bv;
-	vid->sync.h = sh;
-	vid->sync.v = sv;
-	vid->intpos.h = ih;
-	vid->intpos.v = iv;
-	vid->intsz = is;
-	vid->frmsz = fh * fv;
-	vidUpdate(vid);
-}

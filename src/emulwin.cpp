@@ -304,7 +304,7 @@ void MainWin::updateWindow() {
 #ifdef XQTPAINT
 	scrImg = scrImg.scaled(szw,szh);
 	zx->vid->scrimg = scrImg.bits();
-	zx->vid->scrptr = scrImg.bits();
+	zx->vid->scrptr = zx->vid->scrimg;
 #else
 	int sdlflg = SDL_SWSURFACE;
 	if ((vidFlag & VF_FULLSCREEN) && !(vidFlag & VF_BLOCKFULLSCREEN)) {
@@ -319,7 +319,7 @@ void MainWin::updateWindow() {
 	zx->vid->scrimg = (unsigned char*)surf->pixels;
 	zx->vid->scrptr = zx->vid->scrimg;
 #endif
-	zx->vid->firstFrame = true;
+	zx->vid->dotCount = zx->vid->intpos.v * zx->vid->vsze.h + zx->vid->intpos.h + zx->frmDot;
 	updateHead();
 	emulFlags &= ~FL_BLOCK;
 }
@@ -1451,7 +1451,7 @@ void MainWin::reset(QAction* act) {
 
 void MainWin::chLayout(QAction* act) {
 	emulPause(true,PR_EXTRA);
-	emulSetLayout(zx->vid,std::string(act->text().toLocal8Bit().data()));
+	emulSetLayout(zx,std::string(act->text().toLocal8Bit().data()));
 	saveConfig();
 	emulUpdateWindow();
 	setFocus();

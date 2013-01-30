@@ -91,6 +91,9 @@ typedef struct {
 //	int gsCount;
 	int tapCount;
 	unsigned long tickCount;
+	float frmDot;
+	int syncTick;
+	float tickPerFrame;
 } ZXComp;
 
 struct HardWare {
@@ -110,6 +113,7 @@ void zxReset(ZXComp*,int);
 void zxOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
 double zxExec(ZXComp*);
 void zxSetFrq(ZXComp*,float);
+void zxSetLayout(ZXComp*, int, int, int, int, int, int, int, int, int);
 
 void rzxClear(ZXComp*);
 

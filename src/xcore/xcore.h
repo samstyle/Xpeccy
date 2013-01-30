@@ -112,6 +112,6 @@ bool addLayout(std::string,int,int,int,int,int,int,int,int,int);
 bool addLayout(VidLayout);
 std::vector<VidLayout> getLayoutList();
 void setLayoutList(std::vector<VidLayout>);
-bool emulSetLayout(Video*, std::string);
+bool emulSetLayout(ZXComp*, std::string);
 
 #endif
