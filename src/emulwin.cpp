@@ -319,9 +319,8 @@ void MainWin::updateWindow() {
 	zx->vid->scrimg = (unsigned char*)surf->pixels;
 	zx->vid->scrptr = zx->vid->scrimg;
 #endif
-	zx->vid->dotCount = zx->vid->intpos.v * zx->vid->vsze.h + zx->vid->intpos.h;
-	zx->vid->dotCount += zx->frmDot;
-	zx->vid->scrptr = zx->vid->scrimg + int(zx->vid->dotCount);
+	zx->vid->dotCount = zx->vid->intpos.v * zx->vid->full.h + zx->vid->intpos.h + zx->frmDot;
+	zx->vid->scrptr = zx->vid->scrimg + int(zx->frmDot);
 	updateHead();
 	emulFlags &= ~FL_BLOCK;
 }
