@@ -493,16 +493,16 @@ void vidSetCallback(Video* vid) {
 	}
 }
 
-int vidSync(Video* vid, float dotDraw) {
+void vidSync(Video* vid, float dotDraw) {
 	int i;
-	int res = 0;
+//	int res = 0;
 	vid->pxcnt += dotDraw;
-	vid->drawed += dotDraw;
+//	vid->drawed += dotDraw;
 	while (vid->pxcnt >= 1) {
 		mtx = &vid->matrix[vid->dotCount];
 		vid->dotCount++;
-		if (mtx->flag & MTF_INTSTRB) res |= VID_INT;
-		vid->intSignal = (mtx->flag & MTF_INT) ? 1 : 0;
+//		if (mtx->flag & MTF_INTSTRB) res |= VID_INT;
+//		vid->intSignal = (mtx->flag & MTF_INT) ? 1 : 0;
 		if (mtx->flag & MTF_8P) vid->brdcol = vid->nextbrd;
 
 		if (mtx->flag & MTF_VISIBLE) vidCallback(vid);
@@ -512,7 +512,7 @@ int vidSync(Video* vid, float dotDraw) {
 			vid->scrptr += vid->wsze.h;
 		}
 		if (mtx->flag & MTF_FRMEND) {
-			res |= VID_FRM;
+//			res |= VID_FRM;
 			vid->dotCount = 0;
 			vid->fcnt++;
 			vid->flash = vid->fcnt & 0x20;
@@ -524,7 +524,7 @@ int vidSync(Video* vid, float dotDraw) {
 		}
 		vid->pxcnt--;
 	}
-	return res;
+//	return res;
 }
 
 // LAYOUTS

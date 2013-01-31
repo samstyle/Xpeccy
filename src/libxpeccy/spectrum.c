@@ -107,7 +107,7 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 void memwr(Z80EX_CONTEXT* cpu, Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
 	res3 = res2 + z80ex_op_tstate(cpu) + 4;
-	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
+	vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
 	res4 = res3;
 //	if (((adr & 0xc000) == 0x4000) && (comp->hwFlag & HW_CONTMEM)) {
 //		res5 = vidGetWait(comp->vid);
@@ -132,12 +132,12 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 	Z80EX_BYTE res = 0xff;
 // video sync
 	res3 = res2 + z80ex_op_tstate(cpu);
-	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
+	vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
 	res4 = res3;
 	if (comp->hwFlag & HW_CONTIO) {
 		res5 = vidGetWait(comp->vid);
 		if (res5 != 0) {
-			vflg |= vidSync(comp->vid,comp->dotPerTick * res5);
+			vidSync(comp->vid,comp->dotPerTick * res5);
 			res1 += res5;
 		}
 	}
@@ -179,29 +179,29 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 void iowait(ZXComp* comp, int ticks) {
 	res5 = vidGetWait(comp->vid);
 	if (res5 != 0) {
-		vflg |= vidSync(comp->vid, comp->dotPerTick * res5);
+		vidSync(comp->vid, comp->dotPerTick * res5);
 		res1 += res5;
 	}
 	if (ticks != 0)
-		vflg |= vidSync(comp->vid, comp->dotPerTick * ticks);
+		vidSync(comp->vid, comp->dotPerTick * ticks);
 }
 
 void iowr(Z80EX_CONTEXT* cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
 	res3 = res2 + z80ex_op_tstate(cpu);		// start of OUT cycle
-	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
+	vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
 	res4 = res3;
 // if there is contended io, get wait and wait :)
 	if (comp->hwFlag & HW_CONTIO) {
 		switch(port & 0x4001) {
 			case 0x0000:
 				zxOut(comp,port,val);
-				vflg |= vidSync(comp->vid,comp->dotPerTick);	// N:1
+				vidSync(comp->vid,comp->dotPerTick);	// N:1
 				iowait(comp,3);					// C:3
 				break;
 			case 0x0001:
 				zxOut(comp,port,val);
-				vflg |= vidSync(comp->vid, comp->dotPerTick * 4);	// N:4
+				vidSync(comp->vid, comp->dotPerTick * 4);	// N:4
 				break;
 			case 0x4000:
 				zxOut(comp,port,val);
@@ -218,7 +218,7 @@ void iowr(Z80EX_CONTEXT* cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 		}
 		res4 += 4;
 	} else {
-		vflg |= vidSync(comp->vid, comp->dotPerTick * 2);
+		vidSync(comp->vid, comp->dotPerTick * 2);
 		zxOut(comp,port,val);
 		res4 += 2;
 	}
@@ -381,30 +381,24 @@ void zxSetFrq(ZXComp* comp, float frq) {
 
 double zxExec(ZXComp* comp) {
 	res1 = res2 = res3 = res4 = res5 = 0;
-	comp->vid->drawed = 0;
+//	comp->vid->drawed = 0;
 	vflg = 0;
 	do {
 		res2 += z80ex_step(comp->cpu);
 	} while (z80ex_last_op_type(comp->cpu) != 0);
-#ifdef ISDEBUG
 	comp->frmDot += res2 * comp->dotPerTick;
-#endif
 	pcreg = z80ex_get_reg(comp->cpu,regPC);
-	vflg |= vidSync(comp->vid,(res2 - res4) * comp->dotPerTick);
-	res1 += res2;
+	vidSync(comp->vid,(res2 - res4) * comp->dotPerTick);
+	res1 = res2;
 	if (comp->rzxPlay) {
 		comp->intStrobe = (comp->rzxFetches < 1);
 	} else {
-#ifdef ISDEBUG
 		if (comp->frmDot >= comp->vid->frmsz) {
 			comp->intStrobe = 1;
 			comp->frmDot -= comp->vid->frmsz;
 		} else {
 			comp->intStrobe = 0;
 		}
-#else
-		comp->intStrobe = (vflg & VID_INT) ? 1 : 0;
-#endif
 	}
 //	comp->frmStrobe = (vflg & VID_FRM) ? 1 : 0;
 #ifdef ISDEBUG
@@ -416,9 +410,7 @@ double zxExec(ZXComp* comp) {
 		res2 = res3 = res4 = res5 = 0;
 		res2 = z80ex_nmi(comp->cpu);
 		res1 += res2;
-#ifdef ISDEBUG
 		comp->frmDot += res2 * comp->dotPerTick;
-#endif
 		if (res2 != 0) {
 			comp->dosen = 1;
 			comp->prt0 |= 0x10;
@@ -430,9 +422,7 @@ double zxExec(ZXComp* comp) {
 		res2 = res3 = res4 = res5 = 0;
 		res2 = z80ex_int(comp->cpu);
 		res1 += res2;
-#ifdef ISDEBUG
 		comp->frmDot += res2 * comp->dotPerTick;
-#endif
 		vidSync(comp->vid,(res2 - res4) * comp->dotPerTick);
 		if (comp->rzxPlay) {
 			comp->rzxFrame++;
@@ -454,10 +444,10 @@ double zxExec(ZXComp* comp) {
 
 	comp->tickCount += res1;
 
-	ltk = comp->vid->drawed; // res1 * comp->dotPerTick;
+	ltk = res1 * comp->dotPerTick;
 	comp->tapCount += ltk;
 	if (comp->gs->flag & GS_ENABLE) comp->gs->sync += ltk;
 	if (comp->bdi->fdc->type != FDC_NONE) bdiSync(comp->bdi,ltk);
 
-	return ltk;	// res1 * comp->nsPerTick;
+	return ltk;
 }

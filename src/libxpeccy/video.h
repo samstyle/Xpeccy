@@ -26,9 +26,6 @@ extern "C" {
 #define	VID_HWMC	5
 #define	VID_EVO_TEXT	6
 #define	VID_UNKNOWN	0xff
-// flags returned by vidSync
-#define	VID_INT		1
-#define	VID_FRM		(1<<1)
 
 typedef struct {
 	int h;
@@ -110,7 +107,7 @@ extern float brdsize;
 Video* vidCreate(Memory*);
 void vidDestroy(Video*);
 
-int vidSync(Video*,float);
+void vidSync(Video*,float);
 void vidSetMode(Video*,int);
 int vidGetWait(Video*);
 void vidDarkTail(Video*);
