@@ -218,23 +218,15 @@ class MainWin : public QX11EmbedContainer {
 		void checkState();
 		void updateHead();
 		void emuDraw();
-	signals:
-//		void sigSndUpdate();
-//		void sigGoEmulate();
-//		void sigDraw();
 	private:
 		QTimer* timer;
-		QTimer* etimer;
 		QTimer* cmosTimer;
 	public slots:
 		void doOptions();
 		void tapStateChanged(int,int);
-//		void emuFrame();
 	private slots:
-//		void emuSndUpdate();
 
 		void emulFrame();
-//		void processFrame();
 		void cmosTick();
 		void rzxStateChanged(int);
 		void bookmarkSelected(QAction*);
@@ -265,9 +257,7 @@ void emulPause(bool, int);
 int emulGetFlags();
 void emulSetFlag(int,bool);
 bool emulSaveChanged();
-//void emulExec();
 QWidget* emulWidget();
-// void emulSetPalette(ZXComp*,unsigned char);
 
 // keys
 void initKeyMap();
@@ -279,12 +269,6 @@ void setKey(const char*,const char,const char);
 void initUserMenu(QWidget*);
 void fillUserMenu();
 void fillProfileMenu();
-// bookmarks : moved to xcore/bookmarks
-// profiles : moved to xcore/profiles
-// hardware : moved to xcore/hardwares
-// romset : moved to xcore/romsets
-// layouts : moved to xcore/layouts
-// tape window : moved to xgui/tapewin
 // joystick
 void emulOpenJoystick(std::string);
 void emulCloseJoystick();

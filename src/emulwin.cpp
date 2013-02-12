@@ -413,12 +413,9 @@ MainWin::MainWin() {
 
 	initUserMenu((QWidget*)this);
 	timer = new QTimer();
-	etimer = new QTimer();
 	cmosTimer = new QTimer();
 	timer->setInterval(20);	// common
-	etimer->setInterval(1);	// for fast emulation
 	connect(timer,SIGNAL(timeout()),this,SLOT(emulFrame()));
-	connect(etimer,SIGNAL(timeout()),this,SLOT(emuFrame()));
 	connect(cmosTimer,SIGNAL(timeout()),this,SLOT(cmosTick()));
 	cmosTimer->start(1000);
 
@@ -427,7 +424,6 @@ MainWin::MainWin() {
 void MainWin::start() {
 	emulFlags |= FL_WORK;
 	pthread_create(&emuThread,NULL,&emuThreadMain,NULL);		// emulation thread
-	etimer->stop();
 	timer->start();
 }
 
@@ -435,7 +431,6 @@ void MainWin::stop() {
 	emulFlags &= ~FL_WORK;
 	sem_post(&emuSem);
 	pthread_join(emuThread,NULL);
-	etimer->stop();
 	timer->stop();
 }
 
@@ -1158,7 +1153,7 @@ void MainWin::emulFrame() {
 	if (~emulFlags & (FL_FAST | FL_EMUL)) sem_post(&emuSem);	// inc 'emulate frame' semaphore
 
 // update window
-	if (~emulFlags & FL_DRAW) mainWin->emuDraw();
+	mainWin->emuDraw();
 
 // check if menu isn't visible anymore (QMenu doesn't have signals on show/hide events)
 	if (userMenu->isHidden() && (pauseFlags & PR_MENU)) {
