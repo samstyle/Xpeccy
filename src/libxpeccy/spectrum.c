@@ -11,7 +11,7 @@ int res2 = 0;
 int res3 = 0;	// tick in op, wich has last OUT/MWR (and vidSync)
 int res4 = 0;	// save last res3 (vidSync on OUT/MWR process do res3-res4 ticks)
 int res5 = 0;	// ticks ated by slow mem?
-int vflg = 0;
+//int vflg = 0;
 Z80EX_WORD pcreg;
 
 /*
@@ -382,14 +382,14 @@ void zxSetFrq(ZXComp* comp, float frq) {
 double zxExec(ZXComp* comp) {
 	res1 = res2 = res3 = res4 = res5 = 0;
 //	comp->vid->drawed = 0;
-	vflg = 0;
+//	vflg = 0;
 	do {
 		res2 += z80ex_step(comp->cpu);
 	} while (z80ex_last_op_type(comp->cpu) != 0);
 	comp->frmDot += res2 * comp->dotPerTick;
 	pcreg = z80ex_get_reg(comp->cpu,regPC);
 	vidSync(comp->vid,(res2 - res4) * comp->dotPerTick);
-	res1 = res2;
+	res1 += res2;
 	if (comp->rzxPlay) {
 		comp->intStrobe = (comp->rzxFetches < 1);
 	} else {
