@@ -34,7 +34,7 @@
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#define	XPTITLE	"Xpeccy 0.5 (20130212)"
+#define	XPTITLE	"Xpeccy 0.5 (20130215)"
 
 // main
 MainWin* mainWin;
@@ -421,6 +421,20 @@ MainWin::MainWin() {
 
 }
 
+void emuStart() {
+	emulFlags |= FL_WORK;
+	pthread_create(&emuThread,NULL,&emuThreadMain,NULL);		// emulation thread
+	mainWin->timer->start();
+}
+
+void emuStop() {
+	emulFlags &= ~FL_WORK;
+	sem_post(&emuSem);
+	pthread_join(emuThread,NULL);
+	mainWin->timer->stop();
+}
+
+/*
 void MainWin::start() {
 	emulFlags |= FL_WORK;
 	pthread_create(&emuThread,NULL,&emuThreadMain,NULL);		// emulation thread
@@ -433,6 +447,7 @@ void MainWin::stop() {
 	pthread_join(emuThread,NULL);
 	timer->stop();
 }
+*/
 
 unsigned char incBCDbyte(unsigned char val) {
 	val++;
@@ -1042,7 +1057,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 	smpCount = 0;
 	sndFillToEnd();
 //	sndPause(true);
-	timer->stop();
+	emuStop();
 	for (i = 0; i < plist.size(); i++) {
 		cmosFile = optGetString(OPT_WORKDIR) + std::string(SLASH) + plist[i].name + std::string(".cmos");
 		std::ofstream file(cmosFile.c_str());
@@ -1062,7 +1077,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		mainWin->embedClient(inf.info.x11.wmwindow);
 #endif
 //		sndPause(false);
-		start();
+		emuStart();
 	}
 }
 

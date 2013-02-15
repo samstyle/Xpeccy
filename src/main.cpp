@@ -84,9 +84,9 @@ int main(int ac,char** av) {
 			SDL_JoystickOpen(1);
 #endif
 			mainWin->checkState();
-			mainWin->start();
+			emuStart();
 			app.exec();
-			mainWin->stop();
+			emuStop();
 			sndClose();
 #ifdef HAVESDL
 			SDL_Quit();

@@ -213,13 +213,13 @@ class MainWin : public QX11EmbedContainer {
 	public:
 		MainWin();
 		void updateWindow();
-		void start();
-		void stop();
+//		void start();
+//		void stop();
 		void checkState();
 		void updateHead();
 		void emuDraw();
-	private:
 		QTimer* timer;
+	private:
 		QTimer* cmosTimer;
 	public slots:
 		void doOptions();
@@ -250,6 +250,8 @@ class MainWin : public QX11EmbedContainer {
 
 // main
 void emulInit();
+void emuStart();
+void emuStop();
 void emulShow();
 void emulUpdateWindow();
 void emulSetIcon(const char*);
