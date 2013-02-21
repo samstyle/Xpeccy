@@ -213,8 +213,6 @@ class MainWin : public QX11EmbedContainer {
 	public:
 		MainWin();
 		void updateWindow();
-//		void start();
-//		void stop();
 		void checkState();
 		void updateHead();
 		void emuDraw();

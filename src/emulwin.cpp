@@ -434,21 +434,6 @@ void emuStop() {
 	mainWin->timer->stop();
 }
 
-/*
-void MainWin::start() {
-	emulFlags |= FL_WORK;
-	pthread_create(&emuThread,NULL,&emuThreadMain,NULL);		// emulation thread
-	timer->start();
-}
-
-void MainWin::stop() {
-	emulFlags &= ~FL_WORK;
-	sem_post(&emuSem);
-	pthread_join(emuThread,NULL);
-	timer->stop();
-}
-*/
-
 unsigned char incBCDbyte(unsigned char val) {
 	val++;
 	if ((val & 0x0f) < 0x0a) return val;
