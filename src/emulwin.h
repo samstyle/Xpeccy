@@ -44,7 +44,7 @@
 #define	FL_EXIT		(1<<7)
 #define	FL_LED_DISK	(1<<8)
 #define	FL_LED_SHOT	(1<<9)
-//#define	FL_DRAWING	(1<<10)
+#define	FL_UPDATE	(1<<10)
 #define FL_DRAW		(1<<11)
 #define	FL_WORK		(1<<12)
 

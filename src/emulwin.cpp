@@ -323,8 +323,8 @@ void MainWin::updateWindow() {
 	zx->vid->scrimg = (unsigned char*)surf->pixels;
 	zx->vid->scrptr = zx->vid->scrimg;
 #endif
-	zx->vid->dotCount = zx->vid->intpos.v * zx->vid->full.h + zx->vid->intpos.h + zx->frmDot;
-	zx->vid->scrptr = zx->vid->scrimg + int(zx->frmDot);
+//	zx->vid->dotCount = zx->vid->intpos.v * zx->vid->full.h + zx->vid->intpos.h + zx->frmDot;
+//	zx->vid->scrptr = zx->vid->scrimg + int(zx->frmDot);
 	updateHead();
 	emulFlags &= ~FL_BLOCK;
 }
@@ -550,12 +550,14 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;
 			case Qt::Key_1:
 				vidFlag &= ~VF_DOUBLE;
-				mainWin->updateWindow();
+				//mainWin->updateWindow();
+				emulFlags |= FL_UPDATE;
 				saveConfig();
 				break;
 			case Qt::Key_2:
 				vidFlag |= VF_DOUBLE;
-				mainWin->updateWindow();
+				// mainWin->updateWindow();
+				emulFlags |= FL_UPDATE;
 				saveConfig();
 				break;
 			case Qt::Key_3:
@@ -1142,6 +1144,11 @@ void MainWin::emulFrame() {
 // process SDL events
 #ifndef XQTPAINT
 	doSDLEvents();
+#else
+	if (emulFlags & FL_UPDATE) {
+		emulFlags &= ~FL_UPDATE;
+		updateWindow();
+	}
 #endif
 
 // if window is not active release keys & buttons
