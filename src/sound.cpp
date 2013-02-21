@@ -60,6 +60,7 @@ unsigned char lastL,lastR;
 	WAVEFORMATEX wf;
 	WAVEHDR whdr;
 	HWAVEOUT wout;
+	HANDLE event;
 #endif
 
 // output
@@ -384,7 +385,9 @@ bool wave_open() {
 	whdr.lpNext = NULL;
 	whdr.reserved = 0;
 
-	MMRESULT res = waveOutOpen(&wout,WAVE_MAPPER,&wf,NULL,NULL,CALLBACK_NULL);
+	event = CreateEvent(0, FALSE, FALSE, 0);
+//	MMRESULT res = waveOutOpen(&wout,WAVE_MAPPER,&wf,NULL,NULL,CALLBACK_NULL);
+	MMRESULT res = waveOutOpen(&wout,WAVE_MAPPER,&wf,DWORD_PTR(event),0,CALLBACK_EVENT | WAVE_FORMAT_DIRECT);
 	return (res == MMSYSERR_NOERROR);
 }
 
@@ -393,6 +396,9 @@ void wave_play() {
 	whdr.dwBufferLength = ringPos - 1;
 	waveOutPrepareHeader(wout,&whdr,sizeof(WAVEHDR));
 	waveOutWrite(wout,&whdr,sizeof(WAVEHDR));
+	while (!(whdr.dwFlags & WHDR_DONE)) {
+		WaitForSingleObject(event, INFINITE);
+	}
 	waveOutUnprepareHeader(wout,&whdr,sizeof(WAVEHDR));
 	ringPos = 0;
 }
@@ -401,6 +407,7 @@ void wave_close() {
 	waveOutReset(wout);
 	waveOutUnprepareHeader(wout,&whdr,sizeof(WAVEHDR));
 	waveOutClose(wout);
+	CloseHandle(event);
 }
 
 #endif
