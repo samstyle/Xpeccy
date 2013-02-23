@@ -1,6 +1,8 @@
 #ifndef _LIBXPECCY_HARDWARE
 #define _LIBXPECCY_HARDWARE
 
+#include "../spectrum.h"
+
 // hw type
 #define HW_NULL		0
 #define HW_ZX48		1
@@ -12,6 +14,27 @@
 #define	HW_ATM1		7
 #define	HW_ATM2		8
 #define	HW_PENTEVO	9
+// mem size
+#define	MEM_48	0
+#define	MEM_128	1
+#define	MEM_256 (1<<1)
+#define	MEM_512	(1<<2)
+#define	MEM_1M	(1<<3)
+#define	MEM_2M	(1<<4)
+#define	MEM_4M	(1<<5)
+
+struct HardWare {
+	const char* name;
+	int type;
+	int mask;		// mem size bits (b0:128, b1:256, b2:512, b3:1M, b4:2M, b5:4M); =0 for 48K
+	void (*mapMem)(ZXComp*);
+	void (*out)(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
+	Z80EX_BYTE (*in)(ZXComp*,Z80EX_WORD,int);
+};
+
+typedef struct HardWare HardWare;
+extern HardWare hwTab[];
+HardWare* findHardware(const char*);
 
 // zx48
 void speMapMem(ZXComp*);

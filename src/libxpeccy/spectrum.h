@@ -43,7 +43,7 @@ typedef struct {
 	unsigned char page;
 } memEntry;
 
-typedef struct {
+struct ZXComp {
 	int flag;		// states
 	int hwFlag;		// hardware properties
 	struct HardWare *hw;
@@ -94,16 +94,9 @@ typedef struct {
 	float frmDot;
 	int syncTick;
 	float tickPerFrame;
-} ZXComp;
-
-struct HardWare {
-	const char* name;
-	int mask;		// mem size bits (b0:128, b1:256, b2:512, b3:1M, b4:2M, b5:4M); =0 for 48K
-	int type;
-	void (*mapMem)(ZXComp*);
-	void (*out)(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
-	Z80EX_BYTE (*in)(ZXComp*,Z80EX_WORD,int);
 };
+
+typedef struct ZXComp ZXComp;
 
 #include "hardware/hardware.h"
 
@@ -114,6 +107,7 @@ void zxOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
 double zxExec(ZXComp*);
 void zxSetFrq(ZXComp*,float);
 void zxSetLayout(ZXComp*, int, int, int, int, int, int, int, int, int);
+void zxSetHardware(ZXComp*,const char*);
 
 void rzxClear(ZXComp*);
 

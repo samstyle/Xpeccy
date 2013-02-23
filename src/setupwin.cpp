@@ -59,6 +59,16 @@ std::string getRFText(QComboBox* box) {
 
 // OBJECT
 
+std::vector<std::string> getHardwareNames() {
+	int idx = 0;
+	std::vector<std::string> res;
+	while (hwTab[idx].name != NULL) {
+		res.push_back(std::string(hwTab[idx].name));
+		idx++;
+	}
+	return res;
+}
+
 SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	setModal(true);
 	setupUi.setupUi(this);
@@ -456,7 +466,7 @@ void SetupWin::apply() {
 	setRomsetList(rsl);
 	HardWare *oldmac = zx->hw;
 	curProf->hwName = std::string(setupUi.machbox->currentText().toUtf8().data());
-	setHardware(curProf->zx,curProf->hwName);
+	zxSetHardware(curProf->zx,curProf->hwName.c_str());
 	curProf->rsName = std::string(setupUi.rsetbox->currentText().toUtf8().data());
 	setRomset(curProf->name, curProf->rsName);
 //	RomSet* rset = findRomset(curProf->rsName);
@@ -849,6 +859,16 @@ void SetupWin::buildjmaplist() {
 		it->setData(Qt::UserRole,QVector3D(jmap[i].first.type,jmap[i].first.num,jmap[i].first.dir));
 		setupUi.bindTable->setItem(i,0,it);
 	}
+}
+
+std::vector<HardWare> getHardwareList() {
+	std::vector<HardWare> res;
+	int idx = 0;
+	while (hwTab[idx].name != NULL) {
+		res.push_back(hwTab[idx]);
+		idx++;
+	}
+	return res;
 }
 
 void SetupWin::setmszbox(int idx) {

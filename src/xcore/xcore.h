@@ -59,21 +59,6 @@ RomSet* findRomset(std::string);
 std::vector<RomSet> getRomsetList();
 void setRomsetList(std::vector<RomSet>);
 
-// hardwares
-
-#define	MEM_48	0
-#define	MEM_128	1
-#define	MEM_256 (1<<1)
-#define	MEM_512	(1<<2)
-#define	MEM_1M	(1<<3)
-#define	MEM_2M	(1<<4)
-#define	MEM_4M	(1<<5)
-
-void initHardware();
-void setHardware(ZXComp*, std::string);
-std::vector<std::string> getHardwareNames();
-std::vector<HardWare> getHardwareList();
-
 // profiles
 
 typedef struct {

@@ -62,7 +62,7 @@ int main(int ac,char** av) {
 			devShow();
 			return app.exec();
 		} else {
-			initHardware();
+//			initHardware();
 			sndInit();
 			emulInit();
 			dbgInit(NULL);// emulWidget());

@@ -51,7 +51,7 @@ else()
 		-DZ80EX_VERSION_MAJOR=${VERSION_MAJOR}
 		-DZ80EX_VERSION_MINOR=${VERSION_MINOR}
 		-DZ80EX_RELEASE_TYPE=${RELEASE_TYPE})
-	set(INCLUDIRS ${INCLUDIRS} ./src/libz80ex/include)
+	set(INCLUDIRS ${INCLUDIRS} ./thirdpart/libz80ex/include)
 	set(Z80EX_INTERNAL 1)
 endif()
 
@@ -85,7 +85,7 @@ set(MOCFILES
 )
 
 if (Z80EX_INTERNAL)
-	set(SOURCES ${SOURCES} ./src/libz80ex/z80ex.c ./src/libz80ex/z80ex_dasm.c)
+	set(SOURCES ${SOURCES} ./thirdpart/libz80ex/z80ex.c ./thirdpart/libz80ex/z80ex_dasm.c)
 endif()
 
 set(CMAKE_C_FLAGS "-std=gnu99 -Wall -O2")

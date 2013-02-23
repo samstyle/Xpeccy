@@ -1432,7 +1432,7 @@ void MainWin::profileSelected(QAction* act) {
 		zx->flag &= ~ZX_JUSTBORN;
 	}
 	setFocus();
-	vidSetCallback(zx->vid);
+//	vidSetCallback(zx->vid);
 	emulPause(false,PR_EXTRA);
 }
 

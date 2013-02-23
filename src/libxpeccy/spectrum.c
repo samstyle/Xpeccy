@@ -372,6 +372,12 @@ void zxSetLayout(ZXComp *comp, int fh, int fv, int bh, int bv, int sh, int sv, i
 	comp->tickPerFrame = comp->vid->frmsz / comp->dotPerTick;
 }
 
+void zxSetHardware(ZXComp* comp, const char* name) {
+	HardWare* hw = findHardware(name);
+	if (hw == NULL) return;
+	comp->hw = hw;
+}
+
 void zxSetFrq(ZXComp* comp, float frq) {
 	comp->cpuFrq = frq;
 	comp->dotPerTick = 7.0 / frq;
@@ -387,7 +393,7 @@ double zxExec(ZXComp* comp) {
 		res2 += z80ex_step(comp->cpu);
 	} while (z80ex_last_op_type(comp->cpu) != 0);
 	comp->frmDot += res2 * comp->dotPerTick;
-	pcreg = z80ex_get_reg(comp->cpu,regPC);
+//	pcreg = z80ex_get_reg(comp->cpu,regPC);
 	vidSync(comp->vid,(res2 - res4) * comp->dotPerTick);
 	res1 += res2;
 	if (comp->rzxPlay) {
@@ -406,6 +412,7 @@ double zxExec(ZXComp* comp) {
 //		printf("frame end @ tick %f of %i\n",comp->frmDot,comp->vid->frmsz);
 //	}
 #endif
+/*
 	if ((pcreg > 0x3fff) && comp->nmiRequest && !comp->rzxPlay) {
 		res2 = res3 = res4 = res5 = 0;
 		res2 = z80ex_nmi(comp->cpu);
@@ -418,6 +425,7 @@ double zxExec(ZXComp* comp) {
 			vidSync(comp->vid,(res2 - res4) * comp->dotPerTick);
 		}
 	}
+*/
 	if (comp->intStrobe) {
 		res2 = res3 = res4 = res5 = 0;
 		res2 = z80ex_int(comp->cpu);

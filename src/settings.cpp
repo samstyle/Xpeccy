@@ -1072,7 +1072,7 @@ void loadConfig(bool dev) {
 //	zx->ide->refresh();
 	ideSetPassport(zx->ide,IDE_MASTER,masterPass);
 	ideSetPassport(zx->ide,IDE_SLAVE,slavePass);
-	setHardware(zx, curProf->hwName);
+	zxSetHardware(zx, curProf->hwName.c_str());
 	setRomset(curProf->name, curProf->rsName);
 	if (zx->hw==NULL) throw("Can't found current machine");
 	if (findRomset(curProf->rsName) == NULL) throw("Can't found current romset");
