@@ -293,7 +293,7 @@ void tapRewind(Tape* tap, int blk) {
 }
 
 void tapSync(Tape* tap,int tks) {
-	tks >>= 1;
+	tks = tks / 280;
 	if (tap->flag & TAPE_ON) {
 		if (tap->flag & TAPE_REC) {
 			if (tap->flag & TAPE_WAIT) {

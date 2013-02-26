@@ -134,29 +134,6 @@ void ataReadSector(ATADev* dev) {
 			}
 			fclose(file);
 		}
-/*
-		std::ifstream file(dev->image.c_str(),std::ios::binary);
-		if (!file.good()) {
-			std::ofstream fzk(dev->image.c_str());
-			fzk.close();
-			file.open(dev->image.c_str(),std::ios::binary);
-			if (!file.good()) {
-				printf("Can't create HDD image file");
-				dev->type = IDE_NONE;
-			}
-		} else {
-			file.seekg(0,std::ios::end);
-			size_t eps = file.tellg();
-			size_t nps = dev->lba * dev->pass.bps;
-			if (nps < eps) {
-				file.seekg(dev->lba * dev->pass.bps);
-				file.read((char*)&dev->buf.data[0],dev->pass.bps);
-			} else {
-				ataClearBuf(dev);
-			}
-			file.close();
-		}
-*/
 	}
 }
 
@@ -178,19 +155,6 @@ void ataWriteSector(ATADev* dev) {
 		fseek(file,dev->lba * dev->pass.bps,SEEK_SET);
 		fwrite((char*)dev->buf.data,dev->pass.bps,1,file);
 		fclose(file);
-/*
-		std::ofstream file(dev->image.c_str(),std::ios::binary | std::ios::in | std::ios::out);
-		if (!file.good()) {
-			file.open(dev->image.c_str(),std::ios::binary | std::ios::out);
-			if (!file.good()) {
-				printf("Can't write to HDD image file");
-				dev->type = IDE_NONE;
-			}
-		}
-		file.seekp(dev->lba * dev->pass.bps);
-		file.write((char*)&dev->buf.data[0],dev->pass.bps);
-		file.close();
-*/
 	}
 }
 

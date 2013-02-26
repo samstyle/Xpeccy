@@ -118,7 +118,7 @@ void gsReset(GSound* gs) {
 void gsSync(GSound* gs) {
 	int res;
 	if (~gs->flag & GS_ENABLE) return;
-	gs->counter += gs->sync * GS_FRQ / 7.0;
+	gs->counter += gs->sync * GS_FRQ / 980;		// ticks to emulate
 	while (gs->counter > 0) {
 		res = 0;
 		do {

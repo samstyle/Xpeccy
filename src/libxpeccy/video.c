@@ -3,6 +3,8 @@
 #include <math.h>
 #include <stdio.h>
 
+#define NS_PER_DOT	140
+
 #include "video.h"
 
 unsigned char* screenBuf = NULL;
@@ -88,14 +90,12 @@ Video* vidCreate(Memory* me) {
 	vid->fcnt = 0;
 
 	vid->dotCount = 0;
-	vid->pxcnt = 0;
-	vid->drawed = 0;
+	vid->nsDraw = 0;
 
 	vid->scrimg = screenBuf;
 	vid->scrptr = vid->scrimg;
 
 	vid->flags = 0;
-//	vid->firstFrame = 1;
 	vid->intSignal = 0;
 
 	return vid;
@@ -299,9 +299,6 @@ int adr;
 unsigned char* fntptr;
 mtrxItem* mtx = NULL;
 
-//unsigned char pixBuffer[8];
-//unsigned char bitMask[8] = {0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
-
 void vidDarkTail(Video* vid) {
 	unsigned char* ptr = vid->scrptr;
 	int idx = vid->dotCount;
@@ -487,16 +484,12 @@ void vidSetMode(Video* vid, int mode) {
 	}
 }
 
-void vidSync(Video* vid, float dotDraw) {
+void vidSync(Video* vid, int ns) {
 	int i;
-//	int res = 0;
-	vid->pxcnt += dotDraw;
-//	vid->drawed += dotDraw;
-	while (vid->pxcnt >= 1) {
+	vid->nsDraw += ns;
+	while (vid->nsDraw >= NS_PER_DOT) {
 		mtx = &vid->matrix[vid->dotCount];
 		vid->dotCount++;
-//		if (mtx->flag & MTF_INTSTRB) res |= VID_INT;
-//		vid->intSignal = (mtx->flag & MTF_INT) ? 1 : 0;
 		if (mtx->flag & MTF_8P) vid->brdcol = vid->nextbrd;
 
 		if (mtx->flag & MTF_VISIBLE) vid->callback(vid);
@@ -505,20 +498,15 @@ void vidSync(Video* vid, float dotDraw) {
 			memcpy(vid->scrptr, vid->scrptr - vid->wsze.h, vid->wsze.h);
 			vid->scrptr += vid->wsze.h;
 		}
-		if (mtx->flag & MTF_FRMEND) {
-//			res |= VID_FRM;
+		if (vid->dotCount >= vid->frmsz) {
 			vid->dotCount = 0;
 			vid->fcnt++;
 			vid->flash = vid->fcnt & 0x20;
 			vid->scrptr = vid->scrimg;
-//			vid->firstFrame = 0;
 			if (vidFlag & VF_FRAMEDBG) {
 				for(i = 0; i < (vid->wsze.h * vid->wsze.v); i++) vid->scrimg[i] &= 0x0f;
 			}
 		}
-		vid->pxcnt--;
+		vid->nsDraw -= NS_PER_DOT;
 	}
-//	return res;
 }
-
-// LAYOUTS

@@ -39,7 +39,7 @@ typedef struct {
 	int cnt;
 	int stereo;
 	int sync;
-	double counter;
+	long counter;
 } GSound;
 
 GSound* gsCreate();

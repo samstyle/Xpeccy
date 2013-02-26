@@ -37,7 +37,8 @@ extern int ayVolume;
 extern int gsVolume;
 extern int sndRate;
 
-extern double tatbyte;
+//extern double tatbyte;
+extern int nsPerSample;
 
 void sndInit();
 void sndCalibrate();

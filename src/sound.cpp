@@ -41,9 +41,10 @@ int sndRate = 44100;
 int sndChans = 2;
 int sndChunks = 882;
 int sndBufSize = 1764;
-double tatbyte = 162;
-int nsPerByte = 23143;
-double tickCount = 162;
+//double tatbyte = 162;
+//int nsPerByte = 23143;
+int nsPerSample = 23143;
+//double tickCount = 162;
 int lev,levr,levl;
 unsigned char lastL,lastR;
 
@@ -68,10 +69,12 @@ unsigned char lastL,lastR;
 void sndSync(int fast) {
 //	if (tk < tatbyte) return tk;
 //	tk -= tatbyte;
-	tapSync(zx->tape,zx->tapCount); zx->tapCount = 0;
+	tapSync(zx->tape,zx->tapCount);
+	zx->tapCount = 0;
 	gsSync(zx->gs);
-	tsSync(zx->ts,tatbyte);
+	tsSync(zx->ts,nsPerSample);
 	if (fast != 0) return;
+	if (sndOutput == NULL) return;
 	lev = zx->beeplev ? beepVolume : 0;
 	if (zx->tape->flag & TAPE_ON) {
 		lev += (zx->tape->outsig ? tapeVolume : 0) + (zx->tape->signal ? tapeVolume : 0);
@@ -124,8 +127,9 @@ void sndFillToEnd() {
 void sndCalibrate() {
 	sndChunks = (int)(sndRate / 50.0);			// samples played at 1/50 sec			882
 	sndBufSize = sndChans * sndChunks;			// buffer size for 1/50 sec play		1764
-	tatbyte = (zx->vid->frmsz / (double)sndChunks);		// count of 7MHz ticks between samples		162.54 ?
-	nsPerByte = 1000000000/(double)sndRate;			// ns per sample		FIXME
+	nsPerSample = zx->nsPerFrame / sndChunks;
+//	tatbyte = (zx->vid->frmsz / (double)sndChunks);		// count of 7MHz ticks between samples		162.54 ?
+//	nsPerByte = 1000000000/(double)sndRate;			// ns per sample		FIXME
 }
 
 void addOutput(std::string nam, bool (*opf)(), void (*plf)(), void (*clf)()) {

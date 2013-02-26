@@ -31,11 +31,11 @@ unsigned char envforms[16][33]={
 void aymSetType(aymChip* ay, int tp) {
 	ay->type = tp;
 	switch (tp) {
-		case SND_AY: ay->freq = 1774400; break;
-		case SND_YM: ay->freq = 1750000; break;
+		case SND_AY: ay->freq = 1.774400; break;
+		case SND_YM: ay->freq = 1.750000; break;
 		default: ay->type = SND_NONE;
 	}
-	if (ay->type != SND_NONE) ay->aycoe = 400 * 448 * 320 / (double)ay->freq;
+	if (ay->type != SND_NONE) ay->aycoe = 8000 / ay->freq;
 }
 
 aymChip* aymCreate(int tp) {

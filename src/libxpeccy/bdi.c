@@ -6,9 +6,10 @@
 
 #include "bdi.h"
 
-#define	BYTEDELAY	224
-#define IDXDELAY	600
-#define	MSDELAY		7160		// 1ms delay
+#define	ONEDELAY	140			// transit: 1 dot = 140 ns
+#define	BYTEDELAY	224 * ONEDELAY
+#define IDXDELAY	600 * ONEDELAY
+#define	MSDELAY		7160 * ONEDELAY		// 1ms delay
 #define	TRBDELAY	MSDELAY * 3
 
 int pcatch = 0;	// 1 when bdi takes i/o request

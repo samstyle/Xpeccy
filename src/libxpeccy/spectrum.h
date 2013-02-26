@@ -71,10 +71,13 @@ struct ZXComp {
 	int nmiRequest;
 	int beeplev;
 	float cpuFrq;
-	float dotPerTick;
+
 	int nsPerTick;
+	int nsPerFrame;
+	int nsCount;
+
 	memEntry memMap[16];		// memory map for ATM2, PentEvo
-	unsigned char colMap[16];	// color map (--GgRrBb)
+	unsigned char colMap[16];	// color map
 	unsigned char prt0;		// 7ffd value
 	unsigned char prt1;		// extend port value
 	unsigned char prt2;		// scorpion ProfROM layer (0..3)
@@ -88,12 +91,8 @@ struct ZXComp {
 	CMOS cmos;
 	unsigned char dosen;		// active trdos (dosen and b4,prt0 sets rompart)
 	int resbank;		// rompart active after reset
-//	int gsCount;
 	int tapCount;
 	unsigned long tickCount;
-	float frmDot;
-	int syncTick;
-	float tickPerFrame;
 };
 
 typedef struct ZXComp ZXComp;
@@ -104,7 +103,7 @@ ZXComp* zxCreate();
 void zxDestroy(ZXComp*);
 void zxReset(ZXComp*,int);
 void zxOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
-double zxExec(ZXComp*);
+int zxExec(ZXComp*);
 void zxSetFrq(ZXComp*,float);
 void zxSetLayout(ZXComp*, int, int, int, int, int, int, int, int, int);
 void zxSetHardware(ZXComp*,const char*);

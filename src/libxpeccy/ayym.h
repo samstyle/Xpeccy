@@ -46,8 +46,8 @@ typedef struct {
 	int eCur;
 	int ePos;
 	int nPos;
-	int freq;
-	double aycoe;
+	float freq;		// in MHz
+	int aycoe;
 	unsigned char curReg;
 	unsigned char reg[16];
 } aymChip;

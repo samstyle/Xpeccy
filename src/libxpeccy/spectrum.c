@@ -5,13 +5,12 @@
 
 #include "spectrum.h"
 
-double ltk;
+int nsTime;
 int res1 = 0;
 int res2 = 0;
 int res3 = 0;	// tick in op, wich has last OUT/MWR (and vidSync)
 int res4 = 0;	// save last res3 (vidSync on OUT/MWR process do res3-res4 ticks)
 int res5 = 0;	// ticks ated by slow mem?
-//int vflg = 0;
 Z80EX_WORD pcreg;
 
 /*
@@ -107,7 +106,7 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 void memwr(Z80EX_CONTEXT* cpu, Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
 	res3 = res2 + z80ex_op_tstate(cpu) + 3;
-	vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
+	vidSync(comp->vid,comp->nsPerTick * (res3 - res4));
 	res4 = res3;
 //	if (((adr & 0xc000) == 0x4000) && (comp->hwFlag & HW_CONTMEM)) {
 //		res5 = vidGetWait(comp->vid);
@@ -132,12 +131,12 @@ Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
 	Z80EX_BYTE res = 0xff;
 // video sync
 	res3 = res2 + z80ex_op_tstate(cpu);
-	vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
+	vidSync(comp->vid,comp->nsPerTick * (res3 - res4));
 	res4 = res3;
 	if (comp->hwFlag & HW_CONTIO) {
 		res5 = vidGetWait(comp->vid);
 		if (res5 != 0) {
-			vidSync(comp->vid,comp->dotPerTick * res5);
+			vidSync(comp->vid,comp->nsPerTick * res5);
 			res1 += res5;
 		}
 	}
@@ -179,29 +178,29 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 void iowait(ZXComp* comp, int ticks) {
 	res5 = vidGetWait(comp->vid);
 	if (res5 != 0) {
-		vidSync(comp->vid, comp->dotPerTick * res5);
+		vidSync(comp->vid, comp->nsPerTick * res5);
 		res1 += res5;
 	}
 	if (ticks != 0)
-		vidSync(comp->vid, comp->dotPerTick * ticks);
+		vidSync(comp->vid, comp->nsPerTick * ticks);
 }
 
 void iowr(Z80EX_CONTEXT* cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
 	res3 = res2 + z80ex_op_tstate(cpu) - 1;		// start of OUT cycle
-	vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
+	vidSync(comp->vid,comp->nsPerTick * (res3 - res4));
 	res4 = res3;
 // if there is contended io, get wait and wait :)
 	if (comp->hwFlag & HW_CONTIO) {
 		switch(port & 0x4001) {
 			case 0x0000:
 				zxOut(comp,port,val);
-				vidSync(comp->vid,comp->dotPerTick);	// N:1
+				vidSync(comp->vid,comp->nsPerTick);	// N:1
 				iowait(comp,3);					// C:3
 				break;
 			case 0x0001:
 				zxOut(comp,port,val);
-				vidSync(comp->vid, comp->dotPerTick * 4);	// N:4
+				vidSync(comp->vid, comp->nsPerTick * 4);	// N:4
 				break;
 			case 0x4000:
 				zxOut(comp,port,val);
@@ -218,7 +217,7 @@ void iowr(Z80EX_CONTEXT* cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 		}
 		res4 += 4;
 	} else {
-		vidSync(comp->vid, comp->dotPerTick * 3);
+		vidSync(comp->vid, comp->nsPerTick * 3);
 		zxOut(comp,port,val);
 		res4 += 3;
 	}
@@ -282,8 +281,7 @@ ZXComp* zxCreate() {
 	comp->tapCount = 0;
 	comp->resbank = RES_48;
 	comp->tickCount = 0;
-	comp->frmDot = 0;
-	comp->syncTick = 0;
+
 	gsReset(comp->gs);
 	for (i = 0; i < 16; i++) comp->colMap[i] = defPalete[i];
 	comp->cmos.adr = 0;
@@ -355,6 +353,7 @@ void zxReset(ZXComp* comp,int wut) {
 	tsReset(comp->ts);
 	ideReset(comp->ide);
 	comp->hw->mapMem(comp);
+	comp->nsCount = 0;
 }
 
 void zxSetLayout(ZXComp *comp, int fh, int fv, int bh, int bv, int sh, int sv, int ih, int iv, int is) {
@@ -369,7 +368,7 @@ void zxSetLayout(ZXComp *comp, int fh, int fv, int bh, int bv, int sh, int sv, i
 	comp->vid->intsz = is;
 	comp->vid->frmsz = fh * fv;
 	vidUpdate(comp->vid);
-	comp->tickPerFrame = comp->vid->frmsz / comp->dotPerTick;
+	comp->nsPerFrame = 140 * comp->vid->frmsz;
 }
 
 void zxSetHardware(ZXComp* comp, const char* name) {
@@ -380,58 +379,48 @@ void zxSetHardware(ZXComp* comp, const char* name) {
 
 void zxSetFrq(ZXComp* comp, float frq) {
 	comp->cpuFrq = frq;
-	comp->dotPerTick = 7.0 / frq;
-	comp->nsPerTick = 1000.0 / frq;
-	comp->tickPerFrame = comp->vid->frmsz / comp->dotPerTick;
+	comp->nsPerTick = 280 * 3.5 / frq;	// 280 ns per tick @ 3.5 MHz
 }
 
-double zxExec(ZXComp* comp) {
+int zxExec(ZXComp* comp) {
 	res1 = res2 = res3 = res4 = res5 = 0;
-//	comp->vid->drawed = 0;
-//	vflg = 0;
 	do {
 		res2 += z80ex_step(comp->cpu);
 	} while (z80ex_last_op_type(comp->cpu) != 0);
-	comp->frmDot += res2 * comp->dotPerTick;
-//	pcreg = z80ex_get_reg(comp->cpu,regPC);
-	vidSync(comp->vid,(res2 - res4) * comp->dotPerTick);
+	comp->nsCount += res2 * comp->nsPerTick;
+
+	vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
 	res1 += res2;
 	if (comp->rzxPlay) {
 		comp->intStrobe = (comp->rzxFetches < 1);
 	} else {
-		if (comp->frmDot >= comp->vid->frmsz) {
+		if (comp->nsCount >= comp->nsPerFrame) {
 			comp->intStrobe = 1;
-			comp->frmDot -= comp->vid->frmsz;
+			comp->nsCount -= comp->nsPerFrame;
 		} else {
 			comp->intStrobe = 0;
 		}
 	}
-//	comp->frmStrobe = (vflg & VID_FRM) ? 1 : 0;
-#ifdef ISDEBUG
-//	if (vflg & VID_FRM) {
-//		printf("frame end @ tick %f of %i\n",comp->frmDot,comp->vid->frmsz);
-//	}
-#endif
-/*
+	pcreg = z80ex_get_reg(comp->cpu,regPC);
 	if ((pcreg > 0x3fff) && comp->nmiRequest && !comp->rzxPlay) {
 		res2 = res3 = res4 = res5 = 0;
 		res2 = z80ex_nmi(comp->cpu);
 		res1 += res2;
-		comp->frmDot += res2 * comp->dotPerTick;
+		comp->nsCount += res2 * comp->nsPerTick;
 		if (res2 != 0) {
 			comp->dosen = 1;
 			comp->prt0 |= 0x10;
 			comp->hw->mapMem(comp);
-			vidSync(comp->vid,(res2 - res4) * comp->dotPerTick);
+			vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
 		}
 	}
-*/
+
 	if (comp->intStrobe) {
 		res2 = res3 = res4 = res5 = 0;
 		res2 = z80ex_int(comp->cpu);
 		res1 += res2;
-		comp->frmDot += res2 * comp->dotPerTick;
-		vidSync(comp->vid,(res2 - res4) * comp->dotPerTick);
+		comp->nsCount += res2 * comp->nsPerTick;
+		vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
 		if (comp->rzxPlay) {
 			comp->rzxFrame++;
 			if (comp->rzxFrame >= comp->rzxSize) {
@@ -445,6 +434,7 @@ double zxExec(ZXComp* comp) {
 			}
 		}
 	}
+
 	pcreg = z80ex_get_reg(comp->cpu,regPC);
 	if (memGetCellFlags(comp->mem,pcreg) & MEM_BRK_FETCH) {
 		comp->flag |= ZX_BREAK;
@@ -452,10 +442,10 @@ double zxExec(ZXComp* comp) {
 
 	comp->tickCount += res1;
 
-	ltk = res1 * comp->dotPerTick;
-	comp->tapCount += ltk;
-	if (comp->gs->flag & GS_ENABLE) comp->gs->sync += ltk;
-	if (comp->bdi->fdc->type != FDC_NONE) bdiSync(comp->bdi,ltk);
+	nsTime = res1 * comp->nsPerTick;
+	comp->tapCount += nsTime;
+	if (comp->gs->flag & GS_ENABLE) comp->gs->sync += nsTime;
+	if (comp->bdi->fdc->type != FDC_NONE) bdiSync(comp->bdi, nsTime);
 
-	return ltk;
+	return nsTime;
 }

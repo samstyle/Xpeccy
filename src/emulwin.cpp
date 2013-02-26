@@ -34,7 +34,7 @@
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#define	XPTITLE	"Xpeccy 0.5 (20130215)"
+#define	XPTITLE	"Xpeccy 0.5 (20130226)"
 
 // main
 MainWin* mainWin;
@@ -68,7 +68,7 @@ unsigned char* blkData = NULL;
 int blk;
 
 int prc;
-double tks = 0;				// ns counter
+int ns = 0;				// ns counter
 
 pthread_t emuThread;
 sem_t emuSem;
@@ -319,6 +319,7 @@ void MainWin::updateWindow() {
 	}
 	surf = SDL_SetVideoMode(szw,szh,8,sdlflg | SDL_NOFRAME);
 	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
+	free(surf->pixels);
 	surf->pixels = vidGetScreen();
 	zx->vid->scrimg = (unsigned char*)surf->pixels;
 	zx->vid->scrptr = zx->vid->scrimg;
@@ -1278,11 +1279,11 @@ void* emuThreadMain(void *) {
 		if (pauseFlags == 0) {
 			do {
 				// exec 1 opcode (+ INT, NMI)
-				tks += zxExec(zx);
+				ns += zxExec(zx);
 				// if need - request sound buffer update
-				if (tks > tatbyte) {
+				if (ns > nsPerSample) {
 					sndSync(emulFlags & FL_FAST);
-					tks -= tatbyte;
+					ns -= nsPerSample;
 				}
 				// tape trap
 				pc = z80ex_get_reg(zx->cpu,regPC);

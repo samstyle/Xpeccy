@@ -11,7 +11,7 @@ extern "C" {
 #define VF_FULLSCREEN		1
 #define VF_DOUBLE		(1<<1)
 #define VF_BLOCKFULLSCREEN	(1<<2)
-#define VF_CHANGED		(1<<3)
+//#define VF_CHANGED		(1<<3)
 #define	VF_FRAMEDBG		(1<<4)
 #define VF_NOFLIC		(1<<5)
 #define	VF_GREY			(1<<6)
@@ -69,8 +69,7 @@ struct Video {
 	unsigned char* scrimg;
 	int frmsz;
 	int vmode;
-	float pxcnt;
-	float drawed;
+	int nsDraw;
 	int dotCount;
 	VSize full;
 	VSize bord;
@@ -109,7 +108,7 @@ extern float brdsize;
 Video* vidCreate(Memory*);
 void vidDestroy(Video*);
 
-void vidSync(Video*,float);
+void vidSync(Video*,int);
 void vidSetMode(Video*,int);
 int vidGetWait(Video*);
 void vidDarkTail(Video*);
