@@ -334,6 +334,7 @@ void vidPutDot(Video* vid, unsigned char col) {
 	} else {
 		col |= (col << 4);
 	}
+	if ((~vidFlag & VF_CHECKCHA) || (*vid->scrptr != col)) vidFlag |= VF_CHANGED;
 	*(vid->scrptr++) = col;
 	if (vidFlag & VF_DOUBLE) {
 //		*(vid->scrptr + vid->wsze.h - 1) = col;
@@ -410,6 +411,7 @@ void vidDrawATMtext(Video* vid) {
 			pap = papTab[col & 0x3f] | ((col & 0x80) >> 4);
 			adr = (scrbyte << 3);
 			fntptr = vid->scrptr;
+			vidFlag |= VF_CHANGED;
 			for (col = 0; col < 8; col++) {
 				scrbyte = vid->font[adr];
 				if (vidFlag & VF_DOUBLE) {
@@ -448,6 +450,7 @@ void vidDrawATMhwmc(Video* vid) {
 			ink = inkTab[col & 0x7f];
 			pap = papTab[col & 0x3f] | ((col & 0x80) >> 4);
 			fntptr = vid->scrptr;
+			vidFlag |= VF_CHANGED;
 			if (vidFlag & VF_DOUBLE) {
 				for (col = 0; col < 8; col++) {
 					*(fntptr + col) = (scrbyte & 0x80) ? ink : pap;

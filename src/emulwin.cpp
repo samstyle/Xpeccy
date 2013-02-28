@@ -34,7 +34,7 @@
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#define	XPTITLE	"Xpeccy 0.5 (20130226)"
+#define	XPTITLE	"Xpeccy 0.5 (20130228)"
 
 // main
 MainWin* mainWin;
@@ -301,6 +301,7 @@ void MainWin::updateHead() {
 
 void MainWin::updateWindow() {
 	emulFlags |= FL_BLOCK;
+	vidFlag &= ~VF_CHECKCHA;
 	vidUpdate(zx->vid);
 	int szw = zx->vid->wsze.h;
 	int szh = zx->vid->wsze.v;
@@ -1157,11 +1158,12 @@ void MainWin::emulFrame() {
 		keyRelease(zx->keyb,0,0);
 		zx->mouse->buttons = 0xff;
 	}
+// update window
+	mainWin->emuDraw();
+
 // set emulation semaphore
 	if (~emulFlags & (FL_FAST | FL_EMUL)) sem_post(&emuSem);	// inc 'emulate frame' semaphore
 
-// update window
-	mainWin->emuDraw();
 
 // check if menu isn't visible anymore (QMenu doesn't have signals on show/hide events)
 	if (userMenu->isHidden() && (pauseFlags & PR_MENU)) {
@@ -1231,11 +1233,15 @@ void MainWin::emuDraw() {
 			case FDC_WRITE: putIcon(zx->vid,4,4,icoRedDisk); break;
 		}
 	}
+	if (vidFlag & VF_CHANGED) {
 #ifdef XQTPAINT
 	update();
 #else
 	SDL_UpdateRect(surf,0,0,0,0);
 #endif
+	}
+	vidFlag &= ~VF_CHANGED;
+	vidFlag |= VF_CHECKCHA;
 	emulFlags &= ~FL_DRAW;
 }
 

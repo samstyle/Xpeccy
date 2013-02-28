@@ -353,7 +353,6 @@ void zxReset(ZXComp* comp,int wut) {
 	tsReset(comp->ts);
 	ideReset(comp->ide);
 	comp->hw->mapMem(comp);
-	comp->nsCount = 0;
 }
 
 void zxSetLayout(ZXComp *comp, int fh, int fv, int bh, int bv, int sh, int sv, int ih, int iv, int is) {
