@@ -382,14 +382,47 @@ void zxSetFrq(ZXComp* comp, float frq) {
 }
 
 int zxExec(ZXComp* comp) {
-	res1 = res2 = res3 = res4 = res5 = 0;
+#if 0
+	if (comp->intStrobe) {
+		comp->intStrobe = 0;
+		res1 = z80ex_int(comp->cpu);
+		comp->nsCount -= comp->nsPerFrame;
+		if (comp->rzxPlay) {
+			comp->rzxFrame++;
+			if (comp->rzxFrame >= comp->rzxSize) {
+				comp->rzxPlay = 0;
+				comp->rzxSize = 0;
+				if (comp->rzxData) free(comp->rzxData);
+				comp->rzxData = NULL;
+			} else {
+				comp->rzxFetches = comp->rzxData[comp->rzxFrame].fetches;
+				comp->rzxPos = 0;
+			}
+		}
+	} else {
+		res1 = 0;
+		do {
+			res1 += z80ex_step(comp->cpu);
+		} while (z80ex_last_op_type(comp->cpu) != 0);
+	}
+	nsTime = res1 * comp->nsPerTick;
+	vidSync(comp->vid,nsTime);
+//	comp->tickCount += res1;
+	comp->nsCount += nsTime;
+	if (comp->rzxPlay) {
+		if (comp->rzxFetches < 1) comp->intStrobe = 1;
+	} else {
+		if (comp->nsCount >= comp->nsPerFrame) comp->intStrobe = 1;
+	}
+#else
+	res2 = res4 = 0;
 	do {
 		res2 += z80ex_step(comp->cpu);
 	} while (z80ex_last_op_type(comp->cpu) != 0);
 	comp->nsCount += res2 * comp->nsPerTick;
 
 	vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
-	res1 += res2;
+	res1 = res2;
 	if (comp->rzxPlay) {
 		comp->intStrobe = (comp->rzxFetches < 1);
 	} else {
@@ -402,7 +435,7 @@ int zxExec(ZXComp* comp) {
 	}
 	pcreg = z80ex_get_reg(comp->cpu,regPC);
 	if ((pcreg > 0x3fff) && comp->nmiRequest && !comp->rzxPlay) {
-		res2 = res3 = res4 = res5 = 0;
+		res4 = 0;
 		res2 = z80ex_nmi(comp->cpu);
 		res1 += res2;
 		comp->nsCount += res2 * comp->nsPerTick;
@@ -415,7 +448,7 @@ int zxExec(ZXComp* comp) {
 	}
 
 	if (comp->intStrobe) {
-		res2 = res3 = res4 = res5 = 0;
+		res2 = res4 = 0;
 		res2 = z80ex_int(comp->cpu);
 		res1 += res2;
 		comp->nsCount += res2 * comp->nsPerTick;
@@ -434,17 +467,16 @@ int zxExec(ZXComp* comp) {
 		}
 	}
 
+	nsTime = res1 * comp->nsPerTick;
 	pcreg = z80ex_get_reg(comp->cpu,regPC);
 	if (memGetCellFlags(comp->mem,pcreg) & MEM_BRK_FETCH) {
 		comp->flag |= ZX_BREAK;
 	}
 
+#endif
 	comp->tickCount += res1;
-
-	nsTime = res1 * comp->nsPerTick;
 	comp->tapCount += nsTime;
 	if (comp->gs->flag & GS_ENABLE) comp->gs->sync += nsTime;
 	if (comp->bdi->fdc->type != FDC_NONE) bdiSync(comp->bdi, nsTime);
-
 	return nsTime;
 }

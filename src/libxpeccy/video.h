@@ -44,6 +44,8 @@ typedef struct {
 typedef struct {
 	int flag;
 	int tick;		// tick NR (just for debug)
+	int x;
+	int y;
 	unsigned char wait;
 	unsigned char dotMask;
 	unsigned char* scr5ptr;
@@ -105,6 +107,11 @@ typedef struct Video Video;
 
 extern int vidFlag;
 extern float brdsize;
+
+extern int leftCha;
+extern int rightCha;
+extern int upCha;
+extern int downCha;
 
 Video* vidCreate(Memory*);
 void vidDestroy(Video*);

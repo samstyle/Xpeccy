@@ -1234,12 +1234,26 @@ void MainWin::emuDraw() {
 		}
 	}
 	if (vidFlag & VF_CHANGED) {
+		int dx = rightCha - leftCha + 1;
+		int dy = downCha - upCha + 1;
+		if ((dx > 0) && (dy > 0)) {
+			if (vidFlag & VF_DOUBLE) {
+				leftCha <<= 1;
+				upCha <<= 1;
+				dx <<= 1;
+				dy <<= 1;
+			}
 #ifdef XQTPAINT
-	update();
+			update();
 #else
-	SDL_UpdateRect(surf,0,0,0,0);
+			SDL_UpdateRect(surf,leftCha,upCha,dx,dy);
 #endif
+		}
 	}
+	leftCha = 1000;
+	rightCha = 0;
+	upCha = 1000;
+	downCha = 0;
 	vidFlag &= ~VF_CHANGED;
 	vidFlag |= VF_CHECKCHA;
 	emulFlags &= ~FL_DRAW;

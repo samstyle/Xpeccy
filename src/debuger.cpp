@@ -198,7 +198,7 @@ bool DebugWin::fillall() {
 
 void DebugWin::filltick() {
 	QString text = QString::number(zx->tickCount - lastDbgTicks).append(" | ");
-	text.append(QString::number(zx->vid->matrix[zx->vid->dotCount].tick));
+//	text.append(QString::number(zx->vid->matrix[zx->vid->dotCount].tick));
 	tlab->setText(text);
 }
 
