@@ -33,6 +33,7 @@ typedef struct {
 	int v;
 } VSize;
 
+/*
 typedef struct {
 	unsigned char* egaptr;
 	unsigned char* txtptr;
@@ -44,8 +45,7 @@ typedef struct {
 typedef struct {
 	int flag;
 	int tick;		// tick NR (just for debug)
-	int x;
-	int y;
+	unsigned char col;
 	unsigned char wait;
 	unsigned char dotMask;
 	unsigned char* scr5ptr;
@@ -57,23 +57,26 @@ typedef struct {
 	atmItem atm5;
 	atmItem atm7;
 } mtrxItem;
+*/
 
 struct Video {
 	int flags;
-	int intSignal;
+//	int intSignal;
 	int flash;
 	int curscr;
 	unsigned char brdcol;
 	unsigned char nextbrd;
-	unsigned char curCol;
+//	unsigned char curCol;
 	unsigned char fcnt;
 	unsigned char atrbyte;
 	unsigned char* scrptr;
 	unsigned char* scrimg;
+	int x;
+	int y;
 	int frmsz;
 	int vmode;
 	int nsDraw;
-	int dotCount;
+//	int dotCount;
 	VSize full;
 	VSize bord;
 	VSize sync;
@@ -86,6 +89,7 @@ struct Video {
 	int intsz;
 	unsigned char font[0x800];	// ATM text mode font
 	void(*callback)(struct Video*);
+/*
 	mtrxItem matrix[512 * 512];
 	struct {
 		unsigned char *ac00;
@@ -101,17 +105,13 @@ struct Video {
 	unsigned char* scr5atr[0x1800];
 	unsigned char* scr7pix[0x1800];
 	unsigned char* scr7atr[0x1800];
+*/
 };
 
 typedef struct Video Video;
 
 extern int vidFlag;
 extern float brdsize;
-
-extern int leftCha;
-extern int rightCha;
-extern int upCha;
-extern int downCha;
 
 Video* vidCreate(Memory*);
 void vidDestroy(Video*);
