@@ -316,12 +316,11 @@ void MainWin::updateWindow() {
 		sdlflg |= SDL_FULLSCREEN;
 	}
 	if (surf != NULL) {
-		surf->pixels = NULL;		// else creating new surface will destroy screenBuf
+		SDL_FreeSurface(surf);		// else creating new surface will destroy screenBuf
 	}
 	surf = SDL_SetVideoMode(szw,szh,8,sdlflg | SDL_NOFRAME);
 	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
-	free(surf->pixels);
-	surf->pixels = vidGetScreen();
+//	free(surf->pixels);
 	zx->vid->scrimg = (unsigned char*)surf->pixels;
 	zx->vid->scrptr = zx->vid->scrimg;
 #endif

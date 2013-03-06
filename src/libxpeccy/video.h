@@ -77,7 +77,7 @@ void vidDarkTail(Video*);
 
 void vidUpdate(Video*);
 
-unsigned char* vidGetScreen();
+//unsigned char* vidGetScreen();
 unsigned char vidGetAttr(Video*);
 void vidSetFont(Video*,char*);
 
