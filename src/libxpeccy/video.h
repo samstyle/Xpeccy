@@ -33,40 +33,12 @@ typedef struct {
 	int v;
 } VSize;
 
-/*
-typedef struct {
-	unsigned char* egaptr;
-	unsigned char* txtptr;
-	unsigned char* txtatrptr;
-	unsigned char* hwmpix;
-	unsigned char* hwmatr;
-} atmItem;
-
-typedef struct {
-	int flag;
-	int tick;		// tick NR (just for debug)
-	unsigned char col;
-	unsigned char wait;
-	unsigned char dotMask;
-	unsigned char* scr5ptr;
-	unsigned char* atr5ptr;
-	unsigned char* scr7ptr;
-	unsigned char* atr7ptr;
-	unsigned char* alco5ptr;
-	unsigned char* alco7ptr;
-	atmItem atm5;
-	atmItem atm7;
-} mtrxItem;
-*/
-
 struct Video {
 	int flags;
-//	int intSignal;
 	int flash;
 	int curscr;
 	unsigned char brdcol;
 	unsigned char nextbrd;
-//	unsigned char curCol;
 	unsigned char fcnt;
 	unsigned char atrbyte;
 	unsigned char* scrptr;
@@ -76,7 +48,6 @@ struct Video {
 	int frmsz;
 	int vmode;
 	int nsDraw;
-//	int dotCount;
 	VSize full;
 	VSize bord;
 	VSize sync;
@@ -89,23 +60,6 @@ struct Video {
 	int intsz;
 	unsigned char font[0x800];	// ATM text mode font
 	void(*callback)(struct Video*);
-/*
-	mtrxItem matrix[512 * 512];
-	struct {
-		unsigned char *ac00;
-		unsigned char *ac01;
-		unsigned char *ac02;
-		unsigned char *ac03;
-		unsigned char *ac10;
-		unsigned char *ac11;
-		unsigned char *ac12;
-		unsigned char *ac13;
-	} ladrz[0x1800];
-	unsigned char* scr5pix[0x1800];
-	unsigned char* scr5atr[0x1800];
-	unsigned char* scr7pix[0x1800];
-	unsigned char* scr7atr[0x1800];
-*/
 };
 
 typedef struct Video Video;

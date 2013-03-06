@@ -34,7 +34,7 @@
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#define	XPTITLE	"Xpeccy 0.5 (20130228)"
+#define	XPTITLE	"Xpeccy 0.5 (20130306)"
 
 // main
 MainWin* mainWin;
@@ -1233,7 +1233,7 @@ void MainWin::emuDraw() {
 			case FDC_WRITE: putIcon(zx->vid,4,4,icoRedDisk); break;
 		}
 	}
-	if (vidFlag & VF_CHANGED) {
+	if (vidFlag & (VF_CHANGED | VF_FRAMEDBG)) {
 #ifdef XQTPAINT
 		update();
 #else
