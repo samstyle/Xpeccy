@@ -12,13 +12,6 @@
 	#include <mmsystem.h>
 #endif
 
-struct OutSys {
-	std::string name;
-	bool (*open)();
-	void (*play)();
-	void (*close)();
-};
-
 bool sndEnabled;
 bool sndMute;
 
@@ -35,7 +28,7 @@ int tapeVolume = 100;
 int ayVolume = 100;
 int gsVolume = 100;
 
-std::vector<OutSys> sndOutputList;
+//std::vector<OutSys> sndOutputList;
 OutSys *sndOutput = NULL;
 int sndRate = 44100;
 int sndChans = 2;
@@ -47,6 +40,8 @@ int nsPerSample = 23143;
 //double tickCount = 162;
 int lev,levr,levl;
 unsigned char lastL,lastR;
+
+OutSys* findOutSys(const char*);
 
 #ifdef __linux__
 	int32_t ossHandle;			// oss
@@ -67,8 +62,6 @@ unsigned char lastL,lastR;
 // output
 
 void sndSync(int fast) {
-//	if (tk < tatbyte) return tk;
-//	tk -= tatbyte;
 	tapSync(zx->tape,zx->tapCount);
 	zx->tapCount = 0;
 	gsSync(zx->gs);
@@ -113,7 +106,6 @@ void sndSync(int fast) {
 }
 
 void sndFillToEnd() {
-//	printf("tail: %i\n",sndChunks - smpCount);
 	while (smpCount < sndChunks) {
 		ringBuffer[ringPos] = lastL;
 		ringPos++;
@@ -128,17 +120,6 @@ void sndCalibrate() {
 	sndChunks = (int)(sndRate / 50.0);			// samples played at 1/50 sec			882
 	sndBufSize = sndChans * sndChunks;			// buffer size for 1/50 sec play		1764
 	nsPerSample = zx->nsPerFrame / sndChunks;
-//	tatbyte = (zx->vid->frmsz / (double)sndChunks);		// count of 7MHz ticks between samples		162.54 ?
-//	nsPerByte = 1000000000/(double)sndRate;			// ns per sample		FIXME
-}
-
-void addOutput(std::string nam, bool (*opf)(), void (*plf)(), void (*clf)()) {
-	OutSys newsys;
-	newsys.name = nam;
-	newsys.open = opf;
-	newsys.play = plf;
-	newsys.close = clf;
-	sndOutputList.push_back(newsys);
 }
 
 std::string sndGetOutputName() {
@@ -149,24 +130,17 @@ std::string sndGetOutputName() {
 	return res;
 }
 
-void setOutput(std::string nam) {
+void setOutput(const char* name) {
 	if (sndOutput != NULL) {
-//		if (sndOutput->name == nam) return;
 		sndOutput->close();
 	}
-	sndOutput = NULL;
-	for (unsigned int i=0; i<sndOutputList.size(); i++) {
-		if (sndOutputList[i].name == nam) {
-			sndOutput = &sndOutputList[i];
-			break;
-		}
-	}
+	sndOutput = findOutSys(name);
 	if (sndOutput == NULL) {
-		printf("Can't find sound system. Reset to NULL\n");
+		printf("Can't find sound system '%s'. Reset to NULL\n",name);
 		setOutput("NULL");
 	}
 	if (!sndOutput->open()) {
-		printf("Can't open sound system. Reset to NULL\n");
+		printf("Can't open sound system '%s'. Reset to NULL\n",name);
 		setOutput("NULL");
 	}
 	sndCalibrate();
@@ -188,21 +162,13 @@ void sndPlay() {
 void sndPause(bool b) {
 #ifdef HAVESDL
 	if (sndOutput == NULL) return;
-	if (sndOutput->name != "SDL") return;
+	if (strcmp(sndOutput->name,"SDL") != 0) return;
 //	SDL_PauseAudio(b ? 1 : 0);
 #endif
 }
 
 void sndClose() {
 	if (sndOutput != NULL) sndOutput->close();
-}
-
-std::vector<std::string> sndGetList() {
-	std::vector<std::string> res;
-	for (unsigned int i=0; i<sndOutputList.size(); i++) {
-		res.push_back(sndOutputList[i].name);
-	}
-	return res;
 }
 
 std::string sndGetName() {
@@ -418,6 +384,35 @@ void wave_close() {
 
 // init
 
+OutSys sndTab[] = {
+	{SND_NULL,"NULL",&null_open,&null_play,&null_close},
+#ifdef __linux__
+	{SND_OSS,"OSS",&oss_open,&oss_play,&oss_close},
+#ifdef HAVEALSA
+	{SND_ALSA,"ALSA",&alsa_open,&alsa_play,&alsa_close},
+#endif
+#elif _WIN32
+//	{SND_WAVE,"WaveOut",&wave_open,&wave_play,&wave_close},
+#endif
+#ifdef HAVESDL
+	{SND_SDL,"SDL",&sdlopen,&sdlplay,&sdlclose},
+#endif
+	{0,NULL,NULL,NULL,NULL}
+};
+
+OutSys* findOutSys(const char* name) {
+	OutSys* res = NULL;
+	int idx = 0;
+	while (sndTab[idx].name != NULL) {
+		if (strcmp(sndTab[idx].name,name) == 0) {
+			res = &sndTab[idx];
+			break;
+		}
+		idx++;
+	}
+	return res;
+}
+
 void sndInit() {
 #ifdef __linux__
 #ifdef HAVEALSA
@@ -433,8 +428,7 @@ void sndInit() {
 	sndOutput = NULL;
 	beepVolume = tapeVolume = ayVolume = gsVolume = 100;
 	initNoise();							// ay/ym
-//	zx->aym->sc2->n.cur = zx->aym->sc1->n.cur = 0xffff;
-
+/*
 	addOutput("NULL",&null_open,&null_play,&null_close);
 #ifdef __linux__
 	addOutput("OSS",&oss_open,&oss_play,&oss_close);
@@ -447,4 +441,5 @@ void sndInit() {
 #ifdef HAVESDL
 	addOutput("SDL",&sdlopen,&sdlplay,&sdlclose);	// TODO: do something with SDL output
 #endif
+*/
 }

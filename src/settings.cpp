@@ -414,7 +414,7 @@ void saveProfiles() {
 	}
 	cfile << "\n[SOUND]\n\n";
 	cfile << "enabled = " << (sndEnabled ? "yes" : "no") << "\n";
-	cfile << "soundsys = " << sndGetName().c_str() << "\n";
+	cfile << "soundsys = " << sndOutput->name << "\n";
 	cfile << "dontmute = " << (sndMute ? "yes" : "no") << "\n";
 	cfile << "rate = " << int2str(sndRate).c_str() << "\n";
 	cfile << "volume.beep = " << int2str(beepVolume).c_str() << "\n";
@@ -835,7 +835,7 @@ void loadProfiles() {
 	}
 	uint i;
 	for (i=0; i<rslist.size(); i++) addRomset(rslist[i]);
-	setOutput(soutnam);
+	setOutput(soutnam.c_str());
 	if (flag & OF_DEFAULT) {
 		if (!setProfile("default")) {
 			printf("Can't set default profile. GRR!\n");

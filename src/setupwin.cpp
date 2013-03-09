@@ -107,8 +107,12 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 		i++;
 	}
 // sound
-	list = sndGetList();
-	for (i=0;i<list.size();i++) {setupUi.outbox->addItem(QString::fromLocal8Bit(list[i].c_str()));}
+	i = 0;
+	while (sndTab[i].name != NULL) {
+		setupUi.outbox->addItem(QString::fromLocal8Bit(sndTab[i].name));
+		i++;
+	}
+//	for (i=0;i<list.size();i++) {setupUi.outbox->addItem(QString::fromLocal8Bit(list[i].c_str()));}
 	setupUi.ratbox->addItem("48000",48000);
 	setupUi.ratbox->addItem("44100",44100);
 	setupUi.ratbox->addItem("22050",22050);
@@ -350,7 +354,7 @@ void SetupWin::start() {
 	setupUi.senbox->setChecked(sndEnabled);
 	setupUi.mutbox->setChecked(sndMute);
 	setupUi.gsrbox->setChecked(zx->gs->flag & GS_RESET);
-	setupUi.outbox->setCurrentIndex(setupUi.outbox->findText(QString::fromLocal8Bit(sndGetOutputName().c_str())));
+	setupUi.outbox->setCurrentIndex(setupUi.outbox->findText(QString::fromLocal8Bit(sndOutput->name)));
 	setupUi.ratbox->setCurrentIndex(setupUi.ratbox->findData(QVariant(sndRate)));
 	setupUi.bvsld->setValue(beepVolume);
 	setupUi.tvsld->setValue(tapeVolume);
@@ -494,7 +498,7 @@ void SetupWin::apply() {
 	emulSetLayout(zx,std::string(setupUi.geombox->currentText().toLocal8Bit().data()));
 	optSet(OPT_BRGLEV,setupUi.brgslide->value());
 // sound
-	std::string oname = sndGetOutputName();
+	std::string oname = std::string(sndOutput->name);
 	std::string nname(setupUi.outbox->currentText().toLocal8Bit().data());
 	sndEnabled = setupUi.senbox->isChecked();
 	sndMute = setupUi.mutbox->isChecked();
@@ -503,7 +507,7 @@ void SetupWin::apply() {
 	tapeVolume = setupUi.tvsld->value();
 	ayVolume = setupUi.avsld->value();
 	gsVolume = setupUi.gvsld->value();
-	setOutput(nname);
+	setOutput(nname.c_str());
 	aymSetType(zx->ts->chipA,setupUi.schip1box->itemData(setupUi.schip1box->currentIndex()).toInt());
 	aymSetType(zx->ts->chipB,setupUi.schip2box->itemData(setupUi.schip2box->currentIndex()).toInt());
 	zx->ts->chipA->stereo = setupUi.stereo1box->itemData(setupUi.stereo1box->currentIndex()).toInt();
