@@ -382,10 +382,11 @@ void zxSetFrq(ZXComp* comp, float frq) {
 }
 
 int zxExec(ZXComp* comp) {
-#if 0
+#if 1
 	if (comp->intStrobe) {
 		comp->intStrobe = 0;
-		res1 = z80ex_int(comp->cpu);
+		res4 = 0;
+		res2 = z80ex_int(comp->cpu);
 		comp->nsCount -= comp->nsPerFrame;
 		if (comp->rzxPlay) {
 			comp->rzxFrame++;
@@ -400,13 +401,26 @@ int zxExec(ZXComp* comp) {
 			}
 		}
 	} else {
-		res1 = 0;
+		res2 = res4 = 0;
 		do {
-			res1 += z80ex_step(comp->cpu);
+			res2 += z80ex_step(comp->cpu);
 		} while (z80ex_last_op_type(comp->cpu) != 0);
+		// res1 = res2;
+		if (comp->nmiRequest && !comp->rzxPlay) {
+			pcreg = z80ex_get_reg(comp->cpu,regPC);
+			if (pcreg > 0x3fff) {
+				res5 = z80ex_nmi(comp->cpu);
+				if (res5 != 0) {
+					comp->dosen = 1;
+					comp->prt0 |= 0x10;
+					comp->hw->mapMem(comp);
+					res2 += res5;
+				}
+			}
+		}
 	}
-	nsTime = res1 * comp->nsPerTick;
-	vidSync(comp->vid,nsTime);
+	nsTime = res2 * comp->nsPerTick;
+	vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
 //	comp->tickCount += res1;
 	comp->nsCount += nsTime;
 	if (comp->rzxPlay) {
@@ -414,6 +428,7 @@ int zxExec(ZXComp* comp) {
 	} else {
 		if (comp->nsCount >= comp->nsPerFrame) comp->intStrobe = 1;
 	}
+
 #else
 	res2 = res4 = 0;
 	do {
@@ -468,12 +483,14 @@ int zxExec(ZXComp* comp) {
 	}
 
 	nsTime = res1 * comp->nsPerTick;
+#endif
+
+// TOO FAT
 	pcreg = z80ex_get_reg(comp->cpu,regPC);
 	if (memGetCellFlags(comp->mem,pcreg) & MEM_BRK_FETCH) {
 		comp->flag |= ZX_BREAK;
 	}
 
-#endif
 	comp->tickCount += res1;
 	comp->tapCount += nsTime;
 	if (comp->gs->flag & GS_ENABLE) comp->gs->sync += nsTime;
