@@ -34,7 +34,7 @@
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#define	XPTITLE	"Xpeccy 0.5 (20130306)"
+#define	XPTITLE	"Xpeccy 0.5 (20130325)"
 
 // main
 MainWin* mainWin;
@@ -1248,8 +1248,8 @@ void emulTapeCatch() {
 	blk = zx->tape->block;
 	if (blk >= zx->tape->blkCount) return;
 	if (optGetFlag(OF_TAPEFAST) && (zx->tape->blkData[blk].flag & TBF_BYTES)) {
-		de = z80ex_get_reg(zx->cpu,regDE);
-		ix = z80ex_get_reg(zx->cpu,regIX);
+		de = GETDE(zx->cpu);	//z80ex_get_reg(zx->cpu,regDE);
+		ix = GETIX(zx->cpu);	//z80ex_get_reg(zx->cpu,regIX);
 		TapeBlockInfo inf = tapGetBlockInfo(zx->tape,blk);
 		blkData = (unsigned char*)realloc(blkData,inf.size + 2);
 		tapGetBlockData(zx->tape,blk,blkData);
@@ -1258,14 +1258,14 @@ void emulTapeCatch() {
 				memWr(zx->mem,ix,blkData[i + 1]);
 				ix++;
 			}
-			z80ex_set_reg(zx->cpu,regIX,ix);
-			z80ex_set_reg(zx->cpu,regDE,0);
-			z80ex_set_reg(zx->cpu,regHL,0);
+			SETIX(zx->cpu,ix);	// z80ex_set_reg(zx->cpu,regIX,ix);
+			SETDE(zx->cpu,0);	//z80ex_set_reg(zx->cpu,regDE,0);
+			SETHL(zx->cpu,0);	//z80ex_set_reg(zx->cpu,regHL,0);
 			tapNextBlock(zx->tape);
 		} else {
-			z80ex_set_reg(zx->cpu,regHL,0xff00);
+			SETHL(zx->cpu,0xff00);	//z80ex_set_reg(zx->cpu,regHL,0xff00);
 		}
-		z80ex_set_reg(zx->cpu,regPC,0x5df);	// to exit
+		SETPC(zx->cpu,0x5df);	// z80ex_set_reg(zx->cpu,regPC,0x5df);	// to exit
 	} else {
 		if (optGetFlag(OF_TAPEAUTO))
 			mainWin->tapStateChanged(TW_STATE,TWS_PLAY);
@@ -1291,7 +1291,7 @@ void* emuThreadMain(void *) {
 					ns -= nsPerSample;
 				}
 				// tape trap
-				pc = z80ex_get_reg(zx->cpu,regPC);
+				pc = GETPC(zx->cpu);	// z80ex_get_reg(zx->cpu,regPC);
 				if ((zx->mem->pt0->type == MEM_ROM) && (zx->mem->pt0->num == 1)) {
 					if (pc == 0x56b) emulTapeCatch();
 					if ((pc == 0x5e2) && optGetFlag(OF_TAPEAUTO))

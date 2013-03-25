@@ -41,8 +41,10 @@ int main(int ac,char** av) {
 	atexit(SDL_Quit);
 #endif
 	printf("Using Qt ver %s\n",qVersion());
+#ifndef SELFZ80
 	Z80EX_VERSION* ver = z80ex_get_version();
 	printf("Using z80ex ver %d.%d\n",ver->major, ver->minor);
+#endif
 	QApplication app(ac,av,true);
 	try {
 		int i;

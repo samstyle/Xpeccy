@@ -66,7 +66,7 @@ int zxGetPort(ZXComp* comp, Z80EX_WORD port) {
 }
 */
 
-Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
+Z80EX_BYTE memrd(CPUCONT Z80EX_WORD adr,int m1,void* ptr) {
 	Z80EX_BYTE res;
 	ZXComp* comp = (ZXComp*)ptr;
 	if ((comp->hw->type == HW_SCORP) && ((comp->mem->pt0->num & 3) == 2) && ((adr & 0xfff3) == 0x0100)) {
@@ -103,9 +103,9 @@ Z80EX_BYTE memrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 	return res;
 }
 
-void memwr(Z80EX_CONTEXT* cpu, Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
+void memwr(CPUCONT Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
-	res3 = res2 + z80ex_op_tstate(cpu) + 3;
+	res3 = TCPU(comp->cpu) + 3;
 	vidSync(comp->vid,comp->nsPerTick * (res3 - res4));
 	res4 = res3;
 //	if (((adr & 0xc000) == 0x4000) && (comp->hwFlag & HW_CONTMEM)) {
@@ -126,11 +126,11 @@ void memwr(Z80EX_CONTEXT* cpu, Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 
 int bdiz;
 
-Z80EX_BYTE iord(Z80EX_CONTEXT* cpu, Z80EX_WORD port, void* ptr) {
+Z80EX_BYTE iord(CPUCONT Z80EX_WORD port, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
 	Z80EX_BYTE res = 0xff;
 // video sync
-	res3 = res2 + z80ex_op_tstate(cpu);
+	res3 = TCPU(comp->cpu);	// res2 + z80ex_op_tstate(cpu);
 	vidSync(comp->vid,comp->nsPerTick * (res3 - res4));
 	res4 = res3;
 	if (comp->hwFlag & HW_CONTIO) {
@@ -185,9 +185,9 @@ void iowait(ZXComp* comp, int ticks) {
 		vidSync(comp->vid, comp->nsPerTick * ticks);
 }
 
-void iowr(Z80EX_CONTEXT* cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
+void iowr(CPUCONT Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
-	res3 = res2 + z80ex_op_tstate(cpu) - 1;		// start of OUT cycle
+	res3 = TCPU(comp->cpu);	// res2 + z80ex_op_tstate(comp->cpu) - 1;		// start of OUT cycle
 	vidSync(comp->vid,comp->nsPerTick * (res3 - res4));
 	res4 = res3;
 // if there is contended io, get wait and wait :)
@@ -223,7 +223,7 @@ void iowr(Z80EX_CONTEXT* cpu, Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 	}
 }
 
-Z80EX_BYTE intrq(Z80EX_CONTEXT* cpu, void* ptr) {
+Z80EX_BYTE intrq(CPUCONT void* ptr) {
 	return 0xff;
 }
 
@@ -252,7 +252,11 @@ ZXComp* zxCreate() {
 	comp->flag = ZX_JUSTBORN | ZX_PALCHAN;
 	comp->hwFlag = 0;
 
+#ifdef SELFZ80
+	comp->cpu = cpuCreate(&memrd,&memwr,&iord,*iowr,&intrq,ptr);
+#else
 	comp->cpu = z80ex_create(&memrd,ptr,&memwr,ptr,&iord,ptr,&iowr,ptr,&intrq,ptr);
+#endif
 	comp->mem = memCreate();
 	comp->vid = vidCreate(comp->mem);
 	zxSetFrq(comp,3.5);
@@ -291,7 +295,7 @@ ZXComp* zxCreate() {
 }
 
 void zxDestroy(ZXComp* comp) {
-	z80ex_destroy(comp->cpu);
+	KILLCPU(comp->cpu);	// z80ex_destroy(comp->cpu);
 	memDestroy(comp->mem);
 	vidDestroy(comp->vid);
 	keyDestroy(comp->keyb);
@@ -327,7 +331,7 @@ void zxReset(ZXComp* comp,int wut) {
 	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0);
 	rzxClear(comp);
 	comp->rzxPlay = 0;
-	z80ex_reset(comp->cpu);
+	RESETCPU(comp->cpu);	// z80ex_reset(comp->cpu);
 	comp->vid->curscr = 0;
 	vidSetMode(comp->vid,VID_NORMAL);
 	comp->dosen = 0;
@@ -386,7 +390,7 @@ int zxExec(ZXComp* comp) {
 	if (comp->intStrobe) {
 		comp->intStrobe = 0;
 		res4 = 0;
-		res2 = z80ex_int(comp->cpu);
+		res2 = INTCPU(comp->cpu);	// z80ex_int(comp->cpu);
 		comp->nsCount -= comp->nsPerFrame;
 		if (comp->rzxPlay) {
 			comp->rzxFrame++;
@@ -401,15 +405,13 @@ int zxExec(ZXComp* comp) {
 			}
 		}
 	} else {
-		res2 = res4 = 0;
-		do {
-			res2 += z80ex_step(comp->cpu);
-		} while (z80ex_last_op_type(comp->cpu) != 0);
+		res4 = 0;
+		EXECCPU(comp->cpu,res2);
 		// res1 = res2;
 		if (comp->nmiRequest && !comp->rzxPlay) {
-			pcreg = z80ex_get_reg(comp->cpu,regPC);
+			pcreg = GETPC(comp->cpu);// z80ex_get_reg(comp->cpu,regPC);
 			if (pcreg > 0x3fff) {
-				res5 = z80ex_nmi(comp->cpu);
+				res5 = NMICPU(comp->cpu);	// z80ex_nmi(comp->cpu);
 				if (res5 != 0) {
 					comp->dosen = 1;
 					comp->prt0 |= 0x10;
@@ -486,7 +488,7 @@ int zxExec(ZXComp* comp) {
 #endif
 
 // TOO FAT
-	pcreg = z80ex_get_reg(comp->cpu,regPC);
+	pcreg = GETPC(comp->cpu); // z80ex_get_reg(comp->cpu,regPC);
 	if (memGetCellFlags(comp->mem,pcreg) & MEM_BRK_FETCH) {
 		comp->flag |= ZX_BREAK;
 	}

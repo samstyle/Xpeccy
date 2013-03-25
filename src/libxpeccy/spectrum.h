@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include "z80ex.h"
+#include "cpu.h"
 #include "memory.h"
 #include "video.h"
 #include "input.h"
@@ -47,7 +47,7 @@ struct ZXComp {
 	int flag;		// states
 	int hwFlag;		// hardware properties
 	struct HardWare *hw;
-	Z80EX_CONTEXT* cpu;
+	Z80CPU* cpu;
 	Memory* mem;
 	Video* vid;
 	Keyboard* keyb;

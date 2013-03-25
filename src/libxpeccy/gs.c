@@ -3,7 +3,7 @@
 
 #include "gs.h"
 
-Z80EX_BYTE gsmemrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
+Z80EX_BYTE gsmemrd(CPUCONT Z80EX_WORD adr,int m1,void* ptr) {
 	GSound* gs = (GSound*)ptr;
 	Z80EX_BYTE res = memRd(gs->mem,adr);
 	switch (adr & 0xe300) {
@@ -15,13 +15,13 @@ Z80EX_BYTE gsmemrd(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,int m1,void* ptr) {
 	return res;
 }
 
-void gsmemwr(Z80EX_CONTEXT* cpu,Z80EX_WORD adr,Z80EX_BYTE val,void* ptr) {
+void gsmemwr(CPUCONT Z80EX_WORD adr,Z80EX_BYTE val,void* ptr) {
 	GSound* gs = (GSound*)ptr;
 	memWr(gs->mem,adr,val);
 }
 
 // internal IN
-Z80EX_BYTE gsiord(Z80EX_CONTEXT* cpu,Z80EX_WORD port,void* ptr) {
+Z80EX_BYTE gsiord(CPUCONT Z80EX_WORD port,void* ptr) {
 	GSound* gs = (GSound*)ptr;
 	Z80EX_BYTE res = 0xff;
 	port &= 0x0f;
@@ -42,7 +42,7 @@ Z80EX_BYTE gsiord(Z80EX_CONTEXT* cpu,Z80EX_WORD port,void* ptr) {
 	return res;
 }
 
-void gsiowr(Z80EX_CONTEXT* cpu,Z80EX_WORD port,Z80EX_BYTE val,void* ptr) {
+void gsiowr(CPUCONT Z80EX_WORD port,Z80EX_BYTE val,void* ptr) {
 	GSound* gs = (GSound*)ptr;
 	port &= 0x0f;
 	switch (port) {
@@ -70,7 +70,7 @@ void gsiowr(Z80EX_CONTEXT* cpu,Z80EX_WORD port,Z80EX_BYTE val,void* ptr) {
 	}
 }
 
-Z80EX_BYTE gsintrq(Z80EX_CONTEXT* cpu,void* ptr) {
+Z80EX_BYTE gsintrq(CPUCONT void* ptr) {
 	return 0xff;
 }
 
@@ -81,7 +81,11 @@ void gsSetRom(GSound* gs, int part, char* buf) {
 GSound* gsCreate() {
 	GSound* res = (GSound*)malloc(sizeof(GSound));
 	void* ptr = (void*)res;
+#ifdef SELFZ80
+	res->cpu = cpuCreate(&gsmemrd,&gsmemwr,&gsiord,&gsiowr,&gsintrq,ptr);
+#else
 	res->cpu = z80ex_create(&gsmemrd,ptr,&gsmemwr,ptr,&gsiord,ptr,&gsiowr,ptr,&gsintrq,ptr);
+#endif
 	res->mem = memCreate();	// new Memory();
 	memSetSize(res->mem,2048);
 	memSetBank(res->mem,MEM_BANK0,MEM_ROM,0);
@@ -106,13 +110,13 @@ GSound* gsCreate() {
 }
 
 void gsDestroy(GSound* gs) {
-	z80ex_destroy(gs->cpu);
+	KILLCPU(gs->cpu);
 	memDestroy(gs->mem);
 	free(gs);
 }
 
 void gsReset(GSound* gs) {
-	z80ex_reset(gs->cpu);
+	RESETCPU(gs->cpu);
 }
 
 void gsSync(GSound* gs) {
@@ -120,15 +124,12 @@ void gsSync(GSound* gs) {
 	if (~gs->flag & GS_ENABLE) return;
 	gs->counter += gs->sync * GS_FRQ / 980;		// ticks to emulate
 	while (gs->counter > 0) {
-		res = 0;
-		do {
-			res += z80ex_step(gs->cpu);
-		} while (z80ex_last_op_type(gs->cpu) != 0);
+		EXECCPU(gs->cpu,res);
 		gs->counter -= res;
 		gs->cnt += res;
 		if (gs->cnt > 320) {	// 12MHz CLK, 37.5KHz INT -> int in each 320 ticks
 			gs->cnt -= 320;
-			res = z80ex_int(gs->cpu);
+			res = INTCPU(gs->cpu);	// z80ex_int(gs->cpu);
 			gs->cnt += res;
 			gs->counter -= res;
 		}

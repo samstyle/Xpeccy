@@ -88,7 +88,7 @@ int loadZ80(ZXComp* zx, const char* name) {
 	bool btm;
 	unsigned char tmp,tmp2,lst;
 	unsigned short adr;
-	Z80EX_CONTEXT* cpu = zx->cpu;
+	Z80CPU* cpu = zx->cpu;
 	char* pageBuf = new char[0xc000];
 	z80v1Header head;
 	zx->prt0 = 0x10;
@@ -99,7 +99,26 @@ int loadZ80(ZXComp* zx, const char* name) {
 
 	file.read((char*)&head,sizeof(z80v1Header));
 	if (head.flag12 == 0xff) head.flag12 = 0x01;	// Because of compatibility, if byte 12 is 255, it has to be regarded as being 1.
+#ifdef SELFZ80
+	cpu->a = head.a; cpu->f = head.f;
+	cpu->b = head.b; cpu->c = head.c;
+	cpu->d = head.d; cpu->e = head.e;
+	cpu->h = head.h; cpu->l = head.l;
 
+	cpu->a_ = head._a; cpu->f_ = head._f;
+	cpu->b_ = head._b; cpu->c_ = head._c;
+	cpu->d_ = head._d; cpu->e_ = head._e;
+	cpu->h_ = head._h; cpu->l_ = head._l;
+
+	cpu->hpc = head.pch; cpu->lpc = head.pcl;
+	cpu->hsp = head.sph; cpu->lsp = head.spl;
+	cpu->i = head.i;
+	cpu->r7 = (head.flag12 & 0x01) ? 0x80 : 0x00;
+	cpu->r = (head.r7 & 0x7f) | cpu->r7;
+	cpu->imode = head.flag29 & 3;
+	cpu->iff1 = head.iff1;
+	cpu->iff2 = head.iff2;
+#else
 	z80ex_set_reg(cpu,regAF,(head.a << 8) + head.f);
 	z80ex_set_reg(cpu,regBC,(head.b << 8) + head.c);
 	z80ex_set_reg(cpu,regDE,(head.d << 8) + head.e);
@@ -113,12 +132,12 @@ int loadZ80(ZXComp* zx, const char* name) {
 	z80ex_set_reg(cpu,regPC,(head.pch << 8) + head.pcl);
 	z80ex_set_reg(cpu,regSP,(head.sph << 8) + head.spl);
 	z80ex_set_reg(cpu,regI,head.i);
-	z80ex_set_reg(cpu,regR7,head.r7 & 0x7f);
+	z80ex_set_reg(cpu,regR7,(head.flag12 & 0x01) ? 0x80 : 0x00);
 	z80ex_set_reg(cpu,regR,(head.r7 & 0x7f) | ((head.flag12 & 0x01) ? 0x80 : 0x00));
 	z80ex_set_reg(cpu,regIM,head.flag29 & 3);
 	z80ex_set_reg(cpu,regIFF1,head.iff1);
 	z80ex_set_reg(cpu,regIFF2,head.iff2);
-
+#endif
 	zx->vid->brdcol = (head.flag12 >> 1) & 7;
 	zx->vid->nextbrd = zx->vid->brdcol;
 
@@ -127,11 +146,11 @@ int loadZ80(ZXComp* zx, const char* name) {
 	if (head.flag29 & 0x04) printf("...flag 29.bit 2.Issue 2 emulation\n");
 	if (head.flag29 & 0x08) printf("...flag 29.bit 3.Double interrupt frequency\n");
 // continued
-	if (z80ex_get_reg(cpu,regPC) == 0) {
+	if (GETPC(cpu) == 0) {
 		tmp = file.get();
 		tmp2 = file.get();
 		adr = tmp + (tmp2 << 8);
-		z80ex_set_reg(cpu,regPC,getLEWord(&file));
+		SETPC(cpu,getLEWord(&file));
 		lst = file.get();			// 34: HW mode
 		tmp = file.get(); zxOut(zx,0x7ffd,tmp);	// 35: 7FFD last out
 		tmp = file.get();			// 36: skip (IF1)
@@ -206,7 +225,7 @@ printf(".z80 version 2\n");
 				break;
 			default:
 				printf("Hardware mode not supported. reset\n");
-				z80ex_reset(cpu);
+				RESETCPU(cpu);	// z80ex_reset(cpu);
 				break;
 		}
 	} else {			// version 1
