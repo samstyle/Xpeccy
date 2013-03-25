@@ -18,7 +18,7 @@ int loadSNA(ZXComp* zx, const char* name) {
 	unsigned short adr;
 	char* pageBuf = new char[0x4000];
 	char* tmpgBuf = new char[0x4000];
-	Z80CPU* cpu = zx->cpu;
+	CPU* cpu = zx->cpu;
 
 	file.seekg(0,std::ios_base::end);	// get filesize
 	size_t fileSize = file.tellg();
@@ -113,7 +113,7 @@ int saveSNA(ZXComp* zx, const char* name,bool sna48) {
 
 	unsigned char bnk,i;
 	char* pageBuf = new char[0x4000];
-	Z80CPU* cpu = zx->cpu;
+	CPU* cpu = zx->cpu;
 	Z80EX_WORD pc = GETPC(cpu);	// z80ex_get_reg(cpu,regPC);
 	Z80EX_WORD sp = GETSP(cpu);	// z80ex_get_reg(cpu,regSP);
 	if (sna48) {

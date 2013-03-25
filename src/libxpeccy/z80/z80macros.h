@@ -5,8 +5,16 @@
 #define IOWR(port,val,tk) cpu->iwr(port,val,cpu->data);cpu->t+=tk;
 
 // ariphmetic
-#define INC(val) {val++; cpu->f = (cpu->f & FC) | (val ? 0 : FZ) | (val & (FS | F5 | F3)) | ((val == 0x80) ? FV : 0) | ((val & 0x0f) ? 0 : FH);}
-#define DEC(val) {cpu->f = (cpu->f & FC) | ((val & 0x0f) ? 0 : FH ) | FN; val--; cpu->f |= ((val == 0x7f) ? FV : 0 ) | (val & (FS | F5 | F3));}
+#define INC(val) {\
+	val++; \
+	cpu->f = (cpu->f & FC) | (val ? 0 : FZ) | (val & (FS | F5 | F3)) | ((val == 0x80) ? FV : 0) | ((val & 0x0f) ? 0 : FH);\
+}
+	
+#define DEC(val) {\
+	cpu->f = (cpu->f & FC) | ((val & 0x0f) ? 0 : FH ) | FN; \
+	val--; \
+	cpu->f |= ((val == 0x7f) ? FV : 0 ) | (sz53pTab[val] & ~FP);\
+}
 
 #define ADD(val) {\
 	cpu->tmpw = cpu->a + val;\
@@ -70,16 +78,21 @@
 
 #define JR(offset) {cpu->pc += (signed char)offset; cpu->mptr = cpu->pc; cpu->t += 5;}
 
-#define POP(rh,rl) {rh = MEMRD(cpu->sp++,3); rl = MEMRD(cpu->sp++,3);}
-#define PUSH(rh,rl) {MEMWR(--cpu->sp,rl,3); MEMWR(--cpu->sp,rh,3);}
+#define POP(rh,rl) {rl = MEMRD(cpu->sp++,3); rh = MEMRD(cpu->sp++,3);}
+#define PUSH(rh,rl) {MEMWR(--cpu->sp,rh,3); MEMWR(--cpu->sp,rl,3);}
 
-#define RST(adr) {PUSH(cpu->hpc,cpu->lpc);cpu->mptr = adr;cpu->pc = cpu->mptr;}
-#define RET {POP(cpu->hpc,cpu->lpc);cpu->mptr = cpu->pc;}
+#define RST(adr) {PUSH(cpu->hpc,cpu->lpc); cpu->mptr = adr; cpu->pc = cpu->mptr;}
+#define RET {POP(cpu->hpc,cpu->lpc); cpu->mptr = cpu->pc;}
 
 // shift
 
 #define RL(val) {cpu->tmp = val; val = (val << 1) | (cpu->f & FC); cpu->f = (cpu->tmp >> 7) | sz53pTab[val];}
-#define RLC(val) {val = (val << 1) | (val >> 7); cpu->f = (val & FC) | sz53pTab[val];}
+
+#define RLC(val) {\
+	val = (val << 1) | (val >> 7);\
+	cpu->f = (val & FC) | sz53pTab[val];\
+}
+
 #define RR(val) {cpu->tmp = val; val = (val >> 1) | (cpu->f << 7); cpu->f = (cpu->tmp & FC) | sz53pTab[val];}
 #define RRC(val) {cpu->f = val & FC; val = (val >> 1) | (val << 7); cpu->f |= sz53pTab[val];}
 
@@ -91,6 +104,9 @@
 // bit
 
 #define BIT(bit,val) {cpu->f = (cpu->f & FC ) | FH | sz53pTab[val & (0x01 << bit)] | (val & (F5 | F3));}
+#define BITM(bit,val) {cpu->f = (cpu->f & FC) | FH | (sz53pTab[val & (1 << bit)] & ~(F5 | F3)) | (cpu->hptr & (F5 | F3));}
+#define SET(bit,val) {val |= (1 << bit);}
+#define RES(bit,val) {val &= ~(1 << bit);}
 
 // extend
 
@@ -115,11 +131,11 @@
 	reg = cpu->tmpb;\
 }
 
-#define	BITX(base,num) {\
+#define	BITX(base,bit) {\
 	cpu->mptr = base + (signed char)cpu->tmp;\
 	cpu->t += 5;\
 	cpu->tmpb = MEMRD(cpu->mptr,4);\
-	BIT(num,cpu->tmpb);\
+	BITM(bit,cpu->tmpb);\
 }
 
 #define RESX(base,bit) {\

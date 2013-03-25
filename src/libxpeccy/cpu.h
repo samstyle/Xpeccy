@@ -5,6 +5,7 @@
 	#include "z80/z80.h"
 	typedef unsigned short Z80EX_WORD;
 	typedef unsigned char Z80EX_BYTE;
+	typedef Z80CPU CPU;
 
 	#define CPUCONT
 	#define KILLCPU(prc) cpuDestroy(prc)
@@ -39,7 +40,7 @@
 	#define SETSP(prc,num) prc->sp=num
 #else
 	#include "z80ex.h"
-	typedef Z80EX_CONTEXT Z80CPU;
+	typedef Z80EX_CONTEXT CPU;
 
 	#define CPUCONT Z80EX_CONTEXT* cpu,
 	#define KILLCPU(prc) z80ex_destroy(prc)

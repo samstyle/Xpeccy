@@ -50,10 +50,10 @@ void npr09(Z80CPU* cpu) {
 	ADD16(cpu->hl, cpu->bc);
 }
 
-// 0A	ld (bc),a	4 3wr		mptr = bc+1
+// 0A	ld a,(bc)	4 3rd		mptr = bc+1
 void npr0A(Z80CPU* cpu) {
-	MEMWR(cpu->bc,cpu->a,3);
-	cpu->mptr = cpu->bc + 1;
+	cpu->mptr = cpu->bc;
+	cpu->a = MEMRD(cpu->mptr++,3);
 }
 
 // 0B	dec bc		6
@@ -293,16 +293,16 @@ void npr33(Z80CPU* cpu) {
 
 // 34	inc (hl)	4 3rd 4wr
 void npr34(Z80CPU* cpu) {
-	cpu->tmp = MEMRD(cpu->hl,3);
-	INC(cpu->tmp);
-	MEMWR(cpu->hl,cpu->tmp,4);
+	cpu->tmpb = MEMRD(cpu->hl,3);
+	INC(cpu->tmpb);
+	MEMWR(cpu->hl,cpu->tmpb,4);
 }
 
 // 35	dec (hl)	4 3rd 4wr
 void npr35(Z80CPU* cpu) {
-	cpu->tmp = MEMRD(cpu->hl,3);
-	DEC(cpu->tmp);
-	MEMWR(cpu->hl,cpu->tmp,4);
+	cpu->tmpb = MEMRD(cpu->hl,3);
+	DEC(cpu->tmpb);
+	MEMWR(cpu->hl,cpu->tmpb,4);
 }
 
 // 36	ld (hl),n	4 3rd 3wr

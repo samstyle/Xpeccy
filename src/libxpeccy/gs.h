@@ -27,7 +27,7 @@ typedef struct {
 
 typedef struct {
 	int flag;
-	Z80CPU* cpu;
+	CPU* cpu;
 	Memory* mem;
 	unsigned char pb3_gs;	// gs -> zx
 	unsigned char pb3_zx;	// zx -> gs

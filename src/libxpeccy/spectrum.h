@@ -47,7 +47,7 @@ struct ZXComp {
 	int flag;		// states
 	int hwFlag;		// hardware properties
 	struct HardWare *hw;
-	Z80CPU* cpu;
+	CPU* cpu;
 	Memory* mem;
 	Video* vid;
 	Keyboard* keyb;

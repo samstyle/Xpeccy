@@ -88,7 +88,7 @@ int loadZ80(ZXComp* zx, const char* name) {
 	bool btm;
 	unsigned char tmp,tmp2,lst;
 	unsigned short adr;
-	Z80CPU* cpu = zx->cpu;
+	CPU* cpu = zx->cpu;
 	char* pageBuf = new char[0xc000];
 	z80v1Header head;
 	zx->prt0 = 0x10;

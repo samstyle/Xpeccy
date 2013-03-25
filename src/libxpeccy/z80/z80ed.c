@@ -307,7 +307,7 @@ void edA2(Z80CPU* cpu) {
 	cpu->f = (cpu->tmp & 0x80 ? FN : 0) | (cpu->b & (FS | F5 | F3)) | (cpu->b ? 0 : FZ);
 	
 	cpu->tmpw = cpu->tmp + ((cpu->c + 1) & 0xff);
-	if (cpu->tmpw > 255) cpu->f |= (FC | FN);
+	if (cpu->tmpw > 255) cpu->f |= (FC | FH);
 	cpu->f |= (sz53pTab[(cpu->tmpw & 7) ^ cpu->b] & FP);
 }
 
@@ -354,10 +354,10 @@ void edAA(Z80CPU* cpu) {
 	cpu->tmp = IORD(cpu->bc,4);
 	MEMWR(cpu->hl--,cpu->tmp,3);
 	cpu->b--;
-	cpu->f = (cpu->tmp & 0x80 ? FN : 0) | (cpu->b & (FS | F5 | F3)) | (cpu->b ? 0 : FZ);
+	cpu->f = ((cpu->tmp & 0x80) ? FN : 0) | (cpu->b & (FS | F5 | F3)) | (cpu->b ? 0 : FZ);
 	
 	cpu->tmpw = cpu->tmp + ((cpu->c - 1) & 0xff);
-	if (cpu->tmpw > 255) cpu->f |= (FC | FN);
+	if (cpu->tmpw > 255) cpu->f |= (FC | FH);
 	cpu->f |= (sz53pTab[(cpu->tmpw & 7) ^ cpu->b] & FP);
 }
 
