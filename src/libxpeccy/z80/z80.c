@@ -115,3 +115,80 @@ int cpuNMI(Z80CPU* cpu) {
 	cpu->mptr = cpu->pc;
 	return cpu->t;		// always 11
 }
+
+// disasm
+
+const char halfByte[16] = "0123456789ABCDEF";
+
+int cpuDisasm(unsigned short adr,char* buf, cbdmr mrd, void* data) {
+	unsigned char op;
+	unsigned char tmp = 0;
+	unsigned char dtl;
+	unsigned char dth;
+	unsigned short dtw;
+	int res = 0;
+	opCode* opc;
+	opCode* opt = npTab;
+	do {
+		op = mrd(adr++,data);
+		res++;
+		opc = &opt[op];
+		if (opc->flag & 1) {
+			opt = opc->tab;
+			if ((opt == ddcbTab) || (opt == fdcbTab)) {
+				tmp = mrd(adr++,data);
+				res++;
+			}
+		}
+	} while (opc->flag & 1);
+	const char* src = opc->mnem;
+	while (*src != 0) {
+		if (*src == ':') {
+			src++;
+			op = *(src++);
+			switch(op) {
+				case '1':		// byte = (adr)
+					dtl = mrd(adr++,data);
+					res++;
+					*(buf++) = halfByte[dtl >> 4];
+					*(buf++) = halfByte[dtl & 0x0f];
+					break;
+				case '2':		// word = (adr,adr+1)
+					dtl = mrd(adr++,data);
+					dth = mrd(adr++,data);
+					res += 2;
+					*(buf++) = halfByte[dth >> 4];
+					*(buf++) = halfByte[dth & 0x0f];
+					*(buf++) = halfByte[dtl >> 4];
+					*(buf++) = halfByte[dtl & 0x0f];
+					break;
+				case '3':		// word = adr + [e = (adr)]
+					dtl = mrd(adr++,data);
+					res++;
+					dtw = adr + (signed char)dtl;
+					*(buf++) = halfByte[(dtw >> 12) & 0x0f];
+					*(buf++) = halfByte[(dtw >> 8) & 0x0f];
+					*(buf++) = halfByte[(dtw >> 4) & 0x0f];
+					*(buf++) = halfByte[dtw & 0x0f];
+					break;
+				case '4':		// signed byte e = (adr)
+					tmp = mrd(adr++,data);
+					res++;
+				case '5':		// signed byte e = tmp
+					if (tmp < 0x80) {
+						*(buf++) = '+';
+					} else {
+						*(buf++) = '-';
+						tmp = (0xff - tmp) + 1;
+					}
+					*(buf++) = halfByte[tmp >> 4];
+					*(buf++) = halfByte[tmp & 0x0f];
+					break;
+			}
+		} else {
+			*(buf++) = *(src++);
+		}
+	}
+	*buf = 0;
+	return res;
+}

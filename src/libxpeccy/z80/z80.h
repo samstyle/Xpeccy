@@ -11,6 +11,7 @@ struct opCode {
 	int t3;
 	int t4;
 	void(*exec)(struct Z80CPU *);
+	struct opCode *tab;
 	const char* mnem;
 };
 
@@ -26,13 +27,18 @@ typedef struct opCode opCode;
 #define	FN	0x02
 #define	FC	0x01
 
-#define PAIR(p,h,l) union{unsigned short p; struct {unsigned char l; unsigned char h;};}
+#ifdef WORDS_BIG_ENDIAN
+	#define PAIR(p,h,l) union{unsigned short p; struct {unsigned char h; unsigned char l;};}
+#else
+	#define PAIR(p,h,l) union{unsigned short p; struct {unsigned char l; unsigned char h;};}
+#endif
 
 typedef unsigned char(*cbmr)(unsigned short,int,void*);
 typedef void(*cbmw)(unsigned short,unsigned char,void*);
 typedef unsigned char(*cbir)(unsigned short,void*);
 typedef void(*cbiw)(unsigned short,unsigned char,void*);
 typedef unsigned char(*cbirq)(void*);
+typedef unsigned char(*cbdmr)(unsigned short,void*);
 
 struct Z80CPU {
 	PAIR(pc,hpc,lpc);
@@ -46,7 +52,7 @@ struct Z80CPU {
 	unsigned char iff1;
 	unsigned char iff2;
 	unsigned char imode;
-	
+
 	int halt;
 	int resPV;
 	int noint;
@@ -60,17 +66,17 @@ struct Z80CPU {
 	PAIR(bc_,b_,c_);
 	PAIR(de_,d_,e_);
 	PAIR(hl_,h_,l_);
-	
+
 	cbmr mrd;
 	cbmw mwr;
 	cbir ird;
 	cbiw iwr;
 	cbirq irq;
 	void* data;
-	
+
 	opCode* opTab;
 	opCode* op;
-	
+
 	int t;
 	unsigned char tmp;
 	unsigned char tmpb;
@@ -89,5 +95,7 @@ int cpuINT(Z80CPU*);
 int cpuNMI(Z80CPU*);
 
 int cpuExec(Z80CPU*);
+
+int cpuDisasm(unsigned short,char*,cbdmr,void*);
 
 #endif

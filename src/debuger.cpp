@@ -3,7 +3,9 @@
 #include "debuger.h"
 #include "emulwin.h"
 
-#include "z80ex_dasm.h"
+#ifndef SELFZ80
+	#include "z80ex_dasm.h"
+#endif
 
 #include <QIcon>
 #include <QDebug>
@@ -296,13 +298,18 @@ Z80EX_BYTE rdbyte(Z80EX_WORD adr,void*) {
 
 DasmRow DebugWin::getdisasm() {
 	DasmRow res;
-	int t1,t2,clen;
+	int clen;
 	res.adr = adr;
 	res.bytes = "";
 	res.dasm = "";
 	char* buf = new char[256];
+#ifdef SELFZ80
+	clen = cpuDisasm(adr,buf,&rdbyte,NULL);
+#else
+	int t1,t2;
 	clen = z80ex_dasm(buf,256,0,&t1,&t2,&rdbyte,adr,NULL);
-	if (clen > 4) clen=4;		// FIXME: z80ex_dasm bug? for DDCB instructions length
+#endif
+//	if (clen > 4) clen=4;		// FIXME: z80ex_dasm bug? for DDCB instructions length
 	res.dasm = QString(buf);
 	while (clen > 0) {
 		res.bytes.append(gethexbyte(memRd(zx->mem,adr)));
