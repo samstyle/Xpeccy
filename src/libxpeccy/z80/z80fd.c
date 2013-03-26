@@ -185,6 +185,9 @@ void fdBE(Z80CPU* cpu) {RDSHIFT(cpu->iy); cpu->tmpb = MEMRD(cpu->mptr,3); CP(cpu
 void fdCB(Z80CPU* cpu) {
 	cpu->opTab = fdcbTab;
 	cpu->tmp = MEMRD(cpu->pc++,3);
+	cpu->tmpb = MEMRD(cpu->pc++,0);	// opcode. eat 0T? not m1
+	cpu->op = &fdcbTab[cpu->tmpb];
+	cpu->op->exec(cpu);
 }
 
 // e1	pop iy		4 3rd 3rd
