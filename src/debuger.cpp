@@ -396,7 +396,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			switch (cod) {
 				case Qt::Key_Escape: if (!ev->isAutoRepeat()) stop(); break;
 				case Qt::Key_Return:
-/*
+
 					if (ev->isAutoRepeat()) break;
 					switch (curcol) {
 						case 0: showedit((QLabel*)rglay->itemAtPosition(currow,1)->widget(),"HHHH"); break;
@@ -413,7 +413,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 						case 11:
 						case 12: showedit((QLabel*)dmplay->itemAtPosition(currow,curcol-4)->widget(),"HH"); break;
 					}
-*/
+
 					break;
 				case Qt::Key_Space:
 					if (!ev->isAutoRepeat() && curcol>0 && curcol<4) {
@@ -510,7 +510,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			break;
 		}
 	} else {
-/*
+		int idx;
 		switch (cod) {
 			case Qt::Key_Escape:
 				ledit->hide();
@@ -523,28 +523,28 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					case 0: idx = ledit->text().toUShort(&tmpb,16);
 						if (!tmpb) break;
 						switch (currow) {
-							case 0: z80ex_set_reg(zx->cpu,regAF,idx); break;
-							case 1: z80ex_set_reg(zx->cpu,regBC,idx); break;
-							case 2: z80ex_set_reg(zx->cpu,regDE,idx); break;
-							case 3: z80ex_set_reg(zx->cpu,regHL,idx); break;
-							case 4: z80ex_set_reg(zx->cpu,regAF_,idx); break;
-							case 5: z80ex_set_reg(zx->cpu,regBC_,idx); break;
-							case 6: z80ex_set_reg(zx->cpu,regDE_,idx); break;
-							case 7: z80ex_set_reg(zx->cpu,regHL_,idx); break;
-							case 8: z80ex_set_reg(zx->cpu,regIX,idx); break;
-							case 9: z80ex_set_reg(zx->cpu,regIY,idx); break;
-							case 10: z80ex_set_reg(zx->cpu,regI,(idx & 0xff00) >> 8);
-								z80ex_set_reg(zx->cpu,regR,idx & 0xff);
-								z80ex_set_reg(zx->cpu,regR7,idx & 0x80);
+							case 0: SETAF(zx->cpu,idx); break; // z80ex_set_reg(zx->cpu,regAF,idx); break;
+							case 1: SETBC(zx->cpu,idx); break; // z80ex_set_reg(zx->cpu,regBC,idx); break;
+							case 2: SETDE(zx->cpu,idx); break; // z80ex_set_reg(zx->cpu,regDE,idx); break;
+							case 3: SETHL(zx->cpu,idx); break; // z80ex_set_reg(zx->cpu,regHL,idx); break;
+							case 4: SETAF_(zx->cpu,idx); break; // z80ex_set_reg(zx->cpu,regAF_,idx); break;
+							case 5: SETBC_(zx->cpu,idx); break; // z80ex_set_reg(zx->cpu,regBC_,idx); break;
+							case 6: SETDE_(zx->cpu,idx); break; // z80ex_set_reg(zx->cpu,regDE_,idx); break;
+							case 7: SETHL_(zx->cpu,idx); break; // z80ex_set_reg(zx->cpu,regHL_,idx); break;
+							case 8: SETIX(zx->cpu,idx); break; // z80ex_set_reg(zx->cpu,regIX,idx); break;
+							case 9: SETIY(zx->cpu,idx); break; //z80ex_set_reg(zx->cpu,regIY,idx); break;
+							case 10: SETI(zx->cpu,(idx & 0xff00) >> 8); // z80ex_set_reg(zx->cpu,regI,(idx & 0xff00) >> 8);
+								SETR(zx->cpu,idx & 0xff); //z80ex_set_reg(zx->cpu,regR,idx & 0xff);
+								//z80ex_set_reg(zx->cpu,regR7,idx & 0x80);
 								break;
-							case 11: z80ex_set_reg(zx->cpu,regPC,idx); break;
-							case 12: z80ex_set_reg(zx->cpu,regSP,idx); break;
+							case 11: SETPC(zx->cpu,idx); break; // z80ex_set_reg(zx->cpu,regPC,idx); break;
+							case 12: SETSP(zx->cpu,idx); break; // z80ex_set_reg(zx->cpu,regSP,idx); break;
 							case 13: if ((idx & 0xf00)>0x200) {
 									tmpb = false;
 								} else {
-									z80ex_set_reg(zx->cpu,regIM,(idx & 0xf00)>>8);
-									z80ex_set_reg(zx->cpu,regIFF1,idx & 0xf0);
-									z80ex_set_reg(zx->cpu,regIFF2,idx & 0x0f);
+									SETIM(zx->cpu,(idx & 0xf00) >> 8); // z80ex_set_reg(zx->cpu,regIM,(idx & 0xf00)>>8);
+									SETIFF1(zx->cpu, idx & 0xf0); //z80ex_set_reg(zx->cpu,regIFF1,idx & 0xf0);
+									SETIFF2(zx->cpu, idx & 0x0f); // z80ex_set_reg(zx->cpu,regIFF2,idx & 0x0f);
 								}
 								break;
 						}
@@ -588,6 +588,5 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 
 				break;
 		}
-*/
 	}
 }

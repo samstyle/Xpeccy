@@ -33,11 +33,23 @@
 	#define GETIFF2(prc) prc->iff2
 	#define GETIM(prc) prc->imode
 
+	#define SETAF(prc,num) prc->af=num
+	#define SETBC(prc,num) prc->bc=num
 	#define SETDE(prc,num) prc->de=num
 	#define SETHL(prc,num) prc->hl=num
+	#define SETAF_(prc,num) prc->af_=num
+	#define SETBC_(prc,num) prc->bc_=num
+	#define SETDE_(prc,num) prc->de_=num
+	#define SETHL_(prc,num) prc->hl_=num
 	#define SETIX(prc,num) prc->ix=num
+	#define SETIY(prc,num) prc->iy=num
 	#define SETPC(prc,num) prc->pc=num
 	#define SETSP(prc,num) prc->sp=num
+	#define SETI(prc,num) prc->i=num
+	#define SETR(prc,num) prc->r=num;prc->r7=prc->r&0x80
+	#define SETIM(prc,num) prc->imode=num;
+	#define SETIFF1(prc,num) prc->iff1=num;
+	#define SETIFF2(prc,num) prc->iff2=num;
 #else
 	#include "z80ex.h"
 	typedef Z80EX_CONTEXT CPU;
@@ -73,12 +85,23 @@
 	#define GETIFF2(prc) z80ex_get_reg(prc,regIFF2)
 	#define GETIM(prc) z80ex_get_reg(prc,regIM)
 
+	#define SETAF(prc,num) z80ex_set_reg(prc,regAF,num)
+	#define SETBC(prc,num) z80ex_set_reg(prc,regBC,num)
 	#define SETDE(prc,num) z80ex_set_reg(prc,regDE,num)
 	#define SETHL(prc,num) z80ex_set_reg(prc,regHL,num)
+	#define SETAF_(prc,num) z80ex_set_reg(prc,regAF_,num)
+	#define SETBC_(prc,num) z80ex_set_reg(prc,regBC_,num)
+	#define SETDE_(prc,num) z80ex_set_reg(prc,regDE_,num)
+	#define SETHL_(prc,num) z80ex_set_reg(prc,regHL_,num)
 	#define SETIX(prc,num) z80ex_set_reg(prc,regIX,num)
 	#define SETIY(prc,num) z80ex_set_reg(prc,regIY,num)
 	#define SETSP(prc,num) z80ex_set_reg(prc,regSP,num)
 	#define SETPC(prc,num) z80ex_set_reg(prc,regPC,num)
+	#define SETI(prc,num) z80ex_set_reg(prc,regI,num)
+	#define SETR(prc,num) z80ex_set_reg(prc,regR,num);z80ex_set_reg(prc,regR7,(num) & 0x80);
+	#define SETIFF1(prc,num) z80ex_set_reg(prc,regIFF1,num)
+	#define SETIFF2(prc,num) z80ex_set_reg(prc,regIFF2,num)
+	#define SETIM(prc,num) z80ex_set_reg(prc,regIM,num)
 #endif
 
 #endif
