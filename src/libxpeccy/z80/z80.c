@@ -64,6 +64,8 @@ int cpuExec(Z80CPU* cpu) {
 
 int cpuINT(Z80CPU* cpu) {
 	if (!cpu->iff1 || cpu->noint) return 0;
+	cpu->iff1 = 0;
+	cpu->iff2 = 0;
 	if (cpu->halt) {
 		cpu->pc++;
 		cpu->halt = 0;
@@ -93,10 +95,11 @@ int cpuINT(Z80CPU* cpu) {
 			nprFF(cpu);	// +3 +3 execution. 13 total
 			break;
 		case 2:
-			cpu->lptr = cpu->irq(cpu->data);	// int vector (FF)
-			cpu->hptr = cpu->i;
+			cpu->r++;
 			cpu->t = 7;
 			PUSH(cpu->hpc,cpu->lpc);	// +3 (10) +3 (13)
+			cpu->lptr = cpu->irq(cpu->data);	// int vector (FF)
+			cpu->hptr = cpu->i;
 			cpu->lpc = MEMRD(cpu->mptr++,3);	// +3 (16)
 			cpu->hpc = MEMRD(cpu->mptr,3);		// +3 (19)
 			cpu->mptr = cpu->pc;
@@ -118,7 +121,7 @@ int cpuNMI(Z80CPU* cpu) {
 
 // disasm
 
-const char halfByte[16] = "0123456789ABCDEF";
+const char halfByte[] = "0123456789ABCDEF";
 
 int cpuDisasm(unsigned short adr,char* buf, cbdmr mrd, void* data) {
 	unsigned char op;

@@ -122,7 +122,8 @@ void ed56(Z80CPU* cpu) {
 // 57	ld a,i		5
 void ed57(Z80CPU* cpu) {
 	cpu->a = cpu->i;
-	cpu->f = (cpu->f & FC) | (sz53pTab[cpu->a] & ~FP) | (cpu->iff2 ? FV : 0);
+	cpu->f = (cpu->f & FC) | (cpu->a & (FS | F5 | F3)) | (cpu->a ? 0 : FZ) | (cpu->iff2 ? FV : 0);
+	cpu->resPV = 1;
 }
 
 // 58	in e,(c)	4 4in		mptr = port + 1
@@ -160,7 +161,7 @@ void ed5E(Z80CPU* cpu) {
 // 5f	ld a,r		5
 void ed5F(Z80CPU* cpu) {
 	cpu->a = (cpu->r & 0x7f) | (cpu->r7 & 0x80);
-	cpu->f = (cpu->f & FC) | (sz53pTab[cpu->a] & ~FP) | (cpu->iff2 ? FV : 0);
+	cpu->f = (cpu->f & FC) | (cpu->a & (FS | F5 | F3)) | (cpu->a ? 0 : FZ) | (cpu->iff2 ? FV : 0);
 	cpu->resPV = 1;
 }
 

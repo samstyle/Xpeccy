@@ -430,7 +430,7 @@ int zxExec(ZXComp* comp) {
 	} else {
 		if (comp->nsCount >= comp->nsPerFrame) comp->intStrobe = 1;
 	}
-
+	comp->tickCount += res2;
 #else
 	res2 = res4 = 0;
 	do {
@@ -483,8 +483,8 @@ int zxExec(ZXComp* comp) {
 			}
 		}
 	}
-
 	nsTime = res1 * comp->nsPerTick;
+	comp->tickCount += res1;
 #endif
 
 // TOO FAT
@@ -492,8 +492,6 @@ int zxExec(ZXComp* comp) {
 	if (memGetCellFlags(comp->mem,pcreg) & MEM_BRK_FETCH) {
 		comp->flag |= ZX_BREAK;
 	}
-
-	comp->tickCount += res1;
 	comp->tapCount += nsTime;
 	if (comp->gs->flag & GS_ENABLE) comp->gs->sync += nsTime;
 	if (comp->bdi->fdc->type != FDC_NONE) bdiSync(comp->bdi, nsTime);

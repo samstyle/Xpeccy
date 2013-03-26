@@ -92,10 +92,10 @@ void dd35(Z80CPU* cpu) {
 	MEMWR(cpu->mptr,cpu->tmp,3);
 }
 
-// 36	ld (ix+e),n	4 3rd 5add 3rd 3wr	mptr = ix+e
+// 36	ld (ix+e),n	4 3rd {5add 3rd} 3wr	mptr = ix+e
 void dd36(Z80CPU* cpu) {
 	RDSHIFT(cpu->ix);
-	cpu->tmp = MEMRD(cpu->pc++,3);
+	cpu->tmp = MEMRD(cpu->pc++,0);	// 0?
 	MEMWR(cpu->mptr,cpu->tmp,3);
 }
 

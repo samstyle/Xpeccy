@@ -199,8 +199,10 @@ bool DebugWin::fillall() {
 }
 
 void DebugWin::filltick() {
-	QString text = QString::number(zx->tickCount - lastDbgTicks).append(" | ");
-//	text.append(QString::number(zx->vid->matrix[zx->vid->dotCount].tick));
+	QString text = QString::number(zx->tickCount - lastDbgTicks);
+	text.append(" | ").append(QString::number(zx->vid->x)).append(":").append(QString::number(zx->vid->y));
+	text.append(" | ").append(QString::number(zx->nsCount)).append("/").append(QString::number(zx->nsPerFrame));
+
 	tlab->setText(text);
 }
 
@@ -281,7 +283,7 @@ void DebugWin::fillregz() {
 	lab->setBackgroundRole((curcol==0 && currow==8)?QPalette::Highlight:QPalette::Window);
 	lab = (QLabel*)rglay->itemAtPosition(9,1)->widget(); lab->setText(gethexword(GETIY(zx->cpu)));	// iy
 	lab->setBackgroundRole((curcol==0 && currow==9)?QPalette::Highlight:QPalette::Window);
-	Z80EX_WORD ir = (GETI(zx->cpu) << 8) | (GETR(zx->cpu));
+	Z80EX_WORD ir = GETI(zx->cpu); // ((GETI(zx->cpu)) << 8) | (GETR(zx->cpu));
 	lab = (QLabel*)rglay->itemAtPosition(10,1)->widget(); lab->setText(gethexword(ir));	// ir
 	lab->setBackgroundRole((curcol==0 && currow==10)?QPalette::Highlight:QPalette::Window);
 	lab = (QLabel*)rglay->itemAtPosition(11,1)->widget(); lab->setText(gethexword(GETPC(zx->cpu)));		// pc
