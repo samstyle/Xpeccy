@@ -71,7 +71,7 @@
 	cpu->tmp = ((cpu->hl & 0x8800) >> 11) | ((val & 0x8800) >> 10) | ((cpu->tmpi & 0x8800) >> 9);\
 	cpu->mptr = cpu->hl + 1;\
 	cpu->hl = cpu->tmpi;\
-	cpu->f = (cpu->tmpi & 0x10000 ? FC : 0) | FN | FVsubTab[cpu->tmp >> 4] | (cpu->h & (FS | F5 | F3 )) | FHsubTab[cpu->tmp & 0x07] | (cpu->h ? 0 : FZ);\
+	cpu->f = (cpu->tmpi & 0x10000 ? FC : 0) | FN | FVsubTab[cpu->tmp >> 4] | (cpu->h & (FS | F5 | F3 )) | FHsubTab[cpu->tmp & 0x07] | (cpu->hl ? 0 : FZ);\
 }
 
 // misc

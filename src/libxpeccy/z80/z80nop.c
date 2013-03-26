@@ -740,7 +740,7 @@ void nprE3(Z80CPU* cpu) {
 // e4	call po,nn	4 3rd 3rd[+1] [3wr 3wr]		mptr = nn
 void nprE4(Z80CPU* cpu) {
 	cpu->lptr = MEMRD(cpu->pc++,3);
-	cpu->lptr = MEMRD(cpu->pc++,3);
+	cpu->hptr = MEMRD(cpu->pc++,3);
 	if (!(cpu->f & FP)) {
 		cpu->t++;
 		PUSH(cpu->hpc,cpu->lpc);
