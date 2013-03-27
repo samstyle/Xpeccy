@@ -199,8 +199,8 @@ void fdE1(Z80CPU* cpu) {
 void fdE3(Z80CPU* cpu) {
 	POP(cpu->htw,cpu->ltw); cpu->t++;	// 3,3+1
 	PUSH(cpu->hy, cpu->ly); cpu->t += 2;	// 3,3+2
-	cpu->mptr = cpu->iy;
 	cpu->iy = cpu->tmpw;
+	cpu->mptr = cpu->iy;
 }
 
 // e5	push iy		5 3wr 3wr

@@ -733,8 +733,8 @@ void nprE2(Z80CPU* cpu) {
 void nprE3(Z80CPU* cpu) {
 	POP(cpu->htw,cpu->ltw); cpu->t++;	// 3,3+1
 	PUSH(cpu->h, cpu->l); cpu->t += 2;	// 3,3+2
-	cpu->mptr = cpu->hl;
 	cpu->hl = cpu->tmpw;
+	cpu->mptr = cpu->hl;
 }
 
 // e4	call po,nn	4 3rd 3rd[+1] [3wr 3wr]		mptr = nn

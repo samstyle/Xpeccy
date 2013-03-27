@@ -9,7 +9,7 @@ void ed40(Z80CPU* cpu) {
 void ed41(Z80CPU* cpu) {
 	cpu->mptr = cpu->bc;
 	IOWR(cpu->mptr++,cpu->b,4);
-	cpu->hptr = cpu->a;
+//	cpu->hptr = cpu->a;
 }
 
 // 42	sbc hl,bc	11
@@ -59,7 +59,7 @@ void ed48(Z80CPU* cpu) {
 void ed49(Z80CPU* cpu) {
 	cpu->mptr = cpu->bc;
 	IOWR(cpu->mptr++,cpu->c,4);
-	cpu->hptr = cpu->a;
+//	cpu->hptr = cpu->a;
 }
 
 // 4a	adc hl,bc	11
@@ -98,7 +98,7 @@ void ed50(Z80CPU* cpu) {
 void ed51(Z80CPU* cpu) {
 	cpu->mptr = cpu->bc;
 	IOWR(cpu->mptr++,cpu->d,4);
-	cpu->hptr = cpu->a;
+//	cpu->hptr = cpu->a;
 }
 
 // 52	sbc hl,de	11
@@ -137,7 +137,7 @@ void ed58(Z80CPU* cpu) {
 void ed59(Z80CPU* cpu) {
 	cpu->mptr = cpu->bc;
 	IOWR(cpu->mptr++,cpu->e,4);
-	cpu->hptr = cpu->a;
+//	cpu->hptr = cpu->a;
 }
 
 // 5a	adc hl,de	11
@@ -204,7 +204,7 @@ void ed68(Z80CPU* cpu) {
 void ed69(Z80CPU* cpu) {
 	cpu->mptr = cpu->bc;
 	IOWR(cpu->mptr++,cpu->l,4);
-	cpu->hptr = cpu->a;
+//	cpu->hptr = cpu->a;
 }
 
 // 6a	adc hl,hl	11
@@ -233,7 +233,7 @@ void ed70(Z80CPU* cpu) {
 void ed71(Z80CPU* cpu) {
 	cpu->mptr = cpu->bc;
 	IOWR(cpu->mptr++,0,4);
-	cpu->hptr = cpu->a;
+//	cpu->hptr = cpu->a;
 }
 
 // 72	sbc hl,sp	11
@@ -260,7 +260,7 @@ void ed78(Z80CPU* cpu) {
 void ed79(Z80CPU* cpu) {
 	cpu->mptr = cpu->bc;
 	IOWR(cpu->mptr++,cpu->a,4);
-	cpu->hptr = cpu->a;
+//	cpu->hptr = cpu->a;
 }
 
 // 7a	adc hl,sp	11
