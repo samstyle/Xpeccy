@@ -386,7 +386,7 @@ void zxSetFrq(ZXComp* comp, float frq) {
 }
 
 int zxExec(ZXComp* comp) {
-#if 1
+#if 0
 	if (comp->intStrobe) {
 		comp->intStrobe = 0;
 		res4 = 0;
@@ -432,10 +432,8 @@ int zxExec(ZXComp* comp) {
 	}
 	comp->tickCount += res2;
 #else
-	res2 = res4 = 0;
-	do {
-		res2 += z80ex_step(comp->cpu);
-	} while (z80ex_last_op_type(comp->cpu) != 0);
+	res4 = 0;
+	EXECCPU(comp->cpu,res2);
 	comp->nsCount += res2 * comp->nsPerTick;
 
 	vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
@@ -450,10 +448,10 @@ int zxExec(ZXComp* comp) {
 			comp->intStrobe = 0;
 		}
 	}
-	pcreg = z80ex_get_reg(comp->cpu,regPC);
+	pcreg = GETPC(comp->cpu);	// z80ex_get_reg(comp->cpu,regPC);
 	if ((pcreg > 0x3fff) && comp->nmiRequest && !comp->rzxPlay) {
 		res4 = 0;
-		res2 = z80ex_nmi(comp->cpu);
+		res2 = NMICPU(comp->cpu);	// z80ex_nmi(comp->cpu);
 		res1 += res2;
 		comp->nsCount += res2 * comp->nsPerTick;
 		if (res2 != 0) {
@@ -465,8 +463,8 @@ int zxExec(ZXComp* comp) {
 	}
 
 	if (comp->intStrobe) {
-		res2 = res4 = 0;
-		res2 = z80ex_int(comp->cpu);
+		res4 = 0;
+		res2 = INTCPU(comp->cpu);	// z80ex_int(comp->cpu);
 		res1 += res2;
 		comp->nsCount += res2 * comp->nsPerTick;
 		vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
