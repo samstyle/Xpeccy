@@ -199,8 +199,8 @@ void ddE1(Z80CPU* cpu) {
 void ddE3(Z80CPU* cpu) {
 	POP(cpu->htw,cpu->ltw); cpu->t++;	// 3,3+1
 	PUSH(cpu->hx, cpu->lx); cpu->t += 2;	// 3,3+2
-	cpu->mptr = cpu->ix;
 	cpu->ix = cpu->tmpw;
+	cpu->mptr = cpu->ix;
 }
 
 // e5	push ix		5 3wr 3wr
