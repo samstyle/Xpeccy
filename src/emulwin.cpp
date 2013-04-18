@@ -34,7 +34,7 @@
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#define	XPTITLE	"Xpeccy 0.5 (20130327)"
+#define	XPTITLE	"Xpeccy 0.5 (20130418)"
 
 // main
 MainWin* mainWin;
@@ -301,7 +301,7 @@ void MainWin::updateHead() {
 
 void MainWin::updateWindow() {
 	emulFlags |= FL_BLOCK;
-	vidFlag &= ~VF_CHECKCHA;
+//	vidFlag &= ~VF_CHECKCHA;
 	vidUpdate(zx->vid);
 	int szw = zx->vid->wsze.h;
 	int szh = zx->vid->wsze.v;
@@ -1232,15 +1232,15 @@ void MainWin::emuDraw() {
 			case FDC_WRITE: putIcon(zx->vid,4,4,icoRedDisk); break;
 		}
 	}
-	if (vidFlag & (VF_CHANGED | VF_FRAMEDBG)) {
+//	if (vidFlag & (VF_CHANGED | VF_FRAMEDBG)) {
 #ifdef XQTPAINT
 		update();
 #else
 		SDL_UpdateRect(surf,0,0,0,0);
 #endif
-	}
-	vidFlag &= ~VF_CHANGED;
-	vidFlag |= VF_CHECKCHA;
+//	}
+//	vidFlag &= ~VF_CHANGED;
+//	vidFlag |= VF_CHECKCHA;
 	emulFlags &= ~FL_DRAW;
 }
 

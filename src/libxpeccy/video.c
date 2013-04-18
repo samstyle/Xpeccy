@@ -158,7 +158,7 @@ inline void vidPutDot(Video* vid, unsigned char colr) {
 	} else {
 		colr |= (colr << 4);
 	}
-	if ((~vidFlag & VF_CHECKCHA) || (*vid->scrptr != colr)) vidFlag |= VF_CHANGED;
+//	if ((~vidFlag & VF_CHECKCHA) || (*vid->scrptr != colr)) vidFlag |= VF_CHANGED;
 	*(vid->scrptr++) = colr;
 	if (vidFlag & VF_DOUBLE) *(vid->scrptr++)=colr;
 }
@@ -318,7 +318,7 @@ void vidATMDoubleDot(Video* vid,unsigned char colr) {
 		*(vid->scrptr + 2) = (scrbyte & 0x0c) ? ink : pap;
 		*(vid->scrptr + 3) = (scrbyte & 0x03) ? ink : pap;
 	}
-	vidFlag |= VF_CHANGED;
+//	vidFlag |= VF_CHANGED;
 }
 
 void vidDrawATMtext(Video* vid) {
