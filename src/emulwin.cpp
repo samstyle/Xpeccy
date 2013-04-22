@@ -827,12 +827,12 @@ void doSDLEvents() {
 							break;
 						case SDLK_F2:
 							emulPause(true,PR_FILE);
-							saveFile("",FT_ALL,-1);
+							saveFile(zx,"",FT_ALL,-1);
 							emulPause(false,PR_FILE);
 							break;
 						case SDLK_F3:
 							emulPause(true,PR_FILE);
-							loadFile("",FT_ALL,-1);
+							loadFile(zx,"",FT_ALL,-1);
 							emulPause(false,PR_FILE);
 							mainWin->checkState();
 							break;

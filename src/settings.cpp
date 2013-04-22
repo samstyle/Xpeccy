@@ -36,7 +36,7 @@
 #define	SECT_INPUT	16
 #define	SECT_SDC	17
 
-std::vector<optEntry> config;
+//std::vector<optEntry> config;
 std::string workDir;
 std::string romDir;
 std::string profPath;
@@ -200,6 +200,7 @@ void optSet(int wut, int val) {
 
 // group-name vars base
 
+/*
 std::vector<std::string> optGroupsList() {
 	std::vector<std::string> res;
 	std::string grp;
@@ -270,6 +271,7 @@ void optSet(std::string grp, std::string nam, bool val) {
 	optEntry* res = addOption(grp, nam);
 	res->value = val ? "yes" : "no";
 }
+*/
 
 void optSetFlag(int mask, bool wut) {
 	if (wut) {
@@ -283,6 +285,7 @@ bool optGetFlag(int mask) {
 	return ((flag & mask) != 0);
 }
 
+/*
 std::string optGetString(std::string grp, std::string nam) {
 	std::string res = "";
 	optEntry* ent = optFindEntry(grp,nam);
@@ -299,6 +302,7 @@ bool optGetBool(std::string grp, std::string nam) {
 	std::string res = optGetString(grp,nam);
 	return str2bool(res);
 }
+*/
 
 // old
 

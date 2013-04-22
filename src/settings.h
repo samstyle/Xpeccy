@@ -34,6 +34,7 @@
 #define	OF_TAPEFAST	(1<<1)
 #define	OF_DEFAULT	(1<<2)
 #define	OF_PATHS	(1<<3)
+#define	OF_FASTDISK	(1<<4)
 
 struct optEntry {
 	std::string group;
@@ -92,7 +93,7 @@ std::string optGetName(int,int);
 int optGetId(int,std::string);
 OptName* getGetPtr(int prt);
 
-bool optGetBool(std::string,std::string);
-void optSet(std::string,std::string,std::string);
+//bool optGetBool(std::string,std::string);
+//void optSet(std::string,std::string,std::string);
 
 #endif

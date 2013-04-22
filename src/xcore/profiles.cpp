@@ -266,7 +266,7 @@ int prfLoad(std::string nm) {
 		}
 	}
 
-	comp->bdi->fdc->turbo = optGetBool("DISK","fast") ? 1 : 0;
+	comp->bdi->fdc->turbo = optGetFlag(OF_FASTDISK) ? 1 : 0;
 
 	ideSetPassport(comp->ide,IDE_MASTER,masterPass);
 	ideSetPassport(comp->ide,IDE_SLAVE,slavePass);
