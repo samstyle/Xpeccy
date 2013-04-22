@@ -395,6 +395,7 @@ void SetupWin::start() {
 // dos
 	setupUi.diskTypeBox->setCurrentIndex(setupUi.diskTypeBox->findData(zx->bdi->fdc->type));
 	setupUi.bdtbox->setChecked(zx->bdi->fdc->turbo != 0);
+	setupUi.mempaths->setChecked(optGetFlag(OF_PATHS));
 	Floppy* flp = zx->bdi->fdc->flop[0];
 	setupUi.apathle->setText(QString::fromLocal8Bit(flp->path));
 		setupUi.a80box->setChecked(flp->flag & FLP_TRK80);
@@ -421,8 +422,8 @@ void SetupWin::start() {
 
 	setupUi.hm_type->setCurrentIndex(setupUi.hm_type->findData(zx->ide->master->type));
 	ATAPassport pass = ideGetPassport(zx->ide,IDE_MASTER);
-	setupUi.hm_model->setText(QString::fromLocal8Bit(pass.model));
-	setupUi.hm_ser->setText(QString::fromLocal8Bit(pass.serial));
+//	setupUi.hm_model->setText(QString::fromLocal8Bit(pass.model));
+//	setupUi.hm_ser->setText(QString::fromLocal8Bit(pass.serial));
 	setupUi.hm_path->setText(QString::fromLocal8Bit(zx->ide->master->image));
 	setupUi.hm_islba->setChecked(zx->ide->master->flags & ATA_LBA);
 	setupUi.hm_gsec->setValue(pass.spt);
@@ -432,8 +433,8 @@ void SetupWin::start() {
 
 	setupUi.hs_type->setCurrentIndex(setupUi.hm_type->findData(zx->ide->slave->type));
 	pass = ideGetPassport(zx->ide,IDE_SLAVE);
-	setupUi.hs_model->setText(QString::fromLocal8Bit(pass.model));
-	setupUi.hs_ser->setText(QString::fromLocal8Bit(pass.serial));
+//	setupUi.hs_model->setText(QString::fromLocal8Bit(pass.model));
+//	setupUi.hs_ser->setText(QString::fromLocal8Bit(pass.serial));
 	setupUi.hs_path->setText(QString::fromLocal8Bit(zx->ide->slave->image));
 	setupUi.hs_islba->setChecked(zx->ide->slave->flags & ATA_LBA);
 	setupUi.hs_gsec->setValue(pass.spt);
@@ -533,6 +534,7 @@ void SetupWin::apply() {
 // bdi
 	zx->bdi->fdc->type = setupUi.diskTypeBox->itemData(setupUi.diskTypeBox->currentIndex()).toInt();
 	zx->bdi->fdc->turbo = setupUi.bdtbox->isChecked() ? 1 : 0;
+	optSetFlag(OF_PATHS,setupUi.mempaths->isChecked());
 
 	Floppy* flp = zx->bdi->fdc->flop[0];
 	flp->flag &= ~(FLP_TRK80 | FLP_DS | FLP_PROTECT);
@@ -565,8 +567,8 @@ void SetupWin::apply() {
 	ATAPassport pass = ideGetPassport(zx->ide,IDE_MASTER);
 
 	zx->ide->master->type = setupUi.hm_type->itemData(setupUi.hm_type->currentIndex()).toInt();
-	memcpy(pass.model,std::string(setupUi.hm_model->text().toLocal8Bit().data(),40).c_str(),40);
-	memcpy(pass.serial,std::string(setupUi.hm_ser->text().toLocal8Bit().data(),20).c_str(),20);
+//	memcpy(pass.model,std::string(setupUi.hm_model->text().toLocal8Bit().data(),40).c_str(),40);
+//	memcpy(pass.serial,std::string(setupUi.hm_ser->text().toLocal8Bit().data(),20).c_str(),20);
 	ideSetImage(zx->ide,IDE_MASTER,setupUi.hm_path->text().toLocal8Bit().data());
 	setFlagBit(setupUi.hm_islba->isChecked(),&flg,ATA_LBA);
 	zx->ide->master->flags = flg;
@@ -579,8 +581,8 @@ void SetupWin::apply() {
 	pass = ideGetPassport(zx->ide,IDE_SLAVE);
 	flg = zx->ide->slave->flags;
 	zx->ide->slave->type = setupUi.hs_type->itemData(setupUi.hs_type->currentIndex()).toInt();
-	memcpy(pass.model,std::string(setupUi.hs_model->text().toLocal8Bit().data(),40).c_str(),40);
-	memcpy(pass.serial,std::string(setupUi.hs_ser->text().toLocal8Bit().data(),20).c_str(),20);
+//	memcpy(pass.model,std::string(setupUi.hs_model->text().toLocal8Bit().data(),40).c_str(),40);
+//	memcpy(pass.serial,std::string(setupUi.hs_ser->text().toLocal8Bit().data(),20).c_str(),20);
 	ideSetImage(zx->ide,IDE_SLAVE,setupUi.hs_path->text().toLocal8Bit().data());
 	setFlagBit(setupUi.hs_islba->isChecked(),&flg,ATA_LBA);
 	zx->ide->slave->flags = flg;
@@ -605,7 +607,9 @@ void SetupWin::apply() {
 // profiles
 	optSetFlag(OF_DEFAULT,setupUi.defstart->isChecked());
 
-	saveConfig();
+	//saveConfig();
+	saveProfiles();
+	prfSave("");
 	sndCalibrate();
 	zx->flag |= ZX_PALCHAN;
 	// emulSetPalette(zx,setupUi.brgslide->value());
@@ -1319,7 +1323,7 @@ void SetupWin::delJoyBind() {
 
 void SetupWin::newdisk(int idx) {
 	Floppy *flp = zx->bdi->fdc->flop[idx];
-	if (!saveChangedDisk(idx & 3)) return;
+	if (!saveChangedDisk(zx,idx & 3)) return;
 	flpFormat(flp);
 	flp->path = (char*)realloc(flp->path,sizeof(char));
 	flp->path[0] = 0x00;
@@ -1332,20 +1336,20 @@ void SetupWin::newb() {newdisk(1);}
 void SetupWin::newc() {newdisk(2);}
 void SetupWin::newd() {newdisk(3);}
 
-void SetupWin::loada() {loadFile("",FT_DISK,0); updatedisknams();}
-void SetupWin::loadb() {loadFile("",FT_DISK,1); updatedisknams();}
-void SetupWin::loadc() {loadFile("",FT_DISK,2); updatedisknams();}
-void SetupWin::loadd() {loadFile("",FT_DISK,3); updatedisknams();}
+void SetupWin::loada() {loadFile(zx,"",FT_DISK,0); updatedisknams();}
+void SetupWin::loadb() {loadFile(zx,"",FT_DISK,1); updatedisknams();}
+void SetupWin::loadc() {loadFile(zx,"",FT_DISK,2); updatedisknams();}
+void SetupWin::loadd() {loadFile(zx,"",FT_DISK,3); updatedisknams();}
 
-void SetupWin::savea() {Floppy* flp = zx->bdi->fdc->flop[0]; if (flp->flag & FLP_INSERT) saveFile(flp->path,FT_DISK,0);}
-void SetupWin::saveb() {Floppy* flp = zx->bdi->fdc->flop[1]; if (flp->flag & FLP_INSERT) saveFile(flp->path,FT_DISK,1);}
-void SetupWin::savec() {Floppy* flp = zx->bdi->fdc->flop[2]; if (flp->flag & FLP_INSERT) saveFile(flp->path,FT_DISK,2);}
-void SetupWin::saved() {Floppy* flp = zx->bdi->fdc->flop[3]; if (flp->flag & FLP_INSERT) saveFile(flp->path,FT_DISK,3);}
+void SetupWin::savea() {Floppy* flp = zx->bdi->fdc->flop[0]; if (flp->flag & FLP_INSERT) saveFile(zx,flp->path,FT_DISK,0);}
+void SetupWin::saveb() {Floppy* flp = zx->bdi->fdc->flop[1]; if (flp->flag & FLP_INSERT) saveFile(zx,flp->path,FT_DISK,1);}
+void SetupWin::savec() {Floppy* flp = zx->bdi->fdc->flop[2]; if (flp->flag & FLP_INSERT) saveFile(zx,flp->path,FT_DISK,2);}
+void SetupWin::saved() {Floppy* flp = zx->bdi->fdc->flop[3]; if (flp->flag & FLP_INSERT) saveFile(zx,flp->path,FT_DISK,3);}
 
-void SetupWin::ejcta() {saveChangedDisk(0); flpEject(zx->bdi->fdc->flop[0]); updatedisknams();}
-void SetupWin::ejctb() {saveChangedDisk(1); flpEject(zx->bdi->fdc->flop[1]); updatedisknams();}
-void SetupWin::ejctc() {saveChangedDisk(2); flpEject(zx->bdi->fdc->flop[2]); updatedisknams();}
-void SetupWin::ejctd() {saveChangedDisk(3); flpEject(zx->bdi->fdc->flop[3]); updatedisknams();}
+void SetupWin::ejcta() {saveChangedDisk(zx,0); flpEject(zx->bdi->fdc->flop[0]); updatedisknams();}
+void SetupWin::ejctb() {saveChangedDisk(zx,1); flpEject(zx->bdi->fdc->flop[1]); updatedisknams();}
+void SetupWin::ejctc() {saveChangedDisk(zx,2); flpEject(zx->bdi->fdc->flop[2]); updatedisknams();}
+void SetupWin::ejctd() {saveChangedDisk(zx,3); flpEject(zx->bdi->fdc->flop[3]); updatedisknams();}
 
 void SetupWin::updatedisknams() {
 	setupUi.apathle->setText(QString::fromLocal8Bit(zx->bdi->fdc->flop[0]->path));
@@ -1358,13 +1362,13 @@ void SetupWin::updatedisknams() {
 // tape
 
 void SetupWin::loatape() {
-	loadFile("",FT_TAPE,1);
+	loadFile(zx,"",FT_TAPE,1);
 	setupUi.tpathle->setText(QString::fromLocal8Bit(zx->tape->path));
 	buildtapelist();
 }
 
 void SetupWin::savtape() {
-	if (zx->tape->blkCount != 0) saveFile(zx->tape->path,FT_TAP,-1);
+	if (zx->tape->blkCount != 0) saveFile(zx,zx->tape->path,FT_TAP,-1);
 }
 
 void SetupWin::ejctape() {

@@ -249,6 +249,7 @@ void tapEject(Tape* tap) {
 	tap->flag = TAPE_CANSAVE;
 	tap->block = 0;
 	tap->pos = 0;
+	free(tap->path);
 	tap->path = NULL;
 	if (tap->blkData) {
 		for (i = 0; i < tap->blkCount; i++) {

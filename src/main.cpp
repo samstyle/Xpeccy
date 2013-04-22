@@ -62,7 +62,7 @@ int main(int ac,char** av) {
 		}
 		if (dev) {
 			devInit();
-			loadConfig(true);
+			// loadConfig(true);
 			devShow();
 			return app.exec();
 		} else {
@@ -74,14 +74,15 @@ int main(int ac,char** av) {
 			devInit();
 			initFileDialog(emulWidget());
 			loadProfiles();
-			loadConfig(false);
+			prfLoad("");
+//			loadConfig(false);
 			fillUserMenu();
 			emulShow();
 			emulUpdateWindow();
 			zxReset(zx,RES_DEFAULT);
 
 			for(i=1;i<ac;i++) {
-				loadFile(av[i],FT_ALL,0);
+				loadFile(zx,av[i],FT_ALL,0);
 			}
 
 #ifdef HAVESDL

@@ -33,6 +33,7 @@
 #define	OF_TAPEAUTO	1
 #define	OF_TAPEFAST	(1<<1)
 #define	OF_DEFAULT	(1<<2)
+#define	OF_PATHS	(1<<3)
 
 struct optEntry {
 	std::string group;
@@ -68,8 +69,8 @@ typedef std::pair<extButton,intButton> joyPair;
 void initPaths();
 void loadProfiles();
 void saveProfiles();
-void loadConfig(bool);
-void saveConfig();
+//void loadConfig(bool);
+//void saveConfig();
 void loadKeys();
 
 std::string optGetString(int);

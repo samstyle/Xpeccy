@@ -226,7 +226,8 @@ void flpFormTrack(Floppy* flp, int tr, Sector* sdata, int scount) {
 }
 
 int flpEject(Floppy* flp) {
-	flp->path = "";
+	free(flp->path);
+	flp->path = NULL;
 	flp->flag &= ~(FLP_INSERT | FLP_CHANGED);
 	return 1;
 }
@@ -245,11 +246,7 @@ int flpGet(Floppy* flp, int wut) {
 	return res;
 }
 
-//std::string flpGetPath(Floppy* flp) {return flp->path;}
-//void flpSetPath(Floppy* flp,const char* pth) {flp->path = std::string(pth);}
-
 int flpCreateFile(Floppy* flp,TRFile* dsc) {
-//	unsigned char* buf = new unsigned char[256];
 	unsigned char files;
 	unsigned short freesec;
 	if (!flpGetSectorData(flp,0,9,fbuf,256)) return ERR_SHIT;

@@ -331,10 +331,10 @@ void MainWin::updateWindow() {
 }
 
 bool emulSaveChanged() {
-	bool yep = saveChangedDisk(0);
-	yep &= saveChangedDisk(1);
-	yep &= saveChangedDisk(2);
-	yep &= saveChangedDisk(3);
+	bool yep = saveChangedDisk(zx,0);
+	yep &= saveChangedDisk(zx,1);
+	yep &= saveChangedDisk(zx,2);
+	yep &= saveChangedDisk(zx,3);
 	return yep;
 }
 
@@ -488,7 +488,7 @@ void MainWin::tapStateChanged(int wut, int val) {
 					break;
 				case TWS_OPEN:
 					emulPause(true,PR_FILE);
-					loadFile("",FT_TAPE,-1);
+					loadFile(zx,"",FT_TAPE,-1);
 					tapeWin->buildList(zx->tape);
 					tapeWin->setCheck(zx->tape->block);
 					emulPause(false,PR_FILE);
@@ -520,7 +520,7 @@ void MainWin::rzxStateChanged(int state) {
 			break;
 		case RWS_OPEN:
 			emulPause(true,PR_RZX);
-			loadFile("",FT_RZX,0);
+			loadFile(zx,"",FT_RZX,0);
 			if (zx->rzxSize != 0) {
 				rzxWin->startPlay();
 			}
@@ -553,13 +553,15 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				vidFlag &= ~VF_DOUBLE;
 				//mainWin->updateWindow();
 				emulFlags |= FL_UPDATE;
-				saveConfig();
+				saveProfiles();
+				//saveConfig();
 				break;
 			case Qt::Key_2:
 				vidFlag |= VF_DOUBLE;
 				// mainWin->updateWindow();
 				emulFlags |= FL_UPDATE;
-				saveConfig();
+				saveProfiles();
+				//saveConfig();
 				break;
 			case Qt::Key_3:
 				emulFlags ^= FL_FAST_RQ;
@@ -577,7 +579,8 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;
 			case Qt::Key_N:
 				vidFlag ^= VF_NOFLIC;
-				saveConfig();
+				//saveConfig();
+				saveProfiles();
 				break;
 		}
 	} else {
@@ -601,12 +604,12 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;
 			case Qt::Key_F2:
 				emulPause(true,PR_FILE);
-				saveFile("",FT_ALL,-1);
+				saveFile(zx,"",FT_ALL,-1);
 				emulPause(false,PR_FILE);
 				break;
 			case Qt::Key_F3:
 				emulPause(true,PR_FILE);
-				loadFile("",FT_ALL,-1);
+				loadFile(zx,"",FT_ALL,-1);
 				emulPause(false,PR_FILE);
 				checkState();
 				break;
@@ -737,7 +740,7 @@ void MainWin::dropEvent(QDropEvent* ev) {
 #ifdef _WIN32
 		fpath.remove(0,1);	// by some reason path will start with /
 #endif
-		loadFile(fpath.toUtf8().data(),FT_ALL,0);
+		loadFile(zx,fpath.toUtf8().data(),FT_ALL,0);
 	}
 }
 
@@ -767,12 +770,14 @@ void doSDLEvents() {
 						case SDLK_1:
 							vidFlag &= ~VF_DOUBLE;
 							mainWin->updateWindow();
-							saveConfig();
+							saveProfiles();
+							//saveConfig();
 							break;
 						case SDLK_2:
 							vidFlag |= VF_DOUBLE;
 							mainWin->updateWindow();
-							saveConfig();
+							saveProfiles();
+							//saveConfig();
 							break;
 						case SDLK_3:
 							emulFlags ^= FL_FAST_RQ;
@@ -791,11 +796,13 @@ void doSDLEvents() {
 						case SDLK_RETURN:
 							vidFlag ^= VF_FULLSCREEN;
 							mainWin->updateWindow();
-							saveConfig();
+							//saveConfig();
+							saveProfiles();
 							break;
 						case SDLK_n:
 							vidFlag ^= VF_NOFLIC;
-							saveConfig();
+							//saveConfig();
+							saveProfiles();
 							break;
 						default: break;
 					}
@@ -1047,6 +1054,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 //	sndPause(true);
 	emuStop();
 	for (i = 0; i < plist.size(); i++) {
+		prfSave(plist[i].name);
 		cmosFile = optGetString(OPT_WORKDIR) + std::string(SLASH) + plist[i].name + std::string(".cmos");
 		std::ofstream file(cmosFile.c_str());
 		if (file.good()) {
@@ -1054,7 +1062,6 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 			file.close();
 		}
 	}
-
 	if (emulSaveChanged()) {
 		ev->accept();
 	} else {
@@ -1423,14 +1430,16 @@ void fillUserMenu() {
 void MainWin::doOptions() {wantedWin = WW_OPTIONS;}
 
 void MainWin::bookmarkSelected(QAction* act) {
-	loadFile(act->data().toString().toLocal8Bit().data(),FT_ALL,0);
+	loadFile(zx,act->data().toString().toLocal8Bit().data(),FT_ALL,0);
 	setFocus();
 }
 
 void MainWin::profileSelected(QAction* act) {
 	emulPause(true,PR_EXTRA);
 	setProfile(std::string(act->text().toLocal8Bit().data()));
-	loadConfig(false);
+//	loadConfig(false);
+	prfLoad("");
+	sndCalibrate();
 	emulUpdateWindow();
 	saveProfiles();
 	if (zx->flag & ZX_JUSTBORN) {
@@ -1450,7 +1459,8 @@ void MainWin::reset(QAction* act) {
 void MainWin::chLayout(QAction* act) {
 	emulPause(true,PR_EXTRA);
 	emulSetLayout(zx,std::string(act->text().toLocal8Bit().data()));
-	saveConfig();
+	//saveConfig();
+	prfSave("");
 	emulUpdateWindow();
 	setFocus();
 	emulPause(false,PR_EXTRA);

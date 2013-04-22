@@ -23,6 +23,7 @@ void setFlagBit(bool, int*, int);
 bool str2bool(std::string);
 std::vector<std::string> splitstr(std::string,const char*);
 std::pair<std::string,std::string> splitline(std::string);
+void copyFile(const char*, const char*);
 
 // bookmarks
 
@@ -81,6 +82,18 @@ void clearProfiles();
 std::vector<XProfile> getProfileList();
 XProfile* getCurrentProfile();
 XProfile* getProfile(std::string);
+
+#define	PLOAD_OK	0
+#define	PLOAD_NF	1
+#define	PLOAD_OF	2
+
+int prfLoad(std::string);
+
+#define PSAVE_OK	PLOAD_OK
+#define	PSAVE_NF	PLOAD_NF
+#define	PSAVE_OF	PLOAD_OF
+
+int prfSave(std::string);
 
 // layouts
 

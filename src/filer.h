@@ -1,7 +1,7 @@
 #ifndef _FILER_H
 #define _FILER_H
 
-//#include <stdint.h>
+#include "libxpeccy/spectrum.h"
 #include <QFileDialog>
 
 #define	FT_ALL		-1
@@ -23,9 +23,9 @@
 #define	FT_RAW		(1<<11)
 
 void initFileDialog(QWidget*);
-void loadFile(const char*, int, int);
-bool saveFile(const char*, int, int);
+void loadFile(ZXComp*,const char*, int, int);
+bool saveFile(ZXComp*,const char*, int, int);
 
-bool saveChangedDisk(int);
+bool saveChangedDisk(ZXComp*,int);
 
 #endif

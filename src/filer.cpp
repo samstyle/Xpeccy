@@ -24,9 +24,9 @@ void initFileDialog(QWidget*) {
 #endif
 }
 
-bool saveChangedDisk(int id) {
+bool saveChangedDisk(ZXComp* comp,int id) {
 	bool res=true;
-	Floppy* flp = zx->bdi->fdc->flop[id];
+	Floppy* flp = comp->bdi->fdc->flop[id];
 	if (flp->flag & FLP_CHANGED) {
 		QMessageBox mbox;
 		mbox.setText(QString("<b>Disk ").append(QChar('A'+id)).append(": has been changed</b>"));
@@ -34,7 +34,7 @@ bool saveChangedDisk(int id) {
 		mbox.setStandardButtons(QMessageBox::Yes|QMessageBox::No|QMessageBox::Cancel);
 		mbox.setIcon(QMessageBox::Warning);
 		switch (mbox.exec()) {
-			case QMessageBox::Yes: res = saveFile(flp->path,FT_DISK,id); break;		// save
+			case QMessageBox::Yes: res = saveFile(comp,flp->path,FT_DISK,id); break;		// save
 			case QMessageBox::No: res=true; break;						// don't save
 			case QMessageBox::Cancel: res=false; break;					// cancel
 		}
@@ -81,7 +81,7 @@ int getFileType(QString path) {
 	return FT_NONE;
 }
 
-void loadFile(const char* name, int flags, int drv) {
+void loadFile(ZXComp* comp,const char* name, int flags, int drv) {
 	QString opath = QDialog::trUtf8(name);
 	filer->setDirectory(lastDir);
 	if (opath == "") {
@@ -122,17 +122,17 @@ void loadFile(const char* name, int flags, int drv) {
 	}
 	std::string sfnam(opath.toLocal8Bit().data());
 	int ferr = ERR_OK;
-	zx->rzxPlay = false;
-	Floppy* flp = zx->bdi->fdc->flop[drv & 3];
+	comp->rzxPlay = false;
+	Floppy* flp = comp->bdi->fdc->flop[drv & 3];
 	switch (type) {
-		case FT_SNA: ferr = loadSNA(zx,sfnam.c_str()); break;
-		case FT_Z80: ferr = loadZ80(zx,sfnam.c_str()); break;
-		case FT_TAP: ferr = loadTAP(zx->tape,sfnam.c_str()); break;
-		case FT_TZX: ferr = loadTZX(zx->tape,sfnam.c_str()); break;
-		case FT_SCL: if (saveChangedDisk(drv)) {ferr = loadSCL(flp,sfnam.c_str());} break;
-		case FT_TRD: if (saveChangedDisk(drv)) {ferr = loadTRD(flp,sfnam.c_str());} break;
-		case FT_FDI: if (saveChangedDisk(drv)) {ferr = loadFDI(flp,sfnam.c_str());} break;
-		case FT_UDI: if (saveChangedDisk(drv)) {ferr = loadUDI(flp,sfnam.c_str());} break;
+		case FT_SNA: ferr = loadSNA(comp,sfnam.c_str()); break;
+		case FT_Z80: ferr = loadZ80(comp,sfnam.c_str()); break;
+		case FT_TAP: ferr = loadTAP(comp->tape,sfnam.c_str()); break;
+		case FT_TZX: ferr = loadTZX(comp->tape,sfnam.c_str()); break;
+		case FT_SCL: if (saveChangedDisk(comp,drv)) {ferr = loadSCL(flp,sfnam.c_str());} break;
+		case FT_TRD: if (saveChangedDisk(comp,drv)) {ferr = loadTRD(flp,sfnam.c_str());} break;
+		case FT_FDI: if (saveChangedDisk(comp,drv)) {ferr = loadFDI(flp,sfnam.c_str());} break;
+		case FT_UDI: if (saveChangedDisk(comp,drv)) {ferr = loadUDI(flp,sfnam.c_str());} break;
 		case FT_HOBETA: ferr = loadHobeta(flp,sfnam.c_str()); break;
 		case FT_RAW: ferr = loadRaw(flp,sfnam.c_str()); break;
 		case FT_DSK: ferr = loadDsk(flp,sfnam.c_str()); break;
@@ -160,17 +160,17 @@ void loadFile(const char* name, int flags, int drv) {
 	}
 }
 
-bool saveFile(const char* name,int flags,int drv) {
+bool saveFile(ZXComp* comp,const char* name,int flags,int drv) {
 	QString path(name);
 	QString filters = "";
 	if (flags & FT_DISK) {
-		if (((drv == -1) || (drv == 0)) && (zx->bdi->fdc->flop[0]->flag & FLP_INSERT)) filters.append(";;Disk A (*.scl *.trd *.udi)");
-		if ((drv == 1) && (zx->bdi->fdc->flop[1]->flag & FLP_INSERT)) filters.append(";;Disk B (*.scl *.trd *.udi)");
-		if ((drv == 2) && (zx->bdi->fdc->flop[2]->flag & FLP_INSERT)) filters.append(";;Disk C (*.scl *.trd *.udi)");
-		if ((drv == 3) && (zx->bdi->fdc->flop[3]->flag & FLP_INSERT)) filters.append(";;Disk D (*.scl *.trd *.udi)");
+		if (((drv == -1) || (drv == 0)) && (comp->bdi->fdc->flop[0]->flag & FLP_INSERT)) filters.append(";;Disk A (*.scl *.trd *.udi)");
+		if ((drv == 1) && (comp->bdi->fdc->flop[1]->flag & FLP_INSERT)) filters.append(";;Disk B (*.scl *.trd *.udi)");
+		if ((drv == 2) && (comp->bdi->fdc->flop[2]->flag & FLP_INSERT)) filters.append(";;Disk C (*.scl *.trd *.udi)");
+		if ((drv == 3) && (comp->bdi->fdc->flop[3]->flag & FLP_INSERT)) filters.append(";;Disk D (*.scl *.trd *.udi)");
 	}
 	if (flags & FT_SNAP) filters.append(";;Snapshot (*.sna)");
-	if ((flags & FT_TAPE) && (zx->tape->blkCount != 0)) filters.append(";;Tape (*.tap)");
+	if ((flags & FT_TAPE) && (comp->tape->blkCount != 0)) filters.append(";;Tape (*.tap)");
 	if (filters.startsWith(";;")) filters.remove(0,2);
 	filer->setWindowTitle("Save file");
 	filer->setNameFilter(filters);
@@ -190,7 +190,7 @@ bool saveFile(const char* name,int flags,int drv) {
 	int type = getFileType(path);
 	int err = ERR_OK;
 	if (filters.contains("Disk")) {
-		Floppy* flp = zx->bdi->fdc->flop[drv];
+		Floppy* flp = comp->bdi->fdc->flop[drv];
 		switch (type) {
 			case FT_SCL: err = saveSCL(flp,sfnam.c_str()); break;
 			case FT_TRD: err = saveTRD(flp,sfnam.c_str()); break;
@@ -200,19 +200,19 @@ bool saveFile(const char* name,int flags,int drv) {
 	}
 	if (filters.contains("Tape")) {
 		switch (type) {
-			case FT_TAP: err = saveTAP(zx->tape,sfnam.c_str()); break;
-			default: sfnam += ".tap"; err = saveTAP(zx->tape,sfnam.c_str()); break;
+			case FT_TAP: err = saveTAP(comp->tape,sfnam.c_str()); break;
+			default: sfnam += ".tap"; err = saveTAP(comp->tape,sfnam.c_str()); break;
 		}
 	}
 	if (filters.contains("Snap")) {
 		bool mt = (getCurrentProfile()->hwName == "ZX48K");
 		switch (type) {
 			case FT_SNA:
-				err = saveSNA(zx,sfnam.c_str(),mt);
+				err = saveSNA(comp,sfnam.c_str(),mt);
 				break;
 			default:
 				sfnam += ".sna";
-				err = saveSNA(zx,sfnam.c_str(),mt);
+				err = saveSNA(comp,sfnam.c_str(),mt);
 				break;
 		}
 	}

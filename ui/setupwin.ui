@@ -222,6 +222,9 @@
               </item>
               <item>
                <widget class="QCheckBox" name="contIO">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
                 <property name="text">
                  <string>Contended I/O</string>
                 </property>
@@ -1307,6 +1310,13 @@
         </attribute>
         <layout class="QVBoxLayout" name="verticalLayout_29">
          <item>
+          <widget class="QCheckBox" name="mempaths">
+           <property name="text">
+            <string>Restore media</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QTabWidget" name="tabWidget_3">
            <property name="currentIndex">
             <number>0</number>
@@ -1552,38 +1562,68 @@
             <attribute name="title">
              <string>Disk</string>
             </attribute>
-            <layout class="QVBoxLayout" name="verticalLayout_19" stretch="0,0,0,10">
+            <layout class="QVBoxLayout" name="verticalLayout_42">
              <item>
-              <widget class="QCheckBox" name="bdtbox">
-               <property name="text">
-                <string>Turbo</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <layout class="QHBoxLayout" name="horizontalLayout_21">
+              <layout class="QHBoxLayout" name="horizontalLayout_29">
                <item>
-                <widget class="QLabel" name="label_38">
-                 <property name="text">
-                  <string>Interface</string>
+                <layout class="QVBoxLayout" name="verticalLayout_41">
+                 <item>
+                  <layout class="QHBoxLayout" name="horizontalLayout_21" stretch="0,10">
+                   <item>
+                    <widget class="QLabel" name="label_38">
+                     <property name="text">
+                      <string>Interface</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QComboBox" name="diskTypeBox"/>
+                   </item>
+                  </layout>
+                 </item>
+                 <item>
+                  <spacer name="verticalSpacer_30">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>40</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <widget class="QGroupBox" name="groupBox_10">
+                 <property name="title">
+                  <string/>
                  </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_19">
+                  <item>
+                   <widget class="QCheckBox" name="bdtbox">
+                    <property name="text">
+                     <string>Turbo</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <spacer name="verticalSpacer_29">
+                    <property name="orientation">
+                     <enum>Qt::Vertical</enum>
+                    </property>
+                    <property name="sizeHint" stdset="0">
+                     <size>
+                      <width>20</width>
+                      <height>6</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                 </layout>
                 </widget>
-               </item>
-               <item>
-                <widget class="QComboBox" name="diskTypeBox"/>
-               </item>
-               <item>
-                <spacer name="horizontalSpacer_4">
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>40</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                </spacer>
                </item>
               </layout>
              </item>
@@ -2118,37 +2158,6 @@
                    <item row="0" column="1">
                     <widget class="QComboBox" name="hm_type"/>
                    </item>
-                   <item row="1" column="0">
-                    <widget class="QLabel" name="label_27">
-                     <property name="text">
-                      <string>Model</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="1" column="1">
-                    <widget class="QLineEdit" name="hm_model">
-                     <property name="maxLength">
-                      <number>40</number>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="2" column="0">
-                    <widget class="QLabel" name="label_29">
-                     <property name="text">
-                      <string>Serial</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="2" column="1">
-                    <widget class="QLineEdit" name="hm_ser">
-                     <property name="text">
-                      <string/>
-                     </property>
-                     <property name="maxLength">
-                      <number>20</number>
-                     </property>
-                    </widget>
-                   </item>
                    <item row="0" column="0">
                     <widget class="QLabel" name="label_17">
                      <property name="text">
@@ -2156,17 +2165,17 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="3" column="0">
+                   <item row="1" column="0">
                     <widget class="QLabel" name="label_32">
                      <property name="text">
                       <string>Image file</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="3" column="1">
+                   <item row="1" column="1">
                     <widget class="QLineEdit" name="hm_path"/>
                    </item>
-                   <item row="3" column="2">
+                   <item row="1" column="2">
                     <widget class="QToolButton" name="hm_pathtb">
                      <property name="text">
                       <string>...</string>
@@ -2305,54 +2314,20 @@
                     <widget class="QComboBox" name="hs_type"/>
                    </item>
                    <item row="1" column="0">
-                    <widget class="QLabel" name="label_28">
-                     <property name="text">
-                      <string>Model</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="1" column="1">
-                    <widget class="QLineEdit" name="hs_model">
-                     <property name="maxLength">
-                      <number>40</number>
-                     </property>
-                     <property name="frame">
-                      <bool>true</bool>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="2" column="0">
-                    <widget class="QLabel" name="label_30">
-                     <property name="text">
-                      <string>Serial</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="2" column="1">
-                    <widget class="QLineEdit" name="hs_ser">
-                     <property name="text">
-                      <string/>
-                     </property>
-                     <property name="maxLength">
-                      <number>20</number>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="3" column="0">
                     <widget class="QLabel" name="label_31">
                      <property name="text">
                       <string>Image file</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="3" column="1">
+                   <item row="1" column="1">
                     <widget class="QLineEdit" name="hs_path">
                      <property name="readOnly">
                       <bool>true</bool>
                      </property>
                     </widget>
                    </item>
-                   <item row="3" column="2">
+                   <item row="1" column="2">
                     <widget class="QToolButton" name="hs_pathtb">
                      <property name="text">
                       <string>...</string>

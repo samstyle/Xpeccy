@@ -11,6 +11,7 @@
 #include "sound.h"
 #include "emulwin.h"
 #include "settings.h"
+#include "filer.h"
 
 #ifdef _WIN32
 	#include <direct.h>
@@ -362,6 +363,7 @@ void saveProfiles() {
 		cfile << "keys = " << keyFileName.c_str() << "\n";
 	}
 	cfile << "startdefault = " << ((flag & OF_DEFAULT) ? "yes" : "no") << "\n";
+	cfile << "savepaths = " << ((flag & OF_PATHS) ? "yes" : "no") << "\n";
 
 	cfile << "\n[BOOKMARKS]\n\n";
 	std::vector<XBookmark> bml = getBookmarkList();
@@ -455,109 +457,6 @@ void saveProfiles() {
 	cfile.close();
 }
 
-std::string getDiskString(Floppy* flp) {
-	std::string res = "80DW";
-	if (!(flp->flag & FLP_TRK80)) res[0]='4';
-	if (!(flp->flag & FLP_DS)) res[2]='S';
-	if (flp->flag & FLP_PROTECT) res[3]='R';
-	return res;
-}
-
-void setDiskString(Floppy* flp,std::string st) {
-	if (st.size() < 4) return;
-	flp->flag &= ~(FLP_TRK80 | FLP_DS | FLP_PROTECT);
-	if (st.substr(0,2) == "80") flp->flag |= FLP_TRK80;
-	if (st.substr(2,1) == "D") flp->flag |= FLP_DS;
-	if (st.substr(3,1) == "R") flp->flag |= FLP_PROTECT;
-}
-
-void saveConfig() {
-	saveProfiles();
-	XProfile* curProf = getCurrentProfile();
-	optSet("GENERAL","cpu.frq",int(zx->cpuFrq * 2));
-	delOption("GENERAL","sdcimage");
-
-	optSet("SDC","sdcimage",std::string(zx->sdc->image ? zx->sdc->image : ""));
-	optSet("SDC","sdclock",std::string((zx->sdc->flag & SDC_LOCK) ? "yes" : "no"));
-	optSet("SDC","capacity",zx->sdc->capacity);
-
-	optSet("MACHINE","current",curProf->hwName);
-//	optSet("MACHINE","restart",(emulGetFlags() & FL_RESET) != 0);
-	optSet("MACHINE","memory",zx->mem->memSize);
-	optSet("MACHINE","scrp.wait",(zx->hwFlag & HW_WAIT) != 0);
-	optSet("MACHINE","contmem",(zx->hwFlag & HW_CONTMEM) != 0);
-	optSet("MACHINE","contio",(zx->hwFlag & HW_CONTIO) != 0);
-
-//	optSet("ROMSET","gs",curProf->gsFile);
-	delOption("ROMSET","gs");
-	optSet("ROMSET","current",curProf->rsName);
-	optSet("ROMSET","reset",rmnam[zx->resbank]);
-
-	optSet("VIDEO","geometry",curProf->layName);
-	optSet("VIDEO","4t-border",(zx->vid->flags & VID_BORDER_4T) != 0);
-//	optSet("VIDEO","contmem",(zx->vid->flags & VID_SLOWMEM) != 0);
-
-	optSet("SOUND","chip1",zx->ts->chipA->type);
-	optSet("SOUND","chip2",zx->ts->chipB->type);
-	optSet("SOUND","chip1.stereo",zx->ts->chipA->stereo);
-	optSet("SOUND","chip2.stereo",zx->ts->chipB->stereo);
-	optSet("SOUND","ts.type",zx->ts->type);
-	optSet("SOUND","gs",(zx->gs->flag & GS_ENABLE) != 0);
-	optSet("SOUND","gs.reset",(zx->gs->flag & GS_RESET) != 0);
-	optSet("SOUND","gs.stereo",zx->gs->stereo);
-//	optSet("SOUND","covox",(zx->flags & ZX_COVOX) != 0);
-	optSet("SOUND","soundrive_type",zx->sdrv->type);
-
-	optSet("DISK","type",zx->bdi->fdc->type);
-	optSet("DISK","fast",std::string((zx->bdi->fdc->turbo) ? "yes" : "no"));
-	optSet("DISK","A",getDiskString(zx->bdi->fdc->flop[0]));
-	optSet("DISK","B",getDiskString(zx->bdi->fdc->flop[1]));
-	optSet("DISK","C",getDiskString(zx->bdi->fdc->flop[2]));
-	optSet("DISK","D",getDiskString(zx->bdi->fdc->flop[3]));
-
-	optSet("IDE","iface",zx->ide->type);
-
-	optSet("IDE","master.type",zx->ide->master->type);
-	ATAPassport pass = ideGetPassport(zx->ide,IDE_MASTER);
-	optSet("IDE","master.model",std::string(pass.model,40));
-	optSet("IDE","master.serial",std::string(pass.serial,20));
-	optSet("IDE","master.image",std::string(zx->ide->master->image));
-	optSet("IDE","master.lba",(zx->ide->master->flags & ATA_LBA) != 0);
-	optSet("IDE","master.maxlba",zx->ide->master->maxlba);
-	std::string chs = int2str(pass.spt) + "/" + int2str(pass.hds) + "/" + int2str(pass.cyls);
-	optSet("IDE","master.chs",chs);
-
-	optSet("IDE","slave.type",zx->ide->slave->type);
-	pass = ideGetPassport(zx->ide,IDE_SLAVE);
-	optSet("IDE","slave.model",std::string(pass.model,40));
-	optSet("IDE","slave.serial",std::string(pass.serial,20));
-	optSet("IDE","slave.image",std::string(zx->ide->slave->image));
-	optSet("IDE","slave.lba",(zx->ide->slave->flags & ATA_LBA) != 0);
-	optSet("IDE","slave.maxlba",zx->ide->slave->maxlba);
-	chs = int2str(pass.spt) + "/" + int2str(pass.hds) + "/" + int2str(pass.cyls);
-	optSet("IDE","slave.chs",chs);
-
-	optSet("INPUT","mouse",(zx->mouse->flags & INF_ENABLED) != 0);
-	optSet("INPUT","mouse.wheel",(zx->mouse->flags & INF_WHEEL) != 0);
-
-	std::string cfname = workDir + SLASH + getCurrentProfile()->file;
-	std::ofstream sfile(cfname.c_str());
-	if (!sfile.good()) {
-		shitHappens("Can't write settings");
-	} else {
-		uint i,j;
-		std::vector<optEntry> ents;
-		std::vector<std::string> grps = optGroupsList();
-		for (i=0; i<grps.size(); i++) {
-			sfile << "[" << grps[i].c_str() << "]\n\n";
-			ents = optGroupEntries(grps[i]);
-			for (j=0; j<ents.size(); j++) {
-				sfile << ents[j].name.c_str() << " = " << ents[j].value.c_str() << "\n";
-			}
-			sfile << "\n";
-		}
-	}
-}
 
 void loadKeys() {
 	std::string sfnam = workDir + SLASH + keyFileName;
@@ -821,6 +720,9 @@ void loadProfiles() {
 					if (pnam=="startdefault") {
 						optSetFlag(OF_DEFAULT,str2bool(pval));
 					}
+					if (pnam=="savepaths") {
+						optSetFlag(OF_PATHS,str2bool(pval));
+					}
 					break;
 				case SECT_TAPE:
 					if (pnam=="autoplay") optSetFlag(OF_TAPEAUTO,str2bool(pval));
@@ -856,227 +758,3 @@ void loadProfiles() {
 }
 
 // profile config
-
-void loadConfig(bool dev) {
-	XProfile* curProf = getCurrentProfile();
-	std::string cfname = workDir + SLASH + curProf->file;
-	std::ifstream file(cfname.c_str());
-	std::pair<std::string,std::string> spl;
-	std::string line,pnam,pval;
-	std::vector<std::string> vect;
-	size_t pos;
-	char* buf = new char[0x4000];
-	int tmask = 0xff;
-	int tmp2;	// ,tmp;
-	int section = SECT_NONE;
-	int memsz = 48;
-	ATAPassport masterPass = ideGetPassport(zx->ide,IDE_MASTER);
-	ATAPassport slavePass = ideGetPassport(zx->ide,IDE_SLAVE);
-//	int flg;
-//	if (!dev) memSetSize(zx->mem,48);
-	if (!file.good()) {
-//		shithappens(std::string("Can't find config file<br><b>") + cfname + std::string("</b><br>Default one will be created."));
-		printf("Profile config is missing. Default one will be created\n");
-		copyFile(":/conf/xpeccy.conf",cfname.c_str());
-		file.open(cfname.c_str(),std::ifstream::in);
-	}
-	if (!file.good()) {
-		shitHappens("Damn! I can't open config file<br>Zetsuboushita!");
-		throw(0);
-	} else {
-		RomSet newrs;
-		VidLayout vlay;
-		std::string fnam,tms;
-		config.clear();
-		std::string grp = "";
-		optEntry nent;
-		while (!file.eof()) {
-			file.getline(buf,2048);
-			line = std::string(buf);
-			pos = line.find_first_of("#"); if (pos != std::string::npos) line.erase(pos);
-			pos = line.find_first_of(";"); if (pos != std::string::npos) line.erase(pos);
-			spl = splitline(line);
-			pnam = spl.first;
-			pval = spl.second;
-			if (pval=="") {
-				if (pnam=="[ROMSET]") {grp = pnam; section = SECT_ROMSETS;}
-				if (pnam=="[VIDEO]") {grp = pnam; section = SECT_VIDEO;}
-				if (pnam=="[SCREENSHOTS]") {grp = ""; section = SECT_SCRSHOT;}
-				if (pnam=="[SOUND]") {grp = pnam; section = SECT_SOUND;}
-				if ((pnam=="[DISK]") || (pnam=="[BETADISK]")) {grp = "[DISK]"; section = SECT_DISK;}
-				if (pnam=="[MACHINE]") {grp = pnam; section = SECT_MACHINE;}
-				if (pnam=="[TOOLS]") {grp = ""; section = SECT_TOOLS;}
-				if (pnam=="[MENU]") {grp = ""; section = SECT_MENU;}
-				if (pnam=="[IDE]") {grp = pnam; section = SECT_IDE;}
-				if (pnam=="[GENERAL]") {grp = pnam; section = SECT_GENERAL;}
-				if (pnam=="[INPUT]") {grp = pnam; section = SECT_INPUT;}
-				if (pnam=="[SDC]") {grp = pnam; section = SECT_SDC;}
-				if (dev && (section != SECT_TOOLS)) section = SECT_NONE;
-			} else {
-				if (grp.size() > 2) {
-					line = grp;
-					line.erase(line.size()-1,1).erase(0,1);		// remove [ and ] from group name
-					optSet(line,pnam,pval);
-				}
-//printf("%s\t%s\t%s\n",config.back().group.c_str(),config.back().name.c_str(),config.back().value.c_str());
-				switch (section) {
-					case SECT_ROMSETS:
-						if (pnam=="reset") {
-							zx->resbank = 1;
-							if ((pval=="basic128") || (pval=="0")) zx->resbank = 0;
-							if ((pval=="basic48") || (pval=="1")) zx->resbank = 1;
-							if ((pval=="shadow") || (pval=="2")) zx->resbank = 2;
-							if ((pval=="trdos") || (pval=="3")) zx->resbank = 3;
-						}
-						if (pnam=="current") curProf->rsName = pval;
-//						if (pnam=="gs") zx->opt.GSRom = pval;
-						break;
-					case SECT_VIDEO:
-						if (pnam == "geometry") curProf->layName = pval;
-						if (pnam == "4t-border") setFlagBit(str2bool(pval),&zx->vid->flags,VID_BORDER_4T);
-						break;
-					case SECT_SCRSHOT:
-						if (pnam=="folder") shotDir = pval;
-						if (pnam=="format") shotExt = optGetId(OPT_SHOTFRM,pval);
-						if (pnam=="combo.count") shotCount = atoi(pval.c_str());
-						if (pnam=="combo.interval") shotInterval = atoi(pval.c_str());
-						break;
-					case SECT_SOUND:
-						if ((pnam=="covox") || (pnam=="soundrive_type")) {
-							zx->sdrv->type = atoi(pval.c_str());
-							delOption("SOUND","covox");
-						}
-						break;
-					case SECT_DISK:
-						if (pnam=="A") setDiskString(zx->bdi->fdc->flop[0],pval);
-						if (pnam=="B") setDiskString(zx->bdi->fdc->flop[1],pval);
-						if (pnam=="C") setDiskString(zx->bdi->fdc->flop[2],pval);
-						if (pnam=="D") setDiskString(zx->bdi->fdc->flop[3],pval);
-						if (pnam=="enabled") {
-							zx->bdi->fdc->type = str2bool(pval) ? FDC_93 : FDC_NONE;
-							delOption("DISK","enabled");
-						}
-						if (pnam=="type") zx->bdi->fdc->type = atoi(pval.c_str());
-						break;
-					case SECT_MACHINE:
-						if (pnam=="memory") {
-							memsz = atoi(pval.c_str());
-							// memSetSize(zx->mem,tmp);
-							switch (memsz) {
-								case 128: tmask = MEM_128; break;
-								case 256: tmask = MEM_256; break;
-								case 512: tmask = MEM_512; break;
-								case 1024: tmask = MEM_1M; break;
-								case 2048: tmask = MEM_2M; break;
-								case 4096: tmask = MEM_4M; break;
-							}
-						}
-						if (pnam == "contmem") setFlagBit(str2bool(pval),&zx->hwFlag,HW_CONTMEM);
-						if (pnam == "contio") setFlagBit(str2bool(pval),&zx->hwFlag,HW_CONTIO);
-						break;
-					case SECT_TOOLS:
-						if (pnam=="sjasm") asmPath = pval; break;
-						if (pnam=="projectsdir") projDir = pval; break;
-						break;
-					case SECT_MENU:
-						addBookmark(pnam.c_str(),pval.c_str());
-						break;
-					case SECT_IDE:
-						if (pnam=="iface") zx->ide->type = atoi(pval.c_str());
-						if (pnam=="master.type") zx->ide->master->type = atoi(pval.c_str());
-						if (pnam=="master.model") memcpy(masterPass.model,std::string(pval,0,40).c_str(),40);
-						if (pnam=="master.serial") memcpy(masterPass.serial,std::string(pval,0,20).c_str(),20);
-						if (pnam=="master.lba") {
-							//flg = ideGet(zx->ide,IDE_MASTER,IDE_FLAG);
-							setFlagBit(str2bool(pval),&zx->ide->master->flags, ATA_LBA);
-							//ideSet(zx->ide,IDE_MASTER,IDE_FLAG,flg);
-						}
-						if (pnam=="master.maxlba") zx->ide->master->maxlba = atoi(pval.c_str());
-						if (pnam=="master.image") ideSetImage(zx->ide,IDE_MASTER,pval.c_str());
-						if (pnam=="master.chs") {
-							vect = splitstr(pval,"/");
-							if (vect.size() > 2) {
-								masterPass.spt = atoi(vect.at(0).c_str());
-								masterPass.hds = atoi(vect.at(1).c_str());
-								masterPass.cyls = atoi(vect.at(2).c_str());
-							}
-						}
-						if (pnam=="slave.type") zx->ide->slave->type = atoi(pval.c_str());
-						if (pnam=="slave.model") memcpy(slavePass.model,std::string(pval,0,40).c_str(),40);
-						if (pnam=="slave.serial") memcpy(slavePass.serial,std::string(pval,0,20).c_str(),20);
-						if (pnam=="slave.lba") {
-							//flg = ideGet(zx->ide,IDE_SLAVE,IDE_FLAG);
-							setFlagBit(str2bool(pval),&zx->ide->slave->flags, ATA_LBA);
-							//ideSet(zx->ide,IDE_SLAVE,IDE_FLAG,flg);
-						}
-						if (pnam=="slave.maxlba") zx->ide->slave->maxlba = atoi(pval.c_str());
-						if (pnam=="slave.image") ideSetImage(zx->ide,IDE_SLAVE,pval.c_str());
-						if (pnam=="slave.chs") {
-							vect = splitstr(pval,"/");
-							if (vect.size() > 2) {
-								slavePass.spt = atoi(vect.at(0).c_str());
-								slavePass.hds = atoi(vect.at(1).c_str());
-								slavePass.cyls = atoi(vect.at(2).c_str());
-							}
-						}
-						break;
-					case SECT_GENERAL:
-						if (pnam=="sdcimage") sdcSetImage(zx->sdc,pval.c_str());
-						break;
-					case SECT_INPUT:
-						if (pnam=="mouse") setFlagBit(str2bool(pval),&zx->mouse->flags,INF_ENABLED);
-						if (pnam=="mouse.wheel") setFlagBit(str2bool(pval),&zx->mouse->flags,INF_WHEEL);
-						break;
-					case SECT_SDC:
-						if (pnam=="sdcimage") sdcSetImage(zx->sdc,pval.c_str());
-						if (pnam=="sdclock") setFlagBit(str2bool(pval),&zx->sdc->flag,SDC_LOCK);
-						if (pnam=="capacity") sdcSetCapacity(zx->sdc,atoi(pval.c_str()));
-						break;
-				}
-			}
-		}
-	}
-
-	if (dev) return;
-
-	delOption("VIDEO","fullscreen");
-	delOption("VIDEO","doublesize");
-	delOption("VIDEO","contmem");
-	delOption("MACHINE","restart");
-	delOption("ROMSET","gs");
-
-	tmp2 = optGetInt("GENERAL","cpu.frq"); if ((tmp2 > 0) && (tmp2 <= 28)) zxSetFrq(zx,tmp2 / 2.0);
-
-	tmp2 = optGetInt("SOUND","chip1"); if (tmp2 < SND_END) aymSetType(zx->ts->chipA,tmp2);
-	tmp2 = optGetInt("SOUND","chip2"); if (tmp2 < SND_END) aymSetType(zx->ts->chipB,tmp2);
-	zx->ts->chipA->stereo = optGetInt("SOUND","chip1.stereo");
-	zx->ts->chipB->stereo = optGetInt("SOUND","chip2.stereo");
-	zx->ts->type = optGetInt("SOUND","ts.type");
-
-	zx->gs->flag = 0;
-	if (optGetBool("SOUND","gs")) zx->gs->flag |= GS_ENABLE;
-	if (optGetBool("SOUND","gs.reset")) zx->gs->flag |= GS_RESET;
-	zx->gs->stereo = optGetInt("SOUND","gs.stereo");
-
-	zx->bdi->flag = 0;
-	zx->bdi->fdc->turbo = 0;
-//	zx->bdi->type = atoi(optGetString("DISK","type").c_str());
-	zx->bdi->fdc->turbo = optGetBool("DISK","fast") ? 1 : 0;
-	curProf->hwName = optGetString("MACHINE","current");
-	curProf->rsName = optGetString("ROMSET","current");
-//	curProf->gsFile = optGetString("ROMSET","gs");
-//	emulSetFlag(FL_RESET,optGetBool("MACHINE","restart"));
-	setFlagBit(optGetBool("MACHINE","scrp.wait"),&zx->hwFlag,HW_WAIT);
-
-	sndCalibrate();
-//	zx->ide->refresh();
-	ideSetPassport(zx->ide,IDE_MASTER,masterPass);
-	ideSetPassport(zx->ide,IDE_SLAVE,slavePass);
-	zxSetHardware(zx, curProf->hwName.c_str());
-	setRomset(curProf->name, curProf->rsName);
-	if (zx->hw==NULL) throw("Can't found current machine");
-	if (findRomset(curProf->rsName) == NULL) throw("Can't found current romset");
-	if ((zx->hw->mask != 0) && (~zx->hw->mask & tmask)) throw("Incorrect memory size for this machine");
-	memSetSize(zx->mem,memsz);
-	if (!emulSetLayout(zx, curProf->layName)) emulSetLayout(zx,"default");
-}

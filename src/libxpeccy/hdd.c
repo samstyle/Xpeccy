@@ -30,8 +30,10 @@ ATADev* ataCreate(int tp) {
 	ata->pass.bpt = ata->pass.bps * ata->pass.spt;
 	ata->pass.type = 1;
 	memset(ata->pass.serial,' ',20);
+	memcpy(ata->pass.serial,"IDDQD",strlen("IDDQD"));
 	memset(ata->pass.mcver,' ',8);
 	memset(ata->pass.model,' ',40);
+	memcpy(ata->pass.model,"Xpeccy HDD image",strlen("Xpeccy HDD image"));
 	ata->flags = 0x00;
 	ata->image = NULL;
 	return ata;
