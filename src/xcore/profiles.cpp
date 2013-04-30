@@ -42,6 +42,7 @@ bool addProfile(std::string nm, std::string fp) {
 	} else {
 		profileList.push_back(nprof);
 	}
+	prfLoad(nprof.name);
 	return true;
 }
 
@@ -119,6 +120,7 @@ void setDiskString(ZXComp* comp,Floppy* flp,std::string st) {
 int prfLoad(std::string nm) {
 	XProfile* prf = (nm == "") ? currentProfile : getProfile(nm);
 	if (prf == NULL) return PLOAD_NF;
+	printf("%s\n",prf->name.c_str());
 	ZXComp* comp = prf->zx;
 
 	std::string cfname = optGetString(OPT_WORKDIR) + SLASH + prf->file;
@@ -200,12 +202,13 @@ int prfLoad(std::string nm) {
 					if (pnam == "C") setDiskString(comp,comp->bdi->fdc->flop[2],pval);
 					if (pnam == "D") setDiskString(comp,comp->bdi->fdc->flop[3],pval);
 					if (pnam == "type") comp->bdi->fdc->type = atoi(pval.c_str());
+					if (pnam == "fast") comp->bdi->fdc->turbo = str2bool(pval);
 					break;
 				case PS_MACHINE:
 					if (pnam == "current") prf->hwName = pval;
 					if (pnam == "cpu.frq") {
 						tmp2 = atoi(pval.c_str());
-						if ((tmp2 > 0) && (tmp2 <= 28)) zxSetFrq(zx,tmp2 / 2.0);
+						if ((tmp2 > 0) && (tmp2 <= 28)) zxSetFrq(comp,tmp2 / 2.0);
 					}
 					if (pnam == "memory") {
 						memsz = atoi(pval.c_str());
@@ -273,14 +276,22 @@ int prfLoad(std::string nm) {
 
 	zxSetHardware(comp, prf->hwName.c_str());
 	setRomset(prf->name, prf->rsName);
-	if (comp->hw==NULL) throw("Can't found current machine");
 
-	if (findRomset(prf->rsName) == NULL) throw("Can't found current romset");
+	tmp2 = PLOAD_OK;
+
+	if (comp->hw == NULL) {
+		tmp2 = PLOAD_HW;
+		zxSetHardware(comp,"ZX48K");
+	}
+	if (findRomset(prf->rsName) == NULL) {
+		tmp2 = PLOAD_RS;
+	}
+
 	if ((comp->hw->mask != 0) && (~comp->hw->mask & tmask)) throw("Incorrect memory size for this machine");
 	memSetSize(comp->mem,memsz);
 	if (!emulSetLayout(comp, prf->layName)) emulSetLayout(zx,"default");
 
-	return PLOAD_OK;
+	return tmp2;
 }
 
 std::string getDiskString(Floppy* flp) {

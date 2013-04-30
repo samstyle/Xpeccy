@@ -34,7 +34,7 @@
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#define	XPTITLE	"Xpeccy 0.5 (20130422)"
+#define	XPTITLE	"Xpeccy 0.5 (20130429)"
 
 // main
 MainWin* mainWin;
@@ -1438,7 +1438,7 @@ void MainWin::profileSelected(QAction* act) {
 	emulPause(true,PR_EXTRA);
 	setProfile(std::string(act->text().toLocal8Bit().data()));
 //	loadConfig(false);
-	prfLoad("");
+//	prfLoad("");
 	sndCalibrate();
 	emulUpdateWindow();
 	saveProfiles();

@@ -86,6 +86,8 @@ XProfile* getProfile(std::string);
 #define	PLOAD_OK	0
 #define	PLOAD_NF	1
 #define	PLOAD_OF	2
+#define	PLOAD_HW	3
+#define	PLOAD_RS	4
 
 int prfLoad(std::string);
 
