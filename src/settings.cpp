@@ -36,7 +36,6 @@
 #define	SECT_INPUT	16
 #define	SECT_SDC	17
 
-//std::vector<optEntry> config;
 std::string workDir;
 std::string romDir;
 std::string profPath;
@@ -198,81 +197,6 @@ void optSet(int wut, int val) {
 	}
 }
 
-// group-name vars base
-
-/*
-std::vector<std::string> optGroupsList() {
-	std::vector<std::string> res;
-	std::string grp;
-	uint i,j;
-	bool prs;
-	for (i=0; i<config.size(); i++) {
-		grp = config[i].group;
-		prs = false;
-		for (j=0; j<res.size(); j++) {
-			if (res[j] == grp) {
-				prs = true;
-				break;
-			}
-		}
-		if (!prs) res.push_back(grp);
-	}
-	return res;
-}
-
-std::vector<optEntry> optGroupEntries(std::string grp) {
-	std::vector<optEntry> res;
-	for (uint i=0; i<config.size(); i++) {
-		if (config[i].group == grp) res.push_back(config[i]);
-	}
-	return res;
-}
-
-optEntry* optFindEntry(std::string grp, std::string nam) {
-	optEntry* res = NULL;
-	for (uint i=0; i<config.size(); i++) {
-		if ((config[i].group == grp) && (config[i].name == nam)) {
-			res = &config[i];
-			break;
-		}
-	}
-	return res;
-}
-
-void delOption(std::string grp, std::string nam) {
-	uint i;
-	for (i = 0; i < config.size(); i++) {
-		if ((config[i].group == grp) && (config[i].name == nam)) config.erase(config.begin() + i);
-	}
-}
-
-optEntry* addOption(std::string grp, std::string nam) {
-	optEntry* res = optFindEntry(grp, nam);
-	if (res != NULL) return res;
-	optEntry nent;
-	nent.group = grp;
-	nent.name = nam;
-	nent.value = "";
-	config.push_back(nent);
-	return &config[config.size() - 1];
-}
-
-void optSet(std::string grp, std::string nam, std::string val) {
-	optEntry* res = addOption(grp, nam);
-	res->value = val;
-}
-
-void optSet(std::string grp, std::string nam, int val) {
-	optEntry* res = addOption(grp, nam);
-	res->value = int2str(val);
-}
-
-void optSet(std::string grp, std::string nam, bool val) {
-	optEntry* res = addOption(grp, nam);
-	res->value = val ? "yes" : "no";
-}
-*/
-
 void optSetFlag(int mask, bool wut) {
 	if (wut) {
 		flag |= mask;
@@ -284,25 +208,6 @@ void optSetFlag(int mask, bool wut) {
 bool optGetFlag(int mask) {
 	return ((flag & mask) != 0);
 }
-
-/*
-std::string optGetString(std::string grp, std::string nam) {
-	std::string res = "";
-	optEntry* ent = optFindEntry(grp,nam);
-	if (ent != NULL) res = ent->value;
-	return res;
-}
-
-int optGetInt(std::string grp, std::string nam) {
-	std::string res = optGetString(grp,nam);
-	return atoi(res.c_str());
-}
-
-bool optGetBool(std::string grp, std::string nam) {
-	std::string res = optGetString(grp,nam);
-	return str2bool(res);
-}
-*/
 
 // old
 

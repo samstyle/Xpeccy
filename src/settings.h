@@ -70,8 +70,6 @@ typedef std::pair<extButton,intButton> joyPair;
 void initPaths();
 void loadProfiles();
 void saveProfiles();
-//void loadConfig(bool);
-//void saveConfig();
 void loadKeys();
 
 std::string optGetString(int);
@@ -92,8 +90,5 @@ void optDelJMap(extButton);
 std::string optGetName(int,int);
 int optGetId(int,std::string);
 OptName* getGetPtr(int prt);
-
-//bool optGetBool(std::string,std::string);
-//void optSet(std::string,std::string,std::string);
 
 #endif
