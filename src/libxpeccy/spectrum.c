@@ -249,7 +249,7 @@ ZXComp* zxCreate() {
 	ZXComp* comp = (ZXComp*)malloc(sizeof(ZXComp));
 	void* ptr = (void*)comp;
 	memset(ptr,0,sizeof(ZXComp));
-	comp->flag = ZX_JUSTBORN | ZX_PALCHAN;
+	comp->flag = ZX_PALCHAN;	// | ZX_JUSTBORN
 	comp->hwFlag = 0;
 
 #ifdef SELFZ80

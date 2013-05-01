@@ -646,6 +646,7 @@ void loadProfiles() {
 	}
 	uint i;
 	for (i=0; i<rslist.size(); i++) addRomset(rslist[i]);
+	prfLoadAll();
 	setOutput(soutnam.c_str());
 	if (flag & OF_DEFAULT) {
 		if (!setProfile("default")) {

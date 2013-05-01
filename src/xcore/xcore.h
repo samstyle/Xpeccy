@@ -55,7 +55,7 @@ typedef struct {
 } RomSet;
 
 bool addRomset(RomSet);
-void setRomset(std::string, std::string);
+void rsSetRomset(ZXComp*, std::string);
 RomSet* findRomset(std::string);
 std::vector<RomSet> getRomsetList();
 void setRomsetList(std::vector<RomSet>);
@@ -79,6 +79,8 @@ bool addProfile(std::string,std::string);
 int delProfile(std::string);
 bool setProfile(std::string);
 void clearProfiles();
+void prfSetRomset(std::string,std::string);
+void prfLoadAll();
 std::vector<XProfile> getProfileList();
 XProfile* getCurrentProfile();
 XProfile* getProfile(std::string);

@@ -30,95 +30,103 @@ void setRomsetList(std::vector<RomSet> rsl) {
 	}
 	std::vector<XProfile> profileList = getProfileList();
 	for (i=0; i<profileList.size(); i++) {
-		setRomset(profileList[i].name, profileList[i].rsName);
+		rsSetRomset(profileList[i].zx, profileList[i].rsName);
 	}
 }
 
-void setRomset(std::string pn, std::string nm) {
-	XProfile* prof = getProfile(pn);
-	if (prof == NULL) return;
+void rsSetRomset(ZXComp* comp, std::string nm) {
+//	XProfile* prof = getProfile(pn);
+//	if (prof == NULL) return;
+	printf("try to load romset %s\n",nm.c_str());
 	RomSet* rset = findRomset(nm);
-	int i,ad;
+	int i;//,ad;
 #ifdef _WIN32
 	std::string romDir = std::string(".\\config\\roms");
-#else
+#elif __linux
 	std::string romDir = std::string(getenv("HOME")) + "/.config/samstyle/xpeccy/roms";
 #endif
 	std::string fpath = "";
 	std::ifstream file;
 	char* pageBuf = new char[0x4000];
 	int prts = 0;
+//	if (rset == NULL) {
+//		rset = findRomset(prof->rsName);
+//	} else {
+//		prof->rsName = rset->name;
+//	}
+	comp->mem->romMask = 0x03;
 	if (rset == NULL) {
-		rset = findRomset(prof->rsName);
-	} else {
-		prof->rsName = rset->name;
-	}
-	if (rset == NULL) {
-		prof->zx->mem->romMask = 0x03;
+		printf("none found\n");
+		memset(pageBuf,0xff,0x4000);
 		for (i=0; i<16; i++) {
-			for (ad=0; ad<0x4000; ad++) pageBuf[i] = 0xff;
-			memSetPage(prof->zx->mem,MEM_ROM,i,pageBuf);
+			memSetPage(comp->mem,MEM_ROM,i,pageBuf);
 		}
 	} else {
-		prof->zx->mem->romMask = 0x03;
 		if (rset->file.size() != 0) {
+			printf("single file\n");
 			fpath = romDir + SLASH + rset->file;
 			file.open(fpath.c_str(),std::ios::binary);
 			if (file.good()) {
 				file.seekg(0,std::ios_base::end);
 				prts = file.tellg() / 0x4000;
-				if (prts > 4) prof->zx->mem->romMask = 0x07;
-				if (prts > 8) prof->zx->mem->romMask = 0x0f;
-				if (prts > 16) prof->zx->mem->romMask = 0x1f;
+				if (prts > 4) comp->mem->romMask = 0x07;
+				if (prts > 8) comp->mem->romMask = 0x0f;
+				if (prts > 16) comp->mem->romMask = 0x1f;
 				if (prts > 32) prts = 32;
+				printf("mask %.2X\n",comp->mem->romMask);
 				file.seekg(0,std::ios_base::beg);
 				for (i = 0; i < prts; i++) {
 					file.read(pageBuf,0x4000);
-					memSetPage(prof->zx->mem,MEM_ROM,i,pageBuf);
+					memSetPage(comp->mem,MEM_ROM,i,pageBuf);
 				}
-				for (ad = 0; ad < 0x4000; ad++) pageBuf[ad] = 0xff;
-				for (i=prts; i<16; i++) memSetPage(prof->zx->mem,MEM_ROM,i,pageBuf);
+				memset(pageBuf,0xff,0x4000);
+				//for (ad = 0; ad < 0x4000; ad++) pageBuf[ad] = 0xff;
+				for (i=prts; i<16; i++) memSetPage(comp->mem,MEM_ROM,i,pageBuf);
 			} else {
 				printf("Can't open single rom '%s'\n",rset->file.c_str());
-				for (ad = 0; ad < 0x4000; ad++) pageBuf[ad] = 0xff;
-				for (i = 0; i < 16; i++) memSetPage(prof->zx->mem,MEM_ROM,i,pageBuf);
+				memset(pageBuf,0xff,0x4000);
+				//for (ad = 0; ad < 0x4000; ad++) pageBuf[ad] = 0xff;
+				for (i = 0; i < 16; i++) memSetPage(comp->mem,MEM_ROM,i,pageBuf);
 			}
 			file.close();
 		} else {
 			for (i = 0; i < 4; i++) {
 				if (rset->roms[i].path == "") {
-					for (ad = 0; ad < 0x4000; ad++) pageBuf[ad]=0xff;
+					memset(pageBuf,0xff,0x4000);
+					// for (ad = 0; ad < 0x4000; ad++) pageBuf[ad]=0xff;
 				} else {
 					fpath = romDir + SLASH + rset->roms[i].path;
 					file.open(fpath.c_str(),std::ios::binary);
 					if (file.good()) {
-						file.seekg(rset->roms[i].part<<14);
+						file.seekg(rset->roms[i].part << 14);
 						file.read(pageBuf,0x4000);
 					} else {
 						printf("Can't open rom '%s:%i'\n",rset->roms[i].path.c_str(),rset->roms[i].part);
-						for (ad=0;ad<0x4000;ad++) pageBuf[ad]=0xff;
+						memset(pageBuf,0xff,0x4000);
+						//for (ad=0;ad<0x4000;ad++) pageBuf[ad]=0xff;
 					}
 					file.close();
 				}
-				memSetPage(prof->zx->mem,MEM_ROM,i,pageBuf);
+				memSetPage(comp->mem,MEM_ROM,i,pageBuf);
 			}
 		}
-		for (ad = 0; ad < 0x4000; ad++) pageBuf[ad] = 0xff;
+		memset(pageBuf,0xff,0x4000);
+		// for (ad = 0; ad < 0x4000; ad++) pageBuf[ad] = 0xff;
 		if (rset->gsFile.empty()) {
-			gsSetRom(prof->zx->gs,0,pageBuf);
-			gsSetRom(prof->zx->gs,1,pageBuf);
+			gsSetRom(comp->gs,0,pageBuf);
+			gsSetRom(comp->gs,1,pageBuf);
 		} else {
 			fpath = romDir + SLASH + rset->gsFile;
 			file.open(fpath.c_str(),std::ios::binary);
 			if (file.good()) {
 				file.read(pageBuf,0x4000);
-				gsSetRom(prof->zx->gs,0,pageBuf);
+				gsSetRom(comp->gs,0,pageBuf);
 				file.read(pageBuf,0x4000);
-				gsSetRom(prof->zx->gs,1,pageBuf);
+				gsSetRom(comp->gs,1,pageBuf);
 			} else {
 	//			printf("Can't load gs rom '%s'\n",prof->gsFile.c_str());
-				gsSetRom(prof->zx->gs,0,pageBuf);
-				gsSetRom(prof->zx->gs,1,pageBuf);
+				gsSetRom(comp->gs,0,pageBuf);
+				gsSetRom(comp->gs,1,pageBuf);
 			}
 			file.close();
 		}
@@ -127,7 +135,7 @@ void setRomset(std::string pn, std::string nm) {
 			file.open(fpath.c_str(),std::ios::binary);
 			if (file.good()) {
 				file.read(pageBuf,0x800);
-				vidSetFont(prof->zx->vid,pageBuf);
+				vidSetFont(comp->vid,pageBuf);
 			}
 		}
 	}

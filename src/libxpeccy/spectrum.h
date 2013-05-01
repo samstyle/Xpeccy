@@ -19,7 +19,7 @@ extern "C" {
 
 // zx flag
 #define	ZX_BREAK	1	// breakpoint reached
-#define	ZX_JUSTBORN	(1<<1)	// just created zx. need to reset after selection
+//#define	ZX_JUSTBORN	(1<<1)	// just created zx. need to reset after selection
 #define	ZX_PALCHAN	(1<<2)	// signal: palete changed
 // hwFlag
 #define HW_WAIT		1	// scorpion wait

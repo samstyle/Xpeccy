@@ -42,7 +42,7 @@ bool addProfile(std::string nm, std::string fp) {
 	} else {
 		profileList.push_back(nprof);
 	}
-	prfLoad(nprof.name);
+//	prfLoad(nprof.name);
 	return true;
 }
 
@@ -115,6 +115,17 @@ void setDiskString(ZXComp* comp,Floppy* flp,std::string st) {
 	if (flp->path || (st.size() < 5) || !optGetFlag(OF_PATHS)) return;
 	st = st.substr(5);
 	loadFile(comp,st.c_str(),FT_DISK,flp->id);
+}
+
+void prfSetRomset(std::string pnm, std::string rnm) {
+	XProfile* prf = (pnm == "") ? currentProfile : getProfile(pnm);
+	if (prf == NULL) return;
+	prf->rsName = rnm;
+	rsSetRomset(prf->zx,rnm);
+}
+
+void prfLoadAll() {
+	for (uint i = 0; i < profileList.size(); i++) prfLoad(profileList[i].name);
 }
 
 int prfLoad(std::string nm) {
@@ -275,7 +286,7 @@ int prfLoad(std::string nm) {
 	ideSetPassport(comp->ide,IDE_SLAVE,slavePass);
 
 	zxSetHardware(comp, prf->hwName.c_str());
-	setRomset(prf->name, prf->rsName);
+	rsSetRomset(comp,prf->rsName);
 
 	tmp2 = PLOAD_OK;
 
@@ -283,6 +294,7 @@ int prfLoad(std::string nm) {
 		tmp2 = PLOAD_HW;
 		zxSetHardware(comp,"ZX48K");
 	}
+
 	if (findRomset(prf->rsName) == NULL) {
 		tmp2 = PLOAD_RS;
 	}
@@ -290,6 +302,9 @@ int prfLoad(std::string nm) {
 	if ((comp->hw->mask != 0) && (~comp->hw->mask & tmask)) throw("Incorrect memory size for this machine");
 	memSetSize(comp->mem,memsz);
 	if (!emulSetLayout(comp, prf->layName)) emulSetLayout(zx,"default");
+
+
+	zxReset(comp,RES_DEFAULT);
 
 	return tmp2;
 }

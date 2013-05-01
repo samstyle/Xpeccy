@@ -1442,10 +1442,10 @@ void MainWin::profileSelected(QAction* act) {
 	sndCalibrate();
 	emulUpdateWindow();
 	saveProfiles();
-	if (zx->flag & ZX_JUSTBORN) {
-		zxReset(zx,RES_DEFAULT);
-		zx->flag &= ~ZX_JUSTBORN;
-	}
+//	if (zx->flag & ZX_JUSTBORN) {
+//		zxReset(zx,RES_DEFAULT);
+//		zx->flag &= ~ZX_JUSTBORN;
+//	}
 	setFocus();
 //	vidSetCallback(zx->vid);
 	emulPause(false,PR_EXTRA);

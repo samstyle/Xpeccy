@@ -473,7 +473,7 @@ void SetupWin::apply() {
 	curProf->hwName = std::string(setupUi.machbox->currentText().toUtf8().data());
 	zxSetHardware(curProf->zx,curProf->hwName.c_str());
 	curProf->rsName = std::string(setupUi.rsetbox->currentText().toUtf8().data());
-	setRomset(curProf->name, curProf->rsName);
+	prfSetRomset("", curProf->rsName);
 //	RomSet* rset = findRomset(curProf->rsName);
 //	emulSetFlag(FL_RESET, setupUi.reschk->isChecked());
 	zx->resbank = setupUi.resbox->currentIndex();
