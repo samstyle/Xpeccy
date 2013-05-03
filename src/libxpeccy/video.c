@@ -306,7 +306,6 @@ void vidDrawATMega(Video* vid) {
 void vidATMDoubleDot(Video* vid,unsigned char colr) {
 	ink = inkTab[colr & 0x7f];
 	pap = papTab[colr & 0x3f] | ((colr & 0x80) >> 4);
-	scrbyte = vid->font[(scrbyte << 3) | (yscr & 7)];
 	if (vidFlag & VF_DOUBLE) {
 		*(vid->scrptr) = (scrbyte & 0x80) ? ink : pap;
 		*(vid->scrptr + 1) = (scrbyte & 0x40) ? ink : pap;
@@ -340,6 +339,7 @@ void vidDrawATMtext(Video* vid) {
 				scrbyte = vid->mem->ram[vid->curscr ? 7 : 5].data[adr + 0x2000];
 				col = vid->mem->ram[vid->curscr ? 3 : 1].data[adr + 1];
 			}
+			scrbyte = vid->font[(scrbyte << 3) | (yscr & 7)];
 			vidATMDoubleDot(vid,col);
 		}
 		vid->scrptr++;
