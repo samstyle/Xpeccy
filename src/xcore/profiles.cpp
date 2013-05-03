@@ -23,7 +23,7 @@ XProfile* getProfile(std::string nm) {
 }
 
 bool addProfile(std::string nm, std::string fp) {
-	printf("add Profile: %s : %s\n",nm.c_str(),fp.c_str());
+//	printf("add Profile: %s : %s\n",nm.c_str(),fp.c_str());
 	int idx = findProfile(nm);
 	if (idx > -1) return false;
 	XProfile nprof;
@@ -70,7 +70,7 @@ bool setProfile(std::string nm) {
 	int idx = findProfile(nm);
 	if (idx < 0) return false;
 	currentProfile = &profileList[idx];
-	printf("set profile %s\n",currentProfile->name.c_str());
+//	printf("set profile %s\n",currentProfile->name.c_str());
 	zx = currentProfile->zx;
 	vidUpdate(zx->vid);
 	zx->flag |= ZX_PALCHAN;
@@ -131,11 +131,11 @@ void prfLoadAll() {
 int prfLoad(std::string nm) {
 	XProfile* prf = (nm == "") ? currentProfile : getProfile(nm);
 	if (prf == NULL) return PLOAD_NF;
-	printf("%s\n",prf->name.c_str());
+//	printf("%s\n",prf->name.c_str());
 	ZXComp* comp = prf->zx;
 
 	std::string cfname = optGetString(OPT_WORKDIR) + SLASH + prf->file;
-	printf("load config %s\n",cfname.c_str());
+//	printf("load config %s\n",cfname.c_str());
 	std::ifstream file(cfname.c_str());
 	std::pair<std::string,std::string> spl;
 	std::string line,pnam,pval;

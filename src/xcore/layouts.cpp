@@ -6,12 +6,12 @@
 std::vector<VidLayout> layList;
 
 bool addLayout(std::string nm,int fh,int fv,int bh,int bv,int sh,int sv,int ih,int iv,int is) {
-	printf("add Layout: %s\n",nm.c_str());
+//	printf("add Layout: %s\n",nm.c_str());
 	for (unsigned int i = 0; i < layList.size(); i++) {
 		if (layList[i].name == nm) return false;
 	}
 	if ((iv < 0) || (iv >= fv) || (ih < 0) || (ih >= fh) || (is < 1)) {
-		printf("WARNING: INT position and/or length isn't correct\n");
+		printf("WARNING: Layout %s : INT position and/or length isn't correct\n",nm.c_str());
 		iv = 0; ih = 0; is = 64;
 	}
 	VidLayout nlay;
@@ -30,7 +30,7 @@ bool addLayout(std::string nm,int fh,int fv,int bh,int bv,int sh,int sv,int ih,i
 }
 
 bool addLayout(VidLayout lay) {
-	printf("add Layout: %s\n",lay.name.c_str());
+//	printf("add Layout: %s\n",lay.name.c_str());
 	for (unsigned int i = 0; i < layList.size(); i++) {
 		if (layList[i].name == lay.name) return false;
 	}

@@ -231,6 +231,7 @@ class MainWin : public QX11EmbedContainer {
 		void profileSelected(QAction*);
 		void reset(QAction*);
 		void chLayout(QAction*);
+		void chVMode(QAction*);
 	protected:
 		void closeEvent(QCloseEvent*);
 #ifdef XQTPAINT

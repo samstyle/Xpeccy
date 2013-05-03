@@ -19,13 +19,16 @@ extern "C" {
 // vid->flags (vid)
 #define	VID_BORDER_4T		(1<<1)
 // screen drawing mode
-#define	VID_NORMAL	0
-#define	VID_ALCO	1
-#define	VID_ATM_EGA	2
-#define	VID_ATM_TEXT	3
-#define	VID_ATM_HWM	4
-#define	VID_HWMC	5
-#define	VID_EVO_TEXT	6
+#define	VID_NOSCREEN	0
+#define	VID_NORMAL	1
+#define	VID_ALCO	2
+#define	VID_ATM_EGA	3
+#define	VID_ATM_TEXT	4
+#define	VID_ATM_HWM	5
+#define	VID_HWMC	6
+#define	VID_EVO_TEXT	7
+#define VID_TSL_16	8	// TSConf 4bpp
+#define	VID_TSL_256	9	// TSConf 8bpp
 #define	VID_UNKNOWN	0xff
 
 typedef struct {
@@ -58,6 +61,15 @@ struct Video {
 	VSize intpos;
 	Memory* mem;
 	int intsz;
+	struct {
+		unsigned char vidPage;	// 1st video page
+		int xOffset;		// offsets of screen corner
+		int yOffset;
+		int xPos;		// position of screen @ monitor [32|12] x [44|24|0]
+		int yPos;
+		int xSize;		// size of tsconf screen ([320|360] x [200|240|288])
+		int ySize;
+	} tsconf;
 	unsigned char font[0x800];	// ATM text mode font
 	void(*callback)(struct Video*);
 };

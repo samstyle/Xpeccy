@@ -34,7 +34,7 @@
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#define	XPTITLE	"Xpeccy 0.5 (20130429)"
+#define	XPTITLE	"Xpeccy 0.5 (20130503)"
 
 // main
 MainWin* mainWin;
@@ -61,6 +61,7 @@ QMenu* userMenu;
 QMenu* bookmarkMenu;
 QMenu* profileMenu;
 QMenu* layoutMenu;
+QMenu* vmodeMenu;
 // temp emulation
 Z80EX_WORD pc,af,de,ix;
 int blkDataSize = 0;
@@ -1373,6 +1374,16 @@ void initUserMenu(QWidget* par) {
 	layoutMenu = userMenu->addMenu(QIcon(":/images/display.png"),"Layout");
 	QObject::connect(layoutMenu,SIGNAL(triggered(QAction*)),par,SLOT(chLayout(QAction*)));
 
+	vmodeMenu = userMenu->addMenu("Video mode");
+	QObject::connect(vmodeMenu,SIGNAL(triggered(QAction*)),par,SLOT(chVMode(QAction*)));
+	vmodeMenu->addAction("ZX 256 x 192")->setData(VID_NORMAL);
+	vmodeMenu->addAction("Alco 16c")->setData(VID_ALCO);
+	vmodeMenu->addAction("HW multicolor")->setData(VID_HWMC);
+	vmodeMenu->addAction("ATM EGA")->setData(VID_ATM_EGA);
+	vmodeMenu->addAction("ATM HW multicolor")->setData(VID_ATM_HWM);
+	vmodeMenu->addAction("ATM text")->setData(VID_ATM_TEXT);
+	vmodeMenu->addAction("No screen")->setData(VID_NOSCREEN);
+
 	resMenu = userMenu->addMenu(QIcon(":/images/shutdown.png"),"Reset...");
 	QObject::connect(resMenu,SIGNAL(triggered(QAction*)),par,SLOT(reset(QAction*)));
 	resMenu->addAction("default")->setData(RES_DEFAULT);
@@ -1464,4 +1475,8 @@ void MainWin::chLayout(QAction* act) {
 	emulUpdateWindow();
 	setFocus();
 	emulPause(false,PR_EXTRA);
+}
+
+void MainWin::chVMode(QAction* act) {
+	vidSetMode(zx->vid,act->data().toInt());
 }

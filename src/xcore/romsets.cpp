@@ -37,7 +37,7 @@ void setRomsetList(std::vector<RomSet> rsl) {
 void rsSetRomset(ZXComp* comp, std::string nm) {
 //	XProfile* prof = getProfile(pn);
 //	if (prof == NULL) return;
-	printf("try to load romset %s\n",nm.c_str());
+//	printf("try to load romset %s\n",nm.c_str());
 	RomSet* rset = findRomset(nm);
 	int i;//,ad;
 #ifdef _WIN32
@@ -56,14 +56,14 @@ void rsSetRomset(ZXComp* comp, std::string nm) {
 //	}
 	comp->mem->romMask = 0x03;
 	if (rset == NULL) {
-		printf("none found\n");
+//		printf("none found\n");
 		memset(pageBuf,0xff,0x4000);
 		for (i=0; i<16; i++) {
 			memSetPage(comp->mem,MEM_ROM,i,pageBuf);
 		}
 	} else {
 		if (rset->file.size() != 0) {
-			printf("single file\n");
+//			printf("single file\n");
 			fpath = romDir + SLASH + rset->file;
 			file.open(fpath.c_str(),std::ios::binary);
 			if (file.good()) {
@@ -73,7 +73,7 @@ void rsSetRomset(ZXComp* comp, std::string nm) {
 				if (prts > 8) comp->mem->romMask = 0x0f;
 				if (prts > 16) comp->mem->romMask = 0x1f;
 				if (prts > 32) prts = 32;
-				printf("mask %.2X\n",comp->mem->romMask);
+//				printf("mask %.2X\n",comp->mem->romMask);
 				file.seekg(0,std::ios_base::beg);
 				for (i = 0; i < prts; i++) {
 					file.read(pageBuf,0x4000);

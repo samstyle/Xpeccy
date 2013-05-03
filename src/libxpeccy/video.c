@@ -169,6 +169,10 @@ void vidDrawUnknown(Video* vid) {
 	vidPutDot(vid,0);
 }
 
+void vidDrawBorder(Video* vid) {
+	vidPutDot(vid,vid->brdcol);
+}
+
 // common 256 x 192
 void vidDrawNormal(Video* vid) {
 	if ((vid->y < vid->bord.v) || (vid->y > vid->bord.v + 191)) {
@@ -366,17 +370,58 @@ void vidDrawATMhwmc(Video* vid) {
 	}
 }
 
+// tsconf 4bpp
+
+void vidDrawTSL16(Video* vid) {
+	xscr = vid->x - vid->tsconf.xPos;
+	yscr = vid->y - vid->tsconf.yPos;
+	if ((xscr < 0) || (xscr > vid->tsconf.xSize) || (yscr < 0) || (yscr >= vid->tsconf.ySize)) {
+		vidPutDot(vid,vid->brdcol);
+	} else {
+		xscr += (vid->tsconf.xOffset & 0x01ff);
+		yscr += (vid->tsconf.yOffset & 0x01ff);
+		adr = (yscr << 8) | (xscr >> 1);
+		scrbyte = vid->mem->ram[(vid->tsconf.vidPage & 0xf8) + (adr >> 14)].data[adr & 0x3fff];
+		if (xscr & 1) {
+			col = ((scrbyte & 0x38)>>3) | ((scrbyte & 0x80)>>4);	// right pixel
+		} else {
+			col = inkTab[scrbyte & 0x7f];				// left pixel
+		}
+		vidPutDot(vid,col);
+	}
+}
+
+// tsconf 8bpp
+
+void vidDrawTSL256(Video* vid) {
+	xscr = vid->x - vid->tsconf.xPos;
+	yscr = vid->y - vid->tsconf.yPos;
+	if ((xscr < 0) || (xscr > vid->tsconf.xSize) || (yscr < 0) || (yscr >= vid->tsconf.ySize)) {
+		vidPutDot(vid,vid->brdcol);
+	} else {
+		xscr += (vid->tsconf.xOffset & 0x01ff);
+		yscr += (vid->tsconf.yOffset & 0x01ff);
+		adr = (yscr << 9) | xscr;
+		col = vid->mem->ram[(vid->tsconf.vidPage & 0xf8) + (adr >> 14)].data[adr & 0x3fff];
+		*(vid->scrptr++) = col;
+		if (vidFlag & VF_DOUBLE) *(vid->scrptr++) = col;
+	}
+}
+
 // weiter
 
 void vidSetMode(Video* vid, int mode) {
 	vid->vmode = mode;
 	switch (mode) {
+		case VID_NOSCREEN: vid->callback = &vidDrawBorder; break;
 		case VID_NORMAL: vid->callback = &vidDrawNormal; break;
 		case VID_ALCO: vid->callback = &vidDrawAlco; break;
 		case VID_HWMC: vid->callback = &vidDrawHwmc; break;
 		case VID_ATM_EGA: vid->callback = &vidDrawATMega; break;
 		case VID_ATM_TEXT: vid->callback = &vidDrawATMtext; break;
 		case VID_ATM_HWM: vid->callback = &vidDrawATMhwmc; break;
+		case VID_TSL_16: vid->callback = &vidDrawTSL16; break;
+		case VID_TSL_256: vid->callback = &vidDrawTSL256; break;
 		default: vid->callback = &vidDrawUnknown; break;
 	}
 }
