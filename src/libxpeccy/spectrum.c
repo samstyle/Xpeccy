@@ -118,6 +118,9 @@ void memwr(CPUCONT Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 	if ((comp->hw->type == HW_PENTEVO) && (comp->evo.evoBF & 4)) {		// PentEvo: write font byte
 		comp->vid->font[adr & 0x7ff] = val;
 	}
+	if ((comp->hw->type == HW_TSLAB) && (comp->tsconf.flag & 0x10) && ((adr & 0xfe00) == comp->tsconf.tsMapAdr)) {
+		comp->tsconf.tsPal[adr & 0x1ff] = val;
+	}
 	memWr(comp->mem,adr,val);
 	if (comp->mem->flags & MEM_BRK_WRITE) {
 		comp->flag |= ZX_BREAK;
@@ -279,7 +282,7 @@ ZXComp* zxCreate() {
 	comp->evo.evo4F = 0;
 	comp->evo.evo6F = 0;
 	comp->evo.evo8F = 0;
-
+// tsconf
 	comp->rzxSize = 0;
 	comp->rzxData = NULL;
 	comp->tapCount = 0;

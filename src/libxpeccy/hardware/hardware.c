@@ -7,6 +7,9 @@ HardWare hwTab[] = {
 	{"Pentagon",HW_PENT,MEM_128 | MEM_512, &penMapMem,&penOut,&penIn},
 	{"Pentagon1024SL",HW_P1024,MEM_1M,&p1mMapMem,&p1mOut,&p1mIn},
 	{"PentEvo",HW_PENTEVO,MEM_4M,&evoMapMem,&evoOut,&evoIn},
+#ifdef ISDEBUG
+	{"TSLab",HW_TSLAB,MEM_4M,&tslMapMem,&tslOut,&tslIn},
+#endif
 	{"Scorpion",HW_SCORP,MEM_256 | MEM_1M,&scoMapMem,&scoOut,&scoIn},
 	{"ATM2",HW_ATM2,MEM_128 | MEM_256 | MEM_512 | MEM_1M, &atm2MapMem,&atm2Out,&atm2In},
 	{"Spectrum +2",HW_PLUS2,MEM_128, &pl2MapMem,&pl2Out,&pl2In},

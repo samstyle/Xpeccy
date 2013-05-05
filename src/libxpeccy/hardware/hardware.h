@@ -14,6 +14,7 @@
 #define	HW_ATM1		7
 #define	HW_ATM2		8
 #define	HW_PENTEVO	9
+#define	HW_TSLAB	10
 // mem size
 #define	MEM_48	0
 #define	MEM_128	1
@@ -68,5 +69,9 @@ Z80EX_BYTE atm2In(ZXComp*,Z80EX_WORD,int);
 void evoMapMem(ZXComp*);
 void evoOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
 Z80EX_BYTE evoIn(ZXComp*,Z80EX_WORD,int);
+// TSLab conf
+void tslMapMem(ZXComp*);
+void tslOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
+Z80EX_BYTE tslIn(ZXComp*,Z80EX_WORD,int);
 
 #endif

@@ -33,6 +33,12 @@ extern "C" {
 #define	RES_SHADOW	4
 
 typedef struct {
+	unsigned char l;
+	unsigned char h;
+	unsigned char x;
+} DMAaddr;
+
+typedef struct {
 	int fetches;
 	int frmSize;
 	unsigned char* frmData;
@@ -88,9 +94,22 @@ struct ZXComp {
 		unsigned char evo6F;
 		unsigned char evo8F;
 	} evo;
+	struct {
+		DMAaddr src;
+		DMAaddr dst;
+		unsigned char len;
+		unsigned char num;
+	} dma;
+	struct {
+		int flag;
+		unsigned char tsScrPal;
+		unsigned char tsPal[512];	// TSConf palette: 256 x 15bit colors
+		unsigned short tsMapAdr;	// adr for palette mapping
+		unsigned char FDDVirt;
+	} tsconf;
 	CMOS cmos;
 	unsigned char dosen;		// active trdos (dosen and b4,prt0 sets rompart)
-	int resbank;		// rompart active after reset
+	int resbank;			// rompart active after reset
 	int tapCount;
 	unsigned long tickCount;
 };
