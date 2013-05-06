@@ -13,7 +13,7 @@ void tslMapMem(ZXComp* comp) {
 		if (p21AF & 4)
 			memSetBank(comp->mem,MEM_BANK0,MEM_RAM,comp->tsconf.Page0);
 		else
-			memSetBank(comp->mem,MEM_BANK0,MEM_RAM, (comp->tsconf.Page0 & 0xfc) | ((comp->dosen) ? 0 : 2) | ((p7FFD & 0x10) ? 0 : 1));
+			memSetBank(comp->mem,MEM_BANK0,MEM_RAM, comp->tsconf.Page0 + (((comp->dosen) ? 0 : 2) | ((p7FFD & 0x10) ? 0 : 1)));
 	else
 		if (p21AF & 4)
 			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,((comp->dosen) ? 0 : 2) | ((p7FFD & 0x10) ? 1 : 0));
@@ -28,6 +28,7 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 		comp->beeplev = val & 0x10;
 		comp->tape->outsig = (val & 0x08) ? 1 : 0;
 	}
+	if ((port & 0x80ff) == 0x00fd) port = 0x7ffd;		// ???
 	int cnt,sadr,dadr;
 	switch (port) {
 		case 0x00af:
@@ -42,23 +43,20 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 				default: vidSetMode(comp->vid,VID_UNKNOWN); break;
 			}
 			break;
-		case 0x01af:
-			comp->vid->tsconf.vidPage = val;
-			break;
+		case 0x01af: comp->vid->tsconf.vidPage = val; break;
 		case 0x06af:			// TSConf
 			printf("tsconf %.2X\n",val);
 			comp->tsconf.TSConf = val;
 			break;
-		case 0x07af:
-			comp->tsconf.tsScrPal = val & 0x0f;
-			break;
+		case 0x07af: comp->tsconf.tsScrPal = val & 0x0f; break;
 		case 0x0faf:
 			comp->vid->brdcol = val;
 			comp->vid->nextbrd = val;
 			break;
 		case 0x10af:			// Page0
 			comp->tsconf.Page0 = val;
-			memSetBank(comp->mem,MEM_BANK0,MEM_RAM,val);
+			// memSetBank(comp->mem,MEM_BANK0,MEM_RAM,val);
+			tslMapMem(comp);
 			break;
 		case 0x11af:			// Page1
 			comp->tsconf.Page1 = val;
@@ -76,36 +74,16 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 			comp->tsconf.flag = val & 0x10;		// FM_EN
 			comp->tsconf.tsMapAdr = ((val & 0x0f) << 12);
 			break;
-		case 0x16af:
-			comp->tsconf.TMPage = val;
-			break;
-		case 0x17af:
-			comp->tsconf.T0GPage = val & 0xf8;
-			break;
-		case 0x18af:
-			comp->tsconf.T1GPage = val & 0xf8;
-			break;
-		case 0x19af:
-			comp->tsconf.SGPage = val & 0xf8;
-			break;
-		case 0x1aaf:
-			comp->dma.src.l = val;
-			break;
-		case 0x1baf:
-			comp->dma.src.h = val;
-			break;
-		case 0x1caf:
-			comp->dma.src.x = val;
-			break;
-		case 0x1daf:
-			comp->dma.dst.l = val;
-			break;
-		case 0x1eaf:
-			comp->dma.dst.h = val;
-			break;
-		case 0x1faf:
-			comp->dma.dst.x = val;
-			break;
+		case 0x16af: comp->tsconf.TMPage = val; break;
+		case 0x17af: comp->tsconf.T0GPage = val & 0xf8; break;
+		case 0x18af: comp->tsconf.T1GPage = val & 0xf8; break;
+		case 0x19af: comp->tsconf.SGPage = val & 0xf8; break;
+		case 0x1aaf: comp->dma.src.l = val; break;
+		case 0x1baf: comp->dma.src.h = val; break;
+		case 0x1caf: comp->dma.src.x = val; break;
+		case 0x1daf: comp->dma.dst.l = val; break;
+		case 0x1eaf: comp->dma.dst.h = val; break;
+		case 0x1faf: comp->dma.dst.x = val; break;
 		case 0x20af:
 			switch (val & 3) {
 				case 0: zxSetFrq(comp,3.5); break;
@@ -176,10 +154,9 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 		case 0x46af: comp->vid->tsconf.t1yl = val; break;
 		case 0x47af: comp->vid->tsconf.t1yh = val & 1; break;
 		case 0x7ffd:
+			if (p7FFD & 0x20) break;
 			p7FFD = val;
-			cnt = (val & 7) | ((val & 0xc0) >> 3);
-			if (p21AF & 0xc0) cnt &= 7;		// TODO: 00:512K, 01:128K, 1x:auto
-			memSetBank(comp->mem,MEM_BANK3,MEM_RAM,cnt & 0xff);
+			memSetBank(comp->mem,MEM_BANK3,MEM_RAM,val & 7);		// TODO: highmem block mode
 			comp->vid->curscr = (val & 8) ? 1 : 0;
 			tslMapMem(comp);
 			break;
@@ -273,7 +250,7 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 				default:
 					if ((port & 0x0001) == 0x0000) break;
 					printf("TSLab : in %.4X (%i)\n",port,bdiz);
-					//comp->flag |= ZX_BREAK;
+					comp->flag |= ZX_BREAK;
 					//assert(0);
 			}
 			break;
