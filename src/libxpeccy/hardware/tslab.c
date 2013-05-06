@@ -3,14 +3,28 @@
 #include <stdio.h>
 #include <assert.h>
 
+#define p7FFD comp->prt0
+#define pEFF7 comp->prt1
+#define p21AF comp->prt2
+
 void tslMapMem(ZXComp* comp) {
+// bank0 maping taken from Unreal(TSConf)
+	if (p21AF & 8)
+		if (p21AF & 4)
+			memSetBank(comp->mem,MEM_BANK0,MEM_RAM,comp->tsconf.Page0);
+		else
+			memSetBank(comp->mem,MEM_BANK0,MEM_RAM, (comp->tsconf.Page0 & 0xfc) | ((comp->dosen) ? 0 : 2) | ((p7FFD & 0x10) ? 0 : 1));
+	else
+		if (p21AF & 4)
+			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,((comp->dosen) ? 0 : 2) | ((p7FFD & 0x10) ? 1 : 0));
 }
 
 int tslRes[8] = {256,192,320,200,320,240,360,288};
 
 void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
-	if ((port & 0x01) == 0x00) {
+	if ((port & 0x0001) == 0x0000) {
 		comp->vid->brdcol = val & 7;
+		comp->vid->nextbrd = val & 7;
 		comp->beeplev = val & 0x10;
 		comp->tape->outsig = (val & 0x08) ? 1 : 0;
 	}
@@ -31,25 +45,48 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 		case 0x01af:
 			comp->vid->tsconf.vidPage = val;
 			break;
+		case 0x06af:			// TSConf
+			printf("tsconf %.2X\n",val);
+			comp->tsconf.TSConf = val;
+			break;
 		case 0x07af:
 			comp->tsconf.tsScrPal = val & 0x0f;
 			break;
+		case 0x0faf:
+			comp->vid->brdcol = val;
+			comp->vid->nextbrd = val;
+			break;
 		case 0x10af:			// Page0
-			comp->memMap[0].page = val;
+			comp->tsconf.Page0 = val;
 			memSetBank(comp->mem,MEM_BANK0,MEM_RAM,val);
 			break;
 		case 0x11af:			// Page1
+			comp->tsconf.Page1 = val;
 			memSetBank(comp->mem,MEM_BANK1,MEM_RAM,val);
 			break;
 		case 0x12af:			// Page2
+			comp->tsconf.Page2 = val;
 			memSetBank(comp->mem,MEM_BANK2,MEM_RAM,val);
 			break;
 		case 0x13af:			// Page3
+			comp->tsconf.Page3 = val;
 			memSetBank(comp->mem,MEM_BANK3,MEM_RAM,val);
 			break;
 		case 0x15af:
 			comp->tsconf.flag = val & 0x10;		// FM_EN
 			comp->tsconf.tsMapAdr = ((val & 0x0f) << 12);
+			break;
+		case 0x16af:
+			comp->tsconf.TMPage = val;
+			break;
+		case 0x17af:
+			comp->tsconf.T0GPage = val & 0xf8;
+			break;
+		case 0x18af:
+			comp->tsconf.T1GPage = val & 0xf8;
+			break;
+		case 0x19af:
+			comp->tsconf.SGPage = val & 0xf8;
 			break;
 		case 0x1aaf:
 			comp->dma.src.l = val;
@@ -76,17 +113,10 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 				case 2: zxSetFrq(comp,14.0); break;	// normal
 				case 3: zxSetFrq(comp,14.0); break;	// overclock
 			}
-
 			break;
-		case 0x21af:
-			comp->prt2 = val;
-			switch (val & 0x0c) {
-				case 0x00: memSetBank(comp->mem,MEM_BANK0,MEM_ROM,(comp->dosen ? 0 : 2) | (val & 1)); break;
-				case 0x04: memSetBank(comp->mem,MEM_BANK0,MEM_RAM,0); break;
-				case 0x08: memSetBank(comp->mem,MEM_BANK0,MEM_RAM,comp->memMap[0].page); break;
-				case 0x0c: memSetBank(comp->mem,MEM_BANK0,MEM_RAM,0); break;		// ?
-			}
-
+		case 0x21af:			// MemConfig
+			p21AF = val;
+//			printf("MemConfig %.2X\n",val);
 			tslMapMem(comp);
 			break;
 		case 0x26af:
@@ -137,41 +167,116 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 		case 0x29af:
 			comp->tsconf.FDDVirt = val;
 			break;
+		case 0x40af: comp->vid->tsconf.t0xl = val; break;
+		case 0x41af: comp->vid->tsconf.t0xh = val & 1; break;
+		case 0x42af: comp->vid->tsconf.t0yl = val; break;
+		case 0x43af: comp->vid->tsconf.t0yh = val & 1; break;
+		case 0x44af: comp->vid->tsconf.t1xl = val; break;
+		case 0x45af: comp->vid->tsconf.t1xh = val & 1; break;
+		case 0x46af: comp->vid->tsconf.t1yl = val; break;
+		case 0x47af: comp->vid->tsconf.t1yh = val & 1; break;
+		case 0x7ffd:
+			p7FFD = val;
+			cnt = (val & 7) | ((val & 0xc0) >> 3);
+			if (p21AF & 0xc0) cnt &= 7;		// TODO: 00:512K, 01:128K, 1x:auto
+			memSetBank(comp->mem,MEM_BANK3,MEM_RAM,cnt & 0xff);
+			comp->vid->curscr = (val & 8) ? 1 : 0;
+			tslMapMem(comp);
+			break;
 		case 0xeff7:
-			comp->prt1 = val;
+			pEFF7 = val;
 			break;
 		case 0xbff7:			// cmos.data
-			if (comp->prt1 & 0x80) comp->cmos.data[comp->cmos.adr] = val;
+			if (pEFF7 & 0x80) comp->cmos.data[comp->cmos.adr] = val;
 			break;
 		case 0xdff7:			// cmos.adr
-			if (comp->prt1 & 0x80) comp->cmos.adr = val;
+			if (pEFF7 & 0x80) comp->cmos.adr = val;
+			break;
+		case 0xbffd:
+		case 0xbefd:
+		case 0xfffd:
+			tsOut(comp->ts,port | 0x0100,val);
 			break;
 		default:
-			if ((port & 0x01) == 0x00) break;
-			printf("TSLab : out %.4X,%.2X\n",port,val);
-			//comp->flag |= ZX_BREAK;
-			assert(0);
+			switch (port & 0xff) {
+				case 0x1f:
+					if (bdiz) bdiOut(comp->bdi,FDC_COM,val);
+					break;
+				case 0x3f:
+					if (bdiz) bdiOut(comp->bdi,FDC_TRK,val);
+					break;
+				case 0x5f:
+					if (bdiz) bdiOut(comp->bdi,FDC_SEC,val);
+					break;
+				case 0x7f:
+					if (bdiz) bdiOut(comp->bdi,FDC_DATA,val);
+					break;
+				case 0xff:
+					if (bdiz) bdiOut(comp->bdi,BDI_SYS,val);
+					break;
+				case 0xfe:
+					break;
+				case 0xf7:			// WAS IST DAS?
+					break;
+				default:
+					if ((port & 0x0001) == 0x0000) break;
+					printf("TSLab : out %.4X,%.2X (%i)\n",port,val,bdiz);
+					//comp->flag |= ZX_BREAK;
+					assert(0);
+			}
+			break;
 	}
 }
 
 Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 	Z80EX_BYTE res = 0xff;
-	if ((port & 0x01) == 0x00)
+	if ((port & 0x0001) == 0x0000)
 		return keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00);
 	switch(port) {
 		case 0x00af:
 			res = 0;		// b6: PWR_UP
 			break;
+		case 0x12af:
+			res = comp->tsconf.Page2;
+			break;
+		case 0x13af:
+			res = comp->tsconf.Page3;
+			break;
 		case 0x27af:
 			res = 0;		// b7: DMA status
 			break;
 		case 0xbff7:
-			res = (comp->prt1 & 0x80) ? comp->cmos.data[comp->cmos.adr] : 0xff;
+			res = (pEFF7 & 0x80) ? comp->cmos.data[comp->cmos.adr] : 0xff;
+			break;
+		case 0xfffd:
+			res = tsIn(comp->ts,port);
 			break;
 		default:
-			printf("TSLab : in %.4X\n",port);
-			//comp->flag |= ZX_BREAK;
-			assert(0);
+			switch (port & 0xff) {
+				case 0x1f:
+					res = bdiz ? bdiIn(comp->bdi,FDC_STATE) : 0xff;
+					break;
+				case 0x3f:
+					res = bdiz ? bdiIn(comp->bdi,FDC_TRK) : 0xff;
+					break;
+				case 0x5f:
+					res = bdiz ? bdiIn(comp->bdi,FDC_SEC) : 0xff;
+					break;
+				case 0x7f:
+					res = bdiz ? bdiIn(comp->bdi,FDC_DATA) : 0xff;
+					break;
+				case 0xff:
+					res = bdiz ? bdiIn(comp->bdi,BDI_SYS) : 0xff;
+					break;
+				case 0xf6: res = 0xff; break;			// WAS IST DAS?
+				case 0xf7: res = 0xff; break;			// WAS IST DAS?
+				default:
+					if ((port & 0x0001) == 0x0000) break;
+					printf("TSLab : in %.4X (%i)\n",port,bdiz);
+					//comp->flag |= ZX_BREAK;
+					//assert(0);
+			}
+			break;
 	}
 	return res;
 }

@@ -383,9 +383,9 @@ void vidDrawTSL16(Video* vid) {
 		adr = (yscr << 8) | (xscr >> 1);
 		scrbyte = vid->mem->ram[(vid->tsconf.vidPage & 0xf8) + (adr >> 14)].data[adr & 0x3fff];
 		if (xscr & 1) {
-			col = ((scrbyte & 0x38)>>3) | ((scrbyte & 0x80)>>4);	// right pixel
+			col = scrbyte & 0x0f;			// right pixel
 		} else {
-			col = inkTab[scrbyte & 0x7f];				// left pixel
+			col = (scrbyte & 0xf0) >> 4 ;		// left pixel
 		}
 		vidPutDot(vid,col);
 	}

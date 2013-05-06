@@ -36,6 +36,12 @@ typedef struct {
 	int v;
 } VSize;
 
+#ifdef WORDS_BIG_ENDIAN
+	#define VPAIR(p,h,l) union{unsigned short p; struct {unsigned char h; unsigned char l;};}
+#else
+	#define VPAIR(p,h,l) union{unsigned short p; struct {unsigned char l; unsigned char h;};}
+#endif
+
 struct Video {
 	int flags;
 	int flash;
@@ -63,12 +69,16 @@ struct Video {
 	int intsz;
 	struct {
 		unsigned char vidPage;	// 1st video page
-		int xOffset;		// offsets of screen corner
-		int yOffset;
 		int xPos;		// position of screen @ monitor [32|12] x [44|24|0]
 		int yPos;
 		int xSize;		// size of tsconf screen ([320|360] x [200|240|288])
 		int ySize;
+		VPAIR(xOffset,soxh,soxl);		// offsets of screen corner
+		VPAIR(yOffset,soyh,soyl);
+		VPAIR(T0XOffset,t0xh,t0xl);
+		VPAIR(T0YOffset,t0yh,t0yl);
+		VPAIR(T1XOffset,t1xh,t1xl);
+		VPAIR(T1YOffset,t1yh,t1yl);
 	} tsconf;
 	unsigned char font[0x800];	// ATM text mode font
 	void(*callback)(struct Video*);
