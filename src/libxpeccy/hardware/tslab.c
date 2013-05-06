@@ -16,10 +16,13 @@ void tslMapMem(ZXComp* comp) {
 			memSetBank(comp->mem,MEM_BANK0,MEM_RAM, comp->tsconf.Page0 + (((comp->dosen) ? 0 : 2) | ((p7FFD & 0x10) ? 0 : 1)));
 	else
 		if (p21AF & 4)
-			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,((comp->dosen) ? 0 : 2) | ((p7FFD & 0x10) ? 1 : 0));
+			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,comp->tsconf.Page0 & 3);
+		else
+			memSetBank(comp->mem,MEM_BANK0,MEM_ROM, ((p7FFD & 0x10) ? 1 : 0) | (comp->dosen ? 0 : 2));
 }
 
-int tslRes[8] = {256,192,320,200,320,240,360,288};
+int tslXRes[4] = {256,320,320,260};
+int tslYRes[4] = {192,200,240,288};
 
 void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 	if ((port & 0x0001) == 0x0000) {
@@ -32,8 +35,8 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 	int cnt,sadr,dadr;
 	switch (port) {
 		case 0x00af:
-			comp->vid->tsconf.xSize = tslRes[(val & 0xc0) >> 5];
-			comp->vid->tsconf.ySize = tslRes[((val & 0xc0) >> 5) + 1];
+			comp->vid->tsconf.xSize = tslXRes[(val & 0xc0) >> 6];
+			comp->vid->tsconf.ySize = tslYRes[(val & 0xc0) >> 6];
 			printf("vmode %.2X\n",val & 7);
 			switch(val & 7) {
 				case 0: vidSetMode(comp->vid,VID_NORMAL); break;
@@ -94,6 +97,10 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 			break;
 		case 0x21af:			// MemConfig
 			p21AF = val;
+			if (val & 1)
+				p7FFD |= 0x10;
+			else
+				p7FFD &= ~0x10;
 //			printf("MemConfig %.2X\n",val);
 			tslMapMem(comp);
 			break;
