@@ -26,8 +26,8 @@ int tslYRes[4] = {192,200,240,288};
 
 void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 	if ((port & 0x0001) == 0x0000) {
-		comp->vid->brdcol = val & 7;
-		comp->vid->nextbrd = val & 7;
+		comp->vid->brdcol = 0xf0 | (val & 7);
+		comp->vid->nextbrd = comp->vid->brdcol;
 		comp->beeplev = val & 0x10;
 		comp->tape->outsig = (val & 0x08) ? 1 : 0;
 	}
@@ -41,20 +41,36 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 			comp->vid->tsconf.yPos = comp->vid->sync.v + ((comp->vid->full.v - comp->vid->sync.v - comp->vid->tsconf.ySize) >> 1);
 			printf("vmode %.2X\n",val & 7);
 			switch(val & 7) {
-				case 0: vidSetMode(comp->vid,VID_NORMAL); break;
+				case 0: vidSetMode(comp->vid,VID_TSL_NORMAL); break;
 				case 1: vidSetMode(comp->vid,VID_TSL_16); break;
 				case 2: vidSetMode(comp->vid,VID_TSL_256); break;
 				case 3: break;			// 1 page text mode
 				default: vidSetMode(comp->vid,VID_UNKNOWN); break;
 			}
 			break;
-		case 0x01af: comp->vid->tsconf.vidPage = val; break;
+		case 0x01af:
+			comp->vid->tsconf.vidPage = val;
+			printf("vidPage = %.2X\n",val);
+			break;
+		case 0x02af:
+			comp->vid->tsconf.soxl = val;
+			break;
+		case 0x03af:
+			comp->vid->tsconf.soxh = val;
+			break;
+		case 0x04af:
+			comp->vid->tsconf.soyl = val;
+			break;
+		case 0x05af:
+			comp->vid->tsconf.soyh = val;
+			break;
 		case 0x06af:			// TSConf
 			printf("tsconf %.2X\n",val);
 			comp->vid->tsconf.tconfig = val;
 			break;
 		case 0x07af:
-			comp->tsconf.tsScrPal = val & 0x0f;
+			comp->vid->tsconf.scrPal = (val & 0x0f) << 4;
+			printf("scrPal = %.2X\n",comp->vid->tsconf.scrPal);
 			comp->vid->tsconf.T0Pal76 = (val & 0x30) << 2;
 			comp->vid->tsconf.T1Pal76 = (val & 0xc0);
 			break;
@@ -86,7 +102,7 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 		case 0x16af: comp->vid->tsconf.TMPage = val; break;
 		case 0x17af: comp->vid->tsconf.T0GPage = val & 0xf8; break;
 		case 0x18af: comp->vid->tsconf.T1GPage = val & 0xf8; break;
-		case 0x19af: comp->tsconf.SGPage = val & 0xf8; break;
+		case 0x19af: comp->vid->tsconf.SGPage = val & 0xf8; break;
 		case 0x1aaf: comp->dma.src.l = val; break;
 		case 0x1baf: comp->dma.src.h = val; break;
 		case 0x1caf: comp->dma.src.x = val; break;
@@ -109,6 +125,14 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 				p7FFD &= ~0x10;
 //			printf("MemConfig %.2X\n",val);
 			tslMapMem(comp);
+			break;
+		case 0x22af:
+			break;
+		case 0x23af:
+			break;
+		case 0x24af:
+			break;
+		case 0x25af:
 			break;
 		case 0x26af:
 			if (val == 0) val = 1;
@@ -157,6 +181,8 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 			break;
 		case 0x29af:
 			comp->tsconf.FDDVirt = val;
+			break;
+		case 0x2aaf:
 			break;
 		case 0x40af: comp->vid->tsconf.t0xl = val; break;
 		case 0x41af: comp->vid->tsconf.t0xh = val & 1; break;

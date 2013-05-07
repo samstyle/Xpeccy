@@ -144,7 +144,8 @@ void memwr(CPUCONT Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 		comp->vid->font[adr & 0x7ff] = val;
 	}
 	if ((comp->hw->type == HW_TSLAB) && (comp->tsconf.flag & 0x10) && ((adr & 0xf000) == comp->tsconf.tsMapAdr)) {
-		comp->tsconf.tsAMem[adr & 0xfff] = val;
+		comp->vid->tsconf.tsAMem[adr & 0xfff] = val;
+		if ((adr & 0xfff) < 0x200) comp->flag |= ZX_PALCHAN;
 	}
 	memWr(comp->mem,adr,val);
 	if (comp->mem->flags & MEM_BRK_WRITE) {
@@ -376,10 +377,10 @@ void zxReset(ZXComp* comp,int wut) {
 			comp->prt1 = 0x03;	// vid.mode 011
 			break;
 		case HW_TSLAB:
-			comp->dosen = 1;//(resto & 2) ? 0 : 1;	// 0,1 = shadow,dos
-			comp->prt0 = 0x00;//(resto & 1) ? 0x00 : 0x10;	// 2,3 = bas128,bas48
-			comp->prt2 = 4;
+			comp->dosen = (resto & 2) ? 0 : 1;	// 0,1 = shadow,dos
+			comp->prt0 = (resto & 1) ? 0x00 : 0x10;	// 2,3 = bas128,bas48
 			comp->tsconf.Page0 = 0;
+			comp->vid->tsconf.tconfig = 0;
 			break;
 		default:
 			comp->prt0 = ((resto & 1) << 4);

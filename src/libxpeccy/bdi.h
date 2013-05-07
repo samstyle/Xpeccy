@@ -60,9 +60,12 @@ extern "C" {
 #define	FDC_WP		(1<<6)	// s3: write protect
 #define	FDC_FT		(1<<7)	// s3: drive failure ???
 
+extern int fdcFlag;
+
+#define	FDC_FAST	1
+
 typedef struct {
 	int type;		// FDC_NONE | FDC_93 | FDC_765
-	int turbo;
 	int idle;
 	int mr;
 	int crchi;

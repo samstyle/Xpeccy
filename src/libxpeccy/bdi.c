@@ -13,6 +13,7 @@
 #define	TRBDELAY	MSDELAY * 3
 
 int pcatch = 0;	// 1 when bdi takes i/o request
+int fdcFlag = 0;
 
 // FDC
 
@@ -1098,8 +1099,8 @@ void v01(FDC* p) {p1 = *(p->wptr++); p->wptr = vgwork[p1];}
 void v02(FDC* p) {p1 = *(p->wptr++); p->sp = p->wptr; p->wptr = vgwork[p1];}
 void v03(FDC* p) {p->wptr = p->sp;}
 
-void v10(FDC* p) {p->count += p->turbo ? TRBDELAY : delays[p->com & 3];}
-void v11(FDC* p) {p1 = *(p->wptr++); p->count += p->turbo ? TRBDELAY : delays[p1];}
+void v10(FDC* p) {p->count += (fdcFlag & FDC_FAST) ? TRBDELAY : delays[p->com & 3];}
+void v11(FDC* p) {p1 = *(p->wptr++); p->count += (fdcFlag & FDC_FAST) ? TRBDELAY : delays[p1];}
 
 void v20(FDC* p) {p->mode = *(p->wptr++);}
 void v21(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (p->mode == p1) p->wptr += (char)dlt;}
@@ -1210,12 +1211,12 @@ void vAB(FDC* p) {
 	dlt = *(p->wptr++);
 	while (p->fptr->field != 0) {
 		if (flpNext(p->fptr,p->side)) {p->ic--; p->t = 0;}
-		if (!p->turbo) p->count += BYTEDELAY;
+		if (~fdcFlag & FDC_FAST) p->count += BYTEDELAY;
 		if (p->ic == 0) return;
 	}
 	while (p->fptr->field != 1) {
 		if (flpNext(p->fptr,p->side)) {p->ic--; p->t = 0;}
-		if (!p->turbo) p->count += BYTEDELAY;
+		if (~fdcFlag & FDC_FAST) p->count += BYTEDELAY;
 		if (p->ic == 0) return;
 	}
 	p->wptr += (char)dlt;	// success
@@ -1224,12 +1225,12 @@ void vAC(FDC* p) {
 	dlt = *(p->wptr++);
 	while (p->fptr->field != 0) {
 		if (flpNext(p->fptr,p->side)) {p->ic--; p->t = 0;}
-		if (!p->turbo) p->count += BYTEDELAY;
+		if (~fdcFlag & FDC_FAST) p->count += BYTEDELAY;
 		if (p->ic == 0) return;
 	}
 	while ((p->fptr->field != 2) && (p->fptr->field != 3)) {
 		if (flpNext(p->fptr,p->side)) {p->ic--; p->t = 0;}
-		if (!p->turbo) p->count += BYTEDELAY;
+		if (~fdcFlag & FDC_FAST) p->count += BYTEDELAY;
 		if (p->ic == 0) return;
 	}
 	p->wptr += (char)dlt;	// success
@@ -1293,7 +1294,7 @@ void vE0(FDC* p) {
 	if (p1 == 0) {
 		p->fptr->flag &= ~(FLP_MOTOR | FLP_HEAD);
 	} else {
-		if (!(p->fptr->flag & FLP_HEAD)) p->count += p->turbo ? TRBDELAY : delays[5];
+		if (!(p->fptr->flag & FLP_HEAD)) p->count += (fdcFlag & FDC_FAST) ? TRBDELAY : delays[5];
 		p->fptr->flag |= (FLP_MOTOR | FLP_HEAD);
 	}
 }

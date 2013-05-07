@@ -102,9 +102,8 @@ struct ZXComp {
 	} dma;
 	struct {
 		int flag;
-		unsigned char tsScrPal;
-		unsigned char tsAMem[0x1000];	// ALTERA mem: 512 bytes TSConf palette, ... (tiles,sprites)
-		unsigned short tsMapAdr;	// adr for palette mapping
+//		unsigned char tsScrPal;
+		unsigned short tsMapAdr;	// adr for altera mapping
 		unsigned char FDDVirt;
 		unsigned char Page0;
 		unsigned char Page1;
@@ -113,7 +112,7 @@ struct ZXComp {
 //		unsigned char TMPage;		// tile map page
 //		unsigned char T0GPage;		// tile 0 graphics page
 //		unsigned char T1GPage;		// tile 1 graphics page
-		unsigned char SGPage;		// sprite graphics page
+//		unsigned char SGPage;		// sprite graphics page
 	} tsconf;
 	CMOS cmos;
 	unsigned char dosen;		// active trdos (dosen and b4,prt0 sets rompart)

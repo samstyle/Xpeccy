@@ -249,27 +249,43 @@ QWidget* emulWidget() {
 	return (QWidget*)mainWin;
 }
 
+unsigned char tslCoLevs[32] = {
+	0,11,21,32,42,53,64,74,
+	85,95,106,117,127,138,148,159,
+	170,180,191,201,212,223,233,244,
+	255,255,255,255,255,255,255,255
+};
+
 void emulSetPalette(ZXComp* comp,unsigned char lev) {
 	int i;
 	unsigned char col;
-	unsigned char r[16],g[16],b[16];	// common zx-colors
+	unsigned char r[256],g[256],b[256];	// common zx-colors
 	if (lev == 0) lev = optGetInt(OPT_BRGLEV);
 	qPal.clear();
 	qPal.resize(256);
-	for(i = 0; i < 16; i++) {
-		col = comp->colMap[i];
-		b[i] = ((col & 0x10) ? (0xff - lev) : 0x00) + ((col & 0x01) ? lev : 0x00);
-		r[i] = ((col & 0x20) ? (0xff - lev) : 0x00) + ((col & 0x02) ? lev : 0x00);
-		g[i] = ((col & 0x40) ? (0xff - lev) : 0x00) + ((col & 0x04) ? lev : 0x00);
-		if (vidFlag & VF_GREY) {
-			col = 0.299 * r[i] + 0.587 * g[i] + 0.114 * b[i];
-			r[i] = b[i] = g[i] = col;
+	if (comp->hw->type == HW_TSLAB) {
+		for (i = 0; i < 256; i++) {
+			r[i] = tslCoLevs[(comp->vid->tsconf.tsAMem[(i << 1) + 1] & 0x7c) >> 2];
+			g[i] = tslCoLevs[((comp->vid->tsconf.tsAMem[(i << 1) + 1] & 3) << 3) | (comp->vid->tsconf.tsAMem[i << 1] & 0xe0) >> 5];
+			b[i] = tslCoLevs[(comp->vid->tsconf.tsAMem[i << 1] & 0x1f)];
+			qPal[i] = qRgb(r[i],g[i],b[i]);
 		}
-	}
-	for(i = 0; i < 256; i++) {
-		qPal[i] = qRgb((r[i & 0x0f] * 0.5) + (r[(i & 0xf0) >> 4] * 0.5),
-				(g[i & 0x0f] * 0.5) + (g[(i & 0xf0) >> 4] * 0.5),
-				(b[i & 0x0f] * 0.5) + (b[(i & 0xf0) >> 4] * 0.5));
+	} else {
+		for(i = 0; i < 16; i++) {
+			col = comp->colMap[i];
+			b[i] = ((col & 0x10) ? (0xff - lev) : 0x00) + ((col & 0x01) ? lev : 0x00);
+			r[i] = ((col & 0x20) ? (0xff - lev) : 0x00) + ((col & 0x02) ? lev : 0x00);
+			g[i] = ((col & 0x40) ? (0xff - lev) : 0x00) + ((col & 0x04) ? lev : 0x00);
+			if (vidFlag & VF_GREY) {
+				col = 0.299 * r[i] + 0.587 * g[i] + 0.114 * b[i];
+				r[i] = b[i] = g[i] = col;
+			}
+		}
+		for(i = 0; i < 256; i++) {
+			qPal[i] = qRgb((r[i & 0x0f] * 0.5) + (r[(i & 0xf0) >> 4] * 0.5),
+				       (g[i & 0x0f] * 0.5) + (g[(i & 0xf0) >> 4] * 0.5),
+				       (b[i & 0x0f] * 0.5) + (b[(i & 0xf0) >> 4] * 0.5));
+		}
 	}
 #ifndef XQTPAINT
 	for (i=0; i<256; i++) {
@@ -812,20 +828,35 @@ void doSDLEvents() {
 							break;
 #ifdef ISDEBUG
 						case SDLK_F1:			// TSConf: save altera mem (4K), TMPage, T0GPage, T1GPage, SGPage
+							printf("alt-f1\n");
 							file.open("/home/sam/altera",std::ifstream::out);
-							file.write((char*)zx->tsconf.tsAMem,0x1000);
+							file.write((char*)zx->vid->tsconf.tsAMem,0x1000);
 							file.close();
 							file.open("/home/sam/TMPage",std::ofstream::binary);
 							file.write((char*)zx->mem->ram[zx->vid->tsconf.TMPage].data,0x4000);
 							file.close();
 							file.open("/home/sam/T0GPage",std::ofstream::binary);
 							file.write((char*)zx->mem->ram[zx->vid->tsconf.T0GPage].data,0x4000);
+							file.write((char*)zx->mem->ram[zx->vid->tsconf.T0GPage+1].data,0x4000);
+							file.write((char*)zx->mem->ram[zx->vid->tsconf.T0GPage+2].data,0x4000);
+							file.write((char*)zx->mem->ram[zx->vid->tsconf.T0GPage+3].data,0x4000);
+							file.write((char*)zx->mem->ram[zx->vid->tsconf.T0GPage+4].data,0x4000);
+							file.write((char*)zx->mem->ram[zx->vid->tsconf.T0GPage+5].data,0x4000);
+							file.write((char*)zx->mem->ram[zx->vid->tsconf.T0GPage+6].data,0x4000);
+							file.write((char*)zx->mem->ram[zx->vid->tsconf.T0GPage+7].data,0x4000);
 							file.close();
 							file.open("/home/sam/T1GPage",std::ofstream::binary);
 							file.write((char*)zx->mem->ram[zx->vid->tsconf.T1GPage].data,0x4000);
+							file.write((char*)zx->mem->ram[zx->vid->tsconf.T1GPage+1].data,0x4000);
+							file.write((char*)zx->mem->ram[zx->vid->tsconf.T1GPage+2].data,0x4000);
+							file.write((char*)zx->mem->ram[zx->vid->tsconf.T1GPage+3].data,0x4000);
+							file.write((char*)zx->mem->ram[zx->vid->tsconf.T1GPage+4].data,0x4000);
+							file.write((char*)zx->mem->ram[zx->vid->tsconf.T1GPage+5].data,0x4000);
+							file.write((char*)zx->mem->ram[zx->vid->tsconf.T1GPage+6].data,0x4000);
+							file.write((char*)zx->mem->ram[zx->vid->tsconf.T1GPage+7].data,0x4000);
 							file.close();
 							file.open("/home/sam/SGPage",std::ofstream::binary);
-							file.write((char*)zx->mem->ram[zx->tsconf.SGPage].data,0x4000);
+							file.write((char*)zx->mem->ram[zx->vid->tsconf.SGPage].data,0x4000);
 							file.close();
 							showInfo("Fukken saved");
 							break;

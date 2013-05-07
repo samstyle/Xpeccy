@@ -213,7 +213,7 @@ int prfLoad(std::string nm) {
 					if (pnam == "C") setDiskString(comp,comp->bdi->fdc->flop[2],pval);
 					if (pnam == "D") setDiskString(comp,comp->bdi->fdc->flop[3],pval);
 					if (pnam == "type") comp->bdi->fdc->type = atoi(pval.c_str());
-					if (pnam == "fast") comp->bdi->fdc->turbo = str2bool(pval);
+//					if (pnam == "fast") comp->bdi->fdc->turbo = str2bool(pval);
 					break;
 				case PS_MACHINE:
 					if (pnam == "current") prf->hwName = pval;
@@ -280,7 +280,7 @@ int prfLoad(std::string nm) {
 		}
 	}
 
-	comp->bdi->fdc->turbo = optGetFlag(OF_FASTDISK) ? 1 : 0;
+	// comp->bdi->fdc->turbo = optGetFlag(OF_FASTDISK) ? 1 : 0;
 
 	ideSetPassport(comp->ide,IDE_MASTER,masterPass);
 	ideSetPassport(comp->ide,IDE_SLAVE,slavePass);
@@ -371,7 +371,7 @@ int prfSave(std::string nm) {
 
 	file << "\n[DISK]\n\n";
 	file << "type = " << int2str(comp->bdi->fdc->type) << "\n";
-	file << "fast = " << YESNO(comp->bdi->fdc->turbo) << "\n";
+//	file << "fast = " << YESNO(comp->bdi->fdc->turbo) << "\n";
 	file << "A = " << getDiskString(comp->bdi->fdc->flop[0]).c_str() << "\n";
 	file << "B = " << getDiskString(comp->bdi->fdc->flop[1]).c_str() << "\n";
 	file << "C = " << getDiskString(comp->bdi->fdc->flop[2]).c_str() << "\n";

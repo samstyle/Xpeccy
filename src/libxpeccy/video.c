@@ -374,10 +374,20 @@ void vidDrawATMhwmc(Video* vid) {
 
 void vidTSPut(Video* vid, unsigned char* ptr, int ofs) {
 	adr = vid->tsconf.xPos - vid->lcut.h;
+	ptr += (vidFlag & VF_DOUBLE) ? 16 : 8;
+	if (adr > 0) {
+		ptr += adr;
+		if (vidFlag & VF_DOUBLE) ptr += adr;
+	}
 	for (xscr = 0; xscr < vid->tsconf.xSize; xscr++) {
-		if ((adr >= 0) && (adr < vid->vsze.h) && (vid->tsconf.line[ofs])) {		// visible & not transparent
-			*(ptr++) = vid->tsconf.line[ofs & 0x1ff];				// & 1FF for cycling to begin of line
-			if (vidFlag & VF_DOUBLE) *(ptr++) = vid->tsconf.line[ofs & 0x1ff];
+		if ((adr >= 0) && (adr < vid->vsze.h)) {
+			if (vid->tsconf.line[ofs]) {		// visible & not transparent
+				*(ptr++) = vid->tsconf.line[ofs & 0x1ff];				// & 1FF for cycling to begin of line
+				if (vidFlag & VF_DOUBLE) *(ptr++) = vid->tsconf.line[ofs & 0x1ff];
+			} else {
+				ptr++;
+				if (vidFlag & VF_DOUBLE) ptr++;
+			}
 		}
 		adr++;
 		ofs++;
@@ -385,30 +395,28 @@ void vidTSPut(Video* vid, unsigned char* ptr, int ofs) {
 }
 
 int fadr;
-VPAIR(tile,th,tl) t;
+int tile;
+int sadr;	// adr in sprites dsc
+unsigned char* mptr;
 
 #include <assert.h>
 
 void vidTSTiles(Video* vid, int lay) {
 	memset(vid->tsconf.line,0x00,512);
 	yscr = vid->y - vid->tsconf.yPos + (lay ? vid->tsconf.T1YOffset : vid->tsconf.T0YOffset);	// line in TMap
-	adr = (yscr << 8) | (lay ? 0x80 : 0x00);		// start of TMap line
+	adr = ((yscr & 0xf8) << 5) | (lay ? 0x80 : 0x00);		// start of TMap line
 	xscr = 0;						// pos in line buf
 	for (int i = 0; i < 128; i += 2) {
-		t.tl = vid->mem->ram[vid->tsconf.TMPage].data[adr + i];
-		t.th = vid->mem->ram[vid->tsconf.TMPage].data[adr + i + 1];	// tile = 16 bit tile dsc
-		if ((t.tile & 0x0fff) || (vid->tsconf.tconfig & (lay ? 8 : 4))) {		// tile num !0 or 0 enabled
-			// printf("GPage = %.2X\n",lay ? vid->tsconf.T1GPage : vid->tsconf.T0GPage); assert(0);
+		tile = vid->mem->ram[vid->tsconf.TMPage].data[adr + i] | (vid->mem->ram[vid->tsconf.TMPage].data[adr + i + 1] << 8);	// tile = 16 bit tile dsc
+		if ((tile & 0x0fff) || (vid->tsconf.tconfig & (lay ? 8 : 4))) {		// tile num !0 or 0 enabled
 			fadr = (lay ? vid->tsconf.T1GPage : vid->tsconf.T0GPage) << 14;
-			//printf("page fadr = %X\n",fadr);
-			fadr += ((t.tile & 0xfc0) << 5) | ((yscr & 7) << 8) | ((t.tile & 0x3f) << 2);	// full addr of row of this tile
-			//printf("full fadr = %X\n",fadr); assert(0);
+			fadr += ((tile & 0xfc0) << 5) | ((yscr & 7) << 8) | ((tile & 0x3f) << 2);	// full addr of row of this tile
 			for (int j = 0; j < 4; j++) {
-				//col = (lay ? vid->tsconf.T1Pal76 : vid->tsconf.T0Pal76) | (th & 0x30);	// palette num
-				col = (vid->mem->ram[fadr >> 14].data[fadr & 0x3fff] & 0xf0) >> 4;	// left pixel
+				col = (lay ? vid->tsconf.T1Pal76 : vid->tsconf.T0Pal76) | ((tile >> 8) & 0x30);	// palette num
+				col |= (vid->mem->ram[fadr >> 14].data[fadr & 0x3fff] & 0xf0) >> 4;	// left pixel
 				vid->tsconf.line[xscr++] = col;
-				//col &= 0xf0;
-				col = vid->mem->ram[fadr >> 14].data[fadr & 0x3fff] & 0x0f;		// right pixel
+				col &= 0xf0;
+				col |= vid->mem->ram[fadr >> 14].data[fadr & 0x3fff] & 0x0f;		// right pixel
 				vid->tsconf.line[xscr++] = col;
 				fadr++;
 			}
@@ -418,19 +426,110 @@ void vidTSTiles(Video* vid, int lay) {
 	}
 }
 
+void vidTSSprites(Video* vid) {
+	memset(vid->tsconf.line,0x00,512);
+	yscr = vid->y - vid->tsconf.yPos;					// line on screen
+	while (sadr < (0x1000 - 6)) {
+		mptr = &vid->tsconf.tsAMem[sadr];
+		if (mptr[1] & 0x20) {					// ACT
+			adr = mptr[0] | ((mptr[1] & 1) << 8);			// Ypos of spr
+//			printf("current line : %i\n",yscr);
+//			printf("%.4X active sprite\n",sadr);
+//			printf("Ypos = %i\n",adr);
+			xscr = ((mptr[1] & 0x0e) + 2) << 2;			// Ysize - 000:8; 001:16; 010:24; ...
+//			printf("Ysize = %i\n",xscr);
+			if (((yscr - adr) & 0x1ff) < xscr) {			// if sprite visible on current line
+//				printf("is visible\n");
+				yscr -= adr;					// line inside sprite;
+//				printf("line in sprite %i\n",yscr);
+				tile = mptr[4] | ((mptr[5] & 0x0f) << 8);	// pos of 1st tile
+//				printf("corner tile %.4X\n",tile);
+				tile += ((yscr & 0x1f8) << 3);			// shift to current tile line
+//				printf("current line tile %.4X\n",tile);
+				fadr = vid->tsconf.SGPage << 14;
+				fadr += ((tile & 0xfc0) << 5) | ((yscr & 7) << 8) | ((tile & 0x3f) << 2);	// fadr = adr of pix line to put in buf
+//				printf("fadr = %X\n",fadr);
+				adr = mptr[2] | ((mptr[3] & 1) << 8);		// Xpos
+				for (xscr = ((mptr[3] & 0x0e) + 2) << 2; xscr > 0; xscr-=2) {
+					col = (mptr[5] & 0xf0);
+					col |= ((vid->mem->ram[fadr >> 14].data[fadr & 0x3fff] & 0xf0) >> 4);	// left pixel;
+					vid->tsconf.line[adr++] = col;
+					col &= 0xf0;
+					col |= (vid->mem->ram[fadr >> 14].data[fadr & 0x3fff] & 0x0f);		// right pixel
+					vid->tsconf.line[adr++] = col;
+					fadr++;
+				}
+//				assert(0);
+			}
+		}
+		if (mptr[sadr + 1] & 0x40) break;		// LEAP
+		sadr += 6;
+	}
+	sadr += 6;
+}
+
 void vidTSRender(Video* vid, unsigned char* ptr) {
-//	memset(vid->tsconf.line,0x00,512);
+	if (vid->y < vid->tsconf.yPos) return;
+	if (vid->y >= (vid->tsconf.yPos + vid->tsconf.ySize)) return;
 // prepare layers in VID->LINE & out visible part to PTR
+	sadr = 0x200;
 // T0
 	if (vid->tsconf.tconfig & 0x20) {
 		vidTSTiles(vid,0);
 		vidTSPut(vid,ptr,vid->tsconf.T0XOffset);
 	}
+// S0
+			if (vid->tsconf.tconfig & 0x80) {
+				vidTSSprites(vid);
+				vidTSPut(vid,ptr,0);
+			}
 // T1
 	if (vid->tsconf.tconfig & 0x40) {
 		vidTSTiles(vid,1);
 		vidTSPut(vid,ptr,vid->tsconf.T1XOffset);
 	}
+// S1
+	if (vid->tsconf.tconfig & 0x80) {
+		vidTSSprites(vid);
+		vidTSPut(vid,ptr,0);
+	}
+// S2
+	if (vid->tsconf.tconfig & 0x80) {
+		vidTSSprites(vid);
+		vidTSPut(vid,ptr,0);
+	}
+
+}
+
+// tsconf normal screen (separated 'cuz of palette)
+
+void vidDrawTSLNormal(Video* vid) {
+	if ((vid->y < vid->bord.v) || (vid->y > vid->bord.v + 191)) {
+		col = vid->brdcol;
+	} else {
+		xscr = vid->x - vid->bord.h;
+		yscr = vid->y - vid->bord.v;
+		if ((xscr & 7) == 4) {
+			adr = ((yscr & 0xc0) << 5) | ((yscr & 7) << 8) | ((yscr & 0x38) << 2) | (((xscr + 4) & 0xf8) >> 3);
+			nxtbyte = vid->mem->ram[vid->curscr ? 7 :5].data[adr];
+		}
+		if ((vid->x < vid->bord.h) || (vid->x > vid->bord.h + 255)) {
+			col = vid->brdcol;
+		} else {
+			if ((xscr & 7) == 0) {
+				scrbyte = nxtbyte;
+				adr = 0x1800 | ((yscr & 0xc0) << 2) | ((yscr & 0x38) << 2) | (((xscr + 4) & 0xf8) >> 3);
+				vid->atrbyte = vid->mem->ram[vid->curscr ? 7 :5].data[adr];
+				if ((vid->atrbyte & 0x80) && vid->flash) scrbyte ^= 0xff;
+				ink = inkTab[vid->atrbyte & 0x7f];
+				pap = papTab[vid->atrbyte & 0x7f];
+			}
+			col = (scrbyte & 0x80) ? ink : pap;
+			scrbyte <<= 1;
+		}
+	}
+	*(vid->scrptr++) = vid->tsconf.scrPal | col;
+	if (vidFlag & VF_DOUBLE) *(vid->scrptr++) = vid->tsconf.scrPal | col;
 }
 
 // tsconf 4bpp
@@ -439,7 +538,7 @@ void vidDrawTSL16(Video* vid) {
 	xscr = vid->x - vid->tsconf.xPos - vid->sync.h;
 	yscr = vid->y - vid->tsconf.yPos - vid->sync.v;
 	if ((xscr < 0) || (xscr > vid->tsconf.xSize) || (yscr < 0) || (yscr >= vid->tsconf.ySize)) {
-		vidPutDot(vid,vid->brdcol);
+		col = vid->brdcol;
 	} else {
 		xscr += (vid->tsconf.xOffset & 0x01ff);
 		yscr += (vid->tsconf.yOffset & 0x01ff);
@@ -450,8 +549,9 @@ void vidDrawTSL16(Video* vid) {
 		} else {
 			col = (scrbyte & 0xf0) >> 4 ;		// left pixel
 		}
-		vidPutDot(vid,col);
 	}
+	*(vid->scrptr++) = vid->tsconf.scrPal | col;
+	if (vidFlag & VF_DOUBLE) *(vid->scrptr++) = vid->tsconf.scrPal | col;
 }
 
 // tsconf 8bpp
@@ -483,6 +583,7 @@ void vidSetMode(Video* vid, int mode) {
 		case VID_ATM_EGA: vid->callback = &vidDrawATMega; break;
 		case VID_ATM_TEXT: vid->callback = &vidDrawATMtext; break;
 		case VID_ATM_HWM: vid->callback = &vidDrawATMhwmc; break;
+		case VID_TSL_NORMAL: vid->callback = &vidDrawTSLNormal; break;
 		case VID_TSL_16: vid->callback = &vidDrawTSL16; break;
 		case VID_TSL_256: vid->callback = &vidDrawTSL256; break;
 		default: vid->callback = &vidDrawUnknown; break;

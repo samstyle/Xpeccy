@@ -101,7 +101,7 @@ endif()
 set(CMAKE_C_FLAGS "-std=gnu99 -Wall -O2")
 set(CMAKE_CXX_FLAGS "-Wall -O2")
 set(CMAKE_C_FLAGS_DEBUG "-g -DISDEBUG")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -DISDEBUG")
+set(CMAKE_CXX_FLAGS_DEBUG "-DISDEBUG")
 
 find_package(Qt4 REQUIRED QtCore QtGui)
 

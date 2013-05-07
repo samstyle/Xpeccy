@@ -30,6 +30,7 @@ extern "C" {
 #define	VID_EVO_TEXT	7
 #define VID_TSL_16	8	// TSConf 4bpp
 #define	VID_TSL_256	9	// TSConf 8bpp
+#define	VID_TSL_NORMAL	10	// TSConf common screen
 #define	VID_UNKNOWN	0xff
 
 typedef struct {
@@ -69,26 +70,29 @@ struct Video {
 	Memory* mem;
 	int intsz;
 	struct {
-		unsigned char vidPage;	// 1st video page
-		int xPos;		// position of screen @ monitor [32|12] x [44|24|0]
+		unsigned char vidPage;		// 1st video page
+		int xPos;			// position of screen @ monitor [32|12] x [44|24|0]
 		int yPos;
-		int xSize;		// size of tsconf screen ([320|360] x [200|240|288])
+		int xSize;			// size of tsconf screen ([320|360] x [200|240|288])
 		int ySize;
 		unsigned char tconfig;		// port 06AF
 		unsigned char TMPage;		// tiles map page
 		unsigned char T0GPage;		// lay 0 graphics
 		unsigned char T1GPage;		// lay 1 graphics
-		unsigned char T0Pal76;		// b7.6 of palete (07AF)
+		unsigned char SGPage;		// sprites graphics
+		unsigned char T0Pal76;		// b7.6 of tiles palete (07AF)
 		unsigned char T1Pal76;
-		VPAIR(xOffset,soxh,soxl);		// offsets of screen corner
+		unsigned char scrPal;		// b7..4: bitmap palete
+		VPAIR(xOffset,soxh,soxl);	// offsets of screen corner
 		VPAIR(yOffset,soyh,soyl);
 		VPAIR(T0XOffset,t0xh,t0xl);	// tile 0 offsets
 		VPAIR(T0YOffset,t0yh,t0yl);
 		VPAIR(T1XOffset,t1xh,t1xl);	// tile 1 offsets
 		VPAIR(T1YOffset,t1yh,t1yl);
 		unsigned char line[512];	// buffer for render sprites & tiles
+		unsigned char tsAMem[0x1000];	// ALTERA mem: 512 bytes TSConf palette, ... (tiles,sprites)
 	} tsconf;
-	unsigned char font[0x800];	// ATM text mode font
+	unsigned char font[0x800];		// ATM text mode font
 	void(*callback)(struct Video*);
 };
 

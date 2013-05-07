@@ -394,7 +394,7 @@ void SetupWin::start() {
 #endif
 // dos
 	setupUi.diskTypeBox->setCurrentIndex(setupUi.diskTypeBox->findData(zx->bdi->fdc->type));
-	setupUi.bdtbox->setChecked(zx->bdi->fdc->turbo != 0);
+	setupUi.bdtbox->setChecked(fdcFlag & FDC_FAST);
 	setupUi.mempaths->setChecked(optGetFlag(OF_PATHS));
 	Floppy* flp = zx->bdi->fdc->flop[0];
 	setupUi.apathle->setText(QString::fromLocal8Bit(flp->path));
@@ -533,7 +533,7 @@ void SetupWin::apply() {
 	loadKeys();
 // bdi
 	zx->bdi->fdc->type = setupUi.diskTypeBox->itemData(setupUi.diskTypeBox->currentIndex()).toInt();
-	zx->bdi->fdc->turbo = setupUi.bdtbox->isChecked() ? 1 : 0;
+	setFlagBit(setupUi.bdtbox->isChecked(),&fdcFlag,FDC_FAST);
 	optSetFlag(OF_PATHS,setupUi.mempaths->isChecked());
 
 	Floppy* flp = zx->bdi->fdc->flop[0];
