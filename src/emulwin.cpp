@@ -747,12 +747,17 @@ void MainWin::dropEvent(QDropEvent* ev) {
 
 #else
 
+#include <fstream>
+
 void doSDLEvents() {
 	keyEntry kent;
 	int jdir;
 	SDL_Event ev;
 	intButton intb;
 	extButton extb;
+#ifdef ISDEBUG
+	std::ofstream file;
+#endif
 	while (SDL_PollEvent(&ev)) {
 		switch (ev.type) {
 			// BAD NEWS, EVERYONE. SDL 1.2 Hasn't drop event, it appears in SDL 2.0
@@ -805,6 +810,26 @@ void doSDLEvents() {
 							//saveConfig();
 							saveProfiles();
 							break;
+#ifdef ISDEBUG
+						case SDLK_F1:			// TSConf: save altera mem (4K), TMPage, T0GPage, T1GPage, SGPage
+							file.open("/home/sam/altera",std::ifstream::out);
+							file.write((char*)zx->tsconf.tsAMem,0x1000);
+							file.close();
+							file.open("/home/sam/TMPage",std::ofstream::binary);
+							file.write((char*)zx->mem->ram[zx->vid->tsconf.TMPage].data,0x4000);
+							file.close();
+							file.open("/home/sam/T0GPage",std::ofstream::binary);
+							file.write((char*)zx->mem->ram[zx->vid->tsconf.T0GPage].data,0x4000);
+							file.close();
+							file.open("/home/sam/T1GPage",std::ofstream::binary);
+							file.write((char*)zx->mem->ram[zx->vid->tsconf.T1GPage].data,0x4000);
+							file.close();
+							file.open("/home/sam/SGPage",std::ofstream::binary);
+							file.write((char*)zx->mem->ram[zx->tsconf.SGPage].data,0x4000);
+							file.close();
+							showInfo("Fukken saved");
+							break;
+#endif
 						default: break;
 					}
 				} else {

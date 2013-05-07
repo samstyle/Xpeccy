@@ -16,6 +16,7 @@ extern "C" {
 #define VF_NOFLIC		(1<<5)
 #define	VF_GREY			(1<<6)
 //#define	VF_CHECKCHA		(1<<7)
+#define	VF_TSCONF		(1<<8)
 // vid->flags (vid)
 #define	VID_BORDER_4T		(1<<1)
 // screen drawing mode
@@ -73,12 +74,19 @@ struct Video {
 		int yPos;
 		int xSize;		// size of tsconf screen ([320|360] x [200|240|288])
 		int ySize;
+		unsigned char tconfig;		// port 06AF
+		unsigned char TMPage;		// tiles map page
+		unsigned char T0GPage;		// lay 0 graphics
+		unsigned char T1GPage;		// lay 1 graphics
+		unsigned char T0Pal76;		// b7.6 of palete (07AF)
+		unsigned char T1Pal76;
 		VPAIR(xOffset,soxh,soxl);		// offsets of screen corner
 		VPAIR(yOffset,soyh,soyl);
-		VPAIR(T0XOffset,t0xh,t0xl);
+		VPAIR(T0XOffset,t0xh,t0xl);	// tile 0 offsets
 		VPAIR(T0YOffset,t0yh,t0yl);
-		VPAIR(T1XOffset,t1xh,t1xl);
+		VPAIR(T1XOffset,t1xh,t1xl);	// tile 1 offsets
 		VPAIR(T1YOffset,t1yh,t1yl);
+		unsigned char line[512];	// buffer for render sprites & tiles
 	} tsconf;
 	unsigned char font[0x800];	// ATM text mode font
 	void(*callback)(struct Video*);

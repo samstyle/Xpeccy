@@ -412,6 +412,11 @@ void zxSetHardware(ZXComp* comp, const char* name) {
 	HardWare* hw = findHardware(name);
 	if (hw == NULL) return;
 	comp->hw = hw;
+	if (hw->type == HW_TSLAB) {
+		comp->vid->flags |= VF_TSCONF;
+	} else {
+		comp->vid->flags &= ~VF_TSCONF;
+	}
 }
 
 void zxSetFrq(ZXComp* comp, float frq) {

@@ -37,6 +37,8 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 		case 0x00af:
 			comp->vid->tsconf.xSize = tslXRes[(val & 0xc0) >> 6];
 			comp->vid->tsconf.ySize = tslYRes[(val & 0xc0) >> 6];
+			comp->vid->tsconf.xPos = comp->vid->sync.h + ((comp->vid->full.h - comp->vid->sync.h - comp->vid->tsconf.xSize) >> 1);
+			comp->vid->tsconf.yPos = comp->vid->sync.v + ((comp->vid->full.v - comp->vid->sync.v - comp->vid->tsconf.ySize) >> 1);
 			printf("vmode %.2X\n",val & 7);
 			switch(val & 7) {
 				case 0: vidSetMode(comp->vid,VID_NORMAL); break;
@@ -49,9 +51,13 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 		case 0x01af: comp->vid->tsconf.vidPage = val; break;
 		case 0x06af:			// TSConf
 			printf("tsconf %.2X\n",val);
-			comp->tsconf.TSConf = val;
+			comp->vid->tsconf.tconfig = val;
 			break;
-		case 0x07af: comp->tsconf.tsScrPal = val & 0x0f; break;
+		case 0x07af:
+			comp->tsconf.tsScrPal = val & 0x0f;
+			comp->vid->tsconf.T0Pal76 = (val & 0x30) << 2;
+			comp->vid->tsconf.T1Pal76 = (val & 0xc0);
+			break;
 		case 0x0faf:
 			comp->vid->brdcol = val;
 			comp->vid->nextbrd = val;
@@ -77,9 +83,9 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 			comp->tsconf.flag = val & 0x10;		// FM_EN
 			comp->tsconf.tsMapAdr = ((val & 0x0f) << 12);
 			break;
-		case 0x16af: comp->tsconf.TMPage = val; break;
-		case 0x17af: comp->tsconf.T0GPage = val & 0xf8; break;
-		case 0x18af: comp->tsconf.T1GPage = val & 0xf8; break;
+		case 0x16af: comp->vid->tsconf.TMPage = val; break;
+		case 0x17af: comp->vid->tsconf.T0GPage = val & 0xf8; break;
+		case 0x18af: comp->vid->tsconf.T1GPage = val & 0xf8; break;
 		case 0x19af: comp->tsconf.SGPage = val & 0xf8; break;
 		case 0x1aaf: comp->dma.src.l = val; break;
 		case 0x1baf: comp->dma.src.h = val; break;
@@ -214,6 +220,7 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 
 Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 	Z80EX_BYTE res = 0xff;
+//	printf("TSLab : in %.4X (%i)\n",port,bdiz);
 	if ((port & 0x0001) == 0x0000)
 		return keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00);
 	switch(port) {
@@ -238,7 +245,7 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 		default:
 			switch (port & 0xff) {
 				case 0x1f:
-					res = bdiz ? bdiIn(comp->bdi,FDC_STATE) : 0xff;
+					res = bdiz ? bdiIn(comp->bdi,FDC_STATE) : 0x00;		// uwol : kempston detection is fucking where?
 					break;
 				case 0x3f:
 					res = bdiz ? bdiIn(comp->bdi,FDC_TRK) : 0xff;
@@ -256,7 +263,6 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 				case 0xf7: res = 0xff; break;			// WAS IST DAS?
 				default:
 					if ((port & 0x0001) == 0x0000) break;
-					printf("TSLab : in %.4X (%i)\n",port,bdiz);
 					comp->flag |= ZX_BREAK;
 					//assert(0);
 			}
