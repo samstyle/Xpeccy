@@ -391,6 +391,7 @@ void zxReset(ZXComp* comp,int wut) {
 			comp->vid->tsconf.scrPal = 0xf0;
 			memcpy(&comp->vid->tsconf.tsAMem[0x1e0],tsPalInit,0x20);	// init zx palete ?
 			vidSetMode(comp->vid,VID_TSL_NORMAL);
+			comp->vid->nextbrd = 0xf7;
 			break;
 		default:
 			comp->prt0 = ((resto & 1) << 4);

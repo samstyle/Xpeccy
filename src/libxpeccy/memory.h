@@ -20,6 +20,7 @@ extern "C" {
 #define	MEM_BRK_FETCH	1
 #define	MEM_BRK_READ	(1<<1)
 #define	MEM_BRK_WRITE	(1<<2)
+#define MEM_WP		(1<<3)
 
 typedef struct {
 	int type;
@@ -37,6 +38,10 @@ typedef struct {
 	MemPage* pt1;
 	MemPage* pt2;
 	MemPage* pt3;
+	unsigned char ramData[0x400000];	// 4M
+	unsigned char ramFlag[0x400000];
+	unsigned char romData[0x80000];		// 512K
+	unsigned char romFlag[0x80000];
 	int memSize;
 	int memMask;
 	int romMask;	// 0:16K, 1:32K, 3:64K, 7:128K, 15:256K, 31:512K
