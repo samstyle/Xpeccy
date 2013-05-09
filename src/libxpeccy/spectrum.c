@@ -76,16 +76,17 @@ Z80EX_BYTE memrd(CPUCONT Z80EX_WORD adr,int m1,void* ptr) {
 	if (m1 == 1) {
 		if (comp->rzxPlay) comp->rzxFetches--;
 		if (comp->bdi->fdc->type == FDC_93) {
-			if (comp->dosen) {
+			if (comp->dosen == 1) {
 				if (memGetBankPtr(comp->mem,adr)->type == MEM_RAM) {
 					switch(comp->hw->type) {
 						case HW_ATM2:
-							if (~comp->prt1 & 2) comp->dosen = 0;
+							if (comp->prt1 & 2) comp->dosen = 0;
 							break;
 						case HW_PENTEVO:
-							if (~comp->prt1 & 0x40) comp->dosen = 0;
+							if (comp->prt1 & 0x40) comp->dosen = 0;
 							break;
 						case HW_TSLAB:
+							if (comp->mem->pt0->num == 1) comp->dosen = 0;
 							break;
 						default:
 							comp->dosen = 0;
@@ -99,19 +100,19 @@ Z80EX_BYTE memrd(CPUCONT Z80EX_WORD adr,int m1,void* ptr) {
 					comp->hw->mapMem(comp);
 				}
 			}
-
-
+/*
 			if ((comp->dosen == 0) && ((adr & 0xff00) == 0x3d00) && (comp->prt0 & 0x10)) {
 				comp->dosen = 1;
 				comp->hw->mapMem(comp);
 			}
 			if ((comp->dosen == 1) && (memGetBankPtr(comp->mem,adr)->type == MEM_RAM)	// off when fetch in ram
 					&& !((comp->hw->type == HW_ATM2) && (~comp->prt1 & 2))		// but not ATM2 cpm mode
-					&& !((comp->hw->type == HW_PENTEVO && (~comp->prt1 & 0x40)))		// and not PentEvo keep dos alive
+					&& !((comp->hw->type == HW_PENTEVO && (~comp->prt1 & 0x40)))	// and not PentEvo keep dos alive
 					) {
 				comp->dosen = 0;
 				comp->hw->mapMem(comp);
 			}
+*/
 		}
 	}
 //	res3 = res2 + z80ex_op_tstate(cpu);
@@ -398,6 +399,7 @@ void zxReset(ZXComp* comp,int wut) {
 			comp->vid->tsconf.T1YOffset = 0;
 			comp->vid->tsconf.xOffset = 0;
 			comp->vid->tsconf.yOffset = 0;
+			comp->vid->flags &= ~VID_NOGFX;
 			break;
 		default:
 			comp->prt0 = ((resto & 1) << 4);

@@ -16,7 +16,7 @@ Memory* memCreate() {
 	for (i = 0; i < 32; i++) {
 		mem->rom[i].type = MEM_ROM;
 		mem->rom[i].num = i & 0xff;
-		mem->rom[i].flags |= MEM_RDONLY;
+		mem->rom[i].flags = MEM_RDONLY;
 		mem->rom[i].data = mem->romData + (i << 14);
 		mem->rom[i].flag = mem->romFlag + (i << 14);
 	}

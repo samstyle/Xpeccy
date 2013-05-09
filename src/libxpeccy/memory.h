@@ -5,9 +5,13 @@
 extern "C" {
 #endif
 
+// overall flags
+#define	MEM_NOFLAG	1
+
+// mempage type
 #define	MEM_RAM		1
 #define	MEM_ROM		2
-
+// memory banks
 #define	MEM_BANK0	0
 #define	MEM_BANK1	1
 #define	MEM_BANK2	2
@@ -20,7 +24,6 @@ extern "C" {
 #define	MEM_BRK_FETCH	1
 #define	MEM_BRK_READ	(1<<1)
 #define	MEM_BRK_WRITE	(1<<2)
-#define MEM_WP		(1<<3)
 
 typedef struct {
 	int type;
