@@ -527,6 +527,8 @@ void vidTSRender(Video* vid, unsigned char* ptr) {
 void vidDrawTSLNormal(Video* vid) {
 	if ((vid->y < vid->bord.v) || (vid->y > vid->bord.v + 191)) {
 		col = vid->brdcol;
+	} else if (vid->flags & VID_NOGFX) {
+		col = 0;
 	} else {
 		xadr = vid->tsconf.vidPage ^ (vid->curscr ? 2 : 0);	// TODO : ORLY? Current video page
 		xscr = vid->x - vid->bord.h;
@@ -561,6 +563,8 @@ void vidDrawTSL16(Video* vid) {
 	yscr = vid->y - vid->tsconf.yPos;
 	if ((xscr < 0) || (xscr >= vid->tsconf.xSize) || (yscr < 0) || (yscr >= vid->tsconf.ySize)) {
 		col = vid->brdcol;
+	} else if (vid->flags & VID_NOGFX) {
+		col = 0;
 	} else {
 		xscr += (vid->tsconf.xOffset & 0x01ff);
 		yscr += (vid->tsconf.yOffset & 0x01ff);
@@ -583,6 +587,8 @@ void vidDrawTSL256(Video* vid) {
 	yscr = vid->y - vid->tsconf.yPos;
 	if ((xscr < 0) || (xscr >= vid->tsconf.xSize) || (yscr < 0) || (yscr >= vid->tsconf.ySize)) {
 		col = vid->brdcol;
+	} else if (vid->flags & VID_NOGFX) {
+		col = 0;
 	} else {
 		xscr += (vid->tsconf.xOffset & 0x01ff);
 		yscr += (vid->tsconf.yOffset & 0x01ff);

@@ -42,6 +42,8 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 				case 3: break;			// 1 page text mode (not yet)
 				default: vidSetMode(comp->vid,VID_UNKNOWN); break;
 			}
+			comp->vid->flags &= ~VID_NOGFX;
+			if (val & 0x20) comp->vid->flags |= VID_NOGFX;
 			break;
 		case 0x01af:
 			comp->vid->tsconf.vidPage = val;

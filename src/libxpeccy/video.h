@@ -11,14 +11,13 @@ extern "C" {
 #define VF_FULLSCREEN		1
 #define VF_DOUBLE		(1<<1)
 #define VF_BLOCKFULLSCREEN	(1<<2)
-//#define VF_CHANGED		(1<<3)
-#define	VF_FRAMEDBG		(1<<4)
-#define VF_NOFLIC		(1<<5)
-#define	VF_GREY			(1<<6)
-//#define	VF_CHECKCHA		(1<<7)
-#define	VF_TSCONF		(1<<8)
+#define	VF_FRAMEDBG		(1<<3)
+#define VF_NOFLIC		(1<<4)
+#define	VF_GREY			(1<<5)
+#define	VF_TSCONF		(1<<6)
 // vid->flags (vid)
-#define	VID_BORDER_4T		(1<<1)
+#define	VID_BORDER_4T		1
+#define	VID_NOGFX		(1<<1)
 // screen drawing mode
 #define	VID_NOSCREEN	0
 #define	VID_NORMAL	1
