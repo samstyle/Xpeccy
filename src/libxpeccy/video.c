@@ -380,8 +380,9 @@ void vidTSPut(Video* vid, unsigned char* ptr, int ofs) {
 	}
 	for (xscr = 0; xscr < vid->tsconf.xSize; xscr++) {
 		if ((adr >= 0) && (adr < vid->vsze.h)) {			// visible
-			if (vid->tsconf.lflg[ofs]) {				// not transparent
-				col = vid->tsconf.line[ofs & 0x1ff];
+			col = vid->tsconf.line[ofs & 0x1ff];
+			if (col & 0x0f) {					// not transparent
+//				col = vid->tsconf.line[ofs & 0x1ff];
 				*(ptr++) = col;
 				if (vidFlag & VF_DOUBLE) *(ptr++) = col;
 			} else {
@@ -402,47 +403,57 @@ unsigned char* mptr;
 
 #include <assert.h>
 
-void vidTSTiles(Video* vid, int lay) {
+void vidTSTiles(Video* vid, int lay, unsigned short yoffs, unsigned short xoffs, unsigned char gpage, unsigned char palhi) {
 	int i,j;
-	memset(vid->tsconf.lflg,0x01,512);
-	yscr = vid->y - vid->tsconf.yPos + (lay ? vid->tsconf.T1YOffset : vid->tsconf.T0YOffset);	// line in TMap
-	adr = (vid->tsconf.TMPage << 14) | ((yscr & 0xf8) << 5) | (lay ? 0x80 : 0x00);			// start of TMap line (full.adr)
-	xscr = 0;						// pos in line buf
-	xadr = vid->tsconf.tconfig & (lay ? 8 : 4);
-	for (i = 0; i < 128; i += 2) {								// 64 tiles in row
+	yscr = vid->y - vid->tsconf.yPos + yoffs;						// line in TMap
+	adr = (vid->tsconf.TMPage << 14) | ((yscr & 0xf8) << 5) | (lay ? 0x80 : 0x00);		// start of TMap line (full.adr)
+	xscr = 0x200 - xoffs;									// pos in line buf
+	for (i = 0; i < 64; i++) {								// draw (xSize/8 + 1) tiles
 		tile = vid->mem->ramData[adr] | (vid->mem->ramData[adr + 1] << 8);		// tile dsc
 		adr += 2;
 
-		fadr = (lay ? vid->tsconf.T1GPage : vid->tsconf.T0GPage) << 14;
-		fadr += ((tile & 0xfc0) << 5) | ((yscr & 7) << 8) | ((tile & 0x3f) << 2);	// full addr of row of this tile
-		if (tile & 0x8000) fadr ^= 0x0700;						// YFlip
+		if ((tile & 0xfff) || (vid->tsconf.tconfig & (lay ? 8 : 4))) {			// !0 or (0 enabled)
+			fadr = gpage << 14;
+			fadr += ((tile & 0xfc0) << 5) | ((yscr & 7) << 8) | ((tile & 0x3f) << 2);	// full addr of row of this tile
+			if (tile & 0x8000) fadr ^= 0x0700;						// YFlip
 
-		col = (lay ? vid->tsconf.T1Pal76 : vid->tsconf.T0Pal76) | ((tile >> 8) & 0x30);	// palette (b7..4 of color)
-		for (j = 0; j < 4; j++) {
-			col &= 0xf0;
-			col |= (vid->mem->ramData[fadr] & 0xf0) >> 4;				// left pixel
-			if ((col & 0x0f) || xadr) {
-				vid->tsconf.line[(tile & 0x4000) ? (xscr ^ 7) : xscr] = col;	// XFlip (XOR 7 'cuz tiles is 8 pixels width)
-			} else {
-				vid->tsconf.lflg[(tile & 0x4000) ? (xscr ^ 7) : xscr] = 0;
+			col = palhi | ((tile >> 8) & 0x30);					// palette (b7..4 of color)
+			if (tile & 0x4000) {							// XFlip
+				xscr += 8;
+				for (j = 0; j < 4; j++) {
+					col &= 0xf0;
+					col |= (vid->mem->ramData[fadr] & 0xf0) >> 4;				// left pixel
+					xscr--;
+					if (col & 0x0f) vid->tsconf.line[xscr & 0x1ff] = col;
+					col &= 0xf0;
+					col |= vid->mem->ramData[fadr] & 0x0f;					// right pixel
+					xscr--;
+					if (col & 0x0f) vid->tsconf.line[xscr & 0x1ff] = col;
+					fadr++;
+				}
+				xscr += 8;
+			} else {								// no XFlip
+				for (j = 0; j < 4; j++) {
+					col &= 0xf0;
+					col |= (vid->mem->ramData[fadr] & 0xf0) >> 4;				// left pixel
+					if (col & 0x0f) vid->tsconf.line[xscr & 0x1ff] = col;
+					xscr++;
+					col &= 0xf0;
+					col |= vid->mem->ramData[fadr] & 0x0f;					// right pixel
+					if (col & 0x0f) vid->tsconf.line[xscr & 0x1ff] = col;
+					xscr++;
+					fadr++;
+				}
 			}
-			xscr++;
-			col &= 0xf0;
-			col |= vid->mem->ramData[fadr] & 0x0f;					// right pixel
-			if ((col & 0x0f) || xadr) {
-				vid->tsconf.line[(tile & 0x4000) ? (xscr ^ 7) : xscr] = col;
-			} else {
-				vid->tsconf.lflg[(tile & 0x4000) ? (xscr ^ 7) : xscr] = 0;
-			}
-			xscr++;
-			fadr++;
+		} else {
+			memset(&vid->tsconf.line[xscr & 0x1ff],0x00,8);
+			xscr += 8;
 		}
 	}
 }
 
 void vidTSSprites(Video* vid) {
-	memset(vid->tsconf.line,0x00,512);
-	memset(vid->tsconf.lflg,0x00,512);
+//	memset(vid->tsconf.line,0x00,512);
 	while (sadr < (0x1000 - 6)) {
 		mptr = &vid->tsconf.tsAMem[sadr];
 		if (mptr[1] & 0x20) {						// ACT
@@ -465,18 +476,12 @@ void vidTSSprites(Video* vid) {
 				for (xscr = ((mptr[3] & 0x0e) + 2) << 2; xscr > 0; xscr-=2) {
 					col &= 0xf0;
 					col |= ((vid->mem->ramData[fadr] & 0xf0) >> 4);		// left pixel;
-					if (col & 0x0f) {
-						vid->tsconf.line[xadr & 0x1ff] = col;
-						vid->tsconf.lflg[xadr & 0x1ff] = 1;
-					}
+					if (col & 0x0f) vid->tsconf.line[xadr & 0x1ff] = col;
 					if (mptr[3] & 0x80) xadr--; else xadr++;
 					adr++;
 					col &= 0xf0;
 					col |= (vid->mem->ramData[fadr] & 0x0f);		// right pixel
-					if (col & 0x0f) {
-						vid->tsconf.line[xadr & 0x1ff] = col;
-						vid->tsconf.lflg[xadr & 0x1ff] = 1;
-					}
+					if (col & 0x0f) vid->tsconf.line[xadr & 0x1ff] = col;
 					if (mptr[3] & 0x80) xadr--; else xadr++;
 					adr++;
 					fadr++;
@@ -493,33 +498,25 @@ void vidTSRender(Video* vid, unsigned char* ptr) {
 	if (vid->y < vid->tsconf.yPos) return;
 	if (vid->y >= (vid->tsconf.yPos + vid->tsconf.ySize)) return;
 // prepare layers in VID->LINE & out visible part to PTR
-	sadr = 0x200;
-// S0
-//	if (vid->tsconf.tconfig & 0x80) {
-//		vidTSSprites(vid);
-//		vidTSPut(vid,ptr,0);
-//	}
+	sadr = 0x200;			// start of sprites tab in altera mem
+	memset(vid->tsconf.line,0,0x200);		// clear tile-sprite line
 // T0
 	if (vid->tsconf.tconfig & 0x20) {
-		vidTSTiles(vid,0);
-		vidTSPut(vid,ptr,vid->tsconf.T0XOffset);
+		vidTSTiles(vid,0,vid->tsconf.T0YOffset,vid->tsconf.T0XOffset,vid->tsconf.T0GPage,vid->tsconf.T0Pal76);
 	}
 // S1
 	if (vid->tsconf.tconfig & 0x80) {
 		vidTSSprites(vid);
-		vidTSPut(vid,ptr,0);
 	}
 // T1
 	if (vid->tsconf.tconfig & 0x40) {
-		vidTSTiles(vid,1);
-		vidTSPut(vid,ptr,vid->tsconf.T1XOffset);
+		vidTSTiles(vid,1,vid->tsconf.T1YOffset,vid->tsconf.T1XOffset,vid->tsconf.T1GPage,vid->tsconf.T1Pal76);
 	}
 // S2
 	if (vid->tsconf.tconfig & 0x80) {
 		vidTSSprites(vid);
-		vidTSPut(vid,ptr,0);
 	}
-
+	if (vid->tsconf.tconfig & 0xe0) vidTSPut(vid,ptr,0);		// if tile or sprites visible, put line over screen
 }
 
 // tsconf normal screen (separated 'cuz of palette)
