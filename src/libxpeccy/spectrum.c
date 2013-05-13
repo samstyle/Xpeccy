@@ -400,6 +400,7 @@ void zxReset(ZXComp* comp,int wut) {
 			comp->vid->tsconf.xOffset = 0;
 			comp->vid->tsconf.yOffset = 0;
 			comp->vid->flags &= ~VID_NOGFX;
+			comp->vid->tsconf.tconfig = 0;
 			break;
 		default:
 			comp->prt0 = ((resto & 1) << 4);
