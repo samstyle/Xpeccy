@@ -258,6 +258,7 @@ unsigned char tslCoLevs[32] = {
 
 void emulSetPalette(ZXComp* comp,unsigned char lev) {
 	int i;
+	int fcol;
 	unsigned char col;
 	unsigned char r[256],g[256],b[256];	// common zx-colors
 	if (lev == 0) lev = optGetInt(OPT_BRGLEV);
@@ -265,9 +266,10 @@ void emulSetPalette(ZXComp* comp,unsigned char lev) {
 	qPal.resize(256);
 	if (comp->hw->type == HW_TSLAB) {
 		for (i = 0; i < 256; i++) {
-			r[i] = tslCoLevs[(comp->vid->tsconf.tsAMem[(i << 1) + 1] & 0x7c) >> 2];
-			g[i] = tslCoLevs[((comp->vid->tsconf.tsAMem[(i << 1) + 1] & 3) << 3) | (comp->vid->tsconf.tsAMem[i << 1] & 0xe0) >> 5];
-			b[i] = tslCoLevs[(comp->vid->tsconf.tsAMem[i << 1] & 0x1f)];
+			fcol = (comp->vid->tsconf.tsAMem[(i << 1) + 1] << 8) | (comp->vid->tsconf.tsAMem[i << 1]);
+			r[i] = tslCoLevs[(fcol >> 10) & 0x1f];
+			g[i] = tslCoLevs[(fcol >> 5) & 0x1f];
+			b[i] = tslCoLevs[fcol & 0x1f];
 			qPal[i] = qRgb(r[i],g[i],b[i]);
 		}
 	} else {
@@ -1263,8 +1265,8 @@ void MainWin::emuDraw() {
 	emulFlags |= FL_DRAW;
 // change palette if need
 	if (zx->flag & ZX_PALCHAN) {
-		emulSetPalette(zx,optGetInt(OPT_BRGLEV));
 		zx->flag &= ~ZX_PALCHAN;
+		emulSetPalette(zx,optGetInt(OPT_BRGLEV));
 	}
 // update rzx window
 	if ((zx->rzxPlay) && rzxWin->isVisible()) {

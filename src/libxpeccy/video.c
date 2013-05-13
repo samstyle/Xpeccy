@@ -526,19 +526,21 @@ void vidTSRender(Video* vid, unsigned char* ptr) {
 // tsconf normal screen (separated 'cuz of palette)
 
 void vidDrawTSLNormal(Video* vid) {
-	if ((vid->y < vid->bord.v) || (vid->y > vid->bord.v + 191)) {
+	xscr = vid->x - vid->bord.h;
+	yscr = vid->y - vid->bord.v;
+	if ((yscr < 0) || (yscr > 191)) {
 		col = vid->brdcol;
 	} else if (vid->flags & VID_NOGFX) {
-		col = 0;
+		col = 0xf0;
 	} else {
 		xadr = vid->tsconf.vidPage ^ (vid->curscr ? 2 : 0);	// TODO : ORLY? Current video page
-		xscr = vid->x - vid->bord.h;
-		yscr = vid->y - vid->bord.v;
+//		xscr = vid->x - vid->bord.h;
+//		yscr = vid->y - vid->bord.v;
 		if ((xscr & 7) == 4) {
 			adr = ((yscr & 0xc0) << 5) | ((yscr & 7) << 8) | ((yscr & 0x38) << 2) | (((xscr + 4) & 0xf8) >> 3);
 			nxtbyte = vid->mem->ram[xadr].data[adr];
 		}
-		if ((vid->x < vid->bord.h) || (vid->x > vid->bord.h + 255)) {
+		if ((xscr < 0) || (xscr > 255)) {
 			col = vid->brdcol;
 		} else {
 			if ((xscr & 7) == 0) {
@@ -549,12 +551,12 @@ void vidDrawTSLNormal(Video* vid) {
 				ink = inkTab[vid->atrbyte & 0x7f];
 				pap = papTab[vid->atrbyte & 0x7f];
 			}
-			col = (scrbyte & 0x80) ? ink : pap;
+			col = vid->tsconf.scrPal | ((scrbyte & 0x80) ? ink : pap);
 			scrbyte <<= 1;
 		}
 	}
-	*(vid->scrptr++) = vid->tsconf.scrPal | col;
-	if (vidFlag & VF_DOUBLE) *(vid->scrptr++) = vid->tsconf.scrPal | col;
+	*(vid->scrptr++) =  col;
+	if (vidFlag & VF_DOUBLE) *(vid->scrptr++) = col;
 }
 
 // tsconf 4bpp
@@ -565,7 +567,7 @@ void vidDrawTSL16(Video* vid) {
 	if ((xscr < 0) || (xscr >= vid->tsconf.xSize) || (yscr < 0) || (yscr >= vid->tsconf.ySize)) {
 		col = vid->brdcol;
 	} else if (vid->flags & VID_NOGFX) {
-		col = 0;
+		col = 0xf0;
 	} else {
 		xscr += (vid->tsconf.xOffset & 0x01ff);
 		yscr += (vid->tsconf.yOffset & 0x01ff);
@@ -589,7 +591,7 @@ void vidDrawTSL256(Video* vid) {
 	if ((xscr < 0) || (xscr >= vid->tsconf.xSize) || (yscr < 0) || (yscr >= vid->tsconf.ySize)) {
 		col = vid->brdcol;
 	} else if (vid->flags & VID_NOGFX) {
-		col = 0;
+		col = 0xf0;
 	} else {
 		xscr += (vid->tsconf.xOffset & 0x01ff);
 		yscr += (vid->tsconf.yOffset & 0x01ff);
@@ -630,8 +632,8 @@ void vidSync(Video* vid, int ns) {
 		}
 		if (++vid->x >= vid->full.h) {
 			vid->x = 0;
+			if (vid->flags & VF_TSCONF) vidTSRender(vid, vid->scrptr - vid->wsze.h);
 			if ((vid->y >= vid->lcut.v) && (vid->y < vid->rcut.v) && (vidFlag & VF_DOUBLE)) {
-				if (vid->flags & VF_TSCONF) vidTSRender(vid, vid->scrptr - vid->wsze.h);
 				memcpy(vid->scrptr, vid->scrptr - vid->wsze.h, vid->wsze.h);
 				vid->scrptr += vid->wsze.h;
 			}
