@@ -34,7 +34,7 @@
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#define	XPTITLE	"Xpeccy 0.5 (20130513)"
+#define	XPTITLE	"Xpeccy 0.5 (20130514)"
 
 // main
 MainWin* mainWin;
@@ -144,29 +144,29 @@ keyEntry keyMap[256];	// current keymap (init at start from keyMapInit[]
 #define ENDKEY	SDLK_LAST
 
 keyEntry keyMapInit[] = {
-	{"1",SDLK_1,'1',0},{"2",SDLK_2,'2',0},{"3",SDLK_3,'3',0},{"4",SDLK_4,'4',0},{"5",SDLK_5,'5',0},
-	{"6",SDLK_6,'6',0},{"7",SDLK_7,'7',0},{"8",SDLK_8,'8',0},{"9",SDLK_9,'9',0},{"0",SDLK_0,'0',0},
-	{"Q",SDLK_q,'q',0},{"W",SDLK_w,'w',0},{"E",SDLK_e,'e',0},{"R",SDLK_r,'r',0},{"T",SDLK_t,'t',0},
-	{"Y",SDLK_y,'y',0},{"U",SDLK_u,'u',0},{"I",SDLK_i,'i',0},{"O",SDLK_o,'o',0},{"P",SDLK_p,'p',0},
-	{"A",SDLK_a,'a',0},{"S",SDLK_s,'s',0},{"D",SDLK_d,'d',0},{"F",SDLK_f,'f',0},{"G",SDLK_g,'g',0},
-	{"H",SDLK_h,'h',0},{"J",SDLK_j,'j',0},{"K",SDLK_k,'k',0},{"L",SDLK_l,'l',0},{"ENT",SDLK_RETURN,'E',0},
-	{"LS",SDLK_LSHIFT,'C',0},{"Z",SDLK_z,'z',0},{"X",SDLK_x,'x',0},{"C",SDLK_c,'c',0},{"V",SDLK_v,'v',0},
-	{"B",SDLK_b,'b',0},{"N",SDLK_n,'n',0},{"M",SDLK_m,'m',0},{"LC",SDLK_LCTRL,'S',0},{"SPC",SDLK_SPACE,' ',0},
+	{"1",SDLK_1,'1',0,0x16},{"2",SDLK_2,'2',0,0x1e},{"3",SDLK_3,'3',0,0x26},{"4",SDLK_4,'4',0,0x25},{"5",SDLK_5,'5',0,0x2e},
+	{"6",SDLK_6,'6',0,0x36},{"7",SDLK_7,'7',0,0x3d},{"8",SDLK_8,'8',0,0x3e},{"9",SDLK_9,'9',0,0x46},{"0",SDLK_0,'0',0,0x45},
+	{"Q",SDLK_q,'q',0,0x15},{"W",SDLK_w,'w',0,0x1d},{"E",SDLK_e,'e',0,0x24},{"R",SDLK_r,'r',0,0x2d},{"T",SDLK_t,'t',0,0x2c},
+	{"Y",SDLK_y,'y',0,0x35},{"U",SDLK_u,'u',0,0x3c},{"I",SDLK_i,'i',0,0x43},{"O",SDLK_o,'o',0,0x44},{"P",SDLK_p,'p',0,0x4d},
+	{"A",SDLK_a,'a',0,0x1c},{"S",SDLK_s,'s',0,0x1b},{"D",SDLK_d,'d',0,0x23},{"F",SDLK_f,'f',0,0x2b},{"G",SDLK_g,'g',0,0x34},
+	{"H",SDLK_h,'h',0,0x33},{"J",SDLK_j,'j',0,0x3b},{"K",SDLK_k,'k',0,0x42},{"L",SDLK_l,'l',0,0x4b},{"ENT",SDLK_RETURN,'E',0,0x5a},
+	{"LS",SDLK_LSHIFT,'C',0,0x00},{"Z",SDLK_z,'z',0,0x1a},{"X",SDLK_x,'x',0,0x22},{"C",SDLK_c,'c',0,0x21},{"V",SDLK_v,'v',0,0x2a},
+	{"B",SDLK_b,'b',0,0x32},{"N",SDLK_n,'n',0,0x31},{"M",SDLK_m,'m',0,0x3a},{"LC",SDLK_LCTRL,'S',0,0x00},{"SPC",SDLK_SPACE,' ',0,0x29},
 
-	{"RS",SDLK_RSHIFT,'C',0},{"RC",SDLK_RCTRL,'S',0},
+	{"RS",SDLK_RSHIFT,'C',0,0x00},{"RC",SDLK_RCTRL,'S',0,0x00},
 
-	{"`",SDLK_BACKQUOTE,'C','S'},{"\\",SDLK_BACKSLASH,'C','S'},
-	{";",SDLK_SEMICOLON,'S','o'},{"\"",SDLK_QUOTE,'S','p'},
-	{"TAB",SDLK_TAB,'C',' '},{"CAPS",SDLK_CAPSLOCK,'C','2'},
-	{"PGDN",SDLK_PAGEUP,'C','3'},{"PGUP",SDLK_PAGEDOWN,'C','4'},{"BSP",SDLK_BACKSPACE,'C','0'},
-	{"DEL",SDLK_DELETE,'C','9'},{"INS",SDLK_INSERT,'S','w'},{"HOME",SDLK_HOME,'S','q'},{"END",SDLK_END,'S','e'},
-	{"LEFT",SDLK_LEFT,'C','5'},{"DOWN",SDLK_DOWN,'C','6'},{"UP",SDLK_UP,'C','7'},{"RIGHT",SDLK_RIGHT,'C','8'},
-	{"-",SDLK_MINUS,'S','j'},{"+",SDLK_PLUS,'S','k'},{"=",SDLK_EQUALS,'S','l'},
-	{",",SDLK_COMMA,'S','n'},{".",SDLK_PERIOD,'S','m'},{"/",SDLK_SLASH,'S','c'},
-	{"[",SDLK_LEFTBRACKET,'S','8'},{"]",SDLK_RIGHTBRACKET,'S','9'},
-	{"k/",SDLK_KP_DIVIDE,'S','v'},{"k*",SDLK_KP_MULTIPLY,'S','b'},{"k-",SDLK_KP_MINUS,'S','j'},
-	{"k+",SDLK_KP_PLUS,'S','k'},{"kENT",SDLK_KP_ENTER,'E',0},{"k.",SDLK_KP_PERIOD,'S','m'},
-	{"",SDLK_LAST,0,0}
+	{"`",SDLK_BACKQUOTE,'C','S',0x00},{"\\",SDLK_BACKSLASH,'C','S',0x00},
+	{";",SDLK_SEMICOLON,'S','o',0x00},{"\"",SDLK_QUOTE,'S','p',0x00},
+	{"TAB",SDLK_TAB,'C',' ',0x00},{"CAPS",SDLK_CAPSLOCK,'C','2',0x00},
+	{"PGDN",SDLK_PAGEUP,'C','3',0x00},{"PGUP",SDLK_PAGEDOWN,'C','4',0x00},{"BSP",SDLK_BACKSPACE,'C','0',0x00},
+	{"DEL",SDLK_DELETE,'C','9',0x00},{"INS",SDLK_INSERT,'S','w',0x00},{"HOME",SDLK_HOME,'S','q',0x00},{"END",SDLK_END,'S','e',0x00},
+	{"LEFT",SDLK_LEFT,'C','5',0x6b},{"DOWN",SDLK_DOWN,'C','6',0x72},{"UP",SDLK_UP,'C','7',0x75},{"RIGHT",SDLK_RIGHT,'C','8',0x74},
+	{"-",SDLK_MINUS,'S','j',0x00},{"+",SDLK_PLUS,'S','k',0x00},{"=",SDLK_EQUALS,'S','l',0x00},
+	{",",SDLK_COMMA,'S','n',0x00},{".",SDLK_PERIOD,'S','m',0x00},{"/",SDLK_SLASH,'S','c',0x00},
+	{"[",SDLK_LEFTBRACKET,'S','8',0x00},{"]",SDLK_RIGHTBRACKET,'S','9',0x00},
+	{"k/",SDLK_KP_DIVIDE,'S','v',0x00},{"k*",SDLK_KP_MULTIPLY,'S','b',0x00},{"k-",SDLK_KP_MINUS,'S','j',0x00},
+	{"k+",SDLK_KP_PLUS,'S','k',0x00},{"kENT",SDLK_KP_ENTER,'E',0,0x00},{"k.",SDLK_KP_PERIOD,'S','m',0x00},
+	{"",SDLK_LAST,0,0,0x00}
 };
 
 keyEntry getKeyEntry(SDLKey skey) {
@@ -182,26 +182,26 @@ keyEntry getKeyEntry(SDLKey skey) {
 #define ENDKEY 0
 
 keyEntry keyMapInit[] = {
-	{"1",XKEY_1,'1',0},{"2",XKEY_2,'2',0},{"3",XKEY_3,'3',0},{"4",XKEY_4,'4',0},{"5",XKEY_5,'5',0},
-	{"6",XKEY_6,'6',0},{"7",XKEY_7,'7',0},{"8",XKEY_8,'8',0},{"9",XKEY_9,'9',0},{"0",XKEY_0,'0',0},
-	{"Q",XKEY_Q,'q',0},{"W",XKEY_W,'w',0},{"E",XKEY_E,'e',0},{"R",XKEY_R,'r',0},{"T",XKEY_T,'t',0},
-	{"Y",XKEY_Y,'y',0},{"U",XKEY_U,'u',0},{"I",XKEY_I,'i',0},{"O",XKEY_O,'o',0},{"P",XKEY_P,'p',0},
-	{"A",XKEY_A,'a',0},{"S",XKEY_S,'s',0},{"D",XKEY_D,'d',0},{"F",XKEY_F,'f',0},{"G",XKEY_G,'g',0},
-	{"H",XKEY_H,'h',0},{"J",XKEY_J,'j',0},{"K",XKEY_K,'k',0},{"L",XKEY_L,'l',0},{"ENT",XKEY_ENTER,'E',0},
-	{"LS",XKEY_LSHIFT,'C',0},{"Z",XKEY_Z,'z',0},{"X",XKEY_X,'x',0},{"C",XKEY_C,'c',0},{"V",XKEY_V,'v',0},
-	{"B",XKEY_B,'b',0},{"N",XKEY_N,'n',0},{"M",XKEY_M,'m',0},{"LC",XKEY_LCTRL,'S',0},{"SPC",XKEY_SPACE,' ',0},
+	{"1",XKEY_1,'1',0,0x00},{"2",XKEY_2,'2',0,0x00},{"3",XKEY_3,'3',0,0x00},{"4",XKEY_4,'4',0,0x00},{"5",XKEY_5,'5',0,0x00},
+	{"6",XKEY_6,'6',0,0x00},{"7",XKEY_7,'7',0,0x00},{"8",XKEY_8,'8',0,0x00},{"9",XKEY_9,'9',0,0x00},{"0",XKEY_0,'0',0,0x00},
+	{"Q",XKEY_Q,'q',0,0x00},{"W",XKEY_W,'w',0,0x00},{"E",XKEY_E,'e',0,0x00},{"R",XKEY_R,'r',0,0x00},{"T",XKEY_T,'t',0,0x00},
+	{"Y",XKEY_Y,'y',0,0x00},{"U",XKEY_U,'u',0,0x00},{"I",XKEY_I,'i',0,0x00},{"O",XKEY_O,'o',0,0x00},{"P",XKEY_P,'p',0,0x00},
+	{"A",XKEY_A,'a',0,0x00},{"S",XKEY_S,'s',0,0x00},{"D",XKEY_D,'d',0,0x00},{"F",XKEY_F,'f',0,0x00},{"G",XKEY_G,'g',0,0x00},
+	{"H",XKEY_H,'h',0,0x00},{"J",XKEY_J,'j',0,0x00},{"K",XKEY_K,'k',0,0x00},{"L",XKEY_L,'l',0,0x00},{"ENT",XKEY_ENTER,'E',0,0x00},
+	{"LS",XKEY_LSHIFT,'C',0,0x00},{"Z",XKEY_Z,'z',0,0x00},{"X",XKEY_X,'x',0,0x00},{"C",XKEY_C,'c',0,0x00},{"V",XKEY_V,'v',0,0x00},
+	{"B",XKEY_B,'b',0,0x00},{"N",XKEY_N,'n',0,0x00},{"M",XKEY_M,'m',0,0x00},{"LC",XKEY_LCTRL,'S',0,0x00},{"SPC",XKEY_SPACE,' ',0,0x00},
 
-	{"`",XKEY_TILDA,'C','S'},{"\\",XKEY_SLASH,'C','S'},
-	{";",XKEY_DOTCOM,'S','o'},{"\"",XKEY_QUOTE,'S','p'},
-	{"TAB",XKEY_TAB,'C',' '},{"CAPS",XKEY_CAPS,'C','2'},
-	{"PGDN",XKEY_PGUP,'C','3'},{"PGUP",XKEY_PGDN,'C','4'},{"BSP",XKEY_BSP,'C','0'},
-	{"DEL",XKEY_DEL,'C','9'},{"INS",XKEY_INS,'S','w'},{"HOME",XKEY_HOME,'S','q'},{"END",XKEY_END,'S','e'},
-	{"LEFT",XKEY_LEFT,'C','5'},{"DOWN",XKEY_DOWN,'C','6'},{"UP",XKEY_UP,'C','7'},{"RIGHT",XKEY_RIGHT,'C','8'},
-	{"-",XKEY_MINUS,'S','j'},{"+",XKEY_PLUS,'S','k'},
-	{",",XKEY_PERIOD,'S','n'},{".",XKEY_COMMA,'S','m'},{"/",XKEY_BSLASH,'S','c'},
-	{"[",XKEY_LBRACE,'S','8'},{"]",XKEY_RBRACE,'S','9'},
+	{"`",XKEY_TILDA,'C','S',0x00},{"\\",XKEY_SLASH,'C','S',0x00},
+	{";",XKEY_DOTCOM,'S','o',0x00},{"\"",XKEY_QUOTE,'S','p',0x00},
+	{"TAB",XKEY_TAB,'C',' ',0x00},{"CAPS",XKEY_CAPS,'C','2',0x00},
+	{"PGDN",XKEY_PGUP,'C','3',0x00},{"PGUP",XKEY_PGDN,'C','4',0x00},{"BSP",XKEY_BSP,'C','0',0x00},
+	{"DEL",XKEY_DEL,'C','9',0x00},{"INS",XKEY_INS,'S','w',0x00},{"HOME",XKEY_HOME,'S','q',0x00},{"END",XKEY_END,'S','e',0x00},
+	{"LEFT",XKEY_LEFT,'C','5',0x00},{"DOWN",XKEY_DOWN,'C','6',0x00},{"UP",XKEY_UP,'C','7',0x00},{"RIGHT",XKEY_RIGHT,'C','8',0x00},
+	{"-",XKEY_MINUS,'S','j',0x00},{"+",XKEY_PLUS,'S','k',0x00},
+	{",",XKEY_PERIOD,'S','n',0x00},{".",XKEY_COMMA,'S','m',0x00},{"/",XKEY_BSLASH,'S','c',0x00},
+	{"[",XKEY_LBRACE,'S','8',0x00},{"]",XKEY_RBRACE,'S','9',0x00},
 
-	{"",ENDKEY,0,0}
+	{"",ENDKEY,0,0,0x00}
 };
 
 keyEntry getKeyEntry(qint32 qkey) {
@@ -604,7 +604,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 		}
 	} else {
 		keyEntry kent = getKeyEntry(ev->nativeScanCode());
-		keyPress(zx->keyb,kent.key1,kent.key2);
+		keyPress(zx->keyb,kent.key1,kent.key2,kent.keyCode);
 		switch(ev->key()) {
 			case Qt::Key_Pause:
 				pauseFlags ^= PR_PAUSE;
@@ -689,7 +689,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 
 void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 	keyEntry kent = getKeyEntry(ev->nativeScanCode());
-	keyRelease(zx->keyb,kent.key1,kent.key2);
+	keyRelease(zx->keyb,kent.key1,kent.key2,kent.keyCode);
 }
 
 void MainWin::mousePressEvent(QMouseEvent *ev){
@@ -862,12 +862,28 @@ void doSDLEvents() {
 							file.close();
 							showInfo("Fukken saved");
 							break;
+						case SDLK_DOWN:
+							zx->vid->tsconf.yOffset--;
+							zx->vid->tsconf.yOffset &= 0x1ff;
+							break;
+						case SDLK_UP:
+							zx->vid->tsconf.yOffset++;
+							zx->vid->tsconf.yOffset &= 0x1ff;
+							break;
+						case SDLK_LEFT:
+							zx->vid->tsconf.xOffset--;
+							zx->vid->tsconf.xOffset &= 0x1ff;
+							break;
+						case SDLK_RIGHT:
+							zx->vid->tsconf.xOffset++;
+							zx->vid->tsconf.xOffset &= 0x1ff;
+							break;
 #endif
 						default: break;
 					}
 				} else {
 					kent = getKeyEntry(ev.key.keysym.sym);
-					keyPress(zx->keyb,kent.key1,kent.key2);
+					keyPress(zx->keyb,kent.key1,kent.key2,kent.keyCode);
 					switch (ev.key.keysym.sym) {
 						case SDLK_PAUSE:
 							pauseFlags ^= PR_PAUSE;
@@ -949,7 +965,7 @@ void doSDLEvents() {
 				break;
 			case SDL_KEYUP:
 				kent = getKeyEntry(ev.key.keysym.sym);
-				keyRelease(zx->keyb,kent.key1,kent.key2);
+				keyRelease(zx->keyb,kent.key1,kent.key2,kent.keyCode);
 				break;
 			case SDL_MOUSEBUTTONDOWN:
 				switch (ev.button.button) {
@@ -1020,7 +1036,7 @@ void doSDLEvents() {
 				switch (intb.dev) {
 					case XJ_KEY:
 						kent = getKeyEntry(intb.name);
-						keyPress(zx->keyb,kent.key1,kent.key2);
+						keyPress(zx->keyb,kent.key1,kent.key2,kent.keyCode);
 						break;
 					case XJ_JOY:
 						jdir = optGetId(OPT_JOYDIRS,intb.name);
@@ -1036,7 +1052,7 @@ void doSDLEvents() {
 				switch (intb.dev) {
 					case XJ_KEY:
 						kent = getKeyEntry(intb.name);
-						keyRelease(zx->keyb,kent.key1,kent.key2);
+						keyRelease(zx->keyb,kent.key1,kent.key2,kent.keyCode);
 						break;
 					case XJ_JOY:
 						jdir = optGetId(OPT_JOYDIRS,intb.name);
@@ -1053,7 +1069,7 @@ void doSDLEvents() {
 					switch (intb.dev) {
 						case XJ_KEY:
 							kent = getKeyEntry(intb.name);
-							keyPress(zx->keyb,kent.key1,kent.key2);
+							keyPress(zx->keyb,kent.key1,kent.key2,kent.keyCode);
 							break;
 						case XJ_JOY:
 							jdir = optGetId(OPT_JOYDIRS,intb.name);
@@ -1064,7 +1080,7 @@ void doSDLEvents() {
 					switch (intb.dev) {
 						case XJ_KEY:
 							kent = getKeyEntry(intb.name);
-							keyRelease(zx->keyb,kent.key1,kent.key2);
+							keyRelease(zx->keyb,kent.key1,kent.key2,kent.keyCode);
 							break;
 						case XJ_JOY:
 							jdir = optGetId(OPT_JOYDIRS,intb.name);
@@ -1078,7 +1094,7 @@ void doSDLEvents() {
 					switch (intb.dev) {
 						case XJ_KEY:
 							kent = getKeyEntry(intb.name);
-							keyPress(zx->keyb,kent.key1,kent.key2);
+							keyPress(zx->keyb,kent.key1,kent.key2,kent.keyCode);
 							break;
 						case XJ_JOY:
 							jdir = optGetId(OPT_JOYDIRS,intb.name);
@@ -1089,7 +1105,7 @@ void doSDLEvents() {
 					switch (intb.dev) {
 						case XJ_KEY:
 							kent = getKeyEntry(intb.name);
-							keyRelease(zx->keyb,kent.key1,kent.key2);
+							keyRelease(zx->keyb,kent.key1,kent.key2,kent.keyCode);
 							break;
 						case XJ_JOY:
 							jdir = optGetId(OPT_JOYDIRS,intb.name);
@@ -1220,7 +1236,7 @@ void MainWin::emulFrame() {
 
 // if window is not active release keys & buttons
 	if (!isActiveWindow()) {
-		keyRelease(zx->keyb,0,0);
+		keyRelease(zx->keyb,0,0,0);
 		zx->mouse->buttons = 0xff;
 	}
 // update window

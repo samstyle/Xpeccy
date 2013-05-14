@@ -18,7 +18,7 @@ keyScan keyTab[40] = {
 
 Keyboard* keyCreate() {
 	Keyboard* keyb = (Keyboard*)malloc(sizeof(Keyboard));
-	keyRelease(keyb,0,0);
+	keyRelease(keyb,0,0,0);
 	return keyb;
 }
 
@@ -26,16 +26,17 @@ void keyDestroy(Keyboard* keyb) {
 	free(keyb);
 }
 
-void keyPress(Keyboard* keyb,char key1,char key2) {
+void keyPress(Keyboard* keyb,char key1,char key2,char kcod) {
 	int i;
 	for (i=0; i<40; i++) {
 		if ((keyTab[i].key == key1) || (keyTab[i].key == key2)) {
 			keyb->map[keyTab[i].row] &= ~keyTab[i].mask;
 		}
 	}
+	keyb->kbdBuf[0] = kcod;
 }
 
-void keyRelease(Keyboard* keyb,char key1,char key2) {
+void keyRelease(Keyboard* keyb,char key1,char key2, char kcod) {
 	int i;
 	if ((key1 == 0) && (key2 == 0)) {
 		for (i = 0; i < 8; i++) keyb->map[i] = 0x1f;
@@ -46,6 +47,7 @@ void keyRelease(Keyboard* keyb,char key1,char key2) {
 			}
 		}
 	}
+	keyb->kbdBuf[0] = 0x00;
 }
 
 unsigned char keyInput(Keyboard* keyb, unsigned char prt) {

@@ -202,6 +202,7 @@ typedef struct {
 #endif
 	char key1;
 	char key2;
+	char keyCode;
 } keyEntry;
 
 #ifdef XQTPAINT

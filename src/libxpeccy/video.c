@@ -569,8 +569,10 @@ void vidDrawTSL16(Video* vid) {
 	} else if (vid->flags & VID_NOGFX) {
 		col = 0xf0;
 	} else {
-		xscr += (vid->tsconf.xOffset & 0x01ff);
-		yscr += (vid->tsconf.yOffset & 0x01ff);
+		xscr += vid->tsconf.xOffset;
+		yscr += vid->tsconf.yOffset;
+		xscr &= 0x1ff;
+		yscr &= 0x1ff;
 		adr = (vid->tsconf.vidPage << 14) + (yscr << 8) + (xscr >> 1);
 		scrbyte = vid->mem->ramData[adr];
 		if (xscr & 1) {
@@ -578,9 +580,10 @@ void vidDrawTSL16(Video* vid) {
 		} else {
 			col = (scrbyte & 0xf0) >> 4 ;		// left pixel
 		}
+		col |= vid->tsconf.scrPal;
 	}
-	*(vid->scrptr++) = vid->tsconf.scrPal | col;
-	if (vidFlag & VF_DOUBLE) *(vid->scrptr++) = vid->tsconf.scrPal | col;
+	*(vid->scrptr++) = col;
+	if (vidFlag & VF_DOUBLE) *(vid->scrptr++) = col;
 }
 
 // tsconf 8bpp
@@ -593,8 +596,10 @@ void vidDrawTSL256(Video* vid) {
 	} else if (vid->flags & VID_NOGFX) {
 		col = 0xf0;
 	} else {
-		xscr += (vid->tsconf.xOffset & 0x01ff);
-		yscr += (vid->tsconf.yOffset & 0x01ff);
+		xscr += vid->tsconf.xOffset;
+		yscr += vid->tsconf.yOffset;
+		xscr &= 0x1ff;
+		yscr &= 0x1ff;
 		adr = (vid->tsconf.vidPage << 14) + (yscr << 9) + xscr;
 		col = vid->mem->ramData[adr];
 	}

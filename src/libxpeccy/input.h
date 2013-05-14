@@ -32,7 +32,8 @@ typedef struct {
 
 typedef struct {
 	int flags;
-	unsigned char map[8];
+	unsigned char map[8];		// ZX keyboard half-row bits
+	unsigned char kbdBuf[16];	// PS/2 key buffer
 } Keyboard;
 
 typedef struct {
@@ -43,8 +44,8 @@ typedef struct {
 Keyboard* keyCreate();
 void keyDestroy(Keyboard*);
 
-void keyPress(Keyboard*,char,char);
-void keyRelease(Keyboard*,char,char);
+void keyPress(Keyboard*,char,char,char);
+void keyRelease(Keyboard*,char,char,char);
 unsigned char keyInput(Keyboard*,unsigned char);
 
 Mouse* mouseCreate();

@@ -182,6 +182,7 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 			break;
 		case 0xbff7:			// cmos.data
 			if (pEFF7 & 0x80) comp->cmos.data[comp->cmos.adr] = val;
+			if (comp->cmos.adr > 0xef) printf("write to cmos %.2X,%.2X\n",comp->cmos.adr,val);
 			break;
 		case 0xdff7:			// cmos.adr
 			if (pEFF7 & 0x80) comp->cmos.adr = val;
@@ -244,7 +245,18 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 			res = 0;		// b7: DMA status
 			break;
 		case 0xbff7:
+#ifdef ISDEBUG
+			if (comp->cmos.adr > 0xef) {
+				res = comp->keyb->kbdBuf[0];
+				comp->keyb->kbdBuf[0] = 0x00;
+			} else {
+				res = (pEFF7 & 0x80) ? comp->cmos.data[comp->cmos.adr] : 0xff;
+			}
+#else
 			res = (pEFF7 & 0x80) ? comp->cmos.data[comp->cmos.adr] : 0xff;
+#endif
+			//printf("read cmos %.2X = %.2X\n",comp->cmos.adr, res);
+			//if (comp->cmos.adr > 0xef) comp->flag |= ZX_BREAK;
 			break;
 		case 0xfffd:
 			res = tsIn(comp->ts,port);
