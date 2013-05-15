@@ -102,17 +102,12 @@ struct ZXComp {
 	} dma;
 	struct {
 		int flag;
-//		unsigned char tsScrPal;
 		unsigned short tsMapAdr;	// adr for altera mapping
 		unsigned char FDDVirt;
 		unsigned char Page0;
 		unsigned char Page1;
 		unsigned char Page2;
 		unsigned char Page3;
-//		unsigned char TMPage;		// tile map page
-//		unsigned char T0GPage;		// tile 0 graphics page
-//		unsigned char T1GPage;		// tile 1 graphics page
-//		unsigned char SGPage;		// sprite graphics page
 	} tsconf;
 	CMOS cmos;
 	unsigned char dosen;		// active trdos (dosen and b4,prt0 sets rompart)

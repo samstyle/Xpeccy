@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include "input.h"
 
 typedef struct {
@@ -19,6 +20,8 @@ keyScan keyTab[40] = {
 Keyboard* keyCreate() {
 	Keyboard* keyb = (Keyboard*)malloc(sizeof(Keyboard));
 	keyRelease(keyb,0,0,0);
+	keyb->flags = 0;
+	keyb->kBufPos = 0;
 	return keyb;
 }
 
@@ -33,7 +36,12 @@ void keyPress(Keyboard* keyb,char key1,char key2,char kcod) {
 			keyb->map[keyTab[i].row] &= ~keyTab[i].mask;
 		}
 	}
-	keyb->kbdBuf[0] = kcod;
+	if (keyb->flags & INF_PCKEY) {
+		if (keyb->kBufPos < 14) {
+			keyb->kbdBuf[keyb->kBufPos++] = kcod;
+			keyb->kbdBuf[keyb->kBufPos] = 0x00;		// end
+		}
+	}
 }
 
 void keyRelease(Keyboard* keyb,char key1,char key2, char kcod) {
@@ -47,7 +55,11 @@ void keyRelease(Keyboard* keyb,char key1,char key2, char kcod) {
 			}
 		}
 	}
-	keyb->kbdBuf[0] = 0x00;
+	if ((keyb->flags & INF_PCKEY) && (keyb->kBufPos < 14)) {
+		keyb->kbdBuf[keyb->kBufPos++] = 0xf0;		// release code
+		keyb->kbdBuf[keyb->kBufPos++] = kcod;
+		keyb->kbdBuf[keyb->kBufPos] = 0x00;
+	}
 }
 
 unsigned char keyInput(Keyboard* keyb, unsigned char prt) {
@@ -57,6 +69,15 @@ unsigned char keyInput(Keyboard* keyb, unsigned char prt) {
 		if (~prt & 0x80) res &= keyb->map[i];
 		prt <<= 1;
 	}
+	return res;
+}
+
+unsigned char keyReadCode(Keyboard* keyb) {
+	if (~keyb->flags & INF_PCKEY) return 0x00;
+	if (keyb->kBufPos < 1) return 0x00;
+	unsigned char res = keyb->kbdBuf[0];
+	memcpy(&keyb->kbdBuf[0],&keyb->kbdBuf[1],15);
+	keyb->kBufPos--;
 	return res;
 }
 

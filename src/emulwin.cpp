@@ -34,7 +34,7 @@
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#define	XPTITLE	"Xpeccy 0.5 (20130514)"
+#define	XPTITLE	"Xpeccy 0.5 (20130515)"
 
 // main
 MainWin* mainWin;
@@ -863,19 +863,19 @@ void doSDLEvents() {
 							showInfo("Fukken saved");
 							break;
 						case SDLK_DOWN:
-							zx->vid->tsconf.yOffset--;
+							zx->vid->tsconf.yOffset -= 16;
 							zx->vid->tsconf.yOffset &= 0x1ff;
 							break;
 						case SDLK_UP:
-							zx->vid->tsconf.yOffset++;
+							zx->vid->tsconf.yOffset += 16;
 							zx->vid->tsconf.yOffset &= 0x1ff;
 							break;
 						case SDLK_LEFT:
-							zx->vid->tsconf.xOffset--;
+							zx->vid->tsconf.xOffset -= 16;
 							zx->vid->tsconf.xOffset &= 0x1ff;
 							break;
 						case SDLK_RIGHT:
-							zx->vid->tsconf.xOffset++;
+							zx->vid->tsconf.xOffset += 16;
 							zx->vid->tsconf.xOffset &= 0x1ff;
 							break;
 #endif
@@ -1364,6 +1364,7 @@ void* emuThreadMain(void *) {
 		}
 		emulFlags |= FL_EMUL;
 		if (pauseFlags == 0) {
+			zx->frmStrobe = 0;
 			do {
 				// exec 1 opcode (+ INT, NMI)
 				ns += zxExec(zx);
@@ -1379,7 +1380,7 @@ void* emuThreadMain(void *) {
 					if ((pc == 0x5e2) && optGetFlag(OF_TAPEAUTO))
 						mainWin->tapStateChanged(TW_STATE,TWS_STOP);
 				}
-			} while (!(zx->flag & ZX_BREAK) && (zx->intStrobe == 0));		// exec until breakpoint or INT
+			} while (!(zx->flag & ZX_BREAK) && (zx->frmStrobe == 0));		// exec until breakpoint or INT
 			if (zx->flag & ZX_BREAK) {						// request debug window on breakpoint
 				wantedWin = WW_DEBUG;
 				zx->flag &= ~ZX_BREAK;
@@ -1522,17 +1523,10 @@ void MainWin::bookmarkSelected(QAction* act) {
 void MainWin::profileSelected(QAction* act) {
 	emulPause(true,PR_EXTRA);
 	setProfile(std::string(act->text().toLocal8Bit().data()));
-//	loadConfig(false);
-//	prfLoad("");
 	sndCalibrate();
 	emulUpdateWindow();
 	saveProfiles();
-//	if (zx->flag & ZX_JUSTBORN) {
-//		zxReset(zx,RES_DEFAULT);
-//		zx->flag &= ~ZX_JUSTBORN;
-//	}
 	setFocus();
-//	vidSetCallback(zx->vid);
 	emulPause(false,PR_EXTRA);
 }
 
@@ -1544,7 +1538,6 @@ void MainWin::reset(QAction* act) {
 void MainWin::chLayout(QAction* act) {
 	emulPause(true,PR_EXTRA);
 	emulSetLayout(zx,std::string(act->text().toLocal8Bit().data()));
-	//saveConfig();
 	prfSave("");
 	emulUpdateWindow();
 	setFocus();

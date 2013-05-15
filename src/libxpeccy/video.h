@@ -18,6 +18,7 @@ extern "C" {
 // vid->flags (vid)
 #define	VID_BORDER_4T		1
 #define	VID_NOGFX		(1<<1)
+#define	VID_INTSTROBE		(1<<2)
 // screen drawing mode
 #define	VID_NOSCREEN	0
 #define	VID_NORMAL	1
@@ -30,6 +31,7 @@ extern "C" {
 #define VID_TSL_16	8	// TSConf 4bpp
 #define	VID_TSL_256	9	// TSConf 8bpp
 #define	VID_TSL_NORMAL	10	// TSConf common screen
+#define	VID_TSL_TEXT	11
 #define	VID_UNKNOWN	0xff
 
 typedef struct {
@@ -89,7 +91,6 @@ struct Video {
 		VPAIR(T1XOffset,t1xh,t1xl);	// tile 1 offsets
 		VPAIR(T1YOffset,t1yh,t1yl);
 		unsigned char line[512];	// buffer for render sprites & tiles
-//		unsigned char lflg[512];
 		unsigned char tsAMem[0x1000];	// ALTERA mem: 512 bytes TSConf palette, ... (tiles,sprites)
 	} tsconf;
 	unsigned char font[0x800];		// ATM text mode font

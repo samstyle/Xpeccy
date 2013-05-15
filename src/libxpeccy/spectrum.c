@@ -402,6 +402,9 @@ void zxReset(ZXComp* comp,int wut) {
 			comp->vid->tsconf.yOffset = 0;
 			comp->vid->flags &= ~VID_NOGFX;
 			comp->vid->tsconf.tconfig = 0;
+			comp->vid->intpos.h = 0;
+			comp->vid->intpos.v = 0;
+			comp->vid->tsconf.vidPage = 5;
 			break;
 		default:
 			comp->prt0 = ((resto & 1) << 4);
@@ -447,52 +450,6 @@ void zxSetFrq(ZXComp* comp, float frq) {
 }
 
 int zxExec(ZXComp* comp) {
-#if 0
-	if (comp->intStrobe) {
-		comp->intStrobe = 0;
-		res4 = 0;
-		res2 = INTCPU(comp->cpu);	// z80ex_int(comp->cpu);
-		comp->nsCount -= comp->nsPerFrame;
-		if (comp->rzxPlay) {
-			comp->rzxFrame++;
-			if (comp->rzxFrame >= comp->rzxSize) {
-				comp->rzxPlay = 0;
-				comp->rzxSize = 0;
-				if (comp->rzxData) free(comp->rzxData);
-				comp->rzxData = NULL;
-			} else {
-				comp->rzxFetches = comp->rzxData[comp->rzxFrame].fetches;
-				comp->rzxPos = 0;
-			}
-		}
-	} else {
-		res4 = 0;
-		EXECCPU(comp->cpu,res2);
-		// res1 = res2;
-		if (comp->nmiRequest && !comp->rzxPlay) {
-			pcreg = GETPC(comp->cpu);// z80ex_get_reg(comp->cpu,regPC);
-			if (pcreg > 0x3fff) {
-				res5 = NMICPU(comp->cpu);	// z80ex_nmi(comp->cpu);
-				if (res5 != 0) {
-					comp->dosen = 1;
-					comp->prt0 |= 0x10;
-					comp->hw->mapMem(comp);
-					res2 += res5;
-				}
-			}
-		}
-	}
-	nsTime = res2 * comp->nsPerTick;
-	vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
-//	comp->tickCount += res1;
-	comp->nsCount += nsTime;
-	if (comp->rzxPlay) {
-		if (comp->rzxFetches < 1) comp->intStrobe = 1;
-	} else {
-		if (comp->nsCount >= comp->nsPerFrame) comp->intStrobe = 1;
-	}
-	comp->tickCount += res2;
-#else
 	res4 = 0;
 	EXECCPU(comp->cpu,res2);
 	comp->nsCount += res2 * comp->nsPerTick;
@@ -501,12 +458,15 @@ int zxExec(ZXComp* comp) {
 	res1 = res2;
 	if (comp->rzxPlay) {
 		comp->intStrobe = (comp->rzxFetches < 1);
+		comp->frmStrobe = comp->intStrobe;
 	} else {
 		if (comp->nsCount >= comp->nsPerFrame) {
-			comp->intStrobe = 1;
 			comp->nsCount -= comp->nsPerFrame;
-		} else {
-			comp->intStrobe = 0;
+			comp->frmStrobe = 1;
+		}
+		if (comp->vid->flags & VID_INTSTROBE) {
+			comp->intStrobe = 1;
+			comp->vid->flags &= ~VID_INTSTROBE;
 		}
 	}
 	pcreg = GETPC(comp->cpu);	// z80ex_get_reg(comp->cpu,regPC);
@@ -541,10 +501,10 @@ int zxExec(ZXComp* comp) {
 				comp->rzxPos = 0;
 			}
 		}
+		comp->intStrobe = 0;
 	}
 	nsTime = res1 * comp->nsPerTick;
 	comp->tickCount += res1;
-#endif
 
 // TOO FAT
 	pcreg = GETPC(comp->cpu); // z80ex_get_reg(comp->cpu,regPC);

@@ -504,6 +504,10 @@ void vidTSRender(Video* vid, unsigned char* ptr) {
 // prepare layers in VID->LINE & out visible part to PTR
 	sadr = 0x200;			// start of sprites tab in altera mem
 	memset(vid->tsconf.line,0x00,0x200);		// clear tile-sprite line
+// S0 ?
+//	if (vid->tsconf.tconfig & 0x80) {
+//		vidTSSprites(vid);
+//	}
 // T0
 	if (vid->tsconf.tconfig & 0x20) {
 		vidTSTiles(vid,0,vid->tsconf.T0YOffset,vid->tsconf.T0XOffset,vid->tsconf.T0GPage,vid->tsconf.T0Pal76);
@@ -531,11 +535,9 @@ void vidDrawTSLNormal(Video* vid) {
 	if ((yscr < 0) || (yscr > 191)) {
 		col = vid->brdcol;
 	} else if (vid->flags & VID_NOGFX) {
-		col = 0xf0;
+		col = vid->brdcol;
 	} else {
 		xadr = vid->tsconf.vidPage ^ (vid->curscr ? 2 : 0);	// TODO : ORLY? Current video page
-//		xscr = vid->x - vid->bord.h;
-//		yscr = vid->y - vid->bord.v;
 		if ((xscr & 7) == 4) {
 			adr = ((yscr & 0xc0) << 5) | ((yscr & 7) << 8) | ((yscr & 0x38) << 2) | (((xscr + 4) & 0xf8) >> 3);
 			nxtbyte = vid->mem->ram[xadr].data[adr];
@@ -567,7 +569,7 @@ void vidDrawTSL16(Video* vid) {
 	if ((xscr < 0) || (xscr >= vid->tsconf.xSize) || (yscr < 0) || (yscr >= vid->tsconf.ySize)) {
 		col = vid->brdcol;
 	} else if (vid->flags & VID_NOGFX) {
-		col = 0xf0;
+		col = vid->brdcol;
 	} else {
 		xscr += vid->tsconf.xOffset;
 		yscr += vid->tsconf.yOffset;
@@ -594,7 +596,7 @@ void vidDrawTSL256(Video* vid) {
 	if ((xscr < 0) || (xscr >= vid->tsconf.xSize) || (yscr < 0) || (yscr >= vid->tsconf.ySize)) {
 		col = vid->brdcol;
 	} else if (vid->flags & VID_NOGFX) {
-		col = 0xf0;
+		col = vid->brdcol;
 	} else {
 		xscr += vid->tsconf.xOffset;
 		yscr += vid->tsconf.yOffset;
@@ -605,6 +607,12 @@ void vidDrawTSL256(Video* vid) {
 	}
 	*(vid->scrptr++) = col;
 	if (vidFlag & VF_DOUBLE) *(vid->scrptr++) = col;
+}
+
+// tsconf text (not yet)
+
+void vidDrawTSLText(Video* vid) {
+	vidPutDot(vid,vid->brdcol);
 }
 
 // weiter
@@ -622,6 +630,7 @@ void vidSetMode(Video* vid, int mode) {
 		case VID_TSL_NORMAL: vid->callback = &vidDrawTSLNormal; break;
 		case VID_TSL_16: vid->callback = &vidDrawTSL16; break;
 		case VID_TSL_256: vid->callback = &vidDrawTSL256; break;
+		case VID_TSL_TEXT: vid->callback = &vidDrawTSLText; break;
 		default: vid->callback = &vidDrawUnknown; break;
 	}
 }
@@ -635,6 +644,7 @@ void vidSync(Video* vid, int ns) {
 				vid->callback(vid);		// put dot
 			}
 		}
+		if ((vid->x == vid->intpos.h) && (vid->y == vid->intpos.v)) vid->flags |= VID_INTSTROBE;
 		if (++vid->x >= vid->full.h) {
 			vid->x = 0;
 			if (vid->flags & VF_TSCONF) vidTSRender(vid, vid->scrptr - vid->wsze.h);

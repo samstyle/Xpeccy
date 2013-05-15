@@ -39,39 +39,24 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 				case 0: vidSetMode(comp->vid,VID_TSL_NORMAL); break;
 				case 1: vidSetMode(comp->vid,VID_TSL_16); break;
 				case 2: vidSetMode(comp->vid,VID_TSL_256); break;
-				case 3: break;			// 1 page text mode (not yet)
+				case 3: vidSetMode(comp->vid,VID_TSL_TEXT); break;
 				default: vidSetMode(comp->vid,VID_UNKNOWN); break;
 			}
 			comp->vid->flags &= ~VID_NOGFX;
 			if (val & 0x20) comp->vid->flags |= VID_NOGFX;
 			break;
-		case 0x01af:
-			comp->vid->tsconf.vidPage = val;
-			break;
-		case 0x02af:
-			comp->vid->tsconf.soxl = val;
-			break;
-		case 0x03af:
-			comp->vid->tsconf.soxh = val;
-			break;
-		case 0x04af:
-			comp->vid->tsconf.soyl = val;
-			break;
-		case 0x05af:
-			comp->vid->tsconf.soyh = val;
-			break;
-		case 0x06af:			// TSConf
-			comp->vid->tsconf.tconfig = val;
-			break;
+		case 0x01af: comp->vid->tsconf.vidPage = val; break;
+		case 0x02af: comp->vid->tsconf.soxl = val; break;
+		case 0x03af: comp->vid->tsconf.soxh = val; break;
+		case 0x04af: comp->vid->tsconf.soyl = val; break;
+		case 0x05af: comp->vid->tsconf.soyh = val; break;
+		case 0x06af: comp->vid->tsconf.tconfig = val; break;
 		case 0x07af:
 			comp->vid->tsconf.scrPal = (val & 0x0f) << 4;
 			comp->vid->tsconf.T0Pal76 = (val & 0x30) << 2;
 			comp->vid->tsconf.T1Pal76 = (val & 0xc0);
 			break;
-		case 0x0faf:
-			comp->vid->brdcol = val;
-			comp->vid->nextbrd = val;
-			break;
+		case 0x0faf: comp->vid->nextbrd = val; break;
 		case 0x10af:			// Page0
 			comp->tsconf.Page0 = val;
 			// memSetBank(comp->mem,MEM_BANK0,MEM_RAM,val);
@@ -93,10 +78,10 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 			comp->tsconf.flag = val & 0x10;		// FM_EN
 			comp->tsconf.tsMapAdr = ((val & 0x0f) << 12);
 			break;
-		case 0x16af: comp->vid->tsconf.TMPage = val; break;
-		case 0x17af: comp->vid->tsconf.T0GPage = val; break;
-		case 0x18af: comp->vid->tsconf.T1GPage = val; break;
-		case 0x19af: comp->vid->tsconf.SGPage = val; break;
+		case 0x16af: comp->vid->tsconf.TMPage = val & 0xf8; break;
+		case 0x17af: comp->vid->tsconf.T0GPage = val & 0xf8; break;
+		case 0x18af: comp->vid->tsconf.T1GPage = val & 0xf8; break;
+		case 0x19af: comp->vid->tsconf.SGPage = val & 0xf8; break;
 		case 0x1aaf: comp->dma.src.l = val; break;
 		case 0x1baf: comp->dma.src.h = val; break;
 		case 0x1caf: comp->dma.src.x = val; break;
@@ -113,19 +98,25 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 			break;
 		case 0x21af:			// MemConfig
 			p21AF = val;
-			if (val & 1)
-				p7FFD |= 0x10;
-			else
-				p7FFD &= ~0x10;
+			p7FFD &= ~0x10;
+			if (val & 1) p7FFD |= 0x10;
 			tslMapMem(comp);
 			break;
 		case 0x22af:
+			printf("out 22AF,%.2X\n",val);
 			break;
-		case 0x23af:
+		case 0x23af:					// VSINTL
+			comp->vid->intpos.v &= 0xff00;
+			comp->vid->intpos.v |= val;
+			//printf("out 23AF,%.2X\n",val);
 			break;
-		case 0x24af:
+		case 0x24af:					// VSINTH
+			comp->vid->intpos.v &= 0x00ff;
+			comp->vid->intpos.v |= ((val & 1) << 8);
+			//printf("out 24AF,%.2X\n",val);
 			break;
 		case 0x25af:
+			printf("out 25AF,%.2X\n",val);
 			break;
 		case 0x26af:
 			comp->dma.len = val;
@@ -136,17 +127,22 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 					sadr = (comp->dma.src.x << 14) | ((comp->dma.src.h & 0x3f) << 8) | (comp->dma.src.l & 0xfe);
 					dadr = (comp->dma.dst.x << 14) | ((comp->dma.dst.h & 0x3f) << 8) | (comp->dma.dst.l & 0xfe);
 					lcnt = (comp->dma.len + 1) << 1;
+//					printf("\nsrc : %.2X %.2X %.2X (%X)\n",comp->dma.src.x,comp->dma.src.h,comp->dma.src.l,sadr);
+//					printf("dst : %.2X %.2X %.2X (%X)\n",comp->dma.dst.x,comp->dma.dst.h,comp->dma.dst.l,dadr);
+//					printf("len : %.2X (%i bytes)\n",comp->dma.len,lcnt);
+//					printf("num : %.2X\n",comp->dma.num);
+
 					for (cnt = 0; cnt <= comp->dma.num; cnt++) {
 						memcpy(comp->mem->ramData + dadr, comp->mem->ramData + sadr,lcnt);	// ?? will crush @ end of mem
 						sadr += (val & 0x20) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;		// SALGN
 						dadr += (val & 0x10) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;		// DALGN
 					}
-					comp->dma.src.x = ((sadr & 0x3fc000) >> 14);
-					comp->dma.src.h = ((sadr & 0x3f00) >> 8);
-					comp->dma.src.l = sadr & 0xff;
-					comp->dma.dst.x = ((dadr & 0x3fc000) >> 14);
-					comp->dma.dst.h = ((dadr & 0x3f00) >> 8);
-					comp->dma.dst.l = dadr & 0xff;
+					//comp->dma.src.x = ((sadr & 0x3fc000) >> 14);
+					//comp->dma.src.h = ((sadr & 0x3f00) >> 8);
+					//comp->dma.src.l = sadr & 0xff;
+					//comp->dma.dst.x = ((dadr & 0x3fc000) >> 14);
+					//comp->dma.dst.h = ((dadr & 0x3f00) >> 8);
+					//comp->dma.dst.l = dadr & 0xff;
 					break;
 				case 0x81: break;	// nothing
 				default:
@@ -182,7 +178,11 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 			break;
 		case 0xbff7:			// cmos.data
 			if (pEFF7 & 0x80) comp->cmos.data[comp->cmos.adr] = val;
-			if (comp->cmos.adr > 0xef) printf("write to cmos %.2X,%.2X\n",comp->cmos.adr,val);
+			if (comp->cmos.adr == 0xf0) {
+				comp->keyb->flags &= ~INF_PCKEY;
+				if (val & 2) comp->keyb->flags |= INF_PCKEY;
+			}
+			// if (comp->cmos.adr > 0xef) printf("write to cmos %.2X,%.2X\n",comp->cmos.adr,val);
 			break;
 		case 0xdff7:			// cmos.adr
 			if (pEFF7 & 0x80) comp->cmos.adr = val;
@@ -245,18 +245,15 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 			res = 0;		// b7: DMA status
 			break;
 		case 0xbff7:
-#ifdef ISDEBUG
-			if (comp->cmos.adr > 0xef) {
-				res = comp->keyb->kbdBuf[0];
-				comp->keyb->kbdBuf[0] = 0x00;
-			} else {
-				res = (pEFF7 & 0x80) ? comp->cmos.data[comp->cmos.adr] : 0xff;
+			switch (comp->cmos.adr) {
+				case 0xf0:
+					res = keyReadCode(comp->keyb);
+					break;
+				default:
+					res = (pEFF7 & 0x80) ? comp->cmos.data[comp->cmos.adr] : 0xff;
+					break;
 			}
-#else
-			res = (pEFF7 & 0x80) ? comp->cmos.data[comp->cmos.adr] : 0xff;
-#endif
-			//printf("read cmos %.2X = %.2X\n",comp->cmos.adr, res);
-			//if (comp->cmos.adr > 0xef) comp->flag |= ZX_BREAK;
+//			res = (pEFF7 & 0x80) ? comp->cmos.data[comp->cmos.adr] : 0xff;
 			break;
 		case 0xfffd:
 			res = tsIn(comp->ts,port);
