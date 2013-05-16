@@ -68,7 +68,7 @@ void p1mOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 			p1mMapMem(comp);
 			break;
 		case 0xbff7:
-			if (comp->prt1 & 0x80) comp->cmos.data[comp->cmos.adr] = val;
+			if (comp->prt1 & 0x80) cmsWr(comp,val);
 			break;
 		case 0xdff7:
 			if (comp->prt1 & 0x80) comp->cmos.adr = val;
@@ -112,7 +112,7 @@ Z80EX_BYTE p1mIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 			res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->ypos : 0xff;
 			break;
 		case 0xbff7:
-			res = (comp->prt1 & 0x80) ? comp->cmos.data[comp->cmos.adr] : 0xff;
+			res = (comp->prt1 & 0x80) ? cmsRd(comp) : 0xff;
 			break;
 		case 0xfffd:
 			res = tsIn(comp->ts,port);

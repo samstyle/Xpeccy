@@ -7,7 +7,6 @@ extern "C" {
 // flags
 #define	INF_ENABLED	1
 #define	INF_WHEEL	(1<<1)
-#define	INF_PCKEY	(1<<2)
 // mouse
 #define	XM_WHEELUP	0
 #define	XM_WHEELDN	1
@@ -46,8 +45,8 @@ typedef struct {
 Keyboard* keyCreate();
 void keyDestroy(Keyboard*);
 
-void keyPress(Keyboard*,char,char,char);
-void keyRelease(Keyboard*,char,char,char);
+void keyPress(Keyboard*,char,char,int);
+void keyRelease(Keyboard*,char,char,int);
 unsigned char keyInput(Keyboard*,unsigned char);
 unsigned char keyReadCode(Keyboard*);
 

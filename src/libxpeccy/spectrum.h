@@ -93,6 +93,8 @@ struct ZXComp {
 		unsigned char evo4F;
 		unsigned char evo6F;
 		unsigned char evo8F;
+		unsigned char blVer[16];	// bootloader info
+		unsigned char bcVer[16];	// baseconf info
 	} evo;
 	struct {
 		DMAaddr src;
@@ -114,6 +116,7 @@ struct ZXComp {
 	int resbank;			// rompart active after reset
 	int tapCount;
 	unsigned long tickCount;
+	int intVector;
 };
 
 typedef struct ZXComp ZXComp;
@@ -128,6 +131,10 @@ int zxExec(ZXComp*);
 void zxSetFrq(ZXComp*,float);
 void zxSetLayout(ZXComp*, int, int, int, int, int, int, int, int, int);
 void zxSetHardware(ZXComp*,const char*);
+
+// read-write cmos
+unsigned char cmsRd(ZXComp*);
+void cmsWr(ZXComp*,unsigned char);
 
 void rzxClear(ZXComp*);
 

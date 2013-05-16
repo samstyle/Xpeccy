@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include "input.h"
 
@@ -29,22 +30,22 @@ void keyDestroy(Keyboard* keyb) {
 	free(keyb);
 }
 
-void keyPress(Keyboard* keyb,char key1,char key2,char kcod) {
+void keyPress(Keyboard* keyb, char key1, char key2, int kcod) {
 	int i;
 	for (i=0; i<40; i++) {
 		if ((keyTab[i].key == key1) || (keyTab[i].key == key2)) {
 			keyb->map[keyTab[i].row] &= ~keyTab[i].mask;
 		}
 	}
-	if (keyb->flags & INF_PCKEY) {
-		if (keyb->kBufPos < 14) {
-			keyb->kbdBuf[keyb->kBufPos++] = kcod;
-			keyb->kbdBuf[keyb->kBufPos] = 0x00;		// end
+	if (keyb->kBufPos < 14) {
+		while (kcod) {
+			keyb->kbdBuf[keyb->kBufPos++] = (kcod & 0xff);
+			kcod >>= 8;
 		}
 	}
 }
 
-void keyRelease(Keyboard* keyb,char key1,char key2, char kcod) {
+void keyRelease(Keyboard* keyb, char key1, char key2, int kcod) {
 	int i;
 	if ((key1 == 0) && (key2 == 0)) {
 		for (i = 0; i < 8; i++) keyb->map[i] = 0x1f;
@@ -55,10 +56,12 @@ void keyRelease(Keyboard* keyb,char key1,char key2, char kcod) {
 			}
 		}
 	}
-	if ((keyb->flags & INF_PCKEY) && (keyb->kBufPos < 14)) {
-		keyb->kbdBuf[keyb->kBufPos++] = 0xf0;		// release code
-		keyb->kbdBuf[keyb->kBufPos++] = kcod;
-		keyb->kbdBuf[keyb->kBufPos] = 0x00;
+	if (keyb->kBufPos < 14) {
+		while (kcod) {
+			if (kcod < 0x100) keyb->kbdBuf[keyb->kBufPos++] = 0xf0;
+			keyb->kbdBuf[keyb->kBufPos++] = (kcod & 0xff);
+			kcod >>= 8;
+		}
 	}
 }
 
@@ -73,10 +76,10 @@ unsigned char keyInput(Keyboard* keyb, unsigned char prt) {
 }
 
 unsigned char keyReadCode(Keyboard* keyb) {
-	if (~keyb->flags & INF_PCKEY) return 0x00;
-	if (keyb->kBufPos < 1) return 0x00;
-	unsigned char res = keyb->kbdBuf[0];
-	memcpy(&keyb->kbdBuf[0],&keyb->kbdBuf[1],15);
+	if (keyb->kBufPos < 1) return 0x00;		// empty
+	if (keyb->kBufPos > 14) return 0xff;		// overfill
+	unsigned char res = keyb->kbdBuf[0];		// read code
+	memcpy(&keyb->kbdBuf[0],&keyb->kbdBuf[1],15);	// delete code
 	keyb->kBufPos--;
 	return res;
 }

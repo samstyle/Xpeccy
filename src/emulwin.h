@@ -47,6 +47,7 @@
 #define	FL_UPDATE	(1<<10)
 #define FL_DRAW		(1<<11)
 #define	FL_WORK		(1<<12)
+#define	FL_SYSCLOCK	(1<<13)
 
 // Qt nativeScanCode
 
@@ -202,7 +203,7 @@ typedef struct {
 #endif
 	char key1;
 	char key2;
-	char keyCode;
+	int keyCode;		// 0xXXYYZZ = ZZ,YY,XX in buffer (ZZ,YY,0xf0,XX if released)
 } keyEntry;
 
 #ifdef XQTPAINT

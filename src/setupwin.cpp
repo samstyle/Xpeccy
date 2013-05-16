@@ -332,6 +332,7 @@ void SetupWin::start() {
 	if (setupUi.mszbox->currentIndex() < 0) setupUi.mszbox->setCurrentIndex(setupUi.mszbox->count() - 1);
 	setupUi.cpufrq->setValue(zx->cpuFrq * 2); updfrq();
 	setupUi.scrpwait->setChecked(zx->hwFlag & HW_WAIT);
+	setupUi.sysCmos->setChecked(emulGetFlags() & FL_SYSCLOCK);
 // video
 	lays = getLayoutList();
 	setupUi.dszchk->setChecked((vidFlag & VF_DOUBLE));
@@ -498,6 +499,7 @@ void SetupWin::apply() {
 	optSet(OPT_SHOTINT,setupUi.sintbox->value());
 	emulSetLayout(zx,std::string(setupUi.geombox->currentText().toLocal8Bit().data()));
 	optSet(OPT_BRGLEV,setupUi.brgslide->value());
+	emulSetFlag(FL_SYSCLOCK,setupUi.sysCmos->isChecked());
 // sound
 	std::string oname = std::string(sndOutput->name);
 	std::string nname(setupUi.outbox->currentText().toLocal8Bit().data());

@@ -100,19 +100,6 @@ Z80EX_BYTE memrd(CPUCONT Z80EX_WORD adr,int m1,void* ptr) {
 					comp->hw->mapMem(comp);
 				}
 			}
-/*
-			if ((comp->dosen == 0) && ((adr & 0xff00) == 0x3d00) && (comp->prt0 & 0x10)) {
-				comp->dosen = 1;
-				comp->hw->mapMem(comp);
-			}
-			if ((comp->dosen == 1) && (memGetBankPtr(comp->mem,adr)->type == MEM_RAM)	// off when fetch in ram
-					&& !((comp->hw->type == HW_ATM2) && (~comp->prt1 & 2))		// but not ATM2 cpm mode
-					&& !((comp->hw->type == HW_PENTEVO && (~comp->prt1 & 0x40)))	// and not PentEvo keep dos alive
-					) {
-				comp->dosen = 0;
-				comp->hw->mapMem(comp);
-			}
-*/
 		}
 	}
 //	res3 = res2 + z80ex_op_tstate(cpu);
@@ -254,7 +241,7 @@ void iowr(CPUCONT Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 }
 
 Z80EX_BYTE intrq(CPUCONT void* ptr) {
-	return 0xff;
+	return ((ZXComp*)ptr)->intVector;
 }
 
 void rzxClear(ZXComp* zx) {
@@ -316,7 +303,13 @@ ZXComp* zxCreate() {
 	comp->evo.evo4F = 0;
 	comp->evo.evo6F = 0;
 	comp->evo.evo8F = 0;
-// tsconf
+//			0   1   2   3   4   5   6   7   8   9   A   B   C    D    E    F
+	char blnm[] = {'x','B','o','o','t',000,000,000,000,000,000,000,0x38,0x98,0x00,0x00};
+	char bcnm[] = {'x','E','v','o',' ','0','.','5','2',000,000,000,0x89,0x99,0x00,0x00};
+	memcpy(comp->evo.blVer,blnm,16);
+	memcpy(comp->evo.bcVer,bcnm,16);
+	comp->cmos.mode = 0;
+
 	comp->rzxSize = 0;
 	comp->rzxData = NULL;
 	comp->tapCount = 0;
@@ -372,6 +365,7 @@ void zxReset(ZXComp* comp,int wut) {
 	comp->vid->curscr = 0;
 	vidSetMode(comp->vid,VID_NORMAL);
 	comp->dosen = 0;
+	comp->intVector = 0xff;
 	switch (comp->hw->type) {
 		case HW_ZX48:
 			comp->prt0 = 0x10;		// else beta-disk doesn't enter in tr-dos
@@ -392,7 +386,7 @@ void zxReset(ZXComp* comp,int wut) {
 			comp->vid->tsconf.scrPal = 0xf0;
 			memset(comp->vid->tsconf.tsAMem,0x00,0x1e0);
 			memcpy(&comp->vid->tsconf.tsAMem[0x1e0],tsPalInit,0x20);	// init zx palete ?
-			vidSetMode(comp->vid,VID_TSL_NORMAL);
+			tslOut(comp,0x00af,0x00,0);			// std 256x192, NOGFX off
 			comp->vid->nextbrd = 0xf7;
 			comp->vid->tsconf.T0XOffset = 0;
 			comp->vid->tsconf.T0YOffset = 0;
@@ -400,7 +394,6 @@ void zxReset(ZXComp* comp,int wut) {
 			comp->vid->tsconf.T1YOffset = 0;
 			comp->vid->tsconf.xOffset = 0;
 			comp->vid->tsconf.yOffset = 0;
-			comp->vid->flags &= ~VID_NOGFX;
 			comp->vid->tsconf.tconfig = 0;
 			comp->vid->intpos.h = 0;
 			comp->vid->intpos.v = 0;
@@ -515,4 +508,43 @@ int zxExec(ZXComp* comp) {
 	if (comp->gs->flag & GS_ENABLE) comp->gs->sync += nsTime;
 	if (comp->bdi->fdc->type != FDC_NONE) bdiSync(comp->bdi, nsTime);
 	return nsTime;
+}
+
+// cmos
+
+unsigned char cmsRd(ZXComp* comp) {
+	unsigned char res = 0x00;
+	switch (comp->cmos.adr) {
+		case 0x0a: res = 0x00; break;
+		case 0x0b: res = 0x02; break;
+		case 0x0c: res = 0x00; break;
+		case 0x0d: res = 0x80; break;
+		default:
+			if (comp->cmos.adr < 0xf0) {
+				res = comp->cmos.data[comp->cmos.adr];
+			} else {
+				switch(comp->cmos.mode) {
+					case 0: res = comp->evo.bcVer[comp->cmos.adr & 0x0f]; break;
+					case 1: res = comp->evo.blVer[comp->cmos.adr & 0x0f]; break;
+					case 2: res = keyReadCode(comp->keyb); break;		// read PC keyboard keycode
+				}
+			}
+			break;
+	}
+	return res;
+}
+
+void cmsWr(ZXComp* comp, unsigned char val) {
+	switch (comp->cmos.adr) {
+		case 0x0c:
+			if (val & 1) comp->keyb->kBufPos = 0;		// reset PC-keyboard buffer
+			break;
+		default:
+			comp->cmos.data[comp->cmos.adr] = val;
+			if (comp->cmos.adr > 0xef) {
+				comp->cmos.mode = val;	// write to F0..FF : set F0..FF reading mode
+				//printf("cmos mode %i\n",val);
+			}
+			break;
+	}
 }

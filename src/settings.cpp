@@ -274,6 +274,7 @@ void saveProfiles() {
 	cfile << "startdefault = " << ((flag & OF_DEFAULT) ? "yes" : "no") << "\n";
 	cfile << "savepaths = " << ((flag & OF_PATHS) ? "yes" : "no") << "\n";
 	cfile << "fdcturbo = " << ((fdcFlag & FDC_FAST) ? "yes" : "no") << "\n";
+	cfile << "systime = " << ((emulGetFlags() & FL_SYSCLOCK) ? "yes" : "no") << "\n";
 
 	cfile << "\n[BOOKMARKS]\n\n";
 	std::vector<XBookmark> bml = getBookmarkList();
@@ -627,13 +628,10 @@ void loadProfiles() {
 						keyFileName = pval;
 						loadKeys();
 					}
-					if (pnam=="startdefault") {
-						optSetFlag(OF_DEFAULT,str2bool(pval));
-					}
-					if (pnam=="savepaths") {
-						optSetFlag(OF_PATHS,str2bool(pval));
-					}
+					if (pnam=="startdefault") optSetFlag(OF_DEFAULT,str2bool(pval));
+					if (pnam=="savepaths") optSetFlag(OF_PATHS,str2bool(pval));
 					if (pnam == "fdcturbo") setFlagBit(str2bool(pval),&fdcFlag,FDC_FAST);
+					if (pnam == "systime") emulSetFlag(FL_SYSCLOCK,str2bool(pval));
 					break;
 				case SECT_TAPE:
 					if (pnam=="autoplay") optSetFlag(OF_TAPEAUTO,str2bool(pval));

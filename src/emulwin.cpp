@@ -10,6 +10,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
@@ -34,7 +35,7 @@
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#define	XPTITLE	"Xpeccy 0.5 (20130515)"
+#define	XPTITLE	"Xpeccy 0.5 (20130516)"
 
 // main
 MainWin* mainWin;
@@ -153,19 +154,19 @@ keyEntry keyMapInit[] = {
 	{"LS",SDLK_LSHIFT,'C',0,0x00},{"Z",SDLK_z,'z',0,0x1a},{"X",SDLK_x,'x',0,0x22},{"C",SDLK_c,'c',0,0x21},{"V",SDLK_v,'v',0,0x2a},
 	{"B",SDLK_b,'b',0,0x32},{"N",SDLK_n,'n',0,0x31},{"M",SDLK_m,'m',0,0x3a},{"LC",SDLK_LCTRL,'S',0,0x00},{"SPC",SDLK_SPACE,' ',0,0x29},
 
-	{"RS",SDLK_RSHIFT,'C',0,0x00},{"RC",SDLK_RCTRL,'S',0,0x00},
+	{"RS",SDLK_RSHIFT,'C',0,0x59},{"RC",SDLK_RCTRL,'S',0,0x14e0},
 
-	{"`",SDLK_BACKQUOTE,'C','S',0x00},{"\\",SDLK_BACKSLASH,'C','S',0x00},
-	{";",SDLK_SEMICOLON,'S','o',0x00},{"\"",SDLK_QUOTE,'S','p',0x00},
-	{"TAB",SDLK_TAB,'C',' ',0x00},{"CAPS",SDLK_CAPSLOCK,'C','2',0x00},
-	{"PGDN",SDLK_PAGEUP,'C','3',0x00},{"PGUP",SDLK_PAGEDOWN,'C','4',0x00},{"BSP",SDLK_BACKSPACE,'C','0',0x00},
-	{"DEL",SDLK_DELETE,'C','9',0x00},{"INS",SDLK_INSERT,'S','w',0x00},{"HOME",SDLK_HOME,'S','q',0x00},{"END",SDLK_END,'S','e',0x00},
-	{"LEFT",SDLK_LEFT,'C','5',0x6b},{"DOWN",SDLK_DOWN,'C','6',0x72},{"UP",SDLK_UP,'C','7',0x75},{"RIGHT",SDLK_RIGHT,'C','8',0x74},
-	{"-",SDLK_MINUS,'S','j',0x00},{"+",SDLK_PLUS,'S','k',0x00},{"=",SDLK_EQUALS,'S','l',0x00},
-	{",",SDLK_COMMA,'S','n',0x00},{".",SDLK_PERIOD,'S','m',0x00},{"/",SDLK_SLASH,'S','c',0x00},
-	{"[",SDLK_LEFTBRACKET,'S','8',0x00},{"]",SDLK_RIGHTBRACKET,'S','9',0x00},
-	{"k/",SDLK_KP_DIVIDE,'S','v',0x00},{"k*",SDLK_KP_MULTIPLY,'S','b',0x00},{"k-",SDLK_KP_MINUS,'S','j',0x00},
-	{"k+",SDLK_KP_PLUS,'S','k',0x00},{"kENT",SDLK_KP_ENTER,'E',0,0x00},{"k.",SDLK_KP_PERIOD,'S','m',0x00},
+	{"`",SDLK_BACKQUOTE,'C','S',0x0e},{"\\",SDLK_BACKSLASH,'C','S',0x5d},
+	{";",SDLK_SEMICOLON,'S','o',0x4c},{"\"",SDLK_QUOTE,'S','p',0x52},
+	{"TAB",SDLK_TAB,'C',' ',0x0d},{"CAPS",SDLK_CAPSLOCK,'C','2',0x58},
+	{"PGDN",SDLK_PAGEUP,'C','3',0x7de0},{"PGUP",SDLK_PAGEDOWN,'C','4',0x7ae0},{"BSP",SDLK_BACKSPACE,'C','0',0x66},
+	{"DEL",SDLK_DELETE,'C','9',0x71e0},{"INS",SDLK_INSERT,'S','w',0x70e0},{"HOME",SDLK_HOME,'S','q',0x6ce0},{"END",SDLK_END,'S','e',0x69e0},
+	{"LEFT",SDLK_LEFT,'C','5',0x6be0},{"DOWN",SDLK_DOWN,'C','6',0x72e0},{"UP",SDLK_UP,'C','7',0x75e0},{"RIGHT",SDLK_RIGHT,'C','8',0x74e0},
+	{"-",SDLK_MINUS,'S','j',0x4e},{"+",SDLK_PLUS,'S','k',0x00},{"=",SDLK_EQUALS,'S','l',0x55},
+	{",",SDLK_COMMA,'S','n',0x41},{".",SDLK_PERIOD,'S','m',0x49},{"/",SDLK_SLASH,'S','c',0x4a},
+	{"[",SDLK_LEFTBRACKET,'S','8',0x54},{"]",SDLK_RIGHTBRACKET,'S','9',0x5b},
+	{"k/",SDLK_KP_DIVIDE,'S','v',0x4ae0},{"k*",SDLK_KP_MULTIPLY,'S','b',0x7c},{"k-",SDLK_KP_MINUS,'S','j',0x7b},
+	{"k+",SDLK_KP_PLUS,'S','k',0x79},{"kENT",SDLK_KP_ENTER,'E',0,0x5ae0},{"k.",SDLK_KP_PERIOD,'S','m',0x71},
 	{"",SDLK_LAST,0,0,0x00}
 };
 
@@ -191,15 +192,15 @@ keyEntry keyMapInit[] = {
 	{"LS",XKEY_LSHIFT,'C',0,0x00},{"Z",XKEY_Z,'z',0,0x1a},{"X",XKEY_X,'x',0,0x22},{"C",XKEY_C,'c',0,0x21},{"V",XKEY_V,'v',0,0x2a},
 	{"B",XKEY_B,'b',0,0x32},{"N",XKEY_N,'n',0,0x31},{"M",XKEY_M,'m',0,0x3a},{"LC",XKEY_LCTRL,'S',0,0x00},{"SPC",XKEY_SPACE,' ',0,0x29},
 
-	{"`",XKEY_TILDA,'C','S',0x00},{"\\",XKEY_SLASH,'C','S',0x00},
-	{";",XKEY_DOTCOM,'S','o',0x00},{"\"",XKEY_QUOTE,'S','p',0x00},
-	{"TAB",XKEY_TAB,'C',' ',0x00},{"CAPS",XKEY_CAPS,'C','2',0x00},
-	{"PGDN",XKEY_PGUP,'C','3',0x00},{"PGUP",XKEY_PGDN,'C','4',0x00},{"BSP",XKEY_BSP,'C','0',0x00},
-	{"DEL",XKEY_DEL,'C','9',0x00},{"INS",XKEY_INS,'S','w',0x00},{"HOME",XKEY_HOME,'S','q',0x00},{"END",XKEY_END,'S','e',0x00},
-	{"LEFT",XKEY_LEFT,'C','5',0x6b},{"DOWN",XKEY_DOWN,'C','6',0x72},{"UP",XKEY_UP,'C','7',0x75},{"RIGHT",XKEY_RIGHT,'C','8',0x74},
-	{"-",XKEY_MINUS,'S','j',0x00},{"+",XKEY_PLUS,'S','k',0x00},
-	{",",XKEY_PERIOD,'S','n',0x00},{".",XKEY_COMMA,'S','m',0x00},{"/",XKEY_BSLASH,'S','c',0x00},
-	{"[",XKEY_LBRACE,'S','8',0x00},{"]",XKEY_RBRACE,'S','9',0x00},
+	{"`",XKEY_TILDA,'C','S',0x0e},{"\\",XKEY_SLASH,'C','S',0x5d},
+	{";",XKEY_DOTCOM,'S','o',0x4c},{"\"",XKEY_QUOTE,'S','p',0x52},
+	{"TAB",XKEY_TAB,'C',' ',0x0d},{"CAPS",XKEY_CAPS,'C','2',0x58},
+	{"PGDN",XKEY_PGUP,'C','3',0x7de0},{"PGUP",XKEY_PGDN,'C','4',0x7ae0},{"BSP",XKEY_BSP,'C','0',0x66},
+	{"DEL",XKEY_DEL,'C','9',0x71e0},{"INS",XKEY_INS,'S','w',0x70e0},{"HOME",XKEY_HOME,'S','q',0x6ce0},{"END",XKEY_END,'S','e',0x69e0},
+	{"LEFT",XKEY_LEFT,'C','5',0x6be0},{"DOWN",XKEY_DOWN,'C','6',0x72e0},{"UP",XKEY_UP,'C','7',0x75e0},{"RIGHT",XKEY_RIGHT,'C','8',0x74e0},
+	{"-",XKEY_MINUS,'S','j',0x4e},{"+",XKEY_PLUS,'S','k',0x00},
+	{",",XKEY_PERIOD,'S','n',0x41},{".",XKEY_COMMA,'S','m',0x49},{"/",XKEY_BSLASH,'S','c',0x4a},
+	{"[",XKEY_LBRACE,'S','8',0x54},{"]",XKEY_RBRACE,'S','9',0x5b},
 
 	{"",ENDKEY,0,0,0x00}
 };
@@ -454,12 +455,29 @@ void emuStop() {
 	mainWin->timer->stop();
 }
 
-unsigned char incBCDbyte(unsigned char val) {
+unsigned char toBCD(unsigned char val) {
+	unsigned char rrt = val % 10;
+	rrt |= ((val/10) << 4);
+	return rrt;
+}
+
+void incBCDbyte(unsigned char& val) {
 	val++;
-	if ((val & 0x0f) < 0x0a) return val;
+	if ((val & 0x0f) < 0x0a) return;
 	val += 0x10;
 	val &= 0xf0;
-	return val;
+}
+
+void incTime(CMOS* cms) {
+	incBCDbyte(cms->data[0]);		// sec
+	if (cms->data[0] < 0x60) return;
+	cms->data[0] = 0x00;
+	incBCDbyte(cms->data[2]);		// min
+	if (cms->data[2] < 0x60) return;
+	cms->data[2] = 0x00;
+	incBCDbyte(cms->data[4]);		// hour
+	if (cms->data[4] < 0x24) return;
+	cms->data[4] = 0x00;
 }
 
 void MainWin::cmosTick() {
@@ -469,17 +487,19 @@ void MainWin::cmosTick() {
 	for (i = 0; i < plist.size(); i++) {
 		comp = plist[i].zx;
 		if (comp != NULL) {
-			comp->cmos.data[0] = incBCDbyte(comp->cmos.data[0]);			// sec
-			if (comp->cmos.data[0] > 0x59) {
-				comp->cmos.data[0] = 0x00;
-				comp->cmos.data[2] = incBCDbyte(comp->cmos.data[2]);		// min
-				if (comp->cmos.data[2] > 0x59) {
-					comp->cmos.data[2] = 0x00;
-					comp->cmos.data[4] = incBCDbyte(comp->cmos.data[4]);	// hour
-					if (comp->cmos.data[4] > 0x23) {
-						comp->cmos.data[4] = 0x00;
-					}
-				}
+			if (emulFlags & FL_SYSCLOCK) {
+				time_t rtime;
+				time(&rtime);
+				tm* ctime = localtime(&rtime);
+				comp->cmos.data[0] = toBCD(ctime->tm_sec);
+				comp->cmos.data[2] = toBCD(ctime->tm_min);
+				comp->cmos.data[4] = toBCD(ctime->tm_hour);
+				comp->cmos.data[6] = toBCD(ctime->tm_wday);
+				comp->cmos.data[7] = toBCD(ctime->tm_mday);
+				comp->cmos.data[8] = toBCD(ctime->tm_mon);
+				comp->cmos.data[9] = toBCD(ctime->tm_year % 100);
+			} else {
+				incTime(&comp->cmos);
 			}
 		}
 	}

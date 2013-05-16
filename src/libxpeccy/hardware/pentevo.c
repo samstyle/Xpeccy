@@ -181,13 +181,13 @@ void evoOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 			comp->vid->curscr = (val & 0x08) ? 1 : 0;
 			evoMapMem(comp);
 			break;
-		case 0xbef7: if (bdiz) comp->cmos.data[comp->cmos.adr] = val; break;
+		case 0xbef7: if (bdiz) cmsWr(comp,val); break;
 		case 0xdef7: if (bdiz) comp->cmos.adr = val; break;
 		case 0xdff7:
 			if (!bdiz && (comp->prt2 & 0x80)) comp->cmos.adr = val; break;
 			break;
 		case 0xbff7:
-			if (!bdiz && (comp->prt2 & 0x80)) comp->cmos.data[comp->cmos.adr] = val; break;
+			if (!bdiz && (comp->prt2 & 0x80)) cmsWr(comp,val); break;
 			break;
 		case 0xeff7: if (bdiz) break;
 			comp->prt2 = val;
@@ -286,8 +286,8 @@ Z80EX_BYTE evoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 			break;
 		case 0xbf: res = comp->evo.evoBF; break;
 		case 0xfe: res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00); break;
-		case 0xbef7: res = (bdiz) ? comp->cmos.data[comp->cmos.adr] : 0xff; break;
-		case 0xbff7: res = (!bdiz && (comp->prt2 & 0x80)) ? comp->cmos.data[comp->cmos.adr] : 0xff; break;
+		case 0xbef7: res = (bdiz) ? cmsRd(comp) : 0xff; break;
+		case 0xbff7: res = (!bdiz && (comp->prt2 & 0x80)) ? cmsRd(comp) : 0xff; break;
 		case 0xfffd: res = tsIn(comp->ts,ptype); break;
 		case 0xfadf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->buttons : 0xff; break;
 		case 0xfbdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->xpos : 0xff; break;

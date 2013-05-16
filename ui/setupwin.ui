@@ -206,7 +206,7 @@
            </item>
            <item>
             <widget class="QGroupBox" name="archOptGBox">
-             <layout class="QVBoxLayout" name="verticalLayout_26" stretch="0,0,0,0">
+             <layout class="QVBoxLayout" name="verticalLayout_26" stretch="0,0,0,0,0">
               <item>
                <widget class="QCheckBox" name="scrpwait">
                 <property name="enabled">
@@ -217,6 +217,13 @@
                 </property>
                 <property name="checkable">
                  <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="sysCmos">
+                <property name="text">
+                 <string>OS time in CMOS</string>
                 </property>
                </widget>
               </item>

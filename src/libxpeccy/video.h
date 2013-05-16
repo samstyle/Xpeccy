@@ -76,6 +76,7 @@ struct Video {
 		int yPos;
 		int xSize;			// size of tsconf screen ([320|360] x [200|240|288])
 		int ySize;
+		int scrLine;			// bitmap line counter (TSConf)
 		unsigned char tconfig;		// port 06AF
 		unsigned char TMPage;		// tiles map page
 		unsigned char T0GPage;		// lay 0 graphics

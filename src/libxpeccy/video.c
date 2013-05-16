@@ -525,16 +525,15 @@ void vidTSRender(Video* vid, unsigned char* ptr) {
 		vidTSSprites(vid);
 	}
 	if (vid->tsconf.tconfig & 0xe0) vidTSPut(vid,ptr);		// if tile or sprites visible, put line over screen
+	vid->tsconf.scrLine++;
 }
 
 // tsconf normal screen (separated 'cuz of palette)
 
 void vidDrawTSLNormal(Video* vid) {
-	xscr = vid->x - vid->bord.h;
-	yscr = vid->y - vid->bord.v;
-	if ((yscr < 0) || (yscr > 191)) {
-		col = vid->brdcol;
-	} else if (vid->flags & VID_NOGFX) {
+	xscr = vid->x - vid->tsconf.xPos;
+	yscr = vid->y - vid->tsconf.yPos;
+	if ((yscr < 0) || (yscr > 191) || (vid->flags & VID_NOGFX)) {
 		col = vid->brdcol;
 	} else {
 		xadr = vid->tsconf.vidPage ^ (vid->curscr ? 2 : 0);	// TODO : ORLY? Current video page
@@ -572,10 +571,10 @@ void vidDrawTSL16(Video* vid) {
 		col = vid->brdcol;
 	} else {
 		xscr += vid->tsconf.xOffset;
-		yscr += vid->tsconf.yOffset;
+		yscr = vid->tsconf.scrLine;
 		xscr &= 0x1ff;
 		yscr &= 0x1ff;
-		adr = (vid->tsconf.vidPage << 14) + (yscr << 8) + (xscr >> 1);
+		adr = ((vid->tsconf.vidPage & 0xf8) << 14) + (yscr << 8) + (xscr >> 1);
 		scrbyte = vid->mem->ramData[adr];
 		if (xscr & 1) {
 			col = scrbyte & 0x0f;			// right pixel
@@ -593,13 +592,11 @@ void vidDrawTSL16(Video* vid) {
 void vidDrawTSL256(Video* vid) {
 	xscr = vid->x - vid->tsconf.xPos;
 	yscr = vid->y - vid->tsconf.yPos;
-	if ((xscr < 0) || (xscr >= vid->tsconf.xSize) || (yscr < 0) || (yscr >= vid->tsconf.ySize)) {
-		col = vid->brdcol;
-	} else if (vid->flags & VID_NOGFX) {
+	if ((xscr < 0) || (xscr >= vid->tsconf.xSize) || (yscr < 0) || (yscr >= vid->tsconf.ySize) || (vid->flags & VID_NOGFX)) {
 		col = vid->brdcol;
 	} else {
 		xscr += vid->tsconf.xOffset;
-		yscr += vid->tsconf.yOffset;
+		yscr = vid->tsconf.scrLine;
 		xscr &= 0x1ff;
 		yscr &= 0x1ff;
 		adr = (vid->tsconf.vidPage << 14) + (yscr << 9) + xscr;
@@ -657,6 +654,7 @@ void vidSync(Video* vid, int ns) {
 				vid->scrptr = vid->scrimg;
 				vid->fcnt++;
 				vid->flash = vid->fcnt & 0x20;
+				vid->tsconf.scrLine = vid->tsconf.yOffset;
 			}
 		}
 		vid->nsDraw -= NS_PER_DOT;
