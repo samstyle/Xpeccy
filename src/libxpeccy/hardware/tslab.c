@@ -28,7 +28,7 @@ int tslYRes[4] = {192,200,240,288};
 void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 	if ((port & 0x0001) == 0x0000) port |= 0x00fe;		// make XXFE
 	if ((port & 0x80ff) == 0x00fd) port = 0x7ffd;		// ???
-	int cnt,lcnt,sadr,dadr;
+	int cnt,cnt2,lcnt,sadr,dadr;
 	switch (port) {
 		case 0x00af:
 			comp->vid->tsconf.xSize = tslXRes[(val & 0xc0) >> 6];
@@ -133,9 +133,11 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 //					printf("dst : %.2X %.2X %.2X (%X)\n",comp->dma.dst.x,comp->dma.dst.h,comp->dma.dst.l,dadr);
 //					printf("len : %.2X (%i bytes)\n",comp->dma.len,lcnt);
 //					printf("num : %.2X\n",comp->dma.num);
-
 					for (cnt = 0; cnt <= comp->dma.num; cnt++) {
-						memcpy(comp->mem->ramData + dadr, comp->mem->ramData + sadr,lcnt);	// ?? will crush @ end of mem
+						cnt2 = 0;
+						for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
+							comp->mem->ramData[dadr + cnt2] = comp->mem->ramData[sadr + cnt2];
+						}
 						sadr += (val & 0x20) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;		// SALGN
 						dadr += (val & 0x10) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;		// DALGN
 					}
