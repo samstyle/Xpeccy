@@ -111,6 +111,7 @@ void ataSetLBA(ATADev* dev) {
 void ataReadSector(ATADev* dev) {
 	long eps,nps;
 	ataSetLBA(dev);
+//	printf("ataReadSector %i\n",dev->lba);
 	if (dev->lba > dev->maxlba) {			// sector not found
 		dev->reg.state |= HDF_ERR;
 		dev->reg.err |= (HDF_ABRT | HDF_IDNF);
@@ -310,6 +311,7 @@ void ataExec(ATADev* dev, unsigned char cm) {
 				dev->buf.pos = 0;
 				dev->buf.mode = HDB_READ;
 				dev->reg.state |= HDF_DRQ;
+				printf("request hdd info\n");
 				break;
 			case 0xef:			// set features
 				break;
@@ -599,9 +601,9 @@ int ideIn(IDE* ide,unsigned short port,unsigned char* val,int dosen) {
 int ideOut(IDE* ide,unsigned short port,unsigned char val,int dosen) {
 	ataAddr adr = ideDecoder(ide,port,dosen);
 	if (~adr.flags & IDE_CATCH) return 0;
-	if (ide->type == IDE_SMUC) {
-		printf("smuc out %.4X %.2X\n",port,val);
-	}
+//	if (ide->type == IDE_SMUC) {
+//		printf("smuc out %.4X %.2X\n",port,val);
+//	}
 	if (adr.flags & IDE_HDD) {
 		if (adr.port == HDD_HEAD)
 			ide->curDev = (val & HDF_DRV) ? ide->slave : ide->master;	// write to head reg: select MASTER/SLAVE

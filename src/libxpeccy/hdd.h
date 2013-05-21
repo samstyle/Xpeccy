@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 //#include <stdint.h>
-
+#define	IDE_DEFAULT	-1
 #define IDE_NEMO	1
 #define IDE_NEMOA8	2
 #define IDE_SMUC	3

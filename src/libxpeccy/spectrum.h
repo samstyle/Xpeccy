@@ -93,6 +93,7 @@ struct ZXComp {
 		unsigned char evo4F;
 		unsigned char evo6F;
 		unsigned char evo8F;
+		int hiTrig;			// trigger for hi-low byte in IDE
 		unsigned char blVer[16];	// bootloader info
 		unsigned char bcVer[16];	// baseconf info
 	} evo;

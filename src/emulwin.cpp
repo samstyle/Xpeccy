@@ -35,7 +35,7 @@
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#define	XPTITLE	"Xpeccy 0.5 (20130518)"
+#define	XPTITLE	"Xpeccy 0.5 (20130521)"
 
 // main
 MainWin* mainWin;
