@@ -61,6 +61,9 @@ extern "C" {
 #define HDF_ABRT	(1 << 2)
 #define	HDF_T0NF	(1 << 1)
 #define HDF_AMNF	1
+// head register flag
+#define HDF_DRV		(1<<4)
+
 // bufer mode
 #define HDB_IDLE	0
 #define HDB_READ	1

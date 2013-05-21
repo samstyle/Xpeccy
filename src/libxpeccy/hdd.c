@@ -166,7 +166,7 @@ void ataAbort(ATADev* dev) {
 }
 
 void ataExec(ATADev* dev, unsigned char cm) {
-	dev->reg.state &= ~HDF_ERR;
+	dev->reg.state = HDF_DRDY | HDF_DSC;
 	dev->reg.err = 0x00;
 	switch (dev->type) {
 	case IDE_ATA:
@@ -209,6 +209,8 @@ void ataExec(ATADev* dev, unsigned char cm) {
 				dev->reg.err = 0x01;
 				break;
 			case 0x91:			// initialize drive parameters; TODO: pass.spt = reg.count; pass.heads = (reg.head & 15) + 1;
+				dev->pass.spt = dev->reg.count;
+				dev->pass.hds = (dev->reg.head & 0x0f) + 1;
 				break;
 			case 0x94:			// standby immediate; TODO: if reg.count!=0 in idle/standby commands, HDD power off
 			case 0xe0:
@@ -538,7 +540,8 @@ ataAddr ideDecoder(IDE* ide, unsigned short port, int dosen) {
 			if (((port & 6) != 0) || dosen) break;
 			res.flags = IDE_CATCH | IDE_HDD;
 			res.port = (port & 0xe0) >> 5;		//  | (((port & 0x18) ^ 0x18) << 5) | 0x00f0);
-			if (port & ((ide->type == IDE_NEMO) ? 0x01 : 0x100)) res.flags |= IDE_HIGH;
+			if ((ide->type == IDE_NEMO) && ((port & 0xe1) == 0x01)) res.flags |= IDE_HIGH;
+			if ((ide->type == IDE_NEMOA8) && ((port & 0x1e0) == 0x100)) res.flags |= IDE_HIGH;
 			break;
 		case IDE_SMUC:
 			if (((port & 0x18a3) != 0x18a2) || !dosen) break;
@@ -555,6 +558,9 @@ ataAddr ideDecoder(IDE* ide, unsigned short port, int dosen) {
 int ideIn(IDE* ide,unsigned short port,unsigned char* val,int dosen) {
 	ataAddr adr = ideDecoder(ide,port,dosen);
 	if (~adr.flags & IDE_CATCH) return 0;
+	if (ide->type == IDE_SMUC) {
+		printf("smuc in %.4X\n",port);
+	}
 	if (adr.flags & IDE_HDD) {
 		if (adr.flags & IDE_HIGH) {
 			*val = ((ide->bus & 0xff00) >> 8);
@@ -577,6 +583,10 @@ int ideIn(IDE* ide,unsigned short port,unsigned char* val,int dosen) {
 				case 0x7fba:		// virtual fdd
 					*val = ide->smuc.fdd | 0x3f;
 					break;
+				case 0x7ebe:		// pic (not used)
+				case 0x7fbe:
+					*val = 0xff;
+					break;
 				case 0xdfba:		// cmos
 					*val = (ide->smuc.sys & 0x80) ? 0xff : ide->smuc.cmos->data[ide->smuc.cmos->adr];
 					break;
@@ -589,9 +599,12 @@ int ideIn(IDE* ide,unsigned short port,unsigned char* val,int dosen) {
 int ideOut(IDE* ide,unsigned short port,unsigned char val,int dosen) {
 	ataAddr adr = ideDecoder(ide,port,dosen);
 	if (~adr.flags & IDE_CATCH) return 0;
+	if (ide->type == IDE_SMUC) {
+		printf("smuc out %.4X %.2X\n",port,val);
+	}
 	if (adr.flags & IDE_HDD) {
 		if (adr.port == HDD_HEAD)
-			ide->curDev = (val & 0x08) ? ide->slave : ide->master;	// write to head reg: select MASTER/SLAVE
+			ide->curDev = (val & HDF_DRV) ? ide->slave : ide->master;	// write to head reg: select MASTER/SLAVE
 		if (adr.flags & IDE_HIGH) {
 			ide->bus &= 0x00ff;
 			ide->bus |= (val << 8);
@@ -613,7 +626,7 @@ int ideOut(IDE* ide,unsigned short port,unsigned char val,int dosen) {
 					if (ide->smuc.sys & 0x80) {
 						ide->smuc.cmos->data[ide->smuc.cmos->adr] = val;
 					} else {
-						ide->smuc.cmos->adr = val;
+						ide->smuc.cmos->adr = val & 0x7f;
 					}
 					break;
 			}

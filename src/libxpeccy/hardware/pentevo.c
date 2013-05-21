@@ -63,7 +63,7 @@ int evoGetPort(Z80EX_WORD port, int bdiz) {
 	if (port == 0xbefd) return 0xbffd;	// WUUUUUT?
 	if (port == 0xfffd) return 0xfffd;
 	if ((port & 0x1ff) == 0x110) return 0x110;
-	if (((port & 0x1f) == 0x10) || ((port & 0xff) == 0xc8)) return (port & 0xff);	// nemo
+//	if (((port & 0x1f) == 0x10) || ((port & 0xff) == 0xc8)) return (port & 0xff);	// nemo
 	if (bdiz) {
 		if ((port & 0x00ff) == 0x001f) return 0x1f;	// bdi
 		if ((port & 0x00ff) == 0x003f) return 0x3f;
@@ -94,6 +94,7 @@ void evoOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 	if (comp->evo.evoBF & 0x01) bdiz = 1;
 	int ptype = evoGetPort(port,bdiz);
 	switch (ptype) {
+/*
 		case 0x10:
 		case 0x110:
 		case 0x30:
@@ -112,6 +113,7 @@ void evoOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 		case 0xC8:
 			ideOut(comp->ide,0xc0,val,0);
 			break;
+*/
 		case 0x1f: if (bdiz) bdiOut(comp->bdi,FDC_COM,val); break;
 		case 0x3f: if (bdiz) bdiOut(comp->bdi,FDC_TRK,val); break;
 		case 0x5f: if (bdiz) bdiOut(comp->bdi,FDC_SEC,val); break;
@@ -200,10 +202,11 @@ void evoOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 			tsOut(comp->ts,ptype,val);
 			break;
 		default:
-			if (ideOut(comp->ide,port,val,comp->dosen & 1)) break;
+			if (ideOut(comp->ide,port,val,0)) break;
 			if (gsOut(comp->gs,port,val) == GS_OK) break;
 #ifdef ISDEBUG
 			printf("PentEvo out %.4X (%.4X.%i),%.2X\n",port,ptype,bdiz,val);
+			comp->flag |= ZX_BREAK;
 //			assert(0);
 #endif
 			break;
@@ -215,6 +218,7 @@ Z80EX_BYTE evoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 	if (comp->evo.evoBF & 1) bdiz = 1;
 	int ptype = evoGetPort(port,bdiz);
 	switch (ptype) {
+/*
 		case 0x10:
 		case 0x110:
 		case 0x30:
@@ -224,15 +228,16 @@ Z80EX_BYTE evoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 		case 0xB0:
 		case 0xD0:
 		case 0xF0:
-			ideIn(comp->ide,ptype,&res,0);
 #ifdef ISDEBUG
-			printf("PentEvo: Nemo in %.2X\n",ptype);
+			printf("PentEvo: Nemo in %X\n",ptype);
 //			comp->flag |= ZX_BREAK;
 #endif
+			ideIn(comp->ide,ptype,&res,0);
 			break;
 		case 0xC8:
 			ideIn(comp->ide,0xc0,&res,0);
 			break;
+*/
 		case 0x1f: res = bdiz ? bdiIn(comp->bdi,FDC_STATE) : joyInput(comp->joy); break;
 		case 0x3f: res = bdiz ? bdiIn(comp->bdi,FDC_TRK) : 0xff; break;
 		case 0x5f: res = bdiz ? bdiIn(comp->bdi,FDC_SEC) : 0xff; break;
@@ -297,6 +302,7 @@ Z80EX_BYTE evoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 			if (gsIn(comp->gs,port,&res) == GS_OK) break;
 #ifdef ISDEBUG
 			printf("Pentevo: in %.4X (%.4X.%i)\n",port,ptype,bdiz);
+			comp->flag |= ZX_BREAK;
 //			assert(0);
 #endif
 			break;
