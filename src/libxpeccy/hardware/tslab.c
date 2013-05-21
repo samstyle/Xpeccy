@@ -78,7 +78,7 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 			comp->tsconf.flag = val & 0x10;		// FM_EN
 			comp->tsconf.tsMapAdr = ((val & 0x0f) << 12);
 			break;
-		case 0x16af: comp->vid->tsconf.TMPage = val & 0xf8; break;
+		case 0x16af: comp->vid->tsconf.TMPage = val; break;
 		case 0x17af: comp->vid->tsconf.T0GPage = val & 0xf8; break;
 		case 0x18af: comp->vid->tsconf.T1GPage = val & 0xf8; break;
 		case 0x19af: comp->vid->tsconf.SGPage = val & 0xf8; break;
