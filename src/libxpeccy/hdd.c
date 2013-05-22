@@ -36,6 +36,7 @@ ATADev* ataCreate(int tp) {
 	memcpy(ata->pass.model,"Xpeccy HDD image",strlen("Xpeccy HDD image"));
 	ata->flags = 0x00;
 	ata->image = NULL;
+	ata->reg.state = 0;
 	return ata;
 }
 
@@ -45,7 +46,7 @@ void ataDestroy(ATADev* ata) {
 
 void ataReset(ATADev* ata) {
 	ata->reg.state = HDF_DRDY | HDF_DSC;
-	ata->reg.err = 0x01;
+	ata->reg.err = 0x00;
 	ata->reg.count = 0x01;
 	ata->reg.sec = 0x01;
 	ata->reg.cyl = 0x0000;
@@ -119,10 +120,15 @@ void ataReadSector(ATADev* dev) {
 		FILE* file = fopen(dev->image,"rb");
 		if (file == NULL) {
 			file = fopen(dev->image,"wb");
-			fclose(file);
-			file = fopen(dev->image,"rb");
-			if (file == NULL) {
-				printf("Can't creae HDD image file");
+			if (file) {
+				fclose(file);
+				file = fopen(dev->image,"rb");
+				if (file == NULL) {
+					printf("Can't creae HDD image file\n");
+					dev->type = IDE_NONE;
+				}
+			} else {
+				printf("Can't creae HDD image file\n");
 				dev->type = IDE_NONE;
 			}
 		} else {
@@ -535,7 +541,7 @@ ataAddr ideDecoder(IDE* ide, unsigned short port, int dosen) {
 			if (((port & 0x001f) != 0x000f) || !dosen) break;
 			res.flags = IDE_CATCH | IDE_HDD;
 			res.port = (port & 0xe0) >> 5;
-			if (port & 0x100) res.flags |= IDE_HIGH;
+			if ((port & 0x1ff) == 0x10f) res.flags |= IDE_HIGH;
 			break;
 		case IDE_NEMO:
 		case IDE_NEMOA8:
@@ -560,9 +566,6 @@ ataAddr ideDecoder(IDE* ide, unsigned short port, int dosen) {
 int ideIn(IDE* ide,unsigned short port,unsigned char* val,int dosen) {
 	ataAddr adr = ideDecoder(ide,port,dosen);
 	if (~adr.flags & IDE_CATCH) return 0;
-	if (ide->type == IDE_SMUC) {
-		printf("smuc in %.4X\n",port);
-	}
 	if (adr.flags & IDE_HDD) {
 		if (adr.flags & IDE_HIGH) {
 			*val = ((ide->bus & 0xff00) >> 8);
@@ -601,9 +604,6 @@ int ideIn(IDE* ide,unsigned short port,unsigned char* val,int dosen) {
 int ideOut(IDE* ide,unsigned short port,unsigned char val,int dosen) {
 	ataAddr adr = ideDecoder(ide,port,dosen);
 	if (~adr.flags & IDE_CATCH) return 0;
-//	if (ide->type == IDE_SMUC) {
-//		printf("smuc out %.4X %.2X\n",port,val);
-//	}
 	if (adr.flags & IDE_HDD) {
 		if (adr.port == HDD_HEAD)
 			ide->curDev = (val & HDF_DRV) ? ide->slave : ide->master;	// write to head reg: select MASTER/SLAVE

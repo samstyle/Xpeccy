@@ -44,6 +44,24 @@ std::vector<std::string> splitstr(std::string str,const char* spl) {
 
 }
 
+void ltrim(std::string& str) {
+	size_t pos;
+	pos = str.find_first_not_of(' ');
+	str.erase(0,pos);
+}
+
+void rtrim(std::string& str) {
+	size_t pos;
+	pos = str.find_last_not_of(' ');
+	if (pos == std::string::npos) return;
+	str.erase(pos+1,std::string::npos);
+}
+
+void trim(std::string& str) {
+	ltrim(str);
+	rtrim(str);
+}
+
 std::pair<std::string,std::string> splitline(std::string line) {
 	size_t pos;
 	std::pair<std::string,std::string> res;
@@ -55,13 +73,11 @@ std::pair<std::string,std::string> splitline(std::string line) {
 	if (pos!=std::string::npos) {
 		res.first = std::string(line,0,pos);
 		res.second = std::string(line,pos+1);
-		pos = res.first.find_last_not_of(" ");
-		if (pos != std::string::npos) res.first = std::string(res.first,0,pos+1);	// delete last spaces
-		pos = res.second.find_first_not_of(" ");
-		if (pos != std::string::npos) res.second = std::string(res.second,pos);		// delete first spaces
 	} else {
 		res.first = line;
 		res.second = "";
 	}
+	trim(res.first);
+	trim(res.second);
 	return res;
 }

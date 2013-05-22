@@ -239,8 +239,6 @@ int prfLoad(std::string nm) {
 				case PS_IDE:
 					if (pnam == "iface") comp->ide->type = atoi(pval.c_str());
 					if (pnam == "master.type") comp->ide->master->type = atoi(pval.c_str());
-//					if (pnam == "master.model") memcpy(masterPass.model,std::string(pval,0,40).c_str(),40);
-//					if (pnam == "master.serial") memcpy(masterPass.serial,std::string(pval,0,20).c_str(),20);
 					if (pnam == "master.lba") setFlagBit(str2bool(pval),&comp->ide->master->flags, ATA_LBA);
 					if (pnam == "master.maxlba") comp->ide->master->maxlba = atoi(pval.c_str());
 					if (pnam == "master.image") ideSetImage(comp->ide,IDE_MASTER,pval.c_str());
@@ -253,8 +251,6 @@ int prfLoad(std::string nm) {
 						}
 					}
 					if (pnam == "slave.type") comp->ide->slave->type = atoi(pval.c_str());
-//					if (pnam == "slave.model") memcpy(slavePass.model,std::string(pval,0,40).c_str(),40);
-//					if (pnam == "slave.serial") memcpy(slavePass.serial,std::string(pval,0,20).c_str(),20);
 					if (pnam == "slave.lba") setFlagBit(str2bool(pval),&comp->ide->slave->flags, ATA_LBA);
 					if (pnam == "slave.maxlba") comp->ide->slave->maxlba = atoi(pval.c_str());
 					if (pnam == "slave.image") ideSetImage(comp->ide,IDE_SLAVE,pval.c_str());
