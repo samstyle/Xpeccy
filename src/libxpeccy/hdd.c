@@ -124,11 +124,11 @@ void ataReadSector(ATADev* dev) {
 				fclose(file);
 				file = fopen(dev->image,"rb");
 				if (file == NULL) {
-					printf("Can't creae HDD image file\n");
+					printf("Can't create HDD image file\n");
 					dev->type = IDE_NONE;
 				}
 			} else {
-				printf("Can't creae HDD image file\n");
+				printf("Can't create HDD image file\n");
 				dev->type = IDE_NONE;
 			}
 		} else {
