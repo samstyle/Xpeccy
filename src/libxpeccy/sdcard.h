@@ -1,6 +1,8 @@
 #ifndef _SDCARD_H
 #define _SDCARD_H
 
+#include <stdio.h>
+
 // mode
 #define	SDC_INACTIVE	0
 #define	SDC_IDLE	1
@@ -51,7 +53,8 @@ typedef struct {
 	unsigned int addr;
 	int capacity;
 	unsigned int maxlba;
-	char* image;		// image file
+	char* image;		// image file name
+	FILE* file;		// image file
 	struct {		// data buffer
 		int pos;
 		unsigned char data[515];	// data packet: token(1),data(512),crc(2)
@@ -67,5 +70,8 @@ void sdcWrite(SDCard*,unsigned char);
 
 void sdcSetImage(SDCard*,const char*);
 void sdcSetCapacity(SDCard*,int);
+
+void sdcOpenFile(SDCard*);
+void sdcCloseFile(SDCard*);
 
 #endif

@@ -5,7 +5,8 @@
 extern "C" {
 #endif
 
-//#include <stdint.h>
+#include <stdio.h>
+
 #define	IDE_DEFAULT	-1
 #define IDE_NEMO	1
 #define IDE_NEMOA8	2
@@ -25,10 +26,6 @@ extern "C" {
 #define ATA_SLEEP	(1 << 2)
 #define ATA_LBA		(1 << 3)
 #define ATA_DMA		(1 << 4)
-// get/set type
-//#define	IDE_TYPE	0
-//#define	IDE_FLAG	1
-//#define	IDE_MAXLBA	2
 
 #define HDD_BUFSIZE	512
 
@@ -63,6 +60,7 @@ extern "C" {
 #define HDF_AMNF	1
 // head register flag
 #define HDF_DRV		(1<<4)
+#define HDF_LBA		(1<<6)
 
 // bufer mode
 #define HDB_IDLE	0
@@ -80,8 +78,8 @@ typedef struct {
 	char serial[20];	// serial
 	unsigned short type;	// buffer type
 	unsigned short vol;	// buffer volume / 512		1
-	char mcver[8];	// microcode version
-	char model[40];	// model
+	char mcver[8];		// firmware version
+	char model[40];		// model
 } ATAPassport;
 
 typedef struct {
@@ -90,6 +88,7 @@ typedef struct {
 	int lba;
 	int maxlba;
 	char* image;
+	FILE* file;
 	struct {
 		unsigned char data[HDD_BUFSIZE];
 		unsigned int pos;
@@ -131,6 +130,8 @@ void ideDestroy(IDE*);
 int ideIn(IDE*,unsigned short,unsigned char*,int);
 int ideOut(IDE*,unsigned short,unsigned char,int);
 void ideReset(IDE*);
+void ideOpenFiles(IDE*);
+void ideCloseFiles(IDE*);
 
 void ideSetImage(IDE*,int,const char*);
 ATAPassport ideGetPassport(IDE*,int);

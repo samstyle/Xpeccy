@@ -4,7 +4,6 @@
 
 #include "hdd.h"
 
-
 // overall
 
 void copyStringToBuffer(unsigned char* dst, const char* src, int len) {
@@ -36,6 +35,7 @@ ATADev* ataCreate(int tp) {
 	memcpy(ata->pass.model,"Xpeccy HDD image",strlen("Xpeccy HDD image"));
 	ata->flags = 0x00;
 	ata->image = NULL;
+	ata->file = NULL;
 	ata->reg.state = 0;
 	return ata;
 }
@@ -75,7 +75,7 @@ void ataRefresh(ATADev* dev) {
 
 void ataSetSector(ATADev* dev, int nr) {
 	dev->lba = nr;
-	if ((dev->flags & ATA_LBA) && (dev->reg.head & 0x40)) {
+	if ((dev->flags & ATA_LBA) && (dev->reg.head & HDF_LBA)) {
 		dev->reg.sec = nr & 0xff;
 		dev->reg.cyl = (nr >> 8) & 0xffff;
 		dev->reg.head &= 0xf0;
@@ -98,72 +98,45 @@ void ataNextSector(ATADev* dev) {
 }
 
 void ataSetLBA(ATADev* dev) {
-	if ((dev->flags & ATA_LBA) && (dev->reg.head & 0x40)) {
-		dev->lba = dev->reg.sec | (dev->reg.cyl << 8) | ((dev->reg.head & 0x0f) << 24);
+	if ((dev->flags & ATA_LBA) && (dev->reg.head & HDF_LBA)) {
+		dev->lba = dev->reg.sec | (dev->reg.cyl << 8) | ((dev->reg.head & 0x0f) << 24);		// LBA28
 	} else {
 		if ((dev->reg.sec <= dev->pass.spt) && (dev->reg.cyl < dev->pass.cyls) && ((dev->reg.head & 15) < dev->pass.hds)) {
 			dev->lba = ((dev->reg.cyl * dev->pass.hds + (dev->reg.head & 0x0f)) * dev->pass.spt) + dev->reg.sec - 1;
 		} else {
-			dev->lba = dev->maxlba + 1;
+			dev->lba = dev->maxlba + 1;			// CHS is out of range : sector not dound
 		}
 	}
 }
 
 void ataReadSector(ATADev* dev) {
-	long eps,nps;
+	long nps;
 	ataSetLBA(dev);
 //	printf("ataReadSector %i\n",dev->lba);
-	if (dev->lba > dev->maxlba) {			// sector not found
+	if (dev->lba >= dev->maxlba) {					// sector not found
 		dev->reg.state |= HDF_ERR;
 		dev->reg.err |= (HDF_ABRT | HDF_IDNF);
 	} else {
-		FILE* file = fopen(dev->image,"rb");
-		if (file == NULL) {
-			file = fopen(dev->image,"wb");
-			if (file) {
-				fclose(file);
-				file = fopen(dev->image,"rb");
-				if (file == NULL) {
-					printf("Can't create HDD image file\n");
-					dev->type = IDE_NONE;
-				}
-			} else {
-				printf("Can't create HDD image file\n");
-				dev->type = IDE_NONE;
-			}
-		} else {
-			fseek(file,0,SEEK_END);
-			eps = ftell(file);
+		if (dev->file) {
 			nps = dev->lba * dev->pass.bps;
-			if (nps < eps) {
-				fseek(file,dev->lba * dev->pass.bps,SEEK_SET);
-				fread((char*)dev->buf.data,dev->pass.bps,1,file);
-			} else {
-				ataClearBuf(dev);
-			}
-			fclose(file);
+			fseek(dev->file,nps,SEEK_SET);			// if filesize < nps, there will be 0xFF in buf
+			fread((char*)dev->buf.data,dev->pass.bps,1,dev->file);
+		} else {
+			ataClearBuf(dev);
 		}
 	}
 }
 
 void ataWriteSector(ATADev* dev) {
 	ataSetLBA(dev);
-	if (dev->lba > dev->maxlba) {			// sector not found
+	if (dev->lba >= dev->maxlba) {			// sector not found
 		dev->reg.state |= HDF_ERR;
 		dev->reg.err |= (HDF_ABRT | HDF_IDNF);
 	} else {
-		FILE* file = fopen(dev->image,"r+b");
-		if (file == NULL) {
-			file = fopen(dev->image,"wb");
-			if (file == NULL) {
-				printf("Can't write to HDD image file");
-				dev->type = IDE_NONE;
-				return;
-			}
+		if (dev->file) {
+			fseek(dev->file, dev->lba * dev->pass.bps, SEEK_SET);
+			fwrite((char*)dev->buf.data, dev->pass.bps, 1, dev->file);
 		}
-		fseek(file,dev->lba * dev->pass.bps,SEEK_SET);
-		fwrite((char*)dev->buf.data,dev->pass.bps,1,file);
-		fclose(file);
 	}
 }
 
@@ -317,7 +290,7 @@ void ataExec(ATADev* dev, unsigned char cm) {
 				dev->buf.pos = 0;
 				dev->buf.mode = HDB_READ;
 				dev->reg.state |= HDF_DRQ;
-				printf("request hdd info\n");
+				//printf("request hdd info\n");
 				break;
 			case 0xef:			// set features
 				break;
@@ -345,7 +318,7 @@ void ataExec(ATADev* dev, unsigned char cm) {
 
 unsigned short ataIn(ATADev* dev,int prt) {
 	unsigned short res = 0xffff;
-	if ((dev->type != IDE_ATA) || (strcmp(dev->image,"") == 0) || (dev->flags & ATA_SLEEP)) return res;
+	if ((dev->type != IDE_ATA) || (dev->image == NULL) || (dev->flags & ATA_SLEEP)) return res;
 	switch (prt) {
 		case HDD_DATA:
 			if ((dev->buf.mode == HDB_READ) && (dev->reg.state & HDF_DRQ)) {
@@ -399,7 +372,7 @@ unsigned short ataIn(ATADev* dev,int prt) {
 }
 
 void ataOut(ATADev* dev, int prt, unsigned short val) {
-	if ((dev->type != IDE_ATA) || (strcmp(dev->image,"") == 0) || (dev->flags & ATA_SLEEP)) return;
+	if ((dev->type != IDE_ATA) || (dev->image == NULL) || (dev->flags & ATA_SLEEP)) return;
 	switch (prt) {
 		case HDD_DATA:
 			if ((dev->buf.mode == HDB_WRITE) && (dev->reg.state & HDF_DRQ)) {
@@ -475,15 +448,21 @@ void ideDestroy(IDE* ide) {
 }
 
 void ideSetImage(IDE *ide, int wut, const char *name) {
-	switch (wut) {
-		case IDE_MASTER:
-			ide->master->image = realloc(ide->master->image, strlen(name) + 1);
-			strcpy(ide->master->image,name);
-			break;
-		case IDE_SLAVE:
-			ide->slave->image = realloc(ide->slave->image, strlen(name) + 1);
-			strcpy(ide->slave->image,name);
-			break;
+	ATADev* dev = NULL;
+	if (wut == IDE_MASTER)
+		dev = ide->master;
+	else if (wut == IDE_SLAVE)
+		dev = ide->slave;
+	if (dev == NULL) return;
+	if (dev->file) fclose(dev->file);
+	if (strlen(name) == 0) {
+		free(dev->image);
+		dev->image = NULL;
+		dev->file = NULL;
+	} else {
+		dev->image = realloc(dev->image,strlen(name) + 1);
+		strcpy(dev->image,name);
+		dev->file = fopen(dev->image,"rb+");
 	}
 }
 
@@ -641,4 +620,16 @@ void ideReset(IDE* ide) {
 	ataReset(ide->master);
 	ataReset(ide->slave);
 	ide->curDev = ide->master;
+}
+
+void ideOpenFiles(IDE* ide) {
+	if (ide->master->image) ide->master->file = fopen(ide->master->image,"rb+");		// NULL when file doesn't exist
+	if (ide->slave->image) ide->slave->file = fopen(ide->slave->image,"rb+");
+}
+
+void ideCloseFiles(IDE* ide) {
+	if (ide->master->file) fclose(ide->master->file);
+	ide->master->file = NULL;
+	if (ide->slave->file) fclose(ide->slave->file);
+	ide->slave->file = NULL;
 }

@@ -35,7 +35,7 @@
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#define	XPTITLE	"Xpeccy 0.5 (20130522)"
+#define	XPTITLE	"Xpeccy 0.5 (20130524)"
 
 // main
 MainWin* mainWin;
@@ -1146,7 +1146,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 	std::vector<XProfile> plist = getProfileList();
 	smpCount = 0;
 	sndFillToEnd();
-//	sndPause(true);
+	sndPause(true);
 	emuStop();
 	for (i = 0; i < plist.size(); i++) {
 		prfSave(plist[i].name);
@@ -1158,6 +1158,8 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		}
 	}
 	if (emulSaveChanged()) {
+		ideCloseFiles(zx->ide);
+		sdcCloseFile(zx->sdc);
 		ev->accept();
 	} else {
 		ev->ignore();
@@ -1166,7 +1168,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		SDL_GetWMInfo(&inf);
 		mainWin->embedClient(inf.info.x11.wmwindow);
 #endif
-//		sndPause(false);
+		sndPause(false);
 		emuStart();
 	}
 }

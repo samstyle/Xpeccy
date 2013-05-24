@@ -67,10 +67,15 @@ int delProfile(std::string nm) {
 }
 
 bool setProfile(std::string nm) {
-	int idx = findProfile(nm);
-	if (idx < 0) return false;
-	currentProfile = &profileList[idx];
-//	printf("set profile %s\n",currentProfile->name.c_str());
+	XProfile* nprf = getProfile(nm);
+	if (nprf == NULL) return false;
+	if (currentProfile) {
+		ideCloseFiles(currentProfile->zx->ide);
+		sdcCloseFile(currentProfile->zx->sdc);
+	}
+	currentProfile = nprf;
+	ideOpenFiles(nprf->zx->ide);
+	sdcOpenFile(nprf->zx->sdc);
 	zx = currentProfile->zx;
 	vidUpdate(zx->vid);
 	zx->flag |= ZX_PALCHAN;

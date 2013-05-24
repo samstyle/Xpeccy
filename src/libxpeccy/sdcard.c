@@ -44,6 +44,7 @@ SDCard* sdcCreate() {
 	sdc->image = NULL;
 	sdc->blkSize = 512;
 	sdcSetCapacity(sdc,SDC_DEFAULT);
+	sdc->file = NULL;
 	sdcReset(sdc);
 	return sdc;
 }
@@ -58,12 +59,15 @@ void sdcReset(SDCard* sdc) {
 }
 
 void sdcSetImage(SDCard* sdc, const char* name) {
+	sdcCloseFile(sdc);
 	if (strlen(name) == 0) {
 		if (sdc->image) free(sdc->image);
 		sdc->image = NULL;
+		sdc->file = NULL;
 	} else {
-		sdc->image = realloc(sdc->image, strlen(name) + 1);
+		sdc->image = realloc(sdc->image,strlen(name) + 1);
 		strcpy(sdc->image,name);
+		sdcOpenFile(sdc);
 	}
 }
 
@@ -78,35 +82,18 @@ void sdcSetCapacity(SDCard* sdc, int cpc) {
 
 void sdcRdSector(SDCard* sdc) {
 //	printf("SDC read sector %i\n",sdc->addr);
-	if (sdc->addr < sdc->maxlba) {
-		FILE* file = fopen(sdc->image,"rb");
-		if (!file) {			// if can't open fill buffer with 0xff
-			memset((void*)&sdc->buf.data[1],512,0xff);
-/*
-			sdc->image = NULL;
-			file = fopen(sdc->image,"wb");
-			if (file) {
-				fclose(file);
-				file = fopen(sdc->image,"rb");
-			}
-*/
-		} else {
-			fseek(file,sdc->addr * 512,SEEK_SET);
-			fread((void*)&sdc->buf.data[1],512,1,file);
-			fclose(file);
-		}
+	if ((sdc->addr < sdc->maxlba) && sdc->file) {
+		fseek(sdc->file,sdc->addr * 512,SEEK_SET);
+		fread(&sdc->buf.data[1],512,1,sdc->file);
 	} else {
 		memset((void*)&sdc->buf.data[1],512,0xff);
 	}
 }
 
 void sdcWrSector(SDCard* sdc) {
-	if (sdc->addr >= sdc->maxlba) return;
-	FILE* file = fopen(sdc->image,"r+b");
-	if (file) {
-		fseek(file,sdc->addr * 512,SEEK_SET);
-		fwrite((void*)&sdc->buf.data[1],512,1,file);
-		fclose(file);
+	if ((sdc->addr < sdc->maxlba) && sdc->file) {
+		fseek(sdc->file,sdc->addr * 512,SEEK_SET);
+		fwrite(&sdc->buf.data[1],512,1,sdc->file);
 	}
 }
 
@@ -292,4 +279,14 @@ void sdcWrite(SDCard* sdc, unsigned char val) {
 			sdc->argCnt = 6;
 		}
 	}
+}
+
+void sdcOpenFile(SDCard* sdc) {
+	if (sdc->file) fclose(sdc->file);
+	if (sdc->image) sdc->file = fopen(sdc->image,"rb+");
+}
+
+void sdcCloseFile(SDCard* sdc) {
+	if (sdc->file) fclose(sdc->file);
+	sdc->file = NULL;
 }
