@@ -32,6 +32,10 @@ Memory* memCreate() {
 	mem->pt1 = &mem->ram[5];
 	mem->pt2 = &mem->ram[2];
 	mem->pt3 = &mem->ram[0];
+#ifdef ISDEBUG
+	mem->romFlag[(26 << 14) | 0x2e7b] |= MEM_BRK_FETCH;
+#endif
+
 	return mem;
 }
 
