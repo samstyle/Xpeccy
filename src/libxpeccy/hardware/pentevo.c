@@ -92,6 +92,9 @@ void evoOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 	int adr;
 	if (comp->evo.evoBF & 0x01) bdiz = 1;
 	int ptype = evoGetPort(port,bdiz);
+#ifdef ISDEBUG
+//	printf("evo out %.4X (%.4X),%.2X\n",ptype,port,val);
+#endif
 	switch (ptype) {
 		case 0x10:
 			ideOut(comp->ide,comp->evo.hiTrig ? 0x11 : 0x10,val,0);
@@ -284,8 +287,8 @@ Z80EX_BYTE evoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 							if (comp->memMap[bdiz].flag & 0x80) res |= 0x80;
 						}
 						break;
-					case 0x0a00: res = comp->prt0; break;
-					case 0x0b00: res = comp->prt2; break;
+					case 0x0b00: res = comp->prt0; break;
+					case 0x0a00: res = comp->prt2; break;
 					case 0x0c00: res = comp->prt1 | ((comp->dosen & 1) ? 0x10 : 0x00); break;
 					default:
 //						printf("PentEvo\tin %.4X.%i\n",port,bdiz);
