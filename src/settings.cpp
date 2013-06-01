@@ -274,7 +274,7 @@ void saveProfiles() {
 	cfile << "startdefault = " << ((flag & OF_DEFAULT) ? "yes" : "no") << "\n";
 	cfile << "savepaths = " << ((flag & OF_PATHS) ? "yes" : "no") << "\n";
 	cfile << "fdcturbo = " << ((fdcFlag & FDC_FAST) ? "yes" : "no") << "\n";
-	cfile << "systime = " << ((emulGetFlags() & FL_SYSCLOCK) ? "yes" : "no") << "\n";
+	cfile << "systime = " << ((emulFlags & FL_SYSCLOCK) ? "yes" : "no") << "\n";
 
 	cfile << "\n[BOOKMARKS]\n\n";
 	std::vector<XBookmark> bml = getBookmarkList();
@@ -363,8 +363,8 @@ void saveProfiles() {
 	}
 
 	cfile << "\n[LEDS]\n\n";
-	cfile << "disk = " << ((emulGetFlags() & FL_LED_DISK) ? "yes" : "no") << "\n";
-	cfile << "scrshot = " << ((emulGetFlags() & FL_LED_SHOT) ? "yes" : "no") << "\n";
+	cfile << "disk = " << ((emulFlags & FL_LED_DISK) ? "yes" : "no") << "\n";
+	cfile << "scrshot = " << ((emulFlags & FL_LED_SHOT) ? "yes" : "no") << "\n";
 	cfile.close();
 }
 

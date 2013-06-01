@@ -358,10 +358,6 @@ bool emulSaveChanged() {
 	return yep;
 }
 
-int emulGetFlags() {
-	return emulFlags;
-}
-
 void emulSetFlag(int msk,bool cnd) {
 	if (cnd) {
 		emulFlags |= msk;

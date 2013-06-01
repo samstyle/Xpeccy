@@ -325,14 +325,14 @@ void SetupWin::start() {
 	if (rset != NULL)
 		cbx = setupUi.rsetbox->findText(QString::fromUtf8(rset->name.c_str()));
 	setupUi.rsetbox->setCurrentIndex(cbx);
-//	setupUi.reschk->setChecked(emulGetFlags() & FL_RESET);
+//	setupUi.reschk->setChecked(emulFlags & FL_RESET);
 	setupUi.resbox->setCurrentIndex(zx->resbank);
 	setmszbox(setupUi.machbox->currentIndex());
 	setupUi.mszbox->setCurrentIndex(setupUi.mszbox->findData(zx->mem->memSize));
 	if (setupUi.mszbox->currentIndex() < 0) setupUi.mszbox->setCurrentIndex(setupUi.mszbox->count() - 1);
 	setupUi.cpufrq->setValue(zx->cpuFrq * 2); updfrq();
 	setupUi.scrpwait->setChecked(zx->hwFlag & HW_WAIT);
-	setupUi.sysCmos->setChecked(emulGetFlags() & FL_SYSCLOCK);
+	setupUi.sysCmos->setChecked(emulFlags & FL_SYSCLOCK);
 // video
 	lays = getLayoutList();
 	setupUi.dszchk->setChecked((vidFlag & VF_DOUBLE));
@@ -457,8 +457,8 @@ void SetupWin::start() {
 	setupUi.prjdirle->setText(QString::fromLocal8Bit(optGetString(OPT_PROJDIR).c_str()));
 	buildmenulist();
 // leds
-	setupUi.diskLed->setChecked(emulGetFlags() & FL_LED_DISK);
-	setupUi.shotLed->setChecked(emulGetFlags() & FL_LED_SHOT);
+	setupUi.diskLed->setChecked(emulFlags & FL_LED_DISK);
+	setupUi.shotLed->setChecked(emulFlags & FL_LED_SHOT);
 // profiles
 	setupUi.defstart->setChecked(optGetFlag(OF_DEFAULT));
 	buildproflist();

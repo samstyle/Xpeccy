@@ -257,7 +257,7 @@ void emulShow();
 void emulUpdateWindow();
 void emulSetIcon(const char*);
 void emulPause(bool, int);
-int emulGetFlags();
+extern volatile int emulFlags;
 void emulSetFlag(int,bool);
 bool emulSaveChanged();
 QWidget* emulWidget();
