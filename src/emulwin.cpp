@@ -11,6 +11,8 @@
 #include <semaphore.h>
 #include <unistd.h>
 #include <time.h>
+#include <sys/time.h>
+#include <signal.h>
 
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
@@ -1157,6 +1159,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		ideCloseFiles(zx->ide);
 		sdcCloseFile(zx->sdc);
 		ev->accept();
+		emulFlags |= FL_EXIT;
 	} else {
 		ev->ignore();
 #ifndef XQTPAINT
@@ -1372,55 +1375,6 @@ void emulTapeCatch() {
 	}
 }
 
-// emulation thread
-
-void* emuThreadMain(void *) {
-	while (emulFlags & FL_WORK) {
-		if (~emulFlags & FL_FAST) {
-			sem_wait(&emuSem);
-			if (~emulFlags & FL_WORK) break;
-		}
-		emulFlags |= FL_EMUL;
-		if (pauseFlags == 0) {
-			zx->frmStrobe = 0;
-			do {
-				// exec 1 opcode (+ INT, NMI)
-				ns += zxExec(zx);
-				// if need - request sound buffer update
-				if (ns > nsPerSample) {
-					sndSync(emulFlags & FL_FAST);
-					ns -= nsPerSample;
-				}
-				// tape trap
-				pc = GETPC(zx->cpu);	// z80ex_get_reg(zx->cpu,regPC);
-				if ((zx->mem->pt0->type == MEM_ROM) && (zx->mem->pt0->num == 1)) {
-					if (pc == 0x56b) emulTapeCatch();
-					if ((pc == 0x5e2) && optGetFlag(OF_TAPEAUTO))
-						mainWin->tapStateChanged(TW_STATE,TWS_STOP);
-				}
-			} while (!(zx->flag & ZX_BREAK) && (zx->frmStrobe == 0));		// exec until breakpoint or INT
-			if (zx->flag & ZX_BREAK) {						// request debug window on breakpoint
-				wantedWin = WW_DEBUG;
-				zx->flag &= ~ZX_BREAK;
-			}
-			zx->nmiRequest = 0;
-			// decrease frames & screenshot counter (if any), request screenshot (if needed)
-			if (scrCounter != 0) {
-				if (scrInterval == 0) {
-					emulFlags |= FL_SHOT;
-					scrCounter--;
-					scrInterval = optGetInt(OPT_SHOTINT);
-					if (scrCounter == 0) printf("stop combo shots\n");
-				} else {
-					scrInterval--;
-				}
-			}
-		}
-		emulFlags &= ~FL_EMUL;
-	}
-	return NULL;
-}
-
 // JOYSTICK
 
 bool emulIsJoystickOpened() {
@@ -1564,4 +1518,66 @@ void MainWin::chLayout(QAction* act) {
 
 void MainWin::chVMode(QAction* act) {
 	vidSetMode(zx->vid,act->data().toInt());
+}
+
+// emulation thread (non-GUI)
+
+void onSignal(int) {
+	QApplication::processEvents();
+}
+
+void* emuThreadMain(void *) {
+	itimerval ival,oval;
+	ival.it_interval.tv_sec = 0;
+	ival.it_interval.tv_usec = 20000;
+	ival.it_value = ival.it_interval;
+	signal(SIGALRM,&onSignal);
+	setitimer(ITIMER_REAL,&ival,&oval);
+
+	while (emulFlags & FL_WORK) {
+		if (~emulFlags & FL_FAST) {
+			sem_wait(&emuSem);
+			if (~emulFlags & FL_WORK) break;
+		}
+		emulFlags |= FL_EMUL;
+		if (pauseFlags == 0) {
+			zx->frmStrobe = 0;
+			do {
+				// exec 1 opcode (+ INT, NMI)
+				ns += zxExec(zx);
+				// if need - request sound buffer update
+				if (ns > nsPerSample) {
+					sndSync(emulFlags & FL_FAST);
+					ns -= nsPerSample;
+				}
+				// tape trap
+				pc = GETPC(zx->cpu);	// z80ex_get_reg(zx->cpu,regPC);
+				if ((zx->mem->pt0->type == MEM_ROM) && (zx->mem->pt0->num == 1)) {
+					if (pc == 0x56b) emulTapeCatch();
+					if ((pc == 0x5e2) && optGetFlag(OF_TAPEAUTO))
+						mainWin->tapStateChanged(TW_STATE,TWS_STOP);
+				}
+			} while (!(zx->flag & ZX_BREAK) && (zx->frmStrobe == 0));		// exec until breakpoint or INT
+			if (zx->flag & ZX_BREAK) {						// request debug window on breakpoint
+				wantedWin = WW_DEBUG;
+				zx->flag &= ~ZX_BREAK;
+			}
+			zx->nmiRequest = 0;
+			// decrease frames & screenshot counter (if any), request screenshot (if needed)
+			if (scrCounter != 0) {
+				if (scrInterval == 0) {
+					emulFlags |= FL_SHOT;
+					scrCounter--;
+					scrInterval = optGetInt(OPT_SHOTINT);
+					if (scrCounter == 0) printf("stop combo shots\n");
+				} else {
+					scrInterval--;
+				}
+			}
+		}
+		emulFlags &= ~FL_EMUL;
+	}
+
+	setitimer(ITIMER_REAL,&oval,NULL);
+	return NULL;
 }
