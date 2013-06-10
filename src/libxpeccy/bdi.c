@@ -233,7 +233,7 @@ unsigned char vgwork[32][256] = {
 		0xf9,1,0xff,		// ifn flp.ready END
 		0xfd,4,2,0x11,4,	// if (b2,com) wait (15ms)
 		0xe0,1,
-		0x01,14			// WORK 14 (ХИТРОСТЬ DESU)
+		0x01,14			// WORK 14 (FOCUS DESU)
 	},
 // 6: write sector
 	{
@@ -1414,6 +1414,7 @@ unsigned char bdiIn(BDI* bdi,int port) {
 }
 
 void bdiSync(BDI* bdi,int tk) {
+	if (bdi->fdc->wptr == NULL) return;
 	unsigned int tz;
 	while (tk > 0) {
 		if (tk < (int)bdi->fdc->tf) {

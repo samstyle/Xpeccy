@@ -150,6 +150,7 @@ Z80EX_BYTE iord(CPUCONT Z80EX_WORD port, void* ptr) {
 	res3 = TCPU(comp->cpu);	// res2 + z80ex_op_tstate(cpu);
 	vidSync(comp->vid,comp->nsPerTick * (res3 - res4));
 	res4 = res3;
+/*
 	if (comp->hwFlag & HW_CONTIO) {
 		res5 = vidGetWait(comp->vid);
 		if (res5 != 0) {
@@ -157,7 +158,7 @@ Z80EX_BYTE iord(CPUCONT Z80EX_WORD port, void* ptr) {
 			res1 += res5;
 		}
 	}
-
+*/
 	tapSync(comp->tape,comp->tapCount);
 	comp->tapCount = 0;
 // play rzx
@@ -192,6 +193,7 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	comp->hw->out(comp,port,val,bdiz);
 }
 
+/*
 void iowait(ZXComp* comp, int ticks) {
 	res5 = vidGetWait(comp->vid);
 	if (res5 != 0) {
@@ -201,6 +203,7 @@ void iowait(ZXComp* comp, int ticks) {
 	if (ticks != 0)
 		vidSync(comp->vid, comp->nsPerTick * ticks);
 }
+*/
 
 void iowr(CPUCONT Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
@@ -208,6 +211,7 @@ void iowr(CPUCONT Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 	vidSync(comp->vid,comp->nsPerTick * (res3 - res4));
 	res4 = res3;
 // if there is contended io, get wait and wait :)
+/*
 	if (comp->hwFlag & HW_CONTIO) {
 		switch(port & 0x4001) {
 			case 0x0000:
@@ -234,10 +238,11 @@ void iowr(CPUCONT Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 		}
 		res4 += 4;
 	} else {
+*/
 		vidSync(comp->vid, comp->nsPerTick * 3);
 		zxOut(comp,port,val);
 		res4 += 3;
-	}
+//	}
 }
 
 Z80EX_BYTE intrq(CPUCONT void* ptr) {

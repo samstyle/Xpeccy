@@ -120,29 +120,11 @@ void vidDarkTail(Video* vid) {
 				ptr = NULL;
 		}
 	} while (ptr);
-
-/*
-	mtrxItem* mtx;
-	unsigned char* ptr = vid->scrptr;
-	int idx = vid->dotCount;
-	do {
-		mtx = &vid->matrix[idx];
-		idx++;
-		if (mtx->flag & MTF_VISIBLE) {
-			*(ptr++) &= 0x0f;
-			if (vidFlag & VF_DOUBLE) *(ptr++) &= 0x0f;
-		}
-		if ((mtx->flag & MTF_LINEND) && (vidFlag & VF_DOUBLE)) {
-			memcpy(ptr,ptr - vid->wsze.h,vid->wsze.h);
-			ptr += vid->wsze.h;
-		}
-	} while (~mtx->flag & MTF_FRMEND);
-*/
 }
 
-int vidGetWait(Video* vid) {
-	return 0; //vid->matrix[vid->dotCount].wait;
-}
+//int vidGetWait(Video* vid) {
+//	return 0; //vid->matrix[vid->dotCount].wait;
+//}
 
 void vidSetFont(Video* vid, char* src) {
 	memcpy(vid->font,src,0x800);
@@ -173,13 +155,32 @@ void vidDrawBorder(Video* vid) {
 	vidPutDot(vid,vid->brdcol);
 }
 
+void vidBorderTop(Video* vid) {
+	if (vid->y < vid->scrPos) {
+		vidPutDot(vid,vid->brdcol);
+	} else {
+		vid->callback = vid->vidScrCallback;
+		vid->callback(vid);
+	}
+}
+
+void vidBorderBottom(Video* vid) {
+	if (vid->y > vid->scrPos) {
+		vidPutDot(vid,vid->brdcol);
+	} else {
+		vid->callback = &vidBorderTop;
+		vid->callback(vid);
+	}
+}
+
 // common 256 x 192
 void vidDrawNormal(Video* vid) {
-	if ((vid->y < vid->bord.v) || (vid->y > vid->bord.v + 191)) {
-		col = vid->brdcol;
+	yscr = vid->y - vid->scrPos;
+	if (yscr > 191) {
+		vid->callback = &vidBorderBottom;
+		vid->callback(vid);
 	} else {
 		xscr = vid->x - vid->bord.h;
-		yscr = vid->y - vid->bord.v;
 		if ((xscr & 7) == 4) {
 			adr = ((yscr & 0xc0) << 5) | ((yscr & 7) << 8) | ((yscr & 0x38) << 2) | (((xscr + 4) & 0xf8) >> 3);
 			nxtbyte = vid->mem->ram[vid->curscr ? 7 :5].data[adr];
@@ -204,14 +205,15 @@ void vidDrawNormal(Video* vid) {
 
 // alco 16col
 void vidDrawAlco(Video* vid) {
-	if ((vid->y < vid->bord.v) || (vid->y > vid->bord.v + 191)) {
-		col = vid->brdcol;
+	yscr = vid->y - vid->scrPos;
+	if (yscr > 191) {
+		vid->callback = &vidBorderBottom;
+		vid->callback(vid);
 	} else {
-		if ((vid->x < vid->bord.h) || (vid->x > vid->bord.h + 255)) {
+		xscr = vid->x - vid->bord.h;
+		if ((xscr < 0) || (xscr > 255)) {
 			col = vid->brdcol;
 		} else {
-			xscr = vid->x - vid->bord.h;
-			yscr = vid->y - vid->bord.v;
 			adr = ((yscr & 0xc0) << 5) | ((yscr & 7) << 8) | ((yscr & 0x38) << 2) | ((xscr & 0xf8) >> 3);
 			switch (xscr & 7) {
 				case 0:
@@ -236,22 +238,23 @@ void vidDrawAlco(Video* vid) {
 
 			}
 		}
+		vidPutDot(vid,col);
 	}
-	vidPutDot(vid,col);
 }
 
 // hardware multicolor
 void vidDrawHwmc(Video* vid) {
-	if ((vid->y < vid->bord.v) || (vid->y > vid->bord.v + 191)) {
-		col = vid->brdcol;
+	yscr = vid->y - vid->scrPos;
+	if (yscr > 191) {
+		vid->callback = &vidBorderBottom;
+		vid->callback(vid);
 	} else {
 		xscr = vid->x - vid->bord.h;
-		yscr = vid->y - vid->bord.v;
 		if ((xscr & 7) == 4) {
 			adr = ((yscr & 0xc0) << 5) | ((yscr & 7) << 8) | ((yscr & 0x38) << 2) | (((xscr + 4) & 0xf8) >> 3);
 			nxtbyte = vid->mem->ram[vid->curscr ? 7 :5].data[adr];
 		}
-		if ((vid->x < vid->bord.h) || (vid->x > vid->bord.h + 255)) {
+		if ((xscr < 0) || (xscr > 255)) {
 			col = vid->brdcol;
 		} else {
 			if ((xscr & 7) == 0) {
@@ -271,35 +274,40 @@ void vidDrawHwmc(Video* vid) {
 
 // atm ega
 void vidDrawATMega(Video* vid) {
-	if ((vid->y < 76) || (vid->y > 275) || (vid->x < 96) || (vid->x > 415)) {
-		col = vid->brdcol;
+	if (vid->y > 275) {
+		vid->callback = &vidBorderBottom;
+		vid->callback(vid);
 	} else {
-		xscr = vid->x - 96;
-		yscr = vid->y - 76;
-		adr = (yscr * 40) + (xscr >> 3);
-		switch (xscr & 7) {
-			case 0:
-				scrbyte = vid->mem->ram[vid->curscr ? 3 : 1].data[adr];
-				col = inkTab[scrbyte & 0x7f];
-				break;
-			case 2:
-				scrbyte = vid->mem->ram[vid->curscr ? 7 : 5].data[adr];
-				col = inkTab[scrbyte & 0x7f];
-				break;
-			case 4:
-				scrbyte = vid->mem->ram[vid->curscr ? 3 : 1].data[adr + 0x2000];
-				col = inkTab[scrbyte & 0x7f];
-				break;
-			case 6:
-				scrbyte = vid->mem->ram[vid->curscr ? 7 : 5].data[adr + 0x2000];
-				col = inkTab[scrbyte & 0x7f];
-				break;
-			default:
-				col = ((scrbyte & 0x38)>>3) | ((scrbyte & 0x80)>>4);
-				break;
+		if ((vid->x < 96) || (vid->x > 415)) {
+			col = vid->brdcol;
+		} else {
+			xscr = vid->x - 96;
+			yscr = vid->y - 76;
+			adr = (yscr * 40) + (xscr >> 3);
+			switch (xscr & 7) {
+				case 0:
+					scrbyte = vid->mem->ram[vid->curscr ? 3 : 1].data[adr];
+					col = inkTab[scrbyte & 0x7f];
+					break;
+				case 2:
+					scrbyte = vid->mem->ram[vid->curscr ? 7 : 5].data[adr];
+					col = inkTab[scrbyte & 0x7f];
+					break;
+				case 4:
+					scrbyte = vid->mem->ram[vid->curscr ? 3 : 1].data[adr + 0x2000];
+					col = inkTab[scrbyte & 0x7f];
+					break;
+				case 6:
+					scrbyte = vid->mem->ram[vid->curscr ? 7 : 5].data[adr + 0x2000];
+					col = inkTab[scrbyte & 0x7f];
+					break;
+				default:
+					col = ((scrbyte & 0x38)>>3) | ((scrbyte & 0x80)>>4);
+					break;
+			}
 		}
+		vidPutDot(vid,col);
 	}
-	vidPutDot(vid,col);
 }
 
 // atm text
@@ -325,48 +333,58 @@ void vidATMDoubleDot(Video* vid,unsigned char colr) {
 }
 
 void vidDrawATMtext(Video* vid) {
-	if ((vid->y < 76) || (vid->y > 275) || (vid->x < 96) || (vid->x > 415)) {
-		vidPutDot(vid,vid->brdcol);
+	if (vid->y > 275) {
+		vid->callback = &vidBorderBottom;
+		vid->callback(vid);
 	} else {
-		xscr = vid->x - 96;
-		yscr = vid->y - 76;
-		adr = 0x1c0 + ((yscr & 0xf8) << 3) + (xscr >> 3);
-		if ((xscr & 3) == 0) {
-			if ((xscr & 7) == 0) {
-				scrbyte = vid->mem->ram[vid->curscr ? 7 : 5].data[adr];
-				col = vid->mem->ram[vid->curscr ? 3 : 1].data[adr + 0x2000];
-			} else {
-				scrbyte = vid->mem->ram[vid->curscr ? 7 : 5].data[adr + 0x2000];
-				col = vid->mem->ram[vid->curscr ? 3 : 1].data[adr + 1];
+		if ((vid->x < 96) || (vid->x > 415)) {
+			vidPutDot(vid,vid->brdcol);
+		} else {
+			xscr = vid->x - 96;
+			yscr = vid->y - 76;
+			adr = 0x1c0 + ((yscr & 0xf8) << 3) + (xscr >> 3);
+			if ((xscr & 3) == 0) {
+				if ((xscr & 7) == 0) {
+					scrbyte = vid->mem->ram[vid->curscr ? 7 : 5].data[adr];
+					col = vid->mem->ram[vid->curscr ? 3 : 1].data[adr + 0x2000];
+				} else {
+					scrbyte = vid->mem->ram[vid->curscr ? 7 : 5].data[adr + 0x2000];
+					col = vid->mem->ram[vid->curscr ? 3 : 1].data[adr + 1];
+				}
+				scrbyte = vid->font[(scrbyte << 3) | (yscr & 7)];
+				vidATMDoubleDot(vid,col);
 			}
-			scrbyte = vid->font[(scrbyte << 3) | (yscr & 7)];
-			vidATMDoubleDot(vid,col);
+			vid->scrptr++;
+			if (vidFlag & VF_DOUBLE) vid->scrptr++;
 		}
-		vid->scrptr++;
-		if (vidFlag & VF_DOUBLE) vid->scrptr++;
 	}
 }
 
 // atm hardware multicolor
 void vidDrawATMhwmc(Video* vid) {
-	if ((vid->y < 76) || (vid->y > 275) || (vid->x < 96) || (vid->x > 415)) {
-		vidPutDot(vid,vid->brdcol);
+	if (vid->y > 275) {
+		vid->callback = &vidBorderBottom;
+		vid->callback(vid);
 	} else {
-		xscr = vid->x - 96;
-		yscr = vid->y - 76;
-		adr = (yscr * 40) + (xscr >> 3);
-		if ((xscr & 3) == 0) {
-			if ((xscr & 7) == 0) {
-				scrbyte = vid->mem->ram[vid->curscr ? 7 : 5].data[adr];
-				col = vid->mem->ram[vid->curscr ? 3 : 1].data[adr];
-			} else {
-				scrbyte = vid->mem->ram[vid->curscr ? 7 : 5].data[adr + 0x2000];
-				col = vid->mem->ram[vid->curscr ? 3 : 1].data[adr + 0x2000];
+		if ((vid->x < 96) || (vid->x > 415)) {
+			vidPutDot(vid,vid->brdcol);
+		} else {
+			xscr = vid->x - 96;
+			yscr = vid->y - 76;
+			adr = (yscr * 40) + (xscr >> 3);
+			if ((xscr & 3) == 0) {
+				if ((xscr & 7) == 0) {
+					scrbyte = vid->mem->ram[vid->curscr ? 7 : 5].data[adr];
+					col = vid->mem->ram[vid->curscr ? 3 : 1].data[adr];
+				} else {
+					scrbyte = vid->mem->ram[vid->curscr ? 7 : 5].data[adr + 0x2000];
+					col = vid->mem->ram[vid->curscr ? 3 : 1].data[adr + 0x2000];
+				}
+				vidATMDoubleDot(vid,col);
 			}
-			vidATMDoubleDot(vid,col);
+			vid->scrptr++;
+			if (vidFlag & VF_DOUBLE) vid->scrptr++;
 		}
-		vid->scrptr++;
-		if (vidFlag & VF_DOUBLE) vid->scrptr++;
 	}
 }
 
@@ -458,7 +476,7 @@ void vidTSTiles(Video* vid, int lay, unsigned short yoffs, unsigned short xoffs,
 
 void vidTSSprites(Video* vid) {
 //	memset(vid->tsconf.line,0x00,512);
-	while (sadr < (0x1000 - 6)) {
+	while (sadr < (0x400 - 6)) {
 		mptr = &vid->tsconf.tsAMem[sadr];
 		if (mptr[1] & 0x20) {						// ACT
 			adr = mptr[0] | ((mptr[1] & 1) << 8);			// Ypos of spr
@@ -614,22 +632,48 @@ void vidDrawTSLText(Video* vid) {
 
 // weiter
 
+#define	TC_LAYOUT	1
+#define	TC_ATM		2
+#define	TC_TSL		3
+
+typedef struct {
+	int id;
+	void(*callback)(Video*);
+	int topCtrl;
+} vidModeItem;
+
+vidModeItem vidModeTab[] = {
+	{VID_NOSCREEN,&vidDrawBorder,TC_LAYOUT},
+	{VID_NORMAL,&vidDrawNormal,TC_LAYOUT},
+	{VID_ALCO,&vidDrawAlco,TC_LAYOUT},
+	{VID_HWMC,&vidDrawHwmc,TC_LAYOUT},
+	{VID_ATM_EGA,&vidDrawATMega,TC_ATM},
+	{VID_ATM_TEXT,&vidDrawATMtext,TC_ATM},
+	{VID_ATM_HWM,&vidDrawATMhwmc,TC_ATM},
+	{VID_TSL_NORMAL,&vidDrawTSLNormal,TC_LAYOUT},
+	{VID_TSL_16,&vidDrawTSL16,TC_TSL},
+	{VID_TSL_256,&vidDrawTSL256,TC_TSL},
+	{VID_TSL_TEXT,&vidDrawTSLText,TC_TSL},
+	{-1,NULL,TC_LAYOUT}
+};
+
 void vidSetMode(Video* vid, int mode) {
 	vid->vmode = mode;
-	switch (mode) {
-		case VID_NOSCREEN: vid->callback = &vidDrawBorder; break;
-		case VID_NORMAL: vid->callback = &vidDrawNormal; break;
-		case VID_ALCO: vid->callback = &vidDrawAlco; break;
-		case VID_HWMC: vid->callback = &vidDrawHwmc; break;
-		case VID_ATM_EGA: vid->callback = &vidDrawATMega; break;
-		case VID_ATM_TEXT: vid->callback = &vidDrawATMtext; break;
-		case VID_ATM_HWM: vid->callback = &vidDrawATMhwmc; break;
-		case VID_TSL_NORMAL: vid->callback = &vidDrawTSLNormal; break;
-		case VID_TSL_16: vid->callback = &vidDrawTSL16; break;
-		case VID_TSL_256: vid->callback = &vidDrawTSL256; break;
-		case VID_TSL_TEXT: vid->callback = &vidDrawTSLText; break;
-		default: vid->callback = &vidDrawUnknown; break;
+	int idx = 0;
+	vid->vidScrCallback = &vidDrawBorder;
+	while (vidModeTab[idx].id != -1) {
+		if (vidModeTab[idx].id == mode) {
+			vid->vidScrCallback = vidModeTab[idx].callback;
+			break;
+		}
+		idx++;
 	}
+	switch(vidModeTab[idx].topCtrl) {
+		case TC_ATM: vid->scrPos = 76; break;
+		case TC_TSL: vid->scrPos = vid->tsconf.yPos; break;
+		default: vid->scrPos = vid->bord.v; break;
+	}
+	vid->callback = &vidBorderTop;
 }
 
 void vidSync(Video* vid, int ns) {

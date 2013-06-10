@@ -70,6 +70,7 @@ struct Video {
 	VSize intpos;
 	Memory* mem;
 	int intsz;
+	int scrPos;
 	struct {
 		unsigned char vidPage;		// 1st video page
 		int xPos;			// position of screen @ monitor [32|12] x [44|24|0]
@@ -96,6 +97,7 @@ struct Video {
 	} tsconf;
 	unsigned char font[0x800];		// ATM text mode font
 	void(*callback)(struct Video*);
+	void(*vidScrCallback)(struct Video*);
 };
 
 typedef struct Video Video;
@@ -108,7 +110,7 @@ void vidDestroy(Video*);
 
 void vidSync(Video*,int);
 void vidSetMode(Video*,int);
-int vidGetWait(Video*);
+//int vidGetWait(Video*);
 void vidDarkTail(Video*);
 
 void vidUpdate(Video*);
