@@ -34,6 +34,9 @@ int loadSPG(ZXComp* comp, const char* name) {
 	unsigned char outbuf[0xffff];
 	file.read((char*)&hd,sizeof(spgHead));
 	file.read((char*)blkInfo,768);
+
+	printf("spg ver %i.%i\n",(hd.fmt & 0xf0) >> 4, hd.fmt & 0x0f);
+
 	int blkCount = hd.bcl | (hd.bch << 8);
 	int idx = 0;
 	int sze;
@@ -47,22 +50,35 @@ int loadSPG(ZXComp* comp, const char* name) {
 		file.read((char*)inbuf,sze);
 		switch (blkInfo[idx + 1] & 0xc0) {
 			case 0x00:
-				// printf("(%.2X,%.4X,%.4X) is not compressed\n",pg,addr,sze);
+				printf("(%.2X,%.4X,%.4X) is not compressed\n",pg,addr,sze);
 				memcpy(comp->mem->ramData + (pg << 14) + addr, inbuf, sze);
 				break;
 			case 0x40:
-				printf("(%.2X,%.4X,%.4X) is MLZ compressed & unsupported\n",pg,addr,sze);
+				printf("(%.2X,%.4X,%.4X) is MLZ compressed ... ",pg,addr,sze);
+				sze = demegalz(inbuf,outbuf);			// it works?
+				printf("%.4X\n",sze);
+				memcpy(comp->mem->ramData + (pg << 14) + addr, outbuf, sze);
 				break;
 			case 0x80:
-//				printf("(%.2X,%.4X,%.4X) is HRUST compressed ... ",pg,addr,sze);
-				sze = dehrust(inbuf,outbuf) - 6; // no 'last 6 bytes'
+				printf("(%.2X,%.4X,%.4X) is HRUST compressed ... ",pg,addr,sze);
+				sze = dehrust(inbuf,outbuf);	// no 'last 6 bytes'
+				printf("%.4X\n",sze);
 				memcpy(comp->mem->ramData + (pg << 14) + addr, outbuf, sze);
+				break;
+			default:
+				printf("(%.2X,%.4X,%.4X) unknown compression\n",pg,addr,sze);
 				break;
 		}
 
 		if (blkInfo[idx] & 0x80) break;			// last block flag
 		idx += 3;
 	}
+
+	printf("pc = %.4X\n",(hd.pch << 8) | hd.pcl);
+	printf("sp = %.4X\n",(hd.sph << 8) | hd.spl);
+	printf("flag35 = %.2X\n",hd.flag35);
+	printf("page3 = %.2X\n",hd.page3);
+
 	SETPC(comp->cpu, (hd.pch << 8) | hd.pcl);
 	SETSP(comp->cpu, (hd.sph << 8) | hd.spl);
 	switch (hd.flag35 & 0x03) {
@@ -71,6 +87,8 @@ int loadSPG(ZXComp* comp, const char* name) {
 		default: zxSetFrq(comp,14.0); break;
 	}
 	SETIFF1(comp->cpu,(hd.flag35 & 0x04) ? 1 : 0);
+	SETIM(comp->cpu,1);
+	SETI(comp->cpu,0x3f);
 	comp->dosen = 0;
 	comp->prt0 = 0x10;
 	comp->prt1 = 0x00;

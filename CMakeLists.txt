@@ -99,7 +99,7 @@ else()
 endif()
 
 set(INCLUDIRS ${INCLUDIRS} ./thirdpart/packers/)
-set(SOURCES ${SOURCES} ./thirdpart/packers/dehrust1.cpp) # ./thirdpart/packers/demegalz.cpp)
+set(SOURCES ${SOURCES} ./thirdpart/packers/dehrust1.cpp ./thirdpart/packers/demegalz.cpp)
 
 set(CMAKE_C_FLAGS "-std=gnu99 -Wall -O2")
 set(CMAKE_CXX_FLAGS "-Wall -O2")
