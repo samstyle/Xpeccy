@@ -96,7 +96,7 @@ int loadRZX(ZXComp* zx, const char* name) {
 
 	eatsize = 0;
 
-	while (btm && (file.tellg() < fileSize)) {
+	while (btm && ((size_t)file.tellg() < fileSize)) {
 		tmp = file.get();	// block type
 		len = getint(&file);	// block len;
 		switch (tmp) {

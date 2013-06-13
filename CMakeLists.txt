@@ -98,6 +98,9 @@ else()
 	set(Z80EX_TYPE 2)
 endif()
 
+set(INCLUDIRS ${INCLUDIRS} ./thirdpart/packers/)
+set(SOURCES ${SOURCES} ./thirdpart/packers/dehrust1.cpp)
+
 set(CMAKE_C_FLAGS "-std=gnu99 -Wall -O2")
 set(CMAKE_CXX_FLAGS "-Wall -O2")
 set(CMAKE_C_FLAGS_DEBUG "-g -DISDEBUG")
