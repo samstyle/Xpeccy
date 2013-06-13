@@ -56,6 +56,9 @@ QString getFilter(int flags) {
 #ifdef HAVEZLIB
 	if (flags & FT_RZX) res.append(" *.rzx");
 #endif
+#ifdef ISDEBUG
+	if (flags & FT_SPG) res.append(" *.spg");
+#endif
 	if (flags & FT_HOBETA) res.append(" *.$?");
 	if (res.startsWith(" ")) res.remove(0,1);
 	return res;
@@ -71,6 +74,7 @@ int getFileType(QString path) {
 	if (path.endsWith(".fdi",Qt::CaseInsensitive)) return FT_FDI;
 	if (path.endsWith(".udi",Qt::CaseInsensitive)) return FT_UDI;
 	if (path.endsWith(".dsk",Qt::CaseInsensitive)) return FT_DSK;
+	if (path.endsWith(".spg",Qt::CaseInsensitive)) return FT_SPG;
 #ifdef HAVEZLIB
 	if (path.endsWith(".rzx",Qt::CaseInsensitive)) return FT_RZX;
 #endif
@@ -95,7 +99,12 @@ void loadFile(ZXComp* comp,const char* name, int flags, int drv) {
 		}
 		if (flags & FT_SNAP) filters.append(";;Snapshot (").append(getFilter(flags & FT_SNAP)).append(")");
 		if (flags & FT_TAPE) filters.append(";;Tape (").append(getFilter(flags & FT_TAPE)).append(")");
+#ifdef ISDEBUG
+		if (flags & FT_SPG) filters.append(";;SPG file (*.spg)");
+#endif
+#ifdef HAVEZLIB
 		if (flags & FT_RZX) filters.append(";;RZX file (").append(getFilter(flags & FT_RZX)).append(")");
+#endif
 		if (flags & FT_RAW) filters.append(";;Raw file to disk A (*.*)");
 		if (filters.startsWith(";;")) filters.remove(0,2);
 		filer->setWindowTitle("Open file");
@@ -136,6 +145,7 @@ void loadFile(ZXComp* comp,const char* name, int flags, int drv) {
 		case FT_HOBETA: ferr = loadHobeta(flp,sfnam.c_str()); break;
 		case FT_RAW: ferr = loadRaw(flp,sfnam.c_str()); break;
 		case FT_DSK: ferr = loadDsk(flp,sfnam.c_str()); break;
+		case FT_SPG: ferr = loadSPG(comp,sfnam.c_str()); break;
 #if HAVEZLIB
 		case FT_RZX: ferr = loadRZX(zx,sfnam.c_str()); break;
 #endif

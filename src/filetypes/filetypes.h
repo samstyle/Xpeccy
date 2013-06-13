@@ -97,3 +97,7 @@ int saveTRD(Floppy*,const char*);
 int saveUDI(Floppy*,const char*);
 
 int loadDsk(Floppy*,const char*);
+
+// spg
+
+int loadSPG(ZXComp*,const char*);

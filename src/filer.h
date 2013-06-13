@@ -21,6 +21,7 @@
 #define	FT_RZX		(1<<9)
 #define	FT_HOBETA	(1<<10)
 #define	FT_RAW		(1<<11)
+#define	FT_SPG		(1<<12)
 
 void initFileDialog(QWidget*);
 void loadFile(ZXComp*,const char*, int, int);
