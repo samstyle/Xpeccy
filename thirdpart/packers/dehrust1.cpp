@@ -12,64 +12,55 @@
 */
 #define DEHRUST_PC_VERSION	"1.0i"
 
-
 /* BBStream class */
 
-class BBStream
-{
-	private:
-		BYTE* base;
-		BYTE* p;
-		int   idx;
-		int   len;
-		bool  eof;
-		WORD  bits;
-	public:
-		BBStream( BYTE* from, int blockSize )
+class BBStream {
+private:
+	BYTE* base;
+	BYTE* p;
+	int   idx;
+	int   len;
+	bool  eof;
+	WORD  bits;
+public:
+	BBStream( BYTE* from, int blockSize ) {
+		base = p = from;
+
+		len = blockSize;
+		idx = 0;
+		eof = false;
+
+		bits  = getByte();
+		bits += 256*getByte();
+	}
+
+	BYTE getByte( void ) {
+		if( p - base == len ) { eof = true; return 0; }
+		return *p++;
+	}
+
+	BYTE getBit() {
+		WORD mask[]  = { 0x8000, 0x4000, 0x2000, 0x1000, 0x800, 0x400, 0x200, 0x100, 0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1 };
+
+		BYTE bit = ( bits & mask[idx] ) ? 1 : 0;
+		if( idx == 15 )
 		{
-			base = p = from;
-
-			len = blockSize;
-			idx = 0;
-			eof = false;
-
 			bits  = getByte();
 			bits += 256*getByte();
 		}
 
-		BYTE getByte( void )
-		{
-			if( p - base == len ) { eof = true; return 0; }
-			return *p++;
-		}
+		idx = (idx + 1) & 0x0f; // % 16;
+		return bit;
+	}
 
-		BYTE getBit()
-		{
-			WORD mask[]  = { 0x8000, 0x4000, 0x2000, 0x1000, 0x800, 0x400, 0x200, 0x100, 0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1 };
+	BYTE getBits( int n ) {
+		BYTE r = 0;
+		do { r = 2*r + getBit(); } while( --n );
+		return r;
+	}
 
-			BYTE bit = ( bits & mask[idx] ) ? 1 : 0;
-			if( idx == 15 )
-			{
-				bits  = getByte();
-				bits += 256*getByte();
-			}
-
-			idx = (idx + 1) & 0x0f; // % 16;
-			return bit;
-		}
-
-		BYTE getBits( int n )
-		{
-			BYTE r = 0;
-			do { r = 2*r + getBit(); } while( --n );
-			return r;
-		}
-
-		bool error( void ) { return eof; }
+	bool error( void ) { return eof; }
 };
-
-
-
 
 /* depacker */
 
@@ -77,9 +68,7 @@ WORD dehrust( BYTE* source, BYTE* dest )
 {
 
 	BYTE *from = source;
-
 	BBStream s( from /* + 12 , from[4] + 256*from[5] */,0xffff);
-
 	BYTE* to = dest;
 
 	*(to++) = s.getByte();
