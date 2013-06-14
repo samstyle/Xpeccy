@@ -1522,18 +1522,7 @@ void MainWin::chVMode(QAction* act) {
 
 // emulation thread (non-GUI)
 
-void onSignal(int) {
-	QApplication::processEvents();
-}
-
 void* emuThreadMain(void *) {
-	itimerval ival,oval;
-	ival.it_interval.tv_sec = 0;
-	ival.it_interval.tv_usec = 20000;
-	ival.it_value = ival.it_interval;
-	signal(SIGALRM,&onSignal);
-	setitimer(ITIMER_REAL,&ival,&oval);
-
 	while (emulFlags & FL_WORK) {
 		if (~emulFlags & FL_FAST) {
 			sem_wait(&emuSem);
@@ -1577,7 +1566,5 @@ void* emuThreadMain(void *) {
 		}
 		emulFlags &= ~FL_EMUL;
 	}
-
-	setitimer(ITIMER_REAL,&oval,NULL);
 	return NULL;
 }

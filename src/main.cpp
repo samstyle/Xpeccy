@@ -90,10 +90,7 @@ int main(int ac,char** av) {
 #endif
 			mainWin->checkState();
 			emuStart();
-			do {
-				usleep(100000);
-			} while (~emulFlags & FL_EXIT);
-//			app.exec();
+			app.exec();
 			emuStop();
 			sndClose();
 #ifdef HAVESDL
