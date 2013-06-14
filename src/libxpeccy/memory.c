@@ -16,17 +16,18 @@ Memory* memCreate() {
 	for (i = 0; i < 32; i++) {
 		mem->rom[i].type = MEM_ROM;
 		mem->rom[i].num = i & 0xff;
-		mem->rom[i].flags = MEM_RDONLY;
+//		mem->rom[i].flags = MEM_RDONLY;
 		mem->rom[i].data = mem->romData + (i << 14);
 		mem->rom[i].flag = mem->romFlag + (i << 14);
 	}
 	for (i = 0; i < 256; i++) {
 		mem->ram[i].type = MEM_RAM;
 		mem->ram[i].num = i & 0xff;
-		mem->ram[i].flags = 0;
+//		mem->ram[i].flags = 0;
 		mem->ram[i].data = mem->ramData + (i << 14);
 		mem->ram[i].flag = mem->ramFlag + (i << 14);
 	}
+	mem->flags = MEM_ROM_WP;
 	memSetSize(mem,48);
 	mem->pt0 = &mem->rom[0];
 	mem->pt1 = &mem->ram[5];
@@ -61,9 +62,10 @@ unsigned char memRd(Memory* mem, unsigned short adr) {
 }
 
 void memWr(Memory* mem, unsigned short adr, unsigned char val) {
+	if (((adr & 0xc000) == 0x0000) && (mem->flags & MEM_B0_WP)) return;	// bank0 write protect (tsconf)
 	MemPage* ptr = memGetBankPtr(mem,adr);
 	mem->flags = ptr->flag[adr & 0x3fff];
-	if (ptr->flags & MEM_RDONLY) return;
+	if ((ptr->type == MEM_ROM) && (mem->flags & MEM_ROM_WP)) return;
 	ptr->data[adr & 0x3fff] = val;
 }
 

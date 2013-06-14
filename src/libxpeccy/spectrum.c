@@ -364,6 +364,7 @@ void zxReset(ZXComp* comp,int wut) {
 	memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5);
 	memSetBank(comp->mem,MEM_BANK2,MEM_RAM,2);
 	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0);
+	comp->mem->flags = MEM_ROM_WP;
 	rzxClear(comp);
 	comp->rzxPlay = 0;
 	RESETCPU(comp->cpu);	// z80ex_reset(comp->cpu);
@@ -385,7 +386,8 @@ void zxReset(ZXComp* comp,int wut) {
 			break;
 		case HW_TSLAB:
 			comp->dosen = (resto & 2) ? 0 : 1;	// 0,1 = shadow,dos
-			comp->prt0 = (resto & 1) ? 0x00 : 0x10;	// 2,3 = bas128,bas48
+			comp->prt0 = (resto & 1) ? 0x10 : 0x00;	// 2,3 = bas128,bas48
+			comp->mem->flags = MEM_B0_WP;		// no MEM_ROM_WP, only MEM_B0_WP
 			comp->tsconf.Page0 = 0;
 			comp->vid->tsconf.tconfig = 0;
 			comp->vid->tsconf.scrPal = 0xf0;

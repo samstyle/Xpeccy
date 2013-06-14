@@ -56,9 +56,7 @@ QString getFilter(int flags) {
 #ifdef HAVEZLIB
 	if (flags & FT_RZX) res.append(" *.rzx");
 #endif
-#ifdef ISDEBUG
 	if (flags & FT_SPG) res.append(" *.spg");
-#endif
 	if (flags & FT_HOBETA) res.append(" *.$?");
 	if (res.startsWith(" ")) res.remove(0,1);
 	return res;
@@ -99,9 +97,7 @@ void loadFile(ZXComp* comp,const char* name, int flags, int drv) {
 		}
 		if (flags & FT_SNAP) filters.append(";;Snapshot (").append(getFilter(flags & FT_SNAP)).append(")");
 		if (flags & FT_TAPE) filters.append(";;Tape (").append(getFilter(flags & FT_TAPE)).append(")");
-#ifdef ISDEBUG
 		if (flags & FT_SPG) filters.append(";;SPG file (*.spg)");
-#endif
 #ifdef HAVEZLIB
 		if (flags & FT_RZX) filters.append(";;RZX file (").append(getFilter(flags & FT_RZX)).append(")");
 #endif

@@ -14,12 +14,12 @@ void tslMapMem(ZXComp* comp) {
 		if (p21AF & 4)
 			memSetBank(comp->mem,MEM_BANK0,MEM_RAM,comp->tsconf.Page0);
 		else
-			memSetBank(comp->mem,MEM_BANK0,MEM_RAM, comp->tsconf.Page0 + (((comp->dosen) ? 0 : 2) | ((p7FFD & 0x10) ? 0 : 1)));
+			memSetBank(comp->mem,MEM_BANK0,MEM_RAM, (comp->tsconf.Page0 & 0xfc) | ((p7FFD & 0x10) ? 1 : 0) | (comp->dosen ? 0 : 2));
 	else
 		if (p21AF & 4)
-			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,comp->tsconf.Page0 & 3);
+			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,comp->tsconf.Page0);
 		else
-			memSetBank(comp->mem,MEM_BANK0,MEM_ROM, ((p7FFD & 0x10) ? 1 : 0) | (comp->dosen ? 0 : 2));
+			memSetBank(comp->mem,MEM_BANK0,MEM_ROM, (comp->tsconf.Page0 & 0xfc) | ((p7FFD & 0x10) ? 1 : 0) | (comp->dosen ? 0 : 2));
 }
 
 int tslXRes[4] = {256,320,320,360};
@@ -59,7 +59,6 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 		case 0x0faf: comp->vid->nextbrd = val; break;
 		case 0x10af:			// Page0
 			comp->tsconf.Page0 = val;
-			// memSetBank(comp->mem,MEM_BANK0,MEM_RAM,val);
 			tslMapMem(comp);
 			break;
 		case 0x11af:			// Page1
@@ -100,25 +99,22 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 			p21AF = val;
 			p7FFD &= ~0x10;
 			if (val & 1) p7FFD |= 0x10;
+			if (val & 2) {comp->mem->flags &= ~MEM_B0_WP;} else {comp->mem->flags |= MEM_B0_WP;}
 			tslMapMem(comp);
 			break;
 		case 0x22af:					// HSINT
 			comp->vid->intpos.h = (val << 1);
-//			printf("out 22AF,%.2X\n",val);
 			break;
 		case 0x23af:					// VSINTL
 			comp->vid->intpos.v &= 0xff00;
 			comp->vid->intpos.v |= val;
-			//printf("out 23AF,%.2X\n",val);
 			break;
 		case 0x24af:					// VSINTH
 			comp->vid->intpos.v &= 0x00ff;
 			comp->vid->intpos.v |= ((val & 1) << 8);
-			//printf("out 24AF,%.2X\n",val);
 			break;
 		case 0x25af:					// INTVect
 			comp->intVector = val | 1;
-//			printf("out 25AF,%.2X\n",val);
 			break;
 		case 0x26af:
 			comp->dma.len = val;
@@ -193,21 +189,11 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 			break;
 		default:
 			switch (port & 0xff) {
-				case 0x1f:
-					if (bdiz) bdiOut(comp->bdi,FDC_COM,val);
-					break;
-				case 0x3f:
-					if (bdiz) bdiOut(comp->bdi,FDC_TRK,val);
-					break;
-				case 0x5f:
-					if (bdiz) bdiOut(comp->bdi,FDC_SEC,val);
-					break;
-				case 0x7f:
-					if (bdiz) bdiOut(comp->bdi,FDC_DATA,val);
-					break;
-				case 0xff:
-					if (bdiz) bdiOut(comp->bdi,BDI_SYS,val);
-					break;
+				case 0x1f: if (bdiz) bdiOut(comp->bdi,FDC_COM,val); break;
+				case 0x3f: if (bdiz) bdiOut(comp->bdi,FDC_TRK,val); break;
+				case 0x5f: if (bdiz) bdiOut(comp->bdi,FDC_SEC,val); break;
+				case 0x7f: if (bdiz) bdiOut(comp->bdi,FDC_DATA,val); break;
+				case 0xff: if (bdiz) bdiOut(comp->bdi,BDI_SYS,val); break;
 				case 0xfe:
 					comp->vid->brdcol = 0xf0 | (val & 7);
 					comp->vid->nextbrd = comp->vid->brdcol;
@@ -216,6 +202,7 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 					break;
 				case 0xf7:			// WAS IST DAS?
 					break;
+				case 0xfb: sdrvOut(comp->sdrv,0xfb,val); break;	// covox
 				default:
 					if ((port & 0x0001) == 0x0000) break;
 					printf("TSLab : out %.4X,%.2X (%i)\n",port,val,bdiz);
@@ -234,21 +221,16 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 		case 0x00af:
 			res = 0;		// b6: PWR_UP
 			break;
-		case 0x12af:
-			res = comp->tsconf.Page2;
-			break;
-		case 0x13af:
-			res = comp->tsconf.Page3;
-			break;
+		case 0x12af: res = comp->tsconf.Page2; break;
+		case 0x13af: res = comp->tsconf.Page3; break;
 		case 0x27af:
 			res = 0;		// b7: DMA status
 			break;
-		case 0xbff7:
-			if (pEFF7 & 0x80) res = cmsRd(comp);
-			break;
-		case 0xfffd:
-			res = tsIn(comp->ts,port);
-			break;
+		case 0xbff7: if (pEFF7 & 0x80) res = cmsRd(comp); break;
+		case 0xfffd: res = tsIn(comp->ts,port); break;
+		case 0xfadf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->buttons : 0xff; break;
+		case 0xfbdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->xpos : 0xff; break;
+		case 0xffdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->ypos : 0xff; break;
 		default:
 			switch (port & 0xff) {
 				case 0x1f:

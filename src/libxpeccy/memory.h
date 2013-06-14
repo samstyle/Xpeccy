@@ -18,8 +18,10 @@ extern "C" {
 #define	MEM_BANK3	3
 // memory flags
 #define	MEM_BREAK	1
+#define	MEM_B0_WP	(1<<1)		// protect bank0
+#define	MEM_ROM_WP	(1<<2)		// protect rom
 // mempage flags
-#define	MEM_RDONLY	1
+//#define	MEM_RDONLY	1
 // membyte flags
 #define	MEM_BRK_FETCH	1
 #define	MEM_BRK_READ	(1<<1)
