@@ -65,7 +65,7 @@ void memWr(Memory* mem, unsigned short adr, unsigned char val) {
 	if (((adr & 0xc000) == 0x0000) && (mem->flags & MEM_B0_WP)) return;	// bank0 write protect (tsconf)
 	MemPage* ptr = memGetBankPtr(mem,adr);
 	mem->flags = ptr->flag[adr & 0x3fff];
-	if ((ptr->type == MEM_ROM) && (mem->flags & MEM_ROM_WP)) return;
+	if (ptr->type == MEM_ROM) return;
 	ptr->data[adr & 0x3fff] = val;
 }
 

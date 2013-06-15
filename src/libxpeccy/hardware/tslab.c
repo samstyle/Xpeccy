@@ -125,10 +125,6 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 					sadr = (comp->dma.src.x << 14) | ((comp->dma.src.h & 0x3f) << 8) | (comp->dma.src.l & 0xfe);
 					dadr = (comp->dma.dst.x << 14) | ((comp->dma.dst.h & 0x3f) << 8) | (comp->dma.dst.l & 0xfe);
 					lcnt = (comp->dma.len + 1) << 1;
-//					printf("\nsrc : %.2X %.2X %.2X (%X)\n",comp->dma.src.x,comp->dma.src.h,comp->dma.src.l,sadr);
-//					printf("dst : %.2X %.2X %.2X (%X)\n",comp->dma.dst.x,comp->dma.dst.h,comp->dma.dst.l,dadr);
-//					printf("len : %.2X (%i bytes)\n",comp->dma.len,lcnt);
-//					printf("num : %.2X\n",comp->dma.num);
 					for (cnt = 0; cnt <= comp->dma.num; cnt++) {
 						cnt2 = 0;
 						for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
@@ -137,12 +133,12 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 						sadr += (val & 0x20) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;		// SALGN
 						dadr += (val & 0x10) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;		// DALGN
 					}
-					//comp->dma.src.x = ((sadr & 0x3fc000) >> 14);
-					//comp->dma.src.h = ((sadr & 0x3f00) >> 8);
-					//comp->dma.src.l = sadr & 0xff;
-					//comp->dma.dst.x = ((dadr & 0x3fc000) >> 14);
-					//comp->dma.dst.h = ((dadr & 0x3f00) >> 8);
-					//comp->dma.dst.l = dadr & 0xff;
+					comp->dma.src.x = ((sadr & 0x3fc000) >> 14);
+					comp->dma.src.h = ((sadr & 0x3f00) >> 8);
+					comp->dma.src.l = sadr & 0xff;
+					comp->dma.dst.x = ((dadr & 0x3fc000) >> 14);
+					comp->dma.dst.h = ((dadr & 0x3f00) >> 8);
+					comp->dma.dst.l = dadr & 0xff;
 					break;
 				case 0x81: break;	// nothing
 				default:
@@ -170,6 +166,7 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 			if (p7FFD & 0x20) break;
 			p7FFD = val;
 			memSetBank(comp->mem,MEM_BANK3,MEM_RAM,val & 7);		// TODO: highmem block mode
+			comp->vid->tsconf.vidPage = 5;
 			comp->vid->curscr = (val & 8) ? 1 : 0;
 			tslMapMem(comp);
 			break;

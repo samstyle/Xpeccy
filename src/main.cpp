@@ -90,7 +90,11 @@ int main(int ac,char** av) {
 #endif
 			mainWin->checkState();
 			emuStart();
-			app.exec();
+//			app.exec();
+			do {
+				SDL_Delay(10);
+				app.processEvents();
+			} while (~emulFlags & FL_EXIT);
 			emuStop();
 			sndClose();
 #ifdef HAVESDL

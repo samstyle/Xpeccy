@@ -15,8 +15,14 @@
 bool sndEnabled;
 bool sndMute;
 
-unsigned char sndBuffer[0x2000];
-unsigned char ringBuffer[0x4000];
+#define SF_BUF	1
+int sndFlag = 0;
+
+unsigned char sndBufA[0x4000];
+unsigned char sndBufB[0x4000];
+unsigned char* sndBuf = sndBufA;
+//unsigned char sndBuffer[0x2000];
+//unsigned char ringBuffer[0x4000];
 int ringPos = 0;
 int playPos = 0;
 int pass = 0;
@@ -96,9 +102,9 @@ void sndSync(int fast) {
 
 	lastL = levl & 0xff;
 	lastR = levr & 0xff;
-	ringBuffer[ringPos] = lastL;
+	sndBuf[ringPos] = lastL;
 	ringPos++;
-	ringBuffer[ringPos] = lastR;
+	sndBuf[ringPos] = lastR;
 	ringPos++;
 	ringPos &= 0x3fff;
 	smpCount++;
@@ -107,9 +113,9 @@ void sndSync(int fast) {
 
 void sndFillToEnd() {
 	while (smpCount < sndChunks) {
-		ringBuffer[ringPos] = lastL;
+		sndBuf[ringPos] = lastL;
 		ringPos++;
-		ringBuffer[ringPos] = lastR;
+		sndBuf[ringPos] = lastR;
 		ringPos++;
 		ringPos &= 0x3fff;
 		smpCount++;
@@ -184,14 +190,18 @@ std::string sndGetName() {
 //------------------------
 
 void fillBuffer(int len) {
-//printf("%i\t%i\t",len,playPos);
-//int z = playPos;
 	for (int bufPos=0; bufPos < len; bufPos++) {
-		sndBuffer[bufPos] = ringBuffer[playPos];
+		sndBufB[bufPos] = sndBufA[playPos];
 		playPos++;
 		playPos &= 0x3fff;
 	}
-//printf("%i\t%i\n",playPos,(z < playPos) ? playPos - z : 0x4000 - (z - playPos));
+	sndBuf = sndBufA;
+}
+
+void switchSndBuf() {
+	sndBuf = (sndFlag & SF_BUF) ? sndBufA : sndBufB;
+	sndFlag ^= SF_BUF;
+	ringPos = 0;
 }
 
 bool null_open() {return true;}
@@ -205,21 +215,18 @@ void sdlPlayAudio(void*,Uint8* stream, int len) {
 	if (pass < 2) {
 		pass++;
 	} else {
-#if 1
 		int diff;
 		if (playPos < ringPos) {
 			diff = ringPos - playPos;
 		} else {
 			diff = 0x4000 - (ringPos - playPos);
 		}
-		if (diff > len) fillBuffer(len);
-#else
-		fillBuffer(len);
-#endif
+		if (diff >= len) fillBuffer(len);
 	}
 //	SDL_LockAudio();
 //	SDL_MixAudio(stream,sndBuffer,len,SDL_MIX_MAXVOLUME);
-	memcpy(stream,sndBuffer,len);
+	memcpy(stream,sndBufB,len);
+//	switchSndBuf();
 //	SDL_UnlockAudio();
 }
 
@@ -266,8 +273,8 @@ bool oss_open() {
 
 void oss_play() {
 	if (ossHandle < 0) return;
-	fillBuffer(sndBufSize);
-	unsigned char* ptr = sndBuffer;
+//	fillBuffer(sndBufSize);
+	unsigned char* ptr = sndBuf;
 	int fsz = sndBufSize;	// smpCount * sndChans;
 	int res;
 	while (fsz > 0) {
@@ -275,6 +282,7 @@ void oss_play() {
 		ptr += res;
 		fsz -= res;
 	}
+	switchSndBuf();
 	// ringPos = 0;
 }
 
@@ -314,8 +322,8 @@ bool alsa_open() {
 
 void alsa_play() {
 	snd_pcm_sframes_t res;
-	fillBuffer(sndBufSize);
-	unsigned char* ptr = sndBuffer;
+//	fillBuffer(sndBufSize);
+	unsigned char* ptr = sndBuf;
 	int fsz = smpCount;
 	while (fsz > 0) {
 		res = snd_pcm_writei(alsaHandle, ptr, fsz);
@@ -324,6 +332,7 @@ void alsa_play() {
 		fsz -= res;
 		ptr += res * sndChans;
 	}
+	switchSndBuf();
 //	ringPos = 0;
 }
 

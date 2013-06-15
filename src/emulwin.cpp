@@ -37,7 +37,7 @@
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#define	XPTITLE	"Xpeccy 0.5 (20130614)"
+#define	XPTITLE	"Xpeccy 0.5 (20130616)"
 
 // main
 MainWin* mainWin;
@@ -1522,7 +1522,13 @@ void MainWin::chVMode(QAction* act) {
 
 // emulation thread (non-GUI)
 
+// TODO : move here (sndPlay + sem_post) and send signals to main window
+Uint32 onTimer(Uint32 itv,void*) {
+	return itv;
+}
+
 void* emuThreadMain(void *) {
+	SDL_TimerID tid = SDL_AddTimer(20,&onTimer,NULL);
 	while (emulFlags & FL_WORK) {
 		if (~emulFlags & FL_FAST) {
 			sem_wait(&emuSem);
@@ -1566,5 +1572,6 @@ void* emuThreadMain(void *) {
 		}
 		emulFlags &= ~FL_EMUL;
 	}
+	SDL_RemoveTimer(tid);
 	return NULL;
 }

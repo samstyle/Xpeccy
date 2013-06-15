@@ -388,12 +388,11 @@ void zxReset(ZXComp* comp,int wut) {
 			comp->dosen = (resto & 2) ? 0 : 1;	// 0,1 = shadow,dos
 			comp->prt0 = (resto & 1) ? 0x10 : 0x00;	// 2,3 = bas128,bas48
 			comp->mem->flags = MEM_B0_WP;		// no MEM_ROM_WP, only MEM_B0_WP
-			comp->tsconf.Page0 = 0;
-			comp->vid->tsconf.tconfig = 0;
 			comp->vid->tsconf.scrPal = 0xf0;
 			memset(comp->vid->tsconf.tsAMem,0x00,0x1e0);
 			memcpy(&comp->vid->tsconf.tsAMem[0x1e0],tsPalInit,0x20);	// init zx palete ?
 			tslOut(comp,0x00af,0x00,0);			// std 256x192, NOGFX off
+			comp->tsconf.Page0 = 0;
 			comp->vid->nextbrd = 0xf7;
 			comp->vid->tsconf.T0XOffset = 0;
 			comp->vid->tsconf.T0YOffset = 0;
