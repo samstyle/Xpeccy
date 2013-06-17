@@ -22,6 +22,12 @@
 #define	WW_DEBUG	1
 #define WW_OPTIONS	2
 #define	WW_DEVEL	3
+#define	WW_FOPEN	4
+#define WW_FSAVE	5
+#define	WW_SAVECHA	6
+#define WW_RZXPLAYER	7
+#define	WW_TAPEPLAYER	8
+#define	WW_MENU		9
 
 // pause reasons
 #define	PR_MENU		1
@@ -206,6 +212,9 @@ typedef struct {
 	int keyCode;		// 0xXXYYZZ = ZZ,YY,XX in buffer (ZZ,YY,0xf0,XX if released)
 } keyEntry;
 
+#define	EV_WINDOW	1
+#define	EV_TAPE		2
+
 #ifdef XQTPAINT
 class MainWin : public QWidget {
 #else
@@ -218,14 +227,18 @@ class MainWin : public QX11EmbedContainer {
 		void checkState();
 		void updateHead();
 		void emuDraw();
-		QTimer* timer;
+		void sendSignal(int,int);
+//		QTimer* timer;
+	signals:
+		void extSignal(int,int);
 	private:
 		QTimer* cmosTimer;
 	public slots:
 		void doOptions();
 		void tapStateChanged(int,int);
 	private slots:
-
+		void extSlot(int,int);
+		void menuHide();
 		void emulFrame();
 		void cmosTick();
 		void rzxStateChanged(int);

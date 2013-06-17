@@ -35,7 +35,7 @@
 
 extern bool sndEnabled;
 extern bool sndMute;
-extern int smpCount;
+//extern volatile int smpCount;
 extern int beepVolume;
 extern int tapeVolume;
 extern int ayVolume;

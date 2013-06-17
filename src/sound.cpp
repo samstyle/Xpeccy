@@ -21,8 +21,6 @@ int sndFlag = 0;
 unsigned char sndBufA[0x4000];
 unsigned char sndBufB[0x4000];
 unsigned char* sndBuf = sndBufA;
-//unsigned char sndBuffer[0x2000];
-//unsigned char ringBuffer[0x4000];
 int ringPos = 0;
 int playPos = 0;
 int pass = 0;
@@ -34,16 +32,12 @@ int tapeVolume = 100;
 int ayVolume = 100;
 int gsVolume = 100;
 
-//std::vector<OutSys> sndOutputList;
 OutSys *sndOutput = NULL;
 int sndRate = 44100;
 int sndChans = 2;
 int sndChunks = 882;
 int sndBufSize = 1764;
-//double tatbyte = 162;
-//int nsPerByte = 23143;
 int nsPerSample = 23143;
-//double tickCount = 162;
 int lev,levr,levl;
 unsigned char lastL,lastR;
 
@@ -53,10 +47,7 @@ OutSys* findOutSys(const char*);
 	int32_t ossHandle;			// oss
 	int32_t sndFormat;
 #ifdef HAVEALSA
-	char *alsaDevice;			// alsa
-	snd_output_t *alsaOutput;
-	snd_pcm_t *alsaHandle;
-	snd_pcm_sframes_t alsaFrames;
+	snd_pcm_t* alsaHandle = NULL;
 #endif
 #elif _WIN32
 	WAVEFORMATEX wf;
@@ -154,7 +145,8 @@ void setOutput(const char* name) {
 
 bool sndOpen() {
 	if (sndOutput == NULL) return true;
-	return sndOutput->open();
+	if (!sndOutput->open()) setOutput("NULL");
+	return true;
 }
 
 void sndPlay() {
@@ -169,7 +161,7 @@ void sndPause(bool b) {
 #ifdef HAVESDL
 	if (sndOutput == NULL) return;
 	if (strcmp(sndOutput->name,"SDL") != 0) return;
-//	SDL_PauseAudio(b ? 1 : 0);
+	SDL_PauseAudio(b ? 1 : 0);
 #endif
 }
 
@@ -223,11 +215,7 @@ void sdlPlayAudio(void*,Uint8* stream, int len) {
 		}
 		if (diff >= len) fillBuffer(len);
 	}
-//	SDL_LockAudio();
-//	SDL_MixAudio(stream,sndBuffer,len,SDL_MIX_MAXVOLUME);
 	memcpy(stream,sndBufB,len);
-//	switchSndBuf();
-//	SDL_UnlockAudio();
 }
 
 bool sdlopen() {
@@ -299,18 +287,19 @@ bool alsa_open() {
 	int err;
 	bool res = true;
 //	printf("libasound: open audio device... ");
-	if ((err = snd_pcm_open(&alsaHandle,alsaDevice,SND_PCM_STREAM_PLAYBACK,0))<0) {
-		printf("ALSA playback open error: %s\n",snd_strerror(err));
+	err = snd_pcm_open(&alsaHandle,"default",SND_PCM_STREAM_PLAYBACK,0);
+	if (err < 0) {
+//		printf("Error\nALSA playback open error: %s\n",snd_strerror(err));
 		res=false;
 	} else {
 		if (alsaHandle == NULL) {
-			printf("ALSA device open...shit happens\n");
+//			printf("Error\n");
 			res = false;
 		} else {
 //			printf("OK\n");
 //			printf("libasound: set audio paramz...");
 			if ((err = snd_pcm_set_params(alsaHandle,SND_PCM_FORMAT_U8,SND_PCM_ACCESS_RW_INTERLEAVED,sndChans,sndRate,1,100000)) < 0) {
-				printf("ALSA playback open error: %s\n",snd_strerror(err));
+//				printf("ALSA playback open error: %s\n",snd_strerror(err));
 				res=false;
 			} else {
 //				printf("OK\n");
@@ -321,6 +310,7 @@ bool alsa_open() {
 }
 
 void alsa_play() {
+	if (alsaHandle == NULL) return;
 	snd_pcm_sframes_t res;
 //	fillBuffer(sndBufSize);
 	unsigned char* ptr = sndBuf;
@@ -333,7 +323,6 @@ void alsa_play() {
 		ptr += res * sndChans;
 	}
 	switchSndBuf();
-//	ringPos = 0;
 }
 
 void alsa_close() {
@@ -424,10 +413,6 @@ OutSys* findOutSys(const char* name) {
 
 void sndInit() {
 #ifdef __linux__
-#ifdef HAVEALSA
-	alsaDevice = (char*)"default";
-	alsaOutput = NULL;
-#endif
 	sndFormat = AFMT_U8;
 #endif
 	sndRate = 44100;
@@ -437,18 +422,4 @@ void sndInit() {
 	sndOutput = NULL;
 	beepVolume = tapeVolume = ayVolume = gsVolume = 100;
 	initNoise();							// ay/ym
-/*
-	addOutput("NULL",&null_open,&null_play,&null_close);
-#ifdef __linux__
-	addOutput("OSS",&oss_open,&oss_play,&oss_close);
-#ifdef HAVEALSA
-	addOutput("ALSA",&alsa_open,&alsa_play,&alsa_close);
-#endif
-#elif _WIN32
-//	addOutput("WaveOut",&wave_open,&wave_play,&wave_close);
-#endif
-#ifdef HAVESDL
-	addOutput("SDL",&sdlopen,&sdlplay,&sdlclose);	// TODO: do something with SDL output
-#endif
-*/
 }
