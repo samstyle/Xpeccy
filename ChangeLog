@@ -280,3 +280,75 @@ Fix	Ports conflict in Pent1024SL
 
 build 20121225
 New	Basic SD-card functions on PentEvo
+New	Saving CMOS memory
+
+build 20130103
+New	Add 48000Hz audio output
+
+build 20130110
+Fix	Prevent sound buffer overfill
+Fix	Higher mem (>128K) trashed when profile switching
+New	Ability to start always in 'default' profile
+
+build 20130228
+New	New sync system based on 'nanosec time'
+
+build 20130306
+Wrk	Video drawing refactoring (speed up)
+
+build 20130326
+New	My fork of libz80ex. -DZ80EX_BUILD=no in cmake
+
+build 20130327
+Fix	SDCard image file must exist
+
+build 20130422
+Wrk	Refactoring of 'profile config files loading'
+New	Ability to store disk & tape images and resotre it at next start
+
+build 20130429
+Fix	Unused profiles config corruption
+
+build 20130503
+Fix	Romset loading in unused profiles
+New	Video mode switching from user-menu
+New	x86_64 build from now
+
+build 20130509
+New	TSEvo (TSLab PentEvo cofiguration) alpha version
+Fix	ATM2 hardware multicolor
+Fix	Saving turbo option of disk interface
+
+build 20130513
+Wrk	TSEvo sprites/tiles drawing refactoring
+Fix	TSEvo GFXOFF flag
+
+build 20130515
+New	PC-keyboard keycodes through CMOS F0..FF cells
+New	TSEvo INTPOS ports
+
+build 20130516
+Fix	TSEvo screen line counter
+New	Ability to set OS time in CMOS
+Fix	BaseConf version reading from CMOS
+
+build 20130522
+Fix	TSEvo tilemap page number
+Fix	HDD master/slave selection
+Fix	ATM2 HDD hi/low byte selection
+New	Baseconf Nemo-divide
+Wrk	Pair of HDD flags
+
+build 20130524
+Wrk	Rework file operation with SDCard/HDD images
+
+build 20130614
+New	*.spg loading
+New	TSEvo kempston mouse & covox
+Fix	TSEvo ROM mapping
+Wrk	Separating border/screen drawing (speed up)
+
+build 20130618
+Fix	TSEvo DMA registers
+Fix	SDL version may crash by profile switching
+Wrk	Some speed up

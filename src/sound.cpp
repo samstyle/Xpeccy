@@ -336,7 +336,6 @@ bool wave_open() {
 	wf.nAvgBytesPerSec = wf.nSamplesPerSec * wf.nBlockAlign;
 	wf.cbSize = 0;
 
-	whdr.lpData = (LPSTR)ringBuffer;
 	whdr.dwBufferLength = sndBufSize;
 	whdr.dwBytesRecorded = 0;
 	whdr.dwUser = 0;
@@ -344,22 +343,23 @@ bool wave_open() {
 	whdr.lpNext = NULL;
 	whdr.reserved = 0;
 
-	event = CreateEvent(0, FALSE, FALSE, 0);
-//	MMRESULT res = waveOutOpen(&wout,WAVE_MAPPER,&wf,NULL,NULL,CALLBACK_NULL);
-	MMRESULT res = waveOutOpen(&wout,WAVE_MAPPER,&wf,DWORD_PTR(event),0,CALLBACK_EVENT | WAVE_FORMAT_DIRECT);
+//	event = CreateEvent(0, FALSE, FALSE, 0);
+	MMRESULT res = waveOutOpen(&wout,WAVE_MAPPER,&wf,NULL,NULL,CALLBACK_NULL);
+//	MMRESULT res = waveOutOpen(&wout,WAVE_MAPPER,&wf,DWORD_PTR(event),0,CALLBACK_EVENT | WAVE_FORMAT_DIRECT);
 	return (res == MMSYSERR_NOERROR);
 }
 
 void wave_play() {
+	whdr.lpData = (LPSTR)sndBuf;
 	whdr.dwFlags = 0;
-	whdr.dwBufferLength = ringPos - 1;
+	whdr.dwBufferLength = sndBufSize;
 	waveOutPrepareHeader(wout,&whdr,sizeof(WAVEHDR));
 	waveOutWrite(wout,&whdr,sizeof(WAVEHDR));
 	while (!(whdr.dwFlags & WHDR_DONE)) {
 		WaitForSingleObject(event, INFINITE);
 	}
 	waveOutUnprepareHeader(wout,&whdr,sizeof(WAVEHDR));
-	ringPos = 0;
+	switchSndBuf();
 }
 
 void wave_close() {

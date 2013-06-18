@@ -23,6 +23,7 @@
 #define	SND_OSS		1
 #define	SND_ALSA	2
 #define	SND_SDL		3
+#define SND_WAVE	4
 
 #define	SND_RATE	0
 #define	SND_COUNT	1
