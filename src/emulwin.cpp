@@ -351,7 +351,7 @@ void MainWin::updateWindow() {
 	if (surf) SDL_FreeSurface(surf);
 	surf = SDL_SetVideoMode(szw,szh,8,sdlflg);
 	zx->vid->scrptr = (unsigned char*)surf->pixels;
-	zx->vid->scrimg = zx->vid->scrimg;
+	zx->vid->scrimg = zx->vid->scrptr;
 	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
 #endif
 	updateHead();
@@ -466,20 +466,26 @@ void MainWin::extSlot(int sig, int par) {
 					optShow();
 					break;
 				case WW_FOPEN:
+					sndPause(true);
 					emulPause(true,PR_FILE);
 					loadFile(zx,"",FT_ALL,-1);
 					emulPause(false,PR_FILE);
 					mainWin->checkState();
+					sndPause(false);
 					break;
 				case WW_FSAVE:
+					sndPause(true);
 					emulPause(true,PR_FILE);
 					saveFile(zx,"",FT_ALL,-1);
 					emulPause(false,PR_FILE);
+					sndPause(false);
 					break;
 				case WW_SAVECHA:
+					sndPause(true);
 					emulPause(true,PR_FILE);
 					emulSaveChanged();
 					emulPause(false,PR_FILE);
+					sndPause(false);
 					break;
 				case WW_RZXPLAYER:
 					if (rzxWin->isVisible()) {
@@ -1268,11 +1274,6 @@ void emuFrame() {
 // process SDL events
 #ifndef XQTPAINT
 	doSDLEvents();
-//#else
-//	if (emulFlags & FL_UPDATE) {
-//		emulFlags &= ~FL_UPDATE;
-//		updateWindow();
-//	}
 #endif
 	if (pauseFlags != 0) return;
 // take screenshot
@@ -1288,28 +1289,10 @@ void emuFrame() {
 		zx->mouse->buttons = 0xff;
 	}
 // update window
-//	mainWin->emuDraw();
+	mainWin->emuDraw();
 
 // set emulation semaphore
 	if (~emulFlags & (FL_FAST | FL_EMUL)) sem_post(&emuSem);	// inc 'emulate frame' semaphore
-
-// update window
-#ifdef XQTPAINT
-	mainWin->update();
-#else
-	SDL_UpdateRect(surf,0,0,0,0);
-#endif
-// check if menu isn't visible anymore (QMenu doesn't have signals on show/hide events)
-//	if (userMenu->isHidden() && (pauseFlags & PR_MENU)) {
-//		setFocus();
-//		emulPause(false,PR_MENU);
-//	}
-// if request speed change, do it
-//	if (emulFlags & FL_FAST_RQ) {
-//		emulFlags ^= FL_FAST;
-//		updateHead();
-//		emulFlags &= ~FL_FAST_RQ;
-//	}
 }
 
 // video drawing

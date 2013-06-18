@@ -28,9 +28,10 @@ ZXComp* zx;
 extern MainWin* mainWin;
 sem_t eventSem;
 extern sem_t emuSem;
+extern volatile int pauseFlags;
 
 Uint32 onTimer(Uint32 itv, void*) {
-	sem_post(&eventSem);
+	if (~pauseFlags & PR_FILE) sem_post(&eventSem);
 	return itv;
 }
 

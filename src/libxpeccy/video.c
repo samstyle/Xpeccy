@@ -682,7 +682,7 @@ void vidSync(Video* vid, int ns) {
 		if ((vid->y >= vid->lcut.v) && (vid->y < vid->rcut.v)) {
 			if ((vid->x >= vid->lcut.h) && (vid->x < vid->rcut.h)) {
 				if (vid->x & 8) vid->brdcol = vid->nextbrd;
-				if (vid->scrimg) vid->callback(vid);		// put dot
+				vid->callback(vid);		// put dot
 			}
 		}
 		if ((vid->x == vid->intpos.h) && (vid->y == vid->intpos.v)) vid->flags |= VID_INTSTROBE;

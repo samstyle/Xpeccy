@@ -40,7 +40,7 @@ extern int beepVolume;
 extern int tapeVolume;
 extern int ayVolume;
 extern int gsVolume;
-extern int sndRate;
+extern unsigned int sndRate;
 
 struct OutSys {
 	int id;
