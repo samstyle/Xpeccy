@@ -437,6 +437,11 @@ MainWin::MainWin() {
 	connect(rzxWin,SIGNAL(stateChanged(int)),this,SLOT(rzxStateChanged(int)));
 
 	initUserMenu((QWidget*)this);
+
+//	timer = new QTimer();
+//	connect(timer,SIGNAL(timeout()),this,SLOT(emulFrame()));
+//	timer->setInterval(20);
+
 	cmosTimer = new QTimer();
 	connect(cmosTimer,SIGNAL(timeout()),this,SLOT(cmosTick()));
 	cmosTimer->start(1000);
@@ -526,9 +531,9 @@ void emuStart() {
 
 void emuStop() {
 	emulFlags &= ~FL_WORK;
+//	mainWin->timer->stop();
 	sem_post(&emuSem);
 	pthread_join(emuThread,NULL);
-//	mainWin->timer->stop();
 }
 
 unsigned char toBCD(unsigned char val) {

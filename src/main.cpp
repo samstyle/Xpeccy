@@ -24,7 +24,6 @@
 #endif
 
 ZXComp* zx;
-//EmulWin *mwin;
 extern MainWin* mainWin;
 sem_t eventSem;
 extern sem_t emuSem;
@@ -71,11 +70,9 @@ int main(int ac,char** av) {
 		}
 		if (dev) {
 			devInit();
-			// loadConfig(true);
 			devShow();
 			return app.exec();
 		} else {
-//			initHardware();
 			sndInit();
 			emulInit();
 			dbgInit(NULL);// emulWidget());
@@ -84,7 +81,6 @@ int main(int ac,char** av) {
 			initFileDialog(emulWidget());
 			loadProfiles();
 			prfLoad("");
-//			loadConfig(false);
 			fillUserMenu();
 			emulShow();
 			emulUpdateWindow();
@@ -108,7 +104,6 @@ int main(int ac,char** av) {
 				emuFrame();
 			} while (~emulFlags & FL_EXIT);
 			SDL_RemoveTimer(tid);
-
 			emuStop();
 			sndClose();
 #ifdef HAVESDL
