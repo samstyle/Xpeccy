@@ -321,9 +321,20 @@ void MainWin::updateHead() {
 	setWindowTitle(title);
 }
 
+#ifdef WORDS_BIG_ENDIAN
+	#define RMASK 0xff000000
+	#define GMASK 0x00ff0000
+	#define BMASK 0x0000ff00
+	#define AMASK 0x000000ff
+#else
+	#define RMASK 0x000000ff
+	#define GMASK 0x0000ff00
+	#define BMASK 0x00ff0000
+	#define AMASK 0xff000000
+#endif
+
 void MainWin::updateWindow() {
 	emulFlags |= FL_BLOCK;
-//	vidFlag &= ~VF_CHECKCHA;
 	vidUpdate(zx->vid);
 	int szw = zx->vid->wsze.h;
 	int szh = zx->vid->wsze.v;
@@ -333,21 +344,16 @@ void MainWin::updateWindow() {
 	zx->vid->scrimg = scrImg.bits();
 	zx->vid->scrptr = zx->vid->scrimg;
 #else
-	int sdlflg = SDL_SWSURFACE;
+	int sdlflg = SDL_SWSURFACE | SDL_NOFRAME;
 	if ((vidFlag & VF_FULLSCREEN) && !(vidFlag & VF_BLOCKFULLSCREEN)) {
 		sdlflg |= SDL_FULLSCREEN;
 	}
-	if (surf != NULL) {
-		SDL_FreeSurface(surf);		// else creating new surface will destroy screenBuf
-	}
-	surf = SDL_SetVideoMode(szw,szh,8,sdlflg | SDL_NOFRAME);
+	if (surf) SDL_FreeSurface(surf);
+	surf = SDL_SetVideoMode(szw,szh,8,sdlflg);
+	zx->vid->scrptr = (unsigned char*)surf->pixels;
+	zx->vid->scrimg = zx->vid->scrimg;
 	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
-//	free(surf->pixels);
-	zx->vid->scrimg = (unsigned char*)surf->pixels;
-	zx->vid->scrptr = zx->vid->scrimg;
 #endif
-//	zx->vid->dotCount = zx->vid->intpos.v * zx->vid->full.h + zx->vid->intpos.h + zx->frmDot;
-//	zx->vid->scrptr = zx->vid->scrimg + int(zx->frmDot);
 	updateHead();
 	emulFlags &= ~FL_BLOCK;
 }
@@ -396,11 +402,11 @@ void emulPause(bool p, int msk) {
 		SDL_ShowCursor(SDL_DISABLE);
 #endif
 	}
-//	if (pauseFlags == 0) {
-//		mainWin->setWindowIcon(curicon);
-//	} else {
-//		mainWin->setWindowIcon(QIcon(":/images/pause.png"));
-//	}
+	if (pauseFlags == 0) {
+		mainWin->setWindowIcon(curicon);
+	} else {
+		mainWin->setWindowIcon(QIcon(":/images/pause.png"));
+	}
 	if (msk & PR_PAUSE) return;
 	if ((pauseFlags & ~PR_PAUSE) == 0) {
 		vidFlag &= ~VF_BLOCKFULLSCREEN;
@@ -431,10 +437,7 @@ MainWin::MainWin() {
 	connect(rzxWin,SIGNAL(stateChanged(int)),this,SLOT(rzxStateChanged(int)));
 
 	initUserMenu((QWidget*)this);
-//	timer = new QTimer();
 	cmosTimer = new QTimer();
-//	timer->setInterval(20);	// common
-//	connect(timer,SIGNAL(timeout()),this,SLOT(emulFrame()));
 	connect(cmosTimer,SIGNAL(timeout()),this,SLOT(cmosTick()));
 	cmosTimer->start(1000);
 
@@ -1257,29 +1260,30 @@ void MainWin::sendSignal(int sig, int par) {
 	emit extSignal(sig,par);
 }
 
-void MainWin::emulFrame() {
+//void MainWin::emulFrame() {
+void emuFrame() {
 	if (emulFlags & FL_BLOCK) return;
-
 // if not paused play sound buffer
-//	if (sndEnabled && (sndMute || isActiveWindow()))
-//		sndPlay();
-
-// take screenshot
-	if (emulFlags & FL_SHOT) doScreenShot();
-
+	if (sndEnabled && (sndMute || mainWin->isActiveWindow())) sndPlay();
 // process SDL events
-/*
 #ifndef XQTPAINT
 	doSDLEvents();
-#else
-	if (emulFlags & FL_UPDATE) {
-		emulFlags &= ~FL_UPDATE;
-		updateWindow();
-	}
+//#else
+//	if (emulFlags & FL_UPDATE) {
+//		emulFlags &= ~FL_UPDATE;
+//		updateWindow();
+//	}
 #endif
-*/
+	if (pauseFlags != 0) return;
+// take screenshot
+	if (emulFlags & FL_SHOT) doScreenShot();
+// change palette
+	if (zx->flag & ZX_PALCHAN) {
+		zx->flag &= ~ZX_PALCHAN;
+		emulSetPalette(zx,optGetInt(OPT_BRGLEV));
+	}
 // if window is not active release keys & buttons
-	if (!isActiveWindow()) {
+	if (!mainWin->isActiveWindow()) {
 		keyRelease(zx->keyb,0,0,0);
 		zx->mouse->buttons = 0xff;
 	}
@@ -1287,20 +1291,25 @@ void MainWin::emulFrame() {
 //	mainWin->emuDraw();
 
 // set emulation semaphore
-//	if (~emulFlags & (FL_FAST | FL_EMUL)) sem_post(&emuSem);	// inc 'emulate frame' semaphore
+	if (~emulFlags & (FL_FAST | FL_EMUL)) sem_post(&emuSem);	// inc 'emulate frame' semaphore
 
-
+// update window
+#ifdef XQTPAINT
+	mainWin->update();
+#else
+	SDL_UpdateRect(surf,0,0,0,0);
+#endif
 // check if menu isn't visible anymore (QMenu doesn't have signals on show/hide events)
 //	if (userMenu->isHidden() && (pauseFlags & PR_MENU)) {
 //		setFocus();
 //		emulPause(false,PR_MENU);
 //	}
 // if request speed change, do it
-	if (emulFlags & FL_FAST_RQ) {
-		emulFlags ^= FL_FAST;
-		updateHead();
-		emulFlags &= ~FL_FAST_RQ;
-	}
+//	if (emulFlags & FL_FAST_RQ) {
+//		emulFlags ^= FL_FAST;
+//		updateHead();
+//		emulFlags &= ~FL_FAST_RQ;
+//	}
 }
 
 // video drawing
@@ -1530,6 +1539,7 @@ void MainWin::chVMode(QAction* act) {
 
 // emulation thread (non-GUI)
 
+/*
 // TODO : move here (sndPlay + sem_post) and send signals to main window
 Uint32 onTimer(Uint32 itv,void*) {
 	if (sndEnabled && (sndMute || mainWin->isActiveWindow())) sndPlay();
@@ -1543,9 +1553,10 @@ Uint32 onTimer(Uint32 itv,void*) {
 #endif
 	return itv;
 }
+*/
 
 void* emuThreadMain(void *) {
-	SDL_TimerID tid = SDL_AddTimer(20,&onTimer,NULL);
+//	SDL_TimerID tid = SDL_AddTimer(20,&onTimer,NULL);
 	while (emulFlags & FL_WORK) {
 		if (~emulFlags & FL_FAST) {
 			sem_wait(&emuSem);
@@ -1590,6 +1601,6 @@ void* emuThreadMain(void *) {
 		}
 		emulFlags &= ~FL_EMUL;
 	}
-	SDL_RemoveTimer(tid);
+//	SDL_RemoveTimer(tid);
 	return NULL;
 }

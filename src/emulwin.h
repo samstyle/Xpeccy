@@ -239,7 +239,7 @@ class MainWin : public QX11EmbedContainer {
 	private slots:
 		void extSlot(int,int);
 		void menuHide();
-		void emulFrame();
+//		void emulFrame();
 		void cmosTick();
 		void rzxStateChanged(int);
 		void bookmarkSelected(QAction*);
@@ -274,6 +274,8 @@ extern volatile int emulFlags;
 void emulSetFlag(int,bool);
 bool emulSaveChanged();
 QWidget* emulWidget();
+
+void emuFrame();
 
 // keys
 void initKeyMap();

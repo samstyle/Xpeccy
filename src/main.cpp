@@ -1,7 +1,8 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QTimer>
-//#include <getopt.h>
+
+#include <semaphore.h>
 
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
@@ -25,6 +26,13 @@
 ZXComp* zx;
 //EmulWin *mwin;
 extern MainWin* mainWin;
+sem_t eventSem;
+extern sem_t emuSem;
+
+Uint32 onTimer(Uint32 itv, void*) {
+	sem_post(&eventSem);
+	return itv;
+}
 
 int main(int ac,char** av) {
 #ifdef XQTPAINT
@@ -89,12 +97,17 @@ int main(int ac,char** av) {
 			SDL_JoystickOpen(1);
 #endif
 			mainWin->checkState();
+
+			sem_init(&eventSem,0,0);
 			emuStart();
-//			app.exec();
+			SDL_TimerID tid = SDL_AddTimer(20,&onTimer,NULL);
 			do {
-				SDL_Delay(10);
+				sem_wait(&eventSem);
 				app.processEvents();
+				emuFrame();
 			} while (~emulFlags & FL_EXIT);
+			SDL_RemoveTimer(tid);
+
 			emuStop();
 			sndClose();
 #ifdef HAVESDL

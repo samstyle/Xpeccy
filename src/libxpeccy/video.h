@@ -15,6 +15,7 @@ extern "C" {
 #define VF_NOFLIC		(1<<4)
 #define	VF_GREY			(1<<5)
 #define	VF_TSCONF		(1<<6)
+#define	VF_BLOCK		(1<<7)
 // vid->flags (vid)
 #define	VID_BORDER_4T		1
 #define	VID_NOGFX		(1<<1)
@@ -115,7 +116,6 @@ void vidDarkTail(Video*);
 
 void vidUpdate(Video*);
 
-//unsigned char* vidGetScreen();
 unsigned char vidGetAttr(Video*);
 void vidSetFont(Video*,char*);
 

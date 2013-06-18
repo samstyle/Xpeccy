@@ -7,7 +7,7 @@
 
 #include "video.h"
 
-int vidFlag = 0;
+int vidFlag = VF_BLOCK;
 float brdsize = 1.0;
 
 unsigned char inkTab[] = {
@@ -682,7 +682,7 @@ void vidSync(Video* vid, int ns) {
 		if ((vid->y >= vid->lcut.v) && (vid->y < vid->rcut.v)) {
 			if ((vid->x >= vid->lcut.h) && (vid->x < vid->rcut.h)) {
 				if (vid->x & 8) vid->brdcol = vid->nextbrd;
-				vid->callback(vid);		// put dot
+				if (vid->scrimg) vid->callback(vid);		// put dot
 			}
 		}
 		if ((vid->x == vid->intpos.h) && (vid->y == vid->intpos.v)) vid->flags |= VID_INTSTROBE;
