@@ -2,8 +2,7 @@
 #include <QMessageBox>
 #include <QTimer>
 
-// #include <semaphore.h>
-#include <SDL_thread.h>
+#include <semaphore.h>
 
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
@@ -26,12 +25,11 @@
 
 ZXComp* zx;
 extern MainWin* mainWin;
-SDL_sem* eventSem;
-//extern SDL_sem* emuSem;
+sem_t eventSem;
 extern volatile int pauseFlags;
 
 Uint32 onTimer(Uint32 itv, void*) {
-	if (~pauseFlags & PR_FILE) SDL_SemPost(eventSem);
+	if (~pauseFlags & PR_FILE) sem_post(&eventSem);
 	return itv;
 }
 
@@ -96,18 +94,19 @@ int main(int ac,char** av) {
 #endif
 			mainWin->checkState();
 
-			eventSem = SDL_CreateSemaphore(0);
 			emuStart();
+//			app.exec();
+
+			sem_init(&eventSem,1,0);
 			SDL_TimerID tid = SDL_AddTimer(20,&onTimer,NULL);
-			do {
-				//sem_wait(&eventSem);
-				SDL_SemWait(eventSem);
+			while (~emulFlags & FL_EXIT) {
+				sem_wait(&eventSem);
 				app.processEvents();
 				emuFrame();
-			} while (~emulFlags & FL_EXIT);
+			}
 			SDL_RemoveTimer(tid);
+
 			emuStop();
-			SDL_DestroySemaphore(eventSem);
 			sndClose();
 #ifdef HAVESDL
 			SDL_Quit();
