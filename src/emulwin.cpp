@@ -7,12 +7,23 @@
 #include <fstream>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <pthread.h>
-#include <semaphore.h>
 #include <unistd.h>
 #include <time.h>
 #include <sys/time.h>
 #include <signal.h>
+
+#include <SDL_thread.h>
+SDL_Thread* emuThread;
+SDL_sem* emuSem;
+int emuThreadMain(void*);
+
+/*
+	#include <pthread.h>
+	#include <semaphore.h>
+	pthread_t emuThread;
+	sem_t emuSem;
+	void* emuThreadMain(void*);
+*/
 
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
@@ -74,10 +85,6 @@ int blk;
 int prc;
 int ns = 0;				// ns counter
 
-pthread_t emuThread;
-sem_t emuSem;
-void* emuThreadMain(void*);
-
 void emulInit() {
 	initKeyMap();
 	emulFlags = 0;
@@ -88,8 +95,6 @@ void emulInit() {
 	optSet(OPT_SHOTFRM,SCR_PNG);
 
 	addLayout("default",448,320,136,80,64,32,0,0,64);
-
-	sem_init(&emuSem,0,0);
 
 	mainWin = new MainWin;
 }
@@ -346,8 +351,9 @@ void MainWin::updateWindow() {
 #else
 	int sdlflg = SDL_SWSURFACE | SDL_NOFRAME;
 	if ((vidFlag & VF_FULLSCREEN) && !(vidFlag & VF_BLOCKFULLSCREEN)) {
-		sdlflg |= SDL_FULLSCREEN;
+//		sdlflg |= SDL_FULLSCREEN;
 	}
+	zx->vid->scrimg = NULL;
 	if (surf) SDL_FreeSurface(surf);
 	surf = SDL_SetVideoMode(szw,szh,8,sdlflg);
 	zx->vid->scrptr = (unsigned char*)surf->pixels;
@@ -525,15 +531,18 @@ void MainWin::extSlot(int sig, int par) {
 
 void emuStart() {
 	emulFlags |= FL_WORK;
-	pthread_create(&emuThread,NULL,&emuThreadMain,NULL);		// emulation thread
+	emuSem = SDL_CreateSemaphore(0);
+	emuThread = SDL_CreateThread(&emuThreadMain,NULL);
 //	mainWin->timer->start();
 }
 
 void emuStop() {
 	emulFlags &= ~FL_WORK;
 //	mainWin->timer->stop();
-	sem_post(&emuSem);
-	pthread_join(emuThread,NULL);
+//	sem_post(&emuSem);
+	SDL_SemPost(emuSem);
+	SDL_WaitThread(emuThread,NULL);
+	SDL_DestroySemaphore(emuSem);
 }
 
 unsigned char toBCD(unsigned char val) {
@@ -1297,7 +1306,7 @@ void emuFrame() {
 	mainWin->emuDraw();
 
 // set emulation semaphore
-	if (~emulFlags & (FL_FAST | FL_EMUL)) sem_post(&emuSem);	// inc 'emulate frame' semaphore
+	if (~emulFlags & (FL_FAST | FL_EMUL)) SDL_SemPost(emuSem);	// sem_post(&emuSem);	// inc 'emulate frame' semaphore
 }
 
 // video drawing
@@ -1525,29 +1534,13 @@ void MainWin::chVMode(QAction* act) {
 	vidSetMode(zx->vid,act->data().toInt());
 }
 
-// emulation thread (non-GUI)
+// emulation thread (non-GUI,SDL)
 
-/*
-// TODO : move here (sndPlay + sem_post) and send signals to main window
-Uint32 onTimer(Uint32 itv,void*) {
-	if (sndEnabled && (sndMute || mainWin->isActiveWindow())) sndPlay();
-	mainWin->emuDraw();
-	if (~emulFlags & (FL_FAST | FL_EMUL)) sem_post(&emuSem);	// inc 'emulate frame' semaphore
-#ifdef XQTPAINT
-//	mainWin->update();
-#else
-	doSDLEvents();
-//	SDL_UpdateRect(surf,0,0,0,0);
-#endif
-	return itv;
-}
-*/
-
-void* emuThreadMain(void *) {
-//	SDL_TimerID tid = SDL_AddTimer(20,&onTimer,NULL);
+int emuThreadMain(void *) {
 	while (emulFlags & FL_WORK) {
 		if (~emulFlags & FL_FAST) {
-			sem_wait(&emuSem);
+			SDL_SemWait(emuSem);
+			// sem_wait(&emuSem);
 			if (~emulFlags & FL_WORK) break;
 		}
 		emulFlags |= FL_EMUL;
@@ -1589,6 +1582,5 @@ void* emuThreadMain(void *) {
 		}
 		emulFlags &= ~FL_EMUL;
 	}
-//	SDL_RemoveTimer(tid);
-	return NULL;
+	return 0;
 }
