@@ -228,7 +228,7 @@ class MainWin : public QX11EmbedContainer {
 		void updateHead();
 		void emuDraw();
 		void sendSignal(int,int);
-//		QTimer* timer;
+		QTimer* timer;
 	signals:
 		void extSignal(int,int);
 	private:
@@ -239,7 +239,8 @@ class MainWin : public QX11EmbedContainer {
 	private slots:
 		void extSlot(int,int);
 		void menuHide();
-//		void emulFrame();
+		void menuShow();
+		void emulFrame();
 		void cmosTick();
 		void rzxStateChanged(int);
 		void bookmarkSelected(QAction*);
@@ -268,14 +269,14 @@ void emuStart();
 void emuStop();
 void emulShow();
 void emulUpdateWindow();
-void emulSetIcon(const char*);
+//void emulSetIcon(const char*);
 void emulPause(bool, int);
 extern volatile int emulFlags;
 void emulSetFlag(int,bool);
 bool emulSaveChanged();
 QWidget* emulWidget();
 
-void emuFrame();
+// void emuFrame();
 
 // keys
 void initKeyMap();

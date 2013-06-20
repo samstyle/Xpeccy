@@ -348,7 +348,10 @@ void MainWin::updateWindow() {
 //		sdlflg |= SDL_FULLSCREEN;
 	}
 	zx->vid->scrimg = NULL;
-	if (surf) SDL_FreeSurface(surf);
+	if (surf) {
+		SDL_FreeSurface(surf);
+		surf->pixels = NULL;
+	}
 	surf = SDL_SetVideoMode(szw,szh,8,sdlflg);
 	zx->vid->scrptr = (unsigned char*)surf->pixels;
 	zx->vid->scrimg = zx->vid->scrptr;
@@ -374,10 +377,12 @@ void emulSetFlag(int msk,bool cnd) {
 	}
 }
 
+/*
 void emulSetIcon(const char* inam) {
 	curicon = QIcon(QString(inam));
 	emulPause(true, 0);
 }
+*/
 
 void emulPause(bool p, int msk) {
 	if (p) {
@@ -438,17 +443,22 @@ MainWin::MainWin() {
 
 	initUserMenu((QWidget*)this);
 
-//	timer = new QTimer();
-//	connect(timer,SIGNAL(timeout()),this,SLOT(emulFrame()));
-//	timer->setInterval(20);
+	timer = new QTimer();
+	connect(timer,SIGNAL(timeout()),this,SLOT(emulFrame()));
+	timer->setInterval(20);
 
 	cmosTimer = new QTimer();
 	connect(cmosTimer,SIGNAL(timeout()),this,SLOT(cmosTick()));
 	cmosTimer->start(1000);
 
 	connect(this,SIGNAL(extSignal(int,int)),SLOT(extSlot(int,int)));
+	connect(userMenu,SIGNAL(aboutToShow()),SLOT(menuShow()));
 	connect(userMenu,SIGNAL(aboutToHide()),SLOT(menuHide()));
 
+}
+
+void MainWin::menuShow() {
+	emulPause(true,PR_MENU);
 }
 
 void MainWin::menuHide() {
@@ -507,7 +517,7 @@ void MainWin::extSlot(int sig, int par) {
 					}
 					break;
 				case WW_MENU:
-					emulPause(true,PR_MENU);
+//					emulPause(true,PR_MENU);
 					userMenu->popup(mainWin->pos() + QPoint(20,20));
 					userMenu->setFocus();
 					break;
@@ -528,12 +538,12 @@ void emuStart() {
 	sem_init(&emuSem,1,0);
 	pthread_attr_init(&emuAttr);
 	pthread_create(&emuThread,&emuAttr,&emuThreadMain,NULL);
-//	mainWin->timer->start();
+	mainWin->timer->start();
 }
 
 void emuStop() {
 	emulFlags &= ~FL_WORK;
-//	mainWin->timer->stop();
+	mainWin->timer->stop();
 	sem_post(&emuSem);
 	pthread_join(emuThread,NULL);
 }
@@ -594,7 +604,7 @@ void MainWin::tapStateChanged(int wut, int val) {
 			switch(val) {
 				case TWS_PLAY:
 					if (tapPlay(zx->tape)) {
-						emulSetIcon(":/images/play.png");
+//						emulSetIcon(":/images/play.png");
 						tapeWin->setState(TWS_PLAY);
 					} else {
 						tapeWin->setState(TWS_STOP);
@@ -717,7 +727,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				extSlot(EV_WINDOW,WW_DEBUG);
 				break;
 			case Qt::Key_Menu:
-				emulPause(true,PR_MENU);
+//				emulPause(true,PR_MENU);
 				userMenu->popup(mainWin->pos() + QPoint(20,20));
 				userMenu->setFocus();
 				break;
@@ -804,7 +814,7 @@ void MainWin::mousePressEvent(QMouseEvent *ev){
 			if (emulFlags & FL_GRAB) {
 				zx->mouse->buttons &= ~0x02;
 			} else {
-				emulPause(true,PR_MENU);
+//				emulPause(true,PR_MENU);
 				userMenu->popup(QPoint(ev->globalX(),ev->globalY()));
 				userMenu->setFocus();
 			}
@@ -1273,8 +1283,8 @@ void MainWin::sendSignal(int sig, int par) {
 	emit extSignal(sig,par);
 }
 
-//void MainWin::emulFrame() {
-void emuFrame() {
+void MainWin::emulFrame() {
+//void emuFrame() {
 	if (emulFlags & FL_BLOCK) return;
 // if not paused play sound buffer
 	if (sndEnabled && (sndMute || mainWin->isActiveWindow())) sndPlay();
@@ -1342,13 +1352,13 @@ void MainWin::emuDraw() {
 			case FDC_WRITE: putIcon(zx->vid,4,4,icoRedDisk); break;
 		}
 	}
-//	if (vidFlag & (VF_CHANGED | VF_FRAMEDBG)) {
+	if (~emulFlags & FL_BLOCK) {
 #ifdef XQTPAINT
 		update();
 #else
 		SDL_UpdateRect(surf,0,0,0,0);
 #endif
-//	}
+	}
 //	vidFlag &= ~VF_CHANGED;
 //	vidFlag |= VF_CHECKCHA;
 	emulFlags &= ~FL_DRAW;
@@ -1500,13 +1510,13 @@ void MainWin::bookmarkSelected(QAction* act) {
 }
 
 void MainWin::profileSelected(QAction* act) {
-	emulPause(true,PR_EXTRA);
+//	emulPause(true,PR_EXTRA);
 	setProfile(std::string(act->text().toLocal8Bit().data()));
 	sndCalibrate();
 	emulUpdateWindow();
 	saveProfiles();
-	setFocus();
-	emulPause(false,PR_EXTRA);
+//	setFocus();
+//	emulPause(false,PR_EXTRA);
 }
 
 void MainWin::reset(QAction* act) {
@@ -1515,12 +1525,12 @@ void MainWin::reset(QAction* act) {
 }
 
 void MainWin::chLayout(QAction* act) {
-	emulPause(true,PR_EXTRA);
+//	emulPause(true,PR_EXTRA);
 	emulSetLayout(zx,std::string(act->text().toLocal8Bit().data()));
 	prfSave("");
 	emulUpdateWindow();
-	setFocus();
-	emulPause(false,PR_EXTRA);
+//	setFocus();
+//	emulPause(false,PR_EXTRA);
 }
 
 void MainWin::chVMode(QAction* act) {

@@ -25,13 +25,13 @@
 
 ZXComp* zx;
 extern MainWin* mainWin;
-sem_t eventSem;
-extern volatile int pauseFlags;
+//sem_t eventSem;
+//extern volatile int pauseFlags;
 
-Uint32 onTimer(Uint32 itv, void*) {
-	if (~pauseFlags & PR_FILE) sem_post(&eventSem);
-	return itv;
-}
+//Uint32 onTimer(Uint32 itv, void*) {
+//	if (~pauseFlags & PR_FILE) sem_post(&eventSem);
+//	return itv;
+//}
 
 int main(int ac,char** av) {
 #ifdef XQTPAINT
@@ -95,8 +95,9 @@ int main(int ac,char** av) {
 			mainWin->checkState();
 
 			emuStart();
-//			app.exec();
-
+#if 1
+			app.exec();
+#else
 			sem_init(&eventSem,1,0);
 			SDL_TimerID tid = SDL_AddTimer(20,&onTimer,NULL);
 			while (~emulFlags & FL_EXIT) {
@@ -105,7 +106,7 @@ int main(int ac,char** av) {
 				emuFrame();
 			}
 			SDL_RemoveTimer(tid);
-
+#endif
 			emuStop();
 			sndClose();
 #ifdef HAVESDL
