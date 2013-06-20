@@ -212,7 +212,7 @@ bool optGetFlag(int mask) {
 // old
 
 void initPaths() {
-#ifndef _WIN32
+#if __linux
 // move config dir to new place
 	QDir dir;
 	QString newpath = QDir::homePath() + "/.config/samstyle/xpeccy";

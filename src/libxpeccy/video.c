@@ -682,6 +682,7 @@ void vidSync(Video* vid, int ns) {
 		if ((vid->y >= vid->lcut.v) && (vid->y < vid->rcut.v)) {
 			if ((vid->x >= vid->lcut.h) && (vid->x < vid->rcut.h)) {
 				if (vid->x & 8) vid->brdcol = vid->nextbrd;
+				if (vid->scrimg == NULL) printf("NULL\n");
 				vid->callback(vid);		// put dot
 			}
 		}
@@ -690,6 +691,7 @@ void vidSync(Video* vid, int ns) {
 			vid->x = 0;
 			if (vid->flags & VF_TSCONF) vidTSRender(vid, vid->scrptr - vid->wsze.h);
 			if ((vid->y >= vid->lcut.v) && (vid->y < vid->rcut.v) && (vidFlag & VF_DOUBLE)) {
+				if (vid->scrimg == NULL) printf("NULL\n");
 				memcpy(vid->scrptr, vid->scrptr - vid->wsze.h, vid->wsze.h);
 				vid->scrptr += vid->wsze.h;
 			}

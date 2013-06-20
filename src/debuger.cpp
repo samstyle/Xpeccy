@@ -195,7 +195,7 @@ bool DebugWin::fillall() {
 	fillrays();
 	fillvg();
 	filltick();
-	return filldasm();
+	return filldasm();	// fall here
 }
 
 void DebugWin::filltick() {
@@ -318,6 +318,7 @@ DasmRow DebugWin::getdisasm() {
 		clen--;
 		adr++;
 	}
+	free(buf);
 	return res;
 }
 

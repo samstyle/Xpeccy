@@ -15,9 +15,10 @@
 #include <pthread.h>
 #include <semaphore.h>
 pthread_t emuThread;
-pthread_attr_t emuAttr;
 sem_t emuSem;
+sem_t emuStartSem;
 void* emuThreadMain(void*);
+void emuCycle();
 
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
@@ -55,7 +56,7 @@ QIcon curicon;
 #endif
 QVector<QRgb> qPal;
 volatile int emulFlags = FL_BLOCK;
-volatile int pauseFlags;
+volatile int pauseFlags = 0;
 //int wantedWin;
 volatile unsigned int scrCounter;
 volatile unsigned int scrInterval;
@@ -536,8 +537,8 @@ void MainWin::extSlot(int sig, int par) {
 void emuStart() {
 	emulFlags |= FL_WORK;
 	sem_init(&emuSem,1,0);
-	pthread_attr_init(&emuAttr);
-	pthread_create(&emuThread,&emuAttr,&emuThreadMain,NULL);
+//	pthread_attr_init(&emuAttr);
+//	pthread_create(&emuThread,&emuAttr,&emuThreadMain,NULL);
 	mainWin->timer->start();
 }
 
@@ -545,7 +546,7 @@ void emuStop() {
 	emulFlags &= ~FL_WORK;
 	mainWin->timer->stop();
 	sem_post(&emuSem);
-	pthread_join(emuThread,NULL);
+//	pthread_join(emuThread,NULL);
 }
 
 unsigned char toBCD(unsigned char val) {
@@ -1187,9 +1188,10 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 	std::string cmosFile;
 	std::vector<XProfile> plist = getProfileList();
 //	smpCount = 0;
+	pauseFlags |= PR_EXIT;
 	sndFillToEnd();
 	sndPause(true);
-	emuStop();
+//	emuStop();
 	for (i = 0; i < plist.size(); i++) {
 		prfSave(plist[i].name);
 		cmosFile = optGetString(OPT_WORKDIR) + std::string(SLASH) + plist[i].name + std::string(".cmos");
@@ -1212,7 +1214,8 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		mainWin->embedClient(inf.info.x11.wmwindow);
 #endif
 		sndPause(false);
-		emuStart();
+		pauseFlags &= ~PR_EXIT;
+//		emuStart();
 	}
 }
 
@@ -1308,8 +1311,12 @@ void MainWin::emulFrame() {
 // update window
 	mainWin->emuDraw();
 
+#if __linux
 // set emulation semaphore
 	if (~emulFlags & (FL_FAST | FL_EMUL)) sem_post(&emuSem);	// inc 'emulate frame' semaphore
+#elif __WIN32
+	emuCycle();
+#endif
 }
 
 // video drawing
@@ -1540,53 +1547,52 @@ void MainWin::chVMode(QAction* act) {
 // emulation thread (non-GUI,SDL)
 
 void emuCycle() {
-	if (pauseFlags == 0) {
-		zx->frmStrobe = 0;
-		do {
-			// exec 1 opcode (+ INT, NMI)
-			ns += zxExec(zx);
-			// if need - request sound buffer update
-			if (ns > nsPerSample) {
-				sndSync(emulFlags & FL_FAST);
-				ns -= nsPerSample;
-			}
-			// tape trap
-			pc = GETPC(zx->cpu);	// z80ex_get_reg(zx->cpu,regPC);
-			if ((zx->mem->pt0->type == MEM_ROM) && (zx->mem->pt0->num == 1)) {
-				if (pc == 0x56b) emulTapeCatch();
-				if ((pc == 0x5e2) && optGetFlag(OF_TAPEAUTO))
-					mainWin->tapStateChanged(TW_STATE,TWS_STOP);
-			}
-		} while (!(zx->flag & ZX_BREAK) && (zx->frmStrobe == 0));		// exec until breakpoint or INT
-		if (zx->flag & ZX_BREAK) {						// request debug window on breakpoint
-			mainWin->sendSignal(EV_WINDOW,WW_DEBUG);
-			//wantedWin = WW_DEBUG;
-			zx->flag &= ~ZX_BREAK;
+	if (pauseFlags != 0) return;
+	zx->frmStrobe = 0;
+	do {
+		// exec 1 opcode (+ INT, NMI)
+		ns += zxExec(zx);
+		// if need - request sound buffer update
+		if (ns > nsPerSample) {
+			sndSync(emulFlags & FL_FAST);
+			ns -= nsPerSample;
 		}
-		zx->nmiRequest = 0;
-		// decrease frames & screenshot counter (if any), request screenshot (if needed)
-		if (scrCounter != 0) {
-			if (scrInterval == 0) {
-				emulFlags |= FL_SHOT;
-				scrCounter--;
-				scrInterval = optGetInt(OPT_SHOTINT);
-				if (scrCounter == 0) printf("stop combo shots\n");
-			} else {
-				scrInterval--;
-			}
+		// tape trap
+		pc = GETPC(zx->cpu);	// z80ex_get_reg(zx->cpu,regPC);
+		if ((zx->mem->pt0->type == MEM_ROM) && (zx->mem->pt0->num == 1)) {
+			if (pc == 0x56b) emulTapeCatch();
+			if ((pc == 0x5e2) && optGetFlag(OF_TAPEAUTO))
+				mainWin->tapStateChanged(TW_STATE,TWS_STOP);
+		}
+	} while (!(zx->flag & ZX_BREAK) && (zx->frmStrobe == 0));		// exec until breakpoint or INT
+	if (zx->flag & ZX_BREAK) {						// request debug window on breakpoint
+		mainWin->sendSignal(EV_WINDOW,WW_DEBUG);
+		//wantedWin = WW_DEBUG;
+		zx->flag &= ~ZX_BREAK;
+	}
+	zx->nmiRequest = 0;
+	// decrease frames & screenshot counter (if any), request screenshot (if needed)
+	if (scrCounter != 0) {
+		if (scrInterval == 0) {
+			emulFlags |= FL_SHOT;
+			scrCounter--;
+			scrInterval = optGetInt(OPT_SHOTINT);
+			if (scrCounter == 0) printf("stop combo shots\n");
+		} else {
+			scrInterval--;
 		}
 	}
 }
 
 void* emuThreadMain(void *) {
-	while (emulFlags & FL_WORK) {
+	sem_wait(&emuStartSem);
+	do {
 		if (~emulFlags & FL_FAST) {
 			sem_wait(&emuSem);
-			if (~emulFlags & FL_WORK) break;
 		}
 		emulFlags |= FL_EMUL;
 		emuCycle();
 		emulFlags &= ~FL_EMUL;
-	}
+	} while (~emulFlags & FL_EXIT);
 	return NULL;
 }

@@ -38,6 +38,7 @@
 #define	PR_PAUSE	(1<<5)
 #define	PR_EXTRA	(1<<6)
 #define PR_RZX		(1<<7)
+#define	PR_EXIT		(1<<8)
 
 // flags - emul mode / events
 #define	FL_GRAB		1

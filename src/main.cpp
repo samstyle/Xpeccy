@@ -2,6 +2,7 @@
 #include <QMessageBox>
 #include <QTimer>
 
+#include <pthread.h>
 #include <semaphore.h>
 
 #include "xcore/xcore.h"
@@ -25,6 +26,11 @@
 
 ZXComp* zx;
 extern MainWin* mainWin;
+extern sem_t emuSem;
+extern pthread_t emuThread;
+extern sem_t emuStartSem;
+void* emuThreadMain(void*);
+
 //sem_t eventSem;
 //extern volatile int pauseFlags;
 
@@ -34,6 +40,7 @@ extern MainWin* mainWin;
 //}
 
 int main(int ac,char** av) {
+
 #ifdef XQTPAINT
 	printf("Using Qt painter\n");
 #else
@@ -41,11 +48,11 @@ int main(int ac,char** av) {
 #endif
 
 #ifdef HAVESDL
+	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK);
+	atexit(SDL_Quit);
 	SDL_version sdlver;
 	SDL_VERSION(&sdlver);
 	printf("Using SDL ver %u.%u.%u\n", sdlver.major, sdlver.minor, sdlver.patch);
-	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK);
-	atexit(SDL_Quit);
 #endif
 	printf("Using Qt ver %s\n",qVersion());
 #ifdef SELFZ80
@@ -72,6 +79,14 @@ int main(int ac,char** av) {
 			devShow();
 			return app.exec();
 		} else {
+#ifdef __linux
+			sem_init(&emuStartSem,1,0);
+			int err = pthread_create(&emuThread,NULL,&emuThreadMain,NULL);		// create emulation thread (it will idle until start sem)
+			if (err) {
+				printf("thread creation error\n");
+				return 1;
+			}
+#endif
 			sndInit();
 			emulInit();
 			dbgInit(NULL);// emulWidget());
@@ -95,6 +110,7 @@ int main(int ac,char** av) {
 			mainWin->checkState();
 
 			emuStart();
+			sem_post(&emuStartSem);		// start emulation thread
 #if 1
 			app.exec();
 #else
@@ -106,6 +122,10 @@ int main(int ac,char** av) {
 				emuFrame();
 			}
 			SDL_RemoveTimer(tid);
+#endif
+#ifdef __linux
+			sem_post(&emuSem);
+			pthread_join(emuThread,NULL);
 #endif
 			emuStop();
 			sndClose();
