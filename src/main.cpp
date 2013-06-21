@@ -2,9 +2,6 @@
 #include <QMessageBox>
 #include <QTimer>
 
-#include <pthread.h>
-#include <semaphore.h>
-
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
 #include "libxpeccy/spectrum.h"
@@ -21,23 +18,39 @@
 	#undef main
 #endif
 #ifdef _WIN32
-	#include <direct.h>
 #endif
 
 ZXComp* zx;
 extern MainWin* mainWin;
-extern sem_t emuSem;
-extern pthread_t emuThread;
-extern sem_t emuStartSem;
-void* emuThreadMain(void*);
+extern volatile int pauseFlags;
 
-//sem_t eventSem;
-//extern volatile int pauseFlags;
+#ifdef __linux
+	#include <pthread.h>
+	#include <semaphore.h>
+	extern sem_t emuSem;
+	extern pthread_t emuThread;
+	sem_t eventSem;
+	void* emuThreadMain(void*);
 
-//Uint32 onTimer(Uint32 itv, void*) {
-//	if (~pauseFlags & PR_FILE) sem_post(&eventSem);
-//	return itv;
-//}
+Uint32 onTimer(Uint32 itv, void*) {
+	if (~pauseFlags & PR_FILE) sem_post(&eventSem);
+	return itv;
+}
+#elif __WIN32
+	#include <windows.h>
+//	#include <direct.h>
+	extern HANDLE emuThread;
+	extern HANDLE emuSem;
+	HANDLE eventSem;
+	extern DWORD WINAPI emuThreadMain(LPVOID);
+
+Uint32 onTimer(Uint32, void *) {
+	if (~pauseFlags & PR_FILE) {
+		ReleaseSemaphore(eventSem,1,NULL);
+	}
+	return 20;
+}
+#endif
 
 int main(int ac,char** av) {
 
@@ -80,12 +93,15 @@ int main(int ac,char** av) {
 			return app.exec();
 		} else {
 #ifdef __linux
-			sem_init(&emuStartSem,1,0);
-			int err = pthread_create(&emuThread,NULL,&emuThreadMain,NULL);		// create emulation thread (it will idle until start sem)
-			if (err) {
-				printf("thread creation error\n");
-				return 1;
-			}
+			sem_init(&emuSem,1,0);
+			sem_init(&eventSem,1,0);
+			pthread_create(&emuThread,NULL,&emuThreadMain,NULL);
+#elif __WIN32
+			DWORD thrid;
+			emuSem = CreateSemaphore(NULL,0,1,NULL);
+			eventSem = CreateSemaphore(NULL,0,1,NULL);
+			printf("create thread\n");
+			emuThread = CreateThread(NULL,0,&emuThreadMain,NULL,0,&thrid);
 #endif
 			sndInit();
 			emulInit();
@@ -110,23 +126,28 @@ int main(int ac,char** av) {
 			mainWin->checkState();
 
 			emuStart();
-			sem_post(&emuStartSem);		// start emulation thread
-#if 1
-			app.exec();
-#else
-			sem_init(&eventSem,1,0);
 			SDL_TimerID tid = SDL_AddTimer(20,&onTimer,NULL);
 			while (~emulFlags & FL_EXIT) {
+#if __linux
 				sem_wait(&eventSem);
+#elif __WIN32
+				WaitForSingleObject(eventSem,INFINITE);
+#endif
 				app.processEvents();
 				emuFrame();
 			}
 			SDL_RemoveTimer(tid);
-#endif
-#ifdef __linux
+#if __linux
 			sem_post(&emuSem);
 			pthread_join(emuThread,NULL);
+#elif __WIN32
+			ReleaseSemaphore(emuSem,1,NULL);
+			WaitForSingleObject(emuThread,INFINITE);
+			CloseHandle(eventSem);
+			CloseHandle(emuSem);
+			CloseHandle(emuThread);
 #endif
+//			app.exec();
 			emuStop();
 			sndClose();
 #ifdef HAVESDL

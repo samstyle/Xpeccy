@@ -352,3 +352,9 @@ build 20130618
 Fix	TSEvo DMA registers
 Fix	SDL version may crash by profile switching
 Wrk	Some speed up
+
+build 20130621
+Fix	Crash in Windows XP (Separate border drawing canceled - some slow down)
+
+build 20130623
+Wrk	Linux build uses POSIX threads, Windows build - WINAPI threads (pthreadGC2.dll don't need from now)

@@ -12,13 +12,19 @@
 #include <sys/time.h>
 #include <signal.h>
 
-#include <pthread.h>
-#include <semaphore.h>
-pthread_t emuThread;
-sem_t emuSem;
-sem_t emuStartSem;
-void* emuThreadMain(void*);
-void emuCycle();
+#if __linux
+	#include <pthread.h>
+	#include <semaphore.h>
+	pthread_t emuThread;
+	sem_t emuSem;
+//	void* emuThreadMain(void*);
+#elif __WIN32
+	#include <windows.h>
+	HANDLE emuThread;
+	HANDLE emuSem;
+//	DWORD emuThreadMain(LPVOID);
+#endif
+//void emuCycle();
 
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
@@ -43,7 +49,7 @@ void emuCycle();
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#define	XPTITLE	"Xpeccy 0.5 (20130617)"
+#define	XPTITLE	"Xpeccy 0.5 (20130623)"
 
 // main
 MainWin* mainWin;
@@ -443,11 +449,11 @@ MainWin::MainWin() {
 	connect(rzxWin,SIGNAL(stateChanged(int)),this,SLOT(rzxStateChanged(int)));
 
 	initUserMenu((QWidget*)this);
-
-	timer = new QTimer();
-	connect(timer,SIGNAL(timeout()),this,SLOT(emulFrame()));
-	timer->setInterval(20);
-
+//#ifndef USETHREADS
+//	timer = new QTimer();
+//	connect(timer,SIGNAL(timeout()),this,SLOT(emulFrame()));
+//	timer->setInterval(20);
+//#endif
 	cmosTimer = new QTimer();
 	connect(cmosTimer,SIGNAL(timeout()),this,SLOT(cmosTick()));
 	cmosTimer->start(1000);
@@ -536,17 +542,16 @@ void MainWin::extSlot(int sig, int par) {
 
 void emuStart() {
 	emulFlags |= FL_WORK;
-	sem_init(&emuSem,1,0);
-//	pthread_attr_init(&emuAttr);
-//	pthread_create(&emuThread,&emuAttr,&emuThreadMain,NULL);
-	mainWin->timer->start();
+//#ifndef USETHREADS
+//	mainWin->timer->start();
+//#endif
 }
 
 void emuStop() {
 	emulFlags &= ~FL_WORK;
-	mainWin->timer->stop();
-	sem_post(&emuSem);
-//	pthread_join(emuThread,NULL);
+//#ifndef USETHREADS
+//	mainWin->timer->stop();
+//#endif
 }
 
 unsigned char toBCD(unsigned char val) {
@@ -684,20 +689,18 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;
 			case Qt::Key_1:
 				vidFlag &= ~VF_DOUBLE;
-				//mainWin->updateWindow();
-				emulFlags |= FL_UPDATE;
+				mainWin->updateWindow();
 				saveProfiles();
 				//saveConfig();
 				break;
 			case Qt::Key_2:
 				vidFlag |= VF_DOUBLE;
-				// mainWin->updateWindow();
-				emulFlags |= FL_UPDATE;
+				mainWin->updateWindow();
 				saveProfiles();
 				//saveConfig();
 				break;
 			case Qt::Key_3:
-				emulFlags ^= FL_FAST_RQ;
+				emulFlags ^= FL_FAST;
 				break;
 			case Qt::Key_F4:
 				mainWin->close();
@@ -1286,8 +1289,9 @@ void MainWin::sendSignal(int sig, int par) {
 	emit extSignal(sig,par);
 }
 
-void MainWin::emulFrame() {
-//void emuFrame() {
+//void MainWin::emulFrame() {emuFrame();}
+
+void emuFrame() {
 	if (emulFlags & FL_BLOCK) return;
 // if not paused play sound buffer
 	if (sndEnabled && (sndMute || mainWin->isActiveWindow())) sndPlay();
@@ -1311,11 +1315,11 @@ void MainWin::emulFrame() {
 // update window
 	mainWin->emuDraw();
 
-#if __linux
-// set emulation semaphore
+// post emulation semaphore
+#ifdef __linux
 	if (~emulFlags & (FL_FAST | FL_EMUL)) sem_post(&emuSem);	// inc 'emulate frame' semaphore
 #elif __WIN32
-	emuCycle();
+	if (~emulFlags & (FL_FAST | FL_EMUL)) ReleaseSemaphore(emuSem,1,NULL);
 #endif
 }
 
@@ -1544,7 +1548,7 @@ void MainWin::chVMode(QAction* act) {
 	vidSetMode(zx->vid,act->data().toInt());
 }
 
-// emulation thread (non-GUI,SDL)
+// emulation thread (non-GUI)
 
 void emuCycle() {
 	if (pauseFlags != 0) return;
@@ -1584,8 +1588,8 @@ void emuCycle() {
 	}
 }
 
+#ifdef __linux
 void* emuThreadMain(void *) {
-	sem_wait(&emuStartSem);
 	do {
 		if (~emulFlags & FL_FAST) {
 			sem_wait(&emuSem);
@@ -1596,3 +1600,16 @@ void* emuThreadMain(void *) {
 	} while (~emulFlags & FL_EXIT);
 	return NULL;
 }
+#elif __WIN32
+DWORD WINAPI emuThreadMain(LPVOID) {
+	do {
+		if (~emulFlags & FL_FAST) {
+			WaitForSingleObject(emuSem,INFINITE);
+		}
+		emulFlags |= FL_EMUL;
+		emuCycle();
+		emulFlags &= ~FL_EMUL;
+	} while (~emulFlags & FL_EXIT);
+	return 0;
+}
+#endif

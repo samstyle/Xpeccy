@@ -229,7 +229,7 @@ class MainWin : public QX11EmbedContainer {
 		void updateHead();
 		void emuDraw();
 		void sendSignal(int,int);
-		QTimer* timer;
+//		QTimer* timer;
 	signals:
 		void extSignal(int,int);
 	private:
@@ -241,7 +241,6 @@ class MainWin : public QX11EmbedContainer {
 		void extSlot(int,int);
 		void menuHide();
 		void menuShow();
-		void emulFrame();
 		void cmosTick();
 		void rzxStateChanged(int);
 		void bookmarkSelected(QAction*);
@@ -249,6 +248,7 @@ class MainWin : public QX11EmbedContainer {
 		void reset(QAction*);
 		void chLayout(QAction*);
 		void chVMode(QAction*);
+//		void emulFrame();
 	protected:
 		void closeEvent(QCloseEvent*);
 #ifdef XQTPAINT
@@ -277,7 +277,7 @@ void emulSetFlag(int,bool);
 bool emulSaveChanged();
 QWidget* emulWidget();
 
-// void emuFrame();
+void emuFrame();
 
 // keys
 void initKeyMap();
