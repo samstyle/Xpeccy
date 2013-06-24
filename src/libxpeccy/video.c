@@ -214,8 +214,8 @@ void vidDrawAlco(Video* vid) {
 
 			}
 		}
-		vidPutDot(vid,col);
 	}
+	vidPutDot(vid,col);
 }
 
 // hardware multicolor
@@ -276,8 +276,8 @@ void vidDrawATMega(Video* vid) {
 				col = ((scrbyte & 0x38)>>3) | ((scrbyte & 0x80)>>4);
 				break;
 		}
-		vidPutDot(vid,col);
 	}
+	vidPutDot(vid,col);
 }
 
 // atm text
