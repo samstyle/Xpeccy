@@ -20,6 +20,7 @@ file(GLOB SOURCES
 	./src/filetypes/*.cpp
 	./src/xcore/*.cpp
 	./src/xgui/*.cpp
+        ./src/filetypes/unpackers/*.cpp
 if(WIN32)
 	./xpeccy.rc
 endif(WIN32)
@@ -31,6 +32,7 @@ file(GLOB HEADERS
 	./src/filetypes/*.h
 	./src/xcore/*.h
 	./src/xgui/*.h
+        ./src/filetypes/unpackers/*.h
 )
 file(GLOB UIFILES ./ui/*.ui)
 set(QRCFILES ./xpeccy.qrc)
@@ -59,10 +61,6 @@ if("${Z80EX_BUILD}" STREQUAL "no")
 	set(SOURCES ${SOURCES} ./src/libxpeccy/z80/z80.c)
 	set(Z80EX_TYPE 0)
 	add_definitions(-DSELFZ80)
-
-#	set(INCLUDIRS ${INCLUDIRS} ./thirdpart/libz80ex/include)
-#	set(SOURCES ${SOURCES} ./thirdpart/libz80ex/z80ex_dasm.c)
-
 elseif("${Z80EX_BUILD}" STREQUAL "external")
 	# find z80ex
 	find_path(Z80EX_INCLUDE_PATH NAMES z80ex.h PATH_SUFFIXES ${INC_PATHS} DOC "z80ex include directory")
@@ -93,13 +91,10 @@ else()
 		-DZ80EX_VERSION_MAJOR=${VERSION_MAJOR}
 		-DZ80EX_VERSION_MINOR=${VERSION_MINOR}
 		-DZ80EX_RELEASE_TYPE=${RELEASE_TYPE})
-	set(INCLUDIRS ${INCLUDIRS} ./thirdpart/libz80ex/include)
-	set(SOURCES ${SOURCES} ./thirdpart/libz80ex/z80ex.c ./thirdpart/libz80ex/z80ex_dasm.c)
+	set(INCLUDIRS ${INCLUDIRS} ./src/libxpeccy/libz80ex/include)
+	set(SOURCES ${SOURCES} ./src/libxpeccy/libz80ex/z80ex.c ./src/libxpeccy/libz80ex/z80ex_dasm.c)
 	set(Z80EX_TYPE 2)
 endif()
-
-set(INCLUDIRS ${INCLUDIRS} ./thirdpart/packers/)
-set(SOURCES ${SOURCES} ./thirdpart/packers/dehrust1.cpp ./thirdpart/packers/demegalz.cpp)
 
 set(CMAKE_C_FLAGS "-std=gnu99 -Wall -O2")
 set(CMAKE_CXX_FLAGS "-Wall -O2")
