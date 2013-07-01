@@ -4,6 +4,7 @@
 #include <QProgressBar>
 #include <QTableWidget>
 #include <QTime>
+#include <QUrl>
 #include <fstream>
 #include <sys/stat.h>
 #include <sys/types.h>
