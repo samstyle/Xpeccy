@@ -10,7 +10,7 @@
 #include "settings.h"
 #include "debuger.h"
 #include "setupwin.h"
-#include "develwin.h"
+#include "sdkwin.h"
 #include "filer.h"
 
 #ifdef HAVESDL

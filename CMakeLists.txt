@@ -38,7 +38,7 @@ file(GLOB UIFILES ./ui/*.ui)
 set(QRCFILES ./xpeccy.qrc)
 set(MOCFILES
 	./src/emulwin.h
-	./src/develwin.h
+	./src/sdkwin.h
 	./src/debuger.h
 	./src/setupwin.h
 	./src/xgui/xgui.h

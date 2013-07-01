@@ -34,7 +34,7 @@
 #include "emulwin.h"
 #include "setupwin.h"
 #include "debuger.h"
-#include "develwin.h"
+#include "sdkwin.h"
 #include "filer.h"
 
 #ifdef HAVESDL
