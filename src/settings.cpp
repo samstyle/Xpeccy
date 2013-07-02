@@ -12,6 +12,7 @@
 #include "emulwin.h"
 #include "settings.h"
 #include "filer.h"
+#include "sdkwin.h"
 
 #ifdef _WIN32
 	#include <direct.h>
@@ -50,8 +51,8 @@ std::string shotDir;
 int shotCount;
 int shotInterval;
 
-std::string projDir;
-std::string asmPath;
+//std::string projDir;
+//std::string asmPath;
 
 std::string rmnam[] = {"basic128","basic48","shadow","trdos","ext4","ext5","ext6","ext7"};
 OptName fexts[] = {{SCR_BMP,"bmp"},{SCR_PNG,"png"},{SCR_JPG,"jpg"},{SCR_SCR,"scr"},{SCR_HOB,"hobeta"},{-1,""}};
@@ -119,8 +120,8 @@ std::string optGetString(int wut) {
 		case OPT_ROMDIR: res = romDir; break;
 		case OPT_SHOTDIR: res = shotDir; break;
 //		case OPT_SHOTEXT: res = shotExt; break;
-		case OPT_PROJDIR: res = projDir; break;
-		case OPT_ASMPATH: res = asmPath; break;
+//		case OPT_PROJDIR: res = projDir; break;
+//		case OPT_ASMPATH: res = asmPath; break;
 		case OPT_JOYNAME: res = joyName; break;
 		case OPT_KEYNAME: res = keyFileName; break;
 	}
@@ -181,8 +182,8 @@ void optSet(int wut, std::string val) {
 	switch(wut) {
 //		case OPT_SHOTEXT: shotExt = val; break;
 		case OPT_SHOTDIR: shotDir = val; break;
-		case OPT_PROJDIR: projDir = val; break;
-		case OPT_ASMPATH: asmPath = val; break;
+//		case OPT_PROJDIR: projDir = val; break;
+//		case OPT_ASMPATH: asmPath = val; break;
 		case OPT_JOYNAME: joyName = val; break;
 		case OPT_KEYNAME: keyFileName = val; break;
 	}
@@ -335,8 +336,8 @@ void saveProfiles() {
 	cfile << "volume.ay = " << int2str(ayVolume).c_str() << "\n";
 	cfile << "volume.gs = " << int2str(gsVolume).c_str() << "\n";
 	cfile << "\n[TOOLS]\n\n";
-	cfile << "asmPath = " << asmPath.c_str() << "\n";
-	cfile << "projectsDir = " << projDir.c_str() << "\n";
+	cfile << "asmPath = " << compPath.toUtf8().data() << "\n";
+	cfile << "projectsDir = " << prjDir.toUtf8().data() << "\n";
 
 	cfile << "\n[TAPE]\n\n";
 	cfile << "autoplay = " << ((flag & OF_TAPEAUTO) ? "yes" : "no") << "\n";
@@ -592,8 +593,8 @@ void loadProfiles() {
 					}
 					break;
 				case SECT_TOOLS:
-					if (pnam=="asmPath") asmPath = pval;
-					if (pnam=="projectsDir") projDir = pval;
+					if (pnam=="asmPath") compPath = QString(pval.c_str());
+					if (pnam=="projectsDir") prjDir = QString(pval.c_str());
 					break;
 				case SECT_JOYSTICK:
 					if (pnam=="device") joyName = pval;

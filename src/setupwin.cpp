@@ -18,6 +18,7 @@
 #include "emulwin.h"
 #include "settings.h"
 #include "filer.h"
+#include "sdkwin.h"
 #include "filetypes/filetypes.h"
 
 #include "ui_rsedit.h"
@@ -453,8 +454,8 @@ void SetupWin::start() {
 	setupUi.tpathle->setText(QString::fromLocal8Bit(zx->tape->path));
 	buildtapelist();
 // tools
-	setupUi.sjpathle->setText(QString::fromLocal8Bit(optGetString(OPT_ASMPATH).c_str()));
-	setupUi.prjdirle->setText(QString::fromLocal8Bit(optGetString(OPT_PROJDIR).c_str()));
+	setupUi.sjpathle->setText(compPath);
+	setupUi.prjdirle->setText(prjDir);
 	buildmenulist();
 // leds
 	setupUi.diskLed->setChecked(emulFlags & FL_LED_DISK);
@@ -601,8 +602,8 @@ void SetupWin::apply() {
 	optSetFlag(OF_TAPEAUTO,setupUi.cbTapeAuto->isChecked());
 	optSetFlag(OF_TAPEFAST,setupUi.cbTapeFast->isChecked());
 // tools
-	optSet(OPT_ASMPATH,std::string(setupUi.sjpathle->text().toLocal8Bit().data()));
-	optSet(OPT_PROJDIR,std::string(setupUi.prjdirle->text().toLocal8Bit().data()));
+	compPath = setupUi.sjpathle->text();
+	prjDir = setupUi.prjdirle->text();
 // leds
 	emulSetFlag(FL_LED_DISK,setupUi.diskLed->isChecked());
 	emulSetFlag(FL_LED_SHOT,setupUi.shotLed->isChecked());
@@ -1463,7 +1464,7 @@ void SetupWin::ssjapath() {
 }
 
 void SetupWin::sprjpath() {
-	QString fnam = QFileDialog::getExistingDirectory(this,"Projects file",QString::fromLocal8Bit(optGetString(OPT_PROJDIR).c_str()),QFileDialog::ShowDirsOnly);
+	QString fnam = QFileDialog::getExistingDirectory(this,"Projects file",prjDir,QFileDialog::ShowDirsOnly);
 	if (fnam!="") setupUi.prjdirle->setText(fnam);
 }
 

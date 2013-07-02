@@ -10,6 +10,9 @@
     <height>575</height>
    </rect>
   </property>
+  <property name="contextMenuPolicy">
+   <enum>Qt::CustomContextMenu</enum>
+  </property>
   <property name="windowTitle">
    <string>Xpeccy SDK (alpha)</string>
   </property>
@@ -20,6 +23,9 @@
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
         <widget class="QToolButton" name="prjNew">
+         <property name="toolTip">
+          <string>New project</string>
+         </property>
          <property name="text">
           <string>New</string>
          </property>
@@ -31,6 +37,9 @@
        </item>
        <item>
         <widget class="QToolButton" name="prjOpen">
+         <property name="toolTip">
+          <string>Open project</string>
+         </property>
          <property name="text">
           <string>Open</string>
          </property>
@@ -42,12 +51,50 @@
        </item>
        <item>
         <widget class="QToolButton" name="prjSave">
+         <property name="toolTip">
+          <string>Save project</string>
+         </property>
          <property name="text">
           <string>Save</string>
          </property>
          <property name="icon">
           <iconset resource="../xpeccy.qrc">
            <normaloff>:/images/floppy.png</normaloff>:/images/floppy.png</iconset>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="Line" name="line">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="addNewFile">
+         <property name="toolTip">
+          <string>Add new file</string>
+         </property>
+         <property name="text">
+          <string>...</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../xpeccy.qrc">
+           <normaloff>:/images/doc-new.png</normaloff>:/images/doc-new.png</iconset>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="addExisting">
+         <property name="toolTip">
+          <string>Add existing file(s)</string>
+         </property>
+         <property name="text">
+          <string>...</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../xpeccy.qrc">
+           <normaloff>:/images/add.png</normaloff>:/images/add.png</iconset>
          </property>
         </widget>
        </item>
@@ -85,6 +132,9 @@
         <width>200</width>
         <height>16777215</height>
        </size>
+      </property>
+      <property name="contextMenuPolicy">
+       <enum>Qt::ActionsContextMenu</enum>
       </property>
       <property name="editTriggers">
        <set>QAbstractItemView::NoEditTriggers</set>

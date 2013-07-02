@@ -55,6 +55,8 @@ SDKWindow::SDKWindow(QWidget *p):QMainWindow(p) {
 
 	connect(ui.prjBuild,SIGNAL(clicked()),this,SLOT(buildProject()));
 
+	connect(ui.addExisting,SIGNAL(clicked()),this,SLOT(addExFiles()));
+
 	connect(ui.prjtree,SIGNAL(itemActivated(QTreeWidgetItem*,int)),this,SLOT(prjFileChanged(QTreeWidgetItem*)));
 	connect(ui.docedit,SIGNAL(textChanged()),this,SLOT(textChanged()));
 
@@ -100,8 +102,10 @@ void SDKWindow::buildFinish() {
 
 void SDKWindow::buildTree() {
 	ui.prjtree->clear();
+	QFont fnt("",-1,QFont::Bold);
 	for (int i = 0; i < prj.files.size(); i++) {
 		prj.files[i].itm = new QTreeWidgetItem();
+		if (prj.files[i].flag & PF_CHANGED) prj.files[i].itm->setFont(0,fnt);
 		prj.files[i].itm->setText(0,prj.files[i].name);
 		prj.files[i].itm->setData(0,Qt::UserRole,prj.files[i].name);
 		ui.prjtree->invisibleRootItem()->addChild(prj.files[i].itm);
@@ -131,6 +135,7 @@ void SDKWindow::prjFileChanged(QTreeWidgetItem *itm) {
 				if (file.open(QFile::ReadOnly)) {
 					curFile->flag |= PF_OPEN;
 					curFile->text = trUtf8(file.readAll());
+					file.close();
 				} else {
 					ui.docedit->clear();
 					ui.docedit->setEnabled(false);
@@ -151,11 +156,22 @@ void SDKWindow::textChanged() {
 	prj.flag |= PF_CHANGED;
 	if (curFile) curFile->flag |= PF_CHANGED;
 	if (curItem && (~prj.flag & PF_NOCHA)) {
-		curItem->setText(0,QString("* ").append(curFile->name));
+		QFont fnt("",-1,QFont::Bold);
+		curItem->setFont(0,fnt);
 	}
 }
 
 // project
+
+void addFile(PrjFile & npf) {
+	PrjFile pf;
+	bool fnd = false;
+	foreach (pf, prj.files) {
+		if (pf.name == npf.name) fnd = true;
+	}
+	if (fnd) return;
+	prj.files.append(npf);
+}
 
 void SDKWindow::newProject() {
 	QString fpath;
@@ -163,7 +179,7 @@ void SDKWindow::newProject() {
 	PrjFile pf;
 	QString path = QFileDialog::getExistingDirectory(this,"Select new project directory",prjDir);
 	if (path.isEmpty()) return;
-	prj.name = "New Project";
+	prj.name = "Xpeccy SDK Project";
 	prjPath = path;
 	prj.files.clear();
 	pf.flag = 0;
@@ -182,8 +198,8 @@ void SDKWindow::newProject() {
 void SDKWindow::savePrjFile() {
 	QString fpath;
 	QFile file;
-	fpath = prjPath;				// create main.asm
-	fpath.append("/project.ini");
+	fpath = prjPath;
+	fpath.append("/xsdk.conf");
 	file.setFileName(fpath);
 	file.open(QFile::WriteOnly);
 	file.write("name = ");
@@ -199,13 +215,13 @@ void SDKWindow::savePrjFile() {
 }
 
 void SDKWindow::openProject() {
-	QString path = QFileDialog::getOpenFileName(this,"Open project",prjDir,"Project files (project.ini)");
+	QString path = QFileDialog::getOpenFileName(this,"Open project",prjDir,"Project files (xsdk.conf)");
 	if (path == "") return;
 	QFile file(path);
 	if (file.open(QFile::ReadOnly)) {
 		QString line;
 		PrjFile pf;
-		prj.name = "New Project";
+		prj.name = "Xpeccy SDK project";
 		prj.files.clear();
 		prjPath = QFileInfo(path).absoluteDir().absolutePath();
 		while (!file.atEnd()) {
@@ -222,6 +238,7 @@ void SDKWindow::openProject() {
 				}
 			}
 		}
+		file.close();
 		ui.docedit->clear();
 		ui.docedit->setEnabled(false);
 		buildTree();
@@ -241,11 +258,33 @@ void SDKWindow::saveProject() {
 			if (file.open(QFile::WriteOnly)) {
 				file.write(prj.files[i].text.toUtf8());
 				prj.files[i].flag &= ~PF_CHANGED;
-				prj.files[i].itm->setText(0,prj.files[i].name);
+				prj.files[i].itm->setFont(0,QFont());
+				file.close();
 			}
 		}
 	}
 	savePrjFile();
 	ui.statusbar->showMessage("All files saved",3000);
 	prj.flag &= PF_CHANGED;
+}
+
+// files
+
+void SDKWindow::addExFiles() {
+	if (prjPath.isEmpty()) return;
+	QStringList flist = QFileDialog::getOpenFileNames(this,"Add files to project",prjPath,"Spectrum asm files (*.asm)");
+	if (flist.size() == 0) return;
+	QString fnam;
+	PrjFile pf;
+	foreach(fnam,flist) {
+		if (fnam.startsWith(prjPath)) {
+			fnam.remove(0,prjPath.size() + 1);
+			pf.flag = 0;
+			pf.name = fnam;
+			pf.itm = NULL;
+			pf.text.clear();
+			addFile(pf);
+		}
+	}
+	buildTree();
 }

@@ -21,6 +21,8 @@ class SDKWindow : public QMainWindow {
 		void buildProject();
 		void buildFinish();
 
+		void addExFiles();
+
 		void prjFileChanged(QTreeWidgetItem*);
 		void textChanged();
 	protected:
@@ -29,5 +31,8 @@ class SDKWindow : public QMainWindow {
 
 void devInit();
 void devShow();
+
+extern QString prjDir;
+extern QString compPath;
 
 #endif // SDKWIN_H
