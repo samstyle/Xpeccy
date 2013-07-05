@@ -64,41 +64,6 @@
         </widget>
        </item>
        <item>
-        <widget class="Line" name="line">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QToolButton" name="addNewFile">
-         <property name="toolTip">
-          <string>Add new file</string>
-         </property>
-         <property name="text">
-          <string>...</string>
-         </property>
-         <property name="icon">
-          <iconset resource="../xpeccy.qrc">
-           <normaloff>:/images/doc-new.png</normaloff>:/images/doc-new.png</iconset>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QToolButton" name="addExisting">
-         <property name="toolTip">
-          <string>Add existing file(s)</string>
-         </property>
-         <property name="text">
-          <string>...</string>
-         </property>
-         <property name="icon">
-          <iconset resource="../xpeccy.qrc">
-           <normaloff>:/images/add.png</normaloff>:/images/add.png</iconset>
-         </property>
-        </widget>
-       </item>
-       <item>
         <spacer name="verticalSpacer">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -126,27 +91,16 @@
      </widget>
     </item>
     <item>
-     <widget class="QTreeWidget" name="prjtree">
+     <widget class="QTreeView" name="prjtree">
       <property name="maximumSize">
        <size>
         <width>200</width>
         <height>16777215</height>
        </size>
       </property>
-      <property name="contextMenuPolicy">
-       <enum>Qt::ActionsContextMenu</enum>
-      </property>
       <property name="editTriggers">
        <set>QAbstractItemView::NoEditTriggers</set>
       </property>
-      <attribute name="headerVisible">
-       <bool>false</bool>
-      </attribute>
-      <column>
-       <property name="text">
-        <string notr="true">1</string>
-       </property>
-      </column>
      </widget>
     </item>
     <item>
@@ -155,6 +109,11 @@
        <widget class="QPlainTextEdit" name="docedit">
         <property name="enabled">
          <bool>false</bool>
+        </property>
+        <property name="font">
+         <font>
+          <family>DejaVu Sans Mono</family>
+         </font>
         </property>
        </widget>
       </item>

@@ -37,7 +37,7 @@ Video* vidCreate(Memory* me) {
 	vid->mem = me;
 	vid->full.h = 448;
 	vid->full.v = 320;
-	vid->bord.h = 128;
+	vid->bord.h = 138;
 	vid->bord.v = 80;
 	vid->sync.h = 80;
 	vid->sync.v = 32;

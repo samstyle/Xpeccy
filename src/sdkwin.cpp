@@ -7,29 +7,29 @@
 #define PF_OPEN		1
 #define	PF_CHANGED	(1<<1)
 #define	PF_NOCHA	(1<<2)
+#define	PF_CURRENT	(1<<3)
 
-struct PrjFile {
+struct opFiles {
 	int flag;
-	QString name;
+	QString path;
 	QString text;
-	QTreeWidgetItem* itm;
 };
 
 struct Project {
 	int flag;
+	int build;
 	QString name;
-	QList<PrjFile> files;
+	QList<opFiles> files;
 };
 
 bool olden;
 Project prj;
-PrjFile* curFile = NULL;
-QTreeWidgetItem* curItem = NULL;
 QString prjDir = QDir::homePath();
 QString prjPath;
 QString compPath = "/usr/local/bin/sjasmplus";
 QStringList compArgs;
 Ui::SDKWinForm ui;
+QFileSystemModel dmod;
 
 SDKWindow* sdkwin;
 
@@ -52,13 +52,10 @@ SDKWindow::SDKWindow(QWidget *p):QMainWindow(p) {
 	connect(ui.prjNew,SIGNAL(clicked()),this,SLOT(newProject()));
 	connect(ui.prjOpen,SIGNAL(clicked()),this,SLOT(openProject()));
 	connect(ui.prjSave,SIGNAL(clicked()),this,SLOT(saveProject()));
-
 	connect(ui.prjBuild,SIGNAL(clicked()),this,SLOT(buildProject()));
 
-	connect(ui.addExisting,SIGNAL(clicked()),this,SLOT(addExFiles()));
-
-	connect(ui.prjtree,SIGNAL(itemActivated(QTreeWidgetItem*,int)),this,SLOT(prjFileChanged(QTreeWidgetItem*)));
-	connect(ui.docedit,SIGNAL(textChanged()),this,SLOT(textChanged()));
+//	connect(ui.docedit,SIGNAL(textChanged()),this,SLOT(textChanged()));
+	connect(ui.prjtree,SIGNAL(clicked(QModelIndex)),this,SLOT(prjFileChanged(QModelIndex)));
 
 	connect(&prc,SIGNAL(finished(int)),this,SLOT(buildFinish()));
 }
@@ -71,8 +68,7 @@ void SDKWindow::closeEvent(QCloseEvent *ev) {
 // build
 
 void SDKWindow::buildProject() {
-	saveProject();
-	if (prj.files.size() == 0) return;
+	if (prjPath.isEmpty()) return;
 	if (compPath.isEmpty()) {
 		ui.statusbar->showMessage("Compiler not defined",3000);
 		return;
@@ -81,6 +77,8 @@ void SDKWindow::buildProject() {
 		ui.statusbar->showMessage("Compiler not found",3000);
 		return;
 	}
+	prj.build++;
+	saveProject();
 	olden = ui.docedit->isEnabled();
 	ui.butWidget->setEnabled(false);
 	ui.docedit->setEnabled(false);
@@ -101,96 +99,77 @@ void SDKWindow::buildFinish() {
 // tree
 
 void SDKWindow::buildTree() {
-	ui.prjtree->clear();
-	QFont fnt("",-1,QFont::Bold);
-	for (int i = 0; i < prj.files.size(); i++) {
-		prj.files[i].itm = new QTreeWidgetItem();
-		if (prj.files[i].flag & PF_CHANGED) prj.files[i].itm->setFont(0,fnt);
-		prj.files[i].itm->setText(0,prj.files[i].name);
-		prj.files[i].itm->setData(0,Qt::UserRole,prj.files[i].name);
-		ui.prjtree->invisibleRootItem()->addChild(prj.files[i].itm);
+	dmod.setRootPath(prjPath);
+	dmod.setNameFilters(QStringList() << "*.asm");
+	dmod.setNameFilterDisables(false);
+	ui.prjtree->setModel(&dmod);
+	ui.prjtree->setRootIndex(dmod.index(prjPath));
+	ui.prjtree->hideColumn(1);
+	ui.prjtree->hideColumn(2);
+	ui.prjtree->hideColumn(3);
+	ui.prjtree->hideColumn(4);
+}
+
+void saveCurrentText(QPlainTextEdit* ed, bool res) {
+	opFiles of;
+	for(int i = 0; i < prj.files.size(); i++) {
+		if (prj.files[i].flag & PF_CURRENT) {
+			if (res) prj.files[i].flag &= ~PF_CURRENT;
+			prj.files[i].text = ed->toPlainText();
+			break;
+		}
 	}
 }
 
-void SDKWindow::prjFileChanged(QTreeWidgetItem *itm) {
-	curItem = itm;
-	prj.flag |= PF_NOCHA;
-	if (itm == NULL) {
-		ui.docedit->clear();
-		ui.docedit->setEnabled(false);
-		curFile = NULL;
-		prj.flag &= ~PF_NOCHA;
-		return;
-	}
-	QString name = itm->data(0,Qt::UserRole).toString();
-	QString path;
-	if (curFile) curFile->text = ui.docedit->toPlainText();
+void SDKWindow::prjFileChanged(QModelIndex midx) {
+	QFile file;
+	QFileInfo finf = dmod.fileInfo(midx);
+	if (!finf.isFile()) return;
+	QString fname = finf.filePath();
+
+	saveCurrentText(ui.docedit,true);
+
+	bool newfile = true;
 	for (int i = 0; i < prj.files.size(); i++) {
-		if (name == prj.files[i].name) {
-			curFile = &prj.files[i];
-			if (~curFile->flag & PF_OPEN) {
-				path = prjPath;
-				path.append("/").append(curFile->name);
-				QFile file(path);
-				if (file.open(QFile::ReadOnly)) {
-					curFile->flag |= PF_OPEN;
-					curFile->text = trUtf8(file.readAll());
-					file.close();
-				} else {
-					ui.docedit->clear();
-					ui.docedit->setEnabled(false);
-					break;
-				}
-			}
-			ui.docedit->setPlainText(curFile->text);
+		if (prj.files[i].path == fname) {
+			newfile = false;
+			prj.files[i].flag |= PF_CURRENT;
+			ui.docedit->setPlainText(prj.files[i].text);
 			ui.docedit->setEnabled(true);
 			break;
 		}
 	}
-	prj.flag &= ~PF_NOCHA;
-}
+	if (!newfile) return;
 
-// text
-
-void SDKWindow::textChanged() {
-	prj.flag |= PF_CHANGED;
-	if (curFile) curFile->flag |= PF_CHANGED;
-	if (curItem && (~prj.flag & PF_NOCHA)) {
-		QFont fnt("",-1,QFont::Bold);
-		curItem->setFont(0,fnt);
+	opFiles of;
+	of.flag = PF_CURRENT;
+	of.path = fname;
+	of.text.clear();
+	file.setFileName(fname);
+	if (file.open(QFile::ReadOnly)) {
+		of.text = trUtf8(file.readAll());
+		prj.files.append(of);
 	}
+	ui.docedit->setPlainText(of.text);
+	ui.docedit->setEnabled(true);
 }
 
 // project
 
-void addFile(PrjFile & npf) {
-	PrjFile pf;
-	bool fnd = false;
-	foreach (pf, prj.files) {
-		if (pf.name == npf.name) fnd = true;
-	}
-	if (fnd) return;
-	prj.files.append(npf);
-}
-
 void SDKWindow::newProject() {
 	QString fpath;
 	QFile file;
-	PrjFile pf;
 	QString path = QFileDialog::getExistingDirectory(this,"Select new project directory",prjDir);
 	if (path.isEmpty()) return;
 	prj.name = "Xpeccy SDK Project";
 	prjPath = path;
-	prj.files.clear();
-	pf.flag = 0;
-	pf.name = "main.asm";
-	pf.text.clear();
-	prj.files << pf;
 	fpath = path;				// create main.asm
 	fpath.append("/main.asm");
 	file.setFileName(fpath);
-	file.open(QFile::WriteOnly);
-	file.close();
+	if (!file.exists()) {
+		file.open(QFile::WriteOnly);
+		file.close();
+	}
 	savePrjFile();
 	buildTree();
 }
@@ -205,12 +184,9 @@ void SDKWindow::savePrjFile() {
 	file.write("name = ");
 	file.write(prj.name.toUtf8());
 	file.putChar('\n');
-	file.write("files {\n");
-	foreach(PrjFile pf, prj.files) {
-		file.write(pf.name.toUtf8());
-		file.putChar('\n');
-	}
-	file.write("}\n");
+	file.write("build = ");
+	file.write(QString::number(prj.build).toUtf8());
+	file.putChar('\n');
 	file.close();
 }
 
@@ -220,23 +196,12 @@ void SDKWindow::openProject() {
 	QFile file(path);
 	if (file.open(QFile::ReadOnly)) {
 		QString line;
-		PrjFile pf;
 		prj.name = "Xpeccy SDK project";
-		prj.files.clear();
 		prjPath = QFileInfo(path).absoluteDir().absolutePath();
 		while (!file.atEnd()) {
 			line = trUtf8(file.readLine()).remove("\n").remove("\r");
 			if (line.startsWith("name = ")) prj.name = line.mid(7);
-			if (line.startsWith("files {")) {
-				line = trUtf8(file.readLine()).remove("\n").remove("\r");
-				while (!line.startsWith("}") && !file.atEnd()) {
-					pf.flag = 0;
-					pf.name = line;
-					pf.text.clear();
-					prj.files.append(pf);
-					line = trUtf8(file.readLine()).remove("\n").remove("\r");
-				}
-			}
+			if (line.startsWith("build = ")) prj.build = line.mid(8).toInt();
 		}
 		file.close();
 		ui.docedit->clear();
@@ -246,45 +211,34 @@ void SDKWindow::openProject() {
 }
 
 void SDKWindow::saveProject() {
-	if (prj.flag == 0) return;
+	saveCurrentText(ui.docedit,false);
+	opFiles of;
 	QFile file;
-	QString path;
-	if (curFile) curFile->text = ui.docedit->toPlainText();
-	for (int i = 0; i < prj.files.size(); i++) {
-		if (prj.files[i].flag & PF_CHANGED) {
-			path = prjPath;
-			path.append("/").append(prj.files[i].name);
-			file.setFileName(path);
-			if (file.open(QFile::WriteOnly)) {
-				file.write(prj.files[i].text.toUtf8());
-				prj.files[i].flag &= ~PF_CHANGED;
-				prj.files[i].itm->setFont(0,QFont());
-				file.close();
-			}
+	foreach(of,prj.files) {
+		file.setFileName(of.path);
+		if (file.open(QFile::WriteOnly)) {
+			file.write(of.text.toUtf8());
+			file.close();
 		}
 	}
+/*
+	for (int i = 0; i < dmod.rowCount(); i++) {
+		dmod.setData(dmod.index(i,0),QFont(),Qt::FontRole);
+	}
+*/
+	ui.prjtree->setModel(&dmod);
 	savePrjFile();
-	ui.statusbar->showMessage("All files saved",3000);
-	prj.flag &= PF_CHANGED;
+	ui.statusbar->showMessage("Project saved",3000);
 }
 
-// files
+// text
 
-void SDKWindow::addExFiles() {
-	if (prjPath.isEmpty()) return;
-	QStringList flist = QFileDialog::getOpenFileNames(this,"Add files to project",prjPath,"Spectrum asm files (*.asm)");
-	if (flist.size() == 0) return;
-	QString fnam;
-	PrjFile pf;
-	foreach(fnam,flist) {
-		if (fnam.startsWith(prjPath)) {
-			fnam.remove(0,prjPath.size() + 1);
-			pf.flag = 0;
-			pf.name = fnam;
-			pf.itm = NULL;
-			pf.text.clear();
-			addFile(pf);
-		}
-	}
-	buildTree();
+void SDKWindow::textChanged() {
+/*
+	if (!ui.docedit->isEnabled()) return;
+	QModelIndex idx = ui.prjtree->currentIndex();
+	if (!idx.isValid()) return;
+	dmod.setData(idx,QFont("",-1,QFont::Bold),Qt::FontRole);
+	ui.prjtree->setModel(&dmod);
+*/
 }

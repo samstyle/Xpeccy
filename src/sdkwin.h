@@ -2,7 +2,7 @@
 #define SDKWIN_H
 
 #include <QMainWindow>
-#include <QTreeWidgetItem>
+#include <QModelIndex>
 #include <QProcess>
 
 class SDKWindow : public QMainWindow {
@@ -21,9 +21,9 @@ class SDKWindow : public QMainWindow {
 		void buildProject();
 		void buildFinish();
 
-		void addExFiles();
+//		void addExFiles();
 
-		void prjFileChanged(QTreeWidgetItem*);
+		void prjFileChanged(QModelIndex);
 		void textChanged();
 	protected:
 		void closeEvent(QCloseEvent*);

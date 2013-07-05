@@ -96,7 +96,7 @@ void emulInit() {
 	scrInterval = 0;
 	optSet(OPT_SHOTFRM,SCR_PNG);
 
-	addLayout("default",448,320,136,80,64,32,0,0,64);
+	addLayout("default",448,320,138,80,64,32,0,0,64);
 
 	mainWin = new MainWin;
 }
