@@ -11,6 +11,7 @@
 
 struct opFiles {
 	int flag;
+	int cursPos;
 	QString path;
 	QString text;
 };
@@ -111,10 +112,10 @@ void SDKWindow::buildTree() {
 }
 
 void saveCurrentText(QPlainTextEdit* ed, bool res) {
-	opFiles of;
 	for(int i = 0; i < prj.files.size(); i++) {
 		if (prj.files[i].flag & PF_CURRENT) {
 			if (res) prj.files[i].flag &= ~PF_CURRENT;
+			prj.files[i].cursPos = ed->textCursor().position();
 			prj.files[i].text = ed->toPlainText();
 			break;
 		}
@@ -136,6 +137,10 @@ void SDKWindow::prjFileChanged(QModelIndex midx) {
 			prj.files[i].flag |= PF_CURRENT;
 			ui.docedit->setPlainText(prj.files[i].text);
 			ui.docedit->setEnabled(true);
+			QTextCursor curs = ui.docedit->textCursor();
+			curs.setPosition(prj.files[i].cursPos);
+			ui.docedit->setTextCursor(curs);
+			ui.docedit->ensureCursorVisible();
 			break;
 		}
 	}
