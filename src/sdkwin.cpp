@@ -11,7 +11,8 @@
 
 struct opFiles {
 	int flag;
-	int cursPos;
+	int line;
+	int curPos;
 	QString path;
 	QString text;
 };
@@ -115,7 +116,8 @@ void saveCurrentText(QPlainTextEdit* ed, bool res) {
 	for(int i = 0; i < prj.files.size(); i++) {
 		if (prj.files[i].flag & PF_CURRENT) {
 			if (res) prj.files[i].flag &= ~PF_CURRENT;
-			prj.files[i].cursPos = ed->textCursor().position();
+			prj.files[i].line = ed->verticalScrollBar()->value();
+			prj.files[i].curPos = ed->textCursor().position();
 			prj.files[i].text = ed->toPlainText();
 			break;
 		}
@@ -137,10 +139,10 @@ void SDKWindow::prjFileChanged(QModelIndex midx) {
 			prj.files[i].flag |= PF_CURRENT;
 			ui.docedit->setPlainText(prj.files[i].text);
 			ui.docedit->setEnabled(true);
+			ui.docedit->verticalScrollBar()->setValue(prj.files[i].line);
 			QTextCursor curs = ui.docedit->textCursor();
-			curs.setPosition(prj.files[i].cursPos);
+			curs.setPosition(prj.files[i].curPos);
 			ui.docedit->setTextCursor(curs);
-			ui.docedit->ensureCursorVisible();
 			break;
 		}
 	}
