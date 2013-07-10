@@ -4,6 +4,15 @@
 #include <QMainWindow>
 #include <QModelIndex>
 #include <QProcess>
+#include <QSyntaxHighlighter>
+
+class MSyn : public QSyntaxHighlighter {
+	Q_OBJECT
+	public:
+	MSyn(QObject* p):QSyntaxHighlighter(p) {}
+	protected:
+		void highlightBlock(const QString &text);
+};
 
 class SDKWindow : public QMainWindow {
 	Q_OBJECT

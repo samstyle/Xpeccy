@@ -34,6 +34,7 @@ Ui::SDKWinForm ui;
 QFileSystemModel dmod;
 
 SDKWindow* sdkwin;
+MSyn* syn;
 
 // external
 
@@ -50,6 +51,8 @@ void devShow() {
 
 SDKWindow::SDKWindow(QWidget *p):QMainWindow(p) {
 	ui.setupUi(this);
+
+	syn = new MSyn(this);
 
 	connect(ui.prjNew,SIGNAL(clicked()),this,SLOT(newProject()));
 	connect(ui.prjOpen,SIGNAL(clicked()),this,SLOT(openProject()));
@@ -138,6 +141,7 @@ void SDKWindow::prjFileChanged(QModelIndex midx) {
 			newfile = false;
 			prj.files[i].flag |= PF_CURRENT;
 			ui.docedit->setPlainText(prj.files[i].text);
+			syn->setDocument(ui.docedit->document());
 			ui.docedit->setEnabled(true);
 			ui.docedit->verticalScrollBar()->setValue(prj.files[i].line);
 			QTextCursor curs = ui.docedit->textCursor();
@@ -248,4 +252,10 @@ void SDKWindow::textChanged() {
 	dmod.setData(idx,QFont("",-1,QFont::Bold),Qt::FontRole);
 	ui.prjtree->setModel(&dmod);
 */
+}
+
+// highlighter
+
+void MSyn::highlightBlock(const QString &text) {
+	// do something
 }
