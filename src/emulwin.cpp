@@ -50,7 +50,7 @@
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#define	XPTITLE	"Xpeccy 0.5 (20130702)"
+#define	XPTITLE	"Xpeccy 0.5 (20130712)"
 
 // main
 MainWin* mainWin;
@@ -701,7 +701,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				//saveConfig();
 				break;
 			case Qt::Key_3:
-				emulFlags ^= FL_FAST;
+				emulFlags ^= FL_FAST_RQ;
 				break;
 			case Qt::Key_F4:
 				mainWin->close();
@@ -922,7 +922,7 @@ void doSDLEvents() {
 							//saveConfig();
 							break;
 						case SDLK_3:
-							emulFlags ^= FL_FAST;
+							emulFlags ^= FL_FAST_RQ;
 							break;
 						case SDLK_F4:
 							mainWin->close();
@@ -1322,6 +1322,11 @@ void emuFrame() {
 #elif __WIN32
 	if (~emulFlags & (FL_FAST | FL_EMUL)) ReleaseSemaphore(emuSem,1,NULL);
 #endif
+	if (emulFlags & FL_FAST_RQ) {
+		emulFlags &= ~FL_FAST_RQ;
+		emulFlags ^= FL_FAST;
+		mainWin->updateHead();
+	}
 }
 
 // video drawing
