@@ -386,7 +386,7 @@ unsigned char* mptr;
 void vidTSTiles(Video* vid, int lay, unsigned short yoffs, unsigned short xoffs, unsigned char gpage, unsigned char palhi) {
 	int j;
 	yscr = vid->y - vid->tsconf.yPos + yoffs;						// line in TMap
-	adr = (vid->tsconf.TMPage << 14) | ((yscr & 0xf8) << 5) | (lay ? 0x80 : 0x00);		// start of TMap line (full.adr)
+	adr = (vid->tsconf.TMPage << 14) | ((yscr & 0x1f8) << 5) | (lay ? 0x80 : 0x00);		// start of TMap line (full.adr)
 	xscr = (0x200 - xoffs) & 0x1ff;									// pos in line buf
 	xadr = vid->tsconf.tconfig & (lay ? 8 : 4);
 	do {								// 64 tiles in row

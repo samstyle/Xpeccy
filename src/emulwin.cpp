@@ -18,14 +18,11 @@
 	#include <semaphore.h>
 	pthread_t emuThread;
 	sem_t emuSem;
-//	void* emuThreadMain(void*);
 #elif __WIN32
 	#include <windows.h>
 	HANDLE emuThread;
 	HANDLE emuSem;
-//	DWORD emuThreadMain(LPVOID);
 #endif
-//void emuCycle();
 
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
@@ -50,7 +47,7 @@
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#define	XPTITLE	"Xpeccy 0.5 (20130712)"
+#define	XPTITLE	"Xpeccy 0.5 (20130713)"
 
 // main
 MainWin* mainWin;
