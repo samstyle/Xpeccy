@@ -83,7 +83,7 @@ Z80EX_BYTE scoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 	int ptype = scoGetPort(port,bdiz);
 	switch (ptype) {
 		case 0x1f:
-			res = bdiz ? bdiIn(comp->bdi,FDC_STATE) : 0xff;
+			res = bdiz ? bdiIn(comp->bdi,FDC_STATE) : 0xe0;
 			break;
 		case 0x3f:
 			res = bdiz ? bdiIn(comp->bdi,FDC_TRK) : 0xff;

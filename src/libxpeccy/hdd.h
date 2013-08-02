@@ -7,6 +7,8 @@ extern "C" {
 
 #include <stdio.h>
 
+#include "nvram.h"
+
 #define	IDE_DEFAULT	-1
 #define IDE_NEMO	1
 #define IDE_NEMOA8	2
@@ -121,7 +123,8 @@ typedef struct {
 	struct {
 		unsigned char sys;
 		unsigned char fdd;
-		CMOS* cmos;		// for SMUC: it's pointer to ZXComp::CMOS
+		CMOS* cmos;		// pointer to ZXComp::CMOS
+		nvRam* nv;		// NVRAM
 	} smuc;
 } IDE;
 

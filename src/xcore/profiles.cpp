@@ -31,9 +31,18 @@ bool addProfile(std::string nm, std::string fp) {
 	nprof.file = fp;
 	nprof.layName = std::string("default");
 	nprof.zx = zxCreate();
-	std::string cmosFile = optGetString(OPT_WORKDIR) + std::string(SLASH) + nprof.name + std::string(".cmos");
-	std::ifstream file(cmosFile.c_str());
-	if (file.good()) file.read((char*)nprof.zx->cmos.data,256);
+	std::string fname = optGetString(OPT_WORKDIR) + std::string(SLASH) + nprof.name + std::string(".cmos");
+	std::ifstream file(fname.c_str());
+	if (file.good()) {
+		file.read((char*)nprof.zx->cmos.data,256);
+		file.close();
+	}
+	fname = optGetString(OPT_WORKDIR) + std::string(SLASH) + nprof.name + std::string(".nvram");
+	file.open(fname.c_str());
+	if (file.good()) {
+		file.read((char*)nprof.zx->ide->smuc.nv->mem,0x800);
+		file.close();
+	}
 	zxSetHardware(nprof.zx,"ZX48K");
 	if (currentProfile != NULL) {
 		nm = currentProfile->name;
@@ -396,7 +405,7 @@ int prfSave(std::string nm) {
 	file << "\n[SDC]\n\n";
 	file << "sdcimage = " << (comp->sdc->image ? comp->sdc->image : "") << "\n";
 	file << "sdclock = " << YESNO(comp->sdc->flag & SDC_LOCK) << "\n";
-	file << "capacity" << int2str(comp->sdc->capacity) << "\n";
+	file << "capacity = " << int2str(comp->sdc->capacity) << "\n";
 
 	return PSAVE_OK;
 }

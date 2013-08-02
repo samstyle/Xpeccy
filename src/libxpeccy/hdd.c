@@ -443,6 +443,7 @@ IDE* ideCreate(int tp) {
 	ide->curDev = ide->master;
 	ide->smuc.fdd = 0xc0;
 	ide->smuc.sys = 0x00;
+	ide->smuc.nv = nvCreate();
 	return ide;
 }
 
@@ -567,7 +568,7 @@ int ideIn(IDE* ide,unsigned short port,unsigned char* val,int dosen) {
 					*val = 0x40;	// 2
 					break;
 				case 0xffba:		// system
-					*val = 0x00;	// TODO: b7: INTRQ from HDD/CF, b6:SDA?
+					*val = (nvRd(ide->smuc.nv) ? 0x40 : 0x00);	// TODO: b7: INTRQ from HDD/CF, b6:SDA?
 					break;
 				case 0x7fba:		// virtual fdd
 					*val = ide->smuc.fdd | 0x3f;
@@ -604,6 +605,7 @@ int ideOut(IDE* ide,unsigned short port,unsigned char val,int dosen) {
 			switch (port) {
 				case 0xffba:			// system
 					ide->smuc.sys = val;
+					nvWr(ide->smuc.nv, val & 0x10, val & 0x40, val & 0x20);		// nv,sda,scl,wp
 					break;
 				case 0x7fba:			// virtual fdd
 					ide->smuc.fdd = val & 0xc0;
@@ -612,7 +614,7 @@ int ideOut(IDE* ide,unsigned short port,unsigned char val,int dosen) {
 					if (ide->smuc.sys & 0x80) {
 						ide->smuc.cmos->data[ide->smuc.cmos->adr] = val;
 					} else {
-						ide->smuc.cmos->adr = val & 0x7f;
+						ide->smuc.cmos->adr = val;
 					}
 					break;
 			}

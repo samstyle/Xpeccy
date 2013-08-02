@@ -47,7 +47,7 @@
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#define	XPTITLE	"Xpeccy 0.5 (20130713)"
+#define	XPTITLE	"Xpeccy 0.5 (20130802)"
 
 // main
 MainWin* mainWin;
@@ -1186,7 +1186,8 @@ void doSDLEvents() {
 
 void MainWin::closeEvent(QCloseEvent* ev) {
 	unsigned int i;
-	std::string cmosFile;
+	std::ofstream file;
+	std::string fname;
 	std::vector<XProfile> plist = getProfileList();
 //	smpCount = 0;
 	pauseFlags |= PR_EXIT;
@@ -1195,11 +1196,19 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 //	emuStop();
 	for (i = 0; i < plist.size(); i++) {
 		prfSave(plist[i].name);
-		cmosFile = optGetString(OPT_WORKDIR) + std::string(SLASH) + plist[i].name + std::string(".cmos");
-		std::ofstream file(cmosFile.c_str());
+		fname = optGetString(OPT_WORKDIR) + std::string(SLASH) + plist[i].name + std::string(".cmos");
+		file.open(fname.c_str());
 		if (file.good()) {
 			file.write((const char*)plist[i].zx->cmos.data,256);
 			file.close();
+		}
+		if (plist[i].zx->ide->type == IDE_SMUC) {
+			fname = optGetString(OPT_WORKDIR) + std::string(SLASH) + plist[i].name + std::string(".nvram");
+			file.open(fname.c_str());
+			if (file.good()) {
+				file.write((const char*)plist[i].zx->ide->smuc.nv->mem,0x800);
+				file.close();
+			}
 		}
 	}
 	if (emulSaveChanged()) {
