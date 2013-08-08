@@ -26,6 +26,7 @@
 
 struct HardWare {
 	const char* name;
+	const char* optName;
 	int type;
 	int mask;		// mem size bits (b0:128, b1:256, b2:512, b3:1M, b4:2M, b5:4M); =0 for 48K
 	void (*mapMem)(ZXComp*);

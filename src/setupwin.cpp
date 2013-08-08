@@ -89,9 +89,10 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	unsigned int i;
 	std::vector<std::string> list;
 // machine
-	list = getHardwareNames();
-	for (i=0; i < list.size(); i++) {
-		setupUi.machbox->addItem(QString::fromLocal8Bit(list[i].c_str()));
+	i = 0;
+	while (hwTab[i].name != NULL) {
+		setupUi.machbox->addItem(QString::fromLocal8Bit(hwTab[i].optName),QString::fromLocal8Bit(hwTab[i].name));
+		i++;
 	}
 	setupUi.resbox->addItems(QStringList()<<"ROMPage0"<<"ROMPage1"<<"ROMPage2"<<"ROMPage3");
 //	setupUi.rssel->hide();
@@ -321,7 +322,7 @@ void SetupWin::start() {
 	for (i=0; i < rsl.size(); i++) {
 		setupUi.rsetbox->addItem(QString::fromLocal8Bit(rsl[i].name.c_str()));
 	}
-	setupUi.machbox->setCurrentIndex(setupUi.machbox->findText(QString::fromUtf8(zx->hw->name)));
+	setupUi.machbox->setCurrentIndex(setupUi.machbox->findData(QString::fromUtf8(zx->hw->name)));
 	int cbx = -1;
 	if (rset != NULL)
 		cbx = setupUi.rsetbox->findText(QString::fromUtf8(rset->name.c_str()));
@@ -472,7 +473,8 @@ void SetupWin::apply() {
 // machine
 	setRomsetList(rsl);
 	HardWare *oldmac = zx->hw;
-	curProf->hwName = std::string(setupUi.machbox->currentText().toUtf8().data());
+	curProf->hwName = std::string(setupUi.machbox->itemData(setupUi.machbox->currentIndex()).toString().toUtf8().data());
+//	curProf->hwName = std::string(setupUi.machbox->currentText().toUtf8().data());
 	zxSetHardware(curProf->zx,curProf->hwName.c_str());
 	curProf->rsName = std::string(setupUi.rsetbox->currentText().toUtf8().data());
 	prfSetRomset("", curProf->rsName);
