@@ -281,9 +281,7 @@ void vidDrawATMega(Video* vid) {
 }
 
 // atm text
-void vidATMDoubleDot(Video* vid,unsigned char colr) {
-	ink = inkTab[colr & 0x7f];
-	pap = papTab[colr & 0x3f] | ((colr & 0x80) >> 4);
+void vidDoubleDot(Video* vid) {
 	if (vidFlag & VF_DOUBLE) {
 		*(vid->scrptr) = (scrbyte & 0x80) ? ink : pap;
 		*(vid->scrptr + 1) = (scrbyte & 0x40) ? ink : pap;
@@ -300,6 +298,12 @@ void vidATMDoubleDot(Video* vid,unsigned char colr) {
 		*(vid->scrptr + 3) = (scrbyte & 0x03) ? ink : pap;
 	}
 //	vidFlag |= VF_CHANGED;
+}
+
+void vidATMDoubleDot(Video* vid,unsigned char colr) {
+	ink = inkTab[colr & 0x7f];
+	pap = papTab[colr & 0x3f] | ((colr & 0x80) >> 4);
+	vidDoubleDot(vid);
 }
 
 void vidDrawATMtext(Video* vid) {
@@ -545,9 +549,7 @@ void vidDrawTSLNormal(Video* vid) {
 void vidDrawTSL16(Video* vid) {
 	xscr = vid->x - vid->tsconf.xPos;
 	yscr = vid->y - vid->tsconf.yPos;
-	if ((xscr < 0) || (xscr >= vid->tsconf.xSize) || (yscr < 0) || (yscr >= vid->tsconf.ySize)) {
-		col = vid->brdcol;
-	} else if (vid->flags & VID_NOGFX) {
+	if ((xscr < 0) || (xscr >= vid->tsconf.xSize) || (yscr < 0) || (yscr >= vid->tsconf.ySize) || (vid->flags & VID_NOGFX)) {
 		col = vid->brdcol;
 	} else {
 		xscr += vid->tsconf.xOffset;
@@ -579,55 +581,84 @@ void vidDrawTSL256(Video* vid) {
 		yscr = vid->tsconf.scrLine;
 		xscr &= 0x1ff;
 		yscr &= 0x1ff;
-		adr = (vid->tsconf.vidPage << 14) + (yscr << 9) + xscr;
+		adr = ((vid->tsconf.vidPage & 0xf0) << 14) + (yscr << 9) + xscr;
 		col = vid->mem->ramData[adr];
 	}
 	*(vid->scrptr++) = col;
 	if (vidFlag & VF_DOUBLE) *(vid->scrptr++) = col;
 }
 
-// tsconf text (not yet)
+// tsconf text (not working yet)
 
 void vidDrawTSLText(Video* vid) {
-	vidPutDot(vid,vid->brdcol);
+	xscr = vid->x - vid->tsconf.xPos;
+	yscr = vid->y - vid->tsconf.yPos;
+	if ((xscr < 0) || (xscr >= vid->tsconf.xSize) || (yscr < 0) || (yscr >= vid->tsconf.ySize)) {
+		*(vid->scrptr++) = vid->brdcol;
+		if (vidFlag & VF_DOUBLE) *(vid->scrptr++) = vid->brdcol;
+	} else {
+		if ((xscr & 3) == 0) {
+			xscr += vid->tsconf.xOffset;
+			yscr += vid->tsconf.yOffset;
+			xscr &= 0x1ff;
+			yscr &= 0x1ff;
+			adr = (vid->tsconf.vidPage << 14) + ((yscr & 0xf8) << 5) + (xscr >> 2);	// 256 bytes in row
+			scrbyte = vid->mem->ramData[adr];
+			col = vid->mem->ramData[adr | 0x80];
+			ink = (col & 0x0f) | (vid->tsconf.scrPal);
+			pap = ((col & 0xf0) >> 4)  | (vid->tsconf.scrPal);
+			scrbyte = vid->mem->ram[vid->tsconf.vidPage ^ 1].data[(scrbyte << 3) | (yscr & 7)];
+			// scrbyte = vid->font[(scrbyte << 3) | (yscr & 7)];
+			vidDoubleDot(vid);
+		}
+		vid->scrptr++;
+		if (vidFlag & VF_DOUBLE) vid->scrptr++;
+	}
+}
+
+// baseconf text
+
+void vidDrawEvoText(Video* vid) {
+	yscr = vid->y - 76;
+	xscr = vid->x - 96;
+	if ((yscr < 0) || (yscr > 199) || (xscr < 0) || (xscr > 319)) {
+		vidPutDot(vid,vid->brdcol);
+	} else {
+		if ((xscr & 3) == 0) {
+			adr = 0x1c0 + ((yscr & 0xf8) << 3) + (xscr >> 3);
+			if ((xscr & 7) == 0) {
+				scrbyte = vid->mem->ram[vid->curscr ? 10 : 8].data[adr];
+				col = vid->mem->ram[vid->curscr ? 10 : 8].data[adr + 0x3000];
+			} else {
+				scrbyte = vid->mem->ram[vid->curscr ? 10 : 8].data[adr + 0x1000];
+				col = vid->mem->ram[vid->curscr ? 10 : 8].data[adr + 0x2001];
+			}
+			scrbyte = vid->font[(scrbyte << 3) | (yscr & 7)];
+			vidATMDoubleDot(vid,col);
+		}
+		vid->scrptr++;
+		if (vidFlag & VF_DOUBLE) vid->scrptr++;
+	}
 }
 
 // weiter
 
-#define	TC_LAYOUT	1
-#define	TC_ATM		2
-#define	TC_TSL		3
-
-typedef struct {
-	int id;
-	void(*callback)(Video*);
-} vidModeItem;
-
-vidModeItem vidModeTab[] = {
-	{VID_NOSCREEN,&vidDrawBorder},
-	{VID_NORMAL,&vidDrawNormal},
-	{VID_ALCO,&vidDrawAlco},
-	{VID_HWMC,&vidDrawHwmc},
-	{VID_ATM_EGA,&vidDrawATMega},
-	{VID_ATM_TEXT,&vidDrawATMtext},
-	{VID_ATM_HWM,&vidDrawATMhwmc},
-	{VID_TSL_NORMAL,&vidDrawTSLNormal},
-	{VID_TSL_16,&vidDrawTSL16},
-	{VID_TSL_256,&vidDrawTSL256},
-	{VID_TSL_TEXT,&vidDrawTSLText},
-	{-1,NULL}
-};
-
 void vidSetMode(Video* vid, int mode) {
 	vid->vmode = mode;
-	int idx = 0;
-	vid->callback = &vidDrawBorder;
-	while (vidModeTab[idx].id != -1) {
-		if (vidModeTab[idx].id == mode) {
-			vid->callback = vidModeTab[idx].callback;
-			break;
-		}
-		idx++;
+	switch(mode) {
+//		case VID_NOSCREEN: vid->callback = &vidDrawBorder; break;
+		case VID_NORMAL: vid->callback = &vidDrawNormal; break;
+		case VID_ALCO: vid->callback = &vidDrawAlco; break;
+		case VID_HWMC: vid->callback = &vidDrawHwmc; break;
+		case VID_ATM_EGA: vid->callback = &vidDrawATMega; break;
+		case VID_ATM_TEXT: vid->callback = &vidDrawATMtext; break;
+		case VID_ATM_HWM: vid->callback = &vidDrawATMhwmc; break;
+		case VID_EVO_TEXT: vid->callback = &vidDrawEvoText; break;
+		case VID_TSL_NORMAL: vid->callback = &vidDrawTSLNormal; break;
+		case VID_TSL_16: vid->callback = &vidDrawTSL16; break;
+		case VID_TSL_256: vid->callback = &vidDrawTSL256; break;
+		case VID_TSL_TEXT: vid->callback = &vidDrawTSLText; break;
+		default: vid->callback = &vidDrawBorder; break;
 	}
 }
 
@@ -644,7 +675,8 @@ void vidSync(Video* vid, int ns) {
 		if ((vid->x == vid->intpos.h) && (vid->y == vid->intpos.v)) vid->flags |= VID_INTSTROBE;
 		if (++vid->x >= vid->full.h) {
 			vid->x = 0;
-			if (vid->flags & VF_TSCONF) vidTSRender(vid, vid->scrptr - vid->wsze.h);
+			vid->flags |= VID_NEXTROW;
+			if (vid->flags & VF_TSCONF) vidTSRender(vid,vid->scrptr - vid->wsze.h);
 			if ((vid->y >= vid->lcut.v) && (vid->y < vid->rcut.v) && (vidFlag & VF_DOUBLE)) {
 				if (vid->scrimg == NULL) printf("NULL\n");
 				memcpy(vid->scrptr, vid->scrptr - vid->wsze.h, vid->wsze.h);

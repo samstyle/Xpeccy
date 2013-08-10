@@ -75,7 +75,7 @@ Z80EX_BYTE memrd(CPUCONT Z80EX_WORD adr,int m1,void* ptr) {
 	}
 	if (m1 == 1) {
 		if (comp->rzxPlay) comp->rzxFetches--;
-		if (comp->bdi->fdc->type == FDC_93) {
+		if ((comp->bdi->fdc->type == FDC_93) && (comp->prt0 & 0x10)) {
 			if (comp->dosen == 1) {
 				if (memGetBankPtr(comp->mem,adr)->type == MEM_RAM) {
 					switch(comp->hw->type) {
@@ -85,9 +85,6 @@ Z80EX_BYTE memrd(CPUCONT Z80EX_WORD adr,int m1,void* ptr) {
 						case HW_PENTEVO:
 							if (comp->prt1 & 0x40) comp->dosen = 0;
 							break;
-						case HW_TSLAB:
-							if (comp->mem->pt0->num == 1) comp->dosen = 0;
-							break;
 						default:
 							comp->dosen = 0;
 							break;
@@ -96,7 +93,14 @@ Z80EX_BYTE memrd(CPUCONT Z80EX_WORD adr,int m1,void* ptr) {
 				}
 			} else {
 				if (((adr & 0xff00) == 0x3d00) && (comp->prt0 & 0x10)) {
-					comp->dosen = 1;
+					switch (comp->hw->type) {
+						case HW_TSLAB:
+							if ((comp->prt2 & 0x04) == 0x00) comp->dosen = 1;
+							break;
+						default:
+							comp->dosen = 1;
+							break;
+					}
 					comp->hw->mapMem(comp);
 				}
 			}
@@ -391,19 +395,24 @@ void zxReset(ZXComp* comp,int wut) {
 			comp->vid->tsconf.scrPal = 0xf0;
 			memset(comp->vid->tsconf.tsAMem,0x00,0x1e0);
 			memcpy(&comp->vid->tsconf.tsAMem[0x1e0],tsPalInit,0x20);	// init zx palete ?
-			tslOut(comp,0x00af,0x00,0);			// std 256x192, NOGFX off
+//			tslOut(comp,0x00af,0x00,0);			// std 256x192, NOGFX off
 			comp->tsconf.Page0 = 0;
 			comp->vid->nextbrd = 0xf7;
+			comp->tsconf.p00af = 0;
+			comp->tsconf.p01af = 0x05;
+			comp->tsconf.p02af = 0;
+			comp->tsconf.p03af = 0;
+			comp->tsconf.p04af = 0;
+			comp->tsconf.p05af = 0;
+			comp->tsconf.p07af = 0x0f;
 			comp->vid->tsconf.T0XOffset = 0;
 			comp->vid->tsconf.T0YOffset = 0;
 			comp->vid->tsconf.T1XOffset = 0;
 			comp->vid->tsconf.T1YOffset = 0;
-			comp->vid->tsconf.xOffset = 0;
-			comp->vid->tsconf.yOffset = 0;
 			comp->vid->tsconf.tconfig = 0;
 			comp->vid->intpos.h = 0;
 			comp->vid->intpos.v = 0;
-			comp->vid->tsconf.vidPage = 5;
+			tslUpdatePorts(comp);
 			break;
 		default:
 			comp->prt0 = ((resto & 1) << 4);
@@ -501,6 +510,11 @@ int zxExec(ZXComp* comp) {
 			}
 		}
 		comp->intStrobe = 0;
+	}
+	if ((comp->vid->flags & VID_NEXTROW) && (comp->hw->type == HW_TSLAB)) {
+		tslUpdatePorts(comp);
+		// vidTSRender(comp->vid,ptr);
+		comp->vid->flags &= ~VID_NEXTROW;
 	}
 	nsTime = res1 * comp->nsPerTick;
 	comp->tickCount += res1;

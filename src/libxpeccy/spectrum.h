@@ -111,6 +111,13 @@ struct ZXComp {
 		unsigned char Page1;
 		unsigned char Page2;
 		unsigned char Page3;
+		unsigned char p00af;		// ports to be updated from next line
+		unsigned char p01af;
+		unsigned char p02af;
+		unsigned char p03af;
+		unsigned char p04af;
+		unsigned char p05af;
+		unsigned char p07af;
 	} tsconf;
 	CMOS cmos;
 	unsigned char dosen;		// active trdos (dosen and b4,prt0 sets rompart)

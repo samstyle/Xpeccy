@@ -47,7 +47,7 @@
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#define	XPTITLE	"Xpeccy 0.5 (20130809)"
+#define	XPTITLE	"Xpeccy 0.5 (20130810)"
 
 // main
 MainWin* mainWin;
@@ -1463,13 +1463,20 @@ void initUserMenu(QWidget* par) {
 
 	vmodeMenu = userMenu->addMenu("Video mode");
 	QObject::connect(vmodeMenu,SIGNAL(triggered(QAction*)),par,SLOT(chVMode(QAction*)));
+	vmodeMenu->addAction("No screen")->setData(VID_NOSCREEN);
 	vmodeMenu->addAction("ZX 256 x 192")->setData(VID_NORMAL);
 	vmodeMenu->addAction("Alco 16c")->setData(VID_ALCO);
 	vmodeMenu->addAction("HW multicolor")->setData(VID_HWMC);
-	vmodeMenu->addAction("ATM EGA")->setData(VID_ATM_EGA);
-	vmodeMenu->addAction("ATM HW multicolor")->setData(VID_ATM_HWM);
-	vmodeMenu->addAction("ATM text")->setData(VID_ATM_TEXT);
-	vmodeMenu->addAction("No screen")->setData(VID_NOSCREEN);
+	vmodeMenu->addSeparator();
+	vmodeMenu->addAction("ATM2 EGA")->setData(VID_ATM_EGA);
+	vmodeMenu->addAction("ATM2 HW multicolor")->setData(VID_ATM_HWM);
+	vmodeMenu->addAction("ATM2 text")->setData(VID_ATM_TEXT);
+	vmodeMenu->addAction("BaseConf text")->setData(VID_EVO_TEXT);
+	vmodeMenu->addSeparator();
+	vmodeMenu->addAction("TSConf 256 x 192")->setData(VID_TSL_NORMAL);
+	vmodeMenu->addAction("TSConf 4bpp")->setData(VID_TSL_16);
+	vmodeMenu->addAction("TSConf 8bpp")->setData(VID_TSL_256);
+	vmodeMenu->addAction("TSConf text")->setData(VID_TSL_TEXT);
 
 	resMenu = userMenu->addMenu(QIcon(":/images/shutdown.png"),"Reset...");
 	QObject::connect(resMenu,SIGNAL(triggered(QAction*)),par,SLOT(reset(QAction*)));

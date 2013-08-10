@@ -74,5 +74,5 @@ Z80EX_BYTE evoIn(ZXComp*,Z80EX_WORD,int);
 void tslMapMem(ZXComp*);
 void tslOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
 Z80EX_BYTE tslIn(ZXComp*,Z80EX_WORD,int);
-
+void tslUpdatePorts(ZXComp*);
 #endif

@@ -20,6 +20,7 @@ extern "C" {
 #define	VID_BORDER_4T		1
 #define	VID_NOGFX		(1<<1)
 #define	VID_INTSTROBE		(1<<2)
+#define VID_NEXTROW		(1<<3)
 // screen drawing mode
 #define	VID_NOSCREEN	0
 #define	VID_NORMAL	1

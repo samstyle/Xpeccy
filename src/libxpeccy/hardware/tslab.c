@@ -25,37 +25,48 @@ void tslMapMem(ZXComp* comp) {
 int tslXRes[4] = {256,320,320,360};
 int tslYRes[4] = {192,200,240,288};
 
+void tslUpdatePorts(ZXComp* comp) {
+	unsigned char val = comp->tsconf.p00af;
+	comp->vid->tsconf.xSize = tslXRes[(val & 0xc0) >> 6];
+	comp->vid->tsconf.ySize = tslYRes[(val & 0xc0) >> 6];
+	comp->vid->tsconf.xPos = comp->vid->bord.h - ((comp->vid->tsconf.xSize - 256) >> 1);
+	comp->vid->tsconf.yPos = comp->vid->bord.v - ((comp->vid->tsconf.ySize - 192) >> 1);
+	switch(val & 7) {
+		case 0: vidSetMode(comp->vid,VID_TSL_NORMAL); break;
+		case 1: vidSetMode(comp->vid,VID_TSL_16); break;
+		case 2: vidSetMode(comp->vid,VID_TSL_256); break;
+		case 3: vidSetMode(comp->vid,VID_TSL_TEXT); break;
+		default: vidSetMode(comp->vid,VID_UNKNOWN); break;
+	}
+	comp->vid->flags &= ~VID_NOGFX;
+	if (val & 0x20) comp->vid->flags |= VID_NOGFX;
+
+	comp->vid->tsconf.vidPage = comp->tsconf.p01af;
+	comp->vid->tsconf.soxl = comp->tsconf.p02af;
+	comp->vid->tsconf.soxh = comp->tsconf.p03af;
+	comp->vid->tsconf.soyl = comp->tsconf.p04af;
+	comp->vid->tsconf.soyh = comp->tsconf.p05af;
+	val = comp->tsconf.p07af;
+	comp->vid->tsconf.scrPal = (val & 0x0f) << 4;
+	comp->vid->tsconf.T0Pal76 = (val & 0x30) << 2;
+	comp->vid->tsconf.T1Pal76 = (val & 0xc0);
+
+	comp->vid->tsconf.scrLine = comp->vid->tsconf.yOffset;
+}
+
 void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 	if ((port & 0x0001) == 0x0000) port |= 0x00fe;		// make XXFE
 	if ((port & 0x80ff) == 0x00fd) port = 0x7ffd;		// ???
 	int cnt,cnt2,lcnt,sadr,dadr;
 	switch (port) {
-		case 0x00af:
-			comp->vid->tsconf.xSize = tslXRes[(val & 0xc0) >> 6];
-			comp->vid->tsconf.ySize = tslYRes[(val & 0xc0) >> 6];
-			comp->vid->tsconf.xPos = comp->vid->bord.h - ((comp->vid->tsconf.xSize - 256) >> 1);
-			comp->vid->tsconf.yPos = comp->vid->bord.v - ((comp->vid->tsconf.ySize - 192) >> 1);
-			switch(val & 7) {
-				case 0: vidSetMode(comp->vid,VID_TSL_NORMAL); break;
-				case 1: vidSetMode(comp->vid,VID_TSL_16); break;
-				case 2: vidSetMode(comp->vid,VID_TSL_256); break;
-				case 3: vidSetMode(comp->vid,VID_TSL_TEXT); printf("text mode\n"); break;
-				default: vidSetMode(comp->vid,VID_UNKNOWN); break;
-			}
-			comp->vid->flags &= ~VID_NOGFX;
-			if (val & 0x20) comp->vid->flags |= VID_NOGFX;
-			break;
-		case 0x01af: comp->vid->tsconf.vidPage = val; break;
-		case 0x02af: comp->vid->tsconf.soxl = val; break;
-		case 0x03af: comp->vid->tsconf.soxh = val; break;
-		case 0x04af: comp->vid->tsconf.soyl = val; comp->vid->tsconf.scrLine = comp->vid->tsconf.yOffset; break;
-		case 0x05af: comp->vid->tsconf.soyh = val; comp->vid->tsconf.scrLine = comp->vid->tsconf.yOffset; break;
+		case 0x00af: comp->tsconf.p00af = val; break;
+		case 0x01af: comp->tsconf.p01af = val; break;
+		case 0x02af: comp->tsconf.p02af = val; break;
+		case 0x03af: comp->tsconf.p03af = val; break;
+		case 0x04af: comp->tsconf.p04af = val; break;
+		case 0x05af: comp->tsconf.p05af = val; break;
 		case 0x06af: comp->vid->tsconf.tconfig = val; break;
-		case 0x07af:
-			comp->vid->tsconf.scrPal = (val & 0x0f) << 4;
-			comp->vid->tsconf.T0Pal76 = (val & 0x30) << 2;
-			comp->vid->tsconf.T1Pal76 = (val & 0xc0);
-			break;
+		case 0x07af: comp->tsconf.p07af = val; break;
 		case 0x0faf: comp->vid->nextbrd = val; break;
 		case 0x10af:			// Page0
 			comp->tsconf.Page0 = val;
@@ -203,8 +214,10 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 				default:
 					if ((port & 0x0001) == 0x0000) break;
 					printf("TSLab : out %.4X,%.2X (%i)\n",port,val,bdiz);
-					//comp->flag |= ZX_BREAK;
-					assert(0);
+#ifdef ISDEBUG
+					comp->flag |= ZX_BREAK;
+//					assert(0);
+#endif
 			}
 			break;
 	}
@@ -216,7 +229,7 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 	if ((port & 0x0001) == 0x0000) port |= 0x00fe;
 	switch(port) {
 		case 0x00af:
-			res = 0;		// b6: PWR_UP
+			res = 0x00;		// b6: PWR_UP
 			break;
 		case 0x12af: res = comp->tsconf.Page2; break;
 		case 0x13af: res = comp->tsconf.Page3; break;
@@ -249,11 +262,13 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 					res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00);
 					break;
 				case 0xf6: res = 0xff; break;			// WAS IST DAS?
-				case 0xf7: res = 0xff; break;			// WAS IST DAS?
+				case 0xf7: res = 0xff; break;			// WAS IST DAS? 1E | 1F
 				default:
 					printf("TSLab : in %.4X (%i)\n",port,bdiz);
-					//comp->flag |= ZX_BREAK;
-					assert(0);
+#ifdef ISDEBUG
+					comp->flag |= ZX_BREAK;
+//					assert(0);
+#endif
 			}
 			break;
 	}
