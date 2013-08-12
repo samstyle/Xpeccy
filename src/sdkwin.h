@@ -9,7 +9,7 @@
 class MSyn : public QSyntaxHighlighter {
 	Q_OBJECT
 	public:
-	MSyn(QObject* p):QSyntaxHighlighter(p) {}
+		MSyn(QTextEdit* d):QSyntaxHighlighter(d) {}
 	protected:
 		void highlightBlock(const QString &text);
 };

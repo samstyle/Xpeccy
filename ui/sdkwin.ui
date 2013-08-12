@@ -104,16 +104,11 @@
      </widget>
     </item>
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout" stretch="10,0">
+     <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0">
       <item>
-       <widget class="QPlainTextEdit" name="docedit">
+       <widget class="QTextEdit" name="docedit">
         <property name="enabled">
          <bool>false</bool>
-        </property>
-        <property name="font">
-         <font>
-          <family>DejaVu Sans Mono</family>
-         </font>
         </property>
        </widget>
       </item>

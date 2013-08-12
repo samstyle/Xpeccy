@@ -52,7 +52,7 @@ void devShow() {
 SDKWindow::SDKWindow(QWidget *p):QMainWindow(p) {
 	ui.setupUi(this);
 
-	syn = new MSyn(this);
+	syn = new MSyn(ui.docedit);
 
 	connect(ui.prjNew,SIGNAL(clicked()),this,SLOT(newProject()));
 	connect(ui.prjOpen,SIGNAL(clicked()),this,SLOT(openProject()));
@@ -115,7 +115,7 @@ void SDKWindow::buildTree() {
 	ui.prjtree->hideColumn(4);
 }
 
-void saveCurrentText(QPlainTextEdit* ed, bool res) {
+void saveCurrentText(QTextEdit* ed, bool res) {
 	for(int i = 0; i < prj.files.size(); i++) {
 		if (prj.files[i].flag & PF_CURRENT) {
 			if (res) prj.files[i].flag &= ~PF_CURRENT;
@@ -257,5 +257,9 @@ void SDKWindow::textChanged() {
 // highlighter
 
 void MSyn::highlightBlock(const QString &text) {
+	int pos = text.indexOf(QRegExp("[ \t]"));
+	if (pos != 0) setFormat(0,pos,Qt::darkGreen);
+	pos = text.indexOf(";");
+	if (pos >= 0) setFormat(pos,text.length() - pos,Qt::gray);
 	// do something
 }
