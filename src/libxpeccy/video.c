@@ -489,9 +489,9 @@ void vidTSRender(Video* vid, unsigned char* ptr) {
 	sadr = 0x200;			// start of sprites tab in altera mem
 	memset(vid->tsconf.line,0x00,0x200);		// clear tile-sprite line
 // S0 ?
-//	if (vid->tsconf.tconfig & 0x80) {
-//		vidTSSprites(vid);
-//	}
+	if (vid->tsconf.tconfig & 0x80) {
+		vidTSSprites(vid);
+	}
 // T0
 	if (vid->tsconf.tconfig & 0x20) {
 		vidTSTiles(vid,0,vid->tsconf.T0YOffset,vid->tsconf.T0XOffset,vid->tsconf.T0GPage,vid->tsconf.T0Pal76);
