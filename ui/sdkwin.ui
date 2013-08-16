@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>883</width>
-    <height>575</height>
+    <height>627</height>
    </rect>
   </property>
   <property name="contextMenuPolicy">
@@ -104,11 +104,16 @@
      </widget>
     </item>
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0">
+     <layout class="QVBoxLayout" name="verticalLayout" stretch="10,0">
       <item>
        <widget class="QTextEdit" name="docedit">
         <property name="enabled">
          <bool>false</bool>
+        </property>
+        <property name="font">
+         <font>
+          <family>DejaVu Sans Mono</family>
+         </font>
         </property>
        </widget>
       </item>
