@@ -329,7 +329,7 @@ unsigned short ataIn(ATADev* dev,int prt) {
 	switch (prt) {
 		case HDD_DATA:
 			if ((dev->buf.mode == HDB_READ) && (dev->reg.state & HDF_DRQ)) {
-				res = dev->buf.data[dev->buf.pos] | (dev->buf.data[dev->buf.pos + 1] << 8);
+				res = dev->buf.data[dev->buf.pos] | (dev->buf.data[dev->buf.pos + 1] << 8);	// low-hi
 				dev->buf.pos += 2;
 				if (dev->buf.pos >= HDD_BUFSIZE) {
 					dev->buf.pos = 0;
@@ -383,8 +383,8 @@ void ataOut(ATADev* dev, int prt, unsigned short val) {
 	switch (prt) {
 		case HDD_DATA:
 			if ((dev->buf.mode == HDB_WRITE) && (dev->reg.state & HDF_DRQ)) {
-				dev->buf.data[dev->buf.pos++] = (val & 0xff);
-				dev->buf.data[dev->buf.pos++] = ((val & 0xff00) >> 8);
+				dev->buf.data[dev->buf.pos++] = (val & 0xff);			// low
+				dev->buf.data[dev->buf.pos++] = ((val & 0xff00) >> 8);		// hi
 				if (dev->buf.pos >= HDD_BUFSIZE) {
 					dev->buf.pos = 0;
 					if ((dev->reg.com & 0xf0) == 0x30) {
@@ -563,13 +563,13 @@ int ideIn(IDE* ide,unsigned short port,unsigned char* val,int dosen) {
 		if (ide->type == IDE_NEMO_EVO) {
 			if (adr.port == 0) {
 				if (adr.flags & IDE_HIGH) {
-					ide->hiTrig = 1;				// 11 : high, next 10 is low
+					ide->hiTrig = 0;				// 11 : high, next 10 is low
 				} else {
-					ide->hiTrig ^= 1;				// switch trigger
 					if (ide->hiTrig) adr.flags |= IDE_HIGH;		// 10 : high byte
+					ide->hiTrig ^= 1;				// switch trigger
 				}
 			} else {
-				ide->hiTrig = 1;		// non-data ports : next byte is low
+				ide->hiTrig = 0;		// non-data ports : next 10 is low
 			}
 		}
 		if (adr.flags & IDE_HIGH) {
@@ -610,27 +610,36 @@ int ideOut(IDE* ide,unsigned short port,unsigned char val,int dosen) {
 	ataAddr adr = ideDecoder(ide,port,dosen);
 	if (~adr.flags & IDE_CATCH) return 0;
 	if (adr.flags & IDE_HDD) {
+		if (adr.port == HDD_HEAD)
+			ide->curDev = (val & HDF_DRV) ? ide->slave : ide->master;	// write to head reg: select MASTER/SLAVE
 		if (ide->type == IDE_NEMO_EVO) {
 			if (adr.port == 0) {
 				if (adr.flags & IDE_HIGH) {
-					ide->hiTrig = 0;	// 11 : high, next 10 is low
+					ide->hiTrig = 0;		// 11 : high, next 10 is low
 				} else {
-					if (ide->hiTrig) adr.flags |= IDE_HIGH;	// 10:high byte
+					if (ide->hiTrig) {		// 10:high byte
+						ide->bus &= 0x00ff;
+						ide->bus |= (val << 8);
+						ataOut(ide->curDev,0,ide->bus);
+					} else {			// 10:low
+						ide->bus &= 0xff00;
+						ide->bus |= val;
+					}
 					ide->hiTrig ^= 1;			// switch trigger
 				}
 			} else {
-				ide->hiTrig = 1;		// non-data ports : next 10 is high
+				ide->hiTrig = 0;		// non-data ports : next 10 is low
+				ataOut(ide->curDev,adr.port,val);
 			}
-		}
-		if (adr.port == HDD_HEAD)
-			ide->curDev = (val & HDF_DRV) ? ide->slave : ide->master;	// write to head reg: select MASTER/SLAVE
-		if (adr.flags & IDE_HIGH) {
-			ide->bus &= 0x00ff;
-			ide->bus |= (val << 8);
 		} else {
-			ide->bus &= 0xff00;
-			ide->bus |= val;
-			ataOut(ide->curDev,adr.port,ide->bus);
+			if (adr.flags & IDE_HIGH) {
+				ide->bus &= 0x00ff;
+				ide->bus |= (val << 8);
+			} else {
+				ide->bus &= 0xff00;
+				ide->bus |= val;
+				ataOut(ide->curDev,adr.port,ide->bus);
+			}
 		}
 	} else {
 		if (ide->type == IDE_SMUC) {

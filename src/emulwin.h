@@ -112,10 +112,11 @@
 #define	XKEY_PERIOD	59
 #define	XKEY_COMMA	60
 #define	XKEY_BSLASH	61	// /
-#define	XKEY_RSHIFT	62
 #define	XKEY_SPACE	65
 #define	XKEY_CAPS	66
+#define	XKEY_RSHIFT	62
 #define	XKEY_RCTRL	105
+#define XKEY_LALT	64
 #define	XKEY_RALT	108
 #define	XKEY_HOME	110
 #define	XKEY_UP		111
@@ -128,6 +129,18 @@
 #define	XKEY_INS	118
 #define	XKEY_DEL	119
 #define	XKEY_MENU	135
+#define XKEY_ESC	9
+#define XKEY_F1		67
+#define XKEY_F2		68
+#define XKEY_F3		69
+#define XKEY_F4		70
+#define XKEY_F5		71
+#define XKEY_F6		72
+#define XKEY_F7		73
+#define XKEY_F8		74
+#define XKEY_F9		75
+#define XKEY_F10	76
+#define XKEY_F11	95
 
 #elif _WIN32
 
@@ -186,7 +199,9 @@
 #define	XKEY_RSHIFT	54
 #define	XKEY_SPACE	57
 #define	XKEY_CAPS	58
+//#define XKEY_RCTRL
 #define	XKEY_RALT	312
+#define XKEY_LALT	56
 #define	XKEY_HOME	327
 #define	XKEY_UP		328
 #define	XKEY_PGUP	329
@@ -198,6 +213,18 @@
 #define	XKEY_INS	338
 #define	XKEY_DEL	339
 #define	XKEY_MENU	349
+#define XKEY_ESC	1
+#define XKEY_F1		59
+#define XKEY_F2		60
+#define XKEY_F3		61
+#define XKEY_F4		62
+#define XKEY_F5		63
+#define XKEY_F6		64
+#define XKEY_F7		65
+#define XKEY_F8		66
+#define XKEY_F9		67
+#define XKEY_F10	68
+#define XKEY_F11	87
 
 #endif
 

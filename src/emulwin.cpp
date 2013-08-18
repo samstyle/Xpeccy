@@ -75,6 +75,7 @@ QMenu* bookmarkMenu;
 QMenu* profileMenu;
 QMenu* layoutMenu;
 QMenu* vmodeMenu;
+QAction* pckAct;
 // temp emulation
 Z80EX_WORD pc,af,de,ix;
 int blkDataSize = 0;
@@ -157,8 +158,8 @@ keyEntry keyMapInit[] = {
 	{"Y",SDLK_y,'y',0,0x35},{"U",SDLK_u,'u',0,0x3c},{"I",SDLK_i,'i',0,0x43},{"O",SDLK_o,'o',0,0x44},{"P",SDLK_p,'p',0,0x4d},
 	{"A",SDLK_a,'a',0,0x1c},{"S",SDLK_s,'s',0,0x1b},{"D",SDLK_d,'d',0,0x23},{"F",SDLK_f,'f',0,0x2b},{"G",SDLK_g,'g',0,0x34},
 	{"H",SDLK_h,'h',0,0x33},{"J",SDLK_j,'j',0,0x3b},{"K",SDLK_k,'k',0,0x42},{"L",SDLK_l,'l',0,0x4b},{"ENT",SDLK_RETURN,'E',0,0x5a},
-	{"LS",SDLK_LSHIFT,'C',0,0x00},{"Z",SDLK_z,'z',0,0x1a},{"X",SDLK_x,'x',0,0x22},{"C",SDLK_c,'c',0,0x21},{"V",SDLK_v,'v',0,0x2a},
-	{"B",SDLK_b,'b',0,0x32},{"N",SDLK_n,'n',0,0x31},{"M",SDLK_m,'m',0,0x3a},{"LC",SDLK_LCTRL,'S',0,0x00},{"SPC",SDLK_SPACE,' ',0,0x29},
+	{"LS",SDLK_LSHIFT,'C',0,0x12},{"Z",SDLK_z,'z',0,0x1a},{"X",SDLK_x,'x',0,0x22},{"C",SDLK_c,'c',0,0x21},{"V",SDLK_v,'v',0,0x2a},
+	{"B",SDLK_b,'b',0,0x32},{"N",SDLK_n,'n',0,0x31},{"M",SDLK_m,'m',0,0x3a},{"LC",SDLK_LCTRL,'S',0,0x14},{"SPC",SDLK_SPACE,' ',0,0x29},
 
 	{"RS",SDLK_RSHIFT,'C',0,0x59},{"RC",SDLK_RCTRL,'S',0,0x14e0},
 
@@ -173,6 +174,13 @@ keyEntry keyMapInit[] = {
 	{"[",SDLK_LEFTBRACKET,'S','8',0x54},{"]",SDLK_RIGHTBRACKET,'S','9',0x5b},
 	{"k/",SDLK_KP_DIVIDE,'S','v',0x4ae0},{"k*",SDLK_KP_MULTIPLY,'S','b',0x7c},{"k-",SDLK_KP_MINUS,'S','j',0x7b},
 	{"k+",SDLK_KP_PLUS,'S','k',0x79},{"kENT",SDLK_KP_ENTER,'E',0,0x5ae0},{"k.",SDLK_KP_PERIOD,'S','m',0x71},
+
+	{"ESC",SDLK_ESCAPE,0,0,0x76},
+	{"F1",SDLK_F1,0,0,0x05},{"F2",SDLK_F2,0,0,0x06},{"F3",SDLK_F3,0,0,0x04},{"F4",SDLK_F4,0,0,0x0C},
+	{"F5",SDLK_F5,0,0,0x03},{"F6",SDLK_F6,0,0,0x0B},{"F7",SDLK_F7,0,0,0x83},{"F8",SDLK_F8,0,0,0x0A},
+	{"F9",SDLK_F9,0,0,0x01},{"F10",SDLK_F10,0,0,0x09},{"F11",SDLK_F11,0,0,0x78},
+	{"LA",SDLK_LALT,0,0,0x11},{"RA",SDLK_RALT,0,0,0x11e0},
+
 	{"",SDLK_LAST,0,0,0x00}
 };
 
@@ -195,8 +203,10 @@ keyEntry keyMapInit[] = {
 	{"Y",XKEY_Y,'y',0,0x35},{"U",XKEY_U,'u',0,0x3c},{"I",XKEY_I,'i',0,0x43},{"O",XKEY_O,'o',0,0x44},{"P",XKEY_P,'p',0,0x4d},
 	{"A",XKEY_A,'a',0,0x1c},{"S",XKEY_S,'s',0,0x1b},{"D",XKEY_D,'d',0,0x23},{"F",XKEY_F,'f',0,0x2b},{"G",XKEY_G,'g',0,0x34},
 	{"H",XKEY_H,'h',0,0x33},{"J",XKEY_J,'j',0,0x3b},{"K",XKEY_K,'k',0,0x42},{"L",XKEY_L,'l',0,0x4b},{"ENT",XKEY_ENTER,'E',0,0x5a},
-	{"LS",XKEY_LSHIFT,'C',0,0x00},{"Z",XKEY_Z,'z',0,0x1a},{"X",XKEY_X,'x',0,0x22},{"C",XKEY_C,'c',0,0x21},{"V",XKEY_V,'v',0,0x2a},
-	{"B",XKEY_B,'b',0,0x32},{"N",XKEY_N,'n',0,0x31},{"M",XKEY_M,'m',0,0x3a},{"LC",XKEY_LCTRL,'S',0,0x00},{"SPC",XKEY_SPACE,' ',0,0x29},
+	{"LS",XKEY_LSHIFT,'C',0,0x12},{"Z",XKEY_Z,'z',0,0x1a},{"X",XKEY_X,'x',0,0x22},{"C",XKEY_C,'c',0,0x21},{"V",XKEY_V,'v',0,0x2a},
+	{"B",XKEY_B,'b',0,0x32},{"N",XKEY_N,'n',0,0x31},{"M",XKEY_M,'m',0,0x3a},{"LC",XKEY_LCTRL,'S',0,0x14},{"SPC",XKEY_SPACE,' ',0,0x29},
+
+	{"RS",XKEY_RSHIFT,'C',0,0x59},{"RC",XKEY_RCTRL,'S',0,0x14e0},
 
 	{"`",XKEY_TILDA,'C','S',0x0e},{"\\",XKEY_SLASH,'C','S',0x5d},
 	{";",XKEY_DOTCOM,'S','o',0x4c},{"\"",XKEY_QUOTE,'S','p',0x52},
@@ -207,6 +217,13 @@ keyEntry keyMapInit[] = {
 	{"-",XKEY_MINUS,'S','j',0x4e},{"+",XKEY_PLUS,'S','k',0x00},
 	{",",XKEY_PERIOD,'S','n',0x41},{".",XKEY_COMMA,'S','m',0x49},{"/",XKEY_BSLASH,'S','c',0x4a},
 	{"[",XKEY_LBRACE,'S','8',0x54},{"]",XKEY_RBRACE,'S','9',0x5b},
+
+	{"ESC",XKEY_ESC,0,0,0x76},
+	{"F1",XKEY_F1,0,0,0x05},{"F2",XKEY_F2,0,0,0x06},{"F3",XKEY_F3,0,0,0x04},{"F4",XKEY_F4,0,0,0x0C},
+	{"F5",XKEY_F5,0,0,0x03},{"F6",XKEY_F6,0,0,0x0B},{"F7",XKEY_F7,0,0,0x83},{"F8",XKEY_F8,0,0,0x0A},
+	{"F9",XKEY_F9,0,0,0x01},{"F10",XKEY_F10,0,0,0x09},{"F11",XKEY_F11,0,0,0x78},
+
+	{"LA",XKEY_LALT,0,0,0x11},{"RA",XKEY_RALT,0,0,0x11e0},
 
 	{"",ENDKEY,0,0,0x00}
 };
@@ -447,11 +464,6 @@ MainWin::MainWin() {
 	connect(rzxWin,SIGNAL(stateChanged(int)),this,SLOT(rzxStateChanged(int)));
 
 	initUserMenu((QWidget*)this);
-//#ifndef USETHREADS
-//	timer = new QTimer();
-//	connect(timer,SIGNAL(timeout()),this,SLOT(emulFrame()));
-//	timer->setInterval(20);
-//#endif
 	cmosTimer = new QTimer();
 	connect(cmosTimer,SIGNAL(timeout()),this,SLOT(cmosTick()));
 	cmosTimer->start(1000);
@@ -540,16 +552,10 @@ void MainWin::extSlot(int sig, int par) {
 
 void emuStart() {
 	emulFlags |= FL_WORK;
-//#ifndef USETHREADS
-//	mainWin->timer->start();
-//#endif
 }
 
 void emuStop() {
 	emulFlags &= ~FL_WORK;
-//#ifndef USETHREADS
-//	mainWin->timer->stop();
-//#endif
 }
 
 unsigned char toBCD(unsigned char val) {
@@ -674,7 +680,18 @@ void MainWin::paintEvent(QPaintEvent *ev) {
 }
 
 void MainWin::keyPressEvent(QKeyEvent *ev) {
-	if (ev->modifiers() & Qt::AltModifier) {
+	keyEntry kent;
+#ifdef ISDEBUG
+//	qDebug() << ev->nativeScanCode();
+#endif
+	if (pckAct->isChecked()) {
+		kent = getKeyEntry(ev->nativeScanCode());
+		keyPress(zx->keyb,kent.key1,kent.key2,kent.keyCode);
+		if (ev->key() == Qt::Key_F12) {
+			zxReset(zx,RES_DEFAULT);
+			rzxWin->stop();
+		}
+	} else if (ev->modifiers() & Qt::AltModifier) {
 		switch(ev->key()) {
 			case Qt::Key_0:
 				switch (zx->vid->vmode) {
@@ -689,13 +706,11 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				vidFlag &= ~VF_DOUBLE;
 				mainWin->updateWindow();
 				saveProfiles();
-				//saveConfig();
 				break;
 			case Qt::Key_2:
 				vidFlag |= VF_DOUBLE;
 				mainWin->updateWindow();
 				saveProfiles();
-				//saveConfig();
 				break;
 			case Qt::Key_3:
 				emulFlags ^= FL_FAST_RQ;
@@ -713,13 +728,13 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;
 			case Qt::Key_N:
 				vidFlag ^= VF_NOFLIC;
-				//saveConfig();
 				saveProfiles();
 				break;
 		}
 	} else {
-		keyEntry kent = getKeyEntry(ev->nativeScanCode());
-		keyPress(zx->keyb,kent.key1,kent.key2,kent.keyCode);
+		kent = getKeyEntry(ev->nativeScanCode());
+		if ((kent.key1 || kent.key2) || pckAct->isChecked())
+			keyPress(zx->keyb,kent.key1,kent.key2,kent.keyCode);
 		switch(ev->key()) {
 			case Qt::Key_Pause:
 				pauseFlags ^= PR_PAUSE;
@@ -804,7 +819,8 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 
 void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 	keyEntry kent = getKeyEntry(ev->nativeScanCode());
-	keyRelease(zx->keyb,kent.key1,kent.key2,kent.keyCode);
+	if (kent.key1 || kent.key2 || pckAct->isChecked())
+		keyRelease(zx->keyb,kent.key1,kent.key2,kent.keyCode);
 }
 
 void MainWin::mousePressEvent(QMouseEvent *ev){
@@ -1491,6 +1507,8 @@ void initUserMenu(QWidget* par) {
 	userMenu->addAction(QIcon(":/images/tape.png"),"Tape window",tapeWin,SLOT(show()));
 	userMenu->addAction(QIcon(":/images/video.png"),"RZX player",rzxWin,SLOT(show()));
 	userMenu->addSeparator();
+	pckAct = userMenu->addAction(QIcon(":/images/keyboard.png"),"PC keyboard");
+	pckAct->setCheckable(true);
 	userMenu->addAction(QIcon(":/images/other.png"),"Options",par,SLOT(doOptions()));
 }
 
