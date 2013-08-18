@@ -199,7 +199,7 @@
 #define	XKEY_RSHIFT	54
 #define	XKEY_SPACE	57
 #define	XKEY_CAPS	58
-//#define XKEY_RCTRL
+#define XKEY_RCTRL	XKEY_LCTRL
 #define	XKEY_RALT	312
 #define XKEY_LALT	56
 #define	XKEY_HOME	327
