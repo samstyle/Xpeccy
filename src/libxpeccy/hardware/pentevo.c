@@ -17,6 +17,20 @@ void evoSetVideoMode(ZXComp* comp) {
 	}
 }
 
+Z80EX_BYTE evoMRd(ZXComp* comp, Z80EX_WORD adr, int m1) {
+	if (m1 && (comp->bdi->fdc->type == FDC_93)) {
+		if (comp->dosen && (memGetBankPtr(comp->mem,adr)->type == MEM_RAM) && (comp->prt1 & 0x40)) {
+			comp->dosen = 0;
+			if (comp->prt0 & 0x10) comp->hw->mapMem(comp);
+		}
+		if (!comp->dosen && ((adr & 0xff00) == 0x3d00) && (comp->prt0 & 0x10)) {
+			comp->dosen = 1;
+			comp->hw->mapMem(comp);
+		}
+	}
+	return memRd(comp->mem,adr);
+}
+
 void evoSetBank(ZXComp* comp, int bank, memEntry me) {
 	unsigned char page = me.page ^ 0xff;
 	if (me.flag & 0x80) {
@@ -96,6 +110,7 @@ void evoOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 //	printf("evo out %.4X (%.4X),%.2X\n",ptype,port,val);
 #endif
 	switch (ptype) {
+/*
 		case 0x10:
 			ideOut(comp->ide,comp->evo.hiTrig ? 0x11 : 0x10,val,0);
 			comp->evo.hiTrig ^= 1;		// change hi-low trigger
@@ -119,6 +134,7 @@ void evoOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 			//printf("PentEvo: Nemo out %.2X, %.2X\n",ptype,val);
 #endif
 			break;
+*/
 		case 0x1f: if (bdiz) bdiOut(comp->bdi,FDC_COM,val); break;
 		case 0x3f: if (bdiz) bdiOut(comp->bdi,FDC_TRK,val); break;
 		case 0x5f: if (bdiz) bdiOut(comp->bdi,FDC_SEC,val); break;
@@ -207,8 +223,8 @@ void evoOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 			tsOut(comp->ts,ptype,val);
 			break;
 		default:
-			if (ideOut(comp->ide,port,val,0)) break;
-			if (gsOut(comp->gs,port,val) == GS_OK) break;
+//			if (ideOut(comp->ide,port,val,0)) break;
+//			if (gsOut(comp->gs,port,val) == GS_OK) break;
 #ifdef ISDEBUG
 			printf("PentEvo out %.4X (%.4X.%i),%.2X\n",port,ptype,bdiz,val);
 			comp->flag |= ZX_BREAK;
@@ -223,6 +239,7 @@ Z80EX_BYTE evoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 	if (comp->evo.evoBF & 1) bdiz = 1;
 	int ptype = evoGetPort(port,bdiz);
 	switch (ptype) {
+/*
 		case 0x10:
 			ideIn(comp->ide,comp->evo.hiTrig ? 0x10 : 0x11,&res,0);
 			comp->evo.hiTrig ^= 1;
@@ -246,6 +263,7 @@ Z80EX_BYTE evoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 			//comp->flag |= ZX_BREAK;
 #endif
 			break;
+*/
 		case 0x1f: res = bdiz ? bdiIn(comp->bdi,FDC_STATE) : joyInput(comp->joy); break;
 		case 0x3f: res = bdiz ? bdiIn(comp->bdi,FDC_TRK) : 0xff; break;
 		case 0x5f: res = bdiz ? bdiIn(comp->bdi,FDC_SEC) : 0xff; break;
@@ -306,8 +324,8 @@ Z80EX_BYTE evoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 		case 0xfbdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->xpos : 0xff; break;
 		case 0xffdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->ypos : 0xff; break;
 		default:
-			if (ideIn(comp->ide,port,&res,comp->dosen & 1)) break;
-			if (gsIn(comp->gs,port,&res) == GS_OK) break;
+//			if (ideIn(comp->ide,port,&res,comp->dosen & 1)) break;
+//			if (gsIn(comp->gs,port,&res) == GS_OK) break;
 #ifdef ISDEBUG
 			printf("Pentevo: in %.4X (%.4X.%i)\n",port,ptype,bdiz);
 			comp->flag |= ZX_BREAK;

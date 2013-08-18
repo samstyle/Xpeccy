@@ -13,26 +13,6 @@ int res4 = 0;	// save last res3 (vidSync on OUT/MWR process do res3-res4 ticks)
 int res5 = 0;	// ticks ated by slow mem?
 Z80EX_WORD pcreg;
 
-/*
- * ProfROM switch:
- * 	page 2,6,10,14
- * 	PC = E4B5 : ld l,(hl)
- * 	HL = 0110..0113
- * ProfROM table :
- *  adr | 0 1 2 3 <- current layer
- * -----+---------
- * 0110 | 0 1 2 3 <- result layers
- * 0111 | 3 3 3 2
- * 0112 | 2 2 0 1
- * 0113 | 1 0 1 0
- */
-
-unsigned char ZSLays[4][4] = {
-	{0,1,2,3},
-	{3,3,3,2},
-	{2,2,0,1},
-	{1,0,1,0}
-};
 
 // port decoding tables
 
@@ -67,15 +47,18 @@ int zxGetPort(ZXComp* comp, Z80EX_WORD port) {
 */
 
 Z80EX_BYTE memrd(CPUCONT Z80EX_WORD adr,int m1,void* ptr) {
-	Z80EX_BYTE res;
+//	Z80EX_BYTE res;
 	ZXComp* comp = (ZXComp*)ptr;
-	if ((comp->hw->type == HW_SCORP) && ((comp->mem->pt0->num & 3) == 2) && ((adr & 0xfff3) == 0x0100)) {
-		comp->prt2 = ZSLays[(adr & 0x000c) >> 2][comp->prt2 & 3];
-		comp->hw->mapMem(comp);
-	}
+//	if ((comp->hw->type == HW_SCORP) && ((comp->mem->pt0->num & 3) == 2) && ((adr & 0xfff3) == 0x0100)) {
+//		comp->prt2 = ZSLays[(adr & 0x000c) >> 2][comp->prt2 & 3];
+//		comp->hw->mapMem(comp);
+//	}
+	if (m1 && comp->rzxPlay) comp->rzxFetches--;
+	return comp->hw->mrd(comp,adr,m1);
+/*
 	if (m1 == 1) {
 		if (comp->rzxPlay) comp->rzxFetches--;
-		if ((comp->bdi->fdc->type == FDC_93) && (comp->prt0 & 0x10)) {
+		if (comp->bdi->fdc->type == FDC_93) {
 			if (comp->dosen == 1) {
 				if (memGetBankPtr(comp->mem,adr)->type == MEM_RAM) {
 					switch(comp->hw->type) {
@@ -89,7 +72,7 @@ Z80EX_BYTE memrd(CPUCONT Z80EX_WORD adr,int m1,void* ptr) {
 							comp->dosen = 0;
 							break;
 					}
-					comp->hw->mapMem(comp);
+					if (comp->prt0 & 0x10) comp->hw->mapMem(comp);
 				}
 			} else {
 				if (((adr & 0xff00) == 0x3d00) && (comp->prt0 & 0x10)) {
@@ -118,6 +101,7 @@ Z80EX_BYTE memrd(CPUCONT Z80EX_WORD adr,int m1,void* ptr) {
 //	}
 	res = memRd(comp->mem,adr);
 	return res;
+*/
 }
 
 void memwr(CPUCONT Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
@@ -177,10 +161,8 @@ Z80EX_BYTE iord(CPUCONT Z80EX_WORD port, void* ptr) {
 	}
 	bdiz = ((comp->dosen & 1) && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
 // request to external devices
-	if (comp->hw->type != HW_PENTEVO) {
-		if (ideIn(comp->ide,port,&res,comp->dosen & 1)) return res;
-		if (gsIn(comp->gs,port,&res) == GS_OK) return res;
-	}
+	if (ideIn(comp->ide,port,&res,comp->dosen & 1)) return res;
+	if (gsIn(comp->gs,port,&res) == GS_OK) return res;
 	res = comp->hw->in(comp,port,bdiz);
 	return res;
 }
@@ -190,10 +172,8 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	comp->tapCount = 0;
 	bdiz = ((comp->dosen & 1) && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
 // request to external devices
-	if (comp->hw->type != HW_PENTEVO) {
-		if (ideOut(comp->ide,port,val,comp->dosen & 1)) return;
-		if (gsOut(comp->gs,port,val) == GS_OK) return;
-	}
+	if (ideOut(comp->ide,port,val,comp->dosen & 1)) return;
+	if (gsOut(comp->gs,port,val) == GS_OK) return;
 	comp->hw->out(comp,port,val,bdiz);
 }
 
@@ -307,7 +287,7 @@ ZXComp* zxCreate() {
 	comp->ts = tsCreate(TS_NONE,SND_AY,SND_NONE);
 	comp->gs = gsCreate();
 	comp->sdrv = sdrvCreate(SDRV_NONE);
-// evo
+// vaseconf
 	comp->evo.evo2F = 0;
 	comp->evo.evo4F = 0;
 	comp->evo.evo6F = 0;
@@ -318,6 +298,8 @@ ZXComp* zxCreate() {
 	memcpy(comp->evo.blVer,blnm,16);
 	memcpy(comp->evo.bcVer,bcnm,16);
 	comp->cmos.mode = 0;
+//tsconf
+	comp->tsconf.pwr_up = 1;
 
 	comp->rzxSize = 0;
 	comp->rzxData = NULL;

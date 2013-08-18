@@ -14,6 +14,7 @@ extern "C" {
 #define IDE_NEMOA8	2
 #define IDE_SMUC	3
 #define IDE_ATM		4
+#define	IDE_NEMO_EVO	5	// with hi/low trigger
 
 // device select
 #define IDE_NONE	0
@@ -120,6 +121,7 @@ typedef struct {
 	ATADev* slave;
 	ATADev* curDev;
 	unsigned short bus;
+	int hiTrig;
 	struct {
 		unsigned char sys;
 		unsigned char fdd;

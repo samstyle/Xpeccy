@@ -158,6 +158,8 @@ void ataExec(ATADev* dev, unsigned char cm) {
 		switch (cm) {
 			case 0x00:			// NOP
 				break;
+			case 0x08:			// device reset
+				break;
 			case 0x20:			// read sectors (w/retry)
 			case 0x21:			// read sectors (w/o retry)
 				ataReadSector(dev);
@@ -528,6 +530,12 @@ ataAddr ideDecoder(IDE* ide, unsigned short port, int dosen) {
 			res.port = (port & 0xe0) >> 5;
 			if ((port & 0x1ff) == 0x10f) res.flags |= IDE_HIGH;
 			break;
+		case IDE_NEMO_EVO:
+			if ((port & 6) != 0) break;		// DOS is ignored
+			res.flags = IDE_CATCH | IDE_HDD;
+			res.port = (port & 0xe0) >> 5;
+			if ((port & 0xe1) == 0x01) res.flags |= IDE_HIGH;
+			break;
 		case IDE_NEMO:
 		case IDE_NEMOA8:
 			if (((port & 6) != 0) || dosen) break;
@@ -552,6 +560,18 @@ int ideIn(IDE* ide,unsigned short port,unsigned char* val,int dosen) {
 	ataAddr adr = ideDecoder(ide,port,dosen);
 	if (~adr.flags & IDE_CATCH) return 0;
 	if (adr.flags & IDE_HDD) {
+		if (ide->type == IDE_NEMO_EVO) {
+			if (adr.port == 0) {
+				if (adr.flags & IDE_HIGH) {
+					ide->hiTrig = 1;				// 11 : high, next 10 is low
+				} else {
+					ide->hiTrig ^= 1;				// switch trigger
+					if (ide->hiTrig) adr.flags |= IDE_HIGH;		// 10 : high byte
+				}
+			} else {
+				ide->hiTrig = 1;		// non-data ports : next byte is low
+			}
+		}
 		if (adr.flags & IDE_HIGH) {
 			*val = ((ide->bus & 0xff00) >> 8);
 		} else {
@@ -590,6 +610,18 @@ int ideOut(IDE* ide,unsigned short port,unsigned char val,int dosen) {
 	ataAddr adr = ideDecoder(ide,port,dosen);
 	if (~adr.flags & IDE_CATCH) return 0;
 	if (adr.flags & IDE_HDD) {
+		if (ide->type == IDE_NEMO_EVO) {
+			if (adr.port == 0) {
+				if (adr.flags & IDE_HIGH) {
+					ide->hiTrig = 0;	// 11 : high, next 10 is low
+				} else {
+					if (ide->hiTrig) adr.flags |= IDE_HIGH;	// 10:high byte
+					ide->hiTrig ^= 1;			// switch trigger
+				}
+			} else {
+				ide->hiTrig = 1;		// non-data ports : next 10 is high
+			}
+		}
 		if (adr.port == HDD_HEAD)
 			ide->curDev = (val & HDF_DRV) ? ide->slave : ide->master;	// write to head reg: select MASTER/SLAVE
 		if (adr.flags & IDE_HIGH) {

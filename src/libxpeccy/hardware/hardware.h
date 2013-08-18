@@ -32,47 +32,62 @@ struct HardWare {
 	void (*mapMem)(ZXComp*);
 	void (*out)(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
 	Z80EX_BYTE (*in)(ZXComp*,Z80EX_WORD,int);
+	Z80EX_BYTE (*mrd)(ZXComp*,Z80EX_WORD,int);
 };
 
 typedef struct HardWare HardWare;
 extern HardWare hwTab[];
+
 HardWare* findHardware(const char*);
+Z80EX_BYTE stdMRd(ZXComp*,Z80EX_WORD,int);
 
 // zx48
 void speMapMem(ZXComp*);
 void speOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
 Z80EX_BYTE speIn(ZXComp*,Z80EX_WORD,int);
+
 // pentagon
 void penMapMem(ZXComp*);
 void penOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
 Z80EX_BYTE penIn(ZXComp*,Z80EX_WORD,int);
+
 // p1024sl
 void p1mMapMem(ZXComp*);
 void p1mOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
 Z80EX_BYTE p1mIn(ZXComp*,Z80EX_WORD,int);
+
 // scorpion
 void scoMapMem(ZXComp*);
 void scoOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
 Z80EX_BYTE scoIn(ZXComp*,Z80EX_WORD,int);
+Z80EX_BYTE scoMRd(ZXComp*,Z80EX_WORD,int);
+
 // plus 2
 void pl2MapMem(ZXComp*);
 void pl2Out(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
 Z80EX_BYTE pl2In(ZXComp*,Z80EX_WORD,int);
+
 // plus 3
 // void pl3MapMem(ZXComp*);		// = pl2MapMem
 void pl3Out(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
 Z80EX_BYTE pl3In(ZXComp*,Z80EX_WORD,int);
+
 // atm 2
 void atm2MapMem(ZXComp*);
 void atm2Out(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
 Z80EX_BYTE atm2In(ZXComp*,Z80EX_WORD,int);
+//Z80EX_BYTE atm2MRd(ZXComp*,Z80EX_WORD,int);
+
 // pentevo
 void evoMapMem(ZXComp*);
 void evoOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
 Z80EX_BYTE evoIn(ZXComp*,Z80EX_WORD,int);
+Z80EX_BYTE evoMRd(ZXComp*,Z80EX_WORD,int);
+
 // TSLab conf
 void tslMapMem(ZXComp*);
 void tslOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
 Z80EX_BYTE tslIn(ZXComp*,Z80EX_WORD,int);
+Z80EX_BYTE tslMRd(ZXComp*,Z80EX_WORD,int);
 void tslUpdatePorts(ZXComp*);
 #endif

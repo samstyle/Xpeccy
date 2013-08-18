@@ -25,12 +25,24 @@ void tslMapMem(ZXComp* comp) {
 int tslXRes[4] = {256,320,320,360};
 int tslYRes[4] = {192,200,240,288};
 
+Z80EX_BYTE tslMRd(ZXComp* comp, Z80EX_WORD adr, int m1) {
+	if (m1 && (comp->bdi->fdc->type == FDC_93)) {
+		if (comp->dosen && (memGetBankPtr(comp->mem,adr)->type == MEM_RAM)) {
+			comp->dosen = 0;
+			if (p7FFD & 0x10) comp->hw->mapMem(comp);	// don't switch ROM0 to ROM2
+		}
+		if (!comp->dosen && ((adr & 0xff00) == 0x3d00) && (p7FFD & 0x10) && ((p21AF & 0x04) == 0x00)) {
+			comp->dosen = 1;
+			comp->hw->mapMem(comp);
+		}
+	}
+	return memRd(comp->mem,adr);
+}
+
 void tslUpdatePorts(ZXComp* comp) {
 	unsigned char val = comp->tsconf.p00af;
 	comp->vid->tsconf.xSize = tslXRes[(val & 0xc0) >> 6];
 	comp->vid->tsconf.ySize = tslYRes[(val & 0xc0) >> 6];
-//	comp->vid->tsconf.xPos = comp->vid->bord.h - ((comp->vid->tsconf.xSize - 256) >> 1);
-//	comp->vid->tsconf.yPos = comp->vid->bord.v - ((comp->vid->tsconf.ySize - 192) >> 1);
 	comp->vid->tsconf.xPos = ((comp->vid->full.h - comp->vid->sync.h - comp->vid->tsconf.xSize) >> 1) + comp->vid->sync.h;
 	comp->vid->tsconf.yPos = ((comp->vid->full.v - comp->vid->sync.v - comp->vid->tsconf.ySize) >> 1) + comp->vid->sync.v;
 	switch(val & 7) {
@@ -53,11 +65,10 @@ void tslUpdatePorts(ZXComp* comp) {
 	comp->vid->tsconf.T0Pal76 = (val & 0x30) << 2;
 	comp->vid->tsconf.T1Pal76 = (val & 0xc0);
 
-	comp->vid->tsconf.scrLine = comp->vid->tsconf.yOffset;
+//	comp->vid->tsconf.scrLine = comp->vid->tsconf.yOffset;
 }
 
 void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
-	if ((port & 0x0001) == 0x0000) port |= 0x00fe;		// make XXFE
 	if ((port & 0x80ff) == 0x00fd) port = 0x7ffd;		// ???
 	int cnt,cnt2,lcnt,sadr,dadr;
 	switch (port) {
@@ -65,8 +76,12 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 		case 0x01af: comp->tsconf.p01af = val; break;
 		case 0x02af: comp->tsconf.p02af = val; break;
 		case 0x03af: comp->tsconf.p03af = val; break;
-		case 0x04af: comp->tsconf.p04af = val; break;
-		case 0x05af: comp->tsconf.p05af = val; break;
+		case 0x04af: comp->tsconf.p04af = val;
+			comp->vid->tsconf.scrLine = ((comp->tsconf.p05af & 1) << 8) | (comp->tsconf.p04af);
+			break;
+		case 0x05af: comp->tsconf.p05af = val;
+			comp->vid->tsconf.scrLine = ((comp->tsconf.p05af & 1) << 8) | (comp->tsconf.p04af);
+			break;
 		case 0x06af: comp->vid->tsconf.tconfig = val; break;
 		case 0x07af: comp->tsconf.p07af = val; break;
 		case 0x0faf: comp->vid->nextbrd = val; break;
@@ -175,28 +190,6 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 		case 0x45af: comp->vid->tsconf.t1xh = val & 1; break;
 		case 0x46af: comp->vid->tsconf.t1yl = val; break;
 		case 0x47af: comp->vid->tsconf.t1yh = val & 1; break;
-		case 0x7ffd:
-			if (p7FFD & 0x20) break;
-			p7FFD = val;
-			memSetBank(comp->mem,MEM_BANK3,MEM_RAM,val & 7);		// TODO: highmem block mode
-			comp->vid->tsconf.vidPage = 5;
-			comp->vid->curscr = (val & 8) ? 1 : 0;
-			tslMapMem(comp);
-			break;
-		case 0xeff7:
-			pEFF7 = val;
-			break;
-		case 0xbff7:			// cmos.data
-			if (pEFF7 & 0x80) cmsWr(comp,val);
-			break;
-		case 0xdff7:			// cmos.adr
-			if (pEFF7 & 0x80) comp->cmos.adr = val;
-			break;
-		case 0xbffd:
-		case 0xbefd:
-		case 0xfffd:
-			tsOut(comp->ts,port | 0x0100,val);
-			break;
 		default:
 			switch (port & 0xff) {
 				case 0x1f: if (bdiz) bdiOut(comp->bdi,FDC_COM,val); break;
@@ -204,22 +197,73 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 				case 0x5f: if (bdiz) bdiOut(comp->bdi,FDC_SEC,val); break;
 				case 0x7f: if (bdiz) bdiOut(comp->bdi,FDC_DATA,val); break;
 				case 0xff: if (bdiz) bdiOut(comp->bdi,BDI_SYS,val); break;
+				case 0xf6:
 				case 0xfe:
 					comp->vid->brdcol = 0xf0 | (val & 7);
 					comp->vid->nextbrd = comp->vid->brdcol;
 					comp->beeplev = val & 0x10;
 					comp->tape->outsig = (val & 0x08) ? 1 : 0;
 					break;
-				case 0xf7:			// WAS IST DAS?
-					break;
 				case 0xfb: sdrvOut(comp->sdrv,0xfb,val); break;	// covox
+				case 0xf7:
+					if (~port & 0x1000) pEFF7 = val;
+					if ((~port & 0x4000) && ((pEFF7 & 0x80) || comp->dosen)) cmsWr(comp,val);	// BFF7 : cmos data
+					if (~port & 0x2000) comp->cmos.adr = val;				// DFF7 : cmos adr
+					break;
+				case 0xfd:
+					if (((port & 0x8000) == 0x0000) && (~p7FFD & 0x20)) {			// 7ffd
+						p7FFD = val;
+						cnt = (val & 7) | ((val & 0xc0) >> 3);		// page (512K)
+						if (p21AF & 0x80) {				// 1x : !a13
+							if (~port & 0x2000) cnt &= 7;
+						} else if (p21AF & 0x40) {			// 01 : 128
+							cnt &= 7;
+						}
+						memSetBank(comp->mem,MEM_BANK3,MEM_RAM,cnt);
+						comp->vid->tsconf.vidPage = 5;
+						comp->vid->curscr = (val & 8) ? 1 : 0;
+						tslMapMem(comp);
+					}
+					if ((port & 0xc000) == 0xc000) tsOut(comp->ts,0xfffd,val);	// fffd
+					if ((port & 0xc000) == 0x8000) tsOut(comp->ts,0xbffd,val);	// bffd
+					break;
+				case 0x57:
+					sdcWrite(comp->sdc,val);
+					break;
+				case 0x77:
+					comp->sdc->flag &= ~0x03;
+					comp->sdc->flag |= (val & 3);
+					break;
+/*
+				case 0x10:
+					ideOut(comp->ide,comp->evo.hiTrig ? 0x11 : 0x10,val,0);
+					comp->evo.hiTrig ^= 1;		// change hi-low trigger
+					break;
+				case 0x11:
+					ideOut(comp->ide,0x11,val,0);
+					comp->evo.hiTrig = 0;		// next byte is low
+					break;
+				case 0x30:
+				case 0x50:
+				case 0x70:
+				case 0x90:
+				case 0xB0:
+				case 0xD0:
+				case 0xF0:
+				case 0xC8:
+					ideOut(comp->ide,port & 0xf0,val,0);
+					comp->evo.hiTrig = 1;		// next byte is hi (low for in)
+					break;
+*/
 				default:
-					if ((port & 0x0001) == 0x0000) break;
-					printf("TSLab : out %.4X,%.2X (%i)\n",port,val,bdiz);
+//					if (ideOut(comp->ide,port,val,0)) break;
+//					if (gsOut(comp->gs,port,val) == GS_OK) break;
 #ifdef ISDEBUG
+					printf("TSLab : out %.4X,%.2X (%i)\n",port,val,bdiz);
 					comp->flag |= ZX_BREAK;
 //					assert(0);
 #endif
+					break;
 			}
 			break;
 	}
@@ -228,18 +272,16 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 	Z80EX_BYTE res = 0xff;
 //	printf("TSLab : in %.4X (%i)\n",port,bdiz);
-	if ((port & 0x0001) == 0x0000) port |= 0x00fe;
 	switch(port) {
 		case 0x00af:
-			res = 0x00;		// b6: PWR_UP
+			res = comp->tsconf.pwr_up ? 0x40 : 0x00;		// b6: PWR_UP (1st run)
+			comp->tsconf.pwr_up = 0;
 			break;
 		case 0x12af: res = comp->tsconf.Page2; break;
 		case 0x13af: res = comp->tsconf.Page3; break;
 		case 0x27af:
-			res = 0;		// b7: DMA status
+			res = 0;				// b7: DMA status
 			break;
-		case 0xbff7: if (pEFF7 & 0x80) res = cmsRd(comp); break;
-		case 0xfffd: res = tsIn(comp->ts,port); break;
 		case 0xfadf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->buttons : 0xff; break;
 		case 0xfbdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->xpos : 0xff; break;
 		case 0xffdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->ypos : 0xff; break;
@@ -260,17 +302,53 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 				case 0xff:
 					res = bdiz ? bdiIn(comp->bdi,BDI_SYS) : 0xff;
 					break;
+				case 0xf6:
 				case 0xfe:
 					res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00);
 					break;
-				case 0xf6: res = 0xff; break;			// WAS IST DAS?
-				case 0xf7: res = 0xff; break;			// WAS IST DAS? 1E | 1F
+				case 0xf7:
+					if ((~port & 0x4000) && ((pEFF7 & 0x80) || comp->dosen)) res = cmsRd(comp);	// BFF7
+					break;
+				case 0xfd:
+					if ((port & 0xc000) == 0xc000) res = tsIn(comp->ts, 0xfffd);	// fffd
+					break;
+				case 0x57:
+					res = sdcRead(comp->sdc);
+					break;
+				case 0x77:
+					res = 0x00;					// 0x02 : rd only
+					if (comp->sdc->image != NULL) res |= 0x01;	// inserted
+					break;
+/*
+				case 0x10:
+					ideIn(comp->ide,comp->evo.hiTrig ? 0x10 : 0x11,&res,0);
+					comp->evo.hiTrig ^= 1;
+					break;
+				case 0x11:
+					ideIn(comp->ide,0x11,&res,0);
+					comp->evo.hiTrig = 1;		// next byte is low
+					break;
+				case 0x30:
+				case 0x50:
+				case 0x70:
+				case 0x90:
+				case 0xB0:
+				case 0xD0:
+				case 0xF0:
+				case 0xC8:
+					ideIn(comp->ide,port & 0xf0,&res,0);
+					comp->evo.hiTrig = 1;		// next byte is low
+					break;
+*/
 				default:
-					printf("TSLab : in %.4X (%i)\n",port,bdiz);
+//					if (ideIn(comp->ide,port,&res,comp->dosen & 1)) break;
+//					if (gsIn(comp->gs,port,&res) == GS_OK) break;
 #ifdef ISDEBUG
+					printf("TSLab : in %.4X (%i)\n",port,bdiz);
 					comp->flag |= ZX_BREAK;
 //					assert(0);
 #endif
+					break;
 			}
 			break;
 	}

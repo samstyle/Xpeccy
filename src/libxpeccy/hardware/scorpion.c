@@ -1,5 +1,26 @@
 #include "../spectrum.h"
 
+/*
+ProfROM switch:
+page 2,6,10,14
+PC = E4B5 : ld l,(hl)
+HL = 0110..0113
+ProfROM table :
+ adr | 0 1 2 3 <- current layer
+-----+---------
+0110 | 0 1 2 3 <- result layers
+0111 | 3 3 3 2
+0112 | 2 2 0 1
+0113 | 1 0 1 0
+*/
+
+unsigned char ZSLays[4][4] = {
+	{0,1,2,3},
+	{3,3,3,2},
+	{2,2,0,1},
+	{1,0,1,0}
+};
+
 void scoMapMem(ZXComp* comp) {
 	int rp;
 	if (comp->prt1 & 0x01) {
@@ -10,6 +31,14 @@ void scoMapMem(ZXComp* comp) {
 		memSetBank(comp->mem,MEM_BANK0,MEM_ROM,rp);
 	}
 	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,(comp->prt0 & 7) | ((comp->prt1 & 0x10) >> 1) | ((comp->prt1 & 0xc0) >> 2));
+}
+
+Z80EX_BYTE scoMRd(ZXComp* comp, Z80EX_WORD adr, int m1) {
+	if (((comp->mem->pt0->num & 3) == 2) && ((adr & 0xfff3) == 0x0100)) {
+		comp->prt2 = ZSLays[(adr & 0x000c) >> 2][comp->prt2 & 3];
+		comp->hw->mapMem(comp);
+	}
+	return stdMRd(comp,adr,m1);
 }
 
 int scoGetPort(Z80EX_WORD port, int bdiz) {

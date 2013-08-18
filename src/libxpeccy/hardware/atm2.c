@@ -13,6 +13,7 @@ void atmSetBank(ZXComp* comp, int bank, memEntry me) {
 }
 
 void atm2MapMem(ZXComp* comp) {
+	if (~comp->prt1 & 2) comp->dosen = 1;	// CPM
 	if (comp->prt1 & 1) {			// pen = 0: last rom page in every bank && dosen on
 		int adr = (comp->prt0 & 0x10) ? 4 : 0;
 		atmSetBank(comp,MEM_BANK0,comp->memMap[adr]);
@@ -27,6 +28,22 @@ void atm2MapMem(ZXComp* comp) {
 		memSetBank(comp->mem,MEM_BANK3,MEM_ROM,0xff);
 	}
 }
+
+/*
+Z80EX_BYTE atm2MRd(ZXComp* comp, Z80EX_WORD adr, int m1) {
+	if (m1 && (comp->bdi->fdc->type == FDC_93)) {
+		if (comp->dosen && (memGetBankPtr(comp->mem,adr)->type == MEM_RAM) && (comp->prt1 & 2)) {
+			comp->dosen = 0;
+			comp->hw->mapMem(comp);
+		}
+		if (!comp->dosen && ((adr & 0xff00) == 0x3d00) && (comp->prt0 & 0x10)) {
+			comp->dosen = 1;
+			comp->hw->mapMem(comp);
+		}
+	}
+	return memRd(comp->mem,adr);
+}
+*/
 
 int atm2GetPort(Z80EX_WORD port,int bdiz) {
 	if ((port & 0x0007) == 0x0006) return 0xfe;
