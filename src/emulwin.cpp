@@ -911,7 +911,12 @@ void doSDLEvents() {
 		switch (ev.type) {
 			// BAD NEWS, EVERYONE. SDL 1.2 Hasn't drop event, it appears in SDL 2.0
 			case SDL_KEYDOWN:
-				if (ev.key.keysym.mod & KMOD_ALT) {
+				if (pckAct->isChecked()) {
+					kent = getKeyEntry(ev.key.keysym.sym);
+					keyPress(zx->keyb,kent.key1,kent.key2,kent.keyCode);
+					if (ev.key.keysym.sym == SDLK_F12)
+						zxReset(zx,RES_DEFAULT);
+				} else if (ev.key.keysym.mod & KMOD_ALT) {
 					switch(ev.key.keysym.sym) {
 						case SDLK_0:
 							switch (zx->vid->vmode) {
@@ -963,7 +968,8 @@ void doSDLEvents() {
 					}
 				} else {
 					kent = getKeyEntry(ev.key.keysym.sym);
-					keyPress(zx->keyb,kent.key1,kent.key2,kent.keyCode);
+					if (kent.key1 || kent.key2 || pckAct->isChecked())
+						keyPress(zx->keyb,kent.key1,kent.key2,kent.keyCode);
 					switch (ev.key.keysym.sym) {
 						case SDLK_PAUSE:
 							pauseFlags ^= PR_PAUSE;
@@ -1043,7 +1049,8 @@ void doSDLEvents() {
 				break;
 			case SDL_KEYUP:
 				kent = getKeyEntry(ev.key.keysym.sym);
-				keyRelease(zx->keyb,kent.key1,kent.key2,kent.keyCode);
+				if (kent.key1 || kent.key2 || pckAct->isChecked())
+					keyRelease(zx->keyb,kent.key1,kent.key2,kent.keyCode);
 				break;
 			case SDL_MOUSEBUTTONDOWN:
 				switch (ev.button.button) {
