@@ -615,17 +615,25 @@ int ideOut(IDE* ide,unsigned short port,unsigned char val,int dosen) {
 		if (ide->type == IDE_NEMO_EVO) {
 			if (adr.port == 0) {
 				if (adr.flags & IDE_HIGH) {
-					ide->hiTrig = 0;		// 11 : high, next 10 is low
+					ide->bus &= 0xff00;
+					ide->bus |= val;
+					ide->hiTrig = 2;		// 11 : high, next 10 is low
 				} else {
-					if (ide->hiTrig) {		// 10:high byte
+					if (ide->hiTrig == 0) {		// 10 : low
+						ide->bus &= 0xff00;
+						ide->bus |= val;
+						ide->hiTrig = 1;
+					} else if (ide->hiTrig == 1) {	// 10 : high + wr
 						ide->bus &= 0x00ff;
 						ide->bus |= (val << 8);
 						ataOut(ide->curDev,0,ide->bus);
-					} else {			// 10:low
+						ide->hiTrig = 0;
+					} else if (ide->hiTrig == 2) {	// 10 : low + wr (after 11)
 						ide->bus &= 0xff00;
 						ide->bus |= val;
+						ataOut(ide->curDev,0,ide->bus);
+						ide->hiTrig = 0;
 					}
-					ide->hiTrig ^= 1;			// switch trigger
 				}
 			} else {
 				ide->hiTrig = 0;		// non-data ports : next 10 is low
