@@ -476,7 +476,7 @@ void vidTSSprites(Video* vid) {
 				}
 			}
 		}
-		if (mptr[sadr + 1] & 0x40) break;		// LEAP
+		if (mptr[1] & 0x40) break;		// LEAP
 		sadr += 6;
 	}
 	sadr += 6;
