@@ -10,16 +10,19 @@
 
 void tslMapMem(ZXComp* comp) {
 // bank0 maping taken from Unreal(TSConf)
-	if (p21AF & 8)
+	if (comp->tsconf.vdos) {
+		memSetBank(comp->mem,MEM_BANK0,MEM_RAM,0xff);		// vdos on : ramFF in bank0
+	} else if (p21AF & 8) {
 		if (p21AF & 4)
 			memSetBank(comp->mem,MEM_BANK0,MEM_RAM,comp->tsconf.Page0);
 		else
 			memSetBank(comp->mem,MEM_BANK0,MEM_RAM, (comp->tsconf.Page0 & 0xfc) | ((p7FFD & 0x10) ? 1 : 0) | (comp->dosen ? 0 : 2));
-	else
+	} else {
 		if (p21AF & 4)
 			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,comp->tsconf.Page0);
 		else
 			memSetBank(comp->mem,MEM_BANK0,MEM_ROM, (comp->tsconf.Page0 & 0xfc) | ((p7FFD & 0x10) ? 1 : 0) | (comp->dosen ? 0 : 2));
+	}
 }
 
 int tslXRes[4] = {256,320,320,360};
@@ -27,7 +30,7 @@ int tslYRes[4] = {192,200,240,288};
 
 Z80EX_BYTE tslMRd(ZXComp* comp, Z80EX_WORD adr, int m1) {
 	if (m1 && (comp->bdi->fdc->type == FDC_93)) {
-		if (comp->dosen && (memGetBankPtr(comp->mem,adr)->type == MEM_RAM)) {
+		if (comp->dosen && (memGetBankPtr(comp->mem,adr)->type == MEM_RAM) && (!comp->tsconf.vdos)) {
 			comp->dosen = 0;
 			if (p7FFD & 0x10) comp->hw->mapMem(comp);	// don't switch ROM0 to ROM2
 		}
@@ -69,7 +72,7 @@ void tslUpdatePorts(ZXComp* comp) {
 }
 
 void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
-	if ((port & 0x80ff) == 0x00fd) port = 0x7ffd;		// ???
+//	if ((port & 0x80ff) == 0x00fd) port = 0x7ffd;		// ???
 	int cnt,cnt2,lcnt,sadr,dadr;
 	switch (port) {
 		case 0x00af: comp->tsconf.p00af = val; break;
@@ -192,11 +195,34 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 		case 0x47af: comp->vid->tsconf.t1yh = val & 1; break;
 		default:
 			switch (port & 0xff) {
-				case 0x1f: if (bdiz) bdiOut(comp->bdi,FDC_COM,val); break;
-				case 0x3f: if (bdiz) bdiOut(comp->bdi,FDC_TRK,val); break;
-				case 0x5f: if (bdiz) bdiOut(comp->bdi,FDC_SEC,val); break;
-				case 0x7f: if (bdiz) bdiOut(comp->bdi,FDC_DATA,val); break;
-				case 0xff: if (bdiz) bdiOut(comp->bdi,BDI_SYS,val); break;
+				case 0x1f:
+				case 0x3f:
+				case 0x5f:
+				case 0x7f:
+					if (!comp->dosen) break;
+					if (comp->tsconf.vdos) {
+						comp->tsconf.vdos = 0;
+						tslMapMem(comp);
+					} else {
+						if (comp->tsconf.FDDVirt & (1 << (val & 3))) {
+							comp->tsconf.vdos = 1;
+							tslMapMem(comp);
+						} else {
+							if ((port & 0xff) == 0x1f) bdiOut(comp->bdi,FDC_COM,val);
+							if ((port & 0xff) == 0x3f) bdiOut(comp->bdi,FDC_TRK,val);
+							if ((port & 0xff) == 0x5f) bdiOut(comp->bdi,FDC_SEC,val);
+							if ((port & 0xff) == 0x7f) bdiOut(comp->bdi,FDC_DATA,val);
+						}
+					}
+					break;
+				case 0xff:
+					if (!comp->dosen) break;
+					bdiOut(comp->bdi,BDI_SYS,val);
+					if (comp->tsconf.FDDVirt & (1 << (val & 3))) {
+						comp->tsconf.vdos = 1;
+						tslMapMem(comp);
+					}
+					break;
 				case 0xf6:
 				case 0xfe:
 					comp->vid->brdcol = 0xf0 | (val & 7);
@@ -287,6 +313,7 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 		case 0xffdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->ypos : 0xff; break;
 		default:
 			switch (port & 0xff) {
+/*
 				case 0x1f:
 					res = bdiz ? bdiIn(comp->bdi,FDC_STATE) : 0xe0;
 					break;
@@ -299,8 +326,28 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 				case 0x7f:
 					res = bdiz ? bdiIn(comp->bdi,FDC_DATA) : 0xff;
 					break;
+*/
+				case 0x1f:
+				case 0x3f:
+				case 0x5f:
+				case 0x7f:
+					if (comp->dosen) {
+						if (comp->tsconf.vdos) {
+							comp->tsconf.vdos = 0;
+							tslMapMem(comp);
+						} else {
+							if ((port & 0xff) == 0x1f) res = bdiIn(comp->bdi,FDC_COM);
+							if ((port & 0xff) == 0x3f) res = bdiIn(comp->bdi,FDC_TRK);
+							if ((port & 0xff) == 0x5f) res = bdiIn(comp->bdi,FDC_SEC);
+							if ((port & 0xff) == 0x7f) res = bdiIn(comp->bdi,FDC_DATA);
+						}
+					} else {
+						if ((port & 0xff) == 0x1f) res = 0x00;		// kempston joystick
+					}
+					break;
 				case 0xff:
-					res = bdiz ? bdiIn(comp->bdi,BDI_SYS) : 0xff;
+					if (!comp->dosen) break;
+					if (!comp->tsconf.vdos) res = bdiIn(comp->bdi,BDI_SYS);
 					break;
 				case 0xf6:
 				case 0xfe:

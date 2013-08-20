@@ -300,6 +300,7 @@ ZXComp* zxCreate() {
 	comp->cmos.mode = 0;
 //tsconf
 	comp->tsconf.pwr_up = 1;
+	comp->tsconf.vdos = 0;
 
 	comp->rzxSize = 0;
 	comp->rzxData = NULL;

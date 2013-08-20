@@ -118,7 +118,8 @@ struct ZXComp {
 		unsigned char p04af;
 		unsigned char p05af;
 		unsigned char p07af;
-		unsigned char pwr_up;
+		unsigned char pwr_up;		// 1 on 1st run, 0 after reading 00AF
+		unsigned char vdos;
 	} tsconf;
 	CMOS cmos;
 	unsigned char dosen;		// active trdos (dosen and b4,prt0 sets rompart)
