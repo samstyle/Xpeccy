@@ -28,6 +28,7 @@
 #define	SDC_CHECK_CRC	(1<<3)
 #define	SDC_CONT	(1<<4)		// multiple block op
 #define	SDC_LOCK	(1<<5)		// write protect
+#define SDC_BUSY	(1<<6)
 // capacity
 #define	SDC_32M		32
 #define	SDC_64M		64

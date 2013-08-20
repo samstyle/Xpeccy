@@ -181,7 +181,15 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 			comp->dma.num = val;
 			break;
 		case 0x29af:
-			comp->tsconf.FDDVirt = val;
+			// comp->tsconf.FDDVirt = val;
+			comp->bdi->fdc->flop[0]->flag &= ~FLP_VIRT;
+			comp->bdi->fdc->flop[1]->flag &= ~FLP_VIRT;
+			comp->bdi->fdc->flop[2]->flag &= ~FLP_VIRT;
+			comp->bdi->fdc->flop[3]->flag &= ~FLP_VIRT;
+			if (val & 0x01) comp->bdi->fdc->flop[0]->flag |= FLP_VIRT;
+			if (val & 0x02) comp->bdi->fdc->flop[1]->flag |= FLP_VIRT;
+			if (val & 0x04) comp->bdi->fdc->flop[2]->flag |= FLP_VIRT;
+			if (val & 0x08) comp->bdi->fdc->flop[3]->flag |= FLP_VIRT;
 			break;
 		case 0x2aaf:
 			break;
@@ -204,7 +212,7 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 						comp->tsconf.vdos = 0;
 						tslMapMem(comp);
 					} else {
-						if (comp->tsconf.FDDVirt & (1 << (val & 3))) {
+						if (comp->bdi->fdc->fptr->flag & FLP_VIRT) {
 							comp->tsconf.vdos = 1;
 							tslMapMem(comp);
 						} else {
@@ -218,7 +226,7 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 				case 0xff:
 					if (!comp->dosen) break;
 					bdiOut(comp->bdi,BDI_SYS,val);
-					if (comp->tsconf.FDDVirt & (1 << (val & 3))) {
+					if (comp->bdi->fdc->fptr->flag & FLP_VIRT) {
 						comp->tsconf.vdos = 1;
 						tslMapMem(comp);
 					}
@@ -336,10 +344,15 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 							comp->tsconf.vdos = 0;
 							tslMapMem(comp);
 						} else {
-							if ((port & 0xff) == 0x1f) res = bdiIn(comp->bdi,FDC_COM);
-							if ((port & 0xff) == 0x3f) res = bdiIn(comp->bdi,FDC_TRK);
-							if ((port & 0xff) == 0x5f) res = bdiIn(comp->bdi,FDC_SEC);
-							if ((port & 0xff) == 0x7f) res = bdiIn(comp->bdi,FDC_DATA);
+							if (comp->bdi->fdc->fptr->flag & FLP_VIRT) {
+								comp->tsconf.vdos = 1;
+								tslMapMem(comp);
+							} else {
+								if ((port & 0xff) == 0x1f) res = bdiIn(comp->bdi,FDC_COM);
+								if ((port & 0xff) == 0x3f) res = bdiIn(comp->bdi,FDC_TRK);
+								if ((port & 0xff) == 0x5f) res = bdiIn(comp->bdi,FDC_SEC);
+								if ((port & 0xff) == 0x7f) res = bdiIn(comp->bdi,FDC_DATA);
+							}
 						}
 					} else {
 						if ((port & 0xff) == 0x1f) res = 0x00;		// kempston joystick
@@ -347,7 +360,12 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 					break;
 				case 0xff:
 					if (!comp->dosen) break;
-					if (!comp->tsconf.vdos) res = bdiIn(comp->bdi,BDI_SYS);
+					if (comp->bdi->fdc->fptr->flag & FLP_VIRT) {
+						comp->tsconf.vdos = 1;
+						tslMapMem(comp);
+					} else {
+						res = bdiIn(comp->bdi,BDI_SYS);
+					}
 					break;
 				case 0xf6:
 				case 0xfe:
@@ -365,6 +383,7 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 				case 0x77:
 					res = 0x00;					// 0x02 : rd only
 					if (comp->sdc->image != NULL) res |= 0x01;	// inserted
+					if (comp->sdc->flag & SDC_LOCK) res |= 0x02;
 					break;
 /*
 				case 0x10:

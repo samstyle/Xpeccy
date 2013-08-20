@@ -31,7 +31,7 @@
 #define	ACMD41		0x29	// +
 #define	CMD42		0x2A	// locks a block
 #define	CMD55		0x37	// + ACMD prefix
-#define	CMD58		0x3A	// reads the OCR register
+#define	CMD58		0x3A	// + reads the OCR register
 #define	CMD59		0x3B	// + turn CRC
 
 SDCard* sdcCreate() {
@@ -83,17 +83,18 @@ void sdcSetCapacity(SDCard* sdc, int cpc) {
 void sdcRdSector(SDCard* sdc) {
 //	printf("SDC read sector %i\n",sdc->addr);
 	if ((sdc->addr < sdc->maxlba) && sdc->file) {
-		fseek(sdc->file,sdc->addr * 512,SEEK_SET);
-		fread(&sdc->buf.data[1],512,1,sdc->file);
+		fseek(sdc->file,sdc->addr << 9,SEEK_SET);
+		fread(sdc->buf.data + 1, 512, 1, sdc->file);
 	} else {
 		memset((void*)&sdc->buf.data[1],512,0xff);
 	}
 }
 
 void sdcWrSector(SDCard* sdc) {
+//	printf("SDC write sector %i\n",sdc->addr);
 	if ((sdc->addr < sdc->maxlba) && sdc->file) {
-		fseek(sdc->file,sdc->addr * 512,SEEK_SET);
-		fwrite(&sdc->buf.data[1],512,1,sdc->file);
+		fseek(sdc->file,sdc->addr << 9,SEEK_SET);
+		fwrite(sdc->buf.data + 1,512,1,sdc->file);
 	}
 }
 
@@ -102,9 +103,9 @@ void sdcWrSector(SDCard* sdc) {
 unsigned char sdcRead(SDCard* sdc) {
 	if (!sdc->image || ((sdc->flag & 3) != SDC_ON)) return 0xff;	// no image or OFF or !CS
 	unsigned char res = 0xff;
-	if (sdc->respCnt > 0) {			// if have response
-//		printf("resp\n");
+	if (sdc->respCnt > 0) {				// if have response
 		res = sdc->resp[sdc->respPos];
+//		printf("resp %.2X\n",res);
 		sdc->respPos++;
 		sdc->respCnt--;
 	} else {
@@ -118,7 +119,7 @@ unsigned char sdcRead(SDCard* sdc) {
 					sdc->buf.pos = 0;
 				}
 				res = sdc->buf.data[sdc->buf.pos];
-//				printf("buf.%.2X\n",res);
+//				printf("buf %X = %.2X\n",sdc->buf.pos,res);
 				sdc->buf.pos++;
 				if (sdc->buf.pos > 514) {		// 1token.512b.2crc = 0..514 = 515 bytes
 					sdc->buf.pos = -1;
@@ -129,7 +130,6 @@ unsigned char sdcRead(SDCard* sdc) {
 						sdc->state = SDC_FREE;
 					}
 				}
-
 				break;
 		}
 	}
@@ -148,9 +148,11 @@ unsigned int sdcGetArg(SDCard* sdc, unsigned int mask) {
 }
 
 void sdcExec(SDCard* sdc) {
+//	printf("SD exec %.2X\n",sdc->arg[0]);
 	if (sdc->state != SDC_FREE) {
 		if (sdc->arg[0] == CMD12) {
-
+			sdcR1(sdc,0);		// ok
+			sdc->mode = SDC_FREE;
 		}
 	}
 	if ((sdc->arg[0] & 0x40) == 0x40) {
@@ -162,7 +164,7 @@ void sdcExec(SDCard* sdc) {
 					sdcR1(sdc,0);
 					break;
 				default:
-					printf("undef ACMD%.2i\n",sdc->arg[0] & 0x3f);
+					printf("undef ACMD %.2X\n",sdc->arg[0] & 0x3f);
 					assert(0);
 					break;
 			}
@@ -240,7 +242,7 @@ void sdcExec(SDCard* sdc) {
 					sdcR1(sdc,0);
 					break;
 				default:
-					printf("undef CMD%.2i\n",sdc->arg[0] & 0x3f);
+					printf("undef CMD %.2X\n",sdc->arg[0] & 0x3f);
 					assert(0);
 					break;
 			}
@@ -254,20 +256,26 @@ void sdcWrite(SDCard* sdc, unsigned char val) {
 	if (!sdc->image || ((sdc->flag & 3) != SDC_ON)) return;
 //	printf("SD out %.2X\n",val);
 	if (sdc->state == SDC_WRITE) {
-		sdc->buf.data[sdc->buf.pos] = val;
-		sdc->buf.pos++;
-		if (sdc->buf.pos > 514) {	// 0..514 = 515 bytes = {1token,512data,2crc}
-			if (sdc->flag & SDC_LOCK) {
-				sdcR1(sdc,0x1d);	// xxx01101 - data rejected due write error
-				sdc->state = SDC_FREE;
-			} else {
-				sdcR1(sdc,0x05);	// xxx00101 - data accepted
-				sdcWrSector(sdc);
-				if (sdc->flag & SDC_CONT) {
-					sdc->buf.pos = 0;
-					sdc->addr++;
-				} else {
+		if ((sdc->arg[0] = CMD25) && (sdc->buf.pos == 0) && (val == 0xfd)) {		// stop token for com25
+			sdc->state = SDC_FREE;
+//			printf("CMD25 BREAK (%i)\n",sdc->argCnt);
+		} else {
+			sdc->buf.data[sdc->buf.pos] = val;
+			sdc->buf.pos++;
+			if (sdc->buf.pos > 514) {	// 0..514 = 515 bytes = {1token,512data,2crc}
+				if (sdc->flag & SDC_LOCK) {
+					sdcR1(sdc,0x1d);	// xxx01101 - data rejected due write error
 					sdc->state = SDC_FREE;
+				} else {
+					sdcR1(sdc,0x05);	// xxx00101 - data accepted
+					sdcWrSector(sdc);
+					if (sdc->flag & SDC_CONT) {
+						sdc->flag |= SDC_BUSY;
+						sdc->buf.pos = 0;
+						sdc->addr++;
+					} else {
+						sdc->state = SDC_FREE;
+					}
 				}
 			}
 		}

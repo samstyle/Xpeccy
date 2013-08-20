@@ -106,7 +106,7 @@ struct ZXComp {
 	struct {
 		int flag;
 		unsigned short tsMapAdr;	// adr for altera mapping
-		unsigned char FDDVirt;
+//		unsigned char FDDVirt;
 		unsigned char Page0;
 		unsigned char Page1;
 		unsigned char Page2;

@@ -30,6 +30,7 @@ extern "C" {
 #define	FLP_HEAD	(1<<6)
 #define	FLP_CHANGED	(1<<7)
 #define	FLP_SIDE	(1<<8)
+#define	FLP_VIRT	(1<<9)
 
 typedef struct {
 	unsigned char cyl;
