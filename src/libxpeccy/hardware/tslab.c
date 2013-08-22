@@ -30,7 +30,7 @@ int tslYRes[4] = {192,200,240,288};
 
 Z80EX_BYTE tslMRd(ZXComp* comp, Z80EX_WORD adr, int m1) {
 	if (m1 && (comp->bdi->fdc->type == FDC_93)) {
-		if (comp->dosen && (memGetBankPtr(comp->mem,adr)->type == MEM_RAM) && (!comp->tsconf.vdos)) {
+		if (comp->dosen && (adr > 0x4000) && (!comp->tsconf.vdos)) {
 			comp->dosen = 0;
 			if (p7FFD & 0x10) comp->hw->mapMem(comp);	// don't switch ROM0 to ROM2
 		}
@@ -225,10 +225,15 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 					break;
 				case 0xff:
 					if (!comp->dosen) break;
-					bdiOut(comp->bdi,BDI_SYS,val);
-					if (comp->bdi->fdc->fptr->flag & FLP_VIRT) {
+					if ((comp->bdi->fdc->fptr->flag & FLP_VIRT)) {
 						comp->tsconf.vdos = 1;
 						tslMapMem(comp);
+						comp->bdi->fdc->fptr = comp->bdi->fdc->flop[val & 3];	// out VGSys[1:0]
+						if (val & 0x10) comp->flag |= ZX_BREAK;
+					} else if (comp->tsconf.vdos) {
+						comp->bdi->fdc->fptr = comp->bdi->fdc->flop[val & 3];	// out VGSys[1:0]
+					} else {
+						bdiOut(comp->bdi,BDI_SYS,val);
 					}
 					break;
 				case 0xf6:
