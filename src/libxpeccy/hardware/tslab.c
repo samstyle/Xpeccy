@@ -229,7 +229,7 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 						comp->tsconf.vdos = 1;
 						tslMapMem(comp);
 						comp->bdi->fdc->fptr = comp->bdi->fdc->flop[val & 3];	// out VGSys[1:0]
-						if (val & 0x10) comp->flag |= ZX_BREAK;
+//						if (val & 0x10) comp->flag |= ZX_BREAK;
 					} else if (comp->tsconf.vdos) {
 						comp->bdi->fdc->fptr = comp->bdi->fdc->flop[val & 3];	// out VGSys[1:0]
 					} else {
