@@ -42,14 +42,10 @@ void memDestroy(Memory* mem) {
 }
 
 MemPage* memGetBankPtr(Memory* mem, unsigned short adr) {
-	MemPage* ptr;
-	switch (adr & 0xc000) {
-		case 0x0000: ptr = mem->pt0; break;
-		case 0x4000: ptr = mem->pt1; break;
-		case 0x8000: ptr = mem->pt2; break;
-		default: ptr = mem->pt3; break;
-	}
-	return ptr;
+	if (adr < 0x4000) return mem->pt0;
+	if (adr < 0x8000) return mem->pt1;
+	if (adr < 0xc000) return mem->pt2;
+	return mem->pt3;
 }
 
 unsigned char memRd(Memory* mem, unsigned short adr) {
@@ -59,11 +55,9 @@ unsigned char memRd(Memory* mem, unsigned short adr) {
 }
 
 void memWr(Memory* mem, unsigned short adr, unsigned char val) {
-	if (((adr & 0xc000) == 0x0000) && (mem->flags & MEM_B0_WP)) return;	// bank0 write protect (tsconf)
 	MemPage* ptr = memGetBankPtr(mem,adr);
 	mem->flags = ptr->flag[adr & 0x3fff];
-	if (ptr->type == MEM_ROM) return;
-	ptr->data[adr & 0x3fff] = val;
+	if (ptr->type == MEM_RAM) ptr->data[adr & 0x3fff] = val;
 }
 
 unsigned char memGetCellFlags(Memory* mem, unsigned short adr) {

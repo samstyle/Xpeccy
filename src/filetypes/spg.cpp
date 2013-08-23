@@ -88,7 +88,7 @@ int loadSPG(ZXComp* comp, const char* name) {
 	comp->prt0 = 0x10;
 	comp->prt1 = 0x00;
 	comp->prt2 = 0x00;
-	comp->tsconf.Page3 = hd.page3;
+//	comp->tsconf.Page3 = hd.page3;
 	comp->hw->mapMem(comp);
 	memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5);
 	memSetBank(comp->mem,MEM_BANK2,MEM_RAM,2);

@@ -108,9 +108,9 @@ struct ZXComp {
 		unsigned short tsMapAdr;	// adr for altera mapping
 //		unsigned char FDDVirt;
 		unsigned char Page0;
-		unsigned char Page1;
-		unsigned char Page2;
-		unsigned char Page3;
+//		unsigned char Page1;
+//		unsigned char Page2;
+//		unsigned char Page3;
 		unsigned char p00af;		// ports to be updated from next line
 		unsigned char p01af;
 		unsigned char p02af;

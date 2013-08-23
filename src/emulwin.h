@@ -276,6 +276,7 @@ class MainWin : public QX11EmbedContainer {
 		void chLayout(QAction*);
 		void chVMode(QAction*);
 //		void emulFrame();
+		void saveRDisk();
 	protected:
 		void closeEvent(QCloseEvent*);
 #ifdef XQTPAINT

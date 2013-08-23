@@ -313,7 +313,6 @@ int prfLoad(std::string nm) {
 	memSetSize(comp->mem,memsz);
 	if (!emulSetLayout(comp, prf->layName)) emulSetLayout(zx,"default");
 
-
 	zxReset(comp,RES_DEFAULT);
 
 	return tmp2;

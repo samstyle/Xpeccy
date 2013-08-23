@@ -47,7 +47,7 @@
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#define	XPTITLE	"Xpeccy 0.5 (20130821)"
+#define	XPTITLE	"Xpeccy 0.5 (20130823)"
 
 // main
 MainWin* mainWin;
@@ -1517,6 +1517,10 @@ void initUserMenu(QWidget* par) {
 	pckAct = userMenu->addAction(QIcon(":/images/keyboard.png"),"PC keyboard");
 	pckAct->setCheckable(true);
 	userMenu->addAction(QIcon(":/images/other.png"),"Options",par,SLOT(doOptions()));
+#ifdef ISDEBUG
+	userMenu->addSeparator();
+	userMenu->addAction(QIcon(),"Save RAMdisk",par,SLOT(saveRDisk()));
+#endif
 }
 
 void fillBookmarkMenu() {
@@ -1590,6 +1594,21 @@ void MainWin::chLayout(QAction* act) {
 
 void MainWin::chVMode(QAction* act) {
 	vidSetMode(zx->vid,act->data().toInt());
+}
+
+// debug
+
+void MainWin::saveRDisk() {
+	emulPause(true,PR_FILE);
+	QString path = QFileDialog::getSaveFileName(this,"Save RAMDisk","","TRD inages (*.trd)");
+	if (!path.isEmpty()) {
+		QFile file(path);
+		if (file.open(QFile::WriteOnly)) {
+			file.write((const char*)zx->mem->ramData + (0xc0 << 14), 0xa0000);
+			file.close();
+		}
+	}
+	emulPause(false,PR_FILE);
 }
 
 // emulation thread (non-GUI)

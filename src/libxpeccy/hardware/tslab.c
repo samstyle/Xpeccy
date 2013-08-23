@@ -67,12 +67,9 @@ void tslUpdatePorts(ZXComp* comp) {
 	comp->vid->tsconf.scrPal = (val & 0x0f) << 4;
 	comp->vid->tsconf.T0Pal76 = (val & 0x30) << 2;
 	comp->vid->tsconf.T1Pal76 = (val & 0xc0);
-
-//	comp->vid->tsconf.scrLine = comp->vid->tsconf.yOffset;
 }
 
 void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
-//	if ((port & 0x80ff) == 0x00fd) port = 0x7ffd;		// ???
 	int cnt,cnt2,lcnt,sadr,dadr;
 	switch (port) {
 		case 0x00af: comp->tsconf.p00af = val; break;
@@ -93,15 +90,15 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 			tslMapMem(comp);
 			break;
 		case 0x11af:			// Page1
-			comp->tsconf.Page1 = val;
+//			comp->tsconf.Page1 = val;
 			memSetBank(comp->mem,MEM_BANK1,MEM_RAM,val);
 			break;
 		case 0x12af:			// Page2
-			comp->tsconf.Page2 = val;
+//			comp->tsconf.Page2 = val;
 			memSetBank(comp->mem,MEM_BANK2,MEM_RAM,val);
 			break;
 		case 0x13af:			// Page3
-			comp->tsconf.Page3 = val;
+//			comp->tsconf.Page3 = val;
 			memSetBank(comp->mem,MEM_BANK3,MEM_RAM,val);
 			break;
 		case 0x15af:
@@ -215,6 +212,7 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 						if (comp->bdi->fdc->fptr->flag & FLP_VIRT) {
 							comp->tsconf.vdos = 1;
 							tslMapMem(comp);
+//							if (((port & 0xff) == 0x1f) && ((val & 0xe0) == 0xa0)) comp->flag |= ZX_BREAK;
 						} else {
 							if ((port & 0xff) == 0x1f) bdiOut(comp->bdi,FDC_COM,val);
 							if ((port & 0xff) == 0x3f) bdiOut(comp->bdi,FDC_TRK,val);
@@ -225,13 +223,12 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 					break;
 				case 0xff:
 					if (!comp->dosen) break;
+					comp->bdi->fdc->fptr = comp->bdi->fdc->flop[val & 3];
 					if ((comp->bdi->fdc->fptr->flag & FLP_VIRT)) {
 						comp->tsconf.vdos = 1;
 						tslMapMem(comp);
-						comp->bdi->fdc->fptr = comp->bdi->fdc->flop[val & 3];	// out VGSys[1:0]
-//						if (val & 0x10) comp->flag |= ZX_BREAK;
 					} else if (comp->tsconf.vdos) {
-						comp->bdi->fdc->fptr = comp->bdi->fdc->flop[val & 3];	// out VGSys[1:0]
+						// comp->bdi->fdc->fptr = comp->bdi->fdc->flop[val & 3];	// out VGSys[1:0]
 					} else {
 						bdiOut(comp->bdi,BDI_SYS,val);
 					}
@@ -259,6 +256,7 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 							cnt &= 7;
 						}
 						memSetBank(comp->mem,MEM_BANK3,MEM_RAM,cnt);
+//						comp->tsconf.Page3 = cnt;			// !!!
 						comp->vid->tsconf.vidPage = 5;
 						comp->vid->curscr = (val & 8) ? 1 : 0;
 						tslMapMem(comp);
@@ -316,8 +314,8 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 			res = comp->tsconf.pwr_up ? 0x40 : 0x00;		// b6: PWR_UP (1st run)
 			comp->tsconf.pwr_up = 0;
 			break;
-		case 0x12af: res = comp->tsconf.Page2; break;
-		case 0x13af: res = comp->tsconf.Page3; break;
+		case 0x12af: res = comp->mem->pt2->num; break;		// comp->tsconf.Page2;
+		case 0x13af: res = comp->mem->pt3->num; break;		// comp->tsconf.Page3;
 		case 0x27af:
 			res = 0;				// b7: DMA status
 			break;

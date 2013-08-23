@@ -602,7 +602,7 @@ void vidDrawTSLText(Video* vid) {
 			yscr += vid->tsconf.yOffset;
 			xscr &= 0x1ff;
 			yscr &= 0x1ff;
-			adr = (vid->tsconf.vidPage << 14) + ((yscr & 0xf8) << 5) + (xscr >> 2);	// 256 bytes in row
+			adr = (vid->tsconf.vidPage << 14) + ((yscr & 0x1f8) << 5) + (xscr >> 2);	// 256 bytes in row
 			scrbyte = vid->mem->ramData[adr];
 			col = vid->mem->ramData[adr | 0x80];
 			ink = (col & 0x0f) | (vid->tsconf.scrPal);
