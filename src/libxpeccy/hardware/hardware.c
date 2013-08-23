@@ -7,47 +7,47 @@ HardWare hwTab[] = {
 		"ZX48K","ZX 48K",
 		HW_ZX48,
 		MEM_48,
-		&speMapMem,&speOut,&speIn,&stdMRd
+		&speMapMem,&speOut,&speIn,&stdMRd,&stdMWr
 	},{
 		"Pentagon","Pentagon",
 		HW_PENT,
 		MEM_128 | MEM_512,
-		&penMapMem,&penOut,&penIn,&stdMRd
+		&penMapMem,&penOut,&penIn,&stdMRd,&stdMWr
 	},{
 		"Pentagon1024SL","Pentagon 1024 SL",
 		HW_P1024,
 		MEM_1M,
-		&p1mMapMem,&p1mOut,&p1mIn,&stdMRd
+		&p1mMapMem,&p1mOut,&p1mIn,&stdMRd,&stdMWr
 	},{
 		"PentEvo","Evo Baseconf",
 		HW_PENTEVO,
 		MEM_4M,
-		&evoMapMem,&evoOut,&evoIn,&evoMRd
+		&evoMapMem,&evoOut,&evoIn,&evoMRd,&evoMWr
 	},{
 		"TSLab","Evo TSConf",
 		HW_TSLAB,
 		MEM_4M,
-		&tslMapMem,&tslOut,&tslIn,&tslMRd
+		&tslMapMem,&tslOut,&tslIn,&tslMRd,&tslMWr
 	},{
 		"Scorpion","ZS Scorpion",
 		HW_SCORP,
 		MEM_256 | MEM_1M,
-		&scoMapMem,&scoOut,&scoIn,&scoMRd
+		&scoMapMem,&scoOut,&scoIn,&scoMRd,&stdMWr
 	},{
 		"ATM2","ATM Turbo 2+",
 		HW_ATM2,
 		MEM_128 | MEM_256 | MEM_512 | MEM_1M,
-		&atm2MapMem,&atm2Out,&atm2In,&stdMRd //&atm2MRd
+		&atm2MapMem,&atm2Out,&atm2In,&stdMRd,&stdMWr
 	},{
 		"Spectrum +2","Spectrum +2",
 		HW_PLUS2,
 		MEM_128,
-		&pl2MapMem,&pl2Out,&pl2In,&stdMRd
+		&pl2MapMem,&pl2Out,&pl2In,&stdMRd,&stdMWr
 	},{
 		"Spectrum +3","Spectrum +3",
 		HW_PLUS3,
 		MEM_128,
-		&pl2MapMem,&pl3Out,&pl3In,&stdMRd
+		&pl2MapMem,&pl3Out,&pl3In,&stdMRd,&stdMWr
 	},
 	{NULL,NULL,0,0,NULL,NULL,NULL}
 };
@@ -80,4 +80,8 @@ Z80EX_BYTE stdMRd(ZXComp* comp, Z80EX_WORD adr, int m1) {
 		}
 	}
 	return memRd(comp->mem,adr);
+}
+
+void stdMWr(ZXComp *comp, Z80EX_WORD adr, Z80EX_BYTE val) {
+	memWr(comp->mem,adr,val);
 }

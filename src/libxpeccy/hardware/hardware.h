@@ -33,6 +33,7 @@ struct HardWare {
 	void (*out)(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
 	Z80EX_BYTE (*in)(ZXComp*,Z80EX_WORD,int);
 	Z80EX_BYTE (*mrd)(ZXComp*,Z80EX_WORD,int);
+	void (*mwr)(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
 };
 
 typedef struct HardWare HardWare;
@@ -40,6 +41,7 @@ extern HardWare hwTab[];
 
 HardWare* findHardware(const char*);
 Z80EX_BYTE stdMRd(ZXComp*,Z80EX_WORD,int);
+void stdMWr(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
 
 // zx48
 void speMapMem(ZXComp*);
@@ -76,18 +78,19 @@ Z80EX_BYTE pl3In(ZXComp*,Z80EX_WORD,int);
 void atm2MapMem(ZXComp*);
 void atm2Out(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
 Z80EX_BYTE atm2In(ZXComp*,Z80EX_WORD,int);
-//Z80EX_BYTE atm2MRd(ZXComp*,Z80EX_WORD,int);
 
 // pentevo
 void evoMapMem(ZXComp*);
 void evoOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
 Z80EX_BYTE evoIn(ZXComp*,Z80EX_WORD,int);
 Z80EX_BYTE evoMRd(ZXComp*,Z80EX_WORD,int);
+void evoMWr(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
 
 // TSLab conf
 void tslMapMem(ZXComp*);
 void tslOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
 Z80EX_BYTE tslIn(ZXComp*,Z80EX_WORD,int);
 Z80EX_BYTE tslMRd(ZXComp*,Z80EX_WORD,int);
+void tslMWr(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
 void tslUpdatePorts(ZXComp*);
 #endif

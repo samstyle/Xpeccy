@@ -95,7 +95,8 @@ struct Video {
 		VPAIR(T1XOffset,t1xh,t1xl);	// tile 1 offsets
 		VPAIR(T1YOffset,t1yh,t1yl);
 		unsigned char line[512];	// buffer for render sprites & tiles
-		unsigned char tsAMem[0x1000];	// ALTERA mem: 512 bytes TSConf palette, ... (tiles,sprites)
+		unsigned char cram[0x200];	// pal
+		unsigned char sfile[0x200];	// sprites
 	} tsconf;
 	unsigned char font[0x800];		// ATM text mode font
 	void(*callback)(struct Video*);

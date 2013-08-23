@@ -31,6 +31,11 @@ Z80EX_BYTE evoMRd(ZXComp* comp, Z80EX_WORD adr, int m1) {
 	return memRd(comp->mem,adr);
 }
 
+void evoMWr(ZXComp* comp, Z80EX_WORD adr, Z80EX_BYTE val) {
+	if (comp->evo.evoBF & 4) comp->vid->font[adr & 0x7ff] = val;	// PentEvo: write font byte
+	memWr(comp->mem,adr,val);
+}
+
 void evoSetBank(ZXComp* comp, int bank, memEntry me) {
 	unsigned char page = me.page ^ 0xff;
 	if (me.flag & 0x80) {

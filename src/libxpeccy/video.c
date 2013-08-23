@@ -440,53 +440,66 @@ void vidTSTiles(Video* vid, int lay, unsigned short yoffs, unsigned short xoffs,
 	} while (adr & 0x7f);
 }
 
+struct TSpr {
+	unsigned y:9;
+	unsigned ys:3;
+	unsigned res1:1;
+	unsigned act:1;
+	unsigned leap:1;
+	unsigned yf:1;
+	unsigned x:9;
+	unsigned xs:3;
+	unsigned res2:3;
+	unsigned xf:1;
+	unsigned tnum:12;
+	unsigned pal:4;
+};
+typedef struct TSpr TSpr;
+
+TSpr* sptr;
+
 void vidTSSprites(Video* vid) {
-//	memset(vid->tsconf.line,0x00,512);
-	while (sadr < (0x400 - 6)) {
-		mptr = &vid->tsconf.tsAMem[sadr];
-		if (mptr[1] & 0x20) {						// ACT
-			adr = mptr[0] | ((mptr[1] & 1) << 8);			// Ypos of spr
-			xscr = ((mptr[1] & 0x0e) + 2) << 2;			// Ysize - 000:8; 001:16; 010:24; ...
-			yscr = vid->y - vid->tsconf.yPos;			// line on screen
-			if (((yscr - adr) & 0x1ff) < xscr) {			// if sprite visible on current line
-				yscr -= adr;					// line inside sprite;
-				if (mptr[1] & 0x80) yscr = xscr - yscr - 1;	// YFlip (Ysize - norm.pos - 1)
-				tile = mptr[4] | ((mptr[5] & 0x0f) << 8);	// pos of 1st tile
-				tile += ((yscr & 0x1f8) << 3);			// shift to current tile line
+	while (sadr < (0x200 - 6)) {
+		sptr = (TSpr*)&vid->tsconf.sfile[sadr];
+		if (sptr->act) {
+			adr = sptr->y;
+			xscr = (sptr->ys + 1) << 3;		// Ysize - 000:8; 001:16; 010:24; ...
+			yscr = vid->y - vid->tsconf.yPos;	// line on screen
+			if (((yscr - adr) & 0x1ff) < xscr) {	// if sprite visible on current line
+				yscr -= adr;			// line inside sprite;
+				if (sptr->yf) yscr = xscr - yscr - 1;	// YFlip (Ysize - norm.pos - 1)
+				tile = sptr->tnum + ((yscr & 0x1f8) << 3);	// shift to current tile line
 
 				fadr = vid->tsconf.SGPage << 14;
 				fadr += ((tile & 0xfc0) << 5) | ((yscr & 7) << 8) | ((tile & 0x3f) << 2);	// fadr = adr of pix line to put in buf
 
-				adr = mptr[2] | ((mptr[3] & 1) << 8);		// Xpos (First pixel adr)
-				col = (mptr[5] & 0xf0);
-				xadr = adr;
-				if (mptr[3] & 0x80) xadr += (((mptr[3] & 0x0e) + 2) << 2) - 1;
-				for (xscr = ((mptr[3] & 0x0e) + 2) << 2; xscr > 0; xscr-=2) {
+				col = sptr->pal << 4;
+				xadr = (sptr->xs + 1) << 3;	// xsoze
+				adr = sptr->x;			// xpos
+				if (sptr->xf) adr += xadr - 1;	// xpos of right pixel (xflip)
+				for (xscr = xadr; xscr > 0; xscr -= 2) {
 					col &= 0xf0;
 					col |= ((vid->mem->ramData[fadr] & 0xf0) >> 4);		// left pixel;
-					if (col & 0x0f) vid->tsconf.line[xadr & 0x1ff] = col;
-					if (mptr[3] & 0x80) xadr--; else xadr++;
-					adr++;
+					if (col & 0x0f) vid->tsconf.line[adr & 0x1ff] = col;
+					if (sptr->xf) adr--; else adr++;
 					col &= 0xf0;
 					col |= (vid->mem->ramData[fadr] & 0x0f);		// right pixel
-					if (col & 0x0f) vid->tsconf.line[xadr & 0x1ff] = col;
-					if (mptr[3] & 0x80) xadr--; else xadr++;
-					adr++;
+					if (col & 0x0f) vid->tsconf.line[adr & 0x1ff] = col;
+					if (sptr->xf) adr--; else adr++;
 					fadr++;
 				}
 			}
 		}
-		if (mptr[1] & 0x40) break;		// LEAP
 		sadr += 6;
+		if (sptr->leap) break;		// LEAP
 	}
-	sadr += 6;
 }
 
 void vidTSRender(Video* vid, unsigned char* ptr) {
 	if (vid->y < vid->tsconf.yPos) return;
 	if (vid->y >= (vid->tsconf.yPos + vid->tsconf.ySize)) return;
 // prepare layers in VID->LINE & out visible part to PTR
-	sadr = 0x200;			// start of sprites tab in altera mem
+	sadr = 0x000;					// adr inside SFILE
 	memset(vid->tsconf.line,0x00,0x200);		// clear tile-sprite line
 // S0 ?
 	if (vid->tsconf.tconfig & 0x80) {

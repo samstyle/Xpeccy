@@ -42,18 +42,26 @@ Z80EX_BYTE tslMRd(ZXComp* comp, Z80EX_WORD adr, int m1) {
 	return memRd(comp->mem,adr);
 }
 
+void tslMWr(ZXComp* comp, Z80EX_WORD adr, Z80EX_BYTE val) {
+	if ((comp->tsconf.flag & 0x10) && ((adr & 0xf000) == comp->tsconf.tsMapAdr)) {
+		if ((adr & 0xe00) == 0x000) {comp->vid->tsconf.cram[adr & 0x1ff] = val; comp->flag |= ZX_PALCHAN;}
+		if ((adr & 0xe00) == 0x200) comp->vid->tsconf.sfile[adr & 0x1ff] = val;
+	}
+	memWr(comp->mem,adr,val);
+}
+
 void tslUpdatePorts(ZXComp* comp) {
 	unsigned char val = comp->tsconf.p00af;
 	comp->vid->tsconf.xSize = tslXRes[(val & 0xc0) >> 6];
 	comp->vid->tsconf.ySize = tslYRes[(val & 0xc0) >> 6];
 	comp->vid->tsconf.xPos = ((comp->vid->full.h - comp->vid->sync.h - comp->vid->tsconf.xSize) >> 1) + comp->vid->sync.h;
 	comp->vid->tsconf.yPos = ((comp->vid->full.v - comp->vid->sync.v - comp->vid->tsconf.ySize) >> 1) + comp->vid->sync.v;
-	switch(val & 7) {
+	switch(val & 3) {
 		case 0: vidSetMode(comp->vid,VID_TSL_NORMAL); break;
 		case 1: vidSetMode(comp->vid,VID_TSL_16); break;
 		case 2: vidSetMode(comp->vid,VID_TSL_256); break;
 		case 3: vidSetMode(comp->vid,VID_TSL_TEXT); break;
-		default: vidSetMode(comp->vid,VID_UNKNOWN); break;
+		default: vidSetMode(comp->vid,VID_UNKNOWN); break;	// never
 	}
 	comp->vid->flags &= ~VID_NOGFX;
 	if (val & 0x20) comp->vid->flags |= VID_NOGFX;
@@ -71,6 +79,7 @@ void tslUpdatePorts(ZXComp* comp) {
 
 void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 	int cnt,cnt2,lcnt,sadr,dadr;
+	unsigned char* ptr;
 	switch (port) {
 		case 0x00af: comp->tsconf.p00af = val; break;
 		case 0x01af: comp->tsconf.p01af = val; break;
@@ -90,15 +99,12 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 			tslMapMem(comp);
 			break;
 		case 0x11af:			// Page1
-//			comp->tsconf.Page1 = val;
 			memSetBank(comp->mem,MEM_BANK1,MEM_RAM,val);
 			break;
 		case 0x12af:			// Page2
-//			comp->tsconf.Page2 = val;
 			memSetBank(comp->mem,MEM_BANK2,MEM_RAM,val);
 			break;
 		case 0x13af:			// Page3
-//			comp->tsconf.Page3 = val;
 			memSetBank(comp->mem,MEM_BANK3,MEM_RAM,val);
 			break;
 		case 0x15af:
@@ -148,31 +154,44 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 			comp->dma.len = val;
 			break;
 		case 0x27af:
+			sadr = (comp->dma.src.x << 14) | ((comp->dma.src.h & 0x3f) << 8) | (comp->dma.src.l & 0xfe);
+			dadr = (comp->dma.dst.x << 14) | ((comp->dma.dst.h & 0x3f) << 8) | (comp->dma.dst.l & 0xfe);
+			lcnt = (comp->dma.len + 1) << 1;
 			switch (val & 0x87) {
 				case 0x01:		// ram->ram
-					sadr = (comp->dma.src.x << 14) | ((comp->dma.src.h & 0x3f) << 8) | (comp->dma.src.l & 0xfe);
-					dadr = (comp->dma.dst.x << 14) | ((comp->dma.dst.h & 0x3f) << 8) | (comp->dma.dst.l & 0xfe);
-					lcnt = (comp->dma.len + 1) << 1;
 					for (cnt = 0; cnt <= comp->dma.num; cnt++) {
-						cnt2 = 0;
 						for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
 							comp->mem->ramData[dadr + cnt2] = comp->mem->ramData[sadr + cnt2];
 						}
 						sadr += (val & 0x20) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;		// SALGN
 						dadr += (val & 0x10) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;		// DALGN
 					}
-					comp->dma.src.x = ((sadr & 0x3fc000) >> 14);
-					comp->dma.src.h = ((sadr & 0x3f00) >> 8);
-					comp->dma.src.l = sadr & 0xff;
-					comp->dma.dst.x = ((dadr & 0x3fc000) >> 14);
-					comp->dma.dst.h = ((dadr & 0x3f00) >> 8);
-					comp->dma.dst.l = dadr & 0xff;
 					break;
-				case 0x81: break;	// nothing
+				case 0x81: break;	// RAM->BLT
+				case 0x84:		// RAM->CRAM [adr = (dadr >> 1) & 0xff]
+				case 0x85:		// RAM->SFILE
+					ptr = (val & 1) ? comp->vid->tsconf.sfile : comp->vid->tsconf.cram;
+					for (cnt = 0; cnt <= comp->dma.num; cnt++) {
+						for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
+							*(ptr + (((dadr + cnt2) >> 1) & 0xff)) = comp->mem->ramData[sadr + cnt2];
+						}
+						sadr += (val & 0x20) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;		// SALGN
+						dadr += (val & 0x10) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;		// DALGN
+					}
+					break;
 				default:
 					printf("0x27AF: unsupported src-dst: %.2X\n",val & 0x87);
-					assert(0);
+#ifdef ISDEBUG
+					comp->flag |= ZX_BREAK;
+#endif
+					break;
 			}
+			comp->dma.src.x = ((sadr & 0x3fc000) >> 14);
+			comp->dma.src.h = ((sadr & 0x3f00) >> 8);
+			comp->dma.src.l = sadr & 0xff;
+			comp->dma.dst.x = ((dadr & 0x3fc000) >> 14);
+			comp->dma.dst.h = ((dadr & 0x3f00) >> 8);
+			comp->dma.dst.l = dadr & 0xff;
 			break;
 		case 0x28af:
 			comp->dma.num = val;

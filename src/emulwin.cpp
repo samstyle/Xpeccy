@@ -47,7 +47,7 @@
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#define	XPTITLE	"Xpeccy 0.5 (20130823)"
+#define	XPTITLE	"Xpeccy 0.5 (20130825)"
 
 // main
 MainWin* mainWin;
@@ -290,7 +290,7 @@ void emulSetPalette(ZXComp* comp,unsigned char lev) {
 	qPal.resize(256);
 	if (comp->hw->type == HW_TSLAB) {
 		for (i = 0; i < 256; i++) {
-			fcol = (comp->vid->tsconf.tsAMem[(i << 1) + 1] << 8) | (comp->vid->tsconf.tsAMem[i << 1]);
+			fcol = (comp->vid->tsconf.cram[(i << 1) + 1] << 8) | (comp->vid->tsconf.cram[i << 1]);
 			r[i] = tslCoLevs[(fcol >> 10) & 0x1f];
 			g[i] = tslCoLevs[(fcol >> 5) & 0x1f];
 			b[i] = tslCoLevs[fcol & 0x1f];

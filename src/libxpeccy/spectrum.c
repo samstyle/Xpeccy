@@ -109,6 +109,8 @@ void memwr(CPUCONT Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 	res3 = TCPU(comp->cpu) + 3;
 	vidSync(comp->vid,comp->nsPerTick * (res3 - res4));
 	res4 = res3;
+	comp->hw->mwr(comp,adr,val);
+
 //	if (((adr & 0xc000) == 0x4000) && (comp->hwFlag & HW_CONTMEM)) {
 //		res5 = vidGetWait(comp->vid);
 //		if (res5 != 0) {
@@ -116,14 +118,16 @@ void memwr(CPUCONT Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 //			res1 += res5;
 //		}
 //	}
+/*
 	if ((comp->hw->type == HW_PENTEVO) && (comp->evo.evoBF & 4)) {		// PentEvo: write font byte
 		comp->vid->font[adr & 0x7ff] = val;
 	}
 	if ((comp->hw->type == HW_TSLAB) && (comp->tsconf.flag & 0x10) && ((adr & 0xf000) == comp->tsconf.tsMapAdr)) {
-		comp->vid->tsconf.tsAMem[adr & 0xfff] = val;
-		if ((adr & 0xfff) < 0x200) comp->flag |= ZX_PALCHAN;
+		if ((adr & 0xe00) == 0x000) {comp->vid->tsconf.cram[adr & 0x1ff] = val; comp->flag |= ZX_PALCHAN;}
+		if ((adr & 0xe00) == 0x200) comp->vid->tsconf.sfile[adr & 0x1ff] = val;
 	}
 	memWr(comp->mem,adr,val);
+*/
 	if (comp->mem->flags & MEM_BRK_WRITE) {
 		comp->flag |= ZX_BREAK;
 	}
@@ -376,8 +380,8 @@ void zxReset(ZXComp* comp,int wut) {
 			comp->prt0 = (resto & 1) ? 0x10 : 0x00;	// 2,3 = bas128,bas48
 			comp->mem->flags = MEM_B0_WP;		// no MEM_ROM_WP, only MEM_B0_WP
 			comp->vid->tsconf.scrPal = 0xf0;
-			memset(comp->vid->tsconf.tsAMem,0x00,0x1e0);
-			memcpy(&comp->vid->tsconf.tsAMem[0x1e0],tsPalInit,0x20);	// init zx palete ?
+			memset(comp->vid->tsconf.cram,0x00,0x1e0);
+			memcpy(comp->vid->tsconf.cram + 0x1e0,tsPalInit,0x20);	// init zx palete ?
 //			tslOut(comp,0x00af,0x00,0);			// std 256x192, NOGFX off
 			comp->tsconf.Page0 = 0;
 			comp->vid->nextbrd = 0xf7;
