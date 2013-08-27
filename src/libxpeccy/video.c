@@ -126,6 +126,19 @@ void vidDarkTail(Video* vid) {
 //	return 0; //vid->matrix[vid->dotCount].wait;
 //}
 
+int contTabA[] = {12,12,10,10,8,8,6,6,4,4,2,2,0,0,0,0};		// 48K 128K +2 (bank 1,3,5,7)
+int contTabB[] = {2,2,0,0,14,14,12,12,10,10,8,8,6,6,4,4};	// +2A +3 (bank 4,5,6,7)
+
+void vidWait(Video* vid) {
+	if (vid->y < vid->bord.v) return;		// above screen
+	if (vid->y > (vid->bord.v + 191)) return;	// below screen
+	xscr = vid->x - vid->bord.h + 2;
+	if (xscr < 0) return;
+	if (xscr > 253) return;
+//	printf("X:%i, brd:%i, wait:%i\n",vid->x,vid->bord.h,contTabA[xscr & 0x0f]);
+	vidSync(vid, contTabA[xscr & 0x0f] * NS_PER_DOT);
+}
+
 void vidSetFont(Video* vid, char* src) {
 	memcpy(vid->font,src,0x800);
 }
@@ -681,7 +694,6 @@ void vidSync(Video* vid, int ns) {
 		if ((vid->y >= vid->lcut.v) && (vid->y < vid->rcut.v)) {
 			if ((vid->x >= vid->lcut.h) && (vid->x < vid->rcut.h)) {
 				if (vid->x & 8) vid->brdcol = vid->nextbrd;
-				if (vid->scrimg == NULL) printf("NULL\n");
 				vid->callback(vid);		// put dot
 			}
 		}
@@ -691,7 +703,6 @@ void vidSync(Video* vid, int ns) {
 			vid->flags |= VID_NEXTROW;
 			if (vid->flags & VF_TSCONF) vidTSRender(vid,vid->scrptr - vid->wsze.h);
 			if ((vid->y >= vid->lcut.v) && (vid->y < vid->rcut.v) && (vidFlag & VF_DOUBLE)) {
-				if (vid->scrimg == NULL) printf("NULL\n");
 				memcpy(vid->scrptr, vid->scrptr - vid->wsze.h, vid->wsze.h);
 				vid->scrptr += vid->wsze.h;
 			}

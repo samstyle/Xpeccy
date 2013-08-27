@@ -47,7 +47,7 @@
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#define	XPTITLE	"Xpeccy 0.5 (20130825)"
+#define	XPTITLE	"Xpeccy 0.5 (20130902)"
 
 // main
 MainWin* mainWin;
@@ -369,15 +369,12 @@ void MainWin::updateWindow() {
 	if ((vidFlag & VF_FULLSCREEN) && !(vidFlag & VF_BLOCKFULLSCREEN)) {
 //		sdlflg |= SDL_FULLSCREEN;
 	}
-	zx->vid->scrimg = NULL;
-	if (surf) {
-		SDL_FreeSurface(surf);
-		surf->pixels = NULL;
-	}
+	SDL_Surface* oldSurf = surf;
 	surf = SDL_SetVideoMode(szw,szh,8,sdlflg);
 	zx->vid->scrptr = (unsigned char*)surf->pixels;
 	zx->vid->scrimg = zx->vid->scrptr;
 	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
+	if (oldSurf) SDL_FreeSurface(oldSurf);
 #endif
 	updateHead();
 	emulFlags &= ~FL_BLOCK;

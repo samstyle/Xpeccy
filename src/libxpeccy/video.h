@@ -72,7 +72,6 @@ struct Video {
 	VSize intpos;
 	Memory* mem;
 	int intsz;
-//	int scrPos;
 	struct {
 		unsigned char vidPage;		// 1st video page
 		int xPos;			// position of screen @ monitor [32|12] x [44|24|0]
@@ -112,7 +111,7 @@ void vidDestroy(Video*);
 
 void vidSync(Video*,int);
 void vidSetMode(Video*,int);
-//int vidGetWait(Video*);
+void vidWait(Video*);
 void vidDarkTail(Video*);
 
 void vidUpdate(Video*);

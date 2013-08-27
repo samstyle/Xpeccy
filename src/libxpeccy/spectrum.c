@@ -46,91 +46,33 @@ int zxGetPort(ZXComp* comp, Z80EX_WORD port) {
 }
 */
 
-Z80EX_BYTE memrd(CPUCONT Z80EX_WORD adr,int m1,void* ptr) {
-//	Z80EX_BYTE res;
-	ZXComp* comp = (ZXComp*)ptr;
-//	if ((comp->hw->type == HW_SCORP) && ((comp->mem->pt0->num & 3) == 2) && ((adr & 0xfff3) == 0x0100)) {
-//		comp->prt2 = ZSLays[(adr & 0x000c) >> 2][comp->prt2 & 3];
-//		comp->hw->mapMem(comp);
-//	}
-	if (m1 && comp->rzxPlay) comp->rzxFetches--;
-	return comp->hw->mrd(comp,adr,m1);
-/*
-	if (m1 == 1) {
-		if (comp->rzxPlay) comp->rzxFetches--;
-		if (comp->bdi->fdc->type == FDC_93) {
-			if (comp->dosen == 1) {
-				if (memGetBankPtr(comp->mem,adr)->type == MEM_RAM) {
-					switch(comp->hw->type) {
-						case HW_ATM2:
-							if (comp->prt1 & 2) comp->dosen = 0;
-							break;
-						case HW_PENTEVO:
-							if (comp->prt1 & 0x40) comp->dosen = 0;
-							break;
-						default:
-							comp->dosen = 0;
-							break;
-					}
-					if (comp->prt0 & 0x10) comp->hw->mapMem(comp);
-				}
-			} else {
-				if (((adr & 0xff00) == 0x3d00) && (comp->prt0 & 0x10)) {
-					switch (comp->hw->type) {
-						case HW_TSLAB:
-							if ((comp->prt2 & 0x04) == 0x00) comp->dosen = 1;
-							break;
-						default:
-							comp->dosen = 1;
-							break;
-					}
-					comp->hw->mapMem(comp);
-				}
-			}
-		}
+MemPage* mptr;
+
+inline void zxMemRW(ZXComp* comp, int adr) {
+	res3 = TCPU(comp->cpu) + 3;
+	vidSync(comp->vid, comp->nsPerTick * (res3 - res4));
+	res4 = res3;
+	mptr = memGetBankPtr(comp->mem,adr);
+	if ((comp->hwFlag & HW_CONTMEM) && (mptr->type == MEM_RAM) && (mptr->num & 1)) {		// pages 1,3,5,7 (48K model)
+		vidWait(comp->vid);					// do WAIT
 	}
-//	res3 = res2 + z80ex_op_tstate(cpu);
-//	vflg |= vidSync(comp->vid,comp->dotPerTick * (res3 - res4));
-//	res4 = res3;
-//	if (((adr & 0xc000) == 0x4000) && (comp->hwFlag & HW_CONTMEM)) {
-//		res5 = vidGetWait(comp->vid);
-//		if (res5 != 0) {
-//			vflg |= vidSync(comp->vid, comp->dotPerTick * res5);
-//			res1 += res5;
-//		}
-//	}
-	res = memRd(comp->mem,adr);
-	return res;
-*/
+}
+
+Z80EX_BYTE memrd(CPUCONT Z80EX_WORD adr,int m1,void* ptr) {
+	ZXComp* comp = (ZXComp*)ptr;
+	if (m1 && comp->rzxPlay) comp->rzxFetches--;
+	zxMemRW(comp,adr);
+	return comp->hw->mrd(comp,adr,m1);
 }
 
 void memwr(CPUCONT Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
-	res3 = TCPU(comp->cpu) + 3;
-	vidSync(comp->vid,comp->nsPerTick * (res3 - res4));
-	res4 = res3;
+	zxMemRW(comp,adr);
 	comp->hw->mwr(comp,adr,val);
-
-//	if (((adr & 0xc000) == 0x4000) && (comp->hwFlag & HW_CONTMEM)) {
-//		res5 = vidGetWait(comp->vid);
-//		if (res5 != 0) {
-//			vflg |= vidSync(comp->vid,comp->dotPerTick * res5);
-//			res1 += res5;
-//		}
+//	if (comp->mem->flags & MEM_BRK_WRITE) {
+//		comp->mem->flags &= ~MEM_BRK_WRITE;
+//		comp->flag |= ZX_BREAK;
 //	}
-/*
-	if ((comp->hw->type == HW_PENTEVO) && (comp->evo.evoBF & 4)) {		// PentEvo: write font byte
-		comp->vid->font[adr & 0x7ff] = val;
-	}
-	if ((comp->hw->type == HW_TSLAB) && (comp->tsconf.flag & 0x10) && ((adr & 0xf000) == comp->tsconf.tsMapAdr)) {
-		if ((adr & 0xe00) == 0x000) {comp->vid->tsconf.cram[adr & 0x1ff] = val; comp->flag |= ZX_PALCHAN;}
-		if ((adr & 0xe00) == 0x200) comp->vid->tsconf.sfile[adr & 0x1ff] = val;
-	}
-	memWr(comp->mem,adr,val);
-*/
-	if (comp->mem->flags & MEM_BRK_WRITE) {
-		comp->flag |= ZX_BREAK;
-	}
 }
 
 int bdiz;

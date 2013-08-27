@@ -65,7 +65,7 @@ SDKWindow::SDKWindow(QWidget *p):QMainWindow(p) {
 	connect(&prc,SIGNAL(finished(int)),this,SLOT(buildFinish()));
 }
 
-void SDKWindow::closeEvent(QCloseEvent *ev) {
+void SDKWindow::closeEvent(QCloseEvent* ev) {
 	saveProject();
 	ev->accept();
 }
