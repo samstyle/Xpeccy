@@ -152,10 +152,12 @@ int loadZ80(ZXComp* zx, const char* name) {
 		adr = tmp + (tmp2 << 8);
 		SETPC(cpu,getLEWord(&file));
 		lst = file.get();			// 34: HW mode
-		tmp = file.get(); zxOut(zx,0x7ffd,tmp);	// 35: 7FFD last out
+		tmp = file.get(); //zxOut(zx,0x7ffd,tmp);	// 35: 7FFD last out
+		zx->hw->out(zx,0x7ffd,tmp,0);
 		tmp = file.get();			// 36: skip (IF1)
 		tmp = file.get();			// 37: skip (flags) TODO
-		tmp = file.get(); zxOut(zx,0xfffd,tmp);	// 38: last out to fffd
+		tmp = file.get(); //zxOut(zx,0xfffd,tmp);	// 38: last out to fffd
+		zx->hw->out(zx,0xfffd,tmp,0);
 		for (tmp2 = 0; tmp2 < 16; tmp2++) {
 			tmp = file.get();
 			zx->ts->chipA->reg[tmp2] = tmp;

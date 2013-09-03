@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include <stddef.h>
+
 #include "memory.h"
 
 // vidFlags (emul)
@@ -37,8 +39,8 @@ extern "C" {
 #define	VID_UNKNOWN	0xff
 
 typedef struct {
-	int h;
-	int v;
+	size_t h;
+	size_t v;
 } VSize;
 
 #ifdef WORDS_BIG_ENDIAN

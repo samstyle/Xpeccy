@@ -49,12 +49,18 @@ int zxGetPort(ZXComp* comp, Z80EX_WORD port) {
 MemPage* mptr;
 
 inline void zxMemRW(ZXComp* comp, int adr) {
-	res3 = TCPU(comp->cpu) + 3;
-	vidSync(comp->vid, comp->nsPerTick * (res3 - res4));
-	res4 = res3;
 	mptr = memGetBankPtr(comp->mem,adr);
-	if ((comp->hwFlag & HW_CONTMEM) && (mptr->type == MEM_RAM) && (mptr->num & 1)) {		// pages 1,3,5,7 (48K model)
+	if ((comp->hwFlag & HW_CONTMEM) && (mptr->type == MEM_RAM) && (mptr->num & 1)) {	// pages 1,3,5,7 (48K model)
+		res3 = TCPU(comp->cpu);					// until RD/WR cycle
+		vidSync(comp->vid, comp->nsPerTick * (res3 - res4));
+		res4 = res3;
 		vidWait(comp->vid);					// do WAIT
+		vidSync(comp->vid, comp->nsPerTick * 3);		// 3T until last T in cycle
+		res4 += 3;
+	} else {
+		res3 = TCPU(comp->cpu) + 3;
+		vidSync(comp->vid, comp->nsPerTick * (res3 - res4));
+		res4 = res3;
 	}
 }
 
@@ -69,30 +75,44 @@ void memwr(CPUCONT Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
 	zxMemRW(comp,adr);
 	comp->hw->mwr(comp,adr,val);
-//	if (comp->mem->flags & MEM_BRK_WRITE) {
-//		comp->mem->flags &= ~MEM_BRK_WRITE;
-//		comp->flag |= ZX_BREAK;
-//	}
 }
 
 int bdiz;
 
+inline void zxIORW(ZXComp* comp, int port) {
+	if (comp->hwFlag & HW_CONTIO) {
+		if ((port & 0xc000) == 0x4000) {
+			if (port & 0x0001) {			// C:1 C:1 C:1 C:1
+				vidWait(comp->vid); vidSync(comp->vid, comp->nsPerTick);
+				vidWait(comp->vid); vidSync(comp->vid, comp->nsPerTick);
+				vidWait(comp->vid); vidSync(comp->vid, comp->nsPerTick);
+				vidWait(comp->vid); vidSync(comp->vid, comp->nsPerTick);
+			} else {				// C:1 C:3
+				vidWait(comp->vid); vidSync(comp->vid, comp->nsPerTick);
+				vidWait(comp->vid); vidSync(comp->vid, 3 * comp->nsPerTick);
+			}
+		} else {
+			if (port & 0x0001) {			// N:4
+				vidSync(comp->vid, 4 * comp->nsPerTick);
+			} else {				// N:1 C:3
+				vidSync(comp->vid, comp->nsPerTick);
+				vidWait(comp->vid); vidSync(comp->vid, 3 * comp->nsPerTick);
+			}
+		}
+	} else {
+		vidSync(comp->vid, 4 * comp->nsPerTick);
+	}
+}
+
 Z80EX_BYTE iord(CPUCONT Z80EX_WORD port, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
 	Z80EX_BYTE res = 0xff;
-// video sync
-	res3 = TCPU(comp->cpu);	// res2 + z80ex_op_tstate(cpu);
-	vidSync(comp->vid,comp->nsPerTick * (res3 - res4));
-	res4 = res3;
-/*
-	if (comp->hwFlag & HW_CONTIO) {
-		res5 = vidGetWait(comp->vid);
-		if (res5 != 0) {
-			vidSync(comp->vid,comp->nsPerTick * res5);
-			res1 += res5;
-		}
-	}
-*/
+// video sync ( + cont io)
+	res3 = TCPU(comp->cpu);			// start of IN/OUT cycle
+	vidSync(comp->vid, comp->nsPerTick * (res3 - res4));
+	res4 = res3 + 4;			// end of IO cycle
+	zxIORW(comp,port);			// cont mem
+// tape sync
 	tapSync(comp->tape,comp->tapCount);
 	comp->tapCount = 0;
 // play rzx
@@ -113,7 +133,13 @@ Z80EX_BYTE iord(CPUCONT Z80EX_WORD port, void* ptr) {
 	return res;
 }
 
-void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void iowr(CPUCONT Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
+	ZXComp* comp = (ZXComp*)ptr;
+// contended mem, move to end of IO cycle
+	res3 = TCPU(comp->cpu);
+	vidSync(comp->vid, comp->nsPerTick * (res3 - res4));
+	res4 = res3 + 4;
+	zxIORW(comp,port);
 	tapSync(comp->tape,comp->tapCount);
 	comp->tapCount = 0;
 	bdiz = ((comp->dosen & 1) && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
@@ -121,58 +147,6 @@ void zxOut(ZXComp *comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	if (ideOut(comp->ide,port,val,comp->dosen & 1)) return;
 	if (gsOut(comp->gs,port,val) == GS_OK) return;
 	comp->hw->out(comp,port,val,bdiz);
-}
-
-/*
-void iowait(ZXComp* comp, int ticks) {
-	res5 = vidGetWait(comp->vid);
-	if (res5 != 0) {
-		vidSync(comp->vid, comp->nsPerTick * res5);
-		res1 += res5;
-	}
-	if (ticks != 0)
-		vidSync(comp->vid, comp->nsPerTick * ticks);
-}
-*/
-
-void iowr(CPUCONT Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
-	ZXComp* comp = (ZXComp*)ptr;
-	res3 = TCPU(comp->cpu);	// res2 + z80ex_op_tstate(comp->cpu) - 1;		// start of OUT cycle
-	vidSync(comp->vid,comp->nsPerTick * (res3 - res4));
-	res4 = res3;
-// if there is contended io, get wait and wait :)
-/*
-	if (comp->hwFlag & HW_CONTIO) {
-		switch(port & 0x4001) {
-			case 0x0000:
-				zxOut(comp,port,val);
-				vidSync(comp->vid,comp->nsPerTick);	// N:1
-				iowait(comp,3);					// C:3
-				break;
-			case 0x0001:
-				zxOut(comp,port,val);
-				vidSync(comp->vid, comp->nsPerTick * 4);	// N:4
-				break;
-			case 0x4000:
-				zxOut(comp,port,val);
-				iowait(comp,1);			// C:1
-				iowait(comp,3);			// C:3
-				break;
-			case 0x4001:
-				zxOut(comp,port,val);
-				iowait(comp,1);			// C:1	4 times
-				iowait(comp,1);
-				iowait(comp,1);
-				iowait(comp,1);
-				break;
-		}
-		res4 += 4;
-	} else {
-*/
-		vidSync(comp->vid, comp->nsPerTick * 3);
-		zxOut(comp,port,val);
-		res4 += 3;
-//	}
 }
 
 Z80EX_BYTE intrq(CPUCONT void* ptr) {

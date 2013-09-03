@@ -229,9 +229,6 @@
               </item>
               <item>
                <widget class="QCheckBox" name="contIO">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
                 <property name="text">
                  <string>Contended I/O</string>
                 </property>

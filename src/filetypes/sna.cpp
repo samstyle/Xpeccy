@@ -85,7 +85,8 @@ int loadSNA(ZXComp* zx, const char* name) {
 	} else {
 		SETPC(cpu,getLEWord(&file)); // z80ex_set_reg(cpu,regPC,getLEWord(&file));
 		tmp = file.get();
-		zxOut(zx,0x7ffd, tmp);
+		zx->hw->out(zx,0x7ffd,tmp,0);
+//		zxOut(zx,0x7ffd, tmp);
 		tmp2 = file.get();
 		zx->dosen = tmp2 & 1;
 		for (tmp2 = 0; tmp2 < 8; tmp2++) {

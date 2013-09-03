@@ -136,7 +136,7 @@ typedef struct ZXComp ZXComp;
 ZXComp* zxCreate();
 void zxDestroy(ZXComp*);
 void zxReset(ZXComp*,int);
-void zxOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
+//void zxOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
 int zxExec(ZXComp*);
 void zxSetFrq(ZXComp*,float);
 void zxSetLayout(ZXComp*, int, int, int, int, int, int, int, int, int);
