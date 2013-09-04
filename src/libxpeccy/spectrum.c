@@ -99,8 +99,10 @@ inline void zxIORW(ZXComp* comp, int port) {
 				vidWait(comp->vid); vidSync(comp->vid, 3 * comp->nsPerTick);
 			}
 		}
+		res4 += 4;
 	} else {
-		vidSync(comp->vid, 4 * comp->nsPerTick);
+		vidSync(comp->vid, 3 * comp->nsPerTick);
+		res4 += 3;
 	}
 }
 
@@ -110,7 +112,7 @@ Z80EX_BYTE iord(CPUCONT Z80EX_WORD port, void* ptr) {
 // video sync ( + cont io)
 	res3 = TCPU(comp->cpu);			// start of IN/OUT cycle
 	vidSync(comp->vid, comp->nsPerTick * (res3 - res4));
-	res4 = res3 + 4;			// end of IO cycle
+	res4 = res3;
 	zxIORW(comp,port);			// cont mem
 // tape sync
 	tapSync(comp->tape,comp->tapCount);
@@ -138,15 +140,22 @@ void iowr(CPUCONT Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 // contended mem, move to end of IO cycle
 	res3 = TCPU(comp->cpu);
 	vidSync(comp->vid, comp->nsPerTick * (res3 - res4));
-	res4 = res3 + 4;
-	zxIORW(comp,port);
+	res4 = res3;
 	tapSync(comp->tape,comp->tapCount);
 	comp->tapCount = 0;
 	bdiz = ((comp->dosen & 1) && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
 // request to external devices
-	if (ideOut(comp->ide,port,val,comp->dosen & 1)) return;
-	if (gsOut(comp->gs,port,val) == GS_OK) return;
-	comp->hw->out(comp,port,val,bdiz);
+	if (comp->hwFlag & HW_CONTIO) {
+		if (!ideOut(comp->ide,port,val,comp->dosen & 1))
+		if (gsOut(comp->gs,port,val) != GS_OK)
+			comp->hw->out(comp,port,val,bdiz);
+		zxIORW(comp,port);
+	} else {
+		zxIORW(comp,port);
+		if (!ideOut(comp->ide,port,val,comp->dosen & 1))
+		if (gsOut(comp->gs,port,val) != GS_OK)
+			comp->hw->out(comp,port,val,bdiz);
+	}
 }
 
 Z80EX_BYTE intrq(CPUCONT void* ptr) {
