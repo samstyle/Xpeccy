@@ -55,7 +55,7 @@ inline void zxMemRW(ZXComp* comp, int adr) {
 		vidSync(comp->vid, comp->nsPerTick * (res3 - res4));
 		res4 = res3;
 		vidWait(comp->vid);					// do WAIT
-		vidSync(comp->vid, comp->nsPerTick * 3);		// 3T until last T in cycle
+		vidSync(comp->vid, comp->nsPerTick * 3);		// 3T rd/wr cycle
 		res4 += 3;
 	} else {
 		res3 = TCPU(comp->cpu) + 3;

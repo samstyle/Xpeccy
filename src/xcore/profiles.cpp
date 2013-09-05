@@ -247,6 +247,7 @@ int prfLoad(std::string nm) {
 						}
 					}
 					if (pnam == "contmem") setFlagBit(str2bool(pval),&comp->hwFlag,HW_CONTMEM);
+					//if (pnam == "contmemP3") setFlagBit(str2bool(pval),&comp->vid->flags,VID_CONT2);
 					if (pnam == "contio") setFlagBit(str2bool(pval),&comp->hwFlag,HW_CONTIO);
 					if (pnam == "scrp.wait") setFlagBit(str2bool(pval),&comp->hwFlag,HW_WAIT);
 					break;
@@ -351,6 +352,7 @@ int prfSave(std::string nm) {
 	file << "scrp.wait = " << YESNO(comp->hwFlag & HW_WAIT) << "\n";
 	file << "contio = " << YESNO(comp->hwFlag & HW_CONTIO) << "\n";
 	file << "contmem = " << YESNO(comp->hwFlag & HW_CONTMEM) << "\n";
+//	file << "contmemP3 = " << YESNO(comp->vid->flags & VID_CONT2) << "\n";
 
 	file << "\n[ROMSET]\n\n";
 	file << "current = " << prf->rsName.c_str() << "\n";

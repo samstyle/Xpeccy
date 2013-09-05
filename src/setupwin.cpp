@@ -344,6 +344,7 @@ void SetupWin::start() {
 	setupUi.grayscale->setChecked(vidFlag & VF_GREY);
 	setupUi.border4T->setChecked(zx->vid->flags & VID_BORDER_4T);
 	setupUi.contMem->setChecked(zx->hwFlag & HW_CONTMEM);
+//	setupUi.contMemP3->setChecked(zx->vid->flags & VID_CONT2);
 	setupUi.contIO->setChecked(zx->hwFlag & HW_CONTIO);
 	setupUi.bszsld->setValue((int)(brdsize * 100));
 	setupUi.pathle->setText(QString::fromLocal8Bit(optGetString(OPT_SHOTDIR).c_str()));
@@ -494,6 +495,7 @@ void SetupWin::apply() {
 	setFlagBit(setupUi.noflichk->isChecked(),&vidFlag,VF_NOFLIC);
 	setFlagBit(setupUi.border4T->isChecked(),&zx->vid->flags,VID_BORDER_4T);
 	setFlagBit(setupUi.contMem->isChecked(),&zx->hwFlag,HW_CONTMEM);
+//	setFlagBit(setupUi.contMemP3->isChecked(),&zx->vid->flags,VID_CONT2);
 	setFlagBit(setupUi.contIO->isChecked(),&zx->hwFlag,HW_CONTIO);
 	setFlagBit(setupUi.grayscale->isChecked(),&vidFlag,VF_GREY);
 	brdsize = setupUi.bszsld->value()/100.0;
@@ -697,10 +699,11 @@ void SetupWin::layEditorChanged() {
 
 	layUi.showField->setFixedSize(layUi.lineBox->value(),layUi.rowsBox->value());
 	QPixmap pix(layUi.lineBox->value(),layUi.rowsBox->value());
-	pix.fill(Qt::black);
-	layUi.showField->setPixmap(pix);
+//	pix.fill(Qt::black);
+//	layUi.showField->setPixmap(pix);
 	QPainter pnt;
 	pnt.begin(&pix);
+	pnt.fillRect(0,0,pix.width(),pix.height(),Qt::black);
 	pnt.fillRect(layUi.hsyncBox->value(),
 				 layUi.vsyncBox->value(),
 				 layUi.lineBox->value() - layUi.hsyncBox->value(),
