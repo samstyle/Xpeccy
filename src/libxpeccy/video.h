@@ -119,7 +119,7 @@ void vidDarkTail(Video*);
 
 void vidUpdate(Video*);
 
-unsigned char vidGetAttr(Video*);
+//unsigned char vidGetAttr(Video*);
 void vidSetFont(Video*,char*);
 
 #ifdef __cplusplus

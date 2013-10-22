@@ -51,7 +51,9 @@ Z80EX_BYTE speIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 	Z80EX_BYTE res = 0xff;
 	int ptype = speGetPort(port,bdiz);
 	switch (ptype) {
-		case 0: res = vidGetAttr(comp->vid); break;
+		case 0:
+			res = comp->vid->atrbyte;
+			break;
 		case 0x1f:
 			res = bdiz ? bdiIn(comp->bdi,FDC_STATE) : joyInput(comp->joy);
 			break;

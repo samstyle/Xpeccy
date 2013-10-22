@@ -122,17 +122,13 @@ void vidDarkTail(Video* vid) {
 	} while (ptr);
 }
 
-//int vidGetWait(Video* vid) {
-//	return 0; //vid->matrix[vid->dotCount].wait;
-//}
-
 int contTabA[] = {12,12,10,10,8,8,6,6,4,4,2,2,0,0,0,0};		// 48K 128K +2 (bank 1,3,5,7)
 int contTabB[] = {2,2,0,0,14,14,12,12,10,10,8,8,6,6,4,4};	// +2A +3 (bank 4,5,6,7)
 
 void vidWait(Video* vid) {
 	if (vid->y < vid->bord.v) return;		// above screen
 	if (vid->y > (vid->bord.v + 191)) return;	// below screen
-	xscr = vid->x - vid->bord.h + 2;
+	xscr = vid->x - vid->bord.h + 1;
 	if (xscr < 0) return;
 	if (xscr > 253) return;
 //	printf("X:%i, brd:%i, wait:%i\n",vid->x,vid->bord.h,contTabA[xscr & 0x0f]);
@@ -143,9 +139,11 @@ void vidSetFont(Video* vid, char* src) {
 	memcpy(vid->font,src,0x800);
 }
 
+/*
 unsigned char vidGetAttr(Video* vid) {
 	return 0xff; // (vid->matrix[vid->dotCount].flag & MTF_SCREEN) ? vid->atrbyte : vid->brdcol;
 }
+*/
 
 inline void vidPutDot(Video* vid, unsigned char colr) {
 	if ((vidFlag & (VF_NOFLIC | VF_FRAMEDBG)) == VF_NOFLIC) {
@@ -169,6 +167,7 @@ void vidDrawNormal(Video* vid) {
 	yscr = vid->y - vid->bord.v;
 	if ((yscr < 0) || (yscr > 191)) {
 		col = vid->brdcol;
+		vid->atrbyte = 0xff;
 	} else {
 		xscr = vid->x - vid->bord.h;
 		if ((xscr & 7) == 4) {
@@ -177,6 +176,7 @@ void vidDrawNormal(Video* vid) {
 		}
 		if ((vid->x < vid->bord.h) || (vid->x > vid->bord.h + 255)) {
 			col = vid->brdcol;
+			vid->atrbyte = 0xff;
 		} else {
 			if ((xscr & 7) == 0) {
 				scrbyte = nxtbyte;

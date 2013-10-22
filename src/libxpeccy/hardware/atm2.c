@@ -150,7 +150,7 @@ Z80EX_BYTE atm2In(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 			res = bdiz ? bdiIn(comp->bdi,FDC_DATA) : 0xff;
 			break;
 		case 0xff:
-			res = bdiz ? bdiIn(comp->bdi,BDI_SYS) : vidGetAttr(comp->vid);
+			res = bdiz ? bdiIn(comp->bdi,BDI_SYS) : comp->vid->atrbyte;
 			break;
 		case 0xfe:
 			res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00);

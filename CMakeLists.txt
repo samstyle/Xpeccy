@@ -20,7 +20,7 @@ file(GLOB SOURCES
 	./src/filetypes/*.cpp
 	./src/xcore/*.cpp
 	./src/xgui/*.cpp
-        ./src/filetypes/unpackers/*.cpp
+	./src/filetypes/unpackers/*.cpp
 if(WIN32)
 	./xpeccy.rc
 endif(WIN32)
@@ -32,7 +32,7 @@ file(GLOB HEADERS
 	./src/filetypes/*.h
 	./src/xcore/*.h
 	./src/xgui/*.h
-        ./src/filetypes/unpackers/*.h
+	./src/filetypes/unpackers/*.h
 )
 file(GLOB UIFILES ./ui/*.ui)
 set(QRCFILES ./xpeccy.qrc)
@@ -158,6 +158,19 @@ target_link_libraries(xpeccy ${LIBRARIES})
 if(UNIX)
 	install_targets(/bin xpeccy)
 endif(UNIX)
+
+# DEB package
+
+set(CPACK_GENERATOR "DEB")
+set(CPACK_DEBIAN_PACKAGE_NAME "Xpeccy")
+set(CPACK_DEBIAN_PACKAGE_VERSION "20131022")
+#set(CPACK_DEBIAN_PACKAGE_DEPENDS "")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "SAM style")
+set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "ZX Spectrum emulator")
+set(CPACK_DEBIAN_PACKAGE_SECTION "Games")
+set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+
+include(${CMAKE_ROOT}/Modules/CPack.cmake)
 
 # result messages
 
