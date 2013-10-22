@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>Tape</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="../xpeccy.qrc">
+    <normaloff>:/images/tape.png</normaloff>:/images/tape.png</iconset>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QTableWidget" name="tapeList">

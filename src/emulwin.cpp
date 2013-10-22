@@ -446,7 +446,7 @@ void emulPause(bool p, int msk) {
 MainWin::MainWin() {
 	setWindowTitle(XPTITLE);
 	setMouseTracking(true);
-	curicon = QIcon(":/images/logo.png");
+	curicon = QIcon(":/images/xpeccy.png");
 	setWindowIcon(curicon);
 	setAcceptDrops(true);
 #ifndef XQTPAINT

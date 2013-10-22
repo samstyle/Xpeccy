@@ -157,20 +157,26 @@ target_link_libraries(xpeccy ${LIBRARIES})
 
 if(UNIX)
 	install_targets(/bin xpeccy)
-endif(UNIX)
+	install(FILES images/xpeccy.png DESTINATION share/icons)
+	install(FILES Xpeccy.desktop DESTINATION share/applications)
 
 # DEB package
 
 set(CPACK_GENERATOR "DEB")
 set(CPACK_DEBIAN_PACKAGE_NAME "Xpeccy")
 set(CPACK_DEBIAN_PACKAGE_VERSION "20131022")
-#set(CPACK_DEBIAN_PACKAGE_DEPENDS "")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libSDL1.2debian (>=1.2), libqtcore4 (>=4.6), libqtgui4 (>=4.6), libasound2 (>=1.0), zlib1g (>=1.2)")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "SAM style")
 set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "ZX Spectrum emulator")
 set(CPACK_DEBIAN_PACKAGE_SECTION "Games")
 set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+if("${Z80TYPE}" EQUAL "1")
+	set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libz80ex1 (>=1.1.21)")
+endif()
 
 include(${CMAKE_ROOT}/Modules/CPack.cmake)
+
+endif(UNIX)
 
 # result messages
 
