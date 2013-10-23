@@ -1,9 +1,9 @@
 [Desktop Entry]
 Name=Xpeccy
 Version=1.0
-Exec=/usr/bin/xpeccy
+Exec=../../bin/xpeccy
 Comment=ZX Spectrum emulator
-Icon=/usr/share/icons/xpeccy.png
+Icon=../icons/xpeccy.png
 Type=Application
 Terminal=false
 StartupNotify=true
