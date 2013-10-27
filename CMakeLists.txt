@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(xpeccy)
 
+include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
+
 set(INCLUDIRS ${CMAKE_BINARY_DIR})
 
 if(UNIX)
@@ -10,8 +12,6 @@ elseif(WIN32)
 	set(INC_PATHS ${INCLUDE} ${PATH})
 	set(LIB_PATHS ${LIBPATH} ${PATH})
 endif()
-
-include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
 
 file(GLOB SOURCES
 	./src/*.cpp
@@ -155,23 +155,47 @@ add_executable(xpeccy WIN32
 
 target_link_libraries(xpeccy ${LIBRARIES})
 
+message(STATUS "\n")
+message(STATUS "Project will be compiled with following options:")
+
 if(UNIX)
 	install_targets(/bin xpeccy)
 	install(FILES images/xpeccy.png DESTINATION share/icons)
 	install(FILES Xpeccy.desktop DESTINATION share/applications)
 
+set(CPACK_PACKAGE_NAME "Xpeccy")
+set(CPACK_PACKAGE_VERSION "0.5.20131027")
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_${CMAKE_SYSTEM_PROCESSOR}")
+set(CPACK_PACKAGE_DESCRIPTION "ZX Spectrum emulator")
+set(CPACK_PACKAGE_VENDOR "SAM style")
+set(CPACK_PACKAGE_CONTACT "samstyle@list.ru")
+
+if ("${PACK}" STREQUAL "rpm")
+
+# RPM package
+
+message(STATUS "Package type : RPM")
+set(CPACK_GENERATOR "RPM")
+set(CPACK_RPM_PACKAGE_LICENSE "GPLv2")
+set(CPACK_RPM_PACKAGE_GROUP "Games")
+set(CPACK_RPM_PACKAGE_REQUIRES "libSDL >= 1.2, libqt4 >=4.6, libqt4-x11 >= 4.6, libasound2 >= 1.0, zlib >= 1.2")
+if("${Z80TYPE}" EQUAL "1")
+	set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libz80ex1 >= 1.1.21")
+endif()
+
+else ()
+
 # DEB package
 
+message(STATUS "Package type : DEB")
 set(CPACK_GENERATOR "DEB")
-set(CPACK_DEBIAN_PACKAGE_NAME "Xpeccy")
-set(CPACK_DEBIAN_PACKAGE_VERSION "20131022")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libSDL1.2debian (>=1.2), libqtcore4 (>=4.6), libqtgui4 (>=4.6), libasound2 (>=1.0), zlib1g (>=1.2)")
-set(CPACK_DEBIAN_PACKAGE_MAINTAINER "SAM style")
-set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "ZX Spectrum emulator")
 set(CPACK_DEBIAN_PACKAGE_SECTION "Games")
 set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
 if("${Z80TYPE}" EQUAL "1")
 	set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libz80ex1 (>=1.1.21)")
+endif()
+
 endif()
 
 include(${CMAKE_ROOT}/Modules/CPack.cmake)
@@ -179,9 +203,6 @@ include(${CMAKE_ROOT}/Modules/CPack.cmake)
 endif(UNIX)
 
 # result messages
-
-message(STATUS "\n")
-message(STATUS "Project will be compiled with following options:")
 
 if(QTDRAWING OR WIN32)
 	message(STATUS "Painter : Qt")
