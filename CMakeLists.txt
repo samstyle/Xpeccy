@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(xpeccy)
+set(XVER "0.5.20131027")
 
 include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
 
@@ -43,6 +44,8 @@ set(MOCFILES
 	./src/setupwin.h
 	./src/xgui/xgui.h
 )
+
+add_definitions(-DVERSION=${XVER})
 
 # endianess
 
@@ -164,7 +167,7 @@ if(UNIX)
 	install(FILES Xpeccy.desktop DESTINATION share/applications)
 
 set(CPACK_PACKAGE_NAME "Xpeccy")
-set(CPACK_PACKAGE_VERSION "0.5.20131027")
+set(CPACK_PACKAGE_VERSION ${XVER})
 set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_${CMAKE_SYSTEM_PROCESSOR}")
 set(CPACK_PACKAGE_DESCRIPTION "ZX Spectrum emulator")
 set(CPACK_PACKAGE_VENDOR "SAM style")

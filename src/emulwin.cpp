@@ -47,7 +47,10 @@
 	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
 #endif
 
-#define	XPTITLE	"Xpeccy 0.5 (20130905)"
+#define STR_EXPAND(tok) #tok
+#define	STR(tok) STR_EXPAND(tok)
+
+#define	XPTITLE	STR(Xpeccy VERSION)
 
 // main
 MainWin* mainWin;
