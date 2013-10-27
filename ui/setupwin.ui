@@ -2588,8 +2588,8 @@
        </widget>
        <widget class="QWidget" name="tab_4">
         <attribute name="icon">
-         <iconset>
-          <normaloff>:/images/logo.png</normaloff>:/images/logo.png</iconset>
+         <iconset resource="../xpeccy.qrc">
+          <normaloff>:/images/xpeccy.png</normaloff>:/images/xpeccy.png</iconset>
         </attribute>
         <attribute name="title">
          <string>Xpeccy</string>
