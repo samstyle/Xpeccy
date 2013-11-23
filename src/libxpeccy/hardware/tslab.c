@@ -44,8 +44,13 @@ Z80EX_BYTE tslMRd(ZXComp* comp, Z80EX_WORD adr, int m1) {
 
 void tslMWr(ZXComp* comp, Z80EX_WORD adr, Z80EX_BYTE val) {
 	if ((comp->tsconf.flag & 0x10) && ((adr & 0xf000) == comp->tsconf.tsMapAdr)) {
-		if ((adr & 0xe00) == 0x000) {comp->vid->tsconf.cram[adr & 0x1ff] = val; comp->flag |= ZX_PALCHAN;}
-		if ((adr & 0xe00) == 0x200) comp->vid->tsconf.sfile[adr & 0x1ff] = val;
+		if ((adr & 0xe00) == 0x000) {
+			comp->vid->tsconf.cram[adr & 0x1ff] = val;
+			comp->flag |= ZX_PALCHAN;
+		}
+		if ((adr & 0xe00) == 0x200) {
+			comp->vid->tsconf.sfile[adr & 0x1ff] = val;
+		}
 	}
 	memWr(comp->mem,adr,val);
 }

@@ -145,14 +145,8 @@ unsigned char vidGetAttr(Video* vid) {
 }
 */
 
-inline void vidPutDot(Video* vid, unsigned char colr) {
-	if ((vidFlag & (VF_NOFLIC | VF_FRAMEDBG)) == VF_NOFLIC) {
-		colr = (((*vid->scrptr) & 0x0f) << 4) | (colr & 0x0f);
-	} else {
-		colr |= (colr << 4);
-	}
-//	if ((~vidFlag & VF_CHECKCHA) || (*vid->scrptr != colr)) vidFlag |= VF_CHANGED;
-	if (*vid->scrptr != colr) {
+inline void vidPutSimpleDot(Video* vid, unsigned char colr) {
+	if ((*vid->scrptr != colr) || vid->forceDraw) {
 		*(vid->scrptr++) = colr;
 		if (vidFlag & VF_DOUBLE) *(vid->scrptr++)=colr;
 		vid->change = 1;
@@ -160,6 +154,15 @@ inline void vidPutDot(Video* vid, unsigned char colr) {
 		vid->scrptr++;
 		if (vidFlag & VF_DOUBLE) vid->scrptr++;
 	}
+}
+
+inline void vidPutDot(Video* vid, unsigned char colr) {
+	if ((vidFlag & (VF_NOFLIC | VF_FRAMEDBG)) == VF_NOFLIC) {
+		colr = (((*vid->scrptr) & 0x0f) << 4) | (colr & 0x0f);
+	} else {
+		colr |= (colr << 4);
+	}
+	vidPutSimpleDot(vid,colr);
 }
 
 // video drawing
@@ -541,7 +544,10 @@ void vidTSRender(Video* vid, unsigned char* ptr) {
 	if (vid->tsconf.tconfig & 0x80) {
 		vidTSSprites(vid);
 	}
-	if (vid->tsconf.tconfig & 0xe0) vidTSPut(vid,ptr);		// if tile or sprites visible, put line over screen
+	if (vid->tsconf.tconfig & 0xe0) {
+		vidTSPut(vid,ptr);		// if tile or sprites visible, put line over screen
+		vid->change = 1;
+	}
 	vid->tsconf.scrLine++;
 }
 
@@ -573,8 +579,9 @@ void vidDrawTSLNormal(Video* vid) {
 			scrbyte <<= 1;
 		}
 	}
-	*(vid->scrptr++) =  col;
-	if (vidFlag & VF_DOUBLE) *(vid->scrptr++) = col;
+	vidPutSimpleDot(vid,col);
+//	*(vid->scrptr++) =  col;
+//	if (vidFlag & VF_DOUBLE) *(vid->scrptr++) = col;
 }
 
 // tsconf 4bpp
@@ -598,8 +605,9 @@ void vidDrawTSL16(Video* vid) {
 		}
 		col |= vid->tsconf.scrPal;
 	}
-	*(vid->scrptr++) = col;
-	if (vidFlag & VF_DOUBLE) *(vid->scrptr++) = col;
+	vidPutSimpleDot(vid,col);
+//	*(vid->scrptr++) = col;
+//	if (vidFlag & VF_DOUBLE) *(vid->scrptr++) = col;
 }
 
 // tsconf 8bpp
@@ -617,8 +625,9 @@ void vidDrawTSL256(Video* vid) {
 		adr = ((vid->tsconf.vidPage & 0xf0) << 14) + (yscr << 9) + xscr;
 		col = vid->mem->ramData[adr];
 	}
-	*(vid->scrptr++) = col;
-	if (vidFlag & VF_DOUBLE) *(vid->scrptr++) = col;
+	vidPutSimpleDot(vid,col);
+//	*(vid->scrptr++) = col;
+//	if (vidFlag & VF_DOUBLE) *(vid->scrptr++) = col;
 }
 
 // tsconf text (not working yet)
@@ -693,6 +702,7 @@ void vidSetMode(Video* vid, int mode) {
 		case VID_TSL_TEXT: vid->callback = &vidDrawTSLText; break;
 		default: vid->callback = &vidDrawBorder; break;
 	}
+	vid->forceDraw = 1;
 }
 
 void vidSync(Video* vid, int ns) {
@@ -719,6 +729,7 @@ void vidSync(Video* vid, int ns) {
 				vid->fcnt++;
 				vid->flash = vid->fcnt & 0x20;
 				vid->tsconf.scrLine = vid->tsconf.yOffset;
+				vid->forceDraw = 0;
 			}
 		}
 		vid->nsDraw -= NS_PER_DOT;

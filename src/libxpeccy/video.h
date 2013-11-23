@@ -62,6 +62,7 @@ struct Video {
 			unsigned nextrow:1;
 			unsigned istsconf:1;
 			unsigned change:1;
+			unsigned forceDraw:1;
 		};
 	};
 	int flash;

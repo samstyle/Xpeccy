@@ -90,6 +90,7 @@ bool setProfile(std::string nm) {
 	zx->flag |= ZX_PALCHAN;
 	// emulSetPalette(zx,0);
 	zx->vid->change = 1;
+	zx->vid->forceDraw = 1;
 	return true;
 }
 

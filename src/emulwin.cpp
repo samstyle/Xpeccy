@@ -1405,6 +1405,7 @@ void MainWin::emuDraw() {
 		SDL_UpdateRect(surf,0,0,0,0);
 #endif
 		zx->vid->change = 0;
+		// zx->vid->forceDraw = 0;
 	}
 //	vidFlag &= ~VF_CHANGED;
 //	vidFlag |= VF_CHECKCHA;
