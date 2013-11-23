@@ -48,14 +48,22 @@ MemPage* memGetBankPtr(Memory* mem, unsigned short adr) {
 	return mem->pt3;
 }
 
+MemPage* ptr;
+
 unsigned char memRd(Memory* mem, unsigned short adr) {
-	MemPage* ptr = memGetBankPtr(mem,adr);
+	if (adr < 0x4000) ptr = mem->pt0;
+	else if (adr < 0x8000) ptr = mem->pt1;
+	else if (adr < 0xc000) ptr = mem->pt2;
+	else ptr = mem->pt3;
 	mem->flags = ptr->flag[adr & 0x3fff];
 	return ptr->data[adr & 0x3fff];
 }
 
 void memWr(Memory* mem, unsigned short adr, unsigned char val) {
-	MemPage* ptr = memGetBankPtr(mem,adr);
+	if (adr < 0x4000) ptr = mem->pt0;
+	else if (adr < 0x8000) ptr = mem->pt1;
+	else if (adr < 0xc000) ptr = mem->pt2;
+	else ptr = mem->pt3;
 	mem->flags = ptr->flag[adr & 0x3fff];
 	if (ptr->type == MEM_RAM) ptr->data[adr & 0x3fff] = val;
 }

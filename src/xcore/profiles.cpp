@@ -89,6 +89,7 @@ bool setProfile(std::string nm) {
 	vidUpdate(zx->vid);
 	zx->flag |= ZX_PALCHAN;
 	// emulSetPalette(zx,0);
+	zx->vid->change = 1;
 	return true;
 }
 
@@ -205,7 +206,7 @@ int prfLoad(std::string nm) {
 					break;
 				case PS_VIDEO:
 					if (pnam == "geometry") prf->layName = pval;
-					if (pnam == "4t-border") setFlagBit(str2bool(pval),&comp->vid->flags,VID_BORDER_4T);
+					if (pnam == "4t-border") comp->vid->border4t = str2bool(pval) ? 1 : 0;
 					break;
 				case PS_SOUND:
 					if (pnam == "chip1") aymSetType(comp->ts->chipA,atoi(pval.c_str()));
@@ -360,7 +361,7 @@ int prfSave(std::string nm) {
 
 	file << "\n[VIDEO]\n\n";
 	file << "geometry = " << prf->layName.c_str() << "\n";
-	file << "4t-border = " << YESNO(comp->vid->flags & VID_BORDER_4T) << "\n";
+	file << "4t-border = " << YESNO(comp->vid->border4t) << "\n";
 
 	file << "\n[SOUND]\n\n";
 	file << "chip1 = " << int2str(comp->ts->chipA->type) << "\n";

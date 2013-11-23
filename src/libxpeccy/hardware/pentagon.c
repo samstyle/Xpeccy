@@ -30,7 +30,7 @@ void penOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 	sdrvOut(comp->sdrv,port & 0x00ff,val);
 	if ((port & 0x0001) == 0x0000) {
 		comp->vid->nextbrd = val & 0x07;
-		if (!(comp->vid->flags & VID_BORDER_4T)) comp->vid->brdcol = val & 0x07;
+		if (!comp->vid->border4t) comp->vid->brdcol = val & 0x07;
 		comp->beeplev = val & 0x10;
 		comp->tape->outsig = (val & 0x08) ? 1 : 0;
 	}

@@ -131,8 +131,7 @@ Z80EX_BYTE iord(CPUCONT Z80EX_WORD port, void* ptr) {
 // request to external devices
 	if (ideIn(comp->ide,port,&res,comp->dosen & 1)) return res;
 	if (gsIn(comp->gs,port,&res) == GS_OK) return res;
-	res = comp->hw->in(comp,port,bdiz);
-	return res;
+	return comp->hw->in(comp,port,bdiz);
 }
 
 void iowr(CPUCONT Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
@@ -357,11 +356,7 @@ void zxSetHardware(ZXComp* comp, const char* name) {
 	HardWare* hw = findHardware(name);
 	if (hw == NULL) return;
 	comp->hw = hw;
-	if (hw->type == HW_TSLAB) {
-		comp->vid->flags |= VF_TSCONF;
-	} else {
-		comp->vid->flags &= ~VF_TSCONF;
-	}
+	comp->vid->istsconf = (hw->type == HW_TSLAB) ? 1 : 0;
 }
 
 void zxSetFrq(ZXComp* comp, float frq) {
@@ -384,9 +379,9 @@ int zxExec(ZXComp* comp) {
 			comp->nsCount -= comp->nsPerFrame;
 			comp->frmStrobe = 1;
 		}
-		if (comp->vid->flags & VID_INTSTROBE) {
+		if (comp->vid->intstrobe) {
 			comp->intStrobe = 1;
-			comp->vid->flags &= ~VID_INTSTROBE;
+			comp->vid->intstrobe = 0;
 		}
 	}
 	pcreg = GETPC(comp->cpu);	// z80ex_get_reg(comp->cpu,regPC);
@@ -423,10 +418,10 @@ int zxExec(ZXComp* comp) {
 		}
 		comp->intStrobe = 0;
 	}
-	if ((comp->vid->flags & VID_NEXTROW) && (comp->hw->type == HW_TSLAB)) {
+	if ((comp->vid->nextrow) && (comp->hw->type == HW_TSLAB)) {
 		tslUpdatePorts(comp);
 		// vidTSRender(comp->vid,ptr);
-		comp->vid->flags &= ~VID_NEXTROW;
+		comp->vid->nextrow = 0;
 	}
 	nsTime = res1 * comp->nsPerTick;
 	comp->tickCount += res1;

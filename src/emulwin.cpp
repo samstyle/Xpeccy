@@ -1398,12 +1398,13 @@ void MainWin::emuDraw() {
 			case FDC_WRITE: putIcon(zx->vid,4,4,icoRedDisk); break;
 		}
 	}
-	if (~emulFlags & FL_BLOCK) {
+	if ((~emulFlags & FL_BLOCK) && zx->vid->change) {
 #ifdef XQTPAINT
 		update();
 #else
 		SDL_UpdateRect(surf,0,0,0,0);
 #endif
+		zx->vid->change = 0;
 	}
 //	vidFlag &= ~VF_CHANGED;
 //	vidFlag |= VF_CHECKCHA;

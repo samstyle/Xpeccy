@@ -63,8 +63,7 @@ void tslUpdatePorts(ZXComp* comp) {
 		case 3: vidSetMode(comp->vid,VID_TSL_TEXT); break;
 		default: vidSetMode(comp->vid,VID_UNKNOWN); break;	// never
 	}
-	comp->vid->flags &= ~VID_NOGFX;
-	if (val & 0x20) comp->vid->flags |= VID_NOGFX;
+	comp->vid->nogfx = (val & 0x20) ? 1 : 0;
 
 	comp->vid->tsconf.vidPage = comp->tsconf.p01af;
 	comp->vid->tsconf.soxl = comp->tsconf.p02af;

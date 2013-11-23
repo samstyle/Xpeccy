@@ -16,14 +16,16 @@ extern "C" {
 #define	VF_FRAMEDBG		(1<<3)
 #define VF_NOFLIC		(1<<4)
 #define	VF_GREY			(1<<5)
-#define	VF_TSCONF		(1<<6)
 #define	VF_BLOCK		(1<<7)
 // vid->flags (vid)
+/*
 #define	VID_BORDER_4T		1
 #define	VID_NOGFX		(1<<1)
 #define	VID_INTSTROBE		(1<<2)
 #define VID_NEXTROW		(1<<3)
 #define	VID_CONT2		(1<<4)		// +2a or +3 contended memory pattern
+#define	VF_TSCONF		(1<<6)
+*/
 // screen drawing mode
 #define	VID_NOSCREEN	0
 #define	VID_NORMAL	1
@@ -51,7 +53,17 @@ typedef struct {
 #endif
 
 struct Video {
-	int flags;
+	union {
+		int flag;
+		struct {
+			unsigned border4t:1;
+			unsigned nogfx:1;
+			unsigned intstrobe:1;
+			unsigned nextrow:1;
+			unsigned istsconf:1;
+			unsigned change:1;
+		};
+	};
 	int flash;
 	int curscr;
 	unsigned char brdcol;
@@ -60,11 +72,11 @@ struct Video {
 	unsigned char atrbyte;
 	unsigned char* scrptr;
 	unsigned char* scrimg;
-	int x;
-	int y;
-	int frmsz;
-	int vmode;
-	int nsDraw;
+	size_t x;
+	size_t y;
+	size_t frmsz;
+	size_t vmode;
+	size_t nsDraw;
 	VSize full;
 	VSize bord;
 	VSize sync;
@@ -74,7 +86,7 @@ struct Video {
 	VSize wsze;
 	VSize intpos;
 	Memory* mem;
-	int intsz;
+	size_t intsz;
 	struct {
 		unsigned char vidPage;		// 1st video page
 		int xPos;			// position of screen @ monitor [32|12] x [44|24|0]

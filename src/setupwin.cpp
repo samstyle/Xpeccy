@@ -342,7 +342,7 @@ void SetupWin::start() {
 	setupUi.fscchk->setChecked(vidFlag & VF_FULLSCREEN);
 	setupUi.noflichk->setChecked(vidFlag & VF_NOFLIC);
 	setupUi.grayscale->setChecked(vidFlag & VF_GREY);
-	setupUi.border4T->setChecked(zx->vid->flags & VID_BORDER_4T);
+	setupUi.border4T->setChecked(zx->vid->border4t);
 	setupUi.contMem->setChecked(zx->hwFlag & HW_CONTMEM);
 //	setupUi.contMemP3->setChecked(zx->vid->flags & VID_CONT2);
 	setupUi.contIO->setChecked(zx->hwFlag & HW_CONTIO);
@@ -493,7 +493,8 @@ void SetupWin::apply() {
 	setFlagBit(setupUi.dszchk->isChecked(),&vidFlag,VF_DOUBLE);
 	setFlagBit(setupUi.fscchk->isChecked(),&vidFlag,VF_FULLSCREEN);
 	setFlagBit(setupUi.noflichk->isChecked(),&vidFlag,VF_NOFLIC);
-	setFlagBit(setupUi.border4T->isChecked(),&zx->vid->flags,VID_BORDER_4T);
+	zx->vid->border4t = setupUi.border4T->isChecked() ? 1 : 0;
+//	setFlagBit(setupUi.border4T->isChecked(),&zx->vid->flags,VID_BORDER_4T);
 	setFlagBit(setupUi.contMem->isChecked(),&zx->hwFlag,HW_CONTMEM);
 //	setFlagBit(setupUi.contMemP3->isChecked(),&zx->vid->flags,VID_CONT2);
 	setFlagBit(setupUi.contIO->isChecked(),&zx->hwFlag,HW_CONTIO);
