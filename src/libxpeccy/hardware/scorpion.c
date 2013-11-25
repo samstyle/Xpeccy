@@ -34,7 +34,7 @@ void scoMapMem(ZXComp* comp) {
 }
 
 Z80EX_BYTE scoMRd(ZXComp* comp, Z80EX_WORD adr, int m1) {
-	if (((comp->mem->pt0->num & 3) == 2) && ((adr & 0xfff3) == 0x0100)) {
+	if (((comp->mem->pt[0]->num & 3) == 2) && ((adr & 0xfff3) == 0x0100)) {
 		comp->prt2 = ZSLays[(adr & 0x000c) >> 2][comp->prt2 & 3];
 		comp->hw->mapMem(comp);
 	}

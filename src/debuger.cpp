@@ -231,13 +231,13 @@ void DebugWin::fillvg() {
 void DebugWin::fillrays() {
 	QLabel *lab;
 	lab = (QLabel*)raylay->itemAtPosition(0,1)->widget();
-	lab->setText(QString((zx->mem->pt0->type == MEM_ROM) ? "ROM-" : "RAM-").append(QString::number(zx->mem->pt0->num)));
+	lab->setText(QString((zx->mem->pt[0]->type == MEM_ROM) ? "ROM-" : "RAM-").append(QString::number(zx->mem->pt[0]->num)));
 	lab = (QLabel*)raylay->itemAtPosition(1,1)->widget();
-	lab->setText(QString((zx->mem->pt1->type == MEM_ROM) ? "ROM-" : "RAM-").append(QString::number(zx->mem->pt1->num)));
+	lab->setText(QString((zx->mem->pt[1]->type == MEM_ROM) ? "ROM-" : "RAM-").append(QString::number(zx->mem->pt[1]->num)));
 	lab = (QLabel*)raylay->itemAtPosition(2,1)->widget();
-	lab->setText(QString((zx->mem->pt2->type == MEM_ROM) ? "ROM-" : "RAM-").append(QString::number(zx->mem->pt2->num)));
+	lab->setText(QString((zx->mem->pt[2]->type == MEM_ROM) ? "ROM-" : "RAM-").append(QString::number(zx->mem->pt[2]->num)));
 	lab = (QLabel*)raylay->itemAtPosition(3,1)->widget();
-	lab->setText(QString((zx->mem->pt3->type == MEM_ROM) ? "ROM-" : "RAM-").append(QString::number(zx->mem->pt3->num)));
+	lab->setText(QString((zx->mem->pt[3]->type == MEM_ROM) ? "ROM-" : "RAM-").append(QString::number(zx->mem->pt[3]->num)));
 	lab = (QLabel*)raylay->itemAtPosition(4,1)->widget();
 	lab->setText((zx->dosen & 1) ? "1" : "0");
 	lab = (QLabel*)raylay->itemAtPosition(5,1)->widget(); lab->setText(getbinbyte(zx->prt0));

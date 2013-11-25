@@ -1628,7 +1628,7 @@ void emuCycle() {
 		}
 		// tape trap
 		pc = GETPC(zx->cpu);	// z80ex_get_reg(zx->cpu,regPC);
-		if ((zx->mem->pt0->type == MEM_ROM) && (zx->mem->pt0->num == 1)) {
+		if ((zx->mem->pt[0]->type == MEM_ROM) && (zx->mem->pt[0]->num == 1)) {
 			if (pc == 0x56b) emulTapeCatch();
 			if ((pc == 0x5e2) && optGetFlag(OF_TAPEAUTO))
 				mainWin->tapStateChanged(TW_STATE,TWS_STOP);

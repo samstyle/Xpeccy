@@ -29,10 +29,10 @@ Memory* memCreate() {
 	}
 	mem->flags = MEM_ROM_WP;
 	memSetSize(mem,48);
-	mem->pt0 = &mem->rom[0];
-	mem->pt1 = &mem->ram[5];
-	mem->pt2 = &mem->ram[2];
-	mem->pt3 = &mem->ram[0];
+	mem->pt[0] = &mem->rom[0];
+	mem->pt[1] = &mem->ram[5];
+	mem->pt[2] = &mem->ram[2];
+	mem->pt[3] = &mem->ram[0];
 
 	return mem;
 }
@@ -42,28 +42,31 @@ void memDestroy(Memory* mem) {
 }
 
 MemPage* memGetBankPtr(Memory* mem, unsigned short adr) {
-	if (adr < 0x4000) return mem->pt0;
-	if (adr < 0x8000) return mem->pt1;
-	if (adr < 0xc000) return mem->pt2;
-	return mem->pt3;
+	return mem->pt[adr >> 14];
+//	if (adr < 0x4000) return mem->pt0;
+//	if (adr < 0x8000) return mem->pt1;
+//	if (adr < 0xc000) return mem->pt2;
+//	return mem->pt3;
 }
 
 MemPage* ptr;
 
 unsigned char memRd(Memory* mem, unsigned short adr) {
-	if (adr < 0x4000) ptr = mem->pt0;
-	else if (adr < 0x8000) ptr = mem->pt1;
-	else if (adr < 0xc000) ptr = mem->pt2;
-	else ptr = mem->pt3;
+//	if (adr < 0x4000) ptr = mem->pt0;
+//	else if (adr < 0x8000) ptr = mem->pt1;
+//	else if (adr < 0xc000) ptr = mem->pt2;
+//	else ptr = mem->pt3;
+	ptr = mem->pt[adr >> 14];
 	mem->flags = ptr->flag[adr & 0x3fff];
 	return ptr->data[adr & 0x3fff];
 }
 
 void memWr(Memory* mem, unsigned short adr, unsigned char val) {
-	if (adr < 0x4000) ptr = mem->pt0;
-	else if (adr < 0x8000) ptr = mem->pt1;
-	else if (adr < 0xc000) ptr = mem->pt2;
-	else ptr = mem->pt3;
+//	if (adr < 0x4000) ptr = mem->pt0;
+//	else if (adr < 0x8000) ptr = mem->pt1;
+//	else if (adr < 0xc000) ptr = mem->pt2;
+//	else ptr = mem->pt3;
+	ptr = mem->pt[adr >> 14];
 	mem->flags = ptr->flag[adr & 0x3fff];
 	if (ptr->type == MEM_RAM) ptr->data[adr & 0x3fff] = val;
 }
@@ -137,26 +140,26 @@ void memSetBank(Memory* mem, int bank, int wut, unsigned char nr) {
 	switch (bank) {
 		case MEM_BANK0:
 			switch (wut) {
-				case MEM_ROM: mem->pt0 = (nr == 0xff) ? &mem->ram[0] : &mem->rom[nr]; break;
-				case MEM_RAM: mem->pt0 = &mem->ram[nr]; break;
+				case MEM_ROM: mem->pt[0] = (nr == 0xff) ? &mem->ram[0] : &mem->rom[nr]; break;
+				case MEM_RAM: mem->pt[0] = &mem->ram[nr]; break;
 			}
 			break;
 		case MEM_BANK1:
 			switch (wut) {
-				case MEM_ROM: mem->pt1 = &mem->rom[nr]; break;
-				case MEM_RAM: mem->pt1 = &mem->ram[nr]; break;
+				case MEM_ROM: mem->pt[1] = &mem->rom[nr]; break;
+				case MEM_RAM: mem->pt[1] = &mem->ram[nr]; break;
 			}
 			break;
 		case MEM_BANK2:
 			switch (wut) {
-				case MEM_ROM: mem->pt2 = &mem->rom[nr]; break;
-				case MEM_RAM: mem->pt2 = &mem->ram[nr]; break;
+				case MEM_ROM: mem->pt[2] = &mem->rom[nr]; break;
+				case MEM_RAM: mem->pt[2] = &mem->ram[nr]; break;
 			}
 			break;
 		case MEM_BANK3:
 			switch (wut) {
-				case MEM_ROM: mem->pt3 = &mem->rom[nr]; break;
-				case MEM_RAM: mem->pt3 = &mem->ram[nr]; break;
+				case MEM_ROM: mem->pt[3] = &mem->rom[nr]; break;
+				case MEM_RAM: mem->pt[3] = &mem->ram[nr]; break;
 			}
 			break;
 	}

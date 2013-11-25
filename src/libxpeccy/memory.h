@@ -39,10 +39,7 @@ typedef struct {
 	int flags;
 	MemPage ram[256];
 	MemPage rom[32];
-	MemPage* pt0;
-	MemPage* pt1;
-	MemPage* pt2;
-	MemPage* pt3;
+	MemPage* pt[4];
 	unsigned char ramData[0x400000];	// 4M
 	unsigned char ramFlag[0x400000];
 	unsigned char romData[0x80000];		// 512K

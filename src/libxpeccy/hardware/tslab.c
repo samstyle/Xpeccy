@@ -337,8 +337,8 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 			res = comp->tsconf.pwr_up ? 0x40 : 0x00;		// b6: PWR_UP (1st run)
 			comp->tsconf.pwr_up = 0;
 			break;
-		case 0x12af: res = comp->mem->pt2->num; break;		// comp->tsconf.Page2;
-		case 0x13af: res = comp->mem->pt3->num; break;		// comp->tsconf.Page3;
+		case 0x12af: res = comp->mem->pt[2]->num; break;		// comp->tsconf.Page2;
+		case 0x13af: res = comp->mem->pt[3]->num; break;		// comp->tsconf.Page3;
 		case 0x27af:
 			res = 0;				// b7: DMA status
 			break;
