@@ -32,6 +32,32 @@ unsigned char papTab[] = {
   0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f,
 };
 
+// zx screen adr
+unsigned short scrAdrs[6912];
+unsigned short atrAdrs[6912];
+
+void initAdrs() {
+	unsigned short sadr = 0x0000;
+	unsigned short aadr = 0x1800;
+	int idx = 0;
+	int a,b,c,d;
+	for (a = 0; a < 3; a++) {	// parts
+		for (b = 0; b < 8; b++) {	// box lines
+			for (c = 0; c < 8; c++) {	// pixel lines
+				for (d = 0; d < 32; d++) {	// x bytes
+					scrAdrs[idx] = sadr + d;
+					atrAdrs[idx] = aadr + d;
+					idx++;
+				}
+				sadr += 0x100;
+			}
+			sadr -= 0x7e0;
+			aadr += 0x20;
+		}
+		sadr += 0x700;
+	}
+}
+
 Video* vidCreate(Memory* me) {
 	Video* vid = (Video*)malloc(sizeof(Video));
 	vid->mem = me;
@@ -50,7 +76,7 @@ Video* vidCreate(Memory* me) {
 	vidSetMode(vid,VID_NORMAL);
 
 	vid->nextbrd = 0;
-	vid->curscr = 0;
+	vid->curscr = 5;
 	vid->fcnt = 0;
 
 	vid->nsDraw = 0;
@@ -61,6 +87,9 @@ Video* vidCreate(Memory* me) {
 	vid->scrptr = vid->scrimg;
 
 	vid->flag = 0;
+	vid->idx = 0;
+
+	if (~vidFlag & VF_INIT) initAdrs();
 
 	return vid;
 }
@@ -180,8 +209,9 @@ void vidDrawNormal(Video* vid) {
 	} else {
 		xscr = vid->x - vid->bord.h;
 		if ((xscr & 7) == 4) {
-			adr = ((yscr & 0xc0) << 5) | ((yscr & 7) << 8) | ((yscr & 0x38) << 2) | (((xscr + 4) & 0xf8) >> 3);
-			nxtbyte = vid->mem->ram[vid->curscr ? 7 :5].data[adr];
+			nxtbyte = vid->mem->ram[vid->curscr].data[scrAdrs[vid->idx]];
+			//adr = ((yscr & 0xc0) << 5) | ((yscr & 7) << 8) | ((yscr & 0x38) << 2) | (((xscr + 4) & 0xf8) >> 3);
+			//nxtbyte = vid->mem->ram[vid->curscr ? 7 :5].data[adr];
 		}
 		if ((vid->x < vid->bord.h) || (vid->x > vid->bord.h + 255)) {
 			col = vid->brdcol;
@@ -189,8 +219,10 @@ void vidDrawNormal(Video* vid) {
 		} else {
 			if ((xscr & 7) == 0) {
 				scrbyte = nxtbyte;
-				adr = 0x1800 | ((yscr & 0xc0) << 2) | ((yscr & 0x38) << 2) | (((xscr + 4) & 0xf8) >> 3);
-				vid->atrbyte = vid->mem->ram[vid->curscr ? 7 :5].data[adr];
+				vid->atrbyte = vid->mem->ram[vid->curscr].data[atrAdrs[vid->idx]];
+				if (vid->idx < 0x1b00) vid->idx++;
+				//adr = 0x1800 | ((yscr & 0xc0) << 2) | ((yscr & 0x38) << 2) | (((xscr + 4) & 0xf8) >> 3);
+				//vid->atrbyte = vid->mem->ram[vid->curscr ? 7 :5].data[adr];
 				if ((vid->atrbyte & 0x80) && vid->flash) scrbyte ^= 0xff;
 				ink = inkTab[vid->atrbyte & 0x7f];
 				pap = papTab[vid->atrbyte & 0x7f];
@@ -215,19 +247,19 @@ void vidDrawAlco(Video* vid) {
 			adr = ((yscr & 0xc0) << 5) | ((yscr & 7) << 8) | ((yscr & 0x38) << 2) | ((xscr & 0xf8) >> 3);
 			switch (xscr & 7) {
 				case 0:
-					scrbyte = vid->mem->ram[vid->curscr ? 6 : 4].data[adr];
+					scrbyte = vid->mem->ram[vid->curscr - 1].data[adr];
 					col = inkTab[scrbyte & 0x7f];
 					break;
 				case 2:
-					scrbyte = vid->mem->ram[vid->curscr ? 7 : 5].data[adr];
+					scrbyte = vid->mem->ram[vid->curscr].data[adr];
 					col = inkTab[scrbyte & 0x7f];
 					break;
 				case 4:
-					scrbyte = vid->mem->ram[vid->curscr ? 6 : 4].data[adr + 0x2000];
+					scrbyte = vid->mem->ram[vid->curscr - 1].data[adr + 0x2000];
 					col = inkTab[scrbyte & 0x7f];
 					break;
 				case 6:
-					scrbyte = vid->mem->ram[vid->curscr ? 7 : 5].data[adr + 0x2000];
+					scrbyte = vid->mem->ram[vid->curscr].data[adr + 0x2000];
 					col = inkTab[scrbyte & 0x7f];
 					break;
 				default:
@@ -249,7 +281,7 @@ void vidDrawHwmc(Video* vid) {
 		xscr = vid->x - vid->bord.h;
 		if ((xscr & 7) == 4) {
 			adr = ((yscr & 0xc0) << 5) | ((yscr & 7) << 8) | ((yscr & 0x38) << 2) | (((xscr + 4) & 0xf8) >> 3);
-			nxtbyte = vid->mem->ram[vid->curscr ? 7 :5].data[adr];
+			nxtbyte = vid->mem->ram[vid->curscr].data[adr];
 		}
 		if ((xscr < 0) || (xscr > 255)) {
 			col = vid->brdcol;
@@ -257,7 +289,7 @@ void vidDrawHwmc(Video* vid) {
 			if ((xscr & 7) == 0) {
 				scrbyte = nxtbyte;
 				adr = ((yscr & 0xc0) << 5) | ((yscr & 7) << 8) | ((yscr & 0x38) << 2) | ((xscr & 0xf8) >> 3);
-				vid->atrbyte = vid->mem->ram[vid->curscr ? 7 :5].data[adr];
+				vid->atrbyte = vid->mem->ram[vid->curscr].data[adr];
 				if ((vid->atrbyte & 0x80) && vid->flash) scrbyte ^= 0xff;
 				ink = inkTab[vid->atrbyte & 0x7f];
 				pap = papTab[vid->atrbyte & 0x7f];
@@ -279,19 +311,19 @@ void vidDrawATMega(Video* vid) {
 		adr = (yscr * 40) + (xscr >> 3);
 		switch (xscr & 7) {
 			case 0:
-				scrbyte = vid->mem->ram[vid->curscr ? 3 : 1].data[adr];
+				scrbyte = vid->mem->ram[vid->curscr - 4].data[adr];
 				col = inkTab[scrbyte & 0x7f];
 				break;
 			case 2:
-				scrbyte = vid->mem->ram[vid->curscr ? 7 : 5].data[adr];
+				scrbyte = vid->mem->ram[vid->curscr].data[adr];
 				col = inkTab[scrbyte & 0x7f];
 				break;
 			case 4:
-				scrbyte = vid->mem->ram[vid->curscr ? 3 : 1].data[adr + 0x2000];
+				scrbyte = vid->mem->ram[vid->curscr - 4].data[adr + 0x2000];
 				col = inkTab[scrbyte & 0x7f];
 				break;
 			case 6:
-				scrbyte = vid->mem->ram[vid->curscr ? 7 : 5].data[adr + 0x2000];
+				scrbyte = vid->mem->ram[vid->curscr].data[adr + 0x2000];
 				col = inkTab[scrbyte & 0x7f];
 				break;
 			default:
@@ -338,11 +370,11 @@ void vidDrawATMtext(Video* vid) {
 		adr = 0x1c0 + ((yscr & 0xf8) << 3) + (xscr >> 3);
 		if ((xscr & 3) == 0) {
 			if ((xscr & 7) == 0) {
-				scrbyte = vid->mem->ram[vid->curscr ? 7 : 5].data[adr];
-				col = vid->mem->ram[vid->curscr ? 3 : 1].data[adr + 0x2000];
+				scrbyte = vid->mem->ram[vid->curscr].data[adr];
+				col = vid->mem->ram[vid->curscr - 4].data[adr + 0x2000];
 			} else {
-				scrbyte = vid->mem->ram[vid->curscr ? 7 : 5].data[adr + 0x2000];
-				col = vid->mem->ram[vid->curscr ? 3 : 1].data[adr + 1];
+				scrbyte = vid->mem->ram[vid->curscr].data[adr + 0x2000];
+				col = vid->mem->ram[vid->curscr - 4].data[adr + 1];
 			}
 			scrbyte = vid->font[(scrbyte << 3) | (yscr & 7)];
 			vidATMDoubleDot(vid,col);
@@ -364,11 +396,11 @@ void vidDrawATMhwmc(Video* vid) {
 		adr = (yscr * 40) + (xscr >> 3);
 		if ((xscr & 3) == 0) {
 			if ((xscr & 7) == 0) {
-				scrbyte = vid->mem->ram[vid->curscr ? 7 : 5].data[adr];
-				col = vid->mem->ram[vid->curscr ? 3 : 1].data[adr];
+				scrbyte = vid->mem->ram[vid->curscr].data[adr];
+				col = vid->mem->ram[vid->curscr - 4].data[adr];
 			} else {
-				scrbyte = vid->mem->ram[vid->curscr ? 7 : 5].data[adr + 0x2000];
-				col = vid->mem->ram[vid->curscr ? 3 : 1].data[adr + 0x2000];
+				scrbyte = vid->mem->ram[vid->curscr].data[adr + 0x2000];
+				col = vid->mem->ram[vid->curscr - 4].data[adr + 0x2000];
 			}
 			vidATMDoubleDot(vid,col);
 		}
@@ -559,7 +591,7 @@ void vidDrawTSLNormal(Video* vid) {
 	if ((yscr < 0) || (yscr > 191) || (vid->nogfx)) {
 		col = vid->brdcol;
 	} else {
-		xadr = vid->tsconf.vidPage ^ (vid->curscr ? 2 : 0);	// TODO : ORLY? Current video page
+		xadr = vid->tsconf.vidPage ^ (vid->curscr & 2);	// TODO : ORLY? Current video page
 		if ((xscr & 7) == 4) {
 			adr = ((yscr & 0xc0) << 5) | ((yscr & 7) << 8) | ((yscr & 0x38) << 2) | (((xscr + 4) & 0xf8) >> 3);
 			nxtbyte = vid->mem->ram[xadr].data[adr];
@@ -669,11 +701,11 @@ void vidDrawEvoText(Video* vid) {
 		if ((xscr & 3) == 0) {
 			adr = 0x1c0 + ((yscr & 0xf8) << 3) + (xscr >> 3);
 			if ((xscr & 7) == 0) {
-				scrbyte = vid->mem->ram[vid->curscr ? 10 : 8].data[adr];
-				col = vid->mem->ram[vid->curscr ? 10 : 8].data[adr + 0x3000];
+				scrbyte = vid->mem->ram[vid->curscr + 3].data[adr];
+				col = vid->mem->ram[vid->curscr + 3].data[adr + 0x3000];
 			} else {
-				scrbyte = vid->mem->ram[vid->curscr ? 10 : 8].data[adr + 0x1000];
-				col = vid->mem->ram[vid->curscr ? 10 : 8].data[adr + 0x2001];
+				scrbyte = vid->mem->ram[vid->curscr + 3].data[adr + 0x1000];
+				col = vid->mem->ram[vid->curscr + 3].data[adr + 0x2001];
 			}
 			scrbyte = vid->font[(scrbyte << 3) | (yscr & 7)];
 			vidATMDoubleDot(vid,col);
@@ -730,6 +762,7 @@ void vidSync(Video* vid, int ns) {
 				vid->flash = vid->fcnt & 0x20;
 				vid->tsconf.scrLine = vid->tsconf.yOffset;
 				vid->forceDraw = 0;
+				vid->idx = 0;
 			}
 		}
 		vid->nsDraw -= NS_PER_DOT;

@@ -281,7 +281,7 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 						memSetBank(comp->mem,MEM_BANK3,MEM_RAM,cnt);
 //						comp->tsconf.Page3 = cnt;			// !!!
 						comp->vid->tsconf.vidPage = 5;
-						comp->vid->curscr = (val & 8) ? 1 : 0;
+						comp->vid->curscr = (val & 8) ? 7 : 5;
 						tslMapMem(comp);
 					}
 					if ((port & 0xc000) == 0xc000) tsOut(comp->ts,0xfffd,val);	// fffd

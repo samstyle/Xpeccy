@@ -16,6 +16,7 @@ extern "C" {
 #define	VF_FRAMEDBG		(1<<3)
 #define VF_NOFLIC		(1<<4)
 #define	VF_GREY			(1<<5)
+#define	VF_INIT			(1<<6)
 #define	VF_BLOCK		(1<<7)
 // vid->flags (vid)
 /*
@@ -86,8 +87,9 @@ struct Video {
 	VSize vsze;
 	VSize wsze;
 	VSize intpos;
-	Memory* mem;
 	size_t intsz;
+	Memory* mem;
+	int idx;
 	struct {
 		unsigned char vidPage;		// 1st video page
 		int xPos;			// position of screen @ monitor [32|12] x [44|24|0]

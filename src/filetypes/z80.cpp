@@ -95,7 +95,7 @@ int loadZ80(ZXComp* zx, const char* name) {
 	zx->prt1 = 0x00;
 	memSetBank(zx->mem,MEM_BANK0,MEM_ROM,1);
 	memSetBank(zx->mem,MEM_BANK3,MEM_RAM,0);
-	zx->vid->curscr = 0;
+	zx->vid->curscr = 5;
 
 	file.read((char*)&head,sizeof(z80v1Header));
 	if (head.flag12 == 0xff) head.flag12 = 0x01;	// Because of compatibility, if byte 12 is 255, it has to be regarded as being 1.

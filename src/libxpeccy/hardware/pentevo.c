@@ -206,7 +206,7 @@ void evoOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 		case 0x7ffd:
 			if ((comp->prt2 & 4) && (comp->prt0 & 0x20)) break;
 			comp->prt0 = val;
-			comp->vid->curscr = (val & 0x08) ? 1 : 0;
+			comp->vid->curscr = (val & 0x08) ? 7 : 5;
 			evoMapMem(comp);
 			break;
 		case 0xbef7: if (bdiz) cmsWr(comp,val); break;

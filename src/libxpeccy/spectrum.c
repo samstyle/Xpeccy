@@ -283,7 +283,7 @@ void zxReset(ZXComp* comp,int wut) {
 	rzxClear(comp);
 	comp->rzxPlay = 0;
 	RESETCPU(comp->cpu);	// z80ex_reset(comp->cpu);
-	comp->vid->curscr = 0;
+	comp->vid->curscr = 5;
 	vidSetMode(comp->vid,VID_NORMAL);
 	comp->dosen = 0;
 	comp->intVector = 0xff;

@@ -1283,7 +1283,7 @@ void doScreenShot() {
 #endif
 	img->setColorTable(qPal);
 	char* pageBuf = new char[0x4000];
-	memGetPage(zx->mem,MEM_RAM,(zx->vid->curscr == 0) ? 5 : 7,pageBuf);
+	memGetPage(zx->mem,MEM_RAM,zx->vid->curscr,pageBuf);
 	switch (frm) {
 		case SCR_HOB:
 			file.open(fnam.c_str(),std::ios::binary);
