@@ -1398,7 +1398,7 @@ void MainWin::emuDraw() {
 			case FDC_WRITE: putIcon(zx->vid,4,4,icoRedDisk); break;
 		}
 	}
-	if ((~emulFlags & FL_BLOCK) && zx->vid->change) {
+	if ((~emulFlags & FL_BLOCK) /* && zx->vid->change */ ) {
 #ifdef XQTPAINT
 		update();
 #else

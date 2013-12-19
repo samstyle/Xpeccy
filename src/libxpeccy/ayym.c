@@ -33,6 +33,7 @@ void aymSetType(aymChip* ay, int tp) {
 	switch (tp) {
 		case SND_AY: ay->freq = 1.774400; break;
 		case SND_YM: ay->freq = 1.750000; break;
+		case SND_YM2203: ay->freq = 4.2; break;		// 4.2 is base freq
 		default: ay->type = SND_NONE;
 	}
 	if (ay->type != SND_NONE) ay->aycoe = 8000 / ay->freq;
@@ -78,8 +79,7 @@ void aymReset(aymChip* ay) {
 }
 
 void aymSetReg(aymChip* ay, unsigned char val) {
-	if (ay->curReg > 15) return;
-	if (ay->curReg < 14) ay->reg[ay->curReg] = val;
+	ay->reg[ay->curReg] = val;
 	switch (ay->curReg) {
 		case 0x00:
 		case 0x01: ay->chanA.period = ay->aycoe * (ay->reg[0] + ((ay->reg[1] & 0x0f) << 8)); break;
@@ -250,14 +250,14 @@ void tsOut(TSound* ts, int port, unsigned char val) {
 		case 0xfffd:
 			switch (ts->type) {
 				case TS_NEDOPC:
-					switch (val) {
-						case 0xfe: ts->curChip = ts->chipA; break;
-						case 0xff: ts->curChip = ts->chipB; break;
-						default: ts->curChip->curReg = val & 0x0f; break;
+					if ((val & 0xf8) == 0xf8) {
+						ts->curChip = (val & 1) ? ts->chipB : ts->chipA;
+					} else {
+						ts->curChip->curReg = val; break;
 					}
 					break;
 				default:
-					ts->curChip->curReg = val & 0x0f;
+					ts->curChip->curReg = val;
 					break;
 			}
 			break;

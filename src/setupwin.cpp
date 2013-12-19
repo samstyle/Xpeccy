@@ -126,6 +126,10 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	setupUi.schip2box->addItem(QIcon(":/images/cancel.png"),"none",SND_NONE);
 	setupUi.schip2box->addItem(QIcon(":/images/MicrochipLogo.png"),"AY-3-8910",SND_AY);
 	setupUi.schip2box->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2149",SND_YM);
+#ifdef ISDEBUG
+	setupUi.schip1box->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2203",SND_YM2203);
+	setupUi.schip2box->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2203",SND_YM2203);
+#endif
 	setupUi.stereo1box->addItem("Mono",AY_MONO); setupUi.stereo2box->addItem("Mono",AY_MONO);
 	setupUi.stereo1box->addItem("ABC",AY_ABC); setupUi.stereo2box->addItem("ABC",AY_ABC);
 	setupUi.stereo1box->addItem("ACB",AY_ACB); setupUi.stereo2box->addItem("ACB",AY_ACB);

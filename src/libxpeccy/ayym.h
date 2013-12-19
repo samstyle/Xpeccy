@@ -9,7 +9,8 @@ extern "C" {
 #define	SND_NONE	0
 #define	SND_AY		1
 #define	SND_YM		2
-#define	SND_END		3
+#define SND_YM2203	3	// FM
+#define	SND_END		4
 // ay_stereo
 #define	AY_MONO		0
 #define	AY_ABC		1
@@ -49,7 +50,7 @@ typedef struct {
 	float freq;		// in MHz
 	int aycoe;
 	unsigned char curReg;
-	unsigned char reg[16];
+	unsigned char reg[256];
 } aymChip;
 
 typedef struct {
