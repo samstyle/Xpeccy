@@ -87,6 +87,10 @@ struct ZXComp {
 	unsigned char prt0;		// 7ffd value
 	unsigned char prt1;		// extend port value
 	unsigned char prt2;		// scorpion ProfROM layer (0..3)
+
+	unsigned short padr;
+	unsigned char pval;
+
 	struct {
 		unsigned char evoBF;		// PentEvo rw ports
 		unsigned char evo2F;
@@ -106,11 +110,7 @@ struct ZXComp {
 	struct {
 		int flag;
 		unsigned short tsMapAdr;	// adr for altera mapping
-//		unsigned char FDDVirt;
 		unsigned char Page0;
-//		unsigned char Page1;
-//		unsigned char Page2;
-//		unsigned char Page3;
 		unsigned char p00af;		// ports to be updated from next line
 		unsigned char p01af;
 		unsigned char p02af;

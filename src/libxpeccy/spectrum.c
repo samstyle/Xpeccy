@@ -13,7 +13,6 @@ int res4 = 0;	// save last res3 (vidSync on OUT/MWR process do res3-res4 ticks)
 int res5 = 0;	// ticks ated by slow mem?
 Z80EX_WORD pcreg;
 
-
 // port decoding tables
 
 /*
@@ -109,11 +108,13 @@ inline void zxIORW(ZXComp* comp, int port) {
 Z80EX_BYTE iord(CPUCONT Z80EX_WORD port, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
 	Z80EX_BYTE res = 0xff;
+/*
 // video sync ( + cont io)
 	res3 = TCPU(comp->cpu);			// start of IN/OUT cycle
 	vidSync(comp->vid, comp->nsPerTick * (res3 - res4));
 	res4 = res3;
 	zxIORW(comp,port);			// cont mem
+*/
 // tape sync
 	tapSync(comp->tape,comp->tapCount);
 	comp->tapCount = 0;
@@ -136,6 +137,10 @@ Z80EX_BYTE iord(CPUCONT Z80EX_WORD port, void* ptr) {
 
 void iowr(CPUCONT Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
+	comp->padr = port;
+	comp->pval = val;
+}
+/*
 // contended mem, move to end of IO cycle
 	res3 = TCPU(comp->cpu);
 	vidSync(comp->vid, comp->nsPerTick * (res3 - res4));
@@ -156,6 +161,7 @@ void iowr(CPUCONT Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 			comp->hw->out(comp,port,val,bdiz);
 	}
 }
+*/
 
 Z80EX_BYTE intrq(CPUCONT void* ptr) {
 	return ((ZXComp*)ptr)->intVector;
@@ -192,6 +198,7 @@ ZXComp* zxCreate() {
 	memset(ptr,0,sizeof(ZXComp));
 	comp->flag = ZX_PALCHAN;	// | ZX_JUSTBORN
 	comp->hwFlag = 0;
+	comp->padr = 0;
 
 #ifdef SELFZ80
 	comp->cpu = cpuCreate(&memrd,&memwr,&iord,*iowr,&intrq,ptr);
@@ -370,6 +377,15 @@ int zxExec(ZXComp* comp) {
 	comp->nsCount += res2 * comp->nsPerTick;
 
 	vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
+	if (comp->padr) {
+		tapSync(comp->tape,comp->tapCount);
+		comp->tapCount = 0;
+		bdiz = ((comp->dosen & 1) && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
+		if (!ideOut(comp->ide,comp->padr,comp->pval,comp->dosen & 1))
+			if (gsOut(comp->gs,comp->padr,comp->pval) != GS_OK)
+				comp->hw->out(comp,comp->padr,comp->pval,bdiz);
+		comp->padr = 0;
+	}
 	res1 = res2;
 	if (comp->rzxPlay) {
 		comp->intStrobe = (comp->rzxFetches < 1);
