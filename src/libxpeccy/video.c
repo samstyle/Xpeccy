@@ -83,7 +83,7 @@ Video* vidCreate(Memory* me) {
 	vid->x = 0;
 	vid->y = 0;
 
-	vid->scrimg = NULL;
+	vid->scrimg = (unsigned char*)malloc(1024 * 1024);
 	vid->scrptr = vid->scrimg;
 
 	vid->flag = 0;
@@ -175,14 +175,9 @@ unsigned char vidGetAttr(Video* vid) {
 */
 
 inline void vidPutSimpleDot(Video* vid, unsigned char colr) {
-	if ((*vid->scrptr != colr) || vid->forceDraw) {
-		*(vid->scrptr++) = colr;
-		if (vidFlag & VF_DOUBLE) *(vid->scrptr++)=colr;
-		vid->change = 1;
-	} else {
-		vid->scrptr++;
-		if (vidFlag & VF_DOUBLE) vid->scrptr++;
-	}
+	*(vid->scrptr++) = colr;
+	if (vidFlag & VF_DOUBLE) *(vid->scrptr++)=colr;
+//	vid->change = 1;
 }
 
 inline void vidPutDot(Video* vid, unsigned char colr) {
@@ -351,7 +346,7 @@ void vidDoubleDot(Video* vid) {
 		*(vid->scrptr + 2) = (scrbyte & 0x0c) ? ink : pap;
 		*(vid->scrptr + 3) = (scrbyte & 0x03) ? ink : pap;
 	}
-	vid->change = 1;
+//	vid->change = 1;
 //	vidFlag |= VF_CHANGED;
 }
 
@@ -578,7 +573,7 @@ void vidTSRender(Video* vid, unsigned char* ptr) {
 	}
 	if (vid->tsconf.tconfig & 0xe0) {
 		vidTSPut(vid,ptr);		// if tile or sprites visible, put line over screen
-		vid->change = 1;
+//		vid->change = 1;
 	}
 	vid->tsconf.scrLine++;
 }
@@ -734,7 +729,7 @@ void vidSetMode(Video* vid, int mode) {
 		case VID_TSL_TEXT: vid->callback = &vidDrawTSLText; break;
 		default: vid->callback = &vidDrawBorder; break;
 	}
-	vid->forceDraw = 1;
+//	vid->forceDraw = 1;
 }
 
 void vidSync(Video* vid, int ns) {
@@ -761,7 +756,7 @@ void vidSync(Video* vid, int ns) {
 				vid->fcnt++;
 				vid->flash = vid->fcnt & 0x20;
 				vid->tsconf.scrLine = vid->tsconf.yOffset;
-				vid->forceDraw = 0;
+//				vid->forceDraw = 0;
 				vid->idx = 0;
 			}
 		}

@@ -365,8 +365,8 @@ void MainWin::updateWindow() {
 	setFixedSize(szw,szh);
 #ifdef XQTPAINT
 	scrImg = scrImg.scaled(szw,szh);
-	zx->vid->scrimg = scrImg.bits();
-	zx->vid->scrptr = zx->vid->scrimg;
+//	zx->vid->scrimg = scrImg.bits();
+//	zx->vid->scrptr = zx->vid->scrimg;
 #else
 	int sdlflg = SDL_SWSURFACE | SDL_NOFRAME;
 	if ((vidFlag & VF_FULLSCREEN) && !(vidFlag & VF_BLOCKFULLSCREEN)) {
@@ -374,8 +374,8 @@ void MainWin::updateWindow() {
 	}
 	SDL_Surface* oldSurf = surf;
 	surf = SDL_SetVideoMode(szw,szh,8,sdlflg);
-	zx->vid->scrptr = (unsigned char*)surf->pixels;
-	zx->vid->scrimg = zx->vid->scrptr;
+//	zx->vid->scrptr = (unsigned char*)surf->pixels;
+//	zx->vid->scrimg = zx->vid->scrptr;
 	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
 	if (oldSurf) SDL_FreeSurface(oldSurf);
 #endif
@@ -1400,11 +1400,13 @@ void MainWin::emuDraw() {
 	}
 	if ((~emulFlags & FL_BLOCK) /* && zx->vid->change */ ) {
 #ifdef XQTPAINT
+		memcpy(scrImg.bits(),zx->vid->scrimg,zx->vid->wsze.h * zx->vid->wsze.v);
 		update();
 #else
+		memcpy(surf->pixels,zx->vid->scrimg,zx->vid->wsze.h * zx->vid->wsze.v);
 		SDL_UpdateRect(surf,0,0,0,0);
 #endif
-		zx->vid->change = 0;
+//		zx->vid->change = 0;
 		// zx->vid->forceDraw = 0;
 	}
 //	vidFlag &= ~VF_CHANGED;
