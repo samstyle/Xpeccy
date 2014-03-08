@@ -78,7 +78,7 @@ struct Video {
 	size_t y;
 	size_t frmsz;
 	size_t vmode;
-	size_t nsDraw;
+	int nsDraw;
 	VSize full;
 	VSize bord;
 	VSize sync;
