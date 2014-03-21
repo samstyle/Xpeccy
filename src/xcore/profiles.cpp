@@ -208,6 +208,7 @@ int prfLoad(std::string nm) {
 				case PS_VIDEO:
 					if (pnam == "geometry") prf->layName = pval;
 					if (pnam == "4t-border") comp->vid->border4t = str2bool(pval) ? 1 : 0;
+					if (pnam == "ULAplus") comp->vid->ula->enabled = str2bool(pval) ? 1 : 0;
 					break;
 				case PS_SOUND:
 					if (pnam == "chip1") aymSetType(comp->ts->chipA,atoi(pval.c_str()));
@@ -363,6 +364,7 @@ int prfSave(std::string nm) {
 	file << "\n[VIDEO]\n\n";
 	file << "geometry = " << prf->layName.c_str() << "\n";
 	file << "4t-border = " << YESNO(comp->vid->border4t) << "\n";
+	file << "ULAplus = " << YESNO(comp->vid->ula->enabled) << "\n";
 
 	file << "\n[SOUND]\n\n";
 	file << "chip1 = " << int2str(comp->ts->chipA->type) << "\n";

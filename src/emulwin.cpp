@@ -299,6 +299,13 @@ void emulSetPalette(ZXComp* comp,unsigned char lev) {
 			b[i] = tslCoLevs[fcol & 0x1f];
 			qPal[i] = qRgb(r[i],g[i],b[i]);
 		}
+	} else if (comp->vid->ula->enabled && comp->vid->ula->active) {
+		for (i = 0; i < 64; i++) {
+			b[i] = (comp->vid->ula->pal[i] & 0x03) << 6;		// Bb0 : must me Bbb
+			r[i] = (comp->vid->ula->pal[i] & 0x1c) << 3;
+			g[i] = (comp->vid->ula->pal[i] & 0xe0);
+			qPal[i] = qRgb(r[i],g[i],b[i]);
+		}
 	} else {
 		for(i = 0; i < 16; i++) {
 			col = comp->colMap[i];

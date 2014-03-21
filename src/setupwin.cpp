@@ -298,10 +298,6 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	connect(setupUi.tbNewProfile,SIGNAL(released()),this,SLOT(newProfile()));
 	connect(setupUi.tbDelProfile,SIGNAL(released()),this,SLOT(rmProfile()));
 
-#ifdef ISDEBUG
-	setupUi.sdcTab->setEnabled(true);
-
-#endif
 }
 
 void SetupWin::recheck_single(bool st) {
@@ -359,6 +355,7 @@ void SetupWin::start() {
 	setupUi.geombox->clear();
 	for (i=0; i<lays.size(); i++) {setupUi.geombox->addItem(QString::fromLocal8Bit(lays[i].name.c_str()));}
 	setupUi.geombox->setCurrentIndex(setupUi.geombox->findText(QString::fromLocal8Bit(getCurrentProfile()->layName.c_str())));
+	setupUi.ulaPlus->setChecked(zx->vid->ula->enabled);
 // sound
 	setupUi.senbox->setChecked(sndEnabled);
 	setupUi.mutbox->setChecked(sndMute);
@@ -492,13 +489,13 @@ void SetupWin::apply() {
 	zxSetFrq(zx,setupUi.cpufrq->value() / 2.0);
 	setFlagBit(setupUi.scrpwait->isChecked(),&zx->hwFlag,HW_WAIT);
 	if (zx->hw != oldmac) zxReset(zx,RES_DEFAULT);
+	emulSetFlag(FL_SYSCLOCK,setupUi.sysCmos->isChecked());
 // video
 	setLayoutList(lays);
 	setFlagBit(setupUi.dszchk->isChecked(),&vidFlag,VF_DOUBLE);
 	setFlagBit(setupUi.fscchk->isChecked(),&vidFlag,VF_FULLSCREEN);
 	setFlagBit(setupUi.noflichk->isChecked(),&vidFlag,VF_NOFLIC);
 	zx->vid->border4t = setupUi.border4T->isChecked() ? 1 : 0;
-//	setFlagBit(setupUi.border4T->isChecked(),&zx->vid->flags,VID_BORDER_4T);
 	setFlagBit(setupUi.contMem->isChecked(),&zx->hwFlag,HW_CONTMEM);
 //	setFlagBit(setupUi.contMemP3->isChecked(),&zx->vid->flags,VID_CONT2);
 	setFlagBit(setupUi.contIO->isChecked(),&zx->hwFlag,HW_CONTIO);
@@ -510,9 +507,9 @@ void SetupWin::apply() {
 	optSet(OPT_SHOTINT,setupUi.sintbox->value());
 	emulSetLayout(zx,std::string(setupUi.geombox->currentText().toLocal8Bit().data()));
 	optSet(OPT_BRGLEV,setupUi.brgslide->value());
-	emulSetFlag(FL_SYSCLOCK,setupUi.sysCmos->isChecked());
+	zx->vid->ula->enabled = setupUi.ulaPlus->isChecked() ? 1 : 0;
 // sound
-	std::string oname = std::string(sndOutput->name);
+	//std::string oname = std::string(sndOutput->name);
 	std::string nname(setupUi.outbox->currentText().toLocal8Bit().data());
 	sndEnabled = setupUi.senbox->isChecked();
 	sndMute = setupUi.mutbox->isChecked();

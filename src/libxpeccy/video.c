@@ -71,6 +71,7 @@ Video* vidCreate(Memory* me) {
 	vid->intpos.v = 0;
 	vid->intsz = 64;
 	vid->frmsz = vid->full.h * vid->full.v;
+	vid->ula = ulaCreate();
 	vidUpdate(vid);
 
 	vidSetMode(vid,VID_NORMAL);
@@ -86,7 +87,7 @@ Video* vidCreate(Memory* me) {
 	vid->scrimg = (unsigned char*)malloc(1024 * 1024);
 	vid->scrptr = vid->scrimg;
 
-	vid->flag = 0;
+//	vid->flag = 0;
 	vid->idx = 0;
 
 	if (~vidFlag & VF_INIT) initAdrs();
@@ -95,6 +96,7 @@ Video* vidCreate(Memory* me) {
 }
 
 void vidDestroy(Video* vid) {
+	ulaDestroy(vid->ula);
 	free(vid);
 }
 
@@ -181,10 +183,12 @@ inline void vidPutSimpleDot(Video* vid, unsigned char colr) {
 }
 
 inline void vidPutDot(Video* vid, unsigned char colr) {
-	if ((vidFlag & (VF_NOFLIC | VF_FRAMEDBG)) == VF_NOFLIC) {
-		colr = (((*vid->scrptr) & 0x0f) << 4) | (colr & 0x0f);
-	} else {
-		colr |= (colr << 4);
+	if (!vid->ula->active) {
+		if ((vidFlag & (VF_NOFLIC | VF_FRAMEDBG)) == VF_NOFLIC) {
+			colr = (((*vid->scrptr) & 0x0f) << 4) | (colr & 0x0f);
+		} else {
+			colr |= (colr << 4);
+		}
 	}
 	vidPutSimpleDot(vid,colr);
 }
@@ -200,6 +204,7 @@ void vidDrawNormal(Video* vid) {
 	yscr = vid->y - vid->bord.v;
 	if ((yscr < 0) || (yscr > 191)) {
 		col = vid->brdcol;
+		if (vid->ula->active) col |= 8;
 		vid->atrbyte = 0xff;
 	} else {
 		xscr = vid->x - vid->bord.h;
@@ -210,6 +215,7 @@ void vidDrawNormal(Video* vid) {
 		}
 		if ((vid->x < vid->bord.h) || (vid->x > vid->bord.h + 255)) {
 			col = vid->brdcol;
+			if (vid->ula->active) col |= 8;
 			vid->atrbyte = 0xff;
 		} else {
 			if ((xscr & 7) == 0) {
@@ -218,9 +224,14 @@ void vidDrawNormal(Video* vid) {
 				if (vid->idx < 0x1b00) vid->idx++;
 				//adr = 0x1800 | ((yscr & 0xc0) << 2) | ((yscr & 0x38) << 2) | (((xscr + 4) & 0xf8) >> 3);
 				//vid->atrbyte = vid->mem->ram[vid->curscr ? 7 :5].data[adr];
-				if ((vid->atrbyte & 0x80) && vid->flash) scrbyte ^= 0xff;
-				ink = inkTab[vid->atrbyte & 0x7f];
-				pap = papTab[vid->atrbyte & 0x7f];
+				if (vid->ula->active) {
+					ink = ((vid->atrbyte & 0xc0) >> 2) | (vid->atrbyte & 7);
+					pap = ((vid->atrbyte & 0xc0) >> 2) | ((vid->atrbyte & 0x38) >> 3) | 8;
+				} else {
+					if ((vid->atrbyte & 0x80) && vid->flash) scrbyte ^= 0xff;
+					ink = inkTab[vid->atrbyte & 0x7f];
+					pap = papTab[vid->atrbyte & 0x7f];
+				}
 			}
 			col = (scrbyte & 0x80) ? ink : pap;
 			scrbyte <<= 1;

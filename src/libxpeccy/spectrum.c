@@ -132,6 +132,7 @@ Z80EX_BYTE iord(CPUCONT Z80EX_WORD port, void* ptr) {
 // request to external devices
 	if (ideIn(comp->ide,port,&res,comp->dosen & 1)) return res;
 	if (gsIn(comp->gs,port,&res) == GS_OK) return res;
+	if (ulaIn(comp->vid->ula,port,&res)) return res;
 	return comp->hw->in(comp,port,bdiz);
 }
 
@@ -222,7 +223,7 @@ ZXComp* zxCreate() {
 	comp->ts = tsCreate(TS_NONE,SND_AY,SND_NONE);
 	comp->gs = gsCreate();
 	comp->sdrv = sdrvCreate(SDRV_NONE);
-// vaseconf
+// baseconf
 	comp->evo.evo2F = 0;
 	comp->evo.evo4F = 0;
 	comp->evo.evo6F = 0;
@@ -273,6 +274,7 @@ void zxReset(ZXComp* comp,int wut) {
 	int resto = comp->resbank;
 	for (i = 0; i < 16; i++) comp->colMap[i] = defPalete[i];	// reset palete to default
 	comp->flag |= ZX_PALCHAN;
+	comp->vid->ula->active = 0;
 	comp->rzxPlay = 0;
 	switch (wut) {
 		case RES_48: resto = 1; break;
@@ -381,9 +383,18 @@ int zxExec(ZXComp* comp) {
 		tapSync(comp->tape,comp->tapCount);
 		comp->tapCount = 0;
 		bdiz = ((comp->dosen & 1) && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
-		if (!ideOut(comp->ide,comp->padr,comp->pval,comp->dosen & 1))
-			if (gsOut(comp->gs,comp->padr,comp->pval) != GS_OK)
-				comp->hw->out(comp,comp->padr,comp->pval,bdiz);
+		if (!ideOut(comp->ide,comp->padr,comp->pval,comp->dosen & 1)) {
+		if (gsOut(comp->gs,comp->padr,comp->pval) != GS_OK) {
+		if (ulaOut(comp->vid->ula, comp->padr, comp->pval)) {
+			if (comp->vid->ula->palchan) {
+				comp->flag |= ZX_PALCHAN;
+				comp->vid->ula->palchan = 0;
+			}
+		} else {
+			comp->hw->out(comp,comp->padr,comp->pval,bdiz);
+		}
+		}
+		}
 		comp->padr = 0;
 	}
 	res1 = res2;

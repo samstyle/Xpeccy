@@ -75,6 +75,7 @@ int main(int ac,char** av) {
 	printf("Using z80ex ver %d.%d\n",ver->major, ver->minor);
 #endif
 	QApplication app(ac,av,true);
+	char* profName = NULL;
 	try {
 		int i;
 		bool dev = false;
@@ -82,9 +83,10 @@ int main(int ac,char** av) {
 		addProfile("default","xpeccy.conf");
 		setProfile("default");
 		for (int i = 1; i < ac; i++) {
-			if (strcmp(av[i],"-d") == 0) {
-				dev = true;
-				break;
+			if (strcmp(av[i],"-d") == 0) dev = true;
+			if ((strcmp(av[i],"-p") == 0) && (i < (ac - 1))) {
+				profName = av[i + 1];
+				i++;
 			}
 		}
 		if (dev) {
@@ -110,14 +112,22 @@ int main(int ac,char** av) {
 			devInit();
 			initFileDialog(emulWidget());
 			loadProfiles();
-			prfLoad("");
+			if (profName) {
+				setProfile(std::string(profName));
+			} else {
+//				prfLoad("");
+			}
 			fillUserMenu();
 			emulShow();
 			emulUpdateWindow();
 			zxReset(zx,RES_DEFAULT);
 
 			for(i=1;i<ac;i++) {
-				loadFile(zx,av[i],FT_ALL,0);
+				if (strcmp(av[i],"-p") == 0) {		// skip -p profname
+					i++;
+				} else {
+					if (strlen(av[i]) > 0) loadFile(zx,av[i],FT_ALL,0);
+				}
 			}
 
 #ifdef HAVESDL

@@ -8,6 +8,7 @@ extern "C" {
 #include <stddef.h>
 
 #include "memory.h"
+#include "ulaplus.h"
 
 // vidFlags (emul)
 #define VF_FULLSCREEN		1
@@ -54,9 +55,9 @@ typedef struct {
 #endif
 
 struct Video {
-	union {
-		int flag;
-		struct {
+//	union {
+//		int flag;
+//		struct {
 			unsigned border4t:1;
 			unsigned nogfx:1;
 			unsigned intstrobe:1;
@@ -64,8 +65,8 @@ struct Video {
 			unsigned istsconf:1;
 //			unsigned change:1;
 //			unsigned forceDraw:1;
-		};
-	};
+//		};
+//	};
 	int flash;
 	int curscr;
 	unsigned char brdcol;
@@ -89,6 +90,7 @@ struct Video {
 	VSize intpos;
 	size_t intsz;
 	Memory* mem;
+	ulaPlus* ula;
 	int idx;
 	struct {
 		unsigned char vidPage;		// 1st video page

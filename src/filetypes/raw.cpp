@@ -28,8 +28,7 @@ int loadRaw(Floppy* flp, const char* name) {
 	nfle.hst = 0;
 	nfle.llen = len & 0xff;
 	nfle.hlen = (len & 0xff00) >> 8;
-	nfle.slen = nfle.hlen;
-	if (nfle.llen != 0) nfle.slen++;
+	nfle.slen = nfle.hlen + (nfle.llen ? 1 : 0);
 	if (flpCreateFile(flp,&nfle) != ERR_OK) return ERR_HOB_CANT;
 	int i;
 	unsigned char* buf = new unsigned char[256];
