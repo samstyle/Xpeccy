@@ -17,14 +17,6 @@ extern "C" {
 #include "hdd.h"
 #include "sdcard.h"
 
-// zx flag
-#define	ZX_BREAK	1	// breakpoint reached
-//#define	ZX_JUSTBORN	(1<<1)	// just created zx. need to reset after selection
-#define	ZX_PALCHAN	(1<<2)	// signal: palete changed
-// hwFlag
-#define HW_WAIT		1	// scorpion wait
-#define	HW_CONTMEM	(1<<1)	// contended mem
-#define	HW_CONTIO	(1<<2)	// contended io
 // hw reset rompage
 #define	RES_DEFAULT	0
 #define	RES_48		1
@@ -50,8 +42,18 @@ typedef struct {
 } memEntry;
 
 struct ZXComp {
-	int flag;		// states
-	int hwFlag;		// hardware properties
+	unsigned brk:1;			// breakpoint
+	unsigned palchan:1;		// palette changed
+	unsigned frmStrobe:1;		// new frame started
+	unsigned intStrobe:1;		// int front
+	unsigned nmiRequest:1;		// Magic button pressed
+	unsigned beeplev:1;		// beeper level
+	unsigned rzxPlay:1;		// rzx is playing
+
+	unsigned scrpWait:1;		// scorpion wait mode
+	unsigned contMem:1;		// contended mem
+	unsigned contIO:1;		// contended IO
+
 	struct HardWare *hw;
 	CPU* cpu;
 	Memory* mem;
@@ -71,11 +73,6 @@ struct ZXComp {
 	unsigned long rzxFrame;
 	unsigned int rzxPos;
 	int rzxFetches;
-	int rzxPlay;	// true if rzx playing now
-	int intStrobe;
-	int frmStrobe;
-	int nmiRequest;
-	int beeplev;
 	float cpuFrq;
 
 	int nsPerTick;

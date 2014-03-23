@@ -5,8 +5,8 @@
 extern "C" {
 #endif
 // flags
-#define	INF_ENABLED	1
-#define	INF_WHEEL	(1<<1)
+//#define	INF_ENABLED	1
+//#define	INF_WHEEL	(1<<1)
 // mouse
 #define	XM_WHEELUP	0
 #define	XM_WHEELDN	1
@@ -23,7 +23,10 @@ extern "C" {
 #define	XJ_FIRE		(1<<4)
 
 typedef struct {
-	int flags;
+//	int flags;
+	unsigned enable:1;
+	unsigned hasWheel:1;
+
 	unsigned char xpos;
 	unsigned char ypos;
 	unsigned char buttons;	// b0=LMB; b1=RMB;

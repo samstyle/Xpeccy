@@ -12,8 +12,9 @@ TapeBlock tapDataToBlock(char* data,int len,int* sigLens) {
 	block.len0 = sigLens[3];
 	block.len1 = sigLens[4];
 	block.pdur = (sigLens[6] == -1) ? ((tmp == 0) ? 8063 : 3223) : sigLens[6];
-	block.flag = TBF_BYTES;
-	if (tmp == 0) block.flag |= TBF_HEAD;
+	block.breakPoint = 0;
+	block.hasBytes = 1;
+	block.isHeader = (tmp == 0) ? 1 : 0;
 	block.sigCount = 0;
 	block.sigData = NULL;
 	//block.data.clear();
@@ -52,7 +53,7 @@ int loadTAP(Tape* tape, const char* name) {
 			blkClear(&block);
 		}
 	}
-	tape->flag |= TAPE_CANSAVE;
+	tape->isData = 1;
 	tape->path = (char*)realloc(tape->path,sizeof(char) * (strlen(name) + 1));
 	strcpy(tape->path,name);
 	if (blockBuf) free(blockBuf);
@@ -60,7 +61,7 @@ int loadTAP(Tape* tape, const char* name) {
 }
 
 int saveTAP(Tape* tape, const char* name) {
-	if (!(tape->flag & TAPE_CANSAVE)) return ERR_TAP_DATA;
+	if (!tape->isData) return ERR_TAP_DATA;
 	std::ofstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
 

@@ -18,8 +18,8 @@ void nvDestroy(nvRam* nv) {
 void nvWr(nvRam* nv,int sda, int sdc, int wp) {
 //	if (nv->flag & NV_TX) printf("%i:%i\n",sdc ? 1 : 0, sda ? 1 : 0);
 	if (!nv->sdc && sdc) {			// sdc 0->1
-		nv->flag |= NV_STABLE;
-		if ((nv->flag & NV_TX) && (~nv->flag & NV_ACK)) {	// if transmit but not ack read byte to nv->data
+		nv->stable = 1;
+		if (nv->tx && !nv->ack) {	// if transmit but not ack read byte to nv->data
 			if (nv->bitcount == 0) {
 				nv->data = nv->mem[nv->adr & 0x7ff];
 				nv->adr++;
@@ -30,8 +30,9 @@ void nvWr(nvRam* nv,int sda, int sdc, int wp) {
 	} else if (nv->sdc && sdc) {		// sdc 1->1 : control START/STOP/stable
 		if (nv->sda && !sda) {		// sda 1->0 : START
 //			printf("START\n");
-			nv->flag &= ~(NV_STABLE | NV_TX);
-			nv->flag |= NV_RX;	// receive bits
+			nv->stable = 0;
+			nv->tx = 0;
+			nv->rx = 1;
 			nv->mode = NV_COM;	// 1st byte is command
 			nv->bitcount = 8;
 		} else if (!nv->sda && sda) {	// sda 0->1 : STOP, write buffer to mem
@@ -47,15 +48,17 @@ void nvWr(nvRam* nv,int sda, int sdc, int wp) {
 				}
 			}
 			nv->mode = NV_IDLE;
-			nv->flag &= ~(NV_STABLE | NV_RX | NV_TX);
+			nv->stable = 0;
+			nv->rx = 0;
+			nv->tx = 0;
 		}
 	} else if (nv->sdc && !sdc) {		// sdc 1->0 : back front.
-		if (nv->flag & NV_ACK) {
-			nv->flag &= ~NV_ACK;
+		if (nv->ack) {
+			nv->ack = 0;
 		} else {
-			if (nv->flag & NV_TX) {
+			if (nv->tx) {
 				nv->data <<= 1;
-			} else if ((nv->flag & NV_RX) && (nv->flag & NV_STABLE)) {
+			} else if (nv->rx && nv->stable) {
 				nv->data <<= 1;
 				if (nv->sda) nv->data |= 1;
 				nv->bitcount--;
@@ -67,18 +70,21 @@ void nvWr(nvRam* nv,int sda, int sdc, int wp) {
 							if ((nv->data & 0xf0) == 0xa0) {
 								if (nv->data & 1) {			// rd
 									nv->bitcount = 0;
-									nv->flag &= ~NV_RX;
-									nv->flag |= NV_TX;
+									nv->rx = 0;
+									nv->tx = 1;
 								} else {				// wr
 									nv->adr &= 0x0ff;
 									nv->adr |= ((nv->data & 0x0e) << 7);	// hi 3 bits of adr
 									nv->bitcount = 8;
 									nv->mode = NV_ADR;
 								}
-								nv->flag |= NV_ACK;			// ack after com
+								nv->ack = 1;				// ack after com
 							} else {
 								nv->mode = NV_IDLE;			// 1010 not detected
-								nv->flag = 0;
+								nv->stable = 0;
+								nv->ack = 0;
+								nv->rx = 0;
+								nv->tx = 0;
 							}
 							break;
 						case NV_ADR:
@@ -86,13 +92,13 @@ void nvWr(nvRam* nv,int sda, int sdc, int wp) {
 							nv->adr |= (nv->data & 0xff);
 							nv->bitcount = 8;
 							nv->mode = NV_WRITE;
-							nv->flag |= NV_ACK;
+							nv->ack = 1;
 							nv->bufpos = 0;
 							break;
 						case NV_WRITE:
 							nv->buf[nv->bufpos & 0x0f] = nv->data;
 							nv->bufpos++;
-							nv->flag |= NV_ACK;
+							nv->ack = 1;
 							break;
 					}
 				}
@@ -105,12 +111,10 @@ void nvWr(nvRam* nv,int sda, int sdc, int wp) {
 
 int nvRd(nvRam* nv) {
 	int res = 0;
-	if (nv->flag & NV_ACK) {
-//		printf("ACK\n");
+	if (nv->ack) {
 		res = 0;			// rd during ack
-	} else if (nv->flag & NV_TX) {
+	} else if (nv->tx) {
 		res = (nv->data & 0x80) ? 1 : 0;
-//		printf("rd bit %i\n",res);
 	}
 	return res;
 }

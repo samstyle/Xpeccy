@@ -5,8 +5,6 @@
 extern "C" {
 #endif
 
-//#include <stdint.h>
-
 #define	PILOTLEN	2168
 #define	SYNC1LEN	667
 #define	SYNC2LEN	735
@@ -14,23 +12,13 @@ extern "C" {
 #define	SIGN1LEN	1710
 #define	SYNC3LEN	954
 
-#define	TAPE_ON			1
-#define TAPE_REC		(1<<1)
-#define TAPE_CANSAVE		(1<<2)	// can be saved as tap
-#define TAPE_WAIT		(1<<3)	// wait for 1st impulse (rec)
-#define	TAPE_BLOCK_CHANGED	(1<<4)	// move to next block (play)
-#define	TAPE_NEW_BLOCK		(1<<5)	// new block added (rec)
-
-#define	TBF_BREAK	1	// stop tape on start of this block
-#define	TBF_BYTES	(1<<1)	// this is block of standard structure (pilot,sync1,sync2,1,0,sync3 is present)
-#define	TBF_HEAD	(1<<2)	// block is header
-
 #define	TAPE_HEAD	0
 #define	TAPE_DATA	1
 
 typedef struct {
+	unsigned breakPoint:1;
+
 	int type;
-	int flag;
 	const char* name;
 	int size;
 	int time;
@@ -38,8 +26,11 @@ typedef struct {
 } TapeBlockInfo;
 
 typedef struct {
+	unsigned breakPoint:1;
+	unsigned hasBytes:1;
+	unsigned isHeader:1;
+
 	int pause;
-	int flag;
 	int plen;
 	int s1len;
 	int s2len;
@@ -52,7 +43,13 @@ typedef struct {
 } TapeBlock;
 
 typedef struct {
-	int flag;
+	unsigned on:1;
+	unsigned rec:1;
+	unsigned isData:1;
+	unsigned wait:1;
+	unsigned blkChange:1;
+	unsigned newBlock:1;
+
 	int block;
 	int pos;
 	int signal;

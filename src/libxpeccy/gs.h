@@ -8,9 +8,6 @@ extern "C" {
 #include "cpu.h"
 #include "memory.h"
 
-// gs flags
-#define GS_ENABLE	1
-#define GS_RESET	(1<<1)
 // gs stereo
 #define	GS_MONO		0
 #define	GS_12_34	1
@@ -26,7 +23,9 @@ typedef struct {
 } gsPair;
 
 typedef struct {
-	int flag;
+	unsigned enable:1;
+	unsigned reset:1;
+
 	CPU* cpu;
 	Memory* mem;
 	unsigned char pb3_gs;	// gs -> zx

@@ -30,7 +30,7 @@ int loadTZX(Tape* tape, const char* name) {
 	tapEject(tape);
 	tape->path = (char*)realloc(tape->path,sizeof(char) * (strlen(name) + 1));
 	strcpy(tape->path,name);
-	tape->flag |= TAPE_CANSAVE;
+	tape->isData = 1;
 
 	while (!file.eof()) {
 		tmp = file.get();		// block type (will be FF @ eof)
@@ -65,7 +65,7 @@ int loadTZX(Tape* tape, const char* name) {
 				blkAddSignal(&block,sigLens[5]);
 				tapAddBlock(tape,block);
 				blkClear(&block);
-				tape->flag &= ~TAPE_CANSAVE;
+				tape->isData = 0;
 				break;
 			case 0x12:
 				paulen = getlen(&file,2);
@@ -74,7 +74,7 @@ int loadTZX(Tape* tape, const char* name) {
 					blkAddSignal(&block,paulen);
 					len--;
 				}
-				tape->flag &= ~TAPE_CANSAVE;
+				tape->isData = 0;
 				break;
 			case 0x13:
 				len = file.get();
@@ -83,7 +83,7 @@ int loadTZX(Tape* tape, const char* name) {
 					blkAddSignal(&block,paulen);
 					len--;
 				}
-				tape->flag &= ~TAPE_CANSAVE;
+				tape->isData = 0;
 				break;
 			case 0x14:
 				altLens[0] = 0;
@@ -106,7 +106,7 @@ int loadTZX(Tape* tape, const char* name) {
 					blkAddSignal(&block,altBlock.sigData[i]);
 				}
 				block.pause = paulen;
-				tape->flag &= ~TAPE_CANSAVE;
+				tape->isData = 0;
 				break;
 /*
 			case 0x15:
@@ -134,7 +134,7 @@ int loadTZX(Tape* tape, const char* name) {
 			case 0x22:
 				if (block.sigCount != 0) {
 					blkAddSignal(&block,sigLens[5]);
-					block.flag &= ~TBF_BYTES;
+					block.hasBytes = 0;
 					tapAddBlock(tape,block);
 					blkClear(&block);
 				}
@@ -200,7 +200,7 @@ int loadTZX(Tape* tape, const char* name) {
 	}
 	if (block.sigCount != 0) {
 //		blkAddSignal(&block,sigLens[5]);		// FIXME: not really
-		block.flag &= ~TBF_BYTES;
+		block.hasBytes = 0;
 		tapAddBlock(tape,block);
 		blkClear(&block);
 	}

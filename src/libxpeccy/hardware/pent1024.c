@@ -103,13 +103,13 @@ Z80EX_BYTE p1mIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 			res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00);
 			break;
 		case 0xfadf:
-			res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->buttons : 0xff;
+			res = comp->mouse->enable ? comp->mouse->buttons : 0xff;
 			break;
 		case 0xfbdf:
-			res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->xpos : 0xff;
+			res = comp->mouse->enable ? comp->mouse->xpos : 0xff;
 			break;
 		case 0xffdf:
-			res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->ypos : 0xff;
+			res = comp->mouse->enable ? comp->mouse->ypos : 0xff;
 			break;
 		case 0xbff7:
 			res = (comp->prt1 & 0x80) ? cmsRd(comp) : 0xff;

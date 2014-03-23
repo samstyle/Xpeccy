@@ -23,12 +23,6 @@ extern "C" {
 // device type (+ IDE_NONE)
 #define IDE_ATA		1
 #define IDE_ATAPI	2
-// ata flags
-#define ATA_IDLE	1
-#define ATA_STANDBY	(1 << 1)
-#define ATA_SLEEP	(1 << 2)
-#define ATA_LBA		(1 << 3)
-#define ATA_DMA		(1 << 4)
 
 #define HDD_BUFSIZE	512
 
@@ -86,8 +80,13 @@ typedef struct {
 } ATAPassport;
 
 typedef struct {
+	unsigned idle:1;
+	unsigned standby:1;
+	unsigned sleep:1;
+	unsigned hasLBA:1;
+	unsigned hasDMA:1;
+
 	int type;		// none / ata / atapi
-	int flags;
 	int lba;
 	int maxlba;
 	char* image;

@@ -20,6 +20,7 @@ void copyStringToBuffer(unsigned char* dst, const char* src, int len) {
 
 ATADev* ataCreate(int tp) {
 	ATADev* ata = (ATADev*)malloc(sizeof(ATADev));
+	memset(ata,0x00,sizeof(ATADev));
 	ata->type = tp;
 	ata->pass.cyls = 1024;
 	ata->pass.hds = 16;
@@ -33,7 +34,6 @@ ATADev* ataCreate(int tp) {
 	memset(ata->pass.mcver,' ',8);
 	memset(ata->pass.model,' ',40);
 	memcpy(ata->pass.model,"Xpeccy HDD image",strlen("Xpeccy HDD image"));
-	ata->flags = 0x00;
 	ata->image = NULL;
 	ata->file = NULL;
 	ata->reg.state = 0;
@@ -53,7 +53,9 @@ void ataReset(ATADev* ata) {
 	ata->reg.head = 0x00;
 	ata->buf.mode = HDB_IDLE;
 	ata->buf.pos = 0;
-	ata->flags &= ~(ATA_IDLE | ATA_SLEEP | ATA_STANDBY);
+	ata->idle = 0;
+	ata->sleep = 0;
+	ata->standby = 0;
 }
 
 void ataClearBuf(ATADev* dev) {
@@ -64,7 +66,7 @@ void ataClearBuf(ATADev* dev) {
 }
 
 void ataRefresh(ATADev* dev) {
-	if (dev->flags & ATA_LBA) {
+	if (dev->hasLBA) {
 		dev->pass.spt = 255;
 		dev->pass.hds = 16;
 	} else {
@@ -75,7 +77,7 @@ void ataRefresh(ATADev* dev) {
 
 void ataSetSector(ATADev* dev, int nr) {
 	dev->lba = nr;
-	if ((dev->flags & ATA_LBA) && (dev->reg.head & HDF_LBA)) {
+	if (dev->hasLBA && (dev->reg.head & HDF_LBA)) {
 		dev->reg.sec = nr & 0xff;
 		dev->reg.cyl = (nr >> 8) & 0xffff;
 		dev->reg.head &= 0xf0;
@@ -98,7 +100,7 @@ void ataNextSector(ATADev* dev) {
 }
 
 void ataSetLBA(ATADev* dev) {
-	if ((dev->flags & ATA_LBA) && (dev->reg.head & HDF_LBA)) {
+	if (dev->hasLBA && (dev->reg.head & HDF_LBA)) {
 		dev->lba = dev->reg.sec | (dev->reg.cyl << 8) | ((dev->reg.head & 0x0f) << 24);		// LBA28
 	} else {
 		if ((dev->reg.sec <= dev->pass.spt) && (dev->reg.cyl < dev->pass.cyls) && ((dev->reg.head & 15) < dev->pass.hds)) {
@@ -201,27 +203,27 @@ void ataExec(ATADev* dev, unsigned char cm) {
 				break;
 			case 0x94:			// standby immediate; TODO: if reg.count!=0 in idle/standby commands, HDD power off
 			case 0xe0:
-				dev->flags |= ATA_STANDBY;
+				dev->standby = 1;
 				break;
 			case 0x95:			// idle immediate
 			case 0xe1:
-				dev->flags |= ATA_IDLE;
+				dev->idle = 1;
 				break;
 			case 0x96:			// standby
 			case 0xe2:
-				dev->flags |= ATA_STANDBY;
+				dev->standby = 1;
 				break;
 			case 0x97:			// idle
 			case 0xe3:
-				dev->flags |= ATA_IDLE;
+				dev->idle = 1;
 				break;
 			case 0x98:			// check power mode
 			case 0xe5:			// if drive is in, set sector count register to 0x00, if idle - to 0xff
-				dev->reg.count = (dev->flags & ATA_IDLE) ? 0xff : 0x00;
+				dev->reg.count = dev->idle ? 0xff : 0x00;
 				break;
 			case 0x99:			// sleep
 			case 0xe6:
-				dev->flags |= ATA_SLEEP;
+				dev->sleep = 1;
 				break;
 			case 0x9a:			// vendor unique
 			case 0xc0:
@@ -293,7 +295,7 @@ void ataExec(ATADev* dev, unsigned char cm) {
 				dev->buf.data[43] = ((dev->pass.vol & 0xff00) >> 8);		// buffer size
 				copyStringToBuffer(&dev->buf.data[46],dev->pass.mcver,8);	// microcode version (8 bytes)
 				copyStringToBuffer(&dev->buf.data[54],dev->pass.model,10);	// model (40 bytes)
-				dev->buf.data[99] = ((dev->flags & ATA_DMA) ? 0x01 : 0x00) | ((dev->flags & ATA_LBA) ? 0x02 : 0x00);	// lba/dma support
+				dev->buf.data[99] = (dev->hasDMA ? 0x01 : 0x00) | (dev->hasLBA ? 0x02 : 0x00);	// lba/dma support
 				dev->buf.pos = 0;
 				dev->buf.mode = HDB_READ;
 				dev->reg.state |= HDF_DRQ;
@@ -325,7 +327,7 @@ void ataExec(ATADev* dev, unsigned char cm) {
 
 unsigned short ataIn(ATADev* dev,int prt) {
 	unsigned short res = 0xffff;
-	if ((dev->type != IDE_ATA) || (dev->image == NULL) || (dev->flags & ATA_SLEEP)) return res;
+	if ((dev->type != IDE_ATA) || (dev->image == NULL) || dev->sleep) return res;
 	switch (prt) {
 		case HDD_DATA:
 			if ((dev->buf.mode == HDB_READ) && (dev->reg.state & HDF_DRQ)) {
@@ -379,7 +381,7 @@ unsigned short ataIn(ATADev* dev,int prt) {
 }
 
 void ataOut(ATADev* dev, int prt, unsigned short val) {
-	if ((dev->type != IDE_ATA) || (dev->image == NULL) || (dev->flags & ATA_SLEEP)) return;
+	if ((dev->type != IDE_ATA) || (dev->image == NULL) || dev->sleep) return;
 	switch (prt) {
 		case HDD_DATA:
 			if ((dev->buf.mode == HDB_WRITE) && (dev->reg.state & HDF_DRQ)) {

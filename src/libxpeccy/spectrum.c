@@ -49,7 +49,7 @@ MemPage* mptr;
 
 inline void zxMemRW(ZXComp* comp, int adr) {
 	mptr = memGetBankPtr(comp->mem,adr);
-	if ((comp->hwFlag & HW_CONTMEM) && (mptr->type == MEM_RAM) && (mptr->num & 1)) {	// pages 1,3,5,7 (48K model)
+	if (comp->contMem && (mptr->type == MEM_RAM) && (mptr->num & 1)) {	// pages 1,3,5,7 (48K model)
 		res3 = TCPU(comp->cpu);					// until RD/WR cycle
 		vidSync(comp->vid, comp->nsPerTick * (res3 - res4));
 		res4 = res3;
@@ -79,7 +79,7 @@ void memwr(CPUCONT Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
 int bdiz;
 
 inline void zxIORW(ZXComp* comp, int port) {
-	if (comp->hwFlag & HW_CONTIO) {
+	if (comp->contIO) {
 		if ((port & 0xc000) == 0x4000) {
 			if (port & 0x0001) {			// C:1 C:1 C:1 C:1
 				vidWait(comp->vid); vidSync(comp->vid, comp->nsPerTick);
@@ -197,8 +197,9 @@ ZXComp* zxCreate() {
 	ZXComp* comp = (ZXComp*)malloc(sizeof(ZXComp));
 	void* ptr = (void*)comp;
 	memset(ptr,0,sizeof(ZXComp));
-	comp->flag = ZX_PALCHAN;	// | ZX_JUSTBORN
-	comp->hwFlag = 0;
+	// comp->flag = ZX_PALCHAN;	// | ZX_JUSTBORN
+	comp->palchan = 1;
+	// comp->hwFlag = 0;
 	comp->padr = 0;
 
 #ifdef SELFZ80
@@ -273,7 +274,7 @@ void zxReset(ZXComp* comp,int wut) {
 	int i;
 	int resto = comp->resbank;
 	for (i = 0; i < 16; i++) comp->colMap[i] = defPalete[i];	// reset palete to default
-	comp->flag |= ZX_PALCHAN;
+	comp->palchan = 1; // comp->flag |= ZX_PALCHAN;
 	comp->vid->ula->active = 0;
 	comp->rzxPlay = 0;
 	switch (wut) {
@@ -340,7 +341,7 @@ void zxReset(ZXComp* comp,int wut) {
 			break;
 	}
 	bdiReset(comp->bdi);
-	if (comp->gs->flag & GS_RESET) gsReset(comp->gs);
+	if (comp->gs->reset) gsReset(comp->gs);
 	tsReset(comp->ts);
 	ideReset(comp->ide);
 	comp->hw->mapMem(comp);
@@ -387,7 +388,7 @@ int zxExec(ZXComp* comp) {
 		if (gsOut(comp->gs,comp->padr,comp->pval) != GS_OK) {
 		if (ulaOut(comp->vid->ula, comp->padr, comp->pval)) {
 			if (comp->vid->ula->palchan) {
-				comp->flag |= ZX_PALCHAN;
+				comp->palchan = 1; // comp->flag |= ZX_PALCHAN;
 				comp->vid->ula->palchan = 0;
 			}
 		} else {
@@ -456,10 +457,10 @@ int zxExec(ZXComp* comp) {
 // TOO FAT
 	pcreg = GETPC(comp->cpu); // z80ex_get_reg(comp->cpu,regPC);
 	if (memGetCellFlags(comp->mem,pcreg) & MEM_BRK_FETCH) {
-		comp->flag |= ZX_BREAK;
+		comp->brk = 1; // comp->flag |= ZX_BREAK;
 	}
 	comp->tapCount += nsTime;
-	if (comp->gs->flag & GS_ENABLE) comp->gs->sync += nsTime;
+	if (comp->gs->enable) comp->gs->sync += nsTime;
 	if (comp->bdi->fdc->type != FDC_NONE) bdiSync(comp->bdi, nsTime);
 	return nsTime;
 }

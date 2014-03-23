@@ -10,8 +10,10 @@ unsigned char trd_8e0[] = {
 
 Floppy* flpCreate(int id) {
 	Floppy* flp = (Floppy*)malloc(sizeof(Floppy));
+	memset(flp,0x00,sizeof(Floppy));
 	flp->id = id;
-	flp->flag = FLP_TRK80 | FLP_DS;
+	flp->trk80 = 1;
+	flp->doubleSide = 1;
 	flp->trk = 0;
 	flp->rtrk = 0;
 	flp->pos = 0;
@@ -25,7 +27,7 @@ void flpDestroy(Floppy* flp) {
 
 void flpWr(Floppy* flp,unsigned char val) {
 	flp->data[flp->rtrk].byte[flp->pos] = val;
-	flp->flag |= FLP_CHANGED;
+	flp->changed = 1;
 }
 
 unsigned char flpRd(Floppy* flp) {
@@ -39,7 +41,7 @@ unsigned char flpGetField(Floppy* flp) {
 void flpStep(Floppy* flp,int dir) {
 	switch (dir) {
 		case FLP_FORWARD:
-			if (flp->trk < ((flp->flag & FLP_TRK80) ? 86 : 43)) flp->trk++;
+			if (flp->trk < (flp->trk80 ? 86 : 43)) flp->trk++;
 			break;
 		case FLP_BACK:
 			if (flp->trk > 0) flp->trk--;
@@ -50,8 +52,8 @@ void flpStep(Floppy* flp,int dir) {
 int flpNext(Floppy* flp, int fdcSide) {
 	int res = 0;
 	flp->rtrk = (flp->trk << 1);
-	if ((flp->flag & FLP_DS) && !fdcSide) flp->rtrk++;		// /SIDE1 = 0 when upper head (1) selected
-	if (flp->flag & FLP_INSERT) {
+	if (flp->doubleSide && !fdcSide) flp->rtrk++;		// /SIDE1 = 0 when upper head (1) selected
+	if (flp->insert) {
 		flp->pos++;
 		if (flp->pos >= TRACKLEN) {
 			flp->pos = 0;
@@ -66,8 +68,8 @@ int flpNext(Floppy* flp, int fdcSide) {
 
 void flpPrev(Floppy* flp, int fdcSide) {
 	flp->rtrk = (flp->trk << 1);
-	if ((flp->flag & FLP_DS) && !fdcSide) flp->rtrk++;
-	if (flp->flag & FLP_INSERT) {
+	if (flp->doubleSide && !fdcSide) flp->rtrk++;
+	if (flp->insert) {
 		if (flp->pos > 0) {
 			flp->pos--;
 		} else {
@@ -228,7 +230,8 @@ void flpFormTrack(Floppy* flp, int tr, Sector* sdata, int scount) {
 int flpEject(Floppy* flp) {
 	free(flp->path);
 	flp->path = NULL;
-	flp->flag &= ~(FLP_INSERT | FLP_CHANGED);
+	flp->insert = 0;
+	flp->changed = 0;
 	return 1;
 }
 
@@ -272,7 +275,7 @@ int flpCreateFile(Floppy* flp,TRFile* dsc) {
 	if (!flpGetSectorData(flp,0,freesec,fbuf,256)) return ERR_SHIT;
 	memcpy(fbuf + (((files - 1) & 0x0f) << 4), (char*)dsc, 16);
 	flpPutSectorData(flp,0,freesec,fbuf,256);
-	flp->flag |= FLP_CHANGED;
+	flp->changed = 1;
 	return ERR_OK;
 }
 
@@ -344,7 +347,7 @@ std::vector<TRFile> flpGetTRCatalog(Floppy* flp) {
 unsigned char* flpGetSectorDataPtr(Floppy* flp, unsigned char tr, unsigned char sc) {
 	int tpos = 0;
 	int fnd;
-	if (~flp->flag & FLP_INSERT) return NULL;
+	if (!flp->insert) return NULL;
 	while (1) {
 		while (flp->data[tr].field[tpos] != 1) {
 			if (++tpos >= TRACKLEN) return NULL;

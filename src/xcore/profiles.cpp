@@ -87,10 +87,7 @@ bool setProfile(std::string nm) {
 	sdcOpenFile(nprf->zx->sdc);
 	zx = currentProfile->zx;
 	vidUpdate(zx->vid);
-	zx->flag |= ZX_PALCHAN;
-	// emulSetPalette(zx,0);
-//	zx->vid->change = 1;
-//	zx->vid->forceDraw = 1;
+	zx->palchan = 1;
 	return true;
 }
 
@@ -124,10 +121,9 @@ XProfile* getCurrentProfile() {
 
 void setDiskString(ZXComp* comp,Floppy* flp,std::string st) {
 	if (st.size() < 4) return;
-	flp->flag &= ~(FLP_TRK80 | FLP_DS | FLP_PROTECT);
-	if (st.substr(0,2) == "80") flp->flag |= FLP_TRK80;
-	if (st.substr(2,1) == "D") flp->flag |= FLP_DS;
-	if (st.substr(3,1) == "R") flp->flag |= FLP_PROTECT;
+	flp->trk80 = (st.substr(0,2) == "80") ? 1 : 0;
+	flp->doubleSide = (st.substr(2,1) == "D") ? 1 : 0;
+	flp->protect = (st.substr(3,1) == "R") ? 1 : 0;
 	if (flp->path || (st.size() < 5) || !optGetFlag(OF_PATHS)) return;
 	st = st.substr(5);
 	loadFile(comp,st.c_str(),FT_DISK,flp->id);
@@ -216,8 +212,8 @@ int prfLoad(std::string nm) {
 					if (pnam == "chip2") aymSetType(comp->ts->chipB,atoi(pval.c_str()));
 					if (pnam == "chip2.stereo") comp->ts->chipB->stereo = atoi(pval.c_str());
 					if (pnam == "ts.type") comp->ts->type = atoi(pval.c_str());
-					if (pnam == "gs") setFlagBit(str2bool(pval),&comp->gs->flag,GS_ENABLE);
-					if (pnam == "gs.reset") setFlagBit(str2bool(pval),&comp->gs->flag,GS_RESET);
+					if (pnam == "gs") comp->gs->enable = str2bool(pval) ? 1 : 0;
+					if (pnam == "gs.reset") comp->gs->reset = str2bool(pval) ? 1 : 0;
 					if (pnam == "gs.stereo") comp->gs->stereo = atoi(pval.c_str());
 					if (pnam == "soundrive_type") comp->sdrv->type = atoi(pval.c_str());
 					break;
@@ -230,7 +226,6 @@ int prfLoad(std::string nm) {
 					if (pnam == "C") setDiskString(comp,comp->bdi->fdc->flop[2],pval);
 					if (pnam == "D") setDiskString(comp,comp->bdi->fdc->flop[3],pval);
 					if (pnam == "type") comp->bdi->fdc->type = atoi(pval.c_str());
-//					if (pnam == "fast") comp->bdi->fdc->turbo = str2bool(pval);
 					break;
 				case PS_MACHINE:
 					if (pnam == "current") prf->hwName = pval;
@@ -249,15 +244,15 @@ int prfLoad(std::string nm) {
 							case 4096: tmask = MEM_4M; break;
 						}
 					}
-					if (pnam == "contmem") setFlagBit(str2bool(pval),&comp->hwFlag,HW_CONTMEM);
+					if (pnam == "contmem") comp->contMem = str2bool(pval) ? 1 : 0;
 					//if (pnam == "contmemP3") setFlagBit(str2bool(pval),&comp->vid->flags,VID_CONT2);
-					if (pnam == "contio") setFlagBit(str2bool(pval),&comp->hwFlag,HW_CONTIO);
-					if (pnam == "scrp.wait") setFlagBit(str2bool(pval),&comp->hwFlag,HW_WAIT);
+					if (pnam == "contio") comp->contIO = str2bool(pval) ? 1 : 0;
+					if (pnam == "scrp.wait") comp->scrpWait = str2bool(pval) ? 1 : 0;
 					break;
 				case PS_IDE:
 					if (pnam == "iface") comp->ide->type = atoi(pval.c_str());
 					if (pnam == "master.type") comp->ide->master->type = atoi(pval.c_str());
-					if (pnam == "master.lba") setFlagBit(str2bool(pval),&comp->ide->master->flags, ATA_LBA);
+					if (pnam == "master.lba") comp->ide->master->hasLBA = str2bool(pval) ? 1 : 0;
 					if (pnam == "master.maxlba") comp->ide->master->maxlba = atoi(pval.c_str());
 					if (pnam == "master.image") ideSetImage(comp->ide,IDE_MASTER,pval.c_str());
 					if (pnam == "master.chs") {
@@ -269,7 +264,7 @@ int prfLoad(std::string nm) {
 						}
 					}
 					if (pnam == "slave.type") comp->ide->slave->type = atoi(pval.c_str());
-					if (pnam == "slave.lba") setFlagBit(str2bool(pval),&comp->ide->slave->flags, ATA_LBA);
+					if (pnam == "slave.lba") comp->ide->slave->hasLBA = str2bool(pval) ? 1 : 0;
 					if (pnam == "slave.maxlba") comp->ide->slave->maxlba = atoi(pval.c_str());
 					if (pnam == "slave.image") ideSetImage(comp->ide,IDE_SLAVE,pval.c_str());
 					if (pnam == "slave.chs") {
@@ -282,8 +277,8 @@ int prfLoad(std::string nm) {
 					}
 					break;
 				case PS_INPUT:
-					if (pnam == "mouse") setFlagBit(str2bool(pval),&comp->mouse->flags,INF_ENABLED);
-					if (pnam == "mouse.wheel") setFlagBit(str2bool(pval),&comp->mouse->flags,INF_WHEEL);
+					if (pnam == "mouse") comp->mouse->enable = str2bool(pval) ? 1 : 0;
+					if (pnam == "mouse.wheel") comp->mouse->hasWheel = str2bool(pval) ? 1 : 0;
 					break;
 				case PS_SDC:
 					if (pnam == "sdcimage") sdcSetImage(comp->sdc,pval.c_str());
@@ -293,8 +288,6 @@ int prfLoad(std::string nm) {
 			}
 		}
 	}
-
-	// comp->bdi->fdc->turbo = optGetFlag(OF_FASTDISK) ? 1 : 0;
 
 	ideSetPassport(comp->ide,IDE_MASTER,masterPass);
 	ideSetPassport(comp->ide,IDE_SLAVE,slavePass);
@@ -324,9 +317,9 @@ int prfLoad(std::string nm) {
 
 std::string getDiskString(Floppy* flp) {
 	std::string res = "40SW";
-	if (flp->flag & FLP_TRK80) res[0]='8';
-	if (flp->flag & FLP_DS) res[2]='D';
-	if (flp->flag & FLP_PROTECT) res[3]='R';
+	if (flp->trk80) res[0]='8';
+	if (flp->doubleSide) res[2]='D';
+	if (flp->protect) res[3]='R';
 	if (flp->path) {
 		res += ':';
 		res += std::string(flp->path);
@@ -352,10 +345,9 @@ int prfSave(std::string nm) {
 	file << "current = " << prf->hwName.c_str() << "\n";
 	file << "memory = " << int2str(comp->mem->memSize) << "\n";
 	file << "cpu.frq = " << int2str(comp->cpuFrq * 2) << "\n";
-	file << "scrp.wait = " << YESNO(comp->hwFlag & HW_WAIT) << "\n";
-	file << "contio = " << YESNO(comp->hwFlag & HW_CONTIO) << "\n";
-	file << "contmem = " << YESNO(comp->hwFlag & HW_CONTMEM) << "\n";
-//	file << "contmemP3 = " << YESNO(comp->vid->flags & VID_CONT2) << "\n";
+	file << "scrp.wait = " << YESNO(comp->scrpWait) << "\n";
+	file << "contio = " << YESNO(comp->contIO) << "\n";
+	file << "contmem = " << YESNO(comp->contMem) << "\n";
 
 	file << "\n[ROMSET]\n\n";
 	file << "current = " << prf->rsName.c_str() << "\n";
@@ -372,14 +364,14 @@ int prfSave(std::string nm) {
 	file << "chip2 = " << int2str(comp->ts->chipB->type) << "\n";
 	file << "chip2.stereo = " << int2str(comp->ts->chipB->stereo) << "\n";
 	file << "ts.type = " << int2str(comp->ts->type) << "\n";
-	file << "gs = " << YESNO(comp->gs->flag & GS_ENABLE) << "\n";
-	file << "gs.reset = " << YESNO(comp->gs->flag & GS_RESET) << "\n";
+	file << "gs = " << YESNO(comp->gs->enable) << "\n";
+	file << "gs.reset = " << YESNO(comp->gs->reset) << "\n";
 	file << "gs.stereo = " << int2str(comp->gs->stereo) << "\n";
 	file << "soundrive_type = " << int2str(comp->sdrv->type) << "\n";
 
 	file << "\n[INPUT]\n\n";
-	file << "mouse = " << YESNO(comp->mouse->flags & INF_ENABLED) << "\n";
-	file << "mouse.wheel = " << YESNO(comp->mouse->flags & INF_WHEEL) << "\n";
+	file << "mouse = " << YESNO(comp->mouse->enable) << "\n";
+	file << "mouse.wheel = " << YESNO(comp->mouse->hasWheel) << "\n";
 
 	file << "\n[TAPE]\n\n";
 	file << "path = " << (comp->tape->path ? comp->tape->path : "") << "\n";
@@ -397,13 +389,13 @@ int prfSave(std::string nm) {
 	file << "master.type = " << int2str(comp->ide->master->type) << "\n";
 	ATAPassport pass = ideGetPassport(comp->ide,IDE_MASTER);
 	file << "master.image = " << ((comp->ide->master->image) ? comp->ide->master->image : "") << "\n";
-	file << "master.lba = " << YESNO(comp->ide->master->flags & ATA_LBA) << "\n";
+	file << "master.lba = " << YESNO(comp->ide->master->hasLBA) << "\n";
 	file << "master.maxlba = " << int2str(comp->ide->master->maxlba) << "\n";
 	file << "master.chs = " << int2str(pass.spt) << "/" << int2str(pass.hds) << "/" << int2str(pass.cyls) << "\n";
 	file << "slave.type = " << int2str(comp->ide->slave->type) << "\n";
 	pass = ideGetPassport(comp->ide,IDE_SLAVE);
 	file << "slave.image = " << ((comp->ide->slave->image) ? comp->ide->slave->image : "") << "\n";
-	file << "slave.lba = " << YESNO(comp->ide->slave->flags & ATA_LBA) << "\n";
+	file << "slave.lba = " << YESNO(comp->ide->slave->hasLBA) << "\n";
 	file << "slave.maxlba = " << int2str(comp->ide->slave->maxlba) << "\n";
 	file << "slave.chs = " << int2str(pass.spt) << "/" << int2str(pass.hds) << "/" << int2str(pass.cyls) << "\n";
 

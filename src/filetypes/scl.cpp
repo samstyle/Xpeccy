@@ -51,9 +51,9 @@ int loadSCL(Floppy* flp,const char* name) {
 	}
 	flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
 	strcpy(flp->path,name);
-	flp->flag |= FLP_INSERT;
+	flp->insert = 1;
 	loadBoot(flp);
-	flp->flag &= ~FLP_CHANGED;
+	flp->changed = 0;
 	return ERR_OK;
 }
 
@@ -119,7 +119,7 @@ int saveSCL(Floppy* flp,const char* name) {
 
 	flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
 	strcpy(flp->path,name);
-	flp->flag &= ~FLP_CHANGED;
+	flp->changed = 0;
 
 	return ERR_OK;
 }

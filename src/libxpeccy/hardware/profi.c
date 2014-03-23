@@ -29,7 +29,7 @@ Z80EX_BYTE prfIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 					break;
 				default:
 					printf("Profi in %.4X (%i)\n",port,bdiz);
-					comp->flag |= ZX_BREAK;
+					comp->brk = 1; // comp->flag |= ZX_BREAK;
 					// assert(0);
 					break;
 			}
@@ -59,7 +59,7 @@ void prfOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 					break;
 				default:
 					printf("Profi out %.4X,%.2X (%i)\n",port,val,bdiz);
-					comp->flag |= ZX_BREAK;
+					comp->brk = 1; // comp->flag |= ZX_BREAK;
 					//assert(0);
 					break;
 			}

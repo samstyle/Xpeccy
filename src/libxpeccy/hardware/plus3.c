@@ -34,10 +34,10 @@ void pl3Out(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 			break;
 		case 0x2ffd:
 			if (comp->bdi->fdc->type != FDC_765) break;
-			if (val & 1) comp->bdi->fdc->flop[0]->flag |= FLP_MOTOR; else comp->bdi->fdc->flop[0]->flag &= ~FLP_MOTOR;
-			if (val & 2) comp->bdi->fdc->flop[1]->flag |= FLP_MOTOR; else comp->bdi->fdc->flop[1]->flag &= ~FLP_MOTOR;
-			if (val & 4) comp->bdi->fdc->flop[2]->flag |= FLP_MOTOR; else comp->bdi->fdc->flop[2]->flag &= ~FLP_MOTOR;
-			if (val & 8) comp->bdi->fdc->flop[3]->flag |= FLP_MOTOR; else comp->bdi->fdc->flop[3]->flag &= ~FLP_MOTOR;
+			comp->bdi->fdc->flop[0]->motor = (val & 1) ? 1 : 0;
+			comp->bdi->fdc->flop[1]->motor = (val & 2) ? 1 : 0;
+			comp->bdi->fdc->flop[2]->motor = (val & 4) ? 1 : 0;
+			comp->bdi->fdc->flop[3]->motor = (val & 8) ? 1 : 0;
 			break;
 		case 0x3ffd:
 			if (comp->bdi->fdc->type == FDC_765)

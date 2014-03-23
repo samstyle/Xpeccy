@@ -334,7 +334,7 @@ void SetupWin::start() {
 	setupUi.mszbox->setCurrentIndex(setupUi.mszbox->findData(zx->mem->memSize));
 	if (setupUi.mszbox->currentIndex() < 0) setupUi.mszbox->setCurrentIndex(setupUi.mszbox->count() - 1);
 	setupUi.cpufrq->setValue(zx->cpuFrq * 2); updfrq();
-	setupUi.scrpwait->setChecked(zx->hwFlag & HW_WAIT);
+	setupUi.scrpwait->setChecked(zx->scrpWait);
 	setupUi.sysCmos->setChecked(emulFlags & FL_SYSCLOCK);
 // video
 	lays = getLayoutList();
@@ -343,9 +343,8 @@ void SetupWin::start() {
 	setupUi.noflichk->setChecked(vidFlag & VF_NOFLIC);
 	setupUi.grayscale->setChecked(vidFlag & VF_GREY);
 	setupUi.border4T->setChecked(zx->vid->border4t);
-	setupUi.contMem->setChecked(zx->hwFlag & HW_CONTMEM);
-//	setupUi.contMemP3->setChecked(zx->vid->flags & VID_CONT2);
-	setupUi.contIO->setChecked(zx->hwFlag & HW_CONTIO);
+	setupUi.contMem->setChecked(zx->contMem);
+	setupUi.contIO->setChecked(zx->contIO);
 	setupUi.bszsld->setValue((int)(brdsize * 100));
 	setupUi.pathle->setText(QString::fromLocal8Bit(optGetString(OPT_SHOTDIR).c_str()));
 	setupUi.ssfbox->setCurrentIndex(setupUi.ssfbox->findData(optGetInt(OPT_SHOTFRM)));
@@ -359,7 +358,7 @@ void SetupWin::start() {
 // sound
 	setupUi.senbox->setChecked(sndEnabled);
 	setupUi.mutbox->setChecked(sndMute);
-	setupUi.gsrbox->setChecked(zx->gs->flag & GS_RESET);
+	setupUi.gsrbox->setChecked(zx->gs->reset);
 	setupUi.outbox->setCurrentIndex(setupUi.outbox->findText(QString::fromLocal8Bit(sndOutput->name)));
 	setupUi.ratbox->setCurrentIndex(setupUi.ratbox->findData(QVariant(sndRate)));
 	setupUi.bvsld->setValue(beepVolume);
@@ -371,7 +370,7 @@ void SetupWin::start() {
 	setupUi.stereo1box->setCurrentIndex(setupUi.stereo1box->findData(QVariant(zx->ts->chipA->stereo)));
 	setupUi.stereo2box->setCurrentIndex(setupUi.stereo2box->findData(QVariant(zx->ts->chipB->stereo)));
 	setupUi.gstereobox->setCurrentIndex(setupUi.gstereobox->findData(QVariant(zx->gs->stereo)));
-	setupUi.gsgroup->setChecked(zx->gs->flag & GS_ENABLE);
+	setupUi.gsgroup->setChecked(zx->gs->enable);
 	setupUi.tsbox->setCurrentIndex(setupUi.tsbox->findData(QVariant(zx->ts->type)));
 	setupUi.sdrvBox->setCurrentIndex(setupUi.sdrvBox->findData(QVariant(zx->sdrv->type)));
 // input
@@ -381,8 +380,8 @@ void SetupWin::start() {
 	int idx = setupUi.keyMapBox->findText(QString(kmname.c_str()));
 	if (idx < 1) idx = 0;
 	setupUi.keyMapBox->setCurrentIndex(idx);
-	setupUi.ratEnable->setChecked(zx->mouse->flags & INF_ENABLED);
-	setupUi.ratWheel->setChecked(zx->mouse->flags & INF_WHEEL);
+	setupUi.ratEnable->setChecked(zx->mouse->enable);
+	setupUi.ratWheel->setChecked(zx->mouse->hasWheel);
 #ifdef XQTPAINT
 	setupUi.joyBox->setVisible(false);
 #else
@@ -404,24 +403,24 @@ void SetupWin::start() {
 	setupUi.mempaths->setChecked(optGetFlag(OF_PATHS));
 	Floppy* flp = zx->bdi->fdc->flop[0];
 	setupUi.apathle->setText(QString::fromLocal8Bit(flp->path));
-		setupUi.a80box->setChecked(flp->flag & FLP_TRK80);
-		setupUi.adsbox->setChecked(flp->flag & FLP_DS);
-		setupUi.awpbox->setChecked(flp->flag & FLP_PROTECT);
+		setupUi.a80box->setChecked(flp->trk80);
+		setupUi.adsbox->setChecked(flp->doubleSide);
+		setupUi.awpbox->setChecked(flp->protect);
 	flp = zx->bdi->fdc->flop[1];
 	setupUi.bpathle->setText(QString::fromLocal8Bit(flp->path));
-		setupUi.b80box->setChecked(flp->flag & FLP_TRK80);
-		setupUi.bdsbox->setChecked(flp->flag & FLP_DS);
-		setupUi.bwpbox->setChecked(flp->flag & FLP_PROTECT);
+		setupUi.b80box->setChecked(flp->trk80);
+		setupUi.bdsbox->setChecked(flp->doubleSide);
+		setupUi.bwpbox->setChecked(flp->protect);
 	flp = zx->bdi->fdc->flop[2];
 	setupUi.cpathle->setText(QString::fromLocal8Bit(flp->path));
-		setupUi.c80box->setChecked(flp->flag & FLP_TRK80);
-		setupUi.cdsbox->setChecked(flp->flag & FLP_DS);
-		setupUi.cwpbox->setChecked(flp->flag & FLP_PROTECT);
+		setupUi.c80box->setChecked(flp->trk80);
+		setupUi.cdsbox->setChecked(flp->doubleSide);
+		setupUi.cwpbox->setChecked(flp->protect);
 	flp = zx->bdi->fdc->flop[3];
 	setupUi.dpathle->setText(QString::fromLocal8Bit(flp->path));
-		setupUi.d80box->setChecked(flp->flag & FLP_TRK80);
-		setupUi.ddsbox->setChecked(flp->flag & FLP_DS);
-		setupUi.dwpbox->setChecked(flp->flag & FLP_PROTECT);
+		setupUi.d80box->setChecked(flp->trk80);
+		setupUi.ddsbox->setChecked(flp->doubleSide);
+		setupUi.dwpbox->setChecked(flp->protect);
 	fillDiskCat();
 // hdd
 	setupUi.hiface->setCurrentIndex(setupUi.hiface->findData(zx->ide->type));
@@ -431,7 +430,7 @@ void SetupWin::start() {
 //	setupUi.hm_model->setText(QString::fromLocal8Bit(pass.model));
 //	setupUi.hm_ser->setText(QString::fromLocal8Bit(pass.serial));
 	setupUi.hm_path->setText(QString::fromLocal8Bit(zx->ide->master->image));
-	setupUi.hm_islba->setChecked(zx->ide->master->flags & ATA_LBA);
+	setupUi.hm_islba->setChecked(zx->ide->master->hasLBA);
 	setupUi.hm_gsec->setValue(pass.spt);
 	setupUi.hm_ghd->setValue(pass.hds);
 	setupUi.hm_gcyl->setValue(pass.cyls);
@@ -442,7 +441,7 @@ void SetupWin::start() {
 //	setupUi.hs_model->setText(QString::fromLocal8Bit(pass.model));
 //	setupUi.hs_ser->setText(QString::fromLocal8Bit(pass.serial));
 	setupUi.hs_path->setText(QString::fromLocal8Bit(zx->ide->slave->image));
-	setupUi.hs_islba->setChecked(zx->ide->slave->flags & ATA_LBA);
+	setupUi.hs_islba->setChecked(zx->ide->slave->hasLBA);
 	setupUi.hs_gsec->setValue(pass.spt);
 	setupUi.hs_ghd->setValue(pass.hds);
 	setupUi.hs_gcyl->setValue(pass.cyls);
@@ -487,7 +486,8 @@ void SetupWin::apply() {
 
 	memSetSize(zx->mem,setupUi.mszbox->itemData(setupUi.mszbox->currentIndex()).toInt());
 	zxSetFrq(zx,setupUi.cpufrq->value() / 2.0);
-	setFlagBit(setupUi.scrpwait->isChecked(),&zx->hwFlag,HW_WAIT);
+	// setFlagBit(setupUi.scrpwait->isChecked(),&zx->hwFlag,HW_WAIT);
+	zx->scrpWait = setupUi.scrpwait->isChecked() ? 1 : 0;
 	if (zx->hw != oldmac) zxReset(zx,RES_DEFAULT);
 	emulSetFlag(FL_SYSCLOCK,setupUi.sysCmos->isChecked());
 // video
@@ -496,9 +496,11 @@ void SetupWin::apply() {
 	setFlagBit(setupUi.fscchk->isChecked(),&vidFlag,VF_FULLSCREEN);
 	setFlagBit(setupUi.noflichk->isChecked(),&vidFlag,VF_NOFLIC);
 	zx->vid->border4t = setupUi.border4T->isChecked() ? 1 : 0;
-	setFlagBit(setupUi.contMem->isChecked(),&zx->hwFlag,HW_CONTMEM);
+//	setFlagBit(setupUi.contMem->isChecked(),&zx->hwFlag,HW_CONTMEM);
 //	setFlagBit(setupUi.contMemP3->isChecked(),&zx->vid->flags,VID_CONT2);
-	setFlagBit(setupUi.contIO->isChecked(),&zx->hwFlag,HW_CONTIO);
+//	setFlagBit(setupUi.contIO->isChecked(),&zx->hwFlag,HW_CONTIO);
+	zx->contMem = setupUi.contMem->isChecked() ? 1 : 0;
+	zx->contIO = setupUi.contIO->isChecked() ? 1 : 0;
 	setFlagBit(setupUi.grayscale->isChecked(),&vidFlag,VF_GREY);
 	brdsize = setupUi.bszsld->value()/100.0;
 	optSet(OPT_SHOTDIR,std::string(setupUi.pathle->text().toLocal8Bit().data()));
@@ -524,14 +526,13 @@ void SetupWin::apply() {
 	zx->ts->chipA->stereo = setupUi.stereo1box->itemData(setupUi.stereo1box->currentIndex()).toInt();
 	zx->ts->chipB->stereo = setupUi.stereo2box->itemData(setupUi.stereo2box->currentIndex()).toInt();
 	zx->ts->type = setupUi.tsbox->itemData(setupUi.tsbox->currentIndex()).toInt();
-	zx->gs->flag = 0;
-	if (setupUi.gsgroup->isChecked()) zx->gs->flag |= GS_ENABLE;
-	if (setupUi.gsrbox->isChecked()) zx->gs->flag |= GS_RESET;
+	zx->gs->enable = setupUi.gsgroup->isChecked() ? 1 : 0;
+	zx->gs->reset = setupUi.gsrbox->isChecked() ? 1 : 0;
 	zx->gs->stereo = setupUi.gstereobox->itemData(setupUi.gstereobox->currentIndex()).toInt();
 	zx->sdrv->type = setupUi.sdrvBox->itemData(setupUi.sdrvBox->currentIndex()).toInt();
 // input
-	setFlagBit(setupUi.ratEnable->isChecked(),&zx->mouse->flags,INF_ENABLED);
-	setFlagBit(setupUi.ratWheel->isChecked(),&zx->mouse->flags,INF_WHEEL);
+	zx->mouse->enable = setupUi.ratEnable->isChecked() ? 1 : 0;
+	zx->mouse->hasWheel = setupUi.ratWheel->isChecked() ? 1 : 0;
 	if (setupUi.inpDevice->currentIndex() < 1) {
 		optSet(OPT_JOYNAME,std::string(""));
 	} else {
@@ -547,41 +548,32 @@ void SetupWin::apply() {
 	optSetFlag(OF_PATHS,setupUi.mempaths->isChecked());
 
 	Floppy* flp = zx->bdi->fdc->flop[0];
-	flp->flag &= ~(FLP_TRK80 | FLP_DS | FLP_PROTECT);
-	if (setupUi.a80box->isChecked()) flp->flag |= FLP_TRK80;
-	if (setupUi.adsbox->isChecked()) flp->flag |= FLP_DS;
-	if (setupUi.awpbox->isChecked()) flp->flag |= FLP_PROTECT;
+	flp->trk80 = setupUi.a80box->isChecked() ? 1 : 0;
+	flp->doubleSide = setupUi.adsbox->isChecked() ? 1 : 0;
+	flp->protect = setupUi.awpbox->isChecked() ? 1 : 0;
 
 	flp = zx->bdi->fdc->flop[1];
-	flp->flag &= ~(FLP_TRK80 | FLP_DS | FLP_PROTECT);
-	if (setupUi.b80box->isChecked()) flp->flag |= FLP_TRK80;
-	if (setupUi.bdsbox->isChecked()) flp->flag |= FLP_DS;
-	if (setupUi.bwpbox->isChecked()) flp->flag |= FLP_PROTECT;
+	flp->trk80 = setupUi.b80box->isChecked() ? 1 : 0;
+	flp->doubleSide = setupUi.bdsbox->isChecked() ? 1 : 0;
+	flp->protect = setupUi.bwpbox->isChecked() ? 1 : 0;
 
 	flp = zx->bdi->fdc->flop[2];
-	flp->flag &= ~(FLP_TRK80 | FLP_DS | FLP_PROTECT);
-	if (setupUi.c80box->isChecked()) flp->flag |= FLP_TRK80;
-	if (setupUi.cdsbox->isChecked()) flp->flag |= FLP_DS;
-	if (setupUi.cwpbox->isChecked()) flp->flag |= FLP_PROTECT;
+	flp->trk80 = setupUi.c80box->isChecked() ? 1 : 0;
+	flp->doubleSide = setupUi.cdsbox->isChecked() ? 1 : 0;
+	flp->protect = setupUi.cwpbox->isChecked() ? 1 : 0;
 
 	flp = zx->bdi->fdc->flop[3];
-	flp->flag &= ~(FLP_TRK80 | FLP_DS | FLP_PROTECT);
-	if (setupUi.d80box->isChecked()) flp->flag |= FLP_TRK80;
-	if (setupUi.ddsbox->isChecked()) flp->flag |= FLP_DS;
-	if (setupUi.dwpbox->isChecked()) flp->flag |= FLP_PROTECT;
+	flp->trk80 = setupUi.d80box->isChecked() ? 1 : 0;
+	flp->doubleSide = setupUi.ddsbox->isChecked() ? 1 : 0;
+	flp->protect = setupUi.dwpbox->isChecked() ? 1 : 0;
 
 // hdd
 	zx->ide->type = setupUi.hiface->itemData(setupUi.hiface->currentIndex()).toInt();
 
-	int flg = zx->ide->master->flags;
 	ATAPassport pass = ideGetPassport(zx->ide,IDE_MASTER);
-
 	zx->ide->master->type = setupUi.hm_type->itemData(setupUi.hm_type->currentIndex()).toInt();
-//	memcpy(pass.model,std::string(setupUi.hm_model->text().toLocal8Bit().data(),40).c_str(),40);
-//	memcpy(pass.serial,std::string(setupUi.hm_ser->text().toLocal8Bit().data(),20).c_str(),20);
 	ideSetImage(zx->ide,IDE_MASTER,setupUi.hm_path->text().toLocal8Bit().data());
-	setFlagBit(setupUi.hm_islba->isChecked(),&flg,ATA_LBA);
-	zx->ide->master->flags = flg;
+	zx->ide->master->hasLBA = setupUi.hm_islba->isChecked() ? 1 : 0;
 	pass.spt = setupUi.hm_gsec->value();
 	pass.hds = setupUi.hm_ghd->value();
 	pass.cyls = setupUi.hm_gcyl->value();
@@ -589,13 +581,9 @@ void SetupWin::apply() {
 	ideSetPassport(zx->ide,IDE_MASTER,pass);
 
 	pass = ideGetPassport(zx->ide,IDE_SLAVE);
-	flg = zx->ide->slave->flags;
 	zx->ide->slave->type = setupUi.hs_type->itemData(setupUi.hs_type->currentIndex()).toInt();
-//	memcpy(pass.model,std::string(setupUi.hs_model->text().toLocal8Bit().data(),40).c_str(),40);
-//	memcpy(pass.serial,std::string(setupUi.hs_ser->text().toLocal8Bit().data(),20).c_str(),20);
 	ideSetImage(zx->ide,IDE_SLAVE,setupUi.hs_path->text().toLocal8Bit().data());
-	setFlagBit(setupUi.hs_islba->isChecked(),&flg,ATA_LBA);
-	zx->ide->slave->flags = flg;
+	zx->ide->slave->hasLBA = setupUi.hs_islba->isChecked() ? 1 : 0;
 	pass.spt = setupUi.hs_gsec->value();
 	pass.hds = setupUi.hs_ghd->value();
 	pass.cyls = setupUi.hs_gcyl->value();
@@ -621,7 +609,7 @@ void SetupWin::apply() {
 	saveProfiles();
 	prfSave("");
 	sndCalibrate();
-	zx->flag |= ZX_PALCHAN;
+	zx->palchan = 1; // zx->flag |= ZX_PALCHAN;
 	// emulSetPalette(zx,setupUi.brgslide->value());
 	emulOpenJoystick(optGetString(OPT_JOYNAME));
 	emulUpdateWindow();
@@ -973,7 +961,7 @@ void SetupWin::buildtapelist() {
 			setupUi.tapelist->setItem(i,3,itm);
 		}
 		itm = new QTableWidgetItem;
-		if (inf[i].flag & TBF_BREAK) itm->setIcon(QIcon(":/images/cancel.png"));
+		if (inf[i].breakPoint) itm->setIcon(QIcon(":/images/cancel.png"));
 		setupUi.tapelist->setItem(i,1,itm);
 		ts = inf[i].time;
 		tm = ts/60;
@@ -1115,15 +1103,15 @@ void SetupWin::copyToDisk() {
 	int dsk = setupUi.disktabs->currentIndex();
 	int headBlock = -1;
 	int dataBlock = -1;
-	if (~zx->tape->blkData[blk].flag & TBF_BYTES) {
+	if (!zx->tape->blkData[blk].hasBytes) {
 		shitHappens("This is not standard block");
 		return;
 	}
-	if (zx->tape->blkData[blk].flag & TBF_HEAD) {
+	if (zx->tape->blkData[blk].isHeader) {
 		if ((int)zx->tape->blkCount == blk + 1) {
 			shitHappens("Header without data? Hmm...");
 		} else {
-			if (~zx->tape->blkData[blk+1].flag & TBF_BYTES) {
+			if (!zx->tape->blkData[blk+1].hasBytes) {
 				shitHappens("Data block is not standard");
 			} else {
 				headBlock = blk;
@@ -1133,7 +1121,7 @@ void SetupWin::copyToDisk() {
 	} else {
 		dataBlock = blk;
 		if (blk != 0) {
-			if (zx->tape->blkData[blk-1].flag & TBF_HEAD) {
+			if (zx->tape->blkData[blk-1].isHeader) {
 				headBlock = blk - 1;
 			}
 		}
@@ -1161,7 +1149,7 @@ void SetupWin::copyToDisk() {
 			return;
 		}
 	}
-	if (!(zx->bdi->fdc->flop[dsk]->flag & FLP_INSERT)) newdisk(dsk);
+	if (!(zx->bdi->fdc->flop[dsk]->insert)) newdisk(dsk);
 	TapeBlockInfo inf = tapGetBlockInfo(zx->tape,dataBlock);
 	unsigned char* dt = new unsigned char[inf.size];
 	tapGetBlockData(zx->tape,dataBlock,dt);
@@ -1201,7 +1189,7 @@ void SetupWin::fillDiskCat() {
 	wid->setColumnWidth(5,50);
 //	wid->setColumnWidth(6,40);
 	QTableWidgetItem* itm;
-	if (!(zx->bdi->fdc->flop[dsk]->flag & FLP_INSERT)) {
+	if (!(zx->bdi->fdc->flop[dsk]->insert)) {
 		wid->setEnabled(false);
 		wid->setRowCount(0);
 	} else {
@@ -1338,7 +1326,8 @@ void SetupWin::newdisk(int idx) {
 	flpFormat(flp);
 	flp->path = (char*)realloc(flp->path,sizeof(char));
 	flp->path[0] = 0x00;
-	flp->flag |= (FLP_INSERT | FLP_CHANGED);
+	flp->insert = 1;
+	flp->changed = 1;
 	updatedisknams();
 }
 
@@ -1352,10 +1341,10 @@ void SetupWin::loadb() {loadFile(zx,"",FT_DISK,1); updatedisknams();}
 void SetupWin::loadc() {loadFile(zx,"",FT_DISK,2); updatedisknams();}
 void SetupWin::loadd() {loadFile(zx,"",FT_DISK,3); updatedisknams();}
 
-void SetupWin::savea() {Floppy* flp = zx->bdi->fdc->flop[0]; if (flp->flag & FLP_INSERT) saveFile(zx,flp->path,FT_DISK,0);}
-void SetupWin::saveb() {Floppy* flp = zx->bdi->fdc->flop[1]; if (flp->flag & FLP_INSERT) saveFile(zx,flp->path,FT_DISK,1);}
-void SetupWin::savec() {Floppy* flp = zx->bdi->fdc->flop[2]; if (flp->flag & FLP_INSERT) saveFile(zx,flp->path,FT_DISK,2);}
-void SetupWin::saved() {Floppy* flp = zx->bdi->fdc->flop[3]; if (flp->flag & FLP_INSERT) saveFile(zx,flp->path,FT_DISK,3);}
+void SetupWin::savea() {Floppy* flp = zx->bdi->fdc->flop[0]; if (flp->insert) saveFile(zx,flp->path,FT_DISK,0);}
+void SetupWin::saveb() {Floppy* flp = zx->bdi->fdc->flop[1]; if (flp->insert) saveFile(zx,flp->path,FT_DISK,1);}
+void SetupWin::savec() {Floppy* flp = zx->bdi->fdc->flop[2]; if (flp->insert) saveFile(zx,flp->path,FT_DISK,2);}
+void SetupWin::saved() {Floppy* flp = zx->bdi->fdc->flop[3]; if (flp->insert) saveFile(zx,flp->path,FT_DISK,3);}
 
 void SetupWin::ejcta() {saveChangedDisk(zx,0); flpEject(zx->bdi->fdc->flop[0]); updatedisknams();}
 void SetupWin::ejctb() {saveChangedDisk(zx,1); flpEject(zx->bdi->fdc->flop[1]); updatedisknams();}
@@ -1424,7 +1413,7 @@ void SetupWin::chablock(QModelIndex idx) {
 
 void SetupWin::setTapeBreak(int row,int col) {
 	if ((row < 0) || (col != 1)) return;
-	zx->tape->blkData[row].flag ^= TBF_BREAK;
+	zx->tape->blkData[row].breakPoint ^= 1;
 	buildtapelist();
 	setupUi.tapelist->selectRow(row);
 }

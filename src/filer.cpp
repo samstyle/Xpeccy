@@ -27,7 +27,7 @@ void initFileDialog(QWidget*) {
 bool saveChangedDisk(ZXComp* comp,int id) {
 	bool res=true;
 	Floppy* flp = comp->bdi->fdc->flop[id];
-	if (flp->flag & FLP_CHANGED) {
+	if (flp->changed) {
 		QMessageBox mbox;
 		mbox.setText(QString("<b>Disk ").append(QChar('A'+id)).append(": has been changed</b>"));
 		mbox.setInformativeText("Do you want to save it?");
@@ -170,10 +170,10 @@ bool saveFile(ZXComp* comp,const char* name,int flags,int drv) {
 	QString path(name);
 	QString filters = "";
 	if (flags & FT_DISK) {
-		if (((drv == -1) || (drv == 0)) && (comp->bdi->fdc->flop[0]->flag & FLP_INSERT)) filters.append(";;Disk A (*.scl *.trd *.udi)");
-		if ((drv == 1) && (comp->bdi->fdc->flop[1]->flag & FLP_INSERT)) filters.append(";;Disk B (*.scl *.trd *.udi)");
-		if ((drv == 2) && (comp->bdi->fdc->flop[2]->flag & FLP_INSERT)) filters.append(";;Disk C (*.scl *.trd *.udi)");
-		if ((drv == 3) && (comp->bdi->fdc->flop[3]->flag & FLP_INSERT)) filters.append(";;Disk D (*.scl *.trd *.udi)");
+		if (((drv == -1) || (drv == 0)) && (comp->bdi->fdc->flop[0]->insert)) filters.append(";;Disk A (*.scl *.trd *.udi)");
+		if ((drv == 1) && (comp->bdi->fdc->flop[1]->insert)) filters.append(";;Disk B (*.scl *.trd *.udi)");
+		if ((drv == 2) && (comp->bdi->fdc->flop[2]->insert)) filters.append(";;Disk C (*.scl *.trd *.udi)");
+		if ((drv == 3) && (comp->bdi->fdc->flop[3]->insert)) filters.append(";;Disk D (*.scl *.trd *.udi)");
 	}
 	if (flags & FT_SNAP) filters.append(";;Snapshot (*.sna)");
 	if ((flags & FT_TAPE) && (comp->tape->blkCount != 0)) filters.append(";;Tape (*.tap)");

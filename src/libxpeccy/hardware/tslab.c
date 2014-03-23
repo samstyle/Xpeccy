@@ -46,7 +46,7 @@ void tslMWr(ZXComp* comp, Z80EX_WORD adr, Z80EX_BYTE val) {
 	if ((comp->tsconf.flag & 0x10) && ((adr & 0xf000) == comp->tsconf.tsMapAdr)) {
 		if ((adr & 0xe00) == 0x000) {
 			comp->vid->tsconf.cram[adr & 0x1ff] = val;
-			comp->flag |= ZX_PALCHAN;
+			comp->palchan = 1; // comp->flag |= ZX_PALCHAN;
 		}
 		if ((adr & 0xe00) == 0x200) {
 			comp->vid->tsconf.sfile[adr & 0x1ff] = val;
@@ -202,14 +202,10 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 			break;
 		case 0x29af:
 			// comp->tsconf.FDDVirt = val;
-			comp->bdi->fdc->flop[0]->flag &= ~FLP_VIRT;
-			comp->bdi->fdc->flop[1]->flag &= ~FLP_VIRT;
-			comp->bdi->fdc->flop[2]->flag &= ~FLP_VIRT;
-			comp->bdi->fdc->flop[3]->flag &= ~FLP_VIRT;
-			if (val & 0x01) comp->bdi->fdc->flop[0]->flag |= FLP_VIRT;
-			if (val & 0x02) comp->bdi->fdc->flop[1]->flag |= FLP_VIRT;
-			if (val & 0x04) comp->bdi->fdc->flop[2]->flag |= FLP_VIRT;
-			if (val & 0x08) comp->bdi->fdc->flop[3]->flag |= FLP_VIRT;
+			comp->bdi->fdc->flop[0]->virt = (val & 0x01) ? 1 : 0;
+			comp->bdi->fdc->flop[1]->virt = (val & 0x02) ? 1 : 0;
+			comp->bdi->fdc->flop[2]->virt = (val & 0x04) ? 1 : 0;
+			comp->bdi->fdc->flop[3]->virt = (val & 0x08) ? 1 : 0;
 			break;
 		case 0x2aaf:
 			break;
@@ -232,7 +228,7 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 						comp->tsconf.vdos = 0;
 						tslMapMem(comp);
 					} else {
-						if (comp->bdi->fdc->fptr->flag & FLP_VIRT) {
+						if (comp->bdi->fdc->fptr->virt) {
 							comp->tsconf.vdos = 1;
 							tslMapMem(comp);
 //							if (((port & 0xff) == 0x1f) && ((val & 0xe0) == 0xa0)) comp->flag |= ZX_BREAK;
@@ -247,7 +243,7 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 				case 0xff:
 					if (!comp->dosen) break;
 					comp->bdi->fdc->fptr = comp->bdi->fdc->flop[val & 3];
-					if ((comp->bdi->fdc->fptr->flag & FLP_VIRT)) {
+					if (comp->bdi->fdc->fptr->virt) {
 						comp->tsconf.vdos = 1;
 						tslMapMem(comp);
 					} else if (comp->tsconf.vdos) {
@@ -342,9 +338,9 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 		case 0x27af:
 			res = 0;				// b7: DMA status
 			break;
-		case 0xfadf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->buttons : 0xff; break;
-		case 0xfbdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->xpos : 0xff; break;
-		case 0xffdf: res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->ypos : 0xff; break;
+		case 0xfadf: res = comp->mouse->enable ? comp->mouse->buttons : 0xff; break;
+		case 0xfbdf: res = comp->mouse->enable ? comp->mouse->xpos : 0xff; break;
+		case 0xffdf: res = comp->mouse->enable ? comp->mouse->ypos : 0xff; break;
 		default:
 			switch (port & 0xff) {
 /*
@@ -370,7 +366,7 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 							comp->tsconf.vdos = 0;
 							tslMapMem(comp);
 						} else {
-							if (comp->bdi->fdc->fptr->flag & FLP_VIRT) {
+							if (comp->bdi->fdc->fptr->virt) {
 								comp->tsconf.vdos = 1;
 								tslMapMem(comp);
 							} else {
@@ -386,7 +382,7 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 					break;
 				case 0xff:
 					if (!comp->dosen) break;
-					if (comp->bdi->fdc->fptr->flag & FLP_VIRT) {
+					if (comp->bdi->fdc->fptr->virt) {
 						comp->tsconf.vdos = 1;
 						tslMapMem(comp);
 					} else {

@@ -80,6 +80,7 @@ void gsSetRom(GSound* gs, int part, char* buf) {
 
 GSound* gsCreate() {
 	GSound* res = (GSound*)malloc(sizeof(GSound));
+	memset(res,0x00,sizeof(GSound));
 	void* ptr = (void*)res;
 #ifdef SELFZ80
 	res->cpu = cpuCreate(&gsmemrd,&gsmemwr,&gsiord,&gsiowr,&gsintrq,ptr);
@@ -95,7 +96,6 @@ GSound* gsCreate() {
 	res->sync = 0;
 	res->cnt = 0;
 	res->pstate = 0x7e;
-	res->flag = 0;
 	res->stereo = GS_12_34;
 	res->counter = 0;
 	res->ch1 = 0;
@@ -120,8 +120,8 @@ void gsReset(GSound* gs) {
 }
 
 void gsSync(GSound* gs) {
+	if (!gs->enable) return;
 	int res;
-	if (~gs->flag & GS_ENABLE) return;
 	gs->counter += gs->sync * GS_FRQ / 980;		// ticks to emulate
 	while (gs->counter > 0) {
 		EXECCPU(gs->cpu,res);
@@ -141,7 +141,7 @@ gsPair gsGetVolume(GSound* gs) {
 	gsPair res;
 	res.left = 0;
 	res.right = 0;
-	if (~gs->flag & GS_ENABLE) return res;
+	if (!gs->enable) return res;
 	switch (gs->stereo) {
 		case GS_MONO:
 			res.left = ((gs->ch1 * gs->vol1 + \
@@ -161,7 +161,7 @@ gsPair gsGetVolume(GSound* gs) {
 // external in/out
 
 int gsIn(GSound* gs, int prt, unsigned char* val) {
-	if (~gs->flag & GS_ENABLE) return GS_ERR;	// gs disabled
+	if (!gs->enable) return GS_ERR;	// gs disabled
 	if ((prt & 0x44) != 0) return GS_ERR;		// port don't catched
 	gsSync(gs);
 	if (prt & 8) {
@@ -174,7 +174,7 @@ int gsIn(GSound* gs, int prt, unsigned char* val) {
 }
 
 int gsOut(GSound* gs, int prt,unsigned char val) {
-	if (~gs->flag & GS_ENABLE) return GS_ERR;
+	if (!gs->enable) return GS_ERR;
 	if ((prt & 0x44) != 0) return GS_ERR;
 	gsSync(gs);
 	if (prt & 8) {

@@ -20,6 +20,7 @@ extern "C" {
 // step direction
 #define	FLP_BACK	0
 #define	FLP_FORWARD	1
+/*
 // flags
 #define	FLP_INSERT	1
 #define	FLP_PROTECT	(1<<1)
@@ -31,6 +32,7 @@ extern "C" {
 #define	FLP_CHANGED	(1<<7)
 #define	FLP_SIDE	(1<<8)
 #define	FLP_VIRT	(1<<9)
+*/
 
 typedef struct {
 	unsigned char cyl;
@@ -54,7 +56,18 @@ typedef struct {
 } TRFile;
 
 typedef struct {
-	int flag;
+//	int flag;
+	unsigned insert:1;
+	unsigned protect:1;
+	unsigned trk80:1;
+	unsigned doubleSide:1;
+	unsigned index:1;
+	unsigned motor:1;
+	unsigned head:1;
+	unsigned changed:1;
+	unsigned side:1;
+	unsigned virt:1;
+
 	unsigned char id;
 	unsigned char iback;
 	unsigned char trk,rtrk;

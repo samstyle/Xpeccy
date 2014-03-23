@@ -7,9 +7,9 @@ int loadRaw(Floppy* flp, const char* name) {
 	file.seekg(0,std::ios::end);
 	size_t len = file.tellg();
 	if (len > 0xff00) return ERR_RAW_LONG;
-	if (!(flp->flag & FLP_INSERT)) {
+	if (!flp->insert) {
 		flpFormat(flp);
-		flp->flag |= FLP_INSERT;
+		flp->insert = 1;
 	}
 	if (flpGet(flp,FLP_DISKTYPE) != DISK_TYPE_TRD) return ERR_NOTRD;
 	file.seekg(0,std::ios::beg);

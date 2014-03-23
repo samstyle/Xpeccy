@@ -136,13 +136,13 @@ Z80EX_BYTE scoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 			zxSetFrq(comp,7.0);
 			break;
 		case 0xfadf:
-			res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->buttons : 0xff;
+			res = comp->mouse->enable ? comp->mouse->buttons : 0xff;
 			break;
 		case 0xfbdf:
-			res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->xpos : 0xff;
+			res = comp->mouse->enable ? comp->mouse->xpos : 0xff;
 			break;
 		case 0xffdf:
-			res = (comp->mouse->flags & INF_ENABLED) ? comp->mouse->ypos : 0xff;
+			res = comp->mouse->enable ? comp->mouse->ypos : 0xff;
 			break;
 		case 0xfffd:
 			res = tsIn(comp->ts,port);

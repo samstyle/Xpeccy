@@ -56,7 +56,7 @@ void TapeWin::drawStops(Tape *tape) {
 	QTableWidgetItem* itm;
 	for (int i = 0; i < ui.tapeList->rowCount(); i++) {
 		itm = new QTableWidgetItem;
-		if (tape->blkData[i].flag & TBF_BREAK) {
+		if (tape->blkData[i].breakPoint) {
 			itm->setIcon(QIcon(":/images/cancel.png"));
 		}
 		ui.tapeList->setItem(i,1,itm);

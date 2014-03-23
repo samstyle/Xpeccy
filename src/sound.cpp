@@ -66,7 +66,7 @@ void sndSync(int fast) {
 	if (fast != 0) return;
 	if (sndOutput == NULL) return;
 	lev = zx->beeplev ? beepVolume : 0;
-	if (zx->tape->flag & TAPE_ON) {
+	if (zx->tape->on) {
 		lev += (zx->tape->outsig ? tapeVolume : 0) + (zx->tape->signal ? tapeVolume : 0);
 	}
 

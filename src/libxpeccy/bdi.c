@@ -985,10 +985,10 @@ unsigned char fdcRd(FDC* fdc,int port) {
 		case FDC_93:
 			switch(port) {
 				case FDC_STATE:
-					res = ((fdc->fptr->flag & FLP_INSERT) ? 0 : 0x80) | ((fdc->idle == 0) ? 1 : 0);
+					res = ((fdc->fptr->insert) ? 0 : 0x80) | ((fdc->idle == 0) ? 1 : 0);
 					switch (fdc->mode) {
 						case 0:
-							res |= ((fdc->fptr->flag & FLP_PROTECT) ? 0x40 : 0)\
+							res |= ((fdc->fptr->protect) ? 0x40 : 0)\
 								| 0x20\
 								| (fdc->flag & 0x18)\
 								| ((fdc->fptr->trk == 0) ? 4 : 0)\
@@ -1120,11 +1120,11 @@ void v42(FDC *p) {
 		case 1: p->data = p->sr1; break;
 		case 2: p->data = p->sr2; break;
 		case 3: p->data = (p->fptr->id & 3) |\
-				((p->side) ? FDC_HD : 0) |\
-				((p->fptr->flag & FLP_DS) ? 0 : FDC_DS) |\
+				(p->side ? FDC_HD : 0) |\
+				(p->fptr->doubleSide ? 0 : FDC_DS) |\
 				((p->fptr->trk == 0) ? FDC_T0 : 0) |\
-				((p->fptr->flag & FLP_INSERT) ? FDC_RY : 0) |\
-				((p->fptr->flag & FLP_PROTECT) ? FDC_WP : 0);
+				(p->fptr->insert ? FDC_RY : 0) |\
+				(p->fptr->protect ? FDC_WP : 0);
 			break;
 		case 10: p->trk = p->fptr->trk; break;
 		case 11: p->data = p->trk; break;
@@ -1292,10 +1292,12 @@ void vDF(FDC* p) {if (p->crchi) {
 void vE0(FDC* p) {
 	p1 = *(p->wptr++);
 	if (p1 == 0) {
-		p->fptr->flag &= ~(FLP_MOTOR | FLP_HEAD);
+		p->fptr->motor = 0;
+		p->fptr->head = 0;
 	} else {
-		if (!(p->fptr->flag & FLP_HEAD)) p->count += (fdcFlag & FDC_FAST) ? TRBDELAY : delays[5];
-		p->fptr->flag |= (FLP_MOTOR | FLP_HEAD);
+		if (!p->fptr->head) p->count += (fdcFlag & FDC_FAST) ? TRBDELAY : delays[5];
+		p->fptr->motor = 1;
+		p->fptr->head = 1;
 	}
 }
 void vE1(FDC* p) {
@@ -1312,9 +1314,9 @@ void vE2(FDC* p) {dlt = *(p->wptr++); if (p->side == 0) p->wptr += (char)dlt;}
 
 void vF0(FDC* p) {dlt = *(p->wptr++); p->wptr += (signed char)dlt;}
 void vF1(FDC* p) {p->wptr = NULL; p->irq = 1; p->idle = 1; p->drq = 0; p->count = 0; p->status = FDC_IDLE;}
-void vF7(FDC* p) {dlt = *(p->wptr++); if (p->fptr->flag & FLP_DS) p->wptr += (char)dlt;}	// DS
-void vF8(FDC* p) {dlt = *(p->wptr++); if (p->fptr->flag & FLP_PROTECT) p->wptr += (signed char)dlt;}	// PROTECT
-void vF9(FDC* p) {dlt = *(p->wptr++); if (p->fptr->flag & FLP_INSERT) p->wptr += (signed char)dlt;}	// INSERT
+void vF7(FDC* p) {dlt = *(p->wptr++); if (p->fptr->doubleSide) p->wptr += (char)dlt;}		// DS
+void vF8(FDC* p) {dlt = *(p->wptr++); if (p->fptr->protect) p->wptr += (signed char)dlt;}	// PROTECT
+void vF9(FDC* p) {dlt = *(p->wptr++); if (p->fptr->insert) p->wptr += (signed char)dlt;}	// INSERT
 void vFA(FDC* p) {dlt = *(p->wptr++); if (p->sdir) p->wptr += (signed char)dlt;}
 void vFB(FDC* p) {p1 = *(p->wptr++); dlt = *(p->wptr++); if (p->fptr->field == p1) p->wptr += (signed char)dlt;}
 void vFC(FDC* p) {dlt = *(p->wptr++); if (p->strb) p->wptr += (signed char)dlt;}

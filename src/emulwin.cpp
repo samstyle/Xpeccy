@@ -548,7 +548,7 @@ void MainWin::extSlot(int sig, int par) {
 			}
 			break;
 		case EV_TAPE:
-			if (zx->tape->flag & TAPE_ON) {
+			if (zx->tape->on) {
 				mainWin->tapStateChanged(TW_STATE,TWS_STOP);
 			} else {
 				mainWin->tapStateChanged(TW_STATE,par);
@@ -648,7 +648,8 @@ void MainWin::tapStateChanged(int wut, int val) {
 			tapRewind(zx->tape,val);
 			break;
 		case TW_BREAK:
-			zx->tape->blkData[val].flag ^= TBF_BREAK;
+			zx->tape->blkData[val].breakPoint ^= 1;
+			// zx->tape->blkData[val].flag ^= TBF_BREAK;
 			tapeWin->drawStops(zx->tape);
 			break;
 	}
@@ -770,14 +771,14 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				checkState();
 				break;
 			case Qt::Key_F4:
-				if (zx->tape->flag & TAPE_ON) {
+				if (zx->tape->on) {
 					mainWin->tapStateChanged(TW_STATE,TWS_STOP);
 				} else {
 					mainWin->tapStateChanged(TW_STATE,TWS_PLAY);
 				}
 				break;
 			case Qt::Key_F5:
-				if (zx->tape->flag & TAPE_ON) {
+				if (zx->tape->on) {
 					mainWin->tapStateChanged(TW_STATE,TWS_STOP);
 				} else {
 					mainWin->tapStateChanged(TW_STATE,TWS_REC);
@@ -870,7 +871,7 @@ void MainWin::mouseReleaseEvent(QMouseEvent *ev) {
 }
 
 void MainWin::wheelEvent(QWheelEvent* ev) {
-	if ((emulFlags & FL_GRAB) && (zx->mouse->flags & INF_WHEEL)) {
+	if ((emulFlags & FL_GRAB) && zx->mouse->hasWheel) {
 		mouseWheel(zx->mouse,(ev->delta() < 0) ? XM_WHEELDN : XM_WHEELUP);
 	}
 }
@@ -1340,8 +1341,8 @@ void emuFrame() {
 // take screenshot
 	if (emulFlags & FL_SHOT) doScreenShot();
 // change palette
-	if (zx->flag & ZX_PALCHAN) {
-		zx->flag &= ~ZX_PALCHAN;
+	if (zx->palchan) {	//if (zx->flag & ZX_PALCHAN) {
+		zx->palchan = 0;	// zx->flag &= ~ZX_PALCHAN;
 		emulSetPalette(zx,optGetInt(OPT_BRGLEV));
 	}
 // if window is not active release keys & buttons
@@ -1371,10 +1372,10 @@ void MainWin::emuDraw() {
 	if (emulFlags & FL_BLOCK) return;
 	emulFlags |= FL_DRAW;
 // change palette if need
-	if (zx->flag & ZX_PALCHAN) {
-		zx->flag &= ~ZX_PALCHAN;
-		emulSetPalette(zx,optGetInt(OPT_BRGLEV));
-	}
+//	if (zx->palchan) { // if (zx->flag & ZX_PALCHAN) {
+//		zx->palchan = 0;	// zx->flag &= ~ZX_PALCHAN;
+//		emulSetPalette(zx,optGetInt(OPT_BRGLEV));
+//	}
 // update rzx window
 	if ((zx->rzxPlay) && rzxWin->isVisible()) {
 		prc = 100 * zx->rzxFrame / zx->rzxSize;
@@ -1382,19 +1383,19 @@ void MainWin::emuDraw() {
 	}
 // update tape window
 	if (tapeWin->isVisible()) {
-		if ((zx->tape->flag & (TAPE_ON | TAPE_REC)) == TAPE_ON) {
+		if (zx->tape->on && !zx->tape->rec) {
 			tapeWin->setProgress(tapGetBlockTime(zx->tape,zx->tape->block,zx->tape->pos),tapGetBlockTime(zx->tape,zx->tape->block,-1));
 		}
-		if (zx->tape->flag & TAPE_BLOCK_CHANGED) {
-			if (!(zx->tape->flag & TAPE_ON)) {
+		if (zx->tape->blkChange) {
+			if (!zx->tape->on) {
 				tapStateChanged(TW_STATE,TWS_STOP);
 			}
 			tapeWin->setCheck(zx->tape->block);
-			zx->tape->flag &= ~TAPE_BLOCK_CHANGED;
+			zx->tape->blkChange = 0;
 		}
-		if (zx->tape->flag & TAPE_NEW_BLOCK) {
+		if (zx->tape->newBlock) {
 			tapeWin->buildList(zx->tape);
-			zx->tape->flag &= ~TAPE_NEW_BLOCK;
+			zx->tape->newBlock = 0;
 		}
 	}
 // put icons
@@ -1424,7 +1425,7 @@ void MainWin::emuDraw() {
 void emulTapeCatch() {
 	blk = zx->tape->block;
 	if (blk >= zx->tape->blkCount) return;
-	if (optGetFlag(OF_TAPEFAST) && (zx->tape->blkData[blk].flag & TBF_BYTES)) {
+	if (optGetFlag(OF_TAPEFAST) && zx->tape->blkData[blk].hasBytes) {
 		de = GETDE(zx->cpu);	//z80ex_get_reg(zx->cpu,regDE);
 		ix = GETIX(zx->cpu);	//z80ex_get_reg(zx->cpu,regIX);
 		TapeBlockInfo inf = tapGetBlockInfo(zx->tape,blk);
@@ -1483,6 +1484,7 @@ void emulCloseJoystick() {
 // USER MENU
 
 void initUserMenu(QWidget* par) {
+	QAction* act;
 	QMenu* resMenu;
 	userMenu = new QMenu(par);
 
@@ -1497,7 +1499,11 @@ void initUserMenu(QWidget* par) {
 
 	vmodeMenu = userMenu->addMenu("Video mode");
 	QObject::connect(vmodeMenu,SIGNAL(triggered(QAction*)),par,SLOT(chVMode(QAction*)));
-	vmodeMenu->addAction("No screen")->setData(VID_NOSCREEN);
+	act = vmodeMenu->addAction("No screen");
+	act->setData(-1);
+	act->setCheckable(true);
+	act->setChecked(vidFlag & VF_NOSCREEN);
+//	vmodeMenu->addAction("No screen")->setData(VID_NOSCREEN);
 	vmodeMenu->addAction("ZX 256 x 192")->setData(VID_NORMAL);
 	vmodeMenu->addAction("Alco 16c")->setData(VID_ALCO);
 	vmodeMenu->addAction("HW multicolor")->setData(VID_HWMC);
@@ -1604,7 +1610,14 @@ void MainWin::chLayout(QAction* act) {
 }
 
 void MainWin::chVMode(QAction* act) {
-	vidSetMode(zx->vid,act->data().toInt());
+	int mode = act->data().toInt();
+	if (mode > 0) {
+		vidSetMode(zx->vid, mode);
+	} else if (mode == -1) {
+		vidFlag ^= VF_NOSCREEN;
+		act->setChecked(vidFlag & VF_NOSCREEN);
+		vidSetMode(zx->vid, VID_CURRENT);
+	}
 }
 
 // debug
@@ -1642,11 +1655,11 @@ void emuCycle() {
 			if ((pc == 0x5e2) && optGetFlag(OF_TAPEAUTO))
 				mainWin->tapStateChanged(TW_STATE,TWS_STOP);
 		}
-	} while (!(zx->flag & ZX_BREAK) && (zx->frmStrobe == 0));		// exec until breakpoint or INT
-	if (zx->flag & ZX_BREAK) {						// request debug window on breakpoint
+	} while (!zx->brk/*(zx->flag & ZX_BREAK)*/ && (zx->frmStrobe == 0));		// exec until breakpoint or INT
+	if (zx->brk) { // if (zx->flag & ZX_BREAK) {						// request debug window on breakpoint
 		mainWin->sendSignal(EV_WINDOW,WW_DEBUG);
 		//wantedWin = WW_DEBUG;
-		zx->flag &= ~ZX_BREAK;
+		zx->brk = 0; //zx->flag &= ~ZX_BREAK;
 	}
 	zx->nmiRequest = 0;
 	// decrease frames & screenshot counter (if any), request screenshot (if needed)

@@ -77,7 +77,7 @@ int loadDsk(Floppy* flp, const char *name) {
 	file.close();
 	flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
 	strcpy(flp->path,name);
-	flp->flag |= FLP_INSERT;
-	flp->flag &= ~FLP_CHANGED;
+	flp->insert = 1;
+	flp->changed = 0;
 	return ERR_OK;
 }

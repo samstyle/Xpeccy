@@ -119,10 +119,8 @@ unsigned char joyInput(Joystick* joy) {
 
 Mouse* mouseCreate() {
 	Mouse* mou = (Mouse*)malloc(sizeof(Mouse));
+	memset(mou,0x00,sizeof(Mouse));
 	mou->buttons = 0xff;
-	mou->xpos = 0;
-	mou->ypos = 0;
-	mou->flags = 0;	// INF_ENABLED | INF_WHEEL;
 	return mou;
 }
 

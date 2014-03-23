@@ -19,17 +19,9 @@ extern "C" {
 #define	VF_GREY			(1<<5)
 #define	VF_INIT			(1<<6)
 #define	VF_BLOCK		(1<<7)
-// vid->flags (vid)
-/*
-#define	VID_BORDER_4T		1
-#define	VID_NOGFX		(1<<1)
-#define	VID_INTSTROBE		(1<<2)
-#define VID_NEXTROW		(1<<3)
-#define	VID_CONT2		(1<<4)		// +2a or +3 contended memory pattern
-#define	VF_TSCONF		(1<<6)
-*/
+#define VF_NOSCREEN		(1<<8)
 // screen drawing mode
-#define	VID_NOSCREEN	0
+#define	VID_CURRENT	0	// 'refresh' current mode. used on changing VF_NOSCREEN flag
 #define	VID_NORMAL	1
 #define	VID_ALCO	2
 #define	VID_ATM_EGA	3
@@ -55,18 +47,12 @@ typedef struct {
 #endif
 
 struct Video {
-//	union {
-//		int flag;
-//		struct {
-			unsigned border4t:1;
-			unsigned nogfx:1;
-			unsigned intstrobe:1;
-			unsigned nextrow:1;
-			unsigned istsconf:1;
-//			unsigned change:1;
-//			unsigned forceDraw:1;
-//		};
-//	};
+	unsigned border4t:1;
+	unsigned nogfx:1;		// tsl : nogfx flag
+	unsigned intstrobe:1;
+	unsigned nextrow:1;
+	unsigned istsconf:1;
+
 	int flash;
 	int curscr;
 	unsigned char brdcol;
@@ -136,7 +122,6 @@ void vidDarkTail(Video*);
 
 void vidUpdate(Video*);
 
-//unsigned char vidGetAttr(Video*);
 void vidSetFont(Video*,char*);
 
 #ifdef __cplusplus

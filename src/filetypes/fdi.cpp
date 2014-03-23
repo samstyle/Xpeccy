@@ -47,11 +47,10 @@ int loadFDI(Floppy* flp,const char* name) {
 			flpFormTrack(flp, (i << 1) + j, trkimg, tmp);
 		}
 	}
-	flp->flag &= ~FLP_PROTECT;
-	if (err) flp->flag |= FLP_PROTECT;
-	flp->flag |= FLP_INSERT;
+	flp->protect = err ? 1 : 0;
+	flp->insert = 1;
 	loadBoot(flp);
-	flp->flag &= ~FLP_CHANGED;
+	flp->changed = 0;
 	flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
 	strcpy(flp->path,name);
 

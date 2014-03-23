@@ -724,23 +724,29 @@ void vidDrawEvoText(Video* vid) {
 // weiter
 
 void vidSetMode(Video* vid, int mode) {
-	vid->vmode = mode;
-	switch(mode) {
-//		case VID_NOSCREEN: vid->callback = &vidDrawBorder; break;
-		case VID_NORMAL: vid->callback = &vidDrawNormal; break;
-		case VID_ALCO: vid->callback = &vidDrawAlco; break;
-		case VID_HWMC: vid->callback = &vidDrawHwmc; break;
-		case VID_ATM_EGA: vid->callback = &vidDrawATMega; break;
-		case VID_ATM_TEXT: vid->callback = &vidDrawATMtext; break;
-		case VID_ATM_HWM: vid->callback = &vidDrawATMhwmc; break;
-		case VID_EVO_TEXT: vid->callback = &vidDrawEvoText; break;
-		case VID_TSL_NORMAL: vid->callback = &vidDrawTSLNormal; break;
-		case VID_TSL_16: vid->callback = &vidDrawTSL16; break;
-		case VID_TSL_256: vid->callback = &vidDrawTSL256; break;
-		case VID_TSL_TEXT: vid->callback = &vidDrawTSLText; break;
-		default: vid->callback = &vidDrawBorder; break;
+	if (mode == VID_CURRENT) {
+		mode = vid->vmode;
+	} else {
+		vid->vmode = mode;
 	}
-//	vid->forceDraw = 1;
+	if (vidFlag & VF_NOSCREEN) {
+		vid->callback = &vidDrawBorder;
+	} else {
+		switch(mode) {
+			case VID_NORMAL: vid->callback = &vidDrawNormal; break;
+			case VID_ALCO: vid->callback = &vidDrawAlco; break;
+			case VID_HWMC: vid->callback = &vidDrawHwmc; break;
+			case VID_ATM_EGA: vid->callback = &vidDrawATMega; break;
+			case VID_ATM_TEXT: vid->callback = &vidDrawATMtext; break;
+			case VID_ATM_HWM: vid->callback = &vidDrawATMhwmc; break;
+			case VID_EVO_TEXT: vid->callback = &vidDrawEvoText; break;
+			case VID_TSL_NORMAL: vid->callback = &vidDrawTSLNormal; break;
+			case VID_TSL_16: vid->callback = &vidDrawTSL16; break;
+			case VID_TSL_256: vid->callback = &vidDrawTSL256; break;
+			case VID_TSL_TEXT: vid->callback = &vidDrawTSLText; break;
+			default: vid->callback = &vidDrawBorder; break;
+		}
+	}
 }
 
 void vidSync(Video* vid, int ns) {
