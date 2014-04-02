@@ -1,6 +1,7 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QTimer>
+#include <getopt.h>
 
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
@@ -77,16 +78,17 @@ int main(int ac,char** av) {
 	QApplication app(ac,av,true);
 	char* profName = NULL;
 	try {
+		std::vector<char*> files;
 		int i;
 		bool dev = false;
 		initPaths();
 		addProfile("default","xpeccy.conf");
 		setProfile("default");
-		for (int i = 1; i < ac; i++) {
-			if (strcmp(av[i],"-d") == 0) dev = true;
-			if ((strcmp(av[i],"-p") == 0) && (i < (ac - 1))) {
-				profName = av[i + 1];
-				i++;
+		while ((i = getopt(ac,av,"-dp:")) != -1) {
+			switch(i) {
+				case 'd' : dev = true; break;
+				case 'p' : profName = optarg; break;
+				case 1: files.push_back(optarg); break;
 			}
 		}
 		if (dev) {
@@ -122,12 +124,8 @@ int main(int ac,char** av) {
 			emulUpdateWindow();
 			zxReset(zx,RES_DEFAULT);
 
-			for(i=1;i<ac;i++) {
-				if (strcmp(av[i],"-p") == 0) {		// skip -p profname
-					i++;
-				} else {
-					if (strlen(av[i]) > 0) loadFile(zx,av[i],FT_ALL,0);
-				}
+			for (i = 0; i < files.size(); i++) {
+				if (strlen(files[i]) > 0) loadFile(zx,files[i],FT_ALL,0);
 			}
 
 #ifdef HAVESDL
