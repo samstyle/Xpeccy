@@ -364,6 +364,8 @@ void vidDoubleDot(Video* vid) {
 void vidATMDoubleDot(Video* vid,unsigned char colr) {
 	ink = inkTab[colr & 0x7f];
 	pap = papTab[colr & 0x3f] | ((colr & 0x80) >> 4);
+	ink |= (ink << 4);
+	pap |= (pap << 4);
 	vidDoubleDot(vid);
 }
 
