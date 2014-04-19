@@ -1082,11 +1082,11 @@ void doSDLEvents() {
 					case SDL_BUTTON_MIDDLE:
 						break;
 					case SDL_BUTTON_WHEELUP:
-						if ((emulFlags & FL_GRAB) && (zx->mouse->flags & INF_WHEEL))
+						if ((emulFlags & FL_GRAB) && (zx->mouse->wheel))
 							mouseWheel(zx->mouse,XM_WHEELUP);
 						break;
 					case SDL_BUTTON_WHEELDOWN:
-						if ((emulFlags & FL_GRAB) && (zx->mouse->flags & INF_WHEEL))
+						if ((emulFlags & FL_GRAB) && (zx->mouse->wheel))
 							mouseWheel(zx->mouse,XM_WHEELDN);
 						break;
 				}
