@@ -9,10 +9,14 @@
 
 #include <QIcon>
 #include <QDebug>
+#include <QFileDialog>
 
 DebugWin* dbgWin;
 
 unsigned long lastDbgTicks = 0;
+
+QString logFileName;
+QFile logFile;
 
 void dbgInit(QWidget* par) {
 	dbgWin = new DebugWin(par);
@@ -96,8 +100,10 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 					lab = new QLabel("PRT1"); raylay->addWidget(lab,6,0); lab = new QLabel; raylay->addWidget(lab,6,1);
 					lab = new QLabel("PRT2"); raylay->addWidget(lab,7,0); lab = new QLabel; raylay->addWidget(lab,7,1);
 				raybox->setLayout(raylay);
+			logLabel = new QLabel;
 			llay->addWidget(regbox);
 			llay->addWidget(raybox);
+			llay->addWidget(logLabel);
 			llay->addStretch(10);
 		QGroupBox *asmbox = new QGroupBox("Disasm");
 			asmlay = new QGridLayout;
@@ -164,6 +170,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 	t = 0;
 	active = false;
+	logging = false;
 	curcol = 1;
 	currow = 0;
 	dmpadr = 0;
@@ -171,6 +178,8 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 	ledit = new QLineEdit(this);
 	ledit->setWindowModality(Qt::ApplicationModal);
+
+	connect(&logTimer,SIGNAL(timeout()),this,SLOT(logStep()));
 
 	QPalette pal;
 	pal.setColor(QPalette::ToolTipBase,QColor(128,255,128));
@@ -377,6 +386,10 @@ void DebugWin::showedit(QLabel* lab,QString imsk) {
 }
 
 void DebugWin::keyPressEvent(QKeyEvent* ev) {
+	if (logging) {
+		stopLog();
+		return;
+	}
 	qint32 cod = ev->key();
 	QLabel *lab = NULL;
 	uchar i;
@@ -393,6 +406,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 				case Qt::Key_Y: dmpadr = GETIY(zx->cpu); filldump(); break;
 				case Qt::Key_S: dmpadr = GETSP(zx->cpu); filldump(); break;
 				case Qt::Key_P: dmpadr = GETPC(zx->cpu); filldump(); break;
+				case Qt::Key_L: startLog(); break;
 			}
 			break;
 		case Qt::NoModifier:
@@ -431,12 +445,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					}
 					break;
 				case Qt::Key_F7:
-					lastDbgTicks = zx->tickCount;
-					zxExec(zx);
-					if (!fillall()) {
-						upadr = GETPC(zx->cpu);	// z80ex_get_reg(zx->cpu,regPC);
-						filldasm();
-					}
+					doStep();
 					break;
 				case Qt::Key_F8:
 					lastDbgTicks = zx->tickCount;
@@ -592,4 +601,69 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 				break;
 		}
 	}
+}
+
+void DebugWin::doStep() {
+	lastDbgTicks = zx->tickCount;
+	zxExec(zx);
+	if (!fillall()) {
+		upadr = GETPC(zx->cpu);	// z80ex_get_reg(zx->cpu,regPC);
+		filldasm();
+	}
+}
+
+// LOGGING
+
+void DebugWin::startLog() {
+	logFileName = QFileDialog::getSaveFileName(this,"Save log as...");
+	if (!logFileName.isEmpty()) {
+		logFile.setFileName(logFileName);
+		if (logFile.open(QFile::WriteOnly)) {
+			logging = true;
+			logLabel->setText("LOG TRACE");
+			logTimer.start(10);
+		}
+	}
+}
+
+void DebugWin::stopLog() {
+	logging = false;
+	logFile.close();
+	logTimer.stop();
+	logLabel->clear();
+}
+
+void DebugWin::logStep() {
+	adr = GETPC(zx->cpu);
+	DasmRow row = getdisasm();
+	logFile.write(gethexword(row.adr).toUtf8());
+	logFile.write("  ");
+	logFile.write(row.dasm.toUtf8());
+	doStep();
+	logFile.write("\r\nAF:");
+	logFile.write(gethexword(GETAF(zx->cpu)).toUtf8());
+	logFile.write(" BC:");
+	logFile.write(gethexword(GETBC(zx->cpu)).toUtf8());
+	logFile.write(" DE:");
+	logFile.write(gethexword(GETDE(zx->cpu)).toUtf8());
+	logFile.write(" HL:");
+	logFile.write(gethexword(GETHL(zx->cpu)).toUtf8());
+	logFile.write(" AF'");
+	logFile.write(gethexword(GETAF_(zx->cpu)).toUtf8());
+	logFile.write(" BC'");
+	logFile.write(gethexword(GETBC_(zx->cpu)).toUtf8());
+	logFile.write(" DE'");
+	logFile.write(gethexword(GETDE_(zx->cpu)).toUtf8());
+	logFile.write(" HL'");
+	logFile.write(gethexword(GETHL_(zx->cpu)).toUtf8());
+	logFile.write(" IX:");
+	logFile.write(gethexword(GETIX(zx->cpu)).toUtf8());
+	logFile.write(" IY:");
+	logFile.write(gethexword(GETIY(zx->cpu)).toUtf8());
+	logFile.write(" SP:");
+	logFile.write(gethexword(GETSP(zx->cpu)).toUtf8());
+	logFile.write(" IR:");
+	logFile.write(gethexbyte(GETI(zx->cpu)).toUtf8());
+	logFile.write(gethexbyte(GETR(zx->cpu)).toUtf8());
+	logFile.write("\r\n");
 }

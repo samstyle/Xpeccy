@@ -1655,11 +1655,10 @@ void emuCycle() {
 			if ((pc == 0x5e2) && optGetFlag(OF_TAPEAUTO))
 				mainWin->tapStateChanged(TW_STATE,TWS_STOP);
 		}
-	} while (!zx->brk/*(zx->flag & ZX_BREAK)*/ && (zx->frmStrobe == 0));		// exec until breakpoint or INT
-	if (zx->brk) { // if (zx->flag & ZX_BREAK) {						// request debug window on breakpoint
+	} while (!zx->brk && (zx->frmStrobe == 0));		// exec until breakpoint or INT
+	if (zx->brk) {						// request debug window on breakpoint
 		mainWin->sendSignal(EV_WINDOW,WW_DEBUG);
-		//wantedWin = WW_DEBUG;
-		zx->brk = 0; //zx->flag &= ~ZX_BREAK;
+		zx->brk = 0;
 	}
 	zx->nmiRequest = 0;
 	// decrease frames & screenshot counter (if any), request screenshot (if needed)

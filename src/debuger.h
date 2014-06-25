@@ -7,6 +7,7 @@
 #include <QGroupBox>
 #include <QLabel>
 #include <QKeyEvent>
+#include <QTimer>
 
 //#include <stdint.h>
 
@@ -38,6 +39,7 @@ class DebugWin : public QDialog {
 		QLineEdit *ledit;
 		QGridLayout *rglay,*asmlay,*dmplay,*raylay,*vglay;
 		QLabel *dbgscrn,*tlab;
+		QLabel* logLabel;
 		uchar rowincol[16];
 		ushort upadr,adr,dmpadr;
 		uchar curcol, currow;
@@ -54,6 +56,13 @@ class DebugWin : public QDialog {
 		DasmRow getdisasm();
 		bool tmpb;
 		unsigned int t;
+		void doStep();
+		bool logging;
+		QTimer logTimer;
+		void startLog();
+		void stopLog();
+	private slots:
+		void logStep();
 	protected:
 		void keyPressEvent(QKeyEvent*);
 };

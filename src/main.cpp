@@ -1,7 +1,6 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QTimer>
-#include <getopt.h>
 
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
@@ -84,12 +83,13 @@ int main(int ac,char** av) {
 		initPaths();
 		addProfile("default","xpeccy.conf");
 		setProfile("default");
-		while ((i = getopt(ac,av,"-dp:")) != -1) {
-			switch(i) {
-				case 'd' : dev = true; break;
-				case 'p' : profName = optarg; break;
-				case 1: files.push_back(optarg); break;
-			}
+		char* parg;
+		i = 1;
+		while (i < ac) {
+			parg = av[i++];
+			if (strcmp(parg,"-d") == 0) dev = true;
+			else if (((strcmp(parg,"-p") == 0) || (strcmp(parg,"--profile") == 0)) && (i < ac)) profName = av[i++];
+			else files.push_back(parg);
 		}
 		if (dev) {
 			devInit();
@@ -116,7 +116,7 @@ int main(int ac,char** av) {
 			loadProfiles();
 			if (profName) {
 				setProfile(std::string(profName));
-			} else {
+//			} else {
 //				prfLoad("");
 			}
 			fillUserMenu();
