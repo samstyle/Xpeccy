@@ -16,16 +16,21 @@ int loadRaw(Floppy* flp, const char* name) {
 	TRFile nfle;
 
 	std::string fnam(name);
+	std::string ext;
 	size_t pos = fnam.find_last_of(SLASH);
 	if (pos != std::string::npos) fnam = fnam.substr(pos+1);		// get filename
 	pos = fnam.find_last_of(".");
-	if (pos != std::string::npos) fnam = fnam.substr(0,pos);		// cut extension
+	if (pos != std::string::npos) {
+		ext = fnam.substr(pos+1,3);
+		fnam = fnam.substr(0,pos);		// cut extension
+	}
 	fnam.resize(8,' ');
+	ext.resize(3,' ');
 
 	memcpy((char*)&nfle.name[0],fnam.c_str(),8);
-	nfle.ext = 'C';
-	nfle.lst = 0;
-	nfle.hst = 0;
+	nfle.ext = ext.at(0);
+	nfle.lst = ext.at(1);
+	nfle.hst = ext.at(2);
 	nfle.llen = len & 0xff;
 	nfle.hlen = (len & 0xff00) >> 8;
 	nfle.slen = nfle.hlen + (nfle.llen ? 1 : 0);

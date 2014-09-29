@@ -249,6 +249,8 @@ int flpGet(Floppy* flp, int wut) {
 	return res;
 }
 
+#include "stdio.h"
+
 int flpCreateFile(Floppy* flp,TRFile* dsc) {
 	unsigned char files;
 	unsigned short freesec;
@@ -271,9 +273,10 @@ int flpCreateFile(Floppy* flp,TRFile* dsc) {
 		fbuf[0xe2]++;
 	}
 	flpPutSectorData(flp,0,9,fbuf,256);
+	files--;
 	freesec = ((files & 0xf0) >> 4)+1;
 	if (!flpGetSectorData(flp,0,freesec,fbuf,256)) return ERR_SHIT;
-	memcpy(fbuf + (((files - 1) & 0x0f) << 4), (char*)dsc, 16);
+	memcpy(fbuf + ((files & 0x0f) << 4), (char*)dsc, 16);
 	flpPutSectorData(flp,0,freesec,fbuf,256);
 	flp->changed = 1;
 	return ERR_OK;
