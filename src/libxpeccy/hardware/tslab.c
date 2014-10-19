@@ -171,23 +171,25 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 						dadr += (val & 0x10) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;		// DALGN
 					}
 					break;
-				case 0x81: break;	// RAM->BLT
-				case 0x84:		// RAM->CRAM [adr = (dadr >> 1) & 0xff]
-				case 0x85:		// RAM->SFILE
-					ptr = (val & 1) ? comp->vid->tsconf.sfile : comp->vid->tsconf.cram;
+				case 0x04:		// FILL->RAM
 					for (cnt = 0; cnt <= comp->dma.num; cnt++) {
 						for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
-							*(ptr + (((dadr + cnt2) >> 1) & 0xff)) = comp->mem->ramData[sadr + cnt2];
+							comp->mem->ramData[dadr + cnt2] = comp->mem->ramData[sadr + (cnt2 & 1)];
 						}
-						sadr += (val & 0x20) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;		// SALGN
 						dadr += (val & 0x10) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;		// DALGN
+					}
+					break;
+				case 0x84:
+					comp->palchan = 1;
+				case 0x85:		// RAM->SFILE
+					ptr = (val & 1) ? comp->vid->tsconf.sfile : comp->vid->tsconf.cram;
+					for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
+						*(ptr + ((dadr + cnt2) & 0x1ff)) = comp->mem->ramData[sadr + cnt2];
 					}
 					break;
 				default:
 					printf("0x27AF: unsupported src-dst: %.2X\n",val & 0x87);
-#ifdef ISDEBUG
-					comp->flag |= ZX_BREAK;
-#endif
+					comp->brk = 1;
 					break;
 			}
 			comp->dma.src.x = ((sadr & 0x3fc000) >> 14);
