@@ -25,8 +25,25 @@ void tslMapMem(ZXComp* comp) {
 	}
 }
 
-int tslXRes[4] = {256,320,320,360};
-int tslYRes[4] = {192,200,240,288};
+const int tslXRes[4] = {256,320,320,360};
+const int tslYRes[4] = {192,200,240,288};
+
+const unsigned char tslCoLevs[32] = {
+	0,11,21,32,42,53,64,74,
+	85,95,106,117,127,138,148,159,
+	170,180,191,201,212,223,233,244,
+	255,255,255,255,255,255,255,255
+};
+
+void tslUpdatePal(ZXComp* comp) {
+	int col;
+	for (int i = 0; i < 256; i++) {
+		col = (comp->vid->tsconf.cram[(i << 1) + 1] << 8) | (comp->vid->tsconf.cram[i << 1]);
+		comp->vid->pal[i].r = tslCoLevs[(col >> 10) & 0x1f];
+		comp->vid->pal[i].g = tslCoLevs[(col >> 5) & 0x1f];
+		comp->vid->pal[i].b = tslCoLevs[col  & 0x1f];
+	}
+}
 
 Z80EX_BYTE tslMRd(ZXComp* comp, Z80EX_WORD adr, int m1) {
 	if (m1 && (comp->bdi->fdc->type == FDC_93)) {
@@ -46,7 +63,8 @@ void tslMWr(ZXComp* comp, Z80EX_WORD adr, Z80EX_BYTE val) {
 	if ((comp->tsconf.flag & 0x10) && ((adr & 0xf000) == comp->tsconf.tsMapAdr)) {
 		if ((adr & 0xe00) == 0x000) {
 			comp->vid->tsconf.cram[adr & 0x1ff] = val;
-			comp->palchan = 1; // comp->flag |= ZX_PALCHAN;
+			tslUpdatePal(comp);
+			//comp->palchan = 1; // comp->flag |= ZX_PALCHAN;
 		}
 		if ((adr & 0xe00) == 0x200) {
 			comp->vid->tsconf.sfile[adr & 0x1ff] = val;
@@ -180,12 +198,13 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 					}
 					break;
 				case 0x84:
-					comp->palchan = 1;
+//					comp->palchan = 1;
 				case 0x85:		// RAM->SFILE
 					ptr = (val & 1) ? comp->vid->tsconf.sfile : comp->vid->tsconf.cram;
 					for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
 						*(ptr + ((dadr + cnt2) & 0x1ff)) = comp->mem->ramData[sadr + cnt2];
 					}
+					if (~val & 1) tslUpdatePal(comp);
 					break;
 				default:
 					printf("0x27AF: unsupported src-dst: %.2X\n",val & 0x87);

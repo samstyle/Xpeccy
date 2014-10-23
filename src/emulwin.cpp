@@ -44,7 +44,7 @@
 
 #ifdef XQTPAINT
 	#include <QPainter>
-	QImage scrImg = QImage(100,100,QImage::Format_Indexed8);
+	QImage scrImg = QImage(100,100,QImage::Format_RGB888);
 #endif
 
 #define STR_EXPAND(tok) #tok
@@ -276,13 +276,7 @@ QWidget* emulWidget() {
 	return (QWidget*)mainWin;
 }
 
-unsigned char tslCoLevs[32] = {
-	0,11,21,32,42,53,64,74,
-	85,95,106,117,127,138,148,159,
-	170,180,191,201,212,223,233,244,
-	255,255,255,255,255,255,255,255
-};
-
+/*
 void emulSetPalette(ZXComp* comp,unsigned char lev) {
 	int i;
 	int fcol;
@@ -334,6 +328,7 @@ void emulSetPalette(ZXComp* comp,unsigned char lev) {
 	scrImg.setColorTable(qPal);
 #endif
 }
+*/
 
 void emulUpdateWindow() {
 	mainWin->updateWindow();
@@ -380,10 +375,15 @@ void MainWin::updateWindow() {
 //		sdlflg |= SDL_FULLSCREEN;
 	}
 	SDL_Surface* oldSurf = surf;
-	surf = SDL_SetVideoMode(szw,szh,8,sdlflg);
+	surf = SDL_SetVideoMode(szw,szh,24,sdlflg);
+	surf->format->Rmask = 0x000000ff;		// wtf? sdl create BGR format insteat of RGB
+	surf->format->Bmask = 0x00ff0000;
+	surf->format->Rshift = 0;
+	surf->format->Bshift = 16;
+
 //	zx->vid->scrptr = (unsigned char*)surf->pixels;
 //	zx->vid->scrimg = zx->vid->scrptr;
-	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
+//	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
 	if (oldSurf) SDL_FreeSurface(oldSurf);
 #endif
 	updateHead();
@@ -419,6 +419,7 @@ void emulPause(bool p, int msk) {
 	} else {
 		pauseFlags &= ~msk;
 	}
+	sndPause(pauseFlags != 0);
 	bool kk = ((emulFlags & FL_GRAB) != 0);
 	if (!kk || ((pauseFlags != 0) && kk)) {
 #ifdef XQTPAINT
@@ -1220,11 +1221,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 	std::ofstream file;
 	std::string fname;
 	std::vector<XProfile> plist = getProfileList();
-//	smpCount = 0;
-	pauseFlags |= PR_EXIT;
-	sndFillToEnd();
-	sndPause(true);
-//	emuStop();
+	emulPause(true,PR_EXIT);
 	for (i = 0; i < plist.size(); i++) {
 		prfSave(plist[i].name);
 		fname = optGetString(OPT_WORKDIR) + std::string(SLASH) + plist[i].name + std::string(".cmos");
@@ -1254,9 +1251,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		SDL_GetWMInfo(&inf);
 		mainWin->embedClient(inf.info.x11.wmwindow);
 #endif
-		sndPause(false);
-		pauseFlags &= ~PR_EXIT;
-//		emuStart();
+		emulPause(false,PR_EXIT);
 	}
 }
 
@@ -1341,10 +1336,10 @@ void emuFrame() {
 // take screenshot
 	if (emulFlags & FL_SHOT) doScreenShot();
 // change palette
-	if (zx->palchan) {	//if (zx->flag & ZX_PALCHAN) {
-		zx->palchan = 0;	// zx->flag &= ~ZX_PALCHAN;
-		emulSetPalette(zx,optGetInt(OPT_BRGLEV));
-	}
+//	if (zx->palchan) {	//if (zx->flag & ZX_PALCHAN) {
+//		zx->palchan = 0;	// zx->flag &= ~ZX_PALCHAN;
+//		emulSetPalette(zx,optGetInt(OPT_BRGLEV));
+//	}
 // if window is not active release keys & buttons
 	if (!mainWin->isActiveWindow()) {
 		keyRelease(zx->keyb,0,0,0);
@@ -1408,10 +1403,10 @@ void MainWin::emuDraw() {
 	}
 	if ((~emulFlags & FL_BLOCK) /* && zx->vid->change */ ) {
 #ifdef XQTPAINT
-		memcpy(scrImg.bits(),zx->vid->scrimg,zx->vid->wsze.h * zx->vid->wsze.v);
+		memcpy(scrImg.bits(),zx->vid->scrimg,zx->vid->frameBytes);
 		update();
 #else
-		memcpy(surf->pixels,zx->vid->scrimg,zx->vid->wsze.h * zx->vid->wsze.v);
+		memcpy(surf->pixels,zx->vid->scrimg,zx->vid->frameBytes);
 		SDL_UpdateRect(surf,0,0,0,0);
 #endif
 //		zx->vid->change = 0;

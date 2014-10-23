@@ -87,7 +87,7 @@ bool setProfile(std::string nm) {
 	sdcOpenFile(nprf->zx->sdc);
 	zx = currentProfile->zx;
 	vidUpdate(zx->vid);
-	zx->palchan = 1;
+	//zx->palchan = 1;
 	return true;
 }
 

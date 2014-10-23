@@ -11,9 +11,6 @@ extern "C" {
 // gs stereo
 #define	GS_MONO		0
 #define	GS_12_34	1
-// return values
-#define	GS_OK	0
-#define	GS_ERR	1
 // gs cpu freq
 #define	GS_FRQ	12.0
 

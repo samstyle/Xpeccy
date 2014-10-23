@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include "filetypes.h"
 
-unsigned int getlen(std::ifstream *file,unsigned char n) {
+unsigned int getLength(std::ifstream *file,unsigned char n) {
 	unsigned int len = (unsigned)(file->get());
 	if (n > 1) len |= (file->get() << 8);
 	if (n > 2) len |= (file->get() << 16);
@@ -25,7 +25,7 @@ int loadTZX(Tape* tape, const char* name) {
 	std::streampos loopos = 0;
 
 	file.read((char*)buf,10);
-	if ((strncmp((const char*)buf,"ZXTape!",7) != 0) || (buf[7]!=0x1a)) return ERR_TZX_SIGN;
+	if (strncmp((const char*)buf,"ZXTape!\x1a",8) != 0) return ERR_TZX_SIGN;
 
 	tapEject(tape);
 	tape->path = (char*)realloc(tape->path,sizeof(char) * (strlen(name) + 1));
@@ -37,8 +37,8 @@ int loadTZX(Tape* tape, const char* name) {
 		if (file.eof()) break;		// is it the end?
 		switch (tmp) {
 			case 0x10:
-				paulen = getlen(&file,2);
-				len = getlen(&file,2);
+				paulen = getLength(&file,2);
+				len = getLength(&file,2);
 				blockBuf = (char*)realloc(blockBuf,len * sizeof(char));
 				file.read(blockBuf,len);
 				block = tapDataToBlock(blockBuf,len,sigLens);
@@ -49,15 +49,15 @@ int loadTZX(Tape* tape, const char* name) {
 				//block.data.clear();
 				break;
 			case 0x11:
-				altLens[0] = getlen(&file,2);	// pilot
-				altLens[1] = getlen(&file,2);	// sync1
-				altLens[2] = getlen(&file,2);	// sync2
-				altLens[3] = getlen(&file,2);	// 0
-				altLens[4] = getlen(&file,2);	// 1
-				altLens[6] = getlen(&file,2);	// pilot pulses
+				altLens[0] = getLength(&file,2);	// pilot
+				altLens[1] = getLength(&file,2);	// sync1
+				altLens[2] = getLength(&file,2);	// sync2
+				altLens[3] = getLength(&file,2);	// 0
+				altLens[4] = getLength(&file,2);	// 1
+				altLens[6] = getLength(&file,2);	// pilot pulses
 				file.get();
-				paulen = getlen(&file,2);
-				len = getlen(&file,3);
+				paulen = getLength(&file,2);
+				len = getLength(&file,3);
 				blockBuf = (char*)realloc(blockBuf,len * sizeof(char));
 				file.read(blockBuf,len);
 				block = tapDataToBlock(blockBuf,len,altLens);
@@ -67,42 +67,43 @@ int loadTZX(Tape* tape, const char* name) {
 				blkClear(&block);
 				tape->isData = 0;
 				break;
-			case 0x12:
-				paulen = getlen(&file,2);
-				len = getlen(&file,2);
-				while (len>0) {
-					blkAddSignal(&block,paulen);
+
+			case 0x12:			// pure tone
+				paulen = getLength(&file,2);	// Length of one pulse in T-states
+				len = getLength(&file,2);	// Number of pulses
+				while (len > 0) {
+					blkAddPulse(&block,paulen);	// pulse is 1+0 : 2 signals
 					len--;
 				}
 				tape->isData = 0;
 				break;
-			case 0x13:
+			case 0x13:			// pulses sequence
 				len = file.get();
-				while (len>0) {
-					paulen = getlen(&file,2);
-					blkAddSignal(&block,paulen);
+				while (len > 0) {
+					paulen = getLength(&file,2);
+					blkAddPulse(&block,paulen);
 					len--;
 				}
 				tape->isData = 0;
 				break;
-			case 0x14:
+			case 0x14:					// TODO : add CRC & sync
 				altLens[0] = 0;
 				altLens[1] = 0;
 				altLens[2] = 0;
 				altLens[5] = 0;
 				altLens[6] = 0;		// no pilot, syncs
-				altLens[3] = getlen(&file,2);
-				altLens[4] = getlen(&file,2);
+				altLens[3] = getLength(&file,2);	// bit 0
+				altLens[4] = getLength(&file,2);	// bit 1
 				file.get();
-				paulen = getlen(&file,2);
-				len = getlen(&file,3);
+				paulen = getLength(&file,2);
+				len = getLength(&file,3);
 				blockBuf = (char*)realloc(blockBuf,len * sizeof(char));
 				file.read(blockBuf,len);
 				altBlock = tapDataToBlock(blockBuf,len,altLens);
 				block.len0 = altBlock.len0;
 				block.len1 = altBlock.len1;
 				block.dataPos = -1;
-				for (i = 0; i < altBlock.sigCount; i++) {
+				for (i = altBlock.dataPos; i < altBlock.sigCount; i++) {
 					blkAddSignal(&block,altBlock.sigData[i]);
 				}
 				block.pause = paulen;
@@ -124,8 +125,8 @@ int loadTZX(Tape* tape, const char* name) {
 				break;
 */
 			case 0x20:
-				len = getlen(&file,2);
-				blkAddSignal(&block,len);
+				len = getLength(&file,2);
+				blkAddSignal(&block,len);		// ! if 0, next block must be breakpoint
 				break;
 			case 0x21:
 				len = file.get();
@@ -143,7 +144,7 @@ int loadTZX(Tape* tape, const char* name) {
 				file.seekg(2,std::ios::cur);
 				break;
 			case 0x24:
-				loopc = getlen(&file,2);
+				loopc = getLength(&file,2);
 				loopos = file.tellg();
 				break;
 			case 0x25:
@@ -178,16 +179,16 @@ int loadTZX(Tape* tape, const char* name) {
 				file.seekg(len,std::ios::cur);
 				break;
 			case 0x32:
-				len = getlen(&file,2);
+				len = getLength(&file,2);
 				file.seekg(len,std::ios::cur);
 				break;
 			case 0x33:
-				len = getlen(&file,1);
+				len = getLength(&file,1);
 				file.seekg(len*3,std::ios::cur);
 				break;
 			case 0x34:
 				file.seekg(4,std::ios::cur);
-				len = getlen(&file,4);
+				len = getLength(&file,4);
 				file.seekg(len,std::ios::cur);
 				break;
 			case 0x5a:

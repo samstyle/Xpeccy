@@ -48,12 +48,19 @@ void blkClear(TapeBlock *blk) {
 	blk->sigData = NULL;
 }
 
+// add signal (1 level change)
 void blkAddSignal(TapeBlock* blk, int sig) {
 	if ((blk->sigCount & 0xffff) == 0) {
 		blk->sigData = (int*)realloc(blk->sigData,(blk->sigCount + 0x10000) * sizeof(int));	// allocate mem for next 0x10000 signals
 	}
 	blk->sigData[blk->sigCount] = sig;
 	blk->sigCount++;
+}
+
+// add pulse (2 signals)
+void blkAddPulse(TapeBlock* blk, int len) {
+	blkAddSignal(blk,len);
+	blkAddSignal(blk,len);
 }
 
 int tapGetBlockTime(Tape* tape, int blk, int pos) {

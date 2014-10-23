@@ -24,7 +24,7 @@ int loadFDI(Floppy* flp,const char* name) {
 	for (i = 0; i < tmpa; i++) {
 		for (j = 0; j < tmpb; j++) {
 //			trkimg.clear();
-			tmpt = tmpd + getlen(&file,4);
+			tmpt = tmpd + getLength(&file,4);
 			file.seekg(2,std::ios_base::cur);		// skip 2 bytes
 			tmp = file.get();			// sectors in disk;
 			for (scnt=0; scnt < tmp; scnt++) {
@@ -34,7 +34,7 @@ int loadFDI(Floppy* flp,const char* name) {
 				sct.len = file.get();
 				fcnt = file.get();				// flag
 				sct.type = (fcnt & 0x80) ? 0xf8 : 0xfb;
-				tmps = tmpt + getlen(&file,2);
+				tmps = tmpt + getLength(&file,2);
 				cpos = file.tellg();			// remember current pos
 				file.seekg(tmps);
 				slen = (128 << sct.len);		// sector len

@@ -131,7 +131,7 @@ Z80EX_BYTE iord(CPUCONT Z80EX_WORD port, void* ptr) {
 	bdiz = ((comp->dosen & 1) && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
 // request to external devices
 	if (ideIn(comp->ide,port,&res,comp->dosen & 1)) return res;
-	if (gsIn(comp->gs,port,&res) == GS_OK) return res;
+	if (gsIn(comp->gs,port,&res)) return res;
 	if (ulaIn(comp->vid->ula,port,&res)) return res;
 	return comp->hw->in(comp,port,bdiz);
 }
@@ -180,17 +180,28 @@ void rzxClear(ZXComp* zx) {
 
 // 76543210
 // -grb-GRB
+/*
 const unsigned char defPalete[16] = {
 	0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
 	0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77
 };
+*/
 
-const unsigned char tsPalInit[32] = {
-	0x00,0x00,0x10,0x00,0x00,0x40,0x10,0x40,
-	0x00,0x02,0x10,0x02,0x00,0x42,0x10,0x42,
-	0x00,0x00,0x18,0x00,0x00,0x60,0x18,0x60,
-	0x00,0x03,0x18,0x03,0x00,0x63,0x18,0x63
-};
+void zxInitPalete(ZXComp* comp) {
+	for (int i = 0; i<16; i++) {
+		comp->vid->pal[i].b = (i & 1) ? ((i & 8) ? 0xff : 0xaa) : 0x00;
+		comp->vid->pal[i].r = (i & 2) ? ((i & 8) ? 0xff : 0xaa) : 0x00;
+		comp->vid->pal[i].g = (i & 4) ? ((i & 8) ? 0xff : 0xaa) : 0x00;
+	}
+}
+
+void zxSetUlaPalete(ZXComp* comp) {
+	for (int i = 0; i < 64; i++) {
+		comp->vid->pal[i].b = (comp->vid->ula->pal[i] & 0x03) << 6;		// Bb0 : must me Bbb
+		comp->vid->pal[i].r = (comp->vid->ula->pal[i] & 0x1c) << 3;
+		comp->vid->pal[i].g = (comp->vid->ula->pal[i] & 0xe0);
+	}
+}
 
 ZXComp* zxCreate() {
 	int i;
@@ -198,7 +209,7 @@ ZXComp* zxCreate() {
 	void* ptr = (void*)comp;
 	memset(ptr,0,sizeof(ZXComp));
 	// comp->flag = ZX_PALCHAN;	// | ZX_JUSTBORN
-	comp->palchan = 1;
+//	comp->palchan = 1;
 	// comp->hwFlag = 0;
 	comp->padr = 0;
 
@@ -246,7 +257,8 @@ ZXComp* zxCreate() {
 	comp->tickCount = 0;
 
 	gsReset(comp->gs);
-	for (i = 0; i < 16; i++) comp->colMap[i] = defPalete[i];
+	zxInitPalete(comp);
+//	for (i = 0; i < 16; i++) comp->colMap[i] = defPalete[i];
 	comp->cmos.adr = 0;
 	for (i = 0; i < 256; i++) comp->cmos.data[i] = 0x00;
 	comp->cmos.data[17] = 0xaa;
@@ -271,10 +283,11 @@ void zxDestroy(ZXComp* comp) {
 }
 
 void zxReset(ZXComp* comp,int wut) {
-	int i;
+//	int i;
 	int resto = comp->resbank;
-	for (i = 0; i < 16; i++) comp->colMap[i] = defPalete[i];	// reset palete to default
-	comp->palchan = 1; // comp->flag |= ZX_PALCHAN;
+	//for (i = 0; i < 16; i++) comp->colMap[i] = defPalete[i];	// reset palete to default
+	//comp->palchan = 1; // comp->flag |= ZX_PALCHAN;
+	zxInitPalete(comp);
 	comp->vid->ula->active = 0;
 	comp->rzxPlay = 0;
 	switch (wut) {
@@ -315,7 +328,7 @@ void zxReset(ZXComp* comp,int wut) {
 			comp->mem->flags = MEM_B0_WP;		// no MEM_ROM_WP, only MEM_B0_WP
 			comp->vid->tsconf.scrPal = 0xf0;
 			memset(comp->vid->tsconf.cram,0x00,0x1e0);
-			memcpy(comp->vid->tsconf.cram + 0x1e0,tsPalInit,0x20);	// init zx palete ?
+//			memcpy(comp->vid->tsconf.cram + 0x1e0,tsPalInit,0x20);	// init zx palete ?
 //			tslOut(comp,0x00af,0x00,0);			// std 256x192, NOGFX off
 			comp->tsconf.Page0 = 0;
 			comp->vid->nextbrd = 0xf7;
@@ -385,10 +398,10 @@ int zxExec(ZXComp* comp) {
 		comp->tapCount = 0;
 		bdiz = ((comp->dosen & 1) && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
 		if (!ideOut(comp->ide,comp->padr,comp->pval,comp->dosen & 1)) {
-		if (gsOut(comp->gs,comp->padr,comp->pval) != GS_OK) {
+		if (!gsOut(comp->gs,comp->padr,comp->pval)) {
 		if (ulaOut(comp->vid->ula, comp->padr, comp->pval)) {
 			if (comp->vid->ula->palchan) {
-				comp->palchan = 1; // comp->flag |= ZX_PALCHAN;
+				zxSetUlaPalete(comp);
 				comp->vid->ula->palchan = 0;
 			}
 		} else {

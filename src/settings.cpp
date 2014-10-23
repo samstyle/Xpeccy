@@ -663,7 +663,7 @@ void loadProfiles() {
 			}
 		}
 	}
-	zx->palchan = 1;	// zx->flag |= ZX_PALCHAN;
+//	zx->palchan = 1;	// zx->flag |= ZX_PALCHAN;
 	// emulSetPalette(zx,brgLevel);
 	emulOpenJoystick(joyName);
 }

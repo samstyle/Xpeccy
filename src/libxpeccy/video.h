@@ -46,6 +46,12 @@ typedef struct {
 	#define VPAIR(p,h,l) union{unsigned short p; struct {unsigned char l; unsigned char h;};}
 #endif
 
+typedef struct {
+	unsigned char r;
+	unsigned char g;
+	unsigned char b;
+} xColor;
+
 struct Video {
 	unsigned border4t:1;
 	unsigned nogfx:1;		// tsl : nogfx flag
@@ -75,6 +81,8 @@ struct Video {
 	VSize wsze;
 	VSize intpos;
 	size_t intsz;
+	size_t lineBytes;
+	size_t frameBytes;
 	Memory* mem;
 	ulaPlus* ula;
 	int idx;
@@ -105,6 +113,7 @@ struct Video {
 	} tsconf;
 	unsigned char font[0x800];		// ATM text mode font
 	void(*callback)(struct Video*);
+	xColor pal[256];
 };
 
 typedef struct Video Video;

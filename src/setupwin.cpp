@@ -609,7 +609,7 @@ void SetupWin::apply() {
 	saveProfiles();
 	prfSave("");
 	sndCalibrate();
-	zx->palchan = 1; // zx->flag |= ZX_PALCHAN;
+//	zx->palchan = 1; // zx->flag |= ZX_PALCHAN;
 	// emulSetPalette(zx,setupUi.brgslide->value());
 	emulOpenJoystick(optGetString(OPT_JOYNAME));
 	emulUpdateWindow();

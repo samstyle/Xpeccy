@@ -28,10 +28,10 @@ void loadUDITrack(Floppy* flp,std::ifstream* file, unsigned char tr, bool sd) {
 	unsigned char* trackBuf = new unsigned char[TRACKLEN];
 	if (type != 0x00) {
 		printf("TRK %i: unknown format %.2X\n",rt,type);
-		len = getlen(file,4);							// field len
+		len = getLength(file,4);							// field len
 		file->seekg(len,std::ios_base::cur);					// skip unknown field
 	} else {
-		len = getlen(file,2);		// track size
+		len = getLength(file,2);		// track size
 		if (len > TRACKLEN) {
 			printf("TRK %i: too long (%i)\n",rt,len);
 			file->seekg(len,std::ios_base::cur);		// skip track image

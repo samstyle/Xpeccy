@@ -43,7 +43,7 @@ typedef struct {
 
 struct ZXComp {
 	unsigned brk:1;			// breakpoint
-	unsigned palchan:1;		// palette changed
+//	unsigned palchan:1;		// palette changed
 	unsigned frmStrobe:1;		// new frame started
 	unsigned intStrobe:1;		// int front
 	unsigned nmiRequest:1;		// Magic button pressed
@@ -80,7 +80,7 @@ struct ZXComp {
 	int nsCount;
 
 	memEntry memMap[16];		// memory map for ATM2, PentEvo
-	unsigned char colMap[16];	// color map
+//	unsigned char colMap[16];	// color map
 	unsigned char prt0;		// 7ffd value
 	unsigned char prt1;		// extend port value
 	unsigned char prt2;		// scorpion ProfROM layer (0..3)

@@ -58,7 +58,7 @@
 
 unsigned short getLEWord(std::ifstream*);
 unsigned short getBEWord(std::ifstream*);
-unsigned int getlen(std::ifstream*,unsigned char);
+unsigned int getLength(std::ifstream*,unsigned char);
 void putint(unsigned char*, unsigned int);
 
 // snapshot

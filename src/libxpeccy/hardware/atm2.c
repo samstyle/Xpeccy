@@ -87,9 +87,13 @@ void atm2Out(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 				bdiOut(comp->bdi,BDI_SYS,val);
 				if (!(comp->prt1 & 0x40)) {
 					val ^= 0xff;	// inverse colors
-					comp->colMap[comp->vid->brdcol & 0x0f] =		// grbG--RB to -grb-GRB
-							(val & 0x03) | ((val & 0x10) >> 2) | ((val & 0xe0) >> 1);
-					comp->palchan = 1; // comp->flag |= ZX_PALCHAN;
+					adr = comp->vid->brdcol & 0x0f;
+					comp->vid->pal[adr].b = ((val & 0x01) ? 0xaa : 0x00) + ((val & 0x20) ? 0x55 : 0x00);
+					comp->vid->pal[adr].r = ((val & 0x02) ? 0xaa : 0x00) + ((val & 0x40) ? 0x55 : 0x00);
+					comp->vid->pal[adr].g = ((val & 0x10) ? 0xaa : 0x00) + ((val & 0x80) ? 0x55 : 0x00);
+					//comp->colMap[comp->vid->brdcol & 0x0f] =		// grbG--RB to -grb-GRB
+					//		(val & 0x03) | ((val & 0x10) >> 2) | ((val & 0xe0) >> 1);
+					//comp->palchan = 1; // comp->flag |= ZX_PALCHAN;
 				}
 			}
 			break;

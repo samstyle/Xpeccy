@@ -161,8 +161,8 @@ gsPair gsGetVolume(GSound* gs) {
 // external in/out
 
 int gsIn(GSound* gs, int prt, unsigned char* val) {
-	if (!gs->enable) return GS_ERR;	// gs disabled
-	if ((prt & 0x44) != 0) return GS_ERR;		// port don't catched
+	if (!gs->enable) return 0;	// gs disabled
+	if ((prt & 0x44) != 0) return 0;		// port don't catched
 	gsSync(gs);
 	if (prt & 8) {
 		*val = gs->pstate;
@@ -170,12 +170,12 @@ int gsIn(GSound* gs, int prt, unsigned char* val) {
 		*val = gs->pb3_gs;
 		gs->pstate &= 0x7f;		// reset b7,state
 	}
-	return GS_OK;
+	return 1;
 }
 
 int gsOut(GSound* gs, int prt,unsigned char val) {
-	if (!gs->enable) return GS_ERR;
-	if ((prt & 0x44) != 0) return GS_ERR;
+	if (!gs->enable) return 0;
+	if ((prt & 0x44) != 0) return 0;
 	gsSync(gs);
 	if (prt & 8) {
 		gs->pbb_zx = val;
@@ -184,5 +184,5 @@ int gsOut(GSound* gs, int prt,unsigned char val) {
 		gs->pb3_zx = val;
 		gs->pstate |= 0x80;	// set b7,state
 	}
-	return GS_OK;
+	return 1;
 }
