@@ -40,11 +40,8 @@
 	#include <SDL_syswm.h>
 #endif
 
-//#include "ui_tapewin.h"
-
-#ifdef XQTPAINT
+#ifdef DRAWQT
 	#include <QPainter>
-	QImage scrImg = QImage(100,100,QImage::Format_RGB888);
 #endif
 
 #define STR_EXPAND(tok) #tok
@@ -55,13 +52,6 @@
 // main
 MainWin* mainWin;
 QIcon curicon;
-#ifndef XQTPAINT
-	SDL_Surface* surf = NULL;
-	SDL_Color zxpal[256];
-	SDL_SysWMinfo inf;
-	SDL_Joystick* joy = NULL;
-#endif
-QVector<QRgb> qPal;
 volatile int emulFlags = FL_BLOCK;
 volatile int pauseFlags = 0;
 //int wantedWin;
@@ -146,6 +136,7 @@ unsigned char icoRedDisk[256] = {
 
 keyEntry keyMap[256];	// current keymap (init at start from keyMapInit[]
 
+/*
 #ifndef XQTPAINT
 
 // nums & small letters = keys
@@ -196,6 +187,7 @@ keyEntry getKeyEntry(SDLKey skey) {
 }
 
 #else
+*/
 
 #define ENDKEY 0
 
@@ -239,7 +231,7 @@ keyEntry getKeyEntry(qint32 qkey) {
 	return keyMap[idx];
 }
 
-#endif
+// #endif
 
 void setKey(const char* key,const char key1,const char key2) {
 	int idx = 0;
@@ -359,32 +351,16 @@ void MainWin::updateHead() {
 	#define AMASK 0xff000000
 #endif
 
+#include <QDesktopWidget>
+
 void MainWin::updateWindow() {
 	emulFlags |= FL_BLOCK;
 	vidUpdate(zx->vid);
 	int szw = zx->vid->wsze.h;
 	int szh = zx->vid->wsze.v;
 	setFixedSize(szw,szh);
-#ifdef XQTPAINT
+#ifdef DRAWQT
 	scrImg = scrImg.scaled(szw,szh);
-//	zx->vid->scrimg = scrImg.bits();
-//	zx->vid->scrptr = zx->vid->scrimg;
-#else
-	int sdlflg = SDL_SWSURFACE | SDL_NOFRAME;
-	if ((vidFlag & VF_FULLSCREEN) && !(vidFlag & VF_BLOCKFULLSCREEN)) {
-//		sdlflg |= SDL_FULLSCREEN;
-	}
-	SDL_Surface* oldSurf = surf;
-	surf = SDL_SetVideoMode(szw,szh,24,sdlflg);
-	surf->format->Rmask = 0x000000ff;		// wtf? sdl create BGR format insteat of RGB
-	surf->format->Bmask = 0x00ff0000;
-	surf->format->Rshift = 0;
-	surf->format->Bshift = 16;
-
-//	zx->vid->scrptr = (unsigned char*)surf->pixels;
-//	zx->vid->scrimg = zx->vid->scrptr;
-//	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
-	if (oldSurf) SDL_FreeSurface(oldSurf);
 #endif
 	updateHead();
 	emulFlags &= ~FL_BLOCK;
@@ -422,23 +398,12 @@ void emulPause(bool p, int msk) {
 	sndPause(pauseFlags != 0);
 	bool kk = ((emulFlags & FL_GRAB) != 0);
 	if (!kk || ((pauseFlags != 0) && kk)) {
-#ifdef XQTPAINT
 		mainWin->releaseMouse();
-#else
-		SDL_WM_GrabInput(SDL_GRAB_OFF);
-		SDL_ShowCursor(SDL_ENABLE);
-#endif
-	}
-	if ((pauseFlags == 0) && kk) {
-#ifdef XQTPAINT
-		mainWin->grabMouse(QCursor(Qt::BlankCursor));
-#else
-		SDL_WM_GrabInput(SDL_GRAB_ON);
-		SDL_ShowCursor(SDL_DISABLE);
-#endif
 	}
 	if (pauseFlags == 0) {
 		mainWin->setWindowIcon(curicon);
+		if (kk) mainWin->grabMouse(QCursor(Qt::BlankCursor));
+
 	} else {
 		mainWin->setWindowIcon(QIcon(":/images/pause.png"));
 	}
@@ -460,11 +425,6 @@ MainWin::MainWin() {
 	curicon = QIcon(":/images/xpeccy.png");
 	setWindowIcon(curicon);
 	setAcceptDrops(true);
-#ifndef XQTPAINT
-	SDL_VERSION(&inf.version);
-	SDL_GetWMInfo(&inf);
-	embedClient(inf.info.x11.wmwindow);
-#endif
 	tapeWin = new TapeWin(this);
 	connect(tapeWin,SIGNAL(stateChanged(int,int)),this,SLOT(tapStateChanged(int,int)));
 
@@ -475,7 +435,9 @@ MainWin::MainWin() {
 	cmosTimer = new QTimer();
 	connect(cmosTimer,SIGNAL(timeout()),this,SLOT(cmosTick()));
 	cmosTimer->start(1000);
-
+#ifdef DRAWQT
+	scrImg = QImage(100,100,QImage::Format_RGB888);
+#endif
 	connect(this,SIGNAL(extSignal(int,int)),SLOT(extSlot(int,int)));
 	connect(userMenu,SIGNAL(aboutToShow()),SLOT(menuShow()));
 	connect(userMenu,SIGNAL(aboutToHide()),SLOT(menuHide()));
@@ -680,19 +642,18 @@ void MainWin::rzxStateChanged(int state) {
 	}
 }
 
-#ifdef XQTPAINT
-void MainWin::paintEvent(QPaintEvent *ev) {
+#ifdef DRAWQT
+void MainWin::paintEvent(QPaintEvent*) {
 	if (emulFlags & FL_BLOCK) return;
+	memcpy(scrImg.bits(),zx->vid->scrimg,zx->vid->frameBytes);
 	QPainter pnt(this);
 	pnt.drawImage(0,0,scrImg);
 	pnt.end();
 }
+#endif
 
 void MainWin::keyPressEvent(QKeyEvent *ev) {
 	keyEntry kent;
-#ifdef ISDEBUG
-//	qDebug() << ev->nativeScanCode();
-#endif
 	if (pckAct->isChecked()) {
 		kent = getKeyEntry(ev->nativeScanCode());
 		keyPress(zx->keyb,kent.key1,kent.key2,kent.keyCode);
@@ -903,6 +864,7 @@ void MainWin::dropEvent(QDropEvent* ev) {
 	}
 }
 
+/*
 #else
 
 #include <fstream>
@@ -1215,6 +1177,7 @@ void doSDLEvents() {
 }
 
 #endif
+*/
 
 void MainWin::closeEvent(QCloseEvent* ev) {
 	unsigned int i;
@@ -1246,11 +1209,6 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		emulFlags |= FL_EXIT;
 	} else {
 		ev->ignore();
-#ifndef XQTPAINT
-		SDL_VERSION(&inf.version);
-		SDL_GetWMInfo(&inf);
-		mainWin->embedClient(inf.info.x11.wmwindow);
-#endif
 		emulPause(false,PR_EXIT);
 	}
 }
@@ -1279,12 +1237,7 @@ void doScreenShot() {
 	fnams.append(QTime::currentTime().toString("HHmmss_zzz")).append(".").append(QString(fext.c_str()));
 	std::string fnam(fnams.toUtf8().data());
 	std::ofstream file;
-#ifdef XQTPAINT
-	QImage *img = new QImage(scrImg);
-#else
-	QImage *img = new QImage((uchar*)surf->pixels,surf->w,surf->h,QImage::Format_Indexed8);
-#endif
-	img->setColorTable(qPal);
+	QImage *img = new QImage(zx->vid->scrimg,zx->vid->wsze.h, zx->vid->wsze.v,QImage::Format_RGB888);
 	char* pageBuf = new char[0x4000];
 	memGetPage(zx->mem,MEM_RAM,zx->vid->curscr,pageBuf);
 	switch (frm) {
@@ -1328,18 +1281,9 @@ void emuFrame() {
 	if (emulFlags & FL_BLOCK) return;
 // if not paused play sound buffer
 	if (sndEnabled && (sndMute || mainWin->isActiveWindow())) sndPlay();
-// process SDL events
-#ifndef XQTPAINT
-	doSDLEvents();
-#endif
 	if (pauseFlags != 0) return;
 // take screenshot
 	if (emulFlags & FL_SHOT) doScreenShot();
-// change palette
-//	if (zx->palchan) {	//if (zx->flag & ZX_PALCHAN) {
-//		zx->palchan = 0;	// zx->flag &= ~ZX_PALCHAN;
-//		emulSetPalette(zx,optGetInt(OPT_BRGLEV));
-//	}
 // if window is not active release keys & buttons
 	if (!mainWin->isActiveWindow()) {
 		keyRelease(zx->keyb,0,0,0);
@@ -1401,21 +1345,79 @@ void MainWin::emuDraw() {
 			case FDC_WRITE: putIcon(zx->vid,4,4,icoRedDisk); break;
 		}
 	}
-	if ((~emulFlags & FL_BLOCK) /* && zx->vid->change */ ) {
-#ifdef XQTPAINT
-		memcpy(scrImg.bits(),zx->vid->scrimg,zx->vid->frameBytes);
+	if (~emulFlags & FL_BLOCK) {
+		//memcpy(scrImg.bits(),zx->vid->scrimg,zx->vid->frameBytes);
 		update();
-#else
-		memcpy(surf->pixels,zx->vid->scrimg,zx->vid->frameBytes);
-		SDL_UpdateRect(surf,0,0,0,0);
-#endif
-//		zx->vid->change = 0;
-		// zx->vid->forceDraw = 0;
 	}
-//	vidFlag &= ~VF_CHANGED;
-//	vidFlag |= VF_CHECKCHA;
 	emulFlags &= ~FL_DRAW;
 }
+
+#ifdef DRAWGL
+static int int_log2(int val) {
+	int log = 0;
+	while ((val >>= 1) != 0)
+		log++;
+	return log;
+}
+
+void MainWin::resizeGL(int, int) {
+	int w = zx->vid->wsze.h;
+	int h = zx->vid->wsze.v;
+
+	glMatrixMode(GL_PROJECTION);
+	glDeleteTextures(1, &tex);
+	glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	// No borders
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_LINEAR);
+	// TODO: Make an option: GL_LINEAR or GL_NEAREST
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	int texsize = 2 << int_log2(w > h ? w : h);
+	glTexImage2D(GL_TEXTURE_2D, 0, 3, texsize, texsize, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+
+	glClearColor(0.0, 0.0, 0.0, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT);
+	swapBuffers();
+	glClear(GL_COLOR_BUFFER_BIT);
+	glShadeModel(GL_FLAT);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_LIGHTING);
+	glDisable(GL_CULL_FACE);
+	glEnable(GL_TEXTURE_2D);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	GLfloat texw = ((GLfloat)(w)/(GLfloat)texsize);
+	GLfloat texh = ((GLfloat)(h)/(GLfloat)texsize);
+
+	glViewport(0,0,w,h);
+
+	if (glIsList(displaylist)) glDeleteLists(displaylist, 1);
+	displaylist = glGenLists(1);
+	glNewList(displaylist, GL_COMPILE);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glBegin(GL_QUADS);
+	// lower left
+	glTexCoord2f(0, texh); glVertex2f(-1,-1);
+	// lower right
+	glTexCoord2f(texw, texh); glVertex2f(1,-1);
+	// upper right
+	glTexCoord2f(texw, 0); glVertex2f(1,1);
+	// upper left
+	glTexCoord2f(0,0); glVertex2f(-1,1);
+	glEnd();
+	glEndList();
+}
+
+void MainWin::paintGL() {
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, zx->vid->wsze.h, zx->vid->wsze.v, GL_RGB, GL_UNSIGNED_BYTE, zx->vid->scrimg);
+	glCallList(displaylist);
+}
+#endif
 
 void emulTapeCatch() {
 	blk = zx->tape->block;
@@ -1443,37 +1445,6 @@ void emulTapeCatch() {
 		if (optGetFlag(OF_TAPEAUTO))
 			mainWin->tapStateChanged(TW_STATE,TWS_PLAY);
 	}
-}
-
-// JOYSTICK
-
-bool emulIsJoystickOpened() {
-#ifdef XQTPAINT
-	return false;
-#else
-	return (joy != NULL);
-#endif
-}
-
-void emulOpenJoystick(std::string name) {
-#ifndef XQTPAINT
-	emulCloseJoystick();
-	int jnums = SDL_NumJoysticks();
-	for (int i=0; i<jnums; i++) {
-		if (std::string(SDL_JoystickName(i)) == name) {
-			joy = SDL_JoystickOpen(i);
-			break;
-		}
-	}
-#endif
-}
-
-void emulCloseJoystick() {
-#ifndef XQTPAINT
-	if (joy == NULL) return;
-	SDL_JoystickClose(joy);
-	joy = NULL;
-#endif
 }
 
 // USER MENU

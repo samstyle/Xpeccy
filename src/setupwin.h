@@ -49,9 +49,9 @@ class SetupWin : public QDialog {
 		void copyToDisk();
 		void diskToHobeta();
 		void diskToRaw();
-		void addJoyBind();
-		void delJoyBind();
-		void scanJoyBind();
+		//void addJoyBind();
+		//void delJoyBind();
+		//void scanJoyBind();
 		void newProfile();
 		void rmProfile();
 
@@ -65,7 +65,7 @@ class SetupWin : public QDialog {
 		void buildtapelist();
 		void buildmenulist();
 		void buildkeylist();
-		void buildjmaplist();
+		// void buildjmaplist();
 		void buildproflist();
 		int umidx;
 };

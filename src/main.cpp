@@ -54,11 +54,7 @@ Uint32 onTimer(Uint32, void *) {
 
 int main(int ac,char** av) {
 
-#ifdef XQTPAINT
-	printf("Using Qt painter\n");
-#else
-	printf("Using SDL surface\n");
-#endif
+	printf("Using OpenGL painter\n");
 
 #ifdef HAVESDL
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK);

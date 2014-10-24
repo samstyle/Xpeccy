@@ -224,9 +224,6 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	QObject::connect(setupUi.tvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
 	QObject::connect(setupUi.avsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
 	QObject::connect(setupUi.gvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
-// input
-	connect(setupUi.addBind,SIGNAL(released()),this,SLOT(addJoyBind()));
-	connect(setupUi.delBind,SIGNAL(released()),this,SLOT(delJoyBind()));
 // dos
 	QObject::connect(setupUi.newatb,SIGNAL(released()),this,SLOT(newa()));
 	QObject::connect(setupUi.newbtb,SIGNAL(released()),this,SLOT(newb()));
@@ -375,28 +372,14 @@ void SetupWin::start() {
 	setupUi.sdrvBox->setCurrentIndex(setupUi.sdrvBox->findData(QVariant(zx->sdrv->type)));
 // input
 	buildkeylist();
-	buildjmaplist();
+	// buildjmaplist();
 	std::string kmname = optGetString(OPT_KEYNAME);
 	int idx = setupUi.keyMapBox->findText(QString(kmname.c_str()));
 	if (idx < 1) idx = 0;
 	setupUi.keyMapBox->setCurrentIndex(idx);
 	setupUi.ratEnable->setChecked(zx->mouse->enable);
 	setupUi.ratWheel->setChecked(zx->mouse->hasWheel);
-#ifdef XQTPAINT
-	setupUi.joyBox->setVisible(false);
-#else
-	setupUi.joyBox->setVisible(true);
-	setupUi.inpDevice->clear();
-	setupUi.inpDevice->addItem("None");
-
-	int jnum=SDL_NumJoysticks();
-	for (int cnt=0; cnt<jnum; cnt++) {
-		setupUi.inpDevice->addItem(QString(SDL_JoystickName(cnt)));
-	}
-	idx = setupUi.inpDevice->findText(QString(optGetString(OPT_JOYNAME).c_str()));
-	if (idx < 0) idx = 0;
-	setupUi.inpDevice->setCurrentIndex(idx);
-#endif
+	// setupUi.joyBox->setVisible(false);
 // dos
 	setupUi.diskTypeBox->setCurrentIndex(setupUi.diskTypeBox->findData(zx->bdi->fdc->type));
 	setupUi.bdtbox->setChecked(fdcFlag & FDC_FAST);
@@ -533,11 +516,11 @@ void SetupWin::apply() {
 // input
 	zx->mouse->enable = setupUi.ratEnable->isChecked() ? 1 : 0;
 	zx->mouse->hasWheel = setupUi.ratWheel->isChecked() ? 1 : 0;
-	if (setupUi.inpDevice->currentIndex() < 1) {
-		optSet(OPT_JOYNAME,std::string(""));
-	} else {
-		optSet(OPT_JOYNAME,std::string(setupUi.inpDevice->currentText().toLocal8Bit().data()));
-	}
+	//if (setupUi.inpDevice->currentIndex() < 1) {
+	//	optSet(OPT_JOYNAME,std::string(""));
+	//} else {
+	//	optSet(OPT_JOYNAME,std::string(setupUi.inpDevice->currentText().toLocal8Bit().data()));
+	//}
 	std::string kmname = getRFText(setupUi.keyMapBox);
 	if (kmname == "none") kmname = "default";
 	optSet(OPT_KEYNAME,kmname);
@@ -611,7 +594,7 @@ void SetupWin::apply() {
 	sndCalibrate();
 //	zx->palchan = 1; // zx->flag |= ZX_PALCHAN;
 	// emulSetPalette(zx,setupUi.brgslide->value());
-	emulOpenJoystick(optGetString(OPT_JOYNAME));
+	//emulOpenJoystick(optGetString(OPT_JOYNAME));
 	emulUpdateWindow();
 }
 
@@ -831,6 +814,7 @@ void SetupWin::buildkeylist() {
 	fillRFBox(setupUi.keyMapBox,lst);
 }
 
+/*
 void SetupWin::buildjmaplist() {
 	std::vector<joyPair> jmap = getJMap();
 	setupUi.bindTable->setRowCount(jmap.size());
@@ -867,6 +851,7 @@ void SetupWin::buildjmaplist() {
 		setupUi.bindTable->setItem(i,0,it);
 	}
 }
+*/
 
 std::vector<HardWare> getHardwareList() {
 	std::vector<HardWare> res;
@@ -1240,82 +1225,6 @@ void SetupWin::updvolumes() {
 	setupUi.tvlab->setText(QString::number(setupUi.tvsld->value()));
 	setupUi.avlab->setText(QString::number(setupUi.avsld->value()));
 	setupUi.gslab->setText(QString::number(setupUi.gvsld->value()));
-}
-
-// input
-
-QWidget* dia;
-QComboBox* box;
-
-void SetupWin::addJoyBind() {
-	if (!emulIsJoystickOpened()) return;
-	dia = new QWidget(this);
-	QHBoxLayout* lay = new QHBoxLayout;
-	box = new QComboBox;
-	box->addItem("Kempston up","up");
-	box->addItem("Kempston down","down");
-	box->addItem("Kempston left","left");
-	box->addItem("Kempston right","right");
-	box->addItem("Kempston fire","fire");
-	QPushButton* but = new QPushButton("Scan");
-	lay->addWidget(box);
-	lay->addWidget(but);
-	dia->setLayout(lay);
-	connect (but,SIGNAL(released()),this,SLOT(scanJoyBind()));
-	dia->setEnabled(true);
-	dia->show();
-}
-
-void SetupWin::scanJoyBind() {
-#ifndef XQTPAINT
-	dia->setEnabled(false);
-	SDL_Event ev;
-	bool doWork = true;
-	extButton extb;
-	intButton intb;
-	do {
-		SDL_Delay(100);
-		while(SDL_PollEvent(&ev)) {
-			switch(ev.type) {
-				case SDL_JOYBUTTONUP:
-					extb.type = XJ_BUTTON;
-					extb.num = ev.jbutton.button;
-					extb.dir = true;
-					intb.dev = XJ_JOY;
-					intb.name = box->itemData(box->currentIndex()).toString().toLocal8Bit().data();
-					optSetJMap(extb,intb);
-					doWork = false;
-					break;
-				case SDL_JOYAXISMOTION:
-					if ((ev.jaxis.value < -5000) || (ev.jaxis.value > 5000)) {
-						extb.type = XJ_AXIS;
-						extb.num = ev.jaxis.axis;
-						extb.dir = (ev.jaxis.value > 0);
-						intb.dev = XJ_JOY;
-						intb.name = box->itemData(box->currentIndex()).toString().toLocal8Bit().data();
-						optSetJMap(extb,intb);
-						doWork = false;
-					}
-					break;
-			}
-		}
-	} while (doWork);
-	dia->hide();
-	buildjmaplist();
-#endif
-}
-
-void SetupWin::delJoyBind() {
-	int row = setupUi.bindTable->currentRow();
-	if (row < 0) return;
-	if (setupUi.bindTable->isRowHidden(row)) return;
-	QVector3D vec = setupUi.bindTable->item(row,0)->data(Qt::UserRole).value<QVector3D>();
-	extButton extb;
-	extb.type = vec.x();
-	extb.num = vec.y();
-	extb.dir = (vec.z() != 0);
-	optDelJMap(extb);
-	buildjmaplist();
 }
 
 // disk

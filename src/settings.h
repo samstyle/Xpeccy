@@ -17,8 +17,8 @@
 #define	OPT_BRGLEV	0x14
 //#define	OPT_PROJDIR	0x20
 //#define	OPT_ASMPATH	0x21
-#define OPT_JOYNAME	0x30
-#define OPT_JOYDIRS	0x31
+//#define OPT_JOYNAME	0x30
+//#define OPT_JOYDIRS	0x31
 #define	OPT_KEYNAME	0x40
 
 //screenshot format
@@ -81,11 +81,13 @@ void optSet(int,bool);
 void optSetFlag(int,bool);
 bool optGetFlag(int);
 
+/*
 std::vector<joyPair> getJMap();
 void setJMap(std::vector<joyPair>);
 intButton optGetJMap(extButton);
 void optSetJMap(extButton,intButton);
 void optDelJMap(extButton);
+*/
 
 std::string optGetName(int,int);
 int optGetId(int,std::string);

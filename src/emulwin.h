@@ -3,15 +3,10 @@
 
 #include <QTimer>
 #include <QThread>
-
-#ifdef HAVESDL
-	#include <SDL.h>
-	#undef main
+#ifdef DRAWGL
+	#include <QGLWidget>
 #endif
-
-#ifndef XQTPAINT
-	#include <QX11EmbedContainer>
-#else
+#ifdef DRAWQT
 	#include <QWidget>
 #endif
 
@@ -230,11 +225,7 @@
 
 typedef struct {
 	const char* name;
-#ifdef XQTPAINT
 	qint32 key;	// nativeScanCode()
-#else
-	SDLKey key;
-#endif
 	char key1;
 	char key2;
 	int keyCode;		// 0xXXYYZZ = ZZ,YY,XX in buffer (ZZ,YY,0xf0,XX if released)
@@ -243,10 +234,11 @@ typedef struct {
 #define	EV_WINDOW	1
 #define	EV_TAPE		2
 
-#ifdef XQTPAINT
+#ifdef DRAWGL
+class MainWin : public QGLWidget {
+#endif
+#ifdef DRAWQT
 class MainWin : public QWidget {
-#else
-class MainWin : public QX11EmbedContainer {
 #endif
 	Q_OBJECT
 	public:
@@ -261,6 +253,13 @@ class MainWin : public QX11EmbedContainer {
 		void extSignal(int,int);
 	private:
 		QTimer* cmosTimer;
+#ifdef DRAWGL
+		GLuint tex;
+		GLuint displaylist;
+#endif
+#ifdef DRAWQT
+		QImage scrImg;
+#endif
 	public slots:
 		void doOptions();
 		void tapStateChanged(int,int);
@@ -279,17 +278,21 @@ class MainWin : public QX11EmbedContainer {
 		void saveRDisk();
 	protected:
 		void closeEvent(QCloseEvent*);
-#ifdef XQTPAINT
+#ifdef DRAWGL
+		void paintGL();
+		void resizeGL(int,int);
+#endif
 		void dragEnterEvent(QDragEnterEvent*);
 		void dropEvent(QDropEvent*);
+#ifdef DRAWQT
 		void paintEvent(QPaintEvent*);
+#endif
 		void keyPressEvent(QKeyEvent*);
 		void keyReleaseEvent(QKeyEvent*);
 		void mousePressEvent(QMouseEvent*);
 		void mouseReleaseEvent(QMouseEvent*);
 		void mouseMoveEvent(QMouseEvent*);
 		void wheelEvent(QWheelEvent*);
-#endif
 };
 
 // main
@@ -310,16 +313,13 @@ void emuFrame();
 // keys
 void initKeyMap();
 void setKey(const char*,const char,const char);
-#ifndef XQTPAINT
-	keyEntry getKeyEntry(SDLKey);
-#endif
 // USER MENU
 void initUserMenu(QWidget*);
 void fillUserMenu();
 void fillProfileMenu();
 // joystick
-void emulOpenJoystick(std::string);
-void emulCloseJoystick();
-bool emulIsJoystickOpened();
+//void emulOpenJoystick(std::string);
+//void emulCloseJoystick();
+//bool emulIsJoystickOpened();
 
 #endif
