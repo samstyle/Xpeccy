@@ -19,7 +19,7 @@ void pl3Out(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 			comp->vid->nextbrd = val & 0x07;
 			if (!comp->vid->border4t)
 				comp->vid->brdcol = val & 0x07;
-			comp->beeplev = val & 0x10;
+			comp->beeplev = (val & 0x10) ? 1 : 0;
 			comp->tape->outsig = (val & 0x08) ? 1 : 0;
 			break;
 		case 0x7ffd:

@@ -130,7 +130,6 @@ unsigned char ink = 0;
 unsigned char pap = 0;
 unsigned char scrbyte = 0;
 unsigned char nxtbyte = 0;
-//unsigned char* fntptr;
 
 void vidDarkTail(Video* vid) {
 	xscr = vid->x;
@@ -138,16 +137,20 @@ void vidDarkTail(Video* vid) {
 	unsigned char* ptr = vid->scrptr;
 	do {
 		if ((yscr >= vid->lcut.v) && (yscr < vid->rcut.v) && (xscr >= vid->lcut.h) && (xscr < vid->rcut.h)) {
-			*(ptr++) &= 0x0f;
+			*(ptr++) >>= 1;
+			*(ptr++) >>= 1;
+			*(ptr++) >>= 1;
 			if (vidFlag & VF_DOUBLE) {
-				*(ptr++) &= 0x0f;
+				*(ptr++) >>= 1;
+				*(ptr++) >>= 1;
+				*(ptr++) >>= 1;
 			}
 		}
 		if (++xscr >= vid->full.h) {
 			xscr = 0;
 			if ((yscr >= vid->lcut.v) && (yscr < vid->rcut.v) && (vidFlag & VF_DOUBLE)) {
-				memcpy(ptr,ptr - vid->wsze.h,vid->wsze.h);
-				ptr += vid->wsze.h;
+				memcpy(ptr, ptr - vid->lineBytes, vid->lineBytes);
+				ptr += vid->lineBytes;
 			}
 			if (++yscr >= vid->full.v)
 				ptr = NULL;
@@ -171,31 +174,6 @@ void vidWait(Video* vid) {
 void vidSetFont(Video* vid, char* src) {
 	memcpy(vid->font,src,0x800);
 }
-
-/*
-unsigned char vidGetAttr(Video* vid) {
-	return 0xff; // (vid->matrix[vid->dotCount].flag & MTF_SCREEN) ? vid->atrbyte : vid->brdcol;
-}
-*/
-
-/*
-inline void vidPutSimpleDot(Video* vid, unsigned char colr) {
-	*(vid->scrptr++) = colr;
-	if (vidFlag & VF_DOUBLE) *(vid->scrptr++)=colr;
-//	vid->change = 1;
-}
-
-inline void vidPutDot(Video* vid, unsigned char colr) {
-	if (!vid->ula->active) {
-		if ((vidFlag & (VF_NOFLIC | VF_FRAMEDBG)) == VF_NOFLIC) {
-			colr = (((*vid->scrptr) & 0x0f) << 4) | (colr & 0x0f);
-		} else {
-			colr |= (colr << 4);
-		}
-	}
-	vidPutSimpleDot(vid,colr);
-}
-*/
 
 inline void vidSingleDot(Video* vid, unsigned char idx) {
 	*(vid->scrptr++) = vid->pal[idx].r;
@@ -793,8 +771,8 @@ void vidSync(Video* vid, int ns) {
 				vid->fcnt++;
 				vid->flash = vid->fcnt & 0x20;
 				vid->tsconf.scrLine = vid->tsconf.yOffset;
-//				vid->forceDraw = 0;
 				vid->idx = 0;
+				if (vidFlag & VF_DEBUG) vidDarkTail(vid);
 			}
 		}
 		vid->nsDraw -= NS_PER_DOT;

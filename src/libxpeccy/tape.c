@@ -49,18 +49,32 @@ void blkClear(TapeBlock *blk) {
 }
 
 // add signal (1 level change)
-void blkAddSignal(TapeBlock* blk, int sig) {
+void blkAddSignal(TapeBlock* blk, int len) {
 	if ((blk->sigCount & 0xffff) == 0) {
 		blk->sigData = (int*)realloc(blk->sigData,(blk->sigCount + 0x10000) * sizeof(int));	// allocate mem for next 0x10000 signals
 	}
-	blk->sigData[blk->sigCount] = sig;
+	blk->sigData[blk->sigCount] = len;
 	blk->sigCount++;
+}
+
+// add pause. duration in ms
+void blkAddPause(TapeBlock* blk, int len) {
+	blkAddSignal(blk,len * MSDOTS);
 }
 
 // add pulse (2 signals)
 void blkAddPulse(TapeBlock* blk, int len) {
 	blkAddSignal(blk,len);
 	blkAddSignal(blk,len);
+}
+
+// add byte. b0len/b1len = duration of 0/1 bits. When 0, it takes from block signals data
+void blkAddByte(TapeBlock* blk, unsigned char data, int b0len, int b1len) {
+	if (b0len == 0) b0len = blk->len0;
+	if (b1len == 0) b1len = blk->len1;
+	for (int msk = 0x80; msk > 0; msk >>= 1) {
+		blkAddPulse(blk, (data & msk) ? b1len : b0len);
+	}
 }
 
 int tapGetBlockTime(Tape* tape, int blk, int pos) {
@@ -188,21 +202,19 @@ void tapStoreBlock(Tape* tap) {
 	int diff;
 	int siglens[10];
 	int cnt = 0;
-	if (tap->tmpBlock.sigCount > 0) {
-		tap->tmpBlock.pause = 1000;
-		tap->tmpBlock.sigCount--;
-	}
-	if (tap->tmpBlock.sigCount == 0) return;
-	for (i=0; i < tap->tmpBlock.sigCount; i++) {
+	TapeBlock* tblk = &tap->tmpBlock;
+	if (tblk->sigCount == 0) return;
+	tblk->sigData[tblk->sigCount-1] = 1000 * MSDOTS;		// last signal is 1 sec (pause)
+	for (i=0; i < tblk->sigCount; i++) {
 		same = 0;
 		for (j = 0; j < cnt; j++) {
-			diff = tap->tmpBlock.sigData[i] - siglens[j];
+			diff = tblk->sigData[i] - siglens[j];
 			if ((diff > -20) && (diff < 20)) {
 				same = 1;
 			}
 		}
 		if ((same == 0) && (cnt < 10)) {
-			siglens[cnt] = tap->tmpBlock.sigData[i];
+			siglens[cnt] = tblk->sigData[i];
 			cnt++;
 		}
 	}
@@ -216,41 +228,41 @@ void tapStoreBlock(Tape* tap) {
 		siglens[4] = siglens[3];
 		siglens[3] = (siglens[3] > 1000) ? SIGN0LEN : SIGN1LEN;
 	}
-	tap->tmpBlock.breakPoint = 0;
-	tap->tmpBlock.hasBytes = 0;
-	tap->tmpBlock.isHeader = 0;
+	tblk->breakPoint = 0;
+	tblk->hasBytes = 0;
+	tblk->isHeader = 0;
 	if (cnt == 6) {
-		tap->tmpBlock.plen = siglens[0];
-		tap->tmpBlock.s1len = siglens[1];
-		tap->tmpBlock.s2len = siglens[2];
+		tblk->plen = siglens[0];
+		tblk->s1len = siglens[1];
+		tblk->s2len = siglens[2];
 		if (siglens[4] > siglens[3]) {
-			tap->tmpBlock.len0 = siglens[3];
-			tap->tmpBlock.len1 = siglens[4];
+			tblk->len0 = siglens[3];
+			tblk->len1 = siglens[4];
 		} else {
-			tap->tmpBlock.len0 = siglens[4];
-			tap->tmpBlock.len1 = siglens[3];
+			tblk->len0 = siglens[4];
+			tblk->len1 = siglens[3];
 		}
-		tap->tmpBlock.hasBytes = 1;
+		tblk->hasBytes = 1;
 	} else {
-		tap->tmpBlock.plen = PILOTLEN;
-		tap->tmpBlock.s1len = SYNC1LEN;
-		tap->tmpBlock.s2len = SYNC2LEN;
-		tap->tmpBlock.len0 = SIGN0LEN;
-		tap->tmpBlock.len1 = SIGN1LEN;
+		tblk->plen = PILOTLEN;
+		tblk->s1len = SYNC1LEN;
+		tblk->s2len = SYNC2LEN;
+		tblk->len0 = SIGN0LEN;
+		tblk->len1 = SIGN1LEN;
 	}
-	tap->tmpBlock.dataPos = -1;
+	tblk->dataPos = -1;
 	i = 1;
-	while ((i < tap->tmpBlock.sigCount) && (tap->tmpBlock.sigData[i] != tap->tmpBlock.s2len)) i++;
-	if (i < tap->tmpBlock.sigCount) tap->tmpBlock.dataPos = i + 1;
-	tapNormSignals(&tap->tmpBlock);
-	if (tap->tmpBlock.dataPos != -1) {
-		if (tapGetBlockByte(&tap->tmpBlock,0) == 0) {
-			tap->tmpBlock.isHeader = 1;
+	while ((i < tblk->sigCount) && (tblk->sigData[i] != tblk->s2len)) i++;
+	if (i < tblk->sigCount) tblk->dataPos = i + 1;
+	tapNormSignals(tblk);
+	if (tblk->dataPos != -1) {
+		if (tapGetBlockByte(tblk,0) == 0) {
+			tblk->isHeader = 1;
 		}
 	}
 	tapAddBlock(tap,tap->tmpBlock);
 
-	blkClear(&tap->tmpBlock);
+	blkClear(tblk);
 	tap->wait = 1;
 }
 
@@ -334,7 +346,7 @@ void tapSync(Tape* tap,int tks) {
 				tap->sigLen += tap->blkData[tap->block].sigData[tap->pos];
 				tap->pos++;
 				if (tap->pos >= (int)tap->blkData[tap->block].sigCount) {
-					tap->sigLen += tap->blkData[tap->block].pause * MSDOTS;
+					//tap->sigLen += tap->blkData[tap->block].pause * MSDOTS;	// last sig is already pause
 					tap->blkChange = 1;
 					tap->block++;
 					tap->pos = 0;
@@ -366,23 +378,10 @@ void tapNextBlock(Tape* tap) {
 
 // add file to tape
 
-void addBlockByte(TapeBlock* blk, unsigned char bt) {
-	int i;
-	for (i = 0; i < 8; i++) {
-		if (bt & 0x80) {
-			blkAddSignal(blk,blk->len1);
-			blkAddSignal(blk,blk->len1);
-		} else {
-			blkAddSignal(blk,blk->len0);
-			blkAddSignal(blk,blk->len0);
-		}
-		bt = (bt << 1);
-	}
-}
-
 TapeBlock makeTapeBlock(unsigned char* ptr, int ln, int hd) {
 	TapeBlock nblk;
 	int i;
+	int pause;
 	unsigned char tmp;
 	unsigned char crc;
 	nblk.plen = PILOTLEN;
@@ -397,12 +396,12 @@ TapeBlock makeTapeBlock(unsigned char* ptr, int ln, int hd) {
 	nblk.sigData = NULL;
 	if (hd) {
 		nblk.pdur = 8063;
-		nblk.pause = 500;
+		pause = 500 * MSDOTS;
 		nblk.isHeader = 1;
 		crc = 0x00;
 	} else {
 		nblk.pdur = 3223;
-		nblk.pause = 1000;
+		pause = 1000 * MSDOTS;
 		crc = 0xff;
 	}
 	for (i=0; i < nblk.pdur; i++)
@@ -412,15 +411,16 @@ TapeBlock makeTapeBlock(unsigned char* ptr, int ln, int hd) {
 	if (nblk.s2len != 0)
 		blkAddSignal(&nblk,nblk.s2len);
 	nblk.dataPos = nblk.sigCount;
-	addBlockByte(&nblk,crc);
+	blkAddByte(&nblk,crc,0,0);
 	for (i=0; i < ln; i++) {
 		tmp = *ptr;
 		crc ^= tmp;
-		addBlockByte(&nblk,tmp);
+		blkAddByte(&nblk,tmp,0,0);
 		ptr++;
 	}
-	addBlockByte(&nblk,crc);
+	blkAddByte(&nblk,crc,0,0);
 	blkAddSignal(&nblk,SYNC3LEN);
+	blkAddSignal(&nblk,pause);
 	return nblk;
 }
 
@@ -428,7 +428,7 @@ TapeBlock makeTapeBlock(unsigned char* ptr, int ln, int hd) {
 void tapAddFile(Tape* tap, const char* nm, int tp, unsigned short st, unsigned short ln, unsigned short as, unsigned char* ptr, int hdr) {
 	TapeBlock block;
 	if (hdr) {
-		unsigned char* hdbuf = (unsigned char*)malloc(19 * sizeof(unsigned char));
+		unsigned char hdbuf[19];
 		hdbuf[0] = tp & 0xff;						// type (0:basic, 3:code)
 		memset(&hdbuf[1],10,' ');
 		memcpy(&hdbuf[1],nm,(strlen(nm) < 10) ? strlen(nm) : 10);

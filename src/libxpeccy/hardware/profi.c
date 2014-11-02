@@ -54,7 +54,7 @@ void prfOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 			switch (port & 0xff) {
 				case 0xfe:
 					comp->vid->nextbrd = val & 7;
-					comp->beeplev = val & 0x10;
+					comp->beeplev = (val & 0x10) ? 1 : 0;
 					comp->tape->outsig = (val & 0x08) ? 1 : 0;
 					break;
 				default:

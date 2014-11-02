@@ -26,7 +26,7 @@ TapeBlock tapDataToBlock(char* data,int len,int* sigLens) {
 		blkAddSignal(&block,block.s2len);
 	block.dataPos = block.sigCount;
 	for (i = 0; i < len; i++) {
-		addBlockByte(&block,*ptr);
+		blkAddByte(&block,*ptr,0,0);
 		ptr++;
 	}
 //	printf("tapDataToBlock: %i bytes -> %i signals\t datapos = %i\n",len,block.sigCount,block.dataPos);
@@ -47,8 +47,8 @@ int loadTAP(Tape* tape, const char* name) {
 			blockBuf = (char*)realloc(blockBuf,len * sizeof(char));
 			file.read(blockBuf,len);
 			block = tapDataToBlock(blockBuf,len,sigLens);
-			block.pause = (block.pdur == 8063) ? 500 : 1000;
 			blkAddSignal(&block,sigLens[5]);
+			blkAddPause(&block,(block.pdur == 8063) ? 500 : 1000);		// pause
 			tapAddBlock(tape,block);
 			blkClear(&block);
 		}

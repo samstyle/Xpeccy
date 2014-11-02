@@ -31,7 +31,7 @@ typedef struct {
 	unsigned isHeader:1;
 
 	int size;
-	int pause;
+//	int pause;
 	int plen;
 	int s1len;
 	int s2len;
@@ -85,10 +85,11 @@ void tapDelBlock(Tape*,int);
 void tapSwapBlocks(Tape*,int,int);
 
 void tapAddFile(Tape*,const char*,int,unsigned short,unsigned short,unsigned short,unsigned char*,int);
-void addBlockByte(TapeBlock*, unsigned char);
 void blkClear(TapeBlock*);
-void blkAddPulse(TapeBlock*, int);
 void blkAddSignal(TapeBlock*, int);
+void blkAddPause(TapeBlock*, int);
+void blkAddPulse(TapeBlock*, int);
+void blkAddByte(TapeBlock*, unsigned char, int, int);
 
 #ifdef __cplusplus
 }

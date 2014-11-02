@@ -98,6 +98,7 @@ int loadSNA(ZXComp* zx, const char* name) {
 		}
 		memSetPage(zx->mem,MEM_RAM,tmp & 7,tmpgBuf);
 	}
+	tsReset(zx->ts);
 	delete(pageBuf);
 	delete(tmpgBuf);
 	return ERR_OK;

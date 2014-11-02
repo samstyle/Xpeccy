@@ -5,24 +5,13 @@
 #include <QTableWidget>
 #include <QTime>
 #include <QUrl>
+
 #include <fstream>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <time.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <sys/time.h>
-#include <signal.h>
-
-#if __linux
-	#include <pthread.h>
-	#include <semaphore.h>
-	pthread_t emuThread;
-	sem_t emuSem;
-#elif __WIN32
-	#include <windows.h>
-	HANDLE emuThread;
-	HANDLE emuSem;
-#endif
 
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
@@ -36,7 +25,7 @@
 #include "filer.h"
 
 #ifdef HAVESDL
-	#include <SDL_timer.h>
+//	#include <SDL_timer.h>
 	#include <SDL_syswm.h>
 #endif
 
@@ -52,6 +41,7 @@
 // main
 MainWin* mainWin;
 QIcon curicon;
+QMutex mtx;
 volatile int emulFlags = FL_BLOCK;
 volatile int pauseFlags = 0;
 //int wantedWin;
@@ -78,10 +68,12 @@ int blk;
 int prc;
 int ns = 0;				// ns counter
 
+static unsigned char screen[1024 * 1024 * 3];
+static unsigned char prevscr[1024 * 1024 * 3];
+
 void emulInit() {
 	initKeyMap();
 	emulFlags = 0;
-//	wantedWin = WW_NONE;
 
 	scrCounter = 0;
 	scrInterval = 0;
@@ -90,6 +82,9 @@ void emulInit() {
 	addLayout("default",448,320,138,80,64,32,0,0,64);
 
 	mainWin = new MainWin;
+
+	optInit(mainWin);
+	initFileDialog(mainWin);
 }
 
 // leds
@@ -136,59 +131,6 @@ unsigned char icoRedDisk[256] = {
 
 keyEntry keyMap[256];	// current keymap (init at start from keyMapInit[]
 
-/*
-#ifndef XQTPAINT
-
-// nums & small letters = keys
-// capital letters:
-// E = enter	C = CapsShift	S = SymShift	' ' = Space
-
-#define ENDKEY	SDLK_LAST
-
-keyEntry keyMapInit[] = {
-	{"1",SDLK_1,'1',0,0x16},{"2",SDLK_2,'2',0,0x1e},{"3",SDLK_3,'3',0,0x26},{"4",SDLK_4,'4',0,0x25},{"5",SDLK_5,'5',0,0x2e},
-	{"6",SDLK_6,'6',0,0x36},{"7",SDLK_7,'7',0,0x3d},{"8",SDLK_8,'8',0,0x3e},{"9",SDLK_9,'9',0,0x46},{"0",SDLK_0,'0',0,0x45},
-	{"Q",SDLK_q,'q',0,0x15},{"W",SDLK_w,'w',0,0x1d},{"E",SDLK_e,'e',0,0x24},{"R",SDLK_r,'r',0,0x2d},{"T",SDLK_t,'t',0,0x2c},
-	{"Y",SDLK_y,'y',0,0x35},{"U",SDLK_u,'u',0,0x3c},{"I",SDLK_i,'i',0,0x43},{"O",SDLK_o,'o',0,0x44},{"P",SDLK_p,'p',0,0x4d},
-	{"A",SDLK_a,'a',0,0x1c},{"S",SDLK_s,'s',0,0x1b},{"D",SDLK_d,'d',0,0x23},{"F",SDLK_f,'f',0,0x2b},{"G",SDLK_g,'g',0,0x34},
-	{"H",SDLK_h,'h',0,0x33},{"J",SDLK_j,'j',0,0x3b},{"K",SDLK_k,'k',0,0x42},{"L",SDLK_l,'l',0,0x4b},{"ENT",SDLK_RETURN,'E',0,0x5a},
-	{"LS",SDLK_LSHIFT,'C',0,0x12},{"Z",SDLK_z,'z',0,0x1a},{"X",SDLK_x,'x',0,0x22},{"C",SDLK_c,'c',0,0x21},{"V",SDLK_v,'v',0,0x2a},
-	{"B",SDLK_b,'b',0,0x32},{"N",SDLK_n,'n',0,0x31},{"M",SDLK_m,'m',0,0x3a},{"LC",SDLK_LCTRL,'S',0,0x14},{"SPC",SDLK_SPACE,' ',0,0x29},
-
-	{"RS",SDLK_RSHIFT,'C',0,0x59},{"RC",SDLK_RCTRL,'S',0,0x14e0},
-
-	{"`",SDLK_BACKQUOTE,'C','S',0x0e},{"\\",SDLK_BACKSLASH,'C','S',0x5d},
-	{";",SDLK_SEMICOLON,'S','o',0x4c},{"\"",SDLK_QUOTE,'S','p',0x52},
-	{"TAB",SDLK_TAB,'C',' ',0x0d},{"CAPS",SDLK_CAPSLOCK,'C','2',0x58},
-	{"PGDN",SDLK_PAGEUP,'C','3',0x7de0},{"PGUP",SDLK_PAGEDOWN,'C','4',0x7ae0},{"BSP",SDLK_BACKSPACE,'C','0',0x66},
-	{"DEL",SDLK_DELETE,'C','9',0x71e0},{"INS",SDLK_INSERT,'S','w',0x70e0},{"HOME",SDLK_HOME,'S','q',0x6ce0},{"END",SDLK_END,'S','e',0x69e0},
-	{"LEFT",SDLK_LEFT,'C','5',0x6be0},{"DOWN",SDLK_DOWN,'C','6',0x72e0},{"UP",SDLK_UP,'C','7',0x75e0},{"RIGHT",SDLK_RIGHT,'C','8',0x74e0},
-	{"-",SDLK_MINUS,'S','j',0x4e},{"+",SDLK_PLUS,'S','k',0x00},{"=",SDLK_EQUALS,'S','l',0x55},
-	{",",SDLK_COMMA,'S','n',0x41},{".",SDLK_PERIOD,'S','m',0x49},{"/",SDLK_SLASH,'S','c',0x4a},
-	{"[",SDLK_LEFTBRACKET,'S','8',0x54},{"]",SDLK_RIGHTBRACKET,'S','9',0x5b},
-	{"k/",SDLK_KP_DIVIDE,'S','v',0x4ae0},{"k*",SDLK_KP_MULTIPLY,'S','b',0x7c},{"k-",SDLK_KP_MINUS,'S','j',0x7b},
-	{"k+",SDLK_KP_PLUS,'S','k',0x79},{"kENT",SDLK_KP_ENTER,'E',0,0x5ae0},{"k.",SDLK_KP_PERIOD,'S','m',0x71},
-
-	{"ESC",SDLK_ESCAPE,0,0,0x76},
-	{"F1",SDLK_F1,0,0,0x05},{"F2",SDLK_F2,0,0,0x06},{"F3",SDLK_F3,0,0,0x04},{"F4",SDLK_F4,0,0,0x0C},
-	{"F5",SDLK_F5,0,0,0x03},{"F6",SDLK_F6,0,0,0x0B},{"F7",SDLK_F7,0,0,0x83},{"F8",SDLK_F8,0,0,0x0A},
-	{"F9",SDLK_F9,0,0,0x01},{"F10",SDLK_F10,0,0,0x09},{"F11",SDLK_F11,0,0,0x78},
-	{"LA",SDLK_LALT,0,0,0x11},{"RA",SDLK_RALT,0,0,0x11e0},
-
-	{"",SDLK_LAST,0,0,0x00}
-};
-
-keyEntry getKeyEntry(SDLKey skey) {
-	int idx = 0;
-	while ((keyMap[idx].key != ENDKEY) && (keyMap[idx].key != skey)) {
-		idx++;
-	}
-	return keyMap[idx];
-}
-
-#else
-*/
-
 #define ENDKEY 0
 
 keyEntry keyMapInit[] = {
@@ -231,8 +173,6 @@ keyEntry getKeyEntry(qint32 qkey) {
 	return keyMap[idx];
 }
 
-// #endif
-
 void setKey(const char* key,const char key1,const char key2) {
 	int idx = 0;
 	while (keyMap[idx].key != ENDKEY) {
@@ -264,64 +204,6 @@ void emulShow() {
 	mainWin->show();
 }
 
-QWidget* emulWidget() {
-	return (QWidget*)mainWin;
-}
-
-/*
-void emulSetPalette(ZXComp* comp,unsigned char lev) {
-	int i;
-	int fcol;
-	unsigned char col;
-	unsigned char r[256],g[256],b[256];	// common zx-colors
-	if (lev == 0) lev = optGetInt(OPT_BRGLEV);
-	qPal.clear();
-	qPal.resize(256);
-	if (comp->hw->type == HW_TSLAB) {
-		for (i = 0; i < 256; i++) {
-			fcol = (comp->vid->tsconf.cram[(i << 1) + 1] << 8) | (comp->vid->tsconf.cram[i << 1]);
-			r[i] = tslCoLevs[(fcol >> 10) & 0x1f];
-			g[i] = tslCoLevs[(fcol >> 5) & 0x1f];
-			b[i] = tslCoLevs[fcol & 0x1f];
-			qPal[i] = qRgb(r[i],g[i],b[i]);
-		}
-	} else if (comp->vid->ula->enabled && comp->vid->ula->active) {
-		for (i = 0; i < 64; i++) {
-			b[i] = (comp->vid->ula->pal[i] & 0x03) << 6;		// Bb0 : must me Bbb
-			r[i] = (comp->vid->ula->pal[i] & 0x1c) << 3;
-			g[i] = (comp->vid->ula->pal[i] & 0xe0);
-			qPal[i] = qRgb(r[i],g[i],b[i]);
-		}
-	} else {
-		for(i = 0; i < 16; i++) {
-			col = comp->colMap[i];
-			b[i] = ((col & 0x10) ? (0xff - lev) : 0x00) + ((col & 0x01) ? lev : 0x00);
-			r[i] = ((col & 0x20) ? (0xff - lev) : 0x00) + ((col & 0x02) ? lev : 0x00);
-			g[i] = ((col & 0x40) ? (0xff - lev) : 0x00) + ((col & 0x04) ? lev : 0x00);
-			if (vidFlag & VF_GREY) {
-				col = 0.299 * r[i] + 0.587 * g[i] + 0.114 * b[i];
-				r[i] = b[i] = g[i] = col;
-			}
-		}
-		for(i = 0; i < 256; i++) {
-			qPal[i] = qRgb((r[i & 0x0f] * 0.5) + (r[(i & 0xf0) >> 4] * 0.5),
-				       (g[i & 0x0f] * 0.5) + (g[(i & 0xf0) >> 4] * 0.5),
-				       (b[i & 0x0f] * 0.5) + (b[(i & 0xf0) >> 4] * 0.5));
-		}
-	}
-#ifndef XQTPAINT
-	for (i=0; i<256; i++) {
-		zxpal[i].b = qBlue(qPal[i]);
-		zxpal[i].r = qRed(qPal[i]);
-		zxpal[i].g = qGreen(qPal[i]);
-	}
-	SDL_SetPalette(surf,SDL_LOGPAL|SDL_PHYSPAL,zxpal,0,256);
-#else
-	scrImg.setColorTable(qPal);
-#endif
-}
-*/
-
 void emulUpdateWindow() {
 	mainWin->updateWindow();
 }
@@ -351,8 +233,6 @@ void MainWin::updateHead() {
 	#define AMASK 0xff000000
 #endif
 
-#include <QDesktopWidget>
-
 void MainWin::updateWindow() {
 	emulFlags |= FL_BLOCK;
 	vidUpdate(zx->vid);
@@ -360,7 +240,7 @@ void MainWin::updateWindow() {
 	int szh = zx->vid->wsze.v;
 	setFixedSize(szw,szh);
 #ifdef DRAWQT
-	scrImg = scrImg.scaled(szw,szh);
+	scrImg = QImage(screen,szw,szh,QImage::Format_RGB888);
 #endif
 	updateHead();
 	emulFlags &= ~FL_BLOCK;
@@ -381,13 +261,6 @@ void emulSetFlag(int msk,bool cnd) {
 		emulFlags &= ~msk;
 	}
 }
-
-/*
-void emulSetIcon(const char* inam) {
-	curicon = QIcon(QString(inam));
-	emulPause(true, 0);
-}
-*/
 
 void emulPause(bool p, int msk) {
 	if (p) {
@@ -432,16 +305,39 @@ MainWin::MainWin() {
 	connect(rzxWin,SIGNAL(stateChanged(int)),this,SLOT(rzxStateChanged(int)));
 
 	initUserMenu((QWidget*)this);
-	cmosTimer = new QTimer();
-	connect(cmosTimer,SIGNAL(timeout()),this,SLOT(cmosTick()));
-	cmosTimer->start(1000);
+
+	connect(&cmosTimer,SIGNAL(timeout()),this,SLOT(cmosTick()));
+	cmosTimer.start(1000);
+	connect(&timer,SIGNAL(timeout()),this,SLOT(onTimer()));
+	timer.start(20);
+	ethread.start();
+
 #ifdef DRAWQT
 	scrImg = QImage(100,100,QImage::Format_RGB888);
 #endif
-	connect(this,SIGNAL(extSignal(int,int)),SLOT(extSlot(int,int)));
 	connect(userMenu,SIGNAL(aboutToShow()),SLOT(menuShow()));
 	connect(userMenu,SIGNAL(aboutToHide()),SLOT(menuHide()));
+	connect(&ethread,SIGNAL(dbgRequest()),SLOT(doDebug()));
 
+}
+
+void doScreenShot();
+
+void MainWin::onTimer() {
+	if (emulFlags & FL_BLOCK) return;
+// if not paused play sound buffer
+	if (sndEnabled && (sndMute || mainWin->isActiveWindow())) sndPlay();
+	if (pauseFlags != 0) return;
+// take screenshot
+	if (emulFlags & FL_SHOT) doScreenShot();
+// if window is not active release keys & buttons
+	if (!mainWin->isActiveWindow()) {
+		keyRelease(zx->keyb,0,0,0);
+		zx->mouse->buttons = 0xff;
+	}
+// update window
+	emuDraw();
+	if (emulFlags & FL_WORK) mtx.unlock();
 }
 
 void MainWin::menuShow() {
@@ -451,73 +347,6 @@ void MainWin::menuShow() {
 void MainWin::menuHide() {
 	setFocus();
 	emulPause(false,PR_MENU);
-}
-
-// show wanted window if any
-void MainWin::extSlot(int sig, int par) {
-	switch (sig) {
-		case EV_WINDOW:
-			switch (par) {
-				case WW_DEBUG:
-					dbgShow();
-					break;
-				case WW_DEVEL:
-					devShow();
-					break;
-				case WW_OPTIONS:
-					optShow();
-					break;
-				case WW_FOPEN:
-					sndPause(true);
-					emulPause(true,PR_FILE);
-					loadFile(zx,"",FT_ALL,-1);
-					emulPause(false,PR_FILE);
-					mainWin->checkState();
-					sndPause(false);
-					break;
-				case WW_FSAVE:
-					sndPause(true);
-					emulPause(true,PR_FILE);
-					saveFile(zx,"",FT_ALL,-1);
-					emulPause(false,PR_FILE);
-					sndPause(false);
-					break;
-				case WW_SAVECHA:
-					sndPause(true);
-					emulPause(true,PR_FILE);
-					emulSaveChanged();
-					emulPause(false,PR_FILE);
-					sndPause(false);
-					break;
-				case WW_RZXPLAYER:
-					if (rzxWin->isVisible()) {
-						rzxWin->hide();
-					} else {
-						rzxWin->show();
-					}
-					break;
-				case WW_TAPEPLAYER:
-					if (tapeWin->isVisible()) {
-						tapeWin->hide();
-					} else {
-						tapeWin->show();
-					}
-					break;
-				case WW_MENU:
-//					emulPause(true,PR_MENU);
-					userMenu->popup(mainWin->pos() + QPoint(20,20));
-					userMenu->setFocus();
-					break;
-			}
-			break;
-		case EV_TAPE:
-			if (zx->tape->on) {
-				mainWin->tapStateChanged(TW_STATE,TWS_STOP);
-			} else {
-				mainWin->tapStateChanged(TW_STATE,par);
-			}
-			break;
-	}
 }
 
 void emuStart() {
@@ -578,13 +407,14 @@ void MainWin::cmosTick() {
 	}
 }
 
+// connection between tape window & tape state
+
 void MainWin::tapStateChanged(int wut, int val) {
 	switch(wut) {
 		case TW_STATE:
 			switch(val) {
 				case TWS_PLAY:
 					if (tapPlay(zx->tape)) {
-//						emulSetIcon(":/images/play.png");
 						tapeWin->setState(TWS_PLAY);
 					} else {
 						tapeWin->setState(TWS_STOP);
@@ -612,12 +442,12 @@ void MainWin::tapStateChanged(int wut, int val) {
 			break;
 		case TW_BREAK:
 			zx->tape->blkData[val].breakPoint ^= 1;
-			// zx->tape->blkData[val].flag ^= TBF_BREAK;
 			tapeWin->drawStops(zx->tape);
 			break;
 	}
 }
 
+// connection between rzx player and emulation state
 void MainWin::rzxStateChanged(int state) {
 	switch(state) {
 		case RWS_PLAY:
@@ -642,10 +472,35 @@ void MainWin::rzxStateChanged(int state) {
 	}
 }
 
+// convert <size> dots on <ptr> from color-RGB to gray-RGB
+void scrGray(unsigned char* ptr, int size) {
+	int gray;
+	while (size > 0) {
+		gray = qGray(*ptr, *(ptr+1), *(ptr+2));
+		*(ptr++) = gray & 0xff;
+		*(ptr++) = gray & 0xff;
+		*(ptr++) = gray & 0xff;
+		size--;
+	}
+}
+
+// mix prev <size> bytes from <src> to <dst> 50/50 and copy unmixed <dst> to <src>
+void scrMix(unsigned char* src, unsigned char* dst, int size) {
+	unsigned char cur;
+	while (size > 0) {
+		cur = *dst;
+		*dst = (*src + cur) >> 1;
+		*src = cur;
+		src++;
+		dst++;
+		size--;
+	}
+}
+
 #ifdef DRAWQT
 void MainWin::paintEvent(QPaintEvent*) {
 	if (emulFlags & FL_BLOCK) return;
-	memcpy(scrImg.bits(),zx->vid->scrimg,zx->vid->frameBytes);
+//	memcpy(scrImg.bits(),zx->vid->scrimg,zx->vid->frameBytes);
 	QPainter pnt(this);
 	pnt.drawImage(0,0,scrImg);
 	pnt.end();
@@ -674,16 +529,17 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;
 			case Qt::Key_1:
 				vidFlag &= ~VF_DOUBLE;
-				mainWin->updateWindow();
+				updateWindow();
 				saveProfiles();
 				break;
 			case Qt::Key_2:
 				vidFlag |= VF_DOUBLE;
-				mainWin->updateWindow();
+				updateWindow();
 				saveProfiles();
 				break;
 			case Qt::Key_3:
-				emulFlags ^= FL_FAST_RQ;
+				emulFlags ^= FL_FAST;
+				updateHead();
 				break;
 			case Qt::Key_F4:
 				mainWin->close();
@@ -711,7 +567,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				emulPause(true,0);
 				break;
 			case Qt::Key_Escape:
-				extSlot(EV_WINDOW,WW_DEBUG);
+				dbgShow();
 				break;
 			case Qt::Key_Menu:
 //				emulPause(true,PR_MENU);
@@ -719,7 +575,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				userMenu->setFocus();
 				break;
 			case Qt::Key_F1:
-				extSlot(EV_WINDOW,WW_OPTIONS);
+				optShow();
 				break;
 			case Qt::Key_F2:
 				emulPause(true,PR_FILE);
@@ -747,7 +603,8 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				}
 				break;
 			case Qt::Key_F6:
-				extSlot(EV_WINDOW,WW_DEVEL);
+				devShow();
+				//extSlot(EV_WINDOW,WW_DEVEL);
 				break;
 			case Qt::Key_F7:
 				if (scrCounter == 0) {
@@ -864,320 +721,6 @@ void MainWin::dropEvent(QDropEvent* ev) {
 	}
 }
 
-/*
-#else
-
-#include <fstream>
-
-void doSDLEvents() {
-	keyEntry kent;
-	int jdir;
-	SDL_Event ev;
-	intButton intb;
-	extButton extb;
-#ifdef ISDEBUG
-	std::ofstream file;
-#endif
-	while (SDL_PollEvent(&ev)) {
-		switch (ev.type) {
-			// BAD NEWS, EVERYONE. SDL 1.2 Hasn't drop event, it appears in SDL 2.0
-			case SDL_KEYDOWN:
-				if (pckAct->isChecked()) {
-					kent = getKeyEntry(ev.key.keysym.sym);
-					keyPress(zx->keyb,kent.key1,kent.key2,kent.keyCode);
-					if (ev.key.keysym.sym == SDLK_F12)
-						zxReset(zx,RES_DEFAULT);
-				} else if (ev.key.keysym.mod & KMOD_ALT) {
-					switch(ev.key.keysym.sym) {
-						case SDLK_0:
-							switch (zx->vid->vmode) {
-								case VID_NORMAL: vidSetMode(zx->vid,VID_ALCO); break;
-								case VID_ALCO: vidSetMode(zx->vid,VID_ATM_EGA); break;
-								case VID_ATM_EGA: vidSetMode(zx->vid,VID_ATM_TEXT); break;
-								case VID_ATM_TEXT: vidSetMode(zx->vid,VID_ATM_HWM); break;
-								case VID_ATM_HWM: vidSetMode(zx->vid,VID_NORMAL); break;
-							}
-							break;
-						case SDLK_1:
-							vidFlag &= ~VF_DOUBLE;
-							mainWin->updateWindow();
-							saveProfiles();
-							//saveConfig();
-							break;
-						case SDLK_2:
-							vidFlag |= VF_DOUBLE;
-							mainWin->updateWindow();
-							saveProfiles();
-							//saveConfig();
-							break;
-						case SDLK_3:
-							emulFlags ^= FL_FAST_RQ;
-							break;
-						case SDLK_F4:
-							mainWin->close();
-							break;
-						case SDLK_F7:
-							scrCounter = optGetInt(OPT_SHOTCNT);
-							scrInterval = 0;
-							break;	// ALT+F7 combo
-						case SDLK_F12:
-							zxReset(zx,RES_DOS);
-							rzxWin->stop();
-							break;
-						//case SDLK_RETURN:
-						//	vidFlag ^= VF_FULLSCREEN;
-						//	mainWin->updateWindow();
-							//saveConfig();
-						//	saveProfiles();
-							break;
-						case SDLK_n:
-							vidFlag ^= VF_NOFLIC;
-							//saveConfig();
-							saveProfiles();
-							break;
-						default: break;
-					}
-				} else {
-					kent = getKeyEntry(ev.key.keysym.sym);
-					if (kent.key1 || kent.key2 || pckAct->isChecked())
-						keyPress(zx->keyb,kent.key1,kent.key2,kent.keyCode);
-					switch (ev.key.keysym.sym) {
-						case SDLK_PAUSE:
-							pauseFlags ^= PR_PAUSE;
-							emulPause(true,0);
-							break;
-						case SDLK_ESCAPE:
-							mainWin->sendSignal(EV_WINDOW,WW_DEBUG);
-							break;
-						case SDLK_MENU:
-							mainWin->sendSignal(EV_WINDOW,WW_MENU);
-							break;
-						case SDLK_F1:
-							mainWin->sendSignal(EV_WINDOW,WW_OPTIONS);
-							break;
-						case SDLK_F2:
-							mainWin->sendSignal(EV_WINDOW,WW_FSAVE);
-							//wantedWin = WW_FSAVE;
-							//emulPause(true,PR_FILE);
-							//saveFile(zx,"",FT_ALL,-1);
-							//emulPause(false,PR_FILE);
-							break;
-						case SDLK_F3:
-							mainWin->sendSignal(EV_WINDOW,WW_FOPEN);
-							//wantedWin = WW_FOPEN;
-							//emulPause(true,PR_FILE);
-							//loadFile(zx,"",FT_ALL,-1);
-							//emulPause(false,PR_FILE);
-							//mainWin->checkState();
-							break;
-						case SDLK_F4:
-							mainWin->sendSignal(EV_TAPE,TWS_PLAY);
-							//if (zx->tape->flag & TAPE_ON) {
-							//	mainWin->tapStateChanged(TW_STATE,TWS_STOP);
-							//} else {
-							//	mainWin->tapStateChanged(TW_STATE,TWS_PLAY);
-							//}
-							break;
-						case SDLK_F5:
-							mainWin->sendSignal(EV_TAPE,TWS_REC);
-							//if (zx->tape->flag & TAPE_ON) {
-							//	mainWin->tapStateChanged(TW_STATE,TWS_STOP);
-							//} else {
-							//	mainWin->tapStateChanged(TW_STATE,TWS_REC);
-							//}
-							break;
-						case SDLK_F6:
-							mainWin->sendSignal(EV_WINDOW,WW_DEVEL);
-							//wantedWin = WW_DEVEL;
-							break;
-						case SDLK_F7:
-							if (scrCounter == 0) {
-								emulFlags |= FL_SHOT;
-							} else {
-								emulFlags &= ~FL_SHOT;
-							} break;
-						case SDLK_F8:
-							mainWin->sendSignal(EV_WINDOW,WW_RZXPLAYER);
-							//wantedWin = WW_RZXPLAYER;
-						case SDLK_F9:
-							mainWin->sendSignal(EV_WINDOW,WW_SAVECHA);
-							//wantedWin = WW_SAVECHA;
-							break;
-						case SDLK_F10:
-							zx->nmiRequest = true;
-							break;
-						case SDLK_F11:
-							mainWin->sendSignal(EV_WINDOW,WW_TAPEPLAYER);
-							//wantedWin = WW_TAPEPLAYER;
-							break;
-						case SDLK_F12:
-							zxReset(zx,RES_DEFAULT);
-							// rzxWin->stop();
-							break;
-						default: break;
-					}
-				}
-				break;
-			case SDL_KEYUP:
-				kent = getKeyEntry(ev.key.keysym.sym);
-				if (kent.key1 || kent.key2 || pckAct->isChecked())
-					keyRelease(zx->keyb,kent.key1,kent.key2,kent.keyCode);
-				break;
-			case SDL_MOUSEBUTTONDOWN:
-				switch (ev.button.button) {
-					if (pauseFlags != 0) break;
-					case SDL_BUTTON_LEFT:
-						if (emulFlags & FL_GRAB) {
-							zx->mouse->buttons &= ~0x01;
-						}
-						break;
-					case SDL_BUTTON_RIGHT:
-						if (emulFlags & FL_GRAB) {
-							zx->mouse->buttons &= ~0x02;
-						} else {
-							mainWin->sendSignal(EV_WINDOW,WW_MENU);
-							//wantedWin = WW_MENU;
-//							emulPause(true,PR_MENU);
-//							userMenu->popup(mainWin->pos() + QPoint(ev.button.x,ev.button.y+20));
-//							userMenu->setFocus();
-						}
-						break;
-					case SDL_BUTTON_MIDDLE:
-						break;
-					case SDL_BUTTON_WHEELUP:
-						if ((emulFlags & FL_GRAB) && (zx->mouse->wheel))
-							mouseWheel(zx->mouse,XM_WHEELUP);
-						break;
-					case SDL_BUTTON_WHEELDOWN:
-						if ((emulFlags & FL_GRAB) && (zx->mouse->wheel))
-							mouseWheel(zx->mouse,XM_WHEELDN);
-						break;
-				}
-				break;
-			case SDL_MOUSEBUTTONUP:
-				if (pauseFlags != 0) break;
-				switch (ev.button.button) {
-					case SDL_BUTTON_LEFT:
-						if (emulFlags & FL_GRAB) {
-							zx->mouse->buttons |= 0x01;
-						}
-						break;
-					case SDL_BUTTON_RIGHT:
-						if (emulFlags & FL_GRAB) {
-							zx->mouse->buttons |= 0x02;
-						}
-						break;
-					case SDL_BUTTON_MIDDLE:
-						emulFlags ^= FL_GRAB;
-						if (emulFlags & FL_GRAB) {
-							SDL_WM_GrabInput(SDL_GRAB_ON);
-							SDL_ShowCursor(SDL_DISABLE);
-						} else {
-							SDL_WM_GrabInput(SDL_GRAB_OFF);
-							SDL_ShowCursor(SDL_ENABLE);
-						}
-						break;
-				}
-				break;
-			case SDL_MOUSEMOTION:
-				if (!(emulFlags & FL_GRAB) || (pauseFlags !=0 )) break;
-				zx->mouse->xpos = (ev.motion.x - 1)&0xff;
-				zx->mouse->ypos = (257 - ev.motion.y)&0xff;
-				SDL_WarpMouse(zx->mouse->xpos + 1, 257 - zx->mouse->ypos);
-				SDL_PeepEvents(&ev,1,SDL_GETEVENT,SDL_EVENTMASK(SDL_MOUSEMOTION));
-				break;
-			case SDL_JOYBUTTONDOWN:
-				extb.type = XJ_BUTTON;
-				extb.num = ev.jbutton.button;
-				extb.dir = true;
-				intb = optGetJMap(extb);
-				switch (intb.dev) {
-					case XJ_KEY:
-						kent = getKeyEntry(intb.name);
-						keyPress(zx->keyb,kent.key1,kent.key2,kent.keyCode);
-						break;
-					case XJ_JOY:
-						jdir = optGetId(OPT_JOYDIRS,intb.name);
-						joyPress(zx->joy,jdir);
-						break;
-				}
-				break;
-			case SDL_JOYBUTTONUP:
-				extb.type = XJ_BUTTON;
-				extb.num = ev.jbutton.button;
-				extb.dir = true;
-				intb = optGetJMap(extb);
-				switch (intb.dev) {
-					case XJ_KEY:
-						kent = getKeyEntry(intb.name);
-						keyRelease(zx->keyb,kent.key1,kent.key2,kent.keyCode);
-						break;
-					case XJ_JOY:
-						jdir = optGetId(OPT_JOYDIRS,intb.name);
-						joyRelease(zx->joy,jdir);
-						break;
-				}
-				break;
-			case SDL_JOYAXISMOTION:
-				extb.type = XJ_AXIS;
-				extb.num = ev.jaxis.axis;
-				extb.dir = false;
-				intb = optGetJMap(extb);
-				if (ev.jaxis.value < -5000) {
-					switch (intb.dev) {
-						case XJ_KEY:
-							kent = getKeyEntry(intb.name);
-							keyPress(zx->keyb,kent.key1,kent.key2,kent.keyCode);
-							break;
-						case XJ_JOY:
-							jdir = optGetId(OPT_JOYDIRS,intb.name);
-							joyPress(zx->joy,jdir);
-							break;
-					}
-				} else {
-					switch (intb.dev) {
-						case XJ_KEY:
-							kent = getKeyEntry(intb.name);
-							keyRelease(zx->keyb,kent.key1,kent.key2,kent.keyCode);
-							break;
-						case XJ_JOY:
-							jdir = optGetId(OPT_JOYDIRS,intb.name);
-							joyRelease(zx->joy,jdir);
-							break;
-					}
-				}
-				extb.dir = true;
-				intb = optGetJMap(extb);
-				if (ev.jaxis.value > 5000) {
-					switch (intb.dev) {
-						case XJ_KEY:
-							kent = getKeyEntry(intb.name);
-							keyPress(zx->keyb,kent.key1,kent.key2,kent.keyCode);
-							break;
-						case XJ_JOY:
-							jdir = optGetId(OPT_JOYDIRS,intb.name);
-							joyPress(zx->joy,jdir);
-							break;
-					}
-				} else {
-					switch (intb.dev) {
-						case XJ_KEY:
-							kent = getKeyEntry(intb.name);
-							keyRelease(zx->keyb,kent.key1,kent.key2,kent.keyCode);
-							break;
-						case XJ_JOY:
-							jdir = optGetId(OPT_JOYDIRS,intb.name);
-							joyRelease(zx->joy,jdir);
-							break;
-					}
-				}
-				break;
-		}
-	}
-}
-
-#endif
-*/
 
 void MainWin::closeEvent(QCloseEvent* ev) {
 	unsigned int i;
@@ -1271,50 +814,11 @@ void putIcon(Video* vid, int x, int y, unsigned char* data) {
 	}
 }
 
-void MainWin::sendSignal(int sig, int par) {
-	emit extSignal(sig,par);
-}
-
-//void MainWin::emulFrame() {emuFrame();}
-
-void emuFrame() {
-	if (emulFlags & FL_BLOCK) return;
-// if not paused play sound buffer
-	if (sndEnabled && (sndMute || mainWin->isActiveWindow())) sndPlay();
-	if (pauseFlags != 0) return;
-// take screenshot
-	if (emulFlags & FL_SHOT) doScreenShot();
-// if window is not active release keys & buttons
-	if (!mainWin->isActiveWindow()) {
-		keyRelease(zx->keyb,0,0,0);
-		zx->mouse->buttons = 0xff;
-	}
-// update window
-	mainWin->emuDraw();
-
-// post emulation semaphore
-#ifdef __linux
-	if (~emulFlags & (FL_FAST | FL_EMUL)) sem_post(&emuSem);	// inc 'emulate frame' semaphore
-#elif __WIN32
-	if (~emulFlags & (FL_FAST | FL_EMUL)) ReleaseSemaphore(emuSem,1,NULL);
-#endif
-	if (emulFlags & FL_FAST_RQ) {
-		emulFlags &= ~FL_FAST_RQ;
-		emulFlags ^= FL_FAST;
-		mainWin->updateHead();
-	}
-}
-
 // video drawing
 
 void MainWin::emuDraw() {
 	if (emulFlags & FL_BLOCK) return;
 	emulFlags |= FL_DRAW;
-// change palette if need
-//	if (zx->palchan) { // if (zx->flag & ZX_PALCHAN) {
-//		zx->palchan = 0;	// zx->flag &= ~ZX_PALCHAN;
-//		emulSetPalette(zx,optGetInt(OPT_BRGLEV));
-//	}
 // update rzx window
 	if ((zx->rzxPlay) && rzxWin->isVisible()) {
 		prc = 100 * zx->rzxFrame / zx->rzxSize;
@@ -1338,6 +842,7 @@ void MainWin::emuDraw() {
 		}
 	}
 // put icons
+/*
 	if (emulFlags & FL_LED_DISK) {
 		int fst = zx->bdi->fdc->status;
 		switch (fst) {
@@ -1345,10 +850,11 @@ void MainWin::emuDraw() {
 			case FDC_WRITE: putIcon(zx->vid,4,4,icoRedDisk); break;
 		}
 	}
-	if (~emulFlags & FL_BLOCK) {
-		//memcpy(scrImg.bits(),zx->vid->scrimg,zx->vid->frameBytes);
-		update();
-	}
+*/
+	int winDots = zx->vid->wsze.h * zx->vid->wsze.v;
+	if (vidFlag & VF_GREY) scrGray(screen, winDots);
+	if (vidFlag & VF_NOFLIC) scrMix(prevscr, screen, winDots * 3);
+	update();
 	emulFlags &= ~FL_DRAW;
 }
 
@@ -1414,7 +920,7 @@ void MainWin::resizeGL(int, int) {
 
 void MainWin::paintGL() {
 	glBindTexture(GL_TEXTURE_2D, tex);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, zx->vid->wsze.h, zx->vid->wsze.v, GL_RGB, GL_UNSIGNED_BYTE, zx->vid->scrimg);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, zx->vid->wsze.h, zx->vid->wsze.v, GL_RGB, GL_UNSIGNED_BYTE, screen);
 	glCallList(displaylist);
 }
 #endif
@@ -1544,7 +1050,8 @@ void fillUserMenu() {
 
 // SLOTS
 
-void MainWin::doOptions() {extSlot(EV_WINDOW,WW_OPTIONS);}
+void MainWin::doOptions() {optShow();}
+void MainWin::doDebug() {dbgShow();}
 
 void MainWin::bookmarkSelected(QAction* act) {
 	loadFile(zx,act->data().toString().toLocal8Bit().data(),FT_ALL,0);
@@ -1604,7 +1111,6 @@ void MainWin::saveRDisk() {
 // emulation thread (non-GUI)
 
 void emuCycle() {
-	if (pauseFlags != 0) return;
 	zx->frmStrobe = 0;
 	do {
 		// exec 1 opcode (+ INT, NMI)
@@ -1622,10 +1128,9 @@ void emuCycle() {
 				mainWin->tapStateChanged(TW_STATE,TWS_STOP);
 		}
 	} while (!zx->brk && (zx->frmStrobe == 0));		// exec until breakpoint or INT
-	if (zx->brk) {						// request debug window on breakpoint
-		mainWin->sendSignal(EV_WINDOW,WW_DEBUG);
-		zx->brk = 0;
-	}
+
+	memcpy(screen,zx->vid->scrimg,zx->vid->frameBytes);
+
 	zx->nmiRequest = 0;
 	// decrease frames & screenshot counter (if any), request screenshot (if needed)
 	if (scrCounter != 0) {
@@ -1640,28 +1145,13 @@ void emuCycle() {
 	}
 }
 
-#ifdef __linux
-void* emuThreadMain(void *) {
+void xThread::run() {
 	do {
-		if (~emulFlags & FL_FAST) {
-			sem_wait(&emuSem);
+		if (~emulFlags & FL_FAST) mtx.lock();		// wait until unlocked (MainWin::onTimer())
+		if (pauseFlags == 0) emuCycle();
+		if (zx->brk) {
+			emit dbgRequest();
+			zx->brk = 0;
 		}
-		emulFlags |= FL_EMUL;
-		emuCycle();
-		emulFlags &= ~FL_EMUL;
 	} while (~emulFlags & FL_EXIT);
-	return NULL;
 }
-#elif __WIN32
-DWORD WINAPI emuThreadMain(LPVOID) {
-	do {
-		if (~emulFlags & FL_FAST) {
-			WaitForSingleObject(emuSem,INFINITE);
-		}
-		emulFlags |= FL_EMUL;
-		emuCycle();
-		emulFlags &= ~FL_EMUL;
-	} while (~emulFlags & FL_EXIT);
-	return 0;
-}
-#endif

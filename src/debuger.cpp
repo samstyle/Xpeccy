@@ -2,6 +2,7 @@
 
 #include "debuger.h"
 #include "emulwin.h"
+#include "filer.h"
 
 #ifndef SELFZ80
 	#include "z80ex_dasm.h"
@@ -43,13 +44,13 @@ void DebugWin::start() {
 	currow = 0;
 	fillall();
 	show();
-	vidFlag |= VF_FRAMEDBG;
+	vidFlag |= VF_DEBUG;
 	vidDarkTail(zx->vid);
 }
 
 void DebugWin::stop() {
-	vidFlag &= ~VF_FRAMEDBG;
 	ledit->hide();
+	vidFlag &= ~VF_DEBUG;
 	zxExec(zx);
 	hide();
 	active = false;
@@ -411,7 +412,9 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			break;
 		case Qt::NoModifier:
 			switch (cod) {
-				case Qt::Key_Escape: if (!ev->isAutoRepeat()) stop(); break;
+				case Qt::Key_Escape:
+					if (!ev->isAutoRepeat()) stop();
+					break;
 				case Qt::Key_Return:
 
 					if (ev->isAutoRepeat()) break;
@@ -443,6 +446,11 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 						SETPC(zx->cpu,fdasm[currow].adr);
 						filldasm();
 					}
+					break;
+				case Qt::Key_F3:
+					loadFile(zx,"",FT_SNAP,0);
+					upadr = GETPC(zx->cpu);
+					fillall();
 					break;
 				case Qt::Key_F7:
 					doStep();

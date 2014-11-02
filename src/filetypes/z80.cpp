@@ -248,6 +248,7 @@ printf(".z80 version 1\n");
 			memSetPage(zx->mem,MEM_RAM,0,pageBuf);
 		}
 	}
+	tsReset(zx->ts);
 	delete(pageBuf);
 	return ERR_OK;
 }

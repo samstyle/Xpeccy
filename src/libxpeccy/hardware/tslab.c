@@ -277,7 +277,7 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 				case 0xfe:
 					comp->vid->brdcol = 0xf0 | (val & 7);
 					comp->vid->nextbrd = comp->vid->brdcol;
-					comp->beeplev = val & 0x10;
+					comp->beeplev = (val & 0x10) ? 1 : 0;
 					comp->tape->outsig = (val & 0x08) ? 1 : 0;
 					break;
 				case 0xfb: sdrvOut(comp->sdrv,0xfb,val); break;	// covox

@@ -42,8 +42,8 @@ int loadTZX(Tape* tape, const char* name) {
 				blockBuf = (char*)realloc(blockBuf,len * sizeof(char));
 				file.read(blockBuf,len);
 				block = tapDataToBlock(blockBuf,len,sigLens);
-				block.pause = paulen;
 				blkAddSignal(&block,sigLens[5]);
+				blkAddPause(&block,paulen);
 				tapAddBlock(tape,block);
 				blkClear(&block);
 				//block.data.clear();
@@ -61,8 +61,8 @@ int loadTZX(Tape* tape, const char* name) {
 				blockBuf = (char*)realloc(blockBuf,len * sizeof(char));
 				file.read(blockBuf,len);
 				block = tapDataToBlock(blockBuf,len,altLens);
-				block.pause = paulen;
 				blkAddSignal(&block,sigLens[5]);
+				blkAddPause(&block,paulen);
 				tapAddBlock(tape,block);
 				blkClear(&block);
 				tape->isData = 0;
@@ -106,7 +106,7 @@ int loadTZX(Tape* tape, const char* name) {
 				for (i = altBlock.dataPos; i < altBlock.sigCount; i++) {
 					blkAddSignal(&block,altBlock.sigData[i]);
 				}
-				block.pause = paulen;
+				blkAddPause(&block,paulen);
 				tape->isData = 0;
 				break;
 /*

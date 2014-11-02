@@ -12,17 +12,18 @@
 
 #include "libxpeccy/spectrum.h"
 
+
 // wanted windows
-#define	WW_NONE		0
-#define	WW_DEBUG	1
-#define WW_OPTIONS	2
-#define	WW_DEVEL	3
-#define	WW_FOPEN	4
-#define WW_FSAVE	5
-#define	WW_SAVECHA	6
-#define WW_RZXPLAYER	7
-#define	WW_TAPEPLAYER	8
-#define	WW_MENU		9
+//#define	WW_NONE		0
+//#define	WW_DEBUG	1
+//#define WW_OPTIONS	2
+//#define	WW_DEVEL	3
+//#define	WW_FOPEN	4
+//#define WW_FSAVE	5
+//#define	WW_SAVECHA	6
+//#define WW_RZXPLAYER	7
+//#define	WW_TAPEPLAYER	8
+//#define	WW_MENU		9
 
 // pause reasons
 #define	PR_MENU		1
@@ -41,7 +42,7 @@
 #define	FL_SHOT		(1<<2)
 #define	FL_EMUL		(1<<3)
 #define	FL_FAST		(1<<4)
-#define FL_FAST_RQ	(1<<5)
+// #define FL_FAST_RQ	(1<<5)
 #define	FL_BLOCK	(1<<6)
 #define	FL_EXIT		(1<<7)
 #define	FL_LED_DISK	(1<<8)
@@ -234,6 +235,16 @@ typedef struct {
 #define	EV_WINDOW	1
 #define	EV_TAPE		2
 
+#include <QMutex>
+
+class xThread : public QThread {
+	Q_OBJECT
+	public:
+		void run();
+	signals:
+		void dbgRequest();
+};
+
 #ifdef DRAWGL
 class MainWin : public QGLWidget {
 #endif
@@ -247,12 +258,13 @@ class MainWin : public QWidget {
 		void checkState();
 		void updateHead();
 		void emuDraw();
-		void sendSignal(int,int);
-//		QTimer* timer;
-	signals:
-		void extSignal(int,int);
+//		void sendSignal(int,int);
+//	signals:
+//		void extSignal(int,int);
 	private:
-		QTimer* cmosTimer;
+		QTimer cmosTimer;
+		QTimer timer;
+		xThread ethread;
 #ifdef DRAWGL
 		GLuint tex;
 		GLuint displaylist;
@@ -262,19 +274,20 @@ class MainWin : public QWidget {
 #endif
 	public slots:
 		void doOptions();
+		void doDebug();
 		void tapStateChanged(int,int);
 	private slots:
-		void extSlot(int,int);
+		void onTimer();
+		void cmosTick();
+
 		void menuHide();
 		void menuShow();
-		void cmosTick();
 		void rzxStateChanged(int);
 		void bookmarkSelected(QAction*);
 		void profileSelected(QAction*);
 		void reset(QAction*);
 		void chLayout(QAction*);
 		void chVMode(QAction*);
-//		void emulFrame();
 		void saveRDisk();
 	protected:
 		void closeEvent(QCloseEvent*);
@@ -301,14 +314,9 @@ void emuStart();
 void emuStop();
 void emulShow();
 void emulUpdateWindow();
-//void emulSetIcon(const char*);
 void emulPause(bool, int);
 extern volatile int emulFlags;
 void emulSetFlag(int,bool);
-bool emulSaveChanged();
-QWidget* emulWidget();
-
-void emuFrame();
 
 // keys
 void initKeyMap();

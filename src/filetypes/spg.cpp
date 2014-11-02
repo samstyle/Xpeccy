@@ -95,5 +95,6 @@ int loadSPG(ZXComp* comp, const char* name) {
 	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,hd.page3);
 	comp->vid->tsconf.tconfig = 0;
 	comp->vid->nogfx = 0;
+	tsReset(comp->ts);
 	return ERR_OK;
 }

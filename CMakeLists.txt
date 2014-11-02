@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(xpeccy)
-set(XVER "0.5.20141024")
+set(XVER "0.5.20141102")
 
 include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
 
@@ -57,7 +57,7 @@ else()
 	add_definitions(-DWORDS_LITTLE_ENDIAN)
 endif()
 
-# z80ex section
+# z80ex section ( external | internal | * )
 
 if("${Z80EX_BUILD}" STREQUAL "external")
 	# find z80ex
@@ -130,10 +130,12 @@ if(UNIX)
 	endif(ALSA_FOUND)
 endif(UNIX)
 
-find_package(SDL REQUIRED)
-add_definitions(-DHAVESDL)
-set(INCLUDIRS ${INCLUDIRS} ${SDL_INCLUDE_DIR})
-set(LIBRARIES ${LIBRARIES} ${SDL_LIBRARY})
+find_package(SDL)
+if(SDL_FOUND)
+	add_definitions(-DHAVESDL)
+	set(INCLUDIRS ${INCLUDIRS} ${SDL_INCLUDE_DIR})
+	set(LIBRARIES ${LIBRARIES} ${SDL_LIBRARY})
+endif()
 
 find_package(ZLIB)
 if(ZLIB_FOUND)
@@ -164,6 +166,8 @@ add_executable(xpeccy WIN32
 )
 
 target_link_libraries(xpeccy ${LIBRARIES})
+
+# end. print messages
 
 message(STATUS "\n")
 message(STATUS "Project will be compiled with following options:")

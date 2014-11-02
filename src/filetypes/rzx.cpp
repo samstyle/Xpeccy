@@ -211,6 +211,7 @@ int loadRZX(ZXComp* zx, const char* name) {
 				break;
 		}
 	}
+	tsReset(zx->ts);
 	printf("Memory eated for RZX: %i\n",eatsize);
 	return ERR_OK;
 }

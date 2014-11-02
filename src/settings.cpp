@@ -40,7 +40,6 @@
 std::string workDir;
 std::string romDir;
 std::string profPath;
-// std::string joyName;
 std::string keyFileName;
 
 int brgLevel = 192;
@@ -51,68 +50,8 @@ std::string shotDir;
 int shotCount;
 int shotInterval;
 
-//std::string projDir;
-//std::string asmPath;
-
 std::string rmnam[] = {"basic128","basic48","shadow","trdos","ext4","ext5","ext6","ext7"};
 OptName fexts[] = {{SCR_BMP,"bmp"},{SCR_PNG,"png"},{SCR_JPG,"jpg"},{SCR_SCR,"scr"},{SCR_HOB,"hobeta"},{-1,""}};
-// OptName jdirs[] = {{XJ_LEFT,"left"},{XJ_RIGHT,"right"},{XJ_UP,"up"},{XJ_DOWN,"down"},{XJ_FIRE,"fire"},{-1,""}};
-
-// std::vector<joyPair> joyMap;
-
-// new
-
-/*
-bool extButton::operator ==(extButton b1) {
-	return ((type == b1.type) && (num == b1.num) && (dir == b1.dir));
-}
-
-std::vector<joyPair> getJMap() {
-	return joyMap;
-}
-
-void setJMap(std::vector<joyPair> newmap) {
-	joyMap = newmap;
-}
-
-intButton optGetJMap(extButton extb) {
-	unsigned int i;
-	intButton res = {XJ_NONE,XJ_NONE};
-	for (i = 0; i < joyMap.size(); i++) {
-		if (joyMap[i].first == extb) {
-			res = joyMap[i].second;
-			break;
-		}
-	}
-	return res;
-}
-
-void optSetJMap(extButton extb,intButton intb) {
-	bool exist = false;
-	unsigned int i;
-	for (i = 0; i < joyMap.size(); i++) {
-		if (joyMap[i].first == extb) {
-			joyMap[i].second = intb;
-			exist = true;
-			break;
-		}
-	}
-	if (!exist) {
-		joyPair jpair;
-		jpair.first = extb;
-		jpair.second = intb;
-		joyMap.push_back(jpair);
-	}
-}
-
-void optDelJMap(extButton extb) {
-	for (unsigned int i=0; i<joyMap.size(); i++) {
-		if (joyMap[i].first == extb) {
-			joyMap.erase(joyMap.begin() + i);
-		}
-	}
-}
-*/
 
 // static vars base
 std::string optGetString(int wut) {
@@ -121,10 +60,6 @@ std::string optGetString(int wut) {
 		case OPT_WORKDIR: res = workDir; break;
 		case OPT_ROMDIR: res = romDir; break;
 		case OPT_SHOTDIR: res = shotDir; break;
-//		case OPT_SHOTEXT: res = shotExt; break;
-//		case OPT_PROJDIR: res = projDir; break;
-//		case OPT_ASMPATH: res = asmPath; break;
-//		case OPT_JOYNAME: res = joyName; break;
 		case OPT_KEYNAME: res = keyFileName; break;
 	}
 	return res;
@@ -134,7 +69,6 @@ OptName* getGetPtr(int prt) {
 	OptName* res = NULL;
 	switch (prt) {
 		case OPT_SHOTFRM: res = fexts; break;
-//		case OPT_JOYDIRS: res = jdirs; break;
 	}
 	return res;
 }
@@ -182,11 +116,7 @@ int optGetInt(int wut) {
 
 void optSet(int wut, std::string val) {
 	switch(wut) {
-//		case OPT_SHOTEXT: shotExt = val; break;
 		case OPT_SHOTDIR: shotDir = val; break;
-//		case OPT_PROJDIR: projDir = val; break;
-//		case OPT_ASMPATH: asmPath = val; break;
-//		case OPT_JOYNAME: joyName = val; break;
 		case OPT_KEYNAME: keyFileName = val; break;
 	}
 }
@@ -243,22 +173,6 @@ void initPaths() {
 	mkdir(romDir.c_str());
 	optSet(OPT_SHOTDIR,std::string(getenv("HOMEPATH")));
 #endif
-}
-
-std::string getJValue(int type,int val) {
-	std::string res = "";
-	switch (type) {
-		case XJ_JOY:
-			switch (val) {
-				case XJ_UP: res = "up"; break;
-				case XJ_DOWN: res = "down"; break;
-				case XJ_LEFT: res = "left"; break;
-				case XJ_RIGHT: res = "right"; break;
-				case XJ_FIRE: res = "fire"; break;
-			}
-			break;
-	}
-	return res;
 }
 
 void saveProfiles() {
@@ -345,27 +259,6 @@ void saveProfiles() {
 	cfile << "autoplay = " << ((flag & OF_TAPEAUTO) ? "yes" : "no") << "\n";
 	cfile << "fast = " << ((flag & OF_TAPEFAST) ? "yes" : "no") << "\n";
 
-/*
-	cfile << "\n[JOYSTICK]\n\n";
-	cfile << "device = " << joyName.c_str() << "\n";
-	for (i=0; i<joyMap.size(); i++) {
-		switch(joyMap[i].first.type) {
-			case XJ_BUTTON:
-				cfile << "button = ";
-				cfile << int2str(joyMap[i].first.num).c_str() << ":";
-				cfile << ((joyMap[i].second.dev == XJ_JOY) ? "J:" : "K:");
-				cfile << joyMap[i].second.name << "\n";
-				break;
-			case XJ_AXIS:
-				cfile << "axis = ";
-				cfile << int2str(joyMap[i].first.num).c_str() << ":";
-				cfile << (joyMap[i].first.dir ? "+:" : "-:");
-				cfile << ((joyMap[i].second.dev == XJ_JOY) ? "J:" : "K:");
-				cfile << joyMap[i].second.name << "\n";
-				break;
-		}
-	}
-*/
 	cfile << "\n[LEDS]\n\n";
 	cfile << "disk = " << ((emulFlags & FL_LED_DISK) ? "yes" : "no") << "\n";
 	cfile << "scrshot = " << ((emulFlags & FL_LED_SHOT) ? "yes" : "no") << "\n";
@@ -445,8 +338,6 @@ void loadProfiles() {
 	size_t pos;
 	std::string tms,fnam;
 	int test,fprt;
-	//extButton extb;
-	//intButton intb;
 	newrs.file.clear();
 	newrs.gsFile.clear();
 	for (int i=0; i<32; i++) {
@@ -466,7 +357,6 @@ void loadProfiles() {
 			if (pnam=="[ROMSETS]") section = SECT_ROMSETS;
 			if (pnam=="[SOUND]") section = SECT_SOUND;
 			if (pnam=="[TOOLS]") section = SECT_TOOLS;
-			// if (pnam=="[JOYSTICK]") section = SECT_JOYSTICK;
 			if (pnam=="[GENERAL]") section = SECT_GENERAL;
 			if (pnam=="[TAPE]") section = SECT_TAPE;
 			if (pnam=="[LEDS]") section = SECT_LEDS;
@@ -599,36 +489,6 @@ void loadProfiles() {
 					if (pnam=="asmPath") compPath = QString(pval.c_str());
 					if (pnam=="projectsDir") prjDir = QString(pval.c_str());
 					break;
-/*
-				case SECT_JOYSTICK:
-					if (pnam=="device") joyName = pval;
-					if (pnam=="button") {			// button = num:J:{up|down|left|right|fire}
-						vect = splitstr(pval,":");	// button = num:K:keyName
-						if (vect.size() > 2) {
-							extb.type = XJ_BUTTON;
-							extb.num = atoi(vect[0].c_str());
-							extb.dir = true;
-							intb.name = vect[2].c_str();
-							if ((vect[1] == "J") || (vect[1] == "K")) {
-								intb.dev = (vect[1] == "J") ? XJ_JOY : XJ_KEY;
-								optSetJMap(extb,intb);
-							}
-						}
-					}
-					if (pnam=="axis") {			// axis = num:{+|-}:J:{up|down|left|right|fire}
-						vect = splitstr(pval,":");	// axis = num:{+|-}:K:keyName
-						if (vect.size() > 3) {
-							extb.type = XJ_AXIS;
-							extb.num = atoi(vect[0].c_str());
-							extb.dir = (vect[1] == "+");
-							intb.name = vect[2].c_str();
-							if ((vect[1] == "J") || (vect[1] == "K")) {
-								intb.dev = (vect[1] == "J") ? XJ_JOY : XJ_KEY;
-								optSetJMap(extb,intb);
-							}
-						}
-					}
-*/
 				case SECT_GENERAL:
 					if (pnam=="keys") {
 						keyFileName = pval;
@@ -668,9 +528,4 @@ void loadProfiles() {
 			}
 		}
 	}
-//	zx->palchan = 1;	// zx->flag |= ZX_PALCHAN;
-	// emulSetPalette(zx,brgLevel);
-	//emulOpenJoystick(joyName);
 }
-
-// profile config

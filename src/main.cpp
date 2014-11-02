@@ -24,6 +24,7 @@ ZXComp* zx;
 extern MainWin* mainWin;
 extern volatile int pauseFlags;
 
+/*
 #ifdef __linux
 	#include <pthread.h>
 	#include <semaphore.h>
@@ -51,6 +52,7 @@ Uint32 onTimer(Uint32, void *) {
 	return 20;
 }
 #endif
+*/
 
 int main(int ac,char** av) {
 
@@ -97,6 +99,7 @@ int main(int ac,char** av) {
 			devShow();
 			return app.exec();
 		} else {
+/*
 #ifdef __linux
 			sem_init(&emuSem,1,0);
 			sem_init(&eventSem,1,0);
@@ -108,12 +111,13 @@ int main(int ac,char** av) {
 			printf("create thread\n");
 			emuThread = CreateThread(NULL,0,&emuThreadMain,NULL,0,&thrid);
 #endif
+*/
 			sndInit();
 			emulInit();
 			dbgInit(NULL);// emulWidget());
-			optInit(emulWidget());
+//			optInit(emulWidget());
 			devInit();
-			initFileDialog(emulWidget());
+//			initFileDialog(emulWidget());
 			loadProfiles();
 			if (profName) {
 				setProfile(std::string(profName));
@@ -135,6 +139,7 @@ int main(int ac,char** av) {
 			mainWin->checkState();
 
 			emuStart();
+/*
 			SDL_TimerID tid = SDL_AddTimer(20,&onTimer,NULL);
 			while (~emulFlags & FL_EXIT) {
 #if __linux
@@ -156,7 +161,8 @@ int main(int ac,char** av) {
 			CloseHandle(emuSem);
 			CloseHandle(emuThread);
 #endif
-//			app.exec();
+*/
+			app.exec();
 			emuStop();
 			sndClose();
 #ifdef HAVESDL

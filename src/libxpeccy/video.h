@@ -14,7 +14,7 @@ extern "C" {
 #define VF_FULLSCREEN		1
 #define VF_DOUBLE		(1<<1)
 #define VF_BLOCKFULLSCREEN	(1<<2)
-#define	VF_FRAMEDBG		(1<<3)
+#define	VF_DEBUG		(1<<3)
 #define VF_NOFLIC		(1<<4)
 #define	VF_GREY			(1<<5)
 #define	VF_INIT			(1<<6)
