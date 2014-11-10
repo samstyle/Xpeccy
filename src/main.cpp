@@ -22,37 +22,7 @@
 
 ZXComp* zx;
 extern MainWin* mainWin;
-extern volatile int pauseFlags;
-
-/*
-#ifdef __linux
-	#include <pthread.h>
-	#include <semaphore.h>
-	extern sem_t emuSem;
-	extern pthread_t emuThread;
-	sem_t eventSem;
-	void* emuThreadMain(void*);
-
-Uint32 onTimer(Uint32 itv, void*) {
-	if (~pauseFlags & PR_FILE) sem_post(&eventSem);
-	return itv;
-}
-#elif __WIN32
-	#include <windows.h>
-//	#include <direct.h>
-	extern HANDLE emuThread;
-	extern HANDLE emuSem;
-	HANDLE eventSem;
-	extern DWORD WINAPI emuThreadMain(LPVOID);
-
-Uint32 onTimer(Uint32, void *) {
-	if (~pauseFlags & PR_FILE) {
-		ReleaseSemaphore(eventSem,1,NULL);
-	}
-	return 20;
-}
-#endif
-*/
+//extern volatile int pauseFlags;
 
 int main(int ac,char** av) {
 
@@ -129,39 +99,13 @@ int main(int ac,char** av) {
 			emulUpdateWindow();
 			zxReset(zx,RES_DEFAULT);
 
-			for (i = 0; i < files.size(); i++) {
-				if (strlen(files[i]) > 0) loadFile(zx,files[i],FT_ALL,0);
+			for (unsigned idx = 0; idx < files.size(); idx++) {
+				if (strlen(files[idx]) > 0) loadFile(zx,files[idx],FT_ALL,0);
 			}
 
-#ifdef HAVESDL
-			SDL_JoystickOpen(1);
-#endif
 			mainWin->checkState();
 
 			emuStart();
-/*
-			SDL_TimerID tid = SDL_AddTimer(20,&onTimer,NULL);
-			while (~emulFlags & FL_EXIT) {
-#if __linux
-				sem_wait(&eventSem);
-#elif __WIN32
-				WaitForSingleObject(eventSem,INFINITE);
-#endif
-				app.processEvents();
-				emuFrame();
-			}
-			SDL_RemoveTimer(tid);
-#if __linux
-			sem_post(&emuSem);
-			pthread_join(emuThread,NULL);
-#elif __WIN32
-			ReleaseSemaphore(emuSem,1,NULL);
-			WaitForSingleObject(emuThread,INFINITE);
-			CloseHandle(eventSem);
-			CloseHandle(emuSem);
-			CloseHandle(emuThread);
-#endif
-*/
 			app.exec();
 			emuStop();
 			sndClose();

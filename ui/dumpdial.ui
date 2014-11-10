@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>DumpDial</class>
+ <widget class="QDialog" name="DumpDial">
+  <property name="windowModality">
+   <enum>Qt::ApplicationModal</enum>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>150</width>
+    <height>122</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Save RAM dump</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>:/images/logo.png</normaloff>:/images/logo.png</iconset>
+  </property>
+  <property name="modal">
+   <bool>true</bool>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QGridLayout" name="gridLayout" columnstretch="0,0,0">
+     <item row="2" column="1">
+      <widget class="QLineEdit" name="leEnd">
+       <property name="inputMask">
+        <string>HHHH</string>
+       </property>
+       <property name="text">
+        <string>FFFF</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Length</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>Start</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLineEdit" name="leBank">
+       <property name="inputMask">
+        <string>HH</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>End</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QLineEdit" name="leStart">
+       <property name="inputMask">
+        <string>HHHH</string>
+       </property>
+       <property name="text">
+        <string>8000</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QLineEdit" name="leLen">
+       <property name="inputMask">
+        <string>HHHH</string>
+       </property>
+       <property name="text">
+        <string>8000</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Bank</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="2">
+      <widget class="QToolButton" name="tbSave">
+       <property name="text">
+        <string>Save as...</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../xpeccy.qrc">
+         <normaloff>:/images/save_all.png</normaloff>:/images/save_all.png</iconset>
+       </property>
+       <property name="popupMode">
+        <enum>QToolButton::InstantPopup</enum>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+  <action name="aSaveBin">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/filebin.png</normaloff>:/images/filebin.png</iconset>
+   </property>
+   <property name="text">
+    <string>...as bin</string>
+   </property>
+  </action>
+  <action name="aSaveHobeta">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/dollar.png</normaloff>:/images/dollar.png</iconset>
+   </property>
+   <property name="text">
+    <string>...as hobeta</string>
+   </property>
+  </action>
+  <action name="aSaveToA">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/floppy.png</normaloff>:/images/floppy.png</iconset>
+   </property>
+   <property name="text">
+    <string>...to disk A</string>
+   </property>
+  </action>
+  <action name="aSaveToB">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/floppy.png</normaloff>:/images/floppy.png</iconset>
+   </property>
+   <property name="text">
+    <string>...to disk B</string>
+   </property>
+  </action>
+  <action name="aSaveToC">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/floppy.png</normaloff>:/images/floppy.png</iconset>
+   </property>
+   <property name="text">
+    <string>...to disk C</string>
+   </property>
+  </action>
+  <action name="aSaveToD">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/floppy.png</normaloff>:/images/floppy.png</iconset>
+   </property>
+   <property name="text">
+    <string>...to disk D</string>
+   </property>
+  </action>
+ </widget>
+ <tabstops>
+  <tabstop>leBank</tabstop>
+  <tabstop>leStart</tabstop>
+  <tabstop>leEnd</tabstop>
+  <tabstop>leLen</tabstop>
+ </tabstops>
+ <resources>
+  <include location="../xpeccy.qrc"/>
+ </resources>
+ <connections/>
+</ui>

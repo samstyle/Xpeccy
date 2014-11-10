@@ -140,18 +140,18 @@ void vidDarkTail(Video* vid) {
 			*(ptr++) >>= 1;
 			*(ptr++) >>= 1;
 			*(ptr++) >>= 1;
-			if (vidFlag & VF_DOUBLE) {
+//			if (vidFlag & VF_DOUBLE) {
 				*(ptr++) >>= 1;
 				*(ptr++) >>= 1;
 				*(ptr++) >>= 1;
-			}
+//			}
 		}
 		if (++xscr >= vid->full.h) {
 			xscr = 0;
-			if ((yscr >= vid->lcut.v) && (yscr < vid->rcut.v) && (vidFlag & VF_DOUBLE)) {
-				memcpy(ptr, ptr - vid->lineBytes, vid->lineBytes);
-				ptr += vid->lineBytes;
-			}
+//			if ((yscr >= vid->lcut.v) && (yscr < vid->rcut.v) && (vidFlag & VF_DOUBLE)) {
+//				memcpy(ptr, ptr - vid->lineBytes, vid->lineBytes);
+//				ptr += vid->lineBytes;
+//			}
 			if (++yscr >= vid->full.v)
 				ptr = NULL;
 		}
@@ -182,6 +182,9 @@ inline void vidSingleDot(Video* vid, unsigned char idx) {
 }
 
 inline void vidPutDot(Video* vid, unsigned char idx) {
+	vidSingleDot(vid, idx);
+	vidSingleDot(vid, idx);
+/*
 	*(vid->scrptr++) = vid->pal[idx].r;
 	*(vid->scrptr++) = vid->pal[idx].g;
 	*(vid->scrptr++) = vid->pal[idx].b;
@@ -190,6 +193,7 @@ inline void vidPutDot(Video* vid, unsigned char idx) {
 		*(vid->scrptr++) = vid->pal[idx].g;
 		*(vid->scrptr++) = vid->pal[idx].b;
 	}
+*/
 }
 
 // video drawing
@@ -341,15 +345,15 @@ void vidDrawATMega(Video* vid) {
 
 // atm text
 void vidDoubleDot(Video* vid) {
-	if (vidFlag & VF_DOUBLE) {
+//	if (vidFlag & VF_DOUBLE) {
 		for (int i = 0x80; i > 0; i >>= 1) {
 			vidSingleDot(vid, (scrbyte & i) ? ink : pap);
 		}
-	} else {
-		for (int i = 0xc0; i > 0; i >>= 2) {
-			vidSingleDot(vid, (scrbyte & i) ? ink : pap);
-		}
-	}
+//	} else {
+//		for (int i = 0xc0; i > 0; i >>= 2) {
+//			vidSingleDot(vid, (scrbyte & i) ? ink : pap);
+//		}
+//	}
 //	vid->change = 1;
 //	vidFlag |= VF_CHANGED;
 }
@@ -416,7 +420,7 @@ void vidTSPut(Video* vid, unsigned char* ptr) {
 	int ofs = 0;
 	adr = vid->tsconf.xPos - vid->lcut.h;
 	if (adr > 0) {
-		ptr += adr * ((vidFlag & VF_DOUBLE) ? 6 : 3);
+		ptr += adr * 6; // ((vidFlag & VF_DOUBLE) ? 6 : 3);
 	}
 	for (xscr = 0; xscr < vid->tsconf.xSize; xscr++) {
 		if ((adr >= 0) && (adr < vid->vsze.h)) {			// visible
@@ -425,13 +429,13 @@ void vidTSPut(Video* vid, unsigned char* ptr) {
 				*(ptr++) = vid->pal[col].r;
 				*(ptr++) = vid->pal[col].g;
 				*(ptr++) = vid->pal[col].b;
-				if (vidFlag & VF_DOUBLE) {
-					*(ptr++) = vid->pal[col].r;
-					*(ptr++) = vid->pal[col].g;
-					*(ptr++) = vid->pal[col].b;
-				}
+//				if (vidFlag & VF_DOUBLE) {
+				*(ptr++) = vid->pal[col].r;
+				*(ptr++) = vid->pal[col].g;
+				*(ptr++) = vid->pal[col].b;
+//				}
 			} else {
-				ptr += ((vidFlag & VF_DOUBLE) ? 6 : 3);
+				ptr += 6; // ((vidFlag & VF_DOUBLE) ? 6 : 3);
 			}
 		}
 		adr++;
@@ -714,8 +718,8 @@ void vidDrawEvoText(Video* vid) {
 			scrbyte = vid->font[(scrbyte << 3) | (yscr & 7)];
 			vidATMDoubleDot(vid,col);
 		}
-		vid->scrptr++;
-		if (vidFlag & VF_DOUBLE) vid->scrptr++;
+		// vid->scrptr++;
+		// if (vidFlag & VF_DOUBLE) vid->scrptr++;
 	}
 }
 
@@ -760,11 +764,11 @@ void vidSync(Video* vid, int ns) {
 		if (++vid->x >= vid->full.h) {
 			vid->x = 0;
 			vid->nextrow = 1;
-			if (vid->istsconf) vidTSRender(vid,vid->scrptr - vid->lineBytes);
-			if ((vid->y >= vid->lcut.v) && (vid->y < vid->rcut.v) && (vidFlag & VF_DOUBLE)) {
-				memcpy(vid->scrptr, vid->scrptr - vid->lineBytes, vid->lineBytes);
-				vid->scrptr += vid->lineBytes;
-			}
+			if (vid->istsconf) vidTSRender(vid,vid->scrptr - vid->vsze.h * 6);
+//			if ((vid->y >= vid->lcut.v) && (vid->y < vid->rcut.v) && (vidFlag & VF_DOUBLE)) {
+//				memcpy(vid->scrptr, vid->scrptr - vid->lineBytes, vid->lineBytes);
+//				vid->scrptr += vid->lineBytes;
+//			}
 			if (++vid->y >= vid->full.v) {
 				vid->y = 0;
 				vid->scrptr = vid->scrimg;

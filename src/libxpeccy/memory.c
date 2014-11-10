@@ -27,7 +27,7 @@ Memory* memCreate() {
 		mem->ram[i].data = mem->ramData + (i << 14);
 		mem->ram[i].flag = mem->ramFlag + (i << 14);
 	}
-	mem->flags = MEM_ROM_WP;
+//	mem->flags = MEM_ROM_WP;
 	memSetSize(mem,48);
 	mem->pt[0] = &mem->rom[0];
 	mem->pt[1] = &mem->ram[5];
@@ -57,7 +57,7 @@ unsigned char memRd(Memory* mem, unsigned short adr) {
 //	else if (adr < 0xc000) ptr = mem->pt2;
 //	else ptr = mem->pt3;
 	ptr = mem->pt[adr >> 14];
-	mem->flags = ptr->flag[adr & 0x3fff];
+	mem->flag |= (ptr->flag[adr & 0x3fff] & MEM_BRK_READ);
 	return ptr->data[adr & 0x3fff];
 }
 
@@ -67,7 +67,7 @@ void memWr(Memory* mem, unsigned short adr, unsigned char val) {
 //	else if (adr < 0xc000) ptr = mem->pt2;
 //	else ptr = mem->pt3;
 	ptr = mem->pt[adr >> 14];
-	mem->flags = ptr->flag[adr & 0x3fff];
+	mem->flag |= (ptr->flag[adr & 0x3fff] & MEM_BRK_WRITE);
 	if (ptr->type == MEM_RAM) ptr->data[adr & 0x3fff] = val;
 }
 
@@ -76,9 +76,9 @@ unsigned char memGetCellFlags(Memory* mem, unsigned short adr) {
 	return (ptr->flag[adr & 0x3fff]);
 }
 
-void memSwitchCellFlags(Memory* mem, unsigned short adr, unsigned char msk) {
+void memSetCellFlags(Memory* mem, unsigned short adr, unsigned char val) {
 	MemPage* ptr = memGetBankPtr(mem,adr);
-	ptr->flag[adr & 0x3fff] ^= msk;
+	ptr->flag[adr & 0x3fff] = val;
 }
 
 void memSetSize(Memory* mem, int val) {

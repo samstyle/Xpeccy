@@ -1140,7 +1140,7 @@ void SetupWin::copyToDisk() {
 	tapGetBlockData(zx->tape,dataBlock,dt);
 	unsigned char* buf = new unsigned char[256];
 	int pos = 1;	// skip block type mark
-	switch(flpCreateFile(zx->bdi->fdc->flop[dsk],&dsc)) {
+	switch(flpCreateDescriptor(zx->bdi->fdc->flop[dsk],&dsc)) {
 		case ERR_SHIT: shitHappens("Yes, it happens"); break;
 		case ERR_MANYFILES: shitHappens("Too many files @ disk"); break;
 		case ERR_NOSPACE: shitHappens("Not enough space @ disk"); break;

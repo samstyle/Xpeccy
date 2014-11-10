@@ -91,7 +91,7 @@ int loadFDI(Floppy*,const char*);
 
 int saveRawFile(Floppy*,int,const char*);
 int saveHobetaFile(Floppy*,int,const char*);
-//int saveHobeta(TRFile,char*,const char*);
+int saveHobeta(TRFile,char*,const char*);
 int saveSCL(Floppy*,const char*);
 int saveTRD(Floppy*,const char*);
 int saveUDI(Floppy*,const char*);

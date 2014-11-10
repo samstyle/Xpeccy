@@ -555,6 +555,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			case Qt::Key_N:
 				vidFlag ^= VF_NOFLIC;
 				saveProfiles();
+				if (vidFlag & VF_NOFLIC) memcpy(prevscr,screen,zx->vid->frameBytes);
 				break;
 		}
 	} else {
@@ -1093,19 +1094,38 @@ void MainWin::chVMode(QAction* act) {
 	}
 }
 
-// debug
+// scale screen
 
-void MainWin::saveRDisk() {
-	emulPause(true,PR_FILE);
-	QString path = QFileDialog::getSaveFileName(this,"Save RAMDisk","","TRD inages (*.trd)");
-	if (!path.isEmpty()) {
-		QFile file(path);
-		if (file.open(QFile::WriteOnly)) {
-			file.write((const char*)zx->mem->ramData + (0xc0 << 14), 0xa0000);
-			file.close();
-		}
+// 2:1 -> 2:2 = double each line
+void scrDouble (unsigned char* src, int wid, int lines) {
+	unsigned char* dst = screen;
+	while (lines > 0) {
+		memcpy(dst, src, wid);
+		dst += wid;
+		memcpy(dst, src, wid);
+		dst += wid;
+		src += wid;
+		lines--;
 	}
-	emulPause(false,PR_FILE);
+}
+
+// 2:1 -> 1:1 = take each 2nd pixel in a row
+
+void scrNormal (unsigned char* src, int wid, int lines) {
+	unsigned char* dst = screen;
+	int cnt;
+	while (lines > 0) {
+		for (cnt = 0; cnt < wid; cnt += 3) {
+			*dst = *src;
+			dst++; src++;
+			*dst = *src;
+			dst++; src++;
+			*dst = *src;
+			dst++;
+			src += 4;
+		}
+		lines--;
+	}
 }
 
 // emulation thread (non-GUI)
@@ -1129,8 +1149,12 @@ void emuCycle() {
 		}
 	} while (!zx->brk && (zx->frmStrobe == 0));		// exec until breakpoint or INT
 
-	memcpy(screen,zx->vid->scrimg,zx->vid->frameBytes);
-
+//	memcpy(screen,zx->vid->scrimg,zx->vid->frameBytes);
+	if (vidFlag & VF_DOUBLE) {
+		scrDouble(zx->vid->scrimg, zx->vid->lineBytes, zx->vid->vsze.v);
+	} else {
+		scrNormal(zx->vid->scrimg, zx->vid->lineBytes, zx->vid->vsze.v);
+	}
 	zx->nmiRequest = 0;
 	// decrease frames & screenshot counter (if any), request screenshot (if needed)
 	if (scrCounter != 0) {

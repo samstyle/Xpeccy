@@ -158,11 +158,8 @@ void sndPlay() {
 }
 
 void sndPause(bool b) {
-#ifdef HAVESDL
-	if (sndOutput == NULL) return;
-	if (strcmp(sndOutput->name,"SDL") != 0) return;
-	SDL_PauseAudio(b ? 1 : 0);
-#endif
+	smpCount = 0;
+	sndFillToEnd();
 }
 
 void sndClose() {

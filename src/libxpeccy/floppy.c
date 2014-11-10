@@ -251,7 +251,7 @@ int flpGet(Floppy* flp, int wut) {
 
 #include "stdio.h"
 
-int flpCreateFile(Floppy* flp,TRFile* dsc) {
+int flpCreateDescriptor(Floppy* flp,TRFile* dsc) {
 	unsigned char files;
 	unsigned short freesec;
 	if (!flpGetSectorData(flp,0,9,fbuf,256)) return ERR_SHIT;
@@ -282,6 +282,22 @@ int flpCreateFile(Floppy* flp,TRFile* dsc) {
 	return ERR_OK;
 }
 
+int flpCreateFile(Floppy* flp, TRFile dsc, unsigned char* data, int len) {
+	if (len > 0xff00) return ERR_SIZE;
+	dsc.slen = ((len >> 8) & 0xff) + ((len & 0xff) ? 1 : 0);
+	int err = flpCreateDescriptor(flp, &dsc);
+	if (err != ERR_OK) return err;
+	for (int i = 0; i < dsc.slen; i++) {
+		flpPutSectorData(flp, dsc.trk, dsc.sec + 1, &data[i << 8], 256);
+		dsc.sec++;
+		if (dsc.sec > 15) {
+			dsc.trk++;
+			dsc.sec -= 16;
+		}
+	}
+	return ERR_OK;
+}
+
 TRFile flpGetCatalogEntry(Floppy* flp, int num) {
 	TRFile res;
 	int sec,pos;
@@ -292,6 +308,19 @@ TRFile flpGetCatalogEntry(Floppy* flp, int num) {
 	if (!flpGetSectorData(flp,0,sec + 1,fbuf,256)) return res;
 	memcpy((char*)&res,fbuf + pos,16);
 	return res;
+}
+
+TRFile flpMakeDescriptor(const char* name, char ext, int start, int len) {
+	TRFile dsc;
+	memset(dsc.name,' ',8);
+	memcpy(dsc.name,name,(strlen(name) > 8) ? 8 : strlen(name));
+	dsc.ext = ext;
+	dsc.hst = (start >> 8) & 0xff;
+	dsc.lst = start & 0xff;
+	dsc.hlen = (len >> 8) & 0xff;
+	dsc.llen = len & 0xff;
+	dsc.slen = dsc.hlen + (dsc.llen ? 1 : 0);
+	return dsc;
 }
 
 int flpGetTRCatalog(Floppy *flp, TRFile *dst) {

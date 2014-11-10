@@ -155,7 +155,7 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 			p21AF = val;
 			p7FFD &= ~0x10;
 			if (val & 1) p7FFD |= 0x10;
-			if (val & 2) {comp->mem->flags &= ~MEM_B0_WP;} else {comp->mem->flags |= MEM_B0_WP;}
+			//if (val & 2) {comp->mem->flags &= ~MEM_B0_WP;} else {comp->mem->flags |= MEM_B0_WP;}
 			tslMapMem(comp);
 			break;
 		case 0x22af:					// HSINT

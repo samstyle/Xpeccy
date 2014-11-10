@@ -288,7 +288,7 @@ class MainWin : public QWidget {
 		void reset(QAction*);
 		void chLayout(QAction*);
 		void chVMode(QAction*);
-		void saveRDisk();
+//		void saveRDisk();
 	protected:
 		void closeEvent(QCloseEvent*);
 #ifdef DRAWGL

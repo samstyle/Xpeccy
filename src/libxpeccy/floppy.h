@@ -17,22 +17,10 @@ extern "C" {
 #define	ERR_MANYFILES	1
 #define	ERR_NOSPACE	2
 #define	ERR_SHIT	3
+#define ERR_SIZE	4
 // step direction
 #define	FLP_BACK	0
 #define	FLP_FORWARD	1
-/*
-// flags
-#define	FLP_INSERT	1
-#define	FLP_PROTECT	(1<<1)
-#define	FLP_TRK80	(1<<2)
-#define	FLP_DS		(1<<3)
-#define	FLP_INDEX	(1<<4)
-#define	FLP_MOTOR	(1<<5)
-#define	FLP_HEAD	(1<<6)
-#define	FLP_CHANGED	(1<<7)
-#define	FLP_SIDE	(1<<8)
-#define	FLP_VIRT	(1<<9)
-*/
 
 typedef struct {
 	unsigned char cyl;
@@ -56,7 +44,6 @@ typedef struct {
 } TRFile;
 
 typedef struct {
-//	int flag;
 	unsigned insert:1;
 	unsigned protect:1;
 	unsigned trk80:1;
@@ -110,9 +97,11 @@ void flpPutTrack(Floppy*,int,unsigned char*,int);
 void flpGetTrack(Floppy*,int,unsigned char*);
 void flpGetTrackFields(Floppy*,int,unsigned char*);
 
-int flpCreateFile(Floppy*,TRFile*);
+int flpCreateDescriptor(Floppy*,TRFile*);
+int flpCreateFile(Floppy*, TRFile, unsigned char*, int);
 int flpGetTRCatalog(Floppy*,TRFile*);
 TRFile flpGetCatalogEntry(Floppy*, int);
+TRFile flpMakeDescriptor(const char*, char, int, int);
 
 #ifdef __cplusplus
 }

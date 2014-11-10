@@ -5,9 +5,8 @@
 int loadHobeta(Floppy* flp,const char* name) {
 	std::ifstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
-	unsigned char* buf = new unsigned char[256];
+	unsigned char buf[0x10000];
 	TRFile nfle;
-	int i;
 
 	if (!flp->insert) {
 		flpFormat(flp);
@@ -18,17 +17,10 @@ int loadHobeta(Floppy* flp,const char* name) {
 	file.read((char*)buf,17);		// header
 	memcpy((char*)&nfle,buf,13);
 	nfle.slen = buf[14];
-	if (flpCreateFile(flp,&nfle) != ERR_OK) return ERR_HOB_CANT;
-	for (i = 0; i < nfle.slen; i++) {
-		file.read((char*)buf,256);
-		if (!flpPutSectorData(flp,nfle.trk, nfle.sec + 1, buf, 256)) return ERR_HOB_CANT;
-		nfle.sec++;
-		if (nfle.sec > 15) {
-			nfle.trk++;
-			nfle.sec -= 16;
-		}
-	}
-	for (i=0; i<256; i++) flpFillFields(flp,i,true);
+	int len = nfle.slen << 8;
+	file.read((char*)buf, len);
+	if (flpCreateFile(flp, nfle, buf, len) != ERR_OK) return ERR_HOB_CANT;
+	for (int i=0; i<256; i++) flpFillFields(flp,i,true);
 	return ERR_OK;
 }
 

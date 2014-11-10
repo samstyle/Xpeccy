@@ -13,7 +13,6 @@ int loadRaw(Floppy* flp, const char* name) {
 	}
 	if (flpGet(flp,FLP_DISKTYPE) != DISK_TYPE_TRD) return ERR_NOTRD;
 	file.seekg(0,std::ios::beg);
-	TRFile nfle;
 
 	std::string fnam(name);
 	std::string ext;
@@ -27,28 +26,14 @@ int loadRaw(Floppy* flp, const char* name) {
 	fnam.resize(8,' ');
 	ext.resize(3,' ');
 
-	memcpy((char*)&nfle.name[0],fnam.c_str(),8);
-	nfle.ext = ext.at(0);
+	TRFile nfle = flpMakeDescriptor(fnam.c_str(),ext.at(0),0,len);
 	nfle.lst = ext.at(1);
 	nfle.hst = ext.at(2);
-	nfle.llen = len & 0xff;
-	nfle.hlen = (len & 0xff00) >> 8;
-	nfle.slen = nfle.hlen + (nfle.llen ? 1 : 0);
-	if (flpCreateFile(flp,&nfle) != ERR_OK) return ERR_HOB_CANT;
-	int i;
-	unsigned char* buf = new unsigned char[256];
-	for (i = 0; i < nfle.slen; i++) {
-		file.read((char*)buf,256);
-		if (!flpPutSectorData(flp, nfle.trk, nfle.sec + 1, buf, 256)) return ERR_HOB_CANT;
-		nfle.sec++;
-		if (nfle.sec > 15) {
-			nfle.trk++;
-			nfle.sec -= 16;
-		}
-	}
-	for (i=0; i<256; i++) flpFillFields(flp,i,true);
-	delete(buf);
-
+	unsigned char buf[0x10000];
+	file.read((char*)buf,len);
+	file.close();
+	if (flpCreateFile(flp, nfle, buf, len) != ERR_OK) return ERR_HOB_CANT;
+	for (int i=0; i<256; i++) flpFillFields(flp,i,true);
 	return ERR_OK;
 }
 
