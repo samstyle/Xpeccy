@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>780</width>
-    <height>581</height>
+    <width>730</width>
+    <height>560</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -51,7 +51,7 @@
        </property>
        <layout class="QGridLayout" name="gridLayout">
         <property name="verticalSpacing">
-         <number>3</number>
+         <number>1</number>
         </property>
         <item row="0" column="0">
          <widget class="QLabel" name="label">
@@ -66,7 +66,10 @@
            <string>HHHH</string>
           </property>
           <property name="frame">
-           <bool>true</bool>
+           <bool>false</bool>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
           </property>
          </widget>
         </item>
@@ -83,7 +86,10 @@
            <string>HHHH</string>
           </property>
           <property name="frame">
-           <bool>true</bool>
+           <bool>false</bool>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
           </property>
          </widget>
         </item>
@@ -100,7 +106,10 @@
            <string>HHHH</string>
           </property>
           <property name="frame">
-           <bool>true</bool>
+           <bool>false</bool>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
           </property>
          </widget>
         </item>
@@ -131,7 +140,10 @@
            <string>HHHH</string>
           </property>
           <property name="frame">
-           <bool>true</bool>
+           <bool>false</bool>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
           </property>
          </widget>
         </item>
@@ -148,7 +160,10 @@
            <string>HHHH</string>
           </property>
           <property name="frame">
-           <bool>true</bool>
+           <bool>false</bool>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
           </property>
          </widget>
         </item>
@@ -165,7 +180,10 @@
            <string>HHHH</string>
           </property>
           <property name="frame">
-           <bool>true</bool>
+           <bool>false</bool>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
           </property>
          </widget>
         </item>
@@ -182,7 +200,10 @@
            <string>HHHH</string>
           </property>
           <property name="frame">
-           <bool>true</bool>
+           <bool>false</bool>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
           </property>
          </widget>
         </item>
@@ -199,7 +220,10 @@
            <string>HHHH</string>
           </property>
           <property name="frame">
-           <bool>true</bool>
+           <bool>false</bool>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
           </property>
          </widget>
         </item>
@@ -216,7 +240,10 @@
            <string>HHHH</string>
           </property>
           <property name="frame">
-           <bool>true</bool>
+           <bool>false</bool>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
           </property>
          </widget>
         </item>
@@ -233,7 +260,10 @@
            <string>HHHH</string>
           </property>
           <property name="frame">
-           <bool>true</bool>
+           <bool>false</bool>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
           </property>
          </widget>
         </item>
@@ -250,7 +280,10 @@
            <string>HHHH</string>
           </property>
           <property name="frame">
-           <bool>true</bool>
+           <bool>false</bool>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
           </property>
          </widget>
         </item>
@@ -267,7 +300,10 @@
            <string>HHHH</string>
           </property>
           <property name="frame">
-           <bool>true</bool>
+           <bool>false</bool>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
           </property>
          </widget>
         </item>
@@ -284,7 +320,10 @@
            <string>HHHH</string>
           </property>
           <property name="frame">
-           <bool>true</bool>
+           <bool>false</bool>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
           </property>
          </widget>
         </item>
@@ -298,7 +337,7 @@
         <item row="14" column="1">
          <widget class="QSpinBox" name="boxIM">
           <property name="frame">
-           <bool>true</bool>
+           <bool>false</bool>
           </property>
           <property name="maximum">
            <number>2</number>
@@ -417,99 +456,100 @@
     </layout>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox_2">
+    <widget class="QTableWidget" name="dasmTable">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+      <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
      <property name="minimumSize">
       <size>
-       <width>350</width>
+       <width>300</width>
        <height>0</height>
       </size>
      </property>
-     <property name="title">
-      <string>Disasm</string>
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_2">
-      <item>
-       <widget class="QTableWidget" name="dasmTable">
-        <property name="verticalScrollBarPolicy">
-         <enum>Qt::ScrollBarAlwaysOff</enum>
-        </property>
-        <property name="horizontalScrollBarPolicy">
-         <enum>Qt::ScrollBarAlwaysOff</enum>
-        </property>
-        <property name="editTriggers">
-         <set>QAbstractItemView::AnyKeyPressed|QAbstractItemView::DoubleClicked</set>
-        </property>
-        <property name="alternatingRowColors">
-         <bool>false</bool>
-        </property>
-        <property name="selectionMode">
-         <enum>QAbstractItemView::NoSelection</enum>
-        </property>
-        <property name="selectionBehavior">
-         <enum>QAbstractItemView::SelectItems</enum>
-        </property>
-        <property name="showGrid">
-         <bool>true</bool>
-        </property>
-        <property name="gridStyle">
-         <enum>Qt::DotLine</enum>
-        </property>
-        <property name="rowCount">
-         <number>26</number>
-        </property>
-        <property name="columnCount">
-         <number>3</number>
-        </property>
-        <attribute name="horizontalHeaderVisible">
-         <bool>false</bool>
-        </attribute>
-        <attribute name="horizontalHeaderStretchLastSection">
-         <bool>true</bool>
-        </attribute>
-        <attribute name="verticalHeaderVisible">
-         <bool>false</bool>
-        </attribute>
-        <attribute name="verticalHeaderDefaultSectionSize">
-         <number>20</number>
-        </attribute>
-        <row/>
-        <row/>
-        <row/>
-        <row/>
-        <row/>
-        <row/>
-        <row/>
-        <row/>
-        <row/>
-        <row/>
-        <row/>
-        <row/>
-        <row/>
-        <row/>
-        <row/>
-        <row/>
-        <row/>
-        <row/>
-        <row/>
-        <row/>
-        <row/>
-        <row/>
-        <row/>
-        <row/>
-        <row/>
-        <row/>
-        <column/>
-        <column/>
-        <column/>
-       </widget>
-      </item>
-     </layout>
+     <property name="verticalScrollBarPolicy">
+      <enum>Qt::ScrollBarAlwaysOff</enum>
+     </property>
+     <property name="horizontalScrollBarPolicy">
+      <enum>Qt::ScrollBarAlwaysOff</enum>
+     </property>
+     <property name="editTriggers">
+      <set>QAbstractItemView::AnyKeyPressed|QAbstractItemView::DoubleClicked</set>
+     </property>
+     <property name="alternatingRowColors">
+      <bool>false</bool>
+     </property>
+     <property name="selectionMode">
+      <enum>QAbstractItemView::NoSelection</enum>
+     </property>
+     <property name="selectionBehavior">
+      <enum>QAbstractItemView::SelectItems</enum>
+     </property>
+     <property name="showGrid">
+      <bool>true</bool>
+     </property>
+     <property name="gridStyle">
+      <enum>Qt::DotLine</enum>
+     </property>
+     <property name="rowCount">
+      <number>30</number>
+     </property>
+     <property name="columnCount">
+      <number>3</number>
+     </property>
+     <attribute name="horizontalHeaderVisible">
+      <bool>false</bool>
+     </attribute>
+     <attribute name="horizontalHeaderStretchLastSection">
+      <bool>true</bool>
+     </attribute>
+     <attribute name="verticalHeaderVisible">
+      <bool>false</bool>
+     </attribute>
+     <attribute name="verticalHeaderDefaultSectionSize">
+      <number>18</number>
+     </attribute>
+     <attribute name="verticalHeaderMinimumSectionSize">
+      <number>18</number>
+     </attribute>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <row/>
+     <column/>
+     <column/>
+     <column/>
     </widget>
    </item>
    <item>
@@ -545,6 +585,9 @@
             <width>0</width>
             <height>280</height>
            </size>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
           </property>
           <property name="verticalScrollBarPolicy">
            <enum>Qt::ScrollBarAlwaysOff</enum>
@@ -617,7 +660,7 @@
         </item>
         <item>
          <layout class="QGridLayout" name="gridLayout_3">
-          <item row="2" column="3">
+          <item row="1" column="4">
            <widget class="QLabel" name="labSP6">
             <property name="styleSheet">
              <string notr="true">background-color: rgb(240,240,240)</string>
@@ -630,7 +673,7 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="4">
+          <item row="1" column="5">
            <widget class="QLabel" name="labSP8">
             <property name="styleSheet">
              <string notr="true">background-color: rgb(240,240,240)</string>
@@ -643,7 +686,7 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="0">
+          <item row="1" column="1">
            <widget class="QLabel" name="labSP">
             <property name="styleSheet">
              <string notr="true">background-color: rgb(128, 128, 255);</string>
@@ -656,7 +699,7 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="1">
+          <item row="1" column="2">
            <widget class="QLabel" name="labSP2">
             <property name="styleSheet">
              <string notr="true">background-color: rgb(240,240,240)</string>
@@ -669,7 +712,7 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="2">
+          <item row="1" column="3">
            <widget class="QLabel" name="labSP4">
             <property name="styleSheet">
              <string notr="true">background-color: rgb(240,240,240)</string>
@@ -682,65 +725,10 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="2">
-           <widget class="QLabel" name="label_19">
-            <property name="styleSheet">
-             <string notr="true"/>
-            </property>
-            <property name="text">
-             <string>+4</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
           <item row="1" column="0">
-           <widget class="QLabel" name="label_21">
-            <property name="styleSheet">
-             <string notr="true"/>
-            </property>
+           <widget class="QLabel" name="label_27">
             <property name="text">
              <string>SP</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QLabel" name="label_23">
-            <property name="styleSheet">
-             <string notr="true"/>
-            </property>
-            <property name="text">
-             <string>+2</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="3">
-           <widget class="QLabel" name="label_25">
-            <property name="styleSheet">
-             <string notr="true"/>
-            </property>
-            <property name="text">
-             <string>+6</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="4">
-           <widget class="QLabel" name="label_26">
-            <property name="styleSheet">
-             <string notr="true"/>
-            </property>
-            <property name="text">
-             <string>+8</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>

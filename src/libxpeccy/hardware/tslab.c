@@ -35,13 +35,26 @@ const unsigned char tslCoLevs[32] = {
 	255,255,255,255,255,255,255,255
 };
 
+const unsigned char tsl5bLevs[32] = {
+	0,8,16,24,32,41,49,57,
+	65,74,82,90,98,106,115,123,
+	131,139,148,156,164,172,180,189,
+	197,205,213,222,230,238,246,255
+};
+
 void tslUpdatePal(ZXComp* comp) {
 	int col;
 	for (int i = 0; i < 256; i++) {
 		col = (comp->vid->tsconf.cram[(i << 1) + 1] << 8) | (comp->vid->tsconf.cram[i << 1]);
-		comp->vid->pal[i].r = tslCoLevs[(col >> 10) & 0x1f];
-		comp->vid->pal[i].g = tslCoLevs[(col >> 5) & 0x1f];
-		comp->vid->pal[i].b = tslCoLevs[col  & 0x1f];
+		if (col & 0x8000) {
+			comp->vid->pal[i].r = tsl5bLevs[(col >> 10) & 0x1f];
+			comp->vid->pal[i].g = tsl5bLevs[(col >> 5) & 0x1f];
+			comp->vid->pal[i].b = tsl5bLevs[col  & 0x1f];
+		} else {
+			comp->vid->pal[i].r = tslCoLevs[(col >> 10) & 0x1f];
+			comp->vid->pal[i].g = tslCoLevs[(col >> 5) & 0x1f];
+			comp->vid->pal[i].b = tslCoLevs[col  & 0x1f];
+		}
 	}
 }
 
@@ -101,6 +114,7 @@ void tslUpdatePorts(ZXComp* comp) {
 
 void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 	int cnt,cnt2,lcnt,sadr,dadr;
+	unsigned char tmp;
 	unsigned char* ptr;
 	switch (port) {
 		case 0x00af: comp->tsconf.p00af = val; break;
@@ -187,6 +201,39 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 						}
 						sadr += (val & 0x20) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;		// SALGN
 						dadr += (val & 0x10) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;		// DALGN
+					}
+					break;
+				case 0x02:		// SPI->RAM
+					for (cnt = 0; cnt <= comp->dma.num; cnt++) {
+						for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
+							comp->mem->ramData[dadr + cnt2] = sdcRead(comp->sdc);
+						}
+						dadr += (val & 0x10) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;
+					}
+					break;
+				case 0x82:		// RAM->SPI
+					for (cnt = 0; cnt <= comp->dma.num; cnt++) {
+						for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
+							sdcWrite(comp->sdc, comp->mem->ramData[sadr + cnt2]);
+						}
+						sadr += (val & 0x20) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;
+					}
+					break;
+				case 0x03:		// IDE->RAM
+					for (cnt = 0; cnt <= comp->dma.num; cnt++) {
+						for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
+							if (!ideIn(comp->ide, 0x00, &tmp, 1)) tmp = 0xff;
+							comp->mem->ramData[dadr + cnt2] = tmp;
+						}
+						dadr += (val & 0x10) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;
+					}
+					break;
+				case 0x83:		// RAM->IDE
+					for (cnt = 0; cnt <= comp->dma.num; cnt++) {
+						for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
+							ideOut(comp->ide, 0x00, comp->mem->ramData[sadr + cnt2], 1);
+						}
+						sadr += (val & 0x20) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;
 					}
 					break;
 				case 0x04:		// FILL->RAM
@@ -337,7 +384,7 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 //					if (gsOut(comp->gs,port,val) == GS_OK) break;
 #ifdef ISDEBUG
 					printf("TSLab : out %.4X,%.2X (%i)\n",port,val,bdiz);
-					comp->flag |= ZX_BREAK;
+					comp->brk = 1;
 //					assert(0);
 #endif
 					break;
@@ -353,6 +400,7 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 		case 0x00af:
 			res = comp->tsconf.pwr_up ? 0x40 : 0x00;		// b6: PWR_UP (1st run)
 			comp->tsconf.pwr_up = 0;
+			res |= 3;				// 11 : 5bit VDAC
 			break;
 		case 0x12af: res = comp->mem->pt[2]->num; break;		// comp->tsconf.Page2;
 		case 0x13af: res = comp->mem->pt[3]->num; break;		// comp->tsconf.Page3;
