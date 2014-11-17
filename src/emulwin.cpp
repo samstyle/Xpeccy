@@ -310,6 +310,7 @@ MainWin::MainWin() {
 	cmosTimer.start(1000);
 	connect(&timer,SIGNAL(timeout()),this,SLOT(onTimer()));
 	timer.start(20);
+
 	ethread.start();
 
 #ifdef DRAWQT
@@ -749,8 +750,11 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 	if (emulSaveChanged()) {
 		ideCloseFiles(zx->ide);
 		sdcCloseFile(zx->sdc);
-		ev->accept();
 		emulFlags |= FL_EXIT;
+		timer.stop();
+		mtx.unlock();		// unlock emulation thread (it exit, cuz of FL_EXIT)
+		ethread.wait();
+		ev->accept();
 	} else {
 		ev->ignore();
 		emulPause(false,PR_EXIT);
@@ -1007,10 +1011,6 @@ void initUserMenu(QWidget* par) {
 	pckAct = userMenu->addAction(QIcon(":/images/keyboard.png"),"PC keyboard");
 	pckAct->setCheckable(true);
 	userMenu->addAction(QIcon(":/images/other.png"),"Options",par,SLOT(doOptions()));
-#ifdef ISDEBUG
-	userMenu->addSeparator();
-	userMenu->addAction(QIcon(),"Save RAMdisk",par,SLOT(saveRDisk()));
-#endif
 }
 
 void fillBookmarkMenu() {
@@ -1171,11 +1171,13 @@ void emuCycle() {
 
 void xThread::run() {
 	do {
-		if (~emulFlags & FL_FAST) mtx.lock();		// wait until unlocked (MainWin::onTimer())
+		if (~emulFlags & FL_FAST) mtx.lock();		// wait until unlocked (MainWin::onTimer() or at exit)
+		if (emulFlags & FL_EXIT) break;
 		if (pauseFlags == 0) emuCycle();
 		if (zx->brk) {
 			emit dbgRequest();
 			zx->brk = 0;
 		}
-	} while (~emulFlags & FL_EXIT);
+	} while (1);
+	exit(0);
 }

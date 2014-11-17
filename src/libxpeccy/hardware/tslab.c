@@ -203,6 +203,28 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 						dadr += (val & 0x10) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;		// DALGN
 					}
 					break;
+				case 0x81:		// blitter
+					for (cnt = 0; cnt <= comp->dma.num; cnt++) {
+						for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
+							tmp = comp->mem->ramData[sadr + cnt2];
+							if (val & 0x08) {
+								if (tmp != 0) comp->mem->ramData[dadr + cnt2] = tmp;
+							} else {
+								if (tmp & 0xf0) {
+									comp->mem->ramData[dadr + cnt2] &= 0x0f;
+									comp->mem->ramData[dadr + cnt2] |= (tmp & 0xf0);
+								}
+								if (tmp & 0x0f) {
+									comp->mem->ramData[dadr + cnt2] &= 0xf0;
+									comp->mem->ramData[dadr + cnt2] |= (tmp & 0x0f);
+								}
+							}
+							comp->mem->ramData[dadr + cnt2] = comp->mem->ramData[sadr + cnt2];
+						}
+						sadr += (val & 0x20) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;		// SALGN
+						dadr += (val & 0x10) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;		// DALGN
+					}
+					break;
 				case 0x02:		// SPI->RAM
 					for (cnt = 0; cnt <= comp->dma.num; cnt++) {
 						for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
@@ -502,7 +524,7 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 //					if (gsIn(comp->gs,port,&res) == GS_OK) break;
 #ifdef ISDEBUG
 					printf("TSLab : in %.4X (%i)\n",port,bdiz);
-					comp->flag |= ZX_BREAK;
+					comp->brk = 1;
 //					assert(0);
 #endif
 					break;

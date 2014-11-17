@@ -388,6 +388,13 @@ void zxSetFrq(ZXComp* comp, float frq) {
 }
 
 int zxExec(ZXComp* comp) {
+
+	pcreg = GETPC(comp->cpu);
+	if (memGetCellFlags(comp->mem,pcreg) & MEM_BRK_FETCH) {
+		comp->brk = 1;
+		return 0;
+	}
+
 	comp->mem->flag = 0;
 	res4 = 0;
 	EXECCPU(comp->cpu,res2);
@@ -471,10 +478,6 @@ int zxExec(ZXComp* comp) {
 // TOO FAT
 	if (comp->mem->flag & (MEM_BRK_READ | MEM_BRK_WRITE)) comp->brk = 1;
 
-	pcreg = GETPC(comp->cpu); // z80ex_get_reg(comp->cpu,regPC);
-	if (memGetCellFlags(comp->mem,pcreg) & MEM_BRK_FETCH) {
-		comp->brk = 1; // comp->flag |= ZX_BREAK;
-	}
 	comp->tapCount += nsTime;
 	if (comp->gs->enable) comp->gs->sync += nsTime;
 	if (comp->bdi->fdc->type != FDC_NONE) bdiSync(comp->bdi, nsTime);

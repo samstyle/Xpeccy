@@ -236,7 +236,7 @@ void evoOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 //			if (gsOut(comp->gs,port,val) == GS_OK) break;
 #ifdef ISDEBUG
 			printf("PentEvo out %.4X (%.4X.%i),%.2X\n",port,ptype,bdiz,val);
-			comp->flag |= ZX_BREAK;
+			comp->brk = 1;
 //			assert(0);
 #endif
 			break;
@@ -337,7 +337,7 @@ Z80EX_BYTE evoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 //			if (gsIn(comp->gs,port,&res) == GS_OK) break;
 #ifdef ISDEBUG
 			printf("Pentevo: in %.4X (%.4X.%i)\n",port,ptype,bdiz);
-			comp->flag |= ZX_BREAK;
+			comp->brk = 1;
 //			assert(0);
 #endif
 			break;

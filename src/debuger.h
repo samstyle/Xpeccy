@@ -25,14 +25,6 @@ struct DasmRow {
 	QString com;
 };
 
-/*
-struct CatchPoint {
-	bool active;
-	ushort adr;
-	ushort sp;
-};
-*/
-
 #define XTYPE_ADR 0
 #define XTYPE_DUMP 1
 #define XTYPE_BYTE 2
@@ -49,13 +41,14 @@ class DebugWin : public QDialog {
 	Q_OBJECT
 	public:
 		DebugWin(QWidget*);
-//		CatchPoint cpoint;
 		bool active;
-		bool block;
 		void reject();
 		void start();
 		void stop();
 	private:
+		bool block;
+		long tCount;
+
 		Ui::Debuger ui;
 
 		QDialog* dumpwin;
@@ -75,23 +68,25 @@ class DebugWin : public QDialog {
 
 		bool fillAll();
 		void fillZ80();
+		void fillFlags();
 		void fillMem();
 		void fillDump();
 		bool fillDisasm();
 		void fillStack();
 
 		Z80EX_WORD getPrevAdr(Z80EX_WORD);
-		void putBreakPoint();
 		void doBreakPoint(Z80EX_WORD);
 		void scrollDown();
 		void scrollUp();
 
 	private slots:
 		void setZ80();
+		void setFlags();
 
 		void dasmEdited(int, int);
 		void dumpEdited(int, int);
 
+		void putBreakPoint();
 		void chaBreakPoint();
 
 		void doOpenDump();

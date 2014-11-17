@@ -1,6 +1,7 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QTimer>
+#include <QDebug>
 
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
@@ -109,9 +110,6 @@ int main(int ac,char** av) {
 			app.exec();
 			emuStop();
 			sndClose();
-#ifdef HAVESDL
-			SDL_Quit();
-#endif
 			return 0;
 		}
 	}

@@ -15,8 +15,6 @@
 	#include "z80ex_dasm.h"
 #endif
 
-#define NEWDEBUG
-
 DebugWin* dbgWin;
 
 unsigned long lastDbgTicks = 0;
@@ -51,7 +49,8 @@ void DebugWin::start() {
 
 void DebugWin::stop() {
 	vidFlag &= ~VF_DEBUG;
-	zxExec(zx);
+	tCount = zx->tickCount;
+	zxExec(zx);		// to prevent immediatelly fetch break, if PC is on breakpoint
 	hide();
 	active = false;
 	lastDbgTicks = zx->tickCount;
@@ -73,7 +72,6 @@ QWidget* xItemDelegate::createEditor(QWidget* par, const QStyleOptionViewItem&, 
 }
 
 DebugWin::DebugWin(QWidget* par):QDialog(par) {
-#ifdef NEWDEBUG
 	int col,row;
 	ui.setupUi(this);
 // disasm table
@@ -87,6 +85,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.dasmTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_ADR));
 	ui.dasmTable->setItemDelegateForColumn(1, new xItemDelegate(XTYPE_DUMP));
 	connect(ui.dasmTable,SIGNAL(cellChanged(int,int)),this,SLOT(dasmEdited(int,int)));
+	connect(ui.dasmTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
 // dump table
 	for (row = 0; row < ui.dumpTable->rowCount(); row++) {
 		for (col = 0; col < ui.dumpTable->columnCount(); col++) {
@@ -97,6 +96,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.dumpTable->setItemDelegate(new xItemDelegate(XTYPE_BYTE));
 	ui.dumpTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_ADR));
 	connect(ui.dumpTable,SIGNAL(cellChanged(int,int)),this,SLOT(dumpEdited(int,int)));
+	connect(ui.dumpTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
 // registers
 	connect(ui.editAF, SIGNAL(textChanged(QString)), this, SLOT(setZ80()));
 	connect(ui.editBC, SIGNAL(textChanged(QString)), this, SLOT(setZ80()));
@@ -114,133 +114,15 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.boxIM,SIGNAL(valueChanged(int)),this,SLOT(setZ80()));
 	connect(ui.flagIFF1,SIGNAL(stateChanged(int)),this,SLOT(setZ80()));
 	connect(ui.flagIFF2,SIGNAL(stateChanged(int)),this,SLOT(setZ80()));
+	connect(ui.flagGroup,SIGNAL(buttonClicked(int)),this,SLOT(setFlags()));
 
 	setFixedSize(size());
-#else
-	QLabel *lab;
-	int i,j;
-	QVBoxLayout *mlay = new QVBoxLayout;
-	QHBoxLayout *alay = new QHBoxLayout;
-		QVBoxLayout *llay = new QVBoxLayout;
-			QGroupBox *regbox = new QGroupBox("Registers");
-				rglay = new QGridLayout;
-					rglay->setVerticalSpacing(0);
-					lab = new QLabel("AF"); rglay->addWidget(lab,0,0); lab = new QLabel; rglay->addWidget(lab,0,1); lab->setAutoFillBackground(true);
-					lab = new QLabel("BC"); rglay->addWidget(lab,1,0); lab = new QLabel; rglay->addWidget(lab,1,1); lab->setAutoFillBackground(true);
-					lab = new QLabel("DE"); rglay->addWidget(lab,2,0); lab = new QLabel; rglay->addWidget(lab,2,1); lab->setAutoFillBackground(true);
-					lab = new QLabel("HL"); rglay->addWidget(lab,3,0); lab = new QLabel; rglay->addWidget(lab,3,1); lab->setAutoFillBackground(true);
-					lab = new QLabel("AF'"); rglay->addWidget(lab,4,0); lab = new QLabel; rglay->addWidget(lab,4,1); lab->setAutoFillBackground(true);
-					lab = new QLabel("BC'"); rglay->addWidget(lab,5,0); lab = new QLabel; rglay->addWidget(lab,5,1); lab->setAutoFillBackground(true);
-					lab = new QLabel("DE'"); rglay->addWidget(lab,6,0); lab = new QLabel; rglay->addWidget(lab,6,1); lab->setAutoFillBackground(true);
-					lab = new QLabel("HL'"); rglay->addWidget(lab,7,0); lab = new QLabel; rglay->addWidget(lab,7,1); lab->setAutoFillBackground(true);
-					lab = new QLabel("IX"); rglay->addWidget(lab,8,0); lab = new QLabel; rglay->addWidget(lab,8,1); lab->setAutoFillBackground(true);
-					lab = new QLabel("IY"); rglay->addWidget(lab,9,0); lab = new QLabel; rglay->addWidget(lab,9,1); lab->setAutoFillBackground(true);
-					lab = new QLabel("IR"); rglay->addWidget(lab,10,0); lab = new QLabel; rglay->addWidget(lab,10,1); lab->setAutoFillBackground(true);
-					lab = new QLabel("PC"); rglay->addWidget(lab,11,0); lab = new QLabel; rglay->addWidget(lab,11,1); lab->setAutoFillBackground(true);
-					lab = new QLabel("SP"); rglay->addWidget(lab,12,0); lab = new QLabel; rglay->addWidget(lab,12,1); lab->setAutoFillBackground(true);
-					lab = new QLabel("IM"); rglay->addWidget(lab,13,0); lab = new QLabel; rglay->addWidget(lab,13,1); lab->setAutoFillBackground(true);
-					rglay->setColumnStretch(1,10);
-					rglay->setRowStretch(100,10);
-					rowincol[0] = 13;
-				regbox->setLayout(rglay);
-			QGroupBox *raybox = new QGroupBox("Mem");
-				raylay = new QGridLayout;
-					lab = new QLabel("Pg0"); raylay->addWidget(lab,0,0); lab = new QLabel; raylay->addWidget(lab,0,1);
-					lab = new QLabel("Pg1"); raylay->addWidget(lab,1,0); lab = new QLabel; raylay->addWidget(lab,1,1);
-					lab = new QLabel("Pg2"); raylay->addWidget(lab,2,0); lab = new QLabel; raylay->addWidget(lab,2,1);
-					lab = new QLabel("Pg3"); raylay->addWidget(lab,3,0); lab = new QLabel; raylay->addWidget(lab,3,1);
-					lab = new QLabel("DOSEN"); raylay->addWidget(lab,4,0); lab = new QLabel; raylay->addWidget(lab,4,1);
-					lab = new QLabel("PRT0"); raylay->addWidget(lab,5,0); lab = new QLabel; raylay->addWidget(lab,5,1);
-					lab = new QLabel("PRT1"); raylay->addWidget(lab,6,0); lab = new QLabel; raylay->addWidget(lab,6,1);
-					lab = new QLabel("PRT2"); raylay->addWidget(lab,7,0); lab = new QLabel; raylay->addWidget(lab,7,1);
-				raybox->setLayout(raylay);
-			logLabel = new QLabel;
-			llay->addWidget(regbox);
-			llay->addWidget(raybox);
-			llay->addWidget(logLabel);
-			llay->addStretch(10);
-		QGroupBox *asmbox = new QGroupBox("Disasm");
-			asmlay = new QGridLayout;
-				asmlay->setHorizontalSpacing(0);
-				asmlay->setVerticalSpacing(0);
-				for (i=0;i<DASMROW;i++) {
-					lab = new QLabel; asmlay->addWidget(lab,i,0);
-						lab->setAutoFillBackground(true);
-					lab = new QLabel; asmlay->addWidget(lab,i,1);
-						lab->setAutoFillBackground(true);
-					lab = new QLabel; asmlay->addWidget(lab,i,2);
-						lab->setAutoFillBackground(true);
-				}
-				rowincol[1] = rowincol[2] = rowincol[3] = DASMROW-1;
-				asmlay->setColumnMinimumWidth(0,40);
-				asmlay->setColumnMinimumWidth(1,80);
-				asmlay->setColumnMinimumWidth(2,130);
-			asmbox->setLayout(asmlay);
-		QVBoxLayout *rlay = new QVBoxLayout;
-			QGroupBox *dmpbox = new QGroupBox("Memory");
-				dmplay = new QGridLayout;
-				dmplay->setVerticalSpacing(0);
-					for (i=0; i<DMPSIZE; i++) {
-						lab = new QLabel; dmplay->addWidget(lab,i,0);
-						lab->setAutoFillBackground(true);
-						for (j=1; j<9; j++) {
-							lab = new QLabel;
-							lab->setAutoFillBackground(true);
-							dmplay->addWidget(lab,i,j);
-						}
-					}
-					for (i=4; i<13; i++) rowincol[i]=DMPSIZE-1;
-				dmplay->setColumnMinimumWidth(0,40);
-				dmpbox->setLayout(dmplay);
-			QGroupBox *vgbox = new QGroupBox("BDI");
-				vglay = new QGridLayout;
-				vglay->setVerticalSpacing(0);
-				lab = new QLabel("VG.TRK"); vglay->addWidget(lab,0,0); lab = new QLabel; vglay->addWidget(lab,0,1);
-				lab = new QLabel("VG.SEC"); vglay->addWidget(lab,1,0); lab = new QLabel; vglay->addWidget(lab,1,1);
-				lab = new QLabel("VG.DAT"); vglay->addWidget(lab,2,0); lab = new QLabel; vglay->addWidget(lab,2,1);
-				lab = new QLabel("EmulVG.Com"); vglay->addWidget(lab,3,0); lab = new QLabel; vglay->addWidget(lab,3,1);
-				lab = new QLabel("EmulVG.Wait"); vglay->addWidget(lab,4,0); lab = new QLabel; vglay->addWidget(lab,4,1);
-				lab = new QLabel("VG.floppy"); vglay->addWidget(lab,5,0); lab = new QLabel; vglay->addWidget(lab,5,1);
-				lab = new QLabel("VG.com"); vglay->addWidget(lab,6,0); lab = new QLabel; vglay->addWidget(lab,6,1);
-				lab = new QLabel("FLP.TRK"); vglay->addWidget(lab,0,2); lab = new QLabel; vglay->addWidget(lab,0,3);
-				lab = new QLabel("FLP.SID"); vglay->addWidget(lab,1,2); lab = new QLabel; vglay->addWidget(lab,1,3);
-				lab = new QLabel("FLP.POS"); vglay->addWidget(lab,2,2); lab = new QLabel; vglay->addWidget(lab,2,3);
-				lab = new QLabel("FLP.DAT"); vglay->addWidget(lab,3,2); lab = new QLabel; vglay->addWidget(lab,3,3);
-				lab = new QLabel("FLP.FLD"); vglay->addWidget(lab,4,2); lab = new QLabel; vglay->addWidget(lab,4,3);
-				vgbox->setLayout(vglay);
-			rlay->addWidget(dmpbox);
-			rlay->addWidget(vgbox);
-			rlay->addStretch(10);
-		alay->addLayout(llay);
-		alay->addWidget(asmbox);
-		alay->addLayout(rlay,10);
-	mlay->addLayout(alay);
-		QHBoxLayout *dlay = new QHBoxLayout;
-			tlab = new QLabel;
-			dlay->addWidget(tlab);
-			dlay->addStretch(10);
-	mlay->addLayout(dlay);
-	setLayout(mlay);
+	active = false;
+	block = false;
+	disasmAdr = 0;
+	dumpAdr = 0;
+	tCount = 0;
 
-	ledit = new QLineEdit(this);
-	ledit->setWindowModality(Qt::ApplicationModal);
-	ledit->setFrame(false);
-
-	connect(ledit,SIGNAL(cursorPositionChanged(int,int)),this,SLOT(editPosChanged(int,int)));
-	connect(&logTimer,SIGNAL(timeout()),this,SLOT(logStep()));
-
-	QPalette pal;
-	pal.setColor(QPalette::ToolTipBase,QColor(128,255,128));
-	pal.setColor(QPalette::Highlight,QColor(255,128,128));
-	pal.setColor(QPalette::ToolTipText,QColor(255,0,0));
-	setPalette(pal);
-
-	setWindowTitle("Xpeccy deBUGa");
-	setWindowIcon(QIcon(":/images/bug.png"));
-	setFont(QFont("Monospace",9));
-	setModal(true);
-	setFixedSize(640,480);
-#endif
 	dumpwin = new QDialog();
 	dui.setupUi(dumpwin);
 	dui.tbSave->addAction(dui.aSaveBin);
@@ -271,11 +153,6 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(bui.cbFetch,SIGNAL(stateChanged(int)),this,SLOT(chaBreakPoint()));
 	connect(bui.cbRead,SIGNAL(stateChanged(int)),this,SLOT(chaBreakPoint()));
 	connect(bui.cbWrite,SIGNAL(stateChanged(int)),this,SLOT(chaBreakPoint()));
-
-	active = false;
-	block = false;
-	disasmAdr = 0;
-	dumpAdr = 0;
 }
 
 void DebugWin::wheelEvent(QWheelEvent* ev) {
@@ -380,6 +257,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					fillAll();
 					break;
 				case Qt::Key_F7:
+					tCount = zx->tickCount;
 					zxExec(zx);
 					if (!fillAll()) {
 						disasmAdr = GETPC(zx->cpu);
@@ -403,6 +281,7 @@ QString gethexbyte(uchar num) {return QString::number(num+0x100,16).right(2).toU
 QString getbinbyte(uchar num) {return QString::number(num+0x100,2).right(8).toUpper();}
 
 bool DebugWin::fillAll() {
+	ui.labTcount->setText(QString::number(zx->tickCount - tCount));
 	fillZ80();
 	fillMem();
 	fillDump();
@@ -424,6 +303,18 @@ QString flagString(int af) {
 	return flag;
 }
 
+void DebugWin::fillFlags() {
+	Z80EX_WORD af = GETAF(zx->cpu);
+	ui.cbFS->setChecked(af & 0x80);
+	ui.cbFZ->setChecked(af & 0x40);
+	ui.cbF5->setChecked(af & 0x20);
+	ui.cbFH->setChecked(af & 0x10);
+	ui.cbF3->setChecked(af & 0x08);
+	ui.cbFP->setChecked(af & 0x04);
+	ui.cbFN->setChecked(af & 0x02);
+	ui.cbFC->setChecked(af & 0x01);
+}
+
 void DebugWin::fillZ80() {
 	block = true;
 	Z80EX_WORD af = GETAF(zx->cpu);
@@ -443,9 +334,26 @@ void DebugWin::fillZ80() {
 	ui.boxIM->setValue(GETIM(zx->cpu));
 	ui.flagIFF1->setChecked(GETIFF1(zx->cpu));
 	ui.flagIFF2->setChecked(GETIFF1(zx->cpu));
-	ui.labFlag->setText(flagString(af));
+	//ui.labFlag->setText(flagString(af));
+	fillFlags();
 	block = false;
 	fillStack();
+}
+
+void DebugWin::setFlags() {
+	if (block) return;
+	Z80EX_WORD af = GETAF(zx->cpu);
+	af &= 0xff00;
+	if (ui.cbFS->isChecked()) af |= 0x80;
+	if (ui.cbFZ->isChecked()) af |= 0x40;
+	if (ui.cbF5->isChecked()) af |= 0x20;
+	if (ui.cbFH->isChecked()) af |= 0x10;
+	if (ui.cbF3->isChecked()) af |= 0x08;
+	if (ui.cbFP->isChecked()) af |= 0x04;
+	if (ui.cbFN->isChecked()) af |= 0x02;
+	if (ui.cbFC->isChecked()) af |= 0x01;
+	SETAF(zx->cpu, af);
+	ui.editAF->setText(gethexword(af));
 }
 
 void DebugWin::setZ80() {
@@ -467,7 +375,7 @@ void DebugWin::setZ80() {
 	SETIM(zx->cpu, ui.boxIM->value());
 	SETIFF1(zx->cpu, ui.flagIFF1->isChecked());
 	SETIFF2(zx->cpu, ui.flagIFF2->isChecked());
-	ui.labFlag->setText(flagString(af));
+	fillFlags();
 	fillStack();
 }
 

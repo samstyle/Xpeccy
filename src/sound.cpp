@@ -217,19 +217,18 @@ void sdlPlayAudio(void*,Uint8* stream, int len) {
 
 bool sdlopen() {
 //	printf("Open SDL audio device...");
-	SDL_AudioSpec* asp = new SDL_AudioSpec;
-	asp->freq = sndRate;
-	asp->format = AUDIO_U8;
-	asp->channels = sndChans;
-	asp->samples = sndChunks + 1;
-	asp->callback = &sdlPlayAudio;
-	asp->userdata = NULL;
-	if (SDL_OpenAudio(asp,NULL) < 0) {
+	SDL_AudioSpec asp;
+	asp.freq = sndRate;
+	asp.format = AUDIO_U8;
+	asp.channels = sndChans;
+	asp.samples = sndChunks + 1;
+	asp.callback = &sdlPlayAudio;
+	asp.userdata = NULL;
+	if (SDL_OpenAudio(&asp, NULL) != 0) {
 		printf("SDL audio device opening...failed\n");
 		return false;
 	}
 	SDL_PauseAudio(0);
-//	printf("OK\n");
 	return true;
 }
 
@@ -237,8 +236,6 @@ void sdlplay() {
 }
 
 void sdlclose() {
-//	printf("Close SDL audio device\n");
-	SDL_PauseAudio(1);
 	SDL_CloseAudio();
 }
 
