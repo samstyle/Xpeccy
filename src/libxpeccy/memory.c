@@ -7,27 +7,28 @@
 
 #include <stdio.h>
 
-Memory* memCreate() {
+Memory* memCreate(int rampg, int rompg) {
+	if ((rampg == 0) || (rampg > 256)) rampg = 256;
+	if ((rompg == 0) || (rompg > 32)) rompg = 32;
 	int i;
 	Memory* mem = (Memory*)malloc(sizeof(Memory));
+	mem->ramData = (unsigned char*)malloc(rampg << 14);
+	mem->ramFlag = (unsigned char*)malloc(rampg << 14);
+	mem->romData = (unsigned char*)malloc(rompg << 14);
+	mem->romFlag = (unsigned char*)malloc(rompg << 14);
 	mem->romMask = 0x03;
-	memset(mem->romFlag,0x00,0x80000);
-	memset(mem->ramFlag,0x00,0x400000);
-	for (i = 0; i < 32; i++) {
+	for (i = 0; i < rompg; i++) {
 		mem->rom[i].type = MEM_ROM;
 		mem->rom[i].num = i & 0xff;
-//		mem->rom[i].flags = MEM_RDONLY;
-		mem->rom[i].data = mem->romData + (i << 14);
-		mem->rom[i].flag = mem->romFlag + (i << 14);
+		mem->rom[i].dptr = mem->romData + (i << 14);
+		mem->rom[i].fptr = mem->romFlag + (i << 14);
 	}
-	for (i = 0; i < 256; i++) {
+	for (i = 0; i < rampg; i++) {
 		mem->ram[i].type = MEM_RAM;
 		mem->ram[i].num = i & 0xff;
-//		mem->ram[i].flags = 0;
-		mem->ram[i].data = mem->ramData + (i << 14);
-		mem->ram[i].flag = mem->ramFlag + (i << 14);
+		mem->ram[i].dptr = mem->ramData + (i << 14);
+		mem->ram[i].fptr = mem->ramFlag + (i << 14);
 	}
-//	mem->flags = MEM_ROM_WP;
 	memSetSize(mem,48);
 	mem->pt[0] = &mem->rom[0];
 	mem->pt[1] = &mem->ram[5];
@@ -38,41 +39,38 @@ Memory* memCreate() {
 }
 
 void memDestroy(Memory* mem) {
+	free(mem->ramData);
+	free(mem->ramFlag);
+	free(mem->romData);
+	free(mem->romFlag);
 	free(mem);
 }
 
 MemPage* memGetBankPtr(Memory* mem, unsigned short adr) {
 	return mem->pt[adr >> 14];
-//	if (adr < 0x4000) return mem->pt0;
-//	if (adr < 0x8000) return mem->pt1;
-//	if (adr < 0xc000) return mem->pt2;
-//	return mem->pt3;
 }
 
 MemPage* ptr;
 
 unsigned char memRd(Memory* mem, unsigned short adr) {
-//	if (adr < 0x4000) ptr = mem->pt0;
-//	else if (adr < 0x8000) ptr = mem->pt1;
-//	else if (adr < 0xc000) ptr = mem->pt2;
-//	else ptr = mem->pt3;
 	ptr = mem->pt[adr >> 14];
-	mem->flag |= (ptr->flag[adr & 0x3fff] & MEM_BRK_READ);
-	return ptr->data[adr & 0x3fff];
+	mem->flag |= (ptr->fptr[adr & 0x3fff] & MEM_BRK_RD);
+	return ptr->dptr[adr & 0x3fff];
 }
 
 void memWr(Memory* mem, unsigned short adr, unsigned char val) {
-//	if (adr < 0x4000) ptr = mem->pt0;
-//	else if (adr < 0x8000) ptr = mem->pt1;
-//	else if (adr < 0xc000) ptr = mem->pt2;
-//	else ptr = mem->pt3;
 	ptr = mem->pt[adr >> 14];
-	mem->flag |= (ptr->flag[adr & 0x3fff] & MEM_BRK_WRITE);
-	if (ptr->type == MEM_RAM) ptr->data[adr & 0x3fff] = val;
+	mem->flag |= (ptr->fptr[adr & 0x3fff] & MEM_BRK_WR);
+	if (ptr->type == MEM_RAM) ptr->dptr[adr & 0x3fff] = val;
 }
 
+unsigned char* memGetFptr(Memory* mem, unsigned short adr) {
+	return mem->pt[adr >> 14]->fptr + (adr & 0x3fff);
+}
+
+/*
 unsigned char memGetCellFlags(Memory* mem, unsigned short adr) {
-	MemPage* ptr = memGetBankPtr(mem,adr);
+	ptr = mem->pt[adr >> 14];
 	return (ptr->flag[adr & 0x3fff]);
 }
 
@@ -80,6 +78,7 @@ void memSetCellFlags(Memory* mem, unsigned short adr, unsigned char val) {
 	MemPage* ptr = memGetBankPtr(mem,adr);
 	ptr->flag[adr & 0x3fff] = val;
 }
+*/
 
 void memSetSize(Memory* mem, int val) {
 	if (mem->memSize == val) return;
@@ -111,27 +110,6 @@ void memSetSize(Memory* mem, int val) {
 			mem->memSize = 48;
 			break;
 	}
-/*
-	for (int i = 0; i < 256; i++) {
-		if (i <= mem->memMask) {
-			if (mem->ram[i].data == NULL) {
-				mem->ram[i].data = malloc(0x4000 * sizeof(unsigned char));
-				mem->ram[i].flag = malloc(0x4000 * sizeof(unsigned char));
-				memset(mem->ram[i].data,0x00,0x4000 * sizeof(unsigned char));
-				memset(mem->ram[i].flag,0x00,0x4000 * sizeof(unsigned char));
-			}
-		} else {
-			if (mem->ram[i].data != NULL) {
-				free(mem->ram[i].data);
-				mem->ram[i].data = NULL;
-			}
-			if (mem->ram[i].flag != NULL) {
-				free(mem->ram[i].flag);
-				mem->ram[i].flag = NULL;
-			}
-		}
-	}
-*/
 }
 
 void memSetBank(Memory* mem, int bank, int wut, unsigned char nr) {
@@ -168,10 +146,10 @@ void memSetBank(Memory* mem, int bank, int wut, unsigned char nr) {
 void memSetPage(Memory* mem, int type, int page, char* src) {
 	switch(type) {
 		case MEM_ROM:
-			memcpy(mem->rom[page & 31].data,src,0x4000);
+			memcpy(mem->rom[page & 31].dptr,src,0x4000);
 			break;
 		case MEM_RAM:
-			memcpy(mem->ram[page & 63].data,src,0x4000);
+			memcpy(mem->ram[page & 255].dptr,src,0x4000);
 			break;
 	}
 }
@@ -179,10 +157,10 @@ void memSetPage(Memory* mem, int type, int page, char* src) {
 void memGetPage(Memory* mem, int type, int page, char* dst) {
 	switch(type) {
 		case MEM_ROM:
-			memcpy(dst,mem->rom[page & 31].data,0x4000);
+			memcpy(dst,mem->rom[page & 31].dptr,0x4000);
 			break;
 		case MEM_RAM:
-			memcpy(dst,mem->ram[page & 63].data,0x4000);
+			memcpy(dst,mem->ram[page & 255].dptr,0x4000);
 			break;
 	}
 }
@@ -191,10 +169,10 @@ unsigned char* memGetPagePtr(Memory* mem, int type, int page) {
 	unsigned char* res = NULL;
 	switch (type) {
 		case MEM_ROM:
-			res = &mem->rom[page & 31].data[0];
+			res = mem->rom[page & 31].dptr;
 			break;
 		case MEM_RAM:
-			res = &mem->ram[page & 63].data[0];
+			res = mem->ram[page & 255].dptr;
 			break;
 	}
 	return res;

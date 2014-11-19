@@ -208,17 +208,15 @@ ZXComp* zxCreate() {
 	ZXComp* comp = (ZXComp*)malloc(sizeof(ZXComp));
 	void* ptr = (void*)comp;
 	memset(ptr,0,sizeof(ZXComp));
-	// comp->flag = ZX_PALCHAN;	// | ZX_JUSTBORN
-//	comp->palchan = 1;
-	// comp->hwFlag = 0;
+	memset(comp->brkIOMap, 0, 0x10000);
 	comp->padr = 0;
 
 #ifdef SELFZ80
-	comp->cpu = cpuCreate(&memrd,&memwr,&iord,*iowr,&intrq,ptr);
+	comp->cpu = cpuCreate(&memrd,&memwr,&iord,&iowr,&intrq,ptr);
 #else
 	comp->cpu = z80ex_create(&memrd,ptr,&memwr,ptr,&iord,ptr,&iowr,ptr,&intrq,ptr);
 #endif
-	comp->mem = memCreate();
+	comp->mem = memCreate(0,0);
 	comp->vid = vidCreate(comp->mem);
 	zxSetFrq(comp,3.5);
 // input
@@ -389,13 +387,8 @@ void zxSetFrq(ZXComp* comp, float frq) {
 
 int zxExec(ZXComp* comp) {
 
-	pcreg = GETPC(comp->cpu);
-	if (memGetCellFlags(comp->mem,pcreg) & MEM_BRK_FETCH) {
-		comp->brk = 1;
-		return 0;
-	}
-
 	comp->mem->flag = 0;
+
 	res4 = 0;
 	EXECCPU(comp->cpu,res2);
 	comp->nsCount += res2 * comp->nsPerTick;
@@ -469,14 +462,19 @@ int zxExec(ZXComp* comp) {
 	}
 	if ((comp->vid->nextrow) && (comp->hw->type == HW_TSLAB)) {
 		tslUpdatePorts(comp);
-		// vidTSRender(comp->vid,ptr);
 		comp->vid->nextrow = 0;
 	}
 	nsTime = res1 * comp->nsPerTick;
 	comp->tickCount += res1;
 
-// TOO FAT
-	if (comp->mem->flag & (MEM_BRK_READ | MEM_BRK_WRITE)) comp->brk = 1;
+	pcreg = GETPC(comp->cpu);
+	if (*memGetFptr(comp->mem, pcreg) & MEM_BRK_FETCH) {
+		comp->brk = 1;
+	}
+	if (comp->mem->flag & (MEM_BRK_RD | MEM_BRK_WR)) {
+		comp->brk = 1;
+	}
+	if (comp->debug) comp->brk = 0;
 
 	comp->tapCount += nsTime;
 	if (comp->gs->enable) comp->gs->sync += nsTime;

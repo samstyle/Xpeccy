@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(xpeccy)
-set(XVER "0.5.20141117")
+set(XVER "0.5.20141121")
 
 include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
 
@@ -39,7 +39,6 @@ file(GLOB UIFILES ./ui/*.ui)
 set(QRCFILES ./xpeccy.qrc)
 set(MOCFILES
 	./src/emulwin.h
-	./src/sdkwin.h
 	./src/debuger.h
 	./src/setupwin.h
 	./src/xgui/xgui.h

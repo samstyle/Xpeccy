@@ -12,7 +12,6 @@
 #include "emulwin.h"
 #include "settings.h"
 #include "filer.h"
-#include "sdkwin.h"
 
 #ifdef _WIN32
 	#include <direct.h>
@@ -251,9 +250,6 @@ void saveProfiles() {
 	cfile << "volume.tape = " << int2str(tapeVolume).c_str() << "\n";
 	cfile << "volume.ay = " << int2str(ayVolume).c_str() << "\n";
 	cfile << "volume.gs = " << int2str(gsVolume).c_str() << "\n";
-	cfile << "\n[TOOLS]\n\n";
-	cfile << "asmPath = " << compPath.toUtf8().data() << "\n";
-	cfile << "projectsDir = " << prjDir.toUtf8().data() << "\n";
 
 	cfile << "\n[TAPE]\n\n";
 	cfile << "autoplay = " << ((flag & OF_TAPEAUTO) ? "yes" : "no") << "\n";
@@ -486,8 +482,6 @@ void loadProfiles() {
 					}
 					break;
 				case SECT_TOOLS:
-					if (pnam=="asmPath") compPath = QString(pval.c_str());
-					if (pnam=="projectsDir") prjDir = QString(pval.c_str());
 					break;
 				case SECT_GENERAL:
 					if (pnam=="keys") {

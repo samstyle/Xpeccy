@@ -43,7 +43,7 @@ typedef struct {
 
 struct ZXComp {
 	unsigned brk:1;			// breakpoint
-//	unsigned palchan:1;		// palette changed
+	unsigned debug:1;		// dont' do breakpoints
 	unsigned frmStrobe:1;		// new frame started
 	unsigned intStrobe:1;		// int front
 	unsigned nmiRequest:1;		// Magic button pressed
@@ -75,15 +75,17 @@ struct ZXComp {
 	int rzxFetches;
 	float cpuFrq;
 
+	unsigned long tickCount;
 	int nsPerTick;
 	int nsPerFrame;
-	int nsCount;
+	unsigned long nsCount;
 
 	memEntry memMap[16];		// memory map for ATM2, PentEvo
-//	unsigned char colMap[16];	// color map
 	unsigned char prt0;		// 7ffd value
 	unsigned char prt1;		// extend port value
 	unsigned char prt2;		// scorpion ProfROM layer (0..3)
+
+	unsigned char brkIOMap[0x10000];	// brk by port
 
 	unsigned short padr;
 	unsigned char pval;
@@ -122,7 +124,6 @@ struct ZXComp {
 	unsigned char dosen;		// active trdos (dosen and b4,prt0 sets rompart)
 	int resbank;			// rompart active after reset
 	int tapCount;
-	unsigned long tickCount;
 	int intVector;
 };
 

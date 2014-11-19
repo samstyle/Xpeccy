@@ -791,7 +791,7 @@
      <item>
       <widget class="QLabel" name="label_24">
        <property name="styleSheet">
-        <string notr="true">background-color: rgb(0, 255, 0);</string>
+        <string notr="true">background-color: rgb(160, 160, 255);</string>
        </property>
        <property name="text">
         <string>MEM</string>
@@ -856,7 +856,7 @@
      <item>
       <widget class="QLabel" name="label_27">
        <property name="styleSheet">
-        <string notr="true">background-color: rgb(0, 255, 0);</string>
+        <string notr="true">background-color: rgb(160, 160, 255);</string>
        </property>
        <property name="text">
         <string>SP</string>

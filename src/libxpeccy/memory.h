@@ -16,24 +16,18 @@ extern "C" {
 #define	MEM_BANK1	1
 #define	MEM_BANK2	2
 #define	MEM_BANK3	3
-// memory flags
-//#define	MEM_BREAK	1
-//#define	MEM_B0_WP	(1<<1)		// protect bank0
-//#define	MEM_ROM_WP	(1<<2)		// protect rom
-// mempage flags
-//#define	MEM_RDONLY	1
-// membyte flags
+// memory breaks
 #define	MEM_BRK_FETCH	1
-#define	MEM_BRK_READ	(1<<1)
-#define	MEM_BRK_WRITE	(1<<2)
-#define MEM_BRK_ANY	(MEM_BRK_FETCH | MEM_BRK_READ | MEM_BRK_WRITE)
+#define	MEM_BRK_RD	2
+#define	MEM_BRK_WR	4
+#define	MEM_BRK_ANY	(MEM_BRK_FETCH | MEM_BRK_RD | MEM_BRK_WR)
 
 typedef struct {
 	int type;
 	int num;
 	int flags;
-	unsigned char* data;
-	unsigned char* flag;
+	unsigned char* dptr;
+	unsigned char* fptr;
 } MemPage;
 
 typedef struct {
@@ -41,16 +35,16 @@ typedef struct {
 	MemPage ram[256];
 	MemPage rom[32];
 	MemPage* pt[4];
-	unsigned char ramData[0x400000];	// 4M
-	unsigned char ramFlag[0x400000];
-	unsigned char romData[0x80000];		// 512K
-	unsigned char romFlag[0x80000];
+	unsigned char* ramData;
+	unsigned char* ramFlag;
+	unsigned char* romData;
+	unsigned char* romFlag;
 	int memSize;
 	int memMask;
 	int romMask;	// 0:16K, 1:32K, 3:64K, 7:128K, 15:256K, 31:512K
 } Memory;
 
-Memory* memCreate();
+Memory* memCreate(int, int);
 void memDestroy(Memory*);
 
 unsigned char memRd(Memory*,unsigned short);
@@ -63,9 +57,7 @@ void memSetPage(Memory*,int,int,char*);
 void memGetPage(Memory*,int,int,char*);
 
 unsigned char* memGetPagePtr(Memory*,int,int);
-
-unsigned char memGetCellFlags(Memory*, unsigned short);
-void memSetCellFlags(Memory*,unsigned short,unsigned char);
+unsigned char* memGetFptr(Memory*, unsigned short);
 
 MemPage* memGetBankPtr(Memory*,unsigned short);
 

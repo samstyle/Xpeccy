@@ -21,7 +21,6 @@
 #include "emulwin.h"
 #include "setupwin.h"
 #include "debuger.h"
-#include "sdkwin.h"
 #include "filer.h"
 
 #ifdef HAVESDL
@@ -306,6 +305,13 @@ MainWin::MainWin() {
 
 	initUserMenu((QWidget*)this);
 
+	keywin = new QLabel;
+	QPixmap pxm(":/images/keymap.png");
+	keywin->setPixmap(pxm);
+	keywin->setFixedSize(pxm.size());
+	keywin->setWindowIcon(QIcon(":/images/keyboard.png"));
+	keywin->setWindowTitle("ZX Keyboard");
+
 	connect(&cmosTimer,SIGNAL(timeout()),this,SLOT(cmosTick()));
 	cmosTimer.start(1000);
 	connect(&timer,SIGNAL(timeout()),this,SLOT(onTimer()));
@@ -323,6 +329,48 @@ MainWin::MainWin() {
 }
 
 void doScreenShot();
+
+// scale screen
+
+// 2:1 -> 2:2 = double each line
+void scrDouble (unsigned char* src, int wid, int lines) {
+	unsigned char* dst = screen;
+	while (lines > 0) {
+		memcpy(dst, src, wid);
+		dst += wid;
+		memcpy(dst, src, wid);
+		dst += wid;
+		src += wid;
+		lines--;
+	}
+}
+
+// 2:1 -> 1:1 = take each 2nd pixel in a row
+
+void scrNormal (unsigned char* src, int wid, int lines) {
+	unsigned char* dst = screen;
+	int cnt;
+	while (lines > 0) {
+		for (cnt = 0; cnt < wid; cnt += 3) {
+			*dst = *src;
+			dst++; src++;
+			*dst = *src;
+			dst++; src++;
+			*dst = *src;
+			dst++;
+			src += 4;
+		}
+		lines--;
+	}
+}
+
+void convImage(ZXComp* comp) {
+	if (vidFlag & VF_DOUBLE) {
+		scrDouble(zx->vid->scrimg, zx->vid->lineBytes, zx->vid->vsze.v);
+	} else {
+		scrNormal(zx->vid->scrimg, zx->vid->lineBytes, zx->vid->vsze.v);
+	}
+}
 
 void MainWin::onTimer() {
 	if (emulFlags & FL_BLOCK) return;
@@ -553,6 +601,9 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				zxReset(zx,RES_DOS);
 				rzxWin->stop();
 				break;
+			case Qt::Key_K:
+				keywin->show();
+				break;
 			case Qt::Key_N:
 				vidFlag ^= VF_NOFLIC;
 				saveProfiles();
@@ -604,10 +655,6 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 					mainWin->tapStateChanged(TW_STATE,TWS_REC);
 				}
 				break;
-			case Qt::Key_F6:
-				devShow();
-				//extSlot(EV_WINDOW,WW_DEVEL);
-				break;
 			case Qt::Key_F7:
 				if (scrCounter == 0) {
 					emulFlags |= FL_SHOT;
@@ -655,11 +702,11 @@ void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 void MainWin::mousePressEvent(QMouseEvent *ev){
 	switch (ev->button()) {
 		case Qt::LeftButton:
-			if (emulFlags & FL_GRAB) zx->mouse->buttons &= ~0x01;
+			if (emulFlags & FL_GRAB) zx->mouse->buttons &= (zx->mouse->swapButtons ? ~0x02 : ~0x01);
 			break;
 		case Qt::RightButton:
 			if (emulFlags & FL_GRAB) {
-				zx->mouse->buttons &= ~0x02;
+				zx->mouse->buttons &= (zx->mouse->swapButtons ? ~0x01 : ~0x02);
 			} else {
 //				emulPause(true,PR_MENU);
 				userMenu->popup(QPoint(ev->globalX(),ev->globalY()));
@@ -674,10 +721,10 @@ void MainWin::mouseReleaseEvent(QMouseEvent *ev) {
 	if (pauseFlags != 0) return;
 	switch (ev->button()) {
 		case Qt::LeftButton:
-			if (emulFlags & FL_GRAB) zx->mouse->buttons |= 0x01;
+			if (emulFlags & FL_GRAB) zx->mouse->buttons |= (zx->mouse->swapButtons ? 0x02 : 0x01);
 			break;
 		case Qt::RightButton:
-			if (emulFlags & FL_GRAB) zx->mouse->buttons |= 0x02;
+			if (emulFlags & FL_GRAB) zx->mouse->buttons |= (zx->mouse->swapButtons ? 0x01 : 0x02);
 			break;
 		case Qt::MidButton:
 			emulFlags ^= FL_GRAB;
@@ -754,6 +801,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		timer.stop();
 		mtx.unlock();		// unlock emulation thread (it exit, cuz of FL_EXIT)
 		ethread.wait();
+		keywin->close();
 		ev->accept();
 	} else {
 		ev->ignore();
@@ -856,6 +904,7 @@ void MainWin::emuDraw() {
 		}
 	}
 */
+	if (zx->debug) convImage(zx);
 	int winDots = zx->vid->wsze.h * zx->vid->wsze.v;
 	if (vidFlag & VF_GREY) scrGray(screen, winDots);
 	if (vidFlag & VF_NOFLIC) scrMix(prevscr, screen, winDots * 3);
@@ -1094,40 +1143,6 @@ void MainWin::chVMode(QAction* act) {
 	}
 }
 
-// scale screen
-
-// 2:1 -> 2:2 = double each line
-void scrDouble (unsigned char* src, int wid, int lines) {
-	unsigned char* dst = screen;
-	while (lines > 0) {
-		memcpy(dst, src, wid);
-		dst += wid;
-		memcpy(dst, src, wid);
-		dst += wid;
-		src += wid;
-		lines--;
-	}
-}
-
-// 2:1 -> 1:1 = take each 2nd pixel in a row
-
-void scrNormal (unsigned char* src, int wid, int lines) {
-	unsigned char* dst = screen;
-	int cnt;
-	while (lines > 0) {
-		for (cnt = 0; cnt < wid; cnt += 3) {
-			*dst = *src;
-			dst++; src++;
-			*dst = *src;
-			dst++; src++;
-			*dst = *src;
-			dst++;
-			src += 4;
-		}
-		lines--;
-	}
-}
-
 // emulation thread (non-GUI)
 
 void emuCycle() {
@@ -1149,12 +1164,8 @@ void emuCycle() {
 		}
 	} while (!zx->brk && (zx->frmStrobe == 0));		// exec until breakpoint or INT
 
-//	memcpy(screen,zx->vid->scrimg,zx->vid->frameBytes);
-	if (vidFlag & VF_DOUBLE) {
-		scrDouble(zx->vid->scrimg, zx->vid->lineBytes, zx->vid->vsze.v);
-	} else {
-		scrNormal(zx->vid->scrimg, zx->vid->lineBytes, zx->vid->vsze.v);
-	}
+	if (!zx->debug) convImage(zx);
+
 	zx->nmiRequest = 0;
 	// decrease frames & screenshot counter (if any), request screenshot (if needed)
 	if (scrCounter != 0) {

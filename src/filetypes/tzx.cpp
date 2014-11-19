@@ -42,7 +42,7 @@ int loadTZX(Tape* tape, const char* name) {
 				blockBuf = (char*)realloc(blockBuf,len * sizeof(char));
 				file.read(blockBuf,len);
 				block = tapDataToBlock(blockBuf,len,sigLens);
-				blkAddSignal(&block,sigLens[5]);
+				blkAddPulse(&block,sigLens[5]);
 				blkAddPause(&block,paulen);
 				tapAddBlock(tape,block);
 				blkClear(&block);
@@ -61,18 +61,18 @@ int loadTZX(Tape* tape, const char* name) {
 				blockBuf = (char*)realloc(blockBuf,len * sizeof(char));
 				file.read(blockBuf,len);
 				block = tapDataToBlock(blockBuf,len,altLens);
-				blkAddSignal(&block,sigLens[5]);
+				blkAddPulse(&block,sigLens[5]);
 				blkAddPause(&block,paulen);
 				tapAddBlock(tape,block);
 				blkClear(&block);
-				tape->isData = 0;
+//				tape->isData = 0;
 				break;
 
 			case 0x12:			// pure tone
 				paulen = getLength(&file,2);	// Length of one pulse in T-states
 				len = getLength(&file,2);	// Number of pulses
 				while (len > 0) {
-					blkAddPulse(&block,paulen);	// pulse is 1+0 : 2 signals
+					blkAddWave(&block,paulen);	// pulse is 1+0 : 2 signals
 					len--;
 				}
 				tape->isData = 0;
@@ -81,7 +81,7 @@ int loadTZX(Tape* tape, const char* name) {
 				len = file.get();
 				while (len > 0) {
 					paulen = getLength(&file,2);
-					blkAddPulse(&block,paulen);
+					blkAddWave(&block,paulen);
 					len--;
 				}
 				tape->isData = 0;
@@ -104,8 +104,9 @@ int loadTZX(Tape* tape, const char* name) {
 				block.len1 = altBlock.len1;
 				block.dataPos = -1;
 				for (i = altBlock.dataPos; i < altBlock.sigCount; i++) {
-					blkAddSignal(&block,altBlock.sigData[i]);
+					blkAddPulse(&block,altBlock.sigData[i]);
 				}
+				blkAddPulse(&block, SYNC3LEN);
 				blkAddPause(&block,paulen);
 				tape->isData = 0;
 				break;
@@ -126,7 +127,7 @@ int loadTZX(Tape* tape, const char* name) {
 */
 			case 0x20:
 				len = getLength(&file,2);
-				blkAddSignal(&block,len);		// ! if 0, next block must be breakpoint
+				blkAddPulse(&block,len);		// ! if 0, next block must be breakpoint
 				break;
 			case 0x21:
 				len = file.get();
@@ -134,7 +135,7 @@ int loadTZX(Tape* tape, const char* name) {
 				break;
 			case 0x22:
 				if (block.sigCount != 0) {
-					blkAddSignal(&block,sigLens[5]);
+					blkAddPulse(&block,sigLens[5]);
 					block.hasBytes = 0;
 					tapAddBlock(tape,block);
 					blkClear(&block);

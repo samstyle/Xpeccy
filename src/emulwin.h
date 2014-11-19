@@ -3,6 +3,8 @@
 
 #include <QTimer>
 #include <QThread>
+#include <QLabel>
+
 #ifdef DRAWGL
 	#include <QGLWidget>
 #endif
@@ -11,19 +13,6 @@
 #endif
 
 #include "libxpeccy/spectrum.h"
-
-
-// wanted windows
-//#define	WW_NONE		0
-//#define	WW_DEBUG	1
-//#define WW_OPTIONS	2
-//#define	WW_DEVEL	3
-//#define	WW_FOPEN	4
-//#define WW_FSAVE	5
-//#define	WW_SAVECHA	6
-//#define WW_RZXPLAYER	7
-//#define	WW_TAPEPLAYER	8
-//#define	WW_MENU		9
 
 // pause reasons
 #define	PR_MENU		1
@@ -258,13 +247,11 @@ class MainWin : public QWidget {
 		void checkState();
 		void updateHead();
 		void emuDraw();
-//		void sendSignal(int,int);
-//	signals:
-//		void extSignal(int,int);
 	private:
 		QTimer cmosTimer;
 		QTimer timer;
 		xThread ethread;
+		QLabel* keywin;
 #ifdef DRAWGL
 		GLuint tex;
 		GLuint displaylist;
@@ -288,7 +275,6 @@ class MainWin : public QWidget {
 		void reset(QAction*);
 		void chLayout(QAction*);
 		void chVMode(QAction*);
-//		void saveRDisk();
 	protected:
 		void closeEvent(QCloseEvent*);
 #ifdef DRAWGL

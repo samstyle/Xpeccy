@@ -42,5 +42,6 @@
         <file>images/shutdown.png</file>
         <file>images/mouse.png</file>
         <file>images/sdcard.png</file>
+        <file>images/keymap.png</file>
     </qresource>
 </RCC>

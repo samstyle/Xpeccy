@@ -27,7 +27,6 @@ class SetupWin : public QDialog {
 		void loatape(); void savtape(); void ejctape();
 		void tblkup(); void tblkdn(); void tblkrm();
 		void hddMasterImg(); void hddSlaveImg();
-		void ssjapath(); void sprjpath();
 		void umadd(); void umdel(); void umup(); void umdn();
 		void umedit(QModelIndex);
 		void umaselp(); void umaconf();
@@ -39,7 +38,6 @@ class SetupWin : public QDialog {
 		void selSDCimg();
 	void editrset();
 		void setrpart();
-//		void hidersedit();
 		void addNewRomset();
 		void rmRomset();
 		void recheck_single(bool);
@@ -49,9 +47,6 @@ class SetupWin : public QDialog {
 		void copyToDisk();
 		void diskToHobeta();
 		void diskToRaw();
-		//void addJoyBind();
-		//void delJoyBind();
-		//void scanJoyBind();
 		void newProfile();
 		void rmProfile();
 

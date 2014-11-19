@@ -279,6 +279,7 @@ int prfLoad(std::string nm) {
 				case PS_INPUT:
 					if (pnam == "mouse") comp->mouse->enable = str2bool(pval) ? 1 : 0;
 					if (pnam == "mouse.wheel") comp->mouse->hasWheel = str2bool(pval) ? 1 : 0;
+					if (pnam == "mouse.swapButtons") comp->mouse->swapButtons = str2bool(pval) ? 1 : 0;
 					break;
 				case PS_SDC:
 					if (pnam == "sdcimage") sdcSetImage(comp->sdc,pval.c_str());
@@ -372,6 +373,7 @@ int prfSave(std::string nm) {
 	file << "\n[INPUT]\n\n";
 	file << "mouse = " << YESNO(comp->mouse->enable) << "\n";
 	file << "mouse.wheel = " << YESNO(comp->mouse->hasWheel) << "\n";
+	file << "mouse.swapButtons" << YESNO(comp->mouse->swapButtons) << "\n";
 
 	file << "\n[TAPE]\n\n";
 	file << "path = " << (comp->tape->path ? comp->tape->path : "") << "\n";

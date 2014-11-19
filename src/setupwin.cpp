@@ -18,7 +18,6 @@
 #include "emulwin.h"
 #include "settings.h"
 #include "filer.h"
-#include "sdkwin.h"
 #include "filetypes/filetypes.h"
 
 #include "ui_rsedit.h"
@@ -280,8 +279,6 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	connect(setupUi.tbSDCimg,SIGNAL(released()),this,SLOT(selSDCimg()));
 	connect(setupUi.tbsdcfree,SIGNAL(released()),setupUi.sdPath,SLOT(clear()));
 //tools
-	QObject::connect(setupUi.sjselptb,SIGNAL(released()),this,SLOT(ssjapath()));
-	QObject::connect(setupUi.pdselptb,SIGNAL(released()),this,SLOT(sprjpath()));
 	QObject::connect(setupUi.umlist,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(umedit(QModelIndex)));
 	QObject::connect(setupUi.umaddtb,SIGNAL(released()),this,SLOT(umadd()));
 	QObject::connect(setupUi.umdeltb,SIGNAL(released()),this,SLOT(umdel()));
@@ -379,6 +376,7 @@ void SetupWin::start() {
 	setupUi.keyMapBox->setCurrentIndex(idx);
 	setupUi.ratEnable->setChecked(zx->mouse->enable);
 	setupUi.ratWheel->setChecked(zx->mouse->hasWheel);
+	setupUi.cbSwapButtons->setChecked(zx->mouse->swapButtons);
 	// setupUi.joyBox->setVisible(false);
 // dos
 	setupUi.diskTypeBox->setCurrentIndex(setupUi.diskTypeBox->findData(zx->bdi->fdc->type));
@@ -440,8 +438,6 @@ void SetupWin::start() {
 	setupUi.tpathle->setText(QString::fromLocal8Bit(zx->tape->path));
 	buildtapelist();
 // tools
-	setupUi.sjpathle->setText(compPath);
-	setupUi.prjdirle->setText(prjDir);
 	buildmenulist();
 // leds
 	setupUi.diskLed->setChecked(emulFlags & FL_LED_DISK);
@@ -516,6 +512,7 @@ void SetupWin::apply() {
 // input
 	zx->mouse->enable = setupUi.ratEnable->isChecked() ? 1 : 0;
 	zx->mouse->hasWheel = setupUi.ratWheel->isChecked() ? 1 : 0;
+	zx->mouse->swapButtons = setupUi.cbSwapButtons->isChecked() ? 1 : 0;
 	//if (setupUi.inpDevice->currentIndex() < 1) {
 	//	optSet(OPT_JOYNAME,std::string(""));
 	//} else {
@@ -579,9 +576,6 @@ void SetupWin::apply() {
 // tape
 	optSetFlag(OF_TAPEAUTO,setupUi.cbTapeAuto->isChecked());
 	optSetFlag(OF_TAPEFAST,setupUi.cbTapeFast->isChecked());
-// tools
-	compPath = setupUi.sjpathle->text();
-	prjDir = setupUi.prjdirle->text();
 // leds
 	emulSetFlag(FL_LED_DISK,setupUi.diskLed->isChecked());
 	emulSetFlag(FL_LED_SHOT,setupUi.shotLed->isChecked());
@@ -1363,16 +1357,6 @@ void SetupWin::selSDCimg() {
 }
 
 // tools
-
-void SetupWin::ssjapath() {
-	QString fnam = QFileDialog::getOpenFileName(NULL,"Select SJAsm executable",QDir::homePath(),"All files (*)");
-	if (fnam!="") setupUi.sjpathle->setText(fnam);
-}
-
-void SetupWin::sprjpath() {
-	QString fnam = QFileDialog::getExistingDirectory(this,"Projects file",prjDir,QFileDialog::ShowDirsOnly);
-	if (fnam!="") setupUi.prjdirle->setText(fnam);
-}
 
 void SetupWin::umup() {
 	int ps = setupUi.umlist->currentRow();

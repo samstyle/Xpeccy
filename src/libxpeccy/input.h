@@ -26,6 +26,7 @@ typedef struct {
 //	int flags;
 	unsigned enable:1;
 	unsigned hasWheel:1;
+	unsigned swapButtons:1;
 
 	unsigned char xpos;
 	unsigned char ypos;

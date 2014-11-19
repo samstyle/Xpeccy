@@ -11,7 +11,6 @@
 #include "settings.h"
 #include "debuger.h"
 #include "setupwin.h"
-#include "sdkwin.h"
 #include "filer.h"
 
 #ifdef HAVESDL
@@ -53,7 +52,6 @@ int main(int ac,char** av) {
 	try {
 		std::vector<char*> files;
 		int i;
-		bool dev = false;
 		initPaths();
 		addProfile("default","xpeccy.conf");
 		setProfile("default");
@@ -61,69 +59,38 @@ int main(int ac,char** av) {
 		i = 1;
 		while (i < ac) {
 			parg = av[i++];
-			if (strcmp(parg,"-d") == 0) dev = true;
-			else if (((strcmp(parg,"-p") == 0) || (strcmp(parg,"--profile") == 0)) && (i < ac)) profName = av[i++];
+			if (((strcmp(parg,"-p") == 0) || (strcmp(parg,"--profile") == 0)) && (i < ac)) profName = av[i++];
 			else files.push_back(parg);
 		}
-		if (dev) {
-			devInit();
-			devShow();
-			return app.exec();
-		} else {
-/*
-#ifdef __linux
-			sem_init(&emuSem,1,0);
-			sem_init(&eventSem,1,0);
-			pthread_create(&emuThread,NULL,&emuThreadMain,NULL);
-#elif __WIN32
-			DWORD thrid;
-			emuSem = CreateSemaphore(NULL,0,1,NULL);
-			eventSem = CreateSemaphore(NULL,0,1,NULL);
-			printf("create thread\n");
-			emuThread = CreateThread(NULL,0,&emuThreadMain,NULL,0,&thrid);
-#endif
-*/
-			sndInit();
-			emulInit();
-			dbgInit(NULL);// emulWidget());
-//			optInit(emulWidget());
-			devInit();
-//			initFileDialog(emulWidget());
-			loadProfiles();
-			if (profName) {
-				setProfile(std::string(profName));
-//			} else {
-//				prfLoad("");
-			}
-			fillUserMenu();
-			emulShow();
-			emulUpdateWindow();
-			zxReset(zx,RES_DEFAULT);
-
-			for (unsigned idx = 0; idx < files.size(); idx++) {
-				if (strlen(files[idx]) > 0) loadFile(zx,files[idx],FT_ALL,0);
-			}
-
-			mainWin->checkState();
-
-			emuStart();
-			app.exec();
-			emuStop();
-			sndClose();
-			return 0;
+		sndInit();
+		emulInit();
+		dbgInit(NULL);
+		loadProfiles();
+		if (profName) {
+			setProfile(std::string(profName));
 		}
+		fillUserMenu();
+		emulShow();
+		emulUpdateWindow();
+		zxReset(zx,RES_DEFAULT);
+
+		for (unsigned idx = 0; idx < files.size(); idx++) {
+			if (strlen(files[idx]) > 0) loadFile(zx,files[idx],FT_ALL,0);
+		}
+
+		mainWin->checkState();
+
+		emuStart();
+		app.exec();
+		emuStop();
+		sndClose();
+		return 0;
 	}
 	catch (const char* s) {
 		shitHappens(s);
-#ifdef HAVESDL
-		SDL_Quit();
-#endif
 		return 1;
 	}
 	catch (int i) {
-#ifdef HAVESDL
-		SDL_Quit();
-#endif
 		return 1;
 	}
 }
