@@ -349,8 +349,8 @@ void MainWin::onTimer() {
 		zx->mouse->buttons = 0xff;
 	}
 // update window
-	emuDraw();
 	if (emulFlags & FL_WORK) ethread.mtx.unlock();
+	emuDraw();
 }
 
 void MainWin::menuShow() {
