@@ -440,8 +440,8 @@ void SetupWin::start() {
 // tools
 	buildmenulist();
 // leds
-	setupUi.diskLed->setChecked(emulFlags & FL_LED_DISK);
-	setupUi.shotLed->setChecked(emulFlags & FL_LED_SHOT);
+	setupUi.cbMouseLed->setChecked(emulFlags & FL_LED_MOUSE);
+	setupUi.cbJoyLed->setChecked(emulFlags & FL_LED_JOY);
 // profiles
 	setupUi.defstart->setChecked(optGetFlag(OF_DEFAULT));
 	buildproflist();
@@ -577,8 +577,8 @@ void SetupWin::apply() {
 	optSetFlag(OF_TAPEAUTO,setupUi.cbTapeAuto->isChecked());
 	optSetFlag(OF_TAPEFAST,setupUi.cbTapeFast->isChecked());
 // leds
-	emulSetFlag(FL_LED_DISK,setupUi.diskLed->isChecked());
-	emulSetFlag(FL_LED_SHOT,setupUi.shotLed->isChecked());
+	emulSetFlag(FL_LED_MOUSE,setupUi.cbMouseLed->isChecked());
+	emulSetFlag(FL_LED_JOY,setupUi.cbJoyLed->isChecked());
 // profiles
 	optSetFlag(OF_DEFAULT,setupUi.defstart->isChecked());
 

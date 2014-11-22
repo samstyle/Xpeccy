@@ -20,9 +20,7 @@ keyScan keyTab[40] = {
 
 Keyboard* keyCreate() {
 	Keyboard* keyb = (Keyboard*)malloc(sizeof(Keyboard));
-	keyRelease(keyb,0,0,0);
-	keyb->flags = 0;
-	keyb->kBufPos = 0;
+	memset(keyb, 0x00, sizeof(Keyboard));
 	return keyb;
 }
 
@@ -66,6 +64,8 @@ void keyRelease(Keyboard* keyb, char key1, char key2, int kcod) {
 }
 
 unsigned char keyInput(Keyboard* keyb, unsigned char prt) {
+	keyb->used = 1;
+	keyb->port = prt;
 	unsigned char res = 0x1f;
 	int i;
 	for (i = 0; i < 8; i++) {
@@ -107,6 +107,7 @@ void joyRelease(Joystick* joy, unsigned char mask) {
 
 unsigned char joyInput(Joystick* joy) {
 	unsigned char res = 0xff;
+	joy->used = 1;
 	switch (joy->type) {
 		case XJ_KEMPSTON:
 			res = (joy->state & 0x1f) | 0xe0;	// high 3 bits is set

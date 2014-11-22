@@ -23,7 +23,7 @@ extern "C" {
 #define	XJ_FIRE		(1<<4)
 
 typedef struct {
-//	int flags;
+	unsigned used:1;
 	unsigned enable:1;
 	unsigned hasWheel:1;
 	unsigned swapButtons:1;
@@ -35,13 +35,15 @@ typedef struct {
 } Mouse;
 
 typedef struct {
-	int flags;
+	unsigned used:1;
+	unsigned char port;
 	unsigned char map[8];		// ZX keyboard half-row bits
 	unsigned char kbdBuf[16];	// PS/2 key buffer
 	int kBufPos;
 } Keyboard;
 
 typedef struct {
+	unsigned used:1;
 	int type;
 	unsigned char state;
 } Joystick;

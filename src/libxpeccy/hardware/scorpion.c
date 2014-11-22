@@ -112,7 +112,7 @@ Z80EX_BYTE scoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 	int ptype = scoGetPort(port,bdiz);
 	switch (ptype) {
 		case 0x1f:
-			res = bdiz ? bdiIn(comp->bdi,FDC_STATE) : 0xe0;
+			res = bdiz ? bdiIn(comp->bdi,FDC_STATE) : joyInput(comp->joy);
 			break;
 		case 0x3f:
 			res = bdiz ? bdiIn(comp->bdi,FDC_TRK) : 0xff;
@@ -136,12 +136,15 @@ Z80EX_BYTE scoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 			zxSetFrq(comp,7.0);
 			break;
 		case 0xfadf:
+			comp->mouse->used = 1;
 			res = comp->mouse->enable ? comp->mouse->buttons : 0xff;
 			break;
 		case 0xfbdf:
+			comp->mouse->used = 1;
 			res = comp->mouse->enable ? comp->mouse->xpos : 0xff;
 			break;
 		case 0xffdf:
+			comp->mouse->used = 1;
 			res = comp->mouse->enable ? comp->mouse->ypos : 0xff;
 			break;
 		case 0xfffd:

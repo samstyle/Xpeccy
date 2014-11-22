@@ -429,9 +429,18 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 		case 0x27af:
 			res = 0;				// b7: DMA status
 			break;
-		case 0xfadf: res = comp->mouse->enable ? comp->mouse->buttons : 0xff; break;
-		case 0xfbdf: res = comp->mouse->enable ? comp->mouse->xpos : 0xff; break;
-		case 0xffdf: res = comp->mouse->enable ? comp->mouse->ypos : 0xff; break;
+		case 0xfadf:
+			comp->mouse->used = 1;
+			res = comp->mouse->enable ? comp->mouse->buttons : 0xff;
+			break;
+		case 0xfbdf:
+			comp->mouse->used = 1;
+			res = comp->mouse->enable ? comp->mouse->xpos : 0xff;
+			break;
+		case 0xffdf:
+			comp->mouse->used = 1;
+			res = comp->mouse->enable ? comp->mouse->ypos : 0xff;
+			break;
 		default:
 			switch (port & 0xff) {
 /*

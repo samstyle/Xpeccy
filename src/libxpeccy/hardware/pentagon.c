@@ -88,12 +88,15 @@ Z80EX_BYTE penIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 			res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00);
 			break;
 		case 0xfadf:
+			comp->mouse->used = 1;
 			res = comp->mouse->enable ? comp->mouse->buttons : 0xff;
 			break;
 		case 0xfbdf:
+			comp->mouse->used = 1;
 			res = comp->mouse->enable ? comp->mouse->xpos : 0xff;
 			break;
 		case 0xffdf:
+			comp->mouse->used = 1;
 			res = comp->mouse->enable ? comp->mouse->ypos : 0xff;
 			break;
 		case 0xfffd:

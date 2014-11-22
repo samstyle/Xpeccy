@@ -1,9 +1,10 @@
 #ifndef _EMULWIN_H
 #define _EMULWIN_H
 
+#include <QLabel>
 #include <QTimer>
 #include <QThread>
-#include <QLabel>
+#include <QMutex>
 
 #ifdef DRAWGL
 	#include <QGLWidget>
@@ -34,8 +35,8 @@
 // #define FL_FAST_RQ	(1<<5)
 #define	FL_BLOCK	(1<<6)
 #define	FL_EXIT		(1<<7)
-#define	FL_LED_DISK	(1<<8)
-#define	FL_LED_SHOT	(1<<9)
+#define	FL_LED_MOUSE	(1<<8)
+#define	FL_LED_JOY	(1<<9)
 #define	FL_UPDATE	(1<<10)
 #define FL_DRAW		(1<<11)
 #define	FL_WORK		(1<<12)
@@ -221,15 +222,19 @@ typedef struct {
 	int keyCode;		// 0xXXYYZZ = ZZ,YY,XX in buffer (ZZ,YY,0xf0,XX if released)
 } keyEntry;
 
-#define	EV_WINDOW	1
-#define	EV_TAPE		2
-
-#include <QMutex>
+typedef struct {
+	int flag;
+	int showTime;	// in 1/50 sec
+	int x;
+	int y;
+	QString imgName;
+} xLed;
 
 class xThread : public QThread {
 	Q_OBJECT
 	public:
 		void run();
+		QMutex mtx;
 	signals:
 		void dbgRequest();
 };
@@ -252,12 +257,10 @@ class MainWin : public QWidget {
 		QTimer timer;
 		xThread ethread;
 		QLabel* keywin;
+		QImage scrImg;
 #ifdef DRAWGL
 		GLuint tex;
 		GLuint displaylist;
-#endif
-#ifdef DRAWQT
-		QImage scrImg;
 #endif
 	public slots:
 		void doOptions();

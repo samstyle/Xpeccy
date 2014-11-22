@@ -142,7 +142,7 @@ Z80EX_BYTE atm2In(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 	int ptype = atm2GetPort(port,bdiz);
 	switch (ptype) {
 		case 0x1f:
-			res = bdiz ? bdiIn(comp->bdi,FDC_STATE) : 0xff;
+			res = bdiz ? bdiIn(comp->bdi,FDC_STATE) : joyInput(comp->joy);
 			break;
 		case 0x3f:
 			res = bdiz ? bdiIn(comp->bdi,FDC_TRK) : 0xff;

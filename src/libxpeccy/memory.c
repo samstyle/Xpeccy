@@ -16,6 +16,8 @@ Memory* memCreate(int rampg, int rompg) {
 	mem->ramFlag = (unsigned char*)malloc(rampg << 14);
 	mem->romData = (unsigned char*)malloc(rompg << 14);
 	mem->romFlag = (unsigned char*)malloc(rompg << 14);
+	memset(mem->ramFlag, 0x00, rampg << 14);
+	memset(mem->romFlag, 0x00, rompg << 14);
 	mem->romMask = 0x03;
 	for (i = 0; i < rompg; i++) {
 		mem->rom[i].type = MEM_ROM;

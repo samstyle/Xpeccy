@@ -256,8 +256,8 @@ void saveProfiles() {
 	cfile << "fast = " << ((flag & OF_TAPEFAST) ? "yes" : "no") << "\n";
 
 	cfile << "\n[LEDS]\n\n";
-	cfile << "disk = " << ((emulFlags & FL_LED_DISK) ? "yes" : "no") << "\n";
-	cfile << "scrshot = " << ((emulFlags & FL_LED_SHOT) ? "yes" : "no") << "\n";
+	cfile << "mouse = " << ((emulFlags & FL_LED_MOUSE) ? "yes" : "no") << "\n";
+	cfile << "joystick = " << ((emulFlags & FL_LED_JOY) ? "yes" : "no") << "\n";
 	cfile.close();
 }
 
@@ -498,8 +498,8 @@ void loadProfiles() {
 					if (pnam=="fast") optSetFlag(OF_TAPEFAST,str2bool(pval));
 					break;
 				case SECT_LEDS:
-					if (pnam=="disk") emulSetFlag(FL_LED_DISK,str2bool(pval));
-					if (pnam=="scrshot") emulSetFlag(FL_LED_SHOT,str2bool(pval));
+					if (pnam=="mouse") emulSetFlag(FL_LED_MOUSE,str2bool(pval));
+					if (pnam=="joystick") emulSetFlag(FL_LED_JOY,str2bool(pval));
 					break;
 			}
 		}

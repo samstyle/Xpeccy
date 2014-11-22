@@ -329,9 +329,18 @@ Z80EX_BYTE evoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 		case 0xbef7: res = (bdiz) ? cmsRd(comp) : 0xff; break;
 		case 0xbff7: res = (!bdiz && (comp->prt2 & 0x80)) ? cmsRd(comp) : 0xff; break;
 		case 0xfffd: res = tsIn(comp->ts,ptype); break;
-		case 0xfadf: res = comp->mouse->enable ? comp->mouse->buttons : 0xff; break;
-		case 0xfbdf: res = comp->mouse->enable ? comp->mouse->xpos : 0xff; break;
-		case 0xffdf: res = comp->mouse->enable ? comp->mouse->ypos : 0xff; break;
+		case 0xfadf:
+			comp->mouse->used = 1;
+			res = comp->mouse->enable ? comp->mouse->buttons : 0xff;
+			break;
+		case 0xfbdf:
+			comp->mouse->used = 1;
+			res = comp->mouse->enable ? comp->mouse->xpos : 0xff;
+			break;
+		case 0xffdf:
+			comp->mouse->used = 1;
+			res = comp->mouse->enable ? comp->mouse->ypos : 0xff;
+			break;
 		default:
 //			if (ideIn(comp->ide,port,&res,comp->dosen & 1)) break;
 //			if (gsIn(comp->gs,port,&res) == GS_OK) break;
