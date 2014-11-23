@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(xpeccy)
-set(XVER "0.5.20141121")
+set(XVER "0.5.20141126")
 
 include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
 

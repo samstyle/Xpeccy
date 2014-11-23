@@ -15,48 +15,25 @@
 	#include "z80ex_dasm.h"
 #endif
 
-DebugWin* dbgWin;
 
-unsigned long lastDbgTicks = 0;
-
-QString logFileName;
-QFile logFile;
-
-void dbgInit(QWidget* par) {
-	dbgWin = new DebugWin(par);
-}
-
-// TODO: extract from DebugWindow almost all
-
-void dbgShow() {
-	dbgWin->start();
-}
-
-bool dbgIsActive() {
-	return dbgWin->active;
-}
-
-// OBJECT
-
-void DebugWin::start() {
-	emulPause(true,PR_DEBUG);
-	disasmAdr = getPrevAdr(GETPC(zx->cpu));
+void DebugWin::start(ZXComp* c) {
+	comp = c;
+	disasmAdr = getPrevAdr(GETPC(comp->cpu));
 	fillAll();
 	show();
 	vidFlag |= VF_DEBUG;
-//	vidDarkTail(zx->vid);
-	zx->debug = 1;
+	comp->debug = 1;
 }
 
 void DebugWin::stop() {
 	vidFlag &= ~VF_DEBUG;
-	tCount = zx->tickCount;
-	zxExec(zx);		// to prevent immediatelly fetch break, if PC is on breakpoint
+	tCount = comp->tickCount;
+	zxExec(comp);		// to prevent immediatelly fetch break, if PC is on breakpoint
 	hide();
 	active = false;
-	lastDbgTicks = zx->tickCount;
-	zx->debug = 0;
-	emulPause(false,PR_DEBUG);
+	tCount = comp->tickCount;
+	comp->debug = 0;
+	emit closed();
 }
 
 void DebugWin::reject() {stop();}
@@ -199,7 +176,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					break;
 				case Qt::Key_Z:
 					if (!ui.dasmTable->hasFocus()) break;
-					SETPC(zx->cpu, ui.dasmTable->item(ui.dasmTable->currentRow(), 0)->text().toInt(NULL,16));
+					SETPC(comp->cpu, ui.dasmTable->item(ui.dasmTable->currentRow(), 0)->text().toInt(NULL,16));
 					fillZ80();
 					fillDisasm();
 					break;
@@ -224,7 +201,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					putBreakPoint();
 					break;
 				case Qt::Key_Home:
-					disasmAdr = GETPC(zx->cpu);
+					disasmAdr = GETPC(comp->cpu);
 					fillDisasm();
 					break;
 				case Qt::Key_PageUp:
@@ -254,22 +231,22 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					scrollDown();
 					break;
 				case Qt::Key_F3:
-					loadFile(zx,"",FT_SNAP,0);
-					disasmAdr = GETPC(zx->cpu);
+					loadFile(comp,"",FT_SNAP,0);
+					disasmAdr = GETPC(comp->cpu);
 					fillAll();
 					break;
 				case Qt::Key_F7:
-					tCount = zx->tickCount;
-					zxExec(zx);
+					tCount = comp->tickCount;
+					zxExec(comp);
 					if (!fillAll()) {
-						disasmAdr = GETPC(zx->cpu);
+						disasmAdr = GETPC(comp->cpu);
 						fillDisasm();
 					}
 					break;
 				case Qt::Key_F12:
-					zxReset(zx,RES_DEFAULT);
+					zxReset(comp, RES_DEFAULT);
 					if (!fillAll()) {
-						disasmAdr = GETPC(zx->cpu);
+						disasmAdr = GETPC(comp->cpu);
 						fillDisasm();
 					}
 					break;
@@ -283,7 +260,7 @@ QString gethexbyte(uchar num) {return QString::number(num+0x100,16).right(2).toU
 QString getbinbyte(uchar num) {return QString::number(num+0x100,2).right(8).toUpper();}
 
 bool DebugWin::fillAll() {
-	ui.labTcount->setText(QString::number(zx->tickCount - tCount));
+	ui.labTcount->setText(QString::number(comp->tickCount - tCount));
 	fillZ80();
 	fillMem();
 	fillDump();
@@ -306,7 +283,7 @@ QString flagString(int af) {
 }
 
 void DebugWin::fillFlags() {
-	Z80EX_WORD af = GETAF(zx->cpu);
+	Z80EX_WORD af = GETAF(comp->cpu);
 	ui.cbFS->setChecked(af & 0x80);
 	ui.cbFZ->setChecked(af & 0x40);
 	ui.cbF5->setChecked(af & 0x20);
@@ -319,23 +296,23 @@ void DebugWin::fillFlags() {
 
 void DebugWin::fillZ80() {
 	block = true;
-	Z80EX_WORD af = GETAF(zx->cpu);
+	Z80EX_WORD af = GETAF(comp->cpu);
 	ui.editAF->setText(gethexword(af));
-	ui.editBC->setText(gethexword(GETBC(zx->cpu)));
-	ui.editDE->setText(gethexword(GETDE(zx->cpu)));
-	ui.editHL->setText(gethexword(GETHL(zx->cpu)));
-	ui.editAFa->setText(gethexword(GETAF_(zx->cpu)));
-	ui.editBCa->setText(gethexword(GETBC_(zx->cpu)));
-	ui.editDEa->setText(gethexword(GETDE_(zx->cpu)));
-	ui.editHLa->setText(gethexword(GETHL_(zx->cpu)));
-	ui.editPC->setText(gethexword(GETPC(zx->cpu)));
-	ui.editSP->setText(gethexword(GETSP(zx->cpu)));
-	ui.editIX->setText(gethexword(GETIX(zx->cpu)));
-	ui.editIY->setText(gethexword(GETIY(zx->cpu)));
-	ui.editIR->setText(gethexword(GETIR(zx->cpu)));
-	ui.boxIM->setValue(GETIM(zx->cpu));
-	ui.flagIFF1->setChecked(GETIFF1(zx->cpu));
-	ui.flagIFF2->setChecked(GETIFF1(zx->cpu));
+	ui.editBC->setText(gethexword(GETBC(comp->cpu)));
+	ui.editDE->setText(gethexword(GETDE(comp->cpu)));
+	ui.editHL->setText(gethexword(GETHL(comp->cpu)));
+	ui.editAFa->setText(gethexword(GETAF_(comp->cpu)));
+	ui.editBCa->setText(gethexword(GETBC_(comp->cpu)));
+	ui.editDEa->setText(gethexword(GETDE_(comp->cpu)));
+	ui.editHLa->setText(gethexword(GETHL_(comp->cpu)));
+	ui.editPC->setText(gethexword(GETPC(comp->cpu)));
+	ui.editSP->setText(gethexword(GETSP(comp->cpu)));
+	ui.editIX->setText(gethexword(GETIX(comp->cpu)));
+	ui.editIY->setText(gethexword(GETIY(comp->cpu)));
+	ui.editIR->setText(gethexword(GETIR(comp->cpu)));
+	ui.boxIM->setValue(GETIM(comp->cpu));
+	ui.flagIFF1->setChecked(GETIFF1(comp->cpu));
+	ui.flagIFF2->setChecked(GETIFF1(comp->cpu));
 	//ui.labFlag->setText(flagString(af));
 	fillFlags();
 	block = false;
@@ -344,7 +321,7 @@ void DebugWin::fillZ80() {
 
 void DebugWin::setFlags() {
 	if (block) return;
-	Z80EX_WORD af = GETAF(zx->cpu);
+	Z80EX_WORD af = GETAF(comp->cpu);
 	af &= 0xff00;
 	if (ui.cbFS->isChecked()) af |= 0x80;
 	if (ui.cbFZ->isChecked()) af |= 0x40;
@@ -354,29 +331,29 @@ void DebugWin::setFlags() {
 	if (ui.cbFP->isChecked()) af |= 0x04;
 	if (ui.cbFN->isChecked()) af |= 0x02;
 	if (ui.cbFC->isChecked()) af |= 0x01;
-	SETAF(zx->cpu, af);
+	SETAF(comp->cpu, af);
 	ui.editAF->setText(gethexword(af));
 }
 
 void DebugWin::setZ80() {
 	if (block) return;
 	int af = ui.editAF->text().toInt(NULL,16);
-	SETAF(zx->cpu, af);
-	SETBC(zx->cpu, ui.editBC->text().toInt(NULL,16));
-	SETDE(zx->cpu, ui.editDE->text().toInt(NULL,16));
-	SETHL(zx->cpu, ui.editHL->text().toInt(NULL,16));
-	SETAF_(zx->cpu, ui.editAFa->text().toInt(NULL,16));
-	SETBC_(zx->cpu, ui.editBCa->text().toInt(NULL,16));
-	SETDE_(zx->cpu, ui.editDEa->text().toInt(NULL,16));
-	SETHL_(zx->cpu, ui.editHLa->text().toInt(NULL,16));
-	SETPC(zx->cpu, ui.editPC->text().toInt(NULL,16));
-	SETSP(zx->cpu, ui.editSP->text().toInt(NULL,16));
-	SETIX(zx->cpu, ui.editIX->text().toInt(NULL,16));
-	SETIY(zx->cpu, ui.editIY->text().toInt(NULL,16));
-	SETIR(zx->cpu, ui.editIR->text().toInt(NULL,16));
-	SETIM(zx->cpu, ui.boxIM->value());
-	SETIFF1(zx->cpu, ui.flagIFF1->isChecked());
-	SETIFF2(zx->cpu, ui.flagIFF2->isChecked());
+	SETAF(comp->cpu, af);
+	SETBC(comp->cpu, ui.editBC->text().toInt(NULL,16));
+	SETDE(comp->cpu, ui.editDE->text().toInt(NULL,16));
+	SETHL(comp->cpu, ui.editHL->text().toInt(NULL,16));
+	SETAF_(comp->cpu, ui.editAFa->text().toInt(NULL,16));
+	SETBC_(comp->cpu, ui.editBCa->text().toInt(NULL,16));
+	SETDE_(comp->cpu, ui.editDEa->text().toInt(NULL,16));
+	SETHL_(comp->cpu, ui.editHLa->text().toInt(NULL,16));
+	SETPC(comp->cpu, ui.editPC->text().toInt(NULL,16));
+	SETSP(comp->cpu, ui.editSP->text().toInt(NULL,16));
+	SETIX(comp->cpu, ui.editIX->text().toInt(NULL,16));
+	SETIY(comp->cpu, ui.editIY->text().toInt(NULL,16));
+	SETIR(comp->cpu, ui.editIR->text().toInt(NULL,16));
+	SETIM(comp->cpu, ui.boxIM->value());
+	SETIFF1(comp->cpu, ui.flagIFF1->isChecked());
+	SETIFF2(comp->cpu, ui.flagIFF2->isChecked());
 	fillFlags();
 	fillStack();
 }
@@ -390,19 +367,19 @@ QString getPageName(MemPage* pg) {
 }
 
 void DebugWin::fillMem() {
-	ui.labPG0->setText(getPageName(zx->mem->pt[0]));
-	ui.labPG1->setText(getPageName(zx->mem->pt[1]));
-	ui.labPG2->setText(getPageName(zx->mem->pt[2]));
-	ui.labPG3->setText(getPageName(zx->mem->pt[3]));
+	ui.labPG0->setText(getPageName(comp->mem->pt[0]));
+	ui.labPG1->setText(getPageName(comp->mem->pt[1]));
+	ui.labPG2->setText(getPageName(comp->mem->pt[2]));
+	ui.labPG3->setText(getPageName(comp->mem->pt[3]));
 }
 
 // disasm table
 
-Z80EX_BYTE rdbyte(Z80EX_WORD adr,void*) {
-	return memRd(zx->mem,adr);
+Z80EX_BYTE rdbyte(Z80EX_WORD adr, void* ptr) {
+	return memRd(((ZXComp*)ptr)->mem,adr);
 }
 
-DasmRow getDisasm(Z80EX_WORD& adr) {
+DasmRow getDisasm(ZXComp* comp, Z80EX_WORD& adr) {
 	DasmRow drow;
 	drow.adr = adr;
 	drow.bytes.clear();
@@ -410,14 +387,14 @@ DasmRow getDisasm(Z80EX_WORD& adr) {
 	char buf[256];
 	int clen;
 #ifdef SELFZ80
-	clen = cpuDisasm(adr,buf,&rdbyte,NULL);
+	clen = cpuDisasm(adr,buf,&rdbyte,comp);
 #else
 	int t1,t2;
-	clen = z80ex_dasm(buf,256,0,&t1,&t2,&rdbyte,adr,NULL);
+	clen = z80ex_dasm(buf,256,0,&t1,&t2,&rdbyte,adr,comp);
 #endif
 	drow.com = QString(buf).toUpper();
 	while (clen > 0) {
-		drow.bytes.append(gethexbyte(memRd(zx->mem,adr)));
+		drow.bytes.append(gethexbyte(memRd(comp->mem,adr)));
 		clen--;
 		adr++;
 	}
@@ -427,19 +404,19 @@ DasmRow getDisasm(Z80EX_WORD& adr) {
 bool DebugWin::fillDisasm() {
 	block = true;
 	Z80EX_WORD adr = disasmAdr;
-	Z80EX_WORD pc = GETPC(zx->cpu);
+	Z80EX_WORD pc = GETPC(comp->cpu);
 	DasmRow drow;
 	QColor bgcol,acol;
 	bool res = false;
 	for (int i = 0; i < ui.dasmTable->rowCount(); i++) {
 		bgcol = (adr == pc) ? QColor(32,200,32) : QColor(255,255,255);
-		acol = (*memGetFptr(zx->mem, adr) & MEM_BRK_ANY) ? QColor(200,64,64) : bgcol;
+		acol = (*memGetFptr(comp->mem, adr) & MEM_BRK_ANY) ? QColor(200,64,64) : bgcol;
 		res |= (adr == pc);
 		ui.dasmTable->item(i, 0)->setBackgroundColor(acol);
 		ui.dasmTable->item(i, 1)->setBackgroundColor(bgcol);
 		ui.dasmTable->item(i, 2)->setBackgroundColor(bgcol);
 		ui.dasmTable->item(i, 0)->setText(gethexword(adr));
-		drow = getDisasm(adr);
+		drow = getDisasm(comp, adr);
 		ui.dasmTable->item(i, 1)->setText(drow.bytes);
 		ui.dasmTable->item(i, 2)->setText(drow.com);
 	}
@@ -452,7 +429,7 @@ Z80EX_WORD DebugWin::getPrevAdr(Z80EX_WORD adr) {
 	Z80EX_WORD tadr;
 	for (int i = 16; i > 0; i--) {
 		tadr = adr - i;
-		getDisasm(tadr);			// shift tadr to next op
+		getDisasm(comp, tadr);			// shift tadr to next op
 		if (tadr == adr) return (adr - i);
 	}
 	return (adr - 1);
@@ -472,7 +449,7 @@ void DebugWin::dasmEdited(int row, int col) {
 		Z80EX_BYTE cbyte;
 		while (!str.isEmpty()) {
 			cbyte = str.left(2).toInt(NULL,16);
-			memWr(zx->mem, adr, cbyte);
+			memWr(comp->mem, adr, cbyte);
 			adr++;
 			str.remove(0,2);
 		}
@@ -491,9 +468,9 @@ void DebugWin::fillDump() {
 	for (row = 0; row < ui.dumpTable->rowCount(); row++) {
 		ui.dumpTable->item(row,0)->setText(gethexword(adr));
 		for (col = 1; col < ui.dumpTable->columnCount(); col++) {
-			bgcol = (*memGetFptr(zx->mem, adr) & MEM_BRK_ANY) ? QColor(200,64,64) : QColor(255,255,255);
+			bgcol = (*memGetFptr(comp->mem, adr) & MEM_BRK_ANY) ? QColor(200,64,64) : QColor(255,255,255);
 			ui.dumpTable->item(row,col)->setBackgroundColor(bgcol);
-			ui.dumpTable->item(row,col)->setText(gethexbyte(memRd(zx->mem, adr)));
+			ui.dumpTable->item(row,col)->setText(gethexbyte(memRd(comp->mem, adr)));
 			adr++;
 		}
 	}
@@ -507,7 +484,7 @@ void DebugWin::dumpEdited(int row, int col) {
 		dumpAdr = ui.dumpTable->item(row, 0)->text().toInt(NULL,16) - row * (ui.dumpTable->columnCount() - 1);
 	} else {
 		Z80EX_WORD adr = (dumpAdr + (col - 1) + row * (ui.dumpTable->columnCount() - 1)) & 0xffff;
-		memWr(zx->mem, adr, ui.dumpTable->item(row, col)->text().toInt(NULL,16) & 0xff);
+		memWr(comp->mem, adr, ui.dumpTable->item(row, col)->text().toInt(NULL,16) & 0xff);
 		fillDisasm();
 
 		col++;
@@ -528,11 +505,11 @@ void DebugWin::dumpEdited(int row, int col) {
 // stack
 
 void DebugWin::fillStack() {
-	int adr = GETSP(zx->cpu);
+	int adr = GETSP(comp->cpu);
 	QString str;
 	for (int i = 0; i < 5; i++) {
-		str.append(gethexbyte(memRd(zx->mem, adr+1)));
-		str.append(gethexbyte(memRd(zx->mem, adr)));
+		str.append(gethexbyte(memRd(comp->mem, adr+1)));
+		str.append(gethexbyte(memRd(comp->mem, adr)));
 		adr += 2;
 	}
 	ui.labSP->setText(str.left(4));
@@ -557,12 +534,12 @@ void DebugWin::putBreakPoint() {
 
 void DebugWin::doBreakPoint(Z80EX_WORD adr) {
 	bpAdr = adr;
-	QString str = QString((zx->mem->pt[adr >> 14]->type == MEM_RAM) ? "RAM-" : "ROM-");
-	str.append(gethexbyte(zx->mem->pt[adr >> 14]->num));
+	QString str = QString((comp->mem->pt[adr >> 14]->type == MEM_RAM) ? "RAM-" : "ROM-");
+	str.append(gethexbyte(comp->mem->pt[adr >> 14]->num));
 	str.append(", ");
 	str.append(gethexword(adr & 0x3fff));
 	bui.bpAdr->setText(str);
-	unsigned char flag = *memGetFptr(zx->mem, adr);
+	unsigned char flag = *memGetFptr(comp->mem, adr);
 	bui.cbFetch->setChecked(flag & MEM_BRK_FETCH);
 	bui.cbRead->setChecked(flag & MEM_BRK_RD);
 	bui.cbWrite->setChecked(flag & MEM_BRK_WR);
@@ -570,7 +547,7 @@ void DebugWin::doBreakPoint(Z80EX_WORD adr) {
 }
 
 void DebugWin::chaBreakPoint() {
-	unsigned char* ptr = memGetFptr(zx->mem, bpAdr);
+	unsigned char* ptr = memGetFptr(comp->mem, bpAdr);
 	unsigned char flag = *ptr & ~MEM_BRK_ANY;
 	if (bui.cbFetch->isChecked()) flag |= MEM_BRK_FETCH;
 	if (bui.cbRead->isChecked()) flag |= MEM_BRK_RD;
@@ -583,7 +560,7 @@ void DebugWin::chaBreakPoint() {
 // memDump
 
 void DebugWin::doSaveDump() {
-	dui.leBank->setText(QString::number(zx->mem->pt[3]->num,16));
+	dui.leBank->setText(QString::number(comp->mem->pt[3]->num,16));
 	dumpwin->show();
 }
 
@@ -610,18 +587,18 @@ void DebugWin::dmpLenChanged() {
 }
 
 QByteArray DebugWin::getDumpData() {
-	MemPage* curBank = zx->mem->pt[3];
+	MemPage* curBank = comp->mem->pt[3];
 	int bank = dui.leBank->text().toInt(NULL,16);
 	int adr = dui.leStart->text().toInt(NULL,16);
 	int len = dui.leLen->text().toInt(NULL,16);
-	memSetBank(zx->mem,3,MEM_RAM,bank);
+	memSetBank(comp->mem,3,MEM_RAM,bank);
 	QByteArray res;
 	while (len > 0) {
-		res.append(memRd(zx->mem,adr));
+		res.append(memRd(comp->mem,adr));
 		adr++;
 		len--;
 	}
-	zx->mem->pt[3] = curBank;
+	comp->mem->pt[3] = curBank;
 	return res;
 }
 
@@ -671,7 +648,7 @@ void DebugWin::saveDumpToDisk(int idx) {
 	int len = dui.leLen->text().toInt(NULL,16);
 	QString name = dui.leStart->text();
 	name.append(".").append(dui.leBank->text());
-	Floppy* flp = zx->bdi->fdc->flop[idx & 3];
+	Floppy* flp = comp->bdi->fdc->flop[idx & 3];
 	if (!flp->insert) {
 		flpFormat(flp);
 		flp->insert = 1;
@@ -686,7 +663,7 @@ void DebugWin::saveDumpToDisk(int idx) {
 void DebugWin::doOpenDump() {
 	dumpPath.clear();
 	oui.laPath->clear();
-	oui.leBank->setText(QString::number(zx->mem->pt[3]->num,16));
+	oui.leBank->setText(QString::number(comp->mem->pt[3]->num,16));
 	oui.leStart->setText("4000");
 	openDumpDialog->show();
 }
@@ -723,7 +700,7 @@ void DebugWin::loadDump() {
 		QByteArray data = file.readAll();
 		int adr = oui.leStart->text().toInt(NULL,16);
 		for (int i = 0; i < data.size(); i++) {
-			memWr(zx->mem, adr, data[i]);
+			memWr(comp->mem, adr, data[i]);
 			adr++;
 		}
 		fillAll();

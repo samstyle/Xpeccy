@@ -3,13 +3,35 @@
 
 #include <QDialog>
 #include <QModelIndex>
+#include "xcore/xcore.h"
+
+#include "ui_rsedit.h"
+#include "ui_setupwin.h"
+#include "ui_umadial.h"
+#include "ui_layedit.h"
 
 class SetupWin : public QDialog {
 	Q_OBJECT
 	public:
 		SetupWin(QWidget*);
+	private:
+		xConfig* conf;
+		ZXComp* comp;
+
+		Ui::SetupWin setupUi;
+		Ui::UmaDial uia;
+		Ui::RSEdialog rseUi;
+		Ui::LayEditor layUi;
+
+		QDialog* rseditor;
+		QDialog* layeditor;
+
+		std::vector<VidLayout> lays;
+		std::vector<RomSet> rsl;
+	signals:
+		void closed();
 	public slots:
-		void start();
+		void start(xConfig*, ZXComp*);
 	private slots:
 		void reject();
 		void apply();
@@ -36,7 +58,7 @@ class SetupWin : public QDialog {
 		void setTapeBreak(int,int);
 		void hddcap();
 		void selSDCimg();
-	void editrset();
+		void editrset();
 		void setrpart();
 		void addNewRomset();
 		void rmRomset();
@@ -64,8 +86,5 @@ class SetupWin : public QDialog {
 		void buildproflist();
 		int umidx;
 };
-
-void optInit(QWidget*);
-void optShow();
 
 #endif

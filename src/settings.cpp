@@ -174,7 +174,7 @@ void initPaths() {
 #endif
 }
 
-void saveProfiles() {
+void saveProfiles(xConfig* conf) {
 	std::string cfname = workDir + SLASH + "config.conf";
 	std::ofstream cfile(cfname.c_str());
 	if (!cfile.good()) {
@@ -190,7 +190,7 @@ void saveProfiles() {
 	cfile << "startdefault = " << ((flag & OF_DEFAULT) ? "yes" : "no") << "\n";
 	cfile << "savepaths = " << ((flag & OF_PATHS) ? "yes" : "no") << "\n";
 	cfile << "fdcturbo = " << ((fdcFlag & FDC_FAST) ? "yes" : "no") << "\n";
-	cfile << "systime = " << ((emulFlags & FL_SYSCLOCK) ? "yes" : "no") << "\n";
+	cfile << "systime = " << (conf->sysclock ? "yes" : "no") << "\n";
 
 	cfile << "\n[BOOKMARKS]\n\n";
 	std::vector<XBookmark> bml = getBookmarkList();
@@ -256,8 +256,9 @@ void saveProfiles() {
 	cfile << "fast = " << ((flag & OF_TAPEFAST) ? "yes" : "no") << "\n";
 
 	cfile << "\n[LEDS]\n\n";
-	cfile << "mouse = " << ((emulFlags & FL_LED_MOUSE) ? "yes" : "no") << "\n";
-	cfile << "joystick = " << ((emulFlags & FL_LED_JOY) ? "yes" : "no") << "\n";
+	cfile << "mouse = " << (conf->led.mouse ? "yes" : "no") << "\n";
+	cfile << "joystick = " << (conf->led.joy ? "yes" : "no") << "\n";
+	cfile << "keyscan = " << (conf->led.keys ? "yes" : "no") << "\n";
 	cfile.close();
 }
 
@@ -305,7 +306,7 @@ void copyFile(const char* src, const char* dst) {
 
 // emulator config
 
-void loadProfiles() {
+void loadProfiles(xConfig* conf) {
 	std::string soutnam = "NULL";
 	std::ifstream file(profPath.c_str());
 	if (!file.good()) {
@@ -491,15 +492,16 @@ void loadProfiles() {
 					if (pnam=="startdefault") optSetFlag(OF_DEFAULT,str2bool(pval));
 					if (pnam=="savepaths") optSetFlag(OF_PATHS,str2bool(pval));
 					if (pnam == "fdcturbo") setFlagBit(str2bool(pval),&fdcFlag,FDC_FAST);
-					if (pnam == "systime") emulSetFlag(FL_SYSCLOCK,str2bool(pval));
+					if (pnam == "systime") conf->sysclock = str2bool(pval) ? 1 : 0;
 					break;
 				case SECT_TAPE:
 					if (pnam=="autoplay") optSetFlag(OF_TAPEAUTO,str2bool(pval));
 					if (pnam=="fast") optSetFlag(OF_TAPEFAST,str2bool(pval));
 					break;
 				case SECT_LEDS:
-					if (pnam=="mouse") emulSetFlag(FL_LED_MOUSE,str2bool(pval));
-					if (pnam=="joystick") emulSetFlag(FL_LED_JOY,str2bool(pval));
+					if (pnam=="mouse") conf->led.mouse = str2bool(pval) ? 1 : 0;
+					if (pnam=="joystick") conf->led.joy = str2bool(pval) ? 1 : 0;
+					if (pnam=="keyscan") conf->led.keys = str2bool(pval) ? 1 : 0;
 					break;
 			}
 		}
@@ -509,14 +511,14 @@ void loadProfiles() {
 	prfLoadAll();
 	setOutput(soutnam.c_str());
 	if (flag & OF_DEFAULT) {
-		if (!setProfile("default")) {
+		if (!selProfile("default")) {
 			printf("Can't set default profile. GRR!\n");
 			throw(0);
 		}
 	} else {
-		if (!setProfile(pnm.c_str())) {
+		if (!selProfile(pnm.c_str())) {
 			shitHappens("Cannot set current profile\nDefault will be used");
-			if (!setProfile("default")) {
+			if (!selProfile("default")) {
 				shitHappens("...and default too?\nReally, shit happens");
 				throw(0);
 			}

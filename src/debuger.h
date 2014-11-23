@@ -14,7 +14,7 @@
 #include "ui_openDump.h"
 #include "ui_bpeditor.h"
 #include "ui_debuger.h"
-#include "libxpeccy/cpu.h"
+#include "libxpeccy/spectrum.h"
 
 #define DASMROW 26
 #define DMPSIZE 16
@@ -43,11 +43,17 @@ class DebugWin : public QDialog {
 		DebugWin(QWidget*);
 		bool active;
 		void reject();
-		void start();
+		void start(ZXComp*);
 		void stop();
+	signals:
+		void closed();
 	private:
+		ZXComp* comp;
 		bool block;
 		long tCount;
+//		unsigned long lastDbgTicks = 0;
+		QString logFileName;
+		QFile logFile;
 
 		Ui::Debuger ui;
 
@@ -108,9 +114,5 @@ class DebugWin : public QDialog {
 		void keyPressEvent(QKeyEvent*);
 		void wheelEvent(QWheelEvent*);
 };
-
-void dbgInit(QWidget*);
-void dbgShow();
-bool dbgIsActive();
 
 #endif

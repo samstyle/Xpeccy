@@ -44,5 +44,6 @@
         <file>images/sdcard.png</file>
         <file>images/keymap.png</file>
         <file>images/joystick.png</file>
+        <file>images/scanled.png</file>
     </qresource>
 </RCC>

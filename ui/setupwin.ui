@@ -670,9 +670,6 @@
             </item>
             <item>
              <widget class="QCheckBox" name="contMem">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
               <property name="text">
                <string>Cont. mem</string>
               </property>
@@ -2699,14 +2696,21 @@
                <item row="0" column="0">
                 <widget class="QCheckBox" name="cbMouseLed">
                  <property name="text">
-                  <string>Mouse input</string>
+                  <string>Mouse</string>
                  </property>
                 </widget>
                </item>
                <item row="1" column="0">
                 <widget class="QCheckBox" name="cbJoyLed">
                  <property name="text">
-                  <string>Joystick input</string>
+                  <string>Joystick</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0">
+                <widget class="QCheckBox" name="cbKeysLed">
+                 <property name="text">
+                  <string>Keyboard</string>
                  </property>
                 </widget>
                </item>

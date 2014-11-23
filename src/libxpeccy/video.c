@@ -69,8 +69,9 @@ Video* vidCreate(Memory* me) {
 	vid->sync.v = 32;
 	vid->intpos.h = 0;
 	vid->intpos.v = 0;
-	vid->intsz = 64;
+	vid->intSize = 64;
 	vid->frmsz = vid->full.h * vid->full.v;
+	vid->intMask = 0x01;		// FRAME INT for all
 	vid->ula = ulaCreate();
 	vidUpdate(vid);
 
@@ -99,15 +100,6 @@ void vidDestroy(Video* vid) {
 	ulaDestroy(vid->ula);
 	free(vid);
 }
-
-/*
-waits for 128K, +2
-	--wwwwww wwwwww-- : 16-dots cycle, start on border 8 dots before screen
-waits for +2a, +3
-	ww--wwww wwwwwwww : same
-unsigned char waitsTab_A[16] = {5,5,4,4,3,3,2,2,1,1,0,0,0,0,6,6};	// 48K
-unsigned char waitsTab_B[16] = {1,1,0,0,7,7,6,6,5,5,4,4,3,3,2,2};	// +2A,+3
-*/
 
 void vidUpdate(Video* vid) {
 	vid->lcut.h = (int)floor(vid->sync.h + ((vid->bord.h - vid->sync.h) * (1.0 - brdsize))) & 0xfffc;
@@ -158,13 +150,22 @@ void vidDarkTail(Video* vid) {
 	} while (ptr);
 }
 
+/*
+waits for 128K, +2
+	--wwwwww wwwwww-- : 16-dots cycle, start on border 8 dots before screen
+waits for +2a, +3
+	ww--wwww wwwwwwww : same
+unsigned char waitsTab_A[16] = {5,5,4,4,3,3,2,2,1,1,0,0,0,0,6,6};	// 48K
+unsigned char waitsTab_B[16] = {1,1,0,0,7,7,6,6,5,5,4,4,3,3,2,2};	// +2A,+3
+*/
+
 int contTabA[] = {12,12,10,10,8,8,6,6,4,4,2,2,0,0,0,0};		// 48K 128K +2 (bank 1,3,5,7)
-int contTabB[] = {2,2,0,0,14,14,12,12,10,10,8,8,6,6,4,4};	// +2A +3 (bank 4,5,6,7)
+int contTabB[] = {2,1,0,0,14,13,12,11,10,9,8,7,6,5,4,3};	// +2A +3 (bank 4,5,6,7)
 
 void vidWait(Video* vid) {
 	if (vid->y < vid->bord.v) return;		// above screen
 	if (vid->y > (vid->bord.v + 191)) return;	// below screen
-	xscr = vid->x - vid->bord.h + 1;
+	xscr = vid->x - vid->bord.h + 2;
 	if (xscr < 0) return;
 	if (xscr > 253) return;
 //	printf("X:%i, brd:%i, wait:%i\n",vid->x,vid->bord.h,contTabA[xscr & 0x0f]);
@@ -760,16 +761,23 @@ void vidSync(Video* vid, int ns) {
 				vid->callback(vid);		// put dot
 			}
 		}
-		if ((vid->x == vid->intpos.h) && (vid->y == vid->intpos.v)) vid->intstrobe = 1;
+		if ((vid->x == vid->intpos.h) && (vid->y == vid->intpos.v) && (vid->intMask & 0x01)) {
+				vid->intStrobe = 1;
+				vid->intVector = 0xff;
+		}
+		vid->dot++;
 		if (++vid->x >= vid->full.h) {
 			vid->x = 0;
 			vid->nextrow = 1;
-			if (vid->istsconf) vidTSRender(vid,vid->scrptr - vid->vsze.h * 6);
-//			if ((vid->y >= vid->lcut.v) && (vid->y < vid->rcut.v) && (vidFlag & VF_DOUBLE)) {
-//				memcpy(vid->scrptr, vid->scrptr - vid->lineBytes, vid->lineBytes);
-//				vid->scrptr += vid->lineBytes;
-//			}
+			if (vid->istsconf) {
+				vidTSRender(vid,vid->scrptr - vid->vsze.h * 6);
+				if (vid->intMask & 0x02) {
+						vid->intStrobe = 1;
+						vid->intVector = 0xfd;
+				}
+			}
 			if (++vid->y >= vid->full.v) {
+				vid->dot = 0;
 				vid->y = 0;
 				vid->scrptr = vid->scrimg;
 				vid->fcnt++;

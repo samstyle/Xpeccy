@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "../libxpeccy/spectrum.h"
-#include "../emulwin.h"
 
 #ifdef _WIN32
 	#define	SLASH "\\"
@@ -15,7 +14,16 @@
 
 // common
 
-extern ZXComp* zx;
+struct xConfig {
+	unsigned sysclock:1;
+	struct {
+		unsigned mouse:1;
+		unsigned joy:1;
+		unsigned keys:1;
+	} led;
+};
+
+// extern ZXComp* zx;
 
 std::string getTimeString(int);
 std::string int2str(int);
@@ -77,7 +85,7 @@ typedef struct {
 
 bool addProfile(std::string,std::string);
 int delProfile(std::string);
-bool setProfile(std::string);
+bool selProfile(std::string);
 void clearProfiles();
 void prfSetRomset(std::string,std::string);
 void prfLoadAll();

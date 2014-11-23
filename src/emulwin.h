@@ -13,6 +13,9 @@
 	#include <QWidget>
 #endif
 
+#include "setupwin.h"
+#include "debuger.h"
+#include "xcore/xcore.h"
 #include "libxpeccy/spectrum.h"
 
 // pause reasons
@@ -26,21 +29,14 @@
 #define PR_RZX		(1<<7)
 #define	PR_EXIT		(1<<8)
 
-// flags - emul mode / events
-#define	FL_GRAB		1
-#define	FL_RZX		(1<<1)
-#define	FL_SHOT		(1<<2)
-#define	FL_EMUL		(1<<3)
-#define	FL_FAST		(1<<4)
-// #define FL_FAST_RQ	(1<<5)
-#define	FL_BLOCK	(1<<6)
-#define	FL_EXIT		(1<<7)
-#define	FL_LED_MOUSE	(1<<8)
-#define	FL_LED_JOY	(1<<9)
-#define	FL_UPDATE	(1<<10)
-#define FL_DRAW		(1<<11)
-#define	FL_WORK		(1<<12)
-#define	FL_SYSCLOCK	(1<<13)
+// flags - emul mode
+#define FL_PAUSE	1
+#define	FL_BLOCK	(1<<1)
+#define	FL_EXIT		(1<<2)
+//#define	FL_LED_MOUSE	(1<<3)
+//#define	FL_LED_JOY	(1<<4)
+//#define	FL_WORK		(1<<5)
+//#define	FL_SYSCLOCK	(1<<6)
 
 // Qt nativeScanCode
 
@@ -223,7 +219,6 @@ typedef struct {
 } keyEntry;
 
 typedef struct {
-	int flag;
 	int showTime;	// in 1/50 sec
 	int x;
 	int y;
@@ -233,10 +228,17 @@ typedef struct {
 class xThread : public QThread {
 	Q_OBJECT
 	public:
-		void run();
+		unsigned fast:1;
+		unsigned block:1;
+		ZXComp* comp;
 		QMutex mtx;
+		void run();
+	private:
+		void emuCycle();
+		void tapeCatch();
 	signals:
 		void dbgRequest();
+		void tapeSignal(int,int);
 };
 
 #ifdef DRAWGL
@@ -248,11 +250,17 @@ class MainWin : public QWidget {
 	Q_OBJECT
 	public:
 		MainWin();
-		void updateWindow();
+		ZXComp* comp;
 		void checkState();
-		void updateHead();
-		void emuDraw();
+		void setProfile(std::string);
 	private:
+		unsigned grabMice:1;
+
+		SetupWin* opt;
+		DebugWin* dbg;
+
+		xConfig conf;
+
 		QTimer cmosTimer;
 		QTimer timer;
 		xThread ethread;
@@ -262,16 +270,27 @@ class MainWin : public QWidget {
 		GLuint tex;
 		GLuint displaylist;
 #endif
+		int pauseFlags;
+		int scrCounter;
+		int scrInterval;
+
+		bool saveChanged();
+		void updateHead();
+		void emuDraw();
+		void screenShot();
 	public slots:
 		void doOptions();
 		void doDebug();
+		void updateWindow();
+		void pause(bool, int);
 		void tapStateChanged(int,int);
 	private slots:
 		void onTimer();
 		void cmosTick();
-
 		void menuHide();
 		void menuShow();
+		void optApply();
+		void dbgReturn();
 		void rzxStateChanged(int);
 		void bookmarkSelected(QAction*);
 		void profileSelected(QAction*);
@@ -298,14 +317,14 @@ class MainWin : public QWidget {
 };
 
 // main
-void emulInit();
-void emuStart();
-void emuStop();
-void emulShow();
-void emulUpdateWindow();
-void emulPause(bool, int);
-extern volatile int emulFlags;
-void emulSetFlag(int,bool);
+//void emulInit();
+//void emuStart();
+//void emuStop();
+//void emulShow();
+//void emulUpdateWindow();
+//void emulPause(bool, int);
+//extern volatile int emulFlags;
+//void emulSetFlag(int,bool);
 
 // keys
 void initKeyMap();

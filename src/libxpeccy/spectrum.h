@@ -124,7 +124,6 @@ struct ZXComp {
 	unsigned char dosen;		// active trdos (dosen and b4,prt0 sets rompart)
 	int resbank;			// rompart active after reset
 	int tapCount;
-	int intVector;
 };
 
 typedef struct ZXComp ZXComp;

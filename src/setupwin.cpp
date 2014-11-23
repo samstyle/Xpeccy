@@ -20,31 +20,6 @@
 #include "filer.h"
 #include "filetypes/filetypes.h"
 
-#include "ui_rsedit.h"
-#include "ui_setupwin.h"
-#include "ui_umadial.h"
-#include "ui_layedit.h"
-
-Ui::SetupWin setupUi;
-Ui::UmaDial uia;
-Ui::RSEdialog rseUi;
-Ui::LayEditor layUi;
-
-SetupWin* optWin;
-QDialog* rseditor;
-QDialog* layeditor;
-
-std::vector<VidLayout> lays;
-std::vector<RomSet> rsl;
-
-void optInit(QWidget* par) {
-	optWin = new SetupWin(par);
-}
-
-void optShow() {
-	optWin->start();
-}
-
 void fillRFBox(QComboBox* box, QStringList lst) {
 	box->clear();
 	box->addItem("none");
@@ -306,9 +281,10 @@ void SetupWin::okay() {
 	reject();
 }
 
-void SetupWin::start() {
+void SetupWin::start(xConfig* p, ZXComp* c) {
+	conf = p;
+	comp = c;
 	unsigned int i;
-	emulPause(true,PR_OPTS);
 	XProfile* curProf = getCurrentProfile();
 	RomSet* rset = findRomset(curProf->rsName);
 // machine
@@ -317,28 +293,28 @@ void SetupWin::start() {
 	for (i=0; i < rsl.size(); i++) {
 		setupUi.rsetbox->addItem(QString::fromLocal8Bit(rsl[i].name.c_str()));
 	}
-	setupUi.machbox->setCurrentIndex(setupUi.machbox->findData(QString::fromUtf8(zx->hw->name)));
+	setupUi.machbox->setCurrentIndex(setupUi.machbox->findData(QString::fromUtf8(comp->hw->name)));
 	int cbx = -1;
 	if (rset != NULL)
 		cbx = setupUi.rsetbox->findText(QString::fromUtf8(rset->name.c_str()));
 	setupUi.rsetbox->setCurrentIndex(cbx);
 //	setupUi.reschk->setChecked(emulFlags & FL_RESET);
-	setupUi.resbox->setCurrentIndex(zx->resbank);
+	setupUi.resbox->setCurrentIndex(comp->resbank);
 	setmszbox(setupUi.machbox->currentIndex());
-	setupUi.mszbox->setCurrentIndex(setupUi.mszbox->findData(zx->mem->memSize));
+	setupUi.mszbox->setCurrentIndex(setupUi.mszbox->findData(comp->mem->memSize));
 	if (setupUi.mszbox->currentIndex() < 0) setupUi.mszbox->setCurrentIndex(setupUi.mszbox->count() - 1);
-	setupUi.cpufrq->setValue(zx->cpuFrq * 2); updfrq();
-	setupUi.scrpwait->setChecked(zx->scrpWait);
-	setupUi.sysCmos->setChecked(emulFlags & FL_SYSCLOCK);
+	setupUi.cpufrq->setValue(comp->cpuFrq * 2); updfrq();
+	setupUi.scrpwait->setChecked(comp->scrpWait);
+	setupUi.sysCmos->setChecked(conf->sysclock);
 // video
 	lays = getLayoutList();
 	setupUi.dszchk->setChecked((vidFlag & VF_DOUBLE));
 	setupUi.fscchk->setChecked(vidFlag & VF_FULLSCREEN);
 	setupUi.noflichk->setChecked(vidFlag & VF_NOFLIC);
 	setupUi.grayscale->setChecked(vidFlag & VF_GREY);
-	setupUi.border4T->setChecked(zx->vid->border4t);
-	setupUi.contMem->setChecked(zx->contMem);
-	setupUi.contIO->setChecked(zx->contIO);
+	setupUi.border4T->setChecked(comp->vid->border4t);
+	setupUi.contMem->setChecked(comp->contMem);
+	setupUi.contIO->setChecked(comp->contIO);
 	setupUi.bszsld->setValue((int)(brdsize * 100));
 	setupUi.pathle->setText(QString::fromLocal8Bit(optGetString(OPT_SHOTDIR).c_str()));
 	setupUi.ssfbox->setCurrentIndex(setupUi.ssfbox->findData(optGetInt(OPT_SHOTFRM)));
@@ -348,25 +324,25 @@ void SetupWin::start() {
 	setupUi.geombox->clear();
 	for (i=0; i<lays.size(); i++) {setupUi.geombox->addItem(QString::fromLocal8Bit(lays[i].name.c_str()));}
 	setupUi.geombox->setCurrentIndex(setupUi.geombox->findText(QString::fromLocal8Bit(getCurrentProfile()->layName.c_str())));
-	setupUi.ulaPlus->setChecked(zx->vid->ula->enabled);
+	setupUi.ulaPlus->setChecked(comp->vid->ula->enabled);
 // sound
 	setupUi.senbox->setChecked(sndEnabled);
 	setupUi.mutbox->setChecked(sndMute);
-	setupUi.gsrbox->setChecked(zx->gs->reset);
+	setupUi.gsrbox->setChecked(comp->gs->reset);
 	setupUi.outbox->setCurrentIndex(setupUi.outbox->findText(QString::fromLocal8Bit(sndOutput->name)));
 	setupUi.ratbox->setCurrentIndex(setupUi.ratbox->findData(QVariant(sndRate)));
 	setupUi.bvsld->setValue(beepVolume);
 	setupUi.tvsld->setValue(tapeVolume);
 	setupUi.avsld->setValue(ayVolume);
 	setupUi.gvsld->setValue(gsVolume);
-	setupUi.schip1box->setCurrentIndex(setupUi.schip1box->findData(QVariant(zx->ts->chipA->type)));
-	setupUi.schip2box->setCurrentIndex(setupUi.schip2box->findData(QVariant(zx->ts->chipB->type)));
-	setupUi.stereo1box->setCurrentIndex(setupUi.stereo1box->findData(QVariant(zx->ts->chipA->stereo)));
-	setupUi.stereo2box->setCurrentIndex(setupUi.stereo2box->findData(QVariant(zx->ts->chipB->stereo)));
-	setupUi.gstereobox->setCurrentIndex(setupUi.gstereobox->findData(QVariant(zx->gs->stereo)));
-	setupUi.gsgroup->setChecked(zx->gs->enable);
-	setupUi.tsbox->setCurrentIndex(setupUi.tsbox->findData(QVariant(zx->ts->type)));
-	setupUi.sdrvBox->setCurrentIndex(setupUi.sdrvBox->findData(QVariant(zx->sdrv->type)));
+	setupUi.schip1box->setCurrentIndex(setupUi.schip1box->findData(QVariant(comp->ts->chipA->type)));
+	setupUi.schip2box->setCurrentIndex(setupUi.schip2box->findData(QVariant(comp->ts->chipB->type)));
+	setupUi.stereo1box->setCurrentIndex(setupUi.stereo1box->findData(QVariant(comp->ts->chipA->stereo)));
+	setupUi.stereo2box->setCurrentIndex(setupUi.stereo2box->findData(QVariant(comp->ts->chipB->stereo)));
+	setupUi.gstereobox->setCurrentIndex(setupUi.gstereobox->findData(QVariant(comp->gs->stereo)));
+	setupUi.gsgroup->setChecked(comp->gs->enable);
+	setupUi.tsbox->setCurrentIndex(setupUi.tsbox->findData(QVariant(comp->ts->type)));
+	setupUi.sdrvBox->setCurrentIndex(setupUi.sdrvBox->findData(QVariant(comp->sdrv->type)));
 // input
 	buildkeylist();
 	// buildjmaplist();
@@ -374,74 +350,75 @@ void SetupWin::start() {
 	int idx = setupUi.keyMapBox->findText(QString(kmname.c_str()));
 	if (idx < 1) idx = 0;
 	setupUi.keyMapBox->setCurrentIndex(idx);
-	setupUi.ratEnable->setChecked(zx->mouse->enable);
-	setupUi.ratWheel->setChecked(zx->mouse->hasWheel);
-	setupUi.cbSwapButtons->setChecked(zx->mouse->swapButtons);
+	setupUi.ratEnable->setChecked(comp->mouse->enable);
+	setupUi.ratWheel->setChecked(comp->mouse->hasWheel);
+	setupUi.cbSwapButtons->setChecked(comp->mouse->swapButtons);
 	// setupUi.joyBox->setVisible(false);
 // dos
-	setupUi.diskTypeBox->setCurrentIndex(setupUi.diskTypeBox->findData(zx->bdi->fdc->type));
+	setupUi.diskTypeBox->setCurrentIndex(setupUi.diskTypeBox->findData(comp->bdi->fdc->type));
 	setupUi.bdtbox->setChecked(fdcFlag & FDC_FAST);
 	setupUi.mempaths->setChecked(optGetFlag(OF_PATHS));
-	Floppy* flp = zx->bdi->fdc->flop[0];
+	Floppy* flp = comp->bdi->fdc->flop[0];
 	setupUi.apathle->setText(QString::fromLocal8Bit(flp->path));
 		setupUi.a80box->setChecked(flp->trk80);
 		setupUi.adsbox->setChecked(flp->doubleSide);
 		setupUi.awpbox->setChecked(flp->protect);
-	flp = zx->bdi->fdc->flop[1];
+	flp = comp->bdi->fdc->flop[1];
 	setupUi.bpathle->setText(QString::fromLocal8Bit(flp->path));
 		setupUi.b80box->setChecked(flp->trk80);
 		setupUi.bdsbox->setChecked(flp->doubleSide);
 		setupUi.bwpbox->setChecked(flp->protect);
-	flp = zx->bdi->fdc->flop[2];
+	flp = comp->bdi->fdc->flop[2];
 	setupUi.cpathle->setText(QString::fromLocal8Bit(flp->path));
 		setupUi.c80box->setChecked(flp->trk80);
 		setupUi.cdsbox->setChecked(flp->doubleSide);
 		setupUi.cwpbox->setChecked(flp->protect);
-	flp = zx->bdi->fdc->flop[3];
+	flp = comp->bdi->fdc->flop[3];
 	setupUi.dpathle->setText(QString::fromLocal8Bit(flp->path));
 		setupUi.d80box->setChecked(flp->trk80);
 		setupUi.ddsbox->setChecked(flp->doubleSide);
 		setupUi.dwpbox->setChecked(flp->protect);
 	fillDiskCat();
 // hdd
-	setupUi.hiface->setCurrentIndex(setupUi.hiface->findData(zx->ide->type));
+	setupUi.hiface->setCurrentIndex(setupUi.hiface->findData(comp->ide->type));
 
-	setupUi.hm_type->setCurrentIndex(setupUi.hm_type->findData(zx->ide->master->type));
-	ATAPassport pass = ideGetPassport(zx->ide,IDE_MASTER);
+	setupUi.hm_type->setCurrentIndex(setupUi.hm_type->findData(comp->ide->master->type));
+	ATAPassport pass = ideGetPassport(comp->ide,IDE_MASTER);
 //	setupUi.hm_model->setText(QString::fromLocal8Bit(pass.model));
 //	setupUi.hm_ser->setText(QString::fromLocal8Bit(pass.serial));
-	setupUi.hm_path->setText(QString::fromLocal8Bit(zx->ide->master->image));
-	setupUi.hm_islba->setChecked(zx->ide->master->hasLBA);
+	setupUi.hm_path->setText(QString::fromLocal8Bit(comp->ide->master->image));
+	setupUi.hm_islba->setChecked(comp->ide->master->hasLBA);
 	setupUi.hm_gsec->setValue(pass.spt);
 	setupUi.hm_ghd->setValue(pass.hds);
 	setupUi.hm_gcyl->setValue(pass.cyls);
-	setupUi.hm_glba->setValue(zx->ide->master->maxlba);
+	setupUi.hm_glba->setValue(comp->ide->master->maxlba);
 
-	setupUi.hs_type->setCurrentIndex(setupUi.hm_type->findData(zx->ide->slave->type));
-	pass = ideGetPassport(zx->ide,IDE_SLAVE);
+	setupUi.hs_type->setCurrentIndex(setupUi.hm_type->findData(comp->ide->slave->type));
+	pass = ideGetPassport(comp->ide,IDE_SLAVE);
 //	setupUi.hs_model->setText(QString::fromLocal8Bit(pass.model));
 //	setupUi.hs_ser->setText(QString::fromLocal8Bit(pass.serial));
-	setupUi.hs_path->setText(QString::fromLocal8Bit(zx->ide->slave->image));
-	setupUi.hs_islba->setChecked(zx->ide->slave->hasLBA);
+	setupUi.hs_path->setText(QString::fromLocal8Bit(comp->ide->slave->image));
+	setupUi.hs_islba->setChecked(comp->ide->slave->hasLBA);
 	setupUi.hs_gsec->setValue(pass.spt);
 	setupUi.hs_ghd->setValue(pass.hds);
 	setupUi.hs_gcyl->setValue(pass.cyls);
-	setupUi.hs_glba->setValue(zx->ide->slave->maxlba);
+	setupUi.hs_glba->setValue(comp->ide->slave->maxlba);
 // sdcard
-	setupUi.sdPath->setText(QString::fromLocal8Bit(zx->sdc->image));
-	setupUi.sdcapbox->setCurrentIndex(setupUi.sdcapbox->findData(zx->sdc->capacity));
+	setupUi.sdPath->setText(QString::fromLocal8Bit(comp->sdc->image));
+	setupUi.sdcapbox->setCurrentIndex(setupUi.sdcapbox->findData(comp->sdc->capacity));
 	if (setupUi.sdcapbox->currentIndex() < 0) setupUi.sdcapbox->setCurrentIndex(2);	// 128M
-	setupUi.sdlock->setChecked(zx->sdc->flag & SDC_LOCK);
+	setupUi.sdlock->setChecked(comp->sdc->flag & SDC_LOCK);
 // tape
 	setupUi.cbTapeAuto->setChecked(optGetFlag(OF_TAPEAUTO));
 	setupUi.cbTapeFast->setChecked(optGetFlag(OF_TAPEFAST));
-	setupUi.tpathle->setText(QString::fromLocal8Bit(zx->tape->path));
+	setupUi.tpathle->setText(QString::fromLocal8Bit(comp->tape->path));
 	buildtapelist();
 // tools
 	buildmenulist();
 // leds
-	setupUi.cbMouseLed->setChecked(emulFlags & FL_LED_MOUSE);
-	setupUi.cbJoyLed->setChecked(emulFlags & FL_LED_JOY);
+	setupUi.cbMouseLed->setChecked(conf->led.mouse);
+	setupUi.cbJoyLed->setChecked(conf->led.joy);
+	setupUi.cbKeysLed->setChecked(conf->led.keys);
 // profiles
 	setupUi.defstart->setChecked(optGetFlag(OF_DEFAULT));
 	buildproflist();
@@ -453,7 +430,7 @@ void SetupWin::apply() {
 	XProfile* curProf = getCurrentProfile();
 // machine
 	setRomsetList(rsl);
-	HardWare *oldmac = zx->hw;
+	HardWare *oldmac = comp->hw;
 	curProf->hwName = std::string(setupUi.machbox->itemData(setupUi.machbox->currentIndex()).toString().toUtf8().data());
 //	curProf->hwName = std::string(setupUi.machbox->currentText().toUtf8().data());
 	zxSetHardware(curProf->zx,curProf->hwName.c_str());
@@ -461,34 +438,34 @@ void SetupWin::apply() {
 	prfSetRomset("", curProf->rsName);
 //	RomSet* rset = findRomset(curProf->rsName);
 //	emulSetFlag(FL_RESET, setupUi.reschk->isChecked());
-	zx->resbank = setupUi.resbox->currentIndex();
+	comp->resbank = setupUi.resbox->currentIndex();
 
-	memSetSize(zx->mem,setupUi.mszbox->itemData(setupUi.mszbox->currentIndex()).toInt());
-	zxSetFrq(zx,setupUi.cpufrq->value() / 2.0);
-	// setFlagBit(setupUi.scrpwait->isChecked(),&zx->hwFlag,HW_WAIT);
-	zx->scrpWait = setupUi.scrpwait->isChecked() ? 1 : 0;
-	if (zx->hw != oldmac) zxReset(zx,RES_DEFAULT);
-	emulSetFlag(FL_SYSCLOCK,setupUi.sysCmos->isChecked());
+	memSetSize(comp->mem,setupUi.mszbox->itemData(setupUi.mszbox->currentIndex()).toInt());
+	zxSetFrq(comp,setupUi.cpufrq->value() / 2.0);
+	// setFlagBit(setupUi.scrpwait->isChecked(),&comp->hwFlag,HW_WAIT);
+	comp->scrpWait = setupUi.scrpwait->isChecked() ? 1 : 0;
+	if (comp->hw != oldmac) zxReset(comp,RES_DEFAULT);
+	conf->sysclock = setupUi.sysCmos->isChecked() ? 1 : 0;
 // video
 	setLayoutList(lays);
 	setFlagBit(setupUi.dszchk->isChecked(),&vidFlag,VF_DOUBLE);
 	setFlagBit(setupUi.fscchk->isChecked(),&vidFlag,VF_FULLSCREEN);
 	setFlagBit(setupUi.noflichk->isChecked(),&vidFlag,VF_NOFLIC);
-	zx->vid->border4t = setupUi.border4T->isChecked() ? 1 : 0;
-//	setFlagBit(setupUi.contMem->isChecked(),&zx->hwFlag,HW_CONTMEM);
-//	setFlagBit(setupUi.contMemP3->isChecked(),&zx->vid->flags,VID_CONT2);
-//	setFlagBit(setupUi.contIO->isChecked(),&zx->hwFlag,HW_CONTIO);
-	zx->contMem = setupUi.contMem->isChecked() ? 1 : 0;
-	zx->contIO = setupUi.contIO->isChecked() ? 1 : 0;
+	comp->vid->border4t = setupUi.border4T->isChecked() ? 1 : 0;
+//	setFlagBit(setupUi.contMem->isChecked(),&comp->hwFlag,HW_CONTMEM);
+//	setFlagBit(setupUi.contMemP3->isChecked(),&comp->vid->flags,VID_CONT2);
+//	setFlagBit(setupUi.contIO->isChecked(),&comp->hwFlag,HW_CONTIO);
+	comp->contMem = setupUi.contMem->isChecked() ? 1 : 0;
+	comp->contIO = setupUi.contIO->isChecked() ? 1 : 0;
 	setFlagBit(setupUi.grayscale->isChecked(),&vidFlag,VF_GREY);
 	brdsize = setupUi.bszsld->value()/100.0;
 	optSet(OPT_SHOTDIR,std::string(setupUi.pathle->text().toLocal8Bit().data()));
 	optSet(OPT_SHOTFRM,setupUi.ssfbox->itemData(setupUi.ssfbox->currentIndex()).toInt());
 	optSet(OPT_SHOTCNT,setupUi.scntbox->value());
 	optSet(OPT_SHOTINT,setupUi.sintbox->value());
-	emulSetLayout(zx,std::string(setupUi.geombox->currentText().toLocal8Bit().data()));
+	emulSetLayout(comp,std::string(setupUi.geombox->currentText().toLocal8Bit().data()));
 	optSet(OPT_BRGLEV,setupUi.brgslide->value());
-	zx->vid->ula->enabled = setupUi.ulaPlus->isChecked() ? 1 : 0;
+	comp->vid->ula->enabled = setupUi.ulaPlus->isChecked() ? 1 : 0;
 // sound
 	//std::string oname = std::string(sndOutput->name);
 	std::string nname(setupUi.outbox->currentText().toLocal8Bit().data());
@@ -500,19 +477,19 @@ void SetupWin::apply() {
 	ayVolume = setupUi.avsld->value();
 	gsVolume = setupUi.gvsld->value();
 	setOutput(nname.c_str());
-	aymSetType(zx->ts->chipA,setupUi.schip1box->itemData(setupUi.schip1box->currentIndex()).toInt());
-	aymSetType(zx->ts->chipB,setupUi.schip2box->itemData(setupUi.schip2box->currentIndex()).toInt());
-	zx->ts->chipA->stereo = setupUi.stereo1box->itemData(setupUi.stereo1box->currentIndex()).toInt();
-	zx->ts->chipB->stereo = setupUi.stereo2box->itemData(setupUi.stereo2box->currentIndex()).toInt();
-	zx->ts->type = setupUi.tsbox->itemData(setupUi.tsbox->currentIndex()).toInt();
-	zx->gs->enable = setupUi.gsgroup->isChecked() ? 1 : 0;
-	zx->gs->reset = setupUi.gsrbox->isChecked() ? 1 : 0;
-	zx->gs->stereo = setupUi.gstereobox->itemData(setupUi.gstereobox->currentIndex()).toInt();
-	zx->sdrv->type = setupUi.sdrvBox->itemData(setupUi.sdrvBox->currentIndex()).toInt();
+	aymSetType(comp->ts->chipA,setupUi.schip1box->itemData(setupUi.schip1box->currentIndex()).toInt());
+	aymSetType(comp->ts->chipB,setupUi.schip2box->itemData(setupUi.schip2box->currentIndex()).toInt());
+	comp->ts->chipA->stereo = setupUi.stereo1box->itemData(setupUi.stereo1box->currentIndex()).toInt();
+	comp->ts->chipB->stereo = setupUi.stereo2box->itemData(setupUi.stereo2box->currentIndex()).toInt();
+	comp->ts->type = setupUi.tsbox->itemData(setupUi.tsbox->currentIndex()).toInt();
+	comp->gs->enable = setupUi.gsgroup->isChecked() ? 1 : 0;
+	comp->gs->reset = setupUi.gsrbox->isChecked() ? 1 : 0;
+	comp->gs->stereo = setupUi.gstereobox->itemData(setupUi.gstereobox->currentIndex()).toInt();
+	comp->sdrv->type = setupUi.sdrvBox->itemData(setupUi.sdrvBox->currentIndex()).toInt();
 // input
-	zx->mouse->enable = setupUi.ratEnable->isChecked() ? 1 : 0;
-	zx->mouse->hasWheel = setupUi.ratWheel->isChecked() ? 1 : 0;
-	zx->mouse->swapButtons = setupUi.cbSwapButtons->isChecked() ? 1 : 0;
+	comp->mouse->enable = setupUi.ratEnable->isChecked() ? 1 : 0;
+	comp->mouse->hasWheel = setupUi.ratWheel->isChecked() ? 1 : 0;
+	comp->mouse->swapButtons = setupUi.cbSwapButtons->isChecked() ? 1 : 0;
 	//if (setupUi.inpDevice->currentIndex() < 1) {
 	//	optSet(OPT_JOYNAME,std::string(""));
 	//} else {
@@ -523,79 +500,76 @@ void SetupWin::apply() {
 	optSet(OPT_KEYNAME,kmname);
 	loadKeys();
 // bdi
-	zx->bdi->fdc->type = setupUi.diskTypeBox->itemData(setupUi.diskTypeBox->currentIndex()).toInt();
+	comp->bdi->fdc->type = setupUi.diskTypeBox->itemData(setupUi.diskTypeBox->currentIndex()).toInt();
 	setFlagBit(setupUi.bdtbox->isChecked(),&fdcFlag,FDC_FAST);
 	optSetFlag(OF_PATHS,setupUi.mempaths->isChecked());
 
-	Floppy* flp = zx->bdi->fdc->flop[0];
+	Floppy* flp = comp->bdi->fdc->flop[0];
 	flp->trk80 = setupUi.a80box->isChecked() ? 1 : 0;
 	flp->doubleSide = setupUi.adsbox->isChecked() ? 1 : 0;
 	flp->protect = setupUi.awpbox->isChecked() ? 1 : 0;
 
-	flp = zx->bdi->fdc->flop[1];
+	flp = comp->bdi->fdc->flop[1];
 	flp->trk80 = setupUi.b80box->isChecked() ? 1 : 0;
 	flp->doubleSide = setupUi.bdsbox->isChecked() ? 1 : 0;
 	flp->protect = setupUi.bwpbox->isChecked() ? 1 : 0;
 
-	flp = zx->bdi->fdc->flop[2];
+	flp = comp->bdi->fdc->flop[2];
 	flp->trk80 = setupUi.c80box->isChecked() ? 1 : 0;
 	flp->doubleSide = setupUi.cdsbox->isChecked() ? 1 : 0;
 	flp->protect = setupUi.cwpbox->isChecked() ? 1 : 0;
 
-	flp = zx->bdi->fdc->flop[3];
+	flp = comp->bdi->fdc->flop[3];
 	flp->trk80 = setupUi.d80box->isChecked() ? 1 : 0;
 	flp->doubleSide = setupUi.ddsbox->isChecked() ? 1 : 0;
 	flp->protect = setupUi.dwpbox->isChecked() ? 1 : 0;
 
 // hdd
-	zx->ide->type = setupUi.hiface->itemData(setupUi.hiface->currentIndex()).toInt();
+	comp->ide->type = setupUi.hiface->itemData(setupUi.hiface->currentIndex()).toInt();
 
-	ATAPassport pass = ideGetPassport(zx->ide,IDE_MASTER);
-	zx->ide->master->type = setupUi.hm_type->itemData(setupUi.hm_type->currentIndex()).toInt();
-	ideSetImage(zx->ide,IDE_MASTER,setupUi.hm_path->text().toLocal8Bit().data());
-	zx->ide->master->hasLBA = setupUi.hm_islba->isChecked() ? 1 : 0;
+	ATAPassport pass = ideGetPassport(comp->ide,IDE_MASTER);
+	comp->ide->master->type = setupUi.hm_type->itemData(setupUi.hm_type->currentIndex()).toInt();
+	ideSetImage(comp->ide,IDE_MASTER,setupUi.hm_path->text().toLocal8Bit().data());
+	comp->ide->master->hasLBA = setupUi.hm_islba->isChecked() ? 1 : 0;
 	pass.spt = setupUi.hm_gsec->value();
 	pass.hds = setupUi.hm_ghd->value();
 	pass.cyls = setupUi.hm_gcyl->value();
-	zx->ide->master->maxlba = setupUi.hm_glba->value();
-	ideSetPassport(zx->ide,IDE_MASTER,pass);
+	comp->ide->master->maxlba = setupUi.hm_glba->value();
+	ideSetPassport(comp->ide,IDE_MASTER,pass);
 
-	pass = ideGetPassport(zx->ide,IDE_SLAVE);
-	zx->ide->slave->type = setupUi.hs_type->itemData(setupUi.hs_type->currentIndex()).toInt();
-	ideSetImage(zx->ide,IDE_SLAVE,setupUi.hs_path->text().toLocal8Bit().data());
-	zx->ide->slave->hasLBA = setupUi.hs_islba->isChecked() ? 1 : 0;
+	pass = ideGetPassport(comp->ide,IDE_SLAVE);
+	comp->ide->slave->type = setupUi.hs_type->itemData(setupUi.hs_type->currentIndex()).toInt();
+	ideSetImage(comp->ide,IDE_SLAVE,setupUi.hs_path->text().toLocal8Bit().data());
+	comp->ide->slave->hasLBA = setupUi.hs_islba->isChecked() ? 1 : 0;
 	pass.spt = setupUi.hs_gsec->value();
 	pass.hds = setupUi.hs_ghd->value();
 	pass.cyls = setupUi.hs_gcyl->value();
-	zx->ide->slave->maxlba = setupUi.hs_glba->value();
-	ideSetPassport(zx->ide,IDE_SLAVE,pass);
+	comp->ide->slave->maxlba = setupUi.hs_glba->value();
+	ideSetPassport(comp->ide,IDE_SLAVE,pass);
 // sdcard
-	sdcSetImage(zx->sdc,setupUi.sdPath->text().isEmpty() ? "" : setupUi.sdPath->text().toLocal8Bit().data());
-	sdcSetCapacity(zx->sdc,setupUi.sdcapbox->itemData(setupUi.sdcapbox->currentIndex()).toInt());
-	setFlagBit(setupUi.sdlock->isChecked(),&zx->sdc->flag,SDC_LOCK);
+	sdcSetImage(comp->sdc,setupUi.sdPath->text().isEmpty() ? "" : setupUi.sdPath->text().toLocal8Bit().data());
+	sdcSetCapacity(comp->sdc,setupUi.sdcapbox->itemData(setupUi.sdcapbox->currentIndex()).toInt());
+	setFlagBit(setupUi.sdlock->isChecked(),&comp->sdc->flag,SDC_LOCK);
 // tape
 	optSetFlag(OF_TAPEAUTO,setupUi.cbTapeAuto->isChecked());
 	optSetFlag(OF_TAPEFAST,setupUi.cbTapeFast->isChecked());
 // leds
-	emulSetFlag(FL_LED_MOUSE,setupUi.cbMouseLed->isChecked());
-	emulSetFlag(FL_LED_JOY,setupUi.cbJoyLed->isChecked());
+	conf->led.mouse = setupUi.cbMouseLed->isChecked();
+	conf->led.joy = setupUi.cbJoyLed->isChecked();
+	conf->led.keys = setupUi.cbKeysLed->isChecked();
 // profiles
 	optSetFlag(OF_DEFAULT,setupUi.defstart->isChecked());
 
-	//saveConfig();
-	saveProfiles();
+	saveProfiles(conf);
 	prfSave("");
+	nsPerFrame = comp->nsPerFrame;
 	sndCalibrate();
-//	zx->palchan = 1; // zx->flag |= ZX_PALCHAN;
-	// emulSetPalette(zx,setupUi.brgslide->value());
-	//emulOpenJoystick(optGetString(OPT_JOYNAME));
-	emulUpdateWindow();
 }
 
 void SetupWin::reject() {
 	hide();
-	fillUserMenu();
-	emulPause(false,PR_OPTS);
+	emit closed();
+	fillUserMenu();		// TODO : remove
 }
 
 // LAYOUTS
@@ -914,18 +888,18 @@ void SetupWin::buildrsetlist() {
 
 void SetupWin::buildtapelist() {
 //	buildTapeList();
-	TapeBlockInfo* inf = new TapeBlockInfo[zx->tape->blkCount];
-	tapGetBlocksInfo(zx->tape,inf);
-	setupUi.tapelist->setRowCount(zx->tape->blkCount);
-	if (zx->tape->blkCount == 0) {
+	TapeBlockInfo* inf = new TapeBlockInfo[comp->tape->blkCount];
+	tapGetBlocksInfo(comp->tape,inf);
+	setupUi.tapelist->setRowCount(comp->tape->blkCount);
+	if (comp->tape->blkCount == 0) {
 		setupUi.tapelist->setEnabled(false);
 		return;
 	}
 	setupUi.tapelist->setEnabled(true);
 	QTableWidgetItem* itm;
 	uint tm,ts;
-	for (int i=0; i < zx->tape->blkCount; i++) {
-		if (zx->tape->block == i) {
+	for (int i=0; i < comp->tape->blkCount; i++) {
+		if (comp->tape->block == i) {
 			itm = new QTableWidgetItem(QIcon(":/images/checkbox.png"),"");
 			setupUi.tapelist->setItem(i,0,itm);
 			ts = inf[i].curtime;
@@ -986,8 +960,8 @@ void SetupWin::copyToTape() {
 	QModelIndexList idx = setupUi.disklist->selectionModel()->selectedRows();
 	if (idx.size() == 0) return;
 	TRFile cat[128];
-	flpGetTRCatalog(zx->bdi->fdc->flop[dsk],cat);
-	// std::vector<TRFile> cat = flpGetTRCatalog(zx->bdi->flop[dsk]);
+	flpGetTRCatalog(comp->bdi->fdc->flop[dsk],cat);
+	// std::vector<TRFile> cat = flpGetTRCatalog(comp->bdi->flop[dsk]);
 	int row;
 	unsigned char* buf = new unsigned char[0xffff];
 	unsigned short line,start,len;
@@ -995,7 +969,7 @@ void SetupWin::copyToTape() {
 	int savedFiles = 0;
 	for (int i=0; i<idx.size(); i++) {
 		row = idx[i].row();
-		if (flpGetSectorsData(zx->bdi->fdc->flop[dsk],cat[row].trk, cat[row].sec+1, buf, cat[row].slen)) {
+		if (flpGetSectorsData(comp->bdi->fdc->flop[dsk],cat[row].trk, cat[row].sec+1, buf, cat[row].slen)) {
 			if (cat[row].slen == (cat[row].hlen + ((cat[row].llen == 0) ? 0 : 1))) {
 				start = (cat[row].hst << 8) + cat[row].lst;
 				len = (cat[row].hlen << 8) + cat[row].llen;
@@ -1004,7 +978,7 @@ void SetupWin::copyToTape() {
 				strcat(name,".");
 				strncat(name,(char*)&cat[row].ext,1);
 				// name = std::string((char*)&cat[row].name[0],8) + std::string(".") + std::string((char*)&cat[row].ext,1);
-				tapAddFile(zx->tape,name,(cat[row].ext == 'B') ? 0 : 3, start, len, line, buf,true);
+				tapAddFile(comp->tape,name,(cat[row].ext == 'B') ? 0 : 3, start, len, line, buf,true);
 				savedFiles++;
 			} else {
 				shitHappens("File seems to be joined, skip");
@@ -1026,7 +1000,7 @@ void SetupWin::diskToHobeta() {
 	QString dir = QFileDialog::getExistingDirectory(this,"Save file(s) to...",QDir::homePath());
 	if (dir == "") return;
 	std::string sdir = std::string(dir.toLocal8Bit().data()) + std::string(SLASH);
-	Floppy* flp = zx->bdi->fdc->flop[setupUi.disktabs->currentIndex()];		// selected floppy
+	Floppy* flp = comp->bdi->fdc->flop[setupUi.disktabs->currentIndex()];		// selected floppy
 	int savedFiles = 0;
 	for (int i=0; i<idx.size(); i++) {
 		if (saveHobetaFile(flp,idx[i].row(),sdir.c_str()) == ERR_OK) savedFiles++;
@@ -1041,7 +1015,7 @@ void SetupWin::diskToRaw() {
 	QString dir = QFileDialog::getExistingDirectory(this,"Save file(s) to...",QDir::homePath());
 	if (dir == "") return;
 	std::string sdir = std::string(dir.toLocal8Bit().data()) + std::string(SLASH);
-	Floppy* flp = zx->bdi->fdc->flop[setupUi.disktabs->currentIndex()];
+	Floppy* flp = comp->bdi->fdc->flop[setupUi.disktabs->currentIndex()];
 	int savedFiles = 0;
 	for (int i=0; i<idx.size(); i++) {
 		if (saveRawFile(flp,idx[i].row(),sdir.c_str()) == ERR_OK) savedFiles++;
@@ -1050,11 +1024,11 @@ void SetupWin::diskToRaw() {
 	showInfo(msg.c_str());
 }
 
-TRFile getHeadInfo(int blk) {
+TRFile getHeadInfo(Tape* tape, int blk) {
 	TRFile res;
-	TapeBlockInfo inf = tapGetBlockInfo(zx->tape,blk);
+	TapeBlockInfo inf = tapGetBlockInfo(tape,blk);
 	unsigned char* dt = new unsigned char[inf.size];
-	tapGetBlockData(zx->tape,blk,dt);
+	tapGetBlockData(tape,blk,dt);
 	for (int i=0; i<8; i++) res.name[i] = dt[i+2];
 	switch (dt[1]) {
 		case 0:
@@ -1082,15 +1056,15 @@ void SetupWin::copyToDisk() {
 	int dsk = setupUi.disktabs->currentIndex();
 	int headBlock = -1;
 	int dataBlock = -1;
-	if (!zx->tape->blkData[blk].hasBytes) {
+	if (!comp->tape->blkData[blk].hasBytes) {
 		shitHappens("This is not standard block");
 		return;
 	}
-	if (zx->tape->blkData[blk].isHeader) {
-		if ((int)zx->tape->blkCount == blk + 1) {
+	if (comp->tape->blkData[blk].isHeader) {
+		if ((int)comp->tape->blkCount == blk + 1) {
 			shitHappens("Header without data? Hmm...");
 		} else {
-			if (!zx->tape->blkData[blk+1].hasBytes) {
+			if (!comp->tape->blkData[blk+1].hasBytes) {
 				shitHappens("Data block is not standard");
 			} else {
 				headBlock = blk;
@@ -1100,7 +1074,7 @@ void SetupWin::copyToDisk() {
 	} else {
 		dataBlock = blk;
 		if (blk != 0) {
-			if (zx->tape->blkData[blk-1].isHeader) {
+			if (comp->tape->blkData[blk-1].isHeader) {
 				headBlock = blk - 1;
 			}
 		}
@@ -1111,7 +1085,7 @@ void SetupWin::copyToDisk() {
 		memcpy(&dsc.name[0],nm,8);
 		dsc.ext = 'C';
 		dsc.lst = dsc.hst = 0;
-		TapeBlockInfo binf = tapGetBlockInfo(zx->tape,dataBlock);
+		TapeBlockInfo binf = tapGetBlockInfo(comp->tape,dataBlock);
 		int len = binf.size;
 		if (len > 0xff00) {
 			shitHappens("Too much data for TRDos file");
@@ -1122,19 +1096,19 @@ void SetupWin::copyToDisk() {
 		dsc.slen = dsc.hlen;
 		if (dsc.llen != 0) dsc.slen++;
 	} else {
-		dsc = getHeadInfo(headBlock);
+		dsc = getHeadInfo(comp->tape, headBlock);
 		if (dsc.ext == 0x00) {
 			shitHappens("Yes, it happens");
 			return;
 		}
 	}
-	if (!(zx->bdi->fdc->flop[dsk]->insert)) newdisk(dsk);
-	TapeBlockInfo inf = tapGetBlockInfo(zx->tape,dataBlock);
+	if (!(comp->bdi->fdc->flop[dsk]->insert)) newdisk(dsk);
+	TapeBlockInfo inf = tapGetBlockInfo(comp->tape,dataBlock);
 	unsigned char* dt = new unsigned char[inf.size];
-	tapGetBlockData(zx->tape,dataBlock,dt);
+	tapGetBlockData(comp->tape,dataBlock,dt);
 	unsigned char* buf = new unsigned char[256];
 	int pos = 1;	// skip block type mark
-	switch(flpCreateDescriptor(zx->bdi->fdc->flop[dsk],&dsc)) {
+	switch(flpCreateDescriptor(comp->bdi->fdc->flop[dsk],&dsc)) {
 		case ERR_SHIT: shitHappens("Yes, it happens"); break;
 		case ERR_MANYFILES: shitHappens("Too many files @ disk"); break;
 		case ERR_NOSPACE: shitHappens("Not enough space @ disk"); break;
@@ -1144,7 +1118,7 @@ void SetupWin::copyToDisk() {
 					buf[(pos-1) & 0xff] = (pos < inf.size) ? dt[pos] : 0x00;
 					pos++;
 				} while ((pos & 0xff) != 1);
-				flpPutSectorData(zx->bdi->fdc->flop[dsk],dsc.trk, dsc.sec+1, buf, 256);
+				flpPutSectorData(comp->bdi->fdc->flop[dsk],dsc.trk, dsc.sec+1, buf, 256);
 				dsc.sec++;
 				if (dsc.sec > 15) {
 					dsc.sec = 0;
@@ -1168,15 +1142,15 @@ void SetupWin::fillDiskCat() {
 	wid->setColumnWidth(5,50);
 //	wid->setColumnWidth(6,40);
 	QTableWidgetItem* itm;
-	if (!(zx->bdi->fdc->flop[dsk]->insert)) {
+	if (!(comp->bdi->fdc->flop[dsk]->insert)) {
 		wid->setEnabled(false);
 		wid->setRowCount(0);
 	} else {
 		wid->setEnabled(true);
-		if (flpGet(zx->bdi->fdc->flop[dsk],FLP_DISKTYPE) == DISK_TYPE_TRD) {
+		if (flpGet(comp->bdi->fdc->flop[dsk],FLP_DISKTYPE) == DISK_TYPE_TRD) {
 			TRFile cat[128];
-			int catSize = flpGetTRCatalog(zx->bdi->fdc->flop[dsk],cat);
-			// std::vector<TRFile> cat = flpGetTRCatalog(zx->bdi->flop[dsk]);
+			int catSize = flpGetTRCatalog(comp->bdi->fdc->flop[dsk],cat);
+			// std::vector<TRFile> cat = flpGetTRCatalog(comp->bdi->flop[dsk]);
 			wid->setRowCount(catSize);
 			for (int i=0; i<catSize; i++) {
 				itm = new QTableWidgetItem(QString(std::string((char*)cat[i].name,8).c_str())); wid->setItem(i,0,itm);
@@ -1224,8 +1198,8 @@ void SetupWin::updvolumes() {
 // disk
 
 void SetupWin::newdisk(int idx) {
-	Floppy *flp = zx->bdi->fdc->flop[idx];
-	if (!saveChangedDisk(zx,idx & 3)) return;
+	Floppy *flp = comp->bdi->fdc->flop[idx];
+	if (!saveChangedDisk(comp,idx & 3)) return;
 	flpFormat(flp);
 	flp->path = (char*)realloc(flp->path,sizeof(char));
 	flp->path[0] = 0x00;
@@ -1239,51 +1213,51 @@ void SetupWin::newb() {newdisk(1);}
 void SetupWin::newc() {newdisk(2);}
 void SetupWin::newd() {newdisk(3);}
 
-void SetupWin::loada() {loadFile(zx,"",FT_DISK,0); updatedisknams();}
-void SetupWin::loadb() {loadFile(zx,"",FT_DISK,1); updatedisknams();}
-void SetupWin::loadc() {loadFile(zx,"",FT_DISK,2); updatedisknams();}
-void SetupWin::loadd() {loadFile(zx,"",FT_DISK,3); updatedisknams();}
+void SetupWin::loada() {loadFile(comp,"",FT_DISK,0); updatedisknams();}
+void SetupWin::loadb() {loadFile(comp,"",FT_DISK,1); updatedisknams();}
+void SetupWin::loadc() {loadFile(comp,"",FT_DISK,2); updatedisknams();}
+void SetupWin::loadd() {loadFile(comp,"",FT_DISK,3); updatedisknams();}
 
-void SetupWin::savea() {Floppy* flp = zx->bdi->fdc->flop[0]; if (flp->insert) saveFile(zx,flp->path,FT_DISK,0);}
-void SetupWin::saveb() {Floppy* flp = zx->bdi->fdc->flop[1]; if (flp->insert) saveFile(zx,flp->path,FT_DISK,1);}
-void SetupWin::savec() {Floppy* flp = zx->bdi->fdc->flop[2]; if (flp->insert) saveFile(zx,flp->path,FT_DISK,2);}
-void SetupWin::saved() {Floppy* flp = zx->bdi->fdc->flop[3]; if (flp->insert) saveFile(zx,flp->path,FT_DISK,3);}
+void SetupWin::savea() {Floppy* flp = comp->bdi->fdc->flop[0]; if (flp->insert) saveFile(comp,flp->path,FT_DISK,0);}
+void SetupWin::saveb() {Floppy* flp = comp->bdi->fdc->flop[1]; if (flp->insert) saveFile(comp,flp->path,FT_DISK,1);}
+void SetupWin::savec() {Floppy* flp = comp->bdi->fdc->flop[2]; if (flp->insert) saveFile(comp,flp->path,FT_DISK,2);}
+void SetupWin::saved() {Floppy* flp = comp->bdi->fdc->flop[3]; if (flp->insert) saveFile(comp,flp->path,FT_DISK,3);}
 
-void SetupWin::ejcta() {saveChangedDisk(zx,0); flpEject(zx->bdi->fdc->flop[0]); updatedisknams();}
-void SetupWin::ejctb() {saveChangedDisk(zx,1); flpEject(zx->bdi->fdc->flop[1]); updatedisknams();}
-void SetupWin::ejctc() {saveChangedDisk(zx,2); flpEject(zx->bdi->fdc->flop[2]); updatedisknams();}
-void SetupWin::ejctd() {saveChangedDisk(zx,3); flpEject(zx->bdi->fdc->flop[3]); updatedisknams();}
+void SetupWin::ejcta() {saveChangedDisk(comp,0); flpEject(comp->bdi->fdc->flop[0]); updatedisknams();}
+void SetupWin::ejctb() {saveChangedDisk(comp,1); flpEject(comp->bdi->fdc->flop[1]); updatedisknams();}
+void SetupWin::ejctc() {saveChangedDisk(comp,2); flpEject(comp->bdi->fdc->flop[2]); updatedisknams();}
+void SetupWin::ejctd() {saveChangedDisk(comp,3); flpEject(comp->bdi->fdc->flop[3]); updatedisknams();}
 
 void SetupWin::updatedisknams() {
-	setupUi.apathle->setText(QString::fromLocal8Bit(zx->bdi->fdc->flop[0]->path));
-	setupUi.bpathle->setText(QString::fromLocal8Bit(zx->bdi->fdc->flop[1]->path));
-	setupUi.cpathle->setText(QString::fromLocal8Bit(zx->bdi->fdc->flop[2]->path));
-	setupUi.dpathle->setText(QString::fromLocal8Bit(zx->bdi->fdc->flop[3]->path));
+	setupUi.apathle->setText(QString::fromLocal8Bit(comp->bdi->fdc->flop[0]->path));
+	setupUi.bpathle->setText(QString::fromLocal8Bit(comp->bdi->fdc->flop[1]->path));
+	setupUi.cpathle->setText(QString::fromLocal8Bit(comp->bdi->fdc->flop[2]->path));
+	setupUi.dpathle->setText(QString::fromLocal8Bit(comp->bdi->fdc->flop[3]->path));
 	fillDiskCat();
 }
 
 // tape
 
 void SetupWin::loatape() {
-	loadFile(zx,"",FT_TAPE,1);
-	setupUi.tpathle->setText(QString::fromLocal8Bit(zx->tape->path));
+	loadFile(comp,"",FT_TAPE,1);
+	setupUi.tpathle->setText(QString::fromLocal8Bit(comp->tape->path));
 	buildtapelist();
 }
 
 void SetupWin::savtape() {
-	if (zx->tape->blkCount != 0) saveFile(zx,zx->tape->path,FT_TAP,-1);
+	if (comp->tape->blkCount != 0) saveFile(comp,comp->tape->path,FT_TAP,-1);
 }
 
 void SetupWin::ejctape() {
-	tapEject(zx->tape);
-	setupUi.tpathle->setText(QString::fromLocal8Bit(zx->tape->path));
+	tapEject(comp->tape);
+	setupUi.tpathle->setText(QString::fromLocal8Bit(comp->tape->path));
 	buildtapelist();
 }
 
 void SetupWin::tblkup() {
 	int ps = setupUi.tapelist->currentIndex().row();
 	if (ps > 0) {
-		tapSwapBlocks(zx->tape,ps,ps-1);
+		tapSwapBlocks(comp->tape,ps,ps-1);
 		buildtapelist();
 		setupUi.tapelist->selectRow(ps-1);
 	}
@@ -1291,8 +1265,8 @@ void SetupWin::tblkup() {
 
 void SetupWin::tblkdn() {
 	int ps = setupUi.tapelist->currentIndex().row();
-	if ((ps != -1) && (ps < zx->tape->blkCount - 1)) {
-		tapSwapBlocks(zx->tape,ps,ps+1);
+	if ((ps != -1) && (ps < comp->tape->blkCount - 1)) {
+		tapSwapBlocks(comp->tape,ps,ps+1);
 		buildtapelist();
 		setupUi.tapelist->selectRow(ps+1);
 	}
@@ -1301,7 +1275,7 @@ void SetupWin::tblkdn() {
 void SetupWin::tblkrm() {
 	int ps = setupUi.tapelist->currentIndex().row();
 	if (ps != -1) {
-		tapDelBlock(zx->tape,ps);
+		tapDelBlock(comp->tape,ps);
 		buildtapelist();
 		setupUi.tapelist->selectRow(ps);
 	}
@@ -1309,14 +1283,14 @@ void SetupWin::tblkrm() {
 
 void SetupWin::chablock(QModelIndex idx) {
 	int row = idx.row();
-	tapRewind(zx->tape,row);
+	tapRewind(comp->tape,row);
 	buildtapelist();
 	setupUi.tapelist->selectRow(row);
 }
 
 void SetupWin::setTapeBreak(int row,int col) {
 	if ((row < 0) || (col != 1)) return;
-	zx->tape->blkData[row].breakPoint ^= 1;
+	comp->tape->blkData[row].breakPoint ^= 1;
 	buildtapelist();
 	setupUi.tapelist->selectRow(row);
 }
@@ -1324,12 +1298,12 @@ void SetupWin::setTapeBreak(int row,int col) {
 // hdd
 
 void SetupWin::hddMasterImg() {
-	QString path = QFileDialog::getSaveFileName(this,"Image for master HDD",QDir::homePath(),"All files (*.*)",NULL,QFileDialog::DontConfirmOverwrite);
+	QString path = QFileDialog::getOpenFileName(this,"Image for master HDD",QDir::homePath(),"All files (*.*)",NULL,QFileDialog::DontConfirmOverwrite);
 	if (path != "") setupUi.hm_path->setText(path);
 }
 
 void SetupWin::hddSlaveImg() {
-	QString path = QFileDialog::getSaveFileName(this,"Image for slave HDD",QDir::homePath(),"All files (*.*)",NULL,QFileDialog::DontConfirmOverwrite);
+	QString path = QFileDialog::getOpenFileName(this,"Image for slave HDD",QDir::homePath(),"All files (*.*)",NULL,QFileDialog::DontConfirmOverwrite);
 	if (path != "") setupUi.hs_path->setText(path);
 }
 
@@ -1440,7 +1414,7 @@ void SetupWin::rmProfile() {
 	idx = delProfile(pnam);
 	switch(idx) {
 		case DELP_OK_CURR:
-			start();
+			start(conf, comp);
 			break;
 		case DELP_ERR:
 			shitHappens("Sorry, i can't delete this profile");

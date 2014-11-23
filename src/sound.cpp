@@ -1,6 +1,7 @@
+#include <stdio.h>
+
 #include "sound.h"
 #include "xcore/xcore.h"
-#include <stdio.h>
 
 #include <iostream>
 #ifdef HAVESDL
@@ -26,6 +27,8 @@ int playPos = 0;
 int pass = 0;
 
 int smpCount = 0;
+
+long nsPerFrame;
 
 int beepVolume = 100;
 int tapeVolume = 100;
@@ -58,31 +61,31 @@ OutSys* findOutSys(const char*);
 
 // output
 
-void sndSync(int fast) {
-	tapSync(zx->tape,zx->tapCount);
-	zx->tapCount = 0;
-	gsSync(zx->gs);
-	tsSync(zx->ts,nsPerSample);
+void sndSync(ZXComp* comp, int fast) {
+	tapSync(comp->tape,comp->tapCount);
+	comp->tapCount = 0;
+	gsSync(comp->gs);
+	tsSync(comp->ts,nsPerSample);
 	if (fast != 0) return;
 	if (sndOutput == NULL) return;
-	lev = zx->beeplev ? beepVolume : 0;
-	if (zx->tape->on) {
-		lev += (zx->tape->outsig ? tapeVolume : 0) + (zx->tape->signal ? tapeVolume : 0);
+	lev = comp->beeplev ? beepVolume : 0;
+	if (comp->tape->on) {
+		lev += (comp->tape->outsig ? tapeVolume : 0) + (comp->tape->signal ? tapeVolume : 0);
 	}
 
 	lev *= 0.16;
 	levl = lev;
 	levr = lev;
 
-	tsPair tsvol = tsGetVolume(zx->ts);
+	tsPair tsvol = tsGetVolume(comp->ts);
 	levl += tsvol.left * ayVolume / 100.0;
 	levr += tsvol.right * ayVolume / 100.0;
 
-	gsPair gsvol = gsGetVolume(zx->gs);
+	gsPair gsvol = gsGetVolume(comp->gs);
 	levl += gsvol.left * gsVolume / 100.0;
 	levr += gsvol.right * gsVolume / 100.0;
 
-	sdrvPair sdvol = sdrvGetVolume(zx->sdrv);
+	sdrvPair sdvol = sdrvGetVolume(comp->sdrv);
 	levl += sdvol.left * beepVolume / 100.0;
 	levr += sdvol.right * beepVolume / 100.0;
 
@@ -116,7 +119,7 @@ void sndFillToEnd() {
 void sndCalibrate() {
 	sndChunks = (int)(sndRate / 50.0);			// samples played at 1/50 sec			882
 	sndBufSize = sndChans * sndChunks;			// buffer size for 1/50 sec play		1764
-	nsPerSample = zx->nsPerFrame / sndChunks;
+	nsPerSample = nsPerFrame / sndChunks;
 }
 
 std::string sndGetOutputName() {

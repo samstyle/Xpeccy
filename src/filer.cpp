@@ -143,7 +143,7 @@ void loadFile(ZXComp* comp,const char* name, int flags, int drv) {
 		case FT_DSK: ferr = loadDsk(flp,sfnam.c_str()); break;
 		case FT_SPG: ferr = loadSPG(comp,sfnam.c_str()); break;
 #if HAVEZLIB
-		case FT_RZX: ferr = loadRZX(zx,sfnam.c_str()); break;
+		case FT_RZX: ferr = loadRZX(comp,sfnam.c_str()); break;
 #endif
 	}
 	switch (ferr) {

@@ -47,7 +47,7 @@ bool addProfile(std::string nm, std::string fp) {
 	if (currentProfile != NULL) {
 		nm = currentProfile->name;
 		profileList.push_back(nprof);		// PUSH_BACK reallocate profileList and breaks current profile pointer!
-		setProfile(nm);				// then it must be setted again
+		selProfile(nm);				// then it must be setted again
 	} else {
 		profileList.push_back(nprof);
 	}
@@ -62,20 +62,20 @@ int delProfile(std::string nm) {
 	int res = DELP_OK;
 	zxDestroy(profileList[idx].zx);
 	if (currentProfile->name == nm) {
-		setProfile("default");	// if current profile deleted, set default
+		selProfile("default");	// if current profile deleted, set default
 		res = DELP_OK_CURR;
 	}
 	if (currentProfile != NULL) {
 		nm = currentProfile->name;
 		profileList.erase(profileList.begin() + idx);
-		setProfile(nm);
+		selProfile(nm);
 	} else {
 		profileList.erase(profileList.begin() + idx);
 	}
 	return res;
 }
 
-bool setProfile(std::string nm) {
+bool selProfile(std::string nm) {
 	XProfile* nprf = getProfile(nm);
 	if (nprf == NULL) return false;
 	if (currentProfile) {
@@ -85,9 +85,9 @@ bool setProfile(std::string nm) {
 	currentProfile = nprf;
 	ideOpenFiles(nprf->zx->ide);
 	sdcOpenFile(nprf->zx->sdc);
-	zx = currentProfile->zx;
-	vidUpdate(zx->vid);
-	//zx->palchan = 1;
+	emulSetLayout(currentProfile->zx, currentProfile->layName);
+	keyRelease(currentProfile->zx->keyb,0,0,0);
+	currentProfile->zx->mouse->buttons = 0xff;
 	return true;
 }
 
@@ -95,7 +95,7 @@ void clearProfiles() {
 	XProfile defprof = profileList[0];
 	profileList.clear();
 	profileList.push_back(defprof);
-	setProfile(profileList[0].name);
+	selProfile(profileList[0].name);
 }
 
 std::vector<XProfile> getProfileList() {
@@ -138,6 +138,7 @@ void prfSetRomset(std::string pnm, std::string rnm) {
 
 void prfLoadAll() {
 	for (uint i = 0; i < profileList.size(); i++) prfLoad(profileList[i].name);
+	prfLoad("");		// avoid set last profile layout settings to current profile
 }
 
 int prfLoad(std::string nm) {
@@ -309,7 +310,7 @@ int prfLoad(std::string nm) {
 
 	if ((comp->hw->mask != 0) && (~comp->hw->mask & tmask)) throw("Incorrect memory size for this machine");
 	memSetSize(comp->mem,memsz);
-	if (!emulSetLayout(comp, prf->layName)) emulSetLayout(zx,"default");
+	if (!emulSetLayout(comp, prf->layName)) emulSetLayout(comp,"default");
 
 	zxReset(comp,RES_DEFAULT);
 

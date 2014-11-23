@@ -183,8 +183,7 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 			comp->vid->intpos.v &= 0x00ff;
 			comp->vid->intpos.v |= ((val & 1) << 8);
 			break;
-		case 0x25af:					// INTVect
-			comp->intVector = val | 1;
+		case 0x25af:					// INTVect (deleted)
 			break;
 		case 0x26af:
 			comp->dma.len = val;
@@ -219,7 +218,7 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 									comp->mem->ramData[dadr + cnt2] |= (tmp & 0x0f);
 								}
 							}
-							comp->mem->ramData[dadr + cnt2] = comp->mem->ramData[sadr + cnt2];
+							// comp->mem->ramData[dadr + cnt2] = comp->mem->ramData[sadr + cnt2];
 						}
 						sadr += (val & 0x20) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;		// SALGN
 						dadr += (val & 0x10) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;		// DALGN
@@ -267,7 +266,6 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 					}
 					break;
 				case 0x84:
-//					comp->palchan = 1;
 				case 0x85:		// RAM->SFILE
 					ptr = (val & 1) ? comp->vid->tsconf.sfile : comp->vid->tsconf.cram;
 					for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
@@ -286,6 +284,10 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 			comp->dma.dst.x = ((dadr & 0x3fc000) >> 14);
 			comp->dma.dst.h = ((dadr & 0x3f00) >> 8);
 			comp->dma.dst.l = dadr & 0xff;
+			if (comp->vid->intMask & 4) {		// DMA INT
+				comp->vid->intStrobe = 1;
+				comp->vid->intVector = 0xfb;
+			}
 			break;
 		case 0x28af:
 			comp->dma.num = val;
@@ -297,7 +299,10 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 			comp->bdi->fdc->flop[2]->virt = (val & 0x04) ? 1 : 0;
 			comp->bdi->fdc->flop[3]->virt = (val & 0x08) ? 1 : 0;
 			break;
-		case 0x2aaf:
+		case 0x2aaf:			// INT mask
+			comp->vid->intMask = val;
+			break;
+		case 0x2baf:			// Cache config
 			break;
 		case 0x40af: comp->vid->tsconf.t0xl = val; break;
 		case 0x41af: comp->vid->tsconf.t0xh = val & 1; break;

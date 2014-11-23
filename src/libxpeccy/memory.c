@@ -7,25 +7,19 @@
 
 #include <stdio.h>
 
-Memory* memCreate(int rampg, int rompg) {
-	if ((rampg == 0) || (rampg > 256)) rampg = 256;
-	if ((rompg == 0) || (rompg > 32)) rompg = 32;
+Memory* memCreate() {
 	int i;
 	Memory* mem = (Memory*)malloc(sizeof(Memory));
-	mem->ramData = (unsigned char*)malloc(rampg << 14);
-	mem->ramFlag = (unsigned char*)malloc(rampg << 14);
-	mem->romData = (unsigned char*)malloc(rompg << 14);
-	mem->romFlag = (unsigned char*)malloc(rompg << 14);
-	memset(mem->ramFlag, 0x00, rampg << 14);
-	memset(mem->romFlag, 0x00, rompg << 14);
+	memset(mem->ramFlag, 0x00, 0x400000);
+	memset(mem->romFlag, 0x00, 0x80000);
 	mem->romMask = 0x03;
-	for (i = 0; i < rompg; i++) {
+	for (i = 0; i < 32; i++) {
 		mem->rom[i].type = MEM_ROM;
 		mem->rom[i].num = i & 0xff;
 		mem->rom[i].dptr = mem->romData + (i << 14);
 		mem->rom[i].fptr = mem->romFlag + (i << 14);
 	}
-	for (i = 0; i < rampg; i++) {
+	for (i = 0; i < 256; i++) {
 		mem->ram[i].type = MEM_RAM;
 		mem->ram[i].num = i & 0xff;
 		mem->ram[i].dptr = mem->ramData + (i << 14);

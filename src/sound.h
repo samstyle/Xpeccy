@@ -3,21 +3,24 @@
 
 #include <vector>
 #include <string>
-//#include <stdint.h>
 
-#ifndef _WIN32
+#if __linux
 #ifdef HAVEALSA
 	#include <alsa/asoundlib.h>
 #endif
 	#include <sys/ioctl.h>
 	#include <sys/soundcard.h>
 	#include <fcntl.h>
-#else
+#endif
+#if __WIN32
 	#include <windows.h>
 	#include <windef.h>
 	#include <mmsystem.h>
-//	#include <dsound.h>
 #endif
+
+#include "sound.h"
+#include "xcore/xcore.h"
+#include "libxpeccy/spectrum.h"
 
 #define	SND_NULL	0
 #define	SND_OSS		1
@@ -36,11 +39,11 @@
 
 extern bool sndEnabled;
 extern bool sndMute;
-//extern volatile int smpCount;
 extern int beepVolume;
 extern int tapeVolume;
 extern int ayVolume;
 extern int gsVolume;
+extern long nsPerFrame;
 extern unsigned int sndRate;
 
 struct OutSys {
@@ -64,7 +67,7 @@ bool sndOpen();
 void sndPlay();
 void sndPause(bool);
 void sndClose();
-void sndSync(int);
+void sndSync(ZXComp*, int);
 
 void sndFillToEnd();
 

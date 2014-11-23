@@ -64,9 +64,9 @@ void keyRelease(Keyboard* keyb, char key1, char key2, int kcod) {
 }
 
 unsigned char keyInput(Keyboard* keyb, unsigned char prt) {
-	keyb->used = 1;
-	keyb->port = prt;
 	unsigned char res = 0x1f;
+	keyb->port &= prt;
+	keyb->used = 1;
 	int i;
 	for (i = 0; i < 8; i++) {
 		if (~prt & 0x80) res &= keyb->map[i];

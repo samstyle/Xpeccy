@@ -35,16 +35,16 @@ typedef struct {
 	MemPage ram[256];
 	MemPage rom[32];
 	MemPage* pt[4];
-	unsigned char* ramData;
-	unsigned char* ramFlag;
-	unsigned char* romData;
-	unsigned char* romFlag;
+	unsigned char ramData[0x400000];	// 4M
+	unsigned char ramFlag[0x400000];
+	unsigned char romData[0x80000];		// 512K
+	unsigned char romFlag[0x80000];
 	int memSize;
 	int memMask;
 	int romMask;	// 0:16K, 1:32K, 3:64K, 7:128K, 15:256K, 31:512K
 } Memory;
 
-Memory* memCreate(int, int);
+Memory* memCreate();
 void memDestroy(Memory*);
 
 unsigned char memRd(Memory*,unsigned short);

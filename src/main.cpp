@@ -20,10 +20,6 @@
 #ifdef _WIN32
 #endif
 
-ZXComp* zx;
-extern MainWin* mainWin;
-//extern volatile int pauseFlags;
-
 int main(int ac,char** av) {
 
 #ifdef DRAWGL
@@ -49,48 +45,35 @@ int main(int ac,char** av) {
 #endif
 	QApplication app(ac,av,true);
 	char* profName = NULL;
-	try {
-		std::vector<char*> files;
-		int i;
-		initPaths();
-		addProfile("default","xpeccy.conf");
-		setProfile("default");
-		char* parg;
-		i = 1;
-		while (i < ac) {
-			parg = av[i++];
-			if (((strcmp(parg,"-p") == 0) || (strcmp(parg,"--profile") == 0)) && (i < ac)) profName = av[i++];
-			else files.push_back(parg);
-		}
-		sndInit();
-		emulInit();
-		dbgInit(NULL);
-		loadProfiles();
-		if (profName) {
-			setProfile(std::string(profName));
-		}
-		fillUserMenu();
-		emulShow();
-		emulUpdateWindow();
-		zxReset(zx,RES_DEFAULT);
-
-		for (unsigned idx = 0; idx < files.size(); idx++) {
-			if (strlen(files[idx]) > 0) loadFile(zx,files[idx],FT_ALL,0);
-		}
-
-		mainWin->checkState();
-
-		emuStart();
-		app.exec();
-		emuStop();
-		sndClose();
-		return 0;
+	std::vector<char*> files;
+	int i;
+	initPaths();
+	addProfile("default","xpeccy.conf");
+	char* parg;
+	i = 1;
+	while (i < ac) {
+		parg = av[i++];
+		if (((strcmp(parg,"-p") == 0) || (strcmp(parg,"--profile") == 0)) && (i < ac)) profName = av[i++];
+		else files.push_back(parg);
 	}
-	catch (const char* s) {
-		shitHappens(s);
-		return 1;
+	sndInit();
+	MainWin mwin;
+	if (profName) {
+		mwin.setProfile(std::string(profName));
+	} else {
+		mwin.setProfile("default");
 	}
-	catch (int i) {
-		return 1;
+	fillUserMenu();
+	mwin.show();
+	mwin.updateWindow();
+	zxReset(mwin.comp,RES_DEFAULT);
+
+	for (unsigned idx = 0; idx < files.size(); idx++) {
+		if (strlen(files[idx]) > 0) loadFile(mwin.comp,files[idx],FT_ALL,0);
 	}
+
+	mwin.checkState();
+	app.exec();
+	sndClose();
+	return 0;
 }

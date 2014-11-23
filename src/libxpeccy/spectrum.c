@@ -165,7 +165,7 @@ void iowr(CPUCONT Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 */
 
 Z80EX_BYTE intrq(CPUCONT void* ptr) {
-	return ((ZXComp*)ptr)->intVector;
+	return ((ZXComp*)ptr)->vid->intVector;
 }
 
 void rzxClear(ZXComp* zx) {
@@ -209,14 +209,14 @@ ZXComp* zxCreate() {
 	void* ptr = (void*)comp;
 	memset(ptr,0,sizeof(ZXComp));
 	memset(comp->brkIOMap, 0, 0x10000);
-	comp->padr = 0;
+	comp->resbank = 0;
 
 #ifdef SELFZ80
 	comp->cpu = cpuCreate(&memrd,&memwr,&iord,&iowr,&intrq,ptr);
 #else
 	comp->cpu = z80ex_create(&memrd,ptr,&memwr,ptr,&iord,ptr,&iowr,ptr,&intrq,ptr);
 #endif
-	comp->mem = memCreate(0,0);
+	comp->mem = memCreate();
 	comp->vid = vidCreate(comp->mem);
 	zxSetFrq(comp,3.5);
 // input
@@ -307,7 +307,7 @@ void zxReset(ZXComp* comp,int wut) {
 	comp->vid->curscr = 5;
 	vidSetMode(comp->vid,VID_NORMAL);
 	comp->dosen = 0;
-	comp->intVector = 0xff;
+	comp->vid->intMask = 1;
 	switch (comp->hw->type) {
 		case HW_ZX48:
 			comp->prt0 = 0x10;		// else beta-disk doesn't enter in tr-dos
@@ -344,6 +344,7 @@ void zxReset(ZXComp* comp,int wut) {
 			comp->vid->tsconf.tconfig = 0;
 			comp->vid->intpos.h = 0;
 			comp->vid->intpos.v = 0;
+			comp->vid->intMask = 1;
 			tslUpdatePorts(comp);
 			break;
 		default:
@@ -367,7 +368,7 @@ void zxSetLayout(ZXComp *comp, int fh, int fv, int bh, int bv, int sh, int sv, i
 	comp->vid->sync.v = sv;
 	comp->vid->intpos.h = ih;
 	comp->vid->intpos.v = iv;
-	comp->vid->intsz = is;
+	comp->vid->intSize = is;
 	comp->vid->frmsz = fh * fv;
 	vidUpdate(comp->vid);
 	comp->nsPerFrame = 140 * comp->vid->frmsz;
@@ -421,10 +422,6 @@ int zxExec(ZXComp* comp) {
 			comp->nsCount -= comp->nsPerFrame;
 			comp->frmStrobe = 1;
 		}
-		if (comp->vid->intstrobe) {
-			comp->intStrobe = 1;
-			comp->vid->intstrobe = 0;
-		}
 	}
 	pcreg = GETPC(comp->cpu);	// z80ex_get_reg(comp->cpu,regPC);
 	if ((pcreg > 0x3fff) && comp->nmiRequest && !comp->rzxPlay) {
@@ -440,7 +437,7 @@ int zxExec(ZXComp* comp) {
 		}
 	}
 
-	if (comp->intStrobe) {
+	if (comp->vid->intStrobe) {
 		res4 = 0;
 		res2 = INTCPU(comp->cpu);	// z80ex_int(comp->cpu);
 		res1 += res2;
@@ -458,9 +455,9 @@ int zxExec(ZXComp* comp) {
 				comp->rzxPos = 0;
 			}
 		}
-		comp->intStrobe = 0;
+		comp->vid->intStrobe = 0;
 	}
-	if ((comp->vid->nextrow) && (comp->hw->type == HW_TSLAB)) {
+	if (comp->vid->nextrow && (comp->hw->type == HW_TSLAB)) {
 		tslUpdatePorts(comp);
 		comp->vid->nextrow = 0;
 	}

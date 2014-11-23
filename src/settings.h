@@ -5,6 +5,7 @@
 #include <vector>
 //#include <stdint.h>
 
+#include "xcore/xcore.h"
 #include "libxpeccy/spectrum.h"
 
 #define	OPT_WORKDIR	0
@@ -68,8 +69,8 @@ struct intButton {
 typedef std::pair<extButton,intButton> joyPair;
 
 void initPaths();
-void loadProfiles();
-void saveProfiles();
+void loadProfiles(xConfig*);
+void saveProfiles(xConfig*);
 void loadKeys();
 
 std::string optGetString(int);
