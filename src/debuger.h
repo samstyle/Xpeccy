@@ -52,8 +52,8 @@ class DebugWin : public QDialog {
 		bool block;
 		long tCount;
 //		unsigned long lastDbgTicks = 0;
-		QString logFileName;
-		QFile logFile;
+//		QString logFileName;
+//		QFile logFile;
 
 		Ui::Debuger ui;
 
