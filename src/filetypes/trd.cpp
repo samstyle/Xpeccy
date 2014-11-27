@@ -11,11 +11,7 @@ void loadBoot(Floppy* flp) {
 			if (std::string((const char*)&cat[i].name[0],9) == "boot    B") gotBoot = true;
 		}
 		if (!gotBoot) {
-#ifdef _WIN32
-			std::string path = optGetString(OPT_WORKDIR) + "\\boot.$B";
-#else
-			std::string path = optGetString(OPT_WORKDIR) + "/boot.$B";
-#endif
+			std::string path = conf.path.confDir + SLASH + "boot.$B";
 			loadHobeta(flp,path.c_str());
 		}
 	}

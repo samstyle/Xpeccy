@@ -15,7 +15,6 @@ class SetupWin : public QDialog {
 	public:
 		SetupWin(QWidget*);
 	private:
-		xConfig* conf;
 		ZXComp* comp;
 
 		Ui::SetupWin setupUi;
@@ -31,7 +30,7 @@ class SetupWin : public QDialog {
 	signals:
 		void closed();
 	public slots:
-		void start(xConfig*, ZXComp*);
+		void start(ZXComp*);
 	private slots:
 		void reject();
 		void apply();

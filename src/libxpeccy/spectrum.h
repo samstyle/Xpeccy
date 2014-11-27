@@ -49,6 +49,7 @@ struct ZXComp {
 	unsigned nmiRequest:1;		// Magic button pressed
 	unsigned beeplev:1;		// beeper level
 	unsigned rzxPlay:1;		// rzx is playing
+	unsigned firstRun:1;
 
 	unsigned scrpWait:1;		// scorpion wait mode
 	unsigned contMem:1;		// contended mem
@@ -74,11 +75,12 @@ struct ZXComp {
 	unsigned int rzxPos;
 	int rzxFetches;
 	float cpuFrq;
+	unsigned char intVector;
 
 	unsigned long tickCount;
 	int nsPerTick;
 	int nsPerFrame;
-	unsigned long nsCount;
+//	unsigned long nsCount;
 
 	memEntry memMap[16];		// memory map for ATM2, PentEvo
 	unsigned char prt0;		// 7ffd value

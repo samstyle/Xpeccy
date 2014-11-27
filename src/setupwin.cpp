@@ -76,11 +76,10 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 		itm = new QTableWidgetItem; setupUi.rstab->setItem(i,2,itm);
 	}
 // video
-	OptName* ptr = getGetPtr(OPT_SHOTFRM);
-	i = 0;
-	while (ptr[i].id != -1) {
-		setupUi.ssfbox->addItem(QString(ptr[i].name.c_str()),QVariant(ptr[i].id));
-		i++;
+	std::map<std::string,int>::iterator it;
+	for (it = shotFormat.begin(); it != shotFormat.end(); it++) {
+		setupUi.ssfbox->addItem(QString(it->first.c_str()),it->second);
+
 	}
 // sound
 	i = 0;
@@ -88,12 +87,10 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 		setupUi.outbox->addItem(QString::fromLocal8Bit(sndTab[i].name));
 		i++;
 	}
-//	for (i=0;i<list.size();i++) {setupUi.outbox->addItem(QString::fromLocal8Bit(list[i].c_str()));}
 	setupUi.ratbox->addItem("48000",48000);
 	setupUi.ratbox->addItem("44100",44100);
 	setupUi.ratbox->addItem("22050",22050);
 	setupUi.ratbox->addItem("11025",11025);
-//	setupUi.ratbox->addItems(QStringList()<<"48000"<<"44100"<<"22050"<<"11025");
 	setupUi.schip1box->addItem(QIcon(":/images/cancel.png"),"none",SND_NONE);
 	setupUi.schip1box->addItem(QIcon(":/images/MicrochipLogo.png"),"AY-3-8910",SND_AY);
 	setupUi.schip1box->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2149",SND_YM);
@@ -281,8 +278,7 @@ void SetupWin::okay() {
 	reject();
 }
 
-void SetupWin::start(xConfig* p, ZXComp* c) {
-	conf = p;
+void SetupWin::start(ZXComp* c) {
 	comp = c;
 	unsigned int i;
 	XProfile* curProf = getCurrentProfile();
@@ -305,7 +301,7 @@ void SetupWin::start(xConfig* p, ZXComp* c) {
 	if (setupUi.mszbox->currentIndex() < 0) setupUi.mszbox->setCurrentIndex(setupUi.mszbox->count() - 1);
 	setupUi.cpufrq->setValue(comp->cpuFrq * 2); updfrq();
 	setupUi.scrpwait->setChecked(comp->scrpWait);
-	setupUi.sysCmos->setChecked(conf->sysclock);
+	setupUi.sysCmos->setChecked(conf.sysclock);
 // video
 	lays = getLayoutList();
 	setupUi.dszchk->setChecked((vidFlag & VF_DOUBLE));
@@ -316,11 +312,11 @@ void SetupWin::start(xConfig* p, ZXComp* c) {
 	setupUi.contMem->setChecked(comp->contMem);
 	setupUi.contIO->setChecked(comp->contIO);
 	setupUi.bszsld->setValue((int)(brdsize * 100));
-	setupUi.pathle->setText(QString::fromLocal8Bit(optGetString(OPT_SHOTDIR).c_str()));
-	setupUi.ssfbox->setCurrentIndex(setupUi.ssfbox->findData(optGetInt(OPT_SHOTFRM)));
-	setupUi.scntbox->setValue(optGetInt(OPT_SHOTCNT));
-	setupUi.sintbox->setValue(optGetInt(OPT_SHOTINT));
-	setupUi.brgslide->setValue(optGetInt(OPT_BRGLEV));
+	setupUi.pathle->setText(QString::fromLocal8Bit(conf.scrShot.dir.c_str()));
+	setupUi.ssfbox->setCurrentIndex(setupUi.ssfbox->findText(conf.scrShot.format.c_str()));
+	setupUi.scntbox->setValue(conf.scrShot.count);
+	setupUi.sintbox->setValue(conf.scrShot.interval);
+	setupUi.brgslide->setValue(conf.bright);
 	setupUi.geombox->clear();
 	for (i=0; i<lays.size(); i++) {setupUi.geombox->addItem(QString::fromLocal8Bit(lays[i].name.c_str()));}
 	setupUi.geombox->setCurrentIndex(setupUi.geombox->findText(QString::fromLocal8Bit(getCurrentProfile()->layName.c_str())));
@@ -346,8 +342,7 @@ void SetupWin::start(xConfig* p, ZXComp* c) {
 // input
 	buildkeylist();
 	// buildjmaplist();
-	std::string kmname = optGetString(OPT_KEYNAME);
-	int idx = setupUi.keyMapBox->findText(QString(kmname.c_str()));
+	int idx = setupUi.keyMapBox->findText(QString(conf.keyMapName.c_str()));
 	if (idx < 1) idx = 0;
 	setupUi.keyMapBox->setCurrentIndex(idx);
 	setupUi.ratEnable->setChecked(comp->mouse->enable);
@@ -357,7 +352,7 @@ void SetupWin::start(xConfig* p, ZXComp* c) {
 // dos
 	setupUi.diskTypeBox->setCurrentIndex(setupUi.diskTypeBox->findData(comp->bdi->fdc->type));
 	setupUi.bdtbox->setChecked(fdcFlag & FDC_FAST);
-	setupUi.mempaths->setChecked(optGetFlag(OF_PATHS));
+	setupUi.mempaths->setChecked(conf.storePaths);
 	Floppy* flp = comp->bdi->fdc->flop[0];
 	setupUi.apathle->setText(QString::fromLocal8Bit(flp->path));
 		setupUi.a80box->setChecked(flp->trk80);
@@ -409,18 +404,18 @@ void SetupWin::start(xConfig* p, ZXComp* c) {
 	if (setupUi.sdcapbox->currentIndex() < 0) setupUi.sdcapbox->setCurrentIndex(2);	// 128M
 	setupUi.sdlock->setChecked(comp->sdc->flag & SDC_LOCK);
 // tape
-	setupUi.cbTapeAuto->setChecked(optGetFlag(OF_TAPEAUTO));
-	setupUi.cbTapeFast->setChecked(optGetFlag(OF_TAPEFAST));
+	setupUi.cbTapeAuto->setChecked(conf.tape.autostart);
+	setupUi.cbTapeFast->setChecked(conf.tape.fast);
 	setupUi.tpathle->setText(QString::fromLocal8Bit(comp->tape->path));
 	buildtapelist();
 // tools
 	buildmenulist();
 // leds
-	setupUi.cbMouseLed->setChecked(conf->led.mouse);
-	setupUi.cbJoyLed->setChecked(conf->led.joy);
-	setupUi.cbKeysLed->setChecked(conf->led.keys);
+	setupUi.cbMouseLed->setChecked(conf.led.mouse);
+	setupUi.cbJoyLed->setChecked(conf.led.joy);
+	setupUi.cbKeysLed->setChecked(conf.led.keys);
 // profiles
-	setupUi.defstart->setChecked(optGetFlag(OF_DEFAULT));
+	setupUi.defstart->setChecked(conf.defProfile);
 	buildproflist();
 
 	show();
@@ -445,7 +440,7 @@ void SetupWin::apply() {
 	// setFlagBit(setupUi.scrpwait->isChecked(),&comp->hwFlag,HW_WAIT);
 	comp->scrpWait = setupUi.scrpwait->isChecked() ? 1 : 0;
 	if (comp->hw != oldmac) zxReset(comp,RES_DEFAULT);
-	conf->sysclock = setupUi.sysCmos->isChecked() ? 1 : 0;
+	conf.sysclock = setupUi.sysCmos->isChecked() ? 1 : 0;
 // video
 	setLayoutList(lays);
 	setFlagBit(setupUi.dszchk->isChecked(),&vidFlag,VF_DOUBLE);
@@ -459,12 +454,12 @@ void SetupWin::apply() {
 	comp->contIO = setupUi.contIO->isChecked() ? 1 : 0;
 	setFlagBit(setupUi.grayscale->isChecked(),&vidFlag,VF_GREY);
 	brdsize = setupUi.bszsld->value()/100.0;
-	optSet(OPT_SHOTDIR,std::string(setupUi.pathle->text().toLocal8Bit().data()));
-	optSet(OPT_SHOTFRM,setupUi.ssfbox->itemData(setupUi.ssfbox->currentIndex()).toInt());
-	optSet(OPT_SHOTCNT,setupUi.scntbox->value());
-	optSet(OPT_SHOTINT,setupUi.sintbox->value());
+	conf.scrShot.dir = std::string(setupUi.pathle->text().toLocal8Bit().data());
+	conf.scrShot.format = std::string(setupUi.ssfbox->currentText().toLocal8Bit().data());
+	conf.scrShot.count = setupUi.scntbox->value();
+	conf.scrShot.interval = setupUi.sintbox->value();
 	emulSetLayout(comp,std::string(setupUi.geombox->currentText().toLocal8Bit().data()));
-	optSet(OPT_BRGLEV,setupUi.brgslide->value());
+	conf.bright = setupUi.brgslide->value();
 	comp->vid->ula->enabled = setupUi.ulaPlus->isChecked() ? 1 : 0;
 // sound
 	//std::string oname = std::string(sndOutput->name);
@@ -497,12 +492,12 @@ void SetupWin::apply() {
 	//}
 	std::string kmname = getRFText(setupUi.keyMapBox);
 	if (kmname == "none") kmname = "default";
-	optSet(OPT_KEYNAME,kmname);
+	conf.keyMapName = kmname;
 	loadKeys();
 // bdi
 	comp->bdi->fdc->type = setupUi.diskTypeBox->itemData(setupUi.diskTypeBox->currentIndex()).toInt();
 	setFlagBit(setupUi.bdtbox->isChecked(),&fdcFlag,FDC_FAST);
-	optSetFlag(OF_PATHS,setupUi.mempaths->isChecked());
+	conf.storePaths = setupUi.mempaths->isChecked() ? 1 : 0;
 
 	Floppy* flp = comp->bdi->fdc->flop[0];
 	flp->trk80 = setupUi.a80box->isChecked() ? 1 : 0;
@@ -551,16 +546,16 @@ void SetupWin::apply() {
 	sdcSetCapacity(comp->sdc,setupUi.sdcapbox->itemData(setupUi.sdcapbox->currentIndex()).toInt());
 	setFlagBit(setupUi.sdlock->isChecked(),&comp->sdc->flag,SDC_LOCK);
 // tape
-	optSetFlag(OF_TAPEAUTO,setupUi.cbTapeAuto->isChecked());
-	optSetFlag(OF_TAPEFAST,setupUi.cbTapeFast->isChecked());
+	conf.tape.autostart = setupUi.cbTapeAuto->isChecked() ? 1 : 0;
+	conf.tape.fast = setupUi.cbTapeFast->isChecked() ? 1 : 0;
 // leds
-	conf->led.mouse = setupUi.cbMouseLed->isChecked();
-	conf->led.joy = setupUi.cbJoyLed->isChecked();
-	conf->led.keys = setupUi.cbKeysLed->isChecked();
+	conf.led.mouse = setupUi.cbMouseLed->isChecked();
+	conf.led.joy = setupUi.cbJoyLed->isChecked();
+	conf.led.keys = setupUi.cbKeysLed->isChecked();
 // profiles
-	optSetFlag(OF_DEFAULT,setupUi.defstart->isChecked());
+	conf.defProfile = setupUi.defstart->isChecked() ? 1 : 0;
 
-	saveProfiles(conf);
+	saveConfig();
 	prfSave("");
 	nsPerFrame = comp->nsPerFrame;
 	sndCalibrate();
@@ -569,7 +564,6 @@ void SetupWin::apply() {
 void SetupWin::reject() {
 	hide();
 	emit closed();
-	fillUserMenu();		// TODO : remove
 }
 
 // LAYOUTS
@@ -712,8 +706,7 @@ void SetupWin::addNewRomset() {
 void SetupWin::editrset() {
 	int cbx = setupUi.rsetbox->currentIndex();
 	if (cbx < 0) return;
-	std::string rpth = optGetString(OPT_ROMDIR);
-	QDir rdir(QString(rpth.c_str()));
+	QDir rdir(QString(conf.path.romDir.c_str()));
 	QStringList rlst = rdir.entryList(QStringList() << "*.rom",QDir::Files,QDir::Name);
 	fillRFBox(rseUi.rse_singlefile,rlst);
 	fillRFBox(rseUi.rse_file0,rlst);
@@ -776,8 +769,8 @@ void SetupWin::setrpart() {
 // lists
 
 void SetupWin::buildkeylist() {
-	std::string wdir = optGetString(OPT_WORKDIR);
-	QDir dir(wdir.c_str());
+//	std::string wdir = optGetString(OPT_WORKDIR);
+	QDir dir(conf.path.confDir.c_str());
 	QStringList lst = dir.entryList(QStringList() << "*.map",QDir::Files,QDir::Name);
 	fillRFBox(setupUi.keyMapBox,lst);
 }
@@ -1182,7 +1175,7 @@ void SetupWin::chabsz() {setupUi.bszlab->setText(QString::number(setupUi.bszsld-
 void SetupWin::chabrg() {setupUi.brglab->setText(QString::number(setupUi.brgslide->value()));}
 
 void SetupWin::selsspath() {
-	QString fpath = QFileDialog::getExistingDirectory(this,"Screenshots folder",QString::fromLocal8Bit(optGetString(OPT_SHOTDIR).c_str()),QFileDialog::ShowDirsOnly);
+	QString fpath = QFileDialog::getExistingDirectory(this,"Screenshots folder",QString::fromLocal8Bit(conf.scrShot.dir.c_str()),QFileDialog::ShowDirsOnly);
 	if (fpath!="") setupUi.pathle->setText(fpath);
 }
 
@@ -1414,7 +1407,7 @@ void SetupWin::rmProfile() {
 	idx = delProfile(pnam);
 	switch(idx) {
 		case DELP_OK_CURR:
-			start(conf, comp);
+			start(comp);
 			break;
 		case DELP_ERR:
 			shitHappens("Sorry, i can't delete this profile");

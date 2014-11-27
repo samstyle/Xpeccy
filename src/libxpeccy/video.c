@@ -60,6 +60,7 @@ void initAdrs() {
 
 Video* vidCreate(Memory* me) {
 	Video* vid = (Video*)malloc(sizeof(Video));
+	memset(vid,0x00,sizeof(Video));
 	vid->mem = me;
 	vid->full.h = 448;
 	vid->full.v = 320;
@@ -762,28 +763,25 @@ void vidSync(Video* vid, int ns) {
 			}
 		}
 		if ((vid->x == vid->intpos.h) && (vid->y == vid->intpos.v) && (vid->intMask & 0x01)) {
-				vid->intStrobe = 1;
-				vid->intVector = 0xff;
+				vid->intFRAME = 1;
 		}
-		vid->dot++;
 		if (++vid->x >= vid->full.h) {
 			vid->x = 0;
 			vid->nextrow = 1;
 			if (vid->istsconf) {
 				vidTSRender(vid,vid->scrptr - vid->vsze.h * 6);
 				if (vid->intMask & 0x02) {
-						vid->intStrobe = 1;
-						vid->intVector = 0xfd;
+						vid->intLINE = 1;
 				}
 			}
 			if (++vid->y >= vid->full.v) {
-				vid->dot = 0;
 				vid->y = 0;
 				vid->scrptr = vid->scrimg;
 				vid->fcnt++;
 				vid->flash = vid->fcnt & 0x20;
 				vid->tsconf.scrLine = vid->tsconf.yOffset;
 				vid->idx = 0;
+				vid->newFrame = 1;
 				if (vidFlag & VF_DEBUG) vidDarkTail(vid);
 			}
 		}

@@ -36,147 +36,28 @@
 #define	SECT_INPUT	16
 #define	SECT_SDC	17
 
-std::string workDir;
-std::string romDir;
-std::string profPath;
-std::string keyFileName;
-
-int brgLevel = 192;
-int flag = 0;
-
-int shotExt;
-std::string shotDir;
-int shotCount;
-int shotInterval;
-
-std::string rmnam[] = {"basic128","basic48","shadow","trdos","ext4","ext5","ext6","ext7"};
-OptName fexts[] = {{SCR_BMP,"bmp"},{SCR_PNG,"png"},{SCR_JPG,"jpg"},{SCR_SCR,"scr"},{SCR_HOB,"hobeta"},{-1,""}};
-
-// static vars base
-std::string optGetString(int wut) {
-	std::string res;
-	switch (wut) {
-		case OPT_WORKDIR: res = workDir; break;
-		case OPT_ROMDIR: res = romDir; break;
-		case OPT_SHOTDIR: res = shotDir; break;
-		case OPT_KEYNAME: res = keyFileName; break;
-	}
-	return res;
-}
-
-OptName* getGetPtr(int prt) {
-	OptName* res = NULL;
-	switch (prt) {
-		case OPT_SHOTFRM: res = fexts; break;
-	}
-	return res;
-}
-
-int optGetId(int prt,std::string nam) {
-	int res = -1;
-	OptName* ptr = getGetPtr(prt);
-	if (ptr == NULL) return res;
-	int i = -1;
-	do {
-		i++;
-		if ((ptr[i].id == -1) || (ptr[i].name == nam)) {
-			res = ptr[i].id;
-			break;
-		}
-	} while ((ptr[i].id != -1) && (res == -1));
-	return res;
-}
-
-std::string optGetName(int prt, int id) {
-	std::string res = "";
-	OptName* ptr = getGetPtr(prt);
-	if (ptr == NULL) return res;
-	int i = -1;
-	do {
-		i++;
-		if ((ptr[i].id == -1) || (ptr[i].id == id)) {
-			res = ptr[i].name;
-			break;
-		}
-	} while ((ptr[i].id != -1) && (res == ""));
-	return res;
-}
-
-int optGetInt(int wut) {
-	int res = 0;
-	switch (wut) {
-		case OPT_SHOTINT: res = shotInterval; break;
-		case OPT_SHOTCNT: res = shotCount; break;
-		case OPT_BRGLEV: res = brgLevel; break;
-		case OPT_SHOTFRM: res = shotExt; break;
-	}
-	return res;
-}
-
-void optSet(int wut, std::string val) {
-	switch(wut) {
-		case OPT_SHOTDIR: shotDir = val; break;
-		case OPT_KEYNAME: keyFileName = val; break;
-	}
-}
-
-void optSet(int wut, int val) {
-	switch (wut) {
-		case OPT_SHOTINT: shotInterval = val; break;
-		case OPT_SHOTCNT: shotCount = val; break;
-		case OPT_SHOTFRM: shotExt = val; break;
-		case OPT_BRGLEV: brgLevel = val; break;
-	}
-}
-
-void optSetFlag(int mask, bool wut) {
-	if (wut) {
-		flag |= mask;
-	} else {
-		flag &= ~mask;
-	}
-}
-
-bool optGetFlag(int mask) {
-	return ((flag & mask) != 0);
-}
-
-// old
+std::map<std::string, int> shotFormat;
 
 void initPaths() {
 #if __linux
-// move config dir to new place
-	QDir dir;
-	QString newpath = QDir::homePath() + "/.config/samstyle/xpeccy";
-	if (!dir.exists(newpath)) {
-		QFile file;
-		QString oldpath = QDir::homePath() + "/.samstyle/samulator";
-		QString oldfile = oldpath + "/samulator.conf";
-		QString newfile = newpath + "/xpeccy.conf";
-		dir.mkpath(newpath);
-		file.rename(oldfile,newfile);
-		dir.rename(oldpath + "/roms",newpath + "/roms");
-		dir.rmdir(oldpath);
-	}
-	workDir = std::string(getenv("HOME")) + "/.config/samstyle/xpeccy";
-	romDir = workDir + "/roms";
-	profPath = workDir + "/config.conf";
-	mkdir(workDir.c_str(),0777);
-	mkdir(romDir.c_str(),0777);
-	optSet(OPT_SHOTDIR,std::string(getenv("HOME")));
+	conf.path.confDir = std::string(getenv("HOME")) + "/.config/samstyle/xpeccy";
+	conf.path.romDir = conf.path.confDir + "/roms";
+	conf.path.confFile = conf.path.confDir + "/config.conf";
+	conf.scrShot.dir = std::string(getenv("HOME"));
+	mkdir(conf.path.confDir.c_str(),0777);
+	mkdir(conf.path.romDir.c_str(),0777);
 #else
-	workDir = std::string(".\\config");
-	romDir = workDir + "\\roms";
-	profPath = workDir + "\\config.conf";
-	mkdir(workDir.c_str());
-	mkdir(romDir.c_str());
-	optSet(OPT_SHOTDIR,std::string(getenv("HOMEPATH")));
+	conf.path.confDir = std::string(".\\config");
+	conf.path.romDir = workDir + "\\roms";
+	conf.path.confFile = workDir + "\\config.conf";
+	conf.scrShot.dir = std::string(getenv("HOMEPATH"));
+	mkdir(conf.path.confDir.c_str());
+	mkdir(conf.path.romDir.c_str());
 #endif
 }
 
-void saveProfiles(xConfig* conf) {
-	std::string cfname = workDir + SLASH + "config.conf";
-	std::ofstream cfile(cfname.c_str());
+void saveConfig() {
+	std::ofstream cfile(conf.path.confFile.c_str());
 	if (!cfile.good()) {
 		shitHappens("Can't write main config");
 		throw(0);
@@ -184,13 +65,13 @@ void saveProfiles(xConfig* conf) {
 	uint i,j;
 
 	cfile << "[GENERAL]\n\n";
-	if ((keyFileName != "default") && (keyFileName != "")) {
-		cfile << "keys = " << keyFileName.c_str() << "\n";
+	if ((conf.keyMapName != "default") && (conf.keyMapName != "")) {
+		cfile << "keys = " << conf.keyMapName.c_str() << "\n";
 	}
-	cfile << "startdefault = " << ((flag & OF_DEFAULT) ? "yes" : "no") << "\n";
-	cfile << "savepaths = " << ((flag & OF_PATHS) ? "yes" : "no") << "\n";
+	cfile << "startdefault = " << (conf.defProfile ? "yes" : "no") << "\n";
+	cfile << "savepaths = " << (conf.storePaths ? "yes" : "no") << "\n";
 	cfile << "fdcturbo = " << ((fdcFlag & FDC_FAST) ? "yes" : "no") << "\n";
-	cfile << "systime = " << (conf->sysclock ? "yes" : "no") << "\n";
+	cfile << "systime = " << (conf.sysclock ? "yes" : "no") << "\n";
 
 	cfile << "\n[BOOKMARKS]\n\n";
 	std::vector<XBookmark> bml = getBookmarkList();
@@ -213,11 +94,11 @@ void saveProfiles(xConfig* conf) {
 		cfile << int2str(lays[i].sync.h) << ":" << int2str(lays[i].sync.v) << ":";
 		cfile << int2str(lays[i].intsz) << ":" << int2str(lays[i].intpos.v) << ":" << int2str(lays[i].intpos.h) << "\n";
 	}
-	cfile << "scrDir = " << shotDir.c_str() << "\n";
-	cfile << "scrFormat = " << optGetName(OPT_SHOTFRM,shotExt).c_str() << "\n";
-	cfile << "scrCount = " << int2str(shotCount) << "\n";
-	cfile << "scrInterval = " << int2str(shotInterval) << "\n";
-	cfile << "colorLevel = " << int2str(brgLevel) << "\n";
+	cfile << "scrDir = " << conf.scrShot.dir.c_str() << "\n";
+	cfile << "scrFormat = " << conf.scrShot.format.c_str() << "\n";
+	cfile << "scrCount = " << int2str(conf.scrShot.count) << "\n";
+	cfile << "scrInterval = " << int2str(conf.scrShot.interval) << "\n";
+	cfile << "colorLevel = " << int2str(conf.bright) << "\n";
 	cfile << "fullscreen = " << ((vidFlag & VF_FULLSCREEN) ? "yes" : "no") << "\n";
 	cfile << "doublesize = " << ((vidFlag & VF_DOUBLE) ? "yes" : "no") << "\n";
 	cfile << "greyscale = " << ((vidFlag & VF_GREY) ? "yes" : "no") << "\n";
@@ -232,7 +113,7 @@ void saveProfiles(xConfig* conf) {
 		} else {
 			for (j=0; j<4; j++) {
 				if (rsl[i].roms[j].path != "") {
-					cfile << rmnam[j].c_str()<<" = " << rsl[i].roms[j].path.c_str();
+					cfile << int2str(j).c_str() << " = " << rsl[i].roms[j].path.c_str();
 					if (rsl[i].roms[j].part != 0) cfile << ":" << int2str(rsl[i].roms[j].part).c_str();
 					cfile << "\n";
 				}
@@ -252,21 +133,21 @@ void saveProfiles(xConfig* conf) {
 	cfile << "volume.gs = " << int2str(gsVolume).c_str() << "\n";
 
 	cfile << "\n[TAPE]\n\n";
-	cfile << "autoplay = " << ((flag & OF_TAPEAUTO) ? "yes" : "no") << "\n";
-	cfile << "fast = " << ((flag & OF_TAPEFAST) ? "yes" : "no") << "\n";
+	cfile << "autoplay = " << (conf.tape.autostart ? "yes" : "no") << "\n";
+	cfile << "fast = " << (conf.tape.fast ? "yes" : "no") << "\n";
 
 	cfile << "\n[LEDS]\n\n";
-	cfile << "mouse = " << (conf->led.mouse ? "yes" : "no") << "\n";
-	cfile << "joystick = " << (conf->led.joy ? "yes" : "no") << "\n";
-	cfile << "keyscan = " << (conf->led.keys ? "yes" : "no") << "\n";
+	cfile << "mouse = " << (conf.led.mouse ? "yes" : "no") << "\n";
+	cfile << "joystick = " << (conf.led.joy ? "yes" : "no") << "\n";
+	cfile << "keyscan = " << (conf.led.keys ? "yes" : "no") << "\n";
 	cfile.close();
 }
 
 
 void loadKeys() {
-	std::string sfnam = workDir + SLASH + keyFileName;
+	std::string sfnam = conf.path.confDir + SLASH + conf.keyMapName;
 	initKeyMap();
-	if ((keyFileName == "") || (keyFileName == "default")) return;
+	if ((conf.keyMapName == "") || (conf.keyMapName == "default")) return;
 	std::ifstream file(sfnam.c_str());
 	if (!file.good()) {
 		printf("Can't open keyboard layout. Default one will be used\n");
@@ -306,17 +187,17 @@ void copyFile(const char* src, const char* dst) {
 
 // emulator config
 
-void loadProfiles(xConfig* conf) {
+void loadConfig() {
 	std::string soutnam = "NULL";
-	std::ifstream file(profPath.c_str());
+	std::ifstream file(conf.path.confFile.c_str());
 	if (!file.good()) {
 		printf("Main config is missing. Default files will be copied\n");
-		copyFile(":/conf/config.conf",std::string(workDir + SLASH + "config.conf").c_str());
-		copyFile(":/conf/xpeccy.conf",std::string(workDir + SLASH + "xpeccy.conf").c_str());
-		copyFile(":/conf/1982.rom",std::string(romDir + SLASH + "1982.rom").c_str());
-		file.open(profPath.c_str());
+		copyFile(":/conf/config.conf",std::string(conf.path.confFile).c_str());
+		copyFile(":/conf/xpeccy.conf",std::string(conf.path.confDir + SLASH + "xpeccy.conf").c_str());
+		copyFile(":/conf/1982.rom",std::string(conf.path.romDir + SLASH + "1982.rom").c_str());
+		file.open(conf.path.confFile.c_str());
 		if (!file.good()) {
-			printf("%s\n",profPath.c_str());
+			printf("%s\n",conf.path.confFile.c_str());
 			shitHappens("<b>Doh! Something going wrong</b>");
 			throw(0);
 		}
@@ -390,16 +271,16 @@ void loadProfiles(xConfig* conf) {
 							addLayout(vlay);
 						}
 					}
-					if (pnam=="scrDir") shotDir = pval;
+					if (pnam=="scrDir") conf.scrShot.dir = pval;
 					if (pnam=="scrFormat") {
-						shotExt = optGetId(OPT_SHOTFRM,pval);
+						conf.scrShot.format = pval;
 					}
-					if (pnam=="scrCount") shotCount = atoi(pval.c_str());
-					if (pnam=="scrInterval") shotInterval = atoi(pval.c_str());
+					if (pnam=="scrCount") conf.scrShot.count = atoi(pval.c_str());
+					if (pnam=="scrInterval") conf.scrShot.interval = atoi(pval.c_str());
 					if (pnam=="colorLevel") {
 						test=atoi(pval.c_str());
 						if ((test < 50) || (test > 250)) test=192;
-						brgLevel = test;
+						conf.bright = test;
 					}
 					if (pnam=="fullscreen") setFlagBit(str2bool(pval),&vidFlag,VF_FULLSCREEN);
 					if (pnam=="bordersize") {
@@ -486,22 +367,22 @@ void loadProfiles(xConfig* conf) {
 					break;
 				case SECT_GENERAL:
 					if (pnam=="keys") {
-						keyFileName = pval;
+						conf.keyMapName = pval;
 						loadKeys();
 					}
-					if (pnam=="startdefault") optSetFlag(OF_DEFAULT,str2bool(pval));
-					if (pnam=="savepaths") optSetFlag(OF_PATHS,str2bool(pval));
+					if (pnam=="startdefault") conf.defProfile = str2bool(pval) ? 1 : 0;
+					if (pnam=="savepaths") conf.storePaths = str2bool(pval) ? 1 : 0;
 					if (pnam == "fdcturbo") setFlagBit(str2bool(pval),&fdcFlag,FDC_FAST);
-					if (pnam == "systime") conf->sysclock = str2bool(pval) ? 1 : 0;
+					if (pnam == "systime") conf.sysclock = str2bool(pval) ? 1 : 0;
 					break;
 				case SECT_TAPE:
-					if (pnam=="autoplay") optSetFlag(OF_TAPEAUTO,str2bool(pval));
-					if (pnam=="fast") optSetFlag(OF_TAPEFAST,str2bool(pval));
+					if (pnam=="autoplay") conf.tape.autostart = str2bool(pval) ? 1 : 0;
+					if (pnam=="fast") conf.tape.fast = str2bool(pval) ? 1 : 0;
 					break;
 				case SECT_LEDS:
-					if (pnam=="mouse") conf->led.mouse = str2bool(pval) ? 1 : 0;
-					if (pnam=="joystick") conf->led.joy = str2bool(pval) ? 1 : 0;
-					if (pnam=="keyscan") conf->led.keys = str2bool(pval) ? 1 : 0;
+					if (pnam=="mouse") conf.led.mouse = str2bool(pval) ? 1 : 0;
+					if (pnam=="joystick") conf.led.joy = str2bool(pval) ? 1 : 0;
+					if (pnam=="keyscan") conf.led.keys = str2bool(pval) ? 1 : 0;
 					break;
 			}
 		}
@@ -510,7 +391,7 @@ void loadProfiles(xConfig* conf) {
 	for (i=0; i<rslist.size(); i++) addRomset(rslist[i]);
 	prfLoadAll();
 	setOutput(soutnam.c_str());
-	if (flag & OF_DEFAULT) {
+	if (conf.defProfile) {
 		if (!selProfile("default")) {
 			printf("Can't set default profile. GRR!\n");
 			throw(0);

@@ -47,8 +47,7 @@ int main(int ac,char** av) {
 	char* profName = NULL;
 	std::vector<char*> files;
 	int i;
-	initPaths();
-	addProfile("default","xpeccy.conf");
+	MainWin mwin;
 	char* parg;
 	i = 1;
 	while (i < ac) {
@@ -56,14 +55,11 @@ int main(int ac,char** av) {
 		if (((strcmp(parg,"-p") == 0) || (strcmp(parg,"--profile") == 0)) && (i < ac)) profName = av[i++];
 		else files.push_back(parg);
 	}
-	sndInit();
-	MainWin mwin;
 	if (profName) {
 		mwin.setProfile(std::string(profName));
 	} else {
-		mwin.setProfile("default");
+		mwin.setProfile("");
 	}
-	fillUserMenu();
 	mwin.show();
 	mwin.updateWindow();
 	zxReset(mwin.comp,RES_DEFAULT);

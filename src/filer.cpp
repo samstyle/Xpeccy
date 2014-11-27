@@ -10,8 +10,8 @@ QDir lastDir;
 #include <QIcon>
 #include <QMessageBox>
 
-void initFileDialog(QWidget*) {
-	filer = new QFileDialog();
+void initFileDialog(QWidget* par) {
+	filer = new QFileDialog(par);
 	filer->setWindowIcon(QIcon(":/images/logo.png"));
 	filer->setWindowModality(Qt::ApplicationModal);
 	filer->setNameFilterDetailsVisible(true);
@@ -125,6 +125,7 @@ void loadFile(ZXComp* comp,const char* name, int flags, int drv) {
 	} else {
 		type = getFileType(opath);
 	}
+	if (!QFile::exists(opath)) return;
 	std::string sfnam(opath.toLocal8Bit().data());
 	int ferr = ERR_OK;
 	comp->rzxPlay = false;

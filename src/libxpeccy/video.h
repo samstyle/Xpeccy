@@ -54,9 +54,12 @@ typedef struct {
 
 struct Video {
 	unsigned border4t:1;
-	unsigned nogfx:1;		// tsl : nogfx flag
-	unsigned intStrobe:1;
-	unsigned nextrow:1;
+	unsigned nogfx:1;	// tsl : nogfx flag
+	unsigned newFrame:1;	// set @ start of VBlank
+	unsigned intFRAME:1;	// aka INT
+	unsigned intLINE:1;	// for TSConf
+	unsigned intDMA:1;	// for TSConf
+	unsigned nextrow:1;	// = not-masked intLINE
 	unsigned istsconf:1;
 
 	int flash;
@@ -65,12 +68,10 @@ struct Video {
 	unsigned char nextbrd;
 	unsigned char fcnt;
 	unsigned char atrbyte;
-	unsigned char intVector;
 	unsigned char* scrptr;
 	unsigned char* scrimg;
-	size_t x;
-	size_t y;
-	size_t dot;
+	int x;
+	int y;
 	size_t frmsz;
 	size_t vmode;
 	int nsDraw;

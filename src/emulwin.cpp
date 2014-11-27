@@ -220,6 +220,7 @@ void MainWin::pause(bool p, int msk) {
 		setWindowIcon(QIcon(":/images/pause.png"));
 		ethread.block = 1;
 	}
+	updateHead();
 	if (msk & PR_PAUSE) return;
 	if ((pauseFlags & ~PR_PAUSE) == 0) {
 		vidFlag &= ~VF_BLOCKFULLSCREEN;
@@ -245,9 +246,20 @@ MainWin::MainWin() {
 	grabMice = 0;
 
 	emulFlags = 0;
+
+	sndInit();
+	initPaths();
+	addProfile("default","xpeccy.conf");
+
 	initKeyMap();
-	optSet(OPT_SHOTFRM,SCR_PNG);
+	conf.scrShot.format = "png";
 	addLayout("default",448,320,138,80,64,32,0,0,64);
+
+	shotFormat["bmp"] = SCR_BMP;
+	shotFormat["png"] = SCR_PNG;
+	shotFormat["jpg"] = SCR_JPG;
+	shotFormat["scr"] = SCR_SCR;
+	shotFormat["hobeta"] = SCR_HOB;
 
 	opt = new SetupWin(this);
 	dbg = new DebugWin(this);
@@ -278,6 +290,7 @@ MainWin::MainWin() {
 
 	ethread.fast = 0;
 	ethread.mtx.lock();
+	ethread.conf = &conf;
 	connect(&ethread,SIGNAL(dbgRequest()),SLOT(doDebug()));
 	connect(&ethread,SIGNAL(tapeSignal(int,int)),this,SLOT(tapStateChanged(int,int)));
 	ethread.start();
@@ -286,7 +299,8 @@ MainWin::MainWin() {
 	connect(userMenu,SIGNAL(aboutToShow()),SLOT(menuShow()));
 	connect(userMenu,SIGNAL(aboutToHide()),SLOT(menuHide()));
 
-	loadProfiles(&conf);
+	loadConfig();
+	fillUserMenu();
 }
 
 // scale screen
@@ -347,7 +361,7 @@ void MainWin::onTimer() {
 		} else {
 			screenShot();
 			scrCounter--;
-			scrInterval = optGetInt(OPT_SHOTINT);
+			scrInterval = conf.scrShot.interval;
 		}
 	}
 // update window
@@ -537,12 +551,12 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			case Qt::Key_1:
 				vidFlag &= ~VF_DOUBLE;
 				updateWindow();
-				saveProfiles(&conf);
+				saveConfig();
 				break;
 			case Qt::Key_2:
 				vidFlag |= VF_DOUBLE;
 				updateWindow();
-				saveProfiles(&conf);
+				saveConfig();
 				break;
 			case Qt::Key_3:
 				ethread.fast ^= 1;
@@ -552,7 +566,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				close();
 				break;
 			case Qt::Key_F7:
-				scrCounter = optGetInt(OPT_SHOTCNT);
+				scrCounter = conf.scrShot.count;
 				scrInterval = 0;
 				break;	// ALT+F7 combo
 			case Qt::Key_F12:
@@ -564,7 +578,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;
 			case Qt::Key_N:
 				vidFlag ^= VF_NOFLIC;
-				saveProfiles(&conf);
+				saveConfig();
 				if (vidFlag & VF_NOFLIC) memcpy(prevscr,screen,comp->vid->frameBytes);
 				break;
 		}
@@ -578,6 +592,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				pause(true,0);
 				break;
 			case Qt::Key_Escape:
+				ethread.fast = 0;
 				pause(true, PR_DEBUG);
 				dbg->start(comp);
 				break;
@@ -587,7 +602,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;
 			case Qt::Key_F1:
 				pause(true, PR_OPTS);
-				opt->start(&conf,comp);
+				opt->start(comp);
 				break;
 			case Qt::Key_F2:
 				pause(true,PR_FILE);
@@ -741,14 +756,14 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 	pause(true,PR_EXIT);
 	for (i = 0; i < plist.size(); i++) {
 		prfSave(plist[i].name);
-		fname = optGetString(OPT_WORKDIR) + std::string(SLASH) + plist[i].name + std::string(".cmos");
+		fname = conf.path.confDir + SLASH + plist[i].name + ".cmos";
 		file.open(fname.c_str());
 		if (file.good()) {
 			file.write((const char*)plist[i].zx->cmos.data,256);
 			file.close();
 		}
 		if (plist[i].zx->ide->type == IDE_SMUC) {
-			fname = optGetString(OPT_WORKDIR) + std::string(SLASH) + plist[i].name + std::string(".nvram");
+			fname = conf.path.confDir + SLASH + plist[i].name + ".nvram";
 			file.open(fname.c_str());
 			if (file.good()) {
 				file.write((const char*)plist[i].zx->ide->smuc.nv->mem,0x800);
@@ -782,16 +797,16 @@ void MainWin::checkState() {
 uchar hobHead[] = {'s','c','r','e','e','n',' ',' ','C',0,0,0,0x1b,0,0x1b,0xe7,0x81};	// last 2 bytes is crc
 
 void MainWin::screenShot() {
-	int frm = optGetInt(OPT_SHOTFRM);
+	int frm = shotFormat[conf.scrShot.format];
 	std::string fext;
 	switch (frm) {
 		case SCR_BMP: fext = "bmp"; break;
-		case SCR_JPG: fext = "jpg"; break;
 		case SCR_PNG: fext = "png"; break;
+		case SCR_JPG: fext = "jpg"; break;
 		case SCR_SCR: fext = "scr"; break;
 		case SCR_HOB: fext = "$C"; break;
-	};
-	QString fnams = QString(optGetString(OPT_SHOTDIR).c_str()).append(SLASH);
+	}
+	QString fnams = QString(conf.scrShot.dir.c_str()).append(SLASH);
 	fnams.append(QTime::currentTime().toString("HHmmss_zzz")).append(".").append(QString(fext.c_str()));
 	std::string fnam(fnams.toUtf8().data());
 	std::ofstream file;
@@ -853,7 +868,7 @@ void MainWin::emuDraw() {
 	}
 // form image...
 	if (comp->debug || ethread.fast) convImage(comp);
-	int winDots = comp->vid->wsze.h * comp->vid->wsze.v;
+	int winDots = width() * height();
 	if (vidFlag & VF_GREY) scrGray(screen, winDots);
 	if (vidFlag & VF_NOFLIC) scrMix(prevscr, screen, winDots * 3);
 // leds
@@ -1044,15 +1059,17 @@ void fillUserMenu() {
 
 void MainWin::doOptions() {
 	pause(true, PR_OPTS);
-	opt->start(&conf,comp);
+	opt->start(comp);
 }
 
 void MainWin::optApply() {
 	fillUserMenu();
+	updateWindow();
 	pause(false, PR_OPTS);
 }
 
 void MainWin::doDebug() {
+	ethread.fast = 0;
 	pause(true, PR_DEBUG);
 	dbg->start(comp);
 }
@@ -1067,15 +1084,19 @@ void MainWin::bookmarkSelected(QAction* act) {
 }
 
 void MainWin::setProfile(std::string nm) {
-	pause(true, PR_EXTRA);
+	ethread.block = 1;
 	selProfile(nm);
 	comp = getCurrentProfile()->zx;
 	ethread.comp = comp;
 	nsPerFrame = comp->nsPerFrame;
 	sndCalibrate();
 	updateWindow();
-	saveProfiles(&conf);
-	pause(false, PR_EXTRA);
+	if (comp->firstRun) {
+		zxReset(comp, RES_DEFAULT);
+		comp->firstRun = 0;
+	}
+	saveConfig();
+	ethread.block = 0;
 }
 
 void MainWin::profileSelected(QAction* act) {
@@ -1112,7 +1133,7 @@ void MainWin::chVMode(QAction* act) {
 void xThread::tapeCatch() {
 	blk = comp->tape->block;
 	if (blk >= comp->tape->blkCount) return;
-	if (optGetFlag(OF_TAPEFAST) && comp->tape->blkData[blk].hasBytes) {
+	if (conf->tape.fast && comp->tape->blkData[blk].hasBytes) {
 		de = GETDE(comp->cpu);	//z80ex_get_reg(comp->cpu,regDE);
 		ix = GETIX(comp->cpu);	//z80ex_get_reg(comp->cpu,regIX);
 		TapeBlockInfo inf = tapGetBlockInfo(comp->tape,blk);
@@ -1132,7 +1153,7 @@ void xThread::tapeCatch() {
 		}
 		SETPC(comp->cpu,0x5df);	// z80ex_set_reg(comp->cpu,regPC,0x5df);	// to exit
 	} else {
-		if (optGetFlag(OF_TAPEAUTO))
+		if (conf->tape.autostart)
 			emit tapeSignal(TW_STATE,TWS_PLAY);
 	}
 }
@@ -1151,7 +1172,7 @@ void xThread::emuCycle() {
 		pc = GETPC(comp->cpu);	// z80ex_get_reg(comp->cpu,regPC);
 		if ((comp->mem->pt[0]->type == MEM_ROM) && (comp->mem->pt[0]->num == 1)) {
 			if (pc == 0x56b) tapeCatch();
-			if ((pc == 0x5e2) && optGetFlag(OF_TAPEAUTO))
+			if ((pc == 0x5e2) && conf->tape.autostart)
 				emit tapeSignal(TW_STATE,TWS_STOP);
 		}
 	} while (!comp->brk && (comp->frmStrobe == 0));		// exec until breakpoint or INT
@@ -1166,7 +1187,7 @@ void xThread::run() {
 	do {
 		if (!fast) mtx.lock();		// wait until unlocked (MainWin::onTimer() or at exit)
 		if (emulFlags & FL_EXIT) break;
-		if (!block) {
+		if (!block && !comp->brk) {
 			emuCycle();
 			if (comp->joy->used) {
 				leds[1].showTime = 50;

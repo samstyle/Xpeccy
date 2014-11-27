@@ -14,14 +14,40 @@
 
 // common
 
+struct OptName {
+	int id;
+	std::string name;
+};
+
 struct xConfig {
 	unsigned sysclock:1;
+	unsigned storePaths:1;
+	unsigned defProfile:1;
+	std::string keyMapName;
+	int bright;
+	struct {
+		unsigned autostart:1;
+		unsigned fast:1;
+	} tape;
+	struct {
+		int count;
+		int interval;
+		std::string format;
+		std::string dir;
+	} scrShot;
 	struct {
 		unsigned mouse:1;
 		unsigned joy:1;
 		unsigned keys:1;
 	} led;
+	struct {
+		std::string confDir;
+		std::string confFile;
+		std::string romDir;
+	} path;
 };
+
+extern xConfig conf;
 
 // extern ZXComp* zx;
 

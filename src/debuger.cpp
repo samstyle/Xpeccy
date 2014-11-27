@@ -264,6 +264,8 @@ bool DebugWin::fillAll() {
 	fillZ80();
 	fillMem();
 	fillDump();
+	ui.labRX->setNum(comp->vid->x);
+	ui.labRY->setNum(comp->vid->y);
 	return fillDisasm();
 }
 

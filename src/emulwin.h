@@ -230,6 +230,7 @@ class xThread : public QThread {
 	public:
 		unsigned fast:1;
 		unsigned block:1;
+		xConfig* conf;
 		ZXComp* comp;
 		QMutex mtx;
 		void run();
@@ -258,8 +259,6 @@ class MainWin : public QWidget {
 
 		SetupWin* opt;
 		DebugWin* dbg;
-
-		xConfig conf;
 
 		QTimer cmosTimer;
 		QTimer timer;

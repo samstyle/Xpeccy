@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <fstream>
 
+xConfig conf;
 XProfile* currentProfile = NULL;
 std::vector<XProfile> profileList;
 
@@ -31,13 +32,13 @@ bool addProfile(std::string nm, std::string fp) {
 	nprof.file = fp;
 	nprof.layName = std::string("default");
 	nprof.zx = zxCreate();
-	std::string fname = optGetString(OPT_WORKDIR) + std::string(SLASH) + nprof.name + std::string(".cmos");
+	std::string fname = conf.path.confDir + SLASH + nprof.name + std::string(".cmos");
 	std::ifstream file(fname.c_str());
 	if (file.good()) {
 		file.read((char*)nprof.zx->cmos.data,256);
 		file.close();
 	}
-	fname = optGetString(OPT_WORKDIR) + std::string(SLASH) + nprof.name + std::string(".nvram");
+	fname = conf.path.confDir + SLASH + nprof.name + std::string(".nvram");
 	file.open(fname.c_str());
 	if (file.good()) {
 		file.read((char*)nprof.zx->ide->smuc.nv->mem,0x800);
@@ -124,7 +125,7 @@ void setDiskString(ZXComp* comp,Floppy* flp,std::string st) {
 	flp->trk80 = (st.substr(0,2) == "80") ? 1 : 0;
 	flp->doubleSide = (st.substr(2,1) == "D") ? 1 : 0;
 	flp->protect = (st.substr(3,1) == "R") ? 1 : 0;
-	if (flp->path || (st.size() < 5) || !optGetFlag(OF_PATHS)) return;
+	if (flp->path || (st.size() < 5) || !conf.storePaths) return;
 	st = st.substr(5);
 	loadFile(comp,st.c_str(),FT_DISK,flp->id);
 }
@@ -138,7 +139,6 @@ void prfSetRomset(std::string pnm, std::string rnm) {
 
 void prfLoadAll() {
 	for (uint i = 0; i < profileList.size(); i++) prfLoad(profileList[i].name);
-	prfLoad("");		// avoid set last profile layout settings to current profile
 }
 
 int prfLoad(std::string nm) {
@@ -147,7 +147,7 @@ int prfLoad(std::string nm) {
 //	printf("%s\n",prf->name.c_str());
 	ZXComp* comp = prf->zx;
 
-	std::string cfname = optGetString(OPT_WORKDIR) + SLASH + prf->file;
+	std::string cfname = conf.path.confDir + SLASH + prf->file;
 //	printf("load config %s\n",cfname.c_str());
 	std::ifstream file(cfname.c_str());
 	std::pair<std::string,std::string> spl;
@@ -219,7 +219,7 @@ int prfLoad(std::string nm) {
 					if (pnam == "soundrive_type") comp->sdrv->type = atoi(pval.c_str());
 					break;
 				case PS_TAPE:
-					if (pnam == "path" && optGetFlag(OF_PATHS)) loadFile(comp,pval.c_str(),FT_TAPE,0);
+					if (pnam == "path" && conf.storePaths) loadFile(comp,pval.c_str(),FT_TAPE,0);
 					break;
 				case PS_DISK:
 					if (pnam == "A") setDiskString(comp,comp->bdi->fdc->flop[0],pval);
@@ -336,7 +336,7 @@ int prfSave(std::string nm) {
 	if (prf == NULL) return PSAVE_NF;
 	ZXComp* comp = prf->zx;
 
-	std::string cfname = optGetString(OPT_WORKDIR) + SLASH + prf->file;
+	std::string cfname = conf.path.confDir + SLASH + prf->file;
 	std::ofstream file(cfname.c_str());
 	if (!file.good()) {
 		printf("Can't write settings\n");

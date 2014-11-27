@@ -165,7 +165,7 @@ void iowr(CPUCONT Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 */
 
 Z80EX_BYTE intrq(CPUCONT void* ptr) {
-	return ((ZXComp*)ptr)->vid->intVector;
+	return ((ZXComp*)ptr)->intVector;
 }
 
 void rzxClear(ZXComp* zx) {
@@ -210,6 +210,7 @@ ZXComp* zxCreate() {
 	memset(ptr,0,sizeof(ZXComp));
 	memset(comp->brkIOMap, 0, 0x10000);
 	comp->resbank = 0;
+	comp->firstRun = 1;
 
 #ifdef SELFZ80
 	comp->cpu = cpuCreate(&memrd,&memwr,&iord,&iowr,&intrq,ptr);
@@ -281,10 +282,7 @@ void zxDestroy(ZXComp* comp) {
 }
 
 void zxReset(ZXComp* comp,int wut) {
-//	int i;
 	int resto = comp->resbank;
-	//for (i = 0; i < 16; i++) comp->colMap[i] = defPalete[i];	// reset palete to default
-	//comp->palchan = 1; // comp->flag |= ZX_PALCHAN;
 	zxInitPalete(comp);
 	comp->vid->ula->active = 0;
 	comp->rzxPlay = 0;
@@ -300,14 +298,13 @@ void zxReset(ZXComp* comp,int wut) {
 	memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5);
 	memSetBank(comp->mem,MEM_BANK2,MEM_RAM,2);
 	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0);
-//	comp->mem->flags = MEM_ROM_WP;
 	rzxClear(comp);
 	comp->rzxPlay = 0;
 	RESETCPU(comp->cpu);	// z80ex_reset(comp->cpu);
 	comp->vid->curscr = 5;
 	vidSetMode(comp->vid,VID_NORMAL);
 	comp->dosen = 0;
-	comp->vid->intMask = 1;
+	comp->vid->intMask = 1;	// FRAME only
 	switch (comp->hw->type) {
 		case HW_ZX48:
 			comp->prt0 = 0x10;		// else beta-disk doesn't enter in tr-dos
@@ -323,11 +320,8 @@ void zxReset(ZXComp* comp,int wut) {
 		case HW_TSLAB:
 			comp->dosen = (resto & 2) ? 0 : 1;	// 0,1 = shadow,dos
 			comp->prt0 = (resto & 1) ? 0x10 : 0x00;	// 2,3 = bas128,bas48
-//			comp->mem->flags = MEM_B0_WP;		// no MEM_ROM_WP, only MEM_B0_WP
 			comp->vid->tsconf.scrPal = 0xf0;
 			memset(comp->vid->tsconf.cram,0x00,0x1e0);
-//			memcpy(comp->vid->tsconf.cram + 0x1e0,tsPalInit,0x20);	// init zx palete ?
-//			tslOut(comp,0x00af,0x00,0);			// std 256x192, NOGFX off
 			comp->tsconf.Page0 = 0;
 			comp->vid->nextbrd = 0xf7;
 			comp->tsconf.p00af = 0;
@@ -386,13 +380,21 @@ void zxSetFrq(ZXComp* comp, float frq) {
 	comp->nsPerTick = 280 * 3.5 / frq;	// 280 ns per tick @ 3.5 MHz
 }
 
+int zxINT(ZXComp* comp) {
+	res4 = 0;
+	res2 = INTCPU(comp->cpu);	// z80ex_int(comp->cpu);
+	res1 += res2;
+	vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
+	return res2;
+}
+
 int zxExec(ZXComp* comp) {
 
 	comp->mem->flag = 0;
 
 	res4 = 0;
 	EXECCPU(comp->cpu,res2);
-	comp->nsCount += res2 * comp->nsPerTick;
+//	comp->nsCount += res2 * comp->nsPerTick;
 
 	vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
 	if (comp->padr) {
@@ -413,22 +415,22 @@ int zxExec(ZXComp* comp) {
 		}
 		comp->padr = 0;
 	}
+
 	res1 = res2;
+
 	if (comp->rzxPlay) {
 		comp->intStrobe = (comp->rzxFetches < 1);
 		comp->frmStrobe = comp->intStrobe;
-	} else {
-		if (comp->nsCount >= comp->nsPerFrame) {
-			comp->nsCount -= comp->nsPerFrame;
-			comp->frmStrobe = 1;
-		}
+	} else if (comp->vid->newFrame) {
+		comp->vid->newFrame = 0;
+		comp->frmStrobe = 1;
 	}
 	pcreg = GETPC(comp->cpu);	// z80ex_get_reg(comp->cpu,regPC);
+// NMI
 	if ((pcreg > 0x3fff) && comp->nmiRequest && !comp->rzxPlay) {
 		res4 = 0;
 		res2 = NMICPU(comp->cpu);	// z80ex_nmi(comp->cpu);
 		res1 += res2;
-		comp->nsCount += res2 * comp->nsPerTick;
 		if (res2 != 0) {
 			comp->dosen = 1;
 			comp->prt0 |= 0x10;
@@ -436,13 +438,11 @@ int zxExec(ZXComp* comp) {
 			vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
 		}
 	}
-
-	if (comp->vid->intStrobe) {
-		res4 = 0;
-		res2 = INTCPU(comp->cpu);	// z80ex_int(comp->cpu);
-		res1 += res2;
-		comp->nsCount += res2 * comp->nsPerTick;
-		vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
+// INTs handle
+	if (comp->vid->intFRAME) {
+		comp->intVector = 0xff;
+		zxINT(comp);
+		comp->vid->intFRAME = 0;
 		if (comp->rzxPlay) {
 			comp->rzxFrame++;
 			if (comp->rzxFrame >= comp->rzxSize) {
@@ -455,15 +455,21 @@ int zxExec(ZXComp* comp) {
 				comp->rzxPos = 0;
 			}
 		}
-		comp->vid->intStrobe = 0;
+	} else if (comp->vid->intLINE) {
+		comp->intVector = 0xfd;
+		if (zxINT(comp)) comp->vid->intLINE = 0;
+	} else if (comp->vid->intDMA) {
+		comp->intVector = 0xfb;
+		if (zxINT(comp)) comp->vid->intDMA = 0;
 	}
-	if (comp->vid->nextrow && (comp->hw->type == HW_TSLAB)) {
+// TSConf : update 'next-line' registers
+	if (comp->vid->nextrow && comp->vid->istsconf) {
 		tslUpdatePorts(comp);
 		comp->vid->nextrow = 0;
 	}
 	nsTime = res1 * comp->nsPerTick;
 	comp->tickCount += res1;
-
+// breakpoints
 	pcreg = GETPC(comp->cpu);
 	if (*memGetFptr(comp->mem, pcreg) & MEM_BRK_FETCH) {
 		comp->brk = 1;
@@ -472,10 +478,11 @@ int zxExec(ZXComp* comp) {
 		comp->brk = 1;
 	}
 	if (comp->debug) comp->brk = 0;
-
+// sync devices
 	comp->tapCount += nsTime;
 	if (comp->gs->enable) comp->gs->sync += nsTime;
 	if (comp->bdi->fdc->type != FDC_NONE) bdiSync(comp->bdi, nsTime);
+// return ns eated @ this step
 	return nsTime;
 }
 

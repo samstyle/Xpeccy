@@ -285,8 +285,7 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 			comp->dma.dst.h = ((dadr & 0x3f00) >> 8);
 			comp->dma.dst.l = dadr & 0xff;
 			if (comp->vid->intMask & 4) {		// DMA INT
-				comp->vid->intStrobe = 1;
-				comp->vid->intVector = 0xfb;
+				comp->vid->intDMA = 1;
 			}
 			break;
 		case 0x28af:
