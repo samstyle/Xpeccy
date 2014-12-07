@@ -1,5 +1,7 @@
 #include "filetypes.h"
 
+#pragma pack (1)
+
 typedef struct {
 	char signature[34];
 	char creator[14];
@@ -81,3 +83,5 @@ int loadDsk(Floppy* flp, const char *name) {
 	flp->changed = 0;
 	return ERR_OK;
 }
+
+#pragma pack ()

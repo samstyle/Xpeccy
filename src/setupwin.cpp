@@ -154,16 +154,16 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	setupUi.sdcapbox->addItem("1024 M",SDC_1G);
 
 // all
-	QObject::connect(setupUi.okbut,SIGNAL(released()),this,SLOT(okay()));
-	QObject::connect(setupUi.apbut,SIGNAL(released()),this,SLOT(apply()));
-	QObject::connect(setupUi.cnbut,SIGNAL(released()),this,SLOT(reject()));
+	connect(setupUi.okbut,SIGNAL(released()),this,SLOT(okay()));
+	connect(setupUi.apbut,SIGNAL(released()),this,SLOT(apply()));
+	connect(setupUi.cnbut,SIGNAL(released()),this,SLOT(reject()));
 // machine
-	QObject::connect(setupUi.rsetbox,SIGNAL(currentIndexChanged(int)),this,SLOT(buildrsetlist()));
-	QObject::connect(setupUi.machbox,SIGNAL(currentIndexChanged(int)),this,SLOT(setmszbox(int)));
-	QObject::connect(setupUi.cpufrq,SIGNAL(valueChanged(int)),this,SLOT(updfrq()));
-	QObject::connect(setupUi.rstab,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(editrset()));
-	QObject::connect(setupUi.addrset,SIGNAL(released()),this,SLOT(addNewRomset()));
-	QObject::connect(setupUi.rmrset,SIGNAL(released()),this,SLOT(rmRomset()));
+	connect(setupUi.rsetbox,SIGNAL(currentIndexChanged(int)),this,SLOT(buildrsetlist()));
+	connect(setupUi.machbox,SIGNAL(currentIndexChanged(int)),this,SLOT(setmszbox(int)));
+	connect(setupUi.cpufrq,SIGNAL(valueChanged(int)),this,SLOT(updfrq()));
+	connect(setupUi.rstab,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(editrset()));
+	connect(setupUi.addrset,SIGNAL(released()),this,SLOT(addNewRomset()));
+	connect(setupUi.rmrset,SIGNAL(released()),this,SLOT(rmRomset()));
 	connect(setupUi.rsedit,SIGNAL(released()),this,SLOT(editrset()));
 
 	connect(rseUi.rse_cancel,SIGNAL(released()),rseditor,SLOT(hide()));
@@ -171,9 +171,9 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	connect(rseUi.rse_grp_single,SIGNAL(toggled(bool)),this,SLOT(recheck_separate(bool)));
 	connect(rseUi.rse_grp_separate,SIGNAL(toggled(bool)),this,SLOT(recheck_single(bool)));
 // video
-	QObject::connect(setupUi.pathtb,SIGNAL(released()),this,SLOT(selsspath()));
-	QObject::connect(setupUi.bszsld,SIGNAL(valueChanged(int)),this,SLOT(chabsz()));
-	QObject::connect(setupUi.brgslide,SIGNAL(valueChanged(int)),this,SLOT(chabrg()));
+	connect(setupUi.pathtb,SIGNAL(released()),this,SLOT(selsspath()));
+	connect(setupUi.bszsld,SIGNAL(valueChanged(int)),this,SLOT(chabsz()));
+	connect(setupUi.brgslide,SIGNAL(valueChanged(int)),this,SLOT(chabrg()));
 
 	connect(setupUi.layEdit,SIGNAL(released()),this,SLOT(editLayout()));
 	connect(setupUi.layAdd,SIGNAL(released()),this,SLOT(addNewLayout()));
@@ -191,32 +191,32 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	connect(layUi.okButton,SIGNAL(released()),this,SLOT(layEditorOK()));
 	connect(layUi.cnButton,SIGNAL(released()),layeditor,SLOT(hide()));
 // sound
-	QObject::connect(setupUi.bvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
-	QObject::connect(setupUi.tvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
-	QObject::connect(setupUi.avsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
-	QObject::connect(setupUi.gvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
+	connect(setupUi.bvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
+	connect(setupUi.tvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
+	connect(setupUi.avsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
+	connect(setupUi.gvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
 // dos
-	QObject::connect(setupUi.newatb,SIGNAL(released()),this,SLOT(newa()));
-	QObject::connect(setupUi.newbtb,SIGNAL(released()),this,SLOT(newb()));
-	QObject::connect(setupUi.newctb,SIGNAL(released()),this,SLOT(newc()));
-	QObject::connect(setupUi.newdtb,SIGNAL(released()),this,SLOT(newd()));
+	connect(setupUi.newatb,SIGNAL(released()),this,SLOT(newa()));
+	connect(setupUi.newbtb,SIGNAL(released()),this,SLOT(newb()));
+	connect(setupUi.newctb,SIGNAL(released()),this,SLOT(newc()));
+	connect(setupUi.newdtb,SIGNAL(released()),this,SLOT(newd()));
 
-	QObject::connect(setupUi.loadatb,SIGNAL(released()),this,SLOT(loada()));
-	QObject::connect(setupUi.loadbtb,SIGNAL(released()),this,SLOT(loadb()));
-	QObject::connect(setupUi.loadctb,SIGNAL(released()),this,SLOT(loadc()));
-	QObject::connect(setupUi.loaddtb,SIGNAL(released()),this,SLOT(loadd()));
+	connect(setupUi.loadatb,SIGNAL(released()),this,SLOT(loada()));
+	connect(setupUi.loadbtb,SIGNAL(released()),this,SLOT(loadb()));
+	connect(setupUi.loadctb,SIGNAL(released()),this,SLOT(loadc()));
+	connect(setupUi.loaddtb,SIGNAL(released()),this,SLOT(loadd()));
 
-	QObject::connect(setupUi.saveatb,SIGNAL(released()),this,SLOT(savea()));
-	QObject::connect(setupUi.savebtb,SIGNAL(released()),this,SLOT(saveb()));
-	QObject::connect(setupUi.savectb,SIGNAL(released()),this,SLOT(savec()));
-	QObject::connect(setupUi.savedtb,SIGNAL(released()),this,SLOT(saved()));
+	connect(setupUi.saveatb,SIGNAL(released()),this,SLOT(savea()));
+	connect(setupUi.savebtb,SIGNAL(released()),this,SLOT(saveb()));
+	connect(setupUi.savectb,SIGNAL(released()),this,SLOT(savec()));
+	connect(setupUi.savedtb,SIGNAL(released()),this,SLOT(saved()));
 
-	QObject::connect(setupUi.remoatb,SIGNAL(released()),this,SLOT(ejcta()));
-	QObject::connect(setupUi.remobtb,SIGNAL(released()),this,SLOT(ejctb()));
-	QObject::connect(setupUi.remoctb,SIGNAL(released()),this,SLOT(ejctc()));
-	QObject::connect(setupUi.remodtb,SIGNAL(released()),this,SLOT(ejctd()));
+	connect(setupUi.remoatb,SIGNAL(released()),this,SLOT(ejcta()));
+	connect(setupUi.remobtb,SIGNAL(released()),this,SLOT(ejctb()));
+	connect(setupUi.remoctb,SIGNAL(released()),this,SLOT(ejctc()));
+	connect(setupUi.remodtb,SIGNAL(released()),this,SLOT(ejctd()));
 
-	QObject::connect(setupUi.disktabs,SIGNAL(currentChanged(int)),this,SLOT(fillDiskCat()));
+	connect(setupUi.disktabs,SIGNAL(currentChanged(int)),this,SLOT(fillDiskCat()));
 	connect(setupUi.actCopyToTape,SIGNAL(triggered()),this,SLOT(copyToTape()));
 	connect(setupUi.actSaveHobeta,SIGNAL(triggered()),this,SLOT(diskToHobeta()));
 	connect(setupUi.actSaveRaw,SIGNAL(triggered()),this,SLOT(diskToRaw()));
@@ -224,42 +224,42 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	connect(setupUi.tbToHobeta,SIGNAL(released()),this,SLOT(diskToHobeta()));
 	connect(setupUi.tbToRaw,SIGNAL(released()),this,SLOT(diskToRaw()));
 // tape
-	QObject::connect(setupUi.tapelist,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(chablock(QModelIndex)));
-	QObject::connect(setupUi.tapelist,SIGNAL(cellClicked(int,int)),this,SLOT(setTapeBreak(int,int)));
-	QObject::connect(setupUi.tloadtb,SIGNAL(released()),this,SLOT(loatape()));
-	QObject::connect(setupUi.tsavetb,SIGNAL(released()),this,SLOT(savtape()));
-	QObject::connect(setupUi.tremotb,SIGNAL(released()),this,SLOT(ejctape()));
-	QObject::connect(setupUi.blkuptb,SIGNAL(released()),this,SLOT(tblkup()));
-	QObject::connect(setupUi.blkdntb,SIGNAL(released()),this,SLOT(tblkdn()));
-	QObject::connect(setupUi.blkrmtb,SIGNAL(released()),this,SLOT(tblkrm()));
+	connect(setupUi.tapelist,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(chablock(QModelIndex)));
+	connect(setupUi.tapelist,SIGNAL(cellClicked(int,int)),this,SLOT(setTapeBreak(int,int)));
+	connect(setupUi.tloadtb,SIGNAL(released()),this,SLOT(loatape()));
+	connect(setupUi.tsavetb,SIGNAL(released()),this,SLOT(savtape()));
+	connect(setupUi.tremotb,SIGNAL(released()),this,SLOT(ejctape()));
+	connect(setupUi.blkuptb,SIGNAL(released()),this,SLOT(tblkup()));
+	connect(setupUi.blkdntb,SIGNAL(released()),this,SLOT(tblkdn()));
+	connect(setupUi.blkrmtb,SIGNAL(released()),this,SLOT(tblkrm()));
 	connect(setupUi.actCopyToDisk,SIGNAL(triggered()),this,SLOT(copyToDisk()));
 	connect(setupUi.tbToDisk,SIGNAL(released()),this,SLOT(copyToDisk()));
 // hdd
-	QObject::connect(setupUi.hm_islba,SIGNAL(stateChanged(int)),this,SLOT(hddcap()));
-	QObject::connect(setupUi.hm_glba,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
-	QObject::connect(setupUi.hm_gcyl,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
-	QObject::connect(setupUi.hm_ghd,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
-	QObject::connect(setupUi.hm_gsec,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	connect(setupUi.hm_islba,SIGNAL(stateChanged(int)),this,SLOT(hddcap()));
+	connect(setupUi.hm_glba,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	connect(setupUi.hm_gcyl,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	connect(setupUi.hm_ghd,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	connect(setupUi.hm_gsec,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
 	connect(setupUi.hm_pathtb,SIGNAL(released()),this,SLOT(hddMasterImg()));
-	QObject::connect(setupUi.hs_islba,SIGNAL(stateChanged(int)),this,SLOT(hddcap()));
-	QObject::connect(setupUi.hs_glba,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
-	QObject::connect(setupUi.hs_gcyl,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
-	QObject::connect(setupUi.hs_ghd,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
-	QObject::connect(setupUi.hs_gsec,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	connect(setupUi.hs_islba,SIGNAL(stateChanged(int)),this,SLOT(hddcap()));
+	connect(setupUi.hs_glba,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	connect(setupUi.hs_gcyl,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	connect(setupUi.hs_ghd,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	connect(setupUi.hs_gsec,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
 	connect(setupUi.hs_pathtb,SIGNAL(released()),this,SLOT(hddSlaveImg()));
 // sdc
 	connect(setupUi.tbSDCimg,SIGNAL(released()),this,SLOT(selSDCimg()));
 	connect(setupUi.tbsdcfree,SIGNAL(released()),setupUi.sdPath,SLOT(clear()));
 //tools
-	QObject::connect(setupUi.umlist,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(umedit(QModelIndex)));
-	QObject::connect(setupUi.umaddtb,SIGNAL(released()),this,SLOT(umadd()));
-	QObject::connect(setupUi.umdeltb,SIGNAL(released()),this,SLOT(umdel()));
-	QObject::connect(setupUi.umuptb,SIGNAL(released()),this,SLOT(umup()));
-	QObject::connect(setupUi.umdntb,SIGNAL(released()),this,SLOT(umdn()));
+	connect(setupUi.umlist,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(umedit(QModelIndex)));
+	connect(setupUi.umaddtb,SIGNAL(released()),this,SLOT(umadd()));
+	connect(setupUi.umdeltb,SIGNAL(released()),this,SLOT(umdel()));
+	connect(setupUi.umuptb,SIGNAL(released()),this,SLOT(umup()));
+	connect(setupUi.umdntb,SIGNAL(released()),this,SLOT(umdn()));
 // bookmark add dialog
-	QObject::connect(uia.umasptb,SIGNAL(released()),this,SLOT(umaselp()));
-	QObject::connect(uia.umaok,SIGNAL(released()),this,SLOT(umaconf()));
-	QObject::connect(uia.umacn,SIGNAL(released()),umadial,SLOT(hide()));
+	connect(uia.umasptb,SIGNAL(released()),this,SLOT(umaselp()));
+	connect(uia.umaok,SIGNAL(released()),this,SLOT(umaconf()));
+	connect(uia.umacn,SIGNAL(released()),umadial,SLOT(hide()));
 // profiles manager
 	connect(setupUi.tbNewProfile,SIGNAL(released()),this,SLOT(newProfile()));
 	connect(setupUi.tbDelProfile,SIGNAL(released()),this,SLOT(rmProfile()));
@@ -311,7 +311,7 @@ void SetupWin::start(ZXComp* c) {
 	setupUi.border4T->setChecked(comp->vid->border4t);
 	setupUi.contMem->setChecked(comp->contMem);
 	setupUi.contIO->setChecked(comp->contIO);
-	setupUi.bszsld->setValue((int)(brdsize * 100));
+	setupUi.bszsld->setValue((int)(conf.brdsize * 100));
 	setupUi.pathle->setText(QString::fromLocal8Bit(conf.scrShot.dir.c_str()));
 	setupUi.ssfbox->setCurrentIndex(setupUi.ssfbox->findText(conf.scrShot.format.c_str()));
 	setupUi.scntbox->setValue(conf.scrShot.count);
@@ -453,7 +453,7 @@ void SetupWin::apply() {
 	comp->contMem = setupUi.contMem->isChecked() ? 1 : 0;
 	comp->contIO = setupUi.contIO->isChecked() ? 1 : 0;
 	setFlagBit(setupUi.grayscale->isChecked(),&vidFlag,VF_GREY);
-	brdsize = setupUi.bszsld->value()/100.0;
+	conf.brdsize = setupUi.bszsld->value()/100.0;
 	conf.scrShot.dir = std::string(setupUi.pathle->text().toLocal8Bit().data());
 	conf.scrShot.format = std::string(setupUi.ssfbox->currentText().toLocal8Bit().data());
 	conf.scrShot.count = setupUi.scntbox->value();
@@ -1396,7 +1396,6 @@ void SetupWin::newProfile() {
 	std::string fp = nm + ".conf";
 	if (!addProfile(nm,fp)) shitHappens("Can't add such profile");
 	buildproflist();
-	fillProfileMenu();
 }
 
 void SetupWin::rmProfile() {
@@ -1414,5 +1413,4 @@ void SetupWin::rmProfile() {
 			break;
 	}
 	buildproflist();
-	fillProfileMenu();
 }

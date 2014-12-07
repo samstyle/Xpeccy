@@ -1,58 +1,86 @@
 #include "filetypes.h"
 
+#pragma pack (1)
+
+struct fdiHead {
+	char sign[3];
+	char wp;
+	unsigned short cyls;
+	unsigned short heads;
+	unsigned short dInfo;
+	unsigned short dData;
+	unsigned short xSize;
+};
+
+struct fdiTHead {
+	unsigned int dData;
+	unsigned short res;		// reserved
+	unsigned char secCount;
+};
+
+struct fdiSHead {
+	unsigned char cyl;
+	unsigned char head;
+	unsigned char sec;
+	unsigned char len;
+	unsigned char flag;
+	unsigned short dData;
+};
+
+#pragma pack ()
+
 int loadFDI(Floppy* flp,const char* name) {
 	std::ifstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
 
-	unsigned char* buf = new unsigned char[14];
-	Sector sct;
-	Sector trkimg[256];
-	int i,j,scnt;
-	unsigned char fcnt,tmp;
-	unsigned short tmpa,tmpb,slen;
-	size_t tmpd,tmph,tmpt,tmps,cpos;
-
-	file.read((char*)buf,14);
-	if (strncmp((const char*)buf,"FDI",3) != 0) return ERR_FDI_SIGN;
-	bool err = (buf[3] != 0);
-	tmpa = buf[4] + (buf[5] << 8);		// cylinders
-	tmpb = buf[6] + (buf[7] << 8);		// heads
-	if ((tmpb != 1) && (tmpb != 2)) return ERR_FDI_HEAD;
-	tmpd = buf[10] + (buf[11] << 8);	// sectors data pos
-	tmph = buf[12] + (buf[13] << 8) + 14;	// track headers data pos
-	file.seekg(tmph);				// read tracks data
-	for (i = 0; i < tmpa; i++) {
-		for (j = 0; j < tmpb; j++) {
-//			trkimg.clear();
-			tmpt = tmpd + getLength(&file,4);
-			file.seekg(2,std::ios_base::cur);		// skip 2 bytes
-			tmp = file.get();			// sectors in disk;
-			for (scnt=0; scnt < tmp; scnt++) {
-				sct.cyl = file.get();
-				sct.side = file.get();
-				sct.sec = file.get();
-				sct.len = file.get();
-				fcnt = file.get();				// flag
-				sct.type = (fcnt & 0x80) ? 0xf8 : 0xfb;
-				tmps = tmpt + getLength(&file,2);
-				cpos = file.tellg();			// remember current pos
-				file.seekg(tmps);
-				slen = (128 << sct.len);		// sector len
-				sct.data = new unsigned char[slen];
-				file.read((char*)sct.data,slen);	// read sector data
-				file.seekg(cpos);
-				trkimg[scnt] = sct;
-				//trkimg.push_back(sct);
+	fdiHead hd;
+	fdiTHead thd;
+	fdiSHead shd;
+	Sector trkImg[256];
+	size_t pos;
+	file.read((char*)&hd, sizeof(fdiHead));
+#ifdef WORDS_BIG_ENDIAN
+	hd.cyls = le16toh(hd.cyls);
+	hd.heads = le16toh(hd.heads);
+	hd.dInfo = le16toh(hd.dInfo);
+	hd.dData = le16toh(hd.dData);
+	hd.xSize = le16toh(hd.xSize);
+#endif
+	if (strncmp((char*)hd.sign, "FDI", 3) != 0) return ERR_FDI_SIGN;
+	if ((hd.heads == 0) || (hd.heads > 2)) return ERR_FDI_HEAD;		// too many heads (1 or 2 allowed)
+	file.seekg(14 + hd.xSize, std::ios_base::beg);
+	int trk, head, sec;
+	for (trk = 0; trk < hd.cyls; trk++) {
+		for (head = 0; head < hd.heads; head++) {
+			file.read((char*)&thd,sizeof(fdiTHead));
+#ifdef WORDS_BIG_ENDIAN
+			thd.dData = le32toh(thd.dData);
+#endif
+			for (sec = 0; sec < thd.secCount; sec++) {
+				file.read((char*)&shd, sizeof(fdiSHead));
+#ifdef WORDS_BIG_ENDIAN
+				shd.dData = le16toh(shd.dData);
+#endif
+				trkImg[sec].cyl = shd.cyl;
+				trkImg[sec].side = shd.head;
+				trkImg[sec].sec = shd.sec;
+				trkImg[sec].len = shd.len;
+				trkImg[sec].type = (shd.flag & 0x80) ? 0xf8 : 0xfb;
+				trkImg[sec].data = new unsigned char[4096];
+				shd.len = shd.len & 3;
+				pos = file.tellg();
+				file.seekg(hd.dData + thd.dData + shd.dData);
+				file.read((char*)trkImg[sec].data, (128 << shd.len));
+				file.seekg(pos,std::ios_base::beg);
 			}
-			flpFormTrack(flp, (i << 1) + j, trkimg, tmp);
+			flpFormTrack(flp, (trk << 1) + head, trkImg, thd.secCount);
 		}
 	}
-	flp->protect = err ? 1 : 0;
+	flp->protect = hd.wp ? 1 : 0;
 	flp->insert = 1;
 	loadBoot(flp);
 	flp->changed = 0;
 	flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
 	strcpy(flp->path,name);
-
 	return ERR_OK;
 }

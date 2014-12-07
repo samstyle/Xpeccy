@@ -364,7 +364,6 @@ void zxSetLayout(ZXComp *comp, int fh, int fv, int bh, int bv, int sh, int sv, i
 	comp->vid->intpos.v = iv;
 	comp->vid->intSize = is;
 	comp->vid->frmsz = fh * fv;
-	vidUpdate(comp->vid);
 	comp->nsPerFrame = 140 * comp->vid->frmsz;
 }
 
@@ -380,9 +379,10 @@ void zxSetFrq(ZXComp* comp, float frq) {
 	comp->nsPerTick = 280 * 3.5 / frq;	// 280 ns per tick @ 3.5 MHz
 }
 
-int zxINT(ZXComp* comp) {
+int zxINT(ZXComp* comp, unsigned char vect) {
 	res4 = 0;
-	res2 = INTCPU(comp->cpu);	// z80ex_int(comp->cpu);
+	comp->intVector = vect;
+	res2 = INTCPU(comp->cpu);
 	res1 += res2;
 	vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
 	return res2;
@@ -440,8 +440,7 @@ int zxExec(ZXComp* comp) {
 	}
 // INTs handle
 	if (comp->vid->intFRAME) {
-		comp->intVector = 0xff;
-		zxINT(comp);
+		zxINT(comp,0xff);
 		comp->vid->intFRAME = 0;
 		if (comp->rzxPlay) {
 			comp->rzxFrame++;
@@ -456,11 +455,9 @@ int zxExec(ZXComp* comp) {
 			}
 		}
 	} else if (comp->vid->intLINE) {
-		comp->intVector = 0xfd;
-		if (zxINT(comp)) comp->vid->intLINE = 0;
+		if (zxINT(comp,0xfd)) comp->vid->intLINE = 0;
 	} else if (comp->vid->intDMA) {
-		comp->intVector = 0xfb;
-		if (zxINT(comp)) comp->vid->intDMA = 0;
+		if (zxINT(comp,0xfb)) comp->vid->intDMA = 0;
 	}
 // TSConf : update 'next-line' registers
 	if (comp->vid->nextrow && comp->vid->istsconf) {

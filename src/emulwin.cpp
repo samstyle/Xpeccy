@@ -13,20 +13,10 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
-#include "xcore/xcore.h"
-#include "xgui/xgui.h"
-#include "libxpeccy/spectrum.h"
 #include "sound.h"
 #include "settings.h"
 #include "emulwin.h"
-#include "setupwin.h"
-#include "debuger.h"
 #include "filer.h"
-
-#ifdef HAVESDL
-//	#include <SDL_timer.h>
-	#include <SDL_syswm.h>
-#endif
 
 #ifdef DRAWQT
 	#include <QPainter>
@@ -34,48 +24,17 @@
 
 #define STR_EXPAND(tok) #tok
 #define	STR(tok) STR_EXPAND(tok)
-
 #define	XPTITLE	STR(Xpeccy VERSION)
 
 // main
-// MainWin* mainWin;
-QIcon curicon;
-volatile int emulFlags = FL_BLOCK;
 
-// tape player
-TapeWin* tapeWin;
-// rzx player
-RZXWin* rzxWin;
-// for user menu
-QMenu* userMenu;
-QMenu* bookmarkMenu;
-QMenu* profileMenu;
-QMenu* layoutMenu;
-QMenu* vmodeMenu;
-QAction* pckAct;
 // temp emulation
 Z80EX_WORD pc,af,de,ix;
-int blkDataSize = 0;
 unsigned char* blkData = NULL;
 int blk;
 
-int prc;
-int ns = 0;				// ns counter
-
 static unsigned char screen[1024 * 1024 * 3];
 static unsigned char prevscr[1024 * 1024 * 3];
-
-//void emulInit() {
-//	mainWin = new MainWin;
-//}
-
-//void emulPause(bool state, int mask) {
-//	mainWin->pause(state, mask);
-//}
-
-//void emulUpdateWindow() {
-//	mainWin->updateWindow();
-//}
 
 // LEDS
 
@@ -171,27 +130,15 @@ void MainWin::updateHead() {
 	setWindowTitle(title);
 }
 
-#ifdef WORDS_BIG_ENDIAN
-	#define RMASK 0xff000000
-	#define GMASK 0x00ff0000
-	#define BMASK 0x0000ff00
-	#define AMASK 0x000000ff
-#else
-	#define RMASK 0x000000ff
-	#define GMASK 0x0000ff00
-	#define BMASK 0x00ff0000
-	#define AMASK 0xff000000
-#endif
-
 void MainWin::updateWindow() {
-	emulFlags |= FL_BLOCK;
-	vidUpdate(comp->vid);
+	block = 1;
+	vidUpdate(comp->vid, conf.brdsize);
 	int szw = comp->vid->wsze.h;
 	int szh = comp->vid->wsze.v;
 	setFixedSize(szw,szh);
 	scrImg = QImage(screen,szw,szh,QImage::Format_RGB888);
 	updateHead();
-	emulFlags &= ~FL_BLOCK;
+	block = 0;
 }
 
 bool MainWin::saveChanged() {
@@ -213,7 +160,7 @@ void MainWin::pause(bool p, int msk) {
 		releaseMouse();
 	}
 	if (pauseFlags == 0) {
-		setWindowIcon(curicon);
+		setWindowIcon(icon);
 		if (grabMice) grabMouse(QCursor(Qt::BlankCursor));
 		ethread.block = 0;
 	} else {
@@ -236,16 +183,15 @@ void MainWin::pause(bool p, int msk) {
 MainWin::MainWin() {
 	setWindowTitle(XPTITLE);
 	setMouseTracking(true);
-	curicon = QIcon(":/images/xpeccy.png");
-	setWindowIcon(curicon);
+	icon = QIcon(":/images/xpeccy.png");
+	setWindowIcon(icon);
 	setAcceptDrops(true);
 	setAutoFillBackground(false);
 	pauseFlags = 0;
 	scrCounter = 0;
 	scrInterval = 0;
 	grabMice = 0;
-
-	emulFlags = 0;
+	block = 0;
 
 	sndInit();
 	initPaths();
@@ -274,7 +220,7 @@ MainWin::MainWin() {
 	rzxWin = new RZXWin(this);
 	connect(rzxWin,SIGNAL(stateChanged(int)),this,SLOT(rzxStateChanged(int)));
 
-	initUserMenu((QWidget*)this);
+	initUserMenu();
 
 	keywin = new QLabel;
 	QPixmap pxm(":/images/keymap.png");
@@ -288,8 +234,6 @@ MainWin::MainWin() {
 	connect(&timer,SIGNAL(timeout()),this,SLOT(onTimer()));
 	timer.start(20);
 
-	ethread.fast = 0;
-	ethread.mtx.lock();
 	ethread.conf = &conf;
 	connect(&ethread,SIGNAL(dbgRequest()),SLOT(doDebug()));
 	connect(&ethread,SIGNAL(tapeSignal(int,int)),this,SLOT(tapStateChanged(int,int)));
@@ -337,16 +281,44 @@ void scrNormal (unsigned char* src, int wid, int lines) {
 	}
 }
 
+// convert <size> dots on <ptr> from color-RGB to gray-RGB
+void scrGray(unsigned char* ptr, int size) {
+	int gray;
+	while (size > 0) {
+		gray = qGray(*ptr, *(ptr+1), *(ptr+2));
+		*(ptr++) = gray & 0xff;
+		*(ptr++) = gray & 0xff;
+		*(ptr++) = gray & 0xff;
+		size--;
+	}
+}
+
+// mix prev <size> bytes from <src> to <dst> 50/50 and copy unmixed <dst> to <src>
+void scrMix(unsigned char* src, unsigned char* dst, int size) {
+	unsigned char cur;
+	while (size > 0) {
+		cur = *dst;
+		*dst = (*src + cur) >> 1;
+		*src = cur;
+		src++;
+		dst++;
+		size--;
+	}
+}
+
 void convImage(ZXComp* comp) {
 	if (vidFlag & VF_DOUBLE) {
 		scrDouble(comp->vid->scrimg, comp->vid->lineBytes, comp->vid->vsze.v);
 	} else {
 		scrNormal(comp->vid->scrimg, comp->vid->lineBytes, comp->vid->vsze.v);
 	}
+	int winDots = comp->vid->wsze.h * comp->vid->wsze.v;
+	if (vidFlag & VF_GREY) scrGray(screen, winDots);
+	if (vidFlag & VF_NOFLIC) scrMix(prevscr, screen, winDots * 3);
 }
 
 void MainWin::onTimer() {
-	if (emulFlags & FL_BLOCK) return;
+	if (block) return;
 // if not paused play sound buffer
 	if (sndEnabled && (sndMute || isActiveWindow())) sndPlay();
 // if window is not active release keys & buttons
@@ -365,6 +337,7 @@ void MainWin::onTimer() {
 		}
 	}
 // update window
+	convImage(comp);
 	if (pauseFlags == 0) ethread.mtx.unlock();
 	emuDraw();
 }
@@ -493,34 +466,9 @@ void MainWin::rzxStateChanged(int state) {
 	}
 }
 
-// convert <size> dots on <ptr> from color-RGB to gray-RGB
-void scrGray(unsigned char* ptr, int size) {
-	int gray;
-	while (size > 0) {
-		gray = qGray(*ptr, *(ptr+1), *(ptr+2));
-		*(ptr++) = gray & 0xff;
-		*(ptr++) = gray & 0xff;
-		*(ptr++) = gray & 0xff;
-		size--;
-	}
-}
-
-// mix prev <size> bytes from <src> to <dst> 50/50 and copy unmixed <dst> to <src>
-void scrMix(unsigned char* src, unsigned char* dst, int size) {
-	unsigned char cur;
-	while (size > 0) {
-		cur = *dst;
-		*dst = (*src + cur) >> 1;
-		*src = cur;
-		src++;
-		dst++;
-		size--;
-	}
-}
-
 #ifdef DRAWQT
 void MainWin::paintEvent(QPaintEvent*) {
-	if (emulFlags & FL_BLOCK) return;
+	if (block) return;
 	QPainter pnt;
 	pnt.begin(this);
 	pnt.drawImage(0,0,scrImg);
@@ -551,11 +499,13 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			case Qt::Key_1:
 				vidFlag &= ~VF_DOUBLE;
 				updateWindow();
+				convImage(comp);
 				saveConfig();
 				break;
 			case Qt::Key_2:
 				vidFlag |= VF_DOUBLE;
 				updateWindow();
+				convImage(comp);
 				saveConfig();
 				break;
 			case Qt::Key_3:
@@ -774,8 +724,8 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 	if (saveChanged()) {
 		ideCloseFiles(comp->ide);
 		sdcCloseFile(comp->sdc);
-		emulFlags |= FL_EXIT;
 		timer.stop();
+		ethread.finish = 1;
 		ethread.mtx.unlock();		// unlock emulation thread (it exit, cuz of FL_EXIT)
 		ethread.wait();
 		keywin->close();
@@ -843,11 +793,10 @@ void drawLed(int idx, QPainter& pnt) {
 }
 
 void MainWin::emuDraw() {
-	if (emulFlags & FL_BLOCK) return;
+	if (block) return;
 // update rzx window
 	if ((comp->rzxPlay) && rzxWin->isVisible()) {
-		prc = 100 * comp->rzxFrame / comp->rzxSize;
-		rzxWin->setProgress(prc);
+		rzxWin->setProgress(100 * comp->rzxFrame / comp->rzxSize);
 	}
 // update tape window
 	if (tapeWin->isVisible()) {
@@ -867,10 +816,12 @@ void MainWin::emuDraw() {
 		}
 	}
 // form image...
-	if (comp->debug || ethread.fast) convImage(comp);
-	int winDots = width() * height();
-	if (vidFlag & VF_GREY) scrGray(screen, winDots);
-	if (vidFlag & VF_NOFLIC) scrMix(prevscr, screen, winDots * 3);
+	if (comp->debug || ethread.fast) {
+		convImage(comp);
+//		int winDots = width() * height();
+//		if (vidFlag & VF_GREY) scrGray(screen, winDots);
+//		if (vidFlag & VF_NOFLIC) scrMix(prevscr, screen, winDots * 3);
+	}
 // leds
 	QPainter pnt;
 	QImage kled(":/images/scanled.png");
@@ -966,27 +917,33 @@ void MainWin::paintGL() {
 
 // USER MENU
 
-void initUserMenu(QWidget* par) {
+void MainWin::initUserMenu() {
 	QAction* act;
-	QMenu* resMenu;
-	userMenu = new QMenu(par);
-
+	userMenu = new QMenu(this);
+// submenu
 	bookmarkMenu = userMenu->addMenu(QIcon(":/images/star.png"),"Bookmarks");
-	QObject::connect(bookmarkMenu,SIGNAL(triggered(QAction*)),par,SLOT(bookmarkSelected(QAction*)));
-
 	profileMenu = userMenu->addMenu(QIcon(":/images/profile.png"),"Profiles");
-	QObject::connect(profileMenu,SIGNAL(triggered(QAction*)),par,SLOT(profileSelected(QAction*)));
-
 	layoutMenu = userMenu->addMenu(QIcon(":/images/display.png"),"Layout");
-	QObject::connect(layoutMenu,SIGNAL(triggered(QAction*)),par,SLOT(chLayout(QAction*)));
-
 	vmodeMenu = userMenu->addMenu("Video mode");
-	QObject::connect(vmodeMenu,SIGNAL(triggered(QAction*)),par,SLOT(chVMode(QAction*)));
+	resMenu = userMenu->addMenu(QIcon(":/images/shutdown.png"),"Reset...");
+	userMenu->addSeparator();
+	userMenu->addAction(QIcon(":/images/tape.png"),"Tape window",tapeWin,SLOT(show()));
+	userMenu->addAction(QIcon(":/images/video.png"),"RZX player",rzxWin,SLOT(show()));
+	userMenu->addSeparator();
+	pckAct = userMenu->addAction(QIcon(":/images/keyboard.png"),"PC keyboard");
+	pckAct->setCheckable(true);
+	userMenu->addAction(QIcon(":/images/other.png"),"Options",this,SLOT(doOptions()));
+
+	connect(bookmarkMenu,SIGNAL(triggered(QAction*)),this,SLOT(bookmarkSelected(QAction*)));
+	connect(profileMenu,SIGNAL(triggered(QAction*)),this,SLOT(profileSelected(QAction*)));
+	connect(layoutMenu,SIGNAL(triggered(QAction*)),this,SLOT(chLayout(QAction*)));
+	connect(vmodeMenu,SIGNAL(triggered(QAction*)),this,SLOT(chVMode(QAction*)));
+	connect(resMenu,SIGNAL(triggered(QAction*)),this,SLOT(reset(QAction*)));
+
 	act = vmodeMenu->addAction("No screen");
 	act->setData(-1);
 	act->setCheckable(true);
 	act->setChecked(vidFlag & VF_NOSCREEN);
-//	vmodeMenu->addAction("No screen")->setData(VID_NOSCREEN);
 	vmodeMenu->addAction("ZX 256 x 192")->setData(VID_NORMAL);
 	vmodeMenu->addAction("Alco 16c")->setData(VID_ALCO);
 	vmodeMenu->addAction("HW multicolor")->setData(VID_HWMC);
@@ -1001,8 +958,6 @@ void initUserMenu(QWidget* par) {
 	vmodeMenu->addAction("TSConf 8bpp")->setData(VID_TSL_256);
 	vmodeMenu->addAction("TSConf text")->setData(VID_TSL_TEXT);
 
-	resMenu = userMenu->addMenu(QIcon(":/images/shutdown.png"),"Reset...");
-	QObject::connect(resMenu,SIGNAL(triggered(QAction*)),par,SLOT(reset(QAction*)));
 	resMenu->addAction("default")->setData(RES_DEFAULT);
 	resMenu->addSeparator();
 	resMenu->addAction("ROMpage0")->setData(RES_128);
@@ -1010,16 +965,9 @@ void initUserMenu(QWidget* par) {
 	resMenu->addAction("ROMpage2")->setData(RES_SHADOW);
 	resMenu->addAction("ROMpage3")->setData(RES_DOS);
 
-	userMenu->addSeparator();
-	userMenu->addAction(QIcon(":/images/tape.png"),"Tape window",tapeWin,SLOT(show()));
-	userMenu->addAction(QIcon(":/images/video.png"),"RZX player",rzxWin,SLOT(show()));
-	userMenu->addSeparator();
-	pckAct = userMenu->addAction(QIcon(":/images/keyboard.png"),"PC keyboard");
-	pckAct->setCheckable(true);
-	userMenu->addAction(QIcon(":/images/other.png"),"Options",par,SLOT(doOptions()));
 }
 
-void fillBookmarkMenu() {
+void MainWin::fillBookmarkMenu() {
 	bookmarkMenu->clear();
 	QAction* act;
 	std::vector<XBookmark> bookmarkList = getBookmarkList();
@@ -1033,7 +981,7 @@ void fillBookmarkMenu() {
 	}
 }
 
-void fillProfileMenu() {
+void MainWin::fillProfileMenu() {
 	profileMenu->clear();
 	std::vector<XProfile> profileList = getProfileList();
 	for(uint i=0; i < profileList.size(); i++) {
@@ -1041,7 +989,7 @@ void fillProfileMenu() {
 	}
 }
 
-void fillLayoutMenu() {
+void MainWin::fillLayoutMenu() {
 	layoutMenu->clear();
 	std::vector<VidLayout> layoutList = getLayoutList();
 	for (uint i = 0; i < layoutList.size(); i++) {
@@ -1049,7 +997,7 @@ void fillLayoutMenu() {
 	}
 }
 
-void fillUserMenu() {
+void MainWin::fillUserMenu() {
 	fillBookmarkMenu();
 	fillProfileMenu();
 	fillLayoutMenu();
@@ -1109,12 +1057,9 @@ void MainWin::reset(QAction* act) {
 }
 
 void MainWin::chLayout(QAction* act) {
-//	emulPause(true,PR_EXTRA);
 	emulSetLayout(comp,std::string(act->text().toLocal8Bit().data()));
 	prfSave("");
 	updateWindow();
-//	setFocus();
-//	emulPause(false,PR_EXTRA);
 }
 
 void MainWin::chVMode(QAction* act) {
@@ -1130,12 +1075,19 @@ void MainWin::chVMode(QAction* act) {
 
 // emulation thread (non-GUI)
 
+xThread::xThread() {
+	sndNs = 0;
+	fast = 0;
+	finish = 0;
+	mtx.lock();
+}
+
 void xThread::tapeCatch() {
 	blk = comp->tape->block;
 	if (blk >= comp->tape->blkCount) return;
 	if (conf->tape.fast && comp->tape->blkData[blk].hasBytes) {
-		de = GETDE(comp->cpu);	//z80ex_get_reg(comp->cpu,regDE);
-		ix = GETIX(comp->cpu);	//z80ex_get_reg(comp->cpu,regIX);
+		de = GETDE(comp->cpu);
+		ix = GETIX(comp->cpu);
 		TapeBlockInfo inf = tapGetBlockInfo(comp->tape,blk);
 		blkData = (unsigned char*)realloc(blkData,inf.size + 2);
 		tapGetBlockData(comp->tape,blk,blkData);
@@ -1144,14 +1096,14 @@ void xThread::tapeCatch() {
 				memWr(comp->mem,ix,blkData[i + 1]);
 				ix++;
 			}
-			SETIX(comp->cpu,ix);	// z80ex_set_reg(comp->cpu,regIX,ix);
-			SETDE(comp->cpu,0);	//z80ex_set_reg(comp->cpu,regDE,0);
-			SETHL(comp->cpu,0);	//z80ex_set_reg(comp->cpu,regHL,0);
+			SETIX(comp->cpu,ix);
+			SETDE(comp->cpu,0);
+			SETHL(comp->cpu,0);
 			tapNextBlock(comp->tape);
 		} else {
-			SETHL(comp->cpu,0xff00);	//z80ex_set_reg(comp->cpu,regHL,0xff00);
+			SETHL(comp->cpu,0xff00);
 		}
-		SETPC(comp->cpu,0x5df);	// z80ex_set_reg(comp->cpu,regPC,0x5df);	// to exit
+		SETPC(comp->cpu,0x5df);
 	} else {
 		if (conf->tape.autostart)
 			emit tapeSignal(TW_STATE,TWS_PLAY);
@@ -1162,11 +1114,11 @@ void xThread::emuCycle() {
 	comp->frmStrobe = 0;
 	do {
 		// exec 1 opcode (+ INT, NMI)
-		ns += zxExec(comp);
+		sndNs += zxExec(comp);
 		// if need - request sound buffer update
-		if (ns > nsPerSample) {
+		if (sndNs > nsPerSample) {
 			sndSync(comp, fast);
-			ns -= nsPerSample;
+			sndNs -= nsPerSample;
 		}
 		// tape trap
 		pc = GETPC(comp->cpu);	// z80ex_get_reg(comp->cpu,regPC);
@@ -1175,18 +1127,14 @@ void xThread::emuCycle() {
 			if ((pc == 0x5e2) && conf->tape.autostart)
 				emit tapeSignal(TW_STATE,TWS_STOP);
 		}
-	} while (!comp->brk && (comp->frmStrobe == 0));		// exec until breakpoint or INT
-
-	if (!(comp->debug || fast)) convImage(comp);
-
+	} while (!comp->brk && (comp->frmStrobe == 0));		// exec until breakpoint or new frame start
 	comp->nmiRequest = 0;
-	// decrease frames & screenshot counter (if any), request screenshot (if needed)
 }
 
 void xThread::run() {
 	do {
 		if (!fast) mtx.lock();		// wait until unlocked (MainWin::onTimer() or at exit)
-		if (emulFlags & FL_EXIT) break;
+		if (finish) break;
 		if (!block && !comp->brk) {
 			emuCycle();
 			if (comp->joy->used) {

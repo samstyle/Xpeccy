@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "floppy.h"
@@ -218,7 +219,7 @@ void flpFormTrack(Floppy* flp, int tr, Sector* sdata, int scount) {
 		*(ppos++) = 0xa1;
 		*(ppos++) = 0xa1;
 		*(ppos++) = sdata[sc].type;
-		ln = (128 << sdata[sc].len);			//	data
+		ln = (128 << (sdata[sc].len & 3));		//	data
 		for (i=0; i<ln; i++) *(ppos++) = sdata[sc].data[i];
 		*(ppos++) = 0xf7; *(ppos++) = 0xf7;
 		for(i=0;i<60;i++) *(ppos++) = 0x4e;		// 60	sync
@@ -248,8 +249,6 @@ int flpGet(Floppy* flp, int wut) {
 	}
 	return res;
 }
-
-#include "stdio.h"
 
 int flpCreateDescriptor(Floppy* flp,TRFile* dsc) {
 	unsigned char files;

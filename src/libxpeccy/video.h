@@ -123,7 +123,7 @@ struct Video {
 typedef struct Video Video;
 
 extern int vidFlag;
-extern float brdsize;
+// extern float brdsize;
 
 Video* vidCreate(Memory*);
 void vidDestroy(Video*);
@@ -133,7 +133,7 @@ void vidSetMode(Video*,int);
 void vidWait(Video*);
 void vidDarkTail(Video*);
 
-void vidUpdate(Video*);
+void vidUpdate(Video*, float);
 
 void vidSetFont(Video*,char*);
 

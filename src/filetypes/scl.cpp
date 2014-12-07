@@ -2,30 +2,41 @@
 #include <string.h>
 #include <vector>
 
+#pragma pack (1)
+
 struct FilePos {
 	unsigned char trk;
 	unsigned char sec;
 	unsigned char slen;
 };
 
+struct sclHead {
+	char sign[8];	// SINCLAIR
+	unsigned char files;
+};
+
+#pragma pack()
+
 int loadSCL(Floppy* flp,const char* name) {
 	std::ifstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
-	unsigned char* buf = new unsigned char[0x1000];		// track 0 image
+
+	unsigned char buf[0x1000];		// track image
 	unsigned char* bptr;
-	unsigned char fcnt;
 	int tmpa;
 	int scnt;
 	unsigned int i;
-	file.read((char*)buf,9);
-	if (strncmp((char*)buf,"SINCLAIR",8) != 0) return ERR_SCL_SIGN;
-	if (buf[8] > 0x80) return ERR_SCL_MANY;
+
+	sclHead hd;
+	file.read((char*)&hd, sizeof(sclHead));
+	if (strncmp(hd.sign, "SINCLAIR", 8) != 0) return ERR_SCL_SIGN;
+	if (hd.files > 128) return ERR_SCL_MANY;
+
 	flpFormat(flp);
-	fcnt = buf[8];		// files total
-	for (i = 0; i < 0x1000; i++) buf[i]=0x00;	// TRK0 in buf (clear)
+	memset(buf,0x00,0x1000);
 	scnt = 0x10;
-	bptr = buf;		// start of TRK0
-	for (i = 0; i < fcnt; i++) {		// make catalog
+	bptr = buf;					// start of TRK0
+	for (i = 0; i < hd.files; i++) {		// make catalog
 		file.read((char*)bptr,14);		// file dsc
 		bptr[14] = scnt & 0x0f;			// sector
 		bptr[15] = ((scnt & 0xff0) >> 4);	// track
@@ -37,7 +48,7 @@ int loadSCL(Floppy* flp,const char* name) {
 	buf[0x8e1] = scnt & 0x0f;		// free sector
 	buf[0x8e2] = ((scnt & 0xff0) >> 4);	// free track
 	buf[0x8e3] = 0x16;			// 80DS
-	buf[0x8e4] = fcnt;			// files total
+	buf[0x8e4] = hd.files;			// files total
 	tmpa = 0x9f0 - scnt;			// sectors free (0x9f0)	// FIXED: not 0xa00!
 	buf[0x8e5] = (tmpa & 0xff);
 	buf[0x8e6] = ((tmpa & 0xff00) >> 8);

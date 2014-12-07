@@ -1,5 +1,7 @@
 #include "filetypes.h"
 
+#pragma pack (1)
+
 typedef struct {
 	unsigned char a,f,c,b,l,h;
 	unsigned char pcl,pch;
@@ -11,6 +13,8 @@ typedef struct {
 	unsigned char ixl,ixh;
 	unsigned char iff1,iff2,flag29;
 } z80v1Header;
+
+#pragma pack ()
 
 unsigned short getLEWord(std::ifstream* file) {
 	unsigned short res = file->get();

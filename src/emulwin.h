@@ -13,10 +13,11 @@
 	#include <QWidget>
 #endif
 
+#include "libxpeccy/spectrum.h"
 #include "setupwin.h"
 #include "debuger.h"
 #include "xcore/xcore.h"
-#include "libxpeccy/spectrum.h"
+#include "xgui/xgui.h"
 
 // pause reasons
 #define	PR_MENU		1
@@ -28,15 +29,6 @@
 #define	PR_EXTRA	(1<<6)
 #define PR_RZX		(1<<7)
 #define	PR_EXIT		(1<<8)
-
-// flags - emul mode
-#define FL_PAUSE	1
-#define	FL_BLOCK	(1<<1)
-#define	FL_EXIT		(1<<2)
-//#define	FL_LED_MOUSE	(1<<3)
-//#define	FL_LED_JOY	(1<<4)
-//#define	FL_WORK		(1<<5)
-//#define	FL_SYSCLOCK	(1<<6)
 
 // Qt nativeScanCode
 
@@ -228,13 +220,16 @@ typedef struct {
 class xThread : public QThread {
 	Q_OBJECT
 	public:
+		xThread();
 		unsigned fast:1;
 		unsigned block:1;
+		unsigned finish:1;
 		xConfig* conf;
 		ZXComp* comp;
 		QMutex mtx;
 		void run();
 	private:
+		int sndNs;
 		void emuCycle();
 		void tapeCatch();
 	signals:
@@ -256,10 +251,14 @@ class MainWin : public QWidget {
 		void setProfile(std::string);
 	private:
 		unsigned grabMice:1;
+		unsigned block:1;
 
 		SetupWin* opt;
 		DebugWin* dbg;
+		TapeWin* tapeWin;
+		RZXWin* rzxWin;
 
+		QIcon icon;
 		QTimer cmosTimer;
 		QTimer timer;
 		xThread ethread;
@@ -277,6 +276,20 @@ class MainWin : public QWidget {
 		void updateHead();
 		void emuDraw();
 		void screenShot();
+
+		QMenu* userMenu;
+		QMenu* bookmarkMenu;
+		QMenu* profileMenu;
+		QMenu* layoutMenu;
+		QMenu* vmodeMenu;
+		QMenu* resMenu;
+		QAction* pckAct;
+
+		void initUserMenu();
+		void fillUserMenu();
+		void fillProfileMenu();
+		void fillBookmarkMenu();
+		void fillLayoutMenu();
 	public slots:
 		void doOptions();
 		void doDebug();
@@ -315,26 +328,8 @@ class MainWin : public QWidget {
 		void wheelEvent(QWheelEvent*);
 };
 
-// main
-//void emulInit();
-//void emuStart();
-//void emuStop();
-//void emulShow();
-//void emulUpdateWindow();
-//void emulPause(bool, int);
-//extern volatile int emulFlags;
-//void emulSetFlag(int,bool);
-
 // keys
 void initKeyMap();
 void setKey(const char*,const char,const char);
-// USER MENU
-void initUserMenu(QWidget*);
-void fillUserMenu();
-void fillProfileMenu();
-// joystick
-//void emulOpenJoystick(std::string);
-//void emulCloseJoystick();
-//bool emulIsJoystickOpened();
 
 #endif

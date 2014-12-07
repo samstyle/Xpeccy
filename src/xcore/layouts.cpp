@@ -57,6 +57,7 @@ bool emulSetLayout(ZXComp* comp, std::string nm) {
 				     layList[i].bord.h, layList[i].bord.v,
 				     layList[i].sync.h, layList[i].sync.v,
 				     layList[i].intpos.h, layList[i].intpos.v, layList[i].intsz);
+			vidUpdate(comp->vid, conf.brdsize);
 			sndCalibrate();
 			return true;
 		}

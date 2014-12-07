@@ -48,8 +48,8 @@ void initPaths() {
 	mkdir(conf.path.romDir.c_str(),0777);
 #else
 	conf.path.confDir = std::string(".\\config");
-	conf.path.romDir = workDir + "\\roms";
-	conf.path.confFile = workDir + "\\config.conf";
+	conf.path.romDir = conf.path.confDir + "\\roms";
+	conf.path.confFile = conf.path.confDir + "\\config.conf";
 	conf.scrShot.dir = std::string(getenv("HOMEPATH"));
 	mkdir(conf.path.confDir.c_str());
 	mkdir(conf.path.romDir.c_str());
@@ -102,7 +102,7 @@ void saveConfig() {
 	cfile << "fullscreen = " << ((vidFlag & VF_FULLSCREEN) ? "yes" : "no") << "\n";
 	cfile << "doublesize = " << ((vidFlag & VF_DOUBLE) ? "yes" : "no") << "\n";
 	cfile << "greyscale = " << ((vidFlag & VF_GREY) ? "yes" : "no") << "\n";
-	cfile << "bordersize = " << int2str(brdsize * 100) << "\n";
+	cfile << "bordersize = " << int2str(conf.brdsize * 100) << "\n";
 	cfile << "noflic = " << ((vidFlag & VF_NOFLIC) ? "yes" : "no") << "\n";
 	cfile << "\n[ROMSETS]\n";
 	std::vector<RomSet> rsl = getRomsetList();
@@ -285,7 +285,7 @@ void loadConfig() {
 					if (pnam=="fullscreen") setFlagBit(str2bool(pval),&vidFlag,VF_FULLSCREEN);
 					if (pnam=="bordersize") {
 						test=atoi(pval.c_str());
-						if ((test >= 0) && (test <= 100)) brdsize = test / 100.0;
+						if ((test >= 0) && (test <= 100)) conf.brdsize = test / 100.0;
 					}
 					if (pnam=="doublesize") setFlagBit(str2bool(pval),&vidFlag,VF_DOUBLE);
 					if (pnam=="noflic") setFlagBit(str2bool(pval),&vidFlag,VF_NOFLIC);

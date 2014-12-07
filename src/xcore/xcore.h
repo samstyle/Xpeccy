@@ -25,6 +25,7 @@ struct xConfig {
 	unsigned defProfile:1;
 	std::string keyMapName;
 	int bright;
+	float brdsize;
 	struct {
 		unsigned autostart:1;
 		unsigned fast:1;

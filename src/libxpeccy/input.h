@@ -4,9 +4,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-// flags
-//#define	INF_ENABLED	1
-//#define	INF_WHEEL	(1<<1)
 // mouse
 #define	XM_WHEELUP	0
 #define	XM_WHEELDN	1

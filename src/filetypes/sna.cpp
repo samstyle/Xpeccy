@@ -1,5 +1,7 @@
 #include "filetypes.h"
 
+#pragma pack (1)
+
 typedef struct {
 	unsigned char i;
 	unsigned char _l,_h,_e,_d,_c,_b,_f,_a;
@@ -10,14 +12,16 @@ typedef struct {
 	unsigned char imod,border;
 } snaHead;
 
+#pragma pack ()
+
 int loadSNA(ZXComp* zx, const char* name) {
 	std::ifstream file(name,std::ios::binary);
 	if (!file.good()) return ERR_CANT_OPEN;
 
 	unsigned char tmp,tmp2;
 	unsigned short adr;
-	char* pageBuf = new char[0x4000];
-	char* tmpgBuf = new char[0x4000];
+	char pageBuf[0x4000];
+	char tmpgBuf[0x4000];
 	CPU* cpu = zx->cpu;
 
 	file.seekg(0,std::ios_base::end);	// get filesize
@@ -86,7 +90,6 @@ int loadSNA(ZXComp* zx, const char* name) {
 		SETPC(cpu,getLEWord(&file)); // z80ex_set_reg(cpu,regPC,getLEWord(&file));
 		tmp = file.get();
 		zx->hw->out(zx,0x7ffd,tmp,0);
-//		zxOut(zx,0x7ffd, tmp);
 		tmp2 = file.get();
 		zx->dosen = tmp2 & 1;
 		for (tmp2 = 0; tmp2 < 8; tmp2++) {
@@ -99,8 +102,6 @@ int loadSNA(ZXComp* zx, const char* name) {
 		memSetPage(zx->mem,MEM_RAM,tmp & 7,tmpgBuf);
 	}
 	tsReset(zx->ts);
-	delete(pageBuf);
-	delete(tmpgBuf);
 	return ERR_OK;
 }
 

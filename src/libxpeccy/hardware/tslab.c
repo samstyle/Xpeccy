@@ -90,8 +90,8 @@ void tslUpdatePorts(ZXComp* comp) {
 	unsigned char val = comp->tsconf.p00af;
 	comp->vid->tsconf.xSize = tslXRes[(val & 0xc0) >> 6];
 	comp->vid->tsconf.ySize = tslYRes[(val & 0xc0) >> 6];
-	comp->vid->tsconf.xPos = ((comp->vid->full.h - comp->vid->sync.h - comp->vid->tsconf.xSize) >> 1) + comp->vid->sync.h;
-	comp->vid->tsconf.yPos = ((comp->vid->full.v - comp->vid->sync.v - comp->vid->tsconf.ySize) >> 1) + comp->vid->sync.v;
+	comp->vid->tsconf.xPos = comp->vid->bord.h - ((comp->vid->tsconf.xSize - 256) >> 1);
+	comp->vid->tsconf.yPos = comp->vid->bord.v - ((comp->vid->tsconf.ySize - 192) >> 1);
 	switch(val & 3) {
 		case 0: vidSetMode(comp->vid,VID_TSL_NORMAL); break;
 		case 1: vidSetMode(comp->vid,VID_TSL_16); break;

@@ -8,7 +8,7 @@
 #include "video.h"
 
 int vidFlag = VF_BLOCK;
-float brdsize = 1.0;
+// float brdsize = 1.0;
 
 unsigned char inkTab[] = {
   0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
@@ -74,7 +74,7 @@ Video* vidCreate(Memory* me) {
 	vid->frmsz = vid->full.h * vid->full.v;
 	vid->intMask = 0x01;		// FRAME INT for all
 	vid->ula = ulaCreate();
-	vidUpdate(vid);
+	vidUpdate(vid, 0.5);
 
 	vidSetMode(vid,VID_NORMAL);
 
@@ -102,7 +102,9 @@ void vidDestroy(Video* vid) {
 	free(vid);
 }
 
-void vidUpdate(Video* vid) {
+void vidUpdate(Video* vid, float brdsize) {
+	if (brdsize < 0) brdsize = 0;
+	if (brdsize > 1) brdsize = 1;
 	vid->lcut.h = (int)floor(vid->sync.h + ((vid->bord.h - vid->sync.h) * (1.0 - brdsize))) & 0xfffc;
 	vid->lcut.v = (int)floor(vid->sync.v + ((vid->bord.v - vid->sync.v) * (1.0 - brdsize))) & 0xfffc;
 	vid->rcut.h = (int)floor(vid->full.h - ((1.0 - brdsize) * (vid->full.h - vid->bord.h - 256))) & 0xfffc;

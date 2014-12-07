@@ -18,8 +18,8 @@ extern "C" {
 #define	MEM_BANK3	3
 // memory breaks
 #define	MEM_BRK_FETCH	1
-#define	MEM_BRK_RD	2
-#define	MEM_BRK_WR	4
+#define	MEM_BRK_RD	(1<<1)
+#define	MEM_BRK_WR	(1<<2)
 #define	MEM_BRK_ANY	(MEM_BRK_FETCH | MEM_BRK_RD | MEM_BRK_WR)
 
 typedef struct {
