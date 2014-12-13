@@ -45,5 +45,6 @@
         <file>images/keymap.png</file>
         <file>images/joystick.png</file>
         <file>images/scanled.png</file>
+        <file>images/rulers.png</file>
     </qresource>
 </RCC>

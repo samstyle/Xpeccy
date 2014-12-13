@@ -25,8 +25,8 @@ class SetupWin : public QDialog {
 		QDialog* rseditor;
 		QDialog* layeditor;
 
-		std::vector<VidLayout> lays;
-		std::vector<RomSet> rsl;
+		std::vector<xLayout> lays;
+		std::vector<xRomset> rsl;
 	signals:
 		void closed();
 	public slots:

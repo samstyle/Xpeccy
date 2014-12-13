@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 #include "../libxpeccy/spectrum.h"
 
@@ -13,6 +14,16 @@
 #endif
 
 // common
+
+std::string getTimeString(int);
+std::string int2str(int);
+void setFlagBit(bool, int*, int);
+bool str2bool(std::string);
+std::vector<std::string> splitstr(std::string,const char*);
+std::pair<std::string,std::string> splitline(std::string);
+void copyFile(const char*, const char*);
+
+// config
 
 struct OptName {
 	int id;
@@ -48,31 +59,51 @@ struct xConfig {
 	} path;
 };
 
+
 extern xConfig conf;
 
-// extern ZXComp* zx;
+//screenshot format
+#define	SCR_BMP		1
+#define	SCR_PNG		2
+#define	SCR_JPG		3
+#define	SCR_SCR		4
+#define	SCR_HOB		5
+#define	SCR_DISK	6
 
-std::string getTimeString(int);
-std::string int2str(int);
-void setFlagBit(bool, int*, int);
-bool str2bool(std::string);
-std::vector<std::string> splitstr(std::string,const char*);
-std::pair<std::string,std::string> splitline(std::string);
-void copyFile(const char*, const char*);
+void initPaths();
+void loadConfig();
+void saveConfig();
+void loadKeys();
+
+extern std::map<std::string, int> shotFormat;
+
+// keymap
+
+typedef struct {
+	const char* name;
+	signed int key;		// qint32, nativeScanCode()
+	char key1;
+	char key2;
+	int keyCode;		// 0xXXYYZZ = ZZ,YY,XX in buffer (ZZ,YY,0xf0,XX if released)
+} keyEntry;
+
+void initKeyMap();
+void setKey(const char*,const char,const char);
+keyEntry getKeyEntry(signed int);
 
 // bookmarks
 
 typedef struct {
 	std::string name;
 	std::string path;
-} XBookmark;
+} xBookmark;
 
 void addBookmark(std::string,std::string);
 void setBookmark(int,std::string,std::string);
 void delBookmark(int);
 void clearBookmarks();
 void swapBookmarks(int,int);
-std::vector<XBookmark> getBookmarkList();
+std::vector<xBookmark> getBookmarkList();
 int getBookmarksCount();
 
 // romsets
@@ -87,13 +118,13 @@ typedef struct {
 		std::string path;
 		unsigned char part;
 	} roms[32];
-} RomSet;
+} xRomset;
 
-bool addRomset(RomSet);
+bool addRomset(xRomset);
 void rsSetRomset(ZXComp*, std::string);
-RomSet* findRomset(std::string);
-std::vector<RomSet> getRomsetList();
-void setRomsetList(std::vector<RomSet>);
+xRomset* findRomset(std::string);
+std::vector<xRomset> getRomsetList();
+void setRomsetList(std::vector<xRomset>);
 
 // profiles
 
@@ -104,7 +135,7 @@ typedef struct {
 	std::string hwName;
 	std::string rsName;
 	ZXComp* zx;
-} XProfile;
+} xProfile;
 
 #define	DELP_ERR	-1
 #define	DELP_OK		0
@@ -116,9 +147,10 @@ bool selProfile(std::string);
 void clearProfiles();
 void prfSetRomset(std::string,std::string);
 void prfLoadAll();
-std::vector<XProfile> getProfileList();
-XProfile* getCurrentProfile();
-XProfile* getProfile(std::string);
+std::vector<xProfile> getProfileList();
+xProfile* getCurrentProfile();
+xProfile* findProfile(std::string);
+bool prfSetLayout(xProfile*, std::string);
 
 #define	PLOAD_OK	0
 #define	PLOAD_NF	1
@@ -143,12 +175,12 @@ typedef struct {
 	VSize bord;
 	VSize intpos;
 	int intsz;
-} VidLayout;
+} xLayout;
 
 bool addLayout(std::string,int,int,int,int,int,int,int,int,int);
-bool addLayout(VidLayout);
-std::vector<VidLayout> getLayoutList();
-void setLayoutList(std::vector<VidLayout>);
-bool emulSetLayout(ZXComp*, std::string);
+bool addLayout(xLayout);
+xLayout* findLayout(std::string);
+std::vector<xLayout> getLayoutList();
+void setLayoutList(std::vector<xLayout>);
 
 #endif

@@ -1,16 +1,16 @@
 #include "xcore.h"
 
-std::vector<XBookmark> bookmarkList;
+std::vector<xBookmark> bookmarkList;
 
 void addBookmark(std::string nm, std::string fp) {
-	XBookmark nbm;
+	xBookmark nbm;
 	nbm.name = nm;
 	nbm.path = fp;
 	bookmarkList.push_back(nbm);
 }
 
 void swapBookmarks(int p1, int p2) {
-	XBookmark bm = bookmarkList[p1];
+	xBookmark bm = bookmarkList[p1];
 	bookmarkList[p1] = bookmarkList[p2];
 	bookmarkList[p2] = bm;
 }
@@ -32,6 +32,6 @@ int getBookmarksCount() {
 	return bookmarkList.size();
 }
 
-std::vector<XBookmark> getBookmarkList() {
+std::vector<xBookmark> getBookmarkList() {
 	return bookmarkList;
 }

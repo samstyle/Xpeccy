@@ -6,12 +6,10 @@
 
 #include <QtCore>
 
-#include "xcore/xcore.h"
-#include "xgui/xgui.h"
-#include "sound.h"
-#include "emulwin.h"
-#include "settings.h"
-#include "filer.h"
+#include "xcore.h"
+#include "../xgui/xgui.h"
+#include "../sound.h"
+//#include "../emulwin.h"
 
 #ifdef _WIN32
 	#include <direct.h>
@@ -37,6 +35,7 @@
 #define	SECT_SDC	17
 
 std::map<std::string, int> shotFormat;
+xConfig conf;
 
 void initPaths() {
 #if __linux
@@ -46,7 +45,8 @@ void initPaths() {
 	conf.scrShot.dir = std::string(getenv("HOME"));
 	mkdir(conf.path.confDir.c_str(),0777);
 	mkdir(conf.path.romDir.c_str(),0777);
-#else
+#endif
+#ifdef __WIN32
 	conf.path.confDir = std::string(".\\config");
 	conf.path.romDir = conf.path.confDir + "\\roms";
 	conf.path.confFile = conf.path.confDir + "\\config.conf";
@@ -74,18 +74,18 @@ void saveConfig() {
 	cfile << "systime = " << (conf.sysclock ? "yes" : "no") << "\n";
 
 	cfile << "\n[BOOKMARKS]\n\n";
-	std::vector<XBookmark> bml = getBookmarkList();
+	std::vector<xBookmark> bml = getBookmarkList();
 	for (i=0; i<bml.size(); i++) {
 		cfile << bml[i].name << " = " << bml[i].path << "\n";
 	}
 	cfile << "\n[PROFILES]\n\n";
-	std::vector<XProfile> prl = getProfileList();
+	std::vector<xProfile> prl = getProfileList();
 	for (i=1; i<prl.size(); i++) {			// nr.0 skipped ('default' profile)
 		cfile << prl[i].name << " = " << prl[i].file << "\n";
 	}
 	cfile << "current = " << getCurrentProfile()->name << "\n";
 	cfile << "\n[VIDEO]\n\n";
-	std::vector<VidLayout> lays = getLayoutList();
+	std::vector<xLayout> lays = getLayoutList();
 	for (i=1; i < lays.size(); i++) {
 		cfile << "layout = ";
 		cfile << lays[i].name.c_str() << ":";
@@ -105,7 +105,7 @@ void saveConfig() {
 	cfile << "bordersize = " << int2str(conf.brdsize * 100) << "\n";
 	cfile << "noflic = " << ((vidFlag & VF_NOFLIC) ? "yes" : "no") << "\n";
 	cfile << "\n[ROMSETS]\n";
-	std::vector<RomSet> rsl = getRomsetList();
+	std::vector<xRomset> rsl = getRomsetList();
 	for (i=0; i<rsl.size(); i++) {
 		cfile<< "\nname = " << rsl[i].name.c_str() << "\n";
 		if (rsl[i].file != "") {
@@ -204,15 +204,15 @@ void loadConfig() {
 	}
 	clearProfiles();
 	clearBookmarks();
-	char* buf = new char[0x4000];
+	char buf[0x4000];
 	std::pair<std::string,std::string> spl;
 	std::string line,pnam,pval;
 	std::string pnm = "default";
 	int section = SECT_NONE;
 	std::vector<std::string> vect;
-	VidLayout vlay;
-	std::vector<RomSet> rslist;
-	RomSet newrs;
+	xLayout vlay;
+	std::vector<xRomset> rslist;
+	xRomset newrs;
 	size_t pos;
 	std::string tms,fnam;
 	int test,fprt;

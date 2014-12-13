@@ -13,8 +13,8 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
+#include "xcore/xcore.h"
 #include "sound.h"
-#include "settings.h"
 #include "emulwin.h"
 #include "filer.h"
 
@@ -44,82 +44,13 @@ static xLed leds[] = {
 	{-1, -1, -1, ""}
 };
 
-// KEYMAPS
-
-keyEntry keyMap[256];	// current keymap (init at start from keyMapInit[]
-
-#define ENDKEY 0
-
-keyEntry keyMapInit[] = {
-	{"1",XKEY_1,'1',0,0x16},{"2",XKEY_2,'2',0,0x1e},{"3",XKEY_3,'3',0,0x26},{"4",XKEY_4,'4',0,0x25},{"5",XKEY_5,'5',0,0x2e},
-	{"6",XKEY_6,'6',0,0x36},{"7",XKEY_7,'7',0,0x3d},{"8",XKEY_8,'8',0,0x3e},{"9",XKEY_9,'9',0,0x46},{"0",XKEY_0,'0',0,0x45},
-	{"Q",XKEY_Q,'q',0,0x15},{"W",XKEY_W,'w',0,0x1d},{"E",XKEY_E,'e',0,0x24},{"R",XKEY_R,'r',0,0x2d},{"T",XKEY_T,'t',0,0x2c},
-	{"Y",XKEY_Y,'y',0,0x35},{"U",XKEY_U,'u',0,0x3c},{"I",XKEY_I,'i',0,0x43},{"O",XKEY_O,'o',0,0x44},{"P",XKEY_P,'p',0,0x4d},
-	{"A",XKEY_A,'a',0,0x1c},{"S",XKEY_S,'s',0,0x1b},{"D",XKEY_D,'d',0,0x23},{"F",XKEY_F,'f',0,0x2b},{"G",XKEY_G,'g',0,0x34},
-	{"H",XKEY_H,'h',0,0x33},{"J",XKEY_J,'j',0,0x3b},{"K",XKEY_K,'k',0,0x42},{"L",XKEY_L,'l',0,0x4b},{"ENT",XKEY_ENTER,'E',0,0x5a},
-	{"LS",XKEY_LSHIFT,'C',0,0x12},{"Z",XKEY_Z,'z',0,0x1a},{"X",XKEY_X,'x',0,0x22},{"C",XKEY_C,'c',0,0x21},{"V",XKEY_V,'v',0,0x2a},
-	{"B",XKEY_B,'b',0,0x32},{"N",XKEY_N,'n',0,0x31},{"M",XKEY_M,'m',0,0x3a},{"LC",XKEY_LCTRL,'S',0,0x14},{"SPC",XKEY_SPACE,' ',0,0x29},
-
-	{"RS",XKEY_RSHIFT,'C',0,0x59},{"RC",XKEY_RCTRL,'S',0,0x14e0},
-
-	{"`",XKEY_TILDA,'C','S',0x0e},{"\\",XKEY_SLASH,'C','S',0x5d},
-	{";",XKEY_DOTCOM,'S','o',0x4c},{"\"",XKEY_QUOTE,'S','p',0x52},
-	{"TAB",XKEY_TAB,'C',' ',0x0d},{"CAPS",XKEY_CAPS,'C','2',0x58},
-	{"PGDN",XKEY_PGUP,'C','3',0x7de0},{"PGUP",XKEY_PGDN,'C','4',0x7ae0},{"BSP",XKEY_BSP,'C','0',0x66},
-	{"DEL",XKEY_DEL,'C','9',0x71e0},{"INS",XKEY_INS,'S','w',0x70e0},{"HOME",XKEY_HOME,'S','q',0x6ce0},{"END",XKEY_END,'S','e',0x69e0},
-	{"LEFT",XKEY_LEFT,'C','5',0x6be0},{"DOWN",XKEY_DOWN,'C','6',0x72e0},{"UP",XKEY_UP,'C','7',0x75e0},{"RIGHT",XKEY_RIGHT,'C','8',0x74e0},
-	{"-",XKEY_MINUS,'S','j',0x4e},{"+",XKEY_PLUS,'S','k',0x00},
-	{",",XKEY_PERIOD,'S','n',0x41},{".",XKEY_COMMA,'S','m',0x49},{"/",XKEY_BSLASH,'S','c',0x4a},
-	{"[",XKEY_LBRACE,'S','8',0x54},{"]",XKEY_RBRACE,'S','9',0x5b},
-
-	{"ESC",XKEY_ESC,0,0,0x76},
-	{"F1",XKEY_F1,0,0,0x05},{"F2",XKEY_F2,0,0,0x06},{"F3",XKEY_F3,0,0,0x04},{"F4",XKEY_F4,0,0,0x0C},
-	{"F5",XKEY_F5,0,0,0x03},{"F6",XKEY_F6,0,0,0x0B},{"F7",XKEY_F7,0,0,0x83},{"F8",XKEY_F8,0,0,0x0A},
-	{"F9",XKEY_F9,0,0,0x01},{"F10",XKEY_F10,0,0,0x09},{"F11",XKEY_F11,0,0,0x78},
-
-	{"LA",XKEY_LALT,0,0,0x11},{"RA",XKEY_RALT,0,0,0x11e0},
-
-	{"",ENDKEY,0,0,0x00}
-};
-
-keyEntry getKeyEntry(qint32 qkey) {
-	int idx = 0;
-	while ((keyMap[idx].key != ENDKEY) && (keyMap[idx].key != qkey)) {
-		idx++;
-	}
-	return keyMap[idx];
-}
-
-void setKey(const char* key,const char key1,const char key2) {
-	int idx = 0;
-	while (keyMap[idx].key != ENDKEY) {
-		if (strcmp(key,keyMap[idx].name) == 0) {
-			keyMap[idx].key1 = key1;
-			keyMap[idx].key2 = key2;
-		}
-		idx++;
-	}
-}
-
-void initKeyMap() {
-	int idx = -1;
-	do {
-		idx++;
-		keyMap[idx] = keyMapInit[idx];
-	} while (keyMapInit[idx].key != ENDKEY);
-}
-
-keyEntry getKeyEntry(const char* name) {
-	int idx = 0;
-	while ((keyMap[idx].key != ENDKEY) && (strcmp(keyMap[idx].name,name) != 0)) {
-		idx++;
-	}
-	return keyMap[idx];
-}
 
 void MainWin::updateHead() {
 	QString title(XPTITLE);
-	XProfile* curProf = getCurrentProfile();
+#ifdef ISDEBUG
+	title.append(" | debug");
+#endif
+	xProfile* curProf = getCurrentProfile();
 	if (curProf != NULL) {
 		title.append(" | ").append(QString::fromLocal8Bit(curProf->name.c_str()));
 		title.append(" | ").append(QString::fromLocal8Bit(curProf->layName.c_str()));
@@ -379,7 +310,7 @@ void incTime(CMOS* cms) {
 void MainWin::cmosTick() {
 	unsigned int i;
 	ZXComp* comp;
-	std::vector<XProfile> plist = getProfileList();
+	std::vector<xProfile> plist = getProfileList();
 	for (i = 0; i < plist.size(); i++) {
 		comp = plist[i].zx;
 		if (comp != NULL) {
@@ -702,7 +633,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 	unsigned int i;
 	std::ofstream file;
 	std::string fname;
-	std::vector<XProfile> plist = getProfileList();
+	std::vector<xProfile> plist = getProfileList();
 	pause(true,PR_EXIT);
 	for (i = 0; i < plist.size(); i++) {
 		prfSave(plist[i].name);
@@ -924,10 +855,10 @@ void MainWin::initUserMenu() {
 	bookmarkMenu = userMenu->addMenu(QIcon(":/images/star.png"),"Bookmarks");
 	profileMenu = userMenu->addMenu(QIcon(":/images/profile.png"),"Profiles");
 	layoutMenu = userMenu->addMenu(QIcon(":/images/display.png"),"Layout");
-	vmodeMenu = userMenu->addMenu("Video mode");
+	vmodeMenu = userMenu->addMenu(QIcon(":/images/rulers.png"),"Video mode");
 	resMenu = userMenu->addMenu(QIcon(":/images/shutdown.png"),"Reset...");
 	userMenu->addSeparator();
-	userMenu->addAction(QIcon(":/images/tape.png"),"Tape window",tapeWin,SLOT(show()));
+	userMenu->addAction(QIcon(":/images/tape.png"),"Tape player",tapeWin,SLOT(show()));
 	userMenu->addAction(QIcon(":/images/video.png"),"RZX player",rzxWin,SLOT(show()));
 	userMenu->addSeparator();
 	pckAct = userMenu->addAction(QIcon(":/images/keyboard.png"),"PC keyboard");
@@ -970,7 +901,7 @@ void MainWin::initUserMenu() {
 void MainWin::fillBookmarkMenu() {
 	bookmarkMenu->clear();
 	QAction* act;
-	std::vector<XBookmark> bookmarkList = getBookmarkList();
+	std::vector<xBookmark> bookmarkList = getBookmarkList();
 	if (bookmarkList.size() == 0) {
 		bookmarkMenu->addAction("None")->setEnabled(false);
 	} else {
@@ -983,7 +914,7 @@ void MainWin::fillBookmarkMenu() {
 
 void MainWin::fillProfileMenu() {
 	profileMenu->clear();
-	std::vector<XProfile> profileList = getProfileList();
+	std::vector<xProfile> profileList = getProfileList();
 	for(uint i=0; i < profileList.size(); i++) {
 		profileMenu->addAction(profileList[i].name.c_str());
 	}
@@ -991,7 +922,7 @@ void MainWin::fillProfileMenu() {
 
 void MainWin::fillLayoutMenu() {
 	layoutMenu->clear();
-	std::vector<VidLayout> layoutList = getLayoutList();
+	std::vector<xLayout> layoutList = getLayoutList();
 	for (uint i = 0; i < layoutList.size(); i++) {
 		layoutMenu->addAction(layoutList[i].name.c_str());
 	}
@@ -1033,7 +964,11 @@ void MainWin::bookmarkSelected(QAction* act) {
 
 void MainWin::setProfile(std::string nm) {
 	ethread.block = 1;
-	selProfile(nm);
+	if (nm != "") {
+		if (!selProfile(nm)) {
+			selProfile("default");
+		}
+	}
 	comp = getCurrentProfile()->zx;
 	ethread.comp = comp;
 	nsPerFrame = comp->nsPerFrame;
@@ -1057,7 +992,7 @@ void MainWin::reset(QAction* act) {
 }
 
 void MainWin::chLayout(QAction* act) {
-	emulSetLayout(comp,std::string(act->text().toLocal8Bit().data()));
+	prfSetLayout(NULL, std::string(act->text().toLocal8Bit().data()));
 	prfSave("");
 	updateWindow();
 }

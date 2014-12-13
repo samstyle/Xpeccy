@@ -4,10 +4,10 @@
 
 #include "xcore.h"
 
-std::vector<RomSet> rsList;
+std::vector<xRomset> rsList;
 
-RomSet* findRomset(std::string nm) {
-	RomSet* res = NULL;
+xRomset* findRomset(std::string nm) {
+	xRomset* res = NULL;
 	for (unsigned int i=0; i<rsList.size(); i++) {
 		if (rsList[i].name == nm) {
 			res = &rsList[i];
@@ -16,19 +16,19 @@ RomSet* findRomset(std::string nm) {
 	return res;
 }
 
-bool addRomset(RomSet rs) {
+bool addRomset(xRomset rs) {
 	if (findRomset(rs.name) != NULL) return false;
 	rsList.push_back(rs);
 	return true;
 }
 
-void setRomsetList(std::vector<RomSet> rsl) {
+void setRomsetList(std::vector<xRomset> rsl) {
 	rsList.clear();
 	unsigned int i;
 	for (i=0; i<rsl.size(); i++) {
 		addRomset(rsl[i]);
 	}
-	std::vector<XProfile> profileList = getProfileList();
+	std::vector<xProfile> profileList = getProfileList();
 	for (i=0; i<profileList.size(); i++) {
 		rsSetRomset(profileList[i].zx, profileList[i].rsName);
 	}
@@ -38,7 +38,7 @@ void rsSetRomset(ZXComp* comp, std::string nm) {
 //	XProfile* prof = getProfile(pn);
 //	if (prof == NULL) return;
 //	printf("try to load romset %s\n",nm.c_str());
-	RomSet* rset = findRomset(nm);
+	xRomset* rset = findRomset(nm);
 	int i;//,ad;
 #ifdef _WIN32
 	std::string romDir = std::string(".\\config\\roms");
@@ -142,6 +142,6 @@ void rsSetRomset(ZXComp* comp, std::string nm) {
 	free(pageBuf);
 }
 
-std::vector<RomSet> getRomsetList() {
+std::vector<xRomset> getRomsetList() {
 	return rsList;
 }

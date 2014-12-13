@@ -16,7 +16,6 @@
 #include "libxpeccy/spectrum.h"
 #include "setupwin.h"
 #include "emulwin.h"
-#include "settings.h"
 #include "filer.h"
 #include "filetypes/filetypes.h"
 
@@ -281,8 +280,8 @@ void SetupWin::okay() {
 void SetupWin::start(ZXComp* c) {
 	comp = c;
 	unsigned int i;
-	XProfile* curProf = getCurrentProfile();
-	RomSet* rset = findRomset(curProf->rsName);
+	xProfile* curProf = getCurrentProfile();
+	xRomset* rset = findRomset(curProf->rsName);
 // machine
 	rsl = getRomsetList();
 	setupUi.rsetbox->clear();
@@ -422,7 +421,7 @@ void SetupWin::start(ZXComp* c) {
 }
 
 void SetupWin::apply() {
-	XProfile* curProf = getCurrentProfile();
+	xProfile* curProf = getCurrentProfile();
 // machine
 	setRomsetList(rsl);
 	HardWare *oldmac = comp->hw;
@@ -458,7 +457,7 @@ void SetupWin::apply() {
 	conf.scrShot.format = std::string(setupUi.ssfbox->currentText().toLocal8Bit().data());
 	conf.scrShot.count = setupUi.scntbox->value();
 	conf.scrShot.interval = setupUi.sintbox->value();
-	emulSetLayout(comp,std::string(setupUi.geombox->currentText().toLocal8Bit().data()));
+	prfSetLayout(NULL, std::string(setupUi.geombox->currentText().toLocal8Bit().data()));
 	conf.bright = setupUi.brgslide->value();
 	comp->vid->ula->enabled = setupUi.ulaPlus->isChecked() ? 1 : 0;
 // sound
@@ -574,7 +573,7 @@ void SetupWin::editLayout() {
 		shitHappens("You can't edit built-in layout");
 		return;
 	}
-	VidLayout lay = lays[idx];
+	xLayout lay = lays[idx];
 	layUi.lineBox->setValue(lay.full.h);
 	layUi.rowsBox->setValue(lay.full.v);
 	layUi.hsyncBox->setValue(lay.sync.h);
@@ -602,7 +601,7 @@ void SetupWin::delLayout() {
 void SetupWin::addNewLayout() {
 	QString nam = QInputDialog::getText(this,"Enter...","Input layout name"); //,QLineEdit::Normal,"",&ok);
 	if (nam.isEmpty()) return;
-	VidLayout lay = lays[0];		// default
+	xLayout lay = lays[0];		// default
 	lay.name = std::string(nam.toLocal8Bit().data());
 	for (uint i = 0; i < lays.size(); i++) {
 		if (lays[i].name == lay.name) {
@@ -686,7 +685,7 @@ void SetupWin::addNewRomset() {
 //	bool ok = false;
 	QString nam = QInputDialog::getText(this,"Enter...","Input romset name"); //,QLineEdit::Normal,"",&ok);
 	if (nam.isEmpty()) return;
-	RomSet nrs;
+	xRomset nrs;
 	nrs.name = std::string(nam.toLocal8Bit().data());
 	uint i;
 	for (i=0; i<8; i++) {
@@ -850,7 +849,7 @@ void SetupWin::buildrsetlist() {
 		return;
 	}
 	setupUi.rstab->setEnabled(true);
-	RomSet rset = rsl[setupUi.rsetbox->currentIndex()];
+	xRomset rset = rsl[setupUi.rsetbox->currentIndex()];
 	if (rset.file == "") {
 		setupUi.rstab->hideRow(4);
 		for (int i=0; i<4; i++) {
@@ -923,7 +922,7 @@ void SetupWin::buildtapelist() {
 }
 
 void SetupWin::buildmenulist() {
-	std::vector<XBookmark> bml = getBookmarkList();
+	std::vector<xBookmark> bml = getBookmarkList();
 	setupUi.umlist->setRowCount(bml.size());
 	QTableWidgetItem* itm;
 	for (uint i=0; i<bml.size(); i++) {
@@ -937,7 +936,7 @@ void SetupWin::buildmenulist() {
 };
 
 void SetupWin::buildproflist() {
-	std::vector<XProfile> prList = getProfileList();
+	std::vector<xProfile> prList = getProfileList();
 	setupUi.twProfileList->setRowCount(prList.size());
 	QTableWidgetItem* itm;
 	for (uint i=0; i<prList.size(); i++) {

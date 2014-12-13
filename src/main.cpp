@@ -8,7 +8,6 @@
 #include "libxpeccy/spectrum.h"
 #include "sound.h"
 #include "emulwin.h"
-#include "settings.h"
 #include "debuger.h"
 #include "setupwin.h"
 #include "filer.h"

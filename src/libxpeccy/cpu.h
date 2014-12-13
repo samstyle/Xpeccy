@@ -29,7 +29,7 @@
 	#define GETHL_(prc) prc->hl_
 	#define GETI(prc) prc->i
 	#define GETR(prc) prc->r
-	#define GETIR(prc) ((prc->i << 8) | (prc->r & 0x7f) | (prc->r7 & 0x80))
+	#define GETR7(prc) (prc->r7 & 0x80)
 	#define GETIFF1(prc) prc->iff1
 	#define GETIFF2(prc) prc->iff2
 	#define GETIM(prc) prc->imode
@@ -82,6 +82,7 @@
 	#define GETHL_(prc) z80ex_get_reg(prc,regHL_)
 	#define GETI(prc) z80ex_get_reg(prc,regI)
 	#define GETR(prc) z80ex_get_reg(prc,regR)
+	#define GETR7(prc) z80ex_get_reg(prc,regR7)
 	#define GETIFF1(prc) z80ex_get_reg(prc,regIFF1)
 	#define GETIFF2(prc) z80ex_get_reg(prc,regIFF2)
 	#define GETIM(prc) z80ex_get_reg(prc,regIM)
@@ -105,6 +106,7 @@
 	#define SETIM(prc,num) z80ex_set_reg(prc,regIM,num)
 #endif
 
+#define GETIR(prc) ((GETI(prc) << 8) | (GETR(prc) & 0xff) | (GETR7(prc)))
 #define SETIR(prc,num) SETI(prc, ((num) >> 8) & 0xff); SETR(prc, (num) & 0xff)
 
 #endif

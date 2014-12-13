@@ -1,5 +1,5 @@
 #include "filetypes.h"
-#include "../settings.h"
+#include "../xcore/xcore.h"
 
 void loadBoot(Floppy* flp) {
 	if (flpGet(flp,FLP_DISKTYPE) == DISK_TYPE_TRD) {

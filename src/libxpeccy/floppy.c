@@ -186,7 +186,7 @@ void flpFillFields(Floppy* flp,int tr, int fcrc) {
 			if (flp->data[tr].byte[i] == 0xf8) {
 				cpos = bpos;
 				fld = 3;
-				bcnt = (128 << sct);
+				bcnt = (128 << (sct & 3));
 			}
 		}
 		bpos++;

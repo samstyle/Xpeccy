@@ -1,44 +1,35 @@
 #include "xcore.h"
-#include "../settings.h"
 #include "../filer.h"
 #include <stdio.h>
 #include <fstream>
 
-xConfig conf;
-XProfile* currentProfile = NULL;
-std::vector<XProfile> profileList;
+xProfile* currentProfile = NULL;
+std::vector<xProfile> profileList;
 
-int findProfile(std::string nm) {
-	int idx = 0;
-	while (idx < (int)profileList.size()) {
-		if (profileList[idx].name == nm) return idx;
-		idx++;
+xProfile* findProfile(std::string nm) {
+	if (nm == "") return currentProfile;
+	xProfile* res = NULL;
+	for (uint i = 0; i < profileList.size(); i++) {
+		if (profileList[i].name == nm) res = &profileList[i];
 	}
-	return -1;
-}
-
-XProfile* getProfile(std::string nm) {
-	int idx = findProfile(nm);
-	if (idx < 0) return NULL;
-	return &profileList[idx];
+	return res;
 }
 
 bool addProfile(std::string nm, std::string fp) {
 //	printf("add Profile: %s : %s\n",nm.c_str(),fp.c_str());
-	int idx = findProfile(nm);
-	if (idx > -1) return false;
-	XProfile nprof;
+	if (findProfile(nm) != NULL) return false;
+	xProfile nprof;
 	nprof.name = nm;
 	nprof.file = fp;
 	nprof.layName = std::string("default");
 	nprof.zx = zxCreate();
-	std::string fname = conf.path.confDir + SLASH + nprof.name + std::string(".cmos");
+	std::string fname = conf.path.confDir + SLASH + nprof.name + ".cmos";
 	std::ifstream file(fname.c_str());
 	if (file.good()) {
 		file.read((char*)nprof.zx->cmos.data,256);
 		file.close();
 	}
-	fname = conf.path.confDir + SLASH + nprof.name + std::string(".nvram");
+	fname = conf.path.confDir + SLASH + nprof.name + ".nvram";
 	file.open(fname.c_str());
 	if (file.good()) {
 		file.read((char*)nprof.zx->ide->smuc.nv->mem,0x800);
@@ -57,27 +48,25 @@ bool addProfile(std::string nm, std::string fp) {
 }
 
 int delProfile(std::string nm) {
-	if (nm == "default") return DELP_ERR;			// can't touch this
-	int idx = findProfile(nm);
-	if (idx < 0) return DELP_ERR;				// no such profile
+	if (nm == "default") return DELP_ERR;		// can't touch this
+	xProfile* prf = findProfile(nm);
+	if (prf == NULL) return DELP_ERR;		// no such profile
 	int res = DELP_OK;
-	zxDestroy(profileList[idx].zx);
+	zxDestroy(prf->zx);
 	if (currentProfile->name == nm) {
-		selProfile("default");	// if current profile deleted, set default
+		selProfile("default");			// if current profile deleted, set default
 		res = DELP_OK_CURR;
 	}
-	if (currentProfile != NULL) {
-		nm = currentProfile->name;
-		profileList.erase(profileList.begin() + idx);
-		selProfile(nm);
-	} else {
-		profileList.erase(profileList.begin() + idx);
+	if (currentProfile != NULL) nm = currentProfile->name;
+	for (uint i = 0; i < profileList.size(); i++) {
+		if (profileList[i].name == prf->name) profileList.erase(profileList.begin() + i);
 	}
+	if (currentProfile != NULL) selProfile(nm);
 	return res;
 }
 
 bool selProfile(std::string nm) {
-	XProfile* nprf = getProfile(nm);
+	xProfile* nprf = findProfile(nm);
 	if (nprf == NULL) return false;
 	if (currentProfile) {
 		ideCloseFiles(currentProfile->zx->ide);
@@ -86,25 +75,41 @@ bool selProfile(std::string nm) {
 	currentProfile = nprf;
 	ideOpenFiles(nprf->zx->ide);
 	sdcOpenFile(nprf->zx->sdc);
-	emulSetLayout(currentProfile->zx, currentProfile->layName);
+	prfSetLayout(currentProfile, currentProfile->layName);
 	keyRelease(currentProfile->zx->keyb,0,0,0);
 	currentProfile->zx->mouse->buttons = 0xff;
 	return true;
 }
 
 void clearProfiles() {
-	XProfile defprof = profileList[0];
+	xProfile defprof = profileList[0];
 	profileList.clear();
 	profileList.push_back(defprof);
 	selProfile(profileList[0].name);
 }
 
-std::vector<XProfile> getProfileList() {
+std::vector<xProfile> getProfileList() {
 	return profileList;
 }
 
-XProfile* getCurrentProfile() {
+xProfile* getCurrentProfile() {
 	return currentProfile;
+}
+
+void sndCalibrate();
+bool prfSetLayout(xProfile* prf, std::string nm) {
+	if (prf == NULL) prf = getCurrentProfile();
+	xLayout* lay = findLayout(nm);
+	if (lay == NULL) return false;
+	prf->layName = nm;
+	zxSetLayout(prf->zx,
+		     lay->full.h, lay->full.v,
+		     lay->bord.h, lay->bord.v,
+		     lay->sync.h, lay->sync.v,
+		     lay->intpos.h, lay->intpos.v, lay->intsz);
+	vidUpdate(prf->zx->vid, conf.brdsize);
+	sndCalibrate();
+	return true;
 }
 
 // load-save
@@ -131,7 +136,7 @@ void setDiskString(ZXComp* comp,Floppy* flp,std::string st) {
 }
 
 void prfSetRomset(std::string pnm, std::string rnm) {
-	XProfile* prf = (pnm == "") ? currentProfile : getProfile(pnm);
+	xProfile* prf = findProfile(pnm);
 	if (prf == NULL) return;
 	prf->rsName = rnm;
 	rsSetRomset(prf->zx,rnm);
@@ -142,7 +147,7 @@ void prfLoadAll() {
 }
 
 int prfLoad(std::string nm) {
-	XProfile* prf = (nm == "") ? currentProfile : getProfile(nm);
+	xProfile* prf = findProfile(nm);
 	if (prf == NULL) return PLOAD_NF;
 //	printf("%s\n",prf->name.c_str());
 	ZXComp* comp = prf->zx;
@@ -310,7 +315,7 @@ int prfLoad(std::string nm) {
 
 	if ((comp->hw->mask != 0) && (~comp->hw->mask & tmask)) throw("Incorrect memory size for this machine");
 	memSetSize(comp->mem,memsz);
-	if (!emulSetLayout(comp, prf->layName)) emulSetLayout(comp,"default");
+	if (!prfSetLayout(prf, prf->layName)) prfSetLayout(prf,"default");
 
 	zxReset(comp,RES_DEFAULT);
 
@@ -332,7 +337,7 @@ std::string getDiskString(Floppy* flp) {
 #define	YESNO(cnd) ((cnd) ? "yes" : "no")
 
 int prfSave(std::string nm) {
-	XProfile* prf = (nm == "") ? currentProfile : getProfile(nm);
+	xProfile* prf = findProfile(nm);
 	if (prf == NULL) return PSAVE_NF;
 	ZXComp* comp = prf->zx;
 

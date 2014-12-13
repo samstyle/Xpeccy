@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-std::vector<VidLayout> layList;
+std::vector<xLayout> layList;
 
 bool addLayout(std::string nm,int fh,int fv,int bh,int bv,int sh,int sv,int ih,int iv,int is) {
 //	printf("add Layout: %s\n",nm.c_str());
@@ -14,7 +14,7 @@ bool addLayout(std::string nm,int fh,int fv,int bh,int bv,int sh,int sv,int ih,i
 		printf("WARNING: Layout %s : INT position and/or length isn't correct\n",nm.c_str());
 		iv = 0; ih = 0; is = 64;
 	}
-	VidLayout nlay;
+	xLayout nlay;
 	nlay.name = nm;
 	nlay.full.h = fh;
 	nlay.full.v = fv;
@@ -29,7 +29,7 @@ bool addLayout(std::string nm,int fh,int fv,int bh,int bv,int sh,int sv,int ih,i
 	return true;
 }
 
-bool addLayout(VidLayout lay) {
+bool addLayout(xLayout lay) {
 //	printf("add Layout: %s\n",lay.name.c_str());
 	for (unsigned int i = 0; i < layList.size(); i++) {
 		if (layList[i].name == lay.name) return false;
@@ -38,29 +38,18 @@ bool addLayout(VidLayout lay) {
 	return true;
 }
 
-void setLayoutList(std::vector<VidLayout> lst) {
+void setLayoutList(std::vector<xLayout> lst) {
 	layList = lst;
 }
 
-std::vector<VidLayout> getLayoutList() {
+std::vector<xLayout> getLayoutList() {
 	return layList;
 }
 
-// stop, shit here!
-bool emulSetLayout(ZXComp* comp, std::string nm) {
-	XProfile* currentProfile = getCurrentProfile();
-	for (unsigned int i = 0; i < layList.size(); i++) {
-		if (layList[i].name == nm) {
-			currentProfile->layName = nm;
-			zxSetLayout(comp,
-				     layList[i].full.h, layList[i].full.v,
-				     layList[i].bord.h, layList[i].bord.v,
-				     layList[i].sync.h, layList[i].sync.v,
-				     layList[i].intpos.h, layList[i].intpos.v, layList[i].intsz);
-			vidUpdate(comp->vid, conf.brdsize);
-			sndCalibrate();
-			return true;
-		}
+xLayout* findLayout(std::string nm) {
+	xLayout* res = NULL;
+	for (uint i = 0; i < layList.size(); i++) {
+		if (layList[i].name == nm) res = &layList[i];
 	}
-	return false;
+	return res;
 }
