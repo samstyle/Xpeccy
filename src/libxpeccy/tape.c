@@ -14,22 +14,9 @@ Tape* tapCreate() {
 	Tape* tap = (Tape*)malloc(sizeof(Tape));
 	memset(tap,0x00,sizeof(Tape));
 	tap->isData = 1;
-//	tap->block = 0;
-//	tap->pos = 0;
-//	tap->sigLen = 0;
-//	tap->signal = 0;
-//	tap->sigLen = 0;
-//	tap->sigCount = 0;
-//	tap->toutold = 0;
-//	tap->outsig = 0;
 	tap->path = NULL;
-
-//	tap->blkCount = 0;
 	tap->blkData = NULL;
-
-//	tap->tmpBlock.sigCount = 0;
 	tap->tmpBlock.sigData = NULL;
-
 	return tap;
 }
 
@@ -303,7 +290,8 @@ void tapRec(Tape* tap) {
 	tap->on = 1;
 	tap->rec = 1;
 	tap->wait = 1;
-	tap->toutold = tap->outsig;
+	tap->levRec = 0;
+	tap->oldRec = tap->levRec;
 	tap->tmpBlock.sigCount = 0;
 	if (tap->tmpBlock.sigData) free(tap->tmpBlock.sigData);
 }
@@ -317,20 +305,20 @@ void tapRewind(Tape* tap, int blk) {
 	}
 }
 
+// input : tks is time (ns) to sync
 void tapSync(Tape* tap,int tks) {
-	tks = tks / 280;
+	tks = tks / 280;		// and here is T-states (@ 3.5MHz)
 	if (tap->on) {
 		if (tap->rec) {
 			if (tap->wait) {
-				if (tap->toutold != tap->outsig) {
-					tap->toutold = tap->outsig;
+				if (tap->oldRec != tap->levRec) {
+					tap->oldRec = tap->levRec;
 					tap->wait = 0;
 					blkAddPulse(&tap->tmpBlock,0);
 				}
 			} else {
-
-				if (tap->toutold != tap->outsig) {
-					tap->toutold = tap->outsig;
+				if (tap->oldRec != tap->levRec) {
+					tap->oldRec = tap->levRec;
 					blkAddPulse(&tap->tmpBlock,tks);
 				} else {
 					tap->tmpBlock.sigData[tap->tmpBlock.sigCount - 1] += tks;
@@ -342,11 +330,10 @@ void tapSync(Tape* tap,int tks) {
 		} else {
 			tap->sigLen -= tks;
 			while (tap->sigLen < 1) {
-				tap->signal = !tap->signal;
+				tap->levPlay ^= 1;
 				tap->sigLen += tap->blkData[tap->block].sigData[tap->pos];
 				tap->pos++;
 				if (tap->pos >= (int)tap->blkData[tap->block].sigCount) {
-					//tap->sigLen += tap->blkData[tap->block].pause * MSDOTS;	// last sig is already pause
 					tap->blkChange = 1;
 					tap->block++;
 					tap->pos = 0;
@@ -361,7 +348,7 @@ void tapSync(Tape* tap,int tks) {
 	} else {
 		tap->sigLen -= tks;
 		while (tap->sigLen < 1) {
-			tap->signal = !tap->signal;
+			tap->levPlay ^= 1;
 			tap->sigLen += FRAMEDOTS * 25;	// .5 sec
 		}
 	}

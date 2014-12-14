@@ -31,7 +31,8 @@ typedef struct {
 } tsPair;
 
 typedef struct {
-	int lev;
+	unsigned lev:1;
+	int tone;	// 12 bit of tone registers
 	double period;
 	double count;
 } aymChan;

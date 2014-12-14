@@ -25,7 +25,7 @@ Z80EX_BYTE prfIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 		default:
 			switch (port & 0xff) {
 				case 0xfe:
-					res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00);
+					res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->levPlay ? 0x40 : 0x00);
 					break;
 				default:
 					printf("Profi in %.4X (%i)\n",port,bdiz);
@@ -55,7 +55,7 @@ void prfOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 				case 0xfe:
 					comp->vid->nextbrd = val & 7;
 					comp->beeplev = (val & 0x10) ? 1 : 0;
-					comp->tape->outsig = (val & 0x08) ? 1 : 0;
+					comp->tape->levRec = (val & 0x08) ? 1 : 0;
 					break;
 				default:
 					printf("Profi out %.4X,%.2X (%i)\n",port,val,bdiz);

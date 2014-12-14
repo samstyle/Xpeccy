@@ -21,18 +21,18 @@ void DebugWin::start(ZXComp* c) {
 	disasmAdr = getPrevAdr(GETPC(comp->cpu));
 	fillAll();
 	show();
-	vidFlag |= VF_DEBUG;
+	comp->vid->debug = 1;
 	comp->debug = 1;
 }
 
 void DebugWin::stop() {
-	vidFlag &= ~VF_DEBUG;
+	comp->debug = 0;
+	comp->vid->debug = 0;
 	tCount = comp->tickCount;
 	zxExec(comp);		// to prevent immediatelly fetch break, if PC is on breakpoint
 	hide();
 	active = false;
 	tCount = comp->tickCount;
-	comp->debug = 0;
 	emit closed();
 }
 
@@ -127,11 +127,11 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(oui.leStart,SIGNAL(textChanged(QString)),this,SLOT(dmpStartOpen()));
 	connect(oui.butOk,SIGNAL(clicked()), this, SLOT(loadDump()));
 
-	bpEditor = new QDialog();
-	bui.setupUi(bpEditor);
-	connect(bui.cbFetch,SIGNAL(stateChanged(int)),this,SLOT(chaBreakPoint()));
-	connect(bui.cbRead,SIGNAL(stateChanged(int)),this,SLOT(chaBreakPoint()));
-	connect(bui.cbWrite,SIGNAL(stateChanged(int)),this,SLOT(chaBreakPoint()));
+	bpMenu = new QMenu(this);
+	bpMenu->addAction(ui.actFetch);
+	bpMenu->addAction(ui.actRead);
+	bpMenu->addAction(ui.actWrite);
+	connect(bpMenu,SIGNAL(triggered(QAction*)),this,SLOT(chaBreakPoint()));
 }
 
 void DebugWin::wheelEvent(QWheelEvent* ev) {
@@ -532,28 +532,24 @@ void DebugWin::putBreakPoint() {
 		adr = (dumpAdr + (ui.dumpTable->currentColumn() - 1) + ui.dumpTable->currentRow() * (ui.dumpTable->columnCount() - 1)) & 0xffff;
 		doBreakPoint(adr);
 	}
+	bpMenu->move(QCursor::pos());
+	bpMenu->show();
 }
 
 void DebugWin::doBreakPoint(Z80EX_WORD adr) {
 	bpAdr = adr;
-	QString str = QString((comp->mem->pt[adr >> 14]->type == MEM_RAM) ? "RAM-" : "ROM-");
-	str.append(gethexbyte(comp->mem->pt[adr >> 14]->num));
-	str.append(", ");
-	str.append(gethexword(adr & 0x3fff));
-	bui.bpAdr->setText(str);
 	unsigned char flag = *memGetFptr(comp->mem, adr);
-	bui.cbFetch->setChecked(flag & MEM_BRK_FETCH);
-	bui.cbRead->setChecked(flag & MEM_BRK_RD);
-	bui.cbWrite->setChecked(flag & MEM_BRK_WR);
-	bpEditor->show();
+	ui.actFetch->setChecked(flag & MEM_BRK_FETCH);
+	ui.actRead->setChecked(flag & MEM_BRK_RD);
+	ui.actWrite->setChecked(flag & MEM_BRK_WR);
 }
 
 void DebugWin::chaBreakPoint() {
 	unsigned char* ptr = memGetFptr(comp->mem, bpAdr);
 	unsigned char flag = *ptr & ~MEM_BRK_ANY;
-	if (bui.cbFetch->isChecked()) flag |= MEM_BRK_FETCH;
-	if (bui.cbRead->isChecked()) flag |= MEM_BRK_RD;
-	if (bui.cbWrite->isChecked()) flag |= MEM_BRK_WR;
+	if (ui.actFetch->isChecked()) flag |= MEM_BRK_FETCH;
+	if (ui.actRead->isChecked()) flag |= MEM_BRK_RD;
+	if (ui.actWrite->isChecked()) flag |= MEM_BRK_WR;
 	*ptr = flag;
 	fillDisasm();
 	fillDump();

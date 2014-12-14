@@ -50,12 +50,14 @@ typedef struct {
 	unsigned wait:1;
 	unsigned blkChange:1;
 	unsigned newBlock:1;
+	unsigned levPlay:1;	// signal from tape
+	unsigned levRec:1;	// signal to tape
+	unsigned oldRec:1;	// previous rec signal
 
 	int block;
 	int pos;
-	int signal;
-	int toutold;
-	int outsig;
+//	int toutold;
+//	int outsig;
 	int sigLen;
 	char* path;
 	TapeBlock tmpBlock;

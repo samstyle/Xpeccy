@@ -17,6 +17,8 @@
 
 std::string getTimeString(int);
 std::string int2str(int);
+std::string float2str(float);
+int getRanged(const char*, int, int);
 void setFlagBit(bool, int*, int);
 bool str2bool(std::string);
 std::vector<std::string> splitstr(std::string,const char*);
@@ -25,18 +27,31 @@ void copyFile(const char*, const char*);
 
 // config
 
-struct OptName {
-	int id;
-	std::string name;
-};
+#define	YESNO(cnd) ((cnd) ? "yes" : "no")
 
 struct xConfig {
 	unsigned sysclock:1;
 	unsigned storePaths:1;
 	unsigned defProfile:1;
 	std::string keyMapName;
-	int bright;
 	float brdsize;
+	struct {
+		unsigned grayScale:1;
+		unsigned noFlick:1;
+		unsigned fullScreen:1;
+		unsigned doubleSize:1;
+	} vid;
+	struct {
+		unsigned enabled:1;
+		unsigned mute:1;
+		int rate;
+		struct {
+			int beep;
+			int tape;
+			int ay;
+			int gs;
+		} vol;
+	} snd;
 	struct {
 		unsigned autostart:1;
 		unsigned fast:1;
@@ -120,11 +135,13 @@ typedef struct {
 	} roms[32];
 } xRomset;
 
+extern std::vector<xRomset> rsList;
+
 bool addRomset(xRomset);
 void rsSetRomset(ZXComp*, std::string);
 xRomset* findRomset(std::string);
-std::vector<xRomset> getRomsetList();
-void setRomsetList(std::vector<xRomset>);
+// std::vector<xRomset>* getRomsetList();
+// void setRomsetList(std::vector<xRomset>);
 
 // profiles
 
@@ -152,6 +169,9 @@ xProfile* getCurrentProfile();
 xProfile* findProfile(std::string);
 bool prfSetLayout(xProfile*, std::string);
 
+void prfChangeRsName(std::string, std::string);
+void prfChangeLayName(std::string, std::string);
+
 #define	PLOAD_OK	0
 #define	PLOAD_NF	1
 #define	PLOAD_OF	2
@@ -177,10 +197,10 @@ typedef struct {
 	int intsz;
 } xLayout;
 
+extern std::vector<xLayout> layList;
+
 bool addLayout(std::string,int,int,int,int,int,int,int,int,int);
 bool addLayout(xLayout);
 xLayout* findLayout(std::string);
-std::vector<xLayout> getLayoutList();
-void setLayoutList(std::vector<xLayout>);
 
 #endif

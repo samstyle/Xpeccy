@@ -64,10 +64,13 @@ void MainWin::updateHead() {
 void MainWin::updateWindow() {
 	block = 1;
 	vidUpdate(comp->vid, conf.brdsize);
-	int szw = comp->vid->wsze.h;
-	int szh = comp->vid->wsze.v;
+	sndCalibrate();
+	int szw = comp->vid->vsze.h * (conf.vid.doubleSize ? 2 : 1);
+	int szh = comp->vid->vsze.v * (conf.vid.doubleSize ? 2 : 1);
 	setFixedSize(szw,szh);
-	scrImg = QImage(screen,szw,szh,QImage::Format_RGB888);
+	lineBytes = szw * 3;
+	frameBytes = szw * szh * 3;
+	scrImg = QImage(screen, szw, szh, QImage::Format_RGB888);
 	updateHead();
 	block = 0;
 }
@@ -100,13 +103,7 @@ void MainWin::pause(bool p, int msk) {
 	}
 	updateHead();
 	if (msk & PR_PAUSE) return;
-	if ((pauseFlags & ~PR_PAUSE) == 0) {
-		vidFlag &= ~VF_BLOCKFULLSCREEN;
-		if (vidFlag & VF_FULLSCREEN) updateWindow();
-	} else {
-		vidFlag |= VF_BLOCKFULLSCREEN;
-		if (vidFlag & VF_FULLSCREEN) updateWindow();
-	}
+	if (conf.vid.fullScreen) updateWindow();
 }
 
 // Main window
@@ -124,6 +121,7 @@ MainWin::MainWin() {
 	grabMice = 0;
 	block = 0;
 
+	vidInitAdrs();
 	sndInit();
 	initPaths();
 	addProfile("default","xpeccy.conf");
@@ -212,7 +210,7 @@ void scrNormal (unsigned char* src, int wid, int lines) {
 	}
 }
 
-// convert <size> dots on <ptr> from color-RGB to gray-RGB
+// convert <size> bytes (by 3) on <ptr> from color-RGB to gray-RGB
 void scrGray(unsigned char* ptr, int size) {
 	int gray;
 	while (size > 0) {
@@ -220,7 +218,7 @@ void scrGray(unsigned char* ptr, int size) {
 		*(ptr++) = gray & 0xff;
 		*(ptr++) = gray & 0xff;
 		*(ptr++) = gray & 0xff;
-		size--;
+		size -= 3;
 	}
 }
 
@@ -237,21 +235,20 @@ void scrMix(unsigned char* src, unsigned char* dst, int size) {
 	}
 }
 
-void convImage(ZXComp* comp) {
-	if (vidFlag & VF_DOUBLE) {
-		scrDouble(comp->vid->scrimg, comp->vid->lineBytes, comp->vid->vsze.v);
+void MainWin::convImage() {
+	if (conf.vid.doubleSize) {
+		scrDouble(comp->vid->scrimg, lineBytes, comp->vid->vsze.v);
 	} else {
-		scrNormal(comp->vid->scrimg, comp->vid->lineBytes, comp->vid->vsze.v);
+		scrNormal(comp->vid->scrimg, lineBytes, comp->vid->vsze.v);
 	}
-	int winDots = comp->vid->wsze.h * comp->vid->wsze.v;
-	if (vidFlag & VF_GREY) scrGray(screen, winDots);
-	if (vidFlag & VF_NOFLIC) scrMix(prevscr, screen, winDots * 3);
+	if (conf.vid.grayScale) scrGray(screen, frameBytes);
+	if (conf.vid.noFlick) scrMix(prevscr, screen, frameBytes);
 }
 
 void MainWin::onTimer() {
 	if (block) return;
 // if not paused play sound buffer
-	if (sndEnabled && (sndMute || isActiveWindow())) sndPlay();
+	if (conf.snd.enabled && (conf.snd.mute || isActiveWindow())) sndPlay();
 // if window is not active release keys & buttons
 	if (!isActiveWindow()) {
 		keyRelease(comp->keyb,0,0,0);
@@ -268,7 +265,7 @@ void MainWin::onTimer() {
 		}
 	}
 // update window
-	convImage(comp);
+	convImage();
 	if (pauseFlags == 0) ethread.mtx.unlock();
 	emuDraw();
 }
@@ -428,15 +425,15 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				}
 				break;
 			case Qt::Key_1:
-				vidFlag &= ~VF_DOUBLE;
+				conf.vid.doubleSize = 0;
 				updateWindow();
-				convImage(comp);
+				convImage();
 				saveConfig();
 				break;
 			case Qt::Key_2:
-				vidFlag |= VF_DOUBLE;
+				conf.vid.doubleSize = 1;
 				updateWindow();
-				convImage(comp);
+				convImage();
 				saveConfig();
 				break;
 			case Qt::Key_3:
@@ -458,9 +455,9 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				keywin->show();
 				break;
 			case Qt::Key_N:
-				vidFlag ^= VF_NOFLIC;
+				conf.vid.noFlick ^= 1;
 				saveConfig();
-				if (vidFlag & VF_NOFLIC) memcpy(prevscr,screen,comp->vid->frameBytes);
+				if (conf.vid.noFlick) memcpy(prevscr, screen, frameBytes);
 				break;
 		}
 	} else {
@@ -691,7 +688,7 @@ void MainWin::screenShot() {
 	fnams.append(QTime::currentTime().toString("HHmmss_zzz")).append(".").append(QString(fext.c_str()));
 	std::string fnam(fnams.toUtf8().data());
 	std::ofstream file;
-	QImage *img = new QImage(screen,comp->vid->wsze.h, comp->vid->wsze.v,QImage::Format_RGB888);
+	QImage *img = new QImage(screen, width(), height(), QImage::Format_RGB888);
 	char pageBuf[0x4000];
 	memGetPage(comp->mem,MEM_RAM,comp->vid->curscr,pageBuf);
 	switch (frm) {
@@ -745,13 +742,6 @@ void MainWin::emuDraw() {
 			tapeWin->buildList(comp->tape);
 			comp->tape->newBlock = 0;
 		}
-	}
-// form image...
-	if (comp->debug || ethread.fast) {
-		convImage(comp);
-//		int winDots = width() * height();
-//		if (vidFlag & VF_GREY) scrGray(screen, winDots);
-//		if (vidFlag & VF_NOFLIC) scrMix(prevscr, screen, winDots * 3);
 	}
 // leds
 	QPainter pnt;
@@ -849,7 +839,6 @@ void MainWin::paintGL() {
 // USER MENU
 
 void MainWin::initUserMenu() {
-	QAction* act;
 	userMenu = new QMenu(this);
 // submenu
 	bookmarkMenu = userMenu->addMenu(QIcon(":/images/star.png"),"Bookmarks");
@@ -871,10 +860,10 @@ void MainWin::initUserMenu() {
 	connect(vmodeMenu,SIGNAL(triggered(QAction*)),this,SLOT(chVMode(QAction*)));
 	connect(resMenu,SIGNAL(triggered(QAction*)),this,SLOT(reset(QAction*)));
 
-	act = vmodeMenu->addAction("No screen");
-	act->setData(-1);
-	act->setCheckable(true);
-	act->setChecked(vidFlag & VF_NOSCREEN);
+	nsAct = vmodeMenu->addAction("No screen");
+	nsAct->setData(-1);
+	nsAct->setCheckable(true);
+	nsAct->setChecked(false);
 	vmodeMenu->addAction("ZX 256 x 192")->setData(VID_NORMAL);
 	vmodeMenu->addAction("Alco 16c")->setData(VID_ALCO);
 	vmodeMenu->addAction("HW multicolor")->setData(VID_HWMC);
@@ -922,9 +911,8 @@ void MainWin::fillProfileMenu() {
 
 void MainWin::fillLayoutMenu() {
 	layoutMenu->clear();
-	std::vector<xLayout> layoutList = getLayoutList();
-	for (uint i = 0; i < layoutList.size(); i++) {
-		layoutMenu->addAction(layoutList[i].name.c_str());
+	for (uint i = 0; i < layList.size(); i++) {
+		layoutMenu->addAction(layList[i].name.c_str());
 	}
 }
 
@@ -971,6 +959,7 @@ void MainWin::setProfile(std::string nm) {
 	}
 	comp = getCurrentProfile()->zx;
 	ethread.comp = comp;
+	nsAct->setChecked(comp->vid->noScreen);
 	nsPerFrame = comp->nsPerFrame;
 	sndCalibrate();
 	updateWindow();
@@ -1002,8 +991,7 @@ void MainWin::chVMode(QAction* act) {
 	if (mode > 0) {
 		vidSetMode(comp->vid, mode);
 	} else if (mode == -1) {
-		vidFlag ^= VF_NOSCREEN;
-		act->setChecked(vidFlag & VF_NOSCREEN);
+		comp->vid->noScreen = act->isChecked() ? 1 : 0;
 		vidSetMode(comp->vid, VID_CURRENT);
 	}
 }

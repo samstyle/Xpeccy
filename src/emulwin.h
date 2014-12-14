@@ -93,11 +93,14 @@ class MainWin : public QWidget {
 		int pauseFlags;
 		int scrCounter;
 		int scrInterval;
+		int lineBytes;
+		int frameBytes;
 
 		bool saveChanged();
 		void updateHead();
 		void emuDraw();
 		void screenShot();
+		void convImage();
 
 		QMenu* userMenu;
 		QMenu* bookmarkMenu;
@@ -106,6 +109,7 @@ class MainWin : public QWidget {
 		QMenu* vmodeMenu;
 		QMenu* resMenu;
 		QAction* pckAct;
+		QAction* nsAct;
 
 		void initUserMenu();
 		void fillUserMenu();

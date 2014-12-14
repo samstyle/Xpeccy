@@ -20,7 +20,6 @@
 #endif
 
 int main(int ac,char** av) {
-
 #ifdef DRAWGL
 	printf("Using OpenGL painter\n");
 #endif

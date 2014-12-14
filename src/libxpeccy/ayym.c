@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "ayym.h"
 
@@ -61,8 +62,7 @@ void aymDestroy(aymChip* ay) {
 }
 
 void aymReset(aymChip* ay) {
-	int i;
-	for (i = 0; i < 16; i++) ay->reg[i] = 0;
+	memset(ay->reg, 0x00, 16);
 	ay->eCur = 0;
 	ay->nPos = 0;
 	ay->ePos = 0;
@@ -79,20 +79,45 @@ void aymReset(aymChip* ay) {
 }
 
 void aymSetReg(aymChip* ay, unsigned char val) {
-	ay->reg[ay->curReg] = val;
+	if (ay->curReg < 14) ay->reg[ay->curReg] = val;
 	switch (ay->curReg) {
 		case 0x00:
-		case 0x01: ay->chanA.period = ay->aycoe * (ay->reg[0] + ((ay->reg[1] & 0x0f) << 8)); break;
+		case 0x01:
+			ay->chanA.tone = ay->reg[0] | ((ay->reg[1] & 0x0f) << 8);
+			ay->chanA.period = ay->aycoe * ay->chanA.tone;
+			break;
 		case 0x02:
-		case 0x03: ay->chanB.period = ay->aycoe * (ay->reg[2] + ((ay->reg[3] & 0x0f) << 8)); break;
+		case 0x03:
+			ay->chanB.tone = ay->reg[2] | ((ay->reg[3] & 0x0f) << 8);
+			ay->chanB.period = ay->aycoe * ay->chanB.tone;
+			break;
 		case 0x04:
-		case 0x05: ay->chanC.period = ay->aycoe * (ay->reg[4] + ((ay->reg[5] & 0x0f) << 8)); break;
-		case 0x06: ay->chanN.period = 2 * ay->aycoe * (val & 0x1f); break;
+		case 0x05:
+			ay->chanC.tone = ay->reg[4] | ((ay->reg[5] & 0x0f) << 8);
+			ay->chanC.period = ay->aycoe * ay->chanC.tone;
+			break;
+		case 0x06:
+			ay->chanN.tone = val & 0x1f;
+			ay->chanN.period = 2 * ay->aycoe * ay->chanN.tone;
+			break;
 		case 0x0b:
-		case 0x0c: ay->chanE.period = 2 * ay->aycoe * (ay->reg[11] + (ay->reg[12] << 8)); break;
-		case 0x0d: ay->eCur = val & 0x0f; ay->ePos = 0; ay->chanE.count = 0; break;
-		case 0x0e: if (ay->reg[7] & 0x40) ay->reg[14] = val; break;
-		case 0x0f: if (ay->reg[7] & 0x80) ay->reg[15] = val; break;
+		case 0x0c:
+			ay->chanE.tone = ay->reg[11] | (ay->reg[12] << 8);
+			ay->chanE.period = ay->aycoe * ay->chanE.tone * 2;
+			break;
+		case 0x0d:
+			ay->eCur = val & 0x0f;
+			ay->ePos = 0;
+			ay->chanE.count = 0;
+			break;
+		case 0x0e:
+			if (ay->reg[7] & 0x40)
+				ay->reg[14] = val;
+			break;
+		case 0x0f:
+			if (ay->reg[7] & 0x80)
+				ay->reg[15] = val;
+			break;
 	}
 }
 
@@ -102,21 +127,21 @@ void aymSync(aymChip* ay, int tk) {
 		ay->chanA.count -= tk;
 		while (ay->chanA.count < 0) {
 			ay->chanA.count += ay->chanA.period;
-			ay->chanA.lev = !ay->chanA.lev;
+			ay->chanA.lev ^= 1;
 		}
 	}
 	if (ay->chanB.period != 0) {
 		ay->chanB.count -= tk;
 		while (ay->chanB.count < 0) {
 			ay->chanB.count += ay->chanB.period;
-			ay->chanB.lev = !ay->chanB.lev;
+			ay->chanB.lev ^= 1;
 		}
 	}
 	if (ay->chanC.period != 0) {
 		ay->chanC.count -= tk;
 		while (ay->chanC.count < 0) {
 			ay->chanC.count += ay->chanC.period;
-			ay->chanC.lev = !ay->chanC.lev;
+			ay->chanC.lev ^= 1;
 		}
 	}
 	if (ay->chanN.period != 0) {
@@ -125,7 +150,6 @@ void aymSync(aymChip* ay, int tk) {
 			ay->chanN.count += ay->chanN.period;
 			ay->nPos++;
 		}
-		ay->chanN.lev = noizes[ay->nPos & 0x1ffff];
 	}
 	if (ay->chanE.period != 0) {
 		ay->chanE.count -= tk;
@@ -140,21 +164,26 @@ void aymSync(aymChip* ay, int tk) {
 	}
 }
 
+// NOTE : if tone & noise disabled, signal is 1 - take amp/env for digital music
+
 int volA,volB,volC;
 
 tsPair aymGetVolume(aymChip* ay) {
 	tsPair res;
-	volA = (ay->reg[8] & 16) ? envforms[ay->eCur][ay->ePos] : (ay->reg[8] & 15);
-	volB = (ay->reg[9] & 16) ? envforms[ay->eCur][ay->ePos] : (ay->reg[9] & 15);
-	volC = (ay->reg[10] & 16) ? envforms[ay->eCur][ay->ePos] : (ay->reg[10] & 15);
+	ay->chanN.lev = noizes[ay->nPos & 0x1ffff] ? 1 : 0;
+	unsigned char env = envforms[ay->eCur][ay->ePos];
+
+	volA = (ay->reg[8] & 16) ? env : (ay->reg[8] & 15);
+	volB = (ay->reg[9] & 16) ? env : (ay->reg[9] & 15);
+	volC = (ay->reg[10] & 16) ? env : (ay->reg[10] & 15);
 	if ((ay->reg[7] & 0x09) != 0x09) {
-		volA *= ((ay->reg[7] & 1) ? 0 : ay->chanA.lev) + ((ay->reg[7] & 8) ? 0 : ay->chanN.lev);
+		if (((ay->reg[7] & 1) || !ay->chanA.lev) && ((ay->reg[7] & 8) || !ay->chanN.lev)) volA = 0;
 	}
 	if ((ay->reg[7] & 0x12) != 0x12) {
-		volB *= ((ay->reg[7] & 2) ? 0 : ay->chanB.lev) + ((ay->reg[7] & 16) ? 0 : ay->chanN.lev);
+		if (((ay->reg[7] & 2) || !ay->chanB.lev) && ((ay->reg[7] & 16) || !ay->chanN.lev)) volB = 0;
 	}
 	if ((ay->reg[7] & 0x24) != 0x24) {
-		volC *= ((ay->reg[7] & 4) ? 0 : ay->chanC.lev) + ((ay->reg[7] & 32) ? 0 : ay->chanN.lev);
+		if (((ay->reg[7] & 4) || !ay->chanC.lev) && ((ay->reg[7] & 32) || !ay->chanN.lev)) volC = 0;
 	}
 	switch (ay->stereo) {
 		case AY_ABC:

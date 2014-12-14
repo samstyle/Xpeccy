@@ -9,10 +9,10 @@
 #include <QKeyEvent>
 #include <QTimer>
 #include <QItemDelegate>
+#include <QMenu>
 
 #include "ui_dumpdial.h"
 #include "ui_openDump.h"
-#include "ui_bpeditor.h"
 #include "ui_debuger.h"
 #include "libxpeccy/spectrum.h"
 
@@ -51,9 +51,6 @@ class DebugWin : public QDialog {
 		ZXComp* comp;
 		bool block;
 		long tCount;
-//		unsigned long lastDbgTicks = 0;
-//		QString logFileName;
-//		QFile logFile;
 
 		Ui::Debuger ui;
 
@@ -65,9 +62,9 @@ class DebugWin : public QDialog {
 		Ui::oDumpDial oui;
 		QString dumpPath;
 
-		QDialog* bpEditor;
+		QMenu* bpMenu;
 		Z80EX_WORD bpAdr;
-		Ui::BPDialog bui;
+		void doBreakPoint(Z80EX_WORD);
 
 		Z80EX_WORD disasmAdr;
 		Z80EX_WORD dumpAdr;
@@ -81,7 +78,6 @@ class DebugWin : public QDialog {
 		void fillStack();
 
 		Z80EX_WORD getPrevAdr(Z80EX_WORD);
-		void doBreakPoint(Z80EX_WORD);
 		void scrollDown();
 		void scrollUp();
 

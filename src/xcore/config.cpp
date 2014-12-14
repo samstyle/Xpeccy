@@ -1,5 +1,3 @@
-// TODO: rewrite this shit
-
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fstream>
@@ -68,10 +66,10 @@ void saveConfig() {
 	if ((conf.keyMapName != "default") && (conf.keyMapName != "")) {
 		cfile << "keys = " << conf.keyMapName.c_str() << "\n";
 	}
-	cfile << "startdefault = " << (conf.defProfile ? "yes" : "no") << "\n";
-	cfile << "savepaths = " << (conf.storePaths ? "yes" : "no") << "\n";
-	cfile << "fdcturbo = " << ((fdcFlag & FDC_FAST) ? "yes" : "no") << "\n";
-	cfile << "systime = " << (conf.sysclock ? "yes" : "no") << "\n";
+	cfile << "startdefault = " << YESNO(conf.defProfile) << "\n";
+	cfile << "savepaths = " << YESNO(conf.storePaths) << "\n";
+	cfile << "fdcturbo = " << YESNO(fdcFlag & FDC_FAST) << "\n";
+	cfile << "systime = " << YESNO(conf.sysclock) << "\n";
 
 	cfile << "\n[BOOKMARKS]\n\n";
 	std::vector<xBookmark> bml = getBookmarkList();
@@ -84,62 +82,65 @@ void saveConfig() {
 		cfile << prl[i].name << " = " << prl[i].file << "\n";
 	}
 	cfile << "current = " << getCurrentProfile()->name << "\n";
+
 	cfile << "\n[VIDEO]\n\n";
-	std::vector<xLayout> lays = getLayoutList();
-	for (i=1; i < lays.size(); i++) {
+	for (i=1; i < layList.size(); i++) {
 		cfile << "layout = ";
-		cfile << lays[i].name.c_str() << ":";
-		cfile << int2str(lays[i].full.h) << ":" << int2str(lays[i].full.v) << ":";
-		cfile << int2str(lays[i].bord.h) << ":" << int2str(lays[i].bord.v) << ":";
-		cfile << int2str(lays[i].sync.h) << ":" << int2str(lays[i].sync.v) << ":";
-		cfile << int2str(lays[i].intsz) << ":" << int2str(lays[i].intpos.v) << ":" << int2str(lays[i].intpos.h) << "\n";
+		cfile << layList[i].name.c_str() << ":";
+		cfile << int2str(layList[i].full.h) << ":";
+		cfile << int2str(layList[i].full.v) << ":";
+		cfile << int2str(layList[i].bord.h) << ":";
+		cfile << int2str(layList[i].bord.v) << ":";
+		cfile << int2str(layList[i].sync.h) << ":";
+		cfile << int2str(layList[i].sync.v) << ":";
+		cfile << int2str(layList[i].intsz) << ":";
+		cfile << int2str(layList[i].intpos.v) << ":";
+		cfile << int2str(layList[i].intpos.h) << "\n";
 	}
 	cfile << "scrDir = " << conf.scrShot.dir.c_str() << "\n";
 	cfile << "scrFormat = " << conf.scrShot.format.c_str() << "\n";
 	cfile << "scrCount = " << int2str(conf.scrShot.count) << "\n";
 	cfile << "scrInterval = " << int2str(conf.scrShot.interval) << "\n";
-	cfile << "colorLevel = " << int2str(conf.bright) << "\n";
-	cfile << "fullscreen = " << ((vidFlag & VF_FULLSCREEN) ? "yes" : "no") << "\n";
-	cfile << "doublesize = " << ((vidFlag & VF_DOUBLE) ? "yes" : "no") << "\n";
-	cfile << "greyscale = " << ((vidFlag & VF_GREY) ? "yes" : "no") << "\n";
+	cfile << "fullscreen = " << YESNO(conf.vid.fullScreen) << "\n";
+	cfile << "doublesize = " << YESNO(conf.vid.doubleSize) << "\n";
+	cfile << "greyscale = " << YESNO(conf.vid.grayScale) << "\n";
 	cfile << "bordersize = " << int2str(conf.brdsize * 100) << "\n";
-	cfile << "noflic = " << ((vidFlag & VF_NOFLIC) ? "yes" : "no") << "\n";
+	cfile << "noflic = " << YESNO(conf.vid.noFlick) << "\n";
 	cfile << "\n[ROMSETS]\n";
-	std::vector<xRomset> rsl = getRomsetList();
-	for (i=0; i<rsl.size(); i++) {
-		cfile<< "\nname = " << rsl[i].name.c_str() << "\n";
-		if (rsl[i].file != "") {
-			cfile << "file = " << rsl[i].file.c_str() << "\n";
+	for (i=0; i<rsList.size(); i++) {
+		cfile<< "\nname = " << rsList[i].name.c_str() << "\n";
+		if (rsList[i].file != "") {
+			cfile << "file = " << rsList[i].file.c_str() << "\n";
 		} else {
 			for (j=0; j<4; j++) {
-				if (rsl[i].roms[j].path != "") {
-					cfile << int2str(j).c_str() << " = " << rsl[i].roms[j].path.c_str();
-					if (rsl[i].roms[j].part != 0) cfile << ":" << int2str(rsl[i].roms[j].part).c_str();
+				if (rsList[i].roms[j].path != "") {
+					cfile << int2str(j) << " = " << rsList[i].roms[j].path.c_str();
+					if (rsList[i].roms[j].part != 0) cfile << ":" << int2str(rsList[i].roms[j].part);
 					cfile << "\n";
 				}
 			}
 		}
-		if (!rsl[i].gsFile.empty()) cfile << "gs = " << rsl[i].gsFile.c_str() << "\n";
-		if (!rsl[i].fntFile.empty()) cfile << "font = " << rsl[i].fntFile.c_str() << "\n";
+		if (!rsList[i].gsFile.empty()) cfile << "gs = " << rsList[i].gsFile.c_str() << "\n";
+		if (!rsList[i].fntFile.empty()) cfile << "font = " << rsList[i].fntFile.c_str() << "\n";
 	}
 	cfile << "\n[SOUND]\n\n";
-	cfile << "enabled = " << (sndEnabled ? "yes" : "no") << "\n";
+	cfile << "enabled = " << YESNO(conf.snd.enabled) << "\n";
+	cfile << "dontmute = " << YESNO(conf.snd.mute) << "\n";
 	cfile << "soundsys = " << sndOutput->name << "\n";
-	cfile << "dontmute = " << (sndMute ? "yes" : "no") << "\n";
-	cfile << "rate = " << int2str(sndRate).c_str() << "\n";
-	cfile << "volume.beep = " << int2str(beepVolume).c_str() << "\n";
-	cfile << "volume.tape = " << int2str(tapeVolume).c_str() << "\n";
-	cfile << "volume.ay = " << int2str(ayVolume).c_str() << "\n";
-	cfile << "volume.gs = " << int2str(gsVolume).c_str() << "\n";
+	cfile << "rate = " << int2str(conf.snd.rate) << "\n";
+	cfile << "volume.beep = " << int2str(conf.snd.vol.beep) << "\n";
+	cfile << "volume.tape = " << int2str(conf.snd.vol.tape) << "\n";
+	cfile << "volume.ay = " << int2str(conf.snd.vol.ay) << "\n";
+	cfile << "volume.gs = " << int2str(conf.snd.vol.gs) << "\n";
 
 	cfile << "\n[TAPE]\n\n";
-	cfile << "autoplay = " << (conf.tape.autostart ? "yes" : "no") << "\n";
-	cfile << "fast = " << (conf.tape.fast ? "yes" : "no") << "\n";
+	cfile << "autoplay = " << YESNO(conf.tape.autostart) << "\n";
+	cfile << "fast = " << YESNO(conf.tape.fast) << "\n";
 
 	cfile << "\n[LEDS]\n\n";
-	cfile << "mouse = " << (conf.led.mouse ? "yes" : "no") << "\n";
-	cfile << "joystick = " << (conf.led.joy ? "yes" : "no") << "\n";
-	cfile << "keyscan = " << (conf.led.keys ? "yes" : "no") << "\n";
+	cfile << "mouse = " << YESNO(conf.led.mouse) << "\n";
+	cfile << "joystick = " << YESNO(conf.led.joy) << "\n";
+	cfile << "keyscan = " << YESNO(conf.led.keys) << "\n";
 	cfile.close();
 }
 
@@ -211,11 +212,11 @@ void loadConfig() {
 	int section = SECT_NONE;
 	std::vector<std::string> vect;
 	xLayout vlay;
-	std::vector<xRomset> rslist;
+	std::vector<xRomset> rsListist;
 	xRomset newrs;
 	size_t pos;
 	std::string tms,fnam;
-	int test,fprt;
+	int fprt;
 	newrs.file.clear();
 	newrs.gsFile.clear();
 	for (int i=0; i<32; i++) {
@@ -255,10 +256,14 @@ void loadConfig() {
 						vect = splitstr(pval,":");
 						if (vect.size() > 8) {
 							vlay.name = vect[0];
-							vlay.full.h = atoi(vect[1].c_str()); vlay.full.v = atoi(vect[2].c_str());
-							vlay.bord.h = atoi(vect[3].c_str()); vlay.bord.v = atoi(vect[4].c_str());
-							vlay.sync.h = atoi(vect[5].c_str()); vlay.sync.v = atoi(vect[6].c_str());
-							vlay.intsz = atoi(vect[7].c_str()); vlay.intpos.v = atoi(vect[8].c_str());
+							vlay.full.h = atoi(vect[1].c_str());
+							vlay.full.v = atoi(vect[2].c_str());
+							vlay.bord.h = atoi(vect[3].c_str());
+							vlay.bord.v = atoi(vect[4].c_str());
+							vlay.sync.h = atoi(vect[5].c_str());
+							vlay.sync.v = atoi(vect[6].c_str());
+							vlay.intsz = atoi(vect[7].c_str());
+							vlay.intpos.v = atoi(vect[8].c_str());
 							if (vect.size() > 9) {
 								vlay.intpos.h = atoi(vect[9].c_str());
 							} else {
@@ -272,24 +277,14 @@ void loadConfig() {
 						}
 					}
 					if (pnam=="scrDir") conf.scrShot.dir = pval;
-					if (pnam=="scrFormat") {
-						conf.scrShot.format = pval;
-					}
+					if (pnam=="scrFormat") conf.scrShot.format = pval;
 					if (pnam=="scrCount") conf.scrShot.count = atoi(pval.c_str());
 					if (pnam=="scrInterval") conf.scrShot.interval = atoi(pval.c_str());
-					if (pnam=="colorLevel") {
-						test=atoi(pval.c_str());
-						if ((test < 50) || (test > 250)) test=192;
-						conf.bright = test;
-					}
-					if (pnam=="fullscreen") setFlagBit(str2bool(pval),&vidFlag,VF_FULLSCREEN);
-					if (pnam=="bordersize") {
-						test=atoi(pval.c_str());
-						if ((test >= 0) && (test <= 100)) conf.brdsize = test / 100.0;
-					}
-					if (pnam=="doublesize") setFlagBit(str2bool(pval),&vidFlag,VF_DOUBLE);
-					if (pnam=="noflic") setFlagBit(str2bool(pval),&vidFlag,VF_NOFLIC);
-					if (pnam=="greyscale") setFlagBit(str2bool(pval),&vidFlag,VF_GREY);
+					if (pnam=="fullscreen") conf.vid.fullScreen = str2bool(pval) ? 1 : 0;
+					if (pnam=="bordersize") conf.brdsize = getRanged(pval.c_str(), 0, 100) / 100.0;
+					if (pnam=="doublesize") conf.vid.doubleSize = str2bool(pval) ? 1 : 0;
+					if (pnam=="noflic") conf.vid.noFlick = str2bool(pval) ? 1 : 0;
+					if (pnam=="greyscale") conf.vid.grayScale = str2bool(pval) ? 1 : 0;
 					break;
 				case SECT_ROMSETS:
 					pos = pval.find_last_of(":");
@@ -307,61 +302,41 @@ void loadConfig() {
 					}
 					if (pnam=="name") {
 						newrs.name = pval;
-						rslist.push_back(newrs);
+						rsListist.push_back(newrs);
 					}
-					if (rslist.size() != 0) {
+					if (rsListist.size() != 0) {
 						if (pnam=="file") {
-							rslist.back().file = fnam;
+							rsListist.back().file = fnam;
 						}
 						if ((pnam=="basic128") || (pnam=="0")) {
-							rslist.back().roms[0].path=fnam;
-							rslist.back().roms[0].part=fprt;
+							rsListist.back().roms[0].path=fnam;
+							rsListist.back().roms[0].part=fprt;
 						}
 						if ((pnam=="basic48") || (pnam=="1")) {
-							rslist.back().roms[1].path=fnam;
-							rslist.back().roms[1].part=fprt;
+							rsListist.back().roms[1].path=fnam;
+							rsListist.back().roms[1].part=fprt;
 						}
 						if ((pnam=="shadow") || (pnam=="2")) {
-							rslist.back().roms[2].path=fnam;
-							rslist.back().roms[2].part=fprt;
+							rsListist.back().roms[2].path=fnam;
+							rsListist.back().roms[2].part=fprt;
 						}
 						if ((pnam=="trdos") || (pnam=="3")) {
-							rslist.back().roms[3].path=fnam;
-							rslist.back().roms[3].part=fprt;
+							rsListist.back().roms[3].path=fnam;
+							rsListist.back().roms[3].part=fprt;
 						}
-						if (pnam=="gs") rslist.back().gsFile=fnam;
-						if (pnam=="font") rslist.back().fntFile=fnam;
+						if (pnam=="gs") rsListist.back().gsFile=fnam;
+						if (pnam=="font") rsListist.back().fntFile=fnam;
 					}
 					break;
 				case SECT_SOUND:
-					if (pnam=="enabled") sndEnabled = str2bool(pval);
-					if (pnam=="dontmute") sndMute = str2bool(pval);
+					if (pnam=="enabled") conf.snd.enabled = str2bool(pval) ? 1 : 0;
+					if (pnam=="dontmute") conf.snd.mute = str2bool(pval) ? 1 : 0;
 					if (pnam=="soundsys") soutnam = pval;
-					if (pnam=="rate") sndRate = atoi(pval.c_str());
-					if (pnam=="volume.beep") {
-						test = atoi(pval.c_str());
-						if (test > 100) test = 100;
-						if (test < 0) test = 0;
-						beepVolume = test;
-					}
-					if (pnam=="volume.tape") {
-						test = atoi(pval.c_str());
-						if (test > 100) test = 100;
-						if (test < 0) test = 0;
-						tapeVolume = test;
-					}
-					if (pnam=="volume.ay") {
-						test = atoi(pval.c_str());
-						if (test > 100) test = 100;
-						if (test < 0) test = 0;
-						ayVolume = test;
-					}
-					if (pnam=="volume.gs") {
-						test = atoi(pval.c_str());
-						if (test > 100) test = 100;
-						if (test < 0) test = 0;
-						gsVolume = test;
-					}
+					if (pnam=="rate") conf.snd.rate = atoi(pval.c_str());
+					if (pnam=="volume.beep") conf.snd.vol.beep = getRanged(pval.c_str(), 0, 100);
+					if (pnam=="volume.tape") conf.snd.vol.tape = getRanged(pval.c_str(), 0, 100);
+					if (pnam=="volume.ay") conf.snd.vol.ay = getRanged(pval.c_str(), 0, 100);
+					if (pnam=="volume.gs") conf.snd.vol.gs = getRanged(pval.c_str(), 0, 100);
 					break;
 				case SECT_TOOLS:
 					break;
@@ -388,7 +363,7 @@ void loadConfig() {
 		}
 	}
 	uint i;
-	for (i=0; i<rslist.size(); i++) addRomset(rslist[i]);
+	for (i=0; i<rsListist.size(); i++) addRomset(rsListist[i]);
 	prfLoadAll();
 	setOutput(soutnam.c_str());
 	if (conf.defProfile) {

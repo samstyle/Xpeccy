@@ -1,5 +1,10 @@
 #include "../spectrum.h"
 
+// TODO : fill memMap & set prt1 for reset to separate ROM pages
+void atm2Reset(ZXComp* comp) {
+	comp->dosen = 1;
+}
+
 void atmSetBank(ZXComp* comp, int bank, memEntry me) {
 	unsigned char page = me.page ^ 0xff;
 	if (me.flag & 0x80) {
@@ -102,7 +107,7 @@ void atm2Out(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 			if (!comp->vid->border4t)
 				comp->vid->brdcol = comp->vid->nextbrd;
 			comp->beeplev = (val & 0x10) ? 1 : 0;
-			comp->tape->outsig = (val & 0x08) ? 1 : 0;
+			comp->tape->levRec = (val & 0x08) ? 1 : 0;
 			break;
 		case 0x77:
 			switch (val & 7) {
@@ -157,7 +162,7 @@ Z80EX_BYTE atm2In(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 			res = bdiz ? bdiIn(comp->bdi,BDI_SYS) : comp->vid->atrbyte;
 			break;
 		case 0xfe:
-			res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00);
+			res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->levPlay ? 0x40 : 0x00);
 			break;
 		case 0x7ffd:
 			res = 0xff;

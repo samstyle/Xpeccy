@@ -8,6 +8,31 @@
 #define pEFF7 comp->prt1
 #define p21AF comp->prt2
 
+void tslReset(ZXComp* comp) {
+	comp->vid->tsconf.scrPal = 0xf0;
+	memset(comp->vid->tsconf.cram,0x00,0x1e0);
+	comp->prt2 = 0x04;
+	comp->tsconf.Page0 = 0;
+	comp->vid->nextbrd = 0xf7;
+	comp->tsconf.p00af = 0;
+	comp->tsconf.p01af = 0x05;
+	comp->tsconf.p02af = 0;
+	comp->tsconf.p03af = 0;
+	comp->tsconf.p04af = 0;
+	comp->tsconf.p05af = 0;
+	comp->tsconf.p07af = 0x0f;
+	comp->vid->tsconf.T0XOffset = 0;
+	comp->vid->tsconf.T0YOffset = 0;
+	comp->vid->tsconf.T1XOffset = 0;
+	comp->vid->tsconf.T1YOffset = 0;
+	comp->vid->tsconf.tconfig = 0;
+	comp->vid->intpos.h = 0;
+	comp->vid->intpos.v = 0;
+	comp->vid->intMask = 1;
+	comp->tsconf.vdos = 0;
+	tslUpdatePorts(comp);
+}
+
 void tslMapMem(ZXComp* comp) {
 // bank0 maping taken from Unreal(TSConf)
 	if (comp->tsconf.vdos) {
@@ -351,7 +376,7 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 					comp->vid->brdcol = 0xf0 | (val & 7);
 					comp->vid->nextbrd = comp->vid->brdcol;
 					comp->beeplev = (val & 0x10) ? 1 : 0;
-					comp->tape->outsig = (val & 0x08) ? 1 : 0;
+					comp->tape->levRec = (val & 0x08) ? 1 : 0;
 					break;
 				case 0xfb: sdrvOut(comp->sdrv,0xfb,val); break;	// covox
 				case 0xf7:
@@ -495,7 +520,7 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 					break;
 				case 0xf6:
 				case 0xfe:
-					res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00);
+					res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->levPlay ? 0x40 : 0x00);
 					break;
 				case 0xf7:
 					if ((~port & 0x4000) && ((pEFF7 & 0x80) || comp->dosen)) res = cmsRd(comp);	// BFF7

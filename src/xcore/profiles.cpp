@@ -1,7 +1,9 @@
-#include "xcore.h"
-#include "../filer.h"
 #include <stdio.h>
 #include <fstream>
+#include <math.h>
+
+#include "xcore.h"
+#include "../filer.h"
 
 xProfile* currentProfile = NULL;
 std::vector<xProfile> profileList;
@@ -96,7 +98,6 @@ xProfile* getCurrentProfile() {
 	return currentProfile;
 }
 
-void sndCalibrate();
 bool prfSetLayout(xProfile* prf, std::string nm) {
 	if (prf == NULL) prf = getCurrentProfile();
 	xLayout* lay = findLayout(nm);
@@ -108,8 +109,19 @@ bool prfSetLayout(xProfile* prf, std::string nm) {
 		     lay->sync.h, lay->sync.v,
 		     lay->intpos.h, lay->intpos.v, lay->intsz);
 	vidUpdate(prf->zx->vid, conf.brdsize);
-	sndCalibrate();
 	return true;
+}
+
+void prfChangeRsName(std::string oldName, std::string newName) {
+	for (uint i = 0; i < profileList.size(); i++) {
+		if (profileList[i].rsName == oldName) profileList[i].rsName = newName;
+	}
+}
+
+void prfChangeLayName(std::string oldName, std::string newName) {
+	for (uint i = 0; i < profileList.size(); i++) {
+		if (profileList[i].layName == oldName) profileList[i].layName = newName;
+	}
 }
 
 // load-save
@@ -132,7 +144,7 @@ void setDiskString(ZXComp* comp,Floppy* flp,std::string st) {
 	flp->protect = (st.substr(3,1) == "R") ? 1 : 0;
 	if (flp->path || (st.size() < 5) || !conf.storePaths) return;
 	st = st.substr(5);
-	loadFile(comp,st.c_str(),FT_DISK,flp->id);
+	if (st.size() > 1) loadFile(comp,st.c_str(),FT_DISK,flp->id);
 }
 
 void prfSetRomset(std::string pnm, std::string rnm) {
@@ -199,11 +211,11 @@ int prfLoad(std::string nm) {
 			switch (section) {
 				case PS_ROMSET:
 					if (pnam=="reset") {
-						comp->resbank = 1;
-						if ((pval == "basic128") || (pval=="0")) comp->resbank = 0;
-						if ((pval == "basic48") || (pval=="1")) comp->resbank = 1;
-						if ((pval == "shadow") || (pval=="2")) comp->resbank = 2;
-						if ((pval == "trdos") || (pval=="3")) comp->resbank = 3;
+						comp->resbank = RES_48;
+						if ((pval == "basic128") || (pval=="0")) comp->resbank = RES_128;
+						if ((pval == "basic48") || (pval=="1")) comp->resbank = RES_48;
+						if ((pval == "shadow") || (pval=="2")) comp->resbank = RES_SHADOW;
+						if ((pval == "trdos") || (pval=="3")) comp->resbank = RES_DOS;
 					}
 					if (pnam=="current") prf->rsName = pval;
 					break;
@@ -237,7 +249,9 @@ int prfLoad(std::string nm) {
 					if (pnam == "current") prf->hwName = pval;
 					if (pnam == "cpu.frq") {
 						tmp2 = atoi(pval.c_str());
-						if ((tmp2 > 0) && (tmp2 <= 28)) zxSetFrq(comp,tmp2 / 2.0);
+						if (tmp2 < 2) tmp2 = 2;
+						if (tmp2 > 28) tmp2 = 28;
+						zxSetFrq(comp, tmp2 / 2.0);
 					}
 					if (pnam == "memory") {
 						memsz = atoi(pval.c_str());
@@ -334,8 +348,6 @@ std::string getDiskString(Floppy* flp) {
 	return res;
 }
 
-#define	YESNO(cnd) ((cnd) ? "yes" : "no")
-
 int prfSave(std::string nm) {
 	xProfile* prf = findProfile(nm);
 	if (prf == NULL) return PSAVE_NF;
@@ -351,15 +363,20 @@ int prfSave(std::string nm) {
 	file << "[MACHINE]\n\n";
 	file << "current = " << prf->hwName.c_str() << "\n";
 	file << "memory = " << int2str(comp->mem->memSize) << "\n";
-	file << "cpu.frq = " << int2str(comp->cpuFrq * 2) << "\n";
+	file << "cpu.frq = " << int2str(floor(comp->cpuFrq * 2)) << "\n";
 	file << "scrp.wait = " << YESNO(comp->scrpWait) << "\n";
 	file << "contio = " << YESNO(comp->contIO) << "\n";
 	file << "contmem = " << YESNO(comp->contMem) << "\n";
 
 	file << "\n[ROMSET]\n\n";
 	file << "current = " << prf->rsName.c_str() << "\n";
-	file << "reset = " << int2str(comp->resbank) << "\n";
-
+	file << "reset = ";
+	switch (comp->resbank) {
+		case RES_48: file << "basic48\n"; break;
+		case RES_128: file << "basic128\n"; break;
+		case RES_DOS: file << "dos\n"; break;
+		case RES_SHADOW: file << "shadow\n"; break;
+	}
 	file << "\n[VIDEO]\n\n";
 	file << "geometry = " << prf->layName.c_str() << "\n";
 	file << "4t-border = " << YESNO(comp->vid->border4t) << "\n";
@@ -399,13 +416,17 @@ int prfSave(std::string nm) {
 	file << "master.image = " << ((comp->ide->master->image) ? comp->ide->master->image : "") << "\n";
 	file << "master.lba = " << YESNO(comp->ide->master->hasLBA) << "\n";
 	file << "master.maxlba = " << int2str(comp->ide->master->maxlba) << "\n";
-	file << "master.chs = " << int2str(pass.spt) << "/" << int2str(pass.hds) << "/" << int2str(pass.cyls) << "\n";
+	file << "master.chs = " << int2str(pass.spt) << "/";
+	file << int2str(pass.hds) << "/";
+	file << int2str(pass.cyls) << "\n";
 	file << "slave.type = " << int2str(comp->ide->slave->type) << "\n";
 	pass = ideGetPassport(comp->ide,IDE_SLAVE);
 	file << "slave.image = " << ((comp->ide->slave->image) ? comp->ide->slave->image : "") << "\n";
 	file << "slave.lba = " << YESNO(comp->ide->slave->hasLBA) << "\n";
 	file << "slave.maxlba = " << int2str(comp->ide->slave->maxlba) << "\n";
-	file << "slave.chs = " << int2str(pass.spt) << "/" << int2str(pass.hds) << "/" << int2str(pass.cyls) << "\n";
+	file << "slave.chs = " << int2str(pass.spt) << "/";
+	file << int2str(pass.hds) << "/";
+	file << int2str(pass.cyls) << "\n";
 
 	file << "\n[SDC]\n\n";
 	file << "sdcimage = " << (comp->sdc->image ? comp->sdc->image : "") << "\n";

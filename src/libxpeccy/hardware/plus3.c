@@ -20,7 +20,7 @@ void pl3Out(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 			if (!comp->vid->border4t)
 				comp->vid->brdcol = val & 0x07;
 			comp->beeplev = (val & 0x10) ? 1 : 0;
-			comp->tape->outsig = (val & 0x08) ? 1 : 0;
+			comp->tape->levRec = (val & 0x08) ? 1 : 0;
 			break;
 		case 0x7ffd:
 			if (comp->prt0 & 0x20) break;
@@ -55,7 +55,7 @@ Z80EX_BYTE pl3In(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 	int ptype = pl3GetPort(port,bdiz);
 	switch (ptype) {
 		case 0xfe:
-			res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00);
+			res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->levPlay ? 0x40 : 0x00);
 			break;
 		case 0x2ffd:
 			res = fdcRd(comp->bdi->fdc,FDC_STATE);

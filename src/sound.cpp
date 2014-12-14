@@ -13,9 +13,6 @@
 	#include <mmsystem.h>
 #endif
 
-bool sndEnabled;
-bool sndMute;
-
 #define SF_BUF	1
 int sndFlag = 0;
 
@@ -30,13 +27,7 @@ int smpCount = 0;
 
 long nsPerFrame;
 
-int beepVolume = 100;
-int tapeVolume = 100;
-int ayVolume = 100;
-int gsVolume = 100;
-
 OutSys *sndOutput = NULL;
-unsigned int sndRate = 44100;
 int sndChans = 2;
 int sndChunks = 882;
 int sndBufSize = 1764;
@@ -68,9 +59,9 @@ void sndSync(ZXComp* comp, int fast) {
 	tsSync(comp->ts,nsPerSample);
 	if (fast != 0) return;
 	if (sndOutput == NULL) return;
-	lev = comp->beeplev ? beepVolume : 0;
+	lev = comp->beeplev ? conf.snd.vol.beep : 0;
 	if (comp->tape->on) {
-		lev += (comp->tape->outsig ? tapeVolume : 0) + (comp->tape->signal ? tapeVolume : 0);
+		lev += (comp->tape->levRec ? conf.snd.vol.tape : 0) + (comp->tape->levPlay ? conf.snd.vol.tape : 0);
 	}
 
 	lev *= 0.16;
@@ -78,16 +69,16 @@ void sndSync(ZXComp* comp, int fast) {
 	levr = lev;
 
 	tsPair tsvol = tsGetVolume(comp->ts);
-	levl += tsvol.left * ayVolume / 100.0;
-	levr += tsvol.right * ayVolume / 100.0;
+	levl += tsvol.left * conf.snd.vol.ay / 100.0;
+	levr += tsvol.right * conf.snd.vol.ay / 100.0;
 
 	gsPair gsvol = gsGetVolume(comp->gs);
-	levl += gsvol.left * gsVolume / 100.0;
-	levr += gsvol.right * gsVolume / 100.0;
+	levl += gsvol.left * conf.snd.vol.gs / 100.0;
+	levr += gsvol.right * conf.snd.vol.gs / 100.0;
 
 	sdrvPair sdvol = sdrvGetVolume(comp->sdrv);
-	levl += sdvol.left * beepVolume / 100.0;
-	levr += sdvol.right * beepVolume / 100.0;
+	levl += sdvol.left * conf.snd.vol.beep / 100.0;
+	levr += sdvol.right * conf.snd.vol.beep / 100.0;
 
 	if (levl > 0xff) levl = 0xff;
 	if (levr > 0xff) levr = 0xff;
@@ -102,7 +93,6 @@ void sndSync(ZXComp* comp, int fast) {
 	ringPos++;
 	ringPos &= 0x3fff;
 	smpCount++;
-//	return tk;
 }
 
 void sndFillToEnd() {
@@ -117,7 +107,7 @@ void sndFillToEnd() {
 }
 
 void sndCalibrate() {
-	sndChunks = (int)(sndRate / 50.0);			// samples played at 1/50 sec			882
+	sndChunks = (int)(conf.snd.rate / 50.0);		// samples played at 1/50 sec			882
 	sndBufSize = sndChans * sndChunks;			// buffer size for 1/50 sec play		1764
 	nsPerSample = nsPerFrame / sndChunks;
 }
@@ -202,7 +192,6 @@ void null_close() {}
 
 #ifdef HAVESDL
 
-// FIXME: something going wrong. sdlPlayAudio plays buffer slower than emulation fill it
 void sdlPlayAudio(void*,Uint8* stream, int len) {
 	if (pass < 2) {
 		pass++;
@@ -221,7 +210,7 @@ void sdlPlayAudio(void*,Uint8* stream, int len) {
 bool sdlopen() {
 //	printf("Open SDL audio device...");
 	SDL_AudioSpec asp;
-	asp.freq = sndRate;
+	asp.freq = conf.snd.rate;
 	asp.format = AUDIO_U8;
 	asp.channels = sndChans;
 	asp.samples = sndChunks + 1;
@@ -252,7 +241,7 @@ bool oss_open() {
 	if (ossHandle < 0) return false;
 	ioctl(ossHandle,SNDCTL_DSP_SETFMT,&sndFormat);
 	ioctl(ossHandle,SNDCTL_DSP_CHANNELS,&sndChans);
-	ioctl(ossHandle,SNDCTL_DSP_SPEED,&sndRate);
+	ioctl(ossHandle,SNDCTL_DSP_SPEED,&conf.snd.rate);
 	return true;
 }
 
@@ -288,7 +277,7 @@ bool alsa_open() {
 		alsaHandle = NULL;
 		res = false;
 	} else {
-		err = snd_pcm_set_params(alsaHandle,SND_PCM_FORMAT_U8,SND_PCM_ACCESS_RW_INTERLEAVED,sndChans,sndRate,1,100000);
+		err = snd_pcm_set_params(alsaHandle,SND_PCM_FORMAT_U8,SND_PCM_ACCESS_RW_INTERLEAVED,sndChans,conf.snd.rate,1,100000);
 		if (err != 0) {
 			alsaHandle = NULL;
 			res = false;
@@ -403,11 +392,14 @@ void sndInit() {
 #ifdef __linux__
 	sndFormat = AFMT_U8;
 #endif
-	sndRate = 44100;
+	conf.snd.rate = 44100;
 	sndChans = 2;
-	sndEnabled = true;
-	sndMute = true;
+	conf.snd.enabled = 1;
+	conf.snd.mute = 1;
 	sndOutput = NULL;
-	beepVolume = tapeVolume = ayVolume = gsVolume = 100;
+	conf.snd.vol.beep = 100;
+	conf.snd.vol.tape = 100;
+	conf.snd.vol.ay = 100;
+	conf.snd.vol.gs = 100;
 	initNoise();							// ay/ym
 }

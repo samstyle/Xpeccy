@@ -15,7 +15,7 @@ class SetupWin : public QDialog {
 	public:
 		SetupWin(QWidget*);
 	private:
-		ZXComp* comp;
+		ZXComp* comp;		
 
 		Ui::SetupWin setupUi;
 		Ui::UmaDial uia;
@@ -25,8 +25,12 @@ class SetupWin : public QDialog {
 		QDialog* rseditor;
 		QDialog* layeditor;
 
-		std::vector<xLayout> lays;
-		std::vector<xRomset> rsl;
+		int eidx;
+		xRomset nrs;
+		void editRomset();
+
+		xLayout nlay;
+		void editLayout();
 	signals:
 		void closed();
 	public slots:
@@ -39,7 +43,6 @@ class SetupWin : public QDialog {
 		void setmszbox(int);
 		void selsspath();
 		void chabsz();
-		void chabrg();
 		void updatedisknams();
 		void loada(); void loadb(); void loadc(); void loadd();
 		void savea(); void saveb(); void savec(); void saved();
@@ -57,12 +60,15 @@ class SetupWin : public QDialog {
 		void setTapeBreak(int,int);
 		void hddcap();
 		void selSDCimg();
+
 		void editrset();
 		void setrpart();
 		void addNewRomset();
 		void rmRomset();
+		void rsNameCheck(QString);
 		void recheck_single(bool);
 		void recheck_separate(bool);
+
 		void fillDiskCat();
 		void copyToTape();
 		void copyToDisk();
@@ -71,11 +77,12 @@ class SetupWin : public QDialog {
 		void newProfile();
 		void rmProfile();
 
-		void editLayout();
+		void edLayout();
 		void addNewLayout();
 		void delLayout();
 		void layEditorChanged();
 		void layEditorOK();
+		void layNameCheck(QString);
 	private:
 		QDialog *umadial;
 		void buildtapelist();

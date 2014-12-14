@@ -88,7 +88,7 @@ void scoOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 			comp->vid->nextbrd = val & 0x07;
 			if (!comp->vid->border4t) comp->vid->brdcol = val & 0x07;
 			comp->beeplev = (val & 0x10) ? 1 : 0;
-			comp->tape->outsig = (val & 0x08) ? 1 : 0;
+			comp->tape->levRec = (val & 0x08) ? 1 : 0;
 			break;
 		case 0x7ffd:
 			if (comp->prt0 & 0x20) break;
@@ -127,7 +127,7 @@ Z80EX_BYTE scoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 			res = bdiz ? bdiIn(comp->bdi,BDI_SYS) : 0xff;
 			break;
 		case 0xfe:
-			res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00);
+			res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->levPlay ? 0x40 : 0x00);
 			break;
 		case 0x1ffd:
 			zxSetFrq(comp,3.5);

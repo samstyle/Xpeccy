@@ -15,7 +15,6 @@
 #include "sound.h"
 #include "libxpeccy/spectrum.h"
 #include "setupwin.h"
-#include "emulwin.h"
 #include "filer.h"
 #include "filetypes/filetypes.h"
 
@@ -67,7 +66,11 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 		setupUi.machbox->addItem(QString::fromLocal8Bit(hwTab[i].optName),QString::fromLocal8Bit(hwTab[i].name));
 		i++;
 	}
-	setupUi.resbox->addItems(QStringList()<<"ROMPage0"<<"ROMPage1"<<"ROMPage2"<<"ROMPage3");
+	setupUi.resbox->addItem("BASIC 48",RES_48);
+	setupUi.resbox->addItem("BASIC 128",RES_128);
+	setupUi.resbox->addItem("DOS",RES_DOS);
+	setupUi.resbox->addItem("SHADOW",RES_SHADOW);
+//	setupUi.resbox->addItems(QStringList()<<"ROMPage0"<<"ROMPage1"<<"ROMPage2"<<"ROMPage3");
 //	setupUi.rssel->hide();
 	QTableWidgetItem* itm;
 	for (i = 0; i < (unsigned)setupUi.rstab->rowCount(); i++) {
@@ -169,15 +172,16 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	connect(rseUi.rse_apply,SIGNAL(released()),this,SLOT(setrpart()));
 	connect(rseUi.rse_grp_single,SIGNAL(toggled(bool)),this,SLOT(recheck_separate(bool)));
 	connect(rseUi.rse_grp_separate,SIGNAL(toggled(bool)),this,SLOT(recheck_single(bool)));
+	connect(rseUi.rsName,SIGNAL(textChanged(QString)),this,SLOT(rsNameCheck(QString)));
 // video
 	connect(setupUi.pathtb,SIGNAL(released()),this,SLOT(selsspath()));
 	connect(setupUi.bszsld,SIGNAL(valueChanged(int)),this,SLOT(chabsz()));
-	connect(setupUi.brgslide,SIGNAL(valueChanged(int)),this,SLOT(chabrg()));
 
-	connect(setupUi.layEdit,SIGNAL(released()),this,SLOT(editLayout()));
+	connect(setupUi.layEdit,SIGNAL(released()),this,SLOT(edLayout()));
 	connect(setupUi.layAdd,SIGNAL(released()),this,SLOT(addNewLayout()));
 	connect(setupUi.layDel,SIGNAL(released()),this,SLOT(delLayout()));
 
+	connect(layUi.layName,SIGNAL(textChanged(QString)),this,SLOT(layNameCheck(QString)));
 	connect(layUi.lineBox,SIGNAL(valueChanged(int)),this,SLOT(layEditorChanged()));
 	connect(layUi.rowsBox,SIGNAL(valueChanged(int)),this,SLOT(layEditorChanged()));
 	connect(layUi.brdLBox,SIGNAL(valueChanged(int)),this,SLOT(layEditorChanged()));
@@ -283,18 +287,16 @@ void SetupWin::start(ZXComp* c) {
 	xProfile* curProf = getCurrentProfile();
 	xRomset* rset = findRomset(curProf->rsName);
 // machine
-	rsl = getRomsetList();
 	setupUi.rsetbox->clear();
-	for (i=0; i < rsl.size(); i++) {
-		setupUi.rsetbox->addItem(QString::fromLocal8Bit(rsl[i].name.c_str()));
+	for (i=0; i < rsList.size(); i++) {
+		setupUi.rsetbox->addItem(QString::fromLocal8Bit(rsList[i].name.c_str()));
 	}
 	setupUi.machbox->setCurrentIndex(setupUi.machbox->findData(QString::fromUtf8(comp->hw->name)));
 	int cbx = -1;
 	if (rset != NULL)
 		cbx = setupUi.rsetbox->findText(QString::fromUtf8(rset->name.c_str()));
 	setupUi.rsetbox->setCurrentIndex(cbx);
-//	setupUi.reschk->setChecked(emulFlags & FL_RESET);
-	setupUi.resbox->setCurrentIndex(comp->resbank);
+	setupUi.resbox->setCurrentIndex(setupUi.resbox->findData(comp->resbank));
 	setmszbox(setupUi.machbox->currentIndex());
 	setupUi.mszbox->setCurrentIndex(setupUi.mszbox->findData(comp->mem->memSize));
 	if (setupUi.mszbox->currentIndex() < 0) setupUi.mszbox->setCurrentIndex(setupUi.mszbox->count() - 1);
@@ -302,11 +304,10 @@ void SetupWin::start(ZXComp* c) {
 	setupUi.scrpwait->setChecked(comp->scrpWait);
 	setupUi.sysCmos->setChecked(conf.sysclock);
 // video
-	lays = getLayoutList();
-	setupUi.dszchk->setChecked((vidFlag & VF_DOUBLE));
-	setupUi.fscchk->setChecked(vidFlag & VF_FULLSCREEN);
-	setupUi.noflichk->setChecked(vidFlag & VF_NOFLIC);
-	setupUi.grayscale->setChecked(vidFlag & VF_GREY);
+	setupUi.dszchk->setChecked(conf.vid.doubleSize);
+	setupUi.fscchk->setChecked(conf.vid.fullScreen);
+	setupUi.noflichk->setChecked(conf.vid.noFlick);
+	setupUi.grayscale->setChecked(conf.vid.grayScale);
 	setupUi.border4T->setChecked(comp->vid->border4t);
 	setupUi.contMem->setChecked(comp->contMem);
 	setupUi.contIO->setChecked(comp->contIO);
@@ -315,21 +316,22 @@ void SetupWin::start(ZXComp* c) {
 	setupUi.ssfbox->setCurrentIndex(setupUi.ssfbox->findText(conf.scrShot.format.c_str()));
 	setupUi.scntbox->setValue(conf.scrShot.count);
 	setupUi.sintbox->setValue(conf.scrShot.interval);
-	setupUi.brgslide->setValue(conf.bright);
 	setupUi.geombox->clear();
-	for (i=0; i<lays.size(); i++) {setupUi.geombox->addItem(QString::fromLocal8Bit(lays[i].name.c_str()));}
+	for (i=0; i<layList.size(); i++) {
+		setupUi.geombox->addItem(QString::fromLocal8Bit(layList[i].name.c_str()));
+	}
 	setupUi.geombox->setCurrentIndex(setupUi.geombox->findText(QString::fromLocal8Bit(getCurrentProfile()->layName.c_str())));
 	setupUi.ulaPlus->setChecked(comp->vid->ula->enabled);
 // sound
-	setupUi.senbox->setChecked(sndEnabled);
-	setupUi.mutbox->setChecked(sndMute);
+	setupUi.senbox->setChecked(conf.snd.enabled);
+	setupUi.mutbox->setChecked(conf.snd.mute);
 	setupUi.gsrbox->setChecked(comp->gs->reset);
 	setupUi.outbox->setCurrentIndex(setupUi.outbox->findText(QString::fromLocal8Bit(sndOutput->name)));
-	setupUi.ratbox->setCurrentIndex(setupUi.ratbox->findData(QVariant(sndRate)));
-	setupUi.bvsld->setValue(beepVolume);
-	setupUi.tvsld->setValue(tapeVolume);
-	setupUi.avsld->setValue(ayVolume);
-	setupUi.gvsld->setValue(gsVolume);
+	setupUi.ratbox->setCurrentIndex(setupUi.ratbox->findData(QVariant(conf.snd.rate)));
+	setupUi.bvsld->setValue(conf.snd.vol.beep);
+	setupUi.tvsld->setValue(conf.snd.vol.tape);
+	setupUi.avsld->setValue(conf.snd.vol.ay);
+	setupUi.gvsld->setValue(conf.snd.vol.gs);
 	setupUi.schip1box->setCurrentIndex(setupUi.schip1box->findData(QVariant(comp->ts->chipA->type)));
 	setupUi.schip2box->setCurrentIndex(setupUi.schip2box->findData(QVariant(comp->ts->chipB->type)));
 	setupUi.stereo1box->setCurrentIndex(setupUi.stereo1box->findData(QVariant(comp->ts->chipA->stereo)));
@@ -423,7 +425,7 @@ void SetupWin::start(ZXComp* c) {
 void SetupWin::apply() {
 	xProfile* curProf = getCurrentProfile();
 // machine
-	setRomsetList(rsl);
+//	setRomsetList(rsList);
 	HardWare *oldmac = comp->hw;
 	curProf->hwName = std::string(setupUi.machbox->itemData(setupUi.machbox->currentIndex()).toString().toUtf8().data());
 //	curProf->hwName = std::string(setupUi.machbox->currentText().toUtf8().data());
@@ -432,44 +434,38 @@ void SetupWin::apply() {
 	prfSetRomset("", curProf->rsName);
 //	RomSet* rset = findRomset(curProf->rsName);
 //	emulSetFlag(FL_RESET, setupUi.reschk->isChecked());
-	comp->resbank = setupUi.resbox->currentIndex();
-
+	comp->resbank = setupUi.resbox->itemData(setupUi.resbox->currentIndex()).toInt();
 	memSetSize(comp->mem,setupUi.mszbox->itemData(setupUi.mszbox->currentIndex()).toInt());
 	zxSetFrq(comp,setupUi.cpufrq->value() / 2.0);
-	// setFlagBit(setupUi.scrpwait->isChecked(),&comp->hwFlag,HW_WAIT);
 	comp->scrpWait = setupUi.scrpwait->isChecked() ? 1 : 0;
 	if (comp->hw != oldmac) zxReset(comp,RES_DEFAULT);
 	conf.sysclock = setupUi.sysCmos->isChecked() ? 1 : 0;
 // video
-	setLayoutList(lays);
-	setFlagBit(setupUi.dszchk->isChecked(),&vidFlag,VF_DOUBLE);
-	setFlagBit(setupUi.fscchk->isChecked(),&vidFlag,VF_FULLSCREEN);
-	setFlagBit(setupUi.noflichk->isChecked(),&vidFlag,VF_NOFLIC);
-	comp->vid->border4t = setupUi.border4T->isChecked() ? 1 : 0;
-//	setFlagBit(setupUi.contMem->isChecked(),&comp->hwFlag,HW_CONTMEM);
-//	setFlagBit(setupUi.contMemP3->isChecked(),&comp->vid->flags,VID_CONT2);
-//	setFlagBit(setupUi.contIO->isChecked(),&comp->hwFlag,HW_CONTIO);
-	comp->contMem = setupUi.contMem->isChecked() ? 1 : 0;
-	comp->contIO = setupUi.contIO->isChecked() ? 1 : 0;
-	setFlagBit(setupUi.grayscale->isChecked(),&vidFlag,VF_GREY);
-	conf.brdsize = setupUi.bszsld->value()/100.0;
+//	setLayoutList(layList);
+	conf.vid.doubleSize = setupUi.dszchk->isChecked() ? 1 : 0;
+	conf.vid.fullScreen = setupUi.fscchk->isChecked() ? 1 : 0;
+	conf.vid.noFlick = setupUi.noflichk->isChecked() ? 1 : 0;
+	conf.vid.grayScale = setupUi.grayscale->isChecked() ? 1 : 0;
 	conf.scrShot.dir = std::string(setupUi.pathle->text().toLocal8Bit().data());
 	conf.scrShot.format = std::string(setupUi.ssfbox->currentText().toLocal8Bit().data());
 	conf.scrShot.count = setupUi.scntbox->value();
 	conf.scrShot.interval = setupUi.sintbox->value();
-	prfSetLayout(NULL, std::string(setupUi.geombox->currentText().toLocal8Bit().data()));
-	conf.bright = setupUi.brgslide->value();
+	conf.brdsize = setupUi.bszsld->value()/100.0;
+	comp->vid->border4t = setupUi.border4T->isChecked() ? 1 : 0;
+	comp->contMem = setupUi.contMem->isChecked() ? 1 : 0;
+	comp->contIO = setupUi.contIO->isChecked() ? 1 : 0;
 	comp->vid->ula->enabled = setupUi.ulaPlus->isChecked() ? 1 : 0;
+	prfSetLayout(NULL, std::string(setupUi.geombox->currentText().toLocal8Bit().data()));
 // sound
 	//std::string oname = std::string(sndOutput->name);
 	std::string nname(setupUi.outbox->currentText().toLocal8Bit().data());
-	sndEnabled = setupUi.senbox->isChecked();
-	sndMute = setupUi.mutbox->isChecked();
-	sndRate = setupUi.ratbox->itemData(setupUi.ratbox->currentIndex()).toInt();
-	beepVolume = setupUi.bvsld->value();
-	tapeVolume = setupUi.tvsld->value();
-	ayVolume = setupUi.avsld->value();
-	gsVolume = setupUi.gvsld->value();
+	conf.snd.enabled = setupUi.senbox->isChecked() ? 1 : 0;
+	conf.snd.mute = setupUi.mutbox->isChecked() ? 1 : 0;
+	conf.snd.rate = setupUi.ratbox->itemData(setupUi.ratbox->currentIndex()).toInt();
+	conf.snd.vol.beep = setupUi.bvsld->value();
+	conf.snd.vol.tape = setupUi.tvsld->value();
+	conf.snd.vol.ay = setupUi.avsld->value();
+	conf.snd.vol.gs = setupUi.gvsld->value();
 	setOutput(nname.c_str());
 	aymSetType(comp->ts->chipA,setupUi.schip1box->itemData(setupUi.schip1box->currentIndex()).toInt());
 	aymSetType(comp->ts->chipB,setupUi.schip2box->itemData(setupUi.schip2box->currentIndex()).toInt());
@@ -567,51 +563,55 @@ void SetupWin::reject() {
 
 // LAYOUTS
 
-void SetupWin::editLayout() {
-	int idx = setupUi.geombox->currentIndex();
-	if (idx < 1) {
-		shitHappens("You can't edit built-in layout");
-		return;
+void SetupWin::layNameCheck(QString nam) {
+	layUi.okButton->setEnabled(!layUi.layName->text().isEmpty());
+	for (uint i = 0; i < layList.size(); i++) {
+		if ((QString(layList[i].name.c_str()) == nam) && (eidx != (int)i)) {
+			layUi.okButton->setEnabled(false);
+		}
 	}
-	xLayout lay = lays[idx];
-	layUi.lineBox->setValue(lay.full.h);
-	layUi.rowsBox->setValue(lay.full.v);
-	layUi.hsyncBox->setValue(lay.sync.h);
-	layUi.vsyncBox->setValue(lay.sync.v);
-	layUi.brdLBox->setValue(lay.bord.h - lay.sync.h);
-	layUi.brdUBox->setValue(lay.bord.v - lay.sync.v);
-	layUi.intRowBox->setValue(lay.intpos.v);
-	layUi.intPosBox->setValue(lay.intpos.h);
-	layUi.intLenBox->setValue(lay.intsz);
+}
+
+void SetupWin::editLayout() {
+	layUi.lineBox->setValue(nlay.full.h);
+	layUi.rowsBox->setValue(nlay.full.v);
+	layUi.hsyncBox->setValue(nlay.sync.h);
+	layUi.vsyncBox->setValue(nlay.sync.v);
+	layUi.brdLBox->setValue(nlay.bord.h - nlay.sync.h);
+	layUi.brdUBox->setValue(nlay.bord.v - nlay.sync.v);
+	layUi.intRowBox->setValue(nlay.intpos.v);
+	layUi.intPosBox->setValue(nlay.intpos.h);
+	layUi.intLenBox->setValue(nlay.intsz);
+	layUi.okButton->setEnabled(false);
+	layUi.layWidget->setDisabled(eidx == 0);
+	layUi.layName->setText(nlay.name.c_str());
 	layeditor->show();
+	layeditor->setFixedSize(layeditor->minimumSize());
+}
+
+void SetupWin::edLayout() {
+	eidx = setupUi.geombox->currentIndex();
+	nlay = layList[eidx];
+	editLayout();
 }
 
 void SetupWin::delLayout() {
-	int idx = setupUi.geombox->currentIndex();
-	if (idx < 1) {
+	int eidx = setupUi.geombox->currentIndex();
+	if (eidx < 1) {
 		shitHappens("You can't delete this layout");
 		return;
 	}
 	if (areSure("Do you really want to delete this layout?")) {
-		lays.erase(lays.begin() + idx);
-		setupUi.geombox->removeItem(idx);
+		layList.erase(layList.begin() + eidx);
+		setupUi.geombox->removeItem(eidx);
 	}
 }
 
 void SetupWin::addNewLayout() {
-	QString nam = QInputDialog::getText(this,"Enter...","Input layout name"); //,QLineEdit::Normal,"",&ok);
-	if (nam.isEmpty()) return;
-	xLayout lay = lays[0];		// default
-	lay.name = std::string(nam.toLocal8Bit().data());
-	for (uint i = 0; i < lays.size(); i++) {
-		if (lays[i].name == lay.name) {
-			shitHappens("Already have this layout name");
-			return;
-		}
-	}
-	lays.push_back(lay);
-	setupUi.geombox->addItem(nam);
-	setupUi.geombox->setCurrentIndex(setupUi.geombox->count() - 1);
+	eidx = -1;
+	nlay = layList[0];
+	nlay.name = "";
+	editLayout();
 }
 
 void SetupWin::layEditorChanged() {
@@ -633,8 +633,6 @@ void SetupWin::layEditorChanged() {
 
 	layUi.showField->setFixedSize(layUi.lineBox->value(),layUi.rowsBox->value());
 	QPixmap pix(layUi.lineBox->value(),layUi.rowsBox->value());
-//	pix.fill(Qt::black);
-//	layUi.showField->setPixmap(pix);
 	QPainter pnt;
 	pnt.begin(&pix);
 	pnt.fillRect(0,0,pix.width(),pix.height(),Qt::black);
@@ -653,58 +651,75 @@ void SetupWin::layEditorChanged() {
 				 layUi.intRowBox->value());
 	pnt.end();
 	layUi.showField->setPixmap(pix);
+	layeditor->setFixedSize(layeditor->minimumSize());
 }
 
 void SetupWin::layEditorOK() {
-	int idx = setupUi.geombox->currentIndex();
-	if (idx < 1) return;
-	lays[idx].full.h = layUi.lineBox->value();
-	lays[idx].full.v = layUi.rowsBox->value();
-	lays[idx].bord.h = layUi.hsyncBox->value() + layUi.brdLBox->value();
-	lays[idx].bord.v = layUi.vsyncBox->value() + layUi.brdUBox->value();
-	lays[idx].sync.h = layUi.hsyncBox->value();
-	lays[idx].sync.v = layUi.vsyncBox->value();
-	lays[idx].intpos.h = layUi.intPosBox->value();
-	lays[idx].intpos.v = layUi.intRowBox->value();
-	lays[idx].intsz = layUi.intLenBox->value();
+	nlay.name = std::string(layUi.layName->text().toLocal8Bit().data());
+	nlay.full.h = layUi.lineBox->value();
+	nlay.full.v = layUi.rowsBox->value();
+	nlay.bord.h = layUi.hsyncBox->value() + layUi.brdLBox->value();
+	nlay.bord.v = layUi.vsyncBox->value() + layUi.brdUBox->value();
+	nlay.sync.h = layUi.hsyncBox->value();
+	nlay.sync.v = layUi.vsyncBox->value();
+	nlay.intpos.h = layUi.intPosBox->value();
+	nlay.intpos.v = layUi.intRowBox->value();
+	nlay.intsz = layUi.intLenBox->value();
+	if (eidx < 0) {
+		addLayout(nlay);
+		setupUi.geombox->addItem(QString::fromLocal8Bit(nlay.name.c_str()));
+		setupUi.geombox->setCurrentIndex(setupUi.geombox->count() - 1);
+	} else {
+		prfChangeLayName(layList[eidx].name, nlay.name);
+		layList[eidx] = nlay;
+		setupUi.geombox->setItemText(eidx, nlay.name.c_str());
+	}
 	layeditor->hide();
 }
 
 // ROMSETS
 
+void SetupWin::rsNameCheck(QString nam) {
+	rseUi.rse_apply->setEnabled(!rseUi.rsName->text().isEmpty());
+	for (uint i = 0; i < rsList.size(); i++) {
+		if ((QString(rsList[i].name.c_str()) == nam) && (eidx != (int)i)) {
+			rseUi.rse_apply->setEnabled(false);
+		}
+	}
+}
+
 void SetupWin::rmRomset() {
 	int idx = setupUi.rsetbox->currentIndex();
 	if (idx < 0) return;
 	if (areSure("Do you really want to delete this romset?")) {
-		rsl.erase(rsl.begin() + idx);
+		rsList.erase(rsList.begin() + idx);
 		setupUi.rsetbox->removeItem(idx);
 	}
 }
 
 void SetupWin::addNewRomset() {
-//	bool ok = false;
-	QString nam = QInputDialog::getText(this,"Enter...","Input romset name"); //,QLineEdit::Normal,"",&ok);
-	if (nam.isEmpty()) return;
-	xRomset nrs;
-	nrs.name = std::string(nam.toLocal8Bit().data());
+	nrs.name.clear();
 	uint i;
-	for (i=0; i<8; i++) {
+	for (i = 0; i < 8; i++) {
 		nrs.roms[i].path = "";
 		nrs.roms[i].part = 0;
 	}
-	for (i=0; i<rsl.size(); i++) {
-		if (rsl[i].name == nrs.name) return;
-	}
-	rsl.push_back(nrs);
-	setupUi.rsetbox->addItem(QString::fromLocal8Bit(nrs.name.c_str()));
-	setupUi.rsetbox->setCurrentIndex(setupUi.rsetbox->count() - 1);
+	nrs.gsFile = "";
+	nrs.fntFile = "";
+	eidx = -1;
+	editRomset();
 }
 
 // machine
 
 void SetupWin::editrset() {
-	int cbx = setupUi.rsetbox->currentIndex();
-	if (cbx < 0) return;
+	eidx = setupUi.rsetbox->currentIndex();
+	if (eidx < 0) return;
+	nrs = rsList[eidx];
+	editRomset();
+}
+
+void SetupWin::editRomset() {
 	QDir rdir(QString(conf.path.romDir.c_str()));
 	QStringList rlst = rdir.entryList(QStringList() << "*.rom",QDir::Files,QDir::Name);
 	fillRFBox(rseUi.rse_singlefile,rlst);
@@ -714,104 +729,60 @@ void SetupWin::editrset() {
 	fillRFBox(rseUi.rse_file3,rlst);
 	fillRFBox(rseUi.rse_gsfile,rlst);
 	fillRFBox(rseUi.rse_fntfile,rlst);
-	rseUi.rse_singlefile->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].file.c_str())) + 1);
-	rseUi.rse_file0->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].roms[0].path.c_str())) + 1);
-	rseUi.rse_file1->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].roms[1].path.c_str())) + 1);
-	rseUi.rse_file2->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].roms[2].path.c_str())) + 1);
-	rseUi.rse_file3->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].roms[3].path.c_str())) + 1);
-	rseUi.rse_part0->setValue(rsl[cbx].roms[0].part);
-	rseUi.rse_part1->setValue(rsl[cbx].roms[1].part);
-	rseUi.rse_part2->setValue(rsl[cbx].roms[2].part);
-	rseUi.rse_part3->setValue(rsl[cbx].roms[3].part);
-	rseUi.rse_gsfile->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].gsFile.c_str())) + 1);
-	rseUi.rse_fntfile->setCurrentIndex(rlst.indexOf(QString(rsl[cbx].fntFile.c_str())) + 1);
-	rseUi.rse_grp_single->setChecked(rsl[cbx].file != "");
-
-//	setupUi.rstab->hide();
-//	setupUi.rsetbox->setEnabled(false);
-//	setupUi.addrset->setEnabled(false);
-//	setupUi.rmrset->setEnabled(false);
-//	setupUi.rssel->show();
+	rseUi.rsName->setText(nrs.name.c_str());
+	rseUi.rse_singlefile->setCurrentIndex(rlst.indexOf(QString(nrs.file.c_str())) + 1);
+	rseUi.rse_file0->setCurrentIndex(rlst.indexOf(QString(nrs.roms[0].path.c_str())) + 1);
+	rseUi.rse_file1->setCurrentIndex(rlst.indexOf(QString(nrs.roms[1].path.c_str())) + 1);
+	rseUi.rse_file2->setCurrentIndex(rlst.indexOf(QString(nrs.roms[2].path.c_str())) + 1);
+	rseUi.rse_file3->setCurrentIndex(rlst.indexOf(QString(nrs.roms[3].path.c_str())) + 1);
+	rseUi.rse_part0->setValue(nrs.roms[0].part);
+	rseUi.rse_part1->setValue(nrs.roms[1].part);
+	rseUi.rse_part2->setValue(nrs.roms[2].part);
+	rseUi.rse_part3->setValue(nrs.roms[3].part);
+	rseUi.rse_gsfile->setCurrentIndex(rlst.indexOf(QString(nrs.gsFile.c_str())) + 1);
+	rseUi.rse_fntfile->setCurrentIndex(rlst.indexOf(QString(nrs.fntFile.c_str())) + 1);
+	rseUi.rse_grp_single->setChecked(nrs.file != "");
 	rseditor->show();
+	rsNameCheck(rseUi.rsName->text());
 }
 
+// Romset editor OK pressed
 void SetupWin::setrpart() {
-	int cbx = setupUi.rsetbox->currentIndex();
 	if (rseUi.rse_grp_single->isChecked()) {
-		rsl[cbx].file = getRFText(rseUi.rse_singlefile);
+		nrs.file = getRFText(rseUi.rse_singlefile);
 	} else {
-		rsl[cbx].file = "";
+		nrs.file = "";
 	}
-	rsl[cbx].roms[0].path = getRFText(rseUi.rse_file0);
-	rsl[cbx].roms[0].part = rseUi.rse_part0->value();
-	rsl[cbx].roms[1].path = getRFText(rseUi.rse_file1);
-	rsl[cbx].roms[1].part = rseUi.rse_part1->value();
-	rsl[cbx].roms[2].path = getRFText(rseUi.rse_file2);
-	rsl[cbx].roms[2].part = rseUi.rse_part2->value();
-	rsl[cbx].roms[3].path = getRFText(rseUi.rse_file3);
-	rsl[cbx].roms[3].part = rseUi.rse_part3->value();
-	rsl[cbx].gsFile = getRFText(rseUi.rse_gsfile);
-	rsl[cbx].fntFile = getRFText(rseUi.rse_fntfile);
-	buildrsetlist();
+	nrs.roms[0].path = getRFText(rseUi.rse_file0);
+	nrs.roms[0].part = rseUi.rse_part0->value();
+	nrs.roms[1].path = getRFText(rseUi.rse_file1);
+	nrs.roms[1].part = rseUi.rse_part1->value();
+	nrs.roms[2].path = getRFText(rseUi.rse_file2);
+	nrs.roms[2].part = rseUi.rse_part2->value();
+	nrs.roms[3].path = getRFText(rseUi.rse_file3);
+	nrs.roms[3].part = rseUi.rse_part3->value();
+	nrs.gsFile = getRFText(rseUi.rse_gsfile);
+	nrs.fntFile = getRFText(rseUi.rse_fntfile);
+	nrs.name = std::string(rseUi.rsName->text().toLocal8Bit().data());
+	if (eidx < 0) {
+		addRomset(nrs);
+		setupUi.rsetbox->addItem(QString::fromLocal8Bit(nrs.name.c_str()));
+		setupUi.rsetbox->setCurrentIndex(setupUi.rsetbox->count() - 1);
+	} else {
+		prfChangeRsName(rsList[eidx].name, nrs.name);
+		rsList[eidx] = nrs;
+		setupUi.rsetbox->setItemText(eidx, nrs.name.c_str());
+	}
 	rseditor->hide();
-//	hidersedit();
 }
-
-//void SetupWin::hidersedit() {
-//	setupUi.rssel->hide();
-//	setupUi.rstab->show();
-//	setupUi.rsetbox->setEnabled(true);
-//	setupUi.addrset->setEnabled(true);
-//	setupUi.rmrset->setEnabled(true);
-//}
 
 // lists
 
 void SetupWin::buildkeylist() {
-//	std::string wdir = optGetString(OPT_WORKDIR);
 	QDir dir(conf.path.confDir.c_str());
 	QStringList lst = dir.entryList(QStringList() << "*.map",QDir::Files,QDir::Name);
 	fillRFBox(setupUi.keyMapBox,lst);
 }
-
-/*
-void SetupWin::buildjmaplist() {
-	std::vector<joyPair> jmap = getJMap();
-	setupUi.bindTable->setRowCount(jmap.size());
-	setupUi.bindTable->setColumnCount(2);
-	QTableWidgetItem* it;
-	QString qstr;
-	for (uint i=0;i<jmap.size();i++) {
-		it = new QTableWidgetItem;
-		switch(jmap[i].second.dev) {
-			case XJ_JOY:
-				it->setText(QString("Kempston ").append(QString(jmap[i].second.name)));
-				break;
-			case XJ_KEY:
-				it->setText("Key");
-				break;
-			default:
-				it->setText("Unknown");
-				break;
-		}
-		setupUi.bindTable->setItem(i,1,it);
-		it = new QTableWidgetItem;
-		switch (jmap[i].first.type) {
-			case XJ_BUTTON:
-				it->setText(QString("Button ").append(QString::number(jmap[i].first.num)));
-				break;
-			case XJ_AXIS:
-				it->setText(QString("Axis ").append(QString::number(jmap[i].first.num)).append(jmap[i].first.dir ? " +" : " -"));
-				break;
-			default:
-				it->setText("Unknown");
-				break;
-		}
-		it->setData(Qt::UserRole,QVector3D(jmap[i].first.type,jmap[i].first.num,jmap[i].first.dir));
-		setupUi.bindTable->setItem(i,0,it);
-	}
-}
-*/
 
 std::vector<HardWare> getHardwareList() {
 	std::vector<HardWare> res;
@@ -849,7 +820,7 @@ void SetupWin::buildrsetlist() {
 		return;
 	}
 	setupUi.rstab->setEnabled(true);
-	xRomset rset = rsl[setupUi.rsetbox->currentIndex()];
+	xRomset rset = rsList[setupUi.rsetbox->currentIndex()];
 	if (rset.file == "") {
 		setupUi.rstab->hideRow(4);
 		for (int i=0; i<4; i++) {
@@ -980,7 +951,7 @@ void SetupWin::copyToTape() {
 		}
 	}
 	buildtapelist();
-	std::string msg = int2str(savedFiles) + std::string(" of ") + int2str(idx.size()) + " files copied";
+	std::string msg = std::string(int2str(savedFiles)) + " of " + int2str(idx.size()) + " files copied";
 	showInfo(msg.c_str());
 }
 
@@ -997,14 +968,14 @@ void SetupWin::diskToHobeta() {
 	for (int i=0; i<idx.size(); i++) {
 		if (saveHobetaFile(flp,idx[i].row(),sdir.c_str()) == ERR_OK) savedFiles++;
 	}
-	std::string msg = int2str(savedFiles) + std::string(" of ") + int2str(idx.size()) + " files saved";
+	std::string msg = std::string(int2str(savedFiles)) + " of " + int2str(idx.size()) + " files saved";
 	showInfo(msg.c_str());
 }
 
 void SetupWin::diskToRaw() {
 	QModelIndexList idx = setupUi.disklist->selectionModel()->selectedRows();
 	if (idx.size() == 0) return;
-	QString dir = QFileDialog::getExistingDirectory(this,"Save file(s) to...",QDir::homePath());
+	QString dir = QFileDialog::getExistingDirectory(this,"Save file(s) to...","",QFileDialog::DontUseNativeDialog | QFileDialog::ShowDirsOnly);
 	if (dir == "") return;
 	std::string sdir = std::string(dir.toLocal8Bit().data()) + std::string(SLASH);
 	Floppy* flp = comp->bdi->fdc->flop[setupUi.disktabs->currentIndex()];
@@ -1012,7 +983,7 @@ void SetupWin::diskToRaw() {
 	for (int i=0; i<idx.size(); i++) {
 		if (saveRawFile(flp,idx[i].row(),sdir.c_str()) == ERR_OK) savedFiles++;
 	}
-	std::string msg = int2str(savedFiles) + std::string(" of ") + int2str(idx.size()) + " files saved";
+	std::string msg = std::string(int2str(savedFiles)) + " of " + int2str(idx.size()) + " files saved";
 	showInfo(msg.c_str());
 }
 
@@ -1171,7 +1142,6 @@ void SetupWin::updfrq() {
 // video
 
 void SetupWin::chabsz() {setupUi.bszlab->setText(QString::number(setupUi.bszsld->value()).append("%"));}
-void SetupWin::chabrg() {setupUi.brglab->setText(QString::number(setupUi.brgslide->value()));}
 
 void SetupWin::selsspath() {
 	QString fpath = QFileDialog::getExistingDirectory(this,"Screenshots folder",QString::fromLocal8Bit(conf.scrShot.dir.c_str()),QFileDialog::ShowDirsOnly);

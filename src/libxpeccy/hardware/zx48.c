@@ -1,7 +1,12 @@
 #include "../spectrum.h"
 
+void speReset(ZXComp* comp) {
+	comp->prt0 = 0x10;
+	if (comp->dosen) comp->dosen = 1;
+}
+
 void speMapMem(ZXComp* comp) {
-	memSetBank(comp->mem,MEM_BANK0,MEM_ROM,(comp->dosen) ? 3 : 1);
+	memSetBank(comp->mem,MEM_BANK0,MEM_ROM,(comp->dosen) ? 1 : 0);
 	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0);
 }
 
@@ -42,7 +47,7 @@ void speOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 			if (!comp->vid->border4t)
 				comp->vid->brdcol = val & 0x07;
 			comp->beeplev = (val & 0x10) ? 1 : 0;
-			comp->tape->outsig = (val & 0x08) ? 1 : 0;
+			comp->tape->levRec = (val & 0x08) ? 1 : 0;
 			break;
 	}
 }
@@ -70,7 +75,7 @@ Z80EX_BYTE speIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 			res = bdiz ? bdiIn(comp->bdi,BDI_SYS) : 0xff;
 			break;
 		case 0xfe:
-			res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00);
+			res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->levPlay ? 0x40 : 0x00);
 			break;
 	}
 	return res;

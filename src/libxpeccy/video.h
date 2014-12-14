@@ -10,16 +10,6 @@ extern "C" {
 #include "memory.h"
 #include "ulaplus.h"
 
-// vidFlags (emul)
-#define VF_FULLSCREEN		1
-#define VF_DOUBLE		(1<<1)
-#define VF_BLOCKFULLSCREEN	(1<<2)
-#define	VF_DEBUG		(1<<3)
-#define VF_NOFLIC		(1<<4)
-#define	VF_GREY			(1<<5)
-#define	VF_INIT			(1<<6)
-#define	VF_BLOCK		(1<<7)
-#define VF_NOSCREEN		(1<<8)
 // screen drawing mode
 #define	VID_CURRENT	0	// 'refresh' current mode. used on changing VF_NOSCREEN flag
 #define	VID_NORMAL	1
@@ -61,6 +51,8 @@ struct Video {
 	unsigned intDMA:1;	// for TSConf
 	unsigned nextrow:1;	// = not-masked intLINE
 	unsigned istsconf:1;
+	unsigned noScreen:1;
+	unsigned debug:1;
 
 	int flash;
 	int curscr;
@@ -81,12 +73,9 @@ struct Video {
 	VSize lcut;
 	VSize rcut;
 	VSize vsze;
-	VSize wsze;
 	VSize intpos;
 	size_t intSize;
 	unsigned char intMask;		// tsconf only, other machines have 1 here
-	size_t lineBytes;
-	size_t frameBytes;
 	Memory* mem;
 	ulaPlus* ula;
 	int idx;
@@ -127,6 +116,8 @@ extern int vidFlag;
 
 Video* vidCreate(Memory*);
 void vidDestroy(Video*);
+
+void vidInitAdrs();
 
 void vidSync(Video*,int);
 void vidSetMode(Video*,int);

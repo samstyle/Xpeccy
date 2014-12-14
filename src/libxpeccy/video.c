@@ -7,7 +7,7 @@
 
 #include "video.h"
 
-int vidFlag = VF_BLOCK;
+int vidFlag = 0;
 // float brdsize = 1.0;
 
 unsigned char inkTab[] = {
@@ -36,7 +36,7 @@ unsigned char papTab[] = {
 unsigned short scrAdrs[6912];
 unsigned short atrAdrs[6912];
 
-void initAdrs() {
+void vidInitAdrs() {
 	unsigned short sadr = 0x0000;
 	unsigned short aadr = 0x1800;
 	int idx = 0;
@@ -85,14 +85,10 @@ Video* vidCreate(Memory* me) {
 	vid->nsDraw = 0;
 	vid->x = 0;
 	vid->y = 0;
+	vid->idx = 0;
 
 	vid->scrimg = (unsigned char*)malloc(1024 * 1024 * 3);
 	vid->scrptr = vid->scrimg;
-
-//	vid->flag = 0;
-	vid->idx = 0;
-
-	if (~vidFlag & VF_INIT) initAdrs();
 
 	return vid;
 }
@@ -103,18 +99,14 @@ void vidDestroy(Video* vid) {
 }
 
 void vidUpdate(Video* vid, float brdsize) {
-	if (brdsize < 0) brdsize = 0;
-	if (brdsize > 1) brdsize = 1;
+	if (brdsize < 0.0) brdsize = 0.0;
+	if (brdsize > 1.0) brdsize = 1.0;
 	vid->lcut.h = (int)floor(vid->sync.h + ((vid->bord.h - vid->sync.h) * (1.0 - brdsize))) & 0xfffc;
 	vid->lcut.v = (int)floor(vid->sync.v + ((vid->bord.v - vid->sync.v) * (1.0 - brdsize))) & 0xfffc;
 	vid->rcut.h = (int)floor(vid->full.h - ((1.0 - brdsize) * (vid->full.h - vid->bord.h - 256))) & 0xfffc;
 	vid->rcut.v = (int)floor(vid->full.v - ((1.0 - brdsize) * (vid->full.v - vid->bord.v - 192))) & 0xfffc;
 	vid->vsze.h = vid->rcut.h - vid->lcut.h;
 	vid->vsze.v = vid->rcut.v - vid->lcut.v;
-	vid->wsze.h = vid->vsze.h * ((vidFlag & VF_DOUBLE) ? 2 : 1);
-	vid->wsze.v = vid->vsze.v * ((vidFlag & VF_DOUBLE) ? 2 : 1);
-	vid->lineBytes = vid->wsze.h * 3;
-	vid->frameBytes = vid->wsze.h * vid->wsze.v * 3;
 }
 
 int xscr = 0;
@@ -135,18 +127,12 @@ void vidDarkTail(Video* vid) {
 			*(ptr++) >>= 1;
 			*(ptr++) >>= 1;
 			*(ptr++) >>= 1;
-//			if (vidFlag & VF_DOUBLE) {
-				*(ptr++) >>= 1;
-				*(ptr++) >>= 1;
-				*(ptr++) >>= 1;
-//			}
+			*(ptr++) >>= 1;
+			*(ptr++) >>= 1;
+			*(ptr++) >>= 1;
 		}
 		if (++xscr >= vid->full.h) {
 			xscr = 0;
-//			if ((yscr >= vid->lcut.v) && (yscr < vid->rcut.v) && (vidFlag & VF_DOUBLE)) {
-//				memcpy(ptr, ptr - vid->lineBytes, vid->lineBytes);
-//				ptr += vid->lineBytes;
-//			}
 			if (++yscr >= vid->full.v)
 				ptr = NULL;
 		}
@@ -188,16 +174,6 @@ inline void vidSingleDot(Video* vid, unsigned char idx) {
 inline void vidPutDot(Video* vid, unsigned char idx) {
 	vidSingleDot(vid, idx);
 	vidSingleDot(vid, idx);
-/*
-	*(vid->scrptr++) = vid->pal[idx].r;
-	*(vid->scrptr++) = vid->pal[idx].g;
-	*(vid->scrptr++) = vid->pal[idx].b;
-	if (vidFlag & VF_DOUBLE) {
-		*(vid->scrptr++) = vid->pal[idx].r;
-		*(vid->scrptr++) = vid->pal[idx].g;
-		*(vid->scrptr++) = vid->pal[idx].b;
-	}
-*/
 }
 
 // video drawing
@@ -735,7 +711,7 @@ void vidSetMode(Video* vid, int mode) {
 	} else {
 		vid->vmode = mode;
 	}
-	if (vidFlag & VF_NOSCREEN) {
+	if (vid->noScreen) {
 		vid->callback = &vidDrawBorder;
 	} else {
 		switch(mode) {
@@ -784,7 +760,7 @@ void vidSync(Video* vid, int ns) {
 				vid->tsconf.scrLine = vid->tsconf.yOffset;
 				vid->idx = 0;
 				vid->newFrame = 1;
-				if (vidFlag & VF_DEBUG) vidDarkTail(vid);
+				if (vid->debug) vidDarkTail(vid);
 			}
 		}
 		vid->nsDraw -= NS_PER_DOT;

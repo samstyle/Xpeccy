@@ -34,6 +34,7 @@ struct HardWare {
 	Z80EX_BYTE (*in)(ZXComp*,Z80EX_WORD,int);
 	Z80EX_BYTE (*mrd)(ZXComp*,Z80EX_WORD,int);
 	void (*mwr)(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
+	void (*reset)(ZXComp*);
 };
 
 typedef struct HardWare HardWare;
@@ -47,6 +48,7 @@ void stdMWr(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
 void speMapMem(ZXComp*);
 void speOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
 Z80EX_BYTE speIn(ZXComp*,Z80EX_WORD,int);
+void speReset(ZXComp*);
 
 // pentagon
 void penMapMem(ZXComp*);
@@ -78,6 +80,7 @@ Z80EX_BYTE pl3In(ZXComp*,Z80EX_WORD,int);
 void atm2MapMem(ZXComp*);
 void atm2Out(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
 Z80EX_BYTE atm2In(ZXComp*,Z80EX_WORD,int);
+void atm2Reset(ZXComp*);
 
 // pentevo
 void evoMapMem(ZXComp*);
@@ -85,6 +88,7 @@ void evoOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
 Z80EX_BYTE evoIn(ZXComp*,Z80EX_WORD,int);
 Z80EX_BYTE evoMRd(ZXComp*,Z80EX_WORD,int);
 void evoMWr(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
+void evoReset(ZXComp*);
 
 // TSLab conf
 void tslMapMem(ZXComp*);
@@ -92,5 +96,6 @@ void tslOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
 Z80EX_BYTE tslIn(ZXComp*,Z80EX_WORD,int);
 Z80EX_BYTE tslMRd(ZXComp*,Z80EX_WORD,int);
 void tslMWr(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
+void tslReset(ZXComp*);
 void tslUpdatePorts(ZXComp*);
 #endif

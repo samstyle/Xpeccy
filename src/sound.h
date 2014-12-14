@@ -37,14 +37,7 @@
 #define	SND_ENABLE	6
 #define	SND_MUTE	7
 
-extern bool sndEnabled;
-extern bool sndMute;
-extern int beepVolume;
-extern int tapeVolume;
-extern int ayVolume;
-extern int gsVolume;
 extern long nsPerFrame;
-extern unsigned int sndRate;
 
 struct OutSys {
 	int id;

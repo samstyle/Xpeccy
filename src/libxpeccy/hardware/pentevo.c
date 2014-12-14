@@ -3,6 +3,11 @@
 #include <stdio.h>
 #include <assert.h>
 
+void evoReset(ZXComp* comp) {
+	comp->dosen = 1;
+	comp->prt1 = 0x03;
+}
+
 void evoSetVideoMode(ZXComp* comp) {
 	int mode = (comp->prt2 & 0x20) | ((comp->prt2 & 0x01) << 1) | (comp->prt1 & 0x07);	// z5.z0.0.b2.b1.b0	b:FF77, z:eff7
 	switch (mode) {
@@ -191,7 +196,7 @@ void evoOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
 			comp->vid->nextbrd = (val & 0x07) | (~port & 8);
 			if (!comp->vid->border4t) comp->vid->brdcol = comp->vid->nextbrd;
 			comp->beeplev = (val & 0x10) ? 1 : 0;
-			comp->tape->outsig = (val & 0x08) ? 1 : 0;
+			comp->tape->levRec = (val & 0x08) ? 1 : 0;
 			break;
 		case 0xff:
 			if (!bdiz) break;
@@ -325,7 +330,7 @@ Z80EX_BYTE evoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 			}
 			break;
 		case 0xbf: res = comp->evo.evoBF; break;
-		case 0xfe: res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->signal ? 0x40 : 0x00); break;
+		case 0xfe: res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->levPlay ? 0x40 : 0x00); break;
 		case 0xbef7: res = (bdiz) ? cmsRd(comp) : 0xff; break;
 		case 0xbff7: res = (!bdiz && (comp->prt2 & 0x80)) ? cmsRd(comp) : 0xff; break;
 		case 0xfffd: res = tsIn(comp->ts,ptype); break;

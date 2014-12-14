@@ -1,6 +1,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <stdlib.h>
 
 std::string int2str(int num) {
 	std::stringstream str;
@@ -8,10 +9,23 @@ std::string int2str(int num) {
 	return str.str();
 }
 
+std::string float2str(float num) {
+	std::stringstream str;
+	str<<num;
+	return str.str();
+}
+
+int getRanged(const char* str, int min, int max) {
+	int res = atoi(str);
+	if (res < min) res = min;
+	if (res > max) res = max;
+	return res;
+}
+
 std::string getTimeString(int tsec) {
 	int tmin = tsec / 60;
 	tsec -= tmin * 60;
-	std::string res = int2str(tmin);
+	std::string res(int2str(tmin));
 	res += ":";
 	if (tsec < 10) res += "0";
 	res += int2str(tsec);

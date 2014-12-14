@@ -53,7 +53,7 @@ inline void zxMemRW(ZXComp* comp, int adr) {
 		res3 = TCPU(comp->cpu);					// until RD/WR cycle
 		vidSync(comp->vid, comp->nsPerTick * (res3 - res4));
 		res4 = res3;
-		vidWait(comp->vid);					// do WAIT
+		vidWait(comp->vid);					// contended WAIT
 		vidSync(comp->vid, comp->nsPerTick * 3);		// 3T rd/wr cycle
 		res4 += 3;
 	} else {
@@ -178,20 +178,11 @@ void rzxClear(ZXComp* zx) {
 	zx->rzxData = NULL;
 }
 
-// 76543210
-// -grb-GRB
-/*
-const unsigned char defPalete[16] = {
-	0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
-	0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77
-};
-*/
-
 void zxInitPalete(ZXComp* comp) {
 	for (int i = 0; i<16; i++) {
-		comp->vid->pal[i].b = (i & 1) ? ((i & 8) ? 0xff : 0xaa) : 0x00;
-		comp->vid->pal[i].r = (i & 2) ? ((i & 8) ? 0xff : 0xaa) : 0x00;
-		comp->vid->pal[i].g = (i & 4) ? ((i & 8) ? 0xff : 0xaa) : 0x00;
+		comp->vid->pal[i].b = (i & 1) ? ((i & 8) ? 0xff : 0xa0) : 0x00;
+		comp->vid->pal[i].r = (i & 2) ? ((i & 8) ? 0xff : 0xa0) : 0x00;
+		comp->vid->pal[i].g = (i & 4) ? ((i & 8) ? 0xff : 0xa0) : 0x00;
 	}
 }
 
@@ -204,12 +195,11 @@ void zxSetUlaPalete(ZXComp* comp) {
 }
 
 ZXComp* zxCreate() {
-	int i;
 	ZXComp* comp = (ZXComp*)malloc(sizeof(ZXComp));
 	void* ptr = (void*)comp;
 	memset(ptr,0,sizeof(ZXComp));
 	memset(comp->brkIOMap, 0, 0x10000);
-	comp->resbank = 0;
+	comp->resbank = RES_48;
 	comp->firstRun = 1;
 
 #ifdef SELFZ80
@@ -252,14 +242,12 @@ ZXComp* zxCreate() {
 	comp->rzxSize = 0;
 	comp->rzxData = NULL;
 	comp->tapCount = 0;
-	comp->resbank = RES_48;
 	comp->tickCount = 0;
 
 	gsReset(comp->gs);
 	zxInitPalete(comp);
-//	for (i = 0; i < 16; i++) comp->colMap[i] = defPalete[i];
 	comp->cmos.adr = 0;
-	for (i = 0; i < 256; i++) comp->cmos.data[i] = 0x00;
+	memset(comp->cmos.data, 0x00, 256);
 	comp->cmos.data[17] = 0xaa;
 	return comp;
 }
@@ -281,30 +269,40 @@ void zxDestroy(ZXComp* comp) {
 	free(comp);
 }
 
-void zxReset(ZXComp* comp,int wut) {
-	int resto = comp->resbank;
+void zxReset(ZXComp* comp,int res) {
 	zxInitPalete(comp);
 	comp->vid->ula->active = 0;
 	comp->rzxPlay = 0;
+	comp->prt2 = 0;
+	comp->prt1 = 0;
+	memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5);
+	memSetBank(comp->mem,MEM_BANK2,MEM_RAM,2);
+	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0);
+	rzxClear(comp);
+	comp->rzxPlay = 0;
+	RESETCPU(comp->cpu);
+	comp->vid->curscr = 5;
+	vidSetMode(comp->vid,VID_NORMAL);
+	comp->dosen = 0;
+	comp->vid->intMask = 1;
+	bdiReset(comp->bdi);
+	if (comp->gs->reset) gsReset(comp->gs);
+	tsReset(comp->ts);
+	ideReset(comp->ide);
+	if (res == RES_DEFAULT) res = comp->resbank;
+	comp->dosen = ((res == RES_DOS) || (res == RES_SHADOW)) ? 1 : 0;
+	comp->prt0 = ((res == RES_DOS) || (res == RES_48)) ? 0x10 : 0x00;
+	if (comp->hw->reset) comp->hw->reset(comp);
+	comp->hw->mapMem(comp);
+}
+/*
+	int resto = comp->resbank;
 	switch (wut) {
 		case RES_48: resto = 1; break;
 		case RES_128: resto = 0; break;
 		case RES_DOS: resto = 3; break;
 		case RES_SHADOW: resto = 2; break;
 	}
-	comp->prt2 = 0;
-	comp->prt1 = 0;
-	comp->prt0 = 0;
-	memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5);
-	memSetBank(comp->mem,MEM_BANK2,MEM_RAM,2);
-	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0);
-	rzxClear(comp);
-	comp->rzxPlay = 0;
-	RESETCPU(comp->cpu);	// z80ex_reset(comp->cpu);
-	comp->vid->curscr = 5;
-	vidSetMode(comp->vid,VID_NORMAL);
-	comp->dosen = 0;
-	comp->vid->intMask = 1;	// FRAME only
 	switch (comp->hw->type) {
 		case HW_ZX48:
 			comp->prt0 = 0x10;		// else beta-disk doesn't enter in tr-dos
@@ -346,12 +344,8 @@ void zxReset(ZXComp* comp,int wut) {
 			if (resto & 2) comp->dosen = 1;
 			break;
 	}
-	bdiReset(comp->bdi);
-	if (comp->gs->reset) gsReset(comp->gs);
-	tsReset(comp->ts);
-	ideReset(comp->ide);
-	comp->hw->mapMem(comp);
 }
+*/
 
 void zxSetLayout(ZXComp *comp, int fh, int fv, int bh, int bv, int sh, int sv, int ih, int iv, int is) {
 	comp->vid->full.h = fh;

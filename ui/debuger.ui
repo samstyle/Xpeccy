@@ -979,6 +979,30 @@
     </layout>
    </item>
   </layout>
+  <action name="actFetch">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Fetch break</string>
+   </property>
+  </action>
+  <action name="actRead">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Read break</string>
+   </property>
+  </action>
+  <action name="actWrite">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Write break</string>
+   </property>
+  </action>
  </widget>
  <resources>
   <include location="../xpeccy.qrc"/>

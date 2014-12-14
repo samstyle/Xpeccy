@@ -28,6 +28,8 @@ int loadSNA(ZXComp* zx, const char* name) {
 	size_t fileSize = file.tellg();
 	file.seekg(0);
 
+	zxReset(zx, (fileSize < 49180) ? RES_48 : RES_128);
+
 	snaHead hd;
 	file.read((char*)&hd,sizeof(snaHead));
 #ifdef SELFZ80
@@ -77,7 +79,8 @@ int loadSNA(ZXComp* zx, const char* name) {
 	if (fileSize < 49180) {
 		zx->prt0 = 0x10;
 		zx->prt1 = 0x00;
-		memSetBank(zx->mem,MEM_BANK0,MEM_ROM,1);
+		zx->dosen = 0;
+		zx->hw->mapMem(zx);
 		memSetBank(zx->mem,MEM_BANK3,MEM_RAM,0);
 		memSetPage(zx->mem,MEM_RAM,0,tmpgBuf);
 		zx->vid->curscr = 5;

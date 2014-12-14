@@ -22,6 +22,7 @@ bool addRomset(xRomset rs) {
 	return true;
 }
 
+/*
 void setRomsetList(std::vector<xRomset> rsl) {
 	rsList.clear();
 	unsigned int i;
@@ -33,6 +34,7 @@ void setRomsetList(std::vector<xRomset> rsl) {
 		rsSetRomset(profileList[i].zx, profileList[i].rsName);
 	}
 }
+*/
 
 void rsSetRomset(ZXComp* comp, std::string nm) {
 //	XProfile* prof = getProfile(pn);
@@ -142,6 +144,6 @@ void rsSetRomset(ZXComp* comp, std::string nm) {
 	free(pageBuf);
 }
 
-std::vector<xRomset> getRomsetList() {
+std::vector<xRomset>& getRomsetList() {
 	return rsList;
 }
