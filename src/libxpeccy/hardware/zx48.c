@@ -2,7 +2,6 @@
 
 void speReset(ZXComp* comp) {
 	comp->prt0 = 0x10;
-	if (comp->dosen) comp->dosen = 1;
 }
 
 void speMapMem(ZXComp* comp) {

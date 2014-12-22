@@ -17,7 +17,7 @@ class SetupWin : public QDialog {
 	private:
 		ZXComp* comp;		
 
-		Ui::SetupWin setupUi;
+		Ui::SetupWin ui;
 		Ui::UmaDial uia;
 		Ui::RSEdialog rseUi;
 		Ui::LayEditor layUi;

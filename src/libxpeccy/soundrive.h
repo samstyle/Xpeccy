@@ -11,10 +11,7 @@
 #define	SDRV_CHANC	2
 #define	SDRV_CHAND	3
 
-typedef struct {
-	unsigned char left;
-	unsigned char right;
-} sdrvPair;
+#include "sndcommon.h"
 
 typedef struct {
 	int type;
@@ -27,6 +24,6 @@ typedef struct {
 SDrive* sdrvCreate(int);
 void sdrvDestroy(SDrive*);
 void sdrvOut(SDrive*,unsigned short,unsigned char);
-sdrvPair sdrvGetVolume(SDrive*);
+sndPair sdrvGetVolume(SDrive*);
 
 #endif

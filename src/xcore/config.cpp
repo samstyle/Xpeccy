@@ -72,16 +72,15 @@ void saveConfig() {
 	cfile << "systime = " << YESNO(conf.sysclock) << "\n";
 
 	cfile << "\n[BOOKMARKS]\n\n";
-	std::vector<xBookmark> bml = getBookmarkList();
-	for (i=0; i<bml.size(); i++) {
-		cfile << bml[i].name << " = " << bml[i].path << "\n";
+	for (i = 0; i < bookmarkList.size(); i++) {
+		cfile << bookmarkList[i].name << " = " << bookmarkList[i].path << "\n";
 	}
 	cfile << "\n[PROFILES]\n\n";
 	std::vector<xProfile> prl = getProfileList();
 	for (i=1; i<prl.size(); i++) {			// nr.0 skipped ('default' profile)
 		cfile << prl[i].name << " = " << prl[i].file << "\n";
 	}
-	cfile << "current = " << getCurrentProfile()->name << "\n";
+	cfile << "current = " << findProfile("")->name << "\n";
 
 	cfile << "\n[VIDEO]\n\n";
 	for (i=1; i < layList.size(); i++) {
@@ -367,14 +366,14 @@ void loadConfig() {
 	prfLoadAll();
 	setOutput(soutnam.c_str());
 	if (conf.defProfile) {
-		if (!selProfile("default")) {
-			printf("Can't set default profile. GRR!\n");
+		if (!prfSetCurrent("default")) {
+			shitHappens("Can't set default profile!\nYes, it happens");
 			throw(0);
 		}
 	} else {
-		if (!selProfile(pnm.c_str())) {
+		if (!prfSetCurrent(pnm.c_str())) {
 			shitHappens("Cannot set current profile\nDefault will be used");
-			if (!selProfile("default")) {
+			if (!prfSetCurrent("default")) {
 				shitHappens("...and default too?\nReally, shit happens");
 				throw(0);
 			}

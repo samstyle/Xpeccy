@@ -44,7 +44,7 @@ std::vector<std::string> getHardwareNames() {
 
 SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	setModal(true);
-	setupUi.setupUi(this);
+	ui.setupUi(this);
 
 	umadial = new QDialog;
 	uia.setupUi(umadial);
@@ -63,110 +63,113 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 // machine
 	i = 0;
 	while (hwTab[i].name != NULL) {
-		setupUi.machbox->addItem(QString::fromLocal8Bit(hwTab[i].optName),QString::fromLocal8Bit(hwTab[i].name));
+		ui.machbox->addItem(QString::fromLocal8Bit(hwTab[i].optName),QString::fromLocal8Bit(hwTab[i].name));
 		i++;
 	}
-	setupUi.resbox->addItem("BASIC 48",RES_48);
-	setupUi.resbox->addItem("BASIC 128",RES_128);
-	setupUi.resbox->addItem("DOS",RES_DOS);
-	setupUi.resbox->addItem("SHADOW",RES_SHADOW);
+	ui.resbox->addItem("BASIC 48",RES_48);
+	ui.resbox->addItem("BASIC 128",RES_128);
+	ui.resbox->addItem("DOS",RES_DOS);
+	ui.resbox->addItem("SHADOW",RES_SHADOW);
 //	setupUi.resbox->addItems(QStringList()<<"ROMPage0"<<"ROMPage1"<<"ROMPage2"<<"ROMPage3");
 //	setupUi.rssel->hide();
 	QTableWidgetItem* itm;
-	for (i = 0; i < (unsigned)setupUi.rstab->rowCount(); i++) {
-		itm = new QTableWidgetItem; setupUi.rstab->setItem(i,1,itm);
-		itm = new QTableWidgetItem; setupUi.rstab->setItem(i,2,itm);
+	for (i = 0; i < (unsigned)ui.rstab->rowCount(); i++) {
+		itm = new QTableWidgetItem; ui.rstab->setItem(i,1,itm);
+		itm = new QTableWidgetItem; ui.rstab->setItem(i,2,itm);
 	}
 // video
 	std::map<std::string,int>::iterator it;
 	for (it = shotFormat.begin(); it != shotFormat.end(); it++) {
-		setupUi.ssfbox->addItem(QString(it->first.c_str()),it->second);
+		ui.ssfbox->addItem(QString(it->first.c_str()),it->second);
 
 	}
 // sound
 	i = 0;
 	while (sndTab[i].name != NULL) {
-		setupUi.outbox->addItem(QString::fromLocal8Bit(sndTab[i].name));
+		ui.outbox->addItem(QString::fromLocal8Bit(sndTab[i].name));
 		i++;
 	}
-	setupUi.ratbox->addItem("48000",48000);
-	setupUi.ratbox->addItem("44100",44100);
-	setupUi.ratbox->addItem("22050",22050);
-	setupUi.ratbox->addItem("11025",11025);
-	setupUi.schip1box->addItem(QIcon(":/images/cancel.png"),"none",SND_NONE);
-	setupUi.schip1box->addItem(QIcon(":/images/MicrochipLogo.png"),"AY-3-8910",SND_AY);
-	setupUi.schip1box->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2149",SND_YM);
-	setupUi.schip2box->addItem(QIcon(":/images/cancel.png"),"none",SND_NONE);
-	setupUi.schip2box->addItem(QIcon(":/images/MicrochipLogo.png"),"AY-3-8910",SND_AY);
-	setupUi.schip2box->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2149",SND_YM);
+	ui.ratbox->addItem("48000",48000);
+	ui.ratbox->addItem("44100",44100);
+	ui.ratbox->addItem("22050",22050);
+	ui.ratbox->addItem("11025",11025);
+	ui.schip1box->addItem(QIcon(":/images/cancel.png"),"none",SND_NONE);
+	ui.schip1box->addItem(QIcon(":/images/MicrochipLogo.png"),"AY-3-8910",SND_AY);
+	ui.schip1box->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2149",SND_YM);
+	ui.schip2box->addItem(QIcon(":/images/cancel.png"),"none",SND_NONE);
+	ui.schip2box->addItem(QIcon(":/images/MicrochipLogo.png"),"AY-3-8910",SND_AY);
+	ui.schip2box->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2149",SND_YM);
 #ifdef ISDEBUG
 	setupUi.schip1box->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2203",SND_YM2203);
 	setupUi.schip2box->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2203",SND_YM2203);
 #endif
-	setupUi.stereo1box->addItem("Mono",AY_MONO); setupUi.stereo2box->addItem("Mono",AY_MONO);
-	setupUi.stereo1box->addItem("ABC",AY_ABC); setupUi.stereo2box->addItem("ABC",AY_ABC);
-	setupUi.stereo1box->addItem("ACB",AY_ACB); setupUi.stereo2box->addItem("ACB",AY_ACB);
-	setupUi.stereo1box->addItem("BAC",AY_BAC); setupUi.stereo2box->addItem("BAC",AY_BAC);
-	setupUi.stereo1box->addItem("BCA",AY_BCA); setupUi.stereo2box->addItem("BCA",AY_BCA);
-	setupUi.stereo1box->addItem("CAB",AY_CAB); setupUi.stereo2box->addItem("CAB",AY_CAB);
-	setupUi.stereo1box->addItem("CBA",AY_CBA); setupUi.stereo2box->addItem("CBA",AY_BCA);
-	setupUi.tsbox->addItem("None",TS_NONE);
-	setupUi.tsbox->addItem("NedoPC",TS_NEDOPC);
-	setupUi.gstereobox->addItem("Mono",GS_MONO);
-	setupUi.gstereobox->addItem("L:1,2; R:3,4",GS_12_34);
-	setupUi.sdrvBox->addItem("none",SDRV_NONE);
-	setupUi.sdrvBox->addItem("Covox only",SDRV_COVOX);
-	setupUi.sdrvBox->addItem("Soundrive 1.05 mode 1",SDRV_105_1);
-	setupUi.sdrvBox->addItem("Soundrive 1.05 mode 2",SDRV_105_2);
+	ui.stereo1box->addItem("Mono",AY_MONO); ui.stereo2box->addItem("Mono",AY_MONO);
+	ui.stereo1box->addItem("ABC",AY_ABC); ui.stereo2box->addItem("ABC",AY_ABC);
+	ui.stereo1box->addItem("ACB",AY_ACB); ui.stereo2box->addItem("ACB",AY_ACB);
+	ui.stereo1box->addItem("BAC",AY_BAC); ui.stereo2box->addItem("BAC",AY_BAC);
+	ui.stereo1box->addItem("BCA",AY_BCA); ui.stereo2box->addItem("BCA",AY_BCA);
+	ui.stereo1box->addItem("CAB",AY_CAB); ui.stereo2box->addItem("CAB",AY_CAB);
+	ui.stereo1box->addItem("CBA",AY_CBA); ui.stereo2box->addItem("CBA",AY_BCA);
+	ui.tsbox->addItem("None",TS_NONE);
+	ui.tsbox->addItem("NedoPC",TS_NEDOPC);
+	ui.gstereobox->addItem("Mono",GS_MONO);
+	ui.gstereobox->addItem("L:1,2; R:3,4",GS_12_34);
+	ui.sdrvBox->addItem("None",SDRV_NONE);
+	ui.sdrvBox->addItem("Covox only",SDRV_COVOX);
+	ui.sdrvBox->addItem("Soundrive 1.05 mode 1",SDRV_105_1);
+	ui.sdrvBox->addItem("Soundrive 1.05 mode 2",SDRV_105_2);
+	ui.cbSaa->addItem("None",SAA_OFF);
+	ui.cbSaa->addItem("Mono",SAA_MONO);
+	ui.cbSaa->addItem("Stereo",SAA_STEREO);
 // bdi
 // WTF? QtDesigner doesn't save this properties
-	setupUi.disklist->horizontalHeader()->setVisible(true);
-	setupUi.diskTypeBox->addItem("None",FDC_NONE);
-	setupUi.diskTypeBox->addItem("Beta disk (VG93)",FDC_93);
-	setupUi.diskTypeBox->addItem("+3 DOS (uPD765)",FDC_765);
-	setupUi.disklist->addAction(setupUi.actCopyToTape);
-	setupUi.disklist->addAction(setupUi.actSaveHobeta);
-	setupUi.disklist->addAction(setupUi.actSaveRaw);
+	ui.disklist->horizontalHeader()->setVisible(true);
+	ui.diskTypeBox->addItem("None",FDC_NONE);
+	ui.diskTypeBox->addItem("Beta disk (VG93)",FDC_93);
+	ui.diskTypeBox->addItem("+3 DOS (uPD765)",FDC_765);
+	ui.disklist->addAction(ui.actCopyToTape);
+	ui.disklist->addAction(ui.actSaveHobeta);
+	ui.disklist->addAction(ui.actSaveRaw);
 // tape
-	setupUi.tapelist->setColumnWidth(0,20);
-	setupUi.tapelist->setColumnWidth(1,20);
-	setupUi.tapelist->setColumnWidth(2,50);
-	setupUi.tapelist->setColumnWidth(3,50);
-	setupUi.tapelist->setColumnWidth(4,100);
-	setupUi.tapelist->addAction(setupUi.actCopyToDisk);
+	ui.tapelist->setColumnWidth(0,20);
+	ui.tapelist->setColumnWidth(1,20);
+	ui.tapelist->setColumnWidth(2,50);
+	ui.tapelist->setColumnWidth(3,50);
+	ui.tapelist->setColumnWidth(4,100);
+	ui.tapelist->addAction(ui.actCopyToDisk);
 // hdd
-	setupUi.hiface->addItem("None",IDE_NONE);
-	setupUi.hiface->addItem("Nemo",IDE_NEMO);
-	setupUi.hiface->addItem("Nemo A8",IDE_NEMOA8);
-	setupUi.hiface->addItem("Nemo Evo",IDE_NEMO_EVO);
-	setupUi.hiface->addItem("SMUC",IDE_SMUC);
-	setupUi.hiface->addItem("ATM",IDE_ATM);
-	setupUi.hm_type->addItem(QIcon(":/images/cancel.png"),"Not connected",IDE_NONE);
-	setupUi.hm_type->addItem(QIcon(":/images/hdd.png"),"HDD (ATA)",IDE_ATA);
+	ui.hiface->addItem("None",IDE_NONE);
+	ui.hiface->addItem("Nemo",IDE_NEMO);
+	ui.hiface->addItem("Nemo A8",IDE_NEMOA8);
+	ui.hiface->addItem("Nemo Evo",IDE_NEMO_EVO);
+	ui.hiface->addItem("SMUC",IDE_SMUC);
+	ui.hiface->addItem("ATM",IDE_ATM);
+	ui.hm_type->addItem(QIcon(":/images/cancel.png"),"Not connected",IDE_NONE);
+	ui.hm_type->addItem(QIcon(":/images/hdd.png"),"HDD (ATA)",IDE_ATA);
 //	setupUi.hm_type->addItem(QIcon(":/images/cd.png"),"CD (ATAPI) not working yet",IDE_ATAPI);
-	setupUi.hs_type->addItem(QIcon(":/images/cancel.png"),"Not connected",IDE_NONE);
-	setupUi.hs_type->addItem(QIcon(":/images/hdd.png"),"HDD (ATA)",IDE_ATA);
+	ui.hs_type->addItem(QIcon(":/images/cancel.png"),"Not connected",IDE_NONE);
+	ui.hs_type->addItem(QIcon(":/images/hdd.png"),"HDD (ATA)",IDE_ATA);
 //	setupUi.hs_type->addItem(QIcon(":/images/cd.png"),"CD (ATAPI) not working yet",IDE_ATAPI);
 // sdcard
-	setupUi.sdcapbox->addItem("32 M",SDC_32M);
-	setupUi.sdcapbox->addItem("64 M",SDC_64M);
-	setupUi.sdcapbox->addItem("128 M",SDC_128M);
-	setupUi.sdcapbox->addItem("256 M",SDC_256M);
-	setupUi.sdcapbox->addItem("512 M",SDC_512M);
-	setupUi.sdcapbox->addItem("1024 M",SDC_1G);
+	ui.sdcapbox->addItem("32 M",SDC_32M);
+	ui.sdcapbox->addItem("64 M",SDC_64M);
+	ui.sdcapbox->addItem("128 M",SDC_128M);
+	ui.sdcapbox->addItem("256 M",SDC_256M);
+	ui.sdcapbox->addItem("512 M",SDC_512M);
+	ui.sdcapbox->addItem("1024 M",SDC_1G);
 
 // all
-	connect(setupUi.okbut,SIGNAL(released()),this,SLOT(okay()));
-	connect(setupUi.apbut,SIGNAL(released()),this,SLOT(apply()));
-	connect(setupUi.cnbut,SIGNAL(released()),this,SLOT(reject()));
+	connect(ui.okbut,SIGNAL(released()),this,SLOT(okay()));
+	connect(ui.apbut,SIGNAL(released()),this,SLOT(apply()));
+	connect(ui.cnbut,SIGNAL(released()),this,SLOT(reject()));
 // machine
-	connect(setupUi.rsetbox,SIGNAL(currentIndexChanged(int)),this,SLOT(buildrsetlist()));
-	connect(setupUi.machbox,SIGNAL(currentIndexChanged(int)),this,SLOT(setmszbox(int)));
-	connect(setupUi.cpufrq,SIGNAL(valueChanged(int)),this,SLOT(updfrq()));
-	connect(setupUi.rstab,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(editrset()));
-	connect(setupUi.addrset,SIGNAL(released()),this,SLOT(addNewRomset()));
-	connect(setupUi.rmrset,SIGNAL(released()),this,SLOT(rmRomset()));
-	connect(setupUi.rsedit,SIGNAL(released()),this,SLOT(editrset()));
+	connect(ui.rsetbox,SIGNAL(currentIndexChanged(int)),this,SLOT(buildrsetlist()));
+	connect(ui.machbox,SIGNAL(currentIndexChanged(int)),this,SLOT(setmszbox(int)));
+	connect(ui.cpufrq,SIGNAL(valueChanged(int)),this,SLOT(updfrq()));
+	connect(ui.rstab,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(editrset()));
+	connect(ui.addrset,SIGNAL(released()),this,SLOT(addNewRomset()));
+	connect(ui.rmrset,SIGNAL(released()),this,SLOT(rmRomset()));
+	connect(ui.rsedit,SIGNAL(released()),this,SLOT(editrset()));
 
 	connect(rseUi.rse_cancel,SIGNAL(released()),rseditor,SLOT(hide()));
 	connect(rseUi.rse_apply,SIGNAL(released()),this,SLOT(setrpart()));
@@ -174,12 +177,12 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	connect(rseUi.rse_grp_separate,SIGNAL(toggled(bool)),this,SLOT(recheck_single(bool)));
 	connect(rseUi.rsName,SIGNAL(textChanged(QString)),this,SLOT(rsNameCheck(QString)));
 // video
-	connect(setupUi.pathtb,SIGNAL(released()),this,SLOT(selsspath()));
-	connect(setupUi.bszsld,SIGNAL(valueChanged(int)),this,SLOT(chabsz()));
+	connect(ui.pathtb,SIGNAL(released()),this,SLOT(selsspath()));
+	connect(ui.bszsld,SIGNAL(valueChanged(int)),this,SLOT(chabsz()));
 
-	connect(setupUi.layEdit,SIGNAL(released()),this,SLOT(edLayout()));
-	connect(setupUi.layAdd,SIGNAL(released()),this,SLOT(addNewLayout()));
-	connect(setupUi.layDel,SIGNAL(released()),this,SLOT(delLayout()));
+	connect(ui.layEdit,SIGNAL(released()),this,SLOT(edLayout()));
+	connect(ui.layAdd,SIGNAL(released()),this,SLOT(addNewLayout()));
+	connect(ui.layDel,SIGNAL(released()),this,SLOT(delLayout()));
 
 	connect(layUi.layName,SIGNAL(textChanged(QString)),this,SLOT(layNameCheck(QString)));
 	connect(layUi.lineBox,SIGNAL(valueChanged(int)),this,SLOT(layEditorChanged()));
@@ -194,78 +197,78 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	connect(layUi.okButton,SIGNAL(released()),this,SLOT(layEditorOK()));
 	connect(layUi.cnButton,SIGNAL(released()),layeditor,SLOT(hide()));
 // sound
-	connect(setupUi.bvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
-	connect(setupUi.tvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
-	connect(setupUi.avsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
-	connect(setupUi.gvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
+	connect(ui.bvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
+	connect(ui.tvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
+	connect(ui.avsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
+	connect(ui.gvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
 // dos
-	connect(setupUi.newatb,SIGNAL(released()),this,SLOT(newa()));
-	connect(setupUi.newbtb,SIGNAL(released()),this,SLOT(newb()));
-	connect(setupUi.newctb,SIGNAL(released()),this,SLOT(newc()));
-	connect(setupUi.newdtb,SIGNAL(released()),this,SLOT(newd()));
+	connect(ui.newatb,SIGNAL(released()),this,SLOT(newa()));
+	connect(ui.newbtb,SIGNAL(released()),this,SLOT(newb()));
+	connect(ui.newctb,SIGNAL(released()),this,SLOT(newc()));
+	connect(ui.newdtb,SIGNAL(released()),this,SLOT(newd()));
 
-	connect(setupUi.loadatb,SIGNAL(released()),this,SLOT(loada()));
-	connect(setupUi.loadbtb,SIGNAL(released()),this,SLOT(loadb()));
-	connect(setupUi.loadctb,SIGNAL(released()),this,SLOT(loadc()));
-	connect(setupUi.loaddtb,SIGNAL(released()),this,SLOT(loadd()));
+	connect(ui.loadatb,SIGNAL(released()),this,SLOT(loada()));
+	connect(ui.loadbtb,SIGNAL(released()),this,SLOT(loadb()));
+	connect(ui.loadctb,SIGNAL(released()),this,SLOT(loadc()));
+	connect(ui.loaddtb,SIGNAL(released()),this,SLOT(loadd()));
 
-	connect(setupUi.saveatb,SIGNAL(released()),this,SLOT(savea()));
-	connect(setupUi.savebtb,SIGNAL(released()),this,SLOT(saveb()));
-	connect(setupUi.savectb,SIGNAL(released()),this,SLOT(savec()));
-	connect(setupUi.savedtb,SIGNAL(released()),this,SLOT(saved()));
+	connect(ui.saveatb,SIGNAL(released()),this,SLOT(savea()));
+	connect(ui.savebtb,SIGNAL(released()),this,SLOT(saveb()));
+	connect(ui.savectb,SIGNAL(released()),this,SLOT(savec()));
+	connect(ui.savedtb,SIGNAL(released()),this,SLOT(saved()));
 
-	connect(setupUi.remoatb,SIGNAL(released()),this,SLOT(ejcta()));
-	connect(setupUi.remobtb,SIGNAL(released()),this,SLOT(ejctb()));
-	connect(setupUi.remoctb,SIGNAL(released()),this,SLOT(ejctc()));
-	connect(setupUi.remodtb,SIGNAL(released()),this,SLOT(ejctd()));
+	connect(ui.remoatb,SIGNAL(released()),this,SLOT(ejcta()));
+	connect(ui.remobtb,SIGNAL(released()),this,SLOT(ejctb()));
+	connect(ui.remoctb,SIGNAL(released()),this,SLOT(ejctc()));
+	connect(ui.remodtb,SIGNAL(released()),this,SLOT(ejctd()));
 
-	connect(setupUi.disktabs,SIGNAL(currentChanged(int)),this,SLOT(fillDiskCat()));
-	connect(setupUi.actCopyToTape,SIGNAL(triggered()),this,SLOT(copyToTape()));
-	connect(setupUi.actSaveHobeta,SIGNAL(triggered()),this,SLOT(diskToHobeta()));
-	connect(setupUi.actSaveRaw,SIGNAL(triggered()),this,SLOT(diskToRaw()));
-	connect(setupUi.tbToTape,SIGNAL(released()),this,SLOT(copyToTape()));
-	connect(setupUi.tbToHobeta,SIGNAL(released()),this,SLOT(diskToHobeta()));
-	connect(setupUi.tbToRaw,SIGNAL(released()),this,SLOT(diskToRaw()));
+	connect(ui.disktabs,SIGNAL(currentChanged(int)),this,SLOT(fillDiskCat()));
+	connect(ui.actCopyToTape,SIGNAL(triggered()),this,SLOT(copyToTape()));
+	connect(ui.actSaveHobeta,SIGNAL(triggered()),this,SLOT(diskToHobeta()));
+	connect(ui.actSaveRaw,SIGNAL(triggered()),this,SLOT(diskToRaw()));
+	connect(ui.tbToTape,SIGNAL(released()),this,SLOT(copyToTape()));
+	connect(ui.tbToHobeta,SIGNAL(released()),this,SLOT(diskToHobeta()));
+	connect(ui.tbToRaw,SIGNAL(released()),this,SLOT(diskToRaw()));
 // tape
-	connect(setupUi.tapelist,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(chablock(QModelIndex)));
-	connect(setupUi.tapelist,SIGNAL(cellClicked(int,int)),this,SLOT(setTapeBreak(int,int)));
-	connect(setupUi.tloadtb,SIGNAL(released()),this,SLOT(loatape()));
-	connect(setupUi.tsavetb,SIGNAL(released()),this,SLOT(savtape()));
-	connect(setupUi.tremotb,SIGNAL(released()),this,SLOT(ejctape()));
-	connect(setupUi.blkuptb,SIGNAL(released()),this,SLOT(tblkup()));
-	connect(setupUi.blkdntb,SIGNAL(released()),this,SLOT(tblkdn()));
-	connect(setupUi.blkrmtb,SIGNAL(released()),this,SLOT(tblkrm()));
-	connect(setupUi.actCopyToDisk,SIGNAL(triggered()),this,SLOT(copyToDisk()));
-	connect(setupUi.tbToDisk,SIGNAL(released()),this,SLOT(copyToDisk()));
+	connect(ui.tapelist,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(chablock(QModelIndex)));
+	connect(ui.tapelist,SIGNAL(cellClicked(int,int)),this,SLOT(setTapeBreak(int,int)));
+	connect(ui.tloadtb,SIGNAL(released()),this,SLOT(loatape()));
+	connect(ui.tsavetb,SIGNAL(released()),this,SLOT(savtape()));
+	connect(ui.tremotb,SIGNAL(released()),this,SLOT(ejctape()));
+	connect(ui.blkuptb,SIGNAL(released()),this,SLOT(tblkup()));
+	connect(ui.blkdntb,SIGNAL(released()),this,SLOT(tblkdn()));
+	connect(ui.blkrmtb,SIGNAL(released()),this,SLOT(tblkrm()));
+	connect(ui.actCopyToDisk,SIGNAL(triggered()),this,SLOT(copyToDisk()));
+	connect(ui.tbToDisk,SIGNAL(released()),this,SLOT(copyToDisk()));
 // hdd
-	connect(setupUi.hm_islba,SIGNAL(stateChanged(int)),this,SLOT(hddcap()));
-	connect(setupUi.hm_glba,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
-	connect(setupUi.hm_gcyl,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
-	connect(setupUi.hm_ghd,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
-	connect(setupUi.hm_gsec,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
-	connect(setupUi.hm_pathtb,SIGNAL(released()),this,SLOT(hddMasterImg()));
-	connect(setupUi.hs_islba,SIGNAL(stateChanged(int)),this,SLOT(hddcap()));
-	connect(setupUi.hs_glba,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
-	connect(setupUi.hs_gcyl,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
-	connect(setupUi.hs_ghd,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
-	connect(setupUi.hs_gsec,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
-	connect(setupUi.hs_pathtb,SIGNAL(released()),this,SLOT(hddSlaveImg()));
+	connect(ui.hm_islba,SIGNAL(stateChanged(int)),this,SLOT(hddcap()));
+	connect(ui.hm_glba,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	connect(ui.hm_gcyl,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	connect(ui.hm_ghd,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	connect(ui.hm_gsec,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	connect(ui.hm_pathtb,SIGNAL(released()),this,SLOT(hddMasterImg()));
+	connect(ui.hs_islba,SIGNAL(stateChanged(int)),this,SLOT(hddcap()));
+	connect(ui.hs_glba,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	connect(ui.hs_gcyl,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	connect(ui.hs_ghd,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	connect(ui.hs_gsec,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
+	connect(ui.hs_pathtb,SIGNAL(released()),this,SLOT(hddSlaveImg()));
 // sdc
-	connect(setupUi.tbSDCimg,SIGNAL(released()),this,SLOT(selSDCimg()));
-	connect(setupUi.tbsdcfree,SIGNAL(released()),setupUi.sdPath,SLOT(clear()));
+	connect(ui.tbSDCimg,SIGNAL(released()),this,SLOT(selSDCimg()));
+	connect(ui.tbsdcfree,SIGNAL(released()),ui.sdPath,SLOT(clear()));
 //tools
-	connect(setupUi.umlist,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(umedit(QModelIndex)));
-	connect(setupUi.umaddtb,SIGNAL(released()),this,SLOT(umadd()));
-	connect(setupUi.umdeltb,SIGNAL(released()),this,SLOT(umdel()));
-	connect(setupUi.umuptb,SIGNAL(released()),this,SLOT(umup()));
-	connect(setupUi.umdntb,SIGNAL(released()),this,SLOT(umdn()));
+	connect(ui.umlist,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(umedit(QModelIndex)));
+	connect(ui.umaddtb,SIGNAL(released()),this,SLOT(umadd()));
+	connect(ui.umdeltb,SIGNAL(released()),this,SLOT(umdel()));
+	connect(ui.umuptb,SIGNAL(released()),this,SLOT(umup()));
+	connect(ui.umdntb,SIGNAL(released()),this,SLOT(umdn()));
 // bookmark add dialog
 	connect(uia.umasptb,SIGNAL(released()),this,SLOT(umaselp()));
 	connect(uia.umaok,SIGNAL(released()),this,SLOT(umaconf()));
 	connect(uia.umacn,SIGNAL(released()),umadial,SLOT(hide()));
 // profiles manager
-	connect(setupUi.tbNewProfile,SIGNAL(released()),this,SLOT(newProfile()));
-	connect(setupUi.tbDelProfile,SIGNAL(released()),this,SLOT(rmProfile()));
+	connect(ui.tbNewProfile,SIGNAL(released()),this,SLOT(newProfile()));
+	connect(ui.tbDelProfile,SIGNAL(released()),this,SLOT(rmProfile()));
 
 }
 
@@ -284,271 +287,273 @@ void SetupWin::okay() {
 void SetupWin::start(ZXComp* c) {
 	comp = c;
 	unsigned int i;
-	xProfile* curProf = getCurrentProfile();
+	xProfile* curProf = findProfile("");
 	xRomset* rset = findRomset(curProf->rsName);
 // machine
-	setupUi.rsetbox->clear();
+	ui.rsetbox->clear();
 	for (i=0; i < rsList.size(); i++) {
-		setupUi.rsetbox->addItem(QString::fromLocal8Bit(rsList[i].name.c_str()));
+		ui.rsetbox->addItem(QString::fromLocal8Bit(rsList[i].name.c_str()));
 	}
-	setupUi.machbox->setCurrentIndex(setupUi.machbox->findData(QString::fromUtf8(comp->hw->name)));
+	ui.machbox->setCurrentIndex(ui.machbox->findData(QString::fromUtf8(comp->hw->name)));
 	int cbx = -1;
 	if (rset != NULL)
-		cbx = setupUi.rsetbox->findText(QString::fromUtf8(rset->name.c_str()));
-	setupUi.rsetbox->setCurrentIndex(cbx);
-	setupUi.resbox->setCurrentIndex(setupUi.resbox->findData(comp->resbank));
-	setmszbox(setupUi.machbox->currentIndex());
-	setupUi.mszbox->setCurrentIndex(setupUi.mszbox->findData(comp->mem->memSize));
-	if (setupUi.mszbox->currentIndex() < 0) setupUi.mszbox->setCurrentIndex(setupUi.mszbox->count() - 1);
-	setupUi.cpufrq->setValue(comp->cpuFrq * 2); updfrq();
-	setupUi.scrpwait->setChecked(comp->scrpWait);
-	setupUi.sysCmos->setChecked(conf.sysclock);
+		cbx = ui.rsetbox->findText(QString::fromUtf8(rset->name.c_str()));
+	ui.rsetbox->setCurrentIndex(cbx);
+	ui.resbox->setCurrentIndex(ui.resbox->findData(comp->resbank));
+	setmszbox(ui.machbox->currentIndex());
+	ui.mszbox->setCurrentIndex(ui.mszbox->findData(comp->mem->memSize));
+	if (ui.mszbox->currentIndex() < 0) ui.mszbox->setCurrentIndex(ui.mszbox->count() - 1);
+	ui.cpufrq->setValue(comp->cpuFrq * 2); updfrq();
+	ui.scrpwait->setChecked(comp->scrpWait);
+	ui.sysCmos->setChecked(conf.sysclock);
 // video
-	setupUi.dszchk->setChecked(conf.vid.doubleSize);
-	setupUi.fscchk->setChecked(conf.vid.fullScreen);
-	setupUi.noflichk->setChecked(conf.vid.noFlick);
-	setupUi.grayscale->setChecked(conf.vid.grayScale);
-	setupUi.border4T->setChecked(comp->vid->border4t);
-	setupUi.contMem->setChecked(comp->contMem);
-	setupUi.contIO->setChecked(comp->contIO);
-	setupUi.bszsld->setValue((int)(conf.brdsize * 100));
-	setupUi.pathle->setText(QString::fromLocal8Bit(conf.scrShot.dir.c_str()));
-	setupUi.ssfbox->setCurrentIndex(setupUi.ssfbox->findText(conf.scrShot.format.c_str()));
-	setupUi.scntbox->setValue(conf.scrShot.count);
-	setupUi.sintbox->setValue(conf.scrShot.interval);
-	setupUi.geombox->clear();
+	ui.dszchk->setChecked(conf.vid.doubleSize);
+	ui.fscchk->setChecked(conf.vid.fullScreen);
+	ui.noflichk->setChecked(conf.vid.noFlick);
+	ui.grayscale->setChecked(conf.vid.grayScale);
+	ui.border4T->setChecked(comp->vid->border4t);
+	ui.contMem->setChecked(comp->contMem);
+	ui.contIO->setChecked(comp->contIO);
+	ui.bszsld->setValue((int)(conf.brdsize * 100));
+	ui.pathle->setText(QString::fromLocal8Bit(conf.scrShot.dir.c_str()));
+	ui.ssfbox->setCurrentIndex(ui.ssfbox->findText(conf.scrShot.format.c_str()));
+	ui.scntbox->setValue(conf.scrShot.count);
+	ui.sintbox->setValue(conf.scrShot.interval);
+	ui.geombox->clear();
 	for (i=0; i<layList.size(); i++) {
-		setupUi.geombox->addItem(QString::fromLocal8Bit(layList[i].name.c_str()));
+		ui.geombox->addItem(QString::fromLocal8Bit(layList[i].name.c_str()));
 	}
-	setupUi.geombox->setCurrentIndex(setupUi.geombox->findText(QString::fromLocal8Bit(getCurrentProfile()->layName.c_str())));
-	setupUi.ulaPlus->setChecked(comp->vid->ula->enabled);
+	ui.geombox->setCurrentIndex(ui.geombox->findText(QString::fromLocal8Bit(findProfile("")->layName.c_str())));
+	ui.ulaPlus->setChecked(comp->vid->ula->enabled);
 // sound
-	setupUi.senbox->setChecked(conf.snd.enabled);
-	setupUi.mutbox->setChecked(conf.snd.mute);
-	setupUi.gsrbox->setChecked(comp->gs->reset);
-	setupUi.outbox->setCurrentIndex(setupUi.outbox->findText(QString::fromLocal8Bit(sndOutput->name)));
-	setupUi.ratbox->setCurrentIndex(setupUi.ratbox->findData(QVariant(conf.snd.rate)));
-	setupUi.bvsld->setValue(conf.snd.vol.beep);
-	setupUi.tvsld->setValue(conf.snd.vol.tape);
-	setupUi.avsld->setValue(conf.snd.vol.ay);
-	setupUi.gvsld->setValue(conf.snd.vol.gs);
-	setupUi.schip1box->setCurrentIndex(setupUi.schip1box->findData(QVariant(comp->ts->chipA->type)));
-	setupUi.schip2box->setCurrentIndex(setupUi.schip2box->findData(QVariant(comp->ts->chipB->type)));
-	setupUi.stereo1box->setCurrentIndex(setupUi.stereo1box->findData(QVariant(comp->ts->chipA->stereo)));
-	setupUi.stereo2box->setCurrentIndex(setupUi.stereo2box->findData(QVariant(comp->ts->chipB->stereo)));
-	setupUi.gstereobox->setCurrentIndex(setupUi.gstereobox->findData(QVariant(comp->gs->stereo)));
-	setupUi.gsgroup->setChecked(comp->gs->enable);
-	setupUi.tsbox->setCurrentIndex(setupUi.tsbox->findData(QVariant(comp->ts->type)));
-	setupUi.sdrvBox->setCurrentIndex(setupUi.sdrvBox->findData(QVariant(comp->sdrv->type)));
+	ui.senbox->setChecked(conf.snd.enabled);
+	ui.mutbox->setChecked(conf.snd.mute);
+	ui.gsrbox->setChecked(comp->gs->reset);
+	ui.outbox->setCurrentIndex(ui.outbox->findText(QString::fromLocal8Bit(sndOutput->name)));
+	ui.ratbox->setCurrentIndex(ui.ratbox->findData(QVariant(conf.snd.rate)));
+	ui.bvsld->setValue(conf.snd.vol.beep);
+	ui.tvsld->setValue(conf.snd.vol.tape);
+	ui.avsld->setValue(conf.snd.vol.ay);
+	ui.gvsld->setValue(conf.snd.vol.gs);
+	ui.schip1box->setCurrentIndex(ui.schip1box->findData(QVariant(comp->ts->chipA->type)));
+	ui.schip2box->setCurrentIndex(ui.schip2box->findData(QVariant(comp->ts->chipB->type)));
+	ui.stereo1box->setCurrentIndex(ui.stereo1box->findData(QVariant(comp->ts->chipA->stereo)));
+	ui.stereo2box->setCurrentIndex(ui.stereo2box->findData(QVariant(comp->ts->chipB->stereo)));
+	ui.gstereobox->setCurrentIndex(ui.gstereobox->findData(QVariant(comp->gs->stereo)));
+	ui.gsgroup->setChecked(comp->gs->enable);
+	ui.tsbox->setCurrentIndex(ui.tsbox->findData(QVariant(comp->ts->type)));
+	ui.sdrvBox->setCurrentIndex(ui.sdrvBox->findData(QVariant(comp->sdrv->type)));
+	i = comp->saa->enabled ? (comp->saa->mono ? SAA_MONO : SAA_STEREO) : SAA_OFF;
+	ui.cbSaa->setCurrentIndex(ui.cbSaa->findData(QVariant(i)));
 // input
 	buildkeylist();
 	// buildjmaplist();
-	int idx = setupUi.keyMapBox->findText(QString(conf.keyMapName.c_str()));
+	int idx = ui.keyMapBox->findText(QString(conf.keyMapName.c_str()));
 	if (idx < 1) idx = 0;
-	setupUi.keyMapBox->setCurrentIndex(idx);
-	setupUi.ratEnable->setChecked(comp->mouse->enable);
-	setupUi.ratWheel->setChecked(comp->mouse->hasWheel);
-	setupUi.cbSwapButtons->setChecked(comp->mouse->swapButtons);
+	ui.keyMapBox->setCurrentIndex(idx);
+	ui.ratEnable->setChecked(comp->mouse->enable);
+	ui.ratWheel->setChecked(comp->mouse->hasWheel);
+	ui.cbSwapButtons->setChecked(comp->mouse->swapButtons);
 	// setupUi.joyBox->setVisible(false);
 // dos
-	setupUi.diskTypeBox->setCurrentIndex(setupUi.diskTypeBox->findData(comp->bdi->fdc->type));
-	setupUi.bdtbox->setChecked(fdcFlag & FDC_FAST);
-	setupUi.mempaths->setChecked(conf.storePaths);
+	ui.diskTypeBox->setCurrentIndex(ui.diskTypeBox->findData(comp->bdi->fdc->type));
+	ui.bdtbox->setChecked(fdcFlag & FDC_FAST);
+	ui.mempaths->setChecked(conf.storePaths);
 	Floppy* flp = comp->bdi->fdc->flop[0];
-	setupUi.apathle->setText(QString::fromLocal8Bit(flp->path));
-		setupUi.a80box->setChecked(flp->trk80);
-		setupUi.adsbox->setChecked(flp->doubleSide);
-		setupUi.awpbox->setChecked(flp->protect);
+	ui.apathle->setText(QString::fromLocal8Bit(flp->path));
+		ui.a80box->setChecked(flp->trk80);
+		ui.adsbox->setChecked(flp->doubleSide);
+		ui.awpbox->setChecked(flp->protect);
 	flp = comp->bdi->fdc->flop[1];
-	setupUi.bpathle->setText(QString::fromLocal8Bit(flp->path));
-		setupUi.b80box->setChecked(flp->trk80);
-		setupUi.bdsbox->setChecked(flp->doubleSide);
-		setupUi.bwpbox->setChecked(flp->protect);
+	ui.bpathle->setText(QString::fromLocal8Bit(flp->path));
+		ui.b80box->setChecked(flp->trk80);
+		ui.bdsbox->setChecked(flp->doubleSide);
+		ui.bwpbox->setChecked(flp->protect);
 	flp = comp->bdi->fdc->flop[2];
-	setupUi.cpathle->setText(QString::fromLocal8Bit(flp->path));
-		setupUi.c80box->setChecked(flp->trk80);
-		setupUi.cdsbox->setChecked(flp->doubleSide);
-		setupUi.cwpbox->setChecked(flp->protect);
+	ui.cpathle->setText(QString::fromLocal8Bit(flp->path));
+		ui.c80box->setChecked(flp->trk80);
+		ui.cdsbox->setChecked(flp->doubleSide);
+		ui.cwpbox->setChecked(flp->protect);
 	flp = comp->bdi->fdc->flop[3];
-	setupUi.dpathle->setText(QString::fromLocal8Bit(flp->path));
-		setupUi.d80box->setChecked(flp->trk80);
-		setupUi.ddsbox->setChecked(flp->doubleSide);
-		setupUi.dwpbox->setChecked(flp->protect);
+	ui.dpathle->setText(QString::fromLocal8Bit(flp->path));
+		ui.d80box->setChecked(flp->trk80);
+		ui.ddsbox->setChecked(flp->doubleSide);
+		ui.dwpbox->setChecked(flp->protect);
 	fillDiskCat();
 // hdd
-	setupUi.hiface->setCurrentIndex(setupUi.hiface->findData(comp->ide->type));
+	ui.hiface->setCurrentIndex(ui.hiface->findData(comp->ide->type));
 
-	setupUi.hm_type->setCurrentIndex(setupUi.hm_type->findData(comp->ide->master->type));
+	ui.hm_type->setCurrentIndex(ui.hm_type->findData(comp->ide->master->type));
 	ATAPassport pass = ideGetPassport(comp->ide,IDE_MASTER);
 //	setupUi.hm_model->setText(QString::fromLocal8Bit(pass.model));
 //	setupUi.hm_ser->setText(QString::fromLocal8Bit(pass.serial));
-	setupUi.hm_path->setText(QString::fromLocal8Bit(comp->ide->master->image));
-	setupUi.hm_islba->setChecked(comp->ide->master->hasLBA);
-	setupUi.hm_gsec->setValue(pass.spt);
-	setupUi.hm_ghd->setValue(pass.hds);
-	setupUi.hm_gcyl->setValue(pass.cyls);
-	setupUi.hm_glba->setValue(comp->ide->master->maxlba);
+	ui.hm_path->setText(QString::fromLocal8Bit(comp->ide->master->image));
+	ui.hm_islba->setChecked(comp->ide->master->hasLBA);
+	ui.hm_gsec->setValue(pass.spt);
+	ui.hm_ghd->setValue(pass.hds);
+	ui.hm_gcyl->setValue(pass.cyls);
+	ui.hm_glba->setValue(comp->ide->master->maxlba);
 
-	setupUi.hs_type->setCurrentIndex(setupUi.hm_type->findData(comp->ide->slave->type));
+	ui.hs_type->setCurrentIndex(ui.hm_type->findData(comp->ide->slave->type));
 	pass = ideGetPassport(comp->ide,IDE_SLAVE);
 //	setupUi.hs_model->setText(QString::fromLocal8Bit(pass.model));
 //	setupUi.hs_ser->setText(QString::fromLocal8Bit(pass.serial));
-	setupUi.hs_path->setText(QString::fromLocal8Bit(comp->ide->slave->image));
-	setupUi.hs_islba->setChecked(comp->ide->slave->hasLBA);
-	setupUi.hs_gsec->setValue(pass.spt);
-	setupUi.hs_ghd->setValue(pass.hds);
-	setupUi.hs_gcyl->setValue(pass.cyls);
-	setupUi.hs_glba->setValue(comp->ide->slave->maxlba);
+	ui.hs_path->setText(QString::fromLocal8Bit(comp->ide->slave->image));
+	ui.hs_islba->setChecked(comp->ide->slave->hasLBA);
+	ui.hs_gsec->setValue(pass.spt);
+	ui.hs_ghd->setValue(pass.hds);
+	ui.hs_gcyl->setValue(pass.cyls);
+	ui.hs_glba->setValue(comp->ide->slave->maxlba);
 // sdcard
-	setupUi.sdPath->setText(QString::fromLocal8Bit(comp->sdc->image));
-	setupUi.sdcapbox->setCurrentIndex(setupUi.sdcapbox->findData(comp->sdc->capacity));
-	if (setupUi.sdcapbox->currentIndex() < 0) setupUi.sdcapbox->setCurrentIndex(2);	// 128M
-	setupUi.sdlock->setChecked(comp->sdc->flag & SDC_LOCK);
+	ui.sdPath->setText(QString::fromLocal8Bit(comp->sdc->image));
+	ui.sdcapbox->setCurrentIndex(ui.sdcapbox->findData(comp->sdc->capacity));
+	if (ui.sdcapbox->currentIndex() < 0) ui.sdcapbox->setCurrentIndex(2);	// 128M
+	ui.sdlock->setChecked(comp->sdc->flag & SDC_LOCK);
 // tape
-	setupUi.cbTapeAuto->setChecked(conf.tape.autostart);
-	setupUi.cbTapeFast->setChecked(conf.tape.fast);
-	setupUi.tpathle->setText(QString::fromLocal8Bit(comp->tape->path));
+	ui.cbTapeAuto->setChecked(conf.tape.autostart);
+	ui.cbTapeFast->setChecked(conf.tape.fast);
+	ui.tpathle->setText(QString::fromLocal8Bit(comp->tape->path));
 	buildtapelist();
 // tools
 	buildmenulist();
 // leds
-	setupUi.cbMouseLed->setChecked(conf.led.mouse);
-	setupUi.cbJoyLed->setChecked(conf.led.joy);
-	setupUi.cbKeysLed->setChecked(conf.led.keys);
+	ui.cbMouseLed->setChecked(conf.led.mouse);
+	ui.cbJoyLed->setChecked(conf.led.joy);
+	ui.cbKeysLed->setChecked(conf.led.keys);
 // profiles
-	setupUi.defstart->setChecked(conf.defProfile);
+	ui.defstart->setChecked(conf.defProfile);
 	buildproflist();
 
 	show();
 }
 
 void SetupWin::apply() {
-	xProfile* curProf = getCurrentProfile();
+	xProfile* curProf = findProfile("");
 // machine
-//	setRomsetList(rsList);
 	HardWare *oldmac = comp->hw;
-	curProf->hwName = std::string(setupUi.machbox->itemData(setupUi.machbox->currentIndex()).toString().toUtf8().data());
-//	curProf->hwName = std::string(setupUi.machbox->currentText().toUtf8().data());
+	curProf->hwName = std::string(ui.machbox->itemData(ui.machbox->currentIndex()).toString().toUtf8().data());
 	zxSetHardware(curProf->zx,curProf->hwName.c_str());
-	curProf->rsName = std::string(setupUi.rsetbox->currentText().toUtf8().data());
-	prfSetRomset("", curProf->rsName);
-//	RomSet* rset = findRomset(curProf->rsName);
-//	emulSetFlag(FL_RESET, setupUi.reschk->isChecked());
-	comp->resbank = setupUi.resbox->itemData(setupUi.resbox->currentIndex()).toInt();
-	memSetSize(comp->mem,setupUi.mszbox->itemData(setupUi.mszbox->currentIndex()).toInt());
-	zxSetFrq(comp,setupUi.cpufrq->value() / 2.0);
-	comp->scrpWait = setupUi.scrpwait->isChecked() ? 1 : 0;
+	curProf->rsName = std::string(ui.rsetbox->currentText().toUtf8().data());
+	prfSetRomset(curProf, curProf->rsName);
+	comp->resbank = ui.resbox->itemData(ui.resbox->currentIndex()).toInt();
+	memSetSize(comp->mem,ui.mszbox->itemData(ui.mszbox->currentIndex()).toInt());
+	zxSetFrq(comp,ui.cpufrq->value() / 2.0);
+	comp->scrpWait = ui.scrpwait->isChecked() ? 1 : 0;
 	if (comp->hw != oldmac) zxReset(comp,RES_DEFAULT);
-	conf.sysclock = setupUi.sysCmos->isChecked() ? 1 : 0;
+	conf.sysclock = ui.sysCmos->isChecked() ? 1 : 0;
 // video
-//	setLayoutList(layList);
-	conf.vid.doubleSize = setupUi.dszchk->isChecked() ? 1 : 0;
-	conf.vid.fullScreen = setupUi.fscchk->isChecked() ? 1 : 0;
-	conf.vid.noFlick = setupUi.noflichk->isChecked() ? 1 : 0;
-	conf.vid.grayScale = setupUi.grayscale->isChecked() ? 1 : 0;
-	conf.scrShot.dir = std::string(setupUi.pathle->text().toLocal8Bit().data());
-	conf.scrShot.format = std::string(setupUi.ssfbox->currentText().toLocal8Bit().data());
-	conf.scrShot.count = setupUi.scntbox->value();
-	conf.scrShot.interval = setupUi.sintbox->value();
-	conf.brdsize = setupUi.bszsld->value()/100.0;
-	comp->vid->border4t = setupUi.border4T->isChecked() ? 1 : 0;
-	comp->contMem = setupUi.contMem->isChecked() ? 1 : 0;
-	comp->contIO = setupUi.contIO->isChecked() ? 1 : 0;
-	comp->vid->ula->enabled = setupUi.ulaPlus->isChecked() ? 1 : 0;
-	prfSetLayout(NULL, std::string(setupUi.geombox->currentText().toLocal8Bit().data()));
+	conf.vid.doubleSize = ui.dszchk->isChecked() ? 1 : 0;
+	conf.vid.fullScreen = ui.fscchk->isChecked() ? 1 : 0;
+	conf.vid.noFlick = ui.noflichk->isChecked() ? 1 : 0;
+	conf.vid.grayScale = ui.grayscale->isChecked() ? 1 : 0;
+	conf.scrShot.dir = std::string(ui.pathle->text().toLocal8Bit().data());
+	conf.scrShot.format = std::string(ui.ssfbox->currentText().toLocal8Bit().data());
+	conf.scrShot.count = ui.scntbox->value();
+	conf.scrShot.interval = ui.sintbox->value();
+	conf.brdsize = ui.bszsld->value()/100.0;
+	comp->vid->border4t = ui.border4T->isChecked() ? 1 : 0;
+	comp->contMem = ui.contMem->isChecked() ? 1 : 0;
+	comp->contIO = ui.contIO->isChecked() ? 1 : 0;
+	comp->vid->ula->enabled = ui.ulaPlus->isChecked() ? 1 : 0;
+	prfSetLayout(NULL, std::string(ui.geombox->currentText().toLocal8Bit().data()));
 // sound
 	//std::string oname = std::string(sndOutput->name);
-	std::string nname(setupUi.outbox->currentText().toLocal8Bit().data());
-	conf.snd.enabled = setupUi.senbox->isChecked() ? 1 : 0;
-	conf.snd.mute = setupUi.mutbox->isChecked() ? 1 : 0;
-	conf.snd.rate = setupUi.ratbox->itemData(setupUi.ratbox->currentIndex()).toInt();
-	conf.snd.vol.beep = setupUi.bvsld->value();
-	conf.snd.vol.tape = setupUi.tvsld->value();
-	conf.snd.vol.ay = setupUi.avsld->value();
-	conf.snd.vol.gs = setupUi.gvsld->value();
+	std::string nname(ui.outbox->currentText().toLocal8Bit().data());
+	conf.snd.enabled = ui.senbox->isChecked() ? 1 : 0;
+	conf.snd.mute = ui.mutbox->isChecked() ? 1 : 0;
+	conf.snd.rate = ui.ratbox->itemData(ui.ratbox->currentIndex()).toInt();
+	conf.snd.vol.beep = ui.bvsld->value();
+	conf.snd.vol.tape = ui.tvsld->value();
+	conf.snd.vol.ay = ui.avsld->value();
+	conf.snd.vol.gs = ui.gvsld->value();
 	setOutput(nname.c_str());
-	aymSetType(comp->ts->chipA,setupUi.schip1box->itemData(setupUi.schip1box->currentIndex()).toInt());
-	aymSetType(comp->ts->chipB,setupUi.schip2box->itemData(setupUi.schip2box->currentIndex()).toInt());
-	comp->ts->chipA->stereo = setupUi.stereo1box->itemData(setupUi.stereo1box->currentIndex()).toInt();
-	comp->ts->chipB->stereo = setupUi.stereo2box->itemData(setupUi.stereo2box->currentIndex()).toInt();
-	comp->ts->type = setupUi.tsbox->itemData(setupUi.tsbox->currentIndex()).toInt();
-	comp->gs->enable = setupUi.gsgroup->isChecked() ? 1 : 0;
-	comp->gs->reset = setupUi.gsrbox->isChecked() ? 1 : 0;
-	comp->gs->stereo = setupUi.gstereobox->itemData(setupUi.gstereobox->currentIndex()).toInt();
-	comp->sdrv->type = setupUi.sdrvBox->itemData(setupUi.sdrvBox->currentIndex()).toInt();
+	aymSetType(comp->ts->chipA,ui.schip1box->itemData(ui.schip1box->currentIndex()).toInt());
+	aymSetType(comp->ts->chipB,ui.schip2box->itemData(ui.schip2box->currentIndex()).toInt());
+	comp->ts->chipA->stereo = ui.stereo1box->itemData(ui.stereo1box->currentIndex()).toInt();
+	comp->ts->chipB->stereo = ui.stereo2box->itemData(ui.stereo2box->currentIndex()).toInt();
+	comp->ts->type = ui.tsbox->itemData(ui.tsbox->currentIndex()).toInt();
+	comp->gs->enable = ui.gsgroup->isChecked() ? 1 : 0;
+	comp->gs->reset = ui.gsrbox->isChecked() ? 1 : 0;
+	comp->gs->stereo = ui.gstereobox->itemData(ui.gstereobox->currentIndex()).toInt();
+	comp->sdrv->type = ui.sdrvBox->itemData(ui.sdrvBox->currentIndex()).toInt();
+	switch (ui.cbSaa->itemData(ui.cbSaa->currentIndex()).toInt()) {
+		case SAA_OFF: comp->saa->enabled = 0; break;
+		case SAA_MONO: comp->saa->enabled = 1; comp->saa->mono = 1; break;
+		case SAA_STEREO: comp->saa->enabled = 1; comp->saa->mono = 0; break;
+	}
 // input
-	comp->mouse->enable = setupUi.ratEnable->isChecked() ? 1 : 0;
-	comp->mouse->hasWheel = setupUi.ratWheel->isChecked() ? 1 : 0;
-	comp->mouse->swapButtons = setupUi.cbSwapButtons->isChecked() ? 1 : 0;
+	comp->mouse->enable = ui.ratEnable->isChecked() ? 1 : 0;
+	comp->mouse->hasWheel = ui.ratWheel->isChecked() ? 1 : 0;
+	comp->mouse->swapButtons = ui.cbSwapButtons->isChecked() ? 1 : 0;
 	//if (setupUi.inpDevice->currentIndex() < 1) {
 	//	optSet(OPT_JOYNAME,std::string(""));
 	//} else {
 	//	optSet(OPT_JOYNAME,std::string(setupUi.inpDevice->currentText().toLocal8Bit().data()));
 	//}
-	std::string kmname = getRFText(setupUi.keyMapBox);
+	std::string kmname = getRFText(ui.keyMapBox);
 	if (kmname == "none") kmname = "default";
 	conf.keyMapName = kmname;
 	loadKeys();
 // bdi
-	comp->bdi->fdc->type = setupUi.diskTypeBox->itemData(setupUi.diskTypeBox->currentIndex()).toInt();
-	setFlagBit(setupUi.bdtbox->isChecked(),&fdcFlag,FDC_FAST);
-	conf.storePaths = setupUi.mempaths->isChecked() ? 1 : 0;
+	comp->bdi->fdc->type = ui.diskTypeBox->itemData(ui.diskTypeBox->currentIndex()).toInt();
+	setFlagBit(ui.bdtbox->isChecked(),&fdcFlag,FDC_FAST);
+	conf.storePaths = ui.mempaths->isChecked() ? 1 : 0;
 
 	Floppy* flp = comp->bdi->fdc->flop[0];
-	flp->trk80 = setupUi.a80box->isChecked() ? 1 : 0;
-	flp->doubleSide = setupUi.adsbox->isChecked() ? 1 : 0;
-	flp->protect = setupUi.awpbox->isChecked() ? 1 : 0;
+	flp->trk80 = ui.a80box->isChecked() ? 1 : 0;
+	flp->doubleSide = ui.adsbox->isChecked() ? 1 : 0;
+	flp->protect = ui.awpbox->isChecked() ? 1 : 0;
 
 	flp = comp->bdi->fdc->flop[1];
-	flp->trk80 = setupUi.b80box->isChecked() ? 1 : 0;
-	flp->doubleSide = setupUi.bdsbox->isChecked() ? 1 : 0;
-	flp->protect = setupUi.bwpbox->isChecked() ? 1 : 0;
+	flp->trk80 = ui.b80box->isChecked() ? 1 : 0;
+	flp->doubleSide = ui.bdsbox->isChecked() ? 1 : 0;
+	flp->protect = ui.bwpbox->isChecked() ? 1 : 0;
 
 	flp = comp->bdi->fdc->flop[2];
-	flp->trk80 = setupUi.c80box->isChecked() ? 1 : 0;
-	flp->doubleSide = setupUi.cdsbox->isChecked() ? 1 : 0;
-	flp->protect = setupUi.cwpbox->isChecked() ? 1 : 0;
+	flp->trk80 = ui.c80box->isChecked() ? 1 : 0;
+	flp->doubleSide = ui.cdsbox->isChecked() ? 1 : 0;
+	flp->protect = ui.cwpbox->isChecked() ? 1 : 0;
 
 	flp = comp->bdi->fdc->flop[3];
-	flp->trk80 = setupUi.d80box->isChecked() ? 1 : 0;
-	flp->doubleSide = setupUi.ddsbox->isChecked() ? 1 : 0;
-	flp->protect = setupUi.dwpbox->isChecked() ? 1 : 0;
+	flp->trk80 = ui.d80box->isChecked() ? 1 : 0;
+	flp->doubleSide = ui.ddsbox->isChecked() ? 1 : 0;
+	flp->protect = ui.dwpbox->isChecked() ? 1 : 0;
 
 // hdd
-	comp->ide->type = setupUi.hiface->itemData(setupUi.hiface->currentIndex()).toInt();
+	comp->ide->type = ui.hiface->itemData(ui.hiface->currentIndex()).toInt();
 
 	ATAPassport pass = ideGetPassport(comp->ide,IDE_MASTER);
-	comp->ide->master->type = setupUi.hm_type->itemData(setupUi.hm_type->currentIndex()).toInt();
-	ideSetImage(comp->ide,IDE_MASTER,setupUi.hm_path->text().toLocal8Bit().data());
-	comp->ide->master->hasLBA = setupUi.hm_islba->isChecked() ? 1 : 0;
-	pass.spt = setupUi.hm_gsec->value();
-	pass.hds = setupUi.hm_ghd->value();
-	pass.cyls = setupUi.hm_gcyl->value();
-	comp->ide->master->maxlba = setupUi.hm_glba->value();
+	comp->ide->master->type = ui.hm_type->itemData(ui.hm_type->currentIndex()).toInt();
+	ideSetImage(comp->ide,IDE_MASTER,ui.hm_path->text().toLocal8Bit().data());
+	comp->ide->master->hasLBA = ui.hm_islba->isChecked() ? 1 : 0;
+	pass.spt = ui.hm_gsec->value();
+	pass.hds = ui.hm_ghd->value();
+	pass.cyls = ui.hm_gcyl->value();
+	comp->ide->master->maxlba = ui.hm_glba->value();
 	ideSetPassport(comp->ide,IDE_MASTER,pass);
 
 	pass = ideGetPassport(comp->ide,IDE_SLAVE);
-	comp->ide->slave->type = setupUi.hs_type->itemData(setupUi.hs_type->currentIndex()).toInt();
-	ideSetImage(comp->ide,IDE_SLAVE,setupUi.hs_path->text().toLocal8Bit().data());
-	comp->ide->slave->hasLBA = setupUi.hs_islba->isChecked() ? 1 : 0;
-	pass.spt = setupUi.hs_gsec->value();
-	pass.hds = setupUi.hs_ghd->value();
-	pass.cyls = setupUi.hs_gcyl->value();
-	comp->ide->slave->maxlba = setupUi.hs_glba->value();
+	comp->ide->slave->type = ui.hs_type->itemData(ui.hs_type->currentIndex()).toInt();
+	ideSetImage(comp->ide,IDE_SLAVE,ui.hs_path->text().toLocal8Bit().data());
+	comp->ide->slave->hasLBA = ui.hs_islba->isChecked() ? 1 : 0;
+	pass.spt = ui.hs_gsec->value();
+	pass.hds = ui.hs_ghd->value();
+	pass.cyls = ui.hs_gcyl->value();
+	comp->ide->slave->maxlba = ui.hs_glba->value();
 	ideSetPassport(comp->ide,IDE_SLAVE,pass);
 // sdcard
-	sdcSetImage(comp->sdc,setupUi.sdPath->text().isEmpty() ? "" : setupUi.sdPath->text().toLocal8Bit().data());
-	sdcSetCapacity(comp->sdc,setupUi.sdcapbox->itemData(setupUi.sdcapbox->currentIndex()).toInt());
-	setFlagBit(setupUi.sdlock->isChecked(),&comp->sdc->flag,SDC_LOCK);
+	sdcSetImage(comp->sdc,ui.sdPath->text().isEmpty() ? "" : ui.sdPath->text().toLocal8Bit().data());
+	sdcSetCapacity(comp->sdc,ui.sdcapbox->itemData(ui.sdcapbox->currentIndex()).toInt());
+	setFlagBit(ui.sdlock->isChecked(),&comp->sdc->flag,SDC_LOCK);
 // tape
-	conf.tape.autostart = setupUi.cbTapeAuto->isChecked() ? 1 : 0;
-	conf.tape.fast = setupUi.cbTapeFast->isChecked() ? 1 : 0;
+	conf.tape.autostart = ui.cbTapeAuto->isChecked() ? 1 : 0;
+	conf.tape.fast = ui.cbTapeFast->isChecked() ? 1 : 0;
 // leds
-	conf.led.mouse = setupUi.cbMouseLed->isChecked();
-	conf.led.joy = setupUi.cbJoyLed->isChecked();
-	conf.led.keys = setupUi.cbKeysLed->isChecked();
+	conf.led.mouse = ui.cbMouseLed->isChecked();
+	conf.led.joy = ui.cbJoyLed->isChecked();
+	conf.led.keys = ui.cbKeysLed->isChecked();
 // profiles
-	conf.defProfile = setupUi.defstart->isChecked() ? 1 : 0;
+	conf.defProfile = ui.defstart->isChecked() ? 1 : 0;
 
 	saveConfig();
 	prfSave("");
@@ -590,20 +595,20 @@ void SetupWin::editLayout() {
 }
 
 void SetupWin::edLayout() {
-	eidx = setupUi.geombox->currentIndex();
+	eidx = ui.geombox->currentIndex();
 	nlay = layList[eidx];
 	editLayout();
 }
 
 void SetupWin::delLayout() {
-	int eidx = setupUi.geombox->currentIndex();
+	int eidx = ui.geombox->currentIndex();
 	if (eidx < 1) {
 		shitHappens("You can't delete this layout");
 		return;
 	}
 	if (areSure("Do you really want to delete this layout?")) {
 		layList.erase(layList.begin() + eidx);
-		setupUi.geombox->removeItem(eidx);
+		ui.geombox->removeItem(eidx);
 	}
 }
 
@@ -667,12 +672,12 @@ void SetupWin::layEditorOK() {
 	nlay.intsz = layUi.intLenBox->value();
 	if (eidx < 0) {
 		addLayout(nlay);
-		setupUi.geombox->addItem(QString::fromLocal8Bit(nlay.name.c_str()));
-		setupUi.geombox->setCurrentIndex(setupUi.geombox->count() - 1);
+		ui.geombox->addItem(QString::fromLocal8Bit(nlay.name.c_str()));
+		ui.geombox->setCurrentIndex(ui.geombox->count() - 1);
 	} else {
 		prfChangeLayName(layList[eidx].name, nlay.name);
 		layList[eidx] = nlay;
-		setupUi.geombox->setItemText(eidx, nlay.name.c_str());
+		ui.geombox->setItemText(eidx, nlay.name.c_str());
 	}
 	layeditor->hide();
 }
@@ -689,11 +694,11 @@ void SetupWin::rsNameCheck(QString nam) {
 }
 
 void SetupWin::rmRomset() {
-	int idx = setupUi.rsetbox->currentIndex();
+	int idx = ui.rsetbox->currentIndex();
 	if (idx < 0) return;
 	if (areSure("Do you really want to delete this romset?")) {
-		rsList.erase(rsList.begin() + idx);
-		setupUi.rsetbox->removeItem(idx);
+		rsList.erase(rsList.begin() + idx);			// NOTE: should be moved to xcore/romsets.cpp as delRomset?
+		ui.rsetbox->removeItem(idx);
 	}
 }
 
@@ -713,7 +718,7 @@ void SetupWin::addNewRomset() {
 // machine
 
 void SetupWin::editrset() {
-	eidx = setupUi.rsetbox->currentIndex();
+	eidx = ui.rsetbox->currentIndex();
 	if (eidx < 0) return;
 	nrs = rsList[eidx];
 	editRomset();
@@ -766,12 +771,12 @@ void SetupWin::setrpart() {
 	nrs.name = std::string(rseUi.rsName->text().toLocal8Bit().data());
 	if (eidx < 0) {
 		addRomset(nrs);
-		setupUi.rsetbox->addItem(QString::fromLocal8Bit(nrs.name.c_str()));
-		setupUi.rsetbox->setCurrentIndex(setupUi.rsetbox->count() - 1);
+		ui.rsetbox->addItem(QString::fromLocal8Bit(nrs.name.c_str()));
+		ui.rsetbox->setCurrentIndex(ui.rsetbox->count() - 1);
 	} else {
 		prfChangeRsName(rsList[eidx].name, nrs.name);
 		rsList[eidx] = nrs;
-		setupUi.rsetbox->setItemText(eidx, nrs.name.c_str());
+		ui.rsetbox->setItemText(eidx, nrs.name.c_str());
 	}
 	rseditor->hide();
 }
@@ -781,7 +786,7 @@ void SetupWin::setrpart() {
 void SetupWin::buildkeylist() {
 	QDir dir(conf.path.confDir.c_str());
 	QStringList lst = dir.entryList(QStringList() << "*.map",QDir::Files,QDir::Name);
-	fillRFBox(setupUi.keyMapBox,lst);
+	fillRFBox(ui.keyMapBox,lst);
 }
 
 std::vector<HardWare> getHardwareList() {
@@ -797,130 +802,129 @@ std::vector<HardWare> getHardwareList() {
 void SetupWin::setmszbox(int idx) {
 	std::vector<HardWare> list = getHardwareList();
 	int t = list[idx].mask;
-	QString oldText = setupUi.mszbox->currentText();
-	setupUi.mszbox->clear();
+	QString oldText = ui.mszbox->currentText();
+	ui.mszbox->clear();
 	if (t == 0x00) {
-		setupUi.mszbox->addItem("48K",48);
+		ui.mszbox->addItem("48K",48);
 	} else {
-		if (t & 1) setupUi.mszbox->addItem("128K",128);
-		if (t & 2) setupUi.mszbox->addItem("256K",256);
-		if (t & 4) setupUi.mszbox->addItem("512K",512);
-		if (t & 8) setupUi.mszbox->addItem("1024K",1024);
-		if (t & 16) setupUi.mszbox->addItem("2048K",2048);
-		if (t & 32) setupUi.mszbox->addItem("4096K",4096);
+		if (t & 1) ui.mszbox->addItem("128K",128);
+		if (t & 2) ui.mszbox->addItem("256K",256);
+		if (t & 4) ui.mszbox->addItem("512K",512);
+		if (t & 8) ui.mszbox->addItem("1024K",1024);
+		if (t & 16) ui.mszbox->addItem("2048K",2048);
+		if (t & 32) ui.mszbox->addItem("4096K",4096);
 	}
-	setupUi.mszbox->setCurrentIndex(setupUi.mszbox->findText(oldText));
-	if (setupUi.mszbox->currentIndex() < 0) setupUi.mszbox->setCurrentIndex(setupUi.mszbox->count() - 1);
+	ui.mszbox->setCurrentIndex(ui.mszbox->findText(oldText));
+	if (ui.mszbox->currentIndex() < 0) ui.mszbox->setCurrentIndex(ui.mszbox->count() - 1);
 }
 
 void SetupWin::buildrsetlist() {
 //	int i;
-	if (setupUi.rsetbox->currentIndex() < 0) {
-		setupUi.rstab->setEnabled(false);
+	if (ui.rsetbox->currentIndex() < 0) {
+		ui.rstab->setEnabled(false);
 		return;
 	}
-	setupUi.rstab->setEnabled(true);
-	xRomset rset = rsList[setupUi.rsetbox->currentIndex()];
+	ui.rstab->setEnabled(true);
+	xRomset rset = rsList[ui.rsetbox->currentIndex()];
 	if (rset.file == "") {
-		setupUi.rstab->hideRow(4);
+		ui.rstab->hideRow(4);
 		for (int i=0; i<4; i++) {
-			setupUi.rstab->showRow(i);
+			ui.rstab->showRow(i);
 			QString rsf = QString::fromLocal8Bit(rset.roms[i].path.c_str());
-			setupUi.rstab->item(i,1)->setText(rsf);
+			ui.rstab->item(i,1)->setText(rsf);
 			if (rsf != "") {
-				setupUi.rstab->item(i,2)->setText(QString::number(rset.roms[i].part));
+				ui.rstab->item(i,2)->setText(QString::number(rset.roms[i].part));
 			} else {
-				setupUi.rstab->item(i,2)->setText("");
+				ui.rstab->item(i,2)->setText("");
 			}
 		}
 	} else {
-		setupUi.rstab->hideRow(0);
-		setupUi.rstab->hideRow(1);
-		setupUi.rstab->hideRow(2);
-		setupUi.rstab->hideRow(3);
-		setupUi.rstab->showRow(4);
-		setupUi.rstab->item(4,1)->setText(QString::fromLocal8Bit(rset.file.c_str()));
-		setupUi.rstab->item(4,2)->setText("");
+		ui.rstab->hideRow(0);
+		ui.rstab->hideRow(1);
+		ui.rstab->hideRow(2);
+		ui.rstab->hideRow(3);
+		ui.rstab->showRow(4);
+		ui.rstab->item(4,1)->setText(QString::fromLocal8Bit(rset.file.c_str()));
+		ui.rstab->item(4,2)->setText("");
 	}
-	setupUi.rstab->item(5,1)->setText(QString::fromLocal8Bit(rset.gsFile.c_str()));
-	setupUi.rstab->item(6,1)->setText(QString::fromLocal8Bit(rset.fntFile.c_str()));
-	setupUi.rstab->setColumnWidth(0,100);
-	setupUi.rstab->setColumnWidth(1,300);
-	setupUi.rstab->setColumnWidth(2,50);
+	ui.rstab->item(5,1)->setText(QString::fromLocal8Bit(rset.gsFile.c_str()));
+	ui.rstab->item(6,1)->setText(QString::fromLocal8Bit(rset.fntFile.c_str()));
+	ui.rstab->setColumnWidth(0,100);
+	ui.rstab->setColumnWidth(1,300);
+	ui.rstab->setColumnWidth(2,50);
 }
 
 void SetupWin::buildtapelist() {
 //	buildTapeList();
 	TapeBlockInfo* inf = new TapeBlockInfo[comp->tape->blkCount];
 	tapGetBlocksInfo(comp->tape,inf);
-	setupUi.tapelist->setRowCount(comp->tape->blkCount);
+	ui.tapelist->setRowCount(comp->tape->blkCount);
 	if (comp->tape->blkCount == 0) {
-		setupUi.tapelist->setEnabled(false);
+		ui.tapelist->setEnabled(false);
 		return;
 	}
-	setupUi.tapelist->setEnabled(true);
+	ui.tapelist->setEnabled(true);
 	QTableWidgetItem* itm;
 	uint tm,ts;
 	for (int i=0; i < comp->tape->blkCount; i++) {
 		if (comp->tape->block == i) {
 			itm = new QTableWidgetItem(QIcon(":/images/checkbox.png"),"");
-			setupUi.tapelist->setItem(i,0,itm);
+			ui.tapelist->setItem(i,0,itm);
 			ts = inf[i].curtime;
 			tm = ts/60;
 			ts -= tm * 60;
 			itm = new QTableWidgetItem(QString::number(tm).append(":").append(QString::number(ts+100).right(2)));
-			setupUi.tapelist->setItem(i,3,itm);
+			ui.tapelist->setItem(i,3,itm);
 		} else {
 			itm = new QTableWidgetItem;
-			setupUi.tapelist->setItem(i,0,itm);
+			ui.tapelist->setItem(i,0,itm);
 			itm = new QTableWidgetItem;
-			setupUi.tapelist->setItem(i,3,itm);
+			ui.tapelist->setItem(i,3,itm);
 		}
 		itm = new QTableWidgetItem;
 		if (inf[i].breakPoint) itm->setIcon(QIcon(":/images/cancel.png"));
-		setupUi.tapelist->setItem(i,1,itm);
+		ui.tapelist->setItem(i,1,itm);
 		ts = inf[i].time;
 		tm = ts/60;
 		ts -= tm * 60;
 		itm = new QTableWidgetItem(QString::number(tm).append(":").append(QString::number(ts+100).right(2)));
-		setupUi.tapelist->setItem(i,2,itm);
+		ui.tapelist->setItem(i,2,itm);
 		itm = new QTableWidgetItem(QString::number(inf[i].size));
-		setupUi.tapelist->setItem(i,4,itm);
+		ui.tapelist->setItem(i,4,itm);
 		itm = new QTableWidgetItem(QString::fromLocal8Bit(inf[i].name));
-		setupUi.tapelist->setItem(i,5,itm);
+		ui.tapelist->setItem(i,5,itm);
 	}
-	setupUi.tapelist->selectRow(0);
+	ui.tapelist->selectRow(0);
 }
 
 void SetupWin::buildmenulist() {
-	std::vector<xBookmark> bml = getBookmarkList();
-	setupUi.umlist->setRowCount(bml.size());
+	ui.umlist->setRowCount(bookmarkList.size());
 	QTableWidgetItem* itm;
-	for (uint i=0; i<bml.size(); i++) {
-		itm = new QTableWidgetItem(QString(bml[i].name.c_str()));
-		setupUi.umlist->setItem(i,0,itm);
-		itm = new QTableWidgetItem(QString(bml[i].path.c_str()));
-		setupUi.umlist->setItem(i,1,itm);
+	for (uint i = 0; i < bookmarkList.size(); i++) {
+		itm = new QTableWidgetItem(QString(bookmarkList[i].name.c_str()));
+		ui.umlist->setItem(i,0,itm);
+		itm = new QTableWidgetItem(QString(bookmarkList[i].path.c_str()));
+		ui.umlist->setItem(i,1,itm);
 	}
-	setupUi.umlist->setColumnWidth(0,100);
-	setupUi.umlist->selectRow(0);
+	ui.umlist->setColumnWidth(0,100);
+	ui.umlist->selectRow(0);
 };
 
 void SetupWin::buildproflist() {
 	std::vector<xProfile> prList = getProfileList();
-	setupUi.twProfileList->setRowCount(prList.size());
+	ui.twProfileList->setRowCount(prList.size());
 	QTableWidgetItem* itm;
 	for (uint i=0; i<prList.size(); i++) {
 		itm = new QTableWidgetItem(QString::fromLocal8Bit(prList[i].name.c_str()));
-		setupUi.twProfileList->setItem(i,0,itm);
+		ui.twProfileList->setItem(i,0,itm);
 		itm = new QTableWidgetItem(QString::fromLocal8Bit(prList[i].file.c_str()));
-		setupUi.twProfileList->setItem(i,1,itm);
+		ui.twProfileList->setItem(i,1,itm);
 	}
 }
 
 void SetupWin::copyToTape() {
-	int dsk = setupUi.disktabs->currentIndex();
-	QModelIndexList idx = setupUi.disklist->selectionModel()->selectedRows();
+	int dsk = ui.disktabs->currentIndex();
+	QModelIndexList idx = ui.disklist->selectionModel()->selectedRows();
 	if (idx.size() == 0) return;
 	TRFile cat[128];
 	flpGetTRCatalog(comp->bdi->fdc->flop[dsk],cat);
@@ -958,12 +962,12 @@ void SetupWin::copyToTape() {
 // hobeta header crc = ((105 + 257 * std::accumulate(data, data + 15, 0u)) & 0xffff))
 
 void SetupWin::diskToHobeta() {
-	QModelIndexList idx = setupUi.disklist->selectionModel()->selectedRows();
+	QModelIndexList idx = ui.disklist->selectionModel()->selectedRows();
 	if (idx.size() == 0) return;
 	QString dir = QFileDialog::getExistingDirectory(this,"Save file(s) to...",QDir::homePath());
 	if (dir == "") return;
 	std::string sdir = std::string(dir.toLocal8Bit().data()) + std::string(SLASH);
-	Floppy* flp = comp->bdi->fdc->flop[setupUi.disktabs->currentIndex()];		// selected floppy
+	Floppy* flp = comp->bdi->fdc->flop[ui.disktabs->currentIndex()];		// selected floppy
 	int savedFiles = 0;
 	for (int i=0; i<idx.size(); i++) {
 		if (saveHobetaFile(flp,idx[i].row(),sdir.c_str()) == ERR_OK) savedFiles++;
@@ -973,12 +977,12 @@ void SetupWin::diskToHobeta() {
 }
 
 void SetupWin::diskToRaw() {
-	QModelIndexList idx = setupUi.disklist->selectionModel()->selectedRows();
+	QModelIndexList idx = ui.disklist->selectionModel()->selectedRows();
 	if (idx.size() == 0) return;
 	QString dir = QFileDialog::getExistingDirectory(this,"Save file(s) to...","",QFileDialog::DontUseNativeDialog | QFileDialog::ShowDirsOnly);
 	if (dir == "") return;
 	std::string sdir = std::string(dir.toLocal8Bit().data()) + std::string(SLASH);
-	Floppy* flp = comp->bdi->fdc->flop[setupUi.disktabs->currentIndex()];
+	Floppy* flp = comp->bdi->fdc->flop[ui.disktabs->currentIndex()];
 	int savedFiles = 0;
 	for (int i=0; i<idx.size(); i++) {
 		if (saveRawFile(flp,idx[i].row(),sdir.c_str()) == ERR_OK) savedFiles++;
@@ -1014,9 +1018,9 @@ TRFile getHeadInfo(Tape* tape, int blk) {
 }
 
 void SetupWin::copyToDisk() {
-	int blk = setupUi.tapelist->currentRow();
+	int blk = ui.tapelist->currentRow();
 	if (blk < 0) return;
-	int dsk = setupUi.disktabs->currentIndex();
+	int dsk = ui.disktabs->currentIndex();
 	int headBlock = -1;
 	int dataBlock = -1;
 	if (!comp->tape->blkData[blk].hasBytes) {
@@ -1095,8 +1099,8 @@ void SetupWin::copyToDisk() {
 }
 
 void SetupWin::fillDiskCat() {
-	int dsk = setupUi.disktabs->currentIndex();
-	QTableWidget* wid = setupUi.disklist;
+	int dsk = ui.disktabs->currentIndex();
+	QTableWidget* wid = ui.disklist;
 	wid->setColumnWidth(0,100);
 	wid->setColumnWidth(1,30);
 	wid->setColumnWidth(2,70);
@@ -1135,26 +1139,26 @@ void SetupWin::fillDiskCat() {
 // machine
 
 void SetupWin::updfrq() {
-	double f = setupUi.cpufrq->value() / 2.0;
-	setupUi.cpufrqlab->setText(QString::number(f,'f',2).append(" MHz"));
+	double f = ui.cpufrq->value() / 2.0;
+	ui.cpufrqlab->setText(QString::number(f,'f',2).append(" MHz"));
 }
 
 // video
 
-void SetupWin::chabsz() {setupUi.bszlab->setText(QString::number(setupUi.bszsld->value()).append("%"));}
+void SetupWin::chabsz() {ui.bszlab->setText(QString::number(ui.bszsld->value()).append("%"));}
 
 void SetupWin::selsspath() {
 	QString fpath = QFileDialog::getExistingDirectory(this,"Screenshots folder",QString::fromLocal8Bit(conf.scrShot.dir.c_str()),QFileDialog::ShowDirsOnly);
-	if (fpath!="") setupUi.pathle->setText(fpath);
+	if (fpath!="") ui.pathle->setText(fpath);
 }
 
 // sound
 
 void SetupWin::updvolumes() {
-	setupUi.bvlab->setText(QString::number(setupUi.bvsld->value()));
-	setupUi.tvlab->setText(QString::number(setupUi.tvsld->value()));
-	setupUi.avlab->setText(QString::number(setupUi.avsld->value()));
-	setupUi.gslab->setText(QString::number(setupUi.gvsld->value()));
+	ui.bvlab->setText(QString::number(ui.bvsld->value()));
+	ui.tvlab->setText(QString::number(ui.tvsld->value()));
+	ui.avlab->setText(QString::number(ui.avsld->value()));
+	ui.gslab->setText(QString::number(ui.gvsld->value()));
 }
 
 // disk
@@ -1191,10 +1195,10 @@ void SetupWin::ejctc() {saveChangedDisk(comp,2); flpEject(comp->bdi->fdc->flop[2
 void SetupWin::ejctd() {saveChangedDisk(comp,3); flpEject(comp->bdi->fdc->flop[3]); updatedisknams();}
 
 void SetupWin::updatedisknams() {
-	setupUi.apathle->setText(QString::fromLocal8Bit(comp->bdi->fdc->flop[0]->path));
-	setupUi.bpathle->setText(QString::fromLocal8Bit(comp->bdi->fdc->flop[1]->path));
-	setupUi.cpathle->setText(QString::fromLocal8Bit(comp->bdi->fdc->flop[2]->path));
-	setupUi.dpathle->setText(QString::fromLocal8Bit(comp->bdi->fdc->flop[3]->path));
+	ui.apathle->setText(QString::fromLocal8Bit(comp->bdi->fdc->flop[0]->path));
+	ui.bpathle->setText(QString::fromLocal8Bit(comp->bdi->fdc->flop[1]->path));
+	ui.cpathle->setText(QString::fromLocal8Bit(comp->bdi->fdc->flop[2]->path));
+	ui.dpathle->setText(QString::fromLocal8Bit(comp->bdi->fdc->flop[3]->path));
 	fillDiskCat();
 }
 
@@ -1202,7 +1206,7 @@ void SetupWin::updatedisknams() {
 
 void SetupWin::loatape() {
 	loadFile(comp,"",FT_TAPE,1);
-	setupUi.tpathle->setText(QString::fromLocal8Bit(comp->tape->path));
+	ui.tpathle->setText(QString::fromLocal8Bit(comp->tape->path));
 	buildtapelist();
 }
 
@@ -1212,34 +1216,34 @@ void SetupWin::savtape() {
 
 void SetupWin::ejctape() {
 	tapEject(comp->tape);
-	setupUi.tpathle->setText(QString::fromLocal8Bit(comp->tape->path));
+	ui.tpathle->setText(QString::fromLocal8Bit(comp->tape->path));
 	buildtapelist();
 }
 
 void SetupWin::tblkup() {
-	int ps = setupUi.tapelist->currentIndex().row();
+	int ps = ui.tapelist->currentIndex().row();
 	if (ps > 0) {
 		tapSwapBlocks(comp->tape,ps,ps-1);
 		buildtapelist();
-		setupUi.tapelist->selectRow(ps-1);
+		ui.tapelist->selectRow(ps-1);
 	}
 }
 
 void SetupWin::tblkdn() {
-	int ps = setupUi.tapelist->currentIndex().row();
+	int ps = ui.tapelist->currentIndex().row();
 	if ((ps != -1) && (ps < comp->tape->blkCount - 1)) {
 		tapSwapBlocks(comp->tape,ps,ps+1);
 		buildtapelist();
-		setupUi.tapelist->selectRow(ps+1);
+		ui.tapelist->selectRow(ps+1);
 	}
 }
 
 void SetupWin::tblkrm() {
-	int ps = setupUi.tapelist->currentIndex().row();
+	int ps = ui.tapelist->currentIndex().row();
 	if (ps != -1) {
 		tapDelBlock(comp->tape,ps);
 		buildtapelist();
-		setupUi.tapelist->selectRow(ps);
+		ui.tapelist->selectRow(ps);
 	}
 }
 
@@ -1247,80 +1251,80 @@ void SetupWin::chablock(QModelIndex idx) {
 	int row = idx.row();
 	tapRewind(comp->tape,row);
 	buildtapelist();
-	setupUi.tapelist->selectRow(row);
+	ui.tapelist->selectRow(row);
 }
 
 void SetupWin::setTapeBreak(int row,int col) {
 	if ((row < 0) || (col != 1)) return;
 	comp->tape->blkData[row].breakPoint ^= 1;
 	buildtapelist();
-	setupUi.tapelist->selectRow(row);
+	ui.tapelist->selectRow(row);
 }
 
 // hdd
 
 void SetupWin::hddMasterImg() {
 	QString path = QFileDialog::getOpenFileName(this,"Image for master HDD",QDir::homePath(),"All files (*.*)",NULL,QFileDialog::DontConfirmOverwrite);
-	if (path != "") setupUi.hm_path->setText(path);
+	if (path != "") ui.hm_path->setText(path);
 }
 
 void SetupWin::hddSlaveImg() {
 	QString path = QFileDialog::getOpenFileName(this,"Image for slave HDD",QDir::homePath(),"All files (*.*)",NULL,QFileDialog::DontConfirmOverwrite);
-	if (path != "") setupUi.hs_path->setText(path);
+	if (path != "") ui.hs_path->setText(path);
 }
 
 void SetupWin::hddcap() {
 	unsigned int sz;
-	if (setupUi.hm_islba->checkState() == Qt::Checked) {
-		sz = (setupUi.hm_glba->value() >> 11);
+	if (ui.hm_islba->checkState() == Qt::Checked) {
+		sz = (ui.hm_glba->value() >> 11);
 	} else {
-		sz = ((setupUi.hm_gsec->value() * (setupUi.hm_ghd->value() + 1) * (setupUi.hm_gcyl->value() + 1)) >> 11);
+		sz = ((ui.hm_gsec->value() * (ui.hm_ghd->value() + 1) * (ui.hm_gcyl->value() + 1)) >> 11);
 	}
-	setupUi.hm_capacity->setValue(sz);
-	if (setupUi.hs_islba->checkState() == Qt::Checked) {
-		sz = (setupUi.hs_glba->value() >> 11);
+	ui.hm_capacity->setValue(sz);
+	if (ui.hs_islba->checkState() == Qt::Checked) {
+		sz = (ui.hs_glba->value() >> 11);
 	} else {
-		sz = ((setupUi.hs_gsec->value() * (setupUi.hs_ghd->value() + 1) * (setupUi.hs_gcyl->value() + 1)) >> 11);
+		sz = ((ui.hs_gsec->value() * (ui.hs_ghd->value() + 1) * (ui.hs_gcyl->value() + 1)) >> 11);
 	}
-	setupUi.hs_capacity->setValue(sz);
+	ui.hs_capacity->setValue(sz);
 }
 
 // sdc
 
 void SetupWin::selSDCimg() {
 	QString fnam = QFileDialog::getOpenFileName(this,"Image for SD card","","All files (*.*)");
-	if (!fnam.isEmpty()) setupUi.sdPath->setText(fnam);
+	if (!fnam.isEmpty()) ui.sdPath->setText(fnam);
 }
 
 // tools
 
 void SetupWin::umup() {
-	int ps = setupUi.umlist->currentRow();
-	if (ps>0) {
+	int ps = ui.umlist->currentRow();
+	if (ps > 0) {
 		swapBookmarks(ps,ps-1);
 		buildmenulist();
-		setupUi.umlist->selectRow(ps-1);
+		ui.umlist->selectRow(ps-1);
 	}
 }
 
 void SetupWin::umdn() {
-	int ps = setupUi.umlist->currentIndex().row();
-	if ((ps!=-1) && (ps < getBookmarksCount()-1)) {
-		swapBookmarks(ps,ps+1);
+	int ps = ui.umlist->currentIndex().row();
+	if ((ps != -1) && (ps < (int)bookmarkList.size() - 1)) {
+		swapBookmarks(ps, ps+1);
 		buildmenulist();
-		setupUi.umlist->selectRow(ps+1);
+		ui.umlist->selectRow(ps+1);
 	}
 }
 
 void SetupWin::umdel() {
-	int ps = setupUi.umlist->currentIndex().row();
-	if (ps!=-1) {
+	int ps = ui.umlist->currentIndex().row();
+	if (ps != -1) {
 		delBookmark(ps);
 		buildmenulist();
-		if (ps == getBookmarksCount()) {
-			setupUi.umlist->selectRow(ps-1);
+		if (ps == (int)bookmarkList.size()) {
+			ui.umlist->selectRow(ps-1);
 		} else {
-			setupUi.umlist->selectRow(ps);
+			ui.umlist->selectRow(ps);
 		}
 	}
 }
@@ -1334,8 +1338,8 @@ void SetupWin::umadd() {
 
 void SetupWin::umedit(QModelIndex idx) {
 	umidx = idx.row();
-	uia.namele->setText(setupUi.umlist->item(umidx,0)->text());
-	uia.pathle->setText(setupUi.umlist->item(umidx,1)->text());
+	uia.namele->setText(ui.umlist->item(umidx,0)->text());
+	uia.pathle->setText(ui.umlist->item(umidx,1)->text());
 	umadial->show();
 }
 
@@ -1353,7 +1357,7 @@ void SetupWin::umaconf() {
 	}
 	umadial->hide();
 	buildmenulist();
-	setupUi.umlist->selectRow(setupUi.umlist->rowCount()-1);
+	ui.umlist->selectRow(ui.umlist->rowCount()-1);
 }
 
 // profiles
@@ -1368,10 +1372,10 @@ void SetupWin::newProfile() {
 }
 
 void SetupWin::rmProfile() {
-	int idx = setupUi.twProfileList->currentRow();
+	int idx = ui.twProfileList->currentRow();
 	if (idx < 0) return;
 	if (!areSure("Do you really want to delete this profile?")) return;
-	std::string pnam(setupUi.twProfileList->item(idx,0)->text().toLocal8Bit().data());
+	std::string pnam(ui.twProfileList->item(idx,0)->text().toLocal8Bit().data());
 	idx = delProfile(pnam);
 	switch(idx) {
 		case DELP_OK_CURR:

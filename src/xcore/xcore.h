@@ -30,11 +30,11 @@ void copyFile(const char*, const char*);
 #define	YESNO(cnd) ((cnd) ? "yes" : "no")
 
 struct xConfig {
-	unsigned sysclock:1;
-	unsigned storePaths:1;
-	unsigned defProfile:1;
-	std::string keyMapName;
-	float brdsize;
+	unsigned sysclock:1;		// system time in cmos
+	unsigned storePaths:1;		// store tape/disk paths
+	unsigned defProfile:1;		// start @ default profile
+	std::string keyMapName;		// use this keymap
+	float brdsize;			// 0.0 - 1.0 : border size
 	struct {
 		unsigned grayScale:1;
 		unsigned noFlick:1;
@@ -113,13 +113,13 @@ typedef struct {
 	std::string path;
 } xBookmark;
 
+extern std::vector<xBookmark> bookmarkList;
+
 void addBookmark(std::string,std::string);
 void setBookmark(int,std::string,std::string);
 void delBookmark(int);
 void clearBookmarks();
 void swapBookmarks(int,int);
-std::vector<xBookmark> getBookmarkList();
-int getBookmarksCount();
 
 // romsets
 
@@ -128,7 +128,6 @@ typedef struct {
 	std::string file;	// set when romfile is single file
 	std::string gsFile;
 	std::string fntFile;
-	int mask;
 	struct {
 		std::string path;
 		unsigned char part;
@@ -137,11 +136,8 @@ typedef struct {
 
 extern std::vector<xRomset> rsList;
 
-bool addRomset(xRomset);
-void rsSetRomset(ZXComp*, std::string);
 xRomset* findRomset(std::string);
-// std::vector<xRomset>* getRomsetList();
-// void setRomsetList(std::vector<xRomset>);
+bool addRomset(xRomset);
 
 // profiles
 
@@ -158,15 +154,14 @@ typedef struct {
 #define	DELP_OK		0
 #define	DELP_OK_CURR	1
 
+xProfile* findProfile(std::string);
+std::vector<xProfile> getProfileList();
 bool addProfile(std::string,std::string);
 int delProfile(std::string);
-bool selProfile(std::string);
 void clearProfiles();
-void prfSetRomset(std::string,std::string);
 void prfLoadAll();
-std::vector<xProfile> getProfileList();
-xProfile* getCurrentProfile();
-xProfile* findProfile(std::string);
+bool prfSetCurrent(std::string);
+void prfSetRomset(xProfile*, std::string);
 bool prfSetLayout(xProfile*, std::string);
 
 void prfChangeRsName(std::string, std::string);

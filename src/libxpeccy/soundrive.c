@@ -41,8 +41,8 @@ void sdrvOut(SDrive* sdrv,unsigned short port,unsigned char val) {
 	}
 }
 
-sdrvPair sdrvGetVolume(SDrive* sdrv) {
-	sdrvPair res;
+sndPair sdrvGetVolume(SDrive* sdrv) {
+	sndPair res;
 	switch (sdrv->type) {
 		case SDRV_COVOX:
 			res.left = (sdrv->chanA >> 1);

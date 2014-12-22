@@ -2,9 +2,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-
-// NEW
-
 #include <stdio.h>
 
 Memory* memCreate() {
@@ -63,18 +60,6 @@ void memWr(Memory* mem, unsigned short adr, unsigned char val) {
 unsigned char* memGetFptr(Memory* mem, unsigned short adr) {
 	return mem->pt[adr >> 14]->fptr + (adr & 0x3fff);
 }
-
-/*
-unsigned char memGetCellFlags(Memory* mem, unsigned short adr) {
-	ptr = mem->pt[adr >> 14];
-	return (ptr->flag[adr & 0x3fff]);
-}
-
-void memSetCellFlags(Memory* mem, unsigned short adr, unsigned char val) {
-	MemPage* ptr = memGetBankPtr(mem,adr);
-	ptr->flag[adr & 0x3fff] = val;
-}
-*/
 
 void memSetSize(Memory* mem, int val) {
 	if (mem->memSize == val) return;

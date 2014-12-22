@@ -26,7 +26,7 @@ void scoMapMem(ZXComp* comp) {
 	if (comp->prt1 & 0x01) {
 		memSetBank(comp->mem,MEM_BANK0,MEM_RAM,0);
 	} else {
-		rp = (comp->prt1 & 0x02) ? 2 : (((comp->dosen & 1) << 1) | ((comp->prt0 & 0x10) >> 4));
+		rp = (comp->prt1 & 0x02) ? 2 : ((comp->dosen ? 2 : 0) | ((comp->prt0 & 0x10) ? 1 : 0));
 		rp |= ((comp->prt2 & 3) << 2);
 		memSetBank(comp->mem,MEM_BANK0,MEM_ROM,rp);
 	}

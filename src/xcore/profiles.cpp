@@ -41,7 +41,7 @@ bool addProfile(std::string nm, std::string fp) {
 	if (currentProfile != NULL) {
 		nm = currentProfile->name;
 		profileList.push_back(nprof);		// PUSH_BACK reallocate profileList and breaks current profile pointer!
-		selProfile(nm);				// then it must be setted again
+		prfSetCurrent(nm);				// then it must be setted again
 	} else {
 		profileList.push_back(nprof);
 	}
@@ -56,18 +56,18 @@ int delProfile(std::string nm) {
 	int res = DELP_OK;
 	zxDestroy(prf->zx);
 	if (currentProfile->name == nm) {
-		selProfile("default");			// if current profile deleted, set default
+		prfSetCurrent("default");			// if current profile deleted, set default
 		res = DELP_OK_CURR;
 	}
 	if (currentProfile != NULL) nm = currentProfile->name;
 	for (uint i = 0; i < profileList.size(); i++) {
 		if (profileList[i].name == prf->name) profileList.erase(profileList.begin() + i);
 	}
-	if (currentProfile != NULL) selProfile(nm);
+	if (currentProfile != NULL) prfSetCurrent(nm);
 	return res;
 }
 
-bool selProfile(std::string nm) {
+bool prfSetCurrent(std::string nm) {
 	xProfile* nprf = findProfile(nm);
 	if (nprf == NULL) return false;
 	if (currentProfile) {
@@ -87,7 +87,7 @@ void clearProfiles() {
 	xProfile defprof = profileList[0];
 	profileList.clear();
 	profileList.push_back(defprof);
-	selProfile(profileList[0].name);
+	prfSetCurrent(profileList[0].name);
 }
 
 std::vector<xProfile> getProfileList() {
@@ -147,11 +147,96 @@ void setDiskString(ZXComp* comp,Floppy* flp,std::string st) {
 	if (st.size() > 1) loadFile(comp,st.c_str(),FT_DISK,flp->id);
 }
 
-void prfSetRomset(std::string pnm, std::string rnm) {
-	xProfile* prf = findProfile(pnm);
-	if (prf == NULL) return;
+// set specified romset to specified profile & load into ROM of this profile ZX
+void prfSetRomset(xProfile* prf, std::string rnm) {
+	if (prf == NULL) prf = currentProfile;
 	prf->rsName = rnm;
-	rsSetRomset(prf->zx,rnm);
+	xRomset* rset = findRomset(rnm);
+	int i;
+	std::string fpath = "";
+	std::ifstream file;
+	char pageBuf[0x4000];
+	int prts = 0;
+	prf->zx->mem->romMask = 0x03;
+	if (rset == NULL) {		// romset not found : fill all ROM with 0xFF
+		memset(pageBuf,0xff,0x4000);
+		for (i=0; i<16; i++) {
+			memSetPage(prf->zx->mem,MEM_ROM,i,pageBuf);
+		}
+	} else {			// romset found
+		if (rset->file.size() != 0) {			// single rom file
+			fpath = conf.path.romDir + SLASH + rset->file;
+			file.open(fpath.c_str(),std::ios::binary);
+			if (file.good()) {
+				file.seekg(0,std::ios_base::end);
+				prts = file.tellg() / 0x4000;
+				if (prts > 4) prf->zx->mem->romMask = 0x07;
+				if (prts > 8) prf->zx->mem->romMask = 0x0f;
+				if (prts > 16) prf->zx->mem->romMask = 0x1f;
+				if (prts > 32) prts = 32;
+				file.seekg(0,std::ios_base::beg);
+				for (i = 0; i < prts; i++) {
+					file.read(pageBuf,0x4000);
+					memSetPage(prf->zx->mem,MEM_ROM,i,pageBuf);
+				}
+				memset(pageBuf,0xff,0x4000);
+				for (i=prts; i<16; i++) memSetPage(prf->zx->mem,MEM_ROM,i,pageBuf);
+			} else {
+				printf("Can't open single rom '%s'\n",rset->file.c_str());
+				memset(pageBuf,0xff,0x4000);
+				for (i = 0; i < 16; i++) memSetPage(prf->zx->mem,MEM_ROM,i,pageBuf);
+			}
+			file.close();
+		} else {					// separate files
+			for (i = 0; i < 4; i++) {
+				if (rset->roms[i].path == "") {
+					memset(pageBuf,0xff,0x4000);
+					// for (ad = 0; ad < 0x4000; ad++) pageBuf[ad]=0xff;
+				} else {
+					fpath = conf.path.romDir + SLASH + rset->roms[i].path;
+					file.open(fpath.c_str(),std::ios::binary);
+					if (file.good()) {
+						file.seekg(rset->roms[i].part << 14);
+						file.read(pageBuf,0x4000);
+					} else {
+						printf("Can't open rom '%s:%i'\n",rset->roms[i].path.c_str(),rset->roms[i].part);
+						memset(pageBuf,0xff,0x4000);
+						//for (ad=0;ad<0x4000;ad++) pageBuf[ad]=0xff;
+					}
+					file.close();
+				}
+				memSetPage(prf->zx->mem,MEM_ROM,i,pageBuf);
+			}
+		}
+		memset(pageBuf,0xff,0x4000);
+		// for (ad = 0; ad < 0x4000; ad++) pageBuf[ad] = 0xff;
+		if (rset->gsFile.empty()) {
+			gsSetRom(prf->zx->gs,0,pageBuf);
+			gsSetRom(prf->zx->gs,1,pageBuf);
+		} else {
+			fpath = conf.path.romDir + SLASH + rset->gsFile;
+			file.open(fpath.c_str(),std::ios::binary);
+			if (file.good()) {
+				file.read(pageBuf,0x4000);
+				gsSetRom(prf->zx->gs,0,pageBuf);
+				file.read(pageBuf,0x4000);
+				gsSetRom(prf->zx->gs,1,pageBuf);
+			} else {
+				//			printf("Can't load gs rom '%s'\n",prof->gsFile.c_str());
+				gsSetRom(prf->zx->gs,0,pageBuf);
+				gsSetRom(prf->zx->gs,1,pageBuf);
+			}
+			file.close();
+		}
+		if (!rset->fntFile.empty()) {
+			fpath = conf.path.romDir + SLASH + rset->fntFile;
+			file.open(fpath.c_str(),std::ios::binary);
+			if (file.good()) {
+				file.read(pageBuf,0x800);
+				vidSetFont(prf->zx->vid,pageBuf);
+			}
+		}
+	}
 }
 
 void prfLoadAll() {
@@ -161,11 +246,9 @@ void prfLoadAll() {
 int prfLoad(std::string nm) {
 	xProfile* prf = findProfile(nm);
 	if (prf == NULL) return PLOAD_NF;
-//	printf("%s\n",prf->name.c_str());
 	ZXComp* comp = prf->zx;
 
 	std::string cfname = conf.path.confDir + SLASH + prf->file;
-//	printf("load config %s\n",cfname.c_str());
 	std::ifstream file(cfname.c_str());
 	std::pair<std::string,std::string> spl;
 	std::string line,pnam,pval;
@@ -234,6 +317,14 @@ int prfLoad(std::string nm) {
 					if (pnam == "gs.reset") comp->gs->reset = str2bool(pval) ? 1 : 0;
 					if (pnam == "gs.stereo") comp->gs->stereo = atoi(pval.c_str());
 					if (pnam == "soundrive_type") comp->sdrv->type = atoi(pval.c_str());
+					if (pnam == "saa.mode") {
+						tmp2 = atoi(pval.c_str());
+						switch (tmp2) {
+							case 0: comp->saa->enabled = 0; break;
+							case 1: comp->saa->enabled = 1; comp->saa->mono = 1; break;
+							case 2: comp->saa->enabled = 1; comp->saa->mono = 0; break;
+						}
+					}
 					break;
 				case PS_TAPE:
 					if (pnam == "path" && conf.storePaths) loadFile(comp,pval.c_str(),FT_TAPE,0);
@@ -314,7 +405,7 @@ int prfLoad(std::string nm) {
 	ideSetPassport(comp->ide,IDE_SLAVE,slavePass);
 
 	zxSetHardware(comp, prf->hwName.c_str());
-	rsSetRomset(comp,prf->rsName);
+	prfSetRomset(prf, prf->rsName);
 
 	tmp2 = PLOAD_OK;
 
@@ -392,6 +483,7 @@ int prfSave(std::string nm) {
 	file << "gs.reset = " << YESNO(comp->gs->reset) << "\n";
 	file << "gs.stereo = " << int2str(comp->gs->stereo) << "\n";
 	file << "soundrive_type = " << int2str(comp->sdrv->type) << "\n";
+	file << "saa.mode = " << int2str(comp->saa->enabled ? (comp->saa->mono ? 1 : 2) : 0) << "\n";
 
 	file << "\n[INPUT]\n\n";
 	file << "mouse = " << YESNO(comp->mouse->enable) << "\n";

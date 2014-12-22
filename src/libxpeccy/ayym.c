@@ -168,8 +168,8 @@ void aymSync(aymChip* ay, int tk) {
 
 int volA,volB,volC;
 
-tsPair aymGetVolume(aymChip* ay) {
-	tsPair res;
+sndPair aymGetVolume(aymChip* ay) {
+	sndPair res;
 	ay->chanN.lev = noizes[ay->nPos & 0x1ffff] ? 1 : 0;
 	unsigned char env = envforms[ay->eCur][ay->ePos];
 
@@ -239,9 +239,9 @@ void tsSync(TSound* ts, int tk) {
 	aymSync(ts->chipB,tk);
 }
 
-tsPair tsGetVolume(TSound* ts) {
-	tsPair res = aymGetVolume(ts->chipA);
-	tsPair tmp = aymGetVolume(ts->chipB);
+sndPair tsGetVolume(TSound* ts) {
+	sndPair res = aymGetVolume(ts->chipA);
+	sndPair tmp = aymGetVolume(ts->chipB);
 	res.left += tmp.left;
 	res.right += tmp.right;
 	return res;

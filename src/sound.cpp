@@ -57,6 +57,7 @@ void sndSync(ZXComp* comp, int fast) {
 	comp->tapCount = 0;
 	gsSync(comp->gs);
 	tsSync(comp->ts,nsPerSample);
+	saaSync(comp->saa,nsPerSample);
 	if (fast != 0) return;
 	if (sndOutput == NULL) return;
 	lev = comp->beeplev ? conf.snd.vol.beep : 0;
@@ -68,17 +69,21 @@ void sndSync(ZXComp* comp, int fast) {
 	levl = lev;
 	levr = lev;
 
-	tsPair tsvol = tsGetVolume(comp->ts);
-	levl += tsvol.left * conf.snd.vol.ay / 100.0;
-	levr += tsvol.right * conf.snd.vol.ay / 100.0;
+	sndPair svol = tsGetVolume(comp->ts);
+	levl += svol.left * conf.snd.vol.ay / 100.0;
+	levr += svol.right * conf.snd.vol.ay / 100.0;
 
-	gsPair gsvol = gsGetVolume(comp->gs);
-	levl += gsvol.left * conf.snd.vol.gs / 100.0;
-	levr += gsvol.right * conf.snd.vol.gs / 100.0;
+	svol = gsGetVolume(comp->gs);
+	levl += svol.left * conf.snd.vol.gs / 100.0;
+	levr += svol.right * conf.snd.vol.gs / 100.0;
 
-	sdrvPair sdvol = sdrvGetVolume(comp->sdrv);
-	levl += sdvol.left * conf.snd.vol.beep / 100.0;
-	levr += sdvol.right * conf.snd.vol.beep / 100.0;
+	svol = sdrvGetVolume(comp->sdrv);
+	levl += svol.left * conf.snd.vol.beep / 100.0;
+	levr += svol.right * conf.snd.vol.beep / 100.0;
+
+	svol = saaGetVolume(comp->saa);		// TODO : saa volume control
+	levl += svol.left;
+	levr += svol.right;
 
 	if (levl > 0xff) levl = 0xff;
 	if (levr > 0xff) levr = 0xff;

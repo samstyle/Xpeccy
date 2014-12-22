@@ -12,6 +12,7 @@ extern "C" {
 #include "tape.h"
 #include "bdi.h"
 #include "ayym.h"		// AY/YM/TS sound
+#include "saa1099.h"
 #include "soundrive.h"		// covox/soundrive
 #include "gs.h"
 #include "hdd.h"
@@ -50,6 +51,7 @@ struct ZXComp {
 	unsigned beeplev:1;		// beeper level
 	unsigned rzxPlay:1;		// rzx is playing
 	unsigned firstRun:1;
+	unsigned dosen:1;
 
 	unsigned scrpWait:1;		// scorpion wait mode
 	unsigned contMem:1;		// contended mem
@@ -68,6 +70,7 @@ struct ZXComp {
 	SDCard* sdc;
 	GSound* gs;
 	TSound* ts;
+	saaChip* saa;
 	SDrive* sdrv;
 	int rzxSize;
 	RZXFrame* rzxData;
@@ -123,7 +126,6 @@ struct ZXComp {
 		unsigned char vdos;
 	} tsconf;
 	CMOS cmos;
-	unsigned char dosen;		// active trdos (dosen and b4,prt0 sets rompart)
 	int resbank;			// rompart active after reset
 	int tapCount;
 };

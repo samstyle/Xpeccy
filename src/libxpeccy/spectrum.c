@@ -108,13 +108,6 @@ inline void zxIORW(ZXComp* comp, int port) {
 Z80EX_BYTE iord(CPUCONT Z80EX_WORD port, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
 	Z80EX_BYTE res = 0xff;
-/*
-// video sync ( + cont io)
-	res3 = TCPU(comp->cpu);			// start of IN/OUT cycle
-	vidSync(comp->vid, comp->nsPerTick * (res3 - res4));
-	res4 = res3;
-	zxIORW(comp,port);			// cont mem
-*/
 // tape sync
 	tapSync(comp->tape,comp->tapCount);
 	comp->tapCount = 0;
@@ -128,12 +121,12 @@ Z80EX_BYTE iord(CPUCONT Z80EX_WORD port, void* ptr) {
 			return 0xff;
 		}
 	}
-	bdiz = ((comp->dosen & 1) && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
+	bdiz = (comp->dosen && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
 // request to external devices
-	if (ideIn(comp->ide,port,&res,comp->dosen & 1)) return res;
-	if (gsIn(comp->gs,port,&res)) return res;
-	if (ulaIn(comp->vid->ula,port,&res)) return res;
-	return comp->hw->in(comp,port,bdiz);
+	if (ideIn(comp->ide, port, &res, bdiz)) return res;
+	if (gsIn(comp->gs, port, &res)) return res;
+	if (ulaIn(comp->vid->ula, port, &res)) return res;
+	return comp->hw->in(comp, port, bdiz);
 }
 
 void iowr(CPUCONT Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
@@ -141,28 +134,6 @@ void iowr(CPUCONT Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
 	comp->padr = port;
 	comp->pval = val;
 }
-/*
-// contended mem, move to end of IO cycle
-	res3 = TCPU(comp->cpu);
-	vidSync(comp->vid, comp->nsPerTick * (res3 - res4));
-	res4 = res3;
-	tapSync(comp->tape,comp->tapCount);
-	comp->tapCount = 0;
-	bdiz = ((comp->dosen & 1) && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
-// request to external devices
-	if (comp->hwFlag & HW_CONTIO) {
-		if (!ideOut(comp->ide,port,val,comp->dosen & 1))
-		if (gsOut(comp->gs,port,val) != GS_OK)
-			comp->hw->out(comp,port,val,bdiz);
-		zxIORW(comp,port);
-	} else {
-		zxIORW(comp,port);
-		if (!ideOut(comp->ide,port,val,comp->dosen & 1))
-		if (gsOut(comp->gs,port,val) != GS_OK)
-			comp->hw->out(comp,port,val,bdiz);
-	}
-}
-*/
 
 Z80EX_BYTE intrq(CPUCONT void* ptr) {
 	return ((ZXComp*)ptr)->intVector;
@@ -224,6 +195,7 @@ ZXComp* zxCreate() {
 	comp->ts = tsCreate(TS_NONE,SND_AY,SND_NONE);
 	comp->gs = gsCreate();
 	comp->sdrv = sdrvCreate(SDRV_NONE);
+	comp->saa = saaCreate();
 // baseconf
 	comp->evo.evo2F = 0;
 	comp->evo.evo4F = 0;
@@ -289,63 +261,13 @@ void zxReset(ZXComp* comp,int res) {
 	if (comp->gs->reset) gsReset(comp->gs);
 	tsReset(comp->ts);
 	ideReset(comp->ide);
+	saaReset(comp->saa);
 	if (res == RES_DEFAULT) res = comp->resbank;
 	comp->dosen = ((res == RES_DOS) || (res == RES_SHADOW)) ? 1 : 0;
 	comp->prt0 = ((res == RES_DOS) || (res == RES_48)) ? 0x10 : 0x00;
 	if (comp->hw->reset) comp->hw->reset(comp);
 	comp->hw->mapMem(comp);
 }
-/*
-	int resto = comp->resbank;
-	switch (wut) {
-		case RES_48: resto = 1; break;
-		case RES_128: resto = 0; break;
-		case RES_DOS: resto = 3; break;
-		case RES_SHADOW: resto = 2; break;
-	}
-	switch (comp->hw->type) {
-		case HW_ZX48:
-			comp->prt0 = 0x10;		// else beta-disk doesn't enter in tr-dos
-			if (resto & 2) comp->dosen = 1;
-			break;
-		case HW_ATM2:
-			comp->dosen = 1;
-			break;
-		case HW_PENTEVO:
-			comp->dosen = 1;
-			comp->prt1 = 0x03;	// vid.mode 011
-			break;
-		case HW_TSLAB:
-			comp->dosen = (resto & 2) ? 0 : 1;	// 0,1 = shadow,dos
-			comp->prt0 = (resto & 1) ? 0x10 : 0x00;	// 2,3 = bas128,bas48
-			comp->vid->tsconf.scrPal = 0xf0;
-			memset(comp->vid->tsconf.cram,0x00,0x1e0);
-			comp->tsconf.Page0 = 0;
-			comp->vid->nextbrd = 0xf7;
-			comp->tsconf.p00af = 0;
-			comp->tsconf.p01af = 0x05;
-			comp->tsconf.p02af = 0;
-			comp->tsconf.p03af = 0;
-			comp->tsconf.p04af = 0;
-			comp->tsconf.p05af = 0;
-			comp->tsconf.p07af = 0x0f;
-			comp->vid->tsconf.T0XOffset = 0;
-			comp->vid->tsconf.T0YOffset = 0;
-			comp->vid->tsconf.T1XOffset = 0;
-			comp->vid->tsconf.T1YOffset = 0;
-			comp->vid->tsconf.tconfig = 0;
-			comp->vid->intpos.h = 0;
-			comp->vid->intpos.v = 0;
-			comp->vid->intMask = 1;
-			tslUpdatePorts(comp);
-			break;
-		default:
-			comp->prt0 = ((resto & 1) << 4);
-			if (resto & 2) comp->dosen = 1;
-			break;
-	}
-}
-*/
 
 void zxSetLayout(ZXComp *comp, int fh, int fv, int bh, int bv, int sh, int sv, int ih, int iv, int is) {
 	comp->vid->full.h = fh;
@@ -394,19 +316,17 @@ int zxExec(ZXComp* comp) {
 	if (comp->padr) {
 		tapSync(comp->tape,comp->tapCount);
 		comp->tapCount = 0;
-		bdiz = ((comp->dosen & 1) && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
-		if (!ideOut(comp->ide,comp->padr,comp->pval,comp->dosen & 1)) {
-		if (!gsOut(comp->gs,comp->padr,comp->pval)) {
+		bdiz = (comp->dosen && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
+		ideOut(comp->ide, comp->padr, comp->pval, bdiz);
+		gsOut(comp->gs, comp->padr, comp->pval);
+		if (!bdiz) saaWrite(comp->saa, comp->padr, comp->pval);		// bdi ports must be closed!
 		if (ulaOut(comp->vid->ula, comp->padr, comp->pval)) {
 			if (comp->vid->ula->palchan) {
 				zxSetUlaPalete(comp);
 				comp->vid->ula->palchan = 0;
 			}
-		} else {
-			comp->hw->out(comp,comp->padr,comp->pval,bdiz);
 		}
-		}
-		}
+		comp->hw->out(comp, comp->padr, comp->pval, bdiz);
 		comp->padr = 0;
 	}
 

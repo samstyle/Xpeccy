@@ -321,7 +321,7 @@ Z80EX_BYTE evoIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
 						break;
 					case 0x0a00: res = comp->prt0; break;
 					case 0x0b00: res = comp->prt2; break;
-					case 0x0c00: res = comp->prt1 | ((comp->dosen & 1) ? 0x10 : 0x00); break;
+					case 0x0c00: res = comp->prt1 | (comp->dosen ? 0x10 : 0x00); break;
 					default:
 //						printf("PentEvo\tin %.4X.%i\n",port,bdiz);
 //						assert(0);

@@ -23,12 +23,7 @@ extern "C" {
 #define	TS_NONE		0
 #define	TS_NEDOPC	1
 
-// structures
-
-typedef struct {
-	unsigned char left;
-	unsigned char right;
-} tsPair;
+#include "sndcommon.h"
 
 typedef struct {
 	unsigned lev:1;
@@ -71,7 +66,7 @@ void tsReset(TSound*);
 unsigned char tsIn(TSound*,int);
 void tsOut(TSound*,int,unsigned char);
 void tsSync(TSound*,int);
-tsPair tsGetVolume(TSound*);
+sndPair tsGetVolume(TSound*);
 
 #ifdef __cplusplus
 }

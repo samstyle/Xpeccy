@@ -137,8 +137,8 @@ void gsSync(GSound* gs) {
 	gs->sync = 0;
 }
 
-gsPair gsGetVolume(GSound* gs) {
-	gsPair res;
+sndPair gsGetVolume(GSound* gs) {
+	sndPair res;
 	res.left = 0;
 	res.right = 0;
 	if (!gs->enable) return res;

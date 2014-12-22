@@ -14,10 +14,7 @@ extern "C" {
 // gs cpu freq
 #define	GS_FRQ	12.0
 
-typedef struct {
-	unsigned char left;
-	unsigned char right;
-} gsPair;
+#include "sndcommon.h"
 
 typedef struct {
 	unsigned enable:1;
@@ -42,7 +39,7 @@ GSound* gsCreate();
 void gsDestroy(GSound*);
 void gsReset(GSound*);
 void gsSync(GSound*);
-gsPair gsGetVolume(GSound*);
+sndPair gsGetVolume(GSound*);
 
 int gsIn(GSound*, int, unsigned char*);
 int gsOut(GSound*, int, unsigned char);

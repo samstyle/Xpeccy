@@ -94,7 +94,7 @@ int loadSNA(ZXComp* zx, const char* name) {
 		tmp = file.get();
 		zx->hw->out(zx,0x7ffd,tmp,0);
 		tmp2 = file.get();
-		zx->dosen = tmp2 & 1;
+		zx->dosen = (tmp2 & 1) ? 1 : 0;
 		for (tmp2 = 0; tmp2 < 8; tmp2++) {
 			if ((tmp2 == 2) || (tmp2 == 5)) tmp2++;
 			if ((tmp & 7) != tmp2) {
@@ -158,7 +158,7 @@ int saveSNA(ZXComp* zx, const char* name,bool sna48) {
 		file.write(pageBuf,0x4000);
 		putLEWord(&file,GETPC(cpu));
 		file.put((char)zx->prt0);
-		file.put((char)((zx->dosen & 1) ? 0xff : 0x00));
+		file.put((char)(zx->dosen ? 0xff : 0x00));
 		for (i = 0; i < 8; i++) {
 			if ((i == 2) || (i == 5)) i++;
 			if (i != bnk) {

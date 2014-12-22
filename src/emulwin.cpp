@@ -50,7 +50,7 @@ void MainWin::updateHead() {
 #ifdef ISDEBUG
 	title.append(" | debug");
 #endif
-	xProfile* curProf = getCurrentProfile();
+	xProfile* curProf = findProfile("");
 	if (curProf != NULL) {
 		title.append(" | ").append(QString::fromLocal8Bit(curProf->name.c_str()));
 		title.append(" | ").append(QString::fromLocal8Bit(curProf->layName.c_str()));
@@ -890,7 +890,6 @@ void MainWin::initUserMenu() {
 void MainWin::fillBookmarkMenu() {
 	bookmarkMenu->clear();
 	QAction* act;
-	std::vector<xBookmark> bookmarkList = getBookmarkList();
 	if (bookmarkList.size() == 0) {
 		bookmarkMenu->addAction("None")->setEnabled(false);
 	} else {
@@ -953,11 +952,11 @@ void MainWin::bookmarkSelected(QAction* act) {
 void MainWin::setProfile(std::string nm) {
 	ethread.block = 1;
 	if (nm != "") {
-		if (!selProfile(nm)) {
-			selProfile("default");
+		if (!prfSetCurrent(nm)) {
+			prfSetCurrent("default");
 		}
 	}
-	comp = getCurrentProfile()->zx;
+	comp = findProfile("")->zx;
 	ethread.comp = comp;
 	nsAct->setChecked(comp->vid->noScreen);
 	nsPerFrame = comp->nsPerFrame;

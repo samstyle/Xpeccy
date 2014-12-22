@@ -1,7 +1,7 @@
 #include "../spectrum.h"
 
 void penMapMem(ZXComp* comp) {
-	memSetBank(comp->mem,MEM_BANK0,MEM_ROM,((comp->dosen & 1) << 1) | ((comp->prt0 & 0x10) >> 4));
+	memSetBank(comp->mem,MEM_BANK0,MEM_ROM,(comp->dosen ? 2 : 0) | ((comp->prt0 & 0x10) ? 1 : 0));
 	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,(comp->prt0 & 7) | ((comp->prt0 & 0xc0) >> 3));
 }
 
