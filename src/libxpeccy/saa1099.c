@@ -95,7 +95,7 @@ void saaEnvStep(saaEnv* env, saaChan* ch) {
 			break;
 	}
 	env->vol = saaEnvForms[env->form][env->pos];
-	if (env->lowRes) env->vol &= 0xe0;	// 3bit control (ORLY?)
+	if (env->lowRes) env->vol &= 0x0e;	// 3bit control (ORLY?)
 }
 
 int saaWrite(saaChip* saa, int adr, unsigned char val) {
