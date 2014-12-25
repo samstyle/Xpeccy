@@ -6,7 +6,7 @@ std::vector<xLayout> layList;
 
 xLayout* findLayout(std::string nm) {
 	xLayout* res = NULL;
-	for (uint i = 0; i < layList.size(); i++) {
+	for (unsigned int i = 0; i < layList.size(); i++) {
 		if (layList[i].name == nm) res = &layList[i];
 	}
 	return res;
