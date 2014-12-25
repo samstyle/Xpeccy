@@ -1060,6 +1060,12 @@ void fdcWr(FDC* fdc,int port,unsigned char val) {
 			break;
 		case FDC_765:
 			switch (port) {
+				case FDC_COM:
+					fdc->flop[0]->motor = (val & 1) ? 1 : 0;
+					fdc->flop[1]->motor = (val & 2) ? 1 : 0;
+					fdc->flop[2]->motor = (val & 4) ? 1 : 0;
+					fdc->flop[3]->motor = (val & 8) ? 1 : 0;
+					break;
 				case FDC_DATA:
 					switch (fdc->status) {
 						case FDC_IDLE:
@@ -1361,25 +1367,36 @@ void bdiDestroy(BDI* bdi) {
 
 void bdiReset(BDI* bdi) {
 	bdi->fdc->count = 0;
-	bdiOut(bdi,BDI_SYS,0);
+	bdiOut(bdi,0xff,0,1);
 }
 
 int bdiGetPort(int p) {
 	int port = p;
-	pcatch = 0;
-	if ((p & 0x03)==0x03) {
-		if ((p & 0x82) == 0x82) port=BDI_SYS;
-		if ((p & 0xe2) == 0x02) port=FDC_COM;
-		if ((p & 0xe2) == 0x22) port=FDC_TRK;
-		if ((p & 0xe2) == 0x42) port=FDC_SEC;
-		if ((p & 0xe2) == 0x62) port=FDC_DATA;
-		pcatch = 1;
-	}
+	pcatch = 1;
+	if ((p & 0xff) == 0xff) port=BDI_SYS;
+	else if ((p & 0xff) == 0x1f) port=FDC_COM;
+	else if ((p & 0xff) == 0x3f) port=FDC_TRK;
+	else if ((p & 0xff) == 0x5f) port=FDC_SEC;
+	else if ((p & 0xff) == 0x7f) port=FDC_DATA;
+	else pcatch = 0;
 	return port;
 }
 
-int bdiOut(BDI* bdi,int port,unsigned char val) {
-//	if ((port == FDC_COM) || (port == BDI_SYS)) printf("bdiOut(%.4X,%.2X)\n",port,val);
+int pdosGetPort(int p) {
+	int port = p;
+	pcatch = 1;
+	if ((p & 0xf002) == 0x2000) port = FDC_COM;
+	else if ((p & 0xf002) == 0x3000) port = FDC_DATA;
+	else pcatch = 0;
+	return port;
+}
+
+int bdiOut(BDI* bdi,unsigned short port,unsigned char val, unsigned open) {
+	pcatch = 0;
+	if ((bdi->fdc->type == FDC_93) && open) port = bdiGetPort(port);
+	else if (bdi->fdc->type == FDC_765) port = pdosGetPort(port);
+	else return 0;
+	if (pcatch == 0) return 0;
 	switch (port) {
 		case FDC_COM:
 		case FDC_TRK:
@@ -1389,7 +1406,7 @@ int bdiOut(BDI* bdi,int port,unsigned char val) {
 			break;
 		case BDI_SYS:
 			bdi->fdc->fptr = bdi->fdc->flop[val & 0x03];	// selet floppy
-			fdcSetMr(bdi->fdc,(val & 0x04) ? 1 : 0);		// master reset
+			fdcSetMr(bdi->fdc,(val & 0x04) ? 1 : 0);	// master reset
 			bdi->fdc->block = val & 0x08;
 			bdi->fdc->side = (val & 0x10) ? 1 : 0;		// side
 			bdi->fdc->mfm = val & 0x40;
@@ -1398,21 +1415,25 @@ int bdiOut(BDI* bdi,int port,unsigned char val) {
 	return 1;
 }
 
-unsigned char bdiIn(BDI* bdi,int port) {
-	unsigned char res = 0xff;
+int bdiIn(BDI* bdi, unsigned short port, unsigned char* res, unsigned open) {
+	pcatch = 0;
+	if ((bdi->fdc->type == FDC_93) && open) port = bdiGetPort(port);
+	else if (bdi->fdc->type == FDC_765) port = pdosGetPort(port);
+	else return 0;
+	if (pcatch == 0) return 0;
+	*res = 0xff;
 	switch (port) {
 		case FDC_COM:
 		case FDC_TRK:
 		case FDC_SEC:
 		case FDC_DATA:
-			res = fdcRd(bdi->fdc,port);
+			*res = fdcRd(bdi->fdc,port);
 			break;
 		case BDI_SYS:
-			res = (bdi->fdc->irq ? 0x80 : 0x00) | (bdi->fdc->drq ? 0x40 : 0x00);
+			*res = (bdi->fdc->irq ? 0x80 : 0x00) | (bdi->fdc->drq ? 0x40 : 0x00);
 			break;
 	}
-//	if (port == FDC_COM) printf("bdiIn(%.4X) = %.2X\n",port,res);
-	return res;
+	return 1;
 }
 
 void bdiSync(BDI* bdi,int tk) {

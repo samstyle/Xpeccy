@@ -18,7 +18,6 @@ void atmSetBank(ZXComp* comp, int bank, memEntry me) {
 }
 
 void atm2MapMem(ZXComp* comp) {
-	if (~comp->prt1 & 2) comp->dosen = 1;	// CPM
 	if (comp->prt1 & 1) {			// pen = 0: last rom page in every bank && dosen on
 		int adr = (comp->prt0 & 0x10) ? 4 : 0;
 		atmSetBank(comp,MEM_BANK0,comp->memMap[adr]);
@@ -34,148 +33,99 @@ void atm2MapMem(ZXComp* comp) {
 	}
 }
 
-/*
-Z80EX_BYTE atm2MRd(ZXComp* comp, Z80EX_WORD adr, int m1) {
-	if (m1 && (comp->bdi->fdc->type == FDC_93)) {
-		if (comp->dosen && (memGetBankPtr(comp->mem,adr)->type == MEM_RAM) && (comp->prt1 & 2)) {
-			comp->dosen = 0;
-			comp->hw->mapMem(comp);
-		}
-		if (!comp->dosen && ((adr & 0xff00) == 0x3d00) && (comp->prt0 & 0x10)) {
-			comp->dosen = 1;
-			comp->hw->mapMem(comp);
-		}
-	}
-	return memRd(comp->mem,adr);
-}
-*/
+// in
 
-int atm2GetPort(Z80EX_WORD port,int bdiz) {
-	if ((port & 0x0007) == 0x0006) return 0xfe;
-	if ((port & 0x0007) == 0x0002) return 0xfa;	// interface port
-	if ((port & 0x0007) == 0x0003) return 0xfb;	// covox
-	if ((port & 0x8202) == 0x0200) return 0x7ffd;	// mem.main
-	if ((port & 0x8202) == 0x0000) return 0x7dfd;	// digital.rd
-	if ((port & 0xc202) == 0x8200) return 0xbffd;	// ay
-	if ((port & 0xc202) == 0xc200) return 0xfffd;
-	if (bdiz) {
-		if ((port & 0x009f) == 0x009f) return 0xff;				// bdi: ff
-		if ((port & 0x00ff) == 0x001f) return 0x1f;
-		if ((port & 0x00ff) == 0x003f) return 0x3f;
-		if ((port & 0x00ff) == 0x005f) return 0x5f;
-		if ((port & 0x00ff) == 0x007f) return 0x7f;
-		if ((port & 0x009f) == 0x0097) return 0xf7;				// F7: mem.manager (a14.15)
-		if ((port & 0x009f) == 0x0017) return 0x77;				// 77: system (a8.a9.a14)
-		if ((port & 0x001f) == 0x000f) return 0xef;				// EF: hdd (a8..11)
-	}
-	return 0;
+Z80EX_BYTE atm2InFE(ZXComp* comp, Z80EX_WORD port) {
+	return keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->levPlay ? 0x40 : 0x00);
 }
 
-void atm2Out(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
-	int adr;
-	int ptype = atm2GetPort(port,bdiz);
-	switch (ptype) {
-		case 0x1f:
-			if (bdiz) bdiOut(comp->bdi,FDC_COM,val);
-			break;
-		case 0x3f:
-			if (bdiz) bdiOut(comp->bdi,FDC_TRK,val);
-			break;
-		case 0x5f:
-			if (bdiz) bdiOut(comp->bdi,FDC_SEC,val);
-			break;
-		case 0x7f:
-			if (bdiz) bdiOut(comp->bdi,FDC_DATA,val);
-			break;
-		case 0xff:
-			if (bdiz) {
-				bdiOut(comp->bdi,BDI_SYS,val);
-				if (!(comp->prt1 & 0x40)) {
-					val ^= 0xff;	// inverse colors
-					adr = comp->vid->brdcol & 0x0f;
-					comp->vid->pal[adr].b = ((val & 0x01) ? 0xaa : 0x00) + ((val & 0x20) ? 0x55 : 0x00);
-					comp->vid->pal[adr].r = ((val & 0x02) ? 0xaa : 0x00) + ((val & 0x40) ? 0x55 : 0x00);
-					comp->vid->pal[adr].g = ((val & 0x10) ? 0xaa : 0x00) + ((val & 0x80) ? 0x55 : 0x00);
-					//comp->colMap[comp->vid->brdcol & 0x0f] =		// grbG--RB to -grb-GRB
-					//		(val & 0x03) | ((val & 0x10) >> 2) | ((val & 0xe0) >> 1);
-					//comp->palchan = 1; // comp->flag |= ZX_PALCHAN;
-				}
-			}
-			break;
-		case 0xfe:
-			comp->vid->nextbrd = (val & 0x07) | (~port & 8);
-			if (!comp->vid->border4t)
-				comp->vid->brdcol = comp->vid->nextbrd;
-			comp->beeplev = (val & 0x10) ? 1 : 0;
-			comp->tape->levRec = (val & 0x08) ? 1 : 0;
-			break;
-		case 0x77:
-			switch (val & 7) {
-				case 0: vidSetMode(comp->vid,VID_ATM_EGA); break;
-				case 2: vidSetMode(comp->vid,VID_ATM_HWM); break;
-				case 3: vidSetMode(comp->vid,VID_NORMAL); break;
-				case 6: vidSetMode(comp->vid,VID_ATM_TEXT); break;
-				default: vidSetMode(comp->vid,VID_UNKNOWN); break;
-			}
-			zxSetFrq(comp,(val & 0x08) ? 7.0 : 3.5);
-			comp->prt1 = (port & 0xff00) >> 8;
-			atm2MapMem(comp);
-			break;
-		case 0xf7:
-			adr = ((comp->prt0 & 0x10) ? 4 : 0) | ((port & 0xc000) >> 14);	// rom2.a15.a14
-			comp->memMap[adr].flag = val & 0xc0;		// copy b6,7 to flag
-			comp->memMap[adr].page = (val & 0x3f) | 0xc0;	// set b6,7 for PentEvo capability
-			atm2MapMem(comp);
-			break;
-		case 0x7ffd:
-			if (comp->prt0 & 0x20) break;
-			comp->prt0 = val;
-			comp->vid->curscr = (val & 0x08) ? 7 : 5;
-			atm2MapMem(comp);
-			break;
-		case 0xbffd:
-		case 0xfffd:
-			tsOut(comp->ts,ptype,val); break;
-//		default:
-//			printf("ATM2: out %.4X (%.4X) %.2X\n",port,ptype,val);
-//			break;
-	}
+Z80EX_BYTE atm2InFFFD(ZXComp* comp, Z80EX_WORD port) {
+	return tsIn(comp->ts, 0xfffd);
 }
 
-Z80EX_BYTE atm2In(ZXComp* comp, Z80EX_WORD port, int bdiz) {
+// out
+
+void atm2Out77(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {		// dos
+	switch (val & 7) {
+		case 0: vidSetMode(comp->vid,VID_ATM_EGA); break;
+		case 2: vidSetMode(comp->vid,VID_ATM_HWM); break;
+		case 3: vidSetMode(comp->vid,VID_NORMAL); break;
+		case 6: vidSetMode(comp->vid,VID_ATM_TEXT); break;
+		default: vidSetMode(comp->vid,VID_UNKNOWN); break;
+	}
+	zxSetFrq(comp,(val & 0x08) ? 7.0 : 3.5);
+	comp->prt1 = (port & 0xff00) >> 8;
+	atm2MapMem(comp);
+}
+
+void atm2OutF7(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {		// dos
+	int adr = ((comp->prt0 & 0x10) ? 4 : 0) | ((port & 0xc000) >> 14);	// rom2.a15.a14
+	comp->memMap[adr].flag = val & 0xc0;		// copy b6,7 to flag
+	comp->memMap[adr].page = (val & 0x3f) | 0xc0;	// set b6,7 for PentEvo capability
+	atm2MapMem(comp);
+}
+
+void atm2OutFB(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+	sdrvOut(comp->sdrv, port, val);
+}
+
+void atm2OutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+	comp->vid->nextbrd = (val & 0x07) | (~port & 8);
+	if (!comp->vid->border4t)
+		comp->vid->brdcol = comp->vid->nextbrd;
+	comp->beeplev = (val & 0x10) ? 1 : 0;
+	comp->tape->levRec = (val & 0x08) ? 1 : 0;
+}
+
+void atm2Out7FFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+	if (comp->prt0 & 0x20) return;
+	comp->prt0 = val;
+	comp->vid->curscr = (val & 0x08) ? 7 : 5;
+	atm2MapMem(comp);
+}
+
+void atm2OutBFFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+	tsOut(comp->ts, 0xbffd, val);
+}
+
+void atm2OutFFFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+	tsOut(comp->ts, 0xfffd, val);
+}
+
+void atm2OutFF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {		// dos. bdiOut already done
+	if (comp->prt1 & 0x40) return;
+	val ^= 0xff;	// inverse colors
+	int adr = comp->vid->brdcol & 0x0f;
+	comp->vid->pal[adr].b = ((val & 0x01) ? 0xaa : 0x00) + ((val & 0x20) ? 0x55 : 0x00);
+	comp->vid->pal[adr].r = ((val & 0x02) ? 0xaa : 0x00) + ((val & 0x40) ? 0x55 : 0x00);
+	comp->vid->pal[adr].g = ((val & 0x10) ? 0xaa : 0x00) + ((val & 0x80) ? 0x55 : 0x00);
+}
+
+xPort atm2PortMap[] = {
+	{0x0007,0x00fe,1,0,&atm2InFE,	&atm2OutFE},
+	{0x0007,0x00fa,1,0,NULL,	NULL},		// fa
+	{0x0007,0x00fb,1,0,NULL,	&atm2OutFB},	// fb (covox)
+	{0x8202,0x7ffd,1,0,NULL,	&atm2Out7FFD},
+	{0x8202,0x7dfd,1,0,NULL,	NULL},		// 7DFD
+	{0xc202,0xbffd,1,0,NULL,	&atm2OutBFFD},	// ay
+	{0xc202,0xfffd,1,0,&atm2InFFFD,	&atm2OutFFFD},
+	// dos
+	{0x009f,0x00ff,0,1,NULL,	&atm2OutFF},	// palette (dos)
+	{0x009f,0x00f7,0,1,NULL,	&atm2OutF7},
+	{0x009f,0x0077,0,1,NULL,	&atm2Out77},
+	{0x0000,0x0000,1,0,NULL,	NULL}
+};
+
+void atm2Out(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int dos) {
+	if (~comp->prt1 & 2) dos = 1;
+	bdiOut(comp->bdi, port, val, dos);
+	hwOut(atm2PortMap, comp, port, val, dos);
+}
+
+Z80EX_BYTE atm2In(ZXComp* comp, Z80EX_WORD port, int dos) {
 	Z80EX_BYTE res = 0xff;
-	int ptype = atm2GetPort(port,bdiz);
-	switch (ptype) {
-		case 0x1f:
-			res = bdiz ? bdiIn(comp->bdi,FDC_STATE) : joyInput(comp->joy);
-			break;
-		case 0x3f:
-			res = bdiz ? bdiIn(comp->bdi,FDC_TRK) : 0xff;
-			break;
-		case 0x5f:
-			res = bdiz ? bdiIn(comp->bdi,FDC_SEC) : 0xff;
-			break;
-		case 0x7f:
-			res = bdiz ? bdiIn(comp->bdi,FDC_DATA) : 0xff;
-			break;
-		case 0xff:
-			res = bdiz ? bdiIn(comp->bdi,BDI_SYS) : comp->vid->atrbyte;
-			break;
-		case 0xfe:
-			res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->levPlay ? 0x40 : 0x00);
-			break;
-		case 0x7ffd:
-			res = 0xff;
-			break;
-		case 0x7dfd:
-			res = 0xff;
-			break;
-		case 0xfffd:
-			res = tsIn(comp->ts,port);
-			break;
-//		default:
-//			printf("ATM2: in %.4X (%.4X)\n",port,ptype);
-//			break;
-	}
+	if (~comp->prt1 & 2) dos = 1;
+	if (bdiIn(comp->bdi, port, &res, dos)) return res;
+	res = hwIn(atm2PortMap, comp, port, dos);
 	return res;
 }

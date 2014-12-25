@@ -1,6 +1,10 @@
 #ifndef _LIBXPECCY_HARDWARE
 #define _LIBXPECCY_HARDWARE
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "../spectrum.h"
 
 // hw type
@@ -36,6 +40,18 @@ struct HardWare {
 	void (*mwr)(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
 	void (*reset)(ZXComp*);
 };
+
+typedef struct {
+	int mask;		// if (port & mask == value & mask) port is catched
+	int value;
+	unsigned all:1;		// 1 if dos-independed
+	unsigned dos:1;		// if all=0: is port dos-only
+	Z80EX_BYTE (*in)(ZXComp*, Z80EX_WORD);
+	void (*out)(ZXComp*, Z80EX_WORD, Z80EX_BYTE);
+} xPort;
+
+Z80EX_BYTE hwIn(xPort*, ZXComp*, Z80EX_WORD, int);
+void hwOut(xPort*, ZXComp*, Z80EX_WORD, Z80EX_BYTE, int);
 
 typedef struct HardWare HardWare;
 extern HardWare hwTab[];
@@ -98,4 +114,8 @@ Z80EX_BYTE tslMRd(ZXComp*,Z80EX_WORD,int);
 void tslMWr(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
 void tslReset(ZXComp*);
 void tslUpdatePorts(ZXComp*);
+#endif
+
+#ifdef __cplusplus
+}
 #endif

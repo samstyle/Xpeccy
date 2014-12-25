@@ -9,117 +9,101 @@ void p1mMapMem(ZXComp* comp) {
 	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,(comp->prt0 & 7) | ((comp->prt1 & 4) ? 0 : ((comp->prt0 & 0x20) | ((comp->prt0 & 0xc0) >> 3))));
 }
 
-int p1mGetPort(Z80EX_WORD port, int bdiz) {
-	if ((port & 0x0003) == 0x0002) return 0xfe;
-	if ((port & 0x8002) == 0x0000) return 0x7ffd;
-	if ((port & 0xc002) == 0x8000) return 0xbffd;
-	if ((port & 0xc002) == 0xc000) return 0xfffd;
-	if (bdiz) {
-		if ((port & 0x0083) == 0x0083) return 0xff;
-		if ((port & 0x00e3) == 0x0003) return 0x1f;
-		if ((port & 0x00e3) == 0x0023) return 0x3f;
-		if ((port & 0x00e3) == 0x0043) return 0x5f;
-		if ((port & 0x00e3) == 0x0063) return 0x7f;
-	} else {
-		if ((port & 0x05a3) == 0x0083) return 0xfadf;
-		if ((port & 0x05a3) == 0x0183) return 0xfbdf;
-		if ((port & 0x05a3) == 0x0583) return 0xffdf;
-	}
-	if ((port & 0xf008) == 0xe000) return 0xeff7;
-	if ((port & 0xf008) == 0xb000) return 0xbff7;	// cmos
-	if ((port & 0xf008) == 0xd000) return 0xdff7;
-	return 0;
+// in
+
+Z80EX_BYTE p1mInFE(ZXComp* comp, Z80EX_WORD port) {
+	return keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->levPlay ? 0x40 : 0x00);
 }
 
-void p1mOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int bdiz) {
-	int ptype = p1mGetPort(port,bdiz);
-	switch (ptype) {
-		case 0x1f:
-			if (bdiz) bdiOut(comp->bdi,FDC_COM,val);
-			break;
-		case 0x3f:
-			if (bdiz) bdiOut(comp->bdi,FDC_TRK,val);
-			break;
-		case 0x5f:
-			if (bdiz) bdiOut(comp->bdi,FDC_SEC,val);
-			break;
-		case 0x7f:
-			if (bdiz) bdiOut(comp->bdi,FDC_DATA,val);
-			break;
-		case 0xff:
-			if (bdiz) bdiOut(comp->bdi,BDI_SYS,val);
-			break;
-		case 0xfe:
-			comp->vid->nextbrd = val & 0x07;
-			if (!comp->vid->border4t) comp->vid->brdcol = val & 0x07;
-			comp->beeplev = (val & 0x10) ? 1 : 0;
-			comp->tape->levRec = (val & 0x08) ? 1 : 0;
-			break;
-		case 0x7ffd:
-			if ((comp->prt1 & 4) && (comp->prt0 & 0x20)) break;
-			comp->prt0 = val;
-			comp->vid->curscr = (val & 0x08) ? 7 : 5;
-			p1mMapMem(comp);
-			break;
-		case 0xeff7:
-			comp->prt1 = val;
-			vidSetMode(comp->vid,(val & 0x01) ? VID_ALCO : VID_NORMAL);
-			zxSetFrq(comp, (val & 0x10) ? 7.0 : 3.5);
-			p1mMapMem(comp);
-			break;
-		case 0xbff7:
-			if (comp->prt1 & 0x80) cmsWr(comp,val);
-			break;
-		case 0xdff7:
-			if (comp->prt1 & 0x80) comp->cmos.adr = val;
-			break;
-		case 0xbffd:
-		case 0xfffd:
-			tsOut(comp->ts,ptype,val);
-			break;
-	}
+Z80EX_BYTE p1mIn1F(ZXComp* comp, Z80EX_WORD port) {
+	return joyInput(comp->joy);
 }
 
-Z80EX_BYTE p1mIn(ZXComp* comp, Z80EX_WORD port, int bdiz) {
+Z80EX_BYTE p1mInFFFD(ZXComp* comp, Z80EX_WORD port) {
+	return tsIn(comp->ts, 0xfffd);
+}
+
+Z80EX_BYTE p1mInFADF(ZXComp* comp, Z80EX_WORD port) {
+	comp->mouse->used = 1;
+	return comp->mouse->enable ? comp->mouse->buttons : 0xff;
+}
+
+Z80EX_BYTE p1mInFBDF(ZXComp* comp, Z80EX_WORD port) {
+	comp->mouse->used = 1;
+	return comp->mouse->enable ? comp->mouse->xpos : 0xff;
+}
+
+Z80EX_BYTE p1mInFFDF(ZXComp* comp, Z80EX_WORD port) {
+	comp->mouse->used = 1;
+	return comp->mouse->enable ? comp->mouse->ypos : 0xff;
+}
+
+Z80EX_BYTE p1mInBFF7(ZXComp* comp, Z80EX_WORD port) {
+	return (comp->prt1 & 0x80) ? cmsRd(comp) : 0xff;
+}
+
+// out
+
+void p1mOutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+	comp->vid->nextbrd = val & 0x07;
+	if (!comp->vid->border4t) comp->vid->brdcol = val & 0x07;
+	comp->beeplev = (val & 0x10) ? 1 : 0;
+	comp->tape->levRec = (val & 0x08) ? 1 : 0;
+}
+
+void p1mOut7FFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+	if ((comp->prt1 & 4) && (comp->prt0 & 0x20)) return;
+	comp->prt0 = val;
+	comp->vid->curscr = (val & 0x08) ? 7 : 5;
+	p1mMapMem(comp);
+}
+
+void p1mOutBFFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+	tsOut(comp->ts, 0xbffd, val);
+}
+
+void p1mOutFFFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+	tsOut(comp->ts, 0xfffd, val);
+}
+
+void p1mOutBFF7(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+	if (comp->prt1 & 0x80) cmsWr(comp,val);
+}
+
+void p1mOutDFF7(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+	if (comp->prt1 & 0x80) comp->cmos.adr = val;
+}
+
+void p1mOutEFF7(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+	comp->prt1 = val;
+	vidSetMode(comp->vid,(val & 0x01) ? VID_ALCO : VID_NORMAL);
+	zxSetFrq(comp, (val & 0x10) ? 7.0 : 3.5);
+	p1mMapMem(comp);
+}
+
+xPort p1mPortMap[] = {
+	{0x0003,0x00fe,1,0,&p1mInFE,	&p1mOutFE},
+	{0x8002,0x7ffd,1,0,NULL,	&p1mOut7FFD},
+	{0xc002,0xbffd,1,0,NULL,	&p1mOutBFFD},
+	{0xc002,0xfffd,1,0,&p1mInFFFD,	&p1mOutFFFD},
+	{0xf008,0xeff7,1,0,NULL,	&p1mOutEFF7},
+	{0xf008,0xbff7,1,0,&p1mInBFF7,	&p1mOutBFF7},
+	{0xf008,0xdff7,1,0,NULL,	&p1mOutDFF7},
+	{0x05a3,0xfadf,0,0,&p1mInFADF,	NULL},
+	{0x05a3,0xfbdf,0,0,&p1mInFBDF,	NULL},
+	{0x05a3,0xffdf,0,0,&p1mInFFDF,	NULL},
+	{0x00ff,0x001f,0,0,&p1mIn1F,	NULL},		// TODO : ORLY (x & FF = 1F)
+	{0x0000,0x0000,1,0,NULL,NULL}
+};
+
+void p1mOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int dos) {
+	bdiOut(comp->bdi, port, val, dos);
+	hwOut(p1mPortMap, comp, port, val, dos);
+}
+
+Z80EX_BYTE p1mIn(ZXComp* comp, Z80EX_WORD port, int dos) {
 	Z80EX_BYTE res = 0xff;
-	int ptype = p1mGetPort(port,bdiz);
-	switch (ptype) {
-		case 0x1f:
-			res = bdiz ? bdiIn(comp->bdi,FDC_STATE) : joyInput(comp->joy);
-			break;
-		case 0x3f:
-			res = bdiz ? bdiIn(comp->bdi,FDC_TRK) : 0xff;
-			break;
-		case 0x5f:
-			res = bdiz ? bdiIn(comp->bdi,FDC_SEC) : 0xff;
-			break;
-		case 0x7f:
-			res = bdiz ? bdiIn(comp->bdi,FDC_DATA) : 0xff;
-			break;
-		case 0xff:
-			res = bdiz ? bdiIn(comp->bdi,BDI_SYS) : 0xff;
-			break;
-		case 0xfe:
-			res = keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->levPlay ? 0x40 : 0x00);
-			break;
-		case 0xfadf:
-			comp->mouse->used = 1;
-			res = comp->mouse->enable ? comp->mouse->buttons : 0xff;
-			break;
-		case 0xfbdf:
-			comp->mouse->used = 1;
-			res = comp->mouse->enable ? comp->mouse->xpos : 0xff;
-			break;
-		case 0xffdf:
-			comp->mouse->used = 1;
-			res = comp->mouse->enable ? comp->mouse->ypos : 0xff;
-			break;
-		case 0xbff7:
-			res = (comp->prt1 & 0x80) ? cmsRd(comp) : 0xff;
-			break;
-		case 0xfffd:
-			res = tsIn(comp->ts,port);
-			break;
-	}
+	if (bdiIn(comp->bdi, port, &res, dos)) return res;
+	res = hwIn(p1mPortMap, comp, port, dos);
 	return res;
 }

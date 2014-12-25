@@ -575,8 +575,8 @@ void vidTSRender(Video* vid, unsigned char* ptr) {
 // tsconf normal screen (separated 'cuz of palette)
 
 void vidDrawTSLNormal(Video* vid) {
-	xscr = vid->x - vid->tsconf.xPos;
-	yscr = vid->y - vid->tsconf.yPos;
+	xscr = vid->x - vid->bord.h;
+	yscr = vid->y - vid->bord.v;
 	if ((yscr < 0) || (yscr > 191) || (vid->nogfx)) {
 		col = vid->brdcol;
 	} else {

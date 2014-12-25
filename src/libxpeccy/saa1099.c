@@ -146,7 +146,7 @@ int saaWrite(saaChip* saa, int adr, unsigned char val) {
 				saaSetNoise(&saa->noiz[0], val & 3, &saa->chan[0]);
 				saaSetNoise(&saa->noiz[1], (val >> 4) & 3, &saa->chan[3]);
 				break;
-			case 0x18:		// TODO : extCLK, form & invRight should be buffered
+			case 0x18:
 			case 0x19:
 				num = saa->curReg & 1;
 				saa->env[num].buf.invRight = (val & 1) ? 1 : 0;
@@ -161,7 +161,13 @@ int saaWrite(saaChip* saa, int adr, unsigned char val) {
 			case 0x1c:
 //				if (val & 2) printf("saa out 1C,%X\n",val);
 				saa->off = (val & 1) ? 0 : 1;
-				if (val & 2) saaReset(saa);
+				if (val & 2) {
+					for (i = 0; i < 6; i++) saa->chan[i].count = 0;
+					saa->noiz[0].count = 0;
+					saa->noiz[1].count = 0;
+					saa->env[0].count = 0;
+					saa->env[1].count = 0;
+				}
 				break;
 		}
 		for (i = 0; i < 6; i++) {
@@ -204,31 +210,57 @@ void saaSync(saaChip* saa, int ns) {
 			}
 		}
 	}
-	// TODO : envelope
 }
+
+sndPair saaMixTN(saaChan* ch, saaNoise* noiz) {
+	sndPair res;
+	if ((ch->freqEn && ch->lev) || (ch->noizEn && noiz->lev)) {
+		res.left = ch->ampLeft;
+		res.right = ch->ampRight;
+	} else {
+		res.left = 0;
+		res.right = 0;
+	}
+	return res;
+}
+
+sndPair saaMixTNE(saaChan* ch, saaNoise* noiz, saaEnv* env) {
+	if (!env->enable) return saaMixTN(ch, noiz);
+	sndPair res;
+	if (!ch->freqEn && !ch->noizEn) {
+		res.left = env->vol;
+		res.right = (env->invRight) ? (env->vol ^ 0x0f) : env->vol;
+	} else {
+		if ((ch->freqEn && ch->lev) || (ch->noizEn && noiz->lev)) {
+			res.left = env->vol;
+			res.right = (env->invRight) ? (env->vol ^ 0x0f) : env->vol;
+		} else {
+			res.left = 0;
+			res.right = 0;
+		}
+	}
+	return res;
+}
+
 
 sndPair saaGetVolume(saaChip* saa) {
 	sndPair res;
 	int levl = 0;
 	int levr = 0;
-	if (!saa->off) {
-		int nlev;
+	if (!saa->off && saa->enabled) {
 		saa->noiz[0].lev = noizes[saa->noiz[0].pos & 0x1ffff] ? 1 : 0;
 		saa->noiz[1].lev = noizes[saa->noiz[1].pos & 0x1ffff] ? 1 : 0;
 		for (int i = 0; i < 6; i++) {
-			nlev = (i < 3) ? saa->noiz[0].lev : saa->noiz[1].lev;
-			if ((saa->chan[i].freqEn && saa->chan[i].lev) || (saa->chan[i].noizEn && nlev)) {
-				if ((i == 2) && saa->env[0].enable) {
-					levl += saa->env[0].vol;
-					levr += (saa->env[0].invRight) ? (15 - saa->env[0].vol) : saa->env[0].vol;
-				} else if ((i == 5) && saa->env[1].enable) {
-					levl += saa->env[1].vol;
-					levr += (saa->env[1].invRight) ? (15 - saa->env[1].vol) : saa->env[1].vol;
-				} else {
-					levl += saa->chan[i].ampLeft;
-					levr += saa->chan[i].ampRight;
-				}
+			switch (i) {
+				case 0:
+				case 1: res = saaMixTN(&saa->chan[i], &saa->noiz[0]); break;
+				case 2:	res = saaMixTNE(&saa->chan[i], &saa->noiz[0], &saa->env[0]); break;
+				case 3:
+				case 4:	res = saaMixTN(&saa->chan[i], &saa->noiz[1]); break;
+				case 5:	res = saaMixTNE(&saa->chan[i], &saa->noiz[1], &saa->env[1]); break;
 			}
+			levl += res.left;
+			levr += res.right;
 		}
 	}
 	if (saa->mono) {

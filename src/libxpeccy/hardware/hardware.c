@@ -67,6 +67,8 @@ HardWare* findHardware(const char* name) {
 
 unsigned char mbt;
 
+// mem
+
 Z80EX_BYTE stdMRd(ZXComp* comp, Z80EX_WORD adr, int m1) {
 	if (m1 && (comp->bdi->fdc->type == FDC_93)) {
 		mbt = memGetBankPtr(comp->mem,adr)->type;
@@ -84,4 +86,39 @@ Z80EX_BYTE stdMRd(ZXComp* comp, Z80EX_WORD adr, int m1) {
 
 void stdMWr(ZXComp *comp, Z80EX_WORD adr, Z80EX_BYTE val) {
 	memWr(comp->mem,adr,val);
+}
+
+// io
+
+Z80EX_BYTE hwIn(xPort* ptab, ZXComp* comp, Z80EX_WORD port, int dos) {
+	Z80EX_BYTE res = 0xff;
+	int idx = 0;
+	xPort* itm;
+	while (1) {
+		itm = &ptab[idx];
+		if (((port & itm->mask) == (itm->value & itm->mask)) && (itm->all || (itm->dos == dos)) && (itm->in != NULL)) {
+			res = itm->in(comp, port);
+			break;
+		}
+		if (itm->mask == 0) break;
+		idx++;
+	};
+	return res;
+}
+
+void hwOut(xPort* ptab, ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int dos) {
+	int idx = 0;
+	xPort* itm;
+	int ctch = 0;
+	while (1) {
+		itm = &ptab[idx];
+		if (((port & itm->mask) == (itm->value & itm->mask)) && (itm->all || (itm->dos == dos)) && (itm->out != NULL)) {
+			if ((itm->mask != 0) || (ctch == 0)) {
+				itm->out(comp, port, val);
+				ctch = 1;
+			}
+		}
+		if (itm->mask == 0) break;
+		idx++;
+	}
 }
