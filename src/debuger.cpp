@@ -576,11 +576,13 @@ void DebugWin::dmpLimChanged() {
 void DebugWin::dmpLenChanged() {
 	int start = dui.leStart->text().toInt(NULL,16);
 	int len = dui.leLen->text().toInt(NULL,16);
-	if (start + len > 0xffff) len = 0x10000 - start;
+	if (start + len > 0xffff) {
+		len = 0x10000 - start;
+		dui.leLen->setText(QString::number(len,16));
+	}
 	int end = start + len - 1;
 	start = dui.leLen->cursorPosition();
-	dui.leEnd->setText(QString::number(end,16));
-	dui.leLen->setText(QString::number(len,16));
+	dui.leEnd->setText(QString::number(end,16));	
 	dui.leLen->setCursorPosition(start);
 }
 

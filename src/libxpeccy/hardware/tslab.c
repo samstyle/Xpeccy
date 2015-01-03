@@ -137,7 +137,7 @@ void tslUpdatePorts(ZXComp* comp) {
 	comp->vid->tsconf.T1Pal76 = (val & 0xc0);
 }
 
-#if 1
+#if 0
 
 // in
 
@@ -573,7 +573,7 @@ xPort tsPortMap[] = {
 	{0x009f,0x001f,0,1,&tsInBDI,	&tsOutBDI},	// 1f,3f,5f,7f
 	{0x00ff,0x00ff,0,1,&tsInFF,	&tsOutFF},	// ff
 	{0x0000,0x0000,1,0,NULL,	NULL},
-	{0x0000,0x0000,1,0,&tsInCatch,	&tsOutCatch}
+//	{0x0000,0x0000,1,0,&tsInCatch,	&tsOutCatch}
 };
 
 void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int dos) {

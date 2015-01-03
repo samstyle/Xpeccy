@@ -941,10 +941,8 @@ void SetupWin::copyToTape() {
 				start = (cat[row].hst << 8) + cat[row].lst;
 				len = (cat[row].hlen << 8) + cat[row].llen;
 				line = (cat[row].ext == 'B') ? (buf[start] + (buf[start+1] << 8)) : 0x8000;
-				strncpy(name,(char*)&cat[row].name[0],8);
-				strcat(name,".");
-				strncat(name,(char*)&cat[row].ext,1);
-				// name = std::string((char*)&cat[row].name[0],8) + std::string(".") + std::string((char*)&cat[row].ext,1);
+				memset(name,0x20,10);
+				memcpy(name,(char*)cat[row].name,8);
 				tapAddFile(comp->tape,name,(cat[row].ext == 'B') ? 0 : 3, start, len, line, buf,true);
 				savedFiles++;
 			} else {
