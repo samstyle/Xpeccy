@@ -37,12 +37,16 @@ xConfig conf;
 
 void initPaths() {
 #if __linux
-	conf.path.confDir = std::string(getenv("HOME")) + "/.config/samstyle/xpeccy";
+	conf.path.confDir = std::string(getenv("HOME")) + "/.config";
+	mkdir(conf.path.confDir.c_str(),0777);
+	conf.path.confDir += "/samstyle";
+	mkdir(conf.path.confDir.c_str(),0777);
+	conf.path.confDir += "/xpeccy";
+	mkdir(conf.path.confDir.c_str(),0777);
 	conf.path.romDir = conf.path.confDir + "/roms";
+	mkdir(conf.path.romDir.c_str(),0777);
 	conf.path.confFile = conf.path.confDir + "/config.conf";
 	conf.scrShot.dir = std::string(getenv("HOME"));
-	mkdir(conf.path.confDir.c_str(),0777);
-	mkdir(conf.path.romDir.c_str(),0777);
 #endif
 #ifdef __WIN32
 	conf.path.confDir = std::string(".\\config");

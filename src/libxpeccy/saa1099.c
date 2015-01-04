@@ -178,6 +178,7 @@ int saaWrite(saaChip* saa, int adr, unsigned char val) {
 }
 
 void saaSync(saaChip* saa, int ns) {
+	if (!saa->enabled) return;
 	int i;
 	saaEnv* env;
 	saaNoise* noiz;
