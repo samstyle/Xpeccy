@@ -176,7 +176,7 @@ void saaSync(saaChip* saa, int ns) {
 				
 				if ( i == 1 && !saa->env[0].extCLK )
 					saaEnvStep(&saa->env[0], cha);
-				else if ( i == 4  && !saa->env[0].extCLK )
+				else if ( i == 4  && !saa->env[1].extCLK )
 					saaEnvStep(&saa->env[1], cha);
 			}
 		}
