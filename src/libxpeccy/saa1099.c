@@ -4,9 +4,6 @@
 
 #include "saa1099.h"
 
-// start frq (Hz) of each octave. end = next octave start. [8] = last octave end (there's only 8 octaves)
-const int octavePars[9] = {31,61,122,245,489,978,1960,3910,7810};
-
 // 253 : pos=0 (repeat)
 // 255 : pos-- (stay)
 const unsigned char saaEnvForms[8][33] = {
@@ -16,7 +13,7 @@ const unsigned char saaEnvForms[8][33] = {
 	{15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,253},	// 011 : down repeat
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 255},	// 100 : up-down stay
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 253},	// 101 : up-down repeat
-	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 255},	// 110 : up,0 stay
+	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 255, 255},	// 110 : up,0 stay
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,253},		// 111 : up repeat
 };
 
@@ -45,26 +42,11 @@ void saaReset(saaChip* saa) {
 	}
 }
 
-int saaGetFreq(int oct, int frq) {
-	return (octavePars[oct] + (octavePars[oct + 1] - octavePars[oct]) * frq / 256);
-}
-
 void saaSetNoise(saaNoise* nch, int val, saaChan* fch) {
-	switch (val) {
-		case 0:
-			nch->period = 15974;		// 31.3KHz
-			break;
-		case 1:
-			nch->period = 32051;		// 15.6KHz
-			break;
-		case 2:
-			nch->period = 65789;		// 7.8KHz
-			break;
-		default:
-			nch->period = 25e7 / saaGetFreq(fch->octave, fch->freq);		// double channel freq (half channel period)
-			break;
-
-	}
+	if ( val != 3 )
+		nch->period = 0x8000 << val;
+	else
+		nch->period = (511 - fch->freq) << (14 - fch->octave);
 }
 
 void saaUpdateEnv(saaEnv* env, saaChan* ch) {
@@ -83,11 +65,13 @@ void saaUpdateEnv(saaEnv* env, saaChan* ch) {
 
 void saaEnvStep(saaEnv* env, saaChan* ch) {
 	env->pos++;
+	if (env->lowRes) env->pos = (env->pos + 1) & ~1;
 	switch (saaEnvForms[env->form][env->pos]) {
 		case 255:			// non-cycled env end : can be updated immediately
 			env->busy = 0;
 			if (env->buf.update) saaUpdateEnv(env, ch);
 			env->pos--;
+			if (env->lowRes) env->pos &= ~1;
 			break;
 		case 253:			// cycled env : can be updated @ end of cycle
 			if (env->buf.update) saaUpdateEnv(env, ch);
@@ -171,7 +155,7 @@ int saaWrite(saaChip* saa, int adr, unsigned char val) {
 				break;
 		}
 		for (i = 0; i < 6; i++) {
-			saa->chan[i].period = 5e8 / saaGetFreq(saa->chan[i].octave, saa->chan[i].freq);		// ns for T/2
+			saa->chan[i].period = (511 - saa->chan[i].freq) << (15 - saa->chan[i].octave);
 		}
 	}
 	return 1;
@@ -180,7 +164,6 @@ int saaWrite(saaChip* saa, int adr, unsigned char val) {
 void saaSync(saaChip* saa, int ns) {
 	if (!saa->enabled) return;
 	int i;
-	saaEnv* env;
 	saaNoise* noiz;
 	saaChan* cha;
 	for (i = 0; i < 6; i++) {
@@ -190,6 +173,11 @@ void saaSync(saaChip* saa, int ns) {
 			while (cha->count > 0) {
 				cha->count -= cha->period;
 				cha->lev ^= 1;
+				
+				if ( i == 1 && !saa->env[0].extCLK )
+					saaEnvStep(&saa->env[0], cha);
+				else if ( i == 4  && !saa->env[1].extCLK )
+					saaEnvStep(&saa->env[1], cha);
 			}
 		}
 	}
@@ -200,14 +188,6 @@ void saaSync(saaChip* saa, int ns) {
 			while (noiz->count > 0) {
 				noiz->count -= noiz->period;
 				noiz->pos++;
-			}
-		}
-		env = &saa->env[i];
-		if (env->period != 0) {
-			env->count += ns;
-			while (env->count > 0) {
-				env->count -= env->period;
-				saaEnvStep(env, &saa->chan[i ? 4 : 1]);
 			}
 		}
 	}
