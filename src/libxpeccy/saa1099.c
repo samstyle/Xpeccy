@@ -195,9 +195,16 @@ void saaSync(saaChip* saa, int ns) {
 
 sndPair saaMixTN(saaChan* ch, saaNoise* noiz) {
 	sndPair res;
-	if ((ch->freqEn && ch->lev) || (ch->noizEn && noiz->lev)) {
-		res.left = ch->ampLeft;
-		res.right = ch->ampRight;
+	int signal = 1;
+	if ( (ch->freqEn && ch->lev) || (ch->noizEn && noiz->lev) ) {
+		if ( (ch->freqEn && ch->lev) && (ch->noizEn && noiz->lev) )
+			signal = 2;
+		else
+			signal = 0;
+	}
+	if ( signal ) {
+		res.left = ch->ampLeft / signal;
+		res.right = ch->ampRight / signal;
 	} else {
 		res.left = 0;
 		res.right = 0;
@@ -208,17 +215,19 @@ sndPair saaMixTN(saaChan* ch, saaNoise* noiz) {
 sndPair saaMixTNE(saaChan* ch, saaNoise* noiz, saaEnv* env) {
 	if (!env->enable) return saaMixTN(ch, noiz);
 	sndPair res;
-	if (!ch->freqEn && !ch->noizEn) {
-		res.left = env->vol;
-		res.right = (env->invRight) ? (env->vol ^ 0x0f) : env->vol;
+	int signal = 1;
+	if ( (ch->freqEn && ch->lev) || (ch->noizEn && noiz->lev) ) {
+		if ( (ch->freqEn && ch->lev) && (ch->noizEn && noiz->lev) )
+			signal = 2;
+		else
+			signal = 0;
+	}
+	if ( signal ) {
+		res.left = ch->ampLeft * 7 * env->vol / 15 / 8 / signal;
+		res.right = ch->ampRight * 7 * ((env->invRight) ? (env->vol ^ 0x0f) : env->vol) / 15 / 8 / signal;
 	} else {
-		if ((ch->freqEn && ch->lev) || (ch->noizEn && noiz->lev)) {
-			res.left = env->vol;
-			res.right = (env->invRight) ? (env->vol ^ 0x0f) : env->vol;
-		} else {
-			res.left = 0;
-			res.right = 0;
-		}
+		res.left = 0;
+		res.right = 0;
 	}
 	return res;
 }
