@@ -18,8 +18,10 @@
 
 void DebugWin::start(ZXComp* c) {
 	comp = c;
-	disasmAdr = getPrevAdr(GETPC(comp->cpu));
-	fillAll();
+	if (!fillAll()) {
+		disasmAdr = GETPC(comp->cpu);
+		fillAll();
+	}
 	show();
 	comp->vid->debug = 1;
 	comp->debug = 1;
@@ -32,7 +34,6 @@ void DebugWin::stop() {
 	zxExec(comp);		// to prevent immediatelly fetch break, if PC is on breakpoint
 	hide();
 	active = false;
-	tCount = comp->tickCount;
 	emit closed();
 }
 
@@ -162,8 +163,19 @@ void DebugWin::scrollDown() {
 	}
 }
 
+void DebugWin::doStep() {
+	tCount = comp->tickCount;
+	zxExec(comp);
+	if (!fillAll()) {
+		disasmAdr = GETPC(comp->cpu);
+		fillDisasm();
+	}
+}
+
 void DebugWin::keyPressEvent(QKeyEvent* ev) {
 	int i;
+	Z80EX_WORD pc = GETPC(comp->cpu);
+	unsigned char* ptr;
 	int offset = (ui.dumpTable->columnCount() - 1) * (ui.dumpTable->rowCount() - 1);
 	switch(ev->modifiers()) {
 		case Qt::AltModifier:
@@ -174,12 +186,6 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 				case Qt::Key_R:
 					doOpenDump();
 					break;
-				case Qt::Key_Z:
-					if (!ui.dasmTable->hasFocus()) break;
-					SETPC(comp->cpu, ui.dasmTable->item(ui.dasmTable->currentRow(), 0)->text().toInt(NULL,16));
-					fillZ80();
-					fillDisasm();
-					break;
 			}
 			break;
 		case Qt::ControlModifier:
@@ -189,6 +195,12 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					break;
 				case Qt::Key_O:
 					doOpenDump();
+					break;
+				case Qt::Key_Z:
+					if (!ui.dasmTable->hasFocus()) break;
+					SETPC(comp->cpu, ui.dasmTable->item(ui.dasmTable->currentRow(), 0)->text().toInt(NULL,16));
+					fillZ80();
+					fillDisasm();
 					break;
 			}
 			break;
@@ -201,7 +213,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					putBreakPoint();
 					break;
 				case Qt::Key_Home:
-					disasmAdr = GETPC(comp->cpu);
+					disasmAdr = pc;
 					fillDisasm();
 					break;
 				case Qt::Key_PageUp:
@@ -231,16 +243,39 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					scrollDown();
 					break;
 				case Qt::Key_F3:
-					loadFile(comp,"",FT_SNAP,0);
+					loadFile(comp,"",FT_ALL,-1);
 					disasmAdr = GETPC(comp->cpu);
 					fillAll();
 					break;
 				case Qt::Key_F7:
-					tCount = comp->tickCount;
-					zxExec(comp);
-					if (!fillAll()) {
-						disasmAdr = GETPC(comp->cpu);
-						fillDisasm();
+					doStep();
+					break;
+				case Qt::Key_F8:
+					if (!ui.dasmTable->hasFocus()) break;
+					i = memRd(comp->mem, pc);
+					if (((i & 0xc7) == 0xc4) || (i == 0xcd)) {		// call
+						ptr = memGetFptr(comp->mem, pc + 3);
+						*ptr ^= MEM_BRK_TFETCH;
+						stop();
+					} else if ((i & 0xc7) == 0xc7) {			// rst
+						ptr = memGetFptr(comp->mem, pc + 1);
+						*ptr ^= MEM_BRK_TFETCH;
+						stop();
+					} else if (i == 0x10) {
+						ptr = memGetFptr(comp->mem, pc + 2);		// djnz
+						*ptr ^= MEM_BRK_TFETCH;
+						stop();
+					} else if (i == 0xed) {
+						i = memRd(comp->mem, pc + 1);
+						if ((i & 0xf4) == 0xb0) {			// block cmds
+							ptr = memGetFptr(comp->mem, pc + 2);
+							*ptr ^= MEM_BRK_TFETCH;
+							stop();
+						} else {
+							doStep();
+						}
+					} else {
+						doStep();
 					}
 					break;
 				case Qt::Key_F12:
@@ -523,15 +558,19 @@ void DebugWin::fillStack() {
 
 // breakpoint
 
-void DebugWin::putBreakPoint() {
-	int adr;
+int DebugWin::getAdr() {
+	int adr = 0;
 	if (ui.dasmTable->hasFocus()) {
 		adr = ui.dasmTable->item(ui.dasmTable->currentRow(),0)->text().toInt(NULL,16);
-		doBreakPoint(adr);
 	} else if (ui.dumpTable->hasFocus()) {
 		adr = (dumpAdr + (ui.dumpTable->currentColumn() - 1) + ui.dumpTable->currentRow() * (ui.dumpTable->columnCount() - 1)) & 0xffff;
-		doBreakPoint(adr);
 	}
+	return adr;
+}
+
+void DebugWin::putBreakPoint() {
+	int adr = getAdr();
+	doBreakPoint(adr);
 	bpMenu->move(QCursor::pos());
 	bpMenu->show();
 }

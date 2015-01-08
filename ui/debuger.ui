@@ -600,7 +600,10 @@
         <enum>Qt::ScrollBarAlwaysOff</enum>
        </property>
        <property name="editTriggers">
-        <set>QAbstractItemView::AnyKeyPressed|QAbstractItemView::DoubleClicked</set>
+        <set>QAbstractItemView::DoubleClicked|QAbstractItemView::SelectedClicked</set>
+       </property>
+       <property name="tabKeyNavigation">
+        <bool>false</bool>
        </property>
        <property name="selectionMode">
         <enum>QAbstractItemView::SingleSelection</enum>
@@ -700,6 +703,12 @@
        </property>
        <property name="horizontalScrollBarPolicy">
         <enum>Qt::ScrollBarAlwaysOff</enum>
+       </property>
+       <property name="editTriggers">
+        <set>QAbstractItemView::DoubleClicked|QAbstractItemView::SelectedClicked</set>
+       </property>
+       <property name="tabKeyNavigation">
+        <bool>false</bool>
        </property>
        <property name="selectionMode">
         <enum>QAbstractItemView::SingleSelection</enum>

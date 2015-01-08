@@ -10,6 +10,7 @@
 #include <QTimer>
 #include <QItemDelegate>
 #include <QMenu>
+#include <QTableWidget>
 
 #include "ui_dumpdial.h"
 #include "ui_openDump.h"
@@ -65,6 +66,7 @@ class DebugWin : public QDialog {
 		QMenu* bpMenu;
 		Z80EX_WORD bpAdr;
 		void doBreakPoint(Z80EX_WORD);
+		int getAdr();
 
 		Z80EX_WORD disasmAdr;
 		Z80EX_WORD dumpAdr;
@@ -80,6 +82,7 @@ class DebugWin : public QDialog {
 		Z80EX_WORD getPrevAdr(Z80EX_WORD);
 		void scrollDown();
 		void scrollUp();
+		void doStep();
 
 	private slots:
 		void setZ80();

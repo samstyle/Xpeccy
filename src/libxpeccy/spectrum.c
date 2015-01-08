@@ -382,8 +382,12 @@ int zxExec(ZXComp* comp) {
 	comp->tickCount += res1;
 // breakpoints
 	pcreg = GETPC(comp->cpu);
-	if (*memGetFptr(comp->mem, pcreg) & MEM_BRK_FETCH) {
+	unsigned char* ptr = memGetFptr(comp->mem, pcreg);
+	if (*ptr & MEM_BRK_FETCH) {
 		comp->brk = 1;
+	} else if (*ptr & MEM_BRK_TFETCH) {
+		comp->brk = 1;
+		*ptr &= ~MEM_BRK_TFETCH;
 	}
 	if (comp->mem->flag & (MEM_BRK_RD | MEM_BRK_WR)) {
 		comp->brk = 1;

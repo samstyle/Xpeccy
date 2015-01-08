@@ -13,7 +13,7 @@ const unsigned char saaEnvForms[8][33] = {
 	{15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,253},	// 011 : down repeat
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 255},	// 100 : up-down stay
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 253},	// 101 : up-down repeat
-	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 255, 255},	// 110 : up,0 stay
+	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 255},	// 110 : up,0 stay
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,253},		// 111 : up repeat
 };
 
@@ -79,7 +79,7 @@ void saaEnvStep(saaEnv* env, saaChan* ch) {
 			break;
 	}
 	env->vol = saaEnvForms[env->form][env->pos];
-	if (env->lowRes) env->vol &= 0x0e;	// 3bit control (ORLY?)
+//	if (env->lowRes) env->vol &= 0x0e;	// 3bit control (ORLY?)
 }
 
 int saaWrite(saaChip* saa, int adr, unsigned char val) {
