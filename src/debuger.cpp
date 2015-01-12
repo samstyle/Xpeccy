@@ -22,6 +22,7 @@ void DebugWin::start(ZXComp* c) {
 		disasmAdr = GETPC(comp->cpu);
 		fillAll();
 	}
+	move(winPos);
 	show();
 	comp->vid->debug = 1;
 	comp->debug = 1;
@@ -34,6 +35,7 @@ void DebugWin::stop() {
 	zxExec(comp);		// to prevent immediatelly fetch break, if PC is on breakpoint
 	hide();
 	active = false;
+	winPos = pos();
 	emit closed();
 }
 
@@ -102,6 +104,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	disasmAdr = 0;
 	dumpAdr = 0;
 	tCount = 0;
+	trace = 0;
 
 	dumpwin = new QDialog();
 	dui.setupUi(dumpwin);
@@ -170,9 +173,14 @@ void DebugWin::doStep() {
 		disasmAdr = GETPC(comp->cpu);
 		fillDisasm();
 	}
+	if (trace) QTimer::singleShot(10,this,SLOT(doStep()));
 }
 
 void DebugWin::keyPressEvent(QKeyEvent* ev) {
+	if (trace) {
+		trace = 0;
+		return;
+	}
 	int i;
 	Z80EX_WORD pc = GETPC(comp->cpu);
 	unsigned char* ptr;
@@ -201,6 +209,10 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					SETPC(comp->cpu, ui.dasmTable->item(ui.dasmTable->currentRow(), 0)->text().toInt(NULL,16));
 					fillZ80();
 					fillDisasm();
+					break;
+				case Qt::Key_T:
+					trace = 1;
+					doStep();
 					break;
 			}
 			break;
@@ -299,14 +311,40 @@ bool DebugWin::fillAll() {
 	fillZ80();
 	fillMem();
 	fillDump();
+	fillFDC();
 	ui.labRX->setNum(comp->vid->x);
 	ui.labRY->setNum(comp->vid->y);
 	return fillDisasm();
 }
 
+// fdc
+
+void DebugWin::fillFDC() {
+	ui.fdcBusyL->setText(comp->dif->fdc->idle ? "0" : "1");
+	ui.fdcComL->setText(comp->dif->fdc->idle ? "--" : gethexbyte(comp->dif->fdc->com));
+	ui.fdcIrqL->setText(comp->dif->fdc->irq ? "1" : "0");
+	ui.fdcDrqL->setText(comp->dif->fdc->drq ? "1" : "0");
+	ui.fdcTrkL->setText(gethexbyte(comp->dif->fdc->trk));
+	ui.fdcSecL->setText(gethexbyte(comp->dif->fdc->sec));
+	ui.fdcHeadL->setText(comp->dif->fdc->side ? "1" : "0");
+	ui.fdcDataL->setText(gethexbyte(comp->dif->fdc->data));
+	ui.fdcStateL->setText(gethexbyte(comp->dif->fdc->state));
+	ui.fdcSr0L->setText(gethexbyte(comp->dif->fdc->sr0));
+	ui.fdcSr1L->setText(gethexbyte(comp->dif->fdc->sr1));
+	ui.fdcSr2L->setText(gethexbyte(comp->dif->fdc->sr2));
+
+	ui.flpCurL->setText(QString('A' + comp->dif->fdc->flp->id));
+	ui.flpRdyL->setText(comp->dif->fdc->flp->insert ? "1" : "0");
+	ui.flpTrkL->setText(gethexbyte(comp->dif->fdc->flp->trk));
+	ui.flpPosL->setText(QString::number(comp->dif->fdc->flp->pos));
+	ui.flpIdxL->setText(comp->dif->fdc->flp->index ? "1" : "0");
+	ui.flpDataL->setText(comp->dif->fdc->flp->insert ? gethexbyte(flpRd(comp->dif->fdc->flp)): "--");
+	ui.flpMotL->setText(comp->dif->fdc->flp->motor ? "1" : "0");
+}
+
 // z80 regs section
 
-const char* flags = "SZ5H3PNC";
+const char flags[] = "SZ5H3PNC";
 
 QString flagString(int af) {
 	QString flag;
@@ -687,7 +725,7 @@ void DebugWin::saveDumpToDisk(int idx) {
 	int len = dui.leLen->text().toInt(NULL,16);
 	QString name = dui.leStart->text();
 	name.append(".").append(dui.leBank->text());
-	Floppy* flp = comp->bdi->fdc->flop[idx & 3];
+	Floppy* flp = comp->dif->fdc->flop[idx & 3];
 	if (!flp->insert) {
 		flpFormat(flp);
 		flp->insert = 1;

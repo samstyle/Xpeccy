@@ -100,8 +100,8 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.schip2box->addItem(QIcon(":/images/MicrochipLogo.png"),"AY-3-8910",SND_AY);
 	ui.schip2box->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2149",SND_YM);
 #ifdef ISDEBUG
-	setupUi.schip1box->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2203",SND_YM2203);
-	setupUi.schip2box->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2203",SND_YM2203);
+	ui.schip1box->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2203",SND_YM2203);
+	ui.schip2box->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2203",SND_YM2203);
 #endif
 	ui.stereo1box->addItem("Mono",AY_MONO); ui.stereo2box->addItem("Mono",AY_MONO);
 	ui.stereo1box->addItem("ABC",AY_ABC); ui.stereo2box->addItem("ABC",AY_ABC);
@@ -124,9 +124,9 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 // bdi
 // WTF? QtDesigner doesn't save this properties
 	ui.disklist->horizontalHeader()->setVisible(true);
-	ui.diskTypeBox->addItem("None",FDC_NONE);
-	ui.diskTypeBox->addItem("Beta disk (VG93)",FDC_93);
-	ui.diskTypeBox->addItem("+3 DOS (uPD765)",FDC_765);
+	ui.diskTypeBox->addItem("None",DIF_NONE);
+	ui.diskTypeBox->addItem("Beta disk (VG93)",DIF_BDI);
+	ui.diskTypeBox->addItem("+3 DOS (uPD765)",DIF_P3DOS);
 	ui.disklist->addAction(ui.actCopyToTape);
 	ui.disklist->addAction(ui.actSaveHobeta);
 	ui.disklist->addAction(ui.actSaveRaw);
@@ -356,25 +356,25 @@ void SetupWin::start(ZXComp* c) {
 	ui.cbSwapButtons->setChecked(comp->mouse->swapButtons);
 	// setupUi.joyBox->setVisible(false);
 // dos
-	ui.diskTypeBox->setCurrentIndex(ui.diskTypeBox->findData(comp->bdi->fdc->type));
+	ui.diskTypeBox->setCurrentIndex(ui.diskTypeBox->findData(comp->dif->type));
 	ui.bdtbox->setChecked(fdcFlag & FDC_FAST);
 	ui.mempaths->setChecked(conf.storePaths);
-	Floppy* flp = comp->bdi->fdc->flop[0];
+	Floppy* flp = comp->dif->fdc->flop[0];
 	ui.apathle->setText(QString::fromLocal8Bit(flp->path));
 		ui.a80box->setChecked(flp->trk80);
 		ui.adsbox->setChecked(flp->doubleSide);
 		ui.awpbox->setChecked(flp->protect);
-	flp = comp->bdi->fdc->flop[1];
+	flp = comp->dif->fdc->flop[1];
 	ui.bpathle->setText(QString::fromLocal8Bit(flp->path));
 		ui.b80box->setChecked(flp->trk80);
 		ui.bdsbox->setChecked(flp->doubleSide);
 		ui.bwpbox->setChecked(flp->protect);
-	flp = comp->bdi->fdc->flop[2];
+	flp = comp->dif->fdc->flop[2];
 	ui.cpathle->setText(QString::fromLocal8Bit(flp->path));
 		ui.c80box->setChecked(flp->trk80);
 		ui.cdsbox->setChecked(flp->doubleSide);
 		ui.cwpbox->setChecked(flp->protect);
-	flp = comp->bdi->fdc->flop[3];
+	flp = comp->dif->fdc->flop[3];
 	ui.dpathle->setText(QString::fromLocal8Bit(flp->path));
 		ui.d80box->setChecked(flp->trk80);
 		ui.ddsbox->setChecked(flp->doubleSide);
@@ -495,26 +495,27 @@ void SetupWin::apply() {
 	conf.keyMapName = kmname;
 	loadKeys();
 // bdi
-	comp->bdi->fdc->type = ui.diskTypeBox->itemData(ui.diskTypeBox->currentIndex()).toInt();
+//	comp->bdi->fdc->type = ui.diskTypeBox->itemData(ui.diskTypeBox->currentIndex()).toInt();
+	difSetHW(comp->dif, ui.diskTypeBox->itemData(ui.diskTypeBox->currentIndex()).toInt());
 	setFlagBit(ui.bdtbox->isChecked(),&fdcFlag,FDC_FAST);
 	conf.storePaths = ui.mempaths->isChecked() ? 1 : 0;
 
-	Floppy* flp = comp->bdi->fdc->flop[0];
+	Floppy* flp = comp->dif->fdc->flop[0];
 	flp->trk80 = ui.a80box->isChecked() ? 1 : 0;
 	flp->doubleSide = ui.adsbox->isChecked() ? 1 : 0;
 	flp->protect = ui.awpbox->isChecked() ? 1 : 0;
 
-	flp = comp->bdi->fdc->flop[1];
+	flp = comp->dif->fdc->flop[1];
 	flp->trk80 = ui.b80box->isChecked() ? 1 : 0;
 	flp->doubleSide = ui.bdsbox->isChecked() ? 1 : 0;
 	flp->protect = ui.bwpbox->isChecked() ? 1 : 0;
 
-	flp = comp->bdi->fdc->flop[2];
+	flp = comp->dif->fdc->flop[2];
 	flp->trk80 = ui.c80box->isChecked() ? 1 : 0;
 	flp->doubleSide = ui.cdsbox->isChecked() ? 1 : 0;
 	flp->protect = ui.cwpbox->isChecked() ? 1 : 0;
 
-	flp = comp->bdi->fdc->flop[3];
+	flp = comp->dif->fdc->flop[3];
 	flp->trk80 = ui.d80box->isChecked() ? 1 : 0;
 	flp->doubleSide = ui.ddsbox->isChecked() ? 1 : 0;
 	flp->protect = ui.dwpbox->isChecked() ? 1 : 0;
@@ -927,7 +928,7 @@ void SetupWin::copyToTape() {
 	QModelIndexList idx = ui.disklist->selectionModel()->selectedRows();
 	if (idx.size() == 0) return;
 	TRFile cat[128];
-	flpGetTRCatalog(comp->bdi->fdc->flop[dsk],cat);
+	flpGetTRCatalog(comp->dif->fdc->flop[dsk],cat);
 	// std::vector<TRFile> cat = flpGetTRCatalog(comp->bdi->flop[dsk]);
 	int row;
 	unsigned char* buf = new unsigned char[0xffff];
@@ -936,7 +937,7 @@ void SetupWin::copyToTape() {
 	int savedFiles = 0;
 	for (int i=0; i<idx.size(); i++) {
 		row = idx[i].row();
-		if (flpGetSectorsData(comp->bdi->fdc->flop[dsk],cat[row].trk, cat[row].sec+1, buf, cat[row].slen)) {
+		if (flpGetSectorsData(comp->dif->fdc->flop[dsk],cat[row].trk, cat[row].sec+1, buf, cat[row].slen)) {
 			if (cat[row].slen == (cat[row].hlen + ((cat[row].llen == 0) ? 0 : 1))) {
 				start = (cat[row].hst << 8) + cat[row].lst;
 				len = (cat[row].hlen << 8) + cat[row].llen;
@@ -965,7 +966,7 @@ void SetupWin::diskToHobeta() {
 	QString dir = QFileDialog::getExistingDirectory(this,"Save file(s) to...",QDir::homePath());
 	if (dir == "") return;
 	std::string sdir = std::string(dir.toLocal8Bit().data()) + std::string(SLASH);
-	Floppy* flp = comp->bdi->fdc->flop[ui.disktabs->currentIndex()];		// selected floppy
+	Floppy* flp = comp->dif->fdc->flop[ui.disktabs->currentIndex()];		// selected floppy
 	int savedFiles = 0;
 	for (int i=0; i<idx.size(); i++) {
 		if (saveHobetaFile(flp,idx[i].row(),sdir.c_str()) == ERR_OK) savedFiles++;
@@ -980,7 +981,7 @@ void SetupWin::diskToRaw() {
 	QString dir = QFileDialog::getExistingDirectory(this,"Save file(s) to...","",QFileDialog::DontUseNativeDialog | QFileDialog::ShowDirsOnly);
 	if (dir == "") return;
 	std::string sdir = std::string(dir.toLocal8Bit().data()) + std::string(SLASH);
-	Floppy* flp = comp->bdi->fdc->flop[ui.disktabs->currentIndex()];
+	Floppy* flp = comp->dif->fdc->flop[ui.disktabs->currentIndex()];
 	int savedFiles = 0;
 	for (int i=0; i<idx.size(); i++) {
 		if (saveRawFile(flp,idx[i].row(),sdir.c_str()) == ERR_OK) savedFiles++;
@@ -1067,13 +1068,13 @@ void SetupWin::copyToDisk() {
 			return;
 		}
 	}
-	if (!(comp->bdi->fdc->flop[dsk]->insert)) newdisk(dsk);
+	if (!(comp->dif->fdc->flop[dsk]->insert)) newdisk(dsk);
 	TapeBlockInfo inf = tapGetBlockInfo(comp->tape,dataBlock);
 	unsigned char* dt = new unsigned char[inf.size];
 	tapGetBlockData(comp->tape,dataBlock,dt);
 	unsigned char* buf = new unsigned char[256];
 	int pos = 1;	// skip block type mark
-	switch(flpCreateDescriptor(comp->bdi->fdc->flop[dsk],&dsc)) {
+	switch(flpCreateDescriptor(comp->dif->fdc->flop[dsk],&dsc)) {
 		case ERR_SHIT: shitHappens("Yes, it happens"); break;
 		case ERR_MANYFILES: shitHappens("Too many files @ disk"); break;
 		case ERR_NOSPACE: shitHappens("Not enough space @ disk"); break;
@@ -1083,7 +1084,7 @@ void SetupWin::copyToDisk() {
 					buf[(pos-1) & 0xff] = (pos < inf.size) ? dt[pos] : 0x00;
 					pos++;
 				} while ((pos & 0xff) != 1);
-				flpPutSectorData(comp->bdi->fdc->flop[dsk],dsc.trk, dsc.sec+1, buf, 256);
+				flpPutSectorData(comp->dif->fdc->flop[dsk],dsc.trk, dsc.sec+1, buf, 256);
 				dsc.sec++;
 				if (dsc.sec > 15) {
 					dsc.sec = 0;
@@ -1107,14 +1108,14 @@ void SetupWin::fillDiskCat() {
 	wid->setColumnWidth(5,50);
 //	wid->setColumnWidth(6,40);
 	QTableWidgetItem* itm;
-	if (!(comp->bdi->fdc->flop[dsk]->insert)) {
+	if (!(comp->dif->fdc->flop[dsk]->insert)) {
 		wid->setEnabled(false);
 		wid->setRowCount(0);
 	} else {
 		wid->setEnabled(true);
-		if (flpGet(comp->bdi->fdc->flop[dsk],FLP_DISKTYPE) == DISK_TYPE_TRD) {
+		if (flpGet(comp->dif->fdc->flop[dsk],FLP_DISKTYPE) == DISK_TYPE_TRD) {
 			TRFile cat[128];
-			int catSize = flpGetTRCatalog(comp->bdi->fdc->flop[dsk],cat);
+			int catSize = flpGetTRCatalog(comp->dif->fdc->flop[dsk],cat);
 			// std::vector<TRFile> cat = flpGetTRCatalog(comp->bdi->flop[dsk]);
 			wid->setRowCount(catSize);
 			for (int i=0; i<catSize; i++) {
@@ -1162,7 +1163,7 @@ void SetupWin::updvolumes() {
 // disk
 
 void SetupWin::newdisk(int idx) {
-	Floppy *flp = comp->bdi->fdc->flop[idx];
+	Floppy *flp = comp->dif->fdc->flop[idx];
 	if (!saveChangedDisk(comp,idx & 3)) return;
 	flpFormat(flp);
 	flp->path = (char*)realloc(flp->path,sizeof(char));
@@ -1182,21 +1183,21 @@ void SetupWin::loadb() {loadFile(comp,"",FT_DISK,1); updatedisknams();}
 void SetupWin::loadc() {loadFile(comp,"",FT_DISK,2); updatedisknams();}
 void SetupWin::loadd() {loadFile(comp,"",FT_DISK,3); updatedisknams();}
 
-void SetupWin::savea() {Floppy* flp = comp->bdi->fdc->flop[0]; if (flp->insert) saveFile(comp,flp->path,FT_DISK,0);}
-void SetupWin::saveb() {Floppy* flp = comp->bdi->fdc->flop[1]; if (flp->insert) saveFile(comp,flp->path,FT_DISK,1);}
-void SetupWin::savec() {Floppy* flp = comp->bdi->fdc->flop[2]; if (flp->insert) saveFile(comp,flp->path,FT_DISK,2);}
-void SetupWin::saved() {Floppy* flp = comp->bdi->fdc->flop[3]; if (flp->insert) saveFile(comp,flp->path,FT_DISK,3);}
+void SetupWin::savea() {Floppy* flp = comp->dif->fdc->flop[0]; if (flp->insert) saveFile(comp,flp->path,FT_DISK,0);}
+void SetupWin::saveb() {Floppy* flp = comp->dif->fdc->flop[1]; if (flp->insert) saveFile(comp,flp->path,FT_DISK,1);}
+void SetupWin::savec() {Floppy* flp = comp->dif->fdc->flop[2]; if (flp->insert) saveFile(comp,flp->path,FT_DISK,2);}
+void SetupWin::saved() {Floppy* flp = comp->dif->fdc->flop[3]; if (flp->insert) saveFile(comp,flp->path,FT_DISK,3);}
 
-void SetupWin::ejcta() {saveChangedDisk(comp,0); flpEject(comp->bdi->fdc->flop[0]); updatedisknams();}
-void SetupWin::ejctb() {saveChangedDisk(comp,1); flpEject(comp->bdi->fdc->flop[1]); updatedisknams();}
-void SetupWin::ejctc() {saveChangedDisk(comp,2); flpEject(comp->bdi->fdc->flop[2]); updatedisknams();}
-void SetupWin::ejctd() {saveChangedDisk(comp,3); flpEject(comp->bdi->fdc->flop[3]); updatedisknams();}
+void SetupWin::ejcta() {saveChangedDisk(comp,0); flpEject(comp->dif->fdc->flop[0]); updatedisknams();}
+void SetupWin::ejctb() {saveChangedDisk(comp,1); flpEject(comp->dif->fdc->flop[1]); updatedisknams();}
+void SetupWin::ejctc() {saveChangedDisk(comp,2); flpEject(comp->dif->fdc->flop[2]); updatedisknams();}
+void SetupWin::ejctd() {saveChangedDisk(comp,3); flpEject(comp->dif->fdc->flop[3]); updatedisknams();}
 
 void SetupWin::updatedisknams() {
-	ui.apathle->setText(QString::fromLocal8Bit(comp->bdi->fdc->flop[0]->path));
-	ui.bpathle->setText(QString::fromLocal8Bit(comp->bdi->fdc->flop[1]->path));
-	ui.cpathle->setText(QString::fromLocal8Bit(comp->bdi->fdc->flop[2]->path));
-	ui.dpathle->setText(QString::fromLocal8Bit(comp->bdi->fdc->flop[3]->path));
+	ui.apathle->setText(QString::fromLocal8Bit(comp->dif->fdc->flop[0]->path));
+	ui.bpathle->setText(QString::fromLocal8Bit(comp->dif->fdc->flop[1]->path));
+	ui.cpathle->setText(QString::fromLocal8Bit(comp->dif->fdc->flop[2]->path));
+	ui.dpathle->setText(QString::fromLocal8Bit(comp->dif->fdc->flop[3]->path));
 	fillDiskCat();
 }
 

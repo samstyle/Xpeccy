@@ -10,7 +10,7 @@ extern "C" {
 #include "video.h"
 #include "input.h"
 #include "tape.h"
-#include "bdi.h"
+#include "fdc.h"
 #include "ayym.h"		// AY/YM/TS sound
 #include "saa1099.h"
 #include "soundrive.h"		// covox/soundrive
@@ -65,7 +65,7 @@ struct ZXComp {
 	Joystick* joy;
 	Mouse* mouse;
 	Tape* tape;
-	BDI* bdi;
+	DiskIF* dif;
 	IDE* ide;
 	SDCard* sdc;
 	GSound* gs;

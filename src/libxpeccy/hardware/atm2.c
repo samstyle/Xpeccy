@@ -118,14 +118,14 @@ xPort atm2PortMap[] = {
 
 void atm2Out(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int dos) {
 	if (~comp->prt1 & 2) dos = 1;
-	bdiOut(comp->bdi, port, val, dos);
+	difOut(comp->dif, port, val, dos);
 	hwOut(atm2PortMap, comp, port, val, dos);
 }
 
 Z80EX_BYTE atm2In(ZXComp* comp, Z80EX_WORD port, int dos) {
 	Z80EX_BYTE res = 0xff;
 	if (~comp->prt1 & 2) dos = 1;
-	if (bdiIn(comp->bdi, port, &res, dos)) return res;
+	if (difIn(comp->dif, port, &res, dos)) return res;
 	res = hwIn(atm2PortMap, comp, port, dos);
 	return res;
 }

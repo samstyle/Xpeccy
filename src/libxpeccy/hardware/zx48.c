@@ -42,12 +42,12 @@ xPort spePortMap[] = {
 };
 
 void speOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int dos) {
-	bdiOut(comp->bdi, port, val, dos);
+	difOut(comp->dif, port, val, dos);
 	hwOut(spePortMap, comp, port, val, dos);
 }
 
 Z80EX_BYTE speIn(ZXComp* comp, Z80EX_WORD port, int dos) {
 	Z80EX_BYTE res;
-	if (bdiIn(comp->bdi, port, &res, dos)) return res;
+	if (difIn(comp->dif, port, &res, dos)) return res;
 	return hwIn(spePortMap, comp, port, dos);
 }

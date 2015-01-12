@@ -97,13 +97,13 @@ xPort p1mPortMap[] = {
 };
 
 void p1mOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int dos) {
-	bdiOut(comp->bdi, port, val, dos);
+	difOut(comp->dif, port, val, dos);
 	hwOut(p1mPortMap, comp, port, val, dos);
 }
 
 Z80EX_BYTE p1mIn(ZXComp* comp, Z80EX_WORD port, int dos) {
 	Z80EX_BYTE res = 0xff;
-	if (bdiIn(comp->bdi, port, &res, dos)) return res;
+	if (difIn(comp->dif, port, &res, dos)) return res;
 	res = hwIn(p1mPortMap, comp, port, dos);
 	return res;
 }

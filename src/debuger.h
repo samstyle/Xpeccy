@@ -49,6 +49,10 @@ class DebugWin : public QDialog {
 	signals:
 		void closed();
 	private:
+		unsigned trace:1;
+
+		QPoint winPos;
+
 		ZXComp* comp;
 		bool block;
 		long tCount;
@@ -78,11 +82,11 @@ class DebugWin : public QDialog {
 		void fillDump();
 		bool fillDisasm();
 		void fillStack();
+		void fillFDC();
 
 		Z80EX_WORD getPrevAdr(Z80EX_WORD);
 		void scrollDown();
 		void scrollUp();
-		void doStep();
 
 	private slots:
 		void setZ80();
@@ -98,6 +102,8 @@ class DebugWin : public QDialog {
 		void chDumpFile();
 		void dmpStartOpen();
 		void loadDump();
+
+		void doStep();
 
 		void doSaveDump();
 		void dmpLimChanged();

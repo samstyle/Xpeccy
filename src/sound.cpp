@@ -61,10 +61,10 @@ void sndSync(ZXComp* comp, int fast) {
 	if (fast != 0) return;
 	if (sndOutput == NULL) return;
 	lev = comp->beeplev ? conf.snd.vol.beep : 0;
-	if (comp->tape->on) {
-		lev += (comp->tape->levRec ? conf.snd.vol.tape : 0) | (comp->tape->levPlay ? conf.snd.vol.tape : 0);
+	if (comp->tape->levRec) lev += conf.snd.vol.tape;
+	if (comp->tape->on && comp->tape->levPlay) {
+		lev += conf.snd.vol.tape;
 	}
-
 	lev *= 0.16;
 	levl = lev;
 	levr = lev;

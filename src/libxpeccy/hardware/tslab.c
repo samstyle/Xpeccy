@@ -84,7 +84,7 @@ void tslUpdatePal(ZXComp* comp) {
 }
 
 Z80EX_BYTE tslMRd(ZXComp* comp, Z80EX_WORD adr, int m1) {
-	if (m1 && (comp->bdi->fdc->type == FDC_93)) {
+	if (m1 && (comp->dif->type == DIF_BDI)) {
 		if (comp->dosen && (adr > 0x4000) && (!comp->tsconf.vdos)) {
 			comp->dosen = 0;
 			if (p7FFD & 0x10) comp->hw->mapMem(comp);	// don't switch ROM0 to ROM2
@@ -767,10 +767,10 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 			break;
 		case 0x29af:
 			// comp->tsconf.FDDVirt = val;
-			comp->bdi->fdc->flop[0]->virt = (val & 0x01) ? 1 : 0;
-			comp->bdi->fdc->flop[1]->virt = (val & 0x02) ? 1 : 0;
-			comp->bdi->fdc->flop[2]->virt = (val & 0x04) ? 1 : 0;
-			comp->bdi->fdc->flop[3]->virt = (val & 0x08) ? 1 : 0;
+			comp->dif->fdc->flop[0]->virt = (val & 0x01) ? 1 : 0;
+			comp->dif->fdc->flop[1]->virt = (val & 0x02) ? 1 : 0;
+			comp->dif->fdc->flop[2]->virt = (val & 0x04) ? 1 : 0;
+			comp->dif->fdc->flop[3]->virt = (val & 0x08) ? 1 : 0;
 			break;
 		case 0x2aaf:			// INT mask
 			comp->vid->intMask = val;
@@ -796,25 +796,25 @@ void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int bdiz) {
 						comp->tsconf.vdos = 0;
 						tslMapMem(comp);
 					} else {
-						if (comp->bdi->fdc->fptr->virt) {
+						if (comp->dif->fdc->flp->virt) {
 							comp->tsconf.vdos = 1;
 							tslMapMem(comp);
 //							if (((port & 0xff) == 0x1f) && ((val & 0xe0) == 0xa0)) comp->flag |= ZX_BREAK;
 						} else {
-							bdiOut(comp->bdi, port, val, bdiz);
+							difOut(comp->dif, port, val, bdiz);
 						}
 					}
 					break;
 				case 0xff:
 					if (!comp->dosen) break;
-					comp->bdi->fdc->fptr = comp->bdi->fdc->flop[val & 3];
-					if (comp->bdi->fdc->fptr->virt) {
+					comp->dif->fdc->flp = comp->dif->fdc->flop[val & 3];
+					if (comp->dif->fdc->flp->virt) {
 						comp->tsconf.vdos = 1;
 						tslMapMem(comp);
 					} else if (comp->tsconf.vdos) {
 						// comp->bdi->fdc->fptr = comp->bdi->fdc->flop[val & 3];	// out VGSys[1:0]
 					} else {
-						bdiOut(comp->bdi, port, val, bdiz);
+						difOut(comp->dif, port, val, bdiz);
 					}
 					break;
 				case 0xf6:
@@ -927,11 +927,11 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 							comp->tsconf.vdos = 0;
 							tslMapMem(comp);
 						} else {
-							if (comp->bdi->fdc->fptr->virt) {
+							if (comp->dif->fdc->flp->virt) {
 								comp->tsconf.vdos = 1;
 								tslMapMem(comp);
 							} else {
-								bdiIn(comp->bdi, port, &res, bdiz);
+								difIn(comp->dif, port, &res, bdiz);
 							}
 						}
 					} else {
@@ -940,11 +940,11 @@ Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int bdiz) {
 					break;
 				case 0xff:
 					if (!bdiz) break;
-					if (comp->bdi->fdc->fptr->virt) {
+					if (comp->dif->fdc->flp->virt) {
 						comp->tsconf.vdos = 1;
 						tslMapMem(comp);
 					} else {
-						bdiIn(comp->bdi,port,&res,bdiz);
+						difIn(comp->dif,port,&res,bdiz);
 					}
 					break;
 				case 0xf6:

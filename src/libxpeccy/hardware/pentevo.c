@@ -23,7 +23,7 @@ void evoSetVideoMode(ZXComp* comp) {
 }
 
 Z80EX_BYTE evoMRd(ZXComp* comp, Z80EX_WORD adr, int m1) {
-	if (m1 && (comp->bdi->fdc->type == FDC_93)) {
+	if (m1 && (comp->dif->type == DIF_BDI)) {
 		if (comp->dosen && (memGetBankPtr(comp->mem,adr)->type == MEM_RAM) && (comp->prt1 & 0x40)) {
 			comp->dosen = 0;
 			if (comp->prt0 & 0x10) comp->hw->mapMem(comp);
@@ -142,7 +142,7 @@ Z80EX_BYTE evoInKMice(ZXComp* comp, Z80EX_WORD port) {
 
 Z80EX_BYTE evoInBDI(ZXComp* comp, Z80EX_WORD port) {
 	Z80EX_BYTE res;
-	bdiIn(comp->bdi, port, &res, 1);
+	difIn(comp->dif, port, &res, 1);
 	return res;
 }
 
@@ -240,11 +240,11 @@ void evoOutF7(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 }
 
 void evoOutBDI(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {		// dos
-	bdiOut(comp->bdi, port, val, 1);
+	difOut(comp->dif, port, val, 1);
 }
 
 void evoOutFF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {		// dos
-	bdiOut(comp->bdi, 0xff, val, 1);
+	difOut(comp->dif, 0xff, val, 1);
 	if (comp->prt1 & 0x80) return;
 	val ^= 0xff;	// inverse colors
 	int adr = comp->vid->brdcol & 0x0f;

@@ -22,6 +22,7 @@ void p3OutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 
 void p3Out1FFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	comp->prt1 = val;
+	comp->dif->fdc->flp->motor = (val & 8) ? 1 : 0;
 	pl2MapMem(comp);
 }
 
@@ -50,13 +51,13 @@ xPort p3PortMap[] = {
 };
 
 void pl3Out(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int dos) {
-	bdiOut(comp->bdi, port, val, 0);
+	difOut(comp->dif, port, val, 0);
 	hwOut(p3PortMap, comp, port, val, 0);
 }
 
 Z80EX_BYTE pl3In(ZXComp* comp, Z80EX_WORD port, int dos) {
 	Z80EX_BYTE res = 0xff;
-	if (bdiIn(comp->bdi, port, &res, 0)) return res;
+	if (difIn(comp->dif, port, &res, 0)) return res;
 	res = hwIn(p3PortMap, comp, port, 0);
 	return res;
 }

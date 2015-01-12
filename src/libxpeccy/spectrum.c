@@ -121,7 +121,7 @@ Z80EX_BYTE iord(CPUCONT Z80EX_WORD port, void* ptr) {
 			return 0xff;
 		}
 	}
-	bdiz = (comp->dosen && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
+	bdiz = (comp->dosen && (comp->dif->type == DIF_BDI)) ? 1 : 0;
 // request to external devices
 	if (ideIn(comp->ide, port, &res, bdiz)) return res;
 	if (gsIn(comp->gs, port, &res)) return res;
@@ -187,7 +187,7 @@ ZXComp* zxCreate() {
 	comp->mouse = mouseCreate();
 // storage
 	comp->tape = tapCreate();
-	comp->bdi = bdiCreate();
+	comp->dif = difCreate(DIF_NONE);
 	comp->ide = ideCreate(IDE_NONE);
 	comp->ide->smuc.cmos = &comp->cmos;
 	comp->sdc = sdcCreate();
@@ -232,7 +232,7 @@ void zxDestroy(ZXComp* comp) {
 	joyDestroy(comp->joy);
 	mouseDestroy(comp->mouse);
 	tapDestroy(comp->tape);
-	bdiDestroy(comp->bdi);
+	difDestroy(comp->dif);
 	ideDestroy(comp->ide);
 	tsDestroy(comp->ts);
 	gsDestroy(comp->gs);
@@ -257,7 +257,7 @@ void zxReset(ZXComp* comp,int res) {
 	vidSetMode(comp->vid,VID_NORMAL);
 	comp->dosen = 0;
 	comp->vid->intMask = 1;
-	bdiReset(comp->bdi);
+	difReset(comp->dif);	//	bdiReset(comp->bdi);
 	if (comp->gs->reset) gsReset(comp->gs);
 	tsReset(comp->ts);
 	ideReset(comp->ide);
@@ -316,7 +316,7 @@ int zxExec(ZXComp* comp) {
 	if (comp->padr) {
 		tapSync(comp->tape,comp->tapCount);
 		comp->tapCount = 0;
-		bdiz = (comp->dosen && (comp->bdi->fdc->type == FDC_93)) ? 1 : 0;
+		bdiz = (comp->dosen && (comp->dif->type == DIF_BDI)) ? 1 : 0;
 		ideOut(comp->ide, comp->padr, comp->pval, bdiz);
 		gsOut(comp->gs, comp->padr, comp->pval);
 		if (!bdiz) saaWrite(comp->saa, comp->padr, comp->pval);		// bdi ports must be closed!
@@ -396,7 +396,7 @@ int zxExec(ZXComp* comp) {
 // sync devices
 	comp->tapCount += nsTime;
 	if (comp->gs->enable) comp->gs->sync += nsTime;
-	if (comp->bdi->fdc->type != FDC_NONE) bdiSync(comp->bdi, nsTime);
+	difSync(comp->dif, nsTime);
 // return ns eated @ this step
 	return nsTime;
 }

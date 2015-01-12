@@ -60,6 +60,7 @@ int flpNext(Floppy* flp, int fdcSide) {
 			flp->pos = 0;
 			res = 1;
 		}
+		flp->index = (flp->pos < 4) ? 1 : 0;		// ~90ms index pulse
 		flp->field = flp->data[flp->rtrk].field[flp->pos];
 	} else {
 		flp->field = 0;
@@ -181,7 +182,7 @@ void flpFillFields(Floppy* flp,int tr, int fcrc) {
 			if (flp->data[tr].byte[i] == 0xfb) {
 				cpos = bpos;
 				fld = 2;
-				bcnt = (128 << sct);
+				bcnt = (128 << (sct & 3));
 			}
 			if (flp->data[tr].byte[i] == 0xf8) {
 				cpos = bpos;

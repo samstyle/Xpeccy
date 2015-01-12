@@ -247,6 +247,7 @@ int prfLoad(std::string nm) {
 	xProfile* prf = findProfile(nm);
 	if (prf == NULL) return PLOAD_NF;
 	ZXComp* comp = prf->zx;
+//	DiskIF* dif;
 
 	std::string cfname = conf.path.confDir + SLASH + prf->file;
 	std::ifstream file(cfname.c_str());
@@ -330,11 +331,11 @@ int prfLoad(std::string nm) {
 					if (pnam == "path" && conf.storePaths) loadFile(comp,pval.c_str(),FT_TAPE,0);
 					break;
 				case PS_DISK:
-					if (pnam == "A") setDiskString(comp,comp->bdi->fdc->flop[0],pval);
-					if (pnam == "B") setDiskString(comp,comp->bdi->fdc->flop[1],pval);
-					if (pnam == "C") setDiskString(comp,comp->bdi->fdc->flop[2],pval);
-					if (pnam == "D") setDiskString(comp,comp->bdi->fdc->flop[3],pval);
-					if (pnam == "type") comp->bdi->fdc->type = atoi(pval.c_str());
+					if (pnam == "A") setDiskString(comp,comp->dif->fdc->flop[0],pval);
+					if (pnam == "B") setDiskString(comp,comp->dif->fdc->flop[1],pval);
+					if (pnam == "C") setDiskString(comp,comp->dif->fdc->flop[2],pval);
+					if (pnam == "D") setDiskString(comp,comp->dif->fdc->flop[3],pval);
+					if (pnam == "type") difSetHW(comp->dif, atoi(pval.c_str()));
 					break;
 				case PS_MACHINE:
 					if (pnam == "current") prf->hwName = pval;
@@ -494,12 +495,12 @@ int prfSave(std::string nm) {
 	file << "path = " << (comp->tape->path ? comp->tape->path : "") << "\n";
 
 	file << "\n[DISK]\n\n";
-	file << "type = " << int2str(comp->bdi->fdc->type) << "\n";
+	file << "type = " << int2str(comp->dif->type) << "\n";
 //	file << "fast = " << YESNO(comp->bdi->fdc->turbo) << "\n";
-	file << "A = " << getDiskString(comp->bdi->fdc->flop[0]).c_str() << "\n";
-	file << "B = " << getDiskString(comp->bdi->fdc->flop[1]).c_str() << "\n";
-	file << "C = " << getDiskString(comp->bdi->fdc->flop[2]).c_str() << "\n";
-	file << "D = " << getDiskString(comp->bdi->fdc->flop[3]).c_str() << "\n";
+	file << "A = " << getDiskString(comp->dif->fdc->flop[0]).c_str() << "\n";
+	file << "B = " << getDiskString(comp->dif->fdc->flop[1]).c_str() << "\n";
+	file << "C = " << getDiskString(comp->dif->fdc->flop[2]).c_str() << "\n";
+	file << "D = " << getDiskString(comp->dif->fdc->flop[3]).c_str() << "\n";
 
 	file << "\n[IDE]\n\n";
 	file << "iface = " << int2str(comp->ide->type) << "\n";

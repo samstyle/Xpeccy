@@ -52,8 +52,8 @@ void loadUDITrack(Floppy* flp,std::ifstream* file, unsigned char tr, bool sd) {
 void getUDIBitField(Floppy* flp,unsigned char tr, unsigned char* buf) {
 	int i;
 	int msk=0x01;
-	unsigned char* fieldBuf = new unsigned char[TRACKLEN];
-	unsigned char* trackBuf = new unsigned char[TRACKLEN];
+	unsigned char fieldBuf[TRACKLEN];
+	unsigned char trackBuf[TRACKLEN];
 	flpGetTrack(flp,tr,trackBuf);
 	flpGetTrackFields(flp,tr,fieldBuf);
 	for (i = 0; i < TRACKLEN; i++) {
@@ -91,8 +91,8 @@ int loadUDI(Floppy* flp, const char* name) {
 }
 
 int saveUDI(Floppy* flp, const char* name) {
-	const char* sign = "UDI!";
-	unsigned char* img = new unsigned char[0x112cf4];	// 0x112cf4 for 160 tracks in UDI
+	const char sign[] = "UDI!";
+	unsigned char img[0x112cf4];	// 0x112cf4 for 160 tracks in UDI
 	unsigned char* dptr = img;
 	unsigned char* bptr;
 	int i,j;

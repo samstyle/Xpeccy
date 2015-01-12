@@ -70,7 +70,7 @@ unsigned char mbt;
 // mem
 
 Z80EX_BYTE stdMRd(ZXComp* comp, Z80EX_WORD adr, int m1) {
-	if (m1 && (comp->bdi->fdc->type == FDC_93)) {
+	if (m1 && (comp->dif->type == DIF_BDI)) {
 		mbt = memGetBankPtr(comp->mem,adr)->type;
 		if (comp->dosen && (mbt == MEM_RAM)) {
 			comp->dosen = 0;
