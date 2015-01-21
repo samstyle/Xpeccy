@@ -161,6 +161,8 @@ DiskIF* difCreate(int type) {
 	DiskIF* dif = (DiskIF*)malloc(sizeof(DiskIF));
 	dif->fdc = (FDC*)malloc(sizeof(FDC));
 	memset(dif->fdc,0x00,sizeof(FDC));
+	dif->fdc->wait = -1;
+	dif->fdc->plan = NULL;
 	dif->fdc->flop[0] = flpCreate(0);
 	dif->fdc->flop[1] = flpCreate(1);
 	dif->fdc->flop[2] = flpCreate(2);

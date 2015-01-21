@@ -71,6 +71,7 @@ class MainWin : public QWidget {
 		ZXComp* comp;
 		void checkState();
 		void setProfile(std::string);
+		void loadLabels(const char*);
 	private:
 		unsigned grabMice:1;
 		unsigned block:1;

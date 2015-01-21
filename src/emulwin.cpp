@@ -73,6 +73,7 @@ void MainWin::updateWindow() {
 	scrImg = QImage(screen, szw, szh, QImage::Format_RGB888);
 	updateHead();
 	block = 0;
+	if (dbg->isVisible()) dbg->fillAll();
 }
 
 bool MainWin::saveChanged() {
@@ -992,6 +993,33 @@ void MainWin::chVMode(QAction* act) {
 	} else if (mode == -1) {
 		comp->vid->noScreen = act->isChecked() ? 1 : 0;
 		vidSetMode(comp->vid, VID_CURRENT);
+	}
+}
+
+// labels
+
+void MainWin::loadLabels(const char* nm) {
+	QFile file(nm);
+	if (!file.open(QFile::ReadOnly)) return;
+	QString line;
+	QStringList arr;
+	xLabel lab;
+	int bank;
+	dbg->labels.clear();
+	while(!file.atEnd()) {
+		line = file.readLine();
+		arr = line.split(QRegExp("[: \r\n]"),QString::SkipEmptyParts);
+		if (arr.size() == 3) {
+			bank = arr.at(0).toInt(NULL,16);
+			lab.adr = arr.at(1).toInt(NULL,16) & 0x3fff;
+			switch (bank) {
+				case 0x05: lab.adr |= 0x4000; break;
+				case 0x02: lab.adr |= 0x8000; break;
+				default: lab.adr |= 0xc000; break;
+			}
+			lab.name = arr.at(2);
+			dbg->labels.append(lab);
+		}
 	}
 }
 

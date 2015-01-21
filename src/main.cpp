@@ -42,30 +42,48 @@ int main(int ac,char** av) {
 	printf("Using z80ex ver %d.%d\n",ver->major, ver->minor);
 #endif
 	QApplication app(ac,av,true);
-	char* profName = NULL;
-	std::vector<char*> files;
 	int i;
 	MainWin mwin;
 	char* parg;
+	unsigned char* ptr = NULL;
+	int adr = 0x4000;
 	i = 1;
+	mwin.setProfile("");
 	while (i < ac) {
 		parg = av[i++];
-		if (((strcmp(parg,"-p") == 0) || (strcmp(parg,"--profile") == 0)) && (i < ac)) profName = av[i++];
-		else files.push_back(parg);
-	}
-	if (profName) {
-		mwin.setProfile(std::string(profName));
-	} else {
-		mwin.setProfile("");
+		if (((strcmp(parg,"-p") == 0) || (strcmp(parg,"--profile") == 0)) && (i < ac)) {
+			mwin.setProfile(std::string(av[i]));
+			i++;
+		} else if ((strcmp(parg,"-d") == 0) || (strcmp(parg,"--debug") == 0)) {
+			mwin.doDebug();
+		} else if ((strcmp(parg,"--pc") == 0) && (i < ac)) {
+			SETPC(mwin.comp->cpu, strtol(av[i],NULL,0));
+			i++;
+		} else if ((strcmp(parg,"--sp") == 0) && (i < ac)) {
+			SETSP(mwin.comp->cpu, strtol(av[i],NULL,0));
+			i++;
+		} else if (((strcmp(parg,"-b") == 0) || (strcmp(parg,"--bank") == 0)) && (i < ac)) {
+			memSetBank(mwin.comp->mem, MEM_BANK3, MEM_RAM, strtol(av[i],NULL,0));
+			i++;
+		} else if (((strcmp(parg,"-a") == 0) || (strcmp(parg,"--adr") == 0)) && (i < ac)) {
+			adr = strtol(av[i],NULL,0) & 0xffff;
+			i++;
+		} else if (((strcmp(parg,"-f") == 0) || (strcmp(parg,"--file") == 0)) && (i < ac)) {
+			loadDUMP(mwin.comp, av[i], adr);
+			i++;
+		} else if ((strcmp(parg,"--bp") == 0) && (i < ac)) {
+			ptr = memGetFptr(mwin.comp->mem, strtol(av[i],NULL,0) & 0xffff);
+			*ptr |= MEM_BRK_FETCH;
+			i++;
+		} else if (((strcmp(parg,"-l") == 0) || (strcmp(parg,"--labels") == 0)) && (i < ac)) {
+			mwin.loadLabels(av[i]);
+			i++;
+		} else if (strlen(parg) > 0) {
+			loadFile(mwin.comp, parg, FT_ALL, 0);
+		}
 	}
 	mwin.show();
 	mwin.updateWindow();
-	zxReset(mwin.comp,RES_DEFAULT);
-
-	for (unsigned idx = 0; idx < files.size(); idx++) {
-		if (strlen(files[idx]) > 0) loadFile(mwin.comp,files[idx],FT_ALL,0);
-	}
-
 	mwin.checkState();
 	app.exec();
 	sndClose();

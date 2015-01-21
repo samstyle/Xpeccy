@@ -58,3 +58,18 @@ int saveRawFile(Floppy* flp, int num, const char* dir) {
 	delete(buf);
 	return ERR_OK;
 }
+
+// dump (direct to mem)
+
+int loadDUMP(ZXComp* comp, const char* name, int adr) {
+	std::ifstream file(name, std::ios::binary);
+	if (!file.good()) return ERR_CANT_OPEN;
+	int bt;
+	while (adr < 0x10000) {
+		bt = file.get();
+		if (file.eof()) break;
+		memWr(comp->mem, adr & 0xffff, bt & 0xff);
+		adr++;
+	}
+	return ERR_OK;
+}

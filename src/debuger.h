@@ -26,6 +26,12 @@ struct DasmRow {
 	QString com;
 };
 
+struct xLabel {
+	int bank;
+	int adr;
+	QString name;
+};
+
 #define XTYPE_ADR 0
 #define XTYPE_DUMP 1
 #define XTYPE_BYTE 2
@@ -46,10 +52,14 @@ class DebugWin : public QDialog {
 		void reject();
 		void start(ZXComp*);
 		void stop();
+		bool fillAll();
+
+		QList<xLabel> labels;
 	signals:
 		void closed();
 	private:
 		unsigned trace:1;
+		unsigned showLabels:1;
 
 		QPoint winPos;
 
@@ -72,10 +82,11 @@ class DebugWin : public QDialog {
 		void doBreakPoint(Z80EX_WORD);
 		int getAdr();
 
+		xLabel* findLabel(int);
+
 		Z80EX_WORD disasmAdr;
 		Z80EX_WORD dumpAdr;
 
-		bool fillAll();
 		void fillZ80();
 		void fillFlags();
 		void fillMem();

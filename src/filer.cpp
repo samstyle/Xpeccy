@@ -2,8 +2,6 @@
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
 
-#include "filetypes/filetypes.h"
-
 QFileDialog *filer;
 QDir lastDir;
 

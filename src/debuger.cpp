@@ -24,6 +24,7 @@ void DebugWin::start(ZXComp* c) {
 	}
 	move(winPos);
 	show();
+	ui.dasmTable->setFocus();
 	comp->vid->debug = 1;
 	comp->debug = 1;
 }
@@ -62,8 +63,8 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 			ui.dasmTable->setItem(row, col, new QTableWidgetItem);
 		}
 	}
-	ui.dasmTable->setColumnWidth(0,50);
-	ui.dasmTable->setColumnWidth(1,100);
+	ui.dasmTable->setColumnWidth(0,75);
+	ui.dasmTable->setColumnWidth(1,75);
 	ui.dasmTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_ADR));
 	ui.dasmTable->setItemDelegateForColumn(1, new xItemDelegate(XTYPE_DUMP));
 	connect(ui.dasmTable,SIGNAL(cellChanged(int,int)),this,SLOT(dasmEdited(int,int)));
@@ -105,6 +106,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	dumpAdr = 0;
 	tCount = 0;
 	trace = 0;
+	showLabels = 1;
 
 	dumpwin = new QDialog();
 	dui.setupUi(dumpwin);
@@ -161,7 +163,7 @@ void DebugWin::scrollDown() {
 		dumpAdr = (dumpAdr + ui.dumpTable->columnCount() - 1) & 0xffff;
 		fillDump();
 	} else if (ui.dasmTable->hasFocus()) {
-		disasmAdr = ui.dasmTable->item(1,0)->text().toInt(NULL,16);
+		disasmAdr = ui.dasmTable->item(1,0)->data(Qt::UserRole).toInt();
 		fillDisasm();
 	}
 }
@@ -214,6 +216,10 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					trace = 1;
 					doStep();
 					break;
+				case Qt::Key_L:
+					showLabels ^= 1;
+					fillDisasm();
+					break;
 			}
 			break;
 		default:
@@ -244,7 +250,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 						dumpAdr = (dumpAdr + offset) & 0xffff;
 						fillDump();
 					} else if (ui.dasmTable->hasFocus()) {
-						disasmAdr = ui.dasmTable->item(ui.dasmTable->rowCount() - 1, 0)->text().toInt(NULL,16);
+						disasmAdr = ui.dasmTable->item(ui.dasmTable->rowCount() - 1, 0)->data(Qt::UserRole).toInt();
 						fillDisasm();
 					}
 					break;
@@ -476,22 +482,52 @@ DasmRow getDisasm(ZXComp* comp, Z80EX_WORD& adr) {
 	return drow;
 }
 
+xLabel* DebugWin::findLabel(int adr) {
+	if (!showLabels) return NULL;
+//	int bnk = comp->mem->pt[adr >> 14]->num;
+//	adr &= 0x3fff;
+	for (int i = 0; i < labels.size(); i++) {
+		if (/*(labels[i].bank == bnk) && */(labels[i].adr == adr)) return &labels[i];
+	}
+	return NULL;
+}
+
 bool DebugWin::fillDisasm() {
 	block = true;
 	Z80EX_WORD adr = disasmAdr;
 	Z80EX_WORD pc = GETPC(comp->cpu);
 	DasmRow drow;
 	QColor bgcol,acol;
+	xLabel* lab = NULL;
+	QFont fnt = ui.dasmTable->font();
+	int pos;
+	fnt.setBold(true);
 	bool res = false;
 	for (int i = 0; i < ui.dasmTable->rowCount(); i++) {
 		bgcol = (adr == pc) ? QColor(32,200,32) : QColor(255,255,255);
 		acol = (*memGetFptr(comp->mem, adr) & MEM_BRK_ANY) ? QColor(200,64,64) : bgcol;
-		res |= (adr == pc);
+		if (adr == pc) res = true;
+		ui.dasmTable->item(i, 0)->setData(Qt::UserRole, adr);
 		ui.dasmTable->item(i, 0)->setBackgroundColor(acol);
 		ui.dasmTable->item(i, 1)->setBackgroundColor(bgcol);
 		ui.dasmTable->item(i, 2)->setBackgroundColor(bgcol);
-		ui.dasmTable->item(i, 0)->setText(gethexword(adr));
+		lab = findLabel(adr);
+		if (lab) {
+			fnt.setBold(true);
+			ui.dasmTable->item(i, 0)->setText(lab->name);
+		} else {
+			fnt.setBold(false);
+			ui.dasmTable->item(i, 0)->setText(gethexword(adr));
+		}
+		ui.dasmTable->item(i, 0)->setFont(fnt);
 		drow = getDisasm(comp, adr);
+		pos = drow.com.indexOf(QRegExp("[0-9A-F]{4,4}"));
+		if (pos > -1) {
+			lab = findLabel(drow.com.mid(pos,4).toInt(NULL,16));
+			if (lab) {
+				drow.com.replace(pos, 4, lab->name);
+			}
+		}
 		ui.dasmTable->item(i, 1)->setText(drow.bytes);
 		ui.dasmTable->item(i, 2)->setText(drow.com);
 	}
@@ -599,7 +635,7 @@ void DebugWin::fillStack() {
 int DebugWin::getAdr() {
 	int adr = 0;
 	if (ui.dasmTable->hasFocus()) {
-		adr = ui.dasmTable->item(ui.dasmTable->currentRow(),0)->text().toInt(NULL,16);
+		adr = ui.dasmTable->item(ui.dasmTable->currentRow(),0)->data(Qt::UserRole).toInt();
 	} else if (ui.dumpTable->hasFocus()) {
 		adr = (dumpAdr + (ui.dumpTable->currentColumn() - 1) + ui.dumpTable->currentRow() * (ui.dumpTable->columnCount() - 1)) & 0xffff;
 	}
@@ -772,15 +808,9 @@ void DebugWin::dmpStartOpen() {
 
 void DebugWin::loadDump() {
 	if (dumpPath.isEmpty()) return;
-	QFile file(dumpPath);
-	if (file.open(QFile::ReadOnly)) {
-		QByteArray data = file.readAll();
-		int adr = oui.leStart->text().toInt(NULL,16);
-		for (int i = 0; i < data.size(); i++) {
-			memWr(comp->mem, adr, data[i]);
-			adr++;
-		}
-		fillAll();
+	int res = loadDUMP(comp, dumpPath.toStdString().c_str(),oui.leStart->text().toInt(NULL,16));
+	fillAll();
+	if (res == ERR_OK) {
 		openDumpDialog->hide();
 	} else {
 		shitHappens("Can't open file");

@@ -70,6 +70,7 @@ void putint(unsigned char*, unsigned int);
 int loadSNA(ZXComp*,const char*);
 int loadZ80(ZXComp*,const char*);
 int loadRZX(ZXComp*,const char*);
+int loadDUMP(ZXComp*, const char*, int);
 
 int saveSNA(ZXComp*,const char*,bool);
 
