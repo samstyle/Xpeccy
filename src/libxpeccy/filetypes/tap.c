@@ -34,52 +34,54 @@ TapeBlock tapDataToBlock(char* data,int len,int* sigLens) {
 }
 
 int loadTAP(Tape* tape, const char* name) {
-	std::ifstream file(name,std::ios::binary);
-	if (!file.good()) return ERR_CANT_OPEN;
+	FILE* file = fopen(name, "rb");
+	if (!file) return ERR_CANT_OPEN;
+
 	unsigned short len;
-	char* blockBuf = NULL;
+	char blockBuf[0x10000];
 	TapeBlock block;
 	int sigLens[] = {PILOTLEN,SYNC1LEN,SYNC2LEN,SIGN0LEN,SIGN1LEN,SYNC3LEN,-1};
 	tapEject(tape);
-	while (!file.eof()) {
-		len = getLEWord(&file);
-		if (!file.eof()) {
-			blockBuf = (char*)realloc(blockBuf,len * sizeof(char));
-			file.read(blockBuf,len);
-			block = tapDataToBlock(blockBuf,len,sigLens);
-			blkAddPulse(&block,sigLens[5]);
-			blkAddPause(&block,(block.pdur == 8063) ? 500 : 1000);		// pause
-			tapAddBlock(tape,block);
+
+	while (!feof(file)) {
+		len = fgetwLE(file);
+		if (!feof(file)) {
+			fread(blockBuf, len, 1, file);
+			block = tapDataToBlock(blockBuf, len, sigLens);
+			blkAddPulse(&block, sigLens[5]);
+			blkAddPause(&block, (block.pdur == 8063) ? 500 : 1000);		// pause
+			tapAddBlock(tape, block);
 			blkClear(&block);
 		}
 	}
+	fclose(file);
+
 	tape->isData = 1;
 	tape->path = (char*)realloc(tape->path,sizeof(char) * (strlen(name) + 1));
 	strcpy(tape->path,name);
-	if (blockBuf) free(blockBuf);
+
 	return ERR_OK;
 }
 
 int saveTAP(Tape* tape, const char* name) {
 	if (!tape->isData) return ERR_TAP_DATA;
-	std::ofstream file(name,std::ios::binary);
-	if (!file.good()) return ERR_CANT_OPEN;
+	FILE* file = fopen(name, "wb");
+	if (!file) return ERR_CANT_OPEN;
 
 	TapeBlockInfo inf;
-	unsigned char* blockData = NULL;
+	unsigned char blockData[0x100000];
 
 	for (int i = 0; i < tape->blkCount; i++) {
 		inf = tapGetBlockInfo(tape, i);
 		inf.size += 2;	// +flag +crc
-		blockData = (unsigned char*)realloc(blockData,inf.size);
-		tapGetBlockData(tape,i,blockData);
-		file.put(inf.size & 0xff);
-		file.put((inf.size & 0xff00) >> 8);
-		file.write((char*)blockData,inf.size);
+		tapGetBlockData(tape, i, blockData);
+		fputwLE(file, inf.size);
+		fwrite((char*)blockData, inf.size, 1, file);
 	}
+	fclose(file);
+
 	tape->path = (char*)realloc(tape->path,sizeof(char) * (strlen(name) + 1));
 	strcpy(tape->path,name);
-	if (blockData) free(blockData);
 
 	return ERR_OK;
 }

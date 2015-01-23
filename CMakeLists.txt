@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(xpeccy)
-set(XVER "0.5.20150122")
+set(XVER "0.5.20150128")
 
 include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
 
@@ -21,10 +21,11 @@ file(GLOB SOURCES
 	./src/*.cpp
 	./src/libxpeccy/*.c
 	./src/libxpeccy/hardware/*.c
-	./src/filetypes/*.cpp
+	./src/libxpeccy/filetypes/*.c
+	./src/libxpeccy/filetypes/*.cpp
+	./src/libxpeccy/filetypes/unpackers/*.cpp
 	./src/xcore/*.cpp
 	./src/xgui/*.cpp
-	./src/filetypes/unpackers/*.cpp
 if(WIN32)
 	./xpeccy.rc
 endif(WIN32)
@@ -33,10 +34,10 @@ file(GLOB HEADERS
 	./src/*.h
 	./src/libxpeccy/*.h
 	./src/libxpeccy/hardware/*.h
-	./src/filetypes/*.h
+	./src/libxpeccy/filetypes/*.h
+	./src/libxpeccy/filetypes/unpackers/*.h
 	./src/xcore/*.h
 	./src/xgui/*.h
-	./src/filetypes/unpackers/*.h
 )
 file(GLOB UIFILES ./ui/*.ui)
 set(QRCFILES ./xpeccy.qrc)

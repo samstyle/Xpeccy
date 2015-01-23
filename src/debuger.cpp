@@ -8,8 +8,8 @@
 #include "debuger.h"
 #include "emulwin.h"
 #include "filer.h"
-#include "filetypes/filetypes.h"
 #include "xgui/xgui.h"
+#include "filer.h"
 
 #ifndef SELFZ80
 	#include "z80ex_dasm.h"
@@ -188,16 +188,6 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 	unsigned char* ptr;
 	int offset = (ui.dumpTable->columnCount() - 1) * (ui.dumpTable->rowCount() - 1);
 	switch(ev->modifiers()) {
-		case Qt::AltModifier:
-			switch(ev->key()) {
-				case Qt::Key_W:
-					doSaveDump();
-					break;
-				case Qt::Key_R:
-					doOpenDump();
-					break;
-			}
-			break;
 		case Qt::ControlModifier:
 			switch(ev->key()) {
 				case Qt::Key_S:
@@ -275,7 +265,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 						ptr = memGetFptr(comp->mem, pc + 3);
 						*ptr ^= MEM_BRK_TFETCH;
 						stop();
-					} else if ((i & 0xc7) == 0xc7) {			// rst
+					} else if (((i & 0xc7) == 0xc7) || (i == 0x76)) {	// rst, halt
 						ptr = memGetFptr(comp->mem, pc + 1);
 						*ptr ^= MEM_BRK_TFETCH;
 						stop();
@@ -318,9 +308,33 @@ bool DebugWin::fillAll() {
 	fillMem();
 	fillDump();
 	fillFDC();
+	ui.rzxTab->setEnabled(comp->rzxPlay);
+	if (comp->rzxPlay) fillRZX();
 	ui.labRX->setNum(comp->vid->x);
 	ui.labRY->setNum(comp->vid->y);
 	return fillDisasm();
+}
+
+// rzx
+
+void dbgSetRzxIO(QLabel* lab, ZXComp* comp, int pos) {
+	if (pos < comp->rzx.data[comp->rzx.frame].frmSize) {
+		lab->setText(gethexbyte(comp->rzx.data[comp->rzx.frame].frmData[pos]));
+	} else {
+		lab->setText("--");
+	}
+}
+
+void DebugWin::fillRZX() {
+	ui.rzxFrm->setText(QString::number(comp->rzx.frame).append(" / ").append(QString::number(comp->rzx.size)));
+	ui.rzxFetch->setText(QString::number(comp->rzx.fetches));
+	ui.rzxFSize->setText(QString::number(comp->rzx.data[comp->rzx.frame].frmSize));
+	int pos = comp->rzx.pos;
+	dbgSetRzxIO(ui.rzxIO1, comp, pos++);
+	dbgSetRzxIO(ui.rzxIO2, comp, pos++);
+	dbgSetRzxIO(ui.rzxIO3, comp, pos++);
+	dbgSetRzxIO(ui.rzxIO4, comp, pos++);
+	dbgSetRzxIO(ui.rzxIO5, comp, pos);
 }
 
 // fdc

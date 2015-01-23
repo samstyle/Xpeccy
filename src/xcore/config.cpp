@@ -46,12 +46,14 @@ void initPaths() {
 	conf.path.romDir = conf.path.confDir + "/roms";
 	mkdir(conf.path.romDir.c_str(),0777);
 	conf.path.confFile = conf.path.confDir + "/config.conf";
+	conf.path.boot = conf.path.confDir + "/boot.$B";
 	conf.scrShot.dir = std::string(getenv("HOME"));
 #endif
 #ifdef __WIN32
 	conf.path.confDir = std::string(".\\config");
 	conf.path.romDir = conf.path.confDir + "\\roms";
 	conf.path.confFile = conf.path.confDir + "\\config.conf";
+	conf.path.boot = conf.path.confDir + "\\boot.$B";
 	conf.scrShot.dir = std::string(getenv("HOMEPATH"));
 	mkdir(conf.path.confDir.c_str());
 	mkdir(conf.path.romDir.c_str());

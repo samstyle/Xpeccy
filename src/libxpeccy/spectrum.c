@@ -4,6 +4,7 @@
 #include <assert.h>
 
 #include "spectrum.h"
+#include "filetypes/filetypes.h"
 
 int nsTime;
 int res1 = 0;
@@ -65,7 +66,7 @@ inline void zxMemRW(ZXComp* comp, int adr) {
 
 Z80EX_BYTE memrd(CPUCONT Z80EX_WORD adr,int m1,void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
-	if (m1 && comp->rzxPlay) comp->rzxFetches--;
+	if (m1 && comp->rzxPlay) comp->rzx.fetches--;
 	zxMemRW(comp,adr);
 	return comp->hw->mrd(comp,adr,m1);
 }
@@ -113,11 +114,12 @@ Z80EX_BYTE iord(CPUCONT Z80EX_WORD port, void* ptr) {
 	comp->tapCount = 0;
 // play rzx
 	if (comp->rzxPlay) {
-		if (comp->rzxPos < comp->rzxData[comp->rzxFrame].frmSize) {
-			res = comp->rzxData[comp->rzxFrame].frmData[comp->rzxPos];
-			comp->rzxPos++;
+		if (comp->rzx.pos < comp->rzx.data[comp->rzx.frame].frmSize) {
+			res = comp->rzx.data[comp->rzx.frame].frmData[comp->rzx.pos];
+			comp->rzx.pos++;
 			return res;
 		} else {
+			printf("overIO\n");
 			return 0xff;
 		}
 	}
@@ -139,14 +141,16 @@ Z80EX_BYTE intrq(CPUCONT void* ptr) {
 	return ((ZXComp*)ptr)->intVector;
 }
 
-void rzxClear(ZXComp* zx) {
-	int i;
-	for (i = 0; i < zx->rzxSize; i++) {
-		if (zx->rzxData[i].frmData) free(zx->rzxData[i].frmData);
+void rzxStop(ZXComp* zx) {
+	for (int i = 0; i < zx->rzx.size; i++) {
+		if (zx->rzx.data[i].frmData) free(zx->rzx.data[i].frmData);
 	}
-	if (zx->rzxData) free(zx->rzxData);
-	zx->rzxSize = 0;
-	zx->rzxData = NULL;
+	if (zx->rzx.data) free(zx->rzx.data);
+	zx->rzx.size = 0;
+	zx->rzx.data = NULL;
+	zx->rzxPlay = 0;
+	if (zx->rzx.file) fclose(zx->rzx.file);
+	zx->rzx.file = NULL;
 }
 
 void zxInitPalete(ZXComp* comp) {
@@ -211,8 +215,8 @@ ZXComp* zxCreate() {
 	comp->tsconf.pwr_up = 1;
 	comp->tsconf.vdos = 0;
 
-	comp->rzxSize = 0;
-	comp->rzxData = NULL;
+	comp->rzx.size = 0;
+	comp->rzx.data = NULL;
 	comp->tapCount = 0;
 	comp->tickCount = 0;
 
@@ -237,7 +241,7 @@ void zxDestroy(ZXComp* comp) {
 	tsDestroy(comp->ts);
 	gsDestroy(comp->gs);
 	sdrvDestroy(comp->sdrv);
-	if (comp->rzxData) free(comp->rzxData);
+	rzxStop(comp);
 	free(comp);
 }
 
@@ -250,7 +254,7 @@ void zxReset(ZXComp* comp,int res) {
 	memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5);
 	memSetBank(comp->mem,MEM_BANK2,MEM_RAM,2);
 	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0);
-	rzxClear(comp);
+	rzxStop(comp);
 	comp->rzxPlay = 0;
 	RESETCPU(comp->cpu);
 	comp->vid->curscr = 5;
@@ -332,13 +336,13 @@ int zxExec(ZXComp* comp) {
 
 	res1 = res2;
 
-	if (comp->rzxPlay) {
-		comp->intStrobe = (comp->rzxFetches < 1);
-		comp->frmStrobe = comp->intStrobe;
-	} else if (comp->vid->newFrame) {
-		comp->vid->newFrame = 0;
-		comp->frmStrobe = 1;
-	}
+//	if (comp->rzxPlay) {
+//		comp->intStrobe = (comp->rzxFetches < 1);
+//		comp->frmStrobe = comp->intStrobe;
+//	} else if (comp->vid->newFrame) {
+//		comp->vid->newFrame = 0;
+//		comp->frmStrobe = 1;
+//	}
 	pcreg = GETPC(comp->cpu);	// z80ex_get_reg(comp->cpu,regPC);
 // NMI
 	if ((pcreg > 0x3fff) && comp->nmiRequest && !comp->rzxPlay) {
@@ -353,25 +357,29 @@ int zxExec(ZXComp* comp) {
 		}
 	}
 // INTs handle
-	if (comp->vid->intFRAME) {
-		zxINT(comp,0xff);
-		comp->vid->intFRAME = 0;
-		if (comp->rzxPlay) {
-			comp->rzxFrame++;
-			if (comp->rzxFrame >= comp->rzxSize) {
-				comp->rzxPlay = 0;
-				comp->rzxSize = 0;
-				if (comp->rzxData) free(comp->rzxData);
-				comp->rzxData = NULL;
+	if (comp->rzxPlay) {
+		if (comp->rzx.fetches < 1) {
+			zxINT(comp, 0xff);
+			comp->rzx.frame++;
+			if (comp->rzx.frame >= comp->rzx.size) {
+				rzxLoadFrame(comp);
 			} else {
-				comp->rzxFetches = comp->rzxData[comp->rzxFrame].fetches;
-				comp->rzxPos = 0;
+				comp->rzx.fetches = comp->rzx.data[comp->rzx.frame].fetches;
+				comp->rzx.pos = 0;
 			}
 		}
-	} else if (comp->vid->intLINE) {
-		if (zxINT(comp,0xfd)) comp->vid->intLINE = 0;
-	} else if (comp->vid->intDMA) {
-		if (zxINT(comp,0xfb)) comp->vid->intDMA = 0;
+	} else {
+		if (comp->vid->intFRAME) {
+			if (zxINT(comp,0xff)) comp->vid->intFRAME = 0;
+		} else if (comp->vid->intLINE) {
+			if (zxINT(comp,0xfd)) comp->vid->intLINE = 0;
+		} else if (comp->vid->intDMA) {
+			if (zxINT(comp,0xfb)) comp->vid->intDMA = 0;
+		}
+	}
+	if (comp->vid->newFrame) {
+		comp->vid->newFrame = 0;
+		comp->frmStrobe = 1;
 	}
 // TSConf : update 'next-line' registers
 	if (comp->vid->nextrow && comp->vid->istsconf) {

@@ -19,8 +19,9 @@ void RZXWin::startPlay() {
 	state = RWS_PLAY;
 }
 
-void RZXWin::setProgress(int val) {
-	ui.progress->setValue(val);
+void RZXWin::setProgress(int val, int max) {
+	ui.progress->setMaximum(max / 50);
+	ui.progress->setValue(val / 50);
 }
 
 // slots

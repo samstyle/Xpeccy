@@ -740,12 +740,14 @@ void vidSync(Video* vid, int ns) {
 				vid->callback(vid);		// put dot
 			}
 		}
-		if ((vid->x == vid->intpos.h) && (vid->y == vid->intpos.v) && (vid->intMask & 0x01)) {
-				vid->intFRAME = 1;
-		}
+		if ((vid->intMask & 1) && (vid->y == vid->intpos.v) && (vid->x == vid->intpos.h))
+			vid->intFRAME = 1;
+		if (vid->intFRAME && (vid->x >= vid->intpos.h + vid->intSize))
+			vid->intFRAME = 0;
 		if (++vid->x >= vid->full.h) {
 			vid->x = 0;
 			vid->nextrow = 1;
+			vid->intFRAME = 0;
 			if (vid->istsconf) {
 				vidTSRender(vid,vid->scrptr - vid->vsze.h * 6);
 				if (vid->intMask & 0x02) {

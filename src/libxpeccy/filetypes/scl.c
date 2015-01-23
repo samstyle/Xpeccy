@@ -1,25 +1,24 @@
 #include "filetypes.h"
 #include <string.h>
-#include <vector>
 
-#pragma pack (1)
+#pragma pack (push, 1)
 
-struct FilePos {
+typedef struct {
 	unsigned char trk;
 	unsigned char sec;
 	unsigned char slen;
-};
+} FilePos;
 
-struct sclHead {
+typedef struct {
 	char sign[8];	// SINCLAIR
 	unsigned char files;
-};
+} sclHead;
 
-#pragma pack()
+#pragma pack(pop)
 
 int loadSCL(Floppy* flp,const char* name) {
-	std::ifstream file(name,std::ios::binary);
-	if (!file.good()) return ERR_CANT_OPEN;
+	FILE* file = fopen(name, "rb");
+	if (!file) return ERR_CANT_OPEN;
 
 	unsigned char buf[0x1000];		// track image
 	unsigned char* bptr;
@@ -28,7 +27,7 @@ int loadSCL(Floppy* flp,const char* name) {
 	unsigned int i;
 
 	sclHead hd;
-	file.read((char*)&hd, sizeof(sclHead));
+	fread((char*)&hd, sizeof(sclHead), 1, file);
 	if (strncmp(hd.sign, "SINCLAIR", 8) != 0) return ERR_SCL_SIGN;
 	if (hd.files > 128) return ERR_SCL_MANY;
 
@@ -37,7 +36,7 @@ int loadSCL(Floppy* flp,const char* name) {
 	scnt = 0x10;
 	bptr = buf;					// start of TRK0
 	for (i = 0; i < hd.files; i++) {		// make catalog
-		file.read((char*)bptr,14);		// file dsc
+		fread((char*)bptr, 14, 1, file);	// file dsc
 		bptr[14] = scnt & 0x0f;			// sector
 		bptr[15] = ((scnt & 0xff0) >> 4);	// track
 		scnt += bptr[13];			// +sectors size
@@ -55,27 +54,28 @@ int loadSCL(Floppy* flp,const char* name) {
 	buf[0x8e7] = 0x10;			// trdos code
 	flpFormTRDTrack(flp,0,buf);
 	i = 1;
-	while (!file.eof() && (i<168)) {
-		file.read((char*)buf,0x1000);
+	while (!feof(file) && (i < 168)) {
+		fread((char*)buf, 0x1000, 1, file);
 		flpFormTRDTrack(flp,i,buf);
 		i++;
 	}
+	fclose(file);
 	flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
 	strcpy(flp->path,name);
 	flp->insert = 1;
-	loadBoot(flp);
 	flp->changed = 0;
 	return ERR_OK;
 }
 
 int saveSCL(Floppy* flp,const char* name) {
 	const char* sign = "SINCLAIR";
-	unsigned char* img = new unsigned char[0xA0000];
-	unsigned char* buf = new unsigned char[256];
+	unsigned char img[0xA0000];
+	unsigned char buf[256];
 	unsigned char* dptr = img;
 	unsigned char* bptr;
 	FilePos newfp;
-	std::vector<FilePos> fplist;
+	FilePos fplist[256];
+	int fpidx = 0;
 	int i,j;
 	unsigned char tr,sc;
 
@@ -95,7 +95,8 @@ int saveSCL(Floppy* flp,const char* name) {
 					newfp.trk = *(bptr + 15);
 					newfp.sec = *(bptr + 14);
 					newfp.slen = *(bptr + 13);
-					fplist.push_back(newfp);
+					fplist[fpidx] = newfp;
+					fpidx++;
 					dptr += 14;
 					img[8]++;
 				}
@@ -103,7 +104,7 @@ int saveSCL(Floppy* flp,const char* name) {
 			}
 		}
 	}
-	for (i = 0; i < (int)fplist.size(); i++) {
+	for (i = 0; i < fpidx; i++) {
 		tr = fplist[i].trk;
 		sc = fplist[i].sec;
 		for(j = 0; j < fplist[i].slen; j++) {
@@ -123,10 +124,10 @@ int saveSCL(Floppy* flp,const char* name) {
 	putint(dptr, j);
 	dptr += 4;
 
-	std::ofstream file(name,std::ios::binary);
-	if (!file.good()) return ERR_CANT_OPEN;
-	file.write((char*)img,dptr-img);
-	file.close();
+	FILE* file = fopen(name, "wb");
+	if (!file) return ERR_CANT_OPEN;
+	fwrite((char*)img, dptr-img, 1, file);
+	fclose(file);
 
 	flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
 	strcpy(flp->path,name);

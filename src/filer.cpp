@@ -139,9 +139,9 @@ void loadFile(ZXComp* comp,const char* name, int flags, int drv) {
 		case FT_UDI: if (saveChangedDisk(comp,drv)) {ferr = loadUDI(flp,sfnam.c_str());} break;
 		case FT_HOBETA: ferr = loadHobeta(flp,sfnam.c_str()); break;
 		case FT_RAW: ferr = loadRaw(flp,sfnam.c_str()); break;
-		case FT_DSK: ferr = loadDsk(flp,sfnam.c_str()); break;
+		case FT_DSK: ferr = loadDSK(flp,sfnam.c_str()); break;
 		case FT_SPG: ferr = loadSPG(comp,sfnam.c_str()); break;
-#if HAVEZLIB
+#ifdef HAVEZLIB
 		case FT_RZX: ferr = loadRZX(comp,sfnam.c_str()); break;
 #endif
 	}
@@ -162,6 +162,9 @@ void loadFile(ZXComp* comp,const char* name, int flags, int drv) {
 		case ERR_SCL_MANY: shitHappens("Too many files in SCL"); break;
 		case ERR_RAW_LONG: shitHappens("File is too big"); break;
 		case ERR_DSK_SIGN: shitHappens("Wrong DSK signature"); break;
+		case ERR_OK:
+			if (type & FT_DISK) loadBoot(flp, conf.path.boot.c_str());
+			break;
 	}
 }
 

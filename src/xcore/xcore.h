@@ -6,12 +6,7 @@
 #include <map>
 
 #include "../libxpeccy/spectrum.h"
-
-#ifdef _WIN32
-	#define	SLASH "\\"
-#else
-	#define	SLASH "/"
-#endif
+#include "../libxpeccy/filetypes/filetypes.h"
 
 // common
 
@@ -71,6 +66,7 @@ struct xConfig {
 		std::string confDir;
 		std::string confFile;
 		std::string romDir;
+		std::string boot;
 	} path;
 };
 

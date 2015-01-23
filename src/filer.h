@@ -1,7 +1,7 @@
 #ifndef _FILER_H
 #define _FILER_H
 
-#include "filetypes/filetypes.h"
+#include "libxpeccy/filetypes/filetypes.h"
 #include "libxpeccy/spectrum.h"
 #include <QFileDialog>
 

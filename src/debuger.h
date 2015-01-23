@@ -94,6 +94,7 @@ class DebugWin : public QDialog {
 		bool fillDisasm();
 		void fillStack();
 		void fillFDC();
+		void fillRZX();
 
 		Z80EX_WORD getPrevAdr(Z80EX_WORD);
 		void scrollDown();

@@ -1,14 +1,19 @@
-//#include <stdint.h>
+#ifndef _FILETYPES_H
+#define _FILETYPES_H
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef __cplusplus
 #include <fstream>
+#endif
+
 #ifdef WORDS_BIG_ENDIAN
 	#include <endian.h>
 #endif
 
-#include "../libxpeccy/spectrum.h"
+#include "../spectrum.h"
 
 #ifdef _WIN32
 #define SLASH "\\"
@@ -60,49 +65,70 @@
 
 #define	ERR_RAW_LONG	0x90	// raw file too long
 
-unsigned short getLEWord(std::ifstream*);
-unsigned short getBEWord(std::ifstream*);
-unsigned int getLength(std::ifstream*,unsigned char);
+// spg
+
+int loadSPG(ZXComp*,const char*);		// still in c++ part because of depackers
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// common
+
+unsigned int freadLen(FILE*,int);
+unsigned short fgetwLE(FILE*);
+void fputwLE(FILE*, unsigned short);
+
 void putint(unsigned char*, unsigned int);
+void cutSpaces(char*);
+void loadBoot(Floppy*, const char*);
 
-// snapshot
+// rzx
 
-int loadSNA(ZXComp*,const char*);
-int loadZ80(ZXComp*,const char*);
 int loadRZX(ZXComp*,const char*);
+void rzxLoadFrame(ZXComp*);
+
+// memory (snapshot)
+
 int loadDUMP(ZXComp*, const char*, int);
 
-int saveSNA(ZXComp*,const char*,bool);
+int loadZ80(ZXComp*,const char*);
+
+int loadSNA(ZXComp*,const char*);
+int saveSNA(ZXComp*, const char*, int);
 
 // tape
 
+int loadTAP(Tape*,const char*);
+int saveTAP(Tape*,const char*);
 TapeBlock tapDataToBlock(char*,int,int*);
 
-int loadTAP(Tape*,const char*);
 int loadTZX(Tape*,const char*);
-
-int saveTAP(Tape*,const char*);
 
 // disk
 
-void loadBoot(Floppy*);
-
 int loadRaw(Floppy*,const char*);
-int loadHobeta(Floppy*,const char*);
-int loadSCL(Floppy*,const char*);
-int loadTRD(Floppy*,const char*);
-int loadUDI(Floppy*,const char*);
-int loadFDI(Floppy*,const char*);
-
 int saveRawFile(Floppy*,int,const char*);
+
+int loadHobeta(Floppy*,const char*);
 int saveHobetaFile(Floppy*,int,const char*);
 int saveHobeta(TRFile,char*,const char*);
+
+int loadSCL(Floppy*,const char*);
 int saveSCL(Floppy*,const char*);
+
+int loadTRD(Floppy*,const char*);
 int saveTRD(Floppy*,const char*);
+
+int loadUDI(Floppy*,const char*);
 int saveUDI(Floppy*,const char*);
 
-int loadDsk(Floppy*,const char*);
+int loadFDI(Floppy*,const char*);
 
-// spg
+int loadDSK(Floppy*,const char*);
 
-int loadSPG(ZXComp*,const char*);
+#ifdef __cplusplus
+}
+#endif
+
+#endif

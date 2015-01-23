@@ -57,6 +57,9 @@ struct ZXComp {
 	unsigned contMem:1;		// contended mem
 	unsigned contIO:1;		// contended IO
 
+	float cpuFrq;
+	unsigned char intVector;
+
 	struct HardWare *hw;
 	CPU* cpu;
 	Memory* mem;
@@ -72,18 +75,19 @@ struct ZXComp {
 	TSound* ts;
 	saaChip* saa;
 	SDrive* sdrv;
-	int rzxSize;
-	RZXFrame* rzxData;
-	unsigned long rzxFrame;
-	unsigned int rzxPos;
-	int rzxFetches;
-	float cpuFrq;
-	unsigned char intVector;
+
+	struct {
+		FILE* file;
+		int size;
+		RZXFrame* data;
+		int fetches;
+		int frame;
+		int pos;
+	} rzx;
 
 	unsigned long tickCount;
 	int nsPerTick;
 	int nsPerFrame;
-//	unsigned long nsCount;
 
 	memEntry memMap[16];		// memory map for ATM2, PentEvo
 	unsigned char prt0;		// 7ffd value
@@ -137,7 +141,6 @@ typedef struct ZXComp ZXComp;
 ZXComp* zxCreate();
 void zxDestroy(ZXComp*);
 void zxReset(ZXComp*,int);
-//void zxOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
 int zxExec(ZXComp*);
 void zxSetFrq(ZXComp*,float);
 void zxSetLayout(ZXComp*, int, int, int, int, int, int, int, int, int);
@@ -147,7 +150,7 @@ void zxSetHardware(ZXComp*,const char*);
 unsigned char cmsRd(ZXComp*);
 void cmsWr(ZXComp*,unsigned char);
 
-void rzxClear(ZXComp*);
+void rzxStop(ZXComp*);
 
 #ifdef __cplusplus
 }

@@ -10,13 +10,13 @@
 	#undef main
 #endif
 
-#include "xcore/xcore.h"
-#include "xgui/xgui.h"
 #include "sound.h"
-#include "libxpeccy/spectrum.h"
-#include "setupwin.h"
 #include "filer.h"
-#include "filetypes/filetypes.h"
+#include "setupwin.h"
+#include "xgui/xgui.h"
+#include "xcore/xcore.h"
+#include "libxpeccy/spectrum.h"
+#include "libxpeccy/filetypes/filetypes.h"
 
 void fillRFBox(QComboBox* box, QStringList lst) {
 	box->clear();

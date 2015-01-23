@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-#pragma pack (1)
+#pragma pack (push, 1)
 
 struct spgHead {
 	char astr[32];
@@ -27,7 +27,7 @@ struct spgHead {
 	char res70[144];	// 70 : reserved
 };
 
-#pragma pack ()
+#pragma pack (pop)
 
 int loadSPG(ZXComp* comp, const char* name) {
 	std::ifstream file(name,std::ios::binary);

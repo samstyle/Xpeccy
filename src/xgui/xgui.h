@@ -61,7 +61,7 @@ class RZXWin : public QDialog {
 	public:
 		RZXWin(QWidget*);
 		void startPlay();
-		void setProgress(int);
+		void setProgress(int,int);
 	signals:
 		void stateChanged(int);
 	private:

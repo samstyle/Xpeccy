@@ -85,6 +85,7 @@ bool MainWin::saveChanged() {
 }
 
 void MainWin::pause(bool p, int msk) {
+	ethread.fast = 0;
 	if (p) {
 		pauseFlags |= msk;
 	} else {
@@ -381,13 +382,13 @@ void MainWin::rzxStateChanged(int state) {
 			break;
 		case RWS_STOP:
 			comp->rzxPlay = false;
-			rzxClear(comp);
+			rzxStop(comp);
 			pause(false,PR_RZX);
 			break;
 		case RWS_OPEN:
 			pause(true,PR_RZX);
 			loadFile(comp,"",FT_RZX,0);
-			if (comp->rzxSize != 0) {
+			if (comp->rzx.size != 0) {
 				rzxWin->startPlay();
 			}
 			pause(false,PR_RZX);
@@ -725,7 +726,7 @@ void MainWin::emuDraw() {
 	if (block) return;
 // update rzx window
 	if ((comp->rzxPlay) && rzxWin->isVisible()) {
-		rzxWin->setProgress(100 * comp->rzxFrame / comp->rzxSize);
+		rzxWin->setProgress(comp->rzx.frame, comp->rzx.size);
 	}
 // update tape window
 	if (tapeWin->isVisible()) {
@@ -1077,7 +1078,7 @@ void xThread::emuCycle() {
 			if ((pc == 0x5e2) && conf->tape.autostart)
 				emit tapeSignal(TW_STATE,TWS_STOP);
 		}
-	} while (!comp->brk && (comp->frmStrobe == 0));		// exec until breakpoint or new frame start
+	} while (!comp->brk && !comp->frmStrobe);		// exec until breakpoint or new frame start
 	comp->nmiRequest = 0;
 }
 

@@ -9,47 +9,53 @@ void putint(unsigned char* ptr, unsigned int val) {
 	*ptr++ = (val & 0xff000000) >> 24;
 }
 
+unsigned int freadLen(FILE* file, int n) {
+	unsigned int len = fgetc(file);
+	if (n > 1) len |= (fgetc(file) << 8);
+	if (n > 2) len |= (fgetc(file) << 16);
+	if (n > 3) len |= (fgetc(file) << 24);
+	return len;
+}
+
 // crc32 for UDI, taken from Unreal 0.32.7
-void crc32(int &crc, unsigned char *buf, unsigned len) {
+int uCrc32(int crc, unsigned char *buf, unsigned len) {
 	while (len--) {
 		crc ^= -1 ^ *buf++;
 		for(int k = 8; k--; ) {
 			int temp = -(crc & 1); crc >>= 1, crc ^= 0xEDB88320 & temp;
 		}
-	crc ^= -1;
+		crc ^= -1;
 	}
+	return crc;
 }
 
-void loadUDITrack(Floppy* flp,std::ifstream* file, unsigned char tr, bool sd) {
+void loadUDITrack(Floppy* flp, FILE* file, unsigned char tr, int sd) {
 	int rt = (tr << 1) + (sd ? 1 : 0);
-	unsigned char type = file->get();
+	unsigned char type = fgetc(file);
 	unsigned int len;
 //	int i;
-	unsigned char* trackBuf = new unsigned char[TRACKLEN];
+	unsigned char trackBuf[TRACKLEN];
 	if (type != 0x00) {
 		printf("TRK %i: unknown format %.2X\n",rt,type);
-		len = getLength(file,4);							// field len
-		file->seekg(len,std::ios_base::cur);					// skip unknown field
+		len = freadLen(file,4);					// field len
+		fseek(file, len, SEEK_CUR);				// skip unknown field
 	} else {
-		len = getLength(file,2);		// track size
+		len = freadLen(file,2);					// track size
 		if (len > TRACKLEN) {
 			printf("TRK %i: too long (%i)\n",rt,len);
-			file->seekg(len,std::ios_base::cur);		// skip track image
+			fseek(file, len, SEEK_CUR);		// skip track image
 			len = (len >> 3) + (((len & 7) == 0) ? 0 : 1);	// and bit field
-			file->seekg(len,std::ios_base::cur);
+			fseek(file, len, SEEK_CUR);
 		} else {
-//			flpClearTrack(flp,tr);
-			file->read((char*)trackBuf,len);
+			fread((char*)trackBuf, len, 1, file);
 			flpPutTrack(flp,rt,trackBuf,len);
-//			file->read((char*)flp->data[rt].byte,len);		// read track
-//			flpFillFields(flp,rt,false);
-			len = (len >> 3) + (((len & 7) == 0)?0:1);	// skip bit field
-			file->seekg(len,std::ios_base::cur);
+			len = (len >> 3) + (((len & 7) == 0) ? 0 : 1);	// skip bit field
+			fseek(file, len, SEEK_CUR);
 		}
 	}
 }
 
-void getUDIBitField(Floppy* flp,unsigned char tr, unsigned char* buf) {
+void getUDIBitField(Floppy* flp, unsigned char tr, unsigned char* buf) {
 	int i;
 	int msk=0x01;
 	unsigned char fieldBuf[TRACKLEN];
@@ -68,24 +74,25 @@ void getUDIBitField(Floppy* flp,unsigned char tr, unsigned char* buf) {
 }
 
 int loadUDI(Floppy* flp, const char* name) {
-	std::ifstream file(name,std::ios::binary);
-	if (!file.good()) return ERR_CANT_OPEN;
-	char* buf = new char[16];
+	FILE* file = fopen(name, "rb");
+	if (!file) return ERR_CANT_OPEN;
+
+	char buf[16];
 	unsigned char tmp;
-	bool sides;
-	file.read(buf,16);
-	if (strncmp((const char*)buf,"UDI!",4) != 0) return ERR_UDI_SIGN;
-	if (*(buf + 8) != 0x00) return ERR_UDI_SIGN;
-	tmp = *(buf + 9);		// max track;
-	sides = (*(buf + 10) == 0x01);	// true if double side
+	int dbSide;
+
+	fread(buf, 16, 1, file);
+	if (strncmp((char*)buf, "UDI!", 4) != 0) return ERR_UDI_SIGN;
+	if (buf[8] != 0x00) return ERR_UDI_SIGN;
+	tmp = buf[9];			// max track;
+	dbSide = buf[10] ? 1 : 0 ;	// if double side
 	for (int i = 0; i < tmp + 1; i++) {
-		loadUDITrack(flp,&file,i,false);
-		if (sides) loadUDITrack(flp,&file,i,true);
+		loadUDITrack(flp, file, i, 0);
+		if (dbSide) loadUDITrack(flp, file, i, 1);
 	}
 	flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
 	strcpy(flp->path,name);
 	flp->insert = 1;
-	loadBoot(flp);
 	flp->changed = 0;
 	return ERR_OK;
 }
@@ -119,16 +126,18 @@ int saveUDI(Floppy* flp, const char* name) {
 		if (!flp->doubleSide) i++;		// if single-side skip
 	}
 	i = dptr - img;
-	putint(bptr,i);
-	j=-1;
-	crc32(j,img,i);
+	putint(bptr, i);
+	j = -1;
+	j = uCrc32(j, img, i);
 	printf("crc = %X\n",j);
-	putint(dptr,j);
+	putint(dptr, j);
 	dptr += 4;
-	std::ofstream file(name,std::ios::binary);
-	if (!file.good()) return ERR_CANT_OPEN;
-	file.write((char*)img,dptr-img);
-	file.close();
+
+	FILE* file = fopen(name, "wb");
+	if (!file) return ERR_CANT_OPEN;
+	fwrite((char*)img, dptr - img, 1, file);
+	fclose(file);
+
 	flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
 	strcpy(flp->path,name);
 	flp->changed = 0;

@@ -1,19 +1,35 @@
 #ifdef HAVEZLIB
-#include "filetypes.h"
+
 #include <stdlib.h>
-//#include <string>
 #include <zlib.h>
 
-int eatsize = 0;
+#include "filetypes.h"
 
-unsigned int getint(std::ifstream* file) {
-	unsigned int res = file->get();
-	res += (file->get() << 8);
-	res += (file->get() << 16);
-	res += (file->get() << 24);
-	return res;
-}
+#pragma pack (push, 1)
 
+typedef struct {
+	char sign[4];
+	unsigned char major;
+	unsigned char minor;
+	int flags;
+} rzxHead;
+
+typedef struct {
+	int flag;
+	char ext[4];
+	int usl;
+} rzxSnap;
+
+typedef struct {
+	int fCount;
+	char byte09;
+	int tStart;
+	int flags;
+} rzxFrm;
+
+#pragma pack (pop)
+
+/*
 void frmAddValue(RZXFrame* frm, unsigned char val) {
 	if ((frm->frmSize & 0xff) == 0) {
 		frm->frmData = (unsigned char*)realloc(frm->frmData, (frm->frmSize + 0x100) * sizeof(unsigned char));
@@ -34,6 +50,7 @@ void rzxAddFrame(ZXComp* zx, RZXFrame* frm) {
 
 	eatsize += nfrm.frmSize;
 }
+*/
 
 int zlib_uncompress(char* in, int ilen, char* out, int olen) {
 	int ret;
@@ -62,9 +79,155 @@ int zlib_uncompress(char* in, int ilen, char* out, int olen) {
 	return (olen - strm.avail_out);
 }
 
+void rzxLoadFrame(ZXComp* zx) {
+	int work = 1;
+	unsigned char type;
+	unsigned int len;
+	int pos;
+	char* sname = NULL;
+	char* obuf = NULL;
+	char* ibuf = NULL;
+	FILE* file = zx->rzx.file;
+	FILE* ofile;
+	rzxSnap shd;
+	rzxFrm fhd;
+//	RZXFrame frm;
+//	frm.frmSize = 0;
+//	frm.frmData = NULL;
+	while (work) {
+		type = fgetc(file);
+		if (feof(zx->rzx.file)) {
+			printf("eof\n");
+			rzxStop(zx);
+			break;
+		}
+		len = freadLen(file, 4);
+		switch (type) {
+			case 0x30:
+				fread((char*)&shd, sizeof(rzxSnap), 1, file);
+				if (shd.flag & 1) {			// external snapshot file
+					fseek(file, 4, SEEK_CUR);
+					sname = (char*)realloc(sname, len - 20);
+					memset(sname, 0x00, len - 20);
+					fread(sname, len - 21, 1, file);
+				} else {				// internal snapshot
+					obuf = (char*)realloc(obuf, shd.usl);	// unpacked size
+					if (shd.flag & 2) {			// packed
+						ibuf = (char*)realloc(ibuf, len - 17);
+						fread(ibuf, len - 17, 1, file);
+						len = zlib_uncompress(ibuf, len - 17, obuf, shd.usl);
+					} else {				// not packed
+						fread(obuf, shd.usl, 1, file);
+					}
+					if (len == 0) {
+						printf("Decompress error\n");
+						work = 0;
+						rzxStop(zx);
+						break;
+					}
+					sname = tmpnam(NULL);			// write to temp file
+					ofile = fopen(sname, "wb");
+					if (!ofile) {
+						work = 0;
+						rzxStop(zx);
+						break;
+					}
+					fwrite(obuf, shd.usl, 1, ofile);
+					fclose(ofile);
+				}
+				if ((strncmp(shd.ext, "sna", 3) && strncmp(shd.ext, "SNA", 3)) == 0) {
+					if (loadSNA(zx, sname) != ERR_OK) {
+						work = 0;
+						rzxStop(zx);
+					}
+				} else if ((strncmp(shd.ext, "z80", 3) && strncmp(shd.ext, "Z80", 3)) == 0) {
+					if (loadZ80(zx, sname) != ERR_OK) {
+						work = 0;
+						rzxStop(zx);
+					}
+				}
+				if (shd.flag & 1) {
+					free(sname);
+				} else {
+					unlink(sname);		// delete temp file
+				}
+				break;
+			case 0x80:
+				work = 0;
+				fread((char*)&fhd, sizeof(rzxFrm), 1, file);
+#ifdef WORDS_BIG_ENDIAN
+				fhd.fCount = le32toh(fhd.fCount);
+				fhd.tStart = le32toh(fhd.tStart);
+				fhd.flags = le32toh(fhd.flags);
+#endif
+				if (fhd.flags & 1) {
+					printf("Crypted rzx data\n");
+					rzxStop(zx);
+					break;
+				}
+				if (fhd.flags & 2) {
+					obuf = (char*)realloc(obuf, 0x1000000);		// ~16Mb
+					ibuf = (char*)realloc(ibuf, len - 18);
+					fread(ibuf, len - 18, 1, file);
+					len = zlib_uncompress(ibuf, len - 18, obuf, 0x1000000);
+					printf("unpacked : %.X\n",len);
+				} else {
+					obuf = (char*)realloc(obuf, len - 18);
+					fread(obuf, len - 18, 1, file);
+				}
+				if (len == 0) {
+					printf("Decompress error\n");
+					rzxStop(zx);
+					break;
+				}
+				printf("Frames: %i\n",fhd.fCount);
+				zx->rzx.size = fhd.fCount;
+				zx->rzx.data = (RZXFrame*)realloc(zx->rzx.data, fhd.fCount * sizeof(RZXFrame));
+				pos = 0;
+				for (int i = 0; i < fhd.fCount; i++) {
+					zx->rzx.data[i].fetches = (obuf[pos] & 0xff) | ((obuf[pos+1] & 0xff) << 8);
+					len = (obuf[pos+2] & 0xff) | ((obuf[pos+3] & 0xff) << 8);
+					pos += 4;
+					if (len != 0xffff) {
+						zx->rzx.data[i].frmSize = len;
+						zx->rzx.data[i].frmData = (unsigned char*)malloc(len);
+						memcpy(zx->rzx.data[i].frmData, &obuf[pos], len);
+						pos += len;
+					} else {
+						len = zx->rzx.data[i - 1].frmSize;
+						zx->rzx.data[i].frmSize = len;
+						zx->rzx.data[i].frmData = (unsigned char*)malloc(len);
+						memcpy(zx->rzx.data[i].frmData, zx->rzx.data[i - 1].frmData, len);
+					}
+				}
+				zx->rzx.fetches = zx->rzx.data[0].fetches - fhd.tStart;
+				zx->rzx.frame = 0;
+				zx->rzx.pos = 0;
+				break;
+			default:
+				fseek(zx->rzx.file, len - 5, SEEK_CUR);
+				break;
+		}
+	}
+	if (ibuf) free(ibuf);
+	if (obuf) free(obuf);
+}
+
 int loadRZX(ZXComp* zx, const char* name) {
-	std::ifstream file(name,std::ios::binary);
-	if (!file.good()) return ERR_CANT_OPEN;
+	zx->rzxPlay = 0;
+	zx->rzx.file = fopen(name, "rb");
+	if (!zx->rzx.file) return ERR_CANT_OPEN;
+	rzxHead hd;
+	fread((char*)&hd, sizeof(rzxHead), 1, zx->rzx.file);
+#ifdef WORDS_BIG_ENDIAN
+	hd.flags = le32toh(hd.flags);
+#endif
+	zx->rzxPlay = 1;
+	rzxLoadFrame(zx);
+	return ERR_OK;
+}
+
+/*
 #ifdef _WIN32
 	std::string tmpName = std::string(getenv("TEMP"))+"\\lain.tmp";
 #else
@@ -215,5 +378,6 @@ int loadRZX(ZXComp* zx, const char* name) {
 	printf("Memory eated for RZX: %i\n",eatsize);
 	return ERR_OK;
 }
+*/
 
 #endif
