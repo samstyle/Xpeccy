@@ -32,10 +32,10 @@ Memory* memCreate() {
 }
 
 void memDestroy(Memory* mem) {
-	free(mem->ramData);
-	free(mem->ramFlag);
-	free(mem->romData);
-	free(mem->romFlag);
+//	free(mem->ramData);
+//	free(mem->ramFlag);
+//	free(mem->romData);
+//	free(mem->romFlag);
 	free(mem);
 }
 

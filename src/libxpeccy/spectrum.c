@@ -109,6 +109,10 @@ inline void zxIORW(ZXComp* comp, int port) {
 Z80EX_BYTE iord(CPUCONT Z80EX_WORD port, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
 	Z80EX_BYTE res = 0xff;
+
+	res3 = TCPU(comp->cpu) + 3;
+	vidSync(comp->vid,(res3 - res4) * comp->nsPerTick);
+	res4 = res3;
 // tape sync
 	tapSync(comp->tape,comp->tapCount);
 	comp->tapCount = 0;
@@ -141,13 +145,19 @@ Z80EX_BYTE intrq(CPUCONT void* ptr) {
 	return ((ZXComp*)ptr)->intVector;
 }
 
-void rzxStop(ZXComp* zx) {
+void rzxFree(ZXComp* zx) {
+	if (!zx->rzx.data) return;
 	for (int i = 0; i < zx->rzx.size; i++) {
-		if (zx->rzx.data[i].frmData) free(zx->rzx.data[i].frmData);
+		if (zx->rzx.data[i].frmData)
+			free(zx->rzx.data[i].frmData);
 	}
-	if (zx->rzx.data) free(zx->rzx.data);
+	free(zx->rzx.data);
+	zx->rzx.data = 0;
 	zx->rzx.size = 0;
-	zx->rzx.data = NULL;
+}
+
+void rzxStop(ZXComp* zx) {
+	rzxFree(zx);
 	zx->rzxPlay = 0;
 	if (zx->rzx.file) fclose(zx->rzx.file);
 	zx->rzx.file = NULL;
@@ -316,7 +326,7 @@ int zxExec(ZXComp* comp) {
 	EXECCPU(comp->cpu,res2);
 //	comp->nsCount += res2 * comp->nsPerTick;
 
-	vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
+	vidSync(comp->vid,(res2 - res4 - 1) * comp->nsPerTick);
 	if (comp->padr) {
 		tapSync(comp->tape,comp->tapCount);
 		comp->tapCount = 0;
@@ -333,6 +343,7 @@ int zxExec(ZXComp* comp) {
 		comp->hw->out(comp, comp->padr, comp->pval, bdiz);
 		comp->padr = 0;
 	}
+	vidSync(comp->vid, comp->nsPerTick);
 
 	res1 = res2;
 

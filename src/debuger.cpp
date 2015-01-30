@@ -33,7 +33,7 @@ void DebugWin::stop() {
 	comp->debug = 0;
 	comp->vid->debug = 0;
 	tCount = comp->tickCount;
-	zxExec(comp);		// to prevent immediatelly fetch break, if PC is on breakpoint
+//	zxExec(comp);		// to prevent immediatelly fetch break, if PC is on breakpoint
 	hide();
 	active = false;
 	winPos = pos();

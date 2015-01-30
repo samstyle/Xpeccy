@@ -572,6 +572,7 @@ void SetupWin::reject() {
 void SetupWin::layNameCheck(QString nam) {
 	layUi.okButton->setEnabled(!layUi.layName->text().isEmpty());
 	for (uint i = 0; i < layList.size(); i++) {
+//		qDebug() << eidx << i << layList[i].name.c_str() << nam;
 		if ((QString(layList[i].name.c_str()) == nam) && (eidx != (int)i)) {
 			layUi.okButton->setEnabled(false);
 		}
@@ -676,7 +677,8 @@ void SetupWin::layEditorOK() {
 		ui.geombox->addItem(QString::fromLocal8Bit(nlay.name.c_str()));
 		ui.geombox->setCurrentIndex(ui.geombox->count() - 1);
 	} else {
-		prfChangeLayName(layList[eidx].name, nlay.name);
+		if (layList[eidx].name != nlay.name)
+			prfChangeLayName(layList[eidx].name, nlay.name);
 		layList[eidx] = nlay;
 		ui.geombox->setItemText(eidx, nlay.name.c_str());
 	}

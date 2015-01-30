@@ -67,8 +67,6 @@
 
 // spg
 
-int loadSPG(ZXComp*,const char*);		// still in c++ part because of depackers
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -96,6 +94,8 @@ int loadZ80(ZXComp*,const char*);
 
 int loadSNA(ZXComp*,const char*);
 int saveSNA(ZXComp*, const char*, int);
+
+int loadSPG(ZXComp*,const char*);
 
 // tape
 

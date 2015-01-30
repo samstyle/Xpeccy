@@ -33,16 +33,6 @@ void atm2MapMem(ZXComp* comp) {
 	}
 }
 
-// in
-
-Z80EX_BYTE atm2InFE(ZXComp* comp, Z80EX_WORD port) {
-	return keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->levPlay ? 0x40 : 0x00);
-}
-
-Z80EX_BYTE atm2InFFFD(ZXComp* comp, Z80EX_WORD port) {
-	return tsIn(comp->ts, 0xfffd);
-}
-
 // out
 
 void atm2Out77(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {		// dos
@@ -84,14 +74,6 @@ void atm2Out7FFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	atm2MapMem(comp);
 }
 
-void atm2OutBFFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
-	tsOut(comp->ts, 0xbffd, val);
-}
-
-void atm2OutFFFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
-	tsOut(comp->ts, 0xfffd, val);
-}
-
 void atm2OutFF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {		// dos. bdiOut already done
 	if (comp->prt1 & 0x40) return;
 	val ^= 0xff;	// inverse colors
@@ -102,13 +84,13 @@ void atm2OutFF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {		// dos. bdiOut 
 }
 
 xPort atm2PortMap[] = {
-	{0x0007,0x00fe,1,0,&atm2InFE,	&atm2OutFE},
+	{0x0007,0x00fe,1,0,&xInFE,	&atm2OutFE},
 	{0x0007,0x00fa,1,0,NULL,	NULL},		// fa
 	{0x0007,0x00fb,1,0,NULL,	&atm2OutFB},	// fb (covox)
 	{0x8202,0x7ffd,1,0,NULL,	&atm2Out7FFD},
 	{0x8202,0x7dfd,1,0,NULL,	NULL},		// 7DFD
-	{0xc202,0xbffd,1,0,NULL,	&atm2OutBFFD},	// ay
-	{0xc202,0xfffd,1,0,&atm2InFFFD,	&atm2OutFFFD},
+	{0xc202,0xbffd,1,0,NULL,	&xOutBFFD},	// ay
+	{0xc202,0xfffd,1,0,&xInFFFD,	&xOutFFFD},
 	// dos
 	{0x009f,0x00ff,0,1,NULL,	&atm2OutFF},	// palette (dos)
 	{0x009f,0x00f7,0,1,NULL,	&atm2OutF7},

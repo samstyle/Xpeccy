@@ -25,18 +25,17 @@ Z80EX_BYTE spIn1F(ZXComp* comp, Z80EX_WORD port) {
 	return joyInput(comp->joy);
 }
 
-Z80EX_BYTE spInFE(ZXComp* comp, Z80EX_WORD port) {
-	Z80EX_BYTE res = keyInput(comp->keyb, (port & 0xff00) >> 8);
-	res |= (comp->tape->levPlay ? 0x40 : 0x00);
-	return res;
-}
-
 Z80EX_BYTE spInFF(ZXComp* comp, Z80EX_WORD port) {
 	return comp->vid->atrbyte;
 }
 
 xPort spePortMap[] = {
-	{0x0001, 0x00fe, 1, 0, &spInFE, &spOutFE},
+	{0x0001, 0x00fe, 1, 0, &xInFE, &spOutFE},
+	{0xc002, 0xfffd, 1, 0, &xInFFFD, &xOutFFFD},
+	{0xc002, 0xbffd, 1, 0, NULL, &xOutBFFD},
+	{0x0320, 0xfadf, 1, 0, &xInFADF, NULL},
+	{0x0720, 0xfbdf, 1, 0, &xInFBDF, NULL},
+	{0x0720, 0xffdf, 1, 0, &xInFFDF, NULL},
 	{0x0021, 0x001f, 0, 0, &spIn1F, NULL},
 	{0x0000, 0x0000, 0, 0, &spInFF, NULL}		// all unknown ports is FF (nodos)
 };

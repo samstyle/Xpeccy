@@ -1,5 +1,7 @@
 #include "filetypes.h"
 
+#include <endian.h>
+
 #pragma pack (push, 1)
 
 typedef struct {

@@ -5,7 +5,7 @@
 
 #pragma pack (push, 1)
 
-struct spgHead {
+typedef struct {
 	char astr[32];
 	char sign[12];
 	unsigned char fmt;	// 2c : format
@@ -25,19 +25,20 @@ struct spgHead {
 	char res3F[17];		// 3F : reserved
 	char creator[32];
 	char res70[144];	// 70 : reserved
-};
+} spgHead;
 
 #pragma pack (pop)
 
 int loadSPG(ZXComp* comp, const char* name) {
-	std::ifstream file(name,std::ios::binary);
-	if (!file.good()) return ERR_CANT_OPEN;
+	FILE* file = fopen(name,"rb");
+	if (!file) return ERR_CANT_OPEN;
+
 	spgHead hd;
 	unsigned char blkInfo[768];
 	unsigned char inbuf[0x4000];
 	unsigned char outbuf[0xffff];
-	file.read((char*)&hd,sizeof(spgHead));
-	file.read((char*)blkInfo,768);
+	fread((char*)&hd, sizeof(spgHead), 1, file);
+	fread((char*)blkInfo, 768, 1, file);
 
 	printf("spg ver %i.%i\n",(hd.fmt & 0xf0) >> 4, hd.fmt & 0x0f);
 
@@ -51,17 +52,17 @@ int loadSPG(ZXComp* comp, const char* name) {
 		sze = ((blkInfo[idx+1] & 0x1f) + 1) << 9;	// block size (00:512 .. 1f:16K
 		pg = blkInfo[idx+2];
 
-		file.read((char*)inbuf,sze);
+		fread((char*)inbuf, sze, 1, file);
 		switch (blkInfo[idx + 1] & 0xc0) {
 			case 0x00:
 				memcpy(comp->mem->ramData + (pg << 14) + addr, inbuf, sze);
 				break;
 			case 0x40:
-				sze = demegalz(inbuf,outbuf);			// it works?
+				sze = demegalz(inbuf, outbuf);		// it works?
 				memcpy(comp->mem->ramData + (pg << 14) + addr, outbuf, sze);
 				break;
 			case 0x80:
-				sze = dehrust(inbuf,outbuf);	// no 'last 6 bytes'
+				sze = dehrust(inbuf, outbuf);		// no 'last 6 bytes'
 				memcpy(comp->mem->ramData + (pg << 14) + addr, outbuf, sze);
 				break;
 			default:

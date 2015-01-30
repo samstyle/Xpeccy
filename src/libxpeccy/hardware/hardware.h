@@ -60,6 +60,17 @@ HardWare* findHardware(const char*);
 Z80EX_BYTE stdMRd(ZXComp*,Z80EX_WORD,int);
 void stdMWr(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
 
+// common IO
+
+void xOutBFFD(ZXComp*, Z80EX_WORD, Z80EX_BYTE);
+void xOutFFFD(ZXComp*, Z80EX_WORD, Z80EX_BYTE);
+
+Z80EX_BYTE xInFE(ZXComp*, Z80EX_WORD);
+Z80EX_BYTE xInFFFD(ZXComp*, Z80EX_WORD);
+Z80EX_BYTE xInFADF(ZXComp*, Z80EX_WORD);
+Z80EX_BYTE xInFBDF(ZXComp*, Z80EX_WORD);
+Z80EX_BYTE xInFFDF(ZXComp*, Z80EX_WORD);
+
 // zx48
 void speMapMem(ZXComp*);
 void speOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);

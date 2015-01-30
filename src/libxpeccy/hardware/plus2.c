@@ -26,16 +26,6 @@ void pl2MapMem(ZXComp* comp) {
 	}
 }
 
-// in
-
-Z80EX_BYTE p2InFE(ZXComp* comp, Z80EX_WORD port) {
-	return keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->levPlay ? 0x40 : 0x00);
-}
-
-Z80EX_BYTE p2InFFFD(ZXComp* comp, Z80EX_WORD port) {
-	return tsIn(comp->ts, 0xfffd);
-}
-
 // out
 
 void p2OutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
@@ -57,20 +47,12 @@ void p2Out7FFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	pl2MapMem(comp);
 }
 
-void p2OutBFFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
-	tsOut(comp->ts, 0xbffd, val);
-}
-
-void p2OutFFFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
-	tsOut(comp->ts, 0xfffd, val);
-}
-
 xPort p2PortMap[] = {
-	{0x0003,0x00fe,1,0,&p2InFE,	&p2OutFE},
+	{0x0003,0x00fe,1,0,&xInFE,	&p2OutFE},
 	{0xc002,0x7ffd,1,0,NULL,	&p2Out7FFD},
 	{0xf002,0x1ffd,1,0,NULL,	&p2Out1FFD},
-	{0xc002,0xbffd,1,0,NULL,	&p2OutBFFD},
-	{0xc002,0xfffd,1,0,&p2InFFFD,	&p2OutFFFD},
+	{0xc002,0xbffd,1,0,NULL,	&xOutBFFD},
+	{0xc002,0xfffd,1,0,&xInFFFD,	&xOutFFFD},
 	{0x0000,0x0000,1,0,NULL,	NULL}
 };
 

@@ -11,31 +11,8 @@ void p1mMapMem(ZXComp* comp) {
 
 // in
 
-Z80EX_BYTE p1mInFE(ZXComp* comp, Z80EX_WORD port) {
-	return keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->levPlay ? 0x40 : 0x00);
-}
-
 Z80EX_BYTE p1mIn1F(ZXComp* comp, Z80EX_WORD port) {
 	return joyInput(comp->joy);
-}
-
-Z80EX_BYTE p1mInFFFD(ZXComp* comp, Z80EX_WORD port) {
-	return tsIn(comp->ts, 0xfffd);
-}
-
-Z80EX_BYTE p1mInFADF(ZXComp* comp, Z80EX_WORD port) {
-	comp->mouse->used = 1;
-	return comp->mouse->enable ? comp->mouse->buttons : 0xff;
-}
-
-Z80EX_BYTE p1mInFBDF(ZXComp* comp, Z80EX_WORD port) {
-	comp->mouse->used = 1;
-	return comp->mouse->enable ? comp->mouse->xpos : 0xff;
-}
-
-Z80EX_BYTE p1mInFFDF(ZXComp* comp, Z80EX_WORD port) {
-	comp->mouse->used = 1;
-	return comp->mouse->enable ? comp->mouse->ypos : 0xff;
 }
 
 Z80EX_BYTE p1mInBFF7(ZXComp* comp, Z80EX_WORD port) {
@@ -58,14 +35,6 @@ void p1mOut7FFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	p1mMapMem(comp);
 }
 
-void p1mOutBFFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
-	tsOut(comp->ts, 0xbffd, val);
-}
-
-void p1mOutFFFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
-	tsOut(comp->ts, 0xfffd, val);
-}
-
 void p1mOutBFF7(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	if (comp->prt1 & 0x80) cmsWr(comp,val);
 }
@@ -82,16 +51,16 @@ void p1mOutEFF7(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 }
 
 xPort p1mPortMap[] = {
-	{0x0003,0x00fe,1,0,&p1mInFE,	&p1mOutFE},
+	{0x0003,0x00fe,1,0,&xInFE,	&p1mOutFE},
 	{0x8002,0x7ffd,1,0,NULL,	&p1mOut7FFD},
-	{0xc002,0xbffd,1,0,NULL,	&p1mOutBFFD},
-	{0xc002,0xfffd,1,0,&p1mInFFFD,	&p1mOutFFFD},
+	{0xc002,0xbffd,1,0,NULL,	&xOutBFFD},
+	{0xc002,0xfffd,1,0,&xInFFFD,	&xOutFFFD},
 	{0xf008,0xeff7,1,0,NULL,	&p1mOutEFF7},
 	{0xf008,0xbff7,1,0,&p1mInBFF7,	&p1mOutBFF7},
 	{0xf008,0xdff7,1,0,NULL,	&p1mOutDFF7},
-	{0x05a3,0xfadf,0,0,&p1mInFADF,	NULL},
-	{0x05a3,0xfbdf,0,0,&p1mInFBDF,	NULL},
-	{0x05a3,0xffdf,0,0,&p1mInFFDF,	NULL},
+	{0x05a3,0xfadf,0,0,&xInFADF,	NULL},
+	{0x05a3,0xfbdf,0,0,&xInFBDF,	NULL},
+	{0x05a3,0xffdf,0,0,&xInFFDF,	NULL},
 	{0x00ff,0x001f,0,0,&p1mIn1F,	NULL},		// TODO : ORLY (x & FF = 1F)
 	{0x0000,0x0000,1,0,NULL,NULL}
 };

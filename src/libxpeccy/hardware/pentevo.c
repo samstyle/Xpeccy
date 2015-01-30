@@ -127,19 +127,6 @@ Z80EX_BYTE evoInBF(ZXComp* comp, Z80EX_WORD port) {
 	return comp->evo.evoBF;
 }
 
-Z80EX_BYTE evoInFE(ZXComp* comp, Z80EX_WORD port) {
-	return keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->levPlay ? 0x40 : 0x00);
-}
-
-Z80EX_BYTE evoInFFFD(ZXComp* comp, Z80EX_WORD port) {
-	return tsIn(comp->ts, 0xfffd);
-}
-
-Z80EX_BYTE evoInKMice(ZXComp* comp, Z80EX_WORD port) {
-	comp->mouse->used = 1;
-	return (port & 0x0400) ? comp->mouse->ypos : ((port & 0x0100) ? comp->mouse->xpos : comp->mouse->buttons);
-}
-
 Z80EX_BYTE evoInBDI(ZXComp* comp, Z80EX_WORD port) {
 	Z80EX_BYTE res;
 	difIn(comp->dif, port, &res, 1);
@@ -185,14 +172,6 @@ void evoOutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	if (!comp->vid->border4t) comp->vid->brdcol = comp->vid->nextbrd;
 	comp->beeplev = (val & 0x10) ? 1 : 0;
 	comp->tape->levRec = (val & 0x08) ? 1 : 0;
-}
-
-void evoOutBFFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
-	tsOut(comp->ts, 0xbffd, val);
-}
-
-void evoOutFFFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
-	tsOut(comp->ts, 0xfffd, val);
 }
 
 void evoOut2F(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
@@ -284,16 +263,16 @@ void evoOutEFF7(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {	// !dos
 }
 
 xPort evoPortMap[] = {
-	{0x00f7,0x00fe,1,0,&evoInFE,	&evoOutFE},	// A3 = border bright
+	{0x00f7,0x00fe,1,0,&xInFE,	&evoOutFE},	// A3 = border bright
 	{0x00ff,0x00fb,1,0,NULL,	&evoOutFB},	// covox
 	{0x00ff,0x00be,1,0,&evoInBE,	NULL},
 	{0x00ff,0x00bf,1,0,&evoInBF,	&evoOutBF},
 	{0xffff,0x7ffd,1,0,NULL,	&evoOut7FFD},
-	{0xffff,0xfadf,1,0,&evoInKMice, NULL},		// k-mouse (fadf,fbdf,ffdf)
-	{0xffff,0xfbdf,1,0,&evoInKMice,	NULL},
-	{0xffff,0xffdf,1,0,&evoInKMice,	NULL},
-	{0xfeff,0xbffd,1,0,NULL,	&evoOutBFFD},	// ay/ym; bffd, fffd
-	{0xfeff,0xfffd,1,0,&evoInFFFD,	&evoOutFFFD},
+	{0xffff,0xfadf,1,0,&xInFADF,	NULL},		// k-mouse (fadf,fbdf,ffdf)
+	{0xffff,0xfbdf,1,0,&xInFBDF,	NULL},
+	{0xffff,0xffdf,1,0,&xInFFDF,	NULL},
+	{0xfeff,0xbffd,1,0,NULL,	&xOutBFFD},	// ay/ym; bffd, fffd
+	{0xfeff,0xfffd,1,0,&xInFFFD,	&xOutFFFD},
 	// dos only
 	{0x009f,0x001f,0,1,&evoInBDI,	&evoOutBDI},	// bdi 1f,3f,5f,7f
 	{0x00ff,0x00ff,0,1,&evoInBDI,	&evoOutFF},	// bdi ff + set palette

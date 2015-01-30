@@ -9,6 +9,22 @@ typedef unsigned char BYTE;
 
 /* BBStream class */
 
+typedef struct {
+	BYTE* base;
+	BYTE* p;
+	int   idx;
+	int   len;
+	int pType;
+	int  eof;
+	WORD  bits;
+} bbStream;
+
+void bsInit(bbStream*, BYTE*, int);
+BYTE bsGetByte(bbStream*);
+BYTE bsGetBit(bbStream*);
+BYTE bsGetBits(bbStream*, int);
+
+/*
 class BBStream {
 private:
 	BYTE* base;
@@ -65,6 +81,7 @@ public:
 
 	bool error( void ) { return eof; }
 };
+*/
 
 WORD dehrust(BYTE*, BYTE*);
 WORD demegalz(BYTE*, BYTE*);

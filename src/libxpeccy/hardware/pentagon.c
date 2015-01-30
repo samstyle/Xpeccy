@@ -11,29 +11,6 @@ Z80EX_BYTE penIn1F(ZXComp* comp, Z80EX_WORD port) {
 	return joyInput(comp->joy);
 }
 
-Z80EX_BYTE penInFE(ZXComp* comp, Z80EX_WORD port) {
-	return keyInput(comp->keyb, (port & 0xff00) >> 8) | (comp->tape->levPlay ? 0x40 : 0x00);
-}
-
-Z80EX_BYTE penInFFFD(ZXComp* comp, Z80EX_WORD port) {
-	return tsIn(comp->ts, 0xfffd);
-}
-
-Z80EX_BYTE penInFADF(ZXComp* comp, Z80EX_WORD port) {
-	comp->mouse->used = 1;
-	return comp->mouse->enable ? comp->mouse->buttons : 0xff;
-}
-
-Z80EX_BYTE penInFBDF(ZXComp* comp, Z80EX_WORD port) {
-	comp->mouse->used = 1;
-	return comp->mouse->enable ? comp->mouse->xpos : 0xff;
-}
-
-Z80EX_BYTE penInFFDF(ZXComp* comp, Z80EX_WORD port) {
-	comp->mouse->used = 1;
-	return comp->mouse->enable ? comp->mouse->ypos : 0xff;
-}
-
 // out
 
 void penOutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
@@ -50,23 +27,15 @@ void penOut7FFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	penMapMem(comp);
 }
 
-void penOutBFFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
-	tsOut(comp->ts, 0xbffd, val);
-}
-
-void penOutFFFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
-	tsOut(comp->ts, 0xfffd, val);
-}
-
 xPort penPortMap[] = {
-	{0x0001,0x00fe,1,0,&penInFE,	&penOutFE},
+	{0x0001,0x00fe,1,0,&xInFE,	&penOutFE},
 	{0x8002,0x7ffd,1,0,NULL,	&penOut7FFD},
-	{0xc002,0xbffd,1,0,NULL,	&penOutBFFD},
-	{0xc002,0xfffd,1,0,&penInFFFD,	&penOutFFFD},
+	{0xc002,0xbffd,1,0,NULL,	&xOutBFFD},
+	{0xc002,0xfffd,1,0,&xInFFFD,	&xOutFFFD},
 	{0x00ff,0x001f,0,0,&penIn1F,	NULL},		// joystick
-	{0x05a3,0xfadf,0,0,&penInFADF,	NULL},		// mouse
-	{0x05a3,0xfbdf,0,0,&penInFBDF,	NULL},
-	{0x05a3,0xffdf,0,0,&penInFFDF,	NULL},
+	{0x05a3,0xfadf,0,0,&xInFADF,	NULL},		// mouse
+	{0x05a3,0xfbdf,0,0,&xInFBDF,	NULL},
+	{0x05a3,0xffdf,0,0,&xInFFDF,	NULL},
 	{0x0000,0x0000,1,0,NULL,	NULL}		// end
 };
 

@@ -154,7 +154,7 @@ int contTabB[] = {2,1,0,0,14,13,12,11,10,9,8,7,6,5,4,3};	// +2A +3 (bank 4,5,6,7
 void vidWait(Video* vid) {
 	if (vid->y < vid->bord.v) return;		// above screen
 	if (vid->y > (vid->bord.v + 191)) return;	// below screen
-	xscr = vid->x - vid->bord.h + 2;
+	xscr = vid->x - vid->bord.h; // + 2;
 	if (xscr < 0) return;
 	if (xscr > 253) return;
 //	printf("X:%i, brd:%i, wait:%i\n",vid->x,vid->bord.h,contTabA[xscr & 0x0f]);
