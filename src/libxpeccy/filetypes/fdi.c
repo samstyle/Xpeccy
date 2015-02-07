@@ -1,6 +1,8 @@
 #include "filetypes.h"
 
+#ifdef __linux
 #include <endian.h>
+#endif
 
 #pragma pack (push, 1)
 

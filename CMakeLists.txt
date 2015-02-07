@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(xpeccy)
-set(XVER "0.5.20150201")
+set(XVER "0.5.20150209")
 
 include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
 
@@ -24,7 +24,6 @@ file(GLOB SOURCES
 	./src/libxpeccy/filetypes/*.c
 	./src/libxpeccy/filetypes/*.cpp
 	./src/libxpeccy/filetypes/unpackers/*.c
-	./src/libxpeccy/filetypes/unpackers/*.cpp
 	./src/xcore/*.cpp
 	./src/xgui/*.cpp
 if(WIN32)

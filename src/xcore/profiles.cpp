@@ -54,16 +54,27 @@ int delProfile(std::string nm) {
 	xProfile* prf = findProfile(nm);
 	if (prf == NULL) return DELP_ERR;		// no such profile
 	int res = DELP_OK;
-	zxDestroy(prf->zx);
-	if (currentProfile->name == nm) {
-		prfSetCurrent("default");			// if current profile deleted, set default
-		res = DELP_OK_CURR;
+	std::string cpath = conf.path.confDir + SLASH + prf->file;
+//	printf("%s\n",cpath.c_str());
+	remove(cpath.c_str());				// remove config file
+	cpath = conf.path.confDir + SLASH + prf->name + ".cmos";
+	remove(cpath.c_str());
+	cpath = conf.path.confDir + SLASH + prf->name + ".nvram";
+	remove(cpath.c_str());
+	zxDestroy(prf->zx);				// delete ZX
+	if (currentProfile) {
+		if (currentProfile->name == nm) {
+			nm = std::string("default");
+			res = DELP_OK_CURR;
+			currentProfile = NULL;
+		} else {
+			nm = currentProfile->name;
+		}
 	}
-	if (currentProfile != NULL) nm = currentProfile->name;
 	for (uint i = 0; i < profileList.size(); i++) {
 		if (profileList[i].name == prf->name) profileList.erase(profileList.begin() + i);
 	}
-	if (currentProfile != NULL) prfSetCurrent(nm);
+	prfSetCurrent(nm);
 	return res;
 }
 

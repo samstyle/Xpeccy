@@ -38,10 +38,7 @@ SDCard* sdcCreate() {
 	SDCard* sdc = (SDCard*)malloc(sizeof(SDCard));
 	memset(sdc,0x00,sizeof(SDCard));
 	if (!sdc) return NULL;
-//	sdc->addr = 0;
 	sdc->argCnt = 6;
-//	sdc->flag = 0;
-//	sdc->buf.pos = 0;
 	sdc->image = NULL;
 	sdc->blkSize = 512;
 	sdcSetCapacity(sdc,SDC_DEFAULT);
@@ -51,7 +48,8 @@ SDCard* sdcCreate() {
 }
 
 void sdcDestroy(SDCard* sdc) {
-	if (sdc) free(sdc);
+	sdcCloseFile(sdc);
+	free(sdc);
 }
 
 void sdcReset(SDCard* sdc) {

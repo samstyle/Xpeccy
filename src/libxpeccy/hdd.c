@@ -452,6 +452,7 @@ IDE* ideCreate(int tp) {
 }
 
 void ideDestroy(IDE* ide) {
+	ideCloseFiles(ide);
 	ataDestroy(ide->master);
 	ataDestroy(ide->slave);
 	free(ide);
@@ -686,6 +687,7 @@ void ideOpenFiles(IDE* ide) {
 }
 
 void ideCloseFiles(IDE* ide) {
+
 	if (ide->master->file) fclose(ide->master->file);
 	ide->master->file = NULL;
 	if (ide->slave->file) fclose(ide->slave->file);

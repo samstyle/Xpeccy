@@ -58,8 +58,10 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	layUi.setupUi(layeditor);
 	layeditor->setModal(true);
 
+	prfChanged = 0;
+
 	unsigned int i;
-	std::vector<std::string> list;
+//	std::vector<std::string> list;
 // machine
 	i = 0;
 	while (hwTab[i].name != NULL) {
@@ -284,21 +286,17 @@ void SetupWin::okay() {
 	reject();
 }
 
-void SetupWin::start(ZXComp* c) {
-	comp = c;
+void SetupWin::start(xProfile* p) {
+	prof = p;
+	comp = p->zx;
 	unsigned int i;
-	xProfile* curProf = findProfile("");
-	xRomset* rset = findRomset(curProf->rsName);
 // machine
 	ui.rsetbox->clear();
 	for (i=0; i < rsList.size(); i++) {
 		ui.rsetbox->addItem(QString::fromLocal8Bit(rsList[i].name.c_str()));
 	}
 	ui.machbox->setCurrentIndex(ui.machbox->findData(QString::fromUtf8(comp->hw->name)));
-	int cbx = -1;
-	if (rset != NULL)
-		cbx = ui.rsetbox->findText(QString::fromUtf8(rset->name.c_str()));
-	ui.rsetbox->setCurrentIndex(cbx);
+	ui.rsetbox->setCurrentIndex(ui.rsetbox->findText(QString::fromUtf8(prof->rsName.c_str())));
 	ui.resbox->setCurrentIndex(ui.resbox->findData(comp->resbank));
 	setmszbox(ui.machbox->currentIndex());
 	ui.mszbox->setCurrentIndex(ui.mszbox->findData(comp->mem->memSize));
@@ -428,13 +426,12 @@ void SetupWin::start(ZXComp* c) {
 }
 
 void SetupWin::apply() {
-	xProfile* curProf = findProfile("");
 // machine
 	HardWare *oldmac = comp->hw;
-	curProf->hwName = std::string(ui.machbox->itemData(ui.machbox->currentIndex()).toString().toUtf8().data());
-	zxSetHardware(curProf->zx,curProf->hwName.c_str());
-	curProf->rsName = std::string(ui.rsetbox->currentText().toUtf8().data());
-	prfSetRomset(curProf, curProf->rsName);
+	prof->hwName = std::string(ui.machbox->itemData(ui.machbox->currentIndex()).toString().toUtf8().data());
+	zxSetHardware(prof->zx,prof->hwName.c_str());
+	prof->rsName = std::string(ui.rsetbox->currentText().toUtf8().data());
+	prfSetRomset(prof, prof->rsName);
 	comp->resbank = ui.resbox->itemData(ui.resbox->currentIndex()).toInt();
 	memSetSize(comp->mem,ui.mszbox->itemData(ui.mszbox->currentIndex()).toInt());
 	zxSetFrq(comp,ui.cpufrq->value() / 2.0);
@@ -1380,7 +1377,8 @@ void SetupWin::rmProfile() {
 	idx = delProfile(pnam);
 	switch(idx) {
 		case DELP_OK_CURR:
-			start(comp);
+			prfChanged = 1;
+			start(findProfile(""));
 			break;
 		case DELP_ERR:
 			shitHappens("Sorry, i can't delete this profile");

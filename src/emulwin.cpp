@@ -248,6 +248,11 @@ void MainWin::convImage() {
 }
 
 void MainWin::onTimer() {
+	if (opt->prfChanged) {
+		opt->prfChanged = 0;
+		comp = findProfile("")->zx;
+		ethread.comp = comp;
+	}
 	if (block) return;
 // if not paused play sound buffer
 	if (conf.snd.enabled && (conf.snd.mute || isActiveWindow())) sndPlay();
@@ -482,7 +487,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;
 			case Qt::Key_F1:
 				pause(true, PR_OPTS);
-				opt->start(comp);
+				opt->start(findProfile(""));
 				break;
 			case Qt::Key_F2:
 				pause(true,PR_FILE);
@@ -927,7 +932,7 @@ void MainWin::fillUserMenu() {
 
 void MainWin::doOptions() {
 	pause(true, PR_OPTS);
-	opt->start(comp);
+	opt->start(findProfile(""));
 }
 
 void MainWin::optApply() {

@@ -13,8 +13,11 @@
 class SetupWin : public QDialog {
 	Q_OBJECT
 	public:
+		unsigned prfChanged:1;
+
 		SetupWin(QWidget*);
 	private:
+		xProfile* prof;
 		ZXComp* comp;		
 
 		Ui::SetupWin ui;
@@ -34,7 +37,7 @@ class SetupWin : public QDialog {
 	signals:
 		void closed();
 	public slots:
-		void start(ZXComp*);
+		void start(xProfile*);
 	private slots:
 		void reject();
 		void apply();

@@ -41,6 +41,10 @@ typedef unsigned char(*cbirq)(void*);
 typedef unsigned char(*cbdmr)(unsigned short,void*);
 
 struct Z80CPU {
+	unsigned halt:1;
+	unsigned resPV:1;
+	unsigned noint:1;
+
 	PAIR(pc,hpc,lpc);
 	PAIR(sp,hsp,lsp);
 	PAIR(ix,hx,lx);
@@ -52,10 +56,6 @@ struct Z80CPU {
 	unsigned char iff1;
 	unsigned char iff2;
 	unsigned char imode;
-
-	int halt;
-	int resPV;
-	int noint;
 
 	PAIR(af,a,f);
 	PAIR(bc,b,c);
