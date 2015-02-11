@@ -54,53 +54,55 @@ void fgetLine(FILE* file, char* buf, int size, int term) {
 int loadDSK(Floppy* flp, const char *name) {
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
-
+	int err = ERR_OK;
 	DiskInfBlock dib;
 	fread((char*)&dib, sizeof(DiskInfBlock), 1, file);
-	if (strncmp(dib.signature,"EXTENDED CPC DSK File\r\nDisk-Info\r\n",34) != 0) return ERR_DSK_SIGN;
+	if (strncmp(dib.signature,"EXTENDED CPC DSK File\r\nDisk-Info\r\n",34) != 0) {
+		err = ERR_DSK_SIGN;
+	} else {
+		char sigBuf[256];
+		memset(sigBuf,0,256);
+		TrackInfBlock tib;
+		SectorInfBlock* sib;
+		int tr = 0;
+		int i,sc;
+		Sector secs[256];
 
-	char sigBuf[256];
-	memset(sigBuf,0,256);
-	TrackInfBlock tib;
-	SectorInfBlock* sib;
-	int tr = 0;
-	int i,sc;
-	Sector secs[256];
+		for (i = 0; i < 256; i++)
+			secs[i].data = NULL;
 
-	for (i = 0; i < 256; i++)
-		secs[i].data = NULL;
-
-	for (i = 0; i < dib.tracks * dib.sides; i++) {
-		if (!feof(file)) {
-			fgetLine(file, sigBuf, 255, 0);					// read block signature (till byte 0x00)
-			if (strncmp(sigBuf,"Track-Info\r\n",12) == 0) {			// track-info
-				fread((char*)&tib, sizeof(TrackInfBlock), 1, file);
-				sib = (SectorInfBlock*)&tib.sectorInfo;
-				for (sc = 0; sc < tib.secCount; sc++) {
-					secs[sc].cyl = sib[sc].track;
-					secs[sc].side = sib[sc].side;
-					secs[sc].sec = sib[sc].sector;
-					secs[sc].len = sib[sc].size;
-					secs[sc].data = (unsigned char*)realloc(secs[sc].data,sib[sc].bytesSize * sizeof(char));
-					secs[sc].type = 0xfb;
-					fread((char*)secs[sc].data, sib[sc].bytesSize, 1, file);
+		for (i = 0; i < dib.tracks * dib.sides; i++) {
+			if (!feof(file)) {
+				fgetLine(file, sigBuf, 255, 0);					// read block signature (till byte 0x00)
+				if (strncmp(sigBuf,"Track-Info\r\n",12) == 0) {			// track-info
+					fread((char*)&tib, sizeof(TrackInfBlock), 1, file);
+					sib = (SectorInfBlock*)&tib.sectorInfo;
+					for (sc = 0; sc < tib.secCount; sc++) {
+						secs[sc].cyl = sib[sc].track;
+						secs[sc].side = sib[sc].side;
+						secs[sc].sec = sib[sc].sector;
+						secs[sc].len = sib[sc].size;
+						secs[sc].data = (unsigned char*)realloc(secs[sc].data,sib[sc].bytesSize * sizeof(char));
+						secs[sc].type = 0xfb;
+						fread((char*)secs[sc].data, sib[sc].bytesSize, 1, file);
+					}
+					flpFormTrack(flp,tr,secs,tib.secCount);
+					tr++;
+					if (dib.sides == 1) tr++;
+				} else {
+					break;
 				}
-				flpFormTrack(flp,tr,secs,tib.secCount);
-				tr++;
-				if (dib.sides == 1) tr++;
-			} else {
-				break;
 			}
 		}
+		for (i = 0; i < 256; i++) {
+			if (secs[i].data)
+				free(secs[i].data);
+		}
+		flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
+		strcpy(flp->path,name);
+		flp->insert = 1;
+		flp->changed = 0;
 	}
 	fclose(file);
-	for (i = 0; i < 256; i++) {
-		if (secs[i].data)
-			free(secs[i].data);
-	}
-	flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
-	strcpy(flp->path,name);
-	flp->insert = 1;
-	flp->changed = 0;
-	return ERR_OK;
+	return err;
 }

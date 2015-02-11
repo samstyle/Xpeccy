@@ -5,9 +5,6 @@
 extern "C" {
 #endif
 
-// overall flags
-#define	MEM_NOFLAG	1
-
 // mempage type
 #define	MEM_RAM		1
 #define	MEM_ROM		2
@@ -26,7 +23,6 @@ extern "C" {
 typedef struct {
 	int type;
 	int num;
-	int flags;
 	unsigned char* dptr;
 	unsigned char* fptr;
 } MemPage;

@@ -29,7 +29,10 @@ int loadTZX(Tape* tape, const char* name) {
 
 	tzxHead hd;
 	fread((char*)&hd, sizeof(tzxHead), 1, file);
-	if ((strncmp(hd.sign, "ZXTape!",7) != 0) || (hd.eot != 0x1a)) return ERR_TZX_SIGN;
+	if ((strncmp(hd.sign, "ZXTape!",7) != 0) || (hd.eot != 0x1a)) {
+		fclose(file);
+		return ERR_TZX_SIGN;
+	}
 
 	tapEject(tape);
 	tape->path = (char*)realloc(tape->path,sizeof(char) * (strlen(name) + 1));

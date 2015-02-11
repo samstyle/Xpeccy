@@ -10,10 +10,10 @@ void putint(unsigned char* ptr, unsigned int val) {
 }
 
 unsigned int freadLen(FILE* file, int n) {
-	unsigned int len = fgetc(file);
-	if (n > 1) len |= (fgetc(file) << 8);
-	if (n > 2) len |= (fgetc(file) << 16);
-	if (n > 3) len |= (fgetc(file) << 24);
+	unsigned int len = 0;
+	for (int i = 0; i < n; i++) {
+		len |= (fgetc(file) << (i << 3));
+	}
 	return len;
 }
 
@@ -76,25 +76,30 @@ void getUDIBitField(Floppy* flp, unsigned char tr, unsigned char* buf) {
 int loadUDI(Floppy* flp, const char* name) {
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
-
+	int err = ERR_OK;
 	char buf[16];
 	unsigned char tmp;
 	int dbSide;
 
 	fread(buf, 16, 1, file);
-	if (strncmp((char*)buf, "UDI!", 4) != 0) return ERR_UDI_SIGN;
-	if (buf[8] != 0x00) return ERR_UDI_SIGN;
-	tmp = buf[9];			// max track;
-	dbSide = buf[10] ? 1 : 0 ;	// if double side
-	for (int i = 0; i < tmp + 1; i++) {
-		loadUDITrack(flp, file, i, 0);
-		if (dbSide) loadUDITrack(flp, file, i, 1);
+	if (strncmp((char*)buf, "UDI!", 4) != 0) {
+		err = ERR_UDI_SIGN;
+	} else if (buf[8] != 0x00) {
+		err = ERR_UDI_SIGN;
+	} else {
+		tmp = buf[9];			// max track;
+		dbSide = buf[10] ? 1 : 0 ;	// if double side
+		for (int i = 0; i < tmp + 1; i++) {
+			loadUDITrack(flp, file, i, 0);
+			if (dbSide) loadUDITrack(flp, file, i, 1);
+		}
+		flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
+		strcpy(flp->path,name);
+		flp->insert = 1;
+		flp->changed = 0;
 	}
-	flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
-	strcpy(flp->path,name);
-	flp->insert = 1;
-	flp->changed = 0;
-	return ERR_OK;
+	fclose(file);
+	return err;
 }
 
 int saveUDI(Floppy* flp, const char* name) {

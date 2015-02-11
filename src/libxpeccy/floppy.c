@@ -84,27 +84,23 @@ void flpPrev(Floppy* flp, int fdcSide) {
 
 }
 
+void flpClearTrack(Floppy* flp,int tr) {
+	memset(flp->data[tr].byte, 0, TRACKLEN);
+	memset(flp->data[tr].field, 0, TRACKLEN);
+}
+
 void flpClearDisk(Floppy* flp) {
 	int i;
 	for (i = 0; i < 160; i++) flpClearTrack(flp,i);
 }
 
-void flpClearTrack(Floppy* flp,int tr) {
-	int i;
-	for (i = 0; i < TRACKLEN; i++) {
-		flp->data[tr].byte[i] = 0x00;
-		flp->data[tr].field[i] = 0x00;
-	}
-}
-
 void flpFormat(Floppy* flp) {
 	int i;
-	unsigned char *buf = (unsigned char*)malloc(0x1000 * sizeof(unsigned char));
-	for (i = 0; i < 0x1000; i++) buf[i]=0x00;
+	unsigned char buf[0x1000];
+	memset(buf, 0, 0x1000);
 	for (i = 1;i < 168; i++) flpFormTRDTrack(flp,i,buf);
 	memcpy(buf + 0x8e0, trd_8e0, 0x20);
 	flpFormTRDTrack(flp,0,buf);
-	free(buf);
 }
 
 void flpFormTRDTrack(Floppy* flp, int tr, unsigned char* bpos) {

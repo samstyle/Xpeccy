@@ -122,7 +122,10 @@ void rzxLoadFrame(ZXComp* zx) {
 						rzxStop(zx);
 						break;
 					}
-					sname = tmpnam(NULL);			// write to temp file
+					sname = (char*)realloc(sname, L_tmpnam);
+					tmpnam(sname);
+					strcat(sname, ".xpeccy.tmp");
+					printf("%s\n",sname);
 					ofile = fopen(sname, "wb");
 					if (!ofile) {
 						work = 0;
@@ -143,19 +146,18 @@ void rzxLoadFrame(ZXComp* zx) {
 						rzxStop(zx);
 					}
 				}
-				if (shd.flag & 1) {
-					free(sname);
-				} else {
+				if (~shd.flag & 1) {
 					unlink(sname);		// delete temp file
 				}
+				free(sname);
 				break;
 			case 0x80:
 				work = 0;
 				fread((char*)&fhd, sizeof(rzxFrm), 1, file);
 #ifdef WORDS_BIG_ENDIAN
-				fhd.fCount = le32toh(fhd.fCount);
-				fhd.tStart = le32toh(fhd.tStart);
-				fhd.flags = le32toh(fhd.flags);
+				fhd.fCount = swap32(fhd.fCount);
+				fhd.tStart = swap32(fhd.tStart);
+				fhd.flags = swap32(fhd.flags);
 #endif
 				if (fhd.flags & 1) {
 					printf("Crypted rzx data\n");
@@ -211,7 +213,7 @@ int loadRZX(ZXComp* zx, const char* name) {
 	rzxHead hd;
 	fread((char*)&hd, sizeof(rzxHead), 1, zx->rzx.file);
 #ifdef WORDS_BIG_ENDIAN
-	hd.flags = le32toh(hd.flags);
+	hd.flags = swap32(hd.flags);
 #endif
 	zx->rzxPlay = 1;
 	rzxLoadFrame(zx);

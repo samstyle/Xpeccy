@@ -19,6 +19,7 @@ typedef struct {
 int loadSCL(Floppy* flp,const char* name) {
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
+	int err = ERR_OK;
 
 	unsigned char buf[0x1000];		// track image
 	unsigned char* bptr;
@@ -28,43 +29,46 @@ int loadSCL(Floppy* flp,const char* name) {
 
 	sclHead hd;
 	fread((char*)&hd, sizeof(sclHead), 1, file);
-	if (strncmp(hd.sign, "SINCLAIR", 8) != 0) return ERR_SCL_SIGN;
-	if (hd.files > 128) return ERR_SCL_MANY;
-
-	flpFormat(flp);
-	memset(buf,0x00,0x1000);
-	scnt = 0x10;
-	bptr = buf;					// start of TRK0
-	for (i = 0; i < hd.files; i++) {		// make catalog
-		fread((char*)bptr, 14, 1, file);	// file dsc
-		bptr[14] = scnt & 0x0f;			// sector
-		bptr[15] = ((scnt & 0xff0) >> 4);	// track
-		scnt += bptr[13];			// +sectors size
-		bptr += 16;				// next file
-	}
-	bptr[0] = 0;				// mark last file
-	buf[0x800] = 0;
-	buf[0x8e1] = scnt & 0x0f;		// free sector
-	buf[0x8e2] = ((scnt & 0xff0) >> 4);	// free track
-	buf[0x8e3] = 0x16;			// 80DS
-	buf[0x8e4] = hd.files;			// files total
-	tmpa = 0x9f0 - scnt;			// sectors free (0x9f0)	// FIXED: not 0xa00!
-	buf[0x8e5] = (tmpa & 0xff);
-	buf[0x8e6] = ((tmpa & 0xff00) >> 8);
-	buf[0x8e7] = 0x10;			// trdos code
-	flpFormTRDTrack(flp,0,buf);
-	i = 1;
-	while (!feof(file) && (i < 168)) {
-		fread((char*)buf, 0x1000, 1, file);
-		flpFormTRDTrack(flp,i,buf);
-		i++;
+	if (strncmp(hd.sign, "SINCLAIR", 8) != 0) {
+		err = ERR_SCL_SIGN;
+	} else if (hd.files > 128) {
+		err = ERR_SCL_MANY;
+	} else {
+		flpFormat(flp);
+		memset(buf,0x00,0x1000);
+		scnt = 0x10;
+		bptr = buf;					// start of TRK0
+		for (i = 0; i < hd.files; i++) {		// make catalog
+			fread((char*)bptr, 14, 1, file);	// file dsc
+			bptr[14] = scnt & 0x0f;			// sector
+			bptr[15] = ((scnt & 0xff0) >> 4);	// track
+			scnt += bptr[13];			// +sectors size
+			bptr += 16;				// next file
+		}
+		bptr[0] = 0;				// mark last file
+		buf[0x800] = 0;
+		buf[0x8e1] = scnt & 0x0f;		// free sector
+		buf[0x8e2] = ((scnt & 0xff0) >> 4);	// free track
+		buf[0x8e3] = 0x16;			// 80DS
+		buf[0x8e4] = hd.files;			// files total
+		tmpa = 0x9f0 - scnt;			// sectors free (0x9f0)	// FIXED: not 0xa00!
+		buf[0x8e5] = (tmpa & 0xff);
+		buf[0x8e6] = ((tmpa & 0xff00) >> 8);
+		buf[0x8e7] = 0x10;			// trdos code
+		flpFormTRDTrack(flp,0,buf);
+		i = 1;
+		while (!feof(file) && (i < 168)) {
+			fread((char*)buf, 0x1000, 1, file);
+			flpFormTRDTrack(flp,i,buf);
+			i++;
+		}
+		flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
+		strcpy(flp->path,name);
+		flp->insert = 1;
+		flp->changed = 0;
 	}
 	fclose(file);
-	flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
-	strcpy(flp->path,name);
-	flp->insert = 1;
-	flp->changed = 0;
-	return ERR_OK;
+	return err;
 }
 
 int saveSCL(Floppy* flp,const char* name) {

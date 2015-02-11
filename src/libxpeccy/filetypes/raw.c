@@ -22,45 +22,55 @@ void cutSpaces(char* name) {
 int loadRaw(Floppy* flp, const char* name) {
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
+	int err = ERR_OK;
+
 	fseek(file, 0, SEEK_END);
 	size_t len = ftell(file);
 	rewind(file);
-	if (len > 0xff00) return ERR_RAW_LONG;
-	if (!flp->insert) {
-		flpFormat(flp);
-		flp->insert = 1;
-	}
-	if (flpGet(flp,FLP_DISKTYPE) != DISK_TYPE_TRD) return ERR_NOTRD;
-	char fpath[strlen(name) + 1];
-	char fnam[strlen(name)];
-	char fext[strlen(name)];
-	memset(fnam,' ',1024);
-	memset(fext,' ',1024);
-	char* ptr = strrchr(name, SLSH);
-	if (ptr) {
-		strcpy(fpath, ptr + 1);
-	} else {
-		strcpy(fpath, name);
-	}
-	ptr = strrchr(name, '.');
-	if (ptr) {
-		memcpy(fnam, name, ptr - name);			// it doesn't put 0x00 at end, so unused fillnam will be filled with ' '
-		memcpy(fext, ptr + 1, strlen(ptr + 1));
-	} else {
-		memcpy(fnam, name, strlen(name));
-	}
-	TRFile nfle = flpMakeDescriptor(fnam, fext[0], 0, len);
-	nfle.lst = fext[1];
-	nfle.hst = fext[2];
 
-	unsigned char buf[0x10000];
-	fread((char*)buf, len, 1, file);
+	if (len > 0xff00) {
+		err = ERR_RAW_LONG;
+	} else {
+		if (!flp->insert) {
+			flpFormat(flp);
+			flp->insert = 1;
+		}
+		if (flpGet(flp,FLP_DISKTYPE) != DISK_TYPE_TRD) {
+			err = ERR_NOTRD;
+		} else {
+			char fpath[1024];
+			char fnam[1024];
+			char fext[1024];
+			memset(fnam,' ',1024);
+			memset(fext,' ',1024);
+			char* ptr = strrchr(name, SLSH);
+			if (ptr) {
+				strcpy(fpath, ptr + 1);
+			} else {
+				strcpy(fpath, name);
+			}
+			ptr = strrchr(name, '.');
+			if (ptr) {
+				memcpy(fnam, fpath, ptr - name);			// it doesn't put 0x00 at end, so unused fillnam will be filled with ' '
+				memcpy(fext, ptr + 1, strlen(ptr + 1));
+			} else {
+				memcpy(fnam, name, strlen(name));
+			}
+			printf("%s\n%s\n",fnam,fext);
+			TRFile nfle = flpMakeDescriptor(fnam, fext[0], 0, len);
+			nfle.lst = fext[1];
+			nfle.hst = fext[2];
+			unsigned char buf[0x10000];
+			fread((char*)buf, len, 1, file);
+			if (flpCreateFile(flp, nfle, buf, len) != ERR_OK) {
+				err = ERR_HOB_CANT;
+			} else {
+				for (int i = 0; i < 256; i++) flpFillFields(flp, i, 1);
+			}
+		}
+	}
 	fclose(file);
-
-	if (flpCreateFile(flp, nfle, buf, len) != ERR_OK) return ERR_HOB_CANT;
-	for (int i = 0; i < 256; i++) flpFillFields(flp, i, 1);
-
-	return ERR_OK;
+	return err;
 }
 
 int saveRawFile(Floppy* flp, int num, const char* dir) {

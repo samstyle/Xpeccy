@@ -14,6 +14,7 @@ int stdAccumulate(unsigned char* ptr, int size, int res) {
 int loadHobeta(Floppy* flp,const char* name) {
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
+	int err = ERR_OK;
 	unsigned char buf[0x10000];
 	TRFile nfle;
 
@@ -21,16 +22,22 @@ int loadHobeta(Floppy* flp,const char* name) {
 		flpFormat(flp);
 		flp->insert = 1;
 	}
-	if (flpGet(flp,FLP_DISKTYPE) != DISK_TYPE_TRD) return ERR_NOTRD;
-
-	fread((char*)buf, 17, 1, file);		// header
-	memcpy((char*)&nfle,buf,13);
-	nfle.slen = buf[14];
-	int len = nfle.slen << 8;
-	fread((char*)buf, len, 1, file);
-	if (flpCreateFile(flp, nfle, buf, len) != ERR_OK) return ERR_HOB_CANT;
-	for (int i=0; i<256; i++) flpFillFields(flp, i, 1);
-	return ERR_OK;
+	if (flpGet(flp,FLP_DISKTYPE) != DISK_TYPE_TRD) {
+		err = ERR_NOTRD;
+	} else {
+		fread((char*)buf, 17, 1, file);		// header
+		memcpy((char*)&nfle,buf,13);
+		nfle.slen = buf[14];
+		int len = nfle.slen << 8;
+		fread((char*)buf, len, 1, file);
+		if (flpCreateFile(flp, nfle, buf, len) != ERR_OK) {
+			err = ERR_HOB_CANT;
+		} else {
+			for (int i=0; i<256; i++) flpFillFields(flp, i, 1);
+		}
+	}
+	fclose(file);
+	return err;
 }
 
 int saveHobeta(TRFile dsc,char* data,const char* name) {
@@ -52,7 +59,7 @@ int saveHobeta(TRFile dsc,char* data,const char* name) {
 
 int saveHobetaFile(Floppy* flp,int num,const char* dir) {
 	TRFile dsc = flpGetCatalogEntry(flp,num);
-	unsigned char buf[0xffff];
+	unsigned char buf[0x10000];
 	if (!flpGetSectorsData(flp,dsc.trk, dsc.sec+1, buf, dsc.slen)) return ERR_TRD_SNF;	// get file data
 	char name[9];
 	memcpy(name, dsc.name, 8);

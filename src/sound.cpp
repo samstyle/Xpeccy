@@ -209,7 +209,8 @@ void sdlPlayAudio(void*,Uint8* stream, int len) {
 		}
 		if (diff >= len) fillBuffer(len);
 	}
-	memcpy(stream,sndBufB,len);
+	SDL_MixAudio(stream, sndBuf, len, SDL_MIX_MAXVOLUME);
+	// memcpy(stream,sndBufB,len);
 }
 
 bool sdlopen() {
@@ -217,7 +218,7 @@ bool sdlopen() {
 	SDL_AudioSpec asp;
 	asp.freq = conf.snd.rate;
 	asp.format = AUDIO_U8;
-	asp.channels = sndChans;
+	asp.channels = 2;
 	asp.samples = sndChunks + 1;
 	asp.callback = &sdlPlayAudio;
 	asp.userdata = NULL;

@@ -73,12 +73,6 @@ int loadSPG(ZXComp* comp, const char* name) {
 		if (blkInfo[idx] & 0x80) break;			// last block flag
 		idx += 3;
 	}
-#ifdef ISDEBUG
-	printf("pc = %.4X\n",(hd.pch << 8) | hd.pcl);
-	printf("sp = %.4X\n",(hd.sph << 8) | hd.spl);
-	printf("flag35 = %.2X\n",hd.flag35);
-	printf("page3 = %.2X\n",hd.page3);
-#endif
 	SETPC(comp->cpu, (hd.pch << 8) | hd.pcl);
 	SETSP(comp->cpu, (hd.sph << 8) | hd.spl);
 	switch (hd.flag35 & 0x03) {
@@ -93,7 +87,6 @@ int loadSPG(ZXComp* comp, const char* name) {
 	comp->prt0 = 0x10;
 	comp->prt1 = 0x00;
 	comp->prt2 = 0x00;
-//	comp->tsconf.Page3 = hd.page3;
 	comp->hw->mapMem(comp);
 	memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5);
 	memSetBank(comp->mem,MEM_BANK2,MEM_RAM,2);
@@ -101,5 +94,6 @@ int loadSPG(ZXComp* comp, const char* name) {
 	comp->vid->tsconf.tconfig = 0;
 	comp->vid->nogfx = 0;
 	tsReset(comp->ts);
+	fclose(file);
 	return ERR_OK;
 }

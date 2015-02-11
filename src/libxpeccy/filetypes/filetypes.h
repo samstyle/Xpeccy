@@ -5,21 +5,21 @@
 #include <stdlib.h>
 #include <string.h>
 
+/*
 #ifdef __cplusplus
 #include <fstream>
 #endif
-
-#ifdef WORDS_BIG_ENDIAN
-	#include <endian.h>
-#endif
+*/
 
 #include "../spectrum.h"
 
 #ifdef _WIN32
+#define ENVHOME "HOMEPATH"
 #define SLASH "\\"
 #endif
 
 #ifdef __linux__
+#define ENVHOME "HOME"
 #define SLASH "/"
 #endif
 
@@ -33,6 +33,7 @@
 #define TYPE_HOBETA	7
 #define	TYPE_TAP	8
 #define	TYPE_TZX	9
+#define TYPE_WAV	10
 
 #define	ERR_OK		0
 #define	ERR_CANT_OPEN	1	// can't open file
@@ -45,6 +46,9 @@
 
 #define	ERR_TZX_SIGN	0x30	// tzx signature error
 #define	ERR_TZX_UNKNOWN	0x31	// tzx unsupported block
+
+#define ERR_WAV_HEAD	0x38	// wrong wave header
+#define	ERR_WAV_FORMAT	0x39	// unsupported wav format
 
 #define	ERR_TRD_LEN	0x40	// incorrect trd lenght
 #define	ERR_TRD_SIGN	0x41	// not trd image
@@ -81,6 +85,9 @@ void putint(unsigned char*, unsigned int);
 void cutSpaces(char*);
 void loadBoot(Floppy*, const char*);
 
+unsigned short swap16(unsigned short);
+unsigned int swap32(unsigned int);
+
 // rzx
 
 int loadRZX(ZXComp*,const char*);
@@ -104,6 +111,8 @@ int saveTAP(Tape*,const char*);
 TapeBlock tapDataToBlock(char*,int,int*);
 
 int loadTZX(Tape*,const char*);
+
+int loadWAV(Tape*, const char*);
 
 // disk
 

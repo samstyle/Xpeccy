@@ -46,6 +46,7 @@ QString getFilter(int flags) {
 	if (flags & FT_Z80) res.append(" *.z80");
 	if (flags & FT_TAP) res.append(" *.tap");
 	if (flags & FT_TZX) res.append(" *.tzx");
+	if (flags & FT_WAV) res.append(" *.wav");
 	if (flags & FT_SCL) res.append(" *.scl");
 	if (flags & FT_TRD) res.append(" *.trd");
 	if (flags & FT_FDI) res.append(" *.fdi");
@@ -65,6 +66,7 @@ int getFileType(QString path) {
 	if (path.endsWith(".z80",Qt::CaseInsensitive)) return FT_Z80;
 	if (path.endsWith(".tap",Qt::CaseInsensitive)) return FT_TAP;
 	if (path.endsWith(".tzx",Qt::CaseInsensitive)) return FT_TZX;
+	if (path.endsWith(".wav",Qt::CaseInsensitive)) return FT_WAV;
 	if (path.endsWith(".scl",Qt::CaseInsensitive)) return FT_SCL;
 	if (path.endsWith(".trd",Qt::CaseInsensitive)) return FT_TRD;
 	if (path.endsWith(".fdi",Qt::CaseInsensitive)) return FT_FDI;
@@ -133,6 +135,7 @@ void loadFile(ZXComp* comp,const char* name, int flags, int drv) {
 		case FT_Z80: ferr = loadZ80(comp,sfnam.c_str()); break;
 		case FT_TAP: ferr = loadTAP(comp->tape,sfnam.c_str()); break;
 		case FT_TZX: ferr = loadTZX(comp->tape,sfnam.c_str()); break;
+		case FT_WAV: ferr = loadWAV(comp->tape,sfnam.c_str()); break;
 		case FT_SCL: if (saveChangedDisk(comp,drv)) {ferr = loadSCL(flp,sfnam.c_str());} break;
 		case FT_TRD: if (saveChangedDisk(comp,drv)) {ferr = loadTRD(flp,sfnam.c_str());} break;
 		case FT_FDI: if (saveChangedDisk(comp,drv)) {ferr = loadFDI(flp,sfnam.c_str());} break;
@@ -162,6 +165,8 @@ void loadFile(ZXComp* comp,const char* name, int flags, int drv) {
 		case ERR_SCL_MANY: shitHappens("Too many files in SCL"); break;
 		case ERR_RAW_LONG: shitHappens("File is too big"); break;
 		case ERR_DSK_SIGN: shitHappens("Wrong DSK signature"); break;
+		case ERR_WAV_HEAD: shitHappens("Wrong WAV header"); break;
+		case ERR_WAV_FORMAT: shitHappens("Unsupported WAV format"); break;
 		case ERR_OK:
 			if (type & FT_DISK) loadBoot(flp, conf.path.boot.c_str());
 			break;
