@@ -82,9 +82,9 @@ void saveConfig() {
 		cfile << bookmarkList[i].name << " = " << bookmarkList[i].path << "\n";
 	}
 	cfile << "\n[PROFILES]\n\n";
-	std::vector<xProfile> prl = getProfileList();
-	for (i=1; i<prl.size(); i++) {			// nr.0 skipped ('default' profile)
-		cfile << prl[i].name << " = " << prl[i].file << "\n";
+	std::vector<xProfile*> prl = getProfileList();
+	for (i = 1; i < prl.size(); i++) {			// nr.0 skipped ('default' profile)
+		cfile << prl[i]->name << " = " << prl[i]->file << "\n";
 	}
 	cfile << "current = " << findProfile("")->name << "\n";
 

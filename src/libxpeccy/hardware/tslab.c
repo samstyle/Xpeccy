@@ -204,12 +204,14 @@ void tsOutFF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {		// dos
 	}
 }
 
+/*
 void tsOutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	comp->vid->brdcol = 0xf0 | (val & 7);
 	comp->vid->nextbrd = comp->vid->brdcol;
 	comp->beeplev = (val & 0x10) ? 1 : 0;
 	comp->tape->levRec = (val & 0x08) ? 1 : 0;
 }
+*/
 
 void tsOutFB(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	sdrvOut(comp->sdrv, 0xfb, val);
@@ -481,75 +483,75 @@ void tsOutCatch(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 
 xPort tsPortMap[] = {
 	// xxaf
-	{0xffff,0x00af,1,0,&tsIn00AF,	&tsOut00AF},
-	{0xffff,0x01af,1,0,NULL,	&tsOut01AF},
-	{0xffff,0x02af,1,0,NULL,	&tsOut02AF},
-	{0xffff,0x03af,1,0,NULL,	&tsOut03AF},
-	{0xffff,0x04af,1,0,NULL,	&tsOut04AF},
-	{0xffff,0x05af,1,0,NULL,	&tsOut05AF},
-	{0xffff,0x06af,1,0,NULL,	&tsOut06AF},
-	{0xffff,0x07af,1,0,NULL,	&tsOut07AF},
-	{0xffff,0x0faf,1,0,NULL,	&tsOut0FAF},
+	{0xffff,0x00af,2,&tsIn00AF,	&tsOut00AF},
+	{0xffff,0x01af,2,NULL,	&tsOut01AF},
+	{0xffff,0x02af,2,NULL,	&tsOut02AF},
+	{0xffff,0x03af,2,NULL,	&tsOut03AF},
+	{0xffff,0x04af,2,NULL,	&tsOut04AF},
+	{0xffff,0x05af,2,NULL,	&tsOut05AF},
+	{0xffff,0x06af,2,NULL,	&tsOut06AF},
+	{0xffff,0x07af,2,NULL,	&tsOut07AF},
+	{0xffff,0x0faf,2,NULL,	&tsOut0FAF},
 
-	{0xffff,0x10af,1,0,NULL,	&tsOut10AF},
-	{0xffff,0x11af,1,0,NULL,	&tsOut11AF},
-	{0xffff,0x12af,1,0,&tsIn12AF,	&tsOut12AF},
-	{0xffff,0x13af,1,0,&tsIn13AF,	&tsOut13AF},
+	{0xffff,0x10af,2,NULL,	&tsOut10AF},
+	{0xffff,0x11af,2,NULL,	&tsOut11AF},
+	{0xffff,0x12af,2,&tsIn12AF,	&tsOut12AF},
+	{0xffff,0x13af,2,&tsIn13AF,	&tsOut13AF},
 
-	{0xffff,0x15af,1,0,NULL,	&tsOut15AF},
-	{0xffff,0x16af,1,0,NULL,	&tsOut16AF},
-	{0xffff,0x17af,1,0,NULL,	&tsOut17AF},
-	{0xffff,0x18af,1,0,NULL,	&tsOut18AF},
-	{0xffff,0x19af,1,0,NULL,	&tsOut19AF},
+	{0xffff,0x15af,2,NULL,	&tsOut15AF},
+	{0xffff,0x16af,2,NULL,	&tsOut16AF},
+	{0xffff,0x17af,2,NULL,	&tsOut17AF},
+	{0xffff,0x18af,2,NULL,	&tsOut18AF},
+	{0xffff,0x19af,2,NULL,	&tsOut19AF},
 
-	{0xffff,0x1aaf,1,0,NULL,	&tsOut1AAF},
-	{0xffff,0x1baf,1,0,NULL,	&tsOut1BAF},
-	{0xffff,0x1caf,1,0,NULL,	&tsOut1CAF},
-	{0xffff,0x1daf,1,0,NULL,	&tsOut1DAF},
-	{0xffff,0x1eaf,1,0,NULL,	&tsOut1EAF},
-	{0xffff,0x1faf,1,0,NULL,	&tsOut1FAF},
+	{0xffff,0x1aaf,2,NULL,	&tsOut1AAF},
+	{0xffff,0x1baf,2,NULL,	&tsOut1BAF},
+	{0xffff,0x1caf,2,NULL,	&tsOut1CAF},
+	{0xffff,0x1daf,2,NULL,	&tsOut1DAF},
+	{0xffff,0x1eaf,2,NULL,	&tsOut1EAF},
+	{0xffff,0x1faf,2,NULL,	&tsOut1FAF},
 
-	{0xffff,0x20af,1,0,NULL,	&tsOut20AF},
-	{0xffff,0x21af,1,0,NULL,	&tsOut21AF},
-	{0xffff,0x22af,1,0,NULL,	&tsOut22AF},
-	{0xffff,0x23af,1,0,NULL,	&tsOut23AF},
-	{0xffff,0x24af,1,0,NULL,	&tsOut24AF},
-	// {0xffff,0x25af,1,0,NULL,	NULL},		// INTVECT (obsolete)
+	{0xffff,0x20af,2,NULL,	&tsOut20AF},
+	{0xffff,0x21af,2,NULL,	&tsOut21AF},
+	{0xffff,0x22af,2,NULL,	&tsOut22AF},
+	{0xffff,0x23af,2,NULL,	&tsOut23AF},
+	{0xffff,0x24af,2,NULL,	&tsOut24AF},
+	// {0xffff,0x25af,2,NULL,	NULL},		// INTVECT (obsolete)
 
-	{0xffff,0x26af,1,0,NULL,	&tsOut26AF},
-	{0xffff,0x27af,1,0,&tsIn27AF,	&tsOut27AF},
+	{0xffff,0x26af,2,NULL,	&tsOut26AF},
+	{0xffff,0x27af,2,&tsIn27AF,	&tsOut27AF},
 
-	{0xffff,0x28af,1,0,NULL,	&tsOut28AF},
-	{0xffff,0x29af,1,0,NULL,	&tsOut29AF},
-	{0xffff,0x2aaf,1,0,NULL,	&tsOut2AAF},
-	{0xffff,0x2baf,1,0,NULL,	NULL},		// cache config
+	{0xffff,0x28af,2,NULL,	&tsOut28AF},
+	{0xffff,0x29af,2,NULL,	&tsOut29AF},
+	{0xffff,0x2aaf,2,NULL,	&tsOut2AAF},
+	{0xffff,0x2baf,2,NULL,	NULL},		// cache config
 
-	{0xffff,0x40af,1,0,NULL,	&tsOut40AF},
-	{0xffff,0x41af,1,0,NULL,	&tsOut41AF},
-	{0xffff,0x42af,1,0,NULL,	&tsOut42AF},
-	{0xffff,0x43af,1,0,NULL,	&tsOut43AF},
-	{0xffff,0x44af,1,0,NULL,	&tsOut44AF},
-	{0xffff,0x45af,1,0,NULL,	&tsOut45AF},
-	{0xffff,0x46af,1,0,NULL,	&tsOut46AF},
-	{0xffff,0x47af,1,0,NULL,	&tsOut47AF},
+	{0xffff,0x40af,2,NULL,	&tsOut40AF},
+	{0xffff,0x41af,2,NULL,	&tsOut41AF},
+	{0xffff,0x42af,2,NULL,	&tsOut42AF},
+	{0xffff,0x43af,2,NULL,	&tsOut43AF},
+	{0xffff,0x44af,2,NULL,	&tsOut44AF},
+	{0xffff,0x45af,2,NULL,	&tsOut45AF},
+	{0xffff,0x46af,2,NULL,	&tsOut46AF},
+	{0xffff,0x47af,2,NULL,	&tsOut47AF},
 	// !dos
-	{0x00f7,0x00fe,1,0,&xInFE,	&tsOutFE},	// fe
-	{0x00ff,0x0057,1,0,&tsIn57,	&tsOut57},	// 57
-	{0x00ff,0x0077,1,0,&tsIn77,	&tsOut77},	// 77
-	{0x00ff,0x00fb,1,0,NULL,	&tsOutFB},	// fb
-	{0x10ff,0xeff7,1,0,NULL,	&tsOutEFF7},	// eff7
-	{0x20ff,0xdff7,1,0,NULL,	&tsOutDFF7},	// dff7
-	{0x40ff,0xbff7,1,0,&tsInBFF7,	&tsOutBFF7},	// bff7
-	{0x80ff,0x7ffd,1,0,NULL,	&tsOut7FFD},	// 7ffd
-	{0xc0ff,0xbffd,1,0,NULL,	&xOutBFFD},	// bffd
-	{0xc0ff,0xfffd,1,0,&xInFFFD,	&xOutFFFD},	// fffd
-	{0xffff,0xfadf,1,0,&xInFADF,	NULL},		// fadf
-	{0xffff,0xfbdf,1,0,&xInFBDF,	NULL},		// fbdf
-	{0xffff,0xffdf,1,0,&xInFFDF,	NULL},		// ffdf
+	{0x00f7,0x00fe,0,&xInFE,	&xOutFE},	// fe
+	{0x00ff,0x0057,0,&tsIn57,	&tsOut57},	// 57
+	{0x00ff,0x0077,0,&tsIn77,	&tsOut77},	// 77
+	{0x00ff,0x00fb,0,NULL,	&tsOutFB},	// fb
+	{0x10ff,0xeff7,0,NULL,	&tsOutEFF7},	// eff7
+	{0x20ff,0xdff7,0,NULL,	&tsOutDFF7},	// dff7
+	{0x40ff,0xbff7,0,&tsInBFF7,	&tsOutBFF7},	// bff7
+	{0x80ff,0x7ffd,0,NULL,	&tsOut7FFD},	// 7ffd
+	{0xc0ff,0xbffd,0,NULL,	&xOutBFFD},	// bffd
+	{0xc0ff,0xfffd,0,&xInFFFD,	&xOutFFFD},	// fffd
+	{0xffff,0xfadf,0,&xInFADF,	NULL},		// fadf
+	{0xffff,0xfbdf,0,&xInFBDF,	NULL},		// fbdf
+	{0xffff,0xffdf,0,&xInFFDF,	NULL},		// ffdf
 	// dos
-	{0x009f,0x001f,0,1,&tsInBDI,	&tsOutBDI},	// 1f,3f,5f,7f
-	{0x00ff,0x00ff,0,1,&tsInFF,	&tsOutFF},	// ff
-	{0x0000,0x0000,1,0,NULL,	NULL},
+	{0x009f,0x001f,1,&tsInBDI,	&tsOutBDI},	// 1f,3f,5f,7f
+	{0x00ff,0x00ff,1,&tsInFF,	&tsOutFF},	// ff
+	{0x0000,0x0000,2,NULL,	NULL},
 //	{0x0000,0x0000,1,0,&tsInCatch,	&tsOutCatch}
 };
 

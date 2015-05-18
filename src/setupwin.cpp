@@ -58,6 +58,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	layUi.setupUi(layeditor);
 	layeditor->setModal(true);
 
+	block = 0;
 	prfChanged = 0;
 
 	unsigned int i;
@@ -911,13 +912,13 @@ void SetupWin::buildmenulist() {
 };
 
 void SetupWin::buildproflist() {
-	std::vector<xProfile> prList = getProfileList();
+	std::vector<xProfile*> prList = getProfileList();
 	ui.twProfileList->setRowCount(prList.size());
 	QTableWidgetItem* itm;
-	for (uint i=0; i<prList.size(); i++) {
-		itm = new QTableWidgetItem(QString::fromLocal8Bit(prList[i].name.c_str()));
+	for (uint i = 0; i < prList.size(); i++) {
+		itm = new QTableWidgetItem(QString::fromLocal8Bit(prList[i]->name.c_str()));
 		ui.twProfileList->setItem(i,0,itm);
-		itm = new QTableWidgetItem(QString::fromLocal8Bit(prList[i].file.c_str()));
+		itm = new QTableWidgetItem(QString::fromLocal8Bit(prList[i]->file.c_str()));
 		ui.twProfileList->setItem(i,1,itm);
 	}
 }
@@ -1365,24 +1366,29 @@ void SetupWin::newProfile() {
 	if (nam.isEmpty()) return;
 	std::string nm = std::string(nam.toLocal8Bit().data());
 	std::string fp = nm + ".conf";
-	if (!addProfile(nm,fp)) shitHappens("Can't add such profile");
+//	std::string cprf = prof->name;
+	if (!addProfile(nm,fp)) shitHappens("Can't add such profile");		// WARNING: addProfile changes profileList, xProfile* is not valid now
+//	start(findProfile(cprf));
 	buildproflist();
 }
 
 void SetupWin::rmProfile() {
 	int idx = ui.twProfileList->currentRow();
 	if (idx < 0) return;
-	if (!areSure("Do you really want to delete this profile?")) return;
-	std::string pnam(ui.twProfileList->item(idx,0)->text().toLocal8Bit().data());
-	idx = delProfile(pnam);
-	switch(idx) {
-		case DELP_OK_CURR:
-			prfChanged = 1;
-			start(findProfile(""));
-			break;
-		case DELP_ERR:
-			shitHappens("Sorry, i can't delete this profile");
-			break;
+	block = 1;
+	if (areSure("Do you really want to delete this profile?")) {
+		std::string pnam(ui.twProfileList->item(idx,0)->text().toLocal8Bit().data());
+		idx = delProfile(pnam);
+		switch(idx) {
+			case DELP_OK_CURR:
+				prfChanged = 1;
+				start(conf.curProf);
+				break;
+			case DELP_ERR:
+				shitHappens("Sorry, i can't delete this profile");
+				break;
+		}
 	}
+	block = 0;
 	buildproflist();
 }

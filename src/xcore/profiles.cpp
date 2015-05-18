@@ -5,14 +5,15 @@
 #include "xcore.h"
 #include "../filer.h"
 
-xProfile* currentProfile = NULL;
-std::vector<xProfile> profileList;
+// xProfile* currentProfile = NULL;
+std::vector<xProfile*> profileList;
 
 xProfile* findProfile(std::string nm) {
-	if (nm == "") return currentProfile;
+	if (nm == "") return conf.curProf;
 	xProfile* res = NULL;
 	for (uint i = 0; i < profileList.size(); i++) {
-		if (profileList[i].name == nm) res = &profileList[i];
+		if (profileList[i]->name == nm)
+			res = profileList[i];
 	}
 	return res;
 }
@@ -20,24 +21,26 @@ xProfile* findProfile(std::string nm) {
 bool addProfile(std::string nm, std::string fp) {
 //	printf("add Profile: %s : %s\n",nm.c_str(),fp.c_str());
 	if (findProfile(nm) != NULL) return false;
-	xProfile nprof;
-	nprof.name = nm;
-	nprof.file = fp;
-	nprof.layName = std::string("default");
-	nprof.zx = zxCreate();
-	std::string fname = conf.path.confDir + SLASH + nprof.name + ".cmos";
+	xProfile* nprof = new xProfile;
+	nprof->name = nm;
+	nprof->file = fp;
+	nprof->layName = std::string("default");
+	nprof->zx = zxCreate();
+	std::string fname = conf.path.confDir + SLASH + nprof->name + ".cmos";
 	std::ifstream file(fname.c_str());
 	if (file.good()) {
-		file.read((char*)nprof.zx->cmos.data,256);
+		file.read((char*)nprof->zx->cmos.data,256);
 		file.close();
 	}
-	fname = conf.path.confDir + SLASH + nprof.name + ".nvram";
+	fname = conf.path.confDir + SLASH + nprof->name + ".nvram";
 	file.open(fname.c_str());
 	if (file.good()) {
-		file.read((char*)nprof.zx->ide->smuc.nv->mem,0x800);
+		file.read((char*)nprof->zx->ide->smuc.nv->mem,0x800);
 		file.close();
 	}
-	zxSetHardware(nprof.zx,"ZX48K");
+	zxSetHardware(nprof->zx,"ZX48K");
+	profileList.push_back(nprof);
+/*
 	if (currentProfile != NULL) {
 		nm = currentProfile->name;
 		profileList.push_back(nprof);		// PUSH_BACK reallocate profileList and breaks current profile pointer!
@@ -45,72 +48,81 @@ bool addProfile(std::string nm, std::string fp) {
 	} else {
 		profileList.push_back(nprof);
 	}
+*/
 //	prfLoad(nprof.name);
 	return true;
 }
 
+void prfClose() {
+	if (!conf.curProf) return;
+	ideCloseFiles(conf.curProf->zx->ide);
+	sdcCloseFile(conf.curProf->zx->sdc);
+}
+
 int delProfile(std::string nm) {
-	if (nm == "default") return DELP_ERR;		// can't touch this
 	xProfile* prf = findProfile(nm);
 	if (prf == NULL) return DELP_ERR;		// no such profile
+	if (prf->name == "default") return DELP_ERR;	// can't touch this
 	int res = DELP_OK;
-	std::string cpath = conf.path.confDir + SLASH + prf->file;
-//	printf("%s\n",cpath.c_str());
-	remove(cpath.c_str());				// remove config file
-	cpath = conf.path.confDir + SLASH + prf->name + ".cmos";
-	remove(cpath.c_str());
-	cpath = conf.path.confDir + SLASH + prf->name + ".nvram";
-	remove(cpath.c_str());
-	zxDestroy(prf->zx);				// delete ZX
-	if (currentProfile) {
-		if (currentProfile->name == nm) {
-			nm = std::string("default");
+	std::string cpath;
+	// set default profile if current deleted
+	if (conf.curProf) {
+		if (conf.curProf->name == nm) {
+			prfSetCurrent("default");
 			res = DELP_OK_CURR;
-			currentProfile = NULL;
-		} else {
-			nm = currentProfile->name;
+		}
+	} else {
+		prfSetCurrent("default");
+	}
+	// remove all such profiles from list & free mem
+	for (uint i = 0; i < profileList.size(); i++) {
+		if (profileList[i]->name == nm) {
+			cpath = conf.path.confDir + SLASH + prf->file;
+			remove(cpath.c_str());				// remove config file
+			cpath = conf.path.confDir + SLASH + prf->name + ".cmos";
+			remove(cpath.c_str());
+			cpath = conf.path.confDir + SLASH + prf->name + ".nvram";
+			remove(cpath.c_str());
+			zxDestroy(prf->zx);				// delete ZX
+			delete(prf);
+			profileList.erase(profileList.begin() + i);
 		}
 	}
-	for (uint i = 0; i < profileList.size(); i++) {
-		if (profileList[i].name == prf->name) profileList.erase(profileList.begin() + i);
-	}
-	prfSetCurrent(nm);
 	return res;
 }
 
 bool prfSetCurrent(std::string nm) {
 	xProfile* nprf = findProfile(nm);
 	if (nprf == NULL) return false;
-	if (currentProfile) {
-		ideCloseFiles(currentProfile->zx->ide);
-		sdcCloseFile(currentProfile->zx->sdc);
-	}
-	currentProfile = nprf;
+	prfClose();
+	conf.curProf = nprf;
 	ideOpenFiles(nprf->zx->ide);
 	sdcOpenFile(nprf->zx->sdc);
-	prfSetLayout(currentProfile, currentProfile->layName);
-	keyRelease(currentProfile->zx->keyb,0,0,0);
-	currentProfile->zx->mouse->buttons = 0xff;
+	prfSetLayout(conf.curProf, conf.curProf->layName);
+	keyRelease(conf.curProf->zx->keyb,0,0,0);
+	conf.curProf->zx->mouse->buttons = 0xff;
 	return true;
 }
 
 void clearProfiles() {
-	xProfile defprof = profileList[0];
-	profileList.clear();
-	profileList.push_back(defprof);
-	prfSetCurrent(profileList[0].name);
+	while (profileList.size() > 1) {
+		profileList.pop_back();
+	}
+	prfSetCurrent(profileList[0]->name);
 }
 
-std::vector<xProfile> getProfileList() {
+std::vector<xProfile*> getProfileList() {
 	return profileList;
 }
 
+/*
 xProfile* getCurrentProfile() {
 	return currentProfile;
 }
+*/
 
 bool prfSetLayout(xProfile* prf, std::string nm) {
-	if (prf == NULL) prf = getCurrentProfile();
+	if (prf == NULL) prf = conf.curProf;
 	xLayout* lay = findLayout(nm);
 	if (lay == NULL) return false;
 	prf->layName = nm;
@@ -125,13 +137,15 @@ bool prfSetLayout(xProfile* prf, std::string nm) {
 
 void prfChangeRsName(std::string oldName, std::string newName) {
 	for (uint i = 0; i < profileList.size(); i++) {
-		if (profileList[i].rsName == oldName) profileList[i].rsName = newName;
+		if (profileList[i]->rsName == oldName)
+			profileList[i]->rsName = newName;
 	}
 }
 
 void prfChangeLayName(std::string oldName, std::string newName) {
 	for (uint i = 0; i < profileList.size(); i++) {
-		if (profileList[i].layName == oldName) profileList[i].layName = newName;
+		if (profileList[i]->layName == oldName)
+			profileList[i]->layName = newName;
 	}
 }
 
@@ -160,7 +174,7 @@ void setDiskString(ZXComp* comp,Floppy* flp,std::string st) {
 
 // set specified romset to specified profile & load into ROM of this profile ZX
 void prfSetRomset(xProfile* prf, std::string rnm) {
-	if (prf == NULL) prf = currentProfile;
+	if (prf == NULL) prf = conf.curProf;
 	prf->rsName = rnm;
 	xRomset* rset = findRomset(rnm);
 	int i;
@@ -251,7 +265,11 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 }
 
 void prfLoadAll() {
-	for (uint i = 0; i < profileList.size(); i++) prfLoad(profileList[i].name);
+	xProfile* prf;
+	foreach(prf, profileList) {
+		prfLoad(prf->name);
+	}
+//	for (uint i = 0; i < profileList.size(); i++) prfLoad(profileList[i].name);
 }
 
 int prfLoad(std::string nm) {

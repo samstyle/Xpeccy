@@ -167,12 +167,14 @@ void evoOutFB(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	sdrvOut(comp->sdrv,0xfb,val);
 }
 
+/*
 void evoOutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	comp->vid->nextbrd = (val & 0x07) | (~port & 8);
 	if (!comp->vid->border4t) comp->vid->brdcol = comp->vid->nextbrd;
 	comp->beeplev = (val & 0x10) ? 1 : 0;
 	comp->tape->levRec = (val & 0x08) ? 1 : 0;
 }
+*/
 
 void evoOut2F(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	comp->evo.evo2F = val;
@@ -263,36 +265,36 @@ void evoOutEFF7(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {	// !dos
 }
 
 xPort evoPortMap[] = {
-	{0x00f7,0x00fe,1,0,&xInFE,	&evoOutFE},	// A3 = border bright
-	{0x00ff,0x00fb,1,0,NULL,	&evoOutFB},	// covox
-	{0x00ff,0x00be,1,0,&evoInBE,	NULL},
-	{0x00ff,0x00bf,1,0,&evoInBF,	&evoOutBF},
-	{0xffff,0x7ffd,1,0,NULL,	&evoOut7FFD},
-	{0xffff,0xfadf,1,0,&xInFADF,	NULL},		// k-mouse (fadf,fbdf,ffdf)
-	{0xffff,0xfbdf,1,0,&xInFBDF,	NULL},
-	{0xffff,0xffdf,1,0,&xInFFDF,	NULL},
-	{0xfeff,0xbffd,1,0,NULL,	&xOutBFFD},	// ay/ym; bffd, fffd
-	{0xfeff,0xfffd,1,0,&xInFFFD,	&xOutFFFD},
+	{0x00f7,0x00fe,2,&xInFE,	&xOutFE},	// A3 = border bright
+	{0x00ff,0x00fb,2,NULL,		&evoOutFB},	// covox
+	{0x00ff,0x00be,2,&evoInBE,	NULL},
+	{0x00ff,0x00bf,2,&evoInBF,	&evoOutBF},
+	{0xffff,0x7ffd,2,NULL,		&evoOut7FFD},
+	{0xffff,0xfadf,2,&xInFADF,	NULL},		// k-mouse (fadf,fbdf,ffdf)
+	{0xffff,0xfbdf,2,&xInFBDF,	NULL},
+	{0xffff,0xffdf,2,&xInFFDF,	NULL},
+	{0xfeff,0xbffd,2,NULL,		&xOutBFFD},	// ay/ym; bffd, fffd
+	{0xfeff,0xfffd,2,&xInFFFD,	&xOutFFFD},
 	// dos only
-	{0x009f,0x001f,0,1,&evoInBDI,	&evoOutBDI},	// bdi 1f,3f,5f,7f
-	{0x00ff,0x00ff,0,1,&evoInBDI,	&evoOutFF},	// bdi ff + set palette
-	{0x00ff,0x002f,0,1,&evoIn2F,	&evoOut2F},	// extend bdi ports
-	{0x00ff,0x004f,0,1,&evoIn4F,	&evoOut4F},
-	{0x00ff,0x006f,0,1,&evoIn6F,	&evoOut6F},
-	{0x00ff,0x008f,0,1,&evoIn8F,	&evoOut8F},
-	{0x00ff,0x0057,0,1,NULL,	&evoOut77},	// 55,77 : spi. 55 dos = 77 !dos
-	{0x00ff,0x0077,0,1,NULL,	&evoOut77d},
-	{0xffff,0xbef7,0,1,&evoInBEF7,	&evoOutBEF7},	// nvram
-	{0xffff,0xdef7,0,1,NULL,	&evoOutDEF7},
-	{0x07ff,0x07f7,0,1,NULL,	&evoOutF7},	// x7f7
+	{0x009f,0x001f,1,&evoInBDI,	&evoOutBDI},	// bdi 1f,3f,5f,7f
+	{0x00ff,0x00ff,1,&evoInBDI,	&evoOutFF},	// bdi ff + set palette
+	{0x00ff,0x002f,1,&evoIn2F,	&evoOut2F},	// extend bdi ports
+	{0x00ff,0x004f,1,&evoIn4F,	&evoOut4F},
+	{0x00ff,0x006f,1,&evoIn6F,	&evoOut6F},
+	{0x00ff,0x008f,1,&evoIn8F,	&evoOut8F},
+	{0x00ff,0x0057,1,NULL,		&evoOut77},	// 55,77 : spi. 55 dos = 77 !dos
+	{0x00ff,0x0077,1,NULL,		&evoOut77d},
+	{0xffff,0xbef7,1,&evoInBEF7,	&evoOutBEF7},	// nvram
+	{0xffff,0xdef7,1,NULL,		&evoOutDEF7},
+	{0x07ff,0x07f7,1,NULL,		&evoOutF7},	// x7f7
 	// !dos only
-	{0x00ff,0x001f,0,0,&evoIn1F,	NULL},		// k-joy
-	{0x00ff,0x0057,0,0,&evoIn57,	&evoOut57},	// 57,77 : spi
-	{0x00ff,0x0077,0,0,&evoIn77,	&evoOut77},
-	{0xffff,0xbff7,0,0,&evoInBFF7,	&evoOutBFF7},	// nvram
-	{0xffff,0xdff7,0,0,NULL,	&evoOutDFF7},
-	{0xffff,0xeff7,0,0,NULL,	&evoOutEFF7},
-	{0x0000,0x0000,1,0,NULL,	NULL}
+	{0x00ff,0x001f,0,&evoIn1F,	NULL},		// k-joy
+	{0x00ff,0x0057,0,&evoIn57,	&evoOut57},	// 57,77 : spi
+	{0x00ff,0x0077,0,&evoIn77,	&evoOut77},
+	{0xffff,0xbff7,0,&evoInBFF7,	&evoOutBFF7},	// nvram
+	{0xffff,0xdff7,0,NULL,		&evoOutDFF7},
+	{0xffff,0xeff7,0,NULL,		&evoOutEFF7},
+	{0x0000,0x0000,2,NULL,	NULL}
 };
 
 void evoOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int dos) {

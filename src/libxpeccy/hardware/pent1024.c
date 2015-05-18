@@ -21,12 +21,14 @@ Z80EX_BYTE p1mInBFF7(ZXComp* comp, Z80EX_WORD port) {
 
 // out
 
+/*
 void p1mOutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	comp->vid->nextbrd = val & 0x07;
 	if (!comp->vid->border4t) comp->vid->brdcol = val & 0x07;
 	comp->beeplev = (val & 0x10) ? 1 : 0;
 	comp->tape->levRec = (val & 0x08) ? 1 : 0;
 }
+*/
 
 void p1mOut7FFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	if ((comp->prt1 & 4) && (comp->prt0 & 0x20)) return;
@@ -51,18 +53,18 @@ void p1mOutEFF7(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 }
 
 xPort p1mPortMap[] = {
-	{0x0003,0x00fe,1,0,&xInFE,	&p1mOutFE},
-	{0x8002,0x7ffd,1,0,NULL,	&p1mOut7FFD},
-	{0xc002,0xbffd,1,0,NULL,	&xOutBFFD},
-	{0xc002,0xfffd,1,0,&xInFFFD,	&xOutFFFD},
-	{0xf008,0xeff7,1,0,NULL,	&p1mOutEFF7},
-	{0xf008,0xbff7,1,0,&p1mInBFF7,	&p1mOutBFF7},
-	{0xf008,0xdff7,1,0,NULL,	&p1mOutDFF7},
-	{0x05a3,0xfadf,0,0,&xInFADF,	NULL},
-	{0x05a3,0xfbdf,0,0,&xInFBDF,	NULL},
-	{0x05a3,0xffdf,0,0,&xInFFDF,	NULL},
-	{0x00ff,0x001f,0,0,&p1mIn1F,	NULL},		// TODO : ORLY (x & FF = 1F)
-	{0x0000,0x0000,1,0,NULL,NULL}
+	{0x0003,0x00fe,2,&xInFE,	&xOutFE},
+	{0x8002,0x7ffd,2,NULL,		&p1mOut7FFD},
+	{0xc002,0xbffd,2,NULL,		&xOutBFFD},
+	{0xc002,0xfffd,2,&xInFFFD,	&xOutFFFD},
+	{0xf008,0xeff7,2,NULL,		&p1mOutEFF7},
+	{0xf008,0xbff7,2,&p1mInBFF7,	&p1mOutBFF7},
+	{0xf008,0xdff7,2,NULL,		&p1mOutDFF7},
+	{0x05a3,0xfadf,0,&xInFADF,	NULL},
+	{0x05a3,0xfbdf,0,&xInFBDF,	NULL},
+	{0x05a3,0xffdf,0,&xInFFDF,	NULL},
+	{0x00ff,0x001f,0,&p1mIn1F,	NULL},		// TODO : ORLY (x & FF = 1F)
+	{0x0000,0x0000,2,NULL,NULL}
 };
 
 void p1mOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int dos) {

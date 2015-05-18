@@ -59,6 +59,7 @@ void atm2OutFB(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	sdrvOut(comp->sdrv, port, val);
 }
 
+/*
 void atm2OutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	comp->vid->nextbrd = (val & 0x07) | (~port & 8);
 	if (!comp->vid->border4t)
@@ -66,6 +67,7 @@ void atm2OutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	comp->beeplev = (val & 0x10) ? 1 : 0;
 	comp->tape->levRec = (val & 0x08) ? 1 : 0;
 }
+*/
 
 void atm2Out7FFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	if (comp->prt0 & 0x20) return;
@@ -84,18 +86,18 @@ void atm2OutFF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {		// dos. bdiOut 
 }
 
 xPort atm2PortMap[] = {
-	{0x0007,0x00fe,1,0,&xInFE,	&atm2OutFE},
-	{0x0007,0x00fa,1,0,NULL,	NULL},		// fa
-	{0x0007,0x00fb,1,0,NULL,	&atm2OutFB},	// fb (covox)
-	{0x8202,0x7ffd,1,0,NULL,	&atm2Out7FFD},
-	{0x8202,0x7dfd,1,0,NULL,	NULL},		// 7DFD
-	{0xc202,0xbffd,1,0,NULL,	&xOutBFFD},	// ay
-	{0xc202,0xfffd,1,0,&xInFFFD,	&xOutFFFD},
+	{0x0007,0x00fe,2,&xInFE,	&xOutFE},
+	{0x0007,0x00fa,2,NULL,		NULL},		// fa
+	{0x0007,0x00fb,2,NULL,		&atm2OutFB},	// fb (covox)
+	{0x8202,0x7ffd,2,NULL,		&atm2Out7FFD},
+	{0x8202,0x7dfd,2,NULL,		NULL},		// 7DFD
+	{0xc202,0xbffd,2,NULL	,	&xOutBFFD},	// ay
+	{0xc202,0xfffd,2,&xInFFFD,	&xOutFFFD},
 	// dos
-	{0x009f,0x00ff,0,1,NULL,	&atm2OutFF},	// palette (dos)
-	{0x009f,0x00f7,0,1,NULL,	&atm2OutF7},
-	{0x009f,0x0077,0,1,NULL,	&atm2Out77},
-	{0x0000,0x0000,1,0,NULL,	NULL}
+	{0x009f,0x00ff,1,NULL,		&atm2OutFF},	// palette (dos)
+	{0x009f,0x00f7,1,NULL,		&atm2OutF7},
+	{0x009f,0x0077,1,NULL,		&atm2Out77},
+	{0x0000,0x0000,2,NULL,		NULL}
 };
 
 void atm2Out(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int dos) {

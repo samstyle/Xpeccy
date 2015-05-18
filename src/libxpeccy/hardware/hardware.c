@@ -48,6 +48,11 @@ HardWare hwTab[] = {
 		HW_PLUS3,
 		MEM_128,
 		&pl2MapMem,&pl3Out,&pl3In,&stdMRd,&stdMWr,NULL
+	},{
+		"Profi","Profi",
+		HW_PROFI,
+		MEM_512 | MEM_1M,
+		&prfMapMem,&prfOut,&prfIn,&stdMRd,&stdMWr,&prfReset
 	},
 	{NULL,NULL,0,0,NULL,NULL,NULL}
 };
@@ -96,7 +101,7 @@ Z80EX_BYTE hwIn(xPort* ptab, ZXComp* comp, Z80EX_WORD port, int dos) {
 	xPort* itm;
 	while (1) {
 		itm = &ptab[idx];
-		if (((port & itm->mask) == (itm->value & itm->mask)) && (itm->all || (itm->dos == dos)) && (itm->in != NULL)) {
+		if (((port & itm->mask) == (itm->value & itm->mask)) && ((itm->dos & 2) || (itm->dos == dos)) && (itm->in != NULL)) {
 			res = itm->in(comp, port);
 			break;
 		}
@@ -112,7 +117,7 @@ void hwOut(xPort* ptab, ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int dos) 
 	int ctch = 0;
 	while (1) {
 		itm = &ptab[idx];
-		if (((port & itm->mask) == (itm->value & itm->mask)) && (itm->all || (itm->dos == dos)) && (itm->out != NULL)) {
+		if (((port & itm->mask) == (itm->value & itm->mask)) && ((itm->dos & 2) || (itm->dos == dos)) && (itm->out != NULL)) {
 			if ((itm->mask != 0) || (ctch == 0)) {
 				itm->out(comp, port, val);
 				ctch = 1;

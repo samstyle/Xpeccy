@@ -248,9 +248,10 @@ void MainWin::convImage() {
 }
 
 void MainWin::onTimer() {
+	if (opt->block) return;
 	if (opt->prfChanged) {
 		opt->prfChanged = 0;
-		comp = findProfile("")->zx;
+		comp = conf.curProf->zx;
 		ethread.comp = comp;
 	}
 	if (block) return;
@@ -314,9 +315,9 @@ void incTime(CMOS* cms) {
 void MainWin::cmosTick() {
 	unsigned int i;
 	ZXComp* comp;
-	std::vector<xProfile> plist = getProfileList();
+	std::vector<xProfile*> plist = getProfileList();
 	for (i = 0; i < plist.size(); i++) {
-		comp = plist[i].zx;
+		comp = plist[i]->zx;
 		if (comp != NULL) {
 			if (conf.sysclock) {
 				time_t rtime;
@@ -634,24 +635,25 @@ void MainWin::dropEvent(QDropEvent* ev) {
 
 
 void MainWin::closeEvent(QCloseEvent* ev) {
-	unsigned int i;
+//	unsigned int i;
 	std::ofstream file;
 	std::string fname;
-	std::vector<xProfile> plist = getProfileList();
+	std::vector<xProfile*> plist = getProfileList();
 	pause(true,PR_EXIT);
-	for (i = 0; i < plist.size(); i++) {
-		prfSave(plist[i].name);
-		fname = conf.path.confDir + SLASH + plist[i].name + ".cmos";
+//	for (i = 0; i < plist.size(); i++) {
+	foreach(xProfile* prf, plist) {
+		prfSave(prf->name);
+		fname = conf.path.confDir + SLASH + prf->name + ".cmos";
 		file.open(fname.c_str());
 		if (file.good()) {
-			file.write((const char*)plist[i].zx->cmos.data,256);
+			file.write((const char*)prf->zx->cmos.data,256);
 			file.close();
 		}
-		if (plist[i].zx->ide->type == IDE_SMUC) {
-			fname = conf.path.confDir + SLASH + plist[i].name + ".nvram";
+		if (prf->zx->ide->type == IDE_SMUC) {
+			fname = conf.path.confDir + SLASH + prf->name + ".nvram";
 			file.open(fname.c_str());
 			if (file.good()) {
-				file.write((const char*)plist[i].zx->ide->smuc.nv->mem,0x800);
+				file.write((const char*)prf->zx->ide->smuc.nv->mem,0x800);
 				file.close();
 			}
 		}
@@ -909,9 +911,9 @@ void MainWin::fillBookmarkMenu() {
 
 void MainWin::fillProfileMenu() {
 	profileMenu->clear();
-	std::vector<xProfile> profileList = getProfileList();
+	std::vector<xProfile*> profileList = getProfileList();
 	for(uint i=0; i < profileList.size(); i++) {
-		profileMenu->addAction(profileList[i].name.c_str());
+		profileMenu->addAction(profileList[i]->name.c_str());
 	}
 }
 
@@ -936,6 +938,7 @@ void MainWin::doOptions() {
 }
 
 void MainWin::optApply() {
+	comp = findProfile("")->zx;
 	fillUserMenu();
 	updateWindow();
 	pause(false, PR_OPTS);

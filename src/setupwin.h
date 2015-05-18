@@ -13,12 +13,13 @@
 class SetupWin : public QDialog {
 	Q_OBJECT
 	public:
+		unsigned block:1;
 		unsigned prfChanged:1;
 
 		SetupWin(QWidget*);
 	private:
 		xProfile* prof;
-		ZXComp* comp;		
+		ZXComp* comp;
 
 		Ui::SetupWin ui;
 		Ui::UmaDial uia;

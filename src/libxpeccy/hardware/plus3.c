@@ -2,6 +2,7 @@
 
 // out
 
+/*
 void p3OutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	comp->vid->nextbrd = val & 0x07;
 	if (!comp->vid->border4t)
@@ -9,6 +10,7 @@ void p3OutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	comp->beeplev = (val & 0x10) ? 1 : 0;
 	comp->tape->levRec = (val & 0x08) ? 1 : 0;
 }
+*/
 
 void p3Out1FFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	comp->prt1 = val;
@@ -24,12 +26,12 @@ void p3Out7FFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 }
 
 xPort p3PortMap[] = {
-	{0x0003,0x00fe,1,0,&xInFE,	&p3OutFE},
-	{0xc002,0x7ffd,1,0,NULL,	&p3Out7FFD},
-	{0xf002,0x1ffd,1,0,NULL,	&p3Out1FFD},
-	{0xc002,0xbffd,1,0,NULL,	&xOutBFFD},
-	{0xc002,0xfffd,1,0,&xInFFFD,	&xOutFFFD},
-	{0x0000,0x0000,1,0,NULL,	NULL}
+	{0x0003,0x00fe,2,&xInFE,	&xOutFE},
+	{0xc002,0x7ffd,2,NULL,		&p3Out7FFD},
+	{0xf002,0x1ffd,2,NULL,		&p3Out1FFD},
+	{0xc002,0xbffd,2,NULL,		&xOutBFFD},
+	{0xc002,0xfffd,2,&xInFFFD,	&xOutFFFD},
+	{0x0000,0x0000,2,NULL,		NULL}
 };
 
 void pl3Out(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int dos) {

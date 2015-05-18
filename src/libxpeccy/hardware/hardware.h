@@ -19,6 +19,7 @@ extern "C" {
 #define	HW_ATM2		8
 #define	HW_PENTEVO	9
 #define	HW_TSLAB	10
+#define HW_PROFI	11
 // mem size
 #define	MEM_48	0
 #define	MEM_128	1
@@ -44,8 +45,7 @@ struct HardWare {
 typedef struct {
 	int mask;		// if (port & mask == value & mask) port is catched
 	int value;
-	unsigned all:1;		// 1 if dos-independed
-	unsigned dos:1;		// if all=0: is port dos-only
+	unsigned dos:2;		// 0:!dos only; 1:dos only; 2:nevermind
 	Z80EX_BYTE (*in)(ZXComp*, Z80EX_WORD);
 	void (*out)(ZXComp*, Z80EX_WORD, Z80EX_BYTE);
 } xPort;
@@ -62,6 +62,7 @@ void stdMWr(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
 
 // common IO
 
+void xOutFE(ZXComp*, Z80EX_WORD, Z80EX_BYTE);
 void xOutBFFD(ZXComp*, Z80EX_WORD, Z80EX_BYTE);
 void xOutFFFD(ZXComp*, Z80EX_WORD, Z80EX_BYTE);
 
@@ -125,8 +126,15 @@ Z80EX_BYTE tslMRd(ZXComp*,Z80EX_WORD,int);
 void tslMWr(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
 void tslReset(ZXComp*);
 void tslUpdatePorts(ZXComp*);
-#endif
+
+// Profi
+void prfMapMem(ZXComp*);
+void prfOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
+Z80EX_BYTE prfIn(ZXComp*,Z80EX_WORD,int);
+void prfReset(ZXComp*);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif

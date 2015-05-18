@@ -20,6 +20,48 @@ std::vector<std::string> splitstr(std::string,const char*);
 std::pair<std::string,std::string> splitline(std::string);
 void copyFile(const char*, const char*);
 
+// profiles
+
+typedef struct {
+	std::string name;
+	std::string file;
+	std::string layName;
+	std::string hwName;
+	std::string rsName;
+	ZXComp* zx;
+} xProfile;
+
+#define	DELP_ERR	-1
+#define	DELP_OK		0
+#define	DELP_OK_CURR	1
+
+xProfile* findProfile(std::string);
+std::vector<xProfile*> getProfileList();
+bool addProfile(std::string,std::string);
+int delProfile(std::string);
+void clearProfiles();
+void prfLoadAll();
+bool prfSetCurrent(std::string);
+void prfSetRomset(xProfile*, std::string);
+bool prfSetLayout(xProfile*, std::string);
+
+void prfChangeRsName(std::string, std::string);
+void prfChangeLayName(std::string, std::string);
+
+#define	PLOAD_OK	0
+#define	PLOAD_NF	1
+#define	PLOAD_OF	2
+#define	PLOAD_HW	3
+#define	PLOAD_RS	4
+
+int prfLoad(std::string);
+
+#define PSAVE_OK	PLOAD_OK
+#define	PSAVE_NF	PLOAD_NF
+#define	PSAVE_OF	PLOAD_OF
+
+int prfSave(std::string);
+
 // config
 
 #define	YESNO(cnd) ((cnd) ? "yes" : "no")
@@ -30,6 +72,7 @@ struct xConfig {
 	unsigned defProfile:1;		// start @ default profile
 	std::string keyMapName;		// use this keymap
 	float brdsize;			// 0.0 - 1.0 : border size
+	xProfile* curProf;
 	struct {
 		unsigned grayScale:1;
 		unsigned noFlick:1;
@@ -134,48 +177,6 @@ extern std::vector<xRomset> rsList;
 
 xRomset* findRomset(std::string);
 bool addRomset(xRomset);
-
-// profiles
-
-typedef struct {
-	std::string name;
-	std::string file;
-	std::string layName;
-	std::string hwName;
-	std::string rsName;
-	ZXComp* zx;
-} xProfile;
-
-#define	DELP_ERR	-1
-#define	DELP_OK		0
-#define	DELP_OK_CURR	1
-
-xProfile* findProfile(std::string);
-std::vector<xProfile> getProfileList();
-bool addProfile(std::string,std::string);
-int delProfile(std::string);
-void clearProfiles();
-void prfLoadAll();
-bool prfSetCurrent(std::string);
-void prfSetRomset(xProfile*, std::string);
-bool prfSetLayout(xProfile*, std::string);
-
-void prfChangeRsName(std::string, std::string);
-void prfChangeLayName(std::string, std::string);
-
-#define	PLOAD_OK	0
-#define	PLOAD_NF	1
-#define	PLOAD_OF	2
-#define	PLOAD_HW	3
-#define	PLOAD_RS	4
-
-int prfLoad(std::string);
-
-#define PSAVE_OK	PLOAD_OK
-#define	PSAVE_NF	PLOAD_NF
-#define	PSAVE_OF	PLOAD_OF
-
-int prfSave(std::string);
 
 // layouts
 
