@@ -60,6 +60,14 @@ HardWare* findHardware(const char*);
 Z80EX_BYTE stdMRd(ZXComp*,Z80EX_WORD,int);
 void stdMWr(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
 
+// debug IO
+
+Z80EX_BYTE brkIn(ZXComp*, Z80EX_WORD);
+void brkOut(ZXComp*, Z80EX_WORD, Z80EX_BYTE);
+
+Z80EX_BYTE dummyIn(ZXComp*, Z80EX_WORD);
+void dummyOut(ZXComp*, Z80EX_WORD, Z80EX_BYTE);
+
 // common IO
 
 void xOutFE(ZXComp*, Z80EX_WORD, Z80EX_BYTE);
@@ -132,6 +140,7 @@ void prfMapMem(ZXComp*);
 void prfOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
 Z80EX_BYTE prfIn(ZXComp*,Z80EX_WORD,int);
 void prfReset(ZXComp*);
+Z80EX_BYTE prfMRd(ZXComp*,Z80EX_WORD,int);
 
 #ifdef __cplusplus
 }

@@ -23,6 +23,7 @@ extern "C" {
 #define	VID_TSL_256	9	// TSConf 8bpp
 #define	VID_TSL_NORMAL	10	// TSConf common screen
 #define	VID_TSL_TEXT	11
+#define VID_PRF_MC	12	// Profi multicolor
 #define	VID_UNKNOWN	0xff
 
 typedef struct {

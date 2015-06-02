@@ -52,7 +52,7 @@ HardWare hwTab[] = {
 		"Profi","Profi",
 		HW_PROFI,
 		MEM_512 | MEM_1M,
-		&prfMapMem,&prfOut,&prfIn,&stdMRd,&stdMWr,&prfReset
+		&prfMapMem,&prfOut,&prfIn,&prfMRd,&stdMWr,&prfReset
 	},
 	{NULL,NULL,0,0,NULL,NULL,NULL}
 };

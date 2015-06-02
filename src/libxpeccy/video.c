@@ -33,15 +33,15 @@ unsigned char papTab[] = {
 };
 
 // zx screen adr
-unsigned short scrAdrs[6912];
-unsigned short atrAdrs[6912];
+unsigned short scrAdrs[8192];
+unsigned short atrAdrs[8192];
 
 void vidInitAdrs() {
 	unsigned short sadr = 0x0000;
 	unsigned short aadr = 0x1800;
 	int idx = 0;
 	int a,b,c,d;
-	for (a = 0; a < 3; a++) {	// parts
+	for (a = 0; a < 4; a++) {	// parts (4th for profi)
 		for (b = 0; b < 8; b++) {	// box lines
 			for (c = 0; c < 8; c++) {	// pixel lines
 				for (d = 0; d < 32; d++) {	// x bytes
@@ -703,6 +703,39 @@ void vidDrawEvoText(Video* vid) {
 	}
 }
 
+// profi 512x240
+
+void vidProfiScr(Video* vid) {
+	yscr = vid->y - vid->bord.v + 24;
+	if ((yscr < 0) || (yscr > 239)) {
+		vidPutDot(vid, vid->brdcol);
+	} else {
+		xscr = vid->x - vid->bord.h;
+		if ((xscr < 0) || (xscr > 255)) {
+			vidPutDot(vid, vid->brdcol);
+		} else {
+			if ((xscr & 3) == 0) {
+				adr = scrAdrs[vid->idx & 0x1fff] & 0x1fff;
+				if (xscr & 4) {
+					vid->idx++;
+				} else {
+					adr |= 0x2000;
+				}
+				if (vid->curscr == 7) {
+					scrbyte = vid->mem->ram[0x06].dptr[adr];
+					col = vid->mem->ram[0x3a].dptr[adr];		// b0..2 ink, b3..5 pap, b6 inkBR, b7 papBR
+				} else {
+					scrbyte = vid->mem->ram[0x04].dptr[adr];
+					col = vid->mem->ram[0x38].dptr[adr];
+				}
+				ink = inkTab[col & 0x47];
+				pap = papTab[(col & 0x3f) | ((col >> 1) & 0x40)];
+				vidDoubleDot(vid);
+			}
+		}
+	}
+}
+
 // weiter
 
 void vidSetMode(Video* vid, int mode) {
@@ -726,6 +759,7 @@ void vidSetMode(Video* vid, int mode) {
 			case VID_TSL_16: vid->callback = &vidDrawTSL16; break;
 			case VID_TSL_256: vid->callback = &vidDrawTSL256; break;
 			case VID_TSL_TEXT: vid->callback = &vidDrawTSLText; break;
+			case VID_PRF_MC: vid->callback = &vidProfiScr; break;
 			default: vid->callback = &vidDrawBorder; break;
 		}
 	}
