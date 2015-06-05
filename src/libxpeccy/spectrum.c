@@ -127,7 +127,7 @@ Z80EX_BYTE iord(CPUCONT Z80EX_WORD port, void* ptr) {
 			return 0xff;
 		}
 	}
-	bdiz = (comp->dosen && (comp->dif->type == DIF_BDI)) ? 1 : 0;
+	bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
 // request to external devices
 	if (ideIn(comp->ide, port, &res, bdiz)) return res;
 	if (gsIn(comp->gs, port, &res)) return res;
@@ -260,7 +260,7 @@ void zxReset(ZXComp* comp,int res) {
 	comp->vid->ula->active = 0;
 	comp->rzxPlay = 0;
 	comp->prt2 = 0;
-	comp->prt1 = 0;
+	comp->pEFF7 = 0;
 	memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5);
 	memSetBank(comp->mem,MEM_BANK2,MEM_RAM,2);
 	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0);
@@ -269,7 +269,7 @@ void zxReset(ZXComp* comp,int res) {
 	RESETCPU(comp->cpu);
 	comp->vid->curscr = 5;
 	vidSetMode(comp->vid,VID_NORMAL);
-	comp->dosen = 0;
+	comp->dos = 0;
 	comp->vid->intMask = 1;
 	difReset(comp->dif);	//	bdiReset(comp->bdi);
 	if (comp->gs->reset) gsReset(comp->gs);
@@ -277,8 +277,8 @@ void zxReset(ZXComp* comp,int res) {
 	ideReset(comp->ide);
 	saaReset(comp->saa);
 	if (res == RES_DEFAULT) res = comp->resbank;
-	comp->dosen = ((res == RES_DOS) || (res == RES_SHADOW)) ? 1 : 0;
-	comp->prt0 = ((res == RES_DOS) || (res == RES_48)) ? 0x10 : 0x00;
+	comp->dos = ((res == RES_DOS) || (res == RES_SHADOW)) ? 1 : 0;
+	comp->p7FFD = ((res == RES_DOS) || (res == RES_48)) ? 0x10 : 0x00;
 	if (comp->hw->reset) comp->hw->reset(comp);
 	comp->hw->mapMem(comp);
 }
@@ -330,7 +330,7 @@ int zxExec(ZXComp* comp) {
 	if (comp->padr) {
 		tapSync(comp->tape,comp->tapCount);
 		comp->tapCount = 0;
-		bdiz = (comp->dosen && (comp->dif->type == DIF_BDI)) ? 1 : 0;
+		bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
 		ideOut(comp->ide, comp->padr, comp->pval, bdiz);
 		gsOut(comp->gs, comp->padr, comp->pval);
 		if (!bdiz) saaWrite(comp->saa, comp->padr, comp->pval);		// bdi ports must be closed!
@@ -361,8 +361,8 @@ int zxExec(ZXComp* comp) {
 		res2 = NMICPU(comp->cpu);	// z80ex_nmi(comp->cpu);
 		res1 += res2;
 		if (res2 != 0) {
-			comp->dosen = 1;
-			comp->prt0 |= 0x10;
+			comp->dos = 1;
+			comp->p7FFD |= 0x10;
 			comp->hw->mapMem(comp);
 			vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
 		}

@@ -45,7 +45,9 @@ struct HardWare {
 typedef struct {
 	int mask;		// if (port & mask == value & mask) port is catched
 	int value;
-	unsigned dos:2;		// 0:!dos only; 1:dos only; 2:nevermind
+	unsigned dos:2;		// 00:!dos only; 01:dos only; 1x:nevermind
+	unsigned rom:2;		// same: b4,7FFD
+	unsigned cpm:2;		// cpm mode (for profi)
 	Z80EX_BYTE (*in)(ZXComp*, Z80EX_WORD);
 	void (*out)(ZXComp*, Z80EX_WORD, Z80EX_BYTE);
 } xPort;
@@ -74,6 +76,7 @@ void xOutFE(ZXComp*, Z80EX_WORD, Z80EX_BYTE);
 void xOutBFFD(ZXComp*, Z80EX_WORD, Z80EX_BYTE);
 void xOutFFFD(ZXComp*, Z80EX_WORD, Z80EX_BYTE);
 
+Z80EX_BYTE xIn1F(ZXComp*, Z80EX_WORD);
 Z80EX_BYTE xInFE(ZXComp*, Z80EX_WORD);
 Z80EX_BYTE xInFFFD(ZXComp*, Z80EX_WORD);
 Z80EX_BYTE xInFADF(ZXComp*, Z80EX_WORD);

@@ -10,19 +10,19 @@ unsigned char plus2Lays[4][4] = {
 };
 
 void pl2MapMem(ZXComp* comp) {
-	if (comp->prt1 & 1) {
+	if (comp->p1FFD & 1) {
 		// extend mem mode
-		int rp = ((comp->prt1 & 0x06) >> 1);	// b1,2 of 1ffd
+		int rp = ((comp->p1FFD & 0x06) >> 1);	// b1,2 of 1ffd
 		memSetBank(comp->mem,MEM_BANK0,MEM_RAM,plus2Lays[rp][0]);
 		memSetBank(comp->mem,MEM_BANK1,MEM_RAM,plus2Lays[rp][1]);
 		memSetBank(comp->mem,MEM_BANK2,MEM_RAM,plus2Lays[rp][2]);
 		memSetBank(comp->mem,MEM_BANK3,MEM_RAM,plus2Lays[rp][3]);
 	} else {
 		// normal mem mode
-		memSetBank(comp->mem,MEM_BANK0,MEM_ROM,((comp->prt0 & 0x10) >> 4) | ((comp->prt1 & 0x04) >> 1));
+		memSetBank(comp->mem,MEM_BANK0,MEM_ROM,((comp->rom) >> 4) | ((comp->p1FFD & 0x04) >> 1));
 		memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5);
 		memSetBank(comp->mem,MEM_BANK2,MEM_RAM,2);
-		memSetBank(comp->mem,MEM_BANK3,MEM_RAM,comp->prt0 & 7);
+		memSetBank(comp->mem,MEM_BANK3,MEM_RAM,comp->p7FFD & 7);
 	}
 }
 
@@ -38,24 +38,25 @@ void p2OutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 */
 
 void p2Out1FFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
-	comp->prt1 = val;
+	comp->p1FFD = val;
 	pl2MapMem(comp);
 }
 
 void p2Out7FFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
-	if (comp->prt0 & 0x20) return;
-	comp->prt0 = val;
+	if (comp->p7FFD & 0x20) return;
+	comp->rom = (val & 0x10) ? 1 : 0;
+	comp->p7FFD = val;
 	comp->vid->curscr = (val & 0x08) ? 7 : 5;
 	pl2MapMem(comp);
 }
 
 xPort p2PortMap[] = {
-	{0x0003,0x00fe,2,&xInFE,	&xOutFE},
-	{0xc002,0x7ffd,2,NULL,		&p2Out7FFD},
-	{0xf002,0x1ffd,2,NULL,		&p2Out1FFD},
-	{0xc002,0xbffd,2,NULL,		&xOutBFFD},
-	{0xc002,0xfffd,2,&xInFFFD,	&xOutFFFD},
-	{0x0000,0x0000,2,NULL, NULL}
+	{0x0003,0x00fe,2,2,2,xInFE,	xOutFE},
+	{0xc002,0x7ffd,2,2,2,NULL,	p2Out7FFD},
+	{0xf002,0x1ffd,2,2,2,NULL,	p2Out1FFD},
+	{0xc002,0xbffd,2,2,2,NULL,	xOutBFFD},
+	{0xc002,0xfffd,2,2,2,xInFFFD,	xOutFFFD},
+	{0x0000,0x0000,2,2,2,NULL,	NULL}
 };
 
 void pl2Out(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int dos) {

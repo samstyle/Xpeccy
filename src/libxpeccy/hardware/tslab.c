@@ -4,8 +4,6 @@
 #include <string.h>
 #include <assert.h>
 
-#define p7FFD comp->prt0
-#define pEFF7 comp->prt1
 #define p21AF comp->prt2
 
 void tslReset(ZXComp* comp) {
@@ -41,12 +39,12 @@ void tslMapMem(ZXComp* comp) {
 		if (p21AF & 4)
 			memSetBank(comp->mem,MEM_BANK0,MEM_RAM,comp->tsconf.Page0);
 		else
-			memSetBank(comp->mem,MEM_BANK0,MEM_RAM, (comp->tsconf.Page0 & 0xfc) | ((p7FFD & 0x10) ? 1 : 0) | (comp->dosen ? 0 : 2));
+			memSetBank(comp->mem,MEM_BANK0,MEM_RAM, (comp->tsconf.Page0 & 0xfc) | ((comp->rom) ? 1 : 0) | (comp->dos ? 0 : 2));
 	} else {
 		if (p21AF & 4)
 			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,comp->tsconf.Page0);
 		else
-			memSetBank(comp->mem,MEM_BANK0,MEM_ROM, (comp->tsconf.Page0 & 0xfc) | ((p7FFD & 0x10) ? 1 : 0) | (comp->dosen ? 0 : 2));
+			memSetBank(comp->mem,MEM_BANK0,MEM_ROM, (comp->tsconf.Page0 & 0xfc) | ((comp->rom) ? 1 : 0) | (comp->dos ? 0 : 2));
 	}
 }
 
@@ -85,12 +83,12 @@ void tslUpdatePal(ZXComp* comp) {
 
 Z80EX_BYTE tslMRd(ZXComp* comp, Z80EX_WORD adr, int m1) {
 	if (m1 && (comp->dif->type == DIF_BDI)) {
-		if (comp->dosen && (adr > 0x4000) && (!comp->tsconf.vdos)) {
-			comp->dosen = 0;
-			if (p7FFD & 0x10) comp->hw->mapMem(comp);	// don't switch ROM0 to ROM2
+		if (comp->dos && (adr > 0x4000) && (!comp->tsconf.vdos)) {
+			comp->dos = 0;
+			if (comp->rom) comp->hw->mapMem(comp);	// don't switch ROM0 to ROM2
 		}
-		if (!comp->dosen && ((adr & 0xff00) == 0x3d00) && (p7FFD & 0x10) && ((p21AF & 0x04) == 0x00)) {
-			comp->dosen = 1;
+		if (!comp->dos && ((adr & 0xff00) == 0x3d00) && (comp->rom) && ((p21AF & 0x04) == 0x00)) {
+			comp->dos = 1;
 			comp->hw->mapMem(comp);
 		}
 	}
@@ -173,7 +171,7 @@ Z80EX_BYTE tsIn77(ZXComp* comp, Z80EX_WORD port) {
 }
 
 Z80EX_BYTE tsInBFF7(ZXComp* comp, Z80EX_WORD port) {
-	return (pEFF7 & 0x80) ? cmsRd(comp) : 0xff;
+	return (comp->pEFF7 & 0x80) ? cmsRd(comp) : 0xff;
 }
 
 // out
@@ -227,8 +225,9 @@ void tsOut77(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 }
 
 void tsOut7FFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
-	if (p7FFD & 0x20) return;
-	p7FFD = val;
+	if (comp->p7FFD & 0x20) return;
+	comp->p7FFD = val;
+	comp->rom = (val & 0x10) ? 1 : 0;
 	int num = (val & 7) | ((val & 0xc0) >> 3);		// page (512K)
 	if (p21AF & 0x80) {				// 1x : !a13
 		if (~port & 0x2000) num &= 7;
@@ -242,15 +241,15 @@ void tsOut7FFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 }
 
 void tsOutBFF7(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
-	if (pEFF7 & 0x80) cmsWr(comp,val);
+	if (comp->pEFF7 & 0x80) cmsWr(comp,val);
 }
 
 void tsOutDFF7(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
-	if (pEFF7 & 0x80) comp->cmos.adr = val;
+	if (comp->pEFF7 & 0x80) comp->cmos.adr = val;
 }
 
 void tsOutEFF7(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
-	pEFF7 = val;
+	comp->pEFF7 = val;
 }
 
 // xxaf
@@ -324,8 +323,8 @@ void tsOut20AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 
 void tsOut21AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	p21AF = val;
-	p7FFD &= ~0x10;
-	if (val & 1) p7FFD |= 0x10;
+	comp->p7FFD &= ~0x10;
+	if (val & 1) comp->p7FFD |= 0x10;
 	//if (val & 2) {comp->mem->flags &= ~MEM_B0_WP;} else {comp->mem->flags |= MEM_B0_WP;}
 	tslMapMem(comp);
 }
@@ -483,76 +482,75 @@ void tsOutCatch(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 
 xPort tsPortMap[] = {
 	// xxaf
-	{0xffff,0x00af,2,&tsIn00AF,	&tsOut00AF},
-	{0xffff,0x01af,2,NULL,	&tsOut01AF},
-	{0xffff,0x02af,2,NULL,	&tsOut02AF},
-	{0xffff,0x03af,2,NULL,	&tsOut03AF},
-	{0xffff,0x04af,2,NULL,	&tsOut04AF},
-	{0xffff,0x05af,2,NULL,	&tsOut05AF},
-	{0xffff,0x06af,2,NULL,	&tsOut06AF},
-	{0xffff,0x07af,2,NULL,	&tsOut07AF},
-	{0xffff,0x0faf,2,NULL,	&tsOut0FAF},
+	{0xffff,0x00af,2,2,2,tsIn00AF,	tsOut00AF},
+	{0xffff,0x01af,2,2,2,NULL,	tsOut01AF},
+	{0xffff,0x02af,2,2,2,NULL,	tsOut02AF},
+	{0xffff,0x03af,2,2,2,NULL,	tsOut03AF},
+	{0xffff,0x04af,2,2,2,NULL,	tsOut04AF},
+	{0xffff,0x05af,2,2,2,NULL,	tsOut05AF},
+	{0xffff,0x06af,2,2,2,NULL,	tsOut06AF},
+	{0xffff,0x07af,2,2,2,NULL,	tsOut07AF},
+	{0xffff,0x0faf,2,2,2,NULL,	tsOut0FAF},
 
-	{0xffff,0x10af,2,NULL,	&tsOut10AF},
-	{0xffff,0x11af,2,NULL,	&tsOut11AF},
-	{0xffff,0x12af,2,&tsIn12AF,	&tsOut12AF},
-	{0xffff,0x13af,2,&tsIn13AF,	&tsOut13AF},
+	{0xffff,0x10af,2,2,2,NULL,	tsOut10AF},
+	{0xffff,0x11af,2,2,2,NULL,	tsOut11AF},
+	{0xffff,0x12af,2,2,2,tsIn12AF,	tsOut12AF},
+	{0xffff,0x13af,2,2,2,tsIn13AF,	tsOut13AF},
 
-	{0xffff,0x15af,2,NULL,	&tsOut15AF},
-	{0xffff,0x16af,2,NULL,	&tsOut16AF},
-	{0xffff,0x17af,2,NULL,	&tsOut17AF},
-	{0xffff,0x18af,2,NULL,	&tsOut18AF},
-	{0xffff,0x19af,2,NULL,	&tsOut19AF},
+	{0xffff,0x15af,2,2,2,NULL,	tsOut15AF},
+	{0xffff,0x16af,2,2,2,NULL,	tsOut16AF},
+	{0xffff,0x17af,2,2,2,NULL,	tsOut17AF},
+	{0xffff,0x18af,2,2,2,NULL,	tsOut18AF},
+	{0xffff,0x19af,2,2,2,NULL,	tsOut19AF},
 
-	{0xffff,0x1aaf,2,NULL,	&tsOut1AAF},
-	{0xffff,0x1baf,2,NULL,	&tsOut1BAF},
-	{0xffff,0x1caf,2,NULL,	&tsOut1CAF},
-	{0xffff,0x1daf,2,NULL,	&tsOut1DAF},
-	{0xffff,0x1eaf,2,NULL,	&tsOut1EAF},
-	{0xffff,0x1faf,2,NULL,	&tsOut1FAF},
+	{0xffff,0x1aaf,2,2,2,NULL,	tsOut1AAF},
+	{0xffff,0x1baf,2,2,2,NULL,	tsOut1BAF},
+	{0xffff,0x1caf,2,2,2,NULL,	tsOut1CAF},
+	{0xffff,0x1daf,2,2,2,NULL,	tsOut1DAF},
+	{0xffff,0x1eaf,2,2,2,NULL,	tsOut1EAF},
+	{0xffff,0x1faf,2,2,2,NULL,	tsOut1FAF},
 
-	{0xffff,0x20af,2,NULL,	&tsOut20AF},
-	{0xffff,0x21af,2,NULL,	&tsOut21AF},
-	{0xffff,0x22af,2,NULL,	&tsOut22AF},
-	{0xffff,0x23af,2,NULL,	&tsOut23AF},
-	{0xffff,0x24af,2,NULL,	&tsOut24AF},
-	// {0xffff,0x25af,2,NULL,	NULL},		// INTVECT (obsolete)
+	{0xffff,0x20af,2,2,2,NULL,	tsOut20AF},
+	{0xffff,0x21af,2,2,2,NULL,	tsOut21AF},
+	{0xffff,0x22af,2,2,2,NULL,	tsOut22AF},
+	{0xffff,0x23af,2,2,2,NULL,	tsOut23AF},
+	{0xffff,0x24af,2,2,2,NULL,	tsOut24AF},
+	// {0xffff,0x25af,2,2,2,NULL,	NULL},		// INTVECT (obsolete)
 
-	{0xffff,0x26af,2,NULL,	&tsOut26AF},
-	{0xffff,0x27af,2,&tsIn27AF,	&tsOut27AF},
+	{0xffff,0x26af,2,2,2,NULL,	tsOut26AF},
+	{0xffff,0x27af,2,2,2,tsIn27AF,	tsOut27AF},
 
-	{0xffff,0x28af,2,NULL,	&tsOut28AF},
-	{0xffff,0x29af,2,NULL,	&tsOut29AF},
-	{0xffff,0x2aaf,2,NULL,	&tsOut2AAF},
-	{0xffff,0x2baf,2,NULL,	NULL},		// cache config
+	{0xffff,0x28af,2,2,2,NULL,	tsOut28AF},
+	{0xffff,0x29af,2,2,2,NULL,	tsOut29AF},
+	{0xffff,0x2aaf,2,2,2,NULL,	tsOut2AAF},
+	{0xffff,0x2baf,2,2,2,NULL,	NULL},		// cache config
 
-	{0xffff,0x40af,2,NULL,	&tsOut40AF},
-	{0xffff,0x41af,2,NULL,	&tsOut41AF},
-	{0xffff,0x42af,2,NULL,	&tsOut42AF},
-	{0xffff,0x43af,2,NULL,	&tsOut43AF},
-	{0xffff,0x44af,2,NULL,	&tsOut44AF},
-	{0xffff,0x45af,2,NULL,	&tsOut45AF},
-	{0xffff,0x46af,2,NULL,	&tsOut46AF},
-	{0xffff,0x47af,2,NULL,	&tsOut47AF},
+	{0xffff,0x40af,2,2,2,NULL,	tsOut40AF},
+	{0xffff,0x41af,2,2,2,NULL,	tsOut41AF},
+	{0xffff,0x42af,2,2,2,NULL,	tsOut42AF},
+	{0xffff,0x43af,2,2,2,NULL,	tsOut43AF},
+	{0xffff,0x44af,2,2,2,NULL,	tsOut44AF},
+	{0xffff,0x45af,2,2,2,NULL,	tsOut45AF},
+	{0xffff,0x46af,2,2,2,NULL,	tsOut46AF},
+	{0xffff,0x47af,2,2,2,NULL,	tsOut47AF},
 	// !dos
-	{0x00f7,0x00fe,0,&xInFE,	&xOutFE},	// fe
-	{0x00ff,0x0057,0,&tsIn57,	&tsOut57},	// 57
-	{0x00ff,0x0077,0,&tsIn77,	&tsOut77},	// 77
-	{0x00ff,0x00fb,0,NULL,	&tsOutFB},	// fb
-	{0x10ff,0xeff7,0,NULL,	&tsOutEFF7},	// eff7
-	{0x20ff,0xdff7,0,NULL,	&tsOutDFF7},	// dff7
-	{0x40ff,0xbff7,0,&tsInBFF7,	&tsOutBFF7},	// bff7
-	{0x80ff,0x7ffd,0,NULL,	&tsOut7FFD},	// 7ffd
-	{0xc0ff,0xbffd,0,NULL,	&xOutBFFD},	// bffd
-	{0xc0ff,0xfffd,0,&xInFFFD,	&xOutFFFD},	// fffd
-	{0xffff,0xfadf,0,&xInFADF,	NULL},		// fadf
-	{0xffff,0xfbdf,0,&xInFBDF,	NULL},		// fbdf
-	{0xffff,0xffdf,0,&xInFFDF,	NULL},		// ffdf
+	{0x00f7,0x00fe,0,2,2,xInFE,	xOutFE},	// fe
+	{0x00ff,0x0057,0,2,2,tsIn57,	tsOut57},	// 57
+	{0x00ff,0x0077,0,2,2,tsIn77,	tsOut77},	// 77
+	{0x00ff,0x00fb,0,2,2,NULL,	tsOutFB},	// fb
+	{0x10ff,0xeff7,0,2,2,NULL,	tsOutEFF7},	// eff7
+	{0x20ff,0xdff7,0,2,2,NULL,	tsOutDFF7},	// dff7
+	{0x40ff,0xbff7,0,2,2,tsInBFF7,	tsOutBFF7},	// bff7
+	{0x80ff,0x7ffd,0,2,2,NULL,	tsOut7FFD},	// 7ffd
+	{0xc0ff,0xbffd,0,2,2,NULL,	xOutBFFD},	// bffd
+	{0xc0ff,0xfffd,0,2,2,xInFFFD,	xOutFFFD},	// fffd
+	{0xffff,0xfadf,0,2,2,xInFADF,	NULL},		// fadf
+	{0xffff,0xfbdf,0,2,2,xInFBDF,	NULL},		// fbdf
+	{0xffff,0xffdf,0,2,2,xInFFDF,	NULL},		// ffdf
 	// dos
-	{0x009f,0x001f,1,&tsInBDI,	&tsOutBDI},	// 1f,3f,5f,7f
-	{0x00ff,0x00ff,1,&tsInFF,	&tsOutFF},	// ff
-	{0x0000,0x0000,2,NULL,	NULL},
-//	{0x0000,0x0000,1,0,&tsInCatch,	&tsOutCatch}
+	{0x009f,0x001f,1,2,2,tsInBDI,	tsOutBDI},	// 1f,3f,5f,7f
+	{0x00ff,0x00ff,1,2,2,tsInFF,	tsOutFF},	// ff
+	{0x0000,0x0000,2,2,2,NULL,	NULL},
 };
 
 void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int dos) {

@@ -83,9 +83,9 @@ int loadSPG(ZXComp* comp, const char* name) {
 	SETIFF1(comp->cpu,(hd.flag35 & 0x04) ? 1 : 0);	// int enabled/disabled
 	SETIM(comp->cpu,1);				// im 1
 	SETI(comp->cpu,0x3f);				// i = 3F
-	comp->dosen = 0;				// basic 48 in bank0
-	comp->prt0 = 0x10;
-	comp->prt1 = 0x00;
+	comp->dos = 0;				// basic 48 in bank0
+	comp->p7FFD = 0x10;
+	comp->pEFF7 = 0x00;
 	comp->prt2 = 0x00;
 	comp->hw->mapMem(comp);
 	memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5);

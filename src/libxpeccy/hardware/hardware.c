@@ -52,7 +52,7 @@ HardWare hwTab[] = {
 		"Profi","Profi",
 		HW_PROFI,
 		MEM_512 | MEM_1M,
-		&prfMapMem,&prfOut,&prfIn,&prfMRd,&stdMWr,&prfReset
+		&prfMapMem,&prfOut,&prfIn,&stdMRd,&stdMWr,&prfReset
 	},
 	{NULL,NULL,0,0,NULL,NULL,NULL}
 };
@@ -77,12 +77,12 @@ unsigned char mbt;
 Z80EX_BYTE stdMRd(ZXComp* comp, Z80EX_WORD adr, int m1) {
 	if (m1 && (comp->dif->type == DIF_BDI)) {
 		mbt = memGetBankPtr(comp->mem,adr)->type;
-		if (comp->dosen && (mbt == MEM_RAM)) {
-			comp->dosen = 0;
+		if (comp->dos && (mbt == MEM_RAM)) {
+			comp->dos = 0;
 			comp->hw->mapMem(comp);
 		}
-		if (!comp->dosen && ((adr & 0x3f00) == 0x3d00) && (comp->prt0 & 0x10) && (mbt == MEM_ROM)) {
-			comp->dosen = 1;
+		if (!comp->dos && ((adr & 0x3f00) == 0x3d00) && (comp->rom) && (mbt == MEM_ROM)) {
+			comp->dos = 1;
 			comp->hw->mapMem(comp);
 		}
 	}
@@ -101,7 +101,11 @@ Z80EX_BYTE hwIn(xPort* ptab, ZXComp* comp, Z80EX_WORD port, int dos) {
 	xPort* itm;
 	while (1) {
 		itm = &ptab[idx];
-		if (((port & itm->mask) == (itm->value & itm->mask)) && ((itm->dos & 2) || (itm->dos == dos)) && (itm->in != NULL)) {
+		if (((port & itm->mask) == (itm->value & itm->mask)) &&\
+				(itm->in != NULL) &&\
+				((itm->dos & 2) || (itm->dos == dos)) &&\
+				((itm->rom & 2) || (itm->rom == comp->rom)) &&\
+				((itm->cpm & 2) || (itm->cpm == comp->cpm))) {
 			res = itm->in(comp, port);
 			break;
 		}

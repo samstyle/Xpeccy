@@ -1,11 +1,11 @@
 #include "../spectrum.h"
 
 void speReset(ZXComp* comp) {
-	comp->prt0 = 0x10;
+	comp->p7FFD = 0x10;
 }
 
 void speMapMem(ZXComp* comp) {
-	memSetBank(comp->mem,MEM_BANK0,MEM_ROM,(comp->dosen) ? 1 : 0);
+	memSetBank(comp->mem,MEM_BANK0,MEM_ROM,(comp->dos) ? 1 : 0);
 	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0);
 }
 
@@ -30,14 +30,15 @@ Z80EX_BYTE spInFF(ZXComp* comp, Z80EX_WORD port) {
 }
 
 xPort spePortMap[] = {
-	{0x0001, 0x00fe, 2, &xInFE, &spOutFE},
-	{0xc002, 0xfffd, 2, &xInFFFD, &xOutFFFD},
-	{0xc002, 0xbffd, 2, NULL, &xOutBFFD},
-	{0x0320, 0xfadf, 2, &xInFADF, NULL},
-	{0x0720, 0xfbdf, 2, &xInFBDF, NULL},
-	{0x0720, 0xffdf, 2, &xInFFDF, NULL},
-	{0x0021, 0x001f, 0, &spIn1F, NULL},
-	{0x0000, 0x0000, 0, &spInFF, NULL}		// all unknown ports is FF (nodos)
+	{0x0001,0x00fe,2,2,2,xInFE,	spOutFE},
+	{0xc002,0xfffd,2,2,2,xInFFFD,	xOutFFFD},
+	{0xc002,0xbffd,2,2,2,NULL,	xOutBFFD},
+	{0x0320,0xfadf,2,2,2,xInFADF,	NULL},
+	{0x0720,0xfbdf,2,2,2,xInFBDF,	NULL},
+	{0x0720,0xffdf,2,2,2,xInFFDF,	NULL},
+	{0x0021,0x001f,0,2,2,spIn1F,	NULL},
+	{0x0000,0x0000,0,2,2,spInFF,	NULL},		// all unknown ports is FF (nodos)
+	{0x0000,0x0000,2,2,2,spInFF,	NULL}
 };
 
 void speOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int dos) {

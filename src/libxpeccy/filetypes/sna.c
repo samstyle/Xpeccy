@@ -54,9 +54,9 @@ int loadSNA(ZXComp* zx, const char* name) {
 	fread(tmpgBuf, 0x4000, 1, file);
 
 	if (fileSize < 49180) {
-		zx->prt0 = 0x10;
-		zx->prt1 = 0x00;
-		zx->dosen = 0;
+		zx->p7FFD = 0x10;
+		zx->pEFF7 = 0x00;
+		zx->dos = 0;
 		zx->hw->mapMem(zx);
 		memSetBank(zx->mem, MEM_BANK3, MEM_RAM,0);
 		memSetPage(zx->mem, MEM_RAM, 0, tmpgBuf);
@@ -73,7 +73,7 @@ int loadSNA(ZXComp* zx, const char* name) {
 		tmp = fgetc(file);
 		zx->hw->out(zx,0x7ffd,tmp,0);
 		tmp2 = fgetc(file);
-		zx->dosen = (tmp2 & 1) ? 1 : 0;
+		zx->dos = (tmp2 & 1) ? 1 : 0;
 		for (tmp2 = 0; tmp2 < 8; tmp2++) {
 			if ((tmp2 == 2) || (tmp2 == 5)) tmp2++;
 			if ((tmp & 7) != tmp2) {
@@ -134,8 +134,8 @@ int saveSNA(ZXComp* zx, const char* name, int sna48) {
 		adr = GETPC(zx->cpu);
 		fputc(adr & 0xff, file);
 		fputc((adr & 0xff00) >> 8, file);
-		fputc(zx->prt0, file);
-		fputc(zx->dosen ? 0xff : 0x00, file);
+		fputc(zx->p7FFD, file);
+		fputc(zx->dos ? 0xff : 0x00, file);
 		for (i = 0; i < 8; i++) {
 			if ((i == 2) || (i == 5)) i++;
 			if (i != bnk) {

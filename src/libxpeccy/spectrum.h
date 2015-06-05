@@ -51,7 +51,10 @@ struct ZXComp {
 	unsigned beeplev:1;		// beeper level
 	unsigned rzxPlay:1;		// rzx is playing
 	unsigned firstRun:1;
-	unsigned dosen:1;
+
+	unsigned rom:1;		// b4,7ffd
+	unsigned dos:1;		// BDI dos
+	unsigned cpm:1;
 
 	unsigned scrpWait:1;		// scorpion wait mode
 	unsigned contMem:1;		// contended mem
@@ -90,8 +93,14 @@ struct ZXComp {
 	int nsPerFrame;
 
 	memEntry memMap[16];		// memory map for ATM2, PentEvo
-	unsigned char prt0;		// 7ffd value
-	unsigned char prt1;		// extend port value
+	unsigned char p7FFD;		// 7ffd value
+	union {				// extend port values
+		//unsigned char prt1;
+		unsigned char p1FFD;
+		unsigned char pEFF7;
+		unsigned char pDFFD;
+		unsigned char p77hi;
+	};
 	unsigned char prt2;		// scorpion ProfROM layer (0..3)
 
 	unsigned char brkIOMap[0x10000];	// brk by port

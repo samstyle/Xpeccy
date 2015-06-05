@@ -94,8 +94,8 @@ int loadZ80(ZXComp* zx, const char* name) {
 	CPU* cpu = zx->cpu;
 	char pageBuf[0xc000];
 	z80v1Header hd;
-	zx->prt0 = 0x10;
-	zx->prt1 = 0x00;
+	zx->p7FFD = 0x10;
+	zx->pEFF7 = 0x00;
 	memSetBank(zx->mem,MEM_BANK0,MEM_ROM,1);
 	memSetBank(zx->mem,MEM_BANK3,MEM_RAM,0);
 	zx->vid->curscr = 5;

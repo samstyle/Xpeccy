@@ -4,14 +4,14 @@
 // debug
 
 Z80EX_BYTE brkIn(ZXComp* comp, Z80EX_WORD port) {
-	printf("IN %.4X\ndos:%i PRT0:%.2X PRT1:%.2X\n",port,comp->dosen,comp->prt0,comp->prt1);
+	printf("IN %.4X\n",port);
 	assert(0);
 //	comp->brk = 1;
 	return 0xff;
 }
 
 void brkOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
-	printf("OUT %.4X,%.2X\ndos:%i PRT0:%.2X PRT1:%.2X\n",port,val,comp->dosen,comp->prt0,comp->prt1);
+	printf("OUT %.4X,%.2X\n",port,val);
 	assert(0);
 //	comp->brk = 1;
 }
@@ -25,6 +25,10 @@ void dummyOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 }
 
 // in
+
+Z80EX_BYTE xIn1F(ZXComp* comp, Z80EX_WORD port) {
+	return joyInput(comp->joy);
+}
 
 Z80EX_BYTE xInFE(ZXComp* comp, Z80EX_WORD port) {
 	Z80EX_BYTE res = keyInput(comp->keyb, (port & 0xff00) >> 8);
