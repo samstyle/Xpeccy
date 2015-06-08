@@ -302,6 +302,14 @@ QString gethexword(int num) {return QString::number(num+0x10000,16).right(4).toU
 QString gethexbyte(uchar num) {return QString::number(num+0x100,16).right(2).toUpper();}
 QString getbinbyte(uchar num) {return QString::number(num+0x100,2).right(8).toUpper();}
 
+void setSignal(QLabel* lab, int on) {
+	if (on) {
+		lab->setStyleSheet("background-color: rgb(160, 255, 160);");
+	} else {
+		lab->setStyleSheet("background-color: rgb(255, 160, 160);");
+	}
+}
+
 bool DebugWin::fillAll() {
 	ui.labTcount->setText(QString::number(comp->tickCount - tCount));
 	fillZ80();
@@ -312,6 +320,9 @@ bool DebugWin::fillAll() {
 	if (comp->rzxPlay) fillRZX();
 	ui.labRX->setNum(comp->vid->x);
 	ui.labRY->setNum(comp->vid->y);
+	setSignal(ui.labDOS, comp->dos);
+	setSignal(ui.labROM, comp->rom);
+	setSignal(ui.labCPM, comp->cpm);
 	return fillDisasm();
 }
 
@@ -709,7 +720,7 @@ void DebugWin::dmpLenChanged() {
 	}
 	int end = start + len - 1;
 	start = dui.leLen->cursorPosition();
-	dui.leEnd->setText(QString::number(end,16));	
+	dui.leEnd->setText(QString::number(end,16));
 	dui.leLen->setCursorPosition(start);
 }
 

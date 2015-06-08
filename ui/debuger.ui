@@ -1303,6 +1303,49 @@
       </widget>
      </item>
      <item>
+      <widget class="QLabel" name="label_55">
+       <property name="styleSheet">
+        <string notr="true">background-color: rgb(160, 160, 255);</string>
+       </property>
+       <property name="text">
+        <string>SIG</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="labDOS">
+       <property name="text">
+        <string>DOS</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="labROM">
+       <property name="text">
+        <string>ROM</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="labCPM">
+       <property name="text">
+        <string>CPM</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QLabel" name="label_27">
        <property name="styleSheet">
         <string notr="true">background-color: rgb(160, 160, 255);</string>

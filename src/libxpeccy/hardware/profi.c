@@ -79,7 +79,6 @@ xPort prfPortMap[] = {
 	{0xc002,0xbffd,2,2,2,NULL,	xOutBFFD},
 	{0xc002,0xfffd,2,2,2,xInFFFD,	xOutFFFD},
 
-//	{0x009f,0x00ff,1,1,0,prfInBDI,	prfOutBDI},
 	{0x00ff,0x00bf,0,0,1,prfInBDI,	prfOutBDI},	// bf (bdi ff)
 	{0x009f,0x001f,0,0,1,prfInBDI,	prfOutBDI},	// 1f,3f,5f,7f (bdi)
 
