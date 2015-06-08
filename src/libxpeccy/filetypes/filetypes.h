@@ -23,18 +23,6 @@
 #define SLASH "/"
 #endif
 
-#define	TYP_SNA		0
-#define	TYP_Z80 	1
-#define	TYP_RZX 	2
-#define TYPE_TRD	3
-#define TYPE_SCL	4
-#define TYPE_FDI	5
-#define TYPE_UDI	6
-#define TYPE_HOBETA	7
-#define	TYPE_TAP	8
-#define	TYPE_TZX	9
-#define TYPE_WAV	10
-
 #define	ERR_OK		0
 #define	ERR_CANT_OPEN	1	// can't open file
 
@@ -68,6 +56,9 @@
 #define	ERR_DSK_SIGN	0x88	// dsk signature error
 
 #define	ERR_RAW_LONG	0x90	// raw file too long
+
+#define	ERR_TD0_SIGN	0x98	// td0 signature error
+#define ERR_TD0_TYPE	0x99	// unsupported td0 type
 
 // spg
 
@@ -135,6 +126,8 @@ int saveUDI(Floppy*,const char*);
 int loadFDI(Floppy*,const char*);
 
 int loadDSK(Floppy*,const char*);
+
+int loadTD0(Floppy*,const char*);
 
 #ifdef __cplusplus
 }

@@ -82,11 +82,11 @@ int loadFDI(Floppy* flp,const char* name) {
 					trkImg[sec].sec = shd.sec;
 					trkImg[sec].len = shd.len;
 					trkImg[sec].type = (shd.flag & 0x80) ? 0xf8 : 0xfb;
-					trkImg[sec].data = (unsigned char*)malloc(4096 * sizeof(unsigned char));
+					// trkImg[sec].data = (unsigned char*)malloc(4096 * sizeof(unsigned char));
 					shd.len = shd.len & 3;
 					pos = ftell(file);
 					fseek(file, hd.dData + thd.dData + shd.dData, SEEK_SET);
-					fread((char*)trkImg[sec].data, (128 << (shd.len & 3)), 1, file);
+					fread((char*)trkImg[sec].dat, (128 << (shd.len & 3)), 1, file);
 					fseek(file, pos, SEEK_SET);
 				}
 				flpFormTrack(flp, (trk << 1) + head, trkImg, thd.secCount);

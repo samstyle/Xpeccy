@@ -115,7 +115,7 @@ void flpFormTRDTrack(Floppy* flp, int tr, unsigned char* bpos) {
 	sct.len = 1;
 	for (sc = 0; sc < 16; sc++) {
 		sct.sec = sc + 1;
-		sct.data = ppos;
+		memcpy(sct.dat, ppos, 256);
 		lst[sc] = sct;
 		ppos += 256;
 	}
@@ -199,8 +199,8 @@ void flpFormTrack(Floppy* flp, int tr, Sector* sdata, int scount) {
 	*(ppos++) = 0xc2; *(ppos++) = 0xc2;		// 	track mark
 	*(ppos++) = 0xc2; *(ppos++) = 0xfc;
 	for (sc = 0; sc < scount; sc++) {
-		for(i=0;i<10;i++) *(ppos++) = 0x4e;		// 10	sync
-		for(i=0;i<12;i++) *(ppos++) = 0x00;		// 12	space
+		memset(ppos, 0x4e, 10); ppos += 10;		// 10	sync
+		memset(ppos, 0x00, 12); ppos += 12;		// 12	space
 		*(ppos++) = 0xa1;				//	address mark
 		*(ppos++) = 0xa1;
 		*(ppos++) = 0xa1;
@@ -210,16 +210,16 @@ void flpFormTrack(Floppy* flp, int tr, Sector* sdata, int scount) {
 		*(ppos++) = sdata[sc].sec;
 		*(ppos++) = sdata[sc].len;
 		*(ppos++) = 0xf7; *(ppos++) = 0xf7;
-		for(i=0;i<22;i++) *(ppos++) = 0x4e;		// 22	sync
-		for(i=0;i<12;i++) *(ppos++) = 0x00;		// 12	space
+		memset(ppos, 0x4e, 22); ppos += 22;		// 22	sync
+		memset(ppos, 0x00, 12); ppos += 12;		// 12	space
 		*(ppos++) = 0xa1;				//	data mark
 		*(ppos++) = 0xa1;
 		*(ppos++) = 0xa1;
 		*(ppos++) = sdata[sc].type;
 		ln = (128 << (sdata[sc].len & 3));		//	data
-		for (i=0; i<ln; i++) *(ppos++) = sdata[sc].data[i];
+		memcpy(ppos, sdata[sc].dat, ln); ppos += ln;
 		*(ppos++) = 0xf7; *(ppos++) = 0xf7;
-		for(i=0;i<60;i++) *(ppos++) = 0x4e;		// 60	sync
+		memset(ppos, 0x4e, 60); ppos += 60;		// 60	sync
 	}
 	while ((ppos - flp->data[tr].byte) < TRACKLEN) *(ppos++) = 0x4e;		// ?	last sync
 	flpFillFields(flp,tr,1);

@@ -1,6 +1,6 @@
 #ifdef HAVEZLIB
 
-#include <stdlib.h>
+#include <stdio.h>
 #include <zlib.h>
 
 #include "filetypes.h"
@@ -147,7 +147,7 @@ void rzxLoadFrame(ZXComp* zx) {
 					}
 				}
 				if (~shd.flag & 1) {
-					unlink(sname);		// delete temp file
+					remove(sname);		// delete temp file
 				}
 				free(sname);
 				break;

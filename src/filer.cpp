@@ -52,6 +52,7 @@ QString getFilter(int flags) {
 	if (flags & FT_FDI) res.append(" *.fdi");
 	if (flags & FT_UDI) res.append(" *.udi");
 	if (flags & FT_DSK) res.append(" *.dsk");
+	if (flags & FT_TD0) res.append(" *.td0");
 #ifdef HAVEZLIB
 	if (flags & FT_RZX) res.append(" *.rzx");
 #endif
@@ -72,6 +73,7 @@ int getFileType(QString path) {
 	if (path.endsWith(".fdi",Qt::CaseInsensitive)) return FT_FDI;
 	if (path.endsWith(".udi",Qt::CaseInsensitive)) return FT_UDI;
 	if (path.endsWith(".dsk",Qt::CaseInsensitive)) return FT_DSK;
+	if (path.endsWith(".td0",Qt::CaseInsensitive)) return FT_TD0;
 	if (path.endsWith(".spg",Qt::CaseInsensitive)) return FT_SPG;
 #ifdef HAVEZLIB
 	if (path.endsWith(".rzx",Qt::CaseInsensitive)) return FT_RZX;
@@ -143,6 +145,7 @@ void loadFile(ZXComp* comp,const char* name, int flags, int drv) {
 		case FT_HOBETA: ferr = loadHobeta(flp,sfnam.c_str()); break;
 		case FT_RAW: ferr = loadRaw(flp,sfnam.c_str()); break;
 		case FT_DSK: ferr = loadDSK(flp,sfnam.c_str()); break;
+		case FT_TD0: ferr = loadTD0(flp,sfnam.c_str()); break;
 		case FT_SPG: ferr = loadSPG(comp,sfnam.c_str()); break;
 #ifdef HAVEZLIB
 		case FT_RZX: ferr = loadRZX(comp,sfnam.c_str()); break;
@@ -165,6 +168,8 @@ void loadFile(ZXComp* comp,const char* name, int flags, int drv) {
 		case ERR_SCL_MANY: shitHappens("Too many files in SCL"); break;
 		case ERR_RAW_LONG: shitHappens("File is too big"); break;
 		case ERR_DSK_SIGN: shitHappens("Wrong DSK signature"); break;
+		case ERR_TD0_SIGN: shitHappens("Wrong TD0 signature"); break;
+		case ERR_TD0_TYPE: shitHappens("Unsupported TD0"); break;
 		case ERR_WAV_HEAD: shitHappens("Wrong WAV header"); break;
 		case ERR_WAV_FORMAT: shitHappens("Unsupported WAV format"); break;
 		case ERR_OK:

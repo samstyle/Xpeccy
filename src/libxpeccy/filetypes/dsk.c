@@ -68,9 +68,6 @@ int loadDSK(Floppy* flp, const char *name) {
 		int i,sc;
 		Sector secs[256];
 
-		for (i = 0; i < 256; i++)
-			secs[i].data = NULL;
-
 		for (i = 0; i < dib.tracks * dib.sides; i++) {
 			if (!feof(file)) {
 				fgetLine(file, sigBuf, 255, 0);					// read block signature (till byte 0x00)
@@ -82,9 +79,9 @@ int loadDSK(Floppy* flp, const char *name) {
 						secs[sc].side = sib[sc].side;
 						secs[sc].sec = sib[sc].sector;
 						secs[sc].len = sib[sc].size;
-						secs[sc].data = (unsigned char*)realloc(secs[sc].data,sib[sc].bytesSize * sizeof(char));
+						// secs[sc].data = (unsigned char*)realloc(secs[sc].data,sib[sc].bytesSize * sizeof(char));
 						secs[sc].type = 0xfb;
-						fread((char*)secs[sc].data, sib[sc].bytesSize, 1, file);
+						fread((char*)secs[sc].dat, sib[sc].bytesSize, 1, file);
 					}
 					flpFormTrack(flp,tr,secs,tib.secCount);
 					tr++;
@@ -93,10 +90,6 @@ int loadDSK(Floppy* flp, const char *name) {
 					break;
 				}
 			}
-		}
-		for (i = 0; i < 256; i++) {
-			if (secs[i].data)
-				free(secs[i].data);
 		}
 		flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
 		strcpy(flp->path,name);

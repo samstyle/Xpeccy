@@ -27,7 +27,7 @@ typedef struct {
 	unsigned char side;
 	unsigned char sec;
 	unsigned char len;
-	unsigned char* data;
+	unsigned char dat[8192];
 	unsigned char type;
 	int crc;
 	int flag;

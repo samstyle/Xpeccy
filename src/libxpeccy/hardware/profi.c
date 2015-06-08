@@ -72,6 +72,7 @@ void prfBrkOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 
 xPort prfPortMap[] = {
 	{0x0081,0x007e,2,2,1,NULL,	prfOutPal},	// 7e cpm:palete
+	{0x00ff,0x00f7,2,2,2,dummyIn,	dummyOut},	// f7 (off?)
 	{0x00f7,0x00fe,2,2,2,xInFE,	xOutFE},
 	{0x8002,0x7ffd,2,2,2,NULL,	prfOut7FFD},
 	{0xffff,0xdffd,2,2,2,NULL,	prfOutDFFD},
@@ -79,16 +80,20 @@ xPort prfPortMap[] = {
 	{0xc002,0xfffd,2,2,2,xInFFFD,	xOutFFFD},
 
 //	{0x009f,0x00ff,1,1,0,prfInBDI,	prfOutBDI},
-//	{0x009f,0x001f,1,1,0,prfInBDI,	prfOutBDI},
+	{0x00ff,0x00bf,0,0,1,prfInBDI,	prfOutBDI},	// bf (bdi ff)
+	{0x009f,0x001f,0,0,1,prfInBDI,	prfOutBDI},	// 1f,3f,5f,7f (bdi)
 
 	{0x0000,0x0000,2,2,2,prfBrkIn,	prfBrkOut}
 };
 
 void prfOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int dos) {
+	if (difOut(comp->dif, port, val, dos)) return;
 	hwOut(prfPortMap, comp, port, val, dos);
 }
 
 Z80EX_BYTE prfIn(ZXComp* comp, Z80EX_WORD port, int dos) {
-	Z80EX_BYTE res = hwIn(prfPortMap, comp, port, dos);
+	Z80EX_BYTE res = 0xff;
+	if (difIn(comp->dif, port, &res, dos)) return res;
+	res = hwIn(prfPortMap, comp, port, dos);
 	return res;
 }
