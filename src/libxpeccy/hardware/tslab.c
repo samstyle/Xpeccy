@@ -202,14 +202,12 @@ void tsOutFF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {		// dos
 	}
 }
 
-/*
 void tsOutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	comp->vid->brdcol = 0xf0 | (val & 7);
 	comp->vid->nextbrd = comp->vid->brdcol;
 	comp->beeplev = (val & 0x10) ? 1 : 0;
 	comp->tape->levRec = (val & 0x08) ? 1 : 0;
 }
-*/
 
 void tsOutFB(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	sdrvOut(comp->sdrv, 0xfb, val);
@@ -534,7 +532,7 @@ xPort tsPortMap[] = {
 	{0xffff,0x46af,2,2,2,NULL,	tsOut46AF},
 	{0xffff,0x47af,2,2,2,NULL,	tsOut47AF},
 	// !dos
-	{0x00f7,0x00fe,0,2,2,xInFE,	xOutFE},	// fe
+	{0x00f7,0x00fe,0,2,2,xInFE,	tsOutFE},	// fe
 	{0x00ff,0x0057,0,2,2,tsIn57,	tsOut57},	// 57
 	{0x00ff,0x0077,0,2,2,tsIn77,	tsOut77},	// 77
 	{0x00ff,0x00fb,0,2,2,NULL,	tsOutFB},	// fb
