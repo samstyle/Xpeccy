@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <liblhasa-1.0/lha_decoder.h>
+#include <lha_decoder.h>
 
 #include "filetypes.h"
 
@@ -44,20 +44,126 @@ typedef struct {
 
 size_t fGetData(void* buf, size_t len, void* data) {
 	if (feof((FILE*)data)) return 0;
-	fread(buf, len, 1, (FILE*)data);
+	if (buf == NULL) {
+		fseek((FILE*)data,len,SEEK_CUR);
+	} else {
+		fread(buf, len, 1, (FILE*)data);
+	}
 	return len;
+}
+
+size_t lhaDepack(void* buf, size_t len, void* data) {
+	size_t res;
+	if (buf == NULL) {
+		unsigned char* tbuf = (unsigned char*)malloc(len);
+		res = lha_decoder_read((LHADecoder*)data, tbuf, len);
+		free(tbuf);
+	} else {
+		res = lha_decoder_read((LHADecoder*)data, buf, len);
+	}
+	return res;
+}
+
+void doTD0(Floppy* flp, size_t(*getBytes)(void*, size_t,void*), void* dptr, int haveRem) {
+	td0RemHead rhd;
+	td0TrkHead thd;
+	td0SecHead shd;
+	Sector sec[256];
+	int work = 1;
+	int idx;
+	int i;
+	int icnt;
+	unsigned short dlen;
+	unsigned char btype;
+	unsigned short cnt;
+	unsigned char ch1,ch2;
+	unsigned char buf[8192];
+	unsigned char* ptr;
+		if (haveRem) {		// skip comment
+			getBytes(&rhd, sizeof(td0RemHead), dptr);
+#ifdef WORDS_BIG_ENDIAN
+			rhd.len = swap16(rhd.len);
+#endif
+			getBytes(NULL, rhd.len, dptr);
+		}
+		while (work) {
+			idx = 0;
+			getBytes(&thd, sizeof(td0TrkHead), dptr);
+			//printf("== TRK %i:%i (nsec = %i)\n",thd.trk, thd.head, thd.nsec);
+			if (thd.nsec == 0xff) break;
+			for (i = 0; i < thd.nsec; i++) {
+				if (!work) break;
+				getBytes(&shd, sizeof(td0SecHead), dptr);
+				//printf("sec %i (sz = %i)\n",shd.sec, shd.secz);
+				if (shd.sec == 0x65) {
+					work = 0;
+				} else if (((shd.ctrl & 0x30) == 0x00) && ((shd.secz & 0xf8) == 0)) {
+					sec[idx].cyl = shd.trk;
+					sec[idx].side = shd.head;
+					sec[idx].sec = shd.sec;
+					sec[idx].len = shd.secz;
+					sec[idx].type = 0xfb;
+					sec[idx].crc = -1;
+					getBytes(&ch1, 1, dptr);
+					getBytes(&ch2, 1, dptr);
+					dlen = ch1 | (ch2 << 8);
+					if (shd.sec > thd.nsec) {
+						getBytes(NULL, dlen, dptr);	// skip data
+					} else {
+						getBytes(&btype, 1, dptr);
+						switch (btype) {
+							case 0:
+								getBytes(sec[idx].dat, dlen-1, dptr);
+								idx++;
+								break;
+							case 1:
+								getBytes(&ch1, 1, dptr);
+								getBytes(&ch2, 1, dptr);
+								cnt = ch1 | (ch2 << 8);
+								getBytes(&ch1, 1, dptr);
+								getBytes(&ch2, 1, dptr);
+								ptr = sec[idx].dat;
+								while (cnt > 0) {
+									*(ptr++) = ch1;
+									*(ptr++) = ch2;
+									cnt--;
+								}
+								idx++;
+								break;
+							case 2:
+								ptr = sec[idx].dat;
+								while (dlen > 1) {
+									getBytes(&ch1, 1, dptr);
+									getBytes(&ch2, 1, dptr);
+									dlen -= 2;
+									if (ch1 == 0) {
+										getBytes(ptr, ch2, dptr);
+										dlen -= ch2;
+										ptr += ch2;
+									} else {
+										icnt = (1 << ch1);
+										getBytes(buf, icnt, dptr);
+										dlen -= icnt;
+										while (ch2 > 0) {
+											memcpy(ptr, buf, icnt);
+											ptr += icnt;
+											ch2--;
+										}
+									}
+								}
+								idx++;
+								break;
+						}
+					}
+				}
+			}
+			flpFormTrack(flp, (thd.trk << 1) + thd.head, sec, idx);
+		}
 }
 
 int loadTD0(Floppy* flp, const char* name) {
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
-
-	char sname[L_tmpnam + 12];
-	unsigned tmpFile = 0;
-
-	fseek(file, 0, SEEK_END);
-	size_t sz = ftell(file) - sizeof(td0Head);
-	rewind(file);
 
 	int err = ERR_OK;
 	td0Head hd;
@@ -67,121 +173,21 @@ int loadTD0(Floppy* flp, const char* name) {
 	} else if ((hd.dens != 0) || (hd.sides > 2)) {
 		err = ERR_TD0_TYPE;
 	} else {
-		if (strncmp(hd.sign,"TD",2)) {		// 1 on td
-			tmpFile = 1;
-			LHADecoderType* decType = lha_decoder_for_name("-lh1-");
-			LHADecoder* dec = lha_decoder_new(decType, fGetData, file, -1);
-			tmpnam(sname);
-			strcat(sname,".xpeccy.tmp");
-			FILE* tfile = fopen(sname, "wb");
-			unsigned char buf[1024];
-			do {
-				sz = lha_decoder_read(dec, buf, 1024);
-				fwrite((char*)buf, sz, 1, tfile);
-			} while (sz);
-			fclose(file);
-			fclose(tfile);
+		LHADecoderType* decType;
+		LHADecoder* dec = NULL;
+		if (strncmp(hd.sign,"TD",2)) {	// 1 on td (packed)
+			decType = lha_decoder_for_name("-lh1-");
+			dec = lha_decoder_new(decType, fGetData, file, -1);
+			doTD0(flp, lhaDepack, dec, hd.flag & 0x80);
 			lha_decoder_free(dec);
-			file = fopen(sname, "rb");
-		}
-		if (hd.flag & 0x80) {
-			td0RemHead rhd;
-			fread(&rhd, sizeof(td0RemHead), 1, file);
-#ifdef WORDS_BIG_ENDIAN
-			rhd.len = swap16(rhd.len);
-#endif
-			fseek(file, rhd.len, SEEK_CUR);
-		}
-		int i, datlen, blktype, cnt, ch1, ch2;
-		int idx;
-		unsigned char *ptr, *sptr;
-		int work = 1;
-		td0TrkHead thd;
-		td0SecHead shd;
-		Sector sec[256];
-		while (work && !feof(file)) {
-			idx = 0;
-			fread(&thd, sizeof(td0TrkHead), 1, file);
-			if (thd.nsec == 0xff) break;
-			for (i = 0; i < thd.nsec; i++) {
-				if (!work) break;
-				fread(&shd, sizeof(td0SecHead), 1, file);
-				if (shd.sec == 0x65) {
-					work = 0;
-				} else if (((shd.ctrl & 0x30) == 0x00) && ((shd.secz & 0xf8) == 0)) {
-
-					sec[idx].cyl = shd.trk;
-					sec[idx].side = shd.head;
-					sec[idx].sec = shd.sec;
-					sec[idx].len = shd.secz;
-					sec[idx].type = 0xfb;
-					sec[idx].crc = -1;
-
-					datlen = fgetwLE(file);
-					if (shd.sec > thd.nsec) {
-						fseek(file, datlen, SEEK_CUR);
-					} else {
-						blktype = fgetc(file);
-						switch(blktype) {
-							case 0x00:
-								fread(sec[idx].dat, datlen-1, 1, file);
-								idx++;
-								break;
-							case 0x01:
-								cnt = fgetwLE(file);
-								ch1 = fgetc(file);
-								ch2 = fgetc(file);
-								ptr = sec[idx].dat;
-								while (cnt > 0) {
-									*ptr++ = ch1;
-									*ptr++ = ch2;
-									cnt--;
-								}
-								idx++;
-								break;
-							case 0x02:
-								ch2 = 0;
-								ptr = sec[idx].dat;
-								while (ch2 < datlen-1) {
-									ch1 = fgetc(file);
-									cnt = fgetc(file);
-									ch2 += 2;
-									if (ch1 == 0) {
-										fread(ptr, cnt, 1, file);
-										ptr += cnt;
-										ch2 += cnt;
-									} else {
-										ch1 = (1 << ch1);
-										sptr = ptr;
-										fread(ptr, ch1, 1, file);
-										ch2 += ch1;
-										while (cnt > 0) {
-											memcpy(ptr, sptr, ch1);
-											ptr += ch1;
-											cnt--;
-										}
-									}
-								}
-								idx++;
-								break;
-							default:
-								work = 0;
-								break;
-						}
-					}
-				}
-			}
-			if (work) flpFormTrack(flp, (thd.trk << 1) + thd.head, sec, idx);
+		} else {
+			doTD0(flp, fGetData, file, hd.flag & 0x80);
 		}
 		flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
 		strcpy(flp->path,name);
 		flp->insert = 1;
 		flp->changed = 0;
 	}
-
 	fclose(file);
-	if (tmpFile) {
-		remove(sname);
-	}
 	return err;
 }

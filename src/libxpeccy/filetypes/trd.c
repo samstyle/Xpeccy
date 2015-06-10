@@ -1,7 +1,7 @@
 #include "filetypes.h"
 
 void loadBoot(Floppy* flp, const char* path) {
-	if (flpGet(flp,FLP_DISKTYPE) != DISK_TYPE_TRD) return;
+	if (flpGetDiskType(flp) != DISK_TYPE_TRD) return;
 	TRFile cat[128];
 	int catSize = flpGetTRCatalog(flp, cat);
 	int gotBoot = 0;

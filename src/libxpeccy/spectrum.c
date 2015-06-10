@@ -16,36 +16,6 @@ Z80EX_WORD pcreg;
 
 // port decoding tables
 
-/*
-int zxGetPort(ZXComp* comp, Z80EX_WORD port) {
-	switch (comp->hw->type) {
-		case HW_ATM1:
-			if ((port & 0x0007) == 0x0006) return 0xfe;	// (to read: a8..15, to write: a3.5.6.7)
-			if ((port & 0x8202) == 0x8000) return 0xfdfd;	// mem.ext
-			if ((port & 0x8202) == 0x0200) return 0x7ffd;	// mem
-			if ((port & 0x8202) == 0x0000) return 0x7dfd;	// digital.rd / palete.wr
-			if ((port & 0xc202) == 0x8200) return 0xbffd;	// ay
-			if ((port & 0xc202) == 0xc200) return 0xfffd;
-			if ((port & 0x0007) == 0x0002) return 0xfa;	// interface port
-			if ((port & 0x0007) == 0x0003) return 0xfb;	// digital.wr/printer
-			if (comp->dosen & 1) {
-				if ((port & 0x009f) == 0x009f) return 0xff;				// bdi: ff
-				if ((port & 0x00ff) == 0x001f) return 0x1f;
-				if ((port & 0x00ff) == 0x003f) return 0x3f;
-				if ((port & 0x00ff) == 0x005f) return 0x5f;
-				if ((port & 0x00ff) == 0x007f) return 0x7f;
-			}
-			break;
-		default:
-			printf("zxGetPort : unknown hardware type %i\n",comp->hw->type);
-			assert(0);
-			break;
-	}
-//	printf("Unimplemented port %.4X (hw = %.2X)\n",port,comp->hw->type);
-	return 0x0000;		// no port
-}
-*/
-
 MemPage* mptr;
 
 inline void zxMemRW(ZXComp* comp, int adr) {
@@ -277,8 +247,10 @@ void zxReset(ZXComp* comp,int res) {
 	ideReset(comp->ide);
 	saaReset(comp->saa);
 	if (res == RES_DEFAULT) res = comp->resbank;
-	comp->dos = ((res == RES_DOS) || (res == RES_SHADOW)) ? 1 : 0;
 	comp->p7FFD = ((res == RES_DOS) || (res == RES_48)) ? 0x10 : 0x00;
+	comp->dos = ((res == RES_DOS) || (res == RES_SHADOW)) ? 1 : 0;
+	comp->rom = (comp->p7FFD & 0x10) ? 1 : 0;
+	comp->cpm = 0;
 	if (comp->hw->reset) comp->hw->reset(comp);
 	comp->hw->mapMem(comp);
 }

@@ -35,7 +35,7 @@ int loadRaw(Floppy* flp, const char* name) {
 			flpFormat(flp);
 			flp->insert = 1;
 		}
-		if (flpGet(flp,FLP_DISKTYPE) != DISK_TYPE_TRD) {
+		if (flpGetDiskType(flp) != DISK_TYPE_TRD) {
 			err = ERR_NOTRD;
 		} else {
 			char fpath[1024];

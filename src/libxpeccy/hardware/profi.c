@@ -2,7 +2,6 @@
 #include <assert.h>
 
 void prfReset(ZXComp* comp) {
-
 }
 
 // Profi ROM: 128,48,EXT,DOS
@@ -16,7 +15,7 @@ void prfMapMem(ZXComp* comp) {
 	if (comp->pDFFD & 0x40) {
 		memSetBank(comp->mem, MEM_BANK2, MEM_RAM, (comp->p7FFD & 8) ? 6 : 4);
 	} else {
-		memSetBank(comp->mem, MEM_BANK1, MEM_RAM, 5); // (comp->p7FFD & 8) ? 7 : 5);
+		memSetBank(comp->mem, MEM_BANK1, MEM_RAM, (comp->p7FFD & 8) ? 7 : 5);
 		memSetBank(comp->mem, MEM_BANK2, MEM_RAM, 2);
 	}
 }
@@ -79,8 +78,10 @@ xPort prfPortMap[] = {
 	{0xc002,0xbffd,2,2,2,NULL,	xOutBFFD},
 	{0xc002,0xfffd,2,2,2,xInFFFD,	xOutFFFD},
 
-	{0x00ff,0x00bf,0,0,1,prfInBDI,	prfOutBDI},	// bf (bdi ff)
+	{0x00ff,0x00bf,0,0,1,prfInBDI,	prfOutBDI},	// bf (bdi ff) :
 	{0x009f,0x001f,0,0,1,prfInBDI,	prfOutBDI},	// 1f,3f,5f,7f (bdi)
+
+	{0x00ff,0x001f,0,2,0,xIn1F,	NULL},		// 1f (K-joy) : !dos !cpm
 
 	{0x0000,0x0000,2,2,2,prfBrkIn,	prfBrkOut}
 };

@@ -588,6 +588,7 @@ unsigned char vgRead(FDC* fdc, int adr) {
 	switch (adr) {
 		case FDC_COM:
 			//fdc->state &= ~0x08;		// debug: reset crc error
+			fdc->state &= 0x7e;
 			if (!fdc->flp->insert) fdc->state |= 0x80;
 			if (!fdc->idle) fdc->state |= 0x01;
 			if (fdc->fmode == 0) {

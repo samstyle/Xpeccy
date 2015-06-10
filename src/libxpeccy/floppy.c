@@ -235,14 +235,10 @@ int flpEject(Floppy* flp) {
 
 unsigned char fbuf[0x100];
 
-int flpGet(Floppy* flp, int wut) {
+int flpGetDiskType(Floppy* flp) {
 	int res = -1;
-	switch (wut) {
-		case FLP_DISKTYPE:
-			if (flpGetSectorData(flp,0,9,fbuf,0x100)) {
-				if (fbuf[0xe7] == 0x10) res = DISK_TYPE_TRD;
-			}
-			break;
+	if (flpGetSectorData(flp,0,9,fbuf,0x100)) {
+		if (fbuf[0xe7] == 0x10) res = DISK_TYPE_TRD;
 	}
 	return res;
 }
@@ -297,7 +293,7 @@ int flpCreateFile(Floppy* flp, TRFile dsc, unsigned char* data, int len) {
 TRFile flpGetCatalogEntry(Floppy* flp, int num) {
 	TRFile res;
 	int sec,pos;
-	if (flpGet(flp,FLP_DISKTYPE) != DISK_TYPE_TRD) return res;
+	if (flpGetDiskType(flp) != DISK_TYPE_TRD) return res;
 	if (num > 127) return res;
 	sec = ((num & 0xf0) >> 4);	// sector
 	pos = ((num & 0x0f) << 4);	// file number inside sector
@@ -321,7 +317,7 @@ TRFile flpMakeDescriptor(const char* name, char ext, int start, int len) {
 
 int flpGetTRCatalog(Floppy *flp, TRFile *dst) {
 	int cnt = 0;
-	if (flpGet(flp,FLP_DISKTYPE) == DISK_TYPE_TRD) {
+	if (flpGetDiskType(flp) == DISK_TYPE_TRD) {
 		int sc;
 		int fc;
 		unsigned char* ptr;

@@ -1113,7 +1113,7 @@ void SetupWin::fillDiskCat() {
 		wid->setRowCount(0);
 	} else {
 		wid->setEnabled(true);
-		if (flpGet(comp->dif->fdc->flop[dsk],FLP_DISKTYPE) == DISK_TYPE_TRD) {
+		if (flpGetDiskType(comp->dif->fdc->flop[dsk]) == DISK_TYPE_TRD) {
 			TRFile cat[128];
 			int catSize = flpGetTRCatalog(comp->dif->fdc->flop[dsk],cat);
 			// std::vector<TRFile> cat = flpGetTRCatalog(comp->bdi->flop[dsk]);

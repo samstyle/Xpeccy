@@ -71,19 +71,24 @@ typedef struct {
 Floppy* flpCreate(int);
 void flpDestroy(Floppy*);
 
+int flpEject(Floppy*);
 unsigned char flpRd(Floppy*);
 void flpWr(Floppy*,unsigned char);
-int flpEject(Floppy*);
-unsigned char flpGetField(Floppy*);
 int flpNext(Floppy*,int);		// return 1 if index strobe
 void flpPrev(Floppy*,int);
 void flpStep(Floppy*,int);
+unsigned char flpGetField(Floppy*);
 
-int flpGet(Floppy*,int);
-void flpSet(Floppy*,int,int);
+void flpPutTrack(Floppy*,int,unsigned char*,int);
+void flpGetTrack(Floppy*,int,unsigned char*);
+void flpGetTrackFields(Floppy*,int,unsigned char*);
 
 void flpClearTrack(Floppy*,int);
 void flpClearDisk(Floppy*);
+
+// trdos specific TODO:move somewhere else
+
+int flpGetDiskType(Floppy*);
 
 void flpFormat(Floppy*);
 void flpFormTrack(Floppy*,int,Sector*,int);
@@ -93,9 +98,6 @@ void flpFillFields(Floppy*,int,int);
 int flpGetSectorData(Floppy*,unsigned char,unsigned char,unsigned char*,int);
 int flpGetSectorsData(Floppy*,unsigned char,unsigned char,unsigned char*,int);
 int flpPutSectorData(Floppy*,unsigned char,unsigned char,unsigned char*,int);
-void flpPutTrack(Floppy*,int,unsigned char*,int);
-void flpGetTrack(Floppy*,int,unsigned char*);
-void flpGetTrackFields(Floppy*,int,unsigned char*);
 
 int flpCreateDescriptor(Floppy*,TRFile*);
 int flpCreateFile(Floppy*, TRFile, unsigned char*, int);
