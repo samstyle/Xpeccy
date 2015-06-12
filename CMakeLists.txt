@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(xpeccy)
-set(XVER "0.5.20150611")
+set(XVER "0.5.20150612")
 
 include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
 
@@ -163,7 +163,7 @@ find_path(LHASA_INCLUDE_DIR lhasa.h PATH_SUFFIXES include include/liblhasa-1.0)
 find_library(LHASA_LIBRARY NAMES lhasa PATH_SUFFIXES lib lib64)
 
 include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(LHASA DEFAULT_MSG LHASA_INCLUDE_DIR LHASA_LIBRARY)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(LHASA DEFAULT_MSG LHASA_LIBRARY LHASA_INCLUDE_DIR)
 if(!LHASA_FOUND)
 	message(FATAL ERROR "Could not find liblhasa")
 else()

@@ -94,23 +94,25 @@ void doTD0(Floppy* flp, size_t(*getBytes)(void*, size_t,void*), void* dptr, int 
 			for (i = 0; i < thd.nsec; i++) {
 				if (!work) break;
 				getBytes(&shd, sizeof(td0SecHead), dptr);
-				//printf("sec %i (sz = %i)\n",shd.sec, shd.secz);
-				if (shd.sec == 0x65) {
-					work = 0;
-				} else if (((shd.ctrl & 0x30) == 0x00) && ((shd.secz & 0xf8) == 0)) {
-					sec[idx].cyl = shd.trk;
-					sec[idx].side = shd.head;
-					sec[idx].sec = shd.sec;
-					sec[idx].len = shd.secz;
-					sec[idx].type = 0xfb;
-					sec[idx].crc = -1;
+				//printf("%i: sec %i (sz = %i, ctrl = %.2X)\n",idx, shd.sec, shd.secz, shd.ctrl);
+				sec[idx].cyl = shd.trk;
+				sec[idx].side = shd.head;
+				sec[idx].sec = shd.sec;
+				sec[idx].len = shd.secz;
+				sec[idx].type = 0xfb;
+				sec[idx].crc = -1;
+				memset(sec[idx].dat, 0x00, 8192);
+				if (shd.ctrl & 0x10) {				// empty sector
+					idx++;
+				} else {
 					getBytes(&ch1, 1, dptr);
 					getBytes(&ch2, 1, dptr);
-					dlen = ch1 | (ch2 << 8);
-					if (shd.sec > thd.nsec) {
+					dlen = ch1 | (ch2 << 8);		// data size
+					if ((idx > thd.nsec) || (shd.secz & 0xf8)) {
 						getBytes(NULL, dlen, dptr);	// skip data
 					} else {
 						getBytes(&btype, 1, dptr);
+						//printf("type = %i\n",btype);
 						switch (btype) {
 							case 0:
 								getBytes(sec[idx].dat, dlen-1, dptr);

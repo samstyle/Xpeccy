@@ -124,7 +124,7 @@ int saveUDI(Floppy* flp, const char* name) {
 		*(dptr++) = 0x00;		// MFM
 		*(dptr++) = (TRACKLEN & 0xff);	// track len
 		*(dptr++) = ((TRACKLEN & 0xff00) >> 8);
-		flpPutTrack(flp,i,dptr,TRACKLEN); // memcpy((char*)dptr,(char*)flp->data[i].byte,TRACKLEN);	// track image
+		flpGetTrack(flp,i,dptr); // memcpy((char*)dptr,(char*)flp->data[i].byte,TRACKLEN);	// track image
 		dptr += TRACKLEN;
 		getUDIBitField(flp,i,dptr);
 		dptr += 782;			// 6250 / 8 + 1
