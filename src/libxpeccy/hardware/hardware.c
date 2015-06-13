@@ -48,11 +48,13 @@ HardWare hwTab[] = {
 		HW_PLUS3,
 		MEM_128,
 		&pl2MapMem,&pl3Out,&pl3In,&stdMRd,&stdMWr,NULL
+#ifdef ISDEBUG
 	},{
 		"Profi","Profi",
 		HW_PROFI,
 		MEM_512 | MEM_1M,
 		&prfMapMem,&prfOut,&prfIn,&stdMRd,&stdMWr,&prfReset
+#endif
 	},
 	{NULL,NULL,0,0,NULL,NULL,NULL}
 };

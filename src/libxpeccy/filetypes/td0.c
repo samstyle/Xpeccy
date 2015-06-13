@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <lha_decoder.h>
+#include "unpackers/lh1/public/lha_decoder.h"
 
 #include "filetypes.h"
 

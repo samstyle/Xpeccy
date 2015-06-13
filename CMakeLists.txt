@@ -10,8 +10,8 @@ if(UNIX)
 	set(INC_PATHS local/include local/include/z80ex include/z80ex include)
 	set(LIB_PATHS lib lib64 local/lib local/lib64)
 
-	set(CPACK_RPM_PACKAGE_REQUIRES "libqt4 >= 4.6, libqt4-x11 >= 4.6, liblhasa >= 0.2")
-	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqtcore4 (>=4.6), libqtgui4 (>=4.6), liblhasa0 (>=0.2)")
+	set(CPACK_RPM_PACKAGE_REQUIRES "libqt4 >= 4.6, libqt4-x11 >= 4.6")
+	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqtcore4 (>=4.6), libqtgui4 (>=4.6)")
 elseif(WIN32)
 	set(INC_PATHS ${INCLUDE} ${PATH})
 	set(LIB_PATHS ${LIBPATH} ${PATH})
@@ -19,25 +19,27 @@ endif()
 
 file(GLOB SOURCES
 	./src/*.cpp
+	./src/xcore/*.cpp
+	./src/xgui/*.cpp
 	./src/libxpeccy/*.c
 	./src/libxpeccy/hardware/*.c
 	./src/libxpeccy/filetypes/*.c
 	./src/libxpeccy/filetypes/*.cpp
 	./src/libxpeccy/filetypes/unpackers/*.c
-	./src/xcore/*.cpp
-	./src/xgui/*.cpp
+	./src/libxpeccy/filetypes/unpackers/lh1/*.c
 if(WIN32)
 	./xpeccy.rc
 endif(WIN32)
 )
 file(GLOB HEADERS
 	./src/*.h
+	./src/xcore/*.h
+	./src/xgui/*.h
 	./src/libxpeccy/*.h
 	./src/libxpeccy/hardware/*.h
 	./src/libxpeccy/filetypes/*.h
 	./src/libxpeccy/filetypes/unpackers/*.h
-	./src/xcore/*.h
-	./src/xgui/*.h
+	./src/libxpeccy/filetypes/unpackers/lh1/*.h
 )
 file(GLOB UIFILES ./ui/*.ui)
 set(QRCFILES ./xpeccy.qrc)
@@ -157,19 +159,6 @@ if(ZLIB_FOUND)
 	set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, zlib1g (>=1.2)")
 	set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, zlib >= 1.2")
 endif(ZLIB_FOUND)
-
-# lhasa (for td0)
-find_path(LHASA_INCLUDE_DIR lhasa.h PATH_SUFFIXES include include/liblhasa-1.0)
-find_library(LHASA_LIBRARY NAMES lhasa PATH_SUFFIXES lib lib64)
-
-include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(LHASA DEFAULT_MSG LHASA_LIBRARY LHASA_INCLUDE_DIR)
-if(!LHASA_FOUND)
-	message(FATAL ERROR "Could not find liblhasa")
-else()
-	set(LIBRARIES ${LIBRARIES} ${LHASA_LIBRARY})
-	set(INCLUDIRS ${INCLUDIRS} ${LHASA_INCLUDE_DIR})
-endif()
 
 if(WIN32)
 	set(LIBRARIES ${LIBRARIES} winmm.dll)

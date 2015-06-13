@@ -28,6 +28,13 @@ void prfOutPal(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	}
 }
 
+void prfOutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+	xOutFE(comp, port, val);
+	if (comp->pDFFD & 0x80)
+		comp->vid->nextbrd ^= 7;
+}
+
+
 void prfOutBDI(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	difOut(comp->dif, port, val, 1);
 }
@@ -72,7 +79,7 @@ void prfBrkOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 xPort prfPortMap[] = {
 	{0x0081,0x007e,2,2,1,NULL,	prfOutPal},	// 7e cpm:palete
 	{0x00ff,0x00f7,2,2,2,dummyIn,	dummyOut},	// f7 (off?)
-	{0x00f7,0x00fe,2,2,2,xInFE,	xOutFE},
+	{0x00f7,0x00fe,2,2,2,xInFE,	prfOutFE},
 	{0x8002,0x7ffd,2,2,2,NULL,	prfOut7FFD},
 	{0xffff,0xdffd,2,2,2,NULL,	prfOutDFFD},
 	{0xc002,0xbffd,2,2,2,NULL,	xOutBFFD},
