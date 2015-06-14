@@ -59,6 +59,7 @@
 
 #define	ERR_TD0_SIGN	0x98	// td0 signature error
 #define ERR_TD0_TYPE	0x99	// unsupported td0 type
+#define ERR_TD0_VERSION	0x9a	// unsupported version ( <20)
 
 // spg
 

@@ -170,6 +170,7 @@ void loadFile(ZXComp* comp,const char* name, int flags, int drv) {
 		case ERR_DSK_SIGN: shitHappens("Wrong DSK signature"); break;
 		case ERR_TD0_SIGN: shitHappens("Wrong TD0 signature"); break;
 		case ERR_TD0_TYPE: shitHappens("Unsupported TD0"); break;
+		case ERR_TD0_VERSION: shitHappens("Unsupported TD0 version"); break;
 		case ERR_WAV_HEAD: shitHappens("Wrong WAV header"); break;
 		case ERR_WAV_FORMAT: shitHappens("Unsupported WAV format"); break;
 		case ERR_OK:

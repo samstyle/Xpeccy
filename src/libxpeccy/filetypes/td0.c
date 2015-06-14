@@ -174,10 +174,12 @@ int loadTD0(Floppy* flp, const char* name) {
 		err = ERR_TD0_SIGN;
 	} else if ((hd.dens != 0) || (hd.sides > 2)) {
 		err = ERR_TD0_TYPE;
+	} else if (hd.ver < 0x14) {
+		err = ERR_TD0_VERSION;
 	} else {
-		LHADecoderType* decType;
-		LHADecoder* dec = NULL;
 		if (strncmp(hd.sign,"TD",2)) {	// 1 on td (packed)
+			LHADecoderType* decType;
+			LHADecoder* dec = NULL;
 			decType = lha_decoder_for_name("-lh1-");
 			dec = lha_decoder_new(decType, fGetData, file, -1);
 			doTD0(flp, lhaDepack, dec, hd.flag & 0x80);

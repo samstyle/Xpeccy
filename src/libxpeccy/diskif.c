@@ -47,12 +47,15 @@ void vgSetMR(FDC*, int);
 
 int bdiGetPort(int port) {
 	int res = 0;
-	switch (port & 0xff) {
-		case 0xff: res = BDI_SYS; break;
-		case 0x1f: res = FDC_COM; break;
-		case 0x3f: res = FDC_TRK; break;
-		case 0x5f: res = FDC_SEC; break;
-		case 0x7f: res = FDC_DATA; break;
+	if ((port & 0x9f) == 0x9f) {
+		res = BDI_SYS;
+	} else {
+		switch (port & 0xff) {
+			case 0x1f: res = FDC_COM; break;
+			case 0x3f: res = FDC_TRK; break;
+			case 0x5f: res = FDC_SEC; break;
+			case 0x7f: res = FDC_DATA; break;
+		}
 	}
 	return res;
 }
