@@ -107,6 +107,7 @@ void vidUpdate(Video* vid, float brdsize) {
 	vid->rcut.v = (int)floor(vid->full.v - ((1.0 - brdsize) * (vid->full.v - vid->bord.v - 192))) & 0xfffc;
 	vid->vsze.h = vid->rcut.h - vid->lcut.h;
 	vid->vsze.v = vid->rcut.v - vid->lcut.v;
+	vid->vBytes = vid->vsze.h * vid->vsze.h * 6;	// real size of image buffer (3 bytes/dot x2:x1)
 }
 
 int xscr = 0;

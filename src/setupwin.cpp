@@ -306,7 +306,8 @@ void SetupWin::start(xProfile* p) {
 	ui.scrpwait->setChecked(comp->scrpWait);
 	ui.sysCmos->setChecked(conf.sysclock);
 // video
-	ui.dszchk->setChecked(conf.vid.doubleSize);
+	//ui.dszchk->setChecked(conf.vid.doubleSize);
+	ui.sbScale->setValue(conf.vid.scale);
 	ui.fscchk->setChecked(conf.vid.fullScreen);
 	ui.noflichk->setChecked(conf.vid.noFlick);
 	ui.grayscale->setChecked(conf.vid.grayScale);
@@ -440,7 +441,8 @@ void SetupWin::apply() {
 	if (comp->hw != oldmac) zxReset(comp,RES_DEFAULT);
 	conf.sysclock = ui.sysCmos->isChecked() ? 1 : 0;
 // video
-	conf.vid.doubleSize = ui.dszchk->isChecked() ? 1 : 0;
+	// conf.vid.doubleSize = ui.dszchk->isChecked() ? 1 : 0;
+	conf.vid.scale = ui.sbScale->value();
 	conf.vid.fullScreen = ui.fscchk->isChecked() ? 1 : 0;
 	conf.vid.noFlick = ui.noflichk->isChecked() ? 1 : 0;
 	conf.vid.grayScale = ui.grayscale->isChecked() ? 1 : 0;

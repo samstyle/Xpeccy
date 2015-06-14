@@ -107,7 +107,7 @@ void saveConfig() {
 	cfile << "scrCount = " << int2str(conf.scrShot.count) << "\n";
 	cfile << "scrInterval = " << int2str(conf.scrShot.interval) << "\n";
 	cfile << "fullscreen = " << YESNO(conf.vid.fullScreen) << "\n";
-	cfile << "doublesize = " << YESNO(conf.vid.doubleSize) << "\n";
+	cfile << "scale = " << int2str(conf.vid.scale) << "\n";
 	cfile << "greyscale = " << YESNO(conf.vid.grayScale) << "\n";
 	cfile << "bordersize = " << int2str(conf.brdsize * 100) << "\n";
 	cfile << "noflic = " << YESNO(conf.vid.noFlick) << "\n";
@@ -287,7 +287,12 @@ void loadConfig() {
 					if (pnam=="scrInterval") conf.scrShot.interval = atoi(pval.c_str());
 					if (pnam=="fullscreen") conf.vid.fullScreen = str2bool(pval) ? 1 : 0;
 					if (pnam=="bordersize") conf.brdsize = getRanged(pval.c_str(), 0, 100) / 100.0;
-					if (pnam=="doublesize") conf.vid.doubleSize = str2bool(pval) ? 1 : 0;
+					if (pnam=="doublesize") conf.vid.scale = str2bool(pval) ? 2 : 1;
+					if (pnam=="scale") {
+						conf.vid.scale = atoi(pval.c_str());
+						if (conf.vid.scale < 1) conf.vid.scale = 1;
+						if (conf.vid.scale > 4) conf.vid.scale = 4;
+					}
 					if (pnam=="noflic") conf.vid.noFlick = str2bool(pval) ? 1 : 0;
 					if (pnam=="greyscale") conf.vid.grayScale = str2bool(pval) ? 1 : 0;
 					break;

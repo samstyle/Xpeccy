@@ -33,8 +33,10 @@ Z80EX_WORD pc,af,de,ix;
 unsigned char* blkData = NULL;
 int blk;
 
-static unsigned char screen[1024 * 1024 * 3];
-static unsigned char prevscr[1024 * 1024 * 3];
+static unsigned char screen[2048 * 2048 * 3];
+
+static unsigned char scrn[512 * 512 * 3];
+static unsigned char prvScr[512 * 512 * 3];
 
 // LEDS
 
@@ -65,8 +67,8 @@ void MainWin::updateWindow() {
 	block = 1;
 	vidUpdate(comp->vid, conf.brdsize);
 	sndCalibrate();
-	int szw = comp->vid->vsze.h * (conf.vid.doubleSize ? 2 : 1);
-	int szh = comp->vid->vsze.v * (conf.vid.doubleSize ? 2 : 1);
+	int szw = comp->vid->vsze.h * conf.vid.scale;
+	int szh = comp->vid->vsze.v * conf.vid.scale;
 	setFixedSize(szw,szh);
 	lineBytes = szw * 3;
 	frameBytes = szw * szh * 3;
@@ -180,9 +182,59 @@ MainWin::MainWin() {
 
 // scale screen
 
-// 2:1 -> 2:2 = double each line
-void scrDouble (unsigned char* src, int wid, int lines) {
+// 2:1 -> 4:4 = double each pixel & copy each row 3 times
+void scrX4(unsigned char* src, int wid, int lines) {
 	unsigned char* dst = screen;
+	unsigned char* ptr;
+	int cnt;
+	while(lines > 0) {
+		ptr = dst;
+		for (cnt = 0; cnt < wid; cnt++) {
+			memcpy(dst, src, 3);
+			memcpy(dst+3, src, 3);
+			memcpy(dst+6, src+3, 3);
+			memcpy(dst+9, src+3, 3);
+			dst += 12;
+			src += 6;
+		}
+		cnt = dst - ptr;
+		memcpy(dst, ptr, cnt);
+		dst += cnt;
+		memcpy(dst, ptr, cnt);
+		dst += cnt;
+		memcpy(dst, ptr, cnt);
+		dst += cnt;
+		lines--;
+	}
+}
+
+// 2:1 -> 3:3
+void scrX3(unsigned char* src, int wid, int lines) {
+	unsigned char* dst = screen;
+	unsigned char* ptr;
+	int cnt;
+	while (lines > 0) {
+		ptr = dst;
+		for (cnt = 0; cnt < wid; cnt++) {
+			memcpy(dst, src, 3);
+			memcpy(dst+3, src, 3);
+			memcpy(dst+6, src+3, 3);
+			dst += 9;
+			src += 6;
+		}
+		cnt = dst - ptr;
+		memcpy(dst, ptr, cnt);
+		dst += cnt;
+		memcpy(dst, ptr, cnt);
+		dst += cnt;
+		lines--;
+	}
+}
+
+// 2:1 -> 2:2 = double each line
+void scrX2(unsigned char* src, int wid, int lines) {
+	unsigned char* dst = screen;
+	wid *= 6;
 	while (lines > 0) {
 		memcpy(dst, src, wid);
 		dst += wid;
@@ -195,18 +247,14 @@ void scrDouble (unsigned char* src, int wid, int lines) {
 
 // 2:1 -> 1:1 = take each 2nd pixel in a row
 
-void scrNormal (unsigned char* src, int wid, int lines) {
+void scrX1(unsigned char* src, int wid, int lines) {
 	unsigned char* dst = screen;
 	int cnt;
 	while (lines > 0) {
-		for (cnt = 0; cnt < wid; cnt += 3) {
-			*dst = *src;
-			dst++; src++;
-			*dst = *src;
-			dst++; src++;
-			*dst = *src;
-			dst++;
-			src += 4;
+		for (cnt = 0; cnt < wid; cnt++) {
+			memcpy(dst, src, 3);
+			dst += 3;
+			src += 6;
 		}
 		lines--;
 	}
@@ -238,13 +286,19 @@ void scrMix(unsigned char* src, unsigned char* dst, int size) {
 }
 
 void MainWin::convImage() {
-	if (conf.vid.doubleSize) {
-		scrDouble(comp->vid->scrimg, lineBytes, comp->vid->vsze.v);
-	} else {
-		scrNormal(comp->vid->scrimg, lineBytes, comp->vid->vsze.v);
+	memcpy(scrn, comp->vid->scrimg, comp->vid->vBytes);
+	if (conf.vid.grayScale) scrGray(scrn, comp->vid->vBytes);
+	if (conf.vid.noFlick) scrMix(prvScr, scrn, comp->vid->vBytes);
+	switch(conf.vid.scale) {
+		case 1:	scrX1(scrn, comp->vid->vsze.h, comp->vid->vsze.v);
+			break;
+		case 2:	scrX2(scrn, comp->vid->vsze.h, comp->vid->vsze.v);
+			break;
+		case 3:	scrX3(scrn, comp->vid->vsze.h, comp->vid->vsze.v);
+			break;
+		case 4: scrX4(scrn, comp->vid->vsze.h, comp->vid->vsze.v);
+			break;
 	}
-	if (conf.vid.grayScale) scrGray(screen, frameBytes);
-	if (conf.vid.noFlick) scrMix(prevscr, screen, frameBytes);
 }
 
 void MainWin::onTimer() {
@@ -433,20 +487,28 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				}
 				break;
 			case Qt::Key_1:
-				conf.vid.doubleSize = 0;
+				conf.vid.scale = 1;
 				updateWindow();
 				convImage();
 				saveConfig();
 				break;
 			case Qt::Key_2:
-				conf.vid.doubleSize = 1;
+				conf.vid.scale = 2;
 				updateWindow();
 				convImage();
 				saveConfig();
 				break;
 			case Qt::Key_3:
-				ethread.fast ^= 1;
-				updateHead();
+				conf.vid.scale = 3;
+				updateWindow();
+				convImage();
+				saveConfig();
+				break;
+			case Qt::Key_4:
+				conf.vid.scale = 4;
+				updateWindow();
+				convImage();
+				saveConfig();
 				break;
 			case Qt::Key_F4:
 				close();
@@ -465,7 +527,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			case Qt::Key_N:
 				conf.vid.noFlick ^= 1;
 				saveConfig();
-				if (conf.vid.noFlick) memcpy(prevscr, screen, frameBytes);
+				if (conf.vid.noFlick) memcpy(prvScr, scrn, comp->vid->frmsz * 6);
 				break;
 		}
 	} else {
@@ -485,6 +547,10 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			case Qt::Key_Menu:
 				userMenu->popup(pos() + QPoint(20,20));
 				userMenu->setFocus();
+				break;
+			case Qt::Key_Insert:
+				ethread.fast ^= 1;
+				updateHead();
 				break;
 			case Qt::Key_F1:
 				pause(true, PR_OPTS);

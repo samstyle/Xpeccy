@@ -567,9 +567,15 @@
           <widget class="QGroupBox" name="vidOptGBox">
            <layout class="QVBoxLayout" name="verticalLayout_23">
             <item>
-             <widget class="QCheckBox" name="dszchk">
-              <property name="text">
-               <string>Double size</string>
+             <widget class="QSpinBox" name="sbScale">
+              <property name="prefix">
+               <string>scale x</string>
+              </property>
+              <property name="minimum">
+               <number>1</number>
+              </property>
+              <property name="maximum">
+               <number>4</number>
               </property>
              </widget>
             </item>
