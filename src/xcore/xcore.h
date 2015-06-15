@@ -35,8 +35,9 @@ typedef struct {
 #define	DELP_OK		0
 #define	DELP_OK_CURR	1
 
+extern std::vector<xProfile*> profileList;
+
 xProfile* findProfile(std::string);
-std::vector<xProfile*> getProfileList();
 bool addProfile(std::string,std::string);
 int delProfile(std::string);
 void clearProfiles();

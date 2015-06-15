@@ -367,25 +367,21 @@ void incTime(CMOS* cms) {
 }
 
 void MainWin::cmosTick() {
-	unsigned int i;
-	ZXComp* comp;
-	std::vector<xProfile*> plist = getProfileList();
-	for (i = 0; i < plist.size(); i++) {
-		comp = plist[i]->zx;
-		if (comp != NULL) {
+	foreach(xProfile* prf, profileList) {
+		if (prf->zx != NULL) {
 			if (conf.sysclock) {
 				time_t rtime;
 				time(&rtime);
 				tm* ctime = localtime(&rtime);
-				comp->cmos.data[0] = toBCD(ctime->tm_sec);
-				comp->cmos.data[2] = toBCD(ctime->tm_min);
-				comp->cmos.data[4] = toBCD(ctime->tm_hour);
-				comp->cmos.data[6] = toBCD(ctime->tm_wday);
-				comp->cmos.data[7] = toBCD(ctime->tm_mday);
-				comp->cmos.data[8] = toBCD(ctime->tm_mon);
-				comp->cmos.data[9] = toBCD(ctime->tm_year % 100);
+				prf->zx->cmos.data[0] = toBCD(ctime->tm_sec);
+				prf->zx->cmos.data[2] = toBCD(ctime->tm_min);
+				prf->zx->cmos.data[4] = toBCD(ctime->tm_hour);
+				prf->zx->cmos.data[6] = toBCD(ctime->tm_wday);
+				prf->zx->cmos.data[7] = toBCD(ctime->tm_mday);
+				prf->zx->cmos.data[8] = toBCD(ctime->tm_mon);
+				prf->zx->cmos.data[9] = toBCD(ctime->tm_year % 100);
 			} else {
-				incTime(&comp->cmos);
+				incTime(&prf->zx->cmos);
 			}
 		}
 	}
@@ -704,10 +700,9 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 //	unsigned int i;
 	std::ofstream file;
 	std::string fname;
-	std::vector<xProfile*> plist = getProfileList();
 	pause(true,PR_EXIT);
 //	for (i = 0; i < plist.size(); i++) {
-	foreach(xProfile* prf, plist) {
+	foreach(xProfile* prf, profileList) {
 		prfSave(prf->name);
 		fname = conf.path.confDir + SLASH + prf->name + ".cmos";
 		file.open(fname.c_str());
@@ -977,9 +972,8 @@ void MainWin::fillBookmarkMenu() {
 
 void MainWin::fillProfileMenu() {
 	profileMenu->clear();
-	std::vector<xProfile*> profileList = getProfileList();
-	for(uint i=0; i < profileList.size(); i++) {
-		profileMenu->addAction(profileList[i]->name.c_str());
+	foreach(xProfile* prf, profileList) {
+		profileMenu->addAction(prf->name.c_str());
 	}
 }
 

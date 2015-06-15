@@ -40,16 +40,6 @@ bool addProfile(std::string nm, std::string fp) {
 	}
 	zxSetHardware(nprof->zx,"ZX48K");
 	profileList.push_back(nprof);
-/*
-	if (currentProfile != NULL) {
-		nm = currentProfile->name;
-		profileList.push_back(nprof);		// PUSH_BACK reallocate profileList and breaks current profile pointer!
-		prfSetCurrent(nm);				// then it must be setted again
-	} else {
-		profileList.push_back(nprof);
-	}
-*/
-//	prfLoad(nprof.name);
 	return true;
 }
 
@@ -110,16 +100,6 @@ void clearProfiles() {
 	}
 	prfSetCurrent(profileList[0]->name);
 }
-
-std::vector<xProfile*> getProfileList() {
-	return profileList;
-}
-
-/*
-xProfile* getCurrentProfile() {
-	return currentProfile;
-}
-*/
 
 bool prfSetLayout(xProfile* prf, std::string nm) {
 	if (prf == NULL) prf = conf.curProf;
@@ -269,14 +249,12 @@ void prfLoadAll() {
 	foreach(prf, profileList) {
 		prfLoad(prf->name);
 	}
-//	for (uint i = 0; i < profileList.size(); i++) prfLoad(profileList[i].name);
 }
 
 int prfLoad(std::string nm) {
 	xProfile* prf = findProfile(nm);
 	if (prf == NULL) return PLOAD_NF;
 	ZXComp* comp = prf->zx;
-//	DiskIF* dif;
 
 	std::string cfname = conf.path.confDir + SLASH + prf->file;
 	std::ifstream file(cfname.c_str());
@@ -470,90 +448,88 @@ std::string getDiskString(Floppy* flp) {
 }
 
 int prfSave(std::string nm) {
-	xProfile* prf = findProfile(nm);
+	xProfile* prf = conf.curProf;
 	if (prf == NULL) return PSAVE_NF;
 	ZXComp* comp = prf->zx;
 
 	std::string cfname = conf.path.confDir + SLASH + prf->file;
-	std::ofstream file(cfname.c_str());
-	if (!file.good()) {
+	FILE* file = fopen(cfname.c_str(),"wb");
+	if (!file) {
 		printf("Can't write settings\n");
 		return PSAVE_OF;
 	}
 
-	file << "[MACHINE]\n\n";
-	file << "current = " << prf->hwName.c_str() << "\n";
-	file << "memory = " << int2str(comp->mem->memSize) << "\n";
-	file << "cpu.frq = " << int2str(floor(comp->cpuFrq * 2)) << "\n";
-	file << "scrp.wait = " << YESNO(comp->scrpWait) << "\n";
-	file << "contio = " << YESNO(comp->contIO) << "\n";
-	file << "contmem = " << YESNO(comp->contMem) << "\n";
+	fprintf(file, "[MACHINE]\n\n");
+	fprintf(file, "current = %s\n", prf->hwName.c_str());
+	fprintf(file, "memory = %i\n", comp->mem->memSize);
+	fprintf(file, "cpu.frq = %i\n", int(comp->cpuFrq * 2));
+	fprintf(file, "scrp.wait = %s\n", YESNO(comp->scrpWait));
+	fprintf(file, "contio = %s\n", YESNO(comp->contIO));
+	fprintf(file, "contmem = %s\n", YESNO(comp->contMem));
 
-	file << "\n[ROMSET]\n\n";
-	file << "current = " << prf->rsName.c_str() << "\n";
-	file << "reset = ";
+	fprintf(file, "\n[ROMSET]\n\n");
+	fprintf(file, "current = %s\n", prf->rsName.c_str());
+	fprintf(file, "reset = ");
 	switch (comp->resbank) {
-		case RES_48: file << "basic48\n"; break;
-		case RES_128: file << "basic128\n"; break;
-		case RES_DOS: file << "dos\n"; break;
-		case RES_SHADOW: file << "shadow\n"; break;
+		case RES_48: fprintf(file, "basic48\n"); break;
+		case RES_128: fprintf(file, "basic128\n"); break;
+		case RES_DOS: fprintf(file, "dos\n"); break;
+		case RES_SHADOW: fprintf(file, "shadow\n"); break;
 	}
-	file << "\n[VIDEO]\n\n";
-	file << "geometry = " << prf->layName.c_str() << "\n";
-	file << "4t-border = " << YESNO(comp->vid->border4t) << "\n";
-	file << "ULAplus = " << YESNO(comp->vid->ula->enabled) << "\n";
 
-	file << "\n[SOUND]\n\n";
-	file << "chip1 = " << int2str(comp->ts->chipA->type) << "\n";
-	file << "chip1.stereo = " << int2str(comp->ts->chipA->stereo) << "\n";
-	file << "chip2 = " << int2str(comp->ts->chipB->type) << "\n";
-	file << "chip2.stereo = " << int2str(comp->ts->chipB->stereo) << "\n";
-	file << "ts.type = " << int2str(comp->ts->type) << "\n";
-	file << "gs = " << YESNO(comp->gs->enable) << "\n";
-	file << "gs.reset = " << YESNO(comp->gs->reset) << "\n";
-	file << "gs.stereo = " << int2str(comp->gs->stereo) << "\n";
-	file << "soundrive_type = " << int2str(comp->sdrv->type) << "\n";
-	file << "saa.mode = " << int2str(comp->saa->enabled ? (comp->saa->mono ? 1 : 2) : 0) << "\n";
+	fprintf(file, "\n[VIDEO]\n\n");
+	fprintf(file, "geometry = %s\n", prf->layName.c_str());
+	fprintf(file, "4t-border = %s\n", YESNO(comp->vid->border4t));
+	fprintf(file, "ULAplus = %s\n", YESNO(comp->vid->ula->enabled));
 
-	file << "\n[INPUT]\n\n";
-	file << "mouse = " << YESNO(comp->mouse->enable) << "\n";
-	file << "mouse.wheel = " << YESNO(comp->mouse->hasWheel) << "\n";
-	file << "mouse.swapButtons" << YESNO(comp->mouse->swapButtons) << "\n";
+	fprintf(file, "\n[SOUND]\n\n");
+	fprintf(file, "chip1 = %i\n", comp->ts->chipA->type);
+	fprintf(file, "chip1.stereo = %i\n", comp->ts->chipA->stereo);
+	fprintf(file, "chip2 = %i\n", comp->ts->chipB->type);
+	fprintf(file, "chip2.stereo = %i\n", comp->ts->chipB->stereo);
+	fprintf(file, "ts.type = %i\n", comp->ts->type);
+	fprintf(file, "gs = %s\n", YESNO(comp->gs->enable));
+	fprintf(file, "gs.reset = %s\n", YESNO(comp->gs->reset));
+	fprintf(file, "gs.stereo = %i\n", comp->gs->stereo);
+	fprintf(file, "soundrive_type = %i\n", comp->sdrv->type);
+	fprintf(file, "saa.mode = %i\n", comp->saa->enabled ? (comp->saa->mono ? 1 : 2) : 0);
 
-	file << "\n[TAPE]\n\n";
-	file << "path = " << (comp->tape->path ? comp->tape->path : "") << "\n";
+	fprintf(file, "\n[INPUT]\n\n");
+	fprintf(file, "mouse = %s\n", YESNO(comp->mouse->enable));
+	fprintf(file, "mouse.wheel = %s\n", YESNO(comp->mouse->hasWheel));
+	fprintf(file, "mouse.swapButtons = %s\n", YESNO(comp->mouse->swapButtons));
 
-	file << "\n[DISK]\n\n";
-	file << "type = " << int2str(comp->dif->type) << "\n";
-//	file << "fast = " << YESNO(comp->bdi->fdc->turbo) << "\n";
-	file << "A = " << getDiskString(comp->dif->fdc->flop[0]).c_str() << "\n";
-	file << "B = " << getDiskString(comp->dif->fdc->flop[1]).c_str() << "\n";
-	file << "C = " << getDiskString(comp->dif->fdc->flop[2]).c_str() << "\n";
-	file << "D = " << getDiskString(comp->dif->fdc->flop[3]).c_str() << "\n";
+	fprintf(file, "\n[TAPE]\n\n");
+	fprintf(file, "path = %s\n", comp->tape->path ? comp->tape->path : "");
 
-	file << "\n[IDE]\n\n";
-	file << "iface = " << int2str(comp->ide->type) << "\n";
-	file << "master.type = " << int2str(comp->ide->master->type) << "\n";
+	fprintf(file, "\n[DISK]\n\n");
+	fprintf(file, "type = %i\n", comp->dif->type);
+	fprintf(file, "A = %s\n", getDiskString(comp->dif->fdc->flop[0]).c_str());
+	fprintf(file, "B = %s\n", getDiskString(comp->dif->fdc->flop[1]).c_str());
+	fprintf(file, "C = %s\n", getDiskString(comp->dif->fdc->flop[2]).c_str());
+	fprintf(file, "D = %s\n", getDiskString(comp->dif->fdc->flop[3]).c_str());
+
+	fprintf(file, "\n[IDE]\n\n");
+	fprintf(file, "iface = %i\n", comp->ide->type);
+	fprintf(file, "master.type = %i", comp->ide->master->type);
 	ATAPassport pass = ideGetPassport(comp->ide,IDE_MASTER);
-	file << "master.image = " << ((comp->ide->master->image) ? comp->ide->master->image : "") << "\n";
-	file << "master.lba = " << YESNO(comp->ide->master->hasLBA) << "\n";
-	file << "master.maxlba = " << int2str(comp->ide->master->maxlba) << "\n";
-	file << "master.chs = " << int2str(pass.spt) << "/";
-	file << int2str(pass.hds) << "/";
-	file << int2str(pass.cyls) << "\n";
-	file << "slave.type = " << int2str(comp->ide->slave->type) << "\n";
+	fprintf(file, "master.image = %s\n", comp->ide->master->image ? comp->ide->master->image : "");
+	fprintf(file, "master.lba = %s\n", YESNO(comp->ide->master->hasLBA));
+	fprintf(file, "master.maxlba = %i\n", comp->ide->master->maxlba);
+	fprintf(file, "master.chs = %i/%i/%i\n", pass.spt, pass.hds, pass.cyls);
+	fprintf(file, "slave.type = %i\n", comp->ide->slave->type);
 	pass = ideGetPassport(comp->ide,IDE_SLAVE);
-	file << "slave.image = " << ((comp->ide->slave->image) ? comp->ide->slave->image : "") << "\n";
-	file << "slave.lba = " << YESNO(comp->ide->slave->hasLBA) << "\n";
-	file << "slave.maxlba = " << int2str(comp->ide->slave->maxlba) << "\n";
-	file << "slave.chs = " << int2str(pass.spt) << "/";
-	file << int2str(pass.hds) << "/";
-	file << int2str(pass.cyls) << "\n";
+	fprintf(file, "slave.image = %s\n", comp->ide->slave->image ? comp->ide->slave->image : "");
+	fprintf(file, "slave.lba = %s\n", YESNO(comp->ide->slave->hasLBA));
+	fprintf(file, "slave.maxlba = %i\n", comp->ide->slave->maxlba);
+	fprintf(file, "slave.chs = %i/%i/%i\n", pass.spt, pass.hds, pass.cyls);
 
-	file << "\n[SDC]\n\n";
-	file << "sdcimage = " << (comp->sdc->image ? comp->sdc->image : "") << "\n";
-	file << "sdclock = " << YESNO(comp->sdc->flag & SDC_LOCK) << "\n";
-	file << "capacity = " << int2str(comp->sdc->capacity) << "\n";
+	fprintf(file, "\n[SDC]\n\n");
+	fprintf(file, "sdcimage = %s\n", comp->sdc->image ? comp->sdc->image : "");
+	fprintf(file, "sdclock = %s\n", YESNO(comp->sdc->flag & SDC_LOCK));
+	fprintf(file, "capacity = %i\n", comp->sdc->capacity);
+
+	fclose(file);
 
 	return PSAVE_OK;
 }

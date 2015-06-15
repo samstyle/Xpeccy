@@ -914,13 +914,12 @@ void SetupWin::buildmenulist() {
 };
 
 void SetupWin::buildproflist() {
-	std::vector<xProfile*> prList = getProfileList();
-	ui.twProfileList->setRowCount(prList.size());
+	ui.twProfileList->setRowCount(profileList.size());
 	QTableWidgetItem* itm;
-	for (uint i = 0; i < prList.size(); i++) {
-		itm = new QTableWidgetItem(QString::fromLocal8Bit(prList[i]->name.c_str()));
+	for (uint i = 0; i < profileList.size(); i++) {
+		itm = new QTableWidgetItem(QString::fromLocal8Bit(profileList[i]->name.c_str()));
 		ui.twProfileList->setItem(i,0,itm);
-		itm = new QTableWidgetItem(QString::fromLocal8Bit(prList[i]->file.c_str()));
+		itm = new QTableWidgetItem(QString::fromLocal8Bit(profileList[i]->file.c_str()));
 		ui.twProfileList->setItem(i,1,itm);
 	}
 }

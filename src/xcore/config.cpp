@@ -1,6 +1,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fstream>
+#include <stdio.h>
 
 #include <QtCore>
 
@@ -61,92 +62,88 @@ void initPaths() {
 }
 
 void saveConfig() {
-	std::ofstream cfile(conf.path.confFile.c_str());
-	if (!cfile.good()) {
+	FILE* cfile = fopen(conf.path.confFile.c_str(),"wb");
+	if (!cfile) {
 		shitHappens("Can't write main config");
 		throw(0);
 	}
-	uint i,j;
+	uint j;
 
-	cfile << "[GENERAL]\n\n";
+	fprintf(cfile,"[GENERAL]\n\n");
 	if ((conf.keyMapName != "default") && (conf.keyMapName != "")) {
-		cfile << "keys = " << conf.keyMapName.c_str() << "\n";
+		fprintf(cfile,"keys = %s\n",conf.keyMapName.c_str());
 	}
-	cfile << "startdefault = " << YESNO(conf.defProfile) << "\n";
-	cfile << "savepaths = " << YESNO(conf.storePaths) << "\n";
-	cfile << "fdcturbo = " << YESNO(fdcFlag & FDC_FAST) << "\n";
-	cfile << "systime = " << YESNO(conf.sysclock) << "\n";
+	fprintf(cfile, "startdefault = %s\n", YESNO(conf.defProfile));
+	fprintf(cfile, "savepaths = %s\n", YESNO(conf.storePaths));
+	fprintf(cfile, "fdcturbo = %s\n", YESNO(fdcFlag & FDC_FAST));
+	fprintf(cfile, "systime = %s\n", YESNO(conf.sysclock));
 
-	cfile << "\n[BOOKMARKS]\n\n";
-	for (i = 0; i < bookmarkList.size(); i++) {
-		cfile << bookmarkList[i].name << " = " << bookmarkList[i].path << "\n";
+	fprintf(cfile, "\n[BOOKMARKS]\n\n");
+	foreach(xBookmark bkm, bookmarkList) {
+		fprintf(cfile, "%s = %s\n", bkm.name.c_str(), bkm.path.c_str());
 	}
-	cfile << "\n[PROFILES]\n\n";
-	std::vector<xProfile*> prl = getProfileList();
-	for (i = 1; i < prl.size(); i++) {			// nr.0 skipped ('default' profile)
-		cfile << prl[i]->name << " = " << prl[i]->file << "\n";
-	}
-	cfile << "current = " << findProfile("")->name << "\n";
 
-	cfile << "\n[VIDEO]\n\n";
-	for (i=1; i < layList.size(); i++) {
-		cfile << "layout = ";
-		cfile << layList[i].name.c_str() << ":";
-		cfile << int2str(layList[i].full.h) << ":";
-		cfile << int2str(layList[i].full.v) << ":";
-		cfile << int2str(layList[i].bord.h) << ":";
-		cfile << int2str(layList[i].bord.v) << ":";
-		cfile << int2str(layList[i].sync.h) << ":";
-		cfile << int2str(layList[i].sync.v) << ":";
-		cfile << int2str(layList[i].intsz) << ":";
-		cfile << int2str(layList[i].intpos.v) << ":";
-		cfile << int2str(layList[i].intpos.h) << "\n";
+	fprintf(cfile, "\n[PROFILES]\n\n");
+	foreach(xProfile* prf, profileList) {			// nr.0 skipped ('default' profile)
+		if (prf->name != "default")
+			fprintf(cfile, "%s = %s\n", prf->name.c_str(), prf->file.c_str());
 	}
-	cfile << "scrDir = " << conf.scrShot.dir.c_str() << "\n";
-	cfile << "scrFormat = " << conf.scrShot.format.c_str() << "\n";
-	cfile << "scrCount = " << int2str(conf.scrShot.count) << "\n";
-	cfile << "scrInterval = " << int2str(conf.scrShot.interval) << "\n";
-	cfile << "fullscreen = " << YESNO(conf.vid.fullScreen) << "\n";
-	cfile << "scale = " << int2str(conf.vid.scale) << "\n";
-	cfile << "greyscale = " << YESNO(conf.vid.grayScale) << "\n";
-	cfile << "bordersize = " << int2str(conf.brdsize * 100) << "\n";
-	cfile << "noflic = " << YESNO(conf.vid.noFlick) << "\n";
-	cfile << "\n[ROMSETS]\n";
-	for (i=0; i<rsList.size(); i++) {
-		cfile<< "\nname = " << rsList[i].name.c_str() << "\n";
-		if (rsList[i].file != "") {
-			cfile << "file = " << rsList[i].file.c_str() << "\n";
+	fprintf(cfile, "current = %s\n", conf.curProf->name.c_str());
+
+	fprintf(cfile, "\n[VIDEO]\n\n");
+	foreach(xLayout lay, layList) {
+		fprintf(cfile, "layout = %s:%li:%li:%li:%li:%li:%li:%i:%li:%li\n",lay.name.c_str(),\
+		       lay.full.h, lay.full.v, lay.bord.h, lay.bord.v,\
+		       lay.sync.h, lay.sync.v, lay.intsz, lay.intpos.v, lay.intpos.h);
+	}
+	fprintf(cfile, "scrDir = %s\n", conf.scrShot.dir.c_str());
+	fprintf(cfile, "scrFormat = %s\n", conf.scrShot.format.c_str());
+	fprintf(cfile, "scrCount = %i\n", conf.scrShot.count);
+	fprintf(cfile, "scrInterval = %i\n", conf.scrShot.interval);
+	fprintf(cfile, "fullscreen = %s\n", YESNO(conf.vid.fullScreen));
+	fprintf(cfile, "scale = %i\n", conf.vid.scale);
+	fprintf(cfile, "greyscale = %s\n", YESNO(conf.vid.grayScale));
+	fprintf(cfile, "bordersize = %i\n", int(conf.brdsize * 100));
+	fprintf(cfile, "noflic = %s\n", YESNO(conf.vid.noFlick));
+
+	fprintf(cfile, "\n[ROMSETS]\n");
+	foreach(xRomset rms, rsList) {
+		fprintf(cfile, "\nname = %s\n", rms.name.c_str());
+		if (rms.file != "") {
+			fprintf(cfile, "file = %s\n", rms.file.c_str());
 		} else {
-			for (j=0; j<4; j++) {
-				if (rsList[i].roms[j].path != "") {
-					cfile << int2str(j) << " = " << rsList[i].roms[j].path.c_str();
-					if (rsList[i].roms[j].part != 0) cfile << ":" << int2str(rsList[i].roms[j].part);
-					cfile << "\n";
+			for (j = 0; j < 4; j++) {
+				if (rms.roms[j].path != "") {
+					fprintf(cfile, "%i = %s:%i\n", j, rms.roms[j].path.c_str(), rms.roms[j].part);
 				}
 			}
 		}
-		if (!rsList[i].gsFile.empty()) cfile << "gs = " << rsList[i].gsFile.c_str() << "\n";
-		if (!rsList[i].fntFile.empty()) cfile << "font = " << rsList[i].fntFile.c_str() << "\n";
+		if (!rms.gsFile.empty())
+			fprintf(cfile, "gs = %s\n", rms.gsFile.c_str());
+		if (!rms.fntFile.empty())
+			fprintf(cfile, "font = %s\n", rms.fntFile.c_str());
 	}
-	cfile << "\n[SOUND]\n\n";
-	cfile << "enabled = " << YESNO(conf.snd.enabled) << "\n";
-	cfile << "dontmute = " << YESNO(conf.snd.mute) << "\n";
-	cfile << "soundsys = " << sndOutput->name << "\n";
-	cfile << "rate = " << int2str(conf.snd.rate) << "\n";
-	cfile << "volume.beep = " << int2str(conf.snd.vol.beep) << "\n";
-	cfile << "volume.tape = " << int2str(conf.snd.vol.tape) << "\n";
-	cfile << "volume.ay = " << int2str(conf.snd.vol.ay) << "\n";
-	cfile << "volume.gs = " << int2str(conf.snd.vol.gs) << "\n";
 
-	cfile << "\n[TAPE]\n\n";
-	cfile << "autoplay = " << YESNO(conf.tape.autostart) << "\n";
-	cfile << "fast = " << YESNO(conf.tape.fast) << "\n";
+	fprintf(cfile, "\n[SOUND]\n\n");
+	fprintf(cfile, "enabled = %s\n", YESNO(conf.snd.enabled));
+	fprintf(cfile, "dontmute = %s\n", YESNO(conf.snd.mute));
+	fprintf(cfile, "soundsys = %s\n", sndOutput->name);
+	fprintf(cfile, "rate = %i\n", conf.snd.rate);
+	fprintf(cfile, "volume.beep = %i\n", conf.snd.vol.beep);
+	fprintf(cfile, "volume.tape = %i\n", conf.snd.vol.tape);
+	fprintf(cfile, "volume.ay = %i\n", conf.snd.vol.ay);
+	fprintf(cfile, "volume.gs = %i\n", conf.snd.vol.gs);
 
-	cfile << "\n[LEDS]\n\n";
-	cfile << "mouse = " << YESNO(conf.led.mouse) << "\n";
-	cfile << "joystick = " << YESNO(conf.led.joy) << "\n";
-	cfile << "keyscan = " << YESNO(conf.led.keys) << "\n";
-	cfile.close();
+	fprintf(cfile, "\n[TAPE]\n\n");
+	fprintf(cfile, "autoplay = %s\n", YESNO(conf.tape.autostart));
+	fprintf(cfile, "fast = %s\n", YESNO(conf.tape.fast));
+
+	fprintf(cfile, "\n[LEDS]\n\n");
+	fprintf(cfile, "mouse = %s\n", YESNO(conf.led.mouse));
+	fprintf(cfile, "joystick = %s\n", YESNO(conf.led.joy));
+	fprintf(cfile, "keyscan = %s\n", YESNO(conf.led.keys));
+
+	fclose(cfile);
 }
 
 

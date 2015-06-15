@@ -113,8 +113,12 @@ xPort prfPortMap[] = {
 	{0xffff,0xfadf,0,2,0,xInFADF,	NULL},
 	{0xffff,0xfbdf,0,2,0,xInFBDF,	NULL},
 	{0xffff,0xffdf,0,2,0,xInFFDF,	NULL},
-
+#ifdef ISDEBUG
 	{0x0000,0x0000,2,2,2,prfBrkIn,	prfBrkOut}
+#else
+	{0x0000,0x0000,2,2,2,dummyIn,	dummyOut}
+#endif
+
 };
 
 void prfOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int dos) {
