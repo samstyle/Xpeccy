@@ -140,6 +140,7 @@ typedef struct {
 	signed int key;		// qint32, nativeScanCode()
 	char key1;
 	char key2;
+	char key3;
 	int keyCode;		// 0xXXYYZZ = ZZ,YY,XX in buffer (ZZ,YY,0xf0,XX if released)
 } keyEntry;
 

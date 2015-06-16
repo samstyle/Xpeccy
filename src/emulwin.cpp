@@ -313,7 +313,7 @@ void MainWin::onTimer() {
 	if (conf.snd.enabled && (conf.snd.mute || isActiveWindow())) sndPlay();
 // if window is not active release keys & buttons
 	if (!isActiveWindow()) {
-		keyRelease(comp->keyb,0,0,0);
+		keyRelease(comp->keyb,0,0,0,0);
 		comp->mouse->buttons = 0xff;
 	}
 // take screenshot
@@ -466,8 +466,8 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 	keyEntry kent;
 	if (pckAct->isChecked()) {
 		kent = getKeyEntry(ev->nativeScanCode());
-		keyPress(comp->keyb,kent.key1,kent.key2,kent.keyCode);
-		if (ev->key() == Qt::Key_F12) {
+		keyPress(comp->keyb,kent.key1,kent.key2,kent.key3,kent.keyCode);
+		if (ev->key() == Qt::Key_ScrollLock) {
 			zxReset(comp,RES_DEFAULT);
 			rzxWin->stop();
 		}
@@ -528,8 +528,8 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 		}
 	} else {
 		kent = getKeyEntry(ev->nativeScanCode());
-		if ((kent.key1 || kent.key2) || pckAct->isChecked())
-			keyPress(comp->keyb,kent.key1,kent.key2,kent.keyCode);
+		if (kent.key1 || kent.key2 || kent.key3)
+			keyPress(comp->keyb,kent.key1,kent.key2,kent.key3,kent.keyCode);
 		switch(ev->key()) {
 			case Qt::Key_Pause:
 				pauseFlags ^= PR_PAUSE;
@@ -618,8 +618,8 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 
 void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 	keyEntry kent = getKeyEntry(ev->nativeScanCode());
-	if (kent.key1 || kent.key2 || pckAct->isChecked())
-		keyRelease(comp->keyb,kent.key1,kent.key2,kent.keyCode);
+	if (kent.key1 || kent.key2 || kent.key3 || pckAct->isChecked())
+		keyRelease(comp->keyb,kent.key1,kent.key2,kent.key3,kent.keyCode);
 }
 
 void MainWin::mousePressEvent(QMouseEvent *ev){

@@ -10,7 +10,7 @@ void prfMapMem(ZXComp* comp) {
 	}
 	int bank = ((comp->pDFFD & 7) << 3) | (comp->p7FFD & 7);
 	memSetBank(comp->mem, MEM_BANK1, MEM_RAM, (comp->pDFFD & 0x08) ? bank : 5);
-	memSetBank(comp->mem, MEM_BANK2, MEM_RAM, (comp->pDFFD & 0x40) ? 6 : 2);
+	memSetBank(comp->mem, MEM_BANK2, MEM_RAM, ((comp->pDFFD & 0x40) && (comp->p7FFD & 8)) ? 6 : 2);
 	memSetBank(comp->mem, MEM_BANK3, MEM_RAM, (comp->pDFFD & 0x08) ? 7 : bank);
 }
 
@@ -61,6 +61,18 @@ void prfOutDFFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 
 // in
 
+Z80EX_BYTE prfInFE(ZXComp* comp, Z80EX_WORD port) {
+	Z80EX_BYTE res = keyInput(comp->keyb, (port & 0xff00) >> 8) & 0x1f;
+	Z80EX_BYTE ext = keyInputExt(comp->keyb, (port & 0xff00) >> 8) & 0x1f;
+	if (ext == 0x1f) {
+		res |= 0x20;
+	} else {
+		res &= ext;
+	}
+	res |= (comp->tape->levPlay ? 0x40 : 0x00);
+	return res;
+}
+
 Z80EX_BYTE prfInBDI(ZXComp* comp, Z80EX_WORD port) {
 	Z80EX_BYTE res = 0xff;
 	difIn(comp->dif, port, &res, 1);
@@ -85,7 +97,7 @@ void prfBrkOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 
 xPort prfPortMap[] = {
 	// common
-	{0x00f7,0x00fe,2,2,2,xInFE,	prfOutFE},
+	{0x00f7,0x00fe,2,2,2,prfInFE,	prfOutFE},
 	{0x8002,0x7ffd,2,2,2,NULL,	prfOut7FFD},
 	{0x2002,0xdffd,2,2,2,NULL,	prfOutDFFD},
 	{0xc002,0xbffd,2,2,2,NULL,	xOutBFFD},

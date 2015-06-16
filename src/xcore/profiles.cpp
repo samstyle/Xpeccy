@@ -89,7 +89,7 @@ bool prfSetCurrent(std::string nm) {
 	ideOpenFiles(nprf->zx->ide);
 	sdcOpenFile(nprf->zx->sdc);
 	prfSetLayout(conf.curProf, conf.curProf->layName);
-	keyRelease(conf.curProf->zx->keyb,0,0,0);
+	keyRelease(conf.curProf->zx->keyb,0,0,0,0);
 	conf.curProf->zx->mouse->buttons = 0xff;
 	return true;
 }

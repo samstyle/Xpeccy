@@ -35,6 +35,7 @@ typedef struct {
 	unsigned used:1;
 	unsigned char port;
 	unsigned char map[8];		// ZX keyboard half-row bits
+	unsigned char extMap[8];	// Profi XT-keyboard extend
 	unsigned char kbdBuf[16];	// PS/2 key buffer
 	int kBufPos;
 } Keyboard;
@@ -48,9 +49,10 @@ typedef struct {
 Keyboard* keyCreate();
 void keyDestroy(Keyboard*);
 
-void keyPress(Keyboard*,char,char,int);
-void keyRelease(Keyboard*,char,char,int);
+void keyPress(Keyboard*,char,char,char,int);
+void keyRelease(Keyboard*,char,char,char,int);
 unsigned char keyInput(Keyboard*,unsigned char);
+unsigned char keyInputExt(Keyboard*,unsigned char);
 unsigned char keyReadCode(Keyboard*);
 
 Mouse* mouseCreate();
