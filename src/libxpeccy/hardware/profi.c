@@ -62,13 +62,9 @@ void prfOutDFFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 // in
 
 Z80EX_BYTE prfInFE(ZXComp* comp, Z80EX_WORD port) {
-	Z80EX_BYTE res = keyInput(comp->keyb, (port & 0xff00) >> 8) & 0x1f;
-	Z80EX_BYTE ext = keyInputExt(comp->keyb, (port & 0xff00) >> 8) & 0x1f;
-	if (ext == 0x1f) {
-		res |= 0x20;
-	} else {
-		res &= ext;
-	}
+	Z80EX_BYTE res = keyInput(comp->keyb, (port & 0xff00) >> 8, 0);
+	Z80EX_BYTE ext = keyInput(comp->keyb, (port & 0xff00) >> 8, 1);
+	if (ext != 0x3f) res = ext;
 	res |= (comp->tape->levPlay ? 0x40 : 0x00);
 	return res;
 }

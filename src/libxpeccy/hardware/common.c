@@ -31,7 +31,7 @@ Z80EX_BYTE xIn1F(ZXComp* comp, Z80EX_WORD port) {
 }
 
 Z80EX_BYTE xInFE(ZXComp* comp, Z80EX_WORD port) {
-	Z80EX_BYTE res = keyInput(comp->keyb, (port & 0xff00) >> 8);
+	Z80EX_BYTE res = keyInput(comp->keyb, (port & 0xff00) >> 8, 0);
 	res |= (comp->tape->levPlay ? 0x40 : 0x00);
 	return res;
 }

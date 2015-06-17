@@ -49,10 +49,12 @@ typedef struct {
 Keyboard* keyCreate();
 void keyDestroy(Keyboard*);
 
-void keyPress(Keyboard*,char,char,char,int);
-void keyRelease(Keyboard*,char,char,char,int);
-unsigned char keyInput(Keyboard*,unsigned char);
-unsigned char keyInputExt(Keyboard*,unsigned char);
+void keyPress(Keyboard*,unsigned char,int);
+void keyRelease(Keyboard*,unsigned char,int);
+unsigned char keyInput(Keyboard*,unsigned char,int);
+
+void keyPressXT(Keyboard*,int);
+void keyReleaseXT(Keyboard*,int);
 unsigned char keyReadCode(Keyboard*);
 
 Mouse* mouseCreate();

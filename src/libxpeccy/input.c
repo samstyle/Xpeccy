@@ -9,11 +9,12 @@ typedef struct {
 	unsigned char mask;
 } keyScan;
 
-keyScan keyTab[40] = {
+keyScan keyTab[] = {
 	{'1',4,1},{'2',4,2},{'3',4,4},{'4',4,8},{'5',4,16},{'6',3,16},{'7',3,8},{'8',3,4},{'9',3,2},{'0',3,1},
 	{'q',5,1},{'w',5,2},{'e',5,4},{'r',5,8},{'t',5,16},{'y',2,16},{'u',2,8},{'i',2,4},{'o',2,2},{'p',2,1},
 	{'a',6,1},{'s',6,2},{'d',6,4},{'f',6,8},{'g',6,16},{'h',1,16},{'j',1,8},{'k',1,4},{'l',1,2},{'E',1,1},
-	{'C',7,1},{'z',7,2},{'x',7,4},{'c',7,8},{'v',7,16},{'b',0,16},{'n',0,8},{'m',0,4},{'S',0,2},{' ',0,1}
+	{'C',7,1},{'z',7,2},{'x',7,4},{'c',7,8},{'v',7,16},{'b',0,16},{'n',0,8},{'m',0,4},{'S',0,2},{' ',0,1},
+	{0,0,0}
 };
 
 // keyboard
@@ -28,52 +29,41 @@ void keyDestroy(Keyboard* keyb) {
 	free(keyb);
 }
 
-void keyPress(Keyboard* keyb, char key1, char key2, char key3, int kcod) {
-	int i;
-	for (i=0; i<40; i++) {
-		if ((keyTab[i].key == key1) || (keyTab[i].key == key2) || (keyTab[i].key == key3)) {
-			if (key1) {
-				keyb->map[keyTab[i].row] &= ~keyTab[i].mask;
-			} else {
-				keyb->extMap[keyTab[i].row] &= ~keyTab[i].mask;
-			}
+void keyPress(Keyboard* keyb, unsigned char key, int ext) {
+	unsigned char* tab = ext ? keyb->extMap : keyb->map;
+	int i = 0;
+	while (keyTab[i].key) {
+		if (keyTab[i].key == (key & 0x7f)) {
+			tab[keyTab[i].row] &= ~keyTab[i].mask;
+			if (key & 0x80)
+				tab[keyTab[i].row] &= ~0x20;
 		}
-	}
-	if (keyb->kBufPos < 14) {
-		while (kcod) {
-			keyb->kbdBuf[keyb->kBufPos++] = (kcod & 0xff);
-			kcod >>= 8;
-		}
+		i++;
 	}
 }
 
-void keyRelease(Keyboard* keyb, char key1, char key2, char key3, int kcod) {
-	int i;
-	if ((key1 == 0) && (key2 == 0) && (key3 == 0)) {
-		memset(keyb->map, 0x1f, 8);
-		memset(keyb->extMap, 0x1f, 8);
+void keyRelease(Keyboard* keyb, unsigned char key, int ext) {
+	if (key == 0xff) {
+		memset(keyb->map, 0x3f, 8);
+		memset(keyb->extMap, 0x3f, 8);
+		keyb->kBufPos = 0;
 	} else {
-		for (i = 0; i < 40; i++) {
-			if ((keyTab[i].key == key1) || (keyTab[i].key == key2) || (keyTab[i].key == key3)) {
-				if (key1) {
-					keyb->map[keyTab[i].row] |= keyTab[i].mask;
-				} else {
-					keyb->extMap[keyTab[i].row] |= keyTab[i].mask;
-				}
+		unsigned char* tab = ext ? keyb->extMap : keyb->map;
+		int i = 0;
+		while (keyTab[i].key) {
+			if (keyTab[i].key == (key & 0x7f)) {
+				tab[keyTab[i].row] |= keyTab[i].mask;
+				if (key & 0x80)
+					tab[keyTab[i].row] |= 0x20;
 			}
-		}
-	}
-	if (keyb->kBufPos < 14) {
-		while (kcod) {
-			if (kcod < 0x100) keyb->kbdBuf[keyb->kBufPos++] = 0xf0;
-			keyb->kbdBuf[keyb->kBufPos++] = (kcod & 0xff);
-			kcod >>= 8;
+			i++;
 		}
 	}
 }
 
-unsigned char keybScan(Keyboard* keyb, unsigned char prt, unsigned char* ptr) {
-	unsigned char res = 0x1f;
+unsigned char keyInput(Keyboard* keyb, unsigned char prt, int ext) {
+	unsigned char* ptr = ext ? keyb->extMap : keyb->map;
+	unsigned char res = 0x3f;
 	keyb->port &= prt;
 	keyb->used = 1;
 	int i;
@@ -84,12 +74,21 @@ unsigned char keybScan(Keyboard* keyb, unsigned char prt, unsigned char* ptr) {
 	return res;
 }
 
-unsigned char keyInput(Keyboard* keyb, unsigned char prt) {
-	return keybScan(keyb, prt, keyb->map);
+void keyPressXT(Keyboard* keyb, int kcod) {
+	if (keyb->kBufPos > 13) return;
+	while (kcod) {
+		keyb->kbdBuf[keyb->kBufPos++] = (kcod & 0xff);
+		kcod >>= 8;
+	}
 }
 
-unsigned char keyInputExt(Keyboard* keyb, unsigned char prt) {
-	return keybScan(keyb, prt, keyb->extMap);
+void keyReleaseXT(Keyboard* keyb, int kcod) {
+	if (keyb->kBufPos > 13) return;
+	while (kcod) {
+		if (kcod < 0x100) keyb->kbdBuf[keyb->kBufPos++] = 0xf0;
+		keyb->kbdBuf[keyb->kBufPos++] = (kcod & 0xff);
+		kcod >>= 8;
+	}
 }
 
 unsigned char keyReadCode(Keyboard* keyb) {

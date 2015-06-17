@@ -138,9 +138,10 @@ extern std::map<std::string, int> shotFormat;
 typedef struct {
 	const char* name;
 	signed int key;		// qint32, nativeScanCode()
-	char key1;
-	char key2;
-	char key3;
+	unsigned char key1;	// key 1,2 -> Keyboard::map
+	unsigned char key2;
+	unsigned char key3;	// key 3,4 -> Keyboard::extMap (Profi)
+	unsigned char key4;
 	int keyCode;		// 0xXXYYZZ = ZZ,YY,XX in buffer (ZZ,YY,0xf0,XX if released)
 } keyEntry;
 
