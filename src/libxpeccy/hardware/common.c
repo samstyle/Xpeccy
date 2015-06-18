@@ -5,14 +5,14 @@
 
 Z80EX_BYTE brkIn(ZXComp* comp, Z80EX_WORD port) {
 	printf("IN %.4X\n",port);
-	assert(0);
+//	assert(0);
 	comp->brk = 1;
 	return 0xff;
 }
 
 void brkOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	printf("OUT %.4X,%.2X\n",port,val);
-	assert(0);
+//	assert(0);
 	comp->brk = 1;
 }
 

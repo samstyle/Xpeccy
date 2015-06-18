@@ -138,6 +138,11 @@ struct ZXComp {
 		unsigned char pwr_up;		// 1 on 1st run, 0 after reading 00AF
 		unsigned char vdos;
 	} tsconf;
+	struct {
+		unsigned trig7E:1;
+		unsigned char p7E;		// color num (if trig7E=0)
+	} profi;
+
 	CMOS cmos;
 	int resbank;			// rompart active after reset
 	int tapCount;

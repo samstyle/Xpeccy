@@ -16,9 +16,21 @@ void prfMapMem(ZXComp* comp) {
 
 // out
 
+const unsigned char prfColTab[8] = {0,36,73,109,146,182,218,255};
+
 void prfOutPal(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
-	if ((comp->pDFFD & 0x80) && (comp->p7FFD & 0x20)) {
-		// write palete
+	if (comp->pDFFD & 0x80) {
+		if (comp->profi.trig7E) {
+			xColor col;
+			int hi = ((port & 0xff00) >> 7);
+			col.b = prfColTab[hi & 7];
+			col.r = prfColTab[(hi & 0x38) >> 3];
+			col.g = prfColTab[(hi & 0x1c0) >> 6];
+			comp->vid->pal[comp->profi.p7E] = col;
+		} else {
+			comp->profi.p7E = val & 15;
+		}
+		comp->profi.trig7E ^= 1;
 	}
 }
 
@@ -142,4 +154,5 @@ Z80EX_BYTE prfIn(ZXComp* comp, Z80EX_WORD port, int dos) {
 }
 
 void prfReset(ZXComp* comp) {
+	comp->profi.trig7E = 0;
 }
