@@ -511,7 +511,7 @@ int prfSave(std::string nm) {
 
 	fprintf(file, "\n[IDE]\n\n");
 	fprintf(file, "iface = %i\n", comp->ide->type);
-	fprintf(file, "master.type = %i", comp->ide->master->type);
+	fprintf(file, "master.type = %i\n", comp->ide->master->type);
 	ATAPassport pass = ideGetPassport(comp->ide,IDE_MASTER);
 	fprintf(file, "master.image = %s\n", comp->ide->master->image ? comp->ide->master->image : "");
 	fprintf(file, "master.lba = %s\n", YESNO(comp->ide->master->hasLBA));

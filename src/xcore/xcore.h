@@ -78,7 +78,6 @@ struct xConfig {
 		unsigned grayScale:1;
 		unsigned noFlick:1;
 		unsigned fullScreen:1;
-//		unsigned doubleSize:1;
 		int scale;		// 1..4
 	} vid;
 	struct {

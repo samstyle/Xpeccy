@@ -15,6 +15,7 @@ extern "C" {
 #define IDE_SMUC	3
 #define IDE_ATM		4
 #define	IDE_NEMO_EVO	5	// with hi/low trigger
+#define IDE_PROFI	6
 
 // device select
 #define IDE_NONE	0
