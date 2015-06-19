@@ -92,7 +92,7 @@ void saveConfig() {
 
 	fprintf(cfile, "\n[VIDEO]\n\n");
 	foreach(xLayout lay, layList) {
-		fprintf(cfile, "layout = %s:%li:%li:%li:%li:%li:%li:%i:%li:%li\n",lay.name.c_str(),\
+		fprintf(cfile, "layout = %s:%i:%i:%i:%i:%i:%i:%i:%i:%i\n",lay.name.c_str(),\
 		       lay.full.h, lay.full.v, lay.bord.h, lay.bord.v,\
 		       lay.sync.h, lay.sync.v, lay.intsz, lay.intpos.v, lay.intpos.h);
 	}

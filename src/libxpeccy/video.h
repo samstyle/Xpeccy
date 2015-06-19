@@ -27,8 +27,8 @@ extern "C" {
 #define	VID_UNKNOWN	0xff
 
 typedef struct {
-	size_t h;
-	size_t v;
+	int h;
+	int v;
 } VSize;
 
 #ifdef WORDS_BIG_ENDIAN
@@ -62,7 +62,7 @@ struct Video {
 	unsigned char fcnt;
 	unsigned char atrbyte;
 	unsigned char* scrptr;
-	unsigned char* scrimg;
+	unsigned char scrimg[1024 * 1024 * 3];
 	int x;
 	int y;
 	size_t frmsz;

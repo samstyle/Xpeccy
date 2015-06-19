@@ -87,7 +87,7 @@ Video* vidCreate(Memory* me) {
 	vid->y = 0;
 	vid->idx = 0;
 
-	vid->scrimg = (unsigned char*)malloc(1024 * 1024 * 3);
+	// vid->scrimg = (unsigned char*)malloc(1024 * 1024 * 3);
 	vid->scrptr = vid->scrimg;
 
 	return vid;
