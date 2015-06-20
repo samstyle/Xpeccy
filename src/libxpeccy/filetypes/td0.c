@@ -79,88 +79,91 @@ void doTD0(Floppy* flp, size_t(*getBytes)(void*, size_t,void*), void* dptr, int 
 	unsigned char ch1,ch2;
 	unsigned char buf[8192];
 	unsigned char* ptr;
-		if (haveRem) {		// skip comment
-			getBytes(&rhd, sizeof(td0RemHead), dptr);
+//	for (i = 0; i < 256; i++) sec[i].data = NULL;
+	if (haveRem) {		// skip comment
+		getBytes(&rhd, sizeof(td0RemHead), dptr);
 #ifdef WORDS_BIG_ENDIAN
-			rhd.len = swap16(rhd.len);
+		rhd.len = swap16(rhd.len);
 #endif
-			getBytes(NULL, rhd.len, dptr);
-		}
-		while (work) {
-			idx = 0;
-			getBytes(&thd, sizeof(td0TrkHead), dptr);
-			//printf("== TRK %i:%i (nsec = %i)\n",thd.trk, thd.head, thd.nsec);
-			if (thd.nsec == 0xff) break;
-			for (i = 0; i < thd.nsec; i++) {
-				if (!work) break;
-				getBytes(&shd, sizeof(td0SecHead), dptr);
-				//printf("%i: sec %i (sz = %i, ctrl = %.2X)\n",idx, shd.sec, shd.secz, shd.ctrl);
-				sec[idx].cyl = shd.trk;
-				sec[idx].side = shd.head;
-				sec[idx].sec = shd.sec;
-				sec[idx].len = shd.secz;
-				sec[idx].type = 0xfb;
-				sec[idx].crc = -1;
-				memset(sec[idx].dat, 0x00, 8192);
-				if (shd.ctrl & 0x10) {				// empty sector
-					idx++;
+		getBytes(NULL, rhd.len, dptr);
+	}
+	while (work) {
+		idx = 0;
+		getBytes(&thd, sizeof(td0TrkHead), dptr);
+		//printf("== TRK %i:%i (nsec = %i)\n",thd.trk, thd.head, thd.nsec);
+		if (thd.nsec == 0xff) break;
+		for (i = 0; i < thd.nsec; i++) {
+			if (!work) break;
+			getBytes(&shd, sizeof(td0SecHead), dptr);
+			//printf("%i: sec %i (sz = %i, ctrl = %.2X)\n",idx, shd.sec, shd.secz, shd.ctrl);
+			sec[idx].trk = shd.trk;
+			sec[idx].head = shd.head;
+			sec[idx].sec = shd.sec;
+			sec[idx].sz = shd.secz;
+			sec[idx].type = 0xfb;
+			sec[idx].crc = -1;
+			//if (!sec[idx].data) sec[idx].data = malloc(8192);
+			memset(sec[idx].data, 0x00, 4096);
+			if (shd.ctrl & 0x10) {				// empty sector
+				idx++;
+			} else {
+				getBytes(&ch1, 1, dptr);
+				getBytes(&ch2, 1, dptr);
+				dlen = ch1 | (ch2 << 8);		// data size
+				if ((idx > thd.nsec) || (shd.secz & 0xf8)) {
+					getBytes(NULL, dlen, dptr);	// skip data
 				} else {
-					getBytes(&ch1, 1, dptr);
-					getBytes(&ch2, 1, dptr);
-					dlen = ch1 | (ch2 << 8);		// data size
-					if ((idx > thd.nsec) || (shd.secz & 0xf8)) {
-						getBytes(NULL, dlen, dptr);	// skip data
-					} else {
-						getBytes(&btype, 1, dptr);
-						//printf("type = %i\n",btype);
-						switch (btype) {
-							case 0:
-								getBytes(sec[idx].dat, dlen-1, dptr);
-								idx++;
-								break;
-							case 1:
+					getBytes(&btype, 1, dptr);
+					//printf("type = %i\n",btype);
+					switch (btype) {
+						case 0:
+							getBytes(sec[idx].data, dlen-1, dptr);
+							idx++;
+							break;
+						case 1:
+							getBytes(&ch1, 1, dptr);
+							getBytes(&ch2, 1, dptr);
+							cnt = ch1 | (ch2 << 8);
+							getBytes(&ch1, 1, dptr);
+							getBytes(&ch2, 1, dptr);
+							ptr = sec[idx].data;
+							while (cnt > 0) {
+								*(ptr++) = ch1;
+								*(ptr++) = ch2;
+								cnt--;
+							}
+							idx++;
+							break;
+						case 2:
+							ptr = sec[idx].data;
+							while (dlen > 1) {
 								getBytes(&ch1, 1, dptr);
 								getBytes(&ch2, 1, dptr);
-								cnt = ch1 | (ch2 << 8);
-								getBytes(&ch1, 1, dptr);
-								getBytes(&ch2, 1, dptr);
-								ptr = sec[idx].dat;
-								while (cnt > 0) {
-									*(ptr++) = ch1;
-									*(ptr++) = ch2;
-									cnt--;
-								}
-								idx++;
-								break;
-							case 2:
-								ptr = sec[idx].dat;
-								while (dlen > 1) {
-									getBytes(&ch1, 1, dptr);
-									getBytes(&ch2, 1, dptr);
-									dlen -= 2;
-									if (ch1 == 0) {
-										getBytes(ptr, ch2, dptr);
-										dlen -= ch2;
-										ptr += ch2;
-									} else {
-										icnt = (1 << ch1);
-										getBytes(buf, icnt, dptr);
-										dlen -= icnt;
-										while (ch2 > 0) {
-											memcpy(ptr, buf, icnt);
-											ptr += icnt;
-											ch2--;
-										}
+								dlen -= 2;
+								if (ch1 == 0) {
+									getBytes(ptr, ch2, dptr);
+									dlen -= ch2;
+									ptr += ch2;
+								} else {
+									icnt = (1 << ch1);
+									getBytes(buf, icnt, dptr);
+									dlen -= icnt;
+									while (ch2 > 0) {
+										memcpy(ptr, buf, icnt);
+										ptr += icnt;
+										ch2--;
 									}
 								}
-								idx++;
-								break;
-						}
+							}
+							idx++;
+							break;
 					}
 				}
 			}
-			flpFormTrack(flp, (thd.trk << 1) + thd.head, sec, idx);
 		}
+		diskFormTrack(flp, (thd.trk << 1) + thd.head, sec, idx);
+	}
+	//for (i = 0; i < 256; i++) if (sec[i].data) free(sec[i].data);
 }
 
 int loadTD0(Floppy* flp, const char* name) {

@@ -67,7 +67,6 @@ int loadDSK(Floppy* flp, const char *name) {
 		int tr = 0;
 		int i,sc;
 		Sector secs[256];
-
 		for (i = 0; i < dib.tracks * dib.sides; i++) {
 			if (!feof(file)) {
 				fgetLine(file, sigBuf, 255, 0);					// read block signature (till byte 0x00)
@@ -75,15 +74,14 @@ int loadDSK(Floppy* flp, const char *name) {
 					fread((char*)&tib, sizeof(TrackInfBlock), 1, file);
 					sib = (SectorInfBlock*)&tib.sectorInfo;
 					for (sc = 0; sc < tib.secCount; sc++) {
-						secs[sc].cyl = sib[sc].track;
-						secs[sc].side = sib[sc].side;
+						secs[sc].trk = sib[sc].track;
+						secs[sc].head = sib[sc].side;
 						secs[sc].sec = sib[sc].sector;
-						secs[sc].len = sib[sc].size;
-						// secs[sc].data = (unsigned char*)realloc(secs[sc].data,sib[sc].bytesSize * sizeof(char));
+						secs[sc].sz = sib[sc].size;
 						secs[sc].type = 0xfb;
-						fread((char*)secs[sc].dat, sib[sc].bytesSize, 1, file);
+						fread((char*)secs[sc].data, sib[sc].bytesSize, 1, file);
 					}
-					flpFormTrack(flp,tr,secs,tib.secCount);
+					diskFormTrack(flp,tr,secs,tib.secCount);
 					tr++;
 					if (dib.sides == 1) tr++;
 				} else {

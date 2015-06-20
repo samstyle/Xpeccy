@@ -22,26 +22,18 @@ extern "C" {
 #define	FLP_BACK	0
 #define	FLP_FORWARD	1
 
+/*
 typedef struct {
 	unsigned char cyl;
 	unsigned char side;
 	unsigned char sec;
 	unsigned char len;
-	unsigned char dat[8192];
+	unsigned char* data;
 	unsigned char type;
 	int crc;
 	int flag;
 } Sector;
-
-typedef struct {
-	unsigned char name[8];
-	unsigned char ext;
-	unsigned char lst,hst;
-	unsigned char llen,hlen;
-	unsigned char slen;
-	unsigned char sec;
-	unsigned char trk;
-} TRFile;
+*/
 
 typedef struct {
 	unsigned insert:1;
@@ -77,7 +69,9 @@ void flpWr(Floppy*,unsigned char);
 int flpNext(Floppy*,int);		// return 1 if index strobe
 void flpPrev(Floppy*,int);
 void flpStep(Floppy*,int);
+
 unsigned char flpGetField(Floppy*);
+void flpFillFields(Floppy*,int,int);
 
 void flpPutTrack(Floppy*,int,unsigned char*,int);
 void flpGetTrack(Floppy*,int,unsigned char*);
@@ -86,24 +80,9 @@ void flpGetTrackFields(Floppy*,int,unsigned char*);
 void flpClearTrack(Floppy*,int);
 void flpClearDisk(Floppy*);
 
+unsigned short getCrc(unsigned char*, int);
+
 // trdos specific TODO:move somewhere else
-
-int flpGetDiskType(Floppy*);
-
-void flpFormat(Floppy*);
-void flpFormTrack(Floppy*,int,Sector*,int);
-void flpFormTRDTrack(Floppy*,int,unsigned char*);
-void flpFillFields(Floppy*,int,int);
-
-int flpGetSectorData(Floppy*,unsigned char,unsigned char,unsigned char*,int);
-int flpGetSectorsData(Floppy*,unsigned char,unsigned char,unsigned char*,int);
-int flpPutSectorData(Floppy*,unsigned char,unsigned char,unsigned char*,int);
-
-int flpCreateDescriptor(Floppy*,TRFile*);
-int flpCreateFile(Floppy*, TRFile, unsigned char*, int);
-int flpGetTRCatalog(Floppy*,TRFile*);
-TRFile flpGetCatalogEntry(Floppy*, int);
-TRFile flpMakeDescriptor(const char*, char, int, int);
 
 #ifdef __cplusplus
 }

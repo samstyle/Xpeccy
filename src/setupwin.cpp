@@ -32,16 +32,6 @@ std::string getRFText(QComboBox* box) {
 
 // OBJECT
 
-std::vector<std::string> getHardwareNames() {
-	int idx = 0;
-	std::vector<std::string> res;
-	while (hwTab[idx].name != NULL) {
-		res.push_back(std::string(hwTab[idx].name));
-		idx++;
-	}
-	return res;
-}
-
 SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	setModal(true);
 	ui.setupUi(this);
@@ -62,7 +52,6 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	prfChanged = 0;
 
 	unsigned int i;
-//	std::vector<std::string> list;
 // machine
 	i = 0;
 	while (hwTab[i].name != NULL) {
@@ -73,8 +62,6 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.resbox->addItem("BASIC 128",RES_128);
 	ui.resbox->addItem("DOS",RES_DOS);
 	ui.resbox->addItem("SHADOW",RES_SHADOW);
-//	setupUi.resbox->addItems(QStringList()<<"ROMPage0"<<"ROMPage1"<<"ROMPage2"<<"ROMPage3");
-//	setupUi.rssel->hide();
 	QTableWidgetItem* itm;
 	for (i = 0; i < (unsigned)ui.rstab->rowCount(); i++) {
 		itm = new QTableWidgetItem; ui.rstab->setItem(i,1,itm);
@@ -433,7 +420,7 @@ void SetupWin::apply() {
 	HardWare *oldmac = comp->hw;
 	prof->hwName = std::string(ui.machbox->itemData(ui.machbox->currentIndex()).toString().toUtf8().data());
 	zxSetHardware(prof->zx,prof->hwName.c_str());
-	prof->rsName = std::string(ui.rsetbox->currentText().toUtf8().data());
+	prof->rsName = getRFText(ui.rsetbox); // std::string(ui.rsetbox->currentText().toUtf8().data());
 	prfSetRomset(prof, prof->rsName);
 	comp->resbank = ui.resbox->itemData(ui.resbox->currentIndex()).toInt();
 	memSetSize(comp->mem,ui.mszbox->itemData(ui.mszbox->currentIndex()).toInt());
@@ -448,7 +435,7 @@ void SetupWin::apply() {
 	conf.vid.noFlick = ui.noflichk->isChecked() ? 1 : 0;
 	conf.vid.grayScale = ui.grayscale->isChecked() ? 1 : 0;
 	conf.scrShot.dir = std::string(ui.pathle->text().toLocal8Bit().data());
-	conf.scrShot.format = std::string(ui.ssfbox->currentText().toLocal8Bit().data());
+	conf.scrShot.format = getRFText(ui.ssfbox); // std::string(ui.ssfbox->currentText().toLocal8Bit().data());
 	conf.scrShot.count = ui.scntbox->value();
 	conf.scrShot.interval = ui.sintbox->value();
 	conf.brdsize = ui.bszsld->value()/100.0;
@@ -456,10 +443,10 @@ void SetupWin::apply() {
 	comp->contMem = ui.contMem->isChecked() ? 1 : 0;
 	comp->contIO = ui.contIO->isChecked() ? 1 : 0;
 	comp->vid->ula->enabled = ui.ulaPlus->isChecked() ? 1 : 0;
-	prfSetLayout(NULL, std::string(ui.geombox->currentText().toLocal8Bit().data()));
+	prfSetLayout(NULL, getRFText(ui.geombox)); // std::string(ui.geombox->currentText().toLocal8Bit().data()));
 // sound
 	//std::string oname = std::string(sndOutput->name);
-	std::string nname(ui.outbox->currentText().toLocal8Bit().data());
+	std::string nname = getRFText(ui.outbox); // ui.outbox->currentText().toLocal8Bit().data());
 	conf.snd.enabled = ui.senbox->isChecked() ? 1 : 0;
 	conf.snd.mute = ui.mutbox->isChecked() ? 1 : 0;
 	conf.snd.rate = ui.ratbox->itemData(ui.ratbox->currentIndex()).toInt();
@@ -930,7 +917,7 @@ void SetupWin::copyToTape() {
 	QModelIndexList idx = ui.disklist->selectionModel()->selectedRows();
 	if (idx.size() == 0) return;
 	TRFile cat[128];
-	flpGetTRCatalog(comp->dif->fdc->flop[dsk],cat);
+	diskGetTRCatalog(comp->dif->fdc->flop[dsk],cat);
 	// std::vector<TRFile> cat = flpGetTRCatalog(comp->bdi->flop[dsk]);
 	int row;
 	unsigned char* buf = new unsigned char[0xffff];
@@ -939,7 +926,7 @@ void SetupWin::copyToTape() {
 	int savedFiles = 0;
 	for (int i=0; i<idx.size(); i++) {
 		row = idx[i].row();
-		if (flpGetSectorsData(comp->dif->fdc->flop[dsk],cat[row].trk, cat[row].sec+1, buf, cat[row].slen)) {
+		if (diskGetSectorsData(comp->dif->fdc->flop[dsk],cat[row].trk, cat[row].sec+1, buf, cat[row].slen)) {
 			if (cat[row].slen == (cat[row].hlen + ((cat[row].llen == 0) ? 0 : 1))) {
 				start = (cat[row].hst << 8) + cat[row].lst;
 				len = (cat[row].hlen << 8) + cat[row].llen;
@@ -1076,7 +1063,7 @@ void SetupWin::copyToDisk() {
 	tapGetBlockData(comp->tape,dataBlock,dt);
 	unsigned char* buf = new unsigned char[256];
 	int pos = 1;	// skip block type mark
-	switch(flpCreateDescriptor(comp->dif->fdc->flop[dsk],&dsc)) {
+	switch(diskCreateDescriptor(comp->dif->fdc->flop[dsk],&dsc)) {
 		case ERR_SHIT: shitHappens("Yes, it happens"); break;
 		case ERR_MANYFILES: shitHappens("Too many files @ disk"); break;
 		case ERR_NOSPACE: shitHappens("Not enough space @ disk"); break;
@@ -1086,7 +1073,7 @@ void SetupWin::copyToDisk() {
 					buf[(pos-1) & 0xff] = (pos < inf.size) ? dt[pos] : 0x00;
 					pos++;
 				} while ((pos & 0xff) != 1);
-				flpPutSectorData(comp->dif->fdc->flop[dsk],dsc.trk, dsc.sec+1, buf, 256);
+				diskPutSectorData(comp->dif->fdc->flop[dsk],dsc.trk, dsc.sec+1, buf, 256);
 				dsc.sec++;
 				if (dsc.sec > 15) {
 					dsc.sec = 0;
@@ -1115,9 +1102,9 @@ void SetupWin::fillDiskCat() {
 		wid->setRowCount(0);
 	} else {
 		wid->setEnabled(true);
-		if (flpGetDiskType(comp->dif->fdc->flop[dsk]) == DISK_TYPE_TRD) {
+		if (diskGetType(comp->dif->fdc->flop[dsk]) == DISK_TYPE_TRD) {
 			TRFile cat[128];
-			int catSize = flpGetTRCatalog(comp->dif->fdc->flop[dsk],cat);
+			int catSize = diskGetTRCatalog(comp->dif->fdc->flop[dsk],cat);
 			// std::vector<TRFile> cat = flpGetTRCatalog(comp->bdi->flop[dsk]);
 			wid->setRowCount(catSize);
 			for (int i=0; i<catSize; i++) {
@@ -1167,7 +1154,7 @@ void SetupWin::updvolumes() {
 void SetupWin::newdisk(int idx) {
 	Floppy *flp = comp->dif->fdc->flop[idx];
 	if (!saveChangedDisk(comp,idx & 3)) return;
-	flpFormat(flp);
+	diskFormat(flp);
 	flp->path = (char*)realloc(flp->path,sizeof(char));
 	flp->path[0] = 0x00;
 	flp->insert = 1;

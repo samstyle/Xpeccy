@@ -32,10 +32,10 @@ int loadRaw(Floppy* flp, const char* name) {
 		err = ERR_RAW_LONG;
 	} else {
 		if (!flp->insert) {
-			flpFormat(flp);
+			diskFormat(flp);
 			flp->insert = 1;
 		}
-		if (flpGetDiskType(flp) != DISK_TYPE_TRD) {
+		if (diskGetType(flp) != DISK_TYPE_TRD) {
 			err = ERR_NOTRD;
 		} else {
 			char fpath[1024];
@@ -57,12 +57,12 @@ int loadRaw(Floppy* flp, const char* name) {
 				memcpy(fnam, name, strlen(name));
 			}
 			printf("%s\n%s\n",fnam,fext);
-			TRFile nfle = flpMakeDescriptor(fnam, fext[0], 0, len);
+			TRFile nfle = diskMakeDescriptor(fnam, fext[0], 0, len);
 			nfle.lst = fext[1];
 			nfle.hst = fext[2];
 			unsigned char buf[0x10000];
 			fread((char*)buf, len, 1, file);
-			if (flpCreateFile(flp, nfle, buf, len) != ERR_OK) {
+			if (diskCreateFile(flp, nfle, buf, len) != ERR_OK) {
 				err = ERR_HOB_CANT;
 			} else {
 				for (int i = 0; i < 256; i++) flpFillFields(flp, i, 1);
@@ -74,9 +74,9 @@ int loadRaw(Floppy* flp, const char* name) {
 }
 
 int saveRawFile(Floppy* flp, int num, const char* dir) {
-	TRFile dsc = flpGetCatalogEntry(flp,num);
+	TRFile dsc = diskGetCatalogEntry(flp,num);
 	unsigned char buf[0x10000];
-	if (!flpGetSectorsData(flp,dsc.trk, dsc.sec+1, buf, dsc.slen)) return ERR_TRD_SNF;
+	if (!diskGetSectorsData(flp,dsc.trk, dsc.sec+1, buf, dsc.slen)) return ERR_TRD_SNF;
 	char name[9];
 	strncpy(name, (char*)dsc.name, 8);
 	cutSpaces(name);

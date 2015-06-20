@@ -62,7 +62,7 @@ struct Video {
 	unsigned char fcnt;
 	unsigned char atrbyte;
 	unsigned char* scrptr;
-	unsigned char scrimg[1024 * 1024 * 3];
+	unsigned char scrimg[1024 * 512 * 3];
 	int x;
 	int y;
 	size_t frmsz;

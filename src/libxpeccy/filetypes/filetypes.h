@@ -67,8 +67,47 @@
 extern "C" {
 #endif
 
+// disk specific operations
+
+typedef struct {
+	unsigned char trk;
+	unsigned char head;
+	unsigned char sec;
+	unsigned char sz;	// 0..3 = 128..1024
+	unsigned char type;
+	int crc;
+	unsigned char data[4096];
+} Sector;
+
+typedef struct {
+	unsigned char name[8];
+	unsigned char ext;
+	unsigned char lst,hst;
+	unsigned char llen,hlen;
+	unsigned char slen;
+	unsigned char sec;
+	unsigned char trk;
+} TRFile;
+
+void diskFormat(Floppy*);
+void diskFormTrack(Floppy*,int,Sector*,int);
+void diskFormTRDTrack(Floppy*,int,unsigned char*);
+
+int diskGetType(Floppy*);
+
+int diskGetSectorData(Floppy*,unsigned char,unsigned char,unsigned char*,int);
+int diskGetSectorsData(Floppy*,unsigned char,unsigned char,unsigned char*,int);
+int diskPutSectorData(Floppy*,unsigned char,unsigned char,unsigned char*,int);
+
+int diskCreateDescriptor(Floppy*,TRFile*);
+int diskCreateFile(Floppy*, TRFile, unsigned char*, int);
+int diskGetTRCatalog(Floppy*,TRFile*);
+TRFile diskGetCatalogEntry(Floppy*, int);
+TRFile diskMakeDescriptor(const char*, char, int, int);
+
 // common
 
+size_t fgetSize(FILE*);
 unsigned int freadLen(FILE*,int);
 unsigned short fgetwLE(FILE*);
 void fputwLE(FILE*, unsigned short);

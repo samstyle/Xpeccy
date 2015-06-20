@@ -29,18 +29,6 @@ typedef struct {
 
 #pragma pack (pop)
 
-unsigned short swap16(unsigned short wr) {
-	return ((wr & 0xff) << 8) | ((wr >> 8) & 0xff);
-}
-
-unsigned int swap32(unsigned int wr) {
-	unsigned int res = ((wr & 0xff) << 24);
-	res |= ((wr & 0xff00) << 8);
-	res |= ((wr >> 8) & 0xff00);
-	res |= ((wr >> 24) & 0xff);
-	return res;
-}
-
 int loadFDI(Floppy* flp,const char* name) {
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
@@ -51,6 +39,8 @@ int loadFDI(Floppy* flp,const char* name) {
 	fdiSHead shd;
 	Sector trkImg[256];
 	size_t pos;
+//	int i;
+//	for (i = 0; i < 256; i++) trkImg[i].data = NULL;
 	fread((char*)&hd, sizeof(fdiHead), 1, file);
 #ifdef WORDS_BIG_ENDIAN
 	hd.cyls = swap16(hd.cyls);
@@ -77,19 +67,20 @@ int loadFDI(Floppy* flp,const char* name) {
 #ifdef WORDS_BIG_ENDIAN
 					shd.dData = swap16(shd.dData);
 #endif
-					trkImg[sec].cyl = shd.cyl;
-					trkImg[sec].side = shd.head;
+					trkImg[sec].trk = shd.cyl;
+					trkImg[sec].head = shd.head;
 					trkImg[sec].sec = shd.sec;
-					trkImg[sec].len = shd.len;
+					trkImg[sec].sz = shd.len;
 					trkImg[sec].type = (shd.flag & 0x80) ? 0xf8 : 0xfb;
 					// trkImg[sec].data = (unsigned char*)malloc(4096 * sizeof(unsigned char));
 					shd.len = shd.len & 3;
 					pos = ftell(file);
 					fseek(file, hd.dData + thd.dData + shd.dData, SEEK_SET);
-					fread((char*)trkImg[sec].dat, (128 << (shd.len & 3)), 1, file);
+					//if (!trkImg[sec].data) trkImg[sec].data = malloc(1024);
+					fread((char*)trkImg[sec].data, (128 << (shd.len & 3)), 1, file);
 					fseek(file, pos, SEEK_SET);
 				}
-				flpFormTrack(flp, (trk << 1) + head, trkImg, thd.secCount);
+				diskFormTrack(flp, (trk << 1) + head, trkImg, thd.secCount);
 			}
 		}
 		flp->protect = hd.wp ? 1 : 0;
@@ -98,6 +89,7 @@ int loadFDI(Floppy* flp,const char* name) {
 		flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
 		strcpy(flp->path,name);
 	}
+	//for (i = 0; i < 256; i++) if (trkImg[i].data) free(trkImg[i].data);
 	fclose(file);
 	return err;
 }

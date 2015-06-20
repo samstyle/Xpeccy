@@ -34,7 +34,7 @@ int loadSCL(Floppy* flp,const char* name) {
 	} else if (hd.files > 128) {
 		err = ERR_SCL_MANY;
 	} else {
-		flpFormat(flp);
+		diskFormat(flp);
 		memset(buf,0x00,0x1000);
 		scnt = 0x10;
 		bptr = buf;					// start of TRK0
@@ -55,11 +55,11 @@ int loadSCL(Floppy* flp,const char* name) {
 		buf[0x8e5] = (tmpa & 0xff);
 		buf[0x8e6] = ((tmpa & 0xff00) >> 8);
 		buf[0x8e7] = 0x10;			// trdos code
-		flpFormTRDTrack(flp,0,buf);
+		diskFormTRDTrack(flp,0,buf);
 		i = 1;
 		while (!feof(file) && (i < 168)) {
 			fread((char*)buf, 0x1000, 1, file);
-			flpFormTRDTrack(flp,i,buf);
+			diskFormTRDTrack(flp,i,buf);
 			i++;
 		}
 		flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
@@ -87,7 +87,7 @@ int saveSCL(Floppy* flp,const char* name) {
 	img[8] = 0;
 	dptr = img + 9;
 	for (i = 1; i < 9; i++) {
-		flpGetSectorData(flp,0,i,buf,256);
+		diskGetSectorData(flp,0,i,buf,256);
 		bptr = buf;
 		for (j = 0; j < 16; j++) {
 			if (*bptr == 0) {
@@ -112,7 +112,7 @@ int saveSCL(Floppy* flp,const char* name) {
 		tr = fplist[i].trk;
 		sc = fplist[i].sec;
 		for(j = 0; j < fplist[i].slen; j++) {
-			flpGetSectorData(flp,tr, sc + 1, dptr, 256);
+			diskGetSectorData(flp,tr, sc + 1, dptr, 256);
 			dptr += 256;
 			sc++;
 			if (sc > 15) {

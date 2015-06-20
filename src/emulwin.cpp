@@ -33,10 +33,10 @@ Z80EX_WORD pc,af,de,ix;
 unsigned char* blkData = NULL;
 int blk;
 
-static unsigned char screen[4096 * 4096 * 3];
+static unsigned char screen[2048 * 2048 * 3];
 
-static unsigned char scrn[1024 * 1024 * 3];
-static unsigned char prvScr[1024 * 1024 * 3];
+static unsigned char scrn[1024 * 512 * 3];
+static unsigned char prvScr[1024 * 512 * 3];
 
 // LEDS
 

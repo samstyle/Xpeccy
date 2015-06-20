@@ -1,12 +1,12 @@
 #include "../spectrum.h"
 #include <assert.h>
 
-// Profi ROM: 128,48,EXT,DOS
+// Profi ROM: EXT,DOS,128,48
 void prfMapMem(ZXComp* comp) {
 	if (comp->pDFFD & 0x10) {
 		memSetBank(comp->mem, MEM_BANK0, MEM_RAM, 0);
 	} else {
-		memSetBank(comp->mem, MEM_BANK0, MEM_ROM, (comp->dos ? 2 : 0) | (comp->rom ? 1 : 0));
+		memSetBank(comp->mem, MEM_BANK0, MEM_ROM, (comp->dos ? 0 : 2) | (comp->rom ? 1 : 0));
 	}
 	int bank = ((comp->pDFFD & 7) << 3) | (comp->p7FFD & 7);
 	memSetBank(comp->mem, MEM_BANK1, MEM_RAM, (comp->pDFFD & 0x08) ? bank : 5);
