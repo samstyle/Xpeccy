@@ -259,7 +259,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					doStep();
 					break;
 				case Qt::Key_F8:
-					if (!ui.dasmTable->hasFocus()) break;
+					// if (!ui.dasmTable->hasFocus()) break;
 					i = memRd(comp->mem, pc);
 					if (((i & 0xc7) == 0xc4) || (i == 0xcd)) {		// call
 						ptr = memGetFptr(comp->mem, pc + 3);
@@ -285,6 +285,13 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					} else {
 						doStep();
 					}
+					break;
+				case Qt::Key_F9:
+					if (!ui.dasmTable->hasFocus()) break;
+					i = ui.dasmTable->item(ui.dasmTable->currentRow(),0)->data(Qt::UserRole).toInt();
+					ptr = memGetFptr(comp->mem, i);
+					*ptr ^= MEM_BRK_TFETCH;
+					stop();
 					break;
 				case Qt::Key_F12:
 					zxReset(comp, RES_DEFAULT);
@@ -375,47 +382,54 @@ void DebugWin::fillFDC() {
 
 // z80 regs section
 
-const char flags[] = "SZ5H3PNC";
-
-QString flagString(int af) {
-	QString flag;
-	int i = 0;
-	while (i < 8) {
-		flag.append((af & 0x80) ? QString(flags[i]) : QString("."));
-		af <<= 1;
-		i++;
+void setCBFlag(QCheckBox* cb, int state) {
+	if ((cb->isChecked() && !state) || (!cb->isChecked() && state)) {
+		cb->setStyleSheet("background-color: rgb(200,255,200);");
+	} else {
+		cb->setStyleSheet("");
 	}
-	return flag;
+	cb->setChecked(state);
 }
 
 void DebugWin::fillFlags() {
 	Z80EX_WORD af = GETAF(comp->cpu);
-	ui.cbFS->setChecked(af & 0x80);
-	ui.cbFZ->setChecked(af & 0x40);
-	ui.cbF5->setChecked(af & 0x20);
-	ui.cbFH->setChecked(af & 0x10);
-	ui.cbF3->setChecked(af & 0x08);
-	ui.cbFP->setChecked(af & 0x04);
-	ui.cbFN->setChecked(af & 0x02);
-	ui.cbFC->setChecked(af & 0x01);
+	setCBFlag(ui.cbFS, af & 0x80);
+	setCBFlag(ui.cbFZ, af & 0x40);
+	setCBFlag(ui.cbF5, af & 0x20);
+	setCBFlag(ui.cbFH, af & 0x10);
+	setCBFlag(ui.cbF3, af & 0x08);
+	setCBFlag(ui.cbFP, af & 0x04);
+	setCBFlag(ui.cbFN, af & 0x02);
+	setCBFlag(ui.cbFC, af & 0x01);
+}
+
+void setLEReg(QLineEdit* le, int num) {
+	QString txt = gethexword(num);
+	if (le->text() == txt) {
+		le->setStyleSheet("");
+	} else {
+		le->setStyleSheet("background-color: rgb(200,255,200);");
+	}
+	le->setText(txt);
 }
 
 void DebugWin::fillZ80() {
 	block = true;
 	Z80EX_WORD af = GETAF(comp->cpu);
-	ui.editAF->setText(gethexword(af));
-	ui.editBC->setText(gethexword(GETBC(comp->cpu)));
-	ui.editDE->setText(gethexword(GETDE(comp->cpu)));
-	ui.editHL->setText(gethexword(GETHL(comp->cpu)));
-	ui.editAFa->setText(gethexword(GETAF_(comp->cpu)));
-	ui.editBCa->setText(gethexword(GETBC_(comp->cpu)));
-	ui.editDEa->setText(gethexword(GETDE_(comp->cpu)));
-	ui.editHLa->setText(gethexword(GETHL_(comp->cpu)));
-	ui.editPC->setText(gethexword(GETPC(comp->cpu)));
-	ui.editSP->setText(gethexword(GETSP(comp->cpu)));
-	ui.editIX->setText(gethexword(GETIX(comp->cpu)));
-	ui.editIY->setText(gethexword(GETIY(comp->cpu)));
-	ui.editIR->setText(gethexword(GETIR(comp->cpu)));
+	setLEReg(ui.editAF, af);
+	setLEReg(ui.editBC, GETBC(comp->cpu));
+	setLEReg(ui.editDE, GETDE(comp->cpu));
+	setLEReg(ui.editHL, GETHL(comp->cpu));
+	setLEReg(ui.editAFa, GETAF_(comp->cpu));
+	setLEReg(ui.editBCa, GETBC_(comp->cpu));
+	setLEReg(ui.editDEa, GETDE_(comp->cpu));
+	setLEReg(ui.editHLa, GETHL_(comp->cpu));
+	setLEReg(ui.editPC, GETPC(comp->cpu));
+	setLEReg(ui.editSP, GETSP(comp->cpu));
+	setLEReg(ui.editIX, GETIX(comp->cpu));
+	setLEReg(ui.editIY, GETIY(comp->cpu));
+	setLEReg(ui.editIR, GETIR(comp->cpu));
+
 	ui.boxIM->setValue(GETIM(comp->cpu));
 	ui.flagIFF1->setChecked(GETIFF1(comp->cpu));
 	ui.flagIFF2->setChecked(GETIFF1(comp->cpu));
@@ -438,7 +452,7 @@ void DebugWin::setFlags() {
 	if (ui.cbFN->isChecked()) af |= 0x02;
 	if (ui.cbFC->isChecked()) af |= 0x01;
 	SETAF(comp->cpu, af);
-	ui.editAF->setText(gethexword(af));
+	setLEReg(ui.editAF, af);
 }
 
 void DebugWin::setZ80() {
