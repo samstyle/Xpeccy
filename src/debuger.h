@@ -17,15 +17,6 @@
 #include "ui_debuger.h"
 #include "libxpeccy/spectrum.h"
 
-#define DASMROW 26
-#define DMPSIZE 16
-
-struct DasmRow {
-	ushort adr;
-	QString bytes;
-	QString com;
-};
-
 struct xLabel {
 	int bank;
 	int adr;
@@ -91,7 +82,7 @@ class DebugWin : public QDialog {
 		void fillFlags();
 		void fillMem();
 		void fillDump();
-		bool fillDisasm();
+		int fillDisasm();
 		void fillStack();
 		void fillFDC();
 		void fillRZX();

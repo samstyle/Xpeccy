@@ -198,7 +198,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					break;
 				case Qt::Key_Z:
 					if (!ui.dasmTable->hasFocus()) break;
-					SETPC(comp->cpu, ui.dasmTable->item(ui.dasmTable->currentRow(), 0)->text().toInt(NULL,16));
+					SETPC(comp->cpu, ui.dasmTable->item(ui.dasmTable->currentRow(), 0)->data(Qt::UserRole).toInt());
 					fillZ80();
 					fillDisasm();
 					break;
@@ -384,7 +384,7 @@ void DebugWin::fillFDC() {
 
 void setCBFlag(QCheckBox* cb, int state) {
 	if ((cb->isChecked() && !state) || (!cb->isChecked() && state)) {
-		cb->setStyleSheet("background-color: rgb(200,255,200);");
+		cb->setStyleSheet("background-color: rgb(160,255,160);");
 	} else {
 		cb->setStyleSheet("");
 	}
@@ -408,7 +408,7 @@ void setLEReg(QLineEdit* le, int num) {
 	if (le->text() == txt) {
 		le->setStyleSheet("");
 	} else {
-		le->setStyleSheet("background-color: rgb(200,255,200);");
+		le->setStyleSheet("background-color: rgb(160,255,160);");
 	}
 	le->setText(txt);
 }
@@ -453,6 +453,7 @@ void DebugWin::setFlags() {
 	if (ui.cbFC->isChecked()) af |= 0x01;
 	SETAF(comp->cpu, af);
 	setLEReg(ui.editAF, af);
+	fillDisasm();
 }
 
 void DebugWin::setZ80() {
@@ -476,6 +477,7 @@ void DebugWin::setZ80() {
 	SETIFF2(comp->cpu, ui.flagIFF2->isChecked());
 	fillFlags();
 	fillStack();
+	fillDisasm();
 }
 
 // memory map section
@@ -499,9 +501,52 @@ Z80EX_BYTE rdbyte(Z80EX_WORD adr, void* ptr) {
 	return memRd(((ZXComp*)ptr)->mem,adr);
 }
 
+#define DASMROW 26
+#define DMPSIZE 16
+
+struct DasmRow {
+	Z80EX_WORD adr;
+	unsigned ispc:1;	// if adr=PC
+	unsigned cond:1;	// if there is condition command (JR, JP, CALL, RET) and condition met
+	QByteArray bytes;
+	QString com;
+};
+
+int checkCond(ZXComp* comp, int num) {
+	int res = 0;
+	Z80EX_BYTE flg = GETAF(comp->cpu) & 0xff;
+	switch (num) {
+		case 0: res = (flg & FZ) ? 0 : 1; break;	// NZ
+		case 1: res = (flg & FZ) ? 1 : 0; break;	// Z
+		case 2: res = (flg & FC) ? 0 : 1; break;	// NC
+		case 3: res = (flg & FC) ? 1 : 0; break;	// C
+		case 4: res = (flg & FP) ? 0 : 1; break;	// PO
+		case 5: res = (flg & FP) ? 1 : 0; break;	// PE
+		case 6: res = (flg & FS) ? 0 : 1; break;	// N
+		case 7: res = (flg & FS) ? 1 : 0; break;	// M
+	}
+	return res;
+}
+
 DasmRow getDisasm(ZXComp* comp, Z80EX_WORD& adr) {
 	DasmRow drow;
 	drow.adr = adr;
+	drow.ispc = (GETPC(comp->cpu) == adr) ? 1 : 0;	// check if this is PC
+	Z80EX_BYTE bt = memRd(comp->mem, adr);		// check conditions
+	drow.cond = 0;
+	if (drow.ispc) {
+		if (bt == 0x10) {			// djnz $+e
+			drow.cond = ((GETBC(comp->cpu) & 0xff00) == 0x0100) ? 1 : 0;
+		} else if ((bt & 0xe7) == 0x20) {	// jr cnd,$+e
+			drow.cond = checkCond(comp, (bt & 0x18) >> 3);
+		} else if ((bt & 0xc7) == 0xc0) {	// ret cnd
+			drow.cond = checkCond(comp, (bt & 0x38) >> 3);
+		} else if ((bt & 0xc7) == 0xc2) {	// jp cnd,adr
+			drow.cond = checkCond(comp, (bt & 0x38) >> 3);
+		} else if ((bt & 0xc7) == 0xc4) {	// call cnd,adr
+			drow.cond = checkCond(comp, (bt & 0x38) >> 3);
+		}
+	}
 	drow.bytes.clear();
 	drow.com.clear();
 	char buf[256];
@@ -514,7 +559,7 @@ DasmRow getDisasm(ZXComp* comp, Z80EX_WORD& adr) {
 #endif
 	drow.com = QString(buf).toUpper();
 	while (clen > 0) {
-		drow.bytes.append(gethexbyte(memRd(comp->mem,adr)));
+		drow.bytes.append(memRd(comp->mem,adr));
 		clen--;
 		adr++;
 	}
@@ -531,34 +576,18 @@ xLabel* DebugWin::findLabel(int adr) {
 	return NULL;
 }
 
-bool DebugWin::fillDisasm() {
+int DebugWin::fillDisasm() {
 	block = true;
 	Z80EX_WORD adr = disasmAdr;
-	Z80EX_WORD pc = GETPC(comp->cpu);
+	// Z80EX_WORD pc = GETPC(comp->cpu);
 	DasmRow drow;
 	QColor bgcol,acol;
 	xLabel* lab = NULL;
 	QFont fnt = ui.dasmTable->font();
 	int pos;
+	int res = 0;
 	fnt.setBold(true);
-	bool res = false;
 	for (int i = 0; i < ui.dasmTable->rowCount(); i++) {
-		bgcol = (adr == pc) ? QColor(32,200,32) : QColor(255,255,255);
-		acol = (*memGetFptr(comp->mem, adr) & MEM_BRK_ANY) ? QColor(200,64,64) : bgcol;
-		if (adr == pc) res = true;
-		ui.dasmTable->item(i, 0)->setData(Qt::UserRole, adr);
-		ui.dasmTable->item(i, 0)->setBackgroundColor(acol);
-		ui.dasmTable->item(i, 1)->setBackgroundColor(bgcol);
-		ui.dasmTable->item(i, 2)->setBackgroundColor(bgcol);
-		lab = findLabel(adr);
-		if (lab) {
-			fnt.setBold(true);
-			ui.dasmTable->item(i, 0)->setText(lab->name);
-		} else {
-			fnt.setBold(false);
-			ui.dasmTable->item(i, 0)->setText(gethexword(adr));
-		}
-		ui.dasmTable->item(i, 0)->setFont(fnt);
 		drow = getDisasm(comp, adr);
 		pos = drow.com.indexOf(QRegExp("[0-9A-F]{4,4}"));
 		if (pos > -1) {
@@ -567,7 +596,28 @@ bool DebugWin::fillDisasm() {
 				drow.com.replace(pos, 4, lab->name);
 			}
 		}
-		ui.dasmTable->item(i, 1)->setText(drow.bytes);
+		res |= drow.ispc;
+		bgcol = drow.ispc ? QColor(32,200,32) : QColor(255,255,255);;
+		acol = (*memGetFptr(comp->mem, drow.adr) & MEM_BRK_ANY) ? QColor(200,64,64) : bgcol;
+		ui.dasmTable->item(i, 0)->setData(Qt::UserRole, drow.adr);
+		ui.dasmTable->item(i, 0)->setBackgroundColor(acol);
+		ui.dasmTable->item(i, 1)->setBackgroundColor(bgcol);
+		ui.dasmTable->item(i, 2)->setBackgroundColor(bgcol);
+		lab = findLabel(drow.adr);
+		if (lab) {
+			fnt.setBold(true);
+			ui.dasmTable->item(i, 0)->setText(lab->name);
+		} else {
+			fnt.setBold(false);
+			ui.dasmTable->item(i, 0)->setText(gethexword(drow.adr));
+		}
+		ui.dasmTable->item(i, 0)->setFont(fnt);
+		QString str;
+		foreach(pos, drow.bytes)
+			str.append(gethexbyte(pos));
+		ui.dasmTable->item(i, 1)->setText(str);
+		fnt.setBold(drow.cond);
+		ui.dasmTable->item(i, 2)->setFont(fnt);
 		ui.dasmTable->item(i, 2)->setText(drow.com);
 	}
 	fillStack();
