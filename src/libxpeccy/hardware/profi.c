@@ -16,16 +16,17 @@ void prfMapMem(ZXComp* comp) {
 
 // out
 
+const unsigned char prfColB[4] = {0,73,146,255};
 const unsigned char prfColTab[8] = {0,36,73,109,146,182,218,255};
 
 void prfOutPal(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	if (comp->pDFFD & 0x80) {
 		if (comp->profi.trig7E) {
 			xColor col;
-			int hi = ((port & 0xff00) >> 7);
-			col.b = prfColTab[hi & 7];
-			col.r = prfColTab[(hi & 0x38) >> 3];
-			col.g = prfColTab[(hi & 0x1c0) >> 6];
+			int hi = ((port & 0xff00) >> 8);
+			col.b = prfColB[hi & 3];
+			col.r = prfColTab[(hi & 0x1c) >> 2];
+			col.g = prfColTab[(hi & 0xe0) >> 5];
 			comp->vid->pal[comp->profi.p7E] = col;
 		} else {
 			comp->profi.p7E = val & 15;

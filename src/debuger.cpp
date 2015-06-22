@@ -574,7 +574,7 @@ DasmRow getDisasm(ZXComp* comp, Z80EX_WORD& adr) {
 		if (drow.com.endsWith("(HL)") && !drow.com.startsWith("JP")) {
 			drow.mem = 1;
 			drow.mop = memRd(comp->mem, GETHL(comp->cpu));
-		} else if (drow.com.size() > 3) {
+		} else if (drow.com.size() > 6) {
 			bt = drow.bytes.at(clen - 1);
 			if (clen > 2) {
 				if ((unsigned char)drow.bytes.at(clen - 3) == 0xcb)
