@@ -508,6 +508,8 @@ struct DasmRow {
 	Z80EX_WORD adr;
 	unsigned ispc:1;	// if adr=PC
 	unsigned cond:1;	// if there is condition command (JR, JP, CALL, RET) and condition met
+	unsigned mem:1;
+	unsigned char mop;
 	QByteArray bytes;
 	QString com;
 };
@@ -532,21 +534,6 @@ DasmRow getDisasm(ZXComp* comp, Z80EX_WORD& adr) {
 	DasmRow drow;
 	drow.adr = adr;
 	drow.ispc = (GETPC(comp->cpu) == adr) ? 1 : 0;	// check if this is PC
-	Z80EX_BYTE bt = memRd(comp->mem, adr);		// check conditions
-	drow.cond = 0;
-	if (drow.ispc) {
-		if (bt == 0x10) {			// djnz $+e
-			drow.cond = ((GETBC(comp->cpu) & 0xff00) == 0x0100) ? 1 : 0;
-		} else if ((bt & 0xe7) == 0x20) {	// jr cnd,$+e
-			drow.cond = checkCond(comp, (bt & 0x18) >> 3);
-		} else if ((bt & 0xc7) == 0xc0) {	// ret cnd
-			drow.cond = checkCond(comp, (bt & 0x38) >> 3);
-		} else if ((bt & 0xc7) == 0xc2) {	// jp cnd,adr
-			drow.cond = checkCond(comp, (bt & 0x38) >> 3);
-		} else if ((bt & 0xc7) == 0xc4) {	// call cnd,adr
-			drow.cond = checkCond(comp, (bt & 0x38) >> 3);
-		}
-	}
 	drow.bytes.clear();
 	drow.com.clear();
 	char buf[256];
@@ -558,10 +545,49 @@ DasmRow getDisasm(ZXComp* comp, Z80EX_WORD& adr) {
 	clen = z80ex_dasm(buf,256,0,&t1,&t2,&rdbyte,adr,comp);
 #endif
 	drow.com = QString(buf).toUpper();
-	while (clen > 0) {
+	for (int i = 0; i < clen; i++) {
 		drow.bytes.append(memRd(comp->mem,adr));
-		clen--;
 		adr++;
+	}
+	drow.mem = 0;
+	drow.cond = 0;
+	if (drow.ispc) {
+		Z80EX_BYTE bt;		// check conditions
+		if (clen > 2) {
+			bt = drow.bytes.at(clen - 3);		// jp, call
+			if (((bt & 0xc7) == 0xc2) || ((bt & 0xc7) == 0xc4)) {
+				drow.cond = checkCond(comp, (bt & 0x38) >> 3);
+			}
+		} else if (clen > 1) {
+			bt = drow.bytes.at(clen - 2);
+			if (bt == 0x10) {			// djnz
+				drow.cond = ((GETBC(comp->cpu) & 0xff00) == 0x0100) ? 1 : 0;
+			} else if ((bt & 0xe7) == 0x20) {	// jr
+				drow.cond = checkCond(comp, (bt & 0x18) >> 3);
+			}
+		} else {
+			bt = drow.bytes.at(clen - 1);
+			if ((bt & 0xc7) == 0xc0) {		// ret
+				drow.cond = checkCond(comp, (bt & 0x38) >> 3);
+			}
+		}
+		if (drow.com.endsWith("(HL)") && !drow.com.startsWith("JP")) {
+			drow.mem = 1;
+			drow.mop = memRd(comp->mem, GETHL(comp->cpu));
+		} else if (drow.com.size() > 3) {
+			bt = drow.bytes.at(clen - 1);
+			if (clen > 2) {
+				if ((unsigned char)drow.bytes.at(clen - 3) == 0xcb)
+					bt = drow.bytes.at(clen - 2);
+			}
+			if (drow.com.indexOf("(IX") == (drow.com.size() - 7)) {
+				drow.mem = 1;
+				drow.mop = memRd(comp->mem, 0xffff & (GETIX(comp->cpu) + (signed char)bt));
+			} else if (drow.com.indexOf("(IY") == (drow.com.size() - 7)) {
+				drow.mem = 1;
+				drow.mop = memRd(comp->mem, 0xffff & (GETIY(comp->cpu) + (signed char)bt));
+			}
+		}
 	}
 	return drow;
 }
@@ -616,8 +642,12 @@ int DebugWin::fillDisasm() {
 		foreach(pos, drow.bytes)
 			str.append(gethexbyte(pos));
 		ui.dasmTable->item(i, 1)->setText(str);
-		fnt.setBold(drow.cond);
-		ui.dasmTable->item(i, 2)->setFont(fnt);
+		if (drow.cond) {
+			drow.com.append(" [+]");
+		}
+		if (drow.mem) {
+			drow.com.append(" [").append(gethexbyte(drow.mop)).append("]");
+		}
 		ui.dasmTable->item(i, 2)->setText(drow.com);
 	}
 	fillStack();
