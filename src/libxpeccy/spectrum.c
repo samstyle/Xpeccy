@@ -11,7 +11,7 @@ int res1 = 0;
 int res2 = 0;
 int res3 = 0;	// tick in op, wich has last OUT/MWR (and vidSync)
 int res4 = 0;	// save last res3 (vidSync on OUT/MWR process do res3-res4 ticks)
-int res5 = 0;	// ticks ated by slow mem?
+//int res5 = 0;	// ticks ated by slow mem?
 Z80EX_WORD pcreg;
 
 // port decoding tables

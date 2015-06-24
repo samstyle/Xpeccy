@@ -22,37 +22,20 @@ extern "C" {
 #define	FLP_BACK	0
 #define	FLP_FORWARD	1
 
-/*
 typedef struct {
-	unsigned char cyl;
-	unsigned char side;
-	unsigned char sec;
-	unsigned char len;
-	unsigned char* data;
-	unsigned char type;
-	int crc;
-	int flag;
-} Sector;
-*/
-
-typedef struct {
-	unsigned insert:1;
-	unsigned protect:1;
-	unsigned trk80:1;
-	unsigned doubleSide:1;
-	unsigned index:1;
-	unsigned motor:1;
-	unsigned head:1;
-	unsigned changed:1;
-	unsigned side:1;
-	unsigned virt:1;
+	unsigned trk80:1;	// fdd is 80T
+	unsigned doubleSide:1;	// fdd is DS
+	unsigned motor:1;	// fdd motor is on
+	unsigned virt:1;	// fdd is virtual
+	unsigned insert:1;	// disk inserted
+	unsigned protect:1;	// disk is write protected
+	unsigned changed:1;	// disk is changed
+	unsigned index:1;	// disk index impulse
 
 	unsigned char id;
-	unsigned char iback;
 	unsigned char trk,rtrk;
 	unsigned char field;
 	int pos;
-	unsigned int ti;
 	char* path;
 	struct {
 		unsigned char byte[TRACKLEN];
@@ -81,8 +64,6 @@ void flpClearTrack(Floppy*,int);
 void flpClearDisk(Floppy*);
 
 unsigned short getCrc(unsigned char*, int);
-
-// trdos specific TODO:move somewhere else
 
 #ifdef __cplusplus
 }

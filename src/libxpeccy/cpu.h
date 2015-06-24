@@ -106,7 +106,7 @@
 	#define SETIM(prc,num) z80ex_set_reg(prc,regIM,num)
 #endif
 
-#define GETIR(prc) ((GETI(prc) << 8) | (GETR(prc) & 0xff) | (GETR7(prc)))
+#define GETIR(prc) ((GETI(prc) << 8) | (GETR(prc) & 0x7f) | (GETR7(prc)))
 #define SETIR(prc,num) SETI(prc, ((num) >> 8) & 0xff); SETR(prc, (num) & 0xff)
 
 #endif

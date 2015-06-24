@@ -311,7 +311,7 @@ void SetupWin::start(xProfile* p) {
 	for (i=0; i<layList.size(); i++) {
 		ui.geombox->addItem(QString::fromLocal8Bit(layList[i].name.c_str()));
 	}
-	ui.geombox->setCurrentIndex(ui.geombox->findText(QString::fromLocal8Bit(findProfile("")->layName.c_str())));
+	ui.geombox->setCurrentIndex(ui.geombox->findText(QString::fromLocal8Bit(conf.curProf->layName.c_str())));
 	ui.ulaPlus->setChecked(comp->vid->ula->enabled);
 // sound
 	ui.senbox->setChecked(conf.snd.enabled);
