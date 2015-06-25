@@ -101,6 +101,7 @@ class MainWin : public QWidget {
 		void updateHead();
 		void emuDraw();
 		void screenShot();
+		void putLeds();
 		void convImage();
 
 		QMenu* userMenu;

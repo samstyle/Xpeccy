@@ -307,9 +307,11 @@ void SetupWin::start(xProfile* p) {
 	ui.ssfbox->setCurrentIndex(ui.ssfbox->findText(conf.scrShot.format.c_str()));
 	ui.scntbox->setValue(conf.scrShot.count);
 	ui.sintbox->setValue(conf.scrShot.interval);
+	ui.ssNoLeds->setChecked(conf.scrShot.noLeds);
+	ui.ssNoBord->setChecked(conf.scrShot.noBorder);
 	ui.geombox->clear();
-	for (i=0; i<layList.size(); i++) {
-		ui.geombox->addItem(QString::fromLocal8Bit(layList[i].name.c_str()));
+	foreach(xLayout lay, layList) {
+		ui.geombox->addItem(QString::fromLocal8Bit(lay.name.c_str()));
 	}
 	ui.geombox->setCurrentIndex(ui.geombox->findText(QString::fromLocal8Bit(conf.curProf->layName.c_str())));
 	ui.ulaPlus->setChecked(comp->vid->ula->enabled);
@@ -438,6 +440,8 @@ void SetupWin::apply() {
 	conf.scrShot.format = getRFText(ui.ssfbox); // std::string(ui.ssfbox->currentText().toLocal8Bit().data());
 	conf.scrShot.count = ui.scntbox->value();
 	conf.scrShot.interval = ui.sintbox->value();
+	conf.scrShot.noLeds = ui.ssNoLeds->isChecked() ? 1 : 0;
+	conf.scrShot.noBorder = ui.ssNoBord->isChecked() ? 1 : 0;
 	conf.brdsize = ui.bszsld->value()/100.0;
 	comp->vid->border4t = ui.border4T->isChecked() ? 1 : 0;
 	comp->contMem = ui.contMem->isChecked() ? 1 : 0;

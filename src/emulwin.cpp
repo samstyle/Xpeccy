@@ -315,7 +315,10 @@ void MainWin::onTimer() {
 		keyRelease(comp->keyb,0xff,0);
 		comp->mouse->buttons = 0xff;
 	}
+
 // take screenshot
+	convImage();
+	if (!conf.scrShot.noLeds) putLeds();
 	if (scrCounter > 0) {
 		if (scrInterval > 0) {
 			scrInterval--;
@@ -325,8 +328,8 @@ void MainWin::onTimer() {
 			scrInterval = conf.scrShot.interval;
 		}
 	}
+	if (conf.scrShot.noLeds) putLeds();
 // update window
-	convImage();
 	if (pauseFlags == 0) ethread.mtx.unlock();
 	emuDraw();
 }
@@ -767,7 +770,8 @@ void MainWin::screenShot() {
 	fnams.append(QTime::currentTime().toString("HHmmss_zzz")).append(".").append(QString(fext.c_str()));
 	std::string fnam(fnams.toUtf8().data());
 	std::ofstream file;
-	QImage *img = new QImage(screen, width(), height(), QImage::Format_RGB888);
+	QImage img(screen, width(), height(), QImage::Format_RGB888);
+	int x,y,dx,dy;
 	char pageBuf[0x4000];
 	memGetPage(comp->mem,MEM_RAM,comp->vid->curscr,pageBuf);
 	switch (frm) {
@@ -785,7 +789,15 @@ void MainWin::screenShot() {
 		case SCR_BMP:
 		case SCR_JPG:
 		case SCR_PNG:
-			if (img != NULL) img->save(QString(fnam.c_str()),fext.c_str());
+			if (img.isNull()) break;
+			if (conf.scrShot.noBorder) {
+				x = (comp->vid->bord.h - comp->vid->lcut.h) * conf.vid.scale;
+				y = (comp->vid->bord.v - comp->vid->lcut.v) * conf.vid.scale;
+				dx = 256 * conf.vid.scale;
+				dy = 192 * conf.vid.scale;
+				img = img.copy(x, y, dx, dy);
+			}
+			img.save(QString(fnam.c_str()),fext.c_str());
 			break;
 	}
 }
@@ -797,6 +809,30 @@ void drawLed(int idx, QPainter& pnt) {
 		leds[idx].showTime--;
 		pnt.drawImage(leds[idx].x, leds[idx].y, QImage(leds[idx].imgName));
 	}
+}
+
+void MainWin::putLeds() {
+	QPainter pnt;
+	QImage kled(":/images/scanled.png");
+	if (conf.led.keys) {
+		pnt.begin(&kled);
+		unsigned char prt = ~comp->keyb->port;
+		comp->keyb->port = 0xff;
+		if (prt & 0x01) pnt.fillRect(3,17,8,2,Qt::white);
+		if (prt & 0x02) pnt.fillRect(3,14,8,2,Qt::white);
+		if (prt & 0x04) pnt.fillRect(3,11,8,2,Qt::white);
+		if (prt & 0x08) pnt.fillRect(3,8,8,2,Qt::white);
+		if (prt & 0x10) pnt.fillRect(12,8,8,2,Qt::white);
+		if (prt & 0x20) pnt.fillRect(12,11,8,2,Qt::white);
+		if (prt & 0x40) pnt.fillRect(12,14,8,2,Qt::white);
+		if (prt & 0x80) pnt.fillRect(12,17,8,2,Qt::white);
+		pnt.end();
+	}
+	pnt.begin(&scrImg);
+	if (conf.led.mouse) drawLed(0,pnt);
+	if (conf.led.joy) drawLed(1,pnt);
+	if (conf.led.keys) pnt.drawImage(3,3,kled);
+	pnt.end();
 }
 
 void MainWin::emuDraw() {
@@ -822,28 +858,6 @@ void MainWin::emuDraw() {
 			comp->tape->newBlock = 0;
 		}
 	}
-// leds
-	QPainter pnt;
-	QImage kled(":/images/scanled.png");
-	if (conf.led.keys) {
-		pnt.begin(&kled);
-		unsigned char prt = ~comp->keyb->port;
-		comp->keyb->port = 0xff;
-		if (prt & 0x01) pnt.fillRect(3,17,8,2,Qt::white);
-		if (prt & 0x02) pnt.fillRect(3,14,8,2,Qt::white);
-		if (prt & 0x04) pnt.fillRect(3,11,8,2,Qt::white);
-		if (prt & 0x08) pnt.fillRect(3,8,8,2,Qt::white);
-		if (prt & 0x10) pnt.fillRect(12,8,8,2,Qt::white);
-		if (prt & 0x20) pnt.fillRect(12,11,8,2,Qt::white);
-		if (prt & 0x40) pnt.fillRect(12,14,8,2,Qt::white);
-		if (prt & 0x80) pnt.fillRect(12,17,8,2,Qt::white);
-		pnt.end();
-	}
-	pnt.begin(&scrImg);
-	if (conf.led.mouse) drawLed(0,pnt);
-	if (conf.led.joy) drawLed(1,pnt);
-	if (conf.led.keys) pnt.drawImage(3,3,kled);
-	pnt.end();
 // ...
 	update();
 }

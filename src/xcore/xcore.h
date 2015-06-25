@@ -96,6 +96,8 @@ struct xConfig {
 		unsigned fast:1;
 	} tape;
 	struct {
+		unsigned noLeds:1;
+		unsigned noBorder:1;
 		int count;
 		int interval;
 		std::string format;

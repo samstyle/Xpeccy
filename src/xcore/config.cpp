@@ -100,6 +100,8 @@ void saveConfig() {
 	fprintf(cfile, "scrFormat = %s\n", conf.scrShot.format.c_str());
 	fprintf(cfile, "scrCount = %i\n", conf.scrShot.count);
 	fprintf(cfile, "scrInterval = %i\n", conf.scrShot.interval);
+	fprintf(cfile, "scrNoLeds = %s\n", YESNO(conf.scrShot.noLeds));
+	fprintf(cfile, "scrNoBord = %s\n", YESNO(conf.scrShot.noBorder));
 	fprintf(cfile, "fullscreen = %s\n", YESNO(conf.vid.fullScreen));
 	fprintf(cfile, "scale = %i\n", conf.vid.scale);
 	fprintf(cfile, "greyscale = %s\n", YESNO(conf.vid.grayScale));
@@ -271,6 +273,8 @@ void loadConfig() {
 							} else {
 								vlay.intpos.h = 0;
 							}
+							if (vlay.full.h > 512) vlay.full.h = 512;
+							if (vlay.full.v > 512) vlay.full.v = 512;
 							if (vlay.full.h < vlay.bord.h + 256) vlay.full.h = vlay.bord.h + 256;
 							if (vlay.sync.h > vlay.bord.h) vlay.sync.h = vlay.bord.h;
 							if (vlay.full.v < vlay.bord.v + 192) vlay.full.v = vlay.bord.v + 256;
@@ -282,6 +286,8 @@ void loadConfig() {
 					if (pnam=="scrFormat") conf.scrShot.format = pval;
 					if (pnam=="scrCount") conf.scrShot.count = atoi(pval.c_str());
 					if (pnam=="scrInterval") conf.scrShot.interval = atoi(pval.c_str());
+					if (pnam=="scrNoLeds") conf.scrShot.noLeds = str2bool(pval) ? 1 : 0;
+					if (pnam=="scrNoBord") conf.scrShot.noBorder = str2bool(pval) ? 1 : 0;
 					if (pnam=="fullscreen") conf.vid.fullScreen = str2bool(pval) ? 1 : 0;
 					if (pnam=="bordersize") conf.brdsize = getRanged(pval.c_str(), 0, 100) / 100.0;
 					if (pnam=="doublesize") conf.vid.scale = str2bool(pval) ? 2 : 1;
