@@ -22,6 +22,7 @@ void DebugWin::start(ZXComp* c) {
 		disasmAdr = GETPC(comp->cpu);
 		fillAll();
 	}
+	vidDarkTail(comp->vid);
 	move(winPos);
 	show();
 	ui.dasmTable->setFocus();
