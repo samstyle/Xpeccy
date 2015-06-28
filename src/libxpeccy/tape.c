@@ -33,6 +33,10 @@ void blkClear(TapeBlock *blk) {
 	blk->sigCount = 0;
 	if(blk->sigData) free(blk->sigData);
 	blk->sigData = NULL;
+	blk->breakPoint = 0;
+	blk->isHeader = 0;
+	blk->hasBytes = 0;
+	blk->dataPos = -1;
 }
 
 // add signal (1 level change)
@@ -46,7 +50,7 @@ void blkAddPulse(TapeBlock* blk, int len) {
 
 // add pause. duration in ms
 void blkAddPause(TapeBlock* blk, int len) {
-	blkAddPulse(blk,len * MSDOTS);
+	blkAddPulse(blk,len * MSDOTS * 2);
 }
 
 // add pulse (2 signals)
@@ -438,6 +442,7 @@ void tapAddFile(Tape* tap, const char* nm, int tp, unsigned short st, unsigned s
 }
 
 void tapAddBlock(Tape* tap, TapeBlock block) {
+	if (block.sigCount == 0) return;
 	TapeBlock blk = block;
 	blk.sigData = (int*)malloc(blk.sigCount * sizeof(int));
 	memcpy(blk.sigData,block.sigData,blk.sigCount * sizeof(int));

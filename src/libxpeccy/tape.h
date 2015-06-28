@@ -30,7 +30,7 @@ typedef struct {
 	unsigned hasBytes:1;
 	unsigned isHeader:1;
 
-	int size;
+//	int size;
 //	int pause;
 	int plen;
 	int s1len;

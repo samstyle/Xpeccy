@@ -139,6 +139,7 @@ int loadSPG(ZXComp*,const char*);
 
 int loadTAP(Tape*,const char*);
 int saveTAP(Tape*,const char*);
+void blkFromData(TapeBlock*, char*, int, int*);
 TapeBlock tapDataToBlock(char*,int,int*);
 
 int loadTZX(Tape*,const char*);

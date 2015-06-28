@@ -1,34 +1,38 @@
 #include <stdlib.h>
 #include "filetypes.h"
 
-TapeBlock tapDataToBlock(char* data,int len,int* sigLens) {
-	TapeBlock block;
+void blkFromData(TapeBlock* blk, char* data, int len, int* sigLens) {
 	int i;
 	char* ptr = data;
-	char tmp = data[0];		// block type
-	block.plen = sigLens[0];
-	block.s1len = sigLens[1];
-	block.s2len = sigLens[2];
-	block.len0 = sigLens[3];
-	block.len1 = sigLens[4];
-	block.pdur = (sigLens[6] == -1) ? ((tmp == 0) ? 8063 : 3223) : sigLens[6];
-	block.breakPoint = 0;
-	block.hasBytes = 1;
-	block.isHeader = (tmp == 0) ? 1 : 0;
-	block.sigCount = 0;
-	block.sigData = NULL;
-	//block.data.clear();
-	for (i = 0; i < (int)block.pdur; i++)
-		blkAddPulse(&block,block.plen);
-	if (block.s1len != 0)
-		blkAddPulse(&block,block.s1len);
-	if (block.s2len != 0)
-		blkAddPulse(&block,block.s2len);
-	block.dataPos = block.sigCount;
+	char tmp = data[0];		// block type (00:head, xx:data)
+	blkClear(blk);
+	blk->plen = sigLens[0];
+	blk->s1len = sigLens[1];
+	blk->s2len = sigLens[2];
+	blk->len0 = sigLens[3];
+	blk->len1 = sigLens[4];
+	blk->pdur = (sigLens[6] == -1) ? ((tmp == 0) ? 8063 : 3223) : sigLens[6];
+	blk->breakPoint = 0;
+	blk->hasBytes = 1;
+	blk->isHeader = (tmp == 0) ? 1 : 0;
+	for (i = 0; i < (int)blk->pdur; i++)
+		blkAddPulse(blk, blk->plen);
+	if (blk->s1len)
+		blkAddPulse(blk, blk->s1len);
+	if (blk->s2len)
+		blkAddPulse(blk, blk->s2len);
+	blk->dataPos = blk->sigCount;
 	for (i = 0; i < len; i++) {
-		blkAddByte(&block,*ptr,0,0);
+		blkAddByte(blk,*ptr,0,0);
 		ptr++;
 	}
+}
+
+TapeBlock tapDataToBlock(char* data,int len,int* sigLens) {
+	TapeBlock block;
+	block.sigCount = 0;
+	block.sigData = NULL;
+	blkFromData(&block, data, len, sigLens);
 //	printf("tapDataToBlock: %i bytes -> %i signals\t datapos = %i\n",len,block.sigCount,block.dataPos);
 	return block;
 }
