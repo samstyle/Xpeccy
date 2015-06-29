@@ -739,6 +739,27 @@ void vidProfiScr(Video* vid) {
 
 // weiter
 
+typedef struct {
+	int id;
+	void(*callback)(Video*);
+} xVideoMode;
+
+xVideoMode vidModeTab[] = {
+	{VID_NORMAL, vidDrawNormal},
+	{VID_ALCO, vidDrawAlco},
+	{VID_HWMC, vidDrawHwmc},
+	{VID_ATM_EGA, vidDrawATMega},
+	{VID_ATM_TEXT, vidDrawATMtext},
+	{VID_ATM_HWM, vidDrawATMhwmc},
+	{VID_EVO_TEXT, vidDrawEvoText},
+	{VID_TSL_NORMAL, vidDrawTSLNormal},
+	{VID_TSL_16, vidDrawTSL16},
+	{VID_TSL_256, vidDrawTSL256},
+	{VID_TSL_TEXT, vidDrawTSLText},
+	{VID_PRF_MC, vidProfiScr},
+	{VID_UNKNOWN, vidDrawBorder}
+};
+
 void vidSetMode(Video* vid, int mode) {
 	if (mode == VID_CURRENT) {
 		mode = vid->vmode;
@@ -748,21 +769,14 @@ void vidSetMode(Video* vid, int mode) {
 	if (vid->noScreen) {
 		vid->callback = &vidDrawBorder;
 	} else {
-		switch(mode) {
-			case VID_NORMAL: vid->callback = &vidDrawNormal; break;
-			case VID_ALCO: vid->callback = &vidDrawAlco; break;
-			case VID_HWMC: vid->callback = &vidDrawHwmc; break;
-			case VID_ATM_EGA: vid->callback = &vidDrawATMega; break;
-			case VID_ATM_TEXT: vid->callback = &vidDrawATMtext; break;
-			case VID_ATM_HWM: vid->callback = &vidDrawATMhwmc; break;
-			case VID_EVO_TEXT: vid->callback = &vidDrawEvoText; break;
-			case VID_TSL_NORMAL: vid->callback = &vidDrawTSLNormal; break;
-			case VID_TSL_16: vid->callback = &vidDrawTSL16; break;
-			case VID_TSL_256: vid->callback = &vidDrawTSL256; break;
-			case VID_TSL_TEXT: vid->callback = &vidDrawTSLText; break;
-			case VID_PRF_MC: vid->callback = &vidProfiScr; break;
-			default: vid->callback = &vidDrawBorder; break;
-		}
+		int i = 0;
+		do {
+			if ((vidModeTab[i].id == VID_UNKNOWN) || (vidModeTab[i].id == mode)) {
+				vid->callback = vidModeTab[i].callback;
+				i = -2;
+			}
+			i++;
+		} while (i > 0);
 	}
 }
 
