@@ -410,6 +410,7 @@ void SetupWin::start(xProfile* p) {
 	ui.cbMouseLed->setChecked(conf.led.mouse);
 	ui.cbJoyLed->setChecked(conf.led.joy);
 	ui.cbKeysLed->setChecked(conf.led.keys);
+	ui.cbTapeLed->setChecked(conf.led.tape);
 // profiles
 	ui.defstart->setChecked(conf.defProfile);
 	buildproflist();
@@ -542,9 +543,10 @@ void SetupWin::apply() {
 	conf.tape.autostart = ui.cbTapeAuto->isChecked() ? 1 : 0;
 	conf.tape.fast = ui.cbTapeFast->isChecked() ? 1 : 0;
 // leds
-	conf.led.mouse = ui.cbMouseLed->isChecked();
-	conf.led.joy = ui.cbJoyLed->isChecked();
-	conf.led.keys = ui.cbKeysLed->isChecked();
+	conf.led.mouse = ui.cbMouseLed->isChecked() ? 1 : 0;
+	conf.led.joy = ui.cbJoyLed->isChecked() ? 1 : 0;
+	conf.led.keys = ui.cbKeysLed->isChecked() ? 1 : 0;
+	conf.led.tape = ui.cbTapeLed->isChecked() ? 1 : 0;
 // profiles
 	conf.defProfile = ui.defstart->isChecked() ? 1 : 0;
 

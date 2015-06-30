@@ -41,8 +41,8 @@ static unsigned char prvScr[1024 * 512 * 3];
 // LEDS
 
 static xLed leds[] = {
-	{0, 68, 3, ":/images/mouse.png"},
-	{0, 35, 3, ":/images/joystick.png"},
+	{0, 3, 60, ":/images/mouse.png"},
+	{0, 3, 30, ":/images/joystick.png"},
 	{-1, -1, -1, ""}
 };
 
@@ -831,6 +831,8 @@ void MainWin::putLeds() {
 	pnt.begin(&scrImg);
 	if (conf.led.mouse) drawLed(0,pnt);
 	if (conf.led.joy) drawLed(1,pnt);
+	if (conf.led.tape && comp->tape->on)
+		pnt.drawImage(3, 90, QImage(":/images/tape.png"));
 	if (conf.led.keys) pnt.drawImage(3,3,kled);
 	pnt.end();
 }

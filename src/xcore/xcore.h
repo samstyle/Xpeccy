@@ -107,6 +107,7 @@ struct xConfig {
 		unsigned mouse:1;
 		unsigned joy:1;
 		unsigned keys:1;
+		unsigned tape:1;
 	} led;
 	struct {
 		std::string confDir;

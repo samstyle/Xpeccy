@@ -16,8 +16,8 @@ void prfMapMem(ZXComp* comp) {
 
 // out
 
-const unsigned char prfColB[4] = {0,73,146,255};
-const unsigned char prfColTab[8] = {0,36,73,109,146,182,218,255};
+const unsigned char prfColB[4] = {0,80,160,255};
+const unsigned char prfColTab[8] = {0,40,80,120,160,200,228,255};
 
 void prfOutPal(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	if (comp->pDFFD & 0x80) {

@@ -26,7 +26,7 @@ void tzxBlock10(FILE* file, Tape* tape) {
 	char* buf = (char*)malloc(len);
 	fread(buf, len, 1, file);
 	tape->tmpBlock = tapDataToBlock(buf, len, sigLens);
-	blkAddPulse(&tape->tmpBlock, sigLens[5]);
+//	blkAddPulse(&tape->tmpBlock, sigLens[5]);
 	blkAddPause(&tape->tmpBlock, pause);
 	tapAddBlock(tape, tape->tmpBlock);
 	blkClear(&tape->tmpBlock);
@@ -48,7 +48,7 @@ void tzxBlock11(FILE* file, Tape* tape) {
 	char* buf = (char*)malloc(len);
 	fread(buf, len, 1, file);
 	tape->tmpBlock = tapDataToBlock(buf, len, altLens);
-	blkAddPulse(&tape->tmpBlock, sigLens[5]);
+	//blkAddPulse(&tape->tmpBlock, sigLens[5]);
 	blkAddPause(&tape->tmpBlock, pause);
 	tapAddBlock(tape, tape->tmpBlock);
 	blkClear(&tape->tmpBlock);
