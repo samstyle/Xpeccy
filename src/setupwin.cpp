@@ -313,7 +313,7 @@ void SetupWin::start(xProfile* p) {
 	foreach(xLayout lay, layList) {
 		ui.geombox->addItem(QString::fromLocal8Bit(lay.name.c_str()));
 	}
-	ui.geombox->setCurrentIndex(ui.geombox->findText(QString::fromLocal8Bit(conf.curProf->layName.c_str())));
+	ui.geombox->setCurrentIndex(ui.geombox->findText(QString::fromLocal8Bit(conf.prof.cur->layName.c_str())));
 	ui.ulaPlus->setChecked(comp->vid->ula->enabled);
 // sound
 	ui.senbox->setChecked(conf.snd.enabled);
@@ -908,12 +908,12 @@ void SetupWin::buildmenulist() {
 };
 
 void SetupWin::buildproflist() {
-	ui.twProfileList->setRowCount(profileList.size());
+	ui.twProfileList->setRowCount(conf.prof.list.size());
 	QTableWidgetItem* itm;
-	for (uint i = 0; i < profileList.size(); i++) {
-		itm = new QTableWidgetItem(QString::fromLocal8Bit(profileList[i]->name.c_str()));
+	for (uint i = 0; i < conf.prof.list.size(); i++) {
+		itm = new QTableWidgetItem(QString::fromLocal8Bit(conf.prof.list[i]->name.c_str()));
 		ui.twProfileList->setItem(i,0,itm);
-		itm = new QTableWidgetItem(QString::fromLocal8Bit(profileList[i]->file.c_str()));
+		itm = new QTableWidgetItem(QString::fromLocal8Bit(conf.prof.list[i]->file.c_str()));
 		ui.twProfileList->setItem(i,1,itm);
 	}
 }
@@ -1377,7 +1377,7 @@ void SetupWin::rmProfile() {
 		switch(idx) {
 			case DELP_OK_CURR:
 				prfChanged = 1;
-				start(conf.curProf);
+				start(conf.prof.cur);
 				break;
 			case DELP_ERR:
 				shitHappens("Sorry, i can't delete this profile");

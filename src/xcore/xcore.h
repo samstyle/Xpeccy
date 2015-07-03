@@ -35,8 +35,6 @@ typedef struct {
 #define	DELP_OK		0
 #define	DELP_OK_CURR	1
 
-extern std::vector<xProfile*> profileList;
-
 xProfile* findProfile(std::string);
 bool addProfile(std::string,std::string);
 int delProfile(std::string);
@@ -73,7 +71,10 @@ struct xConfig {
 	unsigned defProfile:1;		// start @ default profile
 	std::string keyMapName;		// use this keymap
 	float brdsize;			// 0.0 - 1.0 : border size
-	xProfile* curProf;
+	struct {
+		std::vector<xProfile*> list;
+		xProfile* cur;
+	} prof;
 	struct {
 		unsigned grayScale:1;
 		unsigned noFlick:1;

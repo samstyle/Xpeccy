@@ -52,9 +52,9 @@ void MainWin::updateHead() {
 #ifdef ISDEBUG
 	title.append(" | debug");
 #endif
-	if (conf.curProf != NULL) {
-		title.append(" | ").append(QString::fromLocal8Bit(conf.curProf->name.c_str()));
-		title.append(" | ").append(QString::fromLocal8Bit(conf.curProf->layName.c_str()));
+	if (conf.prof.cur != NULL) {
+		title.append(" | ").append(QString::fromLocal8Bit(conf.prof.cur->name.c_str()));
+		title.append(" | ").append(QString::fromLocal8Bit(conf.prof.cur->layName.c_str()));
 	}
 	if (ethread.fast) {
 		title.append(" | fast");
@@ -304,7 +304,7 @@ void MainWin::onTimer() {
 	if (opt->block) return;
 	if (opt->prfChanged) {
 		opt->prfChanged = 0;
-		comp = conf.curProf->zx;
+		comp = conf.prof.cur->zx;
 		ethread.comp = comp;
 	}
 	if (block) return;
@@ -369,7 +369,7 @@ void incTime(CMOS* cms) {
 }
 
 void MainWin::cmosTick() {
-	foreach(xProfile* prf, profileList) {
+	foreach(xProfile* prf, conf.prof.list) {
 		if (prf->zx != NULL) {
 			if (conf.sysclock) {
 				time_t rtime;
@@ -554,7 +554,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;
 			case Qt::Key_F1:
 				pause(true, PR_OPTS);
-				opt->start(conf.curProf);
+				opt->start(conf.prof.cur);
 				break;
 			case Qt::Key_F2:
 				pause(true,PR_FILE);
@@ -714,7 +714,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 	std::string fname;
 	pause(true,PR_EXIT);
 //	for (i = 0; i < plist.size(); i++) {
-	foreach(xProfile* prf, profileList) {
+	foreach(xProfile* prf, conf.prof.list) {
 		prfSave(prf->name);
 		fname = conf.path.confDir + SLASH + prf->name + ".cmos";
 		file.open(fname.c_str());
@@ -997,7 +997,7 @@ void MainWin::fillBookmarkMenu() {
 
 void MainWin::fillProfileMenu() {
 	profileMenu->clear();
-	foreach(xProfile* prf, profileList) {
+	foreach(xProfile* prf, conf.prof.list) {
 		profileMenu->addAction(prf->name.c_str());
 	}
 }
@@ -1019,11 +1019,11 @@ void MainWin::fillUserMenu() {
 
 void MainWin::doOptions() {
 	pause(true, PR_OPTS);
-	opt->start(conf.curProf);
+	opt->start(conf.prof.cur);
 }
 
 void MainWin::optApply() {
-	comp = conf.curProf->zx;
+	comp = conf.prof.cur->zx;
 	fillUserMenu();
 	updateWindow();
 	pause(false, PR_OPTS);
@@ -1051,7 +1051,7 @@ void MainWin::setProfile(std::string nm) {
 			prfSetCurrent("default");
 		}
 	}
-	comp = conf.curProf->zx;
+	comp = conf.prof.cur->zx;
 	ethread.comp = comp;
 	nsAct->setChecked(comp->vid->noScreen);
 	nsPerFrame = comp->nsPerFrame;

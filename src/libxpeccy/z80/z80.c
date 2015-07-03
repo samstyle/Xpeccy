@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "z80.h"
 #include "z80macros.h"
@@ -58,7 +60,7 @@ int cpuExec(Z80CPU* cpu) {
 		cpu->r++;
 		cpu->t += cpu->op->t;
 		cpu->op->exec(cpu);
-	} while (cpu->op->flag & 1);
+	} while (cpu->op->prefix);
 	return cpu->t;
 }
 
@@ -82,7 +84,7 @@ int cpuINT(Z80CPU* cpu) {
 			cpu->r++;
 			cpu->t += cpu->op->t;		// +5 (RST38 fetch)
 			cpu->op->exec(cpu);		// +3 +3 execution. 13 total
-			while (cpu->op->flag & 1) {
+			while (cpu->op->prefix) {
 				cpu->op = &cpu->opTab[cpu->mrd(cpu->pc++,1,cpu->data)];
 				cpu->r++;
 				cpu->t += cpu->op->t;
@@ -136,14 +138,14 @@ int cpuDisasm(unsigned short adr,char* buf, cbdmr mrd, void* data) {
 		op = mrd(adr++,data);
 		res++;
 		opc = &opt[op];
-		if (opc->flag & 1) {
+		if (opc->prefix) {
 			opt = opc->tab;
 			if ((opt == ddcbTab) || (opt == fdcbTab)) {
 				tmp = mrd(adr++,data);
 				res++;
 			}
 		}
-	} while (opc->flag & 1);
+	} while (opc->prefix);
 	const char* src = opc->mnem;
 	while (*src != 0) {
 		if (*src == ':') {
@@ -153,26 +155,26 @@ int cpuDisasm(unsigned short adr,char* buf, cbdmr mrd, void* data) {
 				case '1':		// byte = (adr)
 					dtl = mrd(adr++,data);
 					res++;
-					*(buf++) = halfByte[dtl >> 4];
-					*(buf++) = halfByte[dtl & 0x0f];
+					*buf++ = halfByte[dtl >> 4];
+					*buf++ = halfByte[dtl & 0x0f];
 					break;
 				case '2':		// word = (adr,adr+1)
 					dtl = mrd(adr++,data);
 					dth = mrd(adr++,data);
 					res += 2;
-					*(buf++) = halfByte[dth >> 4];
-					*(buf++) = halfByte[dth & 0x0f];
-					*(buf++) = halfByte[dtl >> 4];
-					*(buf++) = halfByte[dtl & 0x0f];
+					*buf++ = halfByte[dth >> 4];
+					*buf++ = halfByte[dth & 0x0f];
+					*buf++ = halfByte[dtl >> 4];
+					*buf++ = halfByte[dtl & 0x0f];
 					break;
 				case '3':		// word = adr + [e = (adr)]
 					dtl = mrd(adr++,data);
 					res++;
 					dtw = adr + (signed char)dtl;
-					*(buf++) = halfByte[(dtw >> 12) & 0x0f];
-					*(buf++) = halfByte[(dtw >> 8) & 0x0f];
-					*(buf++) = halfByte[(dtw >> 4) & 0x0f];
-					*(buf++) = halfByte[dtw & 0x0f];
+					*buf++ = halfByte[(dtw >> 12) & 0x0f];
+					*buf++ = halfByte[(dtw >> 8) & 0x0f];
+					*buf++ = halfByte[(dtw >> 4) & 0x0f];
+					*buf++ = halfByte[dtw & 0x0f];
 					break;
 				case '4':		// signed byte e = (adr)
 					tmp = mrd(adr++,data);
@@ -184,8 +186,8 @@ int cpuDisasm(unsigned short adr,char* buf, cbdmr mrd, void* data) {
 						*(buf++) = '-';
 						tmp = (0xff - tmp) + 1;
 					}
-					*(buf++) = halfByte[tmp >> 4];
-					*(buf++) = halfByte[tmp & 0x0f];
+					*buf++ = halfByte[tmp >> 4];
+					*buf++ = halfByte[tmp & 0x0f];
 					break;
 			}
 		} else {
@@ -194,4 +196,177 @@ int cpuDisasm(unsigned short adr,char* buf, cbdmr mrd, void* data) {
 	}
 	*buf = 0;
 	return res;
+}
+
+// asm
+
+typedef struct {
+	unsigned match:1;
+	int idx;
+	opCode* op;
+	char arg[8][256];
+} xAsmScan;
+
+const char letrz[] = "+-0123456789";
+
+xAsmScan scanAsmTab(const char* com, opCode* tab) {
+	xAsmScan res;
+	res.match = 0;
+	int i;
+	for (i = 0; i < 8; i++)
+		memset(res.arg[i], 0, 256);
+	res.idx = -1;
+	i = 0;
+	int par = 0;
+	int work;
+	const char* cptr;
+	const char* zptr;
+	const char* tptr;
+	do {
+		cptr = com;
+		tptr = tab[i].mnem;
+		work = 1;
+		do {
+			if (*tptr == ':') {						// need argument
+				if (strchr(letrz, *cptr)) {				// if there is a number (maybe signed)
+					tptr += 2;
+					zptr = strchr(cptr, *tptr);
+					if (zptr || (*tptr == 0x00)) {
+						if (par < 8) {
+							strncpy(res.arg[par], cptr, zptr - cptr);
+							if (strchr(res.arg[par], ',')) {	// check if argument have ',' - wrong matching
+								work = 0;
+							} else {				// else this is argument
+								cptr = zptr;
+								par++;
+							}
+						} else {
+							work = 0;				// never: too much arguments in command
+						}
+					} else {
+						work = 0;					// argument not found
+					}
+				} else {
+					work = 0;						// number expected, but not met
+				}
+			} else {							// check mnemonic char by char
+				if (*cptr == *tptr) {					// compare current char
+					if (*cptr == 0x00) {				// if both strings reach end
+						res.match = 1;
+						res.idx = i;
+						res.op = &tab[i];
+						work = 0;
+					} else {					// else go to next char
+						cptr++;
+						tptr++;
+					}
+				} else {
+					work = 0;					// different chars: not this op
+				}
+			}
+		} while (work);
+		i++;
+	} while ((res.match == 0) && (i < 256));
+	return res;
+}
+
+int cpuAsm(const char* com, char* buf, unsigned short adr) {
+	if (strlen(com) > 255) return 0;
+	int par = 0;
+	int num;
+	int sign;
+	char cbuf[256];
+	const char* zptr;
+	char* ptr = cbuf;
+	strcpy(cbuf, com);
+	while (*ptr) {			// toLower;
+		if ((*ptr >= 'A') && (*ptr <= 'Z')) {
+			*ptr ^= 0x20;
+		}
+		ptr++;
+	}
+
+	xAsmScan res = scanAsmTab(cbuf, npTab);
+	ptr = buf;
+	if (!res.match) {
+		ptr = buf;
+		*ptr++ = 0xdd;
+		res = scanAsmTab(cbuf, ddTab);
+	}
+	if (!res.match) {
+		ptr = buf;
+		*ptr++ = 0xfd;
+		res = scanAsmTab(cbuf, fdTab);
+	}
+	if (!res.match) {
+		ptr = buf;
+		*ptr++ = 0xcb;
+		res = scanAsmTab(cbuf, cbTab);
+	}
+	if (!res.match) {
+		ptr = buf;
+		*ptr++ = 0xed;
+		res = scanAsmTab(cbuf, edTab);
+	}
+	if (!res.match) {
+		ptr = buf;
+		*ptr++ = 0xdd;
+		*ptr++ = 0xcb;
+		res = scanAsmTab(cbuf, ddcbTab);
+	}
+	if (!res.match) {
+		ptr = buf;
+		*ptr++ = 0xfd;
+		*ptr++ = 0xcb;
+		res = scanAsmTab(cbuf, fdcbTab);
+	}
+	if (res.match) {
+		*ptr++ = res.idx;
+		zptr = res.op->mnem;
+
+		while ((par < 7) && (strlen(res.arg[par]) > 0)) {
+			zptr = strchr(zptr, ':');
+			if (!zptr) break;
+			zptr++;
+			num = strtol(res.arg[par], NULL, 0);
+			sign = ((res.arg[par][0] == '+') || (res.arg[par][0] == '-')) ? 1 : 0;
+			par++;
+			switch(*zptr) {
+				case '1':
+					*ptr++ = num & 0xff;
+					break;
+				case '2':
+					*ptr++ = num & 0xff;
+					*ptr++ = (num >> 8) & 0xff;
+					break;
+				case '3':
+					if (!sign) {
+						num -= (adr + (ptr - buf + 1));
+					}
+					*ptr++ = num & 0xff;
+					break;
+				case '4':
+					if (sign) {
+						*ptr++ = num & 0xff;
+					} else {
+						ptr = buf;
+						par = 100;
+					}
+					break;
+				case '5':
+					if (sign) {
+						*ptr = *(ptr-1);
+						*(ptr-1) = num & 0xff;
+						ptr++;
+					} else {
+						ptr = buf;
+						par = 100;
+					}
+					break;
+			}
+		}
+	} else {
+		ptr = buf;
+	}
+	return (ptr - buf);
 }

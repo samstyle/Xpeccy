@@ -9,7 +9,7 @@
 std::vector<xProfile*> profileList;
 
 xProfile* findProfile(std::string nm) {
-	if (nm == "") return conf.curProf;
+	if (nm == "") return conf.prof.cur;
 	xProfile* res = NULL;
 	for (uint i = 0; i < profileList.size(); i++) {
 		if (profileList[i]->name == nm)
@@ -44,9 +44,9 @@ bool addProfile(std::string nm, std::string fp) {
 }
 
 void prfClose() {
-	if (!conf.curProf) return;
-	ideCloseFiles(conf.curProf->zx->ide);
-	sdcCloseFile(conf.curProf->zx->sdc);
+	if (!conf.prof.cur) return;
+	ideCloseFiles(conf.prof.cur->zx->ide);
+	sdcCloseFile(conf.prof.cur->zx->sdc);
 }
 
 int delProfile(std::string nm) {
@@ -56,8 +56,8 @@ int delProfile(std::string nm) {
 	int res = DELP_OK;
 	std::string cpath;
 	// set default profile if current deleted
-	if (conf.curProf) {
-		if (conf.curProf->name == nm) {
+	if (conf.prof.cur) {
+		if (conf.prof.cur->name == nm) {
 			prfSetCurrent("default");
 			res = DELP_OK_CURR;
 		}
@@ -85,12 +85,12 @@ bool prfSetCurrent(std::string nm) {
 	xProfile* nprf = findProfile(nm);
 	if (nprf == NULL) return false;
 	prfClose();
-	conf.curProf = nprf;
+	conf.prof.cur = nprf;
 	ideOpenFiles(nprf->zx->ide);
 	sdcOpenFile(nprf->zx->sdc);
-	prfSetLayout(conf.curProf, conf.curProf->layName);
-	keyRelease(conf.curProf->zx->keyb,0xff,0);
-	conf.curProf->zx->mouse->buttons = 0xff;
+	prfSetLayout(conf.prof.cur, conf.prof.cur->layName);
+	keyRelease(conf.prof.cur->zx->keyb,0xff,0);
+	conf.prof.cur->zx->mouse->buttons = 0xff;
 	return true;
 }
 
@@ -102,7 +102,7 @@ void clearProfiles() {
 }
 
 bool prfSetLayout(xProfile* prf, std::string nm) {
-	if (prf == NULL) prf = conf.curProf;
+	if (prf == NULL) prf = conf.prof.cur;
 	xLayout* lay = findLayout(nm);
 	if (lay == NULL) return false;
 	prf->layName = nm;
@@ -154,7 +154,7 @@ void setDiskString(ZXComp* comp,Floppy* flp,std::string st) {
 
 // set specified romset to specified profile & load into ROM of this profile ZX
 void prfSetRomset(xProfile* prf, std::string rnm) {
-	if (prf == NULL) prf = conf.curProf;
+	if (prf == NULL) prf = conf.prof.cur;
 	prf->rsName = rnm;
 	xRomset* rset = findRomset(rnm);
 	int i;
@@ -448,7 +448,7 @@ std::string getDiskString(Floppy* flp) {
 }
 
 int prfSave(std::string nm) {
-	xProfile* prf = conf.curProf;
+	xProfile* prf = conf.prof.cur;
 	if (prf == NULL) return PSAVE_NF;
 	ZXComp* comp = prf->zx;
 

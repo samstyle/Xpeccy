@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(xpeccy)
-set(XVER "0.5.20150625")
+set(XVER "0.6.20150704")
 
 include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
 
@@ -64,46 +64,46 @@ endif()
 
 # z80ex section ( external | internal | * )
 
-if("${Z80EX_BUILD}" STREQUAL "external")
-	# find z80ex
-	find_path(Z80EX_INCLUDE_PATH NAMES z80ex.h PATH_SUFFIXES ${INC_PATHS} DOC "z80ex include directory")
-	find_library(Z80EX_LIBRARY NAMES z80ex PATH_SUFFIXES ${LIB_PATHS} DOC "z80ex library")
-	FIND_PACKAGE_HANDLE_STANDARD_ARGS(Z80EX DEFAULT_MSG Z80EX_LIBRARY Z80EX_INCLUDE_PATH)
-	if (!Z80EX_FOUND)
-		message(FATAL ERROR "...Could not find z80ex")
-	endif()
-	#find z80ex_dasm
-	find_path(Z80EX_DASM_INCLUDE_PATH NAMES z80ex_dasm.h PATH_SUFFIXES ${INC_PATHS} DOC "z80ex include directory")
-	find_library(Z80EX_DASM_LIBRARY NAMES z80ex_dasm PATH_SUFFIXES ${LIB_PATHS} DOC "z80ex_dasm library")
-	FIND_PACKAGE_HANDLE_STANDARD_ARGS(Z80EX_DASM DEFAULT_MSG Z80EX_DASM_LIBRARY Z80EX_DASM_INCLUDE_PATH)
-	if (!Z80EX_DASM_FOUND)
-		message(FATAL ERROR "...Could not find z80ex_dasm")
-	endif()
-	set(LIBRARIES ${Z80EX_LIBRARY} ${Z80EX_DASM_LIBRARY})
-	set(INCLUDIRS ${INCLUDIRS} ${Z80EX_INCLUDE_PATH} ${Z80EX_DASM_INCLUDE_PATH})
-	set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libz80ex1 >= 1.1.21")
-	set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libz80ex1 (>=1.1.21)")
-	set(Z80EX_TYPE 1)
-elseif("${Z80EX_BUILD}" STREQUAL "internal")
-	set (API_REVISION 1)
-	set (VERSION_MAJOR 1)
-	set (VERSION_MINOR 19)
-	set (RELEASE_TYPE "")
-	set (VERSION_STR "${API_REVISION}.${VERSION_MAJOR}.${VERSION_MINOR}${RELEASE_TYPE}")
-	add_definitions (
-		-DZ80EX_VERSION_STR=${VERSION_STR}
-		-DZ80EX_API_REVISION=${API_REVISION}
-		-DZ80EX_VERSION_MAJOR=${VERSION_MAJOR}
-		-DZ80EX_VERSION_MINOR=${VERSION_MINOR}
-		-DZ80EX_RELEASE_TYPE=${RELEASE_TYPE})
-	set(INCLUDIRS ${INCLUDIRS} ./src/libxpeccy/libz80ex/include)
-	set(SOURCES ${SOURCES} ./src/libxpeccy/libz80ex/z80ex.c ./src/libxpeccy/libz80ex/z80ex_dasm.c)
-	set(Z80EX_TYPE 2)
-else()
+#if("${Z80EX_BUILD}" STREQUAL "external")
+#	# find z80ex
+#	find_path(Z80EX_INCLUDE_PATH NAMES z80ex.h PATH_SUFFIXES ${INC_PATHS} DOC "z80ex include directory")
+#	find_library(Z80EX_LIBRARY NAMES z80ex PATH_SUFFIXES ${LIB_PATHS} DOC "z80ex library")
+#	FIND_PACKAGE_HANDLE_STANDARD_ARGS(Z80EX DEFAULT_MSG Z80EX_LIBRARY Z80EX_INCLUDE_PATH)
+#	if (!Z80EX_FOUND)
+#		message(FATAL ERROR "...Could not find z80ex")
+#	endif()
+#	#find z80ex_dasm
+#	find_path(Z80EX_DASM_INCLUDE_PATH NAMES z80ex_dasm.h PATH_SUFFIXES ${INC_PATHS} DOC "z80ex include directory")
+#	find_library(Z80EX_DASM_LIBRARY NAMES z80ex_dasm PATH_SUFFIXES ${LIB_PATHS} DOC "z80ex_dasm library")
+#	FIND_PACKAGE_HANDLE_STANDARD_ARGS(Z80EX_DASM DEFAULT_MSG Z80EX_DASM_LIBRARY Z80EX_DASM_INCLUDE_PATH)
+#	if (!Z80EX_DASM_FOUND)
+#		message(FATAL ERROR "...Could not find z80ex_dasm")
+#	endif()
+#	set(LIBRARIES ${Z80EX_LIBRARY} ${Z80EX_DASM_LIBRARY})
+#	set(INCLUDIRS ${INCLUDIRS} ${Z80EX_INCLUDE_PATH} ${Z80EX_DASM_INCLUDE_PATH})
+#	set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libz80ex1 >= 1.1.21")
+#	set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libz80ex1 (>=1.1.21)")
+#	set(Z80EX_TYPE 1)
+#elseif("${Z80EX_BUILD}" STREQUAL "internal")
+#	set (API_REVISION 1)
+#	set (VERSION_MAJOR 1)
+#	set (VERSION_MINOR 19)
+#	set (RELEASE_TYPE "")
+#	set (VERSION_STR "${API_REVISION}.${VERSION_MAJOR}.${VERSION_MINOR}${RELEASE_TYPE}")
+#	add_definitions (
+#		-DZ80EX_VERSION_STR=${VERSION_STR}
+#		-DZ80EX_API_REVISION=${API_REVISION}
+#		-DZ80EX_VERSION_MAJOR=${VERSION_MAJOR}
+#		-DZ80EX_VERSION_MINOR=${VERSION_MINOR}
+#		-DZ80EX_RELEASE_TYPE=${RELEASE_TYPE})
+#	set(INCLUDIRS ${INCLUDIRS} ./src/libxpeccy/libz80ex/include)
+#	set(SOURCES ${SOURCES} ./src/libxpeccy/libz80ex/z80ex.c ./src/libxpeccy/libz80ex/z80ex_dasm.c)
+#	set(Z80EX_TYPE 2)
+#else()
 	set(SOURCES ${SOURCES} ./src/libxpeccy/z80/z80.c)
 	add_definitions(-DSELFZ80)
 	set(Z80EX_TYPE 0)
-endif()
+#endif()
 
 set(CMAKE_C_FLAGS "-std=gnu99 -Wall -O2 ${CMAKE_C_FLAGS}")
 set(CMAKE_CXX_FLAGS "-Wall -O2 ${CMAKE_CXX_FLAGS}")

@@ -84,11 +84,11 @@ void saveConfig() {
 	}
 
 	fprintf(cfile, "\n[PROFILES]\n\n");
-	foreach(xProfile* prf, profileList) {			// nr.0 skipped ('default' profile)
+	foreach(xProfile* prf, conf.prof.list) {			// nr.0 skipped ('default' profile)
 		if (prf->name != "default")
 			fprintf(cfile, "%s = %s\n", prf->name.c_str(), prf->file.c_str());
 	}
-	fprintf(cfile, "current = %s\n", conf.curProf->name.c_str());
+	fprintf(cfile, "current = %s\n", conf.prof.cur->name.c_str());
 
 	fprintf(cfile, "\n[VIDEO]\n\n");
 	foreach(xLayout lay, layList) {
@@ -383,14 +383,14 @@ void loadConfig() {
 	setOutput(soutnam.c_str());
 	if (conf.defProfile) {
 		if (!prfSetCurrent("default")) {
-			shitHappens("Can't set default profile!\nYes, it happens");
+			printf("Can't set default profile!\nYes, it happens\n");
 			throw(0);
 		}
 	} else {
 		if (!prfSetCurrent(pnm.c_str())) {
-			shitHappens("Cannot set current profile\nDefault will be used");
+			printf("Cannot set current profile\nDefault will be used\n");
 			if (!prfSetCurrent("default")) {
-				shitHappens("...and default too?\nReally, shit happens");
+				printf("...and default too?\nReally, shit happens\n");
 				throw(0);
 			}
 		}

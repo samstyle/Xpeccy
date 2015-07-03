@@ -20,6 +20,18 @@
 #endif
 
 int main(int ac,char** av) {
+/*
+	char buf[8];
+	int len = cpuAsm("call z,15", buf, 0);
+	printf("%i : ",len);
+	char* xptr = buf;
+	while (len > 0) {
+		printf("%.2X ", *xptr & 0xff);
+		xptr++;
+		len--;
+	}
+	printf("\n");
+*/
 #ifdef DRAWGL
 	printf("Using OpenGL painter\n");
 #endif

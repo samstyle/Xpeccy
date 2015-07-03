@@ -685,6 +685,15 @@ void DebugWin::dasmEdited(int row, int col) {
 			str.remove(0,2);
 		}
 		fillDump();
+	} else if (col == 2) {
+		char buf[8];
+		int len = cpuAsm(ui.dasmTable->item(row, col)->text().toLocal8Bit().data(), buf, adr);
+		int idx = 0;
+		while (idx < len) {
+			memWr(comp->mem, adr + idx, buf[idx]);
+			idx++;
+		}
+		fillDisasm();
 	}
 	fillDisasm();
 }

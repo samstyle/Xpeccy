@@ -224,7 +224,7 @@ bool saveFile(ZXComp* comp,const char* name,int flags,int drv) {
 		}
 	}
 	if (filters.contains("Snap")) {
-		bool mt = (conf.curProf->hwName == "ZX48K");
+		bool mt = (conf.prof.cur->hwName == "ZX48K");
 		switch (type) {
 			case FT_SNA:
 				err = saveSNA(comp,sfnam.c_str(),mt);

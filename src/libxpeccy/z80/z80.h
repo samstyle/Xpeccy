@@ -4,12 +4,10 @@
 struct Z80CPU;
 
 struct opCode {
-	int flag;
-	int t;
-	int t1;
-	int t2;
-	int t3;
-	int t4;
+	unsigned prefix:1;
+	int t;			// T-states
+	int len;		// opcode len
+	int c1,c2,c3,c4;	// opcode bytes
 	void(*exec)(struct Z80CPU *);
 	struct opCode *tab;
 	const char* mnem;
@@ -97,5 +95,6 @@ int cpuNMI(Z80CPU*);
 int cpuExec(Z80CPU*);
 
 int cpuDisasm(unsigned short,char*,cbdmr,void*);
+int cpuAsm(const char*, char*, unsigned short);
 
 #endif
