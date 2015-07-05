@@ -73,17 +73,19 @@ int loadSPG(ZXComp* comp, const char* name) {
 		if (blkInfo[idx] & 0x80) break;			// last block flag
 		idx += 3;
 	}
-	SETPC(comp->cpu, (hd.pch << 8) | hd.pcl);
-	SETSP(comp->cpu, (hd.sph << 8) | hd.spl);
+	comp->cpu->pc = (hd.pch << 8) | hd.pcl;
+	comp->cpu->sp = (hd.sph << 8) | hd.spl;
 	switch (hd.flag35 & 0x03) {
 		case 0: zxSetFrq(comp,3.5); break;
 		case 1: zxSetFrq(comp,7.0); break;
 		default: zxSetFrq(comp,14.0); break;
 	}
-	SETIFF1(comp->cpu,(hd.flag35 & 0x04) ? 1 : 0);	// int enabled/disabled
-	SETIM(comp->cpu,1);				// im 1
-	SETI(comp->cpu,0x3f);				// i = 3F
-	comp->dos = 0;				// basic 48 in bank0
+	comp->cpu->iff1 = (hd.flag35 & 0x04) ? 1 : 0;	// int enabled/disabled
+	comp->cpu->imode = 1;				// im 1
+	comp->cpu->i = 0x3f;				// i = 3F
+	comp->dos = 0;					// basic 48 in bank0
+	comp->rom = 1;
+	comp->cpm = 0;
 	comp->p7FFD = 0x10;
 	comp->pEFF7 = 0x00;
 	comp->prt2 = 0x00;

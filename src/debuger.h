@@ -69,14 +69,14 @@ class DebugWin : public QDialog {
 		QString dumpPath;
 
 		QMenu* bpMenu;
-		Z80EX_WORD bpAdr;
-		void doBreakPoint(Z80EX_WORD);
+		unsigned short bpAdr;
+		void doBreakPoint(unsigned short);
 		int getAdr();
 
 		xLabel* findLabel(int);
 
-		Z80EX_WORD disasmAdr;
-		Z80EX_WORD dumpAdr;
+		unsigned short disasmAdr;
+		unsigned short dumpAdr;
 
 		void fillZ80();
 		void fillFlags();
@@ -87,7 +87,7 @@ class DebugWin : public QDialog {
 		void fillFDC();
 		void fillRZX();
 
-		Z80EX_WORD getPrevAdr(Z80EX_WORD);
+		unsigned short getPrevAdr(unsigned short);
 		void scrollDown();
 		void scrollUp();
 

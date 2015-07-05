@@ -74,7 +74,7 @@ unsigned char mbt;
 
 // mem
 
-Z80EX_BYTE stdMRd(ZXComp* comp, Z80EX_WORD adr, int m1) {
+unsigned char stdMRd(ZXComp* comp, unsigned short adr, int m1) {
 	if (m1 && (comp->dif->type == DIF_BDI)) {
 		mbt = memGetBankPtr(comp->mem,adr)->type;
 		if (comp->dos && (mbt == MEM_RAM)) {
@@ -89,14 +89,14 @@ Z80EX_BYTE stdMRd(ZXComp* comp, Z80EX_WORD adr, int m1) {
 	return memRd(comp->mem,adr);
 }
 
-void stdMWr(ZXComp *comp, Z80EX_WORD adr, Z80EX_BYTE val) {
+void stdMWr(ZXComp *comp, unsigned short adr, unsigned char val) {
 	memWr(comp->mem,adr,val);
 }
 
 // io
 
-Z80EX_BYTE hwIn(xPort* ptab, ZXComp* comp, Z80EX_WORD port, int dos) {
-	Z80EX_BYTE res = 0xff;
+unsigned char hwIn(xPort* ptab, ZXComp* comp, unsigned short port, int dos) {
+	unsigned char res = 0xff;
 	int idx = 0;
 	xPort* itm;
 	while (1) {
@@ -115,7 +115,7 @@ Z80EX_BYTE hwIn(xPort* ptab, ZXComp* comp, Z80EX_WORD port, int dos) {
 	return res;
 }
 
-void hwOut(xPort* ptab, ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int dos) {
+void hwOut(xPort* ptab, ZXComp* comp, unsigned short port, unsigned char val, int dos) {
 	int idx = 0;
 	xPort* itm;
 	int ctch = 0;

@@ -81,7 +81,7 @@ void tslUpdatePal(ZXComp* comp) {
 	}
 }
 
-Z80EX_BYTE tslMRd(ZXComp* comp, Z80EX_WORD adr, int m1) {
+unsigned char tslMRd(ZXComp* comp, unsigned short adr, int m1) {
 	if (m1 && (comp->dif->type == DIF_BDI)) {
 		if (comp->dos && (adr > 0x4000) && (!comp->tsconf.vdos)) {
 			comp->dos = 0;
@@ -95,7 +95,7 @@ Z80EX_BYTE tslMRd(ZXComp* comp, Z80EX_WORD adr, int m1) {
 	return memRd(comp->mem,adr);
 }
 
-void tslMWr(ZXComp* comp, Z80EX_WORD adr, Z80EX_BYTE val) {
+void tslMWr(ZXComp* comp, unsigned short adr, unsigned char val) {
 	if ((comp->tsconf.flag & 0x10) && ((adr & 0xf000) == comp->tsconf.tsMapAdr)) {
 		if ((adr & 0xe00) == 0x000) {
 			comp->vid->tsconf.cram[adr & 0x1ff] = val;
@@ -137,8 +137,8 @@ void tslUpdatePorts(ZXComp* comp) {
 
 // in
 
-Z80EX_BYTE tsInFF(ZXComp* comp, Z80EX_WORD port) {			// dos
-	Z80EX_BYTE res = 0xff;
+unsigned char tsInFF(ZXComp* comp, unsigned short port) {			// dos
+	unsigned char res = 0xff;
 	if (comp->dif->fdc->flp->virt) {
 		comp->tsconf.vdos = 1;
 		tslMapMem(comp);
@@ -148,8 +148,8 @@ Z80EX_BYTE tsInFF(ZXComp* comp, Z80EX_WORD port) {			// dos
 	return res;
 }
 
-Z80EX_BYTE tsInBDI(ZXComp* comp, Z80EX_WORD port) {			// dos
-	Z80EX_BYTE res = 0xff;
+unsigned char tsInBDI(ZXComp* comp, unsigned short port) {			// dos
+	unsigned char res = 0xff;
 	if (comp->tsconf.vdos) {
 		comp->tsconf.vdos = 0;
 		tslMapMem(comp);
@@ -159,24 +159,24 @@ Z80EX_BYTE tsInBDI(ZXComp* comp, Z80EX_WORD port) {			// dos
 	return res;
 }
 
-Z80EX_BYTE tsIn57(ZXComp* comp, Z80EX_WORD port) {
+unsigned char tsIn57(ZXComp* comp, unsigned short port) {
 	return sdcRead(comp->sdc);
 }
 
-Z80EX_BYTE tsIn77(ZXComp* comp, Z80EX_WORD port) {
-	Z80EX_BYTE res = 0x00;
+unsigned char tsIn77(ZXComp* comp, unsigned short port) {
+	unsigned char res = 0x00;
 	if (comp->sdc->image != NULL) res |= 0x01;	// inserted
 	if (comp->sdc->flag & SDC_LOCK) res |= 0x02;	// wrprt
 	return res;
 }
 
-Z80EX_BYTE tsInBFF7(ZXComp* comp, Z80EX_WORD port) {
+unsigned char tsInBFF7(ZXComp* comp, unsigned short port) {
 	return (comp->pEFF7 & 0x80) ? cmsRd(comp) : 0xff;
 }
 
 // out
 
-void tsOutBDI(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {		// dos
+void tsOutBDI(ZXComp* comp, unsigned short port, unsigned char val) {		// dos
 	if (comp->tsconf.vdos) {
 		comp->tsconf.vdos = 0;
 		tslMapMem(comp);
@@ -190,7 +190,7 @@ void tsOutBDI(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {		// dos
 	}
 }
 
-void tsOutFF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {		// dos
+void tsOutFF(ZXComp* comp, unsigned short port, unsigned char val) {		// dos
 	comp->dif->fdc->flp = comp->dif->fdc->flop[val & 3];
 	if (comp->dif->fdc->flp->virt) {
 		comp->tsconf.vdos = 1;
@@ -202,27 +202,27 @@ void tsOutFF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {		// dos
 	}
 }
 
-void tsOutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void tsOutFE(ZXComp* comp, unsigned short port, unsigned char val) {
 	comp->vid->brdcol = 0xf0 | (val & 7);
 	comp->vid->nextbrd = comp->vid->brdcol;
 	comp->beeplev = (val & 0x10) ? 1 : 0;
 	comp->tape->levRec = (val & 0x08) ? 1 : 0;
 }
 
-void tsOutFB(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void tsOutFB(ZXComp* comp, unsigned short port, unsigned char val) {
 	sdrvOut(comp->sdrv, 0xfb, val);
 }
 
-void tsOut57(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void tsOut57(ZXComp* comp, unsigned short port, unsigned char val) {
 	sdcWrite(comp->sdc,val);
 }
 
-void tsOut77(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void tsOut77(ZXComp* comp, unsigned short port, unsigned char val) {
 	comp->sdc->flag &= ~0x03;
 	comp->sdc->flag |= (val & 3);
 }
 
-void tsOut7FFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void tsOut7FFD(ZXComp* comp, unsigned short port, unsigned char val) {
 	if (comp->p7FFD & 0x20) return;
 	comp->p7FFD = val;
 	comp->rom = (val & 0x10) ? 1 : 0;
@@ -238,79 +238,79 @@ void tsOut7FFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	tslMapMem(comp);
 }
 
-void tsOutBFF7(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void tsOutBFF7(ZXComp* comp, unsigned short port, unsigned char val) {
 	if (comp->pEFF7 & 0x80) cmsWr(comp,val);
 }
 
-void tsOutDFF7(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void tsOutDFF7(ZXComp* comp, unsigned short port, unsigned char val) {
 	if (comp->pEFF7 & 0x80) comp->cmos.adr = val;
 }
 
-void tsOutEFF7(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void tsOutEFF7(ZXComp* comp, unsigned short port, unsigned char val) {
 	comp->pEFF7 = val;
 }
 
 // xxaf
 
-Z80EX_BYTE tsIn00AF(ZXComp* comp, Z80EX_WORD port) {
-	Z80EX_BYTE res = comp->tsconf.pwr_up ? 0x40 : 0x00;	// b6: PWR_UP (1st run)
+unsigned char tsIn00AF(ZXComp* comp, unsigned short port) {
+	unsigned char res = comp->tsconf.pwr_up ? 0x40 : 0x00;	// b6: PWR_UP (1st run)
 	comp->tsconf.pwr_up = 0;
 	res |= 3;						// 11 : 5bit VDAC
 	return res;
 }
 
-void tsOut00AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->tsconf.p00af = val;}
-void tsOut01AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->tsconf.p01af = val;}
-void tsOut02AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->tsconf.p02af = val;}
-void tsOut03AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->tsconf.p03af = val;}
+void tsOut00AF(ZXComp* comp, unsigned short port, unsigned char val) {comp->tsconf.p00af = val;}
+void tsOut01AF(ZXComp* comp, unsigned short port, unsigned char val) {comp->tsconf.p01af = val;}
+void tsOut02AF(ZXComp* comp, unsigned short port, unsigned char val) {comp->tsconf.p02af = val;}
+void tsOut03AF(ZXComp* comp, unsigned short port, unsigned char val) {comp->tsconf.p03af = val;}
 
-void tsOut04AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void tsOut04AF(ZXComp* comp, unsigned short port, unsigned char val) {
 	comp->tsconf.p04af = val;
 	comp->vid->tsconf.scrLine = ((comp->tsconf.p05af & 1) << 8) | (comp->tsconf.p04af);
 }
 
-void tsOut05AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void tsOut05AF(ZXComp* comp, unsigned short port, unsigned char val) {
 	comp->tsconf.p05af = val;
 	comp->vid->tsconf.scrLine = ((comp->tsconf.p05af & 1) << 8) | (comp->tsconf.p04af);
 }
 
-void tsOut06AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->vid->tsconf.tconfig = val;}
-void tsOut07AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->tsconf.p07af = val;}
-void tsOut0FAF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->vid->nextbrd = val;}
+void tsOut06AF(ZXComp* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.tconfig = val;}
+void tsOut07AF(ZXComp* comp, unsigned short port, unsigned char val) {comp->tsconf.p07af = val;}
+void tsOut0FAF(ZXComp* comp, unsigned short port, unsigned char val) {comp->vid->nextbrd = val;}
 
-void tsOut10AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void tsOut10AF(ZXComp* comp, unsigned short port, unsigned char val) {
 	comp->tsconf.Page0 = val;
 	tslMapMem(comp);
 }
 
-void tsOut11AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void tsOut11AF(ZXComp* comp, unsigned short port, unsigned char val) {
 	memSetBank(comp->mem,MEM_BANK1,MEM_RAM,val);
 }
 
-void tsOut12AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {memSetBank(comp->mem,MEM_BANK2,MEM_RAM,val);}
-void tsOut13AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {memSetBank(comp->mem,MEM_BANK3,MEM_RAM,val);}
+void tsOut12AF(ZXComp* comp, unsigned short port, unsigned char val) {memSetBank(comp->mem,MEM_BANK2,MEM_RAM,val);}
+void tsOut13AF(ZXComp* comp, unsigned short port, unsigned char val) {memSetBank(comp->mem,MEM_BANK3,MEM_RAM,val);}
 
-Z80EX_BYTE tsIn12AF(ZXComp* comp, Z80EX_WORD port) {return comp->mem->pt[2]->num;}
-Z80EX_BYTE tsIn13AF(ZXComp* comp, Z80EX_WORD port) {return comp->mem->pt[3]->num;}
+unsigned char tsIn12AF(ZXComp* comp, unsigned short port) {return comp->mem->pt[2]->num;}
+unsigned char tsIn13AF(ZXComp* comp, unsigned short port) {return comp->mem->pt[3]->num;}
 
-void tsOut15AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void tsOut15AF(ZXComp* comp, unsigned short port, unsigned char val) {
 	comp->tsconf.flag = val & 0x10;		// FM_EN
 	comp->tsconf.tsMapAdr = ((val & 0x0f) << 12);
 }
 
-void tsOut16AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->vid->tsconf.TMPage = val;}
-void tsOut17AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->vid->tsconf.T0GPage = val & 0xf8;}
-void tsOut18AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->vid->tsconf.T1GPage = val & 0xf8;}
-void tsOut19AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->vid->tsconf.SGPage = val & 0xf8;}
+void tsOut16AF(ZXComp* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.TMPage = val;}
+void tsOut17AF(ZXComp* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.T0GPage = val & 0xf8;}
+void tsOut18AF(ZXComp* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.T1GPage = val & 0xf8;}
+void tsOut19AF(ZXComp* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.SGPage = val & 0xf8;}
 
-void tsOut1AAF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->dma.src.l = val;}
-void tsOut1BAF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->dma.src.h = val;}
-void tsOut1CAF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->dma.src.x = val;}
-void tsOut1DAF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->dma.dst.l = val;}
-void tsOut1EAF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->dma.dst.h = val;}
-void tsOut1FAF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->dma.dst.x = val;}
+void tsOut1AAF(ZXComp* comp, unsigned short port, unsigned char val) {comp->dma.src.l = val;}
+void tsOut1BAF(ZXComp* comp, unsigned short port, unsigned char val) {comp->dma.src.h = val;}
+void tsOut1CAF(ZXComp* comp, unsigned short port, unsigned char val) {comp->dma.src.x = val;}
+void tsOut1DAF(ZXComp* comp, unsigned short port, unsigned char val) {comp->dma.dst.l = val;}
+void tsOut1EAF(ZXComp* comp, unsigned short port, unsigned char val) {comp->dma.dst.h = val;}
+void tsOut1FAF(ZXComp* comp, unsigned short port, unsigned char val) {comp->dma.dst.x = val;}
 
-void tsOut20AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void tsOut20AF(ZXComp* comp, unsigned short port, unsigned char val) {
 	switch (val & 3) {
 		case 0: zxSetFrq(comp,3.5); break;
 		case 1: zxSetFrq(comp,7.0); break;
@@ -319,7 +319,7 @@ void tsOut20AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	}
 }
 
-void tsOut21AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void tsOut21AF(ZXComp* comp, unsigned short port, unsigned char val) {
 	p21AF = val;
 	comp->p7FFD &= ~0x10;
 	if (val & 1) comp->p7FFD |= 0x10;
@@ -327,22 +327,22 @@ void tsOut21AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	tslMapMem(comp);
 }
 
-void tsOut22AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->vid->intpos.h = (val << 1);}
-void tsOut23AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void tsOut22AF(ZXComp* comp, unsigned short port, unsigned char val) {comp->vid->intpos.h = (val << 1);}
+void tsOut23AF(ZXComp* comp, unsigned short port, unsigned char val) {
 	comp->vid->intpos.v &= 0xff00;
 	comp->vid->intpos.v |= val;
 }
 
-void tsOut24AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void tsOut24AF(ZXComp* comp, unsigned short port, unsigned char val) {
 	comp->vid->intpos.v &= 0x00ff;
 	comp->vid->intpos.v |= ((val & 1) << 8);
 }
 
-void tsOut26AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->dma.len = val;}
+void tsOut26AF(ZXComp* comp, unsigned short port, unsigned char val) {comp->dma.len = val;}
 
-Z80EX_BYTE tsIn27AF(ZXComp* comp, Z80EX_WORD port) {return 0x00;}
+unsigned char tsIn27AF(ZXComp* comp, unsigned short port) {return 0x00;}
 
-void tsOut27AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void tsOut27AF(ZXComp* comp, unsigned short port, unsigned char val) {
 	int cnt, cnt2;
 	unsigned char tmp;
 	unsigned char* ptr = NULL;
@@ -446,9 +446,9 @@ void tsOut27AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	}
 }
 
-void tsOut28AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->dma.num = val;}
+void tsOut28AF(ZXComp* comp, unsigned short port, unsigned char val) {comp->dma.num = val;}
 
-void tsOut29AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void tsOut29AF(ZXComp* comp, unsigned short port, unsigned char val) {
 	// comp->tsconf.FDDVirt = val;
 	comp->dif->fdc->flop[0]->virt = (val & 0x01) ? 1 : 0;
 	comp->dif->fdc->flop[1]->virt = (val & 0x02) ? 1 : 0;
@@ -456,25 +456,25 @@ void tsOut29AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	comp->dif->fdc->flop[3]->virt = (val & 0x08) ? 1 : 0;
 }
 
-void tsOut2AAF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->vid->intMask = val;}
+void tsOut2AAF(ZXComp* comp, unsigned short port, unsigned char val) {comp->vid->intMask = val;}
 
-void tsOut40AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->vid->tsconf.t0xl = val;}
-void tsOut41AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->vid->tsconf.t0xh = val & 1;}
-void tsOut42AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->vid->tsconf.t0yl = val;}
-void tsOut43AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->vid->tsconf.t0yh = val & 1;}
-void tsOut44AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->vid->tsconf.t1xl = val;}
-void tsOut45AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->vid->tsconf.t1xh = val & 1;}
-void tsOut46AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->vid->tsconf.t1yl = val;}
-void tsOut47AF(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {comp->vid->tsconf.t1yh = val & 1;}
+void tsOut40AF(ZXComp* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.t0xl = val;}
+void tsOut41AF(ZXComp* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.t0xh = val & 1;}
+void tsOut42AF(ZXComp* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.t0yl = val;}
+void tsOut43AF(ZXComp* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.t0yh = val & 1;}
+void tsOut44AF(ZXComp* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.t1xl = val;}
+void tsOut45AF(ZXComp* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.t1xh = val & 1;}
+void tsOut46AF(ZXComp* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.t1yl = val;}
+void tsOut47AF(ZXComp* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.t1yh = val & 1;}
 
 // catch
 
-Z80EX_BYTE tsInCatch(ZXComp* comp, Z80EX_WORD port) {
+unsigned char tsInCatch(ZXComp* comp, unsigned short port) {
 	comp->brk = 1;
 	return 0xff;
 }
 
-void tsOutCatch(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void tsOutCatch(ZXComp* comp, unsigned short port, unsigned char val) {
 	comp->brk = 1;
 }
 
@@ -551,10 +551,10 @@ xPort tsPortMap[] = {
 	{0x0000,0x0000,2,2,2,NULL,	NULL},
 };
 
-void tslOut(ZXComp* comp,Z80EX_WORD port,Z80EX_BYTE val,int dos) {
+void tslOut(ZXComp* comp,unsigned short port,unsigned char val,int dos) {
 	hwOut(tsPortMap, comp, port, val, dos);
 }
 
-Z80EX_BYTE tslIn(ZXComp* comp,Z80EX_WORD port,int dos) {
+unsigned char tslIn(ZXComp* comp,unsigned short port,int dos) {
 	return hwIn(tsPortMap, comp, port, dos);
 }

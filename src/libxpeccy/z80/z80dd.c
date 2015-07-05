@@ -1,22 +1,22 @@
 
 // 09	add ix,bc	11	mptr = ix+1 before adding
-void dd09(Z80CPU* cpu) {
+void dd09(CPU* cpu) {
 	ADD16(cpu->ix, cpu->bc);
 }
 
 // 19	add ix,de	11	mptr = ix+1 before adding
-void dd19(Z80CPU* cpu) {
+void dd19(CPU* cpu) {
 	ADD16(cpu->ix,cpu->de);
 }
 
 // 21	ld ix,nn	4 3rd 3rd
-void dd21(Z80CPU* cpu) {
+void dd21(CPU* cpu) {
 	cpu->lx = MEMRD(cpu->pc++,3);
 	cpu->hx = MEMRD(cpu->pc++,3);
 }
 
 // 22	ld (nn),ix	4 3rd 3rd 3wr 3wr	mptr = nn+1
-void dd22(Z80CPU* cpu) {
+void dd22(CPU* cpu) {
 	cpu->lptr = MEMRD(cpu->pc++,3);
 	cpu->hptr = MEMRD(cpu->pc++,3);
 	MEMWR(cpu->mptr++,cpu->lx,3);
@@ -24,32 +24,32 @@ void dd22(Z80CPU* cpu) {
 }
 
 // 23	inc ix		6
-void dd23(Z80CPU* cpu) {
+void dd23(CPU* cpu) {
 	cpu->ix++;
 }
 
 // 24	inc hx		4
-void dd24(Z80CPU* cpu) {
+void dd24(CPU* cpu) {
 	INC(cpu->hx);
 }
 
 // 25	dec hx		4
-void dd25(Z80CPU* cpu) {
+void dd25(CPU* cpu) {
 	DEC(cpu->hx);
 }
 
 // 26	ld hx,n		4 3rd
-void dd26(Z80CPU* cpu) {
+void dd26(CPU* cpu) {
 	cpu->hx = MEMRD(cpu->pc++,3);
 }
 
 // 29	add ix,ix	11
-void dd29(Z80CPU* cpu) {
+void dd29(CPU* cpu) {
 	ADD16(cpu->ix,cpu->ix);
 }
 
 // 2A	ld ix,(nn)	4 3rd 3rd 3rd 3rd	mptr = nn+1
-void dd2A(Z80CPU* cpu) {
+void dd2A(CPU* cpu) {
 	cpu->lptr = MEMRD(cpu->pc++,3);
 	cpu->hptr = MEMRD(cpu->pc++,3);
 	cpu->lx = MEMRD(cpu->mptr++,3);
@@ -57,27 +57,27 @@ void dd2A(Z80CPU* cpu) {
 }
 
 // 2B	dec ix		6
-void dd2B(Z80CPU* cpu) {
+void dd2B(CPU* cpu) {
 	cpu->ix--;
 }
 
 // 2C	inc lx		4
-void dd2C(Z80CPU* cpu) {
+void dd2C(CPU* cpu) {
 	INC(cpu->lx);
 }
 
 // 2D	dec lx		4
-void dd2D(Z80CPU* cpu) {
+void dd2D(CPU* cpu) {
 	DEC(cpu->lx);
 }
 
 // 2E	ld lx,n		4 3rd
-void dd2E(Z80CPU* cpu) {
+void dd2E(CPU* cpu) {
 	cpu->lx = MEMRD(cpu->pc++,3);
 }
 
 // 34	inc (ix+e)	4 3rd 5add 4rd 3wr
-void dd34(Z80CPU* cpu) {
+void dd34(CPU* cpu) {
 	RDSHIFT(cpu->ix);
 	cpu->tmp = MEMRD(cpu->mptr,4);
 	INC(cpu->tmp);
@@ -85,7 +85,7 @@ void dd34(Z80CPU* cpu) {
 }
 
 // 35	dec (ix+e)	4 3rd 5add 4rd 3wr	mptr = ix+e
-void dd35(Z80CPU* cpu) {
+void dd35(CPU* cpu) {
 	RDSHIFT(cpu->ix);
 	cpu->tmp = MEMRD(cpu->mptr,4);
 	DEC(cpu->tmp);
@@ -93,96 +93,96 @@ void dd35(Z80CPU* cpu) {
 }
 
 // 36	ld (ix+e),n	4 3rd {5add 3rd} 3wr	mptr = ix+e
-void dd36(Z80CPU* cpu) {
+void dd36(CPU* cpu) {
 	RDSHIFT(cpu->ix);
 	cpu->tmp = MEMRD(cpu->pc++,0);	// 0?
 	MEMWR(cpu->mptr,cpu->tmp,3);
 }
 
 // 39	add ix,sp	11
-void dd39(Z80CPU* cpu) {
+void dd39(CPU* cpu) {
 	ADD16(cpu->ix,cpu->sp);
 }
 
 // ld r,r		4 [3rd 5add 3rd]
-void dd44(Z80CPU* cpu) {cpu->b = cpu->hx;}
-void dd45(Z80CPU* cpu) {cpu->b = cpu->lx;}
-void dd46(Z80CPU* cpu) {RDSHIFT(cpu->ix); cpu->b = MEMRD(cpu->mptr,3);}
-void dd4C(Z80CPU* cpu) {cpu->c = cpu->hx;}
-void dd4D(Z80CPU* cpu) {cpu->c = cpu->lx;}
-void dd4E(Z80CPU* cpu) {RDSHIFT(cpu->ix); cpu->c = MEMRD(cpu->mptr,3);}
-void dd54(Z80CPU* cpu) {cpu->d = cpu->hx;}
-void dd55(Z80CPU* cpu) {cpu->d = cpu->lx;}
-void dd56(Z80CPU* cpu) {RDSHIFT(cpu->ix); cpu->d = MEMRD(cpu->mptr,3);}
-void dd5C(Z80CPU* cpu) {cpu->e = cpu->hx;}
-void dd5D(Z80CPU* cpu) {cpu->e = cpu->lx;}
-void dd5E(Z80CPU* cpu) {RDSHIFT(cpu->ix); cpu->e = MEMRD(cpu->mptr,3);}
+void dd44(CPU* cpu) {cpu->b = cpu->hx;}
+void dd45(CPU* cpu) {cpu->b = cpu->lx;}
+void dd46(CPU* cpu) {RDSHIFT(cpu->ix); cpu->b = MEMRD(cpu->mptr,3);}
+void dd4C(CPU* cpu) {cpu->c = cpu->hx;}
+void dd4D(CPU* cpu) {cpu->c = cpu->lx;}
+void dd4E(CPU* cpu) {RDSHIFT(cpu->ix); cpu->c = MEMRD(cpu->mptr,3);}
+void dd54(CPU* cpu) {cpu->d = cpu->hx;}
+void dd55(CPU* cpu) {cpu->d = cpu->lx;}
+void dd56(CPU* cpu) {RDSHIFT(cpu->ix); cpu->d = MEMRD(cpu->mptr,3);}
+void dd5C(CPU* cpu) {cpu->e = cpu->hx;}
+void dd5D(CPU* cpu) {cpu->e = cpu->lx;}
+void dd5E(CPU* cpu) {RDSHIFT(cpu->ix); cpu->e = MEMRD(cpu->mptr,3);}
 
-void dd60(Z80CPU* cpu) {cpu->hx = cpu->b;}
-void dd61(Z80CPU* cpu) {cpu->hx = cpu->c;}
-void dd62(Z80CPU* cpu) {cpu->hx = cpu->d;}
-void dd63(Z80CPU* cpu) {cpu->hx = cpu->e;}
-void dd64(Z80CPU* cpu) {}
-void dd65(Z80CPU* cpu) {cpu->hx = cpu->lx;}
-void dd66(Z80CPU* cpu) {RDSHIFT(cpu->ix); cpu->h = MEMRD(cpu->mptr,3);}
-void dd67(Z80CPU* cpu) {cpu->hx = cpu->a;}
+void dd60(CPU* cpu) {cpu->hx = cpu->b;}
+void dd61(CPU* cpu) {cpu->hx = cpu->c;}
+void dd62(CPU* cpu) {cpu->hx = cpu->d;}
+void dd63(CPU* cpu) {cpu->hx = cpu->e;}
+void dd64(CPU* cpu) {}
+void dd65(CPU* cpu) {cpu->hx = cpu->lx;}
+void dd66(CPU* cpu) {RDSHIFT(cpu->ix); cpu->h = MEMRD(cpu->mptr,3);}
+void dd67(CPU* cpu) {cpu->hx = cpu->a;}
 
-void dd68(Z80CPU* cpu) {cpu->lx = cpu->b;}
-void dd69(Z80CPU* cpu) {cpu->lx = cpu->c;}
-void dd6A(Z80CPU* cpu) {cpu->lx = cpu->d;}
-void dd6B(Z80CPU* cpu) {cpu->lx = cpu->e;}
-void dd6C(Z80CPU* cpu) {cpu->lx = cpu->hx;}
-void dd6D(Z80CPU* cpu) {}
-void dd6E(Z80CPU* cpu) {RDSHIFT(cpu->ix); cpu->l = MEMRD(cpu->mptr,3);}
-void dd6F(Z80CPU* cpu) {cpu->lx = cpu->a;}
+void dd68(CPU* cpu) {cpu->lx = cpu->b;}
+void dd69(CPU* cpu) {cpu->lx = cpu->c;}
+void dd6A(CPU* cpu) {cpu->lx = cpu->d;}
+void dd6B(CPU* cpu) {cpu->lx = cpu->e;}
+void dd6C(CPU* cpu) {cpu->lx = cpu->hx;}
+void dd6D(CPU* cpu) {}
+void dd6E(CPU* cpu) {RDSHIFT(cpu->ix); cpu->l = MEMRD(cpu->mptr,3);}
+void dd6F(CPU* cpu) {cpu->lx = cpu->a;}
 // 70..77	ld (ix+e),r	4 3rd 5add 3wr
-void dd70(Z80CPU* cpu) {RDSHIFT(cpu->ix); MEMWR(cpu->mptr,cpu->b,3);}
-void dd71(Z80CPU* cpu) {RDSHIFT(cpu->ix); MEMWR(cpu->mptr,cpu->c,3);}
-void dd72(Z80CPU* cpu) {RDSHIFT(cpu->ix); MEMWR(cpu->mptr,cpu->d,3);}
-void dd73(Z80CPU* cpu) {RDSHIFT(cpu->ix); MEMWR(cpu->mptr,cpu->e,3);}
-void dd74(Z80CPU* cpu) {RDSHIFT(cpu->ix); MEMWR(cpu->mptr,cpu->h,3);}
-void dd75(Z80CPU* cpu) {RDSHIFT(cpu->ix); MEMWR(cpu->mptr,cpu->l,3);}
-void dd77(Z80CPU* cpu) {RDSHIFT(cpu->ix); MEMWR(cpu->mptr,cpu->a,3);}
+void dd70(CPU* cpu) {RDSHIFT(cpu->ix); MEMWR(cpu->mptr,cpu->b,3);}
+void dd71(CPU* cpu) {RDSHIFT(cpu->ix); MEMWR(cpu->mptr,cpu->c,3);}
+void dd72(CPU* cpu) {RDSHIFT(cpu->ix); MEMWR(cpu->mptr,cpu->d,3);}
+void dd73(CPU* cpu) {RDSHIFT(cpu->ix); MEMWR(cpu->mptr,cpu->e,3);}
+void dd74(CPU* cpu) {RDSHIFT(cpu->ix); MEMWR(cpu->mptr,cpu->h,3);}
+void dd75(CPU* cpu) {RDSHIFT(cpu->ix); MEMWR(cpu->mptr,cpu->l,3);}
+void dd77(CPU* cpu) {RDSHIFT(cpu->ix); MEMWR(cpu->mptr,cpu->a,3);}
 
-void dd7C(Z80CPU* cpu) {cpu->a = cpu->hx;}
-void dd7D(Z80CPU* cpu) {cpu->a = cpu->lx;}
-void dd7E(Z80CPU* cpu) {RDSHIFT(cpu->ix); cpu->a = MEMRD(cpu->mptr,3);}
+void dd7C(CPU* cpu) {cpu->a = cpu->hx;}
+void dd7D(CPU* cpu) {cpu->a = cpu->lx;}
+void dd7E(CPU* cpu) {RDSHIFT(cpu->ix); cpu->a = MEMRD(cpu->mptr,3);}
 
 // add x
-void dd84(Z80CPU* cpu) {ADD(cpu->hx);}
-void dd85(Z80CPU* cpu) {ADD(cpu->lx);}
-void dd86(Z80CPU* cpu) {RDSHIFT(cpu->ix); cpu->tmpb = MEMRD(cpu->mptr,3); ADD(cpu->tmpb);}
+void dd84(CPU* cpu) {ADD(cpu->hx);}
+void dd85(CPU* cpu) {ADD(cpu->lx);}
+void dd86(CPU* cpu) {RDSHIFT(cpu->ix); cpu->tmpb = MEMRD(cpu->mptr,3); ADD(cpu->tmpb);}
 // adc x
-void dd8C(Z80CPU* cpu) {ADC(cpu->hx);}
-void dd8D(Z80CPU* cpu) {ADC(cpu->lx);}
-void dd8E(Z80CPU* cpu) {RDSHIFT(cpu->ix); cpu->tmpb = MEMRD(cpu->mptr,3); ADC(cpu->tmpb);}
+void dd8C(CPU* cpu) {ADC(cpu->hx);}
+void dd8D(CPU* cpu) {ADC(cpu->lx);}
+void dd8E(CPU* cpu) {RDSHIFT(cpu->ix); cpu->tmpb = MEMRD(cpu->mptr,3); ADC(cpu->tmpb);}
 // sub x
-void dd94(Z80CPU* cpu) {SUB(cpu->hx);}
-void dd95(Z80CPU* cpu) {SUB(cpu->lx);}
-void dd96(Z80CPU* cpu) {RDSHIFT(cpu->ix); cpu->tmpb = MEMRD(cpu->mptr,3); SUB(cpu->tmpb);}
+void dd94(CPU* cpu) {SUB(cpu->hx);}
+void dd95(CPU* cpu) {SUB(cpu->lx);}
+void dd96(CPU* cpu) {RDSHIFT(cpu->ix); cpu->tmpb = MEMRD(cpu->mptr,3); SUB(cpu->tmpb);}
 // sbc x
-void dd9C(Z80CPU* cpu) {SBC(cpu->hx);}
-void dd9D(Z80CPU* cpu) {SBC(cpu->lx);}
-void dd9E(Z80CPU* cpu) {RDSHIFT(cpu->ix); cpu->tmpb = MEMRD(cpu->mptr,3); SBC(cpu->tmpb);}
+void dd9C(CPU* cpu) {SBC(cpu->hx);}
+void dd9D(CPU* cpu) {SBC(cpu->lx);}
+void dd9E(CPU* cpu) {RDSHIFT(cpu->ix); cpu->tmpb = MEMRD(cpu->mptr,3); SBC(cpu->tmpb);}
 // and x
-void ddA4(Z80CPU* cpu) {cpu->a &= cpu->hx; cpu->f = sz53pTab[cpu->a] | FH;}
-void ddA5(Z80CPU* cpu) {cpu->a &= cpu->lx; cpu->f = sz53pTab[cpu->a] | FH;}
-void ddA6(Z80CPU* cpu) {RDSHIFT(cpu->ix); cpu->tmpb = MEMRD(cpu->mptr,3); cpu->a &= cpu->tmpb; cpu->f = sz53pTab[cpu->a] | FH;}
+void ddA4(CPU* cpu) {cpu->a &= cpu->hx; cpu->f = sz53pTab[cpu->a] | FH;}
+void ddA5(CPU* cpu) {cpu->a &= cpu->lx; cpu->f = sz53pTab[cpu->a] | FH;}
+void ddA6(CPU* cpu) {RDSHIFT(cpu->ix); cpu->tmpb = MEMRD(cpu->mptr,3); cpu->a &= cpu->tmpb; cpu->f = sz53pTab[cpu->a] | FH;}
 // xor x
-void ddAC(Z80CPU* cpu) {cpu->a ^= cpu->hx; cpu->f = sz53pTab[cpu->a];}
-void ddAD(Z80CPU* cpu) {cpu->a ^= cpu->lx; cpu->f = sz53pTab[cpu->a];}
-void ddAE(Z80CPU* cpu) {RDSHIFT(cpu->ix); cpu->tmpb = MEMRD(cpu->mptr,3); cpu->a ^= cpu->tmpb; cpu->f = sz53pTab[cpu->a];}
+void ddAC(CPU* cpu) {cpu->a ^= cpu->hx; cpu->f = sz53pTab[cpu->a];}
+void ddAD(CPU* cpu) {cpu->a ^= cpu->lx; cpu->f = sz53pTab[cpu->a];}
+void ddAE(CPU* cpu) {RDSHIFT(cpu->ix); cpu->tmpb = MEMRD(cpu->mptr,3); cpu->a ^= cpu->tmpb; cpu->f = sz53pTab[cpu->a];}
 // or x
-void ddB4(Z80CPU* cpu) {cpu->a |= cpu->hx; cpu->f = sz53pTab[cpu->a];}
-void ddB5(Z80CPU* cpu) {cpu->a |= cpu->lx; cpu->f = sz53pTab[cpu->a];}
-void ddB6(Z80CPU* cpu) {RDSHIFT(cpu->ix); cpu->tmpb = MEMRD(cpu->mptr,3); cpu->a |= cpu->tmpb; cpu->f = sz53pTab[cpu->a];}
+void ddB4(CPU* cpu) {cpu->a |= cpu->hx; cpu->f = sz53pTab[cpu->a];}
+void ddB5(CPU* cpu) {cpu->a |= cpu->lx; cpu->f = sz53pTab[cpu->a];}
+void ddB6(CPU* cpu) {RDSHIFT(cpu->ix); cpu->tmpb = MEMRD(cpu->mptr,3); cpu->a |= cpu->tmpb; cpu->f = sz53pTab[cpu->a];}
 // cp x
-void ddBC(Z80CPU* cpu) {CP(cpu->hx);}
-void ddBD(Z80CPU* cpu) {CP(cpu->lx);}
-void ddBE(Z80CPU* cpu) {RDSHIFT(cpu->ix); cpu->tmpb = MEMRD(cpu->mptr,3); CP(cpu->tmpb);}
+void ddBC(CPU* cpu) {CP(cpu->hx);}
+void ddBD(CPU* cpu) {CP(cpu->lx);}
+void ddBE(CPU* cpu) {RDSHIFT(cpu->ix); cpu->tmpb = MEMRD(cpu->mptr,3); CP(cpu->tmpb);}
 
 // cb	ddcb prefix	4 3rd
-void ddCB(Z80CPU* cpu) {
+void ddCB(CPU* cpu) {
 	cpu->opTab = ddcbTab;
 	cpu->tmp = MEMRD(cpu->pc++,3);
 	cpu->tmpb = MEMRD(cpu->pc++,0);	// opcode. eat 0T? not m1
@@ -191,12 +191,12 @@ void ddCB(Z80CPU* cpu) {
 }
 
 // e1	pop ix		4 3rd 3rd
-void ddE1(Z80CPU* cpu) {
+void ddE1(CPU* cpu) {
 	POP(cpu->hx,cpu->lx);
 }
 
 // e3	ex (sp),ix	4 3rd 4rd 3wr 5wr	mptr = ix
-void ddE3(Z80CPU* cpu) {
+void ddE3(CPU* cpu) {
 	POP(cpu->htw,cpu->ltw); cpu->t++;	// 3,3+1
 	PUSH(cpu->hx, cpu->lx); cpu->t += 2;	// 3,3+2
 	cpu->ix = cpu->tmpw;
@@ -204,17 +204,17 @@ void ddE3(Z80CPU* cpu) {
 }
 
 // e5	push ix		5 3wr 3wr
-void ddE5(Z80CPU* cpu) {
+void ddE5(CPU* cpu) {
 	PUSH(cpu->hx,cpu->lx);
 }
 
 // e9	jp (ix)		4
-void ddE9(Z80CPU* cpu) {
+void ddE9(CPU* cpu) {
 	cpu->pc = cpu->ix;
 }
 
 // f9	ld sp,ix	6
-void ddF9(Z80CPU* cpu) {
+void ddF9(CPU* cpu) {
 	cpu->sp = cpu->ix;
 }
 

@@ -29,7 +29,7 @@
 // main
 
 // temp emulation
-Z80EX_WORD pc,af,de,ix;
+unsigned short pc,af,de,ix;
 unsigned char* blkData = NULL;
 int blk;
 
@@ -1130,8 +1130,8 @@ void xThread::tapeCatch() {
 	blk = comp->tape->block;
 	if (blk >= comp->tape->blkCount) return;
 	if (conf->tape.fast && comp->tape->blkData[blk].hasBytes) {
-		de = GETDE(comp->cpu);
-		ix = GETIX(comp->cpu);
+		de = comp->cpu->de;
+		ix = comp->cpu->ix;
 		TapeBlockInfo inf = tapGetBlockInfo(comp->tape,blk);
 		blkData = (unsigned char*)realloc(blkData,inf.size + 2);
 		tapGetBlockData(comp->tape,blk,blkData);
@@ -1140,14 +1140,14 @@ void xThread::tapeCatch() {
 				memWr(comp->mem,ix,blkData[i + 1]);
 				ix++;
 			}
-			SETIX(comp->cpu,ix);
-			SETDE(comp->cpu,0);
-			SETHL(comp->cpu,0);
+			comp->cpu->ix = ix;
+			comp->cpu->de = 0;
+			comp->cpu->hl = 0;
 			tapNextBlock(comp->tape);
 		} else {
-			SETHL(comp->cpu,0xff00);
+			comp->cpu->hl = 0xff00;
 		}
-		SETPC(comp->cpu,0x5df);
+		comp->cpu->pc = 0x5df;
 	} else {
 		if (conf->tape.autostart)
 			emit tapeSignal(TW_STATE,TWS_PLAY);
@@ -1165,7 +1165,7 @@ void xThread::emuCycle() {
 			sndNs -= nsPerSample;
 		}
 		// tape trap
-		pc = GETPC(comp->cpu);	// z80ex_get_reg(comp->cpu,regPC);
+		pc = comp->cpu->pc;
 		if ((comp->mem->pt[0]->type == MEM_ROM) && (comp->mem->pt[0]->num == 1)) {
 			if (pc == 0x56b) tapeCatch();
 			if ((pc == 0x5e2) && conf->tape.autostart)

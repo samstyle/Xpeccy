@@ -11,7 +11,7 @@ void speMapMem(ZXComp* comp) {
 
 // out
 
-void spOutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void spOutFE(ZXComp* comp, unsigned short port, unsigned char val) {
 	comp->vid->nextbrd = val & 0x07;
 	if (!comp->vid->border4t)
 		comp->vid->brdcol = val & 0x07;
@@ -21,11 +21,11 @@ void spOutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 
 // in
 
-Z80EX_BYTE spIn1F(ZXComp* comp, Z80EX_WORD port) {
+unsigned char spIn1F(ZXComp* comp, unsigned short port) {
 	return joyInput(comp->joy);
 }
 
-Z80EX_BYTE spInFF(ZXComp* comp, Z80EX_WORD port) {
+unsigned char spInFF(ZXComp* comp, unsigned short port) {
 	return comp->vid->atrbyte;
 }
 
@@ -41,13 +41,13 @@ xPort spePortMap[] = {
 	{0x0000,0x0000,2,2,2,spInFF,	NULL}
 };
 
-void speOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int dos) {
+void speOut(ZXComp* comp, unsigned short port, unsigned char val, int dos) {
 	difOut(comp->dif, port, val, dos);
 	hwOut(spePortMap, comp, port, val, dos);
 }
 
-Z80EX_BYTE speIn(ZXComp* comp, Z80EX_WORD port, int dos) {
-	Z80EX_BYTE res;
+unsigned char speIn(ZXComp* comp, unsigned short port, int dos) {
+	unsigned char res;
 	if (difIn(comp->dif, port, &res, dos)) return res;
 	return hwIn(spePortMap, comp, port, dos);
 }

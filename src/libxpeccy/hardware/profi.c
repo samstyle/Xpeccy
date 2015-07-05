@@ -19,7 +19,7 @@ void prfMapMem(ZXComp* comp) {
 const unsigned char prfColB[4] = {0,80,160,255};
 const unsigned char prfColTab[8] = {0,40,80,120,160,200,228,255};
 
-void prfOutPal(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void prfOutPal(ZXComp* comp, unsigned short port, unsigned char val) {
 	if (comp->pDFFD & 0x80) {
 		if (comp->profi.trig7E) {
 			xColor col;
@@ -35,7 +35,7 @@ void prfOutPal(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	}
 }
 
-void prfOutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void prfOutFE(ZXComp* comp, unsigned short port, unsigned char val) {
 	xOutFE(comp, port, val);
 	if (comp->pDFFD & 0x80) {
 		comp->vid->nextbrd ^= 7;
@@ -43,19 +43,19 @@ void prfOutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	}
 }
 
-void prfOutAS(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void prfOutAS(ZXComp* comp, unsigned short port, unsigned char val) {
 	comp->cmos.adr = val;
 }
 
-void prfOutDS(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void prfOutDS(ZXComp* comp, unsigned short port, unsigned char val) {
 	cmsWr(comp, val);
 }
 
-void prfOutBDI(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void prfOutBDI(ZXComp* comp, unsigned short port, unsigned char val) {
 	difOut(comp->dif, port, val, 1);
 }
 
-void prfOut7FFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void prfOut7FFD(ZXComp* comp, unsigned short port, unsigned char val) {
 	if ((~comp->pDFFD & 0x10) && (comp->p7FFD & 0x20)) return;	// 7FFD is blocked
 	comp->p7FFD = val;
 	comp->rom = (val & 0x10) ? 1 : 0;
@@ -64,7 +64,7 @@ void prfOut7FFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 //	printf("OUT 7FFD,%.2X\n",val);
 }
 
-void prfOutDFFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void prfOutDFFD(ZXComp* comp, unsigned short port, unsigned char val) {
 	comp->pDFFD = val;
 	comp->cpm = (val & 0x20) ? 1 : 0;
 	vidSetMode(comp->vid, (val & 0x80) ? VID_PRF_MC : VID_NORMAL);
@@ -74,32 +74,32 @@ void prfOutDFFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 
 // in
 
-Z80EX_BYTE prfInFE(ZXComp* comp, Z80EX_WORD port) {
-	Z80EX_BYTE res = keyInput(comp->keyb, (port & 0xff00) >> 8, 0);
-	Z80EX_BYTE ext = keyInput(comp->keyb, (port & 0xff00) >> 8, 1);
+unsigned char prfInFE(ZXComp* comp, unsigned short port) {
+	unsigned char res = keyInput(comp->keyb, (port & 0xff00) >> 8, 0);
+	unsigned char ext = keyInput(comp->keyb, (port & 0xff00) >> 8, 1);
 	if (ext != 0x3f) res = ext;
 	res |= (comp->tape->levPlay ? 0x40 : 0x00);
 	return res;
 }
 
-Z80EX_BYTE prfInBDI(ZXComp* comp, Z80EX_WORD port) {
-	Z80EX_BYTE res = 0xff;
+unsigned char prfInBDI(ZXComp* comp, unsigned short port) {
+	unsigned char res = 0xff;
 	difIn(comp->dif, port, &res, 1);
 	return res;
 }
 
-Z80EX_BYTE prfInDS(ZXComp* comp, Z80EX_WORD port) {
+unsigned char prfInDS(ZXComp* comp, unsigned short port) {
 	return cmsRd(comp);
 }
 
 // debug
 
-Z80EX_BYTE prfBrkIn(ZXComp* comp, Z80EX_WORD port) {
+unsigned char prfBrkIn(ZXComp* comp, unsigned short port) {
 	printf("CPM:%i, ROM:%i, DOS:%i\n", comp->cpm, comp->rom, comp->dos);
 	return brkIn(comp, port);
 }
 
-void prfBrkOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void prfBrkOut(ZXComp* comp, unsigned short port, unsigned char val) {
 	printf("CPM:%i, ROM:%i, DOS:%i\n", comp->cpm, comp->rom, comp->dos);
 	brkOut(comp, port, val);
 }
@@ -142,13 +142,13 @@ xPort prfPortMap[] = {
 
 };
 
-void prfOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int dos) {
+void prfOut(ZXComp* comp, unsigned short port, unsigned char val, int dos) {
 	if (difOut(comp->dif, port, val, dos)) return;
 	hwOut(prfPortMap, comp, port, val, dos);
 }
 
-Z80EX_BYTE prfIn(ZXComp* comp, Z80EX_WORD port, int dos) {
-	Z80EX_BYTE res = 0xff;
+unsigned char prfIn(ZXComp* comp, unsigned short port, int dos) {
+	unsigned char res = 0xff;
 	if (difIn(comp->dif, port, &res, dos)) return res;
 	res = hwIn(prfPortMap, comp, port, dos);
 	return res;

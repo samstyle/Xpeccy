@@ -35,10 +35,10 @@ struct HardWare {
 	int type;
 	int mask;		// mem size bits (b0:128, b1:256, b2:512, b3:1M, b4:2M, b5:4M); =0 for 48K
 	void (*mapMem)(ZXComp*);
-	void (*out)(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
-	Z80EX_BYTE (*in)(ZXComp*,Z80EX_WORD,int);
-	Z80EX_BYTE (*mrd)(ZXComp*,Z80EX_WORD,int);
-	void (*mwr)(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
+	void (*out)(ZXComp*,unsigned short,unsigned char,int);
+	unsigned char (*in)(ZXComp*,unsigned short,int);
+	unsigned char (*mrd)(ZXComp*,unsigned short,int);
+	void (*mwr)(ZXComp*,unsigned short,unsigned char);
 	void (*reset)(ZXComp*);
 };
 
@@ -48,102 +48,102 @@ typedef struct {
 	unsigned dos:2;		// 00:!dos only; 01:dos only; 1x:nevermind
 	unsigned rom:2;		// same: b4,7FFD
 	unsigned cpm:2;		// cpm mode (for profi)
-	Z80EX_BYTE (*in)(ZXComp*, Z80EX_WORD);
-	void (*out)(ZXComp*, Z80EX_WORD, Z80EX_BYTE);
+	unsigned char (*in)(ZXComp*, unsigned short);
+	void (*out)(ZXComp*, unsigned short, unsigned char);
 } xPort;
 
-Z80EX_BYTE hwIn(xPort*, ZXComp*, Z80EX_WORD, int);
-void hwOut(xPort*, ZXComp*, Z80EX_WORD, Z80EX_BYTE, int);
+unsigned char hwIn(xPort*, ZXComp*, unsigned short, int);
+void hwOut(xPort*, ZXComp*, unsigned short, unsigned char, int);
 
 typedef struct HardWare HardWare;
 extern HardWare hwTab[];
 
 HardWare* findHardware(const char*);
-Z80EX_BYTE stdMRd(ZXComp*,Z80EX_WORD,int);
-void stdMWr(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
+unsigned char stdMRd(ZXComp*,unsigned short,int);
+void stdMWr(ZXComp*,unsigned short,unsigned char);
 
 // debug IO
 
-Z80EX_BYTE brkIn(ZXComp*, Z80EX_WORD);
-void brkOut(ZXComp*, Z80EX_WORD, Z80EX_BYTE);
+unsigned char brkIn(ZXComp*, unsigned short);
+void brkOut(ZXComp*, unsigned short, unsigned char);
 
-Z80EX_BYTE dummyIn(ZXComp*, Z80EX_WORD);
-void dummyOut(ZXComp*, Z80EX_WORD, Z80EX_BYTE);
+unsigned char dummyIn(ZXComp*, unsigned short);
+void dummyOut(ZXComp*, unsigned short, unsigned char);
 
 // common IO
 
-void xOutFE(ZXComp*, Z80EX_WORD, Z80EX_BYTE);
-void xOutBFFD(ZXComp*, Z80EX_WORD, Z80EX_BYTE);
-void xOutFFFD(ZXComp*, Z80EX_WORD, Z80EX_BYTE);
+void xOutFE(ZXComp*, unsigned short, unsigned char);
+void xOutBFFD(ZXComp*, unsigned short, unsigned char);
+void xOutFFFD(ZXComp*, unsigned short, unsigned char);
 
-Z80EX_BYTE xIn1F(ZXComp*, Z80EX_WORD);
-Z80EX_BYTE xInFE(ZXComp*, Z80EX_WORD);
-Z80EX_BYTE xInFFFD(ZXComp*, Z80EX_WORD);
-Z80EX_BYTE xInFADF(ZXComp*, Z80EX_WORD);
-Z80EX_BYTE xInFBDF(ZXComp*, Z80EX_WORD);
-Z80EX_BYTE xInFFDF(ZXComp*, Z80EX_WORD);
+unsigned char xIn1F(ZXComp*, unsigned short);
+unsigned char xInFE(ZXComp*, unsigned short);
+unsigned char xInFFFD(ZXComp*, unsigned short);
+unsigned char xInFADF(ZXComp*, unsigned short);
+unsigned char xInFBDF(ZXComp*, unsigned short);
+unsigned char xInFFDF(ZXComp*, unsigned short);
 
 // zx48
 void speMapMem(ZXComp*);
-void speOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
-Z80EX_BYTE speIn(ZXComp*,Z80EX_WORD,int);
+void speOut(ZXComp*,unsigned short,unsigned char,int);
+unsigned char speIn(ZXComp*,unsigned short,int);
 void speReset(ZXComp*);
 
 // pentagon
 void penMapMem(ZXComp*);
-void penOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
-Z80EX_BYTE penIn(ZXComp*,Z80EX_WORD,int);
+void penOut(ZXComp*,unsigned short,unsigned char,int);
+unsigned char penIn(ZXComp*,unsigned short,int);
 
 // p1024sl
 void p1mMapMem(ZXComp*);
-void p1mOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
-Z80EX_BYTE p1mIn(ZXComp*,Z80EX_WORD,int);
+void p1mOut(ZXComp*,unsigned short,unsigned char,int);
+unsigned char p1mIn(ZXComp*,unsigned short,int);
 
 // scorpion
 void scoMapMem(ZXComp*);
-void scoOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
-Z80EX_BYTE scoIn(ZXComp*,Z80EX_WORD,int);
-Z80EX_BYTE scoMRd(ZXComp*,Z80EX_WORD,int);
+void scoOut(ZXComp*,unsigned short,unsigned char,int);
+unsigned char scoIn(ZXComp*,unsigned short,int);
+unsigned char scoMRd(ZXComp*,unsigned short,int);
 
 // plus 2
 void pl2MapMem(ZXComp*);
-void pl2Out(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
-Z80EX_BYTE pl2In(ZXComp*,Z80EX_WORD,int);
+void pl2Out(ZXComp*,unsigned short,unsigned char,int);
+unsigned char pl2In(ZXComp*,unsigned short,int);
 
 // plus 3
 // void pl3MapMem(ZXComp*);		// = pl2MapMem
-void pl3Out(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
-Z80EX_BYTE pl3In(ZXComp*,Z80EX_WORD,int);
+void pl3Out(ZXComp*,unsigned short,unsigned char,int);
+unsigned char pl3In(ZXComp*,unsigned short,int);
 
 // atm 2
 void atm2MapMem(ZXComp*);
-void atm2Out(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
-Z80EX_BYTE atm2In(ZXComp*,Z80EX_WORD,int);
+void atm2Out(ZXComp*,unsigned short,unsigned char,int);
+unsigned char atm2In(ZXComp*,unsigned short,int);
 void atm2Reset(ZXComp*);
 
 // pentevo
 void evoMapMem(ZXComp*);
-void evoOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
-Z80EX_BYTE evoIn(ZXComp*,Z80EX_WORD,int);
-Z80EX_BYTE evoMRd(ZXComp*,Z80EX_WORD,int);
-void evoMWr(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
+void evoOut(ZXComp*,unsigned short,unsigned char,int);
+unsigned char evoIn(ZXComp*,unsigned short,int);
+unsigned char evoMRd(ZXComp*,unsigned short,int);
+void evoMWr(ZXComp*,unsigned short,unsigned char);
 void evoReset(ZXComp*);
 
 // TSLab conf
 void tslMapMem(ZXComp*);
-void tslOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
-Z80EX_BYTE tslIn(ZXComp*,Z80EX_WORD,int);
-Z80EX_BYTE tslMRd(ZXComp*,Z80EX_WORD,int);
-void tslMWr(ZXComp*,Z80EX_WORD,Z80EX_BYTE);
+void tslOut(ZXComp*,unsigned short,unsigned char,int);
+unsigned char tslIn(ZXComp*,unsigned short,int);
+unsigned char tslMRd(ZXComp*,unsigned short,int);
+void tslMWr(ZXComp*,unsigned short,unsigned char);
 void tslReset(ZXComp*);
 void tslUpdatePorts(ZXComp*);
 
 // Profi
 void prfMapMem(ZXComp*);
-void prfOut(ZXComp*,Z80EX_WORD,Z80EX_BYTE,int);
-Z80EX_BYTE prfIn(ZXComp*,Z80EX_WORD,int);
+void prfOut(ZXComp*,unsigned short,unsigned char,int);
+unsigned char prfIn(ZXComp*,unsigned short,int);
 void prfReset(ZXComp*);
-Z80EX_BYTE prfMRd(ZXComp*,Z80EX_WORD,int);
+unsigned char prfMRd(ZXComp*,unsigned short,int);
 
 #ifdef __cplusplus
 }

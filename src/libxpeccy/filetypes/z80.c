@@ -84,65 +84,66 @@ const char* v3hardware[16] = {
 	"Spectrum +2","Spectrum +2A","TC1048","TC2068"
 };
 
-int loadZ80(ZXComp* zx, const char* name) {
+int loadZ80(ZXComp* comp, const char* name) {
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
 
 	int btm;
 	unsigned char tmp,tmp2,reg,lst;
 	unsigned short adr, twrd;
-	CPU* cpu = zx->cpu;
+	CPU* cpu = comp->cpu;
 	char pageBuf[0xc000];
 	z80v1Header hd;
-	zx->p7FFD = 0x10;
-	zx->pEFF7 = 0x00;
-	memSetBank(zx->mem,MEM_BANK0,MEM_ROM,1);
-	memSetBank(zx->mem,MEM_BANK3,MEM_RAM,0);
-	zx->vid->curscr = 5;
+	comp->p7FFD = 0x10;
+	comp->pEFF7 = 0x00;
+	memSetBank(comp->mem,MEM_BANK0,MEM_ROM,1);
+	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0);
+	comp->vid->curscr = 5;
 
 	fread((char*)&hd, sizeof(z80v1Header), 1, file);
 	if (hd.flag12 == 0xff) hd.flag12 = 0x01;	// Because of compatibility, if byte 12 is 255, it has to be regarded as being 1.
 
-	SETAF(zx->cpu, (hd.a << 8) | hd.f);
-	SETBC(zx->cpu, (hd.b << 8) | hd.c);
-	SETDE(zx->cpu, (hd.d << 8) | hd.e);
-	SETHL(zx->cpu, (hd.h << 8) | hd.l);
-	SETAF_(zx->cpu, (hd._a << 8) | hd._f);
-	SETBC_(zx->cpu, (hd._b << 8) | hd._c);
-	SETDE_(zx->cpu, (hd._d << 8) | hd._e);
-	SETHL_(zx->cpu, (hd._h << 8) | hd._l);
-	SETPC(zx->cpu, (hd.pch << 8) | hd.pcl);
-	SETSP(zx->cpu, (hd.sph << 8) | hd.spl);
-	SETIX(zx->cpu, (hd.ixh << 8) | hd.ixl);
-	SETIY(zx->cpu, (hd.iyh << 8) | hd.iyl);
-	SETI(zx->cpu, hd.i);
-	SETR(zx->cpu, (hd.r7 & 0x7f) | ((hd.flag12 & 1) ? 0x80 : 0x00));
-	SETIM(zx->cpu, hd.flag29 & 3);
-	SETIFF1(zx->cpu, hd.iff1);
-	SETIFF2(zx->cpu, hd.iff2);
-	zx->vid->brdcol = (hd.flag12 >> 1) & 7;
-	zx->vid->nextbrd = zx->vid->brdcol;
+	comp->cpu->af = (hd.a << 8) | hd.f;
+	comp->cpu->bc = (hd.b << 8) | hd.c;
+	comp->cpu->de = (hd.d << 8) | hd.e;
+	comp->cpu->hl = (hd.h << 8) | hd.l;
+	comp->cpu->af_ = (hd._a << 8) | hd._f;
+	comp->cpu->bc_ = (hd._b << 8) | hd._c;
+	comp->cpu->de_ = (hd._d << 8) | hd._e;
+	comp->cpu->hl_ = (hd._h << 8) | hd._l;
+	comp->cpu->pc = (hd.pch << 8) | hd.pcl;
+	comp->cpu->sp = (hd.sph << 8) | hd.spl;
+	comp->cpu->ix = (hd.ixh << 8) | hd.ixl;
+	comp->cpu->iy = (hd.iyh << 8) | hd.iyl;
+	comp->cpu->i = hd.i;
+	comp->cpu->r7 = (hd.flag12 & 1) ? 0x80 : 0;
+	comp->cpu->r = (hd.r7 & 0x7f) | comp->cpu->r7;
+	comp->cpu->imode = hd.flag29 & 3;
+	comp->cpu->iff1 = hd.iff1;
+	comp->cpu->iff2 = hd.iff2;
+	comp->vid->brdcol = (hd.flag12 >> 1) & 7;
+	comp->vid->nextbrd = comp->vid->brdcol;
 // unsupported things list
 	if (hd.flag12 & 0x10) printf("...flag 12.bit 4.Basic SamRom switched in\n");
 	if (hd.flag29 & 0x04) printf("...flag 29.bit 2.Issue 2 emulation\n");
 	if (hd.flag29 & 0x08) printf("...flag 29.bit 3.Double interrupt frequency\n");
 // continued
-	if (GETPC(zx->cpu) == 0) {
+	if (comp->cpu->pc == 0) {
 		adr = fgetwLE(file);
 		twrd = fgetwLE(file);
-		SETPC(zx->cpu, twrd);
+		comp->cpu->pc = twrd;
 		lst = fgetc(file);			// 34: HW mode
 		tmp = fgetc(file);			// 35: 7FFD last out
-		zx->hw->out(zx, 0x7ffd, tmp, 0);
+		comp->hw->out(comp, 0x7ffd, tmp, 0);
 		tmp = fgetc(file);			// 36: skip (IF1)
 		tmp = fgetc(file);			// 37: skip (flags) TODO
 		reg = fgetc(file);			// 38: last out to fffd
 		for (tmp2 = 0; tmp2 < 16; tmp2++) {	// AY regs
 			tmp = fgetc(file);
-			tsOut(zx->ts, 0xfffd, tmp2);
-			tsOut(zx->ts, 0xbffd, tmp);
+			tsOut(comp->ts, 0xfffd, tmp2);
+			tsOut(comp->ts, 0xbffd, tmp);
 		}
-		zx->hw->out(zx, 0xfffd, reg, 0);
+		comp->hw->out(comp, 0xfffd, reg, 0);
 
 		if (adr > 23) {
 printf(".z80 version 3\n");
@@ -178,9 +179,9 @@ printf(".z80 version 2\n");
 				do {
 					tmp = z80readblock(file,pageBuf);
 					switch (tmp) {
-						case 4: memSetPage(zx->mem,MEM_RAM,2,pageBuf); break;
-						case 5: memSetPage(zx->mem,MEM_RAM,0,pageBuf); break;
-						case 8: memSetPage(zx->mem,MEM_RAM,5,pageBuf); break;
+						case 4: memSetPage(comp->mem,MEM_RAM,2,pageBuf); break;
+						case 5: memSetPage(comp->mem,MEM_RAM,0,pageBuf); break;
+						case 8: memSetPage(comp->mem,MEM_RAM,5,pageBuf); break;
 						default: btm = 0; break;
 					}
 				} while (btm && !feof(file));
@@ -190,7 +191,7 @@ printf(".z80 version 2\n");
 				do {
 					tmp = z80readblock(file,pageBuf);
 					if ((tmp > 2) && (tmp < 11)) {
-						memSetPage(zx->mem,MEM_RAM,tmp-3,pageBuf);
+						memSetPage(comp->mem,MEM_RAM,tmp-3,pageBuf);
 					} else {
 						btm = 0;
 					}
@@ -201,7 +202,7 @@ printf(".z80 version 2\n");
 				do {
 					tmp = z80readblock(file,pageBuf);
 					if ((tmp > 2) && (tmp < 19)) {
-						memSetPage(zx->mem,MEM_RAM,tmp-3,pageBuf);
+						memSetPage(comp->mem,MEM_RAM,tmp-3,pageBuf);
 					} else {
 						btm = 0;
 					}
@@ -209,7 +210,7 @@ printf(".z80 version 2\n");
 				break;
 			default:
 				printf("Hardware mode not supported. reset\n");
-				RESETCPU(cpu);	// z80ex_reset(cpu);
+				cpuReset(cpu);	// z80ex_reset(cpu);
 				break;
 		}
 	} else {			// version 1
@@ -217,20 +218,20 @@ printf(".z80 version 1\n");
 		if (hd.flag12 & 0x20) {
 			printf("data is compressed\n");
 			z80uncompress(file,pageBuf,0xc000);
-			memSetPage(zx->mem,MEM_RAM,5,pageBuf);
-			memSetPage(zx->mem,MEM_RAM,2,pageBuf + 0x4000);
-			memSetPage(zx->mem,MEM_RAM,0,pageBuf + 0x8000);
+			memSetPage(comp->mem,MEM_RAM,5,pageBuf);
+			memSetPage(comp->mem,MEM_RAM,2,pageBuf + 0x4000);
+			memSetPage(comp->mem,MEM_RAM,0,pageBuf + 0x8000);
 		} else {
 			printf("data is not compressed\n");
 			fread(pageBuf, 0x4000, 1, file);
-			memSetPage(zx->mem,MEM_RAM,5,pageBuf);
+			memSetPage(comp->mem,MEM_RAM,5,pageBuf);
 			fread(pageBuf, 0x4000, 1, file);
-			memSetPage(zx->mem,MEM_RAM,2,pageBuf);
+			memSetPage(comp->mem,MEM_RAM,2,pageBuf);
 			fread(pageBuf, 0x4000, 1, file);
-			memSetPage(zx->mem,MEM_RAM,0,pageBuf);
+			memSetPage(comp->mem,MEM_RAM,0,pageBuf);
 		}
 	}
-	tsReset(zx->ts);
+	tsReset(comp->ts);
 	fclose(file);
 	return ERR_OK;
 }

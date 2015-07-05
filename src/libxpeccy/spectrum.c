@@ -12,7 +12,7 @@ int res2 = 0;
 int res3 = 0;	// tick in op, wich has last OUT/MWR (and vidSync)
 int res4 = 0;	// save last res3 (vidSync on OUT/MWR process do res3-res4 ticks)
 //int res5 = 0;	// ticks ated by slow mem?
-Z80EX_WORD pcreg;
+unsigned short pcreg;
 
 // port decoding tables
 
@@ -21,27 +21,27 @@ MemPage* mptr;
 inline void zxMemRW(ZXComp* comp, int adr) {
 	mptr = memGetBankPtr(comp->mem,adr);
 	if (comp->contMem && (mptr->type == MEM_RAM) && (mptr->num & 1)) {	// pages 1,3,5,7 (48K model)
-		res3 = TCPU(comp->cpu);					// until RD/WR cycle
+		res3 = comp->cpu->t;					// until RD/WR cycle
 		vidSync(comp->vid, comp->nsPerTick * (res3 - res4));
 		res4 = res3;
 		vidWait(comp->vid);					// contended WAIT
 		vidSync(comp->vid, comp->nsPerTick * 3);		// 3T rd/wr cycle
 		res4 += 3;
 	} else {
-		res3 = TCPU(comp->cpu) + 3;
+		res3 = comp->cpu->t + 3;
 		vidSync(comp->vid, comp->nsPerTick * (res3 - res4));
 		res4 = res3;
 	}
 }
 
-Z80EX_BYTE memrd(CPUCONT Z80EX_WORD adr,int m1,void* ptr) {
+unsigned char memrd(unsigned short adr,int m1,void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
 	if (m1 && comp->rzxPlay) comp->rzx.fetches--;
 	zxMemRW(comp,adr);
 	return comp->hw->mrd(comp,adr,m1);
 }
 
-void memwr(CPUCONT Z80EX_WORD adr, Z80EX_BYTE val, void* ptr) {
+void memwr(unsigned short adr, unsigned char val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
 	zxMemRW(comp,adr);
 	comp->hw->mwr(comp,adr,val);
@@ -76,11 +76,11 @@ inline void zxIORW(ZXComp* comp, int port) {
 	}
 }
 
-Z80EX_BYTE iord(CPUCONT Z80EX_WORD port, void* ptr) {
+unsigned char iord(unsigned short port, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
-	Z80EX_BYTE res = 0xff;
+	unsigned char res = 0xff;
 
-	res3 = TCPU(comp->cpu) + 3;
+	res3 = comp->cpu->t + 3;
 	vidSync(comp->vid,(res3 - res4) * comp->nsPerTick);
 	res4 = res3;
 // tape sync
@@ -105,13 +105,13 @@ Z80EX_BYTE iord(CPUCONT Z80EX_WORD port, void* ptr) {
 	return comp->hw->in(comp, port, bdiz);
 }
 
-void iowr(CPUCONT Z80EX_WORD port, Z80EX_BYTE val, void* ptr) {
+void iowr(unsigned short port, unsigned char val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
 	comp->padr = port;
 	comp->pval = val;
 }
 
-Z80EX_BYTE intrq(CPUCONT void* ptr) {
+unsigned char intrq(void* ptr) {
 	return ((ZXComp*)ptr)->intVector;
 }
 
@@ -157,11 +157,7 @@ ZXComp* zxCreate() {
 	comp->resbank = RES_48;
 	comp->firstRun = 1;
 
-#ifdef SELFZ80
 	comp->cpu = cpuCreate(&memrd,&memwr,&iord,&iowr,&intrq,ptr);
-#else
-	comp->cpu = z80ex_create(&memrd,ptr,&memwr,ptr,&iord,ptr,&iowr,ptr,&intrq,ptr);
-#endif
 	comp->mem = memCreate();
 	comp->vid = vidCreate(comp->mem);
 	zxSetFrq(comp,3.5);
@@ -209,7 +205,7 @@ ZXComp* zxCreate() {
 }
 
 void zxDestroy(ZXComp* comp) {
-	KILLCPU(comp->cpu);	// z80ex_destroy(comp->cpu);
+	cpuDestroy(comp->cpu);
 	memDestroy(comp->mem);
 	vidDestroy(comp->vid);
 	keyDestroy(comp->keyb);
@@ -236,7 +232,7 @@ void zxReset(ZXComp* comp,int res) {
 	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0);
 	rzxStop(comp);
 	comp->rzxPlay = 0;
-	RESETCPU(comp->cpu);
+	cpuReset(comp->cpu);
 	comp->vid->curscr = 5;
 	vidSetMode(comp->vid,VID_NORMAL);
 	comp->dos = 0;
@@ -284,7 +280,7 @@ void zxSetFrq(ZXComp* comp, float frq) {
 int zxINT(ZXComp* comp, unsigned char vect) {
 	res4 = 0;
 	comp->intVector = vect;
-	res2 = INTCPU(comp->cpu);
+	res2 = cpuINT(comp->cpu);
 	res1 += res2;
 	vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
 	return res2;
@@ -295,8 +291,7 @@ int zxExec(ZXComp* comp) {
 	comp->mem->flag = 0;
 
 	res4 = 0;
-	EXECCPU(comp->cpu,res2);
-//	comp->nsCount += res2 * comp->nsPerTick;
+	res2 = cpuExec(comp->cpu);
 
 	vidSync(comp->vid,(res2 - res4 - 1) * comp->nsPerTick);
 	if (comp->padr) {
@@ -326,11 +321,11 @@ int zxExec(ZXComp* comp) {
 //		comp->vid->newFrame = 0;
 //		comp->frmStrobe = 1;
 //	}
-	pcreg = GETPC(comp->cpu);	// z80ex_get_reg(comp->cpu,regPC);
+	pcreg = comp->cpu->pc;
 // NMI
 	if ((pcreg > 0x3fff) && comp->nmiRequest && !comp->rzxPlay) {
 		res4 = 0;
-		res2 = NMICPU(comp->cpu);	// z80ex_nmi(comp->cpu);
+		res2 = cpuNMI(comp->cpu);	// z80ex_nmi(comp->cpu);
 		res1 += res2;
 		if (res2 != 0) {
 			comp->dos = 1;
@@ -372,7 +367,7 @@ int zxExec(ZXComp* comp) {
 	nsTime = res1 * comp->nsPerTick;
 	comp->tickCount += res1;
 // breakpoints
-	pcreg = GETPC(comp->cpu);
+	pcreg = comp->cpu->pc;
 	unsigned char* ptr = memGetFptr(comp->mem, pcreg);
 	if (*ptr & MEM_BRK_FETCH) {
 		comp->brk = 1;

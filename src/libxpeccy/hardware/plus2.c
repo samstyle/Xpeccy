@@ -29,7 +29,7 @@ void pl2MapMem(ZXComp* comp) {
 // out
 
 /*
-void p2OutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void p2OutFE(ZXComp* comp, unsigned short port, unsigned char val) {
 	comp->vid->nextbrd = val & 0x07;
 	if (!comp->vid->border4t) comp->vid->brdcol = val & 0x07;
 	comp->beeplev = (val & 0x10) ? 1 : 0;
@@ -37,12 +37,12 @@ void p2OutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 }
 */
 
-void p2Out1FFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void p2Out1FFD(ZXComp* comp, unsigned short port, unsigned char val) {
 	comp->p1FFD = val;
 	pl2MapMem(comp);
 }
 
-void p2Out7FFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void p2Out7FFD(ZXComp* comp, unsigned short port, unsigned char val) {
 	if (comp->p7FFD & 0x20) return;
 	comp->rom = (val & 0x10) ? 1 : 0;
 	comp->p7FFD = val;
@@ -59,10 +59,10 @@ xPort p2PortMap[] = {
 	{0x0000,0x0000,2,2,2,NULL,	NULL}
 };
 
-void pl2Out(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int dos) {
+void pl2Out(ZXComp* comp, unsigned short port, unsigned char val, int dos) {
 	hwOut(p2PortMap, comp, port, val, 0);
 }
 
-Z80EX_BYTE pl2In(ZXComp* comp, Z80EX_WORD port, int bdiz) {
+unsigned char pl2In(ZXComp* comp, unsigned short port, int bdiz) {
 	return hwIn(p2PortMap, comp, port, 0);
 }

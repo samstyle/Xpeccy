@@ -47,12 +47,7 @@ int main(int ac,char** av) {
 	printf("Using SDL ver %u.%u.%u\n", sdlver.major, sdlver.minor, sdlver.patch);
 #endif
 	printf("Using Qt ver %s\n",qVersion());
-#ifdef SELFZ80
-	printf("Using my Z80\n");
-#else
-	Z80EX_VERSION* ver = z80ex_get_version();
-	printf("Using z80ex ver %d.%d\n",ver->major, ver->minor);
-#endif
+
 	QApplication app(ac,av,true);
 	int i;
 	MainWin mwin;
@@ -69,10 +64,10 @@ int main(int ac,char** av) {
 		} else if ((strcmp(parg,"-d") == 0) || (strcmp(parg,"--debug") == 0)) {
 			mwin.doDebug();
 		} else if ((strcmp(parg,"--pc") == 0) && (i < ac)) {
-			SETPC(mwin.comp->cpu, strtol(av[i],NULL,0));
+			mwin.comp->cpu->pc = strtol(av[i],NULL,0);
 			i++;
 		} else if ((strcmp(parg,"--sp") == 0) && (i < ac)) {
-			SETSP(mwin.comp->cpu, strtol(av[i],NULL,0));
+			mwin.comp->cpu->sp = strtol(av[i],NULL,0);
 			i++;
 		} else if (((strcmp(parg,"-b") == 0) || (strcmp(parg,"--bank") == 0)) && (i < ac)) {
 			memSetBank(mwin.comp->mem, MEM_BANK3, MEM_RAM, strtol(av[i],NULL,0));

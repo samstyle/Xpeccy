@@ -1,14 +1,14 @@
 #ifndef _Z80_H
 #define _Z80_H
 
-struct Z80CPU;
+struct CPU;
 
 struct opCode {
 	unsigned prefix:1;
 	int t;			// T-states
 	int len;		// opcode len
 	int c1,c2,c3,c4;	// opcode bytes
-	void(*exec)(struct Z80CPU *);
+	void(*exec)(struct CPU *);
 	struct opCode *tab;
 	const char* mnem;
 };
@@ -31,6 +31,8 @@ typedef struct opCode opCode;
 	#define PAIR(p,h,l) union{unsigned short p; struct {unsigned char l; unsigned char h;};}
 #endif
 
+typedef struct CPU CPU;
+
 typedef unsigned char(*cbmr)(unsigned short,int,void*);
 typedef void(*cbmw)(unsigned short,unsigned char,void*);
 typedef unsigned char(*cbir)(unsigned short,void*);
@@ -38,7 +40,7 @@ typedef void(*cbiw)(unsigned short,unsigned char,void*);
 typedef unsigned char(*cbirq)(void*);
 typedef unsigned char(*cbdmr)(unsigned short,void*);
 
-struct Z80CPU {
+struct CPU {
 	unsigned halt:1;
 	unsigned resPV:1;
 	unsigned noint:1;
@@ -82,17 +84,15 @@ struct Z80CPU {
 	int tmpi;
 };
 
-typedef struct Z80CPU Z80CPU;
+CPU* cpuCreate(cbmr,cbmw,cbir,cbiw,cbirq,void*);
+void cpuDestroy(CPU*);
 
-Z80CPU* cpuCreate(cbmr,cbmw,cbir,cbiw,cbirq,void*);
-void cpuDestroy(Z80CPU*);
+void cpuReset(CPU*);
 
-void cpuReset(Z80CPU*);
+int cpuINT(CPU*);
+int cpuNMI(CPU*);
 
-int cpuINT(Z80CPU*);
-int cpuNMI(Z80CPU*);
-
-int cpuExec(Z80CPU*);
+int cpuExec(CPU*);
 
 int cpuDisasm(unsigned short,char*,cbdmr,void*);
 int cpuAsm(const char*, char*, unsigned short);

@@ -8,14 +8,14 @@ void penMapMem(ZXComp* comp) {
 // in
 
 /*
-Z80EX_BYTE penIn1F(ZXComp* comp, Z80EX_WORD port) {
+unsigned char penIn1F(ZXComp* comp, unsigned short port) {
 	return joyInput(comp->joy);
 }
 */
 
 // out
 
-void penOut7FFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void penOut7FFD(ZXComp* comp, unsigned short port, unsigned char val) {
 	if (comp->p7FFD & 0x20) return;
 	comp->rom = (val & 0x10) ? 1 : 0;
 	comp->p7FFD = val;
@@ -35,14 +35,14 @@ xPort penPortMap[] = {
 	{0x0000,0x0000,2,2,2,NULL,	NULL}			// end
 };
 
-void penOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int dos) {
+void penOut(ZXComp* comp, unsigned short port, unsigned char val, int dos) {
 	difOut(comp->dif, port, val, dos);
 	sdrvOut(comp->sdrv,port & 0x00ff,val);
 	hwOut(penPortMap, comp, port, val, dos);
 }
 
-Z80EX_BYTE penIn(ZXComp* comp, Z80EX_WORD port, int dos) {
-	Z80EX_BYTE res = 0xff;
+unsigned char penIn(ZXComp* comp, unsigned short port, int dos) {
+	unsigned char res = 0xff;
 	if (difIn(comp->dif, port, &res, dos)) return res;
 	res = hwIn(penPortMap, comp, port, dos);
 	return res;

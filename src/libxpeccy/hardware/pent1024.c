@@ -11,18 +11,18 @@ void p1mMapMem(ZXComp* comp) {
 
 // in
 
-Z80EX_BYTE p1mIn1F(ZXComp* comp, Z80EX_WORD port) {
+unsigned char p1mIn1F(ZXComp* comp, unsigned short port) {
 	return joyInput(comp->joy);
 }
 
-Z80EX_BYTE p1mInBFF7(ZXComp* comp, Z80EX_WORD port) {
+unsigned char p1mInBFF7(ZXComp* comp, unsigned short port) {
 	return (comp->pEFF7 & 0x80) ? cmsRd(comp) : 0xff;
 }
 
 // out
 
 /*
-void p1mOutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void p1mOutFE(ZXComp* comp, unsigned short port, unsigned char val) {
 	comp->vid->nextbrd = val & 0x07;
 	if (!comp->vid->border4t) comp->vid->brdcol = val & 0x07;
 	comp->beeplev = (val & 0x10) ? 1 : 0;
@@ -30,7 +30,7 @@ void p1mOutFE(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 }
 */
 
-void p1mOut7FFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void p1mOut7FFD(ZXComp* comp, unsigned short port, unsigned char val) {
 	if ((comp->pEFF7 & 4) && (comp->p7FFD & 0x20)) return;
 	comp->rom = (val & 0x10) ? 1 : 0;
 	comp->p7FFD = val;
@@ -38,15 +38,15 @@ void p1mOut7FFD(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
 	p1mMapMem(comp);
 }
 
-void p1mOutBFF7(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void p1mOutBFF7(ZXComp* comp, unsigned short port, unsigned char val) {
 	if (comp->pEFF7 & 0x80) cmsWr(comp,val);
 }
 
-void p1mOutDFF7(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void p1mOutDFF7(ZXComp* comp, unsigned short port, unsigned char val) {
 	if (comp->pEFF7 & 0x80) comp->cmos.adr = val;
 }
 
-void p1mOutEFF7(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val) {
+void p1mOutEFF7(ZXComp* comp, unsigned short port, unsigned char val) {
 	comp->pEFF7 = val;
 	vidSetMode(comp->vid,(val & 0x01) ? VID_ALCO : VID_NORMAL);
 	zxSetFrq(comp, (val & 0x10) ? 7.0 : 3.5);
@@ -68,13 +68,13 @@ xPort p1mPortMap[] = {
 	{0x0000,0x0000,2,2,2,NULL,	NULL}
 };
 
-void p1mOut(ZXComp* comp, Z80EX_WORD port, Z80EX_BYTE val, int dos) {
+void p1mOut(ZXComp* comp, unsigned short port, unsigned char val, int dos) {
 	difOut(comp->dif, port, val, dos);
 	hwOut(p1mPortMap, comp, port, val, dos);
 }
 
-Z80EX_BYTE p1mIn(ZXComp* comp, Z80EX_WORD port, int dos) {
-	Z80EX_BYTE res = 0xff;
+unsigned char p1mIn(ZXComp* comp, unsigned short port, int dos) {
+	unsigned char res = 0xff;
 	if (difIn(comp->dif, port, &res, dos)) return res;
 	res = hwIn(p1mPortMap, comp, port, dos);
 	return res;

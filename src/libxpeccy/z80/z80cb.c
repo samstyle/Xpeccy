@@ -1,294 +1,294 @@
 // 00..07	rlc	4 [4rd 3wr]
-void cb00(Z80CPU* cpu) {RLC(cpu->b);}
-void cb01(Z80CPU* cpu) {RLC(cpu->c);}
-void cb02(Z80CPU* cpu) {RLC(cpu->d);}
-void cb03(Z80CPU* cpu) {RLC(cpu->e);}
-void cb04(Z80CPU* cpu) {RLC(cpu->h);}
-void cb05(Z80CPU* cpu) {RLC(cpu->l);}
-void cb06(Z80CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); RLC(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
-void cb07(Z80CPU* cpu) {RLC(cpu->a);}
+void cb00(CPU* cpu) {RLC(cpu->b);}
+void cb01(CPU* cpu) {RLC(cpu->c);}
+void cb02(CPU* cpu) {RLC(cpu->d);}
+void cb03(CPU* cpu) {RLC(cpu->e);}
+void cb04(CPU* cpu) {RLC(cpu->h);}
+void cb05(CPU* cpu) {RLC(cpu->l);}
+void cb06(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); RLC(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
+void cb07(CPU* cpu) {RLC(cpu->a);}
 // 08..0f	rrc
-void cb08(Z80CPU* cpu) {RRC(cpu->b);}
-void cb09(Z80CPU* cpu) {RRC(cpu->c);}
-void cb0A(Z80CPU* cpu) {RRC(cpu->d);}
-void cb0B(Z80CPU* cpu) {RRC(cpu->e);}
-void cb0C(Z80CPU* cpu) {RRC(cpu->h);}
-void cb0D(Z80CPU* cpu) {RRC(cpu->l);}
-void cb0E(Z80CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); RRC(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
-void cb0F(Z80CPU* cpu) {RRC(cpu->a);}
+void cb08(CPU* cpu) {RRC(cpu->b);}
+void cb09(CPU* cpu) {RRC(cpu->c);}
+void cb0A(CPU* cpu) {RRC(cpu->d);}
+void cb0B(CPU* cpu) {RRC(cpu->e);}
+void cb0C(CPU* cpu) {RRC(cpu->h);}
+void cb0D(CPU* cpu) {RRC(cpu->l);}
+void cb0E(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); RRC(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
+void cb0F(CPU* cpu) {RRC(cpu->a);}
 // 10..17	rl
-void cb10(Z80CPU* cpu) {RL(cpu->b);}
-void cb11(Z80CPU* cpu) {RL(cpu->c);}
-void cb12(Z80CPU* cpu) {RL(cpu->d);}
-void cb13(Z80CPU* cpu) {RL(cpu->e);}
-void cb14(Z80CPU* cpu) {RL(cpu->h);}
-void cb15(Z80CPU* cpu) {RL(cpu->l);}
-void cb16(Z80CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); RL(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
-void cb17(Z80CPU* cpu) {RL(cpu->a);}
+void cb10(CPU* cpu) {RL(cpu->b);}
+void cb11(CPU* cpu) {RL(cpu->c);}
+void cb12(CPU* cpu) {RL(cpu->d);}
+void cb13(CPU* cpu) {RL(cpu->e);}
+void cb14(CPU* cpu) {RL(cpu->h);}
+void cb15(CPU* cpu) {RL(cpu->l);}
+void cb16(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); RL(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
+void cb17(CPU* cpu) {RL(cpu->a);}
 // 18..1f	rr
-void cb18(Z80CPU* cpu) {RR(cpu->b);}
-void cb19(Z80CPU* cpu) {RR(cpu->c);}
-void cb1A(Z80CPU* cpu) {RR(cpu->d);}
-void cb1B(Z80CPU* cpu) {RR(cpu->e);}
-void cb1C(Z80CPU* cpu) {RR(cpu->h);}
-void cb1D(Z80CPU* cpu) {RR(cpu->l);}
-void cb1E(Z80CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); RR(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
-void cb1F(Z80CPU* cpu) {RR(cpu->a);}
+void cb18(CPU* cpu) {RR(cpu->b);}
+void cb19(CPU* cpu) {RR(cpu->c);}
+void cb1A(CPU* cpu) {RR(cpu->d);}
+void cb1B(CPU* cpu) {RR(cpu->e);}
+void cb1C(CPU* cpu) {RR(cpu->h);}
+void cb1D(CPU* cpu) {RR(cpu->l);}
+void cb1E(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); RR(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
+void cb1F(CPU* cpu) {RR(cpu->a);}
 // 20..27	sla
-void cb20(Z80CPU* cpu) {SLA(cpu->b);}
-void cb21(Z80CPU* cpu) {SLA(cpu->c);}
-void cb22(Z80CPU* cpu) {SLA(cpu->d);}
-void cb23(Z80CPU* cpu) {SLA(cpu->e);}
-void cb24(Z80CPU* cpu) {SLA(cpu->h);}
-void cb25(Z80CPU* cpu) {SLA(cpu->l);}
-void cb26(Z80CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); SLA(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
-void cb27(Z80CPU* cpu) {SLA(cpu->a);}
+void cb20(CPU* cpu) {SLA(cpu->b);}
+void cb21(CPU* cpu) {SLA(cpu->c);}
+void cb22(CPU* cpu) {SLA(cpu->d);}
+void cb23(CPU* cpu) {SLA(cpu->e);}
+void cb24(CPU* cpu) {SLA(cpu->h);}
+void cb25(CPU* cpu) {SLA(cpu->l);}
+void cb26(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); SLA(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
+void cb27(CPU* cpu) {SLA(cpu->a);}
 // 28..2f	sra
-void cb28(Z80CPU* cpu) {SRA(cpu->b);}
-void cb29(Z80CPU* cpu) {SRA(cpu->c);}
-void cb2A(Z80CPU* cpu) {SRA(cpu->d);}
-void cb2B(Z80CPU* cpu) {SRA(cpu->e);}
-void cb2C(Z80CPU* cpu) {SRA(cpu->h);}
-void cb2D(Z80CPU* cpu) {SRA(cpu->l);}
-void cb2E(Z80CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); SRA(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
-void cb2F(Z80CPU* cpu) {SRA(cpu->a);}
+void cb28(CPU* cpu) {SRA(cpu->b);}
+void cb29(CPU* cpu) {SRA(cpu->c);}
+void cb2A(CPU* cpu) {SRA(cpu->d);}
+void cb2B(CPU* cpu) {SRA(cpu->e);}
+void cb2C(CPU* cpu) {SRA(cpu->h);}
+void cb2D(CPU* cpu) {SRA(cpu->l);}
+void cb2E(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); SRA(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
+void cb2F(CPU* cpu) {SRA(cpu->a);}
 // 30..37	sll
-void cb30(Z80CPU* cpu) {SLL(cpu->b);}
-void cb31(Z80CPU* cpu) {SLL(cpu->c);}
-void cb32(Z80CPU* cpu) {SLL(cpu->d);}
-void cb33(Z80CPU* cpu) {SLL(cpu->e);}
-void cb34(Z80CPU* cpu) {SLL(cpu->h);}
-void cb35(Z80CPU* cpu) {SLL(cpu->l);}
-void cb36(Z80CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); SLL(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
-void cb37(Z80CPU* cpu) {SLL(cpu->a);}
+void cb30(CPU* cpu) {SLL(cpu->b);}
+void cb31(CPU* cpu) {SLL(cpu->c);}
+void cb32(CPU* cpu) {SLL(cpu->d);}
+void cb33(CPU* cpu) {SLL(cpu->e);}
+void cb34(CPU* cpu) {SLL(cpu->h);}
+void cb35(CPU* cpu) {SLL(cpu->l);}
+void cb36(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); SLL(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
+void cb37(CPU* cpu) {SLL(cpu->a);}
 // 38..3f	srl
-void cb38(Z80CPU* cpu) {SRL(cpu->b);}
-void cb39(Z80CPU* cpu) {SRL(cpu->c);}
-void cb3A(Z80CPU* cpu) {SRL(cpu->d);}
-void cb3B(Z80CPU* cpu) {SRL(cpu->e);}
-void cb3C(Z80CPU* cpu) {SRL(cpu->h);}
-void cb3D(Z80CPU* cpu) {SRL(cpu->l);}
-void cb3E(Z80CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); SRL(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
-void cb3F(Z80CPU* cpu) {SRL(cpu->a);}
+void cb38(CPU* cpu) {SRL(cpu->b);}
+void cb39(CPU* cpu) {SRL(cpu->c);}
+void cb3A(CPU* cpu) {SRL(cpu->d);}
+void cb3B(CPU* cpu) {SRL(cpu->e);}
+void cb3C(CPU* cpu) {SRL(cpu->h);}
+void cb3D(CPU* cpu) {SRL(cpu->l);}
+void cb3E(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); SRL(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
+void cb3F(CPU* cpu) {SRL(cpu->a);}
 
 // 40..47	bit 0,r		4 [4rd]
-void cb40(Z80CPU* cpu) {BIT(0,cpu->b);}
-void cb41(Z80CPU* cpu) {BIT(0,cpu->c);}
-void cb42(Z80CPU* cpu) {BIT(0,cpu->d);}
-void cb43(Z80CPU* cpu) {BIT(0,cpu->e);}
-void cb44(Z80CPU* cpu) {BIT(0,cpu->h);}
-void cb45(Z80CPU* cpu) {BIT(0,cpu->l);}
-void cb46(Z80CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(0,cpu->tmp);}
-void cb47(Z80CPU* cpu) {BIT(0,cpu->a);}
+void cb40(CPU* cpu) {BIT(0,cpu->b);}
+void cb41(CPU* cpu) {BIT(0,cpu->c);}
+void cb42(CPU* cpu) {BIT(0,cpu->d);}
+void cb43(CPU* cpu) {BIT(0,cpu->e);}
+void cb44(CPU* cpu) {BIT(0,cpu->h);}
+void cb45(CPU* cpu) {BIT(0,cpu->l);}
+void cb46(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(0,cpu->tmp);}
+void cb47(CPU* cpu) {BIT(0,cpu->a);}
 // 48..4f	bit 1,r
-void cb48(Z80CPU* cpu) {BIT(1,cpu->b);}
-void cb49(Z80CPU* cpu) {BIT(1,cpu->c);}
-void cb4A(Z80CPU* cpu) {BIT(1,cpu->d);}
-void cb4B(Z80CPU* cpu) {BIT(1,cpu->e);}
-void cb4C(Z80CPU* cpu) {BIT(1,cpu->h);}
-void cb4D(Z80CPU* cpu) {BIT(1,cpu->l);}
-void cb4E(Z80CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(1,cpu->tmp);}
-void cb4F(Z80CPU* cpu) {BIT(1,cpu->a);}
+void cb48(CPU* cpu) {BIT(1,cpu->b);}
+void cb49(CPU* cpu) {BIT(1,cpu->c);}
+void cb4A(CPU* cpu) {BIT(1,cpu->d);}
+void cb4B(CPU* cpu) {BIT(1,cpu->e);}
+void cb4C(CPU* cpu) {BIT(1,cpu->h);}
+void cb4D(CPU* cpu) {BIT(1,cpu->l);}
+void cb4E(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(1,cpu->tmp);}
+void cb4F(CPU* cpu) {BIT(1,cpu->a);}
 // 50..57	bit 2,r
-void cb50(Z80CPU* cpu) {BIT(2,cpu->b);}
-void cb51(Z80CPU* cpu) {BIT(2,cpu->c);}
-void cb52(Z80CPU* cpu) {BIT(2,cpu->d);}
-void cb53(Z80CPU* cpu) {BIT(2,cpu->e);}
-void cb54(Z80CPU* cpu) {BIT(2,cpu->h);}
-void cb55(Z80CPU* cpu) {BIT(2,cpu->l);}
-void cb56(Z80CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(2,cpu->tmp);}
-void cb57(Z80CPU* cpu) {BIT(2,cpu->a);}
+void cb50(CPU* cpu) {BIT(2,cpu->b);}
+void cb51(CPU* cpu) {BIT(2,cpu->c);}
+void cb52(CPU* cpu) {BIT(2,cpu->d);}
+void cb53(CPU* cpu) {BIT(2,cpu->e);}
+void cb54(CPU* cpu) {BIT(2,cpu->h);}
+void cb55(CPU* cpu) {BIT(2,cpu->l);}
+void cb56(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(2,cpu->tmp);}
+void cb57(CPU* cpu) {BIT(2,cpu->a);}
 // 58..5f	bit 3,r
-void cb58(Z80CPU* cpu) {BIT(3,cpu->b);}
-void cb59(Z80CPU* cpu) {BIT(3,cpu->c);}
-void cb5A(Z80CPU* cpu) {BIT(3,cpu->d);}
-void cb5B(Z80CPU* cpu) {BIT(3,cpu->e);}
-void cb5C(Z80CPU* cpu) {BIT(3,cpu->h);}
-void cb5D(Z80CPU* cpu) {BIT(3,cpu->l);}
-void cb5E(Z80CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(3,cpu->tmp);}
-void cb5F(Z80CPU* cpu) {BIT(3,cpu->a);}
+void cb58(CPU* cpu) {BIT(3,cpu->b);}
+void cb59(CPU* cpu) {BIT(3,cpu->c);}
+void cb5A(CPU* cpu) {BIT(3,cpu->d);}
+void cb5B(CPU* cpu) {BIT(3,cpu->e);}
+void cb5C(CPU* cpu) {BIT(3,cpu->h);}
+void cb5D(CPU* cpu) {BIT(3,cpu->l);}
+void cb5E(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(3,cpu->tmp);}
+void cb5F(CPU* cpu) {BIT(3,cpu->a);}
 // 60..67	bit 4,r
-void cb60(Z80CPU* cpu) {BIT(4,cpu->b);}
-void cb61(Z80CPU* cpu) {BIT(4,cpu->c);}
-void cb62(Z80CPU* cpu) {BIT(4,cpu->d);}
-void cb63(Z80CPU* cpu) {BIT(4,cpu->e);}
-void cb64(Z80CPU* cpu) {BIT(4,cpu->h);}
-void cb65(Z80CPU* cpu) {BIT(4,cpu->l);}
-void cb66(Z80CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(4,cpu->tmp);}
-void cb67(Z80CPU* cpu) {BIT(4,cpu->a);}
+void cb60(CPU* cpu) {BIT(4,cpu->b);}
+void cb61(CPU* cpu) {BIT(4,cpu->c);}
+void cb62(CPU* cpu) {BIT(4,cpu->d);}
+void cb63(CPU* cpu) {BIT(4,cpu->e);}
+void cb64(CPU* cpu) {BIT(4,cpu->h);}
+void cb65(CPU* cpu) {BIT(4,cpu->l);}
+void cb66(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(4,cpu->tmp);}
+void cb67(CPU* cpu) {BIT(4,cpu->a);}
 // 68..6f	bit 5,r
-void cb68(Z80CPU* cpu) {BIT(5,cpu->b);}
-void cb69(Z80CPU* cpu) {BIT(5,cpu->c);}
-void cb6A(Z80CPU* cpu) {BIT(5,cpu->d);}
-void cb6B(Z80CPU* cpu) {BIT(5,cpu->e);}
-void cb6C(Z80CPU* cpu) {BIT(5,cpu->h);}
-void cb6D(Z80CPU* cpu) {BIT(5,cpu->l);}
-void cb6E(Z80CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(5,cpu->tmp);}
-void cb6F(Z80CPU* cpu) {BIT(5,cpu->a);}
+void cb68(CPU* cpu) {BIT(5,cpu->b);}
+void cb69(CPU* cpu) {BIT(5,cpu->c);}
+void cb6A(CPU* cpu) {BIT(5,cpu->d);}
+void cb6B(CPU* cpu) {BIT(5,cpu->e);}
+void cb6C(CPU* cpu) {BIT(5,cpu->h);}
+void cb6D(CPU* cpu) {BIT(5,cpu->l);}
+void cb6E(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(5,cpu->tmp);}
+void cb6F(CPU* cpu) {BIT(5,cpu->a);}
 // 70..77	bit 6,r
-void cb70(Z80CPU* cpu) {BIT(6,cpu->b);}
-void cb71(Z80CPU* cpu) {BIT(6,cpu->c);}
-void cb72(Z80CPU* cpu) {BIT(6,cpu->d);}
-void cb73(Z80CPU* cpu) {BIT(6,cpu->e);}
-void cb74(Z80CPU* cpu) {BIT(6,cpu->h);}
-void cb75(Z80CPU* cpu) {BIT(6,cpu->l);}
-void cb76(Z80CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(6,cpu->tmp);}
-void cb77(Z80CPU* cpu) {BIT(6,cpu->a);}
+void cb70(CPU* cpu) {BIT(6,cpu->b);}
+void cb71(CPU* cpu) {BIT(6,cpu->c);}
+void cb72(CPU* cpu) {BIT(6,cpu->d);}
+void cb73(CPU* cpu) {BIT(6,cpu->e);}
+void cb74(CPU* cpu) {BIT(6,cpu->h);}
+void cb75(CPU* cpu) {BIT(6,cpu->l);}
+void cb76(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(6,cpu->tmp);}
+void cb77(CPU* cpu) {BIT(6,cpu->a);}
 // 78..7f	bit 7,r
-void cb78(Z80CPU* cpu) {BIT(7,cpu->b);}
-void cb79(Z80CPU* cpu) {BIT(7,cpu->c);}
-void cb7A(Z80CPU* cpu) {BIT(7,cpu->d);}
-void cb7B(Z80CPU* cpu) {BIT(7,cpu->e);}
-void cb7C(Z80CPU* cpu) {BIT(7,cpu->h);}
-void cb7D(Z80CPU* cpu) {BIT(7,cpu->l);}
-void cb7E(Z80CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(7,cpu->tmp);}
-void cb7F(Z80CPU* cpu) {BIT(7,cpu->a);}
+void cb78(CPU* cpu) {BIT(7,cpu->b);}
+void cb79(CPU* cpu) {BIT(7,cpu->c);}
+void cb7A(CPU* cpu) {BIT(7,cpu->d);}
+void cb7B(CPU* cpu) {BIT(7,cpu->e);}
+void cb7C(CPU* cpu) {BIT(7,cpu->h);}
+void cb7D(CPU* cpu) {BIT(7,cpu->l);}
+void cb7E(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(7,cpu->tmp);}
+void cb7F(CPU* cpu) {BIT(7,cpu->a);}
 
 // 80..87	res 0,r		4 [4rd 3wr]
-void cb80(Z80CPU* cpu) {RES(0,cpu->b);}
-void cb81(Z80CPU* cpu) {RES(0,cpu->c);}
-void cb82(Z80CPU* cpu) {RES(0,cpu->d);}
-void cb83(Z80CPU* cpu) {RES(0,cpu->e);}
-void cb84(Z80CPU* cpu) {RES(0,cpu->h);}
-void cb85(Z80CPU* cpu) {RES(0,cpu->l);}
-void cb86(Z80CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); RES(0,cpu->tmp); MEMWR(cpu->hl,cpu->tmp,3);}
-void cb87(Z80CPU* cpu) {RES(0,cpu->a);}
+void cb80(CPU* cpu) {RES(0,cpu->b);}
+void cb81(CPU* cpu) {RES(0,cpu->c);}
+void cb82(CPU* cpu) {RES(0,cpu->d);}
+void cb83(CPU* cpu) {RES(0,cpu->e);}
+void cb84(CPU* cpu) {RES(0,cpu->h);}
+void cb85(CPU* cpu) {RES(0,cpu->l);}
+void cb86(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); RES(0,cpu->tmp); MEMWR(cpu->hl,cpu->tmp,3);}
+void cb87(CPU* cpu) {RES(0,cpu->a);}
 // 88..8f	res 1,r
-void cb88(Z80CPU* cpu) {RES(1,cpu->b);}
-void cb89(Z80CPU* cpu) {RES(1,cpu->c);}
-void cb8A(Z80CPU* cpu) {RES(1,cpu->d);}
-void cb8B(Z80CPU* cpu) {RES(1,cpu->e);}
-void cb8C(Z80CPU* cpu) {RES(1,cpu->h);}
-void cb8D(Z80CPU* cpu) {RES(1,cpu->l);}
-void cb8E(Z80CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); RES(1,cpu->tmp); MEMWR(cpu->hl,cpu->tmp,3);}
-void cb8F(Z80CPU* cpu) {RES(1,cpu->a);}
+void cb88(CPU* cpu) {RES(1,cpu->b);}
+void cb89(CPU* cpu) {RES(1,cpu->c);}
+void cb8A(CPU* cpu) {RES(1,cpu->d);}
+void cb8B(CPU* cpu) {RES(1,cpu->e);}
+void cb8C(CPU* cpu) {RES(1,cpu->h);}
+void cb8D(CPU* cpu) {RES(1,cpu->l);}
+void cb8E(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); RES(1,cpu->tmp); MEMWR(cpu->hl,cpu->tmp,3);}
+void cb8F(CPU* cpu) {RES(1,cpu->a);}
 // 90..97	res 2,r
-void cb90(Z80CPU* cpu) {RES(2,cpu->b);}
-void cb91(Z80CPU* cpu) {RES(2,cpu->c);}
-void cb92(Z80CPU* cpu) {RES(2,cpu->d);}
-void cb93(Z80CPU* cpu) {RES(2,cpu->e);}
-void cb94(Z80CPU* cpu) {RES(2,cpu->h);}
-void cb95(Z80CPU* cpu) {RES(2,cpu->l);}
-void cb96(Z80CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); RES(2,cpu->tmp); MEMWR(cpu->hl,cpu->tmp,3);}
-void cb97(Z80CPU* cpu) {RES(2,cpu->a);}
+void cb90(CPU* cpu) {RES(2,cpu->b);}
+void cb91(CPU* cpu) {RES(2,cpu->c);}
+void cb92(CPU* cpu) {RES(2,cpu->d);}
+void cb93(CPU* cpu) {RES(2,cpu->e);}
+void cb94(CPU* cpu) {RES(2,cpu->h);}
+void cb95(CPU* cpu) {RES(2,cpu->l);}
+void cb96(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); RES(2,cpu->tmp); MEMWR(cpu->hl,cpu->tmp,3);}
+void cb97(CPU* cpu) {RES(2,cpu->a);}
 // 98..9f	res 3,r
-void cb98(Z80CPU* cpu) {RES(3,cpu->b);}
-void cb99(Z80CPU* cpu) {RES(3,cpu->c);}
-void cb9A(Z80CPU* cpu) {RES(3,cpu->d);}
-void cb9B(Z80CPU* cpu) {RES(3,cpu->e);}
-void cb9C(Z80CPU* cpu) {RES(3,cpu->h);}
-void cb9D(Z80CPU* cpu) {RES(3,cpu->l);}
-void cb9E(Z80CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); RES(3,cpu->tmp); MEMWR(cpu->hl,cpu->tmp,3);}
-void cb9F(Z80CPU* cpu) {RES(3,cpu->a);}
+void cb98(CPU* cpu) {RES(3,cpu->b);}
+void cb99(CPU* cpu) {RES(3,cpu->c);}
+void cb9A(CPU* cpu) {RES(3,cpu->d);}
+void cb9B(CPU* cpu) {RES(3,cpu->e);}
+void cb9C(CPU* cpu) {RES(3,cpu->h);}
+void cb9D(CPU* cpu) {RES(3,cpu->l);}
+void cb9E(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); RES(3,cpu->tmp); MEMWR(cpu->hl,cpu->tmp,3);}
+void cb9F(CPU* cpu) {RES(3,cpu->a);}
 // a0..a7	res 4,r
-void cbA0(Z80CPU* cpu) {RES(4,cpu->b);}
-void cbA1(Z80CPU* cpu) {RES(4,cpu->c);}
-void cbA2(Z80CPU* cpu) {RES(4,cpu->d);}
-void cbA3(Z80CPU* cpu) {RES(4,cpu->e);}
-void cbA4(Z80CPU* cpu) {RES(4,cpu->h);}
-void cbA5(Z80CPU* cpu) {RES(4,cpu->l);}
-void cbA6(Z80CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); RES(4,cpu->tmp); MEMWR(cpu->hl,cpu->tmp,3);}
-void cbA7(Z80CPU* cpu) {RES(4,cpu->a);}
+void cbA0(CPU* cpu) {RES(4,cpu->b);}
+void cbA1(CPU* cpu) {RES(4,cpu->c);}
+void cbA2(CPU* cpu) {RES(4,cpu->d);}
+void cbA3(CPU* cpu) {RES(4,cpu->e);}
+void cbA4(CPU* cpu) {RES(4,cpu->h);}
+void cbA5(CPU* cpu) {RES(4,cpu->l);}
+void cbA6(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); RES(4,cpu->tmp); MEMWR(cpu->hl,cpu->tmp,3);}
+void cbA7(CPU* cpu) {RES(4,cpu->a);}
 // a8..af	res 5,r
-void cbA8(Z80CPU* cpu) {RES(5,cpu->b);}
-void cbA9(Z80CPU* cpu) {RES(5,cpu->c);}
-void cbAA(Z80CPU* cpu) {RES(5,cpu->d);}
-void cbAB(Z80CPU* cpu) {RES(5,cpu->e);}
-void cbAC(Z80CPU* cpu) {RES(5,cpu->h);}
-void cbAD(Z80CPU* cpu) {RES(5,cpu->l);}
-void cbAE(Z80CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); RES(5,cpu->tmp); MEMWR(cpu->hl,cpu->tmp,3);}
-void cbAF(Z80CPU* cpu) {RES(5,cpu->a);}
+void cbA8(CPU* cpu) {RES(5,cpu->b);}
+void cbA9(CPU* cpu) {RES(5,cpu->c);}
+void cbAA(CPU* cpu) {RES(5,cpu->d);}
+void cbAB(CPU* cpu) {RES(5,cpu->e);}
+void cbAC(CPU* cpu) {RES(5,cpu->h);}
+void cbAD(CPU* cpu) {RES(5,cpu->l);}
+void cbAE(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); RES(5,cpu->tmp); MEMWR(cpu->hl,cpu->tmp,3);}
+void cbAF(CPU* cpu) {RES(5,cpu->a);}
 // b0..b7	res 6,r
-void cbB0(Z80CPU* cpu) {RES(6,cpu->b);}
-void cbB1(Z80CPU* cpu) {RES(6,cpu->c);}
-void cbB2(Z80CPU* cpu) {RES(6,cpu->d);}
-void cbB3(Z80CPU* cpu) {RES(6,cpu->e);}
-void cbB4(Z80CPU* cpu) {RES(6,cpu->h);}
-void cbB5(Z80CPU* cpu) {RES(6,cpu->l);}
-void cbB6(Z80CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); RES(6,cpu->tmp); MEMWR(cpu->hl,cpu->tmp,3);}
-void cbB7(Z80CPU* cpu) {RES(6,cpu->a);}
+void cbB0(CPU* cpu) {RES(6,cpu->b);}
+void cbB1(CPU* cpu) {RES(6,cpu->c);}
+void cbB2(CPU* cpu) {RES(6,cpu->d);}
+void cbB3(CPU* cpu) {RES(6,cpu->e);}
+void cbB4(CPU* cpu) {RES(6,cpu->h);}
+void cbB5(CPU* cpu) {RES(6,cpu->l);}
+void cbB6(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); RES(6,cpu->tmp); MEMWR(cpu->hl,cpu->tmp,3);}
+void cbB7(CPU* cpu) {RES(6,cpu->a);}
 // b8..bf	res 7,r
-void cbB8(Z80CPU* cpu) {RES(7,cpu->b);}
-void cbB9(Z80CPU* cpu) {RES(7,cpu->c);}
-void cbBA(Z80CPU* cpu) {RES(7,cpu->d);}
-void cbBB(Z80CPU* cpu) {RES(7,cpu->e);}
-void cbBC(Z80CPU* cpu) {RES(7,cpu->h);}
-void cbBD(Z80CPU* cpu) {RES(7,cpu->l);}
-void cbBE(Z80CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); RES(7,cpu->tmp); MEMWR(cpu->hl,cpu->tmp,3);}
-void cbBF(Z80CPU* cpu) {RES(7,cpu->a);}
+void cbB8(CPU* cpu) {RES(7,cpu->b);}
+void cbB9(CPU* cpu) {RES(7,cpu->c);}
+void cbBA(CPU* cpu) {RES(7,cpu->d);}
+void cbBB(CPU* cpu) {RES(7,cpu->e);}
+void cbBC(CPU* cpu) {RES(7,cpu->h);}
+void cbBD(CPU* cpu) {RES(7,cpu->l);}
+void cbBE(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); RES(7,cpu->tmp); MEMWR(cpu->hl,cpu->tmp,3);}
+void cbBF(CPU* cpu) {RES(7,cpu->a);}
 
 // c0..c7	set 0,r		4 [4rd 3wr]
-void cbC0(Z80CPU* cpu) {cpu->b |= 0x01;}
-void cbC1(Z80CPU* cpu) {cpu->c |= 0x01;}
-void cbC2(Z80CPU* cpu) {cpu->d |= 0x01;}
-void cbC3(Z80CPU* cpu) {cpu->e |= 0x01;}
-void cbC4(Z80CPU* cpu) {cpu->h |= 0x01;}
-void cbC5(Z80CPU* cpu) {cpu->l |= 0x01;}
-void cbC6(Z80CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); cpu->tmp |= 0x01; MEMWR(cpu->hl,cpu->tmp,3);}
-void cbC7(Z80CPU* cpu) {cpu->a |= 0x01;}
+void cbC0(CPU* cpu) {cpu->b |= 0x01;}
+void cbC1(CPU* cpu) {cpu->c |= 0x01;}
+void cbC2(CPU* cpu) {cpu->d |= 0x01;}
+void cbC3(CPU* cpu) {cpu->e |= 0x01;}
+void cbC4(CPU* cpu) {cpu->h |= 0x01;}
+void cbC5(CPU* cpu) {cpu->l |= 0x01;}
+void cbC6(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); cpu->tmp |= 0x01; MEMWR(cpu->hl,cpu->tmp,3);}
+void cbC7(CPU* cpu) {cpu->a |= 0x01;}
 // c8..cf	set 1,r
-void cbC8(Z80CPU* cpu) {cpu->b |= 0x02;}
-void cbC9(Z80CPU* cpu) {cpu->c |= 0x02;}
-void cbCA(Z80CPU* cpu) {cpu->d |= 0x02;}
-void cbCB(Z80CPU* cpu) {cpu->e |= 0x02;}
-void cbCC(Z80CPU* cpu) {cpu->h |= 0x02;}
-void cbCD(Z80CPU* cpu) {cpu->l |= 0x02;}
-void cbCE(Z80CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); cpu->tmp |= 0x02; MEMWR(cpu->hl,cpu->tmp,3);}
-void cbCF(Z80CPU* cpu) {cpu->a |= 0x02;}
+void cbC8(CPU* cpu) {cpu->b |= 0x02;}
+void cbC9(CPU* cpu) {cpu->c |= 0x02;}
+void cbCA(CPU* cpu) {cpu->d |= 0x02;}
+void cbCB(CPU* cpu) {cpu->e |= 0x02;}
+void cbCC(CPU* cpu) {cpu->h |= 0x02;}
+void cbCD(CPU* cpu) {cpu->l |= 0x02;}
+void cbCE(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); cpu->tmp |= 0x02; MEMWR(cpu->hl,cpu->tmp,3);}
+void cbCF(CPU* cpu) {cpu->a |= 0x02;}
 // d0..d7	set 2,r
-void cbD0(Z80CPU* cpu) {cpu->b |= 0x04;}
-void cbD1(Z80CPU* cpu) {cpu->c |= 0x04;}
-void cbD2(Z80CPU* cpu) {cpu->d |= 0x04;}
-void cbD3(Z80CPU* cpu) {cpu->e |= 0x04;}
-void cbD4(Z80CPU* cpu) {cpu->h |= 0x04;}
-void cbD5(Z80CPU* cpu) {cpu->l |= 0x04;}
-void cbD6(Z80CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); cpu->tmp |= 0x04; MEMWR(cpu->hl,cpu->tmp,3);}
-void cbD7(Z80CPU* cpu) {cpu->a |= 0x04;}
+void cbD0(CPU* cpu) {cpu->b |= 0x04;}
+void cbD1(CPU* cpu) {cpu->c |= 0x04;}
+void cbD2(CPU* cpu) {cpu->d |= 0x04;}
+void cbD3(CPU* cpu) {cpu->e |= 0x04;}
+void cbD4(CPU* cpu) {cpu->h |= 0x04;}
+void cbD5(CPU* cpu) {cpu->l |= 0x04;}
+void cbD6(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); cpu->tmp |= 0x04; MEMWR(cpu->hl,cpu->tmp,3);}
+void cbD7(CPU* cpu) {cpu->a |= 0x04;}
 // d8..df	set 3,r
-void cbD8(Z80CPU* cpu) {cpu->b |= 0x08;}
-void cbD9(Z80CPU* cpu) {cpu->c |= 0x08;}
-void cbDA(Z80CPU* cpu) {cpu->d |= 0x08;}
-void cbDB(Z80CPU* cpu) {cpu->e |= 0x08;}
-void cbDC(Z80CPU* cpu) {cpu->h |= 0x08;}
-void cbDD(Z80CPU* cpu) {cpu->l |= 0x08;}
-void cbDE(Z80CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); cpu->tmp |= 0x08; MEMWR(cpu->hl,cpu->tmp,3);}
-void cbDF(Z80CPU* cpu) {cpu->a |= 0x08;}
+void cbD8(CPU* cpu) {cpu->b |= 0x08;}
+void cbD9(CPU* cpu) {cpu->c |= 0x08;}
+void cbDA(CPU* cpu) {cpu->d |= 0x08;}
+void cbDB(CPU* cpu) {cpu->e |= 0x08;}
+void cbDC(CPU* cpu) {cpu->h |= 0x08;}
+void cbDD(CPU* cpu) {cpu->l |= 0x08;}
+void cbDE(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); cpu->tmp |= 0x08; MEMWR(cpu->hl,cpu->tmp,3);}
+void cbDF(CPU* cpu) {cpu->a |= 0x08;}
 // e0..e7	set 4,r
-void cbE0(Z80CPU* cpu) {cpu->b |= 0x10;}
-void cbE1(Z80CPU* cpu) {cpu->c |= 0x10;}
-void cbE2(Z80CPU* cpu) {cpu->d |= 0x10;}
-void cbE3(Z80CPU* cpu) {cpu->e |= 0x10;}
-void cbE4(Z80CPU* cpu) {cpu->h |= 0x10;}
-void cbE5(Z80CPU* cpu) {cpu->l |= 0x10;}
-void cbE6(Z80CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); cpu->tmp |= 0x10; MEMWR(cpu->hl,cpu->tmp,3);}
-void cbE7(Z80CPU* cpu) {cpu->a |= 0x10;}
+void cbE0(CPU* cpu) {cpu->b |= 0x10;}
+void cbE1(CPU* cpu) {cpu->c |= 0x10;}
+void cbE2(CPU* cpu) {cpu->d |= 0x10;}
+void cbE3(CPU* cpu) {cpu->e |= 0x10;}
+void cbE4(CPU* cpu) {cpu->h |= 0x10;}
+void cbE5(CPU* cpu) {cpu->l |= 0x10;}
+void cbE6(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); cpu->tmp |= 0x10; MEMWR(cpu->hl,cpu->tmp,3);}
+void cbE7(CPU* cpu) {cpu->a |= 0x10;}
 // e8..ef	set 5,r
-void cbE8(Z80CPU* cpu) {cpu->b |= 0x20;}
-void cbE9(Z80CPU* cpu) {cpu->c |= 0x20;}
-void cbEA(Z80CPU* cpu) {cpu->d |= 0x20;}
-void cbEB(Z80CPU* cpu) {cpu->e |= 0x20;}
-void cbEC(Z80CPU* cpu) {cpu->h |= 0x20;}
-void cbED(Z80CPU* cpu) {cpu->l |= 0x20;}
-void cbEE(Z80CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); cpu->tmp |= 0x20; MEMWR(cpu->hl,cpu->tmp,3);}
-void cbEF(Z80CPU* cpu) {cpu->a |= 0x20;}
+void cbE8(CPU* cpu) {cpu->b |= 0x20;}
+void cbE9(CPU* cpu) {cpu->c |= 0x20;}
+void cbEA(CPU* cpu) {cpu->d |= 0x20;}
+void cbEB(CPU* cpu) {cpu->e |= 0x20;}
+void cbEC(CPU* cpu) {cpu->h |= 0x20;}
+void cbED(CPU* cpu) {cpu->l |= 0x20;}
+void cbEE(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); cpu->tmp |= 0x20; MEMWR(cpu->hl,cpu->tmp,3);}
+void cbEF(CPU* cpu) {cpu->a |= 0x20;}
 // f0..f7	set 6,r
-void cbF0(Z80CPU* cpu) {cpu->b |= 0x40;}
-void cbF1(Z80CPU* cpu) {cpu->c |= 0x40;}
-void cbF2(Z80CPU* cpu) {cpu->d |= 0x40;}
-void cbF3(Z80CPU* cpu) {cpu->e |= 0x40;}
-void cbF4(Z80CPU* cpu) {cpu->h |= 0x40;}
-void cbF5(Z80CPU* cpu) {cpu->l |= 0x40;}
-void cbF6(Z80CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); cpu->tmp |= 0x40; MEMWR(cpu->hl,cpu->tmp,3);}
-void cbF7(Z80CPU* cpu) {cpu->a |= 0x40;}
+void cbF0(CPU* cpu) {cpu->b |= 0x40;}
+void cbF1(CPU* cpu) {cpu->c |= 0x40;}
+void cbF2(CPU* cpu) {cpu->d |= 0x40;}
+void cbF3(CPU* cpu) {cpu->e |= 0x40;}
+void cbF4(CPU* cpu) {cpu->h |= 0x40;}
+void cbF5(CPU* cpu) {cpu->l |= 0x40;}
+void cbF6(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); cpu->tmp |= 0x40; MEMWR(cpu->hl,cpu->tmp,3);}
+void cbF7(CPU* cpu) {cpu->a |= 0x40;}
 // f8..ff	set 7,r
-void cbF8(Z80CPU* cpu) {cpu->b |= 0x80;}
-void cbF9(Z80CPU* cpu) {cpu->c |= 0x80;}
-void cbFA(Z80CPU* cpu) {cpu->d |= 0x80;}
-void cbFB(Z80CPU* cpu) {cpu->e |= 0x80;}
-void cbFC(Z80CPU* cpu) {cpu->h |= 0x80;}
-void cbFD(Z80CPU* cpu) {cpu->l |= 0x80;}
-void cbFE(Z80CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); cpu->tmp |= 0x80; MEMWR(cpu->hl,cpu->tmp,3);}
-void cbFF(Z80CPU* cpu) {cpu->a |= 0x80;}
+void cbF8(CPU* cpu) {cpu->b |= 0x80;}
+void cbF9(CPU* cpu) {cpu->c |= 0x80;}
+void cbFA(CPU* cpu) {cpu->d |= 0x80;}
+void cbFB(CPU* cpu) {cpu->e |= 0x80;}
+void cbFC(CPU* cpu) {cpu->h |= 0x80;}
+void cbFD(CPU* cpu) {cpu->l |= 0x80;}
+void cbFE(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); cpu->tmp |= 0x80; MEMWR(cpu->hl,cpu->tmp,3);}
+void cbFF(CPU* cpu) {cpu->a |= 0x80;}
 
 // ===
 

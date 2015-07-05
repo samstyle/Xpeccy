@@ -20,8 +20,8 @@ extern opCode edTab[256];
 #include "z80fd.c"
 #include "z80cb.c"
 
-Z80CPU* cpuCreate(cbmr fmr, cbmw fmw, cbir fir, cbiw fiw, cbirq frq, void* dt) {
-	Z80CPU* cpu = (Z80CPU*)malloc(sizeof(Z80CPU));
+CPU* cpuCreate(cbmr fmr, cbmw fmw, cbir fir, cbiw fiw, cbirq frq, void* dt) {
+	CPU* cpu = (CPU*)malloc(sizeof(CPU));
 	cpu->data = dt;
 	cpu->mrd = fmr;
 	cpu->mwr = fmw;
@@ -35,11 +35,11 @@ Z80CPU* cpuCreate(cbmr fmr, cbmw fmw, cbir fir, cbiw fiw, cbirq frq, void* dt) {
 	return cpu;
 }
 
-void cpuDestroy(Z80CPU* cpu) {
+void cpuDestroy(CPU* cpu) {
 	free(cpu);
 }
 
-void cpuReset(Z80CPU* cpu) {
+void cpuReset(CPU* cpu) {
 	cpu->pc = 0;
 	cpu->iff1 = 0;
 	cpu->iff2 = 0;
@@ -51,7 +51,7 @@ void cpuReset(Z80CPU* cpu) {
 	cpu->i = cpu->r = cpu->r7 = 0;
 }
 
-int cpuExec(Z80CPU* cpu) {
+int cpuExec(CPU* cpu) {
 	cpu->t = 0;
 	cpu->noint = 0;
 	cpu->opTab = npTab;
@@ -64,7 +64,7 @@ int cpuExec(Z80CPU* cpu) {
 	return cpu->t;
 }
 
-int cpuINT(Z80CPU* cpu) {
+int cpuINT(CPU* cpu) {
 	if (!cpu->iff1 || cpu->noint) return 0;
 	cpu->iff1 = 0;
 	cpu->iff2 = 0;
@@ -110,7 +110,7 @@ int cpuINT(Z80CPU* cpu) {
 	return cpu->t;
 }
 
-int cpuNMI(Z80CPU* cpu) {
+int cpuNMI(CPU* cpu) {
 	if (cpu->noint) return 0;
 	cpu->r++;
 	cpu->iff1 = 0;

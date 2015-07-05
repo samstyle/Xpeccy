@@ -11,15 +11,10 @@
 #include "xgui/xgui.h"
 #include "filer.h"
 
-#ifndef SELFZ80
-	#include "z80ex_dasm.h"
-#endif
-
-
 void DebugWin::start(ZXComp* c) {
 	comp = c;
 	if (!fillAll()) {
-		disasmAdr = GETPC(comp->cpu);
+		disasmAdr = comp->cpu->pc;
 		fillAll();
 	}
 	vidDarkTail(comp->vid);
@@ -173,7 +168,7 @@ void DebugWin::doStep() {
 	tCount = comp->tickCount;
 	zxExec(comp);
 	if (!fillAll()) {
-		disasmAdr = GETPC(comp->cpu);
+		disasmAdr = comp->cpu->pc;
 		fillDisasm();
 	}
 	if (trace) QTimer::singleShot(10,this,SLOT(doStep()));
@@ -185,7 +180,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 		return;
 	}
 	int i;
-	Z80EX_WORD pc = GETPC(comp->cpu);
+	unsigned short pc = comp->cpu->pc;
 	unsigned char* ptr;
 	int offset = (ui.dumpTable->columnCount() - 1) * (ui.dumpTable->rowCount() - 1);
 	switch(ev->modifiers()) {
@@ -199,7 +194,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					break;
 				case Qt::Key_Z:
 					if (!ui.dasmTable->hasFocus()) break;
-					SETPC(comp->cpu, ui.dasmTable->item(ui.dasmTable->currentRow(), 0)->data(Qt::UserRole).toInt());
+					comp->cpu->pc = ui.dasmTable->item(ui.dasmTable->currentRow(), 0)->data(Qt::UserRole).toInt() & 0xffff;
 					fillZ80();
 					fillDisasm();
 					break;
@@ -253,7 +248,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					break;
 				case Qt::Key_F3:
 					loadFile(comp,"",FT_ALL,-1);
-					disasmAdr = GETPC(comp->cpu);
+					disasmAdr = comp->cpu->pc;
 					fillAll();
 					break;
 				case Qt::Key_F7:
@@ -297,7 +292,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 				case Qt::Key_F12:
 					zxReset(comp, RES_DEFAULT);
 					if (!fillAll()) {
-						disasmAdr = GETPC(comp->cpu);
+						disasmAdr = comp->cpu->pc;
 						fillDisasm();
 					}
 					break;
@@ -393,15 +388,15 @@ void setCBFlag(QCheckBox* cb, int state) {
 }
 
 void DebugWin::fillFlags() {
-	Z80EX_WORD af = GETAF(comp->cpu);
-	setCBFlag(ui.cbFS, af & 0x80);
-	setCBFlag(ui.cbFZ, af & 0x40);
-	setCBFlag(ui.cbF5, af & 0x20);
-	setCBFlag(ui.cbFH, af & 0x10);
-	setCBFlag(ui.cbF3, af & 0x08);
-	setCBFlag(ui.cbFP, af & 0x04);
-	setCBFlag(ui.cbFN, af & 0x02);
-	setCBFlag(ui.cbFC, af & 0x01);
+	unsigned char flg = comp->cpu->f;
+	setCBFlag(ui.cbFS, flg & 0x80);
+	setCBFlag(ui.cbFZ, flg & 0x40);
+	setCBFlag(ui.cbF5, flg & 0x20);
+	setCBFlag(ui.cbFH, flg & 0x10);
+	setCBFlag(ui.cbF3, flg & 0x08);
+	setCBFlag(ui.cbFP, flg & 0x04);
+	setCBFlag(ui.cbFN, flg & 0x02);
+	setCBFlag(ui.cbFC, flg & 0x01);
 }
 
 void setLEReg(QLineEdit* le, int num) {
@@ -416,25 +411,24 @@ void setLEReg(QLineEdit* le, int num) {
 
 void DebugWin::fillZ80() {
 	block = true;
-	Z80EX_WORD af = GETAF(comp->cpu);
-	setLEReg(ui.editAF, af);
-	setLEReg(ui.editBC, GETBC(comp->cpu));
-	setLEReg(ui.editDE, GETDE(comp->cpu));
-	setLEReg(ui.editHL, GETHL(comp->cpu));
-	setLEReg(ui.editAFa, GETAF_(comp->cpu));
-	setLEReg(ui.editBCa, GETBC_(comp->cpu));
-	setLEReg(ui.editDEa, GETDE_(comp->cpu));
-	setLEReg(ui.editHLa, GETHL_(comp->cpu));
-	setLEReg(ui.editPC, GETPC(comp->cpu));
-	setLEReg(ui.editSP, GETSP(comp->cpu));
-	setLEReg(ui.editIX, GETIX(comp->cpu));
-	setLEReg(ui.editIY, GETIY(comp->cpu));
-	setLEReg(ui.editIR, GETIR(comp->cpu));
+//	unsigned short af = GETAF(comp->cpu);
+	setLEReg(ui.editAF, comp->cpu->af);
+	setLEReg(ui.editBC, comp->cpu->bc);
+	setLEReg(ui.editDE, comp->cpu->de);
+	setLEReg(ui.editHL, comp->cpu->hl);
+	setLEReg(ui.editAFa, comp->cpu->af_);
+	setLEReg(ui.editBCa, comp->cpu->bc_);
+	setLEReg(ui.editDEa, comp->cpu->de_);
+	setLEReg(ui.editHLa, comp->cpu->hl_);
+	setLEReg(ui.editPC, comp->cpu->pc);
+	setLEReg(ui.editSP, comp->cpu->sp);
+	setLEReg(ui.editIX, comp->cpu->ix);
+	setLEReg(ui.editIY, comp->cpu->iy);
+	setLEReg(ui.editIR, (comp->cpu->i << 8) | (comp->cpu->r & 0x7f) | comp->cpu->r7);
 
-	ui.boxIM->setValue(GETIM(comp->cpu));
-	ui.flagIFF1->setChecked(GETIFF1(comp->cpu));
-	ui.flagIFF2->setChecked(GETIFF1(comp->cpu));
-	//ui.labFlag->setText(flagString(af));
+	ui.boxIM->setValue(comp->cpu->imode);
+	ui.flagIFF1->setChecked(comp->cpu->iff1);
+	ui.flagIFF2->setChecked(comp->cpu->iff2);
 	fillFlags();
 	block = false;
 	fillStack();
@@ -442,8 +436,7 @@ void DebugWin::fillZ80() {
 
 void DebugWin::setFlags() {
 	if (block) return;
-	Z80EX_WORD af = GETAF(comp->cpu);
-	af &= 0xff00;
+	unsigned char af = comp->cpu->af & 0xff00;
 	if (ui.cbFS->isChecked()) af |= 0x80;
 	if (ui.cbFZ->isChecked()) af |= 0x40;
 	if (ui.cbF5->isChecked()) af |= 0x20;
@@ -452,30 +445,31 @@ void DebugWin::setFlags() {
 	if (ui.cbFP->isChecked()) af |= 0x04;
 	if (ui.cbFN->isChecked()) af |= 0x02;
 	if (ui.cbFC->isChecked()) af |= 0x01;
-	SETAF(comp->cpu, af);
+	comp->cpu->af = af;
 	setLEReg(ui.editAF, af);
 	fillDisasm();
 }
 
 void DebugWin::setZ80() {
 	if (block) return;
-	int af = ui.editAF->text().toInt(NULL,16);
-	SETAF(comp->cpu, af);
-	SETBC(comp->cpu, ui.editBC->text().toInt(NULL,16));
-	SETDE(comp->cpu, ui.editDE->text().toInt(NULL,16));
-	SETHL(comp->cpu, ui.editHL->text().toInt(NULL,16));
-	SETAF_(comp->cpu, ui.editAFa->text().toInt(NULL,16));
-	SETBC_(comp->cpu, ui.editBCa->text().toInt(NULL,16));
-	SETDE_(comp->cpu, ui.editDEa->text().toInt(NULL,16));
-	SETHL_(comp->cpu, ui.editHLa->text().toInt(NULL,16));
-	SETPC(comp->cpu, ui.editPC->text().toInt(NULL,16));
-	SETSP(comp->cpu, ui.editSP->text().toInt(NULL,16));
-	SETIX(comp->cpu, ui.editIX->text().toInt(NULL,16));
-	SETIY(comp->cpu, ui.editIY->text().toInt(NULL,16));
-	SETIR(comp->cpu, ui.editIR->text().toInt(NULL,16));
-	SETIM(comp->cpu, ui.boxIM->value());
-	SETIFF1(comp->cpu, ui.flagIFF1->isChecked());
-	SETIFF2(comp->cpu, ui.flagIFF2->isChecked());
+	comp->cpu->af = ui.editAF->text().toInt(NULL,16);
+	comp->cpu->bc = ui.editBC->text().toInt(NULL,16);
+	comp->cpu->de = ui.editDE->text().toInt(NULL,16);
+	comp->cpu->hl = ui.editHL->text().toInt(NULL,16);
+	comp->cpu->af_ = ui.editAFa->text().toInt(NULL,16);
+	comp->cpu->bc_ = ui.editBCa->text().toInt(NULL,16);
+	comp->cpu->de_ = ui.editDEa->text().toInt(NULL,16);
+	comp->cpu->hl_ = ui.editHLa->text().toInt(NULL,16);
+	comp->cpu->pc = ui.editPC->text().toInt(NULL,16);
+	comp->cpu->sp = ui.editSP->text().toInt(NULL,16);
+	comp->cpu->ix = ui.editIX->text().toInt(NULL,16);
+	comp->cpu->iy = ui.editIY->text().toInt(NULL,16);
+	comp->cpu->i = (ui.editIR->text().toInt(NULL,16) >> 8) & 0xff;
+	comp->cpu->r = ui.editIR->text().toInt(NULL,16) & 0xff;
+	comp->cpu->r7 = comp->cpu->r & 0x80;
+	comp->cpu->imode = ui.boxIM->value();
+	comp->cpu->iff1 = ui.flagIFF1->isChecked() ? 1 : 0;
+	comp->cpu->iff2 = ui.flagIFF2->isChecked() ? 1 : 0;
 	fillFlags();
 	fillStack();
 	fillDisasm();
@@ -498,7 +492,7 @@ void DebugWin::fillMem() {
 
 // disasm table
 
-Z80EX_BYTE rdbyte(Z80EX_WORD adr, void* ptr) {
+unsigned char rdbyte(unsigned short adr, void* ptr) {
 	return memRd(((ZXComp*)ptr)->mem,adr);
 }
 
@@ -506,7 +500,7 @@ Z80EX_BYTE rdbyte(Z80EX_WORD adr, void* ptr) {
 #define DMPSIZE 16
 
 struct DasmRow {
-	Z80EX_WORD adr;
+	unsigned short adr;
 	unsigned ispc:1;	// if adr=PC
 	unsigned cond:1;	// if there is condition command (JR, JP, CALL, RET) and condition met
 	unsigned mem:1;
@@ -517,7 +511,7 @@ struct DasmRow {
 
 int checkCond(ZXComp* comp, int num) {
 	int res = 0;
-	Z80EX_BYTE flg = GETAF(comp->cpu) & 0xff;
+	unsigned char flg = comp->cpu->f;
 	switch (num) {
 		case 0: res = (flg & FZ) ? 0 : 1; break;	// NZ
 		case 1: res = (flg & FZ) ? 1 : 0; break;	// Z
@@ -531,20 +525,15 @@ int checkCond(ZXComp* comp, int num) {
 	return res;
 }
 
-DasmRow getDisasm(ZXComp* comp, Z80EX_WORD& adr) {
+DasmRow getDisasm(ZXComp* comp, unsigned short& adr) {
 	DasmRow drow;
 	drow.adr = adr;
-	drow.ispc = (GETPC(comp->cpu) == adr) ? 1 : 0;	// check if this is PC
+	drow.ispc = (comp->cpu->pc == adr) ? 1 : 0;	// check if this is PC
 	drow.bytes.clear();
 	drow.com.clear();
 	char buf[256];
 	int clen;
-#ifdef SELFZ80
 	clen = cpuDisasm(adr,buf,&rdbyte,comp);
-#else
-	int t1,t2;
-	clen = z80ex_dasm(buf,256,0,&t1,&t2,&rdbyte,adr,comp);
-#endif
 	drow.com = QString(buf).toUpper();
 	for (int i = 0; i < clen; i++) {
 		drow.bytes.append(memRd(comp->mem,adr));
@@ -553,7 +542,7 @@ DasmRow getDisasm(ZXComp* comp, Z80EX_WORD& adr) {
 	drow.mem = 0;
 	drow.cond = 0;
 	if (drow.ispc) {
-		Z80EX_BYTE bt;		// check conditions
+		unsigned char bt;		// check conditions
 		if (clen > 2) {
 			bt = drow.bytes.at(clen - 3);		// jp, call
 			if (((bt & 0xc7) == 0xc2) || ((bt & 0xc7) == 0xc4)) {
@@ -562,7 +551,7 @@ DasmRow getDisasm(ZXComp* comp, Z80EX_WORD& adr) {
 		} else if (clen > 1) {
 			bt = drow.bytes.at(clen - 2);
 			if (bt == 0x10) {			// djnz
-				drow.cond = ((GETBC(comp->cpu) & 0xff00) == 0x0100) ? 1 : 0;
+				drow.cond = (comp->cpu->b == 1) ? 1 : 0;
 			} else if ((bt & 0xe7) == 0x20) {	// jr
 				drow.cond = checkCond(comp, (bt & 0x18) >> 3);
 			}
@@ -574,7 +563,7 @@ DasmRow getDisasm(ZXComp* comp, Z80EX_WORD& adr) {
 		}
 		if (drow.com.endsWith("(HL)") && !drow.com.startsWith("JP")) {
 			drow.mem = 1;
-			drow.mop = memRd(comp->mem, GETHL(comp->cpu));
+			drow.mop = memRd(comp->mem, comp->cpu->hl);
 		} else if (drow.com.size() > 6) {
 			bt = drow.bytes.at(clen - 1);
 			if (clen > 2) {
@@ -583,10 +572,10 @@ DasmRow getDisasm(ZXComp* comp, Z80EX_WORD& adr) {
 			}
 			if (drow.com.indexOf("(IX") == (drow.com.size() - 7)) {
 				drow.mem = 1;
-				drow.mop = memRd(comp->mem, 0xffff & (GETIX(comp->cpu) + (signed char)bt));
+				drow.mop = memRd(comp->mem, 0xffff & (comp->cpu->ix + (signed char)bt));
 			} else if (drow.com.indexOf("(IY") == (drow.com.size() - 7)) {
 				drow.mem = 1;
-				drow.mop = memRd(comp->mem, 0xffff & (GETIY(comp->cpu) + (signed char)bt));
+				drow.mop = memRd(comp->mem, 0xffff & (comp->cpu->iy + (signed char)bt));
 			}
 		}
 	}
@@ -605,8 +594,8 @@ xLabel* DebugWin::findLabel(int adr) {
 
 int DebugWin::fillDisasm() {
 	block = true;
-	Z80EX_WORD adr = disasmAdr;
-	// Z80EX_WORD pc = GETPC(comp->cpu);
+	unsigned short adr = disasmAdr;
+	// unsigned short pc = GETPC(comp->cpu);
 	DasmRow drow;
 	QColor bgcol,acol;
 	xLabel* lab = NULL;
@@ -656,8 +645,8 @@ int DebugWin::fillDisasm() {
 	return res;
 }
 
-Z80EX_WORD DebugWin::getPrevAdr(Z80EX_WORD adr) {
-	Z80EX_WORD tadr;
+unsigned short DebugWin::getPrevAdr(unsigned short adr) {
+	unsigned short tadr;
 	for (int i = 16; i > 0; i--) {
 		tadr = adr - i;
 		getDisasm(comp, tadr);			// shift tadr to next op
@@ -677,7 +666,7 @@ void DebugWin::dasmEdited(int row, int col) {
 		disasmAdr = adr;
 	} else if (col == 1) {
 		QString str = ui.dasmTable->item(row, col)->text();
-		Z80EX_BYTE cbyte;
+		unsigned char cbyte;
 		while (!str.isEmpty()) {
 			cbyte = str.left(2).toInt(NULL,16);
 			memWr(comp->mem, adr, cbyte);
@@ -702,7 +691,7 @@ void DebugWin::dasmEdited(int row, int col) {
 
 void DebugWin::fillDump() {
 	block = true;
-	Z80EX_WORD adr = dumpAdr;
+	unsigned short adr = dumpAdr;
 	int row,col;
 	QColor bgcol;
 	for (row = 0; row < ui.dumpTable->rowCount(); row++) {
@@ -723,7 +712,7 @@ void DebugWin::dumpEdited(int row, int col) {
 	if (col == 0) {
 		dumpAdr = ui.dumpTable->item(row, 0)->text().toInt(NULL,16) - row * (ui.dumpTable->columnCount() - 1);
 	} else {
-		Z80EX_WORD adr = (dumpAdr + (col - 1) + row * (ui.dumpTable->columnCount() - 1)) & 0xffff;
+		unsigned short adr = (dumpAdr + (col - 1) + row * (ui.dumpTable->columnCount() - 1)) & 0xffff;
 		memWr(comp->mem, adr, ui.dumpTable->item(row, col)->text().toInt(NULL,16) & 0xff);
 		fillDisasm();
 
@@ -745,7 +734,7 @@ void DebugWin::dumpEdited(int row, int col) {
 // stack
 
 void DebugWin::fillStack() {
-	int adr = GETSP(comp->cpu);
+	int adr = comp->cpu->sp;
 	QString str;
 	for (int i = 0; i < 5; i++) {
 		str.append(gethexbyte(memRd(comp->mem, adr+1)));
@@ -778,7 +767,7 @@ void DebugWin::putBreakPoint() {
 	bpMenu->show();
 }
 
-void DebugWin::doBreakPoint(Z80EX_WORD adr) {
+void DebugWin::doBreakPoint(unsigned short adr) {
 	bpAdr = adr;
 	unsigned char flag = *memGetFptr(comp->mem, adr);
 	ui.actFetch->setChecked(flag & MEM_BRK_FETCH);
