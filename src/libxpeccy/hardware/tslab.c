@@ -166,7 +166,7 @@ unsigned char tsIn57(ZXComp* comp, unsigned short port) {
 unsigned char tsIn77(ZXComp* comp, unsigned short port) {
 	unsigned char res = 0x00;
 	if (comp->sdc->image != NULL) res |= 0x01;	// inserted
-	if (comp->sdc->flag & SDC_LOCK) res |= 0x02;	// wrprt
+	if (comp->sdc->lock) res |= 0x02;		// wrprt
 	return res;
 }
 
@@ -218,8 +218,8 @@ void tsOut57(ZXComp* comp, unsigned short port, unsigned char val) {
 }
 
 void tsOut77(ZXComp* comp, unsigned short port, unsigned char val) {
-	comp->sdc->flag &= ~0x03;
-	comp->sdc->flag |= (val & 3);
+	comp->sdc->on = val & 1;
+	comp->sdc->cs = (val & 2) ? 1 : 0;
 }
 
 void tsOut7FFD(ZXComp* comp, unsigned short port, unsigned char val) {

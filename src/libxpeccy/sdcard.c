@@ -100,7 +100,7 @@ void sdcWrSector(SDCard* sdc) {
 // io operations
 
 unsigned char sdcRead(SDCard* sdc) {
-	if (!sdc->image || ((sdc->flag & 3) != SDC_ON)) return 0xff;	// no image or OFF or !CS
+	if (!sdc->image || !sdc->on || sdc->cs) return 0xff;	// no image or OFF or !CS
 	unsigned char res = 0xff;
 	if (sdc->respCnt > 0) {				// if have response
 		res = sdc->resp[sdc->respPos];
@@ -122,7 +122,7 @@ unsigned char sdcRead(SDCard* sdc) {
 				sdc->buf.pos++;
 				if (sdc->buf.pos > 514) {		// 1token.512b.2crc = 0..514 = 515 bytes
 					sdc->buf.pos = -1;
-					if (sdc->flag & SDC_CONT) {
+					if (sdc->cont) {
 						sdc->addr++;
 						sdc->buf.pos = -1;
 					} else {
@@ -155,9 +155,9 @@ void sdcExec(SDCard* sdc) {
 		}
 	}
 	if ((sdc->arg[0] & 0x40) == 0x40) {
-		if (sdc->flag & SDC_ACMD) {
+		if (sdc->acmd) {
 //			printf("SD ACMD%.2i\n",sdc->arg[0] & 0x3f);
-			sdc->flag &= ~SDC_ACMD;		// reset ACMD
+			sdc->acmd = 0;		// reset ACMD
 			switch (sdc->arg[0] & 0x3f) {
 				case ACMD41:
 					sdcR1(sdc,0);
@@ -183,7 +183,7 @@ void sdcExec(SDCard* sdc) {
 					sdc->respPos = 0;
 					break;
 				case CMD12:				// stop multiple block rd/wr
-					sdc->flag &= ~SDC_CONT;
+					sdc->cont = 0;
 					sdcR1(sdc,0);
 					if (sdc->buf.pos < 0) sdc->state = SDC_FREE;
 					break;
@@ -192,7 +192,7 @@ void sdcExec(SDCard* sdc) {
 					sdcR1(sdc,0);
 					break;
 				case CMD18:				// read multiple block
-					sdc->flag |= SDC_CONT;
+					sdc->cont = 1;
 				case CMD17:				// read block
 					sdc->addr = sdcGetArg(sdc,0xffffffff);
 					if (sdc->addr < sdc->maxlba) {
@@ -201,12 +201,12 @@ void sdcExec(SDCard* sdc) {
 						sdc->buf.pos = -1;
 					} else {
 						sdcR1(sdc,R1_ADDRESS_ERR);
-						sdc->flag &= ~SDC_CONT;
+						sdc->cont = 0;
 						sdc->state = SDC_FREE;
 					}
 					break;
 				case CMD25:				// write multiple block
-					sdc->flag |= SDC_CONT;
+					sdc->cont = 1;
 				case CMD24:				// write block
 					sdc->addr = sdcGetArg(sdc,0xffffffff);
 					if (sdc->addr < sdc->maxlba) {
@@ -215,12 +215,12 @@ void sdcExec(SDCard* sdc) {
 						sdc->buf.pos = 0;
 					} else {
 						sdcR1(sdc,R1_ADDRESS_ERR);
-						sdc->flag &= ~SDC_CONT;
+						sdc->cont = 0;
 						sdc->state = SDC_FREE;
 					}
 					break;
 				case CMD55:
-					sdc->flag |= SDC_ACMD;		// next command is ACMD
+					sdc->acmd = 1;			// next command is ACMD
 					sdcR1(sdc,0);
 					break;
 				case CMD58:				// read OCR register
@@ -233,11 +233,7 @@ void sdcExec(SDCard* sdc) {
 					sdc->respPos = 0;
 					break;
 				case CMD59:
-					if (sdc->arg[4] & 1) {
-						sdc->flag |= SDC_CHECK_CRC;
-					} else {
-						sdc->flag &= ~SDC_CHECK_CRC;
-					}
+					sdc->checkCrc = sdc->arg[4] & 1;
 					sdcR1(sdc,0);
 					break;
 				default:
@@ -252,7 +248,7 @@ void sdcExec(SDCard* sdc) {
 }
 
 void sdcWrite(SDCard* sdc, unsigned char val) {
-	if (!sdc->image || ((sdc->flag & 3) != SDC_ON)) return;
+	if (!sdc->image || !sdc->on || sdc->cs) return;
 //	printf("SD out %.2X\n",val);
 	if (sdc->state == SDC_WRITE) {
 		if ((sdc->arg[0] = CMD25) && (sdc->buf.pos == 0) && (val == 0xfd)) {		// stop token for com25
@@ -262,14 +258,14 @@ void sdcWrite(SDCard* sdc, unsigned char val) {
 			sdc->buf.data[sdc->buf.pos] = val;
 			sdc->buf.pos++;
 			if (sdc->buf.pos > 514) {	// 0..514 = 515 bytes = {1token,512data,2crc}
-				if (sdc->flag & SDC_LOCK) {
+				if (sdc->lock) {
 					sdcR1(sdc,0x1d);	// xxx01101 - data rejected due write error
 					sdc->state = SDC_FREE;
 				} else {
 					sdcR1(sdc,0x05);	// xxx00101 - data accepted
 					sdcWrSector(sdc);
-					if (sdc->flag & SDC_CONT) {
-						sdc->flag |= SDC_BUSY;
+					if (sdc->cont) {
+						sdc->busy = 1;
 						sdc->buf.pos = 0;
 						sdc->addr++;
 					} else {

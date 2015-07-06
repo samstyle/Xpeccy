@@ -398,7 +398,7 @@ void SetupWin::start(xProfile* p) {
 	ui.sdPath->setText(QString::fromLocal8Bit(comp->sdc->image));
 	ui.sdcapbox->setCurrentIndex(ui.sdcapbox->findData(comp->sdc->capacity));
 	if (ui.sdcapbox->currentIndex() < 0) ui.sdcapbox->setCurrentIndex(2);	// 128M
-	ui.sdlock->setChecked(comp->sdc->flag & SDC_LOCK);
+	ui.sdlock->setChecked(comp->sdc->lock);
 // tape
 	ui.cbTapeAuto->setChecked(conf.tape.autostart);
 	ui.cbTapeFast->setChecked(conf.tape.fast);
@@ -538,7 +538,7 @@ void SetupWin::apply() {
 // sdcard
 	sdcSetImage(comp->sdc,ui.sdPath->text().isEmpty() ? "" : ui.sdPath->text().toLocal8Bit().data());
 	sdcSetCapacity(comp->sdc,ui.sdcapbox->itemData(ui.sdcapbox->currentIndex()).toInt());
-	setFlagBit(ui.sdlock->isChecked(),&comp->sdc->flag,SDC_LOCK);
+	comp->sdc->lock = ui.sdlock->isChecked() ? 1 : 0;
 // tape
 	conf.tape.autostart = ui.cbTapeAuto->isChecked() ? 1 : 0;
 	conf.tape.fast = ui.cbTapeFast->isChecked() ? 1 : 0;

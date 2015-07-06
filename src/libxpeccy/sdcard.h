@@ -22,6 +22,7 @@
 #define	R1_ADDRESS_ERR	(1<<5)
 #define	R1_PARAM_ERR	(1<<6)
 // flag
+/*
 #define	SDC_ON		1
 #define	SDC_CS		(1<<1)
 #define	SDC_ACMD	(1<<2)
@@ -29,6 +30,7 @@
 #define	SDC_CONT	(1<<4)		// multiple block op
 #define	SDC_LOCK	(1<<5)		// write protect
 #define SDC_BUSY	(1<<6)
+*/
 // capacity
 #define	SDC_32M		32
 #define	SDC_64M		64
@@ -39,7 +41,15 @@
 #define	SDC_DEFAULT	SDC_128M
 
 typedef struct {
-	int flag;
+	//int flag;
+	unsigned on:1;
+	unsigned cs:1;
+	unsigned acmd:1;
+	unsigned checkCrc:1;
+	unsigned cont:1;
+	unsigned lock:1;
+	unsigned busy:1;
+
 	unsigned char mode;	// page 18 of SDCard specification 3.01
 	unsigned char state;	// current action
 

@@ -197,8 +197,8 @@ void evoOut57(ZXComp* comp, unsigned short port, unsigned char val) {
 }
 
 void evoOut77(ZXComp* comp, unsigned short port, unsigned char val) {
-	comp->sdc->flag &= ~0x03;
-	comp->sdc->flag |= (val & 3);
+	comp->sdc->on = val & 1;
+	comp->sdc->cs = (val & 2) ? 1 : 0;
 }
 
 void evoOut77d(ZXComp* comp, unsigned short port, unsigned char val) {

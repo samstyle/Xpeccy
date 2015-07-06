@@ -61,66 +61,6 @@ int prfLoad(std::string);
 
 int prfSave(std::string);
 
-// config
-
-#define	YESNO(cnd) ((cnd) ? "yes" : "no")
-
-struct xConfig {
-	unsigned sysclock:1;		// system time in cmos
-	unsigned storePaths:1;		// store tape/disk paths
-	unsigned defProfile:1;		// start @ default profile
-	std::string keyMapName;		// use this keymap
-	float brdsize;			// 0.0 - 1.0 : border size
-	struct {
-		std::vector<xProfile*> list;
-		xProfile* cur;
-	} prof;
-	struct {
-		unsigned grayScale:1;
-		unsigned noFlick:1;
-		unsigned fullScreen:1;
-		int scale;		// 1..4
-	} vid;
-	struct {
-		unsigned enabled:1;
-		unsigned mute:1;
-		int rate;
-		struct {
-			int beep;
-			int tape;
-			int ay;
-			int gs;
-		} vol;
-	} snd;
-	struct {
-		unsigned autostart:1;
-		unsigned fast:1;
-	} tape;
-	struct {
-		unsigned noLeds:1;
-		unsigned noBorder:1;
-		int count;
-		int interval;
-		std::string format;
-		std::string dir;
-	} scrShot;
-	struct {
-		unsigned mouse:1;
-		unsigned joy:1;
-		unsigned keys:1;
-		unsigned tape:1;
-	} led;
-	struct {
-		std::string confDir;
-		std::string confFile;
-		std::string romDir;
-		std::string boot;
-	} path;
-};
-
-
-extern xConfig conf;
-
 //screenshot format
 #define	SCR_BMP		1
 #define	SCR_PNG		2
@@ -201,5 +141,64 @@ extern std::vector<xLayout> layList;
 bool addLayout(std::string,int,int,int,int,int,int,int,int,int);
 bool addLayout(xLayout);
 xLayout* findLayout(std::string);
+
+// config
+
+#define	YESNO(cnd) ((cnd) ? "yes" : "no")
+
+struct xConfig {
+	unsigned sysclock:1;		// system time in cmos
+	unsigned storePaths:1;		// store tape/disk paths
+	unsigned defProfile:1;		// start @ default profile
+	std::string keyMapName;		// use this keymap
+	float brdsize;			// 0.0 - 1.0 : border size
+	struct {
+		std::vector<xProfile*> list;
+		xProfile* cur;
+	} prof;
+	struct {
+		unsigned grayScale:1;
+		unsigned noFlick:1;
+		unsigned fullScreen:1;
+		int scale;		// 1..4
+	} vid;
+	struct {
+		unsigned enabled:1;
+		unsigned mute:1;
+		int rate;
+		struct {
+			int beep;
+			int tape;
+			int ay;
+			int gs;
+		} vol;
+	} snd;
+	struct {
+		unsigned autostart:1;
+		unsigned fast:1;
+	} tape;
+	struct {
+		unsigned noLeds:1;
+		unsigned noBorder:1;
+		int count;
+		int interval;
+		std::string format;
+		std::string dir;
+	} scrShot;
+	struct {
+		unsigned mouse:1;
+		unsigned joy:1;
+		unsigned keys:1;
+		unsigned tape:1;
+	} led;
+	struct {
+		std::string confDir;
+		std::string confFile;
+		std::string romDir;
+		std::string boot;
+	} path;
+};
+
+extern xConfig conf;
 
 #endif

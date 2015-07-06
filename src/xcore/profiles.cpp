@@ -6,14 +6,14 @@
 #include "../filer.h"
 
 // xProfile* currentProfile = NULL;
-std::vector<xProfile*> profileList;
+// std::vector<xProfile*> profileList;
 
 xProfile* findProfile(std::string nm) {
 	if (nm == "") return conf.prof.cur;
 	xProfile* res = NULL;
-	for (uint i = 0; i < profileList.size(); i++) {
-		if (profileList[i]->name == nm)
-			res = profileList[i];
+	for (uint i = 0; i < conf.prof.list.size(); i++) {
+		if (conf.prof.list[i]->name == nm)
+			res = conf.prof.list[i];
 	}
 	return res;
 }
@@ -39,7 +39,7 @@ bool addProfile(std::string nm, std::string fp) {
 		file.close();
 	}
 	zxSetHardware(nprof->zx,"ZX48K");
-	profileList.push_back(nprof);
+	conf.prof.list.push_back(nprof);
 	return true;
 }
 
@@ -65,8 +65,8 @@ int delProfile(std::string nm) {
 		prfSetCurrent("default");
 	}
 	// remove all such profiles from list & free mem
-	for (uint i = 0; i < profileList.size(); i++) {
-		if (profileList[i]->name == nm) {
+	for (uint i = 0; i < conf.prof.list.size(); i++) {
+		if (conf.prof.list[i]->name == nm) {
 			cpath = conf.path.confDir + SLASH + prf->file;
 			remove(cpath.c_str());				// remove config file
 			cpath = conf.path.confDir + SLASH + prf->name + ".cmos";
@@ -75,7 +75,7 @@ int delProfile(std::string nm) {
 			remove(cpath.c_str());
 			zxDestroy(prf->zx);				// delete ZX
 			delete(prf);
-			profileList.erase(profileList.begin() + i);
+			conf.prof.list.erase(conf.prof.list.begin() + i);
 		}
 	}
 	return res;
@@ -95,10 +95,10 @@ bool prfSetCurrent(std::string nm) {
 }
 
 void clearProfiles() {
-	while (profileList.size() > 1) {
-		profileList.pop_back();
+	while (conf.prof.list.size() > 1) {
+		conf.prof.list.pop_back();
 	}
-	prfSetCurrent(profileList[0]->name);
+	prfSetCurrent(conf.prof.list[0]->name);
 }
 
 bool prfSetLayout(xProfile* prf, std::string nm) {
@@ -116,16 +116,16 @@ bool prfSetLayout(xProfile* prf, std::string nm) {
 }
 
 void prfChangeRsName(std::string oldName, std::string newName) {
-	for (uint i = 0; i < profileList.size(); i++) {
-		if (profileList[i]->rsName == oldName)
-			profileList[i]->rsName = newName;
+	for (uint i = 0; i < conf.prof.list.size(); i++) {
+		if (conf.prof.list[i]->rsName == oldName)
+			conf.prof.list[i]->rsName = newName;
 	}
 }
 
 void prfChangeLayName(std::string oldName, std::string newName) {
-	for (uint i = 0; i < profileList.size(); i++) {
-		if (profileList[i]->layName == oldName)
-			profileList[i]->layName = newName;
+	for (uint i = 0; i < conf.prof.list.size(); i++) {
+		if (conf.prof.list[i]->layName == oldName)
+			conf.prof.list[i]->layName = newName;
 	}
 }
 
@@ -246,7 +246,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 
 void prfLoadAll() {
 	xProfile* prf;
-	foreach(prf, profileList) {
+	foreach(prf, conf.prof.list) {
 		prfLoad(prf->name);
 	}
 }
@@ -402,7 +402,7 @@ int prfLoad(std::string nm) {
 					break;
 				case PS_SDC:
 					if (pnam == "sdcimage") sdcSetImage(comp->sdc,pval.c_str());
-					if (pnam == "sdclock") setFlagBit(str2bool(pval),&comp->sdc->flag,SDC_LOCK);
+					if (pnam == "sdclock") comp->sdc->lock = str2bool(pval) ? 1 : 0;
 					if (pnam == "capacity") sdcSetCapacity(comp->sdc,atoi(pval.c_str()));
 					break;
 			}
@@ -526,7 +526,7 @@ int prfSave(std::string nm) {
 
 	fprintf(file, "\n[SDC]\n\n");
 	fprintf(file, "sdcimage = %s\n", comp->sdc->image ? comp->sdc->image : "");
-	fprintf(file, "sdclock = %s\n", YESNO(comp->sdc->flag & SDC_LOCK));
+	fprintf(file, "sdclock = %s\n", YESNO(comp->sdc->lock));
 	fprintf(file, "capacity = %i\n", comp->sdc->capacity);
 
 	fclose(file);

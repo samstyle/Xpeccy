@@ -19,19 +19,15 @@ void prfMapMem(ZXComp* comp) {
 const unsigned char prfColB[4] = {0,80,160,255};
 const unsigned char prfColTab[8] = {0,40,80,120,160,200,228,255};
 
-void prfOutPal(ZXComp* comp, unsigned short port, unsigned char val) {
+void prfOut7E(ZXComp* comp, unsigned short port, unsigned char val) {
 	if (comp->pDFFD & 0x80) {
-		if (comp->profi.trig7E) {
-			xColor col;
-			int hi = ((port & 0xff00) >> 8);
-			col.b = prfColB[hi & 3];
-			col.r = prfColTab[(hi & 0x1c) >> 2];
-			col.g = prfColTab[(hi & 0xe0) >> 5];
-			comp->vid->pal[comp->profi.p7E] = col;
-		} else {
-			comp->profi.p7E = val & 15;
-		}
-		comp->profi.trig7E ^= 1;
+		xColor col;
+		int hi = (port & 0xff00) >> 8;
+		col.b = prfColB[hi & 3];
+		col.r = prfColTab[(hi & 0x1c) >> 2];
+		col.g = prfColTab[(hi & 0xe0) >> 5];
+		comp->vid->pal[comp->profi.p7E & 15] = col;
+		comp->profi.p7E = val & 15;
 	}
 }
 
@@ -40,6 +36,7 @@ void prfOutFE(ZXComp* comp, unsigned short port, unsigned char val) {
 	if (comp->pDFFD & 0x80) {
 		comp->vid->nextbrd ^= 7;
 		comp->vid->brdcol = comp->vid->nextbrd;
+		comp->profi.p7E = val & 15;
 	}
 }
 
@@ -114,7 +111,7 @@ xPort prfPortMap[] = {
 	{0x00ff,0x00f7,2,2,2,dummyIn,	dummyOut},	// f7 (off?)
 
 	// * * CPM
-	{0x00ff,0x007e,2,2,1,NULL,	prfOutPal},	// 7e cpm:palete (?)
+	{0x00ff,0x007e,2,2,1,NULL,	prfOut7E},	// 7e cpm:palete (?)
 
 	// BAS !ROM CPM
 	{0x00ff,0x00df,0,1,1,prfInDS,	prfOutDS},	// cmos DATA
