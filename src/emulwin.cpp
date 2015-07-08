@@ -985,12 +985,12 @@ void MainWin::initUserMenu() {
 void MainWin::fillBookmarkMenu() {
 	bookmarkMenu->clear();
 	QAction* act;
-	if (bookmarkList.size() == 0) {
+	if (conf.bookmarkList.size() == 0) {
 		bookmarkMenu->addAction("None")->setEnabled(false);
 	} else {
-		for(uint i=0; i<bookmarkList.size(); i++) {
-			act = bookmarkMenu->addAction(QString::fromLocal8Bit(bookmarkList[i].name.c_str()));
-			act->setData(QVariant(QString::fromLocal8Bit(bookmarkList[i].path.c_str())));
+		foreach(xBookmark bkm, conf.bookmarkList) {
+			act = bookmarkMenu->addAction(QString::fromLocal8Bit(bkm.name.c_str()));
+			act->setData(QVariant(QString::fromLocal8Bit(bkm.path.c_str())));
 		}
 	}
 }
@@ -1004,8 +1004,8 @@ void MainWin::fillProfileMenu() {
 
 void MainWin::fillLayoutMenu() {
 	layoutMenu->clear();
-	for (uint i = 0; i < layList.size(); i++) {
-		layoutMenu->addAction(layList[i].name.c_str());
+	foreach(xLayout lay, conf.layList) {
+		layoutMenu->addAction(lay.name.c_str());
 	}
 }
 

@@ -36,7 +36,6 @@ void prfOutFE(ZXComp* comp, unsigned short port, unsigned char val) {
 	if (comp->pDFFD & 0x80) {
 		comp->vid->nextbrd ^= 7;
 		comp->vid->brdcol = comp->vid->nextbrd;
-		comp->profi.p7E = val & 15;
 	}
 }
 

@@ -79,7 +79,7 @@ void saveConfig() {
 	fprintf(cfile, "systime = %s\n", YESNO(conf.sysclock));
 
 	fprintf(cfile, "\n[BOOKMARKS]\n\n");
-	foreach(xBookmark bkm, bookmarkList) {
+	foreach(xBookmark bkm, conf.bookmarkList) {
 		fprintf(cfile, "%s = %s\n", bkm.name.c_str(), bkm.path.c_str());
 	}
 
@@ -91,7 +91,7 @@ void saveConfig() {
 	fprintf(cfile, "current = %s\n", conf.prof.cur->name.c_str());
 
 	fprintf(cfile, "\n[VIDEO]\n\n");
-	foreach(xLayout lay, layList) {
+	foreach(xLayout lay, conf.layList) {
 		fprintf(cfile, "layout = %s:%i:%i:%i:%i:%i:%i:%i:%i:%i\n",lay.name.c_str(),\
 		       lay.full.h, lay.full.v, lay.bord.h, lay.bord.v,\
 		       lay.sync.h, lay.sync.v, lay.intsz, lay.intpos.v, lay.intpos.h);
@@ -109,7 +109,7 @@ void saveConfig() {
 	fprintf(cfile, "noflic = %s\n", YESNO(conf.vid.noFlick));
 
 	fprintf(cfile, "\n[ROMSETS]\n");
-	foreach(xRomset rms, rsList) {
+	foreach(xRomset rms, conf.rsList) {
 		fprintf(cfile, "\nname = %s\n", rms.name.c_str());
 		if (rms.file != "") {
 			fprintf(cfile, "file = %s\n", rms.file.c_str());

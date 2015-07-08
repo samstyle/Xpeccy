@@ -99,8 +99,6 @@ typedef struct {
 	std::string path;
 } xBookmark;
 
-extern std::vector<xBookmark> bookmarkList;
-
 void addBookmark(std::string,std::string);
 void setBookmark(int,std::string,std::string);
 void delBookmark(int);
@@ -120,7 +118,7 @@ typedef struct {
 	} roms[32];
 } xRomset;
 
-extern std::vector<xRomset> rsList;
+// extern std::vector<xRomset> rsList;
 
 xRomset* findRomset(std::string);
 bool addRomset(xRomset);
@@ -136,8 +134,6 @@ typedef struct {
 	int intsz;
 } xLayout;
 
-extern std::vector<xLayout> layList;
-
 bool addLayout(std::string,int,int,int,int,int,int,int,int,int);
 bool addLayout(xLayout);
 xLayout* findLayout(std::string);
@@ -152,6 +148,9 @@ struct xConfig {
 	unsigned defProfile:1;		// start @ default profile
 	std::string keyMapName;		// use this keymap
 	float brdsize;			// 0.0 - 1.0 : border size
+	std::vector<xRomset> rsList;
+	std::vector<xLayout> layList;
+	std::vector<xBookmark> bookmarkList;
 	struct {
 		std::vector<xProfile*> list;
 		xProfile* cur;

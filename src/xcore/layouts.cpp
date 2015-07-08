@@ -2,12 +2,10 @@
 
 #include <stdio.h>
 
-std::vector<xLayout> layList;
-
 xLayout* findLayout(std::string nm) {
 	xLayout* res = NULL;
-	for (unsigned int i = 0; i < layList.size(); i++) {
-		if (layList[i].name == nm) res = &layList[i];
+	for (unsigned int i = 0; i < conf.layList.size(); i++) {
+		if (conf.layList[i].name == nm) res = &conf.layList[i];
 	}
 	return res;
 }
@@ -30,13 +28,13 @@ bool addLayout(std::string nm,int fh,int fv,int bh,int bv,int sh,int sv,int ih,i
 	nlay.intpos.h = ih;
 	nlay.intpos.v = iv;
 	nlay.intsz = is;
-	layList.push_back(nlay);
+	conf.layList.push_back(nlay);
 	return true;
 }
 
 bool addLayout(xLayout lay) {
 //	printf("add Layout: %s (%i x %i)\n",lay.name.c_str(), lay.full.h, lay.full.v);
 	if (findLayout(lay.name) != NULL) return false;
-	layList.push_back(lay);
+	conf.layList.push_back(lay);
 	return true;
 }

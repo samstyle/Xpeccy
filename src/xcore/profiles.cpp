@@ -5,9 +5,6 @@
 #include "xcore.h"
 #include "../filer.h"
 
-// xProfile* currentProfile = NULL;
-// std::vector<xProfile*> profileList;
-
 xProfile* findProfile(std::string nm) {
 	if (nm == "") return conf.prof.cur;
 	xProfile* res = NULL;

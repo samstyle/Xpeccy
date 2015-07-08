@@ -4,13 +4,11 @@
 
 #include "xcore.h"
 
-std::vector<xRomset> rsList;
-
 xRomset* findRomset(std::string nm) {
 	xRomset* res = NULL;
-	for (unsigned int i=0; i<rsList.size(); i++) {
-		if (rsList[i].name == nm) {
-			res = &rsList[i];
+	for (unsigned int i=0; i < conf.rsList.size(); i++) {
+		if (conf.rsList[i].name == nm) {
+			res = &conf.rsList[i];
 		}
 	}
 	return res;
@@ -18,6 +16,6 @@ xRomset* findRomset(std::string nm) {
 
 bool addRomset(xRomset rs) {
 	if (findRomset(rs.name) != NULL) return false;
-	rsList.push_back(rs);
+	conf.rsList.push_back(rs);
 	return true;
 }

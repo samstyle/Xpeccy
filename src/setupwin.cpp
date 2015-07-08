@@ -281,9 +281,13 @@ void SetupWin::start(xProfile* p) {
 	unsigned int i;
 // machine
 	ui.rsetbox->clear();
-	for (i=0; i < rsList.size(); i++) {
-		ui.rsetbox->addItem(QString::fromLocal8Bit(rsList[i].name.c_str()));
+	foreach(xRomset rs, conf.rsList) {
+		ui.rsetbox->addItem(QString::fromLocal8Bit(rs.name.c_str()));
 	}
+
+//	for (i=0; i < conf.rsList.size(); i++) {
+//		ui.rsetbox->addItem(QString::fromLocal8Bit(rsList[i].name.c_str()));
+//	}
 	ui.machbox->setCurrentIndex(ui.machbox->findData(QString::fromUtf8(comp->hw->name)));
 	ui.rsetbox->setCurrentIndex(ui.rsetbox->findText(QString::fromUtf8(prof->rsName.c_str())));
 	ui.resbox->setCurrentIndex(ui.resbox->findData(comp->resbank));
@@ -310,7 +314,7 @@ void SetupWin::start(xProfile* p) {
 	ui.ssNoLeds->setChecked(conf.scrShot.noLeds);
 	ui.ssNoBord->setChecked(conf.scrShot.noBorder);
 	ui.geombox->clear();
-	foreach(xLayout lay, layList) {
+	foreach(xLayout lay, conf.layList) {
 		ui.geombox->addItem(QString::fromLocal8Bit(lay.name.c_str()));
 	}
 	ui.geombox->setCurrentIndex(ui.geombox->findText(QString::fromLocal8Bit(conf.prof.cur->layName.c_str())));
@@ -565,9 +569,9 @@ void SetupWin::reject() {
 
 void SetupWin::layNameCheck(QString nam) {
 	layUi.okButton->setEnabled(!layUi.layName->text().isEmpty());
-	for (uint i = 0; i < layList.size(); i++) {
+	for (uint i = 0; i < conf.layList.size(); i++) {
 //		qDebug() << eidx << i << layList[i].name.c_str() << nam;
-		if ((QString(layList[i].name.c_str()) == nam) && (eidx != (int)i)) {
+		if ((QString(conf.layList[i].name.c_str()) == nam) && (eidx != (int)i)) {
 			layUi.okButton->setEnabled(false);
 		}
 	}
@@ -592,7 +596,7 @@ void SetupWin::editLayout() {
 
 void SetupWin::edLayout() {
 	eidx = ui.geombox->currentIndex();
-	nlay = layList[eidx];
+	nlay = conf.layList[eidx];
 	editLayout();
 }
 
@@ -603,14 +607,14 @@ void SetupWin::delLayout() {
 		return;
 	}
 	if (areSure("Do you really want to delete this layout?")) {
-		layList.erase(layList.begin() + eidx);
+		conf.layList.erase(conf.layList.begin() + eidx);
 		ui.geombox->removeItem(eidx);
 	}
 }
 
 void SetupWin::addNewLayout() {
 	eidx = -1;
-	nlay = layList[0];
+	nlay = conf.layList[0];
 	nlay.name = "";
 	editLayout();
 }
@@ -671,9 +675,9 @@ void SetupWin::layEditorOK() {
 		ui.geombox->addItem(QString::fromLocal8Bit(nlay.name.c_str()));
 		ui.geombox->setCurrentIndex(ui.geombox->count() - 1);
 	} else {
-		if (layList[eidx].name != nlay.name)
-			prfChangeLayName(layList[eidx].name, nlay.name);
-		layList[eidx] = nlay;
+		if (conf.layList[eidx].name != nlay.name)
+			prfChangeLayName(conf.layList[eidx].name, nlay.name);
+		conf.layList[eidx] = nlay;
 		ui.geombox->setItemText(eidx, nlay.name.c_str());
 	}
 	layeditor->hide();
@@ -683,8 +687,9 @@ void SetupWin::layEditorOK() {
 
 void SetupWin::rsNameCheck(QString nam) {
 	rseUi.rse_apply->setEnabled(!rseUi.rsName->text().isEmpty());
-	for (uint i = 0; i < rsList.size(); i++) {
-		if ((QString(rsList[i].name.c_str()) == nam) && (eidx != (int)i)) {
+	xRomset rs;
+	for (uint i = 0; i < conf.rsList.size(); i++) {
+		if ((QString(conf.rsList[i].name.c_str()) == nam) && (eidx != (int)i)) {
 			rseUi.rse_apply->setEnabled(false);
 		}
 	}
@@ -694,7 +699,7 @@ void SetupWin::rmRomset() {
 	int idx = ui.rsetbox->currentIndex();
 	if (idx < 0) return;
 	if (areSure("Do you really want to delete this romset?")) {
-		rsList.erase(rsList.begin() + idx);			// NOTE: should be moved to xcore/romsets.cpp as delRomset?
+		conf.rsList.erase(conf.rsList.begin() + idx);		// NOTE: should be moved to xcore/romsets.cpp as delRomset?
 		ui.rsetbox->removeItem(idx);
 	}
 }
@@ -717,7 +722,7 @@ void SetupWin::addNewRomset() {
 void SetupWin::editrset() {
 	eidx = ui.rsetbox->currentIndex();
 	if (eidx < 0) return;
-	nrs = rsList[eidx];
+	nrs = conf.rsList[eidx];
 	editRomset();
 }
 
@@ -771,8 +776,8 @@ void SetupWin::setrpart() {
 		ui.rsetbox->addItem(QString::fromLocal8Bit(nrs.name.c_str()));
 		ui.rsetbox->setCurrentIndex(ui.rsetbox->count() - 1);
 	} else {
-		prfChangeRsName(rsList[eidx].name, nrs.name);
-		rsList[eidx] = nrs;
+		prfChangeRsName(conf.rsList[eidx].name, nrs.name);
+		conf.rsList[eidx] = nrs;
 		ui.rsetbox->setItemText(eidx, nrs.name.c_str());
 	}
 	rseditor->hide();
@@ -822,7 +827,7 @@ void SetupWin::buildrsetlist() {
 		return;
 	}
 	ui.rstab->setEnabled(true);
-	xRomset rset = rsList[ui.rsetbox->currentIndex()];
+	xRomset rset = conf.rsList[ui.rsetbox->currentIndex()];
 	if (rset.file == "") {
 		ui.rstab->hideRow(4);
 		for (int i=0; i<4; i++) {
@@ -895,12 +900,12 @@ void SetupWin::buildtapelist() {
 }
 
 void SetupWin::buildmenulist() {
-	ui.umlist->setRowCount(bookmarkList.size());
+	ui.umlist->setRowCount(conf.bookmarkList.size());
 	QTableWidgetItem* itm;
-	for (uint i = 0; i < bookmarkList.size(); i++) {
-		itm = new QTableWidgetItem(QString(bookmarkList[i].name.c_str()));
+	for (uint i = 0; i < conf.bookmarkList.size(); i++) {
+		itm = new QTableWidgetItem(QString(conf.bookmarkList[i].name.c_str()));
 		ui.umlist->setItem(i,0,itm);
-		itm = new QTableWidgetItem(QString(bookmarkList[i].path.c_str()));
+		itm = new QTableWidgetItem(QString(conf.bookmarkList[i].path.c_str()));
 		ui.umlist->setItem(i,1,itm);
 	}
 	ui.umlist->setColumnWidth(0,100);
@@ -1303,7 +1308,7 @@ void SetupWin::umup() {
 
 void SetupWin::umdn() {
 	int ps = ui.umlist->currentIndex().row();
-	if ((ps != -1) && (ps < (int)bookmarkList.size() - 1)) {
+	if ((ps != -1) && (ps < (int)conf.bookmarkList.size() - 1)) {
 		swapBookmarks(ps, ps+1);
 		buildmenulist();
 		ui.umlist->selectRow(ps+1);
@@ -1315,7 +1320,7 @@ void SetupWin::umdel() {
 	if (ps != -1) {
 		delBookmark(ps);
 		buildmenulist();
-		if (ps == (int)bookmarkList.size()) {
+		if (ps == (int)conf.bookmarkList.size()) {
 			ui.umlist->selectRow(ps-1);
 		} else {
 			ui.umlist->selectRow(ps);
