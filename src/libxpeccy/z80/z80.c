@@ -225,8 +225,8 @@ xAsmScan scanAsmTab(const char* com, opCode* tab) {
 	do {
 		cptr = com;
 		tptr = tab[i].mnem;
-		work = 1;
 		do {
+			work = 0;
 			if (*tptr == ':') {						// need argument
 				if (strchr(letrz, *cptr)) {				// if there is a number (maybe signed)
 					tptr += 2;
@@ -234,20 +234,13 @@ xAsmScan scanAsmTab(const char* com, opCode* tab) {
 					if (zptr || (*tptr == 0x00)) {
 						if (par < 8) {
 							strncpy(res.arg[par], cptr, zptr - cptr);
-							if (strchr(res.arg[par], ',')) {	// check if argument have ',' - wrong matching
-								work = 0;
-							} else {				// else this is argument
+							if (!strchr(res.arg[par], ',')) {	// check if argument doesn't have ',' - wrong matching
+								work = 1;
 								cptr = zptr;
 								par++;
 							}
-						} else {
-							work = 0;				// never: too much arguments in command
 						}
-					} else {
-						work = 0;					// argument not found
 					}
-				} else {
-					work = 0;						// number expected, but not met
 				}
 			} else {							// check mnemonic char by char
 				if (*cptr == *tptr) {					// compare current char
@@ -255,13 +248,11 @@ xAsmScan scanAsmTab(const char* com, opCode* tab) {
 						res.match = 1;
 						res.idx = i;
 						res.op = &tab[i];
-						work = 0;
 					} else {					// else go to next char
+						work = 1;
 						cptr++;
 						tptr++;
 					}
-				} else {
-					work = 0;					// different chars: not this op
 				}
 			}
 		} while (work);

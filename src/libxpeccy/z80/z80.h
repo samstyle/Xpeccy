@@ -6,8 +6,8 @@ struct CPU;
 struct opCode {
 	unsigned prefix:1;
 	int t;			// T-states
-	int len;		// opcode len
-	int c1,c2,c3,c4;	// opcode bytes
+//	int len;		// opcode len
+//	int c1,c2,c3,c4;	// opcode bytes
 	void(*exec)(struct CPU *);
 	struct opCode *tab;
 	const char* mnem;
