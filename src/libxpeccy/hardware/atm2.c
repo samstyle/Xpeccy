@@ -49,7 +49,7 @@ void atm2Out77(ZXComp* comp, unsigned short port, unsigned char val) {		// dos
 }
 
 void atm2OutF7(ZXComp* comp, unsigned short port, unsigned char val) {		// dos
-	int adr = ((comp->rom) ? 4 : 0) | ((port & 0xc000) >> 14);	// rom2.a15.a14
+	int adr = (comp->rom ? 4 : 0) | ((port & 0xc000) >> 14);	// rom2.a15.a14
 	comp->memMap[adr].flag = val & 0xc0;		// copy b6,7 to flag
 	comp->memMap[adr].page = (val & 0x3f) | 0xc0;	// set b6,7 for PentEvo capability
 	atm2MapMem(comp);
@@ -58,16 +58,6 @@ void atm2OutF7(ZXComp* comp, unsigned short port, unsigned char val) {		// dos
 void atm2OutFB(ZXComp* comp, unsigned short port, unsigned char val) {
 	sdrvOut(comp->sdrv, port, val);
 }
-
-/*
-void atm2OutFE(ZXComp* comp, unsigned short port, unsigned char val) {
-	comp->vid->nextbrd = (val & 0x07) | (~port & 8);
-	if (!comp->vid->border4t)
-		comp->vid->brdcol = comp->vid->nextbrd;
-	comp->beeplev = (val & 0x10) ? 1 : 0;
-	comp->tape->levRec = (val & 0x08) ? 1 : 0;
-}
-*/
 
 void atm2Out7FFD(ZXComp* comp, unsigned short port, unsigned char val) {
 	if (comp->p7FFD & 0x20) return;
