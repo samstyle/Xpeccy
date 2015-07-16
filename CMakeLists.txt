@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(xpeccy)
-set(XVER "0.6.20150705")
+set(XVER "0.6.20150716")
 
 include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
 
@@ -23,6 +23,7 @@ file(GLOB SOURCES
 	./src/xgui/*.cpp
 	./src/libxpeccy/*.c
 	./src/libxpeccy/z80/z80.c
+	./src/libxpeccy/sound/*.c
 	./src/libxpeccy/hardware/*.c
 	./src/libxpeccy/filetypes/*.c
 	./src/libxpeccy/filetypes/*.cpp
@@ -38,6 +39,7 @@ file(GLOB HEADERS
 	./src/xgui/*.h
 	./src/libxpeccy/*.h
 	./src/libxpeccy/z80/*.h
+	./src/libxpeccy/sound/*.h
 	./src/libxpeccy/hardware/*.h
 	./src/libxpeccy/filetypes/*.h
 	./src/libxpeccy/filetypes/unpackers/*.h

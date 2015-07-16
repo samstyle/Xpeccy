@@ -5,8 +5,8 @@
 extern "C" {
 #endif
 
-#include "z80/z80.h"
-#include "memory.h"
+#include "../z80/z80.h"
+#include "../memory.h"
 
 // gs stereo
 #define	GS_MONO		0

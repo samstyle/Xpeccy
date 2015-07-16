@@ -11,10 +11,7 @@ extern "C" {
 #include "input.h"
 #include "tape.h"
 #include "fdc.h"
-#include "ayym.h"		// AY/YM/TS sound
-#include "saa1099.h"
-#include "soundrive.h"		// covox/soundrive
-#include "gs.h"
+#include "sound/sndcommon.h"
 #include "hdd.h"
 #include "sdcard.h"
 
