@@ -1366,9 +1366,8 @@ void SetupWin::newProfile() {
 	if (nam.isEmpty()) return;
 	std::string nm = std::string(nam.toLocal8Bit().data());
 	std::string fp = nm + ".conf";
-//	std::string cprf = prof->name;
-	if (!addProfile(nm,fp)) shitHappens("Can't add such profile");		// WARNING: addProfile changes profileList, xProfile* is not valid now
-//	start(findProfile(cprf));
+	if (!addProfile(nm,fp))
+		shitHappens("Can't add such profile");
 	buildproflist();
 }
 
