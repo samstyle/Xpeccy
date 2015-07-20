@@ -17,8 +17,10 @@ void DebugWin::start(ZXComp* c) {
 		disasmAdr = comp->cpu->pc;
 		fillAll();
 	}
+	updateScreen();
 	vidDarkTail(comp->vid);
 	move(winPos);
+	ui.sbScrBank->setValue(c->vid->curscr ? 5 : 7);
 	show();
 	ui.dasmTable->setFocus();
 	comp->vid->debug = 1;
@@ -43,6 +45,7 @@ xItemDelegate::xItemDelegate(int t) {type = t;}
 QWidget* xItemDelegate::createEditor(QWidget* par, const QStyleOptionViewItem&, const QModelIndex&) const {
 	QLineEdit* edt = new QLineEdit(par);
 	switch (type) {
+		case XTYPE_NONE: delete(edt); edt = NULL; break;
 		case XTYPE_ADR: edt->setInputMask("Hhhh"); break;
 		case XTYPE_DUMP: edt->setInputMask("Hhhhhhhhhh"); break;
 		case XTYPE_BYTE: edt->setInputMask("Hh"); break;
@@ -70,10 +73,15 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 		for (col = 0; col < ui.dumpTable->columnCount(); col++) {
 			ui.dumpTable->setItem(row, col, new QTableWidgetItem);
 		}
+		ui.dumpTable->item(row, 9)->setTextAlignment(Qt::AlignRight);
 	}
 	ui.dumpTable->setColumnWidth(0,50);
+	for (col = 1; col < 9; col++) {
+		ui.dumpTable->setColumnWidth(col, 25);
+	}
 	ui.dumpTable->setItemDelegate(new xItemDelegate(XTYPE_BYTE));
 	ui.dumpTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_ADR));
+	ui.dumpTable->setItemDelegateForColumn(9, new xItemDelegate(XTYPE_NONE));
 	connect(ui.dumpTable,SIGNAL(cellChanged(int,int)),this,SLOT(dumpEdited(int,int)));
 	connect(ui.dumpTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
 // registers
@@ -94,6 +102,12 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.flagIFF1,SIGNAL(stateChanged(int)),this,SLOT(setZ80()));
 	connect(ui.flagIFF2,SIGNAL(stateChanged(int)),this,SLOT(setZ80()));
 	connect(ui.flagGroup,SIGNAL(buttonClicked(int)),this,SLOT(setFlags()));
+// infoslots
+	scrImg = QImage(256, 192, QImage::Format_RGB888);
+	ui.scrLabel->setFixedSize(256,192);
+	connect(ui.sbScrBank,SIGNAL(valueChanged(int)),this,SLOT(updateScreen()));
+	connect(ui.cbScrAlt,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
+	connect(ui.cbScrAtr,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
 
 	setFixedSize(size());
 	active = false;
@@ -146,7 +160,7 @@ void DebugWin::wheelEvent(QWheelEvent* ev) {
 
 void DebugWin::scrollUp() {
 	if (ui.dumpTable->hasFocus()) {
-		dumpAdr = (dumpAdr - ui.dumpTable->columnCount() + 1) & 0xffff;
+		dumpAdr = (dumpAdr - 8) & 0xffff;
 		fillDump();
 	} else if (ui.dasmTable->hasFocus()) {
 		disasmAdr = getPrevAdr(disasmAdr);
@@ -156,7 +170,7 @@ void DebugWin::scrollUp() {
 
 void DebugWin::scrollDown() {
 	if (ui.dumpTable->hasFocus()) {
-		dumpAdr = (dumpAdr + ui.dumpTable->columnCount() - 1) & 0xffff;
+		dumpAdr = (dumpAdr + 8) & 0xffff;
 		fillDump();
 	} else if (ui.dasmTable->hasFocus()) {
 		disasmAdr = ui.dasmTable->item(1,0)->data(Qt::UserRole).toInt();
@@ -319,6 +333,8 @@ bool DebugWin::fillAll() {
 	fillMem();
 	fillDump();
 	fillFDC();
+	if (ui.scrLabel->isVisible())
+		updateScreen();
 	ui.rzxTab->setEnabled(comp->rzxPlay);
 	if (comp->rzxPlay) fillRZX();
 	ui.labRX->setNum(comp->vid->x);
@@ -411,24 +427,24 @@ void setLEReg(QLineEdit* le, int num) {
 
 void DebugWin::fillZ80() {
 	block = true;
-//	unsigned short af = GETAF(comp->cpu);
-	setLEReg(ui.editAF, comp->cpu->af);
-	setLEReg(ui.editBC, comp->cpu->bc);
-	setLEReg(ui.editDE, comp->cpu->de);
-	setLEReg(ui.editHL, comp->cpu->hl);
-	setLEReg(ui.editAFa, comp->cpu->af_);
-	setLEReg(ui.editBCa, comp->cpu->bc_);
-	setLEReg(ui.editDEa, comp->cpu->de_);
-	setLEReg(ui.editHLa, comp->cpu->hl_);
-	setLEReg(ui.editPC, comp->cpu->pc);
-	setLEReg(ui.editSP, comp->cpu->sp);
-	setLEReg(ui.editIX, comp->cpu->ix);
-	setLEReg(ui.editIY, comp->cpu->iy);
-	setLEReg(ui.editIR, (comp->cpu->i << 8) | (comp->cpu->r & 0x7f) | comp->cpu->r7);
+	CPU* cpu = comp->cpu;
+	setLEReg(ui.editAF, cpu->af);
+	setLEReg(ui.editBC, cpu->bc);
+	setLEReg(ui.editDE, cpu->de);
+	setLEReg(ui.editHL, cpu->hl);
+	setLEReg(ui.editAFa, cpu->af_);
+	setLEReg(ui.editBCa, cpu->bc_);
+	setLEReg(ui.editDEa, cpu->de_);
+	setLEReg(ui.editHLa, cpu->hl_);
+	setLEReg(ui.editPC, cpu->pc);
+	setLEReg(ui.editSP, cpu->sp);
+	setLEReg(ui.editIX, cpu->ix);
+	setLEReg(ui.editIY, cpu->iy);
+	setLEReg(ui.editIR, (cpu->i << 8) | (cpu->r & 0x7f) | (cpu->r7 & 0x80));
 
-	ui.boxIM->setValue(comp->cpu->imode);
-	ui.flagIFF1->setChecked(comp->cpu->iff1);
-	ui.flagIFF2->setChecked(comp->cpu->iff2);
+	ui.boxIM->setValue(cpu->imode);
+	ui.flagIFF1->setChecked(cpu->iff1);
+	ui.flagIFF2->setChecked(cpu->iff2);
 	fillFlags();
 	block = false;
 	fillStack();
@@ -452,24 +468,26 @@ void DebugWin::setFlags() {
 
 void DebugWin::setZ80() {
 	if (block) return;
-	comp->cpu->af = ui.editAF->text().toInt(NULL,16);
-	comp->cpu->bc = ui.editBC->text().toInt(NULL,16);
-	comp->cpu->de = ui.editDE->text().toInt(NULL,16);
-	comp->cpu->hl = ui.editHL->text().toInt(NULL,16);
-	comp->cpu->af_ = ui.editAFa->text().toInt(NULL,16);
-	comp->cpu->bc_ = ui.editBCa->text().toInt(NULL,16);
-	comp->cpu->de_ = ui.editDEa->text().toInt(NULL,16);
-	comp->cpu->hl_ = ui.editHLa->text().toInt(NULL,16);
-	comp->cpu->pc = ui.editPC->text().toInt(NULL,16);
-	comp->cpu->sp = ui.editSP->text().toInt(NULL,16);
-	comp->cpu->ix = ui.editIX->text().toInt(NULL,16);
-	comp->cpu->iy = ui.editIY->text().toInt(NULL,16);
-	comp->cpu->i = (ui.editIR->text().toInt(NULL,16) >> 8) & 0xff;
-	comp->cpu->r = ui.editIR->text().toInt(NULL,16) & 0xff;
-	comp->cpu->r7 = comp->cpu->r & 0x80;
-	comp->cpu->imode = ui.boxIM->value();
-	comp->cpu->iff1 = ui.flagIFF1->isChecked() ? 1 : 0;
-	comp->cpu->iff2 = ui.flagIFF2->isChecked() ? 1 : 0;
+	CPU* cpu = comp->cpu;
+	cpu->af = ui.editAF->text().toInt(NULL,16);
+	cpu->bc = ui.editBC->text().toInt(NULL,16);
+	cpu->de = ui.editDE->text().toInt(NULL,16);
+	cpu->hl = ui.editHL->text().toInt(NULL,16);
+	cpu->af_ = ui.editAFa->text().toInt(NULL,16);
+	cpu->bc_ = ui.editBCa->text().toInt(NULL,16);
+	cpu->de_ = ui.editDEa->text().toInt(NULL,16);
+	cpu->hl_ = ui.editHLa->text().toInt(NULL,16);
+	cpu->pc = ui.editPC->text().toInt(NULL,16);
+	cpu->sp = ui.editSP->text().toInt(NULL,16);
+	cpu->ix = ui.editIX->text().toInt(NULL,16);
+	cpu->iy = ui.editIY->text().toInt(NULL,16);
+	int ir = ui.editIR->text().toInt(NULL,16);
+	cpu->i = (ir & 0xff00) >> 8;
+	cpu->r = ir & 0xff;
+	cpu->r7 = cpu->r & 0x80;
+	cpu->imode = ui.boxIM->value();
+	cpu->iff1 = ui.flagIFF1->isChecked() ? 1 : 0;
+	cpu->iff2 = ui.flagIFF2->isChecked() ? 1 : 0;
 	fillFlags();
 	fillStack();
 	fillDisasm();
@@ -613,7 +631,7 @@ int DebugWin::fillDisasm() {
 			}
 		}
 		res |= drow.ispc;
-		bgcol = drow.ispc ? QColor(32,200,32) : QColor(255,255,255);;
+		bgcol = drow.ispc ? QColor(32,200,32) : ((i & 1) ? QColor(255,255,255) : QColor(230,230,230));
 		acol = (*memGetFptr(comp->mem, drow.adr) & MEM_BRK_ANY) ? QColor(200,64,64) : bgcol;
 		ui.dasmTable->item(i, 0)->setData(Qt::UserRole, drow.adr);
 		ui.dasmTable->item(i, 0)->setBackgroundColor(acol);
@@ -673,7 +691,7 @@ void DebugWin::dasmEdited(int row, int col) {
 			adr++;
 			str.remove(0,2);
 		}
-		fillDump();
+//		fillDump();
 	} else if (col == 2) {
 		char buf[8];
 		int len = cpuAsm(ui.dasmTable->item(row, col)->text().toLocal8Bit().data(), buf, adr);
@@ -682,23 +700,44 @@ void DebugWin::dasmEdited(int row, int col) {
 			memWr(comp->mem, adr + idx, buf[idx]);
 			idx++;
 		}
-		fillDisasm();
+//		fillDisasm();
 	}
+	fillDump();
 	fillDisasm();
+	updateScreen();
 }
 
 // memory dump
+
+QString getDumpString(Memory* mem, unsigned short adr) {
+	QString res;
+	unsigned char bte;
+	for (int i = 0; i < 8; i++) {
+		bte = memRd(mem, adr);
+		adr = (adr + 1) & 0xffff;
+		if ((bte < 32) || (bte > 127)) {
+			res.append(".");
+		} else {
+			res.append(QChar(bte));
+		}
+	}
+	return res;
+}
 
 void DebugWin::fillDump() {
 	block = true;
 	unsigned short adr = dumpAdr;
 	int row,col;
-	QColor bgcol;
+	QColor bgcol, ccol;
 	for (row = 0; row < ui.dumpTable->rowCount(); row++) {
 		ui.dumpTable->item(row,0)->setText(gethexword(adr));
-		for (col = 1; col < ui.dumpTable->columnCount(); col++) {
-			bgcol = (*memGetFptr(comp->mem, adr) & MEM_BRK_ANY) ? QColor(200,64,64) : QColor(255,255,255);
-			ui.dumpTable->item(row,col)->setBackgroundColor(bgcol);
+		ui.dumpTable->item(row,9)->setText(getDumpString(comp->mem, adr));
+		bgcol = (row & 1) ? QColor(255,255,255) : QColor(230,230,230);
+		ui.dumpTable->item(row, 0)->setBackground(bgcol);
+		ui.dumpTable->item(row, 9)->setBackground(bgcol);
+		for (col = 1; col < 9; col++) {
+			ccol = (*memGetFptr(comp->mem, adr) & MEM_BRK_ANY) ? QColor(200,64,64) : bgcol;
+			ui.dumpTable->item(row,col)->setBackgroundColor(ccol);
 			ui.dumpTable->item(row,col)->setText(gethexbyte(memRd(comp->mem, adr)));
 			adr++;
 		}
@@ -711,10 +750,10 @@ void DebugWin::dumpEdited(int row, int col) {
 	if (block) return;
 	if (col == 0) {
 		dumpAdr = ui.dumpTable->item(row, 0)->text().toInt(NULL,16) - row * (ui.dumpTable->columnCount() - 1);
-	} else {
+	} else if (col < 9) {
 		unsigned short adr = (dumpAdr + (col - 1) + row * (ui.dumpTable->columnCount() - 1)) & 0xffff;
 		memWr(comp->mem, adr, ui.dumpTable->item(row, col)->text().toInt(NULL,16) & 0xff);
-		fillDisasm();
+//		fillDisasm();
 
 		col++;
 		if (col >= ui.dumpTable->columnCount()) {
@@ -729,6 +768,8 @@ void DebugWin::dumpEdited(int row, int col) {
 		ui.dumpTable->setCurrentCell(row,col);
 	}
 	fillDump();
+	fillDisasm();
+	updateScreen();
 }
 
 // stack
@@ -933,4 +974,11 @@ void DebugWin::loadDump() {
 	} else {
 		shitHappens("Can't open file");
 	}
+}
+
+// screen
+
+void DebugWin::updateScreen() {
+	vidGetScreen(comp->vid, scrImg.bits(), ui.sbScrBank->value(), ui.cbScrAlt->isChecked() ? 0x2000 : 0, ui.cbScrAtr->isChecked() ? 0 : 1);
+	ui.scrLabel->setPixmap(QPixmap::fromImage(scrImg));
 }

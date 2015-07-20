@@ -9,9 +9,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>615</width>
-    <height>536</height>
+    <width>703</width>
+    <height>551</height>
    </rect>
+  </property>
+  <property name="font">
+   <font>
+    <family>Monospace</family>
+   </font>
   </property>
   <property name="windowTitle">
    <string>Xpeccy deBUGa</string>
@@ -25,7 +30,7 @@
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
    <item>
-    <layout class="QVBoxLayout" name="verticalLayout_5">
+    <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,0,0,10">
      <item>
       <widget class="QLabel" name="label_26">
        <property name="styleSheet">
@@ -590,6 +595,9 @@
        <property name="contextMenuPolicy">
         <enum>Qt::CustomContextMenu</enum>
        </property>
+       <property name="autoFillBackground">
+        <bool>true</bool>
+       </property>
        <property name="frameShape">
         <enum>QFrame::NoFrame</enum>
        </property>
@@ -605,17 +613,20 @@
        <property name="tabKeyNavigation">
         <bool>false</bool>
        </property>
+       <property name="alternatingRowColors">
+        <bool>true</bool>
+       </property>
        <property name="selectionMode">
         <enum>QAbstractItemView::SingleSelection</enum>
        </property>
        <property name="showGrid">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
        <property name="gridStyle">
         <enum>Qt::DotLine</enum>
        </property>
        <property name="rowCount">
-        <number>21</number>
+        <number>22</number>
        </property>
        <property name="columnCount">
         <number>3</number>
@@ -635,6 +646,7 @@
        <attribute name="verticalHeaderMinimumSectionSize">
         <number>17</number>
        </attribute>
+       <row/>
        <row/>
        <row/>
        <row/>
@@ -680,20 +692,17 @@
      </item>
      <item>
       <widget class="QTableWidget" name="dumpTable">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
        <property name="minimumSize">
         <size>
-         <width>250</width>
-         <height>270</height>
+         <width>320</width>
+         <height>273</height>
         </size>
        </property>
        <property name="contextMenuPolicy">
         <enum>Qt::CustomContextMenu</enum>
+       </property>
+       <property name="autoFillBackground">
+        <bool>true</bool>
        </property>
        <property name="frameShape">
         <enum>QFrame::NoFrame</enum>
@@ -710,8 +719,14 @@
        <property name="tabKeyNavigation">
         <bool>false</bool>
        </property>
+       <property name="alternatingRowColors">
+        <bool>true</bool>
+       </property>
        <property name="selectionMode">
         <enum>QAbstractItemView::SingleSelection</enum>
+       </property>
+       <property name="showGrid">
+        <bool>false</bool>
        </property>
        <property name="gridStyle">
         <enum>Qt::DotLine</enum>
@@ -720,7 +735,7 @@
         <number>16</number>
        </property>
        <property name="columnCount">
-        <number>9</number>
+        <number>10</number>
        </property>
        <attribute name="horizontalHeaderVisible">
         <bool>false</bool>
@@ -771,10 +786,11 @@
        <column/>
        <column/>
        <column/>
+       <column/>
       </widget>
      </item>
      <item>
-      <widget class="QTabWidget" name="tabWidget">
+      <widget class="QTabWidget" name="tabsPanel">
        <property name="currentIndex">
         <number>0</number>
        </property>
@@ -1228,6 +1244,81 @@
             </size>
            </property>
           </spacer>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="scrTab">
+        <attribute name="icon">
+         <iconset resource="../xpeccy.qrc">
+          <normaloff>:/images/display.png</normaloff>:/images/display.png</iconset>
+        </attribute>
+        <attribute name="title">
+         <string/>
+        </attribute>
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <item>
+          <widget class="QLabel" name="scrLabel">
+           <property name="minimumSize">
+            <size>
+             <width>256</width>
+             <height>192</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>TextLabel</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout_3">
+           <item>
+            <widget class="QLabel" name="label_49">
+             <property name="text">
+              <string>Bank</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="sbScrBank">
+             <property name="minimum">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <number>255</number>
+             </property>
+             <property name="value">
+              <number>5</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="cbScrAlt">
+             <property name="text">
+              <string>Alt</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="cbScrAtr">
+             <property name="text">
+              <string>B/W</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_5">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
          </item>
         </layout>
        </widget>

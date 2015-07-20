@@ -140,6 +140,34 @@ void vidDarkTail(Video* vid) {
 	} while (ptr);
 }
 
+void vidGetScreen(Video* vid, unsigned char* dst, int bank, int shift, int watr) {
+	unsigned char* pixs = vid->mem->ram[bank].dptr + (shift & 0x2000);
+	unsigned char* atrs = pixs + 0x1800;
+	unsigned char sbyte, abyte, aink, apap;
+	int prt, lin, row, xpos, bitn, cidx;
+	int sadr, aadr;
+	for (prt = 0; prt < 3; prt++) {
+		for (lin = 0; lin < 8; lin++) {
+			for (row = 0; row < 8; row++) {
+				for (xpos = 0; xpos < 32; xpos++) {
+					sadr = (prt << 11) | (lin << 5) | (row << 8) | xpos;
+					aadr = (prt << 8) | (lin << 5) | xpos;
+					sbyte = *(pixs + sadr);
+					abyte = watr ? *(atrs + aadr) : 0x47;
+					aink = inkTab[abyte & 0x7f];
+					apap = papTab[abyte & 0x7f];
+					for (bitn = 0; bitn < 8; bitn++) {
+						cidx = (sbyte & (128 >> bitn)) ? aink : apap;
+						*(dst++) = vid->pal[cidx].r;
+						*(dst++) = vid->pal[cidx].g;
+						*(dst++) = vid->pal[cidx].b;
+					}
+				}
+			}
+		}
+	}
+}
+
 /*
 waits for 128K, +2
 	--wwwwww wwwwww-- : 16-dots cycle, start on border 8 dots before screen

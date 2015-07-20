@@ -23,6 +23,7 @@ struct xLabel {
 	QString name;
 };
 
+#define XTYPE_NONE -1
 #define XTYPE_ADR 0
 #define XTYPE_DUMP 1
 #define XTYPE_BYTE 2
@@ -52,13 +53,13 @@ class DebugWin : public QDialog {
 		unsigned trace:1;
 		unsigned showLabels:1;
 
+		Ui::Debuger ui;
 		QPoint winPos;
+		QImage scrImg;
 
 		ZXComp* comp;
 		bool block;
 		long tCount;
-
-		Ui::Debuger ui;
 
 		QDialog* dumpwin;
 		Ui::DumpDial dui;
@@ -94,6 +95,7 @@ class DebugWin : public QDialog {
 	private slots:
 		void setZ80();
 		void setFlags();
+		void updateScreen();
 
 		void dasmEdited(int, int);
 		void dumpEdited(int, int);

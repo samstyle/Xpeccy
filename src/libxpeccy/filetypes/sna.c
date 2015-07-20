@@ -41,7 +41,8 @@ int loadSNA(ZXComp* comp, const char* name) {
 	comp->cpu->iy = (hd.hy << 8) | hd.ly;
 	comp->cpu->sp = (hd.hsp << 8) | hd.lsp;
 	comp->cpu->i = hd.i;
-	comp->cpu->r = hd.r; comp->cpu->r7 = hd.r & 0x80;
+	comp->cpu->r = hd.r;
+	comp->cpu->r7 = hd.r & 0x80;
 	comp->cpu->imode = hd.imod & 3;
 	comp->cpu->iff1 = (hd.flag19 & 4) ? 1 : 0;
 	comp->vid->brdcol = hd.border & 7;

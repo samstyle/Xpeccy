@@ -84,7 +84,7 @@ void ed4D(CPU* cpu) {
 // 4f	ld r,a	5
 void ed4F(CPU* cpu) {
 	cpu->r = cpu->a;
-	cpu->r7 = cpu->a;
+	cpu->r7 = cpu->a & 0x80;
 }
 
 // 50	in d,(c)	4 4in	mptr = port + 1
