@@ -12,6 +12,14 @@
 #include <QMenu>
 #include <QTableWidget>
 
+class xTableWidget : public QTableWidget {
+	Q_OBJECT
+	public:
+		xTableWidget(QWidget*);
+	protected:
+		void keyPressEvent(QKeyEvent*);
+};
+
 #include "ui_dumpdial.h"
 #include "ui_openDump.h"
 #include "ui_debuger.h"
@@ -73,6 +81,7 @@ class DebugWin : public QDialog {
 		unsigned short bpAdr;
 		void doBreakPoint(unsigned short);
 		int getAdr();
+		void switchBP(unsigned char);
 
 		xLabel* findLabel(int);
 

@@ -591,7 +591,7 @@
       </layout>
      </item>
      <item>
-      <widget class="QTableWidget" name="dasmTable">
+      <widget class="xTableWidget" name="dasmTable">
        <property name="contextMenuPolicy">
         <enum>Qt::CustomContextMenu</enum>
        </property>
@@ -608,7 +608,7 @@
         <enum>Qt::ScrollBarAlwaysOff</enum>
        </property>
        <property name="editTriggers">
-        <set>QAbstractItemView::AnyKeyPressed|QAbstractItemView::DoubleClicked</set>
+        <set>QAbstractItemView::DoubleClicked|QAbstractItemView::EditKeyPressed</set>
        </property>
        <property name="tabKeyNavigation">
         <bool>false</bool>
@@ -1103,150 +1103,6 @@
          </item>
         </layout>
        </widget>
-       <widget class="QWidget" name="rzxTab">
-        <attribute name="icon">
-         <iconset resource="../xpeccy.qrc">
-          <normaloff>:/images/video.png</normaloff>:/images/video.png</iconset>
-        </attribute>
-        <attribute name="title">
-         <string/>
-        </attribute>
-        <layout class="QVBoxLayout" name="verticalLayout">
-         <item>
-          <layout class="QGridLayout" name="gridLayout_3">
-           <item row="1" column="1">
-            <widget class="QLabel" name="rzxFetch">
-             <property name="text">
-              <string>00</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="QLabel" name="rzxFSize">
-             <property name="text">
-              <string>00</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_48">
-             <property name="text">
-              <string>Frame</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QLabel" name="rzxFrm">
-             <property name="text">
-              <string>00/00</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_51">
-             <property name="text">
-              <string>Fetches</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_52">
-             <property name="text">
-              <string>IO size</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="2">
-            <spacer name="horizontalSpacer_3">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_2">
-           <item>
-            <widget class="QLabel" name="label_50">
-             <property name="text">
-              <string>IO data</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="rzxIO1">
-             <property name="text">
-              <string>00</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="rzxIO2">
-             <property name="text">
-              <string>00</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="rzxIO3">
-             <property name="text">
-              <string>00</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="rzxIO4">
-             <property name="text">
-              <string>00</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="rzxIO5">
-             <property name="text">
-              <string>00</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <spacer name="verticalSpacer_2">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>20</width>
-             <height>93</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </widget>
        <widget class="QWidget" name="scrTab">
         <attribute name="icon">
          <iconset resource="../xpeccy.qrc">
@@ -1594,6 +1450,13 @@
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>xTableWidget</class>
+   <extends>QTableWidget</extends>
+   <header location="global">stdlib.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../xpeccy.qrc"/>
  </resources>

@@ -20,7 +20,7 @@ void DebugWin::start(ZXComp* c) {
 	updateScreen();
 	vidDarkTail(comp->vid);
 	move(winPos);
-	ui.sbScrBank->setValue(c->vid->curscr ? 5 : 7);
+//	ui.sbScrBank->setValue(c->vid->curscr ? 5 : 7);
 	show();
 	ui.dasmTable->setFocus();
 	comp->vid->debug = 1;
@@ -188,6 +188,19 @@ void DebugWin::doStep() {
 	if (trace) QTimer::singleShot(10,this,SLOT(doStep()));
 }
 
+void DebugWin::switchBP(unsigned char mask) {
+	if (!ui.dasmTable->hasFocus()) return;
+	int adr = getAdr();
+	unsigned char* ptr = memGetFptr(comp->mem, adr);
+	if (mask == 0) {
+		*ptr = 0;
+	} else {
+		*ptr ^= mask;
+	}
+	fillDisasm();
+	fillDump();
+}
+
 void DebugWin::keyPressEvent(QKeyEvent* ev) {
 	if (trace) {
 		trace = 0;
@@ -196,7 +209,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 	int i;
 	unsigned short pc = comp->cpu->pc;
 	unsigned char* ptr;
-	int offset = (ui.dumpTable->columnCount() - 1) * (ui.dumpTable->rowCount() - 1);
+	int offset = 8 * (ui.dumpTable->rowCount() - 1);
 	switch(ev->modifiers()) {
 		case Qt::ControlModifier:
 			switch(ev->key()) {
@@ -206,12 +219,6 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 				case Qt::Key_O:
 					doOpenDump();
 					break;
-				case Qt::Key_Z:
-					if (!ui.dasmTable->hasFocus()) break;
-					comp->cpu->pc = ui.dasmTable->item(ui.dasmTable->currentRow(), 0)->data(Qt::UserRole).toInt() & 0xffff;
-					fillZ80();
-					fillDisasm();
-					break;
 				case Qt::Key_T:
 					trace = 1;
 					doStep();
@@ -220,6 +227,19 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					showLabels ^= 1;
 					fillDisasm();
 					break;
+				case Qt::Key_Space:
+					switchBP(0);
+					break;
+			}
+			break;
+		case Qt::AltModifier:
+			switch (ev->key()) {
+				case Qt::Key_R:
+					switchBP(MEM_BRK_RD);
+					break;
+				case Qt::Key_W:
+					switchBP(MEM_BRK_WR);
+					break;
 			}
 			break;
 		default:
@@ -227,12 +247,21 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 				case Qt::Key_Escape:
 					if (!ev->isAutoRepeat()) stop();
 					break;
-				case Qt::Key_Return:
-					putBreakPoint();
-					break;
+//				case Qt::Key_Return:
+//					putBreakPoint();
+//					break;
 				case Qt::Key_Home:
 					disasmAdr = pc;
 					fillDisasm();
+					break;
+				case Qt::Key_End:
+					if (!ui.dasmTable->hasFocus()) break;
+					comp->cpu->pc = getAdr();
+					fillZ80();
+					fillDisasm();
+					break;
+				case Qt::Key_Space:
+					switchBP(MEM_BRK_FETCH);
 					break;
 				case Qt::Key_PageUp:
 					if (ui.dumpTable->hasFocus()) {
@@ -335,7 +364,7 @@ bool DebugWin::fillAll() {
 	fillFDC();
 	if (ui.scrLabel->isVisible())
 		updateScreen();
-	ui.rzxTab->setEnabled(comp->rzxPlay);
+//	ui.rzxTab->setEnabled(comp->rzxPlay);
 	if (comp->rzxPlay) fillRZX();
 	ui.labRX->setNum(comp->vid->x);
 	ui.labRY->setNum(comp->vid->y);
@@ -356,6 +385,7 @@ void dbgSetRzxIO(QLabel* lab, ZXComp* comp, int pos) {
 }
 
 void DebugWin::fillRZX() {
+/*
 	ui.rzxFrm->setText(QString::number(comp->rzx.frame).append(" / ").append(QString::number(comp->rzx.size)));
 	ui.rzxFetch->setText(QString::number(comp->rzx.fetches));
 	ui.rzxFSize->setText(QString::number(comp->rzx.data[comp->rzx.frame].frmSize));
@@ -365,6 +395,7 @@ void DebugWin::fillRZX() {
 	dbgSetRzxIO(ui.rzxIO3, comp, pos++);
 	dbgSetRzxIO(ui.rzxIO4, comp, pos++);
 	dbgSetRzxIO(ui.rzxIO5, comp, pos);
+*/
 }
 
 // fdc
@@ -749,19 +780,19 @@ void DebugWin::fillDump() {
 void DebugWin::dumpEdited(int row, int col) {
 	if (block) return;
 	if (col == 0) {
-		dumpAdr = ui.dumpTable->item(row, 0)->text().toInt(NULL,16) - row * (ui.dumpTable->columnCount() - 1);
+		dumpAdr = ui.dumpTable->item(row, 0)->text().toInt(NULL,16) - row * 8;
 	} else if (col < 9) {
-		unsigned short adr = (dumpAdr + (col - 1) + row * (ui.dumpTable->columnCount() - 1)) & 0xffff;
+		unsigned short adr = (dumpAdr + (col - 1) + row * 8) & 0xffff;
 		memWr(comp->mem, adr, ui.dumpTable->item(row, col)->text().toInt(NULL,16) & 0xff);
 //		fillDisasm();
 
 		col++;
-		if (col >= ui.dumpTable->columnCount()) {
+		if (col > 8) {
 			col = 1;
 			row++;
 			if (row >= ui.dumpTable->rowCount()) {
 				row--;
-				dumpAdr += (ui.dumpTable->columnCount() - 1);
+				dumpAdr += 8;
 			}
 		}
 		// ui.dumpTable->selectionModel()->select(ui.dumpTable->model()->index(row,col), QItemSelectionModel::Clear | QItemSelectionModel::SelectCurrent);
@@ -796,7 +827,7 @@ int DebugWin::getAdr() {
 	if (ui.dasmTable->hasFocus()) {
 		adr = ui.dasmTable->item(ui.dasmTable->currentRow(),0)->data(Qt::UserRole).toInt();
 	} else if (ui.dumpTable->hasFocus()) {
-		adr = (dumpAdr + (ui.dumpTable->currentColumn() - 1) + ui.dumpTable->currentRow() * (ui.dumpTable->columnCount() - 1)) & 0xffff;
+		adr = (dumpAdr + (ui.dumpTable->currentColumn() - 1) + ui.dumpTable->currentRow() * 8) & 0xffff;
 	}
 	return adr;
 }
@@ -981,4 +1012,22 @@ void DebugWin::loadDump() {
 void DebugWin::updateScreen() {
 	vidGetScreen(comp->vid, scrImg.bits(), ui.sbScrBank->value(), ui.cbScrAlt->isChecked() ? 0x2000 : 0, ui.cbScrAtr->isChecked() ? 0 : 1);
 	ui.scrLabel->setPixmap(QPixmap::fromImage(scrImg));
+}
+
+// xtablewidget
+
+xTableWidget::xTableWidget(QWidget* par):QTableWidget(par) {}
+
+void xTableWidget::keyPressEvent(QKeyEvent *ev) {
+	switch (ev->key()) {
+		case Qt::Key_Up:
+		case Qt::Key_Down:
+		case Qt::Key_Left:
+		case Qt::Key_Right:
+			QTableWidget::keyPressEvent(ev);
+			break;
+		default:
+			parent()->event(ev);
+			break;
+	}
 }
