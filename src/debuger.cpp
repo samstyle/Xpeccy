@@ -25,6 +25,7 @@ void DebugWin::start(ZXComp* c) {
 	ui.dasmTable->setFocus();
 	comp->vid->debug = 1;
 	comp->debug = 1;
+	comp->brk = 0;
 }
 
 void DebugWin::stop() {

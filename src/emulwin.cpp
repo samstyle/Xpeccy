@@ -1191,7 +1191,7 @@ void xThread::run() {
 			}
 			if (comp->brk) {
 				emit dbgRequest();
-				comp->brk = 0;
+				//comp->brk = 0;
 			}
 		}
 	} while (1);

@@ -199,7 +199,7 @@ keyEntry keyMapInit[] = {
 	{"`",XKEY_TILDA,'C','S','S','x',0x0e},
 	{"\\",XKEY_SLASH,'C','S','S','d',0x5d},
 	{"PGDN",XKEY_PGUP,'C','3','m'|0x80,0,0x7de0},{"PGUP",XKEY_PGDN,'C','4','n'|0x80,0,0x7ae0},
-	{"DEL",XKEY_DEL,'C','9','p'|0x80,0,0x71e0},{"INS",XKEY_INS,'S','w','o'|0x80,0,0x70e0},
+	{"DEL",XKEY_DEL,'C','9','p'|0x80,0,0x71e0},{"INS",XKEY_INS,0,0,'o'|0x80,0,0x70e0},
 	{"HOME",XKEY_HOME,'S','q','k'|0x80,0,0x6ce0},{"END",XKEY_END,'S','e','l'|0x80,0,0x69e0},
 	{";",XKEY_DOTCOM,'S','o','S','o',0x4c},{"\"",XKEY_QUOTE,'S','p','S','p',0x52},
 	{"-",XKEY_MINUS,'S','j','S','j',0x4e},{"+",XKEY_PLUS,'S','k','S','k',0x00},

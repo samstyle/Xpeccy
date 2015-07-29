@@ -469,15 +469,6 @@ void tsOut47AF(ZXComp* comp, unsigned short port, unsigned char val) {comp->vid-
 
 // catch
 
-unsigned char tsInCatch(ZXComp* comp, unsigned short port) {
-	comp->brk = 1;
-	return 0xff;
-}
-
-void tsOutCatch(ZXComp* comp, unsigned short port, unsigned char val) {
-	comp->brk = 1;
-}
-
 xPort tsPortMap[] = {
 	// xxaf
 	{0xffff,0x00af,2,2,2,tsIn00AF,	tsOut00AF},
