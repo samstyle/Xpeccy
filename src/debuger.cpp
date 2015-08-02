@@ -192,7 +192,7 @@ void DebugWin::doStep() {
 void DebugWin::switchBP(unsigned char mask) {
 	if (!ui.dasmTable->hasFocus()) return;
 	int adr = getAdr();
-	unsigned char* ptr = memGetFptr(comp->mem, adr);
+	unsigned char* ptr = getBrkPtr(comp, adr);
 	if (mask == 0) {
 		*ptr = 0;
 	} else {
@@ -302,21 +302,21 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					// if (!ui.dasmTable->hasFocus()) break;
 					i = memRd(comp->mem, pc);
 					if (((i & 0xc7) == 0xc4) || (i == 0xcd)) {		// call
-						ptr = memGetFptr(comp->mem, pc + 3);
+						ptr = getBrkPtr(comp, pc + 3);
 						*ptr ^= MEM_BRK_TFETCH;
 						stop();
 					} else if (((i & 0xc7) == 0xc7) || (i == 0x76)) {	// rst, halt
-						ptr = memGetFptr(comp->mem, pc + 1);
+						ptr = getBrkPtr(comp, pc + 1);
 						*ptr ^= MEM_BRK_TFETCH;
 						stop();
 					} else if (i == 0x10) {
-						ptr = memGetFptr(comp->mem, pc + 2);		// djnz
+						ptr = getBrkPtr(comp, pc + 2);			// djnz
 						*ptr ^= MEM_BRK_TFETCH;
 						stop();
 					} else if (i == 0xed) {
 						i = memRd(comp->mem, pc + 1);
 						if ((i & 0xf4) == 0xb0) {			// block cmds
-							ptr = memGetFptr(comp->mem, pc + 2);
+							ptr = getBrkPtr(comp, pc + 2);
 							*ptr ^= MEM_BRK_TFETCH;
 							stop();
 						} else {
@@ -329,7 +329,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 				case Qt::Key_F9:
 					if (!ui.dasmTable->hasFocus()) break;
 					i = ui.dasmTable->item(ui.dasmTable->currentRow(),0)->data(Qt::UserRole).toInt();
-					ptr = memGetFptr(comp->mem, i);
+					ptr = getBrkPtr(comp, i);
 					*ptr ^= MEM_BRK_TFETCH;
 					stop();
 					break;
@@ -664,7 +664,7 @@ int DebugWin::fillDisasm() {
 		}
 		res |= drow.ispc;
 		bgcol = drow.ispc ? QColor(32,200,32) : ((i & 1) ? QColor(255,255,255) : QColor(230,230,230));
-		acol = (*memGetFptr(comp->mem, drow.adr) & MEM_BRK_ANY) ? QColor(200,64,64) : bgcol;
+		acol = (*getBrkPtr(comp, drow.adr) & MEM_BRK_ANY) ? QColor(200,64,64) : bgcol;
 		ui.dasmTable->item(i, 0)->setData(Qt::UserRole, drow.adr);
 		ui.dasmTable->item(i, 0)->setBackgroundColor(acol);
 		ui.dasmTable->item(i, 1)->setBackgroundColor(bgcol);
@@ -768,7 +768,7 @@ void DebugWin::fillDump() {
 		ui.dumpTable->item(row, 0)->setBackground(bgcol);
 		ui.dumpTable->item(row, 9)->setBackground(bgcol);
 		for (col = 1; col < 9; col++) {
-			ccol = (*memGetFptr(comp->mem, adr) & MEM_BRK_ANY) ? QColor(200,64,64) : bgcol;
+			ccol = (*getBrkPtr(comp, adr) & MEM_BRK_ANY) ? QColor(200,64,64) : bgcol;
 			ui.dumpTable->item(row,col)->setBackgroundColor(ccol);
 			ui.dumpTable->item(row,col)->setText(gethexbyte(memRd(comp->mem, adr)));
 			adr++;
@@ -842,14 +842,14 @@ void DebugWin::putBreakPoint() {
 
 void DebugWin::doBreakPoint(unsigned short adr) {
 	bpAdr = adr;
-	unsigned char flag = *memGetFptr(comp->mem, adr);
+	unsigned char flag = *getBrkPtr(comp, adr);
 	ui.actFetch->setChecked(flag & MEM_BRK_FETCH);
 	ui.actRead->setChecked(flag & MEM_BRK_RD);
 	ui.actWrite->setChecked(flag & MEM_BRK_WR);
 }
 
 void DebugWin::chaBreakPoint() {
-	unsigned char* ptr = memGetFptr(comp->mem, bpAdr);
+	unsigned char* ptr = getBrkPtr(comp, bpAdr);
 	unsigned char flag = *ptr & ~MEM_BRK_ANY;
 	if (ui.actFetch->isChecked()) flag |= MEM_BRK_FETCH;
 	if (ui.actRead->isChecked()) flag |= MEM_BRK_RD;

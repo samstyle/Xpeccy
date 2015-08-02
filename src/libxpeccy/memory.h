@@ -13,29 +13,20 @@ extern "C" {
 #define	MEM_BANK1	1
 #define	MEM_BANK2	2
 #define	MEM_BANK3	3
-// memory breaks
-#define	MEM_BRK_FETCH	1
-#define	MEM_BRK_RD	(1<<1)
-#define	MEM_BRK_WR	(1<<2)
-#define	MEM_BRK_ANY	(MEM_BRK_FETCH | MEM_BRK_RD | MEM_BRK_WR)
-#define MEM_BRK_TFETCH	(1<<3)
 
 typedef struct {
 	int type;
 	int num;
 	unsigned char* dptr;
-	unsigned char* fptr;
+//	unsigned char* fptr;
 } MemPage;
 
 typedef struct {
-	int flag;
 	MemPage ram[256];
 	MemPage rom[32];
 	MemPage* pt[4];
 	unsigned char ramData[0x400000];	// 4M
-	unsigned char ramFlag[0x400000];
 	unsigned char romData[0x80000];		// 512K
-	unsigned char romFlag[0x80000];
 	int memSize;
 	int memMask;
 	int romMask;	// 0:16K, 1:32K, 3:64K, 7:128K, 15:256K, 31:512K
@@ -54,7 +45,6 @@ void memSetPage(Memory*,int,int,char*);
 void memGetPage(Memory*,int,int,char*);
 
 unsigned char* memGetPagePtr(Memory*,int,int);
-unsigned char* memGetFptr(Memory*, unsigned short);
 
 MemPage* memGetBankPtr(Memory*,unsigned short);
 

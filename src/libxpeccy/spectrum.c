@@ -38,12 +38,18 @@ unsigned char memrd(unsigned short adr,int m1,void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
 	if (m1 && comp->rzxPlay) comp->rzx.fetches--;
 	zxMemRW(comp,adr);
+	if (*getBrkPtr(comp, adr) & MEM_BRK_RD) {
+		comp->brk = 1;
+	}
 	return comp->hw->mrd(comp,adr,m1);
 }
 
 void memwr(unsigned short adr, unsigned char val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
 	zxMemRW(comp,adr);
+	if (*getBrkPtr(comp, adr) & MEM_BRK_WR) {
+		comp->brk = 1;
+	}
 	comp->hw->mwr(comp,adr,val);
 }
 
@@ -98,6 +104,9 @@ unsigned char iord(unsigned short port, void* ptr) {
 		}
 	}
 	bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
+// brk
+	if (comp->brkIOMap[port] & IO_BRK_RD)
+		comp->brk = 1;
 // request to external devices
 	if (ideIn(comp->ide, port, &res, bdiz)) return res;
 	if (gsIn(comp->gs, port, &res)) return res;
@@ -109,6 +118,9 @@ void iowr(unsigned short port, unsigned char val, void* ptr) {
 	ZXComp* comp = (ZXComp*)ptr;
 	comp->padr = port;
 	comp->pval = val;
+// brk
+	if (comp->brkIOMap[port] & IO_BRK_WR)
+		comp->brk = 1;
 }
 
 unsigned char intrq(void* ptr) {
@@ -161,6 +173,11 @@ ZXComp* zxCreate() {
 	comp->mem = memCreate();
 	comp->vid = vidCreate(comp->mem);
 	zxSetFrq(comp,3.5);
+
+	memset(comp->brkIOMap, 0, 0x10000);
+	memset(comp->brkRomMap, 0, 0x80000);
+	memset(comp->brkRamMap, 0, 0x400000);
+
 // input
 	comp->keyb = keyCreate();
 	comp->joy = joyCreate();
@@ -288,7 +305,7 @@ int zxINT(ZXComp* comp, unsigned char vect) {
 
 int zxExec(ZXComp* comp) {
 
-	comp->mem->flag = 0;
+//	comp->mem->flag = 0;
 
 	res4 = 0;
 	res2 = cpuExec(comp->cpu);
@@ -368,17 +385,13 @@ int zxExec(ZXComp* comp) {
 	comp->tickCount += res1;
 // breakpoints
 	pcreg = comp->cpu->pc;
-	unsigned char* ptr = memGetFptr(comp->mem, pcreg);
-	if (*ptr & MEM_BRK_FETCH) {
-		comp->brk = 1;
-	} else if (*ptr & MEM_BRK_TFETCH) {
+	unsigned char* ptr = getBrkPtr(comp, pcreg);
+	if (*ptr & (MEM_BRK_FETCH | MEM_BRK_TFETCH)) {
 		comp->brk = 1;
 		*ptr &= ~MEM_BRK_TFETCH;
 	}
-	if (comp->mem->flag & (MEM_BRK_RD | MEM_BRK_WR)) {
-		comp->brk = 1;
-	}
-	if (comp->debug) comp->brk = 0;
+	if (comp->debug)
+		comp->brk = 0;
 // sync devices
 	comp->tapCount += nsTime;
 	if (comp->gs->enable) comp->gs->sync += nsTime;
@@ -424,4 +437,12 @@ void cmsWr(ZXComp* comp, unsigned char val) {
 			}
 			break;
 	}
+}
+
+// breaks
+
+unsigned char* getBrkPtr(ZXComp* comp, unsigned short madr) {
+	MemPage* ptr = comp->mem->pt[madr >> 14];
+	int adr = (ptr->num << 14) | (madr & 0x3fff);
+	return (ptr->type == MEM_RAM) ? &comp->brkRamMap[adr] : &comp->brkRomMap[adr];
 }

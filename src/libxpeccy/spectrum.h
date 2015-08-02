@@ -21,6 +21,15 @@ extern "C" {
 #define	RES_128		2
 #define	RES_DOS		3
 #define	RES_SHADOW	4
+// memory breaks
+#define	MEM_BRK_FETCH	1
+#define	MEM_BRK_RD	(1<<1)
+#define	MEM_BRK_WR	(1<<2)
+#define	MEM_BRK_ANY	(MEM_BRK_FETCH | MEM_BRK_RD | MEM_BRK_WR)
+#define MEM_BRK_TFETCH	(1<<3)
+// io breaks
+#define IO_BRK_RD	1
+#define IO_BRK_WR	(1<<1)
 
 typedef struct {
 	unsigned char l;
@@ -100,7 +109,9 @@ struct ZXComp {
 	};
 	unsigned char prt2;		// scorpion ProfROM layer (0..3)
 
-	unsigned char brkIOMap[0x10000];	// brk by port
+	unsigned char brkRamMap[0x400000];	// ram brk
+	unsigned char brkRomMap[0x80000];	// rom brk
+	unsigned char brkIOMap[0x10000];	// io brk
 
 	unsigned short padr;
 	unsigned char pval;
@@ -162,6 +173,8 @@ unsigned char cmsRd(ZXComp*);
 void cmsWr(ZXComp*,unsigned char);
 
 void rzxStop(ZXComp*);
+
+unsigned char* getBrkPtr(ZXComp*, unsigned short);
 
 #ifdef __cplusplus
 }

@@ -7,20 +7,20 @@
 Memory* memCreate() {
 	int i;
 	Memory* mem = (Memory*)malloc(sizeof(Memory));
-	memset(mem->ramFlag, 0x00, 0x400000);
-	memset(mem->romFlag, 0x00, 0x80000);
+//	memset(mem->ramFlag, 0x00, 0x400000);
+//	memset(mem->romFlag, 0x00, 0x80000);
 	mem->romMask = 0x03;
 	for (i = 0; i < 32; i++) {
 		mem->rom[i].type = MEM_ROM;
 		mem->rom[i].num = i & 0xff;
 		mem->rom[i].dptr = mem->romData + (i << 14);
-		mem->rom[i].fptr = mem->romFlag + (i << 14);
+//		mem->rom[i].fptr = mem->romFlag + (i << 14);
 	}
 	for (i = 0; i < 256; i++) {
 		mem->ram[i].type = MEM_RAM;
 		mem->ram[i].num = i & 0xff;
 		mem->ram[i].dptr = mem->ramData + (i << 14);
-		mem->ram[i].fptr = mem->ramFlag + (i << 14);
+//		mem->ram[i].fptr = mem->ramFlag + (i << 14);
 	}
 	memSetSize(mem,48);
 	mem->pt[0] = &mem->rom[0];
@@ -47,18 +47,13 @@ MemPage* ptr;
 
 unsigned char memRd(Memory* mem, unsigned short adr) {
 	ptr = mem->pt[adr >> 14];
-	mem->flag |= (ptr->fptr[adr & 0x3fff] & MEM_BRK_RD);
 	return ptr->dptr[adr & 0x3fff];
 }
 
 void memWr(Memory* mem, unsigned short adr, unsigned char val) {
 	ptr = mem->pt[adr >> 14];
-	mem->flag |= (ptr->fptr[adr & 0x3fff] & MEM_BRK_WR);
-	if (ptr->type == MEM_RAM) ptr->dptr[adr & 0x3fff] = val;
-}
-
-unsigned char* memGetFptr(Memory* mem, unsigned short adr) {
-	return mem->pt[adr >> 14]->fptr + (adr & 0x3fff);
+	if (ptr->type == MEM_RAM)
+		ptr->dptr[adr & 0x3fff] = val;
 }
 
 void memSetSize(Memory* mem, int val) {
