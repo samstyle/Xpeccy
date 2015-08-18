@@ -26,7 +26,7 @@ void fillRFBox(QComboBox* box, QStringList lst) {
 
 std::string getRFText(QComboBox* box) {
 	QString res = "";
-	if (box->currentIndex() > 0) res = box->currentText();
+	if (box->currentIndex() >= 0) res = box->currentText();
 	return std::string(res.toLocal8Bit().data());
 }
 
