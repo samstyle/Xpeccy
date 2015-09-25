@@ -1155,13 +1155,14 @@ void xThread::tapeCatch() {
 }
 
 void xThread::emuCycle() {
+	int endBuf = 0;
 	comp->frmStrobe = 0;
 	do {
 		// exec 1 opcode (+ INT, NMI)
 		sndNs += zxExec(comp);
 		// if need - request sound buffer update
 		if (sndNs > nsPerSample) {
-			sndSync(comp, fast);
+			endBuf = sndSync(comp, fast);
 			sndNs -= nsPerSample;
 		}
 		// tape trap
@@ -1171,7 +1172,7 @@ void xThread::emuCycle() {
 			if ((pc == 0x5e2) && conf->tape.autostart)
 				emit tapeSignal(TW_STATE,TWS_STOP);
 		}
-	} while (!comp->brk && !comp->frmStrobe);		// exec until breakpoint or new frame start
+	} while (!comp->brk && !endBuf);
 	comp->nmiRequest = 0;
 }
 

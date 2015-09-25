@@ -173,6 +173,7 @@ int diskCreateFile(Floppy* flp, TRFile dsc, unsigned char* data, int len) {
 
 TRFile diskGetCatalogEntry(Floppy* flp, int num) {
 	TRFile res;
+	memset(&res, 0x00, sizeof(TRFile));
 	int sec,pos;
 	if (diskGetType(flp) != DISK_TYPE_TRD) return res;
 	if (num > 127) return res;

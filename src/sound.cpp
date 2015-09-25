@@ -52,52 +52,56 @@ OutSys* findOutSys(const char*);
 
 // output
 
-void sndSync(ZXComp* comp, int fast) {
+// return 1 when buffer is full
+int sndSync(ZXComp* comp, int fast) {
 	tapSync(comp->tape,comp->tapCount);
 	comp->tapCount = 0;
 	gsSync(comp->gs);
 	tsSync(comp->ts,nsPerSample);
 	saaSync(comp->saa,nsPerSample);
-	if (fast != 0) return;
-	if (sndOutput == NULL) return;
-	lev = comp->beeplev ? conf.snd.vol.beep : 0;
-	if (comp->tape->levRec) lev += conf.snd.vol.tape;
-	if (comp->tape->on && comp->tape->levPlay) {
-		lev += conf.snd.vol.tape;
+	if (!fast && (sndOutput != NULL)) {
+		lev = comp->beeplev ? conf.snd.vol.beep : 0;
+		if (comp->tape->levRec) lev += conf.snd.vol.tape;
+		if (comp->tape->on && comp->tape->levPlay) {
+			lev += conf.snd.vol.tape;
+		}
+		lev *= 0.16;
+		levl = lev;
+		levr = lev;
+
+		sndPair svol = tsGetVolume(comp->ts);
+		levl += svol.left * conf.snd.vol.ay / 100.0;
+		levr += svol.right * conf.snd.vol.ay / 100.0;
+
+		svol = gsGetVolume(comp->gs);
+		levl += svol.left * conf.snd.vol.gs / 100.0;
+		levr += svol.right * conf.snd.vol.gs / 100.0;
+
+		svol = sdrvGetVolume(comp->sdrv);
+		levl += svol.left * conf.snd.vol.beep / 100.0;
+		levr += svol.right * conf.snd.vol.beep / 100.0;
+
+		svol = saaGetVolume(comp->saa);		// TODO : saa volume control
+		levl += svol.left;
+		levr += svol.right;
+
+		if (levl > 0xff) levl = 0xff;
+		if (levr > 0xff) levr = 0xff;
+
+		lastL = levl & 0xff;
+		lastR = levr & 0xff;
 	}
-	lev *= 0.16;
-	levl = lev;
-	levr = lev;
 
-	sndPair svol = tsGetVolume(comp->ts);
-	levl += svol.left * conf.snd.vol.ay / 100.0;
-	levr += svol.right * conf.snd.vol.ay / 100.0;
+//	if (smpCount >= sndChunks) return;		// don't overfill buffer!
 
-	svol = gsGetVolume(comp->gs);
-	levl += svol.left * conf.snd.vol.gs / 100.0;
-	levr += svol.right * conf.snd.vol.gs / 100.0;
-
-	svol = sdrvGetVolume(comp->sdrv);
-	levl += svol.left * conf.snd.vol.beep / 100.0;
-	levr += svol.right * conf.snd.vol.beep / 100.0;
-
-	svol = saaGetVolume(comp->saa);		// TODO : saa volume control
-	levl += svol.left;
-	levr += svol.right;
-
-	if (levl > 0xff) levl = 0xff;
-	if (levr > 0xff) levr = 0xff;
-
-	if (smpCount >= sndChunks) return;		// don't overfill buffer!
-
-	lastL = levl & 0xff;
-	lastR = levr & 0xff;
 	sndBuf[ringPos] = lastL;
 	ringPos++;
 	sndBuf[ringPos] = lastR;
 	ringPos++;
 	ringPos &= 0x3fff;
 	smpCount++;
+
+	return (smpCount < sndChunks) ? 0 : 1;
 }
 
 void sndFillToEnd() {
@@ -114,7 +118,8 @@ void sndFillToEnd() {
 void sndCalibrate() {
 	sndChunks = (int)(conf.snd.rate / 50.0);		// samples played at 1/50 sec			882
 	sndBufSize = sndChans * sndChunks;			// buffer size for 1/50 sec play		1764
-	nsPerSample = nsPerFrame / sndChunks;
+	// nsPerSample = nsPerFrame / sndChunks;
+	nsPerSample = 1e9 / conf.snd.rate;
 }
 
 std::string sndGetOutputName() {

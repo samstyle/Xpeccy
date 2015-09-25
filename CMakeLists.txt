@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(xpeccy)
-set(XVER "0.6.20150818")
+set(XVER "0.6.20150925")
 
 include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
 
@@ -167,7 +167,7 @@ if ("${PACK}" STREQUAL "rpm")
 
 message(STATUS "Package type : RPM")
 set(CPACK_GENERATOR "RPM")
-set(CPACK_RPM_PACKAGE_LICENSE "GPLv2")
+set(CPACK_RPM_PACKAGE_LICENSE "MIT")
 set(CPACK_RPM_PACKAGE_GROUP "Games")
 
 else ()
@@ -192,14 +192,6 @@ if(DRAWTYPE EQUAL 1)
 else()
 	message(STATUS "Painter : Qt")
 endif()
-
-#if(Z80EX_TYPE EQUAL 0)
-#	message(STATUS "libz80ex : not used")
-#elseif(Z80EX_TYPE EQUAL 1)
-#	message(STATUS "libz80ex : external")
-#elseif(Z80EX_TYPE EQUAL 2)
-#	message(STATUS "libz80ex : internal")
-#endif()
 
 if (BIG_ENDIAN)
 	message(STATUS "Endianness: big endian")

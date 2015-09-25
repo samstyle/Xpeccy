@@ -60,7 +60,7 @@ bool sndOpen();
 void sndPlay();
 void sndPause(bool);
 void sndClose();
-void sndSync(ZXComp*, int);
+int sndSync(ZXComp*, int);
 
 void sndFillToEnd();
 
