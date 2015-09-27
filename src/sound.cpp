@@ -316,10 +316,10 @@ void alsa_close() {
 
 bool wave_open() {
 	wf.wFormatTag = WAVE_FORMAT_PCM;
-	wf.nChannels = sndChans;
+	wf.nChannels = conf.snd.chans;
 	wf.nSamplesPerSec = conf.snd.rate;
 	wf.wBitsPerSample = 8;
-	wf.nBlockAlign = (sndChans * wf.wBitsPerSample) >> 3;
+	wf.nBlockAlign = (conf.snd.chans * wf.wBitsPerSample) >> 3;
 	wf.nAvgBytesPerSec = wf.nSamplesPerSec * wf.nBlockAlign;
 	wf.cbSize = 0;
 
