@@ -165,6 +165,7 @@ struct xConfig {
 		unsigned enabled:1;
 		unsigned mute:1;
 		int rate;
+		int chans;
 		struct {
 			int beep;
 			int tape;

@@ -16,11 +16,11 @@
 #define SF_BUF	1
 int sndFlag = 0;
 
-unsigned char sndBufA[0x4000];
-unsigned char sndBufB[0x4000];
+unsigned char sndBufA[0x10000];
+unsigned char sndBufB[0x10000];
 unsigned char* sndBuf = sndBufA;
-int ringPos = 0;
-int playPos = 0;
+unsigned short ringPos = 0;
+unsigned short playPos = 0;
 int pass = 0;
 
 int smpCount = 0;
@@ -28,7 +28,6 @@ int smpCount = 0;
 long nsPerFrame;
 
 OutSys *sndOutput = NULL;
-int sndChans = 2;
 int sndChunks = 882;
 int sndBufSize = 1764;
 int nsPerSample = 23143;
@@ -94,11 +93,8 @@ int sndSync(ZXComp* comp, int fast) {
 
 //	if (smpCount >= sndChunks) return;		// don't overfill buffer!
 
-	sndBuf[ringPos] = lastL;
-	ringPos++;
-	sndBuf[ringPos] = lastR;
-	ringPos++;
-	ringPos &= 0x3fff;
+	sndBuf[ringPos++] = lastL;
+	sndBuf[ringPos++] = lastR;
 	smpCount++;
 
 	return (smpCount < sndChunks) ? 0 : 1;
@@ -106,18 +102,15 @@ int sndSync(ZXComp* comp, int fast) {
 
 void sndFillToEnd() {
 	while (smpCount < sndChunks) {
-		sndBuf[ringPos] = lastL;
-		ringPos++;
-		sndBuf[ringPos] = lastR;
-		ringPos++;
-		ringPos &= 0x3fff;
+		sndBuf[ringPos++] = lastL;
+		sndBuf[ringPos++] = lastR;
 		smpCount++;
 	}
 }
 
 void sndCalibrate() {
-	sndChunks = (int)(conf.snd.rate / 50.0);		// samples played at 1/50 sec			882
-	sndBufSize = sndChans * sndChunks;			// buffer size for 1/50 sec play		1764
+	sndChunks = conf.snd.rate / 50;			// samples played at 1/50 sec			882
+	sndBufSize = conf.snd.chans * sndChunks;	// buffer size for 1/50 sec play		1764
 	// nsPerSample = nsPerFrame / sndChunks;
 	nsPerSample = 1e9 / conf.snd.rate;
 }
@@ -182,10 +175,9 @@ std::string sndGetName() {
 //------------------------
 
 void fillBuffer(int len) {
-	for (int bufPos=0; bufPos < len; bufPos++) {
-		sndBufB[bufPos] = sndBufA[playPos];
-		playPos++;
-		playPos &= 0x3fff;
+	int pos = 0;
+	while (pos < len) {
+		sndBufB[pos++] = sndBufA[playPos++];
 	}
 	sndBuf = sndBufA;
 }
@@ -206,15 +198,13 @@ void sdlPlayAudio(void*,Uint8* stream, int len) {
 	if (pass < 2) {
 		pass++;
 	} else {
-		int diff;
-		if (playPos < ringPos) {
-			diff = ringPos - playPos;
-		} else {
-			diff = 0x4000 - (ringPos - playPos);
+		int diff = ringPos - playPos;
+		if (diff < 0) {
+			diff = 0x10000 - diff;
 		}
 		if (diff >= len) fillBuffer(len);
 	}
-	SDL_MixAudio(stream, sndBuf, len, SDL_MIX_MAXVOLUME);
+	SDL_MixAudio(stream, sndBufB, len, SDL_MIX_MAXVOLUME);
 	// memcpy(stream,sndBufB,len);
 }
 
@@ -251,7 +241,7 @@ bool oss_open() {
 	ossHandle = open("/dev/dsp",O_WRONLY,0777);
 	if (ossHandle < 0) return false;
 	ioctl(ossHandle,SNDCTL_DSP_SETFMT,&sndFormat);
-	ioctl(ossHandle,SNDCTL_DSP_CHANNELS,&sndChans);
+	ioctl(ossHandle,SNDCTL_DSP_CHANNELS,&conf.snd.chans);
 	ioctl(ossHandle,SNDCTL_DSP_SPEED,&conf.snd.rate);
 	return true;
 }
@@ -288,7 +278,7 @@ bool alsa_open() {
 		alsaHandle = NULL;
 		res = false;
 	} else {
-		err = snd_pcm_set_params(alsaHandle,SND_PCM_FORMAT_U8,SND_PCM_ACCESS_RW_INTERLEAVED,sndChans,conf.snd.rate,1,100000);
+		err = snd_pcm_set_params(alsaHandle,SND_PCM_FORMAT_U8,SND_PCM_ACCESS_RW_INTERLEAVED,conf.snd.chans,conf.snd.rate,1,100000);
 		if (err != 0) {
 			alsaHandle = NULL;
 			res = false;
@@ -308,7 +298,7 @@ void alsa_play() {
 		if (res < 0) res = snd_pcm_recover(alsaHandle, res, 1);
 		if (res < 0) break;
 		fsz -= res;
-		ptr += res * sndChans;
+		ptr += res * conf.snd.chans;
 	}
 	switchSndBuf();
 }
@@ -404,7 +394,7 @@ void sndInit() {
 	sndFormat = AFMT_U8;
 #endif
 	conf.snd.rate = 44100;
-	sndChans = 2;
+	conf.snd.chans = 2;
 	conf.snd.enabled = 1;
 	conf.snd.mute = 1;
 	sndOutput = NULL;
