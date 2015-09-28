@@ -89,15 +89,15 @@ int sndSync(ZXComp* comp, int fast) {
 
 		lastL = levl & 0xff;
 		lastR = levr & 0xff;
+
+		sndBuf[ringPos++] = lastL;
+		sndBuf[ringPos++] = lastR;
 	}
 
-//	if (smpCount >= sndChunks) return;		// don't overfill buffer!
-
-	sndBuf[ringPos++] = lastL;
-	sndBuf[ringPos++] = lastR;
 	smpCount++;
-
-	return (smpCount < sndChunks) ? 0 : 1;
+	if (smpCount < sndChunks) return 0;
+	smpCount = 0;
+	return 1;
 }
 
 void sndFillToEnd() {
@@ -146,20 +146,25 @@ bool sndOpen() {
 }
 
 void sndPlay() {
-	sndFillToEnd();
+//	sndFillToEnd();
 	if (sndOutput != NULL) {
 		sndOutput->play();
 	}
-	smpCount = 0;
+//	smpCount = 0;
 }
 
 void sndPause(bool b) {
-	smpCount = 0;
-	sndFillToEnd();
+	for (int i = 0; i < 0x10000;) {
+		sndBufA[i++] = lastL;
+		sndBufA[i++] = lastR;
+	}
+	memcpy(sndBufB, sndBufA, 0x10000);
+//	sndFillToEnd();
 }
 
 void sndClose() {
-	if (sndOutput != NULL) sndOutput->close();
+	if (sndOutput != NULL)
+		sndOutput->close();
 }
 
 std::string sndGetName() {
