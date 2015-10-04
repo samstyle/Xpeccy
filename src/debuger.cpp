@@ -261,7 +261,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					fillZ80();
 					fillDisasm();
 					break;
-				case Qt::Key_Space:
+				case Qt::Key_F2:
 					switchBP(MEM_BRK_FETCH);
 					break;
 				case Qt::Key_PageUp:
@@ -637,7 +637,7 @@ xLabel* DebugWin::findLabel(int adr) {
 //	int bnk = comp->mem->pt[adr >> 14]->num;
 //	adr &= 0x3fff;
 	for (int i = 0; i < labels.size(); i++) {
-		if (/*(labels[i].bank == bnk) && */(labels[i].adr == adr)) return &labels[i];
+		if ((labels[i].adr == adr)) return &labels[i];
 	}
 	return NULL;
 }

@@ -18,7 +18,7 @@ unsigned short pcreg;
 
 MemPage* mptr;
 
-inline void zxMemRW(ZXComp* comp, int adr) {
+void zxMemRW(ZXComp* comp, int adr) {
 	mptr = memGetBankPtr(comp->mem,adr);
 	if (comp->contMem && (mptr->type == MEM_RAM) && (mptr->num & 1)) {	// pages 1,3,5,7 (48K model)
 		res3 = comp->cpu->t;					// until RD/WR cycle

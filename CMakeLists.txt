@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 2.8)
 project(xpeccy)
 set(XVER "0.6.20150928")
 
+#set(CMAKE_C_COMPILER clang)
+#set(CMAKE_CXX_COMPILER clang++)
+
 include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
 
 set(INCLUDIRS ${CMAKE_BINARY_DIR})
