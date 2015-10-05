@@ -13,14 +13,13 @@
 
 #include "../spectrum.h"
 
-#ifdef _WIN32
-#define ENVHOME "HOMEPATH"
-#define SLASH "\\"
-#endif
 
-#ifdef __linux__
-#define ENVHOME "HOME"
-#define SLASH "/"
+#if __linux || __APPLE__
+	#define ENVHOME "HOME"
+	#define SLASH "/"
+#elif _WIN32
+	#define ENVHOME "HOMEPATH"
+	#define SLASH "\\"
 #endif
 
 #define	ERR_OK		0

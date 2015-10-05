@@ -1,12 +1,10 @@
 #include <string.h>
 #include "filetypes.h"
 
-#ifdef _WIN32
-#define SLSH '\\'
-#endif
-
-#ifdef __linux__
+#if __linux || __APPLE__
 #define SLSH '/'
+#elif __WIN32
+#define SLSH '\\'
 #endif
 
 void cutSpaces(char* name) {

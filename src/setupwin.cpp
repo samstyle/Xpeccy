@@ -965,7 +965,7 @@ void SetupWin::diskToHobeta() {
 	if (idx.size() == 0) return;
 	QString dir = QFileDialog::getExistingDirectory(this,"Save file(s) to...",QDir::homePath());
 	if (dir == "") return;
-	std::string sdir = std::string(dir.toLocal8Bit().data()) + std::string(SLASH);
+	std::string sdir = std::string(dir.toLocal8Bit().data()) + SLASH;
 	Floppy* flp = comp->dif->fdc->flop[ui.disktabs->currentIndex()];		// selected floppy
 	int savedFiles = 0;
 	for (int i=0; i<idx.size(); i++) {
@@ -1263,12 +1263,12 @@ void SetupWin::setTapeBreak(int row,int col) {
 // hdd
 
 void SetupWin::hddMasterImg() {
-	QString path = QFileDialog::getOpenFileName(this,"Image for master HDD",QDir::homePath(),"All files (*.*)",NULL,QFileDialog::DontConfirmOverwrite);
+	QString path = QFileDialog::getOpenFileName(this,"Image for master HDD","","All files (*.*)",NULL,QFileDialog::DontConfirmOverwrite);
 	if (path != "") ui.hm_path->setText(path);
 }
 
 void SetupWin::hddSlaveImg() {
-	QString path = QFileDialog::getOpenFileName(this,"Image for slave HDD",QDir::homePath(),"All files (*.*)",NULL,QFileDialog::DontConfirmOverwrite);
+	QString path = QFileDialog::getOpenFileName(this,"Image for slave HDD","","All files (*.*)",NULL,QFileDialog::DontConfirmOverwrite);
 	if (path != "") ui.hs_path->setText(path);
 }
 

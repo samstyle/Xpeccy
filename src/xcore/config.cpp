@@ -37,8 +37,9 @@ std::map<std::string, int> shotFormat;
 xConfig conf;
 
 void initPaths() {
-#if __linux
-	conf.path.confDir = std::string(getenv("HOME")) + "/.config";
+	conf.scrShot.dir = std::string(getenv(ENVHOME));
+#if __linux || __APPLE__
+	conf.path.confDir = std::string(ENVHOME) + "/.config";
 	mkdir(conf.path.confDir.c_str(),0777);
 	conf.path.confDir += "/samstyle";
 	mkdir(conf.path.confDir.c_str(),0777);
@@ -48,14 +49,11 @@ void initPaths() {
 	mkdir(conf.path.romDir.c_str(),0777);
 	conf.path.confFile = conf.path.confDir + "/config.conf";
 	conf.path.boot = conf.path.confDir + "/boot.$B";
-	conf.scrShot.dir = std::string(getenv("HOME"));
-#endif
-#ifdef __WIN32
+#elif __WIN32
 	conf.path.confDir = std::string(".\\config");
 	conf.path.romDir = conf.path.confDir + "\\roms";
 	conf.path.confFile = conf.path.confDir + "\\config.conf";
 	conf.path.boot = conf.path.confDir + "\\boot.$B";
-	conf.scrShot.dir = std::string(getenv("HOMEPATH"));
 	mkdir(conf.path.confDir.c_str());
 	mkdir(conf.path.romDir.c_str());
 #endif
