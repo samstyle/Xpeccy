@@ -5,12 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-/*
-#ifdef __cplusplus
-#include <fstream>
-#endif
-*/
-
 #include "../spectrum.h"
 
 

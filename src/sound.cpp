@@ -36,12 +36,13 @@ unsigned char lastL,lastR;
 
 OutSys* findOutSys(const char*);
 
-#ifdef __linux__
+#ifdef __linux
 	int32_t ossHandle;			// oss
 	int32_t sndFormat;
-#ifdef HAVEALSA
+#if defined(HAVEALSA)
 	snd_pcm_t* alsaHandle = NULL;
 #endif
+
 #elif _WIN32
 	WAVEFORMATEX wf;
 	WAVEHDR whdr;
@@ -239,7 +240,7 @@ void sdlclose() {
 
 #endif
 
-#ifdef __linux__
+#ifdef __linux
 
 bool oss_open() {
 //	printf("Open OSS audio device\n");
@@ -367,7 +368,7 @@ void wave_close() {
 
 OutSys sndTab[] = {
 	{SND_NULL,"NULL",&null_open,&null_play,&null_close},
-#ifdef __linux__
+#ifdef __linux
 	{SND_OSS,"OSS",&oss_open,&oss_play,&oss_close},
 #ifdef HAVEALSA
 	{SND_ALSA,"ALSA",&alsa_open,&alsa_play,&alsa_close},
@@ -395,7 +396,7 @@ OutSys* findOutSys(const char* name) {
 }
 
 void sndInit() {
-#ifdef __linux__
+#ifdef __linux
 	sndFormat = AFMT_U8;
 #endif
 	conf.snd.rate = 44100;

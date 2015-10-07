@@ -39,7 +39,7 @@ xConfig conf;
 void initPaths() {
 	conf.scrShot.dir = std::string(getenv(ENVHOME));
 #if __linux || __APPLE__
-	conf.path.confDir = std::string(ENVHOME) + "/.config";
+	conf.path.confDir = conf.scrShot.dir + "/.config";
 	mkdir(conf.path.confDir.c_str(),0777);
 	conf.path.confDir += "/samstyle";
 	mkdir(conf.path.confDir.c_str(),0777);

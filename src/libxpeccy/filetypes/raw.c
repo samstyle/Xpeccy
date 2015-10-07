@@ -1,7 +1,7 @@
 #include <string.h>
 #include "filetypes.h"
 
-#if __linux || __APPLE__
+#if __linux || __APPLE
 #define SLSH '/'
 #elif __WIN32
 #define SLSH '\\'

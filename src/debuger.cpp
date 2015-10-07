@@ -57,14 +57,20 @@ QWidget* xItemDelegate::createEditor(QWidget* par, const QStyleOptionViewItem&, 
 DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	int col,row;
 	ui.setupUi(this);
+	QTableWidgetItem* itm;
 // disasm table
 	for (row = 0; row < ui.dasmTable->rowCount(); row++) {
 		for (col = 0; col < ui.dasmTable->columnCount(); col++) {
-			ui.dasmTable->setItem(row, col, new QTableWidgetItem);
+			itm = new QTableWidgetItem;
+			if (col == 3) {
+				itm->setTextAlignment(Qt::AlignRight);
+			}
+			ui.dasmTable->setItem(row, col, itm);
 		}
 	}
-	ui.dasmTable->setColumnWidth(0,75);
+	ui.dasmTable->setColumnWidth(0,50);
 	ui.dasmTable->setColumnWidth(1,75);
+	ui.dasmTable->setColumnWidth(2,150);
 	ui.dasmTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_ADR));
 	ui.dasmTable->setItemDelegateForColumn(1, new xItemDelegate(XTYPE_DUMP));
 	connect(ui.dasmTable,SIGNAL(cellChanged(int,int)),this,SLOT(dasmEdited(int,int)));
@@ -669,6 +675,7 @@ int DebugWin::fillDisasm() {
 		ui.dasmTable->item(i, 0)->setBackgroundColor(acol);
 		ui.dasmTable->item(i, 1)->setBackgroundColor(bgcol);
 		ui.dasmTable->item(i, 2)->setBackgroundColor(bgcol);
+		ui.dasmTable->item(i, 3)->setBackgroundColor(bgcol);
 		lab = findLabel(drow.adr);
 		if (lab) {
 			fnt.setBold(true);
@@ -682,13 +689,14 @@ int DebugWin::fillDisasm() {
 		foreach(pos, drow.bytes)
 			str.append(gethexbyte(pos));
 		ui.dasmTable->item(i, 1)->setText(str);
-		if (drow.cond) {
-			drow.com.append(" [+]");
-		}
-		if (drow.mem) {
-			drow.com.append(" [").append(gethexbyte(drow.mop)).append("]");
-		}
 		ui.dasmTable->item(i, 2)->setText(drow.com);
+		if (drow.cond) {
+			ui.dasmTable->item(i,3)->setText("+");
+		} else if (drow.mem) {
+			ui.dasmTable->item(i,3)->setText(gethexbyte(drow.mop));
+		} else {
+			ui.dasmTable->item(i,3)->setText("");
+		}
 	}
 	fillStack();
 	block = false;
