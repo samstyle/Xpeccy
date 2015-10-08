@@ -18,7 +18,7 @@ int sndFlag = 0;
 
 unsigned char sndBufA[0x10000];
 unsigned char sndBufB[0x10000];
-unsigned char* sndBuf = sndBufA;
+//unsigned char* sndBuf = sndBufA;
 unsigned short ringPos = 0;
 unsigned short playPos = 0;
 int pass = 0;
@@ -91,10 +91,10 @@ int sndSync(ZXComp* comp, int fast) {
 		lastL = levl & 0xff;
 		lastR = levr & 0xff;
 
-		sndBuf[ringPos++] = lastL;
-		sndBuf[ringPos++] = lastR;
 	}
 
+	sndBufA[ringPos++] = lastL;
+	sndBufA[ringPos++] = lastR;
 	smpCount++;
 	if (smpCount < sndChunks) return 0;
 	smpCount = 0;
@@ -103,8 +103,8 @@ int sndSync(ZXComp* comp, int fast) {
 
 void sndFillToEnd() {
 	while (smpCount < sndChunks) {
-		sndBuf[ringPos++] = lastL;
-		sndBuf[ringPos++] = lastR;
+		sndBufA[ringPos++] = lastL;
+		sndBufA[ringPos++] = lastR;
 		smpCount++;
 	}
 }
@@ -155,11 +155,13 @@ void sndPlay() {
 }
 
 void sndPause(bool b) {
-	for (int i = 0; i < 0x10000;) {
-		sndBufA[i++] = lastL;
-		sndBufA[i++] = lastR;
+	if (b) {
+		for (int i = 0; i < 0x10000;) {
+			sndBufA[i++] = lastL;
+			sndBufA[i++] = lastR;
+		}
+		memcpy(sndBufB, sndBufA, 0x10000);
 	}
-	memcpy(sndBufB, sndBufA, 0x10000);
 //	sndFillToEnd();
 }
 
@@ -185,14 +187,15 @@ void fillBuffer(int len) {
 	while (pos < len) {
 		sndBufB[pos++] = sndBufA[playPos++];
 	}
-	sndBuf = sndBufA;
 }
 
+/*
 void switchSndBuf() {
 	sndBuf = (sndFlag & SF_BUF) ? sndBufA : sndBufB;
 	sndFlag ^= SF_BUF;
 	ringPos = 0;
 }
+*/
 
 bool null_open() {return true;}
 void null_play() {}
@@ -220,13 +223,16 @@ bool sdlopen() {
 	asp.freq = conf.snd.rate;
 	asp.format = AUDIO_U8;
 	asp.channels = 2;
-	asp.samples = sndChunks + 1;
+	asp.samples = sndChunks;
 	asp.callback = &sdlPlayAudio;
 	asp.userdata = NULL;
 	if (SDL_OpenAudio(&asp, NULL) != 0) {
 		printf("SDL audio device opening...failed\n");
 		return false;
 	}
+	ringPos = 0;
+	playPos = 0;
+	pass = 0;
 	SDL_PauseAudio(0);
 	return true;
 }
@@ -254,8 +260,8 @@ bool oss_open() {
 
 void oss_play() {
 	if (ossHandle < 0) return;
-//	fillBuffer(sndBufSize);
-	unsigned char* ptr = sndBuf;
+	fillBuffer(sndBufSize);
+	unsigned char* ptr = sndBufB;
 	int fsz = sndBufSize;	// smpCount * sndChans;
 	int res;
 	while (fsz > 0) {
@@ -263,7 +269,7 @@ void oss_play() {
 		ptr += res;
 		fsz -= res;
 	}
-	switchSndBuf();
+	// switchSndBuf();
 	// ringPos = 0;
 }
 
@@ -280,12 +286,14 @@ bool alsa_open() {
 	int err;
 	bool res = true;
 	err = snd_pcm_open(&alsaHandle,"default",SND_PCM_STREAM_PLAYBACK,SND_PCM_NONBLOCK);
-	if ((err < 0) || (alsaHandle == NULL)) {
+	if (err < 0) {
+		printf("Playback open error: %s\n", snd_strerror(err));
 		alsaHandle = NULL;
 		res = false;
 	} else {
 		err = snd_pcm_set_params(alsaHandle,SND_PCM_FORMAT_U8,SND_PCM_ACCESS_RW_INTERLEAVED,conf.snd.chans,conf.snd.rate,1,100000);
-		if (err != 0) {
+		if (err < 0) {
+			printf("Set params error: %s\n", snd_strerror(err));
 			alsaHandle = NULL;
 			res = false;
 		}
@@ -293,12 +301,15 @@ bool alsa_open() {
 	return res;
 }
 
+#include <QDebug>
+
 void alsa_play() {
 	if (alsaHandle == NULL) return;
 	snd_pcm_sframes_t res;
-//	fillBuffer(sndBufSize);
-	unsigned char* ptr = sndBuf;
-	int fsz = smpCount;
+	memcpy(sndBufB, sndBufA, sndChunks * conf.snd.chans);
+	ringPos = 0;
+	unsigned char* ptr = sndBufB;
+	int fsz = sndChunks;
 	while (fsz > 0) {
 		res = snd_pcm_writei(alsaHandle, ptr, fsz);
 		if (res < 0) res = snd_pcm_recover(alsaHandle, res, 1);
@@ -306,7 +317,6 @@ void alsa_play() {
 		fsz -= res;
 		ptr += res * conf.snd.chans;
 	}
-	switchSndBuf();
 }
 
 void alsa_close() {
