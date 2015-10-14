@@ -490,7 +490,7 @@ void DebugWin::fillZ80() {
 
 void DebugWin::setFlags() {
 	if (block) return;
-	unsigned char af = comp->cpu->af & 0xff00;
+	unsigned short af = comp->cpu->af & 0xff00;
 	if (ui.cbFS->isChecked()) af |= 0x80;
 	if (ui.cbFZ->isChecked()) af |= 0x40;
 	if (ui.cbF5->isChecked()) af |= 0x20;
