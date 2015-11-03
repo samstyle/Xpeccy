@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>703</width>
-    <height>551</height>
+    <height>559</height>
    </rect>
   </property>
   <property name="font">
@@ -30,7 +30,7 @@
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
    <item>
-    <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,0,0,10">
+    <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,0,0,0">
      <item>
       <widget class="QLabel" name="label_26">
        <property name="styleSheet">
@@ -598,17 +598,11 @@
        <property name="autoFillBackground">
         <bool>true</bool>
        </property>
-       <property name="frameShape">
-        <enum>QFrame::NoFrame</enum>
-       </property>
        <property name="verticalScrollBarPolicy">
         <enum>Qt::ScrollBarAlwaysOff</enum>
        </property>
        <property name="horizontalScrollBarPolicy">
         <enum>Qt::ScrollBarAlwaysOff</enum>
-       </property>
-       <property name="editTriggers">
-        <set>QAbstractItemView::AnyKeyPressed|QAbstractItemView::DoubleClicked|QAbstractItemView::EditKeyPressed</set>
        </property>
        <property name="tabKeyNavigation">
         <bool>false</bool>
@@ -696,7 +690,7 @@
        <property name="minimumSize">
         <size>
          <width>320</width>
-         <height>273</height>
+         <height>275</height>
         </size>
        </property>
        <property name="contextMenuPolicy">
@@ -705,17 +699,11 @@
        <property name="autoFillBackground">
         <bool>true</bool>
        </property>
-       <property name="frameShape">
-        <enum>QFrame::NoFrame</enum>
-       </property>
        <property name="verticalScrollBarPolicy">
         <enum>Qt::ScrollBarAlwaysOff</enum>
        </property>
        <property name="horizontalScrollBarPolicy">
         <enum>Qt::ScrollBarAlwaysOff</enum>
-       </property>
-       <property name="editTriggers">
-        <set>QAbstractItemView::AnyKeyPressed|QAbstractItemView::DoubleClicked|QAbstractItemView::EditKeyPressed</set>
        </property>
        <property name="tabKeyNavigation">
         <bool>false</bool>
@@ -793,7 +781,7 @@
      <item>
       <widget class="QTabWidget" name="tabsPanel">
        <property name="currentIndex">
-        <number>0</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="fdcTab">
         <attribute name="icon">
@@ -802,6 +790,9 @@
         </attribute>
         <attribute name="title">
          <string/>
+        </attribute>
+        <attribute name="toolTip">
+         <string>Disk interface</string>
         </attribute>
         <layout class="QGridLayout" name="gridLayout_2">
          <property name="horizontalSpacing">
@@ -1112,6 +1103,9 @@
         <attribute name="title">
          <string/>
         </attribute>
+        <attribute name="toolTip">
+         <string>Screen</string>
+        </attribute>
         <layout class="QHBoxLayout" name="horizontalLayout_3">
          <item>
           <widget class="QLabel" name="scrLabel">
@@ -1122,7 +1116,7 @@
             </size>
            </property>
            <property name="text">
-            <string>TextLabel</string>
+            <string/>
            </property>
           </widget>
          </item>
@@ -1174,6 +1168,78 @@
               </size>
              </property>
             </spacer>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="brkTab">
+        <attribute name="icon">
+         <iconset resource="../xpeccy.qrc">
+          <normaloff>:/images/redCircle.png</normaloff>:/images/redCircle.png</iconset>
+        </attribute>
+        <attribute name="title">
+         <string/>
+        </attribute>
+        <attribute name="toolTip">
+         <string>Breakpoints</string>
+        </attribute>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <widget class="QTableWidget" name="bpList">
+           <property name="editTriggers">
+            <set>QAbstractItemView::NoEditTriggers</set>
+           </property>
+           <property name="selectionBehavior">
+            <enum>QAbstractItemView::SelectRows</enum>
+           </property>
+           <attribute name="verticalHeaderVisible">
+            <bool>false</bool>
+           </attribute>
+           <attribute name="verticalHeaderDefaultSectionSize">
+            <number>17</number>
+           </attribute>
+           <attribute name="verticalHeaderMinimumSectionSize">
+            <number>17</number>
+           </attribute>
+          </widget>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout">
+           <item>
+            <widget class="QToolButton" name="tbAddBrk">
+             <property name="text">
+              <string>...</string>
+             </property>
+             <property name="icon">
+              <iconset resource="../xpeccy.qrc">
+               <normaloff>:/images/add.png</normaloff>:/images/add.png</iconset>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_2">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QToolButton" name="tbDelBrk">
+             <property name="text">
+              <string>...</string>
+             </property>
+             <property name="icon">
+              <iconset resource="../xpeccy.qrc">
+               <normaloff>:/images/cancel.png</normaloff>:/images/cancel.png</iconset>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>

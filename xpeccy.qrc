@@ -43,5 +43,6 @@
         <file>images/joystick.png</file>
         <file>images/scanled.png</file>
         <file>images/rulers.png</file>
+        <file>images/redCircle.png</file>
     </qresource>
 </RCC>

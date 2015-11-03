@@ -147,7 +147,7 @@ struct ZXComp {
 		unsigned char vdos;
 	} tsconf;
 	struct {
-		unsigned trig7E:1;
+//		unsigned trig7E:1;
 		unsigned char p7E;		// color num (if trig7E=0)
 	} profi;
 

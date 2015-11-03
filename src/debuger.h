@@ -97,6 +97,8 @@ class DebugWin : public QDialog {
 		void fillFDC();
 		void fillRZX();
 
+		void fillBrkTable();
+
 		unsigned short getPrevAdr(unsigned short);
 		void scrollDown();
 		void scrollUp();
@@ -111,6 +113,7 @@ class DebugWin : public QDialog {
 
 		void putBreakPoint();
 		void chaBreakPoint();
+		void goToBrk(QModelIndex);
 
 		void doOpenDump();
 		void chDumpFile();

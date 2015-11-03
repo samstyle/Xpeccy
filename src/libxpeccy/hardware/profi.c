@@ -174,5 +174,4 @@ unsigned char prfIn(ZXComp* comp, unsigned short port, int dos) {
 }
 
 void prfReset(ZXComp* comp) {
-	comp->profi.trig7E = 0;
 }

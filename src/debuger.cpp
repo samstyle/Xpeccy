@@ -17,6 +17,7 @@ void DebugWin::start(ZXComp* c) {
 		disasmAdr = comp->cpu->pc;
 		fillAll();
 	}
+	fillBrkTable();
 	updateScreen();
 	vidDarkTail(comp->vid);
 	move(winPos);
@@ -75,6 +76,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.dasmTable->setItemDelegateForColumn(1, new xItemDelegate(XTYPE_DUMP));
 	connect(ui.dasmTable,SIGNAL(cellChanged(int,int)),this,SLOT(dasmEdited(int,int)));
 	connect(ui.dasmTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
+	ui.dasmTable->setFixedHeight(ui.dasmTable->rowCount() * 17 + 8);
 // dump table
 	for (row = 0; row < ui.dumpTable->rowCount(); row++) {
 		for (col = 0; col < ui.dumpTable->columnCount(); col++) {
@@ -91,6 +93,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.dumpTable->setItemDelegateForColumn(9, new xItemDelegate(XTYPE_NONE));
 	connect(ui.dumpTable,SIGNAL(cellChanged(int,int)),this,SLOT(dumpEdited(int,int)));
 	connect(ui.dumpTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
+	ui.dumpTable->setFixedHeight(ui.dumpTable->rowCount() * 17 + 8);
 // registers
 	connect(ui.editAF, SIGNAL(textChanged(QString)), this, SLOT(setZ80()));
 	connect(ui.editBC, SIGNAL(textChanged(QString)), this, SLOT(setZ80()));
@@ -115,6 +118,9 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.sbScrBank,SIGNAL(valueChanged(int)),this,SLOT(updateScreen()));
 	connect(ui.cbScrAlt,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
 	connect(ui.cbScrAtr,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
+	ui.tbAddBrk->setEnabled(false);
+	ui.tbDelBrk->setEnabled(false);
+	connect(ui.bpList,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(goToBrk(QModelIndex)));
 
 	setFixedSize(size());
 	active = false;
@@ -206,6 +212,7 @@ void DebugWin::switchBP(unsigned char mask) {
 	}
 	fillDisasm();
 	fillDump();
+	fillBrkTable();
 }
 
 void DebugWin::keyPressEvent(QKeyEvent* ev) {
@@ -865,6 +872,7 @@ void DebugWin::chaBreakPoint() {
 	*ptr = flag;
 	fillDisasm();
 	fillDump();
+	fillBrkTable();
 }
 
 // memDump
@@ -1025,18 +1033,103 @@ void DebugWin::updateScreen() {
 
 // xtablewidget
 
-xTableWidget::xTableWidget(QWidget* par):QTableWidget(par) {}
+xTableWidget::xTableWidget(QWidget* par):QTableWidget(par) {
+	setEditTriggers(QAbstractItemView::AnyKeyPressed);
+}
 
 void xTableWidget::keyPressEvent(QKeyEvent *ev) {
 	switch (ev->key()) {
-		case Qt::Key_Up:
-		case Qt::Key_Down:
-		case Qt::Key_Left:
-		case Qt::Key_Right:
-			QTableWidget::keyPressEvent(ev);
+		case Qt::Key_Home:
+		case Qt::Key_F2:
+			ev->ignore();
 			break;
 		default:
-			parent()->event(ev);
-			break;
+			QTableWidget::keyPressEvent(ev);
+	}
+}
+
+// breakpoints
+
+struct bPoint {
+	unsigned rom:1;
+	int bank;
+	int adr;
+	int flags;
+};
+
+void DebugWin::fillBrkTable() {
+	QList<bPoint> list;
+	bPoint bp;
+	int adr;
+	for (adr = 0; adr < 0x400000; adr++) {
+		if (comp->brkRamMap[adr] & MEM_BRK_ANY) {
+			bp.rom = 0;
+			bp.bank = (adr >> 14);
+			bp.adr = adr & 0x3fff;
+			bp.flags = comp->brkRamMap[adr] & 0xff;
+			list.append(bp);
+		}
+		if (adr < 0x80000) {
+			if (comp->brkRomMap[adr] & MEM_BRK_ANY) {
+				bp.rom = 1;
+				bp.bank = (adr >> 14);
+				bp.adr = adr & 0x3fff;
+				bp.flags = comp->brkRomMap[adr] & 0xff;
+				list.append(bp);
+			}
+		}
+	}
+	ui.bpList->clear();
+	ui.bpList->setColumnCount(6);
+	ui.bpList->setRowCount(list.size());
+	ui.bpList->setColumnWidth(0,30);
+	ui.bpList->setColumnWidth(1,50);
+	ui.bpList->setColumnWidth(2,80);
+	ui.bpList->setColumnWidth(3,30);
+	ui.bpList->setColumnWidth(4,30);
+	ui.bpList->setColumnWidth(5,30);
+	ui.bpList->setHorizontalHeaderLabels(QStringList() << "ROM" << "Page" << "Addr" << "Fe" << "Rd" << "Wr");
+	QTableWidgetItem* itm;
+	adr = 0;
+	foreach(bp, list) {
+		itm = new QTableWidgetItem();
+		if (bp.rom) itm->setIcon(QIcon(":/images/checkbox.png"));
+		ui.bpList->setItem(adr, 0, itm);
+		itm = new QTableWidgetItem(tr("0x%0").arg(gethexbyte(bp.bank)));
+		ui.bpList->setItem(adr, 1, itm);
+		itm = new QTableWidgetItem(tr("0x%0").arg(gethexword(bp.adr)));
+		ui.bpList->setItem(adr, 2, itm);
+		itm = new QTableWidgetItem();
+		if (bp.flags & MEM_BRK_FETCH) itm->setIcon(QIcon(":/images/checkbox.png"));
+		ui.bpList->setItem(adr, 3, itm);
+		itm = new QTableWidgetItem();
+		if (bp.flags & MEM_BRK_RD) itm->setIcon(QIcon(":/images/checkbox.png"));
+		ui.bpList->setItem(adr, 4, itm);
+		itm = new QTableWidgetItem();
+		if (bp.flags & MEM_BRK_WR) itm->setIcon(QIcon(":/images/checkbox.png"));
+		ui.bpList->setItem(adr, 5, itm);
+		adr++;
+	}
+}
+
+void DebugWin::goToBrk(QModelIndex idx) {
+	int adr = ui.bpList->item(idx.row(), 2)->text().toInt(NULL,16);
+	int bnk = ui.bpList->item(idx.row(), 1)->text().toInt(NULL,16);
+	int rom = ui.bpList->item(idx.row(), 0)->icon().isNull() ? 0 : 1;
+	int madr = -1;
+	MemPage* pg;
+	for (int i = 0; i < 4; i++) {
+		pg = comp->mem->pt[i];
+		if (pg->num == bnk) {
+			if ((pg->type == MEM_RAM) && !rom) {
+				madr = (i << 14) | adr;
+			} else if ((pg->type == MEM_ROM) && rom) {
+				madr = (i << 14) | adr;
+			}
+		}
+	}
+	if (madr > 0) {
+		disasmAdr = madr;
+		fillDisasm();
 	}
 }
