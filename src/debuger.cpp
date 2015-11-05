@@ -1057,6 +1057,12 @@ struct bPoint {
 	int flags;
 };
 
+enum {
+	roleRom = Qt::UserRole,
+	roleBank,
+	roleAdr
+};
+
 void DebugWin::fillBrkTable() {
 	QList<bPoint> list;
 	bPoint bp;
@@ -1080,42 +1086,38 @@ void DebugWin::fillBrkTable() {
 		}
 	}
 	ui.bpList->clear();
-	ui.bpList->setColumnCount(6);
+	ui.bpList->setColumnCount(4);
 	ui.bpList->setRowCount(list.size());
-	ui.bpList->setColumnWidth(0,30);
-	ui.bpList->setColumnWidth(1,50);
-	ui.bpList->setColumnWidth(2,80);
-	ui.bpList->setColumnWidth(3,30);
-	ui.bpList->setColumnWidth(4,30);
-	ui.bpList->setColumnWidth(5,30);
-	ui.bpList->setHorizontalHeaderLabels(QStringList() << "ROM" << "Page" << "Addr" << "Fe" << "Rd" << "Wr");
+	ui.bpList->setColumnWidth(0,40);
+	ui.bpList->setColumnWidth(1,40);
+	ui.bpList->setColumnWidth(2,40);
+	ui.bpList->setHorizontalHeaderLabels(QStringList() << "Fe" << "Rd" << "Wr" << "Addr");
 	QTableWidgetItem* itm;
 	adr = 0;
 	foreach(bp, list) {
 		itm = new QTableWidgetItem();
-		if (bp.rom) itm->setIcon(QIcon(":/images/checkbox.png"));
-		ui.bpList->setItem(adr, 0, itm);
-		itm = new QTableWidgetItem(tr("0x%0").arg(gethexbyte(bp.bank)));
-		ui.bpList->setItem(adr, 1, itm);
-		itm = new QTableWidgetItem(tr("0x%0").arg(gethexword(bp.adr)));
-		ui.bpList->setItem(adr, 2, itm);
-		itm = new QTableWidgetItem();
+		itm->setData(roleRom, bp.rom);
+		itm->setData(roleBank, bp.bank);
+		itm->setData(roleAdr, bp.adr);
 		if (bp.flags & MEM_BRK_FETCH) itm->setIcon(QIcon(":/images/checkbox.png"));
-		ui.bpList->setItem(adr, 3, itm);
+		ui.bpList->setItem(adr, 0, itm);
 		itm = new QTableWidgetItem();
 		if (bp.flags & MEM_BRK_RD) itm->setIcon(QIcon(":/images/checkbox.png"));
-		ui.bpList->setItem(adr, 4, itm);
+		ui.bpList->setItem(adr, 1, itm);
 		itm = new QTableWidgetItem();
 		if (bp.flags & MEM_BRK_WR) itm->setIcon(QIcon(":/images/checkbox.png"));
-		ui.bpList->setItem(adr, 5, itm);
+		ui.bpList->setItem(adr, 2, itm);
+		itm = new QTableWidgetItem(tr(bp.rom ? "ROM:%0:%1" : "RAM:%0:%1").arg(gethexbyte(bp.bank)).arg(gethexword(bp.adr)));
+		ui.bpList->setItem(adr, 3, itm);
 		adr++;
 	}
 }
 
 void DebugWin::goToBrk(QModelIndex idx) {
-	int adr = ui.bpList->item(idx.row(), 2)->text().toInt(NULL,16);
-	int bnk = ui.bpList->item(idx.row(), 1)->text().toInt(NULL,16);
-	int rom = ui.bpList->item(idx.row(), 0)->icon().isNull() ? 0 : 1;
+	QTableWidgetItem* itm = ui.bpList->item(idx.row(),0);
+	int rom = itm->data(roleRom).toInt();
+	int adr = itm->data(roleAdr).toInt();
+	int bnk = itm->data(roleBank).toInt();
 	int madr = -1;
 	MemPage* pg;
 	for (int i = 0; i < 4; i++) {
