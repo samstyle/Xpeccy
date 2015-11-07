@@ -345,9 +345,10 @@ int prfLoad(std::string nm) {
 					if (pnam == "current") prf->hwName = pval;
 					if (pnam == "cpu.frq") {
 						tmp2 = atoi(pval.c_str());
-						if (tmp2 < 2) tmp2 = 2;
-						if (tmp2 > 28) tmp2 = 28;
-						zxSetFrq(comp, tmp2 / 2.0);
+						if ((tmp2 > 1) && (tmp2 < 29)) tmp2 *= 5e5;	// old 2..28 -> 500000..14000000
+						if (tmp2 < 1e6) tmp2 = 1e6;
+						if (tmp2 > 14e6) tmp2 = 14e6;
+						zxSetFrq(comp, tmp2 / 1e6);
 					}
 					if (pnam == "memory") {
 						memsz = atoi(pval.c_str());
@@ -459,7 +460,7 @@ int prfSave(std::string nm) {
 	fprintf(file, "[MACHINE]\n\n");
 	fprintf(file, "current = %s\n", prf->hwName.c_str());
 	fprintf(file, "memory = %i\n", comp->mem->memSize);
-	fprintf(file, "cpu.frq = %i\n", int(comp->cpuFrq * 2));
+	fprintf(file, "cpu.frq = %i\n", int(comp->cpuFrq * 1e6));
 	fprintf(file, "scrp.wait = %s\n", YESNO(comp->scrpWait));
 	fprintf(file, "contio = %s\n", YESNO(comp->contIO));
 	fprintf(file, "contmem = %s\n", YESNO(comp->contMem));

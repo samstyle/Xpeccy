@@ -81,18 +81,11 @@
           <layout class="QHBoxLayout" name="horizontalLayout_9">
            <item>
             <widget class="QGroupBox" name="archArchGBox">
-             <layout class="QGridLayout" name="gridLayout">
+             <layout class="QGridLayout" name="gridLayout" columnstretch="0,10,0">
               <item row="2" column="0">
                <widget class="QLabel" name="label_42">
                 <property name="text">
                  <string>Reset to</string>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="2">
-               <widget class="QLabel" name="cpufrqlab">
-                <property name="text">
-                 <string>MHz</string>
                 </property>
                </widget>
               </item>
@@ -103,28 +96,6 @@
                <widget class="QLabel" name="label_22">
                 <property name="text">
                  <string>CPU freq</string>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="1">
-               <widget class="QSlider" name="cpufrq">
-                <property name="minimum">
-                 <number>2</number>
-                </property>
-                <property name="maximum">
-                 <number>28</number>
-                </property>
-                <property name="value">
-                 <number>7</number>
-                </property>
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="tickPosition">
-                 <enum>QSlider::TicksBelow</enum>
-                </property>
-                <property name="tickInterval">
-                 <number>2</number>
                 </property>
                </widget>
               </item>
@@ -200,6 +171,28 @@
                  </size>
                 </property>
                </spacer>
+              </item>
+              <item row="3" column="1">
+               <widget class="QDoubleSpinBox" name="sbFreq">
+                <property name="suffix">
+                 <string> MHz</string>
+                </property>
+                <property name="decimals">
+                 <number>3</number>
+                </property>
+                <property name="minimum">
+                 <double>0.500000000000000</double>
+                </property>
+                <property name="maximum">
+                 <double>14.000000000000000</double>
+                </property>
+                <property name="singleStep">
+                 <double>0.050000000000000</double>
+                </property>
+                <property name="value">
+                 <double>3.500000000000000</double>
+                </property>
+               </widget>
               </item>
              </layout>
             </widget>
@@ -1005,7 +998,7 @@
               </size>
              </property>
              <property name="title">
-              <string>General Sound</string>
+              <string>Genera&amp;l Sound</string>
              </property>
              <property name="checkable">
               <bool>true</bool>

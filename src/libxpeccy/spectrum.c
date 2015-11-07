@@ -198,7 +198,7 @@ ZXComp* zxCreate() {
 	comp->evo.evo4F = 0;
 	comp->evo.evo6F = 0;
 	comp->evo.evo8F = 0;
-//			0   1   2   3   4   5   6   7   8   9   A   B   C    D    E    F
+//					0   1   2   3   4   5   6   7   8   9   A   B   C    D    E    F
 	char blnm[] = {'x','B','o','o','t',000,000,000,000,000,000,000,0x38,0x98,0x00,0x00};
 	char bcnm[] = {'x','E','v','o',' ','0','.','5','2',000,000,000,0x89,0x99,0x00,0x00};
 	memcpy(comp->evo.blVer,blnm,16);
@@ -289,7 +289,7 @@ void zxSetHardware(ZXComp* comp, const char* name) {
 	comp->vid->istsconf = (hw->type == HW_TSLAB) ? 1 : 0;
 }
 
-void zxSetFrq(ZXComp* comp, float frq) {
+void zxSetFrq(ZXComp* comp, double frq) {
 	comp->cpuFrq = frq;
 	comp->nsPerTick = 280 * 3.5 / frq;	// 280 ns per tick @ 3.5 MHz
 }

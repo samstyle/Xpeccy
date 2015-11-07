@@ -156,7 +156,8 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 // machine
 	connect(ui.rsetbox,SIGNAL(currentIndexChanged(int)),this,SLOT(buildrsetlist()));
 	connect(ui.machbox,SIGNAL(currentIndexChanged(int)),this,SLOT(setmszbox(int)));
-	connect(ui.cpufrq,SIGNAL(valueChanged(int)),this,SLOT(updfrq()));
+	// connect(ui.cpufrq,SIGNAL(valueChanged(int)),this,SLOT(updfrq()));
+	// connect(ui.sbFreq,SIGNAL(valueChanged(double)),this,SLOT(updfrq2()));
 	connect(ui.rstab,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(editrset()));
 	connect(ui.addrset,SIGNAL(released()),this,SLOT(addNewRomset()));
 	connect(ui.rmrset,SIGNAL(released()),this,SLOT(rmRomset()));
@@ -294,7 +295,9 @@ void SetupWin::start(xProfile* p) {
 	setmszbox(ui.machbox->currentIndex());
 	ui.mszbox->setCurrentIndex(ui.mszbox->findData(comp->mem->memSize));
 	if (ui.mszbox->currentIndex() < 0) ui.mszbox->setCurrentIndex(ui.mszbox->count() - 1);
-	ui.cpufrq->setValue(comp->cpuFrq * 2); updfrq();
+	ui.sbFreq->setValue(comp->cpuFrq);
+	// ui.cpufrq->setValue(comp->cpuFrq * 1000000);
+	// updfrq();
 	ui.scrpwait->setChecked(comp->scrpWait);
 	ui.sysCmos->setChecked(conf.sysclock);
 // video
@@ -431,7 +434,7 @@ void SetupWin::apply() {
 	prfSetRomset(prof, prof->rsName);
 	comp->resbank = ui.resbox->itemData(ui.resbox->currentIndex()).toInt();
 	memSetSize(comp->mem,ui.mszbox->itemData(ui.mszbox->currentIndex()).toInt());
-	zxSetFrq(comp,ui.cpufrq->value() / 2.0);
+	zxSetFrq(comp, ui.sbFreq->value());
 	comp->scrpWait = ui.scrpwait->isChecked() ? 1 : 0;
 	if (comp->hw != oldmac) zxReset(comp,RES_DEFAULT);
 	conf.sysclock = ui.sysCmos->isChecked() ? 1 : 0;
@@ -1137,10 +1140,18 @@ void SetupWin::fillDiskCat() {
 
 // machine
 
+/*
 void SetupWin::updfrq() {
-	double f = ui.cpufrq->value() / 2.0;
-	ui.cpufrqlab->setText(QString::number(f,'f',2).append(" MHz"));
+	double f = ui.cpufrq->value() / 1e6;
+	ui.sbFreq->setValue(f);
+	// ui.cpufrqlab->setText(QString::number(f,'f',2).append(" MHz"));
 }
+
+void SetupWin::updfrq2() {
+	double f = ui.sbFreq->value();
+	ui.cpufrq->setValue(int(f * 1e6));
+}
+*/
 
 // video
 

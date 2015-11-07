@@ -66,7 +66,7 @@ struct ZXComp {
 	unsigned contMem:1;		// contended mem
 	unsigned contIO:1;		// contended IO
 
-	float cpuFrq;
+	double cpuFrq;
 	unsigned char intVector;
 
 	struct HardWare *hw;
@@ -164,7 +164,7 @@ ZXComp* zxCreate();
 void zxDestroy(ZXComp*);
 void zxReset(ZXComp*,int);
 int zxExec(ZXComp*);
-void zxSetFrq(ZXComp*,float);
+void zxSetFrq(ZXComp*,double);
 void zxSetLayout(ZXComp*, int, int, int, int, int, int, int, int, int);
 void zxSetHardware(ZXComp*,const char*);
 
