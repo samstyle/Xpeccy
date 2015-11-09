@@ -26,8 +26,8 @@ int loadHobeta(Floppy* flp,const char* name) {
 		err = ERR_NOTRD;
 	} else {
 		fread((char*)buf, 17, 1, file);		// header
-		memcpy((char*)&nfle,buf,13);
-		nfle.slen = buf[14];
+		memcpy((char*)&nfle,buf,14);
+		// nfle.slen = buf[14];
 		int len = nfle.slen << 8;
 		fread((char*)buf, len, 1, file);
 		if (diskCreateFile(flp, nfle, buf, len) != ERR_OK) {
@@ -46,8 +46,8 @@ int saveHobeta(TRFile dsc,char* data,const char* name) {
 	unsigned short crc;
 	unsigned char buf[17];			// header
 	memcpy((char*)buf,(char*)&dsc,13);
-	buf[13] = 0x00;
-	buf[14] = dsc.slen;
+	buf[13] = dsc.slen;
+	buf[14] = 0x00;
 	crc = ((105 + 257 * stdAccumulate(buf, 15, 0)) & 0xffff);
 	buf[15] = crc & 0xff;
 	buf[16] = ((crc & 0xff00) >> 8);
