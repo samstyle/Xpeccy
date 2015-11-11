@@ -309,7 +309,9 @@ int zxExec(ZXComp* comp) {
 
 	res4 = 0;
 	res2 = cpuExec(comp->cpu);
-
+// scorpion WAIT: add 1T to odd-T command
+	if (comp->scrpWait && (res2 & 1))
+		res2++;
 	vidSync(comp->vid,(res2 - res4 - 1) * comp->nsPerTick);
 	if (comp->padr) {
 		tapSync(comp->tape,comp->tapCount);
