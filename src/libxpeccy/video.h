@@ -61,8 +61,9 @@ struct Video {
 	unsigned char nextbrd;
 	unsigned char fcnt;
 	unsigned char atrbyte;
+	unsigned char scrimg[1024 * 1024 * 3];
 	unsigned char* scrptr;
-	unsigned char scrimg[1024 * 512 * 3];
+	unsigned char* linptr;
 	int x;
 	int y;
 	size_t frmsz;
@@ -102,7 +103,7 @@ struct Video {
 		VPAIR(T0YOffset,t0yh,t0yl);
 		VPAIR(T1XOffset,t1xh,t1xl);	// tile 1 offsets
 		VPAIR(T1YOffset,t1yh,t1yl);
-		unsigned char line[512];	// buffer for render sprites & tiles
+		unsigned char line[0x200];	// buffer for render sprites & tiles
 		unsigned char cram[0x200];	// pal
 		unsigned char sfile[0x200];	// sprites
 	} tsconf;

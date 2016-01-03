@@ -89,6 +89,7 @@ Video* vidCreate(Memory* me) {
 
 	// vid->scrimg = (unsigned char*)malloc(1024 * 1024 * 3);
 	vid->scrptr = vid->scrimg;
+	vid->linptr = vid->scrimg;
 
 	return vid;
 }
@@ -186,7 +187,6 @@ void vidWait(Video* vid) {
 	xscr = vid->x - vid->bord.h; // + 2;
 	if (xscr < 0) return;
 	if (xscr > 253) return;
-//	printf("X:%i, brd:%i, wait:%i\n",vid->x,vid->bord.h,contTabA[xscr & 0x0f]);
 	vidSync(vid, contTabA[xscr & 0x0f] * NS_PER_DOT);
 }
 
@@ -428,6 +428,7 @@ void vidDrawATMhwmc(Video* vid) {
 void vidTSPut(Video* vid, unsigned char* ptr) {
 	int ofs = 0;
 	adr = vid->tsconf.xPos - vid->lcut.h;
+	// printf("%i - %i = %i\n",vid->tsconf.xPos, vid->lcut.h, adr);
 	if (adr > 0) {
 		ptr += adr * 6; // ((vidFlag & VF_DOUBLE) ? 6 : 3);
 	}
@@ -801,10 +802,10 @@ void vidSetMode(Video* vid, int mode) {
 		do {
 			if ((vidModeTab[i].id == VID_UNKNOWN) || (vidModeTab[i].id == mode)) {
 				vid->callback = vidModeTab[i].callback;
-				i = -2;
+				break;
 			}
 			i++;
-		} while (i > 0);
+		} while (1);
 	}
 }
 
@@ -826,7 +827,8 @@ void vidSync(Video* vid, int ns) {
 			vid->nextrow = 1;
 			vid->intFRAME = 0;
 			if (vid->istsconf) {
-				vidTSRender(vid,vid->scrptr - vid->vsze.h * 6);
+				vidTSRender(vid, vid->linptr);
+				vid->linptr = vid->scrptr;
 				if (vid->intMask & 0x02) {
 						vid->intLINE = 1;
 				}
@@ -834,6 +836,7 @@ void vidSync(Video* vid, int ns) {
 			if (++vid->y >= vid->full.v) {
 				vid->y = 0;
 				vid->scrptr = vid->scrimg;
+				vid->linptr = vid->scrimg;
 				vid->fcnt++;
 				vid->flash = vid->fcnt & 0x20;
 				vid->tsconf.scrLine = vid->tsconf.yOffset;

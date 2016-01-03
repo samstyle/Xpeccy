@@ -113,8 +113,8 @@ void tslUpdatePorts(ZXComp* comp) {
 	unsigned char val = comp->tsconf.p00af;
 	comp->vid->tsconf.xSize = tslXRes[(val & 0xc0) >> 6];
 	comp->vid->tsconf.ySize = tslYRes[(val & 0xc0) >> 6];
-	comp->vid->tsconf.xPos = comp->vid->sync.h + ((comp->vid->full.h - comp->vid->sync.h - comp->vid->tsconf.xSize) >> 1);
-	comp->vid->tsconf.yPos = comp->vid->sync.v + ((comp->vid->full.v - comp->vid->sync.v - comp->vid->tsconf.ySize) >> 1);
+	comp->vid->tsconf.xPos = comp->vid->sync.h + ((comp->vid->full.h - comp->vid->sync.h - comp->vid->tsconf.xSize) / 2);
+	comp->vid->tsconf.yPos = comp->vid->sync.v + ((comp->vid->full.v - comp->vid->sync.v - comp->vid->tsconf.ySize) / 2);
 	switch(val & 3) {
 		case 0: vidSetMode(comp->vid,VID_TSL_NORMAL); break;
 		case 1: vidSetMode(comp->vid,VID_TSL_16); break;
@@ -126,9 +126,9 @@ void tslUpdatePorts(ZXComp* comp) {
 
 	comp->vid->tsconf.vidPage = comp->tsconf.p01af;
 	comp->vid->tsconf.soxl = comp->tsconf.p02af;
-	comp->vid->tsconf.soxh = comp->tsconf.p03af;
+	comp->vid->tsconf.soxh = comp->tsconf.p03af & 1;
 	comp->vid->tsconf.soyl = comp->tsconf.p04af;
-	comp->vid->tsconf.soyh = comp->tsconf.p05af;
+	comp->vid->tsconf.soyh = comp->tsconf.p05af & 1;
 	val = comp->tsconf.p07af;
 	comp->vid->tsconf.scrPal = (val & 0x0f) << 4;
 	comp->vid->tsconf.T0Pal76 = (val & 0x30) << 2;
