@@ -11,7 +11,7 @@
 #include "xgui/xgui.h"
 #include "filer.h"
 
-void DebugWin::start(ZXComp* c) {
+void DebugWin::start(Computer* c) {
 	comp = c;
 	if (!fillAll()) {
 		disasmAdr = comp->cpu->pc;
@@ -193,7 +193,7 @@ void DebugWin::scrollDown() {
 
 void DebugWin::doStep() {
 	tCount = comp->tickCount;
-	zxExec(comp);
+	compExec(comp);
 	if (!fillAll()) {
 		disasmAdr = comp->cpu->pc;
 		fillDisasm();
@@ -347,7 +347,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					stop();
 					break;
 				case Qt::Key_F12:
-					zxReset(comp, RES_DEFAULT);
+					compReset(comp, RES_DEFAULT);
 					if (!fillAll()) {
 						disasmAdr = comp->cpu->pc;
 						fillDisasm();
@@ -390,7 +390,7 @@ bool DebugWin::fillAll() {
 
 // rzx
 
-void dbgSetRzxIO(QLabel* lab, ZXComp* comp, int pos) {
+void dbgSetRzxIO(QLabel* lab, Computer* comp, int pos) {
 	if (pos < comp->rzx.data[comp->rzx.frame].frmSize) {
 		lab->setText(gethexbyte(comp->rzx.data[comp->rzx.frame].frmData[pos]));
 	} else {
@@ -556,7 +556,7 @@ void DebugWin::fillMem() {
 // disasm table
 
 unsigned char rdbyte(unsigned short adr, void* ptr) {
-	return memRd(((ZXComp*)ptr)->mem,adr);
+	return memRd(((Computer*)ptr)->mem,adr);
 }
 
 #define DASMROW 26
@@ -572,7 +572,7 @@ struct DasmRow {
 	QString com;
 };
 
-int checkCond(ZXComp* comp, int num) {
+int checkCond(Computer* comp, int num) {
 	int res = 0;
 	unsigned char flg = comp->cpu->f;
 	switch (num) {
@@ -588,7 +588,7 @@ int checkCond(ZXComp* comp, int num) {
 	return res;
 }
 
-DasmRow getDisasm(ZXComp* comp, unsigned short& adr) {
+DasmRow getDisasm(Computer* comp, unsigned short& adr) {
 	DasmRow drow;
 	drow.adr = adr;
 	drow.ispc = (comp->cpu->pc == adr) ? 1 : 0;	// check if this is PC

@@ -9,7 +9,7 @@ unsigned char plus2Lays[4][4] = {
 	{4,7,6,3}
 };
 
-void pl2MapMem(ZXComp* comp) {
+void pl2MapMem(Computer* comp) {
 	if (comp->p1FFD & 1) {
 		// extend mem mode
 		int rp = ((comp->p1FFD & 0x06) >> 1);	// b1,2 of 1ffd
@@ -37,12 +37,12 @@ void p2OutFE(ZXComp* comp, unsigned short port, unsigned char val) {
 }
 */
 
-void p2Out1FFD(ZXComp* comp, unsigned short port, unsigned char val) {
+void p2Out1FFD(Computer* comp, unsigned short port, unsigned char val) {
 	comp->p1FFD = val;
 	pl2MapMem(comp);
 }
 
-void p2Out7FFD(ZXComp* comp, unsigned short port, unsigned char val) {
+void p2Out7FFD(Computer* comp, unsigned short port, unsigned char val) {
 	if (comp->p7FFD & 0x20) return;
 	comp->rom = (val & 0x10) ? 1 : 0;
 	comp->p7FFD = val;
@@ -59,10 +59,10 @@ xPort p2PortMap[] = {
 	{0x0000,0x0000,2,2,2,NULL,	NULL}
 };
 
-void pl2Out(ZXComp* comp, unsigned short port, unsigned char val, int dos) {
+void pl2Out(Computer* comp, unsigned short port, unsigned char val, int dos) {
 	hwOut(p2PortMap, comp, port, val, 0);
 }
 
-unsigned char pl2In(ZXComp* comp, unsigned short port, int bdiz) {
+unsigned char pl2In(Computer* comp, unsigned short port, int bdiz) {
 	return hwIn(p2PortMap, comp, port, 0);
 }

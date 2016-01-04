@@ -19,7 +19,7 @@ class SetupWin : public QDialog {
 		SetupWin(QWidget*);
 	private:
 		xProfile* prof;
-		ZXComp* comp;
+		Computer* comp;
 
 		Ui::SetupWin ui;
 		Ui::UmaDial uia;

@@ -1,6 +1,6 @@
 #include "../spectrum.h"
 
-void p1mMapMem(ZXComp* comp) {
+void p1mMapMem(Computer* comp) {
 	if (comp->pEFF7 & 8) {
 		memSetBank(comp->mem,MEM_BANK0,MEM_RAM,0);
 	} else {
@@ -11,11 +11,11 @@ void p1mMapMem(ZXComp* comp) {
 
 // in
 
-unsigned char p1mIn1F(ZXComp* comp, unsigned short port) {
+unsigned char p1mIn1F(Computer* comp, unsigned short port) {
 	return joyInput(comp->joy);
 }
 
-unsigned char p1mInBFF7(ZXComp* comp, unsigned short port) {
+unsigned char p1mInBFF7(Computer* comp, unsigned short port) {
 	return (comp->pEFF7 & 0x80) ? cmsRd(comp) : 0xff;
 }
 
@@ -30,7 +30,7 @@ void p1mOutFE(ZXComp* comp, unsigned short port, unsigned char val) {
 }
 */
 
-void p1mOut7FFD(ZXComp* comp, unsigned short port, unsigned char val) {
+void p1mOut7FFD(Computer* comp, unsigned short port, unsigned char val) {
 	if ((comp->pEFF7 & 4) && (comp->p7FFD & 0x20)) return;
 	comp->rom = (val & 0x10) ? 1 : 0;
 	comp->p7FFD = val;
@@ -38,18 +38,18 @@ void p1mOut7FFD(ZXComp* comp, unsigned short port, unsigned char val) {
 	p1mMapMem(comp);
 }
 
-void p1mOutBFF7(ZXComp* comp, unsigned short port, unsigned char val) {
+void p1mOutBFF7(Computer* comp, unsigned short port, unsigned char val) {
 	if (comp->pEFF7 & 0x80) cmsWr(comp,val);
 }
 
-void p1mOutDFF7(ZXComp* comp, unsigned short port, unsigned char val) {
+void p1mOutDFF7(Computer* comp, unsigned short port, unsigned char val) {
 	if (comp->pEFF7 & 0x80) comp->cmos.adr = val;
 }
 
-void p1mOutEFF7(ZXComp* comp, unsigned short port, unsigned char val) {
+void p1mOutEFF7(Computer* comp, unsigned short port, unsigned char val) {
 	comp->pEFF7 = val;
 	vidSetMode(comp->vid,(val & 0x01) ? VID_ALCO : VID_NORMAL);
-	zxSetFrq(comp, (val & 0x10) ? 7.0 : 3.5);
+	compSetFrq(comp, (val & 0x10) ? 7.0 : 3.5);
 	p1mMapMem(comp);
 }
 
@@ -68,12 +68,12 @@ xPort p1mPortMap[] = {
 	{0x0000,0x0000,2,2,2,NULL,	NULL}
 };
 
-void p1mOut(ZXComp* comp, unsigned short port, unsigned char val, int dos) {
+void p1mOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
 	difOut(comp->dif, port, val, dos);
 	hwOut(p1mPortMap, comp, port, val, dos);
 }
 
-unsigned char p1mIn(ZXComp* comp, unsigned short port, int dos) {
+unsigned char p1mIn(Computer* comp, unsigned short port, int dos) {
 	unsigned char res = 0xff;
 	if (difIn(comp->dif, port, &res, dos)) return res;
 	res = hwIn(p1mPortMap, comp, port, dos);

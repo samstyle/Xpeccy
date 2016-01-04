@@ -114,19 +114,19 @@ unsigned int swap32(unsigned int);
 
 // rzx
 
-int loadRZX(ZXComp*,const char*);
-void rzxLoadFrame(ZXComp*);
+int loadRZX(Computer*,const char*);
+void rzxLoadFrame(Computer*);
 
 // memory (snapshot)
 
-int loadDUMP(ZXComp*, const char*, int);
+int loadDUMP(Computer*, const char*, int);
 
-int loadZ80(ZXComp*,const char*);
+int loadZ80(Computer*,const char*);
 
-int loadSNA(ZXComp*,const char*);
-int saveSNA(ZXComp*, const char*, int);
+int loadSNA(Computer*,const char*);
+int saveSNA(Computer*, const char*, int);
 
-int loadSPG(ZXComp*,const char*);
+int loadSPG(Computer*,const char*);
 
 // tape
 

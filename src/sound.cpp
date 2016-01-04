@@ -53,7 +53,7 @@ OutSys* findOutSys(const char*);
 // output
 
 // return 1 when buffer is full
-int sndSync(ZXComp* comp, int fast) {
+int sndSync(Computer* comp, int fast) {
 	tapSync(comp->tape,comp->tapCount);
 	comp->tapCount = 0;
 	gsSync(comp->gs);

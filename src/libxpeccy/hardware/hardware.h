@@ -20,6 +20,7 @@ extern "C" {
 #define	HW_PENTEVO	9
 #define	HW_TSLAB	10
 #define HW_PROFI	11
+#define HW_MSX		12
 // mem size
 #define	MEM_48	0
 #define	MEM_128	1
@@ -34,12 +35,12 @@ struct HardWare {
 	const char* optName;
 	int type;
 	int mask;		// mem size bits (b0:128, b1:256, b2:512, b3:1M, b4:2M, b5:4M); =0 for 48K
-	void (*mapMem)(ZXComp*);
-	void (*out)(ZXComp*,unsigned short,unsigned char,int);
-	unsigned char (*in)(ZXComp*,unsigned short,int);
-	unsigned char (*mrd)(ZXComp*,unsigned short,int);
-	void (*mwr)(ZXComp*,unsigned short,unsigned char);
-	void (*reset)(ZXComp*);
+	void (*mapMem)(Computer*);
+	void (*out)(Computer*,unsigned short,unsigned char,int);
+	unsigned char (*in)(Computer*,unsigned short,int);
+	unsigned char (*mrd)(Computer*,unsigned short,int);
+	void (*mwr)(Computer*,unsigned short,unsigned char);
+	void (*reset)(Computer*);
 };
 
 typedef struct {
@@ -48,102 +49,108 @@ typedef struct {
 	unsigned dos:2;		// 00:!dos only; 01:dos only; 1x:nevermind
 	unsigned rom:2;		// same: b4,7FFD
 	unsigned cpm:2;		// cpm mode (for profi)
-	unsigned char (*in)(ZXComp*, unsigned short);
-	void (*out)(ZXComp*, unsigned short, unsigned char);
+	unsigned char (*in)(Computer*, unsigned short);
+	void (*out)(Computer*, unsigned short, unsigned char);
 } xPort;
 
-unsigned char hwIn(xPort*, ZXComp*, unsigned short, int);
-void hwOut(xPort*, ZXComp*, unsigned short, unsigned char, int);
+unsigned char hwIn(xPort*, Computer*, unsigned short, int);
+void hwOut(xPort*, Computer*, unsigned short, unsigned char, int);
 
 typedef struct HardWare HardWare;
 extern HardWare hwTab[];
 
 HardWare* findHardware(const char*);
-unsigned char stdMRd(ZXComp*,unsigned short,int);
-void stdMWr(ZXComp*,unsigned short,unsigned char);
+unsigned char stdMRd(Computer*,unsigned short,int);
+void stdMWr(Computer*,unsigned short,unsigned char);
 
 // debug IO
 
-unsigned char brkIn(ZXComp*, unsigned short);
-void brkOut(ZXComp*, unsigned short, unsigned char);
+unsigned char brkIn(Computer*, unsigned short);
+void brkOut(Computer*, unsigned short, unsigned char);
 
-unsigned char dummyIn(ZXComp*, unsigned short);
-void dummyOut(ZXComp*, unsigned short, unsigned char);
+unsigned char dummyIn(Computer*, unsigned short);
+void dummyOut(Computer*, unsigned short, unsigned char);
 
 // common IO
 
-void xOutFE(ZXComp*, unsigned short, unsigned char);
-void xOutBFFD(ZXComp*, unsigned short, unsigned char);
-void xOutFFFD(ZXComp*, unsigned short, unsigned char);
+void xOutFE(Computer*, unsigned short, unsigned char);
+void xOutBFFD(Computer*, unsigned short, unsigned char);
+void xOutFFFD(Computer*, unsigned short, unsigned char);
 
-unsigned char xIn1F(ZXComp*, unsigned short);
-unsigned char xInFE(ZXComp*, unsigned short);
-unsigned char xInFFFD(ZXComp*, unsigned short);
-unsigned char xInFADF(ZXComp*, unsigned short);
-unsigned char xInFBDF(ZXComp*, unsigned short);
-unsigned char xInFFDF(ZXComp*, unsigned short);
+unsigned char xIn1F(Computer*, unsigned short);
+unsigned char xInFE(Computer*, unsigned short);
+unsigned char xInFFFD(Computer*, unsigned short);
+unsigned char xInFADF(Computer*, unsigned short);
+unsigned char xInFBDF(Computer*, unsigned short);
+unsigned char xInFFDF(Computer*, unsigned short);
 
 // zx48
-void speMapMem(ZXComp*);
-void speOut(ZXComp*,unsigned short,unsigned char,int);
-unsigned char speIn(ZXComp*,unsigned short,int);
-void speReset(ZXComp*);
+void speMapMem(Computer*);
+void speOut(Computer*,unsigned short,unsigned char,int);
+unsigned char speIn(Computer*,unsigned short,int);
+void speReset(Computer*);
 
 // pentagon
-void penMapMem(ZXComp*);
-void penOut(ZXComp*,unsigned short,unsigned char,int);
-unsigned char penIn(ZXComp*,unsigned short,int);
+void penMapMem(Computer*);
+void penOut(Computer*,unsigned short,unsigned char,int);
+unsigned char penIn(Computer*,unsigned short,int);
 
 // p1024sl
-void p1mMapMem(ZXComp*);
-void p1mOut(ZXComp*,unsigned short,unsigned char,int);
-unsigned char p1mIn(ZXComp*,unsigned short,int);
+void p1mMapMem(Computer*);
+void p1mOut(Computer*,unsigned short,unsigned char,int);
+unsigned char p1mIn(Computer*,unsigned short,int);
 
 // scorpion
-void scoMapMem(ZXComp*);
-void scoOut(ZXComp*,unsigned short,unsigned char,int);
-unsigned char scoIn(ZXComp*,unsigned short,int);
-unsigned char scoMRd(ZXComp*,unsigned short,int);
+void scoMapMem(Computer*);
+void scoOut(Computer*,unsigned short,unsigned char,int);
+unsigned char scoIn(Computer*,unsigned short,int);
+unsigned char scoMRd(Computer*,unsigned short,int);
 
 // plus 2
-void pl2MapMem(ZXComp*);
-void pl2Out(ZXComp*,unsigned short,unsigned char,int);
-unsigned char pl2In(ZXComp*,unsigned short,int);
+void pl2MapMem(Computer*);
+void pl2Out(Computer*,unsigned short,unsigned char,int);
+unsigned char pl2In(Computer*,unsigned short,int);
 
 // plus 3
 // void pl3MapMem(ZXComp*);		// = pl2MapMem
-void pl3Out(ZXComp*,unsigned short,unsigned char,int);
-unsigned char pl3In(ZXComp*,unsigned short,int);
+void pl3Out(Computer*,unsigned short,unsigned char,int);
+unsigned char pl3In(Computer*,unsigned short,int);
 
 // atm 2
-void atm2MapMem(ZXComp*);
-void atm2Out(ZXComp*,unsigned short,unsigned char,int);
-unsigned char atm2In(ZXComp*,unsigned short,int);
-void atm2Reset(ZXComp*);
+void atm2MapMem(Computer*);
+void atm2Out(Computer*,unsigned short,unsigned char,int);
+unsigned char atm2In(Computer*,unsigned short,int);
+void atm2Reset(Computer*);
 
 // pentevo
-void evoMapMem(ZXComp*);
-void evoOut(ZXComp*,unsigned short,unsigned char,int);
-unsigned char evoIn(ZXComp*,unsigned short,int);
-unsigned char evoMRd(ZXComp*,unsigned short,int);
-void evoMWr(ZXComp*,unsigned short,unsigned char);
-void evoReset(ZXComp*);
+void evoMapMem(Computer*);
+void evoOut(Computer*,unsigned short,unsigned char,int);
+unsigned char evoIn(Computer*,unsigned short,int);
+unsigned char evoMRd(Computer*,unsigned short,int);
+void evoMWr(Computer*,unsigned short,unsigned char);
+void evoReset(Computer*);
 
 // TSLab conf
-void tslMapMem(ZXComp*);
-void tslOut(ZXComp*,unsigned short,unsigned char,int);
-unsigned char tslIn(ZXComp*,unsigned short,int);
-unsigned char tslMRd(ZXComp*,unsigned short,int);
-void tslMWr(ZXComp*,unsigned short,unsigned char);
-void tslReset(ZXComp*);
-void tslUpdatePorts(ZXComp*);
+void tslMapMem(Computer*);
+void tslOut(Computer*,unsigned short,unsigned char,int);
+unsigned char tslIn(Computer*,unsigned short,int);
+unsigned char tslMRd(Computer*,unsigned short,int);
+void tslMWr(Computer*,unsigned short,unsigned char);
+void tslReset(Computer*);
+void tslUpdatePorts(Computer*);
 
 // Profi
-void prfMapMem(ZXComp*);
-void prfOut(ZXComp*,unsigned short,unsigned char,int);
-unsigned char prfIn(ZXComp*,unsigned short,int);
-void prfReset(ZXComp*);
-unsigned char prfMRd(ZXComp*,unsigned short,int);
+void prfMapMem(Computer*);
+void prfOut(Computer*,unsigned short,unsigned char,int);
+unsigned char prfIn(Computer*,unsigned short,int);
+void prfReset(Computer*);
+unsigned char prfMRd(Computer*,unsigned short,int);
+
+// msx
+void msxMapMem(Computer*);
+void msxOut(Computer*,unsigned short,unsigned char,int);
+unsigned char msxIn(Computer*,unsigned short,int);
+void msxReset(Computer*);
 
 #ifdef __cplusplus
 }

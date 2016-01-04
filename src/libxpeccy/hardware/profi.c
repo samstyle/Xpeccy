@@ -2,7 +2,7 @@
 #include <assert.h>
 
 // Profi ROM: EXT,DOS,128,48
-void prfMapMem(ZXComp* comp) {
+void prfMapMem(Computer* comp) {
 	if (comp->pDFFD & 0x10) {
 		memSetBank(comp->mem, MEM_BANK0, MEM_RAM, 0);
 	} else {
@@ -23,7 +23,7 @@ void prfMapMem(ZXComp* comp) {
 const unsigned char prfColB[4] = {0,80,160,255};
 const unsigned char prfColTab[8] = {0,40,80,120,160,200,228,255};
 
-void prfOut7E(ZXComp* comp, unsigned short port, unsigned char val) {
+void prfOut7E(Computer* comp, unsigned short port, unsigned char val) {
 	if (comp->pDFFD & 0x80) {
 		xColor col;
 		port ^= 0xff00;
@@ -35,7 +35,7 @@ void prfOut7E(ZXComp* comp, unsigned short port, unsigned char val) {
 	}
 }
 
-void prfOutFE(ZXComp* comp, unsigned short port, unsigned char val) {
+void prfOutFE(Computer* comp, unsigned short port, unsigned char val) {
 	xOutFE(comp, port, val);
 	if (comp->pDFFD & 0x80) {
 		comp->vid->nextbrd ^= 7;
@@ -43,23 +43,23 @@ void prfOutFE(ZXComp* comp, unsigned short port, unsigned char val) {
 	}
 }
 
-void prfOutAS(ZXComp* comp, unsigned short port, unsigned char val) {
+void prfOutAS(Computer* comp, unsigned short port, unsigned char val) {
 	comp->cmos.adr = val;
 }
 
-void prfOutDS(ZXComp* comp, unsigned short port, unsigned char val) {
+void prfOutDS(Computer* comp, unsigned short port, unsigned char val) {
 	cmsWr(comp, val);
 }
 
-void prfOutBDI(ZXComp* comp, unsigned short port, unsigned char val) {
+void prfOutBDI(Computer* comp, unsigned short port, unsigned char val) {
 	difOut(comp->dif, (port & 0x60) | 0x1f, val, 1);
 }
 
-void prfOutBDIFF(ZXComp* comp, unsigned short port, unsigned char val) {
+void prfOutBDIFF(Computer* comp, unsigned short port, unsigned char val) {
 	difOut(comp->dif, 0xff, val, 1);
 }
 
-void prfOut7FFD(ZXComp* comp, unsigned short port, unsigned char val) {
+void prfOut7FFD(Computer* comp, unsigned short port, unsigned char val) {
 	if ((~comp->pDFFD & 0x10) && (comp->p7FFD & 0x20)) return;	// 7FFD is blocked
 	comp->p7FFD = val;
 	comp->rom = (val & 0x10) ? 1 : 0;
@@ -68,7 +68,7 @@ void prfOut7FFD(ZXComp* comp, unsigned short port, unsigned char val) {
 //	printf("OUT 7FFD,%.2X\n",val);
 }
 
-void prfOutDFFD(ZXComp* comp, unsigned short port, unsigned char val) {
+void prfOutDFFD(Computer* comp, unsigned short port, unsigned char val) {
 	comp->pDFFD = val;
 	comp->cpm = (val & 0x20) ? 1 : 0;
 	vidSetMode(comp->vid, (val & 0x80) ? VID_PRF_MC : VID_NORMAL);
@@ -78,7 +78,7 @@ void prfOutDFFD(ZXComp* comp, unsigned short port, unsigned char val) {
 
 // in
 
-unsigned char prfInFE(ZXComp* comp, unsigned short port) {
+unsigned char prfInFE(Computer* comp, unsigned short port) {
 	unsigned char res = keyInput(comp->keyb, (port & 0xff00) >> 8, 0);
 	unsigned char ext = keyInput(comp->keyb, (port & 0xff00) >> 8, 1);
 	if (ext != 0x3f) res = ext;
@@ -86,30 +86,30 @@ unsigned char prfInFE(ZXComp* comp, unsigned short port) {
 	return res;
 }
 
-unsigned char prfInBDI(ZXComp* comp, unsigned short port) {
+unsigned char prfInBDI(Computer* comp, unsigned short port) {
 	unsigned char res = 0xff;
 	difIn(comp->dif, (port & 0x60) | 0x1f, &res, 1);
 	return res;
 }
 
-unsigned char prfInBDIFF(ZXComp* comp, unsigned short port) {
+unsigned char prfInBDIFF(Computer* comp, unsigned short port) {
 	unsigned char res = 0xff;
 	difIn(comp->dif, 0xff, &res, 1);
 	return res;
 }
 
-unsigned char prfInDS(ZXComp* comp, unsigned short port) {
+unsigned char prfInDS(Computer* comp, unsigned short port) {
 	return cmsRd(comp);
 }
 
 // debug
 
-unsigned char prfBrkIn(ZXComp* comp, unsigned short port) {
+unsigned char prfBrkIn(Computer* comp, unsigned short port) {
 	printf("CPM:%i, ROM:%i, DOS:%i\n", comp->cpm, comp->rom, comp->dos);
 	return brkIn(comp, port);
 }
 
-void prfBrkOut(ZXComp* comp, unsigned short port, unsigned char val) {
+void prfBrkOut(Computer* comp, unsigned short port, unsigned char val) {
 	printf("CPM:%i, ROM:%i, DOS:%i\n", comp->cpm, comp->rom, comp->dos);
 	brkOut(comp, port, val);
 }
@@ -161,17 +161,17 @@ xPort prfPortMap[] = {
 
 };
 
-void prfOut(ZXComp* comp, unsigned short port, unsigned char val, int dos) {
+void prfOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
 //	if (difOut(comp->dif, port, val, dos)) return;
 	hwOut(prfPortMap, comp, port, val, dos);
 }
 
-unsigned char prfIn(ZXComp* comp, unsigned short port, int dos) {
+unsigned char prfIn(Computer* comp, unsigned short port, int dos) {
 	unsigned char res = 0xff;
 //	if (difIn(comp->dif, port, &res, dos)) return res;
 	res = hwIn(prfPortMap, comp, port, dos);
 	return res;
 }
 
-void prfReset(ZXComp* comp) {
+void prfReset(Computer* comp) {
 }

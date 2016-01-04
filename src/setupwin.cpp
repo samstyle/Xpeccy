@@ -429,14 +429,14 @@ void SetupWin::apply() {
 // machine
 	HardWare *oldmac = comp->hw;
 	prof->hwName = std::string(ui.machbox->itemData(ui.machbox->currentIndex()).toString().toUtf8().data());
-	zxSetHardware(prof->zx,prof->hwName.c_str());
+	compSetHardware(prof->zx,prof->hwName.c_str());
 	prof->rsName = getRFText(ui.rsetbox); // std::string(ui.rsetbox->currentText().toUtf8().data());
 	prfSetRomset(prof, prof->rsName);
 	comp->resbank = ui.resbox->itemData(ui.resbox->currentIndex()).toInt();
 	memSetSize(comp->mem,ui.mszbox->itemData(ui.mszbox->currentIndex()).toInt());
-	zxSetFrq(comp, ui.sbFreq->value());
+	compSetFrq(comp, ui.sbFreq->value());
 	comp->scrpWait = ui.scrpwait->isChecked() ? 1 : 0;
-	if (comp->hw != oldmac) zxReset(comp,RES_DEFAULT);
+	if (comp->hw != oldmac) compReset(comp,RES_DEFAULT);
 	conf.sysclock = ui.sysCmos->isChecked() ? 1 : 0;
 // video
 	// conf.vid.doubleSize = ui.dszchk->isChecked() ? 1 : 0;

@@ -54,7 +54,15 @@ HardWare hwTab[] = {
 		MEM_512 | MEM_1M,
 		&prfMapMem,&prfOut,&prfIn,&stdMRd,&stdMWr,&prfReset
 	},
-	{NULL,NULL,0,0,NULL,NULL,NULL}
+#ifdef ISDEBUG
+	{
+		"MSX","MSX",
+		HW_MSX,
+		MEM_128,
+		&msxMapMem,&msxOut,&msxIn,&stdMRd,&stdMWr,&msxReset
+	},
+#endif
+	{NULL,NULL,0,0,NULL,NULL,NULL,NULL,NULL,NULL}
 };
 
 HardWare* findHardware(const char* name) {
@@ -74,7 +82,7 @@ unsigned char mbt;
 
 // mem
 
-unsigned char stdMRd(ZXComp* comp, unsigned short adr, int m1) {
+unsigned char stdMRd(Computer* comp, unsigned short adr, int m1) {
 	if (m1 && (comp->dif->type == DIF_BDI)) {
 		mbt = memGetBankPtr(comp->mem,adr)->type;
 		if (comp->dos && (mbt == MEM_RAM)) {
@@ -89,13 +97,13 @@ unsigned char stdMRd(ZXComp* comp, unsigned short adr, int m1) {
 	return memRd(comp->mem,adr);
 }
 
-void stdMWr(ZXComp *comp, unsigned short adr, unsigned char val) {
+void stdMWr(Computer *comp, unsigned short adr, unsigned char val) {
 	memWr(comp->mem,adr,val);
 }
 
 // io
 
-unsigned char hwIn(xPort* ptab, ZXComp* comp, unsigned short port, int dos) {
+unsigned char hwIn(xPort* ptab, Computer* comp, unsigned short port, int dos) {
 	unsigned char res = 0xff;
 	int idx = 0;
 	xPort* itm;
@@ -115,7 +123,7 @@ unsigned char hwIn(xPort* ptab, ZXComp* comp, unsigned short port, int dos) {
 	return res;
 }
 
-void hwOut(xPort* ptab, ZXComp* comp, unsigned short port, unsigned char val, int dos) {
+void hwOut(xPort* ptab, Computer* comp, unsigned short port, unsigned char val, int dos) {
 	int idx = 0;
 	xPort* itm;
 	int ctch = 0;

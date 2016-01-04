@@ -1,6 +1,6 @@
 #include "../spectrum.h"
 
-void penMapMem(ZXComp* comp) {
+void penMapMem(Computer* comp) {
 	memSetBank(comp->mem,MEM_BANK0,MEM_ROM,(comp->dos ? 2 : 0) | ((comp->rom) ? 1 : 0));
 	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,(comp->p7FFD & 7) | ((comp->p7FFD & 0xc0) >> 3));
 }
@@ -15,7 +15,7 @@ unsigned char penIn1F(ZXComp* comp, unsigned short port) {
 
 // out
 
-void penOut7FFD(ZXComp* comp, unsigned short port, unsigned char val) {
+void penOut7FFD(Computer* comp, unsigned short port, unsigned char val) {
 	if (comp->p7FFD & 0x20) return;
 	comp->rom = (val & 0x10) ? 1 : 0;
 	comp->p7FFD = val;
@@ -35,13 +35,13 @@ xPort penPortMap[] = {
 	{0x0000,0x0000,2,2,2,NULL,	NULL}			// end
 };
 
-void penOut(ZXComp* comp, unsigned short port, unsigned char val, int dos) {
+void penOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
 	difOut(comp->dif, port, val, dos);
 	sdrvOut(comp->sdrv,port & 0x00ff,val);
 	hwOut(penPortMap, comp, port, val, dos);
 }
 
-unsigned char penIn(ZXComp* comp, unsigned short port, int dos) {
+unsigned char penIn(Computer* comp, unsigned short port, int dos) {
 	unsigned char res = 0xff;
 	if (difIn(comp->dif, port, &res, dos)) return res;
 	res = hwIn(penPortMap, comp, port, dos);

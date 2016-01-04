@@ -50,7 +50,7 @@ class DebugWin : public QDialog {
 		DebugWin(QWidget*);
 		bool active;
 		void reject();
-		void start(ZXComp*);
+		void start(Computer*);
 		void stop();
 		bool fillAll();
 
@@ -65,7 +65,7 @@ class DebugWin : public QDialog {
 		QPoint winPos;
 		QImage scrImg;
 
-		ZXComp* comp;
+		Computer* comp;
 		bool block;
 		long tCount;
 

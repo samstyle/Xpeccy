@@ -28,7 +28,7 @@ typedef struct {
 	std::string layName;
 	std::string hwName;
 	std::string rsName;
-	ZXComp* zx;
+	Computer* zx;
 } xProfile;
 
 #define	DELP_ERR	-1
@@ -81,10 +81,9 @@ extern std::map<std::string, int> shotFormat;
 typedef struct {
 	const char* name;
 	signed int key;		// qint32, nativeScanCode()
-	unsigned char key1;	// key 1,2 -> Keyboard::map
-	unsigned char key2;
-	unsigned char key3;	// key 3,4 -> Keyboard::extMap (Profi)
-	unsigned char key4;
+	xKey zxKey;
+	xKey extKey;
+	xKey msxKey;
 	int keyCode;		// 0xXXYYZZ = ZZ,YY,XX in buffer (ZZ,YY,0xf0,XX if released)
 } keyEntry;
 

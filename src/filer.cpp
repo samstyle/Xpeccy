@@ -22,7 +22,7 @@ void initFileDialog(QWidget* par) {
 #endif
 }
 
-bool saveChangedDisk(ZXComp* comp,int id) {
+bool saveChangedDisk(Computer* comp,int id) {
 	bool res=true;
 	Floppy* flp = comp->dif->fdc->flop[id];
 	if (flp->changed) {
@@ -85,7 +85,7 @@ int getFileType(QString path) {
 	return FT_NONE;
 }
 
-void loadFile(ZXComp* comp,const char* name, int flags, int drv) {
+void loadFile(Computer* comp,const char* name, int flags, int drv) {
 	QString opath = QDialog::trUtf8(name);
 	filer->setDirectory(lastDir);
 	if (opath == "") {
@@ -179,7 +179,7 @@ void loadFile(ZXComp* comp,const char* name, int flags, int drv) {
 	}
 }
 
-bool saveFile(ZXComp* comp,const char* name,int flags,int drv) {
+bool saveFile(Computer* comp,const char* name,int flags,int drv) {
 	QString path(name);
 	QString filters = "";
 	if (flags & FT_DISK) {

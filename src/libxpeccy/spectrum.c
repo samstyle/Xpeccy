@@ -18,7 +18,7 @@ unsigned short pcreg;
 
 MemPage* mptr;
 
-void zxMemRW(ZXComp* comp, int adr) {
+void zxMemRW(Computer* comp, int adr) {
 	mptr = memGetBankPtr(comp->mem,adr);
 	if (comp->contMem && (mptr->type == MEM_RAM) && (mptr->num & 1)) {	// pages 1,3,5,7 (48K model)
 		res3 = comp->cpu->t;					// until RD/WR cycle
@@ -35,7 +35,7 @@ void zxMemRW(ZXComp* comp, int adr) {
 }
 
 unsigned char memrd(unsigned short adr,int m1,void* ptr) {
-	ZXComp* comp = (ZXComp*)ptr;
+	Computer* comp = (Computer*)ptr;
 	if (m1 && comp->rzxPlay) comp->rzx.fetches--;
 	zxMemRW(comp,adr);
 	if (*getBrkPtr(comp, adr) & MEM_BRK_RD) {
@@ -45,7 +45,7 @@ unsigned char memrd(unsigned short adr,int m1,void* ptr) {
 }
 
 void memwr(unsigned short adr, unsigned char val, void* ptr) {
-	ZXComp* comp = (ZXComp*)ptr;
+	Computer* comp = (Computer*)ptr;
 	zxMemRW(comp,adr);
 	if (*getBrkPtr(comp, adr) & MEM_BRK_WR) {
 		comp->brk = 1;
@@ -55,7 +55,7 @@ void memwr(unsigned short adr, unsigned char val, void* ptr) {
 
 int bdiz;
 
-inline void zxIORW(ZXComp* comp, int port) {
+inline void zxIORW(Computer* comp, int port) {
 	if (comp->contIO) {
 		if ((port & 0xc000) == 0x4000) {
 			if (port & 0x0001) {			// C:1 C:1 C:1 C:1
@@ -83,7 +83,7 @@ inline void zxIORW(ZXComp* comp, int port) {
 }
 
 unsigned char iord(unsigned short port, void* ptr) {
-	ZXComp* comp = (ZXComp*)ptr;
+	Computer* comp = (Computer*)ptr;
 	unsigned char res = 0xff;
 
 	res3 = comp->cpu->t + 3;
@@ -115,7 +115,7 @@ unsigned char iord(unsigned short port, void* ptr) {
 }
 
 void iowr(unsigned short port, unsigned char val, void* ptr) {
-	ZXComp* comp = (ZXComp*)ptr;
+	Computer* comp = (Computer*)ptr;
 	comp->padr = port;
 	comp->pval = val;
 // brk
@@ -124,10 +124,10 @@ void iowr(unsigned short port, unsigned char val, void* ptr) {
 }
 
 unsigned char intrq(void* ptr) {
-	return ((ZXComp*)ptr)->intVector;
+	return ((Computer*)ptr)->intVector;
 }
 
-void rzxFree(ZXComp* zx) {
+void rzxFree(Computer* zx) {
 	if (!zx->rzx.data) return;
 	for (int i = 0; i < zx->rzx.size; i++) {
 		if (zx->rzx.data[i].frmData)
@@ -138,14 +138,14 @@ void rzxFree(ZXComp* zx) {
 	zx->rzx.size = 0;
 }
 
-void rzxStop(ZXComp* zx) {
+void rzxStop(Computer* zx) {
 	rzxFree(zx);
 	zx->rzxPlay = 0;
 	if (zx->rzx.file) fclose(zx->rzx.file);
 	zx->rzx.file = NULL;
 }
 
-void zxInitPalete(ZXComp* comp) {
+void zxInitPalete(Computer* comp) {
 	for (int i = 0; i<16; i++) {
 		comp->vid->pal[i].b = (i & 1) ? ((i & 8) ? 0xff : 0xa0) : 0x00;
 		comp->vid->pal[i].r = (i & 2) ? ((i & 8) ? 0xff : 0xa0) : 0x00;
@@ -153,7 +153,7 @@ void zxInitPalete(ZXComp* comp) {
 	}
 }
 
-void zxSetUlaPalete(ZXComp* comp) {
+void zxSetUlaPalete(Computer* comp) {
 	for (int i = 0; i < 64; i++) {
 		comp->vid->pal[i].b = (comp->vid->ula->pal[i] & 0x03) << 6;		// Bb0 : must me Bbb
 		comp->vid->pal[i].r = (comp->vid->ula->pal[i] & 0x1c) << 3;
@@ -161,10 +161,10 @@ void zxSetUlaPalete(ZXComp* comp) {
 	}
 }
 
-ZXComp* zxCreate() {
-	ZXComp* comp = (ZXComp*)malloc(sizeof(ZXComp));
+Computer* compCreate() {
+	Computer* comp = (Computer*)malloc(sizeof(Computer));
 	void* ptr = (void*)comp;
-	memset(ptr,0,sizeof(ZXComp));
+	memset(ptr,0,sizeof(Computer));
 	memset(comp->brkIOMap, 0, 0x10000);
 	comp->resbank = RES_48;
 	comp->firstRun = 1;
@@ -172,7 +172,7 @@ ZXComp* zxCreate() {
 	comp->cpu = cpuCreate(&memrd,&memwr,&iord,&iowr,&intrq,ptr);
 	comp->mem = memCreate();
 	comp->vid = vidCreate(comp->mem);
-	zxSetFrq(comp,3.5);
+	compSetFrq(comp,3.5);
 
 	memset(comp->brkIOMap, 0, 0x10000);
 	memset(comp->brkRomMap, 0, 0x80000);
@@ -221,7 +221,7 @@ ZXComp* zxCreate() {
 	return comp;
 }
 
-void zxDestroy(ZXComp* comp) {
+void compDestroy(Computer* comp) {
 	cpuDestroy(comp->cpu);
 	memDestroy(comp->mem);
 	vidDestroy(comp->vid);
@@ -238,7 +238,7 @@ void zxDestroy(ZXComp* comp) {
 	free(comp);
 }
 
-void zxReset(ZXComp* comp,int res) {
+void compReset(Computer* comp,int res) {
 	zxInitPalete(comp);
 	comp->vid->ula->active = 0;
 	comp->rzxPlay = 0;
@@ -268,7 +268,7 @@ void zxReset(ZXComp* comp,int res) {
 	comp->hw->mapMem(comp);
 }
 
-void zxSetLayout(ZXComp *comp, int fh, int fv, int bh, int bv, int sh, int sv, int ih, int iv, int is) {
+void compSetLayout(Computer *comp, int fh, int fv, int bh, int bv, int sh, int sv, int ih, int iv, int is) {
 	comp->vid->full.h = fh;
 	comp->vid->full.v = fv;
 	comp->vid->bord.h = bh;
@@ -282,19 +282,19 @@ void zxSetLayout(ZXComp *comp, int fh, int fv, int bh, int bv, int sh, int sv, i
 	comp->nsPerFrame = 140 * comp->vid->frmsz;
 }
 
-void zxSetHardware(ZXComp* comp, const char* name) {
+void compSetHardware(Computer* comp, const char* name) {
 	HardWare* hw = findHardware(name);
 	if (hw == NULL) return;
 	comp->hw = hw;
 	comp->vid->istsconf = (hw->type == HW_TSLAB) ? 1 : 0;
 }
 
-void zxSetFrq(ZXComp* comp, double frq) {
+void compSetFrq(Computer* comp, double frq) {
 	comp->cpuFrq = frq;
 	comp->nsPerTick = 280 * 3.5 / frq;	// 280 ns per tick @ 3.5 MHz
 }
 
-int zxINT(ZXComp* comp, unsigned char vect) {
+int zxINT(Computer* comp, unsigned char vect) {
 	res4 = 0;
 	comp->intVector = vect;
 	res2 = cpuINT(comp->cpu);
@@ -303,7 +303,7 @@ int zxINT(ZXComp* comp, unsigned char vect) {
 	return res2;
 }
 
-int zxExec(ZXComp* comp) {
+int compExec(Computer* comp) {
 
 //	comp->mem->flag = 0;
 
@@ -367,7 +367,8 @@ int zxExec(ZXComp* comp) {
 		}
 	} else {
 		if (comp->vid->intFRAME) {
-			if (zxINT(comp,0xff)) comp->vid->intFRAME = 0;
+			zxINT(comp, 0xff);
+			// if (zxINT(comp,0xff)) comp->vid->intFRAME = 0;
 		} else if (comp->vid->intLINE) {
 			if (zxINT(comp,0xfd)) comp->vid->intLINE = 0;
 		} else if (comp->vid->intDMA) {
@@ -404,7 +405,7 @@ int zxExec(ZXComp* comp) {
 
 // cmos
 
-unsigned char cmsRd(ZXComp* comp) {
+unsigned char cmsRd(Computer* comp) {
 	unsigned char res = 0x00;
 	switch (comp->cmos.adr) {
 		case 0x0a: res = 0x00; break;
@@ -426,7 +427,7 @@ unsigned char cmsRd(ZXComp* comp) {
 	return res;
 }
 
-void cmsWr(ZXComp* comp, unsigned char val) {
+void cmsWr(Computer* comp, unsigned char val) {
 	switch (comp->cmos.adr) {
 		case 0x0c:
 			if (val & 1) comp->keyb->kBufPos = 0;		// reset PC-keyboard buffer
@@ -443,7 +444,7 @@ void cmsWr(ZXComp* comp, unsigned char val) {
 
 // breaks
 
-unsigned char* getBrkPtr(ZXComp* comp, unsigned short madr) {
+unsigned char* getBrkPtr(Computer* comp, unsigned short madr) {
 	MemPage* ptr = comp->mem->pt[madr >> 14];
 	int adr = (ptr->num << 14) | (madr & 0x3fff);
 	return (ptr->type == MEM_RAM) ? &comp->brkRamMap[adr] : &comp->brkRomMap[adr];

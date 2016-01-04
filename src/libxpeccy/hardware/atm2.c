@@ -1,11 +1,11 @@
 #include "../spectrum.h"
 
 // TODO : fill memMap & set prt1 for reset to separate ROM pages
-void atm2Reset(ZXComp* comp) {
+void atm2Reset(Computer* comp) {
 	comp->dos = 1;
 }
 
-void atmSetBank(ZXComp* comp, int bank, memEntry me) {
+void atmSetBank(Computer* comp, int bank, memEntry me) {
 	unsigned char page = me.page ^ 0xff;
 	if (me.flag & 0x80) {
 		if (me.flag & 0x40) {
@@ -17,7 +17,7 @@ void atmSetBank(ZXComp* comp, int bank, memEntry me) {
 	memSetBank(comp->mem,bank,(me.flag & 0x40) ? MEM_RAM : MEM_ROM, page);
 }
 
-void atm2MapMem(ZXComp* comp) {
+void atm2MapMem(Computer* comp) {
 	if (comp->p77hi & 1) {			// pen = 0: last rom page in every bank && dosen on
 		int adr = (comp->rom) ? 4 : 0;
 		atmSetBank(comp,MEM_BANK0,comp->memMap[adr]);
@@ -35,7 +35,7 @@ void atm2MapMem(ZXComp* comp) {
 
 // out
 
-void atm2Out77(ZXComp* comp, unsigned short port, unsigned char val) {		// dos
+void atm2Out77(Computer* comp, unsigned short port, unsigned char val) {		// dos
 	switch (val & 7) {
 		case 0: vidSetMode(comp->vid,VID_ATM_EGA); break;
 		case 2: vidSetMode(comp->vid,VID_ATM_HWM); break;
@@ -43,23 +43,23 @@ void atm2Out77(ZXComp* comp, unsigned short port, unsigned char val) {		// dos
 		case 6: vidSetMode(comp->vid,VID_ATM_TEXT); break;
 		default: vidSetMode(comp->vid,VID_UNKNOWN); break;
 	}
-	zxSetFrq(comp,(val & 0x08) ? 7.0 : 3.5);
+	compSetFrq(comp,(val & 0x08) ? 7.0 : 3.5);
 	comp->p77hi = (port & 0xff00) >> 8;
 	atm2MapMem(comp);
 }
 
-void atm2OutF7(ZXComp* comp, unsigned short port, unsigned char val) {		// dos
+void atm2OutF7(Computer* comp, unsigned short port, unsigned char val) {		// dos
 	int adr = (comp->rom ? 4 : 0) | ((port & 0xc000) >> 14);	// rom2.a15.a14
 	comp->memMap[adr].flag = val & 0xc0;		// copy b6,7 to flag
 	comp->memMap[adr].page = (val & 0x3f) | 0xc0;	// set b6,7 for PentEvo capability
 	atm2MapMem(comp);
 }
 
-void atm2OutFB(ZXComp* comp, unsigned short port, unsigned char val) {
+void atm2OutFB(Computer* comp, unsigned short port, unsigned char val) {
 	sdrvOut(comp->sdrv, port, val);
 }
 
-void atm2Out7FFD(ZXComp* comp, unsigned short port, unsigned char val) {
+void atm2Out7FFD(Computer* comp, unsigned short port, unsigned char val) {
 	if (comp->p7FFD & 0x20) return;
 	comp->rom = (val & 0x10) ? 1 : 0;
 	comp->p7FFD = val;
@@ -67,7 +67,7 @@ void atm2Out7FFD(ZXComp* comp, unsigned short port, unsigned char val) {
 	atm2MapMem(comp);
 }
 
-void atm2OutFF(ZXComp* comp, unsigned short port, unsigned char val) {		// dos. bdiOut already done
+void atm2OutFF(Computer* comp, unsigned short port, unsigned char val) {		// dos. bdiOut already done
 	if (comp->p77hi & 0x40) return;
 	val ^= 0xff;	// inverse colors
 	int adr = comp->vid->brdcol & 0x0f;
@@ -91,13 +91,13 @@ xPort atm2PortMap[] = {
 	{0x0000,0x0000,2,2,2,NULL,	NULL}
 };
 
-void atm2Out(ZXComp* comp, unsigned short port, unsigned char val, int dos) {
+void atm2Out(Computer* comp, unsigned short port, unsigned char val, int dos) {
 	if (~comp->p77hi & 2) dos = 1;
 	difOut(comp->dif, port, val, dos);
 	hwOut(atm2PortMap, comp, port, val, dos);
 }
 
-unsigned char atm2In(ZXComp* comp, unsigned short port, int dos) {
+unsigned char atm2In(Computer* comp, unsigned short port, int dos) {
 	unsigned char res = 0xff;
 	if (~comp->p77hi & 2) dos = 1;
 	if (difIn(comp->dif, port, &res, dos)) return res;

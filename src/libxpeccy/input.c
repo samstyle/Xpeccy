@@ -17,6 +17,51 @@ keyScan keyTab[] = {
 	{0,0,0}
 };
 
+/*
+  Line  Bit_7 Bit_6 Bit_5 Bit_4 Bit_3 Bit_2 Bit_1 Bit_0
+   0     "7"   "6"   "5"   "4"   "3"   "2"   "1"   "0"
+   1     ";"   "]"   "["   "\"   "="   "-"   "9"   "8"
+   2     "B"   "A"   ???   "/"   "."   ","   "'"   "`"
+   3     "J"   "I"   "H"   "G"   "F"   "E"   "D"   "C"
+   4     "R"   "Q"   "P"   "O"   "N"   "M"   "L"   "K"
+   5     "Z"   "Y"   "X"   "W"   "V"   "U"   "T"   "S"
+   6     F3    F2    F1   CODE   CAP  GRAPH CTRL  SHIFT
+   7     RET   SEL   BS   STOP   TAB   ESC   F5    F4
+   8    RIGHT DOWN   UP   LEFT   DEL   INS  HOME  SPACE
+ ( 9    NUM4  NUM3  NUM2  NUM1  NUM0  NUM/  NUM+  NUM*  )
+ ( 10   NUM.  NUM,  NUM-  NUM9  NUM8  NUM7  NUM6  NUM5  )
+*/
+
+keyScan msxKeyTab[] = {
+	{'0',0,1},{'1',0,2},{'2',0,4},{'3',0,8},{'4',0,16},{'5',0,32},{'6',0,64},{'7',0,128},
+	{'8',1,1},{'9',1,2},{'-',1,4},{'=',1,8},{'\\',1,16},{'[',1,32},{']',1,64},{';',1,128},
+	{'`',2,1},{0X27,2,2},{',',2,4},{'.',2,8},{'/',2,16},{255,2,32},{'a',2,64},{'b',2,128},
+	{'c',3,1},{'d',3,2},{'e',3,4},{'f',3,8},{'g',3,16},{'h',3,32},{'i',3,64},{'j',3,128},
+	{'k',4,1},{'l',4,2},{'m',4,4},{'n',4,8},{'o',4,16},{'p',4,32},{'q',4,64},{'r',4,128},
+	{'s',5,1},{'t',5,2},{'u',5,4},{'v',5,8},{'w',5,16},{'x',5,32},{'y',5,64},{'z',5,128},
+	{MSXK_SHIFT,6,1},{MSXK_CTRL,6,2},
+	{MSXK_GRAPH,6,4},	// graph
+	{MSXK_CAP,6,8},
+	{MSXK_CODE,6,16},
+	{MSXK_F1,6,32},
+	{MSXK_F2,6,64},
+	{MSXK_F3,6,128},
+	{MSXK_F4,7,1},
+	{MSXK_F5,7,2},
+	{MSXK_ESC,7,4},
+	{MSXK_TAB,7,8},		// tab
+	{MSXK_STOP,7,16},	// stop
+	{MSXK_BSP,7,32},	// bsp
+	{MSXK_SEL,7,64},	// sel
+	{'E',7,128},		// ret
+	{' ',8,1},
+	{MSXK_HOME,8,2},
+	{MSXK_INS,8,4},
+	{MSXK_DEL,8,8},
+	{MSXK_LEFT,8,16},{MSXK_UP,8,32},{MSXK_DOWN,8,64},{MSXK_RIGHT,8,128},	// space,home,ins,del,left,up,down,right
+	{0,0,0}
+};
+
 // keyboard
 
 Keyboard* keyCreate() {
@@ -29,36 +74,57 @@ void keyDestroy(Keyboard* keyb) {
 	free(keyb);
 }
 
-void keyPress(Keyboard* keyb, unsigned char key, int ext) {
-	unsigned char* tab = ext ? keyb->extMap : keyb->map;
+void keyPress(Keyboard* keyb, xKey key, int mode) {
+	unsigned char* tab;
+	keyScan* ktab;
+	switch (mode) {
+		case 1: tab = keyb->extMap; ktab = keyTab; break;	// Profi ext
+		case 2: tab = keyb->msxMap; ktab = msxKeyTab; break;	// MSX
+		default: tab = keyb->map; ktab = keyTab; break;	// common
+	}
 	int i = 0;
-	while (keyTab[i].key) {
-		if (keyTab[i].key == (key & 0x7f)) {
-			tab[keyTab[i].row] &= ~keyTab[i].mask;
-			if (key & 0x80)
-				tab[keyTab[i].row] &= ~0x20;
+	while (ktab[i].key) {
+		if (ktab[i].key == (key.key1 & 0x7f)) {
+			tab[ktab[i].row] &= ~ktab[i].mask;
+			if (key.key1 & 0x80) tab[keyTab[i].row] &= ~0x20;
+		}
+		if (ktab[i].key == (key.key2 & 0x7f)) {
+			tab[ktab[i].row] &= ~ktab[i].mask;
+			if (key.key2 & 0x80) tab[keyTab[i].row] &= ~0x20;
 		}
 		i++;
 	}
+	i = 0;
 }
 
-void keyRelease(Keyboard* keyb, unsigned char key, int ext) {
-	if (key == 0xff) {
-		memset(keyb->map, 0x3f, 8);
-		memset(keyb->extMap, 0x3f, 8);
-		keyb->kBufPos = 0;
-	} else {
-		unsigned char* tab = ext ? keyb->extMap : keyb->map;
-		int i = 0;
-		while (keyTab[i].key) {
-			if (keyTab[i].key == (key & 0x7f)) {
-				tab[keyTab[i].row] |= keyTab[i].mask;
-				if (key & 0x80)
-					tab[keyTab[i].row] |= 0x20;
-			}
-			i++;
-		}
+void keyReleaseAll(Keyboard* keyb) {
+	memset(keyb->map, 0x3f, 8);
+	memset(keyb->extMap, 0x3f, 8);
+	memset(keyb->msxMap, 0xff, 16);
+	keyb->kBufPos = 0;
+}
+
+void keyRelease(Keyboard* keyb, xKey key, int mode) {
+	unsigned char* tab;
+	keyScan* ktab;
+	switch (mode) {
+		case 1: tab = keyb->extMap; ktab = keyTab; break;	// Profi ext
+		case 2: tab = keyb->msxMap; ktab = msxKeyTab; break;	// MSX
+		default: tab = keyb->map; ktab = keyTab; break;	// common
 	}
+	int i = 0;
+	while (ktab[i].key) {
+		if (ktab[i].key == (key.key1 & 0x7f)) {
+			tab[ktab[i].row] |= ktab[i].mask;
+			if (key.key1 & 0x80) tab[ktab[i].row] |= 0x20;
+		}
+		if (ktab[i].key == (key.key2 & 0x7f)) {
+			tab[ktab[i].row] |= ktab[i].mask;
+			if (key.key2 & 0x80) tab[ktab[i].row] |= 0x20;
+		}
+		i++;
+	}
+	i = 0;
 }
 
 unsigned char keyInput(Keyboard* keyb, unsigned char prt, int ext) {

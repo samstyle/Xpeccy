@@ -118,6 +118,7 @@ unsigned char col = 0;
 unsigned char ink = 0;
 unsigned char pap = 0;
 unsigned char scrbyte = 0;
+unsigned char atrbyte = 0;
 unsigned char nxtbyte = 0;
 
 void vidDarkTail(Video* vid) {
@@ -354,17 +355,9 @@ void vidDrawATMega(Video* vid) {
 
 // atm text
 void vidDoubleDot(Video* vid) {
-//	if (vidFlag & VF_DOUBLE) {
-		for (int i = 0x80; i > 0; i >>= 1) {
-			vidSingleDot(vid, (scrbyte & i) ? ink : pap);
-		}
-//	} else {
-//		for (int i = 0xc0; i > 0; i >>= 2) {
-//			vidSingleDot(vid, (scrbyte & i) ? ink : pap);
-//		}
-//	}
-//	vid->change = 1;
-//	vidFlag |= VF_CHANGED;
+	for (int i = 0x80; i > 0; i >>= 1) {
+		vidSingleDot(vid, (scrbyte & i) ? ink : pap);
+	}
 }
 
 void vidATMDoubleDot(Video* vid,unsigned char colr) {
@@ -766,6 +759,58 @@ void vidProfiScr(Video* vid) {
 	}
 }
 
+// MSX scr 0 (40 x 24 text)
+
+void vidMsxScr0(Video* vid) {
+	yscr = vid->y - vid->bord.v;
+	if ((yscr < 0) || (yscr > 191)) {
+		col = vid->brdcol;
+	} else {
+		xscr = vid->x - vid->bord.h;
+		if ((xscr < 0) || (xscr > 239)) {
+			col = vid->brdcol;
+		} else {
+			if ((xscr % 6) == 0) {
+				adr = vid->v9918.ram[((yscr & 0xf8) * 5) + (xscr / 6)];
+				scrbyte = vid->v9918.ram[0x800 + ((adr << 3) | (yscr & 7))];
+				ink = (vid->v9918.reg[7] & 0xf0) >> 4;
+				pap = vid->v9918.reg[7] & 0x0f;
+			}
+			col = (scrbyte & 0x80) ? ink : pap;
+			scrbyte <<= 1;
+		}
+	}
+	vidPutDot(vid, col);
+}
+
+
+
+// MSX scr 1 (32 x 24 text)
+// TODO : OBJ layer
+
+void vidMsxScr1(Video* vid) {
+	yscr = vid->y - vid->bord.v;
+	if ((yscr < 0) || (yscr > 191)) {
+		col = vid->brdcol;
+	} else {
+		xscr = vid->x - vid->bord.h;
+		if ((xscr < 0) || (xscr > 255)) {
+			col = vid->brdcol;
+		} else {
+			if ((xscr & 7) == 0) {
+				adr = vid->v9918.ram[0x1800 + ((xscr >> 3) | ((yscr & 0xf8) << 2))];	// TODO : BG Map adr may be changed
+				scrbyte = vid->v9918.ram[(adr << 3) | (yscr & 7)];
+				atrbyte = vid->v9918.ram[0x2000 + (adr >> 3)];
+				ink = (atrbyte & 0xf0) >> 4;
+				pap = atrbyte & 0x0f;
+			}
+			col = (scrbyte & 0x80) ? ink : pap;
+			scrbyte <<= 1;
+		}
+	}
+	vidPutDot(vid, col);
+}
+
 // weiter
 
 typedef struct {
@@ -786,6 +831,8 @@ xVideoMode vidModeTab[] = {
 	{VID_TSL_256, vidDrawTSL256},
 	{VID_TSL_TEXT, vidDrawTSLText},
 	{VID_PRF_MC, vidProfiScr},
+	{VID_MSX_SCR0, vidMsxScr0},
+	{VID_MSX_SCR1, vidMsxScr1},
 	{VID_UNKNOWN, vidDrawBorder}
 };
 
@@ -820,6 +867,7 @@ void vidSync(Video* vid, int ns) {
 		}
 		if ((vid->intMask & 1) && (vid->y == vid->intpos.v) && (vid->x == vid->intpos.h))
 			vid->intFRAME = 1;
+			vid->v9918.sr0 |= 0x80;
 		if (vid->intFRAME && (vid->x >= vid->intpos.h + vid->intSize))
 			vid->intFRAME = 0;
 		if (++vid->x >= vid->full.h) {

@@ -24,6 +24,14 @@ extern "C" {
 #define	VID_TSL_NORMAL	10	// TSConf common screen
 #define	VID_TSL_TEXT	11
 #define VID_PRF_MC	12	// Profi multicolor
+#define VID_MSX_SCR0	0x20	// MSX 1/2 modes
+#define VID_MSX_SCR1	0x21
+#define VID_MSX_SCR2	0x22
+#define VID_MSX_SCR3	0x23
+#define VID_MSX_SCR4	0x24
+#define VID_MSX_SCR5	0x25
+#define VID_MSX_SCR6	0x26
+#define VID_MSX_SCR7	0x27
 #define	VID_UNKNOWN	0xff
 
 typedef struct {
@@ -61,7 +69,7 @@ struct Video {
 	unsigned char nextbrd;
 	unsigned char fcnt;
 	unsigned char atrbyte;
-	unsigned char scrimg[1024 * 1024 * 3];
+	unsigned char scrimg[1024 * 512 * 3];
 	unsigned char* scrptr;
 	unsigned char* linptr;
 	int x;
@@ -110,12 +118,21 @@ struct Video {
 	unsigned char font[0x800];		// ATM text mode font
 	void(*callback)(struct Video*);
 	xColor pal[256];
+	struct {
+		unsigned high:1;		// indicates hi byte in 2-byte writing
+		unsigned wr:1;			// data direction (b6.hi during writing VADR)
+		int vmode;			// current mode
+		int sr0;			// ststus register 0
+		int vadr;			// VRAM address
+		unsigned char data;		// 1st byte in 2-byte writing
+		unsigned char reg[48];		// VDP registers (8 for v9918, 48? for v9938)
+		unsigned char ram[0x20000];	// VRAM (16K for v9918, 128K for v9938)
+	} v9918;
 };
 
 typedef struct Video Video;
 
 extern int vidFlag;
-// extern float brdsize;
 
 Video* vidCreate(Memory*);
 void vidDestroy(Video*);

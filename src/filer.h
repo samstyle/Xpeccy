@@ -27,9 +27,9 @@
 #define	FT_SPG		(1<<14)
 
 void initFileDialog(QWidget*);
-void loadFile(ZXComp*,const char*, int, int);
-bool saveFile(ZXComp*,const char*, int, int);
+void loadFile(Computer*,const char*, int, int);
+bool saveFile(Computer*,const char*, int, int);
 
-bool saveChangedDisk(ZXComp*,int);
+bool saveChangedDisk(Computer*,int);
 
 #endif

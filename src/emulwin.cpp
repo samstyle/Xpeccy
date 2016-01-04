@@ -312,7 +312,7 @@ void MainWin::onTimer() {
 	if (conf.snd.enabled && (conf.snd.mute || isActiveWindow())) sndPlay();
 // if window is not active release keys & buttons
 	if (!isActiveWindow()) {
-		keyRelease(comp->keyb,0xff,0);
+		keyReleaseAll(comp->keyb);
 		comp->mouse->buttons = 0xff;
 	}
 
@@ -468,12 +468,12 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 	keyEntry kent = getKeyEntry(ev->nativeScanCode());
 	if (pckAct->isChecked()) {
 		keyPressXT(comp->keyb, kent.keyCode);
-		if (!kent.key2)
-			keyPress(comp->keyb,kent.key1,0);
-		keyPress(comp->keyb, kent.key3, 1);
-		keyPress(comp->keyb, kent.key4, 1);
+		if (!kent.zxKey.key2)			// don't press 2-key keys in PC-mode
+			keyPress(comp->keyb,kent.zxKey,0);
+		keyPress(comp->keyb, kent.extKey, 1);
+		keyPress(comp->keyb, kent.msxKey, 2);
 		if (ev->key() == Qt::Key_ScrollLock) {
-			zxReset(comp,RES_DEFAULT);
+			compReset(comp,RES_DEFAULT);
 			rzxWin->stop();
 		}
 	} else if (ev->modifiers() & Qt::AltModifier) {
@@ -519,7 +519,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				scrInterval = 0;
 				break;	// ALT+F7 combo
 			case Qt::Key_F12:
-				zxReset(comp,RES_DOS);
+				compReset(comp,RES_DOS);
 				rzxWin->stop();
 				break;
 			case Qt::Key_K:
@@ -532,8 +532,8 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;
 		}
 	} else {
-		keyPress(comp->keyb, kent.key1, 0);
-		keyPress(comp->keyb, kent.key2, 0);
+		keyPress(comp->keyb, kent.zxKey, 0);
+		if (kent.msxKey.key1) keyPress(comp->keyb,kent.msxKey,2);
 		switch(ev->key()) {
 			case Qt::Key_Pause:
 				pauseFlags ^= PR_PAUSE;
@@ -613,7 +613,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				}
 				break;
 			case Qt::Key_F12:
-				zxReset(comp,RES_DEFAULT);
+				compReset(comp,RES_DEFAULT);
 				rzxWin->stop();
 				break;
 		}
@@ -624,13 +624,13 @@ void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 	keyEntry kent = getKeyEntry(ev->nativeScanCode());
 	if (pckAct->isChecked()) {
 		keyReleaseXT(comp->keyb, kent.keyCode);
-		if (!kent.key2)
-			keyRelease(comp->keyb, kent.key1, 0);
-		keyRelease(comp->keyb, kent.key3, 1);
-		keyRelease(comp->keyb, kent.key4, 1);
+		if (!kent.zxKey.key2)
+			keyRelease(comp->keyb, kent.zxKey, 0);
+		keyRelease(comp->keyb, kent.extKey, 1);
+		keyRelease(comp->keyb, kent.msxKey, 2);
 	} else {
-		keyRelease(comp->keyb, kent.key1, 0);
-		keyRelease(comp->keyb, kent.key2, 0);
+		keyRelease(comp->keyb, kent.zxKey, 0);
+		if (kent.msxKey.key1) keyRelease(comp->keyb,kent.msxKey,2);
 	}
 }
 
@@ -1058,7 +1058,7 @@ void MainWin::setProfile(std::string nm) {
 	sndCalibrate();
 	updateWindow();
 	if (comp->firstRun) {
-		zxReset(comp, RES_DEFAULT);
+		compReset(comp, RES_DEFAULT);
 		comp->firstRun = 0;
 	}
 	saveConfig();
@@ -1071,7 +1071,7 @@ void MainWin::profileSelected(QAction* act) {
 
 void MainWin::reset(QAction* act) {
 	rzxWin->stop();
-	zxReset(comp,act->data().toInt());
+	compReset(comp,act->data().toInt());
 }
 
 void MainWin::chLayout(QAction* act) {
@@ -1159,7 +1159,7 @@ void xThread::emuCycle() {
 	comp->frmStrobe = 0;
 	do {
 		// exec 1 opcode (+ INT, NMI)
-		sndNs += zxExec(comp);
+		sndNs += compExec(comp);
 		// if need - request sound buffer update
 		if (sndNs > nsPerSample) {
 			//endBuf = sndSync(comp, fast);

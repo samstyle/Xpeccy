@@ -29,7 +29,7 @@ typedef struct {
 
 #pragma pack (pop)
 
-int loadSPG(ZXComp* comp, const char* name) {
+int loadSPG(Computer* comp, const char* name) {
 	FILE* file = fopen(name,"rb");
 	if (!file) return ERR_CANT_OPEN;
 
@@ -76,9 +76,9 @@ int loadSPG(ZXComp* comp, const char* name) {
 	comp->cpu->pc = (hd.pch << 8) | hd.pcl;
 	comp->cpu->sp = (hd.sph << 8) | hd.spl;
 	switch (hd.flag35 & 0x03) {
-		case 0: zxSetFrq(comp,3.5); break;
-		case 1: zxSetFrq(comp,7.0); break;
-		default: zxSetFrq(comp,14.0); break;
+		case 0: compSetFrq(comp,3.5); break;
+		case 1: compSetFrq(comp,7.0); break;
+		default: compSetFrq(comp,14.0); break;
 	}
 	comp->cpu->iff1 = (hd.flag35 & 0x04) ? 1 : 0;	// int enabled/disabled
 	comp->cpu->imode = 1;				// im 1

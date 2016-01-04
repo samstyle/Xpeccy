@@ -100,7 +100,7 @@ int saveRawFile(Floppy* flp, int num, const char* dir) {
 
 // dump (direct to mem)
 
-int loadDUMP(ZXComp* comp, const char* name, int adr) {
+int loadDUMP(Computer* comp, const char* name, int adr) {
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
 	int bt;

@@ -1,17 +1,17 @@
 #include "../spectrum.h"
 
-void speReset(ZXComp* comp) {
+void speReset(Computer* comp) {
 	comp->p7FFD = 0x10;
 }
 
-void speMapMem(ZXComp* comp) {
+void speMapMem(Computer* comp) {
 	memSetBank(comp->mem,MEM_BANK0,MEM_ROM,(comp->dos) ? 1 : 0);
 	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0);
 }
 
 // out
 
-void spOutFE(ZXComp* comp, unsigned short port, unsigned char val) {
+void spOutFE(Computer* comp, unsigned short port, unsigned char val) {
 	comp->vid->nextbrd = val & 0x07;
 	if (!comp->vid->border4t)
 		comp->vid->brdcol = val & 0x07;
@@ -21,11 +21,11 @@ void spOutFE(ZXComp* comp, unsigned short port, unsigned char val) {
 
 // in
 
-unsigned char spIn1F(ZXComp* comp, unsigned short port) {
+unsigned char spIn1F(Computer* comp, unsigned short port) {
 	return joyInput(comp->joy);
 }
 
-unsigned char spInFF(ZXComp* comp, unsigned short port) {
+unsigned char spInFF(Computer* comp, unsigned short port) {
 	return comp->vid->atrbyte;
 }
 
@@ -41,12 +41,12 @@ xPort spePortMap[] = {
 	{0x0000,0x0000,2,2,2,spInFF,	NULL}
 };
 
-void speOut(ZXComp* comp, unsigned short port, unsigned char val, int dos) {
+void speOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
 	difOut(comp->dif, port, val, dos);
 	hwOut(spePortMap, comp, port, val, dos);
 }
 
-unsigned char speIn(ZXComp* comp, unsigned short port, int dos) {
+unsigned char speIn(Computer* comp, unsigned short port, int dos) {
 	unsigned char res;
 	if (difIn(comp->dif, port, &res, dos)) return res;
 	return hwIn(spePortMap, comp, port, dos);

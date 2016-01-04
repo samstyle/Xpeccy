@@ -67,7 +67,7 @@ int zlib_uncompress(char* in, int ilen, char* out, int olen) {
 	return res;
 }
 
-void rzxAddFrame(ZXComp* zx, RZXFrame frm, int pos) {
+void rzxAddFrame(Computer* zx, RZXFrame frm, int pos) {
 	if (frm.frmSize == 0xffff) {
 		frm.frmSize = zx->rzx.data[pos - 1].frmSize;
 		frm.frmData = (unsigned char*)malloc(frm.frmSize);
@@ -76,8 +76,8 @@ void rzxAddFrame(ZXComp* zx, RZXFrame frm, int pos) {
 	zx->rzx.data[pos] = frm;
 }
 
-void rzxFree(ZXComp*);
-void rzxLoadFrame(ZXComp* zx) {
+void rzxFree(Computer*);
+void rzxLoadFrame(Computer* zx) {
 	int work = 1;
 	unsigned char type;
 	unsigned int len;
@@ -206,7 +206,7 @@ void rzxLoadFrame(ZXComp* zx) {
 	if (obuf) free(obuf);
 }
 
-int loadRZX(ZXComp* zx, const char* name) {
+int loadRZX(Computer* zx, const char* name) {
 	zx->rzxPlay = 0;
 	zx->rzx.file = fopen(name, "rb");
 	if (!zx->rzx.file) return ERR_CANT_OPEN;

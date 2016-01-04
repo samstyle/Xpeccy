@@ -47,7 +47,7 @@ class xThread : public QThread {
 		unsigned block:1;
 		unsigned finish:1;
 		xConfig* conf;
-		ZXComp* comp;
+		Computer* comp;
 		QMutex mtx;
 		void run();
 	private:
@@ -68,7 +68,7 @@ class MainWin : public QWidget {
 	Q_OBJECT
 	public:
 		MainWin();
-		ZXComp* comp;
+		Computer* comp;
 		void checkState();
 		void setProfile(std::string);
 		void loadLabels(const char*);

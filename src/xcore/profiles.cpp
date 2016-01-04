@@ -22,7 +22,7 @@ bool addProfile(std::string nm, std::string fp) {
 	nprof->name = nm;
 	nprof->file = fp;
 	nprof->layName = std::string("default");
-	nprof->zx = zxCreate();
+	nprof->zx = compCreate();
 	std::string fname = conf.path.confDir + SLASH + nprof->name + ".cmos";
 	std::ifstream file(fname.c_str());
 	if (file.good()) {
@@ -35,7 +35,7 @@ bool addProfile(std::string nm, std::string fp) {
 		file.read((char*)nprof->zx->ide->smuc.nv->mem,0x800);
 		file.close();
 	}
-	zxSetHardware(nprof->zx,"ZX48K");
+	compSetHardware(nprof->zx,"ZX48K");
 	conf.prof.list.push_back(nprof);
 	return true;
 }
@@ -70,7 +70,7 @@ int delProfile(std::string nm) {
 			remove(cpath.c_str());
 			cpath = conf.path.confDir + SLASH + prf->name + ".nvram";
 			remove(cpath.c_str());
-			zxDestroy(prf->zx);				// delete ZX
+			compDestroy(prf->zx);				// delete ZX
 			delete(prf);
 			conf.prof.list.erase(conf.prof.list.begin() + i);
 		}
@@ -86,7 +86,7 @@ bool prfSetCurrent(std::string nm) {
 	ideOpenFiles(nprf->zx->ide);
 	sdcOpenFile(nprf->zx->sdc);
 	prfSetLayout(conf.prof.cur, conf.prof.cur->layName);
-	keyRelease(conf.prof.cur->zx->keyb,0xff,0);
+	keyReleaseAll(conf.prof.cur->zx->keyb);
 	conf.prof.cur->zx->mouse->buttons = 0xff;
 	return true;
 }
@@ -103,7 +103,7 @@ bool prfSetLayout(xProfile* prf, std::string nm) {
 	xLayout* lay = findLayout(nm);
 	if (lay == NULL) return false;
 	prf->layName = nm;
-	zxSetLayout(prf->zx,
+	compSetLayout(prf->zx,
 		     lay->full.h, lay->full.v,
 		     lay->bord.h, lay->bord.v,
 		     lay->sync.h, lay->sync.v,
@@ -139,7 +139,7 @@ void prfChangeLayName(std::string oldName, std::string newName) {
 #define	PS_IDE		8
 #define	PS_SDC		9
 
-void setDiskString(ZXComp* comp,Floppy* flp,std::string st) {
+void setDiskString(Computer* comp,Floppy* flp,std::string st) {
 	if (st.size() < 4) return;
 	flp->trk80 = (st.substr(0,2) == "80") ? 1 : 0;
 	flp->doubleSide = (st.substr(2,1) == "D") ? 1 : 0;
@@ -251,7 +251,7 @@ void prfLoadAll() {
 int prfLoad(std::string nm) {
 	xProfile* prf = findProfile(nm);
 	if (prf == NULL) return PLOAD_NF;
-	ZXComp* comp = prf->zx;
+	Computer* comp = prf->zx;
 
 	std::string cfname = conf.path.confDir + SLASH + prf->file;
 	std::ifstream file(cfname.c_str());
@@ -348,7 +348,7 @@ int prfLoad(std::string nm) {
 						if ((tmp2 > 1) && (tmp2 < 29)) tmp2 *= 5e5;	// old 2..28 -> 500000..14000000
 						if (tmp2 < 1e6) tmp2 = 1e6;
 						if (tmp2 > 14e6) tmp2 = 14e6;
-						zxSetFrq(comp, tmp2 / 1e6);
+						compSetFrq(comp, tmp2 / 1e6);
 					}
 					if (pnam == "memory") {
 						memsz = atoi(pval.c_str());
@@ -410,14 +410,14 @@ int prfLoad(std::string nm) {
 	ideSetPassport(comp->ide,IDE_MASTER,masterPass);
 	ideSetPassport(comp->ide,IDE_SLAVE,slavePass);
 
-	zxSetHardware(comp, prf->hwName.c_str());
+	compSetHardware(comp, prf->hwName.c_str());
 	prfSetRomset(prf, prf->rsName);
 
 	tmp2 = PLOAD_OK;
 
 	if (comp->hw == NULL) {
 		tmp2 = PLOAD_HW;
-		zxSetHardware(comp,"ZX48K");
+		compSetHardware(comp,"ZX48K");
 	}
 
 	if (findRomset(prf->rsName) == NULL) {
@@ -428,7 +428,7 @@ int prfLoad(std::string nm) {
 	memSetSize(comp->mem,memsz);
 	if (!prfSetLayout(prf, prf->layName)) prfSetLayout(prf,"default");
 
-	zxReset(comp,RES_DEFAULT);
+	compReset(comp,RES_DEFAULT);
 
 	return tmp2;
 }
@@ -448,7 +448,7 @@ std::string getDiskString(Floppy* flp) {
 int prfSave(std::string nm) {
 	xProfile* prf = conf.prof.cur;
 	if (prf == NULL) return PSAVE_NF;
-	ZXComp* comp = prf->zx;
+	Computer* comp = prf->zx;
 
 	std::string cfname = conf.path.confDir + SLASH + prf->file;
 	FILE* file = fopen(cfname.c_str(),"wb");

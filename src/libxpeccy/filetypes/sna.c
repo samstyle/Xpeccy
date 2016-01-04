@@ -14,7 +14,7 @@ typedef struct {
 
 #pragma pack (pop)
 
-int loadSNA(ZXComp* comp, const char* name) {
+int loadSNA(Computer* comp, const char* name) {
 	FILE* file = fopen(name,"rb");
 	if (!file) return ERR_CANT_OPEN;
 	unsigned char tmp, tmp2;
@@ -25,7 +25,7 @@ int loadSNA(ZXComp* comp, const char* name) {
 	fseek(file, 0, SEEK_END);
 	size_t fileSize = ftell(file);
 	rewind(file);
-	zxReset(comp, (fileSize < 49180) ? RES_48 : RES_128);
+	compReset(comp, (fileSize < 49180) ? RES_48 : RES_128);
 
 	snaHead hd;
 	fread((char*)&hd, sizeof(snaHead), 1, file);
@@ -89,7 +89,7 @@ int loadSNA(ZXComp* comp, const char* name) {
 	return ERR_OK;
 }
 
-int saveSNA(ZXComp* comp, const char* name, int sna48) {
+int saveSNA(Computer* comp, const char* name, int sna48) {
 	FILE* file = fopen(name, "wb");
 	if (!file) return ERR_CANT_OPEN;
 	unsigned char bnk, i;

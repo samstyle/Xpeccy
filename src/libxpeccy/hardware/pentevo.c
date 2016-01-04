@@ -3,12 +3,12 @@
 #include <stdio.h>
 #include <assert.h>
 
-void evoReset(ZXComp* comp) {
+void evoReset(Computer* comp) {
 	comp->dos = 1;
 	comp->prt2 = 0x03;
 }
 
-void evoSetVideoMode(ZXComp* comp) {
+void evoSetVideoMode(Computer* comp) {
 	int mode = (comp->pEFF7 & 0x20) | ((comp->pEFF7 & 0x01) << 1) | (comp->prt2 & 0x07);	// z5.z0.0.b2.b1.b0	b:FF77, z:eff7
 	switch (mode) {
 		case 0x03: vidSetMode(comp->vid,VID_NORMAL); break;		// common
@@ -22,7 +22,7 @@ void evoSetVideoMode(ZXComp* comp) {
 	}
 }
 
-unsigned char evoMRd(ZXComp* comp, unsigned short adr, int m1) {
+unsigned char evoMRd(Computer* comp, unsigned short adr, int m1) {
 	if (m1 && (comp->dif->type == DIF_BDI)) {
 		if (comp->dos && (memGetBankPtr(comp->mem,adr)->type == MEM_RAM) && (comp->prt2 & 0x40)) {
 			comp->dos = 0;
@@ -36,12 +36,12 @@ unsigned char evoMRd(ZXComp* comp, unsigned short adr, int m1) {
 	return memRd(comp->mem,adr);
 }
 
-void evoMWr(ZXComp* comp, unsigned short adr, unsigned char val) {
+void evoMWr(Computer* comp, unsigned short adr, unsigned char val) {
 	if (comp->evo.evoBF & 4) comp->vid->font[adr & 0x7ff] = val;	// PentEvo: write font byte
 	memWr(comp->mem,adr,val);
 }
 
-void evoSetBank(ZXComp* comp, int bank, memEntry me) {
+void evoSetBank(Computer* comp, int bank, memEntry me) {
 	unsigned char page = me.page ^ 0xff;
 	if (me.flag & 0x80) {
 		if (me.flag & 0x40) {
@@ -57,7 +57,7 @@ void evoSetBank(ZXComp* comp, int bank, memEntry me) {
 	memSetBank(comp->mem,bank,(me.flag & 0x40) ? MEM_RAM : MEM_ROM, page);
 }
 
-void evoMapMem(ZXComp* comp) {
+void evoMapMem(Computer* comp) {
 	if (comp->prt2 & 0x20) {		// A8.xx77
 		int adr = (comp->rom) ? 4 : 0;
 		evoSetBank(comp,MEM_BANK0,comp->memMap[adr]);
@@ -76,21 +76,21 @@ void evoMapMem(ZXComp* comp) {
 
 // in
 
-unsigned char evoIn1F(ZXComp* comp, unsigned short port) {	// !dos
+unsigned char evoIn1F(Computer* comp, unsigned short port) {	// !dos
 	return joyInput(comp->joy);
 }
 
-unsigned char evoIn57(ZXComp* comp, unsigned short port) {	// !dos
+unsigned char evoIn57(Computer* comp, unsigned short port) {	// !dos
 	return sdcRead(comp->sdc);
 }
 
-unsigned char evoIn77(ZXComp* comp, unsigned short port) {	// !dos
+unsigned char evoIn77(Computer* comp, unsigned short port) {	// !dos
 	unsigned char res = 0x02;		// rd only
 	if (comp->sdc->image != NULL) res |= 0x01;
 	return res;
 }
 
-unsigned char evoInBE(ZXComp* comp, unsigned short port) {
+unsigned char evoInBE(Computer* comp, unsigned short port) {
 	unsigned char res = 0xff;
 	int i;
 	if ((port & 0xf800) == 0x0000) {
@@ -123,47 +123,47 @@ unsigned char evoInBE(ZXComp* comp, unsigned short port) {
 	return res;
 }
 
-unsigned char evoInBF(ZXComp* comp, unsigned short port) {
+unsigned char evoInBF(Computer* comp, unsigned short port) {
 	return comp->evo.evoBF;
 }
 
-unsigned char evoInBDI(ZXComp* comp, unsigned short port) {
+unsigned char evoInBDI(Computer* comp, unsigned short port) {
 	unsigned char res;
 	difIn(comp->dif, port, &res, 1);
 	return res;
 }
 
-unsigned char evoIn2F(ZXComp* comp, unsigned short port) {
+unsigned char evoIn2F(Computer* comp, unsigned short port) {
 	return comp->evo.evo2F;
 }
 
-unsigned char evoIn4F(ZXComp* comp, unsigned short port) {
+unsigned char evoIn4F(Computer* comp, unsigned short port) {
 	return comp->evo.evo4F;
 }
 
-unsigned char evoIn6F(ZXComp* comp, unsigned short port) {
+unsigned char evoIn6F(Computer* comp, unsigned short port) {
 	return comp->evo.evo6F;
 }
 
-unsigned char evoIn8F(ZXComp* comp, unsigned short port) {
+unsigned char evoIn8F(Computer* comp, unsigned short port) {
 	return comp->evo.evo8F;
 }
 
-unsigned char evoInBEF7(ZXComp* comp, unsigned short port) {	// dos
+unsigned char evoInBEF7(Computer* comp, unsigned short port) {	// dos
 	return cmsRd(comp);
 }
 
-unsigned char evoInBFF7(ZXComp* comp, unsigned short port) {	// !dos
+unsigned char evoInBFF7(Computer* comp, unsigned short port) {	// !dos
 	return (comp->pEFF7 & 0x80) ? cmsRd(comp) : 0xff;
 }
 
 // out
 
-void evoOutBF(ZXComp* comp, unsigned short port, unsigned char val) {
+void evoOutBF(Computer* comp, unsigned short port, unsigned char val) {
 	comp->evo.evoBF = val;
 }
 
-void evoOutFB(ZXComp* comp, unsigned short port, unsigned char val) {
+void evoOutFB(Computer* comp, unsigned short port, unsigned char val) {
 	sdrvOut(comp->sdrv,0xfb,val);
 }
 
@@ -176,39 +176,39 @@ void evoOutFE(ZXComp* comp, unsigned short port, unsigned char val) {
 }
 */
 
-void evoOut2F(ZXComp* comp, unsigned short port, unsigned char val) {
+void evoOut2F(Computer* comp, unsigned short port, unsigned char val) {
 	comp->evo.evo2F = val;
 }
 
-void evoOut4F(ZXComp* comp, unsigned short port, unsigned char val) {
+void evoOut4F(Computer* comp, unsigned short port, unsigned char val) {
 	comp->evo.evo4F = val;
 }
 
-void evoOut6F(ZXComp* comp, unsigned short port, unsigned char val) {
+void evoOut6F(Computer* comp, unsigned short port, unsigned char val) {
 	comp->evo.evo6F = val;
 }
 
-void evoOut8F(ZXComp* comp, unsigned short port, unsigned char val) {
+void evoOut8F(Computer* comp, unsigned short port, unsigned char val) {
 	comp->evo.evo8F = val;
 }
 
-void evoOut57(ZXComp* comp, unsigned short port, unsigned char val) {
+void evoOut57(Computer* comp, unsigned short port, unsigned char val) {
 	sdcWrite(comp->sdc,val);
 }
 
-void evoOut77(ZXComp* comp, unsigned short port, unsigned char val) {
+void evoOut77(Computer* comp, unsigned short port, unsigned char val) {
 	comp->sdc->on = val & 1;
 	comp->sdc->cs = (val & 2) ? 1 : 0;
 }
 
-void evoOut77d(ZXComp* comp, unsigned short port, unsigned char val) {
+void evoOut77d(Computer* comp, unsigned short port, unsigned char val) {
 	comp->prt2 = ((port & 0x4000) >> 7) | ((port & 0x0300) >> 3) | (val & 0x0f);	// a14.a9.a8.0.b3.b2.b1.b0
-	zxSetFrq(comp,(val & 0x08) ? 14.0 : ((comp->pEFF7 & 0x10) ? 3.5 : 7.0));
+	compSetFrq(comp,(val & 0x08) ? 14.0 : ((comp->pEFF7 & 0x10) ? 3.5 : 7.0));
 	evoSetVideoMode(comp);
 	evoMapMem(comp);
 }
 
-void evoOutF7(ZXComp* comp, unsigned short port, unsigned char val) {
+void evoOutF7(Computer* comp, unsigned short port, unsigned char val) {
 	int adr = ((comp->rom) ? 4 : 0) | ((port & 0xc000) >> 14);
 	if (port & 0x0800) {
 		comp->memMap[adr].flag = val & 0xc0;
@@ -220,11 +220,11 @@ void evoOutF7(ZXComp* comp, unsigned short port, unsigned char val) {
 	evoMapMem(comp);
 }
 
-void evoOutBDI(ZXComp* comp, unsigned short port, unsigned char val) {		// dos
+void evoOutBDI(Computer* comp, unsigned short port, unsigned char val) {		// dos
 	difOut(comp->dif, port, val, 1);
 }
 
-void evoOutFF(ZXComp* comp, unsigned short port, unsigned char val) {		// dos
+void evoOutFF(Computer* comp, unsigned short port, unsigned char val) {		// dos
 	difOut(comp->dif, 0xff, val, 1);
 	if (comp->prt2 & 0x80) return;
 	val ^= 0xff;	// inverse colors
@@ -234,7 +234,7 @@ void evoOutFF(ZXComp* comp, unsigned short port, unsigned char val) {		// dos
 	comp->vid->pal[adr].g = ((val & 0x10) ? 0xaa : 0x00) + ((val & 0x80) ? 0x55 : 0x00);
 }
 
-void evoOut7FFD(ZXComp* comp, unsigned short port, unsigned char val) {
+void evoOut7FFD(Computer* comp, unsigned short port, unsigned char val) {
 	if ((comp->pEFF7 & 4) && (comp->p7FFD & 0x20)) return;
 	comp->rom = (val & 0x10) ? 1 : 0;
 	comp->p7FFD = val;
@@ -242,25 +242,25 @@ void evoOut7FFD(ZXComp* comp, unsigned short port, unsigned char val) {
 	evoMapMem(comp);
 }
 
-void evoOutBEF7(ZXComp* comp, unsigned short port, unsigned char val) {	// dos
+void evoOutBEF7(Computer* comp, unsigned short port, unsigned char val) {	// dos
 	cmsWr(comp,val);
 }
 
-void evoOutDEF7(ZXComp* comp, unsigned short port, unsigned char val) {	// dos
+void evoOutDEF7(Computer* comp, unsigned short port, unsigned char val) {	// dos
 	comp->cmos.adr = val;
 }
 
-void evoOutBFF7(ZXComp* comp, unsigned short port, unsigned char val) {	// !dos
+void evoOutBFF7(Computer* comp, unsigned short port, unsigned char val) {	// !dos
 	if (comp->pEFF7 & 0x80) cmsWr(comp,val);
 }
 
-void evoOutDFF7(ZXComp* comp, unsigned short port, unsigned char val) {	// !dos
+void evoOutDFF7(Computer* comp, unsigned short port, unsigned char val) {	// !dos
 	if (comp->pEFF7 & 0x80) comp->cmos.adr = val;
 }
 
-void evoOutEFF7(ZXComp* comp, unsigned short port, unsigned char val) {	// !dos
+void evoOutEFF7(Computer* comp, unsigned short port, unsigned char val) {	// !dos
 	comp->pEFF7 = val;
-	zxSetFrq(comp,(comp->prt2 & 0x08) ? 14.0 : (val & 0x08) ? 7.0 : 3.5);
+	compSetFrq(comp,(comp->prt2 & 0x08) ? 14.0 : (val & 0x08) ? 7.0 : 3.5);
 	evoSetVideoMode(comp);
 	evoMapMem(comp);
 }
@@ -299,12 +299,12 @@ xPort evoPortMap[] = {
 	{0x0000,0x0000,2,2,2,NULL,	NULL}
 };
 
-void evoOut(ZXComp* comp, unsigned short port, unsigned char val, int dos) {
+void evoOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
 	if (comp->evo.evoBF & 0x01) dos = 1;	// force open ports
 	hwOut(evoPortMap, comp, port, val, dos);
 }
 
-unsigned char evoIn(ZXComp* comp, unsigned short port, int dos) {
+unsigned char evoIn(Computer* comp, unsigned short port, int dos) {
 	unsigned char res = 0xff;
 	if (comp->evo.evoBF & 1) dos = 1;
 	res = hwIn(evoPortMap, comp, port, dos);

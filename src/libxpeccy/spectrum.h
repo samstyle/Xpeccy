@@ -48,7 +48,7 @@ typedef struct {
 	unsigned char page;
 } memEntry;
 
-struct ZXComp {
+typedef struct {
 	unsigned brk:1;			// breakpoint
 	unsigned debug:1;		// dont' do breakpoints
 	unsigned frmStrobe:1;		// new frame started
@@ -147,34 +147,42 @@ struct ZXComp {
 		unsigned char vdos;
 	} tsconf;
 	struct {
-//		unsigned trig7E:1;
 		unsigned char p7E;		// color num (if trig7E=0)
 	} profi;
+	struct {
+		unsigned char keyLine;		// selected keyboard line
+		unsigned char pA8;		// port A8
+		unsigned char pAA;		// port AA
+		unsigned char slot[4];		// primary slots for bank 0..3
+		struct {
+			unsigned char regA;
+			unsigned char regB;
+			unsigned char regC;
+		} ppi;
+	} msx;
 
 	CMOS cmos;
 	int resbank;			// rompart active after reset
 	int tapCount;
-};
-
-typedef struct ZXComp ZXComp;
+} Computer;
 
 #include "hardware/hardware.h"
 
-ZXComp* zxCreate();
-void zxDestroy(ZXComp*);
-void zxReset(ZXComp*,int);
-int zxExec(ZXComp*);
-void zxSetFrq(ZXComp*,double);
-void zxSetLayout(ZXComp*, int, int, int, int, int, int, int, int, int);
-void zxSetHardware(ZXComp*,const char*);
+Computer* compCreate();
+void compDestroy(Computer*);
+void compReset(Computer*,int);
+int compExec(Computer*);
+void compSetFrq(Computer*,double);
+void compSetLayout(Computer*, int, int, int, int, int, int, int, int, int);
+void compSetHardware(Computer*,const char*);
 
 // read-write cmos
-unsigned char cmsRd(ZXComp*);
-void cmsWr(ZXComp*,unsigned char);
+unsigned char cmsRd(Computer*);
+void cmsWr(Computer*,unsigned char);
 
-void rzxStop(ZXComp*);
+void rzxStop(Computer*);
 
-unsigned char* getBrkPtr(ZXComp*, unsigned short);
+unsigned char* getBrkPtr(Computer*, unsigned short);
 
 #ifdef __cplusplus
 }

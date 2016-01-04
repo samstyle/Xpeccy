@@ -84,7 +84,7 @@ const char* v3hardware[16] = {
 	"Spectrum +2","Spectrum +2A","TC1048","TC2068"
 };
 
-int loadZ80(ZXComp* comp, const char* name) {
+int loadZ80(Computer* comp, const char* name) {
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
 
