@@ -163,6 +163,10 @@ int loadDSK(Floppy*,const char*);
 
 int loadTD0(Floppy*,const char*);
 
+// cartridge
+
+int loadCARD(Computer*,const char*,int);
+
 #ifdef __cplusplus
 }
 #endif

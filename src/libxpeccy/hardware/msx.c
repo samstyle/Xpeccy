@@ -1,4 +1,5 @@
 #include "hardware.h"
+#include "assert.h"
 
 typedef struct {
 	int type;
@@ -7,24 +8,38 @@ typedef struct {
 
 mPageNr msxMemTab[4][4] = {
 	{{MEM_ROM, 0}, {MEM_ROM, 1}, {MEM_RAM, 1}, {MEM_RAM, 0}},
-	{{-1,0},{-1,0},{-1,0},{-1,0}},
-	{{-1,0},{-1,0},{-1,0},{-1,0}},
+	{{MEM_EXT,0},{MEM_EXT,0},{MEM_EXT,0},{MEM_EXT,0}},
+	{{MEM_EXT,0},{MEM_EXT,0},{MEM_EXT,0},{MEM_EXT,0}},
 	{{MEM_RAM, 3},{MEM_RAM, 2},{MEM_RAM, 1},{MEM_RAM, 0}}
 };
 
 int bankID[4] = {MEM_BANK0, MEM_BANK1, MEM_BANK2, MEM_BANK3};
+unsigned char emptyPage[0x4000];
 
-void msxSetMem(Memory* mem, int bank, unsigned char slot) {
+void msxSetMem(Computer* comp, int bank, unsigned char slot) {
 	mPageNr pg = msxMemTab[slot][bank];
-	if (pg.type == -1) return;
-	memSetBank(mem, bankID[bank], pg.type, pg.num);
+	if (pg.type == -1) {
+		printf("BANK %i SLOT %i\n",bank,slot);
+		assert(0);
+	}
+	if (pg.type == MEM_EXT) {
+		unsigned char* ptr = (slot & 1) ? comp->msx.slotA : comp->msx.slotB;
+		if (!ptr) {
+			ptr = emptyPage;
+		} else {
+			ptr += (pg.num << 14);
+		}
+		memSetExternal(comp->mem, bankID[bank], 0, ptr);
+	} else {
+		memSetBank(comp->mem, bankID[bank], pg.type, pg.num);
+	}
 }
 
-void msxMapMem(Computer* comp) {				// TODO : do slots
-	msxSetMem(comp->mem, 0, comp->msx.slot[0] & 3);
-	msxSetMem(comp->mem, 1, comp->msx.slot[1] & 3);
-	msxSetMem(comp->mem, 2, comp->msx.slot[2] & 3);
-	msxSetMem(comp->mem, 3, comp->msx.slot[3] & 3);
+void msxMapMem(Computer* comp) {
+	msxSetMem(comp, 0, comp->msx.slot[0] & 3);
+	msxSetMem(comp, 1, comp->msx.slot[1] & 3);
+	msxSetMem(comp, 2, comp->msx.slot[2] & 3);
+	msxSetMem(comp, 3, comp->msx.slot[3] & 3);
 }
 
 // colors was taken from wikipedia article

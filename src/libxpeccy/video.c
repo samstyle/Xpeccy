@@ -811,6 +811,31 @@ void vidMsxScr1(Video* vid) {
 	vidPutDot(vid, col);
 }
 
+// MSX scr 2 (256 x 192)
+
+void vidMsxScr2(Video* vid) {
+	yscr = vid->y - vid->bord.v;
+	if ((yscr < 0) || (yscr > 191)) {
+		col = vid->brdcol;
+	} else {
+		xscr = vid->x - vid->bord.h;
+		if ((xscr < 0) || (xscr > 255)) {
+			col = vid->brdcol;
+		} else {
+			if ((xscr & 7) == 0) {
+				adr = vid->v9918.ram[0x1800 + ((xscr >> 3) | (yscr & 0xf8) << 2)] | ((yscr & 0xc0) << 2);	// tile nr
+				scrbyte = vid->v9918.ram[(adr << 3) + (yscr & 7)];
+				atrbyte = vid->v9918.ram[0x2000 + (adr << 3) + (yscr & 7)];
+				ink = (atrbyte & 0xf0) >> 4;
+				pap = atrbyte & 0x0f;
+			}
+			col = (scrbyte & 0x80) ? ink : pap;
+			scrbyte <<= 1;
+		}
+	}
+	vidPutDot(vid, col);
+}
+
 // weiter
 
 typedef struct {
@@ -833,6 +858,7 @@ xVideoMode vidModeTab[] = {
 	{VID_PRF_MC, vidProfiScr},
 	{VID_MSX_SCR0, vidMsxScr0},
 	{VID_MSX_SCR1, vidMsxScr1},
+	{VID_MSX_SCR2, vidMsxScr2},
 	{VID_UNKNOWN, vidDrawBorder}
 };
 

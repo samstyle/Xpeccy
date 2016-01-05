@@ -63,7 +63,13 @@ class SetupWin : public QDialog {
 		void chablock(QModelIndex);
 		void setTapeBreak(int,int);
 		void hddcap();
+
 		void selSDCimg();
+
+		void openSlotA();
+		void openSlotB();
+		void ejectSlotA();
+		void ejectSlotB();
 
 		void editrset();
 		void setrpart();

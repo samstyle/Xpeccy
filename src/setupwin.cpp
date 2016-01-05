@@ -245,9 +245,13 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	connect(ui.hs_ghd,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
 	connect(ui.hs_gsec,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
 	connect(ui.hs_pathtb,SIGNAL(released()),this,SLOT(hddSlaveImg()));
-// sdc
+// external
 	connect(ui.tbSDCimg,SIGNAL(released()),this,SLOT(selSDCimg()));
 	connect(ui.tbsdcfree,SIGNAL(released()),ui.sdPath,SLOT(clear()));
+	connect(ui.cSlotAOpen,SIGNAL(released()),this,SLOT(openSlotA()));
+	connect(ui.cSlotBOpen,SIGNAL(released()),this,SLOT(openSlotB()));
+	connect(ui.cSlotAEject,SIGNAL(released()),this,SLOT(ejectSlotA()));
+	connect(ui.cSlotBEject,SIGNAL(released()),this,SLOT(ejectSlotB()));
 //tools
 	connect(ui.umlist,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(umedit(QModelIndex)));
 	connect(ui.umaddtb,SIGNAL(released()),this,SLOT(umadd()));
@@ -401,11 +405,14 @@ void SetupWin::start(xProfile* p) {
 	ui.hs_ghd->setValue(pass.hds);
 	ui.hs_gcyl->setValue(pass.cyls);
 	ui.hs_glba->setValue(comp->ide->slave->maxlba);
-// sdcard
+// external
 	ui.sdPath->setText(QString::fromLocal8Bit(comp->sdc->image));
 	ui.sdcapbox->setCurrentIndex(ui.sdcapbox->findData(comp->sdc->capacity));
 	if (ui.sdcapbox->currentIndex() < 0) ui.sdcapbox->setCurrentIndex(2);	// 128M
 	ui.sdlock->setChecked(comp->sdc->lock);
+
+	ui.cSlotAName->setText(comp->msx.slotAname);
+	ui.cSlotBName->setText(comp->msx.slotBname);
 // tape
 	ui.cbTapeAuto->setChecked(conf.tape.autostart);
 	ui.cbTapeFast->setChecked(conf.tape.fast);
@@ -1299,11 +1306,39 @@ void SetupWin::hddcap() {
 	ui.hs_capacity->setValue(sz);
 }
 
-// sdc
+// external
 
 void SetupWin::selSDCimg() {
 	QString fnam = QFileDialog::getOpenFileName(this,"Image for SD card","","All files (*.*)");
 	if (!fnam.isEmpty()) ui.sdPath->setText(fnam);
+}
+
+void SetupWin::openSlotA() {
+	QString fnam = QFileDialog::getOpenFileName(this,"MSX cartridge A","","MSX cartridge (*.rom)");
+	if (fnam.isEmpty()) return;
+	ui.cSlotAName->setText(fnam);
+	loadFile(comp, fnam.toLocal8Bit().data(), FT_SLOT_A, 0);
+}
+
+void SetupWin::openSlotB() {
+	QString fnam = QFileDialog::getOpenFileName(this,"MSX cartridge B","","MSX cartridge (*.rom)");
+	if (fnam.isEmpty()) return;
+	ui.cSlotAName->setText(fnam);
+	loadFile(comp, fnam.toLocal8Bit().data(), FT_SLOT_B, 1);
+}
+
+void SetupWin::ejectSlotA() {
+	free(comp->msx.slotA);
+	comp->msx.slotA = NULL;
+	comp->msx.slotAname[0] = 0x00;
+	ui.cSlotAName->clear();
+}
+
+void SetupWin::ejectSlotB() {
+	free(comp->msx.slotB);
+	comp->msx.slotB = NULL;
+	comp->msx.slotBname[0] = 0x00;
+	ui.cSlotBName->clear();
 }
 
 // tools

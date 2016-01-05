@@ -159,6 +159,10 @@ typedef struct {
 			unsigned char regB;
 			unsigned char regC;
 		} ppi;
+		unsigned char* slotA;	// cartridge A
+		char slotAname[512];
+		unsigned char* slotB;	// cartridge B
+		char slotBname[512];
 	} msx;
 
 	CMOS cmos;

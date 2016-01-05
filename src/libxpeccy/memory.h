@@ -8,6 +8,7 @@ extern "C" {
 // mempage type
 #define	MEM_RAM		1
 #define	MEM_ROM		2
+#define MEM_EXT		3
 // memory banks
 #define	MEM_BANK0	0
 #define	MEM_BANK1	1
@@ -25,6 +26,7 @@ typedef struct {
 	MemPage ram[256];
 	MemPage rom[32];
 	MemPage* pt[4];
+	MemPage ext[4];
 	unsigned char ramData[0x400000];	// 4M
 	unsigned char romData[0x80000];		// 512K
 	int memSize;
@@ -40,6 +42,7 @@ void memWr(Memory*,unsigned short,unsigned char);
 
 void memSetSize(Memory*,int);
 void memSetBank(Memory*,int,int,unsigned char);
+void memSetExternal(Memory*,int,int,unsigned char*);
 
 void memSetPage(Memory*,int,int,char*);
 void memGetPage(Memory*,int,int,char*);

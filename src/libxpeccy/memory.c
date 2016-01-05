@@ -7,20 +7,19 @@
 Memory* memCreate() {
 	int i;
 	Memory* mem = (Memory*)malloc(sizeof(Memory));
-//	memset(mem->ramFlag, 0x00, 0x400000);
-//	memset(mem->romFlag, 0x00, 0x80000);
 	mem->romMask = 0x03;
+	for (i = 0; i < 4; i++) {
+		mem->ext[i].type = MEM_EXT;
+	}
 	for (i = 0; i < 32; i++) {
 		mem->rom[i].type = MEM_ROM;
 		mem->rom[i].num = i & 0xff;
 		mem->rom[i].dptr = mem->romData + (i << 14);
-//		mem->rom[i].fptr = mem->romFlag + (i << 14);
 	}
 	for (i = 0; i < 256; i++) {
 		mem->ram[i].type = MEM_RAM;
 		mem->ram[i].num = i & 0xff;
 		mem->ram[i].dptr = mem->ramData + (i << 14);
-//		mem->ram[i].fptr = mem->ramFlag + (i << 14);
 	}
 	memSetSize(mem,48);
 	mem->pt[0] = &mem->rom[0];
@@ -32,10 +31,6 @@ Memory* memCreate() {
 }
 
 void memDestroy(Memory* mem) {
-//	free(mem->ramData);
-//	free(mem->ramFlag);
-//	free(mem->romData);
-//	free(mem->romFlag);
 	free(mem);
 }
 
@@ -117,6 +112,11 @@ void memSetBank(Memory* mem, int bank, int wut, unsigned char nr) {
 			}
 			break;
 	}
+}
+
+void memSetExternal(Memory* mem, int bank, int flag, unsigned char* data) {
+	mem->ext[bank].dptr = data;
+	mem->pt[bank] = &mem->ext[bank];
 }
 
 void memSetPage(Memory* mem, int type, int page, char* src) {

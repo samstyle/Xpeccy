@@ -25,6 +25,9 @@
 #define	FT_HOBETA	(1<<12)
 #define	FT_RAW		(1<<13)
 #define	FT_SPG		(1<<14)
+#define FT_SLOT_A	(1<<15)
+#define FT_SLOT_B	(1<<16)
+#define FT_SLOT		(FT_SLOT_A | FT_SLOT_B)
 
 void initFileDialog(QWidget*);
 void loadFile(Computer*,const char*, int, int);

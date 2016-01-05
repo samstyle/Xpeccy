@@ -58,6 +58,7 @@ QString getFilter(int flags) {
 #endif
 	if (flags & FT_SPG) res.append(" *.spg");
 	if (flags & FT_HOBETA) res.append(" *.$?");
+	if (flags & FT_SLOT) res.append(" *.rom");
 	if (res.startsWith(" ")) res.remove(0,1);
 	return res;
 }
@@ -75,6 +76,7 @@ int getFileType(QString path) {
 	if (path.endsWith(".dsk",Qt::CaseInsensitive)) return FT_DSK;
 	if (path.endsWith(".td0",Qt::CaseInsensitive)) return FT_TD0;
 	if (path.endsWith(".spg",Qt::CaseInsensitive)) return FT_SPG;
+	if (path.endsWith(".rom",Qt::CaseInsensitive)) return FT_SLOT;
 #ifdef HAVEZLIB
 	if (path.endsWith(".rzx",Qt::CaseInsensitive)) return FT_RZX;
 #endif
@@ -90,15 +92,17 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 	filer->setDirectory(lastDir);
 	if (opath == "") {
 		QString filters = "";
-		if (drv == -1) filters = QString("All known types (").append(getFilter(flags)).append(")");
+		if (drv == -1) filters = QString("All known types (%0)").arg(getFilter(flags));
 		if (flags & FT_DISK) {
 			if ((drv == -1) || (drv == 0)) filters.append(";;Disk A (").append(getFilter(flags & (FT_DISK | FT_HOBETA))).append(")");
 			if ((drv == -1) || (drv == 1)) filters.append(";;Disk B (").append(getFilter(flags & (FT_DISK | FT_HOBETA))).append(")");
 			if ((drv == -1) || (drv == 2)) filters.append(";;Disk C (").append(getFilter(flags & (FT_DISK | FT_HOBETA))).append(")");
 			if ((drv == -1) || (drv == 3)) filters.append(";;Disk D (").append(getFilter(flags & (FT_DISK | FT_HOBETA))).append(")");
 		}
-		if (flags & FT_SNAP) filters.append(";;Snapshot (").append(getFilter(flags & FT_SNAP)).append(")");
-		if (flags & FT_TAPE) filters.append(";;Tape (").append(getFilter(flags & FT_TAPE)).append(")");
+		if (flags & FT_SNAP) filters.append(QString(";;Snapshot (%0)").arg(getFilter(flags & FT_SNAP)));
+		if (flags & FT_TAPE) filters.append(QString(";;Tape (%0)").arg(getFilter(flags & FT_TAPE)));
+		if (flags & FT_SLOT_A) filters.append(QString(";;MSX slot A (%0)").arg(getFilter(flags & FT_SLOT)));
+		if (flags & FT_SLOT_B) filters.append(QString(";;MSX slot B (%0)").arg(getFilter(flags & FT_SLOT)));
 		if (flags & FT_SPG) filters.append(";;SPG file (*.spg)");
 #ifdef HAVEZLIB
 		if (flags & FT_RZX) filters.append(";;RZX file (").append(getFilter(flags & FT_RZX)).append(")");
@@ -115,6 +119,8 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 		if (filters.contains("Disk B")) drv = 1;
 		if (filters.contains("Disk C")) drv = 2;
 		if (filters.contains("Disk D")) drv = 3;
+		if (filters.contains("MSX slot A")) drv = 0;
+		if (filters.contains("MSX slot B")) drv = 1;
 		if (filters.contains("Raw")) drv = 10;
 		opath = filer->selectedFiles().first();
 		lastDir = filer->directory().absolutePath();
@@ -147,6 +153,7 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 		case FT_DSK: ferr = loadDSK(flp,sfnam.c_str()); break;
 		case FT_TD0: ferr = loadTD0(flp,sfnam.c_str()); break;
 		case FT_SPG: ferr = loadSPG(comp,sfnam.c_str()); break;
+		case FT_SLOT: ferr = loadCARD(comp,sfnam.c_str(),drv); break;
 #ifdef HAVEZLIB
 		case FT_RZX: ferr = loadRZX(comp,sfnam.c_str()); break;
 #endif
