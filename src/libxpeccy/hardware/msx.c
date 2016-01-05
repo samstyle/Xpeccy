@@ -75,15 +75,15 @@ void msxReset(Computer* comp) {
 // AY
 
 void msxAYIdxOut(Computer* comp, unsigned short port, unsigned char val) {
-	tsOut(comp->ts, 0xbffd, val);
-}
-
-void msxAYDataOut(Computer* comp, unsigned short port, unsigned char val) {
 	tsOut(comp->ts, 0xfffd, val);
 }
 
+void msxAYDataOut(Computer* comp, unsigned short port, unsigned char val) {
+	tsOut(comp->ts, 0xbffd, val);
+}
+
 unsigned char msxAYDataIn(Computer* comp, unsigned short port) {
-	return tsIn(comp->ts, 0xfffd);
+	return tsIn(comp->ts, 0xbffd);
 }
 
 // 8255A
@@ -164,7 +164,7 @@ void msx99Out(Computer* comp, unsigned short port, unsigned char val) {
 					case 2: vidSetMode(comp->vid, VID_MSX_SCR3); break;	// multicolor 4x4
 					default: vidSetMode(comp->vid, VID_UNKNOWN); break;
 				}
-				printf("MSX set video mode %i\n",vmode & 7);
+				// printf("MSX set video mode %i\n",vmode & 7);
 			}
 		} else {			// b7.hi = 0 : VDP address setup
 			comp->vid->v9918.vadr = ((val & 0x3f) << 8) | comp->vid->v9918.data;

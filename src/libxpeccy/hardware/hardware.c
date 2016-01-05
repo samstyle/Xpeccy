@@ -54,14 +54,12 @@ HardWare hwTab[] = {
 		MEM_512 | MEM_1M,
 		&prfMapMem,&prfOut,&prfIn,&stdMRd,&stdMWr,&prfReset
 	},
-#ifdef ISDEBUG
 	{
-		"MSX","MSX",
+		"MSX","MSX-1",
 		HW_MSX,
 		MEM_128,
 		&msxMapMem,&msxOut,&msxIn,&stdMRd,&stdMWr,&msxReset
 	},
-#endif
 	{NULL,NULL,0,0,NULL,NULL,NULL,NULL,NULL,NULL}
 };
 

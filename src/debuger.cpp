@@ -541,7 +541,13 @@ void DebugWin::setZ80() {
 // memory map section
 
 QString getPageName(MemPage* pg) {
-	QString res = (pg->type == MEM_RAM) ? "RAM-" : "ROM-";
+	QString res;
+	switch(pg->type) {
+		case MEM_RAM: res = "RAM-"; break;
+		case MEM_ROM: res = "ROM-"; break;
+		case MEM_EXT: res = "EXT-"; break;
+		default: res = "----"; break;
+	}
 	res.append(QString::number(pg->num));
 	return res;
 }

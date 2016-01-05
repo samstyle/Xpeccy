@@ -291,6 +291,7 @@ void compSetHardware(Computer* comp, const char* name) {
 	if (hw == NULL) return;
 	comp->hw = hw;
 	comp->vid->istsconf = (hw->type == HW_TSLAB) ? 1 : 0;
+	comp->vid->ismsx = (hw->type == HW_MSX) ? 1 : 0;
 }
 
 void compSetFrq(Computer* comp, double frq) {

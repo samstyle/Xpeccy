@@ -59,7 +59,8 @@ struct Video {
 	unsigned intLINE:1;	// for TSConf
 	unsigned intDMA:1;	// for TSConf
 	unsigned nextrow:1;	// = not-masked intLINE
-	unsigned istsconf:1;
+	unsigned istsconf:1;	// TSConf (render sprites/tiles)
+	unsigned ismsx:1;	// v9918 (render sprites)
 	unsigned noScreen:1;
 	unsigned debug:1;
 
@@ -127,6 +128,7 @@ struct Video {
 		unsigned char data;		// 1st byte in 2-byte writing
 		unsigned char reg[48];		// VDP registers (8 for v9918, 48? for v9938)
 		unsigned char ram[0x20000];	// VRAM (16K for v9918, 128K for v9938)
+		unsigned char sprImg[0xc000];	// 256x192 image with foreground sprites (rebuild @ frame start)
 	} v9918;
 };
 
