@@ -188,10 +188,10 @@ Computer* compCreate() {
 	comp->ide = ideCreate(IDE_NONE);
 	comp->ide->smuc.cmos = &comp->cmos;
 	comp->sdc = sdcCreate();
-	comp->msx.slotA = NULL;
-	comp->msx.slotB = NULL;
-	comp->msx.slotAname[0] = 0x00;
-	comp->msx.slotBname[0] = 0x00;
+	comp->msx.slotA.data = NULL;
+	comp->msx.slotB.data = NULL;
+	comp->msx.slotA.name[0] = 0x00;
+	comp->msx.slotB.name[0] = 0x00;
 // sound
 	comp->ts = tsCreate(TS_NONE,SND_AY,SND_NONE);
 	comp->gs = gsCreate();

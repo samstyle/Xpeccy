@@ -153,7 +153,7 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 		case FT_DSK: ferr = loadDSK(flp,sfnam.c_str()); break;
 		case FT_TD0: ferr = loadTD0(flp,sfnam.c_str()); break;
 		case FT_SPG: ferr = loadSPG(comp,sfnam.c_str()); break;
-		case FT_SLOT: ferr = loadCARD(comp,sfnam.c_str(),drv); break;
+		case FT_SLOT: ferr = loadSlot(comp,sfnam.c_str(),drv); break;
 #ifdef HAVEZLIB
 		case FT_RZX: ferr = loadRZX(comp,sfnam.c_str()); break;
 #endif

@@ -16,10 +16,10 @@ extern "C" {
 #define	MEM_BANK3	3
 
 typedef struct {
+	unsigned wr:1;		// write enable
 	int type;
 	int num;
 	unsigned char* dptr;
-//	unsigned char* fptr;
 } MemPage;
 
 typedef struct {

@@ -10,14 +10,19 @@ Memory* memCreate() {
 	mem->romMask = 0x03;
 	for (i = 0; i < 4; i++) {
 		mem->ext[i].type = MEM_EXT;
+		mem->ext[i].wr = 0;
+		mem->ext[i].num = i;
+		mem->ext[i].dptr = NULL;
 	}
 	for (i = 0; i < 32; i++) {
 		mem->rom[i].type = MEM_ROM;
+		mem->rom[i].wr = 0;
 		mem->rom[i].num = i & 0xff;
 		mem->rom[i].dptr = mem->romData + (i << 14);
 	}
 	for (i = 0; i < 256; i++) {
 		mem->ram[i].type = MEM_RAM;
+		mem->ram[i].wr = 1;
 		mem->ram[i].num = i & 0xff;
 		mem->ram[i].dptr = mem->ramData + (i << 14);
 	}
@@ -42,12 +47,13 @@ MemPage* ptr;
 
 unsigned char memRd(Memory* mem, unsigned short adr) {
 	ptr = mem->pt[adr >> 14];
+//	printf("adr = %i : ptr->type = %i : ptr->num = %p\n",adr,ptr->type,ptr->num);
 	return ptr->dptr[adr & 0x3fff];
 }
 
 void memWr(Memory* mem, unsigned short adr, unsigned char val) {
 	ptr = mem->pt[adr >> 14];
-	if (ptr->type == MEM_RAM)
+	if (ptr->wr)
 		ptr->dptr[adr & 0x3fff] = val;
 }
 
@@ -114,8 +120,9 @@ void memSetBank(Memory* mem, int bank, int wut, unsigned char nr) {
 	}
 }
 
-void memSetExternal(Memory* mem, int bank, int flag, unsigned char* data) {
+void memSetExternal(Memory* mem, int bank, int num, unsigned char* data) {
 	mem->ext[bank].dptr = data;
+	mem->ext[bank].num = num;
 	mem->pt[bank] = &mem->ext[bank];
 }
 

@@ -774,8 +774,8 @@ void msxPutTile(Video* vid, int xpos, int ypos, int pat, int atr) {
 				src <<= 1;
 				xpos++;
 			}
+			xpos -= 8;
 		}
-		xpos -= 8;
 		ypos++;
 	}
 }

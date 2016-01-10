@@ -8,8 +8,8 @@ typedef struct {
 
 mPageNr msxMemTab[4][4] = {
 	{{MEM_ROM, 0}, {MEM_ROM, 1}, {MEM_RAM, 1}, {MEM_RAM, 0}},
-	{{MEM_EXT,0},{MEM_EXT,0},{MEM_EXT,0},{MEM_EXT,0}},
-	{{MEM_EXT,0},{MEM_EXT,0},{MEM_EXT,0},{MEM_EXT,0}},
+	{{MEM_EXT,0},{MEM_EXT,0},{MEM_EXT,1},{MEM_EXT,2}},
+	{{MEM_EXT,0},{MEM_EXT,0},{MEM_EXT,1},{MEM_EXT,2}},
 	{{MEM_RAM, 3},{MEM_RAM, 2},{MEM_RAM, 1},{MEM_RAM, 0}}
 };
 
@@ -18,18 +18,10 @@ unsigned char emptyPage[0x4000];
 
 void msxSetMem(Computer* comp, int bank, unsigned char slot) {
 	mPageNr pg = msxMemTab[slot][bank];
-	if (pg.type == -1) {
-		printf("BANK %i SLOT %i\n",bank,slot);
-		assert(0);
-	}
 	if (pg.type == MEM_EXT) {
-		unsigned char* ptr = (slot & 1) ? comp->msx.slotA : comp->msx.slotB;
-		if (!ptr) {
-			ptr = emptyPage;
-		} else {
-			ptr += (pg.num << 14);
-		}
-		memSetExternal(comp->mem, bankID[bank], 0, ptr);
+		xCartridge* cart = (slot & 1) ? &comp->msx.slotA : &comp->msx.slotB;
+		unsigned char* ptr = cart->data ? cart->data + ((pg.num << 14) & cart->memMask) : emptyPage;
+		memSetExternal(comp->mem, bankID[bank], pg.num, ptr);
 	} else {
 		memSetBank(comp->mem, bankID[bank], pg.type, pg.num);
 	}
@@ -69,6 +61,15 @@ void msxReset(Computer* comp) {
 	comp->vid->v9918.vmode = -1;
 	for (int i = 0; i < 16; i++) {
 		comp->vid->pal[i] = msxPalete[i];
+	}
+}
+
+void msxMWr(Computer* comp, unsigned short adr, unsigned char val) {
+	MemPage* pg = memGetBankPtr(comp->mem, adr);
+	if (pg->type != MEM_EXT) {
+		stdMWr(comp, adr, val);
+	} else {
+		// cartridge mappers
 	}
 }
 

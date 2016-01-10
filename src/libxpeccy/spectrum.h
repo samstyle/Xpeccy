@@ -49,6 +49,12 @@ typedef struct {
 } memEntry;
 
 typedef struct {
+	unsigned char* data;
+	char name[512];
+	int memMask;
+} xCartridge;
+
+typedef struct {
 	unsigned brk:1;			// breakpoint
 	unsigned debug:1;		// dont' do breakpoints
 	unsigned frmStrobe:1;		// new frame started
@@ -159,10 +165,8 @@ typedef struct {
 			unsigned char regB;
 			unsigned char regC;
 		} ppi;
-		unsigned char* slotA;	// cartridge A
-		char slotAname[512];
-		unsigned char* slotB;	// cartridge B
-		char slotBname[512];
+		xCartridge slotA;
+		xCartridge slotB;
 	} msx;
 
 	CMOS cmos;

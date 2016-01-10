@@ -411,8 +411,8 @@ void SetupWin::start(xProfile* p) {
 	if (ui.sdcapbox->currentIndex() < 0) ui.sdcapbox->setCurrentIndex(2);	// 128M
 	ui.sdlock->setChecked(comp->sdc->lock);
 
-	ui.cSlotAName->setText(comp->msx.slotAname);
-	ui.cSlotBName->setText(comp->msx.slotBname);
+	ui.cSlotAName->setText(comp->msx.slotA.name);
+	ui.cSlotBName->setText(comp->msx.slotB.name);
 // tape
 	ui.cbTapeAuto->setChecked(conf.tape.autostart);
 	ui.cbTapeFast->setChecked(conf.tape.fast);
@@ -1327,17 +1327,19 @@ void SetupWin::openSlotB() {
 	loadFile(comp, fnam.toLocal8Bit().data(), FT_SLOT_B, 1);
 }
 
+void ejectSlot(xCartridge* slot) {
+	free(slot->data);
+	slot->data = NULL;
+	slot->name[0] = 0x00;
+}
+
 void SetupWin::ejectSlotA() {
-	free(comp->msx.slotA);
-	comp->msx.slotA = NULL;
-	comp->msx.slotAname[0] = 0x00;
+	ejectSlot(&comp->msx.slotA);
 	ui.cSlotAName->clear();
 }
 
 void SetupWin::ejectSlotB() {
-	free(comp->msx.slotB);
-	comp->msx.slotB = NULL;
-	comp->msx.slotBname[0] = 0x00;
+	ejectSlot(&comp->msx.slotB);
 	ui.cSlotBName->clear();
 }
 

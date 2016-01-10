@@ -151,6 +151,7 @@ void msxMapMem(Computer*);
 void msxOut(Computer*,unsigned short,unsigned char,int);
 unsigned char msxIn(Computer*,unsigned short,int);
 void msxReset(Computer*);
+void msxMWr(Computer*,unsigned short,unsigned char);
 
 #ifdef __cplusplus
 }

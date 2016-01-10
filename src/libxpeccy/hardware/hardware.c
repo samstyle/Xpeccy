@@ -58,7 +58,7 @@ HardWare hwTab[] = {
 		"MSX","MSX-1",
 		HW_MSX,
 		MEM_128,
-		&msxMapMem,&msxOut,&msxIn,&stdMRd,&stdMWr,&msxReset
+		&msxMapMem,&msxOut,&msxIn,&stdMRd,&msxMWr,&msxReset
 	},
 	{NULL,NULL,0,0,NULL,NULL,NULL,NULL,NULL,NULL}
 };
