@@ -1,9 +1,11 @@
 #include "filetypes.h"
 
+int initMSXmap[8] = {0,1,0,1,2,3,0,1};
+
 int loadSlot(Computer* comp, const char* name, int drv) {
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
-	unsigned char* ptr = drv ? comp->msx.slotB.data : comp->msx.slotA.data;
+	xCartridge* slot = drv ? &comp->msx.slotB : &comp->msx.slotA;
 	fseek(file,0,SEEK_END);
 	size_t siz = ftell(file);
 	rewind(file);
@@ -12,20 +14,14 @@ int loadSlot(Computer* comp, const char* name, int drv) {
 		err = ERR_RAW_LONG;
 	} else {
 		int tsiz = 0x4000;
-		while (tsiz < siz) {
-			tsiz <<= 1;
+		while (tsiz < siz) {tsiz <<= 1;}		// get nearest 2^n >= siz
+		slot->data = realloc(slot->data, tsiz);
+		slot->memMask = tsiz - 1;
+		strcpy(slot->name, name);
+		fread(slot->data, tsiz, 1, file);
+		for (tsiz = 0; tsiz < 8; tsiz++) {
+			slot->memMap[tsiz] = initMSXmap[tsiz];
 		}
-		ptr = realloc(ptr, tsiz);
-		if (drv) {
-			comp->msx.slotB.data = ptr;
-			comp->msx.slotB.memMask = tsiz - 1;
-			strcpy(comp->msx.slotB.name, name);
-		} else {
-			comp->msx.slotA.data = ptr;
-			comp->msx.slotA.memMask = tsiz - 1;
-			strcpy(comp->msx.slotA.name, name);
-		}
-		fread(ptr, tsiz, 1, file);
 		err = ERR_OK;
 	}
 	fclose(file);

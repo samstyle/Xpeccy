@@ -48,10 +48,19 @@ typedef struct {
 	unsigned char page;
 } memEntry;
 
+// MSX cartridge mapper type
+#define MSX_NOMAPPER	0
+#define	MSX_KONAMI4	1
+#define	MSX_KONAMI5	2
+#define	MSX_ASCII8	3
+#define	MSX_ASCII16	4
+
 typedef struct {
 	unsigned char* data;
 	char name[512];
 	int memMask;
+	int memMap[8];		// 8 of 8kb pages
+	int mapType;		// mapper
 } xCartridge;
 
 typedef struct {
