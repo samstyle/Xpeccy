@@ -138,6 +138,7 @@ void prfChangeLayName(std::string oldName, std::string newName) {
 #define	PS_DISK		7
 #define	PS_IDE		8
 #define	PS_SDC		9
+#define PS_SLOT		10
 
 void setDiskString(Computer* comp,Floppy* flp,std::string st) {
 	if (st.size() < 4) return;
@@ -295,6 +296,7 @@ int prfLoad(std::string nm) {
 			if (pnam=="[IDE]") section = PS_IDE;
 			if (pnam=="[INPUT]") section = PS_INPUT;
 			if (pnam=="[SDC]") section = PS_SDC;
+			if (pnam=="[SLOT]") section = PS_SLOT;
 		} else {
 			switch (section) {
 				case PS_ROMSET:
@@ -402,6 +404,10 @@ int prfLoad(std::string nm) {
 					if (pnam == "sdcimage") sdcSetImage(comp->sdc,pval.c_str());
 					if (pnam == "sdclock") comp->sdc->lock = str2bool(pval) ? 1 : 0;
 					if (pnam == "capacity") sdcSetCapacity(comp->sdc,atoi(pval.c_str()));
+					break;
+				case PS_SLOT:
+					if (pnam == "slotA.type") comp->msx.slotA.mapType = atoi(pval.c_str());
+					if (pnam == "slotB.type") comp->msx.slotB.mapType = atoi(pval.c_str());
 					break;
 			}
 		}
@@ -526,6 +532,10 @@ int prfSave(std::string nm) {
 	fprintf(file, "sdcimage = %s\n", comp->sdc->image ? comp->sdc->image : "");
 	fprintf(file, "sdclock = %s\n", YESNO(comp->sdc->lock));
 	fprintf(file, "capacity = %i\n", comp->sdc->capacity);
+
+	fprintf(file, "\n[SLOT]\n");
+	fprintf(file, "slotA.type = %i\n",comp->msx.slotA.mapType);
+	fprintf(file, "slotB.type = %i\n",comp->msx.slotB.mapType);
 
 	fclose(file);
 

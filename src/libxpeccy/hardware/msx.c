@@ -60,7 +60,14 @@ void msxReset(Computer* comp) {
 	for (int i = 0; i < 16; i++) {
 		comp->vid->pal[i] = msxPalete[i];
 	}
+	comp->msx.slot[0] = 0;
+	comp->msx.slot[1] = 0;
+	comp->msx.slot[2] = 0;
+	comp->msx.slot[3] = 0;
+	msxMapMem(comp);
 }
+
+int tobrk = 1;
 
 unsigned char msxMRd(Computer* comp, unsigned short adr, int m1) {
 	MemPage* pg = memGetBankPtr(comp->mem, adr);
@@ -68,7 +75,20 @@ unsigned char msxMRd(Computer* comp, unsigned short adr, int m1) {
 	if (pg->type == MEM_EXT) {
 		xCartridge* slot = pg->num ? &comp->msx.slotB : &comp->msx.slotA;
 		if (slot->data) {
-			int tmp = (slot->memMap[(adr >> 13) & 7] << 13) | (adr & 0x1fff);		// absolute addr in cartridge mem
+			int bnk = slot->memMap[(adr >> 13) & 7];
+			int tmp = (bnk << 13) | (adr & 0x1fff);		// absolute addr in cartridge mem
+/*
+			if (tobrk && m1) {
+				printf("map : %i %i %i %i\n",slot->memMap[2],slot->memMap[3],slot->memMap[4],slot->memMap[5]);
+				printf("adr : %.4X\n",adr);
+				printf("bnk : %i\n",bnk);
+				printf("abs : %X\n",tmp);
+				printf("msk : %X\n",slot->memMask);
+				printf("(*) : %.2X\n",*(slot->data + (tmp & slot->memMask)));
+				tobrk = 0;
+				comp->brk = 1;
+			}
+*/
 			res = *(slot->data + (tmp & slot->memMask));
 		} else {
 			res = 0xff;
@@ -85,6 +105,45 @@ void msxMWr(Computer* comp, unsigned short adr, unsigned char val) {
 		stdMWr(comp, adr, val);
 	} else {
 		// cartridge mappers
+		xCartridge* slot = pg->num ? &comp->msx.slotB : &comp->msx.slotA;
+		switch (slot->mapType) {
+			case MSX_KONAMI4:
+				switch(adr) {
+					case 0x6000: slot->memMap[3] = val; break;
+					case 0x8000: slot->memMap[4] = val; break;
+					case 0xa000: slot->memMap[5] = val; break;
+				}
+				break;
+			case MSX_KONAMI5:
+				switch (adr & 0xf800) {
+					case 0x5000: slot->memMap[2] = val; break;
+					case 0x7000: slot->memMap[3] = val; break;
+					case 0x9000: slot->memMap[4] = val; break;
+					case 0xb000: slot->memMap[5] = val; break;
+				}
+				break;
+			case MSX_ASCII8:
+				switch (adr & 0xf800) {
+					case 0x6000: slot->memMap[2] = val; break;
+					case 0x6800: slot->memMap[3] = val; break;
+					case 0x7000: slot->memMap[4] = val; break;
+					case 0x7800: slot->memMap[5] = val; break;
+				}
+				break;
+			case MSX_ASCII16:
+				val <<= 1;	// *2
+				switch (adr & 0xf800) {
+					case 0x6000:
+						slot->memMap[2] = val;
+						slot->memMap[3] = val+1;
+						break;
+					case 0x7000:
+						slot->memMap[4] = val;
+						slot->memMap[5] = val+1;
+						break;
+				}
+				break;
+		}
 	}
 }
 
@@ -223,6 +282,7 @@ xPort msxPortMap[] = {
 	{0xff,0xaa,2,2,2,msxAAIn,	msxAAOut},	// AA	RW	I 8255A/ULA9RA041 PPI Port C Kbd Row sel,LED,CASo,CASm
 	{0xff,0xab,2,2,2,NULL,		msxABOut},	// AB	W	I 8255A/ULA9RA041 Mode select and I/O setup of A,B,C
 
+	{0x00,0x00,2,2,2,dummyIn,brkOut},
 	{0x00,0x00,2,2,2,brkIn,brkOut}
 };
 

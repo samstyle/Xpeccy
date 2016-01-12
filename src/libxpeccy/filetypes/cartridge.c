@@ -1,7 +1,5 @@
 #include "filetypes.h"
 
-int initMSXmap[8] = {0,1,0,1,2,3,0,1};
-
 int loadSlot(Computer* comp, const char* name, int drv) {
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
@@ -20,7 +18,7 @@ int loadSlot(Computer* comp, const char* name, int drv) {
 		strcpy(slot->name, name);
 		fread(slot->data, tsiz, 1, file);
 		for (tsiz = 0; tsiz < 8; tsiz++) {
-			slot->memMap[tsiz] = initMSXmap[tsiz];
+			slot->memMap[tsiz] = 0;
 		}
 		err = ERR_OK;
 	}

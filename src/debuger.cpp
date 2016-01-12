@@ -562,7 +562,8 @@ void DebugWin::fillMem() {
 // disasm table
 
 unsigned char rdbyte(unsigned short adr, void* ptr) {
-	return memRd(((Computer*)ptr)->mem,adr);
+	Computer* comp = (Computer*)ptr;
+	return comp->hw->mrd(comp, adr, 0);
 }
 
 #define DASMROW 26

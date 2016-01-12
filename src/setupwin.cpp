@@ -24,6 +24,10 @@ void fillRFBox(QComboBox* box, QStringList lst) {
 	box->addItems(lst);
 }
 
+void setRFIndex(QComboBox* box, QVariant data) {
+	box->setCurrentIndex(box->findData(data));
+}
+
 std::string getRFText(QComboBox* box) {
 	QString res = "";
 	if (box->currentIndex() >= 0) res = box->currentText();
@@ -141,7 +145,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.hs_type->addItem(QIcon(":/images/cancel.png"),"Not connected",IDE_NONE);
 	ui.hs_type->addItem(QIcon(":/images/hdd.png"),"HDD (ATA)",IDE_ATA);
 //	setupUi.hs_type->addItem(QIcon(":/images/cd.png"),"CD (ATAPI) not working yet",IDE_ATAPI);
-// sdcard
+// others
 	ui.sdcapbox->addItem("32 M",SDC_32M);
 	ui.sdcapbox->addItem("64 M",SDC_64M);
 	ui.sdcapbox->addItem("128 M",SDC_128M);
@@ -149,6 +153,17 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.sdcapbox->addItem("512 M",SDC_512M);
 	ui.sdcapbox->addItem("1024 M",SDC_1G);
 
+	ui.cSlotAType->addItem("No mapper",MSX_NOMAPPER);
+	ui.cSlotAType->addItem("Konami 4",MSX_KONAMI4);
+	ui.cSlotAType->addItem("Konami 5",MSX_KONAMI5);
+	ui.cSlotAType->addItem("ASCII 8K",MSX_ASCII8);
+	ui.cSlotAType->addItem("ASCII 16K",MSX_ASCII16);
+
+	ui.cSlotBType->addItem("No mapper",MSX_NOMAPPER);
+	ui.cSlotBType->addItem("Konami 4",MSX_KONAMI4);
+	ui.cSlotBType->addItem("Konami 5",MSX_KONAMI5);
+	ui.cSlotBType->addItem("ASCII 8K",MSX_ASCII8);
+	ui.cSlotBType->addItem("ASCII 16K",MSX_ASCII16);
 // all
 	connect(ui.okbut,SIGNAL(released()),this,SLOT(okay()));
 	connect(ui.apbut,SIGNAL(released()),this,SLOT(apply()));
@@ -413,6 +428,8 @@ void SetupWin::start(xProfile* p) {
 
 	ui.cSlotAName->setText(comp->msx.slotA.name);
 	ui.cSlotBName->setText(comp->msx.slotB.name);
+	setRFIndex(ui.cSlotAType, comp->msx.slotA.mapType);
+	setRFIndex(ui.cSlotBType, comp->msx.slotB.mapType);
 // tape
 	ui.cbTapeAuto->setChecked(conf.tape.autostart);
 	ui.cbTapeFast->setChecked(conf.tape.fast);
@@ -549,10 +566,13 @@ void SetupWin::apply() {
 	pass.cyls = ui.hs_gcyl->value();
 	comp->ide->slave->maxlba = ui.hs_glba->value();
 	ideSetPassport(comp->ide,IDE_SLAVE,pass);
-// sdcard
+// others
 	sdcSetImage(comp->sdc,ui.sdPath->text().isEmpty() ? "" : ui.sdPath->text().toLocal8Bit().data());
 	sdcSetCapacity(comp->sdc,ui.sdcapbox->itemData(ui.sdcapbox->currentIndex()).toInt());
 	comp->sdc->lock = ui.sdlock->isChecked() ? 1 : 0;
+
+	comp->msx.slotA.mapType = ui.cSlotAType->itemData(ui.cSlotAType->currentIndex()).toInt();
+	comp->msx.slotB.mapType = ui.cSlotBType->itemData(ui.cSlotBType->currentIndex()).toInt();
 // tape
 	conf.tape.autostart = ui.cbTapeAuto->isChecked() ? 1 : 0;
 	conf.tape.fast = ui.cbTapeFast->isChecked() ? 1 : 0;
