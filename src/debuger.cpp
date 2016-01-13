@@ -606,7 +606,7 @@ DasmRow getDisasm(Computer* comp, unsigned short& adr) {
 	clen = cpuDisasm(adr,buf,&rdbyte,comp);
 	drow.com = QString(buf).toUpper();
 	for (int i = 0; i < clen; i++) {
-		drow.bytes.append(memRd(comp->mem,adr));
+		drow.bytes.append(rdbyte(adr, (void*)comp));
 		adr++;
 	}
 	drow.mem = 0;

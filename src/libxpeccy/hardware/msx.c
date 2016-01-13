@@ -54,6 +54,20 @@ xColor msxPalete[16] = {
 	{255,255,255},	// 15: white
 };
 
+void msxResetSlot(xCartridge* slot) {
+	if (slot->mapType == MSX_NOMAPPER) {
+		slot->memMap[2] = 0;
+		slot->memMap[3] = 1;
+		slot->memMap[4] = 2;
+		slot->memMap[5] = 3;
+	} else {
+		slot->memMap[2] = 0;
+		slot->memMap[3] = 0;
+		slot->memMap[4] = 0;
+		slot->memMap[5] = 0;
+	}
+}
+
 void msxReset(Computer* comp) {
 	comp->vid->v9918.high = 0;
 	comp->vid->v9918.vmode = -1;
@@ -64,6 +78,8 @@ void msxReset(Computer* comp) {
 	comp->msx.slot[1] = 0;
 	comp->msx.slot[2] = 0;
 	comp->msx.slot[3] = 0;
+	msxResetSlot(&comp->msx.slotA);
+	msxResetSlot(&comp->msx.slotB);
 	msxMapMem(comp);
 }
 

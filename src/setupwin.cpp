@@ -1343,7 +1343,7 @@ void SetupWin::openSlotA() {
 void SetupWin::openSlotB() {
 	QString fnam = QFileDialog::getOpenFileName(this,"MSX cartridge B","","MSX cartridge (*.rom)");
 	if (fnam.isEmpty()) return;
-	ui.cSlotAName->setText(fnam);
+	ui.cSlotBName->setText(fnam);
 	loadFile(comp, fnam.toLocal8Bit().data(), FT_SLOT_B, 1);
 }
 
