@@ -26,10 +26,10 @@ void msxSetMem(Computer* comp, int bank, unsigned char slot) {
 }
 
 void msxMapMem(Computer* comp) {
-	msxSetMem(comp, 0, comp->msx.slot[0] & 3);
-	msxSetMem(comp, 1, comp->msx.slot[1] & 3);
-	msxSetMem(comp, 2, comp->msx.slot[2] & 3);
-	msxSetMem(comp, 3, comp->msx.slot[3] & 3);
+	msxSetMem(comp, 0, comp->msx.pA8 & 0x03);
+	msxSetMem(comp, 1, (comp->msx.pA8 & 0x0c) >> 2);
+	msxSetMem(comp, 2, (comp->msx.pA8 & 0x30) >> 4);
+	msxSetMem(comp, 3, (comp->msx.pA8 & 0xc0) >> 6);
 }
 
 // colors was taken from wikipedia article
@@ -54,30 +54,47 @@ xColor msxPalete[16] = {
 	{255,255,255},	// 15: white
 };
 
-void msxResetSlot(xCartridge* slot) {
-	if (slot->mapType == MSX_NOMAPPER) {
-		slot->memMap[2] = 0;
-		slot->memMap[3] = 1;
-		slot->memMap[4] = 2;
-		slot->memMap[5] = 3;
-	} else {
-		slot->memMap[2] = 0;
-		slot->memMap[3] = 0;
-		slot->memMap[4] = 0;
-		slot->memMap[5] = 0;
+unsigned char msxSlotRd(xCartridge* slot, unsigned short adr) {
+	unsigned char bnk;
+	int radr = 0;
+	switch(slot->mapType) {
+		case MSX_NOMAPPER:
+			radr = adr ^ 0x4000;
+			break;
+		case MSX_KONAMI4:
+			bnk = ((adr & 0x2000) >> 13) | ((adr & 0x8000) >> 14);
+			bnk = bnk ? slot->memMap[bnk] : 0;
+			radr = (bnk << 13) | (adr & 0x1fff);
+			break;
+		case MSX_ASCII8:
+		case MSX_KONAMI5:
+			bnk = ((adr & 0x2000) >> 13) | ((adr & 0x8000) >> 14);
+			bnk = slot->memMap[bnk];
+			radr = (bnk << 13) | (adr & 0x1fff);
+			break;
+		case MSX_ASCII16:
+			bnk = slot->memMap[(adr & 0x8000) >> 15];
+			radr = (bnk << 14) | (adr & 0x3fff);
+			break;
 	}
+	radr &= slot->memMask;
+	return slot->data[radr];
+}
+
+void msxResetSlot(xCartridge* slot) {
+	slot->memMap[0] = 0;
+	slot->memMap[1] = 0;
+	slot->memMap[2] = 0;
+	slot->memMap[3] = 0;
 }
 
 void msxReset(Computer* comp) {
 	comp->vid->v9918.high = 0;
 	comp->vid->v9918.vmode = -1;
+	comp->msx.pA8 = 0x00;
 	for (int i = 0; i < 16; i++) {
 		comp->vid->pal[i] = msxPalete[i];
 	}
-	comp->msx.slot[0] = 0;
-	comp->msx.slot[1] = 0;
-	comp->msx.slot[2] = 0;
-	comp->msx.slot[3] = 0;
 	msxResetSlot(&comp->msx.slotA);
 	msxResetSlot(&comp->msx.slotB);
 	msxMapMem(comp);
@@ -90,25 +107,7 @@ unsigned char msxMRd(Computer* comp, unsigned short adr, int m1) {
 	unsigned char res = 0xff;
 	if (pg->type == MEM_EXT) {
 		xCartridge* slot = pg->num ? &comp->msx.slotB : &comp->msx.slotA;
-		if (slot->data) {
-			int bnk = slot->memMap[(adr >> 13) & 7];
-			int tmp = (bnk << 13) | (adr & 0x1fff);		// absolute addr in cartridge mem
-/*
-			if (tobrk && m1) {
-				printf("map : %i %i %i %i\n",slot->memMap[2],slot->memMap[3],slot->memMap[4],slot->memMap[5]);
-				printf("adr : %.4X\n",adr);
-				printf("bnk : %i\n",bnk);
-				printf("abs : %X\n",tmp);
-				printf("msk : %X\n",slot->memMask);
-				printf("(*) : %.2X\n",*(slot->data + (tmp & slot->memMask)));
-				tobrk = 0;
-				comp->brk = 1;
-			}
-*/
-			res = *(slot->data + (tmp & slot->memMask));
-		} else {
-			res = 0xff;
-		}
+		res = slot->data ? msxSlotRd(slot, adr) : 0xff;
 	} else {
 		res = stdMRd(comp, adr, m1);
 	}
@@ -125,38 +124,31 @@ void msxMWr(Computer* comp, unsigned short adr, unsigned char val) {
 		switch (slot->mapType) {
 			case MSX_KONAMI4:
 				switch(adr) {
-					case 0x6000: slot->memMap[3] = val; break;
-					case 0x8000: slot->memMap[4] = val; break;
-					case 0xa000: slot->memMap[5] = val; break;
+					case 0x6000: slot->memMap[1] = val; break;
+					case 0x8000: slot->memMap[2] = val; break;
+					case 0xa000: slot->memMap[3] = val; break;
 				}
 				break;
 			case MSX_KONAMI5:
 				switch (adr & 0xf800) {
-					case 0x5000: slot->memMap[2] = val; break;
-					case 0x7000: slot->memMap[3] = val; break;
-					case 0x9000: slot->memMap[4] = val; break;
-					case 0xb000: slot->memMap[5] = val; break;
+					case 0x5000: slot->memMap[0] = val; break;
+					case 0x7000: slot->memMap[1] = val; break;
+					case 0x9000: slot->memMap[2] = val; break;		// TODO: SCC
+					case 0xb000: slot->memMap[3] = val; break;		// TODO: SCC
 				}
 				break;
 			case MSX_ASCII8:
 				switch (adr & 0xf800) {
-					case 0x6000: slot->memMap[2] = val; break;
-					case 0x6800: slot->memMap[3] = val; break;
-					case 0x7000: slot->memMap[4] = val; break;
-					case 0x7800: slot->memMap[5] = val; break;
+					case 0x6000: slot->memMap[0] = val; break;
+					case 0x6800: slot->memMap[1] = val; break;
+					case 0x7000: slot->memMap[2] = val; break;
+					case 0x7800: slot->memMap[3] = val; break;
 				}
 				break;
 			case MSX_ASCII16:
-				val <<= 1;	// *2
 				switch (adr & 0xf800) {
-					case 0x6000:
-						slot->memMap[2] = val;
-						slot->memMap[3] = val+1;
-						break;
-					case 0x7000:
-						slot->memMap[4] = val;
-						slot->memMap[5] = val+1;
-						break;
+					case 0x6000: slot->memMap[0] = val; break;	// #4000..#7FFF
+					case 0x7000: slot->memMap[1] = val; break;	// #8000..#bfff
 				}
 				break;
 		}
@@ -212,15 +204,10 @@ void msxABOut(Computer* comp, unsigned short port, unsigned char val) {
 	}
 }
 
-
 // memory
 
 void msxA8Out(Computer* comp, unsigned short port, unsigned char val) {
 	comp->msx.pA8 = val;
-	comp->msx.slot[0] = val & 3;
-	comp->msx.slot[1] = (val >> 2) & 3;
-	comp->msx.slot[2] = (val >> 4) & 3;
-	comp->msx.slot[3] = (val >> 6) & 3;
 	msxMapMem(comp);
 }
 
@@ -298,8 +285,8 @@ xPort msxPortMap[] = {
 	{0xff,0xaa,2,2,2,msxAAIn,	msxAAOut},	// AA	RW	I 8255A/ULA9RA041 PPI Port C Kbd Row sel,LED,CASo,CASm
 	{0xff,0xab,2,2,2,NULL,		msxABOut},	// AB	W	I 8255A/ULA9RA041 Mode select and I/O setup of A,B,C
 
-	{0x00,0x00,2,2,2,dummyIn,brkOut},
-	{0x00,0x00,2,2,2,brkIn,brkOut}
+	{0x00,0x00,2,2,2,dummyIn,dummyOut},
+//	{0x00,0x00,2,2,2,brkIn,brkOut}
 };
 
 unsigned char msxIn(Computer* comp, unsigned short port, int dos) {

@@ -44,5 +44,6 @@
         <file>images/scanled.png</file>
         <file>images/rulers.png</file>
         <file>images/redCircle.png</file>
+        <file>images/memory.png</file>
     </qresource>
 </RCC>

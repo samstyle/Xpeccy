@@ -21,7 +21,6 @@ void DebugWin::start(Computer* c) {
 	updateScreen();
 	vidDarkTail(comp->vid);
 	move(winPos);
-//	ui.sbScrBank->setValue(c->vid->curscr ? 5 : 7);
 	show();
 	ui.dasmTable->setFocus();
 	comp->vid->debug = 1;
@@ -33,7 +32,6 @@ void DebugWin::stop() {
 	comp->debug = 0;
 	comp->vid->debug = 0;
 	tCount = comp->tickCount;
-//	zxExec(comp);		// to prevent immediatelly fetch break, if PC is on breakpoint
 	hide();
 	active = false;
 	winPos = pos();
@@ -792,7 +790,7 @@ void DebugWin::fillDump() {
 		for (col = 1; col < 9; col++) {
 			ccol = (*getBrkPtr(comp, adr) & MEM_BRK_ANY) ? QColor(200,64,64) : bgcol;
 			ui.dumpTable->item(row,col)->setBackgroundColor(ccol);
-			ui.dumpTable->item(row,col)->setText(gethexbyte(memRd(comp->mem, adr)));
+			ui.dumpTable->item(row,col)->setText(gethexbyte(comp->hw->mrd(comp, adr, 0)));
 			adr++;
 		}
 	}

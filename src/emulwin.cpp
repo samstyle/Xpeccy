@@ -936,6 +936,7 @@ void MainWin::paintGL() {
 void MainWin::initUserMenu() {
 	userMenu = new QMenu(this);
 // submenu
+	fileMenu = userMenu->addMenu(QIcon(":/images/fileopen.png"),"Open...");
 	bookmarkMenu = userMenu->addMenu(QIcon(":/images/star.png"),"Bookmarks");
 	profileMenu = userMenu->addMenu(QIcon(":/images/profile.png"),"Profiles");
 	layoutMenu = userMenu->addMenu(QIcon(":/images/display.png"),"Layout");
@@ -954,6 +955,12 @@ void MainWin::initUserMenu() {
 	connect(layoutMenu,SIGNAL(triggered(QAction*)),this,SLOT(chLayout(QAction*)));
 	connect(vmodeMenu,SIGNAL(triggered(QAction*)),this,SLOT(chVMode(QAction*)));
 	connect(resMenu,SIGNAL(triggered(QAction*)),this,SLOT(reset(QAction*)));
+	connect(fileMenu,SIGNAL(triggered(QAction*)),this,SLOT(umOpen(QAction*)));
+
+	fileMenu->addAction(QIcon(":/images/memory.png"),"Snapshot")->setData(FT_SNAP | FT_SPG);
+	fileMenu->addAction(QIcon(":/images/tape.png"),"Tape")->setData(FT_TAPE);
+	fileMenu->addAction(QIcon(":/images/floppy.png"),"Floppy")->setData(FT_DISK);
+	fileMenu->addAction("Slot (MSX)")->setData(FT_SLOT);
 
 	nsAct = vmodeMenu->addAction("No screen");
 	nsAct->setData(-1);
@@ -1088,6 +1095,10 @@ void MainWin::chVMode(QAction* act) {
 		comp->vid->noScreen = act->isChecked() ? 1 : 0;
 		vidSetMode(comp->vid, VID_CURRENT);
 	}
+}
+
+void MainWin::umOpen(QAction* act) {
+	loadFile(comp, NULL, act->data().toInt(), -1);
 }
 
 // labels

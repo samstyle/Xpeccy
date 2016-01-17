@@ -92,12 +92,12 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 	filer->setDirectory(lastDir);
 	if (opath == "") {
 		QString filters = "";
-		if (drv == -1) filters = QString("All known types (%0)").arg(getFilter(flags));
+		if (flags == FT_ALL) filters = QString("All known types (%0)").arg(getFilter(flags));
 		if (flags & FT_DISK) {
-			if ((drv == -1) || (drv == 0)) filters.append(";;Disk A (").append(getFilter(flags & (FT_DISK | FT_HOBETA))).append(")");
-			if ((drv == -1) || (drv == 1)) filters.append(";;Disk B (").append(getFilter(flags & (FT_DISK | FT_HOBETA))).append(")");
-			if ((drv == -1) || (drv == 2)) filters.append(";;Disk C (").append(getFilter(flags & (FT_DISK | FT_HOBETA))).append(")");
-			if ((drv == -1) || (drv == 3)) filters.append(";;Disk D (").append(getFilter(flags & (FT_DISK | FT_HOBETA))).append(")");
+			if ((drv == -1) || (drv == 0)) filters.append(QString(";;Disk A (%0)").arg(getFilter(flags & (FT_DISK | FT_HOBETA))));
+			if ((drv == -1) || (drv == 1)) filters.append(QString(";;Disk B (%0)").arg(getFilter(flags & (FT_DISK | FT_HOBETA))));
+			if ((drv == -1) || (drv == 2)) filters.append(QString(";;Disk C (%0)").arg(getFilter(flags & (FT_DISK | FT_HOBETA))));
+			if ((drv == -1) || (drv == 3)) filters.append(QString(";;Disk D (%0)").arg(getFilter(flags & (FT_DISK | FT_HOBETA))));
 		}
 		if (flags & FT_SNAP) filters.append(QString(";;Snapshot (%0)").arg(getFilter(flags & FT_SNAP)));
 		if (flags & FT_TAPE) filters.append(QString(";;Tape (%0)").arg(getFilter(flags & FT_TAPE)));
@@ -138,6 +138,7 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 	int ferr = ERR_OK;
 	comp->rzxPlay = false;
 	Floppy* flp = comp->dif->fdc->flop[drv & 3];
+	xCartridge* slot = drv ? &comp->msx.slotB : &comp->msx.slotA;
 	switch (type) {
 		case FT_SNA: ferr = loadSNA(comp,sfnam.c_str()); break;
 		case FT_Z80: ferr = loadZ80(comp,sfnam.c_str()); break;
@@ -153,7 +154,7 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 		case FT_DSK: ferr = loadDSK(flp,sfnam.c_str()); break;
 		case FT_TD0: ferr = loadTD0(flp,sfnam.c_str()); break;
 		case FT_SPG: ferr = loadSPG(comp,sfnam.c_str()); break;
-		case FT_SLOT: ferr = loadSlot(comp,sfnam.c_str(),drv); break;
+		case FT_SLOT: ferr = loadSlot(slot,sfnam.c_str()); break;
 #ifdef HAVEZLIB
 		case FT_RZX: ferr = loadRZX(comp,sfnam.c_str()); break;
 #endif

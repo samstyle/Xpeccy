@@ -165,7 +165,7 @@ int loadTD0(Floppy*,const char*);
 
 // cartridge
 
-int loadSlot(Computer*,const char*,int);
+int loadSlot(xCartridge*,const char*);
 
 #ifdef __cplusplus
 }

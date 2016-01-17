@@ -168,7 +168,7 @@ typedef struct {
 		unsigned char keyLine;		// selected keyboard line
 		unsigned char pA8;		// port A8
 		unsigned char pAA;		// port AA
-		unsigned char slot[4];		// primary slots for bank 0..3
+//		unsigned char slot[4];		// primary slots for bank 0..3
 		struct {
 			unsigned char regA;
 			unsigned char regB;

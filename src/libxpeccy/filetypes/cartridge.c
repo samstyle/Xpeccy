@@ -1,9 +1,8 @@
 #include "filetypes.h"
 
-int loadSlot(Computer* comp, const char* name, int drv) {
+int loadSlot(xCartridge* slot, const char* name) {
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
-	xCartridge* slot = drv ? &comp->msx.slotB : &comp->msx.slotA;
 	fseek(file,0,SEEK_END);
 	size_t siz = ftell(file);
 	rewind(file);

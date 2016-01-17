@@ -110,6 +110,7 @@ class MainWin : public QWidget {
 		QMenu* layoutMenu;
 		QMenu* vmodeMenu;
 		QMenu* resMenu;
+		QMenu* fileMenu;
 		QAction* pckAct;
 		QAction* nsAct;
 
@@ -137,6 +138,7 @@ class MainWin : public QWidget {
 		void reset(QAction*);
 		void chLayout(QAction*);
 		void chVMode(QAction*);
+		void umOpen(QAction*);
 	protected:
 		void closeEvent(QCloseEvent*);
 #ifdef DRAWGL
