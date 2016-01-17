@@ -765,11 +765,11 @@ void msxPutTile(Video* vid, int xpos, int ypos, int pat, int atr) {
 	unsigned char src;
 	int i,j;
 	for (i = 0; i < 8; i++) {
-		src = vid->v9918.ram[0x3800 + (pat << 3) + i];		// tile byte
-		if ((ypos >= 0) && (ypos < 192)) {			// if line onscreen
+		src = vid->v9918.ram[vid->v9918.OBJTiles + (pat << 3) + i];		// tile byte
+		if ((ypos >= 0) && (ypos < 192)) {					// if line onscreen
 			for (j = 0; j < 8; j++) {
 				if ((xpos >= 0) && (xpos < 256) && (src & 0x80)) {	// if sprite has dot onscreen
-						vid->v9918.sprImg[(ypos << 8) + xpos] = atr & 7;
+						vid->v9918.sprImg[(ypos << 8) + xpos] = atr & 15;
 				}
 				src <<= 1;
 				xpos++;
@@ -783,7 +783,7 @@ void msxPutTile(Video* vid, int xpos, int ypos, int pat, int atr) {
 void msxFillSprites(Video* vid) {
 	memset(vid->v9918.sprImg, 0x00, 0xc000);
 	int i;
-	unsigned char* ptr = vid->v9918.ram + 0x1b00;
+	unsigned char* ptr = vid->v9918.ram + vid->v9918.OBJAttr;
 	int ypos, xpos, pat, atr;
 	for (i = 0; i < 32; i++) {
 		if (ptr[0] == 0xd0) break;
@@ -845,9 +845,9 @@ void vidMsxScr1(Video* vid) {
 			col = vid->brdcol;
 		} else {
 			if ((xscr & 7) == 0) {
-				adr = vid->v9918.ram[0x1800 + ((xscr >> 3) | ((yscr & 0xf8) << 2))];	// TODO : BG Map adr may be changed
-				scrbyte = vid->v9918.ram[(adr << 3) | (yscr & 7)];
-				atrbyte = vid->v9918.ram[0x2000 + (adr >> 3)];
+				adr = vid->v9918.ram[vid->v9918.BGMap + (xscr >> 3) + ((yscr & 0xf8) << 2)];
+				scrbyte = vid->v9918.ram[vid->v9918.BGTiles + (adr << 3) + (yscr & 7)];
+				atrbyte = vid->v9918.ram[vid->v9918.BGColors + (adr >> 3)];
 				ink = (atrbyte & 0xf0) >> 4;
 				pap = atrbyte & 0x0f;
 			}
@@ -873,9 +873,9 @@ void vidMsxScr2(Video* vid) {
 			col = vid->brdcol;
 		} else {
 			if ((xscr & 7) == 0) {
-				adr = vid->v9918.ram[0x1800 + ((xscr >> 3) | (yscr & 0xf8) << 2)] | ((yscr & 0xc0) << 2);	// tile nr
-				scrbyte = vid->v9918.ram[(adr << 3) + (yscr & 7)];
-				atrbyte = vid->v9918.ram[0x2000 + (adr << 3) + (yscr & 7)];
+				adr = vid->v9918.ram[vid->v9918.BGMap + (xscr >> 3) + ((yscr & 0xf8) << 2)] | ((yscr & 0xc0) << 2);	// tile nr
+				scrbyte = vid->v9918.ram[(vid->v9918.BGTiles & ~0x1fff) + (adr << 3) + (yscr & 7)];
+				atrbyte = vid->v9918.ram[(vid->v9918.BGColors & ~0x1fff) + (adr << 3) + (yscr & 7)];
 				ink = (atrbyte & 0xf0) >> 4;
 				pap = atrbyte & 0x0f;
 			}

@@ -18,10 +18,16 @@ unsigned char emptyPage[0x4000];
 
 void msxSetMem(Computer* comp, int bank, unsigned char slot) {
 	mPageNr pg = msxMemTab[slot][bank];
-	if (pg.type == MEM_EXT) {
-		memSetExternal(comp->mem, bankID[bank], pg.num, emptyPage);
-	} else {
-		memSetBank(comp->mem, bankID[bank], pg.type, pg.num);
+	switch(pg.type) {
+		case MEM_EXT:
+			memSetExternal(comp->mem, bankID[bank], pg.num, emptyPage);
+			break;
+		case MEM_RAM:
+			memSetBank(comp->mem, bankID[bank], MEM_RAM, comp->msx.memMap[bank & 3] & 7);
+			break;
+		default:
+			memSetBank(comp->mem, bankID[bank], pg.type, pg.num);
+			break;
 	}
 }
 
@@ -46,7 +52,7 @@ xColor msxPalete[16] = {
 	{101,219,239},	// 7 : cyan
 	{219,101,89},	// 8 : medium red
 	{255,137,125},	// 9 : light red
-	{204,195,204},	// 10: dark yellow
+	{204,195,94},	// 10: dark yellow
 	{222,208,135},	// 11: light yellow
 	{58,162,165},	// 12: dark green
 	{183,102,181},	// 13: magenta
@@ -55,11 +61,11 @@ xColor msxPalete[16] = {
 };
 
 unsigned char msxSlotRd(xCartridge* slot, unsigned short adr) {
-	unsigned char bnk;
+	int bnk;
 	int radr = 0;
 	switch(slot->mapType) {
 		case MSX_NOMAPPER:
-			radr = adr ^ 0x4000;
+			radr = (adr & 0x3fff) | ((adr & 0x8000) >> 1);
 			break;
 		case MSX_KONAMI4:
 			bnk = ((adr & 0x2000) >> 13) | ((adr & 0x8000) >> 14);
@@ -97,10 +103,14 @@ void msxReset(Computer* comp) {
 	}
 	msxResetSlot(&comp->msx.slotA);
 	msxResetSlot(&comp->msx.slotB);
+	comp->msx.memMap[0] = 3;
+	comp->msx.memMap[1] = 2;
+	comp->msx.memMap[2] = 1;
+	comp->msx.memMap[3] = 0;
 	msxMapMem(comp);
 }
 
-int tobrk = 1;
+// int tobrk = 1;
 
 unsigned char msxMRd(Computer* comp, unsigned short adr, int m1) {
 	MemPage* pg = memGetBankPtr(comp->mem, adr);
@@ -134,7 +144,7 @@ void msxMWr(Computer* comp, unsigned short adr, unsigned char val) {
 					case 0x5000: slot->memMap[0] = val; break;
 					case 0x7000: slot->memMap[1] = val; break;
 					case 0x9000: slot->memMap[2] = val; break;		// TODO: SCC
-					case 0xb000: slot->memMap[3] = val; break;		// TODO: SCC
+					case 0xb000: slot->memMap[3] = val; break;
 				}
 				break;
 			case MSX_ASCII8:
@@ -215,10 +225,18 @@ unsigned char msxA8In(Computer* comp, unsigned short port) {
 	return comp->msx.pA8;
 }
 
+void msxMemOut(Computer* comp, unsigned short port, unsigned char val) {
+	comp->msx.memMap[port & 3] = val;
+}
+
+unsigned char msxMemIn(Computer* comp, unsigned short port) {
+	return comp->msx.memMap[port & 3];
+}
+
 // v9918
 
 void msx98Out(Computer* comp, unsigned short port, unsigned char val) {
-	comp->vid->v9918.ram[comp->vid->v9918.vadr & 0x3fff] = val;
+	comp->vid->v9918.ram[comp->vid->v9918.vadr & 0x1ffff] = val;
 	comp->vid->v9918.vadr++;
 }
 
@@ -233,25 +251,31 @@ void msx99Out(Computer* comp, unsigned short port, unsigned char val) {
 			vmode = ((comp->vid->v9918.reg[1] & 0x10) >> 4)\
 					| ((comp->vid->v9918.reg[1] & 0x08) >> 2)\
 					| ((comp->vid->v9918.reg[0] & 0x0e) << 1);
-			if ((vmode & 7) != comp->vid->v9918.vmode) {
-				comp->vid->v9918.vmode = vmode & 7;
-				switch (vmode & 7) {
+			vmode &= 7;
+			if (vmode != comp->vid->v9918.vmode) {
+				comp->vid->v9918.vmode = vmode;
+				switch (vmode) {
 					case 1: vidSetMode(comp->vid, VID_MSX_SCR0); break;	// text 40x24
 					case 0: vidSetMode(comp->vid, VID_MSX_SCR1); break;	// text 32x24
 					case 4: vidSetMode(comp->vid, VID_MSX_SCR2); break;	// 256x192
 					case 2: vidSetMode(comp->vid, VID_MSX_SCR3); break;	// multicolor 4x4
 					default: vidSetMode(comp->vid, VID_UNKNOWN); break;
 				}
-				// printf("MSX set video mode %i\n",vmode & 7);
 			}
+			comp->vid->v9918.BGMap = (comp->vid->v9918.reg[2] & 0x7f) << 10;
+			comp->vid->v9918.BGColors = comp->vid->v9918.reg[3] << 6;
+			comp->vid->v9918.BGTiles = (comp->vid->v9918.reg[4] & 0x3f) << 11;
+			comp->vid->v9918.OBJAttr = comp->vid->v9918.reg[5] << 7;
+			comp->vid->v9918.OBJTiles = (comp->vid->v9918.reg[6] & 0x3f) << 11;
 		} else {			// b7.hi = 0 : VDP address setup
 			comp->vid->v9918.vadr = ((val & 0x3f) << 8) | comp->vid->v9918.data;
 			comp->vid->v9918.wr = (val & 0x40) ? 1 : 0;
 		}
+		comp->vid->v9918.high = 0;
 	} else {
 		comp->vid->v9918.data = val;
+		comp->vid->v9918.high = 1;
 	}
-	comp->vid->v9918.high ^= 1;
 }
 
 unsigned char msx98In(Computer* comp, unsigned short port) {
@@ -285,8 +309,10 @@ xPort msxPortMap[] = {
 	{0xff,0xaa,2,2,2,msxAAIn,	msxAAOut},	// AA	RW	I 8255A/ULA9RA041 PPI Port C Kbd Row sel,LED,CASo,CASm
 	{0xff,0xab,2,2,2,NULL,		msxABOut},	// AB	W	I 8255A/ULA9RA041 Mode select and I/O setup of A,B,C
 
-	{0x00,0x00,2,2,2,dummyIn,dummyOut},
-//	{0x00,0x00,2,2,2,brkIn,brkOut}
+	{0xfc,0xfc,2,2,2,msxMemIn,	msxMemOut},	// FC..FF RW	RAM pages for memBanks
+
+//	{0x00,0x00,2,2,2,dummyIn,dummyOut},
+	{0x00,0x00,2,2,2,brkIn,brkOut}
 };
 
 unsigned char msxIn(Computer* comp, unsigned short port, int dos) {
