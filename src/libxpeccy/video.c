@@ -769,7 +769,7 @@ void msxPutTile(Video* vid, int xpos, int ypos, int pat, int atr) {
 		if ((ypos >= 0) && (ypos < 192)) {					// if line onscreen
 			for (j = 0; j < 8; j++) {
 				if ((xpos >= 0) && (xpos < 256) && (src & 0x80)) {	// if sprite has dot onscreen
-						vid->v9918.sprImg[(ypos << 8) + xpos] = atr & 15;
+						vid->v9918.sprImg[(ypos << 8) + xpos] = atr;
 				}
 				src <<= 1;
 				xpos++;
@@ -783,17 +783,18 @@ void msxPutTile(Video* vid, int xpos, int ypos, int pat, int atr) {
 void msxFillSprites(Video* vid) {
 	memset(vid->v9918.sprImg, 0x00, 0xc000);
 	int i;
-	unsigned char* ptr = vid->v9918.ram + vid->v9918.OBJAttr;
+	int adr = vid->v9918.OBJAttr;
 	int ypos, xpos, pat, atr;
 	for (i = 0; i < 32; i++) {
-		if (ptr[0] == 0xd0) break;
-		ypos = (ptr[0] + 1) & 0xff;
-		xpos = ptr[1] & 0xff;
-		pat = ptr[2] & 0xff;
-		atr = ptr[3] & 0xff;
+		if (vid->v9918.ram[adr] == 0xd0) break;
+		ypos = (vid->v9918.ram[adr] + 1) & 0xff;
+		xpos = vid->v9918.ram[adr+1] & 0xff;
+		pat = vid->v9918.ram[adr+2] & 0xff;
+		atr = vid->v9918.ram[adr+3] & 0xff;
 		if (atr & 0x80)			// early clock
 			xpos -= 32;
-		if (vid->v9918.reg[1] & 2) {	// 16x16
+		atr &= 0x0f;
+		if (vid->v9918.reg[1] & 2) {	// 16x16		FIXME: something wrong
 			pat &= 0xfc;
 			msxPutTile(vid, xpos, ypos, pat, atr);
 			msxPutTile(vid, xpos, ypos+8, pat+1, atr);
@@ -802,7 +803,7 @@ void msxFillSprites(Video* vid) {
 		} else {
 			msxPutTile(vid, xpos, ypos, pat, atr);
 		}
-		ptr += 4;
+		adr += 4;
 	}
 }
 

@@ -70,7 +70,7 @@ void MainWin::updateWindow() {
 	int szh = comp->vid->vsze.v * conf.vid.scale;
 	setFixedSize(szw,szh);
 	lineBytes = szw * 3;
-	frameBytes = szw * szh * 3;
+	frameBytes = szh * lineBytes;
 	scrImg = QImage(screen, szw, szh, QImage::Format_RGB888);
 	updateHead();
 	block = 0;
@@ -960,7 +960,7 @@ void MainWin::initUserMenu() {
 	fileMenu->addAction(QIcon(":/images/memory.png"),"Snapshot")->setData(FT_SNAP | FT_SPG);
 	fileMenu->addAction(QIcon(":/images/tape.png"),"Tape")->setData(FT_TAPE);
 	fileMenu->addAction(QIcon(":/images/floppy.png"),"Floppy")->setData(FT_DISK);
-	fileMenu->addAction("Slot (MSX)")->setData(FT_SLOT);
+	fileMenu->addAction(QIcon(":/images/msx.png"),"Slot (MSX)")->setData(FT_SLOT);
 
 	nsAct = vmodeMenu->addAction("No screen");
 	nsAct->setData(-1);

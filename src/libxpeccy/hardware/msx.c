@@ -246,27 +246,32 @@ void msx99Out(Computer* comp, unsigned short port, unsigned char val) {
 	if (comp->vid->v9918.high) {
 		if (val & 0x80) {		// b7.hi = 1 : VDP register setup
 			reg = val & 0x07;
-			comp->vid->v9918.reg[reg] = comp->vid->v9918.data;
-			comp->vid->nextbrd = comp->vid->v9918.reg[7] & 7;		// border color = BG in R7
-			vmode = ((comp->vid->v9918.reg[1] & 0x10) >> 4)\
-					| ((comp->vid->v9918.reg[1] & 0x08) >> 2)\
-					| ((comp->vid->v9918.reg[0] & 0x0e) << 1);
-			vmode &= 7;
-			if (vmode != comp->vid->v9918.vmode) {
-				comp->vid->v9918.vmode = vmode;
-				switch (vmode) {
-					case 1: vidSetMode(comp->vid, VID_MSX_SCR0); break;	// text 40x24
-					case 0: vidSetMode(comp->vid, VID_MSX_SCR1); break;	// text 32x24
-					case 4: vidSetMode(comp->vid, VID_MSX_SCR2); break;	// 256x192
-					case 2: vidSetMode(comp->vid, VID_MSX_SCR3); break;	// multicolor 4x4
-					default: vidSetMode(comp->vid, VID_UNKNOWN); break;
-				}
+			val = comp->vid->v9918.data;
+			comp->vid->v9918.reg[reg] = val;
+			switch (reg) {
+				case 0:
+				case 1:
+					vmode = ((comp->vid->v9918.reg[1] & 0x10) >> 4)\
+							| ((comp->vid->v9918.reg[1] & 0x08) >> 2)\
+							| ((comp->vid->v9918.reg[0] & 0x0e) << 1);
+					switch (vmode & 7) {
+						case 1: vidSetMode(comp->vid, VID_MSX_SCR0); break;	// text 40x24
+						case 0: vidSetMode(comp->vid, VID_MSX_SCR1); break;	// text 32x24
+						case 4: vidSetMode(comp->vid, VID_MSX_SCR2); break;	// 256x192
+						case 2: vidSetMode(comp->vid, VID_MSX_SCR3); break;	// multicolor 4x4
+						default: vidSetMode(comp->vid, VID_UNKNOWN); break;
+					}
+					break;
+				case 2: comp->vid->v9918.BGMap = (val & 0x7f) << 10; break;
+				case 3: comp->vid->v9918.BGColors = val << 6; break;
+				case 4: comp->vid->v9918.BGTiles = (val & 0x3f) << 11; break;
+				case 5: comp->vid->v9918.OBJAttr = val << 7; break;
+				case 6: comp->vid->v9918.OBJTiles = (val & 0x3f) << 11; break;
+				case 7: comp->vid->nextbrd = comp->vid->v9918.reg[7] & 7; break;		// border color = BG in R7
 			}
-			comp->vid->v9918.BGMap = (comp->vid->v9918.reg[2] & 0x7f) << 10;
-			comp->vid->v9918.BGColors = comp->vid->v9918.reg[3] << 6;
-			comp->vid->v9918.BGTiles = (comp->vid->v9918.reg[4] & 0x3f) << 11;
-			comp->vid->v9918.OBJAttr = comp->vid->v9918.reg[5] << 7;
-			comp->vid->v9918.OBJTiles = (comp->vid->v9918.reg[6] & 0x3f) << 11;
+
+
+//			if (reg == 1) printf("reg1 = %.2X\n",comp->vid->v9918.reg[1]);
 		} else {			// b7.hi = 0 : VDP address setup
 			comp->vid->v9918.vadr = ((val & 0x3f) << 8) | comp->vid->v9918.data;
 			comp->vid->v9918.wr = (val & 0x40) ? 1 : 0;

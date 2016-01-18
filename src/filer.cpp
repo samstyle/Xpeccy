@@ -87,6 +87,15 @@ int getFileType(QString path) {
 	return FT_NONE;
 }
 
+int testSlotOn(Computer* comp) {
+	if (comp->hw->type != HW_MSX) return 0;
+	if (comp->mem->pt[0]->type == MEM_EXT) return 1;
+	if (comp->mem->pt[1]->type == MEM_EXT) return 1;
+	if (comp->mem->pt[2]->type == MEM_EXT) return 1;
+	if (comp->mem->pt[3]->type == MEM_EXT) return 1;
+	return 0;
+}
+
 void loadFile(Computer* comp,const char* name, int flags, int drv) {
 	QString opath = QDialog::trUtf8(name);
 	filer->setDirectory(lastDir);
@@ -183,6 +192,7 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 		case ERR_WAV_FORMAT: shitHappens("Unsupported WAV format"); break;
 		case ERR_OK:
 			if (type & FT_DISK) loadBoot(flp, conf.path.boot.c_str());
+			if ((type & FT_SLOT) && testSlotOn(comp)) compReset(comp, RES_DEFAULT);
 			break;
 	}
 }

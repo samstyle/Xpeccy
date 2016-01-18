@@ -45,5 +45,6 @@
         <file>images/rulers.png</file>
         <file>images/redCircle.png</file>
         <file>images/memory.png</file>
+        <file>images/msx.png</file>
     </qresource>
 </RCC>

@@ -1353,14 +1353,18 @@ void ejectSlot(xCartridge* slot) {
 	slot->name[0] = 0x00;
 }
 
+int testSlotOn(Computer*);
+
 void SetupWin::ejectSlotA() {
 	ejectSlot(&comp->msx.slotA);
 	ui.cSlotAName->clear();
+	if (testSlotOn(comp)) compReset(comp,RES_DEFAULT);
 }
 
 void SetupWin::ejectSlotB() {
 	ejectSlot(&comp->msx.slotB);
 	ui.cSlotBName->clear();
+	if (testSlotOn(comp)) compReset(comp,RES_DEFAULT);
 }
 
 // tools

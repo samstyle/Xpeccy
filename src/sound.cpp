@@ -112,8 +112,8 @@ void sndFillToEnd() {
 void sndCalibrate() {
 	sndChunks = conf.snd.rate / 50;			// samples played at 1/50 sec			882
 	sndBufSize = conf.snd.chans * sndChunks;	// buffer size for 1/50 sec play		1764
-	// nsPerSample = nsPerFrame / sndChunks;
-	nsPerSample = 1e9 / conf.snd.rate;
+	nsPerSample = nsPerFrame / sndChunks;
+	// nsPerSample = 1e9 / conf.snd.rate;
 }
 
 std::string sndGetOutputName() {
