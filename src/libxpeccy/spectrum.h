@@ -49,6 +49,7 @@ typedef struct {
 } memEntry;
 
 // MSX cartridge mapper type
+#define MSX_UNKNOWN	-1
 #define MSX_NOMAPPER	0
 #define	MSX_KONAMI4	1
 #define	MSX_KONAMI5	2
@@ -60,7 +61,8 @@ typedef struct {
 	char name[512];
 	int memMask;
 	int memMap[8];		// 8 of 8kb pages
-	int mapType;		// mapper
+	int mapType;		// user defined mapper type, if auto-detect didn't worked
+	int mapAuto;		// auto detected map type OR user defined
 } xCartridge;
 
 typedef struct {

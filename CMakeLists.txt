@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(xpeccy)
-set(XVER "0.6.20160117")
+set(XVER "0.6.20160119")
 
 #set(CMAKE_C_COMPILER clang)
 #set(CMAKE_CXX_COMPILER clang++)

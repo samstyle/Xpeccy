@@ -63,7 +63,7 @@ xColor msxPalete[16] = {
 unsigned char msxSlotRd(xCartridge* slot, unsigned short adr) {
 	int bnk;
 	int radr = 0;
-	switch(slot->mapType) {
+	switch(slot->mapAuto) {
 		case MSX_NOMAPPER:
 			radr = (adr & 0x3fff) | ((adr & 0x8000) >> 1);
 			break;
@@ -131,7 +131,7 @@ void msxMWr(Computer* comp, unsigned short adr, unsigned char val) {
 	} else {
 		// cartridge mappers
 		xCartridge* slot = pg->num ? &comp->msx.slotB : &comp->msx.slotA;
-		switch (slot->mapType) {
+		switch (slot->mapAuto) {
 			case MSX_KONAMI4:
 				switch(adr) {
 					case 0x6000: slot->memMap[1] = val; break;
@@ -316,8 +316,8 @@ xPort msxPortMap[] = {
 
 	{0xfc,0xfc,2,2,2,msxMemIn,	msxMemOut},	// FC..FF RW	RAM pages for memBanks
 
-//	{0x00,0x00,2,2,2,dummyIn,dummyOut},
-	{0x00,0x00,2,2,2,brkIn,brkOut}
+	{0x00,0x00,2,2,2,dummyIn,dummyOut},
+//	{0x00,0x00,2,2,2,brkIn,brkOut}
 };
 
 unsigned char msxIn(Computer* comp, unsigned short port, int dos) {
