@@ -18,7 +18,7 @@ int sndFlag = 0;
 
 unsigned char sndBufA[0x10000];
 unsigned char sndBufB[0x10000];
-//unsigned char* sndBuf = sndBufA;
+unsigned char* sndBuf = sndBufA;
 unsigned short ringPos = 0;
 unsigned short playPos = 0;
 int pass = 0;
@@ -189,13 +189,11 @@ void fillBuffer(int len) {
 	}
 }
 
-/*
 void switchSndBuf() {
 	sndBuf = (sndFlag & SF_BUF) ? sndBufA : sndBufB;
 	sndFlag ^= SF_BUF;
 	ringPos = 0;
 }
-*/
 
 bool null_open() {return true;}
 void null_play() {}
@@ -353,7 +351,7 @@ bool wave_open() {
 }
 
 void wave_play() {
-	whdr.lpData = (LPSTR)sndBuf;
+	whdr.lpData = (LPSTR)sndBufA;
 	whdr.dwFlags = 0;
 	whdr.dwBufferLength = sndBufSize;
 	waveOutPrepareHeader(wout,&whdr,sizeof(WAVEHDR));
