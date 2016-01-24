@@ -127,7 +127,7 @@ int saveSNA(Computer* comp, const char* name, int sna48) {
 		memGetPage(comp->mem, MEM_RAM, 0, pageBuf);		// 0xc000 - 0xffff (48K: bank 0)
 		fwrite(pageBuf, 0x4000, 1, file);
 	} else {
-		bnk = comp->mem->pt[3]->num & 7;
+		bnk = comp->mem->map[3].num & 7;
 		memGetPage(comp->mem, MEM_RAM, bnk, pageBuf);		// current bank
 		fwrite(pageBuf, 0x4000, 1, file);
 		adr = comp->cpu->pc;

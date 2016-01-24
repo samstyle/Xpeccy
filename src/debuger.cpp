@@ -538,30 +538,30 @@ void DebugWin::setZ80() {
 
 // memory map section
 
-QString getPageName(MemPage* pg) {
+QString getPageName(MemPage& pg) {
 	QString res;
-	switch(pg->type) {
+	switch(pg.type) {
 		case MEM_RAM: res = "RAM-"; break;
 		case MEM_ROM: res = "ROM-"; break;
 		case MEM_EXT: res = "EXT-"; break;
 		default: res = "----"; break;
 	}
-	res.append(QString::number(pg->num));
+	res.append(QString::number(pg.num));
 	return res;
 }
 
 void DebugWin::fillMem() {
-	ui.labPG0->setText(getPageName(comp->mem->pt[0]));
-	ui.labPG1->setText(getPageName(comp->mem->pt[1]));
-	ui.labPG2->setText(getPageName(comp->mem->pt[2]));
-	ui.labPG3->setText(getPageName(comp->mem->pt[3]));
+	ui.labPG0->setText(getPageName(comp->mem->map[0]));
+	ui.labPG1->setText(getPageName(comp->mem->map[1]));
+	ui.labPG2->setText(getPageName(comp->mem->map[2]));
+	ui.labPG3->setText(getPageName(comp->mem->map[3]));
 }
 
 // disasm table
 
 unsigned char rdbyte(unsigned short adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	return comp->hw->mrd(comp, adr, 0);
+	return memRd(comp->mem, adr);
 }
 
 #define DASMROW 26
@@ -790,7 +790,7 @@ void DebugWin::fillDump() {
 		for (col = 1; col < 9; col++) {
 			ccol = (*getBrkPtr(comp, adr) & MEM_BRK_ANY) ? QColor(200,64,64) : bgcol;
 			ui.dumpTable->item(row,col)->setBackgroundColor(ccol);
-			ui.dumpTable->item(row,col)->setText(gethexbyte(comp->hw->mrd(comp, adr, 0)));
+			ui.dumpTable->item(row,col)->setText(gethexbyte(memRd(comp->mem, adr)));
 			adr++;
 		}
 	}
@@ -883,7 +883,7 @@ void DebugWin::chaBreakPoint() {
 // memDump
 
 void DebugWin::doSaveDump() {
-	dui.leBank->setText(QString::number(comp->mem->pt[3]->num,16));
+	dui.leBank->setText(QString::number(comp->mem->map[3].num,16));
 	dumpwin->show();
 }
 
@@ -912,7 +912,7 @@ void DebugWin::dmpLenChanged() {
 }
 
 QByteArray DebugWin::getDumpData() {
-	MemPage* curBank = comp->mem->pt[3];
+	MemPage curBank = comp->mem->map[3];
 	int bank = dui.leBank->text().toInt(NULL,16);
 	int adr = dui.leStart->text().toInt(NULL,16);
 	int len = dui.leLen->text().toInt(NULL,16);
@@ -923,7 +923,7 @@ QByteArray DebugWin::getDumpData() {
 		adr++;
 		len--;
 	}
-	comp->mem->pt[3] = curBank;
+	comp->mem->map[3] = curBank;
 	return res;
 }
 
@@ -988,7 +988,7 @@ void DebugWin::saveDumpToDisk(int idx) {
 void DebugWin::doOpenDump() {
 	dumpPath.clear();
 	oui.laPath->clear();
-	oui.leBank->setText(QString::number(comp->mem->pt[3]->num,16));
+	oui.leBank->setText(QString::number(comp->mem->map[3].num,16));
 	oui.leStart->setText("4000");
 	openDumpDialog->show();
 }
@@ -1126,7 +1126,7 @@ void DebugWin::goToBrk(QModelIndex idx) {
 	int madr = -1;
 	MemPage* pg;
 	for (int i = 0; i < 4; i++) {
-		pg = comp->mem->pt[i];
+		pg = &comp->mem->map[i];
 		if (pg->num == bnk) {
 			if ((pg->type == MEM_RAM) && !rom) {
 				madr = (i << 14) | adr;

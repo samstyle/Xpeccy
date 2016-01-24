@@ -290,8 +290,8 @@ void tsOut11AF(Computer* comp, unsigned short port, unsigned char val) {
 void tsOut12AF(Computer* comp, unsigned short port, unsigned char val) {memSetBank(comp->mem,MEM_BANK2,MEM_RAM,val);}
 void tsOut13AF(Computer* comp, unsigned short port, unsigned char val) {memSetBank(comp->mem,MEM_BANK3,MEM_RAM,val);}
 
-unsigned char tsIn12AF(Computer* comp, unsigned short port) {return comp->mem->pt[2]->num;}
-unsigned char tsIn13AF(Computer* comp, unsigned short port) {return comp->mem->pt[3]->num;}
+unsigned char tsIn12AF(Computer* comp, unsigned short port) {return comp->mem->map[2].num;}
+unsigned char tsIn13AF(Computer* comp, unsigned short port) {return comp->mem->map[3].num;}
 
 void tsOut15AF(Computer* comp, unsigned short port, unsigned char val) {
 	comp->tsconf.flag = val & 0x10;		// FM_EN

@@ -450,7 +450,7 @@ void cmsWr(Computer* comp, unsigned char val) {
 // breaks
 
 unsigned char* getBrkPtr(Computer* comp, unsigned short madr) {
-	MemPage* ptr = comp->mem->pt[madr >> 14];
+	MemPage* ptr = &comp->mem->map[madr >> 14];
 	int adr = (ptr->num << 14) | (madr & 0x3fff);
 	return (ptr->type == MEM_RAM) ? &comp->brkRamMap[adr] : &comp->brkRomMap[adr];
 }

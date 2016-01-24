@@ -5,33 +5,13 @@
 #include <stdio.h>
 
 Memory* memCreate() {
-	int i;
 	Memory* mem = (Memory*)malloc(sizeof(Memory));
 	mem->romMask = 0x03;
-	for (i = 0; i < 4; i++) {
-		mem->ext[i].type = MEM_EXT;
-		mem->ext[i].wr = 0;
-		mem->ext[i].num = i;
-		mem->ext[i].dptr = NULL;
-	}
-	for (i = 0; i < 32; i++) {
-		mem->rom[i].type = MEM_ROM;
-		mem->rom[i].wr = 0;
-		mem->rom[i].num = i & 0xff;
-		mem->rom[i].dptr = mem->romData + (i << 14);
-	}
-	for (i = 0; i < 256; i++) {
-		mem->ram[i].type = MEM_RAM;
-		mem->ram[i].wr = 1;
-		mem->ram[i].num = i & 0xff;
-		mem->ram[i].dptr = mem->ramData + (i << 14);
-	}
 	memSetSize(mem,48);
-	mem->pt[0] = &mem->rom[0];
-	mem->pt[1] = &mem->ram[5];
-	mem->pt[2] = &mem->ram[2];
-	mem->pt[3] = &mem->ram[0];
-
+	memSetBank(mem, MEM_BANK0, MEM_ROM, 0);
+	memSetBank(mem, MEM_BANK1, MEM_RAM, 5);
+	memSetBank(mem, MEM_BANK2, MEM_RAM, 2);
+	memSetBank(mem, MEM_BANK3, MEM_RAM, 0);
 	return mem;
 }
 
@@ -40,21 +20,25 @@ void memDestroy(Memory* mem) {
 }
 
 MemPage* memGetBankPtr(Memory* mem, unsigned short adr) {
-	return mem->pt[adr >> 14];
+	return &mem->map[adr >> 14];
 }
 
-MemPage* ptr;
+// MemPage* ptr;
 
 unsigned char memRd(Memory* mem, unsigned short adr) {
-	ptr = mem->pt[adr >> 14];
-//	printf("adr = %i : ptr->type = %i : ptr->num = %p\n",adr,ptr->type,ptr->num);
-	return ptr->dptr[adr & 0x3fff];
+	MemPage* ptr = &mem->map[adr >> 14];
+	if (ptr->type != MEM_EXT) return ptr->dptr[adr & 0x3fff];
+	if (ptr->rd) return ptr->rd(adr, ptr->data);
+	return 0xff;
 }
 
 void memWr(Memory* mem, unsigned short adr, unsigned char val) {
-	ptr = mem->pt[adr >> 14];
-	if (ptr->wr)
+	MemPage* ptr = &mem->map[adr >> 14];
+	if (ptr->type == MEM_EXT) {
+		if (ptr->wr) ptr->wr(adr, val, ptr->data);
+	} else if (ptr->wren) {
 		ptr->dptr[adr & 0x3fff] = val;
+	}
 }
 
 void memSetSize(Memory* mem, int val) {
@@ -90,8 +74,24 @@ void memSetSize(Memory* mem, int val) {
 }
 
 void memSetBank(Memory* mem, int bank, int wut, unsigned char nr) {
+	if (wut == MEM_ROM) {
+		nr &= mem->romMask;
+		mem->map[bank].type = MEM_ROM;
+		mem->map[bank].num = nr;
+		mem->map[bank].wren = 0;
+		mem->map[bank].dptr = mem->romData + (nr << 14);
+	} else if (wut == MEM_RAM) {
+		nr &= mem->memMask;
+		mem->map[bank].type = MEM_RAM;
+		mem->map[bank].num = nr;
+		mem->map[bank].wren = 1;
+		mem->map[bank].dptr = mem->ramData + (nr << 14);
+	}
+/*
 	if (wut == MEM_ROM) nr &= mem->romMask;
 	if (wut == MEM_RAM) nr &= mem->memMask;
+
+
 	switch (bank) {
 		case MEM_BANK0:
 			switch (wut) {
@@ -118,21 +118,24 @@ void memSetBank(Memory* mem, int bank, int wut, unsigned char nr) {
 			}
 			break;
 	}
+*/
 }
 
-void memSetExternal(Memory* mem, int bank, int num, unsigned char* data) {
-	mem->ext[bank].dptr = data;
-	mem->ext[bank].num = num;
-	mem->pt[bank] = &mem->ext[bank];
+void memSetExternal(Memory* mem, int bank, MemPage pg) {
+	pg.type = MEM_EXT;
+	pg.num = 0;
+	mem->map[bank] = pg;
 }
 
 void memSetPage(Memory* mem, int type, int page, char* src) {
 	switch(type) {
 		case MEM_ROM:
-			memcpy(mem->rom[page & 31].dptr,src,0x4000);
+			page &= 0x1f;
+			memcpy(mem->romData + (page << 14), src, 0x4000);
 			break;
 		case MEM_RAM:
-			memcpy(mem->ram[page & 255].dptr,src,0x4000);
+			page &= 0xff;
+			memcpy(mem->ramData + (page << 14), src, 0x4000);
 			break;
 	}
 }
@@ -140,10 +143,11 @@ void memSetPage(Memory* mem, int type, int page, char* src) {
 void memGetPage(Memory* mem, int type, int page, char* dst) {
 	switch(type) {
 		case MEM_ROM:
-			memcpy(dst,mem->rom[page & 31].dptr,0x4000);
+			page &= 0x1f;
+			memcpy(dst, mem->romData + (page << 14), 0x4000);
 			break;
 		case MEM_RAM:
-			memcpy(dst,mem->ram[page & 255].dptr,0x4000);
+			memcpy(dst, mem->ramData + (page << 14), 0x4000);
 			break;
 	}
 }
@@ -152,10 +156,12 @@ unsigned char* memGetPagePtr(Memory* mem, int type, int page) {
 	unsigned char* res = NULL;
 	switch (type) {
 		case MEM_ROM:
-			res = mem->rom[page & 31].dptr;
+			page &= 0x1f;
+			res = mem->romData + (page << 14);
 			break;
 		case MEM_RAM:
-			res = mem->ram[page & 255].dptr;
+			page &= 0xff;
+			res = mem->ramData + (page << 14);
 			break;
 	}
 	return res;

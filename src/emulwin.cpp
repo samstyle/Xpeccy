@@ -1179,7 +1179,7 @@ void xThread::emuCycle() {
 		}
 		// tape trap
 		pc = comp->cpu->pc;
-		if ((comp->mem->pt[0]->type == MEM_ROM) && (comp->mem->pt[0]->num == 1)) {
+		if ((comp->mem->map[0].type == MEM_ROM) && (comp->mem->map[0].num == 1)) {		// FIXME: shit
 			if (pc == 0x56b) tapeCatch();
 			if ((pc == 0x5e2) && conf->tape.autostart)
 				emit tapeSignal(TW_STATE,TWS_STOP);

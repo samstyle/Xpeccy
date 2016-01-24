@@ -6,6 +6,69 @@ typedef struct {
 	unsigned char num;
 } mPageNr;
 
+unsigned char msxSlotRd(unsigned short adr, void* data) {
+	xCartridge* slot = (xCartridge*)data;
+	if (!slot->data) return 0xff;
+	int bnk;
+	int radr = 0;
+	switch(slot->mapAuto) {
+		case MSX_NOMAPPER:
+			radr = (adr & 0x3fff) | ((adr & 0x8000) >> 1);
+			break;
+		case MSX_KONAMI4:
+			bnk = ((adr & 0x2000) >> 13) | ((adr & 0x8000) >> 14);
+			bnk = bnk ? slot->memMap[bnk] : 0;
+			radr = (bnk << 13) | (adr & 0x1fff);
+			break;
+		case MSX_ASCII8:
+		case MSX_KONAMI5:
+			bnk = ((adr & 0x2000) >> 13) | ((adr & 0x8000) >> 14);
+			bnk = slot->memMap[bnk];
+			radr = (bnk << 13) | (adr & 0x1fff);
+			break;
+		case MSX_ASCII16:
+			bnk = slot->memMap[(adr & 0x8000) >> 15];
+			radr = (bnk << 14) | (adr & 0x3fff);
+			break;
+	}
+	return slot->data[radr & slot->memMask];
+}
+
+void msxSlotWr(unsigned short adr, unsigned char val, void* data) {
+	xCartridge* slot = (xCartridge*)data;
+	switch (slot->mapAuto) {
+		case MSX_KONAMI4:
+			switch(adr) {
+				case 0x6000: slot->memMap[1] = val; break;
+				case 0x8000: slot->memMap[2] = val; break;
+				case 0xa000: slot->memMap[3] = val; break;
+			}
+			break;
+		case MSX_KONAMI5:
+			switch (adr & 0xf800) {
+				case 0x5000: slot->memMap[0] = val; break;
+				case 0x7000: slot->memMap[1] = val; break;
+				case 0x9000: slot->memMap[2] = val; break;		// TODO: SCC
+				case 0xb000: slot->memMap[3] = val; break;
+			}
+			break;
+		case MSX_ASCII8:
+			switch (adr & 0xf800) {
+				case 0x6000: slot->memMap[0] = val; break;
+				case 0x6800: slot->memMap[1] = val; break;
+				case 0x7000: slot->memMap[2] = val; break;
+				case 0x7800: slot->memMap[3] = val; break;
+			}
+			break;
+		case MSX_ASCII16:
+			switch (adr & 0xf800) {
+				case 0x6000: slot->memMap[0] = val; break;	// #4000..#7FFF
+				case 0x7000: slot->memMap[1] = val; break;	// #8000..#bfff
+			}
+			break;
+	}
+}
+
 mPageNr msxMemTab[4][4] = {
 	{{MEM_ROM, 0}, {MEM_ROM, 1}, {MEM_RAM, 1}, {MEM_RAM, 0}},
 	{{MEM_EXT,0},{MEM_EXT,0},{MEM_EXT,0},{MEM_EXT,0}},
@@ -13,20 +76,24 @@ mPageNr msxMemTab[4][4] = {
 	{{MEM_RAM, 3},{MEM_RAM, 2},{MEM_RAM, 1},{MEM_RAM, 0}}
 };
 
-int bankID[4] = {MEM_BANK0, MEM_BANK1, MEM_BANK2, MEM_BANK3};
 unsigned char emptyPage[0x4000];
 
 void msxSetMem(Computer* comp, int bank, unsigned char slot) {
+	MemPage p;
 	mPageNr pg = msxMemTab[slot][bank];
 	switch(pg.type) {
 		case MEM_EXT:
-			memSetExternal(comp->mem, bankID[bank], pg.num, emptyPage);
+			p.data = (slot == 1) ? &comp->msx.slotA : &comp->msx.slotB;
+			p.rd = msxSlotRd;
+			p.wr = msxSlotWr;
+			p.wren = 0;
+			memSetExternal(comp->mem, bank, p);
 			break;
 		case MEM_RAM:
-			memSetBank(comp->mem, bankID[bank], MEM_RAM, comp->msx.memMap[bank & 3] & 7);
+			memSetBank(comp->mem, bank, MEM_RAM, comp->msx.memMap[bank & 3] & 7);
 			break;
 		default:
-			memSetBank(comp->mem, bankID[bank], pg.type, pg.num);
+			memSetBank(comp->mem, bank, pg.type, pg.num);
 			break;
 	}
 }
@@ -60,33 +127,6 @@ xColor msxPalete[16] = {
 	{255,255,255},	// 15: white
 };
 
-unsigned char msxSlotRd(xCartridge* slot, unsigned short adr) {
-	int bnk;
-	int radr = 0;
-	switch(slot->mapAuto) {
-		case MSX_NOMAPPER:
-			radr = (adr & 0x3fff) | ((adr & 0x8000) >> 1);
-			break;
-		case MSX_KONAMI4:
-			bnk = ((adr & 0x2000) >> 13) | ((adr & 0x8000) >> 14);
-			bnk = bnk ? slot->memMap[bnk] : 0;
-			radr = (bnk << 13) | (adr & 0x1fff);
-			break;
-		case MSX_ASCII8:
-		case MSX_KONAMI5:
-			bnk = ((adr & 0x2000) >> 13) | ((adr & 0x8000) >> 14);
-			bnk = slot->memMap[bnk];
-			radr = (bnk << 13) | (adr & 0x1fff);
-			break;
-		case MSX_ASCII16:
-			bnk = slot->memMap[(adr & 0x8000) >> 15];
-			radr = (bnk << 14) | (adr & 0x3fff);
-			break;
-	}
-	radr &= slot->memMask;
-	return slot->data[radr];
-}
-
 void msxResetSlot(xCartridge* slot) {
 	slot->memMap[0] = 0;
 	slot->memMap[1] = 0;
@@ -113,6 +153,8 @@ void msxReset(Computer* comp) {
 // int tobrk = 1;
 
 unsigned char msxMRd(Computer* comp, unsigned short adr, int m1) {
+	return stdMRd(comp, adr, m1);
+/*
 	MemPage* pg = memGetBankPtr(comp->mem, adr);
 	unsigned char res = 0xff;
 	if (pg->type == MEM_EXT) {
@@ -122,9 +164,12 @@ unsigned char msxMRd(Computer* comp, unsigned short adr, int m1) {
 		res = stdMRd(comp, adr, m1);
 	}
 	return res;
+*/
 }
 
 void msxMWr(Computer* comp, unsigned short adr, unsigned char val) {
+	stdMWr(comp, adr, val);
+/*
 	MemPage* pg = memGetBankPtr(comp->mem, adr);
 	if (pg->type != MEM_EXT) {
 		stdMWr(comp, adr, val);
@@ -163,6 +208,7 @@ void msxMWr(Computer* comp, unsigned short adr, unsigned char val) {
 				break;
 		}
 	}
+*/
 }
 
 // AY

@@ -89,10 +89,10 @@ int getFileType(QString path) {
 
 int testSlotOn(Computer* comp) {
 	if (comp->hw->type != HW_MSX) return 0;
-	if (comp->mem->pt[0]->type == MEM_EXT) return 1;
-	if (comp->mem->pt[1]->type == MEM_EXT) return 1;
-	if (comp->mem->pt[2]->type == MEM_EXT) return 1;
-	if (comp->mem->pt[3]->type == MEM_EXT) return 1;
+	if (comp->mem->map[0].type == MEM_EXT) return 1;
+	if (comp->mem->map[1].type == MEM_EXT) return 1;
+	if (comp->mem->map[2].type == MEM_EXT) return 1;
+	if (comp->mem->map[3].type == MEM_EXT) return 1;
 	return 0;
 }
 

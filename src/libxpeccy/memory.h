@@ -16,17 +16,17 @@ extern "C" {
 #define	MEM_BANK3	3
 
 typedef struct {
-	unsigned wr:1;		// write enable
+	unsigned wren:1;		// write enable
 	int type;
 	int num;
 	unsigned char* dptr;
+	void* data;						// ptr for rd/wr func
+	unsigned char(*rd)(unsigned short, void*);		// external rd (for type MEM_EXT)
+	void(*wr)(unsigned short, unsigned char, void*);	// external wr (for type MEM_EXT)
 } MemPage;
 
 typedef struct {
-	MemPage ram[256];
-	MemPage rom[32];
-	MemPage* pt[4];
-	MemPage ext[4];
+	MemPage map[4];				// 4 x 16K
 	unsigned char ramData[0x400000];	// 4M
 	unsigned char romData[0x80000];		// 512K
 	int memSize;
@@ -42,7 +42,7 @@ void memWr(Memory*,unsigned short,unsigned char);
 
 void memSetSize(Memory*,int);
 void memSetBank(Memory*,int,int,unsigned char);
-void memSetExternal(Memory*,int,int,unsigned char*);
+void memSetExternal(Memory*,int,MemPage);
 
 void memSetPage(Memory*,int,int,char*);
 void memGetPage(Memory*,int,int,char*);
