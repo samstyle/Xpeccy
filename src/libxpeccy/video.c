@@ -760,13 +760,15 @@ void vidProfiScr(Video* vid) {
 
 void msxPutTile(Video* vid, int xpos, int ypos, int pat, int atr) {
 	unsigned char src;
-	int i,j;
+	int i,j,adr;
 	for (i = 0; i < 8; i++) {
 		src = vid->v9918.ram[vid->v9918.OBJTiles + (pat << 3) + i];		// tile byte
 		if ((ypos >= 0) && (ypos < 192)) {					// if line onscreen
 			for (j = 0; j < 8; j++) {
 				if ((xpos >= 0) && (xpos < 256) && (src & 0x80)) {	// if sprite has dot onscreen
-						vid->v9918.sprImg[(ypos << 8) + xpos] = atr;
+						adr = (ypos << 8) + xpos;
+						if (!vid->v9918.sprImg[adr])		// spr0 is on top!
+							vid->v9918.sprImg[(ypos << 8) + xpos] = atr;
 				}
 				src <<= 1;
 				xpos++;
