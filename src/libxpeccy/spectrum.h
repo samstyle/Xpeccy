@@ -128,6 +128,7 @@ typedef struct {
 
 	unsigned char brkRamMap[0x400000];	// ram brk
 	unsigned char brkRomMap[0x80000];	// rom brk
+	unsigned char brkAdrMap[0x10000];	// adr brk
 	unsigned char brkIOMap[0x10000];	// io brk
 
 	unsigned short padr;
