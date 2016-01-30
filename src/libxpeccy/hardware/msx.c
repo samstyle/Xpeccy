@@ -83,7 +83,7 @@ void msxSetMem(Computer* comp, int bank, unsigned char slot) {
 	mPageNr pg = msxMemTab[slot][bank];
 	switch(pg.type) {
 		case MEM_EXT:
-			p.data = (slot == 1) ? &comp->msx.slotA : &comp->msx.slotB;
+			p.data = pg.num ? &comp->msx.slotB : &comp->msx.slotA;
 			p.rd = msxSlotRd;
 			p.wr = msxSlotWr;
 			p.wren = 0;

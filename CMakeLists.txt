@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(xpeccy)
-set(XVER "0.6.20160119")
+file(STRINGS "Release" XVER)
+
+#set(XVER "0.6.20160119")
 
 #set(CMAKE_C_COMPILER clang)
 #set(CMAKE_CXX_COMPILER clang++)
@@ -189,6 +191,8 @@ include(${CMAKE_ROOT}/Modules/CPack.cmake)
 endif(UNIX)
 
 # result messages
+
+message(STATUS "Version: ${XVER}")
 
 if(DRAWTYPE EQUAL 1)
 	message(STATUS "Painter : Qt OpenGL")

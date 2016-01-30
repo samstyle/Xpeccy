@@ -793,7 +793,7 @@ void msxFillSprites(Video* vid) {
 		if (atr & 0x80)			// early clock
 			xpos -= 32;
 		atr &= 0x0f;
-		if (vid->v9918.reg[1] & 2) {	// 16x16		FIXME: something wrong
+		if (vid->v9918.reg[1] & 2) {
 			pat &= 0xfc;
 			msxPutTile(vid, xpos, ypos, pat, atr);
 			msxPutTile(vid, xpos, ypos+8, pat+1, atr);
@@ -806,7 +806,7 @@ void msxFillSprites(Video* vid) {
 	}
 }
 
-// MSX scr 0 (40 x 24 text)
+// v9918 scr 0 (40 x 24 text)
 
 void vidMsxScr0(Video* vid) {
 	yscr = vid->y - vid->bord.v;
@@ -832,7 +832,7 @@ void vidMsxScr0(Video* vid) {
 
 
 
-// MSX scr 1 (32 x 24 text)
+// v9918 scr 1 (32 x 24 text)
 // TODO : OBJ layer
 
 void vidMsxScr1(Video* vid) {
@@ -861,7 +861,7 @@ void vidMsxScr1(Video* vid) {
 	vidPutDot(vid, col);
 }
 
-// MSX scr 2 (256 x 192)
+// v9918 scr 2 (256 x 192)
 
 void vidMsxScr2(Video* vid) {
 	yscr = vid->y - vid->bord.v;
@@ -884,6 +884,29 @@ void vidMsxScr2(Video* vid) {
 				col = (scrbyte & 0x80) ? ink : pap;
 			}
 			scrbyte <<= 1;
+		}
+	}
+	vidPutDot(vid, col);
+}
+
+// v9918 scr 3 (multicolor)
+
+void vidMsxScr3(Video* vid) {
+	yscr = vid->y - vid->bord.v;
+	if ((yscr < 0) || (yscr > 191)) {
+		col = vid->brdcol;
+	} else {
+		xscr = vid->x - vid->bord.h;
+		if ((xscr < 0) || (xscr > 255)) {
+			col = vid->brdcol;
+		} else {
+			adr = vid->v9918.ram[vid->v9918.BGMap + (xscr >> 3) + ((yscr & 0xf8) << 2)];		// color index
+			adr = vid->v9918.BGTiles + (adr << 3) + ((yscr & 0x18) >> 2) + ((yscr & 4) >> 2);	// color adr
+			col = vid->v9918.ram[adr];								// color for 2 dots
+			if (!(xscr & 4)) {
+				col >>= 4;
+			}
+			col &= 0x0f;
 		}
 	}
 	vidPutDot(vid, col);
@@ -912,6 +935,7 @@ xVideoMode vidModeTab[] = {
 	{VID_MSX_SCR0, vidMsxScr0},
 	{VID_MSX_SCR1, vidMsxScr1},
 	{VID_MSX_SCR2, vidMsxScr2},
+	{VID_MSX_SCR3, vidMsxScr3},
 	{VID_UNKNOWN, vidDrawBorder}
 };
 
