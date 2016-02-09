@@ -203,6 +203,7 @@ void cmsWr(Computer*,unsigned char);
 void rzxStop(Computer*);
 
 unsigned char* getBrkPtr(Computer*, unsigned short);
+unsigned char getBrk(Computer*, unsigned short);
 
 #ifdef __cplusplus
 }

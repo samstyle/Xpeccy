@@ -38,7 +38,7 @@ unsigned char memrd(unsigned short adr,int m1,void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	if (m1 && comp->rzxPlay) comp->rzx.fetches--;
 	zxMemRW(comp,adr);
-	if (*getBrkPtr(comp, adr) & MEM_BRK_RD) {
+	if (getBrk(comp, adr) & MEM_BRK_RD) {
 		comp->brk = 1;
 	}
 	return comp->hw->mrd(comp,adr,m1);
@@ -47,7 +47,7 @@ unsigned char memrd(unsigned short adr,int m1,void* ptr) {
 void memwr(unsigned short adr, unsigned char val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	zxMemRW(comp,adr);
-	if (*getBrkPtr(comp, adr) & MEM_BRK_WR) {
+	if (getBrk(comp, adr) & MEM_BRK_WR) {
 		comp->brk = 1;
 	}
 	comp->hw->mwr(comp,adr,val);
@@ -309,14 +309,12 @@ int zxINT(Computer* comp, unsigned char vect) {
 }
 
 int compExec(Computer* comp) {
-
-//	comp->mem->flag = 0;
-
 	res4 = 0;
 	res2 = cpuExec(comp->cpu);
 // scorpion WAIT: add 1T to odd-T command
 	if (comp->scrpWait && (res2 & 1))
 		res2++;
+// out @ last tick
 	vidSync(comp->vid,(res2 - res4 - 1) * comp->nsPerTick);
 	if (comp->padr) {
 		tapSync(comp->tape,comp->tapCount);
@@ -335,16 +333,8 @@ int compExec(Computer* comp) {
 		comp->padr = 0;
 	}
 	vidSync(comp->vid, comp->nsPerTick);
-
+// ...
 	res1 = res2;
-
-//	if (comp->rzxPlay) {
-//		comp->intStrobe = (comp->rzxFetches < 1);
-//		comp->frmStrobe = comp->intStrobe;
-//	} else if (comp->vid->newFrame) {
-//		comp->vid->newFrame = 0;
-//		comp->frmStrobe = 1;
-//	}
 	pcreg = comp->cpu->pc;
 // NMI
 	if ((pcreg > 0x3fff) && comp->nmiRequest && !comp->rzxPlay) {
@@ -370,16 +360,18 @@ int compExec(Computer* comp) {
 				comp->rzx.pos = 0;
 			}
 		}
-	} else {
+	} else if (!comp->vid->ismsx) {
 		if (comp->vid->intFRAME) {
 			zxINT(comp, 0xff);
-			// if (zxINT(comp,0xff)) comp->vid->intFRAME = 0;
 		} else if (comp->vid->intLINE) {
 			if (zxINT(comp,0xfd)) comp->vid->intLINE = 0;
 		} else if (comp->vid->intDMA) {
 			if (zxINT(comp,0xfb)) comp->vid->intDMA = 0;
 		}
+	} else if (comp->vid->ismsx && (comp->vid->v9918.reg[1] & 0x40) && comp->vid->newFrame) {
+		zxINT(comp, 0xff);
 	}
+// new frame
 	if (comp->vid->newFrame) {
 		comp->vid->newFrame = 0;
 		comp->frmStrobe = 1;
@@ -453,4 +445,17 @@ unsigned char* getBrkPtr(Computer* comp, unsigned short madr) {
 	MemPage* ptr = &comp->mem->map[madr >> 14];
 	int adr = (ptr->num << 14) | (madr & 0x3fff);
 	return (ptr->type == MEM_RAM) ? &comp->brkRamMap[adr] : &comp->brkRomMap[adr];
+}
+
+unsigned char getBrk(Computer* comp, unsigned short madr) {
+	unsigned char res = 0x00;
+	MemPage* ptr = &comp->mem->map[madr >> 14];
+	int adr = (ptr->num << 14) | (madr & 0x3fff);
+	if (ptr->type == MEM_RAM) {
+		res = comp->brkRamMap[adr];
+	} else if (ptr->type == MEM_ROM) {
+		res = comp->brkRomMap[adr];
+	}
+	res |= comp->brkAdrMap[madr];
+	return res;
 }
