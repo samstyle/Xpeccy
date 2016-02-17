@@ -758,30 +758,38 @@ void vidProfiScr(Video* vid) {
 
 // fill MSX foreground sprites image
 
+#define PUTDADOT(ad) if (!vid->v9918.sprImg[ad]) vid->v9918.sprImg[ad] = atr;
+
 void msxPutTile(Video* vid, int xpos, int ypos, int pat, int atr) {
 	unsigned char src;
-	int i,j,adr;
+	int i,j,adr,xsav;
 	for (i = 0; i < 8; i++) {
 		src = vid->v9918.ram[vid->v9918.OBJTiles + (pat << 3) + i];		// tile byte
 		if ((ypos >= 0) && (ypos < 192)) {					// if line onscreen
+			xsav = xpos;
 			for (j = 0; j < 8; j++) {
 				if ((xpos >= 0) && (xpos < 256) && (src & 0x80)) {	// if sprite has dot onscreen
 						adr = (ypos << 8) + xpos;
-						if (!vid->v9918.sprImg[adr])		// spr0 is on top!
-							vid->v9918.sprImg[(ypos << 8) + xpos] = atr;
+						PUTDADOT(adr);
+						if (vid->v9918.reg[1] & 1) {
+							PUTDADOT(adr+1);
+							PUTDADOT(adr+256);
+							PUTDADOT(adr+257);
+							xpos++;
+						}
 				}
 				src <<= 1;
 				xpos++;
 			}
-			xpos -= 8;
+			xpos = xsav;
 		}
-		ypos++;
+		ypos += (vid->v9918.reg[1] & 1) ? 2 : 1;
 	}
 }
 
 void msxFillSprites(Video* vid) {
 	memset(vid->v9918.sprImg, 0x00, 0xc000);
-	int i;
+	int i,sh;
 	int adr = vid->v9918.OBJAttr;
 	int ypos, xpos, pat, atr;
 	for (i = 0; i < 32; i++) {
@@ -795,10 +803,11 @@ void msxFillSprites(Video* vid) {
 		atr &= 0x0f;
 		if (vid->v9918.reg[1] & 2) {
 			pat &= 0xfc;
+			sh = (vid->v9918.reg[1] & 1) ? 16 : 8;
 			msxPutTile(vid, xpos, ypos, pat, atr);
-			msxPutTile(vid, xpos, ypos+8, pat+1, atr);
-			msxPutTile(vid, xpos+8, ypos, pat+2, atr);
-			msxPutTile(vid, xpos+8, ypos+8, pat+3, atr);
+			msxPutTile(vid, xpos, ypos+sh, pat+1, atr);
+			msxPutTile(vid, xpos+sh, ypos, pat+2, atr);
+			msxPutTile(vid, xpos+sh, ypos+sh, pat+3, atr);
 		} else {
 			msxPutTile(vid, xpos, ypos, pat, atr);
 		}
@@ -833,7 +842,6 @@ void vidMsxScr0(Video* vid) {
 
 
 // v9918 scr 1 (32 x 24 text)
-// TODO : OBJ layer
 
 void vidMsxScr1(Video* vid) {
 	yscr = vid->y - vid->bord.v;
