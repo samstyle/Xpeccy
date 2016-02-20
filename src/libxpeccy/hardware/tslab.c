@@ -432,7 +432,7 @@ void tsOut27AF(Computer* comp, unsigned short port, unsigned char val) {
 			break;
 		default:
 			printf("0x27AF: unsupported src-dst: %.2X\n",val & 0x87);
-			comp->brk = 1;
+			// comp->brk = 1;
 			break;
 	}
 	comp->dma.src.x = ((sadr & 0x3fc000) >> 14);

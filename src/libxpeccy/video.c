@@ -504,58 +504,77 @@ void vidTSTiles(Video* vid, int lay, unsigned short yoffs, unsigned short xoffs,
 	} while (adr & 0x7f);
 }
 
-struct TSpr {
-	unsigned y:9;
-	unsigned ys:3;
-	unsigned res1:1;
-	unsigned act:1;
-	unsigned leap:1;
-	unsigned yf:1;
-	unsigned x:9;
-	unsigned xs:3;
-	unsigned res2:3;
-	unsigned xf:1;
-	unsigned tnum:12;
-	unsigned pal:4;
-};
-typedef struct TSpr TSpr;
-
-TSpr* sptr;
+typedef struct {
+	unsigned y:9;		// 0[0:7], 1:0
+	unsigned ys:3;		// 1[1:3]
+	unsigned res1:1;	// 1:4
+	unsigned act:1;		// 1:5
+	unsigned leap:1;	// 1:6
+	unsigned yf:1;		// 1:7
+	unsigned x:9;		// 2[0:7], 3:0
+	unsigned xs:3;		// 3[1:3]
+	unsigned res2:3;	// 3[4:6]
+	unsigned xf:1;		// 3:7
+	unsigned tnum:12;	// 4[0:7], 4[0:3]
+	unsigned pal:4;		// 4[4:7]
+} TSpr;
 
 void vidTSSprites(Video* vid) {
+	unsigned char* ptr;
+	TSpr spr;
 	while (sadr < (0x200 - 6)) {
-		sptr = (TSpr*)&vid->tsconf.sfile[sadr];
-		if (sptr->act) {
-			adr = sptr->y;
-			xscr = (sptr->ys + 1) << 3;		// Ysize - 000:8; 001:16; 010:24; ...
+		ptr = &vid->tsconf.sfile[sadr];
+		spr.y = *ptr;
+		ptr++;
+		spr.y |= (*ptr & 1) << 8;
+		spr.ys = (*ptr & 0x0e) >> 1;
+		spr.res1 = (*ptr & 0x10) ? 1 : 0;
+		spr.act = (*ptr & 0x20) ? 1 : 0;
+		spr.leap = (*ptr & 0x40) ? 1 : 0;
+		spr.yf = (*ptr & 0x80) ? 1 : 0;
+		ptr++;
+		spr.x = *ptr;
+		ptr++;
+		spr.x |= (*ptr & 1) << 8;
+		spr.xs = (*ptr & 0x0e) >> 1;
+		spr.res2 = (*ptr & 0x70) >> 4;
+		spr.xf = (*ptr & 0x80) ? 1 : 0;
+		ptr++;
+		spr.tnum = *ptr;
+		ptr++;
+		spr.tnum |= (*ptr & 0x0f) << 8;
+		spr.pal = (*ptr & 0xf0) >> 4;
+		if (spr.act) {
+			adr = spr.y;
+			xscr = (spr.ys + 1) << 3;		// Ysize - 000:8; 001:16; 010:24; ...
 			yscr = vid->y - vid->tsconf.yPos;	// line on screen
 			if (((yscr - adr) & 0x1ff) < xscr) {	// if sprite visible on current line
 				yscr -= adr;			// line inside sprite;
-				if (sptr->yf) yscr = xscr - yscr - 1;	// YFlip (Ysize - norm.pos - 1)
-				tile = sptr->tnum + ((yscr & 0x1f8) << 3);	// shift to current tile line
+				if (spr.yf) yscr = xscr - yscr - 1;	// YFlip (Ysize - norm.pos - 1)
+				tile = spr.tnum + ((yscr & 0x1f8) << 3);	// shift to current tile line
 
 				fadr = vid->tsconf.SGPage << 14;
 				fadr += ((tile & 0xfc0) << 5) | ((yscr & 7) << 8) | ((tile & 0x3f) << 2);	// fadr = adr of pix line to put in buf
 
-				col = sptr->pal << 4;
-				xadr = (sptr->xs + 1) << 3;	// xsoze
-				adr = sptr->x;			// xpos
-				if (sptr->xf) adr += xadr - 1;	// xpos of right pixel (xflip)
+				col = spr.pal << 4;
+				xadr = (spr.xs + 1) << 3;	// xsoze
+				adr = spr.x;			// xpos
+				if (spr.xf) adr += xadr - 1;	// xpos of right pixel (xflip)
 				for (xscr = xadr; xscr > 0; xscr -= 2) {
 					col &= 0xf0;
 					col |= ((vid->mem->ramData[fadr] & 0xf0) >> 4);		// left pixel;
 					if (col & 0x0f) vid->tsconf.line[adr & 0x1ff] = col;
-					if (sptr->xf) adr--; else adr++;
+					if (spr.xf) adr--; else adr++;
 					col &= 0xf0;
 					col |= (vid->mem->ramData[fadr] & 0x0f);		// right pixel
 					if (col & 0x0f) vid->tsconf.line[adr & 0x1ff] = col;
-					if (sptr->xf) adr--; else adr++;
+					if (spr.xf) adr--; else adr++;
 					fadr++;
 				}
 			}
 		}
 		sadr += 6;
-		if (sptr->leap) break;		// LEAP
+		if (spr.leap) break;		// LEAP
 	}
 }
 

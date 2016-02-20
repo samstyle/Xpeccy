@@ -257,7 +257,7 @@ xAsmScan scanAsmTab(const char* com, opCode* tab) {
 			}
 		} while (work);
 		i++;
-	} while ((res.match == 0) && (i < 256));
+	} while (!res.match && (i < 256));
 	return res;
 }
 

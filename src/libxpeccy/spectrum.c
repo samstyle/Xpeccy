@@ -360,7 +360,10 @@ int compExec(Computer* comp) {
 				comp->rzx.pos = 0;
 			}
 		}
-	} else if (!comp->vid->ismsx) {
+	} else if (comp->vid->ismsx) {
+		if ((comp->vid->v9918.reg[1] & 0x40) && comp->vid->newFrame)
+			zxINT(comp, 0xff);
+	} else {
 		if (comp->vid->intFRAME) {
 			zxINT(comp, 0xff);
 		} else if (comp->vid->intLINE) {
@@ -368,8 +371,6 @@ int compExec(Computer* comp) {
 		} else if (comp->vid->intDMA) {
 			if (zxINT(comp,0xfb)) comp->vid->intDMA = 0;
 		}
-	} else if (comp->vid->ismsx && (comp->vid->v9918.reg[1] & 0x40) && comp->vid->newFrame) {
-		zxINT(comp, 0xff);
 	}
 // new frame
 	if (comp->vid->newFrame) {
