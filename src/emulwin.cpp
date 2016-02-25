@@ -5,6 +5,7 @@
 #include <QTableWidget>
 #include <QTime>
 #include <QUrl>
+#include <QMimeData>
 
 #include <fstream>
 #include <unistd.h>
@@ -736,8 +737,8 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		sdcCloseFile(comp->sdc);
 		timer.stop();
 		ethread.finish = 1;
-		ethread.mtx.unlock();		// unlock emulation thread (it exit, cuz of FL_EXIT)
-		ethread.wait();
+		ethread.mtx.unlock();		// unlock emulation thread
+		ethread.wait();			// wait until it exits
 		keywin->close();
 		ev->accept();
 	} else {
@@ -942,6 +943,7 @@ void MainWin::initUserMenu() {
 	layoutMenu = userMenu->addMenu(QIcon(":/images/display.png"),"Layout");
 	vmodeMenu = userMenu->addMenu(QIcon(":/images/rulers.png"),"Video mode");
 	resMenu = userMenu->addMenu(QIcon(":/images/shutdown.png"),"Reset...");
+
 	userMenu->addSeparator();
 	userMenu->addAction(QIcon(":/images/tape.png"),"Tape player",tapeWin,SLOT(show()));
 	userMenu->addAction(QIcon(":/images/video.png"),"RZX player",rzxWin,SLOT(show()));
@@ -1005,14 +1007,14 @@ void MainWin::fillBookmarkMenu() {
 void MainWin::fillProfileMenu() {
 	profileMenu->clear();
 	foreach(xProfile* prf, conf.prof.list) {
-		profileMenu->addAction(prf->name.c_str());
+		profileMenu->addAction(prf->name.c_str())->setData(prf->name.c_str());
 	}
 }
 
 void MainWin::fillLayoutMenu() {
 	layoutMenu->clear();
 	foreach(xLayout lay, conf.layList) {
-		layoutMenu->addAction(lay.name.c_str());
+		layoutMenu->addAction(lay.name.c_str())->setData(lay.name.c_str());
 	}
 }
 
@@ -1073,7 +1075,8 @@ void MainWin::setProfile(std::string nm) {
 }
 
 void MainWin::profileSelected(QAction* act) {
-	setProfile(std::string(act->text().toLocal8Bit().data()));
+	std::string str = QString(act->data().toByteArray()).toStdString();
+	setProfile(str);
 }
 
 void MainWin::reset(QAction* act) {
@@ -1082,7 +1085,8 @@ void MainWin::reset(QAction* act) {
 }
 
 void MainWin::chLayout(QAction* act) {
-	prfSetLayout(NULL, std::string(act->text().toLocal8Bit().data()));
+	std::string str = QString(act->data().toByteArray()).toStdString();
+	prfSetLayout(NULL, str);
 	prfSave("");
 	updateWindow();
 }
@@ -1208,5 +1212,6 @@ void xThread::run() {
 			}
 		}
 	} while (1);
+	mtx.unlock();
 	exit(0);
 }

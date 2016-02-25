@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 project(xpeccy)
 file(STRINGS "Release" XVER)
 
@@ -76,25 +76,49 @@ set(CMAKE_CXX_FLAGS "-Wall -O2 -DNDEBUG ${CMAKE_CXX_FLAGS}")
 set(CMAKE_C_FLAGS_DEBUG "-g -DISDEBUG ${CMAKE_C_FLAGS_DEBUG}")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -DISDEBUG ${CMAKE_CXX_FLAGS_DEBUG}")
 
-# -DDRAWING=[GL | *] (Qt by default)
-if("${DRAWING}" STREQUAL "GL")
-find_package(OpenGL REQUIRED)
-	if(OPENGL_FOUND)
-		set(INCLUDIRS ${INCLUDIRS} ${OPENGL_INCLUDE_DIR})
-		set(LIBRARIES ${LIBRARIES} ${OPENGL_LIBRARY})
-	else()
-		message(ERROR "OpenGL libraries not found")
-	endif()
-	add_definitions(-DDRAWGL)
-	find_package(Qt4 REQUIRED QtCore QtGui QtOpenGL)
-	set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, libqt4-opengl >=4.6")
-	set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libqt4-opengl (>=4.6)")
-	set(DRAWTYPE 1)
-else()
+# Qt
+
+if("${QT5BUILD}")
+
+	find_package(Qt5Widgets)
+	set(LIBRARIES ${LIBRARIES} Qt5::Widgets)
 	add_definitions(-DDRAWQT)
-	find_package(Qt4 REQUIRED QtCore QtGui)
 	set(DRAWTYPE 0)
+	qt5_add_resources(RESOURCES ${QRCFILES})
+	qt5_wrap_ui(UIHEADERS ${UIFILES})
+	qt5_wrap_cpp(MOCHEADERS ${MOCFILES})
+
+else()
+
+# -DDRAWING=[GL | *] (Qt by default)
+	if("${DRAWING}" STREQUAL "GL")
+	find_package(OpenGL REQUIRED)
+		if(OPENGL_FOUND)
+			set(INCLUDIRS ${INCLUDIRS} ${OPENGL_INCLUDE_DIR})
+			set(LIBRARIES ${LIBRARIES} ${OPENGL_LIBRARY})
+		else()
+			message(ERROR "OpenGL libraries not found")
+		endif()
+		add_definitions(-DDRAWGL)
+		find_package(Qt4 REQUIRED QtCore QtGui QtOpenGL)
+		set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, libqt4-opengl >=4.6")
+		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libqt4-opengl (>=4.6)")
+		set(DRAWTYPE 1)
+	else()
+		add_definitions(-DDRAWQT)
+		find_package(Qt4 REQUIRED QtCore QtGui)
+		set(DRAWTYPE 0)
+	endif()
+
+	qt4_add_resources(RESOURCES ${QRCFILES})
+	qt4_wrap_ui(UIHEADERS ${UIFILES})
+	qt4_wrap_cpp(MOCHEADERS ${MOCFILES})
+	include(${QT_USE_FILE})
+	set(LIBRARIES ${LIBRARIES} ${QT_LIBRARIES})
+
 endif()
+
+# alsa (sound, linux)
 
 if(UNIX)
 	find_package(ALSA)
@@ -107,6 +131,8 @@ if(UNIX)
 	endif(ALSA_FOUND)
 endif(UNIX)
 
+# SDL (sound)
+
 find_package(SDL)
 if(SDL_FOUND)
 	add_definitions(-DHAVESDL)
@@ -117,6 +143,7 @@ if(SDL_FOUND)
 endif()
 
 # zlib (for rzx)
+
 find_package(ZLIB)
 if(ZLIB_FOUND)
 	add_definitions(-DHAVEZLIB)
@@ -126,16 +153,11 @@ if(ZLIB_FOUND)
 	set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, zlib >= 1.2")
 endif(ZLIB_FOUND)
 
+# other
+
 if(WIN32)
 	set(LIBRARIES ${LIBRARIES} winmm.dll)
 endif(WIN32)
-
-qt4_add_resources(RESOURCES ${QRCFILES})
-qt4_wrap_ui(UIHEADERS ${UIFILES})
-qt4_wrap_cpp(MOCHEADERS ${MOCFILES})
-
-include(${QT_USE_FILE})
-set(LIBRARIES ${LIBRARIES} ${QT_LIBRARIES})
 
 include_directories(${INCLUDIRS})
 

@@ -40,7 +40,7 @@ int main(int ac,char** av) {
 #endif
 
 #ifdef HAVESDL
-	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK);
+	SDL_Init(SDL_INIT_AUDIO);
 	atexit(SDL_Quit);
 	SDL_version sdlver;
 	SDL_VERSION(&sdlver);
