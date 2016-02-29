@@ -14,9 +14,6 @@ set(INCLUDIRS ${CMAKE_BINARY_DIR})
 if(UNIX)
 	set(INC_PATHS local/include local/include/z80ex include/z80ex include)
 	set(LIB_PATHS lib lib64 local/lib local/lib64)
-
-	set(CPACK_RPM_PACKAGE_REQUIRES "libqt4 >= 4.6, libqt4-x11 >= 4.6")
-	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqtcore4 (>=4.6), libqtgui4 (>=4.6)")
 elseif(WIN32)
 	set(INC_PATHS ${INCLUDE} ${PATH})
 	set(LIB_PATHS ${LIBPATH} ${PATH})
@@ -87,6 +84,8 @@ if("${QT5BUILD}")
 	qt5_add_resources(RESOURCES ${QRCFILES})
 	qt5_wrap_ui(UIHEADERS ${UIFILES})
 	qt5_wrap_cpp(MOCHEADERS ${MOCFILES})
+	set(CPACK_RPM_PACKAGE_REQUIRES "libQt5Gui5 >= 5.3, libQt5Widgets5 >= 5.3")
+	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5gui5 (>=5.3), libqt5widgets5 (>=5.3)")
 
 else()
 
@@ -115,6 +114,8 @@ else()
 	qt4_wrap_cpp(MOCHEADERS ${MOCFILES})
 	include(${QT_USE_FILE})
 	set(LIBRARIES ${LIBRARIES} ${QT_LIBRARIES})
+	set(CPACK_RPM_PACKAGE_REQUIRES "libqt4 >= 4.6, libqt4-x11 >= 4.6")
+	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqtcore4 (>=4.6), libqtgui4 (>=4.6)")
 
 endif()
 
@@ -215,6 +216,12 @@ endif(UNIX)
 # result messages
 
 message(STATUS "Version: ${XVER}")
+
+if(QT5BUILD)
+	message(STATUS "Qt version : 5")
+else()
+	message(STATUS "Qt version : 4")
+endif()
 
 if(DRAWTYPE EQUAL 1)
 	message(STATUS "Painter : Qt OpenGL")
