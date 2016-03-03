@@ -14,7 +14,7 @@ void initFileDialog(QWidget* par) {
 	filer->setWindowModality(Qt::ApplicationModal);
 	filer->setNameFilterDetailsVisible(true);
 	filer->setConfirmOverwrite(true);
-	filer->setOptions(QFileDialog::DontUseNativeDialog);
+	filer->setOption(QFileDialog::DontUseNativeDialog,0);
 #ifdef _WIN32
 	lastDir = ".";
 #else
