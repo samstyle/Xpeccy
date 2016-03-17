@@ -15,7 +15,7 @@
 #include <sys/time.h>
 
 #include "xcore/xcore.h"
-#include "sound.h"
+#include "xcore/sound.h"
 #include "emulwin.h"
 #include "filer.h"
 

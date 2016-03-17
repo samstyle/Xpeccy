@@ -640,8 +640,6 @@ void vidDrawTSLNormal(Video* vid) {
 		}
 	}
 	vidPutDot(vid,col);
-//	*(vid->scrptr++) =  col;
-//	if (vidFlag & VF_DOUBLE) *(vid->scrptr++) = col;
 }
 
 // tsconf 4bpp
@@ -666,8 +664,6 @@ void vidDrawTSL16(Video* vid) {
 		col |= vid->tsconf.scrPal;
 	}
 	vidPutDot(vid,col);
-//	*(vid->scrptr++) = col;
-//	if (vidFlag & VF_DOUBLE) *(vid->scrptr++) = col;
 }
 
 // tsconf 8bpp
@@ -686,8 +682,6 @@ void vidDrawTSL256(Video* vid) {
 		col = vid->mem->ramData[adr];
 	}
 	vidPutDot(vid,col);
-//	*(vid->scrptr++) = col;
-//	if (vidFlag & VF_DOUBLE) *(vid->scrptr++) = col;
 }
 
 // tsconf text
@@ -709,11 +703,8 @@ void vidDrawTSLText(Video* vid) {
 			ink = (col & 0x0f) | (vid->tsconf.scrPal);
 			pap = ((col & 0xf0) >> 4)  | (vid->tsconf.scrPal);
 			scrbyte = vid->mem->ramData[MADR(vid->tsconf.vidPage ^ 1, (scrbyte << 3) | (yscr & 7))];
-			// scrbyte = vid->font[(scrbyte << 3) | (yscr & 7)];
 			vidDoubleDot(vid);
 		}
-		//vid->scrptr++;
-		//if (vidFlag & VF_DOUBLE) vid->scrptr++;
 	}
 }
 

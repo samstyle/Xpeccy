@@ -196,6 +196,8 @@ void compSetFrq(Computer*,double);
 void compSetLayout(Computer*, int, int, int, int, int, int, int, int, int);
 void compSetHardware(Computer*,const char*);
 
+sndPair compGetVolume(Computer*);
+
 // read-write cmos
 unsigned char cmsRd(Computer*);
 void cmsWr(Computer*,unsigned char);

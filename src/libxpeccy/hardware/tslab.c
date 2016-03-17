@@ -226,14 +226,14 @@ void tsOut7FFD(Computer* comp, unsigned short port, unsigned char val) {
 	if (comp->p7FFD & 0x20) return;
 	comp->p7FFD = val;
 	comp->rom = (val & 0x10) ? 1 : 0;
-	int num = (val & 7) | ((val & 0xc0) >> 3);		// page (512K)
+	int num = (val & 7) | ((val & 0xc0) >> 3);	// page (512K)
 	if (p21AF & 0x80) {				// 1x : !a13
 		if (~port & 0x2000) num &= 7;
 	} else if (p21AF & 0x40) {			// 01 : 128
 		num &= 7;
 	}
 	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,num);
-	comp->vid->tsconf.vidPage = 5;
+	// comp->vid->tsconf.vidPage = 5;
 	comp->vid->curscr = (val & 8) ? 7 : 5;
 	tslMapMem(comp);
 }

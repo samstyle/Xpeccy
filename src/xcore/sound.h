@@ -19,23 +19,16 @@
 #endif
 
 #include "sound.h"
-#include "xcore/xcore.h"
-#include "libxpeccy/spectrum.h"
+#include "xcore.h"
+// #include "../libxpeccy/spectrum.h"
 
-#define	SND_NULL	0
-#define	SND_OSS		1
-#define	SND_ALSA	2
-#define	SND_SDL		3
-#define SND_WAVE	4
-
-#define	SND_RATE	0
-#define	SND_COUNT	1
-#define	SND_BEEP	2
-#define	SND_TAPE	3
-#define	SND_AYVL	4
-#define	SND_GSVL	5
-#define	SND_ENABLE	6
-#define	SND_MUTE	7
+enum xSoundOutput {
+	xOutputNone = 0,
+	xOutputOss,
+	xOutputAlsa,
+	xOutputSDL,
+	xOutputWave
+};
 
 extern long nsPerFrame;
 

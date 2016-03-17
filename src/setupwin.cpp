@@ -10,11 +10,11 @@
 	#undef main
 #endif
 
-#include "sound.h"
 #include "filer.h"
 #include "setupwin.h"
 #include "xgui/xgui.h"
 #include "xcore/xcore.h"
+#include "xcore/sound.h"
 #include "libxpeccy/spectrum.h"
 #include "libxpeccy/filetypes/filetypes.h"
 

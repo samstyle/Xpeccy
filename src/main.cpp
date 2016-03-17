@@ -4,9 +4,9 @@
 #include <QDebug>
 
 #include "xcore/xcore.h"
+#include "xcore/sound.h"
 #include "xgui/xgui.h"
 #include "libxpeccy/spectrum.h"
-#include "sound.h"
 #include "emulwin.h"
 #include "debuger.h"
 #include "setupwin.h"
@@ -17,6 +17,7 @@
 	#undef main
 #endif
 #ifdef _WIN32
+	#include <mmsystem.h>
 #endif
 
 int main(int ac,char** av) {

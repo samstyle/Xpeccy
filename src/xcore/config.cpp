@@ -7,8 +7,7 @@
 
 #include "xcore.h"
 #include "../xgui/xgui.h"
-#include "../sound.h"
-//#include "../emulwin.h"
+#include "sound.h"
 
 #ifdef _WIN32
 	#include <direct.h>
