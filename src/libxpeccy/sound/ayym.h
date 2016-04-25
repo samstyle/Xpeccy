@@ -6,22 +6,28 @@ extern "C" {
 #endif
 
 // ay_type
-#define	SND_NONE	0
-#define	SND_AY		1
-#define	SND_YM		2
-#define SND_YM2203	3	// FM
-#define	SND_END		4
+enum {
+	SND_NONE = 0,
+	SND_AY,
+	SND_YM,
+	SND_YM2203,	// FM
+	SND_END
+};
 // ay_stereo
-#define	AY_MONO		0
-#define	AY_ABC		1
-#define	AY_ACB		2
-#define	AY_BAC		3
-#define	AY_BCA		4
-#define	AY_CAB		5
-#define	AY_CBA		6
+enum {
+	AY_MONO = 0,
+	AY_ABC,
+	AY_ACB,
+	AY_BAC,
+	AY_BCA,
+	AY_CAB,
+	AY_CBA
+};
 // ts_type
-#define	TS_NONE		0
-#define	TS_NEDOPC	1
+enum {
+	TS_NONE = 0,
+	TS_NEDOPC
+};
 
 #include "sndcommon.h"
 

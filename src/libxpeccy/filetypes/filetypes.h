@@ -16,43 +16,45 @@
 	#define SLASH "\\"
 #endif
 
-#define	ERR_OK		0
-#define	ERR_CANT_OPEN	1	// can't open file
+enum {
+	ERR_OK = 0,
+	ERR_CANT_OPEN,		// can't open file
 
-#define	ERR_RZX_SIGN	0x10	// rzx signature error
-#define	ERR_RZX_CRYPT	0x11	// rzx is crypted
-#define	ERR_RZX_UNPACK	0x12	// rzx unpacking error
+	ERR_RZX_SIGN,		// rzx signature error
+	ERR_RZX_CRYPT,		// rzx is crypted
+	ERR_RZX_UNPACK,		// rzx unpacking error
 
-#define	ERR_TAP_DATA	0x20	// can't save tap because of not-standart blocks
+	ERR_TAP_DATA,		// can't save tap because of not-standart blocks
 
-#define	ERR_TZX_SIGN	0x30	// tzx signature error
-#define	ERR_TZX_UNKNOWN	0x31	// tzx unsupported block
+	ERR_TZX_SIGN,		// tzx signature error
+	ERR_TZX_UNKNOWN,	// tzx unsupported block
 
-#define ERR_WAV_HEAD	0x38	// wrong wave header
-#define	ERR_WAV_FORMAT	0x39	// unsupported wav format
+	ERR_WAV_HEAD,		// wrong wave header
+	ERR_WAV_FORMAT,		// unsupported wav format
 
-#define	ERR_TRD_LEN	0x40	// incorrect trd lenght
-#define	ERR_TRD_SIGN	0x41	// not trd image
-#define	ERR_TRD_SNF	0x42	// can't save trd: wrong disk structure
-#define	ERR_NOTRD	0x43	// this is not trd disk
+	ERR_TRD_LEN,		// incorrect trd lenght
+	ERR_TRD_SIGN,		// not trd image
+	ERR_TRD_SNF,		// can't save trd: wrong disk structure
+	ERR_NOTRD,		// this is not trd disk
 
-#define	ERR_HOB_CANT	0x50	// can't create hobeta @ disk
+	ERR_HOB_CANT,		// can't create hobeta @ disk
 
-#define	ERR_UDI_SIGN	0x60	// udi signature errror
+	ERR_UDI_SIGN,		// udi signature errror
 
-#define	ERR_FDI_SIGN	0x70	// fdi signature error
-#define	ERR_FDI_HEAD	0x71	// wrong fdi heads count
+	ERR_FDI_SIGN,		// fdi signature error
+	ERR_FDI_HEAD,		// wrong fdi heads count
 
-#define	ERR_SCL_SIGN	0x80	// scl signature error
-#define	ERR_SCL_MANY	0x81	// too many files in scl
+	ERR_SCL_SIGN,		// scl signature error
+	ERR_SCL_MANY,		// too many files in scl
 
-#define	ERR_DSK_SIGN	0x88	// dsk signature error
+	ERR_DSK_SIGN,		// dsk signature error
 
-#define	ERR_RAW_LONG	0x90	// raw file too long
+	ERR_RAW_LONG,		// raw file too long
 
-#define	ERR_TD0_SIGN	0x98	// td0 signature error
-#define ERR_TD0_TYPE	0x99	// unsupported td0 type
-#define ERR_TD0_VERSION	0x9a	// unsupported version ( <20)
+	ERR_TD0_SIGN,		// td0 signature error
+	ERR_TD0_TYPE,		// unsupported td0 type
+	ERR_TD0_VERSION		// unsupported version ( <20)
+};
 
 // spg
 

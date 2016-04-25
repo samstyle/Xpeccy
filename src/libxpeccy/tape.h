@@ -12,8 +12,10 @@ extern "C" {
 #define	SIGN1LEN	1710
 #define	SYNC3LEN	954
 
-#define	TAPE_HEAD	0
-#define	TAPE_DATA	1
+enum {
+	TAPE_HEAD = 0,
+	TAPE_DATA
+};
 
 typedef struct {
 	unsigned breakPoint:1;

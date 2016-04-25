@@ -6,14 +6,18 @@
 
 #define FDC_FAST	1
 
-#define FDC_NONE	0
-#define FDC_VG93	1
-#define FDC_UPD765	2
+enum {
+	FDC_NONE = 0,
+	FDC_VG93,
+	FDC_UPD765
+};
 
-#define DIF_NONE	0
-#define DIF_BDI		1
-#define DIF_P3DOS	2
-#define DIF_END		-1
+enum {
+	DIF_NONE = 0,
+	DIF_BDI,
+	DIF_P3DOS,
+	DIF_END	= -1
+};
 
 #define	BDI_SYS		0xff
 #define FDC_COM		0x1f
@@ -48,7 +52,7 @@ struct FDC {
 	Floppy* flp;		// current floppy ptr
 	unsigned short crc;	// calculated crc
 	unsigned short fcrc;	// crc get from floppy
-	unsigned char buf[6];	
+	unsigned char buf[6];
 	int fmode;
 	int cnt;
 	int wait;		// pause (ns)

@@ -5,12 +5,10 @@ struct CPU;
 
 struct opCode {
 	unsigned prefix:1;
-	int t;			// T-states
-//	int len;		// opcode len
-//	int c1,c2,c3,c4;	// opcode bytes
-	void(*exec)(struct CPU *);
-	struct opCode *tab;
-	const char* mnem;
+	int t;				// T-states
+	void(*exec)(struct CPU *);	// fuction to exec
+	struct opCode *tab;		// next opCode tab (for prefixes)
+	const char* mnem;		// mnemonic
 };
 
 typedef struct opCode opCode;

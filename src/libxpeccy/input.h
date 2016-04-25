@@ -5,13 +5,17 @@
 extern "C" {
 #endif
 // mouse
-#define	XM_WHEELUP	0
-#define	XM_WHEELDN	1
+enum {
+	XM_WHEELUP = 0,
+	XM_WHEELDN
+};
 // joystick type
-#define XJ_NONE		0
-#define XJ_KEMPSTON	1
-#define	XJ_SINCLAIR_R	2
-#define	XJ_SINCLAIR_L	3
+enum {
+	XJ_NONE = 0,
+	XJ_KEMPSTON,
+	XJ_SINCLAIR_R,
+	XJ_SINCLAIR_L
+};
 // joystick contacts
 #define	XJ_LEFT		1
 #define	XJ_RIGHT	(1<<1)

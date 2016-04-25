@@ -9,8 +9,10 @@ extern "C" {
 #include "../memory.h"
 
 // gs stereo
-#define	GS_MONO		0
-#define	GS_12_34	1
+enum {
+	GS_MONO = 0,
+	GS_12_34
+};
 // gs cpu freq
 #define	GS_FRQ	12.0
 

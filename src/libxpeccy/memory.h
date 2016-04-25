@@ -6,14 +6,18 @@ extern "C" {
 #endif
 
 // mempage type
-#define	MEM_RAM		1
-#define	MEM_ROM		2
-#define MEM_EXT		3
+enum {
+	MEM_RAM	= 1,
+	MEM_ROM,
+	MEM_EXT
+};
 // memory banks
-#define	MEM_BANK0	0
-#define	MEM_BANK1	1
-#define	MEM_BANK2	2
-#define	MEM_BANK3	3
+enum {
+	MEM_BANK0 = 0,
+	MEM_BANK1,
+	MEM_BANK2,
+	MEM_BANK3
+};
 
 typedef struct {
 	unsigned wren:1;		// write enable

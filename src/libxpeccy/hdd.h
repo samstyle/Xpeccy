@@ -9,21 +9,27 @@ extern "C" {
 
 #include "nvram.h"
 
-#define	IDE_DEFAULT	-1
-#define IDE_NEMO	1
-#define IDE_NEMOA8	2
-#define IDE_SMUC	3
-#define IDE_ATM		4
-#define	IDE_NEMO_EVO	5	// with hi/low trigger
-#define IDE_PROFI	6
-
+// IDE interface type
+enum {
+	IDE_DEFAULT = -1,
+	IDE_NEMO = 1,
+	IDE_NEMOA8,
+	IDE_SMUC,
+	IDE_ATM,
+	IDE_NEMO_EVO,	// with hi/low trigger
+	IDE_PROFI
+};
 // device select
-#define IDE_NONE	0
-#define	IDE_MASTER	1
-#define	IDE_SLAVE	2
+enum {
+	IDE_NONE = 0,
+	IDE_MASTER,
+	IDE_SLAVE
+};
 // device type (+ IDE_NONE)
-#define IDE_ATA		1
-#define IDE_ATAPI	2
+enum {
+	IDE_ATA = 1,
+	IDE_ATAPI
+};
 
 #define HDD_BUFSIZE	512
 
@@ -61,9 +67,11 @@ extern "C" {
 #define HDF_LBA		(1<<6)
 
 // bufer mode
-#define HDB_IDLE	0
-#define HDB_READ	1
-#define HDB_WRITE	2
+enum {
+	HDB_IDLE = 0,
+	HDB_READ,
+	HDB_WRITE
+};
 
 typedef struct {
 	unsigned short word;

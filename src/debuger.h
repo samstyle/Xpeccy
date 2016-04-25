@@ -31,10 +31,12 @@ struct xLabel {
 	QString name;
 };
 
-#define XTYPE_NONE -1
-#define XTYPE_ADR 0
-#define XTYPE_DUMP 1
-#define XTYPE_BYTE 2
+enum {
+	XTYPE_NONE = -1,
+	XTYPE_ADR = 0,
+	XTYPE_DUMP,
+	XTYPE_BYTE
+};
 
 class xItemDelegate : public QItemDelegate {
 	public:

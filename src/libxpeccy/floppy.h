@@ -12,15 +12,20 @@ extern "C" {
 #define DISK_TYPE_TRD	1
 // get
 #define	FLP_DISKTYPE	10
+
 // error
-#define	ERR_OK		0
-#define	ERR_MANYFILES	1
-#define	ERR_NOSPACE	2
-#define	ERR_SHIT	3
-#define ERR_SIZE	4
+enum {
+	ERR_MANYFILES = 1,
+	ERR_NOSPACE,
+	ERR_SHIT,
+	ERR_SIZE
+};
+
 // step direction
-#define	FLP_BACK	0
-#define	FLP_FORWARD	1
+enum {
+	FLP_BACK = 0,
+	FLP_FORWARD
+};
 
 typedef struct {
 	unsigned trk80:1;	// fdd is 80T

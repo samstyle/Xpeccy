@@ -14,15 +14,19 @@ void showInfo(const char*);
 #include "ui_tapewin.h"
 #include "../libxpeccy/tape.h"
 
-#define	TW_STATE	0
-#define	TW_REWIND	1
-#define	TW_BREAK	2
+enum {
+	TW_STATE = 0,
+	TW_REWIND,
+	TW_BREAK
+};
 
-#define	TWS_PLAY	1
-#define	TWS_REC		2
-#define	TWS_STOP	3
-#define	TWS_OPEN	4
-#define	TWS_REWIND	5
+enum {
+	TWS_PLAY = 1,
+	TWS_REC,
+	TWS_STOP,
+	TWS_OPEN,
+	TWS_REWIND
+};
 
 class TapeWin : public QDialog {
 	Q_OBJECT
@@ -51,10 +55,12 @@ class TapeWin : public QDialog {
 
 #include "ui_rzxplayer.h"
 
-#define	RWS_PLAY	1
-#define	RWS_STOP	2
-#define	RWS_PAUSE	3
-#define	RWS_OPEN	4
+enum {
+	RWS_PLAY = 1,
+	RWS_STOP,
+	RWS_PAUSE,
+	RWS_OPEN
+};
 
 class RZXWin : public QDialog {
 	Q_OBJECT

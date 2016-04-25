@@ -51,12 +51,14 @@ typedef struct {
 } memEntry;
 
 // MSX cartridge mapper type
-#define MSX_UNKNOWN	-1
-#define MSX_NOMAPPER	0
-#define	MSX_KONAMI4	1
-#define	MSX_KONAMI5	2
-#define	MSX_ASCII8	3
-#define	MSX_ASCII16	4
+enum {
+	MSX_UNKNOWN = -1,
+	MSX_NOMAPPER = 0,
+	MSX_KONAMI4,
+	MSX_KONAMI5,
+	MSX_ASCII8,
+	MSX_ASCII16
+};
 
 typedef struct {
 	unsigned char* data;

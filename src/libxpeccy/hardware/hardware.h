@@ -10,19 +10,19 @@ extern "C" {
 // hw type
 enum {
 	HW_NULL = 0,
-	HW_ZX48,
-	HW_PENT,
-	HW_P1024,
-	HW_SCORP,
-	HW_PLUS2,
-	HW_PLUS3,
-	HW_ATM1,
-	HW_ATM2,
-	HW_PENTEVO,
-	HW_TSLAB,
-	HW_PROFI,
-	HW_PHOENIX,
-	HW_MSX
+	HW_ZX48,	// ZX48K (Classic)
+	HW_PENT,	// Pentagon
+	HW_P1024,	// Pentagon1024SL
+	HW_SCORP,	// ZS Scorpion
+	HW_PLUS2,	// Spectrum 2+
+	HW_PLUS3,	// Spectrum 3+
+	HW_ATM1,	// ATM 1
+	HW_ATM2,	// ATM 2+
+	HW_PENTEVO,	// ZXEvo (Baseconf)
+	HW_TSLAB,	// PentEvo (TSConf)
+	HW_PROFI,	// Profi
+	HW_PHOENIX,	// ZXM Phoenix
+	HW_MSX		// MSX 1
 };
 
 // mem size

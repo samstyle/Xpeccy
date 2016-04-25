@@ -3,9 +3,11 @@
 
 #include "sndcommon.h"
 
-#define SAA_OFF		0
-#define SAA_MONO	1
-#define	SAA_STEREO	2
+enum {
+	SAA_OFF = 0,
+	SAA_MONO,
+	SAA_STEREO
+};
 
 typedef struct {
 	unsigned lev:1;

@@ -4,15 +4,17 @@
 #include <stdio.h>
 
 // mode
-#define	SDC_INACTIVE	0
-#define	SDC_IDLE	1
-#define	SDC_WAIT	2
-
+enum {
+	SDC_INACTIVE = 0,
+	SDC_IDLE,
+	SDC_WAIT
+};
 // action
-#define	SDC_FREE	0
-#define	SDC_READ	1
-#define	SDC_WRITE	2
-
+enum {
+	SDC_FREE = 0,
+	SDC_READ,
+	SDC_WRITE
+};
 // R1 flags
 #define	R1_IDLE		1
 #define	R1_ERASE_RESET	(1<<1)
@@ -21,16 +23,6 @@
 #define	R1_ERASE_SEQ	(1<<4)
 #define	R1_ADDRESS_ERR	(1<<5)
 #define	R1_PARAM_ERR	(1<<6)
-// flag
-/*
-#define	SDC_ON		1
-#define	SDC_CS		(1<<1)
-#define	SDC_ACMD	(1<<2)
-#define	SDC_CHECK_CRC	(1<<3)
-#define	SDC_CONT	(1<<4)		// multiple block op
-#define	SDC_LOCK	(1<<5)		// write protect
-#define SDC_BUSY	(1<<6)
-*/
 // capacity
 #define	SDC_32M		32
 #define	SDC_64M		64
@@ -41,7 +33,6 @@
 #define	SDC_DEFAULT	SDC_128M
 
 typedef struct {
-	//int flag;
 	unsigned on:1;
 	unsigned cs:1;
 	unsigned acmd:1;

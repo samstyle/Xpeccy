@@ -10,29 +10,31 @@ extern "C" {
 #include "memory.h"
 #include "ulaplus.h"
 
-// screen drawing mode
-#define	VID_CURRENT	0	// 'refresh' current mode. used on changing VF_NOSCREEN flag
-#define	VID_NORMAL	1
-#define	VID_ALCO	2
-#define	VID_ATM_EGA	3
-#define	VID_ATM_TEXT	4
-#define	VID_ATM_HWM	5
-#define	VID_HWMC	6
-#define	VID_EVO_TEXT	7
-#define VID_TSL_16	8	// TSConf 4bpp
-#define	VID_TSL_256	9	// TSConf 8bpp
-#define	VID_TSL_NORMAL	10	// TSConf common screen
-#define	VID_TSL_TEXT	11
-#define VID_PRF_MC	12	// Profi multicolor
-#define VID_MSX_SCR0	0x20	// MSX 1/2 modes
-#define VID_MSX_SCR1	0x21
-#define VID_MSX_SCR2	0x22
-#define VID_MSX_SCR3	0x23
-#define VID_MSX_SCR4	0x24
-#define VID_MSX_SCR5	0x25
-#define VID_MSX_SCR6	0x26
-#define VID_MSX_SCR7	0x27
-#define	VID_UNKNOWN	0xff
+// screen mode
+enum {
+	VID_CURRENT = 0,	// 'refresh' current mode. used on changing VF_NOSCREEN flag
+	VID_NORMAL,
+	VID_ALCO,
+	VID_ATM_EGA,
+	VID_ATM_TEXT,
+	VID_ATM_HWM,
+	VID_HWMC,
+	VID_EVO_TEXT,
+	VID_TSL_16,	// TSConf 4bpp
+	VID_TSL_256,	// TSConf 8bpp
+	VID_TSL_NORMAL,	// TSConf common screen
+	VID_TSL_TEXT,
+	VID_PRF_MC,	// Profi multicolor
+	VID_MSX_SCR0,	// MSX 1/2 modes
+	VID_MSX_SCR1,
+	VID_MSX_SCR2,
+	VID_MSX_SCR3,
+	VID_MSX_SCR4,
+	VID_MSX_SCR5,
+	VID_MSX_SCR6,
+	VID_MSX_SCR7,
+	VID_UNKNOWN = 0xff
+};
 
 typedef struct {
 	int h;

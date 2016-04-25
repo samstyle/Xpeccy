@@ -1,10 +1,12 @@
 #ifndef _NVRAM_H
 #define _NVRAM_H
 
-#define	NV_IDLE		0
-#define	NV_WRITE	2
-#define	NV_COM		3
-#define	NV_ADR		4
+enum {
+	NV_IDLE	= 0,
+	NV_WRITE = 2,
+	NV_COM,
+	NV_ADR
+};
 
 typedef struct {
 	unsigned stable:1;
