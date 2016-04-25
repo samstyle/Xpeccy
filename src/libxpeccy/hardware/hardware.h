@@ -8,19 +8,23 @@ extern "C" {
 #include "../spectrum.h"
 
 // hw type
-#define HW_NULL		0
-#define HW_ZX48		1
-#define	HW_PENT		2
-#define	HW_P1024	3
-#define	HW_SCORP	4
-#define	HW_PLUS2	5
-#define	HW_PLUS3	6
-#define	HW_ATM1		7
-#define	HW_ATM2		8
-#define	HW_PENTEVO	9
-#define	HW_TSLAB	10
-#define HW_PROFI	11
-#define HW_MSX		12
+enum {
+	HW_NULL = 0,
+	HW_ZX48,
+	HW_PENT,
+	HW_P1024,
+	HW_SCORP,
+	HW_PLUS2,
+	HW_PLUS3,
+	HW_ATM1,
+	HW_ATM2,
+	HW_PENTEVO,
+	HW_TSLAB,
+	HW_PROFI,
+	HW_PHOENIX,
+	HW_MSX
+};
+
 // mem size
 #define	MEM_48	0
 #define	MEM_128	1
@@ -145,6 +149,12 @@ void prfOut(Computer*,unsigned short,unsigned char,int);
 unsigned char prfIn(Computer*,unsigned short,int);
 void prfReset(Computer*);
 unsigned char prfMRd(Computer*,unsigned short,int);
+
+// ZXM Phoenix
+void phxMapMem(Computer*);
+void phxOut(Computer*,unsigned short,unsigned char,int);
+unsigned char phxIn(Computer*,unsigned short,int);
+void phxReset(Computer*);
 
 // msx
 void msxMapMem(Computer*);

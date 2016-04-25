@@ -16,11 +16,13 @@ extern "C" {
 #include "sdcard.h"
 
 // hw reset rompage
-#define	RES_DEFAULT	0
-#define	RES_48		1
-#define	RES_128		2
-#define	RES_DOS		3
-#define	RES_SHADOW	4
+enum {
+	RES_DEFAULT = 0,
+	RES_48,
+	RES_128,
+	RES_DOS,
+	RES_SHADOW
+};
 // memory breaks
 #define	MEM_BRK_FETCH	1
 #define	MEM_BRK_RD	(1<<1)
@@ -115,17 +117,14 @@ typedef struct {
 	int nsPerTick;
 	int nsPerFrame;
 
-	memEntry memMap[16];		// memory map for ATM2, PentEvo
-	unsigned char p7FFD;		// 7ffd value
-	union {				// extend port values
-		//unsigned char prt1;
-		unsigned char p1FFD;
-		unsigned char pEFF7;
-		unsigned char pDFFD;
-		unsigned char p77hi;
-	};
+	unsigned char p7FFD;		// stored port out
+	unsigned char p1FFD;
+	unsigned char pEFF7;
+	unsigned char pDFFD;
+	unsigned char p77hi;
 	unsigned char prt2;		// scorpion ProfROM layer (0..3)
 
+	memEntry memMap[16];			// memory map for ATM2, PentEvo
 	unsigned char brkRamMap[0x400000];	// ram brk
 	unsigned char brkRomMap[0x80000];	// rom brk
 	unsigned char brkAdrMap[0x10000];	// adr brk
