@@ -65,28 +65,32 @@ int main(int ac,char** av) {
 			i++;
 		} else if ((strcmp(parg,"-d") == 0) || (strcmp(parg,"--debug") == 0)) {
 			dbg = 1;
-		} else if ((strcmp(parg,"--pc") == 0) && (i < ac)) {
-			mwin.comp->cpu->pc = strtol(av[i],NULL,0);
-			i++;
-		} else if ((strcmp(parg,"--sp") == 0) && (i < ac)) {
-			mwin.comp->cpu->sp = strtol(av[i],NULL,0);
-			i++;
-		} else if (((strcmp(parg,"-b") == 0) || (strcmp(parg,"--bank") == 0)) && (i < ac)) {
-			memSetBank(mwin.comp->mem, MEM_BANK3, MEM_RAM, strtol(av[i],NULL,0));
-			i++;
-		} else if (((strcmp(parg,"-a") == 0) || (strcmp(parg,"--adr") == 0)) && (i < ac)) {
-			adr = strtol(av[i],NULL,0) & 0xffff;
-			i++;
-		} else if (((strcmp(parg,"-f") == 0) || (strcmp(parg,"--file") == 0)) && (i < ac)) {
-			loadDUMP(mwin.comp, av[i], adr);
-			i++;
-		} else if ((strcmp(parg,"--bp") == 0) && (i < ac)) {
-			ptr = getBrkPtr(mwin.comp, strtol(av[i],NULL,0) & 0xffff);
-			*ptr |= MEM_BRK_FETCH;
-			i++;
-		} else if (((strcmp(parg,"-l") == 0) || (strcmp(parg,"--labels") == 0)) && (i < ac)) {
-			mwin.loadLabels(av[i]);
-			i++;
+		} else if (i < ac) {
+			if (!strcmp(parg,"--pc")) {
+				mwin.comp->cpu->pc = strtol(av[i],NULL,0);
+				i++;
+			} else if (!strcmp(parg,"--sp")) {
+				mwin.comp->cpu->sp = strtol(av[i],NULL,0);
+				i++;
+			} else if (!strcmp(parg,"-b") || !strcmp(parg,"--bank")) {
+				memSetBank(mwin.comp->mem, MEM_BANK3, MEM_RAM, strtol(av[i],NULL,0));
+				i++;
+			} else if (!strcmp(parg,"-a") || !strcmp(parg,"--adr")) {
+				adr = strtol(av[i],NULL,0) & 0xffff;
+				i++;
+			} else if (!strcmp(parg,"-f") || !strcmp(parg,"--file")) {
+				loadDUMP(mwin.comp, av[i], adr);
+				i++;
+			} else if (!strcmp(parg,"--bp")) {
+				ptr = getBrkPtr(mwin.comp, strtol(av[i],NULL,0) & 0xffff);
+				*ptr |= MEM_BRK_FETCH;
+				i++;
+			} else if (!strcmp(parg,"-l") || !strcmp(parg,"--labels")) {
+				mwin.loadLabels(av[i]);
+				i++;
+			} else if (strlen(parg) > 0) {
+				loadFile(mwin.comp, parg, FT_ALL, 0);
+			}
 		} else if (strlen(parg) > 0) {
 			loadFile(mwin.comp, parg, FT_ALL, 0);
 		}

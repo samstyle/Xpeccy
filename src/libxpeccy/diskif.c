@@ -63,6 +63,7 @@ int bdiGetPort(int port) {
 int bdiIn(DiskIF* dif, int port, unsigned char* res, int dos) {
 	if (!dos) return 0;
 	port = bdiGetPort(port);
+//	printf("in BDI port %.2X\n",port);
 	if (port == 0) {
 		return 0;
 	} else if (port == BDI_SYS) {
@@ -76,6 +77,7 @@ int bdiIn(DiskIF* dif, int port, unsigned char* res, int dos) {
 int bdiOut(DiskIF* dif, int port, unsigned char val, int dos) {
 	if (!dos) return 0;
 	port = bdiGetPort(port);
+//	printf("out BDI port %.2X,%.2X\n",port,val);
 	if (port == 0) {
 		return 0;
 	} else if (port == BDI_SYS) {

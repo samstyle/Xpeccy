@@ -4,16 +4,16 @@
 // debug
 
 unsigned char brkIn(Computer* comp, unsigned short port) {
-	printf("IN %.4X\n",port);
-	assert(0);
+	printf("IN %.4X (dos:rom:cpm = %i:%i:%i)\n",port,comp->dos,comp->rom,comp->cpm);
 	comp->brk = 1;
+	assert(0);
 	return 0xff;
 }
 
 void brkOut(Computer* comp, unsigned short port, unsigned char val) {
-	printf("OUT %.4X,%.2X\n",port,val);
-	assert(0);
+	printf("OUT %.4X,%.2X (dos:rom:cpm = %i:%i:%i)\n",port,val,comp->dos,comp->rom,comp->cpm);
 	comp->brk = 1;
+	assert(0);
 }
 
 unsigned char dummyIn(Computer* comp, unsigned short port) {
