@@ -42,7 +42,7 @@ typedef struct {
 typedef struct {
 	int fetches;
 	int frmSize;
-	unsigned char* frmData;
+	unsigned char frmData[1024];
 } RZXFrame;
 
 typedef struct {
@@ -76,7 +76,7 @@ typedef struct {
 	unsigned intStrobe:1;		// int front
 	unsigned nmiRequest:1;		// Magic button pressed
 	unsigned beeplev:1;		// beeper level
-	unsigned rzxPlay:1;		// rzx is playing
+//	unsigned rzx.play:1;		// rzx is playing
 	unsigned firstRun:1;
 
 	unsigned rom:1;		// b4,7ffd
@@ -107,9 +107,12 @@ typedef struct {
 	SDrive* sdrv;
 
 	struct {
+		unsigned play:1;
+		unsigned overio:1;
 		FILE* file;
 		int size;
 		RZXFrame* data;
+		RZXFrame key;
 		int fetches;
 		int frame;
 		int pos;

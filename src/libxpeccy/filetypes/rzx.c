@@ -33,64 +33,92 @@ int zInit(z_stream* strm, char* in, int ilen) {
 	strm->zalloc = Z_NULL;
 	strm->zfree = Z_NULL;
 	strm->opaque = Z_NULL;
-	if (inflateInit(strm) != Z_OK) return 0;
 	strm->avail_in = ilen;
 	strm->next_in = (unsigned char*)in;
+	if (inflateInit(strm) != Z_OK) return 0;
 	return 1;
 }
 
 int zGetData(z_stream* strm, char* out, int olen) {
 	strm->avail_out = olen;
 	strm->next_out = (unsigned char*)out;
-	int res = inflate(strm,Z_FINISH);
+	int res = inflate(strm, Z_FINISH);
 	switch (res) {
 		case Z_NEED_DICT:
 		case Z_DATA_ERROR:
 		case Z_MEM_ERROR:
+			printf("inflate error %i\n",res);
 			inflateEnd(strm);
-			return 0;
+			break;
 	}
-	return (olen - strm->avail_out);
+	return res;
+	// return (olen - strm->avail_out);
 }
 
 unsigned short zGetWord(z_stream* strm) {
-	char buf[2];
-	zGetData(strm, buf, 2);
-	return (buf[0] & 0xff) | ((buf[1] & 0xff) << 8);
+	char bl,bh;
+	zGetData(strm, &bl, 1);
+	zGetData(strm, &bh, 1);
+	return (bl & 0xff) | ((bh & 0xff) << 8);
 }
 
 int zlib_uncompress(char* in, int ilen, char* out, int olen) {
 	z_stream strm;
-	if (!zInit(&strm, in, ilen)) return 0;
-	int res = zGetData(&strm, out, olen);
-	inflateEnd(&strm);
-	return res;
+	int err;
+	strm.zalloc = Z_NULL;
+	strm.zfree = Z_NULL;
+	strm.opaque = Z_NULL;
+	strm.next_in = (unsigned char*)in;
+	strm.avail_in = ilen;
+	err = inflateInit(&strm);
+	if (err != Z_OK) return -1;
+	strm.next_out = (unsigned char*)out;
+	strm.avail_out = olen;
+	err = inflate(&strm, Z_NO_FLUSH);
+	inflateReset(&strm);
+	if (err == Z_OK) return strm.avail_in;
+	if (err == Z_STREAM_END) return strm.avail_in;
+	return -2;
 }
 
-void rzxAddFrame(Computer* zx, RZXFrame frm, int pos) {
-	if (frm.frmSize == 0xffff) {
-		frm.frmSize = zx->rzx.data[pos - 1].frmSize;
-		frm.frmData = (unsigned char*)malloc(frm.frmSize);
-		memcpy(frm.frmData, zx->rzx.data[pos - 1].frmData, frm.frmSize);
+// TODO : FIX IT
+void rzxAddFrame(Computer* zx, int pos, int fetches, int size, char* data) {
+
+	// printf("%i : rzxAddFrame (%i %i)\n",pos, fetches, size);
+	RZXFrame frm;
+	frm.fetches = fetches;
+	if (size == 0xffff) {
+		frm.frmSize = zx->rzx.key.frmSize;
+		// frm.frmData = (unsigned char*)malloc(frm.frmSize);
+		memcpy(frm.frmData, zx->rzx.key.frmData, frm.frmSize);
+	} else {
+		frm.frmSize = size;
+		// frm.frmData = (unsigned char*)malloc(size);
+		memcpy(frm.frmData, data, size);
+		zx->rzx.key = frm;
 	}
 	zx->rzx.data[pos] = frm;
+
 }
 
 void rzxFree(Computer*);
 void rzxLoadFrame(Computer* zx) {
 	int work = 1;
+	int err;
+	int i;
+	int pos;
 	unsigned char type;
 	unsigned int len;
-	char* sname = NULL;
+	char* sname;
 	char* obuf = NULL;
 	char* ibuf = NULL;
 	FILE* file = zx->rzx.file;
 	FILE* ofile;
 	rzxSnap shd;
 	rzxFrm fhd;
-	z_stream strm;
-	RZXFrame frm;
-	frm.frmData = NULL;
+	int fetches;
+	int size;
+	char iobuf[0x10000];
 	while (work) {
 		type = fgetc(file);
 		if (feof(zx->rzx.file)) {
@@ -104,25 +132,26 @@ void rzxLoadFrame(Computer* zx) {
 				fread((char*)&shd, sizeof(rzxSnap), 1, file);
 				if (shd.flag & 1) {			// external snapshot file
 					fseek(file, 4, SEEK_CUR);
-					sname = (char*)realloc(sname, len - 20);
+					sname = (char*)malloc(len - 20);
 					memset(sname, 0x00, len - 20);
 					fread(sname, len - 21, 1, file);
 				} else {				// internal snapshot
-					obuf = (char*)realloc(obuf, shd.usl);	// unpacked size
+					obuf = (char*)malloc(shd.usl);	// unpacked size
 					if (shd.flag & 2) {			// packed
-						ibuf = (char*)realloc(ibuf, len - 17);
+						ibuf = (char*)malloc(len - 17);
 						fread(ibuf, len - 17, 1, file);
-						len = zlib_uncompress(ibuf, len - 17, obuf, shd.usl);
+						err = zlib_uncompress(ibuf, len - 17, obuf, shd.usl);
+						free(ibuf);
 					} else {				// not packed
 						fread(obuf, shd.usl, 1, file);
 					}
-					if (len == 0) {
+					if (err < 0) {
 						printf("Decompress error\n");
 						work = 0;
 						rzxStop(zx);
 						break;
 					}
-					sname = (char*)realloc(sname, L_tmpnam);
+					sname = (char*)malloc(L_tmpnam);
 					tmpnam(sname);
 					strcat(sname, ".xpeccy.tmp");
 					printf("%s\n",sname);
@@ -134,6 +163,8 @@ void rzxLoadFrame(Computer* zx) {
 					}
 					fwrite(obuf, shd.usl, 1, ofile);
 					fclose(ofile);
+					free(obuf);
+					obuf = NULL;
 				}
 				if ((strncmp(shd.ext, "sna", 3) && strncmp(shd.ext, "SNA", 3)) == 0) {
 					if (loadSNA(zx, sname) != ERR_OK) {
@@ -168,29 +199,46 @@ void rzxLoadFrame(Computer* zx) {
 				rzxFree(zx);
 				zx->rzx.size = fhd.fCount;
 				zx->rzx.data = (RZXFrame*)malloc(fhd.fCount * sizeof(RZXFrame));
+				memset(zx->rzx.data, 0x00, fhd.fCount * sizeof(RZXFrame));
 				if (fhd.flags & 2) {				// packed
-					ibuf = (char*)realloc(ibuf, len - 18);
+					ibuf = (char*)malloc(len - 18);
+					obuf = NULL;
 					fread(ibuf, len - 18, 1, file);
-					zInit(&strm, ibuf, len - 18);
-					for (int i = 0; i < fhd.fCount; i++) {
-						frm.fetches = zGetWord(&strm);
-						frm.frmSize = zGetWord(&strm);
-						if (frm.frmSize != 0xffff) {
-							frm.frmData = (unsigned char*)malloc(frm.frmSize);
-							zGetData(&strm, (char*)frm.frmData, frm.frmSize);
+					size = len;
+					do {
+						obuf = (char*)realloc(obuf,size);
+						// printf("Try obuf[%i]\n",size);
+						err = zlib_uncompress(ibuf, len - 18, obuf, size);
+						// printf("return %i\n",err);
+						if (err < 0) break;		// inflate error
+						if (err != 0) size <<= 1;
+					} while (err != 0);
+					if (err < 0) {
+						printf("unpack error\n");
+						rzxStop(zx);
+					} else {
+						pos = 0;
+						for(i = 0; i < fhd.fCount; i++) {
+							fetches = obuf[pos++] & 0xff;
+							fetches |= ((obuf[pos++] & 0xff) << 8);
+							size = obuf[pos++] & 0xff;
+							size |= ((obuf[pos++] & 0xff) << 8);
+							rzxAddFrame(zx, i, fetches, size, obuf + pos);
+							if (size != 0xffff)
+								pos += size;
 						}
-						rzxAddFrame(zx, frm, i);
+
 					}
-					inflateEnd(&strm);
+					free(ibuf);
+					free(obuf);
 				} else {					// unpacked
 					for (int i = 0; i < fhd.fCount; i++) {
-						frm.fetches = fgetwLE(zx->rzx.file);
-						frm.frmSize = fgetwLE(zx->rzx.file);
-						if (frm.frmSize != 0xffff) {
-							frm.frmData = (unsigned char*)malloc(frm.frmSize);
-							fread(frm.frmData, frm.frmSize, 1, zx->rzx.file);
+						fetches = fgetwLE(zx->rzx.file);
+						size = fgetwLE(zx->rzx.file);
+						if (size != 0xffff) {
+							fread(iobuf, size, 1, file);
 						}
-						rzxAddFrame(zx, frm, i);
+						rzxAddFrame(zx, i, fetches, size, iobuf);
 					}
 				}
 				zx->rzx.fetches = zx->rzx.data[0].fetches - fhd.tStart;
@@ -202,12 +250,10 @@ void rzxLoadFrame(Computer* zx) {
 				break;
 		}
 	}
-	if (ibuf) free(ibuf);
-	if (obuf) free(obuf);
 }
 
 int loadRZX(Computer* zx, const char* name) {
-	zx->rzxPlay = 0;
+	zx->rzx.play = 0;
 	zx->rzx.file = fopen(name, "rb");
 	if (!zx->rzx.file) return ERR_CANT_OPEN;
 	rzxHead hd;
@@ -215,8 +261,10 @@ int loadRZX(Computer* zx, const char* name) {
 #ifdef WORDS_BIG_ENDIAN
 	hd.flags = swap32(hd.flags);
 #endif
-	zx->rzxPlay = 1;
-	rzxLoadFrame(zx);
+	zx->rzx.play = 1;
+	zx->rzx.frame = 0;
+	zx->rzx.size = 0;
+//	rzxLoadFrame(zx);
 	return ERR_OK;
 }
 

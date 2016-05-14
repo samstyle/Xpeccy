@@ -36,7 +36,7 @@ void zxMemRW(Computer* comp, int adr) {
 
 unsigned char memrd(unsigned short adr,int m1,void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	if (m1 && comp->rzxPlay) comp->rzx.fetches--;
+	if (m1 && comp->rzx.play) comp->rzx.fetches--;
 	zxMemRW(comp,adr);
 	if (getBrk(comp, adr) & MEM_BRK_RD) {
 		comp->brk = 1;
@@ -93,13 +93,15 @@ unsigned char iord(unsigned short port, void* ptr) {
 	tapSync(comp->tape,comp->tapCount);
 	comp->tapCount = 0;
 // play rzx
-	if (comp->rzxPlay) {
+	if (comp->rzx.play) {
 		if (comp->rzx.pos < comp->rzx.data[comp->rzx.frame].frmSize) {
 			res = comp->rzx.data[comp->rzx.frame].frmData[comp->rzx.pos];
 			comp->rzx.pos++;
 			return res;
 		} else {
 			printf("overIO\n");
+			comp->rzx.overio = 1;
+			rzxStop(comp);
 			return 0xff;
 		}
 	}
@@ -127,20 +129,31 @@ unsigned char intrq(void* ptr) {
 	return ((Computer*)ptr)->intVector;
 }
 
+void rzxStart(Computer* zx) {
+	if (zx->rzx.play) return;
+	zx->rzx.frame = 0;
+	zx->rzx.pos = 0;
+	zx->rzx.fetches = zx->rzx.data[0].fetches;
+	zx->rzx.play = 1;
+}
+
 void rzxFree(Computer* zx) {
 	if (!zx->rzx.data) return;
-	for (int i = 0; i < zx->rzx.size; i++) {
-		if (zx->rzx.data[i].frmData)
-			free(zx->rzx.data[i].frmData);
-	}
+//	for (int i = 0; i < zx->rzx.size; i++) {
+//		if (zx->rzx.data[i].frmData) {
+//			free(zx->rzx.data[i].frmData);
+//			zx->rzx.data[i].frmData = NULL;
+//		}
+//	}
 	free(zx->rzx.data);
-	zx->rzx.data = 0;
+	zx->rzx.data = NULL;
 	zx->rzx.size = 0;
 }
 
 void rzxStop(Computer* zx) {
+	if (!zx->rzx.play) return;
+	zx->rzx.play = 0;
 	rzxFree(zx);
-	zx->rzxPlay = 0;
 	if (zx->rzx.file) fclose(zx->rzx.file);
 	zx->rzx.file = NULL;
 }
@@ -245,14 +258,14 @@ void compDestroy(Computer* comp) {
 void compReset(Computer* comp,int res) {
 	zxInitPalete(comp);
 	comp->vid->ula->active = 0;
-	comp->rzxPlay = 0;
+	comp->rzx.play = 0;
 	comp->prt2 = 0;
 	comp->pEFF7 = 0;
 	memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5);
 	memSetBank(comp->mem,MEM_BANK2,MEM_RAM,2);
 	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0);
 	rzxStop(comp);
-	comp->rzxPlay = 0;
+	comp->rzx.play = 0;
 	cpuReset(comp->cpu);
 	comp->vid->curscr = 5;
 	vidSetMode(comp->vid,VID_NORMAL);
@@ -337,7 +350,7 @@ int compExec(Computer* comp) {
 	res1 = res2;
 	pcreg = comp->cpu->pc;
 // NMI
-	if ((pcreg > 0x3fff) && comp->nmiRequest && !comp->rzxPlay) {
+	if ((pcreg > 0x3fff) && comp->nmiRequest && !comp->rzx.play) {
 		res4 = 0;
 		res2 = cpuNMI(comp->cpu);	// z80ex_nmi(comp->cpu);
 		res1 += res2;
@@ -349,7 +362,7 @@ int compExec(Computer* comp) {
 		}
 	}
 // INTs handle
-	if (comp->rzxPlay) {
+	if (comp->rzx.play) {
 		if (comp->rzx.fetches < 1) {
 			zxINT(comp, 0xff);
 			comp->rzx.frame++;

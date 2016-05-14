@@ -376,8 +376,8 @@ bool DebugWin::fillAll() {
 	fillFDC();
 	if (ui.scrLabel->isVisible())
 		updateScreen();
-//	ui.rzxTab->setEnabled(comp->rzxPlay);
-	if (comp->rzxPlay) fillRZX();
+//	ui.rzxTab->setEnabled(comp->rzx.play);
+	if (comp->rzx.play) fillRZX();
 	ui.labRX->setNum(comp->vid->x);
 	ui.labRY->setNum(comp->vid->y);
 	setSignal(ui.labDOS, comp->dos);

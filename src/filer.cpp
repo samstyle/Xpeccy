@@ -145,7 +145,7 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 	if (!QFile::exists(opath)) return;
 	std::string sfnam(opath.toLocal8Bit().data());
 	int ferr = ERR_OK;
-	comp->rzxPlay = false;
+	rzxStop(comp);
 	Floppy* flp = comp->dif->fdc->flop[drv & 3];
 	xCartridge* slot = drv ? &comp->msx.slotB : &comp->msx.slotA;
 	switch (type) {

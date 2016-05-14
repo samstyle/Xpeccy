@@ -309,6 +309,12 @@ void MainWin::onTimer() {
 		ethread.comp = comp;
 	}
 	if (block) return;
+	if (comp->rzx.overio) {
+		comp->rzx.overio = 0;
+		pause(true, PR_RZX);
+		shitHappens("RZX playback error");
+		pause(false, PR_RZX);
+	}
 // if not paused play sound buffer
 	if (conf.snd.enabled && (conf.snd.mute || isActiveWindow())) sndPlay();
 // if window is not active release keys & buttons
@@ -440,7 +446,6 @@ void MainWin::rzxStateChanged(int state) {
 			pause(true,PR_RZX);
 			break;
 		case RWS_STOP:
-			comp->rzxPlay = false;
 			rzxStop(comp);
 			pause(false,PR_RZX);
 			break;
@@ -710,11 +715,9 @@ void MainWin::dropEvent(QDropEvent* ev) {
 
 
 void MainWin::closeEvent(QCloseEvent* ev) {
-//	unsigned int i;
 	std::ofstream file;
 	std::string fname;
 	pause(true,PR_EXIT);
-//	for (i = 0; i < plist.size(); i++) {
 	foreach(xProfile* prf, conf.prof.list) {
 		prfSave(prf->name);
 		fname = conf.path.confDir + SLASH + prf->name + ".cmos";
@@ -748,7 +751,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 }
 
 void MainWin::checkState() {
-	if (comp->rzxPlay) rzxWin->startPlay();
+	if (comp->rzx.play) rzxWin->startPlay();
 	tapeWin->buildList(comp->tape);
 	tapeWin->setCheck(comp->tape->block);
 }
@@ -841,7 +844,7 @@ void MainWin::putLeds() {
 void MainWin::emuDraw() {
 	if (block) return;
 // update rzx window
-	if ((comp->rzxPlay) && rzxWin->isVisible()) {
+	if ((comp->rzx.play) && rzxWin->isVisible()) {
 		rzxWin->setProgress(comp->rzx.frame, comp->rzx.size);
 	}
 // update tape window
