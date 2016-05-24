@@ -15,6 +15,10 @@ extern "C" {
 #include "hdd.h"
 #include "sdcard.h"
 
+#ifdef HAVEZLIB
+	#include <zlib.h>
+#endif
+
 // hw reset rompage
 enum {
 	RES_DEFAULT = 0,
@@ -38,12 +42,6 @@ typedef struct {
 	unsigned char h;
 	unsigned char x;
 } DMAaddr;
-
-typedef struct {
-	int fetches;
-	int frmSize;
-	unsigned char frmData[1024];
-} RZXFrame;
 
 typedef struct {
 	unsigned char flag;
@@ -106,17 +104,23 @@ typedef struct {
 	saaChip* saa;
 	SDrive* sdrv;
 
+#ifdef HAVEZLIB
+
 	struct {
+		unsigned start:1;
 		unsigned play:1;
 		unsigned overio:1;
-		FILE* file;
-		int size;
-		RZXFrame* data;
-		RZXFrame key;
-		int fetches;
-		int frame;
-		int pos;
+		int fCount;
+		FILE* file;		// converted tmp-file
+		struct {
+			int fetches;
+			int size;
+			unsigned char data[0x10000];
+			int pos;
+		} frm;
 	} rzx;
+
+#endif
 
 	unsigned long tickCount;
 	int nsPerTick;

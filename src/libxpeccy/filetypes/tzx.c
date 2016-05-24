@@ -21,8 +21,8 @@ int sigLens[] = {PILOTLEN,SYNC1LEN,SYNC2LEN,SIGN0LEN,SIGN1LEN,SYNC3LEN,-1};
 
 // #10: <pause:2>,<datalen:2>,{data}
 void tzxBlock10(FILE* file, Tape* tape) {
-	int pause = fgetwLE(file);
-	int len = fgetwLE(file);
+	int pause = fgetw(file);
+	int len = fgetw(file);
 	char* buf = (char*)malloc(len);
 	fread(buf, len, 1, file);
 	tape->tmpBlock = tapDataToBlock(buf, len, sigLens);
@@ -36,14 +36,14 @@ void tzxBlock10(FILE* file, Tape* tape) {
 // #11: <pilot:2>,<sync1:2>,<sync2:2>,<bit0:2>,<bit1:2>,<pilotcnt:2>,<pause:2>,<datalen:3>,{data}
 void tzxBlock11(FILE* file, Tape* tape) {
 	int altLens[7];
-	altLens[0] = fgetwLE(file);	// pilot
-	altLens[1] = fgetwLE(file);	// sync1
-	altLens[2] = fgetwLE(file);	// sync2
-	altLens[3] = fgetwLE(file);	// 0
-	altLens[4] = fgetwLE(file);	// 1
-	altLens[6] = fgetwLE(file);	// pilot pulses
+	altLens[0] = fgetw(file);	// pilot
+	altLens[1] = fgetw(file);	// sync1
+	altLens[2] = fgetw(file);	// sync2
+	altLens[3] = fgetw(file);	// 0
+	altLens[4] = fgetw(file);	// 1
+	altLens[6] = fgetw(file);	// pilot pulses
 	fgetc(file);			// TODO: used bits in last byte
-	int pause = fgetwLE(file);
+	int pause = fgetw(file);
 	int len = freadLen(file, 3);
 	char* buf = (char*)malloc(len);
 	fread(buf, len, 1, file);
@@ -57,8 +57,8 @@ void tzxBlock11(FILE* file, Tape* tape) {
 
 // #12: <pulselen:2>,<count:2>
 void tzxBlock12(FILE* file, Tape* tape) {
-	int len = fgetwLE(file);	// Length of one pulse in T-states
-	int count = fgetwLE(file);	// Number of pulses
+	int len = fgetw(file);		// Length of one pulse in T-states
+	int count = fgetw(file);	// Number of pulses
 	while (count > 0) {
 		blkAddWave(&tape->tmpBlock, len);	// pulse is 1+0 : 2 signals
 		count--;
@@ -73,7 +73,7 @@ void tzxBlock13(FILE* file, Tape* tape) {
 	int len;
 	int count = fgetc(file);
 	while (count > 0) {
-		len = fgetwLE(file);
+		len = fgetw(file);
 		blkAddWave(&tape->tmpBlock, len);
 		count--;
 	}
@@ -84,11 +84,11 @@ void tzxBlock13(FILE* file, Tape* tape) {
 
 // #14: <bit0:2>,<bit1:2>,<usedbits:1>,<pause:2>,<len:3>,{data:len}
 void tzxBlock14(FILE* file, Tape* tape) {
-	int bit0 = fgetwLE(file);
-	int bit1 = fgetwLE(file);
+	int bit0 = fgetw(file);
+	int bit1 = fgetw(file);
 	int data;
 	fgetc(file);
-	int pause = fgetwLE(file);
+	int pause = fgetw(file);
 	int len = freadLen(file, 3);
 	while (len > 0) {
 		data = fgetc(file);
@@ -109,7 +109,7 @@ void tzxBlock15(FILE* file, Tape* tape) {
 
 // #20,<len:2> : pause or stop tape
 void tzxBlock20(FILE* file, Tape* tape) {
-	int len = fgetwLE(file);
+	int len = fgetw(file);
 	if (len) {
 		blkAddPause(&tape->tmpBlock, len);	// TODO: if 0, next block must be breakpoint
 	} else {
@@ -137,7 +137,7 @@ size_t loopPos = 0;
 
 // #24,<count>				loop start
 void tzxBlock24(FILE* file, Tape* tape) {
-	loopCount = fgetwLE(file);
+	loopCount = fgetw(file);
 	loopPos = ftell(file);
 }
 
@@ -151,7 +151,7 @@ void tzxBlock25(FILE* file, Tape* tape) {
 
 // #26,<len:2>,{offsets:2}		TODO: call sequence
 void tzxBlock26(FILE* file, Tape* tape) {
-	int len = fgetwLE(file);
+	int len = fgetw(file);
 	fseek(file, len * 2, SEEK_CUR);
 }
 
@@ -161,7 +161,7 @@ void tzxBlock27(FILE* file, Tape* tape) {
 
 // #28,<len:2>,<count:2>,{selectblock}	select block
 void tzxBlock28(FILE* file, Tape* tape) {
-	int len = fgetwLE(file);
+	int len = fgetw(file);
 	fseek(file, len, SEEK_CUR);
 }
 
@@ -190,7 +190,7 @@ void tzxBlock31(FILE* file, Tape* tape) {
 }
 
 void tzxBlock32(FILE* file, Tape* tape) {
-	int len = fgetwLE(file);
+	int len = fgetw(file);
 	fseek(file, len, SEEK_CUR);
 }
 

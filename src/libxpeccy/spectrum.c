@@ -11,10 +11,7 @@ int res1 = 0;
 int res2 = 0;
 int res3 = 0;	// tick in op, wich has last OUT/MWR (and vidSync)
 int res4 = 0;	// save last res3 (vidSync on OUT/MWR process do res3-res4 ticks)
-//int res5 = 0;	// ticks ated by slow mem?
 unsigned short pcreg;
-
-// port decoding tables
 
 MemPage* mptr;
 
@@ -36,7 +33,7 @@ void zxMemRW(Computer* comp, int adr) {
 
 unsigned char memrd(unsigned short adr,int m1,void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	if (m1 && comp->rzx.play) comp->rzx.fetches--;
+	if (m1 && comp->rzx.play) comp->rzx.frm.fetches--;
 	zxMemRW(comp,adr);
 	if (getBrk(comp, adr) & MEM_BRK_RD) {
 		comp->brk = 1;
@@ -94,14 +91,14 @@ unsigned char iord(unsigned short port, void* ptr) {
 	comp->tapCount = 0;
 // play rzx
 	if (comp->rzx.play) {
-		if (comp->rzx.pos < comp->rzx.data[comp->rzx.frame].frmSize) {
-			res = comp->rzx.data[comp->rzx.frame].frmData[comp->rzx.pos];
-			comp->rzx.pos++;
+		if (comp->rzx.frm.pos < comp->rzx.frm.size) {
+			res = comp->rzx.frm.data[comp->rzx.frm.pos];
+			comp->rzx.frm.pos++;
 			return res;
 		} else {
+			rzxStop(comp);
 			printf("overIO\n");
 			comp->rzx.overio = 1;
-			rzxStop(comp);
 			return 0xff;
 		}
 	}
@@ -129,33 +126,12 @@ unsigned char intrq(void* ptr) {
 	return ((Computer*)ptr)->intVector;
 }
 
-void rzxStart(Computer* zx) {
-	if (zx->rzx.play) return;
-	zx->rzx.frame = 0;
-	zx->rzx.pos = 0;
-	zx->rzx.fetches = zx->rzx.data[0].fetches;
-	zx->rzx.play = 1;
-}
-
-void rzxFree(Computer* zx) {
-	if (!zx->rzx.data) return;
-//	for (int i = 0; i < zx->rzx.size; i++) {
-//		if (zx->rzx.data[i].frmData) {
-//			free(zx->rzx.data[i].frmData);
-//			zx->rzx.data[i].frmData = NULL;
-//		}
-//	}
-	free(zx->rzx.data);
-	zx->rzx.data = NULL;
-	zx->rzx.size = 0;
-}
-
 void rzxStop(Computer* zx) {
-	if (!zx->rzx.play) return;
 	zx->rzx.play = 0;
-	rzxFree(zx);
 	if (zx->rzx.file) fclose(zx->rzx.file);
 	zx->rzx.file = NULL;
+	zx->rzx.fCount = 0;
+	zx->rzx.frm.size = 0;
 }
 
 void zxInitPalete(Computer* comp) {
@@ -224,9 +200,13 @@ Computer* compCreate() {
 //tsconf
 	comp->tsconf.pwr_up = 1;
 	comp->tsconf.vdos = 0;
+// rzx
+	comp->rzx.start = 0;
+	comp->rzx.play = 0;
+	comp->rzx.overio = 0;
+	comp->rzx.fCount = 0;
+	comp->rzx.file = NULL;
 
-	comp->rzx.size = 0;
-	comp->rzx.data = NULL;
 	comp->tapCount = 0;
 	comp->tickCount = 0;
 
@@ -264,8 +244,7 @@ void compReset(Computer* comp,int res) {
 	memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5);
 	memSetBank(comp->mem,MEM_BANK2,MEM_RAM,2);
 	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0);
-	rzxStop(comp);
-	comp->rzx.play = 0;
+	if (comp->rzx.play) rzxStop(comp);
 	cpuReset(comp->cpu);
 	comp->vid->curscr = 5;
 	vidSetMode(comp->vid,VID_NORMAL);
@@ -363,15 +342,10 @@ int compExec(Computer* comp) {
 	}
 // INTs handle
 	if (comp->rzx.play) {
-		if (comp->rzx.fetches < 1) {
+		if (comp->rzx.frm.fetches < 1) {
 			zxINT(comp, 0xff);
-			comp->rzx.frame++;
-			if (comp->rzx.frame >= comp->rzx.size) {
-				rzxLoadFrame(comp);
-			} else {
-				comp->rzx.fetches = comp->rzx.data[comp->rzx.frame].fetches;
-				comp->rzx.pos = 0;
-			}
+			comp->rzx.fCount--;
+			rzxGetFrame(comp);
 		}
 	} else if (comp->vid->ismsx) {
 		if ((comp->vid->v9918.reg[1] & 0x40) && comp->vid->newFrame)

@@ -4,6 +4,8 @@
 
 #include "filetypes.h"
 
+#ifdef WORDS_BIG_ENDIAN
+
 // swap 16/32 bit variables (LE <-> BE)
 unsigned short swap16(unsigned short wr) {
 	return ((wr & 0xff) << 8) | ((wr >> 8) & 0xff);
@@ -17,12 +19,41 @@ unsigned int swap32(unsigned int wr) {
 	return res;
 }
 
+#else
+
+unsigned short swap16(unsigned short wr) {return wr;}
+unsigned int swap32(unsigned int wr) {return wr;}
+
+#endif
+
 // get filesize & rewind it
 size_t fgetSize(FILE* file) {
 	fseek(file, 0, SEEK_END);
 	size_t res = ftell(file);
 	rewind(file);
 	return res;
+}
+
+unsigned short fgetw(FILE* file) {
+	int res = fgetc(file);
+	res |= (fgetc(file) << 8);
+	return res;
+}
+
+int fgeti(FILE* file) {
+	int res = fgetw(file);
+	res |= (fgetw(file) << 16);
+	return res;
+}
+
+void fputw(unsigned short val, FILE* file) {
+	fputc(val & 0xff, file);
+	fputc((val >> 8) & 0xff, file);
+}
+
+void fputi(int val, FILE* file) {
+	fputw(val & 0xffff, file);
+	fputw((val >> 16) & 0xffff, file);
 }
 
 // load boot PATH to floppy FLP, if there is TRDOS disk

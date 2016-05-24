@@ -14,17 +14,13 @@ typedef struct {
 
 #pragma pack (pop)
 
-int loadSNA(Computer* comp, const char* name) {
-	FILE* file = fopen(name,"rb");
-	if (!file) return ERR_CANT_OPEN;
+int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
+
 	unsigned char tmp, tmp2;
 	unsigned short adr;
-	char pageBuf[0x4000];
-	char tmpgBuf[0x4000];
+	char* pageBuf = malloc(0x4000);
+	char* tmpgBuf = malloc(0x4000);
 
-	fseek(file, 0, SEEK_END);
-	size_t fileSize = ftell(file);
-	rewind(file);
 	compReset(comp, (fileSize < 49180) ? RES_48 : RES_128);
 
 	snaHead hd;
@@ -84,9 +80,21 @@ int loadSNA(Computer* comp, const char* name) {
 		}
 		memSetPage(comp->mem, MEM_RAM, tmp & 7, tmpgBuf);
 	}
-	fclose(file);
 	tsReset(comp->ts);
+	free(pageBuf);
+	free(tmpgBuf);
 	return ERR_OK;
+}
+
+int loadSNA(Computer* comp, const char* name) {
+	FILE* file = fopen(name,"rb");
+	if (!file) return ERR_CANT_OPEN;
+	fseek(file, 0, SEEK_END);	// ?
+	size_t fileSize = ftell(file);
+	rewind(file);		// ?
+	int res = loadSNA_f(comp, file, fileSize);
+	fclose(file);
+	return res;
 }
 
 int saveSNA(Computer* comp, const char* name, int sna48) {

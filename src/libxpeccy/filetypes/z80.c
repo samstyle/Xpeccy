@@ -16,11 +16,13 @@ typedef struct {
 
 #pragma pack (pop)
 
+/*
 unsigned short fgetwLE(FILE* file) {		// get WORD little endian (low-hi)
 	unsigned short res = fgetc(file);
 	res |= (fgetc(file) << 8);
 	return res;
 }
+*/
 
 void fputwLE(FILE* file, unsigned short wrd) {
 	fputc(wrd & 0xff, file);
@@ -62,7 +64,7 @@ void z80uncompress(FILE* file, char* buf, int maxlen) {
 unsigned char z80readblock(FILE* file, char* buf) {
 	unsigned char tmp;
 	int adr;
-	adr = fgetwLE(file);		// compressed size
+	adr = fgetw(file);		// compressed size
 	tmp = fgetc(file);		// page num
 	if (adr == 0xffff) {
 		fread(buf, 0x4000, 1, file);
@@ -87,7 +89,12 @@ const char* v3hardware[16] = {
 int loadZ80(Computer* comp, const char* name) {
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
+	int res = loadZ80_f(comp, file);
+	fclose(file);
+	return res;
+}
 
+int loadZ80_f(Computer* comp, FILE* file) {
 	int btm;
 	unsigned char tmp,tmp2,reg,lst;
 	unsigned short adr, twrd;
@@ -129,8 +136,8 @@ int loadZ80(Computer* comp, const char* name) {
 	if (hd.flag29 & 0x08) printf("...flag 29.bit 3.Double interrupt frequency\n");
 // continued
 	if (comp->cpu->pc == 0) {
-		adr = fgetwLE(file);
-		twrd = fgetwLE(file);
+		adr = fgetw(file);
+		twrd = fgetw(file);
 		comp->cpu->pc = twrd;
 		lst = fgetc(file);			// 34: HW mode
 		tmp = fgetc(file);			// 35: 7FFD last out
@@ -232,6 +239,5 @@ printf(".z80 version 1\n");
 		}
 	}
 	tsReset(comp->ts);
-	fclose(file);
 	return ERR_OK;
 }

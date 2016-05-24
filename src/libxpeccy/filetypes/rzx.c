@@ -29,6 +29,8 @@ typedef struct {
 
 #pragma pack (pop)
 
+// zlib
+
 int zInit(z_stream* strm, char* in, int ilen) {
 	strm->zalloc = Z_NULL;
 	strm->zfree = Z_NULL;
@@ -81,191 +83,227 @@ int zlib_uncompress(char* in, int ilen, char* out, int olen) {
 	return -2;
 }
 
-// TODO : FIX IT
-void rzxAddFrame(Computer* zx, int pos, int fetches, int size, char* data) {
+// new
 
-	// printf("%i : rzxAddFrame (%i %i)\n",pos, fetches, size);
-	RZXFrame frm;
-	frm.fetches = fetches;
-	if (size == 0xffff) {
-		frm.frmSize = zx->rzx.key.frmSize;
-		// frm.frmData = (unsigned char*)malloc(frm.frmSize);
-		memcpy(frm.frmData, zx->rzx.key.frmData, frm.frmSize);
+void rzxGetFrame(Computer* comp) {
+	int type;
+	int len;
+	int work;
+	int size;
+	size_t pos;
+	if (!comp->rzx.file) {
+		rzxStop(comp);
 	} else {
-		frm.frmSize = size;
-		// frm.frmData = (unsigned char*)malloc(size);
-		memcpy(frm.frmData, data, size);
-		zx->rzx.key = frm;
-	}
-	zx->rzx.data[pos] = frm;
+		if (comp->rzx.fCount > 0) {
+			comp->rzx.frm.fetches = fgetw(comp->rzx.file);
+			size = fgetw(comp->rzx.file);
+			if (size != 0xffff) {
+				comp->rzx.frm.size = size;
+				fread(comp->rzx.frm.data, comp->rzx.frm.size, 1, comp->rzx.file);
+			}
+			comp->rzx.frm.pos = 0;
+		} else {
+			work = 1;
+			while (work) {
+				type = fgetc(comp->rzx.file) & 0xff;
+				len = fgeti(comp->rzx.file);
+				pos = ftell(comp->rzx.file);
+				switch (type) {
+					case 0x80:					// IN block
+						comp->rzx.fCount = fgeti(comp->rzx.file);	// +0 frame count
+						comp->rzx.frm.fetches = fgetw(comp->rzx.file);	// +4.. frames		+0 fetches
+						size = fgetw(comp->rzx.file);			//			+2 size
+						if (size != 0xffff) {
+							comp->rzx.frm.size = size;
+							fread(comp->rzx.frm.data, comp->rzx.frm.size, 1, comp->rzx.file);// +4 data
+						}
+						comp->rzx.frm.pos = 0;
+						work = 0;
+						break;
+					case 0x30:					// TODO: snapshot
+						type = fgetc(comp->rzx.file);
+						switch(type) {
+							case 0x00:
+								loadSNA_f(comp, comp->rzx.file, len - 1);
+								fseek(comp->rzx.file, pos + len, SEEK_SET);
+								break;
+							case 0x01:
+								loadZ80_f(comp, comp->rzx.file);		// bad loading?
+								fseek(comp->rzx.file, pos + len, SEEK_SET);
+								break;
+							default:
+								printf("unknown snapshot type\n");
+								rzxStop(comp);
+								work = 0;
+								// fseek(comp->rzx.file, len - 1, SEEK_CUR);
+								break;
+						}
+						break;
+					case 0xff:					// EOF
+						rzxStop(comp);
+						work = 0;
+						break;
+					default:
+						fseek(comp->rzx.file, len, SEEK_CUR);	// skip (len) bytes
+						break;
 
+				}
+			}
+		}
+	}
 }
 
-void rzxFree(Computer*);
-void rzxLoadFrame(Computer* zx) {
-	int work = 1;
-	int err;
-	int i;
-	int pos;
-	unsigned char type;
-	unsigned int len;
-	char* sname;
-	char* obuf = NULL;
-	char* ibuf = NULL;
-	FILE* file = zx->rzx.file;
-	FILE* ofile;
+int inflateToFile(char* buf, int len, FILE* file) {
+	int err = ERR_OK;
+	z_stream strm;
+	char* obuf = malloc(0x4000);
+	strm.zalloc = Z_NULL;
+	strm.zfree = Z_NULL;
+	strm.opaque = Z_NULL;
+	strm.next_in = (unsigned char*)buf;
+	strm.avail_in = len;
+	if (inflateInit(&strm) != Z_OK) {
+		err = ERR_RZX_UNPACK;
+	} else {
+		do {
+			strm.next_out = (unsigned char*)obuf;
+			strm.avail_out = 0x4000;
+			err = inflate(&strm, Z_NO_FLUSH);
+			if ((err == Z_OK) || (err == Z_STREAM_END)) {
+				fwrite(obuf, 0x4000 - strm.avail_out, 1, file);
+			}
+		} while (err == Z_OK);
+		inflateEnd(&strm);
+		err = (err == Z_STREAM_END) ? ERR_OK : ERR_RZX_UNPACK;
+	}
+	free(obuf);
+	return err;
+}
+
+int rzxGetSnapType(char* ext) {
+	int res = 0xff;
+	if (!strncmp(ext, "sna", 3) || !strncmp(ext, "SNA", 3)) {
+		res = 0;
+	} else if (!strncmp(ext, "z80", 3) || !strncmp(ext, "Z80", 3)) {
+		res = 1;
+	}
+	return res;
+}
+
+int loadRZX(Computer* comp, const char* name) {
+	int err = ERR_OK;
+	comp->rzx.play = 0;
+	FILE* file = fopen(name, "rb");
+	int type;
+	int len;
 	rzxSnap shd;
 	rzxFrm fhd;
-	int fetches;
-	int size;
-	char iobuf[0x10000];
-	while (work) {
-		type = fgetc(file);
-		if (feof(zx->rzx.file)) {
-			printf("eof\n");
-			rzxStop(zx);
-			break;
-		}
-		len = freadLen(file, 4);
-		switch (type) {
-			case 0x30:
-				fread((char*)&shd, sizeof(rzxSnap), 1, file);
-				if (shd.flag & 1) {			// external snapshot file
-					fseek(file, 4, SEEK_CUR);
-					sname = (char*)malloc(len - 20);
-					memset(sname, 0x00, len - 20);
-					fread(sname, len - 21, 1, file);
-				} else {				// internal snapshot
-					obuf = (char*)malloc(shd.usl);	// unpacked size
-					if (shd.flag & 2) {			// packed
-						ibuf = (char*)malloc(len - 17);
-						fread(ibuf, len - 17, 1, file);
-						err = zlib_uncompress(ibuf, len - 17, obuf, shd.usl);
-						free(ibuf);
-					} else {				// not packed
-						fread(obuf, shd.usl, 1, file);
-					}
-					if (err < 0) {
-						printf("Decompress error\n");
-						work = 0;
-						rzxStop(zx);
-						break;
-					}
-					sname = (char*)malloc(L_tmpnam);
-					tmpnam(sname);
-					strcat(sname, ".xpeccy.tmp");
-					printf("%s\n",sname);
-					ofile = fopen(sname, "wb");
-					if (!ofile) {
-						work = 0;
-						rzxStop(zx);
-						break;
-					}
-					fwrite(obuf, shd.usl, 1, ofile);
-					fclose(ofile);
-					free(obuf);
-					obuf = NULL;
-				}
-				if ((strncmp(shd.ext, "sna", 3) && strncmp(shd.ext, "SNA", 3)) == 0) {
-					if (loadSNA(zx, sname) != ERR_OK) {
-						work = 0;
-						rzxStop(zx);
-					}
-				} else if ((strncmp(shd.ext, "z80", 3) && strncmp(shd.ext, "Z80", 3)) == 0) {
-					if (loadZ80(zx, sname) != ERR_OK) {
-						work = 0;
-						rzxStop(zx);
-					}
-				}
-				if (~shd.flag & 1) {
-					remove(sname);		// delete temp file
-				}
-				free(sname);
-				break;
-			case 0x80:
-				work = 0;
-				fread((char*)&fhd, sizeof(rzxFrm), 1, file);
-#ifdef WORDS_BIG_ENDIAN
-				fhd.fCount = swap32(fhd.fCount);
-				fhd.tStart = swap32(fhd.tStart);
-				fhd.flags = swap32(fhd.flags);
-#endif
-				if (fhd.flags & 1) {
-					printf("Crypted rzx data\n");
-					rzxStop(zx);
-					break;
-				}
+	FILE* sfile;
+	char* buf = NULL;
+	char* obuf = malloc(0x4000);
+	if (!file) {
+		err = ERR_CANT_OPEN;
+	} else {
+		rzxHead hd;
+		fread(&hd, sizeof(rzxHead), 1, file);
+		hd.flags = swap32(hd.flags);
+		if (strncmp(hd.sign,"RZX!",4)) {
+			err = ERR_RZX_SIGN;
+		} else {
+			printf("RZX ver %i.%i\n",hd.major,hd.minor);
+			comp->rzx.file = fopen("/home/sam/rzx.tmp","w+b");	// tmpfile();
+			if (!comp->rzx.file) {
+				err = ERR_CANT_OPEN;
+			} else {
+				err = ERR_OK;
+				while (!feof(file) && (err == ERR_OK)) {
+					type = fgetc(file) & 0xff;
+					len = fgeti(file);
+					if (feof(file)) break;
+					switch (type) {
+						case 0x30:
+							fread(&shd, sizeof(rzxSnap), 1, file);
+							shd.flag = swap32(shd.flag);
+							shd.usl = swap32(shd.usl);
+							if (shd.flag & 1) {		// external
+								fgeti(file);	// checksum
+								buf = realloc(buf, len - 20);
+								memset(buf, 0x00, len - 20);
+								fread(buf, len - 21, 1, file);
+								sfile = fopen(buf, "rb");
+								if (sfile) {
+									len = fgetSize(sfile);
+									fputc(0x30, comp->rzx.file);
+									fputi(len + 1, comp->rzx.file);
+									fputc(rzxGetSnapType(shd.ext), comp->rzx.file);
+									while (len > 0) {
+										fread(obuf, 0x4000, 1, sfile);
+										fwrite(obuf, (len > 0x4000) ? 0x4000 : len, 1, comp->rzx.file);
+										len -= 0x4000;
+									}
+									fclose(sfile);
+								} else {
+									err = ERR_CANT_OPEN;
+								}
+							} else if (shd.flag & 2) {	// compressed
+								fputc(0x30, comp->rzx.file);
+								fputi(shd.usl + 1, comp->rzx.file);
+								fputc(rzxGetSnapType(shd.ext), comp->rzx.file);
+								buf = realloc(buf, len - 17);
+								fread(buf, len - 17, 1, file);
+								err = inflateToFile(buf, len - 17, comp->rzx.file);
+							} else {			// not compressed
+								buf = realloc(buf, shd.usl);
+								fread(buf, shd.usl, 1, file);
+								fputc(0x30, comp->rzx.file);
+								fputi(shd.usl + 1, comp->rzx.file);
+								fputc(rzxGetSnapType(shd.ext), comp->rzx.file);
+								fwrite(buf, shd.usl, 1, comp->rzx.file);
+							}
+							break;
+						case 0x80:
+							fread(&fhd, sizeof(rzxFrm), 1, file);
+							fhd.fCount = swap32(fhd.fCount);
+							fhd.tStart = swap32(fhd.tStart);
+							fhd.flags = swap32(fhd.flags);
+							fputc(0x80, comp->rzx.file);
+							fputi(0, comp->rzx.file);		// ???
+							fputi(fhd.fCount, comp->rzx.file);
+							// fputw(fhd.tStart, comp->rzx.file);
+							if (fhd.flags & 1) {			// crypted
+								err = ERR_RZX_CRYPT;
+							} else if (fhd.flags & 2) {		// packed
+								buf = realloc(buf, len - 18);
+								fread(buf, len - 18, 1, file);
+								err = inflateToFile(buf, len - 18, comp->rzx.file);
+							} else {				// raw
+								buf = realloc(buf, len - 18);
+								fread(buf, len - 18, 1, file);
+								fwrite(buf, len - 18, 1, comp->rzx.file);
+							}
 
-				rzxFree(zx);
-				zx->rzx.size = fhd.fCount;
-				zx->rzx.data = (RZXFrame*)malloc(fhd.fCount * sizeof(RZXFrame));
-				memset(zx->rzx.data, 0x00, fhd.fCount * sizeof(RZXFrame));
-				if (fhd.flags & 2) {				// packed
-					ibuf = (char*)malloc(len - 18);
-					obuf = NULL;
-					fread(ibuf, len - 18, 1, file);
-					size = len;
-					do {
-						obuf = (char*)realloc(obuf,size);
-						// printf("Try obuf[%i]\n",size);
-						err = zlib_uncompress(ibuf, len - 18, obuf, size);
-						// printf("return %i\n",err);
-						if (err < 0) break;		// inflate error
-						if (err != 0) size <<= 1;
-					} while (err != 0);
-					if (err < 0) {
-						printf("unpack error\n");
-						rzxStop(zx);
-					} else {
-						pos = 0;
-						for(i = 0; i < fhd.fCount; i++) {
-							fetches = obuf[pos++] & 0xff;
-							fetches |= ((obuf[pos++] & 0xff) << 8);
-							size = obuf[pos++] & 0xff;
-							size |= ((obuf[pos++] & 0xff) << 8);
-							rzxAddFrame(zx, i, fetches, size, obuf + pos);
-							if (size != 0xffff)
-								pos += size;
-						}
+							break;
+						default:
+							fseek(file, len - 5, SEEK_CUR);
+							break;
+					}
 
-					}
-					free(ibuf);
-					free(obuf);
-				} else {					// unpacked
-					for (int i = 0; i < fhd.fCount; i++) {
-						fetches = fgetwLE(zx->rzx.file);
-						size = fgetwLE(zx->rzx.file);
-						if (size != 0xffff) {
-							fread(iobuf, size, 1, file);
-						}
-						rzxAddFrame(zx, i, fetches, size, iobuf);
-					}
 				}
-				zx->rzx.fetches = zx->rzx.data[0].fetches - fhd.tStart;
-				zx->rzx.frame = 0;
-				zx->rzx.pos = 0;
-				break;
-			default:
-				fseek(zx->rzx.file, len - 5, SEEK_CUR);
-				break;
+				if (err == ERR_OK) {
+					fputc(0xff, comp->rzx.file);
+					rewind(comp->rzx.file);
+					comp->rzx.start = 1;
+					comp->rzx.play = 0;
+				} else {
+					rzxStop(comp);
+				}
+			}
 		}
+		fclose(file);
 	}
-}
-
-int loadRZX(Computer* zx, const char* name) {
-	zx->rzx.play = 0;
-	zx->rzx.file = fopen(name, "rb");
-	if (!zx->rzx.file) return ERR_CANT_OPEN;
-	rzxHead hd;
-	fread((char*)&hd, sizeof(rzxHead), 1, zx->rzx.file);
-#ifdef WORDS_BIG_ENDIAN
-	hd.flags = swap32(hd.flags);
-#endif
-	zx->rzx.play = 1;
-	zx->rzx.frame = 0;
-	zx->rzx.size = 0;
-//	rzxLoadFrame(zx);
-	return ERR_OK;
+	free(buf);
+	free(obuf);
+	return err;
 }
 
 #endif

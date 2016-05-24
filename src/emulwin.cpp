@@ -452,7 +452,7 @@ void MainWin::rzxStateChanged(int state) {
 		case RWS_OPEN:
 			pause(true,PR_RZX);
 			loadFile(comp,"",FT_RZX,0);
-			if (comp->rzx.size != 0) {
+			if (comp->rzx.play) {
 				rzxWin->startPlay();
 			}
 			pause(false,PR_RZX);
@@ -845,7 +845,7 @@ void MainWin::emuDraw() {
 	if (block) return;
 // update rzx window
 	if ((comp->rzx.play) && rzxWin->isVisible()) {
-		rzxWin->setProgress(comp->rzx.frame, comp->rzx.size);
+		// rzxWin->setProgress(comp->rzx.frame, comp->rzx.size);
 	}
 // update tape window
 	if (tapeWin->isVisible()) {
@@ -1199,6 +1199,13 @@ void xThread::run() {
 	do {
 		if (!fast) mtx.lock();		// wait until unlocked (MainWin::onTimer() or at exit)
 		if (finish) break;
+		if (comp->rzx.start) {
+			comp->rzx.start = 0;
+			comp->rzx.play = 1;
+			comp->rzx.fCount = 0;
+			rewind(comp->rzx.file);
+			rzxGetFrame(comp);
+		}
 		if (!block && !comp->brk) {
 			emuCycle();
 			if (comp->joy->used) {

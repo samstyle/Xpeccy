@@ -345,6 +345,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					stop();
 					break;
 				case Qt::Key_F12:
+					rzxStop(comp);
 					compReset(comp, RES_DEFAULT);
 					if (!fillAll()) {
 						disasmAdr = comp->cpu->pc;
@@ -389,8 +390,8 @@ bool DebugWin::fillAll() {
 // rzx
 
 void dbgSetRzxIO(QLabel* lab, Computer* comp, int pos) {
-	if (pos < comp->rzx.data[comp->rzx.frame].frmSize) {
-		lab->setText(gethexbyte(comp->rzx.data[comp->rzx.frame].frmData[pos]));
+	if (pos < comp->rzx.frm.size) {
+		lab->setText(gethexbyte(comp->rzx.frm.data[pos]));
 	} else {
 		lab->setText("--");
 	}

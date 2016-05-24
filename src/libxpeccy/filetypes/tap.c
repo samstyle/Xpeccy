@@ -48,7 +48,7 @@ int loadTAP(Tape* tape, const char* name) {
 	tapEject(tape);
 
 	while (!feof(file)) {
-		len = fgetwLE(file);
+		len = fgetw(file);
 		if (!feof(file)) {
 			fread(blockBuf, len, 1, file);
 			block = tapDataToBlock(blockBuf, len, sigLens);

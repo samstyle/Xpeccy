@@ -102,9 +102,13 @@ TRFile diskMakeDescriptor(const char*, char, int, int);
 
 // common
 
+int fgeti(FILE*);
+unsigned short fgetw(FILE*);
+void fputi(int, FILE*);
+void fputw(unsigned short, FILE*);
+
 size_t fgetSize(FILE*);
 unsigned int freadLen(FILE*,int);
-unsigned short fgetwLE(FILE*);
 void fputwLE(FILE*, unsigned short);
 
 void putint(unsigned char*, unsigned int);
@@ -117,16 +121,18 @@ unsigned int swap32(unsigned int);
 // rzx
 
 int loadRZX(Computer*,const char*);
-void rzxLoadFrame(Computer*);
+void rzxGetFrame(Computer*);
 
 // memory (snapshot)
 
 int loadDUMP(Computer*, const char*, int);
 
 int loadZ80(Computer*,const char*);
+int loadZ80_f(Computer*, FILE*);
 
 int loadSNA(Computer*,const char*);
 int saveSNA(Computer*, const char*, int);
+int loadSNA_f(Computer*, FILE*, size_t);
 
 int loadSPG(Computer*,const char*);
 
