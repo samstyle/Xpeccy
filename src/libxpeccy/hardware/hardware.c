@@ -105,14 +105,15 @@ unsigned char hwIn(xPort* ptab, Computer* comp, unsigned short port, int dos) {
 void hwOut(xPort* ptab, Computer* comp, unsigned short port, unsigned char val, int dos) {
 	int idx = 0;
 	xPort* itm;
-	int ctch = 0;
 	while (1) {
 		itm = &ptab[idx];
-		if (((port & itm->mask) == (itm->value & itm->mask)) && ((itm->dos & 2) || (itm->dos == dos)) && (itm->out != NULL)) {
-			if ((itm->mask != 0) || (ctch == 0)) {
-				itm->out(comp, port, val);
-				ctch = 1;
-			}
+		if (((port & itm->mask) == (itm->value & itm->mask)) &&\
+				(itm->out != NULL) &&\
+				((itm->dos & 2) || (itm->dos == dos)) &&\
+				((itm->rom & 2) || (itm->rom == comp->rom)) &&\
+				((itm->cpm & 2) || (itm->cpm == comp->cpm))) {
+			itm->out(comp, port, val);
+			break;
 		}
 		if (itm->mask == 0) break;
 		idx++;

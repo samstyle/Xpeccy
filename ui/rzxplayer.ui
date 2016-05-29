@@ -29,7 +29,7 @@
       <number>0</number>
      </property>
      <property name="format">
-      <string>%v/%m sec</string>
+      <string>%v / %m sec</string>
      </property>
     </widget>
    </item>

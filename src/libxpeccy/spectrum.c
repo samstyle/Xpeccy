@@ -33,7 +33,9 @@ void zxMemRW(Computer* comp, int adr) {
 
 unsigned char memrd(unsigned short adr,int m1,void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	if (m1 && comp->rzx.play) comp->rzx.frm.fetches--;
+	if (m1 && comp->rzx.play) {
+		comp->rzx.frm.fetches--;
+	}
 	zxMemRW(comp,adr);
 	if (getBrk(comp, adr) & MEM_BRK_RD) {
 		comp->brk = 1;
@@ -236,15 +238,16 @@ void compDestroy(Computer* comp) {
 }
 
 void compReset(Computer* comp,int res) {
+	if (comp->rzx.play) rzxStop(comp);
 	zxInitPalete(comp);
 	comp->vid->ula->active = 0;
 	comp->rzx.play = 0;
 	comp->prt2 = 0;
+	comp->p1FFD = 0;
 	comp->pEFF7 = 0;
 	memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5);
 	memSetBank(comp->mem,MEM_BANK2,MEM_RAM,2);
 	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0);
-	if (comp->rzx.play) rzxStop(comp);
 	cpuReset(comp->cpu);
 	comp->vid->curscr = 5;
 	vidSetMode(comp->vid,VID_NORMAL);
@@ -260,8 +263,8 @@ void compReset(Computer* comp,int res) {
 	comp->dos = ((res == RES_DOS) || (res == RES_SHADOW)) ? 1 : 0;
 	comp->rom = (comp->p7FFD & 0x10) ? 1 : 0;
 	comp->cpm = 0;
-	if (comp->hw->reset) comp->hw->reset(comp);
 	comp->hw->mapMem(comp);
+	if (comp->hw->reset) comp->hw->reset(comp);
 }
 
 void compSetLayout(Computer *comp, int fh, int fv, int bh, int bv, int sh, int sv, int ih, int iv, int is) {
@@ -344,6 +347,7 @@ int compExec(Computer* comp) {
 	if (comp->rzx.play) {
 		if (comp->rzx.frm.fetches < 1) {
 			zxINT(comp, 0xff);
+			comp->rzx.fCurrent++;
 			comp->rzx.fCount--;
 			rzxGetFrame(comp);
 		}

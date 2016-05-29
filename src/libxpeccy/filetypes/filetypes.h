@@ -24,6 +24,8 @@ enum {
 	ERR_RZX_CRYPT,		// rzx is crypted
 	ERR_RZX_UNPACK,		// rzx unpacking error
 
+	ERR_Z80_HW,		// Z80 hw mode not supported
+
 	ERR_TAP_DATA,		// can't save tap because of not-standart blocks
 
 	ERR_TZX_SIGN,		// tzx signature error

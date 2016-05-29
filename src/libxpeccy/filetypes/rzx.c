@@ -31,6 +31,7 @@ typedef struct {
 
 // zlib
 
+/*
 int zInit(z_stream* strm, char* in, int ilen) {
 	strm->zalloc = Z_NULL;
 	strm->zfree = Z_NULL;
@@ -82,6 +83,7 @@ int zlib_uncompress(char* in, int ilen, char* out, int olen) {
 	if (err == Z_STREAM_END) return strm.avail_in;
 	return -2;
 }
+*/
 
 // new
 
@@ -110,9 +112,10 @@ void rzxGetFrame(Computer* comp) {
 				pos = ftell(comp->rzx.file);
 				switch (type) {
 					case 0x80:					// IN block
-						comp->rzx.fCount = fgeti(comp->rzx.file);	// +0 frame count
-						comp->rzx.frm.fetches = fgetw(comp->rzx.file);	// +4.. frames		+0 fetches
-						size = fgetw(comp->rzx.file);			//			+2 size
+						comp->rzx.fCount = fgeti(comp->rzx.file);		// +0 frame count
+						size = fgeti(comp->rzx.file);				// +4 start Tstate
+						comp->rzx.frm.fetches = fgetw(comp->rzx.file) - size;	// +8.. frames		+0 fetches
+						size = fgetw(comp->rzx.file);				//			+2 size
 						if (size != 0xffff) {
 							comp->rzx.frm.size = size;
 							fread(comp->rzx.frm.data, comp->rzx.frm.size, 1, comp->rzx.file);// +4 data
@@ -128,8 +131,12 @@ void rzxGetFrame(Computer* comp) {
 								fseek(comp->rzx.file, pos + len, SEEK_SET);
 								break;
 							case 0x01:
-								loadZ80_f(comp, comp->rzx.file);		// bad loading?
-								fseek(comp->rzx.file, pos + len, SEEK_SET);
+								if (loadZ80_f(comp, comp->rzx.file) == ERR_OK) {	// bad loading?
+									fseek(comp->rzx.file, pos + len, SEEK_SET);
+								} else {
+									rzxStop(comp);
+									work = 0;
+								}
 								break;
 							default:
 								printf("unknown snapshot type\n");
@@ -193,6 +200,7 @@ int rzxGetSnapType(char* ext) {
 int loadRZX(Computer* comp, const char* name) {
 	int err = ERR_OK;
 	comp->rzx.play = 0;
+	comp->rzx.fTotal = 0;
 	FILE* file = fopen(name, "rb");
 	int type;
 	int len;
@@ -211,7 +219,7 @@ int loadRZX(Computer* comp, const char* name) {
 			err = ERR_RZX_SIGN;
 		} else {
 			printf("RZX ver %i.%i\n",hd.major,hd.minor);
-			comp->rzx.file = fopen("/home/sam/rzx.tmp","w+b");	// tmpfile();
+			comp->rzx.file = tmpfile(); // fopen("/home/sam/rzx.tmp","w+b");
 			if (!comp->rzx.file) {
 				err = ERR_CANT_OPEN;
 			} else {
@@ -266,9 +274,11 @@ int loadRZX(Computer* comp, const char* name) {
 							fhd.fCount = swap32(fhd.fCount);
 							fhd.tStart = swap32(fhd.tStart);
 							fhd.flags = swap32(fhd.flags);
+							comp->rzx.fTotal += fhd.fCount;
 							fputc(0x80, comp->rzx.file);
 							fputi(0, comp->rzx.file);		// ???
 							fputi(fhd.fCount, comp->rzx.file);
+							fputi(fhd.tStart, comp->rzx.file);
 							// fputw(fhd.tStart, comp->rzx.file);
 							if (fhd.flags & 1) {			// crypted
 								err = ERR_RZX_CRYPT;

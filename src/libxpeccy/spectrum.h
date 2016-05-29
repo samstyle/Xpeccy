@@ -110,6 +110,8 @@ typedef struct {
 		unsigned start:1;
 		unsigned play:1;
 		unsigned overio:1;
+		int fTotal;
+		int fCurrent;
 		int fCount;
 		FILE* file;		// converted tmp-file
 		struct {

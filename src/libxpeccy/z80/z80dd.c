@@ -185,7 +185,8 @@ void ddBE(CPU* cpu) {RDSHIFT(cpu->ix); cpu->tmpb = MEMRD(cpu->mptr,3); CP(cpu->t
 void ddCB(CPU* cpu) {
 	cpu->opTab = ddcbTab;
 	cpu->tmp = MEMRD(cpu->pc++,3);
-	cpu->tmpb = MEMRD(cpu->pc++,0);	// opcode. eat 0T? not m1
+	cpu->tmpb = MEMRD(cpu->pc++,0);		// not M1?
+	cpu->r++;
 	cpu->op = &ddcbTab[cpu->tmpb];
 	cpu->op->exec(cpu);
 }

@@ -309,10 +309,14 @@ void MainWin::onTimer() {
 		ethread.comp = comp;
 	}
 	if (block) return;
+	if (comp->rzx.start) {
+		rzxWin->startPlay();
+	}
 	if (comp->rzx.overio) {
 		comp->rzx.overio = 0;
 		pause(true, PR_RZX);
 		shitHappens("RZX playback error");
+		rzxWin->stop();
 		pause(false, PR_RZX);
 	}
 // if not paused play sound buffer
@@ -751,7 +755,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 }
 
 void MainWin::checkState() {
-	if (comp->rzx.play) rzxWin->startPlay();
+	if (comp->rzx.start) rzxWin->startPlay();
 	tapeWin->buildList(comp->tape);
 	tapeWin->setCheck(comp->tape->block);
 }
@@ -844,8 +848,8 @@ void MainWin::putLeds() {
 void MainWin::emuDraw() {
 	if (block) return;
 // update rzx window
-	if ((comp->rzx.play) && rzxWin->isVisible()) {
-		// rzxWin->setProgress(comp->rzx.frame, comp->rzx.size);
+	if (comp->rzx.play && rzxWin->isVisible()) {
+		rzxWin->setProgress(comp->rzx.fCurrent, comp->rzx.fTotal);
 	}
 // update tape window
 	if (tapeWin->isVisible()) {
@@ -1203,6 +1207,7 @@ void xThread::run() {
 			comp->rzx.start = 0;
 			comp->rzx.play = 1;
 			comp->rzx.fCount = 0;
+			comp->rzx.fCurrent = 0;
 			rewind(comp->rzx.file);
 			rzxGetFrame(comp);
 		}

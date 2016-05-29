@@ -96,9 +96,10 @@ int loadZ80(Computer* comp, const char* name) {
 
 int loadZ80_f(Computer* comp, FILE* file) {
 	int btm;
+	int err = ERR_OK;
 	unsigned char tmp,tmp2,reg,lst;
 	unsigned short adr, twrd;
-	CPU* cpu = comp->cpu;
+//	CPU* cpu = comp->cpu;
 	char pageBuf[0xc000];
 	z80v1Header hd;
 	comp->p7FFD = 0x10;
@@ -217,7 +218,8 @@ printf(".z80 version 2\n");
 				break;
 			default:
 				printf("Hardware mode not supported. reset\n");
-				cpuReset(cpu);	// z80ex_reset(cpu);
+				compReset(comp, RES_DEFAULT);
+				err = ERR_Z80_HW;
 				break;
 		}
 	} else {			// version 1
@@ -239,5 +241,5 @@ printf(".z80 version 1\n");
 		}
 	}
 	tsReset(comp->ts);
-	return ERR_OK;
+	return err;
 }

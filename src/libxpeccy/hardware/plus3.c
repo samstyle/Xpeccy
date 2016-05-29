@@ -27,11 +27,11 @@ void p3Out7FFD(Computer* comp, unsigned short port, unsigned char val) {
 }
 
 xPort p3PortMap[] = {
-	{0x0003,0x00fe,2,2,2,xInFE,	xOutFE},
 	{0xc002,0x7ffd,2,2,2,NULL,	p3Out7FFD},
-	{0xf002,0x1ffd,2,2,2,NULL,	p3Out1FFD},
 	{0xc002,0xbffd,2,2,2,NULL,	xOutBFFD},
 	{0xc002,0xfffd,2,2,2,xInFFFD,	xOutFFFD},
+	{0xf002,0x1ffd,2,2,2,NULL,	p3Out1FFD},
+	{0x0003,0x00fe,2,2,2,xInFE,	xOutFE},
 	{0x0000,0x0000,2,2,2,NULL,	NULL}
 };
 

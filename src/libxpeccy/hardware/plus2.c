@@ -19,7 +19,7 @@ void pl2MapMem(Computer* comp) {
 		memSetBank(comp->mem,MEM_BANK3,MEM_RAM,plus2Lays[rp][3]);
 	} else {
 		// normal mem mode
-		memSetBank(comp->mem,MEM_BANK0,MEM_ROM,((comp->rom) >> 4) | ((comp->p1FFD & 0x04) >> 1));
+		memSetBank(comp->mem,MEM_BANK0,MEM_ROM,(comp->rom ? 1 : 0) | ((comp->p1FFD & 0x04) >> 1));
 		memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5);
 		memSetBank(comp->mem,MEM_BANK2,MEM_RAM,2);
 		memSetBank(comp->mem,MEM_BANK3,MEM_RAM,comp->p7FFD & 7);
