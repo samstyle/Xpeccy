@@ -4,6 +4,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 // mouse
 enum {
 	XM_WHEELUP = 0,
@@ -82,10 +83,11 @@ typedef struct {
 Keyboard* keyCreate();
 void keyDestroy(Keyboard*);
 
+unsigned char keyInput(Keyboard*,unsigned short);
+
 void keyPress(Keyboard*,xKey,int);
 void keyRelease(Keyboard*,xKey,int);
 void keyReleaseAll(Keyboard*);
-unsigned char keyInput(Keyboard*,unsigned char,int);
 
 void keyPressXT(Keyboard*,int);
 void keyReleaseXT(Keyboard*,int);

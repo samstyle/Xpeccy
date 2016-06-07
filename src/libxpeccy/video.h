@@ -128,7 +128,7 @@ struct Video {
 		int sr0;			// ststus register 0
 		int vadr;			// VRAM address
 		unsigned char data;		// 1st byte in 2-byte writing
-		unsigned char reg[48];		// VDP registers (8 for v9918, 48? for v9938)
+		unsigned char reg[64];		// VDP registers (8 for v9918, 48 for v9938)
 		unsigned char ram[0x20000];	// VRAM (16K for v9918, 128K for v9938)
 		unsigned char sprImg[0xc000];	// 256x192 image with foreground sprites (rebuild @ frame start)
 		int BGTiles;
@@ -136,7 +136,7 @@ struct Video {
 		int BGColors;
 		int OBJTiles;
 		int OBJAttr;
-	} v9918;
+	} v9938;
 };
 
 typedef struct Video Video;

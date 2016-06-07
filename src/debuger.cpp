@@ -246,6 +246,9 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			break;
 		case Qt::AltModifier:
 			switch (ev->key()) {
+				case Qt::Key_F:
+					switchBP(MEM_BRK_FETCH);
+					break;
 				case Qt::Key_R:
 					switchBP(MEM_BRK_RD);
 					break;

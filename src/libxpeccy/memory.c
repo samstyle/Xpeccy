@@ -87,38 +87,6 @@ void memSetBank(Memory* mem, int bank, int wut, unsigned char nr) {
 		mem->map[bank].wren = 1;
 		mem->map[bank].dptr = mem->ramData + (nr << 14);
 	}
-/*
-	if (wut == MEM_ROM) nr &= mem->romMask;
-	if (wut == MEM_RAM) nr &= mem->memMask;
-
-
-	switch (bank) {
-		case MEM_BANK0:
-			switch (wut) {
-				case MEM_ROM: mem->pt[0] = (nr == 0xff) ? &mem->ram[0] : &mem->rom[nr]; break;
-				case MEM_RAM: mem->pt[0] = &mem->ram[nr]; break;
-			}
-			break;
-		case MEM_BANK1:
-			switch (wut) {
-				case MEM_ROM: mem->pt[1] = &mem->rom[nr]; break;
-				case MEM_RAM: mem->pt[1] = &mem->ram[nr]; break;
-			}
-			break;
-		case MEM_BANK2:
-			switch (wut) {
-				case MEM_ROM: mem->pt[2] = &mem->rom[nr]; break;
-				case MEM_RAM: mem->pt[2] = &mem->ram[nr]; break;
-			}
-			break;
-		case MEM_BANK3:
-			switch (wut) {
-				case MEM_ROM: mem->pt[3] = &mem->rom[nr]; break;
-				case MEM_RAM: mem->pt[3] = &mem->ram[nr]; break;
-			}
-			break;
-	}
-*/
 }
 
 void memSetExternal(Memory* mem, int bank, MemPage pg) {

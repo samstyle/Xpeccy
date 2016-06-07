@@ -1,4 +1,6 @@
 #include "hardware.h"
+
+#undef NDEBUG
 #include "assert.h"
 
 typedef struct {
@@ -76,7 +78,7 @@ mPageNr msxMemTab[4][4] = {
 	{{MEM_RAM, 3},{MEM_RAM, 2},{MEM_RAM, 1},{MEM_RAM, 0}}
 };
 
-unsigned char emptyPage[0x4000];
+// unsigned char emptyPage[0x4000];
 
 void msxSetMem(Computer* comp, int bank, unsigned char slot) {
 	MemPage p;
@@ -135,8 +137,8 @@ void msxResetSlot(xCartridge* slot) {
 }
 
 void msxReset(Computer* comp) {
-	comp->vid->v9918.high = 0;
-	comp->vid->v9918.vmode = -1;
+	comp->vid->v9938.high = 0;
+	comp->vid->v9938.vmode = -1;
 	comp->msx.pA8 = 0x00;
 	for (int i = 0; i < 16; i++) {
 		comp->vid->pal[i] = msxPalete[i];
@@ -148,67 +150,6 @@ void msxReset(Computer* comp) {
 	comp->msx.memMap[2] = 1;
 	comp->msx.memMap[3] = 0;
 	msxMapMem(comp);
-}
-
-// int tobrk = 1;
-
-unsigned char msxMRd(Computer* comp, unsigned short adr, int m1) {
-	return stdMRd(comp, adr, m1);
-/*
-	MemPage* pg = memGetBankPtr(comp->mem, adr);
-	unsigned char res = 0xff;
-	if (pg->type == MEM_EXT) {
-		xCartridge* slot = pg->num ? &comp->msx.slotB : &comp->msx.slotA;
-		res = slot->data ? msxSlotRd(slot, adr) : 0xff;
-	} else {
-		res = stdMRd(comp, adr, m1);
-	}
-	return res;
-*/
-}
-
-void msxMWr(Computer* comp, unsigned short adr, unsigned char val) {
-	stdMWr(comp, adr, val);
-/*
-	MemPage* pg = memGetBankPtr(comp->mem, adr);
-	if (pg->type != MEM_EXT) {
-		stdMWr(comp, adr, val);
-	} else {
-		// cartridge mappers
-		xCartridge* slot = pg->num ? &comp->msx.slotB : &comp->msx.slotA;
-		switch (slot->mapAuto) {
-			case MSX_KONAMI4:
-				switch(adr) {
-					case 0x6000: slot->memMap[1] = val; break;
-					case 0x8000: slot->memMap[2] = val; break;
-					case 0xa000: slot->memMap[3] = val; break;
-				}
-				break;
-			case MSX_KONAMI5:
-				switch (adr & 0xf800) {
-					case 0x5000: slot->memMap[0] = val; break;
-					case 0x7000: slot->memMap[1] = val; break;
-					case 0x9000: slot->memMap[2] = val; break;		// TODO: SCC
-					case 0xb000: slot->memMap[3] = val; break;
-				}
-				break;
-			case MSX_ASCII8:
-				switch (adr & 0xf800) {
-					case 0x6000: slot->memMap[0] = val; break;
-					case 0x6800: slot->memMap[1] = val; break;
-					case 0x7000: slot->memMap[2] = val; break;
-					case 0x7800: slot->memMap[3] = val; break;
-				}
-				break;
-			case MSX_ASCII16:
-				switch (adr & 0xf800) {
-					case 0x6000: slot->memMap[0] = val; break;	// #4000..#7FFF
-					case 0x7000: slot->memMap[1] = val; break;	// #8000..#bfff
-				}
-				break;
-		}
-	}
-*/
 }
 
 // AY
@@ -282,62 +223,66 @@ unsigned char msxMemIn(Computer* comp, unsigned short port) {
 // v9918
 
 void msx98Out(Computer* comp, unsigned short port, unsigned char val) {
-	comp->vid->v9918.ram[comp->vid->v9918.vadr & 0x1ffff] = val;
-	comp->vid->v9918.vadr++;
+	comp->vid->v9938.ram[comp->vid->v9938.vadr & 0x1ffff] = val;
+	comp->vid->v9938.vadr++;
 }
 
 void msx99Out(Computer* comp, unsigned short port, unsigned char val) {
 	int reg;
 	int vmode;
-	if (comp->vid->v9918.high) {
+	if (comp->vid->v9938.high) {
 		if (val & 0x80) {		// b7.hi = 1 : VDP register setup
-			reg = val & 0x07;
-			val = comp->vid->v9918.data;
-			comp->vid->v9918.reg[reg] = val;
+			reg = val & 0x3f;
+			val = comp->vid->v9938.data;
+			comp->vid->v9938.reg[reg] = val;
 			switch (reg) {
 				case 0:
 				case 1:
-					vmode = ((comp->vid->v9918.reg[1] & 0x10) >> 4)\
-							| ((comp->vid->v9918.reg[1] & 0x08) >> 2)\
-							| ((comp->vid->v9918.reg[0] & 0x0e) << 1);
+					vmode = ((comp->vid->v9938.reg[1] & 0x18) >> 3) | ((comp->vid->v9938.reg[1] & 0x0e) << 1);
 					switch (vmode & 7) {
-						case 1: vidSetMode(comp->vid, VID_MSX_SCR0); break;	// text 40x24
+						case 2: vidSetMode(comp->vid, VID_MSX_SCR0); break;	// text 40x24
 						case 0: vidSetMode(comp->vid, VID_MSX_SCR1); break;	// text 32x24
 						case 4: vidSetMode(comp->vid, VID_MSX_SCR2); break;	// 256x192
-						case 2: vidSetMode(comp->vid, VID_MSX_SCR3); break;	// multicolor 4x4
+						case 1: vidSetMode(comp->vid, VID_MSX_SCR3); break;	// multicolor 4x4
 						default: vidSetMode(comp->vid, VID_UNKNOWN); break;
 					}
 					break;
-				case 2: comp->vid->v9918.BGMap = (val & 0x7f) << 10; break;
-				case 3: comp->vid->v9918.BGColors = val << 6; break;
-				case 4: comp->vid->v9918.BGTiles = (val & 0x3f) << 11; break;
-				case 5: comp->vid->v9918.OBJAttr = val << 7; break;
-				case 6: comp->vid->v9918.OBJTiles = (val & 0x3f) << 11; break;
-				case 7: comp->vid->nextbrd = comp->vid->v9918.reg[7] & 7; break;		// border color = BG in R7
+				case 2: comp->vid->v9938.BGMap = (val & 0x7f) << 10; break;
+				case 3: comp->vid->v9938.BGColors = val << 6; break;
+				case 4: comp->vid->v9938.BGTiles = (val & 0x3f) << 11; break;
+				case 5: comp->vid->v9938.OBJAttr = val << 7; break;
+				case 6: comp->vid->v9938.OBJTiles = (val & 0x3f) << 11; break;
+				case 7: comp->vid->nextbrd = comp->vid->v9938.reg[7] & 7; break;		// border color = BG in R7
+				case 9:
+					break;
+				default:
+					printf("v9938 register : wr %.2X,%.2X\n",reg,val);
+					assert(0);
+					break;
 			}
 
 
 //			if (reg == 1) printf("reg1 = %.2X\n",comp->vid->v9918.reg[1]);
 		} else {			// b7.hi = 0 : VDP address setup
-			comp->vid->v9918.vadr = ((val & 0x3f) << 8) | comp->vid->v9918.data;
-			comp->vid->v9918.wr = (val & 0x40) ? 1 : 0;
+			comp->vid->v9938.vadr = ((val & 0x3f) << 8) | comp->vid->v9938.data;
+			comp->vid->v9938.wr = (val & 0x40) ? 1 : 0;
 		}
-		comp->vid->v9918.high = 0;
+		comp->vid->v9938.high = 0;
 	} else {
-		comp->vid->v9918.data = val;
-		comp->vid->v9918.high = 1;
+		comp->vid->v9938.data = val;
+		comp->vid->v9938.high = 1;
 	}
 }
 
 unsigned char msx98In(Computer* comp, unsigned short port) {
-	unsigned char res = comp->vid->v9918.ram[comp->vid->v9918.vadr & 0x3fff];
-	comp->vid->v9918.vadr++;
+	unsigned char res = comp->vid->v9938.ram[comp->vid->v9938.vadr & 0x3fff];
+	comp->vid->v9938.vadr++;
 	return res;
 }
 
 unsigned char msx99In(Computer* comp, unsigned short port) {		// status register 0
-	int res = comp->vid->v9918.sr0;
-	comp->vid->v9918.sr0 &= 0x5f;	// reset b5, b7
+	int res = comp->vid->v9938.sr0;
+	comp->vid->v9938.sr0 &= 0x5f;	// reset b5, b7
 	return res;
 }
 

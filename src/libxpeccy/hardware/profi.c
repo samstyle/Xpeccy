@@ -79,8 +79,8 @@ void prfOutDFFD(Computer* comp, unsigned short port, unsigned char val) {
 // in
 
 unsigned char prfInFE(Computer* comp, unsigned short port) {
-	unsigned char res = keyInput(comp->keyb, (port & 0xff00) >> 8, 0);
-	unsigned char ext = keyInput(comp->keyb, (port & 0xff00) >> 8, 1);
+	unsigned char res = keyInput(comp->keyb, (port & 0xff00) | 0xfe);
+	unsigned char ext = keyInput(comp->keyb, (port & 0xff00) | 0xff);
 	if (ext != 0x3f) res = ext;
 	res |= (comp->tape->levPlay ? 0x40 : 0x00);
 	return res;

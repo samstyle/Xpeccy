@@ -22,7 +22,8 @@ enum {
 	HW_TSLAB,	// PentEvo (TSConf)
 	HW_PROFI,	// Profi
 	HW_PHOENIX,	// ZXM Phoenix
-	HW_MSX		// MSX 1
+	HW_MSX,		// MSX 1
+	HW_MSX2		// MSX 2
 };
 
 // mem size
@@ -163,6 +164,14 @@ unsigned char msxIn(Computer*,unsigned short,int);
 void msxReset(Computer*);
 unsigned char msxMRd(Computer*,unsigned short,int);
 void msxMWr(Computer*,unsigned short,unsigned char);
+
+// msx2
+void msx2mapper(Computer*);
+void msx2Out(Computer*,unsigned short,unsigned char,int);
+unsigned char msx2In(Computer*,unsigned short,int);
+void msx2Reset(Computer*);
+unsigned char msx2mrd(Computer*,unsigned short,int);
+void msx2mwr(Computer*,unsigned short,unsigned char);
 
 #ifdef __cplusplus
 }

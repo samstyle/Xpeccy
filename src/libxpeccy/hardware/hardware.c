@@ -34,12 +34,17 @@ HardWare hwTab[] = {
 		"Profi","Profi",HW_PROFI,MEM_512 | MEM_1M,
 		&prfMapMem,&prfOut,&prfIn,&stdMRd,&stdMWr,&prfReset
 	},{
-		"MSX","MSX-1",HW_MSX,MEM_128,
-		&msxMapMem,&msxOut,&msxIn,&msxMRd,&msxMWr,&msxReset
-	},{
 		"Phoenix","ZXM Phoenix",HW_PHOENIX,MEM_2M,
 		&phxMapMem,&phxOut,&phxIn,&stdMRd,&stdMWr,&phxReset
 	},{
+		"MSX","MSX-1",HW_MSX,MEM_128,
+		&msxMapMem,&msxOut,&msxIn,&stdMRd,&stdMWr,&msxReset
+	},{
+#ifdef ISDEBUG
+		"MSX2","MSX-2",HW_MSX2,MEM_128,
+		&msx2mapper,&msx2Out,&msx2In,&msx2mrd,&msx2mwr,&msx2Reset
+	},{
+#endif
 		NULL,NULL,0,0,NULL,NULL,NULL,NULL,NULL,NULL
 	}
 };

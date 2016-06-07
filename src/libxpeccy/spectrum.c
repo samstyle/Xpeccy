@@ -352,7 +352,7 @@ int compExec(Computer* comp) {
 			rzxGetFrame(comp);
 		}
 	} else if (comp->vid->ismsx) {
-		if ((comp->vid->v9918.reg[1] & 0x40) && comp->vid->newFrame)
+		if ((comp->vid->v9938.reg[1] & 0x40) && comp->vid->newFrame)
 			zxINT(comp, 0xff);
 	} else {
 		if (comp->vid->intFRAME) {

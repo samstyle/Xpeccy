@@ -127,8 +127,12 @@ void keyRelease(Keyboard* keyb, xKey key, int mode) {
 	i = 0;
 }
 
-unsigned char keyInput(Keyboard* keyb, unsigned char prt, int ext) {
-	unsigned char* ptr = ext ? keyb->extMap : keyb->map;
+// read 40-key zxKeyboard port.
+// prt.high = rows selector.
+// prt.bit0 = use profi ext keys
+unsigned char keyInput(Keyboard* keyb, unsigned short prt) {
+	unsigned char* ptr = (prt & 1) ? keyb->extMap : keyb->map;
+	prt >>= 8;
 	unsigned char res = 0x3f;
 	keyb->port &= prt;
 	keyb->used = 1;

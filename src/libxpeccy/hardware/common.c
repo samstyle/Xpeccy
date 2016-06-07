@@ -1,18 +1,21 @@
 #include "hardware.h"
-#include "assert.h"
+
+#undef NDEBUG
+#include <assert.h>
 
 // debug
 
+
 unsigned char brkIn(Computer* comp, unsigned short port) {
 	printf("IN %.4X (dos:rom:cpm = %i:%i:%i)\n",port,comp->dos,comp->rom,comp->cpm);
-	comp->brk = 1;
+	// comp->brk = 1;
 	assert(0);
 	return 0xff;
 }
 
 void brkOut(Computer* comp, unsigned short port, unsigned char val) {
 	printf("OUT %.4X,%.2X (dos:rom:cpm = %i:%i:%i)\n",port,val,comp->dos,comp->rom,comp->cpm);
-	comp->brk = 1;
+	// comp->brk = 1;
 	assert(0);
 }
 
@@ -31,7 +34,7 @@ unsigned char xIn1F(Computer* comp, unsigned short port) {
 }
 
 unsigned char xInFE(Computer* comp, unsigned short port) {
-	unsigned char res = keyInput(comp->keyb, (port & 0xff00) >> 8, 0);
+	unsigned char res = keyInput(comp->keyb, (port & 0xff00) | 0xfe);
 	res |= (comp->tape->levPlay ? 0x40 : 0x00);
 	return res;
 }

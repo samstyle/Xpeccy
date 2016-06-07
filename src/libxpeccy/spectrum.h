@@ -8,12 +8,7 @@ extern "C" {
 #include "z80/z80.h"
 #include "memory.h"
 #include "video.h"
-#include "input.h"
-#include "tape.h"
-#include "fdc.h"
-#include "sound/sndcommon.h"
-#include "hdd.h"
-#include "sdcard.h"
+#include "device.h"
 
 #ifdef HAVEZLIB
 	#include <zlib.h>
@@ -60,7 +55,7 @@ enum {
 
 typedef struct {
 	unsigned char* data;
-	char name[512];
+	char name[FILENAME_MAX];
 	int memMask;
 	int memMap[8];		// 8 of 8kb pages
 	int mapType;		// user defined mapper type, if auto-detect didn't worked
@@ -74,11 +69,10 @@ typedef struct {
 	unsigned intStrobe:1;		// int front
 	unsigned nmiRequest:1;		// Magic button pressed
 	unsigned beeplev:1;		// beeper level
-//	unsigned rzx.play:1;		// rzx is playing
 	unsigned firstRun:1;
 
-	unsigned rom:1;		// b4,7ffd
-	unsigned dos:1;		// BDI dos
+	unsigned rom:1;			// b4,7ffd
+	unsigned dos:1;			// BDI dos
 	unsigned cpm:1;
 
 	unsigned scrpWait:1;		// scorpion wait mode
@@ -181,6 +175,7 @@ typedef struct {
 		unsigned char keyLine;		// selected keyboard line
 		unsigned char pA8;		// port A8
 		unsigned char pAA;		// port AA
+		unsigned char mFFFF;		// mem FFFF : mapper secondary slot
 		unsigned char memMap[4];	// RAM pages (ports FC..FF)
 		struct {
 			unsigned char regA;

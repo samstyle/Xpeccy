@@ -768,20 +768,20 @@ void vidProfiScr(Video* vid) {
 
 // fill MSX foreground sprites image
 
-#define PUTDADOT(ad) if (!vid->v9918.sprImg[ad]) vid->v9918.sprImg[ad] = atr;
+#define PUTDADOT(ad) if (!vid->v9938.sprImg[ad]) vid->v9938.sprImg[ad] = atr;
 
 void msxPutTile(Video* vid, int xpos, int ypos, int pat, int atr) {
 	unsigned char src;
 	int i,j,adr,xsav;
 	for (i = 0; i < 8; i++) {
-		src = vid->v9918.ram[vid->v9918.OBJTiles + (pat << 3) + i];		// tile byte
+		src = vid->v9938.ram[vid->v9938.OBJTiles + (pat << 3) + i];		// tile byte
 		if ((ypos >= 0) && (ypos < 192)) {					// if line onscreen
 			xsav = xpos;
 			for (j = 0; j < 8; j++) {
 				if ((xpos >= 0) && (xpos < 256) && (src & 0x80)) {	// if sprite has dot onscreen
 						adr = (ypos << 8) + xpos;
 						PUTDADOT(adr);
-						if (vid->v9918.reg[1] & 1) {
+						if (vid->v9938.reg[1] & 1) {
 							PUTDADOT(adr+1);
 							PUTDADOT(adr+256);
 							PUTDADOT(adr+257);
@@ -793,27 +793,27 @@ void msxPutTile(Video* vid, int xpos, int ypos, int pat, int atr) {
 			}
 			xpos = xsav;
 		}
-		ypos += (vid->v9918.reg[1] & 1) ? 2 : 1;
+		ypos += (vid->v9938.reg[1] & 1) ? 2 : 1;
 	}
 }
 
 void msxFillSprites(Video* vid) {
-	memset(vid->v9918.sprImg, 0x00, 0xc000);
+	memset(vid->v9938.sprImg, 0x00, 0xc000);
 	int i,sh;
-	int adr = vid->v9918.OBJAttr;
+	int adr = vid->v9938.OBJAttr;
 	int ypos, xpos, pat, atr;
 	for (i = 0; i < 32; i++) {
-		if (vid->v9918.ram[adr] == 0xd0) break;
-		ypos = (vid->v9918.ram[adr] + 1) & 0xff;
-		xpos = vid->v9918.ram[adr+1] & 0xff;
-		pat = vid->v9918.ram[adr+2] & 0xff;
-		atr = vid->v9918.ram[adr+3] & 0xff;
+		if (vid->v9938.ram[adr] == 0xd0) break;
+		ypos = (vid->v9938.ram[adr] + 1) & 0xff;
+		xpos = vid->v9938.ram[adr+1] & 0xff;
+		pat = vid->v9938.ram[adr+2] & 0xff;
+		atr = vid->v9938.ram[adr+3] & 0xff;
 		if (atr & 0x80)			// early clock
 			xpos -= 32;
 		atr &= 0x0f;
-		if (vid->v9918.reg[1] & 2) {
+		if (vid->v9938.reg[1] & 2) {
 			pat &= 0xfc;
-			sh = (vid->v9918.reg[1] & 1) ? 16 : 8;
+			sh = (vid->v9938.reg[1] & 1) ? 16 : 8;
 			msxPutTile(vid, xpos, ypos, pat, atr);
 			msxPutTile(vid, xpos, ypos+sh, pat+1, atr);
 			msxPutTile(vid, xpos+sh, ypos, pat+2, atr);
@@ -837,10 +837,10 @@ void vidMsxScr0(Video* vid) {
 			col = vid->brdcol;
 		} else {
 			if ((xscr % 6) == 0) {
-				adr = vid->v9918.ram[((yscr & 0xf8) * 5) + (xscr / 6)];
-				scrbyte = vid->v9918.ram[0x800 + ((adr << 3) | (yscr & 7))];
-				ink = (vid->v9918.reg[7] & 0xf0) >> 4;
-				pap = vid->v9918.reg[7] & 0x0f;
+				adr = vid->v9938.ram[((yscr & 0xf8) * 5) + (xscr / 6)];
+				scrbyte = vid->v9938.ram[0x800 + ((adr << 3) | (yscr & 7))];
+				ink = (vid->v9938.reg[7] & 0xf0) >> 4;
+				pap = vid->v9938.reg[7] & 0x0f;
 			}
 			col = (scrbyte & 0x80) ? ink : pap;
 			scrbyte <<= 1;
@@ -863,13 +863,13 @@ void vidMsxScr1(Video* vid) {
 			col = vid->brdcol;
 		} else {
 			if ((xscr & 7) == 0) {
-				adr = vid->v9918.ram[vid->v9918.BGMap + (xscr >> 3) + ((yscr & 0xf8) << 2)];
-				scrbyte = vid->v9918.ram[vid->v9918.BGTiles + (adr << 3) + (yscr & 7)];
-				atrbyte = vid->v9918.ram[vid->v9918.BGColors + (adr >> 3)];
+				adr = vid->v9938.ram[vid->v9938.BGMap + (xscr >> 3) + ((yscr & 0xf8) << 2)];
+				scrbyte = vid->v9938.ram[vid->v9938.BGTiles + (adr << 3) + (yscr & 7)];
+				atrbyte = vid->v9938.ram[vid->v9938.BGColors + (adr >> 3)];
 				ink = (atrbyte & 0xf0) >> 4;
 				pap = atrbyte & 0x0f;
 			}
-			col = vid->v9918.sprImg[(yscr << 8) | xscr];
+			col = vid->v9938.sprImg[(yscr << 8) | xscr];
 			if (col == 0) {
 				col = (scrbyte & 0x80) ? ink : pap;
 			}
@@ -891,13 +891,13 @@ void vidMsxScr2(Video* vid) {
 			col = vid->brdcol;
 		} else {
 			if ((xscr & 7) == 0) {
-				adr = vid->v9918.ram[vid->v9918.BGMap + (xscr >> 3) + ((yscr & 0xf8) << 2)] | ((yscr & 0xc0) << 2);	// tile nr
-				scrbyte = vid->v9918.ram[(vid->v9918.BGTiles & ~0x1fff) + (adr << 3) + (yscr & 7)];
-				atrbyte = vid->v9918.ram[(vid->v9918.BGColors & ~0x1fff) + (adr << 3) + (yscr & 7)];
+				adr = vid->v9938.ram[vid->v9938.BGMap + (xscr >> 3) + ((yscr & 0xf8) << 2)] | ((yscr & 0xc0) << 2);	// tile nr
+				scrbyte = vid->v9938.ram[(vid->v9938.BGTiles & ~0x1fff) + (adr << 3) + (yscr & 7)];
+				atrbyte = vid->v9938.ram[(vid->v9938.BGColors & ~0x1fff) + (adr << 3) + (yscr & 7)];
 				ink = (atrbyte & 0xf0) >> 4;
 				pap = atrbyte & 0x0f;
 			}
-			col = vid->v9918.sprImg[(yscr << 8) | xscr];
+			col = vid->v9938.sprImg[(yscr << 8) | xscr];
 			if (col == 0) {
 				col = (scrbyte & 0x80) ? ink : pap;
 			}
@@ -918,9 +918,9 @@ void vidMsxScr3(Video* vid) {
 		if ((xscr < 0) || (xscr > 255)) {
 			col = vid->brdcol;
 		} else {
-			adr = vid->v9918.ram[vid->v9918.BGMap + (xscr >> 3) + ((yscr & 0xf8) << 2)];		// color index
-			adr = vid->v9918.BGTiles + (adr << 3) + ((yscr & 0x18) >> 2) + ((yscr & 4) >> 2);	// color adr
-			col = vid->v9918.ram[adr];								// color for 2 dots
+			adr = vid->v9938.ram[vid->v9938.BGMap + (xscr >> 3) + ((yscr & 0xf8) << 2)];		// color index
+			adr = vid->v9938.BGTiles + (adr << 3) + ((yscr & 0x18) >> 2) + ((yscr & 4) >> 2);	// color adr
+			col = vid->v9938.ram[adr];								// color for 2 dots
 			if (!(xscr & 4)) {
 				col >>= 4;
 			}
@@ -988,7 +988,7 @@ void vidSync(Video* vid, int ns) {
 		}
 		if ((vid->intMask & 1) && (vid->y == vid->intpos.v) && (vid->x == vid->intpos.h))
 			vid->intFRAME = 1;
-			vid->v9918.sr0 |= 0x80;
+			vid->v9938.sr0 |= 0x80;
 		if (vid->intFRAME && (vid->x >= vid->intpos.h + vid->intSize))
 			vid->intFRAME = 0;
 		if (++vid->x >= vid->full.h) {
