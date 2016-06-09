@@ -27,11 +27,11 @@ unsigned char msxSlotRd(unsigned short, void*);
 
 void msx2mapPage(Computer* comp, int bank, int pslot) {
 	if (pslot == 3) {						// pslot:3
-		switch (bank) {
+		switch (bank & 3) {
 			case 0: pslot = comp->msx.mFFFF & 3; break;
 			case 1: pslot = (comp->msx.mFFFF & 0x0c) >> 2; break;
 			case 2: pslot = (comp->msx.mFFFF & 0x30) >> 4; break;
-			default: pslot = (comp->msx.mFFFF & 0xc0) >> 6; break;
+			case 3: pslot = (comp->msx.mFFFF & 0xc0) >> 6; break;
 		}
 		pslot += 4;
 	}
@@ -40,12 +40,7 @@ void msx2mapPage(Computer* comp, int bank, int pslot) {
 	if (bn >= 0xfc) bn = comp->msx.memMap[bn & 3];			// ports fc..ff
 	// printf("memsetbank %i:%i,%i\n",bank,bt,bn);
 	if (bt == MEM_EXT) {
-		MemPage pg;
-		pg.data = bn ? &comp->msx.slotB : &comp->msx.slotA;
-		pg.rd = msxSlotRd;
-		pg.wr = msxSlotWr;
-		pg.wren = 0;
-		memSetExternal(comp->mem, bank, pg);
+		memSetExternal(comp->mem, bank, msxSlotRd, msxSlotWr, bn ? &comp->msx.slotB : &comp->msx.slotA, 0);
 	} else {
 		memSetBank(comp->mem, bank, bt, bn);
 	}
@@ -104,8 +99,16 @@ unsigned char msx2mapIn(Computer* comp, unsigned short port) {
 	return comp->msx.memMap[port & 3];
 }
 
+// vdp
+
+void msx2_9AOut(Computer* comp, unsigned short port, unsigned char val) {
+	vdpPalWr(comp->vid, val);
+}
+
 // tab
 
+void msx98Out(Computer*,unsigned short,unsigned char);
+unsigned char msx98In(Computer*, unsigned short);
 void msx99Out(Computer*,unsigned short,unsigned char);
 unsigned char msx99In(Computer*, unsigned short);
 
@@ -122,7 +125,9 @@ xPort msx2ioTab[] = {
 	{0xff,0x90,2,2,2,dummyIn,	dummyOut},		// printer
 	{0xff,0x91,2,2,2,NULL,		dummyOut},
 
+	{0xff,0x98,2,2,2,msx98In,	msx98Out},
 	{0xff,0x99,2,2,2,msx99In,	msx99Out},
+	{0xff,0x9a,2,2,2,NULL,		msx2_9AOut},
 
 	{0xff,0xa0,2,2,2,NULL,		msxAYIdxOut},		// PSG
 	{0xff,0xa1,2,2,2,NULL,		msxAYDataOut},

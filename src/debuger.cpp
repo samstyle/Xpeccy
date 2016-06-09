@@ -19,7 +19,7 @@ void DebugWin::start(Computer* c) {
 	}
 	fillBrkTable();
 	updateScreen();
-	vidDarkTail(comp->vid);
+	if (!comp->vid->tail) vidDarkTail(comp->vid);
 	move(winPos);
 	show();
 	ui.dasmTable->setFocus();

@@ -1,6 +1,9 @@
 #ifndef _DEVICE_H
 #define _DEVICE_H
 
+// This is experimental part
+// Attempt to unify external device structure
+
 #if __cplusplus
 extern "C" {
 #endif
@@ -49,7 +52,6 @@ typedef union {
 } xDevPtr;
 
 // common device struct
-// NOTE: try to create unified device object
 
 typedef struct {
 	int type;

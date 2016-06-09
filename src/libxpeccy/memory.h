@@ -19,14 +19,17 @@ enum {
 	MEM_BANK3
 };
 
+typedef unsigned char(*extmrd)(unsigned short, void*);
+typedef void(*extmwr)(unsigned short, unsigned char, void*);
+
 typedef struct {
 	unsigned wren:1;		// write enable
 	int type;
 	int num;
-	unsigned char* dptr;
-	void* data;						// ptr for rd/wr func
-	unsigned char(*rd)(unsigned short, void*);		// external rd (for type MEM_EXT)
-	void(*wr)(unsigned short, unsigned char, void*);	// external wr (for type MEM_EXT)
+	unsigned char* dptr;		// ptr to data (!MEM_EXT)
+	void* data;			// ptr for rd/wr func
+	extmrd rd;			// external rd (for type MEM_EXT)
+	extmwr wr;			// external wr (for type MEM_EXT)
 } MemPage;
 
 typedef struct {
@@ -46,10 +49,11 @@ void memWr(Memory*,unsigned short,unsigned char);
 
 void memSetSize(Memory*,int);
 void memSetBank(Memory*,int,int,unsigned char);
-void memSetExternal(Memory*,int,MemPage);
 
-void memSetPage(Memory*,int,int,char*);
-void memGetPage(Memory*,int,int,char*);
+void memSetExternal(Memory*,int,extmrd,extmwr,void*,int);
+
+void memSetPageData(Memory*,int,int,char*);
+void memGetPageData(Memory*,int,int,char*);
 
 unsigned char* memGetPagePtr(Memory*,int,int);
 

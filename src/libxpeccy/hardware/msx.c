@@ -81,15 +81,10 @@ mPageNr msxMemTab[4][4] = {
 // unsigned char emptyPage[0x4000];
 
 void msxSetMem(Computer* comp, int bank, unsigned char slot) {
-	MemPage p;
 	mPageNr pg = msxMemTab[slot][bank];
 	switch(pg.type) {
 		case MEM_EXT:
-			p.data = pg.num ? &comp->msx.slotB : &comp->msx.slotA;
-			p.rd = msxSlotRd;
-			p.wr = msxSlotWr;
-			p.wren = 0;
-			memSetExternal(comp->mem, bank, p);
+			memSetExternal(comp->mem, bank, msxSlotRd, msxSlotWr, pg.num ? &comp->msx.slotB : &comp->msx.slotA, 0);
 			break;
 		case MEM_RAM:
 			memSetBank(comp->mem, bank, MEM_RAM, comp->msx.memMap[bank & 3] & 7);
@@ -220,58 +215,14 @@ unsigned char msxMemIn(Computer* comp, unsigned short port) {
 	return comp->msx.memMap[port & 3];
 }
 
-// v9918
+// v9938
 
 void msx98Out(Computer* comp, unsigned short port, unsigned char val) {
-	comp->vid->v9938.ram[comp->vid->v9938.vadr & 0x1ffff] = val;
-	comp->vid->v9938.vadr++;
+	vdpMemWr(&comp->vid->v9938, val);
 }
 
 void msx99Out(Computer* comp, unsigned short port, unsigned char val) {
-	int reg;
-	int vmode;
-	if (comp->vid->v9938.high) {
-		if (val & 0x80) {		// b7.hi = 1 : VDP register setup
-			reg = val & 0x3f;
-			val = comp->vid->v9938.data;
-			comp->vid->v9938.reg[reg] = val;
-			switch (reg) {
-				case 0:
-				case 1:
-					vmode = ((comp->vid->v9938.reg[1] & 0x18) >> 3) | ((comp->vid->v9938.reg[1] & 0x0e) << 1);
-					switch (vmode & 7) {
-						case 2: vidSetMode(comp->vid, VID_MSX_SCR0); break;	// text 40x24
-						case 0: vidSetMode(comp->vid, VID_MSX_SCR1); break;	// text 32x24
-						case 4: vidSetMode(comp->vid, VID_MSX_SCR2); break;	// 256x192
-						case 1: vidSetMode(comp->vid, VID_MSX_SCR3); break;	// multicolor 4x4
-						default: vidSetMode(comp->vid, VID_UNKNOWN); break;
-					}
-					break;
-				case 2: comp->vid->v9938.BGMap = (val & 0x7f) << 10; break;
-				case 3: comp->vid->v9938.BGColors = val << 6; break;
-				case 4: comp->vid->v9938.BGTiles = (val & 0x3f) << 11; break;
-				case 5: comp->vid->v9938.OBJAttr = val << 7; break;
-				case 6: comp->vid->v9938.OBJTiles = (val & 0x3f) << 11; break;
-				case 7: comp->vid->nextbrd = comp->vid->v9938.reg[7] & 7; break;		// border color = BG in R7
-				case 9:
-					break;
-				default:
-					printf("v9938 register : wr %.2X,%.2X\n",reg,val);
-					assert(0);
-					break;
-			}
-
-
-//			if (reg == 1) printf("reg1 = %.2X\n",comp->vid->v9918.reg[1]);
-		} else {			// b7.hi = 0 : VDP address setup
-			comp->vid->v9938.vadr = ((val & 0x3f) << 8) | comp->vid->v9938.data;
-			comp->vid->v9938.wr = (val & 0x40) ? 1 : 0;
-		}
-		comp->vid->v9938.high = 0;
-	} else {
-		comp->vid->v9938.data = val;
-		comp->vid->v9938.high = 1;
-	}
+	vdpRegWr(comp->vid, val);
 }
 
 unsigned char msx98In(Computer* comp, unsigned short port) {

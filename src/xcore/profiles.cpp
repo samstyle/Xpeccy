@@ -164,7 +164,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 	if (rset == NULL) {		// romset not found : fill all ROM with 0xFF
 		memset(pageBuf,0xff,0x4000);
 		for (i=0; i<16; i++) {
-			memSetPage(prf->zx->mem,MEM_ROM,i,pageBuf);
+			memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
 		}
 	} else {			// romset found
 		if (rset->file.size() != 0) {			// single rom file
@@ -180,14 +180,14 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 				file.seekg(0,std::ios_base::beg);
 				for (i = 0; i < prts; i++) {
 					file.read(pageBuf,0x4000);
-					memSetPage(prf->zx->mem,MEM_ROM,i,pageBuf);
+					memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
 				}
 				memset(pageBuf,0xff,0x4000);
-				for (i=prts; i<16; i++) memSetPage(prf->zx->mem,MEM_ROM,i,pageBuf);
+				for (i=prts; i<16; i++) memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
 			} else {
 				printf("Can't open single rom '%s'\n",rset->file.c_str());
 				memset(pageBuf,0xff,0x4000);
-				for (i = 0; i < 16; i++) memSetPage(prf->zx->mem,MEM_ROM,i,pageBuf);
+				for (i = 0; i < 16; i++) memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
 			}
 			file.close();
 		} else {					// separate files
@@ -208,7 +208,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 					}
 					file.close();
 				}
-				memSetPage(prf->zx->mem,MEM_ROM,i,pageBuf);
+				memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
 			}
 		}
 		memset(pageBuf,0xff,0x4000);

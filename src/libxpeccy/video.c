@@ -2,6 +2,8 @@
 #include <string.h>
 #include <math.h>
 #include <stdio.h>
+#undef NDEBUG
+#include <assert.h>
 
 #define NS_PER_DOT	140
 #define MADR(_bnk,_adr)	((_bnk) << 14) + (_adr)
@@ -88,7 +90,6 @@ Video* vidCreate(Memory* me) {
 	vid->y = 0;
 	vid->idx = 0;
 
-	// vid->scrimg = (unsigned char*)malloc(1024 * 1024 * 3);
 	vid->scrptr = vid->scrimg;
 	vid->linptr = vid->scrimg;
 
@@ -141,6 +142,7 @@ void vidDarkTail(Video* vid) {
 				ptr = NULL;
 		}
 	} while (ptr);
+	vid->tail = 1;
 }
 
 void vidGetScreen(Video* vid, unsigned char* dst, int bank, int shift, int watr) {
@@ -798,30 +800,35 @@ void msxPutTile(Video* vid, int xpos, int ypos, int pat, int atr) {
 }
 
 void msxFillSprites(Video* vid) {
-	memset(vid->v9938.sprImg, 0x00, 0xc000);
-	int i,sh;
-	int adr = vid->v9938.OBJAttr;
-	int ypos, xpos, pat, atr;
-	for (i = 0; i < 32; i++) {
-		if (vid->v9938.ram[adr] == 0xd0) break;
-		ypos = (vid->v9938.ram[adr] + 1) & 0xff;
-		xpos = vid->v9938.ram[adr+1] & 0xff;
-		pat = vid->v9938.ram[adr+2] & 0xff;
-		atr = vid->v9938.ram[adr+3] & 0xff;
-		if (atr & 0x80)			// early clock
-			xpos -= 32;
-		atr &= 0x0f;
-		if (vid->v9938.reg[1] & 2) {
-			pat &= 0xfc;
-			sh = (vid->v9938.reg[1] & 1) ? 16 : 8;
-			msxPutTile(vid, xpos, ypos, pat, atr);
-			msxPutTile(vid, xpos, ypos+sh, pat+1, atr);
-			msxPutTile(vid, xpos+sh, ypos, pat+2, atr);
-			msxPutTile(vid, xpos+sh, ypos+sh, pat+3, atr);
-		} else {
-			msxPutTile(vid, xpos, ypos, pat, atr);
-		}
-		adr += 4;
+	switch (vid->vmode) {
+		case VID_MSX_SCR1:
+		case VID_MSX_SCR2:
+			memset(vid->v9938.sprImg, 0x00, 0xc000);
+			int i,sh;
+			int adr = vid->v9938.OBJAttr;
+			int ypos, xpos, pat, atr;
+			for (i = 0; i < 32; i++) {
+				if (vid->v9938.ram[adr] == 0xd0) break;
+				ypos = (vid->v9938.ram[adr] + 1) & 0xff;
+				xpos = vid->v9938.ram[adr+1] & 0xff;
+				pat = vid->v9938.ram[adr+2] & 0xff;
+				atr = vid->v9938.ram[adr+3] & 0xff;
+				if (atr & 0x80)			// early clock
+					xpos -= 32;
+				atr &= 0x0f;
+				if (vid->v9938.reg[1] & 2) {
+					pat &= 0xfc;
+					sh = (vid->v9938.reg[1] & 1) ? 16 : 8;
+					msxPutTile(vid, xpos, ypos, pat, atr);
+					msxPutTile(vid, xpos, ypos+sh, pat+1, atr);
+					msxPutTile(vid, xpos+sh, ypos, pat+2, atr);
+					msxPutTile(vid, xpos+sh, ypos+sh, pat+3, atr);
+				} else {
+					msxPutTile(vid, xpos, ypos, pat, atr);
+				}
+				adr += 4;
+			}
+			break;
 	}
 }
 
@@ -930,6 +937,33 @@ void vidMsxScr3(Video* vid) {
 	vidPutDot(vid, col);
 }
 
+// v9938 scr 5 (256x212 4bpp)
+
+void vidMsxScr5(Video* vid) {
+	yscr = vid->y - vid->bord.v;
+	if ((yscr < 0) || (yscr >= vid->v9938.lines)) {
+		col = vid->brdcol;
+	} else {
+		xscr = vid->x - vid->bord.h;
+		if ((xscr < 0) || (xscr > 255)) {
+			col = vid->brdcol;
+		} else {
+			if (xscr & 1) {
+				col <<= 4;
+			} else {
+				adr = (vid->v9938.BGMap & 0x18000) + (xscr >> 1) + (yscr << 7);
+				col = vid->v9938.ram[adr & 0x1ffff];			// color byte
+			}
+		}
+	}
+	vidPutDot(vid, (col >> 4) & 15);
+}
+
+void vidBreak(Video* vid) {
+	printf("vid->mode = 0x%.2X\n",vid->vmode);
+	assert(0);
+}
+
 // weiter
 
 typedef struct {
@@ -954,6 +988,12 @@ xVideoMode vidModeTab[] = {
 	{VID_MSX_SCR1, vidMsxScr1},
 	{VID_MSX_SCR2, vidMsxScr2},
 	{VID_MSX_SCR3, vidMsxScr3},
+	{VID_MSX_SCR4, vidBreak},
+	{VID_MSX_SCR5, vidMsxScr5},
+	{VID_MSX_SCR6, vidBreak},
+	{VID_MSX_SCR7, vidBreak},
+	{VID_MSX_SCR8, vidBreak},
+	{VID_MSX_SCR9, vidBreak},
 	{VID_UNKNOWN, vidDrawBorder}
 };
 
@@ -1011,10 +1051,9 @@ void vidSync(Video* vid, int ns) {
 				vid->tsconf.scrLine = vid->tsconf.yOffset;
 				vid->idx = 0;
 				vid->newFrame = 1;
+				vid->tail = 0;
 				if (vid->debug) vidDarkTail(vid);
-				if (vid->ismsx) {
-					msxFillSprites(vid);
-				}
+				if (vid->ismsx) msxFillSprites(vid);
 			}
 		}
 		vid->nsDraw -= NS_PER_DOT;

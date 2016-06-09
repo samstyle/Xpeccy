@@ -75,7 +75,7 @@ unsigned char gsintrq(void* ptr) {
 }
 
 void gsSetRom(GSound* gs, int part, char* buf) {
-	memSetPage(gs->mem,MEM_ROM,part,buf);
+	memSetPageData(gs->mem,MEM_ROM,part,buf);
 }
 
 GSound* gsCreate() {

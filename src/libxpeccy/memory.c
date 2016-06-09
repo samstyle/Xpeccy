@@ -89,13 +89,23 @@ void memSetBank(Memory* mem, int bank, int wut, unsigned char nr) {
 	}
 }
 
-void memSetExternal(Memory* mem, int bank, MemPage pg) {
+// set a page with external rd/wr procedures
+// extmrd = unsigned char(*)(unsigned short adr, void* data) : memRd procedure
+// extmwr = void(*)(unsigned short adr, unsigned char value, void* data) : memWr procedure
+// void* data = pointer to send to rd/wr procedure
+// int wren = write enabled flag
+void memSetExternal(Memory* mem, int bank, extmrd rd, extmwr wr, void* data, int wren) {
+	MemPage pg;
 	pg.type = MEM_EXT;
 	pg.num = 0;
+	pg.wren = wren ? 1 : 0;
+	pg.data = data;
+	pg.rd = rd;
+	pg.wr = wr;
 	mem->map[bank] = pg;
 }
 
-void memSetPage(Memory* mem, int type, int page, char* src) {
+void memSetPageData(Memory* mem, int type, int page, char* src) {
 	switch(type) {
 		case MEM_ROM:
 			page &= 0x1f;
@@ -108,7 +118,7 @@ void memSetPage(Memory* mem, int type, int page, char* src) {
 	}
 }
 
-void memGetPage(Memory* mem, int type, int page, char* dst) {
+void memGetPageData(Memory* mem, int type, int page, char* dst) {
 	switch(type) {
 		case MEM_ROM:
 			page &= 0x1f;

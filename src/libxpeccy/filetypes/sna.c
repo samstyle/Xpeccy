@@ -45,9 +45,9 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 	comp->vid->nextbrd = hd.border & 7;
 
 	fread(pageBuf, 0x4000, 1, file);
-	memSetPage(comp->mem,MEM_RAM,5,pageBuf);
+	memSetPageData(comp->mem,MEM_RAM,5,pageBuf);
 	fread(pageBuf, 0x4000, 1, file);
-	memSetPage(comp->mem,MEM_RAM,2,pageBuf);
+	memSetPageData(comp->mem,MEM_RAM,2,pageBuf);
 	fread(tmpgBuf, 0x4000, 1, file);
 
 	if (fileSize < 49180) {
@@ -56,7 +56,7 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 		comp->dos = 0;
 		comp->hw->mapMem(comp);
 		memSetBank(comp->mem, MEM_BANK3, MEM_RAM,0);
-		memSetPage(comp->mem, MEM_RAM, 0, tmpgBuf);
+		memSetPageData(comp->mem, MEM_RAM, 0, tmpgBuf);
 		comp->vid->curscr = 5;
 		adr = (hd.hsp << 8) | hd.lsp;
 		tmp = memRd(comp->mem, adr++);
@@ -75,10 +75,10 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 			if ((tmp2 == 2) || (tmp2 == 5)) tmp2++;
 			if ((tmp & 7) != tmp2) {
 				fread(pageBuf, 0x4000, 1, file);
-				memSetPage(comp->mem, MEM_RAM, tmp2, pageBuf);
+				memSetPageData(comp->mem, MEM_RAM, tmp2, pageBuf);
 			}
 		}
-		memSetPage(comp->mem, MEM_RAM, tmp & 7, tmpgBuf);
+		memSetPageData(comp->mem, MEM_RAM, tmp & 7, tmpgBuf);
 	}
 	tsReset(comp->ts);
 	free(pageBuf);
@@ -126,17 +126,17 @@ int saveSNA(Computer* comp, const char* name, int sna48) {
 	hd.flag19 = comp->cpu->iff1 ? 4 : 0;
 	hd.border = comp->vid->brdcol & 7;
 	fwrite((char*)&hd, sizeof(snaHead), 1, file);
-	memGetPage(comp->mem, MEM_RAM, 5, pageBuf);
+	memGetPageData(comp->mem, MEM_RAM, 5, pageBuf);
 	fwrite(pageBuf, 0x4000, 1, file);
-	memGetPage(comp->mem, MEM_RAM, 2, pageBuf);
+	memGetPageData(comp->mem, MEM_RAM, 2, pageBuf);
 	fwrite(pageBuf, 0x4000, 1, file);
 
 	if (sna48) {
-		memGetPage(comp->mem, MEM_RAM, 0, pageBuf);		// 0xc000 - 0xffff (48K: bank 0)
+		memGetPageData(comp->mem, MEM_RAM, 0, pageBuf);		// 0xc000 - 0xffff (48K: bank 0)
 		fwrite(pageBuf, 0x4000, 1, file);
 	} else {
 		bnk = comp->mem->map[3].num & 7;
-		memGetPage(comp->mem, MEM_RAM, bnk, pageBuf);		// current bank
+		memGetPageData(comp->mem, MEM_RAM, bnk, pageBuf);		// current bank
 		fwrite(pageBuf, 0x4000, 1, file);
 		adr = comp->cpu->pc;
 		fputc(adr & 0xff, file);
@@ -146,7 +146,7 @@ int saveSNA(Computer* comp, const char* name, int sna48) {
 		for (i = 0; i < 8; i++) {
 			if ((i == 2) || (i == 5)) i++;
 			if (i != bnk) {
-				memGetPage(comp->mem, MEM_RAM, i, pageBuf);
+				memGetPageData(comp->mem, MEM_RAM, i, pageBuf);
 				fwrite(pageBuf, 0x4000, 1, file);
 			}
 		}

@@ -187,9 +187,9 @@ printf(".z80 version 2\n");
 				do {
 					tmp = z80readblock(file,pageBuf);
 					switch (tmp) {
-						case 4: memSetPage(comp->mem,MEM_RAM,2,pageBuf); break;
-						case 5: memSetPage(comp->mem,MEM_RAM,0,pageBuf); break;
-						case 8: memSetPage(comp->mem,MEM_RAM,5,pageBuf); break;
+						case 4: memSetPageData(comp->mem,MEM_RAM,2,pageBuf); break;
+						case 5: memSetPageData(comp->mem,MEM_RAM,0,pageBuf); break;
+						case 8: memSetPageData(comp->mem,MEM_RAM,5,pageBuf); break;
 						default: btm = 0; break;
 					}
 				} while (btm && !feof(file));
@@ -199,7 +199,7 @@ printf(".z80 version 2\n");
 				do {
 					tmp = z80readblock(file,pageBuf);
 					if ((tmp > 2) && (tmp < 11)) {
-						memSetPage(comp->mem,MEM_RAM,tmp-3,pageBuf);
+						memSetPageData(comp->mem,MEM_RAM,tmp-3,pageBuf);
 					} else {
 						btm = 0;
 					}
@@ -210,7 +210,7 @@ printf(".z80 version 2\n");
 				do {
 					tmp = z80readblock(file,pageBuf);
 					if ((tmp > 2) && (tmp < 19)) {
-						memSetPage(comp->mem,MEM_RAM,tmp-3,pageBuf);
+						memSetPageData(comp->mem,MEM_RAM,tmp-3,pageBuf);
 					} else {
 						btm = 0;
 					}
@@ -227,17 +227,17 @@ printf(".z80 version 1\n");
 		if (hd.flag12 & 0x20) {
 			printf("data is compressed\n");
 			z80uncompress(file,pageBuf,0xc000);
-			memSetPage(comp->mem,MEM_RAM,5,pageBuf);
-			memSetPage(comp->mem,MEM_RAM,2,pageBuf + 0x4000);
-			memSetPage(comp->mem,MEM_RAM,0,pageBuf + 0x8000);
+			memSetPageData(comp->mem,MEM_RAM,5,pageBuf);
+			memSetPageData(comp->mem,MEM_RAM,2,pageBuf + 0x4000);
+			memSetPageData(comp->mem,MEM_RAM,0,pageBuf + 0x8000);
 		} else {
 			printf("data is not compressed\n");
 			fread(pageBuf, 0x4000, 1, file);
-			memSetPage(comp->mem,MEM_RAM,5,pageBuf);
+			memSetPageData(comp->mem,MEM_RAM,5,pageBuf);
 			fread(pageBuf, 0x4000, 1, file);
-			memSetPage(comp->mem,MEM_RAM,2,pageBuf);
+			memSetPageData(comp->mem,MEM_RAM,2,pageBuf);
 			fread(pageBuf, 0x4000, 1, file);
-			memSetPage(comp->mem,MEM_RAM,0,pageBuf);
+			memSetPageData(comp->mem,MEM_RAM,0,pageBuf);
 		}
 	}
 	tsReset(comp->ts);

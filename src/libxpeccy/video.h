@@ -33,6 +33,8 @@ enum {
 	VID_MSX_SCR5,
 	VID_MSX_SCR6,
 	VID_MSX_SCR7,
+	VID_MSX_SCR8,
+	VID_MSX_SCR9,
 	VID_UNKNOWN = 0xff
 };
 
@@ -53,6 +55,28 @@ typedef struct {
 	unsigned char b;
 } xColor;
 
+typedef struct {
+	unsigned high:1;		// indicates hi byte in 2-byte writing
+	unsigned wr:1;			// data direction (b6.hi during writing VADR)
+	int vmode;			// current mode
+	int sr0;			// ststus register 0
+	int vadr;			// VRAM address
+	unsigned char data;		// 1st byte in 2-byte writing
+	unsigned char reg[64];		// VDP registers (8 for v9918, 48 for v9938)
+	unsigned char ram[0x20000];	// VRAM (16K for v9918, 128K for v9938)
+	unsigned char sprImg[0xd400];	// 256x212 image with foreground sprites (rebuild @ frame start)
+	int lines;			// 192/212 (b7
+	int srcX, srcY;
+	int dstX, dstY;
+	int sizX, sizY;
+	int BGTiles;
+	int BGMap;
+	int BGColors;
+	int OBJTiles;
+	int OBJAttr;
+	int SPRAttr;
+} VDP9938;
+
 struct Video {
 	unsigned border4t:1;
 	unsigned nogfx:1;	// tsl : nogfx flag
@@ -65,6 +89,7 @@ struct Video {
 	unsigned ismsx:1;	// v9918 (render sprites)
 	unsigned noScreen:1;
 	unsigned debug:1;
+	unsigned tail:1;
 
 	int flash;
 	int curscr;
@@ -121,22 +146,7 @@ struct Video {
 	unsigned char font[0x800];		// ATM text mode font
 	void(*callback)(struct Video*);
 	xColor pal[256];
-	struct {
-		unsigned high:1;		// indicates hi byte in 2-byte writing
-		unsigned wr:1;			// data direction (b6.hi during writing VADR)
-		int vmode;			// current mode
-		int sr0;			// ststus register 0
-		int vadr;			// VRAM address
-		unsigned char data;		// 1st byte in 2-byte writing
-		unsigned char reg[64];		// VDP registers (8 for v9918, 48 for v9938)
-		unsigned char ram[0x20000];	// VRAM (16K for v9918, 128K for v9938)
-		unsigned char sprImg[0xc000];	// 256x192 image with foreground sprites (rebuild @ frame start)
-		int BGTiles;
-		int BGMap;
-		int BGColors;
-		int OBJTiles;
-		int OBJAttr;
-	} v9938;
+	VDP9938 v9938;
 };
 
 typedef struct Video Video;
@@ -157,6 +167,10 @@ void vidUpdate(Video*, float);
 
 void vidSetFont(Video*,char*);
 void vidGetScreen(Video*, unsigned char*, int, int, int);
+
+void vdpMemWr(VDP9938*, unsigned char);
+void vdpRegWr(Video*, unsigned char);
+void vdpPalWr(Video*, unsigned char);
 
 #ifdef __cplusplus
 }
