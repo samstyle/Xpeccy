@@ -4,8 +4,9 @@
 #undef NDEBUG
 #include <assert.h>
 
+// TODO: page model for v9938 vram
 void vdpMemWr(VDP9938* vdp, unsigned char val) {
-	vdp->ram[vdp->vadr & 0x1ffff] = val;
+	vdp->ram[vdp->vadr & vdp->memMask] = val;
 	vdp->vadr++;
 }
 
@@ -62,11 +63,15 @@ void vdpRegWr(Video* vid, unsigned char val) {
 				case 5: vdp->OBJAttr = val << 7; break;
 				case 6: vdp->OBJTiles = (val & 0x3f) << 11; break;
 				case 7: vid->nextbrd = vdp->reg[7] & 7; break;		// border color = BG in R7
-				case 0x09:
-					vdp->lines = (val & 0x80) ? 212 : 192;
-					break;
-				case 0x0b: vdp->SPRAttr = (val & 3) << 15; break;		// sprite color base adr (A16,A15)
+				case 0x08: break;		// mode reg 2
+				case 0x09: vdp->lines = (val & 0x80) ? 212 : 192; break;	// mode reg 3
+				case 0x0b: vdp->OBJAttr = (val & 3) << 15; break;	// sprite color base adr (A16,A15)
 				case 0x0e: vdp->vadr = (vdp->vadr & 0x3fff) | ((val & 7) << 14); break;
+				case 0x10: break;		// palette num
+				case 0x12: vdp->hAdj = (val & 15) - (val & 8) ? 16 : 0;
+					vdp->hAdj = ((val & 0xf0) >> 8) - (val & 0x80) ? 16 : 0;
+					break;
+				case 0x17: break;			// display Y offset
 				case 0x20:
 				case 0x21: vdp->srcX = (vdp->reg[0x20] | (vdp->reg[0x21] << 8)) & 0x1ff; break;
 				case 0x22:
@@ -79,20 +84,15 @@ void vdpRegWr(Video* vid, unsigned char val) {
 				case 0x29: vdp->sizX = (vdp->reg[0x28] | (vdp->reg[0x29] << 8)) & 0x1ff; break;
 				case 0x2a:
 				case 0x2b: vdp->sizY = (vdp->reg[0x2a] | (vdp->reg[0x2b] << 8)) & 0x3ff; break;
+				case 0x2d: break;		// command argument
 
-				case 0x08:
-				case 0x10:			// palette num
-				case 0x17:			// Y offset (0..255)
-				case 0x2c:
-				case 0x2d:
-					break;
 				default:
 					printf("v9938 register : wr #%.2X,#%.2X\n",reg,val);
 					assert(0);
 					break;
 			}
 		} else {			// b7.hi = 0 : VDP address setup
-			vdp->vadr = ((val & 0x3f) << 8) | vdp->data;
+			vdp->vadr = (vdp->vadr & 0x1c000) | ((val & 0x3f) << 8) | vdp->data;
 			vdp->wr = (val & 0x40) ? 1 : 0;
 		}
 		vdp->high = 0;

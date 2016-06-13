@@ -111,6 +111,9 @@ class MainWin : public QWidget {
 		QMenu* vmodeMenu;
 		QMenu* resMenu;
 		QMenu* fileMenu;
+#ifdef ISDEBUG
+		QMenu* dbgMenu;
+#endif
 		QAction* pckAct;
 		QAction* nsAct;
 
@@ -139,6 +142,9 @@ class MainWin : public QWidget {
 		void chLayout(QAction*);
 		void chVMode(QAction*);
 		void umOpen(QAction*);
+#ifdef ISDEBUG
+		void saveVRAM();
+#endif
 	protected:
 		void closeEvent(QCloseEvent*);
 #ifdef DRAWGL

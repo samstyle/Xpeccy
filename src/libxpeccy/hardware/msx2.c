@@ -55,6 +55,7 @@ void msx2mapper(Computer* comp) {
 }
 
 void msx2Reset(Computer* comp) {
+	comp->vid->v9938.memMask = 0x1ffff;
 	comp->msx.pA8 = 0xf0;
 	comp->msx.mFFFF = 0x00;
 	msx2mapper(comp);

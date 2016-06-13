@@ -278,7 +278,7 @@ void compSetLayout(Computer *comp, int fh, int fv, int bh, int bv, int sh, int s
 	comp->vid->intpos.v = iv;
 	comp->vid->intSize = is;
 	comp->vid->frmsz = fh * fv;
-	comp->nsPerFrame = 140 * comp->vid->frmsz;
+	comp->nsPerFrame = comp->vid->nsPerDot * comp->vid->frmsz;
 }
 
 void compSetHardware(Computer* comp, const char* name) {

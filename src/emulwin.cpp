@@ -343,6 +343,7 @@ void MainWin::onTimer() {
 // update window
 	if (pauseFlags == 0) ethread.mtx.unlock();
 	emuDraw();
+	timer.setInterval(comp->vid->frmsz * comp->vid->nsPerDot / 1e6);
 }
 
 void MainWin::menuShow() {
@@ -950,6 +951,9 @@ void MainWin::initUserMenu() {
 	layoutMenu = userMenu->addMenu(QIcon(":/images/display.png"),"Layout");
 	vmodeMenu = userMenu->addMenu(QIcon(":/images/rulers.png"),"Video mode");
 	resMenu = userMenu->addMenu(QIcon(":/images/shutdown.png"),"Reset...");
+#ifdef ISDEBUG
+	dbgMenu = userMenu->addMenu(QIcon(":/images/debuga.png"),"Debug");
+#endif
 
 	userMenu->addSeparator();
 	userMenu->addAction(QIcon(":/images/tape.png"),"Tape player",tapeWin,SLOT(show()));
@@ -995,7 +999,9 @@ void MainWin::initUserMenu() {
 	resMenu->addAction("ROMpage1")->setData(RES_48);
 	resMenu->addAction("ROMpage2")->setData(RES_SHADOW);
 	resMenu->addAction("ROMpage3")->setData(RES_DOS);
-
+#ifdef ISDEBUG
+	dbgMenu->addAction(QIcon(),QString("Save v9938 vram..."),this,SLOT(saveVRAM()));
+#endif
 }
 
 void MainWin::fillBookmarkMenu() {
@@ -1230,3 +1236,19 @@ void xThread::run() {
 	mtx.unlock();
 	exit(0);
 }
+
+#ifdef ISDEBUG
+
+// debug stufffff
+void MainWin::saveVRAM() {
+	QString path = QFileDialog::getSaveFileName(this,"Save VRAM");
+	if (path.isEmpty()) return;
+	QFile file(path);
+	if (file.open(QFile::WriteOnly)) {
+		file.write((char*)comp->vid->v9938.ram, 0x20000);
+		file.write((char*)comp->vid->v9938.reg, 64);
+		file.close();
+	}
+}
+
+#endif

@@ -60,12 +60,14 @@ typedef struct {
 	unsigned wr:1;			// data direction (b6.hi during writing VADR)
 	int vmode;			// current mode
 	int sr0;			// ststus register 0
-	int vadr;			// VRAM address
+	int vadr;			// VRAM address (16K)
+	int memMask;
 	unsigned char data;		// 1st byte in 2-byte writing
 	unsigned char reg[64];		// VDP registers (8 for v9918, 48 for v9938)
 	unsigned char ram[0x20000];	// VRAM (16K for v9918, 128K for v9938)
-	unsigned char sprImg[0xd400];	// 256x212 image with foreground sprites (rebuild @ frame start)
-	int lines;			// 192/212 (b7
+	unsigned char sprImg[0x10000];	// 256x256 image with foreground sprites (rebuild @ frame start)
+	int lines;			// 192/212
+	int hAdj, vAdj;			// horizontal/vertical display adjust
 	int srcX, srcY;
 	int dstX, dstY;
 	int sizX, sizY;
@@ -74,7 +76,6 @@ typedef struct {
 	int BGColors;
 	int OBJTiles;
 	int OBJAttr;
-	int SPRAttr;
 } VDP9938;
 
 struct Video {
@@ -105,7 +106,9 @@ struct Video {
 	size_t frmsz;
 	size_t vBytes;
 	int vmode;
+	int vflag;
 	int nsDraw;
+	int nsPerDot;
 	VSize full;
 	VSize bord;
 	VSize sync;
@@ -144,7 +147,9 @@ struct Video {
 		unsigned char sfile[0x200];	// sprites
 	} tsconf;
 	unsigned char font[0x800];		// ATM text mode font
-	void(*callback)(struct Video*);
+	void(*callback)(struct Video*);		// call every dot
+	void(*lineCall)(struct Video*);		// call every line
+	void(*framCall)(struct Video*);		// call every frame
 	xColor pal[256];
 	VDP9938 v9938;
 };

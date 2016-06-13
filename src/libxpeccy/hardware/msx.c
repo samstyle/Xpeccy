@@ -132,6 +132,7 @@ void msxResetSlot(xCartridge* slot) {
 }
 
 void msxReset(Computer* comp) {
+	comp->vid->v9938.memMask = 0x3fff;
 	comp->vid->v9938.high = 0;
 	comp->vid->v9938.vmode = -1;
 	comp->msx.pA8 = 0x00;
@@ -226,7 +227,7 @@ void msx99Out(Computer* comp, unsigned short port, unsigned char val) {
 }
 
 unsigned char msx98In(Computer* comp, unsigned short port) {
-	unsigned char res = comp->vid->v9938.ram[comp->vid->v9938.vadr & 0x3fff];
+	unsigned char res = comp->vid->v9938.ram[comp->vid->v9938.vadr & 0x1ffff];
 	comp->vid->v9938.vadr++;
 	return res;
 }
