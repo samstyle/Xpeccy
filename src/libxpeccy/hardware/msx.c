@@ -135,16 +135,18 @@ void msxReset(Computer* comp) {
 	comp->vid->v9938.memMask = 0x3fff;
 	comp->vid->v9938.high = 0;
 	comp->vid->v9938.vmode = -1;
+	comp->vid->v9938.lines = 192;
 	comp->msx.pA8 = 0x00;
 	for (int i = 0; i < 16; i++) {
 		comp->vid->pal[i] = msxPalete[i];
 	}
-	msxResetSlot(&comp->msx.slotA);
-	msxResetSlot(&comp->msx.slotB);
 	comp->msx.memMap[0] = 3;
 	comp->msx.memMap[1] = 2;
 	comp->msx.memMap[2] = 1;
 	comp->msx.memMap[3] = 0;
+	msxResetSlot(&comp->msx.slotA);
+	msxResetSlot(&comp->msx.slotB);
+	vdpReset(&comp->vid->v9938);
 	msxMapMem(comp);
 }
 

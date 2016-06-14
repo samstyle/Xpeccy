@@ -4,12 +4,10 @@
 #include <string.h>
 #include <assert.h>
 
-#define p21AF comp->prt2
-
 void tslReset(Computer* comp) {
 	comp->vid->tsconf.scrPal = 0xf0;
 	memset(comp->vid->tsconf.cram,0x00,0x1e0);
-	comp->prt2 = 0x04;
+	comp->tsconf.p21af = 0x04;
 	comp->tsconf.Page0 = 0;
 	comp->vid->nextbrd = 0xf7;
 	comp->tsconf.p00af = 0;
@@ -19,6 +17,7 @@ void tslReset(Computer* comp) {
 	comp->tsconf.p04af = 0;
 	comp->tsconf.p05af = 0;
 	comp->tsconf.p07af = 0x0f;
+	comp->vid->tsconf.vidPage = 5;
 	comp->vid->tsconf.T0XOffset = 0;
 	comp->vid->tsconf.T0YOffset = 0;
 	comp->vid->tsconf.T1XOffset = 0;
@@ -35,13 +34,13 @@ void tslMapMem(Computer* comp) {
 // bank0 maping taken from Unreal(TSConf)
 	if (comp->tsconf.vdos) {
 		memSetBank(comp->mem,MEM_BANK0,MEM_RAM,0xff);		// vdos on : ramFF in bank0
-	} else if (p21AF & 8) {
-		if (p21AF & 4)
+	} else if (comp->tsconf.p21af & 8) {
+		if (comp->tsconf.p21af & 4)
 			memSetBank(comp->mem,MEM_BANK0,MEM_RAM,comp->tsconf.Page0);
 		else
 			memSetBank(comp->mem,MEM_BANK0,MEM_RAM, (comp->tsconf.Page0 & 0xfc) | ((comp->rom) ? 1 : 0) | (comp->dos ? 0 : 2));
 	} else {
-		if (p21AF & 4)
+		if (comp->tsconf.p21af & 4)
 			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,comp->tsconf.Page0);
 		else
 			memSetBank(comp->mem,MEM_BANK0,MEM_ROM, (comp->tsconf.Page0 & 0xfc) | ((comp->rom) ? 1 : 0) | (comp->dos ? 0 : 2));
@@ -87,7 +86,7 @@ unsigned char tslMRd(Computer* comp, unsigned short adr, int m1) {
 			comp->dos = 0;
 			if (comp->rom) comp->hw->mapMem(comp);	// don't switch ROM0 to ROM2
 		}
-		if (!comp->dos && ((adr & 0xff00) == 0x3d00) && (comp->rom) && ((p21AF & 0x04) == 0x00)) {
+		if (!comp->dos && ((adr & 0xff00) == 0x3d00) && (comp->rom) && ((comp->tsconf.p21af & 0x04) == 0x00)) {
 			comp->dos = 1;
 			comp->hw->mapMem(comp);
 		}
@@ -100,7 +99,6 @@ void tslMWr(Computer* comp, unsigned short adr, unsigned char val) {
 		if ((adr & 0xe00) == 0x000) {
 			comp->vid->tsconf.cram[adr & 0x1ff] = val;
 			tslUpdatePal(comp);
-			//comp->palchan = 1; // comp->flag |= ZX_PALCHAN;
 		}
 		if ((adr & 0xe00) == 0x200) {
 			comp->vid->tsconf.sfile[adr & 0x1ff] = val;
@@ -120,7 +118,7 @@ void tslUpdatePorts(Computer* comp) {
 		case 1: vidSetMode(comp->vid,VID_TSL_16); break;
 		case 2: vidSetMode(comp->vid,VID_TSL_256); break;
 		case 3: vidSetMode(comp->vid,VID_TSL_TEXT); break;
-		default: vidSetMode(comp->vid,VID_UNKNOWN); break;	// never
+		// default: vidSetMode(comp->vid,VID_UNKNOWN); break;	// never
 	}
 	comp->vid->nogfx = (val & 0x20) ? 1 : 0;
 
@@ -227,9 +225,9 @@ void tsOut7FFD(Computer* comp, unsigned short port, unsigned char val) {
 	comp->p7FFD = val;
 	comp->rom = (val & 0x10) ? 1 : 0;
 	int num = (val & 7) | ((val & 0xc0) >> 3);	// page (512K)
-	if (p21AF & 0x80) {				// 1x : !a13
+	if (comp->tsconf.p21af & 0x80) {				// 1x : !a13
 		if (~port & 0x2000) num &= 7;
-	} else if (p21AF & 0x40) {			// 01 : 128
+	} else if (comp->tsconf.p21af & 0x40) {			// 01 : 128
 		num &= 7;
 	}
 	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,num);
@@ -320,10 +318,9 @@ void tsOut20AF(Computer* comp, unsigned short port, unsigned char val) {
 }
 
 void tsOut21AF(Computer* comp, unsigned short port, unsigned char val) {
-	p21AF = val;
+	comp->tsconf.p21af = val;
 	comp->p7FFD &= ~0x10;
 	if (val & 1) comp->p7FFD |= 0x10;
-	//if (val & 2) {comp->mem->flags &= ~MEM_B0_WP;} else {comp->mem->flags |= MEM_B0_WP;}
 	tslMapMem(comp);
 }
 

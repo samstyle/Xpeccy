@@ -165,6 +165,7 @@ typedef struct {
 		unsigned char p04af;
 		unsigned char p05af;
 		unsigned char p07af;
+		unsigned char p21af;
 		unsigned char pwr_up;		// 1 on 1st run, 0 after reading 00AF
 		unsigned char vdos;
 	} tsconf;

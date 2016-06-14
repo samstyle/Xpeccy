@@ -54,10 +54,15 @@ void msx2mapper(Computer* comp) {
 	msx2mapPage(comp, 3, (comp->msx.pA8 & 0xc0) >> 6);
 }
 
+void msxResetSlot(xCartridge*);
+
 void msx2Reset(Computer* comp) {
 	comp->vid->v9938.memMask = 0x1ffff;
 	comp->msx.pA8 = 0xf0;
 	comp->msx.mFFFF = 0x00;
+	vdpReset(&comp->vid->v9938);
+	msxResetSlot(&comp->msx.slotA);
+	msxResetSlot(&comp->msx.slotB);
 	msx2mapper(comp);
 }
 

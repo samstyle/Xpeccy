@@ -4,6 +4,19 @@
 #undef NDEBUG
 #include <assert.h>
 
+void vdpReset(VDP9938* vdp) {
+	int i;
+	for (i = 0; i < 64; i++) vdp->reg[i] = 0;
+	vdp->BGColors = 0;
+	vdp->BGMap = 0;
+	vdp->BGTiles = 0;
+	vdp->OBJAttr = 0;
+	vdp->OBJTiles = 0;
+	vdp->hAdj = 0;
+	vdp->vAdj = 0;
+	vdp->vadr = 0;
+}
+
 // TODO: page model for v9938 vram
 void vdpMemWr(VDP9938* vdp, unsigned char val) {
 	vdp->ram[vdp->vadr & vdp->memMask] = val;

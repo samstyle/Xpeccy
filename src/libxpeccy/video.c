@@ -780,16 +780,16 @@ void vidProfiScr(Video* vid) {
 
 // fill MSX foreground sprites image
 
-#define PUTDADOT(ad) if (!vid->v9938.sprImg[ad]) vid->v9938.sprImg[ad] = atrp[i] & 15;
-
 unsigned char atrp[8];
+
+#define PUTDADOT(ad) if (!vid->v9938.sprImg[ad]) vid->v9938.sprImg[ad] = atrp[i] & 15;
 
 void msxPutTile(Video* vid, int xpos, int ypos, int pat) {
 	unsigned char src;
 	int i,j,adr,xsav;
 	int tadr = vid->v9938.OBJTiles + (pat << 3);
 	for (i = 0; i < 8; i++) {
-		src = vid->v9938.ram[tadr];						// tile byte
+		src = vid->v9938.ram[tadr & vid->v9938.memMask];			// tile byte
 		if ((ypos >= 0) && (ypos < vid->v9938.lines)) {				// if line onscreen
 			xsav = xpos;
 			if (atrp[i] & 0x80) {		// early clock (shift left 32 pix)
@@ -818,6 +818,7 @@ void msxPutTile(Video* vid, int xpos, int ypos, int pat) {
 
 void msxFillSprites(Video* vid) {
 	memset(vid->v9938.sprImg, 0x00, 0xd400);
+	if (vid->v9938.reg[8] & 2) return;
 	int i,sh;
 	int adr = vid->v9938.OBJAttr;
 	int ypos, xpos, pat, atr;
@@ -895,8 +896,6 @@ void vidMsxScr0(Video* vid) {
 	vidPutDot(vid, col);
 }
 
-
-
 // v9918 scr 1 (32 x 24 text)
 
 void vidMsxScr1(Video* vid) {
@@ -944,7 +943,7 @@ void vidMsxScr2(Video* vid) {
 				pap = atrbyte & 0x0f;
 			}
 			col = vid->v9938.sprImg[(yscr << 8) | xscr];
-			if (col == 0) {
+			if (!col) {
 				col = (scrbyte & 0x80) ? ink : pap;
 			}
 			scrbyte <<= 1;
@@ -1003,6 +1002,51 @@ void vidMsxScr5(Video* vid) {
 	vidPutDot(vid, col);
 }
 
+// v9938 scr 6 (512x212 2bpp)
+
+void vidMsxScr6(Video* vid) {
+	yscr = vid->y - vid->bord.v - vid->v9938.vAdj - vid->v9938.reg[0x17];
+	if ((yscr < 0) || (yscr >= vid->v9938.lines)) {
+		vidPutDot(vid,vid->brdcol);
+	} else {
+		xscr = vid->x - vid->bord.h - vid->v9938.hAdj;
+		if ((xscr < 0) || (xscr > 255)) {
+			vidPutDot(vid,vid->brdcol);
+		} else {
+			yscr &= 0xff;
+			xscr &= 0xff;
+			if (xscr & 1) {
+				adr = (vid->v9938.BGMap & 0x18000) + (xscr >> 1) + (yscr << 7);
+				col = vid->v9938.ram[adr];
+			}
+			vidSingleDot(vid, (col & 0xc0) >> 6);
+			vidSingleDot(vid, (col & 0x30) >> 4);
+			col <<= 4;
+		}
+	}
+}
+
+// v9938 scr 7 (512x212 4bpp)
+
+void vidMsxScr7(Video* vid) {
+	yscr = vid->y - vid->bord.v - vid->v9938.vAdj - vid->v9938.reg[0x17];
+	if ((yscr < 0) || (yscr >= vid->v9938.lines)) {
+		vidPutDot(vid,vid->brdcol);
+	} else {
+		xscr = vid->x - vid->bord.h - vid->v9938.hAdj;
+		if ((xscr < 0) || (xscr > 255)) {
+			vidPutDot(vid,vid->brdcol);
+		} else {
+			yscr &= 0xff;
+			xscr &= 0xff;
+			adr = (vid->v9938.BGMap & 0x18000) + xscr + (yscr << 8);
+			col = vid->v9938.ram[adr];
+			vidSingleDot(vid, (col & 0xf0) >> 4);
+			vidSingleDot(vid, col & 0x0f);
+		}
+	}
+}
+
 void vidBreak(Video* vid) {
 	printf("vid->mode = 0x%.2X\n",vid->vmode);
 	assert(0);
@@ -1031,14 +1075,14 @@ xVideoMode vidModeTab[] = {
 	{VID_TSL_256, 140, vidDrawTSL256, vidTSline, NULL},
 	{VID_TSL_TEXT, 140, vidDrawTSLText, vidTSline, NULL},
 	{VID_PRF_MC, 140, vidProfiScr, NULL, NULL},
-	{VID_MSX_SCR0, 93, vidMsxScr0, NULL, msxFillSprites},
-	{VID_MSX_SCR1, 93, vidMsxScr1, NULL, msxFillSprites},
-	{VID_MSX_SCR2, 93, vidMsxScr2, NULL, msxFillSprites},
-	{VID_MSX_SCR3, 93, vidMsxScr3, NULL, msxFillSprites},
-	{VID_MSX_SCR4, 93, vidBreak, NULL, msx2FillSprites},
+	{VID_MSX_SCR0, 140, vidMsxScr0, NULL, NULL},
+	{VID_MSX_SCR1, 140, vidMsxScr1, NULL, msxFillSprites},
+	{VID_MSX_SCR2, 140, vidMsxScr2, NULL, msxFillSprites},
+	{VID_MSX_SCR3, 140, vidMsxScr3, NULL, msxFillSprites},
+	{VID_MSX_SCR4, 93, vidMsxScr2, NULL, msx2FillSprites},
 	{VID_MSX_SCR5, 93, vidMsxScr5, NULL, msx2FillSprites},
-	{VID_MSX_SCR6, 93, vidBreak, NULL, msx2FillSprites},
-	{VID_MSX_SCR7, 93, vidBreak, NULL, msx2FillSprites},
+	{VID_MSX_SCR6, 93, vidMsxScr6, NULL, msx2FillSprites},
+	{VID_MSX_SCR7, 93, vidMsxScr7, NULL, msx2FillSprites},
 	{VID_MSX_SCR8, 93, vidBreak, NULL, msx2FillSprites},
 	{VID_MSX_SCR9, 93, vidBreak, NULL, msx2FillSprites},
 	{VID_UNKNOWN, 140, vidDrawBorder, NULL, msx2FillSprites}

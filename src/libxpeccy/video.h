@@ -173,6 +173,7 @@ void vidUpdate(Video*, float);
 void vidSetFont(Video*,char*);
 void vidGetScreen(Video*, unsigned char*, int, int, int);
 
+void vdpReset(VDP9938*);
 void vdpMemWr(VDP9938*, unsigned char);
 void vdpRegWr(Video*, unsigned char);
 void vdpPalWr(Video*, unsigned char);
