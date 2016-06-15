@@ -20,7 +20,6 @@
 
 #include "sound.h"
 #include "xcore.h"
-// #include "../libxpeccy/spectrum.h"
 
 enum xSoundOutput {
 	xOutputNone = 0,
@@ -29,8 +28,6 @@ enum xSoundOutput {
 	xOutputSDL,
 	xOutputWave
 };
-
-extern long nsPerFrame;
 
 struct OutSys {
 	int id;
@@ -46,7 +43,7 @@ extern OutSys* sndOutput;
 extern int nsPerSample;
 
 void sndInit();
-void sndCalibrate();
+void sndCalibrate(int);
 void addOutput(std::string, bool(*)(),void(*)(),void(*)());
 void setOutput(const char*);
 bool sndOpen();

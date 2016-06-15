@@ -7,6 +7,8 @@
 void tslReset(Computer* comp) {
 	comp->vid->tsconf.scrPal = 0xf0;
 	memset(comp->vid->tsconf.cram,0x00,0x1e0);
+	comp->rom = 0;
+	comp->dos = 0;
 	comp->tsconf.p21af = 0x04;
 	comp->tsconf.Page0 = 0;
 	comp->vid->nextbrd = 0xf7;
@@ -28,6 +30,7 @@ void tslReset(Computer* comp) {
 	comp->vid->intMask = 1;
 	comp->tsconf.vdos = 0;
 	tslUpdatePorts(comp);
+	tslMapMem(comp);
 }
 
 void tslMapMem(Computer* comp) {

@@ -92,6 +92,12 @@ struct Video {
 	unsigned debug:1;
 	unsigned tail:1;
 
+	int fps;
+	int nsPerFrame;
+	int nsPerLine;
+	int nsPerDot;
+	int nsDraw;
+
 	int flash;
 	int curscr;
 	unsigned char brdcol;
@@ -107,8 +113,6 @@ struct Video {
 	size_t vBytes;
 	int vmode;
 	int vflag;
-	int nsDraw;
-	int nsPerDot;
 	VSize full;
 	VSize bord;
 	VSize sync;
@@ -168,7 +172,8 @@ void vidSetMode(Video*,int);
 void vidWait(Video*);
 void vidDarkTail(Video*);
 
-void vidUpdate(Video*, float);
+void vidSetFps(Video*,int);
+void vidUpdateLayout(Video*, float);
 
 void vidSetFont(Video*,char*);
 void vidGetScreen(Video*, unsigned char*, int, int, int);

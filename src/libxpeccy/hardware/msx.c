@@ -84,7 +84,7 @@ void msxSetMem(Computer* comp, int bank, unsigned char slot) {
 	mPageNr pg = msxMemTab[slot][bank];
 	switch(pg.type) {
 		case MEM_EXT:
-			memSetExternal(comp->mem, bank, msxSlotRd, msxSlotWr, pg.num ? &comp->msx.slotB : &comp->msx.slotA, 0);
+			memSetExternal(comp->mem, bank, msxSlotRd, msxSlotWr, pg.num ? &comp->msx.slotB : &comp->msx.slotA);
 			break;
 		case MEM_RAM:
 			memSetBank(comp->mem, bank, MEM_RAM, comp->msx.memMap[bank & 3] & 7);

@@ -25,8 +25,6 @@ int pass = 0;
 
 int smpCount = 0;
 
-long nsPerFrame;
-
 OutSys *sndOutput = NULL;
 int sndChunks = 882;
 int sndBufSize = 1764;
@@ -109,11 +107,10 @@ void sndFillToEnd() {
 	}
 }
 
-void sndCalibrate() {
-	sndChunks = conf.snd.rate / 50;			// samples played at 1/50 sec			882
+void sndCalibrate(int fps) {
+	sndChunks = conf.snd.rate / fps;		// samples / frame
 	sndBufSize = conf.snd.chans * sndChunks;	// buffer size for 1/50 sec play		1764
-	nsPerSample = nsPerFrame / sndChunks;
-	// nsPerSample = 1e9 / conf.snd.rate;
+	nsPerSample = 1e9 / conf.snd.rate;
 }
 
 std::string sndGetOutputName() {
@@ -137,7 +134,7 @@ void setOutput(const char* name) {
 		printf("Can't open sound system '%s'. Reset to NULL\n",name);
 		setOutput("NULL");
 	}
-	sndCalibrate();
+	// sndCalibrate();
 }
 
 bool sndOpen() {

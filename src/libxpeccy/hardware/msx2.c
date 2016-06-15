@@ -1,4 +1,6 @@
 #include "hardware.h"
+#undef NDEBUG
+#include <assert.h>
 
 int msx2mtabA[8][4] = {
 	{MEM_ROM, MEM_ROM, MEM_RAM, MEM_RAM},
@@ -17,9 +19,9 @@ unsigned char msx2mtabB[8][4] = {
 	{1,1,1,1},
 	{0,0,0,0},	// not used
 	{2,2,2,2},
-	{2,2,2,2},
+	{3,3,3,3},
 	{0xfc,0xfd,0xfe,0xff},
-	{2,2,2,2}
+	{4,4,4,4}
 };
 
 void msxSlotWr(unsigned short, unsigned char, void*);
@@ -35,12 +37,11 @@ void msx2mapPage(Computer* comp, int bank, int pslot) {
 		}
 		pslot += 4;
 	}
-	int bt = msx2mtabA[pslot][bank];
-	unsigned char bn = msx2mtabB[pslot][bank];
-	if (bn >= 0xfc) bn = comp->msx.memMap[bn & 3];			// ports fc..ff
-	// printf("memsetbank %i:%i,%i\n",bank,bt,bn);
+	int bt = msx2mtabA[pslot][bank];			// page type (ram/rom/ext)
+	unsigned char bn = msx2mtabB[pslot][bank];		// page num
+	if (bn >= 0xfc) bn = comp->msx.memMap[bn & 3];		// ports fc..ff
 	if (bt == MEM_EXT) {
-		memSetExternal(comp->mem, bank, msxSlotRd, msxSlotWr, bn ? &comp->msx.slotB : &comp->msx.slotA, 0);
+		memSetExternal(comp->mem, bank, msxSlotRd, msxSlotWr, bn ? &comp->msx.slotB : &comp->msx.slotA);
 	} else {
 		memSetBank(comp->mem, bank, bt, bn);
 	}

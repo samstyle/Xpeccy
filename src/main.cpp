@@ -21,24 +21,6 @@
 #endif
 
 int main(int ac,char** av) {
-/*
-	char buf[8];
-	int len = cpuAsm("call z,15", buf, 0);
-	printf("%i : ",len);
-	char* xptr = buf;
-	while (len > 0) {
-		printf("%.2X ", *xptr & 0xff);
-		xptr++;
-		len--;
-	}
-	printf("\n");
-*/
-#ifdef DRAWGL
-	printf("Using OpenGL painter\n");
-#endif
-#ifdef DRAWQT
-	printf("Using Qt painter\n");
-#endif
 
 #ifdef HAVESDL
 	SDL_Init(SDL_INIT_AUDIO);
@@ -46,6 +28,12 @@ int main(int ac,char** av) {
 	SDL_version sdlver;
 	SDL_VERSION(&sdlver);
 	printf("Using SDL ver %u.%u.%u\n", sdlver.major, sdlver.minor, sdlver.patch);
+#endif
+#ifdef HAVEALSA
+	printf("Using ALSA ver %s\n",SND_LIB_VERSION_STR);
+#endif
+#ifdef HAVEZLIB
+	printf("Using ZLIB ver %s\n",ZLIB_VERSION);
 #endif
 	printf("Using Qt ver %s\n",qVersion());
 

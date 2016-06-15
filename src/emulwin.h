@@ -5,13 +5,7 @@
 #include <QTimer>
 #include <QThread>
 #include <QMutex>
-
-#ifdef DRAWGL
-	#include <QGLWidget>
-#endif
-#ifdef DRAWQT
-	#include <QWidget>
-#endif
+#include <QWidget>
 
 #include "libxpeccy/spectrum.h"
 #include "setupwin.h"
@@ -59,12 +53,7 @@ class xThread : public QThread {
 		void tapeSignal(int,int);
 };
 
-#ifdef DRAWGL
-class MainWin : public QGLWidget {
-#endif
-#ifdef DRAWQT
 class MainWin : public QWidget {
-#endif
 	Q_OBJECT
 	public:
 		MainWin();
@@ -87,10 +76,7 @@ class MainWin : public QWidget {
 		xThread ethread;
 		QLabel* keywin;
 		QImage scrImg;
-#ifdef DRAWGL
-		GLuint tex;
-		GLuint displaylist;
-#endif
+
 		int pauseFlags;
 		int scrCounter;
 		int scrInterval;
@@ -142,20 +128,13 @@ class MainWin : public QWidget {
 		void chLayout(QAction*);
 		void chVMode(QAction*);
 		void umOpen(QAction*);
-#ifdef ISDEBUG
+
 		void saveVRAM();
-#endif
 	protected:
 		void closeEvent(QCloseEvent*);
-#ifdef DRAWGL
-		void paintGL();
-		void resizeGL(int,int);
-#endif
 		void dragEnterEvent(QDragEnterEvent*);
 		void dropEvent(QDropEvent*);
-#ifdef DRAWQT
 		void paintEvent(QPaintEvent*);
-#endif
 		void keyPressEvent(QKeyEvent*);
 		void keyReleaseEvent(QKeyEvent*);
 		void mousePressEvent(QMouseEvent*);

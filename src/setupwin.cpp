@@ -304,10 +304,6 @@ void SetupWin::start(xProfile* p) {
 	foreach(xRomset rs, conf.rsList) {
 		ui.rsetbox->addItem(QString::fromLocal8Bit(rs.name.c_str()));
 	}
-
-//	for (i=0; i < conf.rsList.size(); i++) {
-//		ui.rsetbox->addItem(QString::fromLocal8Bit(rsList[i].name.c_str()));
-//	}
 	ui.machbox->setCurrentIndex(ui.machbox->findData(QString::fromUtf8(comp->hw->name)));
 	ui.rsetbox->setCurrentIndex(ui.rsetbox->findText(QString::fromUtf8(prof->rsName.c_str())));
 	ui.resbox->setCurrentIndex(ui.resbox->findData(comp->resbank));
@@ -315,12 +311,10 @@ void SetupWin::start(xProfile* p) {
 	ui.mszbox->setCurrentIndex(ui.mszbox->findData(comp->mem->memSize));
 	if (ui.mszbox->currentIndex() < 0) ui.mszbox->setCurrentIndex(ui.mszbox->count() - 1);
 	ui.sbFreq->setValue(comp->cpuFrq);
-	// ui.cpufrq->setValue(comp->cpuFrq * 1000000);
-	// updfrq();
 	ui.scrpwait->setChecked(comp->scrpWait);
 	ui.sysCmos->setChecked(conf.sysclock);
 // video
-	//ui.dszchk->setChecked(conf.vid.doubleSize);
+	ui.fpsSpinbox->setValue(comp->vid->fps);
 	ui.sbScale->setValue(conf.vid.scale);
 	ui.fscchk->setChecked(conf.vid.fullScreen);
 	ui.noflichk->setChecked(conf.vid.noFlick);
@@ -363,14 +357,12 @@ void SetupWin::start(xProfile* p) {
 	ui.cbSaa->setCurrentIndex(ui.cbSaa->findData(QVariant(i)));
 // input
 	buildkeylist();
-	// buildjmaplist();
 	int idx = ui.keyMapBox->findText(QString(conf.keyMapName.c_str()));
 	if (idx < 1) idx = 0;
 	ui.keyMapBox->setCurrentIndex(idx);
 	ui.ratEnable->setChecked(comp->mouse->enable);
 	ui.ratWheel->setChecked(comp->mouse->hasWheel);
 	ui.cbSwapButtons->setChecked(comp->mouse->swapButtons);
-	// setupUi.joyBox->setVisible(false);
 // dos
 	ui.diskTypeBox->setCurrentIndex(ui.diskTypeBox->findData(comp->dif->type));
 	ui.bdtbox->setChecked(fdcFlag & FDC_FAST);
@@ -401,8 +393,6 @@ void SetupWin::start(xProfile* p) {
 
 	ui.hm_type->setCurrentIndex(ui.hm_type->findData(comp->ide->master->type));
 	ATAPassport pass = ideGetPassport(comp->ide,IDE_MASTER);
-//	setupUi.hm_model->setText(QString::fromLocal8Bit(pass.model));
-//	setupUi.hm_ser->setText(QString::fromLocal8Bit(pass.serial));
 	ui.hm_path->setText(QString::fromLocal8Bit(comp->ide->master->image));
 	ui.hm_islba->setChecked(comp->ide->master->hasLBA);
 	ui.hm_gsec->setValue(pass.spt);
@@ -412,8 +402,6 @@ void SetupWin::start(xProfile* p) {
 
 	ui.hs_type->setCurrentIndex(ui.hm_type->findData(comp->ide->slave->type));
 	pass = ideGetPassport(comp->ide,IDE_SLAVE);
-//	setupUi.hs_model->setText(QString::fromLocal8Bit(pass.model));
-//	setupUi.hs_ser->setText(QString::fromLocal8Bit(pass.serial));
 	ui.hs_path->setText(QString::fromLocal8Bit(comp->ide->slave->image));
 	ui.hs_islba->setChecked(comp->ide->slave->hasLBA);
 	ui.hs_gsec->setValue(pass.spt);
@@ -463,7 +451,7 @@ void SetupWin::apply() {
 	if (comp->hw != oldmac) compReset(comp,RES_DEFAULT);
 	conf.sysclock = ui.sysCmos->isChecked() ? 1 : 0;
 // video
-	// conf.vid.doubleSize = ui.dszchk->isChecked() ? 1 : 0;
+	vidSetFps(comp->vid, ui.fpsSpinbox->value());
 	conf.vid.scale = ui.sbScale->value();
 	conf.vid.fullScreen = ui.fscchk->isChecked() ? 1 : 0;
 	conf.vid.noFlick = ui.noflichk->isChecked() ? 1 : 0;
@@ -586,8 +574,7 @@ void SetupWin::apply() {
 
 	saveConfig();
 	prfSave("");
-	nsPerFrame = comp->nsPerFrame;
-	sndCalibrate();
+	sndCalibrate(comp->vid->fps);
 }
 
 void SetupWin::reject() {

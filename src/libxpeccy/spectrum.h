@@ -120,7 +120,6 @@ typedef struct {
 
 	unsigned long tickCount;
 	int nsPerTick;
-	int nsPerFrame;
 
 	unsigned char p7FFD;		// stored port out
 	unsigned char p1FFD;

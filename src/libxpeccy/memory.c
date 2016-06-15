@@ -94,11 +94,11 @@ void memSetBank(Memory* mem, int bank, int wut, unsigned char nr) {
 // extmwr = void(*)(unsigned short adr, unsigned char value, void* data) : memWr procedure
 // void* data = pointer to send to rd/wr procedure
 // int wren = write enabled flag
-void memSetExternal(Memory* mem, int bank, extmrd rd, extmwr wr, void* data, int wren) {
+void memSetExternal(Memory* mem, int bank, extmrd rd, extmwr wr, void* data) {
 	MemPage pg;
 	pg.type = MEM_EXT;
 	pg.num = 0;
-	pg.wren = wren ? 1 : 0;
+	pg.wren = 0;
 	pg.data = data;
 	pg.rd = rd;
 	pg.wr = wr;

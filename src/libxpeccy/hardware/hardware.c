@@ -41,7 +41,7 @@ HardWare hwTab[] = {
 		&msxMapMem,&msxOut,&msxIn,&stdMRd,&stdMWr,&msxReset
 	},{
 #ifdef ISDEBUG
-		"MSX2","MSX-2",HW_MSX2,MEM_128,
+		"MSX2","MSX-2 (alfa)",HW_MSX2,MEM_128,
 		&msx2mapper,&msx2Out,&msx2In,&msx2mrd,&msx2mwr,&msx2Reset
 	},{
 #endif

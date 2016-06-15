@@ -583,14 +583,14 @@ uCom uComTab[] = {
 void uWrite(FDC* fdc, int adr, unsigned char val) {
 	if (adr != FDC_DATA) return;
 	if (fdc->idle) {			// 1st byte, command
-		DBGOUT("updCom %.2X\n",val);
+		// DBGOUT("updCom %.2X\n",val);
 		fdc->com = val;
 		int idx = 0;
 		while (1) {
 			if ((val & uComTab[idx].mask) == uComTab[idx].val) {
 				fdc->comCnt = uComTab[idx].argCount;
 				fdc->plan = uComTab[idx].plan;
-				if (!fdc->plan) DBGOUT("Command %.2X not implemented\n",fdc->com);
+				// if (!fdc->plan) DBGOUT("Command %.2X not implemented\n",fdc->com);
 				assert(fdc->plan);
 				fdc->pos = 0;
 				fdc->comPos = 0;
@@ -608,7 +608,7 @@ void uWrite(FDC* fdc, int adr, unsigned char val) {
 			idx++;
 		}
 	} else if (fdc->comCnt > 0) {		// command
-		DBGOUT("arg %.2X\n",val);
+		// DBGOUT("arg %.2X\n",val);
 		fdc->comBuf[fdc->comPos] = val;
 		fdc->comPos++;
 		fdc->comCnt--;
@@ -644,7 +644,7 @@ unsigned char uRead(FDC* fdc, int adr) {
 					fdc->resCnt--;
 					if (fdc->resCnt == 0)
 						fdc->dir = 0;
-					DBGOUT("resp : %.2X\n",res);
+					//DBGOUT("resp : %.2X\n",res);
 				} else {			// other
 					res = 0xff;
 				}

@@ -6,6 +6,7 @@
 #include <QTime>
 #include <QUrl>
 #include <QMimeData>
+#include <QPainter>
 
 #include <fstream>
 #include <unistd.h>
@@ -19,9 +20,6 @@
 #include "emulwin.h"
 #include "filer.h"
 
-#ifdef DRAWQT
-	#include <QPainter>
-#endif
 
 #define STR_EXPAND(tok) #tok
 #define	STR(tok) STR_EXPAND(tok)
@@ -65,8 +63,8 @@ void MainWin::updateHead() {
 
 void MainWin::updateWindow() {
 	block = 1;
-	vidUpdate(comp->vid, conf.brdsize);
-	sndCalibrate();
+	vidUpdateLayout(comp->vid, conf.brdsize);
+	sndCalibrate(comp->vid->fps);
 	int szw = comp->vid->vsze.h * conf.vid.scale;
 	int szh = comp->vid->vsze.v * conf.vid.scale;
 	setFixedSize(szw,szh);
@@ -343,7 +341,7 @@ void MainWin::onTimer() {
 // update window
 	if (pauseFlags == 0) ethread.mtx.unlock();
 	emuDraw();
-	timer.setInterval(comp->vid->frmsz * comp->vid->nsPerDot / 1e6);
+	timer.setInterval(1000 / comp->vid->fps);
 }
 
 void MainWin::menuShow() {
@@ -465,7 +463,6 @@ void MainWin::rzxStateChanged(int state) {
 	}
 }
 
-#ifdef DRAWQT
 void MainWin::paintEvent(QPaintEvent*) {
 	if (block) return;
 	QPainter pnt;
@@ -473,7 +470,6 @@ void MainWin::paintEvent(QPaintEvent*) {
 	pnt.drawImage(0,0,scrImg);
 	pnt.end();
 }
-#endif
 
 void MainWin::keyPressEvent(QKeyEvent *ev) {
 	keyEntry kent = getKeyEntry(ev->nativeScanCode());
@@ -873,73 +869,6 @@ void MainWin::emuDraw() {
 	update();
 }
 
-#ifdef DRAWGL
-static int int_log2(int val) {
-	int log = 0;
-	while ((val >>= 1) != 0)
-		log++;
-	return log;
-}
-
-void MainWin::resizeGL(int, int) {
-	int w = comp->vid->wsze.h;
-	int h = comp->vid->wsze.v;
-
-	glMatrixMode(GL_PROJECTION);
-	glDeleteTextures(1, &tex);
-	glGenTextures(1, &tex);
-	glBindTexture(GL_TEXTURE_2D, tex);
-	// No borders
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_LINEAR);
-	// TODO: Make an option: GL_LINEAR or GL_NEAREST
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-	int texsize = 2 << int_log2(w > h ? w : h);
-	glTexImage2D(GL_TEXTURE_2D, 0, 3, texsize, texsize, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-
-	glClearColor(0.0, 0.0, 0.0, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT);
-	swapBuffers();
-	glClear(GL_COLOR_BUFFER_BIT);
-	glShadeModel(GL_FLAT);
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_LIGHTING);
-	glDisable(GL_CULL_FACE);
-	glEnable(GL_TEXTURE_2D);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
-	GLfloat texw = ((GLfloat)(w)/(GLfloat)texsize);
-	GLfloat texh = ((GLfloat)(h)/(GLfloat)texsize);
-
-	glViewport(0,0,w,h);
-
-	if (glIsList(displaylist)) glDeleteLists(displaylist, 1);
-	displaylist = glGenLists(1);
-	glNewList(displaylist, GL_COMPILE);
-	glBindTexture(GL_TEXTURE_2D, tex);
-	glBegin(GL_QUADS);
-	// lower left
-	glTexCoord2f(0, texh); glVertex2f(-1,-1);
-	// lower right
-	glTexCoord2f(texw, texh); glVertex2f(1,-1);
-	// upper right
-	glTexCoord2f(texw, 0); glVertex2f(1,1);
-	// upper left
-	glTexCoord2f(0,0); glVertex2f(-1,1);
-	glEnd();
-	glEndList();
-}
-
-void MainWin::paintGL() {
-	glBindTexture(GL_TEXTURE_2D, tex);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, comp->vid->wsze.h, comp->vid->wsze.v, GL_RGB, GL_UNSIGNED_BYTE, screen);
-	glCallList(displaylist);
-}
-#endif
-
 // USER MENU
 
 void MainWin::initUserMenu() {
@@ -951,9 +880,6 @@ void MainWin::initUserMenu() {
 	layoutMenu = userMenu->addMenu(QIcon(":/images/display.png"),"Layout");
 	vmodeMenu = userMenu->addMenu(QIcon(":/images/rulers.png"),"Video mode");
 	resMenu = userMenu->addMenu(QIcon(":/images/shutdown.png"),"Reset...");
-#ifdef ISDEBUG
-	dbgMenu = userMenu->addMenu(QIcon(":/images/debuga.png"),"Debug");
-#endif
 
 	userMenu->addSeparator();
 	userMenu->addAction(QIcon(":/images/tape.png"),"Tape player",tapeWin,SLOT(show()));
@@ -1000,6 +926,8 @@ void MainWin::initUserMenu() {
 	resMenu->addAction("ROMpage2")->setData(RES_SHADOW);
 	resMenu->addAction("ROMpage3")->setData(RES_DOS);
 #ifdef ISDEBUG
+	userMenu->addSeparator();
+	dbgMenu = userMenu->addMenu(QIcon(":/images/debuga.png"),"Debug");
 	dbgMenu->addAction(QIcon(),QString("Save v9938 vram..."),this,SLOT(saveVRAM()));
 #endif
 }
@@ -1076,8 +1004,6 @@ void MainWin::setProfile(std::string nm) {
 	comp = conf.prof.cur->zx;
 	ethread.comp = comp;
 	nsAct->setChecked(comp->vid->noScreen);
-	nsPerFrame = comp->nsPerFrame;
-	sndCalibrate();
 	updateWindow();
 	if (comp->firstRun) {
 		compReset(comp, RES_DEFAULT);
@@ -1237,8 +1163,6 @@ void xThread::run() {
 	exit(0);
 }
 
-#ifdef ISDEBUG
-
 // debug stufffff
 void MainWin::saveVRAM() {
 	QString path = QFileDialog::getSaveFileName(this,"Save VRAM");
@@ -1250,5 +1174,3 @@ void MainWin::saveVRAM() {
 		file.close();
 	}
 }
-
-#endif
