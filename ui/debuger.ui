@@ -1176,7 +1176,7 @@
        <widget class="QWidget" name="brkTab">
         <attribute name="icon">
          <iconset resource="../xpeccy.qrc">
-          <normaloff>:/images/redCircle.png</normaloff>:/images/redCircle.png</iconset>
+          <normaloff>:/images/stop.png</normaloff>:/images/stop.png</iconset>
         </attribute>
         <attribute name="title">
          <string/>

@@ -382,8 +382,8 @@ bool DebugWin::fillAll() {
 		updateScreen();
 //	ui.rzxTab->setEnabled(comp->rzx.play);
 	if (comp->rzx.play) fillRZX();
-	ui.labRX->setNum(comp->vid->x);
-	ui.labRY->setNum(comp->vid->y);
+	ui.labRX->setNum(comp->vid->ray.x);
+	ui.labRY->setNum(comp->vid->ray.y);
 	setSignal(ui.labDOS, comp->dos);
 	setSignal(ui.labROM, comp->rom);
 	setSignal(ui.labCPM, comp->cpm);

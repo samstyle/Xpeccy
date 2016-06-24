@@ -1,8 +1,5 @@
 #include "hardware.h"
 
-#undef NDEBUG
-#include "assert.h"
-
 typedef struct {
 	int type;
 	unsigned char num;
@@ -105,25 +102,6 @@ void msxMapMem(Computer* comp) {
 // colors was taken from wikipedia article
 // https://en.wikipedia.org/wiki/List_of_8-bit_computer_hardware_palettes#Original_MSX
 
-xColor msxPalete[16] = {
-	{0,0,0},	// 0 : transparent (black)
-	{0,0,0},	// 1 : black
-	{62,184,73},	// 2 : medium green
-	{116,208,123},	// 3 : light green
-	{89,85,224},	// 4 : dark blue
-	{128,118,241},	// 5 : light blue
-	{185,94,81},	// 6 : dark red
-	{101,219,239},	// 7 : cyan
-	{219,101,89},	// 8 : medium red
-	{255,137,125},	// 9 : light red
-	{204,195,94},	// 10: dark yellow
-	{222,208,135},	// 11: light yellow
-	{58,162,165},	// 12: dark green
-	{183,102,181},	// 13: magenta
-	{204,204,204},	// 14: gray
-	{255,255,255},	// 15: white
-};
-
 void msxResetSlot(xCartridge* slot) {
 	slot->memMap[0] = 0;
 	slot->memMap[1] = 0;
@@ -134,16 +112,13 @@ void msxResetSlot(xCartridge* slot) {
 void msxReset(Computer* comp) {
 	comp->vid->v9938.memMask = 0x3fff;
 	comp->vid->v9938.high = 0;
-	comp->vid->v9938.vmode = -1;
 	comp->vid->v9938.lines = 192;
 	comp->msx.pA8 = 0x00;
-	for (int i = 0; i < 16; i++) {
-		comp->vid->pal[i] = msxPalete[i];
-	}
 	comp->msx.memMap[0] = 3;
 	comp->msx.memMap[1] = 2;
 	comp->msx.memMap[2] = 1;
 	comp->msx.memMap[3] = 0;
+	vidSetMode(comp->vid, VID_V9938);
 	msxResetSlot(&comp->msx.slotA);
 	msxResetSlot(&comp->msx.slotB);
 	vdpReset(&comp->vid->v9938);
@@ -225,19 +200,17 @@ void msx98Out(Computer* comp, unsigned short port, unsigned char val) {
 }
 
 void msx99Out(Computer* comp, unsigned short port, unsigned char val) {
-	vdpRegWr(comp->vid, val);
+	vdpRegWr(&comp->vid->v9938, val);
 }
 
 unsigned char msx98In(Computer* comp, unsigned short port) {
-	unsigned char res = comp->vid->v9938.ram[comp->vid->v9938.vadr & 0x1ffff];
+	unsigned char res = comp->vid->v9938.ram[comp->vid->v9938.vadr & comp->vid->v9938.memMask];
 	comp->vid->v9938.vadr++;
 	return res;
 }
 
 unsigned char msx99In(Computer* comp, unsigned short port) {		// status register 0
-	int res = comp->vid->v9938.sr0;
-	comp->vid->v9938.sr0 &= 0x5f;	// reset b5, b7
-	return res;
+	return vdpReadSR(&comp->vid->v9938);
 }
 
 // Port map

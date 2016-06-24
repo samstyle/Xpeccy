@@ -104,10 +104,10 @@ bool prfSetLayout(xProfile* prf, std::string nm) {
 	if (lay == NULL) return false;
 	prf->layName = nm;
 	compSetLayout(prf->zx,
-		     lay->full.h, lay->full.v,
-		     lay->bord.h, lay->bord.v,
-		     lay->sync.h, lay->sync.v,
-		     lay->intpos.h, lay->intpos.v, lay->intsz);
+		     lay->full.x, lay->full.y,
+		     lay->bord.x, lay->bord.y,
+		     lay->sync.x, lay->sync.y,
+		     lay->intpos.x, lay->intpos.y, lay->intsz);
 	vidUpdateLayout(prf->zx->vid, conf.brdsize);
 	return true;
 }
@@ -178,16 +178,19 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 				if (prts > 16) prf->zx->mem->romMask = 0x1f;
 				if (prts > 32) prts = 32;
 				file.seekg(0,std::ios_base::beg);
+				//printf("%s : prts = %i (mask %.2X)\n",rnm.c_str(), prts,prf->zx->mem->romMask);
 				for (i = 0; i < prts; i++) {
 					file.read(pageBuf,0x4000);
 					memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
 				}
 				memset(pageBuf,0xff,0x4000);
-				for (i=prts; i<16; i++) memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
+				for (i = prts; i < 32; i++)
+					memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
 			} else {
 				printf("Can't open single rom '%s'\n",rset->file.c_str());
 				memset(pageBuf,0xff,0x4000);
-				for (i = 0; i < 16; i++) memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
+				for (i = 0; i < 32; i++)
+					memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
 			}
 			file.close();
 		} else {					// separate files

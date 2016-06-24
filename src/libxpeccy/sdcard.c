@@ -1,7 +1,6 @@
 #include "sdcard.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include <assert.h>
 #include <string.h>
 
 // commands
@@ -164,7 +163,7 @@ void sdcExec(SDCard* sdc) {
 					break;
 				default:
 					printf("undef ACMD %.2X\n",sdc->arg[0] & 0x3f);
-					assert(0);
+					// assert(0);
 					break;
 			}
 		} else {
@@ -238,7 +237,7 @@ void sdcExec(SDCard* sdc) {
 					break;
 				default:
 					printf("undef CMD %.2X\n",sdc->arg[0] & 0x3f);
-					assert(0);
+					// assert(0);
 					break;
 			}
 		}

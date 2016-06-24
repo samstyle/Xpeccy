@@ -5,7 +5,7 @@
 typedef struct {
 	unsigned char i;
 	unsigned char _l,_h,_e,_d,_c,_b,_f,_a;
-	unsigned char l,h,e,d,c,b,ly,hy,lx,hx;
+	unsigned char l,x,e,d,c,b,ly,hy,lx,hx;
 	unsigned char flag19;
 	unsigned char r;
 	unsigned char f,a,lsp,hsp;
@@ -29,7 +29,7 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 	comp->cpu->de_ = (hd._d << 8) | hd._e;
 	comp->cpu->bc_ = (hd._b << 8) | hd._c;
 	comp->cpu->af_ = (hd._a << 8) | hd._f;
-	comp->cpu->hl = (hd.h << 8) | hd.l;
+	comp->cpu->hl = (hd.x << 8) | hd.l;
 	comp->cpu->de = (hd.d << 8) | hd.e;
 	comp->cpu->bc = (hd.b << 8) | hd.c;
 	comp->cpu->af = (hd.a << 8) | hd.f;
@@ -113,7 +113,7 @@ int saveSNA(Computer* comp, const char* name, int sna48) {
 	hd._d = comp->cpu->d_; hd._e = comp->cpu->e_;
 	hd._b = comp->cpu->b_; hd._c = comp->cpu->c_;
 	hd._a = comp->cpu->a_; hd._f = comp->cpu->f_;
-	hd.h = comp->cpu->h; hd.l = comp->cpu->l;
+	hd.x = comp->cpu->h; hd.l = comp->cpu->l;
 	hd.d = comp->cpu->d; hd.e = comp->cpu->e;
 	hd.b = comp->cpu->b; hd.c = comp->cpu->c;
 	hd.a = comp->cpu->a; hd.f = comp->cpu->f;

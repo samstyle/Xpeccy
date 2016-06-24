@@ -1,6 +1,4 @@
 #include "../spectrum.h"
-#undef NDEBUG
-#include <assert.h>
 
 // Profi ROM: EXT,DOS,128,48
 void prfMapMem(Computer* comp) {

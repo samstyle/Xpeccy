@@ -90,8 +90,8 @@ void saveConfig() {
 	fprintf(cfile, "\n[VIDEO]\n\n");
 	foreach(xLayout lay, conf.layList) {
 		fprintf(cfile, "layout = %s:%i:%i:%i:%i:%i:%i:%i:%i:%i\n",lay.name.c_str(),\
-		       lay.full.h, lay.full.v, lay.bord.h, lay.bord.v,\
-		       lay.sync.h, lay.sync.v, lay.intsz, lay.intpos.v, lay.intpos.h);
+		       lay.full.x, lay.full.y, lay.bord.x, lay.bord.y,\
+		       lay.sync.x, lay.sync.y, lay.intsz, lay.intpos.y, lay.intpos.x);
 	}
 	fprintf(cfile, "scrDir = %s\n", conf.scrShot.dir.c_str());
 	fprintf(cfile, "scrFormat = %s\n", conf.scrShot.format.c_str());
@@ -258,25 +258,25 @@ void loadConfig() {
 						vect = splitstr(pval,":");
 						if (vect.size() > 8) {
 							vlay.name = vect[0];
-							vlay.full.h = atoi(vect[1].c_str());
-							vlay.full.v = atoi(vect[2].c_str());
-							vlay.bord.h = atoi(vect[3].c_str());
-							vlay.bord.v = atoi(vect[4].c_str());
-							vlay.sync.h = atoi(vect[5].c_str());
-							vlay.sync.v = atoi(vect[6].c_str());
+							vlay.full.x = atoi(vect[1].c_str());
+							vlay.full.y = atoi(vect[2].c_str());
+							vlay.bord.x = atoi(vect[3].c_str());
+							vlay.bord.y = atoi(vect[4].c_str());
+							vlay.sync.x = atoi(vect[5].c_str());
+							vlay.sync.y = atoi(vect[6].c_str());
 							vlay.intsz = atoi(vect[7].c_str());
-							vlay.intpos.v = atoi(vect[8].c_str());
+							vlay.intpos.y = atoi(vect[8].c_str());
 							if (vect.size() > 9) {
-								vlay.intpos.h = atoi(vect[9].c_str());
+								vlay.intpos.x = atoi(vect[9].c_str());
 							} else {
-								vlay.intpos.h = 0;
+								vlay.intpos.x = 0;
 							}
-							if (vlay.full.h > 512) vlay.full.h = 512;
-							if (vlay.full.v > 512) vlay.full.v = 512;
-							if (vlay.full.h < vlay.bord.h + 256) vlay.full.h = vlay.bord.h + 256;
-							if (vlay.sync.h > vlay.bord.h) vlay.sync.h = vlay.bord.h;
-							if (vlay.full.v < vlay.bord.v + 192) vlay.full.v = vlay.bord.v + 256;
-							if (vlay.sync.v > vlay.bord.v) vlay.sync.v = vlay.bord.v;
+							if (vlay.full.x > 512) vlay.full.x = 512;
+							if (vlay.full.y > 512) vlay.full.y = 512;
+							if (vlay.full.x < vlay.bord.x + 256) vlay.full.x = vlay.bord.x + 256;
+							if (vlay.sync.x > vlay.bord.x) vlay.sync.x = vlay.bord.x;
+							if (vlay.full.y < vlay.bord.y + 192) vlay.full.y = vlay.bord.y + 256;
+							if (vlay.sync.y > vlay.bord.y) vlay.sync.y = vlay.bord.y;
 							addLayout(vlay);
 						}
 					}

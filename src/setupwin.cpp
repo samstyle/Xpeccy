@@ -595,14 +595,14 @@ void SetupWin::layNameCheck(QString nam) {
 }
 
 void SetupWin::editLayout() {
-	layUi.lineBox->setValue(nlay.full.h);
-	layUi.rowsBox->setValue(nlay.full.v);
-	layUi.hsyncBox->setValue(nlay.sync.h);
-	layUi.vsyncBox->setValue(nlay.sync.v);
-	layUi.brdLBox->setValue(nlay.bord.h - nlay.sync.h);
-	layUi.brdUBox->setValue(nlay.bord.v - nlay.sync.v);
-	layUi.intRowBox->setValue(nlay.intpos.v);
-	layUi.intPosBox->setValue(nlay.intpos.h);
+	layUi.lineBox->setValue(nlay.full.x);
+	layUi.rowsBox->setValue(nlay.full.y);
+	layUi.hsyncBox->setValue(nlay.sync.x);
+	layUi.vsyncBox->setValue(nlay.sync.y);
+	layUi.brdLBox->setValue(nlay.bord.x - nlay.sync.x);
+	layUi.brdUBox->setValue(nlay.bord.y - nlay.sync.y);
+	layUi.intRowBox->setValue(nlay.intpos.y);
+	layUi.intPosBox->setValue(nlay.intpos.x);
 	layUi.intLenBox->setValue(nlay.intsz);
 	layUi.okButton->setEnabled(false);
 	layUi.layWidget->setDisabled(eidx == 0);
@@ -678,14 +678,14 @@ void SetupWin::layEditorChanged() {
 
 void SetupWin::layEditorOK() {
 	nlay.name = std::string(layUi.layName->text().toLocal8Bit().data());
-	nlay.full.h = layUi.lineBox->value();
-	nlay.full.v = layUi.rowsBox->value();
-	nlay.bord.h = layUi.hsyncBox->value() + layUi.brdLBox->value();
-	nlay.bord.v = layUi.vsyncBox->value() + layUi.brdUBox->value();
-	nlay.sync.h = layUi.hsyncBox->value();
-	nlay.sync.v = layUi.vsyncBox->value();
-	nlay.intpos.h = layUi.intPosBox->value();
-	nlay.intpos.v = layUi.intRowBox->value();
+	nlay.full.x = layUi.lineBox->value();
+	nlay.full.y = layUi.rowsBox->value();
+	nlay.bord.x = layUi.hsyncBox->value() + layUi.brdLBox->value();
+	nlay.bord.y = layUi.vsyncBox->value() + layUi.brdUBox->value();
+	nlay.sync.x = layUi.hsyncBox->value();
+	nlay.sync.y = layUi.vsyncBox->value();
+	nlay.intpos.x = layUi.intPosBox->value();
+	nlay.intpos.y = layUi.intRowBox->value();
 	nlay.intsz = layUi.intLenBox->value();
 	if (eidx < 0) {
 		addLayout(nlay);

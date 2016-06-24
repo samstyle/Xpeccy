@@ -1,7 +1,6 @@
 #include "../spectrum.h"
 
 #include <stdio.h>
-#include <assert.h>
 
 void evoReset(Computer* comp) {
 	comp->dos = 1;

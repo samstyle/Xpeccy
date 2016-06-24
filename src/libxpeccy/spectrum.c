@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
 #include "spectrum.h"
 #include "filetypes/filetypes.h"
@@ -268,15 +267,15 @@ void compReset(Computer* comp,int res) {
 }
 
 void compSetLayout(Computer *comp, int fh, int fv, int bh, int bv, int sh, int sv, int ih, int iv, int is) {
-	comp->vid->full.h = fh;
-	comp->vid->full.v = fv;
-	comp->vid->bord.h = bh;
-	comp->vid->bord.v = bv;
-	comp->vid->sync.h = sh;
-	comp->vid->sync.v = sv;
-	comp->vid->intpos.h = ih;
-	comp->vid->intpos.v = iv;
-	comp->vid->intSize = is;
+	comp->vid->lay.full.x = fh;
+	comp->vid->lay.full.y = fv;
+	comp->vid->lay.bord.x = bh;
+	comp->vid->lay.bord.y = bv;
+	comp->vid->lay.sync.x = sh;
+	comp->vid->lay.sync.y = sv;
+	comp->vid->lay.intpos.x = ih;
+	comp->vid->lay.intpos.y = iv;
+	comp->vid->lay.intSize = is;
 	comp->vid->frmsz = fh * fv;
 }
 

@@ -6,8 +6,8 @@ extern "C" {
 #endif
 
 #include "z80/z80.h"
+#include "video/video.h"
 #include "memory.h"
-#include "video.h"
 #include "device.h"
 
 #ifdef HAVEZLIB
@@ -176,6 +176,9 @@ typedef struct {
 		unsigned char pA8;		// port A8
 		unsigned char pAA;		// port AA
 		unsigned char mFFFF;		// mem FFFF : mapper secondary slot
+		unsigned char pF5;
+		unsigned char pslot[4];
+		unsigned char sslot[4];
 		unsigned char memMap[4];	// RAM pages (ports FC..FF)
 		struct {
 			unsigned char regA;

@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include "../spectrum.h"
+#include <assert.h>
 
 // hw type
 enum {

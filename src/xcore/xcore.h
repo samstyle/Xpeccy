@@ -126,10 +126,10 @@ bool addRomset(xRomset);
 
 typedef struct {
 	std::string name;
-	VSize full;
-	VSize sync;
-	VSize bord;
-	VSize intpos;
+	vCoord full;
+	vCoord sync;
+	vCoord bord;
+	vCoord intpos;
 	int intsz;
 } xLayout;
 

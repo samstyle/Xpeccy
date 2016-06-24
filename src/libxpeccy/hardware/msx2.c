@@ -1,75 +1,78 @@
 #include "hardware.h"
-#undef NDEBUG
-#include <assert.h>
 
-int msx2mtabA[8][4] = {
+// primary slot
+
+int msx2mtabA[4][4] = {
 	{MEM_ROM, MEM_ROM, MEM_RAM, MEM_RAM},
 	{MEM_EXT, MEM_EXT, MEM_EXT, MEM_EXT},
 	{MEM_EXT, MEM_EXT, MEM_EXT, MEM_EXT},
-	{0,0,0,0},				// not used
-	{MEM_ROM, MEM_ROM, MEM_ROM, MEM_ROM},
-	{MEM_ROM, MEM_ROM, MEM_ROM, MEM_ROM},
-	{MEM_RAM, MEM_RAM, MEM_RAM, MEM_RAM},
-	{MEM_ROM, MEM_ROM, MEM_ROM, MEM_ROM}
+	{0,0,0,0}				// not used
 };
 
-unsigned char msx2mtabB[8][4] = {
+int msx2mtabB[4][4] = {
 	{0,1,1,0},
 	{0,0,0,0},
 	{1,1,1,1},
-	{0,0,0,0},	// not used
-	{2,2,2,2},
-	{3,3,3,3},
-	{0xfc,0xfd,0xfe,0xff},
-	{4,4,4,4}
+	{0,0,0,0}	// not used
+};
+
+// secondary slot
+
+int msx2mtabC[4][4] = {
+	{MEM_ROM, MEM_ROM, MEM_ROM, MEM_ROM},
+	{MEM_ROM, MEM_ROM, MEM_ROM, MEM_ROM},
+	{MEM_RAM, MEM_RAM, MEM_ROM, MEM_ROM},
+	{MEM_ROM, MEM_ROM, MEM_ROM, MEM_ROM}
+};
+
+int msx2mtabD[4][4] = {
+	{2,3,2,3},
+	{0,0,0,0},
+	{-1,-1,-1,-1},
+	{0,0,0,0}
 };
 
 void msxSlotWr(unsigned short, unsigned char, void*);
 unsigned char msxSlotRd(unsigned short, void*);
 
-void msx2mapPage(Computer* comp, int bank, int pslot) {
-	if (pslot == 3) {						// pslot:3
-		switch (bank & 3) {
-			case 0: pslot = comp->msx.mFFFF & 3; break;
-			case 1: pslot = (comp->msx.mFFFF & 0x0c) >> 2; break;
-			case 2: pslot = (comp->msx.mFFFF & 0x30) >> 4; break;
-			case 3: pslot = (comp->msx.mFFFF & 0xc0) >> 6; break;
-		}
-		pslot += 4;
-	}
-	int bt = msx2mtabA[pslot][bank];			// page type (ram/rom/ext)
-	unsigned char bn = msx2mtabB[pslot][bank];		// page num
-	if (bn >= 0xfc) bn = comp->msx.memMap[bn & 3];		// ports fc..ff
-	if (bt == MEM_EXT) {
-		memSetExternal(comp->mem, bank, msxSlotRd, msxSlotWr, bn ? &comp->msx.slotB : &comp->msx.slotA);
-	} else {
-		memSetBank(comp->mem, bank, bt, bn);
-	}
-}
-
 void msx2mapper(Computer* comp) {
-//	printf("msx2 map pages: PS:%.2X SS:%.2X\n",comp->msx.pA8,comp->msx.mFFFF);
-	msx2mapPage(comp, 0, comp->msx.pA8 & 0x03);
-	msx2mapPage(comp, 1, (comp->msx.pA8 & 0x0c) >> 2);
-	msx2mapPage(comp, 2, (comp->msx.pA8 & 0x30) >> 4);
-	msx2mapPage(comp, 3, (comp->msx.pA8 & 0xc0) >> 6);
-}
-
-void msxResetSlot(xCartridge*);
-
-void msx2Reset(Computer* comp) {
-	comp->vid->v9938.memMask = 0x1ffff;
-	comp->msx.pA8 = 0xf0;
-	comp->msx.mFFFF = 0x00;
-	vdpReset(&comp->vid->v9938);
-	msxResetSlot(&comp->msx.slotA);
-	msxResetSlot(&comp->msx.slotB);
-	msx2mapper(comp);
+	int slot;
+	int bt;
+	unsigned short bn;
+	for (int i = 0; i < 4; i++) {
+		slot = comp->msx.pslot[i];
+		if (slot < 3) {
+			bt = msx2mtabA[slot][i];
+			bn = msx2mtabB[slot][i];
+		} else {
+			slot = comp->msx.sslot[i];
+			bt = msx2mtabC[slot][i];
+			bn = msx2mtabD[slot][i];
+		}
+		if (bn < 0) {
+			bn = comp->msx.memMap[i];
+		}
+		if (bt == MEM_EXT) {
+			memSetExternal(comp->mem, i, msxSlotRd, msxSlotWr, bn ? &comp->msx.slotB : &comp->msx.slotA);
+		} else {
+			memSetBank(comp->mem, i, bt, bn);
+		}
+	}
 }
 
 unsigned char msx2mrd(Computer* comp, unsigned short adr, int m1) {
 	unsigned char res = 0xff;
-	if ((adr == 0xffff) && ((comp->msx.pA8 & 0xc0) == 0xc0)) {
+	if (0 & ((adr & 0xfff8) == 0x7ff8)) {					// fdc io
+		printf("rd %X\n",adr & 7);
+		comp->brk = 1;
+		switch(adr & 7) {
+			case 0: difIn(comp->dif, FDC_COM, &res, 1); break;
+			case 1: difIn(comp->dif, FDC_TRK, &res, 1); break;
+			case 2: difIn(comp->dif, FDC_SEC, &res, 1); break;
+			case 3: difIn(comp->dif, FDC_DATA, &res, 1); break;
+			case 7: res = (comp->dif->fdc->drq ? 0x80 : 0) | (comp->dif->fdc->irq ? 0x40 : 0); break;
+		}
+	} else if ((adr == 0xffff) && (comp->msx.pslot[3] == 3)) {	// sslot
 		res = comp->msx.mFFFF ^ 0xff;
 	} else {
 		res = stdMRd(comp, adr, m1);
@@ -78,8 +81,22 @@ unsigned char msx2mrd(Computer* comp, unsigned short adr, int m1) {
 }
 
 void msx2mwr(Computer* comp, unsigned short adr, unsigned char val) {
-	if ((adr == 0xffff) && ((comp->msx.pA8 & 0xc0) == 0xc0)) {
+	if (0 & ((adr & 0xfff8) == 0x7ff8)) {					// fdc io
+	printf("wr %X,%.2X\n",adr & 7, val);
+		switch(adr & 7) {
+			case 0: difOut(comp->dif, FDC_COM, val, 1); break;
+			case 1: difOut(comp->dif, FDC_TRK, val, 1); break;
+			case 2: difOut(comp->dif, FDC_SEC, val, 1); break;
+			case 3: difOut(comp->dif, FDC_DATA, val, 1); break;
+			case 4: comp->dif->fdc->side = (val & 1) ? 1 : 0; break;
+			case 5: comp->dif->fdc->flp = comp->dif->fdc->flop[val & 1]; break;
+		}
+	} else if ((adr == 0xffff) && (comp->msx.pslot[3] == 3)) {	// sslot
 		comp->msx.mFFFF = val;
+		comp->msx.sslot[0] = val & 3;
+		comp->msx.sslot[1] = (val >> 2) & 3;
+		comp->msx.sslot[2] = (val >> 4) & 3;
+		comp->msx.sslot[3] = (val >> 6) & 3;
 		msx2mapper(comp);
 	} else {
 		stdMWr(comp, adr, val);
@@ -94,6 +111,11 @@ unsigned char msx2_A8in(Computer* comp, unsigned short port) {
 
 void msx2_A8out(Computer* comp, unsigned short port, unsigned char val) {
 	comp->msx.pA8 = val;
+	comp->msx.pslot[0] = val & 3;
+	comp->msx.pslot[1] = (val >> 2) & 3;
+	comp->msx.pslot[2] = (val >> 4) & 3;
+	comp->msx.pslot[3] = (val >> 6) & 3;
+//	printf("A8 out %.2X (%i,%i,%i,%i)\n",comp->msx.pA8, comp->msx.pslot[0], comp->msx.pslot[1], comp->msx.pslot[2], comp->msx.pslot[3]);
 	msx2mapper(comp);
 }
 
@@ -109,8 +131,92 @@ unsigned char msx2mapIn(Computer* comp, unsigned short port) {
 // vdp
 
 void msx2_9AOut(Computer* comp, unsigned short port, unsigned char val) {
-	vdpPalWr(comp->vid, val);
+	vdpPalWr(&comp->vid->v9938, val);
 }
+
+void msx2_9Bout(Computer* comp, unsigned short port, unsigned char val) {
+	if (comp->vid->v9938.regIdx != 0x11) {
+		comp->vid->v9938.data = val;
+		comp->vid->v9938.high = 1;
+		vdpRegWr(&comp->vid->v9938, (comp->vid->v9938.regIdx & 0x3f) | 0x80);
+	}
+	if (~comp->vid->v9938.reg[0x11] & 0x80) {		// b7 = 1 : autoincrement off
+		comp->vid->v9938.regIdx++;
+	}
+}
+
+// reset
+
+void msxResetSlot(xCartridge*);
+void msx2Reset(Computer* comp) {
+	comp->vid->v9938.memMask = 0x1ffff;
+	vidSetMode(comp->vid, VID_V9938);
+	vdpReset(&comp->vid->v9938);
+	msxResetSlot(&comp->msx.slotA);
+	msxResetSlot(&comp->msx.slotB);
+	msx2_A8out(comp, 0xa8, 0xf0);
+	msx2mapper(comp);
+}
+
+// devices
+
+void msx2_F5out(Computer* comp, unsigned short port, unsigned char val) {
+	comp->msx.pF5 = val;
+}
+
+// rtc
+
+void msx2_b4out(Computer* comp, unsigned short port, unsigned char val) {
+	comp->cmos.adr = val & 15;
+}
+
+void msx2_b5out(Computer* comp, unsigned short port, unsigned char val) {
+	int block = comp->cmos.data[0x0d];
+	int adr = comp->cmos.adr & 15;
+	if (adr < 0x0d)
+		adr |= (block << 4);
+	comp->cmos.data[adr] = val & 15;
+}
+
+unsigned char msx2_b5in(Computer* comp, unsigned short port) {
+	unsigned char res = 0x0f;
+	int block;
+	int adr = comp->cmos.adr & 15;
+	switch(adr) {
+		case 0x0d:
+			res = comp->cmos.data[adr];
+			break;
+		case 0x0e:
+		case 0x0f:
+			res = 0x0f;
+			break;
+		default:
+			block = comp->cmos.data[0x0d] & 3;
+			adr = (block << 4) | (comp->cmos.adr & 15);
+			if (block == 0) {
+				switch(adr & 15) {
+					case 0: res = comp->cmos.data[0]; break;
+					case 1: res = (comp->cmos.data[0] >> 4); break;
+					case 2: res = comp->cmos.data[2]; break;
+					case 3: res = (comp->cmos.data[2] >> 4); break;
+					case 4: res = comp->cmos.data[4]; break;
+					case 5: res = (comp->cmos.data[4] >> 4); break;
+					case 6: res = comp->cmos.data[6];
+					case 7: res = comp->cmos.data[7]; break;
+					case 8: res = (comp->cmos.data[7] >> 4); break;
+					case 9: res = comp->cmos.data[8]; break;
+					case 10: res = (comp->cmos.data[8] >> 4); break;
+					case 11: res = comp->cmos.data[9]; break;		// 00 = 1980 !!!
+					case 12: res = (comp->cmos.data[9] >> 4); break;
+				}
+			} else {
+				res = comp->cmos.data[adr];	// 1:alarm, 2,3:user data
+			}
+			break;
+	}
+	return (res & 0x0f);
+}
+
 
 // tab
 
@@ -129,12 +235,17 @@ void msxAYDataOut(Computer*,unsigned short,unsigned char);
 unsigned char msxAYDataIn(Computer*, unsigned short);
 
 xPort msx2ioTab[] = {
+//	{0xff,0x60,2,2,2,dummyIn,NULL},				// 60? really?
+
+	{0xf8,0x80,2,2,2,dummyIn,	dummyOut},		// 80..87 : rs232
+
 	{0xff,0x90,2,2,2,dummyIn,	dummyOut},		// printer
 	{0xff,0x91,2,2,2,NULL,		dummyOut},
 
 	{0xff,0x98,2,2,2,msx98In,	msx98Out},
 	{0xff,0x99,2,2,2,msx99In,	msx99Out},
 	{0xff,0x9a,2,2,2,NULL,		msx2_9AOut},
+	{0xff,0x9b,2,2,2,NULL,		msx2_9Bout},
 
 	{0xff,0xa0,2,2,2,NULL,		msxAYIdxOut},		// PSG
 	{0xff,0xa1,2,2,2,NULL,		msxAYDataOut},
@@ -145,7 +256,15 @@ xPort msx2ioTab[] = {
 	{0xff,0xaa,2,2,2,msxAAIn,	msxAAOut},
 	{0xff,0xab,2,2,2,NULL,		msxABOut},
 
+	{0xff,0xb4,2,2,2,NULL,		msx2_b4out},		// b4 : RTC : RP 5C01 (Not in 738) RTC Register select
+	{0xff,0xb5,2,2,2,msx2_b5in,	msx2_b5out},		// b5 : RTC : RP 5C01 (Not in 738) RTC data
 	{0xfc,0xb8,2,2,2,dummyIn,	dummyOut},		// b8..bb : light pen
+	{0xfe,0xc0,2,2,2,dummyIn,	dummyOut},		// c0,c1 : MSX audio
+	{0xf8,0xc8,2,2,2,dummyIn,	dummyOut},		// c8..cf : MSX interface
+	{0xfc,0xd8,2,2,2,dummyIn,	dummyOut},		// TODO: d8..db : kanji rom
+	{0xff,0xf5,2,2,2,NULL,		msx2_F5out},		// f5 : enable/disable internal devices
+	{0xff,0xf7,2,2,2,dummyIn,	dummyOut},		// TODO: f7: a/v control
+	{0xfc,0xf8,2,2,2,dummyIn,	dummyOut},		// f8..fb : "Reserved (But somehow accessed by MSX2 BIOS ???)"
 	{0xfc,0xfc,2,2,2,msx2mapIn,	msx2mapOut},		// fe..ff : memory mapper
 	{0x00,0x00,2,2,2,brkIn,brkOut}
 };

@@ -58,7 +58,7 @@ QString getFilter(int flags) {
 #endif
 	if (flags & FT_SPG) res.append(" *.spg");
 	if (flags & FT_HOBETA) res.append(" *.$?");
-	if (flags & FT_SLOT) res.append(" *.rom");
+	if (flags & FT_SLOT) res.append(" *.rom *.mx1 *.mx2");
 	if (res.startsWith(" ")) res.remove(0,1);
 	return res;
 }
@@ -77,6 +77,8 @@ int getFileType(QString path) {
 	if (path.endsWith(".td0",Qt::CaseInsensitive)) return FT_TD0;
 	if (path.endsWith(".spg",Qt::CaseInsensitive)) return FT_SPG;
 	if (path.endsWith(".rom",Qt::CaseInsensitive)) return FT_SLOT;
+	if (path.endsWith(".mx1",Qt::CaseInsensitive)) return FT_SLOT;
+	if (path.endsWith(".mx2",Qt::CaseInsensitive)) return FT_SLOT;
 #ifdef HAVEZLIB
 	if (path.endsWith(".rzx",Qt::CaseInsensitive)) return FT_RZX;
 #endif

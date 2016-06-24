@@ -26,6 +26,7 @@ file(GLOB SOURCES
 	./src/libxpeccy/*.c
 	./src/libxpeccy/z80/z80.c
 	./src/libxpeccy/sound/*.c
+	./src/libxpeccy/video/*.c
 	./src/libxpeccy/hardware/*.c
 	./src/libxpeccy/filetypes/*.c
 	./src/libxpeccy/filetypes/*.cpp
@@ -42,6 +43,7 @@ file(GLOB HEADERS
 	./src/libxpeccy/*.h
 	./src/libxpeccy/z80/*.h
 	./src/libxpeccy/sound/*.h
+	./src/libxpeccy/video/*.h
 	./src/libxpeccy/hardware/*.h
 	./src/libxpeccy/filetypes/*.h
 	./src/libxpeccy/filetypes/unpackers/*.h
@@ -68,9 +70,12 @@ else()
 	add_definitions(-DWORDS_LITTLE_ENDIAN)
 endif()
 
-set(CMAKE_C_FLAGS "-std=gnu99 -Wall -O2 -DNDEBUG ${CMAKE_C_FLAGS}")
-set(CMAKE_CXX_FLAGS "-Wall -O2 -DNDEBUG ${CMAKE_CXX_FLAGS}")
+set(CMAKE_C_FLAGS "-std=gnu99 -Wall -O2 ${CMAKE_C_FLAGS}")
+set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG ${CMAKE_C_FLAGS_RELEASE}")
 set(CMAKE_C_FLAGS_DEBUG "-g -DISDEBUG ${CMAKE_C_FLAGS_DEBUG}")
+
+set(CMAKE_CXX_FLAGS "-Wall -O2 ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG ${CMAKE_CXX_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -DISDEBUG ${CMAKE_CXX_FLAGS_DEBUG}")
 
 # Qt4 / Qt5

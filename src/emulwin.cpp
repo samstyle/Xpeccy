@@ -65,8 +65,8 @@ void MainWin::updateWindow() {
 	block = 1;
 	vidUpdateLayout(comp->vid, conf.brdsize);
 	sndCalibrate(comp->vid->fps);
-	int szw = comp->vid->vsze.h * conf.vid.scale;
-	int szh = comp->vid->vsze.v * conf.vid.scale;
+	int szw = comp->vid->vsze.x * conf.vid.scale;
+	int szh = comp->vid->vsze.y * conf.vid.scale;
 	setFixedSize(szw,szh);
 	lineBytes = szw * 3;
 	frameBytes = szh * lineBytes;
@@ -288,13 +288,13 @@ void MainWin::convImage() {
 	if (conf.vid.grayScale) scrGray(scrn, comp->vid->vBytes);
 	if (conf.vid.noFlick) scrMix(prvScr, scrn, comp->vid->vBytes);
 	switch(conf.vid.scale) {
-		case 1:	scrX1(scrn, comp->vid->vsze.h, comp->vid->vsze.v);
+		case 1:	scrX1(scrn, comp->vid->vsze.x, comp->vid->vsze.y);
 			break;
-		case 2:	scrX2(scrn, comp->vid->vsze.h, comp->vid->vsze.v);
+		case 2:	scrX2(scrn, comp->vid->vsze.x, comp->vid->vsze.y);
 			break;
-		case 3:	scrX3(scrn, comp->vid->vsze.h, comp->vid->vsze.v);
+		case 3:	scrX3(scrn, comp->vid->vsze.x, comp->vid->vsze.y);
 			break;
-		case 4: scrX4(scrn, comp->vid->vsze.h, comp->vid->vsze.v);
+		case 4: scrX4(scrn, comp->vid->vsze.x, comp->vid->vsze.y);
 			break;
 	}
 }
@@ -796,8 +796,8 @@ void MainWin::screenShot() {
 		case SCR_PNG:
 			if (img.isNull()) break;
 			if (conf.scrShot.noBorder) {
-				x = (comp->vid->bord.h - comp->vid->lcut.h) * conf.vid.scale;
-				y = (comp->vid->bord.v - comp->vid->lcut.v) * conf.vid.scale;
+				x = (comp->vid->lay.bord.x - comp->vid->lcut.x) * conf.vid.scale;
+				y = (comp->vid->lay.bord.y - comp->vid->lcut.y) * conf.vid.scale;
 				dx = 256 * conf.vid.scale;
 				dy = 192 * conf.vid.scale;
 				img = img.copy(x, y, dx, dy);
@@ -1036,7 +1036,7 @@ void MainWin::chVMode(QAction* act) {
 		vidSetMode(comp->vid, mode);
 	} else if (mode == -1) {
 		comp->vid->noScreen = act->isChecked() ? 1 : 0;
-		vidSetMode(comp->vid, VID_CURRENT);
+		// vidSetMode(comp->vid, VID_CURRENT);
 	}
 }
 
@@ -1171,6 +1171,12 @@ void MainWin::saveVRAM() {
 	if (file.open(QFile::WriteOnly)) {
 		file.write((char*)comp->vid->v9938.ram, 0x20000);
 		file.write((char*)comp->vid->v9938.reg, 64);
+		for (int i = 0; i < 16; i++) {
+			file.putChar(comp->vid->v9938.pal[i].r);
+			file.putChar(comp->vid->v9938.pal[i].g);
+			file.putChar(comp->vid->v9938.pal[i].b);
+		}
+
 		file.close();
 	}
 }

@@ -19,14 +19,14 @@ bool addLayout(std::string nm,int fh,int fv,int bh,int bv,int sh,int sv,int ih,i
 	}
 	xLayout nlay;
 	nlay.name = nm;
-	nlay.full.h = fh;
-	nlay.full.v = fv;
-	nlay.bord.h = bh;
-	nlay.bord.v = bv;
-	nlay.sync.h = sh;
-	nlay.sync.v = sv;
-	nlay.intpos.h = ih;
-	nlay.intpos.v = iv;
+	nlay.full.x = fh;
+	nlay.full.y = fv;
+	nlay.bord.x = bh;
+	nlay.bord.y = bv;
+	nlay.sync.x = sh;
+	nlay.sync.y = sv;
+	nlay.intpos.x = ih;
+	nlay.intpos.y = iv;
 	nlay.intsz = is;
 	conf.layList.push_back(nlay);
 	return true;

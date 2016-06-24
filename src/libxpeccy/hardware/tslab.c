@@ -2,7 +2,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 
 void tslReset(Computer* comp) {
 	comp->vid->tsconf.scrPal = 0xf0;
@@ -25,8 +24,8 @@ void tslReset(Computer* comp) {
 	comp->vid->tsconf.T1XOffset = 0;
 	comp->vid->tsconf.T1YOffset = 0;
 	comp->vid->tsconf.tconfig = 0;
-	comp->vid->intpos.h = 0;
-	comp->vid->intpos.v = 0;
+	comp->vid->lay.intpos.x = 0;
+	comp->vid->lay.intpos.y = 0;
 	comp->vid->intMask = 1;
 	comp->tsconf.vdos = 0;
 	tslUpdatePorts(comp);
@@ -114,8 +113,8 @@ void tslUpdatePorts(Computer* comp) {
 	unsigned char val = comp->tsconf.p00af;
 	comp->vid->tsconf.xSize = tslXRes[(val & 0xc0) >> 6];
 	comp->vid->tsconf.ySize = tslYRes[(val & 0xc0) >> 6];
-	comp->vid->tsconf.xPos = comp->vid->sync.h + ((comp->vid->full.h - comp->vid->sync.h - comp->vid->tsconf.xSize) / 2);
-	comp->vid->tsconf.yPos = comp->vid->sync.v + ((comp->vid->full.v - comp->vid->sync.v - comp->vid->tsconf.ySize) / 2);
+	comp->vid->tsconf.xPos = comp->vid->lay.sync.x + ((comp->vid->lay.full.x - comp->vid->lay.sync.x - comp->vid->tsconf.xSize) / 2);
+	comp->vid->tsconf.yPos = comp->vid->lay.sync.y + ((comp->vid->lay.full.y - comp->vid->lay.sync.y - comp->vid->tsconf.ySize) / 2);
 	switch(val & 3) {
 		case 0: vidSetMode(comp->vid,VID_TSL_NORMAL); break;
 		case 1: vidSetMode(comp->vid,VID_TSL_16); break;
@@ -327,15 +326,18 @@ void tsOut21AF(Computer* comp, unsigned short port, unsigned char val) {
 	tslMapMem(comp);
 }
 
-void tsOut22AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->intpos.h = (val << 1);}
+void tsOut22AF(Computer* comp, unsigned short port, unsigned char val) {
+	comp->vid->lay.intpos.x = (val << 1);
+}
+
 void tsOut23AF(Computer* comp, unsigned short port, unsigned char val) {
-	comp->vid->intpos.v &= 0xff00;
-	comp->vid->intpos.v |= val;
+	comp->vid->lay.intpos.y &= 0xff00;
+	comp->vid->lay.intpos.y |= val;
 }
 
 void tsOut24AF(Computer* comp, unsigned short port, unsigned char val) {
-	comp->vid->intpos.v &= 0x00ff;
-	comp->vid->intpos.v |= ((val & 1) << 8);
+	comp->vid->lay.intpos.y &= 0x00ff;
+	comp->vid->lay.intpos.y |= ((val & 1) << 8);
 }
 
 void tsOut26AF(Computer* comp, unsigned short port, unsigned char val) {comp->dma.len = val;}

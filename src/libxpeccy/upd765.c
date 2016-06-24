@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <assert.h>
 
 #include "fdc.h"
 
@@ -591,7 +590,7 @@ void uWrite(FDC* fdc, int adr, unsigned char val) {
 				fdc->comCnt = uComTab[idx].argCount;
 				fdc->plan = uComTab[idx].plan;
 				// if (!fdc->plan) DBGOUT("Command %.2X not implemented\n",fdc->com);
-				assert(fdc->plan);
+				// assert(fdc->plan);
 				fdc->pos = 0;
 				fdc->comPos = 0;
 				fdc->idle = 0;
