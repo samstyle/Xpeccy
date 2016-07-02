@@ -3,7 +3,7 @@
 #pragma pack (push, 1)
 
 typedef struct {
-	unsigned char a,f,c,b,l,x;
+	unsigned char a,f,c,b,l,h;
 	unsigned char pcl,pch;
 	unsigned char spl,sph;
 	unsigned char i,r7,flag12;
@@ -114,7 +114,7 @@ int loadZ80_f(Computer* comp, FILE* file) {
 	comp->cpu->af = (hd.a << 8) | hd.f;
 	comp->cpu->bc = (hd.b << 8) | hd.c;
 	comp->cpu->de = (hd.d << 8) | hd.e;
-	comp->cpu->hl = (hd.x << 8) | hd.l;
+	comp->cpu->hl = (hd.h << 8) | hd.l;
 	comp->cpu->af_ = (hd._a << 8) | hd._f;
 	comp->cpu->bc_ = (hd._b << 8) | hd._c;
 	comp->cpu->de_ = (hd._d << 8) | hd._e;

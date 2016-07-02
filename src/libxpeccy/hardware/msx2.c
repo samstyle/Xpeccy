@@ -21,7 +21,7 @@ int msx2mtabB[4][4] = {
 int msx2mtabC[4][4] = {
 	{MEM_ROM, MEM_ROM, MEM_ROM, MEM_ROM},
 	{MEM_ROM, MEM_ROM, MEM_ROM, MEM_ROM},
-	{MEM_RAM, MEM_RAM, MEM_ROM, MEM_ROM},
+	{MEM_RAM, MEM_RAM, MEM_RAM, MEM_RAM},
 	{MEM_ROM, MEM_ROM, MEM_ROM, MEM_ROM}
 };
 
