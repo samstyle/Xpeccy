@@ -104,7 +104,7 @@ void vidDestroy(Video* vid) {
 void vidUpdateTimings(Video* vid) {
 	vid->nsPerFrame = 1e9 / vid->fps;
 	vid->nsPerLine = vid->nsPerFrame / vid->lay.full.y;
-	vid->nsPerDot = vid->nsPerLine / vid->lay.full.x;
+	vid->nsPerDot = 140;	// vid->nsPerLine / vid->lay.full.x;
 }
 
 void vidUpdateLayout(Video* vid, float brdsize) {
