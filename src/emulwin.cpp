@@ -64,7 +64,7 @@ void MainWin::updateHead() {
 void MainWin::updateWindow() {
 	block = 1;
 	vidUpdateLayout(comp->vid, conf.brdsize);
-	sndCalibrate(comp->vid->fps);
+	sndCalibrate(comp->vid->fps, comp->vid->nsPerFrame);
 	int szw = comp->vid->vsze.x * conf.vid.scale;
 	int szh = comp->vid->vsze.y * conf.vid.scale;
 	setFixedSize(szw,szh);
@@ -341,7 +341,6 @@ void MainWin::onTimer() {
 // update window
 	if (pauseFlags == 0) ethread.mtx.unlock();
 	emuDraw();
-	timer.setInterval(1000 / comp->vid->fps);
 }
 
 void MainWin::menuShow() {
@@ -974,6 +973,7 @@ void MainWin::doOptions() {
 
 void MainWin::optApply() {
 	comp = conf.prof.cur->zx;
+	timer.setInterval(1000 / comp->vid->fps);
 	fillUserMenu();
 	updateWindow();
 	pause(false, PR_OPTS);
@@ -1010,6 +1010,7 @@ void MainWin::setProfile(std::string nm) {
 		comp->firstRun = 0;
 	}
 	saveConfig();
+	timer.setInterval(1000 / comp->vid->fps);
 	ethread.block = 0;
 }
 

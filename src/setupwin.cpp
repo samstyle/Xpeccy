@@ -574,7 +574,7 @@ void SetupWin::apply() {
 
 	saveConfig();
 	prfSave("");
-	sndCalibrate(comp->vid->fps);
+	sndCalibrate(comp->vid->fps, comp->vid->nsPerFrame);
 }
 
 void SetupWin::reject() {

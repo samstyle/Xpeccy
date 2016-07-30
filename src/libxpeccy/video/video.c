@@ -74,7 +74,7 @@ Video* vidCreate(Memory* me) {
 	vid->frmsz = vid->lay.full.x * vid->lay.full.y;
 	vid->intMask = 0x01;		// FRAME INT for all
 	vid->ula = ulaCreate();
-	vid->fps = 50;
+	vidSetFps(vid, 50);
 	vidUpdateLayout(vid, 0.5);
 
 	vid->nextbrd = 0;
@@ -102,9 +102,11 @@ void vidDestroy(Video* vid) {
 }
 
 void vidUpdateTimings(Video* vid) {
-	vid->nsPerFrame = 1e9 / vid->fps;
-	vid->nsPerLine = vid->nsPerFrame / vid->lay.full.y;
 	vid->nsPerDot = 140;	// vid->nsPerLine / vid->lay.full.x;
+	vid->nsPerLine = vid->nsPerDot * vid->lay.full.x;
+	vid->nsPerFrame = vid->nsPerLine * vid->lay.full.y;
+//	vid->nsPerFrame = 1e9 / vid->fps;
+//	vid->nsPerLine = vid->nsPerFrame / vid->lay.full.y;
 }
 
 void vidUpdateLayout(Video* vid, float brdsize) {
