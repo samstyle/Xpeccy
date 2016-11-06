@@ -98,11 +98,10 @@ unsigned char tslMRd(Computer* comp, unsigned short adr, int m1) {
 
 void tslMWr(Computer* comp, unsigned short adr, unsigned char val) {
 	if ((comp->tsconf.flag & 0x10) && ((adr & 0xf000) == comp->tsconf.tsMapAdr)) {
-		if ((adr & 0xe00) == 0x000) {
+		if ((adr & 0xe00) == 0x000) {				// palete
 			comp->vid->tsconf.cram[adr & 0x1ff] = val;
 			tslUpdatePal(comp);
-		}
-		if ((adr & 0xe00) == 0x200) {
+		} else if ((adr & 0xe00) == 0x200) {			// sprites
 			comp->vid->tsconf.sfile[adr & 0x1ff] = val;
 		}
 	}

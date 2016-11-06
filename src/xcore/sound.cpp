@@ -16,10 +16,15 @@
 #define SF_BUF	1
 int sndFlag = 0;
 
-unsigned char sndBufA[0x10000];
-unsigned char sndBufB[0x10000];
-unsigned char* sndBuf = sndBufA;
-unsigned short ringPos = 0;
+typedef struct {
+	unsigned char data[0x10000];
+	unsigned short pos = 0;
+} sndBuffa;
+
+sndBuffa bufA;		// ring buffer @ real freq
+sndBuffa bufB;		// 1 frame buffer for output
+sndBuffa bufBig;	// 1 frame big buffer @ x8 freq
+
 unsigned short playPos = 0;
 int pass = 0;
 
@@ -29,8 +34,8 @@ OutSys *sndOutput = NULL;
 int sndChunks = 882;
 int sndBufSize = 1764;
 int nsPerSample = 23143;
-int lev,levr,levl;
-unsigned char lastL,lastR;
+sndPair sndLev;
+// sndPair sndLast;
 
 OutSys* findOutSys(const char*);
 
@@ -50,6 +55,40 @@ OutSys* findOutSys(const char*);
 
 // output
 
+void sndMix(Computer* comp) {
+	int lev = comp->beeplev ? conf.snd.vol.beep : 0;
+	if (comp->tape->levRec) lev += conf.snd.vol.tape;
+	if (comp->tape->on && comp->tape->levPlay) {
+		lev += conf.snd.vol.tape;
+	}
+	lev *= 0.16;
+	sndLev.left = lev;
+	sndLev.right = lev;
+
+	sndPair svol = tsGetVolume(comp->ts);
+	sndLev.left += svol.left * conf.snd.vol.ay / 100.0;
+	sndLev.right += svol.right * conf.snd.vol.ay / 100.0;
+
+	svol = gsGetVolume(comp->gs);
+	sndLev.left += svol.left * conf.snd.vol.gs / 100.0;
+	sndLev.right += svol.right * conf.snd.vol.gs / 100.0;
+
+	svol = sdrvGetVolume(comp->sdrv);
+	sndLev.left += svol.left * conf.snd.vol.beep / 100.0;
+	sndLev.right += svol.right * conf.snd.vol.beep / 100.0;
+
+	svol = saaGetVolume(comp->saa);		// TODO : saa volume control
+	sndLev.left += svol.left;
+	sndLev.right += svol.right;
+
+	if (sndLev.left > 0xff) sndLev.left = 0xff;
+	if (sndLev.right > 0xff) sndLev.right = 0xff;
+
+//	sndLast.left = sndLev.left & 0xff;
+//	sndLast.right = sndLev.right & 0xff;
+
+}
+
 // return 1 when buffer is full
 int sndSync(Computer* comp, int fast) {
 	tapSync(comp->tape,comp->tapCount);
@@ -58,41 +97,10 @@ int sndSync(Computer* comp, int fast) {
 	tsSync(comp->ts,nsPerSample);
 	saaSync(comp->saa,nsPerSample);
 	if (!fast && (sndOutput != NULL)) {
-		lev = comp->beeplev ? conf.snd.vol.beep : 0;
-		if (comp->tape->levRec) lev += conf.snd.vol.tape;
-		if (comp->tape->on && comp->tape->levPlay) {
-			lev += conf.snd.vol.tape;
-		}
-		lev *= 0.16;
-		levl = lev;
-		levr = lev;
-
-		sndPair svol = tsGetVolume(comp->ts);
-		levl += svol.left * conf.snd.vol.ay / 100.0;
-		levr += svol.right * conf.snd.vol.ay / 100.0;
-
-		svol = gsGetVolume(comp->gs);
-		levl += svol.left * conf.snd.vol.gs / 100.0;
-		levr += svol.right * conf.snd.vol.gs / 100.0;
-
-		svol = sdrvGetVolume(comp->sdrv);
-		levl += svol.left * conf.snd.vol.beep / 100.0;
-		levr += svol.right * conf.snd.vol.beep / 100.0;
-
-		svol = saaGetVolume(comp->saa);		// TODO : saa volume control
-		levl += svol.left;
-		levr += svol.right;
-
-		if (levl > 0xff) levl = 0xff;
-		if (levr > 0xff) levr = 0xff;
-
-		lastL = levl & 0xff;
-		lastR = levr & 0xff;
-
+		sndMix(comp);			// get lastL:lastR
 	}
-
-	sndBufA[ringPos++] = lastL;
-	sndBufA[ringPos++] = lastR;
+	bufA.data[bufA.pos++] = sndLev.left;
+	bufA.data[bufA.pos++] = sndLev.right;
 	smpCount++;
 	if (smpCount < sndChunks) return 0;
 	smpCount = 0;
@@ -101,8 +109,8 @@ int sndSync(Computer* comp, int fast) {
 
 void sndFillToEnd() {
 	while (smpCount < sndChunks) {
-		sndBufA[ringPos++] = lastL;
-		sndBufA[ringPos++] = lastR;
+		bufA.data[bufA.pos++] = sndLev.left;
+		bufA.data[bufA.pos++] = sndLev.right;
 		smpCount++;
 	}
 }
@@ -162,10 +170,10 @@ void sndPlay() {
 void sndPause(bool b) {
 	if (b) {
 		for (int i = 0; i < 0x10000;) {
-			sndBufA[i++] = lastL;
-			sndBufA[i++] = lastR;
+			bufA.data[i++] = sndLev.left;
+			bufA.data[i++] = sndLev.right;
 		}
-		memcpy(sndBufB, sndBufA, 0x10000);
+		memcpy(bufB.data, bufA.data, 0x10000);
 	}
 //	sndFillToEnd();
 }
@@ -190,15 +198,18 @@ std::string sndGetName() {
 void fillBuffer(int len) {
 	int pos = 0;
 	while (pos < len) {
-		sndBufB[pos++] = sndBufA[playPos++];
+		bufB.data[pos++] = bufA.data[playPos++];
+//		sndBufB[pos++] = sndBufA[playPos++];
 	}
 }
 
+/*
 void switchSndBuf() {
 	sndBuf = (sndFlag & SF_BUF) ? sndBufA : sndBufB;
 	sndFlag ^= SF_BUF;
 	ringPos = 0;
 }
+*/
 
 bool null_open() {return true;}
 void null_play() {}
@@ -210,13 +221,14 @@ void sdlPlayAudio(void*,Uint8* stream, int len) {
 	if (pass < 2) {
 		pass++;
 	} else {
-		int diff = ringPos - playPos;
+		int diff = bufA.pos - playPos;
+//		int diff = ringPos - playPos;
 		if (diff < 0) {
 			diff = 0x10000 - diff;
 		}
 		if (diff >= len) fillBuffer(len);
 	}
-	SDL_MixAudio(stream, sndBufB, len, SDL_MIX_MAXVOLUME);
+	SDL_MixAudio(stream, bufB.data, len, SDL_MIX_MAXVOLUME);
 	// memcpy(stream,sndBufB,len);
 }
 
@@ -233,7 +245,8 @@ bool sdlopen() {
 		printf("SDL audio device opening...failed\n");
 		return false;
 	}
-	ringPos = 0;
+//	ringPos = 0;
+	bufA.pos = 0;
 	playPos = 0;
 	pass = 0;
 	SDL_PauseAudio(0);
@@ -264,7 +277,7 @@ bool oss_open() {
 void oss_play() {
 	if (ossHandle < 0) return;
 	fillBuffer(sndBufSize);
-	unsigned char* ptr = sndBufB;
+	unsigned char* ptr = bufB.data;	//sndBufB;
 	int fsz = sndBufSize;	// smpCount * sndChans;
 	int res;
 	while (fsz > 0) {
@@ -309,9 +322,9 @@ bool alsa_open() {
 void alsa_play() {
 	if (alsaHandle == NULL) return;
 	snd_pcm_sframes_t res;
-	memcpy(sndBufB, sndBufA, sndChunks * conf.snd.chans);
-	ringPos = 0;
-	unsigned char* ptr = sndBufB;
+	memcpy(bufB.data, bufA.data, sndChunks * conf.snd.chans);
+	bufA.pos = 0; //ringPos = 0;
+	unsigned char* ptr = bufB.data;	// sndBufB;
 	int fsz = sndChunks;
 	while (fsz > 0) {
 		res = snd_pcm_writei(alsaHandle, ptr, fsz);
