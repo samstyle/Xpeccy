@@ -200,7 +200,7 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 }
 
 bool saveFile(Computer* comp,const char* name,int flags,int drv) {
-	QString path(name);
+	QString path = QDialog::trUtf8(name);
 	QString filters = "";
 	if (flags & FT_DISK) {
 		if (((drv == -1) || (drv == 0)) && (comp->dif->fdc->flop[0]->insert)) filters.append(";;Disk A (*.scl *.trd *.udi)");
