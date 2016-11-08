@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>507</width>
-    <height>469</height>
+    <width>505</width>
+    <height>467</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -206,7 +206,7 @@
                  <bool>true</bool>
                 </property>
                 <property name="text">
-                 <string>Scorpion /WAIT</string>
+                 <string>Even M1</string>
                 </property>
                 <property name="checkable">
                  <bool>true</bool>

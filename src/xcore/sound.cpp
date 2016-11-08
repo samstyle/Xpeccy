@@ -35,7 +35,7 @@ int sndChunks = 882;
 int sndBufSize = 1764;
 int nsPerSample = 23143;
 sndPair sndLev;
-// sndPair sndLast;
+sndPair sndLast;
 
 OutSys* findOutSys(const char*);
 
@@ -61,7 +61,7 @@ void sndMix(Computer* comp) {
 	if (comp->tape->on && comp->tape->levPlay) {
 		lev += conf.snd.vol.tape;
 	}
-	lev *= 0.16;
+	lev *= .16;
 	sndLev.left = lev;
 	sndLev.right = lev;
 
@@ -81,12 +81,13 @@ void sndMix(Computer* comp) {
 	sndLev.left += svol.left;
 	sndLev.right += svol.right;
 
+	sndLev.left = (sndLev.left + sndLast.left) >> 1;
+	sndLev.right = (sndLev.right + sndLast.right) >> 1;
+
 	if (sndLev.left > 0xff) sndLev.left = 0xff;
 	if (sndLev.right > 0xff) sndLev.right = 0xff;
 
-//	sndLast.left = sndLev.left & 0xff;
-//	sndLast.right = sndLev.right & 0xff;
-
+	sndLast = sndLev;
 }
 
 // return 1 when buffer is full
