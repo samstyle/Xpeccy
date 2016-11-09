@@ -37,6 +37,9 @@ typedef struct {
 	unsigned changed:1;	// disk is changed
 	unsigned index:1;	// disk index impulse
 
+	unsigned rd:1;
+	unsigned wr:1;
+
 	unsigned char id;
 	unsigned char trk,rtrk;
 	unsigned char field;

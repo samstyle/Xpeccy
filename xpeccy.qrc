@@ -47,5 +47,6 @@
         <file>images/memory.png</file>
         <file>images/msx.png</file>
         <file>images/stop.png</file>
+        <file>images/floppyRed.png</file>
     </qresource>
 </RCC>

@@ -55,14 +55,19 @@ OutSys* findOutSys(const char*);
 
 // output
 
+#include "../libxpeccy/hardware/hardware.h"
+
 void sndMix(Computer* comp) {
 	int lev = comp->tape->levRec ? conf.snd.vol.tape : 0;
 	if (comp->tape->on && comp->tape->levPlay) {
 		lev += conf.snd.vol.tape;
 	}
-	lev *= .16;
+	lev *= 0.15;
 
-	lev += (comp->beepAmp >> 4) * conf.snd.vol.beep / 100;
+	beepSync(comp);
+	lev += ((comp->beepAmp & 0xf0) >> 4) * conf.snd.vol.beep / 100.0;
+	// lev += comp->beeplev ? conf.snd.vol.beep * 4 / 25 : 0;
+
 
 	sndLev.left = lev;
 	sndLev.right = lev;

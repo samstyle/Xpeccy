@@ -22,11 +22,13 @@ void flpDestroy(Floppy* flp) {
 }
 
 void flpWr(Floppy* flp,unsigned char val) {
-	flp->data[flp->rtrk].byte[flp->pos] = val;
+	flp->wr = 1;
 	flp->changed = 1;
+	flp->data[flp->rtrk].byte[flp->pos] = val;
 }
 
 unsigned char flpRd(Floppy* flp) {
+	flp->rd = 1;
 	return flp->data[flp->rtrk].byte[flp->pos];
 }
 

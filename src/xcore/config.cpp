@@ -142,6 +142,7 @@ void saveConfig() {
 	fprintf(cfile, "joystick = %s\n", YESNO(conf.led.joy));
 	fprintf(cfile, "keyscan = %s\n", YESNO(conf.led.keys));
 	fprintf(cfile, "tape = %s\n", YESNO(conf.led.tape));
+	fprintf(cfile, "disk = %s\n", YESNO(conf.led.disk));
 
 	fclose(cfile);
 }
@@ -370,6 +371,7 @@ void loadConfig() {
 					if (pnam=="joystick") conf.led.joy = str2bool(pval) ? 1 : 0;
 					if (pnam=="keyscan") conf.led.keys = str2bool(pval) ? 1 : 0;
 					if (pnam=="tape") conf.led.tape = str2bool(pval) ? 1 : 0;
+					if (pnam=="disk") conf.led.disk = str2bool(pval) ? 1 : 0;
 					break;
 			}
 		}

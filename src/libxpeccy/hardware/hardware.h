@@ -69,6 +69,8 @@ HardWare* findHardware(const char*);
 unsigned char stdMRd(Computer*,unsigned short,int);
 void stdMWr(Computer*,unsigned short,unsigned char);
 
+void beepSync(Computer*);
+
 // debug IO
 
 unsigned char brkIn(Computer*, unsigned short);

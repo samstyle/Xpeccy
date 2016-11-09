@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>505</width>
-    <height>467</height>
+    <height>465</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -2850,6 +2850,13 @@
                   </size>
                  </property>
                 </spacer>
+               </item>
+               <item row="1" column="1">
+                <widget class="QCheckBox" name="cbDiskLed">
+                 <property name="text">
+                  <string>Disk</string>
+                 </property>
+                </widget>
                </item>
               </layout>
              </item>

@@ -26,13 +26,13 @@ void dummyOut(Computer* comp, unsigned short port, unsigned char val) {
 
 // beeper transient response emulation
 
-#define OVERSHOOT 22100		// ns to overshoot process
+#define OVERSHOOT 22500			// ns to overshoot process
 
 void beepSync(Computer* comp) {
-	int amp = comp->beepAmp & 0xff;
+	int amp = comp->beepAmp;
 	if (comp->beeplev) {		// going up
 		amp += 256 * comp->beepNs / OVERSHOOT;
-		if (amp > 0xff) amp = 0xff;
+		if (amp > 255) amp = 255;
 	} else {			// going down
 		amp -= 256 * comp->beepNs / OVERSHOOT;
 		if (amp < 0) amp = 0;

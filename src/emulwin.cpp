@@ -37,15 +37,6 @@ static unsigned char screen[2048 * 2048 * 3];
 static unsigned char scrn[1024 * 512 * 3];
 static unsigned char prvScr[1024 * 512 * 3];
 
-// LEDS
-
-static xLed leds[] = {
-	{0, 3, 60, ":/images/mouse.png"},
-	{0, 3, 30, ":/images/joystick.png"},
-	{-1, -1, -1, ""}
-};
-
-
 void MainWin::updateHead() {
 	QString title(XPTITLE);
 #ifdef ISDEBUG
@@ -808,12 +799,51 @@ void MainWin::screenShot() {
 
 // video drawing
 
+QList<xLed> leds;
+
+void drawLeds(QPainter& pnt) {
+	xLed* led;
+	int x,y;
+	int i;
+	for (i = 0; i < leds.size(); i++) {
+		led = &leds[i];
+		if (led->showTime > 0) {
+			led->showTime--;
+			x = led->x;
+			y = led->y;
+			if (x < 0) x = pnt.device()->width() + x;
+			if (y < 0) y = pnt.device()->height() + y;
+			pnt.drawImage(x, y, QImage(led->imgName));
+		}
+	}
+}
+
+void addLed(int x, int y, QString name, int time) {
+	xLed led;
+	led.x = x;
+	led.y = y;
+	led.imgName = name;
+	led.showTime = time;
+	for (int i = 0; i < leds.size(); i++) {
+		if (leds[i].imgName == name) {
+			leds[i] = led;
+			name.clear();
+		}
+	}
+	if (!name.isEmpty()) {
+		leds.append(led);
+		printf("leds.size = %i\n", leds.size());
+	}
+}
+
+/*
 void drawLed(int idx, QPainter& pnt) {
 	if (leds[idx].showTime > 0) {
 		leds[idx].showTime--;
 		pnt.drawImage(leds[idx].x, leds[idx].y, QImage(leds[idx].imgName));
 	}
 }
+*/
 
 void MainWin::putLeds() {
 	QPainter pnt;
@@ -832,11 +862,28 @@ void MainWin::putLeds() {
 		if (prt & 0x80) pnt.fillRect(12,17,8,2,Qt::white);
 		pnt.end();
 	}
+	if (comp->joy->used && conf.led.joy) {
+		addLed(3, 30, ":/images/joystick.png", 50);
+		comp->joy->used = 0;
+	}
+	if (comp->mouse->used && conf.led.mouse) {
+		addLed(3, 60, ":/images/mouse.png", 50);
+		comp->mouse->used = 0;
+	}
+	if (comp->tape->on && conf.led.tape) {
+		addLed(3, 90, ":/images/tape.png", 50);
+	}
+	if (conf.led.disk) {
+		if (comp->dif->fdc->flp->rd) {
+			comp->dif->fdc->flp->rd = 0;
+			addLed(3, 120, ":/images/floppy.png", 50);
+		} else if (comp->dif->fdc->flp->wr) {
+			comp->dif->fdc->flp->wr = 0;
+			addLed(3, 120, ":/images/floppyRed.png", 50);
+		}
+	}
 	pnt.begin(&scrImg);
-	if (conf.led.mouse) drawLed(0,pnt);
-	if (conf.led.joy) drawLed(1,pnt);
-	if (conf.led.tape && comp->tape->on)
-		pnt.drawImage(3, 90, QImage(":/images/tape.png"));
+	drawLeds(pnt);
 	if (conf.led.keys) pnt.drawImage(3,3,kled);
 	pnt.end();
 }
@@ -1146,14 +1193,6 @@ void xThread::run() {
 		}
 		if (!block && !comp->brk) {
 			emuCycle();
-			if (comp->joy->used) {
-				leds[1].showTime = 50;
-				comp->joy->used = 0;
-			}
-			if (comp->mouse->used) {
-				leds[0].showTime = 50;
-				comp->mouse->used = 0;
-			}
 			if (comp->brk) {
 				emit dbgRequest();
 				//comp->brk = 0;

@@ -210,6 +210,8 @@ Computer* compCreate() {
 
 	comp->tapCount = 0;
 	comp->tickCount = 0;
+	comp->beepAmp = 0;
+	comp->beepNs = 0;
 
 	gsReset(comp->gs);
 	zxInitPalete(comp);

@@ -189,6 +189,7 @@ struct xConfig {
 		unsigned joy:1;
 		unsigned keys:1;
 		unsigned tape:1;
+		unsigned disk:1;
 	} led;
 	struct {
 		std::string confDir;

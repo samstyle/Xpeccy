@@ -430,6 +430,7 @@ void SetupWin::start(xProfile* p) {
 	ui.cbJoyLed->setChecked(conf.led.joy);
 	ui.cbKeysLed->setChecked(conf.led.keys);
 	ui.cbTapeLed->setChecked(conf.led.tape);
+	ui.cbDiskLed->setChecked(conf.led.disk);
 // profiles
 	ui.defstart->setChecked(conf.defProfile);
 	buildproflist();
@@ -569,6 +570,7 @@ void SetupWin::apply() {
 	conf.led.joy = ui.cbJoyLed->isChecked() ? 1 : 0;
 	conf.led.keys = ui.cbKeysLed->isChecked() ? 1 : 0;
 	conf.led.tape = ui.cbTapeLed->isChecked() ? 1 : 0;
+	conf.led.disk = ui.cbDiskLed->isChecked() ? 1 : 0;
 // profiles
 	conf.defProfile = ui.defstart->isChecked() ? 1 : 0;
 
