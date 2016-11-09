@@ -82,6 +82,9 @@ typedef struct {
 	double cpuFrq;
 	unsigned char intVector;
 
+	unsigned char beepAmp;
+	long int beepNs;
+
 	struct HardWare *hw;
 	CPU* cpu;
 	Memory* mem;

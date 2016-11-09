@@ -383,6 +383,7 @@ int compExec(Computer* comp) {
 	if (comp->debug)
 		comp->brk = 0;
 // sync devices
+	comp->beepNs += nsTime;
 	comp->tapCount += nsTime;
 	if (comp->gs->enable) comp->gs->sync += nsTime;
 	difSync(comp->dif, nsTime);

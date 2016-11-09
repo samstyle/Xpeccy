@@ -24,6 +24,23 @@ void dummyOut(Computer* comp, unsigned short port, unsigned char val) {
 
 }
 
+// beeper transient response emulation
+
+#define OVERSHOOT 22100		// ns to overshoot process
+
+void beepSync(Computer* comp) {
+	int amp = comp->beepAmp & 0xff;
+	if (comp->beeplev) {		// going up
+		amp += 256 * comp->beepNs / OVERSHOOT;
+		if (amp > 0xff) amp = 0xff;
+	} else {			// going down
+		amp -= 256 * comp->beepNs / OVERSHOOT;
+		if (amp < 0) amp = 0;
+	}
+	comp->beepAmp = amp & 0xff;
+	comp->beepNs = 0;
+}
+
 // in
 
 unsigned char xIn1F(Computer* comp, unsigned short port) {
@@ -60,6 +77,7 @@ unsigned char xInFFDF(Computer* comp, unsigned short port) {
 void xOutFE(Computer* comp, unsigned short port, unsigned char val) {
 	comp->vid->nextbrd = val & 0x07;
 	if (!comp->vid->border4t) comp->vid->brdcol = val & 0x07;
+	beepSync(comp);
 	comp->beeplev = (val & 0x10) ? 1 : 0;
 	comp->tape->levRec = (val & 0x08) ? 1 : 0;
 }

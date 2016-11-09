@@ -56,12 +56,14 @@ OutSys* findOutSys(const char*);
 // output
 
 void sndMix(Computer* comp) {
-	int lev = comp->beeplev ? conf.snd.vol.beep : 0;
-	if (comp->tape->levRec) lev += conf.snd.vol.tape;
+	int lev = comp->tape->levRec ? conf.snd.vol.tape : 0;
 	if (comp->tape->on && comp->tape->levPlay) {
 		lev += conf.snd.vol.tape;
 	}
 	lev *= .16;
+
+	lev += (comp->beepAmp >> 4) * conf.snd.vol.beep / 100;
+
 	sndLev.left = lev;
 	sndLev.right = lev;
 
@@ -81,8 +83,8 @@ void sndMix(Computer* comp) {
 	sndLev.left += svol.left;
 	sndLev.right += svol.right;
 
-	sndLev.left = (sndLev.left + sndLast.left) >> 1;
-	sndLev.right = (sndLev.right + sndLast.right) >> 1;
+//	sndLev.left = (sndLev.left + sndLast.left) >> 1;
+//	sndLev.right = (sndLev.right + sndLast.right) >> 1;
 
 	if (sndLev.left > 0xff) sndLev.left = 0xff;
 	if (sndLev.right > 0xff) sndLev.right = 0xff;
@@ -98,7 +100,7 @@ int sndSync(Computer* comp, int fast) {
 	tsSync(comp->ts,nsPerSample);
 	saaSync(comp->saa,nsPerSample);
 	if (!fast && (sndOutput != NULL)) {
-		sndMix(comp);			// get lastL:lastR
+		sndMix(comp);
 	}
 	bufA.data[bufA.pos++] = sndLev.left;
 	bufA.data[bufA.pos++] = sndLev.right;
