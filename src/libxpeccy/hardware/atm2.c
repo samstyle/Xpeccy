@@ -3,6 +3,7 @@
 // TODO : fill memMap & set prt1 for reset to separate ROM pages
 void atm2Reset(Computer* comp) {
 	comp->dos = 1;
+	comp->p77hi = 0;
 }
 
 void atmSetBank(Computer* comp, int bank, memEntry me) {
@@ -34,6 +35,14 @@ void atm2MapMem(Computer* comp) {
 }
 
 // out
+
+void atm2OutFE(Computer* comp, unsigned short port, unsigned char val) {
+	xOutFE(comp, port, val);
+	if (~port & 0x08) {		// A3 = 0 : bright border
+		comp->vid->nextbrd |= 0x08;
+		comp->vid->brdcol = comp->vid->nextbrd;
+	}
+}
 
 void atm2Out77(Computer* comp, unsigned short port, unsigned char val) {		// dos
 	switch (val & 7) {
@@ -68,16 +77,17 @@ void atm2Out7FFD(Computer* comp, unsigned short port, unsigned char val) {
 }
 
 void atm2OutFF(Computer* comp, unsigned short port, unsigned char val) {		// dos. bdiOut already done
-	if (comp->p77hi & 0x40) return;
+	if (comp->p77hi & 0x40) return;			// pen2 = 1
 	val ^= 0xff;	// inverse colors
 	int adr = comp->vid->brdcol & 0x0f;
+	// printf("%.2X : %.2X\n",adr, val);
 	comp->vid->pal[adr].b = ((val & 0x01) ? 0xaa : 0x00) + ((val & 0x20) ? 0x55 : 0x00);
 	comp->vid->pal[adr].r = ((val & 0x02) ? 0xaa : 0x00) + ((val & 0x40) ? 0x55 : 0x00);
 	comp->vid->pal[adr].g = ((val & 0x10) ? 0xaa : 0x00) + ((val & 0x80) ? 0x55 : 0x00);
 }
 
 xPort atm2PortMap[] = {
-	{0x0007,0x00fe,2,2,2,xInFE,	xOutFE},
+	{0x0007,0x00fe,2,2,2,xInFE,	atm2OutFE},
 	{0x0007,0x00fa,2,2,2,NULL,	NULL},		// fa
 	{0x0007,0x00fb,2,2,2,NULL,	atm2OutFB},	// fb (covox)
 	{0x8202,0x7ffd,2,2,2,NULL,	atm2Out7FFD},

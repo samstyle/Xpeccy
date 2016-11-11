@@ -264,8 +264,8 @@ void compReset(Computer* comp,int res) {
 	comp->dos = ((res == RES_DOS) || (res == RES_SHADOW)) ? 1 : 0;
 	comp->rom = (comp->p7FFD & 0x10) ? 1 : 0;
 	comp->cpm = 0;
-	comp->hw->mapMem(comp);
 	if (comp->hw->reset) comp->hw->reset(comp);
+	comp->hw->mapMem(comp);
 }
 
 void compSetLayout(Computer *comp, int fh, int fv, int bh, int bv, int sh, int sv, int ih, int iv, int is) {

@@ -832,7 +832,7 @@ void addLed(int x, int y, QString name, int time) {
 	}
 	if (!name.isEmpty()) {
 		leds.append(led);
-		printf("leds.size = %i\n", leds.size());
+		//printf("leds.size = %i\n", leds.size());
 	}
 }
 
