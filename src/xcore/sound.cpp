@@ -18,7 +18,7 @@ int sndFlag = 0;
 
 typedef struct {
 	unsigned char data[0x10000];
-	unsigned short pos = 0;
+    unsigned short pos;
 } sndBuffa;
 
 sndBuffa bufA;		// ring buffer @ real freq
@@ -213,9 +213,9 @@ void fillBuffer(int len) {
 
 /*
 void switchSndBuf() {
-	sndBuf = (sndFlag & SF_BUF) ? sndBufA : sndBufB;
+    sndBuf = (sndFlag & SF_BUF) ? bufA.data : bufB.data;
 	sndFlag ^= SF_BUF;
-	ringPos = 0;
+    ringPos = 0;
 }
 */
 
@@ -354,6 +354,7 @@ void alsa_close() {
 
 // TODO: Windows sound output would be here... someday
 
+/*
 bool wave_open() {
 	wf.wFormatTag = WAVE_FORMAT_PCM;
 	wf.nChannels = conf.snd.chans;
@@ -377,7 +378,7 @@ bool wave_open() {
 }
 
 void wave_play() {
-	whdr.lpData = (LPSTR)sndBufA;
+    whdr.lpData = (LPSTR)bufBig.data;
 	whdr.dwFlags = 0;
 	whdr.dwBufferLength = sndBufSize;
 	waveOutPrepareHeader(wout,&whdr,sizeof(WAVEHDR));
@@ -395,6 +396,7 @@ void wave_close() {
 	waveOutClose(wout);
 	CloseHandle(event);
 }
+*/
 
 #endif
 
@@ -443,4 +445,7 @@ void sndInit() {
 	conf.snd.vol.ay = 100;
 	conf.snd.vol.gs = 100;
 	initNoise();							// ay/ym
+    bufA.pos = 0;
+    bufB.pos = 0;
+    bufBig.pos = 0;
 }
