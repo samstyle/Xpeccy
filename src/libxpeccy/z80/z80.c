@@ -155,6 +155,7 @@ int cpuDisasm(unsigned short adr,char* buf, cbdmr mrd, void* data) {
 				case '1':		// byte = (adr)
 					dtl = mrd(adr++,data);
 					res++;
+					*buf++ = '#';
 					*buf++ = halfByte[dtl >> 4];
 					*buf++ = halfByte[dtl & 0x0f];
 					break;
@@ -162,6 +163,7 @@ int cpuDisasm(unsigned short adr,char* buf, cbdmr mrd, void* data) {
 					dtl = mrd(adr++,data);
 					dth = mrd(adr++,data);
 					res += 2;
+					*buf++ = '#';
 					*buf++ = halfByte[dth >> 4];
 					*buf++ = halfByte[dth & 0x0f];
 					*buf++ = halfByte[dtl >> 4];
@@ -171,6 +173,7 @@ int cpuDisasm(unsigned short adr,char* buf, cbdmr mrd, void* data) {
 					dtl = mrd(adr++,data);
 					res++;
 					dtw = adr + (signed char)dtl;
+					*buf++ = '#';
 					*buf++ = halfByte[(dtw >> 12) & 0x0f];
 					*buf++ = halfByte[(dtw >> 8) & 0x0f];
 					*buf++ = halfByte[(dtw >> 4) & 0x0f];
@@ -186,6 +189,7 @@ int cpuDisasm(unsigned short adr,char* buf, cbdmr mrd, void* data) {
 						*(buf++) = '-';
 						tmp = (0xff - tmp) + 1;
 					}
+					*buf++ = '#';
 					*buf++ = halfByte[tmp >> 4];
 					*buf++ = halfByte[tmp & 0x0f];
 					break;
