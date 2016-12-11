@@ -32,9 +32,8 @@ void DebugWin::stop() {
 	comp->debug = 0;
 	comp->vid->debug = 0;
 	tCount = comp->tickCount;
-	hide();
-	active = false;
 	winPos = pos();
+	hide();
 	emit closed();
 }
 
@@ -127,8 +126,8 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.bpList,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(goToBrk(QModelIndex)));
 
 	setFixedSize(size());
-	active = false;
-	block = false;
+//	active = 0;
+	block = 0;
 	disasmAdr = 0;
 	dumpAdr = 0;
 	tCount = 0;
@@ -243,6 +242,9 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 	unsigned short pc = comp->cpu->pc;
 	unsigned char* ptr;
 	int offset = 8 * (ui.dumpTable->rowCount() - 1);
+	QString com;
+	int row;
+	int pos;
 	switch(ev->modifiers()) {
 		case Qt::ControlModifier:
 			switch(ev->key()) {
@@ -258,7 +260,6 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					break;
 				case Qt::Key_L:
 					setShowLabels(showLabels ? false : true);
-					// fillDisasm();
 					break;
 				case Qt::Key_Space:
 					switchBP(0);
@@ -298,6 +299,25 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					break;
 				case Qt::Key_F2:
 					switchBP(MEM_BRK_FETCH);
+					break;
+				case Qt::Key_F4:
+					row = ui.dasmTable->currentRow();
+					if (row < 0) break;
+					com = ui.dasmTable->item(row, 2)->data(Qt::UserRole).toString();
+					pos = com.indexOf(QRegExp("[0-9A-F]{4,4}"));
+					if (pos < 0) break;
+					pos = com.mid(pos, 4).toInt(NULL, 16);
+					//jumpHistory.append(ui.dasmTable->item(row, 0)->data(Qt::UserRole).toInt());
+					jumpHistory.append(disasmAdr);
+					if (jumpHistory.size() > 64)
+						jumpHistory.takeFirst();
+					disasmAdr = pos;
+					fillDisasm();
+					break;
+				case Qt::Key_F5:
+					if (jumpHistory.size() == 0) break;
+					disasmAdr = jumpHistory.takeLast();
+					fillDisasm();
 					break;
 				case Qt::Key_PageUp:
 					if (ui.dumpTable->hasFocus()) {
@@ -494,7 +514,7 @@ void setLEReg(QLineEdit* le, int num) {
 }
 
 void DebugWin::fillZ80() {
-	block = true;
+	block = 1;
 	CPU* cpu = comp->cpu;
 	setLEReg(ui.editAF, cpu->af);
 	setLEReg(ui.editBC, cpu->bc);
@@ -514,7 +534,7 @@ void DebugWin::fillZ80() {
 	ui.flagIFF1->setChecked(cpu->iff1);
 	ui.flagIFF2->setChecked(cpu->iff2);
 	fillFlags();
-	block = false;
+	block = 0;
 	fillStack();
 }
 
@@ -704,7 +724,7 @@ QString DebugWin::findLabel(int adr) {
 }
 
 int DebugWin::fillDisasm() {
-	block = true;
+	block = 1;
 	unsigned short adr = disasmAdr;
 	// unsigned short pc = GETPC(comp->cpu);
 	DasmRow drow;
@@ -717,6 +737,7 @@ int DebugWin::fillDisasm() {
 	fnt.setBold(true);
 	for (int i = 0; i < ui.dasmTable->rowCount(); i++) {
 		drow = getDisasm(comp, adr);
+		ui.dasmTable->item(i, 2)->setData(Qt::UserRole, drow.com);
 		pos = drow.com.indexOf(QRegExp("[0-9A-F]{4,4}"));
 		if (pos > 0) {
 			lab = findLabel(drow.com.mid(pos,4).toInt(NULL,16));
@@ -755,7 +776,7 @@ int DebugWin::fillDisasm() {
 		}
 	}
 	fillStack();
-	block = false;
+	block = 0;
 	return res;
 }
 
@@ -847,7 +868,7 @@ QString getDumpString(Memory* mem, unsigned short adr) {
 }
 
 void DebugWin::fillDump() {
-	block = true;
+	block = 1;
 	unsigned short adr = dumpAdr;
 	int row,col;
 	QColor bgcol, ccol;
@@ -865,7 +886,7 @@ void DebugWin::fillDump() {
 		}
 	}
 	fillStack();
-	block = false;
+	block = 0;
 }
 
 void DebugWin::dumpEdited(int row, int col) {

@@ -73,7 +73,9 @@ class DebugWin : public QDialog {
 	public:
 		DebugWin(QWidget* = NULL);
 		~DebugWin();
-		bool active;
+
+		// unsigned active:1;		// ??
+
 		void reject();
 		void start(Computer*);
 		void stop();
@@ -84,15 +86,16 @@ class DebugWin : public QDialog {
 	signals:
 		void closed();
 	private:
+		unsigned block:1;
 		unsigned trace:1;
 		unsigned showLabels:1;
 
 		Ui::Debuger ui;
 		QPoint winPos;
 		QImage scrImg;
+		QList<unsigned short> jumpHistory;
 
 		Computer* comp;
-		bool block;
 		long tCount;
 
 		QDialog* dumpwin;
