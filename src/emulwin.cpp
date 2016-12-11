@@ -1099,22 +1099,20 @@ void MainWin::loadLabels(const char* nm) {
 	if (!file.open(QFile::ReadOnly)) return;
 	QString line;
 	QStringList arr;
-	xLabel lab;
-	int bank;
+	xAdr xadr;
 	dbg->labels.clear();
 	while(!file.atEnd()) {
 		line = file.readLine();
 		arr = line.split(QRegExp("[: \r\n]"),QString::SkipEmptyParts);
 		if (arr.size() == 3) {
-			bank = arr.at(0).toInt(NULL,16);
-			lab.adr = arr.at(1).toInt(NULL,16) & 0x3fff;
-			switch (bank) {
-				case 0x05: lab.adr |= 0x4000; break;
-				case 0x02: lab.adr |= 0x8000; break;
-				default: lab.adr |= 0xc000; break;
+			xadr.bank = arr.at(0).toInt(NULL,16);
+			xadr.adr = arr.at(1).toInt(NULL,16) & 0x3fff;
+			switch (xadr.bank) {
+				case 0x05: xadr.adr |= 0x4000; break;
+				case 0x02: xadr.adr |= 0x8000; break;
+				default: xadr.adr |= 0xc000; break;
 			}
-			lab.name = arr.at(2);
-			dbg->labels.append(lab);
+			dbg->labels[arr.at(2)] = xadr;
 		}
 	}
 }

@@ -47,6 +47,7 @@ QWidget* xItemDelegate::createEditor(QWidget* par, const QStyleOptionViewItem&, 
 	switch (type) {
 		case XTYPE_NONE: delete(edt); edt = NULL; break;
 		case XTYPE_ADR: edt->setInputMask("Hhhh"); break;
+		case XTYPE_LABEL: break;
 		case XTYPE_DUMP: edt->setInputMask("Hhhhhhhhhh"); break;
 		case XTYPE_BYTE: edt->setInputMask("Hh"); break;
 	}
@@ -67,14 +68,17 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 			ui.dasmTable->setItem(row, col, itm);
 		}
 	}
-	ui.dasmTable->setColumnWidth(0,50);
+	ui.dasmTable->setColumnWidth(0,100);
 	ui.dasmTable->setColumnWidth(1,75);
 	ui.dasmTable->setColumnWidth(2,150);
-	ui.dasmTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_ADR));
+	ui.dasmTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_LABEL));
 	ui.dasmTable->setItemDelegateForColumn(1, new xItemDelegate(XTYPE_DUMP));
 	connect(ui.dasmTable,SIGNAL(cellChanged(int,int)),this,SLOT(dasmEdited(int,int)));
 	connect(ui.dasmTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
-	ui.dasmTable->setFixedHeight(ui.dasmTable->rowCount() * 17 + 8);
+	connect(ui.tbLabelTrigger,SIGNAL(toggled(bool)),this,SLOT(setShowLabels(bool)));
+	row = ui.dasmTable->font().pixelSize();
+	if (row < 0) row = 17;
+	ui.dasmTable->setFixedHeight(ui.dasmTable->rowCount() * row + 8);
 // dump table
 	for (row = 0; row < ui.dumpTable->rowCount(); row++) {
 		for (col = 0; col < ui.dumpTable->columnCount(); col++) {
@@ -91,7 +95,9 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.dumpTable->setItemDelegateForColumn(9, new xItemDelegate(XTYPE_NONE));
 	connect(ui.dumpTable,SIGNAL(cellChanged(int,int)),this,SLOT(dumpEdited(int,int)));
 	connect(ui.dumpTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
-	ui.dumpTable->setFixedHeight(ui.dumpTable->rowCount() * 17 + 8);
+	row = ui.dumpTable->font().pixelSize();
+	if (row < 0) row = 17;
+	ui.dumpTable->setFixedHeight(ui.dumpTable->rowCount() * row + 8);
 // registers
 	connect(ui.editAF, SIGNAL(textChanged(QString)), this, SLOT(setZ80()));
 	connect(ui.editBC, SIGNAL(textChanged(QString)), this, SLOT(setZ80()));
@@ -128,8 +134,8 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	tCount = 0;
 	trace = 0;
 	showLabels = 1;
-
-	dumpwin = new QDialog();
+// subwindows
+	dumpwin = new QDialog(this);
 	dui.setupUi(dumpwin);
 	dui.tbSave->addAction(dui.aSaveBin);
 	dui.tbSave->addAction(dui.aSaveHobeta);
@@ -148,17 +154,32 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(dui.leEnd,SIGNAL(textChanged(QString)),this,SLOT(dmpLimChanged()));
 	connect(dui.leLen,SIGNAL(textChanged(QString)),this,SLOT(dmpLenChanged()));
 
-	openDumpDialog = new QDialog();
+	openDumpDialog = new QDialog(this);
 	oui.setupUi(openDumpDialog);
 	connect(oui.tbFile,SIGNAL(clicked()),this,SLOT(chDumpFile()));
 	connect(oui.leStart,SIGNAL(textChanged(QString)),this,SLOT(dmpStartOpen()));
 	connect(oui.butOk,SIGNAL(clicked()), this, SLOT(loadDump()));
 
+	memViewer = new MemViewer(this);
+	connect(ui.tbMemView, SIGNAL(clicked()),this,SLOT(doMemView()));
+// context menu
 	bpMenu = new QMenu(this);
 	bpMenu->addAction(ui.actFetch);
 	bpMenu->addAction(ui.actRead);
 	bpMenu->addAction(ui.actWrite);
 	connect(bpMenu,SIGNAL(triggered(QAction*)),this,SLOT(chaBreakPoint()));
+}
+
+DebugWin::~DebugWin() {
+	delete(dumpwin);
+	delete(openDumpDialog);
+	delete(memViewer);
+}
+
+void DebugWin::setShowLabels(bool f) {
+	showLabels = f ? 1 : 0;
+	ui.tbLabelTrigger->setChecked(showLabels);
+	fillDisasm();
 }
 
 void DebugWin::wheelEvent(QWheelEvent* ev) {
@@ -236,8 +257,8 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					doStep();
 					break;
 				case Qt::Key_L:
-					showLabels ^= 1;
-					fillDisasm();
+					setShowLabels(showLabels ? false : true);
+					// fillDisasm();
 					break;
 				case Qt::Key_Space:
 					switchBP(0);
@@ -654,6 +675,7 @@ DasmRow getDisasm(Computer* comp, unsigned short& adr) {
 	return drow;
 }
 
+/*
 xLabel* DebugWin::findLabel(int adr) {
 	if (!showLabels) return NULL;
 //	int bnk = comp->mem->pt[adr >> 14]->num;
@@ -663,6 +685,23 @@ xLabel* DebugWin::findLabel(int adr) {
 	}
 	return NULL;
 }
+*/
+
+QString DebugWin::findLabel(int adr) {
+	QString lab;
+	if (!showLabels) return lab;
+//	int bnk = comp->mem->map[adr >> 14]->num;
+//	adr &= 0x3fff;
+	QString key;
+	QStringList keys = labels.keys();
+	foreach(key, keys) {
+		if (labels[key].adr == adr) {
+			lab = key;
+			break;
+		}
+	}
+	return lab;
+}
 
 int DebugWin::fillDisasm() {
 	block = true;
@@ -670,7 +709,8 @@ int DebugWin::fillDisasm() {
 	// unsigned short pc = GETPC(comp->cpu);
 	DasmRow drow;
 	QColor bgcol,acol;
-	xLabel* lab = NULL;
+	// xLabel* lab = NULL;
+	QString lab;
 	QFont fnt = ui.dasmTable->font();
 	int pos;
 	int res = 0;
@@ -678,10 +718,10 @@ int DebugWin::fillDisasm() {
 	for (int i = 0; i < ui.dasmTable->rowCount(); i++) {
 		drow = getDisasm(comp, adr);
 		pos = drow.com.indexOf(QRegExp("[0-9A-F]{4,4}"));
-		if (pos > -1) {
+		if (pos > 0) {
 			lab = findLabel(drow.com.mid(pos,4).toInt(NULL,16));
-			if (lab) {
-				drow.com.replace(pos, 4, lab->name);
+			if (!lab.isEmpty()) {
+				drow.com.replace(pos - 1, 5, lab);
 			}
 		}
 		res |= drow.ispc;
@@ -693,12 +733,12 @@ int DebugWin::fillDisasm() {
 		ui.dasmTable->item(i, 2)->setBackgroundColor(bgcol);
 		ui.dasmTable->item(i, 3)->setBackgroundColor(bgcol);
 		lab = findLabel(drow.adr);
-		if (lab) {
-			fnt.setBold(true);
-			ui.dasmTable->item(i, 0)->setText(lab->name);
-		} else {
+		if (lab.isEmpty()) {
 			fnt.setBold(false);
 			ui.dasmTable->item(i, 0)->setText(gethexword(drow.adr));
+		} else {
+			fnt.setBold(true);
+			ui.dasmTable->item(i, 0)->setText(lab);
 		}
 		ui.dasmTable->item(i, 0)->setFont(fnt);
 		QString str;
@@ -731,32 +771,58 @@ unsigned short DebugWin::getPrevAdr(unsigned short adr) {
 
 void DebugWin::dasmEdited(int row, int col) {
 	if (block) return;
-	int adr = ui.dasmTable->item(row, 0)->text().toInt(NULL,16);
-	if (col == 0) {
-		while (row > 0) {
-			adr = getPrevAdr(adr);
-			row--;
-		}
-		disasmAdr = adr;
-	} else if (col == 1) {
-		QString str = ui.dasmTable->item(row, col)->text();
-		unsigned char cbyte;
-		while (!str.isEmpty()) {
-			cbyte = str.left(2).toInt(NULL,16);
-			memWr(comp->mem, adr, cbyte);
-			adr++;
-			str.remove(0,2);
-		}
-//		fillDump();
-	} else if (col == 2) {
-		char buf[8];
-		int len = cpuAsm(ui.dasmTable->item(row, col)->text().toLocal8Bit().data(), buf, adr);
-		int idx = 0;
-		while (idx < len) {
-			memWr(comp->mem, adr + idx, buf[idx]);
-			idx++;
-		}
-//		fillDisasm();
+	int adr = ui.dasmTable->item(row, 0)->data(Qt::UserRole).toInt();
+	// int adr = ui.dasmTable->item(row, 0)->text().toInt(NULL,16);		// ??? label
+	char buf[8];
+	int len;
+	int idx;
+	unsigned char cbyte;
+	bool flag;
+	QString str;
+	xAdr xadr;
+	switch (col) {
+		case 0:
+			str = ui.dasmTable->item(row, 0)->text();
+			if (str.isEmpty()) {
+				str = findLabel(adr);
+				if (!str.isEmpty()) {
+					labels.remove(str);
+				}
+			} else {
+				idx = str.toInt(&flag, 16);
+				if (flag) {
+					adr = idx;
+				} else if (labels.contains(str)) {
+					adr = labels[str].adr;
+				} else {
+					xadr.bank = comp->mem->map[adr >> 14].num;
+					xadr.adr = adr;
+					labels[str] = xadr;
+				}
+				while (row > 0) {
+					adr = getPrevAdr(adr);
+					row--;
+				}
+				disasmAdr = adr;
+			}
+			break;
+		case 1:
+			str = ui.dasmTable->item(row, col)->text();
+			while (!str.isEmpty()) {
+				cbyte = str.left(2).toInt(NULL,16);
+				memWr(comp->mem, adr, cbyte);
+				adr++;
+				str.remove(0,2);
+			}
+			break;
+		case 2:
+			len = cpuAsm(ui.dasmTable->item(row, col)->text().toLocal8Bit().data(), buf, adr);
+			idx = 0;
+			while (idx < len) {
+				memWr(comp->mem, adr + idx, buf[idx]);
+				idx++;
+			}
+			break;
 	}
 	fillDump();
 	fillDisasm();
@@ -987,6 +1053,59 @@ void DebugWin::saveDumpToDisk(int idx) {
 
 }
 
+// memory viewer
+
+MemViewer::MemViewer(QWidget* p):QDialog(p) {
+	ui.setupUi(this);
+	connect(ui.sbAddr, SIGNAL(valueChanged(int)),this,SLOT(fillImage()));
+	connect(ui.sbWidth, SIGNAL(valueChanged(int)),this,SLOT(fillImage()));
+
+	connect(ui.sbAddr, SIGNAL(valueChanged(int)),ui.scrollbar,SLOT(setValue(int)));
+	connect(ui.scrollbar, SIGNAL(valueChanged(int)), ui.sbAddr, SLOT(setValue(int)));
+}
+
+void MemViewer::wheelEvent(QWheelEvent* ev) {
+	int adr = ui.sbAddr->value();
+	if (ev->delta() < 0) {
+		adr += (ui.sbWidth->value() << 3);
+	} else {
+		adr -= (ui.sbWidth->value() << 3);
+	}
+	ui.sbAddr->setValue(adr & 0xffff);
+}
+
+void MemViewer::fillImage() {
+	QImage img(256,256,QImage::Format_Mono);
+	img.fill(0);
+	int adr = ui.sbAddr->value();
+	unsigned char byt;
+	int bit;
+	int row,col;
+	for (row = 0; row < 256; row++) {
+		for (col = 0; col < ui.sbWidth->value(); col++) {
+			byt = memRd(mem, adr & 0xffff);
+			adr++;
+			for (bit = 0; bit < 8; bit++) {
+				if (byt & 0x80) {
+					img.setPixel((col << 3) | bit, row, 1);
+				}
+				byt <<= 1;
+			}
+		}
+	}
+	QPixmap pxm = QPixmap::fromImage(img.scaled(512,512));
+	ui.view->setPixmap(pxm);
+	int pg = ui.sbWidth->value() << 3;
+	ui.scrollbar->setPageStep(pg);
+	ui.scrollbar->setSingleStep(pg);
+}
+
+void DebugWin::doMemView() {
+	memViewer->mem = comp->mem;
+	memViewer->fillImage();
+	memViewer->show();
+}
+
 // open dump
 
 void DebugWin::doOpenDump() {
@@ -1043,7 +1162,7 @@ void DebugWin::updateScreen() {
 // xtablewidget
 
 xTableWidget::xTableWidget(QWidget* par):QTableWidget(par) {
-	setEditTriggers(QAbstractItemView::AnyKeyPressed);
+	setEditTriggers(QAbstractItemView::AnyKeyPressed | QAbstractItemView::DoubleClicked);
 }
 
 void xTableWidget::keyPressEvent(QKeyEvent *ev) {

@@ -20,20 +20,29 @@ class xTableWidget : public QTableWidget {
 		void keyPressEvent(QKeyEvent*);
 };
 
+#include "ui_memviewer.h"
 #include "ui_dumpdial.h"
 #include "ui_openDump.h"
 #include "ui_debuger.h"
 #include "libxpeccy/spectrum.h"
 
+struct xAdr {
+	int bank;
+	int adr;
+};
+
+/*
 struct xLabel {
 	int bank;
 	int adr;
 	QString name;
 };
+*/
 
 enum {
 	XTYPE_NONE = -1,
 	XTYPE_ADR = 0,
+	XTYPE_LABEL,
 	XTYPE_DUMP,
 	XTYPE_BYTE
 };
@@ -46,17 +55,32 @@ class xItemDelegate : public QItemDelegate {
 
 };
 
+class MemViewer : public QDialog {
+	Q_OBJECT
+	public:
+		MemViewer(QWidget* = NULL);
+		Memory* mem;
+	public slots:
+		void fillImage();
+	private:
+		Ui::MemView ui;
+	protected:
+		void wheelEvent(QWheelEvent*);
+};
+
 class DebugWin : public QDialog {
 	Q_OBJECT
 	public:
-		DebugWin(QWidget*);
+		DebugWin(QWidget* = NULL);
+		~DebugWin();
 		bool active;
 		void reject();
 		void start(Computer*);
 		void stop();
 		bool fillAll();
 
-		QList<xLabel> labels;
+		QMap<QString, xAdr> labels;
+		// QList<xLabel> labels;
 	signals:
 		void closed();
 	private:
@@ -79,13 +103,15 @@ class DebugWin : public QDialog {
 		Ui::oDumpDial oui;
 		QString dumpPath;
 
+		MemViewer* memViewer;
+
 		QMenu* bpMenu;
 		unsigned short bpAdr;
 		void doBreakPoint(unsigned short);
 		int getAdr();
 		void switchBP(unsigned char);
 
-		xLabel* findLabel(int);
+		QString findLabel(int);
 
 		unsigned short disasmAdr;
 		unsigned short dumpAdr;
@@ -106,6 +132,8 @@ class DebugWin : public QDialog {
 		void scrollUp();
 
 	private slots:
+		void setShowLabels(bool);
+
 		void setZ80();
 		void setFlags();
 		void updateScreen();
@@ -121,6 +149,8 @@ class DebugWin : public QDialog {
 		void chDumpFile();
 		void dmpStartOpen();
 		void loadDump();
+
+		void doMemView();
 
 		void doStep();
 

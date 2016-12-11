@@ -48,5 +48,6 @@
         <file>images/msx.png</file>
         <file>images/stop.png</file>
         <file>images/floppyRed.png</file>
+        <file>images/eye.png</file>
     </qresource>
 </RCC>
