@@ -264,6 +264,14 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 				case Qt::Key_Space:
 					switchBP(0);
 					break;
+				case Qt::Key_Up:
+					disasmAdr--;
+					fillDisasm();
+					break;
+				case Qt::Key_Down:
+					disasmAdr++;
+					fillDisasm();
+					break;
 			}
 			break;
 		case Qt::AltModifier:
@@ -1078,11 +1086,15 @@ void DebugWin::saveDumpToDisk(int idx) {
 
 MemViewer::MemViewer(QWidget* p):QDialog(p) {
 	ui.setupUi(this);
-	connect(ui.sbAddr, SIGNAL(valueChanged(int)),this,SLOT(fillImage()));
-	connect(ui.sbWidth, SIGNAL(valueChanged(int)),this,SLOT(fillImage()));
+	connect(ui.sbAddr, SIGNAL(valueChanged(int)), this, SLOT(fillImage()));
+	connect(ui.sbWidth, SIGNAL(valueChanged(int)), this, SLOT(fillImage()));
+	connect(ui.sbHeight, SIGNAL(valueChanged(int)), this, SLOT(fillImage()));
+	connect(ui.sbPage, SIGNAL(valueChanged(int)), this, SLOT(fillImage()));
 
-	connect(ui.sbAddr, SIGNAL(valueChanged(int)),ui.scrollbar,SLOT(setValue(int)));
-	connect(ui.scrollbar, SIGNAL(valueChanged(int)), ui.sbAddr, SLOT(setValue(int)));
+	connect(ui.sbAddr, SIGNAL(valueChanged(int)), this, SLOT(adrChanged(int)));
+	connect(ui.scrollbar, SIGNAL(valueChanged(int)), this, SLOT(memScroll(int)));
+
+	connect(ui.tbSave, SIGNAL(released()), this, SLOT(saveSprite()));
 }
 
 void MemViewer::wheelEvent(QWheelEvent* ev) {
@@ -1095,16 +1107,48 @@ void MemViewer::wheelEvent(QWheelEvent* ev) {
 	ui.sbAddr->setValue(adr & 0xffff);
 }
 
+void MemViewer::saveSprite() {
+	int adr = ui.sbAddr->value();
+	int siz = ui.sbWidth->value() * ui.sbHeight->value() * 8;
+	QByteArray spr;
+	for(int i = 0; i < siz; i++) {
+		spr.append(rdMem(adr));
+		adr++;
+	}
+	QString path = QFileDialog::getSaveFileName(this, "Save sprite");
+	if (path.isEmpty()) return;
+	QFile file(path);
+	if (file.open(QFile::WriteOnly)) {
+		file.write(spr);
+		file.close();
+	} else {
+		shitHappens("Can't write a file");
+	}
+}
+
+unsigned char MemViewer::rdMem(int adr) {
+	adr &= 0xffff;
+	unsigned char res;
+	int page = ui.sbPage->value();
+	if (adr < 0xc000) {
+		res = memRd(mem, adr);
+	} else {
+		res = mem->ramData[(page << 14) | (adr & 0x3fff)];
+	}
+	return res;
+}
+
 void MemViewer::fillImage() {
 	QImage img(256,256,QImage::Format_Mono);
 	img.fill(0);
 	int adr = ui.sbAddr->value();
+	int high = ui.sbHeight->value() << 3;
 	unsigned char byt;
 	int bit;
 	int row,col;
-	for (row = 0; row < 256; row++) {
+	for (row = 0; row < high; row++) {
 		for (col = 0; col < ui.sbWidth->value(); col++) {
-			byt = memRd(mem, adr & 0xffff);
+			byt = rdMem(adr);
 			adr++;
 			for (bit = 0; bit < 8; bit++) {
 				if (byt & 0x80) {
@@ -1121,8 +1165,19 @@ void MemViewer::fillImage() {
 	ui.scrollbar->setSingleStep(pg);
 }
 
+void MemViewer::adrChanged(int adr) {
+	ui.scrollbar->setValue(adr);
+	ui.adrhex->setText(gethexword(adr));
+}
+
+void MemViewer::memScroll(int adr) {
+	adr = adr - ((adr - ui.sbAddr->value()) % ui.sbWidth->value());
+	ui.sbAddr->setValue(adr);
+}
+
 void DebugWin::doMemView() {
 	memViewer->mem = comp->mem;
+	memViewer->ui.sbPage->setValue(comp->mem->map[3].num);
 	memViewer->fillImage();
 	memViewer->show();
 }

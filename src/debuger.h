@@ -60,10 +60,15 @@ class MemViewer : public QDialog {
 	public:
 		MemViewer(QWidget* = NULL);
 		Memory* mem;
+		Ui::MemView ui;
+	private:
+		unsigned char rdMem(int);
 	public slots:
 		void fillImage();
-	private:
-		Ui::MemView ui;
+	private slots:
+		void adrChanged(int);
+		void memScroll(int);
+		void saveSprite();
 	protected:
 		void wheelEvent(QWheelEvent*);
 };

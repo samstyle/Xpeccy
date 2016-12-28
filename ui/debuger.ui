@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>753</width>
-    <height>588</height>
+    <width>749</width>
+    <height>607</height>
    </rect>
   </property>
   <property name="font">
@@ -30,7 +30,7 @@
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
    <item>
-    <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,0,0,0,0">
+    <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,0,0,0,0,0">
      <item>
       <widget class="QLabel" name="label_26">
        <property name="styleSheet">
@@ -591,6 +591,19 @@
       </layout>
      </item>
      <item>
+      <widget class="QLabel" name="label_48">
+       <property name="styleSheet">
+        <string notr="true">background-color: rgb(160, 160, 255)</string>
+       </property>
+       <property name="text">
+        <string>Disasm</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
       <layout class="QHBoxLayout" name="horizontalLayout_4">
        <item>
         <widget class="QToolButton" name="tbLabelTrigger">
@@ -625,9 +638,6 @@
        <property name="contextMenuPolicy">
         <enum>Qt::CustomContextMenu</enum>
        </property>
-       <property name="autoFillBackground">
-        <bool>true</bool>
-       </property>
        <property name="verticalScrollBarPolicy">
         <enum>Qt::ScrollBarAlwaysOff</enum>
        </property>
@@ -645,9 +655,6 @@
        </property>
        <property name="showGrid">
         <bool>false</bool>
-       </property>
-       <property name="gridStyle">
-        <enum>Qt::DotLine</enum>
        </property>
        <property name="rowCount">
         <number>22</number>
