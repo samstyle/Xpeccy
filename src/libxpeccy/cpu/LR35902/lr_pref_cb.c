@@ -1,0 +1,583 @@
+// 00..07	rlc	4 [4rd 3wr]
+void lrcb00(CPU* cpu) {RLC(cpu->b);}
+void lrcb01(CPU* cpu) {RLC(cpu->c);}
+void lrcb02(CPU* cpu) {RLC(cpu->d);}
+void lrcb03(CPU* cpu) {RLC(cpu->e);}
+void lrcb04(CPU* cpu) {RLC(cpu->h);}
+void lrcb05(CPU* cpu) {RLC(cpu->l);}
+void lrcb06(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); RLC(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
+void lrcb07(CPU* cpu) {RLC(cpu->a);}
+// 08..0f	rrc
+void lrcb08(CPU* cpu) {RRC(cpu->b);}
+void lrcb09(CPU* cpu) {RRC(cpu->c);}
+void lrcb0A(CPU* cpu) {RRC(cpu->d);}
+void lrcb0B(CPU* cpu) {RRC(cpu->e);}
+void lrcb0C(CPU* cpu) {RRC(cpu->h);}
+void lrcb0D(CPU* cpu) {RRC(cpu->l);}
+void lrcb0E(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); RRC(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
+void lrcb0F(CPU* cpu) {RRC(cpu->a);}
+// 10..17	rl
+void lrcb10(CPU* cpu) {RL(cpu->b);}
+void lrcb11(CPU* cpu) {RL(cpu->c);}
+void lrcb12(CPU* cpu) {RL(cpu->d);}
+void lrcb13(CPU* cpu) {RL(cpu->e);}
+void lrcb14(CPU* cpu) {RL(cpu->h);}
+void lrcb15(CPU* cpu) {RL(cpu->l);}
+void lrcb16(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); RL(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
+void lrcb17(CPU* cpu) {RL(cpu->a);}
+// 18..1f	rr
+void lrcb18(CPU* cpu) {RR(cpu->b);}
+void lrcb19(CPU* cpu) {RR(cpu->c);}
+void lrcb1A(CPU* cpu) {RR(cpu->d);}
+void lrcb1B(CPU* cpu) {RR(cpu->e);}
+void lrcb1C(CPU* cpu) {RR(cpu->h);}
+void lrcb1D(CPU* cpu) {RR(cpu->l);}
+void lrcb1E(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); RR(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
+void lrcb1F(CPU* cpu) {RR(cpu->a);}
+// 20..27	sla
+void lrcb20(CPU* cpu) {SLA(cpu->b);}
+void lrcb21(CPU* cpu) {SLA(cpu->c);}
+void lrcb22(CPU* cpu) {SLA(cpu->d);}
+void lrcb23(CPU* cpu) {SLA(cpu->e);}
+void lrcb24(CPU* cpu) {SLA(cpu->h);}
+void lrcb25(CPU* cpu) {SLA(cpu->l);}
+void lrcb26(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); SLA(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
+void lrcb27(CPU* cpu) {SLA(cpu->a);}
+// 28..2f	sra
+void lrcb28(CPU* cpu) {SRA(cpu->b);}
+void lrcb29(CPU* cpu) {SRA(cpu->c);}
+void lrcb2A(CPU* cpu) {SRA(cpu->d);}
+void lrcb2B(CPU* cpu) {SRA(cpu->e);}
+void lrcb2C(CPU* cpu) {SRA(cpu->h);}
+void lrcb2D(CPU* cpu) {SRA(cpu->l);}
+void lrcb2E(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); SRA(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
+void lrcb2F(CPU* cpu) {SRA(cpu->a);}
+// 30..37	swap
+void lrcb30(CPU* cpu) {SWAPH(cpu->b);}
+void lrcb31(CPU* cpu) {SWAPH(cpu->c);}
+void lrcb32(CPU* cpu) {SWAPH(cpu->d);}
+void lrcb33(CPU* cpu) {SWAPH(cpu->e);}
+void lrcb34(CPU* cpu) {SWAPH(cpu->h);}
+void lrcb35(CPU* cpu) {SWAPH(cpu->l);}
+void lrcb36(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); SWAPH(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
+void lrcb37(CPU* cpu) {SWAPH(cpu->a);}
+// 38..3f	srl
+void lrcb38(CPU* cpu) {SRL(cpu->b);}
+void lrcb39(CPU* cpu) {SRL(cpu->c);}
+void lrcb3A(CPU* cpu) {SRL(cpu->d);}
+void lrcb3B(CPU* cpu) {SRL(cpu->e);}
+void lrcb3C(CPU* cpu) {SRL(cpu->h);}
+void lrcb3D(CPU* cpu) {SRL(cpu->l);}
+void lrcb3E(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); SRL(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
+void lrcb3F(CPU* cpu) {SRL(cpu->a);}
+
+// 40..47	bit 0,r		4 [4rd]
+void lrcb40(CPU* cpu) {BIT(0,cpu->b);}
+void lrcb41(CPU* cpu) {BIT(0,cpu->c);}
+void lrcb42(CPU* cpu) {BIT(0,cpu->d);}
+void lrcb43(CPU* cpu) {BIT(0,cpu->e);}
+void lrcb44(CPU* cpu) {BIT(0,cpu->h);}
+void lrcb45(CPU* cpu) {BIT(0,cpu->l);}
+void lrcb46(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(0,cpu->tmp);}
+void lrcb47(CPU* cpu) {BIT(0,cpu->a);}
+// 48..4f	bit 1,r
+void lrcb48(CPU* cpu) {BIT(1,cpu->b);}
+void lrcb49(CPU* cpu) {BIT(1,cpu->c);}
+void lrcb4A(CPU* cpu) {BIT(1,cpu->d);}
+void lrcb4B(CPU* cpu) {BIT(1,cpu->e);}
+void lrcb4C(CPU* cpu) {BIT(1,cpu->h);}
+void lrcb4D(CPU* cpu) {BIT(1,cpu->l);}
+void lrcb4E(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(1,cpu->tmp);}
+void lrcb4F(CPU* cpu) {BIT(1,cpu->a);}
+// 50..57	bit 2,r
+void lrcb50(CPU* cpu) {BIT(2,cpu->b);}
+void lrcb51(CPU* cpu) {BIT(2,cpu->c);}
+void lrcb52(CPU* cpu) {BIT(2,cpu->d);}
+void lrcb53(CPU* cpu) {BIT(2,cpu->e);}
+void lrcb54(CPU* cpu) {BIT(2,cpu->h);}
+void lrcb55(CPU* cpu) {BIT(2,cpu->l);}
+void lrcb56(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(2,cpu->tmp);}
+void lrcb57(CPU* cpu) {BIT(2,cpu->a);}
+// 58..5f	bit 3,r
+void lrcb58(CPU* cpu) {BIT(3,cpu->b);}
+void lrcb59(CPU* cpu) {BIT(3,cpu->c);}
+void lrcb5A(CPU* cpu) {BIT(3,cpu->d);}
+void lrcb5B(CPU* cpu) {BIT(3,cpu->e);}
+void lrcb5C(CPU* cpu) {BIT(3,cpu->h);}
+void lrcb5D(CPU* cpu) {BIT(3,cpu->l);}
+void lrcb5E(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(3,cpu->tmp);}
+void lrcb5F(CPU* cpu) {BIT(3,cpu->a);}
+// 60..67	bit 4,r
+void lrcb60(CPU* cpu) {BIT(4,cpu->b);}
+void lrcb61(CPU* cpu) {BIT(4,cpu->c);}
+void lrcb62(CPU* cpu) {BIT(4,cpu->d);}
+void lrcb63(CPU* cpu) {BIT(4,cpu->e);}
+void lrcb64(CPU* cpu) {BIT(4,cpu->h);}
+void lrcb65(CPU* cpu) {BIT(4,cpu->l);}
+void lrcb66(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(4,cpu->tmp);}
+void lrcb67(CPU* cpu) {BIT(4,cpu->a);}
+// 68..6f	bit 5,r
+void lrcb68(CPU* cpu) {BIT(5,cpu->b);}
+void lrcb69(CPU* cpu) {BIT(5,cpu->c);}
+void lrcb6A(CPU* cpu) {BIT(5,cpu->d);}
+void lrcb6B(CPU* cpu) {BIT(5,cpu->e);}
+void lrcb6C(CPU* cpu) {BIT(5,cpu->h);}
+void lrcb6D(CPU* cpu) {BIT(5,cpu->l);}
+void lrcb6E(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(5,cpu->tmp);}
+void lrcb6F(CPU* cpu) {BIT(5,cpu->a);}
+// 70..77	bit 6,r
+void lrcb70(CPU* cpu) {BIT(6,cpu->b);}
+void lrcb71(CPU* cpu) {BIT(6,cpu->c);}
+void lrcb72(CPU* cpu) {BIT(6,cpu->d);}
+void lrcb73(CPU* cpu) {BIT(6,cpu->e);}
+void lrcb74(CPU* cpu) {BIT(6,cpu->h);}
+void lrcb75(CPU* cpu) {BIT(6,cpu->l);}
+void lrcb76(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(6,cpu->tmp);}
+void lrcb77(CPU* cpu) {BIT(6,cpu->a);}
+// 78..7f	bit 7,r
+void lrcb78(CPU* cpu) {BIT(7,cpu->b);}
+void lrcb79(CPU* cpu) {BIT(7,cpu->c);}
+void lrcb7A(CPU* cpu) {BIT(7,cpu->d);}
+void lrcb7B(CPU* cpu) {BIT(7,cpu->e);}
+void lrcb7C(CPU* cpu) {BIT(7,cpu->h);}
+void lrcb7D(CPU* cpu) {BIT(7,cpu->l);}
+void lrcb7E(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(7,cpu->tmp);}
+void lrcb7F(CPU* cpu) {BIT(7,cpu->a);}
+
+// 80..87	res 0,r		4 [4rd 3wr]
+void lrcb80(CPU* cpu) {RES(0,cpu->b);}
+void lrcb81(CPU* cpu) {RES(0,cpu->c);}
+void lrcb82(CPU* cpu) {RES(0,cpu->d);}
+void lrcb83(CPU* cpu) {RES(0,cpu->e);}
+void lrcb84(CPU* cpu) {RES(0,cpu->h);}
+void lrcb85(CPU* cpu) {RES(0,cpu->l);}
+void lrcb86(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); RES(0,cpu->tmp); MEMWR(cpu->hl,cpu->tmp,3);}
+void lrcb87(CPU* cpu) {RES(0,cpu->a);}
+// 88..8f	res 1,r
+void lrcb88(CPU* cpu) {RES(1,cpu->b);}
+void lrcb89(CPU* cpu) {RES(1,cpu->c);}
+void lrcb8A(CPU* cpu) {RES(1,cpu->d);}
+void lrcb8B(CPU* cpu) {RES(1,cpu->e);}
+void lrcb8C(CPU* cpu) {RES(1,cpu->h);}
+void lrcb8D(CPU* cpu) {RES(1,cpu->l);}
+void lrcb8E(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); RES(1,cpu->tmp); MEMWR(cpu->hl,cpu->tmp,3);}
+void lrcb8F(CPU* cpu) {RES(1,cpu->a);}
+// 90..97	res 2,r
+void lrcb90(CPU* cpu) {RES(2,cpu->b);}
+void lrcb91(CPU* cpu) {RES(2,cpu->c);}
+void lrcb92(CPU* cpu) {RES(2,cpu->d);}
+void lrcb93(CPU* cpu) {RES(2,cpu->e);}
+void lrcb94(CPU* cpu) {RES(2,cpu->h);}
+void lrcb95(CPU* cpu) {RES(2,cpu->l);}
+void lrcb96(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); RES(2,cpu->tmp); MEMWR(cpu->hl,cpu->tmp,3);}
+void lrcb97(CPU* cpu) {RES(2,cpu->a);}
+// 98..9f	res 3,r
+void lrcb98(CPU* cpu) {RES(3,cpu->b);}
+void lrcb99(CPU* cpu) {RES(3,cpu->c);}
+void lrcb9A(CPU* cpu) {RES(3,cpu->d);}
+void lrcb9B(CPU* cpu) {RES(3,cpu->e);}
+void lrcb9C(CPU* cpu) {RES(3,cpu->h);}
+void lrcb9D(CPU* cpu) {RES(3,cpu->l);}
+void lrcb9E(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); RES(3,cpu->tmp); MEMWR(cpu->hl,cpu->tmp,3);}
+void lrcb9F(CPU* cpu) {RES(3,cpu->a);}
+// a0..a7	res 4,r
+void lrcbA0(CPU* cpu) {RES(4,cpu->b);}
+void lrcbA1(CPU* cpu) {RES(4,cpu->c);}
+void lrcbA2(CPU* cpu) {RES(4,cpu->d);}
+void lrcbA3(CPU* cpu) {RES(4,cpu->e);}
+void lrcbA4(CPU* cpu) {RES(4,cpu->h);}
+void lrcbA5(CPU* cpu) {RES(4,cpu->l);}
+void lrcbA6(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); RES(4,cpu->tmp); MEMWR(cpu->hl,cpu->tmp,3);}
+void lrcbA7(CPU* cpu) {RES(4,cpu->a);}
+// a8..af	res 5,r
+void lrcbA8(CPU* cpu) {RES(5,cpu->b);}
+void lrcbA9(CPU* cpu) {RES(5,cpu->c);}
+void lrcbAA(CPU* cpu) {RES(5,cpu->d);}
+void lrcbAB(CPU* cpu) {RES(5,cpu->e);}
+void lrcbAC(CPU* cpu) {RES(5,cpu->h);}
+void lrcbAD(CPU* cpu) {RES(5,cpu->l);}
+void lrcbAE(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); RES(5,cpu->tmp); MEMWR(cpu->hl,cpu->tmp,3);}
+void lrcbAF(CPU* cpu) {RES(5,cpu->a);}
+// b0..b7	res 6,r
+void lrcbB0(CPU* cpu) {RES(6,cpu->b);}
+void lrcbB1(CPU* cpu) {RES(6,cpu->c);}
+void lrcbB2(CPU* cpu) {RES(6,cpu->d);}
+void lrcbB3(CPU* cpu) {RES(6,cpu->e);}
+void lrcbB4(CPU* cpu) {RES(6,cpu->h);}
+void lrcbB5(CPU* cpu) {RES(6,cpu->l);}
+void lrcbB6(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); RES(6,cpu->tmp); MEMWR(cpu->hl,cpu->tmp,3);}
+void lrcbB7(CPU* cpu) {RES(6,cpu->a);}
+// b8..bf	res 7,r
+void lrcbB8(CPU* cpu) {RES(7,cpu->b);}
+void lrcbB9(CPU* cpu) {RES(7,cpu->c);}
+void lrcbBA(CPU* cpu) {RES(7,cpu->d);}
+void lrcbBB(CPU* cpu) {RES(7,cpu->e);}
+void lrcbBC(CPU* cpu) {RES(7,cpu->h);}
+void lrcbBD(CPU* cpu) {RES(7,cpu->l);}
+void lrcbBE(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); RES(7,cpu->tmp); MEMWR(cpu->hl,cpu->tmp,3);}
+void lrcbBF(CPU* cpu) {RES(7,cpu->a);}
+
+// c0..c7	set 0,r		4 [4rd 3wr]
+void lrcbC0(CPU* cpu) {cpu->b |= 0x01;}
+void lrcbC1(CPU* cpu) {cpu->c |= 0x01;}
+void lrcbC2(CPU* cpu) {cpu->d |= 0x01;}
+void lrcbC3(CPU* cpu) {cpu->e |= 0x01;}
+void lrcbC4(CPU* cpu) {cpu->h |= 0x01;}
+void lrcbC5(CPU* cpu) {cpu->l |= 0x01;}
+void lrcbC6(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); cpu->tmp |= 0x01; MEMWR(cpu->hl,cpu->tmp,3);}
+void lrcbC7(CPU* cpu) {cpu->a |= 0x01;}
+// c8..cf	set 1,r
+void lrcbC8(CPU* cpu) {cpu->b |= 0x02;}
+void lrcbC9(CPU* cpu) {cpu->c |= 0x02;}
+void lrcbCA(CPU* cpu) {cpu->d |= 0x02;}
+void lrcbCB(CPU* cpu) {cpu->e |= 0x02;}
+void lrcbCC(CPU* cpu) {cpu->h |= 0x02;}
+void lrcbCD(CPU* cpu) {cpu->l |= 0x02;}
+void lrcbCE(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); cpu->tmp |= 0x02; MEMWR(cpu->hl,cpu->tmp,3);}
+void lrcbCF(CPU* cpu) {cpu->a |= 0x02;}
+// d0..d7	set 2,r
+void lrcbD0(CPU* cpu) {cpu->b |= 0x04;}
+void lrcbD1(CPU* cpu) {cpu->c |= 0x04;}
+void lrcbD2(CPU* cpu) {cpu->d |= 0x04;}
+void lrcbD3(CPU* cpu) {cpu->e |= 0x04;}
+void lrcbD4(CPU* cpu) {cpu->h |= 0x04;}
+void lrcbD5(CPU* cpu) {cpu->l |= 0x04;}
+void lrcbD6(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); cpu->tmp |= 0x04; MEMWR(cpu->hl,cpu->tmp,3);}
+void lrcbD7(CPU* cpu) {cpu->a |= 0x04;}
+// d8..df	set 3,r
+void lrcbD8(CPU* cpu) {cpu->b |= 0x08;}
+void lrcbD9(CPU* cpu) {cpu->c |= 0x08;}
+void lrcbDA(CPU* cpu) {cpu->d |= 0x08;}
+void lrcbDB(CPU* cpu) {cpu->e |= 0x08;}
+void lrcbDC(CPU* cpu) {cpu->h |= 0x08;}
+void lrcbDD(CPU* cpu) {cpu->l |= 0x08;}
+void lrcbDE(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); cpu->tmp |= 0x08; MEMWR(cpu->hl,cpu->tmp,3);}
+void lrcbDF(CPU* cpu) {cpu->a |= 0x08;}
+// e0..e7	set 4,r
+void lrcbE0(CPU* cpu) {cpu->b |= 0x10;}
+void lrcbE1(CPU* cpu) {cpu->c |= 0x10;}
+void lrcbE2(CPU* cpu) {cpu->d |= 0x10;}
+void lrcbE3(CPU* cpu) {cpu->e |= 0x10;}
+void lrcbE4(CPU* cpu) {cpu->h |= 0x10;}
+void lrcbE5(CPU* cpu) {cpu->l |= 0x10;}
+void lrcbE6(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); cpu->tmp |= 0x10; MEMWR(cpu->hl,cpu->tmp,3);}
+void lrcbE7(CPU* cpu) {cpu->a |= 0x10;}
+// e8..ef	set 5,r
+void lrcbE8(CPU* cpu) {cpu->b |= 0x20;}
+void lrcbE9(CPU* cpu) {cpu->c |= 0x20;}
+void lrcbEA(CPU* cpu) {cpu->d |= 0x20;}
+void lrcbEB(CPU* cpu) {cpu->e |= 0x20;}
+void lrcbEC(CPU* cpu) {cpu->h |= 0x20;}
+void lrcbED(CPU* cpu) {cpu->l |= 0x20;}
+void lrcbEE(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); cpu->tmp |= 0x20; MEMWR(cpu->hl,cpu->tmp,3);}
+void lrcbEF(CPU* cpu) {cpu->a |= 0x20;}
+// f0..f7	set 6,r
+void lrcbF0(CPU* cpu) {cpu->b |= 0x40;}
+void lrcbF1(CPU* cpu) {cpu->c |= 0x40;}
+void lrcbF2(CPU* cpu) {cpu->d |= 0x40;}
+void lrcbF3(CPU* cpu) {cpu->e |= 0x40;}
+void lrcbF4(CPU* cpu) {cpu->h |= 0x40;}
+void lrcbF5(CPU* cpu) {cpu->l |= 0x40;}
+void lrcbF6(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); cpu->tmp |= 0x40; MEMWR(cpu->hl,cpu->tmp,3);}
+void lrcbF7(CPU* cpu) {cpu->a |= 0x40;}
+// f8..ff	set 7,r
+void lrcbF8(CPU* cpu) {cpu->b |= 0x80;}
+void lrcbF9(CPU* cpu) {cpu->c |= 0x80;}
+void lrcbFA(CPU* cpu) {cpu->d |= 0x80;}
+void lrcbFB(CPU* cpu) {cpu->e |= 0x80;}
+void lrcbFC(CPU* cpu) {cpu->h |= 0x80;}
+void lrcbFD(CPU* cpu) {cpu->l |= 0x80;}
+void lrcbFE(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); cpu->tmp |= 0x80; MEMWR(cpu->hl,cpu->tmp,3);}
+void lrcbFF(CPU* cpu) {cpu->a |= 0x80;}
+
+// ===
+
+opCode lrcbTab[256]={
+	{0,4,lrcb00,NULL,"rlc b"},
+	{0,4,lrcb01,NULL,"rlc c"},
+	{0,4,lrcb02,NULL,"rlc d"},
+	{0,4,lrcb03,NULL,"rlc e"},
+	{0,4,lrcb04,NULL,"rlc h"},
+	{0,4,lrcb05,NULL,"rlc l"},
+	{0,4,lrcb06,NULL,"rlc (hl)"},
+	{0,4,lrcb07,NULL,"rlc a"},
+
+	{0,4,lrcb08,NULL,"rrc b"},
+	{0,4,lrcb09,NULL,"rrc c"},
+	{0,4,lrcb0A,NULL,"rrc d"},
+	{0,4,lrcb0B,NULL,"rrc e"},
+	{0,4,lrcb0C,NULL,"rrc h"},
+	{0,4,lrcb0D,NULL,"rrc l"},
+	{0,4,lrcb0E,NULL,"rrc (hl)"},
+	{0,4,lrcb0F,NULL,"rrc a"},
+
+	{0,4,lrcb10,NULL,"rl b"},
+	{0,4,lrcb11,NULL,"rl c"},
+	{0,4,lrcb12,NULL,"rl d"},
+	{0,4,lrcb13,NULL,"rl e"},
+	{0,4,lrcb14,NULL,"rl h"},
+	{0,4,lrcb15,NULL,"rl l"},
+	{0,4,lrcb16,NULL,"rl (hl)"},
+	{0,4,lrcb17,NULL,"rl a"},
+
+	{0,4,lrcb18,NULL,"rr b"},
+	{0,4,lrcb19,NULL,"rr c"},
+	{0,4,lrcb1A,NULL,"rr d"},
+	{0,4,lrcb1B,NULL,"rr e"},
+	{0,4,lrcb1C,NULL,"rr h"},
+	{0,4,lrcb1D,NULL,"rr l"},
+	{0,4,lrcb1E,NULL,"rr (hl)"},
+	{0,4,lrcb1F,NULL,"rr a"},
+
+	{0,4,lrcb20,NULL,"sla b"},
+	{0,4,lrcb21,NULL,"sla c"},
+	{0,4,lrcb22,NULL,"sla d"},
+	{0,4,lrcb23,NULL,"sla e"},
+	{0,4,lrcb24,NULL,"sla h"},
+	{0,4,lrcb25,NULL,"sla l"},
+	{0,4,lrcb26,NULL,"sla (hl)"},
+	{0,4,lrcb27,NULL,"sla a"},
+
+	{0,4,lrcb28,NULL,"sra b"},
+	{0,4,lrcb29,NULL,"sra c"},
+	{0,4,lrcb2A,NULL,"sra d"},
+	{0,4,lrcb2B,NULL,"sra e"},
+	{0,4,lrcb2C,NULL,"sra h"},
+	{0,4,lrcb2D,NULL,"sra l"},
+	{0,4,lrcb2E,NULL,"sra (hl)"},
+	{0,4,lrcb2F,NULL,"sra a"},
+
+	{0,4,lrcb30,NULL,"swap b"},
+	{0,4,lrcb31,NULL,"swap c"},
+	{0,4,lrcb32,NULL,"swap d"},
+	{0,4,lrcb33,NULL,"swap e"},
+	{0,4,lrcb34,NULL,"swap h"},
+	{0,4,lrcb35,NULL,"swap l"},
+	{0,4,lrcb36,NULL,"swap (hl)"},
+	{0,4,lrcb37,NULL,"swap a"},
+
+	{0,4,lrcb38,NULL,"srl b"},
+	{0,4,lrcb39,NULL,"srl c"},
+	{0,4,lrcb3A,NULL,"srl d"},
+	{0,4,lrcb3B,NULL,"srl e"},
+	{0,4,lrcb3C,NULL,"srl h"},
+	{0,4,lrcb3D,NULL,"srl l"},
+	{0,4,lrcb3E,NULL,"srl (hl)"},
+	{0,4,lrcb3F,NULL,"srl a"},
+
+	{0,4,lrcb40,NULL,"bit 0,b"},
+	{0,4,lrcb41,NULL,"bit 0,c"},
+	{0,4,lrcb42,NULL,"bit 0,d"},
+	{0,4,lrcb43,NULL,"bit 0,e"},
+	{0,4,lrcb44,NULL,"bit 0,h"},
+	{0,4,lrcb45,NULL,"bit 0,l"},
+	{0,4,lrcb46,NULL,"bit 0,(hl)"},
+	{0,4,lrcb47,NULL,"bit 0,a"},
+
+	{0,4,lrcb48,NULL,"bit 1,b"},
+	{0,4,lrcb49,NULL,"bit 1,c"},
+	{0,4,lrcb4A,NULL,"bit 1,d"},
+	{0,4,lrcb4B,NULL,"bit 1,e"},
+	{0,4,lrcb4C,NULL,"bit 1,h"},
+	{0,4,lrcb4D,NULL,"bit 1,l"},
+	{0,4,lrcb4E,NULL,"bit 1,(hl)"},
+	{0,4,lrcb4F,NULL,"bit 1,a"},
+
+	{0,4,lrcb50,NULL,"bit 2,b"},
+	{0,4,lrcb51,NULL,"bit 2,c"},
+	{0,4,lrcb52,NULL,"bit 2,d"},
+	{0,4,lrcb53,NULL,"bit 2,e"},
+	{0,4,lrcb54,NULL,"bit 2,h"},
+	{0,4,lrcb55,NULL,"bit 2,l"},
+	{0,4,lrcb56,NULL,"bit 2,(hl)"},
+	{0,4,lrcb57,NULL,"bit 2,a"},
+
+	{0,4,lrcb58,NULL,"bit 3,b"},
+	{0,4,lrcb59,NULL,"bit 3,c"},
+	{0,4,lrcb5A,NULL,"bit 3,d"},
+	{0,4,lrcb5B,NULL,"bit 3,e"},
+	{0,4,lrcb5C,NULL,"bit 3,h"},
+	{0,4,lrcb5D,NULL,"bit 3,l"},
+	{0,4,lrcb5E,NULL,"bit 3,(hl)"},
+	{0,4,lrcb5F,NULL,"bit 3,a"},
+
+	{0,4,lrcb60,NULL,"bit 4,b"},
+	{0,4,lrcb61,NULL,"bit 4,c"},
+	{0,4,lrcb62,NULL,"bit 4,d"},
+	{0,4,lrcb63,NULL,"bit 4,e"},
+	{0,4,lrcb64,NULL,"bit 4,h"},
+	{0,4,lrcb65,NULL,"bit 4,l"},
+	{0,4,lrcb66,NULL,"bit 4,(hl)"},
+	{0,4,lrcb67,NULL,"bit 4,a"},
+
+	{0,4,lrcb68,NULL,"bit 5,b"},
+	{0,4,lrcb69,NULL,"bit 5,c"},
+	{0,4,lrcb6A,NULL,"bit 5,d"},
+	{0,4,lrcb6B,NULL,"bit 5,e"},
+	{0,4,lrcb6C,NULL,"bit 5,h"},
+	{0,4,lrcb6D,NULL,"bit 5,l"},
+	{0,4,lrcb6E,NULL,"bit 5,(hl)"},
+	{0,4,lrcb6F,NULL,"bit 5,a"},
+
+	{0,4,lrcb70,NULL,"bit 6,b"},
+	{0,4,lrcb71,NULL,"bit 6,c"},
+	{0,4,lrcb72,NULL,"bit 6,d"},
+	{0,4,lrcb73,NULL,"bit 6,e"},
+	{0,4,lrcb74,NULL,"bit 6,h"},
+	{0,4,lrcb75,NULL,"bit 6,l"},
+	{0,4,lrcb76,NULL,"bit 6,(hl)"},
+	{0,4,lrcb77,NULL,"bit 6,a"},
+
+	{0,4,lrcb78,NULL,"bit 7,b"},
+	{0,4,lrcb79,NULL,"bit 7,c"},
+	{0,4,lrcb7A,NULL,"bit 7,d"},
+	{0,4,lrcb7B,NULL,"bit 7,e"},
+	{0,4,lrcb7C,NULL,"bit 7,h"},
+	{0,4,lrcb7D,NULL,"bit 7,l"},
+	{0,4,lrcb7E,NULL,"bit 7,(hl)"},
+	{0,4,lrcb7F,NULL,"bit 7,a"},
+
+	{0,4,lrcb80,NULL,"res 0,b"},
+	{0,4,lrcb81,NULL,"res 0,c"},
+	{0,4,lrcb82,NULL,"res 0,d"},
+	{0,4,lrcb83,NULL,"res 0,e"},
+	{0,4,lrcb84,NULL,"res 0,h"},
+	{0,4,lrcb85,NULL,"res 0,l"},
+	{0,4,lrcb86,NULL,"res 0,(hl)"},
+	{0,4,lrcb87,NULL,"res 0,a"},
+
+	{0,4,lrcb88,NULL,"res 1,b"},
+	{0,4,lrcb89,NULL,"res 1,c"},
+	{0,4,lrcb8A,NULL,"res 1,d"},
+	{0,4,lrcb8B,NULL,"res 1,e"},
+	{0,4,lrcb8C,NULL,"res 1,h"},
+	{0,4,lrcb8D,NULL,"res 1,l"},
+	{0,4,lrcb8E,NULL,"res 1,(hl)"},
+	{0,4,lrcb8F,NULL,"res 1,a"},
+
+	{0,4,lrcb90,NULL,"res 2,b"},
+	{0,4,lrcb91,NULL,"res 2,c"},
+	{0,4,lrcb92,NULL,"res 2,d"},
+	{0,4,lrcb93,NULL,"res 2,e"},
+	{0,4,lrcb94,NULL,"res 2,h"},
+	{0,4,lrcb95,NULL,"res 2,l"},
+	{0,4,lrcb96,NULL,"res 2,(hl)"},
+	{0,4,lrcb97,NULL,"res 2,a"},
+
+	{0,4,lrcb98,NULL,"res 3,b"},
+	{0,4,lrcb99,NULL,"res 3,c"},
+	{0,4,lrcb9A,NULL,"res 3,d"},
+	{0,4,lrcb9B,NULL,"res 3,e"},
+	{0,4,lrcb9C,NULL,"res 3,h"},
+	{0,4,lrcb9D,NULL,"res 3,l"},
+	{0,4,lrcb9E,NULL,"res 3,(hl)"},
+	{0,4,lrcb9F,NULL,"res 3,a"},
+
+	{0,4,lrcbA0,NULL,"res 4,b"},
+	{0,4,lrcbA1,NULL,"res 4,c"},
+	{0,4,lrcbA2,NULL,"res 4,d"},
+	{0,4,lrcbA3,NULL,"res 4,e"},
+	{0,4,lrcbA4,NULL,"res 4,h"},
+	{0,4,lrcbA5,NULL,"res 4,l"},
+	{0,4,lrcbA6,NULL,"res 4,(hl)"},
+	{0,4,lrcbA7,NULL,"res 4,a"},
+
+	{0,4,lrcbA8,NULL,"res 5,b"},
+	{0,4,lrcbA9,NULL,"res 5,c"},
+	{0,4,lrcbAA,NULL,"res 5,d"},
+	{0,4,lrcbAB,NULL,"res 5,e"},
+	{0,4,lrcbAC,NULL,"res 5,h"},
+	{0,4,lrcbAD,NULL,"res 5,l"},
+	{0,4,lrcbAE,NULL,"res 5,(hl)"},
+	{0,4,lrcbAF,NULL,"res 5,a"},
+
+	{0,4,lrcbB0,NULL,"res 6,b"},
+	{0,4,lrcbB1,NULL,"res 6,c"},
+	{0,4,lrcbB2,NULL,"res 6,d"},
+	{0,4,lrcbB3,NULL,"res 6,e"},
+	{0,4,lrcbB4,NULL,"res 6,h"},
+	{0,4,lrcbB5,NULL,"res 6,l"},
+	{0,4,lrcbB6,NULL,"res 6,(hl)"},
+	{0,4,lrcbB7,NULL,"res 6,a"},
+
+	{0,4,lrcbB8,NULL,"res 7,b"},
+	{0,4,lrcbB9,NULL,"res 7,c"},
+	{0,4,lrcbBA,NULL,"res 7,d"},
+	{0,4,lrcbBB,NULL,"res 7,e"},
+	{0,4,lrcbBC,NULL,"res 7,h"},
+	{0,4,lrcbBD,NULL,"res 7,l"},
+	{0,4,lrcbBE,NULL,"res 7,(hl)"},
+	{0,4,lrcbBF,NULL,"res 7,a"},
+
+	{0,4,lrcbC0,NULL,"set 0,b"},
+	{0,4,lrcbC1,NULL,"set 0,c"},
+	{0,4,lrcbC2,NULL,"set 0,d"},
+	{0,4,lrcbC3,NULL,"set 0,e"},
+	{0,4,lrcbC4,NULL,"set 0,h"},
+	{0,4,lrcbC5,NULL,"set 0,l"},
+	{0,4,lrcbC6,NULL,"set 0,(hl)"},
+	{0,4,lrcbC7,NULL,"set 0,a"},
+
+	{0,4,lrcbC8,NULL,"set 1,b"},
+	{0,4,lrcbC9,NULL,"set 1,c"},
+	{0,4,lrcbCA,NULL,"set 1,d"},
+	{0,4,lrcbCB,NULL,"set 1,e"},
+	{0,4,lrcbCC,NULL,"set 1,h"},
+	{0,4,lrcbCD,NULL,"set 1,l"},
+	{0,4,lrcbCE,NULL,"set 1,(hl)"},
+	{0,4,lrcbCF,NULL,"set 1,a"},
+
+	{0,4,lrcbD0,NULL,"set 2,b"},
+	{0,4,lrcbD1,NULL,"set 2,c"},
+	{0,4,lrcbD2,NULL,"set 2,d"},
+	{0,4,lrcbD3,NULL,"set 2,e"},
+	{0,4,lrcbD4,NULL,"set 2,h"},
+	{0,4,lrcbD5,NULL,"set 2,l"},
+	{0,4,lrcbD6,NULL,"set 2,(hl)"},
+	{0,4,lrcbD7,NULL,"set 2,a"},
+
+	{0,4,lrcbD8,NULL,"set 3,b"},
+	{0,4,lrcbD9,NULL,"set 3,c"},
+	{0,4,lrcbDA,NULL,"set 3,d"},
+	{0,4,lrcbDB,NULL,"set 3,e"},
+	{0,4,lrcbDC,NULL,"set 3,h"},
+	{0,4,lrcbDD,NULL,"set 3,l"},
+	{0,4,lrcbDE,NULL,"set 3,(hl)"},
+	{0,4,lrcbDF,NULL,"set 3,a"},
+
+	{0,4,lrcbE0,NULL,"set 4,b"},
+	{0,4,lrcbE1,NULL,"set 4,c"},
+	{0,4,lrcbE2,NULL,"set 4,d"},
+	{0,4,lrcbE3,NULL,"set 4,e"},
+	{0,4,lrcbE4,NULL,"set 4,h"},
+	{0,4,lrcbE5,NULL,"set 4,l"},
+	{0,4,lrcbE6,NULL,"set 4,(hl)"},
+	{0,4,lrcbE7,NULL,"set 4,a"},
+
+	{0,4,lrcbE8,NULL,"set 5,b"},
+	{0,4,lrcbE9,NULL,"set 5,c"},
+	{0,4,lrcbEA,NULL,"set 5,d"},
+	{0,4,lrcbEB,NULL,"set 5,e"},
+	{0,4,lrcbEC,NULL,"set 5,h"},
+	{0,4,lrcbED,NULL,"set 5,l"},
+	{0,4,lrcbEE,NULL,"set 5,(hl)"},
+	{0,4,lrcbEF,NULL,"set 5,a"},
+
+	{0,4,lrcbF0,NULL,"set 6,b"},
+	{0,4,lrcbF1,NULL,"set 6,c"},
+	{0,4,lrcbF2,NULL,"set 6,d"},
+	{0,4,lrcbF3,NULL,"set 6,e"},
+	{0,4,lrcbF4,NULL,"set 6,h"},
+	{0,4,lrcbF5,NULL,"set 6,l"},
+	{0,4,lrcbF6,NULL,"set 6,(hl)"},
+	{0,4,lrcbF7,NULL,"set 6,a"},
+
+	{0,4,lrcbF8,NULL,"set 7,b"},
+	{0,4,lrcbF9,NULL,"set 7,c"},
+	{0,4,lrcbFA,NULL,"set 7,d"},
+	{0,4,lrcbFB,NULL,"set 7,e"},
+	{0,4,lrcbFC,NULL,"set 7,h"},
+	{0,4,lrcbFD,NULL,"set 7,l"},
+	{0,4,lrcbFE,NULL,"set 7,(hl)"},
+	{0,4,lrcbFF,NULL,"set 7,a"},
+};

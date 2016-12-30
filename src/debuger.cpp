@@ -654,7 +654,7 @@ DasmRow getDisasm(Computer* comp, unsigned short& adr) {
 	drow.com.clear();
 	char buf[256];
 	int clen;
-	clen = cpuDisasm(adr,buf,&rdbyte,comp);
+	clen = cpuDisasm(comp->cpu, adr, buf, &rdbyte, comp);
 	drow.com = QString(buf).toUpper();
 	for (int i = 0; i < clen; i++) {
 		drow.bytes.append(rdbyte(adr, (void*)comp));
@@ -734,10 +734,8 @@ QString DebugWin::findLabel(int adr) {
 int DebugWin::fillDisasm() {
 	block = 1;
 	unsigned short adr = disasmAdr;
-	// unsigned short pc = GETPC(comp->cpu);
 	DasmRow drow;
 	QColor bgcol,acol;
-	// xLabel* lab = NULL;
 	QString lab;
 	QFont fnt = ui.dasmTable->font();
 	int pos;
@@ -801,7 +799,6 @@ unsigned short DebugWin::getPrevAdr(unsigned short adr) {
 void DebugWin::dasmEdited(int row, int col) {
 	if (block) return;
 	int adr = ui.dasmTable->item(row, 0)->data(Qt::UserRole).toInt();
-	// int adr = ui.dasmTable->item(row, 0)->text().toInt(NULL,16);		// ??? label
 	char buf[8];
 	int len;
 	int idx;
@@ -845,7 +842,7 @@ void DebugWin::dasmEdited(int row, int col) {
 			}
 			break;
 		case 2:
-			len = cpuAsm(ui.dasmTable->item(row, col)->text().toLocal8Bit().data(), buf, adr);
+			len = cpuAsm(comp->cpu, ui.dasmTable->item(row, col)->text().toLocal8Bit().data(), buf, adr);
 			idx = 0;
 			while (idx < len) {
 				memWr(comp->mem, adr + idx, buf[idx]);

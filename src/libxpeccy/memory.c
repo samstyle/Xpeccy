@@ -102,7 +102,7 @@ void memSetExternal(Memory* mem, int bank, extmrd rd, extmwr wr, void* data) {
 	pg.data = data;
 	pg.rd = rd;
 	pg.wr = wr;
-    pg.dptr = NULL;
+	pg.dptr = NULL;
 	mem->map[bank] = pg;
 }
 

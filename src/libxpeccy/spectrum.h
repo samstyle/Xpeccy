@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include "z80/z80.h"
+#include "cpu/cpu.h"
 #include "video/video.h"
 #include "memory.h"
 #include "device.h"

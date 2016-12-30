@@ -24,7 +24,9 @@ enum {
 	HW_PROFI,	// Profi
 	HW_PHOENIX,	// ZXM Phoenix
 	HW_MSX,		// MSX 1
-	HW_MSX2		// MSX 2
+	HW_MSX2,	// MSX 2
+	HW_GB,		// Game boy
+	HW_GBC,		// Game boy color
 };
 
 // mem size
@@ -175,6 +177,12 @@ unsigned char msx2In(Computer*,unsigned short,int);
 void msx2Reset(Computer*);
 unsigned char msx2mrd(Computer*,unsigned short,int);
 void msx2mwr(Computer*,unsigned short,unsigned char);
+
+// gameboy
+void gbMaper(Computer*);
+void gbReset(Computer*);
+unsigned char gbMemRd(Computer*, unsigned short, int);
+void gbMemWr(Computer*, unsigned short, unsigned char);
 
 #ifdef __cplusplus
 }

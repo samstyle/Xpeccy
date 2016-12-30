@@ -58,7 +58,7 @@ QString getFilter(int flags) {
 #endif
 	if (flags & FT_SPG) res.append(" *.spg");
 	if (flags & FT_HOBETA) res.append(" *.$?");
-	if (flags & FT_SLOT) res.append(" *.rom *.mx1 *.mx2");
+	if (flags & FT_SLOT) res.append(" *.rom *.mx1 *.mx2 *.gb *.gbc");
 	if (res.startsWith(" ")) res.remove(0,1);
 	return res;
 }
@@ -79,6 +79,8 @@ int getFileType(QString path) {
 	if (path.endsWith(".rom",Qt::CaseInsensitive)) return FT_SLOT;
 	if (path.endsWith(".mx1",Qt::CaseInsensitive)) return FT_SLOT;
 	if (path.endsWith(".mx2",Qt::CaseInsensitive)) return FT_SLOT;
+	if (path.endsWith(".gb",Qt::CaseInsensitive)) return FT_SLOT;
+	if (path.endsWith(".gbc",Qt::CaseInsensitive)) return FT_SLOT;
 #ifdef HAVEZLIB
 	if (path.endsWith(".rzx",Qt::CaseInsensitive)) return FT_RZX;
 #endif
@@ -90,12 +92,22 @@ int getFileType(QString path) {
 }
 
 int testSlotOn(Computer* comp) {
-	if (comp->hw->type != HW_MSX) return 0;
-	if (comp->mem->map[0].type == MEM_EXT) return 1;
-	if (comp->mem->map[1].type == MEM_EXT) return 1;
-	if (comp->mem->map[2].type == MEM_EXT) return 1;
-	if (comp->mem->map[3].type == MEM_EXT) return 1;
-	return 0;
+	int res = 0;
+	switch (comp->hw->type) {
+		case HW_MSX:
+		case HW_MSX2:
+		case HW_GB:
+		case HW_GBC:
+			if (comp->mem->map[0].type == MEM_EXT) res = 1;
+			if (comp->mem->map[1].type == MEM_EXT) res = 1;
+			if (comp->mem->map[2].type == MEM_EXT) res = 1;
+			if (comp->mem->map[3].type == MEM_EXT) res = 1;
+			break;
+		default:
+			res = 0;
+			break;
+	}
+	return res;
 }
 
 void loadFile(Computer* comp,const char* name, int flags, int drv) {
@@ -112,8 +124,8 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 		}
 		if (flags & FT_SNAP) filters.append(QString(";;Snapshot (%0)").arg(getFilter(flags & FT_SNAP)));
 		if (flags & FT_TAPE) filters.append(QString(";;Tape (%0)").arg(getFilter(flags & FT_TAPE)));
-		if (flags & FT_SLOT_A) filters.append(QString(";;MSX slot A (%0)").arg(getFilter(flags & FT_SLOT)));
-		if (flags & FT_SLOT_B) filters.append(QString(";;MSX slot B (%0)").arg(getFilter(flags & FT_SLOT)));
+		if (flags & FT_SLOT_A) filters.append(QString(";;Cartrige slot A (%0)").arg(getFilter(flags & FT_SLOT)));
+		if (flags & FT_SLOT_B) filters.append(QString(";;Cartrige slot B (%0)").arg(getFilter(flags & FT_SLOT)));
 		if (flags & FT_SPG) filters.append(";;SPG file (*.spg)");
 #ifdef HAVEZLIB
 		if (flags & FT_RZX) filters.append(";;RZX file (").append(getFilter(flags & FT_RZX)).append(")");
@@ -130,8 +142,8 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 		if (filters.contains("Disk B")) drv = 1;
 		if (filters.contains("Disk C")) drv = 2;
 		if (filters.contains("Disk D")) drv = 3;
-		if (filters.contains("MSX slot A")) drv = 0;
-		if (filters.contains("MSX slot B")) drv = 1;
+		if (filters.contains("Cartrige slot A")) drv = 0;
+		if (filters.contains("Cartrige slot B")) drv = 1;
 		if (filters.contains("Raw")) drv = 10;
 		opath = filer->selectedFiles().first();
 		lastDir = filer->directory().absolutePath();

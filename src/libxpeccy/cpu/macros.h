@@ -1,3 +1,6 @@
+#ifndef _CPU_MACRO_H
+#define _CPU_MACRO_H
+
 // mem i/o
 #define	MEMRD(adr,tk) cpu->mrd(adr,0,cpu->data);cpu->t+=tk;
 #define	MEMWR(adr,val,tk) cpu->mwr(adr,val,cpu->data);cpu->t+=tk;
@@ -9,7 +12,7 @@
 	val++; \
 	cpu->f = (cpu->f & FC) | (val ? 0 : FZ) | (val & (FS | F5 | F3)) | ((val == 0x80) ? FV : 0) | ((val & 0x0f) ? 0 : FH);\
 }
-	
+
 #define DEC(val) {\
 	cpu->f = (cpu->f & FC) | ((val & 0x0f) ? 0 : FH ) | FN; \
 	val--; \
@@ -110,7 +113,8 @@
 
 // extend
 
-#define SWAP(rp1,rp2) {cpu->tmpw = rp1; rp1 = rp2; rp2 = cpu->tmpw;}
+#define SWAP(rp1,rp2) {cpu->tmpw = rp1; rp1 = rp2; rp2 = cpu->tmpw;}		// swap 16bit regs
+#define SWAPH(rp) {rp = ((rp & 0xf0) >> 4) | ((rp & 0x0f) << 4);}		// swap hi/lo halfbyte
 
 #define	RDSHIFT(base) {\
 	cpu->tmp = MEMRD(cpu->pc++,3);\
@@ -163,3 +167,5 @@
 	SETX(base,bit);\
 	reg = cpu->tmpb;\
 }
+
+#endif

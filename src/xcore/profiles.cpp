@@ -354,6 +354,7 @@ int prfLoad(std::string nm) {
 					break;
 				case PS_MACHINE:
 					if (pnam == "current") prf->hwName = pval;
+					if (pnam == "cpu.type") cpuSetType(comp->cpu, getCoreID(pval.c_str()));
 					if (pnam == "cpu.frq") {
 						tmp2 = atoi(pval.c_str());
 						if ((tmp2 > 1) && (tmp2 < 29)) tmp2 *= 5e5;	// old 2..28 -> 500000..14000000
@@ -475,6 +476,7 @@ int prfSave(std::string nm) {
 	fprintf(file, "[MACHINE]\n\n");
 	fprintf(file, "current = %s\n", prf->hwName.c_str());
 	fprintf(file, "memory = %i\n", comp->mem->memSize);
+	fprintf(file, "cpu.type = %s\n", getCoreName(comp->cpu->type));
 	fprintf(file, "cpu.frq = %i\n", int(comp->cpuFrq * 1e6));
 	fprintf(file, "scrp.wait = %s\n", YESNO(comp->scrpWait));
 	fprintf(file, "contio = %s\n", YESNO(comp->contIO));

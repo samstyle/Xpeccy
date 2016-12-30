@@ -24,7 +24,9 @@ file(GLOB SOURCES
 	./src/xcore/*.cpp
 	./src/xgui/*.cpp
 	./src/libxpeccy/*.c
-	./src/libxpeccy/z80/z80.c
+	./src/libxpeccy/cpu/*.c
+	./src/libxpeccy/cpu/Z80/z80.c
+	./src/libxpeccy/cpu/LR35902/lr35902.c
 	./src/libxpeccy/sound/*.c
 	./src/libxpeccy/video/*.c
 	./src/libxpeccy/hardware/*.c
@@ -41,7 +43,8 @@ file(GLOB HEADERS
 	./src/xcore/*.h
 	./src/xgui/*.h
 	./src/libxpeccy/*.h
-	./src/libxpeccy/z80/*.h
+	./src/libxpeccy/cpu/*.h
+	./src/libxpeccy/cpu/*/*.h
 	./src/libxpeccy/sound/*.h
 	./src/libxpeccy/video/*.h
 	./src/libxpeccy/hardware/*.h

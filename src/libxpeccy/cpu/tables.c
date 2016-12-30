@@ -1,10 +1,11 @@
+#include "cpu.h"
 
-static const unsigned char FHaddTab[] = {0, FH, FH, FH, 0, 0, 0, FH};
-static const unsigned char FHsubTab[] = {0, 0, FH, 0, FH, 0, FH, FH};
-static const unsigned char FVaddTab[] = {0, 0, 0, FV, FV, 0, 0, 0};
-static const unsigned char FVsubTab[] = {0, FV, 0, 0, 0, 0, FV, 0};
+const unsigned char FHaddTab[] = {0, FH, FH, FH, 0, 0, 0, FH};
+const unsigned char FHsubTab[] = {0, 0, FH, 0, FH, 0, FH, FH};
+const unsigned char FVaddTab[] = {0, 0, 0, FV, FV, 0, 0, 0};
+const unsigned char FVsubTab[] = {0, FV, 0, 0, 0, 0, FV, 0};
 
-static const unsigned char sz53pTab[0x100] = {
+const unsigned char sz53pTab[0x100] = {
 	 0x44,0x00,0x00,0x04,0x00,0x04,0x04,0x00
 	,0x08,0x0c,0x0c,0x08,0x0c,0x08,0x08,0x0c
 	,0x00,0x04,0x04,0x00,0x04,0x00,0x00,0x04
@@ -41,7 +42,7 @@ static const unsigned char sz53pTab[0x100] = {
 
 /*table for daa, contains af*/
 
-static const unsigned char daaTab[0x1000] = {
+const unsigned char daaTab[0x1000] = {
         0x44,0x00,0x00,0x01,0x00,0x02,0x04,0x03
        ,0x00,0x04,0x04,0x05,0x04,0x06,0x00,0x07
        ,0x08,0x08,0x0c,0x09,0x10,0x10,0x14,0x11

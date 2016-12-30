@@ -159,7 +159,7 @@ Computer* compCreate() {
 	comp->resbank = RES_48;
 	comp->firstRun = 1;
 
-	comp->cpu = cpuCreate(&memrd,&memwr,&iord,&iowr,&intrq,ptr);
+	comp->cpu = cpuCreate(CPU_Z80,&memrd,&memwr,&iord,&iowr,&intrq,ptr);
 	comp->mem = memCreate();
 	comp->vid = vidCreate(comp->mem);
 	compSetFrq(comp,3.5);
@@ -249,7 +249,7 @@ void compReset(Computer* comp,int res) {
 	memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5);
 	memSetBank(comp->mem,MEM_BANK2,MEM_RAM,2);
 	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0);
-	cpuReset(comp->cpu);
+	comp->cpu->reset(comp->cpu);
 	comp->vid->curscr = 5;
 	vidSetMode(comp->vid,VID_NORMAL);
 	comp->dos = 0;
@@ -297,7 +297,7 @@ void compSetFrq(Computer* comp, double frq) {
 int zxINT(Computer* comp, unsigned char vect) {
 	res4 = 0;
 	comp->intVector = vect;
-	res2 = cpuINT(comp->cpu);
+	res2 = comp->cpu->intr(comp->cpu);
 	res1 += res2;
 	vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
 	return res2;
@@ -305,7 +305,7 @@ int zxINT(Computer* comp, unsigned char vect) {
 
 int compExec(Computer* comp) {
 	res4 = 0;
-	res2 = cpuExec(comp->cpu);
+	res2 = comp->cpu->exec(comp->cpu);
 // scorpion WAIT: add 1T to odd-T command
 	if (comp->scrpWait && (res2 & 1))
 		res2++;
@@ -334,7 +334,7 @@ int compExec(Computer* comp) {
 // NMI
 	if ((pcreg > 0x3fff) && comp->nmiRequest && !comp->rzx.play) {
 		res4 = 0;
-		res2 = cpuNMI(comp->cpu);	// z80ex_nmi(comp->cpu);
+		res2 = comp->cpu->nmi(comp->cpu);	// z80ex_nmi(comp->cpu);
 		res1 += res2;
 		if (res2 != 0) {
 			comp->dos = 1;

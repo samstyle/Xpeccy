@@ -82,7 +82,7 @@ GSound* gsCreate() {
 	GSound* res = (GSound*)malloc(sizeof(GSound));
 	memset(res,0x00,sizeof(GSound));
 	void* ptr = (void*)res;
-	res->cpu = cpuCreate(&gsmemrd,&gsmemwr,&gsiord,&gsiowr,&gsintrq,ptr);
+	res->cpu = cpuCreate(CPU_Z80,&gsmemrd,&gsmemwr,&gsiord,&gsiowr,&gsintrq,ptr);
 	res->mem = memCreate();
 	memSetSize(res->mem,2048);
 	memSetBank(res->mem,MEM_BANK0,MEM_ROM,0);
@@ -112,7 +112,7 @@ void gsDestroy(GSound* gs) {
 }
 
 void gsReset(GSound* gs) {
-	cpuReset(gs->cpu);
+	gs->cpu->reset(gs->cpu);
 }
 
 void gsSync(GSound* gs) {
@@ -120,12 +120,12 @@ void gsSync(GSound* gs) {
 	int res;
 	gs->counter += gs->sync * GS_FRQ / 980;		// ticks to emulate
 	while (gs->counter > 0) {
-		res = cpuExec(gs->cpu);
+		res = gs->cpu->exec(gs->cpu);
 		gs->counter -= res;
 		gs->cnt += res;
 		if (gs->cnt > 320) {	// 12MHz CLK, 37.5KHz INT -> int in each 320 ticks
 			gs->cnt -= 320;
-			res = cpuINT(gs->cpu);	// z80ex_int(gs->cpu);
+			res = gs->cpu->intr(gs->cpu);	// z80ex_int(gs->cpu);
 			gs->cnt += res;
 			gs->counter -= res;
 		}

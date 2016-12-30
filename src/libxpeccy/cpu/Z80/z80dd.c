@@ -1,4 +1,3 @@
-
 // 09	add ix,bc	11	mptr = ix+1 before adding
 void dd09(CPU* cpu) {
 	ADD16(cpu->ix, cpu->bc);

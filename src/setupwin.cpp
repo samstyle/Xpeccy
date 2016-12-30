@@ -59,7 +59,12 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 // machine
 	i = 0;
 	while (hwTab[i].name != NULL) {
-		ui.machbox->addItem(QString::fromLocal8Bit(hwTab[i].optName),QString::fromLocal8Bit(hwTab[i].name));
+		ui.machbox->addItem(trUtf8(hwTab[i].optName),QString::fromLocal8Bit(hwTab[i].name));
+		i++;
+	}
+	i = 0;
+	while (cpuTab[i].type != CPU_NONE) {
+		ui.cbCpu->addItem(trUtf8(cpuTab[i].name), cpuTab[i].type);
 		i++;
 	}
 	ui.resbox->addItem("BASIC 48",RES_48);
@@ -310,6 +315,7 @@ void SetupWin::start(xProfile* p) {
 	setmszbox(ui.machbox->currentIndex());
 	ui.mszbox->setCurrentIndex(ui.mszbox->findData(comp->mem->memSize));
 	if (ui.mszbox->currentIndex() < 0) ui.mszbox->setCurrentIndex(ui.mszbox->count() - 1);
+	ui.cbCpu->setCurrentIndex(ui.cbCpu->findData(comp->cpu->type));
 	ui.sbFreq->setValue(comp->cpuFrq);
 	ui.scrpwait->setChecked(comp->scrpWait);
 	ui.sysCmos->setChecked(conf.sysclock);
@@ -447,6 +453,7 @@ void SetupWin::apply() {
 	prfSetRomset(prof, prof->rsName);
 	comp->resbank = ui.resbox->itemData(ui.resbox->currentIndex()).toInt();
 	memSetSize(comp->mem,ui.mszbox->itemData(ui.mszbox->currentIndex()).toInt());
+	cpuSetType(comp->cpu, ui.cbCpu->itemData(ui.cbCpu->currentIndex()).toInt());
 	compSetFrq(comp, ui.sbFreq->value());
 	comp->scrpWait = ui.scrpwait->isChecked() ? 1 : 0;
 	if (comp->hw != oldmac) compReset(comp,RES_DEFAULT);
