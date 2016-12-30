@@ -1,66 +1,73 @@
-#ifndef _CPU_MACRO_H
-#define _CPU_MACRO_H
+#ifndef _LR_MACRO_H
+#define _LR_MACRO_H
 
+extern unsigned char FLHaddTab[8];
+extern unsigned char FLHsubTab[8];
+
+/*
 // mem i/o
 #define	MEMRD(adr,tk) cpu->mrd(adr,0,cpu->data);cpu->t+=tk;
 #define	MEMWR(adr,val,tk) cpu->mwr(adr,val,cpu->data);cpu->t+=tk;
 #define	IORD(port,tk) cpu->ird(port,cpu->data);cpu->t+=tk;
 #define IOWR(port,val,tk) cpu->iwr(port,val,cpu->data);cpu->t+=tk;
+*/
 
 // ariphmetic
-#define INC(val) {\
+#define INCL(val) {\
 	val++; \
-	cpu->f = (cpu->f & FC) | (val ? 0 : FZ) | (val & (FS | F5 | F3)) | ((val == 0x80) ? FV : 0) | ((val & 0x0f) ? 0 : FH);\
+	cpu->f = (cpu->f & FLC) | (val ? 0 : FLZ) | ((val & 0x0f) ? 0 : FLH);\
 }
 
-#define DEC(val) {\
-	cpu->f = (cpu->f & FC) | ((val & 0x0f) ? 0 : FH ) | FN; \
+#define DECL(val) {\
 	val--; \
-	cpu->f |= ((val == 0x7f) ? FV : 0 ) | (sz53pTab[val] & ~FP);\
+	cpu->f = (cpu->f & FLC) | FLN | (val ? 0 : FLZ) | (((val & 0x0f) == 0x0f) ? FLH : 0);\
 }
 
-#define ADD(val) {\
+#define ADDL(val) {\
 	cpu->tmpw = cpu->a + val;\
 	cpu->tmp = ((cpu->a & 0x88) >> 3) | ((val & 0x88) >> 2) | ((cpu->tmpw & 0x88) >> 1);\
 	cpu->a = cpu->tmpw & 0xff;\
-	cpu->f = (cpu->a & (FS | F5 | F3)) | (cpu->a ? 0 : FZ) | ((cpu->tmpw & 0x100) ? FC : 0) | FHaddTab[cpu->tmp & 7] | FVaddTab[cpu->tmp >> 4];\
+	cpu->f = (cpu->a ? 0 : FLZ) | ((cpu->tmpw & 0x100) ? FLC : 0) | FLHaddTab[cpu->tmp & 7];\
 }
 
-#define ADC(val) {\
+#define ADCL(val) {\
 	cpu->tmpw = cpu->a + val + (cpu->f & FC);\
 	cpu->tmp = ((cpu->a & 0x88) >> 3) | ((val & 0x88) >> 2) | ((cpu->tmpw & 0x88) >> 1);\
 	cpu->a = cpu->tmpw & 0xff;\
-	cpu->f = (cpu->a & (FS | F5 | F3)) | (cpu->a ? 0 : FZ) | ((cpu->tmpw & 0x100) ? FC : 0) | FHaddTab[cpu->tmp & 7] | FVaddTab[cpu->tmp >> 4];\
+	cpu->f = (cpu->a ? 0 : FLZ) | ((cpu->tmpw & 0x100) ? FLC : 0) | FLHaddTab[cpu->tmp & 7];\
 }
 
-#define SUB(value) {\
+#define SUBL(value) {\
 	cpu->tmpw = cpu->a - value;\
 	cpu->tmp = ((cpu->a & 0x88) >> 3) | ((value & 0x88) >> 2) | ((cpu->tmpw & 0x88) >> 1);\
 	cpu->a = cpu->tmpw & 0xff;\
-	cpu->f = (cpu->a & (FS | F5 | F3)) | (cpu->a ? 0 : FZ) | ((cpu->tmpw & 0x100) ? FC : 0) | FN | FHsubTab[cpu->tmp & 0x07] | FVsubTab[cpu->tmp >> 4];\
+	cpu->f = (cpu->a ? 0 : FLZ) | ((cpu->tmpw & 0x100) ? FLC : 0) | FLN | FLHsubTab[cpu->tmp & 7];\
 }
 
-#define SBC(value) {\
+#define SBCL(value) {\
 	cpu->tmpw = cpu->a - value - (cpu->f & FC);\
 	cpu->tmp = ((cpu->a & 0x88) >> 3) | ((value & 0x88) >> 2) | ((cpu->tmpw & 0x88) >> 1);\
 	cpu->a = cpu->tmpw & 0xff;\
-	cpu->f = (cpu->a & (FS | F5 | F3)) | (cpu->a ? 0 : FZ) | ((cpu->tmpw & 0x100) ? FC : 0) | FN | FHsubTab[cpu->tmp & 0x07] | FVsubTab[cpu->tmp >> 4];\
+	cpu->f = (cpu->a ? 0 : FLZ) | ((cpu->tmpw & 0x100) ? FLC : 0) | FLN | FLHsubTab[cpu->tmp & 7];\
 }
 
-#define CP(val) {\
+#define CMP(val) {\
 	cpu->tmpw = cpu->a - val;\
 	cpu->tmp = ((cpu->a & 0x88) >> 3) | ((val & 0x88) >> 2) | ((cpu->tmpw & 0x88) >> 1);\
-	cpu->f = (cpu->tmpw & FS) | (val & (F5 | F3)) | ((cpu->tmpw & 0x100) ? FC : (cpu->tmpw ? 0 : FZ)) | FN | FHsubTab[cpu->tmp & 0x07] | FVsubTab[cpu->tmp >> 4];\
+	cpu->f = (cpu->tmpw & FS) | (val & (F5 | F3)) | ((cpu->tmpw & 0x100) ? FLC : (cpu->tmpw ? 0 : FLZ)) | FLN | FLHsubTab[cpu->tmp & 7];\
 }
 
-#define ADD16(val1,val2) {\
+#define ADDL16(val1,val2) {\
 	cpu->tmpi = val1 + val2;\
 	cpu->tmp = ((val1 & 0x800) >> 11) | ((val2 & 0x800) >> 10) | ((cpu->tmpi & 0x800) >> 9);\
 	cpu->mptr = val1 + 1;\
 	val1 = cpu->tmpi;\
-	cpu->f = (cpu->f & (FS | FZ | FV)) | ((cpu->tmpi & 0x10000) ? FC : 0) | ((val1 >> 8) & (F5 | F3)) | FHaddTab[cpu->tmp];\
+	cpu->f = (cpu->f & FLZ) | ((cpu->tmpi & 0x10000) ? FLC : 0) | FLHaddTab[cpu->tmp & 7];\
 }
 
+#define SWAPH(rp) {rp = ((rp & 0xf0) >> 4) | ((rp & 0x0f) << 4); cpu->f = (rp ? 0 : FLZ);}		// swap hi/lo halfbyte
+
+/*
 #define ADC16(val) {\
 	cpu->tmpi = cpu->hl + val + (cpu->f & FC);\
 	cpu->tmp = ((cpu->hl & 0x8800) >> 11) | ((val & 0x8800) >> 10) | ((cpu->tmpi & 0x8800) >> 9);\
@@ -86,35 +93,69 @@
 
 #define RST(adr) {PUSH(cpu->hpc,cpu->lpc); cpu->mptr = adr; cpu->pc = cpu->mptr;}
 #define RET {POP(cpu->hpc,cpu->lpc); cpu->mptr = cpu->pc;}
+*/
 
 // shift
 
-#define RL(val) {cpu->tmp = val; val = (val << 1) | (cpu->f & FC); cpu->f = (cpu->tmp >> 7) | sz53pTab[val];}
-
-#define RLC(val) {\
-	val = (val << 1) | (val >> 7);\
-	cpu->f = (val & FC) | sz53pTab[val];\
+#define RLX(val) {\
+	cpu->tmp = val;\
+	val = (val << 1) | ((cpu->f & FLC) ? 1 : 0);\
+	cpu->f = ((cpu->tmp & 0x80) ? FLC : 0) | (val ? 0 : FLZ);\
 }
 
-#define RR(val) {cpu->tmp = val; val = (val >> 1) | (cpu->f << 7); cpu->f = (cpu->tmp & FC) | sz53pTab[val];}
-#define RRC(val) {cpu->f = val & FC; val = (val >> 1) | (val << 7); cpu->f |= sz53pTab[val];}
+#define RLCX(val) {\
+	val = (val << 1) | (val >> 7);\
+	cpu->f = ((val & 1) ? FLC : 0) | (val ? 0 : FLZ);\
+}
 
-#define SLA(val) {cpu->f = (val >> 7); val <<= 1; cpu->f |= sz53pTab[val];}
-#define SLL(val) {cpu->f = (val >> 7); val = (val << 1) | 0x01; cpu->f |= sz53pTab[val];}
-#define SRA(val) {cpu->f = val & FC; val = (val & 0x80) | (val >> 1); cpu->f |= sz53pTab[val];}
-#define SRL(val) {cpu->f = val & FC; val >>= 1; cpu->f |= sz53pTab[val];}
+#define RRX(val) {\
+	cpu->tmp = val;\
+	val = (val >> 1) | ((cpu->f & FLC) ? 0x80 : 0);\
+	cpu->f = ((cpu->tmp & 1) ? FLC : 0) | (val ? 0 : FLZ);\
+}
+
+#define RRCX(val) {\
+	cpu->f = val & FLC;\
+	val = (val >> 1) | (val << 7);\
+	cpu->f |= (val ? 0 : FLZ);\
+}
+
+#define SLAX(val) {\
+	cpu->f = (val & 0x80) ? FLC : 0;\
+	val <<= 1;\
+	cpu->f |= (val ? 0 : FLZ);\
+}
+
+#define SLLX(val) {\
+	cpu->f = (val & 0x80) ? FLC : 0;\
+	val = (val << 1) | 0x01;\
+	cpu->f |= (val ? 0 : FLZ);\
+}
+
+#define SRAX(val) {\
+	cpu->f = (val & 1) ? FLC : 0;\
+	val = (val & 0x80) | (val >> 1);\
+	cpu->f |= (val ? 0 : FLZ);\
+}
+
+#define SRLX(val) {\
+	cpu->f = (val & 1) ? FLC : 0;\
+	val >>= 1;\
+	cpu->f |= (val ? 0 : FLZ);\
+}
 
 // bit
 
-#define BIT(bit,val) {cpu->f = (cpu->f & FC ) | FH | sz53pTab[val & (0x01 << bit)] | (val & (F5 | F3));}
-#define BITM(bit,val) {cpu->f = (cpu->f & FC) | FH | (sz53pTab[val & (1 << bit)] & ~(F5 | F3)) | (cpu->hptr & (F5 | F3));}
+#define BITL(bit,val) {cpu->f = (cpu->f & FLC) | FLH | ((val & (0x01 << bit)) ? 0 : FLZ);}
+// #define BITML(bit,val) {cpu->f = (cpu->f & FLC) | FLH | (sz53pTab[val & (1 << bit)] & ~(F5 | F3)) | (cpu->hptr & (F5 | F3));}
+
+/*
 #define SET(bit,val) {val |= (1 << bit);}
 #define RES(bit,val) {val &= ~(1 << bit);}
 
 // extend
 
 #define SWAP(rp1,rp2) {cpu->tmpw = rp1; rp1 = rp2; rp2 = cpu->tmpw;}		// swap 16bit regs
-#define SWAPH(rp) {rp = ((rp & 0xf0) >> 4) | ((rp & 0x0f) << 4);}		// swap hi/lo halfbyte
 
 #define	RDSHIFT(base) {\
 	cpu->tmp = MEMRD(cpu->pc++,3);\
@@ -167,5 +208,6 @@
 	SETX(base,bit);\
 	reg = cpu->tmpb;\
 }
+*/
 
 #endif

@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>747</width>
-    <height>605</height>
+    <width>737</width>
+    <height>595</height>
    </rect>
   </property>
   <property name="font">
@@ -37,7 +37,7 @@
         <string notr="true">background-color: rgb(160, 160, 255)</string>
        </property>
        <property name="text">
-        <string>Z80</string>
+        <string>CPU</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -45,7 +45,7 @@
       </widget>
      </item>
      <item>
-      <layout class="QGridLayout" name="gridLayout">
+      <layout class="QGridLayout" name="cpuGrid">
        <property name="verticalSpacing">
         <number>2</number>
        </property>
@@ -349,12 +349,12 @@
       </layout>
      </item>
      <item>
-      <layout class="QGridLayout" name="gridLayout_4">
+      <layout class="QGridLayout" name="flagGrid">
        <property name="verticalSpacing">
         <number>0</number>
        </property>
        <item row="0" column="2">
-        <widget class="QLabel" name="label_6">
+        <widget class="QLabel" name="labF7">
          <property name="text">
           <string>S</string>
          </property>
@@ -364,7 +364,7 @@
         </widget>
        </item>
        <item row="0" column="6">
-        <widget class="QLabel" name="label_19">
+        <widget class="QLabel" name="labF3">
          <property name="text">
           <string>3</string>
          </property>
@@ -374,7 +374,7 @@
         </widget>
        </item>
        <item row="0" column="3">
-        <widget class="QLabel" name="label_7">
+        <widget class="QLabel" name="labF6">
          <property name="text">
           <string>Z</string>
          </property>
@@ -384,7 +384,7 @@
         </widget>
        </item>
        <item row="0" column="5">
-        <widget class="QLabel" name="label_11">
+        <widget class="QLabel" name="labF4">
          <property name="text">
           <string>H</string>
          </property>
@@ -394,7 +394,7 @@
         </widget>
        </item>
        <item row="1" column="5">
-        <widget class="QCheckBox" name="cbFH">
+        <widget class="QCheckBox" name="cbF4">
          <property name="maximumSize">
           <size>
            <width>15</width>
@@ -426,7 +426,7 @@
         </widget>
        </item>
        <item row="1" column="2">
-        <widget class="QCheckBox" name="cbFS">
+        <widget class="QCheckBox" name="cbF7">
          <property name="maximumSize">
           <size>
            <width>15</width>
@@ -442,7 +442,7 @@
         </widget>
        </item>
        <item row="1" column="3">
-        <widget class="QCheckBox" name="cbFZ">
+        <widget class="QCheckBox" name="cbF6">
          <property name="maximumSize">
           <size>
            <width>15</width>
@@ -478,7 +478,7 @@
         </widget>
        </item>
        <item row="0" column="7">
-        <widget class="QLabel" name="label_21">
+        <widget class="QLabel" name="labF2">
          <property name="text">
           <string>P</string>
          </property>
@@ -488,7 +488,7 @@
         </widget>
        </item>
        <item row="0" column="8">
-        <widget class="QLabel" name="label_23">
+        <widget class="QLabel" name="labF1">
          <property name="text">
           <string>N</string>
          </property>
@@ -498,7 +498,7 @@
         </widget>
        </item>
        <item row="0" column="9">
-        <widget class="QLabel" name="label_25">
+        <widget class="QLabel" name="labF0">
          <property name="text">
           <string>C</string>
          </property>
@@ -524,7 +524,7 @@
         </widget>
        </item>
        <item row="1" column="8">
-        <widget class="QCheckBox" name="cbFN">
+        <widget class="QCheckBox" name="cbF1">
          <property name="maximumSize">
           <size>
            <width>15</width>
@@ -540,7 +540,7 @@
         </widget>
        </item>
        <item row="1" column="9">
-        <widget class="QCheckBox" name="cbFC">
+        <widget class="QCheckBox" name="cbF0">
          <property name="maximumSize">
           <size>
            <width>15</width>
@@ -556,7 +556,7 @@
         </widget>
        </item>
        <item row="0" column="4">
-        <widget class="QLabel" name="label_8">
+        <widget class="QLabel" name="labF5">
          <property name="text">
           <string>5</string>
          </property>
@@ -566,7 +566,7 @@
         </widget>
        </item>
        <item row="1" column="7">
-        <widget class="QCheckBox" name="cbFP">
+        <widget class="QCheckBox" name="cbF2">
          <property name="maximumSize">
           <size>
            <width>15</width>

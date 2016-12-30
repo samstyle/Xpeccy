@@ -31,14 +31,6 @@ struct xAdr {
 	int adr;
 };
 
-/*
-struct xLabel {
-	int bank;
-	int adr;
-	QString name;
-};
-*/
-
 enum {
 	XTYPE_NONE = -1,
 	XTYPE_ADR = 0,
@@ -134,6 +126,9 @@ class DebugWin : public QDialog {
 		void fillRZX();
 
 		void fillBrkTable();
+
+		void setFlagNames(const char*);
+		void chLayout();
 
 		unsigned short getPrevAdr(unsigned short);
 		void scrollDown();

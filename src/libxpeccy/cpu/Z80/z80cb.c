@@ -1,3 +1,7 @@
+#include <stdlib.h>
+#include "../cpu.h"
+#include "z80_macro.h"
+
 // 00..07	rlc	4 [4rd 3wr]
 void cb00(CPU* cpu) {RLC(cpu->b);}
 void cb01(CPU* cpu) {RLC(cpu->c);}

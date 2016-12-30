@@ -1,3 +1,8 @@
+#include <stdlib.h>
+#include "../cpu.h"
+#include "z80_macro.h"
+#include "z80_nop.h"
+
 // 40	in b,(c)	4 4in		mptr = bc+1
 void ed40(CPU* cpu) {
 	cpu->mptr = cpu->bc;

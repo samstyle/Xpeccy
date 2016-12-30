@@ -1,3 +1,12 @@
+#include <stdlib.h>
+#include "../cpu.h"
+#include "z80_macro.h"
+#include "z80_nop.h"
+
+extern opCode fdcbTab[256];
+extern opCode ddTab[256];
+extern opCode edTab[256];
+
 // 09	add iy,bc	11	mptr = iy+1 before adding
 void fd09(CPU* cpu) {
 	ADD16(cpu->iy, cpu->bc);

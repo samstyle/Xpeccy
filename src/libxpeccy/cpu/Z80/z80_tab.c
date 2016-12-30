@@ -1,4 +1,4 @@
-#include "cpu.h"
+#include "../cpu.h"
 
 const unsigned char FHaddTab[] = {0, FH, FH, FH, 0, 0, 0, FH};
 const unsigned char FHsubTab[] = {0, 0, FH, 0, FH, 0, FH, FH};

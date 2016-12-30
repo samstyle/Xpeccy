@@ -1,7 +1,9 @@
 #ifndef _Z80_H
 #define _Z80_H
 
-#include "../cpu.h"
+#include "z80_macro.h"
+
+typedef struct CPU CPU;
 
 #define FS	0x80
 #define	FZ	0x40

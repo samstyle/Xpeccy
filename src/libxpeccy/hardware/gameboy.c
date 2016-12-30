@@ -1,22 +1,24 @@
 #include "hardware.h"
 
 void gbReset(Computer* comp) {
+	comp->gb.boot = 1;
 	comp->msx.slotA.memMap[0] = 1;
-	if (comp->msx.slotA.data == NULL) {
-		comp->cpu->lock = 1;
-	}
 }
 
 unsigned char gbSlotRd(unsigned short adr, void* data) {
-	xCartridge* slot = (xCartridge*)data;
-	if (!slot->data) return 0xff;
-	int radr;
-	if (adr < 0x4000) {
-		radr = adr;
-	} else {
-		radr = (slot->memMap[0] << 14) | (adr & 0x3fff);
+	Computer* comp = (Computer*)data;
+	xCartridge* slot = &comp->msx.slotA;
+	unsigned char res = 0xff;
+	int radr = adr & 0x3fff;
+	if ((adr < 0x100) && comp->gb.boot) {
+		res = comp->mem->romData[radr];
+	} else if (slot->data) {
+		if (adr >= 0x4000) {
+			radr |= (slot->memMap[0] << 14);
+		}
+		res = slot->data[radr & slot->memMask];
 	}
-	return slot->data[radr & slot->memMask];
+	return res;
 }
 
 void gbSlotWr(unsigned short adr, unsigned char val, void* data) {
@@ -31,31 +33,18 @@ void gbSlotWr(unsigned short adr, unsigned char val, void* data) {
 }
 
 void gbMaper(Computer* comp) {
-	memSetExternal(comp->mem, MEM_BANK0, gbSlotRd, gbSlotWr, &comp->msx.slotA);
-	memSetExternal(comp->mem, MEM_BANK1, gbSlotRd, gbSlotWr, &comp->msx.slotA);
-	memSetBank(comp->mem, MEM_BANK2, MEM_RAM, 0);
-	memSetBank(comp->mem, MEM_BANK3, MEM_RAM, 1);
+	memSetExternal(comp->mem, MEM_BANK0, gbSlotRd, gbSlotWr, comp);
+	memSetExternal(comp->mem, MEM_BANK1, gbSlotRd, gbSlotWr, comp);
+	memSetBank(comp->mem, MEM_BANK2, MEM_RAM, 0);		// VRAM, slot RAM
+	memSetBank(comp->mem, MEM_BANK3, MEM_RAM, 1);		// internal RAM,
 }
 
 unsigned char gbMemRd(Computer* comp, unsigned short adr, int m1) {
-	unsigned char res = 0xff;
-	if ((adr & 0xff80) == 0xff00) {		// ff00..ff7f : IO mapping
-		switch (adr & 0xff) {
-			default:
-				printf("read %.4X\n",adr);
-				assert(0);
-				break;
-		}
-	} else {
-		res = memRd(comp->mem, adr);
-	}
-	return res;
+	if (m1 && comp->gb.boot && (adr > 0xff))
+		comp->gb.boot = 0;
+	return memRd(comp->mem, adr);
 }
 
 void gbMemWr(Computer* comp, unsigned short adr, unsigned char val) {
-	if (adr >= 0xff00) {
-		printf("write %.4X, %.2X\n",adr,val);
-	} else {
-		memWr(comp->mem, adr, val);
-	}
+	memWr(comp->mem, adr, val);
 }

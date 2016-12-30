@@ -11,16 +11,16 @@ extern opCode ddTab[256];
 extern opCode fdTab[256];
 extern opCode cbTab[256];
 extern opCode edTab[256];
-//extern opCode ddcbTab[256];
-//extern opCode fdcbTab[256];
+extern opCode ddcbTab[256];
+extern opCode fdcbTab[256];
 
-#include "z80nop.c"
-#include "z80ed.c"
-#include "z80ddcb.c"
-#include "z80fdcb.c"
-#include "z80dd.c"
-#include "z80fd.c"
-#include "z80cb.c"
+//#include "z80nop.c"
+//#include "z80ed.c"
+//#include "z80ddcb.c"
+//#include "z80fdcb.c"
+//#include "z80dd.c"
+//#include "z80fd.c"
+//#include "z80cb.c"
 
 void z80_reset(CPU* cpu) {
 	cpu->pc = 0;
@@ -77,7 +77,7 @@ int z80_int(CPU* cpu) {
 		case 1:
 			cpu->r++;
 			cpu->t = 2 + 5;	// 2 extra + 5 on RST38 fetch
-			nprFF(cpu);	// +3 +3 execution. 13 total
+			RST(0x38);	// +3 +3 execution. 13 total
 			break;
 		case 2:
 			cpu->r++;

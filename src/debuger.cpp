@@ -13,6 +13,7 @@
 
 void DebugWin::start(Computer* c) {
 	comp = c;
+	chLayout();
 	if (!fillAll()) {
 		disasmAdr = comp->cpu->pc;
 		fillAll();
@@ -69,7 +70,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	}
 	ui.dasmTable->setColumnWidth(0,100);
 	ui.dasmTable->setColumnWidth(1,75);
-	ui.dasmTable->setColumnWidth(2,150);
+	ui.dasmTable->setColumnWidth(2,130);
 	ui.dasmTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_LABEL));
 	ui.dasmTable->setItemDelegateForColumn(1, new xItemDelegate(XTYPE_DUMP));
 	connect(ui.dasmTable,SIGNAL(cellChanged(int,int)),this,SLOT(dasmEdited(int,int)));
@@ -439,6 +440,50 @@ bool DebugWin::fillAll() {
 	return fillDisasm();
 }
 
+void DebugWin::setFlagNames(const char name[8]) {
+	ui.labF7->setText(QString(name[0]));
+	ui.labF6->setText(QString(name[1]));
+	ui.labF5->setText(QString(name[2]));
+	ui.labF4->setText(QString(name[3]));
+	ui.labF3->setText(QString(name[4]));
+	ui.labF2->setText(QString(name[5]));
+	ui.labF1->setText(QString(name[6]));
+	ui.labF0->setText(QString(name[7]));
+}
+
+void DebugWin::chLayout() {
+	switch (comp->cpu->type) {
+		case CPU_Z80:
+			setFlagNames("SZ5H3PNC");
+			ui.cpuGrid->setEnabled(true);
+			ui.editAFa->setEnabled(true);
+			ui.editBCa->setEnabled(true);
+			ui.editDEa->setEnabled(true);
+			ui.editHLa->setEnabled(true);
+			ui.editIX->setEnabled(true);
+			ui.editIY->setEnabled(true);
+			ui.editIR->setEnabled(true);
+			ui.boxIM->setEnabled(true);
+			break;
+		case CPU_LR35902:
+			ui.cpuGrid->setEnabled(true);
+			ui.editAFa->setEnabled(false);
+			ui.editBCa->setEnabled(false);
+			ui.editDEa->setEnabled(false);
+			ui.editHLa->setEnabled(false);
+			ui.editIX->setEnabled(false);
+			ui.editIY->setEnabled(false);
+			ui.editIR->setEnabled(false);
+			ui.boxIM->setEnabled(false);
+			setFlagNames("ZNHC----");
+			break;
+		default:
+			ui.cpuGrid->setEnabled(false);
+			setFlagNames("--------");
+			break;
+	}
+}
+
 // rzx
 
 void dbgSetRzxIO(QLabel* lab, Computer* comp, int pos) {
@@ -501,14 +546,14 @@ void setCBFlag(QCheckBox* cb, int state) {
 
 void DebugWin::fillFlags() {
 	unsigned char flg = comp->cpu->f;
-	setCBFlag(ui.cbFS, flg & 0x80);
-	setCBFlag(ui.cbFZ, flg & 0x40);
+	setCBFlag(ui.cbF7, flg & 0x80);
+	setCBFlag(ui.cbF6, flg & 0x40);
 	setCBFlag(ui.cbF5, flg & 0x20);
-	setCBFlag(ui.cbFH, flg & 0x10);
+	setCBFlag(ui.cbF4, flg & 0x10);
 	setCBFlag(ui.cbF3, flg & 0x08);
-	setCBFlag(ui.cbFP, flg & 0x04);
-	setCBFlag(ui.cbFN, flg & 0x02);
-	setCBFlag(ui.cbFC, flg & 0x01);
+	setCBFlag(ui.cbF2, flg & 0x04);
+	setCBFlag(ui.cbF1, flg & 0x02);
+	setCBFlag(ui.cbF0, flg & 0x01);
 }
 
 void setLEReg(QLineEdit* le, int num) {
@@ -549,14 +594,14 @@ void DebugWin::fillZ80() {
 void DebugWin::setFlags() {
 	if (block) return;
 	unsigned short af = comp->cpu->af & 0xff00;
-	if (ui.cbFS->isChecked()) af |= 0x80;
-	if (ui.cbFZ->isChecked()) af |= 0x40;
+	if (ui.cbF7->isChecked()) af |= 0x80;
+	if (ui.cbF6->isChecked()) af |= 0x40;
 	if (ui.cbF5->isChecked()) af |= 0x20;
-	if (ui.cbFH->isChecked()) af |= 0x10;
+	if (ui.cbF4->isChecked()) af |= 0x10;
 	if (ui.cbF3->isChecked()) af |= 0x08;
-	if (ui.cbFP->isChecked()) af |= 0x04;
-	if (ui.cbFN->isChecked()) af |= 0x02;
-	if (ui.cbFC->isChecked()) af |= 0x01;
+	if (ui.cbF2->isChecked()) af |= 0x04;
+	if (ui.cbF1->isChecked()) af |= 0x02;
+	if (ui.cbF0->isChecked()) af |= 0x01;
 	comp->cpu->af = af;
 	setLEReg(ui.editAF, af);
 	fillDisasm();

@@ -1,57 +1,61 @@
+#include <stdlib.h>
+#include "../cpu.h"
+#include "lr_macro.h"
+
 // 00..07	rlc	4 [4rd 3wr]
-void lrcb00(CPU* cpu) {RLC(cpu->b);}
-void lrcb01(CPU* cpu) {RLC(cpu->c);}
-void lrcb02(CPU* cpu) {RLC(cpu->d);}
-void lrcb03(CPU* cpu) {RLC(cpu->e);}
-void lrcb04(CPU* cpu) {RLC(cpu->h);}
-void lrcb05(CPU* cpu) {RLC(cpu->l);}
-void lrcb06(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); RLC(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
-void lrcb07(CPU* cpu) {RLC(cpu->a);}
+void lrcb00(CPU* cpu) {RLCX(cpu->b);}
+void lrcb01(CPU* cpu) {RLCX(cpu->c);}
+void lrcb02(CPU* cpu) {RLCX(cpu->d);}
+void lrcb03(CPU* cpu) {RLCX(cpu->e);}
+void lrcb04(CPU* cpu) {RLCX(cpu->h);}
+void lrcb05(CPU* cpu) {RLCX(cpu->l);}
+void lrcb06(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); RLCX(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
+void lrcb07(CPU* cpu) {RLCX(cpu->a);}
 // 08..0f	rrc
-void lrcb08(CPU* cpu) {RRC(cpu->b);}
-void lrcb09(CPU* cpu) {RRC(cpu->c);}
-void lrcb0A(CPU* cpu) {RRC(cpu->d);}
-void lrcb0B(CPU* cpu) {RRC(cpu->e);}
-void lrcb0C(CPU* cpu) {RRC(cpu->h);}
-void lrcb0D(CPU* cpu) {RRC(cpu->l);}
-void lrcb0E(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); RRC(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
-void lrcb0F(CPU* cpu) {RRC(cpu->a);}
+void lrcb08(CPU* cpu) {RRCX(cpu->b);}
+void lrcb09(CPU* cpu) {RRCX(cpu->c);}
+void lrcb0A(CPU* cpu) {RRCX(cpu->d);}
+void lrcb0B(CPU* cpu) {RRCX(cpu->e);}
+void lrcb0C(CPU* cpu) {RRCX(cpu->h);}
+void lrcb0D(CPU* cpu) {RRCX(cpu->l);}
+void lrcb0E(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); RRCX(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
+void lrcb0F(CPU* cpu) {RRCX(cpu->a);}
 // 10..17	rl
-void lrcb10(CPU* cpu) {RL(cpu->b);}
-void lrcb11(CPU* cpu) {RL(cpu->c);}
-void lrcb12(CPU* cpu) {RL(cpu->d);}
-void lrcb13(CPU* cpu) {RL(cpu->e);}
-void lrcb14(CPU* cpu) {RL(cpu->h);}
-void lrcb15(CPU* cpu) {RL(cpu->l);}
-void lrcb16(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); RL(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
-void lrcb17(CPU* cpu) {RL(cpu->a);}
+void lrcb10(CPU* cpu) {RLX(cpu->b);}
+void lrcb11(CPU* cpu) {RLX(cpu->c);}
+void lrcb12(CPU* cpu) {RLX(cpu->d);}
+void lrcb13(CPU* cpu) {RLX(cpu->e);}
+void lrcb14(CPU* cpu) {RLX(cpu->h);}
+void lrcb15(CPU* cpu) {RLX(cpu->l);}
+void lrcb16(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); RLX(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
+void lrcb17(CPU* cpu) {RLX(cpu->a);}
 // 18..1f	rr
-void lrcb18(CPU* cpu) {RR(cpu->b);}
-void lrcb19(CPU* cpu) {RR(cpu->c);}
-void lrcb1A(CPU* cpu) {RR(cpu->d);}
-void lrcb1B(CPU* cpu) {RR(cpu->e);}
-void lrcb1C(CPU* cpu) {RR(cpu->h);}
-void lrcb1D(CPU* cpu) {RR(cpu->l);}
-void lrcb1E(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); RR(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
-void lrcb1F(CPU* cpu) {RR(cpu->a);}
+void lrcb18(CPU* cpu) {RRX(cpu->b);}
+void lrcb19(CPU* cpu) {RRX(cpu->c);}
+void lrcb1A(CPU* cpu) {RRX(cpu->d);}
+void lrcb1B(CPU* cpu) {RRX(cpu->e);}
+void lrcb1C(CPU* cpu) {RRX(cpu->h);}
+void lrcb1D(CPU* cpu) {RRX(cpu->l);}
+void lrcb1E(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); RRX(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
+void lrcb1F(CPU* cpu) {RRX(cpu->a);}
 // 20..27	sla
-void lrcb20(CPU* cpu) {SLA(cpu->b);}
-void lrcb21(CPU* cpu) {SLA(cpu->c);}
-void lrcb22(CPU* cpu) {SLA(cpu->d);}
-void lrcb23(CPU* cpu) {SLA(cpu->e);}
-void lrcb24(CPU* cpu) {SLA(cpu->h);}
-void lrcb25(CPU* cpu) {SLA(cpu->l);}
-void lrcb26(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); SLA(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
-void lrcb27(CPU* cpu) {SLA(cpu->a);}
+void lrcb20(CPU* cpu) {SLAX(cpu->b);}
+void lrcb21(CPU* cpu) {SLAX(cpu->c);}
+void lrcb22(CPU* cpu) {SLAX(cpu->d);}
+void lrcb23(CPU* cpu) {SLAX(cpu->e);}
+void lrcb24(CPU* cpu) {SLAX(cpu->h);}
+void lrcb25(CPU* cpu) {SLAX(cpu->l);}
+void lrcb26(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); SLAX(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
+void lrcb27(CPU* cpu) {SLAX(cpu->a);}
 // 28..2f	sra
-void lrcb28(CPU* cpu) {SRA(cpu->b);}
-void lrcb29(CPU* cpu) {SRA(cpu->c);}
-void lrcb2A(CPU* cpu) {SRA(cpu->d);}
-void lrcb2B(CPU* cpu) {SRA(cpu->e);}
-void lrcb2C(CPU* cpu) {SRA(cpu->h);}
-void lrcb2D(CPU* cpu) {SRA(cpu->l);}
-void lrcb2E(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); SRA(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
-void lrcb2F(CPU* cpu) {SRA(cpu->a);}
+void lrcb28(CPU* cpu) {SRAX(cpu->b);}
+void lrcb29(CPU* cpu) {SRAX(cpu->c);}
+void lrcb2A(CPU* cpu) {SRAX(cpu->d);}
+void lrcb2B(CPU* cpu) {SRAX(cpu->e);}
+void lrcb2C(CPU* cpu) {SRAX(cpu->h);}
+void lrcb2D(CPU* cpu) {SRAX(cpu->l);}
+void lrcb2E(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); SRAX(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
+void lrcb2F(CPU* cpu) {SRAX(cpu->a);}
 // 30..37	swap
 void lrcb30(CPU* cpu) {SWAPH(cpu->b);}
 void lrcb31(CPU* cpu) {SWAPH(cpu->c);}
@@ -62,87 +66,87 @@ void lrcb35(CPU* cpu) {SWAPH(cpu->l);}
 void lrcb36(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); SWAPH(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
 void lrcb37(CPU* cpu) {SWAPH(cpu->a);}
 // 38..3f	srl
-void lrcb38(CPU* cpu) {SRL(cpu->b);}
-void lrcb39(CPU* cpu) {SRL(cpu->c);}
-void lrcb3A(CPU* cpu) {SRL(cpu->d);}
-void lrcb3B(CPU* cpu) {SRL(cpu->e);}
-void lrcb3C(CPU* cpu) {SRL(cpu->h);}
-void lrcb3D(CPU* cpu) {SRL(cpu->l);}
-void lrcb3E(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); SRL(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
-void lrcb3F(CPU* cpu) {SRL(cpu->a);}
+void lrcb38(CPU* cpu) {SRLX(cpu->b);}
+void lrcb39(CPU* cpu) {SRLX(cpu->c);}
+void lrcb3A(CPU* cpu) {SRLX(cpu->d);}
+void lrcb3B(CPU* cpu) {SRLX(cpu->e);}
+void lrcb3C(CPU* cpu) {SRLX(cpu->h);}
+void lrcb3D(CPU* cpu) {SRLX(cpu->l);}
+void lrcb3E(CPU* cpu) {cpu->tmpb = MEMRD(cpu->hl,4); SRLX(cpu->tmpb); MEMWR(cpu->hl,cpu->tmpb,3);}
+void lrcb3F(CPU* cpu) {SRLX(cpu->a);}
 
 // 40..47	bit 0,r		4 [4rd]
-void lrcb40(CPU* cpu) {BIT(0,cpu->b);}
-void lrcb41(CPU* cpu) {BIT(0,cpu->c);}
-void lrcb42(CPU* cpu) {BIT(0,cpu->d);}
-void lrcb43(CPU* cpu) {BIT(0,cpu->e);}
-void lrcb44(CPU* cpu) {BIT(0,cpu->h);}
-void lrcb45(CPU* cpu) {BIT(0,cpu->l);}
-void lrcb46(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(0,cpu->tmp);}
-void lrcb47(CPU* cpu) {BIT(0,cpu->a);}
+void lrcb40(CPU* cpu) {BITL(0,cpu->b);}
+void lrcb41(CPU* cpu) {BITL(0,cpu->c);}
+void lrcb42(CPU* cpu) {BITL(0,cpu->d);}
+void lrcb43(CPU* cpu) {BITL(0,cpu->e);}
+void lrcb44(CPU* cpu) {BITL(0,cpu->h);}
+void lrcb45(CPU* cpu) {BITL(0,cpu->l);}
+void lrcb46(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITL(0,cpu->tmp);}
+void lrcb47(CPU* cpu) {BITL(0,cpu->a);}
 // 48..4f	bit 1,r
-void lrcb48(CPU* cpu) {BIT(1,cpu->b);}
-void lrcb49(CPU* cpu) {BIT(1,cpu->c);}
-void lrcb4A(CPU* cpu) {BIT(1,cpu->d);}
-void lrcb4B(CPU* cpu) {BIT(1,cpu->e);}
-void lrcb4C(CPU* cpu) {BIT(1,cpu->h);}
-void lrcb4D(CPU* cpu) {BIT(1,cpu->l);}
-void lrcb4E(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(1,cpu->tmp);}
-void lrcb4F(CPU* cpu) {BIT(1,cpu->a);}
+void lrcb48(CPU* cpu) {BITL(1,cpu->b);}
+void lrcb49(CPU* cpu) {BITL(1,cpu->c);}
+void lrcb4A(CPU* cpu) {BITL(1,cpu->d);}
+void lrcb4B(CPU* cpu) {BITL(1,cpu->e);}
+void lrcb4C(CPU* cpu) {BITL(1,cpu->h);}
+void lrcb4D(CPU* cpu) {BITL(1,cpu->l);}
+void lrcb4E(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITL(1,cpu->tmp);}
+void lrcb4F(CPU* cpu) {BITL(1,cpu->a);}
 // 50..57	bit 2,r
-void lrcb50(CPU* cpu) {BIT(2,cpu->b);}
-void lrcb51(CPU* cpu) {BIT(2,cpu->c);}
-void lrcb52(CPU* cpu) {BIT(2,cpu->d);}
-void lrcb53(CPU* cpu) {BIT(2,cpu->e);}
-void lrcb54(CPU* cpu) {BIT(2,cpu->h);}
-void lrcb55(CPU* cpu) {BIT(2,cpu->l);}
-void lrcb56(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(2,cpu->tmp);}
-void lrcb57(CPU* cpu) {BIT(2,cpu->a);}
+void lrcb50(CPU* cpu) {BITL(2,cpu->b);}
+void lrcb51(CPU* cpu) {BITL(2,cpu->c);}
+void lrcb52(CPU* cpu) {BITL(2,cpu->d);}
+void lrcb53(CPU* cpu) {BITL(2,cpu->e);}
+void lrcb54(CPU* cpu) {BITL(2,cpu->h);}
+void lrcb55(CPU* cpu) {BITL(2,cpu->l);}
+void lrcb56(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITL(2,cpu->tmp);}
+void lrcb57(CPU* cpu) {BITL(2,cpu->a);}
 // 58..5f	bit 3,r
-void lrcb58(CPU* cpu) {BIT(3,cpu->b);}
-void lrcb59(CPU* cpu) {BIT(3,cpu->c);}
-void lrcb5A(CPU* cpu) {BIT(3,cpu->d);}
-void lrcb5B(CPU* cpu) {BIT(3,cpu->e);}
-void lrcb5C(CPU* cpu) {BIT(3,cpu->h);}
-void lrcb5D(CPU* cpu) {BIT(3,cpu->l);}
-void lrcb5E(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(3,cpu->tmp);}
-void lrcb5F(CPU* cpu) {BIT(3,cpu->a);}
+void lrcb58(CPU* cpu) {BITL(3,cpu->b);}
+void lrcb59(CPU* cpu) {BITL(3,cpu->c);}
+void lrcb5A(CPU* cpu) {BITL(3,cpu->d);}
+void lrcb5B(CPU* cpu) {BITL(3,cpu->e);}
+void lrcb5C(CPU* cpu) {BITL(3,cpu->h);}
+void lrcb5D(CPU* cpu) {BITL(3,cpu->l);}
+void lrcb5E(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITL(3,cpu->tmp);}
+void lrcb5F(CPU* cpu) {BITL(3,cpu->a);}
 // 60..67	bit 4,r
-void lrcb60(CPU* cpu) {BIT(4,cpu->b);}
-void lrcb61(CPU* cpu) {BIT(4,cpu->c);}
-void lrcb62(CPU* cpu) {BIT(4,cpu->d);}
-void lrcb63(CPU* cpu) {BIT(4,cpu->e);}
-void lrcb64(CPU* cpu) {BIT(4,cpu->h);}
-void lrcb65(CPU* cpu) {BIT(4,cpu->l);}
-void lrcb66(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(4,cpu->tmp);}
-void lrcb67(CPU* cpu) {BIT(4,cpu->a);}
+void lrcb60(CPU* cpu) {BITL(4,cpu->b);}
+void lrcb61(CPU* cpu) {BITL(4,cpu->c);}
+void lrcb62(CPU* cpu) {BITL(4,cpu->d);}
+void lrcb63(CPU* cpu) {BITL(4,cpu->e);}
+void lrcb64(CPU* cpu) {BITL(4,cpu->h);}
+void lrcb65(CPU* cpu) {BITL(4,cpu->l);}
+void lrcb66(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITL(4,cpu->tmp);}
+void lrcb67(CPU* cpu) {BITL(4,cpu->a);}
 // 68..6f	bit 5,r
-void lrcb68(CPU* cpu) {BIT(5,cpu->b);}
-void lrcb69(CPU* cpu) {BIT(5,cpu->c);}
-void lrcb6A(CPU* cpu) {BIT(5,cpu->d);}
-void lrcb6B(CPU* cpu) {BIT(5,cpu->e);}
-void lrcb6C(CPU* cpu) {BIT(5,cpu->h);}
-void lrcb6D(CPU* cpu) {BIT(5,cpu->l);}
-void lrcb6E(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(5,cpu->tmp);}
-void lrcb6F(CPU* cpu) {BIT(5,cpu->a);}
+void lrcb68(CPU* cpu) {BITL(5,cpu->b);}
+void lrcb69(CPU* cpu) {BITL(5,cpu->c);}
+void lrcb6A(CPU* cpu) {BITL(5,cpu->d);}
+void lrcb6B(CPU* cpu) {BITL(5,cpu->e);}
+void lrcb6C(CPU* cpu) {BITL(5,cpu->h);}
+void lrcb6D(CPU* cpu) {BITL(5,cpu->l);}
+void lrcb6E(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITL(5,cpu->tmp);}
+void lrcb6F(CPU* cpu) {BITL(5,cpu->a);}
 // 70..77	bit 6,r
-void lrcb70(CPU* cpu) {BIT(6,cpu->b);}
-void lrcb71(CPU* cpu) {BIT(6,cpu->c);}
-void lrcb72(CPU* cpu) {BIT(6,cpu->d);}
-void lrcb73(CPU* cpu) {BIT(6,cpu->e);}
-void lrcb74(CPU* cpu) {BIT(6,cpu->h);}
-void lrcb75(CPU* cpu) {BIT(6,cpu->l);}
-void lrcb76(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(6,cpu->tmp);}
-void lrcb77(CPU* cpu) {BIT(6,cpu->a);}
+void lrcb70(CPU* cpu) {BITL(6,cpu->b);}
+void lrcb71(CPU* cpu) {BITL(6,cpu->c);}
+void lrcb72(CPU* cpu) {BITL(6,cpu->d);}
+void lrcb73(CPU* cpu) {BITL(6,cpu->e);}
+void lrcb74(CPU* cpu) {BITL(6,cpu->h);}
+void lrcb75(CPU* cpu) {BITL(6,cpu->l);}
+void lrcb76(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITL(6,cpu->tmp);}
+void lrcb77(CPU* cpu) {BITL(6,cpu->a);}
 // 78..7f	bit 7,r
-void lrcb78(CPU* cpu) {BIT(7,cpu->b);}
-void lrcb79(CPU* cpu) {BIT(7,cpu->c);}
-void lrcb7A(CPU* cpu) {BIT(7,cpu->d);}
-void lrcb7B(CPU* cpu) {BIT(7,cpu->e);}
-void lrcb7C(CPU* cpu) {BIT(7,cpu->h);}
-void lrcb7D(CPU* cpu) {BIT(7,cpu->l);}
-void lrcb7E(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITM(7,cpu->tmp);}
-void lrcb7F(CPU* cpu) {BIT(7,cpu->a);}
+void lrcb78(CPU* cpu) {BITL(7,cpu->b);}
+void lrcb79(CPU* cpu) {BITL(7,cpu->c);}
+void lrcb7A(CPU* cpu) {BITL(7,cpu->d);}
+void lrcb7B(CPU* cpu) {BITL(7,cpu->e);}
+void lrcb7C(CPU* cpu) {BITL(7,cpu->h);}
+void lrcb7D(CPU* cpu) {BITL(7,cpu->l);}
+void lrcb7E(CPU* cpu) {cpu->tmp = MEMRD(cpu->hl,4); BITL(7,cpu->tmp);}
+void lrcb7F(CPU* cpu) {BITL(7,cpu->a);}
 
 // 80..87	res 0,r		4 [4rd 3wr]
 void lrcb80(CPU* cpu) {RES(0,cpu->b);}

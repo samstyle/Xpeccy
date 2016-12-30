@@ -191,6 +191,9 @@ typedef struct {
 		xCartridge slotA;
 		xCartridge slotB;
 	} msx;
+	struct {
+		unsigned boot:1;	// internal rom on
+	} gb;
 
 	CMOS cmos;
 	int resbank;			// rompart active after reset

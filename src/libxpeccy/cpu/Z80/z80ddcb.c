@@ -1,3 +1,7 @@
+#include <stdlib.h>
+#include "../cpu.h"
+#include "z80_macro.h"
+
 // rlc reg,(ix+e)	[3rd] 4 5add 4rd 3wr
 void ddcb00(CPU* cpu) {XDCBR(cpu->ix,RLC,cpu->b);}
 void ddcb01(CPU* cpu) {XDCBR(cpu->ix,RLC,cpu->c);}

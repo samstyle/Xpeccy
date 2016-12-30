@@ -155,6 +155,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 	if (prf == NULL) prf = conf.prof.cur;
 	prf->rsName = rnm;
 	xRomset* rset = findRomset(rnm);
+	//printf("romset %s : %p\n",rnm.c_str(), rset);
 	int i;
 	std::string fpath = "";
 	std::ifstream file;
@@ -173,6 +174,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 			if (file.good()) {
 				file.seekg(0,std::ios_base::end);
 				prts = file.tellg() / 0x4000;
+				if (file.tellg() & 0x3fff) prts++;
 				if (prts > 4) prf->zx->mem->romMask = 0x07;
 				if (prts > 8) prf->zx->mem->romMask = 0x0f;
 				if (prts > 16) prf->zx->mem->romMask = 0x1f;
@@ -182,6 +184,16 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 				for (i = 0; i < prts; i++) {
 					file.read(pageBuf,0x4000);
 					memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
+/*
+					printf("PART %i:\n",i);
+					for (int j = 0; j < 0x100; j++) {
+						if (!(j & 0x0f)) {
+							printf("\n%.4X : ",j);
+						}
+						printf("%.2X ",prf->zx->mem->romData[j] & 0xff);
+					}
+					printf("\n");
+*/
 				}
 				memset(pageBuf,0xff,0x4000);
 				for (i = prts; i < 32; i++)

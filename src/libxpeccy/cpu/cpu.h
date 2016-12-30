@@ -1,13 +1,6 @@
 #ifndef _CPU_H
 #define _CPU_H
 
-extern const unsigned char daaTab[0x1000];
-extern const unsigned char sz53pTab[0x100];
-extern const unsigned char FHaddTab[8];
-extern const unsigned char FHsubTab[8];
-extern const unsigned char FVaddTab[8];
-extern const unsigned char FVsubTab[8];
-
 typedef struct {
 	int fetch;
 	const char* mnem;
@@ -44,7 +37,6 @@ typedef struct {
 	char arg[8][256];
 } xAsmScan;
 
-#include "macros.h"
 #include "Z80/z80.h"
 #include "LR35902/lr35902.h"
 

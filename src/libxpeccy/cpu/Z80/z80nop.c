@@ -1,3 +1,12 @@
+#include <stdlib.h>
+#include "../cpu.h"
+#include "z80_macro.h"
+
+extern opCode cbTab[256];
+extern opCode edTab[256];
+extern opCode ddTab[256];
+extern opCode fdTab[256];
+
 // 00	nop		4
 void npr00(CPU* cpu) {}
 

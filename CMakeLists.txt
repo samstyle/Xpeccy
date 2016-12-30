@@ -25,8 +25,7 @@ file(GLOB SOURCES
 	./src/xgui/*.cpp
 	./src/libxpeccy/*.c
 	./src/libxpeccy/cpu/*.c
-	./src/libxpeccy/cpu/Z80/z80.c
-	./src/libxpeccy/cpu/LR35902/lr35902.c
+	./src/libxpeccy/cpu/*/*.c
 	./src/libxpeccy/sound/*.c
 	./src/libxpeccy/video/*.c
 	./src/libxpeccy/hardware/*.c

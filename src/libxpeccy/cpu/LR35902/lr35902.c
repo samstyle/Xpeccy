@@ -3,14 +3,24 @@
 
 #include "../cpu.h"
 
-#include "lr_pref_cb.c"
-#include "lr_nopref.c"
+//#include "lr_pref_cb.c"
+//#include "lr_nopref.c"
+
+extern opCode lrTab[256];
+extern opCode lrcbTab[256];
 
 void lr_reset(CPU* cpu) {
-	cpu->pc = 0x100;
+	cpu->pc = 0;
 	cpu->af = cpu->bc = cpu->de = cpu->hl = 0xffff;
-	cpu->sp = 0xfff0;
+	cpu->sp = 0xffff;
 	cpu->lock = 0;
+	// not necessary
+	cpu->imode = 0;
+	cpu->af_ = cpu->bc_ = cpu->de_ = cpu->hl_ = 0xffff;
+	cpu->ix = cpu->iy = 0xffff;
+	cpu->iff1 = 0;
+	cpu->iff2 = 0;
+	cpu->i = cpu->r = cpu->r7 = 0;
 }
 
 int lr_exec(CPU* cpu) {
