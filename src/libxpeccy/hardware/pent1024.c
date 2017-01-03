@@ -49,7 +49,7 @@ void p1mOutDFF7(Computer* comp, unsigned short port, unsigned char val) {
 void p1mOutEFF7(Computer* comp, unsigned short port, unsigned char val) {
 	comp->pEFF7 = val;
 	vidSetMode(comp->vid,(val & 0x01) ? VID_ALCO : VID_NORMAL);
-	compSetFrq(comp, (val & 0x10) ? 7.0 : 3.5);
+	compSetTurbo(comp, (val & 0x10) ? 2 : 1);
 	p1mMapMem(comp);
 }
 

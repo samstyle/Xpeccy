@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>507</width>
-    <height>484</height>
+    <width>505</width>
+    <height>482</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -97,7 +97,7 @@
                  <double>14.000000000000000</double>
                 </property>
                 <property name="singleStep">
-                 <double>0.050000000000000</double>
+                 <double>0.010000000000000</double>
                 </property>
                 <property name="value">
                  <double>3.500000000000000</double>

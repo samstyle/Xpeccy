@@ -311,10 +311,10 @@ void tsOut1FAF(Computer* comp, unsigned short port, unsigned char val) {comp->dm
 
 void tsOut20AF(Computer* comp, unsigned short port, unsigned char val) {
 	switch (val & 3) {
-		case 0: compSetFrq(comp,3.5); break;
-		case 1: compSetFrq(comp,7.0); break;
-		case 2: compSetFrq(comp,14.0); break;	// normal
-		case 3: compSetFrq(comp,14.0); break;	// overclock
+		case 0: compSetTurbo(comp,1); break;
+		case 1: compSetTurbo(comp,2); break;
+		case 2: compSetTurbo(comp,4); break;	// normal
+		case 3: compSetTurbo(comp,4); break;	// overclock
 	}
 }
 

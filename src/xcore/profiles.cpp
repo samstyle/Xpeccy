@@ -372,7 +372,7 @@ int prfLoad(std::string nm) {
 						if ((tmp2 > 1) && (tmp2 < 29)) tmp2 *= 5e5;	// old 2..28 -> 500000..14000000
 						if (tmp2 < 1e6) tmp2 = 1e6;
 						if (tmp2 > 14e6) tmp2 = 14e6;
-						compSetFrq(comp, tmp2 / 1e6);
+						compSetBaseFrq(comp, tmp2 / 1e6);
 					}
 					if (pnam == "memory") {
 						memsz = atoi(pval.c_str());

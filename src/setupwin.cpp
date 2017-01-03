@@ -454,7 +454,7 @@ void SetupWin::apply() {
 	comp->resbank = ui.resbox->itemData(ui.resbox->currentIndex()).toInt();
 	memSetSize(comp->mem,ui.mszbox->itemData(ui.mszbox->currentIndex()).toInt());
 	cpuSetType(comp->cpu, ui.cbCpu->itemData(ui.cbCpu->currentIndex()).toInt());
-	compSetFrq(comp, ui.sbFreq->value());
+	compSetBaseFrq(comp, ui.sbFreq->value());
 	comp->scrpWait = ui.scrpwait->isChecked() ? 1 : 0;
 	if (comp->hw != oldmac) compReset(comp,RES_DEFAULT);
 	conf.sysclock = ui.sysCmos->isChecked() ? 1 : 0;

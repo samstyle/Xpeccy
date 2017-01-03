@@ -80,6 +80,7 @@ typedef struct {
 	unsigned contIO:1;		// contended IO
 
 	double cpuFrq;
+	int frqMul;
 	unsigned char intVector;
 
 	unsigned char beepAmp;
@@ -206,7 +207,8 @@ Computer* compCreate();
 void compDestroy(Computer*);
 void compReset(Computer*,int);
 int compExec(Computer*);
-void compSetFrq(Computer*,double);
+void compSetBaseFrq(Computer*,double);
+void compSetTurbo(Computer*,int);
 void compSetLayout(Computer*, int, int, int, int, int, int, int, int, int);
 void compSetHardware(Computer*,const char*);
 

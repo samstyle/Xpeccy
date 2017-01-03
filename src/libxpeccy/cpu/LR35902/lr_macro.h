@@ -4,14 +4,6 @@
 extern unsigned char FLHaddTab[8];
 extern unsigned char FLHsubTab[8];
 
-/*
-// mem i/o
-#define	MEMRD(adr,tk) cpu->mrd(adr,0,cpu->data);cpu->t+=tk;
-#define	MEMWR(adr,val,tk) cpu->mwr(adr,val,cpu->data);cpu->t+=tk;
-#define	IORD(port,tk) cpu->ird(port,cpu->data);cpu->t+=tk;
-#define IOWR(port,val,tk) cpu->iwr(port,val,cpu->data);cpu->t+=tk;
-*/
-
 // ariphmetic
 #define INCL(val) {\
 	val++; \
@@ -65,35 +57,9 @@ extern unsigned char FLHsubTab[8];
 	cpu->f = (cpu->f & FLZ) | ((cpu->tmpi & 0x10000) ? FLC : 0) | FLHaddTab[cpu->tmp & 7];\
 }
 
-#define SWAPH(rp) {rp = ((rp & 0xf0) >> 4) | ((rp & 0x0f) << 4); cpu->f = (rp ? 0 : FLZ);}		// swap hi/lo halfbyte
-
-/*
-#define ADC16(val) {\
-	cpu->tmpi = cpu->hl + val + (cpu->f & FC);\
-	cpu->tmp = ((cpu->hl & 0x8800) >> 11) | ((val & 0x8800) >> 10) | ((cpu->tmpi & 0x8800) >> 9);\
-	cpu->mptr = cpu->hl + 1;\
-	cpu->hl = cpu->tmpi;\
-	cpu->f = (cpu->tmpi & 0x10000 ? FC : 0) | FVaddTab[cpu->tmp >> 4] | (cpu->h & (FS | F5 | F3)) | FHaddTab[cpu->tmp & 0x07] | (cpu->hl ? 0 : FZ);\
-}
-
-#define SBC16(val) {\
-	cpu->tmpi = cpu->hl - val - (cpu->f & FC);\
-	cpu->tmp = ((cpu->hl & 0x8800) >> 11) | ((val & 0x8800) >> 10) | ((cpu->tmpi & 0x8800) >> 9);\
-	cpu->mptr = cpu->hl + 1;\
-	cpu->hl = cpu->tmpi;\
-	cpu->f = (cpu->tmpi & 0x10000 ? FC : 0) | FN | FVsubTab[cpu->tmp >> 4] | (cpu->h & (FS | F5 | F3 )) | FHsubTab[cpu->tmp & 0x07] | (cpu->hl ? 0 : FZ);\
-}
-
 // misc
 
-#define JR(offset) {cpu->pc += (signed char)offset; cpu->mptr = cpu->pc; cpu->t += 5;}
-
-#define POP(rh,rl) {rl = MEMRD(cpu->sp++,3); rh = MEMRD(cpu->sp++,3);}
-#define PUSH(rh,rl) {MEMWR(--cpu->sp,rh,3); MEMWR(--cpu->sp,rl,3);}
-
-#define RST(adr) {PUSH(cpu->hpc,cpu->lpc); cpu->mptr = adr; cpu->pc = cpu->mptr;}
-#define RET {POP(cpu->hpc,cpu->lpc); cpu->mptr = cpu->pc;}
-*/
+#define SWAPH(rp) {rp = ((rp & 0xf0) >> 4) | ((rp & 0x0f) << 4); cpu->f = (rp ? 0 : FLZ);}		// swap hi/lo halfbyte
 
 // shift
 
@@ -147,67 +113,5 @@ extern unsigned char FLHsubTab[8];
 // bit
 
 #define BITL(bit,val) {cpu->f = (cpu->f & FLC) | FLH | ((val & (0x01 << bit)) ? 0 : FLZ);}
-// #define BITML(bit,val) {cpu->f = (cpu->f & FLC) | FLH | (sz53pTab[val & (1 << bit)] & ~(F5 | F3)) | (cpu->hptr & (F5 | F3));}
-
-/*
-#define SET(bit,val) {val |= (1 << bit);}
-#define RES(bit,val) {val &= ~(1 << bit);}
-
-// extend
-
-#define SWAP(rp1,rp2) {cpu->tmpw = rp1; rp1 = rp2; rp2 = cpu->tmpw;}		// swap 16bit regs
-
-#define	RDSHIFT(base) {\
-	cpu->tmp = MEMRD(cpu->pc++,3);\
-	cpu->mptr = base + (signed char)cpu->tmp;\
-	cpu->t += 5;\
-}
-
-#define XDCB(base,name) {\
-	cpu->mptr = base + (signed char)cpu->tmp;\
-	cpu->t += 5;\
-	cpu->tmpb = MEMRD(cpu->mptr,4);\
-	name(cpu->tmpb);\
-	MEMWR(cpu->mptr,cpu->tmpb,3);\
-}
-
-#define XDCBR(base,name,reg) {\
-	XDCB(base,name);\
-	reg = cpu->tmpb;\
-}
-
-#define	BITX(base,bit) {\
-	cpu->mptr = base + (signed char)cpu->tmp;\
-	cpu->t += 5;\
-	cpu->tmpb = MEMRD(cpu->mptr,4);\
-	BITM(bit,cpu->tmpb);\
-}
-
-#define RESX(base,bit) {\
-	cpu->mptr = base + (signed char)cpu->tmp;\
-	cpu->t += 5;\
-	cpu->tmpb = MEMRD(cpu->mptr,4);\
-	cpu->tmpb &= ~(0x01 << bit);\
-	MEMWR(cpu->mptr,cpu->tmpb,3);\
-}
-
-#define RESXR(base,bit,reg) {\
-	RESX(base,bit);\
-	reg = cpu->tmpb;\
-}
-
-#define SETX(base,bit) {\
-	cpu->mptr = base + (signed char)cpu->tmp;\
-	cpu->t += 5;\
-	cpu->tmpb = MEMRD(cpu->mptr,4);\
-	cpu->tmpb |= (0x01 << bit);\
-	MEMWR(cpu->mptr,cpu->tmpb,3);\
-}
-
-#define SETXR(base,bit,reg) {\
-	SETX(base,bit);\
-	reg = cpu->tmpb;\
-}
-*/
 
 #endif

@@ -52,7 +52,7 @@ void atm2Out77(Computer* comp, unsigned short port, unsigned char val) {		// dos
 		case 6: vidSetMode(comp->vid,VID_ATM_TEXT); break;
 		default: vidSetMode(comp->vid,VID_UNKNOWN); break;
 	}
-	compSetFrq(comp,(val & 0x08) ? 7.0 : 3.5);
+	compSetTurbo(comp,(val & 0x08) ? 2 : 1);
 	comp->p77hi = (port & 0xff00) >> 8;
 	atm2MapMem(comp);
 }

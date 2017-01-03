@@ -22,9 +22,10 @@ unsigned char gbSlotRd(unsigned short adr, void* data) {
 }
 
 void gbSlotWr(unsigned short adr, unsigned char val, void* data) {
-	xCartridge* slot = (xCartridge*)data;
+	Computer* comp = (Computer*)data;
+	xCartridge* slot = &comp->msx.slotA;
 	if (!slot->data) return;
-	switch (adr & 0xf000) {
+	switch (adr & 0xf000) {			// TODO: different cartrige memory mappers
 		case 0x2000:
 		case 0x3000:
 			slot->memMap[0] = val;
@@ -32,11 +33,31 @@ void gbSlotWr(unsigned short adr, unsigned char val, void* data) {
 	}
 }
 
+unsigned char gbvRd(unsigned short adr, void* data) {
+	Computer* comp = (Computer*)data;
+	unsigned char res;
+	if (adr & 0x2000) {		// hi 8K: cartrige ram
+		res = 0xff;
+	} else {
+		res = comp->vid->gbc.ram[adr & 0x1fff];
+	}
+	return res;
+}
+
+void gbvWr(unsigned short adr, unsigned char val, void* data) {
+	Computer* comp = (Computer*)data;
+	if (adr & 0x2000) {
+		// ...
+	} else {
+		comp->vid->gbc.ram[adr & 0x1fff] = val;
+	}
+}
+
 void gbMaper(Computer* comp) {
 	memSetExternal(comp->mem, MEM_BANK0, gbSlotRd, gbSlotWr, comp);
 	memSetExternal(comp->mem, MEM_BANK1, gbSlotRd, gbSlotWr, comp);
-	memSetBank(comp->mem, MEM_BANK2, MEM_RAM, 0);		// VRAM, slot RAM
-	memSetBank(comp->mem, MEM_BANK3, MEM_RAM, 1);		// internal RAM,
+	memSetExternal(comp->mem, MEM_BANK2, gbvRd, gbvWr, comp);	// VRAM (8K), slot ram (8K)
+	memSetBank(comp->mem, MEM_BANK3, MEM_RAM, 0);		// internal RAM (TODO: 8K only, hi 8K = low 8K)
 }
 
 unsigned char gbMemRd(Computer* comp, unsigned short adr, int m1) {

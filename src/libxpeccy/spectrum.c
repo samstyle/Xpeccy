@@ -162,7 +162,8 @@ Computer* compCreate() {
 	comp->cpu = cpuCreate(CPU_Z80,&memrd,&memwr,&iord,&iowr,&intrq,ptr);
 	comp->mem = memCreate();
 	comp->vid = vidCreate(comp->mem);
-	compSetFrq(comp,3.5);
+	compSetBaseFrq(comp, 3.52);
+	compSetTurbo(comp, 1);
 
 	memset(comp->brkIOMap, 0, 0x10000);
 	memset(comp->brkRomMap, 0, 0x80000);
@@ -286,13 +287,29 @@ void compSetHardware(Computer* comp, const char* name) {
 	if (hw == NULL) return;
 	comp->hw = hw;
 	comp->vid->istsconf = (hw->type == HW_TSLAB) ? 1 : 0;
-	comp->vid->ismsx = (hw->type == HW_MSX) ? 1 : 0;
+	comp->vid->ismsx = ((hw->type == HW_MSX) || (hw->type == HW_MSX2)) ? 1 : 0;
 }
 
-void compSetFrq(Computer* comp, double frq) {
-	comp->cpuFrq = frq;
-	comp->nsPerTick = 280 * 3.5 / frq;	// 280 ns per tick @ 3.5 MHz
+// cpu freq
+
+void compUpdateTimings(Computer* comp) {
+	comp->nsPerTick = 1e3 / comp->cpuFrq / comp->frqMul;
+#ifdef ISDEBUG
+	printf("%f x %i : %i ns\n",comp->cpuFrq,comp->frqMul,comp->nsPerTick);
+#endif
 }
+
+void compSetBaseFrq(Computer* comp, double frq) {
+	comp->cpuFrq = frq;
+	compUpdateTimings(comp);
+}
+
+void compSetTurbo(Computer* comp, int mult) {
+	comp->frqMul = mult;
+	compUpdateTimings(comp);
+}
+
+// interrupts
 
 int zxINT(Computer* comp, unsigned char vect) {
 	res4 = 0;
@@ -302,6 +319,8 @@ int zxINT(Computer* comp, unsigned char vect) {
 	vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
 	return res2;
 }
+
+// exec 1 opcode, sync devices, return eated ns
 
 int compExec(Computer* comp) {
 	res4 = 0;

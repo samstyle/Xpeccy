@@ -202,7 +202,7 @@ void evoOut77(Computer* comp, unsigned short port, unsigned char val) {
 
 void evoOut77d(Computer* comp, unsigned short port, unsigned char val) {
 	comp->prt2 = ((port & 0x4000) >> 7) | ((port & 0x0300) >> 3) | (val & 0x0f);	// a14.a9.a8.0.b3.b2.b1.b0
-	compSetFrq(comp,(val & 0x08) ? 14.0 : ((comp->pEFF7 & 0x10) ? 3.5 : 7.0));
+	compSetTurbo(comp,(val & 0x08) ? 4 : ((comp->pEFF7 & 0x10) ? 1 : 2));
 	evoSetVideoMode(comp);
 	evoMapMem(comp);
 }
@@ -259,7 +259,7 @@ void evoOutDFF7(Computer* comp, unsigned short port, unsigned char val) {	// !do
 
 void evoOutEFF7(Computer* comp, unsigned short port, unsigned char val) {	// !dos
 	comp->pEFF7 = val;
-	compSetFrq(comp,(comp->prt2 & 0x08) ? 14.0 : (val & 0x08) ? 7.0 : 3.5);
+	compSetTurbo(comp,(comp->prt2 & 0x08) ? 4 : (val & 0x08) ? 2 : 1);
 	evoSetVideoMode(comp);
 	evoMapMem(comp);
 }

@@ -128,12 +128,12 @@ void sndCalibrate(int fps, int frmNs) {
 	sndBufSize = conf.snd.chans * sndChunks;	// buffer size
 	nsPerSample = frmNs / sndChunks;		// ns / sample
 #ifdef ISDEBUG
-	printf("fps = %i\n",fps);
-	printf("frmNs = %i\n",frmNs);
-	printf("snd.rate = %i\n",conf.snd.rate);
-	printf("sndChunks = %i\n",sndChunks);
-	printf("sndBufSize = %i\n",sndBufSize);
-	printf("nsPerSample = %i\n",nsPerSample);
+//	printf("fps = %i\n",fps);
+//	printf("frmNs = %i\n",frmNs);
+//	printf("snd.rate = %i\n",conf.snd.rate);
+//	printf("sndChunks = %i\n",sndChunks);
+//	printf("sndBufSize = %i\n",sndBufSize);
+//	printf("nsPerSample = %i\n",nsPerSample);
 #endif
 }
 

@@ -8,8 +8,10 @@ extern "C" {
 #include <stddef.h>
 
 #include "../memory.h"
+
 #include "ulaplus.h"
 #include "v9938.h"
+#include "gbcvideo.h"
 
 // screen mode
 enum {
@@ -25,7 +27,8 @@ enum {
 	VID_TSL_NORMAL,	// TSConf common screen
 	VID_TSL_TEXT,
 	VID_PRF_MC,	// Profi multicolor
-	VID_V9938,
+	VID_V9938,	// MSX2
+	VID_GBC,	// Gameboy
 	VID_UNKNOWN = -1
 };
 
@@ -101,6 +104,8 @@ struct Video {
 	Memory* mem;
 	ulaPlus* ula;
 	VDP9938 v9938;
+	GBCVid gbc;
+
 };
 
 typedef struct Video Video;

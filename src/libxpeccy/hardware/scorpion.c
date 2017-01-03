@@ -48,12 +48,12 @@ unsigned char scrpIn1F(Computer* comp, unsigned short port) {
 }
 
 unsigned char scrpIn1FFD(Computer* comp, unsigned short port) {
-	compSetFrq(comp, 3.5);
+	compSetTurbo(comp, 1);
 	return 0xff;
 }
 
 unsigned char scrpIn7FFD(Computer* comp, unsigned short port) {
-	compSetFrq(comp, 7.0);
+	compSetTurbo(comp, 2);
 	return 0xff;
 }
 

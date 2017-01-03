@@ -26,6 +26,7 @@ typedef struct {
 } vRay;
 
 typedef struct {
+	unsigned lock:1;		// lock layout changes
 	vCoord full;
 	vCoord bord;
 	vCoord sync;

@@ -93,6 +93,9 @@ Video* vidCreate(Memory* me) {
 	vid->v9938.lay = &vid->lay;
 	vid->v9938.ray = &vid->ray;
 
+	vid->gbc.lay = &vid->lay;
+	vid->gbc.ray = &vid->ray;
+
 	return vid;
 }
 
@@ -101,12 +104,20 @@ void vidDestroy(Video* vid) {
 	free(vid);
 }
 
+#define FIFTYFRAME142NSPERDOT 1017856000
 void vidUpdateTimings(Video* vid) {
+#if 0
 	vid->nsPerDot = 140;	// vid->nsPerLine / vid->lay.full.x;
 	vid->nsPerLine = vid->nsPerDot * vid->lay.full.x;
 	vid->nsPerFrame = vid->nsPerLine * vid->lay.full.y;
-//	vid->nsPerFrame = 1e9 / vid->fps;
-//	vid->nsPerLine = vid->nsPerFrame / vid->lay.full.y;
+#else
+	vid->nsPerFrame = FIFTYFRAME142NSPERDOT / vid->fps;
+	vid->nsPerLine = vid->nsPerFrame / vid->lay.full.y;
+	vid->nsPerDot = vid->nsPerLine / vid->lay.full.x;
+#ifdef ISDEBUG
+	printf("%i / %i / %i\n", vid->nsPerDot, vid->nsPerLine, vid->nsPerFrame);
+#endif
+#endif
 }
 
 void vidUpdateLayout(Video* vid, float brdsize) {
@@ -208,24 +219,11 @@ void vidSetFont(Video* vid, char* src) {
 }
 
 void vidSetFps(Video* vid, int fps) {
-	if (fps < 25) fps = 25;
+	if (fps < 10) fps = 10;
 	else if (fps > 100) fps = 100;
 	vid->fps = fps;
 	vidUpdateTimings(vid);
 }
-
-/*
-inline void vidSingleDot(Video* vid, unsigned char idx) {
-	*(vid->ray.ptr++) = vid->pal[idx].r;
-	*(vid->ray.ptr++) = vid->pal[idx].g;
-	*(vid->ray.ptr++) = vid->pal[idx].b;
-}
-
-inline void vidPutDot(&video* vid, unsigned char idx) {
-	vidSingleDot(vid, idx);
-	vidSingleDot(vid, idx);
-}
-*/
 
 // video drawing
 
@@ -493,6 +491,21 @@ void vidFrameV9938(Video* vid) {
 		vid->v9938.cbFram(&vid->v9938);
 }
 
+// gameboy
+
+void vidGBDraw(Video* vid) {
+	vid->gbc.draw(&vid->gbc);
+}
+
+void vidGBLine(Video* vid) {
+	if (vid->gbc.cbLine)
+		vid->gbc.cbLine(&vid->gbc);
+}
+
+void vidGBFram(Video* vid) {
+	if (vid->gbc.cbFram)
+		vid->gbc.cbFram(&vid->gbc);
+}
 
 // debug
 
@@ -524,6 +537,7 @@ xVideoMode vidModeTab[] = {
 	{VID_TSL_TEXT, vidDrawTSLText, vidTSline, NULL},
 	{VID_PRF_MC, vidProfiScr, NULL, NULL},
 	{VID_V9938, vidDrawV9938, NULL, vidFrameV9938},
+	{VID_GBC, vidGBDraw, vidGBLine, vidGBFram},
 	{VID_UNKNOWN, vidDrawBorder, NULL, NULL}
 };
 
