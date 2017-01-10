@@ -67,6 +67,7 @@ struct CPU {
 	unsigned char iff1;
 	unsigned char iff2;
 	unsigned char imode;
+	unsigned short inta;
 
 	PAIR(af,a,f);
 	PAIR(bc,b,c);

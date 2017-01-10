@@ -89,9 +89,12 @@ void saveConfig() {
 
 	fprintf(cfile, "\n[VIDEO]\n\n");
 	foreach(xLayout lay, conf.layList) {
-		fprintf(cfile, "layout = %s:%i:%i:%i:%i:%i:%i:%i:%i:%i\n",lay.name.c_str(),\
-		       lay.full.x, lay.full.y, lay.bord.x, lay.bord.y,\
-		       lay.sync.x, lay.sync.y, lay.intsz, lay.intpos.y, lay.intpos.x);
+		if (lay.name != "default") {
+			fprintf(cfile, "layout = %s:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i\n",lay.name.c_str(),\
+				lay.lay.full.x, lay.lay.full.y, lay.lay.bord.x, lay.lay.bord.y,\
+				lay.lay.blank.x, lay.lay.blank.y, lay.lay.intSize, lay.lay.intpos.y, lay.lay.intpos.x,\
+				lay.lay.scr.x, lay.lay.scr.y);
+		}
 	}
 	fprintf(cfile, "scrDir = %s\n", conf.scrShot.dir.c_str());
 	fprintf(cfile, "scrFormat = %s\n", conf.scrShot.format.c_str());
@@ -214,7 +217,7 @@ void loadConfig() {
 	std::string pnm = "default";
 	int section = SECT_NONE;
 	std::vector<std::string> vect;
-	xLayout vlay;
+	vLayout vlay;
 	std::vector<xRomset> rsListist;
 	xRomset newrs;
 	size_t pos;
@@ -257,28 +260,29 @@ void loadConfig() {
 				case SECT_VIDEO:
 					if (pnam=="layout") {
 						vect = splitstr(pval,":");
+						if (vect.size() < 10) {
+
+						}
+
 						if (vect.size() > 8) {
-							vlay.name = vect[0];
 							vlay.full.x = atoi(vect[1].c_str());
 							vlay.full.y = atoi(vect[2].c_str());
 							vlay.bord.x = atoi(vect[3].c_str());
 							vlay.bord.y = atoi(vect[4].c_str());
-							vlay.sync.x = atoi(vect[5].c_str());
-							vlay.sync.y = atoi(vect[6].c_str());
-							vlay.intsz = atoi(vect[7].c_str());
+							vlay.blank.x = atoi(vect[5].c_str());
+							vlay.blank.y = atoi(vect[6].c_str());
+							vlay.intSize = atoi(vect[7].c_str());
 							vlay.intpos.y = atoi(vect[8].c_str());
-							if (vect.size() > 9) {
-								vlay.intpos.x = atoi(vect[9].c_str());
-							} else {
-								vlay.intpos.x = 0;
-							}
+							vlay.intpos.x = (vect.size() > 9) ? atoi(vect[9].c_str()) : 0;
+							vlay.scr.x = (vect.size() > 10) ? atoi(vect[10].c_str()) : 256;
+							vlay.scr.y = (vect.size() > 11) ? atoi(vect[11].c_str()) : 192;
 							if (vlay.full.x > 512) vlay.full.x = 512;
 							if (vlay.full.y > 512) vlay.full.y = 512;
-							if (vlay.full.x < vlay.bord.x + 256) vlay.full.x = vlay.bord.x + 256;
-							if (vlay.sync.x > vlay.bord.x) vlay.sync.x = vlay.bord.x;
-							if (vlay.full.y < vlay.bord.y + 192) vlay.full.y = vlay.bord.y + 256;
-							if (vlay.sync.y > vlay.bord.y) vlay.sync.y = vlay.bord.y;
-							addLayout(vlay);
+							//if (vlay.full.x < vlay.bord.x + vlay.scr.x) vlay.full.x = vlay.bord.x + vlay.scr.x;
+							//if (vlay.blank.x > vlay.bord.x) vlay.blank.x = vlay.bord.x;
+							//if (vlay.full.y < vlay.bord.y + vlay.scr.y) vlay.full.y = vlay.bord.y + vlay.scr.y;
+							//if (vlay.blank.y > vlay.bord.y) vlay.blank.y = vlay.bord.y;
+							addLayout(vect[0], vlay);
 						}
 					}
 					if (pnam=="scrDir") conf.scrShot.dir = pval;

@@ -245,3 +245,13 @@ unsigned char msxIn(Computer* comp, unsigned short port, int dos) {
 void msxOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
 	hwOut(msxPortMap,comp, port, val, dos);
 }
+
+int zxINT(Computer*, unsigned char);
+int msxINT(Computer* comp) {
+	int res = 0;
+	if ((comp->vid->v9938.reg[1] & 0x40) && comp->vid->newFrame) {
+		zxINT(comp, 0xff);
+		res = 1;
+	}
+	return res;
+}

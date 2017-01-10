@@ -27,9 +27,10 @@ typedef struct {
 
 typedef struct {
 	unsigned lock:1;		// lock layout changes
-	vCoord full;
-	vCoord bord;
-	vCoord sync;
+	vCoord full;			// full size = visible + blank
+	vCoord bord;			// left/top border size
+	vCoord blank;			// blank zones
+	vCoord scr;			// screen size (256:192 for zx)
 	vCoord intpos;
 	int intSize;
 } vLayout;

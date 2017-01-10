@@ -117,8 +117,6 @@ typedef struct {
 	} roms[32];
 } xRomset;
 
-// extern std::vector<xRomset> rsList;
-
 xRomset* findRomset(std::string);
 bool addRomset(xRomset);
 
@@ -126,15 +124,10 @@ bool addRomset(xRomset);
 
 typedef struct {
 	std::string name;
-	vCoord full;
-	vCoord sync;
-	vCoord bord;
-	vCoord intpos;
-	int intsz;
+	vLayout lay;
 } xLayout;
 
-bool addLayout(std::string,int,int,int,int,int,int,int,int,int);
-bool addLayout(xLayout);
+bool addLayout(std::string, vLayout); // int,int,int,int,int,int,int,int,int);
 xLayout* findLayout(std::string);
 
 // config

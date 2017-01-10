@@ -301,7 +301,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					fillDisasm();
 					break;
 				case Qt::Key_End:
-					if (!ui.dasmTable->hasFocus()) break;
+					// if (!ui.dasmTable->hasFocus()) break;
 					comp->cpu->pc = getAdr();
 					fillZ80();
 					fillDisasm();

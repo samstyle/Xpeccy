@@ -112,8 +112,8 @@ void tslUpdatePorts(Computer* comp) {
 	unsigned char val = comp->tsconf.p00af;
 	comp->vid->tsconf.xSize = tslXRes[(val & 0xc0) >> 6];
 	comp->vid->tsconf.ySize = tslYRes[(val & 0xc0) >> 6];
-	comp->vid->tsconf.xPos = comp->vid->lay.sync.x + ((comp->vid->lay.full.x - comp->vid->lay.sync.x - comp->vid->tsconf.xSize) / 2);
-	comp->vid->tsconf.yPos = comp->vid->lay.sync.y + ((comp->vid->lay.full.y - comp->vid->lay.sync.y - comp->vid->tsconf.ySize) / 2);
+	comp->vid->tsconf.xPos = (comp->vid->lay.full.x - comp->vid->lay.blank.x - comp->vid->tsconf.xSize) >> 1;
+	comp->vid->tsconf.yPos = (comp->vid->lay.full.y - comp->vid->lay.blank.y - comp->vid->tsconf.ySize) >> 1;
 	switch(val & 3) {
 		case 0: vidSetMode(comp->vid,VID_TSL_NORMAL); break;
 		case 1: vidSetMode(comp->vid,VID_TSL_16); break;

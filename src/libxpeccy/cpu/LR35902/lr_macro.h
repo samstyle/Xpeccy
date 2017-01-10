@@ -46,7 +46,7 @@ extern unsigned char FLHsubTab[8];
 #define CMP(val) {\
 	cpu->tmpw = cpu->a - val;\
 	cpu->tmp = ((cpu->a & 0x88) >> 3) | ((val & 0x88) >> 2) | ((cpu->tmpw & 0x88) >> 1);\
-	cpu->f = (cpu->tmpw & FS) | (val & (F5 | F3)) | ((cpu->tmpw & 0x100) ? FLC : (cpu->tmpw ? 0 : FLZ)) | FLN | FLHsubTab[cpu->tmp & 7];\
+	cpu->f = ((cpu->tmpw & 0x100) ? FLC : (cpu->tmpw ? 0 : FLZ)) | FLN | FLHsubTab[cpu->tmp & 7];\
 }
 
 #define ADDL16(val1,val2) {\

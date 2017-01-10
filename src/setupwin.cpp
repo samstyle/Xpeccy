@@ -206,6 +206,8 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	connect(layUi.intLenBox,SIGNAL(valueChanged(int)),this,SLOT(layEditorChanged()));
 	connect(layUi.intPosBox,SIGNAL(valueChanged(int)),this,SLOT(layEditorChanged()));
 	connect(layUi.intRowBox,SIGNAL(valueChanged(int)),this,SLOT(layEditorChanged()));
+	connect(layUi.sbScrH,SIGNAL(valueChanged(int)),this,SLOT(layEditorChanged()));
+	connect(layUi.sbScrW,SIGNAL(valueChanged(int)),this,SLOT(layEditorChanged()));
 	connect(layUi.okButton,SIGNAL(released()),this,SLOT(layEditorOK()));
 	connect(layUi.cnButton,SIGNAL(released()),layeditor,SLOT(hide()));
 // sound
@@ -604,15 +606,17 @@ void SetupWin::layNameCheck(QString nam) {
 }
 
 void SetupWin::editLayout() {
-	layUi.lineBox->setValue(nlay.full.x);
-	layUi.rowsBox->setValue(nlay.full.y);
-	layUi.hsyncBox->setValue(nlay.sync.x);
-	layUi.vsyncBox->setValue(nlay.sync.y);
-	layUi.brdLBox->setValue(nlay.bord.x - nlay.sync.x);
-	layUi.brdUBox->setValue(nlay.bord.y - nlay.sync.y);
-	layUi.intRowBox->setValue(nlay.intpos.y);
-	layUi.intPosBox->setValue(nlay.intpos.x);
-	layUi.intLenBox->setValue(nlay.intsz);
+	layUi.lineBox->setValue(nlay.lay.full.x);
+	layUi.rowsBox->setValue(nlay.lay.full.y);
+	layUi.hsyncBox->setValue(nlay.lay.blank.x);
+	layUi.vsyncBox->setValue(nlay.lay.blank.y);
+	layUi.brdLBox->setValue(nlay.lay.bord.x);
+	layUi.brdUBox->setValue(nlay.lay.bord.y);
+	layUi.intRowBox->setValue(nlay.lay.intpos.y);
+	layUi.intPosBox->setValue(nlay.lay.intpos.x);
+	layUi.intLenBox->setValue(nlay.lay.intSize);
+	layUi.sbScrW->setValue(nlay.lay.scr.x);
+	layUi.sbScrH->setValue(nlay.lay.scr.y);
 	layUi.okButton->setEnabled(false);
 	layUi.layWidget->setDisabled(eidx == 0);
 	layUi.layName->setText(nlay.name.c_str());
@@ -646,20 +650,26 @@ void SetupWin::addNewLayout() {
 }
 
 void SetupWin::layEditorChanged() {
-	layUi.brdLBox->setMaximum(layUi.lineBox->value() - layUi.hsyncBox->value() - 256);
-	layUi.brdUBox->setMaximum(layUi.rowsBox->value() - layUi.vsyncBox->value() - 192);
-	layUi.hsyncBox->setMaximum(layUi.lineBox->value() - 256);
-	layUi.vsyncBox->setMaximum(layUi.rowsBox->value() - 192);
-	layUi.lineBox->setMinimum(layUi.brdLBox->value() + layUi.hsyncBox->value() + 256);
-	layUi.rowsBox->setMinimum(layUi.brdUBox->value() + layUi.vsyncBox->value() + 192);
+	layUi.brdLBox->setMaximum(layUi.lineBox->value() - layUi.hsyncBox->value() - layUi.sbScrW->value());
+	layUi.brdUBox->setMaximum(layUi.rowsBox->value() - layUi.vsyncBox->value() - layUi.sbScrH->value());
+	layUi.hsyncBox->setMaximum(layUi.lineBox->value() - layUi.sbScrW->value());
+	layUi.vsyncBox->setMaximum(layUi.rowsBox->value() - layUi.sbScrH->value());
+	layUi.lineBox->setMinimum(layUi.brdLBox->value() + layUi.hsyncBox->value() + layUi.sbScrW->value());
+	layUi.rowsBox->setMinimum(layUi.brdUBox->value() + layUi.vsyncBox->value() + layUi.sbScrH->value());
 	layUi.intRowBox->setMaximum(layUi.rowsBox->value());
 	layUi.intPosBox->setMaximum(layUi.lineBox->value());
 
-	QString infText = QString::number((layUi.lineBox->value() >> 1)).append(" / ");
+//	QString infText = QString::number(()).append(" / ");
 	int toscr = layUi.hsyncBox->value() + layUi.brdLBox->value() - layUi.intPosBox->value() +
 			(layUi.vsyncBox->value() + layUi.brdUBox->value() - layUi.intRowBox->value()) * layUi.lineBox->value();
-	infText.append(QString::number(toscr >> 1)).append(" / ");
-	infText.append(QString::number((layUi.rowsBox->value() * layUi.lineBox->value()) >> 1));
+	if (toscr < 0)
+		toscr += layUi.lineBox->value() * layUi.rowsBox->value();
+
+	QString infText = QString("%0 / %1 / %2").arg(layUi.lineBox->value() >> 1)\
+						.arg(toscr >> 1)\
+						.arg((layUi.rowsBox->value() * layUi.lineBox->value()) >> 1);
+//	infText.append(QString::number(toscr >> 1)).append(" / ");
+//	infText.append(QString::number((layUi.rowsBox->value() * layUi.lineBox->value()) >> 1));
 	layUi.infLabel->setText(infText);
 
 	layUi.showField->setFixedSize(layUi.lineBox->value(),layUi.rowsBox->value());
@@ -667,43 +677,47 @@ void SetupWin::layEditorChanged() {
 	QPainter pnt;
 	pnt.begin(&pix);
 	pnt.fillRect(0,0,pix.width(),pix.height(),Qt::black);
-	pnt.fillRect(layUi.hsyncBox->value(),
-				 layUi.vsyncBox->value(),
-				 layUi.lineBox->value() - layUi.hsyncBox->value(),
-				 layUi.rowsBox->value() - layUi.vsyncBox->value(),
-				 Qt::blue);
-	pnt.fillRect(layUi.hsyncBox->value() + layUi.brdLBox->value(),
-				 layUi.vsyncBox->value() + layUi.brdUBox->value(),
-				 256,192,Qt::gray);
+	// visible screen = full - blank
+	pnt.fillRect(0,0,layUi.lineBox->value() - layUi.hsyncBox->value(),
+			layUi.rowsBox->value() - layUi.vsyncBox->value(),
+			Qt::blue);
+	// main screen area
+	pnt.fillRect(layUi.brdLBox->value(), layUi.brdUBox->value(),
+			layUi.sbScrW->value(),layUi.sbScrH->value(),
+			Qt::gray);
+	// INT signal
 	pnt.setPen(Qt::red);
 	pnt.drawLine(layUi.intPosBox->value(),
-				 layUi.intRowBox->value(),
-				 layUi.intPosBox->value() + layUi.intLenBox->value(),
-				 layUi.intRowBox->value());
+			layUi.intRowBox->value(),
+			layUi.intPosBox->value() + layUi.intLenBox->value(),
+			layUi.intRowBox->value());
 	pnt.end();
 	layUi.showField->setPixmap(pix);
 	layeditor->setFixedSize(layeditor->minimumSize());
 }
 
 void SetupWin::layEditorOK() {
-	nlay.name = std::string(layUi.layName->text().toLocal8Bit().data());
-	nlay.full.x = layUi.lineBox->value();
-	nlay.full.y = layUi.rowsBox->value();
-	nlay.bord.x = layUi.hsyncBox->value() + layUi.brdLBox->value();
-	nlay.bord.y = layUi.vsyncBox->value() + layUi.brdUBox->value();
-	nlay.sync.x = layUi.hsyncBox->value();
-	nlay.sync.y = layUi.vsyncBox->value();
-	nlay.intpos.x = layUi.intPosBox->value();
-	nlay.intpos.y = layUi.intRowBox->value();
-	nlay.intsz = layUi.intLenBox->value();
+	std::string name = std::string(layUi.layName->text().toLocal8Bit().data());
+	vLayout vlay;
+	vlay.full.x = layUi.lineBox->value();
+	vlay.full.y = layUi.rowsBox->value();
+	vlay.bord.x = layUi.hsyncBox->value();
+	vlay.bord.y = layUi.vsyncBox->value();
+	vlay.blank.x = layUi.hsyncBox->value();
+	vlay.blank.y = layUi.vsyncBox->value();
+	vlay.intpos.x = layUi.intPosBox->value();
+	vlay.intpos.y = layUi.intRowBox->value();
+	vlay.intSize = layUi.intLenBox->value();
+	vlay.scr.x = layUi.sbScrW->value();
+	vlay.scr.y = layUi.sbScrH->value();
 	if (eidx < 0) {
-		addLayout(nlay);
+		addLayout(name, vlay);
 		ui.geombox->addItem(QString::fromLocal8Bit(nlay.name.c_str()));
 		ui.geombox->setCurrentIndex(ui.geombox->count() - 1);
 	} else {
 		if (conf.layList[eidx].name != nlay.name)
 			prfChangeLayName(conf.layList[eidx].name, nlay.name);
-		conf.layList[eidx] = nlay;
+		conf.layList[eidx].lay = vlay;
 		ui.geombox->setItemText(eidx, nlay.name.c_str());
 	}
 	layeditor->hide();

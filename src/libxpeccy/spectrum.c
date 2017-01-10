@@ -162,8 +162,9 @@ Computer* compCreate() {
 	comp->cpu = cpuCreate(CPU_Z80,&memrd,&memwr,&iord,&iowr,&intrq,ptr);
 	comp->mem = memCreate();
 	comp->vid = vidCreate(comp->mem);
-	compSetBaseFrq(comp, 3.52);
-	compSetTurbo(comp, 1);
+
+	comp->frqMul = 1;
+	compSetBaseFrq(comp, 3.5);
 
 	memset(comp->brkIOMap, 0, 0x10000);
 	memset(comp->brkRomMap, 0, 0x80000);
@@ -269,39 +270,36 @@ void compReset(Computer* comp,int res) {
 	comp->hw->mapMem(comp);
 }
 
-void compSetLayout(Computer *comp, int fh, int fv, int bh, int bv, int sh, int sv, int ih, int iv, int is) {
-	comp->vid->lay.full.x = fh;
-	comp->vid->lay.full.y = fv;
-	comp->vid->lay.bord.x = bh;
-	comp->vid->lay.bord.y = bv;
-	comp->vid->lay.sync.x = sh;
-	comp->vid->lay.sync.y = sv;
-	comp->vid->lay.intpos.x = ih;
-	comp->vid->lay.intpos.y = iv;
-	comp->vid->lay.intSize = is;
-	comp->vid->frmsz = fh * fv;
-}
-
-void compSetHardware(Computer* comp, const char* name) {
-	HardWare* hw = findHardware(name);
-	if (hw == NULL) return;
-	comp->hw = hw;
-	comp->vid->istsconf = (hw->type == HW_TSLAB) ? 1 : 0;
-	comp->vid->ismsx = ((hw->type == HW_MSX) || (hw->type == HW_MSX2)) ? 1 : 0;
+void compSetLayout(Computer *comp, vLayout lay) {
+	comp->vid->lay = lay;
+	comp->vid->frmsz = lay.full.x * lay.full.y;
 }
 
 // cpu freq
 
 void compUpdateTimings(Computer* comp) {
-	comp->nsPerTick = 1e3 / comp->cpuFrq / comp->frqMul;
+	comp->nsPerTick = 1e3 / comp->cpuFrq;
+	if (comp->nsPerTick & 1) comp->nsPerTick++;
+	int type = comp->hw ? comp->hw->type : HW_NULL;
+	switch (type) {
+		case HW_GB:
+		case HW_GBC:
+			vidUpdateTimings(comp->vid, comp->nsPerTick * 2);
+			break;
+		default:
+			vidUpdateTimings(comp->vid, comp->nsPerTick / 2);
+			break;
+	}
+	comp->nsPerTick /= comp->frqMul;
 #ifdef ISDEBUG
-	printf("%f x %i : %i ns\n",comp->cpuFrq,comp->frqMul,comp->nsPerTick);
+	// printf("%f x %i : %i ns\n",comp->cpuFrq,comp->frqMul,comp->nsPerTick);
 #endif
 }
 
 void compSetBaseFrq(Computer* comp, double frq) {
 	comp->cpuFrq = frq;
 	compUpdateTimings(comp);
+
 }
 
 void compSetTurbo(Computer* comp, int mult) {
@@ -309,8 +307,21 @@ void compSetTurbo(Computer* comp, int mult) {
 	compUpdateTimings(comp);
 }
 
+// hardware
+
+void compSetHardware(Computer* comp, const char* name) {
+	HardWare* hw = findHardware(name);
+	if (hw == NULL) return;
+	comp->hw = hw;
+	comp->vid->istsconf = (hw->type == HW_TSLAB) ? 1 : 0;
+	comp->vid->ismsx = ((hw->type == HW_MSX) || (hw->type == HW_MSX2)) ? 1 : 0;
+	comp->vid->isgb = ((hw->type == HW_GB) || (hw->type == HW_GBC)) ? 1 : 0;
+	compUpdateTimings(comp);
+}
+
 // interrupts
 
+/*
 int zxINT(Computer* comp, unsigned char vect) {
 	res4 = 0;
 	comp->intVector = vect;
@@ -319,9 +330,11 @@ int zxINT(Computer* comp, unsigned char vect) {
 	vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
 	return res2;
 }
+*/
 
 // exec 1 opcode, sync devices, return eated ns
 
+int zxINT(Computer*, unsigned char);
 int compExec(Computer* comp) {
 	res4 = 0;
 	res2 = comp->cpu->exec(comp->cpu);
@@ -370,9 +383,23 @@ int compExec(Computer* comp) {
 			comp->rzx.fCount--;
 			rzxGetFrame(comp);
 		}
+	} else if (comp->hw->intr) {
+		comp->hw->intr(comp);
+	}
+/*
 	} else if (comp->vid->ismsx) {
 		if ((comp->vid->v9938.reg[1] & 0x40) && comp->vid->newFrame)
 			zxINT(comp, 0xff);
+	} else if (comp->vid->isgb) {
+		if (comp->vid->intFRAME && (comp->gb.intMask & 1)) {
+			comp->cpu->inta = 0x40;
+		} else if (comp->vid->gbc->intr && (comp->gb.intMask & 2)) {
+			comp->cpu->inta = 0x48;
+		}
+		if (comp->cpu->inta) {
+			comp->cpu->intr(comp->cpu);
+			comp->cpu->inta = 0;
+		}
 	} else {
 		if (comp->vid->intFRAME) {
 			zxINT(comp, 0xff);
@@ -382,6 +409,7 @@ int compExec(Computer* comp) {
 			if (zxINT(comp,0xfb)) comp->vid->intDMA = 0;
 		}
 	}
+*/
 // new frame
 	if (comp->vid->newFrame) {
 		comp->vid->newFrame = 0;

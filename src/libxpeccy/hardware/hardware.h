@@ -39,9 +39,9 @@ enum {
 #define	MEM_4M	(1<<5)
 
 struct HardWare {
-	const char* name;
-	const char* optName;
-	int type;
+	const char* name;	// name used for conf file
+	const char* optName;	// name used for setup window
+	int type;		// id
 	int mask;		// mem size bits (b0:128, b1:256, b2:512, b3:1M, b4:2M, b5:4M); =0 for 48K
 	void (*mapMem)(Computer*);
 	void (*out)(Computer*,unsigned short,unsigned char,int);
@@ -49,6 +49,7 @@ struct HardWare {
 	unsigned char (*mrd)(Computer*,unsigned short,int);
 	void (*mwr)(Computer*,unsigned short,unsigned char);
 	void (*reset)(Computer*);
+	int (*intr)(Computer*);
 };
 
 typedef struct {
@@ -70,6 +71,7 @@ extern HardWare hwTab[];
 HardWare* findHardware(const char*);
 unsigned char stdMRd(Computer*,unsigned short,int);
 void stdMWr(Computer*,unsigned short,unsigned char);
+int stdINT(Computer*);
 
 void beepSync(Computer*);
 
@@ -148,6 +150,7 @@ unsigned char tslMRd(Computer*,unsigned short,int);
 void tslMWr(Computer*,unsigned short,unsigned char);
 void tslReset(Computer*);
 void tslUpdatePorts(Computer*);
+int tslINT(Computer*);
 
 // Profi
 void prfMapMem(Computer*);
@@ -169,6 +172,7 @@ unsigned char msxIn(Computer*,unsigned short,int);
 void msxReset(Computer*);
 unsigned char msxMRd(Computer*,unsigned short,int);
 void msxMWr(Computer*,unsigned short,unsigned char);
+int msxINT(Computer*);
 
 // msx2
 void msx2mapper(Computer*);
@@ -183,6 +187,9 @@ void gbMaper(Computer*);
 void gbReset(Computer*);
 unsigned char gbMemRd(Computer*, unsigned short, int);
 void gbMemWr(Computer*, unsigned short, unsigned char);
+int gbINT(Computer*);
+void gbPress(Computer*, const char*);
+void gbRelease(Computer*, const char*);
 
 #ifdef __cplusplus
 }

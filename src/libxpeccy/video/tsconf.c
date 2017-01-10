@@ -216,7 +216,7 @@ void vidTSline(Video* vid) {
 void vidDrawTSLNormal(Video* vid) {
 	xscr = vid->ray.x - vid->lay.bord.x;
 	yscr = vid->ray.y - vid->lay.bord.y;
-	if ((yscr < 0) || (yscr > 191) || (vid->nogfx)) {
+	if ((yscr < 0) || (yscr >= vid->lay.scr.y) || (vid->nogfx)) {
 		col = vid->brdcol;
 	} else {
 		xadr = vid->tsconf.vidPage ^ (vid->curscr & 2);	// TODO : ORLY? Current video page
@@ -224,7 +224,7 @@ void vidDrawTSLNormal(Video* vid) {
 			adr = ((yscr & 0xc0) << 5) | ((yscr & 7) << 8) | ((yscr & 0x38) << 2) | (((xscr + 4) & 0xf8) >> 3);
 			nxtbyte = vid->mem->ramData[MADR(xadr, adr)];
 		}
-		if ((xscr < 0) || (xscr > 255)) {
+		if ((xscr < 0) || (xscr >= vid->lay.scr.x)) {
 			col = vid->brdcol;
 		} else {
 			if ((xscr & 7) == 0) {

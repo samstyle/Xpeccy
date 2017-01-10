@@ -519,8 +519,8 @@ unsigned char vdpReadSR(VDP9938* vdp) {
 			break;
 		case 2:
 			res &= 0x9f;
-			if (vdp->ray->x < vdp->lay->sync.x) res |= 0x20;
-			if (vdp->ray->y < vdp->lay->sync.y) res |= 0x40;
+			if ((vdp->lay->full.x - vdp->ray->x) < vdp->lay->blank.x) res |= 0x20;
+			if ((vdp->lay->full.y - vdp->ray->y) < vdp->lay->blank.y) res |= 0x40;
 			break;
 		default:
 			break;

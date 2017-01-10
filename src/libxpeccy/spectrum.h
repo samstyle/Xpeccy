@@ -194,6 +194,11 @@ typedef struct {
 	} msx;
 	struct {
 		unsigned boot:1;	// internal rom on
+		unsigned inpint:1;	// button released: request interrupt
+		unsigned char r03;	// 16384Hz increment
+		unsigned char intMask;
+		unsigned short iomap[256];
+		int buttons;
 	} gb;
 
 	CMOS cmos;
@@ -209,7 +214,7 @@ void compReset(Computer*,int);
 int compExec(Computer*);
 void compSetBaseFrq(Computer*,double);
 void compSetTurbo(Computer*,int);
-void compSetLayout(Computer*, int, int, int, int, int, int, int, int, int);
+void compSetLayout(Computer*, vLayout);
 void compSetHardware(Computer*,const char*);
 
 sndPair compGetVolume(Computer*);

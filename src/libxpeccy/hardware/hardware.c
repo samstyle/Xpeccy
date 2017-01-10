@@ -5,47 +5,47 @@
 HardWare hwTab[] = {
 	{
 		"ZX48K","ZX 48K",HW_ZX48,MEM_48,
-		&speMapMem,&speOut,&speIn,&stdMRd,&stdMWr,&speReset
+		&speMapMem,&speOut,&speIn,&stdMRd,&stdMWr,&speReset,&stdINT
 	},{
 		"Pentagon","Pentagon",HW_PENT,MEM_128 | MEM_512,
-		&penMapMem,&penOut,&penIn,&stdMRd,&stdMWr,NULL
+		&penMapMem,&penOut,&penIn,&stdMRd,&stdMWr,NULL,&stdINT
 	},{
 		"Pentagon1024SL","Pentagon 1024 SL",HW_P1024,MEM_1M,
-		&p1mMapMem,&p1mOut,&p1mIn,&stdMRd,&stdMWr,NULL
+		&p1mMapMem,&p1mOut,&p1mIn,&stdMRd,&stdMWr,NULL,&stdINT
 	},{
 		"PentEvo","Evo Baseconf",HW_PENTEVO,MEM_4M,
-		&evoMapMem,&evoOut,&evoIn,&evoMRd,&evoMWr,&evoReset
+		&evoMapMem,&evoOut,&evoIn,&evoMRd,&evoMWr,&evoReset,&stdINT
 	},{
 		"TSLab","Evo TSConf",HW_TSLAB,MEM_4M,
-		&tslMapMem,&tslOut,&tslIn,&tslMRd,&tslMWr,&tslReset
+		&tslMapMem,&tslOut,&tslIn,&tslMRd,&tslMWr,&tslReset,&stdINT
 	},{
 		"Scorpion","ZS Scorpion",HW_SCORP,MEM_256 | MEM_1M,
-		&scoMapMem,&scoOut,&scoIn,&scoMRd,&stdMWr,NULL
+		&scoMapMem,&scoOut,&scoIn,&scoMRd,&stdMWr,NULL,&stdINT
 	},{
 		"ATM2","ATM Turbo 2+",HW_ATM2,MEM_128 | MEM_256 | MEM_512 | MEM_1M,
-		&atm2MapMem,&atm2Out,&atm2In,&stdMRd,&stdMWr,&atm2Reset
+		&atm2MapMem,&atm2Out,&atm2In,&stdMRd,&stdMWr,&atm2Reset,&stdINT
 	},{
 		"Spectrum +2","Spectrum +2",HW_PLUS2,MEM_128,
-		&pl2MapMem,&pl2Out,&pl2In,&stdMRd,&stdMWr,NULL
+		&pl2MapMem,&pl2Out,&pl2In,&stdMRd,&stdMWr,NULL,&stdINT
 	},{
 		"Spectrum +3","Spectrum +3",HW_PLUS3,MEM_128,
-		&pl2MapMem,&pl3Out,&pl3In,&stdMRd,&stdMWr,NULL
+		&pl2MapMem,&pl3Out,&pl3In,&stdMRd,&stdMWr,NULL,&stdINT
 	},{
 		"Profi","Profi",HW_PROFI,MEM_512 | MEM_1M,
-		&prfMapMem,&prfOut,&prfIn,&stdMRd,&stdMWr,&prfReset
+		&prfMapMem,&prfOut,&prfIn,&stdMRd,&stdMWr,&prfReset,&stdINT
 	},{
 		"Phoenix","ZXM Phoenix",HW_PHOENIX,MEM_2M,
-		&phxMapMem,&phxOut,&phxIn,&stdMRd,&stdMWr,&phxReset
+		&phxMapMem,&phxOut,&phxIn,&stdMRd,&stdMWr,&phxReset,&stdINT
 	},{
 		"MSX","MSX-1",HW_MSX,MEM_128,
-		&msxMapMem,&msxOut,&msxIn,&stdMRd,&stdMWr,&msxReset
+		&msxMapMem,&msxOut,&msxIn,&stdMRd,&stdMWr,&msxReset,&msxINT
 	},{
 		"MSX2","MSX-2 (alfa)",HW_MSX2,MEM_128,
-		&msx2mapper,&msx2Out,&msx2In,&msx2mrd,&msx2mwr,&msx2Reset
+		&msx2mapper,&msx2Out,&msx2In,&msx2mrd,&msx2mwr,&msx2Reset,&msxINT
 	},{
 #ifdef ISDEBUG
 		"GameBoy", "Game Boy", HW_GB, MEM_48,
-		&gbMaper, NULL, NULL, &gbMemRd, &gbMemWr, &gbReset
+		&gbMaper, NULL, NULL, &gbMemRd, &gbMemWr, &gbReset, &gbINT
 	},{
 #endif
 		NULL,NULL,0,0,NULL,NULL,NULL,NULL,NULL,NULL

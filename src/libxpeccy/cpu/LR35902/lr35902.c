@@ -26,6 +26,7 @@ void lr_reset(CPU* cpu) {
 int lr_exec(CPU* cpu) {
 	if (cpu->lock) return 1;
 	cpu->t = 0;
+	cpu->noint = 0;
 	cpu->opTab = lrTab;
 	do {
 		cpu->tmp = cpu->mrd(cpu->pc++, 1, cpu->data);
@@ -37,7 +38,15 @@ int lr_exec(CPU* cpu) {
 }
 
 int lr_int(CPU* cpu) {
-	return 0;
+	if (!cpu->iff1 || cpu->noint) return 0;
+	cpu->iff1 = 0;
+	cpu->iff2 = 0;
+	if (cpu->halt) {
+		cpu->halt = 0;
+		cpu->pc++;
+	}
+	RST(cpu->inta);
+	return 15;		// TODO: to know how much T eats INT handle
 }
 
 int lr_nmi(CPU* cpu) {

@@ -24,6 +24,34 @@ void dummyOut(Computer* comp, unsigned short port, unsigned char val) {
 
 }
 
+// INT handle/check
+
+extern int res1,res2,res4;
+int zxINT(Computer* comp, unsigned char vect) {
+	res4 = 0;
+	comp->intVector = vect;
+	res2 = comp->cpu->intr(comp->cpu);
+	res1 += res2;
+	vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
+	return res2;
+}
+
+int stdINT(Computer* comp) {
+	int res = 1;
+	if (comp->vid->intFRAME) {
+		zxINT(comp, 0xff);
+	} else if (comp->vid->intLINE) {
+		if (zxINT(comp,0xfd))
+			comp->vid->intLINE = 0;
+	} else if (comp->vid->intDMA) {
+		if (zxINT(comp,0xfb))
+			comp->vid->intDMA = 0;
+	} else {
+		res = 0;
+	}
+	return res;
+}
+
 // beeper transient response emulation
 
 #define OVERSHOOT 22500			// ns to overshoot process

@@ -62,18 +62,14 @@ Video* vidCreate(Memory* me) {
 	memset(vid,0x00,sizeof(Video));
 	vidSetMode(vid, VID_UNKNOWN);
 	vid->mem = me;
-	vid->lay.full.x = 448;
-	vid->lay.full.y = 320;
-	vid->lay.bord.x = 136;
-	vid->lay.bord.y = 80;
-	vid->lay.sync.x = 80;
-	vid->lay.sync.y = 32;
-	vid->lay.intpos.x = 0;
-	vid->lay.intpos.y = 0;
-	vid->lay.intSize = 64;
+	vLayout vlay = {0,{448,320},{74,48},{64,32},{256,192},{384,288},64};
+	vid->lay = vlay;
 	vid->frmsz = vid->lay.full.x * vid->lay.full.y;
 	vid->intMask = 0x01;		// FRAME INT for all
+
 	vid->ula = ulaCreate();
+	vid->gbc = gbcvCreate(&vid->ray, &vid->lay);
+
 	vidSetFps(vid, 50);
 	vidUpdateLayout(vid, 0.5);
 
@@ -93,44 +89,44 @@ Video* vidCreate(Memory* me) {
 	vid->v9938.lay = &vid->lay;
 	vid->v9938.ray = &vid->ray;
 
-	vid->gbc.lay = &vid->lay;
-	vid->gbc.ray = &vid->ray;
-
 	return vid;
 }
 
 void vidDestroy(Video* vid) {
 	ulaDestroy(vid->ula);
+	gbcvDestroy(vid->gbc);
 	free(vid);
 }
 
-#define FIFTYFRAME142NSPERDOT 1017856000
-void vidUpdateTimings(Video* vid) {
-#if 0
-	vid->nsPerDot = 140;	// vid->nsPerLine / vid->lay.full.x;
+void vidUpdateTimings(Video* vid, int nspd) {
+	vid->nsPerDot = nspd;
 	vid->nsPerLine = vid->nsPerDot * vid->lay.full.x;
 	vid->nsPerFrame = vid->nsPerLine * vid->lay.full.y;
-#else
-	vid->nsPerFrame = FIFTYFRAME142NSPERDOT / vid->fps;
-	vid->nsPerLine = vid->nsPerFrame / vid->lay.full.y;
-	vid->nsPerDot = vid->nsPerLine / vid->lay.full.x;
 #ifdef ISDEBUG
-	printf("%i / %i / %i\n", vid->nsPerDot, vid->nsPerLine, vid->nsPerFrame);
-#endif
+	// printf("%i / %i / %i\n", vid->nsPerDot, vid->nsPerLine, vid->nsPerFrame);
 #endif
 }
 
+// new layout:
+// [ bord ][ scr ][ ? ][ blank ]
+// [ <--------- full --------> ]
+// ? = brdr = full - bord - scr - blank
 void vidUpdateLayout(Video* vid, float brdsize) {
 	if (brdsize < 0.0) brdsize = 0.0;
 	if (brdsize > 1.0) brdsize = 1.0;
-	vid->lcut.x = (int)floor(vid->lay.sync.x + ((vid->lay.bord.x - vid->lay.sync.x) * (1.0 - brdsize))) & 0xfffc;
-	vid->lcut.y = (int)floor(vid->lay.sync.y + ((vid->lay.bord.y - vid->lay.sync.y) * (1.0 - brdsize))) & 0xfffc;
-	vid->rcut.x = (int)floor(vid->lay.full.x - ((1.0 - brdsize) * (vid->lay.full.x - vid->lay.bord.x - 256))) & 0xfffc;
-	vid->rcut.y = (int)floor(vid->lay.full.y - ((1.0 - brdsize) * (vid->lay.full.y - vid->lay.bord.y - 192))) & 0xfffc;
+	vCoord brdr;	// size of right/bottom border parts
+	brdr.x = vid->lay.full.x - vid->lay.bord.x - vid->lay.scr.x - vid->lay.blank.x;
+	brdr.y = vid->lay.full.y - vid->lay.bord.y - vid->lay.scr.y - vid->lay.blank.y;
+	vid->lcut.x = (int)floor(vid->lay.bord.x * (1.0 - brdsize)) & ~3;
+	vid->lcut.y = (int)floor(vid->lay.bord.y * (1.0 - brdsize)) & ~3;
+	vid->rcut.x = (int)floor(vid->lay.bord.x + vid->lay.scr.x + brdr.x * brdsize) & ~3;
+	vid->rcut.y = (int)floor(vid->lay.bord.y + vid->lay.scr.y + brdr.y * brdsize) & ~3;
+	vid->ssze.x = vid->lay.full.x - vid->lay.blank.x;
+	vid->ssze.y = vid->lay.full.y - vid->lay.blank.y;
 	vid->vsze.x = vid->rcut.x - vid->lcut.x;
 	vid->vsze.y = vid->rcut.y - vid->lcut.y;
-	vid->vBytes = vid->vsze.x * vid->vsze.x * 6;	// real size of image buffer (3 bytes/dot x2:x1)
-	vidUpdateTimings(vid);
+	vid->vBytes = vid->vsze.x * vid->vsze.y * 6;	// real size of image buffer (3 bytes/dot x2:x1)
+	vidUpdateTimings(vid, vid->nsPerDot);
 }
 
 int xscr = 0;
@@ -207,10 +203,10 @@ int contTabB[] = {2,1,0,0,14,13,12,11,10,9,8,7,6,5,4,3};	// +2A +3 (bank 4,5,6,7
 
 void vidWait(Video* vid) {
 	if (vid->ray.y < vid->lay.bord.y) return;		// above screen
-	if (vid->ray.y > (vid->lay.bord.y + 191)) return;	// below screen
+	if (vid->ray.y >= (vid->lay.bord.y + vid->lay.scr.y)) return;	// below screen
 	xscr = vid->ray.x - vid->lay.bord.x; // + 2;
 	if (xscr < 0) return;
-	if (xscr > 253) return;
+	if (xscr > (vid->lay.scr.x - 2)) return;
 	vidSync(vid, contTabA[xscr & 0x0f] * vid->nsPerDot);
 }
 
@@ -222,7 +218,7 @@ void vidSetFps(Video* vid, int fps) {
 	if (fps < 10) fps = 10;
 	else if (fps > 100) fps = 100;
 	vid->fps = fps;
-	vidUpdateTimings(vid);
+	vidUpdateTimings(vid, vid->nsPerDot);
 }
 
 // video drawing
@@ -494,17 +490,17 @@ void vidFrameV9938(Video* vid) {
 // gameboy
 
 void vidGBDraw(Video* vid) {
-	vid->gbc.draw(&vid->gbc);
+	vid->gbc->draw(vid->gbc);
 }
 
 void vidGBLine(Video* vid) {
-	if (vid->gbc.cbLine)
-		vid->gbc.cbLine(&vid->gbc);
+	if (vid->gbc->cbLine)
+		vid->gbc->cbLine(vid->gbc);
 }
 
 void vidGBFram(Video* vid) {
-	if (vid->gbc.cbFram)
-		vid->gbc.cbFram(&vid->gbc);
+	if (vid->gbc->cbFram)
+		vid->gbc->cbFram(vid->gbc);
 }
 
 // debug
@@ -575,12 +571,14 @@ void vidSync(Video* vid, int ns) {
 		}
 		if (vid->intFRAME && (vid->ray.x >= vid->lay.intpos.x + vid->lay.intSize))
 			vid->intFRAME = 0;
-		if (++vid->ray.x >= vid->lay.full.x) {
+		vid->ray.x++;
+		if (vid->ray.x >= vid->lay.full.x) {
 			vid->ray.x = 0;
+			vid->ray.y++;
 			vid->nextrow = 1;
 			vid->intFRAME = 0;
 			if (vid->lineCall) vid->lineCall(vid);
-			if (++vid->ray.y >= vid->lay.full.y) {
+			if (vid->ray.y >= vid->lay.full.y) {
 				vid->ray.y = 0;
 				vid->ray.ptr = vid->ray.img;
 				vid->linptr = vid->ray.img;

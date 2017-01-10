@@ -133,7 +133,7 @@ void lrnop16(CPU* cpu) {
 // 17	rla		4
 void lrnop17(CPU* cpu) {
 	cpu->tmp = cpu->a;
-	cpu->a = (cpu->a << 1) | ((cpu->f & FLC) ? 0x80 : 0);
+	cpu->a = (cpu->a << 1) | ((cpu->f & FLC) ? 0x01 : 0);
 	cpu->f = (cpu->f & FLZ) | ((cpu->tmp & 0x80) ? FLC : 0);
 }
 

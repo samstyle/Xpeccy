@@ -32,7 +32,6 @@ enum {
 	VID_UNKNOWN = -1
 };
 
-
 struct Video {
 	unsigned border4t:1;
 	unsigned nogfx:1;	// tsl : nogfx flag
@@ -43,6 +42,7 @@ struct Video {
 	unsigned nextrow:1;	// = not-masked intLINE
 	unsigned istsconf:1;	// TSConf (render sprites/tiles)
 	unsigned ismsx:1;	// v9918 (render sprites)
+	unsigned isgb:1;	// gameboy (interrupts)
 	unsigned noScreen:1;
 	unsigned debug:1;
 	unsigned tail:1;
@@ -69,6 +69,7 @@ struct Video {
 	vLayout lay;
 	vCoord lcut;
 	vCoord rcut;
+	vCoord ssze;
 	vCoord vsze;
 	int idx;
 	struct {
@@ -104,7 +105,7 @@ struct Video {
 	Memory* mem;
 	ulaPlus* ula;
 	VDP9938 v9938;
-	GBCVid gbc;
+	GBCVid* gbc;
 
 };
 
@@ -122,6 +123,7 @@ void vidSetMode(Video*,int);
 void vidWait(Video*);
 void vidDarkTail(Video*);
 
+void vidUpdateTimings(Video*, int);
 void vidSetFps(Video*,int);
 void vidUpdateLayout(Video*, float);
 

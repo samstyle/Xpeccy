@@ -121,7 +121,8 @@ MainWin::MainWin() {
 
 	initKeyMap();
 	conf.scrShot.format = "png";
-	addLayout("default",448,320,138,80,64,32,0,0,64);
+	vLayout vlay = {0,{448,320},{74,48},{64,32},{256,192},{384,287},64};
+	addLayout("default", vlay);
 
 	shotFormat["bmp"] = SCR_BMP;
 	shotFormat["png"] = SCR_PNG;
@@ -463,6 +464,7 @@ void MainWin::paintEvent(QPaintEvent*) {
 
 void MainWin::keyPressEvent(QKeyEvent *ev) {
 	keyEntry kent = getKeyEntry(ev->nativeScanCode());
+	gbPress(comp, kent.name);
 	if (pckAct->isChecked()) {
 		keyPressXT(comp->keyb, kent.keyCode);
 		if (!kent.zxKey.key2)			// don't press 2-key keys in PC-mode
@@ -474,6 +476,11 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			rzxWin->stop();
 		}
 	} else if (ev->modifiers() & Qt::AltModifier) {
+#ifdef ISDEBUG
+		if (ev->key() == Qt::Key_F1) {
+			qDebug() << comp->vid->gbc->sc.x << ":" << comp->vid->gbc->sc.y;
+		}
+#endif
 		switch(ev->key()) {
 			case Qt::Key_0:
 				switch (comp->vid->vmode) {
@@ -619,6 +626,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 
 void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 	keyEntry kent = getKeyEntry(ev->nativeScanCode());
+	gbRelease(comp, kent.name);
 	if (pckAct->isChecked()) {
 		keyReleaseXT(comp->keyb, kent.keyCode);
 		if (!kent.zxKey.key2)
@@ -788,8 +796,8 @@ void MainWin::screenShot() {
 			if (conf.scrShot.noBorder) {
 				x = (comp->vid->lay.bord.x - comp->vid->lcut.x) * conf.vid.scale;
 				y = (comp->vid->lay.bord.y - comp->vid->lcut.y) * conf.vid.scale;
-				dx = 256 * conf.vid.scale;
-				dy = 192 * conf.vid.scale;
+				dx = comp->vid->lay.scr.x * conf.vid.scale;
+				dy = comp->vid->lay.scr.y * conf.vid.scale;
 				img = img.copy(x, y, dx, dy);
 			}
 			img.save(QString(fnam.c_str()),fext.c_str());
