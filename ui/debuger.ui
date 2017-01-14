@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>737</width>
-    <height>595</height>
+    <width>735</width>
+    <height>593</height>
    </rect>
   </property>
   <property name="font">
@@ -1539,6 +1539,26 @@
        </property>
        <property name="text">
         <string>000</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="labHBlank">
+       <property name="text">
+        <string>HB</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="labVBlank">
+       <property name="text">
+        <string>VB</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>

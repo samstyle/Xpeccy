@@ -47,6 +47,11 @@ struct Video {
 	unsigned debug:1;
 	unsigned tail:1;
 
+	unsigned hblank:1;	// HBlank signal
+	unsigned hbstrb:1;	// HBlank strobe 0->1
+	unsigned vblank:1;	// VBlank signal
+	unsigned vbstrb:1;	// VBlank strobe 0->1
+
 	int fps;
 	int nsPerFrame;
 	int nsPerLine;

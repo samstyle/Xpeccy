@@ -18,7 +18,7 @@ int sndFlag = 0;
 
 typedef struct {
 	unsigned char data[0x10000];
-    unsigned short pos;
+	unsigned short pos;
 } sndBuffa;
 
 sndBuffa bufA;		// ring buffer @ real freq
@@ -64,8 +64,9 @@ void sndMix(Computer* comp) {
 	}
 	lev *= 0.15;
 
-	beepSync(comp);
-	lev += ((comp->beepAmp & 0xf0) >> 4) * conf.snd.vol.beep / 100.0;
+	//beepSync(comp);
+	bcSync(comp->beep, -1);
+	lev += ((comp->beep->val & 0xf0) >> 4) * conf.snd.vol.beep / 100.0;
 	// lev += comp->beeplev ? conf.snd.vol.beep * 4 / 25 : 0;
 
 

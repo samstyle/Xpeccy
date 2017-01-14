@@ -13,7 +13,12 @@ extern "C" {
 #include "fdc.h"
 #include "hdd.h"
 #include "sdcard.h"
-#include "sound/sndcommon.h"
+
+#include "sound/ayym.h"
+#include "sound/gs.h"
+#include "sound/saa1099.h"
+#include "sound/soundrive.h"
+#include "sound/gbsound.h"
 
 #define	MAX_DEV_COUNT	16
 
@@ -49,6 +54,7 @@ typedef union {
 	TSound* ts;
 	saaChip* saa;
 	SDrive* sdrv;
+	gbSound* gbsnd;
 } xDevPtr;
 
 // common device struct

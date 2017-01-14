@@ -415,11 +415,9 @@ QString gethexbyte(uchar num) {return QString::number(num+0x100,16).right(2).toU
 QString getbinbyte(uchar num) {return QString::number(num+0x100,2).right(8).toUpper();}
 
 void setSignal(QLabel* lab, int on) {
-	if (on) {
-		lab->setStyleSheet("background-color: rgb(160, 255, 160);");
-	} else {
-		lab->setStyleSheet("background-color: rgb(255, 160, 160);");
-	}
+	QString col(on ? "160,255,160" : "255,160,160");
+	// QString bld(on ? "font-weight:bold" : "");
+	lab->setStyleSheet(QString("background-color: rgb(%0)").arg(col));
 }
 
 bool DebugWin::fillAll() {
@@ -437,6 +435,8 @@ bool DebugWin::fillAll() {
 	setSignal(ui.labDOS, comp->dos);
 	setSignal(ui.labROM, comp->rom);
 	setSignal(ui.labCPM, comp->cpm);
+	setSignal(ui.labHBlank, comp->vid->hblank);
+	setSignal(ui.labVBlank, comp->vid->vblank);
 	return fillDisasm();
 }
 

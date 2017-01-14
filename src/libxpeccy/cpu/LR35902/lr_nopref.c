@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include "../cpu.h"
 #include "lr_macro.h"
 
@@ -94,6 +95,7 @@ void lrnop0F(CPU* cpu) {
 
 // 10	stop		0
 void lrnop10(CPU* cpu) {
+	cpu->halt = 1;		// STOP breaks on interrupt
 	cpu->pc--;
 }
 
@@ -625,22 +627,6 @@ void lrnopD2(CPU* cpu) {
 	if (!(cpu->f & FLC)) cpu->pc = cpu->mptr;
 }
 
-// any absent opcode : lock-up CPU
-void lrnLock(CPU* cpu) {
-	cpu->lock = 1;
-	cpu->pc--;
-}
-
-/*
-// d3	out(n),a	4 3rd 4out		mptr = (a<<8) | ((n + 1) & 0xff)
-void lrnopD3(CPU* cpu) {
-	cpu->lptr = MEMRD(cpu->pc++,3);
-	cpu->hptr = cpu->a;
-	IOWR(cpu->mptr,cpu->a,4);
-	cpu->lptr++;
-}
-*/
-
 // d4	call nc,nn	4 3rd 3rd[+1] [3wr 3wr]		mptr = nn
 void lrnopD4(CPU* cpu) {
 	cpu->lptr = MEMRD(cpu->pc++,3);
@@ -675,7 +661,7 @@ void lrnopD8(CPU* cpu) {
 
 // d9	reti		10? 3rd 3rd
 void lrnopD9(CPU* cpu) {
-	cpu->iff1 = cpu->iff2;
+	cpu->iff1 = 1;
 	RET;
 }
 
@@ -685,15 +671,6 @@ void lrnopDA(CPU* cpu) {
 	cpu->hptr = MEMRD(cpu->pc++,3);
 	if (cpu->f & FLC) cpu->pc = cpu->mptr;
 }
-
-/*
-// db	in a,(n)	4 3rd 4in	memptr = ((a<<8) | n) + 1
-void lrnopDB(CPU* cpu) {
-	cpu->lptr = MEMRD(cpu->pc++,3);
-	cpu->hptr = cpu->a;
-	cpu->a = IORD(cpu->mptr++,4);
-}
-*/
 
 // dc	call c,nn	4 3rd 3rd[+1] [3wr 3wr]		mptr = nn
 void lrnopDC(CPU* cpu) {
@@ -705,13 +682,6 @@ void lrnopDC(CPU* cpu) {
 		cpu->pc = cpu->mptr;
 	}
 }
-
-/*
-// dd	prefix IX	4
-void lrnopDD(CPU* cpu) {
-	cpu->opTab = ddTab;
-}
-*/
 
 // de	sbc a,n		4 3rd
 void lrnopDE(CPU* cpu) {
@@ -739,27 +709,6 @@ void lrnopE1(CPU* cpu) {
 void lrnopE2(CPU* cpu) {
 	MEMWR(0xff00 + cpu->c, cpu->a, 4);
 }
-
-/*
-// e3	ex (sp),hl	4 3rd 4rd 3wr 5wr	mptr = hl
-void lrnopE3(CPU* cpu) {
-	POP(cpu->htw,cpu->ltw); cpu->t++;	// 3,3+1
-	PUSH(cpu->h, cpu->l); cpu->t += 2;	// 3,3+2
-	cpu->hl = cpu->tmpw;
-	cpu->mptr = cpu->hl;
-}
-
-// e4	call po,nn	4 3rd 3rd[+1] [3wr 3wr]		mptr = nn
-void lrnopE4(CPU* cpu) {
-	cpu->lptr = MEMRD(cpu->pc++,3);
-	cpu->hptr = MEMRD(cpu->pc++,3);
-	if (!(cpu->f & FP)) {
-		cpu->t++;
-		PUSH(cpu->hpc,cpu->lpc);
-		cpu->pc = cpu->mptr;
-	}
-}
-*/
 
 // e5	push hl		5 3wr 3wr
 void lrnopE5(CPU* cpu) {
@@ -796,29 +745,6 @@ void lrnopEA(CPU* cpu) {
 	MEMWR(cpu->mptr, cpu->a, 4);
 }
 
-/*
-// eb	ex de,hl
-void lrnopEB(CPU* cpu) {
-	SWAP(cpu->hl,cpu->de);
-}
-
-// ec	call pe,nn	4 3rd 3rd[+1] 3wr 3wr	mptr = nn
-void lrnopEC(CPU* cpu) {
-	cpu->lptr = MEMRD(cpu->pc++,3);
-	cpu->hptr = MEMRD(cpu->pc++,3);
-	if (cpu->f & FP) {
-		cpu->t++;
-		PUSH(cpu->hpc,cpu->lpc);
-		cpu->pc = cpu->mptr;
-	}
-}
-
-// ed	prefix		4
-void lrnopED(CPU* cpu) {
-	cpu->opTab = edTab;
-}
-*/
-
 // ee	xor n		4 3rd
 void lrnopEE(CPU* cpu) {
 	cpu->tmpb = MEMRD(cpu->pc++,3);
@@ -850,21 +776,7 @@ void lrnopF2(CPU* cpu) {
 // f3	di		4
 void lrnopF3(CPU* cpu) {
 	cpu->iff1 = 0;
-	cpu->iff2 = 0;
 }
-
-/*
-// f4	call p,nn	4 3rd 3rd[+1] [3wr 3wr]		memptr = nn
-void lrnopF4(CPU* cpu) {
-	cpu->lptr = MEMRD(cpu->pc++,3);
-	cpu->hptr = MEMRD(cpu->pc++,3);
-	if (!(cpu->f & FS)) {
-		cpu->t++;
-		PUSH(cpu->hpc,cpu->lpc);
-		cpu->pc = cpu->mptr;
-	}
-}
-*/
 
 // f5	push af		5 3wr 3wr
 void lrnopF5(CPU* cpu) {
@@ -904,27 +816,8 @@ void lrnopFA(CPU* cpu) {
 // fb	ei		4
 void lrnopFB(CPU* cpu) {
 	cpu->iff1 = 1;
-	cpu->iff2 = 1;
-	cpu->noint = 1;
+//	cpu->noint = 1;
 }
-
-/*
-// fc	call m,nn	4 3rd 3rd[+1] [3wr 3wr]		mptr = nn
-void lrnopFC(CPU* cpu) {
-	cpu->lptr = MEMRD(cpu->pc++,3);
-	cpu->hptr = MEMRD(cpu->pc++,3);
-	if (cpu->f & FS) {
-		cpu->t++;
-		PUSH(cpu->hpc,cpu->lpc);
-		cpu->pc = cpu->mptr;
-	}
-}
-
-// fd	prefix IY	4
-void lrnopFD(CPU* cpu) {
-	cpu->opTab = fdTab;
-}
-*/
 
 // fe	cp n		4 3rd
 void lrnopFE(CPU* cpu) {
@@ -935,6 +828,12 @@ void lrnopFE(CPU* cpu) {
 // ff	rst38		5 3rd 3rd	mptr = 0x38;
 void lrnopFF(CPU* cpu) {
 	RST(0x38);
+}
+
+// any missing opcode : lock-up CPU
+void lrnLock(CPU* cpu) {
+	cpu->lock = 1;
+	cpu->pc--;
 }
 
 //==================

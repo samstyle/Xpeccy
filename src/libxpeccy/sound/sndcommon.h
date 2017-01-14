@@ -8,9 +8,17 @@ typedef struct {
 
 extern int noizes[0x20000];
 
-#include "ayym.h"
-#include "saa1099.h"
-#include "soundrive.h"		// covox/soundrive
-#include "gs.h"
+typedef struct {
+	unsigned on:1;			// on/off sound output
+	unsigned lev:1;			// 1/0 target level
+	unsigned char val;
+	long accum;			// ns accumulator
+	int period;			// period value, ns
+	int pcount;			// current period counter
+} bitChan;
+
+bitChan* bcCreate();
+void bcDestroy(bitChan*);
+void bcSync(bitChan*, int);
 
 #endif

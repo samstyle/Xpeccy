@@ -189,6 +189,7 @@ Computer* compCreate() {
 	comp->gs = gsCreate();
 	comp->sdrv = sdrvCreate(SDRV_NONE);
 	comp->saa = saaCreate();
+	comp->beep = bcCreate();
 // baseconf
 	comp->evo.evo2F = 0;
 	comp->evo.evo4F = 0;
@@ -212,8 +213,6 @@ Computer* compCreate() {
 
 	comp->tapCount = 0;
 	comp->tickCount = 0;
-	comp->beepAmp = 0;
-	comp->beepNs = 0;
 
 	gsReset(comp->gs);
 	zxInitPalete(comp);
@@ -236,6 +235,7 @@ void compDestroy(Computer* comp) {
 	tsDestroy(comp->ts);
 	gsDestroy(comp->gs);
 	sdrvDestroy(comp->sdrv);
+	bcDestroy(comp->beep);
 	rzxStop(comp);
 	free(comp);
 }
@@ -271,6 +271,7 @@ void compReset(Computer* comp,int res) {
 }
 
 void compSetLayout(Computer *comp, vLayout lay) {
+	if (comp->vid->lay.lock) return;
 	comp->vid->lay = lay;
 	comp->vid->frmsz = lay.full.x * lay.full.y;
 }
@@ -432,7 +433,7 @@ int compExec(Computer* comp) {
 	if (comp->debug)
 		comp->brk = 0;
 // sync devices
-	comp->beepNs += nsTime;
+	comp->beep->accum += nsTime;
 	comp->tapCount += nsTime;
 	if (comp->gs->enable) comp->gs->sync += nsTime;
 	difSync(comp->dif, nsTime);

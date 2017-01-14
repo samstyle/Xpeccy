@@ -204,7 +204,7 @@ void tsOutFF(Computer* comp, unsigned short port, unsigned char val) {		// dos
 void tsOutFE(Computer* comp, unsigned short port, unsigned char val) {
 	comp->vid->brdcol = 0xf0 | (val & 7);
 	comp->vid->nextbrd = comp->vid->brdcol;
-	comp->beeplev = (val & 0x10) ? 1 : 0;
+	comp->beep->lev = (val & 0x10) ? 1 : 0;
 	comp->tape->levRec = (val & 0x08) ? 1 : 0;
 }
 

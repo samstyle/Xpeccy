@@ -983,6 +983,7 @@ void MainWin::initUserMenu() {
 	userMenu->addSeparator();
 	dbgMenu = userMenu->addMenu(QIcon(":/images/debuga.png"),"Debug");
 	dbgMenu->addAction(QIcon(),QString("Save v9938 vram..."),this,SLOT(saveVRAM()));
+	dbgMenu->addAction(QIcon(),QString("Save GB VRAM..."), this, SLOT(saveGBVRAM()));
 #endif
 }
 
@@ -1226,3 +1227,15 @@ void MainWin::saveVRAM() {
 		file.close();
 	}
 }
+
+void MainWin::saveGBVRAM() {
+	QString path = QFileDialog::getSaveFileName(this,"Save GB VRAM");
+	if (path.isEmpty()) return;
+	QFile file(path);
+	if (file.open(QFile::WriteOnly)) {
+		file.write((char*)comp->vid->gbc->ram, 0x2000);
+		file.write((char*)comp->gb.iomap, 0x80);
+		file.close();
+	}
+}
+

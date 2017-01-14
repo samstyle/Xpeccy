@@ -572,14 +572,23 @@ void vidSync(Video* vid, int ns) {
 		if (vid->intFRAME && (vid->ray.x >= vid->lay.intpos.x + vid->lay.intSize))
 			vid->intFRAME = 0;
 		vid->ray.x++;
+		if (vid->ray.x == vid->ssze.x)
+			vid->hblank = 1;
 		if (vid->ray.x >= vid->lay.full.x) {
 			vid->ray.x = 0;
-			vid->ray.y++;
+			vid->hblank = 0;
 			vid->nextrow = 1;
 			vid->intFRAME = 0;
+			vid->ray.y++;
 			if (vid->lineCall) vid->lineCall(vid);
+			if (vid->ray.y == vid->ssze.y) {
+				vid->vblank = 1;
+				vid->vbstrb = 1;
+			}
 			if (vid->ray.y >= vid->lay.full.y) {
 				vid->ray.y = 0;
+				vid->vblank = 0;
+				vid->vbstrb = 0;
 				vid->ray.ptr = vid->ray.img;
 				vid->linptr = vid->ray.img;
 				vid->fcnt++;

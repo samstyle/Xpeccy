@@ -55,6 +55,7 @@ struct CPU {
 	unsigned lock:1;		// LR35902: CPU locked
 
 	int type;
+	unsigned char intrq;		// LR35902: interrupt request (bits 0..4, 1=request)
 
 	PAIR(pc,hpc,lpc);
 	PAIR(sp,hsp,lsp);

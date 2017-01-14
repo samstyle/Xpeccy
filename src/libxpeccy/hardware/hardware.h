@@ -73,7 +73,7 @@ unsigned char stdMRd(Computer*,unsigned short,int);
 void stdMWr(Computer*,unsigned short,unsigned char);
 int stdINT(Computer*);
 
-void beepSync(Computer*);
+// void beepSync(Computer*);
 
 // debug IO
 

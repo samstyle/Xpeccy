@@ -154,7 +154,7 @@ void msxAAOut(Computer* comp, unsigned short port, unsigned char val) {
 		tapPlay(comp->tape);
 	}
 	comp->tape->levRec = (val & 0x20) ? 1 : 0;
-	comp->beeplev = (val & 0x80) ? 1 : 0;
+	comp->beep->lev = (val & 0x80) ? 1 : 0;
 }
 
 unsigned char msxAAIn(Computer* comp, unsigned short port) {

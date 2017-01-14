@@ -10,22 +10,16 @@ struct GBCVid {
 	unsigned bgen:1;		// bg layer enabled
 	unsigned altile:1;		// tileset 01:9c00, tiles num -128..127
 	unsigned bigspr:1;		// sprite 8x16 (8x8 if 0)
-	unsigned lyequal:1;		// ly = lyc
-	unsigned intr:1;
 
-	struct {
-		unsigned lyc:1;
-		unsigned hblank:1;
-		unsigned vblank:1;
-		unsigned oam:1;
-	} inten;			// video interrupt enabling
+	unsigned intrq:1;		// stat interrupt request
+	unsigned char inten;		// int enabling flags
 
 	unsigned short tilesadr;	// tiles data adr (0:8800, 1:8000)
 	unsigned short winmapadr;	// window layer timemap (0:9800, 1:9c00)
 	unsigned short bgmapadr;	// bg layer timemap (0:9800, 1:9c00)
 
 	unsigned char ram[0x2000];	// 8K of video memory
-	unsigned char oem[0x100];	// oem : sprites data
+	unsigned char oam[0x100];	// oem : sprites data
 	unsigned char line[256];	// full line image (color indexes)
 
 	vCoord sc;			// scx/scy

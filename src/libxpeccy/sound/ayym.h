@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include "sndcommon.h"
+
 // ay_type
 enum {
 	SND_NONE = 0,

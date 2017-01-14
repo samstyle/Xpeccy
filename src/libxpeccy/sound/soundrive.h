@@ -1,6 +1,9 @@
 #ifndef	_XSOUNDRIVE
 #define	_XSOUNDRIVE
 // soundrive/covox type
+
+#include "sndcommon.h"
+
 enum {
 	SDRV_NONE = 0,
 	SDRV_COVOX,	// 1 channel only

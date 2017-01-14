@@ -14,19 +14,18 @@ void lr_reset(CPU* cpu) {
 	cpu->af = cpu->bc = cpu->de = cpu->hl = 0xffff;
 	cpu->sp = 0xffff;
 	cpu->lock = 0;
+	cpu->iff1 = 0;
+	cpu->intrq = 0;
 	// not necessary
 	cpu->imode = 0;
 	cpu->af_ = cpu->bc_ = cpu->de_ = cpu->hl_ = 0xffff;
 	cpu->ix = cpu->iy = 0xffff;
-	cpu->iff1 = 0;
-	cpu->iff2 = 0;
 	cpu->i = cpu->r = cpu->r7 = 0;
 }
 
 int lr_exec(CPU* cpu) {
 	if (cpu->lock) return 1;
 	cpu->t = 0;
-	cpu->noint = 0;
 	cpu->opTab = lrTab;
 	do {
 		cpu->tmp = cpu->mrd(cpu->pc++, 1, cpu->data);
@@ -37,16 +36,32 @@ int lr_exec(CPU* cpu) {
 	return cpu->t;
 }
 
+typedef struct {
+	unsigned char mask;
+	unsigned short inta;
+} xLRInt;
+
+xLRInt lr_intab[] = {{1,0x40},{2,0x48},{4,0x50},{8,0x58},{16,0x60},{0,0}};
+
 int lr_int(CPU* cpu) {
-	if (!cpu->iff1 || cpu->noint) return 0;
-	cpu->iff1 = 0;
-	cpu->iff2 = 0;
-	if (cpu->halt) {
+	if (cpu->halt) {		// free HALT anyway
 		cpu->halt = 0;
 		cpu->pc++;
 	}
-	RST(cpu->inta);
-	return 15;		// TODO: to know how much T eats INT handle
+	if (!cpu->iff1) return 0;
+	int idx = 0;
+	int res = 0;
+	while (lr_intab[idx].mask) {
+		if (cpu->intrq & lr_intab[idx].mask) {
+			cpu->iff1 = 0;
+			cpu->intrq ^= lr_intab[idx].mask;	// reset int request flag
+			RST(lr_intab[idx].inta);		// execute call
+			res = 15;				// TODO: to know how much T eats INT handle
+			break;
+		}
+		idx++;
+	}
+	return res;
 }
 
 int lr_nmi(CPU* cpu) {

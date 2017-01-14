@@ -8,7 +8,26 @@ extern "C" {
 #include "cpu/cpu.h"
 #include "video/video.h"
 #include "memory.h"
+
+#if 0
+
 #include "device.h"
+
+#else
+
+#include "input.h"
+#include "tape.h"
+#include "fdc.h"
+#include "hdd.h"
+#include "sdcard.h"
+
+#include "sound/ayym.h"
+#include "sound/gs.h"
+#include "sound/saa1099.h"
+#include "sound/soundrive.h"
+#include "sound/gbsound.h"
+
+#endif
 
 #ifdef HAVEZLIB
 	#include <zlib.h>
@@ -54,6 +73,9 @@ enum {
 };
 
 typedef struct {
+	unsigned ramen:1;
+	unsigned char ram[0x8000];
+	unsigned short ramMask;
 	unsigned char* data;
 	char name[FILENAME_MAX];
 	int memMask;
@@ -68,7 +90,7 @@ typedef struct {
 	unsigned frmStrobe:1;		// new frame started
 	unsigned intStrobe:1;		// int front
 	unsigned nmiRequest:1;		// Magic button pressed
-	unsigned beeplev:1;		// beeper level
+	//unsigned beeplev:1;		// beeper level
 	unsigned firstRun:1;
 
 	unsigned rom:1;			// b4,7ffd
@@ -83,8 +105,9 @@ typedef struct {
 	int frqMul;
 	unsigned char intVector;
 
-	unsigned char beepAmp;
-	long int beepNs;
+	bitChan* beep;
+	//unsigned char beepAmp;
+	//long int beepNs;
 
 	struct HardWare *hw;
 	CPU* cpu;
@@ -101,6 +124,7 @@ typedef struct {
 	TSound* ts;
 	saaChip* saa;
 	SDrive* sdrv;
+	gbSound* gbsnd;
 
 #ifdef HAVEZLIB
 
@@ -193,12 +217,11 @@ typedef struct {
 		xCartridge slotB;
 	} msx;
 	struct {
-		unsigned boot:1;	// internal rom on
-		unsigned inpint:1;	// button released: request interrupt
-		unsigned char r03;	// 16384Hz increment
-		unsigned char intMask;
-		unsigned short iomap[256];
+		unsigned boot:1;	// boot rom on
+		unsigned inpint:1;	// button pressed: request interrupt
+		unsigned short iomap[128];
 		int buttons;
+		unsigned char inten;	// int enable flags
 	} gb;
 
 	CMOS cmos;

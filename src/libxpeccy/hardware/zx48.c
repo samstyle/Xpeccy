@@ -15,7 +15,7 @@ void spOutFE(Computer* comp, unsigned short port, unsigned char val) {
 	comp->vid->nextbrd = val & 0x07;
 	if (!comp->vid->border4t)
 		comp->vid->brdcol = val & 0x07;
-	comp->beeplev = (val & 0x10) ? 1 : 0;
+	comp->beep->lev = (val & 0x10) ? 1 : 0;
 	comp->tape->levRec = (val & 0x08) ? 1 : 0;
 }
 

@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include "sndcommon.h"
+
 #include "../cpu/cpu.h"
 #include "../memory.h"
 

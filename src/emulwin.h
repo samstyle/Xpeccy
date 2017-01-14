@@ -130,6 +130,7 @@ class MainWin : public QWidget {
 		void umOpen(QAction*);
 
 		void saveVRAM();
+		void saveGBVRAM();
 	protected:
 		void closeEvent(QCloseEvent*);
 		void dragEnterEvent(QDragEnterEvent*);
