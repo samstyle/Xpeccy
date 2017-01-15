@@ -5,7 +5,8 @@
 
 // 1-bit channel with transient response
 
-#define OVERSHOOT 22500			// ns to overshoot process
+//#define OVERSHOOT 22500			// ns to overshoot process
+#define OVERDIV 88		// ns/256 : post-compensation
 
 bitChan* bcCreate() {
 	bitChan* ch = malloc(sizeof(bitChan));
@@ -28,11 +29,11 @@ void bcSync(bitChan* ch, int ns) {
 	if (ch->on) {
 		lev = ch->val & 0xff;
 		if (ch->lev) {
-			lev += 256 * ns / OVERSHOOT;
+			lev += ns / OVERDIV;
 			if (lev > 0xff)
 				lev = 0xff;
 		} else {
-			lev -= 256 * ns / OVERSHOOT;
+			lev -= ns / OVERDIV;
 			if (lev < 0)
 				lev = 0;
 		}

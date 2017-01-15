@@ -53,6 +53,8 @@ class MemViewer : public QDialog {
 		MemViewer(QWidget* = NULL);
 		Memory* mem;
 		Ui::MemView ui;
+		QPoint winPos;
+		unsigned vis:1;
 	private:
 		unsigned char rdMem(int);
 	public slots:

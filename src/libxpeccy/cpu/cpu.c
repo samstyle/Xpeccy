@@ -26,9 +26,7 @@ extern opCode lrTab[256];
 
 cpuCore cpuTab[] = {
 	{CPU_Z80, "Z80", npTab, z80_reset, z80_exec, z80_int, z80_nmi, z80_asm, z80_mnem},
-#ifdef ISDEBUG
 	{CPU_LR35902, "LR35902", lrTab, lr_reset, lr_exec, lr_int, lr_nmi, lr_asm, lr_mnem},
-#endif
 	{CPU_NONE, "none", NULL, nil_reset, nil_exec, nil_int, nil_nmi, nil_asm, nil_mnem}
 };
 

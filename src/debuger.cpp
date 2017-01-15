@@ -20,13 +20,17 @@ void DebugWin::start(Computer* c) {
 	}
 	fillBrkTable();
 	updateScreen();
-	if (!comp->vid->tail) vidDarkTail(comp->vid);
+	if (!comp->vid->tail)
+		vidDarkTail(comp->vid);
 	move(winPos);
-	show();
 	ui.dasmTable->setFocus();
 	comp->vid->debug = 1;
 	comp->debug = 1;
 	comp->brk = 0;
+	show();
+	memViewer->move(memViewer->winPos);
+	if (memViewer->vis) memViewer->show();
+	activateWindow();
 }
 
 void DebugWin::stop() {
@@ -34,6 +38,12 @@ void DebugWin::stop() {
 	comp->vid->debug = 0;
 	tCount = comp->tickCount;
 	winPos = pos();
+	trace = 0;
+
+	memViewer->vis = memViewer->isVisible() ? 1 : 0;
+	memViewer->winPos = memViewer->pos();
+
+	memViewer->hide();
 	hide();
 	emit closed();
 }
@@ -160,7 +170,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(oui.leStart,SIGNAL(textChanged(QString)),this,SLOT(dmpStartOpen()));
 	connect(oui.butOk,SIGNAL(clicked()), this, SLOT(loadDump()));
 
-	memViewer = new MemViewer(this);
+	memViewer = new MemViewer();
 	connect(ui.tbMemView, SIGNAL(clicked()),this,SLOT(doMemView()));
 // context menu
 	bpMenu = new QMenu(this);
@@ -211,13 +221,14 @@ void DebugWin::scrollDown() {
 }
 
 void DebugWin::doStep() {
+	if (!trace) return;
 	tCount = comp->tickCount;
 	compExec(comp);
 	if (!fillAll()) {
 		disasmAdr = comp->cpu->pc;
 		fillDisasm();
 	}
-	if (trace) QTimer::singleShot(10,this,SLOT(doStep()));
+	QTimer::singleShot(10,this,SLOT(doStep()));
 }
 
 void DebugWin::switchBP(unsigned char mask) {
@@ -437,6 +448,8 @@ bool DebugWin::fillAll() {
 	setSignal(ui.labCPM, comp->cpm);
 	setSignal(ui.labHBlank, comp->vid->hblank);
 	setSignal(ui.labVBlank, comp->vid->vblank);
+	if (memViewer->isVisible())
+		memViewer->fillImage();
 	return fillDisasm();
 }
 
@@ -1128,6 +1141,9 @@ void DebugWin::saveDumpToDisk(int idx) {
 
 MemViewer::MemViewer(QWidget* p):QDialog(p) {
 	ui.setupUi(this);
+
+	vis = 0;
+
 	connect(ui.sbAddr, SIGNAL(valueChanged(int)), this, SLOT(fillImage()));
 	connect(ui.sbWidth, SIGNAL(valueChanged(int)), this, SLOT(fillImage()));
 	connect(ui.sbHeight, SIGNAL(valueChanged(int)), this, SLOT(fillImage()));
@@ -1181,8 +1197,8 @@ unsigned char MemViewer::rdMem(int adr) {
 }
 
 void MemViewer::fillImage() {
-	QImage img(256,256,QImage::Format_Mono);
-	img.fill(0);
+	QImage img(256,256, QImage::Format_RGB888);
+	img.fill(qRgb(64,64,64));
 	int adr = ui.sbAddr->value();
 	int high = ui.sbHeight->value() << 3;
 	unsigned char byt;
@@ -1193,9 +1209,7 @@ void MemViewer::fillImage() {
 			byt = rdMem(adr);
 			adr++;
 			for (bit = 0; bit < 8; bit++) {
-				if (byt & 0x80) {
-					img.setPixel((col << 3) | bit, row, 1);
-				}
+				img.setPixel((col << 3) | bit, row, (byt & 0x80) ? qRgb(255,255,255) : qRgb(0,0,0));
 				byt <<= 1;
 			}
 		}
