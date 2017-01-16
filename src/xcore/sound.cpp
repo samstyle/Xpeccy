@@ -64,11 +64,8 @@ void sndMix(Computer* comp) {
 	}
 	lev *= 0.15;
 
-	//beepSync(comp);
 	bcSync(comp->beep, -1);
 	lev += ((comp->beep->val & 0xf0) >> 4) * conf.snd.vol.beep / 100.0;
-	// lev += comp->beeplev ? conf.snd.vol.beep * 4 / 25 : 0;
-
 
 	sndLev.left = lev;
 	sndLev.right = lev;
@@ -76,6 +73,10 @@ void sndMix(Computer* comp) {
 	sndPair svol = tsGetVolume(comp->ts);
 	sndLev.left += svol.left * conf.snd.vol.ay / 100.0;
 	sndLev.right += svol.right * conf.snd.vol.ay / 100.0;
+
+	svol = gbsVolume(comp->gbsnd);
+	sndLev.left += svol.left;
+	sndLev.right += svol.right;
 
 	svol = gsGetVolume(comp->gs);
 	sndLev.left += svol.left * conf.snd.vol.gs / 100.0;

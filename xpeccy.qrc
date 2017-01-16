@@ -49,5 +49,6 @@
         <file>images/stop.png</file>
         <file>images/floppyRed.png</file>
         <file>images/eye.png</file>
+        <file>images/gameboy.png</file>
     </qresource>
 </RCC>

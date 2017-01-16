@@ -22,6 +22,8 @@ void DebugWin::start(Computer* c) {
 	updateScreen();
 	if (!comp->vid->tail)
 		vidDarkTail(comp->vid);
+	ui.tabsPanel->setTabEnabled(3, comp->hw->type == HW_GBC);
+
 	move(winPos);
 	ui.dasmTable->setFocus();
 	comp->vid->debug = 1;
@@ -135,9 +137,14 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.tbAddBrk->setEnabled(false);
 	ui.tbDelBrk->setEnabled(false);
 	connect(ui.bpList,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(goToBrk(QModelIndex)));
+// gb tab
+	connect(ui.gbTiles, SIGNAL(clicked(bool)), this, SLOT(fillGBoy()));
+	connect(ui.gbMap, SIGNAL(clicked(bool)), this, SLOT(fillGBoy()));
+	connect(ui.sbTileset, SIGNAL(valueChanged(int)), this, SLOT(fillGBoy()));
+	connect(ui.sbTilemap, SIGNAL(valueChanged(int)), this, SLOT(fillGBoy()));
+
 
 	setFixedSize(size());
-//	active = 0;
 	block = 0;
 	disasmAdr = 0;
 	dumpAdr = 0;
@@ -221,14 +228,13 @@ void DebugWin::scrollDown() {
 }
 
 void DebugWin::doStep() {
-	if (!trace) return;
 	tCount = comp->tickCount;
 	compExec(comp);
 	if (!fillAll()) {
 		disasmAdr = comp->cpu->pc;
 		fillDisasm();
 	}
-	QTimer::singleShot(10,this,SLOT(doStep()));
+	if (trace) QTimer::singleShot(10,this,SLOT(doStep()));
 }
 
 void DebugWin::switchBP(unsigned char mask) {
@@ -437,6 +443,7 @@ bool DebugWin::fillAll() {
 	fillMem();
 	fillDump();
 	fillFDC();
+	fillGBoy();
 	if (ui.scrLabel->isVisible())
 		updateScreen();
 //	ui.rzxTab->setEnabled(comp->rzx.play);
@@ -452,6 +459,76 @@ bool DebugWin::fillAll() {
 		memViewer->fillImage();
 	return fillDisasm();
 }
+
+// gameboy
+
+void drawGBTile(QImage& img, GBCVid* gbv, int x, int y, int adr) {
+	int row, bit;
+	int data;
+	unsigned char col;
+	xColor xcol;
+	for (row = 0; row < 8; row++) {
+		data = gbv->ram[adr & 0x1fff] & 0xff;
+		adr++;
+		data |= (gbv->ram[adr & 0x1fff] & 0xff) << 8;
+		adr++;
+		for (bit = 0; bit < 8; bit++) {
+			col = ((data & 0x80) ? 1 : 0) | ((data & 0x8000) ? 2 : 0);
+			xcol = gbv->pal[col];
+			img.setPixel(x + bit, y + row, qRgb(xcol.r, xcol.g, xcol.b));
+			data <<= 1;
+		}
+	}
+}
+
+QImage getGBTiles(GBCVid* gbv, int tset) {
+	int tadr = tset ? 0x800 : 0;
+	int x,y;
+	QImage img(128, 128, QImage::Format_RGB888);
+	for (y = 0; y < 16; y++) {
+		for (x = 0; x < 16; x++) {
+			drawGBTile(img, gbv, x << 3, y << 3, tadr);
+			tadr += 16;
+		}
+	}
+	return img;
+}
+
+QImage getGBMap(GBCVid* gbv, int tmap, int tset) {
+	QImage img(256, 256, QImage::Format_RGB888);
+	img.fill(qRgb(0,0,0));
+	int adr = tmap ? 0x1c00 : 0x1800;
+	int tadr;
+	unsigned char tile;
+	int x,y;
+	for (y = 0; y < 32; y++) {
+		for (x = 0; x < 32; x++) {
+			tile = gbv->ram[adr & 0x1fff];
+			adr++;
+			if (tset) {
+				tadr = 0x800 + ((tile ^ 0x80) << 4);
+			} else {
+				tadr = tile << 4;
+			}
+			drawGBTile(img, gbv, x << 3, y << 3, tadr);
+		}
+	}
+	return img;
+}
+
+void DebugWin::fillGBoy() {
+	QImage img;
+	int tset = ui.sbTileset->value();
+	int tmap = ui.sbTilemap->value();
+	if (ui.gbTiles->isChecked()) {
+		img = getGBTiles(comp->vid->gbc, tset).scaled(256,256);
+	} else {
+		img = getGBMap(comp->vid->gbc, tmap, tset);
+	}
+	ui.gbImage->setPixmap(QPixmap::fromImage(img));
+}
+
+// ...
 
 void DebugWin::setFlagNames(const char name[8]) {
 	ui.labF7->setText(QString(name[0]));

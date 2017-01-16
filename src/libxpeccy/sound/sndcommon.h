@@ -11,10 +11,15 @@ extern int noizes[0x20000];
 typedef struct {
 	unsigned on:1;			// on/off sound output
 	unsigned lev:1;			// 1/0 target level
+
+	unsigned left:1;		// stereo output control
+	unsigned right:1;
+
 	unsigned char val;
 	long accum;			// ns accumulator
-	int period;			// period value, ns
-	int pcount;			// current period counter
+	int perH;			// halfperiod for lev=1
+	int perL;			// halfperiod for lev=0. gameboy has different halfperiod sizes
+	int pcount;			// current halfperiod counter
 } bitChan;
 
 bitChan* bcCreate();

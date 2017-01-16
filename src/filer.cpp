@@ -96,7 +96,6 @@ int testSlotOn(Computer* comp) {
 	switch (comp->hw->type) {
 		case HW_MSX:
 		case HW_MSX2:
-		case HW_GB:
 		case HW_GBC:
 			if (comp->mem->map[0].type == MEM_EXT) res = 1;
 			if (comp->mem->map[1].type == MEM_EXT) res = 1;

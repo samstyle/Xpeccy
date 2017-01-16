@@ -72,17 +72,31 @@ enum {
 	MSX_ASCII16
 };
 
-typedef struct {
-	unsigned ramen:1;
-	unsigned char ram[0x8000];
+/*
+// GameBoy cartrige MBC
+enum {
+	GB_NOMAP = 0,
+	GB_MBC1,
+	GB_MBC2,
+	GB_MBC3,
+	GB_HUC1
+};
+*/
+
+struct xCartridge {
+	unsigned ramen:1;		// ram enabling (gb)
+	unsigned ramod:1;		// ram banking mode (gb)
+	unsigned char ram[0x8000];	// onboard ram
 	unsigned short ramMask;
-	unsigned char* data;
+	unsigned char* data;		// onboard rom
 	char name[FILENAME_MAX];
 	int memMask;
 	int memMap[8];		// 8 of 8kb pages
-	int mapType;		// user defined mapper type, if auto-detect didn't worked
-	int mapAuto;		// auto detected map type OR user defined
-} xCartridge;
+	int mapType;		// user defined mapper type, if auto-detect didn't worked (msx)
+	int mapAuto;		// auto detected map type OR user defined (msx)
+	void (*wr)(struct xCartridge*, unsigned short, unsigned char);		// write callback
+};
+typedef struct xCartridge xCartridge;
 
 typedef struct {
 	unsigned brk:1;			// breakpoint

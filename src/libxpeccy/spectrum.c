@@ -188,6 +188,7 @@ Computer* compCreate() {
 	comp->ts = tsCreate(TS_NONE,SND_AY,SND_NONE);
 	comp->gs = gsCreate();
 	comp->sdrv = sdrvCreate(SDRV_NONE);
+	comp->gbsnd = gbsCreate();
 	comp->saa = saaCreate();
 	comp->beep = bcCreate();
 // baseconf
@@ -234,6 +235,7 @@ void compDestroy(Computer* comp) {
 	ideDestroy(comp->ide);
 	tsDestroy(comp->ts);
 	gsDestroy(comp->gs);
+	gbsDestroy(comp->gbsnd);
 	sdrvDestroy(comp->sdrv);
 	bcDestroy(comp->beep);
 	rzxStop(comp);
@@ -283,7 +285,6 @@ void compUpdateTimings(Computer* comp) {
 	if (comp->nsPerTick & 1) comp->nsPerTick++;
 	int type = comp->hw ? comp->hw->type : HW_NULL;
 	switch (type) {
-		case HW_GB:
 		case HW_GBC:
 			vidUpdateTimings(comp->vid, comp->nsPerTick * 2);
 			break;
@@ -316,7 +317,7 @@ void compSetHardware(Computer* comp, const char* name) {
 	comp->hw = hw;
 	comp->vid->istsconf = (hw->type == HW_TSLAB) ? 1 : 0;
 	comp->vid->ismsx = ((hw->type == HW_MSX) || (hw->type == HW_MSX2)) ? 1 : 0;
-	comp->vid->isgb = ((hw->type == HW_GB) || (hw->type == HW_GBC)) ? 1 : 0;
+	comp->vid->isgb = (hw->type == HW_GBC) ? 1 : 0;
 	compUpdateTimings(comp);
 }
 
@@ -387,30 +388,6 @@ int compExec(Computer* comp) {
 	} else if (comp->hw->intr) {
 		comp->hw->intr(comp);
 	}
-/*
-	} else if (comp->vid->ismsx) {
-		if ((comp->vid->v9938.reg[1] & 0x40) && comp->vid->newFrame)
-			zxINT(comp, 0xff);
-	} else if (comp->vid->isgb) {
-		if (comp->vid->intFRAME && (comp->gb.intMask & 1)) {
-			comp->cpu->inta = 0x40;
-		} else if (comp->vid->gbc->intr && (comp->gb.intMask & 2)) {
-			comp->cpu->inta = 0x48;
-		}
-		if (comp->cpu->inta) {
-			comp->cpu->intr(comp->cpu);
-			comp->cpu->inta = 0;
-		}
-	} else {
-		if (comp->vid->intFRAME) {
-			zxINT(comp, 0xff);
-		} else if (comp->vid->intLINE) {
-			if (zxINT(comp,0xfd)) comp->vid->intLINE = 0;
-		} else if (comp->vid->intDMA) {
-			if (zxINT(comp,0xfb)) comp->vid->intDMA = 0;
-		}
-	}
-*/
 // new frame
 	if (comp->vid->newFrame) {
 		comp->vid->newFrame = 0;
@@ -437,6 +414,7 @@ int compExec(Computer* comp) {
 	comp->tapCount += nsTime;
 	if (comp->gs->enable) comp->gs->sync += nsTime;
 	difSync(comp->dif, nsTime);
+	gbsSync(comp->gbsnd, nsTime);
 // return ns eated @ this step
 	return nsTime;
 }

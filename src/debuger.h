@@ -73,15 +73,12 @@ class DebugWin : public QDialog {
 		DebugWin(QWidget* = NULL);
 		~DebugWin();
 
-		// unsigned active:1;		// ??
-
 		void reject();
 		void start(Computer*);
 		void stop();
 		bool fillAll();
 
 		QMap<QString, xAdr> labels;
-		// QList<xLabel> labels;
 	signals:
 		void closed();
 	private:
@@ -154,6 +151,8 @@ class DebugWin : public QDialog {
 		void chDumpFile();
 		void dmpStartOpen();
 		void loadDump();
+
+		void fillGBoy();
 
 		void doMemView();
 

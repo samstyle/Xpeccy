@@ -25,8 +25,7 @@ enum {
 	HW_PHOENIX,	// ZXM Phoenix
 	HW_MSX,		// MSX 1
 	HW_MSX2,	// MSX 2
-	HW_GB,		// Game boy
-	HW_GBC,		// Game boy color
+	HW_GBC,		// Game boy color (gameboy capatible)
 };
 
 // mem size

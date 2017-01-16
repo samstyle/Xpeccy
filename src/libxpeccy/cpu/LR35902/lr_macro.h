@@ -23,7 +23,7 @@ extern unsigned char FLHsubTab[8];
 }
 
 #define ADCL(val) {\
-	cpu->tmpw = cpu->a + val + (cpu->f & FC);\
+	cpu->tmpw = cpu->a + val + ((cpu->f & FLC) ? 1 : 0);\
 	cpu->tmp = ((cpu->a & 0x88) >> 3) | ((val & 0x88) >> 2) | ((cpu->tmpw & 0x88) >> 1);\
 	cpu->a = cpu->tmpw & 0xff;\
 	cpu->f = (cpu->a ? 0 : FLZ) | ((cpu->tmpw & 0x100) ? FLC : 0) | FLHaddTab[cpu->tmp & 7];\
@@ -37,7 +37,7 @@ extern unsigned char FLHsubTab[8];
 }
 
 #define SBCL(value) {\
-	cpu->tmpw = cpu->a - value - (cpu->f & FC);\
+	cpu->tmpw = cpu->a - value - ((cpu->f & FLC) ? 1 : 0);\
 	cpu->tmp = ((cpu->a & 0x88) >> 3) | ((value & 0x88) >> 2) | ((cpu->tmpw & 0x88) >> 1);\
 	cpu->a = cpu->tmpw & 0xff;\
 	cpu->f = (cpu->a ? 0 : FLZ) | ((cpu->tmpw & 0x100) ? FLC : 0) | FLN | FLHsubTab[cpu->tmp & 7];\
@@ -81,7 +81,7 @@ extern unsigned char FLHsubTab[8];
 }
 
 #define RRCX(val) {\
-	cpu->f = val & FLC;\
+	cpu->f = (val & 1) ? FLC : 0;\
 	val = (val >> 1) | (val << 7);\
 	cpu->f |= (val ? 0 : FLZ);\
 }

@@ -43,7 +43,7 @@ HardWare hwTab[] = {
 		"MSX2","MSX-2 (alfa)",HW_MSX2,MEM_128,
 		&msx2mapper,&msx2Out,&msx2In,&msx2mrd,&msx2mwr,&msx2Reset,&msxINT
 	},{
-		"GameBoy", "Game Boy", HW_GB, MEM_48,
+		"GameBoy", "Game Boy", HW_GBC, MEM_48,
 		&gbMaper, NULL, NULL, &gbMemRd, &gbMemWr, &gbReset, &gbINT
 	},{
 		NULL,NULL,0,0,NULL,NULL,NULL,NULL,NULL,NULL

@@ -1,7 +1,7 @@
 #include "../cpu.h"
 
-const unsigned char FLHaddTab[] = {0, FH, FH, FH, 0, 0, 0, FH};
-const unsigned char FLHsubTab[] = {0, 0, FH, 0, FH, 0, FH, FH};
+const unsigned char FLHaddTab[] = {0, FLH, FLH, FLH, 0, 0, 0, FLH};
+const unsigned char FLHsubTab[] = {0, 0, FLH, 0, FLH, 0, FLH, FLH};
 
 /*
 const unsigned char lr_szTab[0x100] = {

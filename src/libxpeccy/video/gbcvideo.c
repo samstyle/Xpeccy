@@ -47,10 +47,31 @@ void gbcvLine(GBCVid* vid) {
 			}
 		}
 	}
+// WIN
+	if (vid->winen && (vid->ray->y >= vid->win.y)) {
+		tadr = vid->winmapadr + ((vid->wline & 0xf8) << 2);
+		pos = (vid->sc.x + vid->win.x) & 0xff;
+		for (tx = 0; tx < 32; tx++) {
+			tile = vid->ram[tadr & 0x1fff];
+			if (vid->altile) tile += 0x80;
+			tadr++;
+			adr = vid->tilesadr + (tile << 4) + ((vid->wline & 7) << 1);
+			data = vid->ram[adr & 0x1fff] << 8;
+			data |= vid->ram[(adr + 1) & 0x1fff] << 8;
+			for (bi = 0; bi < 8; bi++) {
+				col = ((data & 0x80) ? 1 : 0) | ((data & 0x8000) ? 2 : 0);	// color index 0..3
+				vid->line[pos & 0xff] = col;
+				pos++;
+				data <<= 1;
+			}
+		}
+		vid->wline++;
+	}
 // OAM (sprites)
 	if (vid->spren) {
 		adr = 0;
 		tx = 10;	// max 10 sprites in line
+		memset(vid->sline, 0x00, 256);
 		while ((adr < 0xa0) && (tx > 0)) {
 			y = vid->oam[adr++] - 16;
 			x = vid->oam[adr++] - 8;
@@ -81,9 +102,17 @@ void gbcvLine(GBCVid* vid) {
 				pos = (vid->sc.x + x) & 0xff;				// X position in line buffer (shift to BG x)
 				for (bi = 0; bi < 8; bi++) {
 					col = ((data & 0x80) ? 1 : 0) | ((data & 0x8000) ? 2 : 0);	// color index
-					if (col && !(vid->line[pos & 0xff] && (flag & 0x80))) {
-						col |= (flag & 0x10) ? 0x44 : 0x40;				// set sprite palete
-						vid->line[pos & 0xff] = col;
+					if (col) {			// not-transparent
+						col |= (flag & 0x10) ? 0x44 : 0x40;			// shift to sprite palete
+						if (flag & 0x80) {					// behind bg/win
+							if ((vid->line[pos & 0xff] == 0) && (vid->sline[pos & 0xff] == 0)) {
+								vid->sline[pos & 0xff] = col;
+							}
+						} else {
+							if (vid->sline[pos & 0xff] == 0) {
+								vid->sline[pos & 0xff] = col;
+							}
+						}
 					}
 					pos++;
 					data <<= 1;
@@ -91,7 +120,10 @@ void gbcvLine(GBCVid* vid) {
 				tx--;
 			}
 		}
-
+		for (pos = 0; pos < 256; pos++) {
+			if (vid->sline[pos] != 0)
+				vid->line[pos] = vid->sline[pos];
+		}
 	}
 
 	if ((vid->ray->x == 0) && (vid->inten & 32)) vid->intrq = 1;			// oam (start of line?)
@@ -101,7 +133,7 @@ void gbcvLine(GBCVid* vid) {
 }
 
 void gbcvFram(GBCVid* vid) {
-
+	vid->wline = 0;
 }
 
 // game boy palette
@@ -129,4 +161,14 @@ GBCVid* gbcvCreate(vRay* ray, vLayout* lay) {
 
 void gbcvDestroy(GBCVid* vid) {
 	free(vid);
+}
+
+void gbcvReset(GBCVid* vid) {
+	vid->sc.x = 0;
+	vid->sc.y = 0;
+	vid->win.x = 0;
+	vid->win.y = 0;
+	vid->bgen = 0;
+	vid->winen = 0;
+	vid->spren = 0;
 }

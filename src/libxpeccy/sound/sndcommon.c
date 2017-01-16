@@ -38,11 +38,11 @@ void bcSync(bitChan* ch, int ns) {
 				lev = 0;
 		}
 		ch->val = lev & 0xff;
-		if (ch->period) {
+		if (ch->perH && ch->perL) {
 			ch->pcount -= ns;
 			while (ch->pcount < 1) {
 				ch->lev = !ch->lev;
-				ch->pcount += ch->period;
+				ch->pcount += ch->lev ? ch->perH : ch->perL;
 			}
 		}
 	}

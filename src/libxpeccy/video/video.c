@@ -560,9 +560,8 @@ void vidSync(Video* vid, int ns) {
 	while (vid->nsDraw >= vid->nsPerDot) {
 		if ((vid->ray.y >= vid->lcut.y) && (vid->ray.y < vid->rcut.y)) {
 			if ((vid->ray.x >= vid->lcut.x) && (vid->ray.x < vid->rcut.x)) {
-				if (vid->ray.x & 8)
-					vid->brdcol = vid->nextbrd;
-				vid->callback(vid);		// put dot
+				if (vid->ray.x & 8) vid->brdcol = vid->nextbrd;	// update border color
+				if (vid->callback) vid->callback(vid);		// put dot callback
 			}
 		}
 		if ((vid->intMask & 1) && (vid->ray.y == vid->lay.intpos.y) && (vid->ray.x == vid->lay.intpos.x)) {
@@ -580,7 +579,6 @@ void vidSync(Video* vid, int ns) {
 			vid->nextrow = 1;
 			vid->intFRAME = 0;
 			vid->ray.y++;
-			if (vid->lineCall) vid->lineCall(vid);
 			if (vid->ray.y == vid->ssze.y) {
 				vid->vblank = 1;
 				vid->vbstrb = 1;
@@ -597,8 +595,11 @@ void vidSync(Video* vid, int ns) {
 				vid->idx = 0;
 				vid->newFrame = 1;
 				vid->tail = 0;
-				if (vid->framCall) vid->framCall(vid);
+				if (vid->lineCall) vid->lineCall(vid);		// line 0 callback
+				if (vid->framCall) vid->framCall(vid);		// frame callback
 				if (vid->debug) vidDarkTail(vid);
+			} else if (vid->lineCall) {
+				vid->lineCall(vid);				// line X callback
 			}
 		}
 		vid->nsDraw -= vid->nsPerDot;

@@ -135,7 +135,7 @@ void lrnop16(CPU* cpu) {
 // 17	rla		4
 void lrnop17(CPU* cpu) {
 	cpu->tmp = cpu->a;
-	cpu->a = (cpu->a << 1) | ((cpu->f & FLC) ? 0x01 : 0);
+	cpu->a = (cpu->a << 1) | ((cpu->f & FLC) ? 1 : 0);
 	cpu->f = (cpu->f & FLZ) | ((cpu->tmp & 0x80) ? FLC : 0);
 }
 
@@ -318,7 +318,6 @@ void lrnop36(CPU* cpu) {
 // 37	scf		4
 void lrnop37(CPU* cpu) {
 	cpu->f |= FLC;
-	// cpu->f = (cpu->f & (FS | FZ | FP)) | (cpu->a & (F5 | F3)) | FC;
 }
 
 // 38	jr c,e		4 3rd [5jr]
@@ -697,7 +696,7 @@ void lrnopDF(CPU* cpu) {
 // e0	ld (FF00 + n), a
 void lrnopE0(CPU* cpu) {
 	cpu->tmpb = MEMRD(cpu->pc++, 4);
-	MEMWR(0xff00 + cpu->tmpb, cpu->a, 4);
+	MEMWR(0xff00 | (cpu->tmpb & 0xff), cpu->a, 4);
 }
 
 // e1	pop hl		4 3rd 3rd
@@ -707,7 +706,7 @@ void lrnopE1(CPU* cpu) {
 
 // e2	ld (FF00 + C), a
 void lrnopE2(CPU* cpu) {
-	MEMWR(0xff00 + cpu->c, cpu->a, 4);
+	MEMWR(0xff00 | (cpu->c & 0xff), cpu->a, 4);
 }
 
 // e5	push hl		5 3wr 3wr
@@ -760,7 +759,7 @@ void lrnopEF(CPU* cpu) {
 // f0	ld a,(FF00 + n)
 void lrnopF0(CPU* cpu) {
 	cpu->tmpb = MEMRD(cpu->pc++, 4);
-	cpu->a = MEMRD(0xff00 + cpu->tmpb, 4);
+	cpu->a = MEMRD(0xff00 | (cpu->tmpb & 0xff), 4);
 }
 
 // f1	pop af		4 3rd 3rd
@@ -770,7 +769,7 @@ void lrnopF1(CPU* cpu) {
 
 // f2	ld a,(FF00 + C)
 void lrnopF2(CPU* cpu) {
-	cpu->a = MEMRD(0xff00 + cpu->c, 4);
+	cpu->a = MEMRD(0xff00 | (cpu->c & 0xff), 4);
 }
 
 // f3	di		4

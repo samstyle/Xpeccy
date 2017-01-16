@@ -2,26 +2,6 @@
 
 #include "hardware.h"
 
-void gbReset(Computer* comp) {
-	comp->gb.boot = 1;
-	vidSetMode(comp->vid, VID_GBC);
-
-	comp->gb.inten = 0;
-	comp->vid->gbc->inten = 0;
-	comp->gb.buttons = 0xff;
-
-	comp->msx.slotA.memMap[0] = 1;	// rom bank
-	comp->msx.slotA.memMap[1] = 0;	// ram bank
-	comp->msx.slotA.ramen = 0;
-	comp->msx.slotA.ramMask = 0x1fff;
-
-#ifdef ISDEBUG
-	if (comp->msx.slotA.data) {
-		int type = comp->msx.slotA.data[0x147];
-		printf("Cartrige type %.2X\n",type);
-	}
-#endif
-}
 
 // IO ports
 
@@ -76,6 +56,27 @@ void setGrayScale(xColor pal[256], int base, unsigned char val) {
 	pal[base + 1] = iniCol[(val >> 2) & 3];
 	pal[base + 2] = iniCol[(val >> 4) & 3];
 	pal[base + 3] = iniCol[(val >> 6) & 3];
+}
+
+void setPeriod(bitChan* ch, int per, int wave) {
+	switch (wave & 0xc0) {
+		case 0x00:
+			ch->perL = per >> 3;		// 1/8
+			ch->perH = (per * 7) >> 3;	// 7/8
+			break;
+		case 0x40:
+			ch->perL = per >> 2;		// 1/4
+			ch->perH = (per * 3) >> 2;	// 3/4
+			break;
+		case 0x80:
+			ch->perL = per >> 1;		// 1/2
+			ch->perH = per >> 1;		// 1/2
+			break;
+		case 0xc0:
+			ch->perL = (per * 3) >> 2;	// 3/4
+			ch->perH = per >> 2;		// 1/4
+			break;
+	}
 }
 
 void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
@@ -140,6 +141,11 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			comp->vid->gbc->win.x = val - 7;
 			break;
 // SOUND
+// 1e9/frq(Hz) = full period ns
+// 5e8/frq(Hz) = half period ns
+// frq = 131072/(2048-N) Hz
+// full period = 7630 * (2048-N) ns -> 15626240 max / 7630 min
+// half period = 3815 * (2048-N) ns
 		// chan 1
 		case 0x10: break;
 		case 0x11: break;
@@ -163,9 +169,21 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 		case 0x22: break;
 		case 0x23: break;
 		// control
-		case 0x24: break;
-		case 0x25: break;
-		case 0x26: break;
+		case 0x24:		// Vin sound channel control (not used?)
+			break;
+		case 0x25:		// send chan sound to SO1/SO2. b0..3 : ch1..4 -> SO1; b4..7 : ch1..4 -> SO2
+			comp->gbsnd->ch1->left = (val & 0x01) ? 1 : 0;
+			comp->gbsnd->ch2->left = (val & 0x02) ? 1 : 0;
+			comp->gbsnd->ch3->left = (val & 0x04) ? 1 : 0;
+			comp->gbsnd->ch4->left = (val & 0x08) ? 1 : 0;
+			comp->gbsnd->ch1->right = (val & 0x10) ? 1 : 0;
+			comp->gbsnd->ch2->right = (val & 0x20) ? 1 : 0;
+			comp->gbsnd->ch3->right = (val & 0x40) ? 1 : 0;
+			comp->gbsnd->ch4->right = (val & 0x80) ? 1 : 0;
+			break;
+		case 0x26:		// on/off channels
+			comp->gbsnd->enable = (val & 0x80) ? 1 : 0;
+			break;
 // TIMER
 		case 0x04:				// divider. inc @ 16384Hz
 			comp->gb.iomap[4] = 0x00;
@@ -221,25 +239,80 @@ unsigned char gbSlotRd(unsigned short adr, void* data) {
 	return res;
 }
 
+// mbc writing
+void wr_nomap(Computer* comp, unsigned short adr, unsigned char val) {
+}
+
+void wr_mbc1(xCartridge* slot, unsigned short adr, unsigned char val) {
+	switch (adr & 0xe000) {
+		case 0x0000:			// 0000..1fff : xA = ram enable
+			slot->ramen = ((val & 0x0f) == 0x0a) ? 1 : 0;
+			break;
+		case 0x2000:			// 2000..3fff : & 1F = ROM bank (0 -> 1)
+			val &= 0x1f;
+			val |= (slot->memMap[0] & 0x60);
+			if (val == 0) val++;
+			slot->memMap[0] = val;
+			break;
+		case 0x4000:			// 4000..5fff : 2bits : b0,1 ram bank | b5,6 rom bank (depends on banking mode)
+			val &= 3;
+			if (slot->ramod) {
+				slot->memMap[1] = val;
+			} else {
+				slot->memMap[0] = (slot->memMap[0] & 0x1f) | (val << 5);
+			}
+			break;
+		case 0x6000:			// 6000..7fff : b0 = 0:rom banking, 1:ram banking
+			slot->ramod = (val & 1);
+			if (slot->ramod) {
+				slot->memMap[0] &= 0x1f;
+			} else {
+				slot->memMap[1] = 0;
+			}
+			break;
+	}
+}
+
+void wr_mbc2(xCartridge* slot, unsigned short adr, unsigned char val) {
+	switch (adr & 0xe000) {
+		case 0x0000:				// 0000..1fff : 4bit ram enabling
+			if (adr & 0x100) return;
+			slot->ramen = ((val & 0x0f) == 0x0a) ? 1 : 0;
+			break;
+		case 0x2000:				// 2000..3fff : rom bank nr
+			if (adr & 0x100) {		// hi LSBit must be 1
+				val &= 0x0f;
+				if (val == 0) val++;
+				slot->memMap[0] = val;
+			}
+			break;
+	}
+}
+
+void wr_mbc3(xCartridge* slot, unsigned short adr, unsigned char val) {
+	switch (adr & 0xe000) {
+		case 0x0000:		// 0000..1fff : xA = ram enable
+			slot->ramen = ((val & 0x0f) == 0x0a) ? 1 : 0;
+			break;
+		case 0x2000:		// 2000..3fff : rom bank (1..127)
+			val = 0x7f;
+			if (val == 0) val++;
+			slot->memMap[0] = val;
+			break;
+		case 0x4000:		// 4000..5fff : ram bank / rtc register
+			if (val < 4) {
+				slot->memMap[1] = val;
+			}
+			break;
+		case 0x6000:		// b0: 0->1 latch rtc registers
+			break;
+	}
+}
+
 void gbSlotWr(unsigned short adr, unsigned char val, void* data) {
 	Computer* comp = (Computer*)data;
 	xCartridge* slot = &comp->msx.slotA;
-	if (!slot->data) return;
-	switch (adr & 0xe000) {
-		case 0x0000:		// 0000..1fff : ram enable
-			comp->msx.slotA.ramen = ((val & 0x0f) == 0x0a) ? 1 : 0;
-			break;
-		case 0x2000:		// 2000..3fff : rom bank
-			slot->memMap[0] = val & 0x7f;
-			break;
-		case 0x4000:		// 4000..5fff : ram bank
-			slot->memMap[1] = val & 0x03;
-			break;
-		default:
-			printf("slot wr %.4X,%.2X\n",adr,val);
-			assert(0);
-			break;
-	}
+	if (slot->data && slot->wr) slot->wr(slot, adr, val);
 }
 
 // 8000..9fff : video mem
@@ -399,4 +472,52 @@ void gbRelease(Computer* comp, const char* key) {
 	int mask = gbGetInputMask(key);
 	if (mask == 0) return;
 	comp->gb.buttons |= mask;
+}
+
+// reset
+
+void gbReset(Computer* comp) {
+	comp->gb.boot = 1;
+	vidSetMode(comp->vid, VID_GBC);
+	gbcvReset(comp->vid->gbc);
+
+	comp->gb.inten = 0;
+	comp->vid->gbc->inten = 0;
+	comp->gb.buttons = 0xff;
+
+	xCartridge* slot = &comp->msx.slotA;
+	slot->memMap[0] = 1;	// rom bank
+	slot->memMap[1] = 0;	// ram bank
+	slot->ramen = 0;
+	slot->ramMask = 0x1fff;
+	slot->ramod = 0;
+	if (slot->data) {
+		unsigned char type = comp->msx.slotA.data[0x147];		// slot type
+		printf("Cartrige type %.2X\n",type);
+		switch (type) {
+			case 0x00:
+				slot->wr = NULL;	// rom only (up to 32K)
+				break;
+			case 0x01:
+			case 0x02:
+			case 0x03:
+				slot->wr = wr_mbc1;	// mbc1
+				break;
+			case 0x05:
+			case 0x06:
+				slot->wr = wr_mbc2;	// mbc2
+				break;
+			case 0x0f:
+			case 0x10:
+			case 0x11:
+			case 0x12:
+			case 0x13:
+				slot->wr = wr_mbc3;	// mbc3
+				break;
+			default:
+				slot->wr = NULL;
+				break;
+		}
+
+	}
 }
