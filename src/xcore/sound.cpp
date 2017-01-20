@@ -113,6 +113,7 @@ int sndSync(Computer* comp, int fast) {
 	bufA.data[bufA.pos++] = sndLev.right;
 	smpCount++;
 	if (smpCount < sndChunks) return 0;
+	conf.snd.fill = 0;
 	smpCount = 0;
 	return 1;
 }
@@ -125,17 +126,16 @@ void sndFillToEnd() {
 	}
 }
 
-void sndCalibrate(int fps, int frmNs) {
+void sndCalibrate(int fps) {
 	sndChunks = conf.snd.rate / fps;		// samples / frame
 	sndBufSize = conf.snd.chans * sndChunks;	// buffer size
-	nsPerSample = frmNs / sndChunks;		// ns / sample
+	nsPerSample = 1e9 / conf.snd.rate;		// ns / sample
 #ifdef ISDEBUG
-//	printf("fps = %i\n",fps);
-//	printf("frmNs = %i\n",frmNs);
-//	printf("snd.rate = %i\n",conf.snd.rate);
-//	printf("sndChunks = %i\n",sndChunks);
-//	printf("sndBufSize = %i\n",sndBufSize);
-//	printf("nsPerSample = %i\n",nsPerSample);
+	printf("fps = %i\n",fps);
+	printf("snd.rate = %i\n",conf.snd.rate);
+	printf("sndChunks = %i\n",sndChunks);
+	printf("sndBufSize = %i\n",sndBufSize);
+	printf("nsPerSample = %i\n",nsPerSample);
 #endif
 }
 
@@ -236,7 +236,9 @@ void sdlPlayAudio(void*,Uint8* stream, int len) {
 		if (diff < 0) {
 			diff = 0x10000 - diff;
 		}
-		if (diff >= len) fillBuffer(len);
+		if (diff >= len) {
+			fillBuffer(len);
+		}
 	}
 	SDL_MixAudio(stream, bufB.data, len, SDL_MIX_MAXVOLUME);
 	// memcpy(stream,sndBufB,len);
@@ -245,16 +247,18 @@ void sdlPlayAudio(void*,Uint8* stream, int len) {
 bool sdlopen() {
 //	printf("Open SDL audio device...");
 	SDL_AudioSpec asp;
+	SDL_AudioSpec dsp;
 	asp.freq = conf.snd.rate;
 	asp.format = AUDIO_U8;
 	asp.channels = 2;
 	asp.samples = sndChunks;
 	asp.callback = &sdlPlayAudio;
 	asp.userdata = NULL;
-	if (SDL_OpenAudio(&asp, NULL) != 0) {
+	if (SDL_OpenAudio(&asp, &dsp) != 0) {
 		printf("SDL audio device opening...failed\n");
 		return false;
 	}
+	printf("SDL opened: %i %i\n",dsp.freq, dsp.samples);
 //	ringPos = 0;
 	bufA.pos = 0;
 	playPos = 0;

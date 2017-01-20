@@ -43,9 +43,9 @@ class xThread : public QThread {
 		xConfig* conf;
 		Computer* comp;
 		QMutex mtx;
+		int sndNs;
 		void run();
 	private:
-		int sndNs;
 		void emuCycle();
 		void tapeCatch();
 	signals:

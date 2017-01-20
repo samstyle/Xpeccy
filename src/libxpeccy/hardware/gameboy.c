@@ -13,13 +13,24 @@ unsigned char gbIORd(Computer* comp, unsigned short port) {
 	port &= 0x7f;
 	unsigned char res = comp->gb.iomap[port];
 	switch(port) {
+// JOYSTICK
 		case 0x00:
 			switch(comp->gb.iomap[0] & 0x30) {
 				case 0x10: res = (comp->gb.buttons & 0xf0) >> 4; break;
 				case 0x20: res = comp->gb.buttons & 0x0f; break;
 			}
 			break;
+// SOUND
 		case 0x24: break;
+		case 0x25: break;
+		case 0x26:
+			res = 0;
+			if (comp->gbsnd->ch1.on) res |= 1;
+			if (comp->gbsnd->ch2.on) res |= 2;
+			if (comp->gbsnd->ch3.on) res |= 4;
+			if (comp->gbsnd->ch4.on) res |= 8;
+			break;
+// VIDEO
 		case 0x40: break;
 		case 0x41:
 			res = (comp->vid->ray.y == comp->vid->gbc->lyc) ? 4 : 0;
@@ -58,32 +69,66 @@ void setGrayScale(xColor pal[256], int base, unsigned char val) {
 	pal[base + 3] = iniCol[(val >> 6) & 3];
 }
 
-void setPeriod(bitChan* ch, int per, int wave) {
-	switch (wave & 0xc0) {
+void gbSetTone(gbsChan* gbch, int frq, int form) {
+	// 1 tick = cpu.freq (Hz) / 32		!!!
+	// 1e9 ns in one sec
+	// ns = 1e9 / 128KHz * (2048 - frq)
+
+	// int per = 1e9 / 131072 * (2048 - frq);			// full, ns
+	int per = (2048 - frq);		// 2048-frq ticks @ 128KHz
+	switch (form & 0xc0) {
 		case 0x00:
-			ch->perL = per >> 3;		// 1/8
-			ch->perH = (per * 7) >> 3;	// 7/8
+			gbch->perL = per >> 3;		// 1/8
+			gbch->perH = (per * 7) >> 3;	// 7/8
 			break;
 		case 0x40:
-			ch->perL = per >> 2;		// 1/4
-			ch->perH = (per * 3) >> 2;	// 3/4
+			gbch->perL = per >> 2;		// 1/4
+			gbch->perH = (per * 3) >> 2;	// 3/4
 			break;
 		case 0x80:
-			ch->perL = per >> 1;		// 1/2
-			ch->perH = per >> 1;		// 1/2
+			gbch->perL = per >> 1;		// 1/2
+			gbch->perH = per >> 1;		// 1/2
 			break;
 		case 0xc0:
-			ch->perL = (per * 3) >> 2;	// 3/4
-			ch->perH = per >> 2;		// 1/4
+			gbch->perL = (per * 3) >> 2;	// 3/4
+			gbch->perH = per >> 2;		// 1/4
 			break;
 	}
 }
 
+void gbSetEnv(gbsChan* gbch, unsigned char reg, unsigned char old) {
+	unsigned char vol = (reg & 0xf0) >> 4;
+	if (((reg & 7) == 0) && gbch->env.cnt) {
+		vol++;
+	} else if ((reg & 8) == 0) {
+		vol += 2;
+	}
+	if ((reg ^ old) & 8) {
+		vol = 16 - vol;
+	}
+	gbch->env.vol = vol & 15;
+	gbch->env.dir = (reg & 0x08) ? 1 : 0;
+	gbch->env.per = (reg & 7) ? (reg & 7) : 8;
+	gbch->env.on = (reg & 7) ? 1 : 0;
+}
+
 void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 	port &= 0x7f;
-	comp->gb.iomap[port] = val;
 	unsigned short sadr;
 	unsigned short dadr;
+	int frq;
+	int per;
+	int r,s;
+	// old env values
+	unsigned char env1 = comp->gb.iomap[0x12];
+	unsigned char env2 = comp->gb.iomap[0x17];
+	unsigned char env4 = comp->gb.iomap[0x21];
+	gbsChan* ch1 = &comp->gbsnd->ch1;
+	gbsChan* ch2 = &comp->gbsnd->ch2;
+	gbsChan* ch3 = &comp->gbsnd->ch3;
+	gbsChan* ch4 = &comp->gbsnd->ch4;
+	GBCVid* gbv = comp->vid->gbc;
+	comp->gb.iomap[port] = val;
 	switch (port) {
 // JOYSTICK
 		// b4: 0:select crest
@@ -91,54 +136,54 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 		case 0x00: break;
 // VIDEO
 		case 0x40:
-			comp->vid->gbc->lcdon = (val & 0x80) ? 1 : 0;
-			comp->vid->gbc->winmapadr = (val & 0x40) ? 0x9c00 : 0x9800;
-			comp->vid->gbc->winen = (val & 0x20) ? 1 : 0;
-			comp->vid->gbc->altile = (val & 0x10) ? 0 : 1;			// signed tile num
-			comp->vid->gbc->tilesadr = (val & 0x10) ? 0x8000 : 0x8800;
-			comp->vid->gbc->bgmapadr = (val & 0x08) ? 0x9c00 : 0x9800;
-			comp->vid->gbc->bigspr = (val & 0x04) ? 1 : 0;
-			comp->vid->gbc->spren  = (val & 0x02) ? 1 : 0;
-			comp->vid->gbc->bgen = (val & 0x01) ? 1 : 0;
+			gbv->lcdon = (val & 0x80) ? 1 : 0;
+			gbv->winmapadr = (val & 0x40) ? 0x9c00 : 0x9800;
+			gbv->winen = (val & 0x20) ? 1 : 0;
+			gbv->altile = (val & 0x10) ? 0 : 1;			// signed tile num
+			gbv->tilesadr = (val & 0x10) ? 0x8000 : 0x8800;
+			gbv->bgmapadr = (val & 0x08) ? 0x9c00 : 0x9800;
+			gbv->bigspr = (val & 0x04) ? 1 : 0;
+			gbv->spren  = (val & 0x02) ? 1 : 0;
+			gbv->bgen = (val & 0x01) ? 1 : 0;
 			break;
 		case 0x41:						// lcd stat interrupts enabling
-			comp->vid->gbc->inten = val;
+			gbv->inten = val;
 			break;
 		case 0x42:
-			comp->vid->gbc->sc.y = val;
+			gbv->sc.y = val;
 			break;
 		case 0x43:
-			comp->vid->gbc->sc.x = val;
+			gbv->sc.x = val;
 			break;
 		case 0x44:
-			comp->vid->gbc->ray->y = 0;			// TODO: writing will reset the counter (?)
+			gbv->ray->y = 0;			// TODO: writing will reset the counter (?)
 			break;
 		case 0x45:
-			comp->vid->gbc->lyc = val;
+			gbv->lyc = val;
 			break;
 		case 0x46:						// TODO: block CPU memory access for 160 microsec (except ff80..fffe)
 			sadr = val << 8;
 			dadr = 0;
 			while (dadr < 0xa0) {
-				comp->vid->gbc->oam[dadr] = memRd(comp->mem, sadr);
+				gbv->oam[dadr] = memRd(comp->mem, sadr);
 				sadr++;
 				dadr++;
 			}
 			break;
 		case 0x47:						// palete for bg/win
-			setGrayScale(comp->vid->gbc->pal, 0, val);
+			setGrayScale(gbv->pal, 0, val);
 			break;
 		case 0x48:
-			setGrayScale(comp->vid->gbc->pal, 0x40, val);	// object pal 0
+			setGrayScale(gbv->pal, 0x40, val);	// object pal 0
 			break;
 		case 0x49:
-			setGrayScale(comp->vid->gbc->pal, 0x44, val);	// object pal 1
+			setGrayScale(gbv->pal, 0x44, val);	// object pal 1
 			break;
 		case 0x4a:
-			comp->vid->gbc->win.y = val;
+			gbv->win.y = val;
 			break;
 		case 0x4b:
-			comp->vid->gbc->win.x = val - 7;
+			gbv->win.x = val - 7;
 			break;
 // SOUND
 // 1e9/frq(Hz) = full period ns
@@ -146,43 +191,151 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 // frq = 131072/(2048-N) Hz
 // full period = 7630 * (2048-N) ns -> 15626240 max / 7630 min
 // half period = 3815 * (2048-N) ns
-		// chan 1
-		case 0x10: break;
-		case 0x11: break;
-		case 0x12: break;
-		case 0x13: break;
-		case 0x14: break;
-		// chan 2
-		case 0x16: break;
-		case 0x17: break;
-		case 0x18: break;
-		case 0x19: break;
-		// chan 3
-		case 0x1a: break;
-		case 0x1b: break;
-		case 0x1c: break;
-		case 0x1d: break;
-		case 0x1e: break;
+		// chan 1 : tone,sweep,env
+		case 0x10:
+			per = (val & 0x70) >> 4;
+			if (per == 0)
+				per = 8;
+			ch1->sweep.dir = (val & 8) ? 0 : 1;
+			ch1->sweep.per = per;
+			ch1->sweep.step = val & 7;
+			break;
+		case 0x11:
+			ch1->dur = 64 - (val & 0x3f);
+			frq = ((comp->gb.iomap[0x14] << 8) | comp->gb.iomap[0x13]) & 0x07ff;
+			gbSetTone(ch1, frq, val);
+			break;
+		case 0x12:
+			gbSetEnv(ch1, val, env1);
+			break;
+		case 0x13:
+			frq = ((comp->gb.iomap[0x14] << 8) | val) & 0x07ff;
+			gbSetTone(ch1, frq, comp->gb.iomap[0x11]);
+			break;
+		case 0x14:
+			frq = ((val << 8) | (comp->gb.iomap[0x13])) & 0x07ff;
+			gbSetTone(ch1, frq, comp->gb.iomap[0x11]);
+			ch1->cont = (val & 0x40) ? 0 : 1;
+			if (val & 0x80) {
+				// ch1->env.count = 0;
+				ch1->sweep.cnt = 0;
+				ch1->step = 0;
+				ch1->cnt = 0;
+
+				ch1->env.vol = (comp->gb.iomap[0x12] >> 4) & 0x0f;
+				ch1->env.cnt = ch1->env.per;
+				ch1->cnt = ch1->lev ? ch1->perH : ch1->perL;
+				if (!ch1->dur) ch1->dur = 64;
+				ch1->on = 1;
+			}
+			break;
+		// chan 2: tone,env
+		case 0x16:
+			ch2->dur = 64 - (val & 0x3f);
+			frq = ((comp->gb.iomap[0x19] << 8) | comp->gb.iomap[0x18]) & 0x07ff;
+			gbSetTone(ch2, frq, val);
+			break;
+		case 0x17:
+			// printf("ch2 env %.2X\n",val);
+			gbSetEnv(ch2, val, env2);
+			break;
+		case 0x18:
+			frq = ((comp->gb.iomap[0x19] << 8) | val) & 0x07ff;
+			gbSetTone(ch2, frq, val);
+			break;
+		case 0x19:
+			frq = ((val << 8) | comp->gb.iomap[0x18]) & 0x07ff;
+			gbSetTone(ch2, frq, val);
+			ch2->cont = (val & 0x40) ? 0 : 1;
+			if (val & 0x80) {
+				ch2->sweep.cnt = 0;
+				ch2->step = 0;
+
+				ch2->env.vol = (comp->gb.iomap[0x17] >> 4) & 0x0f;
+				ch2->env.cnt = ch2->env.per;
+				ch2->cnt = ch2->lev ? ch2->perH : ch2->perL;
+				if (!ch1->dur) ch1->dur = 64;
+				ch2->on = 1;
+			}
+			break;
+		// chan 3 : wave
+		case 0x1a:
+			comp->gbsnd->ch3on = (val & 0x80) ? 0 : 1;
+			break;
+		case 0x1b:
+			ch3->dur = 256 - val;		// 256-x @ 256Hz
+			break;
+		case 0x1c:
+			comp->gbsnd->ch3vol = (val >> 5) & 3;
+			break;
+		case 0x1d:
+			frq = ((comp->gb.iomap[0x1e] << 8) | val) & 0x07ff;
+			per = (2048 - frq) >> 5;	// 2048-frq @ 64KHz | << 1 @ 128KHz. / 32 for 1 sample
+			ch3->perH = per;
+			ch3->perL = per;
+			break;
+		case 0x1e:
+			frq = ((val << 8) | comp->gb.iomap[0x1d]) & 0x07ff;
+			//per = 1e9 / 65535 / 32 * (2048 - frq);
+			per = (2048 - frq) >> 5;
+			ch3->perH = per;
+			ch3->perL = per;
+			ch3->cont = (val & 0x40) ? 0 : 1;
+			if (val & 0x80) {
+				ch3->step = 0;
+				ch3->cnt = ch3->perH;
+				if (!ch1->dur) ch1->dur = 256;
+				ch3->on = 1;
+			}
+			break;
 		// chan 4
-		case 0x20: break;
-		case 0x21: break;
-		case 0x22: break;
-		case 0x23: break;
+		case 0x20:
+			ch4->dur = (64 - (val & 0x3f));		// 64-(val&63) @ 256Hz
+			break;
+		case 0x21:
+			gbSetEnv(ch4, val, env4);
+			break;
+		case 0x22:
+			r = val & 7;
+			s = (val & 0xf0) >> 4;
+			// frq = 524288 / r / 2^(s+1)		524288 = 2^19
+			// r*(2^(s+1)) ticks @ 512KHz
+			// :4 ticks @ 128KHz
+			frq = r ? (r * (2 ^ (s + 1))) : (2 ^ s);
+			if (val & 8) {			// FIXME: find a real way
+				per = frq << 2;
+			} else {
+				per = frq >> 2;
+			}
+			ch4->perH = per >> 1;
+			ch4->perL = per >> 1;
+			break;
+		case 0x23:
+			ch4->cont = (val & 0x40) ? 0 : 1;
+			if (val & 0x80) {
+				ch4->step = 0;
+				ch4->env.vol = (comp->gb.iomap[0x21] >> 4) & 0x0f;
+				ch4->env.cnt = ch4->env.per;
+				ch4->cnt = ch4->perH;
+				if (!ch4->dur) ch4->dur = 64;
+				ch4->on = 1;
+			}
+			break;
 		// control
 		case 0x24:		// Vin sound channel control (not used?)
 			break;
 		case 0x25:		// send chan sound to SO1/SO2. b0..3 : ch1..4 -> SO1; b4..7 : ch1..4 -> SO2
-			comp->gbsnd->ch1->left = (val & 0x01) ? 1 : 0;
-			comp->gbsnd->ch2->left = (val & 0x02) ? 1 : 0;
-			comp->gbsnd->ch3->left = (val & 0x04) ? 1 : 0;
-			comp->gbsnd->ch4->left = (val & 0x08) ? 1 : 0;
-			comp->gbsnd->ch1->right = (val & 0x10) ? 1 : 0;
-			comp->gbsnd->ch2->right = (val & 0x20) ? 1 : 0;
-			comp->gbsnd->ch3->right = (val & 0x40) ? 1 : 0;
-			comp->gbsnd->ch4->right = (val & 0x80) ? 1 : 0;
+			ch1->so1 = (val & 0x01) ? 1 : 0;
+			ch2->so1 = (val & 0x02) ? 1 : 0;
+			ch3->so1 = (val & 0x04) ? 1 : 0;
+			ch4->so1 = (val & 0x08) ? 1 : 0;
+			ch1->so2 = (val & 0x10) ? 1 : 0;
+			ch2->so2 = (val & 0x20) ? 1 : 0;
+			ch3->so2 = (val & 0x40) ? 1 : 0;
+			ch4->so2 = (val & 0x80) ? 1 : 0;
 			break;
 		case 0x26:		// on/off channels
-			comp->gbsnd->enable = (val & 0x80) ? 1 : 0;
+			comp->gbsnd->on = (val & 0x80) ? 1 : 0;
 			break;
 // TIMER
 		case 0x04:				// divider. inc @ 16384Hz
@@ -211,12 +364,19 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 		case 0x4d:			// switch speed
 			break;
 // MISC
-		case 0x50: comp->gb.boot = 0; break;
+		case 0x50:
+			comp->gb.boot = 0;
+			break;
 
 		default:
-			if ((port & 0xf0) == 0x30) break;		// ff30..ff3f : wave pattern ram for chan 3
-			printf("GB: out %.4X,%.2X\n",port,val);
-			assert(0);
+			if ((port & 0xf0) == 0x30) {	// ff30..ff3f : wave pattern ram for chan 3
+				dadr = (port & 0x0f) << 1;
+				comp->gbsnd->wave[dadr++] = (val & 0xf0) | ((val & 0xf0) >> 4);		// HH : high 4 bits
+				comp->gbsnd->wave[dadr] = (val & 0x0f) | ((val & 0x0f) << 4);		// LL : low 4 bits
+			} else {
+				printf("GB: out %.4X,%.2X\n",port,val);
+				// assert(0);
+			}
 			break;
 	}
 }
@@ -484,6 +644,11 @@ void gbReset(Computer* comp) {
 	comp->gb.inten = 0;
 	comp->vid->gbc->inten = 0;
 	comp->gb.buttons = 0xff;
+
+	comp->gbsnd->ch1.on = 0;
+	comp->gbsnd->ch2.on = 0;
+	comp->gbsnd->ch3.on = 0;
+	comp->gbsnd->ch4.on = 0;
 
 	xCartridge* slot = &comp->msx.slotA;
 	slot->memMap[0] = 1;	// rom bank

@@ -1226,6 +1226,7 @@ MemViewer::MemViewer(QWidget* p):QDialog(p) {
 	connect(ui.sbHeight, SIGNAL(valueChanged(int)), this, SLOT(fillImage()));
 	connect(ui.sbPage, SIGNAL(valueChanged(int)), this, SLOT(fillImage()));
 
+	connect(ui.adrHex, SIGNAL(textChanged(QString)), this, SLOT(hexChanged()));
 	connect(ui.sbAddr, SIGNAL(valueChanged(int)), this, SLOT(adrChanged(int)));
 	connect(ui.scrollbar, SIGNAL(valueChanged(int)), this, SLOT(memScroll(int)));
 
@@ -1300,7 +1301,13 @@ void MemViewer::fillImage() {
 
 void MemViewer::adrChanged(int adr) {
 	ui.scrollbar->setValue(adr);
-	ui.adrhex->setText(gethexword(adr));
+	QString hw = gethexword(adr);
+	if (ui.adrHex->text() != hw)
+		ui.adrHex->setText(hw);
+}
+
+void MemViewer::hexChanged() {
+	ui.sbAddr->setValue(ui.adrHex->text().toInt(NULL, 16));
 }
 
 void MemViewer::memScroll(int adr) {

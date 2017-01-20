@@ -156,6 +156,7 @@ struct xConfig {
 	struct {
 		unsigned enabled:1;
 		unsigned mute:1;
+		unsigned fill:1;	// 1 while snd buffer not filled, 0 at end of snd buffer
 		int rate;
 		int chans;
 		struct {

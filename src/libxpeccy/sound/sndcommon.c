@@ -1,17 +1,18 @@
 #include "sndcommon.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 // 1-bit channel with transient response
 
 //#define OVERSHOOT 22500			// ns to overshoot process
-#define OVERDIV 88		// ns/256 : post-compensation
+#define OVERDIV 88			// ns/256 : transient const (ns to rise/lower sound level 1 step)
+#define OVERLIM (OVERDIV * 256)		// ns to full sound level restore
 
 bitChan* bcCreate() {
 	bitChan* ch = malloc(sizeof(bitChan));
 	memset(ch, 0x00, sizeof(bitChan));
-	ch->on = 1;
 	return ch;
 }
 
@@ -19,31 +20,45 @@ void bcDestroy(bitChan* ch) {
 	free(ch);
 }
 
+void bcTransient(bitChan* ch, int ns) {
+	if (ch->lev) {
+		if (ns > OVERLIM) {
+			ch->val = 0xff;
+		} else {
+			ch->val += ns / OVERDIV;
+			if (ch->val > 0xff)
+				ch->val = 0xff;
+		}
+	} else {
+		if (ns > OVERLIM) {
+			ch->val = 0;
+		} else {
+			ch->val -= ns / OVERDIV;
+			if (ch->val < 0)
+				ch->val = 0;
+		}
+	}
+}
+
 void bcSync(bitChan* ch, int ns) {
-	int lev;
+	int per;
 	if (ns < 1) {
 		ns = ch->accum;
 		ch->accum = 0;
 	}
 	if (ns < 1) return;
-	if (ch->on) {
-		lev = ch->val & 0xff;
-		if (ch->lev) {
-			lev += ns / OVERDIV;
-			if (lev > 0xff)
-				lev = 0xff;
-		} else {
-			lev -= ns / OVERDIV;
-			if (lev < 0)
-				lev = 0;
-		}
-		ch->val = lev & 0xff;
-		if (ch->perH && ch->perL) {
-			ch->pcount -= ns;
-			while (ch->pcount < 1) {
-				ch->lev = !ch->lev;
-				ch->pcount += ch->lev ? ch->perH : ch->perL;
-			}
+
+	bcTransient(ch, ns);		// transient process of current wave
+	if (ch->perH && ch->perL) {	// emulate waves
+		// printf("%i %i %i\n",ch->pcount, ch->perH, ch->perL);
+		ch->pcount -= ns;
+		while (ch->pcount < 1) {
+			ch->lev ^= 1;
+			ch->step++;
+			per = ch->lev ? ch->perH : ch->perL;
+			ch->pcount += per;
+			if (ch->pcount > 0) per -= ch->pcount;
+			bcTransient(ch, per);
 		}
 	}
 }

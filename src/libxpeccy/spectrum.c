@@ -286,6 +286,7 @@ void compUpdateTimings(Computer* comp) {
 	int type = comp->hw ? comp->hw->type : HW_NULL;
 	switch (type) {
 		case HW_GBC:
+			comp->gbsnd->wav.period = comp->nsPerTick << 5;			// 128KHz period for wave generator = cpu.frq / 32
 			vidUpdateTimings(comp->vid, comp->nsPerTick * 2);
 			break;
 		default:

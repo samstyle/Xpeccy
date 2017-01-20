@@ -55,7 +55,8 @@ void MainWin::updateHead() {
 void MainWin::updateWindow() {
 	block = 1;
 	vidUpdateLayout(comp->vid, conf.brdsize);
-	sndCalibrate(comp->vid->fps, comp->vid->nsPerFrame);
+	sndCalibrate(comp->vid->fps);
+	ethread.sndNs = 0;
 	int szw = comp->vid->vsze.x * conf.vid.scale;
 	int szh = comp->vid->vsze.y * conf.vid.scale;
 	setFixedSize(szw,szh);
@@ -1029,7 +1030,7 @@ void MainWin::doOptions() {
 
 void MainWin::optApply() {
 	comp = conf.prof.cur->zx;
-	timer.setInterval(1000 / comp->vid->fps);
+	timer.setInterval(1000 / comp->vid->fps);		// 60fps -> 16.(6)ms -> 16ms -> 62.5fps (!!!)
 	fillUserMenu();
 	updateWindow();
 	pause(false, PR_OPTS);
@@ -1166,6 +1167,8 @@ void xThread::tapeCatch() {
 void xThread::emuCycle() {
 //	int endBuf = 0;
 	comp->frmStrobe = 0;
+	sndNs = 0;
+	conf->snd.fill = 1;
 	do {
 		// exec 1 opcode (+ INT, NMI)
 		sndNs += compExec(comp);
@@ -1182,7 +1185,7 @@ void xThread::emuCycle() {
 			if ((pc == 0x5e2) && conf->tape.autostart)
 				emit tapeSignal(TW_STATE,TWS_STOP);
 		}
-	} while (!comp->brk && !comp->frmStrobe);
+	} while (!comp->brk && conf->snd.fill); //(!comp->brk && !comp->frmStrobe);
 	comp->nmiRequest = 0;
 }
 

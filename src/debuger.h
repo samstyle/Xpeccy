@@ -61,6 +61,7 @@ class MemViewer : public QDialog {
 		void fillImage();
 	private slots:
 		void adrChanged(int);
+		void hexChanged();
 		void memScroll(int);
 		void saveSprite();
 	protected:

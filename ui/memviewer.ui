@@ -95,13 +95,6 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
-        <widget class="QLabel" name="adrhex">
-         <property name="text">
-          <string>0</string>
-         </property>
-        </widget>
-       </item>
        <item row="2" column="0">
         <widget class="QLabel" name="label">
          <property name="text">
@@ -143,6 +136,16 @@
          </property>
         </widget>
        </item>
+       <item row="2" column="1">
+        <widget class="QLineEdit" name="adrHex">
+         <property name="inputMask">
+          <string>HHHH</string>
+         </property>
+         <property name="text">
+          <string>0000</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </item>
      <item>
@@ -177,6 +180,14 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>sbPage</tabstop>
+  <tabstop>sbAddr</tabstop>
+  <tabstop>adrHex</tabstop>
+  <tabstop>sbWidth</tabstop>
+  <tabstop>sbHeight</tabstop>
+  <tabstop>tbSave</tabstop>
+ </tabstops>
  <resources>
   <include location="../xpeccy.qrc"/>
  </resources>

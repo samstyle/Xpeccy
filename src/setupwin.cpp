@@ -176,8 +176,6 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 // machine
 	connect(ui.rsetbox,SIGNAL(currentIndexChanged(int)),this,SLOT(buildrsetlist()));
 	connect(ui.machbox,SIGNAL(currentIndexChanged(int)),this,SLOT(setmszbox(int)));
-	// connect(ui.cpufrq,SIGNAL(valueChanged(int)),this,SLOT(updfrq()));
-	// connect(ui.sbFreq,SIGNAL(valueChanged(double)),this,SLOT(updfrq2()));
 	connect(ui.rstab,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(editrset()));
 	connect(ui.addrset,SIGNAL(released()),this,SLOT(addNewRomset()));
 	connect(ui.rmrset,SIGNAL(released()),this,SLOT(rmRomset()));
@@ -585,7 +583,7 @@ void SetupWin::apply() {
 
 	saveConfig();
 	prfSave("");
-	sndCalibrate(comp->vid->fps, comp->vid->nsPerFrame);
+	// sndCalibrate(comp->vid->fps);
 }
 
 void SetupWin::reject() {

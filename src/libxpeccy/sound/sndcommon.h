@@ -9,16 +9,12 @@ typedef struct {
 extern int noizes[0x20000];
 
 typedef struct {
-	unsigned on:1;			// on/off sound output
 	unsigned lev:1;			// 1/0 target level
-
-	unsigned left:1;		// stereo output control
-	unsigned right:1;
-
-	unsigned char val;
+	int val;			// current sound level (0..255)
 	long accum;			// ns accumulator
-	int perH;			// halfperiod for lev=1
-	int perL;			// halfperiod for lev=0. gameboy has different halfperiod sizes
+	int step;			// halfperiod counter
+	unsigned int perH;		// halfperiod for lev=1
+	unsigned int perL;		// halfperiod for lev=0. gameboy has different halfperiod lenght
 	int pcount;			// current halfperiod counter
 } bitChan;
 
