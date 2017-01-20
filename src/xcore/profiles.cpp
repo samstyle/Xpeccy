@@ -324,12 +324,12 @@ int prfLoad(std::string nm) {
 					if (pnam == "geometry") prf->layName = pval;
 					if (pnam == "4t-border") comp->vid->border4t = str2bool(pval) ? 1 : 0;
 					if (pnam == "ULAplus") comp->vid->ula->enabled = str2bool(pval) ? 1 : 0;
-					if (pnam == "fps") {
-						tmp2 = atoi(pval.c_str());
-						if (tmp2 < 25) tmp2 = 25;
-						else if (tmp2 > 100) tmp2 = 100;
-						vidSetFps(comp->vid, tmp2);
-					}
+					//if (pnam == "fps") {
+					//	tmp2 = atoi(pval.c_str());
+					//	if (tmp2 < 25) tmp2 = 25;
+					//	else if (tmp2 > 100) tmp2 = 100;
+					//	vidSetFps(comp->vid, tmp2);
+					//}
 					break;
 				case PS_SOUND:
 					if (pnam == "chip1") aymSetType(comp->ts->chipA,atoi(pval.c_str()));
@@ -504,7 +504,7 @@ int prfSave(std::string nm) {
 	fprintf(file, "geometry = %s\n", prf->layName.c_str());
 	fprintf(file, "4t-border = %s\n", YESNO(comp->vid->border4t));
 	fprintf(file, "ULAplus = %s\n", YESNO(comp->vid->ula->enabled));
-	fprintf(file, "fps = %i\n",comp->vid->fps);
+	// fprintf(file, "fps = %i\n",comp->vid->fps);
 
 	fprintf(file, "\n[SOUND]\n\n");
 	fprintf(file, "chip1 = %i\n", comp->ts->chipA->type);

@@ -70,7 +70,7 @@ Video* vidCreate(Memory* me) {
 	vid->ula = ulaCreate();
 	vid->gbc = gbcvCreate(&vid->ray, &vid->lay);
 
-	vidSetFps(vid, 50);
+//	vidSetFps(vid, 50);
 	vidUpdateLayout(vid, 0.5);
 
 	vid->nextbrd = 0;
@@ -214,12 +214,14 @@ void vidSetFont(Video* vid, char* src) {
 	memcpy(vid->font,src,0x800);
 }
 
+/*
 void vidSetFps(Video* vid, int fps) {
 	if (fps < 10) fps = 10;
 	else if (fps > 100) fps = 100;
 	vid->fps = fps;
 	vidUpdateTimings(vid, vid->nsPerDot);
 }
+*/
 
 // video drawing
 

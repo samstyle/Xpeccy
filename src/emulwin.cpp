@@ -55,7 +55,7 @@ void MainWin::updateHead() {
 void MainWin::updateWindow() {
 	block = 1;
 	vidUpdateLayout(comp->vid, conf.brdsize);
-	sndCalibrate(comp->vid->fps);
+	sndCalibrate();
 	ethread.sndNs = 0;
 	int szw = comp->vid->vsze.x * conf.vid.scale;
 	int szh = comp->vid->vsze.y * conf.vid.scale;
@@ -153,10 +153,10 @@ MainWin::MainWin() {
 	keywin->setWindowIcon(QIcon(":/images/keyboard.png"));
 	keywin->setWindowTitle("ZX Keyboard");
 
-	connect(&cmosTimer,SIGNAL(timeout()),this,SLOT(cmosTick()));
 	cmosTimer.start(1000);
+	timer.setInterval(20);
+	connect(&cmosTimer,SIGNAL(timeout()),this,SLOT(cmosTick()));
 	connect(&timer,SIGNAL(timeout()),this,SLOT(onTimer()));
-	timer.start(20);
 
 	ethread.conf = &conf;
 	connect(&ethread,SIGNAL(dbgRequest()),SLOT(doDebug()));
@@ -169,6 +169,8 @@ MainWin::MainWin() {
 
 	loadConfig();
 	fillUserMenu();
+
+	timer.start();
 }
 
 // scale screen
@@ -1030,7 +1032,7 @@ void MainWin::doOptions() {
 
 void MainWin::optApply() {
 	comp = conf.prof.cur->zx;
-	timer.setInterval(1000 / comp->vid->fps);		// 60fps -> 16.(6)ms -> 16ms -> 62.5fps (!!!)
+//	timer.setInterval(1000 / comp->vid->fps);		// 60fps -> 16.(6)ms -> 16ms -> 62.5fps (!!!)
 	fillUserMenu();
 	updateWindow();
 	pause(false, PR_OPTS);
@@ -1067,7 +1069,8 @@ void MainWin::setProfile(std::string nm) {
 		comp->firstRun = 0;
 	}
 	saveConfig();
-	timer.setInterval(1000 / comp->vid->fps);
+//	timer.setInterval(1000 / comp->vid->fps);
+	opt->prfChanged = 1;
 	ethread.block = 0;
 }
 
@@ -1174,7 +1177,6 @@ void xThread::emuCycle() {
 		sndNs += compExec(comp);
 		// if need - request sound buffer update
 		if (sndNs > nsPerSample) {
-			//endBuf = sndSync(comp, fast);
 			sndSync(comp, fast);
 			sndNs -= nsPerSample;
 		}

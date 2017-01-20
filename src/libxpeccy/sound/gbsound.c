@@ -61,6 +61,7 @@ void gbcSync(gbsChan* ch, long tick) {	// input ticks @ 128KHz
 }
 
 void gbsSync(gbSound* gbs, int ns) {
+	if (gbs->wav.period == 0) return;
 	gbs->wav.count -= ns;
 	while (gbs->wav.count < 0) {
 		gbs->wav.tick++;

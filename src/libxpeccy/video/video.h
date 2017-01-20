@@ -52,7 +52,7 @@ struct Video {
 	unsigned vblank:1;	// VBlank signal
 	unsigned vbstrb:1;	// VBlank strobe 0->1
 
-	int fps;
+	// int fps;
 	int nsPerFrame;
 	int nsPerLine;
 	int nsPerDot;
@@ -129,7 +129,7 @@ void vidWait(Video*);
 void vidDarkTail(Video*);
 
 void vidUpdateTimings(Video*, int);
-void vidSetFps(Video*,int);
+//void vidSetFps(Video*,int);
 void vidUpdateLayout(Video*, float);
 
 void vidSetFont(Video*,char*);

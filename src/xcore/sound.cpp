@@ -73,6 +73,7 @@ void sndMix(Computer* comp) {
 	sndPair svol = tsGetVolume(comp->ts);
 	sndLev.left += svol.left * conf.snd.vol.ay / 100.0;
 	sndLev.right += svol.right * conf.snd.vol.ay / 100.0;
+	// if (svol.left || svol.right) printf("%i : %i : %i\n",conf.snd.vol.ay, svol.left, svol.right);
 
 	svol = gbsVolume(comp->gbsnd);
 	sndLev.left += svol.left;
@@ -126,12 +127,11 @@ void sndFillToEnd() {
 	}
 }
 
-void sndCalibrate(int fps) {
-	sndChunks = conf.snd.rate / fps;		// samples / frame
+void sndCalibrate() {
+	sndChunks = conf.snd.rate / 50;			// samples / frame
 	sndBufSize = conf.snd.chans * sndChunks;	// buffer size
 	nsPerSample = 1e9 / conf.snd.rate;		// ns / sample
 #ifdef ISDEBUG
-	printf("fps = %i\n",fps);
 	printf("snd.rate = %i\n",conf.snd.rate);
 	printf("sndChunks = %i\n",sndChunks);
 	printf("sndBufSize = %i\n",sndBufSize);

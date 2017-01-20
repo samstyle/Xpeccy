@@ -320,7 +320,7 @@ void SetupWin::start(xProfile* p) {
 	ui.scrpwait->setChecked(comp->scrpWait);
 	ui.sysCmos->setChecked(conf.sysclock);
 // video
-	ui.fpsSpinbox->setValue(comp->vid->fps);
+	// ui.fpsSpinbox->setValue(comp->vid->fps);
 	ui.sbScale->setValue(conf.vid.scale);
 	ui.fscchk->setChecked(conf.vid.fullScreen);
 	ui.noflichk->setChecked(conf.vid.noFlick);
@@ -459,7 +459,7 @@ void SetupWin::apply() {
 	if (comp->hw != oldmac) compReset(comp,RES_DEFAULT);
 	conf.sysclock = ui.sysCmos->isChecked() ? 1 : 0;
 // video
-	vidSetFps(comp->vid, ui.fpsSpinbox->value());
+//	vidSetFps(comp->vid, ui.fpsSpinbox->value());
 	conf.vid.scale = ui.sbScale->value();
 	conf.vid.fullScreen = ui.fscchk->isChecked() ? 1 : 0;
 	conf.vid.noFlick = ui.noflichk->isChecked() ? 1 : 0;
