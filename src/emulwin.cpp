@@ -115,6 +115,13 @@ MainWin::MainWin() {
 	grabMice = 0;
 	block = 0;
 
+	QFile file(":/font.bin");
+	file.open(QFile::ReadOnly);
+	font = file.readAll();
+	file.close();
+	msgTimer = 0;
+	msg.clear();
+
 	vidInitAdrs();
 	sndInit();
 	initPaths();
@@ -312,6 +319,12 @@ void MainWin::onTimer() {
 		rzxWin->stop();
 		pause(false, PR_RZX);
 	}
+// if computer sends a message, show it
+	if (comp->msg) {
+		setMessage(QString(comp->msg));
+		comp->msg = NULL;
+	}
+
 // if not paused play sound buffer
 	if (conf.snd.enabled && (conf.snd.mute || isActiveWindow())) sndPlay();
 // if window is not active release keys & buttons
@@ -322,7 +335,7 @@ void MainWin::onTimer() {
 
 // take screenshot
 	convImage();
-	if (!conf.scrShot.noLeds) putLeds();
+	if (!conf.scrShot.noLeds) putLeds();		// put leds before screenshot if on
 	if (scrCounter > 0) {
 		if (scrInterval > 0) {
 			scrInterval--;
@@ -332,7 +345,12 @@ void MainWin::onTimer() {
 			scrInterval = conf.scrShot.interval;
 		}
 	}
-	if (conf.scrShot.noLeds) putLeds();
+	if (conf.scrShot.noLeds) putLeds();		// put leds if it isn't done yet
+	if (msgTimer > 0) {				// put message
+		if (conf.led.message)
+			drawMessage();
+		msgTimer--;
+	}
 // update window
 	if (pauseFlags == 0) ethread.mtx.unlock();
 	emuDraw();
@@ -467,7 +485,6 @@ void MainWin::paintEvent(QPaintEvent*) {
 
 void MainWin::keyPressEvent(QKeyEvent *ev) {
 	keyEntry kent = getKeyEntry(ev->nativeScanCode());
-	gbPress(comp, kent.name);
 	if (pckAct->isChecked()) {
 		keyPressXT(comp->keyb, kent.keyCode);
 		if (!kent.zxKey.key2)			// don't press 2-key keys in PC-mode
@@ -499,24 +516,28 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				updateWindow();
 				convImage();
 				saveConfig();
+				setMessage(" size x1 ");
 				break;
 			case Qt::Key_2:
 				conf.vid.scale = 2;
 				updateWindow();
 				convImage();
 				saveConfig();
+				setMessage(" size x2 ");
 				break;
 			case Qt::Key_3:
 				conf.vid.scale = 3;
 				updateWindow();
 				convImage();
 				saveConfig();
+				setMessage(" size x3 ");
 				break;
 			case Qt::Key_4:
 				conf.vid.scale = 4;
 				updateWindow();
 				convImage();
 				saveConfig();
+				setMessage(" size x4 ");
 				break;
 			case Qt::Key_F4:
 				close();
@@ -536,9 +557,11 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				conf.vid.noFlick ^= 1;
 				saveConfig();
 				if (conf.vid.noFlick) memcpy(prvScr, scrn, comp->vid->frmsz * 6);
+				setMessage(QString(" noflic %0 ").arg(conf.vid.noFlick ? "on" : "off"));
 				break;
 		}
 	} else {
+		gbPress(comp, kent.name);
 		keyPress(comp->keyb, kent.zxKey, 0);
 		if (kent.msxKey.key1) keyPress(comp->keyb,kent.msxKey,2);
 		switch(ev->key()) {
@@ -745,6 +768,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		ethread.mtx.unlock();		// unlock emulation thread
 		ethread.wait();			// wait until it exits
 		keywin->close();
+		saveConfig();
 		ev->accept();
 	} else {
 		ev->ignore();
@@ -824,7 +848,7 @@ void drawLeds(QPainter& pnt) {
 			y = led->y;
 			if (x < 0) x = pnt.device()->width() + x;
 			if (y < 0) y = pnt.device()->height() + y;
-			pnt.drawImage(x, y, QImage(led->imgName));
+			pnt.drawImage(x, y, QImage(led->imgName).scaled(16,16));
 		}
 	}
 }
@@ -843,18 +867,8 @@ void addLed(int x, int y, QString name, int time) {
 	}
 	if (!name.isEmpty()) {
 		leds.append(led);
-		//printf("leds.size = %i\n", leds.size());
 	}
 }
-
-/*
-void drawLed(int idx, QPainter& pnt) {
-	if (leds[idx].showTime > 0) {
-		leds[idx].showTime--;
-		pnt.drawImage(leds[idx].x, leds[idx].y, QImage(leds[idx].imgName));
-	}
-}
-*/
 
 void MainWin::putLeds() {
 	QPainter pnt;
@@ -878,25 +892,75 @@ void MainWin::putLeds() {
 		comp->joy->used = 0;
 	}
 	if (comp->mouse->used && conf.led.mouse) {
-		addLed(3, 60, ":/images/mouse.png", 50);
+		addLed(3, 50, ":/images/mouse.png", 50);
 		comp->mouse->used = 0;
 	}
 	if (comp->tape->on && conf.led.tape) {
-		addLed(3, 90, ":/images/tape.png", 50);
+		addLed(3, 70, ":/images/tape.png", 50);
 	}
 	if (conf.led.disk) {
 		if (comp->dif->fdc->flp->rd) {
 			comp->dif->fdc->flp->rd = 0;
-			addLed(3, 120, ":/images/floppy.png", 50);
+			addLed(3, 90, ":/images/floppy.png", 50);
 		} else if (comp->dif->fdc->flp->wr) {
 			comp->dif->fdc->flp->wr = 0;
-			addLed(3, 120, ":/images/floppyRed.png", 50);
+			addLed(3, 90, ":/images/floppyRed.png", 50);
 		}
 	}
 	pnt.begin(&scrImg);
 	drawLeds(pnt);
 	if (conf.led.keys) pnt.drawImage(3,3,kled);
 	pnt.end();
+}
+
+void MainWin::setMessage(QString str, double dur) {
+	msgTimer = dur * 50;
+	msg = str;
+}
+
+#define CHSIZE (12*12*3)
+
+void drawChar(QByteArray chr, int scradr, int wid) {
+	int x, y;
+	int r,g,b;
+	int adr = 0;
+	int vadr;
+	for (y = 0; y < 12; y++) {
+		for (x = 0; x < 12*3; x+=3) {
+			r = chr.at(adr++);
+			g = chr.at(adr++);
+			b = chr.at(adr++);
+			vadr = scradr + x;
+			if (r || g || b) {
+				screen[vadr++] = r;
+				screen[vadr++] = g;
+				screen[vadr] = b;
+			} else {
+				screen[vadr++] >>= 2;
+				screen[vadr++] >>= 2;
+				screen[vadr] >>= 2;
+			}
+		}
+		scradr += wid * 3;
+	}
+}
+
+void MainWin::drawMessage() {
+	int wid = size().width();
+	int x = 5;
+	int y = size().height() - 17;
+	int scradr = (y * wid + x) * 3;
+	int chr;
+	QByteArray chrdata;
+	for (int i = 0; i < msg.size(); i++) {
+		chr = msg.at(i).unicode() - 32;
+		if (chr > 95)
+			chr = '_' - 32;
+		chrdata = font.mid(chr * CHSIZE, CHSIZE);
+		drawChar(chrdata, scradr + x * 3, wid);
+		x += 12;
+		if (x >= (wid - 12)) break;
+	}
 }
 
 void MainWin::emuDraw() {

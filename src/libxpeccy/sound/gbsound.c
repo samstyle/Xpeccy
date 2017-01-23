@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 
+const char gbEnv[16] = {0,2,4,6,8,9,10,11,12,12,13,13,14,14,15,15};
+
 gbSound* gbsCreate() {
 	gbSound* gbs = malloc(sizeof(gbSound));
 	if (!gbs) return NULL;
@@ -82,7 +84,7 @@ sndPair gbsVolume(gbSound* gbs) {
 		// ch 1 : tone, env, sweep
 #if 1
 		lev = gbs->ch1.lev ? 0xff : 0x00;
-		lev *= gbs->ch1.env.vol;
+		lev *= gbEnv[gbs->ch1.env.vol & 15];
 		lev >>= 4;
 		if (gbs->ch1.so1) left += lev;
 		if (gbs->ch1.so2) right += lev;
@@ -90,7 +92,7 @@ sndPair gbsVolume(gbSound* gbs) {
 		// ch 2 : tone, env
 #if 1
 		lev = gbs->ch2.lev ? 0xff : 0x00;
-		lev *= gbs->ch2.env.vol;
+		lev *= gbEnv[gbs->ch2.env.vol & 15];
 		lev >>= 4;
 		if (gbs->ch2.so1) left += lev;
 		if (gbs->ch2.so2) right += lev;
@@ -110,7 +112,7 @@ sndPair gbsVolume(gbSound* gbs) {
 		// ch 4 : noise, env
 #if 1
 		lev = noizes[gbs->ch4.step & 0x1ffff] ? 0x80 : 0x00;
-		lev *= gbs->ch4.env.vol;
+		lev *= gbEnv[gbs->ch4.env.vol & 15];
 		lev >>= 4;
 		if (gbs->ch4.so1) left += lev;
 		if (gbs->ch4.so2) right += lev;

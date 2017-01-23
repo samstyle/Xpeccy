@@ -287,6 +287,7 @@ void compUpdateTimings(Computer* comp) {
 	switch (type) {
 		case HW_GBC:
 			comp->gbsnd->wav.period = comp->nsPerTick << 5;			// 128KHz period for wave generator = cpu.frq / 32
+			comp->gb.timer.div.per = comp->nsPerTick << 8;			// 16KHz timer divider tick
 			vidUpdateTimings(comp->vid, comp->nsPerTick * 2);
 			break;
 		default:
@@ -415,7 +416,28 @@ int compExec(Computer* comp) {
 	comp->tapCount += nsTime;
 	if (comp->gs->enable) comp->gs->sync += nsTime;
 	difSync(comp->dif, nsTime);
-	gbsSync(comp->gbsnd, nsTime);
+
+	if (comp->hw->type == HW_GBC) {
+		// sound
+		gbsSync(comp->gbsnd, nsTime);
+		// timer
+		comp->gb.timer.div.cnt -= nsTime;
+		if (comp->gb.timer.div.cnt < 0) {
+			comp->gb.timer.div.cnt += comp->gb.timer.div.per;
+			comp->gb.iomap[0x04]++;
+		}
+		if (comp->gb.timer.t.per > 0) {
+			comp->gb.timer.t.cnt -= nsTime;
+			if (comp->gb.timer.t.on && (comp->gb.timer.t.cnt < 0)) {
+				comp->gb.timer.t.cnt += comp->gb.timer.div.per;
+				comp->gb.iomap[0x05]++;
+				if (comp->gb.iomap[0x05] == 0) {	// overflow
+					comp->gb.iomap[0x05] = comp->gb.iomap[0x06];
+					comp->gb.timer.t.intrq = 1;
+				}
+			}
+		}
+	}
 // return ns eated @ this step
 	return nsTime;
 }

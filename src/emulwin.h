@@ -76,12 +76,18 @@ class MainWin : public QWidget {
 		xThread ethread;
 		QLabel* keywin;
 		QImage scrImg;
+		QByteArray font;
 
 		int pauseFlags;
 		int scrCounter;
 		int scrInterval;
 		int lineBytes;
 		int frameBytes;
+
+		int msgTimer;
+		QString msg;
+		void drawMessage();
+		void setMessage(QString, double = 2.0);
 
 		bool saveChanged();
 		void updateHead();

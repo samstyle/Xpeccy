@@ -72,16 +72,13 @@ enum {
 	MSX_ASCII16
 };
 
-/*
 // GameBoy cartrige MBC
 enum {
 	GB_NOMAP = 0,
 	GB_MBC1,
 	GB_MBC2,
 	GB_MBC3,
-	GB_HUC1
 };
-*/
 
 struct xCartridge {
 	unsigned ramen:1;		// ram enabling (gb)
@@ -104,7 +101,6 @@ typedef struct {
 	unsigned frmStrobe:1;		// new frame started
 	unsigned intStrobe:1;		// int front
 	unsigned nmiRequest:1;		// Magic button pressed
-	//unsigned beeplev:1;		// beeper level
 	unsigned firstRun:1;
 
 	unsigned rom:1;			// b4,7ffd
@@ -115,13 +111,13 @@ typedef struct {
 	unsigned contMem:1;		// contended mem
 	unsigned contIO:1;		// contended IO
 
+	char* msg;			// message ptr for displaying outside
+
 	double cpuFrq;
 	int frqMul;
 	unsigned char intVector;
 
 	bitChan* beep;
-	//unsigned char beepAmp;
-	//long int beepNs;
 
 	struct HardWare *hw;
 	CPU* cpu;
@@ -233,9 +229,21 @@ typedef struct {
 	struct {
 		unsigned boot:1;	// boot rom on
 		unsigned inpint:1;	// button pressed: request interrupt
-		unsigned short iomap[128];
-		int buttons;
 		unsigned char inten;	// int enable flags
+		int buttons;
+		struct {
+			struct {
+				long per;
+				long cnt;
+			} div;		// divider (16KHz, inc FF04)
+			struct {
+				unsigned on:1;
+				unsigned intrq:1;
+				long per;
+				long cnt;
+			} t;		// manual timer
+		} timer;
+		unsigned short iomap[128];
 	} gb;
 
 	CMOS cmos;

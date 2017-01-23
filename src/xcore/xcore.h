@@ -184,8 +184,10 @@ struct xConfig {
 		unsigned keys:1;
 		unsigned tape:1;
 		unsigned disk:1;
+		unsigned message:1;
 	} led;
 	struct {
+		std::string lastDir;
 		std::string confDir;
 		std::string confFile;
 		std::string romDir;

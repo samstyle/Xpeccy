@@ -3,30 +3,6 @@
 
 #include "sndcommon.h"
 
-/*
-typedef struct {
-	unsigned on:1;
-	unsigned cont:1;	// don't stop sound when duration over
-	unsigned so1:1;		// output controls
-	unsigned so2:1;
-	struct {
-		unsigned on:1;		// working
-		unsigned dir:1;		// 0:vol down, 1:vol up
-		unsigned char vol;	// current volume
-		unsigned int period;	// step period
-		int count;	// current step
-	} env;
-	struct {
-		unsigned add:1;
-		unsigned int period;
-		int count;
-		int step;
-	} sweep;
-	unsigned long duration;		// ns, sound duration
-	bitChan* ch;
-} gbsChan;
-*/
-
 typedef struct {
 	unsigned on:1;
 	unsigned cont:1;

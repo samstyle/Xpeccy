@@ -74,6 +74,7 @@ void saveConfig() {
 	fprintf(cfile, "savepaths = %s\n", YESNO(conf.storePaths));
 	fprintf(cfile, "fdcturbo = %s\n", YESNO(fdcFlag & FDC_FAST));
 	fprintf(cfile, "systime = %s\n", YESNO(conf.sysclock));
+	fprintf(cfile, "lastdir = %s\n",conf.path.lastDir.c_str());
 
 	fprintf(cfile, "\n[BOOKMARKS]\n\n");
 	foreach(xBookmark bkm, conf.bookmarkList) {
@@ -146,6 +147,7 @@ void saveConfig() {
 	fprintf(cfile, "keyscan = %s\n", YESNO(conf.led.keys));
 	fprintf(cfile, "tape = %s\n", YESNO(conf.led.tape));
 	fprintf(cfile, "disk = %s\n", YESNO(conf.led.disk));
+	fprintf(cfile, "message = %s\n", YESNO(conf.led.message));
 
 	fclose(cfile);
 }
@@ -199,7 +201,7 @@ void loadConfig() {
 	std::ifstream file(conf.path.confFile.c_str());
 	if (!file.good()) {
 		printf("Main config is missing. Default files will be copied\n");
-		copyFile(":/conf/config.conf",std::string(conf.path.confFile).c_str());
+		copyFile(":/conf/config.conf",conf.path.confFile.c_str());
 		copyFile(":/conf/xpeccy.conf",std::string(conf.path.confDir + SLASH + "xpeccy.conf").c_str());
 		copyFile(":/conf/1982.rom",std::string(conf.path.romDir + SLASH + "1982.rom").c_str());
 		file.open(conf.path.confFile.c_str());
@@ -260,10 +262,6 @@ void loadConfig() {
 				case SECT_VIDEO:
 					if (pnam=="layout") {
 						vect = splitstr(pval,":");
-						if (vect.size() < 10) {
-
-						}
-
 						if (vect.size() > 8) {
 							vlay.full.x = atoi(vect[1].c_str());
 							vlay.full.y = atoi(vect[2].c_str());
@@ -278,10 +276,6 @@ void loadConfig() {
 							vlay.scr.y = (vect.size() > 11) ? atoi(vect[11].c_str()) : 192;
 							if (vlay.full.x > 512) vlay.full.x = 512;
 							if (vlay.full.y > 512) vlay.full.y = 512;
-							//if (vlay.full.x < vlay.bord.x + vlay.scr.x) vlay.full.x = vlay.bord.x + vlay.scr.x;
-							//if (vlay.blank.x > vlay.bord.x) vlay.blank.x = vlay.bord.x;
-							//if (vlay.full.y < vlay.bord.y + vlay.scr.y) vlay.full.y = vlay.bord.y + vlay.scr.y;
-							//if (vlay.blank.y > vlay.bord.y) vlay.blank.y = vlay.bord.y;
 							addLayout(vect[0], vlay);
 						}
 					}
@@ -365,6 +359,7 @@ void loadConfig() {
 					if (pnam=="savepaths") conf.storePaths = str2bool(pval) ? 1 : 0;
 					if (pnam == "fdcturbo") setFlagBit(str2bool(pval),&fdcFlag,FDC_FAST);
 					if (pnam == "systime") conf.sysclock = str2bool(pval) ? 1 : 0;
+					if (pnam == "lastdir") conf.path.lastDir = pval;
 					break;
 				case SECT_TAPE:
 					if (pnam=="autoplay") conf.tape.autostart = str2bool(pval) ? 1 : 0;
@@ -376,6 +371,7 @@ void loadConfig() {
 					if (pnam=="keyscan") conf.led.keys = str2bool(pval) ? 1 : 0;
 					if (pnam=="tape") conf.led.tape = str2bool(pval) ? 1 : 0;
 					if (pnam=="disk") conf.led.disk = str2bool(pval) ? 1 : 0;
+					if (pnam=="message") conf.led.message = str2bool(pval) ? 1 : 0;
 					break;
 			}
 		}

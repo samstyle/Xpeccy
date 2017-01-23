@@ -48,7 +48,7 @@ struct HardWare {
 	unsigned char (*mrd)(Computer*,unsigned short,int);
 	void (*mwr)(Computer*,unsigned short,unsigned char);
 	void (*reset)(Computer*);
-	int (*intr)(Computer*);
+	int (*intr)(Computer*);		// callback after each command. request/handle interrupt
 };
 
 typedef struct {

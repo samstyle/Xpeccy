@@ -20,11 +20,16 @@ unsigned char gbIORd(Computer* comp, unsigned short port) {
 				case 0x20: res = comp->gb.buttons & 0x0f; break;
 			}
 			break;
+// TIMER
+		case 0x04: break;
+		case 0x05: break;
+		case 0x06: break;
+		case 0x07: break;
 // SOUND
 		case 0x24: break;
 		case 0x25: break;
 		case 0x26:
-			res = 0;
+			res = 0xf0;
 			if (comp->gbsnd->ch1.on) res |= 1;
 			if (comp->gbsnd->ch2.on) res |= 2;
 			if (comp->gbsnd->ch3.on) res |= 4;
@@ -34,13 +39,7 @@ unsigned char gbIORd(Computer* comp, unsigned short port) {
 		case 0x40: break;
 		case 0x41:
 			res = (comp->vid->ray.y == comp->vid->gbc->lyc) ? 4 : 0;
-			if (comp->vid->ray.y >= comp->vid->lay.scr.y) {		// mode 1 : vblank
-				res |= 1;
-			} else if (comp->vid->ray.x < 40) {			// mode 2 : oam reading. ~80T, 19us
-				res |= 2;
-			} else if (comp->vid->ray.x < 125) {			// mode 3 : oam/vmem rd. ~170T, 41uS
-				res |= 3;
-			}							// mode 0 : hblank. ~206T, 48.6uS
+			res |= comp->vid->gbc->mode & 3;
 			break;
 		case 0x42: break;
 		case 0x43: break;
@@ -349,6 +348,13 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			// custom timer control
 			// b2 : timer on
 			// b0,1 : 00 = 4KHz, 01 = 256KHz, 10 = 64KHz, 11 = 16KHz
+			switch (val & 3) {
+				case 0b00: comp->gb.timer.t.per = comp->nsPerTick << 10; break;
+				case 0b01: comp->gb.timer.t.per = comp->nsPerTick << 4; break;
+				case 0b10: comp->gb.timer.t.per = comp->nsPerTick << 6; break;
+				case 0b11: comp->gb.timer.t.per = comp->nsPerTick << 8; break;
+			}
+			comp->gb.timer.t.on = (val & 4) ? 1 : 0;
 			break;
 // SERIAL
 		case 0x01:
@@ -481,14 +487,12 @@ void gbSlotWr(unsigned short adr, unsigned char val, void* data) {
 unsigned char gbvRd(unsigned short adr, void* data) {
 	Computer* comp = (Computer*)data;
 	xCartridge* slot = &comp->msx.slotA;
-	unsigned char res;
+	unsigned char res = 0xff;
 	int radr;
 	if (adr & 0x2000) {		// hi 8K: cartrige ram
 		if (slot->ramen && slot->data) {
 			radr = (slot->memMap[1] << 13) | (adr & 0x1fff);
 			res = slot->ram[radr & 0x7fff];
-		} else {
-			res = 0xff;
 		}
 	} else {
 		res = comp->vid->gbc->ram[adr & 0x1fff];
@@ -525,8 +529,9 @@ unsigned char gbrRd(unsigned short adr, void* data) {
 	unsigned char res = 0xff;
 	if (adr < 0xfe00) {
 		res = comp->mem->ramData[adr & 0x1fff];			// 8K, [e000...fdff] -> [c000..ddff]
-	} else if (adr < 0xfea0) {
-		res = comp->vid->gbc->oam[adr & 0xff];			// video oem
+	} else if (adr < 0xfea0) {					// video oam not accessible @ mode 2
+		if (comp->vid->gbc->mode != 2)
+			res = comp->vid->gbc->oam[adr & 0xff];
 	} else if (adr < 0xff00) {
 		res = 0xff;						// unused
 	} else if (adr < 0xff80) {
@@ -543,8 +548,9 @@ void gbrWr(unsigned short adr, unsigned char val, void* data) {
 	Computer* comp = (Computer*)data;
 	if (adr < 0xfe00) {
 		comp->mem->ramData[adr & 0x1fff] = val;
-	} else if (adr < 0xfea0) {
-		comp->vid->gbc->oam[adr & 0xff] = val;
+	} else if (adr < 0xfea0) {					// video oam not accessible @ mode 2
+		if (comp->vid->gbc->mode != 2)
+			comp->vid->gbc->oam[adr & 0xff] = val;
 	} else if (adr < 0xff00) {
 		// nothing
 	} else if (adr < 0xff80) {
@@ -574,6 +580,7 @@ void gbMemWr(Computer* comp, unsigned short adr, unsigned char val) {
 }
 
 // collect interrupt requests & handle interrupt
+
 extern int res1,res2,res4;
 int gbINT(Computer* comp) {
 	unsigned char req = 0;
@@ -583,7 +590,8 @@ int gbINT(Computer* comp) {
 	} else if (comp->vid->gbc->intrq) {
 		comp->vid->gbc->intrq = 0;
 		req |= 2;
-	} else if (0) {					// TODO: timer INT
+	} else if (comp->gb.timer.t.intrq) {
+		comp->gb.timer.t.intrq = 0;
 		req |= 4;
 	} else if (0) {					// TODO: serial INT (?)
 		req |= 8;
@@ -592,13 +600,15 @@ int gbINT(Computer* comp) {
 		req |= 16;
 	}
 	req &= comp->gb.inten;			// mask
-	comp->cpu->intrq = req;			// cpu int req
+	comp->cpu->intrq |= req;		// cpu int req
 	res4 = 0;
 	res2 = comp->cpu->intr(comp->cpu);	// run int handling
 	res1 += res2;
 	vidSync(comp->vid, (res2 - res4) * comp->nsPerTick);
 	return res2;
 }
+
+// keypress
 
 typedef struct {
 	const char* name;
@@ -622,10 +632,30 @@ unsigned char gbGetInputMask(const char* key) {
 	return mask;
 }
 
+char gbMsgBG0[] = " BG layer off ";
+char gbMsgBG1[] = " BG layer on ";
+char gbMsgWIN0[] = " WIN layer off ";
+char gbMsgWIN1[] = " WIN layer on ";
+char gbMsgSPR0[] = " SPR layer off ";
+char gbMsgSPR1[] = " SPR layer on ";
+
+
 void gbPress(Computer* comp, const char* key) {
 	unsigned char mask = gbGetInputMask(key);
-	comp->gb.buttons &= ~mask;
-	comp->gb.inpint = 1;			// input interrupt request
+	if (mask) {
+		comp->gb.buttons &= ~mask;
+		comp->gb.inpint = 1;			// input interrupt request
+	} else if (!strcmp(key,"1")) {
+		comp->vid->gbc->bgblock ^= 1;
+		comp->msg = comp->vid->gbc->bgblock ? gbMsgBG0 :gbMsgBG1;
+	} else if (!strcmp(key,"2")) {
+		comp->vid->gbc->winblock ^= 1;
+		comp->msg = comp->vid->gbc->winblock ? gbMsgWIN0 :gbMsgWIN1;
+	} else if (!strcmp(key,"3")) {
+		comp->vid->gbc->sprblock ^= 1;
+		comp->msg = comp->vid->gbc->sprblock ? gbMsgSPR0 :gbMsgSPR1;
+	}
+
 }
 
 void gbRelease(Computer* comp, const char* key) {

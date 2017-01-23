@@ -127,6 +127,10 @@ void vidUpdateLayout(Video* vid, float brdsize) {
 	vid->vsze.y = vid->rcut.y - vid->lcut.y;
 	vid->vBytes = vid->vsze.x * vid->vsze.y * 6;	// real size of image buffer (3 bytes/dot x2:x1)
 	vidUpdateTimings(vid, vid->nsPerDot);
+#ifdef ISDEBUG
+	printf("%i : ",vid->lay.bord.x);
+	printf("%i - %i, %i - %i\n",vid->lcut.x, vid->rcut.x, vid->lcut.y, vid->rcut.y);
+#endif
 }
 
 int xscr = 0;

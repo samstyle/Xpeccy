@@ -437,6 +437,7 @@ void SetupWin::start(xProfile* p) {
 	ui.cbKeysLed->setChecked(conf.led.keys);
 	ui.cbTapeLed->setChecked(conf.led.tape);
 	ui.cbDiskLed->setChecked(conf.led.disk);
+	ui.cbMessage->setChecked(conf.led.message);
 // profiles
 	ui.defstart->setChecked(conf.defProfile);
 	buildproflist();
@@ -578,12 +579,12 @@ void SetupWin::apply() {
 	conf.led.keys = ui.cbKeysLed->isChecked() ? 1 : 0;
 	conf.led.tape = ui.cbTapeLed->isChecked() ? 1 : 0;
 	conf.led.disk = ui.cbDiskLed->isChecked() ? 1 : 0;
+	conf.led.message = ui.cbMessage->isChecked() ? 1 : 0;
 // profiles
 	conf.defProfile = ui.defstart->isChecked() ? 1 : 0;
 
 	saveConfig();
 	prfSave("");
-	// sndCalibrate(comp->vid->fps);
 }
 
 void SetupWin::reject() {
@@ -656,8 +657,7 @@ void SetupWin::layEditorChanged() {
 	layUi.rowsBox->setMinimum(layUi.brdUBox->value() + layUi.vsyncBox->value() + layUi.sbScrH->value());
 	layUi.intRowBox->setMaximum(layUi.rowsBox->value());
 	layUi.intPosBox->setMaximum(layUi.lineBox->value());
-
-//	QString infText = QString::number(()).append(" / ");
+/*
 	int toscr = layUi.hsyncBox->value() + layUi.brdLBox->value() - layUi.intPosBox->value() +
 			(layUi.vsyncBox->value() + layUi.brdUBox->value() - layUi.intRowBox->value()) * layUi.lineBox->value();
 	if (toscr < 0)
@@ -669,7 +669,7 @@ void SetupWin::layEditorChanged() {
 //	infText.append(QString::number(toscr >> 1)).append(" / ");
 //	infText.append(QString::number((layUi.rowsBox->value() * layUi.lineBox->value()) >> 1));
 	layUi.infLabel->setText(infText);
-
+*/
 	layUi.showField->setFixedSize(layUi.lineBox->value(),layUi.rowsBox->value());
 	QPixmap pix(layUi.lineBox->value(),layUi.rowsBox->value());
 	QPainter pnt;
@@ -699,8 +699,8 @@ void SetupWin::layEditorOK() {
 	vLayout vlay;
 	vlay.full.x = layUi.lineBox->value();
 	vlay.full.y = layUi.rowsBox->value();
-	vlay.bord.x = layUi.hsyncBox->value();
-	vlay.bord.y = layUi.vsyncBox->value();
+	vlay.bord.x = layUi.brdLBox->value();
+	vlay.bord.y = layUi.brdUBox->value();
 	vlay.blank.x = layUi.hsyncBox->value();
 	vlay.blank.y = layUi.vsyncBox->value();
 	vlay.intpos.x = layUi.intPosBox->value();

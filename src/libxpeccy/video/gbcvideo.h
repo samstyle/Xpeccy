@@ -11,6 +11,10 @@ struct GBCVid {
 	unsigned altile:1;		// tileset 0:9800; 1:9c00, tiles num -128..127
 	unsigned bigspr:1;		// sprite 8x16 (8x8 if 0)
 
+	unsigned bgblock:1;		// block some gfx layers
+	unsigned winblock:1;
+	unsigned sprblock:1;
+
 	unsigned intrq:1;		// stat interrupt request
 	unsigned char inten;		// int enabling flags
 	unsigned char wline;
@@ -22,8 +26,10 @@ struct GBCVid {
 	unsigned char ram[0x2000];	// 8K of video memory
 	unsigned char oam[0x100];	// oem : sprites data
 	unsigned char line[256];	// full line image (color indexes)
-	unsigned char sline[256];	// line of sprites
+	unsigned char stline[256];	// line of top sprites
+	unsigned char sbline[256];	// line of bg sprites
 
+	int mode;
 	vCoord sc;			// scx/scy
 	vCoord win;			// wx/wy
 	int xpos;

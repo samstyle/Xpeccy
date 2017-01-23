@@ -3,7 +3,7 @@
 #include "xgui/xgui.h"
 
 QFileDialog *filer;
-QDir lastDir;
+// QDir lastDir;
 
 #include <QIcon>
 #include <QMessageBox>
@@ -16,9 +16,9 @@ void initFileDialog(QWidget* par) {
 	filer->setConfirmOverwrite(true);
 	filer->setOption(QFileDialog::DontUseNativeDialog,0);
 #ifdef _WIN32
-	lastDir = ".";
+	conf.path.lastDir = ".";
 #else
-	lastDir = QDir::home();
+	conf.path.lastDir = std::string(QDir::home().absolutePath().toLocal8Bit().data());
 #endif
 }
 
@@ -111,7 +111,7 @@ int testSlotOn(Computer* comp) {
 
 void loadFile(Computer* comp,const char* name, int flags, int drv) {
 	QString opath = QDialog::trUtf8(name);
-	filer->setDirectory(lastDir);
+	filer->setDirectory(conf.path.lastDir.c_str());
 	if (opath == "") {
 		QString filters = "";
 		if (flags == FT_ALL) filters = QString("All known types (%0)").arg(getFilter(flags));
@@ -133,7 +133,7 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 		if (filters.startsWith(";;")) filters.remove(0,2);
 		filer->setWindowTitle("Open file");
 		filer->setNameFilter(filters);
-		filer->setDirectory(lastDir);
+		filer->setDirectory(conf.path.lastDir.c_str());
 		filer->setAcceptMode(QFileDialog::AcceptOpen);
 		if (!filer->exec()) return;
 		filters = filer->selectedNameFilter();
@@ -145,7 +145,7 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 		if (filters.contains("Cartrige slot B")) drv = 1;
 		if (filters.contains("Raw")) drv = 10;
 		opath = filer->selectedFiles().first();
-		lastDir = filer->directory().absolutePath();
+		conf.path.lastDir = std::string(filer->directory().absolutePath().toLocal8Bit().data());
 	}
 	if (drv == -1) drv = 0;
 	int type;
@@ -225,7 +225,7 @@ bool saveFile(Computer* comp,const char* name,int flags,int drv) {
 	filer->setWindowTitle("Save file");
 	filer->setNameFilter(filters);
 	filer->setAcceptMode(QFileDialog::AcceptSave);
-	filer->setDirectory(lastDir);
+	filer->setDirectory(conf.path.lastDir.c_str());
 	if (path != "") filer->selectFile(path);
 	if (!filer->exec()) return false;
 	filters = filer->selectedNameFilter();
@@ -235,7 +235,7 @@ bool saveFile(Computer* comp,const char* name,int flags,int drv) {
 	if (filters.contains("Disk D")) drv = 3;
 	if (drv == -1) drv = 0;
 	path = filer->selectedFiles().first();
-	lastDir = filer->directory().absolutePath();
+	conf.path.lastDir = std::string(filer->directory().absolutePath().toLocal8Bit().data());
 	std::string sfnam(path.toUtf8().data());
 	int type = getFileType(path);
 	int err = ERR_OK;

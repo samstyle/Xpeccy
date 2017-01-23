@@ -50,5 +50,6 @@
         <file>images/floppyRed.png</file>
         <file>images/eye.png</file>
         <file>images/gameboy.png</file>
+        <file>font.bin</file>
     </qresource>
 </RCC>
