@@ -10,8 +10,11 @@ struct GBCVid {
 	unsigned bgen:1;		// bg layer enabled
 	unsigned altile:1;		// tileset 0:9800; 1:9c00, tiles num -128..127
 	unsigned bigspr:1;		// sprite 8x16 (8x8 if 0)
+	unsigned gbmode:1;		// GB capability mode (not-GBC)
+	// unsigned bwlock:1;		// gbmode - remove bg & win (!b0,FF40 in gbmode)
+	unsigned bgprior:1;		// !gbmode - bg/win has priority on bottom layer sprites
 
-	unsigned bgblock:1;		// block some gfx layers
+	unsigned bgblock:1;		// block some gfx layers (external)
 	unsigned winblock:1;
 	unsigned sprblock:1;
 
@@ -23,11 +26,13 @@ struct GBCVid {
 	unsigned short winmapadr;	// window layer timemap (0:9800, 1:9c00)
 	unsigned short bgmapadr;	// bg layer timemap (0:9800, 1:9c00)
 
-	unsigned char ram[0x2000];	// 8K of video memory
+	unsigned char ram[0x4000];	// 2x8K of video memory
 	unsigned char oam[0x100];	// oem : sprites data
-	unsigned char line[256];	// full line image (color indexes)
-	unsigned char stline[256];	// line of top sprites
-	unsigned char sbline[256];	// line of bg sprites
+	// current line images
+	unsigned char wtline[256];	// win layer with priority
+	unsigned char wbline[256];	// win layer without priority
+	unsigned char stline[256];	// spr layer with priority
+	unsigned char sbline[256];	// spr layer without priority
 
 	int mode;
 	vCoord sc;			// scx/scy

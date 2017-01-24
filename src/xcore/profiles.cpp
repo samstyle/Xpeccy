@@ -176,20 +176,9 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 				if (prts > 16) prf->zx->mem->romMask = 0x1f;
 				if (prts > 32) prts = 32;
 				file.seekg(0,std::ios_base::beg);
-				//printf("%s : prts = %i (mask %.2X)\n",rnm.c_str(), prts,prf->zx->mem->romMask);
 				for (i = 0; i < prts; i++) {
-					file.read(pageBuf,0x4000);
+					prf->zx->romsize = file.readsome(pageBuf,0x4000);
 					memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
-/*
-					printf("PART %i:\n",i);
-					for (int j = 0; j < 0x100; j++) {
-						if (!(j & 0x0f)) {
-							printf("\n%.4X : ",j);
-						}
-						printf("%.2X ",prf->zx->mem->romData[j] & 0xff);
-					}
-					printf("\n");
-*/
 				}
 				memset(pageBuf,0xff,0x4000);
 				for (i = prts; i < 32; i++)
@@ -205,17 +194,15 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 			for (i = 0; i < 4; i++) {
 				if (rset->roms[i].path == "") {
 					memset(pageBuf,0xff,0x4000);
-					// for (ad = 0; ad < 0x4000; ad++) pageBuf[ad]=0xff;
 				} else {
 					fpath = conf.path.romDir + SLASH + rset->roms[i].path;
 					file.open(fpath.c_str(),std::ios::binary);
 					if (file.good()) {
 						file.seekg(rset->roms[i].part << 14);
-						file.read(pageBuf,0x4000);
+						prf->zx->romsize = file.readsome(pageBuf,0x4000);
 					} else {
 						printf("Can't open rom '%s:%i'\n",rset->roms[i].path.c_str(),rset->roms[i].part);
 						memset(pageBuf,0xff,0x4000);
-						//for (ad=0;ad<0x4000;ad++) pageBuf[ad]=0xff;
 					}
 					file.close();
 				}
@@ -223,7 +210,6 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 			}
 		}
 		memset(pageBuf,0xff,0x4000);
-		// for (ad = 0; ad < 0x4000; ad++) pageBuf[ad] = 0xff;
 		if (rset->gsFile.empty()) {
 			gsSetRom(prf->zx->gs,0,pageBuf);
 			gsSetRom(prf->zx->gs,1,pageBuf);

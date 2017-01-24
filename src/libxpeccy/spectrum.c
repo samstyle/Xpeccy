@@ -281,20 +281,20 @@ void compSetLayout(Computer *comp, vLayout lay) {
 // cpu freq
 
 void compUpdateTimings(Computer* comp) {
-	comp->nsPerTick = 1e3 / comp->cpuFrq;
+	long perNoTurbo = 1e3 / comp->cpuFrq;
+	comp->nsPerTick = perNoTurbo / comp->frqMul;
 	if (comp->nsPerTick & 1) comp->nsPerTick++;
 	int type = comp->hw ? comp->hw->type : HW_NULL;
 	switch (type) {
 		case HW_GBC:
-			comp->gbsnd->wav.period = comp->nsPerTick << 5;			// 128KHz period for wave generator = cpu.frq / 32
-			comp->gb.timer.div.per = comp->nsPerTick << 8;			// 16KHz timer divider tick
-			vidUpdateTimings(comp->vid, comp->nsPerTick * 2);
+			comp->gbsnd->wav.period = perNoTurbo << 5;			// 128KHz period for wave generator = cpu.frq / 32
+			comp->gb.timer.div.per = comp->nsPerTick << 8;			// 16KHz timer divider tick. this timer depends on turbo speed
+			vidUpdateTimings(comp->vid, perNoTurbo * 2);
 			break;
 		default:
-			vidUpdateTimings(comp->vid, comp->nsPerTick / 2);
+			vidUpdateTimings(comp->vid, perNoTurbo / 2);
 			break;
 	}
-	comp->nsPerTick /= comp->frqMul;
 #ifdef ISDEBUG
 	// printf("%f x %i : %i ns\n",comp->cpuFrq,comp->frqMul,comp->nsPerTick);
 #endif
@@ -341,7 +341,12 @@ int zxINT(Computer* comp, unsigned char vect) {
 int zxINT(Computer*, unsigned char);
 int compExec(Computer* comp) {
 	res4 = 0;
-	res2 = comp->cpu->exec(comp->cpu);
+	if (comp->cpu->inth) {			// 1:handle interrupt
+		comp->cpu->inth = 0;
+		res2 = comp->cpu->intr(comp->cpu);
+	} else {				// 0:exec opcode
+		res2 = comp->cpu->exec(comp->cpu);
+	}
 // scorpion WAIT: add 1T to odd-T command
 	if (comp->scrpWait && (res2 & 1))
 		res2++;
@@ -382,7 +387,8 @@ int compExec(Computer* comp) {
 // INTs handle
 	if (comp->rzx.play) {
 		if (comp->rzx.frm.fetches < 1) {
-			zxINT(comp, 0xff);
+			comp->intVector = 0xff;
+			comp->cpu->inth = 1;
 			comp->rzx.fCurrent++;
 			comp->rzx.fCount--;
 			rzxGetFrame(comp);
@@ -421,21 +427,32 @@ int compExec(Computer* comp) {
 		// sound
 		gbsSync(comp->gbsnd, nsTime);
 		// timer
-		comp->gb.timer.div.cnt -= nsTime;
-		if (comp->gb.timer.div.cnt < 0) {
-			comp->gb.timer.div.cnt += comp->gb.timer.div.per;
-			comp->gb.iomap[0x04]++;
+		if (comp->gb.timer.div.per) {
+			comp->gb.timer.div.cnt -= nsTime;
+			if (comp->gb.timer.div.cnt < 0) {
+				comp->gb.timer.div.cnt += comp->gb.timer.div.per;
+				comp->gb.iomap[0x04]++;
+			}
 		}
-		if (comp->gb.timer.t.per > 0) {
+		if (comp->gb.timer.t.on && (comp->gb.timer.t.per > 0)) {
 			comp->gb.timer.t.cnt -= nsTime;
-			if (comp->gb.timer.t.on && (comp->gb.timer.t.cnt < 0)) {
-				comp->gb.timer.t.cnt += comp->gb.timer.div.per;
-				comp->gb.iomap[0x05]++;
-				if (comp->gb.iomap[0x05] == 0) {	// overflow
+			if (comp->gb.timer.t.cnt < 0) {
+				comp->gb.timer.t.cnt += comp->gb.timer.t.per;
+				if (comp->gb.iomap[0x05] == 0xff) {		// overflow
 					comp->gb.iomap[0x05] = comp->gb.iomap[0x06];
 					comp->gb.timer.t.intrq = 1;
+				} else {
+					comp->gb.iomap[0x05]++;
 				}
 			}
+		}
+		// cpu speed change
+		if (comp->cpu->stop && comp->cpu->speedrq) {
+			comp->cpu->stop = 0;
+			comp->cpu->pc++;
+			comp->cpu->speedrq = 0;
+			comp->cpu->speed ^= 1;
+			compSetTurbo(comp, comp->cpu->speed ? 2.0 : 1.0);
 		}
 	}
 // return ns eated @ this step

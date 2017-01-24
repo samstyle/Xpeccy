@@ -2,6 +2,7 @@
 
 #include <QIcon>
 #include <QDebug>
+#include <QPainter>
 #include <QFileDialog>
 #include <QTemporaryFile>
 
@@ -138,8 +139,9 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.tbDelBrk->setEnabled(false);
 	connect(ui.bpList,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(goToBrk(QModelIndex)));
 // gb tab
-	connect(ui.gbTiles, SIGNAL(clicked(bool)), this, SLOT(fillGBoy()));
-	connect(ui.gbMap, SIGNAL(clicked(bool)), this, SLOT(fillGBoy()));
+	connect(ui.gbModeGroup, SIGNAL(buttonClicked(int)), this, SLOT(fillGBoy()));
+//	connect(ui.gbTiles, SIGNAL(clicked(bool)), this, SLOT(fillGBoy()));
+//	connect(ui.gbMap, SIGNAL(clicked(bool)), this, SLOT(fillGBoy()));
 	connect(ui.sbTileset, SIGNAL(valueChanged(int)), this, SLOT(fillGBoy()));
 	connect(ui.sbTilemap, SIGNAL(valueChanged(int)), this, SLOT(fillGBoy()));
 
@@ -455,6 +457,7 @@ bool DebugWin::fillAll() {
 	setSignal(ui.labCPM, comp->cpm);
 	setSignal(ui.labHBlank, comp->vid->hblank);
 	setSignal(ui.labVBlank, comp->vid->vblank);
+	setSignal(ui.labINT, comp->cpu->inth);
 	if (memViewer->isVisible())
 		memViewer->fillImage();
 	return fillDisasm();
@@ -462,19 +465,20 @@ bool DebugWin::fillAll() {
 
 // gameboy
 
+extern xColor iniCol[4];
 void drawGBTile(QImage& img, GBCVid* gbv, int x, int y, int adr) {
 	int row, bit;
 	int data;
 	unsigned char col;
 	xColor xcol;
 	for (row = 0; row < 8; row++) {
-		data = gbv->ram[adr & 0x1fff] & 0xff;
+		data = gbv->ram[adr & 0x3fff] & 0xff;
 		adr++;
-		data |= (gbv->ram[adr & 0x1fff] & 0xff) << 8;
+		data |= (gbv->ram[adr & 0x3fff] & 0xff) << 8;
 		adr++;
 		for (bit = 0; bit < 8; bit++) {
 			col = ((data & 0x80) ? 1 : 0) | ((data & 0x8000) ? 2 : 0);
-			xcol = gbv->pal[col];
+			xcol = iniCol[col];
 			img.setPixel(x + bit, y + row, qRgb(xcol.r, xcol.g, xcol.b));
 			data <<= 1;
 		}
@@ -482,7 +486,8 @@ void drawGBTile(QImage& img, GBCVid* gbv, int x, int y, int adr) {
 }
 
 QImage getGBTiles(GBCVid* gbv, int tset) {
-	int tadr = tset ? 0x800 : 0;
+	int tadr = (tset & 1) ? 0x800 : 0;
+	if (tset & 2) tadr |= 0x2000;
 	int x,y;
 	QImage img(128, 128, QImage::Format_RGB888);
 	for (y = 0; y < 16; y++) {
@@ -491,13 +496,15 @@ QImage getGBTiles(GBCVid* gbv, int tset) {
 			tadr += 16;
 		}
 	}
-	return img;
+	return img.scaled(256,256);
 }
 
 QImage getGBMap(GBCVid* gbv, int tmap, int tset) {
 	QImage img(256, 256, QImage::Format_RGB888);
 	img.fill(qRgb(0,0,0));
 	int adr = tmap ? 0x1c00 : 0x1800;
+	int badr = (tset & 1) ? 0x800 : 0;
+	if (tset & 2) badr |= 0x2000;
 	int tadr;
 	unsigned char tile;
 	int x,y;
@@ -505,10 +512,11 @@ QImage getGBMap(GBCVid* gbv, int tmap, int tset) {
 		for (x = 0; x < 32; x++) {
 			tile = gbv->ram[adr & 0x1fff];
 			adr++;
-			if (tset) {
-				tadr = 0x800 + ((tile ^ 0x80) << 4);
+			tadr = badr;
+			if (tset & 1) {
+				tadr += (tile ^ 0x80) << 4;
 			} else {
-				tadr = tile << 4;
+				tadr += tile << 4;
 			}
 			drawGBTile(img, gbv, x << 3, y << 3, tadr);
 		}
@@ -516,14 +524,35 @@ QImage getGBMap(GBCVid* gbv, int tmap, int tset) {
 	return img;
 }
 
+QImage getGBPal(GBCVid* gbv) {
+	QImage img(256,256,QImage::Format_RGB888);
+	img.fill(Qt::black);
+	int x,y;
+	int idx = 0;
+	xColor col;
+	QPainter pnt;
+	pnt.begin(&img);
+	for (y = 0; y < 16; y++) {
+		for (x = 0; x < 4; x++) {
+			col = gbv->pal[idx++];
+			pnt.fillRect((x << 6) + 1, (y << 4) + 1, 62, 14, QColor(col.r, col.g, col.b));
+			if (idx == 32) idx += 32;
+		}
+	}
+	pnt.end();
+	return img;
+}
+
 void DebugWin::fillGBoy() {
 	QImage img;
 	int tset = ui.sbTileset->value();
 	int tmap = ui.sbTilemap->value();
-	if (ui.gbTiles->isChecked()) {
-		img = getGBTiles(comp->vid->gbc, tset).scaled(256,256);
-	} else {
+	if (ui.rbTilesetView->isChecked()) {
+		img = getGBTiles(comp->vid->gbc, tset);
+	} else if (ui.rbTilemapView->isChecked()) {
 		img = getGBMap(comp->vid->gbc, tmap, tset);
+	} else {
+		img = getGBPal(comp->vid->gbc);
 	}
 	ui.gbImage->setPixmap(QPixmap::fromImage(img));
 }

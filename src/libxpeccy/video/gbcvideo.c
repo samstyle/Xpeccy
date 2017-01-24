@@ -7,122 +7,125 @@
 #include <assert.h>
 
 void gbcvDraw(GBCVid* vid) {
-#if 1
-	unsigned char col = 0;
+	unsigned char col = 0xff;		// color FF = white
 	int x,y;
 	unsigned char tile;
+	unsigned char flag;
 	int adr, data;
+
 	if (vid->lcdon) {
-		if (vid->stline[vid->ray->x]) {									// top sprites
-			col = vid->stline[vid->ray->x];
-		} else if (vid->winen && (vid->ray->y >= vid->win.y) && (vid->ray->x >= vid->win.x)) {		// window
-			col = vid->line[vid->ray->x];
-		} else if (vid->bgen && !vid->bgblock) {
-			x = (vid->sc.x + vid->ray->x) & 0xff;
-			y = (vid->sc.y + vid->ray->y) & 0xff;
-			adr = vid->bgmapadr + ((y & 0xf8) << 2) + (x >> 3);		// tile adr
-			tile = vid->ram[adr & 0x1fff];					// tile nr
-			if (vid->altile) tile += 0x80;					// tile nr for alt.tileset
-			adr = vid->tilesadr + (tile << 4) + ((y & 7) << 1);		// tile data adr
-			data = vid->ram[adr & 0x1fff] & 0xff;
-			adr++;
-			data |= vid->ram[adr & 0x1fff] << 8;
-			data <<= (x & 7);
+		// get bg color & flag
+		x = (vid->sc.x + vid->ray->x) & 0xff;
+		y = (vid->sc.y + vid->ray->y) & 0xff;
+		adr = vid->bgmapadr + ((y & 0xf8) << 2) + (x >> 3);		// tile adr
+		tile = vid->ram[adr & 0x3fff];					// tile nr
+		flag = vid->gbmode ? 0 : vid->ram[0x2000 | (adr & 0x1fff)];	// tile flags (GBC)
+		if (flag & 0x20) x ^= 7;		// HFlip
+		if (flag & 0x40) y ^= 7;		// VFlip
+		if (vid->altile) tile += 0x80;					// tile nr for alt.tileset
+		adr = vid->tilesadr + (tile << 4) + ((y & 7) << 1);		// tile data adr
+		adr &= 0x1fff;
+		if (flag & 8)
+			adr |= 0x2000;
+		data = vid->ram[adr & 0x3fff] & 0xff;
+		adr++;
+		data |= vid->ram[adr & 0x3fff] << 8;
+		data <<= (x & 7);
+
+		int bgen = vid->bgen && !vid->bgblock;
+		int winen = vid->winen && !vid->winblock && (vid->ray->y >= vid->win.y) && (vid->ray->x >= vid->win.x);
+		int spen = vid->spren && !vid->sprblock;
+
+		if (winen && vid->bgprior && (vid->wtline[vid->ray->x] != 0xff)) {						// WIN + priority
+			col = vid->wtline[vid->ray->x];
+		} else if (bgen && vid->bgprior && (flag & 0x80)) {			// BG + priority
 			col = ((data & 0x80) ? 1 : 0) | ((data & 0x8000) ? 2 : 0);
+			col |= (flag & 7) << 2;
+		} else if (spen && vid->stline[vid->ray->x]) {				// top SPR
+			col = vid->stline[vid->ray->x];
+		} else if (winen) {							// WIN
+			col = vid->wbline[vid->ray->x];
+		} else if (bgen) {							// BG
+			col = ((data & 0x80) ? 1 : 0) | ((data & 0x8000) ? 2 : 0);
+			col |= (flag & 7) << 2;
 		}
-		if ((col == 0) && vid->sbline[vid->ray->x]) {		// bg sprites : only if bg/win color = 0
+		if (!col && vid->sbline[vid->ray->x]) {					// bottom sprites
 			col = vid->sbline[vid->ray->x];
 		}
 	}
 	vidPutDot(vid->ray, vid->pal, col);
-#else
-	unsigned char col = vid->line[vid->xpos & 0xff];
-	vidPutDot(vid->ray, vid->pal, col);
-	vid->xpos++;
-#endif
 	if (vid->ray->y < vid->lay->scr.y) {
-		switch(vid->ray->x) {
-			case 0:				// 40 : oam + vram, mode 2
-				vid->mode = 2;
-				if (vid->inten & 32)
-					vid->intrq = 1;
-				break;
-			case 40:			// 86 : vram, mode 3
-				vid->mode = 3;
-				break;
-			case 86:			// 102 : hblank, mode 0
-				vid->mode = 0;
-				if (vid->inten & 8)
-					vid->intrq = 1;	// int @ hblank
-				break;
+		if (vid->ray->x == 0) {
+			vid->mode = 2;
+			if (vid->inten & 32)
+				vid->intrq = 1;
+		} else if (vid->ray->x == 40) {
+			vid->mode = 3;
+		} else if (vid->ray->x == (vid->lay->scr.x - 1)) {
+			vid->mode = 0;
+			if (vid->inten & 8)
+				vid->intrq = 1;	// int @ hblank
 		}
 	}
 }
 
 // line begin : create full line image in the buffer
 void gbcvLine(GBCVid* vid) {
-	memset(vid->line, 0x00, 256);
 	if (!vid->lcdon) return;
 	unsigned char tile;
-	int tadr;
+	unsigned char flag;
 	unsigned char col;
+	unsigned char pal;
 	unsigned short data;
-	unsigned short flip;
-	int tx, flag, bi;
+	int tx, bi;
 	int x;
 	int y;
+	int tadr;
 	int adr;
 	int pos;
-#if 0
-// BG
-	if (vid->bgen) {
-		y = (vid->sc.y + vid->ray->y) & 0xff;
-		tadr = vid->bgmapadr + ((y & 0xf8) << 2);
-		pos = 0;
-		for (tx = 0; tx < 32; tx++) {					// 32 tiles in row
-			tile = vid->ram[tadr & 0x1fff];				// get tile number
-			if (vid->altile) tile += 0x80;				// alt.tiles -128..127 -> 0..255
-			tadr++;
-			adr = vid->tilesadr + (tile << 4) + ((y & 7) << 1);	// tile byte addr
-			data = vid->ram[adr & 0x1fff] & 0xff;			// low byte
-			data |= vid->ram[(adr + 1) & 0x1fff] << 8;		// hi byte
-			for (bi = 0; bi < 8; bi++) {
-				col = ((data & 0x80) ? 1 : 0) | ((data & 0x8000) ? 2 : 0);	// color index 0..3
-				vid->line[pos & 0xff] = col;
-				pos++;
-				data <<= 1;
-			}
-		}
-	}
-#endif
 // WIN
+	memset(vid->wtline, 0xff, 256);
+	memset(vid->wbline, 0xff, 256);
 	if (vid->winen && !vid->winblock && (vid->ray->y >= vid->win.y)) {
 		tadr = vid->winmapadr + ((vid->wline & 0xf8) << 2);
-		//pos = (vid->sc.x + vid->win.x) & 0xff;
 		pos = vid->win.x;
 		for (tx = 0; tx < 32; tx++) {
 			tile = vid->ram[tadr & 0x1fff];
 			if (vid->altile) tile += 0x80;
+			flag = vid->gbmode ? 0 : vid->ram[(tadr & 0x1fff) | 0x2000];
 			tadr++;
-			adr = vid->tilesadr + (tile << 4) + ((vid->wline & 7) << 1);
-			data = vid->ram[adr & 0x1fff] & 0xff;
-			data |= vid->ram[(adr + 1) & 0x1fff] << 8;
+			y = vid->wline;
+			if (flag & 0x40) y ^= 7;
+			adr = vid->tilesadr + (tile << 4) + ((y & 7) << 1);
+			if (flag & 8) adr |= 0x2000;
+			data = vid->ram[adr & 0x3fff] & 0xff;
+			data |= vid->ram[(adr + 1) & 0x3fff] << 8;
 			for (bi = 0; bi < 8; bi++) {
-				col = ((data & 0x80) ? 1 : 0) | ((data & 0x8000) ? 2 : 0);	// color index 0..3
-				vid->line[pos & 0xff] = col;
+				if (flag & 0x20) {
+					col = ((data & 0x01) | ((data & 0x0100) ? 2 : 0));
+					data >>= 1;
+				} else {
+					col = ((data & 0x80) ? 1 : 0) | ((data & 0x8000) ? 2 : 0);	// color index 0..3
+					data <<= 1;
+				}
+				col |= (flag & 7) << 2;
+				if (flag & 0x80) {
+					vid->wtline[pos & 0xff] = col;
+				} else {
+					vid->wbline[pos & 0xff] = col;
+				}
 				pos++;
-				data <<= 1;
 			}
 		}
 		vid->wline++;
 	}
 // OAM (sprites)
+	memset(vid->stline, 0x00, 256);
+	memset(vid->sbline, 0x00, 256);
 	if (vid->spren && !vid->sprblock) {
 		adr = 0;
 		tx = 10;	// max 10 sprites in line
-		memset(vid->stline, 0x00, 256);
-		memset(vid->sbline, 0x00, 256);
-		while ((adr < 0xa0) && (tx > 0)) {
+		while ((adr < 0xa0)/* && (tx > 0)*/) {
 			y = vid->oam[adr++] - 16;
 			x = vid->oam[adr++] - 8;
 			tile = vid->oam[adr++];
@@ -130,32 +133,34 @@ void gbcvLine(GBCVid* vid) {
 			if (vid->bigspr)
 				tile &= 0xfe;
 			pos = (vid->ray->y - y) & 0xff;				// line inside sprite
+			if (vid->gbmode) {					// start of palete color idx (0x40+ for sprites)
+				pal = (flag & 0x10) ? 0x44 : 0x40;
+				flag &= 0xf8;
+			} else {
+				pal = 0x40 | ((flag & 7) << 2);
+			}
 			if (pos < (vid->bigspr ? 16 : 8)) {			// if line visible
 				if (flag & 0x40) {				// flip Y
 					pos = (vid->bigspr ? 15 : 7) - pos;
 				}
-
-				tadr = (tile << 4) + (pos << 1);		// adr of tile line
-				data = vid->ram[tadr & 0x1fff] & 0xff;		// 8 dots color data
-				data |= vid->ram[(tadr + 1) & 0x1fff] << 8;
-
-				if (flag & 0x20) {		// flip X
-					flip = 0;
-					for (bi = 0; bi < 8; bi++) {
-						flip <<= 1;
-						flip |= (data & 0x0101);
-						data >>= 1;
-					}
-					data = flip;
-				}
-				//pos = (vid->sc.x + x) & 0xff;				// X position in line buffer (shift to BG x)
+				tadr = (tile << 4) | (pos << 1);		// adr of tile data line
+				if (flag & 8)					// vbank 1
+					tadr |= 0x2000;
+				data = vid->ram[tadr & 0x3fff] & 0xff;		// 8 dots color data
+				tadr++;
+				data |= vid->ram[tadr & 0x3fff] << 8;
 				pos = x & 0xff;
 				for (bi = 0; bi < 8; bi++) {
-					col = ((data & 0x80) ? 1 : 0) | ((data & 0x8000) ? 2 : 0);	// color index
-					if (col) {			// not-transparent
-						col |= (flag & 0x10) ? 0x44 : 0x40;			// shift to sprite palete
+					if (flag & 0x20) {
+						col = ((data & 0x01) | ((data & 0x0100) ? 2 : 0));
+						data >>= 1;
+					} else {
+						col = ((data & 0x80) ? 1 : 0) | ((data & 0x8000) ? 2 : 0);	// color index
+						data <<= 1;
+					}
+					if (col) {							// not-transparent
+						col += pal;						// shift to sprite palete
 						if (flag & 0x80) {					// behind bg/win
-							//if ((vid->line[pos & 0xff] == 0) && (vid->sline[pos & 0xff] == 0)) {
 							if (vid->sbline[0xff] == 0) {
 								vid->sbline[pos & 0xff] = col;
 							}
@@ -166,15 +171,10 @@ void gbcvLine(GBCVid* vid) {
 						}
 					}
 					pos++;
-					data <<= 1;
 				}
 				tx--;
 			}
 		}
-//		for (pos = 0; pos < 256; pos++) {
-//			if (vid->sline[pos] != 0)
-//				vid->line[pos] = vid->sline[pos];
-//		}
 	}
 
 	if ((vid->ray->y == vid->lyc) && (vid->inten & 64)) vid->intrq = 1;		// ly = lyc
@@ -212,6 +212,10 @@ GBCVid* gbcvCreate(vRay* ray, vLayout* lay) {
 	for (int i = 0; i < 4; i++) {
 		vid->pal[i] = iniCol[i];
 	}
+	// special color 255: blank pixel
+	vid->pal[255].r = 0xf0;
+	vid->pal[255].g = 0xf0;
+	vid->pal[255].b = 0xf0;
 	return vid;
 }
 
@@ -224,9 +228,10 @@ void gbcvReset(GBCVid* vid) {
 	vid->sc.y = 0;
 	vid->win.x = 0;
 	vid->win.y = 0;
-	vid->bgen = 0;
+	vid->bgen = 1;
 	vid->winen = 0;
 	vid->spren = 0;
-	memset(vid->ram, 0x00, 0x2000);
+	vid->gbmode = 0;
+	memset(vid->ram, 0x00, 0x4000);
 	memset(vid->oam, 0x00, 0x100);
 }

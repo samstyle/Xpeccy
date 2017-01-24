@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>781</width>
+    <width>761</width>
     <height>612</height>
    </rect>
   </property>
@@ -1356,44 +1356,44 @@
          <item>
           <layout class="QVBoxLayout" name="verticalLayout_6">
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_5">
-             <item>
-              <widget class="QToolButton" name="gbTiles">
-               <property name="text">
-                <string>Tiles</string>
-               </property>
-               <property name="checkable">
-                <bool>true</bool>
-               </property>
-               <property name="checked">
-                <bool>true</bool>
-               </property>
-               <attribute name="buttonGroup">
-                <string notr="true">buttonGroup</string>
-               </attribute>
-              </widget>
-             </item>
-             <item>
-              <widget class="QToolButton" name="gbMap">
-               <property name="text">
-                <string>Map</string>
-               </property>
-               <property name="checkable">
-                <bool>true</bool>
-               </property>
-               <attribute name="buttonGroup">
-                <string notr="true">buttonGroup</string>
-               </attribute>
-              </widget>
-             </item>
-            </layout>
+            <widget class="QRadioButton" name="rbTilesetView">
+             <property name="text">
+              <string>&amp;Tileset</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+             <attribute name="buttonGroup">
+              <string notr="true">gbModeGroup</string>
+             </attribute>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="rbTilemapView">
+             <property name="text">
+              <string>T&amp;ilemap</string>
+             </property>
+             <attribute name="buttonGroup">
+              <string notr="true">gbModeGroup</string>
+             </attribute>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="rbPaleteView">
+             <property name="text">
+              <string>&amp;Palete</string>
+             </property>
+             <attribute name="buttonGroup">
+              <string notr="true">gbModeGroup</string>
+             </attribute>
+            </widget>
            </item>
            <item>
             <layout class="QGridLayout" name="gridLayout">
              <item row="0" column="1">
               <widget class="QSpinBox" name="sbTileset">
                <property name="maximum">
-                <number>1</number>
+                <number>3</number>
                </property>
               </widget>
              </item>
@@ -1545,6 +1545,16 @@
       <widget class="QLabel" name="labCPM">
        <property name="text">
         <string>CPM</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="labINT">
+       <property name="text">
+        <string>INT</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -1741,7 +1751,7 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup"/>
+  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>

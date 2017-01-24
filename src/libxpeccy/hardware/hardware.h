@@ -48,7 +48,7 @@ struct HardWare {
 	unsigned char (*mrd)(Computer*,unsigned short,int);
 	void (*mwr)(Computer*,unsigned short,unsigned char);
 	void (*reset)(Computer*);
-	int (*intr)(Computer*);		// callback after each command. request/handle interrupt
+	void (*intr)(Computer*);		// callback after each command. control request/handle interrupt bit
 };
 
 typedef struct {
@@ -70,7 +70,7 @@ extern HardWare hwTab[];
 HardWare* findHardware(const char*);
 unsigned char stdMRd(Computer*,unsigned short,int);
 void stdMWr(Computer*,unsigned short,unsigned char);
-int stdINT(Computer*);
+void stdINT(Computer*);
 
 // void beepSync(Computer*);
 
@@ -171,7 +171,7 @@ unsigned char msxIn(Computer*,unsigned short,int);
 void msxReset(Computer*);
 unsigned char msxMRd(Computer*,unsigned short,int);
 void msxMWr(Computer*,unsigned short,unsigned char);
-int msxINT(Computer*);
+void msxINT(Computer*);
 
 // msx2
 void msx2mapper(Computer*);
@@ -186,7 +186,7 @@ void gbMaper(Computer*);
 void gbReset(Computer*);
 unsigned char gbMemRd(Computer*, unsigned short, int);
 void gbMemWr(Computer*, unsigned short, unsigned char);
-int gbINT(Computer*);
+void gbINT(Computer*);
 void gbPress(Computer*, const char*);
 void gbRelease(Computer*, const char*);
 

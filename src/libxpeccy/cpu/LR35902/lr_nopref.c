@@ -95,7 +95,7 @@ void lrnop0F(CPU* cpu) {
 
 // 10	stop		0
 void lrnop10(CPU* cpu) {
-	cpu->halt = 1;		// STOP breaks on interrupt
+	cpu->stop = 1;
 	cpu->pc--;
 }
 
@@ -1092,7 +1092,7 @@ opCode lrTab[256]={
 
 	{0,4,lrnopE0,NULL,"ldh (:1),a"},
 	{0,4,lrnopE1,NULL,"pop hl"},
-	{0,4,lrnopE2,NULL,"ld (c),a"},
+	{0,4,lrnopE2,NULL,"ldh (c),a"},
 	{0,4,lrnLock,NULL,"(lock)"},
 	{0,4,lrnLock,NULL,"(lock)"},
 	{0,5,lrnopE5,NULL,"push hl"},
@@ -1110,7 +1110,7 @@ opCode lrTab[256]={
 
 	{0,4,lrnopF0,NULL,"ldh a,(:1)"},
 	{0,4,lrnopF1,NULL,"pop af"},
-	{0,4,lrnopF2,NULL,"ld a,(c)"},
+	{0,4,lrnopF2,NULL,"ldh a,(c)"},
 	{0,4,lrnopF3,NULL,"di"},
 	{0,4,lrnLock,NULL,"(lock)"},
 	{0,5,lrnopF5,NULL,"push af"},

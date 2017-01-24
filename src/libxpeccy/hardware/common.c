@@ -26,6 +26,7 @@ void dummyOut(Computer* comp, unsigned short port, unsigned char val) {
 
 // INT handle/check
 
+/*
 extern int res1,res2,res4;
 int zxINT(Computer* comp, unsigned char vect) {
 	res4 = 0;
@@ -35,41 +36,23 @@ int zxINT(Computer* comp, unsigned char vect) {
 	vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
 	return res2;
 }
-
-int stdINT(Computer* comp) {
-	int res = 1;
-	if (comp->vid->intFRAME) {
-		zxINT(comp, 0xff);
-	} else if (comp->vid->intLINE) {
-		if (zxINT(comp,0xfd))
-			comp->vid->intLINE = 0;
-	} else if (comp->vid->intDMA) {
-		if (zxINT(comp,0xfb))
-			comp->vid->intDMA = 0;
-	} else {
-		res = 0;
-	}
-	return res;
-}
-
-/*
-// beeper transient response emulation
-
-#define OVERSHOOT 22500			// ns to overshoot process
-
-void beepSync(Computer* comp) {
-	int amp = comp->beepAmp;
-	if (comp->beeplev) {		// going up
-		amp += 256 * comp->beepNs / OVERSHOOT;
-		if (amp > 255) amp = 255;
-	} else {			// going down
-		amp -= 256 * comp->beepNs / OVERSHOOT;
-		if (amp < 0) amp = 0;
-	}
-	comp->beepAmp = amp & 0xff;
-	comp->beepNs = 0;
-}
 */
+
+void stdINT(Computer* comp) {
+	if (!comp->cpu->iff1) return;
+	if (comp->vid->intFRAME) {
+		comp->intVector = 0xff;
+		comp->cpu->inth = 1;
+	} else if (comp->vid->intLINE) {
+		comp->intVector = 0xfd;
+		comp->cpu->inth = 1;
+		comp->vid->intLINE = 0;
+	} else if (comp->vid->intDMA) {
+		comp->intVector = 0xfb;
+		comp->cpu->inth = 1;
+		comp->vid->intDMA = 0;
+	}
+}
 
 // in
 

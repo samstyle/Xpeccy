@@ -229,7 +229,7 @@ typedef struct {
 	struct {
 		unsigned boot:1;	// boot rom on
 		unsigned inpint:1;	// button pressed: request interrupt
-		unsigned char inten;	// int enable flags
+		// unsigned char inten;	// int enable flags
 		int buttons;
 		struct {
 			struct {
@@ -243,9 +243,13 @@ typedef struct {
 				long cnt;
 			} t;		// manual timer
 		} timer;
+
+		unsigned bgpal[0x3f];
+		unsigned sppal[0x3f];
+		unsigned char iram[256];	// internal ram (FF80..FFFE)
 		unsigned short iomap[128];
 	} gb;
-
+	int romsize;
 	CMOS cmos;
 	int resbank;			// rompart active after reset
 	int tapCount;

@@ -51,6 +51,7 @@ int lr_int(CPU* cpu) {
 	if (!cpu->iff1) return 0;
 	int idx = 0;
 	int res = 0;
+	cpu->intrq &= cpu->inten;
 	while (lr_intab[idx].mask) {
 		if (cpu->intrq & lr_intab[idx].mask) {
 			cpu->iff1 = 0;

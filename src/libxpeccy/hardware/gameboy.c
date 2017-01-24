@@ -20,19 +20,23 @@ unsigned char gbIORd(Computer* comp, unsigned short port) {
 				case 0x20: res = comp->gb.buttons & 0x0f; break;
 			}
 			break;
+// SERIAL
+		case 0x01: res = 0xff; break;
+		case 0x02: res = 0xff; break;
 // TIMER
 		case 0x04: break;
 		case 0x05: break;
 		case 0x06: break;
 		case 0x07: break;
 // SOUND
+		case 0x1a: break;
 		case 0x24: break;
 		case 0x25: break;
 		case 0x26:
 			res = 0xf0;
 			if (comp->gbsnd->ch1.on) res |= 1;
 			if (comp->gbsnd->ch2.on) res |= 2;
-			if (comp->gbsnd->ch3.on) res |= 4;
+			if (comp->gbsnd->ch3.on && comp->gbsnd->ch3on) res |= 4;
 			if (comp->gbsnd->ch4.on) res |= 8;
 			break;
 // VIDEO
@@ -50,8 +54,22 @@ unsigned char gbIORd(Computer* comp, unsigned short port) {
 		case 0x49: break;
 		case 0x4a: break;
 		case 0x4b: break;
-
-		case 0x4d: res = 0; break;
+// INTERRUPT
+		case 0x0f:
+			res = comp->cpu->intrq;
+			break;
+// GBC
+		case 0x4d:
+			res = res & 1;
+			if (comp->cpu->speed)
+				res |= 0x80;
+			break;
+		case 0x4f:
+			res = comp->memMap[0].page & 1;
+			break;
+		case 0x70:
+			res = comp->memMap[1].page & 7;
+			break;
 		default:
 			printf("GB: in %.4X\n",port);
 			assert(0);
@@ -117,16 +135,20 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 	unsigned short dadr;
 	int frq;
 	int per;
-	int r,s;
+	int s,r;
+	xColor col;
 	// old env values
 	unsigned char env1 = comp->gb.iomap[0x12];
 	unsigned char env2 = comp->gb.iomap[0x17];
 	unsigned char env4 = comp->gb.iomap[0x21];
+	// snd chans ptr
 	gbsChan* ch1 = &comp->gbsnd->ch1;
 	gbsChan* ch2 = &comp->gbsnd->ch2;
 	gbsChan* ch3 = &comp->gbsnd->ch3;
 	gbsChan* ch4 = &comp->gbsnd->ch4;
+	// gbc video ptr
 	GBCVid* gbv = comp->vid->gbc;
+
 	comp->gb.iomap[port] = val;
 	switch (port) {
 // JOYSTICK
@@ -143,7 +165,11 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			gbv->bgmapadr = (val & 0x08) ? 0x9c00 : 0x9800;
 			gbv->bigspr = (val & 0x04) ? 1 : 0;
 			gbv->spren  = (val & 0x02) ? 1 : 0;
-			gbv->bgen = (val & 0x01) ? 1 : 0;
+			if (gbv->gbmode) {
+				gbv->bgen = (val & 1);		// gbc in gb mode has different effect
+			} else {
+				gbv->bgprior = (val & 1);	// change bg/win priority
+			}
 			break;
 		case 0x41:						// lcd stat interrupts enabling
 			gbv->inten = val;
@@ -154,8 +180,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 		case 0x43:
 			gbv->sc.x = val;
 			break;
-		case 0x44:
-			gbv->ray->y = 0;			// TODO: writing will reset the counter (?)
+		case 0x44:						// TODO: writing will reset the counter (?)
 			break;
 		case 0x45:
 			gbv->lyc = val;
@@ -169,14 +194,14 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 				dadr++;
 			}
 			break;
-		case 0x47:						// palete for bg/win
-			setGrayScale(gbv->pal, 0, val);
+		case 0x47:							// palete for bg/win
+			if (gbv->gbmode) setGrayScale(gbv->pal, 0, val);
 			break;
 		case 0x48:
-			setGrayScale(gbv->pal, 0x40, val);	// object pal 0
+			if (gbv->gbmode) setGrayScale(gbv->pal, 0x40, val);	// object pal 0
 			break;
 		case 0x49:
-			setGrayScale(gbv->pal, 0x44, val);	// object pal 1
+			if (gbv->gbmode) setGrayScale(gbv->pal, 0x44, val);	// object pal 1
 			break;
 		case 0x4a:
 			gbv->win.y = val;
@@ -216,11 +241,9 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			gbSetTone(ch1, frq, comp->gb.iomap[0x11]);
 			ch1->cont = (val & 0x40) ? 0 : 1;
 			if (val & 0x80) {
-				// ch1->env.count = 0;
 				ch1->sweep.cnt = 0;
 				ch1->step = 0;
 				ch1->cnt = 0;
-
 				ch1->env.vol = (comp->gb.iomap[0x12] >> 4) & 0x0f;
 				ch1->env.cnt = ch1->env.per;
 				ch1->cnt = ch1->lev ? ch1->perH : ch1->perL;
@@ -240,16 +263,14 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			break;
 		case 0x18:
 			frq = ((comp->gb.iomap[0x19] << 8) | val) & 0x07ff;
-			gbSetTone(ch2, frq, val);
+			gbSetTone(ch2, frq, comp->gb.iomap[0x16]);
 			break;
 		case 0x19:
 			frq = ((val << 8) | comp->gb.iomap[0x18]) & 0x07ff;
-			gbSetTone(ch2, frq, val);
+			gbSetTone(ch2, frq, comp->gb.iomap[0x16]);
 			ch2->cont = (val & 0x40) ? 0 : 1;
 			if (val & 0x80) {
-				ch2->sweep.cnt = 0;
 				ch2->step = 0;
-
 				ch2->env.vol = (comp->gb.iomap[0x17] >> 4) & 0x0f;
 				ch2->env.cnt = ch2->env.per;
 				ch2->cnt = ch2->lev ? ch2->perH : ch2->perL;
@@ -259,7 +280,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			break;
 		// chan 3 : wave
 		case 0x1a:
-			comp->gbsnd->ch3on = (val & 0x80) ? 0 : 1;
+			comp->gbsnd->ch3on = (val & 0x80) ? 1 : 0;
 			break;
 		case 0x1b:
 			ch3->dur = 256 - val;		// 256-x @ 256Hz
@@ -275,7 +296,6 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			break;
 		case 0x1e:
 			frq = ((val << 8) | comp->gb.iomap[0x1d]) & 0x07ff;
-			//per = 1e9 / 65535 / 32 * (2048 - frq);
 			per = (2048 - frq) >> 5;
 			ch3->perH = per;
 			ch3->perL = per;
@@ -297,7 +317,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 		case 0x22:
 			r = val & 7;
 			s = (val & 0xf0) >> 4;
-			// frq = 524288 / r / 2^(s+1)		524288 = 2^19
+			// frq = 512KHz / r / 2^(s+1)		512KHz = 2^19 Hz
 			// r*(2^(s+1)) ticks @ 512KHz
 			// :4 ticks @ 128KHz
 			frq = r ? (r * (2 ^ (s + 1))) : (2 ^ s);
@@ -349,10 +369,10 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			// b2 : timer on
 			// b0,1 : 00 = 4KHz, 01 = 256KHz, 10 = 64KHz, 11 = 16KHz
 			switch (val & 3) {
-				case 0b00: comp->gb.timer.t.per = comp->nsPerTick << 10; break;
-				case 0b01: comp->gb.timer.t.per = comp->nsPerTick << 4; break;
-				case 0b10: comp->gb.timer.t.per = comp->nsPerTick << 6; break;
-				case 0b11: comp->gb.timer.t.per = comp->nsPerTick << 8; break;
+				case 0: comp->gb.timer.t.per = comp->nsPerTick << 10; break;
+				case 1: comp->gb.timer.t.per = comp->nsPerTick << 4; break;
+				case 2: comp->gb.timer.t.per = comp->nsPerTick << 6; break;
+				case 3: comp->gb.timer.t.per = comp->nsPerTick << 8; break;
 			}
 			comp->gb.timer.t.on = (val & 4) ? 1 : 0;
 			break;
@@ -363,11 +383,85 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			break;
 // INT
 		case 0x0f:				// interrupt requesting
-			val &= comp->gb.inten;		// mask
 			comp->cpu->intrq |= val;	// add to cpu int req
 			break;
 // GBC
-		case 0x4d:			// switch speed
+//	cpu speed
+		case 0x4d:
+			comp->cpu->speedrq = (val & 1);
+			break;
+//	memory mapping
+		case 0x4f:				// VRAM bank (8000..9fff)
+			comp->memMap[0].page = val & 1;
+			break;
+		case 0x70:				// WRAM bank (D000..DFFF)
+			val &= 7;
+			if (val == 0)
+				val = 1;
+			comp->memMap[1].page = val;
+			break;
+//	palette
+		case 0x68:				// gbc bg palete index (b0..5) & autoincrement (b7)
+			break;
+		case 0x69:				// gbc lo/hi palete value
+			per = comp->gb.iomap[0x68];
+			frq = ((per & 0x3e) >> 1);	// color idx
+			col = gbv->pal[frq];		// current color;
+			if (per & 1) {			// B/g
+				col.b = (val & 0x7c) << 1;
+				col.g = (col.g & 0x3f) | ((val & 3) << 6);
+			} else {			// g/R
+				col.r = (val & 0x1f) << 3;
+				col.g = (col.g & 0xc0) | ((val & 0xe0) >> 2);
+			}
+			gbv->pal[frq] = col;
+			if (per & 0x80) {
+				comp->gb.iomap[0x68] = (per & 0xc0) | ((per + 1) & 0x3f);
+			}
+			break;
+		case 0x6a:
+			break;
+		case 0x6b:
+			per= comp->gb.iomap[0x6a];
+			frq = 0x40 | ((per & 0x3e) >> 1);
+			col = gbv->pal[frq];
+			if (per & 1) {
+				col.b = (val & 0x7c) << 1;
+				col.g = (col.g & 0x3f) | ((val & 3) << 6);
+			} else {			// g/R
+				col.r = (val & 0x1f) << 3;
+				col.g = (col.g & 0xc0) | ((val & 0xe0) >> 2);
+			}
+			gbv->pal[frq] = col;
+			if (per & 0x80) {
+				comp->gb.iomap[0x6a] = (per & 0xc0) | ((per + 1) & 0x3f);
+			}
+			break;
+//	dma
+		case 0x51: comp->dma.src.h = val; break;
+		case 0x52: comp->dma.src.l = val & 0xf0; break;		// low 4 bits = 0
+		case 0x53: comp->dma.dst.h = val & 0x1f; break;		// dst is vram, hi 3 bits ignored
+		case 0x54: comp->dma.dst.l = val & 0xf0; break;
+		case 0x55:
+			sadr = (comp->dma.src.h << 8) | comp->dma.src.l;	// rom/ram adr
+			//if ((sadr & 0xe000) == 0x8000) break;	// not vram
+			//if (sadr > 0xdfff) break;		// not wram
+			dadr = (comp->dma.dst.h << 8) | comp->dma.dst.l;	// vram adr (0000...1ff0)
+			per = ((val & 0x7f) + 1) << 4;				// bytes to transfer (10..800)
+			while (per > 0) {
+				memWr(comp->mem, 0x8000 | (dadr & 0x1fff), memRd(comp->mem, sadr));
+				dadr++;
+				sadr++;
+				per--;
+			}
+			break;
+//	misc
+		case 0x4c:
+			break;
+		case 0x56:			// IR port
+			break;
+		case 0x6c:			// b0: 1:GB mode, 0:GBC mode
+			comp->vid->gbc->gbmode = val & 1;
 			break;
 // MISC
 		case 0x50:
@@ -381,7 +475,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 				comp->gbsnd->wave[dadr] = (val & 0x0f) | ((val & 0x0f) << 4);		// LL : low 4 bits
 			} else {
 				printf("GB: out %.4X,%.2X\n",port,val);
-				// assert(0);
+				assert(0);
 			}
 			break;
 	}
@@ -394,7 +488,7 @@ unsigned char gbSlotRd(unsigned short adr, void* data) {
 	xCartridge* slot = &comp->msx.slotA;
 	unsigned char res = 0xff;
 	int radr = adr & 0x3fff;
-	if ((adr < 0x100) && comp->gb.boot) {
+	if (comp->gb.boot && (adr < comp->romsize) && ((adr & 0xff00) != 0x0100)) {
 		res = comp->mem->romData[radr];
 	} else if (slot->data) {
 		if (adr >= 0x4000) {
@@ -475,13 +569,37 @@ void wr_mbc3(xCartridge* slot, unsigned short adr, unsigned char val) {
 	}
 }
 
+void wr_mbc5(xCartridge* slot, unsigned short adr, unsigned char val) {
+	switch(adr & 0xf000) {
+		case 0x0000:		// 0000..1fff : 0A enable ram, 00 disable ram
+		case 0x1000:
+			if (val == 0x0a) {
+				slot->ramen = 1;
+			} else if (val == 0x00) {
+				slot->ramen = 0;
+			}
+			break;
+		case 0x2000:
+			slot->memMap[0] &= 0x100;
+			slot->memMap[0] |= val;
+			break;
+		case 0x3000:
+			slot->memMap[0] &= 0xff;
+			slot->memMap[0] |= (val & 1) << 8;
+		case 0x4000:
+		case 0x5000:
+			slot->memMap[1] = val & 0x0f;
+			break;
+	}
+}
+
 void gbSlotWr(unsigned short adr, unsigned char val, void* data) {
 	Computer* comp = (Computer*)data;
 	xCartridge* slot = &comp->msx.slotA;
 	if (slot->data && slot->wr) slot->wr(slot, adr, val);
 }
 
-// 8000..9fff : video mem
+// 8000..9fff : video mem (bank 0,1 gbc)
 // a000..bfff : external ram
 
 unsigned char gbvRd(unsigned short adr, void* data) {
@@ -495,7 +613,8 @@ unsigned char gbvRd(unsigned short adr, void* data) {
 			res = slot->ram[radr & 0x7fff];
 		}
 	} else {
-		res = comp->vid->gbc->ram[adr & 0x1fff];
+		adr = (comp->memMap[0].page << 13) | (adr & 0x1fff);
+		res = comp->vid->gbc->ram[adr];
 	}
 	return res;
 }
@@ -510,13 +629,14 @@ void gbvWr(unsigned short adr, unsigned char val, void* data) {
 			slot->ram[radr & 0x7fff] = val;
 		}
 	} else {
-		comp->vid->gbc->ram[adr & 0x1fff] = val;
+		adr = (comp->memMap[0].page << 13) | (adr & 0x1fff);
+		comp->vid->gbc->ram[adr] = val;
 	}
 }
 
 // c000..ffff : internal ram, oem, iomap, int mask
 
-// C000..DFFF : RAM1
+// C000..DFFF : RAM1 : C000..CFFF page 0, D000..DFFF page X
 // E000..FDFF : mirror RAM1
 // FE00..FE9F : OAM (sprites data)
 // FEA0..FEFF : not used
@@ -528,7 +648,13 @@ unsigned char gbrRd(unsigned short adr, void* data) {
 	Computer* comp = (Computer*)data;
 	unsigned char res = 0xff;
 	if (adr < 0xfe00) {
-		res = comp->mem->ramData[adr & 0x1fff];			// 8K, [e000...fdff] -> [c000..ddff]
+		adr &= 0x1fff;						// 8K, [e000...fdff] -> [c000..ddff]
+		if (adr & 0x1000) {					// high 4K -> WRAM page X
+			adr = ((comp->memMap[1].page & 7) << 12) | (adr & 0xfff);
+			res = comp->mem->ramData[adr];
+		} else {						// low 4K -> WRAM page 0
+			res = comp->mem->ramData[adr & 0xfff];
+		}
 	} else if (adr < 0xfea0) {					// video oam not accessible @ mode 2
 		if (comp->vid->gbc->mode != 2)
 			res = comp->vid->gbc->oam[adr & 0xff];
@@ -537,9 +663,9 @@ unsigned char gbrRd(unsigned short adr, void* data) {
 	} else if (adr < 0xff80) {
 		res = gbIORd(comp, adr);				// io rd
 	} else if (adr < 0xffff) {
-		res = comp->mem->ramData[0x2000 | (adr & 0xff)];	// ram2
+		res = comp->gb.iram[adr & 0xff];			// ram2
 	} else {
-		res = comp->gb.inten;					// int mask
+		res = comp->cpu->inten;					// int mask
 	}
 	return res;
 }
@@ -547,7 +673,13 @@ unsigned char gbrRd(unsigned short adr, void* data) {
 void gbrWr(unsigned short adr, unsigned char val, void* data) {
 	Computer* comp = (Computer*)data;
 	if (adr < 0xfe00) {
-		comp->mem->ramData[adr & 0x1fff] = val;
+		adr &= 0x1fff;
+		if (adr & 0x1000) {					// high 4K -> WRAM page
+			adr = ((comp->memMap[1].page & 7) << 12) | (adr & 0xfff);
+			comp->mem->ramData[adr] = val;
+		} else {
+			comp->mem->ramData[adr & 0xfff] = val;
+		}
 	} else if (adr < 0xfea0) {					// video oam not accessible @ mode 2
 		if (comp->vid->gbc->mode != 2)
 			comp->vid->gbc->oam[adr & 0xff] = val;
@@ -556,9 +688,9 @@ void gbrWr(unsigned short adr, unsigned char val, void* data) {
 	} else if (adr < 0xff80) {
 		gbIOWr(comp, adr, val);
 	} else if (adr < 0xffff) {
-		comp->mem->ramData[0x2000 | (adr & 0xff)] = val;
+		comp->gb.iram[adr & 0xff] = val;
 	} else {
-		comp->gb.inten = val;
+		comp->cpu->inten = val;
 	}
 }
 
@@ -582,7 +714,7 @@ void gbMemWr(Computer* comp, unsigned short adr, unsigned char val) {
 // collect interrupt requests & handle interrupt
 
 extern int res1,res2,res4;
-int gbINT(Computer* comp) {
+void gbINT(Computer* comp) {
 	unsigned char req = 0;
 	if (comp->vid->vbstrb) {
 		comp->vid->vbstrb = 0;
@@ -593,19 +725,15 @@ int gbINT(Computer* comp) {
 	} else if (comp->gb.timer.t.intrq) {
 		comp->gb.timer.t.intrq = 0;
 		req |= 4;
-	} else if (0) {					// TODO: serial INT (?)
+	} else if (0) {				// TODO: serial INT (?)
 		req |= 8;
 	} else if (comp->gb.inpint) {
 		comp->gb.inpint = 0;
 		req |= 16;
 	}
-	req &= comp->gb.inten;			// mask
 	comp->cpu->intrq |= req;		// cpu int req
-	res4 = 0;
-	res2 = comp->cpu->intr(comp->cpu);	// run int handling
-	res1 += res2;
-	vidSync(comp->vid, (res2 - res4) * comp->nsPerTick);
-	return res2;
+	if (comp->cpu->iff1 && (comp->cpu->intrq & 0x1f)) //comp->cpu->inten))
+		comp->cpu->inth = 1;
 }
 
 // keypress
@@ -639,7 +767,6 @@ char gbMsgWIN1[] = " WIN layer on ";
 char gbMsgSPR0[] = " SPR layer off ";
 char gbMsgSPR1[] = " SPR layer on ";
 
-
 void gbPress(Computer* comp, const char* key) {
 	unsigned char mask = gbGetInputMask(key);
 	if (mask) {
@@ -671,7 +798,7 @@ void gbReset(Computer* comp) {
 	vidSetMode(comp->vid, VID_GBC);
 	gbcvReset(comp->vid->gbc);
 
-	comp->gb.inten = 0;
+	comp->cpu->inten = 0;
 	comp->vid->gbc->inten = 0;
 	comp->gb.buttons = 0xff;
 
@@ -679,6 +806,13 @@ void gbReset(Computer* comp) {
 	comp->gbsnd->ch2.on = 0;
 	comp->gbsnd->ch3.on = 0;
 	comp->gbsnd->ch4.on = 0;
+
+	comp->gb.timer.div.per = 0;
+	comp->gb.timer.t.per = 0;
+	comp->gb.timer.t.on = 0;
+
+	comp->memMap[0].page = 0;	// vram page
+	comp->memMap[1].page = 1;	// wram page (D000..DFFF)
 
 	xCartridge* slot = &comp->msx.slotA;
 	slot->memMap[0] = 1;	// rom bank
@@ -708,6 +842,15 @@ void gbReset(Computer* comp) {
 			case 0x12:
 			case 0x13:
 				slot->wr = wr_mbc3;	// mbc3
+				break;
+			case 0x19:
+			case 0x1a:
+			case 0x1b:
+			case 0x1c:
+			case 0x1d:
+			case 0x1e:
+				slot->memMap[0] = 0;
+				slot->wr = wr_mbc5;	// mbc5
 				break;
 			default:
 				slot->wr = NULL;

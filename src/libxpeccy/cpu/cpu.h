@@ -52,10 +52,16 @@ struct CPU {
 	unsigned halt:1;
 	unsigned resPV:1;
 	unsigned noint:1;
+	unsigned inth:1;		// next step is 1:handle interrupt, 0: exec opcode
 	unsigned lock:1;		// LR35902: CPU locked
+	unsigned stop:1;		// LR35902: CPU stoped, unlock on keypress
+
+	unsigned speed:1;		// LR35902: double speed mode (TODO)
+	unsigned speedrq:1;		// LR35902: request speed change after STOP command
 
 	int type;
-	unsigned char intrq;		// LR35902: interrupt request (bits 0..4, 1=request)
+	unsigned char intrq;		// LR35902: interrupts request (b0..4, 1=request)
+	unsigned char inten;		// LR35902: interrupts enabled (b0..4, 1=enabled)
 
 	PAIR(pc,hpc,lpc);
 	PAIR(sp,hsp,lsp);
