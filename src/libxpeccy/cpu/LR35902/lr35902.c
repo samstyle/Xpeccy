@@ -16,11 +16,15 @@ void lr_reset(CPU* cpu) {
 	cpu->lock = 0;
 	cpu->iff1 = 0;
 	cpu->intrq = 0;
+	cpu->halt = 0;
+	cpu->stop = 0;
+	cpu->intrq = 0;
+	cpu->inten = 0;
 	// not necessary
 	cpu->imode = 0;
 	cpu->af_ = cpu->bc_ = cpu->de_ = cpu->hl_ = 0xffff;
 	cpu->ix = cpu->iy = 0xffff;
-	cpu->i = cpu->r = cpu->r7 = 0;
+	cpu->i = cpu->r = cpu->r7 = 0xff;
 }
 
 int lr_exec(CPU* cpu) {

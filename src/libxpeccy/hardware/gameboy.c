@@ -807,7 +807,6 @@ void gbReset(Computer* comp) {
 	comp->gbsnd->ch3.on = 0;
 	comp->gbsnd->ch4.on = 0;
 
-	comp->gb.timer.div.per = 0;
 	comp->gb.timer.t.per = 0;
 	comp->gb.timer.t.on = 0;
 

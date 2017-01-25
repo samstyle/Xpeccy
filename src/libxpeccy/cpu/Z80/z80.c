@@ -32,6 +32,8 @@ void z80_reset(CPU* cpu) {
 	cpu->ix = cpu->iy = 0xffff;
 	cpu->sp = 0xffff;
 	cpu->i = cpu->r = cpu->r7 = 0;
+	cpu->halt = 0;
+	cpu->intrq = 0;
 }
 
 int z80_exec(CPU* cpu) {
