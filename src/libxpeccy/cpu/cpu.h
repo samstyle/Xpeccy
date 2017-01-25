@@ -46,7 +46,7 @@ enum {
 	CPU_LR35902		// GB, GBC
 };
 
-typedef struct CPU CPU;
+// typedef struct CPU CPU;
 
 struct CPU {
 	unsigned halt:1;

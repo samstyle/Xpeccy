@@ -15,7 +15,7 @@ typedef struct CPU CPU;
 #define	FN	0x02
 #define	FC	0x01
 
-typedef struct CPU CPU;
+// typedef struct CPU CPU;
 
 void z80_reset(CPU*);
 int z80_exec(CPU*);

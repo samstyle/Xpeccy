@@ -1,7 +1,7 @@
 #ifndef _Z80_NOP_H
 #define _Z80_NOP_H
 
-typedef struct CPU CPU;
+// typedef struct CPU CPU;
 
 void npr00(CPU*);
 void npr01(CPU*);

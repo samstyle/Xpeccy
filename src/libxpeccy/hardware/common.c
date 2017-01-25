@@ -26,23 +26,12 @@ void dummyOut(Computer* comp, unsigned short port, unsigned char val) {
 
 // INT handle/check
 
-/*
-extern int res1,res2,res4;
-int zxINT(Computer* comp, unsigned char vect) {
-	res4 = 0;
-	comp->intVector = vect;
-	res2 = comp->cpu->intr(comp->cpu);
-	res1 += res2;
-	vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
-	return res2;
-}
-*/
-
 void stdINT(Computer* comp) {
 	if (!comp->cpu->iff1) return;
 	if (comp->vid->intFRAME) {
 		comp->intVector = 0xff;
 		comp->cpu->inth = 1;
+		comp->vid->intFRAME = 0;
 	} else if (comp->vid->intLINE) {
 		comp->intVector = 0xfd;
 		comp->cpu->inth = 1;

@@ -6,7 +6,7 @@
 #define FLH 0x20
 #define FLC 0x10
 
-typedef struct CPU CPU;
+// typedef struct CPU CPU;
 
 void lr_reset(CPU*);
 int lr_exec(CPU*);
