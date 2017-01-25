@@ -282,17 +282,22 @@ void compSetLayout(Computer *comp, vLayout lay) {
 
 void compUpdateTimings(Computer* comp) {
 	long perNoTurbo = 1e3 / comp->cpuFrq;
+	if (perNoTurbo & 1) perNoTurbo++;
 	comp->nsPerTick = perNoTurbo / comp->frqMul;
-	if (comp->nsPerTick & 1) comp->nsPerTick++;
 	int type = comp->hw ? comp->hw->type : HW_NULL;
 	switch (type) {
 		case HW_GBC:
 			comp->gbsnd->wav.period = perNoTurbo << 5;			// 128KHz period for wave generator = cpu.frq / 32
 			comp->gb.timer.div.per = comp->nsPerTick << 8;			// 16KHz timer divider tick. this timer depends on turbo speed
-			vidUpdateTimings(comp->vid, perNoTurbo * 2);
+			vidUpdateTimings(comp->vid, perNoTurbo << 1);
 			break;
 		default:
-			vidUpdateTimings(comp->vid, perNoTurbo / 2);
+			vidUpdateTimings(comp->vid, perNoTurbo >> 1);
+			// printf("%i x %i (%i) : %i / %i / %i\n",comp->vid->nsPerDot, comp->nsPerTick, perNoTurbo,\
+			       comp->nsPerTick / comp->vid->nsPerDot,\
+			       comp->vid->nsPerLine / comp->nsPerTick,\
+			       comp->vid->nsPerFrame / comp->nsPerTick\
+			       );
 			break;
 	}
 #ifdef ISDEBUG
