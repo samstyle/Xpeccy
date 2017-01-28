@@ -293,11 +293,6 @@ void compUpdateTimings(Computer* comp) {
 			break;
 		default:
 			vidUpdateTimings(comp->vid, perNoTurbo >> 1);
-			// printf("%i x %i (%i) : %i / %i / %i\n",comp->vid->nsPerDot, comp->nsPerTick, perNoTurbo,\
-			       comp->nsPerTick / comp->vid->nsPerDot,\
-			       comp->vid->nsPerLine / comp->nsPerTick,\
-			       comp->vid->nsPerFrame / comp->nsPerTick\
-			       );
 			break;
 	}
 #ifdef ISDEBUG
@@ -313,6 +308,7 @@ void compSetBaseFrq(Computer* comp, double frq) {
 
 void compSetTurbo(Computer* comp, int mult) {
 	comp->frqMul = mult;
+	comp->cpu->speed = (mult > 1) ? 1 : 0;
 	compUpdateTimings(comp);
 }
 
@@ -353,7 +349,7 @@ int compExec(Computer* comp) {
 		res2 = comp->cpu->exec(comp->cpu);
 	}
 // scorpion WAIT: add 1T to odd-T command
-	if (comp->scrpWait && (res2 & 1))
+	if (comp->evenM1 && (res2 & 1))
 		res2++;
 // out @ last tick
 	vidSync(comp->vid,(res2 - res4 - 1) * comp->nsPerTick);
@@ -377,7 +373,7 @@ int compExec(Computer* comp) {
 // ...
 	res1 = res2;
 	pcreg = comp->cpu->pc;
-// NMI
+// NMI							TODO: remake as another INT
 	if ((pcreg > 0x3fff) && comp->nmiRequest && !comp->rzx.play) {
 		res4 = 0;
 		res2 = comp->cpu->nmi(comp->cpu);	// z80ex_nmi(comp->cpu);
@@ -389,7 +385,10 @@ int compExec(Computer* comp) {
 			vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
 		}
 	}
-// INTs handle
+// execution completed : get eated time
+	nsTime = res1 * comp->nsPerTick;
+	comp->tickCount += res1;
+// sync / INT detection
 	if (comp->rzx.play) {
 		if (comp->rzx.frm.fetches < 1) {
 			comp->intVector = 0xff;
@@ -398,21 +397,19 @@ int compExec(Computer* comp) {
 			comp->rzx.fCount--;
 			rzxGetFrame(comp);
 		}
-	} else if (comp->hw->intr) {
-		comp->hw->intr(comp);
+	} else if (comp->hw->sync) {
+		comp->hw->sync(comp, nsTime);
 	}
 // new frame
 	if (comp->vid->newFrame) {
 		comp->vid->newFrame = 0;
 		comp->frmStrobe = 1;
 	}
-// TSConf : update 'next-line' registers
+// TSConf : update 'next-line' registers			TODO:move to TSConf hw->sync
 	if (comp->vid->nextrow && comp->vid->istsconf) {
 		tslUpdatePorts(comp);
 		comp->vid->nextrow = 0;
 	}
-	nsTime = res1 * comp->nsPerTick;
-	comp->tickCount += res1;
 // breakpoints
 	pcreg = comp->cpu->pc;
 	unsigned char* ptr = getBrkPtr(comp, pcreg);
@@ -422,11 +419,12 @@ int compExec(Computer* comp) {
 	}
 	if (comp->debug)
 		comp->brk = 0;
-// sync devices
+// sync devices							TODO:move to hw->sync
 	comp->beep->accum += nsTime;
 	comp->tapCount += nsTime;
 	if (comp->gs->enable) comp->gs->sync += nsTime;
 	difSync(comp->dif, nsTime);
+	// tsSync(comp->ts, nsTime);
 
 	if (comp->hw->type == HW_GBC) {
 		// sound

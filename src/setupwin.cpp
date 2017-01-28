@@ -317,7 +317,7 @@ void SetupWin::start(xProfile* p) {
 	if (ui.mszbox->currentIndex() < 0) ui.mszbox->setCurrentIndex(ui.mszbox->count() - 1);
 	ui.cbCpu->setCurrentIndex(ui.cbCpu->findData(comp->cpu->type));
 	ui.sbFreq->setValue(comp->cpuFrq);
-	ui.scrpwait->setChecked(comp->scrpWait);
+	ui.scrpwait->setChecked(comp->evenM1);
 	ui.sysCmos->setChecked(conf.sysclock);
 // video
 	// ui.fpsSpinbox->setValue(comp->vid->fps);
@@ -456,7 +456,7 @@ void SetupWin::apply() {
 	memSetSize(comp->mem,ui.mszbox->itemData(ui.mszbox->currentIndex()).toInt());
 	cpuSetType(comp->cpu, ui.cbCpu->itemData(ui.cbCpu->currentIndex()).toInt());
 	compSetBaseFrq(comp, ui.sbFreq->value());
-	comp->scrpWait = ui.scrpwait->isChecked() ? 1 : 0;
+	comp->evenM1 = ui.scrpwait->isChecked() ? 1 : 0;
 	if (comp->hw != oldmac) compReset(comp,RES_DEFAULT);
 	conf.sysclock = ui.sysCmos->isChecked() ? 1 : 0;
 // video

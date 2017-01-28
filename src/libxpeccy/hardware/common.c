@@ -26,7 +26,7 @@ void dummyOut(Computer* comp, unsigned short port, unsigned char val) {
 
 // INT handle/check
 
-void stdINT(Computer* comp) {
+void zx_sync(Computer* comp, long ns) {
 	if (!comp->cpu->iff1) return;
 	if (comp->vid->intFRAME) {
 		comp->intVector = 0xff;

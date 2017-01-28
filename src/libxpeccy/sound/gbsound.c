@@ -118,8 +118,8 @@ sndPair gbsVolume(gbSound* gbs) {
 		if (gbs->ch4.so2) right += lev;
 #endif
 		// mix
-		left >>= 4;		// >> 2 = mix 4 chans; >> 4 = ff -> 0f
-		right >>= 4;
+		left >>= 5;		// >> 2 = mix 4 chans; >> 4 = ff -> 0f
+		right >>= 5;
 	}
 	sndPair res;
 	res.left = (left > 0xff) ? 0xff : left;

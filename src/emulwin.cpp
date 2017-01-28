@@ -561,7 +561,8 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;
 		}
 	} else {
-		gbPress(comp, kent.name);
+		if (comp->hw->type == HW_GBC)
+			gbPress(comp, kent.name);
 		keyPress(comp->keyb, kent.zxKey, 0);
 		if (kent.msxKey.key1) keyPress(comp->keyb,kent.msxKey,2);
 		switch(ev->key()) {

@@ -107,7 +107,7 @@ typedef struct {
 	unsigned dos:1;			// BDI dos
 	unsigned cpm:1;
 
-	unsigned scrpWait:1;		// scorpion wait mode
+	unsigned evenM1:1;		// scorpion wait mode
 	unsigned contMem:1;		// contended mem
 	unsigned contIO:1;		// contended IO
 

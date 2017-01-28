@@ -241,11 +241,10 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			gbSetTone(ch1, frq, comp->gb.iomap[0x11]);
 			ch1->cont = (val & 0x40) ? 0 : 1;
 			if (val & 0x80) {
-				ch1->sweep.cnt = 0;
 				ch1->step = 0;
-				ch1->cnt = 0;
 				ch1->env.vol = (comp->gb.iomap[0x12] >> 4) & 0x0f;
 				ch1->env.cnt = ch1->env.per;
+				ch1->sweep.cnt = ch1->sweep.per;
 				ch1->cnt = ch1->lev ? ch1->perH : ch1->perL;
 				if (!ch1->dur) ch1->dur = 64;
 				ch1->on = 1;
@@ -274,7 +273,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 				ch2->env.vol = (comp->gb.iomap[0x17] >> 4) & 0x0f;
 				ch2->env.cnt = ch2->env.per;
 				ch2->cnt = ch2->lev ? ch2->perH : ch2->perL;
-				if (!ch1->dur) ch1->dur = 64;
+				if (!ch2->dur) ch2->dur = 64;
 				ch2->on = 1;
 			}
 			break;
@@ -303,7 +302,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			if (val & 0x80) {
 				ch3->step = 0;
 				ch3->cnt = ch3->perH;
-				if (!ch1->dur) ch1->dur = 256;
+				if (!ch3->dur) ch3->dur = 256;
 				ch3->on = 1;
 			}
 			break;
@@ -713,8 +712,7 @@ void gbMemWr(Computer* comp, unsigned short adr, unsigned char val) {
 
 // collect interrupt requests & handle interrupt
 
-extern int res1,res2,res4;
-void gbINT(Computer* comp) {
+void gbc_sync(Computer* comp, long ns) {
 	unsigned char req = 0;
 	if (comp->vid->vbstrb) {
 		comp->vid->vbstrb = 0;
@@ -798,6 +796,7 @@ void gbReset(Computer* comp) {
 	vidSetMode(comp->vid, VID_GBC);
 	gbcvReset(comp->vid->gbc);
 
+	compSetTurbo(comp, 1);
 	comp->cpu->inten = 0;
 	comp->vid->gbc->inten = 0;
 	comp->gb.buttons = 0xff;

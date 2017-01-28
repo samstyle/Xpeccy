@@ -370,7 +370,7 @@ int prfLoad(std::string nm) {
 					if (pnam == "contmem") comp->contMem = str2bool(pval) ? 1 : 0;
 					//if (pnam == "contmemP3") setFlagBit(str2bool(pval),&comp->vid->flags,VID_CONT2);
 					if (pnam == "contio") comp->contIO = str2bool(pval) ? 1 : 0;
-					if (pnam == "scrp.wait") comp->scrpWait = str2bool(pval) ? 1 : 0;
+					if (pnam == "scrp.wait") comp->evenM1 = str2bool(pval) ? 1 : 0;
 					break;
 				case PS_IDE:
 					if (pnam == "iface") comp->ide->type = atoi(pval.c_str());
@@ -472,7 +472,7 @@ int prfSave(std::string nm) {
 	fprintf(file, "memory = %i\n", comp->mem->memSize);
 	fprintf(file, "cpu.type = %s\n", getCoreName(comp->cpu->type));
 	fprintf(file, "cpu.frq = %i\n", int(comp->cpuFrq * 1e6));
-	fprintf(file, "scrp.wait = %s\n", YESNO(comp->scrpWait));
+	fprintf(file, "scrp.wait = %s\n", YESNO(comp->evenM1));
 	fprintf(file, "contio = %s\n", YESNO(comp->contIO));
 	fprintf(file, "contmem = %s\n", YESNO(comp->contMem));
 
