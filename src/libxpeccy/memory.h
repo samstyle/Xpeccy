@@ -50,7 +50,7 @@ void memWr(Memory*,unsigned short,unsigned char);
 void memSetSize(Memory*,int);
 void memSetBank(Memory*,int,int,unsigned char);
 
-void memSetExternal(Memory*,int,extmrd,extmwr,void*);
+void memSetExternal(Memory*,int,int,extmrd,extmwr,void*);
 
 void memSetPageData(Memory*,int,int,char*);
 void memGetPageData(Memory*,int,int,char*);

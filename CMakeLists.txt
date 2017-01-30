@@ -60,7 +60,7 @@ set(MOCFILES
 	./src/xgui/xgui.h
 )
 
-add_definitions(-DVERSION=${XVER})
+# add_definitions(-DVERSION=${XVER})
 
 # endianess
 

@@ -51,5 +51,7 @@
         <file>images/eye.png</file>
         <file>images/gameboy.png</file>
         <file>font.bin</file>
+        <file>images/label.png</file>
+        <file>images/bars.png</file>
     </qresource>
 </RCC>

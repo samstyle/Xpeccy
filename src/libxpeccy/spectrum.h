@@ -41,12 +41,14 @@ enum {
 	RES_DOS,
 	RES_SHADOW
 };
-// memory breaks
+// memory flags
 #define	MEM_BRK_FETCH	1
 #define	MEM_BRK_RD	(1<<1)
 #define	MEM_BRK_WR	(1<<2)
 #define	MEM_BRK_ANY	(MEM_BRK_FETCH | MEM_BRK_RD | MEM_BRK_WR)
 #define MEM_BRK_TFETCH	(1<<3)
+#define MEM_TYPE	(3<<6);		// b6,7 : memory cell type (for debugger)
+
 // io breaks
 #define IO_BRK_RD	1
 #define IO_BRK_WR	(1<<1)

@@ -515,7 +515,7 @@ unsigned char getBrk(Computer* comp, unsigned short madr) {
 	int adr = (ptr->num << 14) | (madr & 0x3fff);
 	if (ptr->type == MEM_RAM) {
 		res = comp->brkRamMap[adr];
-	} else if (ptr->type == MEM_ROM) {
+	} else {
 		res = comp->brkRomMap[adr];
 	}
 	res |= comp->brkAdrMap[madr];

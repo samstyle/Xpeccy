@@ -136,6 +136,8 @@ class DebugWin : public QDialog {
 
 	private slots:
 		void setShowLabels(bool);
+		void loadLabels();
+		void saveLabels();
 
 		void setZ80();
 		void setFlags();
@@ -145,7 +147,7 @@ class DebugWin : public QDialog {
 		void dumpEdited(int, int);
 
 		void putBreakPoint();
-		void chaBreakPoint();
+		void chaCellProperty(QAction*);
 		void goToBrk(QModelIndex);
 
 		void doOpenDump();

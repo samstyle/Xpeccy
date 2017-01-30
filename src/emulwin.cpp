@@ -20,7 +20,7 @@
 #include "emulwin.h"
 #include "filer.h"
 
-
+#include "version.h"
 #define STR_EXPAND(tok) #tok
 #define	STR(tok) STR_EXPAND(tok)
 #define	XPTITLE	STR(Xpeccy VERSION)
@@ -286,7 +286,7 @@ void scrMix(unsigned char* src, unsigned char* dst, int size) {
 }
 
 void MainWin::convImage() {
-	if (ethread.fast) memcpy(scrn, comp->vid->scrimg, comp->vid->vBytes);
+	if (ethread.fast || comp->debug) memcpy(scrn, comp->vid->scrimg, comp->vid->vBytes);
 	if (conf.vid.grayScale) scrGray(scrn, comp->vid->vBytes);
 	if (conf.vid.noFlick) scrMix(prvScr, scrn, comp->vid->vBytes);
 	switch(conf.vid.scale) {
@@ -1182,10 +1182,11 @@ void MainWin::loadLabels(const char* nm) {
 	while(!file.atEnd()) {
 		line = file.readLine();
 		arr = line.split(QRegExp("[: \r\n]"),QString::SkipEmptyParts);
-		if (arr.size() == 3) {
+		if (arr.size() > 2) {
 			xadr.bank = arr.at(0).toInt(NULL,16);
 			xadr.adr = arr.at(1).toInt(NULL,16) & 0x3fff;
 			switch (xadr.bank) {
+				case 0xff: break;
 				case 0x05: xadr.adr |= 0x4000; break;
 				case 0x02: xadr.adr |= 0x8000; break;
 				default: xadr.adr |= 0xc000; break;

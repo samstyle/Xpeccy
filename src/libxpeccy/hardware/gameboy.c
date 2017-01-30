@@ -696,10 +696,10 @@ void gbrWr(unsigned short adr, unsigned char val, void* data) {
 // maper
 
 void gbMaper(Computer* comp) {
-	memSetExternal(comp->mem, MEM_BANK0, gbSlotRd, gbSlotWr, comp);
-	memSetExternal(comp->mem, MEM_BANK1, gbSlotRd, gbSlotWr, comp);
-	memSetExternal(comp->mem, MEM_BANK2, gbvRd, gbvWr, comp);	// VRAM (8K), slot ram (8K)
-	memSetExternal(comp->mem, MEM_BANK3, gbrRd, gbrWr, comp);	// internal RAM/OAM/IOMap
+	memSetExternal(comp->mem, MEM_BANK0, 0, gbSlotRd, gbSlotWr, comp);
+	memSetExternal(comp->mem, MEM_BANK1, comp->msx.slotA.memMap[0], gbSlotRd, gbSlotWr, comp);
+	memSetExternal(comp->mem, MEM_BANK2, 0, gbvRd, gbvWr, comp);	// VRAM (8K), slot ram (8K)
+	memSetExternal(comp->mem, MEM_BANK3, 0, gbrRd, gbrWr, comp);	// internal RAM/OAM/IOMap
 }
 
 unsigned char gbMemRd(Computer* comp, unsigned short adr, int m1) {

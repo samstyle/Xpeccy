@@ -53,7 +53,7 @@ void msx2mapper(Computer* comp) {
 			bn = comp->msx.memMap[i];
 		}
 		if (bt == MEM_EXT) {
-			memSetExternal(comp->mem, i, msxSlotRd, msxSlotWr, bn ? &comp->msx.slotB : &comp->msx.slotA);
+			memSetExternal(comp->mem, i, comp->msx.slotA.memMap[i], msxSlotRd, msxSlotWr, bn ? &comp->msx.slotB : &comp->msx.slotA);
 		} else {
 			memSetBank(comp->mem, i, bt, bn);
 		}

@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>813</width>
-    <height>614</height>
+    <width>793</width>
+    <height>612</height>
    </rect>
   </property>
   <property name="font">
@@ -606,15 +606,47 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_4">
        <item>
-        <widget class="QToolButton" name="tbLabelTrigger">
+        <widget class="QToolButton" name="tbBreak">
          <property name="text">
-          <string>L</string>
+          <string>...</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../xpeccy.qrc">
+           <normaloff>:/images/stop.png</normaloff>:/images/stop.png</iconset>
+         </property>
+         <property name="popupMode">
+          <enum>QToolButton::InstantPopup</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="tbLabels">
+         <property name="icon">
+          <iconset resource="../xpeccy.qrc">
+           <normaloff>:/images/label.png</normaloff>:/images/label.png</iconset>
          </property>
          <property name="checkable">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
          <property name="checked">
-          <bool>true</bool>
+          <bool>false</bool>
+         </property>
+         <property name="popupMode">
+          <enum>QToolButton::InstantPopup</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="tbView">
+         <property name="text">
+          <string>...</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../xpeccy.qrc">
+           <normaloff>:/images/bars.png</normaloff>:/images/bars.png</iconset>
+         </property>
+         <property name="popupMode">
+          <enum>QToolButton::InstantPopup</enum>
          </property>
         </widget>
        </item>
@@ -1738,6 +1770,52 @@
     <string>Write break</string>
    </property>
   </action>
+  <action name="actViewOpcode">
+   <property name="text">
+    <string>Opcode</string>
+   </property>
+  </action>
+  <action name="actViewByte">
+   <property name="text">
+    <string>Byte</string>
+   </property>
+  </action>
+  <action name="actViewWord">
+   <property name="text">
+    <string>Word</string>
+   </property>
+  </action>
+  <action name="actViewAddr">
+   <property name="text">
+    <string>Address</string>
+   </property>
+  </action>
+  <action name="actShowLabels">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show labels</string>
+   </property>
+  </action>
+  <action name="actLoadLabels">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/fileopen.png</normaloff>:/images/fileopen.png</iconset>
+   </property>
+   <property name="text">
+    <string>Load labels</string>
+   </property>
+  </action>
+  <action name="actSaveLabels">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/floppy.png</normaloff>:/images/floppy.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save labels</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -1751,11 +1829,11 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
+  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

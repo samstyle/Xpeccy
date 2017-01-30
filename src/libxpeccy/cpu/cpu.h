@@ -43,7 +43,8 @@ typedef struct {
 enum {
 	CPU_NONE = 0,		// dummy
 	CPU_Z80,		// ZX, MSX
-	CPU_LR35902		// GB, GBC
+	CPU_LR35902,		// GB, GBC
+	CPU_6502		// ...
 };
 
 // typedef struct CPU CPU;

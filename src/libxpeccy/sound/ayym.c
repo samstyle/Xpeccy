@@ -103,7 +103,7 @@ void aymSetReg(aymChip* ay, unsigned char val) {
 			break;
 		case 0x06:					// noise
 			tone = val & 0x1f;
-			ay->chanN.per = tone << 5;
+			ay->chanN.per = tone << 4;
 			break;
 		case 0x07:
 			ay->chanA.ten = (val & 1) ? 0 : 1;

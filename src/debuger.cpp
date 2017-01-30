@@ -1,5 +1,7 @@
 #include "xcore/xcore.h"
 
+#include <stdio.h>
+
 #include <QIcon>
 #include <QDebug>
 #include <QPainter>
@@ -71,6 +73,17 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	int col,row;
 	ui.setupUi(this);
 	QTableWidgetItem* itm;
+
+	showLabels = 1;
+	ui.actShowLabels->setChecked(showLabels);
+// actions data
+	ui.actFetch->setData(MEM_BRK_FETCH);
+	ui.actRead->setData(MEM_BRK_RD);
+	ui.actWrite->setData(MEM_BRK_WR);
+	ui.actViewOpcode->setData(0x00);
+	ui.actViewByte->setData(0x40);
+	ui.actViewWord->setData(0x80);
+	ui.actViewAddr->setData(0xc0);
 // disasm table
 	for (row = 0; row < ui.dasmTable->rowCount(); row++) {
 		for (col = 0; col < ui.dasmTable->columnCount(); col++) {
@@ -86,12 +99,32 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.dasmTable->setColumnWidth(2,130);
 	ui.dasmTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_LABEL));
 	ui.dasmTable->setItemDelegateForColumn(1, new xItemDelegate(XTYPE_DUMP));
-	connect(ui.dasmTable,SIGNAL(cellChanged(int,int)),this,SLOT(dasmEdited(int,int)));
-	connect(ui.dasmTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
-	connect(ui.tbLabelTrigger,SIGNAL(toggled(bool)),this,SLOT(setShowLabels(bool)));
 	row = ui.dasmTable->font().pixelSize();
 	if (row < 0) row = 17;
 	ui.dasmTable->setFixedHeight(ui.dasmTable->rowCount() * row + 8);
+
+	ui.tbBreak->addAction(ui.actFetch);
+	ui.tbBreak->addAction(ui.actRead);
+	ui.tbBreak->addAction(ui.actWrite);
+
+	ui.tbLabels->addAction(ui.actShowLabels);
+	ui.tbLabels->addAction(ui.actLoadLabels);
+	ui.tbLabels->addAction(ui.actSaveLabels);
+
+	ui.tbView->addAction(ui.actViewOpcode);
+	ui.tbView->addAction(ui.actViewByte);
+	ui.tbView->addAction(ui.actViewWord);
+	ui.tbView->addAction(ui.actViewAddr);
+
+	connect(ui.dasmTable,SIGNAL(cellChanged(int,int)),this,SLOT(dasmEdited(int,int)));
+	connect(ui.dasmTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
+
+	connect(ui.actShowLabels,SIGNAL(triggered(bool)),this,SLOT(setShowLabels(bool)));
+	connect(ui.actLoadLabels, SIGNAL(triggered(bool)),this,SLOT(loadLabels()));
+	connect(ui.actSaveLabels, SIGNAL(triggered(bool)),this,SLOT(saveLabels()));
+	connect(ui.tbView, SIGNAL(triggered(QAction*)),this,SLOT(chaCellProperty(QAction*)));
+	connect(ui.tbBreak, SIGNAL(triggered(QAction*)),this,SLOT(chaCellProperty(QAction*)));
+
 // dump table
 	for (row = 0; row < ui.dumpTable->rowCount(); row++) {
 		for (col = 0; col < ui.dumpTable->columnCount(); col++) {
@@ -152,7 +185,6 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	dumpAdr = 0;
 	tCount = 0;
 	trace = 0;
-	showLabels = 1;
 // subwindows
 	dumpwin = new QDialog(this);
 	dui.setupUi(dumpwin);
@@ -186,7 +218,12 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	bpMenu->addAction(ui.actFetch);
 	bpMenu->addAction(ui.actRead);
 	bpMenu->addAction(ui.actWrite);
-	connect(bpMenu,SIGNAL(triggered(QAction*)),this,SLOT(chaBreakPoint()));
+	bpMenu->addSeparator();
+	bpMenu->addAction(ui.actViewOpcode);
+	bpMenu->addAction(ui.actViewByte);
+	bpMenu->addAction(ui.actViewWord);
+	bpMenu->addAction(ui.actViewAddr);
+	connect(bpMenu,SIGNAL(triggered(QAction*)),this,SLOT(chaCellProperty(QAction*)));
 }
 
 DebugWin::~DebugWin() {
@@ -197,7 +234,6 @@ DebugWin::~DebugWin() {
 
 void DebugWin::setShowLabels(bool f) {
 	showLabels = f ? 1 : 0;
-	ui.tbLabelTrigger->setChecked(showLabels);
 	fillDisasm();
 }
 
@@ -280,6 +316,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					break;
 				case Qt::Key_L:
 					setShowLabels(showLabels ? false : true);
+					ui.actShowLabels->setChecked(showLabels);
 					break;
 				case Qt::Key_Space:
 					switchBP(0);
@@ -648,7 +685,7 @@ void DebugWin::fillFDC() {
 	ui.flpTrkL->setText(gethexbyte(comp->dif->fdc->flp->trk));
 	ui.flpPosL->setText(QString::number(comp->dif->fdc->flp->pos));
 	ui.flpIdxL->setText(comp->dif->fdc->flp->index ? "1" : "0");
-	ui.flpDataL->setText(comp->dif->fdc->flp->insert ? gethexbyte(flpRd(comp->dif->fdc->flp)): "--");
+	ui.flpDataL->setText(comp->dif->fdc->flp->insert ? gethexbyte(flpRd(comp->dif->fdc->flp)): "--"); comp->dif->fdc->flp->rd = 0;
 	ui.flpMotL->setText(comp->dif->fdc->flp->motor ? "1" : "0");
 }
 
@@ -774,6 +811,80 @@ void DebugWin::fillMem() {
 	ui.labPG3->setText(getPageName(comp->mem->map[3]));
 }
 
+// labels
+
+QString DebugWin::findLabel(int adr) {
+	QString lab;
+	if (!showLabels) return lab;
+//	int bnk = comp->mem->map[adr >> 14]->num;
+//	adr &= 0x3fff;
+	QString key;
+	QStringList keys = labels.keys();
+	foreach(key, keys) {
+		if (labels[key].adr == adr) {
+			lab = key;
+			break;
+		}
+	}
+	return lab;
+}
+
+void DebugWin::loadLabels() {
+	QString path = QFileDialog::getOpenFileName(this, "Open labels list");
+	if (path.isEmpty()) return;
+	QFile file(path);
+	QString line;
+	QStringList arr;
+	xAdr xadr;
+	if (file.open(QFile::ReadOnly)) {
+		labels.clear();
+		while(!file.atEnd()) {
+			line = file.readLine();
+			arr = line.split(QRegExp("[: \r\n]"),QString::SkipEmptyParts);
+			if (arr.size() > 2) {
+				xadr.bank = arr.at(0).toInt(NULL,16);
+				xadr.adr = arr.at(1).toInt(NULL,16) & 0x3fff;
+				switch (xadr.bank) {
+					case 0xff: break;
+					case 0x05: xadr.adr |= 0x4000; break;
+					case 0x02: xadr.adr |= 0x8000; break;
+					default: xadr.adr |= 0xc000; break;
+				}
+				labels[arr.at(2)] = xadr;
+			}
+		}
+		file.close();
+	} else {
+		shitHappens("Can't read file");
+	}
+	fillDisasm();
+}
+
+void DebugWin::saveLabels() {
+	QString path = QFileDialog::getSaveFileName(this, "Save labels list");
+	if (path.isEmpty()) return;
+	QFile file(path);
+	QString key;
+	QStringList keys;
+	xAdr xadr;
+	if (file.open(QFile::WriteOnly)) {
+		keys = labels.keys();
+		foreach(key, keys) {
+			xadr = labels[key];
+			switch(xadr.adr & 0xc000) {
+				case 0x0000: xadr.bank = 255; break;
+				case 0x4000: xadr.bank = 5; break;
+				case 0x8000: xadr.bank = 2; break;
+				default: xadr.bank = 0; break;
+			}
+			file.write(QString("%0:%1:%2\n").arg(gethexbyte(xadr.bank)).arg(gethexword(xadr.adr)).arg(key).toUtf8());
+		}
+		file.close();
+	} else {
+		shitHappens("Can't write to file");
+	}
+}
+
 // disasm table
 
 unsigned char rdbyte(unsigned short adr, void* ptr) {
@@ -785,10 +896,11 @@ unsigned char rdbyte(unsigned short adr, void* ptr) {
 #define DMPSIZE 16
 
 struct DasmRow {
-	unsigned short adr;
-	unsigned ispc:1;	// if adr=PC
+	unsigned ispc:1;	// adr=PC
 	unsigned cond:1;	// if there is condition command (JR, JP, CALL, RET) and condition met
-	unsigned mem:1;
+	unsigned mem:1;		// memory reading
+	unsigned short adr;
+	unsigned char type;
 	unsigned char mop;
 	QByteArray bytes;
 	QString com;
@@ -817,8 +929,23 @@ DasmRow getDisasm(Computer* comp, unsigned short& adr) {
 	drow.bytes.clear();
 	drow.com.clear();
 	char buf[256];
-	int clen;
-	clen = cpuDisasm(comp->cpu, adr, buf, &rdbyte, comp);
+	int clen = 0;
+	drow.type = getBrk(comp, adr) & 0xc0;
+	switch(drow.type & 0xc0) {
+		case 0x00:			// opcode
+			clen = cpuDisasm(comp->cpu, adr, buf, &rdbyte, comp);
+			break;
+		case 0x40:			// db byte
+			clen = 1;
+			sprintf(buf, "db #%.2X", memRd(comp->mem, adr));
+			break;
+		case 0x80:			// dw word
+		case 0xc0:			// dw adr (label using)
+			clen = memRd(comp->mem, adr) | (memRd(comp->mem, adr+1) << 8);
+			sprintf(buf, "dw #%.4X", clen);
+			clen = 2;
+			break;
+	}
 	drow.com = QString(buf).toUpper();
 	for (int i = 0; i < clen; i++) {
 		drow.bytes.append(rdbyte(adr, (void*)comp));
@@ -867,34 +994,6 @@ DasmRow getDisasm(Computer* comp, unsigned short& adr) {
 	return drow;
 }
 
-/*
-xLabel* DebugWin::findLabel(int adr) {
-	if (!showLabels) return NULL;
-//	int bnk = comp->mem->pt[adr >> 14]->num;
-//	adr &= 0x3fff;
-	for (int i = 0; i < labels.size(); i++) {
-		if ((labels[i].adr == adr)) return &labels[i];
-	}
-	return NULL;
-}
-*/
-
-QString DebugWin::findLabel(int adr) {
-	QString lab;
-	if (!showLabels) return lab;
-//	int bnk = comp->mem->map[adr >> 14]->num;
-//	adr &= 0x3fff;
-	QString key;
-	QStringList keys = labels.keys();
-	foreach(key, keys) {
-		if (labels[key].adr == adr) {
-			lab = key;
-			break;
-		}
-	}
-	return lab;
-}
-
 int DebugWin::fillDisasm() {
 	block = 1;
 	unsigned short adr = disasmAdr;
@@ -908,11 +1007,13 @@ int DebugWin::fillDisasm() {
 	for (int i = 0; i < ui.dasmTable->rowCount(); i++) {
 		drow = getDisasm(comp, adr);
 		ui.dasmTable->item(i, 2)->setData(Qt::UserRole, drow.com);
-		pos = drow.com.indexOf(QRegExp("[0-9A-F]{4,4}"));
-		if (pos > 0) {
-			lab = findLabel(drow.com.mid(pos,4).toInt(NULL,16));
-			if (!lab.isEmpty()) {
-				drow.com.replace(pos - 1, 5, lab);
+		if ((drow.type == 0) || (drow.type == 0xc0)) {			// opcode || dw label -> replace addr with label
+			pos = drow.com.indexOf(QRegExp("[0-9A-F]{4,4}"));	// find addr position (XXXX)
+			if (pos > 0) {
+				lab = findLabel(drow.com.mid(pos,4).toInt(NULL,16));	// find label for that addr
+				if (!lab.isEmpty()) {
+					drow.com.replace(pos - 1, 5, lab);	// replace +1 char (#XXXX)
+				}
 			}
 		}
 		res |= drow.ispc;
@@ -1006,7 +1107,37 @@ void DebugWin::dasmEdited(int row, int col) {
 			}
 			break;
 		case 2:
-			len = cpuAsm(comp->cpu, ui.dasmTable->item(row, col)->text().toLocal8Bit().data(), buf, adr);
+			str = ui.dasmTable->item(row, col)->text().replace("#", "0x");	// #NUM -> 0xNUM
+			if (str.startsWith("db ", Qt::CaseInsensitive)) {		// byte
+				str = str.mid(3);
+				buf[0] = strtol(str.toLocal8Bit().data(), NULL, 0) & 0xff;
+				len = 1;
+				chaCellProperty(ui.actViewByte);
+			} else if (str.startsWith("dw ", Qt::CaseInsensitive)) {	// word/addr
+				str = str.mid(3);
+				if (labels.contains(str)) {				// check label
+					idx = labels[str].adr;
+					chaCellProperty(ui.actViewAddr);
+					len = 2;
+				} else {
+					bool flag;
+					idx = str.toInt(&flag, 0);
+					if (flag) {
+						len = 2;
+						chaCellProperty(ui.actViewWord);
+					} else {
+						len = 0;
+					}
+				}
+				if (len > 0) {
+					buf[0] = idx & 0xff;
+					buf[1] = (idx >> 8) & 0xff;
+				}
+			} else {			// byte
+				len = cpuAsm(comp->cpu, str.toLocal8Bit().data(), buf, adr);
+				if (len > 0)
+					chaCellProperty(ui.actViewOpcode);
+			}
 			idx = 0;
 			while (idx < len) {
 				memWr(comp->mem, adr + idx, buf[idx]);
@@ -1104,17 +1235,18 @@ void DebugWin::fillStack() {
 // breakpoint
 
 int DebugWin::getAdr() {
-	int adr = 0;
-	if (ui.dasmTable->hasFocus()) {
-		adr = ui.dasmTable->item(ui.dasmTable->currentRow(),0)->data(Qt::UserRole).toInt();
-	} else if (ui.dumpTable->hasFocus()) {
+	int adr = -1;
+	if (ui.dumpTable->hasFocus()) {
 		adr = (dumpAdr + (ui.dumpTable->currentColumn() - 1) + ui.dumpTable->currentRow() * 8) & 0xffff;
+	} else {
+		adr = ui.dasmTable->item(ui.dasmTable->currentRow(),0)->data(Qt::UserRole).toInt();
 	}
 	return adr;
 }
 
 void DebugWin::putBreakPoint() {
 	int adr = getAdr();
+	if (adr < 0) return;
 	doBreakPoint(adr);
 	bpMenu->move(QCursor::pos());
 	bpMenu->show();
@@ -1122,19 +1254,25 @@ void DebugWin::putBreakPoint() {
 
 void DebugWin::doBreakPoint(unsigned short adr) {
 	bpAdr = adr;
-	unsigned char flag = *getBrkPtr(comp, adr);
+	unsigned char flag = getBrk(comp, adr);
 	ui.actFetch->setChecked(flag & MEM_BRK_FETCH);
 	ui.actRead->setChecked(flag & MEM_BRK_RD);
 	ui.actWrite->setChecked(flag & MEM_BRK_WR);
 }
 
-void DebugWin::chaBreakPoint() {
+void DebugWin::chaCellProperty(QAction* act) {
+	int data = act->data().toInt();
+	bpAdr = getAdr();
 	unsigned char* ptr = getBrkPtr(comp, bpAdr);
-	unsigned char flag = *ptr & ~MEM_BRK_ANY;
-	if (ui.actFetch->isChecked()) flag |= MEM_BRK_FETCH;
-	if (ui.actRead->isChecked()) flag |= MEM_BRK_RD;
-	if (ui.actWrite->isChecked()) flag |= MEM_BRK_WR;
-	*ptr = flag;
+	if (data & MEM_BRK_ANY) {
+		*ptr &= ~MEM_BRK_ANY;
+		if (ui.actFetch->isChecked()) *ptr |= MEM_BRK_FETCH;
+		if (ui.actRead->isChecked()) *ptr |= MEM_BRK_RD;
+		if (ui.actWrite->isChecked()) *ptr |= MEM_BRK_WR;
+	} else {
+		*ptr &= 0x3f;
+		*ptr |= (data & 0xc0);
+	}
 	fillDisasm();
 	fillDump();
 	fillBrkTable();
@@ -1413,6 +1551,7 @@ xTableWidget::xTableWidget(QWidget* par):QTableWidget(par) {
 void xTableWidget::keyPressEvent(QKeyEvent *ev) {
 	switch (ev->key()) {
 		case Qt::Key_Home:
+		case Qt::Key_End:
 		case Qt::Key_F2:
 			ev->ignore();
 			break;
