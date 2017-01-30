@@ -5,7 +5,7 @@
 
 // tables
 
-int noizes[0x20000];		// here iz noize values [generated at start]
+char noizes[0x20000];		// here iz noize values 1/0 [generated at start]
 
 unsigned char envforms[16][33]={
 /*	  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32	*/
@@ -26,6 +26,9 @@ unsigned char envforms[16][33]={
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,253},	// 14
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,255}
 };
+
+// try to use it somehow :)
+unsigned char ayDACvol[16] = {15, 10, 7, 4, 3, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0};
 
 // AY/YM sound chip
 
@@ -70,7 +73,7 @@ void aymReset(aymChip* ay) {
 	ay->chanE.per = 0;
 	ay->chanN.per = 0;
 	ay->chanE.step = 0;
-	ay->chanN.step = 0;
+	// ay->chanN.step = 0;
 	ay->chanA.cnt = 0;
 	ay->chanB.cnt = 0;
 	ay->chanC.cnt = 0;
@@ -100,7 +103,7 @@ void aymSetReg(aymChip* ay, unsigned char val) {
 			break;
 		case 0x06:					// noise
 			tone = val & 0x1f;
-			ay->chanN.per = tone << 4;
+			ay->chanN.per = tone << 5;
 			break;
 		case 0x07:
 			ay->chanA.ten = (val & 1) ? 0 : 1;
@@ -199,10 +202,23 @@ void aymSync(aymChip* ay, int ns) {
 int ayGetChanVol(aymChan* ch, int env, int noi) {
 	int vol = ch->een ? env : ch->vol;
 	if (ch->ten || ch->nen) {
+		vol *= ((ch->lev & ch->ten) + (noi & ch->nen));
+	}
+
+/*
+	switch ((ch->ten << 1) | ch->nen) {
+		case 0x01: vol *= noi; break;
+		case 0x02: vol *= ch->lev; break;
+		case 0x03: vol *= (ch->lev + noi); break;
+	}
+*/
+/*
+	if (ch->ten || ch->nen) {
 		if (!(ch->ten && ch->lev) && !(ch->nen && noi)) {
 			vol = 0;
 		}
 	}
+*/
 	return vol;
 }
 

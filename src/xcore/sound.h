@@ -52,6 +52,6 @@ void sndPause(bool);
 void sndClose();
 int sndSync(Computer*, int);
 
-void sndFillToEnd();
+//void sndFillToEnd();
 
 #endif

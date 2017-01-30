@@ -6,7 +6,7 @@ typedef struct {
 	unsigned char right;
 } sndPair;
 
-extern int noizes[0x20000];
+extern char noizes[0x20000];
 
 typedef struct {
 	unsigned lev:1;			// 1/0 target level

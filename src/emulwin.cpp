@@ -286,7 +286,7 @@ void scrMix(unsigned char* src, unsigned char* dst, int size) {
 }
 
 void MainWin::convImage() {
-	memcpy(scrn, comp->vid->scrimg, comp->vid->vBytes);
+	if (ethread.fast) memcpy(scrn, comp->vid->scrimg, comp->vid->vBytes);
 	if (conf.vid.grayScale) scrGray(scrn, comp->vid->vBytes);
 	if (conf.vid.noFlick) scrMix(prvScr, scrn, comp->vid->vBytes);
 	switch(conf.vid.scale) {
@@ -1240,6 +1240,10 @@ void xThread::emuCycle() {
 	do {
 		// exec 1 opcode (+ INT, NMI)
 		sndNs += compExec(comp);
+		if (comp->frmStrobe && !fast) {
+			comp->frmStrobe = 0;
+			memcpy(scrn, comp->vid->scrimg, comp->vid->vBytes);
+		}
 		// if need - request sound buffer update
 		if (sndNs > nsPerSample) {
 			sndSync(comp, fast);

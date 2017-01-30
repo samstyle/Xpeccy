@@ -119,6 +119,7 @@ int sndSync(Computer* comp, int fast) {
 	return 1;
 }
 
+/*
 void sndFillToEnd() {
 	while (smpCount < sndChunks) {
 		bufA.data[bufA.pos++] = sndLev.left;
@@ -126,6 +127,7 @@ void sndFillToEnd() {
 		smpCount++;
 	}
 }
+*/
 
 void sndCalibrate() {
 	sndChunks = conf.snd.rate / 50;			// samples / frame
