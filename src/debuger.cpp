@@ -14,6 +14,12 @@
 #include "xgui/xgui.h"
 #include "filer.h"
 
+enum {
+	DBG_TRACE_ALL = 0x100,
+	DBG_TRACE_INT,
+	DBG_TRACE_HERE
+};
+
 void DebugWin::start(Computer* c) {
 	comp = c;
 	chLayout();
@@ -84,6 +90,10 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.actViewByte->setData(0x40);
 	ui.actViewWord->setData(0x80);
 	ui.actViewAddr->setData(0xc0);
+
+	ui.actTrace->setData(DBG_TRACE_ALL);
+	ui.actTraceHere->setData(DBG_TRACE_HERE);
+	ui.actTraceINT->setData(DBG_TRACE_INT);
 // disasm table
 	for (row = 0; row < ui.dasmTable->rowCount(); row++) {
 		for (col = 0; col < ui.dasmTable->columnCount(); col++) {
@@ -116,6 +126,10 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.tbView->addAction(ui.actViewWord);
 	ui.tbView->addAction(ui.actViewAddr);
 
+	ui.tbTrace->addAction(ui.actTrace);
+	ui.tbTrace->addAction(ui.actTraceHere);
+	ui.tbTrace->addAction(ui.actTraceINT);
+
 	connect(ui.dasmTable,SIGNAL(cellChanged(int,int)),this,SLOT(dasmEdited(int,int)));
 	connect(ui.dasmTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
 
@@ -124,6 +138,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.actSaveLabels, SIGNAL(triggered(bool)),this,SLOT(saveLabels()));
 	connect(ui.tbView, SIGNAL(triggered(QAction*)),this,SLOT(chaCellProperty(QAction*)));
 	connect(ui.tbBreak, SIGNAL(triggered(QAction*)),this,SLOT(chaCellProperty(QAction*)));
+	connect(ui.tbTrace, SIGNAL(triggered(QAction*)),this,SLOT(doTrace(QAction*)));
 
 // dump table
 	for (row = 0; row < ui.dumpTable->rowCount(); row++) {
@@ -214,16 +229,25 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	memViewer = new MemViewer();
 	connect(ui.tbMemView, SIGNAL(clicked()),this,SLOT(doMemView()));
 // context menu
-	bpMenu = new QMenu(this);
+	cellMenu = new QMenu(this);
+	cellMenu->addAction(ui.actTraceHere);
+	QMenu* bpMenu = new QMenu("Breakpoints");
+	bpMenu->setIcon(QIcon(":/images/stop.png"));
+	cellMenu->addMenu(bpMenu);
 	bpMenu->addAction(ui.actFetch);
 	bpMenu->addAction(ui.actRead);
 	bpMenu->addAction(ui.actWrite);
-	bpMenu->addSeparator();
-	bpMenu->addAction(ui.actViewOpcode);
-	bpMenu->addAction(ui.actViewByte);
-	bpMenu->addAction(ui.actViewWord);
-	bpMenu->addAction(ui.actViewAddr);
+	QMenu* viewMenu = new QMenu("View");
+	viewMenu->setIcon(QIcon(":/images/bars.png"));
+	cellMenu->addMenu(viewMenu);
+	viewMenu->addAction(ui.actViewOpcode);
+	viewMenu->addAction(ui.actViewByte);
+	viewMenu->addAction(ui.actViewWord);
+	viewMenu->addAction(ui.actViewAddr);
+
+	connect(ui.actTraceHere, SIGNAL(triggered(bool)),this,SLOT(doTraceHere()));
 	connect(bpMenu,SIGNAL(triggered(QAction*)),this,SLOT(chaCellProperty(QAction*)));
+	connect(viewMenu,SIGNAL(triggered(QAction*)),this,SLOT(chaCellProperty(QAction*)));
 }
 
 DebugWin::~DebugWin() {
@@ -272,7 +296,28 @@ void DebugWin::doStep() {
 		disasmAdr = comp->cpu->pc;
 		fillDisasm();
 	}
-	if (trace) QTimer::singleShot(10,this,SLOT(doStep()));
+	if ((traceType == DBG_TRACE_INT) && (comp->cpu->inth))
+		trace = 0;
+	if ((traceType == DBG_TRACE_HERE) && (comp->cpu->pc == traceAdr))
+		trace = 0;
+	if (trace) {
+		QTimer::singleShot(10,this,SLOT(doStep()));
+	} else {
+		ui.tbTrace->setEnabled(true);
+	}
+}
+
+void DebugWin::doTraceHere() {
+	doTrace(ui.actTraceHere);
+}
+
+void DebugWin::doTrace(QAction* act) {
+	if (trace) return;
+	trace = 1;
+	traceAdr = getAdr();
+	traceType = act->data().toInt();
+	ui.tbTrace->setEnabled(false);
+	doStep();
 }
 
 void DebugWin::switchBP(unsigned char mask) {
@@ -311,7 +356,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					doOpenDump();
 					break;
 				case Qt::Key_T:
-					trace = 1;
+					doTrace(ui.actTrace);
 					doStep();
 					break;
 				case Qt::Key_L:
@@ -1248,8 +1293,8 @@ void DebugWin::putBreakPoint() {
 	int adr = getAdr();
 	if (adr < 0) return;
 	doBreakPoint(adr);
-	bpMenu->move(QCursor::pos());
-	bpMenu->show();
+	cellMenu->move(QCursor::pos());
+	cellMenu->show();
 }
 
 void DebugWin::doBreakPoint(unsigned short adr) {

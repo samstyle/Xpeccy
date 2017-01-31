@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>793</width>
+    <width>785</width>
     <height>612</height>
    </rect>
   </property>
@@ -644,6 +644,20 @@
          <property name="icon">
           <iconset resource="../xpeccy.qrc">
            <normaloff>:/images/bars.png</normaloff>:/images/bars.png</iconset>
+         </property>
+         <property name="popupMode">
+          <enum>QToolButton::InstantPopup</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="tbTrace">
+         <property name="text">
+          <string>...</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../xpeccy.qrc">
+           <normaloff>:/images/arrGreen.png</normaloff>:/images/arrGreen.png</iconset>
          </property>
          <property name="popupMode">
           <enum>QToolButton::InstantPopup</enum>
@@ -1816,6 +1830,39 @@
     <string>Save labels</string>
    </property>
   </action>
+  <action name="actTrace">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/arrGreen.png</normaloff>:/images/arrGreen.png</iconset>
+   </property>
+   <property name="text">
+    <string>Trace</string>
+   </property>
+  </action>
+  <action name="actTraceINT">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/arrRed.png</normaloff>:/images/arrRed.png</iconset>
+   </property>
+   <property name="text">
+    <string>Trace and stop on INT</string>
+   </property>
+   <property name="toolTip">
+    <string>Trace, stop on INT</string>
+   </property>
+  </action>
+  <action name="actTraceHere">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/arrOrange.png</normaloff>:/images/arrOrange.png</iconset>
+   </property>
+   <property name="text">
+    <string>Trace and stop here</string>
+   </property>
+   <property name="toolTip">
+    <string>Trace, stop here</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -1829,11 +1876,11 @@
  </resources>
  <connections/>
  <buttongroups>
+  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
-  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

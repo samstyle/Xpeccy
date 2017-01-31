@@ -84,8 +84,11 @@ class DebugWin : public QDialog {
 		void closed();
 	private:
 		unsigned block:1;
-		unsigned trace:1;
 		unsigned showLabels:1;
+		// tracer
+		unsigned trace:1;
+		int traceType;
+		int traceAdr;
 
 		Ui::Debuger ui;
 		QPoint winPos;
@@ -105,7 +108,7 @@ class DebugWin : public QDialog {
 
 		MemViewer* memViewer;
 
-		QMenu* bpMenu;
+		QMenu* cellMenu;
 		unsigned short bpAdr;
 		void doBreakPoint(unsigned short);
 		int getAdr();
@@ -159,6 +162,8 @@ class DebugWin : public QDialog {
 
 		void doMemView();
 
+		void doTrace(QAction*);
+		void doTraceHere();
 		void doStep();
 
 		void doSaveDump();
