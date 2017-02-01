@@ -596,6 +596,7 @@ void gbSlotWr(unsigned short adr, unsigned char val, void* data) {
 	Computer* comp = (Computer*)data;
 	xCartridge* slot = &comp->msx.slotA;
 	if (slot->data && slot->wr) slot->wr(slot, adr, val);
+	gbMaper(comp);
 }
 
 // 8000..9fff : video mem (bank 0,1 gbc)
@@ -696,10 +697,10 @@ void gbrWr(unsigned short adr, unsigned char val, void* data) {
 // maper
 
 void gbMaper(Computer* comp) {
-	memSetExternal(comp->mem, MEM_BANK0, 0, gbSlotRd, gbSlotWr, comp);
-	memSetExternal(comp->mem, MEM_BANK1, comp->msx.slotA.memMap[0], gbSlotRd, gbSlotWr, comp);
-	memSetExternal(comp->mem, MEM_BANK2, 0, gbvRd, gbvWr, comp);	// VRAM (8K), slot ram (8K)
-	memSetExternal(comp->mem, MEM_BANK3, 0, gbrRd, gbrWr, comp);	// internal RAM/OAM/IOMap
+	memSetBank(comp->mem, MEM_BANK0, MEM_SLOT, 0, gbSlotRd, gbSlotWr, comp);
+	memSetBank(comp->mem, MEM_BANK1, MEM_SLOT, comp->msx.slotA.memMap[0], gbSlotRd, gbSlotWr, comp);
+	memSetBank(comp->mem, MEM_BANK2, MEM_EXT, 0, gbvRd, gbvWr, comp);	// VRAM (8K), slot ram (8K)
+	memSetBank(comp->mem, MEM_BANK3, MEM_EXT, 1, gbrRd, gbrWr, comp);	// internal RAM/OAM/IOMap
 }
 
 unsigned char gbMemRd(Computer* comp, unsigned short adr, int m1) {

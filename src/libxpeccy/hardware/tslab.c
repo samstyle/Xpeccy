@@ -35,17 +35,17 @@ void tslReset(Computer* comp) {
 void tslMapMem(Computer* comp) {
 // bank0 maping taken from Unreal(TSConf)
 	if (comp->tsconf.vdos) {
-		memSetBank(comp->mem,MEM_BANK0,MEM_RAM,0xff);		// vdos on : ramFF in bank0
+		memSetBank(comp->mem,MEM_BANK0,MEM_RAM,0xff,NULL,NULL,NULL);		// vdos on : ramFF in bank0
 	} else if (comp->tsconf.p21af & 8) {
 		if (comp->tsconf.p21af & 4)
-			memSetBank(comp->mem,MEM_BANK0,MEM_RAM,comp->tsconf.Page0);
+			memSetBank(comp->mem,MEM_BANK0,MEM_RAM,comp->tsconf.Page0,NULL,NULL,NULL);
 		else
-			memSetBank(comp->mem,MEM_BANK0,MEM_RAM, (comp->tsconf.Page0 & 0xfc) | ((comp->rom) ? 1 : 0) | (comp->dos ? 0 : 2));
+			memSetBank(comp->mem,MEM_BANK0,MEM_RAM, (comp->tsconf.Page0 & 0xfc) | ((comp->rom) ? 1 : 0) | (comp->dos ? 0 : 2),NULL,NULL,NULL);
 	} else {
 		if (comp->tsconf.p21af & 4)
-			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,comp->tsconf.Page0);
+			memSetBank(comp->mem,MEM_BANK0,MEM_ROM,comp->tsconf.Page0,NULL,NULL,NULL);
 		else
-			memSetBank(comp->mem,MEM_BANK0,MEM_ROM, (comp->tsconf.Page0 & 0xfc) | ((comp->rom) ? 1 : 0) | (comp->dos ? 0 : 2));
+			memSetBank(comp->mem,MEM_BANK0,MEM_ROM, (comp->tsconf.Page0 & 0xfc) | ((comp->rom) ? 1 : 0) | (comp->dos ? 0 : 2),NULL,NULL,NULL);
 	}
 }
 
@@ -231,7 +231,7 @@ void tsOut7FFD(Computer* comp, unsigned short port, unsigned char val) {
 	} else if (comp->tsconf.p21af & 0x40) {			// 01 : 128
 		num &= 7;
 	}
-	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,num);
+	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,num,NULL,NULL,NULL);
 	// comp->vid->tsconf.vidPage = 5;
 	comp->vid->curscr = (val & 8) ? 7 : 5;
 	tslMapMem(comp);
@@ -283,11 +283,11 @@ void tsOut10AF(Computer* comp, unsigned short port, unsigned char val) {
 }
 
 void tsOut11AF(Computer* comp, unsigned short port, unsigned char val) {
-	memSetBank(comp->mem,MEM_BANK1,MEM_RAM,val);
+	memSetBank(comp->mem,MEM_BANK1,MEM_RAM,val,NULL,NULL,NULL);
 }
 
-void tsOut12AF(Computer* comp, unsigned short port, unsigned char val) {memSetBank(comp->mem,MEM_BANK2,MEM_RAM,val);}
-void tsOut13AF(Computer* comp, unsigned short port, unsigned char val) {memSetBank(comp->mem,MEM_BANK3,MEM_RAM,val);}
+void tsOut12AF(Computer* comp, unsigned short port, unsigned char val) {memSetBank(comp->mem,MEM_BANK2,MEM_RAM,val,NULL,NULL,NULL);}
+void tsOut13AF(Computer* comp, unsigned short port, unsigned char val) {memSetBank(comp->mem,MEM_BANK3,MEM_RAM,val,NULL,NULL,NULL);}
 
 unsigned char tsIn12AF(Computer* comp, unsigned short port) {return comp->mem->map[2].num;}
 unsigned char tsIn13AF(Computer* comp, unsigned short port) {return comp->mem->map[3].num;}

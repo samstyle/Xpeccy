@@ -4,8 +4,8 @@
 
 int msx2mtabA[4][4] = {
 	{MEM_ROM, MEM_ROM, MEM_RAM, MEM_RAM},
-	{MEM_EXT, MEM_EXT, MEM_EXT, MEM_EXT},
-	{MEM_EXT, MEM_EXT, MEM_EXT, MEM_EXT},
+	{MEM_SLOT, MEM_SLOT, MEM_SLOT, MEM_SLOT},
+	{MEM_SLOT, MEM_SLOT, MEM_SLOT, MEM_SLOT},
 	{0,0,0,0}				// not used
 };
 
@@ -52,10 +52,10 @@ void msx2mapper(Computer* comp) {
 		if (bn < 0) {
 			bn = comp->msx.memMap[i];
 		}
-		if (bt == MEM_EXT) {
-			memSetExternal(comp->mem, i, comp->msx.slotA.memMap[i], msxSlotRd, msxSlotWr, bn ? &comp->msx.slotB : &comp->msx.slotA);
+		if (bt == MEM_SLOT) {
+			memSetBank(comp->mem, i, MEM_SLOT, comp->msx.slotA.memMap[i], msxSlotRd, msxSlotWr, bn ? &comp->msx.slotB : &comp->msx.slotA);
 		} else {
-			memSetBank(comp->mem, i, bt, bn);
+			memSetBank(comp->mem, i, bt, bn, NULL, NULL, NULL);
 		}
 	}
 }

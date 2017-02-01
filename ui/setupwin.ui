@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>505</width>
-    <height>478</height>
+    <height>474</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -623,12 +623,16 @@
              </widget>
             </item>
             <item>
-             <widget class="QCheckBox" name="fscchk">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
+             <widget class="QCheckBox" name="cbFullscreen">
               <property name="text">
                <string>Fullscreen</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="cbKeepRatio">
+              <property name="text">
+               <string>Keep ratio</string>
               </property>
              </widget>
             </item>

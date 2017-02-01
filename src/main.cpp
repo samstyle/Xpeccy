@@ -61,7 +61,7 @@ int main(int ac,char** av) {
 				mwin.comp->cpu->sp = strtol(av[i],NULL,0);
 				i++;
 			} else if (!strcmp(parg,"-b") || !strcmp(parg,"--bank")) {
-				memSetBank(mwin.comp->mem, MEM_BANK3, MEM_RAM, strtol(av[i],NULL,0));
+				memSetBank(mwin.comp->mem, MEM_BANK3, MEM_RAM, strtol(av[i],NULL,0), NULL, NULL, NULL);
 				i++;
 			} else if (!strcmp(parg,"-a") || !strcmp(parg,"--adr")) {
 				adr = strtol(av[i],NULL,0) & 0xffff;

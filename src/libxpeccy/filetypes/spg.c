@@ -90,9 +90,9 @@ int loadSPG(Computer* comp, const char* name) {
 	comp->pEFF7 = 0x00;
 	comp->prt2 = 0x00;
 	comp->hw->mapMem(comp);
-	memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5);
-	memSetBank(comp->mem,MEM_BANK2,MEM_RAM,2);
-	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,hd.page3);
+	memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5,NULL,NULL,NULL);
+	memSetBank(comp->mem,MEM_BANK2,MEM_RAM,2,NULL,NULL,NULL);
+	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,hd.page3,NULL,NULL,NULL);
 	comp->vid->tsconf.tconfig = 0;
 	comp->vid->nogfx = 0;
 	tsReset(comp->ts);

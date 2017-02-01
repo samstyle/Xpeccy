@@ -13,16 +13,16 @@ void pl2MapMem(Computer* comp) {
 	if (comp->p1FFD & 1) {
 		// extend mem mode
 		int rp = ((comp->p1FFD & 0x06) >> 1);	// b1,2 of 1ffd
-		memSetBank(comp->mem,MEM_BANK0,MEM_RAM,plus2Lays[rp][0]);
-		memSetBank(comp->mem,MEM_BANK1,MEM_RAM,plus2Lays[rp][1]);
-		memSetBank(comp->mem,MEM_BANK2,MEM_RAM,plus2Lays[rp][2]);
-		memSetBank(comp->mem,MEM_BANK3,MEM_RAM,plus2Lays[rp][3]);
+		memSetBank(comp->mem,MEM_BANK0,MEM_RAM,plus2Lays[rp][0], NULL, NULL, NULL);
+		memSetBank(comp->mem,MEM_BANK1,MEM_RAM,plus2Lays[rp][1], NULL, NULL, NULL);
+		memSetBank(comp->mem,MEM_BANK2,MEM_RAM,plus2Lays[rp][2], NULL, NULL, NULL);
+		memSetBank(comp->mem,MEM_BANK3,MEM_RAM,plus2Lays[rp][3], NULL, NULL, NULL);
 	} else {
 		// normal mem mode
-		memSetBank(comp->mem,MEM_BANK0,MEM_ROM,(comp->rom ? 1 : 0) | ((comp->p1FFD & 0x04) >> 1));
-		memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5);
-		memSetBank(comp->mem,MEM_BANK2,MEM_RAM,2);
-		memSetBank(comp->mem,MEM_BANK3,MEM_RAM,comp->p7FFD & 7);
+		memSetBank(comp->mem,MEM_BANK0,MEM_ROM,(comp->rom ? 1 : 0) | ((comp->p1FFD & 0x04) >> 1), NULL, NULL, NULL);
+		memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5, NULL, NULL, NULL);
+		memSetBank(comp->mem,MEM_BANK2,MEM_RAM,2, NULL, NULL, NULL);
+		memSetBank(comp->mem,MEM_BANK3,MEM_RAM,comp->p7FFD & 7, NULL, NULL, NULL);
 	}
 }
 

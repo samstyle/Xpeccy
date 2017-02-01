@@ -104,6 +104,7 @@ void saveConfig() {
 	fprintf(cfile, "scrNoLeds = %s\n", YESNO(conf.scrShot.noLeds));
 	fprintf(cfile, "scrNoBord = %s\n", YESNO(conf.scrShot.noBorder));
 	fprintf(cfile, "fullscreen = %s\n", YESNO(conf.vid.fullScreen));
+	fprintf(cfile, "keepratio = %s\n", YESNO(conf.vid.keepRatio));
 	fprintf(cfile, "scale = %i\n", conf.vid.scale);
 	fprintf(cfile, "greyscale = %s\n", YESNO(conf.vid.grayScale));
 	fprintf(cfile, "bordersize = %i\n", int(conf.brdsize * 100));
@@ -286,6 +287,7 @@ void loadConfig() {
 					if (pnam=="scrNoLeds") conf.scrShot.noLeds = str2bool(pval) ? 1 : 0;
 					if (pnam=="scrNoBord") conf.scrShot.noBorder = str2bool(pval) ? 1 : 0;
 					if (pnam=="fullscreen") conf.vid.fullScreen = str2bool(pval) ? 1 : 0;
+					if (pnam=="keepratio") conf.vid.keepRatio = str2bool(pval) ? 1 : 0;
 					if (pnam=="bordersize") conf.brdsize = getRanged(pval.c_str(), 0, 100) / 100.0;
 					if (pnam=="doublesize") conf.vid.scale = str2bool(pval) ? 2 : 1;
 					if (pnam=="scale") {
@@ -382,14 +384,14 @@ void loadConfig() {
 	setOutput(soutnam.c_str());
 	if (conf.defProfile) {
 		if (!prfSetCurrent("default")) {
-			printf("Can't set default profile!\nYes, it happens\n");
+			printf("Can't set default profile! Yes, it happens\n");
 			throw(0);
 		}
 	} else {
 		if (!prfSetCurrent(pnm.c_str())) {
-			printf("Cannot set current profile\nDefault will be used\n");
+			printf("Cannot set profile '%s', default will be used\n",pnm.c_str());
 			if (!prfSetCurrent("default")) {
-				printf("...and default too?\nReally, shit happens\n");
+				printf("...and default too? Really, shit happens\n");
 				throw(0);
 			}
 		}

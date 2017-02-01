@@ -104,8 +104,8 @@ int loadZ80_f(Computer* comp, FILE* file) {
 	z80v1Header hd;
 	comp->p7FFD = 0x10;
 	comp->pEFF7 = 0x00;
-	memSetBank(comp->mem,MEM_BANK0,MEM_ROM,1);
-	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0);
+	memSetBank(comp->mem,MEM_BANK0,MEM_ROM,1,NULL,NULL,NULL);
+	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0,NULL,NULL,NULL);
 	comp->vid->curscr = 5;
 
 	fread((char*)&hd, sizeof(z80v1Header), 1, file);

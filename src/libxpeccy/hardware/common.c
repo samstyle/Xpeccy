@@ -31,14 +31,17 @@ void zx_sync(Computer* comp, long ns) {
 	if (comp->vid->intFRAME) {
 		comp->intVector = 0xff;
 		comp->cpu->inth = 1;
+		comp->cpu->intrq |= 1;		// Z80: b0 = INT
 		comp->vid->intFRAME = 0;
 	} else if (comp->vid->intLINE) {
 		comp->intVector = 0xfd;
 		comp->cpu->inth = 1;
+		comp->cpu->intrq |= 1;
 		comp->vid->intLINE = 0;
 	} else if (comp->vid->intDMA) {
 		comp->intVector = 0xfb;
 		comp->cpu->inth = 1;
+		comp->cpu->intrq |= 1;
 		comp->vid->intDMA = 0;
 	}
 }

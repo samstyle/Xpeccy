@@ -14,10 +14,20 @@
 #include "xgui/xgui.h"
 #include "filer.h"
 
+// trace type
 enum {
 	DBG_TRACE_ALL = 0x100,
 	DBG_TRACE_INT,
 	DBG_TRACE_HERE
+};
+
+// memory cell type (bits 4..7)
+enum {
+	DBG_VIEW_CODE = 0x00,
+	DBG_VIEW_BYTE = 0x10,
+	DBG_VIEW_WORD = 0x20,
+	DBG_VIEW_ADDR = 0x30,
+	DBG_VIEW_TEXT = 0x40
 };
 
 void DebugWin::start(Computer* c) {
@@ -83,13 +93,16 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	showLabels = 1;
 	ui.actShowLabels->setChecked(showLabels);
 // actions data
+
 	ui.actFetch->setData(MEM_BRK_FETCH);
 	ui.actRead->setData(MEM_BRK_RD);
 	ui.actWrite->setData(MEM_BRK_WR);
-	ui.actViewOpcode->setData(0x00);
-	ui.actViewByte->setData(0x40);
-	ui.actViewWord->setData(0x80);
-	ui.actViewAddr->setData(0xc0);
+
+	ui.actViewOpcode->setData(DBG_VIEW_CODE);
+	ui.actViewByte->setData(DBG_VIEW_BYTE);
+	ui.actViewWord->setData(DBG_VIEW_WORD);
+	ui.actViewAddr->setData(DBG_VIEW_ADDR);
+	ui.actViewText->setData(DBG_VIEW_TEXT);
 
 	ui.actTrace->setData(DBG_TRACE_ALL);
 	ui.actTraceHere->setData(DBG_TRACE_HERE);
@@ -123,6 +136,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 	ui.tbView->addAction(ui.actViewOpcode);
 	ui.tbView->addAction(ui.actViewByte);
+	ui.tbView->addAction(ui.actViewText);
 	ui.tbView->addAction(ui.actViewWord);
 	ui.tbView->addAction(ui.actViewAddr);
 
@@ -132,6 +146,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 	connect(ui.dasmTable,SIGNAL(cellChanged(int,int)),this,SLOT(dasmEdited(int,int)));
 	connect(ui.dasmTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
+	connect(ui.dasmTable,SIGNAL(rqRefill()),this,SLOT(fillDisasm()));
 
 	connect(ui.actShowLabels,SIGNAL(triggered(bool)),this,SLOT(setShowLabels(bool)));
 	connect(ui.actLoadLabels, SIGNAL(triggered(bool)),this,SLOT(loadLabels()));
@@ -242,6 +257,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	cellMenu->addMenu(viewMenu);
 	viewMenu->addAction(ui.actViewOpcode);
 	viewMenu->addAction(ui.actViewByte);
+	viewMenu->addAction(ui.actViewText);
 	viewMenu->addAction(ui.actViewWord);
 	viewMenu->addAction(ui.actViewAddr);
 
@@ -260,6 +276,39 @@ void DebugWin::setShowLabels(bool f) {
 	showLabels = f ? 1 : 0;
 	fillDisasm();
 }
+
+/*
+void DebugWin::mousePressEvent(QMouseEvent* ev) {
+	qDebug() << ev->button();
+	if (!ui.dasmTable->hasFocus()) return;
+	if (ev->modifiers() & Qt::ControlModifier) {
+		switch (ev->button()) {
+			case Qt::LeftButton:
+				blockStart = getAdr();
+				if (blockEnd < blockStart)
+					blockEnd = blockStart;
+				fillDisasm();
+				ev->ignore();
+				break;
+			case Qt::RightButton:
+				blockEnd = getAdr();
+				if (blockStart > blockEnd)
+					blockStart = blockEnd;
+				fillDisasm();
+				ev->ignore();
+				break;
+			case Qt::MiddleButton:
+				blockStart = -1;
+				blockEnd = -1;
+				fillDisasm();
+				ev->ignore();
+				break;
+			default:
+				break;
+		}
+	}
+}
+*/
 
 void DebugWin::wheelEvent(QWheelEvent* ev) {
 	if (ev->delta() < 0) {
@@ -843,6 +892,7 @@ QString getPageName(MemPage& pg) {
 		case MEM_RAM: res = "RAM-"; break;
 		case MEM_ROM: res = "ROM-"; break;
 		case MEM_EXT: res = "EXT-"; break;
+		case MEM_SLOT: res = "SLT-"; break;
 		default: res = "----"; break;
 	}
 	res.append(QString::number(pg.num));
@@ -973,33 +1023,47 @@ DasmRow getDisasm(Computer* comp, unsigned short& adr) {
 	drow.ispc = (comp->cpu->pc == adr) ? 1 : 0;	// check if this is PC
 	drow.bytes.clear();
 	drow.com.clear();
+	unsigned char bt;
 	char buf[256];
 	int clen = 0;
-	drow.type = getBrk(comp, adr) & 0xc0;
-	switch(drow.type & 0xc0) {
-		case 0x00:			// opcode
+	drow.type = getBrk(comp, adr) & 0xf0;
+	switch(drow.type) {
+		case DBG_VIEW_CODE:			// opcode
 			clen = cpuDisasm(comp->cpu, adr, buf, &rdbyte, comp);
 			break;
-		case 0x40:			// db byte
+		case DBG_VIEW_BYTE:			// db byte
 			clen = 1;
 			sprintf(buf, "db #%.2X", memRd(comp->mem, adr));
 			break;
-		case 0x80:			// dw word
-		case 0xc0:			// dw adr (label using)
+		case DBG_VIEW_TEXT:
+			clen = 0;
+			strcpy(buf, "DB \"");
+			bt = memRd(comp->mem, adr);
+			while ((bt > 31) && (bt < 128) && (clen < 250)) {
+				buf[clen + 4] = bt;
+				clen++;
+				bt = memRd(comp->mem, adr + clen);
+			}
+			buf[clen + 4] = '"';
+			buf[clen + 5] = 0x00;
+			break;
+		case DBG_VIEW_WORD:			// dw word
+		case DBG_VIEW_ADDR:			// dw adr (label using)
 			clen = memRd(comp->mem, adr) | (memRd(comp->mem, adr+1) << 8);
 			sprintf(buf, "dw #%.4X", clen);
 			clen = 2;
 			break;
 	}
-	drow.com = QString(buf).toUpper();
+	drow.com = QString(buf);
+	if (drow.type != DBG_VIEW_TEXT)
+		drow.com = drow.com.toUpper();
 	for (int i = 0; i < clen; i++) {
 		drow.bytes.append(rdbyte(adr, (void*)comp));
 		adr++;
 	}
 	drow.mem = 0;
 	drow.cond = 0;
-	if (drow.ispc) {
-		unsigned char bt;		// check conditions
+	if (drow.ispc && (drow.type == DBG_VIEW_CODE)) {		// !!! TODO:Z80 only
 		if (clen > 2) {
 			bt = drow.bytes.at(clen - 3);		// jp, call
 			if (((bt & 0xc7) == 0xc2) || ((bt & 0xc7) == 0xc4)) {
@@ -1039,6 +1103,12 @@ DasmRow getDisasm(Computer* comp, unsigned short& adr) {
 	return drow;
 }
 
+const QColor colPC(32,200,32);		// pc
+const QColor colBRK(200,128,128);	// breakpoint
+const QColor colBG0(255,255,255);	// background
+const QColor colBG1(230,230,230);	// background alternative
+const QColor colSEL(128,255,128);	// background selected
+
 int DebugWin::fillDisasm() {
 	block = 1;
 	unsigned short adr = disasmAdr;
@@ -1052,23 +1122,33 @@ int DebugWin::fillDisasm() {
 	for (int i = 0; i < ui.dasmTable->rowCount(); i++) {
 		drow = getDisasm(comp, adr);
 		ui.dasmTable->item(i, 2)->setData(Qt::UserRole, drow.com);
-		if ((drow.type == 0) || (drow.type == 0xc0)) {			// opcode || dw label -> replace addr with label
-			pos = drow.com.indexOf(QRegExp("[0-9A-F]{4,4}"));	// find addr position (XXXX)
-			if (pos > 0) {
-				lab = findLabel(drow.com.mid(pos,4).toInt(NULL,16));	// find label for that addr
-				if (!lab.isEmpty()) {
-					drow.com.replace(pos - 1, 5, lab);	// replace +1 char (#XXXX)
+		switch (drow.type) {
+			case DBG_VIEW_CODE:
+			case DBG_VIEW_ADDR:
+				pos = drow.com.indexOf(QRegExp("[0-9A-F]{4,4}"));	// find addr position (XXXX)
+				if (pos > 0) {
+					lab = findLabel(drow.com.mid(pos,4).toInt(NULL,16));	// find label for that addr
+					if (!lab.isEmpty()) {
+						drow.com.replace(pos - 1, 5, lab);	// replace +1 char (#XXXX)
+					}
 				}
-			}
+				break;
 		}
 		res |= drow.ispc;
-		bgcol = drow.ispc ? QColor(32,200,32) : ((i & 1) ? QColor(255,255,255) : QColor(230,230,230));
-		acol = (*getBrkPtr(comp, drow.adr) & MEM_BRK_ANY) ? QColor(200,64,64) : bgcol;
+
+		if (drow.ispc) {
+			bgcol = colPC;
+		} else if ((drow.adr >= ui.dasmTable->blockStart) && (drow.adr <= ui.dasmTable->blockEnd)) {
+			bgcol = colSEL;
+		} else {
+			bgcol = (i & 1) ? colBG0 : colBG1;
+		}
+		acol = (getBrk(comp, drow.adr) & MEM_BRK_ANY) ? colBRK : bgcol;
 		ui.dasmTable->item(i, 0)->setData(Qt::UserRole, drow.adr);
-		ui.dasmTable->item(i, 0)->setBackgroundColor(acol);
+		ui.dasmTable->item(i, 0)->setBackgroundColor(bgcol);
 		ui.dasmTable->item(i, 1)->setBackgroundColor(bgcol);
 		ui.dasmTable->item(i, 2)->setBackgroundColor(bgcol);
-		ui.dasmTable->item(i, 3)->setBackgroundColor(bgcol);
+		ui.dasmTable->item(i, 3)->setBackgroundColor(acol);
 		lab = findLabel(drow.adr);
 		if (lab.isEmpty()) {
 			fnt.setBold(false);
@@ -1154,10 +1234,26 @@ void DebugWin::dasmEdited(int row, int col) {
 		case 2:
 			str = ui.dasmTable->item(row, col)->text().replace("#", "0x");	// #NUM -> 0xNUM
 			if (str.startsWith("db ", Qt::CaseInsensitive)) {		// byte
-				str = str.mid(3);
-				buf[0] = strtol(str.toLocal8Bit().data(), NULL, 0) & 0xff;
-				len = 1;
-				chaCellProperty(ui.actViewByte);
+				if ((str.at(3) == '"') && str.endsWith("\"")) {		// db "text"
+					str = str.mid(4, str.size() - 5);
+					idx = 0;
+					len = str.size();
+					if (len > 255) len = 255;
+					while (idx < len) {
+						buf[idx] = str.at(idx).cell();
+						idx++;
+					}
+					chaCellProperty(ui.actViewText);
+				} else {						// db n
+					str = str.mid(3);
+					idx = str.toInt(&flag, 0);
+					if (flag) {
+						len = 1;
+						buf[0] = idx & 0xff;
+					} else {
+						len = 0;
+					}
+				}
 			} else if (str.startsWith("dw ", Qt::CaseInsensitive)) {	// word/addr
 				str = str.mid(3);
 				if (labels.contains(str)) {				// check label
@@ -1165,7 +1261,6 @@ void DebugWin::dasmEdited(int row, int col) {
 					chaCellProperty(ui.actViewAddr);
 					len = 2;
 				} else {
-					bool flag;
 					idx = str.toInt(&flag, 0);
 					if (flag) {
 						len = 2;
@@ -1265,7 +1360,7 @@ void DebugWin::dumpEdited(int row, int col) {
 void DebugWin::fillStack() {
 	int adr = comp->cpu->sp;
 	QString str;
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < 4; i++) {
 		str.append(gethexbyte(memRd(comp->mem, adr+1)));
 		str.append(gethexbyte(memRd(comp->mem, adr)));
 		adr += 2;
@@ -1274,7 +1369,7 @@ void DebugWin::fillStack() {
 	ui.labSP2->setText(str.mid(4,4));
 	ui.labSP4->setText(str.mid(8,4));
 	ui.labSP6->setText(str.mid(12,4));
-	ui.labSP8->setText(str.mid(16,4));
+//	ui.labSP8->setText(str.mid(16,4));
 }
 
 // breakpoint
@@ -1307,16 +1402,29 @@ void DebugWin::doBreakPoint(unsigned short adr) {
 
 void DebugWin::chaCellProperty(QAction* act) {
 	int data = act->data().toInt();
-	bpAdr = getAdr();
-	unsigned char* ptr = getBrkPtr(comp, bpAdr);
-	if (data & MEM_BRK_ANY) {
-		*ptr &= ~MEM_BRK_ANY;
-		if (ui.actFetch->isChecked()) *ptr |= MEM_BRK_FETCH;
-		if (ui.actRead->isChecked()) *ptr |= MEM_BRK_RD;
-		if (ui.actWrite->isChecked()) *ptr |= MEM_BRK_WR;
-	} else {
-		*ptr &= 0x3f;
-		*ptr |= (data & 0xc0);
+	int adr = getAdr();
+	int bgn, end;
+	unsigned char* ptr;
+	if ((adr < ui.dasmTable->blockStart) || (adr > ui.dasmTable->blockEnd)) {	// pointer outside block : process 1 cell
+		bgn = adr;
+		end = adr;
+	} else {									// pointer inside block : process all block
+		bgn = ui.dasmTable->blockStart;
+		end = ui.dasmTable->blockEnd;
+	}
+	adr = bgn;
+	while (adr <= end) {
+		ptr = getBrkPtr(comp, adr);
+		if (data & MEM_BRK_ANY) {
+			*ptr &= ~MEM_BRK_ANY;
+			if (ui.actFetch->isChecked()) *ptr |= MEM_BRK_FETCH;
+			if (ui.actRead->isChecked()) *ptr |= MEM_BRK_RD;
+			if (ui.actWrite->isChecked()) *ptr |= MEM_BRK_WR;
+		} else {
+			*ptr &= 0x0f;
+			*ptr |= (data & 0xf0);
+		}
+		adr++;
 	}
 	fillDisasm();
 	fillDump();
@@ -1355,11 +1463,11 @@ void DebugWin::dmpLenChanged() {
 }
 
 QByteArray DebugWin::getDumpData() {
-	MemPage curBank = comp->mem->map[3];
+	MemPage curBank = comp->mem->map[MEM_BANK3];
 	int bank = dui.leBank->text().toInt(NULL,16);
 	int adr = dui.leStart->text().toInt(NULL,16);
 	int len = dui.leLen->text().toInt(NULL,16);
-	memSetBank(comp->mem,3,MEM_RAM,bank);
+	memSetBank(comp->mem, MEM_BANK3, MEM_RAM, bank, NULL, NULL, NULL);
 	QByteArray res;
 	while (len > 0) {
 		res.append(memRd(comp->mem,adr));
@@ -1591,6 +1699,8 @@ void DebugWin::updateScreen() {
 
 xTableWidget::xTableWidget(QWidget* par):QTableWidget(par) {
 	setEditTriggers(QAbstractItemView::AnyKeyPressed | QAbstractItemView::DoubleClicked);
+	blockStart = -1;
+	blockEnd = -1;
 }
 
 void xTableWidget::keyPressEvent(QKeyEvent *ev) {
@@ -1602,6 +1712,38 @@ void xTableWidget::keyPressEvent(QKeyEvent *ev) {
 			break;
 		default:
 			QTableWidget::keyPressEvent(ev);
+	}
+}
+
+void xTableWidget::mousePressEvent(QMouseEvent* ev) {
+	int row = rowAt(ev->pos().y());
+	int adr = item(row,0)->data(Qt::UserRole).toInt();
+	switch (ev->button()) {
+		case Qt::MiddleButton:
+			blockStart = -1;
+			blockEnd = -1;
+			emit rqRefill();
+			ev->ignore();
+			break;
+		case Qt::LeftButton:
+			if (ev->modifiers() & Qt::ControlModifier) {
+				blockStart = adr;
+				if (blockEnd < blockStart) blockEnd = blockStart;
+				emit rqRefill();
+				ev->ignore();
+			} else if (ev->modifiers() & Qt::ShiftModifier) {
+				blockEnd = adr;
+				if (blockStart > blockEnd) blockStart = blockEnd;
+				if (blockStart < 0) blockStart = 0;
+				emit rqRefill();
+				ev->ignore();
+			} else {
+				QTableWidget::mousePressEvent(ev);
+			}
+			break;
+		default:
+			QTableWidget::mousePressEvent(ev);
+			break;
 	}
 }
 

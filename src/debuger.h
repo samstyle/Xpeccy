@@ -16,8 +16,13 @@ class xTableWidget : public QTableWidget {
 	Q_OBJECT
 	public:
 		xTableWidget(QWidget*);
+		int blockStart;
+		int blockEnd;
+	signals:
+		void rqRefill();
 	protected:
 		void keyPressEvent(QKeyEvent*);
+		void mousePressEvent(QMouseEvent*);
 };
 
 #include "ui_memviewer.h"
@@ -123,7 +128,6 @@ class DebugWin : public QDialog {
 		void fillFlags();
 		void fillMem();
 		void fillDump();
-		int fillDisasm();
 		void fillStack();
 		void fillFDC();
 		void fillRZX();
@@ -141,6 +145,8 @@ class DebugWin : public QDialog {
 		void setShowLabels(bool);
 		void loadLabels();
 		void saveLabels();
+
+		int fillDisasm();
 
 		void setZ80();
 		void setFlags();

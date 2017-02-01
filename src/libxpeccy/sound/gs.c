@@ -49,11 +49,11 @@ void gsiowr(unsigned short port,unsigned char val,void* ptr) {
 		case 0: gs->rp0 = val;
 			val &= 0x1f;
 			if (val == 0) {
-				memSetBank(gs->mem,MEM_BANK2,MEM_ROM,0);	// gs->mem->pt2 = &gs->mem->rom[0][0];
-				memSetBank(gs->mem,MEM_BANK3,MEM_ROM,1);	// gs->mem->pt3 = &gs->mem->rom[1][0];
+				memSetBank(gs->mem, MEM_BANK2, MEM_ROM, 0, NULL, NULL, NULL);
+				memSetBank(gs->mem, MEM_BANK3, MEM_ROM, 1, NULL, NULL, NULL);
 			} else {
-				memSetBank(gs->mem,MEM_BANK2,MEM_RAM,(val << 1) - 2);	// gs->mem->pt2 = &gs->mem->ram[(val << 1) - 2][0];
-				memSetBank(gs->mem,MEM_BANK3,MEM_RAM,(val << 1) - 1);	// gs->mem->pt3 = &gs->mem->ram[(val << 1) - 1][0];
+				memSetBank(gs->mem, MEM_BANK2, MEM_RAM, (val << 1) - 2, NULL, NULL, NULL);
+				memSetBank(gs->mem, MEM_BANK3, MEM_RAM, (val << 1) - 1, NULL, NULL, NULL);
 			}
 			break;
 		case 1: break;
@@ -84,11 +84,11 @@ GSound* gsCreate() {
 	void* ptr = (void*)res;
 	res->cpu = cpuCreate(CPU_Z80,&gsmemrd,&gsmemwr,&gsiord,&gsiowr,&gsintrq,ptr);
 	res->mem = memCreate();
-	memSetSize(res->mem,2048);
-	memSetBank(res->mem,MEM_BANK0,MEM_ROM,0);
-	memSetBank(res->mem,MEM_BANK1,MEM_RAM,0);
-	memSetBank(res->mem,MEM_BANK2,MEM_RAM,0);
-	memSetBank(res->mem,MEM_BANK3,MEM_RAM,1);
+	memSetSize(res->mem, 2048);
+	memSetBank(res->mem, MEM_BANK0, MEM_ROM, 0, NULL, NULL, NULL);
+	memSetBank(res->mem, MEM_BANK1, MEM_RAM, 0, NULL, NULL, NULL);
+	memSetBank(res->mem, MEM_BANK2, MEM_RAM, 0, NULL, NULL, NULL);
+	memSetBank(res->mem, MEM_BANK3, MEM_RAM, 1, NULL, NULL, NULL);
 	res->sync = 0;
 	res->cnt = 0;
 	res->pstate = 0x7e;

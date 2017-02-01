@@ -70,8 +70,8 @@ void msxSlotWr(unsigned short adr, unsigned char val, void* data) {
 
 mPageNr msxMemTab[4][4] = {
 	{{MEM_ROM, 0}, {MEM_ROM, 1}, {MEM_RAM, 1}, {MEM_RAM, 0}},
-	{{MEM_EXT,0},{MEM_EXT,0},{MEM_EXT,0},{MEM_EXT,0}},
-	{{MEM_EXT,1},{MEM_EXT,1},{MEM_EXT,1},{MEM_EXT,1}},
+	{{MEM_SLOT,0},{MEM_SLOT,0},{MEM_SLOT,0},{MEM_SLOT,0}},
+	{{MEM_SLOT,1},{MEM_SLOT,1},{MEM_SLOT,1},{MEM_SLOT,1}},
 	{{MEM_RAM, 3},{MEM_RAM, 2},{MEM_RAM, 1},{MEM_RAM, 0}}
 };
 
@@ -80,14 +80,14 @@ mPageNr msxMemTab[4][4] = {
 void msxSetMem(Computer* comp, int bank, unsigned char slot) {
 	mPageNr pg = msxMemTab[slot][bank];
 	switch(pg.type) {
-		case MEM_EXT:
-			memSetExternal(comp->mem, bank, comp->msx.slotA.memMap[bank], msxSlotRd, msxSlotWr, pg.num ? &comp->msx.slotB : &comp->msx.slotA);
+		case MEM_SLOT:
+			memSetBank(comp->mem, bank, MEM_SLOT, comp->msx.slotA.memMap[bank], msxSlotRd, msxSlotWr, pg.num ? &comp->msx.slotB : &comp->msx.slotA);
 			break;
 		case MEM_RAM:
-			memSetBank(comp->mem, bank, MEM_RAM, comp->msx.memMap[bank & 3] & 7);
+			memSetBank(comp->mem, bank, MEM_RAM, comp->msx.memMap[bank & 3] & 7, NULL, NULL, NULL);
 			break;
-		default:
-			memSetBank(comp->mem, bank, pg.type, pg.num);
+		case MEM_ROM:
+			memSetBank(comp->mem, bank, MEM_ROM, pg.num, NULL, NULL, NULL);
 			break;
 	}
 }

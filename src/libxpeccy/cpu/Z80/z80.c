@@ -41,7 +41,8 @@ int z80_exec(CPU* cpu) {
 	cpu->noint = 0;
 	cpu->opTab = npTab;
 	do {
-		cpu->op = &cpu->opTab[cpu->mrd(cpu->pc++,1,cpu->data)];
+		cpu->com = cpu->mrd(cpu->pc++,1,cpu->data);
+		cpu->op = &cpu->opTab[cpu->com];
 		cpu->r++;
 		cpu->t += cpu->op->t;
 		cpu->op->exec(cpu);
@@ -50,60 +51,66 @@ int z80_exec(CPU* cpu) {
 }
 
 int z80_int(CPU* cpu) {
-	if (!cpu->iff1 || cpu->noint) return 0;
-	cpu->iff1 = 0;
-	cpu->iff2 = 0;
-	if (cpu->halt) {
-		cpu->pc++;
-		cpu->halt = 0;
-	}
-	if (cpu->resPV) {
-		cpu->f &= ~FP;
-		cpu->resPV = 0;
-	}
-	cpu->opTab = npTab;
-	switch(cpu->imode) {
-		case 0:
-			cpu->t = 2;
-			cpu->op = &cpu->opTab[cpu->irq(cpu->data)];
-			cpu->r++;
-			cpu->t += cpu->op->t;		// +5 (RST38 fetch)
-			cpu->op->exec(cpu);		// +3 +3 execution. 13 total
-			while (cpu->op->prefix) {
-				cpu->op = &cpu->opTab[cpu->mrd(cpu->pc++,1,cpu->data)];
-				cpu->r++;
-				cpu->t += cpu->op->t;
-				cpu->op->exec(cpu);
+	int res = 0;
+	if (cpu->intrq & 1) {		// int
+		if (cpu->iff1 && !cpu->noint) {
+			cpu->iff1 = 0;
+			cpu->iff2 = 0;
+			if (cpu->halt) {
+				cpu->pc++;
+				cpu->halt = 0;
 			}
-			break;
-		case 1:
+			if (cpu->resPV) {
+				cpu->f &= ~FP;
+				cpu->resPV = 0;
+			}
+			cpu->opTab = npTab;
+			switch(cpu->imode) {
+				case 0:
+					cpu->t = 2;
+					cpu->op = &cpu->opTab[cpu->irq(cpu->data)];
+					cpu->r++;
+					cpu->t += cpu->op->t;		// +5 (RST38 fetch)
+					cpu->op->exec(cpu);		// +3 +3 execution. 13 total
+					while (cpu->op->prefix) {
+						cpu->op = &cpu->opTab[cpu->mrd(cpu->pc++,1,cpu->data)];
+						cpu->r++;
+						cpu->t += cpu->op->t;
+						cpu->op->exec(cpu);
+					}
+					break;
+				case 1:
+					cpu->r++;
+					cpu->t = 2 + 5;	// 2 extra + 5 on RST38 fetch
+					RST(0x38);	// +3 +3 execution. 13 total
+					break;
+				case 2:
+					cpu->r++;
+					cpu->t = 7;
+					PUSH(cpu->hpc,cpu->lpc);		// +3 (10) +3 (13)
+					cpu->lptr = cpu->irq(cpu->data);	// int vector (FF)
+					cpu->hptr = cpu->i;
+					cpu->lpc = MEMRD(cpu->mptr++,3);	// +3 (16)
+					cpu->hpc = MEMRD(cpu->mptr,3);		// +3 (19)
+					cpu->mptr = cpu->pc;
+					break;
+			}
+			res = cpu->t;
+		}
+	} else if (cpu->intrq & 2) {			// nmi
+		if (!cpu->noint) {
 			cpu->r++;
-			cpu->t = 2 + 5;	// 2 extra + 5 on RST38 fetch
-			RST(0x38);	// +3 +3 execution. 13 total
-			break;
-		case 2:
-			cpu->r++;
-			cpu->t = 7;
-			PUSH(cpu->hpc,cpu->lpc);	// +3 (10) +3 (13)
-			cpu->lptr = cpu->irq(cpu->data);	// int vector (FF)
-			cpu->hptr = cpu->i;
-			cpu->lpc = MEMRD(cpu->mptr++,3);	// +3 (16)
-			cpu->hpc = MEMRD(cpu->mptr,3);		// +3 (19)
+			cpu->iff2 = cpu->iff1;
+			cpu->iff1 = 0;
+			cpu->t = 5;
+			PUSH(cpu->hpc,cpu->lpc);
+			cpu->pc = 0x0066;
 			cpu->mptr = cpu->pc;
-			break;
+			res = cpu->t;		// always 11
+		}
 	}
-	return cpu->t;
-}
-
-int z80_nmi(CPU* cpu) {
-	if (cpu->noint) return 0;
-	cpu->r++;
-	cpu->iff1 = 0;
-	cpu->t = 5;
-	PUSH(cpu->hpc,cpu->lpc);
-	cpu->pc = 0x0066;
-	cpu->mptr = cpu->pc;
-	return cpu->t;		// always 11
+	cpu->intrq = 0;
+	return res;
 }
 
 // disasm

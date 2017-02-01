@@ -25,9 +25,9 @@ extern opCode npTab[256];
 extern opCode lrTab[256];
 
 cpuCore cpuTab[] = {
-	{CPU_Z80, "Z80", npTab, z80_reset, z80_exec, z80_int, z80_nmi, z80_asm, z80_mnem},
-	{CPU_LR35902, "LR35902", lrTab, lr_reset, lr_exec, lr_int, lr_nmi, lr_asm, lr_mnem},
-	{CPU_NONE, "none", NULL, nil_reset, nil_exec, nil_int, nil_nmi, nil_asm, nil_mnem}
+	{CPU_Z80, "Z80", npTab, z80_reset, z80_exec, z80_int, z80_asm, z80_mnem},
+	{CPU_LR35902, "LR35902", lrTab, lr_reset, lr_exec, lr_int, lr_asm, lr_mnem},
+	{CPU_NONE, "none", NULL, nil_reset, nil_exec, nil_int, nil_asm, nil_mnem}
 };
 
 cpuCore* findCore(int type) {
@@ -57,7 +57,6 @@ void cpuSetType(CPU* cpu, int type) {
 	cpu->reset = core->reset;
 	cpu->exec = core->exec;
 	cpu->intr = core->intr;
-	cpu->nmi = core->nmi;
 	cpu->asmbl = core->asmbl;
 	cpu->mnem = core->mnem;
 	cpu->tab = core->tab;

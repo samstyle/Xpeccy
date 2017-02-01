@@ -55,7 +55,7 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 		comp->pEFF7 = 0x00;
 		comp->dos = 0;
 		comp->hw->mapMem(comp);
-		memSetBank(comp->mem, MEM_BANK3, MEM_RAM,0);
+		memSetBank(comp->mem, MEM_BANK3, MEM_RAM,0,NULL,NULL,NULL);
 		memSetPageData(comp->mem, MEM_RAM, 0, tmpgBuf);
 		comp->vid->curscr = 5;
 		adr = (hd.hsp << 8) | hd.lsp;

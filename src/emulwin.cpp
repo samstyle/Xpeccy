@@ -7,6 +7,7 @@
 #include <QUrl>
 #include <QMimeData>
 #include <QPainter>
+#include <QDesktopWidget>
 
 #include <fstream>
 #include <unistd.h>
@@ -32,10 +33,9 @@ unsigned short pc,af,de,ix;
 unsigned char* blkData = NULL;
 int blk;
 
-static unsigned char screen[2048 * 2048 * 3];
-
-static unsigned char scrn[1024 * 512 * 3];
-static unsigned char prvScr[1024 * 512 * 3];
+static unsigned char screen[2048 * 2048 * 3];		// scaled image (up to fullscreen)
+static unsigned char scrn[1024 * 512 * 3];		// 2:1 image
+static unsigned char prvScr[1024 * 512 * 3];		// copy of last 2:1 image (for noflic)
 
 void MainWin::updateHead() {
 	QString title(XPTITLE);
@@ -59,13 +59,21 @@ void MainWin::updateWindow() {
 	ethread.sndNs = 0;
 	int szw = comp->vid->vsze.x * conf.vid.scale;
 	int szh = comp->vid->vsze.y * conf.vid.scale;
-	setFixedSize(szw,szh);
+	if (conf.vid.fullScreen) {
+		QSize wsz = QApplication::desktop()->screenGeometry().size();
+		szw = wsz.width();
+		szh = wsz.height();
+		setWindowState(windowState() | Qt::WindowFullScreen);
+	} else {
+		setWindowState(windowState() & ~Qt::WindowFullScreen);
+	}
+	setFixedSize(szw, szh);
 	lineBytes = szw * 3;
 	frameBytes = szh * lineBytes;
 	scrImg = QImage(screen, szw, szh, QImage::Format_RGB888);
 	updateHead();
 	block = 0;
-	if (dbg->isVisible()) dbg->fillAll();
+	if (dbg->isVisible()) dbg->fillAll();		// hmmm... why?
 }
 
 bool MainWin::saveChanged() {
@@ -97,7 +105,6 @@ void MainWin::pause(bool p, int msk) {
 	}
 	updateHead();
 	if (msk & PR_PAUSE) return;
-	if (conf.vid.fullScreen) updateWindow();
 }
 
 // Main window
@@ -181,6 +188,62 @@ MainWin::MainWin() {
 }
 
 // scale screen
+
+// 2:1 -> fullscreen
+
+#include <math.h>
+
+void scrFS(unsigned char* src, int srcw, int srch) {
+	QSize dstsize = QApplication::desktop()->screenGeometry().size();
+	int dstw = dstsize.width();
+	int dsth = dstsize.height();
+	double scalex = dstw / (double)srcw;
+	double scaley = dsth / (double)srch;
+	int resw = dstw;
+	int resh = dsth;
+	if (conf.vid.keepRatio) {
+		if (scalex < scaley) {
+			scaley = scalex;
+		} else {
+			scalex = scaley;
+		}
+		resw = srcw * (double)scalex;		// dest picture size, = dstw,dsth if don't keep ratio
+		resh = srch * (double)scaley;
+	}
+	int posx = (resw < dstw) ? ((dstw - resw) >> 1) : 0;
+	int posy = (resh < dsth) ? ((dsth - resh) >> 1) : 0;
+
+	memset(screen, 0x00, dstw * dsth * 3);
+
+	unsigned char* dst = screen + (posy * dstw * 3) + (posx * 3);		// drawing start here
+	unsigned char* ptr = dst;
+	scalex = scalex / 2.0;			// because of source 2:1
+	srcw <<= 1;
+	double cntx = scalex;
+	double cnty = scaley;
+	int x,y;
+	for (y = 0; y < srch; y++) {
+		// ptr = dst;
+		for (x = 0; x < srcw; x++) {
+			while(cntx > 1.0) {
+				memcpy(ptr, src, 3);
+				ptr += 3;
+				cntx -= 1.0;
+			}
+			src += 3;
+			cntx += scalex;
+		}
+		ptr = dst + dstw * 3;
+		cnty -= 1.0;			// 1st line completed
+		while(cnty > 1.0) {
+			memcpy(ptr, dst, resw * 3);
+			ptr += dstw * 3;
+			cnty -= 1.0;
+		}
+		cnty += scaley;
+		dst = ptr;
+	}
+}
 
 // 2:1 -> 4:4 = double each pixel & copy each row 3 times
 void scrX4(unsigned char* src, int wid, int lines) {
@@ -289,15 +352,19 @@ void MainWin::convImage() {
 	if (ethread.fast || comp->debug) memcpy(scrn, comp->vid->scrimg, comp->vid->vBytes);
 	if (conf.vid.grayScale) scrGray(scrn, comp->vid->vBytes);
 	if (conf.vid.noFlick) scrMix(prvScr, scrn, comp->vid->vBytes);
-	switch(conf.vid.scale) {
-		case 1:	scrX1(scrn, comp->vid->vsze.x, comp->vid->vsze.y);
-			break;
-		case 2:	scrX2(scrn, comp->vid->vsze.x, comp->vid->vsze.y);
-			break;
-		case 3:	scrX3(scrn, comp->vid->vsze.x, comp->vid->vsze.y);
-			break;
-		case 4: scrX4(scrn, comp->vid->vsze.x, comp->vid->vsze.y);
-			break;
+	if (conf.vid.fullScreen) {
+		scrFS(scrn, comp->vid->vsze.x, comp->vid->vsze.y);
+	} else {
+		switch(conf.vid.scale) {
+			case 1:	scrX1(scrn, comp->vid->vsze.x, comp->vid->vsze.y);
+				break;
+			case 2:	scrX2(scrn, comp->vid->vsze.x, comp->vid->vsze.y);
+				break;
+			case 3:	scrX3(scrn, comp->vid->vsze.x, comp->vid->vsze.y);
+				break;
+			case 4: scrX4(scrn, comp->vid->vsze.x, comp->vid->vsze.y);
+				break;
+		}
 	}
 }
 
@@ -479,11 +546,20 @@ void MainWin::paintEvent(QPaintEvent*) {
 	if (block) return;
 	QPainter pnt;
 	pnt.begin(this);
+#if 1
 	pnt.drawImage(0,0,scrImg);
+#else
+	if (conf.vid.fullScreen) {
+		pnt.drawImage(0,0,scrImg.scaled(size(),Qt::IgnoreAspectRatio,Qt::FastTransformation));
+	} else {
+		pnt.drawImage(0,0,scrImg);
+	}
+#endif
 	pnt.end();
 }
 
 void MainWin::keyPressEvent(QKeyEvent *ev) {
+	Qt::WindowStates state;
 	keyEntry kent = getKeyEntry(ev->nativeScanCode());
 	if (pckAct->isChecked()) {
 		keyPressXT(comp->keyb, kent.keyCode);
@@ -496,12 +572,14 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			rzxWin->stop();
 		}
 	} else if (ev->modifiers() & Qt::AltModifier) {
-#ifdef ISDEBUG
-		if (ev->key() == Qt::Key_F1) {
-			qDebug() << comp->vid->gbc->sc.x << ":" << comp->vid->gbc->sc.y;
-		}
-#endif
 		switch(ev->key()) {
+			case Qt::Key_Return:
+				conf.vid.fullScreen ^= 1;
+				setMessage(conf.vid.fullScreen ? " fullscreen on " : " fullscreen off ");
+				updateWindow();
+				saveConfig();
+				break;
+				/*
 			case Qt::Key_0:
 				switch (comp->vid->vmode) {
 					case VID_NORMAL: vidSetMode(comp->vid,VID_ALCO); break;
@@ -511,6 +589,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 					case VID_ATM_HWM: vidSetMode(comp->vid,VID_NORMAL); break;
 				}
 				break;
+				*/
 			case Qt::Key_1:
 				conf.vid.scale = 1;
 				updateWindow();
@@ -633,7 +712,8 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				pause(false,PR_FILE);
 				break;
 			case Qt::Key_F10:
-				comp->nmiRequest = true;
+				if (comp->cpu->type != CPU_Z80) break;
+				comp->nmiRequest = 1;
 				break;
 			case Qt::Key_F11:
 				if (tapeWin->isVisible()) {

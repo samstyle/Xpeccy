@@ -3,14 +3,14 @@
 // Profi ROM: EXT,DOS,128,48
 void prfMapMem(Computer* comp) {
 	if (comp->pDFFD & 0x10) {
-		memSetBank(comp->mem, MEM_BANK0, MEM_RAM, 0);
+		memSetBank(comp->mem, MEM_BANK0, MEM_RAM, 0, NULL, NULL, NULL);
 	} else {
-		memSetBank(comp->mem, MEM_BANK0, MEM_ROM, (comp->dos ? 0 : 2) | (comp->rom ? 1 : 0));
+		memSetBank(comp->mem, MEM_BANK0, MEM_ROM, (comp->dos ? 0 : 2) | (comp->rom ? 1 : 0), NULL, NULL, NULL);
 	}
 	int bank = ((comp->pDFFD & 7) << 3) | (comp->p7FFD & 7);
-	memSetBank(comp->mem, MEM_BANK1, MEM_RAM, (comp->pDFFD & 0x08) ? bank : 5);
-	memSetBank(comp->mem, MEM_BANK2, MEM_RAM, ((comp->pDFFD & 0x40) && (comp->p7FFD & 8)) ? 6 : 2);
-	memSetBank(comp->mem, MEM_BANK3, MEM_RAM, (comp->pDFFD & 0x08) ? 7 : bank);
+	memSetBank(comp->mem, MEM_BANK1, MEM_RAM, (comp->pDFFD & 0x08) ? bank : 5, NULL, NULL, NULL);
+	memSetBank(comp->mem, MEM_BANK2, MEM_RAM, ((comp->pDFFD & 0x40) && (comp->p7FFD & 8)) ? 6 : 2, NULL, NULL, NULL);
+	memSetBank(comp->mem, MEM_BANK3, MEM_RAM, (comp->pDFFD & 0x08) ? 7 : bank, NULL, NULL, NULL);
 }
 
 // out

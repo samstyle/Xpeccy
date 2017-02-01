@@ -59,7 +59,11 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 // machine
 	i = 0;
 	while (hwTab[i].name != NULL) {
-		ui.machbox->addItem(trUtf8(hwTab[i].optName),QString::fromLocal8Bit(hwTab[i].name));
+		if (hwTab[i].type != HW_NULL) {
+			ui.machbox->addItem(trUtf8(hwTab[i].optName),QString::fromLocal8Bit(hwTab[i].name));
+		} else {
+			ui.machbox->insertSeparator(i);
+		}
 		i++;
 	}
 	i = 0;
@@ -320,9 +324,9 @@ void SetupWin::start(xProfile* p) {
 	ui.scrpwait->setChecked(comp->evenM1);
 	ui.sysCmos->setChecked(conf.sysclock);
 // video
-	// ui.fpsSpinbox->setValue(comp->vid->fps);
+	ui.cbFullscreen->setChecked(conf.vid.fullScreen);
+	ui.cbKeepRatio->setChecked(conf.vid.keepRatio);
 	ui.sbScale->setValue(conf.vid.scale);
-	ui.fscchk->setChecked(conf.vid.fullScreen);
 	ui.noflichk->setChecked(conf.vid.noFlick);
 	ui.grayscale->setChecked(conf.vid.grayScale);
 	ui.border4T->setChecked(comp->vid->border4t);
@@ -460,9 +464,9 @@ void SetupWin::apply() {
 	if (comp->hw != oldmac) compReset(comp,RES_DEFAULT);
 	conf.sysclock = ui.sysCmos->isChecked() ? 1 : 0;
 // video
-//	vidSetFps(comp->vid, ui.fpsSpinbox->value());
+	conf.vid.fullScreen = ui.cbFullscreen->isChecked() ? 1 : 0;
+	conf.vid.keepRatio = ui.cbKeepRatio->isChecked() ? 1 : 0;
 	conf.vid.scale = ui.sbScale->value();
-	conf.vid.fullScreen = ui.fscchk->isChecked() ? 1 : 0;
 	conf.vid.noFlick = ui.noflichk->isChecked() ? 1 : 0;
 	conf.vid.grayScale = ui.grayscale->isChecked() ? 1 : 0;
 	conf.scrShot.dir = std::string(ui.pathle->text().toLocal8Bit().data());

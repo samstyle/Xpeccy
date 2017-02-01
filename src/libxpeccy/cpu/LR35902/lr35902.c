@@ -69,15 +69,7 @@ int lr_int(CPU* cpu) {
 	return res;
 }
 
-int lr_nmi(CPU* cpu) {
-	return 0;
-}
-
 // disasm
-
-
-
-// asm
 
 xAsmScan lr_asm(const char* cbuf, char* buf) {
 	xAsmScan res = scanAsmTab(cbuf, lrTab);

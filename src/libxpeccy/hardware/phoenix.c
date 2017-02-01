@@ -2,17 +2,17 @@
 
 void phxMapMem(Computer* comp) {
 	int bank = (comp->p7FFD & 7) | ((comp->p1FFD & 0xd0) << 1) | ((comp->p7FFD & 0x80) << 3);
-	memSetBank(comp->mem, MEM_BANK3, MEM_RAM, bank);
+	memSetBank(comp->mem, MEM_BANK3, MEM_RAM, bank, NULL, NULL, NULL);
 	// memSetBank(comp->mem, MEM_BANK2, MEM_RAM, 2);
 	// memSetBank(comp->mem, MEM_BANK1, MEM_RAM, 5);
 	if (comp->p1FFD & 1) {
-		memSetBank(comp->mem, MEM_BANK0, MEM_RAM, 0);
+		memSetBank(comp->mem, MEM_BANK0, MEM_RAM, 0, NULL, NULL, NULL);
 	} else if (comp->p1FFD & 2) {
-		memSetBank(comp->mem, MEM_BANK0, MEM_ROM, 0);
+		memSetBank(comp->mem, MEM_BANK0, MEM_ROM, 0, NULL, NULL, NULL);
 	} else if (comp->p1FFD & 8) {
-		memSetBank(comp->mem, MEM_BANK0, MEM_ROM, comp->dos ? 3 : (comp->rom ? 1 : 0));
+		memSetBank(comp->mem, MEM_BANK0, MEM_ROM, comp->dos ? 3 : (comp->rom ? 1 : 0), NULL, NULL, NULL);
 	} else {
-		memSetBank(comp->mem, MEM_BANK0, MEM_ROM, comp->dos ? 1 : (comp->rom ? 3 : 2));
+		memSetBank(comp->mem, MEM_BANK0, MEM_ROM, comp->dos ? 1 : (comp->rom ? 3 : 2), NULL, NULL, NULL);
 	}
 }
 

@@ -9,6 +9,7 @@ extern "C" {
 enum {
 	MEM_RAM	= 1,
 	MEM_ROM,
+	MEM_SLOT,
 	MEM_EXT
 };
 // memory banks
@@ -24,9 +25,9 @@ typedef void(*extmwr)(unsigned short, unsigned char, void*);
 
 typedef struct {
 	unsigned wren:1;		// write enable
-	int type;
-	int num;
-	unsigned char* dptr;		// ptr to data (!MEM_EXT)
+	int type;			// type of page data
+	int num;			// 16K page number
+//	unsigned char* dptr;		// ptr to data (!MEM_EXT)
 	void* data;			// ptr for rd/wr func
 	extmrd rd;			// external rd (for type MEM_EXT)
 	extmwr wr;			// external wr (for type MEM_EXT)
@@ -47,10 +48,10 @@ void memDestroy(Memory*);
 unsigned char memRd(Memory*,unsigned short);
 void memWr(Memory*,unsigned short,unsigned char);
 
-void memSetSize(Memory*,int);
-void memSetBank(Memory*,int,int,unsigned char);
+void memSetSize(Memory*, int);
+void memSetBank(Memory*, int, int, int, extmrd, extmwr, void*);
 
-void memSetExternal(Memory*,int,int,extmrd,extmwr,void*);
+// void memSetExternal(Memory*,int,int,extmrd,extmwr,void*);
 
 void memSetPageData(Memory*,int,int,char*);
 void memGetPageData(Memory*,int,int,char*);

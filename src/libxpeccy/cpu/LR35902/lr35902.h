@@ -11,7 +11,7 @@
 void lr_reset(CPU*);
 int lr_exec(CPU*);
 int lr_int(CPU*);
-int lr_nmi(CPU*);
+// int lr_nmi(CPU*);
 
 xAsmScan lr_asm(const char*, char*);
 xMnem lr_mnem(unsigned short, cbdmr, void*);

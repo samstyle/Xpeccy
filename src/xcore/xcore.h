@@ -150,8 +150,9 @@ struct xConfig {
 	struct {
 		unsigned grayScale:1;
 		unsigned noFlick:1;
-		unsigned fullScreen:1;
-		int scale;		// 1..4
+		unsigned fullScreen:1;	// use fullscreen
+		unsigned keepRatio:1;	// keep ratio in fullscreen (add black borders)
+		int scale;		// x1..x4
 	} vid;
 	struct {
 		unsigned enabled:1;

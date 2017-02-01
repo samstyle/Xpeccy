@@ -50,7 +50,7 @@ enum {
 // typedef struct CPU CPU;
 
 struct CPU {
-	unsigned halt:1;
+	unsigned halt:1;		// cpu halted, undo on interrput
 	unsigned resPV:1;
 	unsigned noint:1;
 	unsigned inth:1;		// next step is 1:handle interrupt, 0: exec opcode
@@ -60,7 +60,8 @@ struct CPU {
 	unsigned speed:1;		// LR35902: double speed mode (TODO)
 	unsigned speedrq:1;		// LR35902: request speed change after STOP command
 
-	int type;
+	int type;			// cpu type id
+
 	unsigned char intrq;		// LR35902: interrupts request (b0..4, 1=request)
 	unsigned char inten;		// LR35902: interrupts enabled (b0..4, 1=enabled)
 
@@ -74,8 +75,7 @@ struct CPU {
 	unsigned char r7;
 	unsigned char iff1;
 	unsigned char iff2;
-	unsigned char imode;
-	unsigned short inta;
+	unsigned char imode;		// Z80:int mode
 
 	PAIR(af,a,f);
 	PAIR(bc,b,c);
@@ -94,14 +94,15 @@ struct CPU {
 	cbirq irq;
 	void* data;
 
+	unsigned char com;
 	opCode* tab;
 	opCode* opTab;
 	opCode* op;
 
 	void (*reset)(CPU*);
 	int (*exec)(CPU*);
-	int (*intr)(CPU*);
-	int (*nmi)(CPU*);
+	int (*intr)(CPU*);		// handle interrupt. intrq = requested INT types
+	// int (*nmi)(CPU*);
 	xAsmScan (*asmbl)(const char*, char*);
 	xMnem (*mnem)(unsigned short, cbdmr, void*);
 
@@ -118,8 +119,8 @@ typedef struct {
 	opCode* tab;				// start opcode tab;
 	void (*reset)(CPU*);			// reset
 	int (*exec)(CPU*);			// exec opcode, return T
-	int (*intr)(CPU*);			// handle INT, return T
-	int (*nmi)(CPU*);			// handle NMI, return T
+	int (*intr)(CPU*);			// handle interrupt, return T
+	// int (*nmi)(CPU*);			// handle NMI, return T
 	xAsmScan (*asmbl)(const char*, char*);	// compile mnemonic
 	xMnem (*mnem)(unsigned short, cbdmr, void*);
 } cpuCore;

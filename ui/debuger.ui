@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>785</width>
-    <height>612</height>
+    <width>757</width>
+    <height>614</height>
    </rect>
   </property>
   <property name="font">
@@ -28,7 +28,7 @@
   <property name="modal">
    <bool>true</bool>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout">
+  <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="10,0">
    <item>
     <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,0,0,0,0,0">
      <item>
@@ -49,14 +49,47 @@
        <property name="verticalSpacing">
         <number>2</number>
        </property>
-       <item row="0" column="0">
-        <widget class="QLabel" name="label">
+       <item row="4" column="5">
+        <widget class="QLabel" name="label_8">
          <property name="text">
-          <string>PC</string>
+          <string>IFF1</string>
          </property>
         </widget>
        </item>
-       <item row="0" column="1">
+       <item row="1" column="4">
+        <widget class="QLabel" name="label_13">
+         <property name="text">
+          <string>IX</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="5">
+        <widget class="QLineEdit" name="editIX">
+         <property name="inputMask">
+          <string>HHHH</string>
+         </property>
+         <property name="frame">
+          <bool>false</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="7">
+        <widget class="QLineEdit" name="editIY">
+         <property name="inputMask">
+          <string>HHHH</string>
+         </property>
+         <property name="frame">
+          <bool>false</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
         <widget class="QLineEdit" name="editPC">
          <property name="inputMask">
           <string>HHHH</string>
@@ -69,15 +102,8 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="2">
-        <widget class="QLabel" name="label_9">
-         <property name="text">
-          <string>AF</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="3">
-        <widget class="QLineEdit" name="editAF">
+       <item row="3" column="3">
+        <widget class="QLineEdit" name="editBCa">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -89,48 +115,21 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="4">
-        <widget class="QLabel" name="label_12">
+       <item row="2" column="6">
+        <widget class="QLabel" name="label_5">
          <property name="text">
-          <string>AF'</string>
+          <string>HL</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="2">
-        <widget class="QLabel" name="label_3">
+       <item row="4" column="4">
+        <widget class="QCheckBox" name="flagIFF1">
          <property name="text">
-          <string>BC</string>
+          <string/>
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>SP</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="5">
-        <widget class="QLineEdit" name="editAFa">
-         <property name="inputMask">
-          <string>HHHH</string>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="4">
-        <widget class="QLabel" name="label_15">
-         <property name="text">
-          <string>BC'</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
+       <item row="1" column="3">
         <widget class="QLineEdit" name="editSP">
          <property name="inputMask">
           <string>HHHH</string>
@@ -150,74 +149,14 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_13">
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_17">
          <property name="text">
-          <string>IX</string>
+          <string>IR</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="3">
-        <widget class="QLineEdit" name="editBC">
-         <property name="inputMask">
-          <string>HHHH</string>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="2">
-        <widget class="QLabel" name="label_4">
-         <property name="text">
-          <string>DE</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="5">
-        <widget class="QLineEdit" name="editBCa">
-         <property name="inputMask">
-          <string>HHHH</string>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="4">
-        <widget class="QLabel" name="label_16">
-         <property name="text">
-          <string>DE'</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QLineEdit" name="editIX">
-         <property name="inputMask">
-          <string>HHHH</string>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="label_14">
-         <property name="text">
-          <string>IY</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="3">
+       <item row="2" column="5">
         <widget class="QLineEdit" name="editDE">
          <property name="inputMask">
           <string>HHHH</string>
@@ -230,35 +169,15 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="2">
-        <widget class="QLabel" name="label_5">
-         <property name="text">
-          <string>HL</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="5">
-        <widget class="QLineEdit" name="editDEa">
-         <property name="inputMask">
-          <string>HHHH</string>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="4">
+       <item row="3" column="6">
         <widget class="QLabel" name="label_18">
          <property name="text">
           <string>HL'</string>
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
-        <widget class="QLineEdit" name="editIY">
+       <item row="2" column="1">
+        <widget class="QLineEdit" name="editAF">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -270,14 +189,55 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="0">
-        <widget class="QLabel" name="label_17">
-         <property name="text">
-          <string>IR</string>
+       <item row="3" column="7">
+        <widget class="QLineEdit" name="editHLa">
+         <property name="inputMask">
+          <string>HHHH</string>
+         </property>
+         <property name="frame">
+          <bool>false</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
-       <item row="3" column="3">
+       <item row="4" column="6">
+        <widget class="QCheckBox" name="flagIFF2">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="2">
+        <widget class="QLabel" name="label_15">
+         <property name="text">
+          <string>BC'</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_12">
+         <property name="text">
+          <string>AF'</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="6">
+        <widget class="QLabel" name="label_14">
+         <property name="text">
+          <string>IY</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="7">
+        <widget class="QLabel" name="label_11">
+         <property name="text">
+          <string>IFF2</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="7">
         <widget class="QLineEdit" name="editHL">
          <property name="inputMask">
           <string>HHHH</string>
@@ -303,8 +263,29 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="5">
-        <widget class="QLineEdit" name="editHLa">
+       <item row="2" column="4">
+        <widget class="QLabel" name="label_4">
+         <property name="text">
+          <string>DE</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_9">
+         <property name="text">
+          <string>AF</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="2">
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>BC</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="3">
+        <widget class="QLineEdit" name="editBC">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -316,10 +297,23 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="4">
-        <widget class="QLabel" name="label_20">
+       <item row="1" column="2">
+        <widget class="QLabel" name="label_2">
          <property name="text">
-          <string>dT</string>
+          <string>SP</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QLineEdit" name="editAFa">
+         <property name="inputMask">
+          <string>HHHH</string>
+         </property>
+         <property name="frame">
+          <bool>false</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
@@ -336,15 +330,45 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="5">
-        <widget class="QLabel" name="labTcount">
+       <item row="3" column="4">
+        <widget class="QLabel" name="label_16">
          <property name="text">
-          <string/>
+          <string>DE'</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>PC</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="5">
+        <widget class="QLineEdit" name="editDEa">
+         <property name="inputMask">
+          <string>HHHH</string>
+         </property>
+         <property name="frame">
+          <bool>false</bool>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
          </property>
         </widget>
+       </item>
+       <item row="1" column="8">
+        <spacer name="horizontalSpacer_4">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
        </item>
       </layout>
      </item>
@@ -353,27 +377,7 @@
        <property name="verticalSpacing">
         <number>0</number>
        </property>
-       <item row="0" column="2">
-        <widget class="QLabel" name="labF7">
-         <property name="text">
-          <string>S</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="6">
-        <widget class="QLabel" name="labF3">
-         <property name="text">
-          <string>3</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="3">
+       <item row="0" column="5">
         <widget class="QLabel" name="labF6">
          <property name="text">
           <string>Z</string>
@@ -383,65 +387,7 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="5">
-        <widget class="QLabel" name="labF4">
-         <property name="text">
-          <string>H</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="5">
-        <widget class="QCheckBox" name="cbF4">
-         <property name="maximumSize">
-          <size>
-           <width>15</width>
-           <height>15</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
-        </widget>
-       </item>
-       <item row="1" column="6">
-        <widget class="QCheckBox" name="cbF3">
-         <property name="maximumSize">
-          <size>
-           <width>15</width>
-           <height>15</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
-        </widget>
-       </item>
-       <item row="1" column="2">
-        <widget class="QCheckBox" name="cbF7">
-         <property name="maximumSize">
-          <size>
-           <width>15</width>
-           <height>15</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
-        </widget>
-       </item>
-       <item row="1" column="3">
+       <item row="2" column="5">
         <widget class="QCheckBox" name="cbF6">
          <property name="maximumSize">
           <size>
@@ -457,27 +403,23 @@
          </attribute>
         </widget>
        </item>
-       <item row="0" column="1">
-        <spacer name="horizontalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
+       <item row="2" column="8">
+        <widget class="QCheckBox" name="cbF3">
+         <property name="maximumSize">
           <size>
-           <width>40</width>
-           <height>20</height>
+           <width>15</width>
+           <height>15</height>
           </size>
          </property>
-        </spacer>
-       </item>
-       <item row="0" column="0">
-        <widget class="QCheckBox" name="flagIFF1">
          <property name="text">
-          <string>IFF1</string>
+          <string/>
          </property>
+         <attribute name="buttonGroup">
+          <string notr="true">flagGroup</string>
+         </attribute>
         </widget>
        </item>
-       <item row="0" column="7">
+       <item row="0" column="9">
         <widget class="QLabel" name="labF2">
          <property name="text">
           <string>P</string>
@@ -487,27 +429,23 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="8">
-        <widget class="QLabel" name="labF1">
+       <item row="2" column="9">
+        <widget class="QCheckBox" name="cbF2">
+         <property name="maximumSize">
+          <size>
+           <width>15</width>
+           <height>15</height>
+          </size>
+         </property>
          <property name="text">
-          <string>N</string>
+          <string/>
          </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
+         <attribute name="buttonGroup">
+          <string notr="true">flagGroup</string>
+         </attribute>
         </widget>
        </item>
-       <item row="0" column="9">
-        <widget class="QLabel" name="labF0">
-         <property name="text">
-          <string>C</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="4">
+       <item row="2" column="6">
         <widget class="QCheckBox" name="cbF5">
          <property name="maximumSize">
           <size>
@@ -523,7 +461,79 @@
          </attribute>
         </widget>
        </item>
-       <item row="1" column="8">
+       <item row="0" column="6">
+        <widget class="QLabel" name="labF5">
+         <property name="text">
+          <string>5</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="7">
+        <widget class="QCheckBox" name="cbF4">
+         <property name="maximumSize">
+          <size>
+           <width>15</width>
+           <height>15</height>
+          </size>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <attribute name="buttonGroup">
+          <string notr="true">flagGroup</string>
+         </attribute>
+        </widget>
+       </item>
+       <item row="2" column="4">
+        <widget class="QCheckBox" name="cbF7">
+         <property name="maximumSize">
+          <size>
+           <width>15</width>
+           <height>15</height>
+          </size>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <attribute name="buttonGroup">
+          <string notr="true">flagGroup</string>
+         </attribute>
+        </widget>
+       </item>
+       <item row="0" column="11">
+        <widget class="QLabel" name="labF0">
+         <property name="text">
+          <string>C</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="8">
+        <widget class="QLabel" name="labF3">
+         <property name="text">
+          <string>3</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="7">
+        <widget class="QLabel" name="labF4">
+         <property name="text">
+          <string>H</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="10">
         <widget class="QCheckBox" name="cbF1">
          <property name="maximumSize">
           <size>
@@ -539,7 +549,17 @@
          </attribute>
         </widget>
        </item>
-       <item row="1" column="9">
+       <item row="0" column="10">
+        <widget class="QLabel" name="labF1">
+         <property name="text">
+          <string>N</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="11">
         <widget class="QCheckBox" name="cbF0">
          <property name="maximumSize">
           <size>
@@ -556,37 +576,44 @@
         </widget>
        </item>
        <item row="0" column="4">
-        <widget class="QLabel" name="labF5">
+        <widget class="QLabel" name="labF7">
          <property name="text">
-          <string>5</string>
+          <string>S</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
-       <item row="1" column="7">
-        <widget class="QCheckBox" name="cbF2">
-         <property name="maximumSize">
-          <size>
-           <width>15</width>
-           <height>15</height>
-          </size>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_20">
+         <property name="text">
+          <string>dT</string>
          </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLabel" name="labTcount">
          <property name="text">
           <string/>
          </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QCheckBox" name="flagIFF2">
-         <property name="text">
-          <string>IFF2</string>
+         <property name="alignment">
+          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
          </property>
         </widget>
+       </item>
+       <item row="2" column="1">
+        <spacer name="horizontalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
        </item>
       </layout>
      </item>
@@ -677,6 +704,17 @@
          </property>
         </spacer>
        </item>
+       <item>
+        <widget class="QToolButton" name="tbSaveDasm">
+         <property name="text">
+          <string>...</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../xpeccy.qrc">
+           <normaloff>:/images/floppy.png</normaloff>:/images/floppy.png</iconset>
+         </property>
+        </widget>
+       </item>
       </layout>
      </item>
      <item>
@@ -703,7 +741,7 @@
         <bool>false</bool>
        </property>
        <property name="rowCount">
-        <number>22</number>
+        <number>24</number>
        </property>
        <property name="columnCount">
         <number>4</number>
@@ -748,6 +786,8 @@
        <row/>
        <row/>
        <row/>
+       <row/>
+       <row/>
        <column/>
        <column/>
        <column/>
@@ -759,115 +799,396 @@
    <item>
     <layout class="QVBoxLayout" name="verticalLayout_4">
      <item>
-      <widget class="QLabel" name="label_28">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(160, 160, 255)</string>
-       </property>
-       <property name="text">
-        <string>Dump</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
+      <layout class="QHBoxLayout" name="horizontalLayout" stretch="10,0">
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <item>
+          <widget class="QLabel" name="label_28">
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(160, 160, 255)</string>
+           </property>
+           <property name="text">
+            <string>Dump</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QTableWidget" name="dumpTable">
+           <property name="minimumSize">
+            <size>
+             <width>320</width>
+             <height>275</height>
+            </size>
+           </property>
+           <property name="contextMenuPolicy">
+            <enum>Qt::CustomContextMenu</enum>
+           </property>
+           <property name="autoFillBackground">
+            <bool>true</bool>
+           </property>
+           <property name="verticalScrollBarPolicy">
+            <enum>Qt::ScrollBarAlwaysOff</enum>
+           </property>
+           <property name="horizontalScrollBarPolicy">
+            <enum>Qt::ScrollBarAlwaysOff</enum>
+           </property>
+           <property name="tabKeyNavigation">
+            <bool>false</bool>
+           </property>
+           <property name="alternatingRowColors">
+            <bool>true</bool>
+           </property>
+           <property name="selectionMode">
+            <enum>QAbstractItemView::SingleSelection</enum>
+           </property>
+           <property name="showGrid">
+            <bool>false</bool>
+           </property>
+           <property name="gridStyle">
+            <enum>Qt::DotLine</enum>
+           </property>
+           <property name="rowCount">
+            <number>16</number>
+           </property>
+           <property name="columnCount">
+            <number>10</number>
+           </property>
+           <attribute name="horizontalHeaderVisible">
+            <bool>false</bool>
+           </attribute>
+           <attribute name="horizontalHeaderDefaultSectionSize">
+            <number>25</number>
+           </attribute>
+           <attribute name="horizontalHeaderMinimumSectionSize">
+            <number>25</number>
+           </attribute>
+           <attribute name="horizontalHeaderStretchLastSection">
+            <bool>true</bool>
+           </attribute>
+           <attribute name="verticalHeaderVisible">
+            <bool>false</bool>
+           </attribute>
+           <attribute name="verticalHeaderDefaultSectionSize">
+            <number>17</number>
+           </attribute>
+           <attribute name="verticalHeaderMinimumSectionSize">
+            <number>17</number>
+           </attribute>
+           <attribute name="verticalHeaderStretchLastSection">
+            <bool>true</bool>
+           </attribute>
+           <row/>
+           <row/>
+           <row/>
+           <row/>
+           <row/>
+           <row/>
+           <row/>
+           <row/>
+           <row/>
+           <row/>
+           <row/>
+           <row/>
+           <row/>
+           <row/>
+           <row/>
+           <row/>
+           <column/>
+           <column/>
+           <column/>
+           <column/>
+           <column/>
+           <column/>
+           <column/>
+           <column/>
+           <column/>
+           <column/>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QGridLayout" name="gridLayout_3">
+         <item row="5" column="0">
+          <widget class="QLabel" name="label_22">
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(160, 160, 255);</string>
+           </property>
+           <property name="text">
+            <string>RAY</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="1">
+          <widget class="QLabel" name="labROM">
+           <property name="text">
+            <string>ROM</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="labSP">
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(240,240,240)</string>
+           </property>
+           <property name="text">
+            <string>0000</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="labSP2">
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(240,240,240)</string>
+           </property>
+           <property name="text">
+            <string>0000</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="labSP4">
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(240,240,240)</string>
+           </property>
+           <property name="text">
+            <string>0000</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="1">
+          <widget class="QLabel" name="labDOS">
+           <property name="text">
+            <string>DOS</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="9" column="0">
+          <widget class="QLabel" name="labVBlank">
+           <property name="text">
+            <string>VB</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QLabel" name="labPG2">
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(255, 255, 255);</string>
+           </property>
+           <property name="text">
+            <string>RAM2</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLabel" name="labPG0">
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(255, 255, 255);</string>
+           </property>
+           <property name="text">
+            <string>ROM0</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="9" column="1">
+          <widget class="QLabel" name="labINT">
+           <property name="text">
+            <string>INT</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="1">
+          <widget class="QLabel" name="label_55">
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(160, 160, 255);</string>
+           </property>
+           <property name="text">
+            <string>SIG</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QLabel" name="labPG3">
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(255, 255, 255);</string>
+           </property>
+           <property name="text">
+            <string>RAM0</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="0">
+          <widget class="QLabel" name="labRY">
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(240,240,240)</string>
+           </property>
+           <property name="text">
+            <string>000</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="1">
+          <widget class="QLabel" name="labCPM">
+           <property name="text">
+            <string>CPM</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="labSP6">
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(240,240,240)</string>
+           </property>
+           <property name="text">
+            <string>0000</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_27">
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(160, 160, 255);</string>
+           </property>
+           <property name="text">
+            <string>SP</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLabel" name="label_24">
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(160, 160, 255);</string>
+           </property>
+           <property name="text">
+            <string>MEM</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="0">
+          <widget class="QLabel" name="labHBlank">
+           <property name="text">
+            <string>HB</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="0">
+          <widget class="QLabel" name="labRX">
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(240,240,240)</string>
+           </property>
+           <property name="text">
+            <string>000</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLabel" name="labPG1">
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(255, 255, 255);</string>
+           </property>
+           <property name="text">
+            <string>RAM5</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="10" column="0">
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+      </layout>
      </item>
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_7">
        <item>
-        <widget class="QTableWidget" name="dumpTable">
-         <property name="minimumSize">
-          <size>
-           <width>320</width>
-           <height>275</height>
-          </size>
+        <widget class="QToolButton" name="tbMemView">
+         <property name="toolTip">
+          <string>Memory viewer</string>
          </property>
-         <property name="contextMenuPolicy">
-          <enum>Qt::CustomContextMenu</enum>
+         <property name="text">
+          <string>...</string>
          </property>
-         <property name="autoFillBackground">
-          <bool>true</bool>
+         <property name="icon">
+          <iconset resource="../xpeccy.qrc">
+           <normaloff>:/images/eye.png</normaloff>:/images/eye.png</iconset>
          </property>
-         <property name="verticalScrollBarPolicy">
-          <enum>Qt::ScrollBarAlwaysOff</enum>
-         </property>
-         <property name="horizontalScrollBarPolicy">
-          <enum>Qt::ScrollBarAlwaysOff</enum>
-         </property>
-         <property name="tabKeyNavigation">
-          <bool>false</bool>
-         </property>
-         <property name="alternatingRowColors">
-          <bool>true</bool>
-         </property>
-         <property name="selectionMode">
-          <enum>QAbstractItemView::SingleSelection</enum>
-         </property>
-         <property name="showGrid">
-          <bool>false</bool>
-         </property>
-         <property name="gridStyle">
-          <enum>Qt::DotLine</enum>
-         </property>
-         <property name="rowCount">
-          <number>16</number>
-         </property>
-         <property name="columnCount">
-          <number>10</number>
-         </property>
-         <attribute name="horizontalHeaderVisible">
-          <bool>false</bool>
-         </attribute>
-         <attribute name="horizontalHeaderDefaultSectionSize">
-          <number>25</number>
-         </attribute>
-         <attribute name="horizontalHeaderMinimumSectionSize">
-          <number>25</number>
-         </attribute>
-         <attribute name="horizontalHeaderStretchLastSection">
-          <bool>true</bool>
-         </attribute>
-         <attribute name="verticalHeaderVisible">
-          <bool>false</bool>
-         </attribute>
-         <attribute name="verticalHeaderDefaultSectionSize">
-          <number>17</number>
-         </attribute>
-         <attribute name="verticalHeaderMinimumSectionSize">
-          <number>17</number>
-         </attribute>
-         <attribute name="verticalHeaderStretchLastSection">
-          <bool>true</bool>
-         </attribute>
-         <row/>
-         <row/>
-         <row/>
-         <row/>
-         <row/>
-         <row/>
-         <row/>
-         <row/>
-         <row/>
-         <row/>
-         <row/>
-         <row/>
-         <row/>
-         <row/>
-         <row/>
-         <row/>
-         <column/>
-         <column/>
-         <column/>
-         <column/>
-         <column/>
-         <column/>
-         <column/>
-         <column/>
-         <column/>
-         <column/>
         </widget>
        </item>
        <item>
-        <spacer name="horizontalSpacer_4">
+        <spacer name="horizontalSpacer_5">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
@@ -1211,55 +1532,45 @@
         </attribute>
         <layout class="QHBoxLayout" name="horizontalLayout_3">
          <item>
-          <widget class="QLabel" name="scrLabel">
-           <property name="minimumSize">
-            <size>
-             <width>256</width>
-             <height>192</height>
-            </size>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item>
           <layout class="QVBoxLayout" name="verticalLayout_3">
            <item>
+            <widget class="QLabel" name="scrLabel">
+             <property name="minimumSize">
+              <size>
+               <width>256</width>
+               <height>192</height>
+              </size>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_6">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QGridLayout" name="gridLayout_4">
+           <item row="0" column="0">
             <widget class="QLabel" name="label_49">
              <property name="text">
               <string>Bank</string>
              </property>
             </widget>
            </item>
-           <item>
-            <widget class="QSpinBox" name="sbScrBank">
-             <property name="minimum">
-              <number>0</number>
-             </property>
-             <property name="maximum">
-              <number>255</number>
-             </property>
-             <property name="value">
-              <number>5</number>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QCheckBox" name="cbScrAlt">
-             <property name="text">
-              <string>Alt</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QCheckBox" name="cbScrAtr">
-             <property name="text">
-              <string>B/W</string>
-             </property>
-            </widget>
-           </item>
-           <item>
+           <item row="5" column="0">
             <spacer name="verticalSpacer_5">
              <property name="orientation">
               <enum>Qt::Vertical</enum>
@@ -1272,20 +1583,30 @@
              </property>
             </spacer>
            </item>
-           <item>
-            <widget class="QToolButton" name="tbMemView">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
+           <item row="0" column="1">
+            <widget class="QSpinBox" name="sbScrBank">
+             <property name="minimum">
+              <number>0</number>
              </property>
+             <property name="maximum">
+              <number>255</number>
+             </property>
+             <property name="value">
+              <number>5</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QCheckBox" name="cbScrAlt">
              <property name="text">
-              <string>...</string>
+              <string>+#2000</string>
              </property>
-             <property name="icon">
-              <iconset resource="../xpeccy.qrc">
-               <normaloff>:/images/eye.png</normaloff>:/images/eye.png</iconset>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QCheckBox" name="cbScrAtr">
+             <property name="text">
+              <string>noAtr</string>
              </property>
             </widget>
            </item>
@@ -1487,278 +1808,6 @@
      </item>
     </layout>
    </item>
-   <item>
-    <layout class="QVBoxLayout" name="verticalLayout_2">
-     <item>
-      <widget class="QLabel" name="label_24">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(160, 160, 255);</string>
-       </property>
-       <property name="text">
-        <string>MEM</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labPG0">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(255, 255, 255);</string>
-       </property>
-       <property name="text">
-        <string>ROM0</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labPG1">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(255, 255, 255);</string>
-       </property>
-       <property name="text">
-        <string>RAM5</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labPG2">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(255, 255, 255);</string>
-       </property>
-       <property name="text">
-        <string>RAM2</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labPG3">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(255, 255, 255);</string>
-       </property>
-       <property name="text">
-        <string>RAM0</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="label_55">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(160, 160, 255);</string>
-       </property>
-       <property name="text">
-        <string>SIG</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labDOS">
-       <property name="text">
-        <string>DOS</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labROM">
-       <property name="text">
-        <string>ROM</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labCPM">
-       <property name="text">
-        <string>CPM</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labINT">
-       <property name="text">
-        <string>INT</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="label_27">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(160, 160, 255);</string>
-       </property>
-       <property name="text">
-        <string>SP</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labSP">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(240,240,240)</string>
-       </property>
-       <property name="text">
-        <string>0000</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labSP2">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(240,240,240)</string>
-       </property>
-       <property name="text">
-        <string>0000</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labSP4">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(240,240,240)</string>
-       </property>
-       <property name="text">
-        <string>0000</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labSP6">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(240,240,240)</string>
-       </property>
-       <property name="text">
-        <string>0000</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labSP8">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(240,240,240)</string>
-       </property>
-       <property name="text">
-        <string>0000</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="label_22">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(160, 160, 255);</string>
-       </property>
-       <property name="text">
-        <string>RAY</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labRX">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(240,240,240)</string>
-       </property>
-       <property name="text">
-        <string>000</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labRY">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(240,240,240)</string>
-       </property>
-       <property name="text">
-        <string>000</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labHBlank">
-       <property name="text">
-        <string>HB</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labVBlank">
-       <property name="text">
-        <string>VB</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="verticalSpacer">
-       <property name="orientation">
-        <enum>Qt::Vertical</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>20</width>
-         <height>40</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-    </layout>
-   </item>
   </layout>
   <action name="actFetch">
    <property name="checkable">
@@ -1863,6 +1912,11 @@
     <string>Trace, stop here</string>
    </property>
   </action>
+  <action name="actViewText">
+   <property name="text">
+    <string>Ascii</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -1871,16 +1925,62 @@
    <header location="global">stdlib.h</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>editPC</tabstop>
+  <tabstop>editSP</tabstop>
+  <tabstop>editIX</tabstop>
+  <tabstop>editIY</tabstop>
+  <tabstop>editAF</tabstop>
+  <tabstop>editBC</tabstop>
+  <tabstop>editDE</tabstop>
+  <tabstop>editHL</tabstop>
+  <tabstop>editAFa</tabstop>
+  <tabstop>editBCa</tabstop>
+  <tabstop>editDEa</tabstop>
+  <tabstop>editHLa</tabstop>
+  <tabstop>editIR</tabstop>
+  <tabstop>boxIM</tabstop>
+  <tabstop>flagIFF1</tabstop>
+  <tabstop>flagIFF2</tabstop>
+  <tabstop>cbF4</tabstop>
+  <tabstop>cbF7</tabstop>
+  <tabstop>cbF6</tabstop>
+  <tabstop>cbF5</tabstop>
+  <tabstop>cbF3</tabstop>
+  <tabstop>tbBreak</tabstop>
+  <tabstop>cbF2</tabstop>
+  <tabstop>cbF1</tabstop>
+  <tabstop>cbF0</tabstop>
+  <tabstop>tbLabels</tabstop>
+  <tabstop>tbView</tabstop>
+  <tabstop>tbTrace</tabstop>
+  <tabstop>tbSaveDasm</tabstop>
+  <tabstop>dasmTable</tabstop>
+  <tabstop>dumpTable</tabstop>
+  <tabstop>tabsPanel</tabstop>
+  <tabstop>sbScrBank</tabstop>
+  <tabstop>cbScrAlt</tabstop>
+  <tabstop>cbScrAtr</tabstop>
+  <tabstop>tbMemView</tabstop>
+  <tabstop>bpList</tabstop>
+  <tabstop>tbAddBrk</tabstop>
+  <tabstop>tbDelBrk</tabstop>
+  <tabstop>rbTilesetView</tabstop>
+  <tabstop>rbTilemapView</tabstop>
+  <tabstop>rbPaleteView</tabstop>
+  <tabstop>sbTileset</tabstop>
+  <tabstop>sbTilemap</tabstop>
+ </tabstops>
  <resources>
   <include location="../xpeccy.qrc"/>
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
+  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

@@ -20,7 +20,7 @@ typedef struct CPU CPU;
 void z80_reset(CPU*);
 int z80_exec(CPU*);
 int z80_int(CPU*);
-int z80_nmi(CPU*);
+// int z80_nmi(CPU*);
 xAsmScan z80_asm(const char*, char*);
 xMnem z80_mnem(unsigned short, cbdmr, void*);
 

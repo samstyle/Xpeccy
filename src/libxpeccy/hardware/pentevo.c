@@ -53,7 +53,7 @@ void evoSetBank(Computer* comp, int bank, memEntry me) {
 			page = (page & 0x3e) | (comp->dos ? 1 : 0);				// mix with dosen
 		}
 	}
-	memSetBank(comp->mem,bank,(me.flag & 0x40) ? MEM_RAM : MEM_ROM, page);
+	memSetBank(comp->mem,bank,(me.flag & 0x40) ? MEM_RAM : MEM_ROM, page, NULL, NULL, NULL);
 }
 
 void evoMapMem(Computer* comp) {
@@ -65,12 +65,13 @@ void evoMapMem(Computer* comp) {
 		evoSetBank(comp,MEM_BANK3,comp->memMap[adr+3]);
 	} else {
 		comp->dos = 1;
-		memSetBank(comp->mem,MEM_BANK0,MEM_ROM,0xff);
-		memSetBank(comp->mem,MEM_BANK1,MEM_ROM,0xff);
-		memSetBank(comp->mem,MEM_BANK2,MEM_ROM,0xff);
-		memSetBank(comp->mem,MEM_BANK3,MEM_ROM,0xff);
+		memSetBank(comp->mem,MEM_BANK0,MEM_ROM,0xff, NULL, NULL, NULL);
+		memSetBank(comp->mem,MEM_BANK1,MEM_ROM,0xff, NULL, NULL, NULL);
+		memSetBank(comp->mem,MEM_BANK2,MEM_ROM,0xff, NULL, NULL, NULL);
+		memSetBank(comp->mem,MEM_BANK3,MEM_ROM,0xff, NULL, NULL, NULL);
 	}
-	if (comp->pEFF7 & 8) memSetBank(comp->mem,MEM_BANK0,MEM_RAM,0x00);	// b3.EFF7: ram0 @ 0x0000 : high priority
+	if (comp->pEFF7 & 8)				// b3.EFF7: ram0 @ 0x0000 : high priority
+		memSetBank(comp->mem,MEM_BANK0,MEM_RAM,0x00, NULL, NULL, NULL);
 }
 
 // in

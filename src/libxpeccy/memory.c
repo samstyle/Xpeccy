@@ -8,10 +8,10 @@ Memory* memCreate() {
 	Memory* mem = (Memory*)malloc(sizeof(Memory));
 	mem->romMask = 0x03;
 	memSetSize(mem,48);
-	memSetBank(mem, MEM_BANK0, MEM_ROM, 0);
-	memSetBank(mem, MEM_BANK1, MEM_RAM, 5);
-	memSetBank(mem, MEM_BANK2, MEM_RAM, 2);
-	memSetBank(mem, MEM_BANK3, MEM_RAM, 0);
+	memSetBank(mem, MEM_BANK0, MEM_ROM, 0, NULL, NULL, NULL);
+	memSetBank(mem, MEM_BANK1, MEM_RAM, 5, NULL, NULL, NULL);
+	memSetBank(mem, MEM_BANK2, MEM_RAM, 2, NULL, NULL, NULL);
+	memSetBank(mem, MEM_BANK3, MEM_RAM, 0, NULL, NULL, NULL);
 	return mem;
 }
 
@@ -26,19 +26,25 @@ MemPage* memGetBankPtr(Memory* mem, unsigned short adr) {
 // MemPage* ptr;
 
 unsigned char memRd(Memory* mem, unsigned short adr) {
-	MemPage* ptr = &mem->map[adr >> 14];
+	MemPage* ptr = &mem->map[(adr & 0xc000) >> 14];
+	return ptr->rd ? ptr->rd(adr, ptr->data) : 0xff;
+/*
 	if (ptr->type != MEM_EXT) return ptr->dptr[adr & 0x3fff];
 	if (ptr->rd) return ptr->rd(adr, ptr->data);
 	return 0xff;
+*/
 }
 
 void memWr(Memory* mem, unsigned short adr, unsigned char val) {
-	MemPage* ptr = &mem->map[adr >> 14];
+	MemPage* ptr = &mem->map[(adr & 0xc000) >> 14];
+	if (ptr->wr) ptr->wr(adr, val, ptr->data);
+/*
 	if (ptr->type == MEM_EXT) {
 		if (ptr->wr) ptr->wr(adr, val, ptr->data);
 	} else if (ptr->wren) {
 		ptr->dptr[adr & 0x3fff] = val;
 	}
+*/
 }
 
 void memSetSize(Memory* mem, int val) {
@@ -73,6 +79,7 @@ void memSetSize(Memory* mem, int val) {
 	}
 }
 
+/*
 void memSetBank(Memory* mem, int bank, int wut, unsigned char nr) {
 	if (wut == MEM_ROM) {
 		nr &= mem->romMask;
@@ -104,6 +111,39 @@ void memSetExternal(Memory* mem, int bank, int num, extmrd rd, extmwr wr, void* 
 	pg.wr = wr;
 	pg.dptr = NULL;
 	mem->map[bank] = pg;
+}
+*/
+
+unsigned char memPageRd(unsigned short adr, void* data) {
+	return ((unsigned char*)data)[adr & 0x3fff];
+}
+
+void memPageWr(unsigned short adr, unsigned char val, void* data) {
+	((unsigned char*)data)[adr & 0x3fff] = val;
+}
+
+void memSetBank(Memory* mem, int bank, int type, int page, extmrd rd, extmwr wr, void* data) {
+	MemPage pg;
+	pg.type = type;
+	pg.num = page;
+	switch(type) {
+		case MEM_ROM:
+			pg.data = mem->romData + ((page & 0xff) << 14);		// ptr of page begin
+			pg.rd = memPageRd;
+			pg.wr = NULL;		// write disabled
+			break;
+		case MEM_RAM:
+			pg.data = mem->ramData + ((page & 0xff) << 14);
+			pg.rd = memPageRd;
+			pg.wr = memPageWr;
+			break;
+		default:
+			pg.data = data;
+			pg.rd = rd;
+			pg.wr = wr;
+			break;
+	}
+	mem->map[bank & 3] = pg;
 }
 
 void memSetPageData(Memory* mem, int type, int page, char* src) {

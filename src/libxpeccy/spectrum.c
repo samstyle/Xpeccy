@@ -250,9 +250,10 @@ void compReset(Computer* comp,int res) {
 	comp->prt2 = 0;
 	comp->p1FFD = 0;
 	comp->pEFF7 = 0;
-	memSetBank(comp->mem,MEM_BANK1,MEM_RAM,5);
-	memSetBank(comp->mem,MEM_BANK2,MEM_RAM,2);
-	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0);
+	memSetBank(comp->mem, MEM_BANK0, MEM_ROM, 0, NULL, NULL, NULL);
+	memSetBank(comp->mem, MEM_BANK1, MEM_RAM, 5, NULL, NULL, NULL);
+	memSetBank(comp->mem, MEM_BANK2, MEM_RAM, 2, NULL, NULL, NULL);
+	memSetBank(comp->mem, MEM_BANK3, MEM_RAM, 0, NULL, NULL, NULL);
 	comp->cpu->reset(comp->cpu);
 	comp->vid->curscr = 5;
 	vidSetMode(comp->vid,VID_NORMAL);
@@ -286,6 +287,12 @@ void compUpdateTimings(Computer* comp) {
 	comp->nsPerTick = perNoTurbo / comp->frqMul;
 	int type = comp->hw ? comp->hw->type : HW_NULL;
 	switch (type) {
+		case HW_MSX:
+		case HW_MSX2:
+			perNoTurbo = perNoTurbo * 5 / 6;				// convert 50Hz->60Hz
+			comp->nsPerTick = perNoTurbo / comp->frqMul;
+			vidUpdateTimings(comp->vid, perNoTurbo >> 1);
+			break;
 		case HW_GBC:
 			comp->gbsnd->wav.period = perNoTurbo << 5;			// 128KHz period for wave generator = cpu.frq / 32
 			comp->gb.timer.div.per = comp->nsPerTick << 8;			// 16KHz timer divider tick. this timer depends on turbo speed
@@ -375,15 +382,11 @@ int compExec(Computer* comp) {
 	pcreg = comp->cpu->pc;
 // NMI							TODO: remake as another INT
 	if ((pcreg > 0x3fff) && comp->nmiRequest && !comp->rzx.play) {
-		res4 = 0;
-		res2 = comp->cpu->nmi(comp->cpu);	// z80ex_nmi(comp->cpu);
-		res1 += res2;
-		if (res2 != 0) {
-			comp->dos = 1;
-			comp->p7FFD |= 0x10;
-			comp->hw->mapMem(comp);
-			vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
-		}
+		comp->cpu->intrq |= 2;		// request nmi
+		comp->cpu->inth = 1;
+		comp->dos = 1;			// set dos page
+		comp->rom = 1;
+		comp->hw->mapMem(comp);
 	}
 // execution completed : get eated time
 	nsTime = res1 * comp->nsPerTick;
