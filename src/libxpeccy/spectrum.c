@@ -512,15 +512,23 @@ unsigned char* getBrkPtr(Computer* comp, unsigned short madr) {
 	return (ptr->type == MEM_RAM) ? &comp->brkRamMap[adr] : &comp->brkRomMap[adr];
 }
 
-unsigned char getBrk(Computer* comp, unsigned short madr) {
-	unsigned char res = 0x00;
-	MemPage* ptr = &comp->mem->map[madr >> 14];
-	int adr = (ptr->num << 14) | (madr & 0x3fff);
-	if (ptr->type == MEM_RAM) {
-		res = comp->brkRamMap[adr];
+void setBrk(Computer* comp, unsigned short adr, unsigned char val) {
+	xAdr xadr = memGetXAdr(comp->mem, adr);
+	if (xadr.type == MEM_RAM) {
+		comp->brkRamMap[xadr.abs] = val;
 	} else {
-		res = comp->brkRomMap[adr];
+		comp->brkRomMap[xadr.abs] = val;
 	}
-	res |= comp->brkAdrMap[madr];
+}
+
+unsigned char getBrk(Computer* comp, unsigned short adr) {
+	unsigned char res = 0x00;
+	xAdr xadr = memGetXAdr(comp->mem, adr);
+	if (xadr.type == MEM_RAM) {
+		res = comp->brkRamMap[xadr.abs];
+	} else {
+		res = comp->brkRomMap[xadr.abs];
+	}
+	res |= (comp->brkAdrMap[adr] & 0x0f);
 	return res;
 }

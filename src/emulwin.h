@@ -137,6 +137,7 @@ class MainWin : public QWidget {
 
 		void saveVRAM();
 		void saveGBVRAM();
+		void debugAction();
 	protected:
 		void closeEvent(QCloseEvent*);
 		void dragEnterEvent(QDragEnterEvent*);

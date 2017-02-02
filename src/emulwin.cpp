@@ -64,9 +64,18 @@ void MainWin::updateWindow() {
 		szw = wsz.width();
 		szh = wsz.height();
 		setWindowState(windowState() | Qt::WindowFullScreen);
+//		grabMice = 1;
+//		grabMouse();
 	} else {
 		setWindowState(windowState() & ~Qt::WindowFullScreen);
+//		grabMice = 0;
+//		releaseMouse();
 	}
+//	if (grabMice || conf.vid.fullScreen) {
+//		setCursor(Qt::BlankCursor);
+//	} else {
+//		unsetCursor();
+//	}
 	setFixedSize(szw, szh);
 	lineBytes = szw * 3;
 	frameBytes = szh * lineBytes;
@@ -394,10 +403,15 @@ void MainWin::onTimer() {
 
 // if not paused play sound buffer
 	if (conf.snd.enabled && (conf.snd.mute || isActiveWindow())) sndPlay();
-// if window is not active release keys & buttons
+// if window is not active release keys & buttons, release mouse
 	if (!isActiveWindow()) {
 		keyReleaseAll(comp->keyb);
 		comp->mouse->buttons = 0xff;
+		unsetCursor();
+		if (grabMice) {
+			grabMice = 0;
+			releaseMouse();
+		}
 	}
 
 // take screenshot
@@ -578,6 +592,9 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				setMessage(conf.vid.fullScreen ? " fullscreen on " : " fullscreen off ");
 				updateWindow();
 				saveConfig();
+				break;
+			case Qt::Key_Home:
+				debugAction();
 				break;
 				/*
 			case Qt::Key_0:
@@ -779,8 +796,10 @@ void MainWin::mouseReleaseEvent(QMouseEvent *ev) {
 			grabMice = !grabMice;
 			if (grabMice) {
 				grabMouse(QCursor(Qt::BlankCursor));
+				setMessage(" grab mouse ");
 			} else {
 				releaseMouse();
+				setMessage(" release mouse ");
 			}
 			break;
 		default: break;
@@ -1263,13 +1282,24 @@ void MainWin::loadLabels(const char* nm) {
 		line = file.readLine();
 		arr = line.split(QRegExp("[: \r\n]"),QString::SkipEmptyParts);
 		if (arr.size() > 2) {
+			xadr.type = MEM_RAM;
 			xadr.bank = arr.at(0).toInt(NULL,16);
 			xadr.adr = arr.at(1).toInt(NULL,16) & 0x3fff;
 			switch (xadr.bank) {
-				case 0xff: break;
-				case 0x05: xadr.adr |= 0x4000; break;
-				case 0x02: xadr.adr |= 0x8000; break;
-				default: xadr.adr |= 0xc000; break;
+				case 0xff:
+					xadr.type = MEM_ROM;
+					xadr.bank = -1;
+					break;
+				case 0x05:
+					xadr.adr |= 0x4000;
+					break;
+				case 0x02:
+					xadr.adr |= 0x8000;
+					break;
+				default:
+					xadr.bank = -1;
+					xadr.adr |= 0xc000;
+					break;
 			}
 			dbg->labels[arr.at(2)] = xadr;
 		}
@@ -1394,3 +1424,7 @@ void MainWin::saveGBVRAM() {
 	}
 }
 
+void MainWin::debugAction() {
+	xAdr xadr = memGetXAdr(comp->mem, 0x4000);
+	qDebug() << xadr.type << xadr.bank << xadr.adr << xadr.abs;
+}

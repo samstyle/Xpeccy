@@ -31,10 +31,12 @@ class xTableWidget : public QTableWidget {
 #include "ui_debuger.h"
 #include "libxpeccy/spectrum.h"
 
+/*
 struct xAdr {
 	int bank;
 	int adr;
 };
+*/
 
 enum {
 	XTYPE_NONE = -1,
@@ -119,7 +121,7 @@ class DebugWin : public QDialog {
 		int getAdr();
 		void switchBP(unsigned char);
 
-		QString findLabel(int);
+		QString findLabel(int, int, int);
 
 		unsigned short disasmAdr;
 		unsigned short dumpAdr;
@@ -143,8 +145,11 @@ class DebugWin : public QDialog {
 
 	private slots:
 		void setShowLabels(bool);
-		void loadLabels();
-		void saveLabels();
+//		void loadLabels();
+//		void saveLabels();
+
+		void loadMap();
+		void saveMap();
 
 		int fillDisasm();
 

@@ -87,7 +87,7 @@ struct xCartridge {
 	unsigned ramod:1;		// ram banking mode (gb)
 	unsigned char ram[0x8000];	// onboard ram
 	unsigned short ramMask;
-	unsigned char* data;		// onboard rom
+	unsigned char* data;		// onboard rom (malloc)
 	char name[FILENAME_MAX];
 	int memMask;
 	int memMap[8];		// 8 of 8kb pages
@@ -170,7 +170,7 @@ typedef struct {
 
 	memEntry memMap[16];			// memory map for ATM2, PentEvo
 	unsigned char brkRamMap[0x400000];	// ram brk/type : b0..3:brk flags, b4..7:type
-	unsigned char brkRomMap[0x80000];	// rom brk/type : b0..3:brk flags, b4..7:type
+	unsigned char brkRomMap[0x400000];	// rom brk/type : b0..3:brk flags, b4..7:type
 	unsigned char brkAdrMap[0x10000];	// adr brk
 	unsigned char brkIOMap[0x10000];	// io brk
 
@@ -231,7 +231,6 @@ typedef struct {
 	struct {
 		unsigned boot:1;	// boot rom on
 		unsigned inpint:1;	// button pressed: request interrupt
-		// unsigned char inten;	// int enable flags
 		int buttons;
 		struct {
 			struct {
@@ -278,6 +277,7 @@ void rzxStop(Computer*);
 
 unsigned char* getBrkPtr(Computer*, unsigned short);
 unsigned char getBrk(Computer*, unsigned short);
+void setBrk(Computer*, unsigned short, unsigned char);
 
 #ifdef __cplusplus
 }

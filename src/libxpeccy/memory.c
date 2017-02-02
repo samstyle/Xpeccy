@@ -28,23 +28,11 @@ MemPage* memGetBankPtr(Memory* mem, unsigned short adr) {
 unsigned char memRd(Memory* mem, unsigned short adr) {
 	MemPage* ptr = &mem->map[(adr & 0xc000) >> 14];
 	return ptr->rd ? ptr->rd(adr, ptr->data) : 0xff;
-/*
-	if (ptr->type != MEM_EXT) return ptr->dptr[adr & 0x3fff];
-	if (ptr->rd) return ptr->rd(adr, ptr->data);
-	return 0xff;
-*/
 }
 
 void memWr(Memory* mem, unsigned short adr, unsigned char val) {
 	MemPage* ptr = &mem->map[(adr & 0xc000) >> 14];
 	if (ptr->wr) ptr->wr(adr, val, ptr->data);
-/*
-	if (ptr->type == MEM_EXT) {
-		if (ptr->wr) ptr->wr(adr, val, ptr->data);
-	} else if (ptr->wren) {
-		ptr->dptr[adr & 0x3fff] = val;
-	}
-*/
 }
 
 void memSetSize(Memory* mem, int val) {
@@ -78,41 +66,6 @@ void memSetSize(Memory* mem, int val) {
 			break;
 	}
 }
-
-/*
-void memSetBank(Memory* mem, int bank, int wut, unsigned char nr) {
-	if (wut == MEM_ROM) {
-		nr &= mem->romMask;
-		mem->map[bank].type = MEM_ROM;
-		mem->map[bank].num = nr;
-		mem->map[bank].wren = 0;
-		mem->map[bank].dptr = mem->romData + (nr << 14);
-	} else if (wut == MEM_RAM) {
-		nr &= mem->memMask;
-		mem->map[bank].type = MEM_RAM;
-		mem->map[bank].num = nr;
-		mem->map[bank].wren = 1;
-		mem->map[bank].dptr = mem->ramData + (nr << 14);
-	}
-}
-
-// set a page with external rd/wr procedures
-// extmrd = unsigned char(*)(unsigned short adr, void* data) : memRd procedure
-// extmwr = void(*)(unsigned short adr, unsigned char value, void* data) : memWr procedure
-// void* data = pointer to send to rd/wr procedure
-// int wren = write enabled flag
-void memSetExternal(Memory* mem, int bank, int num, extmrd rd, extmwr wr, void* data) {
-	MemPage pg;
-	pg.type = MEM_EXT;
-	pg.num = num;
-	pg.wren = 0;
-	pg.data = data;
-	pg.rd = rd;
-	pg.wr = wr;
-	pg.dptr = NULL;
-	mem->map[bank] = pg;
-}
-*/
 
 unsigned char memPageRd(unsigned short adr, void* data) {
 	return ((unsigned char*)data)[adr & 0x3fff];
@@ -184,4 +137,15 @@ unsigned char* memGetPagePtr(Memory* mem, int type, int page) {
 			break;
 	}
 	return res;
+}
+
+// get memory cell address
+xAdr memGetXAdr(Memory* mem, unsigned short adr) {
+	xAdr xadr;
+	MemPage* ptr = &mem->map[(adr >> 14) & 3];
+	xadr.type = ptr->type;
+	xadr.bank = ptr->num;
+	xadr.adr = adr;					// 16bit adr
+	xadr.abs = (xadr.bank << 14) | (adr & 0x3fff);	// absolute addr
+	return xadr;
 }

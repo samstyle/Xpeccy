@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>757</width>
-    <height>614</height>
+    <width>771</width>
+    <height>646</height>
    </rect>
   </property>
   <property name="font">
@@ -30,7 +30,7 @@
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="10,0">
    <item>
-    <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,0,0,0,0,0">
+    <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,0,0,0,0,10">
      <item>
       <widget class="QLabel" name="label_26">
        <property name="styleSheet">
@@ -653,10 +653,10 @@
            <normaloff>:/images/label.png</normaloff>:/images/label.png</iconset>
          </property>
          <property name="checkable">
-          <bool>false</bool>
+          <bool>true</bool>
          </property>
          <property name="checked">
-          <bool>false</bool>
+          <bool>true</bool>
          </property>
          <property name="popupMode">
           <enum>QToolButton::InstantPopup</enum>
@@ -713,12 +713,21 @@
           <iconset resource="../xpeccy.qrc">
            <normaloff>:/images/floppy.png</normaloff>:/images/floppy.png</iconset>
          </property>
+         <property name="popupMode">
+          <enum>QToolButton::InstantPopup</enum>
+         </property>
         </widget>
        </item>
       </layout>
      </item>
      <item>
       <widget class="xTableWidget" name="dasmTable">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <property name="contextMenuPolicy">
         <enum>Qt::CustomContextMenu</enum>
        </property>
@@ -741,7 +750,7 @@
         <bool>false</bool>
        </property>
        <property name="rowCount">
-        <number>24</number>
+        <number>25</number>
        </property>
        <property name="columnCount">
         <number>4</number>
@@ -764,6 +773,7 @@
        <attribute name="verticalHeaderMinimumSectionSize">
         <number>17</number>
        </attribute>
+       <row/>
        <row/>
        <row/>
        <row/>
@@ -1917,6 +1927,24 @@
     <string>Ascii</string>
    </property>
   </action>
+  <action name="actSaveMap">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/floppy.png</normaloff>:/images/floppy.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save map</string>
+   </property>
+  </action>
+  <action name="actLoadMap">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/fileopen.png</normaloff>:/images/fileopen.png</iconset>
+   </property>
+   <property name="text">
+    <string>Load map</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -1976,11 +2004,11 @@
  </resources>
  <connections/>
  <buttongroups>
+  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
-  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

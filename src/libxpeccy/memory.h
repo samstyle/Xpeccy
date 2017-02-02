@@ -20,6 +20,13 @@ enum {
 	MEM_BANK3
 };
 
+typedef struct {
+	int type;
+	int bank;
+	int adr;
+	int abs;
+} xAdr;
+
 typedef unsigned char(*extmrd)(unsigned short, void*);
 typedef void(*extmwr)(unsigned short, unsigned char, void*);
 
@@ -51,14 +58,12 @@ void memWr(Memory*,unsigned short,unsigned char);
 void memSetSize(Memory*, int);
 void memSetBank(Memory*, int, int, int, extmrd, extmwr, void*);
 
-// void memSetExternal(Memory*,int,int,extmrd,extmwr,void*);
-
 void memSetPageData(Memory*,int,int,char*);
 void memGetPageData(Memory*,int,int,char*);
 
 unsigned char* memGetPagePtr(Memory*,int,int);
-
 MemPage* memGetBankPtr(Memory*,unsigned short);
+xAdr memGetXAdr(Memory*, unsigned short);
 
 #if __cplusplus
 }
