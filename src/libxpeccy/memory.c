@@ -81,12 +81,12 @@ void memSetBank(Memory* mem, int bank, int type, int page, extmrd rd, extmwr wr,
 	pg.num = page;
 	switch(type) {
 		case MEM_ROM:
-			pg.data = mem->romData + ((page & 0xff) << 14);		// ptr of page begin
+			pg.data = mem->romData + ((page & mem->romMask) << 14);		// ptr of page begin
 			pg.rd = memPageRd;
 			pg.wr = NULL;		// write disabled
 			break;
 		case MEM_RAM:
-			pg.data = mem->ramData + ((page & 0xff) << 14);
+			pg.data = mem->ramData + ((page & mem->memMask) << 14);
 			pg.rd = memPageRd;
 			pg.wr = memPageWr;
 			break;
@@ -102,11 +102,11 @@ void memSetBank(Memory* mem, int bank, int type, int page, extmrd rd, extmwr wr,
 void memSetPageData(Memory* mem, int type, int page, char* src) {
 	switch(type) {
 		case MEM_ROM:
-			page &= 0x1f;
+			page &= mem->romMask;
 			memcpy(mem->romData + (page << 14), src, 0x4000);
 			break;
 		case MEM_RAM:
-			page &= 0xff;
+			page &= mem->memMask;
 			memcpy(mem->ramData + (page << 14), src, 0x4000);
 			break;
 	}
@@ -115,10 +115,11 @@ void memSetPageData(Memory* mem, int type, int page, char* src) {
 void memGetPageData(Memory* mem, int type, int page, char* dst) {
 	switch(type) {
 		case MEM_ROM:
-			page &= 0x1f;
+			page &= mem->romMask;
 			memcpy(dst, mem->romData + (page << 14), 0x4000);
 			break;
 		case MEM_RAM:
+			page &= mem->memMask;
 			memcpy(dst, mem->ramData + (page << 14), 0x4000);
 			break;
 	}
@@ -128,11 +129,11 @@ unsigned char* memGetPagePtr(Memory* mem, int type, int page) {
 	unsigned char* res = NULL;
 	switch (type) {
 		case MEM_ROM:
-			page &= 0x1f;
+			page &= mem->romMask;
 			res = mem->romData + (page << 14);
 			break;
 		case MEM_RAM:
-			page &= 0xff;
+			page &= mem->memMask;
 			res = mem->ramData + (page << 14);
 			break;
 	}

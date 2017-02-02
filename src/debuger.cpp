@@ -130,10 +130,6 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.tbBreak->addAction(ui.actRead);
 	ui.tbBreak->addAction(ui.actWrite);
 
-//	ui.tbLabels->addAction(ui.actShowLabels);
-//	ui.tbLabels->addAction(ui.actLoadLabels);
-//	ui.tbLabels->addAction(ui.actSaveLabels);
-
 	ui.tbView->addAction(ui.actViewOpcode);
 	ui.tbView->addAction(ui.actViewByte);
 	ui.tbView->addAction(ui.actViewText);
@@ -142,6 +138,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 	ui.tbSaveDasm->addAction(ui.actLoadMap);
 	ui.tbSaveDasm->addAction(ui.actSaveMap);
+	ui.tbSaveDasm->addAction(ui.actDisasm);
 
 	ui.tbTrace->addAction(ui.actTrace);
 	ui.tbTrace->addAction(ui.actTraceHere);
@@ -152,14 +149,12 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.dasmTable,SIGNAL(rqRefill()),this,SLOT(fillDisasm()));
 
 	connect(ui.tbLabels, SIGNAL(toggled(bool)),this,SLOT(setShowLabels(bool)));
-//	connect(ui.actShowLabels,SIGNAL(triggered(bool)),this,SLOT(setShowLabels(bool)));
-//	connect(ui.actLoadLabels, SIGNAL(triggered(bool)),this,SLOT(loadLabels()));
-//	connect(ui.actSaveLabels, SIGNAL(triggered(bool)),this,SLOT(saveLabels()));
 	connect(ui.tbView, SIGNAL(triggered(QAction*)),this,SLOT(chaCellProperty(QAction*)));
 	connect(ui.tbBreak, SIGNAL(triggered(QAction*)),this,SLOT(chaCellProperty(QAction*)));
 	connect(ui.tbTrace, SIGNAL(triggered(QAction*)),this,SLOT(doTrace(QAction*)));
 	connect(ui.actLoadMap, SIGNAL(triggered(bool)),this,SLOT(loadMap()));
 	connect(ui.actSaveMap, SIGNAL(triggered(bool)),this,SLOT(saveMap()));
+	connect(ui.actDisasm, SIGNAL(triggered(bool)),this,SLOT(saveDasm()));
 
 // dump table
 	for (row = 0; row < ui.dumpTable->rowCount(); row++) {
@@ -209,8 +204,6 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.bpList,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(goToBrk(QModelIndex)));
 // gb tab
 	connect(ui.gbModeGroup, SIGNAL(buttonClicked(int)), this, SLOT(fillGBoy()));
-//	connect(ui.gbTiles, SIGNAL(clicked(bool)), this, SLOT(fillGBoy()));
-//	connect(ui.gbMap, SIGNAL(clicked(bool)), this, SLOT(fillGBoy()));
 	connect(ui.sbTileset, SIGNAL(valueChanged(int)), this, SLOT(fillGBoy()));
 	connect(ui.sbTilemap, SIGNAL(valueChanged(int)), this, SLOT(fillGBoy()));
 
@@ -283,44 +276,21 @@ void DebugWin::setShowLabels(bool f) {
 	fillDisasm();
 }
 
-/*
-void DebugWin::mousePressEvent(QMouseEvent* ev) {
-	qDebug() << ev->button();
-	if (!ui.dasmTable->hasFocus()) return;
-	if (ev->modifiers() & Qt::ControlModifier) {
-		switch (ev->button()) {
-			case Qt::LeftButton:
-				blockStart = getAdr();
-				if (blockEnd < blockStart)
-					blockEnd = blockStart;
-				fillDisasm();
-				ev->ignore();
-				break;
-			case Qt::RightButton:
-				blockEnd = getAdr();
-				if (blockStart > blockEnd)
-					blockStart = blockEnd;
-				fillDisasm();
-				ev->ignore();
-				break;
-			case Qt::MiddleButton:
-				blockStart = -1;
-				blockEnd = -1;
-				fillDisasm();
-				ev->ignore();
-				break;
-			default:
-				break;
-		}
-	}
-}
-*/
-
 void DebugWin::wheelEvent(QWheelEvent* ev) {
-	if (ev->delta() < 0) {
-		scrollDown();
-	} else if (ev->delta() > 0) {
-		scrollUp();
+	if (ev->modifiers() & Qt::ControlModifier) {
+		if (ev->delta() < 0) {
+			disasmAdr++;
+			fillDisasm();
+		} else if (ev->delta() > 0) {
+			disasmAdr--;
+			fillDisasm();
+		}
+	} else {
+		if (ev->delta() < 0) {
+			scrollDown();
+		} else if (ev->delta() > 0) {
+			scrollUp();
+		}
 	}
 }
 
@@ -449,9 +419,6 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 				case Qt::Key_Escape:
 					if (!ev->isAutoRepeat()) stop();
 					break;
-//				case Qt::Key_Return:
-//					putBreakPoint();
-//					break;
 				case Qt::Key_Home:
 					disasmAdr = pc;
 					fillDisasm();
@@ -933,63 +900,6 @@ QString DebugWin::findLabel(int adr, int type, int bank) {
 	return lab;
 }
 
-/*
-void DebugWin::loadLabels() {
-	QString path = QFileDialog::getOpenFileName(this, "Open labels list");
-	if (path.isEmpty()) return;
-	QFile file(path);
-	QString line;
-	QStringList arr;
-	xAdr xadr;
-	if (file.open(QFile::ReadOnly)) {
-		labels.clear();
-		while(!file.atEnd()) {
-			line = file.readLine();
-			arr = line.split(QRegExp("[: \r\n]"),QString::SkipEmptyParts);
-			if (arr.size() > 2) {
-				xadr.bank = arr.at(0).toInt(NULL,16);
-				xadr.adr = arr.at(1).toInt(NULL,16) & 0x3fff;
-				switch (xadr.bank) {
-					case 0xff: break;
-					case 0x05: xadr.adr |= 0x4000; break;
-					case 0x02: xadr.adr |= 0x8000; break;
-					default: xadr.adr |= 0xc000; break;
-				}
-				labels[arr.at(2)] = xadr;
-			}
-		}
-		file.close();
-	} else {
-		shitHappens("Can't read file");
-	}
-	fillDisasm();
-}
-
-void DebugWin::saveLabels() {
-	QString path = QFileDialog::getSaveFileName(this, "Save labels list");
-	if (path.isEmpty()) return;
-	QFile file(path);
-	QString key;
-	QStringList keys;
-	xAdr xadr;
-	if (file.open(QFile::WriteOnly)) {
-		keys = labels.keys();
-		foreach(key, keys) {
-			xadr = labels[key];
-			switch(xadr.adr & 0xc000) {
-				case 0x0000: xadr.bank = 255; break;
-				case 0x4000: xadr.bank = 5; break;
-				case 0x8000: xadr.bank = 2; break;
-				default: xadr.bank = 0; break;
-			}
-			file.write(QString("%0:%1:%2\n").arg(gethexbyte(xadr.bank)).arg(gethexword(xadr.adr)).arg(key).toUtf8());
-		}
-		file.close();
-	} else {
-		shitHappens("Can't write to file");
-	}
-}
-*/
 
 // map
 
@@ -1071,20 +981,6 @@ unsigned char rdbyte(unsigned short adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	return memRd(comp->mem, adr);
 }
-
-#define DASMROW 26
-#define DMPSIZE 16
-
-struct DasmRow {
-	unsigned ispc:1;	// adr=PC
-	unsigned cond:1;	// if there is condition command (JR, JP, CALL, RET) and condition met
-	unsigned mem:1;		// memory reading
-	unsigned short adr;
-	unsigned char type;
-	unsigned char mop;
-	QByteArray bytes;
-	QString com;
-};
 
 int checkCond(Computer* comp, int num) {
 	int res = 0;
@@ -1206,6 +1102,20 @@ const QColor colBG0(255,255,255);	// background
 const QColor colBG1(230,230,230);	// background alternative
 const QColor colSEL(128,255,128);	// background selected
 
+void DebugWin::placeLabel(DasmRow& drow) {
+	int pos;
+	QString lab;
+	if ((drow.type == DBG_VIEW_ADDR) || (drow.type == DBG_VIEW_CODE)) {
+		pos = drow.com.indexOf(QRegExp("#[0-9A-F]{4,4}"));			// find addr position (#XXXX)
+		if (pos > 0) {
+			lab = findLabel(drow.com.mid(pos+1,4).toInt(NULL,16), -1, -1);	// find label for that addr
+			if (!lab.isEmpty()) {
+				drow.com.replace(pos, 5, lab);				// replace +1 char (#XXXX)
+			}
+		}
+	}
+}
+
 int DebugWin::fillDisasm() {
 	block = 1;
 	unsigned short adr = disasmAdr;
@@ -1215,25 +1125,11 @@ int DebugWin::fillDisasm() {
 	QFont fnt = ui.dasmTable->font();
 	xAdr xadr;
 	int pos;
-	int res = 0;
 	fnt.setBold(true);
 	for (int i = 0; i < ui.dasmTable->rowCount(); i++) {
 		drow = getDisasm(comp, adr);
 		ui.dasmTable->item(i, 2)->setData(Qt::UserRole, drow.com);
-		switch (drow.type) {
-			case DBG_VIEW_CODE:
-			case DBG_VIEW_ADDR:
-				pos = drow.com.indexOf(QRegExp("[0-9A-F]{4,4}"));	// find addr position (XXXX)
-				if (pos > 0) {
-					lab = findLabel(drow.com.mid(pos,4).toInt(NULL,16), -1, -1);	// find label for that addr
-					if (!lab.isEmpty()) {
-						drow.com.replace(pos - 1, 5, lab);	// replace +1 char (#XXXX)
-					}
-				}
-				break;
-		}
-		res |= drow.ispc;
-
+		placeLabel(drow);
 		if (drow.ispc) {
 			bgcol = colPC;
 		} else if ((drow.adr >= ui.dasmTable->blockStart) && (drow.adr <= ui.dasmTable->blockEnd)) {
@@ -1272,7 +1168,7 @@ int DebugWin::fillDisasm() {
 	}
 	fillStack();
 	block = 0;
-	return res;
+	return drow.ispc;
 }
 
 unsigned short DebugWin::getPrevAdr(unsigned short adr) {
@@ -1393,6 +1289,36 @@ void DebugWin::dasmEdited(int row, int col) {
 	fillDump();
 	fillDisasm();
 	updateScreen();
+}
+
+void DebugWin::saveDasm() {
+	QString path = QFileDialog::getSaveFileName(this, "Save disasm");
+	if (path.isEmpty()) return;
+	QFile file(path);
+	DasmRow drow;
+	xAdr xadr;
+	QString label;
+	if (file.open(QFile::WriteOnly)) {
+		QTextStream strm(&file);
+		unsigned short adr = (ui.dasmTable->blockStart < 0) ? 0 : (ui.dasmTable->blockStart & 0xffff);
+		unsigned short end = (ui.dasmTable->blockEnd < 0) ? 0 : (ui.dasmTable->blockEnd & 0xffff);
+		int work = 1;
+		while ((adr <= end) && work) {
+			drow = getDisasm(comp, adr);
+			if (adr < drow.adr) work = 0;		// address overfill (FFFF+)
+			placeLabel(drow);
+			xadr = memGetXAdr(comp->mem, drow.adr);
+			label = findLabel(xadr.adr, xadr.type, xadr.bank);
+			if (label.isEmpty()) {
+				strm << QString("\t%0\n").arg(drow.com);
+			} else {
+				strm << QString("%0:\n\t%1\n").arg(label).arg(drow.com);
+			}
+		}
+		file.close();
+	} else {
+		shitHappens("Can't write to file");
+	}
 }
 
 // memory dump
@@ -1809,14 +1735,18 @@ xTableWidget::xTableWidget(QWidget* par):QTableWidget(par) {
 }
 
 void xTableWidget::keyPressEvent(QKeyEvent *ev) {
-	switch (ev->key()) {
-		case Qt::Key_Home:
-		case Qt::Key_End:
-		case Qt::Key_F2:
-			ev->ignore();
-			break;
-		default:
-			QTableWidget::keyPressEvent(ev);
+	if (ev->modifiers() & Qt::ControlModifier) {
+		ev->ignore();
+	} else {
+		switch (ev->key()) {
+			case Qt::Key_Home:
+			case Qt::Key_End:
+			case Qt::Key_F2:
+				ev->ignore();
+				break;
+			default:
+				QTableWidget::keyPressEvent(ev);
+		}
 	}
 }
 

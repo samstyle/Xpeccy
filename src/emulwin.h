@@ -12,6 +12,7 @@
 #include "debuger.h"
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
+#include "ethread.h"
 
 // pause reasons
 #define	PR_MENU		1
@@ -32,26 +33,6 @@ typedef struct {
 	int y;
 	QString imgName;
 } xLed;
-
-class xThread : public QThread {
-	Q_OBJECT
-	public:
-		xThread();
-		unsigned fast:1;
-		unsigned block:1;
-		unsigned finish:1;
-		xConfig* conf;
-		Computer* comp;
-		QMutex mtx;
-		int sndNs;
-		void run();
-	private:
-		void emuCycle();
-		void tapeCatch();
-	signals:
-		void dbgRequest();
-		void tapeSignal(int,int);
-};
 
 class MainWin : public QWidget {
 	Q_OBJECT

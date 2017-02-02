@@ -148,6 +148,11 @@ struct xConfig {
 		xProfile* cur;
 	} prof;
 	struct {
+		struct {
+			unsigned char screen[2048 * 2048 * 3];		// scaled image (up to fullscreen)
+			unsigned char scrn[1024 * 512 * 3];		// 2:1 image
+			unsigned char prvScr[1024 * 512 * 3];		// copy of last 2:1 image (for noflic)
+		};
 		unsigned grayScale:1;
 		unsigned noFlick:1;
 		unsigned fullScreen:1;	// use fullscreen

@@ -21,7 +21,11 @@
 #include "emulwin.h"
 #include "filer.h"
 
+#include "vfilters.h"
+#include "vscalers.h"
+
 #include "version.h"
+
 #define STR_EXPAND(tok) #tok
 #define	STR(tok) STR_EXPAND(tok)
 #define	XPTITLE	STR(Xpeccy VERSION)
@@ -30,12 +34,7 @@
 
 // temp emulation
 unsigned short pc,af,de,ix;
-unsigned char* blkData = NULL;
-int blk;
-
-static unsigned char screen[2048 * 2048 * 3];		// scaled image (up to fullscreen)
-static unsigned char scrn[1024 * 512 * 3];		// 2:1 image
-static unsigned char prvScr[1024 * 512 * 3];		// copy of last 2:1 image (for noflic)
+//int blk;
 
 void MainWin::updateHead() {
 	QString title(XPTITLE);
@@ -79,7 +78,7 @@ void MainWin::updateWindow() {
 	setFixedSize(szw, szh);
 	lineBytes = szw * 3;
 	frameBytes = szh * lineBytes;
-	scrImg = QImage(screen, szw, szh, QImage::Format_RGB888);
+	scrImg = QImage(conf.vid.screen, szw, szh, QImage::Format_RGB888);
 	updateHead();
 	block = 0;
 	if (dbg->isVisible()) dbg->fillAll();		// hmmm... why?
@@ -198,183 +197,25 @@ MainWin::MainWin() {
 
 // scale screen
 
-// 2:1 -> fullscreen
-
-#include <math.h>
-
-void scrFS(unsigned char* src, int srcw, int srch) {
-	QSize dstsize = QApplication::desktop()->screenGeometry().size();
-	int dstw = dstsize.width();
-	int dsth = dstsize.height();
-	double scalex = dstw / (double)srcw;
-	double scaley = dsth / (double)srch;
-	int resw = dstw;
-	int resh = dsth;
-	if (conf.vid.keepRatio) {
-		if (scalex < scaley) {
-			scaley = scalex;
-		} else {
-			scalex = scaley;
-		}
-		resw = srcw * (double)scalex;		// dest picture size, = dstw,dsth if don't keep ratio
-		resh = srch * (double)scaley;
-	}
-	int posx = (resw < dstw) ? ((dstw - resw) >> 1) : 0;
-	int posy = (resh < dsth) ? ((dsth - resh) >> 1) : 0;
-
-	memset(screen, 0x00, dstw * dsth * 3);
-
-	unsigned char* dst = screen + (posy * dstw * 3) + (posx * 3);		// drawing start here
-	unsigned char* ptr = dst;
-	scalex = scalex / 2.0;			// because of source 2:1
-	srcw <<= 1;
-	double cntx = scalex;
-	double cnty = scaley;
-	int x,y;
-	for (y = 0; y < srch; y++) {
-		// ptr = dst;
-		for (x = 0; x < srcw; x++) {
-			while(cntx > 1.0) {
-				memcpy(ptr, src, 3);
-				ptr += 3;
-				cntx -= 1.0;
-			}
-			src += 3;
-			cntx += scalex;
-		}
-		ptr = dst + dstw * 3;
-		cnty -= 1.0;			// 1st line completed
-		while(cnty > 1.0) {
-			memcpy(ptr, dst, resw * 3);
-			ptr += dstw * 3;
-			cnty -= 1.0;
-		}
-		cnty += scaley;
-		dst = ptr;
-	}
-}
-
-// 2:1 -> 4:4 = double each pixel & copy each row 3 times
-void scrX4(unsigned char* src, int wid, int lines) {
-	unsigned char* dst = screen;
-	unsigned char* ptr;
-	int cnt;
-	while(lines > 0) {
-		ptr = dst;
-		for (cnt = 0; cnt < wid; cnt++) {
-			memcpy(dst, src, 3);
-			memcpy(dst+3, src, 3);
-			memcpy(dst+6, src+3, 3);
-			memcpy(dst+9, src+3, 3);
-			dst += 12;
-			src += 6;
-		}
-		cnt = dst - ptr;
-		memcpy(dst, ptr, cnt);
-		dst += cnt;
-		memcpy(dst, ptr, cnt);
-		dst += cnt;
-		memcpy(dst, ptr, cnt);
-		dst += cnt;
-		lines--;
-	}
-}
-
-// 2:1 -> 3:3
-void scrX3(unsigned char* src, int wid, int lines) {
-	unsigned char* dst = screen;
-	unsigned char* ptr;
-	int cnt;
-	while (lines > 0) {
-		ptr = dst;
-		for (cnt = 0; cnt < wid; cnt++) {
-			memcpy(dst, src, 3);
-			memcpy(dst+3, src, 3);
-			memcpy(dst+6, src+3, 3);
-			dst += 9;
-			src += 6;
-		}
-		cnt = dst - ptr;
-		memcpy(dst, ptr, cnt);
-		dst += cnt;
-		memcpy(dst, ptr, cnt);
-		dst += cnt;
-		lines--;
-	}
-}
-
-// 2:1 -> 2:2 = double each line
-void scrX2(unsigned char* src, int wid, int lines) {
-	unsigned char* dst = screen;
-	wid *= 6;
-	while (lines > 0) {
-		memcpy(dst, src, wid);
-		dst += wid;
-		memcpy(dst, src, wid);
-		dst += wid;
-		src += wid;
-		lines--;
-	}
-}
-
-// 2:1 -> 1:1 = take each 2nd pixel in a row
-
-void scrX1(unsigned char* src, int wid, int lines) {
-	unsigned char* dst = screen;
-	int cnt;
-	while (lines > 0) {
-		for (cnt = 0; cnt < wid; cnt++) {
-			memcpy(dst, src, 3);
-			dst += 3;
-			src += 6;
-		}
-		lines--;
-	}
-}
-
-// convert <size> bytes (by 3) on <ptr> from color-RGB to gray-RGB
-void scrGray(unsigned char* ptr, int size) {
-	int gray;
-	while (size > 0) {
-		gray = qGray(*ptr, *(ptr+1), *(ptr+2));
-		*(ptr++) = gray & 0xff;
-		*(ptr++) = gray & 0xff;
-		*(ptr++) = gray & 0xff;
-		size -= 3;
-	}
-}
-
-// mix prev <size> bytes from <src> to <dst> 50/50 and copy unmixed <dst> to <src>
-void scrMix(unsigned char* src, unsigned char* dst, int size) {
-	unsigned char cur;
-	while (size > 0) {
-		cur = *dst;
-		*dst = (*src + cur) >> 1;
-		*src = cur;
-		src++;
-		dst++;
-		size--;
-	}
-}
-
 void MainWin::convImage() {
-	if (ethread.fast || comp->debug) memcpy(scrn, comp->vid->scrimg, comp->vid->vBytes);
-	if (conf.vid.grayScale) scrGray(scrn, comp->vid->vBytes);
-	if (conf.vid.noFlick) scrMix(prvScr, scrn, comp->vid->vBytes);
+	if (ethread.fast || comp->debug) memcpy(conf.vid.scrn, comp->vid->scrimg, comp->vid->vBytes);
+	if (conf.vid.grayScale) scrGray(conf.vid.scrn, comp->vid->vBytes);
+	if (conf.vid.noFlick) scrMix(conf.vid.prvScr, conf.vid.scrn, comp->vid->vBytes);
 	if (conf.vid.fullScreen) {
-		scrFS(scrn, comp->vid->vsze.x, comp->vid->vsze.y);
+		scrFS(conf.vid.scrn, comp->vid->vsze.x, comp->vid->vsze.y);
 	} else {
 		switch(conf.vid.scale) {
-			case 1:	scrX1(scrn, comp->vid->vsze.x, comp->vid->vsze.y);
+			case 1:	scrX1(conf.vid.scrn, comp->vid->vsze.x, comp->vid->vsze.y);
 				break;
-			case 2:	scrX2(scrn, comp->vid->vsze.x, comp->vid->vsze.y);
+			case 2:	scrX2(conf.vid.scrn, comp->vid->vsze.x, comp->vid->vsze.y);
 				break;
-			case 3:	scrX3(scrn, comp->vid->vsze.x, comp->vid->vsze.y);
+			case 3:	scrX3(conf.vid.scrn, comp->vid->vsze.x, comp->vid->vsze.y);
 				break;
-			case 4: scrX4(scrn, comp->vid->vsze.x, comp->vid->vsze.y);
+			case 4: scrX4(conf.vid.scrn, comp->vid->vsze.x, comp->vid->vsze.y);
 				break;
 		}
 	}
+	// scrEPS(conf.vid.screen, width(), height());
 }
 
 void MainWin::onTimer() {
@@ -652,7 +493,8 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			case Qt::Key_N:
 				conf.vid.noFlick ^= 1;
 				saveConfig();
-				if (conf.vid.noFlick) memcpy(prvScr, scrn, comp->vid->frmsz * 6);
+				if (conf.vid.noFlick)
+					memcpy(conf.vid.prvScr, conf.vid.scrn, comp->vid->frmsz * 6);
 				setMessage(QString(" noflic %0 ").arg(conf.vid.noFlick ? "on" : "off"));
 				break;
 		}
@@ -900,7 +742,7 @@ void MainWin::screenShot() {
 	fnams.append(QTime::currentTime().toString("HHmmss_zzz")).append(".").append(QString(fext.c_str()));
 	std::string fnam(fnams.toUtf8().data());
 	std::ofstream file;
-	QImage img(screen, width(), height(), QImage::Format_RGB888);
+	QImage img(conf.vid.screen, width(), height(), QImage::Format_RGB888);
 	int x,y,dx,dy;
 	char pageBuf[0x4000];
 	memGetPageData(comp->mem,MEM_RAM,comp->vid->curscr,pageBuf);
@@ -1032,13 +874,13 @@ void drawChar(QByteArray chr, int scradr, int wid) {
 			b = chr.at(adr++);
 			vadr = scradr + x;
 			if (r || g || b) {
-				screen[vadr++] = r;
-				screen[vadr++] = g;
-				screen[vadr] = b;
+				conf.vid.screen[vadr++] = r;
+				conf.vid.screen[vadr++] = g;
+				conf.vid.screen[vadr] = b;
 			} else {
-				screen[vadr++] >>= 2;
-				screen[vadr++] >>= 2;
-				screen[vadr] >>= 2;
+				conf.vid.screen[vadr++] >>= 2;
+				conf.vid.screen[vadr++] >>= 2;
+				conf.vid.screen[vadr] >>= 2;
 			}
 		}
 		scradr += wid * 3;
@@ -1306,94 +1148,6 @@ void MainWin::loadLabels(const char* nm) {
 	}
 }
 
-// emulation thread (non-GUI)
-
-xThread::xThread() {
-	sndNs = 0;
-	fast = 0;
-	finish = 0;
-	mtx.lock();
-}
-
-void xThread::tapeCatch() {
-	blk = comp->tape->block;
-	if (blk >= comp->tape->blkCount) return;
-	if (conf->tape.fast && comp->tape->blkData[blk].hasBytes) {
-		de = comp->cpu->de;
-		ix = comp->cpu->ix;
-		TapeBlockInfo inf = tapGetBlockInfo(comp->tape,blk);
-		blkData = (unsigned char*)realloc(blkData,inf.size + 2);
-		tapGetBlockData(comp->tape,blk,blkData);
-		if (inf.size == de) {
-			for (int i = 0; i < de; i++) {
-				memWr(comp->mem,ix,blkData[i + 1]);
-				ix++;
-			}
-			comp->cpu->ix = ix;
-			comp->cpu->de = 0;
-			comp->cpu->hl = 0;
-			tapNextBlock(comp->tape);
-		} else {
-			comp->cpu->hl = 0xff00;
-		}
-		comp->cpu->pc = 0x5df;
-	} else {
-		if (conf->tape.autostart)
-			emit tapeSignal(TW_STATE,TWS_PLAY);
-	}
-}
-
-void xThread::emuCycle() {
-//	int endBuf = 0;
-	comp->frmStrobe = 0;
-	sndNs = 0;
-	conf->snd.fill = 1;
-	do {
-		// exec 1 opcode (+ INT, NMI)
-		sndNs += compExec(comp);
-		if (comp->frmStrobe && !fast) {
-			comp->frmStrobe = 0;
-			memcpy(scrn, comp->vid->scrimg, comp->vid->vBytes);
-		}
-		// if need - request sound buffer update
-		if (sndNs > nsPerSample) {
-			sndSync(comp, fast);
-			sndNs -= nsPerSample;
-		}
-		// tape trap
-		pc = comp->cpu->pc;
-		if ((comp->mem->map[0].type == MEM_ROM) && (comp->mem->map[0].num == 1)) {		// FIXME: shit
-			if (pc == 0x56b) tapeCatch();
-			if ((pc == 0x5e2) && conf->tape.autostart)
-				emit tapeSignal(TW_STATE,TWS_STOP);
-		}
-	} while (!comp->brk && conf->snd.fill); //(!comp->brk && !comp->frmStrobe);
-	comp->nmiRequest = 0;
-}
-
-void xThread::run() {
-	do {
-		if (!fast) mtx.lock();		// wait until unlocked (MainWin::onTimer() or at exit)
-		if (finish) break;
-		if (comp->rzx.start) {
-			comp->rzx.start = 0;
-			comp->rzx.play = 1;
-			comp->rzx.fCount = 0;
-			comp->rzx.fCurrent = 0;
-			rewind(comp->rzx.file);
-			rzxGetFrame(comp);
-		}
-		if (!block && !comp->brk) {
-			emuCycle();
-			if (comp->brk) {
-				emit dbgRequest();
-				//comp->brk = 0;
-			}
-		}
-	} while (1);
-	mtx.unlock();
-	exit(0);
-}
 
 // debug stufffff
 void MainWin::saveVRAM() {

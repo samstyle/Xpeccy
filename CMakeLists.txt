@@ -54,6 +54,7 @@ file(GLOB HEADERS
 file(GLOB UIFILES ./ui/*.ui)
 set(QRCFILES ./xpeccy.qrc)
 set(MOCFILES
+	./src/ethread.h
 	./src/emulwin.h
 	./src/debuger.h
 	./src/setupwin.h

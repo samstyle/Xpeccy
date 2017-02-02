@@ -31,19 +31,23 @@ class xTableWidget : public QTableWidget {
 #include "ui_debuger.h"
 #include "libxpeccy/spectrum.h"
 
-/*
-struct xAdr {
-	int bank;
-	int adr;
-};
-*/
-
 enum {
 	XTYPE_NONE = -1,
 	XTYPE_ADR = 0,
 	XTYPE_LABEL,
 	XTYPE_DUMP,
 	XTYPE_BYTE
+};
+
+struct DasmRow {
+	unsigned ispc:1;	// adr=PC
+	unsigned cond:1;	// if there is condition command (JR, JP, CALL, RET) and condition met
+	unsigned mem:1;		// memory reading
+	unsigned short adr;
+	unsigned char type;
+	unsigned char mop;
+	QByteArray bytes;
+	QString com;
 };
 
 class xItemDelegate : public QItemDelegate {
@@ -122,6 +126,7 @@ class DebugWin : public QDialog {
 		void switchBP(unsigned char);
 
 		QString findLabel(int, int, int);
+		void placeLabel(DasmRow&);
 
 		unsigned short disasmAdr;
 		unsigned short dumpAdr;
@@ -145,11 +150,10 @@ class DebugWin : public QDialog {
 
 	private slots:
 		void setShowLabels(bool);
-//		void loadLabels();
-//		void saveLabels();
 
 		void loadMap();
 		void saveMap();
+		void saveDasm();
 
 		int fillDisasm();
 

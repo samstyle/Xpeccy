@@ -343,8 +343,8 @@ void vidDrawHwmc(Video* vid) {
 
 // atm ega
 void vidDrawATMega(Video* vid) {
-	yscr = vid->ray.y - 76;
-	xscr = vid->ray.x - 96;
+	yscr = vid->ray.y - 76 + 32;
+	xscr = vid->ray.x - 96 + 64;
 	if ((yscr < 0) || (yscr > 199) || (xscr < 0) || (xscr > 319)) {
 		col = vid->brdcol;
 	} else {
@@ -389,8 +389,8 @@ void vidATMDoubleDot(Video* vid,unsigned char colr) {
 }
 
 void vidDrawATMtext(Video* vid) {
-	yscr = vid->ray.y - 76;
-	xscr = vid->ray.x - 96;
+	yscr = vid->ray.y - 76 + 32;
+	xscr = vid->ray.x - 96 + 64;
 	if ((yscr < 0) || (yscr > 199) || (xscr < 0) || (xscr > 319)) {
 		vidPutDot(&vid->ray, vid->pal, vid->brdcol);
 	} else {
@@ -411,8 +411,8 @@ void vidDrawATMtext(Video* vid) {
 
 // atm hardware multicolor
 void vidDrawATMhwmc(Video* vid) {
-	yscr = vid->ray.y - 76;
-	xscr = vid->ray.x - 96;
+	yscr = vid->ray.y - 76 + 32;
+	xscr = vid->ray.x - 96 + 64;
 	if ((yscr < 0) || (yscr > 199) || (xscr < 0) || (xscr > 319)) {
 		vidPutDot(&vid->ray, vid->pal, vid->brdcol);
 	} else {
@@ -438,7 +438,7 @@ void vidDrawATMhwmc(Video* vid) {
 // profi 512x240
 
 void vidProfiScr(Video* vid) {
-	yscr = vid->ray.y - vid->lay.bord.y + 24;
+	yscr = vid->ray.y - vid->lay.bord.y; // + 24;
 	if ((yscr < 0) || (yscr > 239)) {
 		vidPutDot(&vid->ray, vid->pal, vid->brdcol);
 	} else {

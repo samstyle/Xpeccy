@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>771</width>
+    <width>769</width>
     <height>646</height>
    </rect>
   </property>
@@ -1943,6 +1943,15 @@
    </property>
    <property name="text">
     <string>Load map</string>
+   </property>
+  </action>
+  <action name="actDisasm">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/floppyRed.png</normaloff>:/images/floppyRed.png</iconset>
+   </property>
+   <property name="text">
+    <string>Disasm to file</string>
    </property>
   </action>
  </widget>
