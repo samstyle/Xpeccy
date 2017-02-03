@@ -84,7 +84,7 @@ xAsmScan lr_asm(const char* cbuf, char* buf) {
 	return res;
 }
 
-xMnem lr_mnem(unsigned short adr, cbdmr mrd, void* data) {
+xMnem lr_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 	int res = 0;
 	opCode* opt = lrTab;
 	opCode* opc;
@@ -96,7 +96,9 @@ xMnem lr_mnem(unsigned short adr, cbdmr mrd, void* data) {
 		if (opc->prefix) opt = opc->tab;
 	} while (opc->prefix);
 	xMnem mn;
-	mn.fetch = res;
+	mn.len = res;
 	mn.mnem = opc->mnem;
+	mn.mem = 0;		// TODO
+	mn.cond = 0;
 	return mn;
 }

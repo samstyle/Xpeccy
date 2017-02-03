@@ -5,6 +5,7 @@
 #include "xcore/sound.h"
 
 unsigned char* blkData = NULL;
+extern unsigned char scrn[1024 * 512 * 3];
 
 xThread::xThread() {
 	sndNs = 0;
@@ -51,7 +52,7 @@ void xThread::emuCycle() {
 		sndNs += compExec(comp);
 		if (comp->frmStrobe && !fast) {
 			comp->frmStrobe = 0;
-			memcpy(conf->vid.scrn, comp->vid->scrimg, comp->vid->vBytes);
+			memcpy(scrn, comp->vid->scrimg, comp->vid->vBytes);
 		}
 		// if need - request sound buffer update
 		if (sndNs > nsPerSample) {

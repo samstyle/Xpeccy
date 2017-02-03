@@ -1,10 +1,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 #include "../cpu.h"
-// #include "z80tables.c"
-// #include "z80macros.h"
+
 
 extern opCode npTab[256];
 extern opCode ddTab[256];
@@ -13,14 +13,6 @@ extern opCode cbTab[256];
 extern opCode edTab[256];
 extern opCode ddcbTab[256];
 extern opCode fdcbTab[256];
-
-//#include "z80nop.c"
-//#include "z80ed.c"
-//#include "z80ddcb.c"
-//#include "z80fdcb.c"
-//#include "z80dd.c"
-//#include "z80fd.c"
-//#include "z80cb.c"
 
 void z80_reset(CPU* cpu) {
 	cpu->pc = 0;
@@ -115,27 +107,74 @@ int z80_int(CPU* cpu) {
 
 // disasm
 
-xMnem z80_mnem(unsigned short adr, cbdmr mrd, void* data) {
-	int res = 0;
+unsigned char z80_cnd[4] = {FZ, FC, FP, FS};
+
+xMnem z80_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
+	xMnem mn;
 	opCode* opt = npTab;
 	opCode* opc;
 	unsigned char op;
-//	unsigned char tmp;
+	unsigned char e;
+	unsigned short madr;
+	mn.len = 0;
 	do {
 		op = mrd(adr++,data);
-		res++;
+		mn.len++;
 		opc = &opt[op];
 		if (opc->prefix) {
 			opt = opc->tab;
 			if ((opt == ddcbTab) || (opt == fdcbTab)) {
 				adr++;
-				res++;
+				mn.len++;
 			}
 		}
 	} while (opc->prefix);
-	xMnem mn;
-	mn.fetch = res;
 	mn.mnem = opc->mnem;
+	// mem reading
+	mn.mem = 0;
+	mn.mop = 0xff;
+	if (strstr(opc->mnem, "(hl)") && strcmp(opc->mnem, "jp (hl)")) {
+		mn.mem = 1;
+		mn.mop = mrd(cpu->hl, data);
+	} else if (strstr(opc->mnem, "(de)")) {
+		mn.mem = 1;
+		mn.mop = mrd(cpu->de, data);
+	} else if (strstr(opc->mnem, "(bc)")) {
+		mn.mem = 1;
+		mn.mop = mrd(cpu->bc, data);
+	} else if (strstr(opc->mnem, "(ix")) {
+		mn.mem = 1;
+		e = (opt == ddcbTab) ? mrd(adr-2, data) : mrd(adr, data);
+		mn.mop = mrd((cpu->ix + (signed char)e) & 0xff, data);
+	} else if (strstr(opc->mnem, "(iy")) {
+		mn.mem = 1;
+		e = (opt == fdcbTab) ? mrd(adr-2, data) : mrd(adr, data);
+		mn.mop = mrd((cpu->iy + (signed char)e) & 0xff, data);
+	} else if (strstr(opc->mnem, "(:2)")) {
+		mn.mem = 1;
+		madr = mrd(adr, data) & 0xff;
+		madr |= (mrd(adr+1, data) << 8);
+		mn.mop = mrd(madr, data);
+	}
+	// conditions
+	mn.cond = 0;
+	mn.met = 0;
+	if (strstr(opc->mnem, "djnz")) {
+		mn.cond = 1;
+		mn.met = (cpu->b == 1) ? 0 : 1;
+	} else if (opt == npTab) {
+		if (((op & 0xc7) == 0xc2) || ((op & 0xc7) == 0xc4) || ((op & 0xc7) == 0xc0)) {		// call, jp, ret
+			mn.cond = 1;
+			mn.met = (cpu->f & z80_cnd[(op & 0x30) >> 4]) ? 0 : 1;
+			if (op & 8)
+				mn.met ^= 1;
+		} else if ((op & 0xe7) == 0x20) {							// jr
+			mn.cond = 1;
+			mn.met = (cpu->f & z80_cnd[(op & 0x10) >> 4] ? 0 : 1);
+			if (op & 8)
+				mn.met ^= 1;
+		}
+	}
 	return mn;
 }
 
@@ -145,35 +184,36 @@ xAsmScan z80_asm(const char* cbuf, char* buf) {
 	xAsmScan res = scanAsmTab(cbuf, npTab);
 	res.ptr = buf;
 	if (!res.match) {
-		*res.ptr++ = 0xdd;
 		res = scanAsmTab(cbuf, ddTab);
+		res.ptr = buf;
+		*res.ptr++ = 0xdd;
 	}
 	if (!res.match) {
+		res = scanAsmTab(cbuf, fdTab);
 		res.ptr = buf;
 		*res.ptr++ = 0xfd;
-		res = scanAsmTab(cbuf, fdTab);
 	}
 	if (!res.match) {
+		res = scanAsmTab(cbuf, cbTab);
 		res.ptr = buf;
 		*res.ptr++ = 0xcb;
-		res = scanAsmTab(cbuf, cbTab);
 	}
 	if (!res.match) {
+		res = scanAsmTab(cbuf, edTab);
 		res.ptr = buf;
 		*res.ptr++ = 0xed;
-		res = scanAsmTab(cbuf, edTab);
 	}
 	if (!res.match) {
+		res = scanAsmTab(cbuf, ddcbTab);
 		res.ptr = buf;
 		*res.ptr++ = 0xdd;
 		*res.ptr++ = 0xcb;
-		res = scanAsmTab(cbuf, ddcbTab);
 	}
 	if (!res.match) {
+		res = scanAsmTab(cbuf, fdcbTab);
 		res.ptr = buf;
 		*res.ptr++ = 0xfd;
 		*res.ptr++ = 0xcb;
-		res = scanAsmTab(cbuf, fdcbTab);
 	}
 	if (res.match) {
 		*res.ptr++ = res.idx;

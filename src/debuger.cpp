@@ -1000,6 +1000,9 @@ int checkCond(Computer* comp, int num) {
 
 DasmRow getDisasm(Computer* comp, unsigned short& adr) {
 	DasmRow drow;
+	drow.mem = 0;
+	drow.cond = 0;
+	xMnem mn;
 	drow.adr = adr;
 	drow.ispc = (comp->cpu->pc == adr) ? 1 : 0;	// check if this is PC
 	drow.bytes.clear();
@@ -1012,7 +1015,13 @@ DasmRow getDisasm(Computer* comp, unsigned short& adr) {
 	drow.type = getBrk(comp, adr) & 0xf0;
 	switch(drow.type) {
 		case DBG_VIEW_CODE:			// opcode
-			clen = cpuDisasm(comp->cpu, adr, buf, &rdbyte, comp);
+			mn = cpuDisasm(comp->cpu, adr, buf, &rdbyte, comp);
+			clen = mn.len;
+			if (drow.ispc) {
+				drow.cond = mn.cond & mn.met;
+				drow.mem = mn.mem;
+				drow.mop = mn.mop;
+			}
 			break;
 		case DBG_VIEW_BYTE:			// db byte
 			clen = 1;
@@ -1031,8 +1040,9 @@ DasmRow getDisasm(Computer* comp, unsigned short& adr) {
 			}
 			if (clen == 0) {
 				ptr = getBrkPtr(comp, adr);
-				*ptr &= 0xc0;
+				*ptr &= 0x0f;
 				*ptr |= DBG_VIEW_BYTE;
+				drow.type = DBG_VIEW_BYTE;
 				clen = 1;
 				sprintf(buf, "db #%.2X", memRd(comp->mem, adr));
 			} else {
@@ -1054,9 +1064,8 @@ DasmRow getDisasm(Computer* comp, unsigned short& adr) {
 		drow.bytes.append(rdbyte(adr, (void*)comp));
 		adr++;
 	}
-	drow.mem = 0;
-	drow.cond = 0;
-	if (drow.ispc && (drow.type == DBG_VIEW_CODE)) {		// !!! TODO:Z80 only
+/*
+	if (drow.ispc && (drow.type == DBG_VIEW_CODE)) {		// !!! TODO:Z80 only : move it to cpuDisasm
 		if (clen > 2) {
 			bt = drow.bytes.at(clen - 3);		// jp, call
 			if (((bt & 0xc7) == 0xc2) || ((bt & 0xc7) == 0xc4)) {
@@ -1093,6 +1102,7 @@ DasmRow getDisasm(Computer* comp, unsigned short& adr) {
 			}
 		}
 	}
+*/
 	return drow;
 }
 
@@ -1118,6 +1128,7 @@ void DebugWin::placeLabel(DasmRow& drow) {
 
 int DebugWin::fillDisasm() {
 	block = 1;
+	unsigned char res = 0;
 	unsigned short adr = disasmAdr;
 	DasmRow drow;
 	QColor bgcol,acol;
@@ -1128,6 +1139,7 @@ int DebugWin::fillDisasm() {
 	fnt.setBold(true);
 	for (int i = 0; i < ui.dasmTable->rowCount(); i++) {
 		drow = getDisasm(comp, adr);
+		res |= drow.ispc;
 		ui.dasmTable->item(i, 2)->setData(Qt::UserRole, drow.com);
 		placeLabel(drow);
 		if (drow.ispc) {
@@ -1168,7 +1180,7 @@ int DebugWin::fillDisasm() {
 	}
 	fillStack();
 	block = 0;
-	return drow.ispc;
+	return res;
 }
 
 unsigned short DebugWin::getPrevAdr(unsigned short adr) {
@@ -1400,7 +1412,6 @@ void DebugWin::fillStack() {
 	ui.labSP2->setText(str.mid(4,4));
 	ui.labSP4->setText(str.mid(8,4));
 	ui.labSP6->setText(str.mid(12,4));
-//	ui.labSP8->setText(str.mid(16,4));
 }
 
 // breakpoint
@@ -1435,6 +1446,8 @@ void DebugWin::chaCellProperty(QAction* act) {
 	int data = act->data().toInt();
 	int adr = getAdr();
 	int bgn, end;
+	unsigned short eadr;
+	unsigned char bt;
 	unsigned char* ptr;
 	if ((adr < ui.dasmTable->blockStart) || (adr > ui.dasmTable->blockEnd)) {	// pointer outside block : process 1 cell
 		bgn = adr;
@@ -1443,6 +1456,7 @@ void DebugWin::chaCellProperty(QAction* act) {
 		bgn = ui.dasmTable->blockStart;
 		end = ui.dasmTable->blockEnd;
 	}
+	eadr = end & 0xffff; getDisasm(comp, eadr); end = (eadr-1) & 0xffff;		// move end to last byte of block
 	adr = bgn;
 	while (adr <= end) {
 		ptr = getBrkPtr(comp, adr);
@@ -1453,7 +1467,16 @@ void DebugWin::chaCellProperty(QAction* act) {
 			if (ui.actWrite->isChecked()) *ptr |= MEM_BRK_WR;
 		} else {
 			*ptr &= 0x0f;
-			*ptr |= (data & 0xf0);
+			if ((data & 0xf0) == DBG_VIEW_TEXT) {
+				bt = memRd(comp->mem, adr);
+				if ((bt < 32) || (bt > 127)) {
+					*ptr |= DBG_VIEW_BYTE;
+				} else {
+					*ptr |= DBG_VIEW_TEXT;
+				}
+			} else {
+				*ptr |= (data & 0xf0);
+			}
 		}
 		adr++;
 	}
@@ -1773,6 +1796,7 @@ void xTableWidget::mousePressEvent(QMouseEvent* ev) {
 				emit rqRefill();
 				ev->ignore();
 			} else {
+				markAdr = adr;
 				QTableWidget::mousePressEvent(ev);
 			}
 			break;
@@ -1780,6 +1804,28 @@ void xTableWidget::mousePressEvent(QMouseEvent* ev) {
 			QTableWidget::mousePressEvent(ev);
 			break;
 	}
+}
+
+void xTableWidget::mouseReleaseEvent(QMouseEvent* ev) {
+	if (ev->button() == Qt::LeftButton) {
+		markAdr = -1;
+	}
+}
+
+void xTableWidget::mouseMoveEvent(QMouseEvent* ev) {
+	int row = rowAt(ev->pos().y());
+	int adr = item(row,0)->data(Qt::UserRole).toInt();
+	if ((ev->modifiers() == Qt::NoModifier) && (ev->buttons() & Qt::LeftButton) && (adr != blockStart) && (adr != blockEnd) && (markAdr >= 0)) {
+		if (adr < blockStart) {
+			blockStart = adr;
+			blockEnd = markAdr;
+		} else {
+			blockStart = markAdr;
+			blockEnd = adr;
+		}
+		emit rqRefill();
+	}
+	QTableWidget::mouseMoveEvent(ev);
 }
 
 // breakpoints

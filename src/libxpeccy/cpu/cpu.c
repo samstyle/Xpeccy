@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "cpu.h"
+#include <stdio.h>
 
 const char nomnem[] = "undef";
 
@@ -14,10 +15,12 @@ xAsmScan nil_asm(const char* com, char* buf) {
 	res.match = 0;
 	return res;
 }
-xMnem nil_mnem(unsigned short adr, cbdmr mrd, void* data) {
+xMnem nil_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 	xMnem res;
-	res.fetch = 1;
+	res.len = 1;
 	res.mnem = nomnem;
+	res.mem = 0;
+	res.cond = 0;
 	return res;
 }
 
@@ -86,24 +89,22 @@ void cpuDestroy(CPU* cpu) {
 
 const char halfByte[] = "0123456789ABCDEF";
 
-int cpuDisasm(CPU* cpu, unsigned short adr,char* buf, cbdmr mrd, void* data) {
-	int res = 0;
+xMnem cpuDisasm(CPU* cpu, unsigned short adr, char* buf, cbdmr mrd, void* data) {
+	xMnem mn;
 	opCode* opt = cpu->tab;
 	if (opt == NULL) {			// no opcode tab
 		strcpy(buf, "undef");
-		res = 1;
+		mn.len = 1;
 	} else {
 		unsigned char op;
 		unsigned char tmp = 0;
 		unsigned char dtl;
 		unsigned char dth;
 		unsigned short dtw;
-		xMnem mn = cpu->mnem(adr, mrd, data);
-		res = mn.fetch;
-		adr += res;
+		mn = cpu->mnem(cpu, adr, mrd, data);
+		adr += mn.len;
 		const char* src = mn.mnem;
 
-//		const char* src = opc->mnem;
 		while (*src != 0) {
 			if (*src == ':') {
 				src++;
@@ -111,7 +112,7 @@ int cpuDisasm(CPU* cpu, unsigned short adr,char* buf, cbdmr mrd, void* data) {
 				switch(op) {
 					case '1':		// byte = (adr)
 						dtl = mrd(adr++,data);
-						res++;
+						mn.len++;
 						*buf++ = '#';
 						*buf++ = halfByte[dtl >> 4];
 						*buf++ = halfByte[dtl & 0x0f];
@@ -119,7 +120,7 @@ int cpuDisasm(CPU* cpu, unsigned short adr,char* buf, cbdmr mrd, void* data) {
 					case '2':		// word = (adr,adr+1)
 						dtl = mrd(adr++,data);
 						dth = mrd(adr++,data);
-						res += 2;
+						mn.len += 2;
 						*buf++ = '#';
 						*buf++ = halfByte[dth >> 4];
 						*buf++ = halfByte[dth & 0x0f];
@@ -128,7 +129,7 @@ int cpuDisasm(CPU* cpu, unsigned short adr,char* buf, cbdmr mrd, void* data) {
 						break;
 					case '3':		// word = adr + [e = (adr)]
 						dtl = mrd(adr++,data);
-						res++;
+						mn.len++;
 						dtw = adr + (signed char)dtl;
 						*buf++ = '#';
 						*buf++ = halfByte[(dtw >> 12) & 0x0f];
@@ -138,7 +139,7 @@ int cpuDisasm(CPU* cpu, unsigned short adr,char* buf, cbdmr mrd, void* data) {
 						break;
 					case '4':		// signed byte e = (adr)
 						tmp = mrd(adr++,data);
-						res++;
+						mn.len++;
 					case '5':		// signed byte e = tmp
 						if (tmp < 0x80) {
 							*(buf++) = '+';
@@ -157,7 +158,7 @@ int cpuDisasm(CPU* cpu, unsigned short adr,char* buf, cbdmr mrd, void* data) {
 		}
 		*buf = 0;
 	}
-	return res;
+	return mn;
 }
 
 // asm

@@ -2,7 +2,11 @@
 #define _CPU_H
 
 typedef struct {
-	int fetch;
+	unsigned cond:1;	// condition present
+	unsigned met:1;		// condition met
+	unsigned mem:1;		// operand mem rd :(nn),(hl),(de) etc
+	int len;
+	unsigned char mop;	// operand
 	const char* mnem;
 } xMnem;
 
@@ -102,9 +106,8 @@ struct CPU {
 	void (*reset)(CPU*);
 	int (*exec)(CPU*);
 	int (*intr)(CPU*);		// handle interrupt. intrq = requested INT types
-	// int (*nmi)(CPU*);
 	xAsmScan (*asmbl)(const char*, char*);
-	xMnem (*mnem)(unsigned short, cbdmr, void*);
+	xMnem (*mnem)(CPU*, unsigned short, cbdmr, void*);
 
 	int t;
 	unsigned char tmp;
@@ -120,9 +123,8 @@ typedef struct {
 	void (*reset)(CPU*);			// reset
 	int (*exec)(CPU*);			// exec opcode, return T
 	int (*intr)(CPU*);			// handle interrupt, return T
-	// int (*nmi)(CPU*);			// handle NMI, return T
 	xAsmScan (*asmbl)(const char*, char*);	// compile mnemonic
-	xMnem (*mnem)(unsigned short, cbdmr, void*);
+	xMnem (*mnem)(CPU*, unsigned short, cbdmr, void*);
 } cpuCore;
 
 CPU* cpuCreate(int,cbmr,cbmw,cbir,cbiw,cbirq,void*);
@@ -134,7 +136,7 @@ const char* getCoreName(int);
 
 extern cpuCore cpuTab[];
 
-int cpuDisasm(CPU*, unsigned short, char*, cbdmr, void*);
+xMnem cpuDisasm(CPU*, unsigned short, char*, cbdmr, void*);
 int cpuAsm(CPU*, const char*, char*, unsigned short);
 xAsmScan scanAsmTab(const char*, opCode*);
 

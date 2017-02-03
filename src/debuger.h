@@ -18,11 +18,15 @@ class xTableWidget : public QTableWidget {
 		xTableWidget(QWidget*);
 		int blockStart;
 		int blockEnd;
+	private:
+		int markAdr;
 	signals:
 		void rqRefill();
 	protected:
 		void keyPressEvent(QKeyEvent*);
 		void mousePressEvent(QMouseEvent*);
+		void mouseReleaseEvent(QMouseEvent*);
+		void mouseMoveEvent(QMouseEvent*);
 };
 
 #include "ui_memviewer.h"

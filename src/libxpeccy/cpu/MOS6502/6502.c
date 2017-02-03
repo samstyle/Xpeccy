@@ -38,11 +38,13 @@ int m6502_exec(CPU* cpu) {
 	return cpu->t;
 }
 
-xMnem m6502_mnem(unsigned short adr, cbdmr mrd, void* data) {
+xMnem m6502_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 	xMnem mn;
 	unsigned char op = mrd(adr++,data);
-	mn.fetch = 1;
+	mn.len = 1;
 	mn.mnem = mosTab[op].mnem;
+	mn.cond = 0;		// TODO
+	mn.mem = 0;
 	return mn;
 }
 

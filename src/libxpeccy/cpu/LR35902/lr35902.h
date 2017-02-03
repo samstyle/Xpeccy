@@ -14,6 +14,6 @@ int lr_int(CPU*);
 // int lr_nmi(CPU*);
 
 xAsmScan lr_asm(const char*, char*);
-xMnem lr_mnem(unsigned short, cbdmr, void*);
+xMnem lr_mnem(CPU*, unsigned short, cbdmr, void*);
 
 #endif

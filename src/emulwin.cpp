@@ -32,6 +32,10 @@
 
 // main
 
+unsigned char screen[2048 * 2048 * 3];		// scaled image (up to fullscreen)
+unsigned char scrn[1024 * 512 * 3];		// 2:1 image
+unsigned char prvScr[1024 * 512 * 3];		// copy of last 2:1 image (for noflic)
+
 // temp emulation
 unsigned short pc,af,de,ix;
 //int blk;
@@ -78,7 +82,7 @@ void MainWin::updateWindow() {
 	setFixedSize(szw, szh);
 	lineBytes = szw * 3;
 	frameBytes = szh * lineBytes;
-	scrImg = QImage(conf.vid.screen, szw, szh, QImage::Format_RGB888);
+	scrImg = QImage(screen, szw, szh, QImage::Format_RGB888);
 	updateHead();
 	block = 0;
 	if (dbg->isVisible()) dbg->fillAll();		// hmmm... why?
@@ -198,20 +202,21 @@ MainWin::MainWin() {
 // scale screen
 
 void MainWin::convImage() {
-	if (ethread.fast || comp->debug) memcpy(conf.vid.scrn, comp->vid->scrimg, comp->vid->vBytes);
-	if (conf.vid.grayScale) scrGray(conf.vid.scrn, comp->vid->vBytes);
-	if (conf.vid.noFlick) scrMix(conf.vid.prvScr, conf.vid.scrn, comp->vid->vBytes);
+	if (ethread.fast || comp->debug) memcpy(scrn, comp->vid->scrimg, comp->vid->vBytes);
+	if (conf.vid.grayScale) scrGray(scrn, comp->vid->vBytes);
+	if (conf.vid.noFlick) scrMix(prvScr, scrn, comp->vid->vBytes);
 	if (conf.vid.fullScreen) {
-		scrFS(conf.vid.scrn, comp->vid->vsze.x, comp->vid->vsze.y);
+		QSize dstsize = QApplication::desktop()->screenGeometry().size();
+		scrFS(scrn, comp->vid->vsze.x, comp->vid->vsze.y, screen, dstsize.width(), dstsize.height());
 	} else {
 		switch(conf.vid.scale) {
-			case 1:	scrX1(conf.vid.scrn, comp->vid->vsze.x, comp->vid->vsze.y);
+			case 1:	scrX1(scrn, comp->vid->vsze.x, comp->vid->vsze.y, screen);
 				break;
-			case 2:	scrX2(conf.vid.scrn, comp->vid->vsze.x, comp->vid->vsze.y);
+			case 2:	scrX2(scrn, comp->vid->vsze.x, comp->vid->vsze.y, screen);
 				break;
-			case 3:	scrX3(conf.vid.scrn, comp->vid->vsze.x, comp->vid->vsze.y);
+			case 3:	scrX3(scrn, comp->vid->vsze.x, comp->vid->vsze.y, screen);
 				break;
-			case 4: scrX4(conf.vid.scrn, comp->vid->vsze.x, comp->vid->vsze.y);
+			case 4: scrX4(scrn, comp->vid->vsze.x, comp->vid->vsze.y, screen);
 				break;
 		}
 	}
@@ -494,7 +499,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				conf.vid.noFlick ^= 1;
 				saveConfig();
 				if (conf.vid.noFlick)
-					memcpy(conf.vid.prvScr, conf.vid.scrn, comp->vid->frmsz * 6);
+					memcpy(prvScr, scrn, comp->vid->frmsz * 6);
 				setMessage(QString(" noflic %0 ").arg(conf.vid.noFlick ? "on" : "off"));
 				break;
 		}
@@ -742,7 +747,7 @@ void MainWin::screenShot() {
 	fnams.append(QTime::currentTime().toString("HHmmss_zzz")).append(".").append(QString(fext.c_str()));
 	std::string fnam(fnams.toUtf8().data());
 	std::ofstream file;
-	QImage img(conf.vid.screen, width(), height(), QImage::Format_RGB888);
+	QImage img(screen, width(), height(), QImage::Format_RGB888);
 	int x,y,dx,dy;
 	char pageBuf[0x4000];
 	memGetPageData(comp->mem,MEM_RAM,comp->vid->curscr,pageBuf);
@@ -874,13 +879,13 @@ void drawChar(QByteArray chr, int scradr, int wid) {
 			b = chr.at(adr++);
 			vadr = scradr + x;
 			if (r || g || b) {
-				conf.vid.screen[vadr++] = r;
-				conf.vid.screen[vadr++] = g;
-				conf.vid.screen[vadr] = b;
+				screen[vadr++] = r;
+				screen[vadr++] = g;
+				screen[vadr] = b;
 			} else {
-				conf.vid.screen[vadr++] >>= 2;
-				conf.vid.screen[vadr++] >>= 2;
-				conf.vid.screen[vadr] >>= 2;
+				screen[vadr++] >>= 2;
+				screen[vadr++] >>= 2;
+				screen[vadr] >>= 2;
 			}
 		}
 		scradr += wid * 3;

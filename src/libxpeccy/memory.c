@@ -102,11 +102,11 @@ void memSetBank(Memory* mem, int bank, int type, int page, extmrd rd, extmwr wr,
 void memSetPageData(Memory* mem, int type, int page, char* src) {
 	switch(type) {
 		case MEM_ROM:
-			page &= mem->romMask;
+			page &= 0x1f;
 			memcpy(mem->romData + (page << 14), src, 0x4000);
 			break;
 		case MEM_RAM:
-			page &= mem->memMask;
+			page &= 0xff;
 			memcpy(mem->ramData + (page << 14), src, 0x4000);
 			break;
 	}
@@ -115,11 +115,11 @@ void memSetPageData(Memory* mem, int type, int page, char* src) {
 void memGetPageData(Memory* mem, int type, int page, char* dst) {
 	switch(type) {
 		case MEM_ROM:
-			page &= mem->romMask;
+			page &= 0x1f;
 			memcpy(dst, mem->romData + (page << 14), 0x4000);
 			break;
 		case MEM_RAM:
-			page &= mem->memMask;
+			page &= 0xff;
 			memcpy(dst, mem->ramData + (page << 14), 0x4000);
 			break;
 	}
@@ -129,11 +129,11 @@ unsigned char* memGetPagePtr(Memory* mem, int type, int page) {
 	unsigned char* res = NULL;
 	switch (type) {
 		case MEM_ROM:
-			page &= mem->romMask;
+			page &= 0x1f;
 			res = mem->romData + (page << 14);
 			break;
 		case MEM_RAM:
-			page &= mem->memMask;
+			page &= 0xff;
 			res = mem->ramData + (page << 14);
 			break;
 	}
