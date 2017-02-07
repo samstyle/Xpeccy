@@ -56,5 +56,6 @@
         <file>images/arrGreen.png</file>
         <file>images/arrOrange.png</file>
         <file>images/arrRed.png</file>
+        <file>images/settings.png</file>
     </qresource>
 </RCC>

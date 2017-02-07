@@ -82,23 +82,18 @@ sndPair gbsVolume(gbSound* gbs) {
 
 	if (gbs->on) {
 		// ch 1 : tone, env, sweep
-#if 1
 		lev = gbs->ch1.lev ? 0xff : 0x00;
 		lev *= gbEnv[gbs->ch1.env.vol & 15];
 		lev >>= 4;
 		if (gbs->ch1.so1) left += lev;
 		if (gbs->ch1.so2) right += lev;
-#endif
 		// ch 2 : tone, env
-#if 1
 		lev = gbs->ch2.lev ? 0xff : 0x00;
 		lev *= gbEnv[gbs->ch2.env.vol & 15];
 		lev >>= 4;
 		if (gbs->ch2.so1) left += lev;
 		if (gbs->ch2.so2) right += lev;
-#endif
 		// ch 3 : waveform
-#if 1
 		lev = gbs->wave[gbs->ch3.step & 0x1f];
 		switch(gbs->ch3vol & 3) {
 			case 0: lev = 0; break;
@@ -108,18 +103,15 @@ sndPair gbsVolume(gbSound* gbs) {
 		}
 		if (gbs->ch3.so1) left += lev;
 		if (gbs->ch3.so2) right += lev;
-#endif
 		// ch 4 : noise, env
-#if 1
 		lev = noizes[gbs->ch4.step & 0x1ffff] ? 0x80 : 0x00;
 		lev *= gbEnv[gbs->ch4.env.vol & 15];
 		lev >>= 4;
 		if (gbs->ch4.so1) left += lev;
 		if (gbs->ch4.so2) right += lev;
-#endif
 		// mix
-		left >>= 5;		// >> 2 = mix 4 chans; >> 4 = ff -> 0f
-		right >>= 5;
+		left >>= 2;		// >> 2 = mix 4 chans; result 00..FF
+		right >>= 2;
 	}
 	sndPair res;
 	res.left = (left > 0xff) ? 0xff : left;

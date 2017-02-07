@@ -23,7 +23,7 @@ typedef struct {
 
 sndBuffa bufA;		// ring buffer @ real freq
 sndBuffa bufB;		// 1 frame buffer for output
-sndBuffa bufBig;	// 1 frame big buffer @ x8 freq
+//sndBuffa bufBig;	// 1 frame big buffer @ x8 freq
 
 unsigned short playPos = 0;
 int pass = 0;
@@ -35,7 +35,7 @@ int sndChunks = 882;
 int sndBufSize = 1764;
 int nsPerSample = 23143;
 sndPair sndLev;
-sndPair sndLast;
+//sndPair sndLast;
 
 OutSys* findOutSys(const char*);
 
@@ -57,47 +57,49 @@ OutSys* findOutSys(const char*);
 
 #include "../libxpeccy/hardware/hardware.h"
 
+int sdevcnt = 1;
+
+sndPair mixer(sndPair cur, int levL, int levR, int vol) {
+	if ((levL == 0) && (levR == 0)) return cur;
+	levL = levL * vol / 100.0;
+	levR = levR * vol / 100.0;
+	cur.left = ((cur.left * sdevcnt) + levL) / (sdevcnt + 1);
+	cur.right = ((cur.right * sdevcnt) + levR) / (sdevcnt + 1);
+	sdevcnt++;
+	return cur;
+}
+
 void sndMix(Computer* comp) {
-	int lev = comp->tape->levRec ? conf.snd.vol.tape : 0;
-	if (comp->tape->on && comp->tape->levPlay) {
-		lev += conf.snd.vol.tape;
-	}
-	lev *= 0.15;
-
+	int lev = 0;
+	sndPair svol;
+	sdevcnt = 0;
+	sndLev.left = 0;
+	sndLev.right = 0;
+	// tape
+	lev = (comp->tape->on && (comp->tape->levRec || comp->tape->levPlay)) ? 0x7f : 0x00;
+	sndLev = mixer(sndLev, lev, lev, conf.snd.vol.tape);
+	// beeper
 	bcSync(comp->beep, -1);
-	lev += ((comp->beep->val & 0xf0) >> 4) * conf.snd.vol.beep / 100.0;
-
-	sndLev.left = lev;
-	sndLev.right = lev;
-
-	sndPair svol = tsGetVolume(comp->ts);
-	sndLev.left += svol.left * conf.snd.vol.ay / 100.0;
-	sndLev.right += svol.right * conf.snd.vol.ay / 100.0;
-	// if (svol.left || svol.right) printf("%i : %i : %i\n",conf.snd.vol.ay, svol.left, svol.right);
-
+	lev = (comp->beep->val & 0xfe) >> 1;
+	sndLev = mixer(sndLev, lev, lev, conf.snd.vol.beep);
+	// turbosound
+	svol = tsGetVolume(comp->ts);
+	sndLev = mixer(sndLev, svol.left, svol.right, conf.snd.vol.ay);
+	// gameboy
 	svol = gbsVolume(comp->gbsnd);
-	sndLev.left += svol.left;
-	sndLev.right += svol.right;
-
+	sndLev = mixer(sndLev, svol.left, svol.right, 100);
+	// general sound
 	svol = gsGetVolume(comp->gs);
-	sndLev.left += svol.left * conf.snd.vol.gs / 100.0;
-	sndLev.right += svol.right * conf.snd.vol.gs / 100.0;
-
+	sndLev = mixer(sndLev, svol.left, svol.right, conf.snd.vol.gs);
+	// soundrive
 	svol = sdrvGetVolume(comp->sdrv);
-	sndLev.left += svol.left * conf.snd.vol.beep / 100.0;
-	sndLev.right += svol.right * conf.snd.vol.beep / 100.0;
-
+	sndLev = mixer(sndLev, svol.left, svol.right, conf.snd.vol.beep);
+	// saa
 	svol = saaGetVolume(comp->saa);		// TODO : saa volume control
-	sndLev.left += svol.left;
-	sndLev.right += svol.right;
-
-//	sndLev.left = (sndLev.left + sndLast.left) >> 1;
-//	sndLev.right = (sndLev.right + sndLast.right) >> 1;
-
+	sndLev = mixer(sndLev, svol.left, svol.right, 100);
+	// cut
 	if (sndLev.left > 0xff) sndLev.left = 0xff;
 	if (sndLev.right > 0xff) sndLev.right = 0xff;
-
-	sndLast = sndLev;
 }
 
 // return 1 when buffer is full
@@ -110,8 +112,8 @@ int sndSync(Computer* comp, int fast) {
 	if (!fast && (sndOutput != NULL)) {
 		sndMix(comp);
 	}
-	bufA.data[bufA.pos++] = sndLev.left;
-	bufA.data[bufA.pos++] = sndLev.right;
+	bufA.data[bufA.pos++] = sndLev.left >> 3;
+	bufA.data[bufA.pos++] = sndLev.right >> 3;
 	smpCount++;
 	if (smpCount < sndChunks) return 0;
 	conf.snd.fill = 0;
@@ -242,7 +244,7 @@ void sdlPlayAudio(void*,Uint8* stream, int len) {
 			fillBuffer(len);
 		}
 	}
-	SDL_MixAudio(stream, bufB.data, len, SDL_MIX_MAXVOLUME);
+	SDL_MixAudio(stream, bufB.data, len, SDL_MIX_MAXVOLUME * 0.8);
 	// memcpy(stream,sndBufB,len);
 }
 
@@ -333,14 +335,12 @@ bool alsa_open() {
 	return res;
 }
 
-#include <QDebug>
-
 void alsa_play() {
 	if (alsaHandle == NULL) return;
 	snd_pcm_sframes_t res;
 	memcpy(bufB.data, bufA.data, sndChunks * conf.snd.chans);
-	bufA.pos = 0; //ringPos = 0;
-	unsigned char* ptr = bufB.data;	// sndBufB;
+	bufA.pos = 0;
+	unsigned char* ptr = bufB.data;
 	int fsz = sndChunks;
 	while (fsz > 0) {
 		res = snd_pcm_writei(alsaHandle, ptr, fsz);
@@ -455,5 +455,5 @@ void sndInit() {
 	initNoise();							// ay/ym
     bufA.pos = 0;
     bufB.pos = 0;
-    bufBig.pos = 0;
+//    bufBig.pos = 0;
 }

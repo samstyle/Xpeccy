@@ -1,7 +1,5 @@
 #include <QColor>
 
-#include "libxpeccy/video/vidcommon.h"
-
 // convert <size> bytes (by 3) on <ptr> from color-RGB to gray-RGB
 void scrGray(unsigned char* ptr, int size) {
 	int gray;

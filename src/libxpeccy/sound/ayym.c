@@ -28,7 +28,8 @@ unsigned char envforms[16][33]={
 };
 
 // try to use it somehow :)
-unsigned char ayDACvol[16] = {15, 10, 7, 4, 3, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0};
+//unsigned char ayDACvol[16] = {0,0,0,0,0,1,1,1,1,2,2,3,4,7,10,15};		// from AY manual
+//unsigned char ayDACvol[16] = {0,0,0,0,0,0,0,1,1,3,4,5,7,9,12,15};		// from ayumi
 
 // AY/YM sound chip
 
@@ -128,7 +129,7 @@ void aymSetReg(aymChip* ay, unsigned char val) {
 		case 0x0b:
 		case 0x0c:
 			tone = ay->reg[11] | (ay->reg[12] << 8);
-			ay->chanE.per = tone << 4;		// must be << 8, but it didn't work WHYYYY?
+			ay->chanE.per = tone << 5;		// must be << 8, but it didn't work WHYYYY?
 			break;
 		case 0x0d:
 			ay->eForm = val & 0x0f;
@@ -154,35 +155,36 @@ void aymSync(aymChip* ay, int ns) {
 		ay->cnt += ay->per;
 		if (ay->chanA.per) {
 			ay->chanA.cnt--;
-			if (ay->chanA.cnt < 1) {
+			if (ay->chanA.cnt < 0) {
 				ay->chanA.cnt = ay->chanA.per;
 				ay->chanA.lev ^= 1;
 			}
 		}
 		if (ay->chanB.per) {
 			ay->chanB.cnt--;
-			if (ay->chanB.cnt < 1) {
+			if (ay->chanB.cnt < 0) {
 				ay->chanB.cnt = ay->chanB.per;
 				ay->chanB.lev ^= 1;
 			}
 		}
 		if (ay->chanC.per) {
 			ay->chanC.cnt--;
-			if (ay->chanC.cnt < 1) {
+			if (ay->chanC.cnt < 0) {
 				ay->chanC.cnt = ay->chanC.per;
 				ay->chanC.lev ^= 1;
 			}
 		}
 		if (ay->chanN.per) {
 			ay->chanN.cnt--;
-			if (ay->chanN.cnt < 1) {
+			if (ay->chanN.cnt < 0) {
 				ay->chanN.cnt = ay->chanN.per;
 				ay->chanN.step++;
+				ay->chanN.lev = noizes[ay->chanN.step & 0x1ffff] & 1;
 			}
 		}
 		if (ay->chanE.per) {
 			ay->chanE.cnt--;
-			if (ay->chanE.cnt < 1) {
+			if (ay->chanE.cnt < 0) {
 				ay->chanE.cnt = ay->chanE.per;
 				ay->chanE.step++;
 				if ((ay->chanE.step & 31) == 0) {
@@ -192,48 +194,30 @@ void aymSync(aymChip* ay, int ns) {
 						ay->chanE.step = 31;		// hold
 					}
 				}
+				ay->chanE.vol = envforms[ay->eForm][ay->chanE.step];
 			}
 		}
 	}
 }
 
 // NOTE : if tone & noise disabled, signal is 1 - take amp/env for digital music
-
-int ayGetChanVol(aymChan* ch, int env, int noi) {
-	int vol = ch->een ? env : ch->vol;
+int ayGetChanVol(aymChip* ay, aymChan* ch) {
+	int vol = ch->een ? ay->chanE.vol : ch->vol;
 	if (ch->ten || ch->nen) {
-		vol *= ((ch->lev & ch->ten) + (noi & ch->nen));
+		vol = ((ch->lev && ch->ten) || (ay->chanN.lev && ch->nen)) ? vol : 0;
 	}
-
-/*
-	switch ((ch->ten << 1) | ch->nen) {
-		case 0x01: vol *= noi; break;
-		case 0x02: vol *= ch->lev; break;
-		case 0x03: vol *= (ch->lev + noi); break;
-	}
-*/
-/*
-	if (ch->ten || ch->nen) {
-		if (!(ch->ten && ch->lev) && !(ch->nen && noi)) {
-			vol = 0;
-		}
-	}
-*/
-	return vol;
+	vol &= 15;
+	return (vol << 3) | (vol >> 1);		// 0..f -> 00..7f
+	// return ayDACvol[vol];
 }
 
 sndPair aymGetVolume(aymChip* ay) {
 	sndPair res;
-	int volA;
-	int volB;
-	int volC;
-
-	ay->chanN.lev = noizes[ay->chanN.step & 0x1ffff] ? 1 : 0;	// noise value
-	ay->chanE.vol = envforms[ay->eForm][ay->chanE.step];		// envelope value
-
-	volA = ayGetChanVol(&ay->chanA, ay->chanE.vol, ay->chanN.lev);
-	volB = ayGetChanVol(&ay->chanB, ay->chanE.vol, ay->chanN.lev);
-	volC = ayGetChanVol(&ay->chanC, ay->chanE.vol, ay->chanN.lev);
+	// ay->chanN.lev = noizes[ay->chanN.step & 0x1ffff] ? 1 : 0;	// noise value
+	// ay->chanE.vol = envforms[ay->eForm][ay->chanE.step];		// envelope value
+	int volA = ayGetChanVol(ay, &ay->chanA);
+	int volB = ayGetChanVol(ay, &ay->chanB);
+	int volC = ayGetChanVol(ay, &ay->chanC);
 
 	switch (ay->stereo) {
 		case AY_ABC:

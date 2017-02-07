@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>769</width>
-    <height>646</height>
+    <width>776</width>
+    <height>648</height>
    </rect>
   </property>
   <property name="font">
@@ -647,23 +647,6 @@
         </widget>
        </item>
        <item>
-        <widget class="QToolButton" name="tbLabels">
-         <property name="icon">
-          <iconset resource="../xpeccy.qrc">
-           <normaloff>:/images/label.png</normaloff>:/images/label.png</iconset>
-         </property>
-         <property name="checkable">
-          <bool>true</bool>
-         </property>
-         <property name="checked">
-          <bool>true</bool>
-         </property>
-         <property name="popupMode">
-          <enum>QToolButton::InstantPopup</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
         <widget class="QToolButton" name="tbView">
          <property name="text">
           <string>...</string>
@@ -685,6 +668,20 @@
          <property name="icon">
           <iconset resource="../xpeccy.qrc">
            <normaloff>:/images/arrGreen.png</normaloff>:/images/arrGreen.png</iconset>
+         </property>
+         <property name="popupMode">
+          <enum>QToolButton::InstantPopup</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="tbDbgOpt">
+         <property name="text">
+          <string>...</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../xpeccy.qrc">
+           <normaloff>:/images/settings.png</normaloff>:/images/settings.png</iconset>
          </property>
          <property name="popupMode">
           <enum>QToolButton::InstantPopup</enum>
@@ -1954,6 +1951,14 @@
     <string>Disasm to file</string>
    </property>
   </action>
+  <action name="actShowSeg">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show segment</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -1988,7 +1993,6 @@
   <tabstop>cbF2</tabstop>
   <tabstop>cbF1</tabstop>
   <tabstop>cbF0</tabstop>
-  <tabstop>tbLabels</tabstop>
   <tabstop>tbView</tabstop>
   <tabstop>tbTrace</tabstop>
   <tabstop>tbSaveDasm</tabstop>

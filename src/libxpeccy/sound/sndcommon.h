@@ -2,8 +2,8 @@
 #define _SNDCOMMON_H
 
 typedef struct {
-	unsigned char left;
-	unsigned char right;
+	int left;
+	int right;
 } sndPair;
 
 extern char noizes[0x20000];

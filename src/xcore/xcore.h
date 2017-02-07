@@ -194,6 +194,10 @@ struct xConfig {
 		std::string romDir;
 		std::string boot;
 	} path;
+	struct {
+		unsigned labels:1;
+		unsigned segment:1;
+	} dbg;
 };
 
 extern xConfig conf;

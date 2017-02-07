@@ -97,12 +97,13 @@ xMnem cpuDisasm(CPU* cpu, unsigned short adr, char* buf, cbdmr mrd, void* data) 
 		mn.len = 1;
 	} else {
 		unsigned char op;
-		unsigned char tmp = 0;
+		unsigned char tmp;
 		unsigned char dtl;
 		unsigned char dth;
 		unsigned short dtw;
 		mn = cpu->mnem(cpu, adr, mrd, data);
 		adr += mn.len;
+		tmp = mrd((adr - 2) & 0xffff, data);
 		const char* src = mn.mnem;
 
 		while (*src != 0) {

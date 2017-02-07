@@ -21,8 +21,8 @@
 #include "emulwin.h"
 #include "filer.h"
 
-#include "vfilters.h"
-#include "vscalers.h"
+#include "xcore/vfilters.h"
+#include "xcore/vscalers.h"
 
 #include "version.h"
 
@@ -431,6 +431,14 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			compReset(comp,RES_DEFAULT);
 			rzxWin->stop();
 		}
+	} else if (ev->modifiers() & Qt::ControlModifier) {
+		switch(ev->key()) {
+			case Qt::Key_Return:
+				conf.vid.keepRatio ^= 1;
+				setMessage(conf.vid.keepRatio ? " keep aspect ratio " : " ignore aspect ratio ");
+				saveConfig();
+				break;
+		}
 	} else if (ev->modifiers() & Qt::AltModifier) {
 		switch(ev->key()) {
 			case Qt::Key_Return:
@@ -442,17 +450,6 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			case Qt::Key_Home:
 				debugAction();
 				break;
-				/*
-			case Qt::Key_0:
-				switch (comp->vid->vmode) {
-					case VID_NORMAL: vidSetMode(comp->vid,VID_ALCO); break;
-					case VID_ALCO: vidSetMode(comp->vid,VID_ATM_EGA); break;
-					case VID_ATM_EGA: vidSetMode(comp->vid,VID_ATM_TEXT); break;
-					case VID_ATM_TEXT: vidSetMode(comp->vid,VID_ATM_HWM); break;
-					case VID_ATM_HWM: vidSetMode(comp->vid,VID_NORMAL); break;
-				}
-				break;
-				*/
 			case Qt::Key_1:
 				conf.vid.scale = 1;
 				updateWindow();
@@ -1119,6 +1116,11 @@ void MainWin::umOpen(QAction* act) {
 // labels
 
 void MainWin::loadLabels(const char* nm) {
+	dbg->loadLabels(QString(nm));
+}
+
+/*
+void MainWin::loadLabels(const char* nm) {
 	QFile file(nm);
 	if (!file.open(QFile::ReadOnly)) return;
 	QString line;
@@ -1152,7 +1154,7 @@ void MainWin::loadLabels(const char* nm) {
 		}
 	}
 }
-
+*/
 
 // debug stufffff
 void MainWin::saveVRAM() {

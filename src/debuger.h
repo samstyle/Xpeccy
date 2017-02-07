@@ -99,7 +99,6 @@ class DebugWin : public QDialog {
 		void closed();
 	private:
 		unsigned block:1;
-		unsigned showLabels:1;
 		// tracer
 		unsigned trace:1;
 		int traceType;
@@ -152,14 +151,19 @@ class DebugWin : public QDialog {
 		void scrollDown();
 		void scrollUp();
 
+	public slots:
+		void loadLabels(QString = QString());
 	private slots:
 		void setShowLabels(bool);
+		void setShowSegment(bool);
 
 		void loadMap();
 		void saveMap();
 		void saveDasm();
+		void saveLabels();
 
 		int fillDisasm();
+		void fillGBoy();
 
 		void setZ80();
 		void setFlags();
@@ -176,8 +180,6 @@ class DebugWin : public QDialog {
 		void chDumpFile();
 		void dmpStartOpen();
 		void loadDump();
-
-		void fillGBoy();
 
 		void doMemView();
 

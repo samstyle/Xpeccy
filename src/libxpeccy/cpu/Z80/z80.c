@@ -114,7 +114,7 @@ xMnem z80_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 	opCode* opt = npTab;
 	opCode* opc;
 	unsigned char op;
-	unsigned char e;
+	unsigned char e = 0;
 	unsigned short madr;
 	mn.len = 0;
 	do {
@@ -124,6 +124,7 @@ xMnem z80_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 		if (opc->prefix) {
 			opt = opc->tab;
 			if ((opt == ddcbTab) || (opt == fdcbTab)) {
+				e = mrd(adr, data);
 				adr++;
 				mn.len++;
 			}
@@ -144,12 +145,12 @@ xMnem z80_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 		mn.mop = mrd(cpu->bc, data);
 	} else if (strstr(opc->mnem, "(ix")) {
 		mn.mem = 1;
-		e = (opt == ddcbTab) ? mrd(adr-2, data) : mrd(adr, data);
-		mn.mop = mrd((cpu->ix + (signed char)e) & 0xff, data);
+		if (opt != ddcbTab) e = mrd(adr, data);
+		mn.mop = mrd((cpu->ix + (signed char)e) & 0xffff, data);
 	} else if (strstr(opc->mnem, "(iy")) {
 		mn.mem = 1;
-		e = (opt == fdcbTab) ? mrd(adr-2, data) : mrd(adr, data);
-		mn.mop = mrd((cpu->iy + (signed char)e) & 0xff, data);
+		if (opt != fdcbTab) e = mrd(adr, data);
+		mn.mop = mrd((cpu->iy + (signed char)e) & 0xffff, data);
 	} else if (strstr(opc->mnem, "(:2)")) {
 		mn.mem = 1;
 		madr = mrd(adr, data) & 0xff;

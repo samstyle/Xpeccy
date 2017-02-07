@@ -90,8 +90,10 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.setupUi(this);
 	QTableWidgetItem* itm;
 
-	showLabels = 1;
-	ui.actShowLabels->setChecked(showLabels);
+	conf.dbg.labels = 1;
+	conf.dbg.segment = 0;
+	ui.actShowLabels->setChecked(conf.dbg.labels);
+	ui.actShowSeg->setChecked(conf.dbg.segment);
 // actions data
 
 	ui.actFetch->setData(MEM_BRK_FETCH);
@@ -136,22 +138,33 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.tbView->addAction(ui.actViewWord);
 	ui.tbView->addAction(ui.actViewAddr);
 
+	ui.tbSaveDasm->addAction(ui.actDisasm);
+	ui.tbSaveDasm->addAction(ui.actLoadLabels);
+	ui.tbSaveDasm->addAction(ui.actSaveLabels);
 	ui.tbSaveDasm->addAction(ui.actLoadMap);
 	ui.tbSaveDasm->addAction(ui.actSaveMap);
-	ui.tbSaveDasm->addAction(ui.actDisasm);
 
 	ui.tbTrace->addAction(ui.actTrace);
 	ui.tbTrace->addAction(ui.actTraceHere);
 	ui.tbTrace->addAction(ui.actTraceINT);
 
+	ui.tbDbgOpt->addAction(ui.actShowLabels);
+	ui.tbDbgOpt->addAction(ui.actShowSeg);
+
 	connect(ui.dasmTable,SIGNAL(cellChanged(int,int)),this,SLOT(dasmEdited(int,int)));
 	connect(ui.dasmTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
 	connect(ui.dasmTable,SIGNAL(rqRefill()),this,SLOT(fillDisasm()));
 
-	connect(ui.tbLabels, SIGNAL(toggled(bool)),this,SLOT(setShowLabels(bool)));
+	connect(ui.actShowLabels,SIGNAL(toggled(bool)),this,SLOT(setShowLabels(bool)));
+	connect(ui.actShowSeg,SIGNAL(toggled(bool)),this,SLOT(setShowSegment(bool)));
+
+//	connect(ui.tbLabels, SIGNAL(toggled(bool)),this,SLOT(setShowLabels(bool)));
 	connect(ui.tbView, SIGNAL(triggered(QAction*)),this,SLOT(chaCellProperty(QAction*)));
 	connect(ui.tbBreak, SIGNAL(triggered(QAction*)),this,SLOT(chaCellProperty(QAction*)));
 	connect(ui.tbTrace, SIGNAL(triggered(QAction*)),this,SLOT(doTrace(QAction*)));
+
+	connect(ui.actLoadLabels, SIGNAL(triggered(bool)),this,SLOT(loadLabels()));
+	connect(ui.actSaveLabels, SIGNAL(triggered(bool)),this,SLOT(saveLabels()));
 	connect(ui.actLoadMap, SIGNAL(triggered(bool)),this,SLOT(loadMap()));
 	connect(ui.actSaveMap, SIGNAL(triggered(bool)),this,SLOT(saveMap()));
 	connect(ui.actDisasm, SIGNAL(triggered(bool)),this,SLOT(saveDasm()));
@@ -272,7 +285,12 @@ DebugWin::~DebugWin() {
 }
 
 void DebugWin::setShowLabels(bool f) {
-	showLabels = f ? 1 : 0;
+	conf.dbg.labels = f ? 1 : 0;
+	fillDisasm();
+}
+
+void DebugWin::setShowSegment(bool f) {
+	conf.dbg.segment = f ? 1 : 0;
 	fillDisasm();
 }
 
@@ -385,8 +403,9 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					doStep();
 					break;
 				case Qt::Key_L:
-					setShowLabels(showLabels ? false : true);
-					ui.actShowLabels->setChecked(showLabels);
+					ui.actShowLabels->setChecked(!conf.dbg.labels);
+					//setShowLabels(showLabels ? false : true);
+					//ui.actShowLabels->setChecked(showLabels);
 					break;
 				case Qt::Key_Space:
 					switchBP(0);
@@ -862,13 +881,13 @@ void DebugWin::setZ80() {
 QString getPageName(MemPage& pg) {
 	QString res;
 	switch(pg.type) {
-		case MEM_RAM: res = "RAM-"; break;
-		case MEM_ROM: res = "ROM-"; break;
-		case MEM_EXT: res = "EXT-"; break;
-		case MEM_SLOT: res = "SLT-"; break;
-		default: res = "----"; break;
+		case MEM_RAM: res = "RAM:"; break;
+		case MEM_ROM: res = "ROM:"; break;
+		case MEM_EXT: res = "EXT:"; break;
+		case MEM_SLOT: res = "SLT:"; break;
+		default: res = "---:"; break;
 	}
-	res.append(QString::number(pg.num));
+	res.append(gethexbyte(pg.num));
 	return res;
 }
 
@@ -881,9 +900,75 @@ void DebugWin::fillMem() {
 
 // labels
 
+void DebugWin::loadLabels(QString path) {
+	if (path.isEmpty())
+		path = QFileDialog::getOpenFileName(this, "Load SJASM labels");
+	if (path.isEmpty())
+		return;
+	labels.clear();
+	QString line;
+	QString name;
+	QStringList arr;
+	QFile file(path);
+	xAdr xadr;
+	if (file.open(QFile::ReadOnly)) {
+		while(!file.atEnd()) {
+			line = file.readLine();
+			arr = line.split(QRegExp("[: \r\n]"),QString::SkipEmptyParts);
+			if (arr.size() > 2) {
+				xadr.type = MEM_RAM;
+				xadr.bank = arr.at(0).toInt(NULL,16);
+				xadr.adr = arr.at(1).toInt(NULL,16) & 0x3fff;
+				name = arr.at(2);
+				switch (xadr.bank) {
+					case 0xff:
+						xadr.type = MEM_ROM;
+						xadr.bank = -1;
+						break;
+					case 0x05:
+						xadr.adr |= 0x4000;
+						break;
+					case 0x02:
+						xadr.adr |= 0x8000;
+						break;
+					default:
+						xadr.bank = -1;
+						xadr.adr |= 0xc000;
+						break;
+				}
+				labels[name] = xadr;
+			}
+		}
+	} else {
+		shitHappens("Can't open file");
+	}
+}
+
+void DebugWin::saveLabels() {
+	QString path = QFileDialog::getSaveFileName(this, "save SJASM labels");
+	if (path.isEmpty()) return;
+	QStringList keys;
+	QString key;
+	xAdr xadr;
+	QString line;
+	QFile file(path);
+	if (file.open(QFile::WriteOnly)) {
+		keys = labels.keys();
+		foreach(key, keys) {
+			xadr = labels[key];
+			line = (xadr.type == MEM_RAM) ? gethexbyte(xadr.bank) : "FF";
+			line.append(QString(":%0 %1\n").arg(gethexword(xadr.adr & 0x3fff)).arg(key));
+			file.write(line.toUtf8());
+		}
+		file.close();
+	} else {
+		shitHappens("Can't open file for writing");
+	}
+}
+
 QString DebugWin::findLabel(int adr, int type, int bank) {
 	QString lab;
-	if (!showLabels)
+	if (!conf.dbg.labels)
 		return lab;
 	QString key;
 	xAdr xadr;
@@ -1133,12 +1218,28 @@ int DebugWin::fillDisasm() {
 	DasmRow drow;
 	QColor bgcol,acol;
 	QString lab;
+	QString sadr;
+	MemPage* mptr;
 	QFont fnt = ui.dasmTable->font();
 	xAdr xadr;
 	int pos;
 	fnt.setBold(true);
 	for (int i = 0; i < ui.dasmTable->rowCount(); i++) {
 		drow = getDisasm(comp, adr);
+
+		if (conf.dbg.segment) {
+			mptr = &comp->mem->map[(adr & 0xc000) >> 14];
+			switch (mptr->type) {
+				case MEM_RAM: sadr = "RAM"; break;
+				case MEM_ROM: sadr = "ROM"; break;
+				default: sadr = "EXT"; break;
+			}
+			sadr.append(QString(":%0:%1").arg(gethexbyte(mptr->num)).arg(gethexword(adr)));
+			sadr.toUpper();
+		} else {
+			sadr = gethexword(drow.adr);
+		}
+
 		res |= drow.ispc;
 		ui.dasmTable->item(i, 2)->setData(Qt::UserRole, drow.com);
 		placeLabel(drow);
@@ -1159,7 +1260,8 @@ int DebugWin::fillDisasm() {
 		lab = findLabel(xadr.adr, xadr.type, xadr.bank);
 		if (lab.isEmpty()) {
 			fnt.setBold(false);
-			ui.dasmTable->item(i, 0)->setText(gethexword(drow.adr));
+			//ui.dasmTable->item(i, 0)->setText(gethexword(drow.adr));
+			ui.dasmTable->item(i, 0)->setText(sadr);
 		} else {
 			fnt.setBold(true);
 			ui.dasmTable->item(i, 0)->setText(lab);
