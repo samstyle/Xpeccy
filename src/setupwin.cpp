@@ -712,6 +712,7 @@ void SetupWin::layEditorOK() {
 	vlay.intSize = layUi.intLenBox->value();
 	vlay.scr.x = layUi.sbScrW->value();
 	vlay.scr.y = layUi.sbScrH->value();
+    vlay.lock = 0;
 	if (eidx < 0) {
 		addLayout(name, vlay);
 		ui.geombox->addItem(QString::fromLocal8Bit(nlay.name.c_str()));

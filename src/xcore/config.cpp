@@ -48,14 +48,26 @@ void initPaths() {
 	mkdir(conf.path.romDir.c_str(),0777);
 	conf.path.confFile = conf.path.confDir + "/config.conf";
 	conf.path.boot = conf.path.confDir + "/boot.$B";
+	//conf.path.font = conf.path.confDir + "/appfont.ttf";
 #elif __WIN32
 	conf.path.confDir = std::string(".\\config");
 	conf.path.romDir = conf.path.confDir + "\\roms";
 	conf.path.confFile = conf.path.confDir + "\\config.conf";
 	conf.path.boot = conf.path.confDir + "\\boot.$B";
+	//conf.path.font = conf.path.confDir + "\\appfont.ttf";
 	mkdir(conf.path.confDir.c_str());
 	mkdir(conf.path.romDir.c_str());
 #endif
+	/*
+	// check user app font or use built-in DejaVuSansMono.ttf
+	FILE* file = fopen(conf.path.font.c_str(), "rb");
+	if (file != NULL) {
+		fclose(file);
+	} else {
+		conf.path.font = "://DejaVuSansMono.ttf";
+	}
+	// printf("Used font : %s\n",conf.path.font.c_str());
+	*/
 }
 
 void saveConfig() {

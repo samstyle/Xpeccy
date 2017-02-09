@@ -2,6 +2,7 @@
 #include <QMessageBox>
 #include <QTimer>
 #include <QDebug>
+#include <QFontDatabase>
 
 #include "xcore/xcore.h"
 #include "xcore/sound.h"
@@ -38,6 +39,15 @@ int main(int ac,char** av) {
 	printf("Using Qt ver %s\n",qVersion());
 
 	QApplication app(ac,av,true);
+
+
+	vidInitAdrs();
+	sndInit();
+	initPaths();
+	addProfile("default","xpeccy.conf");
+
+	QFontDatabase::addApplicationFont("://DejaVuSansMono.ttf");
+
 	int i;
 	MainWin mwin;
 	char* parg;

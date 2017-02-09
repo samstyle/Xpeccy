@@ -5,7 +5,7 @@
 
 #include "../xcore/xcore.h"
 
-// resize srcw x srch from
+// resize srcw x srch @ src -> dstw x dsth @ dst
 void scrFS(unsigned char* src, int srcw, int srch, unsigned char* dst, int dstw, int dsth) {
 	int  scalex = (dstw << 8) / srcw;
 	int  scaley = (dsth << 8) / srch;
@@ -37,11 +37,16 @@ void scrFS(unsigned char* src, int srcw, int srch, unsigned char* dst, int dstw,
 	for (y = 0; y < srch; y++) {
 		for (x = 0; x < srcw; x++) {
 			while(cntx > 0x100) {
-				memcpy(ptr, src, 3);
-				ptr += 3;
+				*ptr++ = *src;
+				*ptr++ = *(src+1);
+				*ptr++ = *(src+2);
+				// ptr += 3;
 				cntx -= 0x100;
 			}
 			src += 3;
+			//*(ptr - 3) = (*(ptr - 3) + *src) >> 1;
+			//*(ptr - 2) = (*(ptr - 2) + *(src+1)) >> 1;
+			//*(ptr - 1) = (*(ptr - 1) + *(src+2)) >> 1;
 			cntx += scalex;
 		}
 		ptr = lptr + lsiz;

@@ -134,17 +134,12 @@ MainWin::MainWin() {
 	grabMice = 0;
 	block = 0;
 
-	QFile file(":/font.bin");
+	QFile file(":/font.bin");		// on-screen messages bitmap font 12x12
 	file.open(QFile::ReadOnly);
 	font = file.readAll();
 	file.close();
 	msgTimer = 0;
 	msg.clear();
-
-	vidInitAdrs();
-	sndInit();
-	initPaths();
-	addProfile("default","xpeccy.conf");
 
 	initKeyMap();
 	conf.scrShot.format = "png";

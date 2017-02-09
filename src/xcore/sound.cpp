@@ -112,8 +112,8 @@ int sndSync(Computer* comp, int fast) {
 	if (!fast && (sndOutput != NULL)) {
 		sndMix(comp);
 	}
-	bufA.data[bufA.pos++] = sndLev.left >> 3;
-	bufA.data[bufA.pos++] = sndLev.right >> 3;
+	bufA.data[bufA.pos++] = sndLev.left >> 2;
+	bufA.data[bufA.pos++] = sndLev.right >> 2;
 	smpCount++;
 	if (smpCount < sndChunks) return 0;
 	conf.snd.fill = 0;

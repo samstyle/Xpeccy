@@ -12,10 +12,16 @@
 #include <QMenu>
 #include <QTableWidget>
 
+#include "libxpeccy/spectrum.h"
+#include "dbg_sprscan.h"
+#include "dbg_memfill.h"
+#include "dbg_finder.h"
+
 class xTableWidget : public QTableWidget {
 	Q_OBJECT
 	public:
 		xTableWidget(QWidget*);
+		Computer* comp;
 		int blockStart;
 		int blockEnd;
 	private:
@@ -29,11 +35,10 @@ class xTableWidget : public QTableWidget {
 		void mouseMoveEvent(QMouseEvent*);
 };
 
-#include "ui_memviewer.h"
 #include "ui_dumpdial.h"
 #include "ui_openDump.h"
 #include "ui_debuger.h"
-#include "libxpeccy/spectrum.h"
+
 
 enum {
 	XTYPE_NONE = -1,
@@ -62,27 +67,6 @@ class xItemDelegate : public QItemDelegate {
 
 };
 
-class MemViewer : public QDialog {
-	Q_OBJECT
-	public:
-		MemViewer(QWidget* = NULL);
-		Memory* mem;
-		Ui::MemView ui;
-		QPoint winPos;
-		unsigned vis:1;
-	private:
-		unsigned char rdMem(int);
-	public slots:
-		void fillImage();
-	private slots:
-		void adrChanged(int);
-		void hexChanged();
-		void memScroll(int);
-		void saveSprite();
-	protected:
-		void wheelEvent(QWheelEvent*);
-};
-
 class DebugWin : public QDialog {
 	Q_OBJECT
 	public:
@@ -92,9 +76,10 @@ class DebugWin : public QDialog {
 		void reject();
 		void start(Computer*);
 		void stop();
-		bool fillAll();
 
 		QMap<QString, xAdr> labels;
+	public slots:
+		bool fillAll();
 	signals:
 		void closed();
 	private:
@@ -120,6 +105,8 @@ class DebugWin : public QDialog {
 		Ui::oDumpDial oui;
 		QString dumpPath;
 
+		xMemFiller* memFiller;
+		xMemFinder* memFinder;
 		MemViewer* memViewer;
 
 		QMenu* cellMenu;
@@ -182,6 +169,10 @@ class DebugWin : public QDialog {
 		void loadDump();
 
 		void doMemView();
+		void doFill();
+
+		void doFind();
+		void onFound(int);
 
 		void doTrace(QAction*);
 		void doTraceHere();

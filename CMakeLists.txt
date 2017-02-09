@@ -57,6 +57,9 @@ set(MOCFILES
 	./src/ethread.h
 	./src/emulwin.h
 	./src/debuger.h
+	./src/dbg_sprscan.h
+	./src/dbg_memfill.h
+	./src/dbg_finder.h
 	./src/setupwin.h
 	./src/xgui/xgui.h
 )

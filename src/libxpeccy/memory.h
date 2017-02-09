@@ -31,10 +31,8 @@ typedef unsigned char(*extmrd)(unsigned short, void*);
 typedef void(*extmwr)(unsigned short, unsigned char, void*);
 
 typedef struct {
-	unsigned wren:1;		// write enable
 	int type;			// type of page data
 	int num;			// 16K page number
-//	unsigned char* dptr;		// ptr to data (!MEM_EXT)
 	void* data;			// ptr for rd/wr func
 	extmrd rd;			// external rd (for type MEM_EXT)
 	extmwr wr;			// external wr (for type MEM_EXT)

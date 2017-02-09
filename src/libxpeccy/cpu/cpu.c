@@ -91,6 +91,7 @@ const char halfByte[] = "0123456789ABCDEF";
 
 xMnem cpuDisasm(CPU* cpu, unsigned short adr, char* buf, cbdmr mrd, void* data) {
 	xMnem mn;
+    mn.mnem = NULL;
 	opCode* opt = cpu->tab;
 	if (opt == NULL) {			// no opcode tab
 		strcpy(buf, "undef");

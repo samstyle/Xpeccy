@@ -2,6 +2,19 @@
 #include <vector>
 #include <sstream>
 #include <stdlib.h>
+#include <QString>
+
+QString gethexword(int num) {
+	return QString::number(num+0x10000,16).right(4).toUpper();
+}
+
+QString gethexbyte(uchar num) {
+	return QString::number(num+0x100,16).right(2).toUpper();
+}
+
+QString getbinbyte(uchar num) {
+	return QString::number(num+0x100,2).right(8).toUpper();
+}
 
 std::string int2str(int num) {
 	std::stringstream str;

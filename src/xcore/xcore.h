@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <QString>
 
 #include "../libxpeccy/spectrum.h"
 #include "../libxpeccy/filetypes/filetypes.h"
@@ -19,6 +20,10 @@ bool str2bool(std::string);
 std::vector<std::string> splitstr(std::string,const char*);
 std::pair<std::string,std::string> splitline(std::string);
 void copyFile(const char*, const char*);
+
+QString getbinbyte(uchar);
+QString gethexbyte(uchar);
+QString gethexword(int);
 
 // profiles
 
@@ -192,6 +197,7 @@ struct xConfig {
 		std::string confDir;
 		std::string confFile;
 		std::string romDir;
+		std::string font;
 		std::string boot;
 	} path;
 	struct {

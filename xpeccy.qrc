@@ -57,5 +57,8 @@
         <file>images/arrOrange.png</file>
         <file>images/arrRed.png</file>
         <file>images/settings.png</file>
+        <file>images/fill.png</file>
+        <file>images/search.png</file>
+        <file>DejaVuSansMono.ttf</file>
     </qresource>
 </RCC>
