@@ -60,5 +60,6 @@
         <file>images/fill.png</file>
         <file>images/search.png</file>
         <file>DejaVuSansMono.ttf</file>
+        <file>images/note.png</file>
     </qresource>
 </RCC>

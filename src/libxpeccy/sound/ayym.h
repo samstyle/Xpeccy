@@ -49,16 +49,17 @@ typedef struct {
 } aymChan;
 
 typedef struct {
+	unsigned coarseEnv:1;	// 4-bit envelope volume
 	int type;
 	int stereo;
+	double frq;		// in MHz
 	aymChan chanA;
 	aymChan chanB;
 	aymChan chanC;
 	aymChan chanN;
 	aymChan chanE;
 	int eForm;		// envelope form
-	double frq;		// in MHz
-	int per;		// = 1e9/frq(MHz)
+	int per;		// pariod ns len
 	int cnt;		// ns countdown
 	unsigned char curReg;
 	unsigned char reg[256];
@@ -74,6 +75,7 @@ typedef struct {
 void initNoise();
 
 void aymSetType(aymChip*, int);
+int ayGetChanVol(aymChip*, aymChan*);
 
 TSound* tsCreate(int,int,int);
 void tsDestroy(TSound*);

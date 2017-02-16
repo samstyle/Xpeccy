@@ -10,8 +10,8 @@ xMemFiller::xMemFiller(QWidget* p):QDialog(p) {
 	connect(ui.sbEnd, SIGNAL(valueChanged(int)),this,SLOT(adrChange()));
 	connect(ui.leStartHex, SIGNAL(textChanged(QString)),this,SLOT(hexChange()));
 	connect(ui.leEndHex, SIGNAL(textChanged(QString)),this,SLOT(hexChange()));
+	connect(ui.cbMethod, SIGNAL(currentIndexChanged(int)),this,SLOT(metChange()));
 
-	connect(ui.pbCancel,SIGNAL(clicked(bool)),this,SLOT(close()));
 	connect(ui.pbFill,SIGNAL(clicked(bool)),this,SLOT(fill()));
 }
 
@@ -40,6 +40,10 @@ void xMemFiller::hexChange() {
 	ui.pbFill->setEnabled(ui.sbStart->value() <= ui.sbEnd->value());
 }
 
+void xMemFiller::metChange() {
+	ui.leMask->setEnabled(ui.cbMethod->currentText() == "Mask");
+}
+
 void xMemFiller::fill() {
 	QStringList strl = ui.leBytes->text().split(":",QString::SkipEmptyParts);
 	QStringList strm = ui.leMask->text().split(":",QString::SkipEmptyParts);
@@ -66,7 +70,23 @@ void xMemFiller::fill() {
 	idx = 0;
 	do {				// fill by pattern and mask
 		byt = memRd(mem, adr & 0xffff);
-		byt = (byt & ~msk[idx]) | (pat[idx] & msk[idx]);
+		switch(ui.cbMethod->currentIndex()) {
+			case 0:				// mask
+				byt = (byt & ~msk[idx]) | (pat[idx] & msk[idx]);
+				break;
+			case 1:				// put
+				byt = pat[idx];
+				break;
+			case 2:				// or
+				byt |= pat[idx];
+				break;
+			case 3:				// and
+				byt &= pat[idx];
+				break;
+			case 4:				// xor
+				byt ^= pat[idx];
+				break;
+		}
 		memWr(mem, adr & 0xffff, byt);
 		idx++;
 		if (idx >= psiz)

@@ -118,6 +118,7 @@ class MainWin : public QWidget {
 
 		void saveVRAM();
 		void saveGBVRAM();
+		void saveGSRAM();
 		void debugAction();
 	protected:
 		void closeEvent(QCloseEvent*);

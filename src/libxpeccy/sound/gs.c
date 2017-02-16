@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "gs.h"
@@ -7,10 +8,18 @@ unsigned char gsmemrd(unsigned short adr,int m1,void* ptr) {
 	GSound* gs = (GSound*)ptr;
 	unsigned char res = memRd(gs->mem,adr);
 	switch (adr & 0xe300) {
-		case 0x6000: gs->ch1 = res; break;
-		case 0x6100: gs->ch2 = res; break;
-		case 0x6200: gs->ch3 = res; break;
-		case 0x6300: gs->ch4 = res; break;
+		case 0x6000:
+			gs->ch1 = res;
+			break;
+		case 0x6100:
+			gs->ch2 = res;
+			break;
+		case 0x6200:
+			gs->ch3 = res;
+			break;
+		case 0x6300:
+			gs->ch4 = res;
+			break;
 	}
 	return res;
 }
@@ -52,8 +61,9 @@ void gsiowr(unsigned short port,unsigned char val,void* ptr) {
 				memSetBank(gs->mem, MEM_BANK2, MEM_ROM, 0, NULL, NULL, NULL);
 				memSetBank(gs->mem, MEM_BANK3, MEM_ROM, 1, NULL, NULL, NULL);
 			} else {
-				memSetBank(gs->mem, MEM_BANK2, MEM_RAM, (val << 1) - 2, NULL, NULL, NULL);
-				memSetBank(gs->mem, MEM_BANK3, MEM_RAM, (val << 1) - 1, NULL, NULL, NULL);
+				val--;
+				memSetBank(gs->mem, MEM_BANK2, MEM_RAM, val << 1, NULL, NULL, NULL);
+				memSetBank(gs->mem, MEM_BANK3, MEM_RAM, (val << 1) + 1, NULL, NULL, NULL);
 			}
 			break;
 		case 1: break;
@@ -65,8 +75,8 @@ void gsiowr(unsigned short port,unsigned char val,void* ptr) {
 		case 7: gs->vol2 = val & 0x3f; break;
 		case 8: gs->vol3 = val & 0x3f; break;
 		case 9: gs->vol4 = val & 0x3f; break;
-		case 10: if (gs->rp0 & 1) gs->pstate &= 0x7f; else gs->pstate |= 0x80; break;
-		case 11: if (gs->vol1 & 64) gs->pstate |= 1; else gs->pstate &= 0xfe; break;
+		case 10: if (gs->rp0 & 0x01) gs->pstate &= 0x7f; else gs->pstate |= 0x80; break;
+		case 11: if (gs->vol1 & 0x20) gs->pstate |= 1; else gs->pstate &= 0xfe; break;
 	}
 }
 
@@ -94,10 +104,10 @@ GSound* gsCreate() {
 	res->pstate = 0x7e;
 	res->stereo = GS_12_34;
 	res->counter = 0;
-	res->ch1 = 0;
-	res->ch2 = 0;
-	res->ch3 = 0;
-	res->ch4 = 0;
+	res->ch1 = 0x80;
+	res->ch2 = 0x80;
+	res->ch3 = 0x80;
+	res->ch4 = 0x80;
 	res->vol1 = 0;
 	res->vol2 = 0;
 	res->vol3 = 0;
@@ -120,18 +130,27 @@ void gsSync(GSound* gs) {
 	int res;
 	gs->counter += gs->sync * GS_FRQ / 980;		// ticks to emulate
 	while (gs->counter > 0) {
-		res = gs->cpu->exec(gs->cpu);
+		if (gs->cpu->inth) {
+			gs->cpu->inth = 0;
+			gs->cpu->intrq = 1;
+			res = gs->cpu->intr(gs->cpu);
+		} else {
+			res = gs->cpu->exec(gs->cpu);
+		}
 		gs->counter -= res;
 		gs->cnt += res;
 		if (gs->cnt > 320) {	// 12MHz CLK, 37.5KHz INT -> int in each 320 ticks
 			gs->cnt -= 320;
-			res = gs->cpu->intr(gs->cpu);	// z80ex_int(gs->cpu);
-			gs->cnt += res;
-			gs->counter -= res;
+			gs->cpu->inth = 1;
 		}
 	}
 	gs->sync = 0;
 }
+
+// max 1ch = 256 * 64 = 16384 = 2^14
+// 4ch = 2^14 * 4 = 2^16 = 65536
+// 2ch = 2^15
+// 2^16 -> 2^7 : >> 9
 
 sndPair gsGetVolume(GSound* gs) {
 	sndPair res;
@@ -143,12 +162,12 @@ sndPair gsGetVolume(GSound* gs) {
 			res.left = ((gs->ch1 * gs->vol1 + \
 				gs->ch2 * gs->vol2 + \
 				gs->ch3 * gs->vol3 + \
-				gs->ch4 * gs->vol4) >> 9);
+				gs->ch4 * gs->vol4) >> 8);
 			res.right = res.left;
 			break;
 		case GS_12_34:
-			res.left = ((gs->ch1 * gs->vol1 + gs->ch2 * gs->vol2) >> 8);
-			res.right = ((gs->ch3 * gs->vol3 + gs->ch4 * gs->vol4) >> 8);
+			res.left = ((gs->ch1 * gs->vol1 + gs->ch2 * gs->vol2) >> 7);
+			res.right = ((gs->ch3 * gs->vol3 + gs->ch4 * gs->vol4) >> 7);
 			break;
 	}
 	return res;

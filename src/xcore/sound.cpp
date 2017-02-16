@@ -23,7 +23,6 @@ typedef struct {
 
 sndBuffa bufA;		// ring buffer @ real freq
 sndBuffa bufB;		// 1 frame buffer for output
-//sndBuffa bufBig;	// 1 frame big buffer @ x8 freq
 
 unsigned short playPos = 0;
 int pass = 0;
@@ -60,12 +59,16 @@ OutSys* findOutSys(const char*);
 int sdevcnt = 1;
 
 sndPair mixer(sndPair cur, int levL, int levR, int vol) {
-	if ((levL == 0) && (levR == 0)) return cur;
 	levL = levL * vol / 100.0;
 	levR = levR * vol / 100.0;
-	cur.left = ((cur.left * sdevcnt) + levL) / (sdevcnt + 1);
-	cur.right = ((cur.right * sdevcnt) + levR) / (sdevcnt + 1);
-	sdevcnt++;
+	double fl = cur.left / 256.0;
+	double fr = cur.right / 256.0;
+	double sl = levL / 256.0;
+	double sr = levR / 256.0;
+	double xl = (fl + sl) / (1.0 + fl * sl);
+	double xr = (fr + sr) / (1.0 + fr * sr);
+	cur.left = xl * 256;
+	cur.right = xr * 256;
 	return cur;
 }
 
@@ -76,11 +79,11 @@ void sndMix(Computer* comp) {
 	sndLev.left = 0;
 	sndLev.right = 0;
 	// tape
-	lev = (comp->tape->on && (comp->tape->levRec || comp->tape->levPlay)) ? 0x7f : 0x00;
+	lev = (comp->tape->on && (comp->tape->levRec || comp->tape->levPlay)) ? 0xff : 0x00;
 	sndLev = mixer(sndLev, lev, lev, conf.snd.vol.tape);
 	// beeper
 	bcSync(comp->beep, -1);
-	lev = (comp->beep->val & 0xfe) >> 1;
+	lev = comp->beep->val;
 	sndLev = mixer(sndLev, lev, lev, conf.snd.vol.beep);
 	// turbosound
 	svol = tsGetVolume(comp->ts);
@@ -244,8 +247,8 @@ void sdlPlayAudio(void*,Uint8* stream, int len) {
 			fillBuffer(len);
 		}
 	}
-	SDL_MixAudio(stream, bufB.data, len, SDL_MIX_MAXVOLUME * 0.8);
-	// memcpy(stream,sndBufB,len);
+	// SDL_MixAudio(stream, bufB.data, len, SDL_MIX_MAXVOLUME);
+	memcpy(stream, bufB.data, len);
 }
 
 bool sdlopen() {

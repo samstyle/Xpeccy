@@ -414,7 +414,6 @@ void MainWin::paintEvent(QPaintEvent*) {
 }
 
 void MainWin::keyPressEvent(QKeyEvent *ev) {
-	Qt::WindowStates state;
 	keyEntry kent = getKeyEntry(ev->nativeScanCode());
 	if (pckAct->isChecked()) {
 		keyPressXT(comp->keyb, kent.keyCode);
@@ -425,14 +424,6 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 		if (ev->key() == Qt::Key_ScrollLock) {
 			compReset(comp,RES_DEFAULT);
 			rzxWin->stop();
-		}
-	} else if (ev->modifiers() & Qt::ControlModifier) {
-		switch(ev->key()) {
-			case Qt::Key_Return:
-				conf.vid.keepRatio ^= 1;
-				setMessage(conf.vid.keepRatio ? " keep aspect ratio " : " ignore aspect ratio ");
-				saveConfig();
-				break;
 		}
 	} else if (ev->modifiers() & Qt::AltModifier) {
 		switch(ev->key()) {
@@ -493,6 +484,11 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				if (conf.vid.noFlick)
 					memcpy(prvScr, scrn, comp->vid->frmsz * 6);
 				setMessage(QString(" noflic %0 ").arg(conf.vid.noFlick ? "on" : "off"));
+				break;
+			case Qt::Key_R:
+				conf.vid.keepRatio ^= 1;
+				setMessage(conf.vid.keepRatio ? " keep aspect ratio " : " ignore aspect ratio ");
+				saveConfig();
 				break;
 		}
 	} else {
@@ -990,6 +986,7 @@ void MainWin::initUserMenu() {
 	dbgMenu = userMenu->addMenu(QIcon(":/images/debuga.png"),"Debug");
 	dbgMenu->addAction(QIcon(),QString("Save v9938 vram..."),this,SLOT(saveVRAM()));
 	dbgMenu->addAction(QIcon(),QString("Save GB VRAM..."), this, SLOT(saveGBVRAM()));
+	dbgMenu->addAction(QIcon(),QString("Save GS RAM..."),this,SLOT(saveGSRAM()));
 #endif
 }
 
@@ -1176,6 +1173,16 @@ void MainWin::saveGBVRAM() {
 	if (file.open(QFile::WriteOnly)) {
 		file.write((char*)comp->vid->gbc->ram, 0x2000);
 		file.write((char*)comp->gb.iomap, 0x80);
+		file.close();
+	}
+}
+
+void MainWin::saveGSRAM() {
+	QString path = QFileDialog::getSaveFileName(this,"Save GB VRAM");
+	if (path.isEmpty()) return;
+	QFile file(path);
+	if (file.open(QFile::WriteOnly)) {
+		file.write((char*)comp->gs->mem->ramData, 2 * 1024 * 1024);		// 2Mb
 		file.close();
 	}
 }

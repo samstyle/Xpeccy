@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>249</width>
+    <width>245</width>
     <height>153</height>
    </rect>
   </property>
@@ -137,6 +137,35 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
+      <widget class="QComboBox" name="cbMethod">
+       <item>
+        <property name="text">
+         <string>Mask</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Put</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Or</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>And</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Xor</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -148,17 +177,6 @@
         </size>
        </property>
       </spacer>
-     </item>
-     <item>
-      <widget class="QPushButton" name="pbCancel">
-       <property name="text">
-        <string>Cancel</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../xpeccy.qrc">
-         <normaloff>:/images/cancel.png</normaloff>:/images/cancel.png</iconset>
-       </property>
-      </widget>
      </item>
      <item>
       <widget class="QPushButton" name="pbFill">

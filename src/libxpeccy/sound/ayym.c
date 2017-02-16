@@ -7,16 +7,38 @@
 
 char noizes[0x20000];		// here iz noize values 1/0 [generated at start]
 
-unsigned char envforms[16][33]={
+unsigned char envforms[16][34]={
 /*	  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32	*/
+	{31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,255},		// 0..3: max->0,stay
+	{31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,255},
+	{31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,255},
+	{31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,255},
+
+	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31, 0,255},	// 4..7: 0->max,invert,stay
+	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31, 0,255},
+	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31, 0,255},
+	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31, 0,255},
+
+	{31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,253},		// 8: max->0, repeat
+	{31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,255},		// 9: max->0, stay
+	{31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,254},		// A: max->0, invert, repeat
+	{31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,31,255},	// B: max->0, invert, stay
+
+	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,253},		// C: 0->max, repeat
+	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,255},		// D: 0->max, stay
+	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,254},		// E: 0->max, invert, repeat
+	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31, 0,255}	// F: 0->max, invert, stay
+/*
 	{15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,255},
 	{15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,255},
 	{15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,255},
 	{15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,255},
+
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,255},
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,255},
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,255},
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,255},
+
 	{15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,253},	// 8
 	{15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,255},
 	{15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,253},	// 10
@@ -25,6 +47,7 @@ unsigned char envforms[16][33]={
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,255},
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,253},	// 14
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,255}
+*/
 };
 
 // try to use it somehow :)
@@ -38,9 +61,11 @@ void aymSetType(aymChip* ay, int tp) {
 	switch (tp) {
 		case SND_AY:
 			ay->frq = 1.774400;
+			ay->coarseEnv = 1;
 			break;
 		case SND_YM:
 			ay->frq = 1.750000;
+			ay->coarseEnv = 0;
 			break;
 		case SND_YM2203:		// 4.2 is base freq
 			ay->frq = 4.2;
@@ -50,7 +75,7 @@ void aymSetType(aymChip* ay, int tp) {
 			ay->type = SND_NONE;
 	}
 	if (ay->type == SND_NONE) return;
-	ay->per = 1000 / ay->frq;
+	ay->per = 500 / ay->frq;		// 1000/frq = full period, 500/frq = half-period
 	ay->cnt = ay->per;
 }
 
@@ -66,20 +91,23 @@ void aymDestroy(aymChip* ay) {
 	free(ay);
 }
 
+void aymResetChan(aymChan* ch) {
+	ch->per = 0;
+	ch->step = 0;
+	ch->cnt = 0;
+	ch->ten = 0;
+	ch->nen = 0;
+	ch->een = 0;
+}
+
 void aymReset(aymChip* ay) {
 	memset(ay->reg, 0x00, 256);
-	ay->chanA.per = 0;
-	ay->chanB.per = 0;
-	ay->chanC.per = 0;
-	ay->chanE.per = 0;
-	ay->chanN.per = 0;
-	ay->chanE.step = 0;
-	// ay->chanN.step = 0;
-	ay->chanA.cnt = 0;
-	ay->chanB.cnt = 0;
-	ay->chanC.cnt = 0;
-	ay->chanE.cnt = 0;
-	ay->chanN.cnt = 0;
+	aymResetChan(&ay->chanA);
+	aymResetChan(&ay->chanB);
+	aymResetChan(&ay->chanC);
+	aymResetChan(&ay->chanE);
+	aymResetChan(&ay->chanN);
+	ay->chanN.per = 1;
 }
 
 void aymSetReg(aymChip* ay, unsigned char val) {
@@ -90,7 +118,7 @@ void aymSetReg(aymChip* ay, unsigned char val) {
 		case 0x00:
 		case 0x01:
 			tone = ay->reg[0] | ((ay->reg[1] & 0x0f) << 8);
-			ay->chanA.per = tone << 4;		// 16 chip ticks / tone pulse
+			ay->chanA.per = tone << 4;		// 16 chip ticks / tone tick
 			break;
 		case 0x02:
 		case 0x03:
@@ -104,7 +132,7 @@ void aymSetReg(aymChip* ay, unsigned char val) {
 			break;
 		case 0x06:					// noise
 			tone = val & 0x1f;
-			ay->chanN.per = tone << 4;
+			ay->chanN.per = (tone + 1) << 3;
 			break;
 		case 0x07:
 			ay->chanA.ten = (val & 1) ? 0 : 1;
@@ -129,12 +157,13 @@ void aymSetReg(aymChip* ay, unsigned char val) {
 		case 0x0b:
 		case 0x0c:
 			tone = ay->reg[11] | (ay->reg[12] << 8);
-			ay->chanE.per = tone << 5;		// must be << 8, but it didn't work WHYYYY?
+			ay->chanE.per = tone << 4;
 			break;
 		case 0x0d:
 			ay->eForm = val & 0x0f;
 			ay->chanE.step = 0;
 			ay->chanE.cnt = ay->chanE.per;
+			ay->chanE.lev = 0;
 			break;
 		case 0x0e:
 			if (ay->reg[7] & 0x40)
@@ -179,22 +208,38 @@ void aymSync(aymChip* ay, int ns) {
 			if (ay->chanN.cnt < 0) {
 				ay->chanN.cnt = ay->chanN.per;
 				ay->chanN.step++;
-				ay->chanN.lev = noizes[ay->chanN.step & 0x1ffff] & 1;
+				ay->chanN.lev = noizes[ay->chanN.step & 0x1ffff] ? 1 : 0;
 			}
 		}
 		if (ay->chanE.per) {
 			ay->chanE.cnt--;
 			if (ay->chanE.cnt < 0) {
 				ay->chanE.cnt = ay->chanE.per;
-				ay->chanE.step++;
-				if ((ay->chanE.step & 31) == 0) {
-					if ((ay->eForm & 9) == 8) {
-						ay->chanE.step = 0;		// repeat
-					} else {
-						ay->chanE.step = 31;		// hold
+				if (ay->chanE.lev) {
+					ay->chanE.step--;
+					if (ay->chanE.step < 0) {
+						ay->chanE.lev = 0;
+						ay->chanE.step = 0;
 					}
+				} else {
+					ay->chanE.step++;
+				}
+				switch (envforms[ay->eForm][ay->chanE.step]) {
+					case 253:
+						ay->chanE.step = 0;
+						break;
+					case 254:
+						ay->chanE.lev = 1;
+						ay->chanE.step--;
+						break;
+					case 255:
+						ay->chanE.step--;
+						break;
 				}
 				ay->chanE.vol = envforms[ay->eForm][ay->chanE.step];
+				if (ay->coarseEnv) {
+					ay->chanE.vol |= 1;
+				}
 			}
 		}
 	}
@@ -206,10 +251,11 @@ int ayGetChanVol(aymChip* ay, aymChan* ch) {
 	if (ch->ten || ch->nen) {
 		vol = ((ch->lev && ch->ten) || (ay->chanN.lev && ch->nen)) ? vol : 0;
 	}
-	vol &= 15;
-	return (vol << 3) | (vol >> 1);		// 0..f -> 00..7f
+	return (vol << 3) | (vol >> 1);		// 0..f -> 00..ff
 	// return ayDACvol[vol];
 }
+
+#define STEREOFACTOR 0.5
 
 sndPair aymGetVolume(aymChip* ay) {
 	sndPair res;
@@ -221,31 +267,31 @@ sndPair aymGetVolume(aymChip* ay) {
 
 	switch (ay->stereo) {
 		case AY_ABC:
-			res.left = volA + 0.7 * volB;
-			res.right = volC + 0.7 * volB;
+			res.left = volA + STEREOFACTOR * volB;
+			res.right = volC + STEREOFACTOR * volB;
 			break;
 		case AY_ACB:
-			res.left = volA + 0.7 * volC;
-			res.right = volB + 0.7 * volC;
+			res.left = volA + STEREOFACTOR * volC;
+			res.right = volB + STEREOFACTOR * volC;
 			break;
 		case AY_BAC:
-			res.left = volB + 0.7 * volA;
-			res.right = volC + 0.7 * volA;
+			res.left = volB + STEREOFACTOR * volA;
+			res.right = volC + STEREOFACTOR * volA;
 			break;
 		case AY_BCA:
-			res.left = volB + 0.7 * volC;
-			res.right = volA + 0.7 * volC;
+			res.left = volB + STEREOFACTOR * volC;
+			res.right = volA + STEREOFACTOR * volC;
 			break;
 		case AY_CAB:
-			res.left = volC + 0.7 * volA;
-			res.right = volB + 0.7 * volA;
+			res.left = volC + STEREOFACTOR * volA;
+			res.right = volB + STEREOFACTOR * volA;
 			break;
 		case AY_CBA:
-			res.left = volC + 0.7 * volB;
-			res.right = volA + 0.7 * volB;
+			res.left = volC + STEREOFACTOR * volB;
+			res.right = volA + STEREOFACTOR * volB;
 			break;
 		default:
-			res.left = (volA + volB + volC) * 0.7;
+			res.left = (volA + volB + volC) * STEREOFACTOR;
 			res.right = res.left;
 			break;
 	}

@@ -18,6 +18,7 @@ class xMemFiller : public QDialog {
 	private slots:
 		void adrChange();
 		void hexChange();
+		void metChange();
 		void fill();
 };
 

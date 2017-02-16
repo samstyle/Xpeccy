@@ -43,7 +43,7 @@ void DebugWin::start(Computer* c) {
 	updateScreen();
 	if (!comp->vid->tail)
 		vidDarkTail(comp->vid);
-	ui.tabsPanel->setTabEnabled(3, comp->hw->type == HW_GBC);
+	ui.tabsPanel->setTabEnabled(ui.tabsPanel->indexOf(ui.gbTab), comp->hw->type == HW_GBC);
 
 	ui.dasmTable->comp = comp;
 	move(winPos);
@@ -576,6 +576,34 @@ void setSignal(QLabel* lab, int on) {
 	lab->setStyleSheet(QString("background-color: rgb(%0)").arg(col));
 }
 
+QString getAYmix(aymChan* ch) {
+	QString res = ch->ten ? "T" : "-";
+	res += ch->nen ? "N" : "-";
+	res += ch->een ? "E" : "-";
+	return res;
+}
+
+void DebugWin::fillAY() {
+	aymChip* chp = comp->ts->chipA;
+	ui.leToneA->setText(gethexword(((chp->reg[0] << 8) | chp->reg[1]) & 0x0fff));
+	ui.leToneB->setText(gethexword(((chp->reg[2] << 8) | chp->reg[3]) & 0x0fff));
+	ui.leToneC->setText(gethexword(((chp->reg[4] << 8) | chp->reg[5]) & 0x0fff));
+	ui.leVolA->setText(gethexbyte(chp->chanA.vol));
+	ui.leVolB->setText(gethexbyte(chp->chanB.vol));
+	ui.leVolC->setText(gethexbyte(chp->chanC.vol));
+	ui.leMixA->setText(getAYmix(&chp->chanA));
+	ui.leMixB->setText(getAYmix(&chp->chanB));
+	ui.leMixC->setText(getAYmix(&chp->chanC));
+	ui.leToneN->setText(gethexbyte(chp->reg[6]));
+	ui.leEnvTone->setText(gethexword((chp->reg[11] << 8) | chp->reg[12]));
+	ui.leEnvForm->setText(gethexbyte(chp->reg[13]));
+	ui.leVolE->setText(gethexbyte(chp->chanE.vol));
+	ui.labLevA->setText(chp->chanA.lev ? "1" : "0");
+	ui.labLevB->setText(chp->chanB.lev ? "1" : "0");
+	ui.labLevC->setText(chp->chanC.lev ? "1" : "0");
+	ui.labLevN->setText(chp->chanN.lev ? "1" : "0");
+}
+
 bool DebugWin::fillAll() {
 	ui.labTcount->setText(QString::number(comp->tickCount - tCount));
 	fillZ80();
@@ -583,6 +611,7 @@ bool DebugWin::fillAll() {
 	fillDump();
 	fillFDC();
 	fillGBoy();
+	fillAY();
 	if (ui.scrLabel->isVisible())
 		updateScreen();
 //	ui.rzxTab->setEnabled(comp->rzx.play);

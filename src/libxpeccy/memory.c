@@ -68,29 +68,33 @@ void memSetSize(Memory* mem, int val) {
 }
 
 unsigned char memPageRd(unsigned short adr, void* data) {
-	return ((unsigned char*)data)[adr & 0x3fff];
+	unsigned char* ptr = (unsigned char*)data;
+	return ptr[adr & 0x3fff];
 }
 
 void memPageWr(unsigned short adr, unsigned char val, void* data) {
-	((unsigned char*)data)[adr & 0x3fff] = val;
+	unsigned char* ptr = (unsigned char*)data;
+	ptr[adr & 0x3fff] = val;
 }
 
 void memSetBank(Memory* mem, int bank, int type, int page, extmrd rd, extmwr wr, void* data) {
 	MemPage pg;
 	pg.type = type;
-	pg.num = page;
 	switch(type) {
 		case MEM_ROM:
-			pg.data = mem->romData + ((page & mem->romMask) << 14);		// ptr of page begin
+			pg.num = page & mem->romMask;
+			pg.data = mem->romData + (pg.num << 14);	// ptr of page begin
 			pg.rd = memPageRd;
-			pg.wr = NULL;		// write disabled
+			pg.wr = NULL;					// write disabled
 			break;
 		case MEM_RAM:
-			pg.data = mem->ramData + ((page & mem->memMask) << 14);
+			pg.num = page & mem->memMask;
+			pg.data = mem->ramData + (pg.num << 14);
 			pg.rd = memPageRd;
 			pg.wr = memPageWr;
 			break;
 		default:
+			pg.num = page;
 			pg.data = data;
 			pg.rd = rd;
 			pg.wr = wr;

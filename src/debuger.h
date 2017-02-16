@@ -128,6 +128,7 @@ class DebugWin : public QDialog {
 		void fillStack();
 		void fillFDC();
 		void fillRZX();
+		void fillAY();
 
 		void fillBrkTable();
 

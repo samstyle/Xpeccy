@@ -224,6 +224,7 @@ Computer* compCreate() {
 }
 
 void compDestroy(Computer* comp) {
+	rzxStop(comp);
 	cpuDestroy(comp->cpu);
 	memDestroy(comp->mem);
 	vidDestroy(comp->vid);
@@ -238,7 +239,6 @@ void compDestroy(Computer* comp) {
 	gbsDestroy(comp->gbsnd);
 	sdrvDestroy(comp->sdrv);
 	bcDestroy(comp->beep);
-	rzxStop(comp);
 	free(comp);
 }
 
@@ -425,7 +425,8 @@ int compExec(Computer* comp) {
 // sync devices							TODO:move to hw->sync
 	comp->beep->accum += nsTime;
 	comp->tapCount += nsTime;
-	if (comp->gs->enable) comp->gs->sync += nsTime;
+	if (comp->gs->enable)
+		comp->gs->sync += nsTime;
 	difSync(comp->dif, nsTime);
 	// tsSync(comp->ts, nsTime);
 
