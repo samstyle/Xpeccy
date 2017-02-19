@@ -33,8 +33,9 @@ OutSys *sndOutput = NULL;
 int sndChunks = 882;
 int sndBufSize = 1764;
 int nsPerSample = 23143;
+
 sndPair sndLev;
-//sndPair sndLast;
+// sndPair sndLast;
 
 OutSys* findOutSys(const char*);
 
@@ -106,13 +107,15 @@ void sndMix(Computer* comp) {
 }
 
 // return 1 when buffer is full
-int sndSync(Computer* comp, int fast) {
-	tapSync(comp->tape,comp->tapCount);
-	comp->tapCount = 0;
-	gsSync(comp->gs);
-	tsSync(comp->ts,nsPerSample);
-	saaSync(comp->saa,nsPerSample);
-	if (!fast && (sndOutput != NULL)) {
+int sndSync(Computer* comp, int nosync, int fast) {
+	if (!nosync) {
+		tapSync(comp->tape,comp->tapCount);
+		comp->tapCount = 0;
+		gsSync(comp->gs);
+		tsSync(comp->ts,nsPerSample);
+		saaSync(comp->saa,nsPerSample);
+	}
+	if (!nosync && !fast) {
 		sndMix(comp);
 	}
 	bufA.data[bufA.pos++] = sndLev.left >> 2;
@@ -123,16 +126,6 @@ int sndSync(Computer* comp, int fast) {
 	smpCount = 0;
 	return 1;
 }
-
-/*
-void sndFillToEnd() {
-	while (smpCount < sndChunks) {
-		bufA.data[bufA.pos++] = sndLev.left;
-		bufA.data[bufA.pos++] = sndLev.right;
-		smpCount++;
-	}
-}
-*/
 
 void sndCalibrate() {
 	sndChunks = conf.snd.rate / 50;			// samples / frame
@@ -177,22 +170,9 @@ bool sndOpen() {
 }
 
 void sndPlay() {
-//	sndFillToEnd();
 	if (sndOutput != NULL) {
 		sndOutput->play();
 	}
-//	smpCount = 0;
-}
-
-void sndPause(bool b) {
-	if (b) {
-		for (int i = 0; i < 0x10000;) {
-			bufA.data[i++] = sndLev.left;
-			bufA.data[i++] = sndLev.right;
-		}
-		memcpy(bufB.data, bufA.data, 0x10000);
-	}
-//	sndFillToEnd();
 }
 
 void sndClose() {
@@ -216,17 +196,8 @@ void fillBuffer(int len) {
 	int pos = 0;
 	while (pos < len) {
 		bufB.data[pos++] = bufA.data[playPos++];
-//		sndBufB[pos++] = sndBufA[playPos++];
 	}
 }
-
-/*
-void switchSndBuf() {
-    sndBuf = (sndFlag & SF_BUF) ? bufA.data : bufB.data;
-	sndFlag ^= SF_BUF;
-    ringPos = 0;
-}
-*/
 
 bool null_open() {return true;}
 void null_play() {}
@@ -235,17 +206,16 @@ void null_close() {}
 #ifdef HAVESDL
 
 void sdlPlayAudio(void*,Uint8* stream, int len) {
-	if (pass < 2) {
-		pass++;
-	} else {
+	if (pass) {
 		int diff = bufA.pos - playPos;
-//		int diff = ringPos - playPos;
 		if (diff < 0) {
 			diff = 0x10000 - diff;
 		}
 		if (diff >= len) {
 			fillBuffer(len);
 		}
+	} else {
+		pass++;
 	}
 	// SDL_MixAudio(stream, bufB.data, len, SDL_MIX_MAXVOLUME);
 	memcpy(stream, bufB.data, len);
@@ -459,4 +429,18 @@ void sndInit() {
     bufA.pos = 0;
     bufB.pos = 0;
 //    bufBig.pos = 0;
+}
+
+// debug
+
+void sndDbg() {
+	int adr = playPos;
+	for (int i = 0; i < sndBufSize; i++) {
+		if ((i & 0x1f) == 0) {
+			printf("\n%.4X : ",adr & 0xffff);
+		}
+		printf("%.2X ",bufA.data[adr & 0xffff]);
+		adr++;
+	}
+	printf("\n");
 }

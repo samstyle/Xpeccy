@@ -62,7 +62,7 @@ Video* vidCreate(Memory* me) {
 	memset(vid,0x00,sizeof(Video));
 	vidSetMode(vid, VID_UNKNOWN);
 	vid->mem = me;
-	vLayout vlay = {0,{448,320},{74,48},{64,32},{256,192},{384,288},64};
+	vLayout vlay = {0,{448,320},{74,48},{64,32},{256,192},{0,0},64};
 	vid->lay = vlay;
 	vid->frmsz = vid->lay.full.x * vid->lay.full.y;
 	vid->intMask = 0x01;		// FRAME INT for all
@@ -83,7 +83,6 @@ Video* vidCreate(Memory* me) {
 	vid->idx = 0;
 
 	vid->ray.ptr = vid->scrimg;
-	vid->linptr = vid->scrimg;
 
 	vid->ray.img = vid->scrimg;
 	vid->v9938.lay = &vid->lay;
@@ -115,14 +114,14 @@ void vidUpdateLayout(Video* vid, float brdsize) {
 	if (brdsize < 0.0) brdsize = 0.0;
 	if (brdsize > 1.0) brdsize = 1.0;
 	vCoord brdr;	// size of right/bottom border parts
-	brdr.x = vid->lay.full.x - vid->lay.bord.x - vid->lay.scr.x - vid->lay.blank.x;
-	brdr.y = vid->lay.full.y - vid->lay.bord.y - vid->lay.scr.y - vid->lay.blank.y;
+	vid->ssze.x = vid->lay.full.x - vid->lay.blank.x;
+	vid->ssze.y = vid->lay.full.y - vid->lay.blank.y;
+	brdr.x = vid->ssze.x - vid->lay.bord.x - vid->lay.scr.x;
+	brdr.y = vid->ssze.y - vid->lay.bord.y - vid->lay.scr.y;
 	vid->lcut.x = (int)floor(vid->lay.bord.x * (1.0 - brdsize)) & ~3;
 	vid->lcut.y = (int)floor(vid->lay.bord.y * (1.0 - brdsize)) & ~3;
 	vid->rcut.x = (int)floor(vid->lay.bord.x + vid->lay.scr.x + brdr.x * brdsize) & ~3;
 	vid->rcut.y = (int)floor(vid->lay.bord.y + vid->lay.scr.y + brdr.y * brdsize) & ~3;
-	vid->ssze.x = vid->lay.full.x - vid->lay.blank.x;
-	vid->ssze.y = vid->lay.full.y - vid->lay.blank.y;
 	vid->vsze.x = vid->rcut.x - vid->lcut.x;
 	vid->vsze.y = vid->rcut.y - vid->lcut.y;
 	vid->vBytes = vid->vsze.x * vid->vsze.y * 6;	// real size of image buffer (3 bytes/dot x2:x1)
@@ -534,8 +533,8 @@ xVideoMode vidModeTab[] = {
 	{VID_ATM_HWM, vidDrawATMhwmc, NULL, NULL},
 	{VID_EVO_TEXT, vidDrawEvoText, NULL, NULL},
 	{VID_TSL_NORMAL, vidDrawTSLNormal, vidTSline, NULL},
-	{VID_TSL_16, vidDrawTSL16, vidTSline, NULL},
-	{VID_TSL_256, vidDrawTSL256, vidTSline, NULL},
+	{VID_TSL_16, vidDrawTSLNormal, vidTSline, NULL},			// vidDrawTSL16
+	{VID_TSL_256, vidDrawTSLNormal, vidTSline, NULL},			// vidDrawTSL256
 	{VID_TSL_TEXT, vidDrawTSLText, vidTSline, NULL},
 	{VID_PRF_MC, vidProfiScr, NULL, NULL},
 	{VID_V9938, vidDrawV9938, NULL, vidFrameV9938},
@@ -564,50 +563,57 @@ void vidSetMode(Video* vid, int mode) {
 void vidSync(Video* vid, int ns) {
 	vid->nsDraw += ns;
 	while (vid->nsDraw >= vid->nsPerDot) {
+
+		vid->nsDraw -= vid->nsPerDot;
+
 		if ((vid->ray.y >= vid->lcut.y) && (vid->ray.y < vid->rcut.y)) {
 			if ((vid->ray.x >= vid->lcut.x) && (vid->ray.x < vid->rcut.x)) {
 				if (vid->ray.x & 8) vid->brdcol = vid->nextbrd;	// update border color
 				if (vid->callback) vid->callback(vid);		// put dot callback
 			}
 		}
-		if ((vid->intMask & 1) && (vid->ray.y == vid->lay.intpos.y) && (vid->ray.x == vid->lay.intpos.x)) {
+
+		if ((vid->ray.yb == vid->lay.intpos.y) && (vid->ray.xb == vid->lay.intpos.x)) {
+			// printf("GEN: frm %i line %i pix %i\n",vid->fcnt,vid->ray.yb,vid->ray.xb);
 			vid->intFRAME = 1;
 			vid->v9938.sr[0] |= 0x80;
 		}
-		if (vid->intFRAME && (vid->ray.x >= vid->lay.intpos.x + vid->lay.intSize))
-			vid->intFRAME = 0;
+
 		vid->ray.x++;
-		if (vid->ray.x == vid->ssze.x)
-			vid->hblank = 1;
-		if (vid->ray.x >= vid->lay.full.x) {
-			vid->ray.x = 0;
+		vid->ray.xb++;
+
+		if (vid->ray.xb == vid->lay.blank.x) {			// hblank end
 			vid->hblank = 0;
+			vid->hbstrb = 0;
+			vid->ray.x = 0;
+		} else if (vid->ray.xb >= vid->lay.full.x) {		// hblank start
+			vid->hblank = 1;
 			vid->nextrow = 1;
-			vid->intFRAME = 0;
+			vid->ray.xb = 0;
 			vid->ray.y++;
-			if (vid->ray.y == vid->ssze.y) {
-				vid->vblank = 1;
-				vid->vbstrb = 1;
-			}
-			if (vid->ray.y >= vid->lay.full.y) {
-				vid->ray.y = 0;
+			vid->ray.yb++;
+			if (vid->ray.yb == vid->lay.blank.y) {		// vblank end
 				vid->vblank = 0;
 				vid->vbstrb = 0;
-				vid->ray.ptr = vid->ray.img;
-				vid->linptr = vid->ray.img;
+				vid->ray.y = 0;
+				vid->tsconf.scrLine = 0;
+				if (vid->lineCall) vid->lineCall(vid);
+			} else if (vid->ray.yb >= vid->lay.full.y) {	// vblank start
+				vid->vblank = 1;
+				vid->vbstrb = 1;
+				vid->ray.yb = 0;
 				vid->fcnt++;
 				vid->flash = (vid->fcnt & 0x20) ? 1 : 0;
-				vid->tsconf.scrLine = vid->tsconf.yOffset;
+				vid->ray.ptr = vid->ray.img;
 				vid->idx = 0;
 				vid->newFrame = 1;
 				vid->tail = 0;
-				if (vid->lineCall) vid->lineCall(vid);		// line 0 callback
+				if (vid->lineCall) vid->lineCall(vid);		// new line callback
 				if (vid->framCall) vid->framCall(vid);		// frame callback
 				if (vid->debug) vidDarkTail(vid);
 			} else if (vid->lineCall) {
-				vid->lineCall(vid);				// line X callback
+				vid->lineCall(vid);
 			}
 		}
-		vid->nsDraw -= vid->nsPerDot;
 	}
 }

@@ -56,11 +56,11 @@ void xThread::emuCycle() {
 		}
 		// if need - request sound buffer update
 		if (sndNs > nsPerSample) {
-			sndSync(comp, fast);
+			sndSync(comp, 0, fast);
 			sndNs -= nsPerSample;
 		}
 		// tape trap
-		// pc = comp->cpu->pc;
+		// pc =	comp->cpu->pc;
 		if ((comp->mem->map[0].type == MEM_ROM) && comp->rom && !comp->dos) {		// FIXME: shit
 			if (comp->cpu->pc == 0x56b) tapeCatch();
 			if ((comp->cpu->pc == 0x5e2) && conf->tape.autostart)
@@ -86,7 +86,6 @@ void xThread::run() {
 			emuCycle();
 			if (comp->brk) {
 				emit dbgRequest();
-				//comp->brk = 0;
 			}
 		}
 	} while (1);

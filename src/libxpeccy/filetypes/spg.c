@@ -40,7 +40,7 @@ int loadSPG(Computer* comp, const char* name) {
 	fread((char*)&hd, sizeof(spgHead), 1, file);
 	fread((char*)blkInfo, 768, 1, file);
 
-	printf("spg ver %i.%i\n",(hd.fmt & 0xf0) >> 4, hd.fmt & 0x0f);
+	// printf("spg ver %i.%i\n",(hd.fmt & 0xf0) >> 4, hd.fmt & 0x0f);
 
 	int blkCount = hd.bcl | (hd.bch << 8);
 	int idx = 0;
@@ -73,6 +73,7 @@ int loadSPG(Computer* comp, const char* name) {
 		if (blkInfo[idx] & 0x80) break;			// last block flag
 		idx += 3;
 	}
+	compReset(comp, RES_DEFAULT);
 	comp->cpu->pc = (hd.pch << 8) | hd.pcl;
 	comp->cpu->sp = (hd.sph << 8) | hd.spl;
 	switch (hd.flag35 & 0x03) {

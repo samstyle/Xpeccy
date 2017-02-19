@@ -616,13 +616,21 @@ bool DebugWin::fillAll() {
 		updateScreen();
 //	ui.rzxTab->setEnabled(comp->rzx.play);
 	if (comp->rzx.play) fillRZX();
-	ui.labRX->setNum(comp->vid->ray.x);
-	ui.labRY->setNum(comp->vid->ray.y);
+	if (comp->vid->ray.x < comp->vid->ssze.x)
+		ui.labRX->setNum(comp->vid->ray.x);
+	else
+		ui.labRX->setText("HB");
+	if (comp->vid->ray.y < comp->vid->ssze.y)
+		ui.labRY->setNum(comp->vid->ray.y);
+	else
+		ui.labRY->setText("VB");
+	//ui.labRX->setNum(comp->vid->ray.x);
+	//ui.labRY->setNum(comp->vid->ray.y);
 	setSignal(ui.labDOS, comp->dos);
 	setSignal(ui.labROM, comp->rom);
 	setSignal(ui.labCPM, comp->cpm);
-	setSignal(ui.labHBlank, comp->vid->hblank);
-	setSignal(ui.labVBlank, comp->vid->vblank);
+	//setSignal(ui.labHBlank, comp->vid->hblank);
+	//setSignal(ui.labVBlank, comp->vid->vblank);
 	setSignal(ui.labINT, comp->cpu->inth);
 	if (memViewer->isVisible())
 		memViewer->fillImage();

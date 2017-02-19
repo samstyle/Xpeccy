@@ -62,10 +62,9 @@ struct Video {
 	int curscr;
 	unsigned char brdcol;
 	unsigned char nextbrd;
-	unsigned char fcnt;
+	int fcnt;
 	unsigned char atrbyte;
 	unsigned char scrimg[1024 * 512 * 3];	// 512x512 rgb (dX x2)
-	unsigned char* linptr;
 	size_t frmsz;
 	size_t vBytes;
 	int vmode;
@@ -83,7 +82,6 @@ struct Video {
 		int yPos;
 		int xSize;			// size of tsconf screen ([320|360] x [200|240|288])
 		int ySize;
-		int scrLine;			// bitmap line counter (TSConf)
 		unsigned char tconfig;		// port 06AF
 		unsigned char TMPage;		// tiles map page
 		unsigned char T0GPage;		// lay 0 graphics
@@ -98,6 +96,9 @@ struct Video {
 		ePair(T0YOffset,t0yh,t0yl);
 		ePair(T1XOffset,t1xh,t1xl);	// tile 1 offsets
 		ePair(T1YOffset,t1yh,t1yl);
+		ePair(scrLine, loffh, loffl);
+		ePair(intLine, ilinh, ilinl);	// INT line
+		unsigned char linb[0x200];	// buffer for rendered bitplane
 		unsigned char line[0x200];	// buffer for render sprites & tiles
 		unsigned char cram[0x200];	// pal
 		unsigned char sfile[0x200];	// sprites

@@ -74,7 +74,7 @@ int prfSave(std::string);
 #define	SCR_HOB		5
 #define	SCR_DISK	6
 
-void initPaths();
+void initPaths(char*);
 void loadConfig();
 void saveConfig();
 void loadKeys();

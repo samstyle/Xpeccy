@@ -10,6 +10,7 @@ class xThread : public QThread {
 	public:
 		xThread();
 		unsigned fast:1;
+		unsigned silent:1;	// don't produce sound
 		unsigned block:1;
 		unsigned finish:1;
 		xConfig* conf;

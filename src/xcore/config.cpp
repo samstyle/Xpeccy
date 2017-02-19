@@ -35,7 +35,7 @@
 std::map<std::string, int> shotFormat;
 xConfig conf;
 
-void initPaths() {
+void initPaths(char* wpath) {
 	conf.scrShot.dir = std::string(getenv(ENVHOME));
 #if __linux || __APPLE__
 	conf.path.confDir = conf.scrShot.dir + "/.config";
@@ -50,7 +50,12 @@ void initPaths() {
 	conf.path.boot = conf.path.confDir + "/boot.$B";
 	//conf.path.font = conf.path.confDir + "/appfont.ttf";
 #elif __WIN32
-	conf.path.confDir = std::string(".\\config");
+	std::string wdir(wpath);
+	size_t pos = wdir.find_last_of("/\\");
+	if (pos > 0) {
+		wdir = wdir.substr(0, pos);
+	}
+	conf.path.confDir = wdir + "\\config";
 	conf.path.romDir = conf.path.confDir + "\\roms";
 	conf.path.confFile = conf.path.confDir + "\\config.conf";
 	conf.path.boot = conf.path.confDir + "\\boot.$B";

@@ -258,7 +258,7 @@ void compReset(Computer* comp,int res) {
 	comp->vid->curscr = 5;
 	vidSetMode(comp->vid,VID_NORMAL);
 	comp->dos = 0;
-	comp->vid->intMask = 1;
+	// comp->vid->intMask = 1;
 	difReset(comp->dif);	//	bdiReset(comp->bdi);
 	if (comp->gs->reset) gsReset(comp->gs);
 	tsReset(comp->ts);
@@ -332,29 +332,18 @@ void compSetHardware(Computer* comp, const char* name) {
 }
 
 // interrupts
-
-/*
-int zxINT(Computer* comp, unsigned char vect) {
-	res4 = 0;
-	comp->intVector = vect;
-	res2 = comp->cpu->intr(comp->cpu);
-	res1 += res2;
-	vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
-	return res2;
-}
-*/
-
 // exec 1 opcode, sync devices, return eated ns
 
-int zxINT(Computer*, unsigned char);
+void vidTSRender(Video*, unsigned char*);
 int compExec(Computer* comp) {
 	res4 = 0;
+	res2 = 0;
 	if (comp->cpu->inth) {			// 1:handle interrupt
 		comp->cpu->inth = 0;
 		res2 = comp->cpu->intr(comp->cpu);
-	} else {				// 0:exec opcode
-		res2 = comp->cpu->exec(comp->cpu);
 	}
+	if (res2 == 0)
+		res2 = comp->cpu->exec(comp->cpu);
 // scorpion WAIT: add 1T to odd-T command
 	if (comp->evenM1 && (res2 & 1))
 		res2++;
@@ -411,6 +400,7 @@ int compExec(Computer* comp) {
 // TSConf : update 'next-line' registers			TODO:move to TSConf hw->sync
 	if (comp->vid->nextrow && comp->vid->istsconf) {
 		tslUpdatePorts(comp);
+		// vidTSRender(comp->vid, comp->vid->linptr);
 		comp->vid->nextrow = 0;
 	}
 // breakpoints

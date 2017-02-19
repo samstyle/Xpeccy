@@ -43,7 +43,7 @@ int main(int ac,char** av) {
 
 	vidInitAdrs();
 	sndInit();
-	initPaths();
+	initPaths(av[0]);
 	addProfile("default","xpeccy.conf");
 
 	QFontDatabase::addApplicationFont("://DejaVuSansMono.ttf");

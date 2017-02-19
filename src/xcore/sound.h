@@ -48,9 +48,10 @@ void addOutput(std::string, bool(*)(),void(*)(),void(*)());
 void setOutput(const char*);
 bool sndOpen();
 void sndPlay();
-void sndPause(bool);
 void sndClose();
-int sndSync(Computer*, int);
+int sndSync(Computer*, int, int);
+
+void sndDbg();
 
 //void sndFillToEnd();
 

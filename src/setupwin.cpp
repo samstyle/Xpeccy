@@ -653,6 +653,7 @@ void SetupWin::addNewLayout() {
 }
 
 void SetupWin::layEditorChanged() {
+/*
 	layUi.brdLBox->setMaximum(layUi.lineBox->value() - layUi.hsyncBox->value() - layUi.sbScrW->value());
 	layUi.brdUBox->setMaximum(layUi.rowsBox->value() - layUi.vsyncBox->value() - layUi.sbScrH->value());
 	layUi.hsyncBox->setMaximum(layUi.lineBox->value() - layUi.sbScrW->value());
@@ -661,18 +662,6 @@ void SetupWin::layEditorChanged() {
 	layUi.rowsBox->setMinimum(layUi.brdUBox->value() + layUi.vsyncBox->value() + layUi.sbScrH->value());
 	layUi.intRowBox->setMaximum(layUi.rowsBox->value());
 	layUi.intPosBox->setMaximum(layUi.lineBox->value());
-/*
-	int toscr = layUi.hsyncBox->value() + layUi.brdLBox->value() - layUi.intPosBox->value() +
-			(layUi.vsyncBox->value() + layUi.brdUBox->value() - layUi.intRowBox->value()) * layUi.lineBox->value();
-	if (toscr < 0)
-		toscr += layUi.lineBox->value() * layUi.rowsBox->value();
-
-	QString infText = QString("%0 / %1 / %2").arg(layUi.lineBox->value() >> 1)\
-						.arg(toscr >> 1)\
-						.arg((layUi.rowsBox->value() * layUi.lineBox->value()) >> 1);
-//	infText.append(QString::number(toscr >> 1)).append(" / ");
-//	infText.append(QString::number((layUi.rowsBox->value() * layUi.lineBox->value()) >> 1));
-	layUi.infLabel->setText(infText);
 */
 	layUi.showField->setFixedSize(layUi.lineBox->value(),layUi.rowsBox->value());
 	QPixmap pix(layUi.lineBox->value(),layUi.rowsBox->value());
@@ -680,11 +669,12 @@ void SetupWin::layEditorChanged() {
 	pnt.begin(&pix);
 	pnt.fillRect(0,0,pix.width(),pix.height(),Qt::black);
 	// visible screen = full - blank
-	pnt.fillRect(0,0,layUi.lineBox->value() - layUi.hsyncBox->value(),
+	pnt.fillRect(layUi.hsyncBox->value(),layUi.vsyncBox->value(),
+			layUi.lineBox->value() - layUi.hsyncBox->value(),
 			layUi.rowsBox->value() - layUi.vsyncBox->value(),
 			Qt::blue);
 	// main screen area
-	pnt.fillRect(layUi.brdLBox->value(), layUi.brdUBox->value(),
+	pnt.fillRect(layUi.brdLBox->value()+layUi.hsyncBox->value(), layUi.brdUBox->value()+layUi.vsyncBox->value(),
 			layUi.sbScrW->value(),layUi.sbScrH->value(),
 			Qt::gray);
 	// INT signal

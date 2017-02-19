@@ -23,6 +23,8 @@ typedef struct {
 	unsigned char* ptr;
 	int x;
 	int y;
+	int xb;
+	int yb;
 } vRay;
 
 typedef struct {

@@ -103,7 +103,6 @@ void MainWin::pause(bool p, int msk) {
 	} else {
 		pauseFlags &= ~msk;
 	}
-	sndPause(pauseFlags != 0);
 	if (!grabMice || ((pauseFlags != 0) && grabMice)) {
 		releaseMouse();
 	}
@@ -116,7 +115,6 @@ void MainWin::pause(bool p, int msk) {
 		ethread.block = 1;
 	}
 	updateHead();
-	if (msk & PR_PAUSE) return;
 }
 
 // Main window
@@ -143,7 +141,7 @@ MainWin::MainWin() {
 
 	initKeyMap();
 	conf.scrShot.format = "png";
-	vLayout vlay = {0,{448,320},{74,48},{64,32},{256,192},{384,287},64};
+	vLayout vlay = {0,{448,320},{74,48},{64,32},{256,192},{0,0},64};		// {384,287}
 	addLayout("default", vlay);
 
 	shotFormat["bmp"] = SCR_BMP;
@@ -274,7 +272,14 @@ void MainWin::onTimer() {
 		msgTimer--;
 	}
 // update window
-	if (pauseFlags == 0) ethread.mtx.unlock();
+	if (pauseFlags) {
+		conf.snd.fill = 1;
+		do {
+			sndSync(comp, 1, 1);
+		} while (conf.snd.fill);
+	} else {
+		ethread.mtx.unlock();
+	}
 	emuDraw();
 }
 
@@ -414,6 +419,7 @@ void MainWin::paintEvent(QPaintEvent*) {
 }
 
 void MainWin::keyPressEvent(QKeyEvent *ev) {
+	if (ev->isAutoRepeat()) return;
 	keyEntry kent = getKeyEntry(ev->nativeScanCode());
 	if (pckAct->isChecked()) {
 		keyPressXT(comp->keyb, kent.keyCode);
@@ -579,6 +585,9 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				compReset(comp,RES_DEFAULT);
 				rzxWin->stop();
 				break;
+			default:
+				keyPressXT(comp->keyb, kent.keyCode);
+				break;
 		}
 	}
 }
@@ -586,8 +595,8 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 	keyEntry kent = getKeyEntry(ev->nativeScanCode());
 	gbRelease(comp, kent.name);
+	keyReleaseXT(comp->keyb, kent.keyCode);
 	if (pckAct->isChecked()) {
-		keyReleaseXT(comp->keyb, kent.keyCode);
 		if (!kent.zxKey.key2)
 			keyRelease(comp->keyb, kent.zxKey, 0);
 		keyRelease(comp->keyb, kent.extKey, 1);
@@ -1188,6 +1197,5 @@ void MainWin::saveGSRAM() {
 }
 
 void MainWin::debugAction() {
-	xAdr xadr = memGetXAdr(comp->mem, 0x4000);
-	qDebug() << xadr.type << xadr.bank << xadr.adr << xadr.abs;
+	sndDbg();
 }
