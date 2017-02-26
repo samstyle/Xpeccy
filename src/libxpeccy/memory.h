@@ -21,10 +21,10 @@ enum {
 };
 
 typedef struct {
-	int type;
-	int bank;
-	int adr;
-	int abs;
+    int type;
+    int bank;
+    int adr;
+    int abs;
 } xAdr;
 
 typedef unsigned char(*extmrd)(unsigned short, void*);

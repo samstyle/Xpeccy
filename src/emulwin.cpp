@@ -20,6 +20,7 @@
 #include "xcore/sound.h"
 #include "emulwin.h"
 #include "filer.h"
+#include "watcher.h"
 
 #include "xcore/vfilters.h"
 #include "xcore/vscalers.h"
@@ -152,6 +153,7 @@ MainWin::MainWin() {
 
 	opt = new SetupWin(this);
 	dbg = new DebugWin(this);
+	watcher = new xWatcher(this);
 
 	initFileDialog(this);
 	connect(opt,SIGNAL(closed()),this,SLOT(optApply()));
@@ -595,8 +597,8 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 	keyEntry kent = getKeyEntry(ev->nativeScanCode());
 	gbRelease(comp, kent.name);
-	keyReleaseXT(comp->keyb, kent.keyCode);
 	if (pckAct->isChecked()) {
+		keyReleaseXT(comp->keyb, kent.keyCode);
 		if (!kent.zxKey.key2)
 			keyRelease(comp->keyb, kent.zxKey, 0);
 		keyRelease(comp->keyb, kent.extKey, 1);
@@ -930,6 +932,10 @@ void MainWin::emuDraw() {
 			comp->tape->newBlock = 0;
 		}
 	}
+// update watcher
+	if (watcher->isVisible()) {
+		watcher->fillFields(comp);
+	}
 // ...
 	update();
 }
@@ -952,6 +958,7 @@ void MainWin::initUserMenu() {
 	userMenu->addSeparator();
 	pckAct = userMenu->addAction(QIcon(":/images/keyboard.png"),"PC keyboard");
 	pckAct->setCheckable(true);
+	userMenu->addAction(QIcon(),"Watcher",watcher,SLOT(show()));
 	userMenu->addAction(QIcon(":/images/other.png"),"Options",this,SLOT(doOptions()));
 
 	connect(bookmarkMenu,SIGNAL(triggered(QAction*)),this,SLOT(bookmarkSelected(QAction*)));
@@ -964,7 +971,7 @@ void MainWin::initUserMenu() {
 	fileMenu->addAction(QIcon(":/images/memory.png"),"Snapshot")->setData(FT_SNAP | FT_SPG);
 	fileMenu->addAction(QIcon(":/images/tape.png"),"Tape")->setData(FT_TAPE);
 	fileMenu->addAction(QIcon(":/images/floppy.png"),"Floppy")->setData(FT_DISK);
-	fileMenu->addAction(QIcon(":/images/msx.png"),"Slot (MSX)")->setData(FT_SLOT);
+	fileMenu->addAction(QIcon(),"Slot")->setData(FT_SLOT);
 
 	nsAct = vmodeMenu->addAction("No screen");
 	nsAct->setData(-1);

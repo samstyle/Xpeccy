@@ -10,6 +10,7 @@
 #include "libxpeccy/spectrum.h"
 #include "setupwin.h"
 #include "debuger.h"
+#include "watcher.h"
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
 #include "ethread.h"
@@ -50,6 +51,7 @@ class MainWin : public QWidget {
 		DebugWin* dbg;
 		TapeWin* tapeWin;
 		RZXWin* rzxWin;
+		xWatcher* watcher;
 
 		QIcon icon;
 		QTimer cmosTimer;

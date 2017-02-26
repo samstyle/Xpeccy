@@ -22,6 +22,8 @@ std::pair<std::string,std::string> splitline(std::string);
 void copyFile(const char*, const char*);
 
 QString getbinbyte(uchar);
+QString gethexshift(char);
+QString getdecshift(char);
 QString gethexbyte(uchar);
 QString gethexword(int);
 

@@ -12,6 +12,22 @@ QString gethexbyte(uchar num) {
 	return QString::number(num+0x100,16).right(2).toUpper();
 }
 
+QString gethexshift(char shft) {
+	QString str = (shft < 0) ? "-" : "+";
+	if (shft < 0)
+		shft = 256 - shft;
+	str.append(gethexbyte(shft & 0x7f));
+	return str;
+}
+
+QString getdecshift(char shft) {
+	QString str = (shft < 0) ? "-" : "+";
+	if (shft < 0)
+		shft = 256 - shft;
+	str.append(QString::number(shft & 0x7f));
+	return str;
+}
+
 QString getbinbyte(uchar num) {
 	return QString::number(num+0x100,2).right(8).toUpper();
 }

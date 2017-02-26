@@ -51,8 +51,8 @@ sndPair sdrvGetVolume(SDrive* sdrv) {
 			break;
 		case SDRV_105_1:
 		case SDRV_105_2:
-			res.left = ((sdrv->chanA >> 1) + (sdrv->chanB >> 1));
-			res.right = ((sdrv->chanC >> 1) + (sdrv->chanD >> 1));
+			res.left = ((sdrv->chanA >> 2) + (sdrv->chanB >> 2));
+			res.right = ((sdrv->chanC >> 2) + (sdrv->chanD >> 2));
 			break;
 		default:
 			res.left = 0;

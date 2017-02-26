@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>775</width>
+    <width>771</width>
     <height>614</height>
    </rect>
   </property>
@@ -2269,6 +2269,24 @@
     <string>Search</string>
    </property>
   </action>
+  <action name="actLoadDump">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/fileopen.png</normaloff>:/images/fileopen.png</iconset>
+   </property>
+   <property name="text">
+    <string>Load dump</string>
+   </property>
+  </action>
+  <action name="actSaveDump">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/floppy.png</normaloff>:/images/floppy.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save dump</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -2325,11 +2343,11 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
+  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

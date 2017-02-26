@@ -39,7 +39,6 @@ class xTableWidget : public QTableWidget {
 #include "ui_openDump.h"
 #include "ui_debuger.h"
 
-
 enum {
 	XTYPE_NONE = -1,
 	XTYPE_ADR = 0,
@@ -164,10 +163,6 @@ class DebugWin : public QDialog {
 		void chaCellProperty(QAction*);
 		void goToBrk(QModelIndex);
 
-		void doOpenDump();
-		void chDumpFile();
-		void dmpStartOpen();
-		void loadDump();
 
 		void doMemView();
 		void doFill();
@@ -179,7 +174,11 @@ class DebugWin : public QDialog {
 		void doTraceHere();
 		void doStep();
 
+		void doOpenDump();
 		void doSaveDump();
+		void loadDump();
+		void chDumpFile();
+		void dmpStartOpen();
 		void dmpLimChanged();
 		void dmpLenChanged();
 		void saveDumpBin();

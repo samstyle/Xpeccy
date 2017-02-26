@@ -60,6 +60,7 @@ set(MOCFILES
 	./src/dbg_sprscan.h
 	./src/dbg_memfill.h
 	./src/dbg_finder.h
+	./src/watcher.h
 	./src/setupwin.h
 	./src/xgui/xgui.h
 )

@@ -575,9 +575,10 @@ void vidSync(Video* vid, int ns) {
 
 		if ((vid->ray.yb == vid->lay.intpos.y) && (vid->ray.xb == vid->lay.intpos.x)) {
 			// printf("GEN: frm %i line %i pix %i\n",vid->fcnt,vid->ray.yb,vid->ray.xb);
-			vid->intFRAME = 1;
+			vid->intFRAME = vid->lay.intSize;
 			vid->v9938.sr[0] |= 0x80;
 		}
+		if (vid->intFRAME && !vid->istsconf) vid->intFRAME--;
 
 		vid->ray.x++;
 		vid->ray.xb++;
@@ -598,6 +599,7 @@ void vidSync(Video* vid, int ns) {
 				vid->ray.y = 0;
 				vid->tsconf.scrLine = 0;
 				if (vid->lineCall) vid->lineCall(vid);
+				if (vid->debug) vidDarkTail(vid);
 			} else if (vid->ray.yb >= vid->lay.full.y) {	// vblank start
 				vid->vblank = 1;
 				vid->vbstrb = 1;
@@ -610,7 +612,6 @@ void vidSync(Video* vid, int ns) {
 				vid->tail = 0;
 				if (vid->lineCall) vid->lineCall(vid);		// new line callback
 				if (vid->framCall) vid->framCall(vid);		// frame callback
-				if (vid->debug) vidDarkTail(vid);
 			} else if (vid->lineCall) {
 				vid->lineCall(vid);
 			}

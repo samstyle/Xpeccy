@@ -80,7 +80,7 @@ void sndMix(Computer* comp) {
 	sndLev.left = 0;
 	sndLev.right = 0;
 	// tape
-	lev = (comp->tape->on && (comp->tape->levRec || comp->tape->levPlay)) ? 0xff : 0x00;
+	lev = (comp->tape->on && (comp->tape->levRec || comp->tape->levPlay)) ? 0x7f : 0x00;
 	sndLev = mixer(sndLev, lev, lev, conf.snd.vol.tape);
 	// beeper
 	bcSync(comp->beep, -1);
@@ -118,8 +118,8 @@ int sndSync(Computer* comp, int nosync, int fast) {
 	if (!nosync && !fast) {
 		sndMix(comp);
 	}
-	bufA.data[bufA.pos++] = sndLev.left >> 2;
-	bufA.data[bufA.pos++] = sndLev.right >> 2;
+	bufA.data[bufA.pos++] = sndLev.left >> 3;
+	bufA.data[bufA.pos++] = sndLev.right >> 3;
 	smpCount++;
 	if (smpCount < sndChunks) return 0;
 	conf.snd.fill = 0;
@@ -166,6 +166,10 @@ void setOutput(const char* name) {
 bool sndOpen() {
 	if (sndOutput == NULL) return true;
 	if (!sndOutput->open()) setOutput("NULL");
+	bufA.pos = 0;
+	bufB.pos = 0;
+	playPos = 0;
+	pass = 0;
 	return true;
 }
 
@@ -206,7 +210,7 @@ void null_close() {}
 #ifdef HAVESDL
 
 void sdlPlayAudio(void*,Uint8* stream, int len) {
-	if (pass) {
+	if (pass > 2) {
 		int diff = bufA.pos - playPos;
 		if (diff < 0) {
 			diff = 0x10000 - diff;

@@ -11,19 +11,20 @@ void tslReset(Computer* comp) {
 	comp->tsconf.p21af = 0x04;
 	comp->tsconf.Page0 = 0;
 	comp->vid->nextbrd = 0xf7;
+
 	comp->tsconf.p00af = 0;
 	comp->tsconf.p01af = 0x05;
-	comp->tsconf.p02af = 0;
-	comp->tsconf.p03af = 0;
-	comp->tsconf.p04af = 0;
-	comp->tsconf.p05af = 0;
+	comp->vid->tsconf.xOffset = 0;
+	comp->vid->tsconf.yOffset = 0;
 	comp->tsconf.p07af = 0x0f;
+
 	comp->vid->tsconf.vidPage = 5;
 	comp->vid->tsconf.T0XOffset = 0;
 	comp->vid->tsconf.T0YOffset = 0;
 	comp->vid->tsconf.T1XOffset = 0;
 	comp->vid->tsconf.T1YOffset = 0;
 	comp->vid->tsconf.tconfig = 0;
+	comp->vid->tsconf.intLine = 0;
 	comp->vid->lay.intpos.x = 0;
 	comp->vid->lay.intpos.y = 0;
 	comp->vid->intMask = 1;

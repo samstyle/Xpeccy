@@ -10,8 +10,6 @@
 
 #include "debuger.h"
 #include "dbg_sprscan.h"
-
-#include "emulwin.h"
 #include "filer.h"
 #include "xgui/xgui.h"
 #include "filer.h"
@@ -142,10 +140,12 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.tbView->addAction(ui.actViewAddr);
 
 	ui.tbSaveDasm->addAction(ui.actDisasm);
-	ui.tbSaveDasm->addAction(ui.actLoadLabels);
-	ui.tbSaveDasm->addAction(ui.actSaveLabels);
+	ui.tbSaveDasm->addAction(ui.actLoadDump);
 	ui.tbSaveDasm->addAction(ui.actLoadMap);
+	ui.tbSaveDasm->addAction(ui.actLoadLabels);
+	ui.tbSaveDasm->addAction(ui.actSaveDump);
 	ui.tbSaveDasm->addAction(ui.actSaveMap);
+	ui.tbSaveDasm->addAction(ui.actSaveLabels);
 
 	ui.tbTrace->addAction(ui.actTrace);
 	ui.tbTrace->addAction(ui.actTraceHere);
@@ -173,6 +173,8 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.tbBreak, SIGNAL(triggered(QAction*)),this,SLOT(chaCellProperty(QAction*)));
 	connect(ui.tbTrace, SIGNAL(triggered(QAction*)),this,SLOT(doTrace(QAction*)));
 
+	connect(ui.actLoadDump, SIGNAL(triggered(bool)),this,SLOT(doOpenDump()));
+	connect(ui.actSaveDump, SIGNAL(triggered(bool)),this,SLOT(doSaveDump()));
 	connect(ui.actLoadLabels, SIGNAL(triggered(bool)),this,SLOT(loadLabels()));
 	connect(ui.actSaveLabels, SIGNAL(triggered(bool)),this,SLOT(saveLabels()));
 	connect(ui.actLoadMap, SIGNAL(triggered(bool)),this,SLOT(loadMap()));
@@ -359,7 +361,7 @@ void DebugWin::doStep() {
 	if ((traceType == DBG_TRACE_HERE) && (comp->cpu->pc == traceAdr))
 		trace = 0;
 	if (trace) {
-		QTimer::singleShot(10,this,SLOT(doStep()));
+		QTimer::singleShot(1,this,SLOT(doStep()));
 	} else {
 		ui.tbTrace->setEnabled(true);
 	}
@@ -418,7 +420,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					break;
 				case Qt::Key_T:
 					doTrace(ui.actTrace);
-					doStep();
+					// doStep();
 					break;
 				case Qt::Key_L:
 					ui.actShowLabels->setChecked(!conf.dbg.labels);
@@ -1360,6 +1362,7 @@ void DebugWin::dasmEdited(int row, int col) {
 	bool flag;
 	QString str;
 	QString lab;
+	QStringList lst;
 	xAdr xadr = memGetXAdr(comp->mem, adr);
 	switch (col) {
 		case 0:
@@ -1390,12 +1393,11 @@ void DebugWin::dasmEdited(int row, int col) {
 			}
 			break;
 		case 1:
-			str = ui.dasmTable->item(row, col)->text();
-			while (!str.isEmpty()) {
-				cbyte = str.left(2).toInt(NULL,16);
+			lst = ui.dasmTable->item(row, col)->text().split(":", QString::SkipEmptyParts);
+			foreach(str, lst) {
+				cbyte = str.toInt(NULL,16);
 				memWr(comp->mem, adr, cbyte);
 				adr++;
-				str.remove(0,2);
 			}
 			break;
 		case 2:

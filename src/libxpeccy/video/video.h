@@ -36,7 +36,7 @@ struct Video {
 	unsigned border4t:1;
 	unsigned nogfx:1;	// tsl : nogfx flag
 	unsigned newFrame:1;	// set @ start of VBlank
-	unsigned intFRAME:1;	// aka INT
+	int intFRAME;	// aka INT
 	unsigned intLINE:1;	// for TSConf
 	unsigned intDMA:1;	// for TSConf
 	unsigned nextrow:1;	// = not-masked intLINE
