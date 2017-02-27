@@ -506,6 +506,7 @@ void SetupWin::apply() {
 		case SAA_MONO: comp->saa->enabled = 1; comp->saa->mono = 1; break;
 		case SAA_STEREO: comp->saa->enabled = 1; comp->saa->mono = 0; break;
 	}
+	sndCalibrate(comp);
 // input
 	comp->mouse->enable = ui.ratEnable->isChecked() ? 1 : 0;
 	comp->mouse->hasWheel = ui.ratWheel->isChecked() ? 1 : 0;

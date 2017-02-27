@@ -65,10 +65,10 @@ unsigned char gbIORd(Computer* comp, unsigned short port) {
 				res |= 0x80;
 			break;
 		case 0x4f:
-			res = comp->memMap[0].page & 1;
+			res = comp->gb.vbank & 1;
 			break;
 		case 0x70:
-			res = comp->memMap[1].page & 7;
+			res = comp->gb.wbank & 7;
 			break;
 		default:
 			printf("GB: in %.4X\n",port);
@@ -391,13 +391,13 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			break;
 //	memory mapping
 		case 0x4f:				// VRAM bank (8000..9fff)
-			comp->memMap[0].page = val & 1;
+			comp->gb.vbank = val & 1;
 			break;
 		case 0x70:				// WRAM bank (D000..DFFF)
 			val &= 7;
 			if (val == 0)
 				val = 1;
-			comp->memMap[1].page = val;
+			comp->gb.wbank = val;
 			break;
 //	palette
 		case 0x68:				// gbc bg palete index (b0..5) & autoincrement (b7)
@@ -490,7 +490,7 @@ unsigned char gbSlotRd(unsigned short adr, void* data) {
 	if (comp->gb.boot && (adr < comp->romsize) && ((adr & 0xff00) != 0x0100)) {
 		res = comp->mem->romData[radr];
 	} else if (slot->data) {
-		if (adr >= 0x4000) {
+		if (adr & 0x4000) {
 			radr |= (slot->memMap[0] << 14);
 		}
 		res = slot->data[radr & slot->memMask];
@@ -585,6 +585,7 @@ void wr_mbc5(xCartridge* slot, unsigned short adr, unsigned char val) {
 		case 0x3000:
 			slot->memMap[0] &= 0xff;
 			slot->memMap[0] |= (val & 1) << 8;
+			break;
 		case 0x4000:
 		case 0x5000:
 			slot->memMap[1] = val & 0x0f;
@@ -613,8 +614,8 @@ unsigned char gbvRd(unsigned short adr, void* data) {
 			res = slot->ram[radr & 0x7fff];
 		}
 	} else {
-		adr = (comp->memMap[0].page << 13) | (adr & 0x1fff);
-		res = comp->vid->gbc->ram[adr];
+		radr = (comp->gb.vbank << 13) | (adr & 0x1fff);
+		res = comp->vid->gbc->ram[radr];
 	}
 	return res;
 }
@@ -629,8 +630,8 @@ void gbvWr(unsigned short adr, unsigned char val, void* data) {
 			slot->ram[radr & 0x7fff] = val;
 		}
 	} else {
-		adr = (comp->memMap[0].page << 13) | (adr & 0x1fff);
-		comp->vid->gbc->ram[adr] = val;
+		radr = (comp->gb.vbank << 13) | (adr & 0x1fff);
+		comp->vid->gbc->ram[radr & 0x3fff] = val;
 	}
 }
 
@@ -650,7 +651,7 @@ unsigned char gbrRd(unsigned short adr, void* data) {
 	if (adr < 0xfe00) {
 		adr &= 0x1fff;						// 8K, [e000...fdff] -> [c000..ddff]
 		if (adr & 0x1000) {					// high 4K -> WRAM page X
-			adr = ((comp->memMap[1].page & 7) << 12) | (adr & 0xfff);
+			adr =(comp->gb.wbank << 12) | (adr & 0xfff);
 			res = comp->mem->ramData[adr];
 		} else {						// low 4K -> WRAM page 0
 			res = comp->mem->ramData[adr & 0xfff];
@@ -675,7 +676,7 @@ void gbrWr(unsigned short adr, unsigned char val, void* data) {
 	if (adr < 0xfe00) {
 		adr &= 0x1fff;
 		if (adr & 0x1000) {					// high 4K -> WRAM page
-			adr = ((comp->memMap[1].page & 7) << 12) | (adr & 0xfff);
+			adr = (comp->gb.wbank << 12) | (adr & 0xfff);
 			comp->mem->ramData[adr] = val;
 		} else {
 			comp->mem->ramData[adr & 0xfff] = val;
@@ -794,6 +795,7 @@ void gbRelease(Computer* comp, const char* key) {
 
 void gbReset(Computer* comp) {
 	comp->gb.boot = 1;
+	comp->vid->gbc->gbmode = 0;
 	vidSetMode(comp->vid, VID_GBC);
 	gbcvReset(comp->vid->gbc);
 
@@ -810,14 +812,14 @@ void gbReset(Computer* comp) {
 	comp->gb.timer.t.per = 0;
 	comp->gb.timer.t.on = 0;
 
-	comp->memMap[0].page = 0;	// vram page
-	comp->memMap[1].page = 1;	// wram page (D000..DFFF)
+	comp->gb.vbank = 0;	// vram page
+	comp->gb.wbank = 1;	// wram page (D000..DFFF)
 
 	xCartridge* slot = &comp->msx.slotA;
 	slot->memMap[0] = 1;	// rom bank
 	slot->memMap[1] = 0;	// ram bank
 	slot->ramen = 0;
-	slot->ramMask = 0x1fff;
+	slot->ramMask = 0x7fff;
 	slot->ramod = 0;
 	if (slot->data) {
 		unsigned char type = comp->msx.slotA.data[0x147];		// slot type

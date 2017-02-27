@@ -3,6 +3,7 @@
 #include <math.h>
 
 #include "xcore.h"
+#include "sound.h"
 #include "../filer.h"
 
 xProfile* findProfile(std::string nm) {
@@ -438,6 +439,7 @@ int prfLoad(std::string nm) {
 	memSetSize(comp->mem,memsz);
 	if (!prfSetLayout(prf, prf->layName)) prfSetLayout(prf,"default");
 
+	sndCalibrate(comp);
 	compReset(comp,RES_DEFAULT);
 
 	return tmp2;

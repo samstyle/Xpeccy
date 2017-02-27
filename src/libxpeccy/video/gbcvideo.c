@@ -18,7 +18,7 @@ void gbcvDraw(GBCVid* vid) {
 		x = (vid->sc.x + vid->ray->x) & 0xff;
 		y = (vid->sc.y + vid->ray->y) & 0xff;
 		adr = vid->bgmapadr + ((y & 0xf8) << 2) + (x >> 3);		// tile adr
-		tile = vid->ram[adr & 0x3fff];					// tile nr
+		tile = vid->ram[adr & 0x1fff];					// tile nr
 		flag = vid->gbmode ? 0 : vid->ram[0x2000 | (adr & 0x1fff)];	// tile flags (GBC)
 		if (flag & 0x20) x ^= 7;		// HFlip
 		if (flag & 0x40) y ^= 7;		// VFlip
@@ -36,7 +36,7 @@ void gbcvDraw(GBCVid* vid) {
 		int winen = vid->winen && !vid->winblock && (vid->ray->y >= vid->win.y) && (vid->ray->x >= vid->win.x);
 		int spen = vid->spren && !vid->sprblock;
 
-		if (winen && vid->bgprior && (vid->wtline[vid->ray->x] != 0xff)) {						// WIN + priority
+		if (winen && vid->bgprior && (vid->wtline[vid->ray->x] != 0xff)) {	// WIN + priority
 			col = vid->wtline[vid->ray->x];
 		} else if (bgen && vid->bgprior && (flag & 0x80)) {			// BG + priority
 			col = ((data & 0x80) ? 1 : 0) | ((data & 0x8000) ? 2 : 0);
@@ -54,24 +54,30 @@ void gbcvDraw(GBCVid* vid) {
 		}
 	}
 	vidPutDot(vid->ray, vid->pal, col);
-	if (vid->ray->y < vid->lay->scr.y) {
-		if (vid->ray->x == 0) {
+	if (vid->ray->y < vid->lay->scr.y) {		// on visible screen
+		if (vid->ray->x == 0) {			// visible line start : mode 2
 			vid->mode = 2;
 			if (vid->inten & 32)
 				vid->intrq = 1;
-		} else if (vid->ray->x == 40) {
+		} else if (vid->ray->x == 40) {		// end of oem/vmem access : mode 3
 			vid->mode = 3;
-		} else if (vid->ray->x == (vid->lay->scr.x - 1)) {
-			vid->mode = 0;
-			if (vid->inten & 8)
-				vid->intrq = 1;	// int @ hblank
 		}
 	}
 }
 
 // line begin : create full line image in the buffer
 void gbcvLine(GBCVid* vid) {
+	memset(vid->wtline, 0xff, 256);
+	memset(vid->wbline, 0xff, 256);
+	memset(vid->stline, 0x00, 256);
+	memset(vid->sbline, 0x00, 256);
+
+	vid->mode = 0;					// hblank start: mode 0
+	if (vid->inten & 8)
+		vid->intrq = 1;
+
 	if (!vid->lcdon) return;
+	if (vid->ray->y >= vid->lay->scr.y) return;
 	unsigned char tile;
 	unsigned char flag;
 	unsigned char col;
@@ -84,8 +90,6 @@ void gbcvLine(GBCVid* vid) {
 	int adr;
 	int pos;
 // WIN
-	memset(vid->wtline, 0xff, 256);
-	memset(vid->wbline, 0xff, 256);
 	if (vid->winen && !vid->winblock && (vid->ray->y >= vid->win.y)) {
 		tadr = vid->winmapadr + ((vid->wline & 0xf8) << 2);
 		pos = vid->win.x;
@@ -120,8 +124,6 @@ void gbcvLine(GBCVid* vid) {
 		vid->wline++;
 	}
 // OAM (sprites)
-	memset(vid->stline, 0x00, 256);
-	memset(vid->sbline, 0x00, 256);
 	if (vid->spren && !vid->sprblock) {
 		adr = 0;
 		tx = 10;	// max 10 sprites in line
@@ -178,18 +180,15 @@ void gbcvLine(GBCVid* vid) {
 	}
 
 	if ((vid->ray->y == vid->lyc) && (vid->inten & 64)) vid->intrq = 1;		// ly = lyc
-	if (vid->ray->y < vid->lay->scr.y) {
-		vid->mode = 2;		// visible line start : mode 2
-	} else if (vid->ray->y == vid->lay->blank.y) {
-		vid->mode = 1;		// line 144+ : vblank, mode 1
-		if (vid->inten & 16)
-			vid->intrq = 1;	// int @ vblank
-	}
 	vid->xpos = vid->sc.x;
 }
 
 void gbcvFram(GBCVid* vid) {
 	vid->wline = 0;
+
+	vid->mode = 1;		// vblank start : mode 1
+	if (vid->inten & 16)
+		vid->intrq = 1;	// int @ vblank
 }
 
 // game boy palette

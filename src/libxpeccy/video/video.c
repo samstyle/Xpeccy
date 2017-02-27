@@ -433,6 +433,28 @@ void vidDrawATMhwmc(Video* vid) {
 	}
 }
 
+// baseconf text
+
+void vidDrawEvoText(Video* vid) {
+	yscr = vid->ray.y - 76;
+	xscr = vid->ray.x - 96;
+	if ((yscr < 0) || (yscr > 199) || (xscr < 0) || (xscr > 319)) {
+		vidPutDot(&vid->ray, vid->pal, vid->brdcol);
+	} else {
+		if ((xscr & 3) == 0) {
+			adr = 0x1c0 + ((yscr & 0xf8) << 3) + (xscr >> 3);
+			if ((xscr & 7) == 0) {
+				scrbyte = vid->mem->ramData[MADR(vid->curscr + 3, adr)];
+				col = vid->mem->ramData[MADR(vid->curscr + 3, adr + 0x3000)];
+			} else {
+				scrbyte = vid->mem->ramData[MADR(vid->curscr + 3, adr + 0x1000)];
+				col = vid->mem->ramData[MADR(vid->curscr + 3, adr + 0x2001)];
+			}
+			scrbyte = vid->font[(scrbyte << 3) | (yscr & 7)];
+			vidATMDoubleDot(vid,col);
+		}
+	}
+}
 
 // profi 512x240
 
@@ -470,9 +492,8 @@ void vidProfiScr(Video* vid) {
 // tsconf
 
 void vidDrawTSLNormal(Video*);
+void vidDrawTSLExt(Video*);
 void vidTSline(Video*);
-void vidDrawTSL16(Video*);
-void vidDrawTSL256(Video*);
 void vidDrawTSLText(Video*);
 void vidDrawEvoText(Video*);
 
@@ -533,8 +554,8 @@ xVideoMode vidModeTab[] = {
 	{VID_ATM_HWM, vidDrawATMhwmc, NULL, NULL},
 	{VID_EVO_TEXT, vidDrawEvoText, NULL, NULL},
 	{VID_TSL_NORMAL, vidDrawTSLNormal, vidTSline, NULL},
-	{VID_TSL_16, vidDrawTSLNormal, vidTSline, NULL},			// vidDrawTSL16
-	{VID_TSL_256, vidDrawTSLNormal, vidTSline, NULL},			// vidDrawTSL256
+	{VID_TSL_16, vidDrawTSLExt, vidTSline, NULL},			// vidDrawTSL16
+	{VID_TSL_256, vidDrawTSLExt, vidTSline, NULL},			// vidDrawTSL256
 	{VID_TSL_TEXT, vidDrawTSLText, vidTSline, NULL},
 	{VID_PRF_MC, vidProfiScr, NULL, NULL},
 	{VID_V9938, vidDrawV9938, NULL, vidFrameV9938},
@@ -544,20 +565,13 @@ xVideoMode vidModeTab[] = {
 
 void vidSetMode(Video* vid, int mode) {
 	vid->vmode = mode;
-	if (vid->noScreen) {
-		vid->callback = &vidDrawBorder;
-	} else {
-		int i = 0;
-		do {
-			if ((vidModeTab[i].id == VID_UNKNOWN) || (vidModeTab[i].id == mode)) {
-				vid->callback = vidModeTab[i].callback;
-				vid->lineCall = vidModeTab[i].lineCall;
-				vid->framCall = vidModeTab[i].framCall;
-				break;
-			}
-			i++;
-		} while (1);
+	int i = 0;
+	while ((vidModeTab[i].id != VID_UNKNOWN) && (vidModeTab[i].id != mode)) {
+		i++;
 	}
+	vid->callback = vid->noScreen ? vidDrawBorder : vidModeTab[i].callback;
+	vid->lineCall = vidModeTab[i].lineCall;
+	vid->framCall = vidModeTab[i].framCall;
 }
 
 void vidSync(Video* vid, int ns) {
@@ -566,20 +580,14 @@ void vidSync(Video* vid, int ns) {
 
 		vid->nsDraw -= vid->nsPerDot;
 
-		if ((vid->ray.y >= vid->lcut.y) && (vid->ray.y < vid->rcut.y)) {
-			if ((vid->ray.x >= vid->lcut.x) && (vid->ray.x < vid->rcut.x)) {
-				if (vid->ray.x & 8) vid->brdcol = vid->nextbrd;	// update border color
-				if (vid->callback) vid->callback(vid);		// put dot callback
-			}
+		if (vid->ray.x & 8) vid->brdcol = vid->nextbrd;			// update border color
+		// if ray is on visible screen & video has drawing callback...
+		if ((vid->ray.y >= vid->lcut.y) && (vid->ray.y < vid->rcut.y) \
+			&& (vid->ray.x >= vid->lcut.x) && (vid->ray.x < vid->rcut.x) \
+			&& vid->callback) {
+				vid->callback(vid);		// put dot callback
 		}
-
-		if ((vid->ray.yb == vid->lay.intpos.y) && (vid->ray.xb == vid->lay.intpos.x)) {
-			// printf("GEN: frm %i line %i pix %i\n",vid->fcnt,vid->ray.yb,vid->ray.xb);
-			vid->intFRAME = vid->lay.intSize;
-			vid->v9938.sr[0] |= 0x80;
-		}
-		if (vid->intFRAME && !vid->istsconf) vid->intFRAME--;
-
+		// move ray to next dot, update counters
 		vid->ray.x++;
 		vid->ray.xb++;
 
@@ -615,6 +623,12 @@ void vidSync(Video* vid, int ns) {
 			} else if (vid->lineCall) {
 				vid->lineCall(vid);
 			}
+		}
+		// generate int
+		if (vid->intFRAME) vid->intFRAME--;
+		if ((vid->ray.yb == vid->lay.intpos.y) && (vid->ray.xb == vid->lay.intpos.x)) {
+			vid->intFRAME = vid->lay.intSize;
+			vid->v9938.sr[0] |= 0x80;
 		}
 	}
 }

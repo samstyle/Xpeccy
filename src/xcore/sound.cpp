@@ -17,8 +17,8 @@
 int sndFlag = 0;
 
 typedef struct {
-	unsigned char data[0x10000];
-	unsigned short pos;
+	unsigned char data[0x1000];
+	unsigned pos:12;
 } sndBuffa;
 
 sndBuffa bufA;		// ring buffer @ real freq
@@ -118,16 +118,22 @@ int sndSync(Computer* comp, int nosync, int fast) {
 	if (!nosync && !fast) {
 		sndMix(comp);
 	}
+
 	bufA.data[bufA.pos++] = sndLev.left >> 3;
 	bufA.data[bufA.pos++] = sndLev.right >> 3;
+	bufA.pos &= 0xfff;
+
 	smpCount++;
 	if (smpCount < sndChunks) return 0;
+
+//	memcpy(bufB.data, bufA.data, sndBufSize);
+//	bufA.pos = 0;
 	conf.snd.fill = 0;
 	smpCount = 0;
 	return 1;
 }
 
-void sndCalibrate() {
+void sndCalibrate(Computer* comp) {
 	sndChunks = conf.snd.rate / 50;			// samples / frame
 	sndBufSize = conf.snd.chans * sndChunks;	// buffer size
 	nsPerSample = 1e9 / conf.snd.rate;		// ns / sample
@@ -174,9 +180,10 @@ bool sndOpen() {
 }
 
 void sndPlay() {
-	if (sndOutput != NULL) {
+	if (sndOutput) {
 		sndOutput->play();
 	}
+	// playPos = (bufA.pos - sndBufSize) & 0xffff;
 }
 
 void sndClose() {
@@ -200,6 +207,7 @@ void fillBuffer(int len) {
 	int pos = 0;
 	while (pos < len) {
 		bufB.data[pos++] = bufA.data[playPos++];
+		playPos &= 0xfff;
 	}
 }
 
@@ -213,7 +221,7 @@ void sdlPlayAudio(void*,Uint8* stream, int len) {
 	if (pass > 2) {
 		int diff = bufA.pos - playPos;
 		if (diff < 0) {
-			diff = 0x10000 - diff;
+			diff += 0x1000;
 		}
 		if (diff >= len) {
 			fillBuffer(len);

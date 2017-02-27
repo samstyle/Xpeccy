@@ -188,8 +188,8 @@ void xWatcher::hexAdrChanged(QString str) {
 }
 
 void xWatcher::decAdrChanged(int num) {
-	QString str = gethexword(num);
-	if (nui.leAdrHex->text() == str) return;
+	QString str = gethexword(num).toUpper();
+	if (nui.leAdrHex->text().toUpper() == str) return;
 	nui.leAdrHex->setText(str);
 }
 

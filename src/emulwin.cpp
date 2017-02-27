@@ -59,7 +59,7 @@ void MainWin::updateHead() {
 void MainWin::updateWindow() {
 	block = 1;
 	vidUpdateLayout(comp->vid, conf.brdsize);
-	sndCalibrate();
+	sndCalibrate(comp);
 	ethread.sndNs = 0;
 	int szw = comp->vid->vsze.x * conf.vid.scale;
 	int szh = comp->vid->vsze.y * conf.vid.scale;
@@ -142,7 +142,7 @@ MainWin::MainWin() {
 
 	initKeyMap();
 	conf.scrShot.format = "png";
-	vLayout vlay = {0,{448,320},{74,48},{64,32},{256,192},{0,0},64};		// {384,287}
+	vLayout vlay = {0,{448,320},{74,48},{64,32},{256,192},{0,0},64};
 	addLayout("default", vlay);
 
 	shotFormat["bmp"] = SCR_BMP;
@@ -408,20 +408,12 @@ void MainWin::paintEvent(QPaintEvent*) {
 	if (block) return;
 	QPainter pnt;
 	pnt.begin(this);
-#if 1
 	pnt.drawImage(0,0,scrImg);
-#else
-	if (conf.vid.fullScreen) {
-		pnt.drawImage(0,0,scrImg.scaled(size(),Qt::IgnoreAspectRatio,Qt::FastTransformation));
-	} else {
-		pnt.drawImage(0,0,scrImg);
-	}
-#endif
 	pnt.end();
 }
 
 void MainWin::keyPressEvent(QKeyEvent *ev) {
-	if (ev->isAutoRepeat()) return;
+	// if (ev->isAutoRepeat()) return;
 	keyEntry kent = getKeyEntry(ev->nativeScanCode());
 	if (pckAct->isChecked()) {
 		keyPressXT(comp->keyb, kent.keyCode);
@@ -1204,5 +1196,5 @@ void MainWin::saveGSRAM() {
 }
 
 void MainWin::debugAction() {
-	sndDbg();
+	qDebug() << gethexword(comp->vid->gbc->bgmapadr) << comp->vid->gbc->gbmode;
 }

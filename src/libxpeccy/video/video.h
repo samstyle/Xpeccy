@@ -77,7 +77,6 @@ struct Video {
 	vCoord vsze;
 	int idx;
 	struct {
-		unsigned char vidPage;		// 1st video page
 		int xPos;			// position of screen @ monitor [32|12] x [44|24|0]
 		int yPos;
 		int xSize;			// size of tsconf screen ([320|360] x [200|240|288])
@@ -90,6 +89,8 @@ struct Video {
 		unsigned char T0Pal76;		// b7.6 of tiles palete (07AF)
 		unsigned char T1Pal76;
 		unsigned char scrPal;		// b7..4: bitmap palete
+		unsigned char vidPage;		// 1st video page
+		int hsint;			// tsconf INT x pos = p22AF << 1
 		ePair(xOffset,soxh,soxl);	// offsets of screen corner
 		ePair(yOffset,soyh,soyl);
 		ePair(T0XOffset,t0xh,t0xl);	// tile 0 offsets
@@ -102,6 +103,7 @@ struct Video {
 		unsigned char line[0x200];	// buffer for render sprites & tiles
 		unsigned char cram[0x200];	// pal
 		unsigned char sfile[0x200];	// sprites
+		int dmabytes;
 	} tsconf;
 	unsigned char font[0x800];		// ATM text mode font
 	void(*callback)(struct Video*);		// call every dot

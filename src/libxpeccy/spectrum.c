@@ -310,7 +310,6 @@ void compUpdateTimings(Computer* comp) {
 void compSetBaseFrq(Computer* comp, double frq) {
 	comp->cpuFrq = frq;
 	compUpdateTimings(comp);
-
 }
 
 void compSetTurbo(Computer* comp, int mult) {

@@ -66,7 +66,7 @@ void xThread::emuCycle() {
 			if ((comp->cpu->pc == 0x5e2) && conf->tape.autostart)
 				emit tapeSignal(TW_STATE,TWS_STOP);
 		}
-	} while (!comp->brk && conf->snd.fill); //(!comp->brk && !comp->frmStrobe);
+	} while (!comp->brk && conf->snd.fill); //(!comp->brk && !comp->frmStrobe); conf->snd.fill
 	comp->nmiRequest = 0;
 }
 

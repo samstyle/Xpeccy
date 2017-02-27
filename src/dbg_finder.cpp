@@ -23,7 +23,7 @@ void xMemFinder::onTextEdit() {
 			ch = txt.at(i);
 			if (i != 0)
 				str.append(":");
-			str.append(gethexbyte(ch.toAscii()));
+			str.append(gethexbyte(ch.toLatin1()));
 		}
 	}
 	ui.leBytes->setText(str);

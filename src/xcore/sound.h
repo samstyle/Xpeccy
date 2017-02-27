@@ -43,7 +43,7 @@ extern OutSys* sndOutput;
 extern int nsPerSample;
 
 void sndInit();
-void sndCalibrate();
+void sndCalibrate(Computer*);
 void addOutput(std::string, bool(*)(),void(*)(),void(*)());
 void setOutput(const char*);
 bool sndOpen();
