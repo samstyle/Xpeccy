@@ -91,6 +91,8 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.setupUi(this);
 	QTableWidgetItem* itm;
 
+	setFont(QFont("://DejaVuSansMono.ttf",10));
+
 	conf.dbg.labels = 1;
 	conf.dbg.segment = 0;
 	ui.actShowLabels->setChecked(conf.dbg.labels);
@@ -125,9 +127,9 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.dasmTable->setColumnWidth(2,130);
 	ui.dasmTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_LABEL));
 	ui.dasmTable->setItemDelegateForColumn(1, new xItemDelegate(XTYPE_DUMP));
-	row = ui.dasmTable->font().pixelSize();
-	if (row < 0) row = 17;
-	ui.dasmTable->setFixedHeight(ui.dasmTable->rowCount() * row + 8);
+//	row = ui.dasmTable->font().pixelSize();
+//	if (row < 0) row = 17;
+//	ui.dasmTable->setFixedHeight(ui.dasmTable->rowCount() * row + 8);
 // actions
 	ui.tbBreak->addAction(ui.actFetch);
 	ui.tbBreak->addAction(ui.actRead);
@@ -189,17 +191,17 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 		ui.dumpTable->item(row, 9)->setTextAlignment(Qt::AlignRight);
 	}
 	ui.dumpTable->setColumnWidth(0,50);
-	for (col = 1; col < 9; col++) {
-		ui.dumpTable->setColumnWidth(col, 25);
-	}
+//	for (col = 1; col < 9; col++) {
+//		ui.dumpTable->setColumnWidth(col, 27);
+//	}
 	ui.dumpTable->setItemDelegate(new xItemDelegate(XTYPE_BYTE));
 	ui.dumpTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_ADR));
 	ui.dumpTable->setItemDelegateForColumn(9, new xItemDelegate(XTYPE_NONE));
 	connect(ui.dumpTable,SIGNAL(cellChanged(int,int)),this,SLOT(dumpEdited(int,int)));
 	connect(ui.dumpTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
-	row = ui.dumpTable->font().pixelSize();
-	if (row < 0) row = 17;
-	ui.dumpTable->setFixedHeight(ui.dumpTable->rowCount() * row + 8);
+	//row = ui.dumpTable->font().pixelSize();
+	//if (row < 0) row = 17;
+	//ui.dumpTable->setFixedHeight(ui.dumpTable->rowCount() * row + 8);
 // registers
 	connect(ui.editAF, SIGNAL(textChanged(QString)), this, SLOT(setZ80()));
 	connect(ui.editBC, SIGNAL(textChanged(QString)), this, SLOT(setZ80()));
@@ -220,7 +222,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.flagGroup,SIGNAL(buttonClicked(int)),this,SLOT(setFlags()));
 // infoslots
 	scrImg = QImage(256, 192, QImage::Format_RGB888);
-	ui.scrLabel->setFixedSize(256,192);
+	// ui.scrLabel->setFixedSize(256,192);
 	connect(ui.sbScrBank,SIGNAL(valueChanged(int)),this,SLOT(updateScreen()));
 	connect(ui.cbScrAlt,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
 	connect(ui.cbScrAtr,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
@@ -233,7 +235,8 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.sbTilemap, SIGNAL(valueChanged(int)), this, SLOT(fillGBoy()));
 
 
-	setFixedSize(size());
+	// setFixedSize(size());
+	setFixedHeight(size().height());
 	block = 0;
 	disasmAdr = 0;
 	dumpAdr = 0;

@@ -37,6 +37,10 @@ int lr_exec(CPU* cpu) {
 		cpu->t += cpu->op->t;
 		cpu->op->exec(cpu);
 	} while (cpu->op->prefix);
+	if (cpu->dihalt) {		// LR35902 bug (?) : repeat opcode after HALT with disabled interrupts (DI)
+		cpu->dihalt = 0;
+		cpu->pc = cpu->tmpw;
+	}
 	return cpu->t;
 }
 
@@ -51,6 +55,10 @@ int lr_int(CPU* cpu) {
 	if (cpu->halt) {		// free HALT anyway
 		cpu->halt = 0;
 		cpu->pc++;
+		if (!cpu->iff1) {
+			cpu->dihalt = 1;
+			cpu->tmpw = cpu->pc;		// tmpw doesn't used on LR35902, store PC there
+		}
 	}
 	if (!cpu->iff1) return 0;
 	int idx = 0;

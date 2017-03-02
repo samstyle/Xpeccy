@@ -55,19 +55,20 @@ enum {
 
 struct CPU {
 	unsigned halt:1;		// cpu halted, undo on interrput
-	unsigned resPV:1;
-	unsigned noint:1;
 	unsigned inth:1;		// next step is 1:handle interrupt, 0: exec opcode
+	unsigned resPV:1;		// Z80: reset PV flag on INT
+	unsigned noint:1;		// Z80: don't handle INT after EI
+	unsigned wait:1;		// Z80: WAIT signal
 	unsigned lock:1;		// LR35902: CPU locked
 	unsigned stop:1;		// LR35902: CPU stoped, unlock on keypress
-
 	unsigned speed:1;		// LR35902: double speed mode (TODO)
 	unsigned speedrq:1;		// LR35902: request speed change after STOP command
+	unsigned dihalt:1;		// LR35902: HALT when DI: repeat next opcode
 
 	int type;			// cpu type id
 
-	unsigned char intrq;		// LR35902: interrupts request (b0..4, 1=request)
-	unsigned char inten;		// LR35902: interrupts enabled (b0..4, 1=enabled)
+	unsigned char intrq;		// interrupts request. 8 bits = 8 INT types, 1 = requested
+	unsigned char inten;		// interrupts enabled mask
 
 	PAIR(pc,hpc,lpc);
 	PAIR(sp,hsp,lsp);

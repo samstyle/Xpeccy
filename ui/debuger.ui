@@ -9,14 +9,9 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>771</width>
-    <height>614</height>
+    <width>787</width>
+    <height>617</height>
    </rect>
-  </property>
-  <property name="font">
-   <font>
-    <family>DejaVu Sans Mono</family>
-   </font>
   </property>
   <property name="windowTitle">
    <string>Xpeccy deBUGa</string>
@@ -30,7 +25,7 @@
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="10,0">
    <item>
-    <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,0,0,0,0,10,0">
+    <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,0,0,0,0,10">
      <item>
       <widget class="QLabel" name="label_26">
        <property name="styleSheet">
@@ -733,17 +728,16 @@
      </item>
      <item>
       <widget class="xTableWidget" name="dasmTable">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
        <property name="minimumSize">
         <size>
          <width>350</width>
          <height>0</height>
         </size>
+       </property>
+       <property name="font">
+        <font>
+         <family>DejaVu Sans Mono</family>
+        </font>
        </property>
        <property name="contextMenuPolicy">
         <enum>Qt::CustomContextMenu</enum>
@@ -766,8 +760,11 @@
        <property name="showGrid">
         <bool>false</bool>
        </property>
+       <property name="wordWrap">
+        <bool>true</bool>
+       </property>
        <property name="rowCount">
-        <number>23</number>
+        <number>24</number>
        </property>
        <property name="columnCount">
         <number>4</number>
@@ -813,24 +810,12 @@
        <row/>
        <row/>
        <row/>
+       <row/>
        <column/>
        <column/>
        <column/>
        <column/>
       </widget>
-     </item>
-     <item>
-      <spacer name="verticalSpacer_7">
-       <property name="orientation">
-        <enum>Qt::Vertical</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>20</width>
-         <height>40</height>
-        </size>
-       </property>
-      </spacer>
      </item>
     </layout>
    </item>
@@ -857,9 +842,14 @@
           <widget class="QTableWidget" name="dumpTable">
            <property name="minimumSize">
             <size>
-             <width>320</width>
-             <height>275</height>
+             <width>330</width>
+             <height>0</height>
             </size>
+           </property>
+           <property name="font">
+            <font>
+             <family>DejaVu Sans Mono</family>
+            </font>
            </property>
            <property name="contextMenuPolicy">
             <enum>Qt::CustomContextMenu</enum>
@@ -883,10 +873,13 @@
             <enum>QAbstractItemView::SingleSelection</enum>
            </property>
            <property name="showGrid">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
            <property name="gridStyle">
             <enum>Qt::DotLine</enum>
+           </property>
+           <property name="wordWrap">
+            <bool>false</bool>
            </property>
            <property name="rowCount">
             <number>16</number>
@@ -1238,41 +1231,14 @@
          </item>
          <item>
           <layout class="QGridLayout" name="gridLayout_4">
-           <item row="0" column="1">
-            <widget class="QLabel" name="label_49">
-             <property name="text">
-              <string>Bank</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QSpinBox" name="sbScrBank">
-             <property name="minimum">
-              <number>0</number>
-             </property>
-             <property name="maximum">
-              <number>255</number>
-             </property>
-             <property name="value">
-              <number>5</number>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1">
+           <item row="3" column="1">
             <widget class="QCheckBox" name="cbScrAlt">
              <property name="text">
               <string>+#2000</string>
              </property>
             </widget>
            </item>
-           <item row="3" column="1">
-            <widget class="QCheckBox" name="cbScrAtr">
-             <property name="text">
-              <string>noAtr</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="1">
+           <item row="5" column="1">
             <spacer name="verticalSpacer_5">
              <property name="orientation">
               <enum>Qt::Vertical</enum>
@@ -1284,6 +1250,37 @@
               </size>
              </property>
             </spacer>
+           </item>
+           <item row="4" column="1">
+            <widget class="QCheckBox" name="cbScrAtr">
+             <property name="text">
+              <string>noAtr</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <layout class="QHBoxLayout" name="horizontalLayout_7">
+             <item>
+              <widget class="QLabel" name="label_49">
+               <property name="text">
+                <string>Bank</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="sbScrBank">
+               <property name="minimum">
+                <number>0</number>
+               </property>
+               <property name="maximum">
+                <number>255</number>
+               </property>
+               <property name="value">
+                <number>5</number>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
           </layout>
          </item>
@@ -2327,7 +2324,6 @@
   <tabstop>dasmTable</tabstop>
   <tabstop>dumpTable</tabstop>
   <tabstop>tabsPanel</tabstop>
-  <tabstop>sbScrBank</tabstop>
   <tabstop>cbScrAlt</tabstop>
   <tabstop>bpList</tabstop>
   <tabstop>tbAddBrk</tabstop>
@@ -2343,11 +2339,11 @@
  </resources>
  <connections/>
  <buttongroups>
+  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
-  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

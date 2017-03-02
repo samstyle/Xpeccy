@@ -26,9 +26,11 @@ void z80_reset(CPU* cpu) {
 	cpu->i = cpu->r = cpu->r7 = 0;
 	cpu->halt = 0;
 	cpu->intrq = 0;
+	cpu->wait = 0;
 }
 
 int z80_exec(CPU* cpu) {
+	if (cpu->wait) return 1;
 	cpu->t = 0;
 	cpu->noint = 0;
 	cpu->opTab = npTab;
@@ -44,6 +46,7 @@ int z80_exec(CPU* cpu) {
 
 int z80_int(CPU* cpu) {
 	int res = 0;
+	if (cpu->wait) return 0;
 	if (cpu->intrq & 1) {		// int
 		if (cpu->iff1 && !cpu->noint) {
 			cpu->iff1 = 0;

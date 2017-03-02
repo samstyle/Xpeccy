@@ -16,7 +16,8 @@ MemViewer::MemViewer(QWidget* p):QDialog(p) {
 	connect(ui.sbWidth, SIGNAL(valueChanged(int)), this, SLOT(fillImage()));
 	connect(ui.sbHeight, SIGNAL(valueChanged(int)), this, SLOT(fillImage()));
 	connect(ui.sbPage, SIGNAL(valueChanged(int)), this, SLOT(fillImage()));
-	connect(ui.tbInvert, SIGNAL(toggled(bool)), this, SLOT(fillImage()));
+	connect(ui.cbInvert, SIGNAL(toggled(bool)), this, SLOT(fillImage()));
+	connect(ui.cbGrid, SIGNAL(toggled(bool)), this, SLOT(fillImage()));
 
 	connect(ui.adrHex, SIGNAL(textChanged(QString)), this, SLOT(hexChanged()));
 	connect(ui.sbAddr, SIGNAL(valueChanged(int)), this, SLOT(adrChanged(int)));
@@ -72,15 +73,27 @@ void MemViewer::fillImage() {
 	int adr = ui.sbAddr->value();
 	int high = ui.sbHeight->value() << 3;
 	unsigned char byt;
-	unsigned char inv = ui.tbInvert->isChecked() ? 0xff : 0x00;
+	unsigned char inv = ui.cbInvert->isChecked() ? 0xff : 0x00;
 	int bit;
 	int row,col;
+	QRgb blk = qRgb(0,0,0);
+	QRgb wht = qRgb(255,255,255);
+	QRgb lgry = qRgb(160,160,160);
+	QRgb dgry = qRgb(32,32,32);
+	if (!ui.cbGrid->isChecked()) {
+		lgry = wht;
+		dgry = blk;
+	}
+	QRgb clr;
+	int alt;
 	for (row = 0; row < high; row++) {
 		for (col = 0; col < ui.sbWidth->value(); col++) {
 			byt = rdMem(adr) ^ inv;
+			alt = ((row >> 3) ^ col) & 1;
 			adr++;
 			for (bit = 0; bit < 8; bit++) {
-				img.setPixel((col << 3) | bit, row, (byt & 0x80) ? qRgb(255,255,255) : qRgb(0,0,0));
+				clr = (byt & 0x80) ? (alt ? wht : lgry) : (alt ? blk : dgry);
+				img.setPixel((col << 3) | bit, row, clr);
 				byt <<= 1;
 			}
 		}

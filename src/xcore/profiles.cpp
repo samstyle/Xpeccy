@@ -178,7 +178,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 				if (prts > 32) prts = 32;
 				file.seekg(0,std::ios_base::beg);
 				for (i = 0; i < prts; i++) {
-					prf->zx->romsize = file.readsome(pageBuf,0x4000);
+					prf->zx->romsize = file.read(pageBuf,0x4000);
 					memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
 				}
 				memset(pageBuf,0xff,0x4000);
@@ -200,7 +200,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 					file.open(fpath.c_str(),std::ios::binary);
 					if (file.good()) {
 						file.seekg(rset->roms[i].part << 14);
-						prf->zx->romsize = file.readsome(pageBuf,0x4000);
+						prf->zx->romsize = file.read(pageBuf,0x4000);
 					} else {
 						printf("Can't open rom '%s:%i'\n",rset->roms[i].path.c_str(),rset->roms[i].part);
 						memset(pageBuf,0xff,0x4000);

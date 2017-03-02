@@ -97,6 +97,7 @@ typedef struct {
 void initKeyMap();
 void setKey(const char*,const char,const char);
 keyEntry getKeyEntry(signed int);
+int qKey2id(int);
 
 // bookmarks
 

@@ -57,8 +57,6 @@ OutSys* findOutSys(const char*);
 
 #include "../libxpeccy/hardware/hardware.h"
 
-int sdevcnt = 1;
-
 sndPair mixer(sndPair cur, int levL, int levR, int vol) {
 	levL = levL * vol / 100.0;
 	levR = levR * vol / 100.0;
@@ -76,11 +74,17 @@ sndPair mixer(sndPair cur, int levL, int levR, int vol) {
 void sndMix(Computer* comp) {
 	int lev = 0;
 	sndPair svol;
-	sdevcnt = 0;
 	sndLev.left = 0;
 	sndLev.right = 0;
 	// tape
-	lev = (comp->tape->on && (comp->tape->levRec || comp->tape->levPlay)) ? 0x7f : 0x00;
+	if (comp->tape->on) {
+		if (comp->tape->rec) {
+			lev = comp->tape->levRec ? 0x7f : 0x00;
+		} else {
+			lev = comp->tape->levPlay ? 0x7f : 0x00;
+		}
+	}
+//	lev = (comp->tape->on && (comp->tape->levRec || comp->tape->levPlay)) ? 0x7f : 0x00;
 	sndLev = mixer(sndLev, lev, lev, conf.snd.vol.tape);
 	// beeper
 	bcSync(comp->beep, -1);
@@ -119,8 +123,8 @@ int sndSync(Computer* comp, int nosync, int fast) {
 		sndMix(comp);
 	}
 
-	bufA.data[bufA.pos++] = sndLev.left >> 3;
-	bufA.data[bufA.pos++] = sndLev.right >> 3;
+	bufA.data[bufA.pos++] = sndLev.left >> 2;
+	bufA.data[bufA.pos++] = sndLev.right >> 2;
 	bufA.pos &= 0xfff;
 
 	smpCount++;

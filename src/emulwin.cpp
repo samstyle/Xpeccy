@@ -414,7 +414,8 @@ void MainWin::paintEvent(QPaintEvent*) {
 
 void MainWin::keyPressEvent(QKeyEvent *ev) {
 	// if (ev->isAutoRepeat()) return;
-	keyEntry kent = getKeyEntry(ev->nativeScanCode());
+	int keyid = qKey2id(ev->key());
+	keyEntry kent = getKeyEntry(keyid);
 	if (pckAct->isChecked()) {
 		keyPressXT(comp->keyb, kent.keyCode);
 		if (!kent.zxKey.key2)			// don't press 2-key keys in PC-mode
@@ -587,7 +588,8 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 }
 
 void MainWin::keyReleaseEvent(QKeyEvent *ev) {
-	keyEntry kent = getKeyEntry(ev->nativeScanCode());
+	int keyid = qKey2id(ev->key());
+	keyEntry kent = getKeyEntry(keyid);
 	gbRelease(comp, kent.name);
 	if (pckAct->isChecked()) {
 		keyReleaseXT(comp->keyb, kent.keyCode);
