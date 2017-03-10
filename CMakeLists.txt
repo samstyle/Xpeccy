@@ -11,7 +11,7 @@ include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
 
 set(INCLUDIRS ${CMAKE_BINARY_DIR})
 
-if(UNIX)
+if(UNIX OR APPLE)
 	set(INC_PATHS local/include local/include/z80ex include/z80ex include)
 	set(LIB_PATHS lib lib64 local/lib local/lib64)
 elseif(WIN32)

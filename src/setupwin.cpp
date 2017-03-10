@@ -1014,7 +1014,7 @@ void SetupWin::diskToRaw() {
 	if (idx.size() == 0) return;
 	QString dir = QFileDialog::getExistingDirectory(this,"Save file(s) to...","",QFileDialog::DontUseNativeDialog | QFileDialog::ShowDirsOnly);
 	if (dir == "") return;
-	std::string sdir = std::string(dir.toLocal8Bit().data()) + std::string(SLASH);
+	std::string sdir = std::string(dir.toLocal8Bit().data()) + SLASH;
 	Floppy* flp = comp->dif->fdc->flop[ui.disktabs->currentIndex()];
 	int savedFiles = 0;
 	for (int i=0; i<idx.size(); i++) {

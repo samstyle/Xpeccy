@@ -1,12 +1,6 @@
 #include <string.h>
 #include "filetypes.h"
 
-#if __linux || __APPLE
-#define SLSH '/'
-#elif __WIN32
-#define SLSH '\\'
-#endif
-
 void cutSpaces(char* name) {
 	for (int i = 7; i > 0; i--) {		// cut last spaces from 8-char name
 		if (name[i] == ' ') {

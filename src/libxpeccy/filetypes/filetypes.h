@@ -11,9 +11,11 @@
 #if __linux || __APPLE__
 	#define ENVHOME "HOME"
 	#define SLASH "/"
+	#define SLSH '/'
 #elif _WIN32
 	#define ENVHOME "HOMEPATH"
 	#define SLASH "\\"
+	#define SLSH '\\'
 #endif
 
 enum {

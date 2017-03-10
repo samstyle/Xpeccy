@@ -159,9 +159,10 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 	char pageBuf[0x4000];
 	int prts = 0;
 	prf->zx->mem->romMask = 0x03;
+	prf->zx->romsize = 0x10000;
 	if (rset == NULL) {		// romset not found : fill all ROM with 0xFF
 		memset(pageBuf,0xff,0x4000);
-		for (i=0; i<16; i++) {
+		for (i = 0; i < 32; i++) {
 			memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
 		}
 	} else {			// romset found
@@ -176,9 +177,10 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 				if (prts > 8) prf->zx->mem->romMask = 0x0f;
 				if (prts > 16) prf->zx->mem->romMask = 0x1f;
 				if (prts > 32) prts = 32;
+				prf->zx->romsize = (prts << 14);	// not really
 				file.seekg(0,std::ios_base::beg);
 				for (i = 0; i < prts; i++) {
-					prf->zx->romsize = file.read(pageBuf,0x4000);
+					file.read(pageBuf,0x4000);
 					memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
 				}
 				memset(pageBuf,0xff,0x4000);
@@ -200,7 +202,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 					file.open(fpath.c_str(),std::ios::binary);
 					if (file.good()) {
 						file.seekg(rset->roms[i].part << 14);
-						prf->zx->romsize = file.read(pageBuf,0x4000);
+						file.read(pageBuf,0x4000);
 					} else {
 						printf("Can't open rom '%s:%i'\n",rset->roms[i].path.c_str(),rset->roms[i].part);
 						memset(pageBuf,0xff,0x4000);
@@ -223,7 +225,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 				file.read(pageBuf,0x4000);
 				gsSetRom(prf->zx->gs,1,pageBuf);
 			} else {
-				//			printf("Can't load gs rom '%s'\n",prof->gsFile.c_str());
+//				printf("Can't load gs rom '%s'\n",prof->gsFile.c_str());
 				gsSetRom(prf->zx->gs,0,pageBuf);
 				gsSetRom(prf->zx->gs,1,pageBuf);
 			}
