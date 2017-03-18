@@ -477,7 +477,13 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				rzxWin->stop();
 				break;
 			case Qt::Key_K:
-				keywin->show();
+				if (keywin->isVisible()) {
+					keywin->close();
+				} else {
+					keywin->show();
+					activateWindow();
+					raise();
+				}
 				break;
 			case Qt::Key_N:
 				conf.vid.noFlick ^= 1;

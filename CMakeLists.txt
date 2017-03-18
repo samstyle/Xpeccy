@@ -4,68 +4,11 @@ file(STRINGS "Release" XVER)
 
 #set(XVER "0.6.20160119")
 
-#set(CMAKE_C_COMPILER clang)
-#set(CMAKE_CXX_COMPILER clang++)
+#set(CMAKE_C_COMPILER gcc)
+#set(CMAKE_CXX_COMPILER g++)
 
 include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
-
-set(INCLUDIRS ${CMAKE_BINARY_DIR})
-
-if(UNIX OR APPLE)
-	set(INC_PATHS local/include local/include/z80ex include/z80ex include)
-	set(LIB_PATHS lib lib64 local/lib local/lib64)
-elseif(WIN32)
-	set(INC_PATHS ${INCLUDE} ${PATH})
-	set(LIB_PATHS ${LIBPATH} ${PATH})
-endif()
-
-file(GLOB SOURCES
-	./src/*.cpp
-	./src/xcore/*.cpp
-	./src/xgui/*.cpp
-	./src/libxpeccy/*.c
-	./src/libxpeccy/cpu/*.c
-	./src/libxpeccy/cpu/*/*.c
-	./src/libxpeccy/sound/*.c
-	./src/libxpeccy/video/*.c
-	./src/libxpeccy/hardware/*.c
-	./src/libxpeccy/filetypes/*.c
-	./src/libxpeccy/filetypes/*.cpp
-	./src/libxpeccy/filetypes/unpackers/*.c
-	./src/libxpeccy/filetypes/unpackers/lh1/*.c
-if(WIN32)
-	./xpeccy.rc
-endif(WIN32)
-)
-file(GLOB HEADERS
-	./src/*.h
-	./src/xcore/*.h
-	./src/xgui/*.h
-	./src/libxpeccy/*.h
-	./src/libxpeccy/cpu/*.h
-	./src/libxpeccy/cpu/*/*.h
-	./src/libxpeccy/sound/*.h
-	./src/libxpeccy/video/*.h
-	./src/libxpeccy/hardware/*.h
-	./src/libxpeccy/filetypes/*.h
-	./src/libxpeccy/filetypes/unpackers/*.h
-	./src/libxpeccy/filetypes/unpackers/lh1/*.h
-)
-file(GLOB UIFILES ./ui/*.ui)
-set(QRCFILES ./xpeccy.qrc)
-set(MOCFILES
-	./src/ethread.h
-	./src/emulwin.h
-	./src/debuger.h
-	./src/dbg_sprscan.h
-	./src/dbg_memfill.h
-	./src/dbg_finder.h
-	./src/watcher.h
-	./src/setupwin.h
-	./src/xgui/xgui.h
-)
-
-# add_definitions(-DVERSION=${XVER})
+include(${CMAKE_ROOT}/Modules/CPack.cmake)
 
 # endianess
 
@@ -77,6 +20,8 @@ else()
 	add_definitions(-DWORDS_LITTLE_ENDIAN)
 endif()
 
+# compilation flags
+
 set(CMAKE_C_FLAGS "-std=gnu99 -Wall -O2 ${CMAKE_C_FLAGS}")
 set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG ${CMAKE_C_FLAGS_RELEASE}")
 set(CMAKE_C_FLAGS_DEBUG "-g -DISDEBUG ${CMAKE_C_FLAGS_DEBUG}")
@@ -84,6 +29,94 @@ set(CMAKE_C_FLAGS_DEBUG "-g -DISDEBUG ${CMAKE_C_FLAGS_DEBUG}")
 set(CMAKE_CXX_FLAGS "-Wall -O2 ${CMAKE_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG ${CMAKE_CXX_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -DISDEBUG ${CMAKE_CXX_FLAGS_DEBUG}")
+
+# OS-depended section
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+
+	set(INC_PATHS local/include include)
+	set(LIB_PATHS lib lib64 local/lib local/lib64)
+
+	if ("${PACK}" STREQUAL "rpm")
+
+	# RPM package
+
+	message(STATUS "Package type : RPM")
+	set(CPACK_GENERATOR "RPM")
+	set(CPACK_RPM_PACKAGE_LICENSE "MIT")
+	set(CPACK_RPM_PACKAGE_GROUP "Games")
+
+	else ()
+
+	# DEB package
+
+	message(STATUS "Package type : DEB")
+	set(CPACK_GENERATOR "DEB")
+	set(CPACK_DEBIAN_PACKAGE_SECTION "Games")
+	set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+
+	endif()
+
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+
+	set(INC_PATHS local/include include)
+	set(LIB_PATHS lib lib64 local/lib local/lib64)
+
+	set(CPACK_GENERATOR "DragNDrop")
+	set(CPACK_DMG_NAME "Xpeccy")
+	set(CPACK_DMG_FORMAT UDZO)
+
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+
+	set(INC_PATHS ${INCLUDE} ${PATH})
+	set(LIB_PATHS ${LIBPATH} ${PATH})
+
+else()
+
+	message(ERROR "Unsupported system : ${CMAKE_SYSTEM_NAME}")
+
+endif()
+
+set(INCLUDIRS ${CMAKE_BINARY_DIR})
+
+# sources
+file(GLOB SOURCES
+	./src/*.cpp
+	./src/*/*.cpp
+	./src/*/*.c
+	./src/*/*/*.c
+	./src/*/*/*/*.c
+	./src/*/*/*/*/*.c
+	./xpeccy.rc
+)
+
+# headers
+file(GLOB HEADERS
+	./src/*.h
+	./src/*/*.h
+	./src/*/*/*.h
+	./src/*/*/*/*.h
+	./src/*/*/*/*/*.h
+)
+
+# Qt user interface
+file(GLOB UIFILES ./ui/*.ui)
+
+# Qt resources
+set(QRCFILES ./xpeccy.qrc)
+
+# Qt moc files
+set(MOCFILES
+	./src/ethread.h
+	./src/emulwin.h
+	./src/debuger.h
+	./src/dbg_sprscan.h
+	./src/dbg_memfill.h
+	./src/dbg_finder.h
+	./src/watcher.h
+	./src/setupwin.h
+	./src/xgui/xgui.h
+)
 
 # Qt4 / Qt5
 
@@ -163,15 +196,7 @@ add_executable(xpeccy WIN32
 
 target_link_libraries(xpeccy ${LIBRARIES})
 
-# end. print messages
-
-message(STATUS "\n")
-message(STATUS "Project will be compiled with following options:")
-
-if(UNIX)
-	install_targets(/bin xpeccy)
-	install(FILES images/xpeccy.png DESTINATION share/icons)
-	install(FILES Xpeccy.desktop DESTINATION share/applications)
+# packaging
 
 set(CPACK_PACKAGE_NAME "Xpeccy")
 set(CPACK_PACKAGE_VERSION ${XVER})
@@ -180,33 +205,18 @@ set(CPACK_PACKAGE_DESCRIPTION "ZX Spectrum emulator")
 set(CPACK_PACKAGE_VENDOR "SAM style")
 set(CPACK_PACKAGE_CONTACT "samstyle@list.ru")
 
-if ("${PACK}" STREQUAL "rpm")
+# install
 
-# RPM package
+install_targets(/bin xpeccy)
+install(FILES images/xpeccy.png DESTINATION share/icons)
+install(FILES Xpeccy.desktop DESTINATION share/applications)
 
-message(STATUS "Package type : RPM")
-set(CPACK_GENERATOR "RPM")
-set(CPACK_RPM_PACKAGE_LICENSE "MIT")
-set(CPACK_RPM_PACKAGE_GROUP "Games")
+# print messages
 
-else ()
-
-# DEB package
-
-message(STATUS "Package type : DEB")
-set(CPACK_GENERATOR "DEB")
-set(CPACK_DEBIAN_PACKAGE_SECTION "Games")
-set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
-
-endif()
-
-include(${CMAKE_ROOT}/Modules/CPack.cmake)
-
-endif(UNIX)
-
-# result messages
-
-message(STATUS "Version: ${XVER}")
+message(STATUS "\n")
+message(STATUS "Project will be compiled with following options:")
+message(STATUS "OS : ${CMAKE_SYSTEM_NAME}")
+message(STATUS "Version : ${XVER}")
 
 if(QT5BUILD)
 	message(STATUS "Qt version : 5")

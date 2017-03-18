@@ -123,7 +123,6 @@ class DebugWin : public QDialog {
 		void fillZ80();
 		void fillFlags();
 		void fillMem();
-		void fillDump();
 		void fillStack();
 		void fillFDC();
 		void fillRZX();
@@ -150,6 +149,7 @@ class DebugWin : public QDialog {
 		void saveLabels();
 
 		int fillDisasm();
+		void fillDump();
 		void fillGBoy();
 
 		void setZ80();
@@ -162,7 +162,6 @@ class DebugWin : public QDialog {
 		void putBreakPoint();
 		void chaCellProperty(QAction*);
 		void goToBrk(QModelIndex);
-
 
 		void doMemView();
 		void doFill();

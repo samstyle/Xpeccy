@@ -163,6 +163,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.dasmTable,SIGNAL(cellChanged(int,int)),this,SLOT(dasmEdited(int,int)));
 	connect(ui.dasmTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
 	connect(ui.dasmTable,SIGNAL(rqRefill()),this,SLOT(fillDisasm()));
+	connect(ui.dasmTable,SIGNAL(rqRefill()),this,SLOT(fillDump()));
 
 	connect(ui.actSearch,SIGNAL(triggered(bool)),this,SLOT(doFind()));
 	connect(ui.actFill,SIGNAL(triggered(bool)),this,SLOT(doFill()));
@@ -1293,7 +1294,7 @@ int DebugWin::fillDisasm() {
 				default: sadr = "EXT"; break;
 			}
 			sadr.append(QString(":%0:%1").arg(gethexbyte(mptr->num)).arg(gethexword(drow.adr)));
-			sadr.toUpper();
+            sadr = sadr.toUpper();
 		} else {
 			sadr = gethexword(drow.adr);
 		}
@@ -1523,11 +1524,17 @@ void DebugWin::fillDump() {
 	for (row = 0; row < ui.dumpTable->rowCount(); row++) {
 		ui.dumpTable->item(row,0)->setText(gethexword(adr));
 		ui.dumpTable->item(row,9)->setText(getDumpString(comp->mem, adr));
-		bgcol = (row & 1) ? QColor(255,255,255) : QColor(230,230,230);
+		bgcol = (row & 1) ? colBG0 : colBG1;
 		ui.dumpTable->item(row, 0)->setBackground(bgcol);
 		ui.dumpTable->item(row, 9)->setBackground(bgcol);
 		for (col = 1; col < 9; col++) {
-			ccol = (*getBrkPtr(comp, adr) & MEM_BRK_ANY) ? QColor(200,64,64) : bgcol;
+			if (getBrk(comp, adr) & MEM_BRK_ANY) {
+				ccol = colBRK;
+			} else if ((adr >= ui.dasmTable->blockStart) && (adr <= ui.dasmTable->blockEnd)) {
+				ccol = colSEL;
+			} else {
+				ccol = bgcol;
+			}
 			ui.dumpTable->item(row,col)->setBackgroundColor(ccol);
 			ui.dumpTable->item(row,col)->setText(gethexbyte(memRd(comp->mem, adr)));
 			adr++;
@@ -1864,6 +1871,7 @@ void xTableWidget::keyPressEvent(QKeyEvent *ev) {
 
 void xTableWidget::mousePressEvent(QMouseEvent* ev) {
 	int row = rowAt(ev->pos().y());
+	// if ((row < 0) || (row >= rowCount())) return;
 	int adr = item(row,0)->data(Qt::UserRole).toInt();
 	switch (ev->button()) {
 		case Qt::MiddleButton:
@@ -1903,6 +1911,7 @@ void xTableWidget::mouseReleaseEvent(QMouseEvent* ev) {
 
 void xTableWidget::mouseMoveEvent(QMouseEvent* ev) {
 	int row = rowAt(ev->pos().y());
+	// if ((row < 0) || (row >= rowCount())) return;
 	int adr = item(row,0)->data(Qt::UserRole).toInt();
 	// int len;
 	if ((ev->modifiers() == Qt::NoModifier) && (ev->buttons() & Qt::LeftButton) && (adr != blockStart) && (adr != blockEnd) && (markAdr >= 0)) {
