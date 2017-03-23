@@ -35,6 +35,19 @@ typedef struct {
 	QString imgName;
 } xLed;
 
+class keyWindow : public QLabel {
+	Q_OBJECT
+	public:
+		keyWindow(QWidget* = NULL);
+		Keyboard* kb;
+	private:
+		xKey xk;
+	protected:
+		void paintEvent(QPaintEvent*);
+		void mousePressEvent(QMouseEvent*);
+		void mouseReleaseEvent(QMouseEvent*);
+};
+
 class MainWin : public QWidget {
 	Q_OBJECT
 	public:
@@ -57,7 +70,7 @@ class MainWin : public QWidget {
 		QTimer cmosTimer;
 		QTimer timer;
 		xThread ethread;
-		QLabel* keywin;
+		keyWindow* keywin;
 		QImage scrImg;
 		QByteArray font;
 

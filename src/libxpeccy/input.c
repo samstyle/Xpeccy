@@ -127,6 +127,29 @@ void keyRelease(Keyboard* keyb, xKey key, int mode) {
 	i = 0;
 }
 
+void keyTrigger(Keyboard* keyb, xKey key, int mode) {
+	unsigned char* tab;
+	keyScan* ktab;
+	switch (mode) {
+		case 1: tab = keyb->extMap; ktab = keyTab; break;	// Profi ext
+		case 2: tab = keyb->msxMap; ktab = msxKeyTab; break;	// MSX
+		default: tab = keyb->map; ktab = keyTab; break;	// common
+	}
+	int i = 0;
+	while (ktab[i].key) {
+		if (ktab[i].key == (key.key1 & 0x7f)) {
+			tab[ktab[i].row] ^= ktab[i].mask;
+			if (key.key1 & 0x80) tab[ktab[i].row] |= 0x20;
+		}
+		if (ktab[i].key == (key.key2 & 0x7f)) {
+			tab[ktab[i].row] ^= ktab[i].mask;
+			if (key.key2 & 0x80) tab[ktab[i].row] |= 0x20;
+		}
+		i++;
+	}
+	i = 0;
+}
+
 // read 40-key zxKeyboard port.
 // prt.high = rows selector.
 // prt.bit0 = use profi ext keys

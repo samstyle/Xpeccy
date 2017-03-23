@@ -88,6 +88,7 @@ unsigned char keyInput(Keyboard*,unsigned short);
 void keyPress(Keyboard*,xKey,int);
 void keyRelease(Keyboard*,xKey,int);
 void keyReleaseAll(Keyboard*);
+void keyTrigger(Keyboard*, xKey, int);
 
 void keyPressXT(Keyboard*,int);
 void keyReleaseXT(Keyboard*,int);

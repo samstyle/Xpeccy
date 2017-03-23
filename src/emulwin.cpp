@@ -39,7 +39,78 @@ unsigned char prvScr[1024 * 512 * 3];		// copy of last 2:1 image (for noflic)
 
 // temp emulation
 unsigned short pc,af,de,ix;
-//int blk;
+
+// onscreen keyboard
+
+unsigned char kwMap[4][10] = {
+	{'1','2','3','4','5','6','7','8','9','0'},
+	{'q','w','e','r','t','y','u','i','o','p'},
+	{'a','s','d','f','g','h','j','k','l','E'},
+	{'C','z','x','c','v','b','n','m','S',' '}
+};
+
+keyWindow::keyWindow(QWidget* p):QLabel(p) {
+	kb = NULL;
+	xk.key1 = 0;
+	xk.key2 = 0;
+}
+
+void keyWindow::paintEvent(QPaintEvent*) {
+	QPainter pnt;
+	int wid = width() / 10 + 1;
+	int hig = height() / 4;
+	pnt.begin(this);
+	pnt.fillRect(QRectF(0,0,1,1), qRgba(0,0,0,0));
+	if (~kb->map[0] & 2) {		// SS
+		pnt.fillRect(8 * wid, 3 * hig, wid, hig, qRgba(64, 160, 160, 100));
+	}
+	if (~kb->map[7] & 1) {		// CS
+		pnt.fillRect(0, 3 * hig, wid, hig, qRgba(64, 160, 160, 100));
+	}
+	pnt.drawPixmap(0, 0, QPixmap(":/images/keymap.png"));
+	pnt.end();
+}
+
+void keyWindow::mousePressEvent(QMouseEvent* ev) {
+	if (!kb) return;
+	int row;
+	int col;
+	if (ev->button() == Qt::RightButton) {
+		keyReleaseAll(kb);
+		xk.key1 = 0;
+	} else {
+		row = ev->y() * 4 / height();
+		col = ev->x() * 10 / width();
+		xk.key1 = kwMap[row][col];
+		if ((xk.key1 == 'S') || (xk.key1 == 'C')) {
+			keyTrigger(kb, xk, 0);
+			update();
+		} else {
+			keyPress(kb, xk, 0);
+		}
+	}
+}
+
+void keyWindow::mouseReleaseEvent(QMouseEvent* ev) {
+	if (!kb) return;
+	switch(xk.key1) {
+		case 'C':
+			if (kb->map[0] & 2) break;
+			keyRelease(kb, xk, 0);
+			update();
+			break;
+		case 'S':
+			if (kb->map[7] & 1) break;
+			keyRelease(kb, xk, 0);
+			update();
+			break;
+		default:
+			keyRelease(kb, xk, 0);
+			break;
+	}
+}
+
+// mainwin
 
 void MainWin::updateHead() {
 	QString title(XPTITLE);
@@ -167,7 +238,7 @@ MainWin::MainWin() {
 
 	initUserMenu();
 
-	keywin = new QLabel;
+	keywin = new keyWindow();
 	QPixmap pxm(":/images/keymap.png");
 	keywin->setPixmap(pxm);
 	keywin->setFixedSize(pxm.size());
@@ -246,7 +317,8 @@ void MainWin::onTimer() {
 	if (conf.snd.enabled && (conf.snd.mute || isActiveWindow())) sndPlay();
 // if window is not active release keys & buttons, release mouse
 	if (!isActiveWindow()) {
-		keyReleaseAll(comp->keyb);
+		if (!keywin->isVisible())
+			keyReleaseAll(comp->keyb);
 		comp->mouse->buttons = 0xff;
 		unsetCursor();
 		if (grabMice) {
@@ -1078,6 +1150,7 @@ void MainWin::setProfile(std::string nm) {
 	}
 	comp = conf.prof.cur->zx;
 	ethread.comp = comp;
+	keywin->kb = comp->keyb;
 	nsAct->setChecked(comp->vid->noScreen);
 	updateWindow();
 	if (comp->firstRun) {
