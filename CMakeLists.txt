@@ -8,7 +8,6 @@ file(STRINGS "Release" XVER)
 #set(CMAKE_CXX_COMPILER g++)
 
 include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
-include(${CMAKE_ROOT}/Modules/CPack.cmake)
 
 # endianess
 
@@ -32,10 +31,18 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g -DISDEBUG ${CMAKE_CXX_FLAGS_DEBUG}")
 
 # OS-depended section
 
+set(CPACK_PACKAGE_NAME "Xpeccy")
+set(CPACK_PACKAGE_VERSION ${XVER})
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_${CMAKE_SYSTEM_PROCESSOR}")
+set(CPACK_PACKAGE_DESCRIPTION "ZX Spectrum emulator")
+set(CPACK_PACKAGE_VENDOR "SAM style")
+set(CPACK_PACKAGE_CONTACT "samstyle@list.ru")
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 	set(INC_PATHS local/include include)
 	set(LIB_PATHS lib lib64 local/lib local/lib64)
+
 
 	if ("${PACK}" STREQUAL "rpm")
 
@@ -57,6 +64,11 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 	endif()
 
+#	install_targets(/bin xpeccy)
+	install(FILES ${CMAKE_BINARY_DIR}/xpeccy DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE WORLD_READ WORLD_EXECUTE GROUP_READ GROUP_EXECUTE)
+	install(FILES images/xpeccy.png DESTINATION share/icons)
+	install(FILES Xpeccy.desktop DESTINATION share/applications)
+
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 	set(INC_PATHS local/include include)
@@ -66,8 +78,21 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	set(CPACK_DMG_NAME "Xpeccy")
 	set(CPACK_DMG_FORMAT UDZO)
 
+	set(BUNDLE_NAME ${CPACK_DMG_NAME}.app)
+	set(BUNDLE_ICON images/xpeccy.icns)
+	set(BINDIR ${BUNDLE_NAME}/Contents/MacOS)
+#	set(LIBDIR ${BINDIR})
+#	set(RLIBDIR ${BUNDLE_NAME}/Contents/Frameworks)
+	set(SHAREDIR ${BUNDLE_NAME}/Contents/Resources)
+#	set(PLUGINSDIR ${BUNDLE_NAME}/Contents/PlugIns)
+#	set(IMPORTSDIR ${BINDIR})
+
+	install(FILES ${CMAKE_BINARY_DIR}/xpeccy DESTINATION ${BINDIR} PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE WORLD_READ WORLD_EXECUTE GROUP_READ GROUP_EXECUTE)
+	install(FILES images/xpeccy.png DESTINATION ${SHAREDIR})
+
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
+	set(LIBRARIES ${LIBRARIES} winmm.dll)
 	set(INC_PATHS ${INCLUDE} ${PATH})
 	set(LIB_PATHS ${LIBPATH} ${PATH})
 
@@ -180,10 +205,6 @@ endif(ZLIB_FOUND)
 
 # other
 
-if(WIN32)
-	set(LIBRARIES ${LIBRARIES} winmm.dll)
-endif(WIN32)
-
 include_directories(${INCLUDIRS})
 
 add_executable(xpeccy WIN32
@@ -196,20 +217,9 @@ add_executable(xpeccy WIN32
 
 target_link_libraries(xpeccy ${LIBRARIES})
 
-# packaging
-
-set(CPACK_PACKAGE_NAME "Xpeccy")
-set(CPACK_PACKAGE_VERSION ${XVER})
-set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}_${CPACK_PACKAGE_VERSION}_${CMAKE_SYSTEM_PROCESSOR}")
-set(CPACK_PACKAGE_DESCRIPTION "ZX Spectrum emulator")
-set(CPACK_PACKAGE_VENDOR "SAM style")
-set(CPACK_PACKAGE_CONTACT "samstyle@list.ru")
+include(${CMAKE_ROOT}/Modules/CPack.cmake)
 
 # install
-
-install_targets(/bin xpeccy)
-install(FILES images/xpeccy.png DESTINATION share/icons)
-install(FILES Xpeccy.desktop DESTINATION share/applications)
 
 # print messages
 
