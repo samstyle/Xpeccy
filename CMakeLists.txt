@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.11)
 project(xpeccy)
 file(STRINGS "Release" XVER)
 
@@ -81,20 +81,16 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	set(BUNDLE_NAME ${CPACK_DMG_NAME}.app)
 	set(BUNDLE_ICON images/xpeccy.icns)
 	set(BINDIR ${BUNDLE_NAME}/Contents/MacOS)
-#	set(LIBDIR ${BINDIR})
-#	set(RLIBDIR ${BUNDLE_NAME}/Contents/Frameworks)
 	set(SHAREDIR ${BUNDLE_NAME}/Contents/Resources)
-#	set(PLUGINSDIR ${BUNDLE_NAME}/Contents/PlugIns)
-#	set(IMPORTSDIR ${BINDIR})
 
 	install(FILES ${CMAKE_BINARY_DIR}/xpeccy DESTINATION ${BINDIR} PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE WORLD_READ WORLD_EXECUTE GROUP_READ GROUP_EXECUTE)
-	install(FILES images/xpeccy.png DESTINATION ${SHAREDIR})
+	install(FILES images/xpeccy.icns DESTINATION ${SHAREDIR})
 
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
 	set(LIBRARIES ${LIBRARIES} winmm.dll)
-	set(INC_PATHS ${INCLUDE} ${PATH})
-	set(LIB_PATHS ${LIBPATH} ${PATH})
+	set(INC_PATHS $ENV{INCLUDE} $ENV{PATH})
+	set(LIB_PATHS $ENV{LIBPATH} $ENV{PATH})
 
 else()
 
@@ -155,16 +151,20 @@ if("${QT5BUILD}")
 	set(CPACK_RPM_PACKAGE_REQUIRES "libQt5Gui5 >= 5.3, libQt5Widgets5 >= 5.3")
 	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5gui5 (>=5.3), libqt5widgets5 (>=5.3)")
 
+	set(QT_VER ${Qt5Widgets_VERSION})
+
 else()
 
-	find_package(Qt4 REQUIRED QtCore QtGui)
+	find_package(Qt4 COMPONENTS QtCore QtGui REQUIRED)
+	include(${QT_USE_FILE})
 	qt4_add_resources(RESOURCES ${QRCFILES})
 	qt4_wrap_ui(UIHEADERS ${UIFILES})
 	qt4_wrap_cpp(MOCHEADERS ${MOCFILES})
-	include(${QT_USE_FILE})
 	set(LIBRARIES ${LIBRARIES} ${QT_LIBRARIES})
 	set(CPACK_RPM_PACKAGE_REQUIRES "libqt4 >= 4.6, libqt4-x11 >= 4.6")
 	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqtcore4 (>=4.6), libqtgui4 (>=4.6)")
+
+	set(QT_VER ${QT_VERSION_MAJOR}.${QT_VERSION_MINOR}.${QT_VERSION_PATCH})
 
 endif()
 
@@ -224,21 +224,17 @@ include(${CMAKE_ROOT}/Modules/CPack.cmake)
 # print messages
 
 message(STATUS "\n")
-message(STATUS "Project will be compiled with following options:")
+message(STATUS "Project will be compiled with following options:\n")
+message(STATUS "Build type : ${CMAKE_BUILD_TYPE}")
+message(STATUS "Xpeccy version : ${XVER}")
 message(STATUS "OS : ${CMAKE_SYSTEM_NAME}")
-message(STATUS "Version : ${XVER}")
-
-if(QT5BUILD)
-	message(STATUS "Qt version : 5")
-else()
-	message(STATUS "Qt version : 4")
-endif()
+message(STATUS "Qt version : ${QT_VER}")
+message(STATUS "SDL version : ${SDL_VERSION_STRING}")
 
 if (BIG_ENDIAN)
-	message(STATUS "Endianness: big endian")
+	message(STATUS "Endianness: BE")
 else ()
-	message(STATUS "Endianness: little endian")
+	message(STATUS "Endianness: LE")
 endif()
 
-message(STATUS "Build type : ${CMAKE_BUILD_TYPE}")
 message(STATUS "\n")

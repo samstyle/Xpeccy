@@ -16,8 +16,10 @@ MemViewer::MemViewer(QWidget* p):QDialog(p) {
 	connect(ui.sbWidth, SIGNAL(valueChanged(int)), this, SLOT(fillImage()));
 	connect(ui.sbHeight, SIGNAL(valueChanged(int)), this, SLOT(fillImage()));
 	connect(ui.sbPage, SIGNAL(valueChanged(int)), this, SLOT(fillImage()));
+
 	connect(ui.cbInvert, SIGNAL(toggled(bool)), this, SLOT(fillImage()));
 	connect(ui.cbGrid, SIGNAL(toggled(bool)), this, SLOT(fillImage()));
+	connect(ui.cbScreen, SIGNAL(toggled(bool)), this, SLOT(fillImage()));
 
 	connect(ui.adrHex, SIGNAL(textChanged(QString)), this, SLOT(hexChanged()));
 	connect(ui.sbAddr, SIGNAL(valueChanged(int)), this, SLOT(adrChanged(int)));
@@ -40,6 +42,9 @@ void MemViewer::saveSprite() {
 	int adr = ui.sbAddr->value();
 	int siz = ui.sbWidth->value() * ui.sbHeight->value() * 8;
 	QByteArray spr;
+	if (ui.cbScreen->isChecked()) {
+		siz = 0x1800;
+	}
 	for(int i = 0; i < siz; i++) {
 		spr.append(rdMem(adr));
 		adr++;
@@ -71,7 +76,14 @@ void MemViewer::fillImage() {
 	QImage img(256,256, QImage::Format_RGB888);
 	img.fill(qRgb(64,64,64));
 	int adr = ui.sbAddr->value();
-	int high = ui.sbHeight->value() << 3;
+	int wid, high;
+	if (ui.cbScreen->isChecked()) {
+		wid = 32;
+		high = 192;
+	} else {
+		wid = ui.sbWidth->value();
+		high = ui.sbHeight->value() << 3;
+	}
 	unsigned char byt;
 	unsigned char inv = ui.cbInvert->isChecked() ? 0xff : 0x00;
 	int bit;
@@ -87,7 +99,7 @@ void MemViewer::fillImage() {
 	QRgb clr;
 	int alt;
 	for (row = 0; row < high; row++) {
-		for (col = 0; col < ui.sbWidth->value(); col++) {
+		for (col = 0; col < wid; col++) {
 			byt = rdMem(adr) ^ inv;
 			alt = ((row >> 3) ^ col) & 1;
 			adr++;
@@ -97,10 +109,19 @@ void MemViewer::fillImage() {
 				byt <<= 1;
 			}
 		}
+		if (ui.cbScreen->isChecked()) {
+			adr += 0xe0;
+			if ((row & 0x07) == 0x07) {
+				adr -= 0x7e0;
+				if ((row & 0x3f) == 0x3f) {
+					adr += 0x700;
+				}
+			}
+		}
 	}
 	QPixmap pxm = QPixmap::fromImage(img.scaled(512,512));
 	ui.view->setPixmap(pxm);
-	int pg = ui.sbWidth->value() << 3;
+	int pg = wid << 3;
 	ui.scrollbar->setPageStep(pg);
 	ui.scrollbar->setSingleStep(pg);
 }
