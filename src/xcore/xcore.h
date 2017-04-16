@@ -143,6 +143,7 @@ xLayout* findLayout(std::string);
 #define	YESNO(cnd) ((cnd) ? "yes" : "no")
 
 struct xConfig {
+	unsigned running:1;
 	unsigned sysclock:1;		// system time in cmos
 	unsigned storePaths:1;		// store tape/disk paths
 	unsigned defProfile:1;		// start @ default profile

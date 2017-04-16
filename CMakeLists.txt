@@ -8,6 +8,7 @@ file(STRINGS "Release" XVER)
 #set(CMAKE_C_COMPILER gcc)
 #set(CMAKE_CXX_COMPILER g++)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
 
 # endianess
@@ -147,7 +148,7 @@ set(MOCFILES
 
 # Qt4 / Qt5
 
-if("${QT5BUILD}")
+if(${QT5BUILD})
 
 	find_package(Qt5Widgets)
 	set(LIBRARIES ${LIBRARIES} Qt5::Widgets)
@@ -159,7 +160,7 @@ if("${QT5BUILD}")
 
 	set(QT_VER ${Qt5Widgets_VERSION})
 
-else()
+else(${QT5BUILD})
 
 	find_package(Qt4 COMPONENTS QtCore QtGui REQUIRED)
 	include(${QT_USE_FILE})
@@ -172,31 +173,46 @@ else()
 
 	set(QT_VER ${QT_VERSION_MAJOR}.${QT_VERSION_MINOR}.${QT_VERSION_PATCH})
 
-endif()
+endif(${QT5BUILD})
+
 
 # alsa (sound, linux)
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-	find_package(ALSA)
-	if (ALSA_FOUND)
-		add_definitions(-DHAVEALSA)
-		set(INCLUDIRS ${INCLUDIRS} ${ALSA_INCLUDE_DIR})
-		set(LIBRARIES ${LIBRARIES} ${ALSA_LIBRARY})
-		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libasound2 (>=1.0)")
-		set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, libasound2 >= 1.0")
-	endif(ALSA_FOUND)
-endif()
+#if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+#	find_package(ALSA)
+#	if (ALSA_FOUND)
+#		add_definitions(-DHAVEALSA)
+#		set(INCLUDIRS ${INCLUDIRS} ${ALSA_INCLUDE_DIR})
+#		set(LIBRARIES ${LIBRARIES} ${ALSA_LIBRARY})
+#		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libasound2 (>=1.0)")
+#		set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, libasound2 >= 1.0")
+#	endif(ALSA_FOUND)
+#endif()
 
 # SDL (sound)
 
-find_package(SDL)
-if(SDL_FOUND)
-	add_definitions(-DHAVESDL)
-	set(INCLUDIRS ${INCLUDIRS} ${SDL_INCLUDE_DIR})
-	set(LIBRARIES ${LIBRARIES} ${SDL_LIBRARY})
-	set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libSDL1.2debian (>=1.2)")
-	set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, SDL >= 1.2")
-endif()
+if(${SDL2BUILD})
+	find_package(SDL2 REQUIRED)
+	if (${SDL2_FOUND})
+		add_definitions(-DHAVESDL2)
+		set(INCLUDIRS ${INCLUDIRS} ${SDL2_INCLUDE_DIR})
+		set(LIBRARIES ${LIBRARIES} ${SDL2_LIBRARY})
+		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libSDL2-2.0-0 (>=2.0)")
+		set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, SDL2 >= 2.0")
+		set(SDL_VER "2.x")
+		message(STATUS "SDL2_INCLUDE_DIR = " ${SDL2_INCLUDE_DIR})
+	endif(${SDL2_FOUND})
+else(${SDL2BUILD})
+	find_package(SDL)
+	if(${SDL_FOUND})
+		add_definitions(-DHAVESDL1)
+		set(INCLUDIRS ${INCLUDIRS} ${SDL_INCLUDE_DIR})
+		set(LIBRARIES ${LIBRARIES} ${SDL_LIBRARY})
+		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libSDL1.2debian (>=1.2)")
+		set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, SDL >= 1.2")
+		set(SDL_VER ${SDL_VERSION_STRING})
+	endif(${SDL_FOUND})
+endif(${SDL2BUILD})
 
 # zlib (for rzx)
 
@@ -243,7 +259,7 @@ message(STATUS "Build type : ${CMAKE_BUILD_TYPE}")
 message(STATUS "Xpeccy version : ${XVER}")
 message(STATUS "OS : ${CMAKE_SYSTEM_NAME}")
 message(STATUS "Qt version : ${QT_VER}")
-message(STATUS "SDL version : ${SDL_VERSION_STRING}")
+message(STATUS "SDL version : ${SDL_VER}")
 
 if (BIG_ENDIAN)
 	message(STATUS "Endianness: BE")

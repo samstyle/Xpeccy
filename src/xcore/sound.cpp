@@ -4,17 +4,12 @@
 #include "xcore.h"
 
 #include <iostream>
-#ifdef HAVESDL
-	#include <SDL.h>
-	#undef main
-#endif
+#include <mutex>
 
-#ifdef _WIN32
-	#include <mmsystem.h>
-#endif
+#include <SDL.h>
+#undef main
 
-#define SF_BUF	1
-int sndFlag = 0;
+extern std::mutex emutex;		// unlock to start emulation cycle
 
 typedef struct {
 	unsigned char data[0x1000];
@@ -138,7 +133,7 @@ int sndSync(Computer* comp, int nosync, int fast) {
 }
 
 void sndCalibrate(Computer* comp) {
-	sndChunks = conf.snd.rate / 50;			// samples / frame
+	// sndChunks = conf.snd.rate / 50;			// samples / frame
 	sndBufSize = conf.snd.chans * sndChunks;	// buffer size
 	nsPerSample = 1e9 / conf.snd.rate;		// ns / sample
 #ifdef ISDEBUG
@@ -165,22 +160,23 @@ void setOutput(const char* name) {
 	if (sndOutput == NULL) {
 		printf("Can't find sound system '%s'. Reset to NULL\n",name);
 		setOutput("NULL");
-	}
-	if (!sndOutput->open()) {
+	} else if (!sndOutput->open()) {
 		printf("Can't open sound system '%s'. Reset to NULL\n",name);
 		setOutput("NULL");
 	}
 	// sndCalibrate();
 }
 
-bool sndOpen() {
-	if (sndOutput == NULL) return true;
-	if (!sndOutput->open()) setOutput("NULL");
+int sndOpen() {
+	if (sndOutput == NULL) return 0;
+	if (!sndOutput->open()) {
+		setOutput("NULL");
+	}
 	bufA.pos = 0;
 	bufB.pos = 0;
 	playPos = 0;
 	pass = 0;
-	return true;
+	return 1;
 }
 
 void sndPlay() {
@@ -215,11 +211,32 @@ void fillBuffer(int len) {
 	}
 }
 
-bool null_open() {return true;}
-void null_play() {}
-void null_close() {}
+// NULL (SDL timer callback for mutex unlocking)
 
-#ifdef HAVESDL
+SDL_TimerID tid;
+
+// 20ms callback. starts if output callback doesn't started by some reason
+Uint32 sdlontimer(Uint32 interval, void* data) {
+	if (conf.running) emutex.unlock();
+	return interval;
+}
+
+int null_open() {
+	tid = SDL_AddTimer(20, &sdlontimer, NULL);
+	if (tid == 0) {
+		printf("Can't set SDL timer : %s\n",SDL_GetError());
+	}
+	sndChunks = conf.snd.rate / 50;
+	return 1;
+}
+
+void null_play() {}
+
+void null_close() {
+	SDL_RemoveTimer(tid);
+}
+
+// SDL
 
 void sdlPlayAudio(void*,Uint8* stream, int len) {
 	if (pass > 2) {
@@ -235,10 +252,14 @@ void sdlPlayAudio(void*,Uint8* stream, int len) {
 	}
 	// SDL_MixAudio(stream, bufB.data, len, SDL_MIX_MAXVOLUME);
 	memcpy(stream, bufB.data, len);
+	if (conf.running) {
+		emutex.unlock();
+	}
 }
 
-bool sdlopen() {
+int sdlopen() {
 //	printf("Open SDL audio device...");
+	int res;
 	SDL_AudioSpec asp;
 	SDL_AudioSpec dsp;
 	asp.freq = conf.snd.rate;
@@ -249,15 +270,17 @@ bool sdlopen() {
 	asp.userdata = NULL;
 	if (SDL_OpenAudio(&asp, &dsp) != 0) {
 		printf("SDL audio device opening...failed\n");
-		return false;
+		res = 0;
+	} else {
+		printf("SDL opened: %i %i\n",dsp.freq, dsp.samples);
+		sndChunks = dsp.samples;
+		bufA.pos = 0;
+		playPos = 0;
+		pass = 0;
+		SDL_PauseAudio(0);
+		res = 1;
 	}
-	printf("SDL opened: %i %i\n",dsp.freq, dsp.samples);
-//	ringPos = 0;
-	bufA.pos = 0;
-	playPos = 0;
-	pass = 0;
-	SDL_PauseAudio(0);
-	return true;
+	return res;
 }
 
 void sdlplay() {
@@ -267,8 +290,8 @@ void sdlclose() {
 	SDL_CloseAudio();
 }
 
-#endif
-
+/*
+ *
 #ifdef __linux
 
 bool oss_open() {
@@ -347,7 +370,9 @@ void alsa_close() {
 
 #endif
 
-#elif _WIN32
+*/
+
+#ifdef _WIN32
 
 // TODO: Windows sound output would be here... someday
 
@@ -402,14 +427,14 @@ void wave_close() {
 OutSys sndTab[] = {
 	{xOutputNone,"NULL",&null_open,&null_play,&null_close},
 #ifdef __linux
-	{xOutputOss,"OSS",&oss_open,&oss_play,&oss_close},
+//	{xOutputOss,"OSS",&oss_open,&oss_play,&oss_close},
 #ifdef HAVEALSA
-	{xOutputAlsa,"ALSA",&alsa_open,&alsa_play,&alsa_close},
+//	{xOutputAlsa,"ALSA",&alsa_open,&alsa_play,&alsa_close},
 #endif
 #elif _WIN32
 //	{xOutputWave,"WaveOut",&wave_open,&wave_play,&wave_close},
 #endif
-#ifdef HAVESDL
+#if defined(HAVESDL1) || defined(HAVESDL2)
 	{xOutputSDL,"SDL",&sdlopen,&sdlplay,&sdlclose},
 #endif
 	{0,NULL,NULL,NULL,NULL}

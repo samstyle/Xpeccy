@@ -87,7 +87,6 @@ class MainWin : public QWidget {
 
 		bool saveChanged();
 		void updateHead();
-		void emuDraw();
 		void screenShot();
 		void putLeds();
 		void convImage();
@@ -118,6 +117,7 @@ class MainWin : public QWidget {
 		void tapStateChanged(int,int);
 	private slots:
 		void onTimer();
+		void emuDraw();
 		void cmosTick();
 		void menuHide();
 		void menuShow();

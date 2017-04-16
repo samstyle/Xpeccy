@@ -4,6 +4,8 @@
 #include "xgui/xgui.h"
 #include "xcore/sound.h"
 
+std::mutex emutex;
+
 unsigned char* blkData = NULL;
 extern unsigned char scrn[1024 * 512 * 3];
 
@@ -11,7 +13,7 @@ xThread::xThread() {
 	sndNs = 0;
 	fast = 0;
 	finish = 0;
-	mtx.lock();
+	emutex.lock();
 }
 
 void xThread::tapeCatch() {
@@ -48,11 +50,12 @@ void xThread::emuCycle() {
 	sndNs = 0;
 	conf->snd.fill = 1;
 	do {
-		// exec 1 opcode (+ INT, NMI)
+		// exec 1 opcode (or handle INT, NMI)
 		sndNs += compExec(comp);
 		if (comp->frmStrobe && !fast) {
 			comp->frmStrobe = 0;
 			memcpy(scrn, comp->vid->scrimg, comp->vid->vBytes);
+			emit picReady();
 		}
 		// if need - request sound buffer update
 		if (sndNs > nsPerSample) {
@@ -71,8 +74,9 @@ void xThread::emuCycle() {
 }
 
 void xThread::run() {
+	waitpic = 1;
 	do {
-		if (!fast) mtx.lock();		// wait until unlocked (MainWin::onTimer() or at exit)
+		if (!fast) emutex.lock();		// wait until unlocked (MainWin::onTimer() or at exit)
 		if (finish) break;
 		if (comp->rzx.start) {
 			comp->rzx.start = 0;
@@ -89,6 +93,6 @@ void xThread::run() {
 			}
 		}
 	} while (1);
-	mtx.unlock();
+	emutex.unlock();
 	exit(0);
 }

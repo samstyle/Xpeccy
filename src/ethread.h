@@ -2,7 +2,8 @@
 #define _ETHREAD_H
 
 #include <QThread>
-#include <QMutex>
+#include <mutex>
+
 #include "xcore/xcore.h"
 
 class xThread : public QThread {
@@ -13,11 +14,13 @@ class xThread : public QThread {
 		unsigned silent:1;	// don't produce sound
 		unsigned block:1;
 		unsigned finish:1;
+		unsigned waitpic:1;	// display thread waits for new picture (basicly: picReady signal enabled)
 		xConfig* conf;
 		Computer* comp;
-		QMutex mtx;
 		int sndNs;
 		void run();
+	signals:
+		void picReady();	// picture ready for display
 	private:
 		void emuCycle();
 		void tapeCatch();
@@ -25,5 +28,7 @@ class xThread : public QThread {
 		void dbgRequest();
 		void tapeSignal(int,int);
 };
+
+extern std::mutex emutex;
 
 #endif

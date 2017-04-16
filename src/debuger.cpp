@@ -49,9 +49,18 @@ void DebugWin::start(Computer* c) {
 	comp->vid->debug = 1;
 	comp->debug = 1;
 	comp->brk = 0;
+
 	show();
-	memViewer->move(memViewer->winPos);
-	if (memViewer->vis) memViewer->show();
+
+	int wd = ui.dasmTable->height() / ui.dasmTable->rowCount();
+	ui.dasmTable->verticalHeader()->setDefaultSectionSize(wd);
+	wd = ui.dumpTable->height() / ui.dumpTable->rowCount();
+	ui.dumpTable->verticalHeader()->setDefaultSectionSize(wd);
+
+	if (memViewer->vis) {
+		memViewer->move(memViewer->winPos);
+		memViewer->show();
+	}
 	activateWindow();
 }
 

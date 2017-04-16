@@ -253,6 +253,7 @@ MainWin::MainWin() {
 	ethread.conf = &conf;
 	connect(&ethread,SIGNAL(dbgRequest()),SLOT(doDebug()));
 	connect(&ethread,SIGNAL(tapeSignal(int,int)),this,SLOT(tapStateChanged(int,int)));
+	connect(&ethread,SIGNAL(picReady()),this,SLOT(emuDraw()));
 	ethread.start();
 
 	scrImg = QImage(100,100,QImage::Format_RGB888);
@@ -292,9 +293,9 @@ void MainWin::convImage() {
 void MainWin::onTimer() {
 	if (opt->block) return;
 	if (opt->prfChanged) {
-		opt->prfChanged = 0;
 		comp = conf.prof.cur->zx;
 		ethread.comp = comp;
+		opt->prfChanged = 0;
 	}
 	if (block) return;
 	if (comp->rzx.start) {
@@ -352,9 +353,9 @@ void MainWin::onTimer() {
 			sndSync(comp, 1, 1);
 		} while (conf.snd.fill);
 	} else {
-		ethread.mtx.unlock();
+		// emutex.unlock();
 	}
-	emuDraw();
+	if (ethread.fast) emuDraw();
 }
 
 void MainWin::menuShow() {
@@ -783,7 +784,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		sdcCloseFile(comp->sdc);
 		timer.stop();
 		ethread.finish = 1;
-		ethread.mtx.unlock();		// unlock emulation thread
+		emutex.unlock();		// unlock emulation thread
 		ethread.wait();			// wait until it exits
 		keywin->close();
 		saveConfig();

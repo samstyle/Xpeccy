@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>751</width>
-    <height>608</height>
+    <width>749</width>
+    <height>606</height>
    </rect>
   </property>
   <property name="font">
@@ -200,15 +200,6 @@
        <attribute name="verticalHeaderVisible">
         <bool>false</bool>
        </attribute>
-       <attribute name="verticalHeaderDefaultSectionSize">
-        <number>17</number>
-       </attribute>
-       <attribute name="verticalHeaderMinimumSectionSize">
-        <number>17</number>
-       </attribute>
-       <attribute name="verticalHeaderStretchLastSection">
-        <bool>true</bool>
-       </attribute>
        <row/>
        <row/>
        <row/>
@@ -309,15 +300,6 @@
        </attribute>
        <attribute name="verticalHeaderVisible">
         <bool>false</bool>
-       </attribute>
-       <attribute name="verticalHeaderDefaultSectionSize">
-        <number>17</number>
-       </attribute>
-       <attribute name="verticalHeaderMinimumSectionSize">
-        <number>17</number>
-       </attribute>
-       <attribute name="verticalHeaderStretchLastSection">
-        <bool>true</bool>
        </attribute>
        <row/>
        <row/>

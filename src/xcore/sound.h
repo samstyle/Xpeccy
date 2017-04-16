@@ -32,7 +32,7 @@ enum xSoundOutput {
 struct OutSys {
 	int id;
 	const char* name;
-	bool (*open)();
+	int (*open)();
 	void (*play)();
 	void (*close)();
 };
@@ -46,7 +46,7 @@ void sndInit();
 void sndCalibrate(Computer*);
 void addOutput(std::string, bool(*)(),void(*)(),void(*)());
 void setOutput(const char*);
-bool sndOpen();
+int sndOpen();
 void sndPlay();
 void sndClose();
 int sndSync(Computer*, int, int);
