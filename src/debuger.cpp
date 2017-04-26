@@ -41,7 +41,7 @@ void DebugWin::start(Computer* c) {
 	updateScreen();
 	if (!comp->vid->tail)
 		vidDarkTail(comp->vid);
-	ui.tabsPanel->setTabEnabled(ui.tabsPanel->indexOf(ui.gbTab), comp->hw->type == HW_GBC);
+	ui.tabsPanel->setTabEnabled(ui.tabsPanel->indexOf(ui.gbTab), comp->hw->id == HW_GBC);
 
 	ui.dasmTable->comp = comp;
 	move(winPos);
@@ -369,7 +369,7 @@ void DebugWin::doStep() {
 		disasmAdr = comp->cpu->pc;
 		fillDisasm();
 	}
-	if ((traceType == DBG_TRACE_INT) && (comp->cpu->inth))
+	if ((traceType == DBG_TRACE_INT) && (comp->cpu->intrq & comp->cpu->inten))
 		trace = 0;
 	if ((traceType == DBG_TRACE_HERE) && (comp->cpu->pc == traceAdr))
 		trace = 0;
@@ -646,7 +646,7 @@ bool DebugWin::fillAll() {
 	setSignal(ui.labCPM, comp->cpm);
 	//setSignal(ui.labHBlank, comp->vid->hblank);
 	//setSignal(ui.labVBlank, comp->vid->vblank);
-	setSignal(ui.labINT, comp->cpu->inth);
+	setSignal(ui.labINT, comp->cpu->intrq & comp->cpu->inten);
 	if (memViewer->isVisible())
 		memViewer->fillImage();
 	return fillDisasm();

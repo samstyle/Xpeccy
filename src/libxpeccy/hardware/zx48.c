@@ -1,7 +1,7 @@
 #include "../spectrum.h"
 
 void speReset(Computer* comp) {
-	comp->p7FFD = 0x10;
+
 }
 
 void speMapMem(Computer* comp) {

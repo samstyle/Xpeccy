@@ -732,8 +732,8 @@ void gbc_sync(Computer* comp, long ns) {
 		req |= 16;
 	}
 	comp->cpu->intrq |= req;		// cpu int req
-	if (comp->cpu->iff1 && (comp->cpu->intrq & 0x1f)) //comp->cpu->inten))
-		comp->cpu->inth = 1;
+//	if (comp->cpu->iff1 && (comp->cpu->intrq & 0x1f)) //comp->cpu->inten))
+//		comp->cpu->inth = 1;
 }
 
 // keypress

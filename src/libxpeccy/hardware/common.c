@@ -30,17 +30,17 @@ void zx_sync(Computer* comp, long ns) {
 	if (!comp->cpu->iff1 || comp->cpu->noint) return;
 	if (comp->vid->intFRAME && (comp->vid->intMask & 1)) {
 		comp->intVector = 0xff;
-		comp->cpu->inth = 1;
+//		comp->cpu->inth = 1;
 		comp->cpu->intrq |= 1;
 		comp->vid->intFRAME = 0;
 	} else if (comp->vid->intLINE) {
 		comp->intVector = 0xfd;
-		comp->cpu->inth = 1;
+//		comp->cpu->inth = 1;
 		comp->cpu->intrq |= 1;
 		comp->vid->intLINE = 0;
 	} else if (comp->vid->intDMA) {
 		comp->intVector = 0xfb;
-		comp->cpu->inth = 1;
+//		comp->cpu->inth = 1;
 		comp->cpu->intrq |= 1;
 		comp->vid->intDMA = 0;
 	}

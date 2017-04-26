@@ -59,7 +59,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 // machine
 	i = 0;
 	while (hwTab[i].name != NULL) {
-		if (hwTab[i].type != HW_NULL) {
+		if (hwTab[i].id != HW_NULL) {
 			ui.machbox->addItem(trUtf8(hwTab[i].optName),QString::fromLocal8Bit(hwTab[i].name));
 		} else {
 			ui.machbox->insertSeparator(i);

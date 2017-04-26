@@ -249,7 +249,8 @@ void msxOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
 // int zxINT(Computer*, unsigned char);
 void msx_sync(Computer* comp, long ns) {
 	if ((comp->vid->v9938.reg[1] & 0x40) && comp->vid->newFrame && comp->cpu->iff1) {
-		comp->cpu->inth = 1;
+//		comp->cpu->inth = 1;
+		comp->cpu->intrq |= 1;
 		comp->intVector = 0xff;
 	}
 }

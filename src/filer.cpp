@@ -93,7 +93,7 @@ int getFileType(QString path) {
 
 int testSlotOn(Computer* comp) {
 	int res = 0;
-	switch (comp->hw->type) {
+	switch (comp->hw->id) {
 		case HW_MSX:
 		case HW_MSX2:
 		case HW_GBC:

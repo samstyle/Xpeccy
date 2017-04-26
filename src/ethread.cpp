@@ -4,7 +4,7 @@
 #include "xgui/xgui.h"
 #include "xcore/sound.h"
 
-std::mutex emutex;
+QMutex emutex;
 
 unsigned char* blkData = NULL;
 extern unsigned char scrn[1024 * 512 * 3];

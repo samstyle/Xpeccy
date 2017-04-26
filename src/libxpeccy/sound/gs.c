@@ -130,18 +130,12 @@ void gsSync(GSound* gs) {
 	int res;
 	gs->counter += gs->sync * GS_FRQ / 980;		// ticks to emulate
 	while (gs->counter > 0) {
-		if (gs->cpu->inth) {
-			gs->cpu->inth = 0;
-			gs->cpu->intrq = 1;
-			res = gs->cpu->intr(gs->cpu);
-		} else {
-			res = gs->cpu->exec(gs->cpu);
-		}
+		res = gs->cpu->exec(gs->cpu);
 		gs->counter -= res;
 		gs->cnt += res;
 		if (gs->cnt > 320) {	// 12MHz CLK, 37.5KHz INT -> int in each 320 ticks
 			gs->cnt -= 320;
-			gs->cpu->inth = 1;
+			gs->cpu->intrq |= 1;
 		}
 	}
 	gs->sync = 0;

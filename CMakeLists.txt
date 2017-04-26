@@ -87,11 +87,17 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	set(CPACK_DMG_NAME ${PROJECT_NAME})
 	set(CPACK_DMG_FORMAT UDZO)
 
-	set(CPACK_BUNDLE_NAME ${PROJECT_NAME}.app)
-	set(CPACK_BUNDLE_ICON ${CMAKE_SOURCE_DIR}/images/xpeccy.icns)
+	set(MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}.app)
+	set(MACOSX_BUNDLE_ICON_FILE ${PROJECT_NAME}.icns)
+	set(MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/Info.plist)
+	set(MACOSX_BUNDLE_BUNDLE_VERSION ${XVER})
 
-	set_source_files_properties(${CMAKE_BINARY_DIR}/${PROJECT_NAME} PROPERTIES MACOS_PACKAGE_LOCATION MacOSX)
-	set_source_files_properties(${CPACK_BUNDLE_ICON} PROPERTIES MACOS_PACKAGE_LOCATION Resources)
+	set(BUNDLE_ICON_PATH ${CMAKE_SOURCE_DIR}/images/${MACOSX_BUNDLE_ICON_FILE})
+	set(BUNDLE_PATH ${CMAKE_BINARY_DIR}/${MACOSX_BUNDLE_BUNDLE_NAME})
+
+
+	set_source_files_properties(${CMAKE_BINARY_DIR}/${PROJECT_NAME} PROPERTIES MACOSX_PACKAGE_LOCATION MacOSX)
+	set_source_files_properties(${BUNDLE_ICON_PATH} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
@@ -143,6 +149,7 @@ set(MOCFILES
 	./src/dbg_finder.h
 	./src/watcher.h
 	./src/setupwin.h
+	./src/vkeyboard.h
 	./src/xgui/xgui.h
 )
 
@@ -232,14 +239,20 @@ include_directories(${INCLUDIRS})
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS})
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS})
+	add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS} ${BUNDLE_ICON_PATH})
 	find_program(MACDEPLOYQTEXE macdeployqt)
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-		COMMAND mkdir ARGS -p ${CMAKE_BINARY_DIR}/${CPACK_BUNDLE_NAME}/Contents/Frameworks
-		COMMAND cp ARGS -R /Library/Frameworks/SDL.framework ${CMAKE_BINARY_DIR}/${CPACK_BUNDLE_NAME}/Contents/Frameworks
-		COMMAND ${MACDEPLOYQTEXE} ARGS ${CMAKE_BINARY_DIR}/${CPACK_BUNDLE_NAME} -always-overwrite
+		COMMAND ${MACDEPLOYQTEXE} ARGS ${BUNDLE_PATH} -always-overwrite
+#		COMMAND mkdir ARGS -p ${BUNDLE_PATH}/Contents/Frameworks
+		COMMAND cp ARGS -R /Library/Frameworks/SDL.framework ${BUNDLE_PATH}/Contents/Frameworks
 	)
 	set(CMAKE_INSTALL_PREFIX "/Applications")
+#	install(CODE "
+#		include(BundleUtilities)
+#		fixup_bundle(${BUNDLE_PATH} \"\" ${LIBDIRS})
+#		find_program(MACDEPLOYQTEXE macdeployqt)
+#		execute_process(COMMAND ${MACDEPLOYQTEXE} ARGS ${BUNDLE_PATH} -always-overwrite)
+#		" COMPONENT Runtime)
 	install(TARGETS ${PROJECT_NAME} BUNDLE DESTINATION .)
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS})

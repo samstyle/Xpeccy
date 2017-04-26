@@ -4,12 +4,12 @@
 #include "xcore.h"
 
 #include <iostream>
-#include <mutex>
+#include <QMutex>
 
 #include <SDL.h>
 #undef main
 
-extern std::mutex emutex;		// unlock to start emulation cycle
+extern QMutex emutex;		// unlock to start emulation cycle
 
 typedef struct {
 	unsigned char data[0x1000];

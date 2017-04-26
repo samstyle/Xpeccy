@@ -2220,7 +2220,7 @@
   <action name="actSprScan">
    <property name="icon">
     <iconset resource="../xpeccy.qrc">
-     <normaloff>:/images/eye.png</normaloff>:/images/eye.png</iconset>
+     <normaloff>:/images/pixels.png</normaloff>:/images/pixels.png</iconset>
    </property>
    <property name="text">
     <string>Sprite scanner</string>

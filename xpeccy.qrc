@@ -48,7 +48,6 @@
         <file>images/msx.png</file>
         <file>images/stop.png</file>
         <file>images/floppyRed.png</file>
-        <file>images/eye.png</file>
         <file>images/gameboy.png</file>
         <file>font.bin</file>
         <file>images/label.png</file>
@@ -61,5 +60,9 @@
         <file>images/search.png</file>
         <file>DejaVuSansMono.ttf</file>
         <file>images/note.png</file>
+        <file>images/keyboardzx.png</file>
+        <file>images/objective.png</file>
+        <file>images/pixels.png</file>
+        <file>images/cartrige.png</file>
     </qresource>
 </RCC>

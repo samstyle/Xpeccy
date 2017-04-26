@@ -2,8 +2,6 @@
 
 #include "xcore.h"
 
-// #if __linux
-
 #define	XKEY_1	10
 #define	XKEY_2	11
 #define	XKEY_3	12
@@ -90,94 +88,6 @@
 #define XKEY_RBRACK	257	// }
 #define XKEY_QUEST	258
 
-/*
-#elif _WIN32
-
-#define	XKEY_1	2
-#define	XKEY_2	3
-#define	XKEY_3	4
-#define	XKEY_4	5
-#define	XKEY_5	6
-#define	XKEY_6	7
-#define	XKEY_7	8
-#define	XKEY_8	9
-#define	XKEY_9	10
-#define	XKEY_0	11
-#define	XKEY_MINUS	12
-#define	XKEY_PLUS	13
-#define	XKEY_BSP	14
-#define	XKEY_TAB	15
-#define	XKEY_Q	16
-#define	XKEY_W	17
-#define	XKEY_E	18
-#define	XKEY_R	19
-#define	XKEY_T	20
-#define	XKEY_Y	21
-#define	XKEY_U	22
-#define	XKEY_I	23
-#define	XKEY_O	24
-#define	XKEY_P	25
-#define	XKEY_LBRACE	26
-#define	XKEY_RBRACE	27
-#define	XKEY_ENTER	28
-#define	XKEY_LCTRL	29
-#define	XKEY_A	30
-#define	XKEY_S	31
-#define	XKEY_D	32
-#define	XKEY_F	33
-#define	XKEY_G	34
-#define	XKEY_H	35
-#define	XKEY_J	36
-#define	XKEY_K	37
-#define	XKEY_L	38
-#define	XKEY_DOTCOM	39	// ;
-#define	XKEY_QUOTE	40	// "
-#define	XKEY_TILDA	41	// ~
-#define	XKEY_LSHIFT	42
-#define	XKEY_SLASH	43
-#define	XKEY_Z	44
-#define	XKEY_X	45
-#define	XKEY_C	46
-#define	XKEY_V	47
-#define	XKEY_B	48
-#define	XKEY_N	49
-#define	XKEY_M	50
-#define	XKEY_PERIOD	51
-#define	XKEY_COMMA	52
-#define	XKEY_BSLASH	53	// /
-#define	XKEY_RSHIFT	54
-#define	XKEY_SPACE	57
-#define	XKEY_CAPS	58
-#define XKEY_RCTRL	XKEY_LCTRL
-#define	XKEY_RALT	312
-#define XKEY_LALT	56
-#define	XKEY_HOME	327
-#define	XKEY_UP		328
-#define	XKEY_PGUP	329
-#define	XKEY_LEFT	331
-#define	XKEY_RIGHT	333
-#define	XKEY_END	335
-#define	XKEY_DOWN	336
-#define	XKEY_PGDN	337
-#define	XKEY_INS	338
-#define	XKEY_DEL	339
-#define	XKEY_MENU	349
-#define XKEY_ESC	1
-#define XKEY_F1		59
-#define XKEY_F2		60
-#define XKEY_F3		61
-#define XKEY_F4		62
-#define XKEY_F5		63
-#define XKEY_F6		64
-#define XKEY_F7		65
-#define XKEY_F8		66
-#define XKEY_F9		67
-#define XKEY_F10	68
-#define XKEY_F11	87
-
-#endif
-*/
-
 #define ENDKEY 0
 
 // KEYMAPS
@@ -240,7 +150,7 @@ keyEntry keyMapInit[] = {
 	{"[",XKEY_LBRACK,{'S','8'},{'S','y'},{'[',0},0x54},
 	{"]",XKEY_RBRACK,{'S','9'},{'S','u'},{']',0},0x5b},
 	{"`",XKEY_TILDA,{'C','S'},{'S','x'},{'`',0},0x0e},
-	{"\\",XKEY_SLASH,{'S','c'},{'S','d'},{'\\',0},0x5d},
+	{"\\",XKEY_SLASH,{'S','C'},{0,0},{'\\',0},0x5d},
 
 	{"PGDN",XKEY_PGUP,{'C','3'},{'m'|0x80,0},{MSXK_CODE,0},0x7de0},
 	{"PGUP",XKEY_PGDN,{'C','4'},{'n'|0x80,0},{MSXK_SEL,0},0x7ae0},
@@ -354,7 +264,7 @@ keyTrans ktTab[] = {
 	{Qt::Key_BracketRight, 1066, XKEY_RBRACK},		// ]
 //	{Qt::Key_BraceLeft, 1061, XKEY_LBRACE},			// { == Shift + [
 //	{Qt::Key_BraceRight, 1066, XKEY_LBRACE},		// } == Shift + ]
-	{Qt::Key_Slash, Qt::Key_Slash, XKEY_BSLASH},		// ?
+	{Qt::Key_Backslash, Qt::Key_Backslash, XKEY_SLASH},	// |
 
 	{Qt::Key_CapsLock, Qt::Key_CapsLock, XKEY_CAPS},
 	{Qt::Key_A, 1060, XKEY_A},
@@ -380,6 +290,7 @@ keyTrans ktTab[] = {
 	{Qt::Key_M, 1068, XKEY_M},
 	{Qt::Key_Period, 1041, XKEY_PERIOD},
 	{Qt::Key_Comma, Qt::Key_Comma, XKEY_COMMA},
+	{Qt::Key_Slash, Qt::Key_Slash, XKEY_BSLASH},		// ?
 
 	{Qt::Key_Control, Qt::Key_Control, XKEY_LCTRL},
 	{Qt::Key_Alt, Qt::Key_Alt, XKEY_LALT},

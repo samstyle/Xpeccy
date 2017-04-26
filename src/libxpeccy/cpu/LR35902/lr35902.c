@@ -27,23 +27,6 @@ void lr_reset(CPU* cpu) {
 	cpu->i = cpu->r = cpu->r7 = 0xff;
 }
 
-int lr_exec(CPU* cpu) {
-	if (cpu->lock) return 1;
-	cpu->t = 0;
-	cpu->opTab = lrTab;
-	do {
-		cpu->tmp = cpu->mrd(cpu->pc++, 1, cpu->data);
-		cpu->op = &cpu->opTab[cpu->tmp];
-		cpu->t += cpu->op->t;
-		cpu->op->exec(cpu);
-	} while (cpu->op->prefix);
-	if (cpu->dihalt) {		// LR35902 bug (?) : repeat opcode after HALT with disabled interrupts (DI)
-		cpu->dihalt = 0;
-		cpu->pc = cpu->tmpw;
-	}
-	return cpu->t;
-}
-
 typedef struct {
 	unsigned char mask;
 	unsigned short inta;
@@ -73,6 +56,30 @@ int lr_int(CPU* cpu) {
 			break;
 		}
 		idx++;
+	}
+	return res;
+}
+
+int lr_exec(CPU* cpu) {
+	int res = 0;
+	if ((cpu->intrq & cpu->inten) && cpu->iff1) {
+		res = lr_int(cpu);
+	} else if (cpu->lock) {
+		res = 1;
+	} else {
+		cpu->t = 0;
+		cpu->opTab = lrTab;
+		do {
+			cpu->tmp = cpu->mrd(cpu->pc++, 1, cpu->data);
+			cpu->op = &cpu->opTab[cpu->tmp];
+			cpu->t += cpu->op->t;
+			cpu->op->exec(cpu);
+		} while (cpu->op->prefix);
+		if (cpu->dihalt) {		// LR35902 bug (?) : repeat opcode after HALT with disabled interrupts (DI)
+			cpu->dihalt = 0;
+			cpu->pc = cpu->tmpw;
+		}
+		res = cpu->t;
 	}
 	return res;
 }

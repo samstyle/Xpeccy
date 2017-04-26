@@ -845,6 +845,7 @@ void nprF2(CPU* cpu) {
 void nprF3(CPU* cpu) {
 	cpu->iff1 = 0;
 	cpu->iff2 = 0;
+	cpu->inten &= ~1;
 }
 
 // f4	call p,nn	4 3rd 3rd[+1] [3wr 3wr]		memptr = nn
@@ -897,6 +898,7 @@ void nprFB(CPU* cpu) {
 	cpu->iff1 = 1;
 	cpu->iff2 = 1;
 	cpu->noint = 1;
+	cpu->inten |= 1;
 }
 
 // fc	call m,nn	4 3rd 3rd[+1] [3wr 3wr]		mptr = nn

@@ -37,12 +37,37 @@ enum {
 #define	MEM_2M	(1<<4)
 #define	MEM_4M	(1<<5)
 
+// Hardware callbacks
+
+// reset
+typedef void(*cbHwRes)(Computer*);
+// map memory
+typedef void(*cbHwMap)(Computer*);
+// sync: calls after every CPU command
+typedef void(*cbHwSnc)(Computer*, long);
+// memory read
+typedef unsigned char(*cbHwMrd)(Computer*, unsigned short, int);
+// memory write
+typedef void(*cbHwMwr)(Computer*, unsigned short, unsigned char);
+// io read; TODO:remove last argument (bdi activity)
+typedef unsigned char(*cbHwIrd)(Computer*, unsigned short, int);
+// io write
+typedef void(*cbHwIwr)(Computer*, unsigned short, unsigned char, int);
+
 struct HardWare {
+	int id;			// id
 	const char* name;	// name used for conf file
 	const char* optName;	// name used for setup window
-	int type;		// id
 	int fps;
 	int mask;		// mem size bits (b0:128, b1:256, b2:512, b3:1M, b4:2M, b5:4M); =0 for 48K
+	cbHwMap mapMem;
+	cbHwIwr out;
+	cbHwIrd in;
+	cbHwMrd mrd;
+	cbHwMwr mwr;
+	cbHwRes reset;
+	cbHwSnc sync;
+/*
 	void (*mapMem)(Computer*);
 	void (*out)(Computer*,unsigned short,unsigned char,int);
 	unsigned char (*in)(Computer*,unsigned short,int);
@@ -50,6 +75,7 @@ struct HardWare {
 	void (*mwr)(Computer*,unsigned short,unsigned char);
 	void (*reset)(Computer*);
 	void (*sync)(Computer*, long);		// callback after each command. control request/handle interrupt bit
+*/
 };
 
 typedef struct {

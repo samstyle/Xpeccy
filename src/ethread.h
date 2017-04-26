@@ -2,7 +2,7 @@
 #define _ETHREAD_H
 
 #include <QThread>
-#include <mutex>
+#include <QMutex>
 
 #include "xcore/xcore.h"
 
@@ -29,6 +29,6 @@ class xThread : public QThread {
 		void tapeSignal(int,int);
 };
 
-extern std::mutex emutex;
+extern QMutex emutex;
 
 #endif

@@ -33,82 +33,12 @@
 
 // main
 
-unsigned char screen[2048 * 2048 * 3];		// scaled image (up to fullscreen)
+unsigned char screen[4096 * 2048 * 3];		// scaled image (up to fullscreen)
 unsigned char scrn[1024 * 512 * 3];		// 2:1 image
 unsigned char prvScr[1024 * 512 * 3];		// copy of last 2:1 image (for noflic)
 
 // temp emulation
 unsigned short pc,af,de,ix;
-
-// onscreen keyboard
-
-unsigned char kwMap[4][10] = {
-	{'1','2','3','4','5','6','7','8','9','0'},
-	{'q','w','e','r','t','y','u','i','o','p'},
-	{'a','s','d','f','g','h','j','k','l','E'},
-	{'C','z','x','c','v','b','n','m','S',' '}
-};
-
-keyWindow::keyWindow(QWidget* p):QLabel(p) {
-	kb = NULL;
-	xk.key1 = 0;
-	xk.key2 = 0;
-}
-
-void keyWindow::paintEvent(QPaintEvent*) {
-	QPainter pnt;
-	int wid = width() / 10 + 1;
-	int hig = height() / 4;
-	pnt.begin(this);
-	pnt.fillRect(QRectF(0,0,1,1), qRgba(0,0,0,0));
-	if (~kb->map[0] & 2) {		// SS
-		pnt.fillRect(8 * wid, 3 * hig, wid, hig, qRgba(64, 160, 160, 100));
-	}
-	if (~kb->map[7] & 1) {		// CS
-		pnt.fillRect(0, 3 * hig, wid, hig, qRgba(64, 160, 160, 100));
-	}
-	pnt.drawPixmap(0, 0, QPixmap(":/images/keymap.png"));
-	pnt.end();
-}
-
-void keyWindow::mousePressEvent(QMouseEvent* ev) {
-	if (!kb) return;
-	int row;
-	int col;
-	if (ev->button() == Qt::RightButton) {
-		keyReleaseAll(kb);
-		xk.key1 = 0;
-	} else {
-		row = ev->y() * 4 / height();
-		col = ev->x() * 10 / width();
-		xk.key1 = kwMap[row][col];
-		if ((xk.key1 == 'S') || (xk.key1 == 'C')) {
-			keyTrigger(kb, xk, 0);
-			update();
-		} else {
-			keyPress(kb, xk, 0);
-		}
-	}
-}
-
-void keyWindow::mouseReleaseEvent(QMouseEvent* ev) {
-	if (!kb) return;
-	switch(xk.key1) {
-		case 'C':
-			if (kb->map[0] & 2) break;
-			keyRelease(kb, xk, 0);
-			update();
-			break;
-		case 'S':
-			if (kb->map[7] & 1) break;
-			keyRelease(kb, xk, 0);
-			update();
-			break;
-		default:
-			keyRelease(kb, xk, 0);
-			break;
-	}
-}
 
 // mainwin
 
@@ -236,14 +166,14 @@ MainWin::MainWin() {
 	rzxWin = new RZXWin(this);
 	connect(rzxWin,SIGNAL(stateChanged(int)),this,SLOT(rzxStateChanged(int)));
 
-	initUserMenu();
-
 	keywin = new keyWindow();
 	QPixmap pxm(":/images/keymap.png");
 	keywin->setPixmap(pxm);
 	keywin->setFixedSize(pxm.size());
 	keywin->setWindowIcon(QIcon(":/images/keyboard.png"));
 	keywin->setWindowTitle("ZX Keyboard");
+
+	initUserMenu();
 
 	cmosTimer.start(1000);
 	timer.setInterval(20);
@@ -554,8 +484,8 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 					keywin->close();
 				} else {
 					keywin->show();
-					activateWindow();
-					raise();
+					// activateWindow();
+					// raise();
 				}
 				break;
 			case Qt::Key_N:
@@ -572,7 +502,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;
 		}
 	} else {
-		if (comp->hw->type == HW_GBC)
+		if (comp->hw->id == HW_GBC)
 			gbPress(comp, kent.name);
 		keyPress(comp->keyb, kent.zxKey, 0);
 		if (kent.msxKey.key1) keyPress(comp->keyb,kent.msxKey,2);
@@ -664,6 +594,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;
 		}
 	}
+	if (keywin->isVisible()) keywin->update();
 }
 
 void MainWin::keyReleaseEvent(QKeyEvent *ev) {
@@ -680,6 +611,7 @@ void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 		keyRelease(comp->keyb, kent.zxKey, 0);
 		if (kent.msxKey.key1) keyRelease(comp->keyb,kent.msxKey,2);
 	}
+	if (keywin->isVisible()) keywin->update();
 }
 
 void MainWin::mousePressEvent(QMouseEvent *ev){
@@ -1031,7 +963,8 @@ void MainWin::initUserMenu() {
 	userMenu->addSeparator();
 	pckAct = userMenu->addAction(QIcon(":/images/keyboard.png"),"PC keyboard");
 	pckAct->setCheckable(true);
-	userMenu->addAction(QIcon(),"Watcher",watcher,SLOT(show()));
+	userMenu->addAction(QIcon(":/images/keyboardzx.png"),"ZX Keyboard",keywin,SLOT(show()));
+	userMenu->addAction(QIcon(":/images/objective.png"),"Watcher",watcher,SLOT(show()));
 	userMenu->addAction(QIcon(":/images/other.png"),"Options",this,SLOT(doOptions()));
 
 	connect(bookmarkMenu,SIGNAL(triggered(QAction*)),this,SLOT(bookmarkSelected(QAction*)));
@@ -1044,7 +977,7 @@ void MainWin::initUserMenu() {
 	fileMenu->addAction(QIcon(":/images/memory.png"),"Snapshot")->setData(FT_SNAP | FT_SPG);
 	fileMenu->addAction(QIcon(":/images/tape.png"),"Tape")->setData(FT_TAPE);
 	fileMenu->addAction(QIcon(":/images/floppy.png"),"Floppy")->setData(FT_DISK);
-	fileMenu->addAction(QIcon(),"Slot")->setData(FT_SLOT);
+	fileMenu->addAction(QIcon(":/images/cartrige.png"),"Slot")->setData(FT_SLOT);
 
 	nsAct = vmodeMenu->addAction("No screen");
 	nsAct->setData(-1);

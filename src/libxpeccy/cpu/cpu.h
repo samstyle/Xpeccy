@@ -10,11 +10,17 @@ typedef struct {
 	const char* mnem;
 } xMnem;
 
+// memrq rd
 typedef unsigned char(*cbmr)(unsigned short,int,void*);
+// memrq wr
 typedef void(*cbmw)(unsigned short,unsigned char,void*);
+// iorq rd
 typedef unsigned char(*cbir)(unsigned short,void*);
+// iorq wr
 typedef void(*cbiw)(unsigned short,unsigned char,void*);
+// iorq int : interrupt vector request
 typedef unsigned char(*cbirq)(void*);
+// memrd external
 typedef unsigned char(*cbdmr)(unsigned short,void*);
 
 #ifdef WORDS_BIG_ENDIAN
@@ -55,7 +61,7 @@ enum {
 
 struct CPU {
 	unsigned halt:1;		// cpu halted, undo on interrput
-	unsigned inth:1;		// next step is 1:handle interrupt, 0: exec opcode
+//	unsigned inth:1;		// next step is 1:handle interrupt, 0: exec opcode
 	unsigned resPV:1;		// Z80: reset PV flag on INT
 	unsigned noint:1;		// Z80: don't handle INT after EI
 	unsigned wait:1;		// Z80: WAIT signal
@@ -106,7 +112,7 @@ struct CPU {
 
 	void (*reset)(CPU*);
 	int (*exec)(CPU*);
-	int (*intr)(CPU*);		// handle interrupt. intrq = requested INT types
+//	int (*intr)(CPU*);		// handle interrupt. intrq = requested INT types
 	xAsmScan (*asmbl)(const char*, char*);
 	xMnem (*mnem)(CPU*, unsigned short, cbdmr, void*);
 
@@ -123,7 +129,7 @@ typedef struct {
 	opCode* tab;				// start opcode tab;
 	void (*reset)(CPU*);			// reset
 	int (*exec)(CPU*);			// exec opcode, return T
-	int (*intr)(CPU*);			// handle interrupt, return T
+//	int (*intr)(CPU*);			// handle interrupt, return T
 	xAsmScan (*asmbl)(const char*, char*);	// compile mnemonic
 	xMnem (*mnem)(CPU*, unsigned short, cbdmr, void*);
 } cpuCore;

@@ -11,6 +11,7 @@
 #include "setupwin.h"
 #include "debuger.h"
 #include "watcher.h"
+#include "vkeyboard.h"
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
 #include "ethread.h"
@@ -34,19 +35,6 @@ typedef struct {
 	int y;
 	QString imgName;
 } xLed;
-
-class keyWindow : public QLabel {
-	Q_OBJECT
-	public:
-		keyWindow(QWidget* = NULL);
-		Keyboard* kb;
-	private:
-		xKey xk;
-	protected:
-		void paintEvent(QPaintEvent*);
-		void mousePressEvent(QMouseEvent*);
-		void mouseReleaseEvent(QMouseEvent*);
-};
 
 class MainWin : public QWidget {
 	Q_OBJECT

@@ -26,22 +26,8 @@ void z80_reset(CPU* cpu) {
 	cpu->i = cpu->r = cpu->r7 = 0;
 	cpu->halt = 0;
 	cpu->intrq = 0;
+	cpu->inten = 2;	// NMI allways enabled, INT is controlled by ei/di
 	cpu->wait = 0;
-}
-
-int z80_exec(CPU* cpu) {
-	if (cpu->wait) return 1;
-	cpu->t = 0;
-	cpu->noint = 0;
-	cpu->opTab = npTab;
-	do {
-		cpu->com = cpu->mrd(cpu->pc++,1,cpu->data);
-		cpu->op = &cpu->opTab[cpu->com];
-		cpu->r++;
-		cpu->t += cpu->op->t;
-		cpu->op->exec(cpu);
-	} while (cpu->op->prefix);
-	return cpu->t;
 }
 
 int z80_int(CPU* cpu) {
@@ -105,6 +91,28 @@ int z80_int(CPU* cpu) {
 		}
 	}
 	cpu->intrq = 0;
+	return res;
+}
+
+int z80_exec(CPU* cpu) {
+	int res = 0;
+	if (cpu->wait) {
+		res = 1;
+	} else if (cpu->intrq & cpu->inten) {
+		res = z80_int(cpu);
+	} else {
+		cpu->t = 0;
+		cpu->noint = 0;
+		cpu->opTab = npTab;
+		do {
+			cpu->com = cpu->mrd(cpu->pc++,1,cpu->data);
+			cpu->op = &cpu->opTab[cpu->com];
+			cpu->r++;
+			cpu->t += cpu->op->t;
+			cpu->op->exec(cpu);
+		} while (cpu->op->prefix);
+		res = cpu->t;
+	}
 	return res;
 }
 

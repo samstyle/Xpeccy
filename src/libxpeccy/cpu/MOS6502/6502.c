@@ -26,16 +26,23 @@ int m6502_int(CPU* cpu) {
 		m6502_push_int(cpu);
 		cpu->pc = 0xfffe;
 	}
-	cpu->inth = cpu->intrq ? 1 : 0;		// if both INT happened in one time
+//	cpu->inth = cpu->intrq ? 1 : 0;		// if both INT happened in one time
 	return 7;
 }
 
 int m6502_exec(CPU* cpu) {
-	unsigned char com = cpu->mrd(cpu->pc++, 1, cpu->data);
-	opCode* op = &mosTab[com];
-	cpu->t = op->t;			// 2T fetch
-	op->exec(cpu);
-	return cpu->t;
+	int res = 0;
+	unsigned char com;
+	if (cpu->intrq & cpu->inten) {
+		res = m6502_int(cpu);
+	} else {
+		com = cpu->mrd(cpu->pc++, 1, cpu->data);
+		opCode* op = &mosTab[com];
+		cpu->t = op->t;			// 2T fetch
+		op->exec(cpu);
+		res = cpu->t;
+	}
+	return res;
 }
 
 xMnem m6502_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {

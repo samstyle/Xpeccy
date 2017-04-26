@@ -4,55 +4,55 @@
 
 HardWare hwTab[] = {
 	{
-		"ZX48K","ZX 48K",HW_ZX48,50,MEM_48,
+		HW_ZX48,"ZX48K","ZX 48K",50,MEM_48,
 		&speMapMem,&speOut,&speIn,&stdMRd,&stdMWr,&speReset,&zx_sync
 	},{
-		"Pentagon","Pentagon",HW_PENT,50,MEM_128 | MEM_512,
+		HW_PENT,"Pentagon","Pentagon",50,MEM_128 | MEM_512,
 		&penMapMem,&penOut,&penIn,&stdMRd,&stdMWr,NULL,&zx_sync
 	},{
-		"Pentagon1024SL","Pentagon 1024 SL",HW_P1024,50,MEM_1M,
+		HW_P1024,"Pentagon1024SL","Pentagon 1024 SL",50,MEM_1M,
 		&p1mMapMem,&p1mOut,&p1mIn,&stdMRd,&stdMWr,NULL,&zx_sync
 	},{
-		"Scorpion","ZS Scorpion",HW_SCORP,50,MEM_256 | MEM_1M,
+		HW_SCORP,"Scorpion","ZS Scorpion",50,MEM_256 | MEM_1M,
 		&scoMapMem,&scoOut,&scoIn,&scoMRd,&stdMWr,NULL,&zx_sync
 	},{
-		"ATM2","ATM Turbo 2+",HW_ATM2,50,MEM_128 | MEM_256 | MEM_512 | MEM_1M,
+		HW_ATM2,"ATM2","ATM Turbo 2+",50,MEM_128 | MEM_256 | MEM_512 | MEM_1M,
 		&atm2MapMem,&atm2Out,&atm2In,&stdMRd,&stdMWr,&atm2Reset,&zx_sync
 	},{
-		"Profi","Profi",HW_PROFI,50,MEM_512 | MEM_1M,
+		HW_PROFI,"Profi","Profi",50,MEM_512 | MEM_1M,
 		&prfMapMem,&prfOut,&prfIn,&stdMRd,&stdMWr,&prfReset,&zx_sync
 	},{
-		"Phoenix","ZXM Phoenix",HW_PHOENIX,50,MEM_2M,
+		HW_PHOENIX,"Phoenix","ZXM Phoenix",50,MEM_2M,
 		&phxMapMem,&phxOut,&phxIn,&stdMRd,&stdMWr,&phxReset,&zx_sync
 	},{
-		"PentEvo","Evo Baseconf",HW_PENTEVO,50,MEM_4M,
+		HW_PENTEVO,"PentEvo","Evo Baseconf",50,MEM_4M,
 		&evoMapMem,&evoOut,&evoIn,&evoMRd,&evoMWr,&evoReset,&zx_sync
 	},{
-		"TSLab","Evo TSConf",HW_TSLAB,50,MEM_4M,
+		HW_TSLAB,"TSLab","Evo TSConf",50,MEM_4M,
 		&tslMapMem,&tslOut,&tslIn,&tslMRd,&tslMWr,&tslReset,&zx_sync
 	},{
-		"","",HW_NULL,50,0,NULL,NULL,NULL,NULL,NULL,NULL			// separator
+		HW_NULL,"","",50,0,NULL,NULL,NULL,NULL,NULL,NULL			// separator
 	},{
-		"Spectrum +2","Spectrum +2",HW_PLUS2,50,MEM_128,
+		HW_PLUS2,"Spectrum +2","Spectrum +2",50,MEM_128,
 		&pl2MapMem,&pl2Out,&pl2In,&stdMRd,&stdMWr,NULL,&zx_sync
 	},{
-		"Spectrum +3","Spectrum +3",HW_PLUS3,50,MEM_128,
+		HW_PLUS3,"Spectrum +3","Spectrum +3",50,MEM_128,
 		&pl2MapMem,&pl3Out,&pl3In,&stdMRd,&stdMWr,NULL,&zx_sync
 	},{
-		"","",HW_NULL,50,0,NULL,NULL,NULL,NULL,NULL,NULL			// separator
+		HW_NULL,"","",50,0,NULL,NULL,NULL,NULL,NULL,NULL			// separator
 	},{
-		"MSX","MSX-1",HW_MSX,60,MEM_128,
+		HW_MSX,"MSX","MSX-1",60,MEM_128,
 		&msxMapMem,&msxOut,&msxIn,&stdMRd,&stdMWr,&msxReset,&msx_sync
 	},{
-		"MSX2","MSX-2 (alfa)",HW_MSX2,60,MEM_128,
+		HW_MSX2,"MSX2","MSX-2 (alfa)",60,MEM_128,
 		&msx2mapper,&msx2Out,&msx2In,&msx2mrd,&msx2mwr,&msx2Reset,&msx_sync
 	},{
-		"","",HW_NULL,50,0,NULL,NULL,NULL,NULL,NULL,NULL			// separator
+		HW_NULL,"","",50,0,NULL,NULL,NULL,NULL,NULL,NULL			// separator
 	},{
-		"GameBoy", "Game Boy", HW_GBC, 60, MEM_48,
-		&gbMaper, NULL, NULL, &gbMemRd, &gbMemWr, &gbReset, &gbc_sync
+		HW_GBC,"GameBoy","Game Boy",60,MEM_48,
+		&gbMaper,NULL,NULL,&gbMemRd,&gbMemWr,&gbReset,&gbc_sync
 	},{
-		NULL,NULL,HW_NULL,50,0,NULL,NULL,NULL,NULL,NULL,NULL		// eot
+		HW_NULL,NULL,NULL,50,0,NULL,NULL,NULL,NULL,NULL,NULL			// eot
 	}
 };
 
@@ -60,7 +60,7 @@ HardWare* findHardware(const char* name) {
 	HardWare* hw = NULL;
 	int idx = 0;
 	while (hwTab[idx].name != NULL) {
-		if ((hwTab[idx].type != HW_NULL) && !strcmp(hwTab[idx].name,name)) {
+		if ((hwTab[idx].id != HW_NULL) && !strcmp(hwTab[idx].name,name)) {
 			hw = &hwTab[idx];
 			break;
 		}

@@ -246,7 +246,6 @@ void compReset(Computer* comp,int res) {
 	if (comp->rzx.play) rzxStop(comp);
 	zxInitPalete(comp);
 	comp->vid->ula->active = 0;
-	comp->rzx.play = 0;
 	comp->prt2 = 0;
 	comp->p1FFD = 0;
 	comp->pEFF7 = 0;
@@ -285,7 +284,7 @@ void compUpdateTimings(Computer* comp) {
 	long perNoTurbo = 1e3 / comp->cpuFrq;
 	if (perNoTurbo & 1) perNoTurbo++;
 	comp->nsPerTick = perNoTurbo / comp->frqMul;
-	int type = comp->hw ? comp->hw->type : HW_NULL;
+	int type = comp->hw ? comp->hw->id : HW_NULL;
 	switch (type) {
 		case HW_MSX:
 		case HW_MSX2:
@@ -324,25 +323,23 @@ void compSetHardware(Computer* comp, const char* name) {
 	HardWare* hw = findHardware(name);
 	if (hw == NULL) return;
 	comp->hw = hw;
-	comp->vid->istsconf = (hw->type == HW_TSLAB) ? 1 : 0;
-	comp->vid->ismsx = ((hw->type == HW_MSX) || (hw->type == HW_MSX2)) ? 1 : 0;
-	comp->vid->isgb = (hw->type == HW_GBC) ? 1 : 0;
+	comp->vid->istsconf = (hw->id == HW_TSLAB) ? 1 : 0;
+	comp->vid->ismsx = ((hw->id == HW_MSX) || (hw->id == HW_MSX2)) ? 1 : 0;
+	comp->vid->isgb = (hw->id == HW_GBC) ? 1 : 0;
 	compUpdateTimings(comp);
 }
 
 // interrupts
 // exec 1 opcode, sync devices, return eated ns
 
+// IDEA : let video system to accumulate TIME value, not like (cpu->t * comp->nsPerTick);
+
 void vidTSRender(Video*, unsigned char*);
 int compExec(Computer* comp) {
 	res4 = 0;
 	res2 = 0;
-	if (comp->cpu->inth) {			// 1:handle interrupt
-		comp->cpu->inth = 0;
-		res2 = comp->cpu->intr(comp->cpu);
-	}
-	if (res2 == 0)
-		res2 = comp->cpu->exec(comp->cpu);
+// exec cpu opcode OR handle interrupt. get T states back
+	res2 = comp->cpu->exec(comp->cpu);
 // scorpion WAIT: add 1T to odd-T command
 	if (comp->evenM1 && (res2 & 1))
 		res2++;
@@ -368,10 +365,9 @@ int compExec(Computer* comp) {
 // ...
 	res1 = res2;
 	pcreg = comp->cpu->pc;
-// NMI							TODO: remake as another INT
+// NMI
 	if ((pcreg > 0x3fff) && comp->nmiRequest && !comp->rzx.play) {
 		comp->cpu->intrq |= 2;		// request nmi
-		comp->cpu->inth = 1;
 		comp->dos = 1;			// set dos page
 		comp->rom = 1;
 		comp->hw->mapMem(comp);
@@ -383,7 +379,7 @@ int compExec(Computer* comp) {
 	if (comp->rzx.play) {
 		if (comp->rzx.frm.fetches < 1) {
 			comp->intVector = 0xff;
-			comp->cpu->inth = 1;
+			comp->cpu->intrq |= 1;
 			comp->rzx.fCurrent++;
 			comp->rzx.fCount--;
 			rzxGetFrame(comp);
@@ -399,7 +395,6 @@ int compExec(Computer* comp) {
 // TSConf : update 'next-line' registers			TODO:move to TSConf hw->sync
 	if (comp->vid->nextrow && comp->vid->istsconf) {
 		tslUpdatePorts(comp);
-		// vidTSRender(comp->vid, comp->vid->linptr);
 		comp->vid->nextrow = 0;
 	}
 // breakpoints
@@ -419,7 +414,7 @@ int compExec(Computer* comp) {
 	difSync(comp->dif, nsTime);
 	// tsSync(comp->ts, nsTime);
 
-	if (comp->hw->type == HW_GBC) {
+	if (comp->hw->id == HW_GBC) {
 		// sound
 		gbsSync(comp->gbsnd, nsTime);
 		// timer
