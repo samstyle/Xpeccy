@@ -322,7 +322,7 @@ void SetupWin::start(xProfile* p) {
 	ui.cbCpu->setCurrentIndex(ui.cbCpu->findData(comp->cpu->type));
 	ui.sbFreq->setValue(comp->cpuFrq);
 	ui.scrpwait->setChecked(comp->evenM1);
-	ui.sysCmos->setChecked(conf.sysclock);
+//	ui.sysCmos->setChecked(conf.sysclock);
 // video
 	ui.cbFullscreen->setChecked(conf.vid.fullScreen);
 	ui.cbKeepRatio->setChecked(conf.vid.keepRatio);
@@ -462,7 +462,7 @@ void SetupWin::apply() {
 	compSetBaseFrq(comp, ui.sbFreq->value());
 	comp->evenM1 = ui.scrpwait->isChecked() ? 1 : 0;
 	if (comp->hw != oldmac) compReset(comp,RES_DEFAULT);
-	conf.sysclock = ui.sysCmos->isChecked() ? 1 : 0;
+//	conf.sysclock = ui.sysCmos->isChecked() ? 1 : 0;
 // video
 	conf.vid.fullScreen = ui.cbFullscreen->isChecked() ? 1 : 0;
 	conf.vid.keepRatio = ui.cbKeepRatio->isChecked() ? 1 : 0;

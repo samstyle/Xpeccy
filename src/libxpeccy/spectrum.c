@@ -196,7 +196,7 @@ Computer* compCreate() {
 	comp->evo.evo4F = 0;
 	comp->evo.evo6F = 0;
 	comp->evo.evo8F = 0;
-//					0   1   2   3   4   5   6   7   8   9   A   B   C    D    E    F
+//					0   1   2   3   4   5   6   7   8    9    A    B    C    D    E    F
 	char blnm[] = {'x','B','o','o','t',000,000,000,000,000,000,000,0x38,0x98,0x00,0x00};
 	char bcnm[] = {'x','E','v','o',' ','0','.','5','2',000,000,000,0x89,0x99,0x00,0x00};
 	memcpy(comp->evo.blVer,blnm,16);
@@ -338,13 +338,14 @@ void vidTSRender(Video*, unsigned char*);
 int compExec(Computer* comp) {
 	res4 = 0;
 	res2 = 0;
+	comp->vid->time = 0;
 // exec cpu opcode OR handle interrupt. get T states back
 	res2 = comp->cpu->exec(comp->cpu);
 // scorpion WAIT: add 1T to odd-T command
 	if (comp->evenM1 && (res2 & 1))
 		res2++;
 // out @ last tick
-	vidSync(comp->vid,(res2 - res4 - 1) * comp->nsPerTick);
+	vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
 	if (comp->padr) {
 		tapSync(comp->tape,comp->tapCount);
 		comp->tapCount = 0;
@@ -361,7 +362,7 @@ int compExec(Computer* comp) {
 		comp->hw->out(comp, comp->padr, comp->pval, bdiz);
 		comp->padr = 0;
 	}
-	vidSync(comp->vid, comp->nsPerTick);
+	// vidSync(comp->vid, comp->nsPerTick);
 // ...
 	res1 = res2;
 	pcreg = comp->cpu->pc;
@@ -373,7 +374,7 @@ int compExec(Computer* comp) {
 		comp->hw->mapMem(comp);
 	}
 // execution completed : get eated time
-	nsTime = res1 * comp->nsPerTick;
+	nsTime = comp->vid->time;
 	comp->tickCount += res1;
 // sync / INT detection
 	if (comp->rzx.play) {
@@ -452,9 +453,37 @@ int compExec(Computer* comp) {
 
 // cmos
 
+unsigned char toBCD(unsigned char val) {
+	unsigned char rrt = val % 10;
+	rrt |= ((val/10) << 4);
+	return rrt;
+}
+
+#include <time.h>
+
 unsigned char cmsRd(Computer* comp) {
 	unsigned char res = 0x00;
+
+	time_t rtime;
+	time(&rtime);
+	struct tm* ctime = localtime(&rtime);
+/*
+	prf->zx->cmos.data[0] = toBCD(ctime->tm_sec);
+	prf->zx->cmos.data[2] = toBCD(ctime->tm_min);
+	prf->zx->cmos.data[4] = toBCD(ctime->tm_hour);
+	prf->zx->cmos.data[6] = toBCD(ctime->tm_wday);
+	prf->zx->cmos.data[7] = toBCD(ctime->tm_mday);
+	prf->zx->cmos.data[8] = toBCD(ctime->tm_mon);
+	prf->zx->cmos.data[9] = toBCD(ctime->tm_year % 100);
+*/
 	switch (comp->cmos.adr) {
+		case 0x00: res = toBCD(ctime->tm_sec); break;
+		case 0x02: res = toBCD(ctime->tm_min); break;
+		case 0x04: res = toBCD(ctime->tm_hour); break;
+		case 0x06: res = toBCD(ctime->tm_wday); break;
+		case 0x07: res = toBCD(ctime->tm_mday); break;
+		case 0x08: res = toBCD(ctime->tm_mon); break;
+		case 0x09: res = toBCD(ctime->tm_year % 100); break;
 		case 0x0a: res = 0x00; break;
 		case 0x0b: res = 0x02; break;
 		case 0x0c: res = 0x00; break;

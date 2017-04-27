@@ -3,12 +3,14 @@
 #include <math.h>
 #include <string.h>
 
-#include "../xcore/xcore.h"
+#include "xcore.h"
+
+int bytesPerLine = 100;		// update on scrImg size changed
 
 // resize srcw x srch @ src -> dstw x dsth @ dst
 void scrFS(unsigned char* src, int srcw, int srch, unsigned char* dst, int dstw, int dsth) {
-	int  scalex = (dstw << 8) / srcw;
-	int  scaley = (dsth << 8) / srch;
+	int scalex = (dstw << 8) / srcw;
+	int scaley = (dsth << 8) / srch;
 	int resw = dstw;
 	int resh = dsth;
 	if (conf.vid.keepRatio) {
@@ -23,16 +25,15 @@ void scrFS(unsigned char* src, int srcw, int srch, unsigned char* dst, int dstw,
 	int posx = (resw < dstw) ? ((dstw - resw) >> 1) : 0;
 	int posy = (resh < dsth) ? ((dsth - resh) >> 1) : 0;
 
-	memset(dst, 0x00, dstw * dsth * 3);
+	memset(dst, 0x00, bytesPerLine * dsth);
 
-	unsigned char* lptr = dst + (posy * dstw * 3) + (posx * 3);		// drawing start here
+	unsigned char* lptr = dst + (posy * bytesPerLine) + (posx * 3);		// drawing start here
 	unsigned char* ptr = lptr;
-	scalex = scalex >> 1;			// because of source 2:1
+	scalex = scalex >> 1;						// because of source is 2:1
 	srcw <<= 1;
 	int cntx = scalex;
 	int cnty = scaley;
 	int x,y;
-	int lsiz = dstw * 3;
 	int vlsz = resw * 3;
 	for (y = 0; y < srch; y++) {
 		for (x = 0; x < srcw; x++) {
@@ -44,16 +45,13 @@ void scrFS(unsigned char* src, int srcw, int srch, unsigned char* dst, int dstw,
 				cntx -= 0x100;
 			}
 			src += 3;
-			//*(ptr - 3) = (*(ptr - 3) + *src) >> 1;
-			//*(ptr - 2) = (*(ptr - 2) + *(src+1)) >> 1;
-			//*(ptr - 1) = (*(ptr - 1) + *(src+2)) >> 1;
 			cntx += scalex;
 		}
-		ptr = lptr + lsiz;
+		ptr = lptr + bytesPerLine;
 		cnty -= 0x100;			// 1st line completed
 		while(cnty > 0x100) {
 			memcpy(ptr, lptr, vlsz);
-			ptr += lsiz;
+			ptr += bytesPerLine;
 			cnty -= 0x100;
 		}
 		cnty += scaley;
@@ -76,13 +74,13 @@ void scrX4(unsigned char* src, int srcw, int srch, unsigned char* dst) {
 			dst += 12;
 			src += 6;
 		}
-		cnt = dst - ptr;
-		memcpy(dst, ptr, cnt);
-		dst += cnt;
-		memcpy(dst, ptr, cnt);
-		dst += cnt;
-		memcpy(dst, ptr, cnt);
-		dst += cnt;
+		dst = ptr + bytesPerLine;
+		memcpy(dst, ptr, bytesPerLine);
+		dst += bytesPerLine;
+		memcpy(dst, ptr, bytesPerLine);
+		dst += bytesPerLine;
+		memcpy(dst, ptr, bytesPerLine);
+		dst += bytesPerLine;
 		srch--;
 	}
 }
@@ -100,24 +98,24 @@ void scrX3(unsigned char* src, int srcw, int srch, unsigned char* dst) {
 			dst += 9;
 			src += 6;
 		}
-		cnt = dst - ptr;
-		memcpy(dst, ptr, cnt);
-		dst += cnt;
-		memcpy(dst, ptr, cnt);
-		dst += cnt;
+		dst = ptr + bytesPerLine;
+		memcpy(dst, ptr, bytesPerLine);
+		dst += bytesPerLine;
+		memcpy(dst, ptr, bytesPerLine);
+		dst += bytesPerLine;
 		srch--;
 	}
 }
 
 // 2:1 -> 2:2 = double each line
 void scrX2(unsigned char* src, int srcw, int srch, unsigned char* dst) {
-	srcw *= 6;
+	int ssiz = srcw * 6;
 	while (srch > 0) {
-		memcpy(dst, src, srcw);
-		dst += srcw;
-		memcpy(dst, src, srcw);
-		dst += srcw;
-		src += srcw;
+		memcpy(dst, src, ssiz);
+		dst += bytesPerLine;
+		memcpy(dst, src, ssiz);
+		dst += bytesPerLine;
+		src += ssiz;
 		srch--;
 	}
 }
@@ -126,12 +124,15 @@ void scrX2(unsigned char* src, int srcw, int srch, unsigned char* dst) {
 
 void scrX1(unsigned char* src, int srcw, int srch, unsigned char* dst) {
 	int cnt;
+	unsigned char* ptr;
 	while (srch > 0) {
+		ptr = dst;
 		for (cnt = 0; cnt < srcw; cnt++) {
 			memcpy(dst, src, 3);
 			dst += 3;
 			src += 6;
 		}
+		dst = ptr + bytesPerLine;
 		srch--;
 	}
 }

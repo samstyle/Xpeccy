@@ -118,10 +118,10 @@ void vidUpdateLayout(Video* vid, float brdsize) {
 	vid->ssze.y = vid->lay.full.y - vid->lay.blank.y;
 	brdr.x = vid->ssze.x - vid->lay.bord.x - vid->lay.scr.x;
 	brdr.y = vid->ssze.y - vid->lay.bord.y - vid->lay.scr.y;
-	vid->lcut.x = (int)floor(vid->lay.bord.x * (1.0 - brdsize)) & ~3;
-	vid->lcut.y = (int)floor(vid->lay.bord.y * (1.0 - brdsize)) & ~3;
-	vid->rcut.x = (int)floor(vid->lay.bord.x + vid->lay.scr.x + brdr.x * brdsize) & ~3;
-	vid->rcut.y = (int)floor(vid->lay.bord.y + vid->lay.scr.y + brdr.y * brdsize) & ~3;
+	vid->lcut.x = (int)floor(vid->lay.bord.x * (1.0 - brdsize));
+	vid->lcut.y = (int)floor(vid->lay.bord.y * (1.0 - brdsize));
+	vid->rcut.x = (int)floor(vid->lay.bord.x + vid->lay.scr.x + brdr.x * brdsize);
+	vid->rcut.y = (int)floor(vid->lay.bord.y + vid->lay.scr.y + brdr.y * brdsize);
 	vid->vsze.x = vid->rcut.x - vid->lcut.x;
 	vid->vsze.y = vid->rcut.y - vid->lcut.y;
 	vid->vBytes = vid->vsze.x * vid->vsze.y * 6;	// real size of image buffer (3 bytes/dot x2:x1)
@@ -579,6 +579,7 @@ void vidSync(Video* vid, int ns) {
 	while (vid->nsDraw >= vid->nsPerDot) {
 
 		vid->nsDraw -= vid->nsPerDot;
+		vid->time += vid->nsPerDot;
 
 		if (vid->ray.x & 8) vid->brdcol = vid->nextbrd;			// update border color
 		// if ray is on visible screen & video has drawing callback...

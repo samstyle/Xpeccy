@@ -133,7 +133,7 @@ int sndSync(Computer* comp, int nosync, int fast) {
 }
 
 void sndCalibrate(Computer* comp) {
-	// sndChunks = conf.snd.rate / 50;			// samples / frame
+	// sndChunks = conf.snd.rate / 50;		// samples / frame
 	sndBufSize = conf.snd.chans * sndChunks;	// buffer size
 	nsPerSample = 1e9 / conf.snd.rate;		// ns / sample
 #ifdef ISDEBUG
@@ -217,7 +217,8 @@ SDL_TimerID tid;
 
 // 20ms callback. starts if output callback doesn't started by some reason
 Uint32 sdlontimer(Uint32 interval, void* data) {
-	if (conf.running) emutex.unlock();
+	if (conf.running)
+		emutex.unlock();
 	return interval;
 }
 
@@ -253,6 +254,7 @@ void sdlPlayAudio(void*,Uint8* stream, int len) {
 	// SDL_MixAudio(stream, bufB.data, len, SDL_MIX_MAXVOLUME);
 	memcpy(stream, bufB.data, len);
 	if (conf.running) {
+//		sndChunks = len / conf.snd.chans;
 		emutex.unlock();
 	}
 }
@@ -264,16 +266,19 @@ int sdlopen() {
 	SDL_AudioSpec dsp;
 	asp.freq = conf.snd.rate;
 	asp.format = AUDIO_U8;
-	asp.channels = 2;
-	asp.samples = sndChunks;
+	asp.channels = conf.snd.chans;
+	asp.samples = conf.snd.rate / 50;
 	asp.callback = &sdlPlayAudio;
 	asp.userdata = NULL;
 	if (SDL_OpenAudio(&asp, &dsp) != 0) {
 		printf("SDL audio device opening...failed\n");
 		res = 0;
 	} else {
-		printf("SDL opened: %i %i\n",dsp.freq, dsp.samples);
-		sndChunks = dsp.samples;
+		printf("SDL audio device opening...success: %i %i\n",dsp.freq, dsp.samples);
+		sndChunks = dsp.samples;				// why it allways returns desired_rate/2 ???
+//		int per = 1000 * sndChunks / conf.snd.rate;		// ms to fill the buffer
+//		printf("per = %i\n",per);
+//		tid = SDL_AddTimer(per, &sdlontimer, NULL);
 		bufA.pos = 0;
 		playPos = 0;
 		pass = 0;
@@ -287,6 +292,7 @@ void sdlplay() {
 }
 
 void sdlclose() {
+//	SDL_RemoveTimer(tid);
 	SDL_CloseAudio();
 }
 

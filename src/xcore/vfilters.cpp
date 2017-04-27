@@ -13,17 +13,29 @@ void scrGray(unsigned char* ptr, int size) {
 }
 
 // mix prev <size> bytes from <src> to <dst> 50/50 and copy unmixed <dst> to <src>
-void scrMix(unsigned char* src, unsigned char* dst, int size) {
+void scrMix(unsigned char* src, unsigned char* dst, int size, double mass) {
 	unsigned char cur;
 	while (size > 0) {
 		cur = *dst;
-		*dst = (*src + cur) >> 1;
+		*dst = (*src * (1.0 - mass) + cur * mass);
+		// *dst = (*src + cur) >> 1;
 		*src = cur;
 		src++;
 		dst++;
 		size--;
 	}
 }
+
+/*
+// make image dim
+void scrDim(unsigned char* src, int size) {
+	while(size > 0) {
+		*src >>= 2;
+		src++;
+		size--;
+	}
+}
+*/
 
 // TODO: pixel filters like eps, scale2x... etc
 

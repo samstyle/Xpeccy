@@ -90,7 +90,7 @@ void saveConfig() {
 	fprintf(cfile, "startdefault = %s\n", YESNO(conf.defProfile));
 	fprintf(cfile, "savepaths = %s\n", YESNO(conf.storePaths));
 	fprintf(cfile, "fdcturbo = %s\n", YESNO(fdcFlag & FDC_FAST));
-	fprintf(cfile, "systime = %s\n", YESNO(conf.sysclock));
+//	fprintf(cfile, "systime = %s\n", YESNO(conf.sysclock));
 	fprintf(cfile, "lastdir = %s\n",conf.path.lastDir.c_str());
 
 	fprintf(cfile, "\n[BOOKMARKS]\n\n");
@@ -377,7 +377,7 @@ void loadConfig() {
 					if (pnam=="startdefault") conf.defProfile = str2bool(pval) ? 1 : 0;
 					if (pnam=="savepaths") conf.storePaths = str2bool(pval) ? 1 : 0;
 					if (pnam == "fdcturbo") setFlagBit(str2bool(pval),&fdcFlag,FDC_FAST);
-					if (pnam == "systime") conf.sysclock = str2bool(pval) ? 1 : 0;
+//					if (pnam == "systime") conf.sysclock = str2bool(pval) ? 1 : 0;
 					if (pnam == "lastdir") conf.path.lastDir = pval;
 					break;
 				case SECT_TAPE:

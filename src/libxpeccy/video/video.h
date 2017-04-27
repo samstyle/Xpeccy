@@ -52,11 +52,11 @@ struct Video {
 	unsigned vblank:1;	// VBlank signal
 	unsigned vbstrb:1;	// VBlank strobe 0->1
 
-	// int fps;
 	int nsPerFrame;
 	int nsPerLine;
 	int nsPerDot;
 	int nsDraw;
+	int time;		// +nsPerDot each dot
 
 	int flash;
 	int curscr;

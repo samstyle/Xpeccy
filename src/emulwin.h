@@ -55,7 +55,7 @@ class MainWin : public QWidget {
 		xWatcher* watcher;
 
 		QIcon icon;
-		QTimer cmosTimer;
+//		QTimer cmosTimer;
 		QTimer timer;
 		xThread ethread;
 		keyWindow* keywin;
@@ -77,7 +77,6 @@ class MainWin : public QWidget {
 		void updateHead();
 		void screenShot();
 		void putLeds();
-		void convImage();
 
 		QMenu* userMenu;
 		QMenu* bookmarkMenu;
@@ -105,8 +104,9 @@ class MainWin : public QWidget {
 		void tapStateChanged(int,int);
 	private slots:
 		void onTimer();
-		void emuDraw();
-		void cmosTick();
+		void convImage();
+		void updateSatellites();
+//		void cmosTick();
 		void menuHide();
 		void menuShow();
 		void optApply();

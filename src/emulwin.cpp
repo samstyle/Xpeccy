@@ -11,10 +11,10 @@
 
 #include <fstream>
 #include <unistd.h>
-#include <time.h>
+//#include <time.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/time.h>
+//#include <sys/time.h>
 
 #include "xcore/xcore.h"
 #include "xcore/sound.h"
@@ -36,6 +36,7 @@
 unsigned char screen[4096 * 2048 * 3];		// scaled image (up to fullscreen)
 unsigned char scrn[1024 * 512 * 3];		// 2:1 image
 unsigned char prvScr[1024 * 512 * 3];		// copy of last 2:1 image (for noflic)
+extern int bytesPerLine;
 
 // temp emulation
 unsigned short pc,af,de,ix;
@@ -85,6 +86,7 @@ void MainWin::updateWindow() {
 	lineBytes = szw * 3;
 	frameBytes = szh * lineBytes;
 	scrImg = QImage(screen, szw, szh, QImage::Format_RGB888);
+	bytesPerLine = scrImg.bytesPerLine();
 	updateHead();
 	block = 0;
 	if (dbg->isVisible()) dbg->fillAll();		// hmmm... why?
@@ -175,15 +177,15 @@ MainWin::MainWin() {
 
 	initUserMenu();
 
-	cmosTimer.start(1000);
+//	cmosTimer.start(1000);
 	timer.setInterval(20);
-	connect(&cmosTimer,SIGNAL(timeout()),this,SLOT(cmosTick()));
+//	connect(&cmosTimer,SIGNAL(timeout()),this,SLOT(cmosTick()));
 	connect(&timer,SIGNAL(timeout()),this,SLOT(onTimer()));
 
 	ethread.conf = &conf;
 	connect(&ethread,SIGNAL(dbgRequest()),SLOT(doDebug()));
 	connect(&ethread,SIGNAL(tapeSignal(int,int)),this,SLOT(tapStateChanged(int,int)));
-	connect(&ethread,SIGNAL(picReady()),this,SLOT(emuDraw()));
+	connect(&ethread,SIGNAL(picReady()),this,SLOT(convImage()));
 	ethread.start();
 
 	scrImg = QImage(100,100,QImage::Format_RGB888);
@@ -199,9 +201,15 @@ MainWin::MainWin() {
 // scale screen
 
 void MainWin::convImage() {
-	if (ethread.fast || comp->debug) memcpy(scrn, comp->vid->scrimg, comp->vid->vBytes);
-	if (conf.vid.grayScale) scrGray(scrn, comp->vid->vBytes);
-	if (conf.vid.noFlick) scrMix(prvScr, scrn, comp->vid->vBytes);
+	if (ethread.fast || comp->debug)
+		memcpy(scrn, comp->vid->scrimg, comp->vid->vBytes);
+
+	if (!pauseFlags) {
+		if (conf.vid.grayScale)
+			scrGray(scrn, comp->vid->vBytes);
+		scrMix(prvScr, scrn, comp->vid->vBytes, conf.vid.noFlick ? 0.5 : 0.7);
+	}
+
 	if (conf.vid.fullScreen) {
 		QSize dstsize = QApplication::desktop()->screenGeometry().size();
 		scrFS(scrn, comp->vid->vsze.x, comp->vid->vsze.y, screen, dstsize.width(), dstsize.height());
@@ -217,7 +225,26 @@ void MainWin::convImage() {
 				break;
 		}
 	}
-	// scrEPS(conf.vid.screen, width(), height());
+// [put leds],make screenshot,[put leds]
+	if (!conf.scrShot.noLeds) putLeds();		// put leds before screenshot if on
+	if (scrCounter > 0) {
+		if (scrInterval > 0) {
+			scrInterval--;
+		} else {
+			screenShot();
+			scrCounter--;
+			scrInterval = conf.scrShot.interval;
+		}
+	}
+	if (conf.scrShot.noLeds) putLeds();		// put leds if it isn't done yet
+// put messages
+	if (msgTimer > 0) {
+		if (conf.led.message)
+			drawMessage();
+		msgTimer--;
+	}
+
+	update();
 }
 
 void MainWin::onTimer() {
@@ -243,9 +270,6 @@ void MainWin::onTimer() {
 		setMessage(QString(comp->msg));
 		comp->msg = NULL;
 	}
-
-// if not paused play sound buffer
-	if (conf.snd.enabled && (conf.snd.mute || isActiveWindow())) sndPlay();
 // if window is not active release keys & buttons, release mouse
 	if (!isActiveWindow()) {
 		if (!keywin->isVisible())
@@ -257,35 +281,18 @@ void MainWin::onTimer() {
 			releaseMouse();
 		}
 	}
-
-// take screenshot
-	convImage();
-	if (!conf.scrShot.noLeds) putLeds();		// put leds before screenshot if on
-	if (scrCounter > 0) {
-		if (scrInterval > 0) {
-			scrInterval--;
-		} else {
-			screenShot();
-			scrCounter--;
-			scrInterval = conf.scrShot.interval;
-		}
-	}
-	if (conf.scrShot.noLeds) putLeds();		// put leds if it isn't done yet
-	if (msgTimer > 0) {				// put message
-		if (conf.led.message)
-			drawMessage();
-		msgTimer--;
-	}
-// update window
+// update satellites
+	updateSatellites();
+// fill fake buffer if paused
 	if (pauseFlags) {
 		conf.snd.fill = 1;
 		do {
 			sndSync(comp, 1, 1);
 		} while (conf.snd.fill);
-	} else {
-		// emutex.unlock();
+		convImage();
+	} else if (ethread.fast) {
+		convImage();
 	}
-	if (ethread.fast) emuDraw();
 }
 
 void MainWin::menuShow() {
@@ -297,6 +304,7 @@ void MainWin::menuHide() {
 	pause(false,PR_MENU);
 }
 
+/*
 unsigned char toBCD(unsigned char val) {
 	unsigned char rrt = val % 10;
 	rrt |= ((val/10) << 4);
@@ -321,7 +329,9 @@ void incTime(CMOS* cms) {
 	if (cms->data[4] < 0x24) return;
 	cms->data[4] = 0x00;
 }
+*/
 
+/*
 void MainWin::cmosTick() {
 	foreach(xProfile* prf, conf.prof.list) {
 		if (prf->zx != NULL) {
@@ -342,6 +352,7 @@ void MainWin::cmosTick() {
 		}
 	}
 }
+*/
 
 // connection between tape window & tape state
 
@@ -500,6 +511,16 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				setMessage(conf.vid.keepRatio ? " keep aspect ratio " : " ignore aspect ratio ");
 				saveConfig();
 				break;
+			case Qt::Key_M:
+				grabMice = !grabMice;
+				if (grabMice) {
+					grabMouse(QCursor(Qt::BlankCursor));
+					setMessage(" grab mouse ");
+				} else {
+					releaseMouse();
+					setMessage(" release mouse ");
+				}
+				break;
 		}
 	} else {
 		if (comp->hw->id == HW_GBC)
@@ -521,6 +542,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				userMenu->setFocus();
 				break;
 			case Qt::Key_Insert:
+				if (pauseFlags) break;
 				ethread.fast ^= 1;
 				updateHead();
 				break;
@@ -871,7 +893,7 @@ void MainWin::setMessage(QString str, double dur) {
 
 #define CHSIZE (12*12*3)
 
-void drawChar(QByteArray chr, int scradr, int wid) {
+void drawChar(QByteArray chr, int scradr) {
 	int x, y;
 	int r,g,b;
 	int adr = 0;
@@ -892,7 +914,7 @@ void drawChar(QByteArray chr, int scradr, int wid) {
 				screen[vadr] >>= 2;
 			}
 		}
-		scradr += wid * 3;
+		scradr += bytesPerLine;
 	}
 }
 
@@ -900,7 +922,7 @@ void MainWin::drawMessage() {
 	int wid = size().width();
 	int x = 5;
 	int y = size().height() - 17;
-	int scradr = (y * wid + x) * 3;
+	int scradr = y * bytesPerLine + x * 3;
 	int chr;
 	QByteArray chrdata;
 	for (int i = 0; i < msg.size(); i++) {
@@ -908,13 +930,13 @@ void MainWin::drawMessage() {
 		if (chr > 95)
 			chr = '_' - 32;
 		chrdata = font.mid(chr * CHSIZE, CHSIZE);
-		drawChar(chrdata, scradr + x * 3, wid);
+		drawChar(chrdata, scradr + x * 3);
 		x += 12;
 		if (x >= (wid - 12)) break;
 	}
 }
 
-void MainWin::emuDraw() {
+void MainWin::updateSatellites() {
 	if (block) return;
 // update rzx window
 	if (comp->rzx.play && rzxWin->isVisible()) {
@@ -941,8 +963,6 @@ void MainWin::emuDraw() {
 	if (watcher->isVisible()) {
 		watcher->fillFields(comp);
 	}
-// ...
-	update();
 }
 
 // USER MENU
@@ -1133,43 +1153,6 @@ void MainWin::umOpen(QAction* act) {
 void MainWin::loadLabels(const char* nm) {
 	dbg->loadLabels(QString(nm));
 }
-
-/*
-void MainWin::loadLabels(const char* nm) {
-	QFile file(nm);
-	if (!file.open(QFile::ReadOnly)) return;
-	QString line;
-	QStringList arr;
-	xAdr xadr;
-	dbg->labels.clear();
-	while(!file.atEnd()) {
-		line = file.readLine();
-		arr = line.split(QRegExp("[: \r\n]"),QString::SkipEmptyParts);
-		if (arr.size() > 2) {
-			xadr.type = MEM_RAM;
-			xadr.bank = arr.at(0).toInt(NULL,16);
-			xadr.adr = arr.at(1).toInt(NULL,16) & 0x3fff;
-			switch (xadr.bank) {
-				case 0xff:
-					xadr.type = MEM_ROM;
-					xadr.bank = -1;
-					break;
-				case 0x05:
-					xadr.adr |= 0x4000;
-					break;
-				case 0x02:
-					xadr.adr |= 0x8000;
-					break;
-				default:
-					xadr.bank = -1;
-					xadr.adr |= 0xc000;
-					break;
-			}
-			dbg->labels[arr.at(2)] = xadr;
-		}
-	}
-}
-*/
 
 // debug stufffff
 void MainWin::saveVRAM() {
