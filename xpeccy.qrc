@@ -64,5 +64,7 @@
         <file>images/objective.png</file>
         <file>images/pixels.png</file>
         <file>images/cartrige.png</file>
+        <file>images/arrup.png</file>
+        <file>images/arrdn.png</file>
     </qresource>
 </RCC>

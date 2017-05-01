@@ -484,7 +484,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 
 unsigned char gbSlotRd(unsigned short adr, void* data) {
 	Computer* comp = (Computer*)data;
-	xCartridge* slot = &comp->msx.slotA;
+	xCartridge* slot = comp->slot;
 	unsigned char res = 0xff;
 	int radr = adr & 0x3fff;
 	if (comp->gb.boot && (adr < comp->romsize) && ((adr & 0xff00) != 0x0100)) {
@@ -595,8 +595,9 @@ void wr_mbc5(xCartridge* slot, unsigned short adr, unsigned char val) {
 
 void gbSlotWr(unsigned short adr, unsigned char val, void* data) {
 	Computer* comp = (Computer*)data;
-	xCartridge* slot = &comp->msx.slotA;
-	if (slot->data && slot->wr) slot->wr(slot, adr, val);
+	xCartridge* slot = comp->slot;
+	if (slot->data && slot->wr)
+		slot->wr(slot, adr, val);
 	gbMaper(comp);
 }
 
@@ -605,7 +606,7 @@ void gbSlotWr(unsigned short adr, unsigned char val, void* data) {
 
 unsigned char gbvRd(unsigned short adr, void* data) {
 	Computer* comp = (Computer*)data;
-	xCartridge* slot = &comp->msx.slotA;
+	xCartridge* slot = comp->slot;
 	unsigned char res = 0xff;
 	int radr;
 	if (adr & 0x2000) {		// hi 8K: cartrige ram
@@ -622,7 +623,7 @@ unsigned char gbvRd(unsigned short adr, void* data) {
 
 void gbvWr(unsigned short adr, unsigned char val, void* data) {
 	Computer* comp = (Computer*)data;
-	xCartridge* slot = &comp->msx.slotA;
+	xCartridge* slot = comp->slot;
 	int radr;
 	if (adr & 0x2000) {
 		if (slot->ramen && slot->data) {
@@ -699,7 +700,7 @@ void gbrWr(unsigned short adr, unsigned char val, void* data) {
 
 void gbMaper(Computer* comp) {
 	memSetBank(comp->mem, MEM_BANK0, MEM_SLOT, 0, gbSlotRd, gbSlotWr, comp);
-	memSetBank(comp->mem, MEM_BANK1, MEM_SLOT, comp->msx.slotA.memMap[0], gbSlotRd, gbSlotWr, comp);
+	memSetBank(comp->mem, MEM_BANK1, MEM_SLOT, comp->slot->memMap[0], gbSlotRd, gbSlotWr, comp);
 	memSetBank(comp->mem, MEM_BANK2, MEM_EXT, 0, gbvRd, gbvWr, comp);	// VRAM (8K), slot ram (8K)
 	memSetBank(comp->mem, MEM_BANK3, MEM_EXT, 1, gbrRd, gbrWr, comp);	// internal RAM/OAM/IOMap
 }
@@ -714,7 +715,7 @@ void gbMemWr(Computer* comp, unsigned short adr, unsigned char val) {
 
 // collect interrupt requests & handle interrupt
 
-void gbc_sync(Computer* comp, long ns) {
+void gbcSync(Computer* comp, long ns) {
 	unsigned char req = 0;
 	if (comp->vid->vbstrb) {
 		comp->vid->vbstrb = 0;
@@ -815,14 +816,14 @@ void gbReset(Computer* comp) {
 	comp->gb.vbank = 0;	// vram page
 	comp->gb.wbank = 1;	// wram page (D000..DFFF)
 
-	xCartridge* slot = &comp->msx.slotA;
+	xCartridge* slot = comp->slot;
 	slot->memMap[0] = 1;	// rom bank
 	slot->memMap[1] = 0;	// ram bank
 	slot->ramen = 0;
 	slot->ramMask = 0x7fff;
 	slot->ramod = 0;
 	if (slot->data) {
-		unsigned char type = comp->msx.slotA.data[0x147];		// slot type
+		unsigned char type = slot->data[0x147];		// slot type
 		printf("Cartrige type %.2X\n",type);
 		switch (type) {
 			case 0x00:

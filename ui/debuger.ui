@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>749</width>
-    <height>606</height>
+    <height>612</height>
    </rect>
   </property>
   <property name="font">
@@ -327,7 +327,7 @@
     </layout>
    </item>
    <item>
-    <layout class="QVBoxLayout" name="verticalLayout_4" stretch="0,0,0,0,0,0">
+    <layout class="QVBoxLayout" name="verticalLayout_4" stretch="0,0,0,0,0,0,0">
      <item>
       <widget class="QLabel" name="label_26">
        <property name="styleSheet">
@@ -1140,6 +1140,19 @@
         </layout>
        </item>
       </layout>
+     </item>
+     <item>
+      <spacer name="verticalSpacer_7">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>40</height>
+        </size>
+       </property>
+      </spacer>
      </item>
      <item>
       <spacer name="verticalSpacer">
@@ -2251,6 +2264,22 @@
    </property>
    <property name="text">
     <string>Save dump</string>
+   </property>
+  </action>
+  <action name="actHideAddr">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Hide address</string>
+   </property>
+  </action>
+  <action name="actHideAddr_2">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Hide address</string>
    </property>
   </action>
  </widget>

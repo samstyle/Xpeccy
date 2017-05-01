@@ -52,6 +52,7 @@ struct DasmRow {
 	unsigned cond:1;	// if there is condition command (JR, JP, CALL, RET) and condition met
 	unsigned mem:1;		// memory reading
 	unsigned short adr;
+	unsigned short radr;
 	unsigned char type;
 	unsigned char mop;
 	QByteArray bytes;

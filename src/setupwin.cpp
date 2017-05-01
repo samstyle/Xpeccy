@@ -162,17 +162,12 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.sdcapbox->addItem("512 M",SDC_512M);
 	ui.sdcapbox->addItem("1024 M",SDC_1G);
 
-	ui.cSlotAType->addItem("No mapper",MSX_NOMAPPER);
-	ui.cSlotAType->addItem("Konami 4",MSX_KONAMI4);
-	ui.cSlotAType->addItem("Konami 5",MSX_KONAMI5);
-	ui.cSlotAType->addItem("ASCII 8K",MSX_ASCII8);
-	ui.cSlotAType->addItem("ASCII 16K",MSX_ASCII16);
+	ui.cSlotType->addItem("No mapper",MSX_NOMAPPER);
+	ui.cSlotType->addItem("Konami 4",MSX_KONAMI4);
+	ui.cSlotType->addItem("Konami 5",MSX_KONAMI5);
+	ui.cSlotType->addItem("ASCII 8K",MSX_ASCII8);
+	ui.cSlotType->addItem("ASCII 16K",MSX_ASCII16);
 
-	ui.cSlotBType->addItem("No mapper",MSX_NOMAPPER);
-	ui.cSlotBType->addItem("Konami 4",MSX_KONAMI4);
-	ui.cSlotBType->addItem("Konami 5",MSX_KONAMI5);
-	ui.cSlotBType->addItem("ASCII 8K",MSX_ASCII8);
-	ui.cSlotBType->addItem("ASCII 16K",MSX_ASCII16);
 // all
 	connect(ui.okbut,SIGNAL(released()),this,SLOT(okay()));
 	connect(ui.apbut,SIGNAL(released()),this,SLOT(apply()));
@@ -272,10 +267,8 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 // external
 	connect(ui.tbSDCimg,SIGNAL(released()),this,SLOT(selSDCimg()));
 	connect(ui.tbsdcfree,SIGNAL(released()),ui.sdPath,SLOT(clear()));
-	connect(ui.cSlotAOpen,SIGNAL(released()),this,SLOT(openSlotA()));
-	connect(ui.cSlotBOpen,SIGNAL(released()),this,SLOT(openSlotB()));
-	connect(ui.cSlotAEject,SIGNAL(released()),this,SLOT(ejectSlotA()));
-	connect(ui.cSlotBEject,SIGNAL(released()),this,SLOT(ejectSlotB()));
+	connect(ui.cSlotOpen,SIGNAL(released()),this,SLOT(openSlot()));
+	connect(ui.cSlotEject,SIGNAL(released()),this,SLOT(ejectSlot()));
 //tools
 	connect(ui.umlist,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(umedit(QModelIndex)));
 	connect(ui.umaddtb,SIGNAL(released()),this,SLOT(umadd()));
@@ -424,10 +417,8 @@ void SetupWin::start(xProfile* p) {
 	if (ui.sdcapbox->currentIndex() < 0) ui.sdcapbox->setCurrentIndex(2);	// 128M
 	ui.sdlock->setChecked(comp->sdc->lock);
 
-	ui.cSlotAName->setText(comp->msx.slotA.name);
-	ui.cSlotBName->setText(comp->msx.slotB.name);
-	setRFIndex(ui.cSlotAType, comp->msx.slotA.mapType);
-	setRFIndex(ui.cSlotBType, comp->msx.slotB.mapType);
+	ui.cSlotName->setText(comp->slot->name);
+	setRFIndex(ui.cSlotType, comp->slot->mapType);
 // tape
 	ui.cbTapeAuto->setChecked(conf.tape.autostart);
 	ui.cbTapeFast->setChecked(conf.tape.fast);
@@ -573,8 +564,7 @@ void SetupWin::apply() {
 	sdcSetCapacity(comp->sdc,ui.sdcapbox->itemData(ui.sdcapbox->currentIndex()).toInt());
 	comp->sdc->lock = ui.sdlock->isChecked() ? 1 : 0;
 
-	comp->msx.slotA.mapType = ui.cSlotAType->itemData(ui.cSlotAType->currentIndex()).toInt();
-	comp->msx.slotB.mapType = ui.cSlotBType->itemData(ui.cSlotBType->currentIndex()).toInt();
+	comp->slot->mapType = ui.cSlotType->itemData(ui.cSlotType->currentIndex()).toInt();
 // tape
 	conf.tape.autostart = ui.cbTapeAuto->isChecked() ? 1 : 0;
 	conf.tape.fast = ui.cbTapeFast->isChecked() ? 1 : 0;
@@ -1337,38 +1327,20 @@ void SetupWin::selSDCimg() {
 	if (!fnam.isEmpty()) ui.sdPath->setText(fnam);
 }
 
-void SetupWin::openSlotA() {
+void SetupWin::openSlot() {
 	QString fnam = QFileDialog::getOpenFileName(this,"MSX cartridge A","","MSX cartridge (*.rom)");
 	if (fnam.isEmpty()) return;
-	ui.cSlotAName->setText(fnam);
+	ui.cSlotName->setText(fnam);
 	loadFile(comp, fnam.toLocal8Bit().data(), FT_SLOT_A, 0);
-}
-
-void SetupWin::openSlotB() {
-	QString fnam = QFileDialog::getOpenFileName(this,"MSX cartridge B","","MSX cartridge (*.rom)");
-	if (fnam.isEmpty()) return;
-	ui.cSlotBName->setText(fnam);
-	loadFile(comp, fnam.toLocal8Bit().data(), FT_SLOT_B, 1);
-}
-
-void ejectSlot(xCartridge* slot) {
-	free(slot->data);
-	slot->data = NULL;
-	slot->name[0] = 0x00;
 }
 
 int testSlotOn(Computer*);
 
-void SetupWin::ejectSlotA() {
-	ejectSlot(&comp->msx.slotA);
-	ui.cSlotAName->clear();
-	if (testSlotOn(comp)) compReset(comp,RES_DEFAULT);
-}
-
-void SetupWin::ejectSlotB() {
-	ejectSlot(&comp->msx.slotB);
-	ui.cSlotBName->clear();
-	if (testSlotOn(comp)) compReset(comp,RES_DEFAULT);
+void SetupWin::ejectSlot() {
+	sltEject(comp->slot);
+	ui.cSlotName->clear();
+	if (testSlotOn(comp))
+		compReset(comp,RES_DEFAULT);
 }
 
 // tools

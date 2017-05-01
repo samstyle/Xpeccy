@@ -82,6 +82,7 @@ int loadSPG(Computer* comp, const char* name) {
 		default: compSetTurbo(comp, 3); break;
 	}
 	comp->cpu->iff1 = (hd.flag35 & 0x04) ? 1 : 0;	// int enabled/disabled
+	comp->cpu->inten = comp->cpu->iff1 ? 3 : 2;
 	comp->cpu->imode = 1;				// im 1
 	comp->cpu->i = 0x3f;				// i = 3F
 	comp->dos = 0;					// basic 48 in bank0

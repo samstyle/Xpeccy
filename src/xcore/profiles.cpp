@@ -413,8 +413,8 @@ int prfLoad(std::string nm) {
 					if (pnam == "capacity") sdcSetCapacity(comp->sdc,atoi(pval.c_str()));
 					break;
 				case PS_SLOT:
-					if (pnam == "slotA.type") comp->msx.slotA.mapType = atoi(pval.c_str());
-					if (pnam == "slotB.type") comp->msx.slotB.mapType = atoi(pval.c_str());
+					if ((pnam == "slot.type") || (pnam == "slotA.type"))
+						comp->slot->mapType = atoi(pval.c_str());
 					break;
 			}
 		}
@@ -544,8 +544,7 @@ int prfSave(std::string nm) {
 	fprintf(file, "capacity = %i\n", comp->sdc->capacity);
 
 	fprintf(file, "\n[SLOT]\n");
-	fprintf(file, "slotA.type = %i\n",comp->msx.slotA.mapType);
-	fprintf(file, "slotB.type = %i\n",comp->msx.slotB.mapType);
+	fprintf(file, "slot.type = %i\n",comp->slot->mapType);
 
 	fclose(file);
 

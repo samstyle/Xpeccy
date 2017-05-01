@@ -168,6 +168,7 @@ void setOutput(const char* name) {
 }
 
 int sndOpen() {
+	sndChunks = conf.snd.rate / 50;
 	if (sndOutput == NULL) return 0;
 	if (!sndOutput->open()) {
 		setOutput("NULL");
@@ -211,31 +212,14 @@ void fillBuffer(int len) {
 	}
 }
 
-// NULL (SDL timer callback for mutex unlocking)
-
-SDL_TimerID tid;
-
-// 20ms callback. starts if output callback doesn't started by some reason
-Uint32 sdlontimer(Uint32 interval, void* data) {
-	if (conf.running)
-		emutex.unlock();
-	return interval;
-}
+// NULL
 
 int null_open() {
-	tid = SDL_AddTimer(20, &sdlontimer, NULL);
-	if (tid == 0) {
-		printf("Can't set SDL timer : %s\n",SDL_GetError());
-	}
-	sndChunks = conf.snd.rate / 50;
 	return 1;
 }
 
 void null_play() {}
-
-void null_close() {
-	SDL_RemoveTimer(tid);
-}
+void null_close() {}
 
 // SDL
 
@@ -253,10 +237,6 @@ void sdlPlayAudio(void*,Uint8* stream, int len) {
 	}
 	// SDL_MixAudio(stream, bufB.data, len, SDL_MIX_MAXVOLUME);
 	memcpy(stream, bufB.data, len);
-	if (conf.running) {
-//		sndChunks = len / conf.snd.chans;
-		emutex.unlock();
-	}
 }
 
 int sdlopen() {
@@ -267,7 +247,7 @@ int sdlopen() {
 	asp.freq = conf.snd.rate;
 	asp.format = AUDIO_U8;
 	asp.channels = conf.snd.chans;
-	asp.samples = conf.snd.rate / 50;
+	asp.samples = sndChunks;
 	asp.callback = &sdlPlayAudio;
 	asp.userdata = NULL;
 	if (SDL_OpenAudio(&asp, &dsp) != 0) {
@@ -275,10 +255,6 @@ int sdlopen() {
 		res = 0;
 	} else {
 		printf("SDL audio device opening...success: %i %i\n",dsp.freq, dsp.samples);
-		sndChunks = dsp.samples;				// why it allways returns desired_rate/2 ???
-//		int per = 1000 * sndChunks / conf.snd.rate;		// ms to fill the buffer
-//		printf("per = %i\n",per);
-//		tid = SDL_AddTimer(per, &sdlontimer, NULL);
 		bufA.pos = 0;
 		playPos = 0;
 		pass = 0;

@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 2.8.11)
+
 set(PROJECT_NAME "xpeccy")
 project(${PROJECT_NAME})
-file(STRINGS "Release" XVER)
 
-#set(XVER "0.6.20160119")
+file(STRINGS "Release" XVER)
 
 #set(CMAKE_C_COMPILER gcc)
 #set(CMAKE_CXX_COMPILER g++)
@@ -66,17 +66,11 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 	endif()
 
-#	install_targets(/bin ${PROJECT_NAME})
-	install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}
-		DESTINATION bin
+	install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME} DESTINATION bin
 		PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE WORLD_READ WORLD_EXECUTE GROUP_READ GROUP_EXECUTE
 	)
-	install(FILES images/xpeccy.png
-		DESTINATION share/icons
-	)
-	install(FILES Xpeccy.desktop
-		DESTINATION share/applications
-	)
+	install(FILES images/xpeccy.png DESTINATION share/icons)
+	install(FILES Xpeccy.desktop DESTINATION share/applications)
 
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
@@ -101,6 +95,7 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
+	set(CPACK_GENERATOR "ZIP")
 	set(LIBRARIES ${LIBRARIES} winmm.dll)
 	set(INC_PATHS $ENV{INCLUDE} $ENV{PATH})
 	set(LIB_PATHS $ENV{LIBPATH} $ENV{PATH})
@@ -177,11 +172,9 @@ else(${QT5BUILD})
 	set(LIBRARIES ${LIBRARIES} ${QT_LIBRARIES})
 	set(CPACK_RPM_PACKAGE_REQUIRES "libqt4 >= 4.6, libqt4-x11 >= 4.6")
 	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqtcore4 (>=4.6), libqtgui4 (>=4.6)")
-
 	set(QT_VER ${QT_VERSION_MAJOR}.${QT_VERSION_MINOR}.${QT_VERSION_PATCH})
 
 endif(${QT5BUILD})
-
 
 # alsa (sound, linux)
 

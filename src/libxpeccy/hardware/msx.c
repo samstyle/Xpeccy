@@ -81,7 +81,7 @@ void msxSetMem(Computer* comp, int bank, unsigned char slot) {
 	mPageNr pg = msxMemTab[slot][bank];
 	switch(pg.type) {
 		case MEM_SLOT:
-			memSetBank(comp->mem, bank, MEM_SLOT, comp->msx.slotA.memMap[bank], msxSlotRd, msxSlotWr, pg.num ? &comp->msx.slotB : &comp->msx.slotA);
+			memSetBank(comp->mem, bank, MEM_SLOT, comp->slot->memMap[bank], msxSlotRd, msxSlotWr, &comp->slot);
 			break;
 		case MEM_RAM:
 			memSetBank(comp->mem, bank, MEM_RAM, comp->msx.memMap[bank & 3] & 7, NULL, NULL, NULL);
@@ -119,8 +119,7 @@ void msxReset(Computer* comp) {
 	comp->msx.memMap[2] = 1;
 	comp->msx.memMap[3] = 0;
 	vidSetMode(comp->vid, VID_V9938);
-	msxResetSlot(&comp->msx.slotA);
-	msxResetSlot(&comp->msx.slotB);
+	msxResetSlot(comp->slot);
 	vdpReset(&comp->vid->v9938);
 	msxMapMem(comp);
 }

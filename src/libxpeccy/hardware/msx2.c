@@ -53,7 +53,7 @@ void msx2mapper(Computer* comp) {
 			bn = comp->msx.memMap[i];
 		}
 		if (bt == MEM_SLOT) {
-			memSetBank(comp->mem, i, MEM_SLOT, comp->msx.slotA.memMap[i], msxSlotRd, msxSlotWr, bn ? &comp->msx.slotB : &comp->msx.slotA);
+			memSetBank(comp->mem, i, MEM_SLOT, comp->slot->memMap[i], msxSlotRd, msxSlotWr, &comp->slot);
 		} else {
 			memSetBank(comp->mem, i, bt, bn, NULL, NULL, NULL);
 		}
@@ -152,8 +152,7 @@ void msx2Reset(Computer* comp) {
 	comp->vid->v9938.memMask = 0x1ffff;
 	vidSetMode(comp->vid, VID_V9938);
 	vdpReset(&comp->vid->v9938);
-	msxResetSlot(&comp->msx.slotA);
-	msxResetSlot(&comp->msx.slotB);
+	msxResetSlot(comp->slot);
 	msx2_A8out(comp, 0xa8, 0xf0);
 	msx2mapper(comp);
 }

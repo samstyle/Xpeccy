@@ -160,7 +160,7 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 	int ferr = ERR_OK;
 	rzxStop(comp);
 	Floppy* flp = comp->dif->fdc->flop[drv & 3];
-	xCartridge* slot = drv ? &comp->msx.slotB : &comp->msx.slotA;
+	// xCartridge* slot = drv ? &comp->msx.slotB : &comp->msx.slotA;
 	switch (type) {
 		case FT_SNA: ferr = loadSNA(comp,sfnam.c_str()); break;
 		case FT_Z80: ferr = loadZ80(comp,sfnam.c_str()); break;
@@ -176,7 +176,7 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 		case FT_DSK: ferr = loadDSK(flp,sfnam.c_str()); break;
 		case FT_TD0: ferr = loadTD0(flp,sfnam.c_str()); break;
 		case FT_SPG: ferr = loadSPG(comp,sfnam.c_str()); break;
-		case FT_SLOT: ferr = loadSlot(slot,sfnam.c_str()); break;
+		case FT_SLOT: ferr = loadSlot(comp->slot,sfnam.c_str()); break;
 #ifdef HAVEZLIB
 		case FT_RZX: ferr = loadRZX(comp,sfnam.c_str()); break;
 #endif

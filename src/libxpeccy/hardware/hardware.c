@@ -50,7 +50,7 @@ HardWare hwTab[] = {
 		HW_NULL,"","",50,0,NULL,NULL,NULL,NULL,NULL,NULL			// separator
 	},{
 		HW_GBC,"GameBoy","Game Boy",60,MEM_48,
-		&gbMaper,NULL,NULL,&gbMemRd,&gbMemWr,&gbReset,&gbc_sync
+		&gbMaper,NULL,NULL,&gbMemRd,&gbMemWr,&gbReset,&gbcSync
 	},{
 		HW_NULL,NULL,NULL,50,0,NULL,NULL,NULL,NULL,NULL,NULL			// eot
 	}

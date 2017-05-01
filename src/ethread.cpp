@@ -3,11 +3,19 @@
 #include "ethread.h"
 #include "xgui/xgui.h"
 #include "xcore/sound.h"
+#include "xcore/vfilters.h"
 
 QMutex emutex;
 
 unsigned char* blkData = NULL;
+extern unsigned char sbufa[1024 * 512 * 3];
 extern unsigned char scrn[1024 * 512 * 3];
+extern unsigned char prvScr[1024 * 512 * 3];
+
+void processPicture(unsigned char* src, int size) {
+	memcpy(sbufa, src, size);
+	scrMix(prvScr, sbufa, size, conf.vid.noFlick ? 0.5 : 0.7);
+}
 
 xThread::xThread() {
 	sndNs = 0;
@@ -52,10 +60,15 @@ void xThread::emuCycle() {
 	do {
 		// exec 1 opcode (or handle INT, NMI)
 		sndNs += compExec(comp);
-		if (comp->frmStrobe && !fast) {
+		if (comp->frmStrobe) {
 			comp->frmStrobe = 0;
-			memcpy(scrn, comp->vid->scrimg, comp->vid->vBytes);
-			emit picReady();
+			if (!fast) {
+				processPicture(comp->vid->scrimg, comp->vid->vBytes);
+				if (waitpic) {
+					waitpic = 0;
+					emit picReady();
+				}
+			}
 		}
 		// if need - request sound buffer update
 		if (sndNs > nsPerSample) {
@@ -63,13 +76,12 @@ void xThread::emuCycle() {
 			sndNs -= nsPerSample;
 		}
 		// tape trap
-		// pc =	comp->cpu->pc;
 		if ((comp->mem->map[0].type == MEM_ROM) && comp->rom && !comp->dos) {		// FIXME: shit
 			if (comp->cpu->pc == 0x56b) tapeCatch();
 			if ((comp->cpu->pc == 0x5e2) && conf->tape.autostart)
 				emit tapeSignal(TW_STATE,TWS_STOP);
 		}
-	} while (!comp->brk && conf->snd.fill); //(!comp->brk && !comp->frmStrobe); conf->snd.fill
+	} while (!comp->brk && conf->snd.fill);
 	comp->nmiRequest = 0;
 }
 

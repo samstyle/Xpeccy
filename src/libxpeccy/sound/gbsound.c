@@ -18,7 +18,7 @@ void gbsDestroy(gbSound* gbs) {
 	free(gbs);
 }
 
-void gbcSync(gbsChan* ch, long tick) {	// input ticks @ 128KHz
+void gbchSync(gbsChan* ch, long tick) {	// input ticks @ 128KHz
 	if (!ch->on) return;
 	ch->cnt--;
 	if (ch->cnt < 0) {
@@ -68,10 +68,10 @@ void gbsSync(gbSound* gbs, int ns) {
 	while (gbs->wav.count < 0) {
 		gbs->wav.tick++;
 		gbs->wav.count += gbs->wav.period;
-		gbcSync(&gbs->ch1, gbs->wav.tick);
-		gbcSync(&gbs->ch2, gbs->wav.tick);
-		gbcSync(&gbs->ch3, gbs->wav.tick);
-		gbcSync(&gbs->ch4, gbs->wav.tick);
+		gbchSync(&gbs->ch1, gbs->wav.tick);
+		gbchSync(&gbs->ch2, gbs->wav.tick);
+		gbchSync(&gbs->ch3, gbs->wav.tick);
+		gbchSync(&gbs->ch4, gbs->wav.tick);
 	}
 }
 

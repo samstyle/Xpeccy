@@ -180,10 +180,7 @@ Computer* compCreate() {
 	comp->ide = ideCreate(IDE_NONE);
 	comp->ide->smuc.cmos = &comp->cmos;
 	comp->sdc = sdcCreate();
-	comp->msx.slotA.data = NULL;
-	comp->msx.slotB.data = NULL;
-	comp->msx.slotA.name[0] = 0x00;
-	comp->msx.slotB.name[0] = 0x00;
+	comp->slot = sltCreate();
 // sound
 	comp->ts = tsCreate(TS_NONE,SND_AY,SND_NONE);
 	comp->gs = gsCreate();
@@ -239,6 +236,7 @@ void compDestroy(Computer* comp) {
 	gbsDestroy(comp->gbsnd);
 	sdrvDestroy(comp->sdrv);
 	bcDestroy(comp->beep);
+	sltDestroy(comp->slot);
 	free(comp);
 }
 

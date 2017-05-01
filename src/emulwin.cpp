@@ -11,10 +11,8 @@
 
 #include <fstream>
 #include <unistd.h>
-//#include <time.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-//#include <sys/time.h>
 
 #include "xcore/xcore.h"
 #include "xcore/sound.h"
@@ -35,6 +33,7 @@
 
 unsigned char screen[4096 * 2048 * 3];		// scaled image (up to fullscreen)
 unsigned char scrn[1024 * 512 * 3];		// 2:1 image
+unsigned char sbufa[1024 * 512 * 3];		// Emulation render -> (this)buffer -> scrn for postprocessing
 unsigned char prvScr[1024 * 512 * 3];		// copy of last 2:1 image (for noflic)
 extern int bytesPerLine;
 
@@ -130,6 +129,7 @@ MainWin::MainWin() {
 	setWindowIcon(icon);
 	setAcceptDrops(true);
 	setAutoFillBackground(false);
+	setUpdatesEnabled(false);
 	pauseFlags = 0;
 	scrCounter = 0;
 	scrInterval = 0;
@@ -177,9 +177,7 @@ MainWin::MainWin() {
 
 	initUserMenu();
 
-//	cmosTimer.start(1000);
 	timer.setInterval(20);
-//	connect(&cmosTimer,SIGNAL(timeout()),this,SLOT(cmosTick()));
 	connect(&timer,SIGNAL(timeout()),this,SLOT(onTimer()));
 
 	ethread.conf = &conf;
@@ -200,14 +198,20 @@ MainWin::MainWin() {
 
 // scale screen
 
-void MainWin::convImage() {
-	if (ethread.fast || comp->debug)
-		memcpy(scrn, comp->vid->scrimg, comp->vid->vBytes);
+void processPicture(unsigned char*, int);
 
-	if (!pauseFlags) {
+void MainWin::convImage() {
+
+	if (!pauseFlags || comp->debug) {
+		if (ethread.fast || comp->debug) {
+			memcpy(scrn, comp->vid->scrimg, comp->vid->vBytes);
+		} else {
+			memcpy(scrn, sbufa, comp->vid->vBytes);
+			// processPicture(comp->vid->scrimg, comp->vid->vBytes);
+		}
+		// scrMix(prvScr, scrn, comp->vid->vBytes, conf.vid.noFlick ? 0.5 : 0.7);
 		if (conf.vid.grayScale)
 			scrGray(scrn, comp->vid->vBytes);
-		scrMix(prvScr, scrn, comp->vid->vBytes, conf.vid.noFlick ? 0.5 : 0.7);
 	}
 
 	if (conf.vid.fullScreen) {
@@ -225,6 +229,7 @@ void MainWin::convImage() {
 				break;
 		}
 	}
+	ethread.waitpic = 1;
 // [put leds],make screenshot,[put leds]
 	if (!conf.scrShot.noLeds) putLeds();		// put leds before screenshot if on
 	if (scrCounter > 0) {
@@ -243,8 +248,9 @@ void MainWin::convImage() {
 			drawMessage();
 		msgTimer--;
 	}
-
-	update();
+	setUpdatesEnabled(true);
+	repaint();
+	setUpdatesEnabled(false);
 }
 
 void MainWin::onTimer() {
@@ -293,6 +299,8 @@ void MainWin::onTimer() {
 	} else if (ethread.fast) {
 		convImage();
 	}
+
+	emutex.unlock();
 }
 
 void MainWin::menuShow() {
@@ -535,6 +543,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			case Qt::Key_Escape:
 				ethread.fast = 0;
 				pause(true, PR_DEBUG);
+				setUpdatesEnabled(true);
 				dbg->start(comp);
 				break;
 			case Qt::Key_Menu:

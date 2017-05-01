@@ -167,6 +167,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.tbTool->addAction(ui.actSprScan);
 
 	ui.tbDbgOpt->addAction(ui.actShowLabels);
+	ui.tbDbgOpt->addAction(ui.actHideAddr);
 	ui.tbDbgOpt->addAction(ui.actShowSeg);
 // connections
 	connect(ui.dasmTable,SIGNAL(cellChanged(int,int)),this,SLOT(dasmEdited(int,int)));
@@ -179,6 +180,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.actSprScan,SIGNAL(triggered(bool)),this,SLOT(doMemView()));
 
 	connect(ui.actShowLabels,SIGNAL(toggled(bool)),this,SLOT(setShowLabels(bool)));
+	connect(ui.actHideAddr,SIGNAL(toggled(bool)),this,SLOT(fillDisasm()));
 	connect(ui.actShowSeg,SIGNAL(toggled(bool)),this,SLOT(setShowSegment(bool)));
 
 	connect(ui.tbView, SIGNAL(triggered(QAction*)),this,SLOT(chaCellProperty(QAction*)));
@@ -1270,7 +1272,8 @@ void DebugWin::placeLabel(DasmRow& drow) {
 	if ((drow.type == DBG_VIEW_ADDR) || (drow.type == DBG_VIEW_CODE)) {
 		pos = drow.com.indexOf(QRegExp("#[0-9A-F]{4,4}"));			// find addr position (#XXXX)
 		if (pos > 0) {
-			lab = findLabel(drow.com.mid(pos+1,4).toInt(NULL,16), -1, -1);	// find label for that addr
+			drow.radr = drow.com.mid(pos + 1, 4).toInt(NULL, 16);
+			lab = findLabel(drow.radr, -1, -1);	// find label for that addr
 			if (!lab.isEmpty()) {
 				drow.com.replace(pos, 5, lab);				// replace +1 char (#XXXX)
 			}
@@ -1288,6 +1291,7 @@ int DebugWin::fillDisasm() {
 	QString lab;
 	QString sadr;
 	MemPage* mptr;
+	QTableWidgetItem* itm;
 	QFont fnt = ui.dasmTable->font();
 	xAdr xadr;
 	int pos;
@@ -1324,28 +1328,47 @@ int DebugWin::fillDisasm() {
 		ui.dasmTable->item(i, 1)->setBackgroundColor(bgcol);
 		ui.dasmTable->item(i, 2)->setBackgroundColor(bgcol);
 		ui.dasmTable->item(i, 3)->setBackgroundColor(acol);
+		// place segment/addr/label
 		xadr = memGetXAdr(comp->mem, drow.adr);
 		lab = findLabel(xadr.adr, xadr.type, xadr.bank);
+		itm = ui.dasmTable->item(i, 0);
 		if (lab.isEmpty()) {
 			fnt.setBold(false);
-			//ui.dasmTable->item(i, 0)->setText(gethexword(drow.adr));
-			ui.dasmTable->item(i, 0)->setText(sadr);
+			itm->setForeground(ui.actHideAddr->isChecked() ? Qt::gray : Qt::black);
+			itm->setText(sadr);
 		} else {
+			itm->setForeground(Qt::black);
 			fnt.setBold(true);
-			ui.dasmTable->item(i, 0)->setText(lab);
+			itm->setText(lab);
 		}
-		ui.dasmTable->item(i, 0)->setFont(fnt);
+		itm->setFont(fnt);
+
+		// fill bytes
 		QString str;
 		foreach(pos, drow.bytes)
 			str.append(gethexbyte(pos));
 		ui.dasmTable->item(i, 1)->setText(str);
+
+		// fill command
 		ui.dasmTable->item(i, 2)->setText(drow.com);
+
+		// fill last cell
+		itm = ui.dasmTable->item(i,3);
 		if (drow.cond) {
-			ui.dasmTable->item(i,3)->setText("+");
+			if (drow.adr < drow.radr) {
+				itm->setIcon(QIcon(":/images/arrdn.png"));
+			} else if (drow.adr > drow.radr) {
+				itm->setIcon(QIcon(":/images/arrup.png"));
+			} else {
+				itm->setIcon(QIcon(":/images/redCircle.png"));
+			}
+			// ui.dasmTable->item(i,3)->setText("+");
 		} else if (drow.mem) {
-			ui.dasmTable->item(i,3)->setText(gethexbyte(drow.mop));
+			itm->setText(gethexbyte(drow.mop));
+			itm->setIcon(QIcon());
 		} else {
-			ui.dasmTable->item(i,3)->setText("");
+			itm->setText("");
+			itm->setIcon(QIcon());
 		}
 	}
 	fillStack();

@@ -66,10 +66,8 @@ class SetupWin : public QDialog {
 
 		void selSDCimg();
 
-		void openSlotA();
-		void openSlotB();
-		void ejectSlotA();
-		void ejectSlotB();
+		void openSlot();
+		void ejectSlot();
 
 		void editrset();
 		void setrpart();

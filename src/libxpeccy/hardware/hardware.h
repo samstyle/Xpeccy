@@ -26,6 +26,7 @@ enum {
 	HW_MSX,		// MSX 1
 	HW_MSX2,	// MSX 2
 	HW_GBC,		// Game boy color (gameboy capatible)
+	HW_NES		// Nintendo Entertaiment System (Dendy)
 };
 
 // mem size
@@ -67,15 +68,6 @@ struct HardWare {
 	cbHwMwr mwr;
 	cbHwRes reset;
 	cbHwSnc sync;
-/*
-	void (*mapMem)(Computer*);
-	void (*out)(Computer*,unsigned short,unsigned char,int);
-	unsigned char (*in)(Computer*,unsigned short,int);
-	unsigned char (*mrd)(Computer*,unsigned short,int);
-	void (*mwr)(Computer*,unsigned short,unsigned char);
-	void (*reset)(Computer*);
-	void (*sync)(Computer*, long);		// callback after each command. control request/handle interrupt bit
-*/
 };
 
 typedef struct {
@@ -213,9 +205,16 @@ void gbMaper(Computer*);
 void gbReset(Computer*);
 unsigned char gbMemRd(Computer*, unsigned short, int);
 void gbMemWr(Computer*, unsigned short, unsigned char);
-void gbc_sync(Computer*, long);
+void gbcSync(Computer*, long);
 void gbPress(Computer*, const char*);
 void gbRelease(Computer*, const char*);
+
+// nes
+void nesMaper(Computer*);
+void nesReset(Computer*);
+unsigned char nesMemRd(Computer*, unsigned short, int);
+void nesMemWr(Computer*, unsigned short, unsigned char);
+void nesSync(Computer*, long);
 
 #ifdef __cplusplus
 }
