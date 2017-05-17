@@ -7,6 +7,7 @@
 #include <QPainter>
 #include <QFileDialog>
 #include <QTemporaryFile>
+#include <QTextCodec>
 
 #include "debuger.h"
 #include "dbg_sprscan.h"
@@ -121,6 +122,10 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.actTrace->setData(DBG_TRACE_ALL);
 	ui.actTraceHere->setData(DBG_TRACE_HERE);
 	ui.actTraceINT->setData(DBG_TRACE_INT);
+
+	ui.act1251->setData(XCP_1251);
+	ui.act866->setData(XCP_866);
+	ui.actKoi8r->setData(XCP_KOI8R);
 // disasm table
 	for (row = 0; row < ui.dasmTable->rowCount(); row++) {
 		for (col = 0; col < ui.dasmTable->columnCount(); col++) {
@@ -169,6 +174,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.tbDbgOpt->addAction(ui.actShowLabels);
 	ui.tbDbgOpt->addAction(ui.actHideAddr);
 	ui.tbDbgOpt->addAction(ui.actShowSeg);
+
 // connections
 	connect(ui.dasmTable,SIGNAL(cellChanged(int,int)),this,SLOT(dasmEdited(int,int)));
 	connect(ui.dasmTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
@@ -196,24 +202,34 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.actDisasm, SIGNAL(triggered(bool)),this,SLOT(saveDasm()));
 
 // dump table
+
+	agCodepage = new QActionGroup(ui.tbCodepage);
+	agCodepage->addAction(ui.act1251);
+	agCodepage->addAction(ui.act866);
+	agCodepage->addAction(ui.actKoi8r);
+	ui.act1251->setChecked(true);
+
+	ui.tbCodepage->addAction(ui.act1251);
+	ui.tbCodepage->addAction(ui.act866);
+	ui.tbCodepage->addAction(ui.actKoi8r);
+
 	for (row = 0; row < ui.dumpTable->rowCount(); row++) {
 		for (col = 0; col < ui.dumpTable->columnCount(); col++) {
 			ui.dumpTable->setItem(row, col, new QTableWidgetItem);
 		}
 		ui.dumpTable->item(row, 9)->setTextAlignment(Qt::AlignRight);
 	}
+
 	ui.dumpTable->setColumnWidth(0,50);
-//	for (col = 1; col < 9; col++) {
-//		ui.dumpTable->setColumnWidth(col, 27);
-//	}
 	ui.dumpTable->setItemDelegate(new xItemDelegate(XTYPE_BYTE));
 	ui.dumpTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_ADR));
 	ui.dumpTable->setItemDelegateForColumn(9, new xItemDelegate(XTYPE_NONE));
+
 	connect(ui.dumpTable,SIGNAL(cellChanged(int,int)),this,SLOT(dumpEdited(int,int)));
 	connect(ui.dumpTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
-	//row = ui.dumpTable->font().pixelSize();
-	//if (row < 0) row = 17;
-	//ui.dumpTable->setFixedHeight(ui.dumpTable->rowCount() * row + 8);
+
+	connect(agCodepage, SIGNAL(triggered(QAction*)), this, SLOT(fillDump()));
+
 // registers
 	connect(ui.editAF, SIGNAL(textChanged(QString)), this, SLOT(setZ80()));
 	connect(ui.editBC, SIGNAL(textChanged(QString)), this, SLOT(setZ80()));
@@ -1533,18 +1549,27 @@ void DebugWin::saveDasm() {
 
 // memory dump
 
-QString getDumpString(Memory* mem, unsigned short adr) {
+QString getDumpString(Memory* mem, unsigned short adr, int cp) {
 	QString res;
+	QTextCodec* codec = NULL;
+	switch(cp) {
+		case XCP_1251: codec = QTextCodec::codecForName("CP1251"); break;
+		case XCP_866: codec = QTextCodec::codecForName("IBM866"); break;
+		case XCP_KOI8R: codec = QTextCodec::codecForName("KOI8R"); break;
+	}
 	unsigned char bte;
 	for (int i = 0; i < 8; i++) {
 		bte = memRd(mem, adr);
 		adr = (adr + 1) & 0xffff;
-		if ((bte < 32) || (bte > 127)) {
-			res.append(".");
-		} else {
+		if (bte > 0) {
 			res.append(QChar(bte));
+		} else {
+			res.append(".");
 		}
 	}
+	if (codec == NULL) return res;
+	QByteArray arr = res.toLatin1();
+	res = codec->toUnicode(arr);
 	return res;
 }
 
@@ -1555,7 +1580,7 @@ void DebugWin::fillDump() {
 	QColor bgcol, ccol;
 	for (row = 0; row < ui.dumpTable->rowCount(); row++) {
 		ui.dumpTable->item(row,0)->setText(gethexword(adr));
-		ui.dumpTable->item(row,9)->setText(getDumpString(comp->mem, adr));
+		ui.dumpTable->item(row,9)->setText(getDumpString(comp->mem, adr, agCodepage->checkedAction()->data().toInt()));
 		bgcol = (row & 1) ? colBG0 : colBG1;
 		ui.dumpTable->item(row, 0)->setBackground(bgcol);
 		ui.dumpTable->item(row, 9)->setBackground(bgcol);

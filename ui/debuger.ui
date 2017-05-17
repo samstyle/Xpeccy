@@ -225,17 +225,41 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="label_28">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(160, 160, 255)</string>
-       </property>
-       <property name="text">
-        <string>Dump</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
+      <layout class="QHBoxLayout" name="horizontalLayout_8">
+       <item>
+        <widget class="QLabel" name="label_28">
+         <property name="styleSheet">
+          <string notr="true">background-color: rgb(160, 160, 255)</string>
+         </property>
+         <property name="text">
+          <string>Dump</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="tbCodepage">
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>14</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>V</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../xpeccy.qrc">
+           <normaloff>:/images/settings.png</normaloff>:/images/settings.png</iconset>
+         </property>
+         <property name="popupMode">
+          <enum>QToolButton::InstantPopup</enum>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
       <widget class="QTableWidget" name="dumpTable">
@@ -2282,6 +2306,30 @@
     <string>Hide address</string>
    </property>
   </action>
+  <action name="act1251">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>cp1251</string>
+   </property>
+  </action>
+  <action name="act866">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>ibm866</string>
+   </property>
+  </action>
+  <action name="actKoi8r">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Koi8R</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -2354,11 +2402,11 @@
  </resources>
  <connections/>
  <buttongroups>
+  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
-  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

@@ -154,6 +154,7 @@ void zxSetUlaPalete(Computer* comp) {
 Computer* compCreate() {
 	Computer* comp = (Computer*)malloc(sizeof(Computer));
 	void* ptr = (void*)comp;
+	int i;
 	memset(ptr,0,sizeof(Computer));
 	memset(comp->brkIOMap, 0, 0x10000);
 	comp->resbank = RES_48;
@@ -169,6 +170,9 @@ Computer* compCreate() {
 	memset(comp->brkIOMap, 0, 0x10000);
 	memset(comp->brkRomMap, 0, 0x80000);
 	memset(comp->brkRamMap, 0, 0x400000);
+
+	for(i = 0; i < MAX_DEV_COUNT; i++)
+		comp->devList[i] = NULL;
 
 // input
 	comp->keyb = keyCreate();
@@ -327,12 +331,102 @@ void compSetHardware(Computer* comp, const char* name) {
 	compUpdateTimings(comp);
 }
 
-// interrupts
+// external devices
+
+xDevPtr compFindDev(Computer* comp, int type) {
+	xDevPtr res;
+	res.ptr = NULL;
+	int idx = 0;
+	xDevice* dev;
+	while(idx < MAX_DEV_COUNT) {
+		dev = comp->devList[idx];
+		if (dev) {
+			if (dev->type == type) {
+				res = dev->ptr;
+				idx = MAX_DEV_COUNT;
+			}
+		}
+		idx++;
+	}
+	return res;
+}
+
+void compAddDev(Computer* comp, int type) {
+	if (compFindDev(comp, type).ptr != NULL) return;		// already added
+	int idx = 0;
+	while(idx < MAX_DEV_COUNT) {
+		if (comp->devList[idx] == NULL) {
+			comp->devList[idx] = devCreate(type);
+			idx = MAX_DEV_COUNT;
+		}
+		idx++;
+	}
+}
+
+void compDelDev(Computer* comp, int type) {
+	int idx = 0;
+	xDevice* dev;
+	while(idx < MAX_DEV_COUNT) {
+		dev = comp->devList[idx];
+		if (dev) {
+			if (dev->type == type) {
+				devDestroy(dev);
+				comp->devList[idx] = NULL;
+				idx = MAX_DEV_COUNT;
+			}
+		}
+		idx++;
+	}
+}
+
+// send byte <data> to all devices for address <adr>
+void compDevWr(Computer* comp, unsigned short adr, unsigned char data) {
+	int idx = 0;
+	xDevice* dev;
+	comp->bus.iorge = 0;
+	comp->bus.adr = adr;
+	comp->bus.data = data;
+	while(idx < MAX_DEV_COUNT) {
+		dev = comp->devList[idx];
+		if (dev) {
+			if (dev->wr)
+				dev->wr(dev->ptr, &comp->bus);
+		}
+		idx++;
+	}
+}
+
+// try to read byte from devices from address <adr>
+// bus.iorge = 1 : some device answered, then bus.data = received byte
+void compDevRd(Computer* comp, unsigned short adr) {
+	int idx = 0;
+	xDevice* dev;
+	comp->bus.iorge = 0;
+	comp->bus.adr = adr;
+	while (!comp->bus.iorge && (idx < MAX_DEV_COUNT)) {
+		dev = comp->devList[idx];
+		if (dev) {
+			if (dev->rd) {
+				dev->rd(dev->ptr, &comp->bus);
+			}
+		}
+		idx++;
+	}
+}
+
+void compDevReset(Computer* comp) {
+	int idx = 0;
+	xDevice* dev;
+	while (idx < MAX_DEV_COUNT) {
+		dev = comp->devList[idx];
+		if (dev) {
+			if (dev->reset) dev->reset(dev->ptr);
+		}
+	}
+}
+
 // exec 1 opcode, sync devices, return eated ns
 
-// IDEA : let video system to accumulate TIME value, not like (cpu->t * comp->nsPerTick);
-
-void vidTSRender(Video*, unsigned char*);
 int compExec(Computer* comp) {
 	res4 = 0;
 	res2 = 0;

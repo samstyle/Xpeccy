@@ -779,7 +779,7 @@ void MainWin::screenShot() {
 		case SCR_HOB: fext = "$C"; break;
 	}
 	QString fnams = QString(conf.scrShot.dir.c_str()).append(SLASH);
-	fnams.append(QTime::currentTime().toString("HHmmss_zzz")).append(".").append(QString(fext.c_str()));
+	fnams.append(QString("xpeccy_%0.%1").arg(QTime::currentTime().toString("HHmmss_zzz")).arg(fext.c_str()));
 	std::string fnam(fnams.toUtf8().data());
 	std::ofstream file;
 	QImage img(screen, width(), height(), QImage::Format_RGB888);
@@ -812,6 +812,7 @@ void MainWin::screenShot() {
 			img.save(QString(fnam.c_str()),fext.c_str());
 			break;
 	}
+	setMessage(trUtf8("screenshot saved"));
 }
 
 // video drawing

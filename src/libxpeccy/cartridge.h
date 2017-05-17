@@ -1,6 +1,10 @@
 #ifndef _CARTRIDGE_H
 #define _CARTRIDGE_H
 
+#if __cplusplus
+extern "C" {
+#endif
+
 #include <stdio.h>
 
 // MSX cartridge mapper type
@@ -39,5 +43,9 @@ typedef struct xCartridge xCartridge;
 xCartridge* sltCreate();
 void sltDestroy(xCartridge*);
 void sltEject(xCartridge*);
+
+#if __cplusplus
+}
+#endif
 
 #endif

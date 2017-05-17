@@ -9,6 +9,12 @@ extern "C" {
 #include "video/video.h"
 #include "memory.h"
 
+#if 1
+
+#include "device.h"
+
+#else
+
 #include "input.h"
 #include "tape.h"
 #include "fdc.h"
@@ -21,6 +27,8 @@ extern "C" {
 #include "sound/saa1099.h"
 #include "sound/soundrive.h"
 #include "sound/gbsound.h"
+
+#endif
 
 #ifdef HAVEZLIB
 	#include <zlib.h>
@@ -86,6 +94,7 @@ typedef struct {
 	CPU* cpu;
 	Memory* mem;
 	Video* vid;
+
 	Keyboard* keyb;
 	Joystick* joy;
 	Mouse* mouse;
@@ -99,6 +108,9 @@ typedef struct {
 	SDrive* sdrv;
 	gbSound* gbsnd;
 	xCartridge* slot;		// cartrige slot (MSX, GB, NES)
+
+	xDevBus bus;
+	xDevice* devList[MAX_DEV_COUNT];	// new : unified devices list
 
 #ifdef HAVEZLIB
 

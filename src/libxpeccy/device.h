@@ -13,6 +13,7 @@ extern "C" {
 #include "fdc.h"
 #include "hdd.h"
 #include "sdcard.h"
+#include "cartridge.h"
 
 #include "sound/ayym.h"
 #include "sound/gs.h"
@@ -20,7 +21,7 @@ extern "C" {
 #include "sound/soundrive.h"
 #include "sound/gbsound.h"
 
-#define	MAX_DEV_COUNT	16
+#define	MAX_DEV_COUNT	32
 
 // device type
 
@@ -38,6 +39,18 @@ enum {
 	DEV_SAA,
 	DEV_SDRIVE
 };
+
+// universal bus to device
+
+typedef struct {
+	unsigned iorge:1;	// request catched (use to prevent devices conflict)
+	unsigned iorq:1;	// io request
+	unsigned memrq:1;	// mem request
+	unsigned rd:1;		// read (device will return data in the 'data' field)
+	unsigned wr:1;		// write
+	unsigned short adr;	// address bus (16 bit)
+	unsigned char data;	// data bus (8 bit)
+} xDevBus;
 
 // pointer to device
 
@@ -61,11 +74,17 @@ typedef union {
 
 typedef struct {
 	int type;
-	unsigned char(*rd)(xDevPtr, unsigned short);		// receive byte from device
-	void(*wr)(xDevPtr, unsigned short, unsigned char);	// send byte to device
-	void(*sync)(xDevPtr, unsigned long);			// emulate device work during some time (ns)
-	xDevPtr ptr;						// pointer to device-specified data
+	xDevPtr(*create)();
+	void(*destroy)(xDevPtr);
+	void(*reset)(xDevPtr);
+	int(*rd)(xDevPtr, xDevBus*);		// read byte from device
+	int(*wr)(xDevPtr, xDevBus*);		// write byte to device
+	void(*sync)(xDevPtr, int);		// emulate device work during some time (ns)
+	xDevPtr ptr;				// pointer to device-specified data
 } xDevice;
+
+xDevice* devCreate(int);
+void devDestroy(xDevice*);
 
 #if __cplusplus
 }

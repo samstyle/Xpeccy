@@ -47,6 +47,12 @@ enum {
 	XTYPE_BYTE
 };
 
+enum {
+	XCP_1251 = 1,
+	XCP_866,
+	XCP_KOI8R
+};
+
 struct DasmRow {
 	unsigned ispc:1;	// adr=PC
 	unsigned cond:1;	// if there is condition command (JR, JP, CALL, RET) and condition met
@@ -120,6 +126,8 @@ class DebugWin : public QDialog {
 
 		unsigned short disasmAdr;
 		unsigned short dumpAdr;
+
+		QActionGroup* agCodepage;
 
 		void fillZ80();
 		void fillFlags();
