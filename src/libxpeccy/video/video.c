@@ -73,6 +73,7 @@ Video* vidCreate(Memory* me) {
 //	vidSetFps(vid, 50);
 	vidUpdateLayout(vid, 0.5);
 
+	vid->brdstep = 1;
 	vid->nextbrd = 0;
 	vid->curscr = 5;
 	vid->fcnt = 0;
@@ -148,12 +149,21 @@ void vidDarkTail(Video* vid) {
 	unsigned char* ptr = vid->ray.ptr;
 	do {
 		if ((yscr >= vid->lcut.y) && (yscr < vid->rcut.y) && (xscr >= vid->lcut.x) && (xscr < vid->rcut.x)) {
+#if 0
 			*(ptr++) >>= 1;
 			*(ptr++) >>= 1;
 			*(ptr++) >>= 1;
 			*(ptr++) >>= 1;
 			*(ptr++) >>= 1;
 			*(ptr++) >>= 1;
+#else
+			*ptr = ((*ptr - 0x80) >> 1) + 128; ptr++;
+			*ptr = ((*ptr - 0x80) >> 1) + 128; ptr++;
+			*ptr = ((*ptr - 0x80) >> 1) + 128; ptr++;
+			*ptr = ((*ptr - 0x80) >> 1) + 128; ptr++;
+			*ptr = ((*ptr - 0x80) >> 1) + 128; ptr++;
+			*ptr = ((*ptr - 0x80) >> 1) + 128; ptr++;
+#endif
 		}
 		if (++xscr >= vid->lay.full.x) {
 			xscr = 0;
@@ -164,8 +174,13 @@ void vidDarkTail(Video* vid) {
 	vid->tail = 1;
 }
 
-void vidGetScreen(Video* vid, unsigned char* dst, int bank, int shift, int watr) {
-	unsigned char* pixs = vid->mem->ramData + MADR(bank, shift & 0x2000);
+//const unsigned char emptyBox[8] = {0x00,0x18,0x3c,0x7e,0x7e,0x3c,0x18,0x00};
+//const unsigned char emptyBox[8] = {0x81,0x00,0x00,0x00,0x00,0x00,0x00,0x81};
+const unsigned char emptyBox[8] = {0x00,0x00,0x00,0x18,0x18,0x00,0x00,0x00};
+
+void vidGetScreen(Video* vid, unsigned char* dst, int bank, int shift, int flag) {
+	if ((bank == 0xff) && (shift > 0x2800)) shift = 0x2800;
+	unsigned char* pixs = vid->mem->ramData + MADR(bank, shift);
 	unsigned char* atrs = pixs + 0x1800;
 	unsigned char sbyte, abyte, aink, apap;
 	int prt, lin, row, xpos, bitn, cidx;
@@ -176,15 +191,21 @@ void vidGetScreen(Video* vid, unsigned char* dst, int bank, int shift, int watr)
 				for (xpos = 0; xpos < 32; xpos++) {
 					sadr = (prt << 11) | (lin << 5) | (row << 8) | xpos;
 					aadr = (prt << 8) | (lin << 5) | xpos;
-					sbyte = *(pixs + sadr);
-					abyte = watr ? *(atrs + aadr) : 0x47;
+					sbyte = (flag & 2) ? emptyBox[row] : *(pixs + sadr);
+					abyte = (flag & 1) ? 0x47 : *(atrs + aadr);
 					aink = inkTab[abyte & 0x7f];
 					apap = papTab[abyte & 0x7f];
 					for (bitn = 0; bitn < 8; bitn++) {
 						cidx = (sbyte & (128 >> bitn)) ? aink : apap;
-						*(dst++) = vid->pal[cidx].r;
-						*(dst++) = vid->pal[cidx].g;
-						*(dst++) = vid->pal[cidx].b;
+						if ((flag & 4) && ((lin ^ xpos) & 1)) {
+							*(dst++) = ((vid->pal[cidx].r - 0x80) >> 1) + 0x80;
+							*(dst++) = ((vid->pal[cidx].g - 0x80) >> 1) + 0x80;
+							*(dst++) = ((vid->pal[cidx].b - 0x80) >> 1) + 0x80;
+						} else {
+							*(dst++) = vid->pal[cidx].r;
+							*(dst++) = vid->pal[cidx].g;
+							*(dst++) = vid->pal[cidx].b;
+						}
 					}
 				}
 			}
@@ -581,7 +602,9 @@ void vidSync(Video* vid, int ns) {
 		vid->nsDraw -= vid->nsPerDot;
 		vid->time += vid->nsPerDot;
 
-		if (vid->ray.x & 8) vid->brdcol = vid->nextbrd;			// update border color
+		if (~vid->ray.x & vid->brdstep)
+			vid->brdcol = vid->nextbrd;
+
 		// if ray is on visible screen & video has drawing callback...
 		if ((vid->ray.y >= vid->lcut.y) && (vid->ray.y < vid->rcut.y) \
 			&& (vid->ray.x >= vid->lcut.x) && (vid->ray.x < vid->rcut.x) \

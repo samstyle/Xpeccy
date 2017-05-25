@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>749</width>
+    <width>758</width>
     <height>612</height>
    </rect>
   </property>
@@ -227,6 +227,28 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_8">
        <item>
+        <widget class="QToolButton" name="tbDumpView">
+         <property name="minimumSize">
+          <size>
+           <width>50</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>14</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>MEM</string>
+         </property>
+         <property name="popupMode">
+          <enum>QToolButton::InstantPopup</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QLabel" name="label_28">
          <property name="styleSheet">
           <string notr="true">background-color: rgb(160, 160, 255)</string>
@@ -241,6 +263,12 @@
        </item>
        <item>
         <widget class="QToolButton" name="tbCodepage">
+         <property name="minimumSize">
+          <size>
+           <width>50</width>
+           <height>0</height>
+          </size>
+         </property>
          <property name="maximumSize">
           <size>
            <width>16777215</width>
@@ -248,11 +276,7 @@
           </size>
          </property>
          <property name="text">
-          <string>V</string>
-         </property>
-         <property name="icon">
-          <iconset resource="../xpeccy.qrc">
-           <normaloff>:/images/settings.png</normaloff>:/images/settings.png</iconset>
+          <string>WIN</string>
          </property>
          <property name="popupMode">
           <enum>QToolButton::InstantPopup</enum>
@@ -1237,14 +1261,7 @@
          </item>
          <item>
           <layout class="QGridLayout" name="gridLayout_4">
-           <item row="3" column="1">
-            <widget class="QCheckBox" name="cbScrAlt">
-             <property name="text">
-              <string>+#2000</string>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="1">
+           <item row="8" column="1">
             <spacer name="verticalSpacer_5">
              <property name="orientation">
               <enum>Qt::Vertical</enum>
@@ -1257,23 +1274,16 @@
              </property>
             </spacer>
            </item>
-           <item row="4" column="1">
-            <widget class="QCheckBox" name="cbScrAtr">
+           <item row="3" column="1">
+            <widget class="QCheckBox" name="cbScrPix">
              <property name="text">
-              <string>noAtr</string>
+              <string>noPix</string>
              </property>
             </widget>
            </item>
            <item row="2" column="1">
-            <layout class="QHBoxLayout" name="horizontalLayout_7">
-             <item>
-              <widget class="QLabel" name="label_49">
-               <property name="text">
-                <string>Bank</string>
-               </property>
-              </widget>
-             </item>
-             <item>
+            <layout class="QGridLayout" name="gridLayout_6">
+             <item row="0" column="1">
               <widget class="QSpinBox" name="sbScrBank">
                <property name="minimum">
                 <number>0</number>
@@ -1286,7 +1296,42 @@
                </property>
               </widget>
              </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_49">
+               <property name="text">
+                <string>Bank</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_59">
+               <property name="text">
+                <string>Adr</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QSpinBox" name="sbScrAdr">
+               <property name="maximum">
+                <number>16383</number>
+               </property>
+              </widget>
+             </item>
             </layout>
+           </item>
+           <item row="4" column="1">
+            <widget class="QCheckBox" name="cbScrAtr">
+             <property name="text">
+              <string>noAtr</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="QCheckBox" name="cbScrGrid">
+             <property name="text">
+              <string>Grid</string>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>
@@ -2307,27 +2352,28 @@
    </property>
   </action>
   <action name="act1251">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
    <property name="text">
     <string>cp1251</string>
    </property>
   </action>
   <action name="act866">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
    <property name="text">
     <string>ibm866</string>
    </property>
   </action>
   <action name="actKoi8r">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
    <property name="text">
     <string>Koi8R</string>
+   </property>
+  </action>
+  <action name="actDumpMem">
+   <property name="text">
+    <string>Memory dump</string>
+   </property>
+  </action>
+  <action name="actDumpReg">
+   <property name="text">
+    <string>Registers</string>
    </property>
   </action>
  </widget>
@@ -2364,8 +2410,6 @@
   <tabstop>cbF1</tabstop>
   <tabstop>cbF0</tabstop>
   <tabstop>tabsPanel</tabstop>
-  <tabstop>sbScrBank</tabstop>
-  <tabstop>cbScrAlt</tabstop>
   <tabstop>cbScrAtr</tabstop>
   <tabstop>tbBreak</tabstop>
   <tabstop>tbView</tabstop>
@@ -2402,11 +2446,11 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
+  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

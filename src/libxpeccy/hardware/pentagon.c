@@ -39,7 +39,7 @@ xPort penPortMap[] = {
 
 void penOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
 	difOut(comp->dif, port, val, dos);
-	sdrvOut(comp->sdrv,port & 0x00ff,val);
+//	sdrvOut(comp->sdrv,port & 0x00ff,val);
 	hwOut(penPortMap, comp, port, val, dos);
 }
 

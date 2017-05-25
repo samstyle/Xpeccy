@@ -6,13 +6,120 @@
 #include "filetypes/filetypes.h"
 
 int nsTime;
-int res1 = 0;
+// int res1 = 0;
 int res2 = 0;
 int res3 = 0;	// tick in op, wich has last OUT/MWR (and vidSync)
 int res4 = 0;	// save last res3 (vidSync on OUT/MWR process do res3-res4 ticks)
 unsigned short pcreg;
 
 MemPage* mptr;
+
+// external devices
+
+xDevice* compFindDev(Computer* comp, int type) {
+	xDevice* res = NULL;
+	int idx = 0;
+	xDevice* dev;
+	while((idx < MAX_DEV_COUNT) && comp->devList[idx]) {
+		dev = comp->devList[idx];
+		if (dev->type == type) {
+			res = dev;
+			idx = MAX_DEV_COUNT;
+		}
+		idx++;
+	}
+	return res;
+}
+
+void compAddDev(Computer* comp, int type) {
+	if (compFindDev(comp, type)) return;		// already added
+	int idx = 0;
+	while(idx < MAX_DEV_COUNT) {
+		if (comp->devList[idx] == NULL) {
+			comp->devList[idx] = devCreate(type);
+			idx = MAX_DEV_COUNT;
+		}
+		idx++;
+	}
+}
+
+void compDelDev(Computer* comp, int type) {
+	int idx = 0;
+	xDevice* dev;
+	while(idx < MAX_DEV_COUNT) {
+		dev = comp->devList[idx];
+		if (dev) {
+			if (dev->type == type) {
+				devDestroy(dev);
+				while(idx < MAX_DEV_COUNT - 1) {
+					comp->devList[idx] = comp->devList[idx + 1];
+					idx++;
+				}
+				comp->devList[MAX_DEV_COUNT - 1] = NULL;
+			}
+		}
+		idx++;
+	}
+}
+
+void compDelAllDev(Computer* comp) {
+	int idx = 0;
+	xDevice* dev;
+	while((idx < MAX_DEV_COUNT) && comp->devList[idx]) {
+		dev = comp->devList[idx];
+		devDestroy(dev);
+		comp->devList[idx] = NULL;
+		idx++;
+	}
+}
+
+void compDevReset(Computer* comp) {
+	int idx = 0;
+	xDevice* dev;
+	while ((idx < MAX_DEV_COUNT) && comp->devList[idx]) {
+		dev = comp->devList[idx];
+		if (dev->reset)
+			dev->reset(dev->ptr.ptr);
+		idx++;
+	}
+}
+
+void compDevRequest(Computer* comp) {
+	int idx = 0;
+	xDevice* dev;
+	comp->bus.busy = 0;
+	comp->bus.dos = comp->dos;
+	while ((idx < MAX_DEV_COUNT) && !comp->bus.busy && comp->devList[idx]) {
+		dev = comp->devList[idx];
+		if (dev->req)
+			dev->req(dev->ptr.ptr, &comp->bus);
+		idx++;
+	}
+}
+
+void compDevSync(Computer* comp, int ns) {
+	int idx = 0;
+	xDevice* dev;
+	while((idx < MAX_DEV_COUNT) && comp->devList[idx]) {
+		dev = comp->devList[idx];
+		if (dev->sync)
+			dev->sync(dev->ptr.ptr, ns);
+		idx++;
+	}
+}
+
+void compDevFlush(Computer* comp) {
+	int idx = 0;
+	xDevice* dev;
+	while((idx < MAX_DEV_COUNT) && comp->devList[idx]) {
+		dev = comp->devList[idx];
+		if (dev->flush)
+			dev->flush(dev->ptr.ptr);
+		idx++;
+	}
+}
+
+// ...
 
 void zxMemRW(Computer* comp, int adr) {
 	mptr = memGetBankPtr(comp->mem,adr);
@@ -108,8 +215,18 @@ unsigned char iord(unsigned short port, void* ptr) {
 	if (comp->brkIOMap[port] & IO_BRK_RD)
 		comp->brk = 1;
 // request to external devices
+
+	comp->bus.busy = 0;
+	comp->bus.iorq = 1;
+	comp->bus.memrq = 0;
+	comp->bus.rd = 1;
+	comp->bus.adr = port;
+	comp->bus.dos = comp->dos;
+	compDevRequest(comp);
+	if (comp->bus.busy) return comp->bus.data;
+
 	if (ideIn(comp->ide, port, &res, bdiz)) return res;
-	if (gsIn(comp->gs, port, &res)) return res;
+//	if (gsIn(comp->gs, port, &res)) return res;
 	if (ulaIn(comp->vid->ula, port, &res)) return res;
 	return comp->hw->in(comp, port, bdiz);
 }
@@ -174,6 +291,9 @@ Computer* compCreate() {
 	for(i = 0; i < MAX_DEV_COUNT; i++)
 		comp->devList[i] = NULL;
 
+	compAddDev(comp, DEV_GSOUND);
+	compAddDev(comp, DEV_SDRIVE);
+
 // input
 	comp->keyb = keyCreate();
 	comp->joy = joyCreate();
@@ -187,8 +307,8 @@ Computer* compCreate() {
 	comp->slot = sltCreate();
 // sound
 	comp->ts = tsCreate(TS_NONE,SND_AY,SND_NONE);
-	comp->gs = gsCreate();
-	comp->sdrv = sdrvCreate(SDRV_NONE);
+//	comp->gs = gsCreate();
+//	comp->sdrv = sdrvCreate(SDRV_NONE);
 	comp->gbsnd = gbsCreate();
 	comp->saa = saaCreate();
 	comp->beep = bcCreate();
@@ -216,7 +336,7 @@ Computer* compCreate() {
 	comp->tapCount = 0;
 	comp->tickCount = 0;
 
-	gsReset(comp->gs);
+//	gsReset(comp->gs);
 	zxInitPalete(comp);
 	comp->cmos.adr = 0;
 	memset(comp->cmos.data, 0x00, 256);
@@ -226,6 +346,9 @@ Computer* compCreate() {
 
 void compDestroy(Computer* comp) {
 	rzxStop(comp);
+
+	compDelAllDev(comp);
+
 	cpuDestroy(comp->cpu);
 	memDestroy(comp->mem);
 	vidDestroy(comp->vid);
@@ -236,9 +359,9 @@ void compDestroy(Computer* comp) {
 	difDestroy(comp->dif);
 	ideDestroy(comp->ide);
 	tsDestroy(comp->ts);
-	gsDestroy(comp->gs);
+//	gsDestroy(comp->gs);
 	gbsDestroy(comp->gbsnd);
-	sdrvDestroy(comp->sdrv);
+//	sdrvDestroy(comp->sdrv);
 	bcDestroy(comp->beep);
 	sltDestroy(comp->slot);
 	free(comp);
@@ -259,9 +382,11 @@ void compReset(Computer* comp,int res) {
 	comp->vid->curscr = 5;
 	vidSetMode(comp->vid,VID_NORMAL);
 	comp->dos = 0;
-	// comp->vid->intMask = 1;
+
+	compDevReset(comp);		// send RESET to external devices
+
 	difReset(comp->dif);	//	bdiReset(comp->bdi);
-	if (comp->gs->reset) gsReset(comp->gs);
+//	if (comp->gs->reset) gsReset(comp->gs);
 	tsReset(comp->ts);
 	ideReset(comp->ide);
 	saaReset(comp->saa);
@@ -331,100 +456,6 @@ void compSetHardware(Computer* comp, const char* name) {
 	compUpdateTimings(comp);
 }
 
-// external devices
-
-xDevPtr compFindDev(Computer* comp, int type) {
-	xDevPtr res;
-	res.ptr = NULL;
-	int idx = 0;
-	xDevice* dev;
-	while(idx < MAX_DEV_COUNT) {
-		dev = comp->devList[idx];
-		if (dev) {
-			if (dev->type == type) {
-				res = dev->ptr;
-				idx = MAX_DEV_COUNT;
-			}
-		}
-		idx++;
-	}
-	return res;
-}
-
-void compAddDev(Computer* comp, int type) {
-	if (compFindDev(comp, type).ptr != NULL) return;		// already added
-	int idx = 0;
-	while(idx < MAX_DEV_COUNT) {
-		if (comp->devList[idx] == NULL) {
-			comp->devList[idx] = devCreate(type);
-			idx = MAX_DEV_COUNT;
-		}
-		idx++;
-	}
-}
-
-void compDelDev(Computer* comp, int type) {
-	int idx = 0;
-	xDevice* dev;
-	while(idx < MAX_DEV_COUNT) {
-		dev = comp->devList[idx];
-		if (dev) {
-			if (dev->type == type) {
-				devDestroy(dev);
-				comp->devList[idx] = NULL;
-				idx = MAX_DEV_COUNT;
-			}
-		}
-		idx++;
-	}
-}
-
-// send byte <data> to all devices for address <adr>
-void compDevWr(Computer* comp, unsigned short adr, unsigned char data) {
-	int idx = 0;
-	xDevice* dev;
-	comp->bus.iorge = 0;
-	comp->bus.adr = adr;
-	comp->bus.data = data;
-	while(idx < MAX_DEV_COUNT) {
-		dev = comp->devList[idx];
-		if (dev) {
-			if (dev->wr)
-				dev->wr(dev->ptr, &comp->bus);
-		}
-		idx++;
-	}
-}
-
-// try to read byte from devices from address <adr>
-// bus.iorge = 1 : some device answered, then bus.data = received byte
-void compDevRd(Computer* comp, unsigned short adr) {
-	int idx = 0;
-	xDevice* dev;
-	comp->bus.iorge = 0;
-	comp->bus.adr = adr;
-	while (!comp->bus.iorge && (idx < MAX_DEV_COUNT)) {
-		dev = comp->devList[idx];
-		if (dev) {
-			if (dev->rd) {
-				dev->rd(dev->ptr, &comp->bus);
-			}
-		}
-		idx++;
-	}
-}
-
-void compDevReset(Computer* comp) {
-	int idx = 0;
-	xDevice* dev;
-	while (idx < MAX_DEV_COUNT) {
-		dev = comp->devList[idx];
-		if (dev) {
-			if (dev->reset) dev->reset(dev->ptr);
-		}
-	}
-}
-
 // exec 1 opcode, sync devices, return eated ns
 
 int compExec(Computer* comp) {
@@ -439,11 +470,20 @@ int compExec(Computer* comp) {
 // out @ last tick
 	vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
 	if (comp->padr) {
+
+		comp->bus.busy = 0;
+		comp->bus.iorq = 1;
+		comp->bus.memrq = 0;
+		comp->bus.rd = 0;
+		comp->bus.adr = comp->padr;
+		comp->bus.data = comp->pval;
+		compDevRequest(comp);
+
 		tapSync(comp->tape,comp->tapCount);
 		comp->tapCount = 0;
 		bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
 		ideOut(comp->ide, comp->padr, comp->pval, bdiz);
-		gsOut(comp->gs, comp->padr, comp->pval);
+//		gsOut(comp->gs, comp->padr, comp->pval);
 		if (!bdiz) saaWrite(comp->saa, comp->padr, comp->pval);		// bdi ports must be closed!
 		if (ulaOut(comp->vid->ula, comp->padr, comp->pval)) {
 			if (comp->vid->ula->palchan) {
@@ -456,7 +496,7 @@ int compExec(Computer* comp) {
 	}
 	// vidSync(comp->vid, comp->nsPerTick);
 // ...
-	res1 = res2;
+	// res1 = res2;
 	pcreg = comp->cpu->pc;
 // NMI
 	if ((pcreg > 0x3fff) && comp->nmiRequest && !comp->rzx.play) {
@@ -467,7 +507,7 @@ int compExec(Computer* comp) {
 	}
 // execution completed : get eated time
 	nsTime = comp->vid->time;
-	comp->tickCount += res1;
+	comp->tickCount += res2;
 // sync / INT detection
 	if (comp->rzx.play) {
 		if (comp->rzx.frm.fetches < 1) {
@@ -499,11 +539,14 @@ int compExec(Computer* comp) {
 	}
 	if (comp->debug)
 		comp->brk = 0;
-// sync devices							TODO:move to hw->sync
+// sync devices
+
+	compDevSync(comp, nsTime);
+
 	comp->beep->accum += nsTime;
 	comp->tapCount += nsTime;
-	if (comp->gs->enable)
-		comp->gs->sync += nsTime;
+//	if (comp->gs->enable)
+//		comp->gs->sync += nsTime;
 	difSync(comp->dif, nsTime);
 	// tsSync(comp->ts, nsTime);
 
@@ -559,15 +602,6 @@ unsigned char cmsRd(Computer* comp) {
 	time_t rtime;
 	time(&rtime);
 	struct tm* ctime = localtime(&rtime);
-/*
-	prf->zx->cmos.data[0] = toBCD(ctime->tm_sec);
-	prf->zx->cmos.data[2] = toBCD(ctime->tm_min);
-	prf->zx->cmos.data[4] = toBCD(ctime->tm_hour);
-	prf->zx->cmos.data[6] = toBCD(ctime->tm_wday);
-	prf->zx->cmos.data[7] = toBCD(ctime->tm_mday);
-	prf->zx->cmos.data[8] = toBCD(ctime->tm_mon);
-	prf->zx->cmos.data[9] = toBCD(ctime->tm_year % 100);
-*/
 	switch (comp->cmos.adr) {
 		case 0x00: res = toBCD(ctime->tm_sec); break;
 		case 0x02: res = toBCD(ctime->tm_min); break;

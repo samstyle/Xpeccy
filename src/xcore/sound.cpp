@@ -92,14 +92,31 @@ void sndMix(Computer* comp) {
 	svol = gbsVolume(comp->gbsnd);
 	sndLev = mixer(sndLev, svol.left, svol.right, 100);
 	// general sound
-	svol = gsGetVolume(comp->gs);
-	sndLev = mixer(sndLev, svol.left, svol.right, conf.snd.vol.gs);
+	//svol = gsGetVolume(comp->gs);
+	//sndLev = mixer(sndLev, svol.left, svol.right, conf.snd.vol.gs);
 	// soundrive
-	svol = sdrvGetVolume(comp->sdrv);
-	sndLev = mixer(sndLev, svol.left, svol.right, conf.snd.vol.beep);
+//	svol = sdrvGetVolume(comp->sdrv);
+//	sndLev = mixer(sndLev, svol.left, svol.right, conf.snd.vol.beep);
 	// saa
 	svol = saaGetVolume(comp->saa);		// TODO : saa volume control
 	sndLev = mixer(sndLev, svol.left, svol.right, 100);
+	// DEVICES
+	int idx = 0;
+	xDevice* dev;
+	int vol = 0;
+	while ((idx < MAX_DEV_COUNT) && comp->devList[idx]) {
+		dev = comp->devList[idx];
+		if (dev->vol) {
+			switch(dev->type) {
+				case DEV_SDRIVE: vol = 100; break;
+				case DEV_GSOUND: vol = conf.snd.vol.gs; break;
+				default: vol = 0; break;
+			}
+			svol = dev->vol(dev->ptr.ptr);
+			sndLev = mixer(sndLev, svol.left, svol.right, vol);
+		}
+		idx++;
+	}
 	// cut
 	if (sndLev.left > 0xff) sndLev.left = 0xff;
 	if (sndLev.right > 0xff) sndLev.right = 0xff;
@@ -110,9 +127,11 @@ int sndSync(Computer* comp, int nosync, int fast) {
 	if (!nosync) {
 		tapSync(comp->tape,comp->tapCount);
 		comp->tapCount = 0;
-		gsSync(comp->gs);
+		//gsSync(comp->gs);
 		tsSync(comp->ts,nsPerSample);
 		saaSync(comp->saa,nsPerSample);
+
+		compDevFlush(comp);
 	}
 	if (!nosync && !fast) {
 		sndMix(comp);

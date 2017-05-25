@@ -8,19 +8,6 @@
 extern "C" {
 #endif
 
-#include "input.h"
-#include "tape.h"
-#include "fdc.h"
-#include "hdd.h"
-#include "sdcard.h"
-#include "cartridge.h"
-
-#include "sound/ayym.h"
-#include "sound/gs.h"
-#include "sound/saa1099.h"
-#include "sound/soundrive.h"
-#include "sound/gbsound.h"
-
 #define	MAX_DEV_COUNT	32
 
 // device type
@@ -40,46 +27,50 @@ enum {
 	DEV_SDRIVE
 };
 
-// universal bus to device
-
-typedef struct {
-	unsigned iorge:1;	// request catched (use to prevent devices conflict)
-	unsigned iorq:1;	// io request
-	unsigned memrq:1;	// mem request
-	unsigned rd:1;		// read (device will return data in the 'data' field)
-	unsigned wr:1;		// write
-	unsigned short adr;	// address bus (16 bit)
-	unsigned char data;	// data bus (8 bit)
-} xDevBus;
+#include "devbus.h"
 
 // pointer to device
 
+#include "input.h"
+#include "tape.h"
+#include "fdc.h"
+#include "hdd.h"
+#include "sdcard.h"
+#include "cartridge.h"
+
+#include "sound/ayym.h"
+#include "sound/gs.h"
+#include "sound/saa1099.h"
+#include "sound/soundrive.h"
+#include "sound/gbsound.h"
+
 typedef union {
 	void* ptr;
-	Keyboard* keyb;
-	Joystick* joy;
-	Mouse* mouse;
-	Tape* tape;
-	DiskIF* dif;
-	IDE* ide;
-	SDCard* sdc;
+//	Keyboard* keyb;
+//	Joystick* joy;
+//	Mouse* mouse;
+//	Tape* tape;
+//	DiskIF* dif;
+//	IDE* ide;
+//	SDCard* sdc;
 	GSound* gs;
-	TSound* ts;
-	saaChip* saa;
+//	TSound* ts;
+//	saaChip* saa;
 	SDrive* sdrv;
-	gbSound* gbsnd;
+//	gbSound* gbsnd;
 } xDevPtr;
 
 // common device struct
 
 typedef struct {
 	int type;
-	xDevPtr(*create)();
-	void(*destroy)(xDevPtr);
-	void(*reset)(xDevPtr);
-	int(*rd)(xDevPtr, xDevBus*);		// read byte from device
-	int(*wr)(xDevPtr, xDevBus*);		// write byte to device
-	void(*sync)(xDevPtr, int);		// emulate device work during some time (ns)
+	void*(*create)();			// create device data
+	void(*destroy)(void*);			// destroy device data
+	void(*reset)(void*);			// reset device
+	void(*req)(void*, xDevBus*);		// send bus signals
+	void(*sync)(void*, int);		// emulate device work during some time (ns)
+	void(*flush)(void*);			// flush device
+	sndPair(*vol)(void*);			// get volume if device produce sound
 	xDevPtr ptr;				// pointer to device-specified data
 } xDevice;
 

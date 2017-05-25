@@ -1,63 +1,57 @@
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "soundrive.h"
 
-SDrive* sdrvCreate(int type) {
+void* sdCreate() {
 	SDrive* sdrv = (SDrive*)malloc(sizeof(SDrive));
-	sdrv->type = type;
-	sdrv->chanA = 0;
-	sdrv->chanB = 0;
-	sdrv->chanC = 0;
-	sdrv->chanD = 0;
+	memset(sdrv, 0x00, sizeof(SDrive));
+	sdrv->type = SDRV_COVOX;
 	return sdrv;
 }
 
-void sdrvDestroy(SDrive* sdrv) {
+void sdDestroy(void* sdrv) {
 	free(sdrv);
 }
 
-void sdrvOut(SDrive* sdrv,unsigned short port,unsigned char val) {
+void sdRequest(void* ptr, xDevBus* bus) {
+	if (bus->busy) return;		// bus is free
+	if (!bus->iorq) return;		// IO only
+	if (bus->rd) return;		// write only
+	if (bus->dos) return;		// !dos
+	SDrive* sdrv = (SDrive*)ptr;
+	int ch = -1;
 	switch (sdrv->type) {
 		case SDRV_COVOX:
-			if (port == 0xfb) sdrv->chanA = val;
+			if ((bus->adr & 0xff) == 0xfb)
+				ch = 4;			// to all channels
 			break;
 		case SDRV_105_1:
-			if (port == 0x0f) sdrv->chanA = val;
-			if (port == 0x1f) sdrv->chanB = val;
-			if (port == 0x4f) sdrv->chanC = val;
-			if (port == 0x5f) sdrv->chanD = val;
+			if ((bus->adr & 0xaf) == 0x0f)
+				ch = ((bus->adr & 0x10) >> 4) | ((bus->adr & 0x40) >> 5);
 			break;
 		case SDRV_105_2:
-			if (port == 0xf1) sdrv->chanA = val;
-			if (port == 0xf3) sdrv->chanB = val;
-			if (port == 0xf9) sdrv->chanC = val;
-			if (port == 0xfb) sdrv->chanD = val;
+			if ((bus->adr & 0xf5) == 0xf1)
+				ch = ((bus->adr & 0x02) >> 1) | ((bus->adr & 0x08) >> 2);
 			break;
-		default:
-			sdrv->chanA = 0;
-			sdrv->chanB = 0;
-			sdrv->chanC = 0;
-			sdrv->chanD = 0;
-			break;
+	}
+	if (ch < 0) return;
+	bus->busy = 1;
+	if (ch < 4) {
+		sdrv->chan[ch] = bus->data;
+	} else {
+		sdrv->chan[0] = bus->data;
+		sdrv->chan[1] = bus->data;
+		sdrv->chan[2] = bus->data;
+		sdrv->chan[3] = bus->data;
 	}
 }
 
-sndPair sdrvGetVolume(SDrive* sdrv) {
+sndPair sdVolume(void* ptr) {
 	sndPair res;
-	switch (sdrv->type) {
-		case SDRV_COVOX:
-			res.left = (sdrv->chanA >> 1);
-			res.right = (sdrv->chanA >> 1);
-			break;
-		case SDRV_105_1:
-		case SDRV_105_2:
-			res.left = ((sdrv->chanA >> 2) + (sdrv->chanB >> 2));
-			res.right = ((sdrv->chanC >> 2) + (sdrv->chanD >> 2));
-			break;
-		default:
-			res.left = 0;
-			res.right = 0;
-			break;
-	}
+	SDrive* sdrv = (SDrive*)ptr;
+	res.left = ((sdrv->chan[0] >> 2) + (sdrv->chan[1] >> 2));
+	res.right = ((sdrv->chan[2] >> 2) + (sdrv->chan[3] >> 2));
 	return res;
 }

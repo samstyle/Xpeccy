@@ -208,9 +208,11 @@ void tsOutFE(Computer* comp, unsigned short port, unsigned char val) {
 	comp->tape->levRec = (val & 0x08) ? 1 : 0;
 }
 
+/*
 void tsOutFB(Computer* comp, unsigned short port, unsigned char val) {
 	sdrvOut(comp->sdrv, 0xfb, val);
 }
+*/
 
 void tsOut57(Computer* comp, unsigned short port, unsigned char val) {
 	sdcWrite(comp->sdc,val);
@@ -535,7 +537,7 @@ xPort tsPortMap[] = {
 	{0x00f7,0x00fe,0,2,2,xInFE,	tsOutFE},	// fe
 	{0x00ff,0x0057,0,2,2,tsIn57,	tsOut57},	// 57
 	{0x00ff,0x0077,0,2,2,tsIn77,	tsOut77},	// 77
-	{0x00ff,0x00fb,0,2,2,NULL,	tsOutFB},	// fb
+//	{0x00ff,0x00fb,0,2,2,NULL,	tsOutFB},	// fb
 	{0x10ff,0xeff7,0,2,2,NULL,	tsOutEFF7},	// eff7
 	{0x20ff,0xdff7,0,2,2,NULL,	tsOutDFF7},	// dff7
 	{0x40ff,0xbff7,0,2,2,tsInBFF7,	tsOutBFF7},	// bff7

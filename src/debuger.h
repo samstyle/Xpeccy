@@ -53,6 +53,11 @@ enum {
 	XCP_KOI8R
 };
 
+enum {
+	DMP_MEM = 1,
+	DMP_REG
+};
+
 struct DasmRow {
 	unsigned ispc:1;	// adr=PC
 	unsigned cond:1;	// if there is condition command (JR, JP, CALL, RET) and condition met
@@ -126,8 +131,10 @@ class DebugWin : public QDialog {
 
 		unsigned short disasmAdr;
 		unsigned short dumpAdr;
+		int dumpMode;
+		int codePage;
 
-		QActionGroup* agCodepage;
+//		QActionGroup* agCodepage;
 
 		void fillZ80();
 		void fillFlags();
@@ -151,6 +158,8 @@ class DebugWin : public QDialog {
 	private slots:
 		void setShowLabels(bool);
 		void setShowSegment(bool);
+		void setDumpView(QAction*);
+		void setDumpCP(QAction*);
 
 		void loadMap();
 		void saveMap();

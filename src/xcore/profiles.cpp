@@ -212,25 +212,32 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 				memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
 			}
 		}
+// load GS ROM
 		memset(pageBuf,0xff,0x4000);
-		if (rset->gsFile.empty()) {
-			gsSetRom(prf->zx->gs,0,pageBuf);
-			gsSetRom(prf->zx->gs,1,pageBuf);
-		} else {
-			fpath = conf.path.romDir + SLASH + rset->gsFile;
-			file.open(fpath.c_str(),std::ios::binary);
-			if (file.good()) {
-				file.read(pageBuf,0x4000);
-				gsSetRom(prf->zx->gs,0,pageBuf);
-				file.read(pageBuf,0x4000);
-				gsSetRom(prf->zx->gs,1,pageBuf);
+		xDevice* dev = compFindDev(prf->zx, DEV_GSOUND);
+		if (dev) {
+			GSound* gs = dev->ptr.gs;
+			if (rset->gsFile.empty()) {
+				memSetPageData(gs->mem, MEM_ROM, 0, pageBuf);
+				memSetPageData(gs->mem, MEM_ROM, 1, pageBuf);
 			} else {
-//				printf("Can't load gs rom '%s'\n",prof->gsFile.c_str());
-				gsSetRom(prf->zx->gs,0,pageBuf);
-				gsSetRom(prf->zx->gs,1,pageBuf);
+				fpath = conf.path.romDir + SLASH + rset->gsFile;
+				file.open(fpath.c_str(),std::ios::binary);
+				if (file.good()) {
+					file.read(pageBuf,0x4000);
+					memSetPageData(gs->mem, MEM_ROM, 0, pageBuf);
+					file.read(pageBuf,0x4000);
+					memSetPageData(gs->mem, MEM_ROM, 1, pageBuf);
+				} else {
+	//				printf("Can't load gs rom '%s'\n",prof->gsFile.c_str());
+					memSetPageData(gs->mem, MEM_ROM, 0, pageBuf);
+					memSetPageData(gs->mem, MEM_ROM, 1, pageBuf);
+				}
+				file.close();
 			}
-			file.close();
+
 		}
+// load ATM2 font data
 		if (!rset->fntFile.empty()) {
 			fpath = conf.path.romDir + SLASH + rset->fntFile;
 			file.open(fpath.c_str(),std::ios::binary);
@@ -253,6 +260,7 @@ int prfLoad(std::string nm) {
 	xProfile* prf = findProfile(nm);
 	if (prf == NULL) return PLOAD_NF;
 	Computer* comp = prf->zx;
+	xDevice* dev = NULL;
 
 	std::string cfname = conf.path.confDir + SLASH + prf->file;
 	std::ifstream file(cfname.c_str());
@@ -311,14 +319,8 @@ int prfLoad(std::string nm) {
 					break;
 				case PS_VIDEO:
 					if (pnam == "geometry") prf->layName = pval;
-					if (pnam == "4t-border") comp->vid->border4t = str2bool(pval) ? 1 : 0;
+					if (pnam == "4t-border") comp->vid->brdstep = str2bool(pval) ? 7 : 1;
 					if (pnam == "ULAplus") comp->vid->ula->enabled = str2bool(pval) ? 1 : 0;
-					//if (pnam == "fps") {
-					//	tmp2 = atoi(pval.c_str());
-					//	if (tmp2 < 25) tmp2 = 25;
-					//	else if (tmp2 > 100) tmp2 = 100;
-					//	vidSetFps(comp->vid, tmp2);
-					//}
 					break;
 				case PS_SOUND:
 					if (pnam == "chip1") aymSetType(comp->ts->chipA,atoi(pval.c_str()));
@@ -326,10 +328,16 @@ int prfLoad(std::string nm) {
 					if (pnam == "chip2") aymSetType(comp->ts->chipB,atoi(pval.c_str()));
 					if (pnam == "chip2.stereo") comp->ts->chipB->stereo = atoi(pval.c_str());
 					if (pnam == "ts.type") comp->ts->type = atoi(pval.c_str());
-					if (pnam == "gs") comp->gs->enable = str2bool(pval) ? 1 : 0;
-					if (pnam == "gs.reset") comp->gs->reset = str2bool(pval) ? 1 : 0;
-					if (pnam == "gs.stereo") comp->gs->stereo = atoi(pval.c_str());
-					if (pnam == "soundrive_type") comp->sdrv->type = atoi(pval.c_str());
+					dev = compFindDev(comp, DEV_GSOUND);
+					if (dev) {
+						if (pnam == "gs") dev->ptr.gs->enable = str2bool(pval) ? 1 : 0;
+						if (pnam == "gs.reset") dev->ptr.gs->reset = str2bool(pval) ? 1 : 0;
+						if (pnam == "gs.stereo") dev->ptr.gs->stereo = atoi(pval.c_str());
+					}
+					dev = compFindDev(comp, DEV_SDRIVE);
+					if (dev) {
+						if (pnam == "soundrive_type") dev->ptr.sdrv->type = atoi(pval.c_str());
+					}
 					if (pnam == "saa.mode") {
 						tmp2 = atoi(pval.c_str());
 						switch (tmp2) {
@@ -492,7 +500,7 @@ int prfSave(std::string nm) {
 
 	fprintf(file, "\n[VIDEO]\n\n");
 	fprintf(file, "geometry = %s\n", prf->layName.c_str());
-	fprintf(file, "4t-border = %s\n", YESNO(comp->vid->border4t));
+	fprintf(file, "4t-border = %s\n", YESNO(comp->vid->brdstep & 0x06));
 	fprintf(file, "ULAplus = %s\n", YESNO(comp->vid->ula->enabled));
 	// fprintf(file, "fps = %i\n",comp->vid->fps);
 
@@ -502,10 +510,16 @@ int prfSave(std::string nm) {
 	fprintf(file, "chip2 = %i\n", comp->ts->chipB->type);
 	fprintf(file, "chip2.stereo = %i\n", comp->ts->chipB->stereo);
 	fprintf(file, "ts.type = %i\n", comp->ts->type);
-	fprintf(file, "gs = %s\n", YESNO(comp->gs->enable));
-	fprintf(file, "gs.reset = %s\n", YESNO(comp->gs->reset));
-	fprintf(file, "gs.stereo = %i\n", comp->gs->stereo);
-	fprintf(file, "soundrive_type = %i\n", comp->sdrv->type);
+	xDevice* dev = compFindDev(comp, DEV_GSOUND);
+	if (dev) {
+		fprintf(file, "gs = %s\n", YESNO(dev->ptr.gs->enable));
+		fprintf(file, "gs.reset = %s\n", YESNO(dev->ptr.gs->reset));
+		fprintf(file, "gs.stereo = %i\n", dev->ptr.gs->stereo);
+	}
+	dev = compFindDev(comp, DEV_SDRIVE);
+	if (dev) {
+		fprintf(file, "soundrive_type = %i\n", dev->ptr.sdrv->type);
+	}
 	fprintf(file, "saa.mode = %i\n", comp->saa->enabled ? (comp->saa->mono ? 1 : 2) : 0);
 
 	fprintf(file, "\n[INPUT]\n\n");

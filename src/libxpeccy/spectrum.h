@@ -102,10 +102,10 @@ typedef struct {
 	DiskIF* dif;
 	IDE* ide;
 	SDCard* sdc;
-	GSound* gs;
+//	GSound* gs;
 	TSound* ts;
 	saaChip* saa;
-	SDrive* sdrv;
+//	SDrive* sdrv;
 	gbSound* gbsnd;
 	xCartridge* slot;		// cartrige slot (MSX, GB, NES)
 
@@ -237,12 +237,16 @@ Computer* compCreate();
 void compDestroy(Computer*);
 void compReset(Computer*,int);
 int compExec(Computer*);
+
+xDevice* compFindDev(Computer*, int);
+void compDevFlush(Computer*);
+
 void compSetBaseFrq(Computer*,double);
 void compSetTurbo(Computer*,int);
 void compSetLayout(Computer*, vLayout);
 void compSetHardware(Computer*,const char*);
 
-sndPair compGetVolume(Computer*);
+// sndPair compGetVolume(Computer*);
 
 // read-write cmos
 unsigned char cmsRd(Computer*);

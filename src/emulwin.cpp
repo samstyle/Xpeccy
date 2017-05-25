@@ -1194,6 +1194,7 @@ void MainWin::saveGBVRAM() {
 }
 
 void MainWin::saveGSRAM() {
+/*
 	QString path = QFileDialog::getSaveFileName(this,"Save GB VRAM");
 	if (path.isEmpty()) return;
 	QFile file(path);
@@ -1201,6 +1202,7 @@ void MainWin::saveGSRAM() {
 		file.write((char*)comp->gs->mem->ramData, 2 * 1024 * 1024);		// 2Mb
 		file.close();
 	}
+*/
 }
 
 void MainWin::debugAction() {

@@ -61,7 +61,15 @@ unsigned char scrpIn7FFD(Computer* comp, unsigned short port) {
 // out
 
 void scrpOutDD(Computer* comp, unsigned short port, unsigned char val) {
-	sdrvOut(comp->sdrv, 0xfb, val);
+	xDevice* dev = compFindDev(comp, DEV_SDRIVE);
+	if (!dev) return;
+	if (!dev->req) return;
+	comp->bus.adr = 0xfb;
+	comp->bus.data = val;
+	comp->bus.iorq = 1;
+	comp->bus.rd = 0;
+	dev->req(dev->ptr.ptr, &comp->bus);
+	//sdrvOut(comp->sdrv, 0xfb, val);
 }
 
 /*

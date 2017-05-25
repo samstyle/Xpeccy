@@ -163,9 +163,11 @@ void evoOutBF(Computer* comp, unsigned short port, unsigned char val) {
 	comp->evo.evoBF = val;
 }
 
+/*
 void evoOutFB(Computer* comp, unsigned short port, unsigned char val) {
 	sdrvOut(comp->sdrv,0xfb,val);
 }
+*/
 
 /*
 void evoOutFE(ZXComp* comp, unsigned short port, unsigned char val) {
@@ -267,7 +269,7 @@ void evoOutEFF7(Computer* comp, unsigned short port, unsigned char val) {	// !do
 
 xPort evoPortMap[] = {
 	{0x00f7,0x00fe,2,2,2,xInFE,	xOutFE},	// A3 = border bright
-	{0x00ff,0x00fb,2,2,2,NULL,	evoOutFB},	// covox
+//	{0x00ff,0x00fb,2,2,2,NULL,	evoOutFB},	// covox
 	{0x00ff,0x00be,2,2,2,evoInBE,	NULL},
 	{0x00ff,0x00bf,2,2,2,evoInBF,	evoOutBF},
 	{0xffff,0x7ffd,2,2,2,NULL,	evoOut7FFD},

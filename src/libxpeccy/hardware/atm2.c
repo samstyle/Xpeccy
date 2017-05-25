@@ -64,9 +64,11 @@ void atm2OutF7(Computer* comp, unsigned short port, unsigned char val) {		// dos
 	atm2MapMem(comp);
 }
 
+/*
 void atm2OutFB(Computer* comp, unsigned short port, unsigned char val) {
 	sdrvOut(comp->sdrv, port, val);
 }
+*/
 
 void atm2Out7FFD(Computer* comp, unsigned short port, unsigned char val) {
 	if (comp->p7FFD & 0x20) return;
@@ -89,7 +91,7 @@ void atm2OutFF(Computer* comp, unsigned short port, unsigned char val) {		// dos
 xPort atm2PortMap[] = {
 	{0x0007,0x00fe,2,2,2,xInFE,	atm2OutFE},
 	{0x0007,0x00fa,2,2,2,NULL,	NULL},		// fa
-	{0x0007,0x00fb,2,2,2,NULL,	atm2OutFB},	// fb (covox)
+//	{0x0007,0x00fb,2,2,2,NULL,	atm2OutFB},	// fb (covox)
 	{0x8202,0x7ffd,2,2,2,NULL,	atm2Out7FFD},
 	{0x8202,0x7dfd,2,2,2,NULL,	NULL},		// 7DFD
 	{0xc202,0xbffd,2,2,2,NULL,	xOutBFFD},	// ay

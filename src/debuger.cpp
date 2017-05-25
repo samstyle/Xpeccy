@@ -123,9 +123,6 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.actTraceHere->setData(DBG_TRACE_HERE);
 	ui.actTraceINT->setData(DBG_TRACE_INT);
 
-	ui.act1251->setData(XCP_1251);
-	ui.act866->setData(XCP_866);
-	ui.actKoi8r->setData(XCP_KOI8R);
 // disasm table
 	for (row = 0; row < ui.dasmTable->rowCount(); row++) {
 		for (col = 0; col < ui.dasmTable->columnCount(); col++) {
@@ -203,15 +200,19 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 // dump table
 
-	agCodepage = new QActionGroup(ui.tbCodepage);
-	agCodepage->addAction(ui.act1251);
-	agCodepage->addAction(ui.act866);
-	agCodepage->addAction(ui.actKoi8r);
-	ui.act1251->setChecked(true);
-
+	ui.act1251->setData(XCP_1251);
+	ui.act866->setData(XCP_866);
+	ui.actKoi8r->setData(XCP_KOI8R);
 	ui.tbCodepage->addAction(ui.act1251);
 	ui.tbCodepage->addAction(ui.act866);
 	ui.tbCodepage->addAction(ui.actKoi8r);
+	codePage = XCP_1251;
+
+	ui.actDumpMem->setData(DMP_MEM);
+	ui.actDumpReg->setData(DMP_REG);
+	ui.tbDumpView->addAction(ui.actDumpMem);
+	ui.tbDumpView->addAction(ui.actDumpReg);
+	dumpMode = DMP_MEM;
 
 	for (row = 0; row < ui.dumpTable->rowCount(); row++) {
 		for (col = 0; col < ui.dumpTable->columnCount(); col++) {
@@ -228,7 +229,8 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.dumpTable,SIGNAL(cellChanged(int,int)),this,SLOT(dumpEdited(int,int)));
 	connect(ui.dumpTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
 
-	connect(agCodepage, SIGNAL(triggered(QAction*)), this, SLOT(fillDump()));
+	connect(ui.tbCodepage, SIGNAL(triggered(QAction*)), this, SLOT(setDumpCP(QAction*)));
+	connect(ui.tbDumpView, SIGNAL(triggered(QAction*)), this, SLOT(setDumpView(QAction*)));
 
 // registers
 	connect(ui.editAF, SIGNAL(textChanged(QString)), this, SLOT(setZ80()));
@@ -252,8 +254,11 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	scrImg = QImage(256, 192, QImage::Format_RGB888);
 	// ui.scrLabel->setFixedSize(256,192);
 	connect(ui.sbScrBank,SIGNAL(valueChanged(int)),this,SLOT(updateScreen()));
-	connect(ui.cbScrAlt,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
+	connect(ui.sbScrAdr,SIGNAL(valueChanged(int)),this,SLOT(updateScreen()));
 	connect(ui.cbScrAtr,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
+	connect(ui.cbScrPix,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
+	connect(ui.cbScrGrid,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
+
 	ui.tbAddBrk->setEnabled(false);
 	ui.tbDelBrk->setEnabled(false);
 	connect(ui.bpList,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(goToBrk(QModelIndex)));
@@ -358,6 +363,27 @@ void DebugWin::wheelEvent(QWheelEvent* ev) {
 			scrollUp();
 		}
 	}
+}
+
+void DebugWin::setDumpCP(QAction* act) {
+	codePage = act->data().toInt();
+	switch(codePage) {
+		case XCP_1251: ui.tbCodepage->setText("WIN"); break;
+		case XCP_866: ui.tbCodepage->setText("DOS"); break;
+		case XCP_KOI8R: ui.tbCodepage->setText("KOI"); break;
+		default: ui.tbCodepage->setText("???"); break;
+	}
+	fillDump();
+}
+
+void DebugWin::setDumpView(QAction* act) {
+	dumpMode = act->data().toInt();
+	switch(dumpMode) {
+		case DMP_MEM: ui.tbDumpView->setText("MEM"); break;
+		case DMP_REG: ui.tbDumpView->setText("REG"); break;
+		default: ui.tbDumpView->setText("???"); break;
+	}
+	fillDump();
 }
 
 void DebugWin::scrollUp() {
@@ -647,7 +673,6 @@ bool DebugWin::fillAll() {
 	fillAY();
 	if (ui.scrLabel->isVisible())
 		updateScreen();
-//	ui.rzxTab->setEnabled(comp->rzx.play);
 	if (comp->rzx.play) fillRZX();
 	if (comp->vid->ray.x < comp->vid->ssze.x)
 		ui.labRX->setNum(comp->vid->ray.x);
@@ -657,13 +682,9 @@ bool DebugWin::fillAll() {
 		ui.labRY->setNum(comp->vid->ray.y);
 	else
 		ui.labRY->setText("VB");
-	//ui.labRX->setNum(comp->vid->ray.x);
-	//ui.labRY->setNum(comp->vid->ray.y);
 	setSignal(ui.labDOS, comp->dos);
 	setSignal(ui.labROM, comp->rom);
 	setSignal(ui.labCPM, comp->cpm);
-	//setSignal(ui.labHBlank, comp->vid->hblank);
-	//setSignal(ui.labVBlank, comp->vid->vblank);
 	setSignal(ui.labINT, comp->cpu->intrq & comp->cpu->inten);
 	if (memViewer->isVisible())
 		memViewer->fillImage();
@@ -1580,7 +1601,7 @@ void DebugWin::fillDump() {
 	QColor bgcol, ccol;
 	for (row = 0; row < ui.dumpTable->rowCount(); row++) {
 		ui.dumpTable->item(row,0)->setText(gethexword(adr));
-		ui.dumpTable->item(row,9)->setText(getDumpString(comp->mem, adr, agCodepage->checkedAction()->data().toInt()));
+		ui.dumpTable->item(row,9)->setText(getDumpString(comp->mem, adr, codePage));
 		bgcol = (row & 1) ? colBG0 : colBG1;
 		ui.dumpTable->item(row, 0)->setBackground(bgcol);
 		ui.dumpTable->item(row, 9)->setBackground(bgcol);
@@ -1898,7 +1919,10 @@ void DebugWin::loadDump() {
 // screen
 
 void DebugWin::updateScreen() {
-	vidGetScreen(comp->vid, scrImg.bits(), ui.sbScrBank->value(), ui.cbScrAlt->isChecked() ? 0x2000 : 0, ui.cbScrAtr->isChecked() ? 0 : 1);
+	int flag = ui.cbScrAtr->isChecked() ? 1 : 0;
+	flag |= ui.cbScrPix->isChecked() ? 2 : 0;
+	flag |= ui.cbScrGrid->isChecked() ? 4 : 0;
+	vidGetScreen(comp->vid, scrImg.bits(), ui.sbScrBank->value(), ui.sbScrAdr->value(), flag);
 	ui.scrLabel->setPixmap(QPixmap::fromImage(scrImg));
 }
 
@@ -1906,6 +1930,7 @@ void DebugWin::updateScreen() {
 
 xTableWidget::xTableWidget(QWidget* par):QTableWidget(par) {
 	setEditTriggers(QAbstractItemView::AnyKeyPressed | QAbstractItemView::DoubleClicked);
+	// verticalHeader()->setStretchLastSection(true);
 	blockStart = -1;
 	blockEnd = -1;
 }
@@ -1928,7 +1953,7 @@ void xTableWidget::keyPressEvent(QKeyEvent *ev) {
 
 void xTableWidget::mousePressEvent(QMouseEvent* ev) {
 	int row = rowAt(ev->pos().y());
-	// if ((row < 0) || (row >= rowCount())) return;
+	if ((row < 0) || (row >= rowCount())) return;
 	int adr = item(row,0)->data(Qt::UserRole).toInt();
 	switch (ev->button()) {
 		case Qt::MiddleButton:
@@ -1968,7 +1993,7 @@ void xTableWidget::mouseReleaseEvent(QMouseEvent* ev) {
 
 void xTableWidget::mouseMoveEvent(QMouseEvent* ev) {
 	int row = rowAt(ev->pos().y());
-	// if ((row < 0) || (row >= rowCount())) return;
+	if ((row < 0) || (row >= rowCount())) return;
 	int adr = item(row,0)->data(Qt::UserRole).toInt();
 	// int len;
 	if ((ev->modifiers() == Qt::NoModifier) && (ev->buttons() & Qt::LeftButton) && (adr != blockStart) && (adr != blockEnd) && (markAdr >= 0)) {

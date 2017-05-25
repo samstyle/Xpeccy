@@ -4,6 +4,7 @@
 
 #include "gs.h"
 
+// internam MEMRQ
 unsigned char gsmemrd(unsigned short adr,int m1,void* ptr) {
 	GSound* gs = (GSound*)ptr;
 	unsigned char res = memRd(gs->mem,adr);
@@ -29,7 +30,7 @@ void gsmemwr(unsigned short adr,unsigned char val,void* ptr) {
 	memWr(gs->mem,adr,val);
 }
 
-// internal IN
+// internal IORQ
 unsigned char gsiord(unsigned short port,void* ptr) {
 	GSound* gs = (GSound*)ptr;
 	unsigned char res = 0xff;
@@ -84,51 +85,56 @@ unsigned char gsintrq(void* ptr) {
 	return 0xff;
 }
 
-void gsSetRom(GSound* gs, int part, char* buf) {
-	memSetPageData(gs->mem,MEM_ROM,part,buf);
-}
-
-GSound* gsCreate() {
+void* gsCreate() {
 	GSound* res = (GSound*)malloc(sizeof(GSound));
 	memset(res,0x00,sizeof(GSound));
-	void* ptr = (void*)res;
-	res->cpu = cpuCreate(CPU_Z80,&gsmemrd,&gsmemwr,&gsiord,&gsiowr,&gsintrq,ptr);
+	res->cpu = cpuCreate(CPU_Z80, &gsmemrd, &gsmemwr, &gsiord, &gsiowr, &gsintrq, (void*)res);
 	res->mem = memCreate();
 	memSetSize(res->mem, 2048);
 	memSetBank(res->mem, MEM_BANK0, MEM_ROM, 0, NULL, NULL, NULL);
 	memSetBank(res->mem, MEM_BANK1, MEM_RAM, 0, NULL, NULL, NULL);
 	memSetBank(res->mem, MEM_BANK2, MEM_RAM, 0, NULL, NULL, NULL);
 	memSetBank(res->mem, MEM_BANK3, MEM_RAM, 1, NULL, NULL, NULL);
-	res->sync = 0;
-	res->cnt = 0;
+//	res->sync = 0;
+//	res->cnt = 0;
 	res->pstate = 0x7e;
 	res->stereo = GS_12_34;
-	res->counter = 0;
+//	res->counter = 0;
 	res->ch1 = 0x80;
 	res->ch2 = 0x80;
 	res->ch3 = 0x80;
 	res->ch4 = 0x80;
-	res->vol1 = 0;
-	res->vol2 = 0;
-	res->vol3 = 0;
-	res->vol4 = 0;
+//	res->vol1 = 0;
+//	res->vol2 = 0;
+//	res->vol3 = 0;
+//	res->vol4 = 0;
 	return res;
 }
 
-void gsDestroy(GSound* gs) {
+void gsDestroy(void* ptr) {
+	GSound* gs = (GSound*)ptr;
 	cpuDestroy(gs->cpu);
 	memDestroy(gs->mem);
 	free(gs);
 }
 
-void gsReset(GSound* gs) {
+void gsReset(void* ptr) {
+	GSound* gs = (GSound*)ptr;
+	if (!gs->reset) return;
 	gs->cpu->reset(gs->cpu);
 }
 
-void gsSync(GSound* gs) {
+void gsSync(void* ptr, int ns) {
+	GSound* gs = (GSound*)ptr;
+	if (!gs->enable) return;
+	gs->time += ns;
+}
+
+void gsFlush(void* ptr) {
+	GSound* gs = (GSound*)ptr;
 	if (!gs->enable) return;
 	int res;
-	gs->counter += gs->sync * GS_FRQ / 980;		// ticks to emulate
+	gs->counter += gs->time * GS_FRQ / 980;		// ticks to emulate
 	while (gs->counter > 0) {
 		res = gs->cpu->exec(gs->cpu);
 		gs->counter -= res;
@@ -138,7 +144,32 @@ void gsSync(GSound* gs) {
 			gs->cpu->intrq |= 1;
 		}
 	}
-	gs->sync = 0;
+	gs->time = 0;
+}
+
+void gsRequest(void* ptr, xDevBus* bus) {
+	GSound* gs = (GSound*)ptr;
+	if (!gs->enable) return;			// gs disabled
+	if ((bus->adr & 0x0044) != 0) return;		// port doesn't catched
+	if (!bus->iorq) return;
+	gsFlush(ptr);
+	if (bus->adr & 8) {
+		if (bus->rd) {
+			bus->data = gs->pstate;
+		} else {
+			gs->pbb_zx = bus->data;
+			gs->pstate |= 1;
+		}
+	} else {
+		if (bus->rd) {
+			bus->data = gs->pb3_gs;
+			gs->pstate &= 0x7f;
+		} else {
+			gs->pb3_zx = bus->data;
+			gs->pstate |= 0x80;		// set b7,state
+		}
+	}
+	bus->busy = 1;
 }
 
 // max 1ch = 256 * 64 = 16384 = 2^14
@@ -146,7 +177,8 @@ void gsSync(GSound* gs) {
 // 2ch = 2^15
 // 2^16 -> 2^7 : >> 9
 
-sndPair gsGetVolume(GSound* gs) {
+sndPair gsVolume(void* ptr) {
+	GSound* gs = (GSound*)ptr;
 	sndPair res;
 	res.left = 0;
 	res.right = 0;
@@ -169,10 +201,11 @@ sndPair gsGetVolume(GSound* gs) {
 
 // external in/out
 
+/*
 int gsIn(GSound* gs, int prt, unsigned char* val) {
 	if (!gs->enable) return 0;	// gs disabled
 	if ((prt & 0x44) != 0) return 0;		// port don't catched
-	gsSync(gs);
+	//gsSync(gs);
 	if (prt & 8) {
 		*val = gs->pstate;
 	} else {
@@ -185,7 +218,7 @@ int gsIn(GSound* gs, int prt, unsigned char* val) {
 int gsOut(GSound* gs, int prt,unsigned char val) {
 	if (!gs->enable) return 0;
 	if ((prt & 0x44) != 0) return 0;
-	gsSync(gs);
+	//gsSync(gs);
 	if (prt & 8) {
 		gs->pbb_zx = val;
 		gs->pstate |= 1;
@@ -195,3 +228,4 @@ int gsOut(GSound* gs, int prt,unsigned char val) {
 	}
 	return 1;
 }
+*/

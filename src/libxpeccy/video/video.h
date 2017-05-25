@@ -33,7 +33,7 @@ enum {
 };
 
 struct Video {
-	unsigned border4t:1;
+	// unsigned border4t:1;
 	unsigned nogfx:1;	// tsl : nogfx flag
 	unsigned newFrame:1;	// set @ start of VBlank
 	int intFRAME;	// aka INT
@@ -60,8 +60,11 @@ struct Video {
 
 	int flash;
 	int curscr;
+
+	int brdstep;
 	unsigned char brdcol;
 	unsigned char nextbrd;
+
 	int fcnt;
 	unsigned char atrbyte;
 	unsigned char scrimg[1024 * 512 * 3];	// 512x512 rgb (dX x2)

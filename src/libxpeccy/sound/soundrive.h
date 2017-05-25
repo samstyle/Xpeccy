@@ -3,6 +3,7 @@
 // soundrive/covox type
 
 #include "sndcommon.h"
+#include "../devbus.h"
 
 enum {
 	SDRV_NONE = 0,
@@ -10,27 +11,17 @@ enum {
 	SDRV_105_1,	// mode1: ports 0f,1f,4f,5f
 	SDRV_105_2	// mode2: ports f1,f3,f9,fb (default)
 };
-// soundrive channels
-enum {
-	SDRV_CHANA = 0,
-	SDRV_CHANB,
-	SDRV_CHANC,
-	SDRV_CHAND,
-};
 
 #include "sndcommon.h"
 
 typedef struct {
 	int type;
-	unsigned char chanA;
-	unsigned char chanB;
-	unsigned char chanC;
-	unsigned char chanD;
+	unsigned char chan[4];
 } SDrive;
 
-SDrive* sdrvCreate(int);
-void sdrvDestroy(SDrive*);
-void sdrvOut(SDrive*,unsigned short,unsigned char);
-sndPair sdrvGetVolume(SDrive*);
+void* sdCreate();
+void sdDestroy(void*);
+void sdRequest(void*, xDevBus*);
+sndPair sdVolume(void*);
 
 #endif

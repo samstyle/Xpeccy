@@ -11,13 +11,13 @@ void speMapMem(Computer* comp) {
 
 // out
 
+/*
 void spOutFE(Computer* comp, unsigned short port, unsigned char val) {
 	comp->vid->nextbrd = val & 0x07;
-	if (!comp->vid->border4t)
-		comp->vid->brdcol = val & 0x07;
 	comp->beep->lev = (val & 0x10) ? 1 : 0;
 	comp->tape->levRec = (val & 0x08) ? 1 : 0;
 }
+*/
 
 // in
 
@@ -30,7 +30,7 @@ unsigned char spInFF(Computer* comp, unsigned short port) {
 }
 
 xPort spePortMap[] = {
-	{0x0001,0x00fe,2,2,2,xInFE,	spOutFE},
+	{0x0001,0x00fe,2,2,2,xInFE,	xOutFE},
 	{0xc002,0xfffd,2,2,2,xInFFFD,	xOutFFFD},
 	{0xc002,0xbffd,2,2,2,NULL,	xOutBFFD},
 	{0x0320,0xfadf,2,2,2,xInFADF,	NULL},

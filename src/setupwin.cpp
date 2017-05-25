@@ -322,7 +322,7 @@ void SetupWin::start(xProfile* p) {
 	ui.sbScale->setValue(conf.vid.scale);
 	ui.noflichk->setChecked(conf.vid.noFlick);
 	ui.grayscale->setChecked(conf.vid.grayScale);
-	ui.border4T->setChecked(comp->vid->border4t);
+	ui.border4T->setChecked(comp->vid->brdstep & 0x06);
 	ui.contMem->setChecked(comp->contMem);
 	ui.contIO->setChecked(comp->contIO);
 	ui.bszsld->setValue((int)(conf.brdsize * 100));
@@ -339,9 +339,18 @@ void SetupWin::start(xProfile* p) {
 	ui.geombox->setCurrentIndex(ui.geombox->findText(QString::fromLocal8Bit(conf.prof.cur->layName.c_str())));
 	ui.ulaPlus->setChecked(comp->vid->ula->enabled);
 // sound
+	xDevice* dev = compFindDev(comp, DEV_GSOUND);
+	if (dev) {
+		ui.gsgroup->setEnabled(true);
+		ui.gsrbox->setChecked(dev->ptr.gs->reset);
+		ui.gstereobox->setCurrentIndex(ui.gstereobox->findData(QVariant(dev->ptr.gs->stereo)));
+		ui.gsgroup->setChecked(dev->ptr.gs->enable);
+	} else {
+		ui.gsgroup->setEnabled(false);
+	}
+
 	ui.senbox->setChecked(conf.snd.enabled);
 	ui.mutbox->setChecked(conf.snd.mute);
-	ui.gsrbox->setChecked(comp->gs->reset);
 	ui.outbox->setCurrentIndex(ui.outbox->findText(QString::fromLocal8Bit(sndOutput->name)));
 	ui.ratbox->setCurrentIndex(ui.ratbox->findData(QVariant(conf.snd.rate)));
 	ui.bvsld->setValue(conf.snd.vol.beep);
@@ -352,10 +361,13 @@ void SetupWin::start(xProfile* p) {
 	ui.schip2box->setCurrentIndex(ui.schip2box->findData(QVariant(comp->ts->chipB->type)));
 	ui.stereo1box->setCurrentIndex(ui.stereo1box->findData(QVariant(comp->ts->chipA->stereo)));
 	ui.stereo2box->setCurrentIndex(ui.stereo2box->findData(QVariant(comp->ts->chipB->stereo)));
-	ui.gstereobox->setCurrentIndex(ui.gstereobox->findData(QVariant(comp->gs->stereo)));
-	ui.gsgroup->setChecked(comp->gs->enable);
 	ui.tsbox->setCurrentIndex(ui.tsbox->findData(QVariant(comp->ts->type)));
-	ui.sdrvBox->setCurrentIndex(ui.sdrvBox->findData(QVariant(comp->sdrv->type)));
+
+	dev = compFindDev(comp, DEV_SDRIVE);
+	if (dev) {
+		ui.sdrvBox->setCurrentIndex(ui.sdrvBox->findData(QVariant(dev->ptr.sdrv->type)));
+	}
+
 	i = comp->saa->enabled ? (comp->saa->mono ? SAA_MONO : SAA_STEREO) : SAA_OFF;
 	ui.cbSaa->setCurrentIndex(ui.cbSaa->findData(QVariant(i)));
 // input
@@ -467,7 +479,7 @@ void SetupWin::apply() {
 	conf.scrShot.noLeds = ui.ssNoLeds->isChecked() ? 1 : 0;
 	conf.scrShot.noBorder = ui.ssNoBord->isChecked() ? 1 : 0;
 	conf.brdsize = ui.bszsld->value()/100.0;
-	comp->vid->border4t = ui.border4T->isChecked() ? 1 : 0;
+	comp->vid->brdstep = ui.border4T->isChecked() ? 7 : 1;
 	comp->contMem = ui.contMem->isChecked() ? 1 : 0;
 	comp->contIO = ui.contIO->isChecked() ? 1 : 0;
 	comp->vid->ula->enabled = ui.ulaPlus->isChecked() ? 1 : 0;
@@ -488,10 +500,18 @@ void SetupWin::apply() {
 	comp->ts->chipA->stereo = ui.stereo1box->itemData(ui.stereo1box->currentIndex()).toInt();
 	comp->ts->chipB->stereo = ui.stereo2box->itemData(ui.stereo2box->currentIndex()).toInt();
 	comp->ts->type = ui.tsbox->itemData(ui.tsbox->currentIndex()).toInt();
-	comp->gs->enable = ui.gsgroup->isChecked() ? 1 : 0;
-	comp->gs->reset = ui.gsrbox->isChecked() ? 1 : 0;
-	comp->gs->stereo = ui.gstereobox->itemData(ui.gstereobox->currentIndex()).toInt();
-	comp->sdrv->type = ui.sdrvBox->itemData(ui.sdrvBox->currentIndex()).toInt();
+
+	xDevice* dev = compFindDev(comp, DEV_GSOUND);
+	if (dev) {
+		dev->ptr.gs->enable = ui.gsgroup->isChecked() ? 1 : 0;
+		dev->ptr.gs->reset = ui.gsrbox->isChecked() ? 1 : 0;
+		dev->ptr.gs->stereo = ui.gstereobox->itemData(ui.gstereobox->currentIndex()).toInt();
+	}
+
+	dev = compFindDev(comp, DEV_SDRIVE);
+	if (dev) {
+		dev->ptr.sdrv->type = ui.sdrvBox->itemData(ui.sdrvBox->currentIndex()).toInt();
+	}
 	switch (ui.cbSaa->itemData(ui.cbSaa->currentIndex()).toInt()) {
 		case SAA_OFF: comp->saa->enabled = 0; break;
 		case SAA_MONO: comp->saa->enabled = 1; comp->saa->mono = 1; break;
