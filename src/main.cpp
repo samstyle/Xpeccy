@@ -36,7 +36,8 @@ void help() {
 
 int main(int ac,char** av) {
 
-	SDL_Init(SDL_INIT_AUDIO | SDL_INIT_TIMER);
+// NOTE:SDL_INIT_VIDEO must be here for SDL_Joystick event processing. Joystick doesn't works without video init
+	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK | SDL_INIT_TIMER);
 	atexit(SDL_Quit);
 	SDL_version sdlver;
 	SDL_VERSION(&sdlver);

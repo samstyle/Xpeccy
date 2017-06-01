@@ -142,6 +142,8 @@ set(MOCFILES
 	./src/dbg_sprscan.h
 	./src/dbg_memfill.h
 	./src/dbg_finder.h
+	./src/dbg_dump.h
+	./src/dbg_disasm.h
 	./src/watcher.h
 	./src/setupwin.h
 	./src/vkeyboard.h

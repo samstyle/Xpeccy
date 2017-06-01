@@ -3,9 +3,9 @@
 
 #include <QLabel>
 #include <QTimer>
-#include <QThread>
-#include <QMutex>
 #include <QWidget>
+
+#include <SDL.h>
 
 #include "libxpeccy/spectrum.h"
 #include "setupwin.h"
@@ -55,12 +55,13 @@ class MainWin : public QWidget {
 		xWatcher* watcher;
 
 		QIcon icon;
-//		QTimer cmosTimer;
 		QTimer timer;
 		xThread ethread;
 		keyWindow* keywin;
 		QImage scrImg;
 		QByteArray font;
+
+		SDL_Joystick* joy;
 
 		int pauseFlags;
 		int scrCounter;

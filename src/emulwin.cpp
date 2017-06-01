@@ -158,6 +158,18 @@ MainWin::MainWin() {
 	dbg = new DebugWin(this);
 	watcher = new xWatcher(this);
 
+	if (SDL_NumJoysticks() > 0) {
+		SDL_JoystickEventState(SDL_ENABLE);
+		joy = SDL_JoystickOpen(0);
+		printf("Joystick opened\n");
+		printf("%i axis\n", SDL_JoystickNumAxes(joy));
+		printf("%i buttons\n", SDL_JoystickNumButtons(joy));
+
+	} else {
+		printf("Joystick not opened\n");
+		joy = NULL;
+	}
+
 	initFileDialog(this);
 	connect(opt,SIGNAL(closed()),this,SLOT(optApply()));
 	connect(dbg,SIGNAL(closed()),this,SLOT(dbgReturn()));
@@ -270,6 +282,28 @@ void MainWin::onTimer() {
 		shitHappens("RZX playback error");
 		rzxWin->stop();
 		pause(false, PR_RZX);
+	}
+// process sdl event (gamepad)
+	if (joy) {
+		SDL_Event ev;
+		while(SDL_PollEvent(&ev)) {
+			switch(ev.type) {
+				case SDL_JOYAXISMOTION:
+					if (abs(ev.jaxis.value) < conf.joy.dead)
+						ev.jaxis.value = 0;
+					mapJoystick(comp, JOY_AXIS, ev.jaxis.axis, ev.jaxis.value);
+					printf("Axis %i %i\n", ev.jaxis.axis, ev.jaxis.value);
+					break;
+				case SDL_JOYBUTTONDOWN:
+					mapJoystick(comp, JOY_BUTTON, ev.jbutton.button, 1);
+					printf("Button %i down\n", ev.jbutton.button);
+					break;
+				case SDL_JOYBUTTONUP:
+					mapJoystick(comp, JOY_BUTTON, ev.jbutton.button, 0);
+					printf("Button %i up\n", ev.jbutton.button);
+					break;
+			}
+		}
 	}
 // if computer sends a message, show it
 	if (comp->msg) {
@@ -750,6 +784,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		emutex.unlock();		// unlock emulation thread
 		ethread.wait();			// wait until it exits
 		keywin->close();
+		if (joy) SDL_JoystickClose(joy);
 		saveConfig();
 		ev->accept();
 	} else {

@@ -602,7 +602,7 @@ void vidSync(Video* vid, int ns) {
 		vid->nsDraw -= vid->nsPerDot;
 		vid->time += vid->nsPerDot;
 
-		if (~vid->ray.x & vid->brdstep)
+		if ((vid->ray.x & vid->brdstep) == 0)
 			vid->brdcol = vid->nextbrd;
 
 		// if ray is on visible screen & video has drawing callback...

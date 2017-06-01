@@ -23,14 +23,18 @@ xMnem nil_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 	res.cond = 0;
 	return res;
 }
+void nil_get_regs(CPU* cpu, xRegBunch* bunch) {}
+void nil_set_regs(CPU* cpu, xRegBunch bunch) {}
 
 extern opCode npTab[256];
 extern opCode lrTab[256];
+extern opCode mosTab[256];
 
 cpuCore cpuTab[] = {
-	{CPU_Z80, "Z80", npTab, z80_reset, z80_exec, /*z80_int,*/ z80_asm, z80_mnem},
-	{CPU_LR35902, "LR35902", lrTab, lr_reset, lr_exec, /*lr_int,*/ lr_asm, lr_mnem},
-	{CPU_NONE, "none", NULL, nil_reset, nil_exec, /*nil_int,*/ nil_asm, nil_mnem}
+	{CPU_Z80, "Z80", npTab, z80_reset, z80_exec, /*z80_int,*/ z80_asm, z80_mnem, z80_get_regs, z80_set_regs},
+	{CPU_LR35902, "LR35902", lrTab, lr_reset, lr_exec, /*lr_int,*/ lr_asm, lr_mnem, lr_get_regs, lr_set_regs},
+	{CPU_6502, "MOS6502", mosTab, m6502_reset, m6502_exec, m6502_asm, m6502_mnem, m6502_get_regs, m6502_set_regs},
+	{CPU_NONE, "none", NULL, nil_reset, nil_exec, /*nil_int,*/ nil_asm, nil_mnem, nil_get_regs, nil_set_regs}
 };
 
 cpuCore* findCore(int type) {
@@ -59,10 +63,11 @@ void cpuSetType(CPU* cpu, int type) {
 	cpu->type = core->type;
 	cpu->reset = core->reset;
 	cpu->exec = core->exec;
-//	cpu->intr = core->intr;
 	cpu->asmbl = core->asmbl;
 	cpu->mnem = core->mnem;
 	cpu->tab = core->tab;
+	cpu->getregs = core->getregs;
+	cpu->setregs = core->setregs;
 }
 
 CPU* cpuCreate(int type, cbmr fmr, cbmw fmw, cbir fir, cbiw fiw, cbirq frq, void* dt) {
@@ -74,10 +79,6 @@ CPU* cpuCreate(int type, cbmr fmr, cbmw fmw, cbir fir, cbiw fiw, cbirq frq, void
 	cpu->ird = fir;
 	cpu->iwr = fiw;
 	cpu->irq = frq;
-//	cpu->halt = 0;
-//	cpu->resPV = 0;
-//	cpu->noint = 0;
-//	cpu->imode = 0;
 	cpuSetType(cpu, type);
 	return cpu;
 }
@@ -290,4 +291,22 @@ int cpuAsm(CPU* cpu, const char* com, char* buf, unsigned short adr) {
 		ptr = buf;
 	}
 	return (ptr - buf);
+}
+
+// get/set reg bunch
+
+xRegBunch cpuGetRegs(CPU* cpu) {
+	xRegBunch bunch;
+	int i;
+	for (i = 0; i < 32; i++) {
+		bunch.regs[i].name[0] = 0x00;
+		bunch.regs[i].id = REG_NONE;
+		bunch.regs[i].value = 0;
+	}
+	cpu->getregs(cpu, &bunch);
+	return bunch;
+}
+
+void cpuSetRegs(CPU* cpu, xRegBunch bunch) {
+	cpu->setregs(cpu, bunch);
 }

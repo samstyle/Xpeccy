@@ -12,28 +12,13 @@
 #include <QMenu>
 #include <QTableWidget>
 
+#include "dbg_dump.h"
+#include "dbg_disasm.h"
+
 #include "libxpeccy/spectrum.h"
 #include "dbg_sprscan.h"
 #include "dbg_memfill.h"
 #include "dbg_finder.h"
-
-class xTableWidget : public QTableWidget {
-	Q_OBJECT
-	public:
-		xTableWidget(QWidget*);
-		Computer* comp;
-		int blockStart;
-		int blockEnd;
-	private:
-		int markAdr;
-	signals:
-		void rqRefill();
-	protected:
-		void keyPressEvent(QKeyEvent*);
-		void mousePressEvent(QMouseEvent*);
-		void mouseReleaseEvent(QMouseEvent*);
-		void mouseMoveEvent(QMouseEvent*);
-};
 
 #include "ui_dumpdial.h"
 #include "ui_openDump.h"
@@ -45,12 +30,6 @@ enum {
 	XTYPE_LABEL,
 	XTYPE_DUMP,
 	XTYPE_BYTE
-};
-
-enum {
-	XCP_1251 = 1,
-	XCP_866,
-	XCP_KOI8R
 };
 
 enum {
@@ -105,6 +84,8 @@ class DebugWin : public QDialog {
 		QImage scrImg;
 		QList<unsigned short> jumpHistory;
 
+		xDumpModel* dumpodel;
+
 		Computer* comp;
 		long tCount;
 
@@ -130,13 +111,10 @@ class DebugWin : public QDialog {
 		void placeLabel(DasmRow&);
 
 		unsigned short disasmAdr;
-		unsigned short dumpAdr;
 		int dumpMode;
-		int codePage;
+//		int codePage;
 
-//		QActionGroup* agCodepage;
-
-		void fillZ80();
+		void fillCPU();
 		void fillFlags();
 		void fillMem();
 		void fillStack();
@@ -170,7 +148,7 @@ class DebugWin : public QDialog {
 		void fillDump();
 		void fillGBoy();
 
-		void setZ80();
+		void setCPU();
 		void setFlags();
 		void updateScreen();
 

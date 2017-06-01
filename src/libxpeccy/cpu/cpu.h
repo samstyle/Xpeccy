@@ -10,6 +10,23 @@ typedef struct {
 	const char* mnem;
 } xMnem;
 
+#define REG_NONE 0
+
+typedef struct {
+	char name[8];
+	int id;
+	int value;
+} xRegister;
+
+typedef struct {
+	xRegister regs[32];
+} xRegBunch;
+
+typedef struct {
+	int id;
+	const char* name;
+} xRegDsc;
+
 // memrq rd
 typedef unsigned char(*cbmr)(unsigned short,int,void*);
 // memrq wr
@@ -49,6 +66,7 @@ typedef struct {
 
 #include "Z80/z80.h"
 #include "LR35902/lr35902.h"
+#include "MOS6502/6502.h"
 
 enum {
 	CPU_NONE = 0,		// dummy
@@ -115,6 +133,8 @@ struct CPU {
 //	int (*intr)(CPU*);		// handle interrupt. intrq = requested INT types
 	xAsmScan (*asmbl)(const char*, char*);
 	xMnem (*mnem)(CPU*, unsigned short, cbdmr, void*);
+	void (*getregs)(CPU*, xRegBunch*);
+	void (*setregs)(CPU*, xRegBunch);
 
 	int t;
 	unsigned char tmp;
@@ -132,6 +152,8 @@ typedef struct {
 //	int (*intr)(CPU*);			// handle interrupt, return T
 	xAsmScan (*asmbl)(const char*, char*);	// compile mnemonic
 	xMnem (*mnem)(CPU*, unsigned short, cbdmr, void*);
+	void(*getregs)(CPU*,xRegBunch*);	// get cpu registers: name,id,value
+	void(*setregs)(CPU*,xRegBunch);		// set cpu registers
 } cpuCore;
 
 CPU* cpuCreate(int,cbmr,cbmw,cbir,cbiw,cbirq,void*);
@@ -146,5 +168,8 @@ extern cpuCore cpuTab[];
 xMnem cpuDisasm(CPU*, unsigned short, char*, cbdmr, void*);
 int cpuAsm(CPU*, const char*, char*, unsigned short);
 xAsmScan scanAsmTab(const char*, opCode*);
+
+xRegBunch cpuGetRegs(CPU*);
+void cpuSetRegs(CPU*, xRegBunch);
 
 #endif

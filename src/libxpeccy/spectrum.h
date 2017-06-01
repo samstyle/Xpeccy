@@ -238,6 +238,9 @@ void compDestroy(Computer*);
 void compReset(Computer*,int);
 int compExec(Computer*);
 
+void compKeyPress(Computer*, int, keyEntry*);
+void compKeyRelease(Computer*, int, keyEntry*);
+
 xDevice* compFindDev(Computer*, int);
 void compDevFlush(Computer*);
 

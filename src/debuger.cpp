@@ -15,6 +15,10 @@
 #include "xgui/xgui.h"
 #include "filer.h"
 
+unsigned short dumpAdr = 0;
+unsigned short blockStart = -1;
+unsigned short blockEnd = -1;
+
 // trace type
 enum {
 	DBG_TRACE_ALL = 0x100,
@@ -31,8 +35,17 @@ enum {
 	DBG_VIEW_TEXT = 0x40
 };
 
+typedef struct {
+	QLabel* name;
+	QLineEdit* edit;
+} dbgRegPlace;
+
+dbgRegPlace dbgRegTab[16];
+
 void DebugWin::start(Computer* c) {
 	comp = c;
+	blockStart = -1;
+	blockEnd = -1;
 	chLayout();
 	if (!fillAll()) {
 		disasmAdr = comp->cpu->pc;
@@ -44,7 +57,7 @@ void DebugWin::start(Computer* c) {
 		vidDarkTail(comp->vid);
 	ui.tabsPanel->setTabEnabled(ui.tabsPanel->indexOf(ui.gbTab), comp->hw->id == HW_GBC);
 
-	ui.dasmTable->comp = comp;
+//	ui.dasmTable->comp = comp;
 	move(winPos);
 	ui.dasmTable->setFocus();
 	comp->vid->debug = 1;
@@ -53,9 +66,13 @@ void DebugWin::start(Computer* c) {
 
 	show();
 
+	//int wd = 17;
+	//ui.dasmTable->setRowCount(ui.dasmTable->height() / wd);
 	int wd = ui.dasmTable->height() / ui.dasmTable->rowCount();
 	ui.dasmTable->verticalHeader()->setDefaultSectionSize(wd);
-	wd = ui.dumpTable->height() / ui.dumpTable->rowCount();
+
+	//ui.dumpTable->setRowCount(ui.dumpTable->height() / wd);
+	wd = ui.dumpTable->height() / ui.dumpTable->model()->rowCount();
 	ui.dumpTable->verticalHeader()->setDefaultSectionSize(wd);
 
 	if (memViewer->vis) {
@@ -96,10 +113,42 @@ QWidget* xItemDelegate::createEditor(QWidget* par, const QStyleOptionViewItem&, 
 	return edt;
 }
 
+int dmpmrd(unsigned short adr, void* ptr) {
+	Computer* comp = (Computer*)ptr;
+	int res = memRd(comp->mem, adr) & 0xff;
+	res |= getBrk(comp, adr) << 8;
+	return res;
+}
+
+void dmpmwr(unsigned short adr, unsigned char val, void* ptr) {
+	Computer* comp = (Computer*)ptr;
+	memWr(comp->mem, adr, val);
+}
+
 DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	int col,row;
 	ui.setupUi(this);
 	QTableWidgetItem* itm;
+
+	dumpodel = new xDumpModel((void**)(&comp), dmpmrd, dmpmwr);
+	ui.dumpTable->setModel(dumpodel);
+
+	dbgRegTab[0] = {ui.labReg00, ui.editPC};
+	dbgRegTab[1] = {ui.labReg01, ui.editSP};
+	dbgRegTab[2] = {ui.labReg02, ui.editAF};
+	dbgRegTab[3] = {ui.labReg03, ui.editBC};
+	dbgRegTab[4] = {ui.labReg04, ui.editDE};
+	dbgRegTab[5] = {ui.labReg05, ui.editHL};
+	dbgRegTab[6] = {ui.labReg06, ui.editAFa};
+	dbgRegTab[7] = {ui.labReg07, ui.editBCa};
+	dbgRegTab[8] = {ui.labReg08, ui.editDEa};
+	dbgRegTab[9] = {ui.labReg09, ui.editHLa};
+	dbgRegTab[10] = {ui.labReg10, ui.editIX};
+	dbgRegTab[11] = {ui.labReg11, ui.editIY};
+	dbgRegTab[12] = {ui.labReg12, ui.editIR};
+	dbgRegTab[13] = {ui.labReg13, ui.leReg13};
+	dbgRegTab[14] = {ui.labReg14, ui.leReg14};
+	dbgRegTab[15] = {NULL, NULL};
 
 	setFont(QFont("://DejaVuSansMono.ttf",10));
 
@@ -206,49 +255,51 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.tbCodepage->addAction(ui.act1251);
 	ui.tbCodepage->addAction(ui.act866);
 	ui.tbCodepage->addAction(ui.actKoi8r);
-	codePage = XCP_1251;
 
 	ui.actDumpMem->setData(DMP_MEM);
 	ui.actDumpReg->setData(DMP_REG);
 	ui.tbDumpView->addAction(ui.actDumpMem);
 	ui.tbDumpView->addAction(ui.actDumpReg);
 	dumpMode = DMP_MEM;
-
+/*
 	for (row = 0; row < ui.dumpTable->rowCount(); row++) {
 		for (col = 0; col < ui.dumpTable->columnCount(); col++) {
 			ui.dumpTable->setItem(row, col, new QTableWidgetItem);
 		}
 		ui.dumpTable->item(row, 9)->setTextAlignment(Qt::AlignRight);
 	}
-
-	ui.dumpTable->setColumnWidth(0,50);
+*/
+	ui.dumpTable->setColumnWidth(0,60);
 	ui.dumpTable->setItemDelegate(new xItemDelegate(XTYPE_BYTE));
 	ui.dumpTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_ADR));
 	ui.dumpTable->setItemDelegateForColumn(9, new xItemDelegate(XTYPE_NONE));
 
-	connect(ui.dumpTable,SIGNAL(cellChanged(int,int)),this,SLOT(dumpEdited(int,int)));
+//	connect(ui.dumpTable,SIGNAL(cellChanged(int,int)),this,SLOT(dumpEdited(int,int)));
 	connect(ui.dumpTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
 
 	connect(ui.tbCodepage, SIGNAL(triggered(QAction*)), this, SLOT(setDumpCP(QAction*)));
 	connect(ui.tbDumpView, SIGNAL(triggered(QAction*)), this, SLOT(setDumpView(QAction*)));
 
 // registers
-	connect(ui.editAF, SIGNAL(textChanged(QString)), this, SLOT(setZ80()));
-	connect(ui.editBC, SIGNAL(textChanged(QString)), this, SLOT(setZ80()));
-	connect(ui.editDE, SIGNAL(textChanged(QString)), this, SLOT(setZ80()));
-	connect(ui.editHL, SIGNAL(textChanged(QString)), this, SLOT(setZ80()));
-	connect(ui.editAFa, SIGNAL(textChanged(QString)), this, SLOT(setZ80()));
-	connect(ui.editBCa, SIGNAL(textChanged(QString)), this, SLOT(setZ80()));
-	connect(ui.editDEa, SIGNAL(textChanged(QString)), this, SLOT(setZ80()));
-	connect(ui.editHLa, SIGNAL(textChanged(QString)), this, SLOT(setZ80()));
-	connect(ui.editPC, SIGNAL(textChanged(QString)), this, SLOT(setZ80()));
-	connect(ui.editSP, SIGNAL(textChanged(QString)), this, SLOT(setZ80()));
-	connect(ui.editIX, SIGNAL(textChanged(QString)), this, SLOT(setZ80()));
-	connect(ui.editIY, SIGNAL(textChanged(QString)), this, SLOT(setZ80()));
-	connect(ui.editIR, SIGNAL(textChanged(QString)), this, SLOT(setZ80()));
-	connect(ui.boxIM,SIGNAL(valueChanged(int)),this,SLOT(setZ80()));
-	connect(ui.flagIFF1,SIGNAL(stateChanged(int)),this,SLOT(setZ80()));
-	connect(ui.flagIFF2,SIGNAL(stateChanged(int)),this,SLOT(setZ80()));
+	connect(ui.editAF, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editBC, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editDE, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editHL, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editAFa, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editBCa, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editDEa, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editHLa, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editPC, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editSP, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editIX, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editIY, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editIR, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.leReg13, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.leReg14, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+
+	connect(ui.boxIM,SIGNAL(valueChanged(int)),this,SLOT(setCPU()));
+	connect(ui.flagIFF1,SIGNAL(stateChanged(int)),this,SLOT(setCPU()));
+	connect(ui.flagIFF2,SIGNAL(stateChanged(int)),this,SLOT(setCPU()));
 	connect(ui.flagGroup,SIGNAL(buttonClicked(int)),this,SLOT(setFlags()));
 // infoslots
 	scrImg = QImage(256, 192, QImage::Format_RGB888);
@@ -311,7 +362,6 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 // context menu
 	cellMenu = new QMenu(this);
-	cellMenu->addAction(ui.actTraceHere);
 	QMenu* bpMenu = new QMenu("Breakpoints");
 	bpMenu->setIcon(QIcon(":/images/stop.png"));
 	cellMenu->addMenu(bpMenu);
@@ -326,6 +376,9 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	viewMenu->addAction(ui.actViewText);
 	viewMenu->addAction(ui.actViewWord);
 	viewMenu->addAction(ui.actViewAddr);
+	cellMenu->addSeparator();
+	cellMenu->addAction(ui.actTraceHere);
+	cellMenu->addAction(ui.actShowLabels);
 	// NOTE: actions already connected to slots by main menu. no need to double it here
 }
 
@@ -366,8 +419,8 @@ void DebugWin::wheelEvent(QWheelEvent* ev) {
 }
 
 void DebugWin::setDumpCP(QAction* act) {
-	codePage = act->data().toInt();
-	switch(codePage) {
+	dumpodel->codePage = act->data().toInt();
+	switch(dumpodel->codePage) {
 		case XCP_1251: ui.tbCodepage->setText("WIN"); break;
 		case XCP_866: ui.tbCodepage->setText("DOS"); break;
 		case XCP_KOI8R: ui.tbCodepage->setText("KOI"); break;
@@ -459,7 +512,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 	int i;
 	unsigned short pc = comp->cpu->pc;
 	unsigned char* ptr;
-	int offset = 8 * (ui.dumpTable->rowCount() - 1);
+//	int offset = 8 * (ui.dumpTable->rowCount() - 1);
 	QString com;
 	int row;
 	int pos;
@@ -522,7 +575,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 				case Qt::Key_End:
 					// if (!ui.dasmTable->hasFocus()) break;
 					comp->cpu->pc = getAdr();
-					fillZ80();
+					fillCPU();
 					fillDisasm();
 					break;
 				case Qt::Key_F2:
@@ -549,7 +602,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					break;
 				case Qt::Key_PageUp:
 					if (ui.dumpTable->hasFocus()) {
-						dumpAdr = (dumpAdr - offset) & 0xffff;
+						//dumpAdr = (dumpAdr - offset) & 0xffff;
 						fillDump();
 					} else if (ui.dasmTable->hasFocus()) {
 						for (i = 0; i < ui.dasmTable->rowCount() - 1; i++) {
@@ -560,7 +613,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					break;
 				case Qt::Key_PageDown:
 					if (ui.dumpTable->hasFocus()) {
-						dumpAdr = (dumpAdr + offset) & 0xffff;
+						//dumpAdr = (dumpAdr + offset) & 0xffff;
 						fillDump();
 					} else if (ui.dasmTable->hasFocus()) {
 						disasmAdr = ui.dasmTable->item(ui.dasmTable->rowCount() - 1, 0)->data(Qt::UserRole).toInt();
@@ -665,7 +718,7 @@ void DebugWin::fillAY() {
 
 bool DebugWin::fillAll() {
 	ui.labTcount->setText(QString::number(comp->tickCount - tCount));
-	fillZ80();
+	fillCPU();
 	fillMem();
 	fillDump();
 	fillFDC();
@@ -913,23 +966,42 @@ void setLEReg(QLineEdit* le, int num) {
 	le->setText(txt);
 }
 
-void DebugWin::fillZ80() {
+void DebugWin::fillCPU() {
 	block = 1;
 	CPU* cpu = comp->cpu;
-	setLEReg(ui.editAF, cpu->af);
-	setLEReg(ui.editBC, cpu->bc);
-	setLEReg(ui.editDE, cpu->de);
-	setLEReg(ui.editHL, cpu->hl);
-	setLEReg(ui.editAFa, cpu->af_);
-	setLEReg(ui.editBCa, cpu->bc_);
-	setLEReg(ui.editDEa, cpu->de_);
-	setLEReg(ui.editHLa, cpu->hl_);
-	setLEReg(ui.editPC, cpu->pc);
-	setLEReg(ui.editSP, cpu->sp);
-	setLEReg(ui.editIX, cpu->ix);
-	setLEReg(ui.editIY, cpu->iy);
-	setLEReg(ui.editIR, (cpu->i << 8) | (cpu->r & 0x7f) | (cpu->r7 & 0x80));
-
+#if 1
+	xRegBunch bunch = cpuGetRegs(cpu);
+	int idx = 0;
+	int i = 0;
+	while(dbgRegTab[i].name != NULL) {
+		if (bunch.regs[idx].id == REG_NONE) {
+			dbgRegTab[i].name->clear();
+			dbgRegTab[i].edit->setEnabled(false);
+			dbgRegTab[i].edit->clear();
+		} else {
+			dbgRegTab[i].name->setText(bunch.regs[idx].name);
+			dbgRegTab[i].edit->setText(gethexword(bunch.regs[idx].value));
+			dbgRegTab[i].edit->setProperty("regid", bunch.regs[idx].id);
+			dbgRegTab[i].edit->setEnabled(true);
+			idx++;
+		}
+		i++;
+	}
+#else
+	setLEReg(dbgui.editAF, cpu->af);
+	setLEReg(dbgui.editBC, cpu->bc);
+	setLEReg(dbgui.editDE, cpu->de);
+	setLEReg(dbgui.editHL, cpu->hl);
+	setLEReg(dbgui.editAFa, cpu->af_);
+	setLEReg(dbgui.editBCa, cpu->bc_);
+	setLEReg(dbgui.editDEa, cpu->de_);
+	setLEReg(dbgui.editHLa, cpu->hl_);
+	setLEReg(dbgui.editPC, cpu->pc);
+	setLEReg(dbgui.editSP, cpu->sp);
+	setLEReg(dbgui.editIX, cpu->ix);
+	setLEReg(dbgui.editIY, cpu->iy);
+	setLEReg(dbgui.editIR, (cpu->i << 8) | (cpu->r & 0x7f) | (cpu->r7 & 0x80));
+#endif
 	ui.boxIM->setValue(cpu->imode);
 	ui.flagIFF1->setChecked(cpu->iff1);
 	ui.flagIFF2->setChecked(cpu->iff2);
@@ -954,9 +1026,25 @@ void DebugWin::setFlags() {
 	fillDisasm();
 }
 
-void DebugWin::setZ80() {
+void DebugWin::setCPU() {
 	if (block) return;
 	CPU* cpu = comp->cpu;
+#if 1
+	int i = 0;
+	int idx = 0;
+	xRegBunch bunch;
+	while (dbgRegTab[idx].edit != NULL) {
+		if (dbgRegTab[idx].edit->isEnabled()) {
+			bunch.regs[i].id = dbgRegTab[idx].edit->property("regid").toInt();
+			bunch.regs[i].value = dbgRegTab[idx].edit->text().toInt(NULL, 16);
+			i++;
+		} else {
+			bunch.regs[i].id = REG_NONE;
+		}
+		idx++;
+	}
+	cpuSetRegs(cpu, bunch);
+#else
 	cpu->af = ui.editAF->text().toInt(NULL,16);
 	cpu->bc = ui.editBC->text().toInt(NULL,16);
 	cpu->de = ui.editDE->text().toInt(NULL,16);
@@ -973,6 +1061,7 @@ void DebugWin::setZ80() {
 	cpu->i = (ir & 0xff00) >> 8;
 	cpu->r = ir & 0xff;
 	cpu->r7 = cpu->r & 0x80;
+#endif
 	cpu->imode = ui.boxIM->value();
 	cpu->iff1 = ui.flagIFF1->isChecked() ? 1 : 0;
 	cpu->iff2 = ui.flagIFF2->isChecked() ? 1 : 0;
@@ -1354,7 +1443,7 @@ int DebugWin::fillDisasm() {
 		placeLabel(drow);
 		if (drow.ispc) {
 			bgcol = colPC;
-		} else if ((drow.adr >= ui.dasmTable->blockStart) && (drow.adr <= ui.dasmTable->blockEnd)) {
+		} else if ((drow.adr >= blockStart) && (drow.adr <= blockEnd)) {
 			bgcol = colSEL;
 		} else {
 			bgcol = (i & 1) ? colBG0 : colBG1;
@@ -1547,8 +1636,8 @@ void DebugWin::saveDasm() {
 	QString label;
 	if (file.open(QFile::WriteOnly)) {
 		QTextStream strm(&file);
-		unsigned short adr = (ui.dasmTable->blockStart < 0) ? 0 : (ui.dasmTable->blockStart & 0xffff);
-		unsigned short end = (ui.dasmTable->blockEnd < 0) ? 0 : (ui.dasmTable->blockEnd & 0xffff);
+		unsigned short adr = (blockStart < 0) ? 0 : (blockStart & 0xffff);
+		unsigned short end = (blockEnd < 0) ? 0 : (blockEnd & 0xffff);
 		int work = 1;
 		strm << "; Created by Xpeccy deBUGa\n\n";
 		strm << "\tORG 0x" << gethexword(adr) << "\n\n";
@@ -1570,32 +1659,11 @@ void DebugWin::saveDasm() {
 
 // memory dump
 
-QString getDumpString(Memory* mem, unsigned short adr, int cp) {
-	QString res;
-	QTextCodec* codec = NULL;
-	switch(cp) {
-		case XCP_1251: codec = QTextCodec::codecForName("CP1251"); break;
-		case XCP_866: codec = QTextCodec::codecForName("IBM866"); break;
-		case XCP_KOI8R: codec = QTextCodec::codecForName("KOI8R"); break;
-	}
-	unsigned char bte;
-	for (int i = 0; i < 8; i++) {
-		bte = memRd(mem, adr);
-		adr = (adr + 1) & 0xffff;
-		if (bte > 0) {
-			res.append(QChar(bte));
-		} else {
-			res.append(".");
-		}
-	}
-	if (codec == NULL) return res;
-	QByteArray arr = res.toLatin1();
-	res = codec->toUnicode(arr);
-	return res;
-}
-
 void DebugWin::fillDump() {
 	block = 1;
+	dumpodel->update();
+
+/*
 	unsigned short adr = dumpAdr;
 	int row,col;
 	QColor bgcol, ccol;
@@ -1618,11 +1686,13 @@ void DebugWin::fillDump() {
 			adr++;
 		}
 	}
+*/
 	fillStack();
 	block = 0;
 }
 
 void DebugWin::dumpEdited(int row, int col) {
+/*
 	if (block) return;
 	if (col == 0) {
 		dumpAdr = ui.dumpTable->item(row, 0)->text().toInt(NULL,16) - row * 8;
@@ -1646,6 +1716,7 @@ void DebugWin::dumpEdited(int row, int col) {
 	fillDump();
 	fillDisasm();
 	updateScreen();
+*/
 }
 
 // stack
@@ -1669,7 +1740,7 @@ void DebugWin::fillStack() {
 int DebugWin::getAdr() {
 	int adr = -1;
 	if (ui.dumpTable->hasFocus()) {
-		adr = (dumpAdr + (ui.dumpTable->currentColumn() - 1) + ui.dumpTable->currentRow() * 8) & 0xffff;
+//		adr = (dumpAdr + (ui.dumpTable->currentColumn() - 1) + ui.dumpTable->currentRow() * 8) & 0xffff;
 	} else {
 		adr = ui.dasmTable->item(ui.dasmTable->currentRow(),0)->data(Qt::UserRole).toInt();
 	}
@@ -1699,12 +1770,12 @@ void DebugWin::chaCellProperty(QAction* act) {
 	unsigned short eadr;
 	unsigned char bt;
 	unsigned char* ptr;
-	if ((adr < ui.dasmTable->blockStart) || (adr > ui.dasmTable->blockEnd)) {	// pointer outside block : process 1 cell
+	if ((adr < blockStart) || (adr > blockEnd)) {	// pointer outside block : process 1 cell
 		bgn = adr;
 		end = adr;
 	} else {									// pointer inside block : process all block
-		bgn = ui.dasmTable->blockStart;
-		end = ui.dasmTable->blockEnd;
+		bgn = blockStart;
+		end = blockEnd;
 	}
 	eadr = end & 0xffff; getDisasm(comp, eadr); end = (eadr-1) & 0xffff;		// move end to last byte of block
 	if (end < bgn)
@@ -1856,9 +1927,7 @@ void DebugWin::onFound(int adr) {
 // memfiller
 
 void DebugWin::doFill() {
-	int bgn = ui.dasmTable->blockStart;
-	int end = ui.dasmTable->blockEnd;
-	memFiller->start(comp->mem, bgn, end);
+	memFiller->start(comp->mem, blockStart, blockEnd);
 }
 
 // spr scanner
@@ -1924,91 +1993,6 @@ void DebugWin::updateScreen() {
 	flag |= ui.cbScrGrid->isChecked() ? 4 : 0;
 	vidGetScreen(comp->vid, scrImg.bits(), ui.sbScrBank->value(), ui.sbScrAdr->value(), flag);
 	ui.scrLabel->setPixmap(QPixmap::fromImage(scrImg));
-}
-
-// xtablewidget
-
-xTableWidget::xTableWidget(QWidget* par):QTableWidget(par) {
-	setEditTriggers(QAbstractItemView::AnyKeyPressed | QAbstractItemView::DoubleClicked);
-	// verticalHeader()->setStretchLastSection(true);
-	blockStart = -1;
-	blockEnd = -1;
-}
-
-void xTableWidget::keyPressEvent(QKeyEvent *ev) {
-	if (ev->modifiers() & Qt::ControlModifier) {
-		ev->ignore();
-	} else {
-		switch (ev->key()) {
-			case Qt::Key_Home:
-			case Qt::Key_End:
-			case Qt::Key_F2:
-				ev->ignore();
-				break;
-			default:
-				QTableWidget::keyPressEvent(ev);
-		}
-	}
-}
-
-void xTableWidget::mousePressEvent(QMouseEvent* ev) {
-	int row = rowAt(ev->pos().y());
-	if ((row < 0) || (row >= rowCount())) return;
-	int adr = item(row,0)->data(Qt::UserRole).toInt();
-	switch (ev->button()) {
-		case Qt::MiddleButton:
-			blockStart = -1;
-			blockEnd = -1;
-			emit rqRefill();
-			ev->ignore();
-			break;
-		case Qt::LeftButton:
-			if (ev->modifiers() & Qt::ControlModifier) {
-				blockStart = adr;
-				if (blockEnd < blockStart) blockEnd = blockStart;
-				emit rqRefill();
-				ev->ignore();
-			} else if (ev->modifiers() & Qt::ShiftModifier) {
-				blockEnd = adr;
-				if (blockStart > blockEnd) blockStart = blockEnd;
-				if (blockStart < 0) blockStart = 0;
-				emit rqRefill();
-				ev->ignore();
-			} else {
-				markAdr = adr;
-				QTableWidget::mousePressEvent(ev);
-			}
-			break;
-		default:
-			QTableWidget::mousePressEvent(ev);
-			break;
-	}
-}
-
-void xTableWidget::mouseReleaseEvent(QMouseEvent* ev) {
-	if (ev->button() == Qt::LeftButton) {
-		markAdr = -1;
-	}
-}
-
-void xTableWidget::mouseMoveEvent(QMouseEvent* ev) {
-	int row = rowAt(ev->pos().y());
-	if ((row < 0) || (row >= rowCount())) return;
-	int adr = item(row,0)->data(Qt::UserRole).toInt();
-	// int len;
-	if ((ev->modifiers() == Qt::NoModifier) && (ev->buttons() & Qt::LeftButton) && (adr != blockStart) && (adr != blockEnd) && (markAdr >= 0)) {
-		if (adr < blockStart) {
-			blockStart = adr;
-			blockEnd = markAdr;
-		} else {
-			blockStart = markAdr;
-			blockEnd = adr;
-		}
-		// len = getCommandSize(comp, blockEnd) - 1;
-		// blockEnd += len;
-		emit rqRefill();
-	}
-	QTableWidget::mouseMoveEvent(ev);
 }
 
 // breakpoints

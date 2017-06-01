@@ -9,7 +9,7 @@
 #include <SDL.h>
 #undef main
 
-extern QMutex emutex;		// unlock to start emulation cycle
+// extern QMutex emutex;		// unlock to start emulation cycle
 
 typedef struct {
 	unsigned char data[0x1000];
@@ -243,7 +243,7 @@ void null_close() {}
 // SDL
 
 void sdlPlayAudio(void*,Uint8* stream, int len) {
-	if (pass > 2) {
+	if (pass > 3) {
 		int diff = bufA.pos - playPos;
 		if (diff < 0) {
 			diff += 0x1000;

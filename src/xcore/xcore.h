@@ -85,15 +85,6 @@ extern std::map<std::string, int> shotFormat;
 
 // keymap
 
-typedef struct {
-	const char* name;
-	signed int key;		// qint32, nativeScanCode()
-	xKey zxKey;
-	xKey extKey;
-	xKey msxKey;
-	int keyCode;		// 0xXXYYZZ = ZZ,YY,XX in buffer (ZZ,YY,0xf0,XX if released)
-} keyEntry;
-
 void initKeyMap();
 void setKey(const char*,const char,const char);
 keyEntry getKeyEntry(signed int);
@@ -135,8 +126,32 @@ typedef struct {
 	vLayout lay;
 } xLayout;
 
-bool addLayout(std::string, vLayout); // int,int,int,int,int,int,int,int,int);
+bool addLayout(std::string, vLayout);
 xLayout* findLayout(std::string);
+
+// joystick
+
+enum {
+	JOY_NONE = 0,
+	JOY_AXIS,
+	JOY_BUTTON
+};
+
+enum {
+	JMAP_NONE = 0,
+	JMAP_KEY,
+	JMAP_JOY
+};
+
+typedef struct {
+	int type;		// axis/button
+	int num;		// number of axis/button
+	int state;		// -x/+x for axis, 0/x for button
+	int dev;		// device for action JMAP_*
+	int key;		// key/contact id for device. XKEY_* for keyboard, XJ_* for joystick
+} xJoyMap;
+
+void mapJoystick(Computer*, int, int, int);
 
 // config
 
@@ -144,7 +159,6 @@ xLayout* findLayout(std::string);
 
 struct xConfig {
 	unsigned running:1;
-//	unsigned sysclock:1;		// system time in cmos
 	unsigned storePaths:1;		// store tape/disk paths
 	unsigned defProfile:1;		// start @ default profile
 	std::string keyMapName;		// use this keymap
@@ -180,6 +194,10 @@ struct xConfig {
 		unsigned autostart:1;
 		unsigned fast:1;
 	} tape;
+	struct {
+		int dead;
+		std::vector<xJoyMap> map;	// gamepad mapping
+	} joy;
 	struct {
 		unsigned noLeds:1;
 		unsigned noBorder:1;

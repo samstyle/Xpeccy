@@ -1,10 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "../cpu.h"
-
-//#include "lr_pref_cb.c"
-//#include "lr_nopref.c"
+#include "lr35902.h"
+#include <string.h>
 
 extern opCode lrTab[256];
 extern opCode lrcbTab[256];
@@ -116,4 +114,49 @@ xMnem lr_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 	mn.mem = 0;		// TODO
 	mn.cond = 0;
 	return mn;
+}
+
+// registers
+
+xRegDsc lrRegTab[] = {
+	{LR_REG_PC, "PC"},
+	{LR_REG_SP, "SP"},
+	{LR_REG_AF, "AF"},
+	{LR_REG_BC, "BC"},
+	{LR_REG_DE, "DE"},
+	{LR_REG_HL, "HL"},
+	{REG_NONE, ""}
+};
+
+void lr_get_regs(CPU* cpu, xRegBunch* bunch) {
+	int idx = 0;
+	while(lrRegTab[idx].id != REG_NONE) {
+		bunch->regs[idx].id = lrRegTab[idx].id;
+		strncpy(bunch->regs[idx].name, lrRegTab[idx].name, 7);
+		switch(lrRegTab[idx].id) {
+			case LR_REG_PC: bunch->regs[idx].value = cpu->pc; break;
+			case LR_REG_SP: bunch->regs[idx].value = cpu->sp; break;
+			case LR_REG_AF: bunch->regs[idx].value = cpu->af; break;
+			case LR_REG_BC: bunch->regs[idx].value = cpu->bc; break;
+			case LR_REG_DE: bunch->regs[idx].value = cpu->de; break;
+			case LR_REG_HL: bunch->regs[idx].value = cpu->hl; break;
+		}
+		idx++;
+	}
+	bunch->regs[idx].id = REG_NONE;
+}
+
+void lr_set_regs(CPU* cpu, xRegBunch bunch) {
+	int idx;
+	for (idx = 0; idx < 32; idx++) {
+		switch(bunch.regs[idx].id) {
+			case LR_REG_PC: cpu->pc = bunch.regs[idx].value; break;
+			case LR_REG_SP: cpu->sp = bunch.regs[idx].value; break;
+			case LR_REG_AF: cpu->af = bunch.regs[idx].value; break;
+			case LR_REG_BC: cpu->bc = bunch.regs[idx].value; break;
+			case LR_REG_DE: cpu->de = bunch.regs[idx].value; break;
+			case LR_REG_HL: cpu->hl = bunch.regs[idx].value; break;
+			case REG_NONE: idx = 100; break;
+		}
+	}
 }
