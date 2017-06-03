@@ -6,9 +6,10 @@
 
 // id, create, destroy, reset, request, sync, vol, {NULL}
 xDevice devTab[] = {
-	{DEV_GSOUND, gsCreate, gsDestroy, gsReset, gsRequest, gsSync, gsFlush, gsVolume, {NULL}},
-	{DEV_SDRIVE, sdCreate, sdDestroy, NULL, sdRequest, NULL, NULL, sdVolume, {NULL}},
-	{DEV_NONE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, {NULL}}
+	{DEV_GSOUND, gsCreate, gsDestroy, gsReset, gsRequest, gsSync, gsFlush, gsVolume, gsSet, gsGet, {NULL}},
+	{DEV_SDRIVE, sdCreate, sdDestroy, NULL, sdRequest, NULL, NULL, sdVolume, sdSet, sdGet, {NULL}},
+	{DEV_SAA, saaCreate, saaDestroy, saaReset, saaRequest, saaSync, saaFlush, saaVolume, saaSet, saaGet, {NULL}},
+	{DEV_NONE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, {NULL}}
 };
 
 xDevice* getDevDsc(int type) {

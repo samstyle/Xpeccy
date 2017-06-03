@@ -55,3 +55,20 @@ sndPair sdVolume(void* ptr) {
 	res.right = ((sdrv->chan[2] >> 2) + (sdrv->chan[3] >> 2));
 	return res;
 }
+
+// arguments
+void sdSet(void* ptr, int type, xArg arg) {
+	SDrive* sdrv = (SDrive*)ptr;
+	switch(type) {
+		case SDRV_ARG_MODE: sdrv->type = arg.i; break;
+	}
+}
+
+xArg sdGet(void* ptr, int type) {
+	SDrive* sdrv = (SDrive*)ptr;
+	xArg arg = {0, 0, NULL};
+	switch(type) {
+		case SDRV_ARG_MODE: arg.i = sdrv->type; break;
+	}
+	return arg;
+}

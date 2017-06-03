@@ -7,15 +7,23 @@ extern "C" {
 
 #include "sndcommon.h"
 
-#include "../cpu/cpu.h"
-#include "../memory.h"
-#include "../devbus.h"
+#include "cpu.h"
+#include "memory.h"
+#include "devbus.h"
 
 // gs stereo
 enum {
 	GS_MONO = 0,
 	GS_12_34
 };
+
+enum {
+	GS_ARG_ENABLE = 0,
+	GS_ARG_RESET,
+	GS_ARG_STEREO,
+	GS_ARG_ROM
+};
+
 // gs cpu freq
 #define	GS_FRQ	12.0
 
@@ -47,6 +55,8 @@ void gsSync(void*, int);
 void gsFlush(void*);
 void gsRequest(void*, xDevBus*);
 sndPair gsVolume(void*);
+void gsSet(void*, int, xArg);
+xArg gsGet(void*, int);
 
 // void gsSetRom(GSound*,int,char*);
 

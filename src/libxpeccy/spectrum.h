@@ -104,7 +104,7 @@ typedef struct {
 	SDCard* sdc;
 //	GSound* gs;
 	TSound* ts;
-	saaChip* saa;
+//	saaChip* saa;
 //	SDrive* sdrv;
 	gbSound* gbsnd;
 	xCartridge* slot;		// cartrige slot (MSX, GB, NES)
@@ -144,7 +144,7 @@ typedef struct {
 
 	memEntry memMap[16];			// memory map for ATM2, PentEvo
 	unsigned char brkRamMap[0x400000];	// ram brk/type : b0..3:brk flags, b4..7:type
-	unsigned char brkRomMap[0x400000];	// rom brk/type : b0..3:brk flags, b4..7:type
+	unsigned char brkRomMap[0x80000];	// rom brk/type : b0..3:brk flags, b4..7:type
 	unsigned char brkAdrMap[0x10000];	// adr brk
 	unsigned char brkIOMap[0x10000];	// io brk
 
@@ -231,7 +231,7 @@ typedef struct {
 	int tapCount;
 } Computer;
 
-#include "hardware/hardware.h"
+#include "hardware.h"
 
 Computer* compCreate();
 void compDestroy(Computer*);
@@ -243,13 +243,13 @@ void compKeyRelease(Computer*, int, keyEntry*);
 
 xDevice* compFindDev(Computer*, int);
 void compDevFlush(Computer*);
+void compSetDevArg(Computer*, int, int, xArg);
+xArg compGetDevArg(Computer*, int, int);
 
 void compSetBaseFrq(Computer*,double);
 void compSetTurbo(Computer*,int);
 void compSetLayout(Computer*, vLayout);
 void compSetHardware(Computer*,const char*);
-
-// sndPair compGetVolume(Computer*);
 
 // read-write cmos
 unsigned char cmsRd(Computer*);

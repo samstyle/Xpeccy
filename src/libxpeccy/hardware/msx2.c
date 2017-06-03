@@ -53,7 +53,7 @@ void msx2mapper(Computer* comp) {
 			bn = comp->msx.memMap[i];
 		}
 		if (bt == MEM_SLOT) {
-			memSetBank(comp->mem, i, MEM_SLOT, comp->slot->memMap[i], msxSlotRd, msxSlotWr, &comp->slot);
+			memSetBank(comp->mem, i, MEM_SLOT, comp->slot->memMap[i], msxSlotRd, msxSlotWr, comp->slot);
 		} else {
 			memSetBank(comp->mem, i, bt, bn, NULL, NULL, NULL);
 		}
@@ -82,7 +82,7 @@ unsigned char msx2mrd(Computer* comp, unsigned short adr, int m1) {
 
 void msx2mwr(Computer* comp, unsigned short adr, unsigned char val) {
 	if (0 & ((adr & 0xfff8) == 0x7ff8)) {					// fdc io
-	printf("wr %X,%.2X\n",adr & 7, val);
+	// printf("wr %X,%.2X\n",adr & 7, val);
 		switch(adr & 7) {
 			case 0: difOut(comp->dif, FDC_COM, val, 1); break;
 			case 1: difOut(comp->dif, FDC_TRK, val, 1); break;

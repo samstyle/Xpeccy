@@ -213,6 +213,9 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 			}
 		}
 // load GS ROM
+		fpath = conf.path.romDir + SLASH + rset->gsFile;
+		compSetDevArg(prf->zx, DEV_GSOUND, GS_ARG_ROM, {0,0,fpath.c_str()});
+/*
 		memset(pageBuf,0xff,0x4000);
 		xDevice* dev = compFindDev(prf->zx, DEV_GSOUND);
 		if (dev) {
@@ -237,6 +240,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 			}
 
 		}
+*/
 // load ATM2 font data
 		if (!rset->fntFile.empty()) {
 			fpath = conf.path.romDir + SLASH + rset->fntFile;
@@ -260,7 +264,7 @@ int prfLoad(std::string nm) {
 	xProfile* prf = findProfile(nm);
 	if (prf == NULL) return PLOAD_NF;
 	Computer* comp = prf->zx;
-	xDevice* dev = NULL;
+//	xDevice* dev = NULL;
 
 	std::string cfname = conf.path.confDir + SLASH + prf->file;
 	std::ifstream file(cfname.c_str());
@@ -285,6 +289,8 @@ int prfLoad(std::string nm) {
 		return PLOAD_OF;
 	}
 
+	xArg arg;
+
 	while (!file.eof()) {
 		file.getline(buf,2048);
 		line = std::string(buf);
@@ -293,6 +299,11 @@ int prfLoad(std::string nm) {
 		spl = splitline(line);
 		pnam = spl.first;
 		pval = spl.second;
+
+		arg.b = str2bool(pval) ? 1 : 0;
+		arg.s = pval.c_str();
+		arg.i = strtol(arg.s, NULL, 0);
+
 		if (pval=="") {
 			if (pnam=="[MACHINE]") section = PS_MACHINE;
 			if (pnam=="[GENERAL]") section = PS_MACHINE;
@@ -328,24 +339,14 @@ int prfLoad(std::string nm) {
 					if (pnam == "chip2") aymSetType(comp->ts->chipB,atoi(pval.c_str()));
 					if (pnam == "chip2.stereo") comp->ts->chipB->stereo = atoi(pval.c_str());
 					if (pnam == "ts.type") comp->ts->type = atoi(pval.c_str());
-					dev = compFindDev(comp, DEV_GSOUND);
-					if (dev) {
-						if (pnam == "gs") dev->ptr.gs->enable = str2bool(pval) ? 1 : 0;
-						if (pnam == "gs.reset") dev->ptr.gs->reset = str2bool(pval) ? 1 : 0;
-						if (pnam == "gs.stereo") dev->ptr.gs->stereo = atoi(pval.c_str());
-					}
-					dev = compFindDev(comp, DEV_SDRIVE);
-					if (dev) {
-						if (pnam == "soundrive_type") dev->ptr.sdrv->type = atoi(pval.c_str());
-					}
-					if (pnam == "saa.mode") {
-						tmp2 = atoi(pval.c_str());
-						switch (tmp2) {
-							case 0: comp->saa->enabled = 0; break;
-							case 1: comp->saa->enabled = 1; comp->saa->mono = 1; break;
-							case 2: comp->saa->enabled = 1; comp->saa->mono = 0; break;
-						}
-					}
+
+					if (pnam == "gs") compSetDevArg(comp, DEV_GSOUND, GS_ARG_ENABLE, arg);
+					if (pnam == "gs.reset") compSetDevArg(comp, DEV_GSOUND, GS_ARG_RESET, arg);
+					if (pnam == "gs.stereo") compSetDevArg(comp, DEV_GSOUND, GS_ARG_STEREO, arg);
+
+					if (pnam == "soundrive_type") compSetDevArg(comp, DEV_SDRIVE, SDRV_ARG_MODE, arg);
+
+					if (pnam == "saa.mode") compSetDevArg(comp, DEV_SAA, SAA_ARG_MODE, arg);
 					break;
 				case PS_TAPE:
 					if (pnam == "path" && conf.storePaths) loadFile(comp,pval.c_str(),FT_TAPE,0);
@@ -510,17 +511,14 @@ int prfSave(std::string nm) {
 	fprintf(file, "chip2 = %i\n", comp->ts->chipB->type);
 	fprintf(file, "chip2.stereo = %i\n", comp->ts->chipB->stereo);
 	fprintf(file, "ts.type = %i\n", comp->ts->type);
-	xDevice* dev = compFindDev(comp, DEV_GSOUND);
-	if (dev) {
-		fprintf(file, "gs = %s\n", YESNO(dev->ptr.gs->enable));
-		fprintf(file, "gs.reset = %s\n", YESNO(dev->ptr.gs->reset));
-		fprintf(file, "gs.stereo = %i\n", dev->ptr.gs->stereo);
-	}
-	dev = compFindDev(comp, DEV_SDRIVE);
-	if (dev) {
-		fprintf(file, "soundrive_type = %i\n", dev->ptr.sdrv->type);
-	}
-	fprintf(file, "saa.mode = %i\n", comp->saa->enabled ? (comp->saa->mono ? 1 : 2) : 0);
+
+	fprintf(file, "gs = %s\n", YESNO(compGetDevArg(comp, DEV_GSOUND, GS_ARG_ENABLE).b));
+	fprintf(file, "gs.reset = %s\n", YESNO(compGetDevArg(comp, DEV_GSOUND, GS_ARG_RESET).b));
+	fprintf(file, "gs.stereo = %s\n", YESNO(compGetDevArg(comp, DEV_GSOUND, GS_ARG_STEREO).b));
+
+	fprintf(file, "soundrive_type = %i\n", compGetDevArg(comp, DEV_SDRIVE, SDRV_ARG_MODE).i);
+
+	fprintf(file, "saa.mode = %i\n", compGetDevArg(comp, DEV_SAA, SAA_ARG_MODE).i);
 
 	fprintf(file, "\n[INPUT]\n\n");
 	fprintf(file, "mouse = %s\n", YESNO(comp->mouse->enable));

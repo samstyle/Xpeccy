@@ -4,8 +4,8 @@
 #include <QFileDialog>
 
 #include "dbg_sprscan.h"
-#include "xcore/xcore.h"
-#include "xgui/xgui.h"
+#include "../../xcore/xcore.h"
+#include "../xgui.h"
 
 MemViewer::MemViewer(QWidget* p):QDialog(p) {
 	ui.setupUi(this);

@@ -8,64 +8,13 @@ typedef struct {
 unsigned char msxSlotRd(unsigned short adr, void* data) {
 	xCartridge* slot = (xCartridge*)data;
 	if (!slot->data) return 0xff;
-	int bnk;
-	int radr = 0;
-	switch(slot->mapAuto) {
-		case MSX_NOMAPPER:
-			radr = (adr & 0x3fff) | ((adr & 0x8000) >> 1);
-			break;
-		case MSX_KONAMI4:
-			bnk = ((adr & 0x2000) >> 13) | ((adr & 0x8000) >> 14);
-			bnk = bnk ? slot->memMap[bnk] : 0;
-			radr = (bnk << 13) | (adr & 0x1fff);
-			break;
-		case MSX_ASCII8:
-		case MSX_KONAMI5:
-			bnk = ((adr & 0x2000) >> 13) | ((adr & 0x8000) >> 14);
-			bnk = slot->memMap[bnk];
-			radr = (bnk << 13) | (adr & 0x1fff);
-			break;
-		case MSX_ASCII16:
-			bnk = slot->memMap[(adr & 0x8000) >> 15];
-			radr = (bnk << 14) | (adr & 0x3fff);
-			break;
-	}
-	return slot->data[radr & slot->memMask];
+	return slot->core->rd(slot, adr);
 }
 
 void msxSlotWr(unsigned short adr, unsigned char val, void* data) {
 	xCartridge* slot = (xCartridge*)data;
-	switch (slot->mapAuto) {
-		case MSX_KONAMI4:
-			switch(adr) {
-				case 0x6000: slot->memMap[1] = val; break;
-				case 0x8000: slot->memMap[2] = val; break;
-				case 0xa000: slot->memMap[3] = val; break;
-			}
-			break;
-		case MSX_KONAMI5:
-			switch (adr & 0xf800) {
-				case 0x5000: slot->memMap[0] = val; break;
-				case 0x7000: slot->memMap[1] = val; break;
-				case 0x9000: slot->memMap[2] = val; break;		// TODO: SCC
-				case 0xb000: slot->memMap[3] = val; break;
-			}
-			break;
-		case MSX_ASCII8:
-			switch (adr & 0xf800) {
-				case 0x6000: slot->memMap[0] = val; break;
-				case 0x6800: slot->memMap[1] = val; break;
-				case 0x7000: slot->memMap[2] = val; break;
-				case 0x7800: slot->memMap[3] = val; break;
-			}
-			break;
-		case MSX_ASCII16:
-			switch (adr & 0xf800) {
-				case 0x6000: slot->memMap[0] = val; break;	// #4000..#7FFF
-				case 0x7000: slot->memMap[1] = val; break;	// #8000..#bfff
-			}
-			break;
-	}
+	if (!slot->data) return;
+	slot->core->wr(slot, adr, val);
 }
 
 mPageNr msxMemTab[4][4] = {
@@ -81,7 +30,7 @@ void msxSetMem(Computer* comp, int bank, unsigned char slot) {
 	mPageNr pg = msxMemTab[slot][bank];
 	switch(pg.type) {
 		case MEM_SLOT:
-			memSetBank(comp->mem, bank, MEM_SLOT, comp->slot->memMap[bank], msxSlotRd, msxSlotWr, &comp->slot);
+			memSetBank(comp->mem, bank, MEM_SLOT, comp->slot->memMap[bank], msxSlotRd, msxSlotWr, comp->slot);
 			break;
 		case MEM_RAM:
 			memSetBank(comp->mem, bank, MEM_RAM, comp->msx.memMap[bank & 3] & 7, NULL, NULL, NULL);
@@ -98,9 +47,6 @@ void msxMapMem(Computer* comp) {
 	msxSetMem(comp, 2, (comp->msx.pA8 & 0x30) >> 4);
 	msxSetMem(comp, 3, (comp->msx.pA8 & 0xc0) >> 6);
 }
-
-// colors was taken from wikipedia article
-// https://en.wikipedia.org/wiki/List_of_8-bit_computer_hardware_palettes#Original_MSX
 
 void msxResetSlot(xCartridge* slot) {
 	slot->memMap[0] = 0;

@@ -486,119 +486,21 @@ unsigned char gbSlotRd(unsigned short adr, void* data) {
 	Computer* comp = (Computer*)data;
 	xCartridge* slot = comp->slot;
 	unsigned char res = 0xff;
-	int radr = adr & 0x3fff;
 	if (comp->gb.boot && (adr < comp->romsize) && ((adr & 0xff00) != 0x0100)) {
-		res = comp->mem->romData[radr];
+		res = comp->mem->romData[adr & 0x3fff];
 	} else if (slot->data) {
-		if (adr & 0x4000) {
-			radr |= (slot->memMap[0] << 14);
-		}
-		res = slot->data[radr & slot->memMask];
+		res = slot->core->rd(slot, adr);
 	}
 	return res;
-}
-
-// mbc writing
-void wr_nomap(Computer* comp, unsigned short adr, unsigned char val) {
-}
-
-void wr_mbc1(xCartridge* slot, unsigned short adr, unsigned char val) {
-	switch (adr & 0xe000) {
-		case 0x0000:			// 0000..1fff : xA = ram enable
-			slot->ramen = ((val & 0x0f) == 0x0a) ? 1 : 0;
-			break;
-		case 0x2000:			// 2000..3fff : & 1F = ROM bank (0 -> 1)
-			val &= 0x1f;
-			val |= (slot->memMap[0] & 0x60);
-			if (val == 0) val++;
-			slot->memMap[0] = val;
-			break;
-		case 0x4000:			// 4000..5fff : 2bits : b0,1 ram bank | b5,6 rom bank (depends on banking mode)
-			val &= 3;
-			if (slot->ramod) {
-				slot->memMap[1] = val;
-			} else {
-				slot->memMap[0] = (slot->memMap[0] & 0x1f) | (val << 5);
-			}
-			break;
-		case 0x6000:			// 6000..7fff : b0 = 0:rom banking, 1:ram banking
-			slot->ramod = (val & 1);
-			if (slot->ramod) {
-				slot->memMap[0] &= 0x1f;
-			} else {
-				slot->memMap[1] = 0;
-			}
-			break;
-	}
-}
-
-void wr_mbc2(xCartridge* slot, unsigned short adr, unsigned char val) {
-	switch (adr & 0xe000) {
-		case 0x0000:				// 0000..1fff : 4bit ram enabling
-			if (adr & 0x100) return;
-			slot->ramen = ((val & 0x0f) == 0x0a) ? 1 : 0;
-			break;
-		case 0x2000:				// 2000..3fff : rom bank nr
-			if (adr & 0x100) {		// hi LSBit must be 1
-				val &= 0x0f;
-				if (val == 0) val++;
-				slot->memMap[0] = val;
-			}
-			break;
-	}
-}
-
-void wr_mbc3(xCartridge* slot, unsigned short adr, unsigned char val) {
-	switch (adr & 0xe000) {
-		case 0x0000:		// 0000..1fff : xA = ram enable
-			slot->ramen = ((val & 0x0f) == 0x0a) ? 1 : 0;
-			break;
-		case 0x2000:		// 2000..3fff : rom bank (1..127)
-			val = 0x7f;
-			if (val == 0) val++;
-			slot->memMap[0] = val;
-			break;
-		case 0x4000:		// 4000..5fff : ram bank / rtc register
-			if (val < 4) {
-				slot->memMap[1] = val;
-			}
-			break;
-		case 0x6000:		// b0: 0->1 latch rtc registers
-			break;
-	}
-}
-
-void wr_mbc5(xCartridge* slot, unsigned short adr, unsigned char val) {
-	switch(adr & 0xf000) {
-		case 0x0000:		// 0000..1fff : 0A enable ram, 00 disable ram
-		case 0x1000:
-			if (val == 0x0a) {
-				slot->ramen = 1;
-			} else if (val == 0x00) {
-				slot->ramen = 0;
-			}
-			break;
-		case 0x2000:
-			slot->memMap[0] &= 0x100;
-			slot->memMap[0] |= val;
-			break;
-		case 0x3000:
-			slot->memMap[0] &= 0xff;
-			slot->memMap[0] |= (val & 1) << 8;
-			break;
-		case 0x4000:
-		case 0x5000:
-			slot->memMap[1] = val & 0x0f;
-			break;
-	}
 }
 
 void gbSlotWr(unsigned short adr, unsigned char val, void* data) {
 	Computer* comp = (Computer*)data;
 	xCartridge* slot = comp->slot;
-	if (slot->data && slot->wr)
-		slot->wr(slot, adr, val);
-	gbMaper(comp);
+	if (slot->data && slot->core->wr)
+		slot->core->wr(slot, adr, val);
+	memSetBank(comp->mem, MEM_BANK1, MEM_SLOT, comp->slot->memMap[0], gbSlotRd, gbSlotWr, comp);
+	//gbMaper(comp);
 }
 
 // 8000..9fff : video mem (bank 0,1 gbc)
@@ -609,12 +511,11 @@ unsigned char gbvRd(unsigned short adr, void* data) {
 	xCartridge* slot = comp->slot;
 	unsigned char res = 0xff;
 	int radr;
-	if (adr & 0x2000) {		// hi 8K: cartrige ram
-		if (slot->ramen && slot->data) {
-			radr = (slot->memMap[1] << 13) | (adr & 0x1fff);
-			res = slot->ram[radr & 0x7fff];
+	if (adr & 0x2000) {		// cartrige ram
+		if (slot->data) {
+			res = slot->core->rd(slot, adr);
 		}
-	} else {
+	} else {			// video ram
 		radr = (comp->gb.vbank << 13) | (adr & 0x1fff);
 		res = comp->vid->gbc->ram[radr];
 	}
@@ -625,12 +526,11 @@ void gbvWr(unsigned short adr, unsigned char val, void* data) {
 	Computer* comp = (Computer*)data;
 	xCartridge* slot = comp->slot;
 	int radr;
-	if (adr & 0x2000) {
-		if (slot->ramen && slot->data) {
-			radr = (slot->memMap[1] << 13) | (adr & 0x1fff);
-			slot->ram[radr & 0x7fff] = val;
+	if (adr & 0x2000) {		// cartrige ram
+		if (slot->data) {
+			slot->core->wr(slot, adr, val);
 		}
-	} else {
+	} else {			// video ram
 		radr = (comp->gb.vbank << 13) | (adr & 0x1fff);
 		comp->vid->gbc->ram[radr & 0x3fff] = val;
 	}
@@ -783,7 +683,6 @@ void gbPress(Computer* comp, const char* key) {
 		comp->vid->gbc->sprblock ^= 1;
 		comp->msg = comp->vid->gbc->sprblock ? gbMsgSPR0 :gbMsgSPR1;
 	}
-
 }
 
 void gbRelease(Computer* comp, const char* key) {
@@ -827,23 +726,23 @@ void gbReset(Computer* comp) {
 		printf("Cartrige type %.2X\n",type);
 		switch (type) {
 			case 0x00:
-				slot->wr = NULL;	// rom only (up to 32K)
+				sltSetMaper(slot, MAP_GB_NOMAP);	// rom only (up to 32K)
 				break;
 			case 0x01:
 			case 0x02:
 			case 0x03:
-				slot->wr = wr_mbc1;	// mbc1
+				sltSetMaper(slot, MAP_GB_MBC1);		// mbc1
 				break;
 			case 0x05:
 			case 0x06:
-				slot->wr = wr_mbc2;	// mbc2
+				sltSetMaper(slot, MAP_GB_MBC2);		// mbc2
 				break;
 			case 0x0f:
 			case 0x10:
 			case 0x11:
 			case 0x12:
 			case 0x13:
-				slot->wr = wr_mbc3;	// mbc3
+				sltSetMaper(slot, MAP_GB_MBC3);		// mbc3
 				break;
 			case 0x19:
 			case 0x1a:
@@ -852,10 +751,10 @@ void gbReset(Computer* comp) {
 			case 0x1d:
 			case 0x1e:
 				slot->memMap[0] = 0;
-				slot->wr = wr_mbc5;	// mbc5
+				sltSetMaper(slot, MAP_GB_MBC5);		// mbc5
 				break;
 			default:
-				slot->wr = NULL;
+				sltSetMaper(slot, MAP_UNKNOWN);
 				break;
 		}
 

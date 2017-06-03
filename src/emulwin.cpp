@@ -14,14 +14,14 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "xcore/xcore.h"
-#include "xcore/sound.h"
+#include "xcore.h"
+#include "sound.h"
 #include "emulwin.h"
 #include "filer.h"
 #include "watcher.h"
 
-#include "xcore/vfilters.h"
-#include "xcore/vscalers.h"
+#include "vfilters.h"
+#include "vscalers.h"
 
 #include "version.h"
 
@@ -777,9 +777,10 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		}
 	}
 	if (saveChanged()) {
+		timer.stop();
 		ideCloseFiles(comp->ide);
 		sdcCloseFile(comp->sdc);
-		timer.stop();
+		sltEject(comp->slot);		// this must save cartridge ram
 		ethread.finish = 1;
 		emutex.unlock();		// unlock emulation thread
 		ethread.wait();			// wait until it exits

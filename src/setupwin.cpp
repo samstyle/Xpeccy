@@ -28,6 +28,14 @@ void setRFIndex(QComboBox* box, QVariant data) {
 	box->setCurrentIndex(box->findData(data));
 }
 
+int getRFIData(QComboBox* box) {
+	return box->itemData(box->currentIndex()).toInt();
+}
+
+QString getRFSData(QComboBox* box) {
+	return box->itemData(box->currentIndex()).toString();
+}
+
 std::string getRFText(QComboBox* box) {
 	QString res = "";
 	if (box->currentIndex() >= 0) res = box->currentText();
@@ -162,11 +170,11 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.sdcapbox->addItem("512 M",SDC_512M);
 	ui.sdcapbox->addItem("1024 M",SDC_1G);
 
-	ui.cSlotType->addItem("No mapper",MSX_NOMAPPER);
-	ui.cSlotType->addItem("Konami 4",MSX_KONAMI4);
-	ui.cSlotType->addItem("Konami 5",MSX_KONAMI5);
-	ui.cSlotType->addItem("ASCII 8K",MSX_ASCII8);
-	ui.cSlotType->addItem("ASCII 16K",MSX_ASCII16);
+	ui.cSlotType->addItem("No mapper",MAP_MSX_NOMAPPER);
+	ui.cSlotType->addItem("Konami 4",MAP_MSX_KONAMI4);
+	ui.cSlotType->addItem("Konami 5",MAP_MSX_KONAMI5);
+	ui.cSlotType->addItem("ASCII 8K",MAP_MSX_ASCII8);
+	ui.cSlotType->addItem("ASCII 16K",MAP_MSX_ASCII16);
 
 // all
 	connect(ui.okbut,SIGNAL(released()),this,SLOT(okay()));
@@ -300,7 +308,7 @@ void SetupWin::okay() {
 void SetupWin::start(xProfile* p) {
 	prof = p;
 	comp = p->zx;
-	unsigned int i;
+//	unsigned int i;
 // machine
 	ui.rsetbox->clear();
 	foreach(xRomset rs, conf.rsList) {
@@ -339,15 +347,13 @@ void SetupWin::start(xProfile* p) {
 	ui.geombox->setCurrentIndex(ui.geombox->findText(QString::fromLocal8Bit(conf.prof.cur->layName.c_str())));
 	ui.ulaPlus->setChecked(comp->vid->ula->enabled);
 // sound
-	xDevice* dev = compFindDev(comp, DEV_GSOUND);
-	if (dev) {
-		ui.gsgroup->setEnabled(true);
-		ui.gsrbox->setChecked(dev->ptr.gs->reset);
-		ui.gstereobox->setCurrentIndex(ui.gstereobox->findData(QVariant(dev->ptr.gs->stereo)));
-		ui.gsgroup->setChecked(dev->ptr.gs->enable);
-	} else {
-		ui.gsgroup->setEnabled(false);
-	}
+	ui.gsgroup->setChecked(compGetDevArg(comp, DEV_GSOUND, GS_ARG_ENABLE).b);
+	ui.gsrbox->setChecked(compGetDevArg(comp, DEV_GSOUND, GS_ARG_RESET).b);
+	setRFIndex(ui.gstereobox, compGetDevArg(comp, DEV_GSOUND, GS_ARG_STEREO).i);
+
+	ui.sdrvBox->setCurrentIndex(ui.sdrvBox->findData(compGetDevArg(comp, DEV_SDRIVE, SDRV_ARG_MODE).i));
+
+	ui.cbSaa->setCurrentIndex(ui.cbSaa->findData(compGetDevArg(comp, DEV_SAA, SAA_ARG_MODE).i));
 
 	ui.senbox->setChecked(conf.snd.enabled);
 	ui.mutbox->setChecked(conf.snd.mute);
@@ -363,13 +369,7 @@ void SetupWin::start(xProfile* p) {
 	ui.stereo2box->setCurrentIndex(ui.stereo2box->findData(QVariant(comp->ts->chipB->stereo)));
 	ui.tsbox->setCurrentIndex(ui.tsbox->findData(QVariant(comp->ts->type)));
 
-	dev = compFindDev(comp, DEV_SDRIVE);
-	if (dev) {
-		ui.sdrvBox->setCurrentIndex(ui.sdrvBox->findData(QVariant(dev->ptr.sdrv->type)));
-	}
 
-	i = comp->saa->enabled ? (comp->saa->mono ? SAA_MONO : SAA_STEREO) : SAA_OFF;
-	ui.cbSaa->setCurrentIndex(ui.cbSaa->findData(QVariant(i)));
 // input
 	buildkeylist();
 	int idx = ui.keyMapBox->findText(QString(conf.keyMapName.c_str()));
@@ -455,13 +455,13 @@ void SetupWin::start(xProfile* p) {
 void SetupWin::apply() {
 // machine
 	HardWare *oldmac = comp->hw;
-	prof->hwName = std::string(ui.machbox->itemData(ui.machbox->currentIndex()).toString().toUtf8().data());
+	prof->hwName = std::string(getRFSData(ui.machbox).toUtf8().data());
 	compSetHardware(prof->zx,prof->hwName.c_str());
 	prof->rsName = getRFText(ui.rsetbox); // std::string(ui.rsetbox->currentText().toUtf8().data());
 	prfSetRomset(prof, prof->rsName);
-	comp->resbank = ui.resbox->itemData(ui.resbox->currentIndex()).toInt();
-	memSetSize(comp->mem,ui.mszbox->itemData(ui.mszbox->currentIndex()).toInt());
-	cpuSetType(comp->cpu, ui.cbCpu->itemData(ui.cbCpu->currentIndex()).toInt());
+	comp->resbank = getRFIData(ui.resbox);
+	memSetSize(comp->mem, getRFIData(ui.mszbox));
+	cpuSetType(comp->cpu, getRFIData(ui.cbCpu));
 	compSetBaseFrq(comp, ui.sbFreq->value());
 	comp->evenM1 = ui.scrpwait->isChecked() ? 1 : 0;
 	if (comp->hw != oldmac) compReset(comp,RES_DEFAULT);
@@ -489,51 +489,37 @@ void SetupWin::apply() {
 	std::string nname = getRFText(ui.outbox); // ui.outbox->currentText().toLocal8Bit().data());
 	conf.snd.enabled = ui.senbox->isChecked() ? 1 : 0;
 	conf.snd.mute = ui.mutbox->isChecked() ? 1 : 0;
-	conf.snd.rate = ui.ratbox->itemData(ui.ratbox->currentIndex()).toInt();
+	conf.snd.rate = getRFIData(ui.ratbox);
 	conf.snd.vol.beep = ui.bvsld->value();
 	conf.snd.vol.tape = ui.tvsld->value();
 	conf.snd.vol.ay = ui.avsld->value();
 	conf.snd.vol.gs = ui.gvsld->value();
 	setOutput(nname.c_str());
-	aymSetType(comp->ts->chipA,ui.schip1box->itemData(ui.schip1box->currentIndex()).toInt());
-	aymSetType(comp->ts->chipB,ui.schip2box->itemData(ui.schip2box->currentIndex()).toInt());
-	comp->ts->chipA->stereo = ui.stereo1box->itemData(ui.stereo1box->currentIndex()).toInt();
-	comp->ts->chipB->stereo = ui.stereo2box->itemData(ui.stereo2box->currentIndex()).toInt();
-	comp->ts->type = ui.tsbox->itemData(ui.tsbox->currentIndex()).toInt();
+	aymSetType(comp->ts->chipA, getRFIData(ui.schip1box));
+	aymSetType(comp->ts->chipB, getRFIData(ui.schip2box));
+	comp->ts->chipA->stereo = getRFIData(ui.stereo1box);
+	comp->ts->chipB->stereo = getRFIData(ui.stereo2box);
+	comp->ts->type = getRFIData(ui.tsbox);
 
-	xDevice* dev = compFindDev(comp, DEV_GSOUND);
-	if (dev) {
-		dev->ptr.gs->enable = ui.gsgroup->isChecked() ? 1 : 0;
-		dev->ptr.gs->reset = ui.gsrbox->isChecked() ? 1 : 0;
-		dev->ptr.gs->stereo = ui.gstereobox->itemData(ui.gstereobox->currentIndex()).toInt();
-	}
+	compSetDevArg(comp, DEV_GSOUND, GS_ARG_ENABLE, {(unsigned)(ui.gsgroup->isChecked() ? 1 : 0), 0, NULL});
+	compSetDevArg(comp, DEV_GSOUND, GS_ARG_RESET, {(unsigned)(ui.gsgroup->isChecked() ? 1 : 0), 0, NULL});
+	compSetDevArg(comp, DEV_GSOUND, GS_ARG_STEREO, {0, getRFIData(ui.gstereobox), NULL});
 
-	dev = compFindDev(comp, DEV_SDRIVE);
-	if (dev) {
-		dev->ptr.sdrv->type = ui.sdrvBox->itemData(ui.sdrvBox->currentIndex()).toInt();
-	}
-	switch (ui.cbSaa->itemData(ui.cbSaa->currentIndex()).toInt()) {
-		case SAA_OFF: comp->saa->enabled = 0; break;
-		case SAA_MONO: comp->saa->enabled = 1; comp->saa->mono = 1; break;
-		case SAA_STEREO: comp->saa->enabled = 1; comp->saa->mono = 0; break;
-	}
+	compSetDevArg(comp, DEV_SDRIVE, SDRV_ARG_MODE, {1, getRFIData(ui.sdrvBox), NULL});
+
+	compSetDevArg(comp, DEV_SAA, SAA_ARG_MODE, {1, getRFIData(ui.cbSaa), NULL});
+
 	sndCalibrate(comp);
 // input
 	comp->mouse->enable = ui.ratEnable->isChecked() ? 1 : 0;
 	comp->mouse->hasWheel = ui.ratWheel->isChecked() ? 1 : 0;
 	comp->mouse->swapButtons = ui.cbSwapButtons->isChecked() ? 1 : 0;
-	//if (setupUi.inpDevice->currentIndex() < 1) {
-	//	optSet(OPT_JOYNAME,std::string(""));
-	//} else {
-	//	optSet(OPT_JOYNAME,std::string(setupUi.inpDevice->currentText().toLocal8Bit().data()));
-	//}
 	std::string kmname = getRFText(ui.keyMapBox);
 	if (kmname == "none") kmname = "default";
 	conf.keyMapName = kmname;
 	loadKeys();
 // bdi
-//	comp->bdi->fdc->type = ui.diskTypeBox->itemData(ui.diskTypeBox->currentIndex()).toInt();
-	difSetHW(comp->dif, ui.diskTypeBox->itemData(ui.diskTypeBox->currentIndex()).toInt());
+	difSetHW(comp->dif, getRFIData(ui.diskTypeBox));
 	setFlagBit(ui.bdtbox->isChecked(),&fdcFlag,FDC_FAST);
 	conf.storePaths = ui.mempaths->isChecked() ? 1 : 0;
 
@@ -558,10 +544,10 @@ void SetupWin::apply() {
 	flp->protect = ui.dwpbox->isChecked() ? 1 : 0;
 
 // hdd
-	comp->ide->type = ui.hiface->itemData(ui.hiface->currentIndex()).toInt();
+	comp->ide->type = getRFIData(ui.hiface);
 
 	ATAPassport pass = ideGetPassport(comp->ide,IDE_MASTER);
-	comp->ide->master->type = ui.hm_type->itemData(ui.hm_type->currentIndex()).toInt();
+	comp->ide->master->type = getRFIData(ui.hm_type);
 	ideSetImage(comp->ide,IDE_MASTER,ui.hm_path->text().toLocal8Bit().data());
 	comp->ide->master->hasLBA = ui.hm_islba->isChecked() ? 1 : 0;
 	pass.spt = ui.hm_gsec->value();
@@ -571,7 +557,7 @@ void SetupWin::apply() {
 	ideSetPassport(comp->ide,IDE_MASTER,pass);
 
 	pass = ideGetPassport(comp->ide,IDE_SLAVE);
-	comp->ide->slave->type = ui.hs_type->itemData(ui.hs_type->currentIndex()).toInt();
+	comp->ide->slave->type = getRFIData(ui.hs_type);
 	ideSetImage(comp->ide,IDE_SLAVE,ui.hs_path->text().toLocal8Bit().data());
 	comp->ide->slave->hasLBA = ui.hs_islba->isChecked() ? 1 : 0;
 	pass.spt = ui.hs_gsec->value();
@@ -581,10 +567,10 @@ void SetupWin::apply() {
 	ideSetPassport(comp->ide,IDE_SLAVE,pass);
 // others
 	sdcSetImage(comp->sdc,ui.sdPath->text().isEmpty() ? "" : ui.sdPath->text().toLocal8Bit().data());
-	sdcSetCapacity(comp->sdc,ui.sdcapbox->itemData(ui.sdcapbox->currentIndex()).toInt());
+	sdcSetCapacity(comp->sdc, getRFIData(ui.sdcapbox));
 	comp->sdc->lock = ui.sdlock->isChecked() ? 1 : 0;
 
-	comp->slot->mapType = ui.cSlotType->itemData(ui.cSlotType->currentIndex()).toInt();
+	comp->slot->mapType = getRFIData(ui.cSlotType);
 // tape
 	conf.tape.autostart = ui.cbTapeAuto->isChecked() ? 1 : 0;
 	conf.tape.fast = ui.cbTapeFast->isChecked() ? 1 : 0;

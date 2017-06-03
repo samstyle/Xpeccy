@@ -6,6 +6,7 @@ typedef struct {
 	unsigned met:1;		// condition met
 	unsigned mem:1;		// operand mem rd :(nn),(hl),(de) etc
 	int len;
+	int oadr;		// direct addressation adr
 	unsigned char mop;	// operand
 	const char* mnem;
 } xMnem;

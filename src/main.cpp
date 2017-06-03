@@ -9,7 +9,7 @@
 #include "xgui/xgui.h"
 #include "libxpeccy/spectrum.h"
 #include "emulwin.h"
-#include "debuger.h"
+#include "xgui/debuga/debuger.h"
 #include "setupwin.h"
 #include "filer.h"
 

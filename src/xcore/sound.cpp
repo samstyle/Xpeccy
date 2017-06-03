@@ -50,7 +50,7 @@ OutSys* findOutSys(const char*);
 
 // output
 
-#include "../libxpeccy/hardware/hardware.h"
+#include "hardware.h"
 
 sndPair mixer(sndPair cur, int levL, int levR, int vol) {
 	levL = levL * vol / 100.0;
@@ -98,8 +98,8 @@ void sndMix(Computer* comp) {
 //	svol = sdrvGetVolume(comp->sdrv);
 //	sndLev = mixer(sndLev, svol.left, svol.right, conf.snd.vol.beep);
 	// saa
-	svol = saaGetVolume(comp->saa);		// TODO : saa volume control
-	sndLev = mixer(sndLev, svol.left, svol.right, 100);
+//	svol = saaGetVolume(comp->saa);		// TODO : saa volume control
+//	sndLev = mixer(sndLev, svol.left, svol.right, 100);
 	// DEVICES
 	int idx = 0;
 	xDevice* dev;
@@ -108,6 +108,7 @@ void sndMix(Computer* comp) {
 		dev = comp->devList[idx];
 		if (dev->vol) {
 			switch(dev->type) {
+				case DEV_SAA: vol = 100; break;
 				case DEV_SDRIVE: vol = 100; break;
 				case DEV_GSOUND: vol = conf.snd.vol.gs; break;
 				default: vol = 0; break;
@@ -129,12 +130,13 @@ int sndSync(Computer* comp, int nosync, int fast) {
 		comp->tapCount = 0;
 		//gsSync(comp->gs);
 		tsSync(comp->ts,nsPerSample);
-		saaSync(comp->saa,nsPerSample);
+		//saaSync(comp->saa,nsPerSample);
 
 		compDevFlush(comp);
-	}
-	if (!nosync && !fast) {
-		sndMix(comp);
+
+		if (!fast) {
+			sndMix(comp);
+		}
 	}
 
 	bufA.data[bufA.pos++] = sndLev.left >> 2;

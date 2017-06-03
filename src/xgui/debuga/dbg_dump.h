@@ -3,6 +3,10 @@
 
 #include <QTableView>
 #include <QAbstractItemModel>
+#include <QKeyEvent>
+#include <QWheelEvent>
+
+#include "../../libxpeccy/spectrum.h"
 
 enum {
 	XCP_1251 = 1,
@@ -25,9 +29,10 @@ class xDumpModel:public QAbstractItemModel {
 		Qt::ItemFlags flags(const QModelIndex&) const;
 		QVariant data(const QModelIndex&, int) const;
 		bool setData(const QModelIndex&, const QVariant&, int);
-		void update();
 		void updateCell(int, int);
 		void updateRow(int);
+	public slots:
+		void update();
 	private:
 		void** pptr;
 		dmpMrd mrd;
@@ -38,6 +43,16 @@ class xDumpTable:public QTableView {
 	Q_OBJECT
 	public:
 		xDumpTable(QWidget* = NULL);
+		Computer** cptr;
+	signals:
+		void rqRefill();
+	private:
+		int markAdr;
+		void keyPressEvent(QKeyEvent*);
+		void mousePressEvent(QMouseEvent*);
+		void mouseMoveEvent(QMouseEvent*);
+		void mouseReleaseEvent(QMouseEvent*);
+		void wheelEvent(QWheelEvent*);
 };
 
 #endif

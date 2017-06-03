@@ -15,7 +15,7 @@
 #include "dbg_dump.h"
 #include "dbg_disasm.h"
 
-#include "libxpeccy/spectrum.h"
+#include "../../libxpeccy/spectrum.h"
 #include "dbg_sprscan.h"
 #include "dbg_memfill.h"
 #include "dbg_finder.h"
@@ -37,6 +37,7 @@ enum {
 	DMP_REG
 };
 
+/*
 struct DasmRow {
 	unsigned ispc:1;	// adr=PC
 	unsigned cond:1;	// if there is condition command (JR, JP, CALL, RET) and condition met
@@ -48,6 +49,7 @@ struct DasmRow {
 	QByteArray bytes;
 	QString com;
 };
+*/
 
 class xItemDelegate : public QItemDelegate {
 	public:
@@ -67,7 +69,6 @@ class DebugWin : public QDialog {
 		void start(Computer*);
 		void stop();
 
-		QMap<QString, xAdr> labels;
 	public slots:
 		bool fillAll();
 	signals:
@@ -85,6 +86,7 @@ class DebugWin : public QDialog {
 		QList<unsigned short> jumpHistory;
 
 		xDumpModel* dumpodel;
+		xDisasmModel* dasmodel;
 
 		Computer* comp;
 		long tCount;
@@ -107,10 +109,10 @@ class DebugWin : public QDialog {
 		int getAdr();
 		void switchBP(unsigned char);
 
-		QString findLabel(int, int, int);
-		void placeLabel(DasmRow&);
+//		QString findLabel(int, int, int);
+//		void placeLabel(DasmRow&);
 
-		unsigned short disasmAdr;
+//		unsigned short disasmAdr;
 		int dumpMode;
 //		int codePage;
 
@@ -128,8 +130,8 @@ class DebugWin : public QDialog {
 		void chLayout();
 
 		unsigned short getPrevAdr(unsigned short);
-		void scrollDown();
-		void scrollUp();
+//		void scrollDown();
+//		void scrollUp();
 
 	public slots:
 		void loadLabels(QString = QString());
@@ -185,7 +187,7 @@ class DebugWin : public QDialog {
 		void saveDumpToD();
 	protected:
 		void keyPressEvent(QKeyEvent*);
-		void wheelEvent(QWheelEvent*);
+//		void wheelEvent(QWheelEvent*);
 };
 
 #endif

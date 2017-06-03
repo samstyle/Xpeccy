@@ -7,13 +7,13 @@
 
 #include <SDL.h>
 
-#include "libxpeccy/spectrum.h"
+#include "spectrum.h"
 #include "setupwin.h"
 #include "debuger.h"
 #include "watcher.h"
 #include "vkeyboard.h"
-#include "xcore/xcore.h"
-#include "xgui/xgui.h"
+#include "xcore.h"
+#include "xgui.h"
 #include "ethread.h"
 
 // pause reasons

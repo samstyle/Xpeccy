@@ -119,6 +119,24 @@ void compDevFlush(Computer* comp) {
 	}
 }
 
+void compSetDevArg(Computer* comp, int devid, int argid, xArg arg) {
+	xDevice* dev = compFindDev(comp, devid);
+	if (!dev) return;
+	if (!dev->set) return;
+	dev->set(dev->ptr.ptr, argid, arg);
+}
+
+xArg compGetDevArg(Computer* comp, int devid, int argid) {
+	xArg arg;
+	arg.b = 0;
+	arg.i = 0;
+	arg.s = NULL;
+	xDevice* dev = compFindDev(comp, devid);
+	if (!dev) return arg;
+	if (!dev->get) return arg;
+	return dev->get(dev->ptr.ptr, argid);
+}
+
 // ...
 
 void zxMemRW(Computer* comp, int adr) {
@@ -252,14 +270,6 @@ void rzxStop(Computer* zx) {
 	zx->rzx.frm.size = 0;
 }
 
-void zxInitPalete(Computer* comp) {
-	for (int i = 0; i<16; i++) {
-		comp->vid->pal[i].b = (i & 1) ? ((i & 8) ? 0xff : 0xa0) : 0x00;
-		comp->vid->pal[i].r = (i & 2) ? ((i & 8) ? 0xff : 0xa0) : 0x00;
-		comp->vid->pal[i].g = (i & 4) ? ((i & 8) ? 0xff : 0xa0) : 0x00;
-	}
-}
-
 void zxSetUlaPalete(Computer* comp) {
 	for (int i = 0; i < 64; i++) {
 		comp->vid->pal[i].b = (comp->vid->ula->pal[i] & 0x03) << 6;		// Bb0 : must me Bbb
@@ -287,12 +297,14 @@ Computer* compCreate() {
 	memset(comp->brkIOMap, 0, 0x10000);
 	memset(comp->brkRomMap, 0, 0x80000);
 	memset(comp->brkRamMap, 0, 0x400000);
+	memset(comp->brkAdrMap, 0, 0x1000);
 
 	for(i = 0; i < MAX_DEV_COUNT; i++)
 		comp->devList[i] = NULL;
 
 	compAddDev(comp, DEV_GSOUND);
 	compAddDev(comp, DEV_SDRIVE);
+	compAddDev(comp, DEV_SAA);
 
 // input
 	comp->keyb = keyCreate();
@@ -310,7 +322,7 @@ Computer* compCreate() {
 //	comp->gs = gsCreate();
 //	comp->sdrv = sdrvCreate(SDRV_NONE);
 	comp->gbsnd = gbsCreate();
-	comp->saa = saaCreate();
+//	comp->saa = saaCreate();
 	comp->beep = bcCreate();
 // baseconf
 	comp->evo.evo2F = 0;
@@ -337,7 +349,7 @@ Computer* compCreate() {
 	comp->tickCount = 0;
 
 //	gsReset(comp->gs);
-	zxInitPalete(comp);
+//	zxInitPalete(comp);
 	comp->cmos.adr = 0;
 	memset(comp->cmos.data, 0x00, 256);
 	comp->cmos.data[17] = 0xaa;
@@ -369,19 +381,17 @@ void compDestroy(Computer* comp) {
 
 void compReset(Computer* comp,int res) {
 	if (comp->rzx.play) rzxStop(comp);
-	zxInitPalete(comp);
-	comp->vid->ula->active = 0;
+	vidReset(comp->vid);
 	comp->prt2 = 0;
 	comp->p1FFD = 0;
 	comp->pEFF7 = 0;
+	comp->rom = 0;
+	comp->dos = 0;
 	memSetBank(comp->mem, MEM_BANK0, MEM_ROM, 0, NULL, NULL, NULL);
 	memSetBank(comp->mem, MEM_BANK1, MEM_RAM, 5, NULL, NULL, NULL);
 	memSetBank(comp->mem, MEM_BANK2, MEM_RAM, 2, NULL, NULL, NULL);
 	memSetBank(comp->mem, MEM_BANK3, MEM_RAM, 0, NULL, NULL, NULL);
 	comp->cpu->reset(comp->cpu);
-	comp->vid->curscr = 5;
-	vidSetMode(comp->vid,VID_NORMAL);
-	comp->dos = 0;
 
 	compDevReset(comp);		// send RESET to external devices
 
@@ -389,7 +399,7 @@ void compReset(Computer* comp,int res) {
 //	if (comp->gs->reset) gsReset(comp->gs);
 	tsReset(comp->ts);
 	ideReset(comp->ide);
-	saaReset(comp->saa);
+//	saaReset(comp->saa);
 	if (res == RES_DEFAULT) res = comp->resbank;
 	comp->p7FFD = ((res == RES_DOS) || (res == RES_48)) ? 0x10 : 0x00;
 	comp->dos = ((res == RES_DOS) || (res == RES_SHADOW)) ? 1 : 0;
@@ -484,7 +494,7 @@ int compExec(Computer* comp) {
 		bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
 		ideOut(comp->ide, comp->padr, comp->pval, bdiz);
 //		gsOut(comp->gs, comp->padr, comp->pval);
-		if (!bdiz) saaWrite(comp->saa, comp->padr, comp->pval);		// bdi ports must be closed!
+//		if (!bdiz) saaWrite(comp->saa, comp->padr, comp->pval);		// bdi ports must be closed!
 		if (ulaOut(comp->vid->ula, comp->padr, comp->pval)) {
 			if (comp->vid->ula->palchan) {
 				zxSetUlaPalete(comp);

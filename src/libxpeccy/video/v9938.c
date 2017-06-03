@@ -11,6 +11,7 @@ extern unsigned char scrbyte, atrbyte, col, ink, pap;
 
 // v9938 modes
 enum {
+	VID_MSX_NONE = -1,
 	VID_MSX_SCR0 = 0,
 	VID_MSX_SCR1,
 	VID_MSX_SCR2,
@@ -21,7 +22,6 @@ enum {
 	VID_MSX_SCR7,
 	VID_MSX_SCR8,
 	VID_MSX_SCR9,
-	VID_MSX_NONE = -1
 };
 
 // color mix
@@ -446,6 +446,9 @@ void vdpSetMode(VDP9938* vdp, int mode) {
 		idx++;
 	}
 }
+
+// colors was taken from wikipedia article
+// https://en.wikipedia.org/wiki/List_of_8-bit_computer_hardware_palettes#Original_MSX
 
 xColor msxPalete[16] = {
 	{0,0,0},	// 0 : transparent (black)

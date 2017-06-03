@@ -13,4 +13,10 @@ typedef struct {
 	unsigned char data;	// data bus (8 bit)
 } xDevBus;
 
+typedef struct {
+	unsigned b:1;
+	int i;
+	const char* s;
+} xArg;
+
 #endif

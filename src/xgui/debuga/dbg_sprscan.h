@@ -5,7 +5,7 @@
 #include <QWheelEvent>
 
 #include "ui_memviewer.h"
-#include "libxpeccy/spectrum.h"
+#include "../../libxpeccy/spectrum.h"
 
 class MemViewer : public QDialog {
 	Q_OBJECT

@@ -5,9 +5,12 @@
 #include <QTextCodec>
 #include <QColor>
 
+extern QColor colBRK;
+extern QColor colSEL;
+
 extern unsigned short dumpAdr;
-extern unsigned short blockStart;
-extern unsigned short blockEnd;
+extern int blockStart;
+extern int blockEnd;
 
 QString gethexbyte(unsigned char);
 QString gethexword(int);
@@ -53,7 +56,7 @@ QModelIndex xDumpModel::parent(const QModelIndex& idx) const {
 }
 
 int xDumpModel::rowCount(const QModelIndex& idx) const {
-	return 13;
+	return 12;
 }
 
 int xDumpModel::columnCount(const QModelIndex& idx) const {
@@ -90,9 +93,9 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 			if (col < 1) break;
 			if (col > 8) break;
 			if (flg & 0x0f) {						// breakpoint
-				res = QColor(200,128,128);
+				res = colBRK;
 			} else if ((cadr >= blockStart) && (cadr <= blockEnd)) {	// selection
-				res = QColor(128,255,128);
+				res = colSEL;
 			}
 			break;
 		case Qt::TextAlignmentRole:
@@ -133,6 +136,8 @@ bool xDumpModel::setData(const QModelIndex& idx, const QVariant& val, int role) 
 	if (role != Qt::EditRole) return false;
 	int row = idx.row();
 	int col = idx.column();
+	if ((row < 0) || (row >= rowCount())) return false;
+	if ((col < 0) || (col >= columnCount())) return false;
 	unsigned short adr = dumpAdr + (row << 3);
 	unsigned short nadr;
 	unsigned char bt;
@@ -152,5 +157,117 @@ bool xDumpModel::setData(const QModelIndex& idx, const QVariant& val, int role) 
 // TABLE
 
 xDumpTable::xDumpTable(QWidget* p):QTableView(p) {
+	markAdr = -1;
+}
 
+void xDumpTable::keyPressEvent(QKeyEvent* ev) {
+	QModelIndex idx = currentIndex();
+	switch(ev->key()) {
+		case Qt::Key_Up:
+			if (idx.row() > 0) {
+				QTableView::keyPressEvent(ev);
+			} else {
+				dumpAdr -= 8;
+				emit rqRefill();
+			}
+			break;
+		case Qt::Key_Down:
+			if (idx.row() < model()->rowCount() - 1) {
+				QTableView::keyPressEvent(ev);
+			} else {
+				dumpAdr += 8;
+				emit rqRefill();
+			}
+			break;
+		default:
+			QTableView::keyPressEvent(ev);
+			break;
+	}
+}
+
+void xDumpTable::mousePressEvent(QMouseEvent* ev) {
+	QTableView::mousePressEvent(ev);
+	QModelIndex idx = indexAt(ev->pos());
+	int row = idx.row();
+	int col = idx.column();
+	if ((row < 0) || (row >= model()->rowCount())) return;
+	if ((col < 0) || (col >= model()->columnCount())) return;
+	if (col > 8) return;
+	int adr;
+	if ((col == 0) || (col > 8)) {
+		adr = dumpAdr + (row << 3);
+	} else {
+		adr = dumpAdr + (row << 3) + col - 1;
+	}
+	adr &= 0xffff;
+	switch(ev->button()) {
+		case Qt::LeftButton:
+			if (ev->modifiers() & Qt::ControlModifier) {
+				blockStart = adr;
+				if (blockEnd < blockStart) blockEnd = blockStart;
+				emit rqRefill();
+			} else if (ev->modifiers() & Qt::ShiftModifier) {
+				blockEnd = adr;
+				if (blockStart > blockEnd) blockStart = blockEnd;
+				if (blockStart < 0) blockStart = 0;
+				emit rqRefill();
+			} else {
+				markAdr = adr;
+			}
+			emit rqRefill();
+			break;
+		case Qt::MidButton:
+			blockStart = -1;
+			blockEnd = -1;
+			markAdr = -1;
+			emit rqRefill();
+			break;
+		default:
+			break;
+	}
+}
+
+void xDumpTable::mouseReleaseEvent(QMouseEvent* ev) {
+	QTableView::mouseReleaseEvent(ev);
+	if (ev->button() == Qt::LeftButton)
+		markAdr = -1;
+}
+
+void xDumpTable::mouseMoveEvent(QMouseEvent* ev) {
+	QTableView::mouseMoveEvent(ev);
+	QModelIndex idx = indexAt(ev->pos());
+	int row = idx.row();
+	int col = idx.column();
+	if ((row < 0) || (row >= model()->rowCount())) return;
+	if ((col < 0) || (col >= model()->columnCount())) return;
+	int adr;
+	if ((col == 0) || (col > 8)) {
+		adr = dumpAdr + (row << 3);
+	} else {
+		adr = dumpAdr + (row << 3) + col - 1;
+	}
+	adr &= 0xffff;
+	if ((ev->modifiers() == Qt::NoModifier) && (ev->buttons() & Qt::LeftButton) && (adr != blockStart) && (adr != blockEnd) && (adr != markAdr)) {
+		if ((col == 0) || (col > 8))
+			adr += 7;
+		if (adr < blockStart) {
+			blockStart = adr;
+			blockEnd = markAdr;
+		} else {
+			blockStart = markAdr;
+			blockEnd = adr;
+		}
+		emit rqRefill();
+	}
+	ev->accept();
+}
+
+void xDumpTable::wheelEvent(QWheelEvent* ev) {
+	if (ev->delta() < 0) {
+		dumpAdr += 8;
+		emit rqRefill();
+	} else if (ev->delta() > 0) {
+		dumpAdr -= 8;
+		emit rqRefill();
+	}
 }

@@ -93,18 +93,19 @@ const char halfByte[] = "0123456789ABCDEF";
 
 xMnem cpuDisasm(CPU* cpu, unsigned short adr, char* buf, cbdmr mrd, void* data) {
 	xMnem mn;
-    mn.mnem = NULL;
 	opCode* opt = cpu->tab;
+	unsigned char op;
+	unsigned char tmp;
+	unsigned char dtl;
+	unsigned char dth;
+	unsigned short dtw;
+	mn.mnem = NULL;
 	if (opt == NULL) {			// no opcode tab
 		strcpy(buf, "undef");
 		mn.len = 1;
 	} else {
-		unsigned char op;
-		unsigned char tmp;
-		unsigned char dtl;
-		unsigned char dth;
-		unsigned short dtw;
 		mn = cpu->mnem(cpu, adr, mrd, data);
+		mn.oadr = -1;
 		adr += mn.len;
 		tmp = mrd((adr - 2) & 0xffff, data);
 		const char* src = mn.mnem;
@@ -125,6 +126,7 @@ xMnem cpuDisasm(CPU* cpu, unsigned short adr, char* buf, cbdmr mrd, void* data) 
 						dtl = mrd(adr++,data);
 						dth = mrd(adr++,data);
 						mn.len += 2;
+						mn.oadr = dtl | (dth << 8);
 						*buf++ = '#';
 						*buf++ = halfByte[dth >> 4];
 						*buf++ = halfByte[dth & 0x0f];
@@ -135,6 +137,7 @@ xMnem cpuDisasm(CPU* cpu, unsigned short adr, char* buf, cbdmr mrd, void* data) 
 						dtl = mrd(adr++,data);
 						mn.len++;
 						dtw = adr + (signed char)dtl;
+						mn.oadr = dtw;
 						*buf++ = '#';
 						*buf++ = halfByte[(dtw >> 12) & 0x0f];
 						*buf++ = halfByte[(dtw >> 8) & 0x0f];

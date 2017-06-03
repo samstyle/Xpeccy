@@ -3,7 +3,7 @@
 
 #include <QDialog>
 #include "ui_dbgfinder.h"
-#include "libxpeccy/memory.h"
+#include "../../libxpeccy/memory.h"
 
 class xMemFinder : public QDialog {
 	Q_OBJECT

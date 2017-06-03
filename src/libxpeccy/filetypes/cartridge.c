@@ -1,24 +1,24 @@
 #include "filetypes.h"
 
 void detectType(xCartridge* slot) {
-	slot->mapAuto = slot->mapType;
+	int test, radr, adr;
+	sltSetMaper(slot, slot->mapType);
 	if (slot->memMask < 0x8000) {
-		slot->mapAuto = MSX_NOMAPPER;		// 16/32K : no mapper
+		sltSetMaper(slot, MAP_MSX_NOMAPPER);		// 16/32K : no mapper
 	} else {
-		int test, radr;
-		for (int adr = 0; adr < 0x4000; adr++) {
+		for (adr = 0; adr < 0x4000; adr++) {
 			radr = adr & slot->memMask;
 			test = slot->data[radr++] << 16;
 			test |= slot->data[radr++] << 8;
 			test |= slot->data[radr];
 			if ((test == 0x320050) || (test == 0x3200b0)) {
-				slot->mapAuto = MSX_KONAMI5;
+				sltSetMaper(slot, MAP_MSX_KONAMI5);
 				break;
 			} else if ((test == 0x320068) || (test == 0x320078)) {
-				slot->mapAuto = MSX_ASCII8;
+				sltSetMaper(slot, MAP_MSX_ASCII8);
 				break;
 			} else if (test == 0x3200a0) {
-				slot->mapAuto = MSX_KONAMI4;
+				sltSetMaper(slot, MAP_MSX_KONAMI4);
 				break;
 			}
 		}
@@ -34,6 +34,7 @@ int loadSlot(xCartridge* slot, const char* name) {
 	int err = ERR_OK;
 	if (siz > (4 * 1024 * 1024)) {
 		err = ERR_RAW_LONG;
+		fclose(file);
 	} else {
 		int tsiz = 1;
 		while (tsiz < siz) {tsiz <<= 1;}		// get nearest 2^n >= siz
@@ -45,8 +46,18 @@ int loadSlot(xCartridge* slot, const char* name) {
 			slot->memMap[tsiz] = 0;
 		}
 		detectType(slot);
+		fclose(file);
+		char rname[FILENAME_MAX];
+		strcpy(rname, name);
+		strcat(rname, ".ram");
+		file = fopen(rname, "rb");
+		if (file) {
+			fread(slot->ram, 0x8000, 1, file);
+			fclose(file);
+		} else {
+			memset(slot->ram, 0x00, 0x8000);
+		}
 		err = ERR_OK;
 	}
-	fclose(file);
 	return err;
 }

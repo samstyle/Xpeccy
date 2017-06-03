@@ -12,6 +12,10 @@ enum {
 	SDRV_105_2	// mode2: ports f1,f3,f9,fb (default)
 };
 
+enum {
+	SDRV_ARG_MODE = 0
+};
+
 #include "sndcommon.h"
 
 typedef struct {
@@ -23,5 +27,7 @@ void* sdCreate();
 void sdDestroy(void*);
 void sdRequest(void*, xDevBus*);
 sndPair sdVolume(void*);
+void sdSet(void*, int, xArg);
+xArg sdGet(void*, int);
 
 #endif

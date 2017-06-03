@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>806</width>
-    <height>582</height>
+    <width>813</width>
+    <height>578</height>
    </rect>
   </property>
   <property name="font">
@@ -740,16 +740,10 @@
       </layout>
      </item>
      <item>
-      <widget class="xTableWidget" name="dasmTable">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
+      <widget class="xDisasmTable" name="dasmTable">
        <property name="minimumSize">
         <size>
-         <width>347</width>
+         <width>350</width>
          <height>0</height>
         </size>
        </property>
@@ -782,12 +776,6 @@
        <property name="wordWrap">
         <bool>true</bool>
        </property>
-       <property name="rowCount">
-        <number>19</number>
-       </property>
-       <property name="columnCount">
-        <number>4</number>
-       </property>
        <attribute name="horizontalHeaderVisible">
         <bool>false</bool>
        </attribute>
@@ -803,29 +791,9 @@
        <attribute name="verticalHeaderDefaultSectionSize">
         <number>17</number>
        </attribute>
-       <row/>
-       <row/>
-       <row/>
-       <row/>
-       <row/>
-       <row/>
-       <row/>
-       <row/>
-       <row/>
-       <row/>
-       <row/>
-       <row/>
-       <row/>
-       <row/>
-       <row/>
-       <row/>
-       <row/>
-       <row/>
-       <row/>
-       <column/>
-       <column/>
-       <column/>
-       <column/>
+       <attribute name="verticalHeaderMinimumSectionSize">
+        <number>17</number>
+       </attribute>
       </widget>
      </item>
     </layout>
@@ -958,7 +926,7 @@
         <number>17</number>
        </attribute>
        <attribute name="verticalHeaderStretchLastSection">
-        <bool>true</bool>
+        <bool>false</bool>
        </attribute>
       </widget>
      </item>
@@ -2365,12 +2333,12 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>xTableWidget</class>
-   <extends>QTableWidget</extends>
+   <class>xDumpTable</class>
+   <extends>QTableView</extends>
    <header location="global">stdlib.h</header>
   </customwidget>
   <customwidget>
-   <class>xDumpTable</class>
+   <class>xDisasmTable</class>
    <extends>QTableView</extends>
    <header location="global">stdlib.h</header>
   </customwidget>

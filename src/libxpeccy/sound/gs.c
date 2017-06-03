@@ -95,19 +95,12 @@ void* gsCreate() {
 	memSetBank(res->mem, MEM_BANK1, MEM_RAM, 0, NULL, NULL, NULL);
 	memSetBank(res->mem, MEM_BANK2, MEM_RAM, 0, NULL, NULL, NULL);
 	memSetBank(res->mem, MEM_BANK3, MEM_RAM, 1, NULL, NULL, NULL);
-//	res->sync = 0;
-//	res->cnt = 0;
 	res->pstate = 0x7e;
 	res->stereo = GS_12_34;
-//	res->counter = 0;
 	res->ch1 = 0x80;
 	res->ch2 = 0x80;
 	res->ch3 = 0x80;
 	res->ch4 = 0x80;
-//	res->vol1 = 0;
-//	res->vol2 = 0;
-//	res->vol3 = 0;
-//	res->vol4 = 0;
 	return res;
 }
 
@@ -175,7 +168,6 @@ void gsRequest(void* ptr, xDevBus* bus) {
 // max 1ch = 256 * 64 = 16384 = 2^14
 // 4ch = 2^14 * 4 = 2^16 = 65536
 // 2ch = 2^15
-// 2^16 -> 2^7 : >> 9
 
 sndPair gsVolume(void* ptr) {
 	GSound* gs = (GSound*)ptr;
@@ -199,33 +191,38 @@ sndPair gsVolume(void* ptr) {
 	return res;
 }
 
-// external in/out
+// arguments
 
-/*
-int gsIn(GSound* gs, int prt, unsigned char* val) {
-	if (!gs->enable) return 0;	// gs disabled
-	if ((prt & 0x44) != 0) return 0;		// port don't catched
-	//gsSync(gs);
-	if (prt & 8) {
-		*val = gs->pstate;
-	} else {
-		*val = gs->pb3_gs;
-		gs->pstate &= 0x7f;		// reset b7,state
+void gsSet(void* ptr, int type, xArg arg) {
+	GSound* gs = (GSound*)ptr;
+	FILE* file;
+	switch(type) {
+		case GS_ARG_ENABLE: gs->enable = arg.b; break;
+		case GS_ARG_RESET: gs->reset = arg.b; break;
+		case GS_ARG_STEREO: gs->stereo = arg.i; break;
+		case GS_ARG_ROM:
+			if (!arg.s) {
+				memset(gs->mem->romData, 0xff, 0x8000);
+			} else {
+				file = fopen(arg.s, "rb");
+				if (file) {
+					fread(gs->mem->romData, 0x8000, 1, file);
+					fclose(file);
+				} else {
+					memset(gs->mem->romData, 0xff, 0x8000);
+				}
+			}
+			break;
 	}
-	return 1;
 }
 
-int gsOut(GSound* gs, int prt,unsigned char val) {
-	if (!gs->enable) return 0;
-	if ((prt & 0x44) != 0) return 0;
-	//gsSync(gs);
-	if (prt & 8) {
-		gs->pbb_zx = val;
-		gs->pstate |= 1;
-	} else {
-		gs->pb3_zx = val;
-		gs->pstate |= 0x80;	// set b7,state
+xArg gsGet(void* ptr, int type) {
+	GSound* gs = (GSound*)ptr;
+	xArg arg = {0, 0, NULL};
+	switch(type) {
+		case GS_ARG_ENABLE: arg.b = gs->enable; break;
+		case GS_ARG_RESET: arg.b = gs->reset; break;
+		case GS_ARG_STEREO: arg.i = gs->stereo; break;
 	}
-	return 1;
+	return arg;
 }
-*/

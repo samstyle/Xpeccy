@@ -129,6 +129,7 @@ void vidDestroy(Video*);
 
 void vidInitAdrs();
 
+void vidReset(Video*);
 void vidSync(Video*,int);
 void vidSetMode(Video*,int);
 void vidWait(Video*);

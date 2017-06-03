@@ -106,12 +106,24 @@ else()
 
 endif()
 
-set(INCLUDIRS ${CMAKE_BINARY_DIR})
+set(INCLUDIRS ${CMAKE_BINARY_DIR}
+	./src
+	./src/xcore
+	./src/xgui
+	./src/xgui/debuga
+	./src/libxpeccy
+	./src/libxpeccy/cpu
+	./src/libxpeccy/hardware
+	./src/libxpeccy/sound
+	./src/libxpeccy/video
+	./src/libxpeccy/filetypes
+	)
 
 # sources
 file(GLOB SOURCES
 	./src/*.cpp
 	./src/*/*.cpp
+	./src/*/*/*.cpp
 	./src/*/*.c
 	./src/*/*/*.c
 	./src/*/*/*/*.c
@@ -138,12 +150,12 @@ set(QRCFILES ./xpeccy.qrc)
 set(MOCFILES
 	./src/ethread.h
 	./src/emulwin.h
-	./src/debuger.h
-	./src/dbg_sprscan.h
-	./src/dbg_memfill.h
-	./src/dbg_finder.h
-	./src/dbg_dump.h
-	./src/dbg_disasm.h
+	./src/xgui/debuga/debuger.h
+	./src/xgui/debuga/dbg_sprscan.h
+	./src/xgui/debuga/dbg_memfill.h
+	./src/xgui/debuga/dbg_finder.h
+	./src/xgui/debuga/dbg_dump.h
+	./src/xgui/debuga/dbg_disasm.h
 	./src/watcher.h
 	./src/setupwin.h
 	./src/vkeyboard.h

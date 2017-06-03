@@ -2,11 +2,16 @@
 #define _SAA1099_H
 
 #include "sndcommon.h"
+#include "devbus.h"
 
 enum {
 	SAA_OFF = 0,
 	SAA_MONO,
 	SAA_STEREO
+};
+
+enum {
+	SAA_ARG_MODE = 0
 };
 
 typedef struct {
@@ -51,18 +56,30 @@ typedef struct {
 	unsigned enabled:1;	// options : present/not present
 	unsigned mono:1;
 	unsigned off:1;		// software control : Reg 1C bit 0
+	int time;
 	int curReg;
 	saaChan chan[6];	// 6 8-bit channels
 	saaNoise noiz[2];	// 2 noize channels (mix ch 0,1,2 & 3,4,5; generators from ch 0,3)
 	saaEnv env[2];		// 2 envelope (aff ch 2 & 5, generators from ch 1, 4)
 } saaChip;
 
+/*
 saaChip* saaCreate();
 void saaDestroy(saaChip*);
 void saaReset(saaChip*);
 int saaWrite(saaChip*, int, unsigned char);
-
 void saaSync(saaChip*, int);
 sndPair saaGetVolume(saaChip*);
+*/
+
+void* saaCreate();
+void saaDestroy(void*);
+void saaReset(void*);
+void saaRequest(void*, xDevBus*);
+void saaSync(void*, int);
+void saaFlush(void*);
+sndPair saaVolume(void*);
+void saaSet(void*, int, xArg);
+xArg saaGet(void*, int);
 
 #endif

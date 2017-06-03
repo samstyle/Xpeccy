@@ -107,6 +107,25 @@ void vidUpdateTimings(Video* vid, int nspd) {
 #endif
 }
 
+void vidReset(Video* vid) {
+	int i;
+	for (i = 0; i<16; i++) {
+		vid->pal[i].b = (i & 1) ? ((i & 8) ? 0xff : 0xa0) : 0x00;
+		vid->pal[i].r = (i & 2) ? ((i & 8) ? 0xff : 0xa0) : 0x00;
+		vid->pal[i].g = (i & 4) ? ((i & 8) ? 0xff : 0xa0) : 0x00;
+	}
+	vid->ula->active = 0;
+	vid->curscr = 5;
+	vid->ray.x = 0;
+	vid->ray.y = 0;
+	vid->ray.xb = vid->lay.blank.x;
+	vid->ray.yb = vid->lay.blank.y;
+	vid->idx = 0;
+	vid->ray.ptr = vid->ray.img;
+	vid->nsDraw = 0;
+	vidSetMode(vid, VID_NORMAL);
+}
+
 // new layout:
 // [ bord ][ scr ][ ? ][ blank ]
 // [ <--------- full --------> ]

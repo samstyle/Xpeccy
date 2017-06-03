@@ -1,5 +1,5 @@
 #include "dbg_finder.h"
-#include "xcore/xcore.h"
+#include "../../xcore/xcore.h"
 
 xMemFinder::xMemFinder(QWidget* p):QDialog(p) {
 	ui.setupUi(this);

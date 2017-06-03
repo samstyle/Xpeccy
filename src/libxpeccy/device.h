@@ -55,7 +55,7 @@ typedef union {
 //	SDCard* sdc;
 	GSound* gs;
 //	TSound* ts;
-//	saaChip* saa;
+	saaChip* saa;
 	SDrive* sdrv;
 //	gbSound* gbsnd;
 } xDevPtr;
@@ -71,6 +71,8 @@ typedef struct {
 	void(*sync)(void*, int);		// emulate device work during some time (ns)
 	void(*flush)(void*);			// flush device
 	sndPair(*vol)(void*);			// get volume if device produce sound
+	void(*set)(void*, int, xArg);
+	xArg(*get)(void*, int);
 	xDevPtr ptr;				// pointer to device-specified data
 } xDevice;
 

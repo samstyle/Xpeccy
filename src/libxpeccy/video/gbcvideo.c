@@ -127,7 +127,7 @@ void gbcvLine(GBCVid* vid) {
 	if (vid->spren && !vid->sprblock) {
 		adr = 0;
 		tx = 10;	// max 10 sprites in line
-		while ((adr < 0xa0)/* && (tx > 0)*/) {
+		while ((adr < 0xa0) && (tx > 0)) {
 			y = vid->oam[adr++] - 16;
 			x = vid->oam[adr++] - 8;
 			tile = vid->oam[adr++];
