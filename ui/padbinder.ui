@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>252</width>
+    <width>250</width>
     <height>150</height>
    </rect>
   </property>
@@ -84,7 +84,7 @@
      <item row="3" column="0">
       <widget class="QRadioButton" name="rbJoy">
        <property name="text">
-        <string>&amp;Kepston</string>
+        <string>&amp;Kempston</string>
        </property>
        <attribute name="buttonGroup">
         <string notr="true">bgrDevType</string>
