@@ -40,7 +40,20 @@ typedef struct {
 	QLineEdit* edit;
 } dbgRegPlace;
 
-dbgRegPlace dbgRegTab[16];
+Ui::Debuger ui;
+
+QLabel* dbgRegLabs[16] = {
+	ui.labReg00, ui.labReg01, ui.labReg02, ui.labReg03, ui.labReg04,
+	ui.labReg05, ui.labReg06, ui.labReg07, ui.labReg08, ui.labReg09,
+	ui.labReg10, ui.labReg11, ui.labReg12, ui.labReg13, ui.labReg14,
+	NULL
+};
+QLineEdit* dbgRegEdit[16] = {
+	ui.editReg00, ui.editReg01, ui.editReg02, ui.editReg03, ui.editReg04,
+	ui.editReg05, ui.editReg06, ui.editReg07, ui.editReg08, ui.editReg09,
+	ui.editReg10, ui.editReg11, ui.editReg12, ui.editReg13, ui.editReg14,
+	NULL
+};
 
 void DebugWin::start(Computer* c) {
 	comp = c;
@@ -135,7 +148,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	dasmodel = new xDisasmModel(&comp);
 	ui.dasmTable->setModel(dasmodel);
 	ui.dasmTable->cptr = &comp;
-
+/*
 	dbgRegTab[0] = {ui.labReg00, ui.editPC};
 	dbgRegTab[1] = {ui.labReg01, ui.editSP};
 	dbgRegTab[2] = {ui.labReg02, ui.editAF};
@@ -152,7 +165,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	dbgRegTab[13] = {ui.labReg13, ui.leReg13};
 	dbgRegTab[14] = {ui.labReg14, ui.leReg14};
 	dbgRegTab[15] = {NULL, NULL};
-
+*/
 	setFont(QFont("://DejaVuSansMono.ttf",10));
 
 	conf.dbg.labels = 1;
@@ -291,21 +304,21 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.tbDumpView, SIGNAL(triggered(QAction*)), this, SLOT(setDumpView(QAction*)));
 
 // registers
-	connect(ui.editAF, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editBC, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editDE, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editHL, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editAFa, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editBCa, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editDEa, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editHLa, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editPC, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editSP, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editIX, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editIY, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editIR, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.leReg13, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.leReg14, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editReg00, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editReg01, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editReg02, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editReg03, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editReg04, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editReg05, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editReg06, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editReg07, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editReg08, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editReg09, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editReg10, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editReg11, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editReg12, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editReg13, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
+	connect(ui.editReg14, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
 
 	connect(ui.boxIM,SIGNAL(valueChanged(int)),this,SLOT(setCPU()));
 	connect(ui.flagIFF1,SIGNAL(stateChanged(int)),this,SLOT(setCPU()));
@@ -868,6 +881,7 @@ void DebugWin::chLayout() {
 	switch (comp->cpu->type) {
 		case CPU_Z80:
 			setFlagNames("SZ5H3PNC");
+/*
 			ui.cpuGrid->setEnabled(true);
 			ui.editAFa->setEnabled(true);
 			ui.editBCa->setEnabled(true);
@@ -876,9 +890,11 @@ void DebugWin::chLayout() {
 			ui.editIX->setEnabled(true);
 			ui.editIY->setEnabled(true);
 			ui.editIR->setEnabled(true);
+*/
 			ui.boxIM->setEnabled(true);
 			break;
 		case CPU_LR35902:
+/*
 			ui.cpuGrid->setEnabled(true);
 			ui.editAFa->setEnabled(false);
 			ui.editBCa->setEnabled(false);
@@ -887,8 +903,13 @@ void DebugWin::chLayout() {
 			ui.editIX->setEnabled(false);
 			ui.editIY->setEnabled(false);
 			ui.editIR->setEnabled(false);
+*/
 			ui.boxIM->setEnabled(false);
 			setFlagNames("ZNHC----");
+			break;
+		case CPU_6502:
+			ui.boxIM->setEnabled(false);
+			setFlagNames("MV5BDIZC");
 			break;
 		default:
 			ui.cpuGrid->setEnabled(false);
@@ -982,39 +1003,23 @@ void setLEReg(QLineEdit* le, int num) {
 void DebugWin::fillCPU() {
 	block = 1;
 	CPU* cpu = comp->cpu;
-#if 1
 	xRegBunch bunch = cpuGetRegs(cpu);
 	int idx = 0;
 	int i = 0;
-	while(dbgRegTab[i].name != NULL) {
+	while(dbgRegLabs[i] != NULL) {
 		if (bunch.regs[idx].id == REG_NONE) {
-			dbgRegTab[i].name->clear();
-			dbgRegTab[i].edit->setEnabled(false);
-			dbgRegTab[i].edit->clear();
+			dbgRegLabs[i]->clear();
+			dbgRegEdit[i]->setEnabled(false);
+			dbgRegEdit[i]->clear();
 		} else {
-			dbgRegTab[i].name->setText(bunch.regs[idx].name);
-			dbgRegTab[i].edit->setText(gethexword(bunch.regs[idx].value));
-			dbgRegTab[i].edit->setProperty("regid", bunch.regs[idx].id);
-			dbgRegTab[i].edit->setEnabled(true);
+			dbgRegLabs[i]->setText(bunch.regs[idx].name);
+			dbgRegEdit[i]->setText(gethexword(bunch.regs[idx].value));
+			dbgRegEdit[i]->setProperty("regid", bunch.regs[idx].id);
+			dbgRegEdit[i]->setEnabled(true);
 			idx++;
 		}
 		i++;
 	}
-#else
-	setLEReg(dbgui.editAF, cpu->af);
-	setLEReg(dbgui.editBC, cpu->bc);
-	setLEReg(dbgui.editDE, cpu->de);
-	setLEReg(dbgui.editHL, cpu->hl);
-	setLEReg(dbgui.editAFa, cpu->af_);
-	setLEReg(dbgui.editBCa, cpu->bc_);
-	setLEReg(dbgui.editDEa, cpu->de_);
-	setLEReg(dbgui.editHLa, cpu->hl_);
-	setLEReg(dbgui.editPC, cpu->pc);
-	setLEReg(dbgui.editSP, cpu->sp);
-	setLEReg(dbgui.editIX, cpu->ix);
-	setLEReg(dbgui.editIY, cpu->iy);
-	setLEReg(dbgui.editIR, (cpu->i << 8) | (cpu->r & 0x7f) | (cpu->r7 & 0x80));
-#endif
 	ui.boxIM->setValue(cpu->imode);
 	ui.flagIFF1->setChecked(cpu->iff1);
 	ui.flagIFF2->setChecked(cpu->iff2);
@@ -1035,21 +1040,20 @@ void DebugWin::setFlags() {
 	if (ui.cbF1->isChecked()) af |= 0x02;
 	if (ui.cbF0->isChecked()) af |= 0x01;
 	comp->cpu->af = af;
-	setLEReg(ui.editAF, af);
+	setCPU();
 	fillDisasm();
 }
 
 void DebugWin::setCPU() {
 	if (block) return;
 	CPU* cpu = comp->cpu;
-#if 1
 	int i = 0;
 	int idx = 0;
 	xRegBunch bunch;
-	while (dbgRegTab[idx].edit != NULL) {
-		if (dbgRegTab[idx].edit->isEnabled()) {
-			bunch.regs[i].id = dbgRegTab[idx].edit->property("regid").toInt();
-			bunch.regs[i].value = dbgRegTab[idx].edit->text().toInt(NULL, 16);
+	while (dbgRegEdit[idx] != NULL) {
+		if (dbgRegEdit[idx]->isEnabled()) {
+			bunch.regs[i].id = dbgRegEdit[idx]->property("regid").toInt();
+			bunch.regs[i].value = dbgRegEdit[idx]->text().toInt(NULL, 16);
 			i++;
 		} else {
 			bunch.regs[i].id = REG_NONE;
@@ -1057,24 +1061,6 @@ void DebugWin::setCPU() {
 		idx++;
 	}
 	cpuSetRegs(cpu, bunch);
-#else
-	cpu->af = ui.editAF->text().toInt(NULL,16);
-	cpu->bc = ui.editBC->text().toInt(NULL,16);
-	cpu->de = ui.editDE->text().toInt(NULL,16);
-	cpu->hl = ui.editHL->text().toInt(NULL,16);
-	cpu->af_ = ui.editAFa->text().toInt(NULL,16);
-	cpu->bc_ = ui.editBCa->text().toInt(NULL,16);
-	cpu->de_ = ui.editDEa->text().toInt(NULL,16);
-	cpu->hl_ = ui.editHLa->text().toInt(NULL,16);
-	cpu->pc = ui.editPC->text().toInt(NULL,16);
-	cpu->sp = ui.editSP->text().toInt(NULL,16);
-	cpu->ix = ui.editIX->text().toInt(NULL,16);
-	cpu->iy = ui.editIY->text().toInt(NULL,16);
-	int ir = ui.editIR->text().toInt(NULL,16);
-	cpu->i = (ir & 0xff00) >> 8;
-	cpu->r = ir & 0xff;
-	cpu->r7 = cpu->r & 0x80;
-#endif
 	cpu->imode = ui.boxIM->value();
 	cpu->iff1 = ui.flagIFF1->isChecked() ? 1 : 0;
 	cpu->iff2 = ui.flagIFF2->isChecked() ? 1 : 0;

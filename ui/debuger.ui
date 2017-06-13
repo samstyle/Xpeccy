@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>813</width>
-    <height>578</height>
+    <width>811</width>
+    <height>576</height>
    </rect>
   </property>
   <property name="font">
@@ -61,7 +61,7 @@
         </widget>
        </item>
        <item row="3" column="3">
-        <widget class="QLineEdit" name="editDEa">
+        <widget class="QLineEdit" name="editReg08">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -74,7 +74,7 @@
         </widget>
        </item>
        <item row="3" column="1">
-        <widget class="QLineEdit" name="editDE">
+        <widget class="QLineEdit" name="editReg04">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -87,7 +87,7 @@
         </widget>
        </item>
        <item row="4" column="1">
-        <widget class="QLineEdit" name="editHL">
+        <widget class="QLineEdit" name="editReg05">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -100,7 +100,7 @@
         </widget>
        </item>
        <item row="1" column="5">
-        <widget class="QLineEdit" name="editIY">
+        <widget class="QLineEdit" name="editReg11">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -113,7 +113,7 @@
         </widget>
        </item>
        <item row="0" column="3">
-        <widget class="QLineEdit" name="editSP">
+        <widget class="QLineEdit" name="editReg01">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -126,7 +126,7 @@
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QLineEdit" name="editPC">
+        <widget class="QLineEdit" name="editReg00">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -139,7 +139,7 @@
         </widget>
        </item>
        <item row="4" column="3">
-        <widget class="QLineEdit" name="editHLa">
+        <widget class="QLineEdit" name="editReg09">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -180,7 +180,7 @@
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QLineEdit" name="editAF">
+        <widget class="QLineEdit" name="editReg02">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -200,7 +200,7 @@
         </widget>
        </item>
        <item row="2" column="1">
-        <widget class="QLineEdit" name="editBC">
+        <widget class="QLineEdit" name="editReg03">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -240,7 +240,7 @@
         </widget>
        </item>
        <item row="2" column="5">
-        <widget class="QLineEdit" name="editIR">
+        <widget class="QLineEdit" name="editReg12">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -288,7 +288,7 @@
         </widget>
        </item>
        <item row="0" column="5">
-        <widget class="QLineEdit" name="editIX">
+        <widget class="QLineEdit" name="editReg10">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -301,7 +301,7 @@
         </widget>
        </item>
        <item row="2" column="3">
-        <widget class="QLineEdit" name="editBCa">
+        <widget class="QLineEdit" name="editReg07">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -321,7 +321,7 @@
         </widget>
        </item>
        <item row="1" column="3">
-        <widget class="QLineEdit" name="editAFa">
+        <widget class="QLineEdit" name="editReg06">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -355,7 +355,7 @@
         </widget>
        </item>
        <item row="3" column="5">
-        <widget class="QLineEdit" name="leReg13">
+        <widget class="QLineEdit" name="editReg13">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -365,7 +365,7 @@
         </widget>
        </item>
        <item row="4" column="5">
-        <widget class="QLineEdit" name="leReg14">
+        <widget class="QLineEdit" name="editReg14">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -2388,11 +2388,11 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
+  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

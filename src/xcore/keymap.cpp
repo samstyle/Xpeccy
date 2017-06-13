@@ -108,6 +108,22 @@ keyEntry getKeyEntry(signed int qkey) {
 	return keyMap[idx];
 }
 
+int getKeyIdByName(const char* name) {
+	int idx = 0;
+	while ((keyMap[idx].key != ENDKEY) && strcmp(name, keyMap[idx].name)) {
+		idx++;
+	}
+	return keyMap[idx].key;
+}
+
+const char* getKeyNameById(int id) {
+	int idx = 0;
+	while ((keyMap[idx].key != ENDKEY) && (keyMap[idx].key != id)) {
+		idx++;
+	}
+	return keyMap[idx].name;
+}
+
 void setKey(const char* key,const char key1, const char key2) {
 	int idx = 0;
 	while (keyMap[idx].key != ENDKEY) {
@@ -247,36 +263,10 @@ int qKey2id(int qkey) {
 	return ktTab[idx].keyId;
 }
 
-int sign(int val) {
-	if (val < 0) return -1;
-	if (val > 0) return 1;
-	return 0;
-}
-
-void mapJoystick(Computer* comp, int type, int num, int state) {
-	xJoyMap xjm;
-	keyEntry kent;
-	foreach(xjm, conf.joy.map) {
-		if ((type == xjm.type) && (num == xjm.num) && (sign(state) == sign(xjm.state))) {
-			switch(xjm.dev) {
-				case JMAP_KEY:
-					kent = getKeyEntry(xjm.key);
-					if (state) {
-						keyPress(comp->keyb, kent.zxKey, 0);
-					} else {
-						keyRelease(comp->keyb, kent.zxKey, 0);
-					}
-					break;
-				case JMAP_JOY:
-					if (state) {
-						// press
-						comp->joy->state |= xjm.key;
-					} else {
-						// release
-						comp->joy->state &= ~xjm.key;
-					}
-					break;
-			}
-		}
+int key2qid(int key) {
+	int idx = 0;
+	while ((ktTab[idx].keyId != key) && (ktTab[idx].keyLat != Qt::Key_unknown)) {
+		idx++;
 	}
+	return ktTab[idx].keyLat;
 }

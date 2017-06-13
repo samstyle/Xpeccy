@@ -3,7 +3,10 @@
 
 #include <QDialog>
 #include <QModelIndex>
-#include "xcore/xcore.h"
+#include <QAbstractTableModel>
+
+#include "xcore.h"
+#include "padbinder.h"
 
 #include "ui_rsedit.h"
 #include "ui_setupwin.h"
@@ -28,6 +31,9 @@ class SetupWin : public QDialog {
 
 		QDialog* rseditor;
 		QDialog* layeditor;
+		QDialog *umadial;
+		xPadMapModel* padModel;
+		xPadBinder* padial;
 
 		int eidx;
 		xRomset nrs;
@@ -35,6 +41,15 @@ class SetupWin : public QDialog {
 
 		xLayout nlay;
 		void editLayout();
+
+		int bindidx;
+		int umidx;
+		void buildtapelist();
+		void buildmenulist();
+		void buildkeylist();
+		void buildproflist();
+		void buildpadlist();
+
 	signals:
 		void closed();
 	public slots:
@@ -59,7 +74,6 @@ class SetupWin : public QDialog {
 		void umedit(QModelIndex);
 		void umaselp(); void umaconf();
 		void updvolumes();
-		// void updfrq(); void updfrq2();
 		void chablock(QModelIndex);
 		void setTapeBreak(int,int);
 		void hddcap();
@@ -77,6 +91,14 @@ class SetupWin : public QDialog {
 		void recheck_single(bool);
 		void recheck_separate(bool);
 
+		void newPadMap();
+		void delPadMap();
+		void chaPadMap(int);
+		void addBinding();
+		void editBinding();
+		void delBinding();
+		void bindAccept(xJoyMapEntry);
+
 		void fillDiskCat();
 		void copyToTape();
 		void copyToDisk();
@@ -91,14 +113,6 @@ class SetupWin : public QDialog {
 		void layEditorChanged();
 		void layEditorOK();
 		void layNameCheck(QString);
-	private:
-		QDialog *umadial;
-		void buildtapelist();
-		void buildmenulist();
-		void buildkeylist();
-		// void buildjmaplist();
-		void buildproflist();
-		int umidx;
 };
 
 #endif

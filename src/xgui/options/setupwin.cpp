@@ -13,15 +13,21 @@
 #include "filer.h"
 #include "setupwin.h"
 #include "xgui/xgui.h"
+#include "xcore/gamepad.h"
 #include "xcore/xcore.h"
 #include "xcore/sound.h"
 #include "libxpeccy/spectrum.h"
 #include "libxpeccy/filetypes/filetypes.h"
 
+#include "ui_padbinder.h"
+Ui::PadBinder padui;
+
 void fillRFBox(QComboBox* box, QStringList lst) {
 	box->clear();
-	box->addItem("none");
-	box->addItems(lst);
+	box->addItem("none","");
+	foreach(QString str, lst) {
+		box->addItem(str, str);
+	}
 }
 
 void setRFIndex(QComboBox* box, QVariant data) {
@@ -42,6 +48,7 @@ std::string getRFText(QComboBox* box) {
 	return std::string(res.toLocal8Bit().data());
 }
 
+
 // OBJECT
 
 SetupWin::SetupWin(QWidget* par):QDialog(par) {
@@ -59,6 +66,8 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	layeditor = new QDialog(this);
 	layUi.setupUi(layeditor);
 	layeditor->setModal(true);
+
+	padial = new xPadBinder(this);
 
 	block = 0;
 	prfChanged = 0;
@@ -169,13 +178,17 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.sdcapbox->addItem("256 M",SDC_256M);
 	ui.sdcapbox->addItem("512 M",SDC_512M);
 	ui.sdcapbox->addItem("1024 M",SDC_1G);
-
 	ui.cSlotType->addItem("No mapper",MAP_MSX_NOMAPPER);
 	ui.cSlotType->addItem("Konami 4",MAP_MSX_KONAMI4);
 	ui.cSlotType->addItem("Konami 5",MAP_MSX_KONAMI5);
 	ui.cSlotType->addItem("ASCII 8K",MAP_MSX_ASCII8);
 	ui.cSlotType->addItem("ASCII 16K",MAP_MSX_ASCII16);
-
+// input
+	padModel = new xPadMapModel();
+	ui.tvPadTable->setModel(padModel);
+	ui.tvPadTable->addAction(ui.actAddBinding);
+	ui.tvPadTable->addAction(ui.actEditBinding);
+	ui.tvPadTable->addAction(ui.actDelBinding);
 // all
 	connect(ui.okbut,SIGNAL(released()),this,SLOT(okay()));
 	connect(ui.apbut,SIGNAL(released()),this,SLOT(apply()));
@@ -277,6 +290,18 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	connect(ui.tbsdcfree,SIGNAL(released()),ui.sdPath,SLOT(clear()));
 	connect(ui.cSlotOpen,SIGNAL(released()),this,SLOT(openSlot()));
 	connect(ui.cSlotEject,SIGNAL(released()),this,SLOT(ejectSlot()));
+// input
+	connect(ui.tbPadNew, SIGNAL(released()),this,SLOT(newPadMap()));
+	connect(ui.tbPadDelete,SIGNAL(released()),this,SLOT(delPadMap()));
+	connect(ui.cbPadMap, SIGNAL(currentIndexChanged(int)),this,SLOT(chaPadMap(int)));
+	connect(ui.tbAddBind,SIGNAL(clicked(bool)),this, SLOT(addBinding()));
+	connect(ui.tbEditBind,SIGNAL(clicked(bool)),this,SLOT(editBinding()));
+	connect(ui.tbDelBind,SIGNAL(clicked(bool)),this,SLOT(delBinding()));
+	connect(ui.actAddBinding,SIGNAL(triggered()),this,SLOT(addBinding()));
+	connect(ui.actEditBinding,SIGNAL(triggered()),this,SLOT(editBinding()));
+	connect(ui.tvPadTable,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(editBinding()));
+	connect(ui.actDelBinding,SIGNAL(triggered()),this,SLOT(delBinding()));
+	connect(padial, SIGNAL(bindReady(xJoyMapEntry)), this, SLOT(bindAccept(xJoyMapEntry)));
 //tools
 	connect(ui.umlist,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(umedit(QModelIndex)));
 	connect(ui.umaddtb,SIGNAL(released()),this,SLOT(umadd()));
@@ -368,8 +393,6 @@ void SetupWin::start(xProfile* p) {
 	ui.stereo1box->setCurrentIndex(ui.stereo1box->findData(QVariant(comp->ts->chipA->stereo)));
 	ui.stereo2box->setCurrentIndex(ui.stereo2box->findData(QVariant(comp->ts->chipB->stereo)));
 	ui.tsbox->setCurrentIndex(ui.tsbox->findData(QVariant(comp->ts->type)));
-
-
 // input
 	buildkeylist();
 	int idx = ui.keyMapBox->findText(QString(conf.keyMapName.c_str()));
@@ -378,6 +401,9 @@ void SetupWin::start(xProfile* p) {
 	ui.ratEnable->setChecked(comp->mouse->enable);
 	ui.ratWheel->setChecked(comp->mouse->hasWheel);
 	ui.cbSwapButtons->setChecked(comp->mouse->swapButtons);
+	ui.sldDeadZone->setValue(conf.joy.dead);
+	ui.lePadName->setText(conf.joy.joy ? SDL_JoystickName(0) : "none");
+	padModel->update();
 // dos
 	ui.diskTypeBox->setCurrentIndex(ui.diskTypeBox->findData(comp->dif->type));
 	ui.bdtbox->setChecked(fdcFlag & FDC_FAST);
@@ -436,6 +462,9 @@ void SetupWin::start(xProfile* p) {
 	ui.cbTapeFast->setChecked(conf.tape.fast);
 	ui.tpathle->setText(QString::fromLocal8Bit(comp->tape->path));
 	buildtapelist();
+// input
+	buildpadlist();
+	setRFIndex(ui.cbPadMap, trUtf8(conf.prof.cur->jmapName.c_str()));
 // tools
 	buildmenulist();
 // leds
@@ -501,19 +530,19 @@ void SetupWin::apply() {
 	comp->ts->chipB->stereo = getRFIData(ui.stereo2box);
 	comp->ts->type = getRFIData(ui.tsbox);
 
-	compSetDevArg(comp, DEV_GSOUND, GS_ARG_ENABLE, {(unsigned)(ui.gsgroup->isChecked() ? 1 : 0), 0, NULL});
-	compSetDevArg(comp, DEV_GSOUND, GS_ARG_RESET, {(unsigned)(ui.gsgroup->isChecked() ? 1 : 0), 0, NULL});
-	compSetDevArg(comp, DEV_GSOUND, GS_ARG_STEREO, {0, getRFIData(ui.gstereobox), NULL});
-
-	compSetDevArg(comp, DEV_SDRIVE, SDRV_ARG_MODE, {1, getRFIData(ui.sdrvBox), NULL});
-
-	compSetDevArg(comp, DEV_SAA, SAA_ARG_MODE, {1, getRFIData(ui.cbSaa), NULL});
+	xArg xarg;
+	xarg.b = ui.gsgroup->isChecked() ? 1 : 0; compSetDevArg(comp, DEV_GSOUND, GS_ARG_ENABLE, xarg);
+	xarg.b = ui.gsrbox->isChecked() ? 1 : 0; compSetDevArg(comp, DEV_GSOUND, GS_ARG_RESET, xarg);
+	xarg.i = getRFIData(ui.gstereobox); compSetDevArg(comp, DEV_GSOUND, GS_ARG_STEREO, xarg);
+	xarg.i = getRFIData(ui.sdrvBox); compSetDevArg(comp, DEV_SDRIVE, SDRV_ARG_MODE, xarg);
+	xarg.i = getRFIData(ui.cbSaa); compSetDevArg(comp, DEV_SAA, SAA_ARG_MODE, xarg);
 
 	sndCalibrate(comp);
 // input
 	comp->mouse->enable = ui.ratEnable->isChecked() ? 1 : 0;
 	comp->mouse->hasWheel = ui.ratWheel->isChecked() ? 1 : 0;
 	comp->mouse->swapButtons = ui.cbSwapButtons->isChecked() ? 1 : 0;
+	conf.joy.dead = ui.sldDeadZone->value();
 	std::string kmname = getRFText(ui.keyMapBox);
 	if (kmname == "none") kmname = "default";
 	conf.keyMapName = kmname;
@@ -574,6 +603,8 @@ void SetupWin::apply() {
 // tape
 	conf.tape.autostart = ui.cbTapeAuto->isChecked() ? 1 : 0;
 	conf.tape.fast = ui.cbTapeFast->isChecked() ? 1 : 0;
+// input
+	conf.prof.cur->jmapName = getRFSData(ui.cbPadMap).toStdString();
 // leds
 	conf.led.mouse = ui.cbMouseLed->isChecked() ? 1 : 0;
 	conf.led.joy = ui.cbJoyLed->isChecked() ? 1 : 0;
@@ -814,6 +845,12 @@ void SetupWin::setrpart() {
 }
 
 // lists
+
+void SetupWin::buildpadlist() {
+	QDir dir(conf.path.confDir.c_str());
+	QStringList lst = dir.entryList(QStringList() << "*.pad",QDir::Files,QDir::Name);
+	fillRFBox(ui.cbPadMap, lst);
+}
 
 void SetupWin::buildkeylist() {
 	QDir dir(conf.path.confDir.c_str());
@@ -1347,6 +1384,79 @@ void SetupWin::ejectSlot() {
 	ui.cSlotName->clear();
 	if (testSlotOn(comp))
 		compReset(comp,RES_DEFAULT);
+}
+
+// input
+
+void SetupWin::newPadMap() {
+	QString nam = QInputDialog::getText(this,"Enter...","New gamepad map name");
+	if (nam.isEmpty()) return;
+	nam.append(".pad");
+	std::string name = nam.toStdString();
+	if (padCreate(name)) {
+		ui.cbPadMap->addItem(nam, nam);
+		ui.cbPadMap->setCurrentIndex(ui.cbPadMap->count() - 1);
+	} else {
+		showInfo("Map with that name already exists");
+	}
+}
+
+void SetupWin::delPadMap() {
+	if (ui.cbPadMap->currentIndex() == 0) return;
+	QString name = getRFSData(ui.cbPadMap);
+	if (name.isEmpty()) return;
+	if (!areSure("Delete this map?")) return;
+	padDelete(name.toStdString());
+	ui.cbPadMap->removeItem(ui.cbPadMap->currentIndex());
+	ui.cbPadMap->setCurrentIndex(0);
+}
+
+void SetupWin::chaPadMap(int idx) {
+	idx--;
+	if (idx < 0) {
+		conf.joy.map.clear();
+	} else {
+		padLoadConfig(getRFSData(ui.cbPadMap).toStdString());
+	}
+	padModel->update();
+}
+
+void SetupWin::addBinding() {
+	if (getRFSData(ui.cbPadMap).isEmpty()) return;
+	bindidx = -1;
+	xJoyMapEntry jent;
+	jent.dev = JOY_NONE;
+	jent.dev = JMAP_JOY;
+	jent.key = ENDKEY;
+	jent.dir = XJ_NONE;
+	padial->start(jent);
+}
+
+void SetupWin::editBinding() {
+	bindidx = ui.tvPadTable->currentIndex().row();
+	if (bindidx < 0) return;
+	padial->start(conf.joy.map[bindidx]);
+}
+
+void SetupWin::bindAccept(xJoyMapEntry ent) {
+	if (ent.type == JOY_NONE) return;
+	if (ent.dev == JMAP_NONE) return;
+	if ((bindidx < 0) || (bindidx >= (int)conf.joy.map.size())) {
+		conf.joy.map.push_back(ent);
+	} else {
+		conf.joy.map[bindidx] = ent;
+	}
+	padSaveConfig(getRFSData(ui.cbPadMap).toStdString());
+	padModel->update();
+}
+
+void SetupWin::delBinding() {
+	int row = ui.tvPadTable->currentIndex().row();
+	if (row < 0) return;
+	if (!areSure("Delete this binding?")) return;
+	conf.joy.map.erase(conf.joy.map.begin() + row);
+	padModel->update();
+	padSaveConfig(getRFSData(ui.cbPadMap).toStdString());
 }
 
 // tools

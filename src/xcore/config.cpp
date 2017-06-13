@@ -20,7 +20,7 @@
 #define	SECT_ROMSETS	4
 #define	SECT_SOUND	5
 #define	SECT_TOOLS	6
-#define	SECT_JOYSTICK	7
+#define	SECT_GAMEPAD	7
 #define	SECT_GENERAL	8
 #define	SECT_SCRSHOT	9
 #define	SECT_DISK	10
@@ -159,6 +159,9 @@ void saveConfig() {
 	fprintf(cfile, "autoplay = %s\n", YESNO(conf.tape.autostart));
 	fprintf(cfile, "fast = %s\n", YESNO(conf.tape.fast));
 
+	fprintf(cfile, "\n[INPUT]\n\n");
+	fprintf(cfile, "deadzone = %i", conf.joy.dead);
+
 	fprintf(cfile, "\n[LEDS]\n\n");
 	fprintf(cfile, "mouse = %s\n", YESNO(conf.led.mouse));
 	fprintf(cfile, "joystick = %s\n", YESNO(conf.led.joy));
@@ -230,7 +233,7 @@ void loadConfig() {
 		}
 	}
 	clearProfiles();
-	clearBookmarks();
+	conf.bookmarkList.clear();
 	char buf[0x4000];
 	std::pair<std::string,std::string> spl;
 	std::string line,pnam,pval;
@@ -265,6 +268,7 @@ void loadConfig() {
 			if (pnam=="[GENERAL]") section = SECT_GENERAL;
 			if (pnam=="[TAPE]") section = SECT_TAPE;
 			if (pnam=="[LEDS]") section = SECT_LEDS;
+			if (pnam=="[INPUT]") section = SECT_INPUT;
 		} else {
 			switch (section) {
 				case SECT_BOOKMARK:
@@ -276,6 +280,9 @@ void loadConfig() {
 					} else {
 						addProfile(pnam,pval);
 					}
+					break;
+				case SECT_INPUT:
+					if (pnam=="deadzone") conf.joy.dead = strtol(pval.c_str(), NULL, 0);
 					break;
 				case SECT_VIDEO:
 					if (pnam=="layout") {

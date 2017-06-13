@@ -18,10 +18,11 @@ enum {
 	XJ_SINCLAIR_L
 };
 // joystick contacts
-#define	XJ_LEFT		1
-#define	XJ_RIGHT	(1<<1)
-#define	XJ_UP		(1<<2)
-#define	XJ_DOWN		(1<<3)
+#define XJ_NONE		0
+#define	XJ_RIGHT	1
+#define	XJ_LEFT		(1<<1)
+#define	XJ_DOWN		(1<<2)
+#define	XJ_UP		(1<<3)
 #define	XJ_FIRE		(1<<4)
 // msx extend keys
 #define MSXK_SHIFT	'S'

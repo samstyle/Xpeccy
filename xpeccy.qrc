@@ -66,5 +66,6 @@
         <file>images/cartrige.png</file>
         <file>images/arrup.png</file>
         <file>images/arrdn.png</file>
+        <file>images/gamepad.png</file>
     </qresource>
 </RCC>

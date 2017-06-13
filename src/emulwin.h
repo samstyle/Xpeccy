@@ -61,8 +61,6 @@ class MainWin : public QWidget {
 		QImage scrImg;
 		QByteArray font;
 
-		SDL_Joystick* joy;
-
 		int pauseFlags;
 		int scrCounter;
 		int scrInterval;
@@ -78,6 +76,10 @@ class MainWin : public QWidget {
 		void updateHead();
 		void screenShot();
 		void putLeds();
+
+		void mapJoystick(Computer*, int, int, int);
+		void mapPress(Computer*, xJoyMapEntry);
+		void mapRelease(Computer*, xJoyMapEntry);
 
 		QMenu* userMenu;
 		QMenu* bookmarkMenu;

@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PadBinder</class>
+ <widget class="QDialog" name="PadBinder">
+  <property name="windowModality">
+   <enum>Qt::ApplicationModal</enum>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>252</width>
+    <height>150</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>Gamepad binder</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../xpeccy.qrc">
+    <normaloff>:/images/gamepad.png</normaloff>:/images/gamepad.png</iconset>
+  </property>
+  <property name="modal">
+   <bool>true</bool>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QGridLayout" name="gridLayout" columnstretch="0,10">
+     <item row="2" column="0">
+      <widget class="QRadioButton" name="rbKey">
+       <property name="text">
+        <string>&amp;PCKey</string>
+       </property>
+       <attribute name="buttonGroup">
+        <string notr="true">bgrDevType</string>
+       </attribute>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>is binding to</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QPushButton" name="pbKeyBind">
+       <property name="text">
+        <string>Push to set</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../xpeccy.qrc">
+         <normaloff>:/images/keyboard.png</normaloff>:/images/keyboard.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Gamepad</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QPushButton" name="pbPadBind">
+       <property name="text">
+        <string>Push to set</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../xpeccy.qrc">
+         <normaloff>:/images/gamepad.png</normaloff>:/images/gamepad.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QRadioButton" name="rbJoy">
+       <property name="text">
+        <string>&amp;Kepston</string>
+       </property>
+       <attribute name="buttonGroup">
+        <string notr="true">bgrDevType</string>
+       </attribute>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QComboBox" name="cbJoyList"/>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pbOk">
+       <property name="text">
+        <string>OK</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../xpeccy.qrc">
+         <normaloff>:/images/checkbox.png</normaloff>:/images/checkbox.png</iconset>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../xpeccy.qrc"/>
+ </resources>
+ <connections/>
+ <buttongroups>
+  <buttongroup name="bgrDevType"/>
+ </buttongroups>
+</ui>

@@ -98,13 +98,6 @@ unsigned char dasmrd(unsigned short adr, void* ptr) {
 	return memRd(comp->mem, adr);
 }
 
-QMap<int, QString> mtName = {
-	{MEM_RAM, "RAM"},
-	{MEM_ROM, "ROM"},
-	{MEM_SLOT, "SLT"},
-	{MEM_EXT, "EXT"}
-};
-
 void placeLabel(dasmData& drow) {
 	QString lab = findLabel(drow.oadr, -1, -1);
 	if (lab.isEmpty()) return;
@@ -214,7 +207,14 @@ dasmData getDisasm(Computer* comp, unsigned short& adr) {
 	if (lab.isEmpty()) {
 		drow.islab = 0;
 		if (conf.dbg.segment) {
-			drow.aname = QString("%0:%1:%2").arg(mtName[xadr.type]).arg(gethexbyte(xadr.bank)).arg(gethexword(xadr.adr & 0x3fff));
+			switch(xadr.type) {
+				case MEM_RAM: drow.aname = "RAM:"; break;
+				case MEM_ROM: drow.aname = "ROM:"; break;
+				case MEM_SLOT: drow.aname = "SLT:"; break;
+				case MEM_EXT: drow.aname = "EXT:"; break;
+				default: drow.aname = "???"; break;
+			}
+			drow.aname.append(QString("%1:%2").arg(gethexbyte(xadr.bank)).arg(gethexword(xadr.adr & 0x3fff)));
 		} else {
 			drow.aname = gethexword(adr);
 		}

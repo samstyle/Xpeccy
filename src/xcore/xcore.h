@@ -4,10 +4,11 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <SDL_joystick.h>
 #include <QString>
 
-#include "../libxpeccy/spectrum.h"
-#include "../libxpeccy/filetypes/filetypes.h"
+#include "spectrum.h"
+#include "filetypes.h"
 
 // common
 
@@ -35,6 +36,7 @@ typedef struct {
 	std::string layName;
 	std::string hwName;
 	std::string rsName;
+	std::string jmapName;
 	Computer* zx;
 } xProfile;
 
@@ -87,8 +89,11 @@ extern std::map<std::string, int> shotFormat;
 
 void initKeyMap();
 void setKey(const char*,const char,const char);
-keyEntry getKeyEntry(signed int);
+keyEntry getKeyEntry(int);
+int getKeyIdByName(const char*);
+const char* getKeyNameById(int);
 int qKey2id(int);
+int key2qid(int);
 
 // bookmarks
 
@@ -100,7 +105,6 @@ typedef struct {
 void addBookmark(std::string,std::string);
 void setBookmark(int,std::string,std::string);
 void delBookmark(int);
-void clearBookmarks();
 void swapBookmarks(int,int);
 
 // romsets
@@ -134,7 +138,8 @@ xLayout* findLayout(std::string);
 enum {
 	JOY_NONE = 0,
 	JOY_AXIS,
-	JOY_BUTTON
+	JOY_BUTTON,
+	JOY_HAT
 };
 
 enum {
@@ -148,8 +153,9 @@ typedef struct {
 	int num;		// number of axis/button
 	int state;		// -x/+x for axis, 0/x for button
 	int dev;		// device for action JMAP_*
-	int key;		// key/contact id for device. XKEY_* for keyboard, XJ_* for joystick
-} xJoyMap;
+	int key;		// key XKEY_* for keyboard
+	int dir;		// XJ_* for kempston
+} xJoyMapEntry;
 
 void mapJoystick(Computer*, int, int, int);
 
@@ -195,8 +201,9 @@ struct xConfig {
 		unsigned fast:1;
 	} tape;
 	struct {
+		SDL_Joystick* joy;
 		int dead;
-		std::vector<xJoyMap> map;	// gamepad mapping
+		std::vector<xJoyMapEntry> map;	// gamepad map for current profile
 	} joy;
 	struct {
 		unsigned noLeds:1;

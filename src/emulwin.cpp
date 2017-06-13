@@ -159,15 +159,15 @@ MainWin::MainWin() {
 	watcher = new xWatcher(this);
 
 	if (SDL_NumJoysticks() > 0) {
-		SDL_JoystickEventState(SDL_ENABLE);
-		joy = SDL_JoystickOpen(0);
-		printf("Joystick opened\n");
-		printf("%i axis\n", SDL_JoystickNumAxes(joy));
-		printf("%i buttons\n", SDL_JoystickNumButtons(joy));
-
+		conf.joy.joy = SDL_JoystickOpen(0);
+		if (conf.joy.joy) {
+			printf("Joystick opened\n");
+			printf("%i axis\n", SDL_JoystickNumAxes(conf.joy.joy));
+			printf("%i buttons\n", SDL_JoystickNumButtons(conf.joy.joy));
+		}
 	} else {
 		printf("Joystick not opened\n");
-		joy = NULL;
+		conf.joy.joy = NULL;
 	}
 
 	initFileDialog(this);
@@ -265,6 +265,60 @@ void MainWin::convImage() {
 	setUpdatesEnabled(false);
 }
 
+void MainWin::mapRelease(Computer* comp, xJoyMapEntry ent) {
+	QKeyEvent ev(QEvent::KeyRelease, key2qid(ent.key), Qt::NoModifier);
+	switch(ent.dev) {
+		case JMAP_KEY:
+			keyReleaseEvent(&ev);
+			// keyRelease(comp->keyb, kent.zxKey, 0);
+			break;
+		case JMAP_JOY:
+			joyRelease(comp->joy, ent.dir);
+			break;
+
+	}
+}
+
+void MainWin::mapPress(Computer* comp, xJoyMapEntry ent) {
+	QKeyEvent ev(QEvent::KeyPress, key2qid(ent.key), Qt::NoModifier);
+	switch(ent.dev) {
+		case JMAP_KEY:
+			keyPressEvent(&ev);
+			break;
+		case JMAP_JOY:
+			joyPress(comp->joy, ent.dir);
+			break;
+	}
+}
+
+void MainWin::mapJoystick(Computer* comp, int type, int num, int state) {
+	// printf("map %i %i %i\n",type, num, state);
+	foreach(xJoyMapEntry xjm, conf.joy.map) {
+		if ((type == xjm.type) && (num == xjm.num)) {
+			if (state == 0) {
+				mapRelease(comp, xjm);
+			} else {
+				switch(type) {
+					case JOY_AXIS:
+					case JOY_HAT:
+						if (state == xjm.state)
+							mapPress(comp, xjm);
+						break;
+					case JOY_BUTTON:
+						mapPress(comp, xjm);
+						break;
+				}
+			}
+		}
+	}
+}
+
+int sign(int v) {
+	if (v < 0) return -1;
+	if (v > 0) return 1;
+	return 0;
+}
+
 void MainWin::onTimer() {
 	if (opt->block) return;
 	if (opt->prfChanged) {
@@ -284,23 +338,29 @@ void MainWin::onTimer() {
 		pause(false, PR_RZX);
 	}
 // process sdl event (gamepad)
-	if (joy) {
+	if (conf.joy.joy && !pauseFlags) {
 		SDL_Event ev;
+		SDL_JoystickUpdate();
 		while(SDL_PollEvent(&ev)) {
+			// printf("%i\n", ev.type);
 			switch(ev.type) {
 				case SDL_JOYAXISMOTION:
 					if (abs(ev.jaxis.value) < conf.joy.dead)
 						ev.jaxis.value = 0;
-					mapJoystick(comp, JOY_AXIS, ev.jaxis.axis, ev.jaxis.value);
-					printf("Axis %i %i\n", ev.jaxis.axis, ev.jaxis.value);
+					mapJoystick(comp, JOY_AXIS, ev.jaxis.axis, sign(ev.jaxis.value));
+					//printf("Axis %i %i\n", ev.jaxis.axis, ev.jaxis.value);
 					break;
 				case SDL_JOYBUTTONDOWN:
 					mapJoystick(comp, JOY_BUTTON, ev.jbutton.button, 1);
-					printf("Button %i down\n", ev.jbutton.button);
+					//printf("Button %i down\n", ev.jbutton.button);
 					break;
 				case SDL_JOYBUTTONUP:
 					mapJoystick(comp, JOY_BUTTON, ev.jbutton.button, 0);
-					printf("Button %i up\n", ev.jbutton.button);
+					//printf("Button %i up\n", ev.jbutton.button);
+					break;
+				case SDL_JOYHATMOTION:
+					mapJoystick(comp, JOY_HAT, ev.jhat.hat, ev.jhat.value);
+					// printf("hat %i %i\n", ev.jhat.hat, ev.jhat.value);
 					break;
 			}
 		}
@@ -785,7 +845,8 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		emutex.unlock();		// unlock emulation thread
 		ethread.wait();			// wait until it exits
 		keywin->close();
-		if (joy) SDL_JoystickClose(joy);
+		if (conf.joy.joy)
+			SDL_JoystickClose(conf.joy.joy);
 		saveConfig();
 		ev->accept();
 	} else {

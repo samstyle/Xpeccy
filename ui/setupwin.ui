@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>505</width>
-    <height>466</height>
+    <height>444</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -243,6 +243,9 @@
              </property>
              <property name="editTriggers">
               <set>QAbstractItemView::NoEditTriggers</set>
+             </property>
+             <property name="alternatingRowColors">
+              <bool>true</bool>
              </property>
              <property name="selectionMode">
               <enum>QAbstractItemView::SingleSelection</enum>
@@ -1176,25 +1179,196 @@
              <property name="title">
               <string>Keyboard</string>
              </property>
-             <property name="alignment">
-              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-             </property>
-             <property name="flat">
-              <bool>false</bool>
-             </property>
-             <property name="checkable">
-              <bool>false</bool>
-             </property>
-             <layout class="QGridLayout" name="gridLayout_21" rowstretch="0,0" columnstretch="0,0">
+             <layout class="QGridLayout" name="gridLayout_21" columnstretch="0,10">
               <item row="1" column="1">
                <widget class="QComboBox" name="keyMapBox"/>
               </item>
               <item row="1" column="0">
                <widget class="QLabel" name="label_39">
                 <property name="text">
-                 <string>Keys Map</string>
+                 <string>KeyMap</string>
                 </property>
                </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="groupBox_6">
+             <property name="title">
+              <string>Gamepad</string>
+             </property>
+             <property name="flat">
+              <bool>false</bool>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_25">
+              <item>
+               <layout class="QGridLayout" name="gridLayout_22">
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label_28">
+                  <property name="text">
+                   <string>Gamepad</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="label_29">
+                  <property name="text">
+                   <string>Dead zone</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QSlider" name="sldDeadZone">
+                  <property name="maximum">
+                   <number>32767</number>
+                  </property>
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QLineEdit" name="lePadName">
+                  <property name="readOnly">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0">
+                 <widget class="QLabel" name="label_22">
+                  <property name="text">
+                   <string>PadMap</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="1">
+                 <layout class="QHBoxLayout" name="horizontalLayout_30">
+                  <item>
+                   <widget class="QComboBox" name="cbPadMap"/>
+                  </item>
+                  <item>
+                   <widget class="QToolButton" name="tbPadNew">
+                    <property name="text">
+                     <string>...</string>
+                    </property>
+                    <property name="icon">
+                     <iconset resource="../xpeccy.qrc">
+                      <normaloff>:/images/add.png</normaloff>:/images/add.png</iconset>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QToolButton" name="tbPadDelete">
+                    <property name="text">
+                     <string>...</string>
+                    </property>
+                    <property name="icon">
+                     <iconset resource="../xpeccy.qrc">
+                      <normaloff>:/images/cancel.png</normaloff>:/images/cancel.png</iconset>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_31">
+                <item>
+                 <layout class="QVBoxLayout" name="verticalLayout_36">
+                  <item>
+                   <widget class="QToolButton" name="tbAddBind">
+                    <property name="text">
+                     <string>...</string>
+                    </property>
+                    <property name="icon">
+                     <iconset resource="../xpeccy.qrc">
+                      <normaloff>:/images/add.png</normaloff>:/images/add.png</iconset>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QToolButton" name="tbEditBind">
+                    <property name="text">
+                     <string>...</string>
+                    </property>
+                    <property name="icon">
+                     <iconset resource="../xpeccy.qrc">
+                      <normaloff>:/images/other.png</normaloff>:/images/other.png</iconset>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <spacer name="verticalSpacer_20">
+                    <property name="orientation">
+                     <enum>Qt::Vertical</enum>
+                    </property>
+                    <property name="sizeHint" stdset="0">
+                     <size>
+                      <width>20</width>
+                      <height>40</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                  <item>
+                   <widget class="QToolButton" name="tbDelBind">
+                    <property name="text">
+                     <string>...</string>
+                    </property>
+                    <property name="icon">
+                     <iconset resource="../xpeccy.qrc">
+                      <normaloff>:/images/cancel.png</normaloff>:/images/cancel.png</iconset>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <widget class="QTableView" name="tvPadTable">
+                  <property name="contextMenuPolicy">
+                   <enum>Qt::ActionsContextMenu</enum>
+                  </property>
+                  <property name="alternatingRowColors">
+                   <bool>true</bool>
+                  </property>
+                  <property name="selectionMode">
+                   <enum>QAbstractItemView::SingleSelection</enum>
+                  </property>
+                  <property name="selectionBehavior">
+                   <enum>QAbstractItemView::SelectRows</enum>
+                  </property>
+                  <property name="gridStyle">
+                   <enum>Qt::DotLine</enum>
+                  </property>
+                  <property name="sortingEnabled">
+                   <bool>true</bool>
+                  </property>
+                  <attribute name="horizontalHeaderVisible">
+                   <bool>false</bool>
+                  </attribute>
+                  <attribute name="horizontalHeaderDefaultSectionSize">
+                   <number>100</number>
+                  </attribute>
+                  <attribute name="horizontalHeaderMinimumSectionSize">
+                   <number>100</number>
+                  </attribute>
+                  <attribute name="horizontalHeaderStretchLastSection">
+                   <bool>true</bool>
+                  </attribute>
+                  <attribute name="verticalHeaderVisible">
+                   <bool>false</bool>
+                  </attribute>
+                  <attribute name="verticalHeaderDefaultSectionSize">
+                   <number>17</number>
+                  </attribute>
+                  <attribute name="verticalHeaderMinimumSectionSize">
+                   <number>17</number>
+                  </attribute>
+                 </widget>
+                </item>
+               </layout>
               </item>
              </layout>
             </widget>
@@ -1409,6 +1583,9 @@
                   </property>
                   <property name="editTriggers">
                    <set>QAbstractItemView::NoEditTriggers</set>
+                  </property>
+                  <property name="alternatingRowColors">
+                   <bool>true</bool>
                   </property>
                   <property name="selectionMode">
                    <enum>QAbstractItemView::SingleSelection</enum>
@@ -1938,6 +2115,9 @@
                  </property>
                  <property name="editTriggers">
                   <set>QAbstractItemView::NoEditTriggers</set>
+                 </property>
+                 <property name="alternatingRowColors">
+                  <bool>true</bool>
                  </property>
                  <property name="selectionMode">
                   <enum>QAbstractItemView::ExtendedSelection</enum>
@@ -2601,6 +2781,9 @@
                     <property name="editTriggers">
                      <set>QAbstractItemView::NoEditTriggers</set>
                     </property>
+                    <property name="alternatingRowColors">
+                     <bool>true</bool>
+                    </property>
                     <property name="selectionMode">
                      <enum>QAbstractItemView::SingleSelection</enum>
                     </property>
@@ -2832,6 +3015,9 @@
                  <property name="editTriggers">
                   <set>QAbstractItemView::NoEditTriggers</set>
                  </property>
+                 <property name="alternatingRowColors">
+                  <bool>true</bool>
+                 </property>
                  <property name="selectionMode">
                   <enum>QAbstractItemView::SingleSelection</enum>
                  </property>
@@ -3023,6 +3209,33 @@
    </property>
    <property name="text">
     <string>Save as raw</string>
+   </property>
+  </action>
+  <action name="actAddBinding">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/add.png</normaloff>:/images/add.png</iconset>
+   </property>
+   <property name="text">
+    <string>Add binding</string>
+   </property>
+  </action>
+  <action name="actEditBinding">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/other.png</normaloff>:/images/other.png</iconset>
+   </property>
+   <property name="text">
+    <string>Edit binding</string>
+   </property>
+  </action>
+  <action name="actDelBinding">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/cancel.png</normaloff>:/images/cancel.png</iconset>
+   </property>
+   <property name="text">
+    <string>Delete binding</string>
    </property>
   </action>
  </widget>

@@ -111,6 +111,7 @@ set(INCLUDIRS ${CMAKE_BINARY_DIR}
 	./src/xcore
 	./src/xgui
 	./src/xgui/debuga
+	./src/xgui/options
 	./src/libxpeccy
 	./src/libxpeccy/cpu
 	./src/libxpeccy/hardware
@@ -157,7 +158,8 @@ set(MOCFILES
 	./src/xgui/debuga/dbg_dump.h
 	./src/xgui/debuga/dbg_disasm.h
 	./src/watcher.h
-	./src/setupwin.h
+	./src/xgui/options/setupwin.h
+	./src/xgui/options/padbinder.h
 	./src/vkeyboard.h
 	./src/xgui/xgui.h
 )

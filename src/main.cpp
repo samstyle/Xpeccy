@@ -54,6 +54,7 @@ int main(int ac,char** av) {
 	QApplication app(ac,av,true);
 
 	conf.running = 0;
+	conf.joy.dead = 8192;
 	vidInitAdrs();
 	sndInit();
 	initPaths(av[0]);

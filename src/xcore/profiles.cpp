@@ -4,7 +4,8 @@
 
 #include "xcore.h"
 #include "sound.h"
-#include "../filer.h"
+#include "filer.h"
+#include "gamepad.h"
 
 xProfile* findProfile(std::string nm) {
 	if (nm == "") return conf.prof.cur;
@@ -89,6 +90,7 @@ bool prfSetCurrent(std::string nm) {
 	prfSetLayout(conf.prof.cur, conf.prof.cur->layName);
 	keyReleaseAll(conf.prof.cur->zx->keyb);
 	conf.prof.cur->zx->mouse->buttons = 0xff;
+	padLoadConfig(conf.prof.cur->jmapName);
 	return true;
 }
 
@@ -152,8 +154,8 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 	if (prf == NULL) prf = conf.prof.cur;
 	prf->rsName = rnm;
 	xRomset* rset = findRomset(rnm);
-	//printf("romset %s : %p\n",rnm.c_str(), rset);
 	int i;
+	xArg xarg;
 	std::string fpath = "";
 	std::ifstream file;
 	char pageBuf[0x4000];
@@ -214,33 +216,8 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 		}
 // load GS ROM
 		fpath = conf.path.romDir + SLASH + rset->gsFile;
-		compSetDevArg(prf->zx, DEV_GSOUND, GS_ARG_ROM, {0,0,fpath.c_str()});
-/*
-		memset(pageBuf,0xff,0x4000);
-		xDevice* dev = compFindDev(prf->zx, DEV_GSOUND);
-		if (dev) {
-			GSound* gs = dev->ptr.gs;
-			if (rset->gsFile.empty()) {
-				memSetPageData(gs->mem, MEM_ROM, 0, pageBuf);
-				memSetPageData(gs->mem, MEM_ROM, 1, pageBuf);
-			} else {
-				fpath = conf.path.romDir + SLASH + rset->gsFile;
-				file.open(fpath.c_str(),std::ios::binary);
-				if (file.good()) {
-					file.read(pageBuf,0x4000);
-					memSetPageData(gs->mem, MEM_ROM, 0, pageBuf);
-					file.read(pageBuf,0x4000);
-					memSetPageData(gs->mem, MEM_ROM, 1, pageBuf);
-				} else {
-	//				printf("Can't load gs rom '%s'\n",prof->gsFile.c_str());
-					memSetPageData(gs->mem, MEM_ROM, 0, pageBuf);
-					memSetPageData(gs->mem, MEM_ROM, 1, pageBuf);
-				}
-				file.close();
-			}
-
-		}
-*/
+		xarg.s = fpath.c_str();
+		compSetDevArg(prf->zx, DEV_GSOUND, GS_ARG_ROM, xarg);
 // load ATM2 font data
 		if (!rset->fntFile.empty()) {
 			fpath = conf.path.romDir + SLASH + rset->fntFile;
@@ -415,6 +392,7 @@ int prfLoad(std::string nm) {
 					if (pnam == "mouse") comp->mouse->enable = str2bool(pval) ? 1 : 0;
 					if (pnam == "mouse.wheel") comp->mouse->hasWheel = str2bool(pval) ? 1 : 0;
 					if (pnam == "mouse.swapButtons") comp->mouse->swapButtons = str2bool(pval) ? 1 : 0;
+					if (pnam == "gamepad.map") prf->jmapName = pval;
 					break;
 				case PS_SDC:
 					if (pnam == "sdcimage") sdcSetImage(comp->sdc,pval.c_str());
@@ -524,6 +502,7 @@ int prfSave(std::string nm) {
 	fprintf(file, "mouse = %s\n", YESNO(comp->mouse->enable));
 	fprintf(file, "mouse.wheel = %s\n", YESNO(comp->mouse->hasWheel));
 	fprintf(file, "mouse.swapButtons = %s\n", YESNO(comp->mouse->swapButtons));
+	fprintf(file, "gamepad.map = %s\n", prf->jmapName.c_str());
 
 	fprintf(file, "\n[TAPE]\n\n");
 	fprintf(file, "path = %s\n", comp->tape->path ? comp->tape->path : "");
