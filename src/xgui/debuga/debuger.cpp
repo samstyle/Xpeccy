@@ -40,21 +40,6 @@ typedef struct {
 	QLineEdit* edit;
 } dbgRegPlace;
 
-Ui::Debuger ui;
-
-QLabel* dbgRegLabs[16] = {
-	ui.labReg00, ui.labReg01, ui.labReg02, ui.labReg03, ui.labReg04,
-	ui.labReg05, ui.labReg06, ui.labReg07, ui.labReg08, ui.labReg09,
-	ui.labReg10, ui.labReg11, ui.labReg12, ui.labReg13, ui.labReg14,
-	NULL
-};
-QLineEdit* dbgRegEdit[16] = {
-	ui.editReg00, ui.editReg01, ui.editReg02, ui.editReg03, ui.editReg04,
-	ui.editReg05, ui.editReg06, ui.editReg07, ui.editReg08, ui.editReg09,
-	ui.editReg10, ui.editReg11, ui.editReg12, ui.editReg13, ui.editReg14,
-	NULL
-};
-
 void DebugWin::start(Computer* c) {
 	comp = c;
 	blockStart = -1;
@@ -136,10 +121,29 @@ void dmpmwr(unsigned short adr, unsigned char val, void* ptr) {
 	memWr(comp->mem, adr, val);
 }
 
+QLabel* dbgRegLabs[16];
+QLineEdit* dbgRegEdit[16];
+
 DebugWin::DebugWin(QWidget* par):QDialog(par) {
-//	int col,row;
 	ui.setupUi(this);
-//	QTableWidgetItem* itm;
+
+	QLabel* arrl[16] = {
+		ui.labReg00, ui.labReg01, ui.labReg02, ui.labReg03, ui.labReg04,
+		ui.labReg05, ui.labReg06, ui.labReg07, ui.labReg08, ui.labReg09,
+		ui.labReg10, ui.labReg11, ui.labReg12, ui.labReg13, ui.labReg14,
+		NULL
+	};
+
+	QLineEdit* arre[16] = {
+		ui.editReg00, ui.editReg01, ui.editReg02, ui.editReg03, ui.editReg04,
+		ui.editReg05, ui.editReg06, ui.editReg07, ui.editReg08, ui.editReg09,
+		ui.editReg10, ui.editReg11, ui.editReg12, ui.editReg13, ui.editReg14,
+		NULL
+	};
+	for (int i = 0; i < 16; i++) {
+		dbgRegLabs[i] = arrl[i];
+		dbgRegEdit[i] = arre[i];
+	}
 
 	dumpodel = new xDumpModel((void**)(&comp), dmpmrd, dmpmwr);
 	ui.dumpTable->setModel(dumpodel);

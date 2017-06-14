@@ -80,7 +80,7 @@ class DebugWin : public QDialog {
 		int traceType;
 		int traceAdr;
 
-		// Ui::Debuger ui;
+		Ui::Debuger ui;
 		QPoint winPos;
 		QImage scrImg;
 		QList<unsigned short> jumpHistory;
