@@ -160,6 +160,7 @@ set(MOCFILES
 	./src/watcher.h
 	./src/xgui/options/setupwin.h
 	./src/xgui/options/padbinder.h
+	./src/xgui/options/opt_romset.h
 	./src/vkeyboard.h
 	./src/xgui/xgui.h
 )

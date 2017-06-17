@@ -59,9 +59,9 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	uia.setupUi(umadial);
 	umadial->setModal(true);
 
-	rseditor = new QDialog(this);
-	rseUi.setupUi(rseditor);
-	rseditor->setModal(true);
+	rseditor = new xRomsetEditor(this);
+	rsmodel = new xRomsetModel();
+	ui.tvRomset->setModel(rsmodel);
 
 	layeditor = new QDialog(this);
 	layUi.setupUi(layeditor);
@@ -92,11 +92,6 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.resbox->addItem("BASIC 128",RES_128);
 	ui.resbox->addItem("DOS",RES_DOS);
 	ui.resbox->addItem("SHADOW",RES_SHADOW);
-	QTableWidgetItem* itm;
-	for (i = 0; i < (unsigned)ui.rstab->rowCount(); i++) {
-		itm = new QTableWidgetItem; ui.rstab->setItem(i,1,itm);
-		itm = new QTableWidgetItem; ui.rstab->setItem(i,2,itm);
-	}
 // video
 	std::map<std::string,int>::iterator it;
 	for (it = shotFormat.begin(); it != shotFormat.end(); it++) {
@@ -196,16 +191,12 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 // machine
 	connect(ui.rsetbox,SIGNAL(currentIndexChanged(int)),this,SLOT(buildrsetlist()));
 	connect(ui.machbox,SIGNAL(currentIndexChanged(int)),this,SLOT(setmszbox(int)));
-	connect(ui.rstab,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(editrset()));
+	connect(ui.tvRomset,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(editrset()));
 	connect(ui.addrset,SIGNAL(released()),this,SLOT(addNewRomset()));
 	connect(ui.rmrset,SIGNAL(released()),this,SLOT(rmRomset()));
 	connect(ui.rsedit,SIGNAL(released()),this,SLOT(editrset()));
+	connect(rseditor,SIGNAL(complete(int,QString)),this,SLOT(rscomplete(int,QString)));
 
-	connect(rseUi.rse_cancel,SIGNAL(released()),rseditor,SLOT(hide()));
-	connect(rseUi.rse_apply,SIGNAL(released()),this,SLOT(setrpart()));
-	connect(rseUi.rse_grp_single,SIGNAL(toggled(bool)),this,SLOT(recheck_separate(bool)));
-	connect(rseUi.rse_grp_separate,SIGNAL(toggled(bool)),this,SLOT(recheck_single(bool)));
-	connect(rseUi.rsName,SIGNAL(textChanged(QString)),this,SLOT(rsNameCheck(QString)));
 // video
 	connect(ui.pathtb,SIGNAL(released()),this,SLOT(selsspath()));
 	connect(ui.bszsld,SIGNAL(valueChanged(int)),this,SLOT(chabsz()));
@@ -318,13 +309,6 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 
 }
 
-void SetupWin::recheck_single(bool st) {
-	rseUi.rse_grp_single->setChecked(!st);
-}
-void SetupWin::recheck_separate(bool st) {
-	rseUi.rse_grp_separate->setChecked(!st);
-}
-
 void SetupWin::okay() {
 	apply();
 	reject();
@@ -333,7 +317,6 @@ void SetupWin::okay() {
 void SetupWin::start(xProfile* p) {
 	prof = p;
 	comp = p->zx;
-//	unsigned int i;
 // machine
 	ui.rsetbox->clear();
 	foreach(xRomset rs, conf.rsList) {
@@ -348,7 +331,6 @@ void SetupWin::start(xProfile* p) {
 	ui.cbCpu->setCurrentIndex(ui.cbCpu->findData(comp->cpu->type));
 	ui.sbFreq->setValue(comp->cpuFrq);
 	ui.scrpwait->setChecked(comp->evenM1);
-//	ui.sysCmos->setChecked(conf.sysclock);
 // video
 	ui.cbFullscreen->setChecked(conf.vid.fullScreen);
 	ui.cbKeepRatio->setChecked(conf.vid.keepRatio);
@@ -486,7 +468,7 @@ void SetupWin::apply() {
 	HardWare *oldmac = comp->hw;
 	prof->hwName = std::string(getRFSData(ui.machbox).toUtf8().data());
 	compSetHardware(prof->zx,prof->hwName.c_str());
-	prof->rsName = getRFText(ui.rsetbox); // std::string(ui.rsetbox->currentText().toUtf8().data());
+	prof->rsName = getRFText(ui.rsetbox);
 	prfSetRomset(prof, prof->rsName);
 	comp->resbank = getRFIData(ui.resbox);
 	memSetSize(comp->mem, getRFIData(ui.mszbox));
@@ -494,7 +476,6 @@ void SetupWin::apply() {
 	compSetBaseFrq(comp, ui.sbFreq->value());
 	comp->evenM1 = ui.scrpwait->isChecked() ? 1 : 0;
 	if (comp->hw != oldmac) compReset(comp,RES_DEFAULT);
-//	conf.sysclock = ui.sysCmos->isChecked() ? 1 : 0;
 // video
 	conf.vid.fullScreen = ui.cbFullscreen->isChecked() ? 1 : 0;
 	conf.vid.keepRatio = ui.cbKeepRatio->isChecked() ? 1 : 0;
@@ -502,7 +483,7 @@ void SetupWin::apply() {
 	conf.vid.noFlick = ui.noflichk->isChecked() ? 1 : 0;
 	conf.vid.grayScale = ui.grayscale->isChecked() ? 1 : 0;
 	conf.scrShot.dir = std::string(ui.pathle->text().toLocal8Bit().data());
-	conf.scrShot.format = getRFText(ui.ssfbox); // std::string(ui.ssfbox->currentText().toLocal8Bit().data());
+	conf.scrShot.format = getRFText(ui.ssfbox);
 	conf.scrShot.count = ui.scntbox->value();
 	conf.scrShot.interval = ui.sintbox->value();
 	conf.scrShot.noLeds = ui.ssNoLeds->isChecked() ? 1 : 0;
@@ -512,10 +493,9 @@ void SetupWin::apply() {
 	comp->contMem = ui.contMem->isChecked() ? 1 : 0;
 	comp->contIO = ui.contIO->isChecked() ? 1 : 0;
 	comp->vid->ula->enabled = ui.ulaPlus->isChecked() ? 1 : 0;
-	prfSetLayout(NULL, getRFText(ui.geombox)); // std::string(ui.geombox->currentText().toLocal8Bit().data()));
+	prfSetLayout(NULL, getRFText(ui.geombox));
 // sound
-	//std::string oname = std::string(sndOutput->name);
-	std::string nname = getRFText(ui.outbox); // ui.outbox->currentText().toLocal8Bit().data());
+	std::string nname = getRFText(ui.outbox);
 	conf.snd.enabled = ui.senbox->isChecked() ? 1 : 0;
 	conf.snd.mute = ui.mutbox->isChecked() ? 1 : 0;
 	conf.snd.rate = getRFIData(ui.ratbox);
@@ -629,7 +609,6 @@ void SetupWin::reject() {
 void SetupWin::layNameCheck(QString nam) {
 	layUi.okButton->setEnabled(!layUi.layName->text().isEmpty());
 	for (uint i = 0; i < conf.layList.size(); i++) {
-//		qDebug() << eidx << i << layList[i].name.c_str() << nam;
 		if ((QString(conf.layList[i].name.c_str()) == nam) && (eidx != (int)i)) {
 			layUi.okButton->setEnabled(false);
 		}
@@ -681,16 +660,6 @@ void SetupWin::addNewLayout() {
 }
 
 void SetupWin::layEditorChanged() {
-/*
-	layUi.brdLBox->setMaximum(layUi.lineBox->value() - layUi.hsyncBox->value() - layUi.sbScrW->value());
-	layUi.brdUBox->setMaximum(layUi.rowsBox->value() - layUi.vsyncBox->value() - layUi.sbScrH->value());
-	layUi.hsyncBox->setMaximum(layUi.lineBox->value() - layUi.sbScrW->value());
-	layUi.vsyncBox->setMaximum(layUi.rowsBox->value() - layUi.sbScrH->value());
-	layUi.lineBox->setMinimum(layUi.brdLBox->value() + layUi.hsyncBox->value() + layUi.sbScrW->value());
-	layUi.rowsBox->setMinimum(layUi.brdUBox->value() + layUi.vsyncBox->value() + layUi.sbScrH->value());
-	layUi.intRowBox->setMaximum(layUi.rowsBox->value());
-	layUi.intPosBox->setMaximum(layUi.lineBox->value());
-*/
 	layUi.showField->setFixedSize(layUi.lineBox->value(),layUi.rowsBox->value());
 	QPixmap pix(layUi.lineBox->value(),layUi.rowsBox->value());
 	QPainter pnt;
@@ -746,16 +715,6 @@ void SetupWin::layEditorOK() {
 
 // ROMSETS
 
-void SetupWin::rsNameCheck(QString nam) {
-	rseUi.rse_apply->setEnabled(!rseUi.rsName->text().isEmpty());
-	xRomset rs;
-	for (uint i = 0; i < conf.rsList.size(); i++) {
-		if ((QString(conf.rsList[i].name.c_str()) == nam) && (eidx != (int)i)) {
-			rseUi.rse_apply->setEnabled(false);
-		}
-	}
-}
-
 void SetupWin::rmRomset() {
 	int idx = ui.rsetbox->currentIndex();
 	if (idx < 0) return;
@@ -766,82 +725,25 @@ void SetupWin::rmRomset() {
 }
 
 void SetupWin::addNewRomset() {
-	nrs.name.clear();
-	uint i;
-	for (i = 0; i < 8; i++) {
-		nrs.roms[i].path = "";
-		nrs.roms[i].part = 0;
-	}
-	nrs.gsFile = "";
-	nrs.fntFile = "";
-	eidx = -1;
-	editRomset();
+	rseditor->edit();
 }
-
-// machine
 
 void SetupWin::editrset() {
 	eidx = ui.rsetbox->currentIndex();
 	if (eidx < 0) return;
-	nrs = conf.rsList[eidx];
-	editRomset();
+	rseditor->edit(eidx);
 }
 
-void SetupWin::editRomset() {
-	QDir rdir(QString(conf.path.romDir.c_str()));
-	QStringList rlst = rdir.entryList(QStringList() << "*.rom",QDir::Files,QDir::Name);
-	fillRFBox(rseUi.rse_singlefile,rlst);
-	fillRFBox(rseUi.rse_file0,rlst);
-	fillRFBox(rseUi.rse_file1,rlst);
-	fillRFBox(rseUi.rse_file2,rlst);
-	fillRFBox(rseUi.rse_file3,rlst);
-	fillRFBox(rseUi.rse_gsfile,rlst);
-	fillRFBox(rseUi.rse_fntfile,rlst);
-	rseUi.rsName->setText(nrs.name.c_str());
-	rseUi.rse_singlefile->setCurrentIndex(rlst.indexOf(QString(nrs.file.c_str())) + 1);
-	rseUi.rse_file0->setCurrentIndex(rlst.indexOf(QString(nrs.roms[0].path.c_str())) + 1);
-	rseUi.rse_file1->setCurrentIndex(rlst.indexOf(QString(nrs.roms[1].path.c_str())) + 1);
-	rseUi.rse_file2->setCurrentIndex(rlst.indexOf(QString(nrs.roms[2].path.c_str())) + 1);
-	rseUi.rse_file3->setCurrentIndex(rlst.indexOf(QString(nrs.roms[3].path.c_str())) + 1);
-	rseUi.rse_part0->setValue(nrs.roms[0].part);
-	rseUi.rse_part1->setValue(nrs.roms[1].part);
-	rseUi.rse_part2->setValue(nrs.roms[2].part);
-	rseUi.rse_part3->setValue(nrs.roms[3].part);
-	rseUi.rse_gsfile->setCurrentIndex(rlst.indexOf(QString(nrs.gsFile.c_str())) + 1);
-	rseUi.rse_fntfile->setCurrentIndex(rlst.indexOf(QString(nrs.fntFile.c_str())) + 1);
-	rseUi.rse_grp_single->setChecked(nrs.file != "");
-	rseditor->show();
-	rsNameCheck(rseUi.rsName->text());
-}
-
-// Romset editor OK pressed
-void SetupWin::setrpart() {
-	if (rseUi.rse_grp_single->isChecked()) {
-		nrs.file = getRFText(rseUi.rse_singlefile);
-	} else {
-		nrs.file = "";
-	}
-	nrs.roms[0].path = getRFText(rseUi.rse_file0);
-	nrs.roms[0].part = rseUi.rse_part0->value();
-	nrs.roms[1].path = getRFText(rseUi.rse_file1);
-	nrs.roms[1].part = rseUi.rse_part1->value();
-	nrs.roms[2].path = getRFText(rseUi.rse_file2);
-	nrs.roms[2].part = rseUi.rse_part2->value();
-	nrs.roms[3].path = getRFText(rseUi.rse_file3);
-	nrs.roms[3].part = rseUi.rse_part3->value();
-	nrs.gsFile = getRFText(rseUi.rse_gsfile);
-	nrs.fntFile = getRFText(rseUi.rse_fntfile);
-	nrs.name = std::string(rseUi.rsName->text().toLocal8Bit().data());
-	if (eidx < 0) {
-		addRomset(nrs);
-		ui.rsetbox->addItem(QString::fromLocal8Bit(nrs.name.c_str()));
+void SetupWin::rscomplete(int res, QString nam) {
+// res == 0: new romset with name NAM created
+// res != 0: romset edited
+	if (res == 0) {
+		ui.rsetbox->addItem(nam);
 		ui.rsetbox->setCurrentIndex(ui.rsetbox->count() - 1);
+		// buildrsetlist();
 	} else {
-		prfChangeRsName(conf.rsList[eidx].name, nrs.name);
-		conf.rsList[eidx] = nrs;
-		ui.rsetbox->setItemText(eidx, nrs.name.c_str());
+		buildrsetlist();
 	}
-	rseditor->hide();
 }
 
 // lists
@@ -888,43 +790,26 @@ void SetupWin::setmszbox(int idx) {
 }
 
 void SetupWin::buildrsetlist() {
-//	int i;
 	if (ui.rsetbox->currentIndex() < 0) {
-		ui.rstab->setEnabled(false);
-		return;
-	}
-	ui.rstab->setEnabled(true);
-	xRomset rset = conf.rsList[ui.rsetbox->currentIndex()];
-	if (rset.file == "") {
-		ui.rstab->hideRow(4);
-		for (int i=0; i<4; i++) {
-			ui.rstab->showRow(i);
-			QString rsf = QString::fromLocal8Bit(rset.roms[i].path.c_str());
-			ui.rstab->item(i,1)->setText(rsf);
-			if (rsf != "") {
-				ui.rstab->item(i,2)->setText(QString::number(rset.roms[i].part));
-			} else {
-				ui.rstab->item(i,2)->setText("");
-			}
-		}
+		ui.tvRomset->setEnabled(false);
 	} else {
-		ui.rstab->hideRow(0);
-		ui.rstab->hideRow(1);
-		ui.rstab->hideRow(2);
-		ui.rstab->hideRow(3);
-		ui.rstab->showRow(4);
-		ui.rstab->item(4,1)->setText(QString::fromLocal8Bit(rset.file.c_str()));
-		ui.rstab->item(4,2)->setText("");
+		ui.tvRomset->setEnabled(true);
+		xRomset rset = conf.rsList[ui.rsetbox->currentIndex()];
+
+		if (rset.file == "") {
+			for (int i = 0; i < 4; i++) ui.tvRomset->showRow(i);
+			ui.tvRomset->hideRow(4);
+		} else {
+			for (int i = 0; i < 4; i++) ui.tvRomset->hideRow(i);
+			ui.tvRomset->showRow(4);
+		}
+		ui.tvRomset->setColumnWidth(0,100);
+		ui.tvRomset->setColumnWidth(1,300);
+		rsmodel->update(rset);
 	}
-	ui.rstab->item(5,1)->setText(QString::fromLocal8Bit(rset.gsFile.c_str()));
-	ui.rstab->item(6,1)->setText(QString::fromLocal8Bit(rset.fntFile.c_str()));
-	ui.rstab->setColumnWidth(0,100);
-	ui.rstab->setColumnWidth(1,300);
-	ui.rstab->setColumnWidth(2,50);
 }
 
 void SetupWin::buildtapelist() {
-//	buildTapeList();
 	TapeBlockInfo* inf = new TapeBlockInfo[comp->tape->blkCount];
 	tapGetBlocksInfo(comp->tape,inf);
 	ui.tapelist->setRowCount(comp->tape->blkCount);
@@ -996,7 +881,6 @@ void SetupWin::copyToTape() {
 	if (idx.size() == 0) return;
 	TRFile cat[128];
 	diskGetTRCatalog(comp->dif->fdc->flop[dsk],cat);
-	// std::vector<TRFile> cat = flpGetTRCatalog(comp->bdi->flop[dsk]);
 	int row;
 	unsigned char* buf = new unsigned char[0xffff];
 	unsigned short line,start,len;
@@ -1173,7 +1057,6 @@ void SetupWin::fillDiskCat() {
 	wid->setColumnWidth(3,70);
 	wid->setColumnWidth(4,50);
 	wid->setColumnWidth(5,50);
-//	wid->setColumnWidth(6,40);
 	QTableWidgetItem* itm;
 	if (!(comp->dif->fdc->flop[dsk]->insert)) {
 		wid->setEnabled(false);
@@ -1183,7 +1066,6 @@ void SetupWin::fillDiskCat() {
 		if (diskGetType(comp->dif->fdc->flop[dsk]) == DISK_TYPE_TRD) {
 			TRFile cat[128];
 			int catSize = diskGetTRCatalog(comp->dif->fdc->flop[dsk],cat);
-			// std::vector<TRFile> cat = flpGetTRCatalog(comp->bdi->flop[dsk]);
 			wid->setRowCount(catSize);
 			for (int i=0; i<catSize; i++) {
 				itm = new QTableWidgetItem(QString(std::string((char*)cat[i].name,8).c_str())); wid->setItem(i,0,itm);
@@ -1201,21 +1083,6 @@ void SetupWin::fillDiskCat() {
 		}
 	}
 }
-
-// machine
-
-/*
-void SetupWin::updfrq() {
-	double f = ui.cpufrq->value() / 1e6;
-	ui.sbFreq->setValue(f);
-	// ui.cpufrqlab->setText(QString::number(f,'f',2).append(" MHz"));
-}
-
-void SetupWin::updfrq2() {
-	double f = ui.sbFreq->value();
-	ui.cpufrq->setValue(int(f * 1e6));
-}
-*/
 
 // video
 

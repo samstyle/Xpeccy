@@ -208,7 +208,8 @@ int xPadMapModel::rowCount(const QModelIndex& par) const {
 	return (int)conf.joy.map.size();
 }
 
-int xPadMapModel::columnCount(const QModelIndex& parent) const {
+int xPadMapModel::columnCount(const QModelIndex& par) const {
+	if (par.isValid()) return 0;
 	return 2;
 }
 

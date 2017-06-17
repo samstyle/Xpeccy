@@ -237,7 +237,7 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_19">
            <item>
-            <widget class="QTableWidget" name="rstab">
+            <widget class="QTableView" name="tvRomset">
              <property name="enabled">
               <bool>true</bool>
              </property>
@@ -256,20 +256,11 @@
              <property name="gridStyle">
               <enum>Qt::DotLine</enum>
              </property>
-             <property name="rowCount">
-              <number>7</number>
-             </property>
-             <property name="columnCount">
-              <number>3</number>
-             </property>
              <attribute name="horizontalHeaderVisible">
               <bool>false</bool>
              </attribute>
-             <attribute name="horizontalHeaderMinimumSectionSize">
-              <number>1</number>
-             </attribute>
-             <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
-              <bool>false</bool>
+             <attribute name="horizontalHeaderDefaultSectionSize">
+              <number>28</number>
              </attribute>
              <attribute name="horizontalHeaderStretchLastSection">
               <bool>true</bool>
@@ -280,51 +271,9 @@
              <attribute name="verticalHeaderDefaultSectionSize">
               <number>17</number>
              </attribute>
-             <row/>
-             <row/>
-             <row/>
-             <row/>
-             <row/>
-             <row/>
-             <row/>
-             <column/>
-             <column/>
-             <column/>
-             <item row="0" column="0">
-              <property name="text">
-               <string>Page 0</string>
-              </property>
-             </item>
-             <item row="1" column="0">
-              <property name="text">
-               <string>Page 1</string>
-              </property>
-             </item>
-             <item row="2" column="0">
-              <property name="text">
-               <string>Page 2</string>
-              </property>
-             </item>
-             <item row="3" column="0">
-              <property name="text">
-               <string>Page 3</string>
-              </property>
-             </item>
-             <item row="4" column="0">
-              <property name="text">
-               <string>File</string>
-              </property>
-             </item>
-             <item row="5" column="0">
-              <property name="text">
-               <string>GS</string>
-              </property>
-             </item>
-             <item row="6" column="0">
-              <property name="text">
-               <string>Font</string>
-              </property>
-             </item>
+             <attribute name="verticalHeaderMinimumSectionSize">
+              <number>17</number>
+             </attribute>
             </widget>
            </item>
           </layout>

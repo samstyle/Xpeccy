@@ -2,16 +2,22 @@
 <ui version="4.0">
  <class>RSEdialog</class>
  <widget class="QDialog" name="RSEdialog">
+  <property name="windowModality">
+   <enum>Qt::ApplicationModal</enum>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>365</width>
-    <height>324</height>
+    <width>363</width>
+    <height>331</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Romset editor</string>
+  </property>
+  <property name="modal">
+   <bool>true</bool>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -31,7 +37,7 @@
    <item>
     <widget class="QGroupBox" name="rse_grp_single">
      <property name="title">
-      <string>Single file</string>
+      <string>&amp;Single file</string>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -66,7 +72,7 @@
    <item>
     <widget class="QGroupBox" name="rse_grp_separate">
      <property name="title">
-      <string>Separate Files</string>
+      <string>Separate &amp;Files</string>
      </property>
      <property name="checkable">
       <bool>true</bool>

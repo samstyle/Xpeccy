@@ -7,6 +7,7 @@
 
 #include "xcore.h"
 #include "padbinder.h"
+#include "opt_romset.h"
 
 #include "ui_rsedit.h"
 #include "ui_setupwin.h"
@@ -26,17 +27,17 @@ class SetupWin : public QDialog {
 
 		Ui::SetupWin ui;
 		Ui::UmaDial uia;
-		Ui::RSEdialog rseUi;
 		Ui::LayEditor layUi;
 
-		QDialog* rseditor;
+		xRomsetEditor* rseditor;
+		xRomsetModel* rsmodel;
+
 		QDialog* layeditor;
 		QDialog *umadial;
 		xPadMapModel* padModel;
 		xPadBinder* padial;
 
 		int eidx;
-		xRomset nrs;
 		void editRomset();
 
 		xLayout nlay;
@@ -84,12 +85,9 @@ class SetupWin : public QDialog {
 		void ejectSlot();
 
 		void editrset();
-		void setrpart();
 		void addNewRomset();
 		void rmRomset();
-		void rsNameCheck(QString);
-		void recheck_single(bool);
-		void recheck_separate(bool);
+		void rscomplete(int, QString);
 
 		void newPadMap();
 		void delPadMap();

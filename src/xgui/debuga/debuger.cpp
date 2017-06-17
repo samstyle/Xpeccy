@@ -1034,17 +1034,17 @@ void DebugWin::fillCPU() {
 
 void DebugWin::setFlags() {
 	if (block) return;
-	unsigned short af = comp->cpu->af & 0xff00;
-	if (ui.cbF7->isChecked()) af |= 0x80;
-	if (ui.cbF6->isChecked()) af |= 0x40;
-	if (ui.cbF5->isChecked()) af |= 0x20;
-	if (ui.cbF4->isChecked()) af |= 0x10;
-	if (ui.cbF3->isChecked()) af |= 0x08;
-	if (ui.cbF2->isChecked()) af |= 0x04;
-	if (ui.cbF1->isChecked()) af |= 0x02;
-	if (ui.cbF0->isChecked()) af |= 0x01;
-	comp->cpu->af = af;
-	setCPU();
+	unsigned char f = 0;
+	if (ui.cbF7->isChecked()) f |= 0x80;
+	if (ui.cbF6->isChecked()) f |= 0x40;
+	if (ui.cbF5->isChecked()) f |= 0x20;
+	if (ui.cbF4->isChecked()) f |= 0x10;
+	if (ui.cbF3->isChecked()) f |= 0x08;
+	if (ui.cbF2->isChecked()) f |= 0x04;
+	if (ui.cbF1->isChecked()) f |= 0x02;
+	if (ui.cbF0->isChecked()) f |= 0x01;
+	comp->cpu->f = f;
+	fillCPU();
 	fillDisasm();
 }
 
