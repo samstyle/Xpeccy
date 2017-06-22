@@ -6,10 +6,10 @@ extern "C" {
 #endif
 
 // mouse
-enum {
-	XM_WHEELUP = 0,
-	XM_WHEELDN
-};
+//enum {
+//	XM_WHEELUP = 0,
+//	XM_WHEELDN
+//};
 // joystick type
 enum {
 	XJ_NONE = 0,
@@ -17,6 +17,20 @@ enum {
 	XJ_SINCLAIR_R,
 	XJ_SINCLAIR_L
 };
+
+enum {
+	XM_NONE = 0,
+	XM_UP,
+	XM_DOWN,
+	XM_LEFT,
+	XM_RIGHT,
+	XM_LMB,
+	XM_MMB,
+	XM_RMB,
+	XM_WHEELUP,
+	XM_WHEELDN
+};
+
 // joystick contacts
 #define XJ_NONE		0
 #define	XJ_RIGHT	1
@@ -140,10 +154,16 @@ typedef struct {
 	unsigned hasWheel:1;
 	unsigned swapButtons:1;
 
+	unsigned lmb:1;
+	unsigned rmb:1;
+	unsigned mmb:1;
+	unsigned char wheel;
+
 	unsigned char xpos;
 	unsigned char ypos;
-	unsigned char buttons;	// b0=LMB; b1=RMB;
-	unsigned char wheel;
+	int autox;
+	int autoy;
+//	unsigned char buttons;	// b0=LMB; b1=RMB; b2=MMB; b4-7=wheel
 } Mouse;
 
 typedef struct {
@@ -192,7 +212,9 @@ unsigned char keyReadCode(Keyboard*);
 
 Mouse* mouseCreate();
 void mouseDestroy(Mouse*);
-void mouseWheel(Mouse*, int);
+void mousePress(Mouse*, int, int);
+void mouseRelease(Mouse*, int);
+void mouseReleaseAll(Mouse*);
 
 Joystick* joyCreate();
 void joyDestroy(Joystick*);

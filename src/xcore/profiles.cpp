@@ -87,10 +87,10 @@ bool prfSetCurrent(std::string nm) {
 	conf.prof.cur = nprf;
 	ideOpenFiles(nprf->zx->ide);
 	sdcOpenFile(nprf->zx->sdc);
-	prfSetLayout(conf.prof.cur, conf.prof.cur->layName);
-	keyReleaseAll(conf.prof.cur->zx->keyb);
-	conf.prof.cur->zx->mouse->buttons = 0xff;
-	padLoadConfig(conf.prof.cur->jmapName);
+	prfSetLayout(nprf, nprf->layName);
+	keyReleaseAll(nprf->zx->keyb);
+	mouseReleaseAll(nprf->zx->mouse);
+	padLoadConfig(nprf->jmapName);
 	return true;
 }
 

@@ -275,6 +275,9 @@ void MainWin::mapRelease(Computer* comp, xJoyMapEntry ent) {
 		case JMAP_JOY:
 			joyRelease(comp->joy, ent.dir);
 			break;
+		case JMAP_MOUSE:
+			mouseRelease(comp->mouse, ent.dir);
+			break;
 
 	}
 }
@@ -288,7 +291,16 @@ void MainWin::mapPress(Computer* comp, xJoyMapEntry ent) {
 		case JMAP_JOY:
 			joyPress(comp->joy, ent.dir);
 			break;
+		case JMAP_MOUSE:
+			mousePress(comp->mouse, ent.dir, abs(ent.state / 4096));
+			break;
 	}
+}
+
+int sign(int v) {
+	if (v < 0) return -1;
+	if (v > 0) return 1;
+	return 0;
 }
 
 void MainWin::mapJoystick(Computer* comp, int type, int num, int state) {
@@ -300,6 +312,11 @@ void MainWin::mapJoystick(Computer* comp, int type, int num, int state) {
 			} else {
 				switch(type) {
 					case JOY_AXIS:
+						if (sign(state) == sign(xjm.state)) {
+							xjm.state = state;
+							mapPress(comp, xjm);
+						}
+						break;
 					case JOY_HAT:
 						if (state == xjm.state)
 							mapPress(comp, xjm);
@@ -311,12 +328,6 @@ void MainWin::mapJoystick(Computer* comp, int type, int num, int state) {
 			}
 		}
 	}
-}
-
-int sign(int v) {
-	if (v < 0) return -1;
-	if (v > 0) return 1;
-	return 0;
 }
 
 void MainWin::onTimer() {
@@ -347,11 +358,11 @@ void MainWin::onTimer() {
 				case SDL_JOYAXISMOTION:
 					if (abs(ev.jaxis.value) < conf.joy.dead)
 						ev.jaxis.value = 0;
-					mapJoystick(comp, JOY_AXIS, ev.jaxis.axis, sign(ev.jaxis.value));
+					mapJoystick(comp, JOY_AXIS, ev.jaxis.axis, ev.jaxis.value);
 					//printf("Axis %i %i\n", ev.jaxis.axis, ev.jaxis.value);
 					break;
 				case SDL_JOYBUTTONDOWN:
-					mapJoystick(comp, JOY_BUTTON, ev.jbutton.button, 1);
+					mapJoystick(comp, JOY_BUTTON, ev.jbutton.button, 32768);
 					//printf("Button %i down\n", ev.jbutton.button);
 					break;
 				case SDL_JOYBUTTONUP:
@@ -365,6 +376,9 @@ void MainWin::onTimer() {
 			}
 		}
 	}
+// process mouse auto move
+	comp->mouse->xpos += comp->mouse->autox;
+	comp->mouse->ypos += comp->mouse->autoy;
 // if computer sends a message, show it
 	if (comp->msg) {
 		setMessage(QString(comp->msg));
@@ -374,7 +388,7 @@ void MainWin::onTimer() {
 	if (!isActiveWindow()) {
 		if (!keywin->isVisible())
 			keyReleaseAll(comp->keyb);
-		comp->mouse->buttons = 0xff;
+		mouseReleaseAll(comp->mouse);
 		unsetCursor();
 		if (grabMice) {
 			grabMice = 0;
@@ -406,55 +420,6 @@ void MainWin::menuHide() {
 	pause(false,PR_MENU);
 }
 
-/*
-unsigned char toBCD(unsigned char val) {
-	unsigned char rrt = val % 10;
-	rrt |= ((val/10) << 4);
-	return rrt;
-}
-
-void incBCDbyte(unsigned char& val) {
-	val++;
-	if ((val & 0x0f) < 0x0a) return;
-	val += 0x10;
-	val &= 0xf0;
-}
-
-void incTime(CMOS* cms) {
-	incBCDbyte(cms->data[0]);		// sec
-	if (cms->data[0] < 0x60) return;
-	cms->data[0] = 0x00;
-	incBCDbyte(cms->data[2]);		// min
-	if (cms->data[2] < 0x60) return;
-	cms->data[2] = 0x00;
-	incBCDbyte(cms->data[4]);		// hour
-	if (cms->data[4] < 0x24) return;
-	cms->data[4] = 0x00;
-}
-*/
-
-/*
-void MainWin::cmosTick() {
-	foreach(xProfile* prf, conf.prof.list) {
-		if (prf->zx != NULL) {
-			if (conf.sysclock) {
-				time_t rtime;
-				time(&rtime);
-				tm* ctime = localtime(&rtime);
-				prf->zx->cmos.data[0] = toBCD(ctime->tm_sec);
-				prf->zx->cmos.data[2] = toBCD(ctime->tm_min);
-				prf->zx->cmos.data[4] = toBCD(ctime->tm_hour);
-				prf->zx->cmos.data[6] = toBCD(ctime->tm_wday);
-				prf->zx->cmos.data[7] = toBCD(ctime->tm_mday);
-				prf->zx->cmos.data[8] = toBCD(ctime->tm_mon);
-				prf->zx->cmos.data[9] = toBCD(ctime->tm_year % 100);
-			} else {
-				incTime(&prf->zx->cmos);
-			}
-		}
-	}
-}
-*/
 
 // connection between tape window & tape state
 
@@ -743,11 +708,11 @@ void MainWin::mousePressEvent(QMouseEvent *ev){
 	switch (ev->button()) {
 		case Qt::LeftButton:
 			if (!grabMice) break;
-			comp->mouse->buttons &= (comp->mouse->swapButtons ? ~0x02 : ~0x01);
+			comp->mouse->lmb = 1;
 			break;
 		case Qt::RightButton:
 			if (grabMice) {
-				comp->mouse->buttons &= (comp->mouse->swapButtons ? ~0x01 : ~0x02);
+				comp->mouse->rmb = 1;
 			} else {
 				userMenu->popup(QPoint(ev->globalX(),ev->globalY()));
 				userMenu->setFocus();
@@ -762,11 +727,11 @@ void MainWin::mouseReleaseEvent(QMouseEvent *ev) {
 	switch (ev->button()) {
 		case Qt::LeftButton:
 			if (!grabMice) break;
-			comp->mouse->buttons |= (comp->mouse->swapButtons ? 0x02 : 0x01);
+			comp->mouse->lmb = 0;
 			break;
 		case Qt::RightButton:
 			if (!grabMice) break;
-			comp->mouse->buttons |= (comp->mouse->swapButtons ? 0x01 : 0x02);
+			comp->mouse->rmb = 0;
 			break;
 		case Qt::MidButton:
 			grabMice = !grabMice;
@@ -784,7 +749,7 @@ void MainWin::mouseReleaseEvent(QMouseEvent *ev) {
 
 void MainWin::wheelEvent(QWheelEvent* ev) {
 	if (grabMice && comp->mouse->hasWheel) {
-		mouseWheel(comp->mouse,(ev->delta() < 0) ? XM_WHEELDN : XM_WHEELUP);
+		mousePress(comp->mouse, (ev->delta() < 0) ? XM_WHEELDN : XM_WHEELUP, 0);
 	}
 }
 

@@ -734,14 +734,14 @@ void SetupWin::editrset() {
 	rseditor->edit(eidx);
 }
 
-void SetupWin::rscomplete(int res, QString nam) {
-// res == 0: new romset with name NAM created
-// res != 0: romset edited
-	if (res == 0) {
+void SetupWin::rscomplete(int idx, QString nam) {
+// idx < 0: new romset with name NAM created
+// idx >= 0: romset IDX edited, NAM = new name
+	if (idx == 0) {
 		ui.rsetbox->addItem(nam);
 		ui.rsetbox->setCurrentIndex(ui.rsetbox->count() - 1);
-		// buildrsetlist();
 	} else {
+		ui.rsetbox->setItemText(idx, nam);
 		buildrsetlist();
 	}
 }

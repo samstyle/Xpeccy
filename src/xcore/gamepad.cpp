@@ -2,6 +2,69 @@
 
 #include "gamepad.h"
 
+typedef struct {
+	char ch;
+	int val;
+} xCharDir;
+
+const xCharDir kjoyChars[] = {
+	{'U', XJ_UP},
+	{'D', XJ_DOWN},
+	{'L', XJ_LEFT},
+	{'R', XJ_RIGHT},
+	{'F', XJ_FIRE},
+	{'-', XJ_NONE}
+};
+
+const xCharDir kmouChars[] = {
+	{'U', XM_UP},
+	{'D', XM_DOWN},
+	{'L', XM_LEFT},
+	{'R', XM_RIGHT},
+	{'[', XM_LMB},
+	{'|', XM_MMB},
+	{']', XM_RMB},
+	{'^', XM_WHEELUP},
+	{'v', XM_WHEELDN},
+	{'-', XM_NONE}
+};
+
+const xCharDir hatChars[] = {
+	{'U', SDL_HAT_UP},
+	{'D', SDL_HAT_DOWN},
+	{'L', SDL_HAT_LEFT},
+	{'R', SDL_HAT_RIGHT},
+	{'-', 0}
+};
+
+const xCharDir pabhChars[] = {
+	{'A', JOY_AXIS},
+	{'B', JOY_BUTTON},
+	{'H', JOY_HAT},
+	{'-', JOY_NONE}
+};
+
+const xCharDir devChars[] = {
+	{'K', JMAP_KEY},
+	{'J', JMAP_JOY},
+	{'M', JMAP_MOUSE},
+	{'-', JMAP_NONE}
+};
+
+char padGetChar(int val, const xCharDir* tab) {
+	int idx = 0;
+	while ((tab[idx].val > 0) && (tab[idx].val != val))
+		idx++;
+	return tab[idx].ch;
+}
+
+int padGetId(char ch, const xCharDir* tab) {
+	int idx = 0;
+	while ((tab[idx].val > 0) && (tab[idx].ch != ch))
+		idx++;
+	return tab[idx].val;
+}
+
 void padLoadConfig(std::string name) {
 	if (name.empty()) return;
 	xJoyMapEntry jent;
@@ -19,10 +82,7 @@ void padLoadConfig(std::string name) {
 			memset(buf, 0x00, 1024);
 			fgets(buf, 1023, file);
 			strtok(buf, "\n\a");
-			if (buf[0] == 'A') jent.type = JOY_AXIS;
-			else if (buf[0] == 'B') jent.type = JOY_BUTTON;
-			else if (buf[0] == 'H') jent.type = JOY_HAT;
-			else jent.type = JOY_NONE;
+			jent.type = padGetId(buf[0], pabhChars);
 			num = 0;
 			idx = 1;
 			while ((buf[idx] >= '0') && (buf[idx] <= '9')) {
@@ -30,6 +90,7 @@ void padLoadConfig(std::string name) {
 				idx++;
 			}
 			jent.num = num;
+
 			switch(jent.type) {
 				case JOY_AXIS:
 					jent.state = (buf[idx] == '-') ? -1 : +1;
@@ -38,20 +99,13 @@ void padLoadConfig(std::string name) {
 				case JOY_BUTTON:
 					break;
 				case JOY_HAT:
-					switch(buf[idx]) {
-						case 'U': jent.state = SDL_HAT_UP; break;
-						case 'D': jent.state = SDL_HAT_DOWN; break;
-						case 'L': jent.state = SDL_HAT_LEFT; break;
-						case 'R': jent.state = SDL_HAT_RIGHT; break;
-					}
+					jent.state = padGetId(buf[idx], hatChars);
 					idx++;
 					break;
 			}
 			if (buf[idx] == ':') {
 				idx++;
-				if (buf[idx] == 'K') jent.dev = JMAP_KEY;
-				else if (buf[idx] == 'J') jent.dev = JMAP_JOY;
-				else jent.dev = JMAP_NONE;
+				jent.dev = padGetId(buf[idx], devChars);
 				idx++;
 				switch(jent.dev) {
 					case JMAP_KEY:
@@ -60,14 +114,11 @@ void padLoadConfig(std::string name) {
 							conf.joy.map.push_back(jent);
 						break;
 					case JMAP_JOY:
-						switch(buf[idx]) {
-							case 'R': jent.dir = XJ_RIGHT; break;
-							case 'L': jent.dir = XJ_LEFT; break;
-							case 'U': jent.dir = XJ_UP; break;
-							case 'D': jent.dir = XJ_DOWN; break;
-							case 'F': jent.dir = XJ_FIRE; break;
-							default: jent.dir = XJ_NONE; break;
-						}
+						jent.dir = padGetId(buf[idx], kjoyChars);
+						conf.joy.map.push_back(jent);
+						break;
+					case JMAP_MOUSE:
+						jent.dir = padGetId(buf[idx], kmouChars);
 						conf.joy.map.push_back(jent);
 						break;
 				}
@@ -84,41 +135,28 @@ void padSaveConfig(std::string name) {
 	file = fopen(path.c_str(), "wb");
 	if (file) {
 		foreach(xJoyMapEntry jent, conf.joy.map) {
-			if (jent.type == JOY_AXIS) fputc('A', file);
-			else if (jent.type == JOY_HAT) fputc('H', file);
-			else fputc('B', file);
-			fprintf(file, "%i", jent.num);
+			fprintf(file, "%c%i", padGetChar(jent.type, pabhChars), jent.num);
 			switch (jent.type) {
 				case JOY_AXIS:
 					fputc((jent.state < 0) ? '-' : '+', file);
 					break;
 				case JOY_HAT:
-					switch(jent.state) {
-						case SDL_HAT_UP: fputc('U', file); break;
-						case SDL_HAT_DOWN: fputc('D', file); break;
-						case SDL_HAT_LEFT: fputc('L', file); break;
-						case SDL_HAT_RIGHT: fputc('R', file); break;
-					}
+					fputc(padGetChar(jent.state, hatChars), file);
 					break;
 			}
-			fputc(':', file);
+			fprintf(file, ":%c", padGetChar(jent.dev, devChars));
 			switch(jent.dev) {
 				case JMAP_KEY:
-					fprintf(file, "K%s", getKeyNameById(jent.key));
+					fprintf(file, "%s", getKeyNameById(jent.key));
 					break;
 				case JMAP_JOY:
-					fputc('J', file);
-					switch(jent.dir) {
-						case XJ_RIGHT: fputc('R', file); break;
-						case XJ_LEFT: fputc('L', file); break;
-						case XJ_UP: fputc('U', file); break;
-						case XJ_DOWN: fputc('D', file); break;
-						case XJ_FIRE: fputc('F', file); break;
-						default: fputc('?', file); break;
-					}
+					fputc(padGetChar(jent.dir, kjoyChars), file);
+					break;
+				case JMAP_MOUSE:
+					fputc(padGetChar(jent.dir, kmouChars), file);
 					break;
 				default:
-					fprintf(file, "??");
+					fprintf(file, "?");
 			}
 			fputc('\n', file);
 		}

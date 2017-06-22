@@ -18,10 +18,21 @@ xPadBinder::xPadBinder(QWidget* p):QDialog(p) {
 	ui.cbJoyList->addItem("Right", XJ_RIGHT);
 	ui.cbJoyList->addItem("Fire", XJ_FIRE);
 
+	ui.cbMouseList->addItem("Up", XM_UP);
+	ui.cbMouseList->addItem("Down", XM_DOWN);
+	ui.cbMouseList->addItem("Left", XM_LEFT);
+	ui.cbMouseList->addItem("Right", XM_RIGHT);
+	ui.cbMouseList->addItem("Left button", XM_LMB);
+	ui.cbMouseList->addItem("Mid button", XM_MMB);
+	ui.cbMouseList->addItem("Right button", XM_RMB);
+	ui.cbMouseList->addItem("Wheel up", XM_WHEELUP);
+	ui.cbMouseList->addItem("Wheel down", XM_WHEELDN);
+
 	connect(&timer, SIGNAL(timeout()), this, SLOT(onTimer()));
 	connect(ui.pbPadBind, SIGNAL(clicked(bool)), this, SLOT(startBindPad()));
 	connect(ui.pbKeyBind, SIGNAL(clicked(bool)), this, SLOT(startBindKey()));
 	connect(ui.cbJoyList, SIGNAL(currentIndexChanged(int)), this, SLOT(setJoyDir()));
+	connect(ui.cbMouseList, SIGNAL(currentIndexChanged(int)), this, SLOT(setMouseDir()));
 	connect(ui.pbOk, SIGNAL(clicked(bool)), this, SLOT(okPress()));
 
 }
@@ -49,6 +60,11 @@ void xPadBinder::setKeyButtonText() {
 			ui.pbKeyBind->setText("Push to bind");
 			ui.rbJoy->setChecked(true);
 			ui.cbJoyList->setCurrentIndex(ui.cbJoyList->findData(ent.dir));
+			break;
+		case JMAP_MOUSE:
+			ui.pbKeyBind->setText("Push to bind");
+			ui.rbMouse->setChecked(true);
+			ui.cbMouseList->setCurrentIndex(ui.cbMouseList->findData(ent.dir));
 			break;
 		default:
 			ui.pbKeyBind->setText("Push to bind");
@@ -91,6 +107,13 @@ void xPadBinder::setJoyDir() {
 	ent.dev = JMAP_JOY;
 	ent.key = ENDKEY;
 	ent.dir = ui.cbJoyList->itemData(ui.cbJoyList->currentIndex()).toInt();
+}
+
+void xPadBinder::setMouseDir() {
+	ui.rbMouse->setChecked(true);
+	ent.dev = JMAP_MOUSE;
+	ent.key = ENDKEY;
+	ent.dir = ui.cbMouseList->itemData(ui.cbMouseList->currentIndex()).toInt();
 }
 
 // set key bind
@@ -260,6 +283,21 @@ QVariant xPadMapModel::data(const QModelIndex& idx, int role) const {
 								case XJ_RIGHT: str.append("right"); break;
 								case XJ_LEFT: str.append("left"); break;
 								case XJ_FIRE: str.append("fire"); break;
+								default: str.append("??"); break;
+							}
+							break;
+						case JMAP_MOUSE:
+							str = "Mouse ";
+							switch (jent.dir) {
+								case XM_UP: str.append("up"); break;
+								case XM_DOWN: str.append("down"); break;
+								case XM_LEFT: str.append("left"); break;
+								case XM_RIGHT: str.append("right"); break;
+								case XM_LMB: str.append("LB"); break;
+								case XM_MMB: str.append("MB"); break;
+								case XM_RMB: str.append("RB"); break;
+								case XM_WHEELUP: str.append("wheel up"); break;
+								case XM_WHEELDN: str.append("wheel down"); break;
 								default: str.append("??"); break;
 							}
 					}

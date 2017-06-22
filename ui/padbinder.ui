@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>250</width>
-    <height>150</height>
+    <width>236</width>
+    <height>179</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -63,6 +63,19 @@
        </property>
       </widget>
      </item>
+     <item row="3" column="1">
+      <widget class="QComboBox" name="cbJoyList"/>
+     </item>
+     <item row="3" column="0">
+      <widget class="QRadioButton" name="rbJoy">
+       <property name="text">
+        <string>&amp;Kempston</string>
+       </property>
+       <attribute name="buttonGroup">
+        <string notr="true">bgrDevType</string>
+       </attribute>
+      </widget>
+     </item>
      <item row="0" column="0">
       <widget class="QLabel" name="label">
        <property name="text">
@@ -81,18 +94,18 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="0">
-      <widget class="QRadioButton" name="rbJoy">
+     <item row="4" column="0">
+      <widget class="QRadioButton" name="rbMouse">
        <property name="text">
-        <string>&amp;Kempston</string>
+        <string>K&amp;Mouse</string>
        </property>
        <attribute name="buttonGroup">
         <string notr="true">bgrDevType</string>
        </attribute>
       </widget>
      </item>
-     <item row="3" column="1">
-      <widget class="QComboBox" name="cbJoyList"/>
+     <item row="4" column="1">
+      <widget class="QComboBox" name="cbMouseList"/>
      </item>
     </layout>
    </item>

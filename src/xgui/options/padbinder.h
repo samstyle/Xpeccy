@@ -36,6 +36,7 @@ class xPadBinder : public QDialog {
 		void startBindPad();
 		void startBindKey();
 		void setJoyDir();
+		void setMouseDir();
 	private:
 		Ui::PadBinder ui;
 		xPadMapModel* model;

@@ -145,7 +145,8 @@ enum {
 enum {
 	JMAP_NONE = 0,
 	JMAP_KEY,
-	JMAP_JOY
+	JMAP_JOY,
+	JMAP_MOUSE
 };
 
 typedef struct {

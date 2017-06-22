@@ -63,8 +63,22 @@ unsigned char xInFFFD(Computer* comp, unsigned short port) {
 }
 
 unsigned char xInFADF(Computer* comp, unsigned short port) {
+	unsigned char res = 0xff;
 	comp->mouse->used = 1;
-	return comp->mouse->enable ? comp->mouse->buttons : 0xff;
+	if (!comp->mouse->enable) return res;
+	if (comp->mouse->hasWheel) {
+		res &= 0x0f;
+		res |= ((comp->mouse->wheel & 0x0f) << 4);
+	}
+	res ^= comp->mouse->mmb ? 4 : 0;
+	if (comp->mouse->swapButtons) {
+		res ^= comp->mouse->rmb ? 1 : 0;
+		res ^= comp->mouse->lmb ? 2 : 0;
+	} else {
+		res ^= comp->mouse->lmb ? 1 : 0;
+		res ^= comp->mouse->rmb ? 2 : 0;
+	}
+	return res;
 }
 
 unsigned char xInFBDF(Computer* comp, unsigned short port) {

@@ -108,12 +108,11 @@ void xRomsetEditor::store() {
 
 	if (idx < 0) {
 		addRomset(nrs);
-		emit complete(0, trUtf8(nrs.name.c_str()));
 	} else {
 		prfChangeRsName(conf.rsList[idx].name, nrs.name);
 		conf.rsList[idx] = nrs;
-		emit complete(1, QString());
 	}
+	emit complete(idx, trUtf8(nrs.name.c_str()));
 	hide();
 }
 
