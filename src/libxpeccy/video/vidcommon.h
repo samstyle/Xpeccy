@@ -28,7 +28,6 @@ typedef struct {
 } vRay;
 
 typedef struct {
-	unsigned lock:1;		// lock layout changes
 	vCoord full;			// full size = visible + blank
 	vCoord bord;			// left/top border size
 	vCoord blank;			// blank zones

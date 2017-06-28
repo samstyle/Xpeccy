@@ -59,7 +59,7 @@ void MainWin::updateHead() {
 
 void MainWin::updateWindow() {
 	block = 1;
-	vidUpdateLayout(comp->vid, conf.brdsize);
+	vidSetBorder(comp->vid, conf.brdsize);
 	sndCalibrate(comp);
 	ethread.sndNs = 0;
 	int szw = comp->vid->vsze.x * conf.vid.scale;
@@ -145,7 +145,7 @@ MainWin::MainWin() {
 
 	initKeyMap();
 	conf.scrShot.format = "png";
-	vLayout vlay = {0,{448,320},{74,48},{64,32},{256,192},{0,0},64};
+	vLayout vlay = {{448,320},{74,48},{64,32},{256,192},{0,0},64};
 	addLayout("default", vlay);
 
 	shotFormat["bmp"] = SCR_BMP;
@@ -1069,7 +1069,7 @@ void MainWin::initUserMenu() {
 	fileMenu->addAction(QIcon(":/images/memory.png"),"Snapshot")->setData(FT_SNAP | FT_SPG);
 	fileMenu->addAction(QIcon(":/images/tape.png"),"Tape")->setData(FT_TAPE);
 	fileMenu->addAction(QIcon(":/images/floppy.png"),"Floppy")->setData(FT_DISK);
-	fileMenu->addAction(QIcon(":/images/cartrige.png"),"Slot")->setData(FT_SLOT);
+//	fileMenu->addAction(QIcon(":/images/cartrige.png"),"Slot")->setData(FT_SLOT_A);
 
 	nsAct = vmodeMenu->addAction("No screen");
 	nsAct->setData(-1);

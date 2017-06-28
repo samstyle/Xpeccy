@@ -209,6 +209,18 @@ void slt_gb_mbc5_wr(xCartridge* slot, unsigned short adr, unsigned char val) {
 	}
 }
 
+// nes
+
+unsigned char slt_nes_all_rd(xCartridge* slot, unsigned short adr) {
+	int radr;
+	if (adr & 0x4000) {		// page 0 (0x8000..0xbfff)
+		radr = (slot->memMap[1] << 14) | (adr & 0x3fff);
+	} else {			// page 1 (0xc000..0xffff)
+		radr = (slot->memMap[0] << 14) | (adr & 0x3fff);
+	}
+	return slot->data[radr & slot->memMask];
+}
+
 // table
 
 xCardCallback maperTab[] = {
@@ -223,6 +235,8 @@ xCardCallback maperTab[] = {
 	{MAP_GB_MBC2, slt_gb_all_rd, slt_gb_mbc2_wr},
 	{MAP_GB_MBC3, slt_gb_all_rd, slt_gb_mbc3_wr},
 	{MAP_GB_MBC5, slt_gb_all_rd, slt_gb_mbc5_wr},
+
+	{MAP_NES_NOMAP, slt_nes_all_rd, slt_wr_dum},
 
 	{MAP_UNKNOWN, slt_rd_dum, slt_wr_dum}
 };

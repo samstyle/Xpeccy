@@ -7,8 +7,8 @@
 #define MJR(_e) \
 	cpu->t++;\
 	cpu->tmpb = cpu->hpc;\
-	if (_e & 0x80) {cpu->pc -= (_e & 127);} else {cpu->pc += _e;}\
-	if (cpu->tmp != cpu->hpc) cpu->t++;
+	cpu->pc += (signed char)(_e);\
+	if (cpu->tmpb != cpu->hpc) cpu->t++;
 
 #define MBIT(_op) \
 	cpu->f = (cpu->f & ~(MFN | MFZ | MFV)) | ((cpu->a & _op) ? 0 : MFZ) | ((_op & 0x80) ? MFN : 0) | ((_op & 0x40) ? MFV : 0);

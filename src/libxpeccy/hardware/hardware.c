@@ -52,6 +52,11 @@ HardWare hwTab[] = {
 		HW_GBC,"GameBoy","Game Boy",60,MEM_48,
 		&gbMaper,NULL,NULL,&gbMemRd,&gbMemWr,&gbReset,&gbcSync
 	},{
+		HW_NULL,"","",50,0,NULL,NULL,NULL,NULL,NULL,NULL			// separator
+	},{
+		HW_NES,"NES","NES",50,MEM_48,
+		&nesMaper,NULL,NULL,&nesMemRd,&nesMemWr,&nesReset,&nesSync
+	},{
 		HW_NULL,NULL,NULL,50,0,NULL,NULL,NULL,NULL,NULL,NULL			// eot
 	}
 };

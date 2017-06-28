@@ -295,7 +295,7 @@ Computer* compCreate() {
 	compSetBaseFrq(comp, 3.5);
 
 	memset(comp->brkIOMap, 0, 0x10000);
-	memset(comp->brkRomMap, 0, 0x80000);
+	memset(comp->brkRomMap, 0, 0x400000);
 	memset(comp->brkRamMap, 0, 0x400000);
 	memset(comp->brkAdrMap, 0, 0x1000);
 
@@ -381,17 +381,24 @@ void compDestroy(Computer* comp) {
 
 void compReset(Computer* comp,int res) {
 	if (comp->rzx.play) rzxStop(comp);
+
+	if (res == RES_DEFAULT)
+		res = comp->resbank;
+	comp->p7FFD = ((res == RES_DOS) || (res == RES_48)) ? 0x10 : 0x00;
+	comp->dos = ((res == RES_DOS) || (res == RES_SHADOW)) ? 1 : 0;
+	comp->rom = (comp->p7FFD & 0x10) ? 1 : 0;
+	comp->cpm = 0;
+
 	vidReset(comp->vid);
 	comp->prt2 = 0;
 	comp->p1FFD = 0;
 	comp->pEFF7 = 0;
-	comp->rom = 0;
-	comp->dos = 0;
-	memSetBank(comp->mem, MEM_BANK0, MEM_ROM, 0, NULL, NULL, NULL);
-	memSetBank(comp->mem, MEM_BANK1, MEM_RAM, 5, NULL, NULL, NULL);
-	memSetBank(comp->mem, MEM_BANK2, MEM_RAM, 2, NULL, NULL, NULL);
-	memSetBank(comp->mem, MEM_BANK3, MEM_RAM, 0, NULL, NULL, NULL);
-	comp->cpu->reset(comp->cpu);
+//	comp->rom = 0;
+//	comp->dos = 0;
+//	memSetBank(comp->mem, MEM_BANK0, MEM_ROM, 0, NULL, NULL, NULL);
+//	memSetBank(comp->mem, MEM_BANK1, MEM_RAM, 5, NULL, NULL, NULL);
+//	memSetBank(comp->mem, MEM_BANK2, MEM_RAM, 2, NULL, NULL, NULL);
+//	memSetBank(comp->mem, MEM_BANK3, MEM_RAM, 0, NULL, NULL, NULL);
 
 	compDevReset(comp);		// send RESET to external devices
 
@@ -400,20 +407,18 @@ void compReset(Computer* comp,int res) {
 	tsReset(comp->ts);
 	ideReset(comp->ide);
 //	saaReset(comp->saa);
-	if (res == RES_DEFAULT) res = comp->resbank;
-	comp->p7FFD = ((res == RES_DOS) || (res == RES_48)) ? 0x10 : 0x00;
-	comp->dos = ((res == RES_DOS) || (res == RES_SHADOW)) ? 1 : 0;
-	comp->rom = (comp->p7FFD & 0x10) ? 1 : 0;
-	comp->cpm = 0;
 	if (comp->hw->reset) comp->hw->reset(comp);
+	comp->cpu->reset(comp->cpu);
 	comp->hw->mapMem(comp);
 }
 
+/*
 void compSetLayout(Computer *comp, vLayout lay) {
 	if (comp->vid->lay.lock) return;
 	comp->vid->lay = lay;
 	comp->vid->frmsz = lay.full.x * lay.full.y;
 }
+*/
 
 // cpu freq
 
@@ -456,13 +461,32 @@ void compSetTurbo(Computer* comp, int mult) {
 
 // hardware
 
+vLayout gbcLay = {{228,154},{0,0},{68,10},{160,144},{0,0},64};
+vLayout nesLay = {{341,260},{0,0},{85,20},{256,240},{0,0},64};
+
 void compSetHardware(Computer* comp, const char* name) {
 	HardWare* hw = findHardware(name);
 	if (hw == NULL) return;
 	comp->hw = hw;
-	comp->vid->istsconf = (hw->id == HW_TSLAB) ? 1 : 0;
-	comp->vid->ismsx = ((hw->id == HW_MSX) || (hw->id == HW_MSX2)) ? 1 : 0;
-	comp->vid->isgb = (hw->id == HW_GBC) ? 1 : 0;
+//	comp->vid->istsconf = 0;
+	comp->vid->lockLayout = 0;
+	switch(hw->id) {
+		case HW_NES:
+			vidSetLayout(comp->vid, nesLay);
+			comp->vid->lockLayout = 1;
+			break;
+		case HW_GBC:
+			vidSetLayout(comp->vid, gbcLay);
+			comp->vid->lockLayout = 1;
+			break;
+		case HW_TSLAB:
+//			comp->vid->istsconf = 1;
+			break;
+		case HW_MSX:
+		case HW_MSX2:
+			break;
+
+	}
 	compUpdateTimings(comp);
 }
 
@@ -493,8 +517,6 @@ int compExec(Computer* comp) {
 		comp->tapCount = 0;
 		bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
 		ideOut(comp->ide, comp->padr, comp->pval, bdiz);
-//		gsOut(comp->gs, comp->padr, comp->pval);
-//		if (!bdiz) saaWrite(comp->saa, comp->padr, comp->pval);		// bdi ports must be closed!
 		if (ulaOut(comp->vid->ula, comp->padr, comp->pval)) {
 			if (comp->vid->ula->palchan) {
 				zxSetUlaPalete(comp);
@@ -535,11 +557,6 @@ int compExec(Computer* comp) {
 		comp->vid->newFrame = 0;
 		comp->frmStrobe = 1;
 	}
-// TSConf : update 'next-line' registers			TODO:move to TSConf hw->sync
-	if (comp->vid->nextrow && comp->vid->istsconf) {
-		tslUpdatePorts(comp);
-		comp->vid->nextrow = 0;
-	}
 // breakpoints
 	pcreg = comp->cpu->pc;
 	unsigned char* ptr = getBrkPtr(comp, pcreg);
@@ -555,12 +572,9 @@ int compExec(Computer* comp) {
 
 	comp->beep->accum += nsTime;
 	comp->tapCount += nsTime;
-//	if (comp->gs->enable)
-//		comp->gs->sync += nsTime;
 	difSync(comp->dif, nsTime);
-	// tsSync(comp->ts, nsTime);
 
-	if (comp->hw->id == HW_GBC) {
+	if (comp->hw->id == HW_GBC) {			// TODO: move to GBC HW Sync
 		// sound
 		gbsSync(comp->gbsnd, nsTime);
 		// timer

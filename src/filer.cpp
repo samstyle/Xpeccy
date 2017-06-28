@@ -58,7 +58,8 @@ QString getFilter(int flags) {
 #endif
 	if (flags & FT_SPG) res.append(" *.spg");
 	if (flags & FT_HOBETA) res.append(" *.$?");
-	if (flags & FT_SLOT) res.append(" *.rom *.mx1 *.mx2 *.gb *.gbc");
+	if (flags & FT_SLOT_A) res.append(" *.rom *.mx1 *.mx2 *.gb *.gbc");
+	if (flags & FT_NES) res.append(" *.nes");
 	if (res.startsWith(" ")) res.remove(0,1);
 	return res;
 }
@@ -76,11 +77,12 @@ int getFileType(QString path) {
 	if (path.endsWith(".dsk",Qt::CaseInsensitive)) return FT_DSK;
 	if (path.endsWith(".td0",Qt::CaseInsensitive)) return FT_TD0;
 	if (path.endsWith(".spg",Qt::CaseInsensitive)) return FT_SPG;
-	if (path.endsWith(".rom",Qt::CaseInsensitive)) return FT_SLOT;
-	if (path.endsWith(".mx1",Qt::CaseInsensitive)) return FT_SLOT;
-	if (path.endsWith(".mx2",Qt::CaseInsensitive)) return FT_SLOT;
-	if (path.endsWith(".gb",Qt::CaseInsensitive)) return FT_SLOT;
-	if (path.endsWith(".gbc",Qt::CaseInsensitive)) return FT_SLOT;
+	if (path.endsWith(".rom",Qt::CaseInsensitive)) return FT_SLOT_A;
+	if (path.endsWith(".mx1",Qt::CaseInsensitive)) return FT_SLOT_A;
+	if (path.endsWith(".mx2",Qt::CaseInsensitive)) return FT_SLOT_A;
+	if (path.endsWith(".gb",Qt::CaseInsensitive)) return FT_SLOT_A;
+	if (path.endsWith(".gbc",Qt::CaseInsensitive)) return FT_SLOT_A;
+	if (path.endsWith(".nes",Qt::CaseInsensitive)) return FT_NES;
 #ifdef HAVEZLIB
 	if (path.endsWith(".rzx",Qt::CaseInsensitive)) return FT_RZX;
 #endif
@@ -97,6 +99,7 @@ int testSlotOn(Computer* comp) {
 		case HW_MSX:
 		case HW_MSX2:
 		case HW_GBC:
+		case HW_NES:
 			if (comp->mem->map[0].type == MEM_EXT) res = 1;
 			if (comp->mem->map[1].type == MEM_EXT) res = 1;
 			if (comp->mem->map[2].type == MEM_EXT) res = 1;
@@ -123,8 +126,8 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 		}
 		if (flags & FT_SNAP) filters.append(QString(";;Snapshot (%0)").arg(getFilter(flags & FT_SNAP)));
 		if (flags & FT_TAPE) filters.append(QString(";;Tape (%0)").arg(getFilter(flags & FT_TAPE)));
-		if (flags & FT_SLOT_A) filters.append(QString(";;Cartrige slot A (%0)").arg(getFilter(flags & FT_SLOT)));
-		if (flags & FT_SLOT_B) filters.append(QString(";;Cartrige slot B (%0)").arg(getFilter(flags & FT_SLOT)));
+		if (flags & FT_SLOT_A) filters.append(QString(";;Cartrige data (%0)").arg(getFilter(flags & FT_SLOT_A)));
+		if (flags & FT_NES) filters.append(QString(";;NES cartrige (%0)").arg(getFilter(flags & FT_NES)));
 		if (flags & FT_SPG) filters.append(";;SPG file (*.spg)");
 #ifdef HAVEZLIB
 		if (flags & FT_RZX) filters.append(";;RZX file (").append(getFilter(flags & FT_RZX)).append(")");
@@ -141,8 +144,7 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 		if (filters.contains("Disk B")) drv = 1;
 		if (filters.contains("Disk C")) drv = 2;
 		if (filters.contains("Disk D")) drv = 3;
-		if (filters.contains("Cartrige slot A")) drv = 0;
-		if (filters.contains("Cartrige slot B")) drv = 1;
+//		if (filters.contains("Cartrige slot A")) drv = 0;
 		if (filters.contains("Raw")) drv = 10;
 		opath = filer->selectedFiles().first();
 		conf.path.lastDir = std::string(filer->directory().absolutePath().toLocal8Bit().data());
@@ -176,7 +178,8 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 		case FT_DSK: ferr = loadDSK(flp,sfnam.c_str()); break;
 		case FT_TD0: ferr = loadTD0(flp,sfnam.c_str()); break;
 		case FT_SPG: ferr = loadSPG(comp,sfnam.c_str()); break;
-		case FT_SLOT: ferr = loadSlot(comp->slot,sfnam.c_str()); break;
+		case FT_SLOT_A: ferr = loadSlot(comp->slot,sfnam.c_str()); break;
+		case FT_NES: ferr = loadNes(comp->slot, sfnam.c_str()); break;
 #ifdef HAVEZLIB
 		case FT_RZX: ferr = loadRZX(comp,sfnam.c_str()); break;
 #endif

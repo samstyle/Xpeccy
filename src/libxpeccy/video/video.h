@@ -12,6 +12,7 @@ extern "C" {
 #include "ulaplus.h"
 #include "v9938.h"
 #include "gbcvideo.h"
+#include "nesppu.h"
 
 // screen mode
 enum {
@@ -29,20 +30,17 @@ enum {
 	VID_PRF_MC,	// Profi multicolor
 	VID_V9938,	// MSX2
 	VID_GBC,	// Gameboy
+	VID_NES,	// NES PPU
 	VID_UNKNOWN = -1
 };
 
 struct Video {
-	// unsigned border4t:1;
 	unsigned nogfx:1;	// tsl : nogfx flag
 	unsigned newFrame:1;	// set @ start of VBlank
-	int intFRAME;	// aka INT
+	int intFRAME;		// aka INT
 	unsigned intLINE:1;	// for TSConf
 	unsigned intDMA:1;	// for TSConf
-	unsigned nextrow:1;	// = not-masked intLINE
-	unsigned istsconf:1;	// TSConf (render sprites/tiles)
-	unsigned ismsx:1;	// v9918 (render sprites)
-	unsigned isgb:1;	// gameboy (interrupts)
+	unsigned lockLayout:1;	// fix layout & don't change it by vidSetLayout
 	unsigned noScreen:1;
 	unsigned debug:1;
 	unsigned tail:1;
@@ -62,6 +60,7 @@ struct Video {
 	int curscr;
 
 	int brdstep;
+	double brdsize;
 	unsigned char brdcol;
 	unsigned char nextbrd;
 
@@ -94,6 +93,8 @@ struct Video {
 		unsigned char scrPal;		// b7..4: bitmap palete
 		unsigned char vidPage;		// 1st video page
 		int hsint;			// tsconf INT x pos = p22AF << 1
+		unsigned char p00af;
+		unsigned char p07af;
 		ePair(xOffset,soxh,soxl);	// offsets of screen corner
 		ePair(yOffset,soyh,soyl);
 		ePair(T0XOffset,t0xh,t0xl);	// tile 0 offsets
@@ -117,6 +118,7 @@ struct Video {
 	ulaPlus* ula;
 	VDP9938 v9938;
 	GBCVid* gbc;
+	nesPPU* ppu;
 
 };
 
@@ -135,12 +137,14 @@ void vidSetMode(Video*,int);
 void vidWait(Video*);
 void vidDarkTail(Video*);
 
+void vidSetLayout(Video*, vLayout);
+void vidSetBorder(Video*, double);
 void vidUpdateTimings(Video*, int);
-//void vidSetFps(Video*,int);
-void vidUpdateLayout(Video*, float);
 
 void vidSetFont(Video*,char*);
 void vidGetScreen(Video*, unsigned char*, int, int, int);
+
+void tslUpdatePorts(Video*);
 
 #ifdef __cplusplus
 }

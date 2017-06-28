@@ -144,7 +144,7 @@ typedef struct {
 
 	memEntry memMap[16];			// memory map for ATM2, PentEvo
 	unsigned char brkRamMap[0x400000];	// ram brk/type : b0..3:brk flags, b4..7:type
-	unsigned char brkRomMap[0x80000];	// rom brk/type : b0..3:brk flags, b4..7:type
+	unsigned char brkRomMap[0x400000];	// rom brk/type : b0..3:brk flags, b4..7:type
 	unsigned char brkAdrMap[0x10000];	// adr brk
 	unsigned char brkIOMap[0x10000];	// io brk
 
@@ -171,13 +171,13 @@ typedef struct {
 		int flag;
 		unsigned short tsMapAdr;	// adr for altera mapping
 		unsigned char Page0;
-		unsigned char p00af;		// ports to be updated from next line
+//		unsigned char p00af;		// ports to be updated from next line
 		unsigned char p01af;
 		unsigned char p02af;
 		unsigned char p03af;
 		unsigned char p04af;
 		unsigned char p05af;
-		unsigned char p07af;
+//		unsigned char p07af;
 		unsigned char p21af;
 		unsigned char pwr_up;		// 1 on 1st run, 0 after reading 00AF
 		unsigned char vdos;
@@ -248,7 +248,7 @@ xArg compGetDevArg(Computer*, int, int);
 
 void compSetBaseFrq(Computer*,double);
 void compSetTurbo(Computer*,int);
-void compSetLayout(Computer*, vLayout);
+//void compSetLayout(Computer*, vLayout);
 void compSetHardware(Computer*,const char*);
 
 // read-write cmos

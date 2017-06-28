@@ -12,11 +12,11 @@ void tslReset(Computer* comp) {
 	comp->tsconf.Page0 = 0;
 	comp->vid->nextbrd = 0xf7;
 
-	comp->tsconf.p00af = 0;
+	comp->vid->tsconf.p00af = 0;
 	comp->tsconf.p01af = 0x05;
 	comp->vid->tsconf.xOffset = 0;
 	comp->vid->tsconf.yOffset = 0;
-	comp->tsconf.p07af = 0x0f;
+	comp->vid->tsconf.p07af = 0x0f;
 
 	comp->vid->tsconf.vidPage = 5;
 	comp->vid->tsconf.T0XOffset = 0;
@@ -29,7 +29,7 @@ void tslReset(Computer* comp) {
 	comp->vid->lay.intpos.y = 0;
 	comp->vid->intMask = 1;
 	comp->tsconf.vdos = 0;
-	tslUpdatePorts(comp);
+	tslUpdatePorts(comp->vid);
 	tslMapMem(comp);
 }
 
@@ -49,9 +49,6 @@ void tslMapMem(Computer* comp) {
 			memSetBank(comp->mem,MEM_BANK0,MEM_ROM, (comp->tsconf.Page0 & 0xfc) | ((comp->rom) ? 1 : 0) | (comp->dos ? 0 : 2),NULL,NULL,NULL);
 	}
 }
-
-const int tslXRes[4] = {256,320,320,360};
-const int tslYRes[4] = {192,200,240,288};
 
 const unsigned char tslCoLevs[32] = {
 	0,11,21,32,42,53,64,74,
@@ -109,8 +106,9 @@ void tslMWr(Computer* comp, unsigned short adr, unsigned char val) {
 	memWr(comp->mem,adr,val);
 }
 
+/*
 void tslUpdatePorts(Computer* comp) {
-	unsigned char val = comp->tsconf.p00af;
+	unsigned char val = comp->vid->tsconf.p00af;
 	comp->vid->tsconf.xSize = tslXRes[(val & 0xc0) >> 6];
 	comp->vid->tsconf.ySize = tslYRes[(val & 0xc0) >> 6];
 	comp->vid->tsconf.xPos = (comp->vid->ssze.x - comp->vid->tsconf.xSize) >> 1;
@@ -122,17 +120,12 @@ void tslUpdatePorts(Computer* comp) {
 		case 3: vidSetMode(comp->vid,VID_TSL_TEXT); break;
 	}
 	comp->vid->nogfx = (val & 0x20) ? 1 : 0;
-
-//	comp->vid->tsconf.vidPage = comp->tsconf.p01af;
-//	comp->vid->tsconf.soxl = comp->tsconf.p02af;
-//	comp->vid->tsconf.soxh = comp->tsconf.p03af & 1;
-//	comp->vid->tsconf.soyl = comp->tsconf.p04af;
-//	comp->vid->tsconf.soyh = comp->tsconf.p05af & 1;
-	val = comp->tsconf.p07af;
+	val = comp->vid->tsconf.p07af;
 	comp->vid->tsconf.scrPal = (val & 0x0f) << 4;
 	comp->vid->tsconf.T0Pal76 = (val & 0x30) << 2;
 	comp->vid->tsconf.T1Pal76 = (val & 0xc0);
 }
+*/
 
 // in
 
@@ -259,7 +252,7 @@ unsigned char tsIn00AF(Computer* comp, unsigned short port) {
 	return res;
 }
 
-void tsOut00AF(Computer* comp, unsigned short port, unsigned char val) {comp->tsconf.p00af = val;}
+void tsOut00AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.p00af = val;}
 void tsOut01AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.vidPage = val;}
 void tsOut02AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.soxl = val;}
 void tsOut03AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.soxh = val & 1;}
@@ -275,7 +268,7 @@ void tsOut05AF(Computer* comp, unsigned short port, unsigned char val) {
 }
 
 void tsOut06AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.tconfig = val;}
-void tsOut07AF(Computer* comp, unsigned short port, unsigned char val) {comp->tsconf.p07af = val;}
+void tsOut07AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.p07af = val;}
 void tsOut0FAF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->nextbrd = val;}
 
 void tsOut10AF(Computer* comp, unsigned short port, unsigned char val) {

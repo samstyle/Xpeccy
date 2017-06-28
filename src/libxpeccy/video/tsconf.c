@@ -229,6 +229,28 @@ int vidTSRender(Video* vid) {
 	return res;
 }
 
+const int tslXRes[4] = {256,320,320,360};
+const int tslYRes[4] = {192,200,240,288};
+
+void tslUpdatePorts(Video* vid) {
+	unsigned char val = vid->tsconf.p00af;
+	vid->tsconf.xSize = tslXRes[(val & 0xc0) >> 6];
+	vid->tsconf.ySize = tslYRes[(val & 0xc0) >> 6];
+	vid->tsconf.xPos = (vid->ssze.x - vid->tsconf.xSize) >> 1;
+	vid->tsconf.yPos = (vid->ssze.y - vid->tsconf.ySize) >> 1;
+	switch(val & 3) {
+		case 0: vidSetMode(vid,VID_TSL_NORMAL); break;
+		case 1: vidSetMode(vid,VID_TSL_16); break;
+		case 2: vidSetMode(vid,VID_TSL_256); break;
+		case 3: vidSetMode(vid,VID_TSL_TEXT); break;
+	}
+	vid->nogfx = (val & 0x20) ? 1 : 0;
+	val = vid->tsconf.p07af;
+	vid->tsconf.scrPal = (val & 0x0f) << 4;
+	vid->tsconf.T0Pal76 = (val & 0x30) << 2;
+	vid->tsconf.T1Pal76 = (val & 0xc0);
+}
+
 // tsconf line callback
 // TODO : emulate drawing time
 void vidTSline(Video* vid) {
@@ -236,8 +258,8 @@ void vidTSline(Video* vid) {
 	vid->lay.intpos.x = vid->tsconf.hsint + res;
 	if (vid->intMask & 2)
 		vid->intLINE = 1;
+	tslUpdatePorts(vid);
 }
-
 
 void scanExtLine(Video* vid) {
 	xscr = vid->ray.x - vid->tsconf.xPos;

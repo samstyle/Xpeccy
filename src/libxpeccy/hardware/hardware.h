@@ -152,7 +152,7 @@ void atm2Out(Computer*,unsigned short,unsigned char,int);
 unsigned char atm2In(Computer*,unsigned short,int);
 void atm2Reset(Computer*);
 
-// pentevo
+// Evo baseconf
 void evoMapMem(Computer*);
 void evoOut(Computer*,unsigned short,unsigned char,int);
 unsigned char evoIn(Computer*,unsigned short,int);
@@ -160,15 +160,13 @@ unsigned char evoMRd(Computer*,unsigned short,int);
 void evoMWr(Computer*,unsigned short,unsigned char);
 void evoReset(Computer*);
 
-// TSLab conf
+// Evo tsconf
 void tslMapMem(Computer*);
 void tslOut(Computer*,unsigned short,unsigned char,int);
 unsigned char tslIn(Computer*,unsigned short,int);
 unsigned char tslMRd(Computer*,unsigned short,int);
 void tslMWr(Computer*,unsigned short,unsigned char);
 void tslReset(Computer*);
-void tslUpdatePorts(Computer*);
-int tslINT(Computer*);
 
 // Profi
 void prfMapMem(Computer*);

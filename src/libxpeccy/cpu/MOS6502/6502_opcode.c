@@ -91,8 +91,17 @@ void mosGetINDY(CPU* cpu) {
 
 // brk : 7T
 void mosop00(CPU* cpu) {
-	cpu->intrq |= 1;		// request for user interrupt
-//	cpu->inth = 1;
+	cpu->intrq |= 1;
+/*
+	cpu->mwr(cpu->sp, cpu->lsp, cpu->data);
+	cpu->lsp--;
+	cpu->mwr(cpu->sp, cpu->hsp, cpu->data);
+	cpu->lsp--;
+	cpu->mwr(cpu->sp, cpu->f, cpu->data);
+	cpu->lsp--;
+	cpu->lpc = cpu->mrd(0xfffe, 0, cpu->data);
+	cpu->hpc = cpu->mrd(0xffff, 0, cpu->data);
+*/
 }
 
 // 01:ora indx n : 6T

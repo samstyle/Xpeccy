@@ -1842,7 +1842,7 @@ void DebugWin::fillBrkTable() {
 			bp.flags = comp->brkRamMap[adr] & 0xff;
 			list.append(bp);
 		}
-		if (adr < 0x80000) {
+//		if (adr < 0x80000) {
 			if (comp->brkRomMap[adr] & MEM_BRK_ANY) {
 				bp.rom = 1;
 				bp.bank = (adr >> 14);
@@ -1850,7 +1850,7 @@ void DebugWin::fillBrkTable() {
 				bp.flags = comp->brkRomMap[adr];
 				list.append(bp);
 			}
-		}
+//		}
 	}
 	ui.bpList->clear();
 	ui.bpList->setColumnCount(4);

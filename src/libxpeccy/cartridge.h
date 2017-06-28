@@ -21,7 +21,9 @@ enum {
 	MAP_GB_MBC1,
 	MAP_GB_MBC2,
 	MAP_GB_MBC3,
-	MAP_GB_MBC5
+	MAP_GB_MBC5,
+// NES
+	MAP_NES_NOMAP = 0x100
 };
 
 typedef struct xCartridge xCartridge;
@@ -41,11 +43,11 @@ struct xCartridge {
 	unsigned short ramMask;
 	unsigned char ram[0x8000];	// onboard ram
 	int memMask;
-	unsigned char* data;		// onboard rom (malloc)
+	int chrMask;
+	unsigned char* data;		// onboard rom (malloc) = nes prg-rom
+	unsigned char* chrrom;		// nes chr rom
 	xCardCallback* core;
-//	int mapAuto;		// auto detected map type OR user defined (msx)
-//	void (*wr)(struct xCartridge*, unsigned short, unsigned char);		// write callback
-} ;
+};
 
 xCartridge* sltCreate();
 void sltDestroy(xCartridge*);

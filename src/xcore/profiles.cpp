@@ -106,8 +106,8 @@ bool prfSetLayout(xProfile* prf, std::string nm) {
 	xLayout* lay = findLayout(nm);
 	if (lay == NULL) return false;
 	prf->layName = nm;
-	compSetLayout(prf->zx, lay->lay);
-	vidUpdateLayout(prf->zx->vid, conf.brdsize);
+	vidSetLayout(prf->zx->vid, lay->lay);
+	vidSetBorder(prf->zx->vid, conf.brdsize);
 	return true;
 }
 

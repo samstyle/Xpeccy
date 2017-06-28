@@ -62,16 +62,17 @@ Video* vidCreate(Memory* me) {
 	memset(vid,0x00,sizeof(Video));
 	vidSetMode(vid, VID_UNKNOWN);
 	vid->mem = me;
-	vLayout vlay = {0,{448,320},{74,48},{64,32},{256,192},{0,0},64};
-	vid->lay = vlay;
+	vLayout vlay = {{448,320},{74,48},{64,32},{256,192},{0,0},64};
+	vidSetLayout(vid, vlay);
 	vid->frmsz = vid->lay.full.x * vid->lay.full.y;
 	vid->intMask = 0x01;		// FRAME INT for all
 
 	vid->ula = ulaCreate();
 	vid->gbc = gbcvCreate(&vid->ray, &vid->lay);
+	vid->ppu = ppuCreate(&vid->ray);
 
 //	vidSetFps(vid, 50);
-	vidUpdateLayout(vid, 0.5);
+	vidSetBorder(vid, 0.5);
 
 	vid->brdstep = 1;
 	vid->nextbrd = 0;
@@ -130,18 +131,16 @@ void vidReset(Video* vid) {
 // [ bord ][ scr ][ ? ][ blank ]
 // [ <--------- full --------> ]
 // ? = brdr = full - bord - scr - blank
-void vidUpdateLayout(Video* vid, float brdsize) {
-	if (brdsize < 0.0) brdsize = 0.0;
-	if (brdsize > 1.0) brdsize = 1.0;
+void vidUpdateLayout(Video* vid) {
 	vCoord brdr;	// size of right/bottom border parts
 	vid->ssze.x = vid->lay.full.x - vid->lay.blank.x;
 	vid->ssze.y = vid->lay.full.y - vid->lay.blank.y;
 	brdr.x = vid->ssze.x - vid->lay.bord.x - vid->lay.scr.x;
 	brdr.y = vid->ssze.y - vid->lay.bord.y - vid->lay.scr.y;
-	vid->lcut.x = (int)floor(vid->lay.bord.x * (1.0 - brdsize));
-	vid->lcut.y = (int)floor(vid->lay.bord.y * (1.0 - brdsize));
-	vid->rcut.x = (int)floor(vid->lay.bord.x + vid->lay.scr.x + brdr.x * brdsize);
-	vid->rcut.y = (int)floor(vid->lay.bord.y + vid->lay.scr.y + brdr.y * brdsize);
+	vid->lcut.x = (int)floor(vid->lay.bord.x * (1.0 - vid->brdsize));
+	vid->lcut.y = (int)floor(vid->lay.bord.y * (1.0 - vid->brdsize));
+	vid->rcut.x = (int)floor(vid->lay.bord.x + vid->lay.scr.x + brdr.x * vid->brdsize);
+	vid->rcut.y = (int)floor(vid->lay.bord.y + vid->lay.scr.y + brdr.y * vid->brdsize);
 	vid->vsze.x = vid->rcut.x - vid->lcut.x;
 	vid->vsze.y = vid->rcut.y - vid->lcut.y;
 	vid->vBytes = vid->vsze.x * vid->vsze.y * 6;	// real size of image buffer (3 bytes/dot x2:x1)
@@ -150,6 +149,20 @@ void vidUpdateLayout(Video* vid, float brdsize) {
 	printf("%i : ",vid->lay.bord.x);
 	printf("%i - %i, %i - %i\n",vid->lcut.x, vid->rcut.x, vid->lcut.y, vid->rcut.y);
 #endif
+}
+
+void vidSetLayout(Video* vid, vLayout lay) {
+	if (vid->lockLayout) return;
+	vid->lay = lay;
+	vid->frmsz = lay.full.x * lay.full.y;
+	vidUpdateLayout(vid);
+}
+
+void vidSetBorder(Video* vid, double brd) {
+	if (brd < 0.0) brd = 0.0;
+	else if (brd > 1.0) brd = 1.0;
+	vid->brdsize = brd;
+	vidUpdateLayout(vid);
 }
 
 int xscr = 0;
@@ -569,6 +582,19 @@ void vidGBFram(Video* vid) {
 		vid->gbc->cbFram(vid->gbc);
 }
 
+// nes
+void vidNESDraw(Video* vid) {
+	ppuDraw(vid->ppu);
+}
+
+void vidNESLine(Video* vid) {
+	ppuLine(vid->ppu);
+}
+
+void vidNESFram(Video* vid) {
+	ppuFram(vid->ppu);
+}
+
 // debug
 
 void vidBreak(Video* vid) {
@@ -600,6 +626,7 @@ xVideoMode vidModeTab[] = {
 	{VID_PRF_MC, vidProfiScr, NULL, NULL},
 	{VID_V9938, vidDrawV9938, NULL, vidFrameV9938},
 	{VID_GBC, vidGBDraw, vidGBLine, vidGBFram},
+	{VID_NES, vidNESDraw, vidNESLine, vidNESFram},
 	{VID_UNKNOWN, vidDrawBorder, NULL, NULL}
 };
 
@@ -640,7 +667,6 @@ void vidSync(Video* vid, int ns) {
 			vid->ray.x = 0;
 		} else if (vid->ray.xb >= vid->lay.full.x) {		// hblank start
 			vid->hblank = 1;
-			vid->nextrow = 1;
 			vid->ray.xb = 0;
 			vid->ray.y++;
 			vid->ray.yb++;
