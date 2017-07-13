@@ -56,6 +56,7 @@ struct FDC {
 	int fmode;
 	int cnt;
 	int wait;		// pause (ns)
+	int tns;
 	fdcCall* plan;		// current task
 	int pos;		// pos in plan
 

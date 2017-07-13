@@ -102,11 +102,9 @@ typedef struct {
 	DiskIF* dif;
 	IDE* ide;
 	SDCard* sdc;
-//	GSound* gs;
 	TSound* ts;
-//	saaChip* saa;
-//	SDrive* sdrv;
 	gbSound* gbsnd;
+	nesAPU* nesapu;
 	xCartridge* slot;		// cartrige slot (MSX, GB, NES)
 
 	xDevBus bus;
@@ -200,6 +198,17 @@ typedef struct {
 			unsigned char regC;
 		} ppi;
 	} msx;
+	struct {
+		int priPadState;		// b0..7 = A,B,sel,start,up,down,left,right,0,0,0,0,....
+		int secPadState;
+		int priJoy;			// shift registers (reading 4016/17 returns bit 0 & shift right)
+		int secJoy;			//		write b0=1 to 4016 restore status
+		struct {
+			unsigned lev:1;
+			int ns;
+			int per;
+		} clock;
+	} nes;
 	struct {
 		unsigned boot:1;	// boot rom on
 		unsigned inpint:1;	// button pressed: request interrupt

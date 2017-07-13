@@ -12,20 +12,25 @@ typedef struct {
 } xMnem;
 
 #define REG_NONE 0
+#define REG_EMPTY -1
+#define REG_MPTR -2
 
 typedef struct {
-	char name[8];
 	int id;
+	unsigned byte:1;
+	char name[8];
 	int value;
 } xRegister;
 
 typedef struct {
-	xRegister regs[32];
+	char flags[8];		// name of flags
+	xRegister regs[32];	// registers
 } xRegBunch;
 
 typedef struct {
 	int id;
 	const char* name;
+	unsigned byte:1;
 } xRegDsc;
 
 // memrq rd

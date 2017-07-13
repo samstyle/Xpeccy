@@ -179,7 +179,7 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 		case FT_TD0: ferr = loadTD0(flp,sfnam.c_str()); break;
 		case FT_SPG: ferr = loadSPG(comp,sfnam.c_str()); break;
 		case FT_SLOT_A: ferr = loadSlot(comp->slot,sfnam.c_str()); break;
-		case FT_NES: ferr = loadNes(comp->slot, sfnam.c_str()); break;
+		case FT_NES: ferr = loadNes(comp, sfnam.c_str()); break;
 #ifdef HAVEZLIB
 		case FT_RZX: ferr = loadRZX(comp,sfnam.c_str()); break;
 #endif
@@ -206,6 +206,8 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 		case ERR_TD0_VERSION: shitHappens("Unsupported TD0 version"); break;
 		case ERR_WAV_HEAD: shitHappens("Wrong WAV header"); break;
 		case ERR_WAV_FORMAT: shitHappens("Unsupported WAV format"); break;
+		case ERR_NES_HEAD: shitHappens("Wrong NES header"); break;
+		case ERR_NES_MAPPER: shitHappens("Unsupported mapper"); break;
 		case ERR_OK:
 			if (type & FT_DISK) loadBoot(flp, conf.path.boot.c_str());
 			if ((type & FT_SLOT) && testSlotOn(comp)) compReset(comp, RES_DEFAULT);

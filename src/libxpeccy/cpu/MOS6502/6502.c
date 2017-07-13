@@ -6,7 +6,10 @@
 extern opCode mosTab[256];
 
 void m6502_reset(CPU* cpu) {
-	cpu->sp = 0x0100;	// segment 01xx is stack
+	cpu->intrq = 0;
+	cpu->inten = 3;		// brk/nmi enabled
+	cpu->sp = 0x1ff;	// segment 01xx is stack
+	cpu->f |= MFI;		// irq int disabled
 	cpu->lpc = cpu->mrd(0xfffc, 0, cpu->data);
 	cpu->hpc = cpu->mrd(0xfffd, 0, cpu->data);
 //	printf("mos pc = %.4X\n", cpu->pc);
@@ -22,13 +25,13 @@ void m6502_push_int(CPU* cpu) {
 }
 
 int m6502_int(CPU* cpu) {
-	if (cpu->intrq & 2) {		// NMI (VBlank)
-		cpu->intrq &= ~2;
+	if (cpu->intrq & MOS6502_INT_NMI) {		// NMI (VBlank)
+		cpu->intrq &= ~MOS6502_INT_NMI;
 		m6502_push_int(cpu);
 		cpu->lpc = cpu->mrd(0xfffa, 0, cpu->data);
 		cpu->hpc = cpu->mrd(0xfffb, 0, cpu->data);
-	} else if (cpu->intrq & 1) {	// BRK
-		cpu->intrq &= ~1;
+	} else if (cpu->intrq & MOS6502_INT_BRK) {	// BRK
+		cpu->intrq &= ~MOS6502_INT_BRK;
 		m6502_push_int(cpu);
 		cpu->lpc = cpu->mrd(0xfffe, 0, cpu->data);
 		cpu->hpc = cpu->mrd(0xffff, 0, cpu->data);
@@ -40,9 +43,11 @@ int m6502_int(CPU* cpu) {
 int m6502_exec(CPU* cpu) {
 	int res = 0;
 	unsigned char com;
-	if (cpu->intrq) {
+	cpu->intrq &= cpu->inten;
+	if (cpu->intrq && !cpu->noint) {
 		res = m6502_int(cpu);
 	} else {
+		cpu->noint = 0;
 		com = cpu->mrd(cpu->pc++, 1, cpu->data);
 		opCode* op = &mosTab[com];
 		cpu->t = op->t;			// 2T fetch
@@ -72,11 +77,15 @@ xAsmScan m6502_asm(const char* cbuf, char* buf) {
 }
 
 xRegDsc m6502RegTab[] = {
-	{M6502_REG_PC, "PC"},
-	{M6502_REG_S, "S"},
-	{M6502_REG_AF, "AF"},
-	{M6502_REG_X, "X"},
-	{M6502_REG_Y, "Y"},
+	{M6502_REG_PC, "PC", 0},
+	{M6502_REG_A, "A", 1},
+	{M6502_REG_X, "X", 1},
+	{REG_EMPTY, "", 0},
+	{REG_EMPTY, "", 0},
+
+	{M6502_REG_S, "S", 1},
+	{M6502_REG_F, "P", 1},
+	{M6502_REG_Y, "Y", 1},
 	{REG_NONE, ""}
 };
 
@@ -85,15 +94,18 @@ void m6502_get_regs(CPU* cpu, xRegBunch* bunch) {
 	while(m6502RegTab[idx].id != REG_NONE) {
 		bunch->regs[idx].id = m6502RegTab[idx].id;
 		strncpy(bunch->regs[idx].name, m6502RegTab[idx].name, 7);
+		bunch->regs[idx].byte = m6502RegTab[idx].byte;
 		switch(m6502RegTab[idx].id) {
 			case M6502_REG_PC: bunch->regs[idx].value = cpu->pc; break;
 			case M6502_REG_S: bunch->regs[idx].value = 0x100 | cpu->lsp; break;
-			case M6502_REG_AF: bunch->regs[idx].value = cpu->af; break;
+			case M6502_REG_A: bunch->regs[idx].value = cpu->a; break;
+			case M6502_REG_F: bunch->regs[idx].value = cpu->f; break;
 			case M6502_REG_X: bunch->regs[idx].value = cpu->lx; break;
 			case M6502_REG_Y: bunch->regs[idx].value = cpu->ly; break;
 		}
 		idx++;
 	}
+	memcpy(bunch->flags, "NV-BDIZC", 8);
 	bunch->regs[idx].id = REG_NONE;
 }
 
@@ -103,7 +115,8 @@ void m6502_set_regs(CPU* cpu, xRegBunch bunch) {
 		switch(bunch.regs[idx].id) {
 			case M6502_REG_PC: cpu->pc = bunch.regs[idx].value; break;
 			case M6502_REG_S: cpu->sp = 0x0100 | (bunch.regs[idx].value & 0xff); break;
-			case M6502_REG_AF: cpu->af = bunch.regs[idx].value; break;
+			case M6502_REG_A: cpu->a = bunch.regs[idx].value & 0xff; break;
+			case M6502_REG_F: cpu->f = bunch.regs[idx].value & 0xff; break;
 			case M6502_REG_X: cpu->lx = bunch.regs[idx].value & 0xff; break;
 			case M6502_REG_Y: cpu->ly = bunch.regs[idx].value & 0xff; break;
 			case REG_NONE: idx = 100; break;

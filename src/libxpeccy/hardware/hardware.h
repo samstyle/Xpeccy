@@ -54,6 +54,8 @@ typedef void(*cbHwMwr)(Computer*, unsigned short, unsigned char);
 typedef unsigned char(*cbHwIrd)(Computer*, unsigned short, int);
 // io write
 typedef void(*cbHwIwr)(Computer*, unsigned short, unsigned char, int);
+// key press/release
+typedef void(*cbHwKey)(Computer*, keyEntry);
 
 struct HardWare {
 	int id;			// id
@@ -68,6 +70,8 @@ struct HardWare {
 	cbHwMwr mwr;
 	cbHwRes reset;
 	cbHwSnc sync;
+	cbHwKey keyp;
+	cbHwKey keyr;
 };
 
 typedef struct {
@@ -90,8 +94,6 @@ HardWare* findHardware(const char*);
 unsigned char stdMRd(Computer*,unsigned short,int);
 void stdMWr(Computer*,unsigned short,unsigned char);
 void zx_sync(Computer*, long);
-
-// void beepSync(Computer*);
 
 // debug IO
 
@@ -119,6 +121,8 @@ void speMapMem(Computer*);
 void speOut(Computer*,unsigned short,unsigned char,int);
 unsigned char speIn(Computer*,unsigned short,int);
 void speReset(Computer*);
+void zx_keyp(Computer*, keyEntry);
+void zx_keyr(Computer*, keyEntry);
 
 // pentagon
 void penMapMem(Computer*);
@@ -174,6 +178,8 @@ void prfOut(Computer*,unsigned short,unsigned char,int);
 unsigned char prfIn(Computer*,unsigned short,int);
 void prfReset(Computer*);
 unsigned char prfMRd(Computer*,unsigned short,int);
+void prf_keyp(Computer*, keyEntry);
+void prf_keyr(Computer*, keyEntry);
 
 // ZXM Phoenix
 void phxMapMem(Computer*);
@@ -189,6 +195,8 @@ void msxReset(Computer*);
 unsigned char msxMRd(Computer*,unsigned short,int);
 void msxMWr(Computer*,unsigned short,unsigned char);
 void msx_sync(Computer*, long);
+void msx_keyp(Computer*, keyEntry);
+void msx_keyr(Computer*, keyEntry);
 
 // msx2
 void msx2mapper(Computer*);
@@ -204,8 +212,10 @@ void gbReset(Computer*);
 unsigned char gbMemRd(Computer*, unsigned short, int);
 void gbMemWr(Computer*, unsigned short, unsigned char);
 void gbcSync(Computer*, long);
-void gbPress(Computer*, const char*);
-void gbRelease(Computer*, const char*);
+//void gbPress(Computer*, const char*);
+//void gbRelease(Computer*, const char*);
+void gbc_keyp(Computer*, keyEntry);
+void gbc_keyr(Computer*, keyEntry);
 
 // nes
 void nesMaper(Computer*);
@@ -213,6 +223,8 @@ void nesReset(Computer*);
 unsigned char nesMemRd(Computer*, unsigned short, int);
 void nesMemWr(Computer*, unsigned short, unsigned char);
 void nesSync(Computer*, long);
+void nes_keyp(Computer*, keyEntry);
+void nes_keyr(Computer*, keyEntry);
 
 #ifdef __cplusplus
 }

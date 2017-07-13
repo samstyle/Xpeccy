@@ -119,13 +119,15 @@ xMnem lr_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 // registers
 
 xRegDsc lrRegTab[] = {
-	{LR_REG_PC, "PC"},
-	{LR_REG_SP, "SP"},
-	{LR_REG_AF, "AF"},
-	{LR_REG_BC, "BC"},
-	{LR_REG_DE, "DE"},
-	{LR_REG_HL, "HL"},
-	{REG_NONE, ""}
+	{LR_REG_PC, "PC", 0},
+	{LR_REG_AF, "AF", 0},
+	{LR_REG_BC, "BC", 0},
+	{LR_REG_DE, "DE", 0},
+	{LR_REG_HL, "HL", 0},
+
+	{LR_REG_SP, "SP", 0},
+
+	{REG_NONE, "", 0}
 };
 
 void lr_get_regs(CPU* cpu, xRegBunch* bunch) {
@@ -133,6 +135,7 @@ void lr_get_regs(CPU* cpu, xRegBunch* bunch) {
 	while(lrRegTab[idx].id != REG_NONE) {
 		bunch->regs[idx].id = lrRegTab[idx].id;
 		strncpy(bunch->regs[idx].name, lrRegTab[idx].name, 7);
+		bunch->regs[idx].byte = lrRegTab[idx].byte;
 		switch(lrRegTab[idx].id) {
 			case LR_REG_PC: bunch->regs[idx].value = cpu->pc; break;
 			case LR_REG_SP: bunch->regs[idx].value = cpu->sp; break;
@@ -144,6 +147,7 @@ void lr_get_regs(CPU* cpu, xRegBunch* bunch) {
 		idx++;
 	}
 	bunch->regs[idx].id = REG_NONE;
+	memcpy(bunch->flags, "ZNHC----", 8);
 }
 
 void lr_set_regs(CPU* cpu, xRegBunch bunch) {

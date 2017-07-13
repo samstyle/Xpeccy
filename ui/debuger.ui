@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>811</width>
-    <height>576</height>
+    <width>809</width>
+    <height>570</height>
    </rect>
   </property>
   <property name="font">
@@ -74,7 +74,7 @@
         </widget>
        </item>
        <item row="3" column="1">
-        <widget class="QLineEdit" name="editReg04">
+        <widget class="QLineEdit" name="editReg03">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -87,7 +87,7 @@
         </widget>
        </item>
        <item row="4" column="1">
-        <widget class="QLineEdit" name="editReg05">
+        <widget class="QLineEdit" name="editReg04">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -113,7 +113,7 @@
         </widget>
        </item>
        <item row="0" column="3">
-        <widget class="QLineEdit" name="editReg01">
+        <widget class="QLineEdit" name="editReg05">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -152,9 +152,9 @@
         </widget>
        </item>
        <item row="1" column="0">
-        <widget class="QLabel" name="labReg02">
+        <widget class="QLabel" name="labReg01">
          <property name="text">
-          <string>2</string>
+          <string>1</string>
          </property>
         </widget>
        </item>
@@ -166,9 +166,9 @@
         </widget>
        </item>
        <item row="2" column="0">
-        <widget class="QLabel" name="labReg03">
+        <widget class="QLabel" name="labReg02">
          <property name="text">
-          <string>3</string>
+          <string>2</string>
          </property>
         </widget>
        </item>
@@ -180,7 +180,7 @@
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QLineEdit" name="editReg02">
+        <widget class="QLineEdit" name="editReg01">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -200,7 +200,7 @@
         </widget>
        </item>
        <item row="2" column="1">
-        <widget class="QLineEdit" name="editReg03">
+        <widget class="QLineEdit" name="editReg02">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -253,16 +253,16 @@
         </widget>
        </item>
        <item row="0" column="2">
-        <widget class="QLabel" name="labReg01">
+        <widget class="QLabel" name="labReg05">
          <property name="text">
-          <string>1</string>
+          <string>5</string>
          </property>
         </widget>
        </item>
        <item row="4" column="0">
-        <widget class="QLabel" name="labReg05">
+        <widget class="QLabel" name="labReg04">
          <property name="text">
-          <string>5</string>
+          <string>4</string>
          </property>
         </widget>
        </item>
@@ -314,9 +314,9 @@
         </widget>
        </item>
        <item row="3" column="0">
-        <widget class="QLabel" name="labReg04">
+        <widget class="QLabel" name="labReg03">
          <property name="text">
-          <string>4</string>
+          <string>3</string>
          </property>
         </widget>
        </item>
@@ -362,6 +362,9 @@
          <property name="frame">
           <bool>false</bool>
          </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
         </widget>
        </item>
        <item row="4" column="5">
@@ -371,6 +374,9 @@
          </property>
          <property name="frame">
           <bool>false</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
@@ -552,6 +558,22 @@
          </property>
         </widget>
        </item>
+       <item row="1" column="4">
+        <widget class="QCheckBox" name="cbF3">
+         <property name="maximumSize">
+          <size>
+           <width>15</width>
+           <height>15</height>
+          </size>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <attribute name="buttonGroup">
+          <string notr="true">flagGroup</string>
+         </attribute>
+        </widget>
+       </item>
        <item row="1" column="5">
         <widget class="QCheckBox" name="cbF2">
          <property name="maximumSize">
@@ -584,20 +606,14 @@
          </attribute>
         </widget>
        </item>
-       <item row="1" column="4">
-        <widget class="QCheckBox" name="cbF3">
-         <property name="maximumSize">
-          <size>
-           <width>15</width>
-           <height>15</height>
-          </size>
-         </property>
+       <item row="1" column="8">
+        <widget class="QLabel" name="labTcount">
          <property name="text">
           <string/>
          </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
         </widget>
        </item>
        <item row="0" column="8">
@@ -612,16 +628,6 @@
           </size>
          </property>
         </spacer>
-       </item>
-       <item row="1" column="8">
-        <widget class="QLabel" name="labTcount">
-         <property name="text">
-          <string/>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
        </item>
       </layout>
      </item>
@@ -2388,11 +2394,11 @@
  </resources>
  <connections/>
  <buttongroups>
+  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
-  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

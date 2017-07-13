@@ -25,6 +25,7 @@ void dumSync(DiskIF* dif, int ns) {}
 void fdcSync(FDC* fdc, int ns) {
 	if (fdc->plan == NULL) return;	// fdc does nothing
 	fdc->wait -= ns;
+	fdc->tns += ns;
 	while ((fdc->wait < 0) && (fdc->plan != NULL)) {
 		if (fdc->plan[fdc->pos] != NULL) {
 			fdc->plan[fdc->pos](fdc);

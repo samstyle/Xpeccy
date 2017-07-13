@@ -3,10 +3,41 @@
 // NOTE: NES is fukkeen trash. why did i start this?
 
 // NOTE: Video PPU must have access to cartridge memory, as long as CPU
-// NOTE: Cartridges have potentially 255 mappers
+// NOTE: Cartridges have potentially 255+ mappers
+
+unsigned char nesChrRd(unsigned short adr, void* ptr) {
+	Computer* comp = (Computer*)ptr;
+	unsigned char res;
+	if (comp->slot->chrrom == NULL) {
+		res = comp->vid->ppu->mem[adr & 0x1fff];
+	} else if (adr & 0x1000) {
+		res = comp->slot->chrrom[(comp->slot->memMap[3] << 12) | (adr & 0xfff)];
+	} else {
+		res = comp->slot->chrrom[(comp->slot->memMap[2] << 12) | (adr & 0xfff)];
+	}
+	return res;
+}
+
+void nesChrWr(unsigned short adr, unsigned char val, void* ptr) {
+	Computer* comp = (Computer*)ptr;
+	if (comp->slot->chrrom == NULL) {
+		comp->vid->ppu->mem[adr & 0x1fff] = val;
+	} else {
+		// CHR-RAM?
+	}
+}
 
 void nesReset(Computer* comp) {
-	printf("nes reset\n");
+	comp->vid->ppu->mrd = nesChrRd;
+	comp->vid->ppu->mwr = nesChrWr;
+	comp->vid->ppu->data = comp;
+	ppuReset(comp->vid->ppu);
+	vidSetMode(comp->vid, VID_NES);
+	comp->slot->memMap[0] = 0;	// prg 2x16K pages
+	comp->slot->memMap[1] = comp->slot->memMask >> 14;
+	comp->slot->memMap[2] = 0;	// chr 2x4K pages
+	comp->slot->memMap[3] = 1;
+	comp->slot->memMap[7] = 0;	// ram
 }
 
 unsigned char nesMMrd(unsigned short adr, void* data) {
@@ -23,43 +54,46 @@ unsigned char nesMMrd(unsigned short adr, void* data) {
 			case 2:
 				if (!comp->vid->vblank) res ^= 0x80;
 				// TODO : b6:spr0 hit, b5:spr overflow
-				ppu->sclatch = 0;
-				ppu->valatch = 0;
+				ppu->latch = 0;
 				break;
 			case 4:
 				res = ppu->oam[ppu->oamadr & 0xff];
 				break;
 			case 7:
-				if (ppu->vidadr < 0x2000) {
-					res = ppu->mem[ppu->vidadr];
-				} else if (ppu->vidadr < 0x3f00) {
-					res = ppu->mem[(ppu->vidadr & 0xfff) | 0x2000];
-				} else {
-					res = ppu->mem[(ppu->vidadr & 0x1f) | 0x3f00];
-				}
-				ppu->vidadr += ppu->vadrinc;
+				res = ppuRead(ppu);
 				break;
 		}
 	} else if (adr < 0x5000) {
 		// audio, dma, io registers (0x17, other is unused)
+		switch (adr) {
+			case 0x4016:		// joystick 1
+				res = comp->nes.priJoy & 1;
+				comp->nes.priJoy >>= 1;
+				break;
+			case 0x4017:		// joystick 2
+				res = comp->nes.secJoy & 1;
+				comp->nes.secJoy >>= 1;
+				break;
+
+		}
 	} else if (adr < 0x6000) {
 		// expansion rom (4K)
-	} else {
-		// sram (8K)
+	} else if (comp->slot->data) {
+		// cartrige ram (8K)
+		res = comp->slot->ram[adr & 0x1fff];
 	}
 	return res;
 }
 
 void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 	Computer* comp = (Computer*)data;
-	unsigned char* mem = comp->mem->ramData;
 	adr &= 0x7fff;
 	if (adr < 0x2000) {
-		mem[adr & 0x7ff] = val;
+		comp->mem->ramData[adr & 0x7ff] = val;
 	} else if (adr < 0x4000) {
-		adr &= 7;
+		// write video registers
 		nesPPU* ppu = comp->vid->ppu;
-		switch (adr) {
+		switch (adr & 7) {
 			case 0:		// PPUCTRL
 				ppu->ntadr = 0x2000 | ((val & 3) << 10);
 				ppu->vadrinc = (val & 0x04) ? 32 : 1;
@@ -81,46 +115,58 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 				ppu->oamadr = val;
 				break;
 			case 4:
-				if (comp->vid->vblank) {
-					ppu->oam[ppu->oamadr & 0xff] = val;
-				}
+				ppu->oam[ppu->oamadr & 0xff] = val;
 				ppu->oamadr++;
 				break;
 			case 5:
-				ppu->sclatch ^= 1;
-				if (ppu->sclatch) {
+				ppu->latch ^= 1;
+				if (ppu->latch) {
 					ppu->scx = val;
 				} else {
 					ppu->scy = val;
 				}
 				break;
 			case 6:
-				ppu->valatch ^= 1;
-				if (ppu->valatch) {
-					ppu->vidadr = (ppu->vidadr & 0xff) | ((val & 0x3f) << 8);
+				ppu->latch ^= 1;
+				if (ppu->latch) {
+					ppu->vah = val;
 				} else {
-					ppu->vidadr = (ppu->vidadr & 0x3f00) | (val & 0xff);
+					ppu->val = val;
 				}
 				break;
 			case 7:
-				if (ppu->vidadr < 0x2000) {
-					ppu->mem[ppu->vidadr] = val;
-				} else if (ppu->vidadr < 0x3f00) {
-					ppu->mem[(ppu->vidadr & 0xfff) | 0x2000] = val;
-				} else {
-					ppu->mem[(ppu->vidadr & 0x1f) | 0x3f00] = val;
-				}
-				ppu->vidadr += ppu->vadrinc;
+				ppuWrite(ppu, val);
 				break;
 		}
-
-		// write video registers
 	} else if (adr < 0x5000) {
 		// write audio/dma/io?
+		switch (adr) {
+			case 0x4014:		// OAMDMA
+				adr = (val << 8);
+				do {
+					comp->vid->ppu->oam[comp->vid->ppu->oamadr & 0xff] = memRd(comp->mem, adr);
+					comp->vid->ppu->oamadr++;
+					adr++;
+				} while (adr & 0xff);
+				comp->cpu->t += 0x200;
+				break;
+			case 0x4016:
+				if (val & 1) {		// b0: 0-1-0 = reload gamepads state
+					comp->nes.priJoy = comp->nes.priPadState;
+					comp->nes.secJoy = comp->nes.secPadState;
+				}
+				break;
+			case 0x4017:
+				break;
+			default:
+				//printf("write %.4X,%.2X\n",adr,val);
+				break;
+		}
 	} else if (adr < 0x6000) {
 		// nothing?
-	} else {
+	} else if (comp->slot->data) {
 		// sram 8K
+		comp->slot->ram[adr & 0x1fff] = val;
 	}
 }
 
@@ -142,7 +188,17 @@ void nesMaper(Computer* comp) {
 }
 
 void nesSync(Computer* comp, long ns) {
-
+	if (comp->vid->vbstrb) {			// @ start of VBlank
+		comp->vid->vbstrb = 0;
+		if (comp->vid->ppu->inten) {
+			comp->cpu->intrq |= MOS6502_INT_NMI;	// request NMI...
+		}
+	}
+	comp->nes.clock.ns += ns;
+	if (comp->nes.clock.ns >= comp->nes.clock.per) {
+		comp->nes.clock.ns -= comp->nes.clock.per;
+		comp->nes.clock.lev ^= 1;
+	}
 }
 
 unsigned char nesMemRd(Computer* comp, unsigned short adr, int m1) {
@@ -151,4 +207,46 @@ unsigned char nesMemRd(Computer* comp, unsigned short adr, int m1) {
 
 void nesMemWr(Computer* comp, unsigned short adr, unsigned char val) {
 	memWr(comp->mem, adr, val);
+}
+
+// keypress
+
+typedef struct {
+	signed int id;
+	int mask;
+} nesKey;
+
+nesKey nesKeyMap[8] = {
+	{XKEY_Z,1},		// A
+	{XKEY_X,2},		// B
+	{XKEY_SPACE,4},		// select
+	{XKEY_ENTER,8},		// start
+	{XKEY_UP,16},		// up
+	{XKEY_DOWN,32},		// down
+	{XKEY_LEFT,64},		// left
+	{XKEY_RIGHT,128}	// right
+};
+
+int nesGetInputMask(signed int keyid) {
+	int idx = 0;
+	unsigned char mask = 0;
+	while (idx < 8) {
+		if (nesKeyMap[idx].id == keyid) {
+			mask = nesKeyMap[idx].mask;
+		}
+		idx++;
+	}
+	return mask;
+}
+
+void nes_keyp(Computer* comp, keyEntry ent) {
+	int mask = nesGetInputMask(ent.key);
+	if (mask == 0) return;
+	comp->nes.priPadState |= mask;
+}
+
+void nes_keyr(Computer* comp, keyEntry ent) {
+	int mask = nesGetInputMask(ent.key);
+	if (mask == 0) return;
+	comp->nes.priPadState &= ~mask;
 }

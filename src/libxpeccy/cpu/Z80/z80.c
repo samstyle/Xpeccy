@@ -236,20 +236,23 @@ xAsmScan z80_asm(const char* cbuf, char* buf) {
 // registers
 
 xRegDsc z80RegTab[] = {
-	{Z80_REG_PC, "PC"},
-	{Z80_REG_SP, "SP"},
-	{Z80_REG_AF, "AF"},
-	{Z80_REG_BC, "BC"},
-	{Z80_REG_DE, "DE"},
-	{Z80_REG_HL, "HL"},
-	{Z80_REG_AFA, "AF'"},
-	{Z80_REG_BCA, "BC'"},
-	{Z80_REG_DEA, "DE'"},
-	{Z80_REG_HLA, "HL'"},
-	{Z80_REG_IX, "IX"},
-	{Z80_REG_IY, "IY"},
-	{Z80_REG_IR, "IR"},
-	{REG_NONE, ""}
+	{Z80_REG_PC, "PC", 0},
+	{Z80_REG_AF, "AF", 0},
+	{Z80_REG_BC, "BC", 0},
+	{Z80_REG_DE, "DE", 0},
+	{Z80_REG_HL, "HL", 0},
+
+	{Z80_REG_SP, "SP", 0},
+	{Z80_REG_AFA, "AF'", 0},
+	{Z80_REG_BCA, "BC'", 0},
+	{Z80_REG_DEA, "DE'", 0},
+	{Z80_REG_HLA, "HL'", 0},
+
+	{Z80_REG_IX, "IX", 0},
+	{Z80_REG_IY, "IY", 0},
+	{Z80_REG_I, "I", 1},
+	{Z80_REG_R, "R", 1},
+	{REG_NONE, "", 0}
 };
 
 void z80_get_regs(CPU* cpu, xRegBunch* bunch) {
@@ -257,6 +260,7 @@ void z80_get_regs(CPU* cpu, xRegBunch* bunch) {
 	while(z80RegTab[idx].id != REG_NONE) {
 		bunch->regs[idx].id = z80RegTab[idx].id;
 		strncpy(bunch->regs[idx].name, z80RegTab[idx].name, 7);
+		bunch->regs[idx].byte = z80RegTab[idx].byte;
 		switch(z80RegTab[idx].id) {
 			case Z80_REG_PC: bunch->regs[idx].value = cpu->pc; break;
 			case Z80_REG_SP: bunch->regs[idx].value = cpu->sp; break;
@@ -270,11 +274,13 @@ void z80_get_regs(CPU* cpu, xRegBunch* bunch) {
 			case Z80_REG_HLA: bunch->regs[idx].value = cpu->hl_; break;
 			case Z80_REG_IX: bunch->regs[idx].value = cpu->ix; break;
 			case Z80_REG_IY: bunch->regs[idx].value = cpu->iy; break;
-			case Z80_REG_IR: bunch->regs[idx].value = (cpu->i << 8) | (cpu->r & 0x7f) | (cpu->r7 & 0x80); break;
+			case Z80_REG_I: bunch->regs[idx].value = cpu->i; break;
+			case Z80_REG_R: bunch->regs[idx].value = (cpu->r & 0x7f) | (cpu->r7 & 0x80); break;
 		}
 		idx++;
 	}
 	bunch->regs[idx].id = REG_NONE;
+	memcpy(bunch->flags, "SZ5H3PNC", 8);
 }
 
 void z80_set_regs(CPU* cpu, xRegBunch bunch) {
@@ -293,8 +299,8 @@ void z80_set_regs(CPU* cpu, xRegBunch bunch) {
 			case Z80_REG_HLA: cpu->hl_ = bunch.regs[idx].value; break;
 			case Z80_REG_IX: cpu->ix = bunch.regs[idx].value; break;
 			case Z80_REG_IY: cpu->iy = bunch.regs[idx].value; break;
-			case Z80_REG_IR:
-				cpu->i = bunch.regs[idx].value >> 8;
+			case Z80_REG_I: cpu->i = bunch.regs[idx].value & 0xff; break;
+			case Z80_REG_R:
 				cpu->r = bunch.regs[idx].value & 0x7f;
 				cpu->r7 = bunch.regs[idx].value & 0x80;
 				break;

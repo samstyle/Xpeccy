@@ -457,6 +457,9 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			emit rqRefillAll();
 			ev->ignore();
 			break;
+		case Qt::Key_F2:
+			ev->accept();
+			break;
 		default:
 			QTableView::keyPressEvent(ev);
 			break;

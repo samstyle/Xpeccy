@@ -63,11 +63,19 @@ int seekADR(FDC* fdc) {
 int vgSendByte(FDC* fdc) {
 	int res = 0;
 	if (turbo) {
-		if (!fdc->drq) {
+		if (fdc->drq) {
+			if (fdc->tns > BYTEDELAY) {
+				fdc->state |= 0x04;
+				flpNext(fdc->flp, fdc->side);
+				fdc->tns = 0;
+				res = 1;
+			}
+		} else {
 			fdcAddCrc(fdc, fdc->data);
 			flpWr(fdc->flp, fdc->data);
 			flpNext(fdc->flp, fdc->side);
 			fdc->drq = 1;
+			fdc->tns = 1;
 			res = 1;
 		}
 		fdc->wait = 1;
@@ -80,6 +88,7 @@ int vgSendByte(FDC* fdc) {
 		flpNext(fdc->flp, fdc->side);
 		fdc->drq = 1;
 		fdc->wait += BYTEDELAY;
+		fdc->tns = 0;
 		res = 1;
 	}
 	return res;
@@ -89,10 +98,18 @@ int vgSendByte(FDC* fdc) {
 int vgGetByte(FDC* fdc) {
 	int res = 0;
 	if (turbo) {
-		if (!fdc->drq) {			// turbo : read next byte if drq=0 (on demand only)
+		if (fdc->drq) {
+			if (fdc->tns > BYTEDELAY) {
+				fdc->state |= 0x04;
+				flpNext(fdc->flp, fdc->side);
+				fdc->tns = 0;
+				res = 1;
+			}
+		} else {
 			fdc->data = flpRd(fdc->flp);
 			flpNext(fdc->flp, fdc->side);
 			fdc->drq = 1;
+			fdc->tns = 0;
 			res = 1;
 		}
 		fdc->wait = 1;				// check every time (no delay)
@@ -104,6 +121,7 @@ int vgGetByte(FDC* fdc) {
 		flpNext(fdc->flp, fdc->side);
 		fdc->drq = 1;
 		fdc->wait += BYTEDELAY;
+		fdc->tns = 0;
 		res = 1;
 	}
 	return res;
@@ -194,9 +212,9 @@ void vgchk(FDC* fdc) {
 void vgres00(FDC* fdc) {
 	fdc->fmode = 0;
 	fdc->trk = 0xff;
-	fdc->wait += 1000000;		// 1 ms delay for BV
+	fdc->wait += 1000000;		// delay for BV
 	if (fdc->com & 8) {		// if h=1 : start motor, pause 15 ms
-		fdc->wait += turbo ? 1 : 15000;
+		fdc->wait += turbo ? 5000 : 15000;
 		fdc->flp->motor = 1;
 	}
 	fdc->pos++;
@@ -286,6 +304,7 @@ void vgrdsDBG(FDC* fdc) {
 // prepare
 void vgrds00(FDC* fdc) {
 //	if ((fdc->com & 0xe1) == 0x80) printf("RDSec(%.2X)...T:%.2X S:%.2X H:%i (FT:%.2X)\n",fdc->com, fdc->trk, fdc->sec, fdc->side, fdc->flp->trk);
+	//printf("fdc com %.2X\n",fdc->com);
 	fdc->fmode = 1;
 	if (!fdc->flp->insert) {
 		vgstp(fdc);
@@ -349,6 +368,8 @@ void vgrds03(FDC* fdc) {
 	fdc->dir = 1;					// dir: FDC to CPU
 	fdc->wait = BYTEDELAY;
 	fdc->pos++;
+	fdc->tns = 0;
+//	printf("vgrds03: %i.%i.%i\n",fdc->trk,fdc->sec,fdc->cnt);
 }
 
 // transfer CNT bytes flp->cpu
@@ -367,10 +388,12 @@ void vgrds05(FDC* fdc) {
 	rdFCRC(fdc);
 	fdc->wait += turbo ? 1 : (2 * BYTEDELAY);
 	if (fdc->crc != fdc->fcrc) {
+		// printf("crc error\n");
 		fdc->state |= 0x08;
 		fdc->pos++;
 	} else if (fdc->com & 0x10) {
 		fdc->sec++;
+		// printf("sec %i\n", fdc->sec);
 		fdc->pos = 1;
 		fdc->cnt = 5;
 	} else {
@@ -405,6 +428,7 @@ void vgwrs01(FDC* fdc) {
 	flpNext(fdc->flp, fdc->side);
 	fdc->cnt = 0x80 << (fdc->buf[3] & 3);	// sector size
 	fdc->wait = BYTEDELAY;
+	fdc->tns = 0;
 	fdc->pos++;
 }
 
@@ -544,6 +568,7 @@ vgComItem vgComTab[] = {
 void vgExec(FDC* fdc, unsigned char com) {
 	int idx;
 	if ((com & 0xf0) == 0xd0) {	// interrupt (doesn't mind about FDC is idle)
+		// printf("INT:%.2X\n",com);
 		fdc->wait = 0;
 		vgstp(fdc);
 	} else if (fdc->idle) {		// if FDC is idle

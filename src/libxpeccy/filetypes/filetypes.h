@@ -59,7 +59,8 @@ enum {
 	ERR_TD0_TYPE,		// unsupported td0 type
 	ERR_TD0_VERSION,	// unsupported version ( <20)
 
-	ERR_NES_HEAD
+	ERR_NES_HEAD,		// header error
+	ERR_NES_MAPPER		// unsupported mapper
 };
 
 // spg
@@ -180,7 +181,7 @@ int loadTD0(Floppy*,const char*);
 // cartridge
 
 int loadSlot(xCartridge*,const char*);
-int loadNes(xCartridge*, const char*);
+int loadNes(Computer*, const char*);
 
 #ifdef __cplusplus
 }

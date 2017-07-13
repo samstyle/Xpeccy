@@ -468,28 +468,6 @@ void DebugWin::setDumpView(QAction* act) {
 	fillDump();
 }
 
-/*
-void DebugWin::scrollUp() {
-	if (ui.dumpTable->hasFocus()) {
-		dumpAdr = (dumpAdr - 8) & 0xffff;
-		fillDump();
-	} else if (ui.dasmTable->hasFocus()) {
-		disasmAdr = getPrevAdr(disasmAdr);
-		fillDisasm();
-	}
-}
-
-void DebugWin::scrollDown() {
-	if (ui.dumpTable->hasFocus()) {
-		dumpAdr = (dumpAdr + 8) & 0xffff;
-		fillDump();
-	} else if (ui.dasmTable->hasFocus()) {
-		disasmAdr = ui.dasmTable->getData(1,0,Qt::UserRole).toInt();
-		fillDisasm();
-	}
-}
-*/
-
 void DebugWin::doStep() {
 	tCount = comp->tickCount;
 	compExec(comp);
@@ -694,7 +672,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					if (!ui.dasmTable->hasFocus()) break;
 					idx = ui.dasmTable->currentIndex();
 					i = ui.dasmTable->getData(idx.row(), 0, Qt::UserRole).toInt() & 0xffff;
-					qDebug() << idx << i;
+					// qDebug() << idx << i;
 					ptr = getBrkPtr(comp, i);
 					*ptr |= MEM_BRK_TFETCH;
 					stop();
@@ -884,7 +862,7 @@ void DebugWin::setFlagNames(const char name[8]) {
 void DebugWin::chLayout() {
 	switch (comp->cpu->type) {
 		case CPU_Z80:
-			setFlagNames("SZ5H3PNC");
+//			setFlagNames("SZ5H3PNC");
 /*
 			ui.cpuGrid->setEnabled(true);
 			ui.editAFa->setEnabled(true);
@@ -909,15 +887,15 @@ void DebugWin::chLayout() {
 			ui.editIR->setEnabled(false);
 */
 			ui.boxIM->setEnabled(false);
-			setFlagNames("ZNHC----");
+//			setFlagNames("ZNHC----");
 			break;
 		case CPU_6502:
 			ui.boxIM->setEnabled(false);
-			setFlagNames("MV5BDIZC");
+//			setFlagNames("MV5BDIZC");
 			break;
 		default:
-			ui.cpuGrid->setEnabled(false);
-			setFlagNames("--------");
+//			ui.cpuGrid->setEnabled(false);
+//			setFlagNames("--------");
 			break;
 	}
 }
@@ -1008,22 +986,31 @@ void DebugWin::fillCPU() {
 	block = 1;
 	CPU* cpu = comp->cpu;
 	xRegBunch bunch = cpuGetRegs(cpu);
-	int idx = 0;
 	int i = 0;
 	while(dbgRegLabs[i] != NULL) {
-		if (bunch.regs[idx].id == REG_NONE) {
-			dbgRegLabs[i]->clear();
-			dbgRegEdit[i]->setEnabled(false);
-			dbgRegEdit[i]->clear();
-		} else {
-			dbgRegLabs[i]->setText(bunch.regs[idx].name);
-			dbgRegEdit[i]->setText(gethexword(bunch.regs[idx].value));
-			dbgRegEdit[i]->setProperty("regid", bunch.regs[idx].id);
-			dbgRegEdit[i]->setEnabled(true);
-			idx++;
+		switch (bunch.regs[i].id) {
+			case REG_EMPTY:
+			case REG_NONE:
+				dbgRegLabs[i]->clear();
+				dbgRegEdit[i]->setEnabled(false);
+				dbgRegEdit[i]->clear();
+				break;
+			default:
+				dbgRegLabs[i]->setText(bunch.regs[i].name);
+				dbgRegEdit[i]->setProperty("regid", bunch.regs[i].id);
+				if (bunch.regs[i].byte) {
+					dbgRegEdit[i]->setInputMask("HH");
+					dbgRegEdit[i]->setText(gethexbyte(bunch.regs[i].value & 0xff));
+				} else {
+					dbgRegEdit[i]->setInputMask("HHHH");
+					dbgRegEdit[i]->setText(gethexword(bunch.regs[i].value));
+				}
+				dbgRegEdit[i]->setEnabled(true);
+				break;
 		}
 		i++;
 	}
+	setFlagNames(bunch.flags);
 	ui.boxIM->setValue(cpu->imode);
 	ui.flagIFF1->setChecked(cpu->iff1);
 	ui.flagIFF2->setChecked(cpu->iff2);

@@ -19,7 +19,8 @@ enum {
 	Z80_REG_HLA,
 	Z80_REG_IX,
 	Z80_REG_IY,
-	Z80_REG_IR
+	Z80_REG_I,
+	Z80_REG_R
 };
 
 #define FS	0x80

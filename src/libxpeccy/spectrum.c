@@ -160,7 +160,7 @@ unsigned char memrd(unsigned short adr,int m1,void* ptr) {
 	if (m1 && comp->rzx.play) {
 		comp->rzx.frm.fetches--;
 	}
-	zxMemRW(comp,adr);
+	// zxMemRW(comp,adr);
 	if (getBrk(comp, adr) & MEM_BRK_RD) {
 		comp->brk = 1;
 	}
@@ -169,7 +169,7 @@ unsigned char memrd(unsigned short adr,int m1,void* ptr) {
 
 void memwr(unsigned short adr, unsigned char val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	zxMemRW(comp,adr);
+	//zxMemRW(comp,adr);
 	if (getBrk(comp, adr) & MEM_BRK_WR) {
 		comp->brk = 1;
 	}
@@ -438,6 +438,14 @@ void compUpdateTimings(Computer* comp) {
 			comp->gbsnd->wav.period = perNoTurbo << 5;			// 128KHz period for wave generator = cpu.frq / 32
 			comp->gb.timer.div.per = comp->nsPerTick << 8;			// 16KHz timer divider tick. this timer depends on turbo speed
 			vidUpdateTimings(comp->vid, perNoTurbo << 1);
+			break;
+		case HW_NES:
+			// cpu frq (1.79MHz)
+			// smallest wave period = cpu frq / 16		(~112KHz)
+			// smallest triangle per = cpu frq / 32
+			// pal:ntsc = 48:60 Hz frame irq
+
+			// comp->nes.tper = perNoTurbo << 4;
 			break;
 		default:
 			vidUpdateTimings(comp->vid, perNoTurbo >> 1);

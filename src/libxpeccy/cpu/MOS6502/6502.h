@@ -5,7 +5,8 @@
 
 enum {
 	M6502_REG_PC = 1,
-	M6502_REG_AF,
+	M6502_REG_A,
+	M6502_REG_F,
 	M6502_REG_S,
 	M6502_REG_X,
 	M6502_REG_Y
@@ -19,6 +20,10 @@ enum {
 #define MFI 0x04	// interrupt mask
 #define MFZ 0x02	// zero
 #define MFC 0x01	// carry
+
+#define MOS6502_INT_NMI	1
+#define MOS6502_INT_RES	2
+#define MOS6502_INT_BRK	4
 
 void m6502_reset(CPU*);
 int m6502_exec(CPU*);

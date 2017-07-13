@@ -640,20 +640,26 @@ void gbcSync(Computer* comp, long ns) {
 // keypress
 
 typedef struct {
-	const char* name;
+	signed int id;
 	int mask;
 } gbKey;
 
 gbKey gbKeyMap[8] = {
-	{"RIGHT",1},{"LEFT",2},{"UP",4},{"DOWN",8},
-	{"Z",16},{"X",32},{"SPC",64},{"ENT",128}
+	{XKEY_RIGHT,1},
+	{XKEY_LEFT,2},
+	{XKEY_UP,4},
+	{XKEY_DOWN,8},
+	{XKEY_Z,16},
+	{XKEY_X,32},
+	{XKEY_SPACE,64},
+	{XKEY_ENTER,128}
 };
 
-unsigned char gbGetInputMask(const char* key) {
+unsigned char gbGetInputMask(signed int keyid) {
 	int idx = 0;
 	unsigned char mask = 0;
 	while (idx < 8) {
-		if (!strcmp(key, gbKeyMap[idx].name)) {
+		if (gbKeyMap[idx].id == keyid) {
 			mask = gbKeyMap[idx].mask;
 		}
 		idx++;
@@ -668,25 +674,25 @@ char gbMsgWIN1[] = " WIN layer on ";
 char gbMsgSPR0[] = " SPR layer off ";
 char gbMsgSPR1[] = " SPR layer on ";
 
-void gbPress(Computer* comp, const char* key) {
-	unsigned char mask = gbGetInputMask(key);
+void gbc_keyp(Computer* comp, keyEntry ent) {
+	unsigned char mask = gbGetInputMask(ent.key);
 	if (mask) {
 		comp->gb.buttons &= ~mask;
 		comp->gb.inpint = 1;			// input interrupt request
-	} else if (!strcmp(key,"1")) {
+	} else if (ent.key == XKEY_1) {
 		comp->vid->gbc->bgblock ^= 1;
 		comp->msg = comp->vid->gbc->bgblock ? gbMsgBG0 :gbMsgBG1;
-	} else if (!strcmp(key,"2")) {
+	} else if (ent.key == XKEY_2) {
 		comp->vid->gbc->winblock ^= 1;
 		comp->msg = comp->vid->gbc->winblock ? gbMsgWIN0 :gbMsgWIN1;
-	} else if (!strcmp(key,"3")) {
+	} else if (ent.key == XKEY_3) {
 		comp->vid->gbc->sprblock ^= 1;
 		comp->msg = comp->vid->gbc->sprblock ? gbMsgSPR0 :gbMsgSPR1;
 	}
 }
 
-void gbRelease(Computer* comp, const char* key) {
-	int mask = gbGetInputMask(key);
+void gbc_keyr(Computer* comp, keyEntry ent) {
+	int mask = gbGetInputMask(ent.key);
 	if (mask == 0) return;
 	comp->gb.buttons |= mask;
 }

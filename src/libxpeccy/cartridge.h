@@ -23,7 +23,8 @@ enum {
 	MAP_GB_MBC3,
 	MAP_GB_MBC5,
 // NES
-	MAP_NES_NOMAP = 0x100
+	MAP_NES_NOMAP = 0x100,
+	MAP_NES_MMC1
 };
 
 typedef struct xCartridge xCartridge;
@@ -35,23 +36,33 @@ typedef struct {
 } xCardCallback;
 
 struct xCartridge {
-	unsigned ramen:1;		// ram enabling (gb)
+	unsigned ramen:1;		// ram enabled (gb, nes)
 	unsigned ramod:1;		// ram banking mode (gb)
+
 	char name[FILENAME_MAX];
-	int memMap[8];		// 8 of 8kb pages
-	int mapType;		// user defined mapper type, if auto-detect didn't worked (msx)
-	unsigned short ramMask;
-	unsigned char ram[0x8000];	// onboard ram
-	int memMask;
-	int chrMask;
+	int memMap[8];
+	int mapType;			// user defined mapper type, if auto-detect didn't worked (msx)
+
+	unsigned char shift;		// shift register
+	int smask;			// counter of bits writing to shift register
+	unsigned char reg00;		// control registers
+	unsigned char reg01;
+	unsigned char reg02;
+	unsigned char reg03;
+
 	unsigned char* data;		// onboard rom (malloc) = nes prg-rom
-	unsigned char* chrrom;		// nes chr rom
+	int memMask;
+	unsigned char* chrrom;		// nes chr rom (malloc)
+	int chrMask;
+	unsigned char ram[0x8000];	// onboard ram (32K max)
+	unsigned short ramMask;
+
 	xCardCallback* core;
 };
 
 xCartridge* sltCreate();
 void sltDestroy(xCartridge*);
-void sltSetMaper(xCartridge*, int);
+int sltSetMaper(xCartridge*, int);
 void sltEject(xCartridge*);
 
 #if __cplusplus

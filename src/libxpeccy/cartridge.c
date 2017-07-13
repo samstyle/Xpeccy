@@ -211,6 +211,7 @@ void slt_gb_mbc5_wr(xCartridge* slot, unsigned short adr, unsigned char val) {
 
 // nes
 
+// nomaper
 unsigned char slt_nes_all_rd(xCartridge* slot, unsigned short adr) {
 	int radr;
 	if (adr & 0x4000) {		// page 0 (0x8000..0xbfff)
@@ -219,6 +220,66 @@ unsigned char slt_nes_all_rd(xCartridge* slot, unsigned short adr) {
 		radr = (slot->memMap[0] << 14) | (adr & 0x3fff);
 	}
 	return slot->data[radr & slot->memMask];
+}
+
+// mmc1
+
+void slt_nes_mmc1_map(xCartridge* slot) {
+	switch(slot->reg00 & 0x0c) {
+		case 0x0:
+		case 0x4:				// 1 x 32K page
+			slot->memMap[0] = slot->reg03 & 0x0e;
+			slot->memMap[1] = slot->memMap[0] + 1;
+			break;
+		case 0x8:				// 8000:fixed page 0, c000:switchable
+			slot->memMap[0] = 0;
+			slot->memMap[1] = slot->reg03 & 0x0f;
+			break;
+		case 0xc:				// 8000:switchable, c000:fixed last page
+			slot->memMap[0] = slot->reg03 & 0x0f;
+			slot->memMap[1] = slot->memMask >> 14;
+			break;
+	}
+	if (slot->reg00 & 0x10) {			// 2 x 4K pages
+		slot->memMap[2] = slot->reg01 & 0x1f;
+		slot->memMap[3] = slot->reg02 & 0x1f;
+	} else {					// 1 x 8K page
+		slot->memMap[2] = slot->reg01 & 0x1e;
+		slot->memMap[3] = slot->memMap[2] + 1;
+	}
+}
+
+void slt_nes_mmc1_wr(xCartridge* slot, unsigned short adr, unsigned char val) {
+	if (val & 0x80) {
+		slot->shift = 0;
+		slot->smask = 1;
+		slot->reg00 |= 0x0c;
+	} else {
+		// lsb first
+		if (val & 1)
+			slot->shift |= slot->smask;
+		slot->smask <<= 1;
+		if (slot->smask > 0x10) {
+			switch (adr & 0x6000) {
+				case 0x0000:		// control
+					slot->reg00 = slot->shift & 0x1f;
+					break;
+				case 0x2000:		// chr bank 0
+					slot->reg01 = slot->shift & 0x1f;
+					break;
+				case 0x4000:		// chr bank 1
+					slot->reg02 = slot->shift & 0x1f;
+					break;
+				case 0x6000:		// prg bank
+					slot->reg03 = slot->shift & 0x0f;
+					slot->ramen = (slot->shift & 0x10) ? 1 : 0;
+					break;
+			}
+			slot->shift = 0;
+			slot->smask = 1;
+		}
+	}
+	slt_nes_mmc1_map(slot);
 }
 
 // table
@@ -237,16 +298,18 @@ xCardCallback maperTab[] = {
 	{MAP_GB_MBC5, slt_gb_all_rd, slt_gb_mbc5_wr},
 
 	{MAP_NES_NOMAP, slt_nes_all_rd, slt_wr_dum},
+	{MAP_NES_MMC1, slt_nes_all_rd, slt_nes_mmc1_wr},
 
 	{MAP_UNKNOWN, slt_rd_dum, slt_wr_dum}
 };
 
-void sltSetMaper(xCartridge* slt, int id) {
+int sltSetMaper(xCartridge* slt, int id) {
 	int idx = 0;
 	while ((maperTab[idx].id != id) && (maperTab[idx].id != MAP_UNKNOWN)) {
 		idx++;
 	}
 	slt->core = &maperTab[idx];
+	return (slt->core->id == MAP_UNKNOWN) ? 0 : 1;
 }
 
 // common
@@ -280,4 +343,8 @@ void sltEject(xCartridge* slot) {
 		free(slot->data);
 	slot->data = NULL;
 	slot->name[0] = 0x00;
+	// free chr-rom
+	if (slot->chrrom)
+		free(slot->chrrom);
+	slot->chrrom = NULL;
 }

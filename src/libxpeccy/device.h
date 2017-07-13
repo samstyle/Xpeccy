@@ -43,6 +43,7 @@ enum {
 #include "sound/saa1099.h"
 #include "sound/soundrive.h"
 #include "sound/gbsound.h"
+#include "sound/nesapu.h"
 
 typedef union {
 	void* ptr;

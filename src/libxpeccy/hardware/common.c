@@ -46,6 +46,18 @@ void zx_sync(Computer* comp, long ns) {
 	}
 }
 
+// zx keypress/release
+
+void zx_keyp(Computer* comp, keyEntry ent) {
+	keyPressXT(comp->keyb, ent.keyCode);
+	keyPress(comp->keyb, ent.zxKey, 0);
+}
+
+void zx_keyr(Computer* comp, keyEntry ent) {
+	keyReleaseXT(comp->keyb, ent.keyCode);
+	keyRelease(comp->keyb, ent.zxKey, 0);
+}
+
 // in
 
 unsigned char xIn1F(Computer* comp, unsigned short port) {

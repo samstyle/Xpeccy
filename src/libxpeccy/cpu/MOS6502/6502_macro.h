@@ -27,12 +27,13 @@
 	cpu->a ^= _op;\
 	MFLAGZN(cpu->a);
 
+// NOTE: SUB & CMP clears C flag if overflow occured, set if not
 #define MCMP(_ac, _op) \
 	cpu->tmpw = _ac - _op;\
-	cpu->f = (cpu->f & ~(MFN | MFC | MFZ)) | ((cpu->tmpw & 0x100) ? MFC : 0) | ((cpu->tmpw & 0x80) ? MFN : 0) | (cpu->ltw ? 0 : MFZ);
+	cpu->f = (cpu->f & ~(MFN | MFC | MFZ)) | ((cpu->tmpw & 0x100) ? 0 : MFC) | ((cpu->tmpw & 0x80) ? MFN : 0) | (cpu->ltw ? 0 : MFZ);
 
 // math
-
+// NOTE: ADD set C flag if overflow occured, clears if not
 #define MADC(_op) \
 	cpu->e = (cpu->f & MFC) ? 1 : 0;\
 	cpu->tmpw = cpu->a + _op + cpu->e;\
@@ -57,8 +58,8 @@
 	}
 
 #define MSBC(_op) \
-	cpu->e = (cpu->f & MFC) ? 1 : 0;\
-	cpu->tmpw = cpu->a - _op - ((cpu->f & MFC) ? 1 : 0);\
+	cpu->e = (cpu->f & MFC) ? 0 : 1;\
+	cpu->tmpw = cpu->a - _op - cpu->e;\
 	cpu->f &= ~(MFV | MFC | MFZ | MFN);\
 	if (((cpu->tmpw ^ _op) & 0x80) && ((cpu->a ^ _op) & 0x80)) cpu->f |= MFV;\
 	if (cpu->f & MFD) {\
@@ -66,14 +67,14 @@
 		if (cpu->l & 16) cpu->l -= 6;\
 		cpu->h = (cpu->a >> 4) - (_op >> 4) - ((cpu->l & 16) ? 1 : 0);\
 		if (cpu->h & 15) cpu->h -= 6;\
-		if (cpu->tmpw & 0x100) cpu->f |= MFC;\
+		if (cpu->tmpw < 0x100) cpu->f |= MFC;\
 		if (!cpu->ltw) cpu->f |= MFZ;\
 		if (cpu->tmpw & 0x80) cpu->f |= MFN;\
 		cpu->a = ((cpu->h & 0x0f) << 4) | (cpu->l & 0x0f);\
 	} else {\
-		cpu->tmpb = (cpu->a & 0x7f) - (_op & 0x7f) - (cpu->f & MFC) ? 1 : 0;\
+		cpu->tmpb = (cpu->a & 0x7f) - (_op & 0x7f) - cpu->e;\
 		cpu->a = cpu->ltw;\
-		if (cpu->tmpw & 0x100) cpu->f |= MFC;\
+		if (cpu->tmpw < 0x100) cpu->f |= MFC;\
 		if (!cpu->a) cpu->f |= MFZ;\
 		if (cpu->a & 0x80) cpu->f |= MFN;\
 	}

@@ -265,6 +265,8 @@ void MainWin::convImage() {
 	setUpdatesEnabled(false);
 }
 
+// gamepad mapper
+
 void MainWin::mapRelease(Computer* comp, xJoyMapEntry ent) {
 	QKeyEvent ev(QEvent::KeyRelease, key2qid(ent.key), Qt::NoModifier);
 	switch(ent.dev) {
@@ -330,6 +332,8 @@ void MainWin::mapJoystick(Computer* comp, int type, int num, int state) {
 	}
 }
 
+// calling on timer every 20ms
+
 void MainWin::onTimer() {
 	if (opt->block) return;
 	if (opt->prfChanged) {
@@ -349,6 +353,12 @@ void MainWin::onTimer() {
 		pause(false, PR_RZX);
 	}
 // process sdl event (gamepad)
+
+/* TODO : rewrite using this:
+	SDL_JoystickGetAxis(joy, 0);
+	SDL_JoystickGetButton(joy, 0);
+	SDL_JoystickGetHat(joy, 0);
+*/
 	if (conf.joy.joy && !pauseFlags) {
 		SDL_Event ev;
 		SDL_JoystickUpdate();
@@ -412,6 +422,7 @@ void MainWin::onTimer() {
 }
 
 void MainWin::menuShow() {
+	layoutMenu->setDisabled(comp->vid->lockLayout);
 	pause(true,PR_MENU);
 }
 
@@ -498,11 +509,16 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 	int keyid = qKey2id(ev->key());
 	keyEntry kent = getKeyEntry(keyid);
 	if (pckAct->isChecked()) {
+		if (comp->hw->keyp) {
+			comp->hw->keyp(comp, kent);
+		}
+/*
 		keyPressXT(comp->keyb, kent.keyCode);
 		if (!kent.zxKey.key2)			// don't press 2-key keys in PC-mode
 			keyPress(comp->keyb,kent.zxKey,0);
 		keyPress(comp->keyb, kent.extKey, 1);
 		keyPress(comp->keyb, kent.msxKey, 2);
+*/
 		if (ev->key() == Qt::Key_ScrollLock) {
 			compReset(comp,RES_DEFAULT);
 			rzxWin->stop();
@@ -590,10 +606,10 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;
 		}
 	} else {
-		if (comp->hw->id == HW_GBC)
-			gbPress(comp, kent.name);
-		keyPress(comp->keyb, kent.zxKey, 0);
-		if (kent.msxKey.key1) keyPress(comp->keyb,kent.msxKey,2);
+//		if (comp->hw->id == HW_GBC)
+//			gbPress(comp, kent.name);
+//		keyPress(comp->keyb, kent.zxKey, 0);
+//		if (kent.msxKey.key1) keyPress(comp->keyb,kent.msxKey,2);
 		switch(ev->key()) {
 			case Qt::Key_Pause:
 				pauseFlags ^= PR_PAUSE;
@@ -680,7 +696,10 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				rzxWin->stop();
 				break;
 			default:
-				keyPressXT(comp->keyb, kent.keyCode);
+				if (comp->hw->keyp) {
+					comp->hw->keyp(comp, kent);
+				}
+				//keyPressXT(comp->keyb, kent.keyCode);
 				break;
 		}
 	}
@@ -690,6 +709,9 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 	int keyid = qKey2id(ev->key());
 	keyEntry kent = getKeyEntry(keyid);
+	if (comp->hw->keyr)
+		comp->hw->keyr(comp, kent);
+/*
 	gbRelease(comp, kent.name);
 	if (pckAct->isChecked()) {
 		keyReleaseXT(comp->keyb, kent.keyCode);
@@ -701,6 +723,7 @@ void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 		keyRelease(comp->keyb, kent.zxKey, 0);
 		if (kent.msxKey.key1) keyRelease(comp->keyb,kent.msxKey,2);
 	}
+*/
 	if (keywin->isVisible()) keywin->update();
 }
 
@@ -1046,7 +1069,6 @@ void MainWin::initUserMenu() {
 	bookmarkMenu = userMenu->addMenu(QIcon(":/images/star.png"),"Bookmarks");
 	profileMenu = userMenu->addMenu(QIcon(":/images/profile.png"),"Profiles");
 	layoutMenu = userMenu->addMenu(QIcon(":/images/display.png"),"Layout");
-	vmodeMenu = userMenu->addMenu(QIcon(":/images/rulers.png"),"Video mode");
 	resMenu = userMenu->addMenu(QIcon(":/images/shutdown.png"),"Reset...");
 
 	userMenu->addSeparator();
@@ -1062,32 +1084,12 @@ void MainWin::initUserMenu() {
 	connect(bookmarkMenu,SIGNAL(triggered(QAction*)),this,SLOT(bookmarkSelected(QAction*)));
 	connect(profileMenu,SIGNAL(triggered(QAction*)),this,SLOT(profileSelected(QAction*)));
 	connect(layoutMenu,SIGNAL(triggered(QAction*)),this,SLOT(chLayout(QAction*)));
-	connect(vmodeMenu,SIGNAL(triggered(QAction*)),this,SLOT(chVMode(QAction*)));
 	connect(resMenu,SIGNAL(triggered(QAction*)),this,SLOT(reset(QAction*)));
 	connect(fileMenu,SIGNAL(triggered(QAction*)),this,SLOT(umOpen(QAction*)));
 
 	fileMenu->addAction(QIcon(":/images/memory.png"),"Snapshot")->setData(FT_SNAP | FT_SPG);
 	fileMenu->addAction(QIcon(":/images/tape.png"),"Tape")->setData(FT_TAPE);
 	fileMenu->addAction(QIcon(":/images/floppy.png"),"Floppy")->setData(FT_DISK);
-//	fileMenu->addAction(QIcon(":/images/cartrige.png"),"Slot")->setData(FT_SLOT_A);
-
-	nsAct = vmodeMenu->addAction("No screen");
-	nsAct->setData(-1);
-	nsAct->setCheckable(true);
-	nsAct->setChecked(false);
-	vmodeMenu->addAction("ZX 256 x 192")->setData(VID_NORMAL);
-	vmodeMenu->addAction("Alco 16c")->setData(VID_ALCO);
-	vmodeMenu->addAction("HW multicolor")->setData(VID_HWMC);
-	vmodeMenu->addSeparator();
-	vmodeMenu->addAction("ATM2 EGA")->setData(VID_ATM_EGA);
-	vmodeMenu->addAction("ATM2 HW multicolor")->setData(VID_ATM_HWM);
-	vmodeMenu->addAction("ATM2 text")->setData(VID_ATM_TEXT);
-	vmodeMenu->addAction("BaseConf text")->setData(VID_EVO_TEXT);
-	vmodeMenu->addSeparator();
-	vmodeMenu->addAction("TSConf 256 x 192")->setData(VID_TSL_NORMAL);
-	vmodeMenu->addAction("TSConf 4bpp")->setData(VID_TSL_16);
-	vmodeMenu->addAction("TSConf 8bpp")->setData(VID_TSL_256);
-	vmodeMenu->addAction("TSConf text")->setData(VID_TSL_TEXT);
 
 	resMenu->addAction("default")->setData(RES_DEFAULT);
 	resMenu->addSeparator();
@@ -1100,7 +1102,8 @@ void MainWin::initUserMenu() {
 	dbgMenu = userMenu->addMenu(QIcon(":/images/debuga.png"),"Debug");
 	dbgMenu->addAction(QIcon(),QString("Save v9938 vram..."),this,SLOT(saveVRAM()));
 	dbgMenu->addAction(QIcon(),QString("Save GB VRAM..."), this, SLOT(saveGBVRAM()));
-	dbgMenu->addAction(QIcon(),QString("Save GS RAM..."),this,SLOT(saveGSRAM()));
+//	dbgMenu->addAction(QIcon(),QString("Save GS RAM..."),this,SLOT(saveGSRAM()));
+	dbgMenu->addAction(QIcon(),QString("Save NES PPU vram..."),this,SLOT(saveNESPPU()));
 #endif
 }
 
@@ -1146,7 +1149,6 @@ void MainWin::doOptions() {
 
 void MainWin::optApply() {
 	comp = conf.prof.cur->zx;
-//	timer.setInterval(1000 / comp->vid->fps);		// 60fps -> 16.(6)ms -> 16ms -> 62.5fps (!!!)
 	fillUserMenu();
 	updateWindow();
 	pause(false, PR_OPTS);
@@ -1177,7 +1179,7 @@ void MainWin::setProfile(std::string nm) {
 	comp = conf.prof.cur->zx;
 	ethread.comp = comp;
 	keywin->kb = comp->keyb;
-	nsAct->setChecked(comp->vid->noScreen);
+//	nsAct->setChecked(comp->vid->noScreen);
 	updateWindow();
 	if (comp->firstRun) {
 		compReset(comp, RES_DEFAULT);
@@ -1204,16 +1206,6 @@ void MainWin::chLayout(QAction* act) {
 	prfSetLayout(NULL, str);
 	prfSave("");
 	updateWindow();
-}
-
-void MainWin::chVMode(QAction* act) {
-	int mode = act->data().toInt();
-	if (mode > 0) {
-		vidSetMode(comp->vid, mode);
-	} else if (mode == -1) {
-		comp->vid->noScreen = act->isChecked() ? 1 : 0;
-		// vidSetMode(comp->vid, VID_CURRENT);
-	}
 }
 
 void MainWin::umOpen(QAction* act) {
@@ -1255,16 +1247,15 @@ void MainWin::saveGBVRAM() {
 	}
 }
 
-void MainWin::saveGSRAM() {
-/*
+void MainWin::saveNESPPU() {
 	QString path = QFileDialog::getSaveFileName(this,"Save GB VRAM");
 	if (path.isEmpty()) return;
 	QFile file(path);
 	if (file.open(QFile::WriteOnly)) {
-		file.write((char*)comp->gs->mem->ramData, 2 * 1024 * 1024);		// 2Mb
+		file.write((char*)comp->vid->ppu->mem, 0x4000);
+		file.write((char*)comp->vid->ppu->oam, 0x100);
 		file.close();
 	}
-*/
 }
 
 void MainWin::debugAction() {

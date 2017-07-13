@@ -9,73 +9,101 @@
 #define mosGetImm(_op) _op = cpu->mrd(cpu->pc++, 0, cpu->data);
 
 // ZP : peek(n) +1T
-void mosGetZP(CPU* cpu) {
+void mosGetZPw(CPU* cpu) {
 	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);
 	cpu->hptr = 0;
+}
+
+void mosGetZP(CPU* cpu) {
+	mosGetZPw(cpu);
 	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->data);
 }
 
 // ZPX : peek((X + n) & 0xff)
-void mosGetZPX(CPU* cpu) {
+void mosGetZPXw(CPU* cpu) {
 	cpu->tmp = cpu->mrd(cpu->pc++, 0, cpu->data);
 	cpu->mptr = (cpu->lx + cpu->tmp) & 0xff;
+}
+
+void mosGetZPX(CPU* cpu) {
+	mosGetZPXw(cpu);
 	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->data);
 }
 
 // ZPY : peek((Y + n) & 0xff)
-void mosGetZPY(CPU* cpu) {
+void mosGetZPYw(CPU* cpu) {
 	cpu->tmp = cpu->mrd(cpu->pc++, 0, cpu->data);
 	cpu->mptr = (cpu->ly + cpu->tmp) & 0xff;
+}
+
+void mosGetZPY(CPU* cpu) {
+	mosGetZPYw(cpu);
 	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->data);
 }
 
 // ABS: peek(nn)
-void mosGetABS(CPU* cpu) {
+void mosGetABSw(CPU* cpu) {
 	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);
 	cpu->hptr = cpu->mrd(cpu->pc++, 0, cpu->data);
+}
+
+void mosGetABS(CPU* cpu) {
+	mosGetABSw(cpu);
 	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->data);
 }
 
 // ABSX: peek(nn + x) ! +1T if nn high byte changed
-void mosGetABSX(CPU* cpu) {
+void mosGetABSXw(CPU* cpu) {
 	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);
 	cpu->hptr = cpu->mrd(cpu->pc++, 0, cpu->data);
 	cpu->tmp = cpu->hptr;
 	cpu->mptr += cpu->lx;
 	if (cpu->hptr != cpu->tmp)
 		cpu->t++;
+}
+
+void mosGetABSX(CPU* cpu) {
+	mosGetABSXw(cpu);
 	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->data);
 }
 
 // ABSY: peek(nn + y) ! +1T if nn high byte changed
-void mosGetABSY(CPU* cpu) {
+void mosGetABSYw(CPU* cpu) {
 	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);
 	cpu->hptr = cpu->mrd(cpu->pc++, 0, cpu->data);
 	cpu->tmp = cpu->hptr;
 	cpu->mptr += cpu->ly;
 	if (cpu->hptr != cpu->tmp)
 		cpu->t++;
+}
+
+void mosGetABSY(CPU* cpu) {
+	mosGetABSYw(cpu);
 	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->data);
 }
 
 // INDX: 4T
 // val = PEEK(PEEK((arg + X) & 0xff) + PEEK((arg + X + 1) & 0xff) * 256)
-void mosGetINDX(CPU* cpu) {
+void mosGetINDXw(CPU* cpu) {
 	cpu->tmp = cpu->mrd(cpu->pc++, 0, cpu->data);
 	cpu->mptr = (cpu->tmp + cpu->lx) & 0xff;
 	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->data);	// low adr byte
 	cpu->lptr++;					// hi byte didn't changed (00FF -> 0000)
 	cpu->hptr = cpu->mrd(cpu->mptr, 0, cpu->data);	// hi adr byte
 	cpu->lptr = cpu->tmp;				// mptr = address
+}
+
+void mosGetINDX(CPU* cpu) {
+	mosGetINDXw(cpu);
 	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->data);
 }
 
 // INDY: 4(5)T
 // val = PEEK(PEEK(arg) + PEEK((arg + 1) & 0xff) * 256 + Y)
-void mosGetINDY(CPU* cpu) {
-	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);
+void mosGetINDYw(CPU* cpu) {
+	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);		// zp adr
 	cpu->hptr = 0;
-	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->data);
+	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->data);		// pick abs.adr
 	cpu->lptr++;
 	cpu->hptr = cpu->mrd(cpu->mptr, 0, cpu->data);
 	cpu->lptr = cpu->tmp;
@@ -83,6 +111,10 @@ void mosGetINDY(CPU* cpu) {
 	cpu->mptr += cpu->ly;
 	if (cpu->tmp != cpu->hptr)
 		cpu->t++;
+}
+
+void mosGetINDY(CPU* cpu) {
+	mosGetINDYw(cpu);
 	cpu->tmp = cpu->mrd(cpu->mptr, 0, cpu->data);
 }
 
@@ -91,17 +123,7 @@ void mosGetINDY(CPU* cpu) {
 
 // brk : 7T
 void mosop00(CPU* cpu) {
-	cpu->intrq |= 1;
-/*
-	cpu->mwr(cpu->sp, cpu->lsp, cpu->data);
-	cpu->lsp--;
-	cpu->mwr(cpu->sp, cpu->hsp, cpu->data);
-	cpu->lsp--;
-	cpu->mwr(cpu->sp, cpu->f, cpu->data);
-	cpu->lsp--;
-	cpu->lpc = cpu->mrd(0xfffe, 0, cpu->data);
-	cpu->hpc = cpu->mrd(0xffff, 0, cpu->data);
-*/
+	cpu->intrq |= MOS6502_INT_BRK;
 }
 
 // 01:ora indx n : 6T
@@ -174,10 +196,10 @@ void mosop0E(CPU* cpu) {
 void mosop0F(CPU* cpu) {
 }
 
-// bmp e = jr p,e
+// bpl e = jr p,e
 void mosop10(CPU* cpu) {
 	mosGetImm(cpu->tmp);
-	if (cpu->f & FN) return;
+	if (cpu->f & MFN) return;
 	MJR(cpu->tmp);
 }
 
@@ -251,7 +273,7 @@ void mosop1F(CPU* cpu) {
 // jsr nn = call nn
 void mosop20(CPU* cpu) {
 	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);
-	cpu->hptr = cpu->mrd(cpu->pc, 0, cpu->data);
+	cpu->hptr = cpu->mrd(cpu->pc++, 0, cpu->data);
 	cpu->mwr(cpu->sp, cpu->hpc, cpu->data);
 	cpu->lsp--;
 	cpu->mwr(cpu->sp, cpu->lpc, cpu->data);
@@ -412,12 +434,12 @@ void mosop3F(CPU* cpu) {
 
 // rti
 void mosop40(CPU* cpu) {
+	cpu->lsp++;
 	cpu->f = cpu->mrd(cpu->sp, 0, cpu->data);
 	cpu->lsp++;
 	cpu->lpc = cpu->mrd(cpu->sp, 0, cpu->data);
 	cpu->lsp++;
 	cpu->hpc = cpu->mrd(cpu->sp, 0, cpu->data);
-	cpu->lsp++;
 }
 
 // eor ind,x n
@@ -535,6 +557,8 @@ void mosop57(CPU* cpu) {
 // cli
 void mosop58(CPU* cpu) {
 	cpu->f &= ~MFI;
+	cpu->inten = 0;
+	cpu->noint = 1;
 }
 
 // eor abs,y nn
@@ -570,10 +594,10 @@ void mosop5F(CPU* cpu) {
 
 // rts
 void mosop60(CPU* cpu) {
+	cpu->lsp++;
 	cpu->lpc = cpu->mrd(cpu->sp, 0, cpu->data);
 	cpu->lsp++;
 	cpu->hpc = cpu->mrd(cpu->sp, 0, cpu->data);
-	cpu->lsp++;
 }
 
 // adc indx
@@ -733,7 +757,7 @@ void mosop80(CPU* cpu) {
 
 // sta ind,x n
 void mosop81(CPU* cpu) {
-	mosGetINDX(cpu);
+	mosGetINDXw(cpu);
 	cpu->mwr(cpu->mptr, cpu->a, cpu->data);
 }
 
@@ -741,33 +765,38 @@ void mosop82(CPU* cpu) {
 }
 
 void mosop83(CPU* cpu) {
+	mosGetINDXw(cpu);
+	cpu->mwr(cpu->mptr, cpu->a & cpu->lx, cpu->data);
 }
 
 // sty zp n
 void mosop84(CPU* cpu) {
-	mosGetZP(cpu);
+	mosGetZPw(cpu);
 	cpu->mwr(cpu->mptr, cpu->ly, cpu->data);
 }
 
 // sta zp n
 void mosop85(CPU* cpu) {
-	mosGetZP(cpu);
+	mosGetZPw(cpu);
 	cpu->mwr(cpu->mptr, cpu->a, cpu->data);
 }
 
 // stx zp n
 void mosop86(CPU* cpu) {
-	mosGetZP(cpu);
+	mosGetZPw(cpu);
 	cpu->mwr(cpu->mptr, cpu->lx, cpu->data);
 }
 
 void mosop87(CPU* cpu) {
+	mosGetZPw(cpu);
+	cpu->mwr(cpu->mptr, cpu->a & cpu->lx, cpu->data);
 }
 
 // dey
 void mosop88(CPU* cpu) {
 	cpu->ly--;
-	cpu->f = (cpu->f & ~(MFN | MFZ)) | ((cpu->ly & 0x80) ? MFN : 0) | (cpu->ly ? 0 : MFZ);
+	MFLAGZN(cpu->ly);
+//	cpu->f = (cpu->f & ~(MFN | MFZ)) | ((cpu->ly & 0x80) ? MFN : 0) | (cpu->ly ? 0 : MFZ);
 }
 
 void mosop89(CPU* cpu) {
@@ -784,23 +813,25 @@ void mosop8B(CPU* cpu) {
 
 // sty abs nn
 void mosop8C(CPU* cpu) {
-	mosGetABS(cpu);
+	mosGetABSw(cpu);
 	cpu->mwr(cpu->mptr, cpu->ly, cpu->data);
 }
 
 // sta abs nn
 void mosop8D(CPU* cpu) {
-	mosGetABS(cpu);
+	mosGetABSw(cpu);
 	cpu->mwr(cpu->mptr, cpu->a, cpu->data);
 }
 
 // stx abs nn
 void mosop8E(CPU* cpu) {
-	mosGetABS(cpu);
+	mosGetABSw(cpu);
 	cpu->mwr(cpu->mptr, cpu->lx, cpu->data);
 }
 
 void mosop8F(CPU* cpu) {
+	mosGetABSw(cpu);
+	cpu->mwr(cpu->mptr, cpu->a & cpu->lx, cpu->data);
 }
 
 // bcc e = jr nc,e
@@ -812,7 +843,7 @@ void mosop90(CPU* cpu) {
 
 // sta ind,y n
 void mosop91(CPU* cpu) {
-	mosGetINDY(cpu);
+	mosGetINDYw(cpu);
 	cpu->mwr(cpu->mptr, cpu->a, cpu->data);
 }
 
@@ -824,23 +855,25 @@ void mosop93(CPU* cpu) {
 
 // sty zp,x n
 void mosop94(CPU* cpu) {
-	mosGetZPX(cpu);
+	mosGetZPXw(cpu);
 	cpu->mwr(cpu->mptr, cpu->ly, cpu->data);
 }
 
 // sta zp,x n
 void mosop95(CPU* cpu) {
-	mosGetZPX(cpu);
+	mosGetZPXw(cpu);
 	cpu->mwr(cpu->mptr, cpu->a, cpu->data);
 }
 
 // stx zp,y n
 void mosop96(CPU* cpu) {
-	mosGetZPY(cpu);
+	mosGetZPYw(cpu);
 	cpu->mwr(cpu->mptr, cpu->lx, cpu->data);
 }
 
 void mosop97(CPU* cpu) {
+	mosGetZPYw(cpu);
+	cpu->mwr(cpu->mptr, cpu->a & cpu->lx, cpu->data);
 }
 
 // tya
@@ -851,7 +884,7 @@ void mosop98(CPU* cpu) {
 
 // sta abs,y nn
 void mosop99(CPU* cpu) {
-	mosGetABSY(cpu);
+	mosGetABSYw(cpu);
 	cpu->mwr(cpu->mptr, cpu->a, cpu->data);
 }
 
@@ -868,7 +901,7 @@ void mosop9C(CPU* cpu) {
 
 // sta abs,x nn
 void mosop9D(CPU* cpu) {
-	mosGetABSX(cpu);
+	mosGetABSXw(cpu);
 	cpu->mwr(cpu->mptr, cpu->a, cpu->data);
 }
 
@@ -898,6 +931,10 @@ void mosopA2(CPU* cpu) {
 }
 
 void mosopA3(CPU* cpu) {
+	mosGetINDX(cpu);
+	cpu->a = cpu->tmp;
+	cpu->lx = cpu->tmp;
+	MFLAGZN(cpu->tmp);
 }
 
 // ldy zp n
@@ -922,6 +959,10 @@ void mosopA6(CPU* cpu) {
 }
 
 void mosopA7(CPU* cpu) {
+	mosGetZP(cpu);
+	cpu->a = cpu->tmp;
+	cpu->lx = cpu->tmp;
+	MFLAGZN(cpu->tmp);
 }
 
 //tay
@@ -967,9 +1008,13 @@ void mosopAE(CPU* cpu) {
 }
 
 void mosopAF(CPU* cpu) {
+	mosGetABS(cpu);
+	cpu->a = cpu->tmp;
+	cpu->lx = cpu->tmp;
+	MFLAGZN(cpu->tmp);
 }
 
-// bcs (if MFC pc += (unsigned)e)
+// bcs e = jr c,e
 void mosopB0(CPU* cpu) {
 	mosGetImm(cpu->tmp);
 	if (cpu->f & MFC) {
@@ -988,6 +1033,10 @@ void mosopB2(CPU* cpu) {
 }
 
 void mosopB3(CPU* cpu) {
+	mosGetINDY(cpu);
+	cpu->a = cpu->tmp;
+	cpu->lx = cpu->tmp;
+	MFLAGZN(cpu->tmp);
 }
 
 // ldy zp,x n
@@ -1012,6 +1061,10 @@ void mosopB6(CPU* cpu) {
 }
 
 void mosopB7(CPU* cpu) {
+	mosGetZPY(cpu);
+	cpu->a = cpu->tmp;
+	cpu->lx = cpu->tmp;
+	MFLAGZN(cpu->tmp);
 }
 
 // clv
@@ -1115,7 +1168,8 @@ void mosopC9(CPU* cpu) {
 // dex
 void mosopCA(CPU* cpu) {
 	cpu->lx--;
-	cpu->f = (cpu->f & ~(MFN | MFZ)) | ((cpu->lx & 0x80) ? MFN : 0) | (cpu->lx ? 0 : MFZ);
+	MFLAGZN(cpu->lx);
+//	cpu->f = (cpu->f & ~(MFN | MFZ)) | ((cpu->lx & 0x80) ? MFN : 0) | (cpu->lx ? 0 : MFZ);
 }
 
 void mosopCB(CPU* cpu) {
@@ -1382,290 +1436,290 @@ void mosopFF(CPU* cpu) {
 
 opCode mosTab[256] = {
 	{0,2,mosop00,NULL,"brk"},
-	{0,2,mosop01,NULL,"ora ind,x :1"},
+	{0,6,mosop01,NULL,"ora ind,x :1"},
 	{0,2,mosop02,NULL,"unknown"},
 	{0,2,mosop03,NULL,"unknown"},
 	{0,2,mosop04,NULL,"unknown"},
-	{0,2,mosop05,NULL,"ora zp :1"},
-	{0,2,mosop06,NULL,"asl zp :1"},
+	{0,3,mosop05,NULL,"ora zp :1"},
+	{0,5,mosop06,NULL,"asl zp :1"},
 	{0,2,mosop07,NULL,"unknown"},
-	{0,2,mosop08,NULL,"php"},
 
+	{0,3,mosop08,NULL,"php"},
 	{0,2,mosop09,NULL,"ora :1"},
 	{0,2,mosop0A,NULL,"asl a"},
 	{0,2,mosop0B,NULL,"unknown"},
 	{0,2,mosop0C,NULL,"unknown"},
-	{0,2,mosop0D,NULL,"ora abs :2"},
-	{0,2,mosop0E,NULL,"asl abs :2"},
+	{0,4,mosop0D,NULL,"ora abs :2"},
+	{0,6,mosop0E,NULL,"asl abs :2"},
 	{0,2,mosop0F,NULL,"unknown"},
-	{0,2,mosop10,NULL,"bpl :3"},
 
-	{0,2,mosop11,NULL,"ora ind,y :1"},
+	{0,2,mosop10,NULL,"bpl :3"},
+	{0,5,mosop11,NULL,"ora ind,y :1"},
 	{0,2,mosop12,NULL,"unknown"},
 	{0,2,mosop13,NULL,"unknown"},
 	{0,2,mosop14,NULL,"unknown"},
-	{0,2,mosop15,NULL,"ora zp,x :1"},
-	{0,2,mosop16,NULL,"asl zp,x :1"},
+	{0,4,mosop15,NULL,"ora zp,x :1"},
+	{0,6,mosop16,NULL,"asl zp,x :1"},
 	{0,2,mosop17,NULL,"unknown"},
-	{0,2,mosop18,NULL,"clc"},
 
-	{0,2,mosop19,NULL,"ora abs,y :2"},
+	{0,2,mosop18,NULL,"clc"},
+	{0,4,mosop19,NULL,"ora abs,y :2"},
 	{0,2,mosop1A,NULL,"unknown"},
 	{0,2,mosop1B,NULL,"unknown"},
 	{0,2,mosop1C,NULL,"unknown"},
-	{0,2,mosop1D,NULL,"ora abs,x :2"},
-	{0,2,mosop1E,NULL,"asl abs,x :2"},
+	{0,4,mosop1D,NULL,"ora abs,x :2"},
+	{0,7,mosop1E,NULL,"asl abs,x :2"},
 	{0,2,mosop1F,NULL,"unknown"},
 
-	{0,2,mosop20,NULL,"jsr :2"},
-	{0,2,mosop21,NULL,"and ind,x :1"},
+	{0,6,mosop20,NULL,"jsr :2"},
+	{0,6,mosop21,NULL,"and ind,x :1"},
 	{0,2,mosop22,NULL,"unknown"},
 	{0,2,mosop23,NULL,"unknown"},
-	{0,2,mosop24,NULL,"bit zp :1"},
-	{0,2,mosop25,NULL,"and zp :1"},
-	{0,2,mosop26,NULL,"rol zp :1"},
+	{0,3,mosop24,NULL,"bit zp :1"},
+	{0,3,mosop25,NULL,"and zp :1"},
+	{0,5,mosop26,NULL,"rol zp :1"},
 	{0,2,mosop27,NULL,"unknown"},
 
-	{0,2,mosop28,NULL,"plp"},
+	{0,4,mosop28,NULL,"plp"},
 	{0,2,mosop29,NULL,"and :1"},
 	{0,2,mosop2A,NULL,"rol a"},
 	{0,2,mosop2B,NULL,"unknown"},
-	{0,2,mosop2C,NULL,"bit abs :2"},
-	{0,2,mosop2D,NULL,"and abs :2"},
-	{0,2,mosop2E,NULL,"rol abs :2"},
+	{0,4,mosop2C,NULL,"bit abs :2"},
+	{0,4,mosop2D,NULL,"and abs :2"},
+	{0,6,mosop2E,NULL,"rol abs :2"},
 	{0,2,mosop2F,NULL,"unknown"},
 
 	{0,2,mosop30,NULL,"bmi :3"},
-	{0,2,mosop31,NULL,"and ind,y :1"},
+	{0,5,mosop31,NULL,"and ind,y :1"},
 	{0,2,mosop32,NULL,"unknown"},
 	{0,2,mosop33,NULL,"unknown"},
 	{0,2,mosop34,NULL,"unknown"},
-	{0,2,mosop35,NULL,"and zp,x :1"},
-	{0,2,mosop36,NULL,"rol zp,x :1"},
+	{0,4,mosop35,NULL,"and zp,x :1"},
+	{0,6,mosop36,NULL,"rol zp,x :1"},
 	{0,2,mosop37,NULL,"unknown"},
 
 	{0,2,mosop38,NULL,"sec"},
-	{0,2,mosop39,NULL,"and abs,y :2"},
+	{0,4,mosop39,NULL,"and abs,y :2"},
 	{0,2,mosop3A,NULL,"unknown"},
 	{0,2,mosop3B,NULL,"unknown"},
 	{0,2,mosop3C,NULL,"unknown"},
-	{0,2,mosop3D,NULL,"and abs,x :2"},
-	{0,2,mosop3E,NULL,"rol abs,x :2"},
+	{0,4,mosop3D,NULL,"and abs,x :2"},
+	{0,7,mosop3E,NULL,"rol abs,x :2"},
 	{0,2,mosop3F,NULL,"unknown"},
 
-	{0,2,mosop40,NULL,"rti"},
-	{0,2,mosop41,NULL,"eor ind,x :1"},
+	{0,6,mosop40,NULL,"rti"},
+	{0,6,mosop41,NULL,"eor ind,x :1"},
 	{0,2,mosop42,NULL,"unknown"},
 	{0,2,mosop43,NULL,"unknown"},
 	{0,2,mosop44,NULL,"unknown"},
-	{0,2,mosop45,NULL,"eor zp :1"},
-	{0,2,mosop46,NULL,"lsr zp :1"},
+	{0,3,mosop45,NULL,"eor zp :1"},
+	{0,5,mosop46,NULL,"lsr zp :1"},
 	{0,2,mosop47,NULL,"unknown"},
 
-	{0,2,mosop48,NULL,"pha"},
+	{0,3,mosop48,NULL,"pha"},
 	{0,2,mosop49,NULL,"eor :1"},
 	{0,2,mosop4A,NULL,"lsr a"},
 	{0,2,mosop4B,NULL,"unknown"},
-	{0,2,mosop4C,NULL,"jmp :2"},
-	{0,2,mosop4D,NULL,"eor abs :2"},
-	{0,2,mosop4E,NULL,"lsr abs :2"},
+	{0,3,mosop4C,NULL,"jmp :2"},
+	{0,4,mosop4D,NULL,"eor abs :2"},
+	{0,6,mosop4E,NULL,"lsr abs :2"},
 	{0,2,mosop4F,NULL,"unknown"},
 
 	{0,2,mosop50,NULL,"bvc :3"},
-	{0,2,mosop51,NULL,"eor ind,y :1"},
+	{0,5,mosop51,NULL,"eor ind,y :1"},
 	{0,2,mosop52,NULL,"unknown"},
 	{0,2,mosop53,NULL,"unknown"},
 	{0,2,mosop54,NULL,"unknown"},
-	{0,2,mosop55,NULL,"eor zp,x :1"},
-	{0,2,mosop56,NULL,"lsr zp,x :1"},
+	{0,4,mosop55,NULL,"eor zp,x :1"},
+	{0,6,mosop56,NULL,"lsr zp,x :1"},
 	{0,2,mosop57,NULL,"unknown"},
 
 	{0,2,mosop58,NULL,"cli"},
-	{0,2,mosop59,NULL,"eor abs,y :2"},
+	{0,4,mosop59,NULL,"eor abs,y :2"},
 	{0,2,mosop5A,NULL,"unknown"},
 	{0,2,mosop5B,NULL,"unknown"},
 	{0,2,mosop5C,NULL,"unknown"},
-	{0,2,mosop5D,NULL,"eor abs,x :2"},
-	{0,2,mosop5E,NULL,"lsr abs,x :2"},
+	{0,4,mosop5D,NULL,"eor abs,x :2"},
+	{0,7,mosop5E,NULL,"lsr abs,x :2"},
 	{0,2,mosop5F,NULL,"unknown"},
 
-	{0,2,mosop60,NULL,"rts"},
-	{0,2,mosop61,NULL,"adc ind,x :1"},
+	{0,6,mosop60,NULL,"rts"},
+	{0,6,mosop61,NULL,"adc ind,x :1"},
 	{0,2,mosop62,NULL,"unknown"},
 	{0,2,mosop63,NULL,"unknown"},
 	{0,2,mosop64,NULL,"unknown"},
-	{0,2,mosop65,NULL,"adc zp :1"},
-	{0,2,mosop66,NULL,"ror zp :1"},
+	{0,3,mosop65,NULL,"adc zp :1"},
+	{0,5,mosop66,NULL,"ror zp :1"},
 	{0,2,mosop67,NULL,"unknown"},
 
-	{0,2,mosop68,NULL,"pla"},
+	{0,4,mosop68,NULL,"pla"},
 	{0,2,mosop69,NULL,"adc :1"},
 	{0,2,mosop6A,NULL,"ror a"},
 	{0,2,mosop6B,NULL,"unknown"},
-	{0,2,mosop6C,NULL,"jmp (:2)"},
-	{0,2,mosop6D,NULL,"adc abs :2"},
-	{0,2,mosop6E,NULL,"ror abs :2"},
+	{0,5,mosop6C,NULL,"jmp (:2)"},
+	{0,4,mosop6D,NULL,"adc abs :2"},
+	{0,6,mosop6E,NULL,"ror abs :2"},
 	{0,2,mosop6F,NULL,"unknown"},
 
 	{0,2,mosop70,NULL,"bvs :3"},
-	{0,2,mosop71,NULL,"adc ind,y :1"},
+	{0,5,mosop71,NULL,"adc ind,y :1"},
 	{0,2,mosop72,NULL,"unknown"},
 	{0,2,mosop73,NULL,"unknown"},
 	{0,2,mosop74,NULL,"unknown"},
-	{0,2,mosop75,NULL,"adc zp,x :1"},
-	{0,2,mosop76,NULL,"ror zp,x :1"},
+	{0,4,mosop75,NULL,"adc zp,x :1"},
+	{0,6,mosop76,NULL,"ror zp,x :1"},
 	{0,2,mosop77,NULL,"unknown"},
 
 	{0,2,mosop78,NULL,"sei"},
-	{0,2,mosop79,NULL,"adc abs,y :2"},
+	{0,4,mosop79,NULL,"adc abs,y :2"},
 	{0,2,mosop7A,NULL,"unknown"},
 	{0,2,mosop7B,NULL,"unknown"},
 	{0,2,mosop7C,NULL,"unknown"},
-	{0,2,mosop7D,NULL,"adc abs,x :2"},
-	{0,2,mosop7E,NULL,"ror abs,x :2"},
+	{0,4,mosop7D,NULL,"adc abs,x :2"},
+	{0,7,mosop7E,NULL,"ror abs,x :2"},
 	{0,2,mosop7F,NULL,"unknown"},
 
 	{0,2,mosop80,NULL,"unknown"},
-	{0,2,mosop81,NULL,"sta ind,x :1"},
+	{0,6,mosop81,NULL,"sta ind,x :1"},
 	{0,2,mosop82,NULL,"unknown"},
-	{0,2,mosop83,NULL,"unknown"},
-	{0,2,mosop84,NULL,"sty zp :1"},
-	{0,2,mosop85,NULL,"sta zp :1"},
-	{0,2,mosop86,NULL,"stx zp :1"},
-	{0,2,mosop87,NULL,"unknown"},
+	{0,2,mosop83,NULL,"sax ind,x :1"},
+	{0,3,mosop84,NULL,"sty zp :1"},
+	{0,3,mosop85,NULL,"sta zp :1"},
+	{0,3,mosop86,NULL,"stx zp :1"},
+	{0,3,mosop87,NULL,"sax :1"},
 
-	{0,2,mosop88,NULL,"unknown"},
+	{0,2,mosop88,NULL,"dey"},
 	{0,2,mosop89,NULL,"unknown"},
 	{0,2,mosop8A,NULL,"txa"},
 	{0,2,mosop8B,NULL,"unknown"},
-	{0,2,mosop8C,NULL,"sty abs :2"},
-	{0,2,mosop8D,NULL,"sta abs :2"},
-	{0,2,mosop8E,NULL,"stx abs :2"},
-	{0,2,mosop8F,NULL,"unknown"},
+	{0,4,mosop8C,NULL,"sty abs :2"},
+	{0,4,mosop8D,NULL,"sta abs :2"},
+	{0,4,mosop8E,NULL,"stx abs :2"},
+	{0,4,mosop8F,NULL,"sax abs :2"},
 
 	{0,2,mosop90,NULL,"bcc :3"},
-	{0,2,mosop91,NULL,"sta ind,y :1"},
+	{0,6,mosop91,NULL,"sta ind,y :1"},
 	{0,2,mosop92,NULL,"unknown"},
 	{0,2,mosop93,NULL,"unknown"},
-	{0,2,mosop94,NULL,"sty zp,x :1"},
-	{0,2,mosop95,NULL,"sta zp,x :1"},
-	{0,2,mosop96,NULL,"stx zp,y :1"},
-	{0,2,mosop97,NULL,"unknown"},
+	{0,4,mosop94,NULL,"sty zp,x :1"},
+	{0,4,mosop95,NULL,"sta zp,x :1"},
+	{0,4,mosop96,NULL,"stx zp,y :1"},
+	{0,4,mosop97,NULL,"sax zp,y :1"},
 
 	{0,2,mosop98,NULL,"tya"},
-	{0,2,mosop99,NULL,"sta abs,y :2"},
+	{0,5,mosop99,NULL,"sta abs,y :2"},
 	{0,2,mosop9A,NULL,"txs"},
 	{0,2,mosop9B,NULL,"unknown"},
 	{0,2,mosop9C,NULL,"unknown"},
-	{0,2,mosop9D,NULL,"sta abs,x :2"},
+	{0,5,mosop9D,NULL,"sta abs,x :2"},
 	{0,2,mosop9E,NULL,"unknown"},
 	{0,2,mosop9F,NULL,"unknown"},
 
 	{0,2,mosopA0,NULL,"ldy :1"},
-	{0,2,mosopA1,NULL,"lda ind,x :1"},
+	{0,6,mosopA1,NULL,"lda ind,x :1"},
 	{0,2,mosopA2,NULL,"ldx :1"},
-	{0,2,mosopA3,NULL,"unknown"},
-	{0,2,mosopA4,NULL,"ldy zp :1"},
-	{0,2,mosopA5,NULL,"lda zp :1"},
-	{0,2,mosopA6,NULL,"ldx zp :1"},
-	{0,2,mosopA7,NULL,"unknown"},
+	{0,6,mosopA3,NULL,"lax ind,x :1"},
+	{0,3,mosopA4,NULL,"ldy zp :1"},
+	{0,3,mosopA5,NULL,"lda zp :1"},
+	{0,3,mosopA6,NULL,"ldx zp :1"},
+	{0,3,mosopA7,NULL,"lax zp :1"},
 
 	{0,2,mosopA8,NULL,"tay"},
 	{0,2,mosopA9,NULL,"lda :1"},
 	{0,2,mosopAA,NULL,"tax"},
 	{0,2,mosopAB,NULL,"unknown"},
-	{0,2,mosopAC,NULL,"ldy abs :2"},
-	{0,2,mosopAD,NULL,"lda abs :2"},
-	{0,2,mosopAE,NULL,"ldx abs :2"},
-	{0,2,mosopAF,NULL,"unknown"},
+	{0,4,mosopAC,NULL,"ldy abs :2"},
+	{0,4,mosopAD,NULL,"lda abs :2"},
+	{0,4,mosopAE,NULL,"ldx abs :2"},
+	{0,4,mosopAF,NULL,"lax abs :2"},
 
 	{0,2,mosopB0,NULL,"bcs :3"},
-	{0,2,mosopB1,NULL,"lda ind,y :1"},
+	{0,5,mosopB1,NULL,"lda ind,y :1"},
 	{0,2,mosopB2,NULL,"unknown"},
-	{0,2,mosopB3,NULL,"unknown"},
-	{0,2,mosopB4,NULL,"ldy zp,x :1"},
-	{0,2,mosopB5,NULL,"lda zp,x :1"},
-	{0,2,mosopB6,NULL,"ldx zp,y :1"},
-	{0,2,mosopB7,NULL,"unknown"},
+	{0,5,mosopB3,NULL,"lax ind,y :1"},
+	{0,4,mosopB4,NULL,"ldy zp,x :1"},
+	{0,4,mosopB5,NULL,"lda zp,x :1"},
+	{0,4,mosopB6,NULL,"ldx zp,y :1"},
+	{0,4,mosopB7,NULL,"lax zp,y :1"},
 
 	{0,2,mosopB8,NULL,"clv"},
-	{0,2,mosopB9,NULL,"lda abs,y :2"},
+	{0,4,mosopB9,NULL,"lda abs,y :2"},
 	{0,2,mosopBA,NULL,"tsx"},
 	{0,2,mosopBB,NULL,"unknown"},
-	{0,2,mosopBC,NULL,"ldy abs,x :2"},
-	{0,2,mosopBD,NULL,"lda abs,x :2"},
-	{0,2,mosopBE,NULL,"ldx abs,y :2"},
+	{0,4,mosopBC,NULL,"ldy abs,x :2"},
+	{0,4,mosopBD,NULL,"lda abs,x :2"},
+	{0,4,mosopBE,NULL,"ldx abs,y :2"},
 	{0,2,mosopBF,NULL,"unknown"},
 
 	{0,2,mosopC0,NULL,"cpy :1"},
-	{0,2,mosopC1,NULL,"cmp ind,x :1"},
+	{0,6,mosopC1,NULL,"cmp ind,x :1"},
 	{0,2,mosopC2,NULL,"unknown"},
 	{0,2,mosopC3,NULL,"unknown"},
-	{0,2,mosopC4,NULL,"cpy zp :1"},
-	{0,2,mosopC5,NULL,"cmp zp :1"},
-	{0,2,mosopC6,NULL,"dec zp n"},
+	{0,3,mosopC4,NULL,"cpy zp :1"},
+	{0,3,mosopC5,NULL,"cmp zp :1"},
+	{0,5,mosopC6,NULL,"dec zp n"},
 	{0,2,mosopC7,NULL,"unknown"},
 
 	{0,2,mosopC8,NULL,"iny"},
 	{0,2,mosopC9,NULL,"cmp :1"},
 	{0,2,mosopCA,NULL,"dex"},
 	{0,2,mosopCB,NULL,"unknown"},
-	{0,2,mosopCC,NULL,"cpy abs :2"},
-	{0,2,mosopCD,NULL,"cmp abs :2"},
-	{0,2,mosopCE,NULL,"dec abs :2"},
+	{0,4,mosopCC,NULL,"cpy abs :2"},
+	{0,4,mosopCD,NULL,"cmp abs :2"},
+	{0,6,mosopCE,NULL,"dec abs :2"},
 	{0,2,mosopCF,NULL,"unknown"},
 
 	{0,2,mosopD0,NULL,"bne :3"},
-	{0,2,mosopD1,NULL,"cmp ind,y :1"},
+	{0,5,mosopD1,NULL,"cmp ind,y :1"},
 	{0,2,mosopD2,NULL,"unknown"},
 	{0,2,mosopD3,NULL,"unknown"},
 	{0,2,mosopD4,NULL,"unknown"},
-	{0,2,mosopD5,NULL,"cmp zp,x :1"},
-	{0,2,mosopD6,NULL,"dec zp,x :1"},
+	{0,4,mosopD5,NULL,"cmp zp,x :1"},
+	{0,6,mosopD6,NULL,"dec zp,x :1"},
 	{0,2,mosopD7,NULL,"unknown"},
 
 	{0,2,mosopD8,NULL,"cld"},
-	{0,2,mosopD9,NULL,"cmp abs,y :2"},
+	{0,4,mosopD9,NULL,"cmp abs,y :2"},
 	{0,2,mosopDA,NULL,"unknown"},
 	{0,2,mosopDB,NULL,"unknown"},
 	{0,2,mosopDC,NULL,"unknown"},
-	{0,2,mosopDD,NULL,"cmp abs,x :2"},
-	{0,2,mosopDE,NULL,"dec abs,x :2"},
+	{0,4,mosopDD,NULL,"cmp abs,x :2"},
+	{0,7,mosopDE,NULL,"dec abs,x :2"},
 	{0,2,mosopDF,NULL,"unknown"},
 
 	{0,2,mosopE0,NULL,"cpx :1"},
-	{0,2,mosopE1,NULL,"sbc ind,x :1"},
+	{0,6,mosopE1,NULL,"sbc ind,x :1"},
 	{0,2,mosopE2,NULL,"unknown"},
 	{0,2,mosopE3,NULL,"unknown"},
-	{0,2,mosopE4,NULL,"cpx zp :1"},
-	{0,2,mosopE5,NULL,"sbc zp :1"},
-	{0,2,mosopE6,NULL,"inc zp :1"},
+	{0,3,mosopE4,NULL,"cpx zp :1"},
+	{0,3,mosopE5,NULL,"sbc zp :1"},
+	{0,5,mosopE6,NULL,"inc zp :1"},
 	{0,2,mosopE7,NULL,"unknown"},
 
 	{0,2,mosopE8,NULL,"inx"},
-	{0,2,mosopE9,NULL,"sbc n"},
+	{0,2,mosopE9,NULL,"sbc :1"},
 	{0,2,mosopEA,NULL,"nop"},
 	{0,2,mosopEB,NULL,"unknown"},
-	{0,2,mosopEC,NULL,"cpx abs :2"},
-	{0,2,mosopED,NULL,"sbc abs :2"},
-	{0,2,mosopEE,NULL,"inc abs :2"},
+	{0,4,mosopEC,NULL,"cpx abs :2"},
+	{0,4,mosopED,NULL,"sbc abs :2"},
+	{0,6,mosopEE,NULL,"inc abs :2"},
 	{0,2,mosopEF,NULL,"unknown"},
 
 	{0,2,mosopF0,NULL,"beq :3"},
-	{0,2,mosopF1,NULL,"sbc ind,y :1"},
+	{0,5,mosopF1,NULL,"sbc ind,y :1"},
 	{0,2,mosopF2,NULL,"unknown"},
 	{0,2,mosopF3,NULL,"unknown"},
 	{0,2,mosopF4,NULL,"unknown"},
-	{0,2,mosopF5,NULL,"sbc zp,x :1"},
-	{0,2,mosopF6,NULL,"inc zp,x :1"},
+	{0,4,mosopF5,NULL,"sbc zp,x :1"},
+	{0,6,mosopF6,NULL,"inc zp,x :1"},
 	{0,2,mosopF7,NULL,"unknown"},
 
 	{0,2,mosopF8,NULL,"sed"},
-	{0,2,mosopF9,NULL,"sbc abs,y :2"},
+	{0,4,mosopF9,NULL,"sbc abs,y :2"},
 	{0,2,mosopFA,NULL,"unknown"},
 	{0,2,mosopFB,NULL,"unknown"},
 	{0,2,mosopFC,NULL,"unknown"},
-	{0,2,mosopFD,NULL,"sbc abs,x :2"},
-	{0,2,mosopFE,NULL,"inc abs,x :2"},
+	{0,4,mosopFD,NULL,"sbc abs,x :2"},
+	{0,7,mosopFE,NULL,"inc abs,x :2"},
 	{0,2,mosopFF,NULL,"unknown"}
 };

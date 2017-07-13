@@ -85,14 +85,14 @@ class MainWin : public QWidget {
 		QMenu* bookmarkMenu;
 		QMenu* profileMenu;
 		QMenu* layoutMenu;
-		QMenu* vmodeMenu;
+//		QMenu* vmodeMenu;
 		QMenu* resMenu;
 		QMenu* fileMenu;
 #ifdef ISDEBUG
 		QMenu* dbgMenu;
 #endif
 		QAction* pckAct;
-		QAction* nsAct;
+//		QAction* nsAct;
 
 		void initUserMenu();
 		void fillUserMenu();
@@ -119,12 +119,13 @@ class MainWin : public QWidget {
 		void profileSelected(QAction*);
 		void reset(QAction*);
 		void chLayout(QAction*);
-		void chVMode(QAction*);
+		// void chVMode(QAction*);
 		void umOpen(QAction*);
 
 		void saveVRAM();
 		void saveGBVRAM();
-		void saveGSRAM();
+		//void saveGSRAM();
+		void saveNESPPU();
 		void debugAction();
 	protected:
 		void closeEvent(QCloseEvent*);

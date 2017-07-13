@@ -114,7 +114,7 @@ struct Video {
 	void(*lineCall)(struct Video*);		// call every line
 	void(*framCall)(struct Video*);		// call every frame
 	xColor pal[256];
-	Memory* mem;
+	Memory* mem;				// TODO: replace with external mrd(adr, void*) callback: zx modes only?
 	ulaPlus* ula;
 	VDP9938 v9938;
 	GBCVid* gbc;
