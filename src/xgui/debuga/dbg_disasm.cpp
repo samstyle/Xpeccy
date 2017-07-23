@@ -15,16 +15,8 @@ QString findLabel(int, int, int);
 
 // MODEL
 
-xDisasmModel::xDisasmModel(Computer** pt, QObject* p):QAbstractItemModel(p) {
-	cptr = pt;
-}
-
-QModelIndex xDisasmModel::index(int row, int col, const QModelIndex& idx) const {
-	return createIndex(row, col);
-}
-
-QModelIndex xDisasmModel::parent(const QModelIndex& idx) const {
-	return QModelIndex();
+xDisasmModel::xDisasmModel(QObject* p):QAbstractTableModel(p) {
+	cptr = NULL;
 }
 
 int xDisasmModel::columnCount(const QModelIndex& idx) const {
@@ -32,11 +24,12 @@ int xDisasmModel::columnCount(const QModelIndex& idx) const {
 }
 
 int xDisasmModel::rowCount(const QModelIndex& idx) const {
-	return 19;
+	return 17;
 }
 
 QVariant xDisasmModel::data(const QModelIndex& idx, int role) const {
 	QVariant res;
+	if (!cptr) return res;
 	if (!idx.isValid()) return res;
 	int row = idx.row();
 	int col = idx.column();
@@ -424,14 +417,31 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 // TABLE
 
 xDisasmTable::xDisasmTable(QWidget* p):QTableView(p) {
+	cptr = NULL;
+	model = new xDisasmModel();
+	setModel(model);
 }
 
 QVariant xDisasmTable::getData(int row, int col, int role) {
-	return model()->data(model()->index(row, col), role);
+	return model->data(model->index(row, col), role);
+}
+
+int xDisasmTable::rows() {
+	return model->rowCount();
+}
+
+void xDisasmTable::setComp(Computer** comp) {
+	cptr = comp;
+	model->cptr = comp;
+}
+
+int xDisasmTable::updContent() {
+	return model->update();
 }
 
 void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 	QModelIndex idx = currentIndex();
+	int bpt = MEM_BRK_FETCH;
 	switch (ev->key()) {
 		case Qt::Key_Up:
 			if ((ev->modifiers() & Qt::ControlModifier) || (idx.row() == 0)) {
@@ -439,26 +449,38 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			} else {
 				QTableView::keyPressEvent(ev);
 			}
+			ev->ignore();
 			break;
 		case Qt::Key_Down:
-			if ((ev->modifiers() & Qt::ControlModifier) || (idx.row() == model()->rowCount() - 1)) {
+			if ((ev->modifiers() & Qt::ControlModifier) || (idx.row() == model->rowCount() - 1)) {
 				scrolDn(ev->modifiers());
 			} else {
 				QTableView::keyPressEvent(ev);
 			}
+			ev->ignore();
 			break;
 		case Qt::Key_Home:
+			if (!cptr) break;
 			disasmAdr = (*cptr)->cpu->pc;
 			emit rqRefill();
 			ev->ignore();
 			break;
 		case Qt::Key_End:
+			if (!cptr) break;
 			(*cptr)->cpu->pc = getData(idx.row(), 0, Qt::UserRole).toInt();
 			emit rqRefillAll();
 			ev->ignore();
 			break;
 		case Qt::Key_F2:
-			ev->accept();
+			if (ev->modifiers() & Qt::AltModifier)
+				bpt = MEM_BRK_RD;
+			else if (ev->modifiers() & Qt::ControlModifier)
+				bpt = MEM_BRK_WR;
+			else
+				bpt = MEM_BRK_FETCH;
+			brkXor(BRK_MEMCELL, bpt, getData(idx.row(), 0, Qt::UserRole).toInt(), -1);
+			emit rqRefill();
+			ev->ignore();
 			break;
 		default:
 			QTableView::keyPressEvent(ev);
@@ -468,7 +490,7 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 
 void xDisasmTable::mousePressEvent(QMouseEvent* ev) {
 	int row = rowAt(ev->pos().y());
-	if ((row < 0) || (row >= model()->rowCount())) return;
+	if ((row < 0) || (row >= model->rowCount())) return;
 	int adr = getData(row, 0, Qt::UserRole).toInt();
 	switch (ev->button()) {
 		case Qt::MiddleButton:
@@ -507,8 +529,8 @@ void xDisasmTable::mouseReleaseEvent(QMouseEvent* ev) {
 
 void xDisasmTable::mouseMoveEvent(QMouseEvent* ev) {
 	int row = rowAt(ev->pos().y());
-	if ((row < 0) || (row >= model()->rowCount())) return;
-	int adr = model()->data(model()->index(row, 0), Qt::UserRole).toInt();	// item(row,0)->data(Qt::UserRole).toInt();
+	if ((row < 0) || (row >= model->rowCount())) return;
+	int adr = model->data(model->index(row, 0), Qt::UserRole).toInt();	// item(row,0)->data(Qt::UserRole).toInt();
 	if ((ev->modifiers() == Qt::NoModifier) && (ev->buttons() & Qt::LeftButton) && (adr != blockStart) && (adr != blockEnd) && (markAdr >= 0)) {
 		if (adr < blockStart) {
 			blockStart = adr;

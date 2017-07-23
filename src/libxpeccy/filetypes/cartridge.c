@@ -39,6 +39,8 @@ int loadSlot(xCartridge* slot, const char* name) {
 		int tsiz = 1;
 		while (tsiz < siz) {tsiz <<= 1;}		// get nearest 2^n >= siz
 		slot->data = realloc(slot->data, tsiz);
+		slot->brkMap = realloc(slot->brkMap, tsiz);
+		memset(slot->brkMap, 0x00, tsiz);
 		slot->memMask = tsiz - 1;
 		strcpy(slot->name, name);
 		fread(slot->data, tsiz, 1, file);

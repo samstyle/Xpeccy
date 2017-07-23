@@ -47,7 +47,7 @@ void DebugWin::start(Computer* c) {
 	chLayout();
 	disasmAdr = comp->cpu->pc;
 	fillAll();
-	fillBrkTable();
+//	fillBrkTable();
 	updateScreen();
 	if (!comp->vid->tail)
 		vidDarkTail(comp->vid);
@@ -64,7 +64,7 @@ void DebugWin::start(Computer* c) {
 
 	//int wd = 17;
 	//ui.dasmTable->setRowCount(ui.dasmTable->height() / wd);
-	int wd = ui.dasmTable->height() / ui.dasmTable->model()->rowCount();
+	int wd = ui.dasmTable->height() / ui.dasmTable->rows();
 	ui.dasmTable->verticalHeader()->setDefaultSectionSize(wd);
 
 	//ui.dumpTable->setRowCount(ui.dumpTable->height() / wd);
@@ -149,27 +149,8 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.dumpTable->setModel(dumpodel);
 	ui.dumpTable->cptr = &comp;
 
-	dasmodel = new xDisasmModel(&comp);
-	ui.dasmTable->setModel(dasmodel);
-	ui.dasmTable->cptr = &comp;
-/*
-	dbgRegTab[0] = {ui.labReg00, ui.editPC};
-	dbgRegTab[1] = {ui.labReg01, ui.editSP};
-	dbgRegTab[2] = {ui.labReg02, ui.editAF};
-	dbgRegTab[3] = {ui.labReg03, ui.editBC};
-	dbgRegTab[4] = {ui.labReg04, ui.editDE};
-	dbgRegTab[5] = {ui.labReg05, ui.editHL};
-	dbgRegTab[6] = {ui.labReg06, ui.editAFa};
-	dbgRegTab[7] = {ui.labReg07, ui.editBCa};
-	dbgRegTab[8] = {ui.labReg08, ui.editDEa};
-	dbgRegTab[9] = {ui.labReg09, ui.editHLa};
-	dbgRegTab[10] = {ui.labReg10, ui.editIX};
-	dbgRegTab[11] = {ui.labReg11, ui.editIY};
-	dbgRegTab[12] = {ui.labReg12, ui.editIR};
-	dbgRegTab[13] = {ui.labReg13, ui.leReg13};
-	dbgRegTab[14] = {ui.labReg14, ui.leReg14};
-	dbgRegTab[15] = {NULL, NULL};
-*/
+	ui.dasmTable->setComp(&comp);
+
 	setFont(QFont("://DejaVuSansMono.ttf",10));
 
 	conf.dbg.labels = 1;
@@ -177,7 +158,6 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.actShowLabels->setChecked(conf.dbg.labels);
 	ui.actShowSeg->setChecked(conf.dbg.segment);
 // actions data
-
 	ui.actFetch->setData(MEM_BRK_FETCH);
 	ui.actRead->setData(MEM_BRK_RD);
 	ui.actWrite->setData(MEM_BRK_WR);
@@ -193,25 +173,11 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.actTraceINT->setData(DBG_TRACE_INT);
 
 // disasm table
-/*
-	for (row = 0; row < ui.dasmTable->rowCount(); row++) {
-		for (col = 0; col < ui.dasmTable->columnCount(); col++) {
-			itm = new QTableWidgetItem;
-			if (col == 3) {
-				itm->setTextAlignment(Qt::AlignRight);
-			}
-			ui.dasmTable->setItem(row, col, itm);
-		}
-	}
-*/
 	ui.dasmTable->setColumnWidth(0,100);
 	ui.dasmTable->setColumnWidth(1,85);
 	ui.dasmTable->setColumnWidth(2,130);
 	ui.dasmTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_LABEL));
 	ui.dasmTable->setItemDelegateForColumn(1, new xItemDelegate(XTYPE_DUMP));
-//	row = ui.dasmTable->font().pixelSize();
-//	if (row < 0) row = 17;
-//	ui.dasmTable->setFixedHeight(ui.dasmTable->rowCount() * row + 8);
 // actions
 	ui.tbBreak->addAction(ui.actFetch);
 	ui.tbBreak->addAction(ui.actRead);
@@ -244,15 +210,19 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.tbDbgOpt->addAction(ui.actShowSeg);
 
 // connections
-	connect(ui.dasmTable,SIGNAL(rqRefillAll()),this,SLOT(fillAll()));
-	connect(ui.dasmTable,SIGNAL(rqRefill()),this,SLOT(fillDisasm()));
-	connect(ui.dasmTable,SIGNAL(rqRefill()),this,SLOT(fillDump()));
 	connect(ui.dasmTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
 	connect(ui.dasmTable,SIGNAL(rqRefill()),this,SLOT(fillDisasm()));
 	connect(ui.dasmTable,SIGNAL(rqRefill()),this,SLOT(fillDump()));
+	connect(ui.dasmTable,SIGNAL(rqRefill()),ui.bpList,SLOT(update()));
+	connect(ui.dasmTable,SIGNAL(rqRefillAll()),this,SLOT(fillAll()));
 
 	connect(ui.dumpTable,SIGNAL(rqRefill()),this,SLOT(fillDump()));
 	connect(ui.dumpTable,SIGNAL(rqRefill()),this,SLOT(fillDisasm()));
+	connect(ui.dumpTable,SIGNAL(rqRefill()),ui.bpList,SLOT(update()));
+
+	connect(ui.bpList,SIGNAL(rqDisasm()),this,SLOT(fillDisasm()));
+	connect(ui.bpList,SIGNAL(rqDasmDump()),this,SLOT(fillDisasm()));
+	connect(ui.bpList,SIGNAL(rqDasmDump()),this,SLOT(fillDump()));
 
 	connect(ui.actSearch,SIGNAL(triggered(bool)),this,SLOT(doFind()));
 	connect(ui.actFill,SIGNAL(triggered(bool)),this,SLOT(doFill()));
@@ -287,15 +257,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.actDumpReg->setData(DMP_REG);
 	ui.tbDumpView->addAction(ui.actDumpMem);
 	ui.tbDumpView->addAction(ui.actDumpReg);
-	dumpMode = DMP_MEM;
-/*
-	for (row = 0; row < ui.dumpTable->rowCount(); row++) {
-		for (col = 0; col < ui.dumpTable->columnCount(); col++) {
-			ui.dumpTable->setItem(row, col, new QTableWidgetItem);
-		}
-		ui.dumpTable->item(row, 9)->setTextAlignment(Qt::AlignRight);
-	}
-*/
+
 	ui.dumpTable->setColumnWidth(0,60);
 	ui.dumpTable->setItemDelegate(new xItemDelegate(XTYPE_BYTE));
 	ui.dumpTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_ADR));
@@ -305,7 +267,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.dumpTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
 
 	connect(ui.tbCodepage, SIGNAL(triggered(QAction*)), this, SLOT(setDumpCP(QAction*)));
-	connect(ui.tbDumpView, SIGNAL(triggered(QAction*)), this, SLOT(setDumpView(QAction*)));
+	// connect(ui.tbDumpView, SIGNAL(triggered(QAction*)), this, SLOT(setDumpView(QAction*)));
 
 // registers
 	connect(ui.editReg00, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
@@ -337,14 +299,14 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.cbScrPix,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
 	connect(ui.cbScrGrid,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
 
-	ui.tbAddBrk->setEnabled(false);
-	ui.tbDelBrk->setEnabled(false);
-	connect(ui.bpList,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(goToBrk(QModelIndex)));
+	connect(ui.tbAddBrk, SIGNAL(clicked()), this, SLOT(addBrk()));
+	connect(ui.tbEditBrk, SIGNAL(clicked()), this, SLOT(editBrk()));
+	connect(ui.tbDelBrk, SIGNAL(clicked()), this, SLOT(delBrk()));
+	connect(ui.bpList, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(goToBrk(QModelIndex)));
 // gb tab
 	connect(ui.gbModeGroup, SIGNAL(buttonClicked(int)), this, SLOT(fillGBoy()));
 	connect(ui.sbTileset, SIGNAL(valueChanged(int)), this, SLOT(fillGBoy()));
 	connect(ui.sbTilemap, SIGNAL(valueChanged(int)), this, SLOT(fillGBoy()));
-
 
 	// setFixedSize(size());
 	setFixedHeight(size().height());
@@ -386,6 +348,9 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 	memFiller = new xMemFiller(this);
 	connect(memFiller, SIGNAL(rqRefill()),this,SLOT(fillAll()));
+
+	brkManager = new xBrkManager(this);
+	connect(brkManager, SIGNAL(completed(xBrkPoint, xBrkPoint)), this, SLOT(confirmBrk(xBrkPoint, xBrkPoint)));
 
 // context menu
 	cellMenu = new QMenu(this);
@@ -458,6 +423,7 @@ void DebugWin::setDumpCP(QAction* act) {
 	fillDump();
 }
 
+/*
 void DebugWin::setDumpView(QAction* act) {
 	dumpMode = act->data().toInt();
 	switch(dumpMode) {
@@ -467,6 +433,7 @@ void DebugWin::setDumpView(QAction* act) {
 	}
 	fillDump();
 }
+*/
 
 void DebugWin::doStep() {
 	tCount = comp->tickCount;
@@ -499,6 +466,7 @@ void DebugWin::doTrace(QAction* act) {
 	doStep();
 }
 
+/*
 void DebugWin::switchBP(unsigned char mask) {
 	if (!ui.dasmTable->hasFocus()) return;
 	int adr = getAdr();
@@ -510,8 +478,9 @@ void DebugWin::switchBP(unsigned char mask) {
 	}
 	fillDisasm();
 	fillDump();
-	fillBrkTable();
+//	fillBrkTable();
 }
+*/
 
 void DebugWin::keyPressEvent(QKeyEvent* ev) {
 	if (trace) {
@@ -545,7 +514,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					ui.actShowLabels->setChecked(!conf.dbg.labels);
 					break;
 				case Qt::Key_Space:
-					switchBP(0);
+					//switchBP(0);
 					break;
 				case Qt::Key_Up:
 					disasmAdr--;
@@ -557,19 +526,21 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					break;
 			}
 			break;
+/*
 		case Qt::AltModifier:
 			switch (ev->key()) {
 				case Qt::Key_F:
-					switchBP(MEM_BRK_FETCH);
+					//switchBP(MEM_BRK_FETCH);
 					break;
 				case Qt::Key_R:
-					switchBP(MEM_BRK_RD);
+					//switchBP(MEM_BRK_RD);
 					break;
 				case Qt::Key_W:
-					switchBP(MEM_BRK_WR);
+					//switchBP(MEM_BRK_WR);
 					break;
 			}
 			break;
+*/
 		default:
 			switch(ev->key()) {
 				case Qt::Key_Escape:
@@ -586,7 +557,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					fillDisasm();
 					break;
 				case Qt::Key_F2:
-					switchBP(MEM_BRK_FETCH);
+					// switchBP(MEM_BRK_FETCH);
 					break;
 				case Qt::Key_F4:
 					idx = ui.dasmTable->currentIndex();
@@ -611,7 +582,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 						dumpAdr = (dumpAdr - offset) & 0xffff;
 						fillDump();
 					} else if (ui.dasmTable->hasFocus()) {
-						for (i = 0; i < ui.dasmTable->model()->rowCount() - 1; i++) {
+						for (i = 0; i < ui.dasmTable->rows() - 1; i++) {
 							disasmAdr = getPrevAdr(disasmAdr);
 						}
 						fillDisasm();
@@ -622,7 +593,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 						dumpAdr = (dumpAdr + offset) & 0xffff;
 						fillDump();
 					} else if (ui.dasmTable->hasFocus()) {
-						disasmAdr = ui.dasmTable->getData(ui.dasmTable->model()->rowCount() - 1, 0, Qt::UserRole).toInt();
+						disasmAdr = ui.dasmTable->getData(ui.dasmTable->rows() - 1, 0, Qt::UserRole).toInt();
 						fillDisasm();
 					}
 					break;
@@ -732,6 +703,7 @@ bool DebugWin::fillAll() {
 	fillFDC();
 	fillGBoy();
 	fillAY();
+	ui.brkTab->update();
 	if (ui.scrLabel->isVisible())
 		updateScreen();
 	if (comp->rzx.play) fillRZX();
@@ -1187,6 +1159,38 @@ void freadpack(QDataStream& strm, unsigned char* data, int maxsize) {
 	memcpy(data, unpk.data(), size);
 }
 
+void strmLabels(QDataStream& strm) {
+	QStringList keys = labels.keys();
+	QString key;
+	xAdr xadr;
+	foreach(key, keys) {			// labels list
+		xadr = labels[key];
+		strm << xadr.type;
+		strm << xadr.bank;
+		strm << xadr.adr;
+		strm << key;
+	}
+	strm << 0x00 << 0x00 << 0x00;		// end of labels list
+	strm << QString();
+}
+
+void strdLabels(QDataStream& strm) {
+	xAdr xadr;
+	QString key;
+	labels.clear();
+	do {
+		strm >> xadr.type;
+		strm >> xadr.bank;
+		strm >> xadr.adr;
+		strm >> key;
+		if (!key.isEmpty()) {
+			labels[key] = xadr;
+		}
+	} while (!key.isEmpty());
+}
+
+#define XDBGVER 0x00
+
 void DebugWin::saveMap() {
 	QString path = QFileDialog::getSaveFileName(this, "Save deBUGa project","","deBUGa project (*.xdbg)",NULL,QFileDialog::DontUseNativeDialog);
 	if (path.isEmpty()) return;
@@ -1195,21 +1199,23 @@ void DebugWin::saveMap() {
 	QFile file(path);
 	if (file.open(QFile::WriteOnly)) {
 		QDataStream strm(&file);
-		strm << QString("deBUGa");		// signature
-		QStringList keys = labels.keys();
-		QString key;
-		xAdr xadr;
-		foreach(key, keys) {			// labels list
-			xadr = labels[key];
-			strm << xadr.type;
-			strm << xadr.bank;
-			strm << xadr.adr;
-			strm << key;
-		}
-		strm << 0x00 << 0x00 << 0x00;			// end of labels list
-		strm << QString();
+#if 1
+		strm << QString("XDBG");		// [new] signature
+		strm << XDBGVER;			// version
+		strmLabels(strm);
+		int bit = 0b011;			// b0:ram cells, b1:rom cells, b2:slt cells
+		if (comp->slot->brkMap) bit |= 0b100;
+		strm << bit;
 		fwritepack(strm, comp->brkRamMap, 0x400000);
-		fwritepack(strm, comp->brkRomMap, 0x400000);
+		fwritepack(strm, comp->brkRomMap, 0x80000);
+		if (bit & 0b100) fwritepack(strm, comp->slot->brkMap, comp->slot->memMask + 1);
+#else
+
+		strm << QString("deBUGa");		// signature
+		strmLabels(strm);
+		fwritepack(strm, comp->brkRamMap, 0x400000);
+		fwritepack(strm, comp->brkRomMap, 0x80000);
+#endif
 		file.close();
 	}
 }
@@ -1219,29 +1225,34 @@ void DebugWin::loadMap() {
 	if (path.isEmpty()) return;
 	QFile file(path);
 	QString key;
-	// unsigned char bt;
-	xAdr xadr;
+	int bt;
 	if (file.open(QFile::ReadOnly)) {
 		QDataStream strm(&file);
 		strm >> key;
-		if (key != QString("deBUGa")) {
-			shitHappens("Wrong signature");
-		} else {
-			labels.clear();
-			do {
-				strm >> xadr.type;
-				strm >> xadr.bank;
-				strm >> xadr.adr;
-				strm >> key;
-				if (!key.isEmpty()) {
-					labels[key] = xadr;
-				}
-			} while (!key.isEmpty());
+		if (key == QString("deBUGa")) {		// old data
+			strdLabels(strm);
 			freadpack(strm, comp->brkRamMap, 0x400000);
 			freadpack(strm, comp->brkRomMap, 0x400000);
-			fillAll();
+		} else if (key == QString("XDBG")) {	// new data
+			strm >> bt;
+			if (bt > XDBGVER) {
+				shitHappens("Version mismatch");
+			} else {
+				strdLabels(strm);
+				strm >> bt;
+				memset(comp->brkRamMap, 0x00, 0x400000);
+				memset(comp->brkRomMap, 0x00, 0x80000);
+				if (comp->slot->brkMap) memset(comp->slot->brkMap, 0x00, comp->slot->memMask + 1);
+				if (bt & 1) freadpack(strm, comp->brkRamMap, 0x400000);
+				if (bt & 2) freadpack(strm, comp->brkRomMap, 0x80000);
+				if ((bt & 4) && comp->slot->brkMap) freadpack(strm, comp->slot->brkMap, comp->slot->memMask + 1);
+			}
+
+		} else {
+			shitHappens("Wrong signature");
 		}
-		file.close();
+		brkInstallAll();
+		fillAll();
 	}
 }
 
@@ -1309,7 +1320,7 @@ int getCommandSize(Computer* comp, unsigned short adr) {
 
 int DebugWin::fillDisasm() {
 	conf.dbg.hideadr = ui.actHideAddr->isChecked() ? 1 : 0;
-	return dasmodel->update();
+	return ui.dasmTable->updContent();
 }
 
 unsigned short DebugWin::getPrevAdr(unsigned short adr) {
@@ -1591,10 +1602,12 @@ void DebugWin::chaCellProperty(QAction* act) {
 	while (adr <= end) {
 		ptr = getBrkPtr(comp, adr);
 		if (data & MEM_BRK_ANY) {
-			*ptr &= 0xf0;
-			if (ui.actFetch->isChecked()) *ptr |= MEM_BRK_FETCH;
-			if (ui.actRead->isChecked()) *ptr |= MEM_BRK_RD;
-			if (ui.actWrite->isChecked()) *ptr |= MEM_BRK_WR;
+			bt = 0;
+			if (ui.actFetch->isChecked()) bt |= MEM_BRK_FETCH;
+			if (ui.actRead->isChecked()) bt |= MEM_BRK_RD;
+			if (ui.actWrite->isChecked()) bt |= MEM_BRK_WR;
+			brkSet(BRK_MEMCELL, bt, adr, -1);
+			ui.bpList->update();
 		} else {
 			*ptr &= 0x0f;
 			if ((data & 0xf0) == DBG_VIEW_TEXT) {
@@ -1612,7 +1625,7 @@ void DebugWin::chaCellProperty(QAction* act) {
 	}
 	fillDisasm();
 	fillDump();
-	fillBrkTable();
+//	fillBrkTable();
 }
 
 // memDump
@@ -1804,88 +1817,60 @@ void DebugWin::updateScreen() {
 
 // breakpoints
 
-struct bPoint {
-	unsigned rom:1;
-	int bank;
-	int adr;
-	int flags;
-};
+void DebugWin::addBrk() {
+	brkManager->edit(NULL);
+}
 
-enum {
-	roleRom = Qt::UserRole,
-	roleBank,
-	roleAdr
-};
+void DebugWin::editBrk() {
+	QModelIndexList idxl = ui.bpList->selectionModel()->selectedRows();
+	if (idxl.size() < 1) return;
+	int row = idxl.first().row();
+	xBrkPoint* brk = &conf.prof.cur->brkList[row];
+	brkManager->edit(brk);
+}
 
-void DebugWin::fillBrkTable() {
-	QList<bPoint> list;
-	bPoint bp;
-	int adr;
-	for (adr = 0; adr < 0x400000; adr++) {
-		if (comp->brkRamMap[adr] & MEM_BRK_ANY) {
-			bp.rom = 0;
-			bp.bank = (adr >> 14);
-			bp.adr = adr & 0x3fff;
-			bp.flags = comp->brkRamMap[adr] & 0xff;
-			list.append(bp);
-		}
-//		if (adr < 0x80000) {
-			if (comp->brkRomMap[adr] & MEM_BRK_ANY) {
-				bp.rom = 1;
-				bp.bank = (adr >> 14);
-				bp.adr = adr & 0x3fff;
-				bp.flags = comp->brkRomMap[adr];
-				list.append(bp);
-			}
-//		}
+void DebugWin::delBrk() {
+	QModelIndexList idxl = ui.bpList->selectionModel()->selectedRows();
+	qSort(idxl.begin(), idxl.end(), qGreater<QModelIndex>());
+	QModelIndex idx;
+	xBrkPoint brk;
+	foreach(idx, idxl) {
+		brk = conf.prof.cur->brkList[idx.row()];
+		brkDelete(brk);
 	}
-	ui.bpList->clear();
-	ui.bpList->setColumnCount(4);
-	ui.bpList->setRowCount(list.size());
-	ui.bpList->setColumnWidth(0,40);
-	ui.bpList->setColumnWidth(1,40);
-	ui.bpList->setColumnWidth(2,40);
-	ui.bpList->setHorizontalHeaderLabels(QStringList() << "Fe" << "Rd" << "Wr" << "Addr");
-	QTableWidgetItem* itm;
-	adr = 0;
-	foreach(bp, list) {
-		itm = new QTableWidgetItem();
-		itm->setData(roleRom, bp.rom);
-		itm->setData(roleBank, bp.bank);
-		itm->setData(roleAdr, bp.adr);
-		if (bp.flags & MEM_BRK_FETCH) itm->setIcon(QIcon(":/images/checkbox.png"));
-		ui.bpList->setItem(adr, 0, itm);
-		itm = new QTableWidgetItem();
-		if (bp.flags & MEM_BRK_RD) itm->setIcon(QIcon(":/images/checkbox.png"));
-		ui.bpList->setItem(adr, 1, itm);
-		itm = new QTableWidgetItem();
-		if (bp.flags & MEM_BRK_WR) itm->setIcon(QIcon(":/images/checkbox.png"));
-		ui.bpList->setItem(adr, 2, itm);
-		itm = new QTableWidgetItem(tr(bp.rom ? "ROM:%0:%1" : "RAM:%0:%1").arg(gethexbyte(bp.bank)).arg(gethexword(bp.adr)));
-		ui.bpList->setItem(adr, 3, itm);
-		adr++;
-	}
+	ui.bpList->update();
+	fillDisasm();
+	fillDump();
+}
+
+void DebugWin::confirmBrk(xBrkPoint obrk, xBrkPoint brk) {
+	brkDelete(obrk);
+	brkAdd(brk);
+	fillDisasm();
+	fillDump();
+	ui.bpList->update();
 }
 
 void DebugWin::goToBrk(QModelIndex idx) {
-	QTableWidgetItem* itm = ui.bpList->item(idx.row(),0);
-	int rom = itm->data(roleRom).toInt();
-	int adr = itm->data(roleAdr).toInt();
-	int bnk = itm->data(roleBank).toInt();
-	int madr = -1;
-	MemPage* pg;
-	for (int i = 0; i < 4; i++) {
-		pg = &comp->mem->map[i];
-		if (pg->num == bnk) {
-			if ((pg->type == MEM_RAM) && !rom) {
-				madr = (i << 14) | adr;
-			} else if ((pg->type == MEM_ROM) && rom) {
-				madr = (i << 14) | adr;
+	if (!idx.isValid()) return;
+	int row = idx.row();
+	xBrkPoint brk = conf.prof.cur->brkList[row];
+	int adr;
+	int mtype = MEM_EXT;
+	switch(brk.type) {
+		case BRK_CPUADR:
+			adr = brk.adr & 0xffff;
+			break;
+		default:
+			switch(brk.type) {
+				case BRK_MEMRAM: mtype = MEM_RAM; break;
+				case BRK_MEMROM: mtype = MEM_ROM; break;
+				case BRK_MEMSLT: mtype = MEM_SLOT; break;
 			}
-		}
+			adr = memFindAdr(comp->mem, mtype, brk.adr);
+			break;
 	}
-	if (madr > 0) {
-		disasmAdr = madr;
-		fillDisasm();
-	}
+	if (adr < 0) return;
+	disasmAdr = adr & 0xffff;
+	fillDisasm();
 }

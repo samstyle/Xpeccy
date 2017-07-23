@@ -295,7 +295,7 @@ Computer* compCreate() {
 	compSetBaseFrq(comp, 3.5);
 
 	memset(comp->brkIOMap, 0, 0x10000);
-	memset(comp->brkRomMap, 0, 0x400000);
+	memset(comp->brkRomMap, 0, 0x80000);
 	memset(comp->brkRamMap, 0, 0x400000);
 	memset(comp->brkAdrMap, 0, 0x1000);
 
@@ -680,32 +680,24 @@ void cmsWr(Computer* comp, unsigned char val) {
 
 unsigned char* getBrkPtr(Computer* comp, unsigned short madr) {
 	xAdr xadr = memGetXAdr(comp->mem, madr);
-	unsigned char* ptr;
-	if (xadr.type == MEM_RAM) {
-		ptr = comp->brkRamMap + xadr.abs;
-	} else {
-		ptr = comp->brkRomMap + xadr.abs;
+	unsigned char* ptr = NULL;
+	switch (xadr.type) {
+		case MEM_RAM: ptr = comp->brkRamMap + (xadr.abs & 0x3fffff); break;
+		case MEM_ROM: ptr = comp->brkRomMap + (xadr.abs & 0x7ffff); break;
+		case MEM_SLOT: ptr = comp->slot->brkMap + (xadr.abs & comp->slot->memMask); break;
 	}
 	return ptr;
 }
 
 void setBrk(Computer* comp, unsigned short adr, unsigned char val) {
-	xAdr xadr = memGetXAdr(comp->mem, adr);
-	if (xadr.type == MEM_RAM) {
-		comp->brkRamMap[xadr.abs] = val;
-	} else {
-		comp->brkRomMap[xadr.abs] = val;
-	}
+	unsigned char* ptr = getBrkPtr(comp, adr);
+	if (ptr == NULL) return;
+	*ptr = (*ptr & 0xf0) | (val & 0x0f);
 }
 
 unsigned char getBrk(Computer* comp, unsigned short adr) {
-	unsigned char res = 0x00;
-	xAdr xadr = memGetXAdr(comp->mem, adr);
-	if (xadr.type == MEM_RAM) {
-		res = comp->brkRamMap[xadr.abs];
-	} else {
-		res = comp->brkRomMap[xadr.abs];
-	}
+	unsigned char* ptr = getBrkPtr(comp, adr);
+	unsigned char res = ptr ? *ptr : 0x00;
 	res |= (comp->brkAdrMap[adr] & 0x0f);
-	return res;
+	return res & 0x0f;
 }

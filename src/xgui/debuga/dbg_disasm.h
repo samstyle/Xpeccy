@@ -2,12 +2,12 @@
 #define _DBG_DISASM_H
 
 #include <QTableView>
-#include <QAbstractItemModel>
+#include <QAbstractTableModel>
 #include <QKeyEvent>
 #include <QMouseEvent>
 
-#include "../../libxpeccy/spectrum.h"
-#include "../../xcore/xcore.h"
+#include "libxpeccy/spectrum.h"
+#include "xcore/xcore.h"
 
 // memory cell type (bits 4..7)
 enum {
@@ -33,21 +33,19 @@ typedef struct {
 	QString icon;			// icon path if any
 } dasmData;
 
-class xDisasmModel : public QAbstractItemModel {
+class xDisasmModel : public QAbstractTableModel {
 	Q_OBJECT
 	public:
-		xDisasmModel(Computer**, QObject* = NULL);
+		xDisasmModel(QObject* = NULL);
 		int rowCount(const QModelIndex& = QModelIndex()) const;
 		int columnCount(const QModelIndex& = QModelIndex()) const;
-		QModelIndex index(int, int, const QModelIndex& = QModelIndex()) const;
-		QModelIndex parent(const QModelIndex& = QModelIndex()) const;
 		Qt::ItemFlags flags(const QModelIndex&) const;
 		QVariant data(const QModelIndex&, int) const;
 		bool setData(const QModelIndex&, const QVariant&, int);
+		Computer** cptr;
 	public slots:
 		int update();
 	private:
-		Computer** cptr;
 		QList<dasmData> dasm;
 		int fill();
 };
@@ -57,9 +55,13 @@ class xDisasmTable : public QTableView {
 	public:
 		xDisasmTable(QWidget* = NULL);
 		QVariant getData(int, int, int);
-		Computer** cptr;
+		int rows();
+		int updContent();
+		void setComp(Computer**);
 	private:
 		int markAdr;
+		xDisasmModel* model;
+		Computer** cptr;
 	signals:
 		void rqRefill();
 		void rqRefillAll();

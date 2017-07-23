@@ -67,5 +67,6 @@
         <file>images/arrup.png</file>
         <file>images/arrdn.png</file>
         <file>images/gamepad.png</file>
+        <file>images/edit.png</file>
     </qresource>
 </RCC>

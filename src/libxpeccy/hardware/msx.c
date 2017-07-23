@@ -7,14 +7,16 @@ typedef struct {
 
 unsigned char msxSlotRd(unsigned short adr, void* data) {
 	xCartridge* slot = (xCartridge*)data;
-	if (!slot->data) return 0xff;
-	return slot->core->rd(slot, adr);
+	return sltRead(slot, adr);
+	//if (!slot->data) return 0xff;
+	//return slot->core->rd(slot, adr);
 }
 
 void msxSlotWr(unsigned short adr, unsigned char val, void* data) {
 	xCartridge* slot = (xCartridge*)data;
-	if (!slot->data) return;
-	slot->core->wr(slot, adr, val);
+	sltWrite(slot, adr, val);
+	//if (!slot->data) return;
+	//slot->core->wr(slot, adr, val);
 }
 
 mPageNr msxMemTab[4][4] = {

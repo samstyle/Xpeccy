@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <fstream>
 #include <math.h>
 
@@ -91,6 +92,7 @@ bool prfSetCurrent(std::string nm) {
 	keyReleaseAll(nprf->zx->keyb);
 	mouseReleaseAll(nprf->zx->mouse);
 	padLoadConfig(nprf->jmapName);
+//	prfFillBreakpoints(nprf);
 	return true;
 }
 
@@ -123,6 +125,38 @@ void prfChangeLayName(std::string oldName, std::string newName) {
 		if (conf.prof.list[i]->layName == oldName)
 			conf.prof.list[i]->layName = newName;
 	}
+}
+
+// breakpoints
+
+void prfFillBreakpoints(xProfile* prf) {
+/*
+	memset(prf->zx->brkRamMap, 0x00, 0x400000);
+	memset(prf->zx->brkRomMap, 0x00, 0x80000);
+	memset(prf->zx->brkAdrMap, 0x00, 0x10000);
+	memset(prf->zx->brkIOMap, 0x00, 0x10000);
+	xBrkPoint brk;
+	unsigned char mask;
+	unsigned char* ptr;
+	foreach(brk, prf->brkList) {
+		mask = 0;
+		if (brk.fetch) mask |= MEM_BRK_FETCH;
+		if (brk.read) mask |= MEM_BRK_RD;
+		if (brk.write) mask |= MEM_BRK_WR;
+		ptr = NULL;
+		switch(brk.type) {
+			case BRK_CPUADR: ptr = &prf->zx->brkAdrMap[brk.adr & 0xffff]; break;
+			case BRK_MEMRAM: ptr = &prf->zx->brkRamMap[brk.adr & 0x3fffff]; break;
+			case BRK_MEMROM: ptr = &prf->zx->brkRomMap[brk.adr & 0x7ffff]; break;
+			case BRK_MEMSLT: if (!prf->zx->slot->brkMap) break;
+				ptr = &prf->zx->slot->brkMap[brk.adr & prf->zx->slot->memMask];
+				break;
+		}
+		if (ptr) {
+			*ptr = (*ptr & 0xf0) | mask;
+		}
+	}
+*/
 }
 
 // load-save

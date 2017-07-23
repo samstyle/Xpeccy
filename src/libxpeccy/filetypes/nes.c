@@ -34,6 +34,8 @@ int loadNes(Computer* comp, const char* name) {
 		while (tsiz < (hd.nprg << 14)) {tsiz <<= 1;}	// up to 2^n - 1
 
 		slot->data = realloc(slot->data, tsiz);		// PRG-ROM / 16K
+		slot->brkMap = realloc(slot->brkMap, tsiz);
+		memset(slot->brkMap, 0x00, tsiz);
 		slot->memMask = tsiz - 1;
 		fread(slot->data, hd.nprg << 14, 1, file);
 

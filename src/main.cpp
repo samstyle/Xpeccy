@@ -65,7 +65,7 @@ int main(int ac,char** av) {
 	int i;
 	MainWin mwin;
 	char* parg;
-	unsigned char* ptr = NULL;
+//	unsigned char* ptr = NULL;
 	int adr = 0x4000;
 	i = 1;
 	mwin.setProfile("");
@@ -98,8 +98,7 @@ int main(int ac,char** av) {
 				loadDUMP(mwin.comp, av[i], adr);
 				i++;
 			} else if (!strcmp(parg,"--bp")) {
-				ptr = getBrkPtr(mwin.comp, strtol(av[i],NULL,0) & 0xffff);
-				*ptr |= MEM_BRK_FETCH;
+				brkSet(BRK_MEMCELL, MEM_BRK_FETCH, strtol(av[i],NULL,0) & 0xffff, -1);
 				i++;
 			} else if (!strcmp(parg,"-l") || !strcmp(parg,"--labels")) {
 				mwin.loadLabels(av[i]);
@@ -111,6 +110,7 @@ int main(int ac,char** av) {
 			loadFile(mwin.comp, parg, FT_ALL, 0);
 		}
 	}
+	prfFillBreakpoints(conf.prof.cur);
 	if (dbg) mwin.doDebug();
 	mwin.show();
 	mwin.raise();

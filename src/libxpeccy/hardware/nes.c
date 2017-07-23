@@ -172,12 +172,14 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 
 unsigned char nesSLrd(unsigned short adr, void* data) {
 	xCartridge* slot = (xCartridge*)data;
-	return slot->core->rd(slot, adr);
+	return sltRead(slot, adr);
+	//return slot->core->rd(slot, adr);
 }
 
 void nesSLwr(unsigned short adr, unsigned char val, void* data) {
 	xCartridge* slot = (xCartridge*)data;
-	slot->core->wr(slot, adr, val);
+	sltWrite(slot, adr, val);
+	//slot->core->wr(slot, adr, val);
 }
 
 void nesMaper(Computer* comp) {

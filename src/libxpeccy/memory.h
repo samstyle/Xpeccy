@@ -62,6 +62,7 @@ void memGetPageData(Memory*,int,int,char*);
 unsigned char* memGetPagePtr(Memory*,int,int);
 MemPage* memGetBankPtr(Memory*,unsigned short);
 xAdr memGetXAdr(Memory*, unsigned short);
+int memFindAdr(Memory*, int, int);
 
 #if __cplusplus
 }

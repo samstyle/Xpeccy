@@ -106,7 +106,8 @@ else()
 
 endif()
 
-set(INCLUDIRS ${CMAKE_BINARY_DIR}
+set(INCLUDIRS
+	${CMAKE_BINARY_DIR}
 	./src
 	./src/xcore
 	./src/xgui
@@ -157,6 +158,7 @@ set(MOCFILES
 	./src/xgui/debuga/dbg_finder.h
 	./src/xgui/debuga/dbg_dump.h
 	./src/xgui/debuga/dbg_disasm.h
+	./src/xgui/debuga/dbg_brkpoints.h
 	./src/watcher.h
 	./src/xgui/options/setupwin.h
 	./src/xgui/options/padbinder.h

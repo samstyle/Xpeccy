@@ -4,30 +4,40 @@
 
 // dummy
 
-unsigned char slt_rd_dum(xCartridge* slt, unsigned short adr) {
+int slt_adr_dum(xCartridge* slt, unsigned short adr) {
+	return 0;
+}
+
+unsigned char slt_rd_dum(xCartridge* slt, unsigned short adr, int radr) {
 	return 0xff;
 }
 
-void slt_wr_dum(xCartridge* slt, unsigned short adr, unsigned char val) {
+void slt_wr_dum(xCartridge* slt, unsigned short adr, int radr, unsigned char val) {
 }
 
 // MSX mappers
 
-// no mapper
-unsigned char slt_msx_nomap_rd(xCartridge* slot, unsigned short adr) {
-	int radr = (adr & 0x3fff) | ((adr & 0x8000) >> 1);
+unsigned char slt_msx_all_rd(xCartridge* slot, unsigned short adr, int radr) {
 	return slot->data[radr & slot->memMask];
+}
+
+// no mapper
+int slt_msx_nomap_adr(xCartridge* slot, unsigned short adr) {
+	int radr = (adr & 0x3fff) | ((adr & 0x8000) >> 1);
+	radr &= slot->memMask;
+	return radr;
 }
 
 // konami 4
-unsigned char slt_msx_kon4_rd(xCartridge* slot, unsigned short adr) {
+int slt_msx_kon4_adr(xCartridge* slot, unsigned short adr) {
 	int bnk = ((adr & 0x2000) >> 13) | ((adr & 0x8000) >> 14);
 	bnk = bnk ? slot->memMap[bnk] : 0;
 	int radr = (bnk << 13) | (adr & 0x1fff);
-	return slot->data[radr & slot->memMask];
+	radr &= slot->memMask;
+	return radr;
 }
 
-void slt_msx_kon4_wr(xCartridge* slot, unsigned short adr, unsigned char val) {
+void slt_msx_kon4_wr(xCartridge* slot, unsigned short adr, int radr, unsigned char val) {
 	switch(adr) {
 		case 0x6000: slot->memMap[1] = val; break;
 		case 0x8000: slot->memMap[2] = val; break;
@@ -36,14 +46,15 @@ void slt_msx_kon4_wr(xCartridge* slot, unsigned short adr, unsigned char val) {
 }
 
 // konami 5
-unsigned char slt_msx_kon5_rd(xCartridge* slot, unsigned short adr) {
+int slt_msx_kon5_adr(xCartridge* slot, unsigned short adr) {
 	int bnk = ((adr & 0x2000) >> 13) | ((adr & 0x8000) >> 14);
 	bnk = slot->memMap[bnk];
 	int radr = (bnk << 13) | (adr & 0x1fff);
-	return slot->data[radr & slot->memMask];
+	radr &= slot->memMask;
+	return radr;
 }
 
-void slt_msx_kon5_wr(xCartridge* slot, unsigned short adr, unsigned char val) {
+void slt_msx_kon5_wr(xCartridge* slot, unsigned short adr, int radr, unsigned char val) {
 	switch (adr & 0xf800) {
 		case 0x5000: slot->memMap[0] = val; break;
 		case 0x7000: slot->memMap[1] = val; break;
@@ -54,7 +65,7 @@ void slt_msx_kon5_wr(xCartridge* slot, unsigned short adr, unsigned char val) {
 
 // ascii8
 // rd = konami5 rd
-void slt_msx_asc8_wr(xCartridge* slot, unsigned short adr, unsigned char val) {
+void slt_msx_asc8_wr(xCartridge* slot, unsigned short adr, int radr, unsigned char val) {
 	switch (adr & 0xf800) {
 		case 0x6000: slot->memMap[0] = val; break;
 		case 0x6800: slot->memMap[1] = val; break;
@@ -64,13 +75,14 @@ void slt_msx_asc8_wr(xCartridge* slot, unsigned short adr, unsigned char val) {
 }
 
 // ascii16
-unsigned char slt_msx_asc16_rd(xCartridge* slot, unsigned short adr) {
+int slt_msx_asc16_adr(xCartridge* slot, unsigned short adr) {
 	int bnk = slot->memMap[(adr & 0x8000) >> 15];
 	int radr = (bnk << 14) | (adr & 0x3fff);
-	return slot->data[radr & slot->memMask];
+	radr &= slot->memMask;
+	return radr;
 }
 
-void slt_msx_asc16_wr(xCartridge* slot, unsigned short adr, unsigned char val) {
+void slt_msx_asc16_wr(xCartridge* slot, unsigned short adr, int radr, unsigned char val) {
 	switch (adr & 0xf800) {
 		case 0x6000: slot->memMap[0] = val; break;	// #4000..#7FFF
 		case 0x7000: slot->memMap[1] = val; break;	// #8000..#bfff
@@ -80,24 +92,33 @@ void slt_msx_asc16_wr(xCartridge* slot, unsigned short adr, unsigned char val) {
 // GAMEBOY
 
 // reading is same for all mappers
-unsigned char slt_gb_all_rd(xCartridge* slot, unsigned short adr) {
-	unsigned char res = 0xff;
+int slt_gb_all_adr(xCartridge* slot, unsigned short adr) {
 	int radr;
-	if (adr & 0x8000) {			// ram
-		if (slot->ramen) {
-			radr = (slot->memMap[1] << 13) | (adr & 0x1fff);
-			res = slot->ram[radr & 0x7fff];
-		}
-	} else {				// rom
+	if (adr & 0x8000) {		// ram
+		radr = (slot->memMap[1] << 13) | (adr & 0x1fff);
+		radr &= 0x7fff;
+	} else {
 		radr = adr & 0x3fff;
-		if (adr & 0x4000)
+		if (adr & 0x4000) {
 			radr |= (slot->memMap[0] << 14);
+			radr &= slot->memMask;
+		}
+	}
+	return radr;
+}
+
+unsigned char slt_gb_all_rd(xCartridge* slot, unsigned short adr, int radr) {
+	unsigned char res = 0xff;
+	if (adr & 0x8000) {
+		if (slot->ramen)
+			res = slot->ram[radr & 0x7fff];
+	} else {
 		res = slot->data[radr & slot->memMask];
 	}
 	return res;
 }
 
-void slt_gb_mbc1_wr(xCartridge* slot, unsigned short adr, unsigned char val) {
+void slt_gb_mbc1_wr(xCartridge* slot, unsigned short adr, int radr, unsigned char val) {
 	switch (adr & 0xe000) {
 		case 0x0000:			// 0000..1fff : xA = ram enable
 			slot->ramen = ((val & 0x0f) == 0x0a) ? 1 : 0;
@@ -132,7 +153,7 @@ void slt_gb_mbc1_wr(xCartridge* slot, unsigned short adr, unsigned char val) {
 	}
 }
 
-void slt_gb_mbc2_wr(xCartridge* slot, unsigned short adr, unsigned char val) {
+void slt_gb_mbc2_wr(xCartridge* slot, unsigned short adr, int radr, unsigned char val) {
 	switch (adr & 0xe000) {
 		case 0x0000:				// 0000..1fff : 4bit ram enabling
 			if (adr & 0x100) return;
@@ -153,7 +174,7 @@ void slt_gb_mbc2_wr(xCartridge* slot, unsigned short adr, unsigned char val) {
 	}
 }
 
-void slt_gb_mbc3_wr(xCartridge* slot, unsigned short adr, unsigned char val) {
+void slt_gb_mbc3_wr(xCartridge* slot, unsigned short adr, int radr, unsigned char val) {
 	switch (adr & 0xe000) {
 		case 0x0000:		// 0000..1fff : xA = ram enable
 			slot->ramen = ((val & 0x0f) == 0x0a) ? 1 : 0;
@@ -178,7 +199,7 @@ void slt_gb_mbc3_wr(xCartridge* slot, unsigned short adr, unsigned char val) {
 	}
 }
 
-void slt_gb_mbc5_wr(xCartridge* slot, unsigned short adr, unsigned char val) {
+void slt_gb_mbc5_wr(xCartridge* slot, unsigned short adr, int radr, unsigned char val) {
 	switch(adr & 0xf000) {
 		case 0x0000:		// 0000..1fff : 0A enable ram, 00 disable ram
 		case 0x1000:
@@ -211,15 +232,21 @@ void slt_gb_mbc5_wr(xCartridge* slot, unsigned short adr, unsigned char val) {
 
 // nes
 
-// nomaper
-unsigned char slt_nes_all_rd(xCartridge* slot, unsigned short adr) {
+// common/nomaper
+int slt_nes_all_adr(xCartridge* slot, unsigned short adr) {
 	int radr;
 	if (adr & 0x4000) {		// page 0 (0x8000..0xbfff)
 		radr = (slot->memMap[1] << 14) | (adr & 0x3fff);
 	} else {			// page 1 (0xc000..0xffff)
 		radr = (slot->memMap[0] << 14) | (adr & 0x3fff);
 	}
-	return slot->data[radr & slot->memMask];
+	radr &= slot->memMask;
+	return radr;
+}
+
+unsigned char slt_nes_all_rd(xCartridge* slot, unsigned short adr, int radr) {
+	radr &= slot->memMask;
+	return slot->data[radr];
 }
 
 // mmc1
@@ -249,7 +276,7 @@ void slt_nes_mmc1_map(xCartridge* slot) {
 	}
 }
 
-void slt_nes_mmc1_wr(xCartridge* slot, unsigned short adr, unsigned char val) {
+void slt_nes_mmc1_wr(xCartridge* slot, unsigned short adr, int radr, unsigned char val) {
 	if (val & 0x80) {
 		slot->shift = 0;
 		slot->smask = 1;
@@ -285,22 +312,22 @@ void slt_nes_mmc1_wr(xCartridge* slot, unsigned short adr, unsigned char val) {
 // table
 
 xCardCallback maperTab[] = {
-	{MAP_MSX_NOMAPPER, slt_msx_nomap_rd, slt_wr_dum},
-	{MAP_MSX_KONAMI4, slt_msx_kon4_rd, slt_msx_kon4_wr},
-	{MAP_MSX_KONAMI5, slt_msx_kon5_rd, slt_msx_kon5_wr},
-	{MAP_MSX_ASCII8, slt_msx_kon5_rd, slt_msx_asc8_wr},
-	{MAP_MSX_ASCII16, slt_msx_asc16_rd, slt_msx_asc16_wr},
+	{MAP_MSX_NOMAPPER, slt_msx_all_rd, slt_wr_dum, slt_msx_nomap_adr},
+	{MAP_MSX_KONAMI4, slt_msx_all_rd, slt_msx_kon4_wr, slt_msx_kon4_adr},
+	{MAP_MSX_KONAMI5, slt_msx_all_rd, slt_msx_kon5_wr, slt_msx_kon5_adr},
+	{MAP_MSX_ASCII8, slt_msx_all_rd, slt_msx_asc8_wr, slt_msx_kon5_adr},
+	{MAP_MSX_ASCII16, slt_msx_all_rd, slt_msx_asc16_wr, slt_msx_asc16_adr},
 
-	{MAP_GB_NOMAP, slt_gb_all_rd, slt_wr_dum},
-	{MAP_GB_MBC1, slt_gb_all_rd, slt_gb_mbc1_wr},
-	{MAP_GB_MBC2, slt_gb_all_rd, slt_gb_mbc2_wr},
-	{MAP_GB_MBC3, slt_gb_all_rd, slt_gb_mbc3_wr},
-	{MAP_GB_MBC5, slt_gb_all_rd, slt_gb_mbc5_wr},
+	{MAP_GB_NOMAP, slt_gb_all_rd, slt_wr_dum, slt_gb_all_adr},
+	{MAP_GB_MBC1, slt_gb_all_rd, slt_gb_mbc1_wr, slt_gb_all_adr},
+	{MAP_GB_MBC2, slt_gb_all_rd, slt_gb_mbc2_wr, slt_gb_all_adr},
+	{MAP_GB_MBC3, slt_gb_all_rd, slt_gb_mbc3_wr, slt_gb_all_adr},
+	{MAP_GB_MBC5, slt_gb_all_rd, slt_gb_mbc5_wr, slt_gb_all_adr},
 
-	{MAP_NES_NOMAP, slt_nes_all_rd, slt_wr_dum},
-	{MAP_NES_MMC1, slt_nes_all_rd, slt_nes_mmc1_wr},
+	{MAP_NES_NOMAP, slt_nes_all_rd, slt_wr_dum, slt_nes_all_adr},
+	{MAP_NES_MMC1, slt_nes_all_rd, slt_nes_mmc1_wr, slt_nes_all_adr},
 
-	{MAP_UNKNOWN, slt_rd_dum, slt_wr_dum}
+	{MAP_UNKNOWN, slt_rd_dum, slt_wr_dum, slt_adr_dum}
 };
 
 int sltSetMaper(xCartridge* slt, int id) {
@@ -343,8 +370,30 @@ void sltEject(xCartridge* slot) {
 		free(slot->data);
 	slot->data = NULL;
 	slot->name[0] = 0x00;
+	// free brk map
+	if (slot->brkMap)
+		free(slot->brkMap);
+	slot->brkMap = NULL;
 	// free chr-rom
 	if (slot->chrrom)
 		free(slot->chrrom);
 	slot->chrrom = NULL;
+}
+
+unsigned char sltRead(xCartridge* slt, unsigned short adr) {
+	if (!slt->data) return 0xff;
+	if (!slt->core) return 0xff;
+	if (!slt->core->rd) return 0xff;
+	int radr = slt->core->adr(slt, adr);
+	if (slt->brkMap[radr] & MEM_BRK_RD)
+		slt->brk = 1;
+	return slt->core->rd(slt, adr, radr);
+}
+
+void sltWrite(xCartridge* slt, unsigned short adr, unsigned char val) {
+	if (!slt->data) return;
+	if (!slt->core) return;
+	if (!slt->core->wr) return;
+	int radr = slt->core->adr(slt, adr);
+	slt->core->wr(slt, adr, radr, val);
 }

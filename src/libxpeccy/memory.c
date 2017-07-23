@@ -154,3 +154,15 @@ xAdr memGetXAdr(Memory* mem, unsigned short adr) {
 	xadr.abs = (xadr.bank << 14) | (adr & 0x3fff);	// absolute addr
 	return xadr;
 }
+
+int memFindAdr(Memory* mem, int type, int fadr) {
+	int i;
+	int adr = -1;
+	for (i = 0; i < 4; i++) {
+		if ((mem->map[i].type == type) && (mem->map[i].num == (fadr >> 14))) {
+			adr = (i << 14) | (fadr & 0x3fff);
+			break;
+		}
+	}
+	return adr;
+}

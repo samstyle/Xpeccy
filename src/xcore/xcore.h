@@ -28,15 +28,47 @@ QString getdecshift(char);
 QString gethexbyte(uchar);
 QString gethexword(int);
 
+// brk points
+
+enum {
+	BRK_IOPORT = 1,
+	BRK_CPUADR,
+	BRK_MEMCELL,
+	BRK_MEMRAM,
+	BRK_MEMROM,
+	BRK_MEMSLT,
+	BRK_MEMEXT
+};
+
+typedef struct {
+	unsigned off:1;
+	unsigned fetch:1;
+	unsigned read:1;
+	unsigned write:1;
+	unsigned block:1;
+	int type;
+	int adr;
+	int size;	// size of block
+	int mask;	// io: if (port & mask == adr & mask)
+} xBrkPoint;
+
+void brkSet(int, int, int, int);
+void brkXor(int, int, int, int);
+void brkAdd(xBrkPoint);
+void brkInstall(xBrkPoint);
+void brkDelete(xBrkPoint);
+void brkInstallAll();
+
 // profiles
 
 typedef struct {
 	std::string name;
-	std::string file;
+ 	std::string file;
 	std::string layName;
 	std::string hwName;
 	std::string rsName;
 	std::string jmapName;
+	std::vector<xBrkPoint> brkList;
 	Computer* zx;
 } xProfile;
 
@@ -55,6 +87,8 @@ bool prfSetLayout(xProfile*, std::string);
 
 void prfChangeRsName(std::string, std::string);
 void prfChangeLayName(std::string, std::string);
+
+void prfFillBreakpoints(xProfile*);
 
 #define	PLOAD_OK	0
 #define	PLOAD_NF	1
