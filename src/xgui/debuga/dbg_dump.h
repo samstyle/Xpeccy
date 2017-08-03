@@ -2,11 +2,11 @@
 #define _DBG_DUMP_H
 
 #include <QTableView>
-#include <QAbstractItemModel>
+#include <QAbstractTableModel>
 #include <QKeyEvent>
 #include <QWheelEvent>
 
-#include "../../libxpeccy/spectrum.h"
+#include "libxpeccy/spectrum.h"
 
 enum {
 	XCP_1251 = 1,
@@ -17,20 +17,22 @@ enum {
 typedef int(*dmpMrd)(unsigned short, void*);
 typedef void(*dmpMwr)(unsigned short, unsigned char, void*);
 
-class xDumpModel:public QAbstractItemModel {
+class xDumpModel:public QAbstractTableModel {
 	Q_OBJECT
 	public:
-		xDumpModel(void**, dmpMrd, dmpMwr, QObject* = NULL);
+		xDumpModel(QObject* = NULL);
 		int codePage;
+		void setMachine(void**, dmpMrd, dmpMwr);
 		int rowCount(const QModelIndex& = QModelIndex()) const;
 		int columnCount(const QModelIndex& = QModelIndex()) const;
-		QModelIndex index(int, int, const QModelIndex& = QModelIndex()) const;
-		QModelIndex parent(const QModelIndex& = QModelIndex()) const;
 		Qt::ItemFlags flags(const QModelIndex&) const;
 		QVariant data(const QModelIndex&, int) const;
 		bool setData(const QModelIndex&, const QVariant&, int);
 		void updateCell(int, int);
 		void updateRow(int);
+		void updateColumn(int);
+	signals:
+		void rqRefill();
 	public slots:
 		void update();
 	private:
@@ -44,9 +46,14 @@ class xDumpTable:public QTableView {
 	public:
 		xDumpTable(QWidget* = NULL);
 		Computer** cptr;
+		void setMachine(void**, dmpMrd, dmpMwr);
+		int rows();
+		void setCodePage(int);
+		void update();
 	signals:
 		void rqRefill();
 	private:
+		xDumpModel* model;
 		int markAdr;
 		void keyPressEvent(QKeyEvent*);
 		void mousePressEvent(QMouseEvent*);

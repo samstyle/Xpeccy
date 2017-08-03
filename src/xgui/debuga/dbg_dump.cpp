@@ -40,13 +40,17 @@ QString getDumpString(QByteArray bts, int cp) {
 	return res;
 }
 
-xDumpModel::xDumpModel(void** pp, dmpMrd cr, dmpMwr cw, QObject* par):QAbstractItemModel(par) {
-	pptr = pp;
-	mrd = cr;
-	mwr = cw;
+xDumpModel::xDumpModel(QObject* par):QAbstractTableModel(par) {
 	codePage = XCP_1251;
 }
 
+void xDumpModel::setMachine(void** pp, dmpMrd cr, dmpMwr cw) {
+	pptr = pp;
+	mrd = cr;
+	mwr = cw;
+}
+
+/*
 QModelIndex xDumpModel::index(int row, int col, const QModelIndex& par) const {
 	return createIndex(row, col);
 }
@@ -54,6 +58,7 @@ QModelIndex xDumpModel::index(int row, int col, const QModelIndex& par) const {
 QModelIndex xDumpModel::parent(const QModelIndex& idx) const {
 	return QModelIndex();
 }
+*/
 
 int xDumpModel::rowCount(const QModelIndex& idx) const {
 	return 12;
@@ -73,6 +78,10 @@ void xDumpModel::updateCell(int row, int col) {
 
 void xDumpModel::updateRow(int row) {
 	emit dataChanged(index(row, 0), index(row, columnCount() - 1));
+}
+
+void xDumpModel::updateColumn(int col) {
+	emit dataChanged(index(0, col), index(rowCount() - 1, col));
 }
 
 QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
@@ -138,18 +147,19 @@ bool xDumpModel::setData(const QModelIndex& idx, const QVariant& val, int role) 
 	int col = idx.column();
 	if ((row < 0) || (row >= rowCount())) return false;
 	if ((col < 0) || (col >= columnCount())) return false;
-	unsigned short adr = dumpAdr + (row << 3);
+	unsigned short adr = (dumpAdr + (row << 3)) & 0xffff;
 	unsigned short nadr;
 	unsigned char bt;
 	if (col == 0) {
-		nadr = val.toString().toInt(NULL, 16);
-		dumpAdr = nadr - (row << 3);
+		nadr = val.toString().toInt(NULL, 16) & 0xffff;
+		dumpAdr = (nadr - (row << 3)) & 0xffff;
 		update();
 	} else if (col < 9) {
-		bt = val.toString().toInt(NULL, 16);
-		nadr = adr + col - 1;
+		bt = val.toString().toInt(NULL, 16) & 0xff;
+		nadr = (adr + col - 1) & 0xffff;
 		mwr(nadr, bt, *pptr);
 		updateRow(row);
+		emit rqRefill();
 	}
 	return true;
 }
@@ -158,6 +168,29 @@ bool xDumpModel::setData(const QModelIndex& idx, const QVariant& val, int role) 
 
 xDumpTable::xDumpTable(QWidget* p):QTableView(p) {
 	markAdr = -1;
+	model = new xDumpModel();
+	setModel(model);
+
+	connect(model, SIGNAL(rqRefill()), this, SIGNAL(rqRefill()));
+}
+
+void xDumpTable::setMachine(void** pp, dmpMrd cr, dmpMwr cw) {
+	cptr = (Computer**)pp;
+	model->setMachine(pp, cr, cw);
+}
+
+int xDumpTable::rows() {
+	return model->rowCount();
+}
+
+void xDumpTable::setCodePage(int cp) {
+	model->codePage = cp;
+	model->updateColumn(9);
+}
+
+void xDumpTable::update() {
+	model->update();
+	QTableView::update();
 }
 
 void xDumpTable::keyPressEvent(QKeyEvent* ev) {
@@ -172,7 +205,7 @@ void xDumpTable::keyPressEvent(QKeyEvent* ev) {
 			}
 			break;
 		case Qt::Key_Down:
-			if (idx.row() < model()->rowCount() - 1) {
+			if (idx.row() < model->rowCount() - 1) {
 				QTableView::keyPressEvent(ev);
 			} else {
 				dumpAdr += 8;
@@ -190,8 +223,8 @@ void xDumpTable::mousePressEvent(QMouseEvent* ev) {
 	QModelIndex idx = indexAt(ev->pos());
 	int row = idx.row();
 	int col = idx.column();
-	if ((row < 0) || (row >= model()->rowCount())) return;
-	if ((col < 0) || (col >= model()->columnCount())) return;
+	if ((row < 0) || (row >= model->rowCount())) return;
+	if ((col < 0) || (col >= model->columnCount())) return;
 	if (col > 8) return;
 	int adr;
 	if ((col == 0) || (col > 8)) {
@@ -238,8 +271,8 @@ void xDumpTable::mouseMoveEvent(QMouseEvent* ev) {
 	QModelIndex idx = indexAt(ev->pos());
 	int row = idx.row();
 	int col = idx.column();
-	if ((row < 0) || (row >= model()->rowCount())) return;
-	if ((col < 0) || (col >= model()->columnCount())) return;
+	if ((row < 0) || (row >= model->rowCount())) return;
+	if ((col < 0) || (col >= model->columnCount())) return;
 	int adr;
 	if ((col == 0) || (col > 8)) {
 		adr = dumpAdr + (row << 3);

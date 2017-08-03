@@ -72,7 +72,7 @@ class DebugWin : public QDialog {
 		QImage scrImg;
 		QList<unsigned short> jumpHistory;
 
-		xDumpModel* dumpodel;
+//		xDumpModel* dumpodel;
 
 		Computer* comp;
 		long tCount;
@@ -132,8 +132,8 @@ class DebugWin : public QDialog {
 		void setFlags();
 		void updateScreen();
 
-		void dasmEdited(int, int);
-		void dumpEdited(int, int);
+//		void dasmEdited(int, int);
+//		void dumpEdited(int, int);
 
 		void addBrk();
 		void editBrk();

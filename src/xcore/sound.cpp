@@ -154,7 +154,7 @@ int sndSync(Computer* comp, int nosync, int fast) {
 }
 
 void sndCalibrate(Computer* comp) {
-	// sndChunks = conf.snd.rate / 50;		// samples / frame
+	sndChunks = conf.snd.rate / 50;			// samples / frame
 	sndBufSize = conf.snd.chans * sndChunks;	// buffer size
 	nsPerSample = 1e9 / conf.snd.rate;		// ns / sample
 #ifdef ISDEBUG

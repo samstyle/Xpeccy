@@ -331,10 +331,11 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 		case 1:	// bytes
 			lst = val.toString().split(":", QString::SkipEmptyParts);
 			foreach(str, lst) {
-				cbyte = str.toInt(NULL,16);
-				memWr((*cptr)->mem, adr, cbyte);
+				cbyte = str.toInt(NULL,16) & 0xff;
+				memWr((*cptr)->mem, adr & 0xffff, cbyte);
 				adr++;
 			}
+			emit rqRefill();
 			break;
 		case 2:	// command
 			ptr = getBrkPtr(*cptr, adr & 0xffff);
@@ -408,6 +409,7 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 				memWr((*cptr)->mem, (adr + idx) & 0xffff, buf[idx]);
 				idx++;
 			}
+			emit rqRefill();
 			break;
 	}
 	update();
@@ -420,6 +422,7 @@ xDisasmTable::xDisasmTable(QWidget* p):QTableView(p) {
 	cptr = NULL;
 	model = new xDisasmModel();
 	setModel(model);
+	connect(model, SIGNAL(rqRefill()), this, SIGNAL(rqRefill()));
 }
 
 QVariant xDisasmTable::getData(int row, int col, int role) {

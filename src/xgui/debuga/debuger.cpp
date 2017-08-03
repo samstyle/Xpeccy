@@ -68,7 +68,7 @@ void DebugWin::start(Computer* c) {
 	ui.dasmTable->verticalHeader()->setDefaultSectionSize(wd);
 
 	//ui.dumpTable->setRowCount(ui.dumpTable->height() / wd);
-	wd = ui.dumpTable->height() / ui.dumpTable->model()->rowCount();
+	wd = ui.dumpTable->height() / ui.dumpTable->rows();
 	ui.dumpTable->verticalHeader()->setDefaultSectionSize(wd);
 
 	if (memViewer->vis) {
@@ -145,10 +145,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 		dbgRegEdit[i] = arre[i];
 	}
 
-	dumpodel = new xDumpModel((void**)(&comp), dmpmrd, dmpmwr);
-	ui.dumpTable->setModel(dumpodel);
-	ui.dumpTable->cptr = &comp;
-
+	ui.dumpTable->setMachine((void**)(&comp), dmpmrd, dmpmwr);
 	ui.dasmTable->setComp(&comp);
 
 	setFont(QFont("://DejaVuSansMono.ttf",10));
@@ -213,12 +210,14 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.dasmTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
 	connect(ui.dasmTable,SIGNAL(rqRefill()),this,SLOT(fillDisasm()));
 	connect(ui.dasmTable,SIGNAL(rqRefill()),this,SLOT(fillDump()));
+	connect(ui.dasmTable,SIGNAL(rqRefill()),this,SLOT(updateScreen()));
 	connect(ui.dasmTable,SIGNAL(rqRefill()),ui.bpList,SLOT(update()));
 	connect(ui.dasmTable,SIGNAL(rqRefillAll()),this,SLOT(fillAll()));
 
 	connect(ui.dumpTable,SIGNAL(rqRefill()),this,SLOT(fillDump()));
 	connect(ui.dumpTable,SIGNAL(rqRefill()),this,SLOT(fillDisasm()));
 	connect(ui.dumpTable,SIGNAL(rqRefill()),ui.bpList,SLOT(update()));
+	connect(ui.dumpTable,SIGNAL(rqRefill()),this,SLOT(updateScreen()));
 
 	connect(ui.bpList,SIGNAL(rqDisasm()),this,SLOT(fillDisasm()));
 	connect(ui.bpList,SIGNAL(rqDasmDump()),this,SLOT(fillDisasm()));
@@ -413,8 +412,9 @@ void DebugWin::wheelEvent(QWheelEvent* ev) {
 */
 
 void DebugWin::setDumpCP(QAction* act) {
-	dumpodel->codePage = act->data().toInt();
-	switch(dumpodel->codePage) {
+	int cp = act->data().toInt();
+	ui.dumpTable->setCodePage(cp);
+	switch(cp) {
 		case XCP_1251: ui.tbCodepage->setText("WIN"); break;
 		case XCP_866: ui.tbCodepage->setText("DOS"); break;
 		case XCP_KOI8R: ui.tbCodepage->setText("KOI"); break;
@@ -490,7 +490,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 	int i;
 	unsigned short pc = comp->cpu->pc;
 	unsigned char* ptr;
-	int offset = (ui.dumpTable->model()->rowCount() - 1) << 3;
+	int offset = (ui.dumpTable->rows() - 1) << 3;
 	QString com;
 	int row;
 	int pos;
@@ -1331,122 +1331,6 @@ unsigned short DebugWin::getPrevAdr(unsigned short adr) {
 	return (adr - 1);
 }
 
-void DebugWin::dasmEdited(int row, int col) {
-/*
-	if (block) return;
-	int adr = getAdr();
-	char buf[8];
-	int len;
-	int idx;
-	unsigned char cbyte;
-	unsigned char* ptr;
-	bool flag;
-	QString str;
-	QString lab;
-	QStringList lst;
-	xAdr xadr = memGetXAdr(comp->mem, adr);
-	switch (col) {
-		case 0:
-			str = ui.dasmTable->item(row, 0)->text();
-			if (str.isEmpty()) {
-				str = findLabel(xadr.adr, xadr.type, xadr.bank);
-				if (!str.isEmpty()) {
-					labels.remove(str);
-				}
-			} else {
-				idx = str.toInt(&flag, 16);
-				if (flag) {				// is number
-					adr = idx;
-				} else if (labels.contains(str)) {	// is existing label
-					adr = labels[str].adr;
-				} else {				// else create a new label
-					// xadr = memGetXAdr(comp->mem, adr);
-					lab = findLabel(xadr.adr, xadr.type, xadr.bank);	// old label was here (if any)
-					if (!lab.isEmpty())
-						labels.remove(lab);
-					labels[str] = xadr;
-				}
-				while (row > 0) {
-					adr = getPrevAdr(adr);
-					row--;
-				}
-				disasmAdr = adr;
-			}
-			break;
-		case 1:
-			lst = ui.dasmTable->item(row, col)->text().split(":", QString::SkipEmptyParts);
-			foreach(str, lst) {
-				cbyte = str.toInt(NULL,16);
-				memWr(comp->mem, adr, cbyte);
-				adr++;
-			}
-			break;
-		case 2:
-			str = ui.dasmTable->item(row, col)->text();
-			if (!str.startsWith("db \"", Qt::CaseInsensitive))		// #NUM -> 0xNUM if not db "..."
-				str.replace("#", "0x");
-			if (str.startsWith("db ", Qt::CaseInsensitive)) {		// db
-				if ((str.at(3) == '"') && str.endsWith("\"")) {		// db "text"
-					str = str.mid(4, str.size() - 5);
-					idx = 0;
-					cbyte = str.at(idx).cell();
-					while ((idx < 250) && (idx < str.size()) && (cbyte > 31) && (cbyte < 128)) {
-						buf[idx] = cbyte;
-						ptr = getBrkPtr(comp, (adr + idx) & 0xffff);
-						*ptr &= 0x0f;
-						*ptr |= DBG_VIEW_TEXT;
-						idx++;
-						cbyte = str.at(idx).cell();
-					}
-					len = idx;
-				} else {						// db n
-					str = str.mid(3);
-					idx = str.toInt(&flag, 0);
-					if (flag) {
-						len = 1;
-						buf[0] = idx & 0xff;
-						chaCellProperty(ui.actViewByte);
-					} else {
-						len = 0;
-					}
-				}
-			} else if (str.startsWith("dw ", Qt::CaseInsensitive)) {	// word/addr
-				str = str.mid(3);
-				if (labels.contains(str)) {				// check label
-					idx = labels[str].adr;
-					chaCellProperty(ui.actViewAddr);
-					len = 2;
-				} else {
-					idx = str.toInt(&flag, 0);
-					if (flag) {
-						len = 2;
-						chaCellProperty(ui.actViewWord);
-					} else {
-						len = 0;
-					}
-				}
-				if (len > 0) {
-					buf[0] = idx & 0xff;
-					buf[1] = (idx >> 8) & 0xff;
-				}
-			} else {			// byte
-				len = cpuAsm(comp->cpu, str.toLocal8Bit().data(), buf, adr);
-				if (len > 0)
-					chaCellProperty(ui.actViewOpcode);
-			}
-			idx = 0;
-			while (idx < len) {
-				memWr(comp->mem, (adr + idx) & 0xffff, buf[idx]);
-				idx++;
-			}
-			break;
-	}
-	fillDump();
-	fillDisasm();
-	updateScreen();
-*/
-}
-
 void DebugWin::saveDasm() {
 	QString path = QFileDialog::getSaveFileName(this, "Save disasm");
 	if (path.isEmpty()) return;
@@ -1476,38 +1360,13 @@ void DebugWin::saveDasm() {
 
 void DebugWin::fillDump() {
 	block = 1;
-	dumpodel->update();
-
-/*
-	unsigned short adr = dumpAdr;
-	int row,col;
-	QColor bgcol, ccol;
-	for (row = 0; row < ui.dumpTable->rowCount(); row++) {
-		ui.dumpTable->item(row,0)->setText(gethexword(adr));
-		ui.dumpTable->item(row,9)->setText(getDumpString(comp->mem, adr, codePage));
-		bgcol = (row & 1) ? colBG0 : colBG1;
-		ui.dumpTable->item(row, 0)->setBackground(bgcol);
-		ui.dumpTable->item(row, 9)->setBackground(bgcol);
-		for (col = 1; col < 9; col++) {
-			if (getBrk(comp, adr) & MEM_BRK_ANY) {
-				ccol = colBRK;
-			} else if ((adr >= ui.dasmTable->blockStart) && (adr <= ui.dasmTable->blockEnd)) {
-				ccol = colSEL;
-			} else {
-				ccol = bgcol;
-			}
-			ui.dumpTable->item(row,col)->setBackgroundColor(ccol);
-			ui.dumpTable->item(row,col)->setText(gethexbyte(memRd(comp->mem, adr)));
-			adr++;
-		}
-	}
-*/
+	ui.dumpTable->update();
 	fillStack();
 	block = 0;
 }
 
-void DebugWin::dumpEdited(int row, int col) {
 /*
+void DebugWin::dumpEdited(int row, int col) {
 	if (block) return;
 	if (col == 0) {
 		dumpAdr = ui.dumpTable->item(row, 0)->text().toInt(NULL,16) - row * 8;
@@ -1531,8 +1390,8 @@ void DebugWin::dumpEdited(int row, int col) {
 	fillDump();
 	fillDisasm();
 	updateScreen();
-*/
 }
+*/
 
 // stack
 

@@ -43,6 +43,8 @@ class xDisasmModel : public QAbstractTableModel {
 		QVariant data(const QModelIndex&, int) const;
 		bool setData(const QModelIndex&, const QVariant&, int);
 		Computer** cptr;
+	signals:
+		void rqRefill();
 	public slots:
 		int update();
 	private:
