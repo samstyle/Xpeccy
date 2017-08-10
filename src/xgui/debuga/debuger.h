@@ -127,6 +127,7 @@ class DebugWin : public QDialog {
 		int fillDisasm();
 		void fillDump();
 		void fillGBoy();
+		void drawNes();
 
 		void setCPU();
 		void setFlags();

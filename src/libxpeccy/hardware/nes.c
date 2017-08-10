@@ -33,6 +33,10 @@ void nesReset(Computer* comp) {
 	comp->vid->ppu->data = comp;
 	ppuReset(comp->vid->ppu);
 	vidSetMode(comp->vid, VID_NES);
+
+	comp->nesapu->inten = 1;
+	comp->nesapu->pal = 0;
+
 	comp->slot->memMap[0] = 0;	// prg 2x16K pages
 	comp->slot->memMap[1] = comp->slot->memMask >> 14;
 	comp->slot->memMap[2] = 0;	// chr 2x4K pages
@@ -52,8 +56,11 @@ unsigned char nesMMrd(unsigned short adr, void* data) {
 		nesPPU* ppu = comp->vid->ppu;
 		switch(adr) {
 			case 2:
-				if (!comp->vid->vblank) res ^= 0x80;
-				// TODO : b6:spr0 hit, b5:spr overflow
+				// b7:vblank, b6:spr0 hit, b5:spr overflow
+				res = 0x1f;
+				if (comp->vid->vblank) res |= 0x80;
+				if (comp->vid->ppu->sp0hit) res |= 0x40;
+				if (comp->vid->ppu->spover) res |= 0x20;
 				ppu->latch = 0;
 				break;
 			case 4:
@@ -66,6 +73,15 @@ unsigned char nesMMrd(unsigned short adr, void* data) {
 	} else if (adr < 0x5000) {
 		// audio, dma, io registers (0x17, other is unused)
 		switch (adr) {
+			case 0x4015:
+				res = 0;
+				if (comp->nesapu->ch0.len && comp->nesapu->ch0.en) res |= 0x01;
+				if (comp->nesapu->ch1.len && comp->nesapu->ch1.en) res |= 0x02;
+				if (comp->nesapu->ch2.len && comp->nesapu->ch2.en) res |= 0x04;
+				if (comp->nesapu->ch3.len && comp->nesapu->ch3.en) res |= 0x08;
+				if (comp->nesapu->ch4.len && comp->nesapu->ch4.en) res |= 0x10;
+				if (comp->nesapu->frm) res |= 0x40;		// frame irq
+				break;
 			case 0x4016:		// joystick 1
 				res = comp->nes.priJoy & 1;
 				comp->nes.priJoy >>= 1;
@@ -85,9 +101,12 @@ unsigned char nesMMrd(unsigned short adr, void* data) {
 	return res;
 }
 
+static int decayTab[4] = {1,2,4,6};
+
 void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 	Computer* comp = (Computer*)data;
 	adr &= 0x7fff;
+	int decay;
 	if (adr < 0x2000) {
 		comp->mem->ramData[adr & 0x7ff] = val;
 	} else if (adr < 0x4000) {
@@ -141,6 +160,68 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 	} else if (adr < 0x5000) {
 		// write audio/dma/io?
 		switch (adr) {
+			// ch0 : tone 0
+			case 0x4000:
+				if (val & 0x10) {
+					comp->nesapu->ch0.env = 0;
+					comp->nesapu->ch0.vol = val & 0x0f;
+					comp->nesapu->ch0.lenen = (val & 0x20) ? 0 : 1;
+				} else {
+					comp->nesapu->ch0.env = 1;
+					comp->nesapu->ch0.eloop = (val & 0x20) ? 1 : 0;
+					comp->nesapu->ch0.eper = (val & 0x0f) + 1;
+				}
+				decay = decayTab[(val & 0xc0) >> 6];
+				comp->nesapu->ch0.per1 = comp->nesapu->ch0.per * decay / 4;
+				comp->nesapu->ch0.per0 = comp->nesapu->ch0.per * (8 - decay) / 4;
+				break;
+			case 0x4001:
+				break;
+			case 0x4002:
+				break;
+			case 0x4003:
+				comp->nesapu->ch0.len = val;
+				break;
+			// ch1 : tone 1
+			case 0x4004:
+				comp->nesapu->ch1.lenen = (val & 0x20) ? 0 : 1;
+				break;
+			case 0x4005:
+				break;
+			case 0x4006:
+				break;
+			case 0x4007:
+				comp->nesapu->ch1.len = val;
+				break;
+			// ch2 : triangle
+			case 0x4008:
+				break;
+			case 0x4009:
+				break;
+			case 0x400a:
+				break;
+			case 0x400b:
+				break;
+			// ch3 : noise
+			case 0x400c:
+				comp->nesapu->ch3.lenen = (val & 0x20) ? 0 : 1;
+				break;
+			case 0x400d:
+				break;
+			case 0x400e:
+				break;
+			case 0x400f:
+				break;
+			// ch4 : dmc
+			case 0x4010:
+				break;
+			case 0x4011:
+				break;
+			case 0x4012:
+				break;
+			case 0x4013:
+				break;
+			// ...
 			case 0x4014:		// OAMDMA
 				adr = (val << 8);
 				do {
@@ -150,6 +231,13 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 				} while (adr & 0xff);
 				comp->cpu->t += 0x200;
 				break;
+			case 0x4015:
+				comp->nesapu->ch0.en = (val & 0x01) ? 1 : 0;
+				comp->nesapu->ch1.en = (val & 0x02) ? 1 : 0;
+				comp->nesapu->ch2.en = (val & 0x04) ? 1 : 0;
+				comp->nesapu->ch3.en = (val & 0x08) ? 1 : 0;
+				comp->nesapu->ch4.en = (val & 0x10) ? 1 : 0;
+				break;
 			case 0x4016:
 				if (val & 1) {		// b0: 0-1-0 = reload gamepads state
 					comp->nes.priJoy = comp->nes.priPadState;
@@ -157,6 +245,9 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 				}
 				break;
 			case 0x4017:
+				comp->nesapu->pal = (val & 0x80) ? 1 : 0;
+				comp->nesapu->inten = (val & 0x40) ? 0 : 1;
+				comp->nesapu->tcount = comp->nesapu->pal ? 0 : 4;
 				break;
 			default:
 				//printf("write %.4X,%.2X\n",adr,val);
@@ -190,11 +281,15 @@ void nesMaper(Computer* comp) {
 }
 
 void nesSync(Computer* comp, long ns) {
-	if (comp->vid->vbstrb) {			// @ start of VBlank
+	if (comp->vid->vbstrb && comp->vid->ppu->inten) {	// @ start of VBlank
 		comp->vid->vbstrb = 0;
-		if (comp->vid->ppu->inten) {
-			comp->cpu->intrq |= MOS6502_INT_NMI;	// request NMI...
-		}
+		comp->cpu->intrq |= MOS6502_INT_NMI;		// request NMI...
+	}
+	apuSync(comp->nesapu, ns);
+	if (comp->nesapu->frm) {				// if APU generates FRAME signal, send BRK INT to cpu (will be handled if enabled)
+		comp->nesapu->frm = 0;
+		if (~comp->cpu->f & MFI)
+			comp->cpu->intrq |= MOS6502_INT_BRK;
 	}
 	comp->nes.clock.ns += ns;
 	if (comp->nes.clock.ns >= comp->nes.clock.per) {
@@ -218,7 +313,7 @@ typedef struct {
 	int mask;
 } nesKey;
 
-nesKey nesKeyMap[8] = {
+static nesKey nesKeyMap[8] = {
 	{XKEY_Z,1},		// A
 	{XKEY_X,2},		// B
 	{XKEY_SPACE,4},		// select
@@ -231,7 +326,7 @@ nesKey nesKeyMap[8] = {
 
 int nesGetInputMask(signed int keyid) {
 	int idx = 0;
-	unsigned char mask = 0;
+	int mask = 0;
 	while (idx < 8) {
 		if (nesKeyMap[idx].id == keyid) {
 			mask = nesKeyMap[idx].mask;
@@ -241,10 +336,24 @@ int nesGetInputMask(signed int keyid) {
 	return mask;
 }
 
+static char nesBgOn[] = " BG layer on ";
+static char nesBgOff[] = " BG layer off ";
+static char nesSpOn[] = " SPR layer on ";
+static char nesSpOff[] = " SPR layer off ";
+
 void nes_keyp(Computer* comp, keyEntry ent) {
 	int mask = nesGetInputMask(ent.key);
-	if (mask == 0) return;
 	comp->nes.priPadState |= mask;
+	switch (ent.key) {
+		case XKEY_1:
+			comp->vid->ppu->bglock ^= 1;
+			comp->msg = comp->vid->ppu->bglock ? nesBgOff : nesBgOn;
+			break;
+		case XKEY_2:
+			comp->vid->ppu->splock ^= 1;
+			comp->msg = comp->vid->ppu->splock ? nesSpOff : nesSpOn;
+			break;
+	}
 }
 
 void nes_keyr(Computer* comp, keyEntry ent) {

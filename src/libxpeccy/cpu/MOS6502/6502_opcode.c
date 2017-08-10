@@ -119,11 +119,19 @@ void mosGetINDY(CPU* cpu) {
 }
 
 // opcodes
-// fetch already eats 2T (?)
 
 // brk : 7T
 void mosop00(CPU* cpu) {
-	cpu->intrq |= MOS6502_INT_BRK;
+	cpu->pc++;						// increment pc???
+	cpu->f |= (MFB | 0x20);
+	cpu->mwr(cpu->sp, cpu->hpc, cpu->data);
+	cpu->lsp--;
+	cpu->mwr(cpu->sp, cpu->lpc, cpu->data);
+	cpu->lsp--;
+	cpu->mwr(cpu->sp, cpu->f, cpu->data);
+	cpu->lsp--;
+	cpu->lpc = cpu->mrd(0xfffe, 0, cpu->data);
+	cpu->hpc = cpu->mrd(0xffff, 0, cpu->data);
 }
 
 // 01:ora indx n : 6T
@@ -159,6 +167,7 @@ void mosop07(CPU* cpu) {
 
 // php = push f
 void mosop08(CPU* cpu) {
+	cpu->f |= (MFB | 0x20);
 	cpu->mwr(cpu->sp, cpu->f, cpu->data);
 	cpu->lsp--;
 }
@@ -272,13 +281,13 @@ void mosop1F(CPU* cpu) {
 
 // jsr nn = call nn
 void mosop20(CPU* cpu) {
-	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);
-	cpu->hptr = cpu->mrd(cpu->pc++, 0, cpu->data);
-	cpu->mwr(cpu->sp, cpu->hpc, cpu->data);
+	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);		// fetch low addr byte
+	cpu->mwr(cpu->sp, cpu->hpc, cpu->data);			// push pch
 	cpu->lsp--;
-	cpu->mwr(cpu->sp, cpu->lpc, cpu->data);
+	cpu->mwr(cpu->sp, cpu->lpc, cpu->data);			// push pcl
 	cpu->lsp--;
-	cpu->pc = cpu->mptr;
+	cpu->hpc = cpu->mrd(cpu->pc, 0, cpu->data);		// fetch hi addr byte
+	cpu->lpc = cpu->lptr;
 }
 
 // and ind,x n
@@ -317,6 +326,7 @@ void mosop27(CPU* cpu) {
 
 // plp = pop f
 void mosop28(CPU* cpu) {
+	cpu->tmpb = cpu->mrd(cpu->pc, 0, cpu->data);
 	cpu->lsp++;
 	cpu->f = cpu->mrd(cpu->sp, 0 ,cpu->data);
 }
@@ -475,7 +485,7 @@ void mosop47(CPU* cpu) {
 
 // pha : push a
 void mosop48(CPU* cpu) {
-	cpu->mwr(cpu->sp, cpu->a, cpu->data);
+	cpu->mwr(cpu->sp, cpu->a, cpu->data);		// push a
 	cpu->lsp--;
 }
 
@@ -557,7 +567,6 @@ void mosop57(CPU* cpu) {
 // cli
 void mosop58(CPU* cpu) {
 	cpu->f &= ~MFI;
-	cpu->inten = 0;
 	cpu->noint = 1;
 }
 
@@ -595,9 +604,10 @@ void mosop5F(CPU* cpu) {
 // rts
 void mosop60(CPU* cpu) {
 	cpu->lsp++;
-	cpu->lpc = cpu->mrd(cpu->sp, 0, cpu->data);
+	cpu->lpc = cpu->mrd(cpu->sp, 0, cpu->data);		// pop pcl
 	cpu->lsp++;
-	cpu->hpc = cpu->mrd(cpu->sp, 0, cpu->data);
+	cpu->hpc = cpu->mrd(cpu->sp, 0, cpu->data);		// pop pch
+	cpu->pc++;						// inc pc, cuz of jsr push algorithm
 }
 
 // adc indx
@@ -633,6 +643,7 @@ void mosop67(CPU* cpu) {
 
 // pla = pop a
 void mosop68(CPU* cpu) {
+	cpu->tmpb = cpu->mrd(cpu->pc, 0, cpu->data);
 	cpu->lsp++;
 	cpu->a = cpu->mrd(cpu->sp, 0, cpu->data);
 	MFLAGZN(cpu->a);

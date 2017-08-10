@@ -35,6 +35,14 @@ enum {
 	DBG_TRACE_HERE
 };
 
+enum {
+	NES_SCR_OFF = 0x00,
+	NES_SCR_0,
+	NES_SCR_1,
+	NES_SCR_2,
+	NES_SCR_3
+};
+
 typedef struct {
 	QLabel* name;
 	QLineEdit* edit;
@@ -52,6 +60,7 @@ void DebugWin::start(Computer* c) {
 	if (!comp->vid->tail)
 		vidDarkTail(comp->vid);
 	ui.tabsPanel->setTabEnabled(ui.tabsPanel->indexOf(ui.gbTab), comp->hw->id == HW_GBC);
+	ui.tabsPanel->setTabEnabled(ui.tabsPanel->indexOf(ui.nesTab), comp->hw->id == HW_NES);
 
 //	ui.dasmTable->comp = comp;
 	move(winPos);
@@ -314,6 +323,16 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	dumpAdr = 0;
 	tCount = 0;
 	trace = 0;
+// nes tab
+	ui.nesScrType->addItem(trUtf8("BG off"), NES_SCR_OFF);
+	ui.nesScrType->addItem(trUtf8("BG SCR 0"), NES_SCR_0);
+	ui.nesScrType->addItem(trUtf8("BG SCR 1"), NES_SCR_1);
+	ui.nesScrType->addItem(trUtf8("BG SCR 2"), NES_SCR_2);
+	ui.nesScrType->addItem(trUtf8("BG SCR 3"), NES_SCR_3);
+
+	connect(ui.nesScrType,SIGNAL(currentIndexChanged(int)), this, SLOT(drawNes()));
+	connect(ui.nesShowSpr,SIGNAL(stateChanged(int)), this, SLOT(drawNes()));
+
 // subwindows
 	dumpwin = new QDialog(this);
 	dui.setupUi(dumpwin);
@@ -702,6 +721,7 @@ bool DebugWin::fillAll() {
 	fillDump();
 	fillFDC();
 	fillGBoy();
+	drawNes();
 	fillAY();
 	ui.brkTab->update();
 	if (ui.scrLabel->isVisible())
@@ -818,6 +838,31 @@ void DebugWin::fillGBoy() {
 	ui.gbImage->setPixmap(QPixmap::fromImage(img));
 }
 
+// nes
+
+void DebugWin::drawNes() {
+	nesPPU* ppu = comp->vid->ppu;
+
+	ui.labNTAdr->setText(gethexword(ppu->ntadr));
+	ui.labSCX->setText(gethexbyte(ppu->scx));
+	ui.labSCY->setText(gethexbyte(ppu->scy));
+
+
+	unsigned char scrmap[32 * 32];
+	switch(ui.nesScrType->itemData(ui.nesScrType->currentIndex()).toInt()) {
+		case NES_SCR_OFF: memset(scrmap, 0x00, 32*32); break;
+		case NES_SCR_0:	memcpy(scrmap, ppu->mem + 0x2000, 0x400); break;
+		case NES_SCR_1: memcpy(scrmap, ppu->mem + 0x2400, 0x400); break;
+		case NES_SCR_2: memcpy(scrmap, ppu->mem + 0x2800, 0x400); break;
+		case NES_SCR_3: memcpy(scrmap, ppu->mem + 0x2c00, 0x400); break;
+	}
+
+	QImage img(256, 240, QImage::Format_RGB888);
+	img.fill(Qt::black);
+	// TODO: draw nes screen / sprites
+	ui.nesScreen->setPixmap(QPixmap::fromImage(img));
+}
+
 // ...
 
 void DebugWin::setFlagNames(const char name[8]) {
@@ -834,40 +879,15 @@ void DebugWin::setFlagNames(const char name[8]) {
 void DebugWin::chLayout() {
 	switch (comp->cpu->type) {
 		case CPU_Z80:
-//			setFlagNames("SZ5H3PNC");
-/*
-			ui.cpuGrid->setEnabled(true);
-			ui.editAFa->setEnabled(true);
-			ui.editBCa->setEnabled(true);
-			ui.editDEa->setEnabled(true);
-			ui.editHLa->setEnabled(true);
-			ui.editIX->setEnabled(true);
-			ui.editIY->setEnabled(true);
-			ui.editIR->setEnabled(true);
-*/
 			ui.boxIM->setEnabled(true);
 			break;
 		case CPU_LR35902:
-/*
-			ui.cpuGrid->setEnabled(true);
-			ui.editAFa->setEnabled(false);
-			ui.editBCa->setEnabled(false);
-			ui.editDEa->setEnabled(false);
-			ui.editHLa->setEnabled(false);
-			ui.editIX->setEnabled(false);
-			ui.editIY->setEnabled(false);
-			ui.editIR->setEnabled(false);
-*/
 			ui.boxIM->setEnabled(false);
-//			setFlagNames("ZNHC----");
 			break;
 		case CPU_6502:
 			ui.boxIM->setEnabled(false);
-//			setFlagNames("MV5BDIZC");
 			break;
 		default:
-//			ui.cpuGrid->setEnabled(false);
-//			setFlagNames("--------");
 			break;
 	}
 }

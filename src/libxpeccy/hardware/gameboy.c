@@ -671,12 +671,12 @@ unsigned char gbGetInputMask(signed int keyid) {
 	return mask;
 }
 
-char gbMsgBG0[] = " BG layer off ";
-char gbMsgBG1[] = " BG layer on ";
-char gbMsgWIN0[] = " WIN layer off ";
-char gbMsgWIN1[] = " WIN layer on ";
-char gbMsgSPR0[] = " SPR layer off ";
-char gbMsgSPR1[] = " SPR layer on ";
+static char gbMsgBG0[] = " BG layer off ";
+static char gbMsgBG1[] = " BG layer on ";
+static char gbMsgWIN0[] = " WIN layer off ";
+static char gbMsgWIN1[] = " WIN layer on ";
+static char gbMsgSPR0[] = " SPR layer off ";
+static char gbMsgSPR1[] = " SPR layer on ";
 
 void gbc_keyp(Computer* comp, keyEntry ent) {
 	unsigned char mask = gbGetInputMask(ent.key);

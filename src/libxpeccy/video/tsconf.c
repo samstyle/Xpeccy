@@ -6,8 +6,8 @@
 
 extern int adr,xscr,yscr;
 extern unsigned char col, ink, pap, scrbyte, nxtbyte;
-extern unsigned char inkTab[];
-extern unsigned char papTab[];
+extern unsigned char inkTab[128];
+extern unsigned char papTab[128];
 
 void vidDrawByteDD(Video*);
 

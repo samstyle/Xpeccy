@@ -5,6 +5,7 @@
 
 typedef struct {
 	unsigned sp0hit:1;		// sprite 0 hit
+	unsigned spover:1;		// sprites overscan
 	unsigned bigspr:1;		// 8x16 sprites
 	unsigned master:1;
 	unsigned inten:1;		// NMI @ vblank
@@ -13,6 +14,8 @@ typedef struct {
 	unsigned spleft8:1;		// show left 8 pix of spr
 	unsigned bgen:1;		// bg render enabled
 	unsigned spen:1;		// spr render enabled
+	unsigned bglock:1;
+	unsigned splock:1;
 	unsigned latch:1;		// 0:scx/hi 1:scy/low
 	// memory
 	unsigned char vbuf;

@@ -324,6 +324,7 @@ Computer* compCreate() {
 	comp->gbsnd = gbsCreate();
 //	comp->saa = saaCreate();
 	comp->beep = bcCreate();
+	comp->nesapu = apuCreate();
 // baseconf
 	comp->evo.evo2F = 0;
 	comp->evo.evo4F = 0;
@@ -375,6 +376,7 @@ void compDestroy(Computer* comp) {
 	gbsDestroy(comp->gbsnd);
 //	sdrvDestroy(comp->sdrv);
 	bcDestroy(comp->beep);
+	apuDestroy(comp->nesapu);
 	sltDestroy(comp->slot);
 	free(comp);
 }
@@ -446,6 +448,8 @@ void compUpdateTimings(Computer* comp) {
 			// pal:ntsc = 48:60 Hz frame irq
 
 			// comp->nes.tper = perNoTurbo << 4;
+			comp->nesapu->period = perNoTurbo * 14915;	// ~240 Hz @ 1.78MHz
+			vidUpdateTimings(comp->vid, perNoTurbo / 3);
 			break;
 		default:
 			vidUpdateTimings(comp->vid, perNoTurbo >> 1);
@@ -469,8 +473,8 @@ void compSetTurbo(Computer* comp, int mult) {
 
 // hardware
 
-vLayout gbcLay = {{228,154},{0,0},{68,10},{160,144},{0,0},64};
-vLayout nesLay = {{341,260},{0,0},{85,20},{256,240},{0,0},64};
+static vLayout gbcLay = {{228,154},{0,0},{68,10},{160,144},{0,0},64};
+static vLayout nesLay = {{341,262},{0,0},{85,22},{256,240},{0,0},0};
 
 void compSetHardware(Computer* comp, const char* name) {
 	HardWare* hw = findHardware(name);
@@ -678,13 +682,22 @@ void cmsWr(Computer* comp, unsigned char val) {
 
 // breaks
 
+unsigned char dumBrk = 0x00;
+
 unsigned char* getBrkPtr(Computer* comp, unsigned short madr) {
 	xAdr xadr = memGetXAdr(comp->mem, madr);
 	unsigned char* ptr = NULL;
 	switch (xadr.type) {
 		case MEM_RAM: ptr = comp->brkRamMap + (xadr.abs & 0x3fffff); break;
 		case MEM_ROM: ptr = comp->brkRomMap + (xadr.abs & 0x7ffff); break;
-		case MEM_SLOT: ptr = comp->slot->brkMap + (xadr.abs & comp->slot->memMask); break;
+		case MEM_SLOT:
+			if (comp->slot->brkMap)
+				ptr = comp->slot->brkMap + (xadr.abs & comp->slot->memMask);
+			break;
+	}
+	if (!ptr) {
+		dumBrk = 0;
+		ptr = &dumBrk;
 	}
 	return ptr;
 }
