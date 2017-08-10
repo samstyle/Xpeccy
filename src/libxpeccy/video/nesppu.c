@@ -13,7 +13,7 @@
 // palette taken here:
 // https://en.wikipedia.org/wiki/List_of_video_game_console_palettes#NES
 
-xColor nesPal[64] = {
+static xColor nesPal[64] = {
 	{0x7c,0x7c,0x7c},{0x00,0x00,0x7c},{0x00,0x00,0xbc},{0x44,0x28,0xbc},
 	{0x94,0x00,0x84},{0xa8,0x00,0x20},{0xa8,0x10,0x00},{0x88,0x14,0x00},
 	{0x50,0x30,0x00},{0x00,0x78,0x00},{0x00,0x68,0x00},{0x00,0x58,0x00},
@@ -35,7 +35,7 @@ xColor nesPal[64] = {
 	{0x00,0xfc,0xfc},{0xd8,0xd8,0xd8},{0x00,0x00,0x00},{0x00,0x00,0x00}
 };
 
-unsigned char nesInitIdx[32] = {
+static unsigned char nesInitIdx[32] = {
 	0x09,0x01,0x00,0x01,0x00,0x02,0x02,0x0d,
 	0x08,0x10,0x08,0x24,0x00,0x00,0x04,0x2c,
 	0x09,0x01,0x34,0x03,0x00,0x04,0x00,0x14,
@@ -58,31 +58,61 @@ void ppuReset(nesPPU* ppu) {
 	ppu->latch = 0;
 	ppu->bgen = 1;
 	ppu->spen = 1;
-	ppu->ntadr = 0x2000;
 	ppu->bgadr = 0;
 	ppu->spadr = 0;
-	ppu->scx = 0;
-	ppu->scy = 0;
+	ppu->vadr = 0;
+	ppu->tadr = 0;
+	ppu->finex = 0;
 	memcpy(ppu->mem + 0x3f00, nesInitIdx, 32);
 }
 
-extern unsigned char col,ink,pap;
+// extern unsigned char col,ink,pap;
+
+unsigned short ppuYinc(unsigned short v) {
+	int y;
+	if ((v & 0x7000) != 0x7000) {
+		v += 0x1000;
+	} else {
+		v &= ~0x7000;
+		y = (v & 0x3e0) >> 5;
+		if (y == 29) {		// lines 0..29 is visible
+			y = 0;
+			v ^= 0x0800;
+		} else if (y == 31) {	// pseudo lines 30,31 @ attributes area
+			y = 0;
+		} else {
+			y++;
+		}
+		v = (v & ~0x03e0) | ((y << 5) & 0x3e0);
+	}
+	return v;
+}
+
+unsigned short ppuXcoarse(unsigned short v) {
+	if ((v & 0x1f) == 0x1f) {
+		v &= ~0x1f;
+		v ^= 0x400;
+	} else {
+		v++;
+	}
+	return v;
+}
 
 void ppuDraw(nesPPU* ppu) {
-	col = 0;
-	pap = ppu->bgline[(ppu->ray->x + ppu->scx) & 0x1ff];
-	ink = ppu->spline[ppu->ray->x];
+	unsigned char col = 0;
+	unsigned char bgc = ppu->bgline[ppu->ray->x & 0xff];		// background color
+	unsigned char spc = ppu->spline[ppu->ray->x & 0xff];		// sprite color
 
-	if ((pap & 3) && (ppu->prline[ppu->ray->x] & 0x80))
+	if ((bgc & 3) && (ppu->prline[ppu->ray->x] & 0x80))
 		ppu->sp0hit = 1;
 
-	if (ppu->bglock) pap = 0;
-	if (ppu->splock) ink = 0;
+	if (ppu->bglock) bgc = 0;
+	if (ppu->splock) spc = 0;
 
 	if (ppu->prline[ppu->ray->x] & 0x20) {			// spr behind bg
-		col = (pap & 3) ? pap : ink;
+		col = (bgc & 3) ? bgc : spc;
 	} else {					// spr above bg
-		col = (ink & 3) ? ink : pap;
+		col = (spc & 3) ? spc : bgc;
 	}
 	if ((col & 3) == 0) col = 0;				// universal color 0
 	col = ppu->mem[0x3f00 | (col & 0x3f)];			// pal index -> col index
@@ -90,98 +120,97 @@ void ppuDraw(nesPPU* ppu) {
 	vidPutDot(ppu->ray, nesPal, col);
 }
 
+// from nesdev wiki:
+// tile address      = 0x2000 | (v & 0x0FFF)
+// attribute address = 0x23C0 | (v & 0x0C00) | ((v >> 4) & 0x38) | ((v >> 2) & 0x07)
+
 void ppuLine(nesPPU* ppu) {
-	memset(ppu->bgline, 0x00, 512);		// bg
-	memset(ppu->spline, 0x00, 256);		// sprites
-	memset(ppu->prline, 0x00, 256);		// sprites priority
-	if (ppu->ray->y > 239) return;
-	if (ppu->ray->y == 0) ppu->sp0hit = 0;
+
 	unsigned char x,y,flag;
 	unsigned char shi,sln;
 	int cnt;
 	int lin;
-	int vadr;
-	int tadr;
+	unsigned short adr;
+	unsigned short bgadr;
 	unsigned short data;
 	unsigned char tile;
+	unsigned char atr;
 	unsigned char col;
-	// render tiles
+
+	if (ppu->ray->y < 239) {			// only on visible screen
+		if (ppu->ray->y == 0) {
+			if (ppu->bgen) {
+				ppu->vadr &= 0x041f;		// copy Y related bits
+				ppu->vadr |= (ppu->tadr & 0x7be0);
+			}
+			ppu->sp0hit = 0;
+		} else if (ppu->bgen) {
+			ppu->vadr = ppuYinc(ppu->vadr);	// increment vertical position in vadr
+		}
+		if (ppu->bgen) {
+			ppu->vadr &= 0x7be0;			// copy X related bits...
+			ppu->vadr |= (ppu->tadr & 0x041f);	// ...from tadr to vadr
+		}
+	}
+
+	memset(ppu->bgline, 0x00, 512);		// bg
+	memset(ppu->spline, 0x00, 256);		// sprites
+	memset(ppu->prline, 0x00, 256);		// sprites priority
+
+	if (ppu->ray->y > 239) return;
+
+// render tiles
+
 	if (ppu->bgen) {
-		lin = (ppu->ray->y + ppu->scy);				// full line number
-		if (lin > 0xef) lin += 0x10;				// shift to skip attr block
-		if (lin > 0x1ef) lin += 0x10;
-		lin &= 0x1ff;
-		vadr = ppu->ntadr | ((lin & 0xf8) << 2);		// adr of line start @ left half
-		if (lin > 255) vadr ^= 0x800;				// if line number > 255 - move to other top/bottom half
 		cnt = 0;
-		while (cnt < 512) {
-			tile = ppu->mem[vadr & ppu->ntmask];
-			tadr = ppu->bgadr | (tile << 4) | (lin & 7);	// 16 bytes/tile + line low 3 bits
-			data = ppu->mrd(tadr, ppu->data);
-			data |= (ppu->mrd(tadr + 8, ppu->data) << 8);
+		adr = ppu->vadr;
+		while (cnt < 0x108) {
+			tile = ppu->mem[(0x2000 | (adr & 0x0fff)) & ppu->ntmask];						// tile num
+			atr = ppu->mem[(0x23c0 | (adr & 0x0c00) | ((adr >> 4) & 0x38) | ((adr >> 2) & 7)) & ppu->ntmask];	// attribute
+			bgadr = ppu->bgadr | ((tile << 4) & 0x0ff0) | ((adr >> 12) & 7);
+			data = ppu->mrd(bgadr, ppu->data);
+			data |= (ppu->mrd(bgadr + 8, ppu->data) << 8);
+			if (adr & 0x0040) atr >>= 4;			// bit 3,4 = attribute of current tile
+			if (~adr & 0x0002) atr <<= 2;
 			do {
-				col = (data & 0x80) ? 1 : 0;		// get direct color index 0-3
+				col = (data & 0x80) ? 1 : 0;
 				if (data & 0x8000) col |= 2;
-				ppu->bgline[cnt] = col;			// store to bg buffer (w/o shift to palete yet)
+				col |= (atr & 0x0c);
+				if (cnt >= ppu->finex)
+					ppu->bgline[cnt - ppu->finex] = col;
 				data <<= 1;
 				cnt++;
-			} while (cnt & 7);				// repeat 8 times
-			if ((vadr & 0x1f) == 0x1f) {
-				vadr &= ~0x1f;
-				vadr ^= 0x400;				// move to other half
-			} else {
-				vadr++;					// to next tile inside current half
-			}
+			} while (cnt & 7);
+			adr = ppuXcoarse(adr);		// move to next tile
 		}
-		// attrs = bg color bit 2,3
-		vadr = ppu->ntadr | 0x3c0 | ((lin & 0xe0) >> 2);	// adr of start of line attrs
-		if (lin > 255) vadr ^= 0x800;
-		cnt = 0;
-		while (cnt < 512) {
-			tile = ppu->mem[vadr & ppu->ntmask];
-			if (lin & 0x10) tile >>= 4;			// lower 4x2 block
-			col = (tile & 3) << 2;
-			do {
-				ppu->bgline[cnt] |= col;
-				cnt++;
-			} while (cnt & 0x0f);				// attr for 2 tiles = 16 dots
-			col = tile & 0x0c;
-			do {
-				ppu->bgline[cnt] |= col;
-				cnt++;
-			} while (cnt & 0x0f);
-			if ((vadr & 7) == 7) {
-				vadr &= ~7;
-				vadr ^= 0x400;
-			} else {
-				vadr++;
-			}
-		}
-		if (!ppu->bgleft8) memset(ppu->bgline + ppu->scx, 0x00, 0x08);
+		if (!ppu->bgleft8)					// hide left 8 pixels?
+			memset(ppu->bgline, 0x00, 8);
 	}
-	// render sprites
+
+// render sprites
+
 	ppu->spover = 0;
 	if (ppu->spen) {
 		cnt = 0;
 		lin = 0;
-		vadr = 0;			// oam addr
+		adr = 0;			// oam addr
 		shi = ppu->bigspr ? 16 : 8;	// sprite height
 		while ((cnt < 8) && (lin < 64)) {
-			y = ppu->oam[vadr++];
-			tile = ppu->oam[vadr++];
-			flag = ppu->oam[vadr++];
-			x = ppu->oam[vadr++];
-			if ((x < 0xfa) && (y < 0xf0)) {		// sprite is visible
+			y = ppu->oam[adr++];
+			tile = ppu->oam[adr++];
+			flag = ppu->oam[adr++];
+			x = ppu->oam[adr++];
+			if (y < 0xf0) {				// sprite is visible
 				sln = ppu->ray->y - y;
 				if (sln < shi) {		// sprite is crossing current line
 					if (flag & 0x80) sln = shi - sln - 1;		// VFlip
 					if (ppu->bigspr) {
-						tadr = ((tile & 1) ? 0x1000 : 0) | ((tile & 0xfe) << 4) | (sln & 7);
+						bgadr = ((tile & 1) ? 0x1000 : 0) | ((tile << 4) & 0xfe0) | (sln & 7);
 					} else {
-						tadr = ppu->spadr | (tile << 4) | (sln & 7);
+						bgadr = ppu->spadr | ((tile << 4) & 0x0ff0) | (sln & 7);
 					}
-					data = ppu->mrd(tadr, ppu->data);
-					data |= (ppu->mrd(tadr + 8, ppu->data) << 8);
+					data = ppu->mrd(bgadr, ppu->data);
+					data |= (ppu->mrd(bgadr + 8, ppu->data) << 8);
 					for (y = 0; y < 8; y++) {
 						if (flag & 0x40) {			// HFlip
 							col = (data & 0x01) ? 1 : 0;
@@ -193,8 +222,11 @@ void ppuLine(nesPPU* ppu) {
 							data <<= 1;
 						}
 						col |= (flag & 3) << 2;			// add sprite palete
-						ppu->spline[x + y] = col | 0x10;	// sprite colors are 10-1f
-						ppu->prline[x + y] = flag & 0x20;	// !0 -> sprite behind bg, visible where bg col = 0
+						col |= 0x10;
+						if (!(ppu->spline[x + y] & 3)) {
+							ppu->spline[x + y] = col;	// sprite colors are 10-1f
+							ppu->prline[x + y] = flag & 0x20;	// !0 -> sprite behind bg, visible where bg col = 0
+						}
 						if ((lin == 0) && (col & 3))
 							ppu->prline[x + y] |= 0x80;
 
@@ -220,32 +252,35 @@ void ppuFram(nesPPU* ppu) {
 // rd/wr
 
 void ppuWrite(nesPPU* ppu, unsigned char val) {
-	ppu->vadr &= 0x3fff;
-	if (ppu->vadr < 0x2000) {
-		ppu->mwr(ppu->vadr, val, ppu->data);
-	} else if (ppu->vadr < 0x3f00) {
-		ppu->mem[(ppu->vadr & ppu->ntmask) | 0x2000] = val;		// nametables (! can be mapped to cartridge)
+//	ppu->vadr &= 0x3fff;
+	unsigned short adr = ppu->vadr & 0x3fff;
+	if (adr < 0x2000) {
+		ppu->mwr(adr, val, ppu->data);
+	} else if (adr < 0x3f00) {
+		ppu->mem[(adr & ppu->ntmask) | 0x2000] = val;		// nametables (! can be mapped to cartridge)
 	} else {
-		ppu->mem[(ppu->vadr & 0x1f) | 0x3f00] = val;		// palette
-		if ((ppu->vadr & 0x1f) == 0x10) ppu->mem[0x3f00] = val;
-		else if ((ppu->vadr & 0x1f) == 0x00) ppu->mem[0x3f10] = val;
+		ppu->mem[(adr & 0x1f) | 0x3f00] = val;		// palette
+		if ((adr & 0x1f) == 0x10)
+			ppu->mem[0x3f00] = val;
+		else if ((adr & 0x1f) == 0x00)
+			ppu->mem[0x3f10] = val;
 	}
 	ppu->vadr += ppu->vadrinc;
 }
 
 unsigned char ppuRead(nesPPU* ppu) {
 	unsigned char res = 0xff;
-	ppu->vadr &= 0x3fff;
-	if (ppu->vadr < 0x3f00) {
+	unsigned short adr = ppu->vadr & 0x3fff;
+	if (adr < 0x3f00) {
 		res = ppu->vbuf;
-		if (ppu->vadr < 0x2000) {
-			ppu->vbuf = ppu->mrd(ppu->vadr, ppu->data);
+		if (adr < 0x2000) {
+			ppu->vbuf = ppu->mrd(adr, ppu->data);
 		} else {
-			ppu->vbuf = ppu->mem[(ppu->vadr & ppu->ntmask) | 0x2000];
+			ppu->vbuf = ppu->mem[(adr & ppu->ntmask) | 0x2000];
 		}
 	} else {
-		res = ppu->mem[(ppu->vadr & 0x1f) | 0x3f00];		// palette
-		ppu->vbuf = ppu->mem[(ppu->vadr & 0xfff & ppu->ntmask) | 0x2000];
+		res = ppu->mem[(adr & 0x1f) | 0x3f00];		// palette
+		ppu->vbuf = ppu->mem[(adr & 0x2fff & ppu->ntmask) | 0x2000];
 	}
 	ppu->vadr += ppu->vadrinc;
 	return res;

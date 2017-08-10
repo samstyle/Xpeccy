@@ -35,12 +35,14 @@ typedef struct {
 	vRay* ray;
 	int oamadr;		// oam access address
 	ePair(vadr,vah,val);	// videomem access addr
+	unsigned short tadr;	// tmp vadr
 	int vadrinc;		// videomem addr increment (1 | 32)
-	int ntadr;		// tilemap base adr
-	int spadr;		// 8x8 sprites tiles adr
-	int bgadr;		// bg tiles adr
-	unsigned char scx;
-	unsigned char scy;
+//	int ntadr;		// tilemap base adr
+	unsigned short spadr;	// 8x8 sprites tiles adr
+	unsigned short bgadr;	// bg tiles adr
+	int finex;		// = x scroll low 3 bits
+//	unsigned char scx;
+//	unsigned char scy;
 } nesPPU;
 
 nesPPU* ppuCreate(vRay*);

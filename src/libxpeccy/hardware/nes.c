@@ -114,13 +114,15 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 		nesPPU* ppu = comp->vid->ppu;
 		switch (adr & 7) {
 			case 0:		// PPUCTRL
-				ppu->ntadr = 0x2000 | ((val & 3) << 10);
 				ppu->vadrinc = (val & 0x04) ? 32 : 1;
 				ppu->spadr = (val & 0x08) ? 0x1000 : 0x0000;
 				ppu->bgadr = (val & 0x10) ? 0x1000 : 0x0000;
 				ppu->bigspr = (val & 0x20) ? 1 : 0;
 				ppu->master = (val & 0x40) ? 1 : 0;
 				ppu->inten = (val & 0x80) ? 1 : 0;
+
+				ppu->tadr = (ppu->tadr & ~0x0c00) | ((val << 10) & 0x0c00);
+
 				break;
 			case 1:		// PPUMASK
 				ppu->greyscale = (val & 0x01) ? 1 : 0;
@@ -138,19 +140,28 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 				ppu->oamadr++;
 				break;
 			case 5:
-				ppu->latch ^= 1;
 				if (ppu->latch) {
-					ppu->scx = val;
+					ppu->tadr &= 0x0c1f;
+					ppu->tadr |= ((val & 0x07) << 12);
+					ppu->tadr |= ((val & 0xf8) << 2);
+					ppu->latch = 0;
 				} else {
-					ppu->scy = val;
+					ppu->tadr &= ~0x001f;
+					ppu->tadr |= ((val >> 3) & 0x1f);
+					ppu->finex = val & 7;
+					ppu->latch = 1;
 				}
 				break;
 			case 6:
-				ppu->latch ^= 1;
 				if (ppu->latch) {
-					ppu->vah = val;
+					ppu->tadr &= 0xff00;
+					ppu->tadr |= (val & 0xff);
+					ppu->vadr = ppu->tadr;			// VADR changes right now
+					ppu->latch = 0;
 				} else {
-					ppu->val = val;
+					ppu->tadr &= 0x00ff;
+					ppu->tadr |= ((val << 8) & 0x3f00);
+					ppu->latch = 1;
 				}
 				break;
 			case 7:

@@ -843,9 +843,7 @@ void DebugWin::fillGBoy() {
 void DebugWin::drawNes() {
 	nesPPU* ppu = comp->vid->ppu;
 
-	ui.labNTAdr->setText(gethexword(ppu->ntadr));
-	ui.labSCX->setText(gethexbyte(ppu->scx));
-	ui.labSCY->setText(gethexbyte(ppu->scy));
+//	ui.labNTAdr->setText(gethexword(ppu->vadr));
 
 
 	unsigned char scrmap[32 * 32];
