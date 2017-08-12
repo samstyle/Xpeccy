@@ -473,7 +473,7 @@ void tsOut47AF(Computer* comp, unsigned short port, unsigned char val) {comp->vi
 
 // catch
 
-xPort tsPortMap[] = {
+static xPort tsPortMap[] = {
 	// xxaf
 	{0xffff,0x00af,2,2,2,tsIn00AF,	tsOut00AF},
 	{0xffff,0x01af,2,2,2,NULL,	tsOut01AF},
@@ -547,9 +547,13 @@ xPort tsPortMap[] = {
 };
 
 void tslOut(Computer* comp,unsigned short port,unsigned char val,int dos) {
+	zx_dev_wr(comp, port, val, dos);
 	hwOut(tsPortMap, comp, port, val, dos);
 }
 
 unsigned char tslIn(Computer* comp,unsigned short port,int dos) {
-	return hwIn(tsPortMap, comp, port, dos);
+	unsigned char res = 0xff;
+	if (zx_dev_rd(comp, port, &res, dos)) return res;
+	res = hwIn(tsPortMap, comp, port, dos);
+	return  res;
 }

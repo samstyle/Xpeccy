@@ -22,4 +22,6 @@ bitChan* bcCreate();
 void bcDestroy(bitChan*);
 void bcSync(bitChan*, int);
 
+sndPair mixer(sndPair, int, int, int);
+
 #endif

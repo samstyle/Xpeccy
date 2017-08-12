@@ -1,9 +1,8 @@
-#ifndef	_XSOUNDRIVE
-#define	_XSOUNDRIVE
+#ifndef	XSOUNDRIVE
+#define	XSOUNDRIVE
 // soundrive/covox type
 
 #include "sndcommon.h"
-#include "../devbus.h"
 
 enum {
 	SDRV_NONE = 0,
@@ -23,11 +22,9 @@ typedef struct {
 	unsigned char chan[4];
 } SDrive;
 
-void* sdCreate();
-void sdDestroy(void*);
-void sdRequest(void*, xDevBus*);
-sndPair sdVolume(void*);
-void sdSet(void*, int, xArg);
-xArg sdGet(void*, int);
+SDrive* sdrvCreate(int);
+void sdrvDestroy(SDrive*);
+int sdrvWrite(SDrive*, unsigned short, unsigned char);
+sndPair sdrvVolume(SDrive*);
 
 #endif

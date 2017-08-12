@@ -88,7 +88,7 @@ void atm2OutFF(Computer* comp, unsigned short port, unsigned char val) {		// dos
 	comp->vid->pal[adr].g = ((val & 0x10) ? 0xaa : 0x00) + ((val & 0x80) ? 0x55 : 0x00);
 }
 
-xPort atm2PortMap[] = {
+static xPort atm2PortMap[] = {
 	{0x0007,0x00fe,2,2,2,xInFE,	atm2OutFE},
 	{0x0007,0x00fa,2,2,2,NULL,	NULL},		// fa
 //	{0x0007,0x00fb,2,2,2,NULL,	atm2OutFB},	// fb (covox)
@@ -105,6 +105,7 @@ xPort atm2PortMap[] = {
 
 void atm2Out(Computer* comp, unsigned short port, unsigned char val, int dos) {
 	if (~comp->p77hi & 2) dos = 1;
+	zx_dev_wr(comp, port, val, dos);
 	difOut(comp->dif, port, val, dos);
 	hwOut(atm2PortMap, comp, port, val, dos);
 }
@@ -112,6 +113,7 @@ void atm2Out(Computer* comp, unsigned short port, unsigned char val, int dos) {
 unsigned char atm2In(Computer* comp, unsigned short port, int dos) {
 	unsigned char res = 0xff;
 	if (~comp->p77hi & 2) dos = 1;
+	if (zx_dev_rd(comp, port, &res, dos)) return res;
 	if (difIn(comp->dif, port, &res, dos)) return res;
 	res = hwIn(atm2PortMap, comp, port, dos);
 	return res;

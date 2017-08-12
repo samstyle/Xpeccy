@@ -48,7 +48,7 @@ unsigned char phxInF7(Computer* comp, unsigned short port) {
 	return 0x00;
 }
 
-xPort phxPortMap[] = {
+static xPort phxPortMap[] = {
 	{0x0007,0x00fe,2,2,2,xInFE,	xOutFE},	// FE
 	{0xc007,0x1ffd,2,2,2,NULL,	phxOut1FFD},	// mem control
 	{0xc007,0x7ffd,2,2,2,NULL,	phxOut7FFD},
@@ -71,12 +71,14 @@ xPort phxPortMap[] = {
 void phxOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
 	if (comp->pEFF7 & 0x80) dos = 1;
 	if (difOut(comp->dif, port, val, dos)) return;
+	zx_dev_wr(comp, port, val, dos);
 	hwOut(phxPortMap, comp, port, val, dos);
 }
 
-unsigned char phxIn(Computer* comp, unsigned short port, int bdi) {
-	if (comp->pEFF7 & 0x80) bdi = 1;
+unsigned char phxIn(Computer* comp, unsigned short port, int dos) {
+	if (comp->pEFF7 & 0x80) dos = 1;
 	unsigned char res = 0xff;
-	if (difIn(comp->dif, port, &res, bdi)) return res;
-	return hwIn(phxPortMap, comp, port, bdi);
+	if (difIn(comp->dif, port, &res, dos)) return res;
+	if (zx_dev_rd(comp, port, &res, dos)) return res;
+	return hwIn(phxPortMap, comp, port, dos);
 }

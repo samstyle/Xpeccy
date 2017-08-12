@@ -8,22 +8,46 @@
 unsigned char nesChrRd(unsigned short adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	unsigned char res;
-	if (comp->slot->chrrom == NULL) {
-		res = comp->vid->ppu->mem[adr & 0x1fff];
-	} else if (adr & 0x1000) {
-		res = comp->slot->chrrom[(comp->slot->memMap[3] << 12) | (adr & 0xfff)];
-	} else {
-		res = comp->slot->chrrom[(comp->slot->memMap[2] << 12) | (adr & 0xfff)];
+	switch (adr & 0x3000) {
+		case 0x0000:
+			if (comp->slot->chrrom) {
+				res = comp->slot->chrrom[((comp->slot->memMap[2] << 12) | (adr & 0xfff)) & comp->slot->chrMask];
+			} else {
+				res = comp->vid->ppu->mem[adr & 0x1fff];
+			}
+			break;
+		case 0x1000:
+			if (comp->slot->chrrom) {
+				res = comp->slot->chrrom[((comp->slot->memMap[3] << 12) | (adr & 0xfff)) & comp->slot->chrMask];
+			} else {
+				res = comp->vid->ppu->mem[adr & 0x1fff];
+			}
+			break;
+		default:
+			adr &= 0x2fff;			// @ 3000 is mirror of 2000
+			adr &= comp->slot->ntmask;	// control adr bits by catrige signals
+			res = comp->vid->ppu->mem[adr];
+			break;
 	}
 	return res;
 }
 
 void nesChrWr(unsigned short adr, unsigned char val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	if (comp->slot->chrrom == NULL) {
-		comp->vid->ppu->mem[adr & 0x1fff] = val;
-	} else {
-		// CHR-RAM?
+	switch (adr & 0x3000) {
+		case 0x0000:
+		case 0x1000:
+			if (comp->slot->chrrom == NULL) {
+				comp->vid->ppu->mem[adr & 0x1fff] = val;
+			} else {
+				// CHR-RAM?
+			}
+			break;
+		default:
+			adr &= 0x2fff;
+			adr &= comp->slot->ntmask;
+			comp->vid->ppu->mem[adr] = val;
+			break;
 	}
 }
 
@@ -114,7 +138,7 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 		nesPPU* ppu = comp->vid->ppu;
 		switch (adr & 7) {
 			case 0:		// PPUCTRL
-				ppu->vadrinc = (val & 0x04) ? 32 : 1;
+				ppu->vastep = (val & 0x04) ? 1 : 0;
 				ppu->spadr = (val & 0x08) ? 0x1000 : 0x0000;
 				ppu->bgadr = (val & 0x10) ? 0x1000 : 0x0000;
 				ppu->bigspr = (val & 0x20) ? 1 : 0;
@@ -240,7 +264,7 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 					comp->vid->ppu->oamadr++;
 					adr++;
 				} while (adr & 0xff);
-				comp->cpu->t += 0x200;
+				// comp->cpu->t += 0x200;
 				break;
 			case 0x4015:
 				comp->nesapu->ch0.en = (val & 0x01) ? 1 : 0;
@@ -291,12 +315,14 @@ void nesMaper(Computer* comp) {
 	memSetBank(comp->mem, MEM_BANK3, MEM_SLOT, 1, nesSLrd, nesSLwr, comp->slot);
 }
 
-void nesSync(Computer* comp, long ns) {
+void nesSync(Computer* comp, int ns) {
 	if (comp->vid->vbstrb && comp->vid->ppu->inten) {	// @ start of VBlank
 		comp->vid->vbstrb = 0;
 		comp->cpu->intrq |= MOS6502_INT_NMI;		// request NMI...
 	}
+
 	apuSync(comp->nesapu, ns);
+
 	if (comp->nesapu->frm) {				// if APU generates FRAME signal, send BRK INT to cpu (will be handled if enabled)
 		comp->nesapu->frm = 0;
 		if (~comp->cpu->f & MFI)
@@ -371,4 +397,9 @@ void nes_keyr(Computer* comp, keyEntry ent) {
 	int mask = nesGetInputMask(ent.key);
 	if (mask == 0) return;
 	comp->nes.priPadState &= ~mask;
+}
+
+sndPair nes_vol(Computer* comp) {
+	sndPair vol = apuVolume(comp->nesapu);
+	return  vol;
 }

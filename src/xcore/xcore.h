@@ -1,5 +1,5 @@
-#ifndef _XCORE_H
-#define	_XCORE_H
+#ifndef XCORE_H
+#define	XCORE_H
 
 #include <string>
 #include <vector>
@@ -27,6 +27,12 @@ QString gethexshift(char);
 QString getdecshift(char);
 QString gethexbyte(uchar);
 QString gethexword(int);
+
+typedef struct {
+	int b:1;
+	int i;
+	const char* s;
+} xArg;
 
 // brk points
 

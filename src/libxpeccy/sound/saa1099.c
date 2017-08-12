@@ -6,7 +6,7 @@
 
 // 253 : pos=0 (repeat)
 // 255 : pos-- (stay)
-const unsigned char saaEnvForms[8][33] = {
+static unsigned char saaEnvForms[8][33] = {
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,255},	// 000 : 0 stay
 	{15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,253},	// 001 : F repeat = F stay
 	{15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,255},	// 010 : down stay
@@ -17,19 +17,18 @@ const unsigned char saaEnvForms[8][33] = {
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,253},		// 111 : up repeat
 };
 
-void* saaCreate() {
+saaChip* saaCreate() {
 	saaChip* saa = (saaChip*)malloc(sizeof(saaChip));
 	memset(saa, 0x00, sizeof(saaChip));
 	return saa;
 }
 
-void saaDestroy(void* ptr) {
-	if (ptr == NULL) return;
-	free((saaChip*)ptr);
+void saaDestroy(saaChip* saa) {
+	if (saa == NULL) return;
+	free(saa);
 }
 
-void saaReset(void* ptr) {
-	saaChip* saa = (saaChip*)ptr;
+void saaReset(saaChip* saa) {
 	int i;
 	for (i = 0; i < 6; i++) {
 		saa->chan[i].period = 0;
@@ -84,15 +83,12 @@ void saaEnvStep(saaEnv* env, saaChan* ch) {
 //	if (env->lowRes) env->vol &= 0x0e;	// 3bit control (ORLY?)
 }
 
-void saaRequest(void* ptr, xDevBus* bus) {
-	saaChip* saa = (saaChip*)ptr;
-	if (bus->dos) return;
-	if (!bus->iorq || bus->rd) return;		// io wr only
-	if ((bus->adr & 0xff) != 0xff) return;
-//	saaFlush(ptr);
+int saaWrite(saaChip* saa, unsigned short adr, unsigned char data) {
 	int i, num;
-	if (bus->adr & 0x100) {
-		saa->curReg = bus->data & 0x1f;
+	if ((adr & 0xff) != 0xff) return 0;
+	saaFlush(saa);
+	if (adr & 0x100) {
+		saa->curReg = data & 0x1f;
 // ORLY: external envelope clock (address write pulse)
 		if (saa->env[0].extCLK && saa->env[0].enable)
 			saaEnvStep(&saa->env[0], &saa->chan[1]);
@@ -106,8 +102,8 @@ void saaRequest(void* ptr, xDevBus* bus) {
 			case 0x03:
 			case 0x04:
 			case 0x05:
-				saa->chan[saa->curReg].ampLeft = bus->data & 0x0f;
-				saa->chan[saa->curReg].ampRight = (bus->data >> 4) & 0x0f;
+				saa->chan[saa->curReg].ampLeft = data & 0x0f;
+				saa->chan[saa->curReg].ampRight = (data >> 4) & 0x0f;
 				break;
 			case 0x08:
 			case 0x09:
@@ -115,46 +111,46 @@ void saaRequest(void* ptr, xDevBus* bus) {
 			case 0x0b:
 			case 0x0c:
 			case 0x0d:
-				saa->chan[saa->curReg & 7].freq = bus->data;
+				saa->chan[saa->curReg & 7].freq = data;
 				break;
 			case 0x10:
 			case 0x11:
 			case 0x12:
 				num = (saa->curReg & 3) << 1;
-				saa->chan[num].octave = bus->data & 7;
-				saa->chan[num + 1].octave = (bus->data >> 4) & 7;
+				saa->chan[num].octave = data & 7;
+				saa->chan[num + 1].octave = (data >> 4) & 7;
 				break;
 			case 0x14:
 				for (i = 0; i < 6; i++) {
-					saa->chan[i].freqEn = (bus->data & (1 << i)) ? 1 : 0;
+					saa->chan[i].freqEn = (data & (1 << i)) ? 1 : 0;
 				}
 				break;
 			case 0x15:
 				for (i = 0; i < 6; i++) {
-					saa->chan[i].noizEn = (bus->data & (1 << i)) ? 1 : 0;
+					saa->chan[i].noizEn = (data & (1 << i)) ? 1 : 0;
 				}
 				break;
 			case 0x16:
-				saaSetNoise(&saa->noiz[0], bus->data & 3, &saa->chan[0]);
-				saaSetNoise(&saa->noiz[1], (bus->data >> 4) & 3, &saa->chan[3]);
+				saaSetNoise(&saa->noiz[0], data & 3, &saa->chan[0]);
+				saaSetNoise(&saa->noiz[1], (data >> 4) & 3, &saa->chan[3]);
 				break;
 			case 0x18:
 			case 0x19:
 				num = saa->curReg & 1;
-				saa->env[num].buf.invRight = (bus->data & 1) ? 1 : 0;
-				saa->env[num].buf.form = (bus->data >> 1) & 7;
-				saa->env[num].buf.extCLK = (bus->data & 0x20) ? 1 : 0;
+				saa->env[num].buf.invRight = (data & 1) ? 1 : 0;
+				saa->env[num].buf.form = (data >> 1) & 7;
+				saa->env[num].buf.extCLK = (data & 0x20) ? 1 : 0;
 				saa->env[num].buf.update = 1;
-				saa->env[num].lowRes = (bus->data & 0x10) ? 1 : 0;
+				saa->env[num].lowRes = (data & 0x10) ? 1 : 0;
 				if (!saa->env[num].busy)
 					saaUpdateEnv(&saa->env[num], &saa->chan[num ? 4 : 1]);
-				saa->env[num].enable = (bus->data & 0x80) ? 1 : 0;
+				saa->env[num].enable = (data & 0x80) ? 1 : 0;
 				saa->env[num].busy = saa->env[num].enable;
 				break;
 			case 0x1c:
 //				if (val & 2) printf("saa out 1C,%X\n",val);
-				saa->off = (bus->data & 1) ? 0 : 1;
-				if (bus->data & 2) {
+				saa->off = (data & 1) ? 0 : 1;
+				if (data & 2) {
 					for (i = 0; i < 6; i++)
 						saa->chan[i].count = 0;
 					saa->noiz[0].count = 0;
@@ -167,18 +163,16 @@ void saaRequest(void* ptr, xDevBus* bus) {
 		for (i = 0; i < 6; i++) {
 			saa->chan[i].period = (511 - saa->chan[i].freq) << (15 - saa->chan[i].octave);
 		}
-		bus->busy = 1;
 	}
+	return 1;
 }
 
-void saaSync(void* ptr, int ns) {
-	saaChip* saa = (saaChip*)ptr;
+void saaSync(saaChip* saa, int ns) {
 	if (!saa->enabled) return;
 	saa->time += ns;
 }
 
-void saaFlush(void* ptr) {
-	saaChip* saa = (saaChip*)ptr;
+void saaFlush(saaChip* saa) {
 	if (!saa->enabled) return;
 	int ns = saa->time;
 	saa->time = 0;
@@ -243,7 +237,7 @@ sndPair saaMixTNE(saaChan* ch, saaNoise* noiz, saaEnv* env) {
 }
 
 
-sndPair saaVolume(void* ptr) {
+sndPair saaVolume(saaChip* ptr) {
 	saaChip* saa = (saaChip*)ptr;
 	sndPair res;
 	int levl = 0;
@@ -271,33 +265,4 @@ sndPair saaVolume(void* ptr) {
 	res.left = levl << 3;
 	res.right = levr << 3;
 	return res;
-}
-
-// arguments
-void saaSet(void* ptr, int type, xArg arg) {
-	saaChip* saa = (saaChip*)ptr;
-	switch(type) {
-		case SAA_ARG_MODE:
-			switch(arg.i) {
-				case 0:	saa->enabled = 0;
-					break;
-				case 1:	saa->enabled = 1;
-					saa->mono = 1;
-					break;
-				case 2: saa->enabled = 1;
-					saa->mono = 0;
-					break;
-			}
-	}
-}
-
-xArg saaGet(void* ptr, int type) {
-	saaChip* saa = (saaChip*)ptr;
-	xArg arg = {0, 0, NULL};
-	switch(type) {
-		case SAA_ARG_MODE:
-			arg.i = saa->enabled ? (saa->mono ? 1 : 2) : 0;
-			break;
-	}
-	return arg;
 }

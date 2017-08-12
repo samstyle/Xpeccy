@@ -9,7 +9,7 @@ extern "C" {
 #include "video/video.h"
 #include "memory.h"
 
-#if 1
+#if 0
 
 #include "device.h"
 
@@ -27,6 +27,7 @@ extern "C" {
 #include "sound/saa1099.h"
 #include "sound/soundrive.h"
 #include "sound/gbsound.h"
+#include "sound/nesapu.h"
 
 #endif
 
@@ -58,6 +59,16 @@ typedef struct {
 	unsigned char page;
 } memEntry;
 
+/*
+typedef  struct {
+	int bitvol;		// 1-bit channel (beep)
+	int tapvol;		// tape
+	int tsvol;		// turbo sound
+	int gsvol;		// general sound
+	int sdrvol;		// soundrive
+	int saavol;		// saa chip
+} compVolume;
+*/
 
 typedef struct {
 	unsigned brk:1;			// breakpoint
@@ -81,8 +92,6 @@ typedef struct {
 	int frqMul;
 	unsigned char intVector;
 
-	bitChan* beep;
-
 	struct HardWare *hw;
 	CPU* cpu;
 	Memory* mem;
@@ -91,17 +100,25 @@ typedef struct {
 	Keyboard* keyb;
 	Joystick* joy;
 	Mouse* mouse;
+
 	Tape* tape;
 	DiskIF* dif;
 	IDE* ide;
+
+	bitChan* beep;
 	SDCard* sdc;
 	TSound* ts;
+	GSound* gs;
+	SDrive* sdrv;
+	saaChip* saa;
+
 	gbSound* gbsnd;
+
 	nesAPU* nesapu;
+
 	xCartridge* slot;		// cartrige slot (MSX, GB, NES)
 
-	xDevBus bus;
-	xDevice* devList[MAX_DEV_COUNT];	// new : unified devices list
+//	compVolume vol;			// devices volume (default = 100)
 
 #ifdef HAVEZLIB
 
@@ -243,14 +260,8 @@ int compExec(Computer*);
 void compKeyPress(Computer*, int, keyEntry*);
 void compKeyRelease(Computer*, int, keyEntry*);
 
-xDevice* compFindDev(Computer*, int);
-void compDevFlush(Computer*);
-void compSetDevArg(Computer*, int, int, xArg);
-xArg compGetDevArg(Computer*, int, int);
-
 void compSetBaseFrq(Computer*,double);
 void compSetTurbo(Computer*,int);
-//void compSetLayout(Computer*, vLayout);
 void compSetHardware(Computer*,const char*);
 
 // read-write cmos

@@ -314,7 +314,7 @@ void tsDestroy(TSound* ts) {
 	free(ts);
 }
 
-void tsSync(TSound* ts, long ns) {
+void tsSync(TSound* ts, int ns) {
 	aymSync(ts->chipA,ns);
 	aymSync(ts->chipB,ns);
 }

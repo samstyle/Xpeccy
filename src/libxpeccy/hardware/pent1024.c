@@ -56,7 +56,7 @@ void p1mOutEFF7(Computer* comp, unsigned short port, unsigned char val) {
 	p1mMapMem(comp);
 }
 
-xPort p1mPortMap[] = {
+static xPort p1mPortMap[] = {
 	{0x0003,0x00fe,2,2,2,xInFE,	xOutFE},
 	{0x8002,0x7ffd,2,2,2,NULL,	p1mOut7FFD},
 	{0xc002,0xbffd,2,2,2,NULL,	xOutBFFD},
@@ -72,6 +72,7 @@ xPort p1mPortMap[] = {
 };
 
 void p1mOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
+	zx_dev_wr(comp, port, val, dos);
 	difOut(comp->dif, port, val, dos);
 	hwOut(p1mPortMap, comp, port, val, dos);
 }
@@ -79,6 +80,7 @@ void p1mOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
 unsigned char p1mIn(Computer* comp, unsigned short port, int dos) {
 	unsigned char res = 0xff;
 	if (difIn(comp->dif, port, &res, dos)) return res;
+	if (zx_dev_rd(comp, port, &res, dos)) return res;
 	res = hwIn(p1mPortMap, comp, port, dos);
 	return res;
 }

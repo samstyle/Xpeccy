@@ -24,7 +24,11 @@ enum {
 	MAP_GB_MBC5,
 // NES
 	MAP_NES_NOMAP = 0x100,
-	MAP_NES_MMC1
+	MAP_NES_MMC1,
+	MAP_NES_MMC2,
+	MAP_NES_MMC3,
+	MAP_NES_MMC4,
+	MAP_NES_MMC5,
 };
 
 // memory flags
@@ -53,8 +57,8 @@ struct xCartridge {
 	int memMap[8];
 	int mapType;			// user defined mapper type, if auto-detect didn't worked (msx)
 
-	unsigned char shift;		// shift register
-	int smask;			// counter of bits writing to shift register
+	unsigned char shift;		// shift register (mmc1)
+	int bitcount;			// counter of bits writing to shift register (mmc1)
 	unsigned char reg00;		// control registers
 	unsigned char reg01;
 	unsigned char reg02;
@@ -65,6 +69,7 @@ struct xCartridge {
 	int memMask;
 	unsigned char* chrrom;		// nes chr rom (malloc)
 	int chrMask;
+	unsigned short ntmask;		// nes nametables mirroring control (must be ADR bus mask)
 	unsigned char ram[0x8000];	// onboard ram (32K max)
 	unsigned short ramMask;
 	xCardCallback* core;

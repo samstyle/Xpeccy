@@ -113,7 +113,7 @@ void prfBrkOut(Computer* comp, unsigned short port, unsigned char val) {
 	brkOut(comp, port, val);
 }
 
-xPort prfPortMap[] = {
+static xPort prfPortMap[] = {
 	// common
 	{0x00f7,0x00fe,2,2,2,prfInFE,	prfOutFE},
 	{0x8002,0x7ffd,2,2,2,NULL,	prfOut7FFD},
@@ -161,13 +161,13 @@ xPort prfPortMap[] = {
 };
 
 void prfOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
-//	if (difOut(comp->dif, port, val, dos)) return;
+	zx_dev_wr(comp, port, val, dos);
 	hwOut(prfPortMap, comp, port, val, dos);
 }
 
 unsigned char prfIn(Computer* comp, unsigned short port, int dos) {
 	unsigned char res = 0xff;
-//	if (difIn(comp->dif, port, &res, dos)) return res;
+	if (zx_dev_rd(comp, port, &res, dos)) return res;
 	res = hwIn(prfPortMap, comp, port, dos);
 	return res;
 }

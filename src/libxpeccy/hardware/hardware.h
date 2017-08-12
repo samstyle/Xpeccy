@@ -45,7 +45,7 @@ typedef void(*cbHwRes)(Computer*);
 // map memory
 typedef void(*cbHwMap)(Computer*);
 // sync: calls after every CPU command
-typedef void(*cbHwSnc)(Computer*, long);
+typedef void(*cbHwSnc)(Computer*, int);
 // memory read
 typedef unsigned char(*cbHwMrd)(Computer*, unsigned short, int);
 // memory write
@@ -56,6 +56,8 @@ typedef unsigned char(*cbHwIrd)(Computer*, unsigned short, int);
 typedef void(*cbHwIwr)(Computer*, unsigned short, unsigned char, int);
 // key press/release
 typedef void(*cbHwKey)(Computer*, keyEntry);
+// get volume
+typedef sndPair(*cbHwVol)(Computer*);
 
 struct HardWare {
 	int id;			// id
@@ -72,6 +74,7 @@ struct HardWare {
 	cbHwSnc sync;
 	cbHwKey keyp;
 	cbHwKey keyr;
+	cbHwVol vol;
 };
 
 typedef struct {
@@ -93,7 +96,9 @@ extern HardWare hwTab[];
 HardWare* findHardware(const char*);
 unsigned char stdMRd(Computer*,unsigned short,int);
 void stdMWr(Computer*,unsigned short,unsigned char);
-void zx_sync(Computer*, long);
+
+void zx_sync(Computer*, int);
+sndPair zx_vol(Computer*);
 
 // debug IO
 
@@ -104,6 +109,9 @@ unsigned char dummyIn(Computer*, unsigned short);
 void dummyOut(Computer*, unsigned short, unsigned char);
 
 // common IO
+
+int zx_dev_wr(Computer*, unsigned short, unsigned char, int);
+int zx_dev_rd(Computer*, unsigned short, unsigned char*, int);
 
 void xOutFE(Computer*, unsigned short, unsigned char);
 void xOutBFFD(Computer*, unsigned short, unsigned char);
@@ -194,9 +202,10 @@ unsigned char msxIn(Computer*,unsigned short,int);
 void msxReset(Computer*);
 unsigned char msxMRd(Computer*,unsigned short,int);
 void msxMWr(Computer*,unsigned short,unsigned char);
-void msx_sync(Computer*, long);
+void msx_sync(Computer*, int);
 void msx_keyp(Computer*, keyEntry);
 void msx_keyr(Computer*, keyEntry);
+sndPair msx_vol(Computer*);
 
 // msx2
 void msx2mapper(Computer*);
@@ -211,20 +220,20 @@ void gbMaper(Computer*);
 void gbReset(Computer*);
 unsigned char gbMemRd(Computer*, unsigned short, int);
 void gbMemWr(Computer*, unsigned short, unsigned char);
-void gbcSync(Computer*, long);
-//void gbPress(Computer*, const char*);
-//void gbRelease(Computer*, const char*);
+void gbcSync(Computer*, int);
 void gbc_keyp(Computer*, keyEntry);
 void gbc_keyr(Computer*, keyEntry);
+sndPair gbc_vol(Computer*);
 
 // nes
 void nesMaper(Computer*);
 void nesReset(Computer*);
 unsigned char nesMemRd(Computer*, unsigned short, int);
 void nesMemWr(Computer*, unsigned short, unsigned char);
-void nesSync(Computer*, long);
+void nesSync(Computer*, int);
 void nes_keyp(Computer*, keyEntry);
 void nes_keyr(Computer*, keyEntry);
+sndPair nes_vol(Computer*);
 
 #ifdef __cplusplus
 }

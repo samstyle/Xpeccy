@@ -189,7 +189,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 	prf->rsName = rnm;
 	xRomset* rset = findRomset(rnm);
 	int i;
-	xArg xarg;
+//	xArg xarg;
 	std::string fpath = "";
 	std::ifstream file;
 	char pageBuf[0x4000];
@@ -250,8 +250,14 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 		}
 // load GS ROM
 		fpath = conf.path.romDir + SLASH + rset->gsFile;
-		xarg.s = fpath.c_str();
-		compSetDevArg(prf->zx, DEV_GSOUND, GS_ARG_ROM, xarg);
+		file.open(fpath.c_str(), std::ios::binary);
+		if (file.good()) {
+			file.read((char*)prf->zx->gs->mem->romData, 0x8000);
+			file.close();
+		} else {
+			memset((char*)prf->zx->gs->mem->romData, 0xff, 0x8000);
+		}
+
 // load ATM2 font data
 		if (!rset->fntFile.empty()) {
 			fpath = conf.path.romDir + SLASH + rset->fntFile;
@@ -351,13 +357,15 @@ int prfLoad(std::string nm) {
 					if (pnam == "chip2.stereo") comp->ts->chipB->stereo = atoi(pval.c_str());
 					if (pnam == "ts.type") comp->ts->type = atoi(pval.c_str());
 
-					if (pnam == "gs") compSetDevArg(comp, DEV_GSOUND, GS_ARG_ENABLE, arg);
-					if (pnam == "gs.reset") compSetDevArg(comp, DEV_GSOUND, GS_ARG_RESET, arg);
-					if (pnam == "gs.stereo") compSetDevArg(comp, DEV_GSOUND, GS_ARG_STEREO, arg);
+					if (pnam == "gs") comp->gs->enable = arg.b;
+					if (pnam == "gs.reset") comp->gs->reset = arg.b;
+					if (pnam == "gs.stereo") comp->gs->stereo = arg.b ? GS_12_34 : GS_MONO;
 
-					if (pnam == "soundrive_type") compSetDevArg(comp, DEV_SDRIVE, SDRV_ARG_MODE, arg);
+					if (pnam == "soundrive_type") comp->sdrv->type = arg.i;
 
-					if (pnam == "saa.mode") compSetDevArg(comp, DEV_SAA, SAA_ARG_MODE, arg);
+					if (pnam == "saa") comp->saa->enabled = arg.b;
+					if (pnam == "saa.stereo") comp->saa->mono = !arg.b;
+
 					break;
 				case PS_TAPE:
 					if (pnam == "path" && conf.storePaths) loadFile(comp,pval.c_str(),FT_TAPE,0);
@@ -524,13 +532,14 @@ int prfSave(std::string nm) {
 	fprintf(file, "chip2.stereo = %i\n", comp->ts->chipB->stereo);
 	fprintf(file, "ts.type = %i\n", comp->ts->type);
 
-	fprintf(file, "gs = %s\n", YESNO(compGetDevArg(comp, DEV_GSOUND, GS_ARG_ENABLE).b));
-	fprintf(file, "gs.reset = %s\n", YESNO(compGetDevArg(comp, DEV_GSOUND, GS_ARG_RESET).b));
-	fprintf(file, "gs.stereo = %s\n", YESNO(compGetDevArg(comp, DEV_GSOUND, GS_ARG_STEREO).b));
+	fprintf(file, "gs = %s\n", YESNO(comp->gs->enable));
+	fprintf(file, "gs.reset = %s\n", YESNO(comp->gs->stereo));
+	fprintf(file, "gs.stereo = %i\n", comp->gs->stereo);
 
-	fprintf(file, "soundrive_type = %i\n", compGetDevArg(comp, DEV_SDRIVE, SDRV_ARG_MODE).i);
+	fprintf(file, "soundrive_type = %i\n", comp->sdrv->type);
 
-	fprintf(file, "saa.mode = %i\n", compGetDevArg(comp, DEV_SAA, SAA_ARG_MODE).i);
+	fprintf(file, "saa = %s\n", YESNO(comp->saa->enabled));
+	fprintf(file, "saa.stereo = %s\n", YESNO(!comp->saa->mono));
 
 	fprintf(file, "\n[INPUT]\n\n");
 	fprintf(file, "mouse = %s\n", YESNO(comp->mouse->enable));

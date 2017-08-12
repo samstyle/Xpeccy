@@ -2,31 +2,25 @@
 
 typedef struct {
 	int type;
-	unsigned char num;
+	int num;
 } mPageNr;
 
-unsigned char msxSlotRd(unsigned short adr, void* data) {
-	xCartridge* slot = (xCartridge*)data;
-	return sltRead(slot, adr);
-	//if (!slot->data) return 0xff;
-	//return slot->core->rd(slot, adr);
-}
-
-void msxSlotWr(unsigned short adr, unsigned char val, void* data) {
-	xCartridge* slot = (xCartridge*)data;
-	sltWrite(slot, adr, val);
-	//if (!slot->data) return;
-	//slot->core->wr(slot, adr, val);
-}
-
-mPageNr msxMemTab[4][4] = {
+static mPageNr msxMemTab[4][4] = {
 	{{MEM_ROM, 0}, {MEM_ROM, 1}, {MEM_RAM, 1}, {MEM_RAM, 0}},
 	{{MEM_SLOT,0},{MEM_SLOT,0},{MEM_SLOT,0},{MEM_SLOT,0}},
 	{{MEM_SLOT,1},{MEM_SLOT,1},{MEM_SLOT,1},{MEM_SLOT,1}},
 	{{MEM_RAM, 3},{MEM_RAM, 2},{MEM_RAM, 1},{MEM_RAM, 0}}
 };
 
-// unsigned char emptyPage[0x4000];
+unsigned char msxSlotRd(unsigned short adr, void* data) {
+	xCartridge* slot = (xCartridge*)data;
+	return sltRead(slot, adr);
+}
+
+void msxSlotWr(unsigned short adr, unsigned char val, void* data) {
+	xCartridge* slot = (xCartridge*)data;
+	sltWrite(slot, adr, val);
+}
 
 void msxSetMem(Computer* comp, int bank, unsigned char slot) {
 	mPageNr pg = msxMemTab[slot][bank];
@@ -162,7 +156,7 @@ unsigned char msx99In(Computer* comp, unsigned short port) {		// status register
 
 // Port map
 
-xPort msxPortMap[] = {
+static xPort msxPortMap[] = {
 
 	{0xff,0x90,2,2,2,dummyIn,	dummyOut},	// 90	RW	ULA5RA087 Centronic BUSY state (bit 1=1) / ULA5RA087 Centronic STROBE output (bit 0=0)
 	{0xff,0x91,2,2,2,NULL,		dummyOut},	// 91	W	ULA5RA087 Centronic Printer Data
@@ -193,7 +187,7 @@ void msxOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
 	hwOut(msxPortMap,comp, port, val, dos);
 }
 
-void msx_sync(Computer* comp, long ns) {
+void msx_sync(Computer* comp, int ns) {
 	if ((comp->vid->v9938.reg[1] & 0x40) && comp->vid->newFrame && comp->cpu->iff1) {
 		comp->cpu->intrq |= 1;
 		comp->intVector = 0xff;
@@ -206,4 +200,9 @@ void msx_keyp(Computer* comp, keyEntry ent) {
 
 void msx_keyr(Computer* comp, keyEntry ent) {
 	keyRelease(comp->keyb, ent.msxKey, 2);
+}
+
+sndPair msx_vol(Computer* comp) {
+	sndPair vol = aymGetVolume(comp->ts->chipA);
+	return vol;
 }

@@ -4,6 +4,22 @@
 #include <stdio.h>
 #include <string.h>
 
+// mixer
+
+sndPair mixer(sndPair cur, int levL, int levR, int vol) {
+	levL = levL * vol / 100.0;
+	levR = levR * vol / 100.0;
+	double fl = cur.left / 256.0;
+	double fr = cur.right / 256.0;
+	double sl = levL / 256.0;
+	double sr = levR / 256.0;
+	double xl = (fl + sl) / (1.0 + fl * sl);
+	double xr = (fr + sr) / (1.0 + fr * sr);
+	cur.left = xl * 256;
+	cur.right = xr * 256;
+	return cur;
+}
+
 // 1-bit channel with transient response
 
 //#define OVERSHOOT 22500			// ns to overshoot process

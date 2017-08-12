@@ -133,9 +133,6 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.sdrvBox->addItem("Covox only",SDRV_COVOX);
 	ui.sdrvBox->addItem("Soundrive 1.05 mode 1",SDRV_105_1);
 	ui.sdrvBox->addItem("Soundrive 1.05 mode 2",SDRV_105_2);
-	ui.cbSaa->addItem("None",SAA_OFF);
-	ui.cbSaa->addItem("Mono",SAA_MONO);
-	ui.cbSaa->addItem("Stereo",SAA_STEREO);
 // bdi
 // WTF? QtDesigner doesn't save this properties
 	ui.disklist->horizontalHeader()->setVisible(true);
@@ -354,13 +351,14 @@ void SetupWin::start(xProfile* p) {
 	ui.geombox->setCurrentIndex(ui.geombox->findText(QString::fromLocal8Bit(conf.prof.cur->layName.c_str())));
 	ui.ulaPlus->setChecked(comp->vid->ula->enabled);
 // sound
-	ui.gsgroup->setChecked(compGetDevArg(comp, DEV_GSOUND, GS_ARG_ENABLE).b);
-	ui.gsrbox->setChecked(compGetDevArg(comp, DEV_GSOUND, GS_ARG_RESET).b);
-	setRFIndex(ui.gstereobox, compGetDevArg(comp, DEV_GSOUND, GS_ARG_STEREO).i);
+	ui.gsgroup->setChecked(comp->gs->enable);
+	ui.gsrbox->setChecked(comp->gs->reset);
+	setRFIndex(ui.gstereobox, comp->gs->stereo);
 
-	ui.sdrvBox->setCurrentIndex(ui.sdrvBox->findData(compGetDevArg(comp, DEV_SDRIVE, SDRV_ARG_MODE).i));
+	ui.sdrvBox->setCurrentIndex(ui.sdrvBox->findData(comp->sdrv->type));
 
-	ui.cbSaa->setCurrentIndex(ui.cbSaa->findData(compGetDevArg(comp, DEV_SAA, SAA_ARG_MODE).i));
+	ui.saaEn->setChecked(comp->saa->enabled);
+	ui.saaStereo->setChecked(!comp->saa->mono);
 
 	ui.senbox->setChecked(conf.snd.enabled);
 	ui.mutbox->setChecked(conf.snd.mute);
@@ -510,12 +508,14 @@ void SetupWin::apply() {
 	comp->ts->chipB->stereo = getRFIData(ui.stereo2box);
 	comp->ts->type = getRFIData(ui.tsbox);
 
-	xArg xarg;
-	xarg.b = ui.gsgroup->isChecked() ? 1 : 0; compSetDevArg(comp, DEV_GSOUND, GS_ARG_ENABLE, xarg);
-	xarg.b = ui.gsrbox->isChecked() ? 1 : 0; compSetDevArg(comp, DEV_GSOUND, GS_ARG_RESET, xarg);
-	xarg.i = getRFIData(ui.gstereobox); compSetDevArg(comp, DEV_GSOUND, GS_ARG_STEREO, xarg);
-	xarg.i = getRFIData(ui.sdrvBox); compSetDevArg(comp, DEV_SDRIVE, SDRV_ARG_MODE, xarg);
-	xarg.i = getRFIData(ui.cbSaa); compSetDevArg(comp, DEV_SAA, SAA_ARG_MODE, xarg);
+	comp->gs->enable = ui.gsgroup->isChecked() ? 1 : 0;
+	comp->gs->reset = ui.gsrbox->isChecked() ? 1 : 0;
+	comp->gs->stereo = getRFIData(ui.gstereobox);
+
+	comp->sdrv->type = getRFIData(ui.sdrvBox);
+
+	comp->saa->enabled = ui.saaEn->isChecked() ? 1 : 0;
+	comp->saa->mono = ui.saaStereo->isChecked() ? 0 : 1;
 
 	sndCalibrate(comp);
 // input

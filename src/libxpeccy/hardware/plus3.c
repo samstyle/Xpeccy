@@ -26,7 +26,7 @@ void p3Out7FFD(Computer* comp, unsigned short port, unsigned char val) {
 	pl2MapMem(comp);
 }
 
-xPort p3PortMap[] = {
+static xPort p3PortMap[] = {
 	{0xc002,0x7ffd,2,2,2,NULL,	p3Out7FFD},
 	{0xc002,0xbffd,2,2,2,NULL,	xOutBFFD},
 	{0xc002,0xfffd,2,2,2,xInFFFD,	xOutFFFD},
@@ -37,12 +37,14 @@ xPort p3PortMap[] = {
 
 void pl3Out(Computer* comp, unsigned short port, unsigned char val, int dos) {
 	difOut(comp->dif, port, val, 0);
+	zx_dev_wr(comp, port, val, dos);
 	hwOut(p3PortMap, comp, port, val, 0);
 }
 
 unsigned char pl3In(Computer* comp, unsigned short port, int dos) {
 	unsigned char res = 0xff;
 	if (difIn(comp->dif, port, &res, 0)) return res;
+	if (zx_dev_rd(comp, port, &res, dos)) return res;
 	res = hwIn(p3PortMap, comp, port, 0);
 	return res;
 }

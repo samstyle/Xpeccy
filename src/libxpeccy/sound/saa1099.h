@@ -1,8 +1,7 @@
-#ifndef _SAA1099_H
-#define _SAA1099_H
+#ifndef SAA1099_H
+#define SAA1099_H
 
 #include "sndcommon.h"
-#include "devbus.h"
 
 enum {
 	SAA_OFF = 0,
@@ -38,11 +37,11 @@ typedef struct {
 	unsigned lowRes:1;	// 3-bit env control;
 	unsigned extCLK:1;	// external frq control (8MHz)
 	unsigned busy:1;
+	unsigned char vol;
 	int form;
 	int period;
 	int count;
 	int pos;
-	unsigned char vol;
 } saaEnv;
 
 typedef struct {
@@ -63,23 +62,13 @@ typedef struct {
 	saaEnv env[2];		// 2 envelope (aff ch 2 & 5, generators from ch 1, 4)
 } saaChip;
 
-/*
 saaChip* saaCreate();
 void saaDestroy(saaChip*);
 void saaReset(saaChip*);
-int saaWrite(saaChip*, int, unsigned char);
+int saaWrite(saaChip*, unsigned short, unsigned char);
 void saaSync(saaChip*, int);
 sndPair saaGetVolume(saaChip*);
-*/
-
-void* saaCreate();
-void saaDestroy(void*);
-void saaReset(void*);
-void saaRequest(void*, xDevBus*);
-void saaSync(void*, int);
-void saaFlush(void*);
-sndPair saaVolume(void*);
-void saaSet(void*, int, xArg);
-xArg saaGet(void*, int);
+void saaFlush(saaChip*);
+sndPair saaVolume(saaChip*);
 
 #endif

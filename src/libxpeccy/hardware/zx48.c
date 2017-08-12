@@ -29,7 +29,7 @@ unsigned char spInFF(Computer* comp, unsigned short port) {
 	return comp->vid->atrbyte;
 }
 
-xPort spePortMap[] = {
+static xPort spePortMap[] = {
 	{0x0001,0x00fe,2,2,2,xInFE,	xOutFE},
 	{0xc002,0xfffd,2,2,2,xInFFFD,	xOutFFFD},
 	{0xc002,0xbffd,2,2,2,NULL,	xOutBFFD},
@@ -43,11 +43,13 @@ xPort spePortMap[] = {
 
 void speOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
 	difOut(comp->dif, port, val, dos);
+	zx_dev_wr(comp, port, val, dos);
 	hwOut(spePortMap, comp, port, val, dos);
 }
 
 unsigned char speIn(Computer* comp, unsigned short port, int dos) {
 	unsigned char res;
 	if (difIn(comp->dif, port, &res, dos)) return res;
+	if (zx_dev_rd(comp, port, &res, dos)) return res;
 	return hwIn(spePortMap, comp, port, dos);
 }

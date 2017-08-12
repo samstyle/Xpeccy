@@ -267,7 +267,7 @@ void evoOutEFF7(Computer* comp, unsigned short port, unsigned char val) {	// !do
 	evoMapMem(comp);
 }
 
-xPort evoPortMap[] = {
+static xPort evoPortMap[] = {
 	{0x00f7,0x00fe,2,2,2,xInFE,	xOutFE},	// A3 = border bright
 //	{0x00ff,0x00fb,2,2,2,NULL,	evoOutFB},	// covox
 	{0x00ff,0x00be,2,2,2,evoInBE,	NULL},
@@ -303,12 +303,14 @@ xPort evoPortMap[] = {
 
 void evoOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
 	if (comp->evo.evoBF & 0x01) dos = 1;	// force open ports
+	zx_dev_wr(comp, port, val, dos);
 	hwOut(evoPortMap, comp, port, val, dos);
 }
 
 unsigned char evoIn(Computer* comp, unsigned short port, int dos) {
 	unsigned char res = 0xff;
 	if (comp->evo.evoBF & 1) dos = 1;
+	if (zx_dev_rd(comp, port, &res, dos)) return res;
 	res = hwIn(evoPortMap, comp, port, dos);
 	return res;
 }

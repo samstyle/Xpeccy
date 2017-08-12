@@ -76,7 +76,7 @@ void apuNoiseTick(nesapuChan* ch) {
 	}
 }
 
-void apuSync(nesAPU* apu, long ns) {
+void apuSync(nesAPU* apu, int ns) {
 	apu->tick -= ns;
 	if (apu->tick > 0) return;
 	apu->tick += apu->period;					// add period
@@ -103,4 +103,23 @@ void apuReset(nesAPU* apu) {
 	apuChReset(&apu->ch2);
 	apuChReset(&apu->ch3);
 	apuChReset(&apu->ch4);
+}
+
+sndPair apuVolume(nesAPU* apu) {
+	sndPair res;
+	res.left = 0;
+	res.right = 0;
+	int vol = apu->ch0.lev ? apu->ch0.vol : 0;
+	res = mixer(res, vol, vol, 100);
+	vol = apu->ch1.lev ? apu->ch1.vol : 0;
+	res = mixer(res, vol, vol, 100);
+	vol = apu->ch2.vol;
+	res = mixer(res, vol, vol, 100);
+	vol = apu->ch3.lev ? apu->ch3.vol : 0;
+	res = mixer(res, vol, vol, 100);
+
+	res.left <<= 4;
+	res.right <<= 4;
+
+	return res;
 }

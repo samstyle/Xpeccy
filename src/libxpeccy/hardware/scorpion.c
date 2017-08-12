@@ -61,15 +61,7 @@ unsigned char scrpIn7FFD(Computer* comp, unsigned short port) {
 // out
 
 void scrpOutDD(Computer* comp, unsigned short port, unsigned char val) {
-	xDevice* dev = compFindDev(comp, DEV_SDRIVE);
-	if (!dev) return;
-	if (!dev->req) return;
-	comp->bus.adr = 0xfb;
-	comp->bus.data = val;
-	comp->bus.iorq = 1;
-	comp->bus.rd = 0;
-	dev->req(dev->ptr.ptr, &comp->bus);
-	//sdrvOut(comp->sdrv, 0xfb, val);
+	sdrvWrite(comp->sdrv, 0xfb, val);
 }
 
 /*
@@ -94,7 +86,7 @@ void scrpOut1FFD(Computer* comp, unsigned short port, unsigned char val) {
 	scoMapMem(comp);
 }
 
-xPort scrpPortMap[] = {
+static xPort scrpPortMap[] = {
 	{0x0023,0x00fe,0,2,2,xInFE,	xOutFE},	// !dos cuz of SMUC
 	{0xc023,0x1ffd,2,2,2,scrpIn1FFD,scrpOut1FFD},	// mem
 	{0xc023,0x7ffd,2,2,2,scrpIn7FFD,scrpOut7FFD},
@@ -110,12 +102,14 @@ xPort scrpPortMap[] = {
 
 void scoOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
 	difOut(comp->dif, port, val, dos);
+	zx_dev_wr(comp, port, val, dos);
 	hwOut(scrpPortMap, comp, port, val, dos);
 }
 
 unsigned char scoIn(Computer* comp, unsigned short port, int dos) {
 	unsigned char res = 0xff;
 	if (difIn(comp->dif, port, &res, dos)) return res;
+	if (zx_dev_rd(comp, port, &res, dos)) return res;
 	res = hwIn(scrpPortMap, comp, port, dos);
 	return res;
 }

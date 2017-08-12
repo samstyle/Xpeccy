@@ -9,7 +9,6 @@ extern "C" {
 
 #include "cpu.h"
 #include "memory.h"
-#include "devbus.h"
 
 // gs stereo
 enum {
@@ -48,17 +47,14 @@ typedef struct {
 	long counter;
 } GSound;
 
-void* gsCreate();
-void gsDestroy(void*);
-void gsReset(void*);
-void gsSync(void*, int);
-void gsFlush(void*);
-void gsRequest(void*, xDevBus*);
-sndPair gsVolume(void*);
-void gsSet(void*, int, xArg);
-xArg gsGet(void*, int);
-
-// void gsSetRom(GSound*,int,char*);
+GSound* gsCreate();
+void gsDestroy(GSound*);
+void gsReset(GSound*);
+void gsSync(GSound*, int);
+void gsFlush(GSound*);
+sndPair gsVolume(GSound*);
+int gsWrite(GSound*, unsigned short, unsigned char);
+int gsRead(GSound*, unsigned short, unsigned char*);
 
 #ifdef __cplusplus
 }

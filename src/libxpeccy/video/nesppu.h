@@ -1,5 +1,5 @@
-#ifndef _NESPPU_H
-#define _NESPPU_H
+#ifndef NESPPU_H
+#define NESPPU_H
 
 #include "vidcommon.h"
 
@@ -17,12 +17,13 @@ typedef struct {
 	unsigned bglock:1;
 	unsigned splock:1;
 	unsigned latch:1;		// 0:scx/hi 1:scy/low
+	unsigned vastep:1;
 	// memory
 	unsigned char vbuf;
 	unsigned char reg[8];
 	unsigned char oam[256];			// 256 bytes OAM
 	unsigned char mem[0x4000];		// 16K of video mem
-	int ntmask;
+//	int ntmask;
 	// buffers
 	unsigned char bgline[0x200];		// bg (full 2 screens)
 	unsigned char spline[0x108];		// sprites (8 max)
@@ -33,16 +34,13 @@ typedef struct {
 	void* data;
 
 	vRay* ray;
-	int oamadr;		// oam access address
+	unsigned char oamadr;	// oam access address
 	ePair(vadr,vah,val);	// videomem access addr
 	unsigned short tadr;	// tmp vadr
-	int vadrinc;		// videomem addr increment (1 | 32)
-//	int ntadr;		// tilemap base adr
+//	int vadrinc;		// videomem addr increment (1 | 32)
 	unsigned short spadr;	// 8x8 sprites tiles adr
 	unsigned short bgadr;	// bg tiles adr
 	int finex;		// = x scroll low 3 bits
-//	unsigned char scx;
-//	unsigned char scy;
 } nesPPU;
 
 nesPPU* ppuCreate(vRay*);

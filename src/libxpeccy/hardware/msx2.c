@@ -2,14 +2,14 @@
 
 // primary slot
 
-int msx2mtabA[4][4] = {
+static int msx2mtabA[4][4] = {
 	{MEM_ROM, MEM_ROM, MEM_RAM, MEM_RAM},
 	{MEM_SLOT, MEM_SLOT, MEM_SLOT, MEM_SLOT},
 	{MEM_SLOT, MEM_SLOT, MEM_SLOT, MEM_SLOT},
 	{0,0,0,0}				// not used
 };
 
-int msx2mtabB[4][4] = {
+static int msx2mtabB[4][4] = {
 	{0,1,1,0},
 	{0,0,0,0},
 	{1,1,1,1},
@@ -18,14 +18,14 @@ int msx2mtabB[4][4] = {
 
 // secondary slot
 
-int msx2mtabC[4][4] = {
+static int msx2mtabC[4][4] = {
 	{MEM_ROM, MEM_ROM, MEM_ROM, MEM_ROM},
 	{MEM_ROM, MEM_ROM, MEM_ROM, MEM_ROM},
 	{MEM_RAM, MEM_RAM, MEM_RAM, MEM_RAM},
 	{MEM_ROM, MEM_ROM, MEM_ROM, MEM_ROM}
 };
 
-int msx2mtabD[4][4] = {
+static int msx2mtabD[4][4] = {
 	{2,3,2,3},
 	{0,0,0,0},
 	{-1,-1,-1,-1},
@@ -38,7 +38,7 @@ unsigned char msxSlotRd(unsigned short, void*);
 void msx2mapper(Computer* comp) {
 	int slot;
 	int bt;
-	unsigned short bn;
+	int bn;
 	for (int i = 0; i < 4; i++) {
 		slot = comp->msx.pslot[i];
 		if (slot < 3) {

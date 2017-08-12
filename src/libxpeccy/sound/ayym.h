@@ -83,9 +83,10 @@ void tsReset(TSound*);
 unsigned char tsIn(TSound*,int);
 void tsOut(TSound*,int,unsigned char);
 
-void tsSync(TSound*, long);
+void tsSync(TSound*, int);
 
 sndPair tsGetVolume(TSound*);
+sndPair aymGetVolume(aymChip*);
 
 #ifdef __cplusplus
 }

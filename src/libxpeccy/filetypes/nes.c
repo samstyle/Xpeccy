@@ -57,14 +57,14 @@ int loadNes(Computer* comp, const char* name) {
 		printf("memMask %X; %i %i\n", slot->memMask, slot->memMap[0], slot->memMap[1]);
 
 		if (hd.flag1 & 8) {
-			comp->vid->ppu->ntmask = 0x3fff;		// full 4-screen nametable
+			comp->slot->ntmask = 0x3fff;		// full 4-screen nametable
 		} else if (hd.flag1 & 1) {
-			comp->vid->ppu->ntmask = 0x37ff;		// down screens (2800, 2c00) = upper screens (2000, 2400) : ignore bit 11
+			comp->slot->ntmask = 0x37ff;		// down screens (2800, 2c00) = upper screens (2000, 2400) : ignore bit 11
 		} else {
-			comp->vid->ppu->ntmask = 0x3bff;		// right sceens (2400, 2c00) = left sceens (2000, 2800) : ignore bit 10
+			comp->slot->ntmask = 0x3bff;		// right sceens (2400, 2c00) = left sceens (2000, 2800) : ignore bit 10
 		}
 
-		printf("mirroring mask %.4X\n", comp->vid->ppu->ntmask);
+		printf("mirroring mask %.4X\n", comp->slot->ntmask);
 
 		int maper = ((hd.flag1 >> 4) & 0x0f) | (hd.flag2 & 0xf0);
 		if (!sltSetMaper(slot, maper | 0x100))				// #01xx = nes mapers

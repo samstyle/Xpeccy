@@ -85,7 +85,9 @@ unsigned char gsintrq(void* ptr) {
 	return 0xff;
 }
 
-void* gsCreate() {
+// EXTERNAL
+
+GSound* gsCreate() {
 	GSound* res = (GSound*)malloc(sizeof(GSound));
 	memset(res,0x00,sizeof(GSound));
 	res->cpu = cpuCreate(CPU_Z80, &gsmemrd, &gsmemwr, &gsiord, &gsiowr, &gsintrq, (void*)res);
@@ -104,27 +106,23 @@ void* gsCreate() {
 	return res;
 }
 
-void gsDestroy(void* ptr) {
-	GSound* gs = (GSound*)ptr;
+void gsDestroy(GSound* gs) {
 	cpuDestroy(gs->cpu);
 	memDestroy(gs->mem);
 	free(gs);
 }
 
-void gsReset(void* ptr) {
-	GSound* gs = (GSound*)ptr;
+void gsReset(GSound* gs) {
 	if (!gs->reset) return;
 	gs->cpu->reset(gs->cpu);
 }
 
-void gsSync(void* ptr, int ns) {
-	GSound* gs = (GSound*)ptr;
+void gsSync(GSound* gs, int ns) {
 	if (!gs->enable) return;
 	gs->time += ns;
 }
 
-void gsFlush(void* ptr) {
-	GSound* gs = (GSound*)ptr;
+void gsFlush(GSound* gs) {
 	if (!gs->enable) return;
 	int res;
 	gs->counter += gs->time * GS_FRQ / 980;		// ticks to emulate
@@ -140,37 +138,42 @@ void gsFlush(void* ptr) {
 	gs->time = 0;
 }
 
-void gsRequest(void* ptr, xDevBus* bus) {
-	GSound* gs = (GSound*)ptr;
-	if (!gs->enable) return;			// gs disabled
-	if ((bus->adr & 0x0044) != 0) return;		// port doesn't catched
-	if (!bus->iorq) return;
-	gsFlush(ptr);
-	if (bus->adr & 8) {
-		if (bus->rd) {
-			bus->data = gs->pstate;
-		} else {
-			gs->pbb_zx = bus->data;
-			gs->pstate |= 1;
-		}
+int gsCheck(GSound* gs, unsigned short adr) {
+	if (!gs->enable) return 0;
+	if (adr & 0x0044) return 0;
+	return 1;
+}
+
+int gsWrite(GSound* gs, unsigned short adr, unsigned char data) {
+	if (!gsCheck(gs, adr)) return 0;
+	gsFlush(gs);
+	if (adr & 8) {
+		gs->pbb_zx = data;
+		gs->pstate |= 1;
 	} else {
-		if (bus->rd) {
-			bus->data = gs->pb3_gs;
-			gs->pstate &= 0x7f;
-		} else {
-			gs->pb3_zx = bus->data;
-			gs->pstate |= 0x80;		// set b7,state
-		}
+		gs->pb3_zx = data;
+		gs->pstate |= 0x80;		// set b7,state
 	}
-	bus->busy = 1;
+	return 1;
+}
+
+int gsRead(GSound* gs, unsigned short adr, unsigned char* dptr) {
+	if (!gsCheck(gs, adr)) return 0;
+	gsFlush(gs);
+	if (adr & 8) {
+		*dptr = gs->pstate;
+	} else {
+		*dptr = gs->pb3_gs;
+		gs->pstate &= 0x7f;
+	}
+	return 1;
 }
 
 // max 1ch = 256 * 64 = 16384 = 2^14
 // 4ch = 2^14 * 4 = 2^16 = 65536
 // 2ch = 2^15
 
-sndPair gsVolume(void* ptr) {
-	GSound* gs = (GSound*)ptr;
+sndPair gsVolume(GSound* gs) {
 	sndPair res;
 	res.left = 0;
 	res.right = 0;
@@ -193,6 +196,7 @@ sndPair gsVolume(void* ptr) {
 
 // arguments
 
+/*
 void gsSet(void* ptr, int type, xArg arg) {
 	GSound* gs = (GSound*)ptr;
 	FILE* file;
@@ -226,3 +230,4 @@ xArg gsGet(void* ptr, int type) {
 	}
 	return arg;
 }
+*/

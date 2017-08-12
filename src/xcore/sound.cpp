@@ -52,23 +52,9 @@ OutSys* findOutSys(const char*);
 
 #include "hardware.h"
 
-sndPair mixer(sndPair cur, int levL, int levR, int vol) {
-	levL = levL * vol / 100.0;
-	levR = levR * vol / 100.0;
-	double fl = cur.left / 256.0;
-	double fr = cur.right / 256.0;
-	double sl = levL / 256.0;
-	double sr = levR / 256.0;
-	double xl = (fl + sl) / (1.0 + fl * sl);
-	double xr = (fr + sr) / (1.0 + fr * sr);
-	cur.left = xl * 256;
-	cur.right = xr * 256;
-	return cur;
-}
-
+/*
 void sndMix(Computer* comp) {
 	int lev = 0;
-	sndPair svol;
 	sndLev.left = 0;
 	sndLev.right = 0;
 	// tape
@@ -122,32 +108,29 @@ void sndMix(Computer* comp) {
 	if (sndLev.left > 0xff) sndLev.left = 0xff;
 	if (sndLev.right > 0xff) sndLev.right = 0xff;
 }
+*/
 
 // return 1 when buffer is full
 int sndSync(Computer* comp, int nosync, int fast) {
 	if (!nosync) {
 		tapSync(comp->tape,comp->tapCount);
 		comp->tapCount = 0;
-		//gsSync(comp->gs);
 		tsSync(comp->ts,nsPerSample);
-		//saaSync(comp->saa,nsPerSample);
-
-		compDevFlush(comp);
+		gsFlush(comp->gs);
+		saaFlush(comp->saa);
 
 		if (!fast) {
-			sndMix(comp);
+			sndLev = comp->hw->vol(comp);
 		}
 	}
 
-	bufA.data[bufA.pos++] = sndLev.left >> 2;
-	bufA.data[bufA.pos++] = sndLev.right >> 2;
+	bufA.data[bufA.pos++] = (sndLev.left >> 2) & 0xff;
+	bufA.data[bufA.pos++] = (sndLev.right >> 2) & 0xff;
 	bufA.pos &= 0xfff;
 
 	smpCount++;
 	if (smpCount < sndChunks) return 0;
 
-//	memcpy(bufB.data, bufA.data, sndBufSize);
-//	bufA.pos = 0;
 	conf.snd.fill = 0;
 	smpCount = 0;
 	return 1;

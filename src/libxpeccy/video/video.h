@@ -1,5 +1,5 @@
-#ifndef _VIDEO_H
-#define _VIDEO_H
+#ifndef VIDEO_H
+#define VIDEO_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -112,6 +112,7 @@ struct Video {
 	unsigned char font[0x800];		// ATM text mode font
 	void(*callback)(struct Video*);		// call every dot
 	void(*lineCall)(struct Video*);		// call every line
+	void(*hbendCall)(struct Video*);	// @ hblank end
 	void(*framCall)(struct Video*);		// call every frame
 	xColor pal[256];
 	Memory* mem;				// TODO: replace with external mrd(adr, void*) callback: zx modes only?

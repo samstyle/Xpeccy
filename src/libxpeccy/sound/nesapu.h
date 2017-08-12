@@ -1,6 +1,8 @@
 #ifndef X_NESAPU_H
 #define X_NESAPU_H
 
+#include "sndcommon.h"
+
 typedef struct {
 	unsigned en:1;	// channel is enabled
 	unsigned lev:1;
@@ -34,6 +36,7 @@ typedef struct {
 
 nesAPU* apuCreate();
 void apuDestroy(nesAPU*);
-void apuSync(nesAPU*, long);
+void apuSync(nesAPU*, int);
+sndPair apuVolume(nesAPU*);
 
 #endif

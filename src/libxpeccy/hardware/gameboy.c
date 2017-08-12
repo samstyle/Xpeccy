@@ -619,7 +619,7 @@ void gbMemWr(Computer* comp, unsigned short adr, unsigned char val) {
 
 // collect interrupt requests & handle interrupt
 
-void gbcSync(Computer* comp, long ns) {
+void gbcSync(Computer* comp, int ns) {
 	unsigned char req = 0;
 	if (comp->vid->vbstrb) {
 		comp->vid->vbstrb = 0;
@@ -637,8 +637,6 @@ void gbcSync(Computer* comp, long ns) {
 		req |= 16;
 	}
 	comp->cpu->intrq |= req;		// cpu int req
-//	if (comp->cpu->iff1 && (comp->cpu->intrq & 0x1f)) //comp->cpu->inten))
-//		comp->cpu->inth = 1;
 }
 
 // keypress
@@ -648,7 +646,7 @@ typedef struct {
 	int mask;
 } gbKey;
 
-gbKey gbKeyMap[8] = {
+static gbKey gbKeyMap[8] = {
 	{XKEY_RIGHT,1},
 	{XKEY_LEFT,2},
 	{XKEY_UP,4},
@@ -661,14 +659,14 @@ gbKey gbKeyMap[8] = {
 
 unsigned char gbGetInputMask(signed int keyid) {
 	int idx = 0;
-	unsigned char mask = 0;
+	int mask = 0;
 	while (idx < 8) {
 		if (gbKeyMap[idx].id == keyid) {
 			mask = gbKeyMap[idx].mask;
 		}
 		idx++;
 	}
-	return mask;
+	return mask & 0xff;
 }
 
 static char gbMsgBG0[] = " BG layer off ";
@@ -699,6 +697,11 @@ void gbc_keyr(Computer* comp, keyEntry ent) {
 	int mask = gbGetInputMask(ent.key);
 	if (mask == 0) return;
 	comp->gb.buttons |= mask;
+}
+
+sndPair gbc_vol(Computer* comp) {
+	sndPair vol = gbsVolume(comp->gbsnd);
+	return vol;
 }
 
 // reset

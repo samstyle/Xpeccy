@@ -278,18 +278,26 @@ void slt_nes_mmc1_map(xCartridge* slot) {
 
 void slt_nes_mmc1_wr(xCartridge* slot, unsigned short adr, int radr, unsigned char val) {
 	if (val & 0x80) {
-		slot->shift = 0;
-		slot->smask = 1;
+		slot->shift = 0x10;	// actually, if shift right causes bit carry, it means 'end of transmit'
+		slot->bitcount = 0;	// but i using bits counter here. 5th transmited bit means 'end'
 		slot->reg00 |= 0x0c;
 	} else {
 		// lsb first
+		slot->shift >>= 1;
 		if (val & 1)
-			slot->shift |= slot->smask;
-		slot->smask <<= 1;
-		if (slot->smask > 0x10) {
+			slot->shift |= 0x10;
+		slot->bitcount++;
+		if (slot->bitcount > 4) {
 			switch (adr & 0x6000) {
 				case 0x0000:		// control
 					slot->reg00 = slot->shift & 0x1f;
+					switch (slot->shift & 3) {
+						case 0: slot->ntmask = 0x33ff; break;		// 1 screen (TODO: lower bank)
+						case 1: slot->ntmask = 0x33ff; break;		// 1 screen (TODO: upper bank)
+						case 2: slot->ntmask = 0x37ff; break;		// vertical
+						case 3: slot->ntmask = 0x3bff; break;		// horisontal
+					}
+
 					break;
 				case 0x2000:		// chr bank 0
 					slot->reg01 = slot->shift & 0x1f;
@@ -302,16 +310,30 @@ void slt_nes_mmc1_wr(xCartridge* slot, unsigned short adr, int radr, unsigned ch
 					slot->ramen = (slot->shift & 0x10) ? 1 : 0;
 					break;
 			}
-			slot->shift = 0;
-			slot->smask = 1;
+			slot->shift = 0x10;
+			slot->bitcount = 0;
+			slt_nes_mmc1_map(slot);
 		}
 	}
-	slt_nes_mmc1_map(slot);
+}
+
+// mmc 2 :  8(16) PRG 16K pages @ 8000
+
+void slt_nes_mmc2_wr(xCartridge* slot, unsigned short adr, int radr, unsigned char val) {
+	slot->memMap[0] = val & 0x0f;			// @ 8000 : switchable bank
+	slot->memMap[1] = slot->memMask >> 14;		// @ c000 : last bank
+}
+
+// mmc 3 : no PRG banking, up to 256 8K CHR banks
+
+void slt_nes_mmc3_wr(xCartridge* slot, unsigned short adr, int radr, unsigned char val) {
+	slot->memMap[2] = val << 1;
+	slot->memMap[3] = (val << 1) + 1;
 }
 
 // table
 
-xCardCallback maperTab[] = {
+static xCardCallback maperTab[] = {
 	{MAP_MSX_NOMAPPER, slt_msx_all_rd, slt_wr_dum, slt_msx_nomap_adr},
 	{MAP_MSX_KONAMI4, slt_msx_all_rd, slt_msx_kon4_wr, slt_msx_kon4_adr},
 	{MAP_MSX_KONAMI5, slt_msx_all_rd, slt_msx_kon5_wr, slt_msx_kon5_adr},
@@ -326,6 +348,8 @@ xCardCallback maperTab[] = {
 
 	{MAP_NES_NOMAP, slt_nes_all_rd, slt_wr_dum, slt_nes_all_adr},
 	{MAP_NES_MMC1, slt_nes_all_rd, slt_nes_mmc1_wr, slt_nes_all_adr},
+	{MAP_NES_MMC2, slt_nes_all_rd, slt_nes_mmc2_wr, slt_nes_all_adr},
+	{MAP_NES_MMC3, slt_nes_all_rd, slt_nes_mmc3_wr, slt_nes_all_adr},
 
 	{MAP_UNKNOWN, slt_rd_dum, slt_wr_dum, slt_adr_dum}
 };

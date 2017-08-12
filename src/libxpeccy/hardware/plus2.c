@@ -50,7 +50,7 @@ void p2Out7FFD(Computer* comp, unsigned short port, unsigned char val) {
 	pl2MapMem(comp);
 }
 
-xPort p2PortMap[] = {
+static xPort p2PortMap[] = {
 	{0x0003,0x00fe,2,2,2,xInFE,	xOutFE},
 	{0xc002,0x7ffd,2,2,2,NULL,	p2Out7FFD},
 	{0xf002,0x1ffd,2,2,2,NULL,	p2Out1FFD},
@@ -60,9 +60,13 @@ xPort p2PortMap[] = {
 };
 
 void pl2Out(Computer* comp, unsigned short port, unsigned char val, int dos) {
+	zx_dev_wr(comp, port, val, dos);
 	hwOut(p2PortMap, comp, port, val, 0);
 }
 
-unsigned char pl2In(Computer* comp, unsigned short port, int bdiz) {
-	return hwIn(p2PortMap, comp, port, 0);
+unsigned char pl2In(Computer* comp, unsigned short port, int dos) {
+	unsigned char res = 0xff;
+	if (zx_dev_rd(comp, port, &res, dos)) return res;
+	res = hwIn(p2PortMap, comp, port, 0);
+	return  res;
 }

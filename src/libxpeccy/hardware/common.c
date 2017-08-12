@@ -26,21 +26,18 @@ void dummyOut(Computer* comp, unsigned short port, unsigned char val) {
 
 // INT handle/check
 
-void zx_sync(Computer* comp, long ns) {
+void zx_sync(Computer* comp, int ns) {
 	if (!comp->cpu->iff1 || comp->cpu->noint) return;
 	if (comp->vid->intFRAME && (comp->vid->intMask & 1)) {
 		comp->intVector = 0xff;
-//		comp->cpu->inth = 1;
 		comp->cpu->intrq |= 1;
 		comp->vid->intFRAME = 0;
 	} else if (comp->vid->intLINE) {
 		comp->intVector = 0xfd;
-//		comp->cpu->inth = 1;
 		comp->cpu->intrq |= 1;
 		comp->vid->intLINE = 0;
 	} else if (comp->vid->intDMA) {
 		comp->intVector = 0xfb;
-//		comp->cpu->inth = 1;
 		comp->cpu->intrq |= 1;
 		comp->vid->intDMA = 0;
 	}
@@ -58,7 +55,59 @@ void zx_keyr(Computer* comp, keyEntry ent) {
 	keyRelease(comp->keyb, ent.zxKey, 0);
 }
 
+// volume
+
+sndPair zx_vol(Computer* comp) {
+	sndPair vol;
+	sndPair svol;
+	int lev = 0;
+	vol.left = 0;
+	vol.right = 0;
+	// tape sound
+	if (comp->tape->on) {
+		if (comp->tape->rec) {
+			lev = comp->tape->levRec ? 0x7f : 0x00;
+		} else {
+			lev = comp->tape->levPlay ? 0x7f : 0x00;
+		}
+	}
+	vol = mixer(vol, lev, lev, 100);
+	// beeper
+	bcSync(comp->beep, -1);
+	lev = comp->beep->val;
+	vol = mixer(vol, lev, lev, 100);
+	// turbo sound
+	svol = tsGetVolume(comp->ts);
+	vol = mixer(vol, svol.left, svol.right, 100);
+	// general sound
+	svol = gsVolume(comp->gs);
+	vol = mixer(vol, svol.left, svol.right, 100);
+	// soundrive
+	svol = sdrvVolume(comp->sdrv);
+	vol = mixer(vol, svol.left, svol.right, 100);
+	// saa
+	svol = saaVolume(comp->saa);
+	vol = mixer(vol, svol.left, svol.right, 100);
+
+	return vol;
+}
+
 // in
+
+int zx_dev_wr(Computer* comp, unsigned short adr, unsigned char val, int dos) {
+	int res = 0;
+	res = gsWrite(comp->gs, adr, val);
+	if (!dos) {
+		res |= saaWrite(comp->saa, adr, val);
+		res |= sdrvWrite(comp->sdrv, adr, val);
+	}
+	return res;
+}
+
+int zx_dev_rd(Computer* comp, unsigned short adr, unsigned char* ptr, int dos) {
+	if (gsRead(comp->gs, adr, ptr)) return 1;
+	return 0;
+}
 
 unsigned char xIn1F(Computer* comp, unsigned short port) {
 	return joyInput(comp->joy);

@@ -606,28 +606,29 @@ void vidBreak(Video* vid) {
 
 typedef struct {
 	int id;
-	void(*callback)(Video*);
-	void(*lineCall)(Video*);
-	void(*framCall)(Video*);
+	void(*callback)(Video*);		// each dot
+	void(*lineCall)(Video*);		// hblank start
+	void(*hbendCall)(Video*);		// hblank end
+	void(*framCall)(Video*);		// vblank start
 } xVideoMode;
 
-xVideoMode vidModeTab[] = {
-	{VID_NORMAL, vidDrawNormal, NULL, NULL},
-	{VID_ALCO, vidDrawAlco, NULL, NULL},
-	{VID_HWMC, vidDrawHwmc, NULL, NULL},
-	{VID_ATM_EGA, vidDrawATMega, NULL, NULL},
-	{VID_ATM_TEXT, vidDrawATMtext, NULL, NULL},
-	{VID_ATM_HWM, vidDrawATMhwmc, NULL, NULL},
-	{VID_EVO_TEXT, vidDrawEvoText, NULL, NULL},
-	{VID_TSL_NORMAL, vidDrawTSLNormal, vidTSline, NULL},
-	{VID_TSL_16, vidDrawTSLExt, vidTSline, NULL},			// vidDrawTSL16
-	{VID_TSL_256, vidDrawTSLExt, vidTSline, NULL},			// vidDrawTSL256
-	{VID_TSL_TEXT, vidDrawTSLText, vidTSline, NULL},
-	{VID_PRF_MC, vidProfiScr, NULL, NULL},
-	{VID_V9938, vidDrawV9938, NULL, vidFrameV9938},
-	{VID_GBC, vidGBDraw, vidGBLine, vidGBFram},
-	{VID_NES, vidNESDraw, vidNESLine, vidNESFram},
-	{VID_UNKNOWN, vidDrawBorder, NULL, NULL}
+static xVideoMode vidModeTab[] = {
+	{VID_NORMAL, vidDrawNormal, NULL, NULL, NULL},
+	{VID_ALCO, vidDrawAlco, NULL, NULL, NULL},
+	{VID_HWMC, vidDrawHwmc, NULL, NULL, NULL},
+	{VID_ATM_EGA, vidDrawATMega, NULL, NULL, NULL},
+	{VID_ATM_TEXT, vidDrawATMtext, NULL, NULL, NULL},
+	{VID_ATM_HWM, vidDrawATMhwmc, NULL, NULL, NULL},
+	{VID_EVO_TEXT, vidDrawEvoText, NULL, NULL, NULL},
+	{VID_TSL_NORMAL, vidDrawTSLNormal, vidTSline, NULL, NULL},
+	{VID_TSL_16, vidDrawTSLExt, vidTSline, NULL, NULL},			// vidDrawTSL16
+	{VID_TSL_256, vidDrawTSLExt, vidTSline, NULL, NULL},			// vidDrawTSL256
+	{VID_TSL_TEXT, vidDrawTSLText, vidTSline, NULL, NULL},
+	{VID_PRF_MC, vidProfiScr, NULL, NULL, NULL},
+	{VID_V9938, vidDrawV9938, NULL, NULL, vidFrameV9938},
+	{VID_GBC, vidGBDraw, vidGBLine, NULL, vidGBFram},
+	{VID_NES, vidNESDraw, NULL, vidNESLine, vidNESFram},
+	{VID_UNKNOWN, vidDrawBorder, NULL, NULL, NULL}
 };
 
 void vidSetMode(Video* vid, int mode) {
@@ -639,6 +640,7 @@ void vidSetMode(Video* vid, int mode) {
 	vid->callback = vid->noScreen ? vidDrawBorder : vidModeTab[i].callback;
 	vid->lineCall = vidModeTab[i].lineCall;
 	vid->framCall = vidModeTab[i].framCall;
+	vid->hbendCall = vidModeTab[i].hbendCall;
 }
 
 void vidSync(Video* vid, int ns) {
@@ -665,6 +667,7 @@ void vidSync(Video* vid, int ns) {
 			vid->hblank = 0;
 			vid->hbstrb = 0;
 			vid->ray.x = 0;
+			if (vid->hbendCall) vid->hbendCall(vid);
 		} else if (vid->ray.xb >= vid->lay.full.x) {		// hblank start
 			vid->hblank = 1;
 			vid->ray.xb = 0;

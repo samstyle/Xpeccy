@@ -25,7 +25,7 @@ void penOut7FFD(Computer* comp, unsigned short port, unsigned char val) {
 	penMapMem(comp);
 }
 
-xPort penPortMap[] = {
+static xPort penPortMap[] = {
 	{0x0001,0x00fe,2,2,2,xInFE,	xOutFE},
 	{0x8002,0x7ffd,2,2,2,NULL,	penOut7FFD},
 	{0xc002,0xbffd,2,2,2,NULL,	xOutBFFD},
@@ -39,13 +39,14 @@ xPort penPortMap[] = {
 
 void penOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
 	difOut(comp->dif, port, val, dos);
-//	sdrvOut(comp->sdrv,port & 0x00ff,val);
+	zx_dev_wr(comp, port, val, dos);
 	hwOut(penPortMap, comp, port, val, dos);
 }
 
 unsigned char penIn(Computer* comp, unsigned short port, int dos) {
 	unsigned char res = 0xff;
 	if (difIn(comp->dif, port, &res, dos)) return res;
+	if (zx_dev_rd(comp, port, &res, dos)) return res;
 	res = hwIn(penPortMap, comp, port, dos);
 	return res;
 }
