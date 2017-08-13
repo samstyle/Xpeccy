@@ -14,12 +14,12 @@ static mPageNr msxMemTab[4][4] = {
 
 unsigned char msxSlotRd(unsigned short adr, void* data) {
 	xCartridge* slot = (xCartridge*)data;
-	return sltRead(slot, adr);
+	return sltRead(slot, SLT_PRG, adr);
 }
 
 void msxSlotWr(unsigned short adr, unsigned char val, void* data) {
 	xCartridge* slot = (xCartridge*)data;
-	sltWrite(slot, adr, val);
+	sltWrite(slot, SLT_PRG, adr, val);
 }
 
 void msxSetMem(Computer* comp, int bank, unsigned char slot) {

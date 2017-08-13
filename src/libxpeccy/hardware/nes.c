@@ -8,46 +8,30 @@
 unsigned char nesChrRd(unsigned short adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	unsigned char res;
-	switch (adr & 0x3000) {
-		case 0x0000:
-			if (comp->slot->chrrom) {
-				res = comp->slot->chrrom[((comp->slot->memMap[2] << 12) | (adr & 0xfff)) & comp->slot->chrMask];
-			} else {
-				res = comp->vid->ppu->mem[adr & 0x1fff];
-			}
-			break;
-		case 0x1000:
-			if (comp->slot->chrrom) {
-				res = comp->slot->chrrom[((comp->slot->memMap[3] << 12) | (adr & 0xfff)) & comp->slot->chrMask];
-			} else {
-				res = comp->vid->ppu->mem[adr & 0x1fff];
-			}
-			break;
-		default:
-			adr &= 0x2fff;			// @ 3000 is mirror of 2000
-			adr &= comp->slot->ntmask;	// control adr bits by catrige signals
+	if (adr & 0x2000) {	// nametable
+		adr &= comp->slot->ntmask;
+		res = comp->vid->ppu->mem[adr];
+	} else {
+		if (comp->slot->chrrom) {
+			res = sltRead(comp->slot, SLT_CHR, adr);
+		} else {
 			res = comp->vid->ppu->mem[adr];
-			break;
+		}
 	}
 	return res;
 }
 
 void nesChrWr(unsigned short adr, unsigned char val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	switch (adr & 0x3000) {
-		case 0x0000:
-		case 0x1000:
-			if (comp->slot->chrrom == NULL) {
-				comp->vid->ppu->mem[adr & 0x1fff] = val;
-			} else {
-				// CHR-RAM?
-			}
-			break;
-		default:
-			adr &= 0x2fff;
-			adr &= comp->slot->ntmask;
-			comp->vid->ppu->mem[adr] = val;
-			break;
+	if (adr & 0x2000) {
+		adr &= comp->slot->ntmask;
+		comp->vid->ppu->mem[adr] = val;
+	} else {
+		if (comp->slot->chrrom) {
+			// CHR-RAM?
+		} else {
+			comp->vid->ppu->mem[adr & 0x1fff] = val;
+		}
 	}
 }
 
@@ -298,14 +282,12 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 
 unsigned char nesSLrd(unsigned short adr, void* data) {
 	xCartridge* slot = (xCartridge*)data;
-	return sltRead(slot, adr);
-	//return slot->core->rd(slot, adr);
+	return sltRead(slot, SLT_PRG, adr);
 }
 
 void nesSLwr(unsigned short adr, unsigned char val, void* data) {
 	xCartridge* slot = (xCartridge*)data;
-	sltWrite(slot, adr, val);
-	//slot->core->wr(slot, adr, val);
+	sltWrite(slot, SLT_PRG, adr, val);
 }
 
 void nesMaper(Computer* comp) {

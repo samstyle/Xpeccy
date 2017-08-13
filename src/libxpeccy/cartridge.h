@@ -1,5 +1,5 @@
-#ifndef _CARTRIDGE_H
-#define _CARTRIDGE_H
+#ifndef CARTRIDGE_H
+#define CARTRIDGE_H
 
 #if __cplusplus
 extern "C" {
@@ -31,6 +31,11 @@ enum {
 	MAP_NES_MMC5,
 };
 
+enum {
+	SLT_PRG = 1,
+	SLT_CHR			// access by NES ppu
+};
+
 // memory flags
 #define	MEM_BRK_FETCH	1
 #define	MEM_BRK_RD	(1<<1)
@@ -43,9 +48,9 @@ typedef struct xCartridge xCartridge;
 
 typedef struct {
 	int id;
-	unsigned char (*rd)(xCartridge*, unsigned short, int);
-	void (*wr)(xCartridge*, unsigned short, int, unsigned char);
-	int (*adr)(xCartridge*, unsigned short);
+	unsigned char (*rd)(xCartridge*, int, unsigned short, int);
+	void (*wr)(xCartridge*, int, unsigned short, int, unsigned char);
+	int (*adr)(xCartridge*, int, unsigned short);
 } xCardCallback;
 
 struct xCartridge {
@@ -77,11 +82,13 @@ struct xCartridge {
 
 xCartridge* sltCreate();
 void sltDestroy(xCartridge*);
-int sltSetMaper(xCartridge*, int);
 void sltEject(xCartridge*);
 
-unsigned char sltRead(xCartridge*, unsigned short);
-void sltWrite(xCartridge*, unsigned short, unsigned char);
+xCardCallback* sltFindMaper(int);
+int sltSetMaper(xCartridge*, int);
+
+unsigned char sltRead(xCartridge*, int, unsigned short);
+void sltWrite(xCartridge*, int, unsigned short, unsigned char);
 
 #if __cplusplus
 }

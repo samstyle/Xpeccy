@@ -489,20 +489,15 @@ unsigned char gbSlotRd(unsigned short adr, void* data) {
 	if (comp->gb.boot && (adr < comp->romsize) && ((adr & 0xff00) != 0x0100)) {
 		res = comp->mem->romData[adr & 0x3fff];
 	} else if (slot->data) {
-		res = sltRead(slot, adr);
-		// res = slot->core->rd(slot, adr);
+		res = sltRead(slot, SLT_PRG, adr);
 	}
 	return res;
 }
 
 void gbSlotWr(unsigned short adr, unsigned char val, void* data) {
 	Computer* comp = (Computer*)data;
-	// xCartridge* slot = comp->slot;
-	sltWrite(comp->slot, adr, val);
-	//if (slot->data && slot->core->wr)
-	//	slot->core->wr(slot, adr, val);
+	sltWrite(comp->slot, SLT_PRG, adr, val);
 	memSetBank(comp->mem, MEM_BANK1, MEM_SLOT, comp->slot->memMap[0], gbSlotRd, gbSlotWr, comp);
-	//gbMaper(comp);
 }
 
 // 8000..9fff : video mem (bank 0,1 gbc)
@@ -514,10 +509,7 @@ unsigned char gbvRd(unsigned short adr, void* data) {
 	unsigned char res = 0xff;
 	int radr;
 	if (adr & 0x2000) {		// cartrige ram
-		res = sltRead(slot, adr);
-		//if (slot->data) {
-		//	res = slot->core->rd(slot, adr);
-		//}
+		res = sltRead(slot, SLT_PRG, adr);
 	} else {			// video ram
 		radr = (comp->gb.vbank << 13) | (adr & 0x1fff);
 		res = comp->vid->gbc->ram[radr];
@@ -530,7 +522,7 @@ void gbvWr(unsigned short adr, unsigned char val, void* data) {
 	// xCartridge* slot = comp->slot;
 	int radr;
 	if (adr & 0x2000) {		// cartrige ram
-		sltWrite(comp->slot, adr, val);
+		sltWrite(comp->slot, SLT_PRG, adr, val);
 		//if (slot->data) {
 		//	slot->core->wr(slot, adr, val);
 		//}
