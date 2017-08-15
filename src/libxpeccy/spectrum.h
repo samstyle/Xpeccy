@@ -59,17 +59,6 @@ typedef struct {
 	unsigned char page;
 } memEntry;
 
-/*
-typedef  struct {
-	int bitvol;		// 1-bit channel (beep)
-	int tapvol;		// tape
-	int tsvol;		// turbo sound
-	int gsvol;		// general sound
-	int sdrvol;		// soundrive
-	int saavol;		// saa chip
-} compVolume;
-*/
-
 typedef struct {
 	unsigned brk:1;			// breakpoint
 	unsigned debug:1;		// dont' do breakpoints
@@ -111,14 +100,10 @@ typedef struct {
 	GSound* gs;
 	SDrive* sdrv;
 	saaChip* saa;
-
 	gbSound* gbsnd;
-
 	nesAPU* nesapu;
 
 	xCartridge* slot;		// cartrige slot (MSX, GB, NES)
-
-//	compVolume vol;			// devices volume (default = 100)
 
 #ifdef HAVEZLIB
 
@@ -209,15 +194,11 @@ typedef struct {
 		} ppi;
 	} msx;
 	struct {
+		unsigned pal:1;
 		int priPadState;		// b0..7 = A,B,sel,start,up,down,left,right,0,0,0,0,....
 		int secPadState;
 		int priJoy;			// shift registers (reading 4016/17 returns bit 0 & shift right)
 		int secJoy;			//		write b0=1 to 4016 restore status
-		struct {
-			unsigned lev:1;
-			int ns;
-			int per;
-		} clock;
 	} nes;
 	struct {
 		unsigned boot:1;	// boot rom on
@@ -263,6 +244,7 @@ void compKeyRelease(Computer*, int, keyEntry*);
 void compSetBaseFrq(Computer*,double);
 void compSetTurbo(Computer*,int);
 void compSetHardware(Computer*,const char*);
+void compUpdateTimings(Computer*);
 
 // read-write cmos
 unsigned char cmsRd(Computer*);

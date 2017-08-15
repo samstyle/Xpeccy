@@ -3,40 +3,64 @@
 
 #include "sndcommon.h"
 
-typedef struct {
-	unsigned en:1;	// channel is enabled
-	unsigned lev:1;
-	unsigned lenen:1;	// length counter enabled
-	unsigned env:1;		// envelope active
-	unsigned eloop:1;	// envelope loop enabled
-	int vol;	// current volume
-	int eper;	// envelope period
-	int per;	// 50/50 duty period calculated from frequence
-	int per0;	// low & high periods according duty cycle
-	int per1;
-	int pcount;	// period countdown
-	int tcount;	// ticks counter
-	int step;	// halfwave counter
-	int len;	// decrease every 4 ticks. if (len == 0) there is no sound
-} nesapuChan;
+typedef unsigned char(*extmrd)(unsigned short, void*);
 
 typedef struct {
-	unsigned pal:1;		// PAL mode
-	unsigned inten:1;	// enable frame IRQ signal
-	unsigned frm:1;		// frame IRQ
-	nesapuChan ch0;		// tone 0
-	nesapuChan ch1;		// tone 1
-	nesapuChan ch2;		// triangle
-	nesapuChan ch3;		// noise
-	nesapuChan ch4;		// DMC wave
-	long period;		// ns per tick @ 240Hz = CPUfrq/14915 (NTSC) | PAL skips every 5th tick ~ 192Hz
-	long tick;		// ns tick counter
-	int tcount;		// 0 to 4
+	unsigned lev:1;
+	unsigned env:1;		// envelope on
+	unsigned elen:1;	// length counter enabled / envelope looped
+	unsigned duty:2;
+	unsigned sweep:1;	// sweep working
+	unsigned sdir:1;	// 0:add to period, 1:sub from period
+	unsigned dir:1;		// triangle wave direction (1:up 0:down)
+
+	unsigned char vol;	// current volume;
+	unsigned char buf;	// readed byte (digital)
+	int len;		// length counter
+	int lcnt;		// linear counter (triangle)
+	int hper;		// 50/50 period
+	int per0;		// duty period for 0
+	int per1;		// duty period for 1
+	int pcnt;		// period counter
+	int pstp;		// waves counter
+	int eper;		// envelope period
+	int ecnt;		// envelope counter;
+	int sper;		// sweep period
+	int scnt;		// sweep counter
+	int sshi;		// sweep shift
+	int sdiv;		// sweep divider
+	unsigned short sadr;	// sample address (digital)
+	unsigned short cadr;	// next fetch address (digital)
+} apuChannel;
+
+typedef struct {
+	unsigned step5:1;
+	unsigned irqen:1;	// enable frame irq
+	unsigned frm:1;		// frame irq
+
+	int wper;		// wave tick = CPU/16
+	int wcnt;
+	int wstp;
+
+	int tper;		// 240Hz period
+	int tcnt;
+	int tstp;
+
+	apuChannel ch0;		// square 0
+	apuChannel ch1;		// square 1
+	apuChannel cht;		// triangle
+	apuChannel chn;		// noise
+	apuChannel chd;		// digital
+
+	extmrd mrd;
+	void* data;
 } nesAPU;
 
-nesAPU* apuCreate();
+nesAPU* apuCreate(extmrd, void*);
 void apuDestroy(nesAPU*);
 void apuSync(nesAPU*, int);
 sndPair apuVolume(nesAPU*);
+
+void apuToneDuty(apuChannel*);
 
 #endif

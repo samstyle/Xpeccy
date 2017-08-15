@@ -234,6 +234,9 @@ void nesSync(Computer*, int);
 void nes_keyp(Computer*, keyEntry);
 void nes_keyr(Computer*, keyEntry);
 sndPair nes_vol(Computer*);
+unsigned char nes_apu_ext_rd(unsigned short, void*);
+unsigned char nes_ppu_ext_rd(unsigned short, void*);
+unsigned char nes_apu_ext_wr(unsigned short, unsigned char, void*);
 
 #ifdef __cplusplus
 }

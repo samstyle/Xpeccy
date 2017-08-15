@@ -1,11 +1,12 @@
 #include "hardware.h"
 
-// NOTE: NES is fukkeen trash. why did i start this?
+#include <stdio.h>
 
-// NOTE: Video PPU must have access to cartridge memory, as long as CPU
+// NOTE: NES is fukkeen trash. why did i start this?
 // NOTE: Cartridges have potentially 255+ mappers
 
-unsigned char nesChrRd(unsigned short adr, void* ptr) {
+// PPU reads byte (except palette)
+unsigned char nes_ppu_ext_rd(unsigned short adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	unsigned char res;
 	if (adr & 0x2000) {	// nametable
@@ -21,7 +22,8 @@ unsigned char nesChrRd(unsigned short adr, void* ptr) {
 	return res;
 }
 
-void nesChrWr(unsigned short adr, unsigned char val, void* ptr) {
+// PPU writes byte (except palette)
+void nes_ppu_ext_wr(unsigned short adr, unsigned char val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	if (adr & 0x2000) {
 		adr &= comp->slot->ntmask;
@@ -35,15 +37,18 @@ void nesChrWr(unsigned short adr, unsigned char val, void* ptr) {
 	}
 }
 
+// APU reads byte (DMC channel)
+unsigned char nes_apu_ext_rd(unsigned short adr, void* ptr) {
+	Computer* comp = (Computer*)ptr;
+	return comp->hw->mrd(comp, adr, 0);
+}
+
 void nesReset(Computer* comp) {
-	comp->vid->ppu->mrd = nesChrRd;
-	comp->vid->ppu->mwr = nesChrWr;
+	comp->vid->ppu->mrd = nes_ppu_ext_rd;
+	comp->vid->ppu->mwr = nes_ppu_ext_wr;
 	comp->vid->ppu->data = comp;
 	ppuReset(comp->vid->ppu);
 	vidSetMode(comp->vid, VID_NES);
-
-	comp->nesapu->inten = 1;
-	comp->nesapu->pal = 0;
 
 	comp->slot->memMap[0] = 0;	// prg 2x16K pages
 	comp->slot->memMap[1] = comp->slot->memMask >> 14;
@@ -80,15 +85,16 @@ unsigned char nesMMrd(unsigned short adr, void* data) {
 		}
 	} else if (adr < 0x5000) {
 		// audio, dma, io registers (0x17, other is unused)
+		nesAPU* apu = comp->nesapu;
 		switch (adr) {
 			case 0x4015:
 				res = 0;
-				if (comp->nesapu->ch0.len && comp->nesapu->ch0.en) res |= 0x01;
-				if (comp->nesapu->ch1.len && comp->nesapu->ch1.en) res |= 0x02;
-				if (comp->nesapu->ch2.len && comp->nesapu->ch2.en) res |= 0x04;
-				if (comp->nesapu->ch3.len && comp->nesapu->ch3.en) res |= 0x08;
-				if (comp->nesapu->ch4.len && comp->nesapu->ch4.en) res |= 0x10;
-				if (comp->nesapu->frm) res |= 0x40;		// frame irq
+				if (apu->ch0.len) res |= 0x01;
+				if (apu->ch1.len) res |= 0x02;
+				if (apu->cht.len) res |= 0x04;
+				if (apu->chn.len) res |= 0x08;
+				if (apu->chd.len) res |= 0x10;
+				if (apu->frm) res |= 0x40;
 				break;
 			case 0x4016:		// joystick 1
 				res = comp->nes.priJoy & 1;
@@ -104,17 +110,31 @@ unsigned char nesMMrd(unsigned short adr, void* data) {
 		// expansion rom (4K)
 	} else if (comp->slot->data) {
 		// cartrige ram (8K)
-		res = comp->slot->ram[adr & 0x1fff];
+		res = comp->slot->ramen ? comp->slot->ram[adr & 0x1fff] : 0xff;
 	}
 	return res;
 }
 
-static int decayTab[4] = {1,2,4,6};
+// taked from nesdev wiki
+// convert to apu ticks = div 16
+static int apuPcmPer[16] = {428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106,  84,  72,  54};
+static int apuLenPAL[8] = {5,10,20,40,80,30,7,13};
+static int apuLenNTSC[8] = {6,12,24,48,96,36,8,16};
+static int apuLenGeneral[16] = {127,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+
+int apuGetLC(unsigned char val) {
+	int len;
+	switch (val & 0x88) {
+		case 0x00: len = apuLenPAL[(val >> 4) & 7]; break;
+		case 0x80: len = apuLenNTSC[(val >> 4) & 7]; break;
+		default: len = apuLenGeneral[(val >> 4) & 15]; break;
+	}
+	return len;
+}
 
 void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 	Computer* comp = (Computer*)data;
 	adr &= 0x7fff;
-	int decay;
 	if (adr < 0x2000) {
 		comp->mem->ramData[adr & 0x7ff] = val;
 	} else if (adr < 0x4000) {
@@ -178,67 +198,133 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 		}
 	} else if (adr < 0x5000) {
 		// write audio/dma/io?
+		nesAPU* apu = comp->nesapu;
 		switch (adr) {
 			// ch0 : tone 0
 			case 0x4000:
-				if (val & 0x10) {
-					comp->nesapu->ch0.env = 0;
-					comp->nesapu->ch0.vol = val & 0x0f;
-					comp->nesapu->ch0.lenen = (val & 0x20) ? 0 : 1;
+				apu->ch0.duty = (val >> 6) & 3;
+				apu->ch0.env = (val & 0x10) ? 0 : 1;
+				apu->ch0.elen = (val & 0x20) ? 0 : 1;
+				if (apu->ch0.env) {
+					//printf("ch0 env %.2X\n",val);
+					apu->ch0.eper = ((val & 15) + 1);
+					apu->ch0.ecnt = apu->ch0.eper;
+					apu->ch0.vol = 0x0f;
 				} else {
-					comp->nesapu->ch0.env = 1;
-					comp->nesapu->ch0.eloop = (val & 0x20) ? 1 : 0;
-					comp->nesapu->ch0.eper = (val & 0x0f) + 1;
+					apu->ch0.vol = val & 15;
 				}
-				decay = decayTab[(val & 0xc0) >> 6];
-				comp->nesapu->ch0.per1 = comp->nesapu->ch0.per * decay / 4;
-				comp->nesapu->ch0.per0 = comp->nesapu->ch0.per * (8 - decay) / 4;
+				apuToneDuty(&apu->ch0);
 				break;
 			case 0x4001:
+//				printf("ch0 sweep %.2X\n",val);
+				apu->ch0.sweep = (val & 0x80) ? 1 : 0;
+				apu->ch0.sper = ((val >> 4) & 7) + 1;
+				apu->ch0.sdir = (val & 0x08) ? 1 : 0;
+				apu->ch0.sshi = val & 7;
 				break;
 			case 0x4002:
+				apu->ch0.hper &= 0x700;
+				apu->ch0.hper |= (val & 0xff);
+				apuToneDuty(&apu->ch0);
 				break;
 			case 0x4003:
-				comp->nesapu->ch0.len = val;
+				//printf("wr 4003,%.2X\n",val);
+				apu->ch0.hper &= 0xff;
+				apu->ch0.hper |= ((val << 8) & 0x0700);
+				switch (val & 0x88) {
+					case 0x00: apu->ch0.len = apuLenPAL[(val >> 4) & 7]; break;
+					case 0x80: apu->ch0.len = apuLenNTSC[(val >> 4) & 7]; break;
+					default: apu->ch0.len = apuLenGeneral[(val >> 4) & 15]; break;
+				}
+				apuToneDuty(&apu->ch0);
+				//printf("CH0 len = %i, p0 = %i, p1 = %i\n", apu->ch0.len, apu->ch0.per0, apu->ch0.per1);
 				break;
 			// ch1 : tone 1
 			case 0x4004:
-				comp->nesapu->ch1.lenen = (val & 0x20) ? 0 : 1;
+				apu->ch1.duty = (val >> 6) & 3;
+				apu->ch1.env = (val & 0x10) ? 0 : 1;
+				apu->ch1.elen = (val & 0x20) ? 0 : 1;
+				if (apu->ch1.env) {
+					apu->ch1.eper = ((val & 15) + 1);
+					apu->ch1.ecnt = apu->ch1.eper;
+					apu->ch1.vol = 0x0f;
+				} else {
+					apu->ch1.vol = val & 15;
+				}
+				apuToneDuty(&apu->ch1);
 				break;
 			case 0x4005:
+				apu->ch1.sweep = (val & 0x80) ? 1 : 0;
+				apu->ch1.sper = ((val >> 4) & 7) + 1;
+				apu->ch1.sdir = (val & 0x08) ? 1 : 0;
+				apu->ch1.sshi = val & 7;
 				break;
 			case 0x4006:
+				apu->ch1.hper &= 0x700;
+				apu->ch1.hper |= val;
+				apuToneDuty(&apu->ch1);
 				break;
 			case 0x4007:
-				comp->nesapu->ch1.len = val;
+				apu->ch1.hper &= 0xff;
+				apu->ch1.hper |= ((val << 8) & 0x0700);
+				apu->ch1.len = apuGetLC(val);
+				apuToneDuty(&apu->ch1);
 				break;
 			// ch2 : triangle
 			case 0x4008:
+				apu->cht.elen = (val & 0x80) ? 0 : 1;
+				apu->cht.lcnt = (val & 0x7f);
 				break;
 			case 0x4009:
 				break;
-			case 0x400a:
+			case 0x400a:					// tone period divided by 2 cuz triangle clock is CPU/32
+				apu->cht.hper &= 0x700;
+				apu->cht.hper |= val & 0xff;
 				break;
 			case 0x400b:
+				apu->cht.hper &= 0xff;
+				apu->cht.hper |= (val << 8) & 0x70;
+				apu->cht.len = apuGetLC(val);
+				apu->cht.vol = 8;
+				apu->cht.dir = 1;
 				break;
 			// ch3 : noise
 			case 0x400c:
-				comp->nesapu->ch3.lenen = (val & 0x20) ? 0 : 1;
+				apu->chn.elen = (val & 0x20) ? 0 : 1;
+				apu->chn.env = (val & 0x10) ? 0 : 1;
+				if (apu->chn.env) {
+					apu->chn.eper = (val & 15) + 1;
+					apu->chn.ecnt = apu->chn.eper;
+					apu->chn.vol = 0x0f;
+				} else {
+					apu->chn.vol = val & 15;
+				}
 				break;
 			case 0x400d:
 				break;
 			case 0x400e:
+				apu->chn.hper = val & 0x0f;
+				// b7:loop noise (short generator)
 				break;
 			case 0x400f:
+				apu->chn.len = apuGetLC(val);
 				break;
 			// ch4 : dmc
 			case 0x4010:
+				apu->chd.env = (val & 0x80) ? 1 : 0;		// IRQ enable
+				apu->chd.elen = (val & 0x40) ? 1 : 0;		// loop
+				apu->chd.hper = apuPcmPer[val & 0x0f];		// period
 				break;
 			case 0x4011:
+				apu->chd.vol = val & 0x7f;
 				break;
 			case 0x4012:
+				apu->chd.sadr = 0xc000 | ((val << 6) & 0x3fc0);
+				apu->chd.cadr = apu->chd.sadr;
 				break;
 			case 0x4013:
+				apu->chd.len = ((val << 4) & 0x0ff0) | 1;
+				apu->chd.lcnt = apu->chd.len;
 				break;
 			// ...
 			case 0x4014:		// OAMDMA
@@ -251,11 +337,11 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 				// comp->cpu->t += 0x200;
 				break;
 			case 0x4015:
-				comp->nesapu->ch0.en = (val & 0x01) ? 1 : 0;
-				comp->nesapu->ch1.en = (val & 0x02) ? 1 : 0;
-				comp->nesapu->ch2.en = (val & 0x04) ? 1 : 0;
-				comp->nesapu->ch3.en = (val & 0x08) ? 1 : 0;
-				comp->nesapu->ch4.en = (val & 0x10) ? 1 : 0;
+				if (~val & 0x01) apu->ch0.len = 0;
+				if (~val & 0x02) apu->ch1.len = 0;
+				if (~val & 0x04) apu->cht.len = 0;
+				if (~val & 0x08) apu->chn.len = 0;
+				if (~val & 0x10) apu->chd.len = 0;
 				break;
 			case 0x4016:
 				if (val & 1) {		// b0: 0-1-0 = reload gamepads state
@@ -264,9 +350,8 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 				}
 				break;
 			case 0x4017:
-				comp->nesapu->pal = (val & 0x80) ? 1 : 0;
-				comp->nesapu->inten = (val & 0x40) ? 0 : 1;
-				comp->nesapu->tcount = comp->nesapu->pal ? 0 : 4;
+				apu->irqen = (val & 0x80) ? 0 : 1;
+				apu->step5 = (val & 0x40) ? 1 : 0;
 				break;
 			default:
 				//printf("write %.4X,%.2X\n",adr,val);
@@ -310,11 +395,7 @@ void nesSync(Computer* comp, int ns) {
 		if (~comp->cpu->f & MFI)
 			comp->cpu->intrq |= MOS6502_INT_BRK;
 	}
-	comp->nes.clock.ns += ns;
-	if (comp->nes.clock.ns >= comp->nes.clock.per) {
-		comp->nes.clock.ns -= comp->nes.clock.per;
-		comp->nes.clock.lev ^= 1;
-	}
+
 }
 
 unsigned char nesMemRd(Computer* comp, unsigned short adr, int m1) {
@@ -359,11 +440,18 @@ static char nesBgOn[] = " BG layer on ";
 static char nesBgOff[] = " BG layer off ";
 static char nesSpOn[] = " SPR layer on ";
 static char nesSpOff[] = " SPR layer off ";
+static char nesPAL[] = " PAL ";
+static char nesNTSC[] = " NTSC ";
 
 void nes_keyp(Computer* comp, keyEntry ent) {
 	int mask = nesGetInputMask(ent.key);
 	comp->nes.priPadState |= mask;
 	switch (ent.key) {
+		case XKEY_0:
+			comp->nes.pal ^= 1;
+			comp->msg = comp->nes.pal ? nesPAL : nesNTSC;
+			compUpdateTimings(comp);
+			break;
 		case XKEY_1:
 			comp->vid->ppu->bglock ^= 1;
 			comp->msg = comp->vid->ppu->bglock ? nesBgOff : nesBgOn;

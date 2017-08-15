@@ -31,7 +31,7 @@ HardWare hwTab[] = {
 		HW_TSLAB,"TSLab","Evo TSConf",50,MEM_4M,
 		tslMapMem,tslOut,tslIn,tslMRd,tslMWr,tslReset,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
-		HW_NULL,"","",50,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// separator
+		HW_NULL,"","",50,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// separator
 	},{
 		HW_PLUS2,"Spectrum +2","Spectrum +2",50,MEM_128,
 		pl2MapMem,pl2Out,pl2In,stdMRd,stdMWr,NULL,zx_sync,zx_keyp,zx_keyr,zx_vol
@@ -39,7 +39,7 @@ HardWare hwTab[] = {
 		HW_PLUS3,"Spectrum +3","Spectrum +3",50,MEM_128,
 		pl2MapMem,pl3Out,pl3In,stdMRd,stdMWr,NULL,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
-		HW_NULL,"","",50,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// separator
+		HW_NULL,"","",50,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// separator
 	},{
 		HW_MSX,"MSX","MSX-1",60,MEM_128,
 		msxMapMem,msxOut,msxIn,stdMRd,stdMWr,msxReset,msx_sync,msx_keyp,msx_keyr,msx_vol
@@ -47,17 +47,17 @@ HardWare hwTab[] = {
 		HW_MSX2,"MSX2","MSX-2 (alfa)",60,MEM_128,
 		msx2mapper,msx2Out,msx2In,msx2mrd,msx2mwr,msx2Reset,msx_sync,msx_keyp,msx_keyr,msx_vol
 	},{
-		HW_NULL,"","",50,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// separator
+		HW_NULL,"","",50,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// separator
 	},{
 		HW_GBC,"GameBoy","Game Boy",60,MEM_48,
 		gbMaper,NULL,NULL,gbMemRd,gbMemWr,gbReset,gbcSync,gbc_keyp,gbc_keyr,gbc_vol
 	},{
-		HW_NULL,"","",50,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// separator
+		HW_NULL,"","",50,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// separator
 	},{
 		HW_NES,"NES","NES",50,MEM_48,
 		nesMaper,NULL,NULL,nesMemRd,nesMemWr,nesReset,nesSync,nes_keyp,nes_keyr,nes_vol
 	},{
-		HW_NULL,NULL,NULL,50,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// eot
+		HW_NULL,NULL,NULL,50,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// eot
 	}
 };
 

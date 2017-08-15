@@ -181,7 +181,7 @@ Computer* compCreate() {
 	comp->gbsnd = gbsCreate();
 	comp->saa = saaCreate();
 	comp->beep = bcCreate();
-	comp->nesapu = apuCreate();
+	comp->nesapu = apuCreate(nes_apu_ext_rd, comp);
 // baseconf
 	comp->evo.evo2F = 0;
 	comp->evo.evo4F = 0;
@@ -264,36 +264,39 @@ void compReset(Computer* comp,int res) {
 // cpu freq
 
 void compUpdateTimings(Computer* comp) {
-	long perNoTurbo = 1e3 / comp->cpuFrq;
+	int perNoTurbo = 1e3 / comp->cpuFrq;		// ns for full cpu tick
 	if (perNoTurbo & 1) perNoTurbo++;
-	comp->nsPerTick = perNoTurbo / comp->frqMul;
+//	comp->nsPerTick = perNoTurbo / comp->frqMul;	// apply frequence multiplier
 	int type = comp->hw ? comp->hw->id : HW_NULL;
 	switch (type) {
 		case HW_MSX:
 		case HW_MSX2:
 			perNoTurbo = perNoTurbo * 5 / 6;				// convert 50Hz->60Hz
-			comp->nsPerTick = perNoTurbo / comp->frqMul;
+//				comp->nsPerTick = perNoTurbo / comp->frqMul;
 			vidUpdateTimings(comp->vid, perNoTurbo >> 1);
 			break;
 		case HW_GBC:
 			comp->gbsnd->wav.period = perNoTurbo << 5;			// 128KHz period for wave generator = cpu.frq / 32
-			comp->gb.timer.div.per = comp->nsPerTick << 8;			// 16KHz timer divider tick. this timer depends on turbo speed
+			comp->gb.timer.div.per = (perNoTurbo / comp->frqMul) << 8;	// 16KHz timer divider tick. this timer depends on turbo speed
 			vidUpdateTimings(comp->vid, perNoTurbo << 1);
 			break;
 		case HW_NES:
-			// cpu frq (1.79MHz)
+			// cpu frq (1.78MHz)
 			// smallest wave period = cpu frq / 16		(~112KHz)
-			// smallest triangle per = cpu frq / 32
 			// pal:ntsc = 48:60 Hz frame irq
-
-			// comp->nes.tper = perNoTurbo << 4;
-			comp->nesapu->period = perNoTurbo * 14915;	// ~240 Hz @ 1.78MHz
-			vidUpdateTimings(comp->vid, perNoTurbo / 3);
+			if (comp->nes.pal) {
+				perNoTurbo = perNoTurbo * 6 / 5;			// 60Hz(NTSC)->50Hz (if PAL using)
+//				comp->nsPerTick = perNoTurbo / comp->frqMul;
+			}
+			comp->nesapu->wper = perNoTurbo * 16 / 2;			// most high tone frq = CPU/16
+			comp->nesapu->tper = perNoTurbo * 14915 / 2;			// ~240 Hz @ 1.78MHz (full period)
+			vidUpdateTimings(comp->vid, perNoTurbo / 3);		// 1 CPU tick = 3 PPU ticks
 			break;
 		default:
 			vidUpdateTimings(comp->vid, perNoTurbo >> 1);
 			break;
 	}
+	comp->nsPerTick = perNoTurbo / comp->frqMul;
 #ifdef ISDEBUG
 	// printf("%f x %i : %i ns\n",comp->cpuFrq,comp->frqMul,comp->nsPerTick);
 #endif
@@ -319,7 +322,6 @@ void compSetHardware(Computer* comp, const char* name) {
 	HardWare* hw = findHardware(name);
 	if (hw == NULL) return;
 	comp->hw = hw;
-//	comp->vid->istsconf = 0;
 	comp->vid->lockLayout = 0;
 	switch(hw->id) {
 		case HW_NES:
@@ -331,7 +333,6 @@ void compSetHardware(Computer* comp, const char* name) {
 			comp->vid->lockLayout = 1;
 			break;
 		case HW_TSLAB:
-//			comp->vid->istsconf = 1;
 			break;
 		case HW_MSX:
 		case HW_MSX2:
@@ -355,15 +356,6 @@ int compExec(Computer* comp) {
 // out @ last tick
 	vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
 	if (comp->padr) {
-/*
-		comp->bus.busy = 0;
-		comp->bus.iorq = 1;
-		comp->bus.memrq = 0;
-		comp->bus.rd = 0;
-		comp->bus.adr = comp->padr;
-		comp->bus.data = comp->pval;
-		compDevRequest(comp);
-*/
 		tapSync(comp->tape,comp->tapCount);
 		comp->tapCount = 0;
 		bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
