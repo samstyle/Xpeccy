@@ -55,4 +55,7 @@ void ppuFram(nesPPU*);
 void ppuWrite(nesPPU*, unsigned char);
 unsigned char ppuRead(nesPPU*);
 
+void ppuRenderBGLine(nesPPU*, unsigned char*, unsigned short, int, unsigned short);
+unsigned short ppuYinc(unsigned short);
+
 #endif

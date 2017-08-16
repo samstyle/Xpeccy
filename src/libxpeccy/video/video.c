@@ -670,6 +670,7 @@ void vidSync(Video* vid, int ns) {
 			if (vid->hbendCall) vid->hbendCall(vid);
 		} else if (vid->ray.xb >= vid->lay.full.x) {		// hblank start
 			vid->hblank = 1;
+			vid->hbstrb = 1;
 			vid->ray.xb = 0;
 			vid->ray.y++;
 			vid->ray.yb++;

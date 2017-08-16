@@ -40,7 +40,13 @@ enum {
 	NES_SCR_0,
 	NES_SCR_1,
 	NES_SCR_2,
-	NES_SCR_3
+	NES_SCR_3,
+	NES_SCR_ALL
+};
+
+enum {
+	NES_TILE_0000 = 0,
+	NES_TILE_1000
 };
 
 typedef struct {
@@ -325,12 +331,17 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	trace = 0;
 // nes tab
 	ui.nesScrType->addItem(trUtf8("BG off"), NES_SCR_OFF);
-	ui.nesScrType->addItem(trUtf8("BG SCR 0"), NES_SCR_0);
-	ui.nesScrType->addItem(trUtf8("BG SCR 1"), NES_SCR_1);
-	ui.nesScrType->addItem(trUtf8("BG SCR 2"), NES_SCR_2);
-	ui.nesScrType->addItem(trUtf8("BG SCR 3"), NES_SCR_3);
+	ui.nesScrType->addItem(trUtf8("BG scr 0"), NES_SCR_0);
+	ui.nesScrType->addItem(trUtf8("BG scr 1"), NES_SCR_1);
+	ui.nesScrType->addItem(trUtf8("BG scr 2"), NES_SCR_2);
+	ui.nesScrType->addItem(trUtf8("BG scr 3"), NES_SCR_3);
+	ui.nesScrType->addItem(trUtf8("All in 1"), NES_SCR_ALL);
+
+	ui.nesTileType->addItem(trUtf8("Tiles #0000"), NES_TILE_0000);
+	ui.nesTileType->addItem(trUtf8("Tiles #1000"), NES_TILE_1000);
 
 	connect(ui.nesScrType,SIGNAL(currentIndexChanged(int)), this, SLOT(drawNes()));
+	connect(ui.nesTileType,SIGNAL(currentIndexChanged(int)), this, SLOT(drawNes()));
 	connect(ui.nesShowSpr,SIGNAL(stateChanged(int)), this, SLOT(drawNes()));
 
 // subwindows
@@ -840,25 +851,72 @@ void DebugWin::fillGBoy() {
 
 // nes
 
-void DebugWin::drawNes() {
-	nesPPU* ppu = comp->vid->ppu;
+extern xColor nesPal[64];
 
-//	ui.labNTAdr->setText(gethexword(ppu->vadr));
-
-
-	unsigned char scrmap[32 * 32];
-	switch(ui.nesScrType->itemData(ui.nesScrType->currentIndex()).toInt()) {
-		case NES_SCR_OFF: memset(scrmap, 0x00, 32*32); break;
-		case NES_SCR_0:	memcpy(scrmap, ppu->mem + 0x2000, 0x400); break;
-		case NES_SCR_1: memcpy(scrmap, ppu->mem + 0x2400, 0x400); break;
-		case NES_SCR_2: memcpy(scrmap, ppu->mem + 0x2800, 0x400); break;
-		case NES_SCR_3: memcpy(scrmap, ppu->mem + 0x2c00, 0x400); break;
-	}
-
+QImage dbgNesScreenImg(nesPPU* ppu, unsigned short adr, unsigned short tadr) {
 	QImage img(256, 240, QImage::Format_RGB888);
 	img.fill(Qt::black);
-	// TODO: draw nes screen / sprites
-	ui.nesScreen->setPixmap(QPixmap::fromImage(img));
+	unsigned char scrmap[256 * 240];
+	int x,y;
+	unsigned char col;
+	xColor xcol;
+	if (adr != 0) {
+		for(y = 0; y < 240; y++) {
+			ppuRenderBGLine(ppu, scrmap + (y << 8), adr, 0, tadr);
+			adr = ppuYinc(adr);
+		}
+	} else {
+		memset(scrmap, 0x00, 256*240);
+	}
+	uchar* ptr = img.bits();
+	adr = 0;
+	for (y = 0; y < 240; y++) {
+		for (x = 0; x < 256; x++) {
+			col = scrmap[adr];
+			if (!(col & 3)) col = 0;
+			col = ppu->mem[0x3f00 | (col & 0x3f)];
+			xcol = nesPal[col & 0x3f];
+			*(ptr++) = xcol.r;
+			*(ptr++) = xcol.g;
+			*(ptr++) = xcol.b;
+			adr++;
+		}
+	}
+	return img;
+}
+
+void DebugWin::drawNes() {
+	nesPPU* ppu = comp->vid->ppu;
+	unsigned short adr = 0;
+	unsigned short tadr = 0;
+	QImage img;
+	QPixmap pic;
+	switch(ui.nesScrType->itemData(ui.nesScrType->currentIndex()).toInt()) {
+		case NES_SCR_OFF: adr = 0; break;
+		case NES_SCR_0:	adr = 0x2000; break;
+		case NES_SCR_1: adr = 0x2400; break;
+		case NES_SCR_2: adr = 0x2800; break;
+		case NES_SCR_3: adr = 0x2c00; break;
+		case NES_SCR_ALL: adr = 0xffff; break;
+	}
+	switch(ui.nesTileType->itemData(ui.nesTileType->currentIndex()).toInt()) {
+		case NES_TILE_0000: tadr = 0x0000; break;
+		case NES_TILE_1000: tadr = 0x1000; break;
+	}
+	if (adr != 0xffff) {
+		img = dbgNesScreenImg(ppu, adr, tadr);
+		ui.nesScreen->setPixmap(QPixmap::fromImage(img));
+	} else {
+		pic = QPixmap(256, 240);
+		QPainter pnt;
+		pnt.begin(&pic);
+		pnt.drawImage(0, 0, dbgNesScreenImg(ppu, 0x2000, tadr).scaled(128, 120));
+		pnt.drawImage(128, 0, dbgNesScreenImg(ppu, 0x2400, tadr).scaled(128, 120));
+		pnt.drawImage(0, 120, dbgNesScreenImg(ppu, 0x2800, tadr).scaled(128, 120));
+		pnt.drawImage(128, 120, dbgNesScreenImg(ppu, 0x2c00, tadr).scaled(128, 120));
+		pnt.end();
+		ui.nesScreen->setPixmap(pic);
+	}
 }
 
 // ...

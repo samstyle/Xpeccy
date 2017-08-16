@@ -5,8 +5,8 @@
 typedef struct {
 	char sign[3];			// "NES"
 	char id;			// 0x1a
-	unsigned char nprg;
-	unsigned char nchr;
+	unsigned char nprg;		// x16K PRG
+	unsigned char nchr;		// x8K CHR
 	unsigned char flag6;
 	unsigned char flag7;
 	unsigned char flag8;
@@ -56,7 +56,7 @@ int loadNes(Computer* comp, const char* name) {
 				maper = ((hd.flag6 >> 4) & 0x0f) | (hd.flag7 & 0xf0);
 				break;
 			case NES_HD_20:
-				maper = ((hd.flag6 >> 4) & 0x0f) | (hd.flag7 & 0xf0);
+				maper = ((hd.flag6 >> 4) & 0x0f) | (hd.flag7 & 0xf0);		// | 4 bits more
 				pal = hd.flag9 & 1;
 				break;
 			default:
@@ -64,22 +64,25 @@ int loadNes(Computer* comp, const char* name) {
 				break;
 		}
 
-		printf("maper %X\n", maper | 0x100);
+		printf("\nmaper %X\n", maper);
 		xCardCallback* core = sltFindMaper(maper | 0x100);
 		if (core->id == MAP_UNKNOWN) {
 			res = ERR_NES_MAPPER;
 		} else {
+			slot->core = core;
 
-			printf("\nPRGROM:%i CHRROM:%i\n", hd.nprg, hd.nchr);
+			printf("PRGROM:%i\n", hd.nprg);
 			int tsiz = 1;
 			while (tsiz < (hd.nprg << 14)) {tsiz <<= 1;}	// up to 2^n - 1
-
 			slot->data = realloc(slot->data, tsiz);		// PRG-ROM / 16K
 			slot->brkMap = realloc(slot->brkMap, tsiz);
 			memset(slot->brkMap, 0x00, tsiz);
 			slot->memMask = tsiz - 1;
+			slot->prglast = slot->memMask >> 13;
+			printf("memMask:%X   last8K:%X\n",slot->memMask, slot->prglast);
 			fread(slot->data, hd.nprg << 14, 1, file);
 
+			printf("CHRROM:%i\n",hd.nchr);
 			if (hd.nchr == 0) {				// no CHR-ROM
 				if (slot->chrrom)
 					free(slot->chrrom);
@@ -93,9 +96,13 @@ int loadNes(Computer* comp, const char* name) {
 			}
 
 			slot->memMap[0] = 0x00;						// 0x8000 : 1st page
-			slot->memMap[1] = hd.nprg - 1;					// 0xc000 : last page
+			slot->memMap[1] = 0x01;
+			slot->memMap[2] = slot->prglast - 1;				// 0xc000 : last page
+			slot->memMap[3] = slot->prglast;
+			for (int i = 0; i < 8; i++)
+				slot->chrMap[i] = i;
 
-			printf("memMask %X; %i %i\n", slot->memMask, slot->memMap[0], slot->memMap[1]);
+			// printf("memMask %X; %i %i\n", slot->memMask, slot->memMap[0], slot->memMap[1]);
 
 			if (hd.flag6 & 8) {
 				comp->slot->ntmask = 0x3fff;		// full 4-screen nametable
@@ -104,12 +111,10 @@ int loadNes(Computer* comp, const char* name) {
 			} else {
 				comp->slot->ntmask = 0x3bff;		// right sceens (2400, 2c00) = left sceens (2000, 2800) : ignore bit 10
 			}
+			comp->slot->ntorsk = 0x0000;
+
 			comp->nes.pal = pal ? 1 : 0;
 			compUpdateTimings(comp);
-
-			sltSetMaper(slot, maper | 0x100);				// #01xx = nes mapers
-
-			printf("nametable mask %.4X\n", comp->slot->ntmask);
 		}
 	}
 

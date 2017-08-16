@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>815</width>
-    <height>584</height>
+    <width>813</width>
+    <height>582</height>
    </rect>
   </property>
   <property name="font">
@@ -1911,6 +1911,9 @@
             <widget class="QComboBox" name="nesScrType"/>
            </item>
            <item>
+            <widget class="QComboBox" name="nesTileType"/>
+           </item>
+           <item>
             <widget class="QCheckBox" name="nesShowSpr">
              <property name="text">
               <string>Sprites</string>
@@ -2516,11 +2519,11 @@
  </resources>
  <connections/>
  <buttongroups>
+  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
-  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

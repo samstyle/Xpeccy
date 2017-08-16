@@ -13,7 +13,7 @@
 // palette taken here:
 // https://en.wikipedia.org/wiki/List_of_video_game_console_palettes#NES
 
-static xColor nesPal[64] = {
+xColor nesPal[64] = {
 	{0x7c,0x7c,0x7c},{0x00,0x00,0x7c},{0x00,0x00,0xbc},{0x44,0x28,0xbc},
 	{0x94,0x00,0x84},{0xa8,0x00,0x20},{0xa8,0x10,0x00},{0x88,0x14,0x00},
 	{0x50,0x30,0x00},{0x00,0x78,0x00},{0x00,0x68,0x00},{0x00,0x58,0x00},
@@ -124,6 +124,36 @@ void ppuDraw(nesPPU* ppu) {
 // tile address      = 0x2000 | (v & 0x0FFF)
 // attribute address = 0x23C0 | (v & 0x0C00) | ((v >> 4) & 0x38) | ((v >> 2) & 0x07)
 
+void ppuRenderBGLine(nesPPU* ppu, unsigned char* buf, unsigned short adr, int xoff, unsigned short ppubga) {
+	int cnt = 0;
+	unsigned char tile, atr, col;
+	unsigned short bgadr, data;
+	xoff &= 7;
+	while (cnt < 0x108) {
+		cnt = 0;
+//		adr = ppu->vadr;
+		while (cnt < 0x108) {
+			tile = ppu->mrd(0x4000 | 0x2000 | (adr & 0x0fff), ppu->data);						// tile num
+			atr = ppu->mrd(0x4000 | 0x23c0 | (adr & 0x0c00) | ((adr >> 4) & 0x38) | ((adr >> 2) & 7), ppu->data);	// attribute
+			bgadr = ppubga | ((tile << 4) & 0x0ff0) | ((adr >> 12) & 7);
+			data = ppu->mrd(bgadr, ppu->data);
+			data |= (ppu->mrd(bgadr + 8, ppu->data) << 8);
+			if (adr & 0x0040) atr >>= 4;			// bit 3,4 = attribute of current tile
+			if (~adr & 0x0002) atr <<= 2;
+			do {
+				col = (data & 0x80) ? 1 : 0;
+				if (data & 0x8000) col |= 2;
+				col |= (atr & 0x0c);
+				if (cnt >= xoff)
+					buf[cnt - xoff] = col;
+				data <<= 1;
+				cnt++;
+			} while (cnt & 7);
+			adr = ppuXcoarse(adr);		// move to next tile
+		}
+	}
+}
+
 void ppuLine(nesPPU* ppu) {
 
 	unsigned char x,y,flag;
@@ -134,7 +164,6 @@ void ppuLine(nesPPU* ppu) {
 	unsigned short bgadr;
 	unsigned short data;
 	unsigned char tile;
-	unsigned char atr;
 	unsigned char col;
 
 	if (ppu->ray->y < 240) {			// only on visible screen
@@ -163,11 +192,13 @@ void ppuLine(nesPPU* ppu) {
 // render tiles
 
 	if (ppu->bgen) {
+		ppuRenderBGLine(ppu, ppu->bgline, ppu->vadr, ppu->finex, ppu->bgadr);
+/*
 		cnt = 0;
 		adr = ppu->vadr;
 		while (cnt < 0x108) {
-			tile = ppu->mrd(0x2000 | (adr & 0x0fff), ppu->data);						// tile num
-			atr = ppu->mrd(0x23c0 | (adr & 0x0c00) | ((adr >> 4) & 0x38) | ((adr >> 2) & 7), ppu->data);	// attribute
+			tile = ppu->mrd(0x4000 | 0x2000 | (adr & 0x0fff), ppu->data);						// tile num
+			atr = ppu->mrd(0x4000 | 0x23c0 | (adr & 0x0c00) | ((adr >> 4) & 0x38) | ((adr >> 2) & 7), ppu->data);	// attribute
 			bgadr = ppu->bgadr | ((tile << 4) & 0x0ff0) | ((adr >> 12) & 7);
 			data = ppu->mrd(bgadr, ppu->data);
 			data |= (ppu->mrd(bgadr + 8, ppu->data) << 8);
@@ -184,6 +215,7 @@ void ppuLine(nesPPU* ppu) {
 			} while (cnt & 7);
 			adr = ppuXcoarse(adr);		// move to next tile
 		}
+*/
 		if (!ppu->bgleft8)					// hide left 8 pixels?
 			memset(ppu->bgline, 0x00, 8);
 	}

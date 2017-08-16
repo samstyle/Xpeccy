@@ -25,15 +25,19 @@ enum {
 // NES
 	MAP_NES_NOMAP = 0x100,
 	MAP_NES_MMC1,
-	MAP_NES_MMC2,
+	MAP_NES_M002,
+	MAP_NES_M003,
 	MAP_NES_MMC3,
-	MAP_NES_MMC4,
 	MAP_NES_MMC5,
+	MAP_NES_M007 = 0x107,
+	MAP_NES_M047 = 0x12f,
+	MAP_NES_M071 = 0x147
 };
 
 enum {
 	SLT_PRG = 1,
-	SLT_CHR			// access by NES ppu
+	SLT_CHR,		// access by NES ppu
+	SLT_RAM
 };
 
 // memory flags
@@ -55,11 +59,17 @@ typedef struct {
 
 struct xCartridge {
 	unsigned ramen:1;		// ram enabled (gb, nes)
+	unsigned ramwe:1;		// ram writing enable (nes)
 	unsigned ramod:1;		// ram banking mode (gb)
 	unsigned brk:1;
+	unsigned irqen:1;		// irq enable (nes)
+	unsigned irqrl:1;		// irq reload request (nes)
+	unsigned irq:1;			// irq signal (nes)
 
 	char name[FILENAME_MAX];
-	int memMap[8];
+	int memMap[4];			// 4x8K PRG pages
+	int chrMap[8];			// 8x1K CHR pages
+	int prglast;
 	int mapType;			// user defined mapper type, if auto-detect didn't worked (msx)
 
 	unsigned char shift;		// shift register (mmc1)
@@ -68,13 +78,15 @@ struct xCartridge {
 	unsigned char reg01;
 	unsigned char reg02;
 	unsigned char reg03;
+	unsigned char icnt;		// irq counter (nes mmc3)
 
 	unsigned char* data;		// onboard rom (malloc) = nes prg-rom
 	unsigned char* brkMap;
 	int memMask;
 	unsigned char* chrrom;		// nes chr rom (malloc)
 	int chrMask;
-	unsigned short ntmask;		// nes nametables mirroring control (must be ADR bus mask)
+	unsigned short ntmask;		// nes nametables mirroring control (AND)
+	unsigned short ntorsk;		// same (OR)
 	unsigned char ram[0x8000];	// onboard ram (32K max)
 	unsigned short ramMask;
 	xCardCallback* core;

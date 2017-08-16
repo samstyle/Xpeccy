@@ -11,6 +11,7 @@ unsigned char nes_ppu_ext_rd(unsigned short adr, void* ptr) {
 	unsigned char res;
 	if (adr & 0x2000) {	// nametable
 		adr &= comp->slot->ntmask;
+		adr |= comp->slot->ntorsk;
 		res = comp->vid->ppu->mem[adr];
 	} else {
 		if (comp->slot->chrrom) {
@@ -27,6 +28,7 @@ void nes_ppu_ext_wr(unsigned short adr, unsigned char val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	if (adr & 0x2000) {
 		adr &= comp->slot->ntmask;
+		adr |= comp->slot->ntorsk;
 		comp->vid->ppu->mem[adr] = val;
 	} else {
 		if (comp->slot->chrrom) {
@@ -50,11 +52,12 @@ void nesReset(Computer* comp) {
 	ppuReset(comp->vid->ppu);
 	vidSetMode(comp->vid, VID_NES);
 
-	comp->slot->memMap[0] = 0;	// prg 2x16K pages
-	comp->slot->memMap[1] = comp->slot->memMask >> 14;
-	comp->slot->memMap[2] = 0;	// chr 2x4K pages
-	comp->slot->memMap[3] = 1;
-	comp->slot->memMap[7] = 0;	// ram
+	comp->slot->memMap[0] = 0;	// prg 4x8K pages
+	comp->slot->memMap[1] = 1;
+	comp->slot->memMap[2] = comp->slot->prglast - 1;
+	comp->slot->memMap[3] = comp->slot->prglast;
+	for (int i = 0; i < 8; i++)	// chr 8x1K pages
+		comp->slot->chrMap[i] = i;
 }
 
 unsigned char nesMMrd(unsigned short adr, void* data) {
@@ -110,7 +113,7 @@ unsigned char nesMMrd(unsigned short adr, void* data) {
 		// expansion rom (4K)
 	} else if (comp->slot->data) {
 		// cartrige ram (8K)
-		res = comp->slot->ramen ? comp->slot->ram[adr & 0x1fff] : 0xff;
+		res = sltRead(comp->slot, SLT_RAM, adr);
 	}
 	return res;
 }
@@ -132,6 +135,10 @@ int apuGetLC(unsigned char val) {
 	return len;
 }
 
+// write @ page 4000..7fff
+// 4000..4fff : IO block
+// 5000..5fff : ?
+// 6000..7fff : cartrige ram
 void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 	Computer* comp = (Computer*)data;
 	adr &= 0x7fff;
@@ -361,7 +368,7 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 		// nothing?
 	} else if (comp->slot->data) {
 		// sram 8K
-		comp->slot->ram[adr & 0x1fff] = val;
+		sltWrite(comp->slot, SLT_RAM, adr, val);
 	}
 }
 
@@ -390,12 +397,27 @@ void nesSync(Computer* comp, int ns) {
 
 	apuSync(comp->nesapu, ns);
 
-	if (comp->nesapu->frm) {				// if APU generates FRAME signal, send BRK INT to cpu (will be handled if enabled)
-		comp->nesapu->frm = 0;
-		if (~comp->cpu->f & MFI)
-			comp->cpu->intrq |= MOS6502_INT_BRK;
+	// MMC3 irq counter triggered @ HBlank (?)
+	if ((comp->vid->hbstrb) && (comp->vid->ray.y < 239)) {
+		comp->vid->hbstrb = 0;
+		if (comp->slot->irqrl) {
+			comp->slot->irqrl = 0;
+			comp->slot->icnt = comp->slot->reg03;
+		} else {
+			comp->slot->icnt--;
+			if (comp->slot->icnt == 0) {
+				comp->slot->icnt = comp->slot->reg03;
+				comp->slot->irq = comp->slot->irqen;
+			}
+		}
 	}
 
+	int irq = comp->nesapu->frm | comp->slot->irq;		// external irq signals
+	comp->nesapu->frm = 0;
+	comp->slot->irq = 0;
+
+	if (irq && !(comp->cpu->f & MFI))
+		comp->cpu->intrq |= MOS6502_INT_BRK;
 }
 
 unsigned char nesMemRd(Computer* comp, unsigned short adr, int m1) {

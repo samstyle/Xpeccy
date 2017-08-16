@@ -235,23 +235,20 @@ void slt_gb_mbc5_wr(xCartridge* slot, int mt, unsigned short adr, int radr, unsi
 
 // common/nomaper
 
-// address for 2x16K PRG & 2x4K CHR banks (common scheme)
+// address for 4x8K PRG & 8x1K CHR banks
 int slt_nes_all_adr(xCartridge* slot, int mt, unsigned short adr) {
 	int radr = 0;
 	switch (mt) {
 		case SLT_PRG:
-			if (adr & 0x4000)
-				radr = (slot->memMap[1] << 14) | (adr & 0x3fff);
-			else
-				radr = (slot->memMap[0] << 14) | (adr & 0x3fff);
+			radr = (slot->memMap[(adr >> 13) & 3] << 13) | (adr & 0x1fff);
 			radr &= slot->memMask;
 			break;
 		case SLT_CHR:
-			if (adr & 0x1000)
-				radr = (slot->memMap[3] << 12) | (adr & 0xfff);
-			else
-				radr = (slot->memMap[2] << 12) | (adr & 0xfff);
+			radr = (slot->chrMap[(adr >> 10) & 7] << 10) | (adr & 0x3ff);
 			radr &= slot->chrMask;
+			break;
+		case SLT_RAM:
+			radr = adr & 0x1fff;
 			break;
 	}
 	return radr;
@@ -270,6 +267,10 @@ unsigned char slt_nes_all_rd(xCartridge* slot, int mt, unsigned short adr, int r
 			if (slot->chrrom)
 				res = slot->chrrom[radr];
 			break;
+		case SLT_RAM:
+			radr &= 0x1fff;
+			res = slot->ramen ? slot->ram[radr] : 0xff;
+			break;
 	}
 	return res;
 }
@@ -277,86 +278,225 @@ unsigned char slt_nes_all_rd(xCartridge* slot, int mt, unsigned short adr, int r
 // mmc1
 
 void slt_nes_mmc1_map(xCartridge* slot) {
+	int tmp;
 	switch(slot->reg00 & 0x0c) {
 		case 0x0:
 		case 0x4:				// 1 x 32K page
-			slot->memMap[0] = slot->reg03 & 0x0e;
-			slot->memMap[1] = slot->memMap[0] + 1;
+			tmp = (slot->reg03 & 0x0e) << 1;
+			slot->memMap[0] = tmp;
+			slot->memMap[1] = tmp + 1;
+			slot->memMap[2] = tmp + 2;
+			slot->memMap[3] = tmp + 3;
 			break;
 		case 0x8:				// 8000:fixed page 0, c000:switchable
+			tmp = (slot->reg03 & 0x0f) << 1;
 			slot->memMap[0] = 0;
-			slot->memMap[1] = slot->reg03 & 0x0f;
+			slot->memMap[1] = 1;
+			slot->memMap[2] = tmp;
+			slot->memMap[3] = tmp + 1;
 			break;
 		case 0xc:				// 8000:switchable, c000:fixed last page
-			slot->memMap[0] = slot->reg03 & 0x0f;
-			slot->memMap[1] = slot->memMask >> 14;
+			tmp = (slot->reg03 & 0x0f) << 1;
+			slot->memMap[0] = tmp;
+			slot->memMap[1] = tmp + 1;
+			slot->memMap[2] = slot->prglast - 1;
+			slot->memMap[3] = slot->prglast;
 			break;
 	}
 	if (slot->reg00 & 0x10) {			// 2 x 4K pages
-		slot->memMap[2] = slot->reg01 & 0x1f;
-		slot->memMap[3] = slot->reg02 & 0x1f;
+		tmp = (slot->reg01 & 0x1f) << 2;
+		slot->chrMap[0] = tmp;
+		slot->chrMap[1] = tmp + 1;
+		slot->chrMap[2] = tmp + 2;
+		slot->chrMap[3] = tmp + 3;
+		tmp = (slot->reg02 & 0x1f) << 2;
+		slot->chrMap[4] = tmp;
+		slot->chrMap[5] = tmp + 1;
+		slot->chrMap[6] = tmp + 2;
+		slot->chrMap[7] = tmp + 3;
 	} else {					// 1 x 8K page
-		slot->memMap[2] = slot->reg01 & 0x1e;
-		slot->memMap[3] = slot->memMap[2] + 1;
+		tmp = (slot->reg01 & 0x1e) << 3;
+		slot->chrMap[0] = tmp;
+		slot->chrMap[1] = tmp + 1;
+		slot->chrMap[2] = tmp + 2;
+		slot->chrMap[3] = tmp + 3;
+		slot->chrMap[0] = tmp + 4;
+		slot->chrMap[1] = tmp + 5;
+		slot->chrMap[2] = tmp + 6;
+		slot->chrMap[3] = tmp + 7;
 	}
 }
 
 void slt_nes_mmc1_wr(xCartridge* slot, int mt, unsigned short adr, int radr, unsigned char val) {
-	if (mt != SLT_PRG) return;
-	if (val & 0x80) {
-		slot->shift = 0x10;	// actually, if shift right causes bit carry, it means 'end of transmit'
-		slot->bitcount = 0;	// but i using bits counter here. 5th transmited bit means 'end'
-		slot->reg00 |= 0x0c;
-	} else {
-		// lsb first
-		slot->shift >>= 1;
-		if (val & 1)
-			slot->shift |= 0x10;
-		slot->bitcount++;
-		if (slot->bitcount > 4) {
-			switch (adr & 0x6000) {
-				case 0x0000:		// control
-					slot->reg00 = slot->shift & 0x1f;
-					switch (slot->shift & 3) {
-						case 0: slot->ntmask = 0x33ff; break;		// 1 screen (TODO: lower bank)
-						case 1: slot->ntmask = 0x33ff; break;		// 1 screen (TODO: upper bank)
-						case 2: slot->ntmask = 0x37ff; break;		// vertical
-						case 3: slot->ntmask = 0x3bff; break;		// horisontal
-					}
+	switch (mt) {
+		case SLT_PRG:
+			if (val & 0x80) {
+				slot->shift = 0x10;	// actually, if shift right causes bit carry, it means 'end of transmit'
+				slot->bitcount = 0;	// but i using bits counter here. 5th transmited bit means 'end'
+				slot->reg00 |= 0x0c;
+			} else {
+				// lsb first
+				slot->shift >>= 1;
+				if (val & 1)
+					slot->shift |= 0x10;
+				slot->bitcount++;
+				if (slot->bitcount > 4) {
+					switch (adr & 0x6000) {
+						case 0x0000:		// control
+							slot->reg00 = slot->shift & 0x1f;
+							slot->ntorsk = 0x0000;
+							switch (slot->shift & 3) {
+								case 0:						// 1 screen (lower bank)
+									slot->ntmask = 0x33ff;
+									slot->ntorsk = 0x0400;
+									break;
+								case 1:	slot->ntmask = 0x33ff; break;		// 1 screen (upper bank)
+								case 2: slot->ntmask = 0x37ff; break;		// vertical
+								case 3: slot->ntmask = 0x3bff; break;		// horisontal
+							}
 
-					break;
-				case 0x2000:		// chr bank 0
-					slot->reg01 = slot->shift & 0x1f;
-					break;
-				case 0x4000:		// chr bank 1
-					slot->reg02 = slot->shift & 0x1f;
-					break;
-				case 0x6000:		// prg bank
-					slot->reg03 = slot->shift & 0x0f;
-					slot->ramen = (slot->shift & 0x10) ? 1 : 0;
-					break;
+							break;
+						case 0x2000:		// chr bank 0
+							slot->reg01 = slot->shift & 0x1f;
+							break;
+						case 0x4000:		// chr bank 1
+							slot->reg02 = slot->shift & 0x1f;
+							break;
+						case 0x6000:		// prg bank
+							slot->reg03 = slot->shift & 0x0f;
+							slot->ramen = (slot->shift & 0x10) ? 1 : 0;
+							break;
+					}
+					slot->shift = 0x10;
+					slot->bitcount = 0;
+					slt_nes_mmc1_map(slot);
+				}
 			}
-			slot->shift = 0x10;
-			slot->bitcount = 0;
-			slt_nes_mmc1_map(slot);
-		}
+			break;
+		case SLT_RAM:
+			if (slot->ramen)
+				slot->ram[radr & 0x1fff] = val;
+			break;
 	}
 }
 
-// mmc 2 :  8(16) PRG 16K pages @ 8000
+// maper 002 :  8(16) PRG 16K pages @ 8000
 
-void slt_nes_mmc2_wr(xCartridge* slot, int mt, unsigned short adr, int radr, unsigned char val) {
+void slt_nes_m002_wr(xCartridge* slot, int mt, unsigned short adr, int radr, unsigned char val) {
 	if (mt != SLT_PRG) return;
-	slot->memMap[0] = val & 0x0f;			// @ 8000 : switchable bank
-	slot->memMap[1] = slot->memMask >> 14;		// @ c000 : last bank
+	int tmp = (val & 0x0f) << 1;
+	slot->memMap[0] = tmp;				// @ 8000 : switchable bank
+	slot->memMap[1] = tmp + 1;
+	slot->memMap[2] = slot->prglast - 1;		// @ c000 : last bank
+	slot->memMap[3] = slot->prglast;
 }
 
-// mmc 3 : no PRG banking, up to 256 8K CHR banks
+// maper 003 : no PRG banking, up to 256 8K CHR banks
+
+void slt_nes_m003_wr(xCartridge* slot, int mt, unsigned short adr, int radr, unsigned char val) {
+	if (mt != SLT_PRG) return;
+	int tmp = val << 3;
+	slot->chrMap[0] = tmp;
+	slot->chrMap[1] = tmp + 1;
+	slot->chrMap[2] = tmp + 2;
+	slot->chrMap[3] = tmp + 3;
+	slot->chrMap[0] = tmp + 4;
+	slot->chrMap[1] = tmp + 5;
+	slot->chrMap[2] = tmp + 6;
+	slot->chrMap[3] = tmp + 7;
+}
+
+// mmc 3: PRGROM 8K, PRGRAM 8K, CHRROM 1K
+// memmap 0-3 : 4 PRGROM 8K pages (0 and 2 can be switched)
+// memmap 4-11 : 8 CHRROM 1K pages (0..3 and 4..7 blocks can be switched)
 
 void slt_nes_mmc3_wr(xCartridge* slot, int mt, unsigned short adr, int radr, unsigned char val) {
+	switch (mt) {
+		case SLT_PRG:
+			switch(adr & 0xe001) {
+				case 0x8000:
+					slot->reg00 = val;
+					//printf("wr reg,%.2X\n",val);
+					break;
+				case 0x8001:
+					//printf("wr r%i,%.2X\n",slot->reg00 & 7, val);
+					switch (slot->reg00 & 0x07) {
+						case 0:						// 2K CHR @ 0000 (1000)
+							slot->chrMap[0] = val & 0xfe;
+							slot->chrMap[1] = (val & 0xfe) | 1;
+							break;
+						case 1:						// 2K CHR @ 0800 (1800)
+							slot->chrMap[2] = val & 0xfe;
+							slot->chrMap[3] = (val & 0xfe) | 1;
+							break;
+						case 2: slot->chrMap[4] = val; break;		// 1K CHR @ 1000 (0000)
+						case 3: slot->chrMap[5] = val; break;		// 1K CHR @ 1400 (0400)
+						case 4: slot->chrMap[6] = val; break;		// 1K CHR @ 1800 (0800)
+						case 5: slot->chrMap[7] = val; break;		// 1K CHR @ 1c00 (0c00)
+						case 6: slot->memMap[0] = val & 0x3f; break;		// 8K PRG @ 8000 (C000)
+						case 7: slot->memMap[1] = val & 0x3f; break;		// 8K PRG @ A000
+					}
+				case 0xa000:
+					slot->ntmask = (val & 1) ? 0x3bff : 0x37ff;	// nametable mirroring
+					break;
+				case 0xa001:
+					slot->ramwe = (val & 0x40) ? 0 : 1;
+					slot->ramen = (val & 0x80) ? 1 : 0;
+					break;
+				case 0xc000: slot->reg03 = val; break;			// irq counter reload value
+				case 0xc001: slot->irqrl = 1; break;		// reload irq counter
+				case 0xe000: slot->irqen = 0; break;
+				case 0xe001: slot->irqen = 1; break;
+			}
+			break;
+		case SLT_RAM:
+			if (slot->ramen && slot->ramwe)
+				slot->ram[radr & 0x1fff] = val;
+			break;
+	}
+}
+
+int slt_nes_mmc3_adr(xCartridge* slot, int mt, unsigned short adr) {
+	int radr = -1;
+	switch (mt) {
+		case SLT_PRG:
+			if ((slot->reg00 & 0x40) && !(adr & 0x2000))		// 8000..9fff <-> c000..dfff
+				adr ^= 0x4000;
+			radr = (slot->memMap[(adr >> 13) & 3] << 13) | (adr & 0x1fff);
+			break;
+		case SLT_CHR:
+			if (slot->reg00 & 0x80)
+				adr ^= 0x1000;					// 0000..0fff <-> 1000..1fff
+			radr = (slot->chrMap[(adr >> 10) & 7] << 10) | (adr & 0x03ff);
+			break;
+		case SLT_RAM:
+			radr = adr & 0x1fff;
+			break;
+	}
+	return radr;
+}
+
+// maper 007 (AxROM) : 32K PRG pages
+
+void slt_nes_m007_wr(xCartridge* slot, int mt, unsigned short adr, int radr, unsigned char val) {
 	if (mt != SLT_PRG) return;
-	slot->memMap[2] = val << 1;
-	slot->memMap[3] = (val << 1) + 1;
+	int tmp = (val << 2) & 0x1c;		//
+	slot->memMap[0] = tmp;
+	slot->memMap[1] = tmp + 1;
+	slot->memMap[2] = tmp + 2;
+	slot->memMap[3] = tmp + 3;
+	slot->ntorsk = (val & 0x40) ? 0x0400 : 0x0000;
+}
+
+// maper 071 : 2x16K PRG
+
+void slt_nes_m071_wr(xCartridge* slot, int mt, unsigned short adr, int radr, unsigned char val) {
+	if (mt == SLT_PRG) {
+		if ((adr & 0xe000) == 0xc000) {
+			slot->memMap[0] = (val << 1);
+			slot->memMap[1] = (val << 1) + 1;
+		}
+	}
 }
 
 // table
@@ -376,8 +516,11 @@ static xCardCallback maperTab[] = {
 
 	{MAP_NES_NOMAP, slt_nes_all_rd, slt_wr_dum, slt_nes_all_adr},
 	{MAP_NES_MMC1, slt_nes_all_rd, slt_nes_mmc1_wr, slt_nes_all_adr},
-	{MAP_NES_MMC2, slt_nes_all_rd, slt_nes_mmc2_wr, slt_nes_all_adr},
-	{MAP_NES_MMC3, slt_nes_all_rd, slt_nes_mmc3_wr, slt_nes_all_adr},
+	{MAP_NES_M002, slt_nes_all_rd, slt_nes_m002_wr, slt_nes_all_adr},
+	{MAP_NES_M003, slt_nes_all_rd, slt_nes_m003_wr, slt_nes_all_adr},
+	{MAP_NES_MMC3, slt_nes_all_rd, slt_nes_mmc3_wr, slt_nes_mmc3_adr},
+	{MAP_NES_M007, slt_nes_all_rd, slt_nes_m007_wr, slt_nes_all_adr},
+	{MAP_NES_M071, slt_nes_all_rd, slt_nes_m071_wr, slt_nes_all_adr},
 
 	{MAP_UNKNOWN, slt_rd_dum, slt_wr_dum, slt_adr_dum}
 };
@@ -456,3 +599,4 @@ void sltWrite(xCartridge* slt, int mt, unsigned short adr, unsigned char val) {
 	int radr = slt->core->adr(slt, mt, adr);
 	slt->core->wr(slt, mt, adr, radr, val);
 }
+

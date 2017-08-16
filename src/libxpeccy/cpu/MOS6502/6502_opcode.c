@@ -1668,7 +1668,7 @@ opCode mosTab[256] = {
 	{0,2,mosopC3,NULL,"unknown"},
 	{0,3,mosopC4,NULL,"cpy zp :1"},
 	{0,3,mosopC5,NULL,"cmp zp :1"},
-	{0,5,mosopC6,NULL,"dec zp n"},
+	{0,5,mosopC6,NULL,"dec zp :1"},
 	{0,2,mosopC7,NULL,"unknown"},
 
 	{0,2,mosopC8,NULL,"iny"},

@@ -44,7 +44,7 @@ int loadSlot(xCartridge* slot, const char* name) {
 		slot->memMask = tsiz - 1;
 		strcpy(slot->name, name);
 		fread(slot->data, tsiz, 1, file);
-		for (tsiz = 0; tsiz < 8; tsiz++) {
+		for (tsiz = 0; tsiz < 4; tsiz++) {
 			slot->memMap[tsiz] = 0;
 		}
 		detectType(slot);
