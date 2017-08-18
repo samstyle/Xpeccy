@@ -6,13 +6,15 @@
 typedef unsigned char(*extmrd)(unsigned short, void*);
 
 typedef struct {
-	unsigned lev:1;
+	unsigned en:1;		// channel enabled
+	unsigned lev:1;		// square signal level
 	unsigned env:1;		// envelope on
 	unsigned elen:1;	// length counter enabled / envelope looped
 	unsigned duty:2;
 	unsigned sweep:1;	// sweep working
 	unsigned sdir:1;	// 0:add to period, 1:sub from period
 	unsigned dir:1;		// triangle wave direction (1:up 0:down)
+	unsigned irq:1;		// dmc irq
 
 	unsigned char vol;	// current volume;
 	unsigned char buf;	// readed byte (digital)
@@ -36,7 +38,8 @@ typedef struct {
 typedef struct {
 	unsigned step5:1;
 	unsigned irqen:1;	// enable frame irq
-	unsigned frm:1;		// frame irq
+	unsigned firq:1;	// frame irq
+	unsigned dirq:1;	// dmc irq
 
 	int wper;		// wave tick = CPU/16
 	int wcnt;
@@ -51,6 +54,8 @@ typedef struct {
 	apuChannel cht;		// triangle
 	apuChannel chn;		// noise
 	apuChannel chd;		// digital
+
+	int time;
 
 	extmrd mrd;
 	void* data;

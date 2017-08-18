@@ -258,14 +258,12 @@ unsigned char slt_nes_all_rd(xCartridge* slot, int mt, unsigned short adr, int r
 	unsigned char res = 0xff;
 	switch (mt) {
 		case SLT_PRG:
-			radr &= slot->memMask;
 			if (slot->data)
-				res = slot->data[radr];
+				res = slot->data[radr & slot->memMask];
 			break;
 		case SLT_CHR:
-			radr &= slot->chrMask;
 			if (slot->chrrom)
-				res = slot->chrrom[radr];
+				res = slot->chrrom[radr & slot->chrMask];
 			break;
 		case SLT_RAM:
 			radr &= 0x1fff;
@@ -391,7 +389,7 @@ void slt_nes_m002_wr(xCartridge* slot, int mt, unsigned short adr, int radr, uns
 	slot->memMap[3] = slot->prglast;
 }
 
-// maper 003 : no PRG banking, up to 256 8K CHR banks
+// maper 003 (CNROM) : no PRG banking, up to 256 8K CHR banks
 
 void slt_nes_m003_wr(xCartridge* slot, int mt, unsigned short adr, int radr, unsigned char val) {
 	if (mt != SLT_PRG) return;
@@ -433,8 +431,8 @@ void slt_nes_mmc3_wr(xCartridge* slot, int mt, unsigned short adr, int radr, uns
 						case 3: slot->chrMap[5] = val; break;		// 1K CHR @ 1400 (0400)
 						case 4: slot->chrMap[6] = val; break;		// 1K CHR @ 1800 (0800)
 						case 5: slot->chrMap[7] = val; break;		// 1K CHR @ 1c00 (0c00)
-						case 6: slot->memMap[0] = val & 0x3f; break;		// 8K PRG @ 8000 (C000)
-						case 7: slot->memMap[1] = val & 0x3f; break;		// 8K PRG @ A000
+						case 6: slot->memMap[0] = val; break;		// 8K PRG @ 8000 (C000)
+						case 7: slot->memMap[1] = val; break;		// 8K PRG @ A000
 					}
 				case 0xa000:
 					slot->ntmask = (val & 1) ? 0x3bff : 0x37ff;	// nametable mirroring
@@ -458,16 +456,19 @@ void slt_nes_mmc3_wr(xCartridge* slot, int mt, unsigned short adr, int radr, uns
 
 int slt_nes_mmc3_adr(xCartridge* slot, int mt, unsigned short adr) {
 	int radr = -1;
+	int bnk;
 	switch (mt) {
 		case SLT_PRG:
-			if ((slot->reg00 & 0x40) && !(adr & 0x2000))		// 8000..9fff <-> c000..dfff
-				adr ^= 0x4000;
-			radr = (slot->memMap[(adr >> 13) & 3] << 13) | (adr & 0x1fff);
+			bnk = (adr >> 13) & 3;
+			if ((slot->reg00 & 0x40) && !(bnk & 1))			// 8000..9fff (bnk:0) <-> c000..dfff (bnk:2)
+				bnk ^= 2;
+			radr = (slot->memMap[bnk] << 13) | (adr & 0x1fff);
 			break;
 		case SLT_CHR:
+			bnk = (adr >> 10) & 7;
 			if (slot->reg00 & 0x80)
-				adr ^= 0x1000;					// 0000..0fff <-> 1000..1fff
-			radr = (slot->chrMap[(adr >> 10) & 7] << 10) | (adr & 0x03ff);
+				bnk ^= 4;					// 0000..0fff (bnk:0..3) <-> 1000..1fff (bnk:4..7)
+			radr = (slot->chrMap[bnk] << 10) | (adr & 0x03ff);
 			break;
 		case SLT_RAM:
 			radr = adr & 0x1fff;
@@ -480,12 +481,12 @@ int slt_nes_mmc3_adr(xCartridge* slot, int mt, unsigned short adr) {
 
 void slt_nes_m007_wr(xCartridge* slot, int mt, unsigned short adr, int radr, unsigned char val) {
 	if (mt != SLT_PRG) return;
-	int tmp = (val << 2) & 0x1c;		//
+	int tmp = (val << 2) & 0x1c;
 	slot->memMap[0] = tmp;
 	slot->memMap[1] = tmp + 1;
 	slot->memMap[2] = tmp + 2;
 	slot->memMap[3] = tmp + 3;
-	slot->ntorsk = (val & 0x40) ? 0x0400 : 0x0000;
+	slot->ntorsk = (val & 0x40) ? ((slot->ntmask & 0xc00) ^ 0xc00) : 0x0000;
 }
 
 // maper 071 : 2x16K PRG
@@ -495,6 +496,8 @@ void slt_nes_m071_wr(xCartridge* slot, int mt, unsigned short adr, int radr, uns
 		if ((adr & 0xe000) == 0xc000) {
 			slot->memMap[0] = (val << 1);
 			slot->memMap[1] = (val << 1) + 1;
+			slot->memMap[2] = slot->prglast - 1;
+			slot->memMap[3] = slot->prglast;
 		}
 	}
 }
@@ -588,7 +591,7 @@ unsigned char sltRead(xCartridge* slt, int mt, unsigned short adr) {
 	res = slt->core->rd(slt, mt, adr, radr);
 	if (mt != SLT_PRG) return res;
 	if (!slt->brkMap) return res;
-	if (slt->brkMap[radr] & MEM_BRK_RD)
+	if (slt->brkMap[radr & slt->memMask] & MEM_BRK_RD)
 		slt->brk = 1;
 	return res;
 }
@@ -598,5 +601,7 @@ void sltWrite(xCartridge* slt, int mt, unsigned short adr, unsigned char val) {
 	if (!slt->core->wr) return;
 	int radr = slt->core->adr(slt, mt, adr);
 	slt->core->wr(slt, mt, adr, radr, val);
+	if (slt->brkMap[radr & slt->memMask] & MEM_BRK_WR)
+		slt->brk = 1;
 }
 

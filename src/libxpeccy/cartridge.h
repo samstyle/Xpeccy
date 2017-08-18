@@ -80,16 +80,16 @@ struct xCartridge {
 	unsigned char reg03;
 	unsigned char icnt;		// irq counter (nes mmc3)
 
-	unsigned char* data;		// onboard rom (malloc) = nes prg-rom
-	unsigned char* brkMap;
 	int memMask;
-	unsigned char* chrrom;		// nes chr rom (malloc)
 	int chrMask;
 	unsigned short ntmask;		// nes nametables mirroring control (AND)
 	unsigned short ntorsk;		// same (OR)
-	unsigned char ram[0x8000];	// onboard ram (32K max)
 	unsigned short ramMask;
+	unsigned char ram[0x8000];	// onboard ram (32K max)
 	xCardCallback* core;
+	unsigned char* data;		// onboard rom (malloc) = nes prg-rom
+	unsigned char* brkMap;
+	unsigned char* chrrom;		// nes chr rom (malloc)
 };
 
 xCartridge* sltCreate();

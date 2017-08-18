@@ -5,7 +5,7 @@
 #include <string.h>
 
 // full line 341
-// nes layout: 256x240
+// nes layout: 256x240 = 32x30 of 8x8 tiles
 // hblank: 85 dots ?
 // vblank: 20 lines
 // 1 cpu tick = 3 dots
@@ -130,30 +130,33 @@ void ppuRenderBGLine(nesPPU* ppu, unsigned char* buf, unsigned short adr, int xo
 	unsigned short bgadr, data;
 	xoff &= 7;
 	while (cnt < 0x108) {
-		cnt = 0;
-//		adr = ppu->vadr;
-		while (cnt < 0x108) {
-			tile = ppu->mrd(0x4000 | 0x2000 | (adr & 0x0fff), ppu->data);						// tile num
-			atr = ppu->mrd(0x4000 | 0x23c0 | (adr & 0x0c00) | ((adr >> 4) & 0x38) | ((adr >> 2) & 7), ppu->data);	// attribute
-			bgadr = ppubga | ((tile << 4) & 0x0ff0) | ((adr >> 12) & 7);
-			data = ppu->mrd(bgadr, ppu->data);
-			data |= (ppu->mrd(bgadr + 8, ppu->data) << 8);
-			if (adr & 0x0040) atr >>= 4;			// bit 3,4 = attribute of current tile
-			if (~adr & 0x0002) atr <<= 2;
-			do {
-				col = (data & 0x80) ? 1 : 0;
-				if (data & 0x8000) col |= 2;
-				col |= (atr & 0x0c);
-				if (cnt >= xoff)
-					buf[cnt - xoff] = col;
-				data <<= 1;
-				cnt++;
-			} while (cnt & 7);
-			adr = ppuXcoarse(adr);		// move to next tile
-		}
+		tile = ppu->mrd(0x2000 | (adr & 0x0fff), ppu->data);						// tile num
+		atr = ppu->mrd(0x23c0 | (adr & 0x0c00) | ((adr >> 4) & 0x38) | ((adr >> 2) & 7), ppu->data);	// attribute
+		bgadr = ppubga | ((tile << 4) & 0x0ff0) | ((adr >> 12) & 7);
+		data = ppu->mrd(bgadr, ppu->data);
+		data |= (ppu->mrd(bgadr + 8, ppu->data) << 8);
+		if (adr & 0x0040) atr >>= 4;			// bit 3,4 = attribute of current tile
+		if (~adr & 0x0002) atr <<= 2;
+		do {
+			col = (data & 0x80) ? 1 : 0;
+			if (data & 0x8000) col |= 2;
+			col |= (atr & 0x0c);
+			if (cnt >= xoff)
+				buf[cnt - xoff] = col;
+			data <<= 1;
+			cnt++;
+		} while (cnt & 7);
+		adr = ppuXcoarse(adr);		// move to next tile
 	}
 }
 
+// @ start of HBlank
+void ppuHBL(nesPPU* ppu) {
+	if (ppu->ray->y < 240) {				// only on visible screen
+	}
+}
+
+// @ start of new line
 void ppuLine(nesPPU* ppu) {
 
 	unsigned char x,y,flag;
@@ -166,28 +169,36 @@ void ppuLine(nesPPU* ppu) {
 	unsigned char tile;
 	unsigned char col;
 
-	if (ppu->ray->y < 240) {			// only on visible screen
-		if (ppu->ray->y == 0) {
-			if (ppu->bgen) {
-				ppu->vadr &= 0x041f;		// copy Y related bits
-				ppu->vadr |= (ppu->tadr & 0x7be0);
-			}
-			ppu->sp0hit = 0;
-			ppu->spover = 0;
-		} else if (ppu->bgen) {
-			ppu->vadr = ppuYinc(ppu->vadr);	// increment vertical position in vadr
-		}
-		if (ppu->bgen) {
-			ppu->vadr &= 0x7be0;			// copy X related bits...
-			ppu->vadr |= (ppu->tadr & 0x041f);	// ...from tadr to vadr
-		}
-	}
-
 	memset(ppu->bgline, 0x00, 256);		// bg
 	memset(ppu->spline, 0x00, 256);		// sprites
 	memset(ppu->prline, 0x00, 256);		// sprites priority
 
+	switch(ppu->ray->y) {
+		case 241:
+			ppu->vbl = 1;
+			ppu->vblstrb = 1;
+			break;
+		case 261: ppu->vbl = 0;
+			ppu->vblstrb = 0;
+			ppu->sp0hit = 0;
+			ppu->spover = 0;
+			break;
+	}
+
 	if (ppu->ray->y > 239) return;
+
+	if (ppu->ray->y == 0) {
+		if (ppu->bgen) {
+			ppu->vadr &= 0x041f;		// copy Y related bits
+			ppu->vadr |= (ppu->tadr & 0x7be0);
+		}
+	} else if (ppu->bgen) {
+		ppu->vadr = ppuYinc(ppu->vadr);		// increment vertical position in vadr
+	}
+	if (ppu->bgen) {
+		ppu->vadr &= 0x7be0;			// copy X related bits...
+		ppu->vadr |= (ppu->tadr & 0x041f);	// ...from tadr to vadr
+	}
 
 // render tiles
 
@@ -282,40 +293,104 @@ void ppuLine(nesPPU* ppu) {
 void ppuFram(nesPPU* ppu) {
 }
 
-// rd/wr
+// rd/wr registers
 
-void ppuWrite(nesPPU* ppu, unsigned char val) {
-//	ppu->vadr &= 0x3fff;
-	unsigned short adr = ppu->vadr & 0x3fff;
-	if (adr < 0x3f00) {
-		ppu->mwr(adr, val, ppu->data);
-//	} else if (adr < 0x3f00) {
-//		ppu->mem[(adr & ppu->ntmask) | 0x2000] = val;		// nametables (! can be mapped to cartridge)
-	} else {
-		ppu->mem[(adr & 0x1f) | 0x3f00] = val;		// palette
-		if ((adr & 0x1f) == 0x10)
-			ppu->mem[0x3f00] = val;
-		else if ((adr & 0x1f) == 0x00)
-			ppu->mem[0x3f10] = val;
+unsigned char ppuRead(nesPPU* ppu, int reg) {
+	unsigned char res = 0xff;
+	unsigned short adr;
+	switch (reg & 7) {
+		case 2:
+			// b7:vblank, b6:spr0 hit, b5:spr overflow
+			res = 0x1f;
+			if (ppu->vbl) res |= 0x80;
+			if (ppu->sp0hit) res |= 0x40;
+			if (ppu->spover) res |= 0x20;
+			ppu->latch = 0;
+			break;
+		case 4:
+			res = ppu->oam[ppu->oamadr & 0xff];
+			break;
+		case 7:
+			adr = ppu->vadr & 0x3fff;
+			if (adr < 0x3f00) {
+				res = ppu->vbuf;
+				ppu->vbuf = ppu->mrd(adr, ppu->data);
+			} else {
+				res = ppu->mem[(adr & 0x1f) | 0x3f00];		// palette
+				ppu->vbuf = ppu->mrd(adr & 0x2fff, ppu->data);
+			}
+			ppu->vadr += ppu->vastep ? 32 : 1;
+			break;
 	}
-	ppu->vadr += ppu->vastep ? 32 : 1;
+	return  res;
 }
 
-unsigned char ppuRead(nesPPU* ppu) {
-	unsigned char res = 0xff;
-	unsigned short adr = ppu->vadr & 0x3fff;
-	if (adr < 0x3f00) {
-		res = ppu->vbuf;
-		ppu->vbuf = ppu->mrd(adr, ppu->data);
-//		if (adr < 0x2000) {
-//			ppu->vbuf = ppu->mrd(adr, ppu->data);
-//		} else {
-//			ppu->vbuf = ppu->mem[(adr & ppu->ntmask) | 0x2000];
-//		}
-	} else {
-		res = ppu->mem[(adr & 0x1f) | 0x3f00];		// palette
-		ppu->vbuf = ppu->mrd(adr, ppu->data);
+void ppuWrite(nesPPU* ppu, int reg, unsigned char val) {
+	unsigned short adr;
+	switch (reg & 7) {
+		case 0:		// PPUCTRL
+			ppu->vastep = (val & 0x04) ? 1 : 0;
+			ppu->spadr = (val & 0x08) ? 0x1000 : 0x0000;
+			ppu->bgadr = (val & 0x10) ? 0x1000 : 0x0000;
+			ppu->bigspr = (val & 0x20) ? 1 : 0;
+			ppu->master = (val & 0x40) ? 1 : 0;
+			ppu->inten = (val & 0x80) ? 1 : 0;
+
+			ppu->tadr = (ppu->tadr & ~0x0c00) | ((val << 10) & 0x0c00);
+
+			break;
+		case 1:		// PPUMASK
+			ppu->greyscale = (val & 0x01) ? 1 : 0;
+			ppu->bgleft8 = (val & 0x02) ? 1 : 0;
+			ppu->spleft8 = (val & 0x04) ? 1 : 0;
+			ppu->bgen = (val & 0x08) ? 1 : 0;
+			ppu->spen = (val & 0x10) ? 1 : 0;
+			// TODO: b5,6,7 = color tint
+			break;
+		case 3:
+			ppu->oamadr = val;
+			break;
+		case 4:
+			ppu->oam[ppu->oamadr & 0xff] = val;
+			ppu->oamadr++;
+			break;
+		case 5:
+			if (ppu->latch) {
+				ppu->tadr &= 0x0c1f;
+				ppu->tadr |= ((val & 0x07) << 12);
+				ppu->tadr |= ((val & 0xf8) << 2);
+				ppu->latch = 0;
+			} else {
+				ppu->tadr &= ~0x001f;
+				ppu->tadr |= ((val >> 3) & 0x1f);
+				ppu->finex = val & 7;
+				ppu->latch = 1;
+			}
+			break;
+		case 6:
+			if (ppu->latch) {
+				ppu->tadr &= 0xff00;
+				ppu->tadr |= (val & 0xff);
+				ppu->vadr = ppu->tadr;			// VADR changes right now
+				ppu->latch = 0;
+			} else {
+				ppu->tadr &= 0x00ff;
+				ppu->tadr |= ((val << 8) & 0x3f00);
+				ppu->latch = 1;
+			}
+			break;
+		case 7:
+			adr = ppu->vadr & 0x3fff;
+			if (adr < 0x3f00) {
+				ppu->mwr(adr, val, ppu->data);
+			} else {
+				ppu->mem[(adr & 0x1f) | 0x3f00] = val;
+				if ((adr & 0x1f) == 0x10)
+					ppu->mem[0x3f00] = val;
+				else if ((adr & 0x1f) == 0x00)
+					ppu->mem[0x3f10] = val;
+			}
+			ppu->vadr += ppu->vastep ? 32 : 1;
+			break;
 	}
-	ppu->vadr += ppu->vastep ? 32 : 1;
-	return res;
 }

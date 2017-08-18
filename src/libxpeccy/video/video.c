@@ -591,6 +591,10 @@ void vidNESLine(Video* vid) {
 	ppuLine(vid->ppu);
 }
 
+void vidNEShbl(Video* vid) {
+	ppuHBL(vid->ppu);
+}
+
 void vidNESFram(Video* vid) {
 	ppuFram(vid->ppu);
 }
@@ -627,7 +631,7 @@ static xVideoMode vidModeTab[] = {
 	{VID_PRF_MC, vidProfiScr, NULL, NULL, NULL},
 	{VID_V9938, vidDrawV9938, NULL, NULL, vidFrameV9938},
 	{VID_GBC, vidGBDraw, vidGBLine, NULL, vidGBFram},
-	{VID_NES, vidNESDraw, NULL, vidNESLine, vidNESFram},
+	{VID_NES, vidNESDraw, NULL , vidNESLine, vidNESFram},
 	{VID_UNKNOWN, vidDrawBorder, NULL, NULL, NULL}
 };
 

@@ -64,29 +64,29 @@ int loadNes(Computer* comp, const char* name) {
 				break;
 		}
 
-		printf("\nmaper %X\n", maper);
+		printf("\nMapper #%.3X\n", maper);
 		xCardCallback* core = sltFindMaper(maper | 0x100);
 		if (core->id == MAP_UNKNOWN) {
 			res = ERR_NES_MAPPER;
 		} else {
 			slot->core = core;
 
-			printf("PRGROM:%i\n", hd.nprg);
 			int tsiz = 1;
-			while (tsiz < (hd.nprg << 14)) {tsiz <<= 1;}	// up to 2^n - 1
-			slot->data = realloc(slot->data, tsiz);		// PRG-ROM / 16K
-			slot->brkMap = realloc(slot->brkMap, tsiz);
-			memset(slot->brkMap, 0x00, tsiz);
+			while (tsiz < (hd.nprg << 14))		// up to 2^n
+				tsiz <<= 1;
+			slot->data = realloc(slot->data, tsiz);		// PRGROM
+			slot->brkMap = realloc(slot->brkMap, tsiz);	// PRGROM breakpoints map
+			memset(slot->brkMap, 0x00, tsiz);		// init
 			slot->memMask = tsiz - 1;
 			slot->prglast = slot->memMask >> 13;
-			printf("memMask:%X   last8K:%X\n",slot->memMask, slot->prglast);
+			printf("PRGROM:%.3i x 16K = %X (%i x 8K)\n", hd.nprg, slot->memMask, slot->prglast + 1);
 			fread(slot->data, hd.nprg << 14, 1, file);
 
-			printf("CHRROM:%i\n",hd.nchr);
 			if (hd.nchr == 0) {				// no CHR-ROM
 				if (slot->chrrom)
 					free(slot->chrrom);
 				slot->chrrom = NULL;
+				slot->chrMask = 0;
 			} else {					// CHR-ROM must be mapped @ 1st 8K of PPU memory
 				tsiz = 1;
 				while (tsiz < (hd.nchr << 13)) {tsiz <<= 1;}
@@ -94,24 +94,27 @@ int loadNes(Computer* comp, const char* name) {
 				slot->chrMask = tsiz - 1;
 				fread(slot->chrrom, hd.nchr << 13, 1, file);
 			}
+			printf("CHRROM:%.3i x  8K = %X\n",hd.nchr, slot->chrMask);
 
-			slot->memMap[0] = 0x00;						// 0x8000 : 1st page
+			slot->memMap[0] = 0x00;						// 0x8000 : page 0
 			slot->memMap[1] = 0x01;
 			slot->memMap[2] = slot->prglast - 1;				// 0xc000 : last page
 			slot->memMap[3] = slot->prglast;
-			for (int i = 0; i < 8; i++)
+			for (int i = 0; i < 8; i++)					// 0x0000 : CHR 8x1K pages
 				slot->chrMap[i] = i;
-
-			// printf("memMask %X; %i %i\n", slot->memMask, slot->memMap[0], slot->memMap[1]);
 
 			if (hd.flag6 & 8) {
 				comp->slot->ntmask = 0x3fff;		// full 4-screen nametable
 			} else if (hd.flag6 & 1) {
-				comp->slot->ntmask = 0x37ff;		// down screens (2800, 2c00) = upper screens (2000, 2400) : ignore bit 11
+				comp->slot->ntmask = 0x37ff;		// down screens (2800, 2c00) = upper screens (2000, 2400) : VA11
 			} else {
-				comp->slot->ntmask = 0x3bff;		// right sceens (2400, 2c00) = left sceens (2000, 2800) : ignore bit 10
+				comp->slot->ntmask = 0x3bff;		// right sceens (2400, 2c00) = left sceens (2000, 2800) : VA10
 			}
 			comp->slot->ntorsk = 0x0000;
+			slot->ramen = 1;
+			slot->ramwe = 1;
+			slot->irqen = 0;
+			slot->irq = 0;
 
 			comp->nes.pal = pal ? 1 : 0;
 			compUpdateTimings(comp);

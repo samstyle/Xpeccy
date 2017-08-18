@@ -4,6 +4,8 @@
 #include "vidcommon.h"
 
 typedef struct {
+	unsigned vbl:1;			// vertical blank (lines 241-260) : ack by status register bit
+	unsigned vblstrb:1;		// strobe of vbl, can be reset
 	unsigned sp0hit:1;		// sprite 0 hit
 	unsigned spover:1;		// sprites overscan
 	unsigned bigspr:1;		// 8x16 sprites
@@ -37,7 +39,6 @@ typedef struct {
 	unsigned char oamadr;	// oam access address
 	ePair(vadr,vah,val);	// videomem access addr
 	unsigned short tadr;	// tmp vadr
-//	int vadrinc;		// videomem addr increment (1 | 32)
 	unsigned short spadr;	// 8x8 sprites tiles adr
 	unsigned short bgadr;	// bg tiles adr
 	int finex;		// = x scroll low 3 bits
@@ -49,11 +50,13 @@ void ppuDestroy(nesPPU*);
 void ppuReset(nesPPU*);
 
 void ppuDraw(nesPPU*);
+void ppuHBL(nesPPU*);
 void ppuLine(nesPPU*);
 void ppuFram(nesPPU*);
 
-void ppuWrite(nesPPU*, unsigned char);
-unsigned char ppuRead(nesPPU*);
+// rd/wr ppu registers
+void ppuWrite(nesPPU*, int, unsigned char);
+unsigned char ppuRead(nesPPU*, int);
 
 void ppuRenderBGLine(nesPPU*, unsigned char*, unsigned short, int, unsigned short);
 unsigned short ppuYinc(unsigned short);

@@ -70,7 +70,8 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 		adr |= fgetc(file) << 8;
 		comp->cpu->pc = adr;
 		tmp = fgetc(file);
-		comp->hw->out(comp,0x7ffd,tmp,0);
+		if (comp->hw->out)
+			comp->hw->out(comp,0x7ffd,tmp,0);
 		tmp2 = fgetc(file);
 		comp->dos = (tmp2 & 1) ? 1 : 0;
 		for (tmp2 = 0; tmp2 < 8; tmp2++) {
