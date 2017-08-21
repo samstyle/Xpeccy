@@ -78,8 +78,8 @@ int loadNes(Computer* comp, const char* name) {
 			slot->brkMap = realloc(slot->brkMap, tsiz);	// PRGROM breakpoints map
 			memset(slot->brkMap, 0x00, tsiz);		// init
 			slot->memMask = tsiz - 1;
-			slot->prglast = slot->memMask >> 13;
-			printf("PRGROM:%.3i x 16K = %X (%i x 8K)\n", hd.nprg, slot->memMask, slot->prglast + 1);
+			slot->prglast = slot->memMask >> 14;		// last 16K page number
+			printf("PRGROM:%i x 16K, mask %X\n", hd.nprg, slot->memMask);
 			fread(slot->data, hd.nprg << 14, 1, file);
 
 			if (hd.nchr == 0) {				// no CHR-ROM
@@ -94,23 +94,30 @@ int loadNes(Computer* comp, const char* name) {
 				slot->chrMask = tsiz - 1;
 				fread(slot->chrrom, hd.nchr << 13, 1, file);
 			}
-			printf("CHRROM:%.3i x  8K = %X\n",hd.nchr, slot->chrMask);
-
-			slot->memMap[0] = 0x00;						// 0x8000 : page 0
-			slot->memMap[1] = 0x01;
-			slot->memMap[2] = slot->prglast - 1;				// 0xc000 : last page
-			slot->memMap[3] = slot->prglast;
-			for (int i = 0; i < 8; i++)					// 0x0000 : CHR 8x1K pages
-				slot->chrMap[i] = i;
-
+			printf("CHRROM:%i x  8K, mask %X\n",hd.nchr, slot->chrMask);
+/*
+			slot->regCT = 0;
+			slot->reg00 = 0;
+			slot->reg01 = 0;
+			slot->reg02 = 0;
+			slot->reg03 = 0;
+			slot->reg04 = 0;
+			slot->reg05 = 0;
+			slot->reg06 = 0;
+			slot->reg07 = 0;
+*/
 			if (hd.flag6 & 8) {
-				comp->slot->ntmask = 0x3fff;		// full 4-screen nametable
+				printf("Mirroring : quatro\n");
+				slot->mirror = NES_NT_QUATRO;		// full 4-screen nametable
 			} else if (hd.flag6 & 1) {
-				comp->slot->ntmask = 0x37ff;		// down screens (2800, 2c00) = upper screens (2000, 2400) : VA11
+				printf("Mirroring : vert\n");
+				slot->mirror = NES_NT_VERT;		// down screens (2800, 2c00) = upper screens (2000, 2400) : CIRAM A10 = VA10
 			} else {
-				comp->slot->ntmask = 0x3bff;		// right sceens (2400, 2c00) = left sceens (2000, 2800) : VA10
+				printf("Mirroring : horiz\n");
+				slot->mirror = NES_NT_HORIZ;		// right sceens (2400, 2c00) = left sceens (2000, 2800) : CIRAM A10 = VA11
 			}
-			comp->slot->ntorsk = 0x0000;
+			slot->ramMask = 0x1fff;		// TODO: ram bankswitches
+			slot->blk1 = 0;
 			slot->ramen = 1;
 			slot->ramwe = 1;
 			slot->irqen = 0;

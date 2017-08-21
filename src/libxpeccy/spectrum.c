@@ -5,19 +5,13 @@
 #include "spectrum.h"
 #include "filetypes/filetypes.h"
 
-int nsTime;
-// int res1 = 0;
-int res2 = 0;
 int res3 = 0;	// tick in op, wich has last OUT/MWR (and vidSync)
 int res4 = 0;	// save last res3 (vidSync on OUT/MWR process do res3-res4 ticks)
-unsigned short pcreg;
-
-MemPage* mptr;
 
 // ...
 
 void zxMemRW(Computer* comp, int adr) {
-	mptr = memGetBankPtr(comp->mem,adr);
+	MemPage* mptr = memGetBankPtr(comp->mem,adr);
 	if (comp->contMem && (mptr->type == MEM_RAM) && (mptr->num & 1)) {	// pages 1,3,5,7 (48K model)
 		res3 = comp->cpu->t;					// until RD/WR cycle
 		vidSync(comp->vid, comp->nsPerTick * (res3 - res4));
@@ -345,8 +339,9 @@ void compSetHardware(Computer* comp, const char* name) {
 // exec 1 opcode, sync devices, return eated ns
 
 int compExec(Computer* comp) {
+	int nsTime;
+	int res2 = 0;
 	res4 = 0;
-	res2 = 0;
 	comp->vid->time = 0;
 // exec cpu opcode OR handle interrupt. get T states back
 	res2 = comp->cpu->exec(comp->cpu);
@@ -370,11 +365,8 @@ int compExec(Computer* comp) {
 		comp->padr = 0;
 	}
 	// vidSync(comp->vid, comp->nsPerTick);
-// ...
-	// res1 = res2;
-	pcreg = comp->cpu->pc;
 // NMI
-	if ((pcreg > 0x3fff) && comp->nmiRequest && !comp->rzx.play) {
+	if ((comp->cpu->pc > 0x3fff) && comp->nmiRequest && !comp->rzx.play) {
 		comp->cpu->intrq |= 2;		// request nmi
 		comp->dos = 1;			// set dos page
 		comp->rom = 1;
@@ -401,8 +393,7 @@ int compExec(Computer* comp) {
 		comp->frmStrobe = 1;
 	}
 // breakpoints
-	pcreg = comp->cpu->pc;
-	unsigned char* ptr = getBrkPtr(comp, pcreg);
+	unsigned char* ptr = getBrkPtr(comp, comp->cpu->pc);
 	if (*ptr & (MEM_BRK_FETCH | MEM_BRK_TFETCH)) {
 		comp->brk = 1;
 		*ptr &= ~MEM_BRK_TFETCH;

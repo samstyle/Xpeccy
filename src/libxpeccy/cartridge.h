@@ -23,21 +23,30 @@ enum {
 	MAP_GB_MBC3,
 	MAP_GB_MBC5,
 // NES
-	MAP_NES_NOMAP = 0x100,
+	MAP_NES_NROM = 0x100,
 	MAP_NES_MMC1,
-	MAP_NES_M002,
-	MAP_NES_M003,
+	MAP_NES_UNROM,
+	MAP_NES_CNROM,
 	MAP_NES_MMC3,
 	MAP_NES_MMC5,
-	MAP_NES_M007 = 0x107,
+	MAP_NES_AOROM = 0x107,
 	MAP_NES_M047 = 0x12f,
-	MAP_NES_M071 = 0x147
+	MAP_NES_CAMERICA = 0x147
 };
 
+// slot memory type
 enum {
 	SLT_PRG = 1,
 	SLT_CHR,		// access by NES ppu
 	SLT_RAM
+};
+
+// NES nametable mirroring
+enum {
+	NES_NT_SINGLE = 0,
+	NES_NT_HORIZ,
+	NES_NT_VERT,
+	NES_NT_QUATRO
 };
 
 // memory flags
@@ -67,24 +76,32 @@ struct xCartridge {
 	unsigned irq:1;			// irq signal (nes)
 
 	char name[FILENAME_MAX];
-	int memMap[4];			// 4x8K PRG pages
-	int chrMap[8];			// 8x1K CHR pages
-	int prglast;
+	int memMap[4];			// max 4x8K PRG pages
+//	int chrMap[8];			// max 8x1K CHR pages
+	int prglast;			// last 16K PRG page number
 	int mapType;			// user defined mapper type, if auto-detect didn't worked (msx)
 
 	unsigned char shift;		// shift register (mmc1)
 	int bitcount;			// counter of bits writing to shift register (mmc1)
-	unsigned char reg00;		// control registers
+	unsigned char regCT;		// control registers
+	unsigned char reg00;
 	unsigned char reg01;
 	unsigned char reg02;
 	unsigned char reg03;
+	unsigned char reg04;
+	unsigned char reg05;
+	unsigned char reg06;
+	unsigned char reg07;
+
+	unsigned char ival;		// irq init value (nes mmc3)
 	unsigned char icnt;		// irq counter (nes mmc3)
+
+	unsigned blk1:1;		// BLK0/1 selection signal
+	int mirror;			// mirroring type
 
 	int memMask;
 	int chrMask;
-	unsigned short ntmask;		// nes nametables mirroring control (AND)
-	unsigned short ntorsk;		// same (OR)
-	unsigned short ramMask;
+	int ramMask;
 	unsigned char ram[0x8000];	// onboard ram (32K max)
 	xCardCallback* core;
 	unsigned char* data;		// onboard rom (malloc) = nes prg-rom
@@ -101,6 +118,9 @@ int sltSetMaper(xCartridge*, int);
 
 unsigned char sltRead(xCartridge*, int, unsigned short);
 void sltWrite(xCartridge*, int, unsigned short, unsigned char);
+
+// translate ppu nt vadr according mirroring type
+unsigned short nes_nt_vadr(xCartridge*, unsigned short);
 
 #if __cplusplus
 }

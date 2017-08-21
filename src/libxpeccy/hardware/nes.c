@@ -10,8 +10,9 @@ unsigned char nes_ppu_ext_rd(unsigned short adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	unsigned char res;
 	if (adr & 0x2000) {	// nametable
-		adr &= comp->slot->ntmask;
-		adr |= comp->slot->ntorsk;
+//		adr &= comp->slot->ntmask;
+//		adr |= comp->slot->ntorsk;
+		adr = nes_nt_vadr(comp->slot, adr);
 		res = comp->vid->ppu->mem[adr];
 	} else {
 		if (comp->slot->chrrom) {
@@ -27,8 +28,9 @@ unsigned char nes_ppu_ext_rd(unsigned short adr, void* ptr) {
 void nes_ppu_ext_wr(unsigned short adr, unsigned char val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	if (adr & 0x2000) {
-		adr &= comp->slot->ntmask;
-		adr |= comp->slot->ntorsk;
+//		adr &= comp->slot->ntmask;
+//		adr |= comp->slot->ntorsk;
+		adr = nes_nt_vadr(comp->slot, adr);
 		comp->vid->ppu->mem[adr] = val;
 	} else {
 		if (comp->slot->chrrom) {
@@ -51,13 +53,14 @@ void nesReset(Computer* comp) {
 	comp->vid->ppu->data = comp;
 	ppuReset(comp->vid->ppu);
 	vidSetMode(comp->vid, VID_NES);
-
+/*
 	comp->slot->memMap[0] = 0;	// prg 4x8K pages
 	comp->slot->memMap[1] = 1;
 	comp->slot->memMap[2] = comp->slot->prglast - 1;
 	comp->slot->memMap[3] = comp->slot->prglast;
 	for (int i = 0; i < 8; i++)	// chr 8x1K pages
 		comp->slot->chrMap[i] = i;
+*/
 }
 
 unsigned char nesMMrd(unsigned short adr, void* data) {
@@ -540,7 +543,7 @@ void nesSync(Computer* comp, int ns) {
 		comp->vid->hbstrb = 0;
 		if (comp->slot->irqrl) {		// reload counter
 			comp->slot->irqrl = 0;
-			comp->slot->icnt = comp->slot->reg03;
+			comp->slot->icnt = comp->slot->ival;
 		} else {
 			comp->slot->icnt--;
 			if (comp->slot->icnt == 0) {

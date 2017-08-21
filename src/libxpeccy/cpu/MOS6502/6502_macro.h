@@ -72,7 +72,7 @@
 #define MASL(_op) \
 	if (_op & 0x80) {cpu->f |= MFC;} else {cpu->f &= ~MFC;}\
 	_op = (_op << 1) & 0xff;\
-	MFLAGZN(cpu->a);
+	MFLAGZN(_op);
 
 #define MLSR(_op) \
 	if (_op & 0x01) {cpu->f |= MFC;} else {cpu->f &= ~MFC;}\
