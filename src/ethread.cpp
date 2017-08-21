@@ -14,7 +14,7 @@ extern unsigned char prvScr[1024 * 512 * 3];
 
 void processPicture(unsigned char* src, int size) {
 	memcpy(sbufa, src, size);
-	scrMix(prvScr, sbufa, size, conf.vid.noFlick ? 0.5 : 0.7);
+	scrMix(prvScr, sbufa, size, conf.vid.noflic / 100.0);
 }
 
 xThread::xThread() {

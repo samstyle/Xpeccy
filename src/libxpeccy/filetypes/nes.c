@@ -30,10 +30,10 @@ int loadNes(Computer* comp, const char* name) {
 
 	int res = ERR_OK;
 	int type;
-	int pal = 0;
+	int pal = 1;
 	int maper;
 
-	if (strstr(name, "(E)")) pal = 1;		// europe : pal
+	if (strstr(name, "(U)")) pal = 0;		// USA : ntsc
 
 	xNesHeader hd;
 	fread((char*)&hd, sizeof(xNesHeader), 1, file);

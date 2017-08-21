@@ -77,24 +77,28 @@ unsigned char nesMMrd(unsigned short adr, void* data) {
 			res = ppuRead(comp->vid->ppu, adr & 7);
 			break;
 		case 0x4000:		// 4000..5fff : IO mapping
-			switch (adr & 0x1fff) {
-				case 0x0015:
-					res = 0;
-					if (apu->ch0.len && apu->ch0.en) res |= 0x01;
-					if (apu->ch1.len && apu->ch1.en) res |= 0x02;
-					if (apu->cht.len && apu->cht.en) res |= 0x04;
-					if (apu->chn.len && apu->chn.en) res |= 0x08;
-					if (apu->chd.len && apu->chd.en) res |= 0x10;
-					if (apu->firq) res |= 0x40;
-					break;
-				case 0x0016:		// joystick 1
-					res = comp->nes.priJoy & 1;
-					comp->nes.priJoy >>= 1;
-					break;
-				case 0x0017:		// joystick 2
-					res = comp->nes.secJoy & 1;
-					comp->nes.secJoy >>= 1;
-					break;
+			if (adr & 0x1000) {
+				res = sltRead(comp->slot, SLT_EXT, adr);
+			} else {
+				switch (adr & 0x0fff) {
+					case 0x0015:
+						res = 0;
+						if (apu->ch0.len && apu->ch0.en) res |= 0x01;
+						if (apu->ch1.len && apu->ch1.en) res |= 0x02;
+						if (apu->cht.len && apu->cht.en) res |= 0x04;
+						if (apu->chn.len && apu->chn.en) res |= 0x08;
+						if (apu->chd.len && apu->chd.en) res |= 0x10;
+						if (apu->firq) res |= 0x40;
+						break;
+					case 0x0016:		// joystick 1
+						res = comp->nes.priJoy & 1;
+						comp->nes.priJoy >>= 1;
+						break;
+					case 0x0017:		// joystick 2
+						res = comp->nes.secJoy & 1;
+						comp->nes.secJoy >>= 1;
+						break;
+				}
 			}
 			break;
 		case 0x6000:		// 6000..7fff : slot ram
@@ -103,46 +107,11 @@ unsigned char nesMMrd(unsigned short adr, void* data) {
 	}
 	return  res;
 }
-/*
-	if (adr < 0x2000) {
-		res = mem[adr & 0x7ff];
-	} else if (adr < 0x4000) {
-		adr &= 7;
-		nesPPU* ppu = comp->vid->ppu;
-		switch(adr) {
-			case 2:
-				// b7:vblank, b6:spr0 hit, b5:spr overflow
-				res = 0x1f;
-				if (comp->vid->vblank) res |= 0x80;
-				if (comp->vid->ppu->sp0hit) res |= 0x40;
-				if (comp->vid->ppu->spover) res |= 0x20;
-				ppu->latch = 0;
-				break;
-			case 4:
-				res = ppu->oam[ppu->oamadr & 0xff];
-				break;
-			case 7:
-				res = ppuRead(ppu);
-				break;
-		}
-	} else if (adr < 0x5000) {
-		// audio, dma, io registers (0x17, other is unused)
-
-		}
-	} else if (adr < 0x6000) {
-		// expansion rom (4K)
-	} else if (comp->slot->data) {
-		// cartrige ram (8K)
-		res = sltRead(comp->slot, SLT_RAM, adr);
-	}
-	return res;
-}
-*/
 
 // taked from nesdev wiki
-// convert to apu ticks = div 16
 static int apuNoisePer[16] = {0x02,0x04,0x08,0x10,0x20,0x30,0x40,0x50,0x65,0x7F,0xBE,0xFE,0x17D,0x1FC,0x3F9,0x7F2};
-static int apuPcmPer[16] = {428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106,  84,  72,  54};
+//static int apuPcmPer[16] = {428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106,  84,  72,  54};		// this is in CPU ticks
+static int apuPcmPer[16] = {54, 48, 42, 40, 36, 32, 28, 27, 24, 20, 18, 16, 13, 11, 9, 7};				// this is APU ticks (CPU/8)
 static int apuLenPAL[8] = {5,10,20,40,80,30,7,13};
 static int apuLenNTSC[8] = {6,12,24,48,96,36,8,16};
 static int apuLenGeneral[16] = {127,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
@@ -173,8 +142,11 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 			ppuWrite(comp->vid->ppu, adr & 7, val);
 			break;
 		case 0x4000:			// 4000..5fff : IO mappings
-			switch(adr & 0x1fff) {
-				case 0x0000:
+			if (adr > 0x401f) {	// 4020+ -> cartrige IO
+				sltWrite(comp->slot, SLT_EXT, adr, val);
+			} else {
+			switch(adr) {
+				case 0x4000:
 					apu->ch0.duty = (val >> 6) & 3;
 					apu->ch0.env = (val & 0x10) ? 0 : 1;
 					apu->ch0.elen = (val & 0x20) ? 0 : 1;
@@ -188,19 +160,19 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 					}
 					apuToneDuty(&apu->ch0);
 					break;
-				case 0x0001:
+				case 0x4001:
 	//				printf("ch0 sweep %.2X\n",val);
 					apu->ch0.sweep = (val & 0x80) ? 1 : 0;
 					apu->ch0.sper = ((val >> 4) & 7) + 1;
 					apu->ch0.sdir = (val & 0x08) ? 1 : 0;
 					apu->ch0.sshi = val & 7;
 					break;
-				case 0x0002:
+				case 0x4002:
 					apu->ch0.hper &= 0x700;
 					apu->ch0.hper |= (val & 0xff);
 					apuToneDuty(&apu->ch0);
 					break;
-				case 0x0003:
+				case 0x4003:
 					//printf("wr 4003,%.2X\n",val);
 					apu->ch0.hper &= 0xff;
 					apu->ch0.hper |= ((val << 8) & 0x0700);
@@ -210,10 +182,12 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 						default: apu->ch0.len = apuLenGeneral[(val >> 4) & 15]; break;
 					}
 					apuToneDuty(&apu->ch0);
+					apu->ch0.pcnt = 0;
+					apu->ch0.ecnt = 0;
 					//printf("CH0 len = %i, p0 = %i, p1 = %i\n", apu->ch0.len, apu->ch0.per0, apu->ch0.per1);
 					break;
 				// ch1 : tone 1
-				case 0x0004:
+				case 0x4004:
 					apu->ch1.duty = (val >> 6) & 3;
 					apu->ch1.env = (val & 0x10) ? 0 : 1;
 					apu->ch1.elen = (val & 0x20) ? 0 : 1;
@@ -226,43 +200,47 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 					}
 					apuToneDuty(&apu->ch1);
 					break;
-				case 0x0005:
+				case 0x4005:
 					apu->ch1.sweep = (val & 0x80) ? 1 : 0;
 					apu->ch1.sper = ((val >> 4) & 7) + 1;
 					apu->ch1.sdir = (val & 0x08) ? 1 : 0;
 					apu->ch1.sshi = val & 7;
 					break;
-				case 0x0006:
+				case 0x4006:
 					apu->ch1.hper &= 0x700;
 					apu->ch1.hper |= val;
 					apuToneDuty(&apu->ch1);
 					break;
-				case 0x0007:
+				case 0x4007:
 					apu->ch1.hper &= 0xff;
 					apu->ch1.hper |= ((val << 8) & 0x0700);
 					apu->ch1.len = apuGetLC(val);
 					apuToneDuty(&apu->ch1);
+					apu->ch1.pcnt = 0;
+					apu->ch0.ecnt = 0;
 					break;
 				// ch2 : triangle
-				case 0x0008:
+				case 0x4008:
 					apu->cht.elen = (val & 0x80) ? 0 : 1;
 					apu->cht.lcnt = (val & 0x7f);
 					break;
-				case 0x0009:
+				case 0x4009:
 					break;
-				case 0x000a:
+				case 0x400a:
 					apu->cht.hper &= 0x700;
 					apu->cht.hper |= val & 0xff;
+					apu->cht.pcnt = apu->cht.hper;
 					break;
-				case 0x000b:
+				case 0x400b:
 					apu->cht.hper &= 0xff;
 					apu->cht.hper |= (val << 8) & 0x700;
+					apu->cht.pcnt = 0;
 					apu->cht.len = apuGetLC(val);
 					apu->cht.vol = 8;
 					apu->cht.dir = 1;
 					break;
 				// ch3 : noise
-				case 0x000c:
+				case 0x400c:
 					apu->chn.elen = (val & 0x20) ? 0 : 1;
 					apu->chn.env = (val & 0x10) ? 0 : 1;
 					if (apu->chn.env) {
@@ -273,56 +251,57 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 						apu->chn.vol = val & 15;
 					}
 					break;
-				case 0x000d:
+				case 0x400d:
 					break;
-				case 0x000e:
+				case 0x400e:
 					apu->chn.hper = apuNoisePer[val & 15];
 					// b7:loop noise (short generator)
 					break;
-				case 0x000f:
+				case 0x400f:
 					apu->chn.len = apuGetLC(val);
 					break;
 				// ch4 : dmc
-				case 0x0010:
+				case 0x4010:
 					apu->chd.env = (val & 0x80) ? 1 : 0;		// IRQ enable
 					apu->chd.elen = (val & 0x40) ? 1 : 0;		// loop
 					apu->chd.hper = apuPcmPer[val & 0x0f];		// period
+					apu->chd.pcnt = 0;
 					break;
-				case 0x0011:
+				case 0x4011:
 					apu->chd.vol = val & 0x7f;
 					break;
-				case 0x0012:
+				case 0x4012:
 					apu->chd.sadr = 0xc000 | ((val << 6) & 0x3fc0);
 					apu->chd.cadr = apu->chd.sadr;
 					break;
-				case 0x0013:
-					apu->chd.len = ((val << 4) & 0x0ff0) | 1;
-					apu->chd.lcnt = apu->chd.len;
+				case 0x4013:
+					apu->chd.lcnt = ((val << 4) & 0x0ff0) | 1;	// this is length in bytes
+					apu->chd.len = apu->chd.lcnt;
 					break;
 				// ...
-				case 0x0014:		// OAMDMA
+				case 0x4014:		// OAMDMA
 					adr = (val << 8);
 					do {
 						comp->vid->ppu->oam[comp->vid->ppu->oamadr & 0xff] = memRd(comp->mem, adr);
 						comp->vid->ppu->oamadr++;
 						adr++;
 					} while (adr & 0xff);
-					comp->cpu->t += 0x200;
+					comp->cpu->t += 0x201;	// DMA eats 512+1 cpu ticks, cpu is halted during operation
 					break;
-				case 0x0015:
+				case 0x4015:
 					apu->ch0.en = (val & 0x01) ? 1 : 0;
 					apu->ch1.en = (val & 0x02) ? 1 : 0;
 					apu->cht.en = (val & 0x04) ? 1 : 0;
 					apu->chn.en = (val & 0x08) ? 1 : 0;
 					apu->chd.en = (val & 0x10) ? 1 : 0;
 					break;
-				case 0x0016:
+				case 0x4016:
 					if (val & 1) {		// b0: 0-1-0 = reload gamepads state
 						comp->nes.priJoy = comp->nes.priPadState;
 						comp->nes.secJoy = comp->nes.secPadState;
 					}
 					break;
-				case 0x0017:
+				case 0x4017:
 					apu->irqen = (val & 0x80) ? 0 : 1;
 					apu->step5 = (val & 0x40) ? 1 : 0;
 					break;
@@ -330,187 +309,12 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 					//printf("write %.4X,%.2X\n",adr,val);
 					break;
 			}
+			}
 			break;
 		case 0x6000:			// 6000..7fff : slot RAM
 			sltWrite(comp->slot, SLT_RAM, adr, val);
 			break;
 	}
-
-/*
-	if (adr < 0x2000) {
-		comp->mem->ramData[adr & 0x7ff] = val;
-	} else if (adr < 0x4000) {
-		// write video registers
-		nesPPU* ppu = comp->vid->ppu;
-		}
-	} else if (adr < 0x5000) {
-		// write audio/dma/io?
-		nesAPU* apu = comp->nesapu;
-		switch (adr) {
-			// ch0 : tone 0
-			case 0x4000:
-				apu->ch0.duty = (val >> 6) & 3;
-				apu->ch0.env = (val & 0x10) ? 0 : 1;
-				apu->ch0.elen = (val & 0x20) ? 0 : 1;
-				if (apu->ch0.env) {
-					//printf("ch0 env %.2X\n",val);
-					apu->ch0.eper = ((val & 15) + 1);
-					apu->ch0.ecnt = apu->ch0.eper;
-					apu->ch0.vol = 0x0f;
-				} else {
-					apu->ch0.vol = val & 15;
-				}
-				apuToneDuty(&apu->ch0);
-				break;
-			case 0x4001:
-//				printf("ch0 sweep %.2X\n",val);
-				apu->ch0.sweep = (val & 0x80) ? 1 : 0;
-				apu->ch0.sper = ((val >> 4) & 7) + 1;
-				apu->ch0.sdir = (val & 0x08) ? 1 : 0;
-				apu->ch0.sshi = val & 7;
-				break;
-			case 0x4002:
-				apu->ch0.hper &= 0x700;
-				apu->ch0.hper |= (val & 0xff);
-				apuToneDuty(&apu->ch0);
-				break;
-			case 0x4003:
-				//printf("wr 4003,%.2X\n",val);
-				apu->ch0.hper &= 0xff;
-				apu->ch0.hper |= ((val << 8) & 0x0700);
-				switch (val & 0x88) {
-					case 0x00: apu->ch0.len = apuLenPAL[(val >> 4) & 7]; break;
-					case 0x80: apu->ch0.len = apuLenNTSC[(val >> 4) & 7]; break;
-					default: apu->ch0.len = apuLenGeneral[(val >> 4) & 15]; break;
-				}
-				apuToneDuty(&apu->ch0);
-				//printf("CH0 len = %i, p0 = %i, p1 = %i\n", apu->ch0.len, apu->ch0.per0, apu->ch0.per1);
-				break;
-			// ch1 : tone 1
-			case 0x4004:
-				apu->ch1.duty = (val >> 6) & 3;
-				apu->ch1.env = (val & 0x10) ? 0 : 1;
-				apu->ch1.elen = (val & 0x20) ? 0 : 1;
-				if (apu->ch1.env) {
-					apu->ch1.eper = ((val & 15) + 1);
-					apu->ch1.ecnt = apu->ch1.eper;
-					apu->ch1.vol = 0x0f;
-				} else {
-					apu->ch1.vol = val & 15;
-				}
-				apuToneDuty(&apu->ch1);
-				break;
-			case 0x4005:
-				apu->ch1.sweep = (val & 0x80) ? 1 : 0;
-				apu->ch1.sper = ((val >> 4) & 7) + 1;
-				apu->ch1.sdir = (val & 0x08) ? 1 : 0;
-				apu->ch1.sshi = val & 7;
-				break;
-			case 0x4006:
-				apu->ch1.hper &= 0x700;
-				apu->ch1.hper |= val;
-				apuToneDuty(&apu->ch1);
-				break;
-			case 0x4007:
-				apu->ch1.hper &= 0xff;
-				apu->ch1.hper |= ((val << 8) & 0x0700);
-				apu->ch1.len = apuGetLC(val);
-				apuToneDuty(&apu->ch1);
-				break;
-			// ch2 : triangle
-			case 0x4008:
-				apu->cht.elen = (val & 0x80) ? 0 : 1;
-				apu->cht.lcnt = (val & 0x7f);
-				break;
-			case 0x4009:
-				break;
-			case 0x400a:					// tone period divided by 2 cuz triangle clock is CPU/32
-				apu->cht.hper &= 0x700;
-				apu->cht.hper |= val & 0xff;
-				break;
-			case 0x400b:
-				apu->cht.hper &= 0xff;
-				apu->cht.hper |= (val << 8) & 0x70;
-				apu->cht.len = apuGetLC(val);
-				apu->cht.vol = 8;
-				apu->cht.dir = 1;
-				break;
-			// ch3 : noise
-			case 0x400c:
-				apu->chn.elen = (val & 0x20) ? 0 : 1;
-				apu->chn.env = (val & 0x10) ? 0 : 1;
-				if (apu->chn.env) {
-					apu->chn.eper = (val & 15) + 1;
-					apu->chn.ecnt = apu->chn.eper;
-					apu->chn.vol = 0x0f;
-				} else {
-					apu->chn.vol = val & 15;
-				}
-				break;
-			case 0x400d:
-				break;
-			case 0x400e:
-				apu->chn.hper = val & 0x0f;
-				// b7:loop noise (short generator)
-				break;
-			case 0x400f:
-				apu->chn.len = apuGetLC(val);
-				break;
-			// ch4 : dmc
-			case 0x4010:
-				apu->chd.env = (val & 0x80) ? 1 : 0;		// IRQ enable
-				apu->chd.elen = (val & 0x40) ? 1 : 0;		// loop
-				apu->chd.hper = apuPcmPer[val & 0x0f];		// period
-				break;
-			case 0x4011:
-				apu->chd.vol = val & 0x7f;
-				break;
-			case 0x4012:
-				apu->chd.sadr = 0xc000 | ((val << 6) & 0x3fc0);
-				apu->chd.cadr = apu->chd.sadr;
-				break;
-			case 0x4013:
-				apu->chd.len = ((val << 4) & 0x0ff0) | 1;
-				apu->chd.lcnt = apu->chd.len;
-				break;
-			// ...
-			case 0x4014:		// OAMDMA
-				adr = (val << 8);
-				do {
-					comp->vid->ppu->oam[comp->vid->ppu->oamadr & 0xff] = memRd(comp->mem, adr);
-					comp->vid->ppu->oamadr++;
-					adr++;
-				} while (adr & 0xff);
-				comp->cpu->t += 0x200;
-				break;
-			case 0x4015:
-				apu->ch0.en = (val & 0x01) ? 1 : 0;
-				apu->ch1.en = (val & 0x02) ? 1 : 0;
-				apu->cht.en = (val & 0x04) ? 1 : 0;
-				apu->chn.en = (val & 0x08) ? 1 : 0;
-				apu->chd.en = (val & 0x10) ? 1 : 0;
-				break;
-			case 0x4016:
-				if (val & 1) {		// b0: 0-1-0 = reload gamepads state
-					comp->nes.priJoy = comp->nes.priPadState;
-					comp->nes.secJoy = comp->nes.secPadState;
-				}
-				break;
-			case 0x4017:
-				apu->irqen = (val & 0x80) ? 0 : 1;
-				apu->step5 = (val & 0x40) ? 1 : 0;
-				break;
-			default:
-				//printf("write %.4X,%.2X\n",adr,val);
-				break;
-		}
-	} else if (adr < 0x6000) {
-		// nothing?
-	} else if (comp->slot->data) {
-		// sram 8K
-		sltWrite(comp->slot, SLT_RAM, adr, val);
-	}
-*/
 }
 
 unsigned char nesSLrd(unsigned short adr, void* data) {
@@ -606,6 +410,16 @@ static char nesSpOn[] = " SPR layer on ";
 static char nesSpOff[] = " SPR layer off ";
 static char nesPAL[] = " PAL ";
 static char nesNTSC[] = " NTSC ";
+static char nesC0off[] = " CH0 off ";
+static char nesC0on[] = " CH0 on ";
+static char nesC1off[] = " CH1 off ";
+static char nesC1on[] = " CH1 on ";
+static char nesC2off[] = " CH2 off ";
+static char nesC2on[] = " CH2 on ";
+static char nesC3off[] = " CH3 off ";
+static char nesC3on[] = " CH3 on ";
+static char nesC4off[] = " CH4 off ";
+static char nesC4on[] = " CH4 on ";
 
 void nes_keyp(Computer* comp, keyEntry ent) {
 	int mask = nesGetInputMask(ent.key);
@@ -623,6 +437,26 @@ void nes_keyp(Computer* comp, keyEntry ent) {
 		case XKEY_2:
 			comp->vid->ppu->splock ^= 1;
 			comp->msg = comp->vid->ppu->splock ? nesSpOff : nesSpOn;
+			break;
+		case XKEY_3:
+			comp->nesapu->ch0.off ^= 1;
+			comp->msg = comp->nesapu->ch0.off ? nesC0off : nesC0on;
+			break;
+		case XKEY_4:
+			comp->nesapu->ch1.off ^= 1;
+			comp->msg = comp->nesapu->ch1.off ? nesC1off : nesC1on;
+			break;
+		case XKEY_5:
+			comp->nesapu->cht.off ^= 1;
+			comp->msg = comp->nesapu->cht.off ? nesC2off : nesC2on;
+			break;
+		case XKEY_6:
+			comp->nesapu->chn.off ^= 1;
+			comp->msg = comp->nesapu->chn.off ? nesC3off : nesC3on;
+			break;
+		case XKEY_7:
+			comp->nesapu->chd.off ^= 1;
+			comp->msg = comp->nesapu->chd.off ? nesC4off : nesC4on;
 			break;
 	}
 }

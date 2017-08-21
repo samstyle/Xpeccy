@@ -197,6 +197,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 // video
 	connect(ui.pathtb,SIGNAL(released()),this,SLOT(selsspath()));
 	connect(ui.bszsld,SIGNAL(valueChanged(int)),this,SLOT(chabsz()));
+	connect(ui.sldNoflic,SIGNAL(valueChanged(int)),this,SLOT(chaflc()));
 
 	connect(ui.layEdit,SIGNAL(released()),this,SLOT(edLayout()));
 	connect(ui.layAdd,SIGNAL(released()),this,SLOT(addNewLayout()));
@@ -332,7 +333,8 @@ void SetupWin::start(xProfile* p) {
 	ui.cbFullscreen->setChecked(conf.vid.fullScreen);
 	ui.cbKeepRatio->setChecked(conf.vid.keepRatio);
 	ui.sbScale->setValue(conf.vid.scale);
-	ui.noflichk->setChecked(conf.vid.noFlick);
+//	ui.noflichk->setChecked(conf.vid.noFlick);
+	ui.sldNoflic->setValue(conf.vid.noflic);
 	ui.grayscale->setChecked(conf.vid.grayScale);
 	ui.border4T->setChecked(comp->vid->brdstep & 0x06);
 	ui.contMem->setChecked(comp->contMem);
@@ -478,7 +480,8 @@ void SetupWin::apply() {
 	conf.vid.fullScreen = ui.cbFullscreen->isChecked() ? 1 : 0;
 	conf.vid.keepRatio = ui.cbKeepRatio->isChecked() ? 1 : 0;
 	conf.vid.scale = ui.sbScale->value();
-	conf.vid.noFlick = ui.noflichk->isChecked() ? 1 : 0;
+//	conf.vid.noFlick = ui.noflichk->isChecked() ? 1 : 0;
+	conf.vid.noflic = ui.sldNoflic->value();
 	conf.vid.grayScale = ui.grayscale->isChecked() ? 1 : 0;
 	conf.scrShot.dir = std::string(ui.pathle->text().toLocal8Bit().data());
 	conf.scrShot.format = getRFText(ui.ssfbox);
@@ -1085,7 +1088,8 @@ void SetupWin::fillDiskCat() {
 
 // video
 
-void SetupWin::chabsz() {ui.bszlab->setText(QString::number(ui.bszsld->value()).append("%"));}
+void SetupWin::chabsz() {ui.bszlab->setText(QString("%0%").arg(ui.bszsld->value()));}
+void SetupWin::chaflc() {ui.labNoflic->setText(QString("%0%").arg(ui.sldNoflic->value() * 2));}
 
 void SetupWin::selsspath() {
 	QString fpath = QFileDialog::getExistingDirectory(this,"Screenshots folder",QString::fromLocal8Bit(conf.scrShot.dir.c_str()),QFileDialog::ShowDirsOnly);

@@ -125,7 +125,7 @@ void saveConfig() {
 	fprintf(cfile, "scale = %i\n", conf.vid.scale);
 	fprintf(cfile, "greyscale = %s\n", YESNO(conf.vid.grayScale));
 	fprintf(cfile, "bordersize = %i\n", int(conf.brdsize * 100));
-	fprintf(cfile, "noflic = %s\n", YESNO(conf.vid.noFlick));
+	fprintf(cfile, "noflick = %s%%\n", YESNO(conf.vid.noflic));
 
 	fprintf(cfile, "\n[ROMSETS]\n");
 	foreach(xRomset rms, conf.rsList) {
@@ -319,7 +319,8 @@ void loadConfig() {
 						if (conf.vid.scale < 1) conf.vid.scale = 1;
 						if (conf.vid.scale > 4) conf.vid.scale = 4;
 					}
-					if (pnam=="noflic") conf.vid.noFlick = str2bool(pval) ? 1 : 0;
+					if (pnam=="noflic") conf.vid.noflic = str2bool(pval) ? 50 : 25;		// old parameter
+					if (pnam=="noflick") conf.vid.noflic = getRanged(pval.c_str(), 0, 50);	// new parameter
 					if (pnam=="greyscale") conf.vid.grayScale = str2bool(pval) ? 1 : 0;
 					break;
 				case SECT_ROMSETS:

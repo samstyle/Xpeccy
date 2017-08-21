@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-// full line 341
+// full line 341 dots
 // nes layout: 256x240 = 32x30 of 8x8 tiles
 // hblank: 85 dots ?
 // vblank: 20 lines
@@ -152,11 +152,9 @@ void ppuRenderBGLine(nesPPU* ppu, unsigned char* buf, unsigned short adr, int xo
 
 // @ start of HBlank
 void ppuHBL(nesPPU* ppu) {
-	if (ppu->ray->y < 240) {				// only on visible screen
-	}
 }
 
-// @ start of new line
+// @ start of new line (end of HBlank)
 void ppuLine(nesPPU* ppu) {
 
 	unsigned char x,y,flag;
@@ -174,11 +172,11 @@ void ppuLine(nesPPU* ppu) {
 	memset(ppu->prline, 0x00, 256);		// sprites priority
 
 	switch(ppu->ray->y) {
-		case 241:
+		case 240:
 			ppu->vbl = 1;
 			ppu->vblstrb = 1;
 			break;
-		case 261: ppu->vbl = 0;
+		case 260: ppu->vbl = 0;
 			ppu->vblstrb = 0;
 			ppu->sp0hit = 0;
 			ppu->spover = 0;
@@ -204,30 +202,7 @@ void ppuLine(nesPPU* ppu) {
 
 	if (ppu->bgen) {
 		ppuRenderBGLine(ppu, ppu->bgline, ppu->vadr, ppu->finex, ppu->bgadr);
-/*
-		cnt = 0;
-		adr = ppu->vadr;
-		while (cnt < 0x108) {
-			tile = ppu->mrd(0x4000 | 0x2000 | (adr & 0x0fff), ppu->data);						// tile num
-			atr = ppu->mrd(0x4000 | 0x23c0 | (adr & 0x0c00) | ((adr >> 4) & 0x38) | ((adr >> 2) & 7), ppu->data);	// attribute
-			bgadr = ppu->bgadr | ((tile << 4) & 0x0ff0) | ((adr >> 12) & 7);
-			data = ppu->mrd(bgadr, ppu->data);
-			data |= (ppu->mrd(bgadr + 8, ppu->data) << 8);
-			if (adr & 0x0040) atr >>= 4;			// bit 3,4 = attribute of current tile
-			if (~adr & 0x0002) atr <<= 2;
-			do {
-				col = (data & 0x80) ? 1 : 0;
-				if (data & 0x8000) col |= 2;
-				col |= (atr & 0x0c);
-				if (cnt >= ppu->finex)
-					ppu->bgline[cnt - ppu->finex] = col;
-				data <<= 1;
-				cnt++;
-			} while (cnt & 7);
-			adr = ppuXcoarse(adr);		// move to next tile
-		}
-*/
-		if (!ppu->bgleft8)					// hide left 8 pixels?
+		if (!ppu->bgleft8)
 			memset(ppu->bgline, 0x00, 8);
 	}
 
@@ -244,12 +219,18 @@ void ppuLine(nesPPU* ppu) {
 			tile = ppu->oam[adr++];
 			flag = ppu->oam[adr++];
 			x = ppu->oam[adr++];
-			if (y < 0xf0) {				// sprite is visible
-				sln = ppu->ray->y - y;
-				if (sln < shi) {		// sprite is crossing current line
-					if (flag & 0x80) sln = shi - sln - 1;		// VFlip
+			if ((y < 0xf0) && (x < 0xff)) {				// sprite is visible
+				// y++;
+				sln = ppu->ray->y - 1 - y;
+				if (sln < shi) {				// sprite is crossing current line
+					if (flag & 0x80) {
+						sln = shi - sln - 1;		// VFlip
+					}
 					if (ppu->bigspr) {
-						bgadr = ((tile & 1) ? 0x1000 : 0) | ((tile << 4) & 0xfe0) | (sln & 7);
+						bgadr = (tile & 1) ? 0x1000 : 0x0000;
+						tile &= 0xfe;
+						if (sln & 8) tile++;
+						bgadr = bgadr | ((tile << 4) & 0xff0) | (sln & 7);
 					} else {
 						bgadr = ppu->spadr | ((tile << 4) & 0x0ff0) | (sln & 7);
 					}
@@ -266,13 +247,13 @@ void ppuLine(nesPPU* ppu) {
 							data <<= 1;
 						}
 						col |= (flag & 3) << 2;			// add sprite palete
-						col |= 0x10;
+						col |= 0x10;				// sprite colors are 10-1f
 						if (!(ppu->spline[x + y] & 3)) {
-							ppu->spline[x + y] = col;	// sprite colors are 10-1f
+							ppu->spline[x + y] = col;
 							ppu->prline[x + y] = flag & 0x20;	// !0 -> sprite behind bg, visible where bg col = 0
 						}
 						if ((lin == 0) && (col & 3))
-							ppu->prline[x + y] |= 0x80;
+							ppu->prline[x + y] |= 0x80;		// non-transparent sprite 0 pixel
 
 					}
 					cnt++;
@@ -371,7 +352,7 @@ void ppuWrite(nesPPU* ppu, int reg, unsigned char val) {
 			if (ppu->latch) {
 				ppu->tadr &= 0xff00;
 				ppu->tadr |= (val & 0xff);
-				ppu->vadr = ppu->tadr;			// VADR changes right now
+				ppu->vadr = ppu->tadr;
 				ppu->latch = 0;
 			} else {
 				ppu->tadr &= 0x00ff;

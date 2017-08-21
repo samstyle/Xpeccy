@@ -6,6 +6,7 @@
 typedef unsigned char(*extmrd)(unsigned short, void*);
 
 typedef struct {
+	unsigned off:1;		// external on/off channel volume. sound generation doesn't stop
 	unsigned en:1;		// channel enabled
 	unsigned lev:1;		// square signal level
 	unsigned env:1;		// envelope on

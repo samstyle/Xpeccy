@@ -219,10 +219,10 @@ struct xConfig {
 	} prof;
 	struct {
 		unsigned grayScale:1;
-		unsigned noFlick:1;
 		unsigned fullScreen:1;	// use fullscreen
 		unsigned keepRatio:1;	// keep ratio in fullscreen (add black borders)
 		int scale;		// x1..x4
+		int noflic;		// 0 (noflic) .. 50 (full flick)
 	} vid;
 	struct {
 		unsigned enabled:1;

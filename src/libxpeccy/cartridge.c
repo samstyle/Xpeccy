@@ -677,6 +677,7 @@ unsigned char sltRead(xCartridge* slt, int mt, unsigned short adr) {
 	unsigned char res = 0xff;
 	if (!slt->core) return res;
 	if (!slt->core->rd) return res;
+	if (!slt->data) return res;
 	int radr = slt->core->adr(slt, mt, adr);
 	res = slt->core->rd(slt, mt, adr, radr);
 	if (mt != SLT_PRG) return res;
@@ -689,6 +690,7 @@ unsigned char sltRead(xCartridge* slt, int mt, unsigned short adr) {
 void sltWrite(xCartridge* slt, int mt, unsigned short adr, unsigned char val) {
 	if (!slt->core) return;
 	if (!slt->core->wr) return;
+	if (!slt->data) return;
 	int radr = slt->core->adr(slt, mt, adr);
 	slt->core->wr(slt, mt, adr, radr, val);
 	if (slt->brkMap[radr & slt->memMask] & MEM_BRK_WR)

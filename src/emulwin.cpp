@@ -583,11 +583,14 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				}
 				break;
 			case Qt::Key_N:
-				conf.vid.noFlick ^= 1;
+				if (conf.vid.noflic < 15)
+					conf.vid.noflic = 25;
+				else if (conf.vid.noflic < 35)
+					conf.vid.noflic = 50;
+				else	conf.vid.noflic = 0;
 				saveConfig();
-				if (conf.vid.noFlick)
-					memcpy(prvScr, scrn, comp->vid->frmsz * 6);
-				setMessage(QString(" noflic %0 ").arg(conf.vid.noFlick ? "on" : "off"));
+				memcpy(prvScr, scrn, comp->vid->frmsz * 6);
+				setMessage(QString(" noflick %0% ").arg(conf.vid.noflic * 2));
 				break;
 			case Qt::Key_R:
 				conf.vid.keepRatio ^= 1;

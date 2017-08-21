@@ -22,23 +22,22 @@ enum {
 	MAP_GB_MBC2,
 	MAP_GB_MBC3,
 	MAP_GB_MBC5,
-// NES
+// NES (1.0)
 	MAP_NES_NROM = 0x100,
-	MAP_NES_MMC1,
-	MAP_NES_UNROM,
-	MAP_NES_CNROM,
-	MAP_NES_MMC3,
-	MAP_NES_MMC5,
+	MAP_NES_MMC1 = 0x101,
+	MAP_NES_UNROM = 0x102,
+	MAP_NES_CNROM = 0x103,
+	MAP_NES_MMC3 = 0x104,
 	MAP_NES_AOROM = 0x107,
-	MAP_NES_M047 = 0x12f,
 	MAP_NES_CAMERICA = 0x147
 };
 
 // slot memory type
 enum {
 	SLT_PRG = 1,
-	SLT_CHR,		// access by NES ppu
-	SLT_RAM
+	SLT_CHR,		// NES PPU 0000..1fff
+	SLT_RAM,		// NES 6000..7fff
+	SLT_EXT			// NES 5000..5fff
 };
 
 // NES nametable mirroring
