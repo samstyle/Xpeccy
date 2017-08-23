@@ -215,7 +215,7 @@ void apuSync(nesAPU* apu, int ns) {
 		apuDigiSync(&apu->chd, apu->mrd, apu->data);
 	}
 	if (apu->chd.irq) {
-		apu->chd.irq = 1;
+		apu->chd.irq = 0;
 		apu->dirq = 1;
 	}
 
