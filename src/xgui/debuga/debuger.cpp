@@ -891,6 +891,10 @@ void DebugWin::drawNes() {
 	unsigned short tadr = 0;
 	QImage img;
 	QPixmap pic;
+
+	ui.labVAdr->setText(gethexword(ppu->vadr & 0x7fff));
+	ui.labTAdr->setText(gethexword(ppu->tadr & 0x7fff));
+
 	switch(ui.nesScrType->itemData(ui.nesScrType->currentIndex()).toInt()) {
 		case NES_SCR_OFF: adr = 0; break;
 		case NES_SCR_0:	adr = 0x2000; break;

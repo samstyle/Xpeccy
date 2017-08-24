@@ -39,6 +39,9 @@ QString brkGetString(xBrkPoint brk) {
 		case BRK_MEMEXT:
 			res = QString("EXT:%0:%1").arg(gethexbyte(brk.adr >> 14)).arg(gethexword(brk.adr & 0x3fff));
 			break;
+		case BRK_IRQ:
+			res = QString("IRQ");
+			break;
 	}
 	return res;
 }
@@ -55,9 +58,9 @@ QVariant xBreakListModel::data(const QModelIndex& idx, int role) const {
 		case Qt::CheckStateRole:
 			switch(col) {
 				case 0: res = brk.off ? Qt::Unchecked : Qt::Checked; break;
-				case 1: res = brk.fetch ? Qt::Checked : Qt::Unchecked; break;
-				case 2: res = brk.read ? Qt::Checked : Qt::Unchecked; break;
-				case 3: res = brk.write ? Qt::Checked : Qt::Unchecked; break;
+				case 1: if (brk.type != BRK_IRQ) res = brk.fetch ? Qt::Checked : Qt::Unchecked; break;
+				case 2: if (brk.type != BRK_IRQ) res = brk.read ? Qt::Checked : Qt::Unchecked; break;
+				case 3: if (brk.type != BRK_IRQ) res = brk.write ? Qt::Checked : Qt::Unchecked; break;
 			}
 			break;
 		case Qt::DisplayRole:
@@ -190,6 +193,7 @@ xBrkManager::xBrkManager(QWidget* p):QDialog(p) {
 	ui.brkType->addItem("RAM cell", BRK_MEMRAM);
 	ui.brkType->addItem("ROM cell", BRK_MEMROM);
 	ui.brkType->addItem("SLT cell", BRK_MEMCELL);
+	ui.brkType->addItem("IRQ", BRK_IRQ);
 
 	connect(ui.brkAdrDec, SIGNAL(valueChanged(int)), this, SLOT(adrDec2hex(int)));
 	connect(ui.brkAdrHex, SIGNAL(textChanged(QString)), this, SLOT(adrHex2dec(QString)));

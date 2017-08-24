@@ -68,6 +68,9 @@ void brkInstall(xBrkPoint brk) {
 			if (!comp->slot->brkMap) break;
 			ptr = comp->slot->brkMap + (brk.adr & comp->slot->memMask);
 			break;
+		case BRK_IRQ:
+			comp->brkirq = !brk.off;
+			break;
 	}
 	if (!ptr) return;
 	msk = 0;

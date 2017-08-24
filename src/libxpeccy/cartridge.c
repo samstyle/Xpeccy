@@ -384,7 +384,7 @@ void slt_nes_mmc1_wr(xCartridge* slot, int mt, unsigned short adr, int radr, uns
 							break;
 						case 0x6000:		// prg bank/ramen
 							slot->reg03 = slot->shift & 0x0f;
-							slot->ramen = (slot->shift & 0x10) ? 1 : 0;
+							slot->ramen = (slot->shift & 0x10) ? 0 : 1;
 							break;
 					}
 					slot->shift = 0x10;

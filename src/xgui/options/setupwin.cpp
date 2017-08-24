@@ -334,7 +334,7 @@ void SetupWin::start(xProfile* p) {
 	ui.cbKeepRatio->setChecked(conf.vid.keepRatio);
 	ui.sbScale->setValue(conf.vid.scale);
 //	ui.noflichk->setChecked(conf.vid.noFlick);
-	ui.sldNoflic->setValue(conf.vid.noflic);
+	ui.sldNoflic->setValue(conf.vid.noflic); chaflc();
 	ui.grayscale->setChecked(conf.vid.grayScale);
 	ui.border4T->setChecked(comp->vid->brdstep & 0x06);
 	ui.contMem->setChecked(comp->contMem);

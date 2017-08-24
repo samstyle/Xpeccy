@@ -22,10 +22,10 @@ std::vector<std::string> splitstr(std::string,const char*);
 std::pair<std::string,std::string> splitline(std::string);
 void copyFile(const char*, const char*);
 
-QString getbinbyte(uchar);
+QString getbinbyte(unsigned char);
 QString gethexshift(char);
 QString getdecshift(char);
-QString gethexbyte(uchar);
+QString gethexbyte(unsigned char);
 QString gethexword(int);
 
 typedef struct {
@@ -43,7 +43,9 @@ enum {
 	BRK_MEMRAM,
 	BRK_MEMROM,
 	BRK_MEMSLT,
-	BRK_MEMEXT
+	BRK_MEMEXT,
+	BRK_IRQ,
+	BRK_HBLANK
 };
 
 typedef struct {

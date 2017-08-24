@@ -75,6 +75,8 @@ typedef struct {
 	unsigned contMem:1;		// contended mem
 	unsigned contIO:1;		// contended IO
 
+	unsigned brkirq:1;		// break on irq
+
 	char* msg;			// message ptr for displaying outside
 
 	double cpuFrq;
@@ -125,7 +127,7 @@ typedef struct {
 
 #endif
 
-	unsigned long tickCount;
+	int tickCount;
 	int nsPerTick;
 
 	unsigned char p7FFD;		// stored port out

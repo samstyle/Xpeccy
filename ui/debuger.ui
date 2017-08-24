@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>813</width>
-    <height>582</height>
+    <height>578</height>
    </rect>
   </property>
   <property name="font">
@@ -1936,7 +1936,7 @@
            <item>
             <layout class="QGridLayout" name="gridLayout_3" columnstretch="0,10">
              <item row="1" column="1">
-              <widget class="QLabel" name="labSCX">
+              <widget class="QLabel" name="labTAdr">
                <property name="text">
                 <string>2</string>
                </property>
@@ -1945,19 +1945,19 @@
              <item row="0" column="0">
               <widget class="QLabel" name="label">
                <property name="text">
-                <string>NT</string>
+                <string>VADR</string>
                </property>
               </widget>
              </item>
              <item row="1" column="0">
               <widget class="QLabel" name="label_3">
                <property name="text">
-                <string>SX</string>
+                <string>TADR</string>
                </property>
               </widget>
              </item>
              <item row="0" column="1">
-              <widget class="QLabel" name="labNTAdr">
+              <widget class="QLabel" name="labVAdr">
                <property name="text">
                 <string>1</string>
                </property>
@@ -1966,14 +1966,14 @@
              <item row="2" column="0">
               <widget class="QLabel" name="label_5">
                <property name="text">
-                <string>SY</string>
+                <string>*</string>
                </property>
               </widget>
              </item>
              <item row="2" column="1">
               <widget class="QLabel" name="labSCY">
                <property name="text">
-                <string>3</string>
+                <string/>
                </property>
               </widget>
              </item>

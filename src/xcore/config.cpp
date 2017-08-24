@@ -125,7 +125,7 @@ void saveConfig() {
 	fprintf(cfile, "scale = %i\n", conf.vid.scale);
 	fprintf(cfile, "greyscale = %s\n", YESNO(conf.vid.grayScale));
 	fprintf(cfile, "bordersize = %i\n", int(conf.brdsize * 100));
-	fprintf(cfile, "noflick = %s%%\n", YESNO(conf.vid.noflic));
+	fprintf(cfile, "noflick = %i%%\n", conf.vid.noflic);
 
 	fprintf(cfile, "\n[ROMSETS]\n");
 	foreach(xRomset rms, conf.rsList) {

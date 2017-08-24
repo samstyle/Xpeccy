@@ -591,7 +591,7 @@ void vidNESLine(Video* vid) {
 	ppuLine(vid->ppu);
 }
 
-void vidNEShbl(Video* vid) {
+void vidNES_HB(Video* vid) {
 	ppuHBL(vid->ppu);
 }
 
@@ -616,6 +616,7 @@ typedef struct {
 	void(*framCall)(Video*);		// vblank start
 } xVideoMode;
 
+// id,(@every_visible_dot),(@HBlank),(@LineStart),(@VBlank)
 static xVideoMode vidModeTab[] = {
 	{VID_NORMAL, vidDrawNormal, NULL, NULL, NULL},
 	{VID_ALCO, vidDrawAlco, NULL, NULL, NULL},
@@ -631,7 +632,7 @@ static xVideoMode vidModeTab[] = {
 	{VID_PRF_MC, vidProfiScr, NULL, NULL, NULL},
 	{VID_V9938, vidDrawV9938, NULL, NULL, vidFrameV9938},
 	{VID_GBC, vidGBDraw, vidGBLine, NULL, vidGBFram},
-	{VID_NES, vidNESDraw, vidNESLine, NULL, vidNESFram},
+	{VID_NES, vidNESDraw, vidNES_HB, vidNESLine, vidNESFram},
 	{VID_UNKNOWN, vidDrawBorder, NULL, NULL, NULL}
 };
 

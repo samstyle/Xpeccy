@@ -51,6 +51,7 @@ void nesReset(Computer* comp) {
 	comp->vid->ppu->mrd = nes_ppu_ext_rd;
 	comp->vid->ppu->mwr = nes_ppu_ext_wr;
 	comp->vid->ppu->data = comp;
+	comp->slot->reg00 = 0x0c;	// MMC1
 	ppuReset(comp->vid->ppu);
 	vidSetMode(comp->vid, VID_NES);
 /*

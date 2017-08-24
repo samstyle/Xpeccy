@@ -193,7 +193,7 @@ void apuDigiSync(apuChannel* ch, extmrd mrd, void* data) {
 
 int apuDigiVolume(apuChannel* ch) {
 	if (ch->off) return 0;
-	return  ch->vol >> 2;
+	return  ch->vol;
 }
 
 // ...

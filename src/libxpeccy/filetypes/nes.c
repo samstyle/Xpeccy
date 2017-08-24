@@ -57,7 +57,7 @@ int loadNes(Computer* comp, const char* name) {
 				break;
 			case NES_HD_20:
 				maper = ((hd.flag6 >> 4) & 0x0f) | (hd.flag7 & 0xf0);		// | 4 bits more
-				pal = hd.flag9 & 1;
+				pal = (hd.flag9 & 1) ? 0 : 1;
 				break;
 			default:
 				maper = (hd.flag6 >> 4) & 0x0f;

@@ -8,6 +8,10 @@
 int res3 = 0;	// tick in op, wich has last OUT/MWR (and vidSync)
 int res4 = 0;	// save last res3 (vidSync on OUT/MWR process do res3-res4 ticks)
 
+static vLayout gbcLay = {{228,154},{0,0},{68,10},{160,144},{0,0},64};
+static vLayout nesNTSCLay = {{341,262},{0,0},{85,22},{256,240},{0,0},64};
+static vLayout nesPALLay = {{341,312},{0,0},{85,72},{256,240},{0,0},64};
+
 // ...
 
 void zxMemRW(Computer* comp, int adr) {
@@ -278,13 +282,20 @@ void compUpdateTimings(Computer* comp) {
 			// cpu frq (1.78MHz)
 			// smallest wave period = cpu frq / 16		(~112KHz)
 			// pal:ntsc = 48:60 Hz frame irq
+			//printf("%s\n",comp->nes.pal ? "PAL" : "NTSC");
+			comp->vid->lockLayout = 0;
 			if (comp->nes.pal) {
-				perNoTurbo = perNoTurbo * 6 / 5;			// 60Hz(NTSC)->50Hz (if PAL using)
-//				comp->nsPerTick = perNoTurbo / comp->frqMul;
+				perNoTurbo = 1e3 / 1.66;
+				vidSetLayout(comp->vid, nesPALLay);
+				vidUpdateTimings(comp->vid, perNoTurbo / 3.2);		// 3.2 ???
+			} else {
+				perNoTurbo = 1e3 / 1.79;
+				vidSetLayout(comp->vid, nesNTSCLay);
+				vidUpdateTimings(comp->vid, perNoTurbo / 3);		// 1 CPU tick = 3 PPU ticks
 			}
+			comp->vid->lockLayout = 1;
 			comp->nesapu->wper = perNoTurbo * 16 / 2;			// most high tone frq = CPU/16
 			comp->nesapu->tper = perNoTurbo * 14915 / 2;			// ~240 Hz @ 1.78MHz (full period)
-			vidUpdateTimings(comp->vid, perNoTurbo / 3);		// 1 CPU tick = 3 PPU ticks
 			break;
 		default:
 			vidUpdateTimings(comp->vid, perNoTurbo >> 1);
@@ -309,9 +320,6 @@ void compSetTurbo(Computer* comp, int mult) {
 
 // hardware
 
-static vLayout gbcLay = {{228,154},{0,0},{68,10},{160,144},{0,0},64};
-static vLayout nesLay = {{341,262},{0,0},{85,22},{256,240},{0,0},64};
-
 void compSetHardware(Computer* comp, const char* name) {
 	HardWare* hw = findHardware(name);
 	if (hw == NULL) return;
@@ -319,7 +327,6 @@ void compSetHardware(Computer* comp, const char* name) {
 	comp->vid->lockLayout = 0;
 	switch(hw->id) {
 		case HW_NES:
-			vidSetLayout(comp->vid, nesLay);
 			comp->vid->lockLayout = 1;
 			break;
 		case HW_GBC:
@@ -365,7 +372,7 @@ int compExec(Computer* comp) {
 		comp->padr = 0;
 	}
 	// vidSync(comp->vid, comp->nsPerTick);
-// NMI
+// NMI (!!! ZX ONLY)
 	if ((comp->cpu->pc > 0x3fff) && comp->nmiRequest && !comp->rzx.play) {
 		comp->cpu->intrq |= 2;		// request nmi
 		comp->dos = 1;			// set dos page
@@ -393,18 +400,19 @@ int compExec(Computer* comp) {
 		comp->frmStrobe = 1;
 	}
 // breakpoints
-	unsigned char* ptr = getBrkPtr(comp, comp->cpu->pc);
-	if (*ptr & (MEM_BRK_FETCH | MEM_BRK_TFETCH)) {
-		comp->brk = 1;
-		*ptr &= ~MEM_BRK_TFETCH;
+	if (!comp->debug) {
+		unsigned char* ptr = getBrkPtr(comp, comp->cpu->pc);
+		if (*ptr & (MEM_BRK_FETCH | MEM_BRK_TFETCH)) {
+			comp->brk = 1;
+			*ptr &= ~MEM_BRK_TFETCH;
+		}
+		if (comp->cpu->intrq && comp->brkirq)
+			comp->brk = 1;
 	}
-	if (comp->debug)
-		comp->brk = 0;
+
 // sync devices
 
-//	compDevSync(comp, nsTime);
-
-	comp->beep->accum += nsTime;
+	comp->beep->accum += nsTime;			// TODO: move to ZX/MSX sync
 	comp->tapCount += nsTime;
 	difSync(comp->dif, nsTime);
 	gsSync(comp->gs, nsTime);

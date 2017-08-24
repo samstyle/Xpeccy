@@ -25,7 +25,6 @@ typedef struct {
 	unsigned char reg[8];
 	unsigned char oam[256];			// 256 bytes OAM
 	unsigned char mem[0x4000];		// 16K of video mem
-//	int ntmask;
 	// buffers
 	unsigned char bgline[0x200];		// bg (full 2 screens)
 	unsigned char spline[0x108];		// sprites (8 max)
@@ -42,6 +41,11 @@ typedef struct {
 	unsigned short spadr;	// 8x8 sprites tiles adr
 	unsigned short bgadr;	// bg tiles adr
 	int finex;		// = x scroll low 3 bits
+
+	int nt;
+	int finey;
+	int scx;
+	int scy;
 } nesPPU;
 
 nesPPU* ppuCreate(vRay*);
