@@ -58,7 +58,7 @@ void mosGetABSXw(CPU* cpu) {
 	cpu->hptr = cpu->mrd(cpu->pc++, 0, cpu->data);
 	cpu->tmp = cpu->hptr;
 	cpu->mptr += cpu->lx;
-	if (cpu->hptr != cpu->tmp)
+	if ((cpu->hptr != cpu->tmp) && !cpu->sta)
 		cpu->t++;
 }
 
@@ -73,7 +73,7 @@ void mosGetABSYw(CPU* cpu) {
 	cpu->hptr = cpu->mrd(cpu->pc++, 0, cpu->data);
 	cpu->tmp = cpu->hptr;
 	cpu->mptr += cpu->ly;
-	if (cpu->hptr != cpu->tmp)
+	if ((cpu->hptr != cpu->tmp) && !cpu->sta)
 		cpu->t++;
 }
 
@@ -109,7 +109,7 @@ void mosGetINDYw(CPU* cpu) {
 	cpu->lptr = cpu->tmp;
 	cpu->tmp = cpu->hptr;
 	cpu->mptr += cpu->ly;
-	if (cpu->tmp != cpu->hptr)
+	if ((cpu->hptr != cpu->tmp) && !cpu->sta)
 		cpu->t++;
 }
 
@@ -1609,7 +1609,7 @@ opCode mosTab[256] = {
 	{0,4,mosop8F,NULL,"sax abs :2"},
 
 	{0,2,mosop90,NULL,"bcc :3"},
-	{0,6,mosop91,NULL,"sta ind,y :1"},
+	{1,6,mosop91,NULL,"sta ind,y :1"},
 	{0,2,mosop92,NULL,"unknown"},
 	{0,2,mosop93,NULL,"unknown"},
 	{0,4,mosop94,NULL,"sty zp,x :1"},
@@ -1618,11 +1618,11 @@ opCode mosTab[256] = {
 	{0,4,mosop97,NULL,"sax zp,y :1"},
 
 	{0,2,mosop98,NULL,"tya"},
-	{0,5,mosop99,NULL,"sta abs,y :2"},
+	{1,5,mosop99,NULL,"sta abs,y :2"},
 	{0,2,mosop9A,NULL,"txs"},
 	{0,2,mosop9B,NULL,"unknown"},
 	{0,2,mosop9C,NULL,"unknown"},
-	{0,5,mosop9D,NULL,"sta abs,x :2"},
+	{1,5,mosop9D,NULL,"sta abs,x :2"},
 	{0,2,mosop9E,NULL,"unknown"},
 	{0,2,mosop9F,NULL,"unknown"},
 

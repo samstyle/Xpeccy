@@ -64,9 +64,13 @@ typedef struct {
 
 nesAPU* apuCreate(extmrd, void*);
 void apuDestroy(nesAPU*);
+
+void apuReset(nesAPU*);
 void apuSync(nesAPU*, int);
 sndPair apuVolume(nesAPU*);
 
-void apuToneDuty(apuChannel*);
+void apuWrite(nesAPU*, int, unsigned char);
+
+// void apuToneDuty(apuChannel*);
 
 #endif

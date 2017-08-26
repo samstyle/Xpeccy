@@ -65,7 +65,7 @@ int loadNes(Computer* comp, const char* name) {
 		}
 
 		printf("\nMapper #%.3X\n", maper);
-		xCardCallback* core = sltFindMaper(maper | 0x100);
+		xCardCallback* core = sltFindMaper(MAPER_NES, maper);
 		if (core->id == MAP_UNKNOWN) {
 			res = ERR_NES_MAPPER;
 		} else {

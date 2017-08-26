@@ -276,3 +276,160 @@ sndPair apuVolume(nesAPU* apu) {
 
 	return res;
 }
+
+// taked from nesdev wiki
+static int apuNoisePer[16] = {0x02,0x04,0x08,0x10,0x20,0x30,0x40,0x50,0x65,0x7F,0xBE,0xFE,0x17D,0x1FC,0x3F9,0x7F2};
+//static int apuPcmPer[16] = {428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106,  84,  72,  54};		// this is in CPU ticks
+static int apuPcmPer[16] = {54, 48, 42, 40, 36, 32, 28, 27, 24, 20, 18, 16, 13, 11, 9, 7};				// this is APU ticks (CPU/8)
+static int apuLenPAL[8] = {5,10,20,40,80,30,7,13};
+static int apuLenNTSC[8] = {6,12,24,48,96,36,8,16};
+static int apuLenGeneral[16] = {127,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+
+int apuGetLC(unsigned char val) {
+	int len;
+	switch (val & 0x88) {
+		case 0x00: len = apuLenPAL[(val >> 4) & 7]; break;
+		case 0x80: len = apuLenNTSC[(val >> 4) & 7]; break;
+		default: len = apuLenGeneral[(val >> 4) & 15]; break;
+	}
+	return len;
+}
+
+// write to registers 00..13
+
+void apuWrite(nesAPU* apu, int reg, unsigned char val) {
+	switch (reg & 0x1f) {
+		case 0x00:
+			apu->ch0.duty = (val >> 6) & 3;
+			apu->ch0.env = (val & 0x10) ? 0 : 1;
+			apu->ch0.elen = (val & 0x20) ? 0 : 1;
+			if (apu->ch0.env) {
+				//printf("ch0 env %.2X\n",val);
+				apu->ch0.eper = ((val & 15) + 1);
+				apu->ch0.ecnt = apu->ch0.eper;
+				apu->ch0.vol = 0x0f;
+			} else {
+				apu->ch0.vol = val & 15;
+			}
+			apuToneDuty(&apu->ch0);
+			break;
+		case 0x01:
+//				printf("ch0 sweep %.2X\n",val);
+			apu->ch0.sweep = (val & 0x80) ? 1 : 0;
+			apu->ch0.sper = ((val >> 4) & 7) + 1;
+			apu->ch0.sdir = (val & 0x08) ? 1 : 0;
+			apu->ch0.sshi = val & 7;
+			break;
+		case 0x02:
+			apu->ch0.hper &= 0x700;
+			apu->ch0.hper |= (val & 0xff);
+			apuToneDuty(&apu->ch0);
+			break;
+		case 0x03:
+			//printf("wr 4003,%.2X\n",val);
+			apu->ch0.hper &= 0xff;
+			apu->ch0.hper |= ((val << 8) & 0x0700);
+			switch (val & 0x88) {
+				case 0x00: apu->ch0.len = apuLenPAL[(val >> 4) & 7]; break;
+				case 0x80: apu->ch0.len = apuLenNTSC[(val >> 4) & 7]; break;
+				default: apu->ch0.len = apuLenGeneral[(val >> 4) & 15]; break;
+			}
+			apuToneDuty(&apu->ch0);
+			apu->ch0.pcnt = 0;
+			apu->ch0.ecnt = 0;
+			//printf("CH0 len = %i, p0 = %i, p1 = %i\n", apu->ch0.len, apu->ch0.per0, apu->ch0.per1);
+			break;
+		// ch1 : tone 1
+		case 0x04:
+			apu->ch1.duty = (val >> 6) & 3;
+			apu->ch1.env = (val & 0x10) ? 0 : 1;
+			apu->ch1.elen = (val & 0x20) ? 0 : 1;
+			if (apu->ch1.env) {
+				apu->ch1.eper = ((val & 15) + 1);
+				apu->ch1.ecnt = apu->ch1.eper;
+				apu->ch1.vol = 0x0f;
+			} else {
+				apu->ch1.vol = val & 15;
+			}
+			apuToneDuty(&apu->ch1);
+			break;
+		case 0x05:
+			apu->ch1.sweep = (val & 0x80) ? 1 : 0;
+			apu->ch1.sper = ((val >> 4) & 7) + 1;
+			apu->ch1.sdir = (val & 0x08) ? 1 : 0;
+			apu->ch1.sshi = val & 7;
+			break;
+		case 0x06:
+			apu->ch1.hper &= 0x700;
+			apu->ch1.hper |= val;
+			apuToneDuty(&apu->ch1);
+			break;
+		case 0x07:
+			apu->ch1.hper &= 0xff;
+			apu->ch1.hper |= ((val << 8) & 0x0700);
+			apu->ch1.len = apuGetLC(val);
+			apuToneDuty(&apu->ch1);
+			apu->ch1.pcnt = 0;
+			apu->ch0.ecnt = 0;
+			break;
+		// ch2 : triangle
+		case 0x08:
+			apu->cht.elen = (val & 0x80) ? 0 : 1;
+			apu->cht.lcnt = (val & 0x7f);
+			break;
+		case 0x09:
+			break;
+		case 0x0a:
+			apu->cht.hper &= 0x700;
+			apu->cht.hper |= val & 0xff;
+			apu->cht.pcnt = apu->cht.hper;
+			break;
+		case 0x0b:
+			apu->cht.hper &= 0xff;
+			apu->cht.hper |= (val << 8) & 0x700;
+			apu->cht.pcnt = 0;
+			apu->cht.len = apuGetLC(val);
+			apu->cht.vol = 8;
+			apu->cht.dir = 1;
+			break;
+		// ch3 : noise
+		case 0x0c:
+			apu->chn.elen = (val & 0x20) ? 0 : 1;
+			apu->chn.env = (val & 0x10) ? 0 : 1;
+			if (apu->chn.env) {
+				apu->chn.eper = (val & 15) + 1;
+				apu->chn.ecnt = apu->chn.eper;
+				apu->chn.vol = 0x0f;
+			} else {
+				apu->chn.vol = val & 15;
+			}
+			break;
+		case 0x0d:
+			break;
+		case 0x0e:
+			apu->chn.hper = apuNoisePer[val & 15];
+			// b7:loop noise (short generator)
+			break;
+		case 0x0f:
+			apu->chn.len = apuGetLC(val);
+			break;
+		// ch4 : dmc
+		case 0x10:
+			apu->chd.env = (val & 0x80) ? 1 : 0;		// IRQ enable
+			apu->chd.elen = (val & 0x40) ? 1 : 0;		// loop
+			apu->chd.hper = apuPcmPer[val & 0x0f];		// period
+			apu->chd.pcnt = 0;
+			break;
+		case 0x11:
+			apu->chd.vol = val & 0x7f;
+			break;
+		case 0x12:
+			apu->chd.sadr = 0xc000 | ((val << 6) & 0x3fc0);
+			apu->chd.cadr = apu->chd.sadr;
+			break;
+		case 0x13:
+			apu->chd.lcnt = ((val << 4) & 0x0ff0) | 1;	// this is length in bytes
+			apu->chd.len = apu->chd.lcnt;
+			break;
+	}
+}

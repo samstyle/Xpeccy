@@ -2,9 +2,9 @@
 
 void detectType(xCartridge* slot) {
 	int test, radr, adr;
-	sltSetMaper(slot, slot->mapType);
+	sltSetMaper(slot, MAPER_MSX, slot->mapType);
 	if (slot->memMask < 0x8000) {
-		sltSetMaper(slot, MAP_MSX_NOMAPPER);		// 16/32K : no mapper
+		sltSetMaper(slot, MAPER_MSX, MAP_MSX_NOMAPPER);		// 16/32K : no mapper
 	} else {
 		for (adr = 0; adr < 0x4000; adr++) {
 			radr = adr & slot->memMask;
@@ -12,13 +12,13 @@ void detectType(xCartridge* slot) {
 			test |= slot->data[radr++] << 8;
 			test |= slot->data[radr];
 			if ((test == 0x320050) || (test == 0x3200b0)) {
-				sltSetMaper(slot, MAP_MSX_KONAMI5);
+				sltSetMaper(slot, MAPER_MSX, MAP_MSX_KONAMI5);
 				break;
 			} else if ((test == 0x320068) || (test == 0x320078)) {
-				sltSetMaper(slot, MAP_MSX_ASCII8);
+				sltSetMaper(slot, MAPER_MSX, MAP_MSX_ASCII8);
 				break;
 			} else if (test == 0x3200a0) {
-				sltSetMaper(slot, MAP_MSX_KONAMI4);
+				sltSetMaper(slot, MAPER_MSX, MAP_MSX_KONAMI4);
 				break;
 			}
 		}

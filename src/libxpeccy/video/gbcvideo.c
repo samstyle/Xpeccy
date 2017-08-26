@@ -90,7 +90,7 @@ void gbcvLine(GBCVid* vid) {
 	int adr;
 	int pos;
 // WIN
-	if (vid->winen && !vid->winblock && (vid->ray->y >= vid->win.y)) {
+	if (vid->winen && (vid->ray->y >= vid->win.y)) {
 		tadr = vid->winmapadr + ((vid->wline & 0xf8) << 2);
 		pos = vid->win.x;
 		for (tx = 0; tx < 32; tx++) {
@@ -124,7 +124,7 @@ void gbcvLine(GBCVid* vid) {
 		vid->wline++;
 	}
 // OAM (sprites)
-	if (vid->spren && !vid->sprblock) {
+	if (vid->spren) {
 		adr = 0;
 		tx = 10;	// max 10 sprites in line
 		while ((adr < 0xa0) && (tx > 0)) {

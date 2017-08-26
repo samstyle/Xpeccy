@@ -731,23 +731,23 @@ void gbReset(Computer* comp) {
 		printf("Cartrige type %.2X\n",type);
 		switch (type) {
 			case 0x00:
-				sltSetMaper(slot, MAP_GB_NOMAP);	// rom only (up to 32K)
+				sltSetMaper(slot, MAPER_GB, MAP_GB_NOMAP);	// rom only (up to 32K)
 				break;
 			case 0x01:
 			case 0x02:
 			case 0x03:
-				sltSetMaper(slot, MAP_GB_MBC1);		// mbc1
+				sltSetMaper(slot, MAPER_GB, MAP_GB_MBC1);		// mbc1
 				break;
 			case 0x05:
 			case 0x06:
-				sltSetMaper(slot, MAP_GB_MBC2);		// mbc2
+				sltSetMaper(slot, MAPER_GB, MAP_GB_MBC2);		// mbc2
 				break;
 			case 0x0f:
 			case 0x10:
 			case 0x11:
 			case 0x12:
 			case 0x13:
-				sltSetMaper(slot, MAP_GB_MBC3);		// mbc3
+				sltSetMaper(slot, MAPER_GB, MAP_GB_MBC3);		// mbc3
 				break;
 			case 0x19:
 			case 0x1a:
@@ -756,10 +756,10 @@ void gbReset(Computer* comp) {
 			case 0x1d:
 			case 0x1e:
 				slot->memMap[0] = 0;
-				sltSetMaper(slot, MAP_GB_MBC5);		// mbc5
+				sltSetMaper(slot, MAPER_GB, MAP_GB_MBC5);		// mbc5
 				break;
 			default:
-				sltSetMaper(slot, MAP_UNKNOWN);
+				sltSetMaper(slot, MAPER_GB, MAP_UNKNOWN);
 				break;
 		}
 

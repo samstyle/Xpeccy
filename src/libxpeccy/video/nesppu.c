@@ -231,7 +231,7 @@ void ppuDraw(nesPPU* ppu) {
 void ppuHBL(nesPPU* ppu) {
 	// here: render sprites
 	int cnt;
-	if (ppu->ray->y > 238) return;
+	if (ppu->ray->y > 239) return;
 
 	if (ppu->bgen) {
 		ppu->vadr = ppuYinc(ppu->vadr);		// increment vertical position in vadr
@@ -241,12 +241,13 @@ void ppuHBL(nesPPU* ppu) {
 
 	memset(ppu->spline, 0x00, 256);		// sprites
 	memset(ppu->prline, 0x00, 256);		// sprites priority
-	if (!ppu->spen) return;
-	cnt = ppuRenderSpriteLine(ppu, ppu->ray->y, ppu->spline, ppu->prline, ppu->spadr, 8);
-	if (cnt > 7) ppu->spover = 1;		// 8+ sprites @ line
-	if (!ppu->spleft8) {
-		memset(ppu->spline, 0x00, 0x08);
-		memset(ppu->prline, 0x00, 0x08);
+	if (ppu->spen) {
+		cnt = ppuRenderSpriteLine(ppu, ppu->ray->y, ppu->spline, ppu->prline, ppu->spadr, 8);
+		if (cnt > 7) ppu->spover = 1;		// 8+ sprites @ line
+		if (!ppu->spleft8) {
+			memset(ppu->spline, 0x00, 0x08);
+			memset(ppu->prline, 0x00, 0x08);
+		}
 	}
 }
 
@@ -268,18 +269,15 @@ void ppuLine(nesPPU* ppu) {
 			break;
 	}
 
-	if (ppu->ray->y > 238) return;
+	if (ppu->ray->y > 239) return;
 
 	if (ppu->ray->y == 0) {				// @ very 1st line
 		if (ppu->bgen) {
 			ppu->vadr &= 0x041f;		// copy Y related bits
 			ppu->vadr |= (ppu->tadr & ~0x041f);
-//			ppu->tadr = ((ppu->finey << 12) & 0x7000) | ((ppu->nt << 10) & 0x0c00) | ((ppu->scx << 5) & 0x3e0) | (ppu->scy & 0x1f);
-//			ppu->vadr = ppu->tadr;
 		}
 	}
-
-// pre-render 2 tiles
+	// pre-render 2 tiles
 	if (ppu->bgen) {
 		ppuRenderTile(ppu, ppu->bgline, -ppu->finex, ppu->vadr, ppu->bgadr);
 		ppu->vadr = ppuXcoarse(ppu->vadr);
@@ -372,7 +370,6 @@ void ppuWrite(nesPPU* ppu, int reg, unsigned char val) {
 			}
 			break;
 		case 6:
-#if 1
 			if (ppu->latch) {
 				ppu->tadr &= 0xff00;
 				ppu->tadr |= (val & 0xff);
@@ -383,18 +380,6 @@ void ppuWrite(nesPPU* ppu, int reg, unsigned char val) {
 				ppu->tadr |= ((val << 8) & 0x3f00);
 				ppu->latch = 1;
 			}
-#else
-			if (ppu->latch) {
-				ppu->vadr &= 0xff00;
-				ppu->vadr |= (val & 0xff);
-				ppu->latch = 0;
-			} else {
-				ppu->vadr &= 0x00ff;
-				ppu->vadr |= ((val << 8) & 0x3f00);
-				ppu->latch = 1;
-			}
-#endif
-
 			break;
 		case 7:
 			adr = ppu->vadr & 0x3fff;

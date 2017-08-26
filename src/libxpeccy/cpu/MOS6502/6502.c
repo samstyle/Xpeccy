@@ -50,7 +50,8 @@ int m6502_exec(CPU* cpu) {
 		cpu->noint = 0;
 		com = cpu->mrd(cpu->pc++, 1, cpu->data);
 		opCode* op = &mosTab[com];
-		cpu->t = op->t;			// 2T fetch
+		cpu->t = op->t;
+		cpu->sta = op->prefix;
 		op->exec(cpu);
 		res = cpu->t;
 	}

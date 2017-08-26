@@ -8,28 +8,43 @@ extern "C" {
 #include <stdio.h>
 
 // cartridge mapers
+
+#define MAP_UNKNOWN -1
+
 enum {
+	MAPER_MSX = 0,
+	MAPER_GB,
+	MAPER_NES,
+};
+
 // MSX
-	MAP_UNKNOWN = -1,
+enum {
 	MAP_MSX_NOMAPPER = 0,
 	MAP_MSX_KONAMI4,
 	MAP_MSX_KONAMI5,
 	MAP_MSX_ASCII8,
-	MAP_MSX_ASCII16,
+	MAP_MSX_ASCII16
+};
 // GameBoy
+enum {
 	MAP_GB_NOMAP,
 	MAP_GB_MBC1,
 	MAP_GB_MBC2,
 	MAP_GB_MBC3,
-	MAP_GB_MBC5,
+	MAP_GB_MBC5
+};
 // NES (1.0)
-	MAP_NES_NROM = 0x100,
-	MAP_NES_MMC1 = 0x101,
-	MAP_NES_UNROM = 0x102,
-	MAP_NES_CNROM = 0x103,
-	MAP_NES_MMC3 = 0x104,
-	MAP_NES_AOROM = 0x107,
-	MAP_NES_CAMERICA = 0x147
+enum {
+	MAP_NES_NROM = 0x00,
+	MAP_NES_MMC1 = 0x01,
+	MAP_NES_UNROM = 0x02,
+	MAP_NES_CNROM = 0x03,
+	MAP_NES_MMC3 = 0x04,
+	MAP_NES_AOROM = 0x07,
+	MAP_NES_CAMERICA = 0x47,
+	MAP_NES_VRC3 = 0x49,
+	MAP_NES_VRC1 = 0x4b,
+	MAP_NES_VRC7 = 0x55
 };
 
 // slot memory type
@@ -112,8 +127,8 @@ xCartridge* sltCreate();
 void sltDestroy(xCartridge*);
 void sltEject(xCartridge*);
 
-xCardCallback* sltFindMaper(int);
-int sltSetMaper(xCartridge*, int);
+xCardCallback* sltFindMaper(int,int);
+int sltSetMaper(xCartridge*,int, int);
 
 unsigned char sltRead(xCartridge*, int, unsigned short);
 void sltWrite(xCartridge*, int, unsigned short, unsigned char);

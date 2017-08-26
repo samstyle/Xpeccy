@@ -113,7 +113,7 @@ unsigned char slt_gb_all_rd(xCartridge* slot, int mt, unsigned short adr, int ra
 	if (adr & 0x8000) {
 		if (slot->ramen)
 			res = slot->ram[radr & 0x7fff];
-	} else if (slot->data) {
+	} else if (slot->data != NULL) {
 		res = slot->data[radr & slot->memMask];
 	}
 	return res;
@@ -591,19 +591,29 @@ void slt_nes_camerica_wr(xCartridge* slot, int mt, unsigned short adr, int radr,
 
 // table
 
-static xCardCallback maperTab[] = {
+static xCardCallback dumMapers[] = {
+	{MAP_UNKNOWN, slt_rd_dum, slt_wr_dum, slt_adr_dum}
+};
+
+static xCardCallback msxMapers[] = {
 	{MAP_MSX_NOMAPPER, slt_msx_all_rd, slt_wr_dum, slt_msx_nomap_adr},
 	{MAP_MSX_KONAMI4, slt_msx_all_rd, slt_msx_kon4_wr, slt_msx_kon4_adr},
 	{MAP_MSX_KONAMI5, slt_msx_all_rd, slt_msx_kon5_wr, slt_msx_kon5_adr},
 	{MAP_MSX_ASCII8, slt_msx_all_rd, slt_msx_asc8_wr, slt_msx_kon5_adr},
 	{MAP_MSX_ASCII16, slt_msx_all_rd, slt_msx_asc16_wr, slt_msx_asc16_adr},
+	{MAP_UNKNOWN, slt_rd_dum, slt_wr_dum, slt_adr_dum}
+};
 
+static xCardCallback gbMapers[] = {
 	{MAP_GB_NOMAP, slt_gb_all_rd, slt_wr_dum, slt_gb_all_adr},
 	{MAP_GB_MBC1, slt_gb_all_rd, slt_gb_mbc1_wr, slt_gb_all_adr},
 	{MAP_GB_MBC2, slt_gb_all_rd, slt_gb_mbc2_wr, slt_gb_all_adr},
 	{MAP_GB_MBC3, slt_gb_all_rd, slt_gb_mbc3_wr, slt_gb_all_adr},
 	{MAP_GB_MBC5, slt_gb_all_rd, slt_gb_mbc5_wr, slt_gb_all_adr},
+	{MAP_UNKNOWN, slt_rd_dum, slt_wr_dum, slt_adr_dum}
+};
 
+static xCardCallback nesMapers[] = {
 	{MAP_NES_NROM, slt_nes_all_rd, slt_wr_dum, slt_nes_nrom_adr},
 	{MAP_NES_MMC1, slt_nes_all_rd, slt_nes_mmc1_wr, slt_nes_mmc1_adr},
 	{MAP_NES_UNROM, slt_nes_all_rd, slt_nes_unrom_wr, slt_nes_unrom_adr},
@@ -611,20 +621,39 @@ static xCardCallback maperTab[] = {
 	{MAP_NES_MMC3, slt_nes_all_rd, slt_nes_mmc3_wr, slt_nes_mmc3_adr},
 	{MAP_NES_AOROM, slt_nes_all_rd, slt_nes_aorom_wr, slt_nes_aorom_adr},
 	{MAP_NES_CAMERICA, slt_nes_all_rd, slt_nes_camerica_wr, slt_nes_camerica_adr},
-
 	{MAP_UNKNOWN, slt_rd_dum, slt_wr_dum, slt_adr_dum}
 };
 
-xCardCallback* sltFindMaper(int id) {
+typedef struct {
+	int id;
+	xCardCallback* tab;
+} xCardHWPtr;
+
+static xCardHWPtr maperTab[] = {
+	{MAPER_MSX, msxMapers},
+	{MAPER_GB, gbMapers},
+	{MAPER_NES, nesMapers},
+	{MAP_UNKNOWN, dumMapers}
+};
+
+xCardCallback* sltFindMaper(int hw, int id) {
 	int idx = 0;
-	while ((maperTab[idx].id != id) && (maperTab[idx].id != MAP_UNKNOWN)) {
+	xCardCallback* tab;
+	while ((maperTab[idx].id != hw) && (maperTab[idx].id != MAP_UNKNOWN)) {
 		idx++;
 	}
-	return &maperTab[idx];
+	if (maperTab[idx].id == MAP_UNKNOWN)
+		id = MAP_UNKNOWN;
+	tab = maperTab[idx].tab;
+	idx = 0;
+	while ((tab[idx].id != id) && (tab[idx].id != MAP_UNKNOWN)) {
+		idx++;
+	}
+	return &tab[idx];
 }
 
-int sltSetMaper(xCartridge* slt, int id) {
-	slt->core = sltFindMaper(id);
+int sltSetMaper(xCartridge* slt, int hw, int id) {
+	slt->core = sltFindMaper(hw, id);
 	return (slt->core->id == MAP_UNKNOWN) ? 0 : 1;
 }
 
@@ -633,7 +662,7 @@ int sltSetMaper(xCartridge* slt, int id) {
 xCartridge* sltCreate() {
 	xCartridge* slt = (xCartridge*)malloc(sizeof(xCartridge));
 	memset(slt, 0x00, sizeof(xCartridge));
-	sltSetMaper(slt, MAP_UNKNOWN);
+	sltSetMaper(slt, MAP_UNKNOWN, MAP_UNKNOWN);
 	return slt;
 }
 
@@ -670,7 +699,7 @@ void sltEject(xCartridge* slot) {
 		free(slot->chrrom);
 		slot->chrrom = NULL;
 	}
-	sltSetMaper(slot, MAP_UNKNOWN);
+	sltSetMaper(slot, MAP_UNKNOWN, MAP_UNKNOWN);
 }
 
 unsigned char sltRead(xCartridge* slt, int mt, unsigned short adr) {

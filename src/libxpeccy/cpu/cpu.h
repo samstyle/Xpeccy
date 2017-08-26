@@ -94,6 +94,7 @@ struct CPU {
 	unsigned speed:1;		// LR35902: double speed mode (TODO)
 	unsigned speedrq:1;		// LR35902: request speed change after STOP command
 	unsigned dihalt:1;		// LR35902: HALT when DI: repeat next opcode
+	unsigned sta:1;			// MOS6502: STA (ABSX,ABSY,INDY) have different timings
 
 	int type;			// cpu type id
 
