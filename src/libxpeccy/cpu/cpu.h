@@ -85,7 +85,6 @@ enum {
 
 struct CPU {
 	unsigned halt:1;		// cpu halted, undo on interrput
-//	unsigned inth:1;		// next step is 1:handle interrupt, 0: exec opcode
 	unsigned resPV:1;		// Z80: reset PV flag on INT
 	unsigned noint:1;		// Z80: don't handle INT after EI
 	unsigned wait:1;		// Z80: WAIT signal
@@ -94,7 +93,8 @@ struct CPU {
 	unsigned speed:1;		// LR35902: double speed mode (TODO)
 	unsigned speedrq:1;		// LR35902: request speed change after STOP command
 	unsigned dihalt:1;		// LR35902: HALT when DI: repeat next opcode
-	unsigned sta:1;			// MOS6502: STA (ABSX,ABSY,INDY) have different timings
+	unsigned sta:1;			// MOS6502: don't add 1T on (ABSX,ABSY,INDY)
+	unsigned nod:1;			// MOS6502: ignore flag D in ADC/SBC
 
 	int type;			// cpu type id
 

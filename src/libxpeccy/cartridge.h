@@ -35,16 +35,16 @@ enum {
 };
 // NES (1.0)
 enum {
-	MAP_NES_NROM = 0x00,
-	MAP_NES_MMC1 = 0x01,
-	MAP_NES_UNROM = 0x02,
-	MAP_NES_CNROM = 0x03,
-	MAP_NES_MMC3 = 0x04,
-	MAP_NES_AOROM = 0x07,
-	MAP_NES_CAMERICA = 0x47,
-	MAP_NES_VRC3 = 0x49,
-	MAP_NES_VRC1 = 0x4b,
-	MAP_NES_VRC7 = 0x55
+	MAP_NES_NROM = 0,
+	MAP_NES_MMC1 = 1,
+	MAP_NES_UNROM = 2,
+	MAP_NES_CNROM = 3,
+	MAP_NES_MMC3 = 4,
+	MAP_NES_AOROM = 7,
+	MAP_NES_CAMERICA = 71,
+	MAP_NES_VRC3 = 73,
+	MAP_NES_VRC1 = 75,
+	MAP_NES_VRC7 = 85
 };
 
 // slot memory type
@@ -78,6 +78,7 @@ typedef struct {
 	unsigned char (*rd)(xCartridge*, int, unsigned short, int);
 	void (*wr)(xCartridge*, int, unsigned short, int, unsigned char);
 	int (*adr)(xCartridge*, int, unsigned short);
+	void (*chk)(xCartridge*, unsigned short);
 } xCardCallback;
 
 struct xCartridge {
@@ -88,10 +89,10 @@ struct xCartridge {
 	unsigned irqen:1;		// irq enable (nes)
 	unsigned irqrl:1;		// irq reload request (nes)
 	unsigned irq:1;			// irq signal (nes)
+	unsigned irqs:1;		// irq control signal (A12 for nes mmc3)
 
 	char name[FILENAME_MAX];
 	int memMap[4];			// max 4x8K PRG pages
-//	int chrMap[8];			// max 8x1K CHR pages
 	int prglast;			// last 16K PRG page number
 	int mapType;			// user defined mapper type, if auto-detect didn't worked (msx)
 
@@ -132,6 +133,7 @@ int sltSetMaper(xCartridge*,int, int);
 
 unsigned char sltRead(xCartridge*, int, unsigned short);
 void sltWrite(xCartridge*, int, unsigned short, unsigned char);
+void sltChecker(xCartridge*, unsigned short);
 
 // translate ppu nt vadr according mirroring type
 unsigned short nes_nt_vadr(xCartridge*, unsigned short);

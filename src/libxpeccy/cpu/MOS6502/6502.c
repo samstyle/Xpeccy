@@ -6,10 +6,14 @@
 extern opCode mosTab[256];
 
 void m6502_reset(CPU* cpu) {
+	cpu->lock = 0;
 	cpu->intrq = 0;
 	cpu->inten = MOS6502_INT_BRK | MOS6502_INT_NMI;		// brk/nmi enabled
-	cpu->sp = 0x1ff;	// segment 01xx is stack
-	cpu->f |= MFI;		// irq int disabled
+	cpu->sp = 0x1fd;	// segment 01xx is stack
+	cpu->f = 0x24;
+	cpu->a = 0;
+	cpu->lx = 0;
+	cpu->ly = 0;
 	cpu->lpc = cpu->mrd(0xfffc, 0, cpu->data);
 	cpu->hpc = cpu->mrd(0xfffd, 0, cpu->data);
 //	printf("mos pc = %.4X\n", cpu->pc);
@@ -42,6 +46,7 @@ int m6502_int(CPU* cpu) {
 
 int m6502_exec(CPU* cpu) {
 	int res = 0;
+	if (cpu->lock) return 1;
 	unsigned char com;
 	cpu->intrq &= cpu->inten;
 	if (cpu->intrq && !cpu->noint) {

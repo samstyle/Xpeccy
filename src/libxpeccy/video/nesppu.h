@@ -38,6 +38,7 @@ typedef struct {
 	unsigned char oamadr;	// oam access address
 	ePair(vadr,vah,val);	// videomem access addr
 	unsigned short tadr;	// tmp vadr
+	unsigned short zadr;	// for debug
 	unsigned short spadr;	// 8x8 sprites tiles adr
 	unsigned short bgadr;	// bg tiles adr
 	int finex;		// = x scroll low 3 bits

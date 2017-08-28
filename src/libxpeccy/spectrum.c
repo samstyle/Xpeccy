@@ -287,11 +287,11 @@ void compUpdateTimings(Computer* comp) {
 			if (comp->nes.pal) {
 				perNoTurbo = 1e3 / 1.66;
 				vidSetLayout(comp->vid, nesPALLay);
-				vidUpdateTimings(comp->vid, perNoTurbo / 3.2);		// 3.2 ???
+				vidUpdateTimings(comp->vid, perNoTurbo / 3.2);		// 16 ticks = 5 dots
 			} else {
 				perNoTurbo = 1e3 / 1.79;
 				vidSetLayout(comp->vid, nesNTSCLay);
-				vidUpdateTimings(comp->vid, perNoTurbo / 3);		// 1 CPU tick = 3 PPU ticks
+				vidUpdateTimings(comp->vid, perNoTurbo / 3);		// 15 ticks = 5 dots
 			}
 			comp->vid->lockLayout = 1;
 			comp->nesapu->wper = perNoTurbo * 16 / 2;			// most high tone frq = CPU/16
@@ -325,9 +325,11 @@ void compSetHardware(Computer* comp, const char* name) {
 	if (hw == NULL) return;
 	comp->hw = hw;
 	comp->vid->lockLayout = 0;
+	comp->cpu->nod = 0;
 	switch(hw->id) {
 		case HW_NES:
 			comp->vid->lockLayout = 1;
+			comp->cpu->nod = 1;
 			break;
 		case HW_GBC:
 			vidSetLayout(comp->vid, gbcLay);

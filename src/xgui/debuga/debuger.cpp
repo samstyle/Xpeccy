@@ -32,7 +32,8 @@ QMap<QString, xAdr> labels;
 enum {
 	DBG_TRACE_ALL = 0x100,
 	DBG_TRACE_INT,
-	DBG_TRACE_HERE
+	DBG_TRACE_HERE,
+	DBG_TRACE_LOG
 };
 
 enum {
@@ -183,6 +184,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.actTrace->setData(DBG_TRACE_ALL);
 	ui.actTraceHere->setData(DBG_TRACE_HERE);
 	ui.actTraceINT->setData(DBG_TRACE_INT);
+	ui.actTraceLog->setData(DBG_TRACE_LOG);
 
 // disasm table
 	ui.dasmTable->setColumnWidth(0,100);
@@ -212,6 +214,9 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.tbTrace->addAction(ui.actTrace);
 	ui.tbTrace->addAction(ui.actTraceHere);
 	ui.tbTrace->addAction(ui.actTraceINT);
+#ifdef ISDEBUG
+	ui.tbTrace->addAction(ui.actTraceLog);
+#endif
 
 	ui.tbTool->addAction(ui.actSearch);
 	ui.tbTool->addAction(ui.actFill);
@@ -465,21 +470,45 @@ void DebugWin::setDumpView(QAction* act) {
 }
 */
 
+static QFile logfile;
+
 void DebugWin::doStep() {
+	QString str;
+	if (traceType == DBG_TRACE_LOG) {
+		str = gethexword(comp->cpu->pc).append(" ");
+		str.append(QString("A:%0 ").arg(gethexbyte(comp->cpu->a)));
+		str.append(QString("X:%0 ").arg(gethexbyte(comp->cpu->lx)));
+		str.append(QString("Y:%0 ").arg(gethexbyte(comp->cpu->ly)));
+		str.append(QString("P:%0 ").arg(gethexbyte(comp->cpu->f)));
+		str.append(QString("SP:%0 ").arg(gethexbyte(comp->cpu->lsp)));
+		str.append(QString("CYC:%0").arg(comp->vid->ray.x));
+		logfile.write(str.toUtf8());
+		logfile.write("\r\n");
+		if (comp->cpu->pc == 0xc66e)
+			trace = 0;
+	}
+
 	tCount = comp->tickCount;
 	compExec(comp);
 	if (!fillAll()) {
 		disasmAdr = comp->cpu->pc;
 		fillDisasm();
 	}
-	if ((traceType == DBG_TRACE_INT) && (comp->cpu->intrq & comp->cpu->inten))
-		trace = 0;
-	if ((traceType == DBG_TRACE_HERE) && (comp->cpu->pc == traceAdr))
-		trace = 0;
+	switch(traceType) {
+		case DBG_TRACE_INT:
+			if (comp->cpu->intrq & comp->cpu->inten)
+				trace = 0;
+			break;
+		case DBG_TRACE_HERE:
+			if (comp->cpu->pc == traceAdr)
+				trace = 0;
+			break;
+	}
 	if (trace) {
 		QTimer::singleShot(1,this,SLOT(doStep()));
 	} else {
 		ui.tbTrace->setEnabled(true);
+		if (logfile.isOpen()) logfile.close();
 	}
 }
 
@@ -489,9 +518,18 @@ void DebugWin::doTraceHere() {
 
 void DebugWin::doTrace(QAction* act) {
 	if (trace) return;
+
+	traceType = act->data().toInt();
+
+	if (traceType == DBG_TRACE_LOG) {
+		QString path = QFileDialog::getSaveFileName(this, "Log file");
+		if (path.isEmpty()) return;
+		logfile.setFileName(path);
+		if (!logfile.open(QFile::WriteOnly)) return;
+	}
+
 	trace = 1;
 	traceAdr = getAdr();
-	traceType = act->data().toInt();
 	ui.tbTrace->setEnabled(false);
 	doStep();
 }
@@ -738,14 +776,19 @@ bool DebugWin::fillAll() {
 	if (ui.scrLabel->isVisible())
 		updateScreen();
 	if (comp->rzx.play) fillRZX();
+
+	ui.labRX->setNum(comp->vid->ray.x);
 	if (comp->vid->ray.x < comp->vid->ssze.x)
-		ui.labRX->setNum(comp->vid->ray.x);
+		ui.labRX->setStyleSheet("");
 	else
-		ui.labRX->setText("HB");
+		ui.labRX->setStyleSheet("background-color: rgb(255,160,160);");
+
+	ui.labRY->setNum(comp->vid->ray.y);
 	if (comp->vid->ray.y < comp->vid->ssze.y)
-		ui.labRY->setNum(comp->vid->ray.y);
+		ui.labRY->setStyleSheet("");
 	else
-		ui.labRY->setText("VB");
+		ui.labRY->setStyleSheet("background-color: rgb(255,160,160);");
+
 	setSignal(ui.labDOS, comp->dos);
 	setSignal(ui.labROM, comp->rom);
 	setSignal(ui.labCPM, comp->cpm);

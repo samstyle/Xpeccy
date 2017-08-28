@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>813</width>
-    <height>578</height>
+    <height>576</height>
    </rect>
   </property>
   <property name="font">
@@ -2454,6 +2454,15 @@
   <action name="actDumpReg">
    <property name="text">
     <string>Registers</string>
+   </property>
+  </action>
+  <action name="actTraceLog">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/bug.png</normaloff>:/images/bug.png</iconset>
+   </property>
+   <property name="text">
+    <string>Trace log</string>
    </property>
   </action>
  </widget>

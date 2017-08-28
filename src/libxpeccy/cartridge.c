@@ -259,21 +259,23 @@ unsigned char slt_nes_all_rd(xCartridge* slot, int mt, unsigned short adr, int r
 // translate ppu nt vadr
 
 //_Name Table____________NT0___NT1___NT2___NT3
-// Horizontal Mirroring  BLK0  BLK0  BLK1  BLK1
-// Vertical Mirroring    BLK0  BLK1  BLK0  BLK1
-// Four-screen           BLK0  BLK1  BLK2  BLK3
+// Horizontal Mirroring  BLK0  BLK0  BLK1  BLK1		A11 = 0, A10 = PA10
+// Vertical Mirroring    BLK0  BLK1  BLK0  BLK1		A11 = 0, A10 = PA11
+// Four-screen           BLK0  BLK1  BLK2  BLK3		A11 = PA11, A10 = PA10
 unsigned short nes_nt_vadr(xCartridge* slot, unsigned short adr) {
-	switch (slot->mirror) {
-		case NES_NT_SINGLE:
-			adr = (adr & 0x33ff) | (slot->blk1 ? 0x800 : 0x000);
-			break;
-		case NES_NT_VERT:			// CIRAM A10 = VA10
-			adr = (adr & 0x37ff) | (slot->blk1 ? 0x800 : 0x000);
-			break;
-		case NES_NT_HORIZ:			// CIRAM A10 = VA11
-			adr = (adr & 0x33ff) | ((adr >> 1) & 0x400) | (slot->blk1 ? 0x800 : 0x000);
-			break;
-		// case NES_NT_QUATRO: no changes
+	if (adr & 0x2000) {
+		switch (slot->mirror) {
+			case NES_NT_SINGLE:
+				adr = (adr & 0x33ff) | (slot->blk1 ? 0x800 : 0x000);
+				break;
+			case NES_NT_VERT:			// CIRAM A10 = VA10
+				adr = (adr & 0x37ff) | (slot->blk1 ? 0x800 : 0x000);
+				break;
+			case NES_NT_HORIZ:			// CIRAM A10 = VA11
+				adr = (adr & 0x33ff) | ((adr >> 1) & 0x400) | (slot->blk1 ? 0x800 : 0x000);
+				break;
+				// case NES_NT_QUATRO: no changes
+		}
 	}
 	return adr;
 }
@@ -519,7 +521,7 @@ void slt_nes_mmc3_wr(xCartridge* slot, int mt, unsigned short adr, int radr, uns
 					break;
 				case 0xc000: slot->ival = val; break;			// irq counter reload value
 				case 0xc001: slot->irqrl = 1; break;			// reload irq counter
-				case 0xe000: slot->irqen = 0; break;
+				case 0xe000: slot->irqen = 0; slot->irq = 0; break;
 				case 0xe001: slot->irqen = 1; break;
 			}
 			break;
@@ -528,6 +530,22 @@ void slt_nes_mmc3_wr(xCartridge* slot, int mt, unsigned short adr, int radr, uns
 				slot->ram[radr & 0x1fff] = val;
 			break;
 	}
+}
+
+// IRQ checker: on PPU A12 0->1 decrement irq counter
+void slt_nes_mmc3_chk(xCartridge* slot, unsigned short adr) {
+	if (!slot->irqs && (adr & 0x1000)) {
+		if (slot->irqrl) {
+			slot->icnt = slot->ival+1;
+			slot->irqrl = 0;
+		} else if (slot->icnt == 2) {
+			slot->icnt = slot->ival;
+			slot->irq = slot->irqen;
+		} else {
+			slot->icnt--;
+		}
+	}
+	slot->irqs = (adr & 0x1000) ? 1 : 0;
 }
 
 // maper 007 (AxROM) : 32K PRG pages
@@ -592,36 +610,36 @@ void slt_nes_camerica_wr(xCartridge* slot, int mt, unsigned short adr, int radr,
 // table
 
 static xCardCallback dumMapers[] = {
-	{MAP_UNKNOWN, slt_rd_dum, slt_wr_dum, slt_adr_dum}
+	{MAP_UNKNOWN, slt_rd_dum, slt_wr_dum, slt_adr_dum, NULL}
 };
 
 static xCardCallback msxMapers[] = {
-	{MAP_MSX_NOMAPPER, slt_msx_all_rd, slt_wr_dum, slt_msx_nomap_adr},
-	{MAP_MSX_KONAMI4, slt_msx_all_rd, slt_msx_kon4_wr, slt_msx_kon4_adr},
-	{MAP_MSX_KONAMI5, slt_msx_all_rd, slt_msx_kon5_wr, slt_msx_kon5_adr},
-	{MAP_MSX_ASCII8, slt_msx_all_rd, slt_msx_asc8_wr, slt_msx_kon5_adr},
-	{MAP_MSX_ASCII16, slt_msx_all_rd, slt_msx_asc16_wr, slt_msx_asc16_adr},
-	{MAP_UNKNOWN, slt_rd_dum, slt_wr_dum, slt_adr_dum}
+	{MAP_MSX_NOMAPPER, slt_msx_all_rd, slt_wr_dum, slt_msx_nomap_adr, NULL},
+	{MAP_MSX_KONAMI4, slt_msx_all_rd, slt_msx_kon4_wr, slt_msx_kon4_adr, NULL},
+	{MAP_MSX_KONAMI5, slt_msx_all_rd, slt_msx_kon5_wr, slt_msx_kon5_adr, NULL},
+	{MAP_MSX_ASCII8, slt_msx_all_rd, slt_msx_asc8_wr, slt_msx_kon5_adr, NULL},
+	{MAP_MSX_ASCII16, slt_msx_all_rd, slt_msx_asc16_wr, slt_msx_asc16_adr, NULL},
+	{MAP_UNKNOWN, slt_rd_dum, slt_wr_dum, slt_adr_dum, NULL}
 };
 
 static xCardCallback gbMapers[] = {
-	{MAP_GB_NOMAP, slt_gb_all_rd, slt_wr_dum, slt_gb_all_adr},
-	{MAP_GB_MBC1, slt_gb_all_rd, slt_gb_mbc1_wr, slt_gb_all_adr},
-	{MAP_GB_MBC2, slt_gb_all_rd, slt_gb_mbc2_wr, slt_gb_all_adr},
-	{MAP_GB_MBC3, slt_gb_all_rd, slt_gb_mbc3_wr, slt_gb_all_adr},
-	{MAP_GB_MBC5, slt_gb_all_rd, slt_gb_mbc5_wr, slt_gb_all_adr},
-	{MAP_UNKNOWN, slt_rd_dum, slt_wr_dum, slt_adr_dum}
+	{MAP_GB_NOMAP, slt_gb_all_rd, slt_wr_dum, slt_gb_all_adr, NULL},
+	{MAP_GB_MBC1, slt_gb_all_rd, slt_gb_mbc1_wr, slt_gb_all_adr, NULL},
+	{MAP_GB_MBC2, slt_gb_all_rd, slt_gb_mbc2_wr, slt_gb_all_adr, NULL},
+	{MAP_GB_MBC3, slt_gb_all_rd, slt_gb_mbc3_wr, slt_gb_all_adr, NULL},
+	{MAP_GB_MBC5, slt_gb_all_rd, slt_gb_mbc5_wr, slt_gb_all_adr, NULL},
+	{MAP_UNKNOWN, slt_rd_dum, slt_wr_dum, slt_adr_dum, NULL}
 };
 
 static xCardCallback nesMapers[] = {
-	{MAP_NES_NROM, slt_nes_all_rd, slt_wr_dum, slt_nes_nrom_adr},
-	{MAP_NES_MMC1, slt_nes_all_rd, slt_nes_mmc1_wr, slt_nes_mmc1_adr},
-	{MAP_NES_UNROM, slt_nes_all_rd, slt_nes_unrom_wr, slt_nes_unrom_adr},
-	{MAP_NES_CNROM, slt_nes_all_rd, slt_nes_cnrom_wr, slt_nes_cnrom_adr},
-	{MAP_NES_MMC3, slt_nes_all_rd, slt_nes_mmc3_wr, slt_nes_mmc3_adr},
-	{MAP_NES_AOROM, slt_nes_all_rd, slt_nes_aorom_wr, slt_nes_aorom_adr},
-	{MAP_NES_CAMERICA, slt_nes_all_rd, slt_nes_camerica_wr, slt_nes_camerica_adr},
-	{MAP_UNKNOWN, slt_rd_dum, slt_wr_dum, slt_adr_dum}
+	{MAP_NES_NROM, slt_nes_all_rd, slt_wr_dum, slt_nes_nrom_adr, NULL},
+	{MAP_NES_MMC1, slt_nes_all_rd, slt_nes_mmc1_wr, slt_nes_mmc1_adr, NULL},
+	{MAP_NES_UNROM, slt_nes_all_rd, slt_nes_unrom_wr, slt_nes_unrom_adr, NULL},
+	{MAP_NES_CNROM, slt_nes_all_rd, slt_nes_cnrom_wr, slt_nes_cnrom_adr, NULL},
+	{MAP_NES_MMC3, slt_nes_all_rd, slt_nes_mmc3_wr, slt_nes_mmc3_adr, slt_nes_mmc3_chk},
+	{MAP_NES_AOROM, slt_nes_all_rd, slt_nes_aorom_wr, slt_nes_aorom_adr, NULL},
+	{MAP_NES_CAMERICA, slt_nes_all_rd, slt_nes_camerica_wr, slt_nes_camerica_adr, NULL},
+	{MAP_UNKNOWN, slt_rd_dum, slt_wr_dum, slt_adr_dum, NULL}
 };
 
 typedef struct {
@@ -722,7 +740,14 @@ void sltWrite(xCartridge* slt, int mt, unsigned short adr, unsigned char val) {
 	if (!slt->data) return;
 	int radr = slt->core->adr(slt, mt, adr);
 	slt->core->wr(slt, mt, adr, radr, val);
+	if (!slt->brkMap) return;
 	if (slt->brkMap[radr & slt->memMask] & MEM_BRK_WR)
 		slt->brk = 1;
 }
 
+void sltChecker(xCartridge* slt, unsigned short adr) {
+	if (!slt->data) return;
+	if (!slt->core) return;
+	if (!slt->core->chk) return;
+	slt->core->chk(slt, adr);
+}

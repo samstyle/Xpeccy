@@ -35,37 +35,37 @@
 // math
 // NOTE: ADD set C flag if overflow occured, clears if not
 // NOTE: BCD mode (flag MFD) doesn't affect NES
-#define MADC(_op) \
+#define MADC(_ac, _op) \
 	cpu->e = (cpu->f & MFC) ? 1 : 0;\
-	cpu->tmpw = cpu->a + _op + cpu->e;\
+	cpu->tmpw = _ac + _op + cpu->e;\
 	cpu->f &= ~(MFV | MFC | MFZ | MFN);\
 	if (!(cpu->tmpw & 0xff)) cpu->f |= MFZ;\
-	if (cpu->f & MFD) {\
-		if ((cpu->a & 0x0f) + (_op & 0x0f) + cpu->e > 9) cpu->tmpw += 6;\
+	if ((cpu->f & MFD) && !cpu->nod) {\
+		if ((_ac & 0x0f) + (_op & 0x0f) + cpu->e > 9) cpu->tmpw += 6;\
 		if (cpu->tmpw & 0x80) cpu->f |= MFN;\
-		if (!((cpu->a ^ _op) & 0x80) && ((cpu->a ^ cpu->tmpw) & 0x80)) cpu->f |= MFV;\
+		if (!((_ac ^ _op) & 0x80) && ((_ac ^ cpu->tmpw) & 0x80)) cpu->f |= MFV;\
 		if (cpu->tmpw > 0x99) cpu->tmpw += 0x60;\
 		if (cpu->tmpw > 0x99) cpu->f |= MFC;\
 	} else {\
 		if (cpu->tmpw & 0x80) cpu->f |= MFN;\
-		if (!((cpu->a ^ _op) & 0x80) && ((cpu->a ^ cpu->tmpw) & 0x80)) cpu->f |= MFV;\
+		if (!((_ac ^ _op) & 0x80) && ((_ac ^ cpu->tmpw) & 0x80)) cpu->f |= MFV;\
 		if (cpu->tmpw & 0xff00) cpu->f |= MFC;\
 	}\
-	cpu->a = cpu->tmpw & 0xff;
+	_ac = cpu->tmpw & 0xff;
 
-#define MSBC(_op) \
+#define MSBC(_ac, _op) \
 	cpu->e = (cpu->f & MFC) ? 0 : 1;\
-	cpu->tmpw = cpu->a - _op - cpu->e;\
+	cpu->tmpw = _ac - _op - cpu->e;\
 	cpu->f &= ~(MFV | MFC | MFZ | MFN);\
 	if (cpu->tmpw & 0x80) cpu->f |= MFN;\
 	if (!(cpu->tmpw & 0xff)) cpu->f |= MFZ;\
-	if (((cpu->tmpw ^ cpu->a) & 0x80) && ((cpu->a ^ _op) & 0x80)) cpu->f |= MFV;\
-	if (cpu->f & MFD) {\
-		if (((cpu->a & 0x0f) - cpu->e) < (_op & 0x0f)) cpu->tmpw -= 6;\
+	if (((cpu->tmpw ^ _ac) & 0x80) && ((_ac ^ _op) & 0x80)) cpu->f |= MFV;\
+	if ((cpu->f & MFD) && !cpu->nod) {\
+		if (((_ac & 0x0f) - cpu->e) < (_op & 0x0f)) cpu->tmpw -= 6;\
 		if (cpu->tmpw > 0x99) cpu->tmpw -= 0x60;\
 	}\
 	if (cpu->tmpw < 0x100) cpu->f |= MFC;\
-	cpu->a = cpu->tmpw & 0xff;
+	_ac = cpu->tmpw & 0xff;
 
 // shift
 
