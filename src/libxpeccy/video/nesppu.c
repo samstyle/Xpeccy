@@ -239,7 +239,7 @@ void ppuDraw(nesPPU* ppu) {
 }
 
 // @ start of HBlank
-// Y here : 0 @ pre-render (261), 1 @ line 0, etc
+// Y here : 0 @ pre-render, 1 @ line 0, etc
 void ppuHBL(nesPPU* ppu) {
 	// here: render sprites
 	int cnt;
@@ -267,22 +267,20 @@ void ppuHBL(nesPPU* ppu) {
 }
 
 // @ start of new line (end of HBlank)
-// Y here : real line number (pre-render = 261)
+// Y here : real line number (pre-render = 261 (311))
 void ppuLine(nesPPU* ppu) {
 
 	memset(ppu->bgline, 0x00, 256);		// clear bg
 
-	switch(ppu->ray->y) {
-		case 241:
+	// NES NTSC: 241/261; NES PAL:241/311; Dendy: 291/311
+	if (ppu->ray->y == ppu->vbsline) {
 			ppu->vbl = 1;
 			ppu->vblstrb = 1;
-			break;
-		case 261:
+	} else if (ppu->ray->y == ppu->vbrline) {
 			ppu->vbl = 0;
 			ppu->vblstrb = 0;
 			ppu->sp0hit = 0;
 			ppu->spover = 0;
-			break;
 	}
 
 	if (ppu->ray->y > 239) return;

@@ -186,27 +186,11 @@ void nesSync(Computer* comp, int ns) {
 	}
 
 	apuSync(comp->nesapu, ns);
-/*
-	// MMC3 irq counter triggered @ HBlank (?)
-	if ((comp->vid->hbstrb) && (comp->vid->ray.y < 240)) {
-		comp->vid->hbstrb = 0;
-		if (comp->slot->irqrl) {		// reload counter
-			comp->slot->irqrl = 0;
-			comp->slot->icnt = comp->slot->ival;
-		} else {
-			comp->slot->icnt--;
-			if (comp->slot->icnt == 0) {
-				comp->slot->icnt = comp->slot->reg03;
-				comp->slot->irq = comp->slot->irqen;
-			}
-		}
-	}
-*/
+	// irq
 	int irq = comp->nesapu->firq | comp->nesapu->dirq | comp->slot->irq;		// external irq signals
 	comp->nesapu->firq = 0;
 	comp->nesapu->dirq = 0;
 	comp->slot->irq = 0;
-
 	if (irq && !(comp->cpu->f & MFI))
 		comp->cpu->intrq |= MOS6502_INT_BRK;
 }
@@ -218,8 +202,8 @@ unsigned char nesMemRd(Computer* comp, unsigned short adr, int m1) {
 }
 
 void nesMemWr(Computer* comp, unsigned short adr, unsigned char val) {
-//	vidSync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
-//	res4 = comp->cpu->t;
+	vidSync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
+	res4 = comp->cpu->t;
 	memWr(comp->mem, adr, val);
 }
 

@@ -12,7 +12,7 @@ typedef struct {
 	unsigned env:1;		// envelope on
 	unsigned elen:1;	// length counter enabled / envelope looped
 	unsigned duty:2;
-	unsigned sweep:1;	// sweep working
+	unsigned sweep:1;	// sweep working | TriChan linear counter reload flag
 	unsigned sdir:1;	// 0:add to period, 1:sub from period
 	unsigned dir:1;		// triangle wave direction (1:up 0:down)
 	unsigned irq:1;		// dmc irq
@@ -21,6 +21,7 @@ typedef struct {
 	unsigned char buf;	// readed byte (digital)
 	int len;		// length counter
 	int lcnt;		// linear counter (triangle)
+	int lval;		// linear counter reload value
 	int hper;		// 50/50 period
 	int per0;		// duty period for 0
 	int per1;		// duty period for 1

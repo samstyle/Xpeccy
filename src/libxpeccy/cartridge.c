@@ -536,9 +536,9 @@ void slt_nes_mmc3_wr(xCartridge* slot, int mt, unsigned short adr, int radr, uns
 void slt_nes_mmc3_chk(xCartridge* slot, unsigned short adr) {
 	if (!slot->irqs && (adr & 0x1000)) {
 		if (slot->irqrl) {
-			slot->icnt = slot->ival+1;
+			slot->icnt = slot->ival-1;		// what if 0?
 			slot->irqrl = 0;
-		} else if (slot->icnt == 2) {
+		} else if (slot->icnt == 0) {
 			slot->icnt = slot->ival;
 			slot->irq = slot->irqen;
 		} else {

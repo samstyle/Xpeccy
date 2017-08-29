@@ -33,8 +33,11 @@ typedef struct {
 	unsigned char (*mrd)(unsigned short, void*);
 	void (*mwr)(unsigned short, unsigned char, void*);
 	void* data;
-
+	// layout
 	vRay* ray;
+	int vbsline;
+	int vbrline;
+	// address
 	unsigned char oamadr;	// oam access address
 	ePair(vadr,vah,val);	// videomem access addr
 	unsigned short tadr;	// tmp vadr
