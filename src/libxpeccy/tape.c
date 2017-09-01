@@ -96,7 +96,7 @@ unsigned char tapGetBlockByte(TapeBlock* block, int bytePos) {
 	return res;
 }
 
-int tapGetBlockData(Tape* tape, int blockNum, unsigned char* dst) {
+int tapGetBlockData(Tape* tape, int blockNum, unsigned char* dst,int maxsize) {
 	TapeBlock* block = &tape->blkData[blockNum];
 	unsigned int pos = block->dataPos;
 	int bytePos = 0;
@@ -104,7 +104,7 @@ int tapGetBlockData(Tape* tape, int blockNum, unsigned char* dst) {
 		dst[bytePos] = tapGetBlockByte(block,bytePos);
 		bytePos++;
 		pos += 16;
-	} while (pos < (block->sigCount - 1));
+	} while ((pos < (block->sigCount - 1)) && (bytePos < maxsize));
 	return bytePos;
 }
 

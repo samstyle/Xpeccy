@@ -121,11 +121,13 @@ int sndSync(Computer* comp, int nosync, int fast) {
 
 		if (!fast) {
 			sndLev = comp->hw->vol(comp);
+			if (sndLev.left > 127) sndLev.left = 127;
+			if (sndLev.right > 127) sndLev.right = 127;
 		}
 	}
 
-	bufA.data[bufA.pos++] = (sndLev.left >> 2) & 0xff;
-	bufA.data[bufA.pos++] = (sndLev.right >> 2) & 0xff;
+	bufA.data[bufA.pos++] = sndLev.left & 0xff;
+	bufA.data[bufA.pos++] = sndLev.right & 0xff;
 	bufA.pos &= 0xfff;
 
 	smpCount++;

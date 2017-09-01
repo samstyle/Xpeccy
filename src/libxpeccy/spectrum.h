@@ -9,12 +9,6 @@ extern "C" {
 #include "video/video.h"
 #include "memory.h"
 
-#if 0
-
-#include "device.h"
-
-#else
-
 #include "input.h"
 #include "tape.h"
 #include "fdc.h"
@@ -28,8 +22,6 @@ extern "C" {
 #include "sound/soundrive.h"
 #include "sound/gbsound.h"
 #include "sound/nesapu.h"
-
-#endif
 
 #ifdef HAVEZLIB
 	#include <zlib.h>
@@ -77,11 +69,12 @@ typedef struct {
 
 	unsigned brkirq:1;		// break on irq
 
-	char* msg;			// message ptr for displaying outside
-
+	double fps;
 	double cpuFrq;
 	int frqMul;
 	unsigned char intVector;
+
+	char* msg;			// message ptr for displaying outside
 
 	struct HardWare *hw;
 	CPU* cpu;

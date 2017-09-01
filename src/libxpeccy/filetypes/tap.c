@@ -78,7 +78,7 @@ int saveTAP(Tape* tape, const char* name) {
 	for (int i = 0; i < tape->blkCount; i++) {
 		inf = tapGetBlockInfo(tape, i);
 		inf.size += 2;	// +flag +crc
-		tapGetBlockData(tape, i, blockData);
+		tapGetBlockData(tape, i, blockData,inf.size);
 		fputwLE(file, inf.size);
 		fwrite((char*)blockData, inf.size, 1, file);
 	}

@@ -64,6 +64,7 @@ void ppuReset(nesPPU* ppu) {
 	ppu->vadr = 0;
 	ppu->tadr = 0;
 	ppu->finex = 0;
+	memset(ppu->oam, 0xff, 0x100);
 	memcpy(ppu->mem + 0x3f00, nesInitIdx, 32);
 }
 

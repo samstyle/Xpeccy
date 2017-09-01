@@ -77,12 +77,14 @@ unsigned char nesMMrd(unsigned short adr, void* data) {
 				switch (adr & 0x1f) {
 					case 0x15:
 						res = 0;
-						if (apu->ch0.len && apu->ch0.en) res |= 0x01;
-						if (apu->ch1.len && apu->ch1.en) res |= 0x02;
-						if (apu->cht.len && apu->cht.en) res |= 0x04;
-						if (apu->chn.len && apu->chn.en) res |= 0x08;
-						if (apu->chd.len && apu->chd.en) res |= 0x10;
+						if (apu->ch0.en && apu->ch0.len) res |= 0x01;
+						if (apu->ch1.en && apu->ch1.len) res |= 0x02;
+						if (apu->cht.en && apu->cht.len) res |= 0x04;
+						if (apu->chn.en && apu->chn.len) res |= 0x08;
+						if (apu->chd.en && apu->chd.len) res |= 0x10;
 						if (apu->firq) res |= 0x40;
+						if (apu->dirq) res |= 0x80;
+						apu->firq = 0;
 						break;
 					case 0x16:		// joystick 1
 						res = comp->nes.priJoy & 1;
@@ -121,8 +123,8 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 			if (adr < 0x4014) {	// 4000..4013 : APU
 				apuWrite(comp->nesapu, adr & 0x1f, val);
 			} else if (adr < 0x4020) {
-				switch (adr) {
-					case 0x4014:		// OAMDMA
+				switch (adr & 0x1f) {
+					case 0x14:		// OAMDMA
 						adr = (val << 8);
 						do {
 							comp->vid->ppu->oam[comp->vid->ppu->oamadr & 0xff] = memRd(comp->mem, adr);
@@ -131,22 +133,24 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 						} while (adr & 0xff);
 						comp->cpu->t += 0x201;	// DMA eats 512+1+1 cpu ticks, cpu is halted during operation
 						break;
-					case 0x4015:
+					case 0x15:
 						apu->ch0.en = (val & 0x01) ? 1 : 0;
 						apu->ch1.en = (val & 0x02) ? 1 : 0;
 						apu->cht.en = (val & 0x04) ? 1 : 0;
 						apu->chn.en = (val & 0x08) ? 1 : 0;
 						apu->chd.en = (val & 0x10) ? 1 : 0;
+						apu->dirq = 0;
 						break;
-					case 0x4016:
+					case 0x16:
 						if (val & 1) {		// b0: 0-1-0 = reload gamepads state
 							comp->nes.priJoy = comp->nes.priPadState;
 							comp->nes.secJoy = comp->nes.secPadState;
 						}
 						break;
-					case 0x4017:
+					case 0x17:
 						apu->irqen = (val & 0x80) ? 0 : 1;
 						apu->step5 = (val & 0x40) ? 1 : 0;
+						apu->tstp = 0;
 						break;
 					default:
 						//printf("write %.4X,%.2X\n",adr,val);
@@ -192,12 +196,14 @@ void nesSync(Computer* comp, int ns) {
 	comp->nesapu->dirq = 0;
 	comp->slot->irq = 0;
 	if (irq && !(comp->cpu->f & MFI))
-		comp->cpu->intrq |= MOS6502_INT_BRK;
+		comp->cpu->intrq |= MOS6502_INT_IRQ;
 }
 
 extern int res4;
 
 unsigned char nesMemRd(Computer* comp, unsigned short adr, int m1) {
+	vidSync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
+	res4 = comp->cpu->t;
 	return memRd(comp->mem, adr);
 }
 
@@ -301,6 +307,5 @@ void nes_keyr(Computer* comp, keyEntry ent) {
 }
 
 sndPair nes_vol(Computer* comp) {
-	sndPair vol = apuVolume(comp->nesapu);
-	return  vol;
+	return apuVolume(comp->nesapu);
 }

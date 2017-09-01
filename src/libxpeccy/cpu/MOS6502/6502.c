@@ -8,9 +8,9 @@ extern opCode mosTab[256];
 void m6502_reset(CPU* cpu) {
 	cpu->lock = 0;
 	cpu->intrq = 0;
-	cpu->inten = MOS6502_INT_BRK | MOS6502_INT_NMI;		// brk/nmi enabled
+	cpu->inten = MOS6502_INT_IRQ | MOS6502_INT_NMI;		// brk/nmi enabled
 	cpu->sp = 0x1fd;	// segment 01xx is stack
-	cpu->f = 0x24;
+	cpu->f = MF5 | MFI;
 	cpu->a = 0;
 	cpu->lx = 0;
 	cpu->ly = 0;
@@ -34,14 +34,15 @@ int m6502_int(CPU* cpu) {
 		m6502_push_int(cpu);
 		cpu->lpc = cpu->mrd(0xfffa, 0, cpu->data);
 		cpu->hpc = cpu->mrd(0xfffb, 0, cpu->data);
-	} else if (cpu->intrq & MOS6502_INT_BRK) {	// BRK
-		cpu->intrq &= ~MOS6502_INT_BRK;
+	} else if (cpu->intrq & MOS6502_INT_IRQ) {	// IRQ
+		cpu->intrq &= ~MOS6502_INT_IRQ;
+		cpu->f &= ~MFB;				// reset B flag
+		cpu->f |= MFI;
 		m6502_push_int(cpu);
 		cpu->lpc = cpu->mrd(0xfffe, 0, cpu->data);
 		cpu->hpc = cpu->mrd(0xffff, 0, cpu->data);
 	}
-//	cpu->inth = cpu->intrq ? 1 : 0;		// if both INT happened in one time
-	return 7;
+	return 7;				// real: 7T
 }
 
 int m6502_exec(CPU* cpu) {

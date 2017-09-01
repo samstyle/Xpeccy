@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>813</width>
-    <height>576</height>
+    <height>574</height>
    </rect>
   </property>
   <property name="font">
@@ -2484,35 +2484,35 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>sbTilemap</tabstop>
-  <tabstop>cbF7</tabstop>
-  <tabstop>cbF6</tabstop>
-  <tabstop>rbTilemapView</tabstop>
-  <tabstop>cbF4</tabstop>
-  <tabstop>cbF2</tabstop>
-  <tabstop>cbF1</tabstop>
-  <tabstop>cbF0</tabstop>
-  <tabstop>tabsPanel</tabstop>
-  <tabstop>cbScrAtr</tabstop>
-  <tabstop>tbBreak</tabstop>
-  <tabstop>tbView</tabstop>
-  <tabstop>tbTrace</tabstop>
-  <tabstop>tbTool</tabstop>
-  <tabstop>tbDbgOpt</tabstop>
-  <tabstop>tbSaveDasm</tabstop>
-  <tabstop>dasmTable</tabstop>
-  <tabstop>tbDelBrk</tabstop>
-  <tabstop>sbTileset</tabstop>
+  <tabstop>editReg00</tabstop>
+  <tabstop>editReg01</tabstop>
+  <tabstop>editReg02</tabstop>
+  <tabstop>editReg03</tabstop>
+  <tabstop>editReg04</tabstop>
+  <tabstop>editReg05</tabstop>
+  <tabstop>editReg06</tabstop>
+  <tabstop>editReg07</tabstop>
+  <tabstop>editReg08</tabstop>
+  <tabstop>editReg09</tabstop>
+  <tabstop>editReg10</tabstop>
+  <tabstop>editReg11</tabstop>
+  <tabstop>editReg12</tabstop>
+  <tabstop>editReg13</tabstop>
+  <tabstop>editReg14</tabstop>
+  <tabstop>boxIM</tabstop>
+  <tabstop>flagIFF1</tabstop>
+  <tabstop>flagIFF2</tabstop>
   <tabstop>tbAddBrk</tabstop>
   <tabstop>bpList</tabstop>
-  <tabstop>cbF5</tabstop>
-  <tabstop>cbF3</tabstop>
-  <tabstop>rbPaleteView</tabstop>
   <tabstop>rbTilesetView</tabstop>
+  <tabstop>cbF7</tabstop>
+  <tabstop>rbPaleteView</tabstop>
+  <tabstop>cbF5</tabstop>
   <tabstop>leMixA</tabstop>
-  <tabstop>leVolA</tabstop>
-  <tabstop>leToneC</tabstop>
+  <tabstop>cbF3</tabstop>
+  <tabstop>cbF2</tabstop>
   <tabstop>leVolC</tabstop>
+  <tabstop>cbF0</tabstop>
   <tabstop>leMixB</tabstop>
   <tabstop>leEnvForm</tabstop>
   <tabstop>leVolB</tabstop>
@@ -2522,6 +2522,35 @@
   <tabstop>leToneN</tabstop>
   <tabstop>leEnvTone</tabstop>
   <tabstop>leVolE</tabstop>
+  <tabstop>tabsPanel</tabstop>
+  <tabstop>rbTilemapView</tabstop>
+  <tabstop>cbF4</tabstop>
+  <tabstop>tbView</tabstop>
+  <tabstop>leVolA</tabstop>
+  <tabstop>sbTilemap</tabstop>
+  <tabstop>cbScrAtr</tabstop>
+  <tabstop>sbTileset</tabstop>
+  <tabstop>cbF6</tabstop>
+  <tabstop>dasmTable</tabstop>
+  <tabstop>tbSaveDasm</tabstop>
+  <tabstop>tbTrace</tabstop>
+  <tabstop>tbDelBrk</tabstop>
+  <tabstop>tbBreak</tabstop>
+  <tabstop>leToneC</tabstop>
+  <tabstop>cbF1</tabstop>
+  <tabstop>tbTool</tabstop>
+  <tabstop>tbDbgOpt</tabstop>
+  <tabstop>tbDumpView</tabstop>
+  <tabstop>tbCodepage</tabstop>
+  <tabstop>dumpTable</tabstop>
+  <tabstop>cbScrPix</tabstop>
+  <tabstop>sbScrBank</tabstop>
+  <tabstop>sbScrAdr</tabstop>
+  <tabstop>cbScrGrid</tabstop>
+  <tabstop>tbEditBrk</tabstop>
+  <tabstop>nesScrType</tabstop>
+  <tabstop>nesTileType</tabstop>
+  <tabstop>nesShowSpr</tabstop>
  </tabstops>
  <resources>
   <include location="../xpeccy.qrc"/>

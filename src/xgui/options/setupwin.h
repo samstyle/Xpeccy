@@ -8,6 +8,7 @@
 #include "xcore.h"
 #include "padbinder.h"
 #include "opt_romset.h"
+#include "opt_diskcat.h"
 
 #include "ui_rsedit.h"
 #include "ui_setupwin.h"

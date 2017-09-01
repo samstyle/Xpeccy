@@ -946,8 +946,8 @@ void SetupWin::diskToRaw() {
 TRFile getHeadInfo(Tape* tape, int blk) {
 	TRFile res;
 	TapeBlockInfo inf = tapGetBlockInfo(tape,blk);
-	unsigned char* dt = new unsigned char[inf.size];
-	tapGetBlockData(tape,blk,dt);
+	unsigned char* dt = (unsigned char*)malloc(inf.size + 2);
+	tapGetBlockData(tape,blk,dt,inf.size+2);
 	for (int i=0; i<8; i++) res.name[i] = dt[i+2];
 	switch (dt[1]) {
 		case 0:
@@ -966,13 +966,22 @@ TRFile getHeadInfo(Tape* tape, int blk) {
 	}
 	res.slen = res.hlen;
 	if (res.llen != 0) res.slen++;
+	free(dt);
 	return res;
 }
 
 void SetupWin::copyToDisk() {
+	unsigned char* dt;
+	unsigned char buf[256];
+	int pos;	// skip block type mark
+	TapeBlockInfo inf;
+	TRFile dsc;
+
 	int blk = ui.tapelist->currentRow();
 	if (blk < 0) return;
 	int dsk = ui.disktabs->currentIndex();
+	if (dsk < 0) dsk = 0;
+	if (dsk > 3) dsk = 3;
 	int headBlock = -1;
 	int dataBlock = -1;
 	if (!comp->tape->blkData[blk].hasBytes) {
@@ -998,7 +1007,6 @@ void SetupWin::copyToDisk() {
 			}
 		}
 	}
-	TRFile dsc;
 	if (headBlock < 0) {
 		const char* nm = "FILE    ";
 		memcpy(&dsc.name[0],nm,8);
@@ -1022,22 +1030,23 @@ void SetupWin::copyToDisk() {
 		}
 	}
 	if (!(comp->dif->fdc->flop[dsk]->insert)) newdisk(dsk);
-	TapeBlockInfo inf = tapGetBlockInfo(comp->tape,dataBlock);
-	unsigned char* dt = new unsigned char[inf.size];
-	tapGetBlockData(comp->tape,dataBlock,dt);
-	unsigned char* buf = new unsigned char[256];
-	int pos = 1;	// skip block type mark
+	inf = tapGetBlockInfo(comp->tape,dataBlock);
+	dt = (unsigned char*)malloc(inf.size+2);		// +2 = +mark +crc
+	tapGetBlockData(comp->tape,dataBlock,dt,inf.size+2);
 	switch(diskCreateDescriptor(comp->dif->fdc->flop[dsk],&dsc)) {
 		case ERR_SHIT: shitHappens("Yes, it happens"); break;
 		case ERR_MANYFILES: shitHappens("Too many files @ disk"); break;
 		case ERR_NOSPACE: shitHappens("Not enough space @ disk"); break;
 		case ERR_OK:
+			pos = 1;
 			while (pos < inf.size) {
 				do {
 					buf[(pos-1) & 0xff] = (pos < inf.size) ? dt[pos] : 0x00;
 					pos++;
 				} while ((pos & 0xff) != 1);
+
 				diskPutSectorData(comp->dif->fdc->flop[dsk],dsc.trk, dsc.sec+1, buf, 256);
+
 				dsc.sec++;
 				if (dsc.sec > 15) {
 					dsc.sec = 0;
@@ -1048,42 +1057,24 @@ void SetupWin::copyToDisk() {
 			showInfo("File was copied");
 			break;
 	}
+	free(dt);
 }
 
 void SetupWin::fillDiskCat() {
 	int dsk = ui.disktabs->currentIndex();
-	QTableWidget* wid = ui.disklist;
-	wid->setColumnWidth(0,100);
-	wid->setColumnWidth(1,30);
-	wid->setColumnWidth(2,70);
-	wid->setColumnWidth(3,70);
-	wid->setColumnWidth(4,50);
-	wid->setColumnWidth(5,50);
-	QTableWidgetItem* itm;
-	if (!(comp->dif->fdc->flop[dsk]->insert)) {
-		wid->setEnabled(false);
-		wid->setRowCount(0);
-	} else {
-		wid->setEnabled(true);
-		if (diskGetType(comp->dif->fdc->flop[dsk]) == DISK_TYPE_TRD) {
-			TRFile cat[128];
-			int catSize = diskGetTRCatalog(comp->dif->fdc->flop[dsk],cat);
-			wid->setRowCount(catSize);
-			for (int i=0; i<catSize; i++) {
-				itm = new QTableWidgetItem(QString(std::string((char*)cat[i].name,8).c_str())); wid->setItem(i,0,itm);
-				itm = new QTableWidgetItem(QString(QChar(cat[i].ext))); wid->setItem(i,1,itm);
-				itm = new QTableWidgetItem(QString::number(cat[i].lst + (cat[i].hst << 8))); wid->setItem(i,2,itm);
-				itm = new QTableWidgetItem(QString::number(cat[i].llen + (cat[i].hlen << 8))); wid->setItem(i,3,itm);
-				itm = new QTableWidgetItem(QString::number(cat[i].slen)); wid->setItem(i,4,itm);
-				itm = new QTableWidgetItem(QString::number(cat[i].trk)); wid->setItem(i,5,itm);
-				itm = new QTableWidgetItem(QString::number(cat[i].sec)); wid->setItem(i,6,itm);
-				wid->setRowHidden(i, cat[i].name[0] < 0x20);
-			}
-		} else {
-			wid->setEnabled(false);
-			wid->setRowCount(0);
+	Floppy* flp = comp->dif->fdc->flop[dsk];
+	TRFile ct[128];
+	QList<TRFile> cat;
+	int catSize = 0;
+	if (flp->insert && (diskGetType(flp) == DISK_TYPE_TRD)) {
+		catSize = diskGetTRCatalog(flp, ct);
+		for(int i = 0; i < catSize; i++) {
+			if (ct[i].name[0] > 0x1f)
+				cat.append(ct[i]);
 		}
 	}
+	qDebug() << cat.size();
+	ui.disklist->setCatalog(cat);
 }
 
 // video

@@ -209,7 +209,7 @@ void saaFlush(saaChip* saa) {
 sndPair saaMixTN(saaChan* ch, saaNoise* noiz) {
 	sndPair res;
 	if ((ch->freqEn && ch->lev) || (ch->noizEn && noiz->lev)) {
-		res.left = ch->ampLeft;
+		res.left = ch->ampLeft;				// 0..F
 		res.right = ch->ampRight;
 	} else {
 		res.left = 0;
@@ -262,7 +262,7 @@ sndPair saaVolume(saaChip* ptr) {
 		levl = (levl + levr) / 2;
 		levr = levl;
 	}
-	res.left = levl << 3;
-	res.right = levr << 3;
+	res.left = levl; // << 3;
+	res.right = levr; // << 3;
 	return res;
 }

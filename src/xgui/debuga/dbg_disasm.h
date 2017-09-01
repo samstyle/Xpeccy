@@ -1,5 +1,5 @@
-#ifndef _DBG_DISASM_H
-#define _DBG_DISASM_H
+#ifndef X_DBG_DISASM_H
+#define X_DBG_DISASM_H
 
 #include <QTableView>
 #include <QAbstractTableModel>

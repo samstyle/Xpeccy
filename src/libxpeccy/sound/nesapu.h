@@ -10,23 +10,28 @@ typedef struct {
 	unsigned en:1;		// channel enabled
 	unsigned lev:1;		// square signal level
 	unsigned env:1;		// envelope on
+	unsigned mute:1;	// sweep unit has muted this channel
 	unsigned elen:1;	// length counter enabled / envelope looped
-	unsigned duty:2;
 	unsigned sweep:1;	// sweep working | TriChan linear counter reload flag
 	unsigned sdir:1;	// 0:add to period, 1:sub from period
 	unsigned dir:1;		// triangle wave direction (1:up 0:down)
 	unsigned irq:1;		// dmc irq
+	unsigned mode:1;	// noise long/short generator
 
-	unsigned char vol;	// current volume;
+	unsigned duty:2;
+	unsigned nseed:15;	// noise seed
+
+	unsigned char vol;	// current volume	(generated regardless of OFF & EN flags)
+//	unsigned char evol;	// envelope volume
+	unsigned char out;	// output volume;	(respect OFF & EN flags and update from VOL if enabled)
 	unsigned char buf;	// readed byte (digital)
 	int len;		// length counter
 	int lcnt;		// linear counter (triangle)
 	int lval;		// linear counter reload value
-	int hper;		// 50/50 period
-	int per0;		// duty period for 0
-	int per1;		// duty period for 1
-	int pcnt;		// period counter
+	int hper;		// period div
+	int pcnt;		// period div counter
 	int pstp;		// waves counter
+	int tper;		// target period (sweep)
 	int eper;		// envelope period
 	int ecnt;		// envelope counter;
 	int sper;		// sweep period
@@ -47,8 +52,8 @@ typedef struct {
 	int wcnt;
 	int wstp;
 
-	int tper;		// 240Hz period
-	int tcnt;
+//	int tper;		// 240Hz period
+//	int tcnt;
 	int tstp;
 
 	apuChannel ch0;		// square 0

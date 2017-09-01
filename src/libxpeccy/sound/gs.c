@@ -183,12 +183,12 @@ sndPair gsVolume(GSound* gs) {
 			res.left = ((gs->ch1 * gs->vol1 + \
 				gs->ch2 * gs->vol2 + \
 				gs->ch3 * gs->vol3 + \
-				gs->ch4 * gs->vol4) >> 8);
+				gs->ch4 * gs->vol4) >> 9);		// 4000 x 4 - 1 = FFFF -> 7F
 			res.right = res.left;
 			break;
 		case GS_12_34:
-			res.left = ((gs->ch1 * gs->vol1 + gs->ch2 * gs->vol2) >> 7);
-			res.right = ((gs->ch3 * gs->vol3 + gs->ch4 * gs->vol4) >> 7);
+			res.left = ((gs->ch1 * gs->vol1 + gs->ch2 * gs->vol2) >> 8);
+			res.right = ((gs->ch3 * gs->vol3 + gs->ch4 * gs->vol4) >> 8);
 			break;
 	}
 	return res;

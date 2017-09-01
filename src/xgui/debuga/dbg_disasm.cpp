@@ -326,7 +326,7 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 				}
 				disasmAdr = idx;
 			}
-			update();
+			// update();
 			break;
 		case 1:	// bytes
 			lst = val.toString().split(":", QString::SkipEmptyParts);
@@ -456,7 +456,7 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			break;
 		case Qt::Key_Down:
 			if ((ev->modifiers() & Qt::ControlModifier) || (idx.row() == model->rowCount() - 1)) {
-				scrolDn(ev->modifiers());
+				scrolUp(ev->modifiers());
 			} else {
 				QTableView::keyPressEvent(ev);
 			}
@@ -465,7 +465,7 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 		case Qt::Key_Home:
 			if (!cptr) break;
 			disasmAdr = (*cptr)->cpu->pc;
-			emit rqRefill();
+			model->update();
 			ev->ignore();
 			break;
 		case Qt::Key_End:
@@ -553,7 +553,7 @@ void xDisasmTable::scrolDn(Qt::KeyboardModifiers mod) {
 	} else {
 		disasmAdr = getData(1, 0, Qt::UserRole).toInt() & 0xffff;
 	}
-	emit rqRefill();
+	model->update();
 }
 
 void xDisasmTable::scrolUp(Qt::KeyboardModifiers mod) {
@@ -562,7 +562,7 @@ void xDisasmTable::scrolUp(Qt::KeyboardModifiers mod) {
 	} else {
 		disasmAdr = getPrevAdr(*cptr, disasmAdr);
 	}
-	emit rqRefill();
+	model->update();
 }
 
 void xDisasmTable::wheelEvent(QWheelEvent* ev) {

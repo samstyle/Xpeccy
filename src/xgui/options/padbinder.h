@@ -1,5 +1,5 @@
-#ifndef _PADBINDER_H
-#define _PADBINDER_H
+#ifndef X_PADBINDER_H
+#define X_PADBINDER_H
 
 #include <QAbstractItemModel>
 #include <QDialog>

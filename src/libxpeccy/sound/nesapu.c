@@ -21,7 +21,11 @@ void apuDestroy(nesAPU* apu) {
 void apuResetChan(apuChannel* ch) {
 	ch->en = 0;
 	ch->len = 0;
+	ch->lval = 0;
+	ch->lcnt = 0;
 	ch->hper = 0;
+	ch->eper = 0;
+	ch->mute = 0;
 }
 
 void apuReset(nesAPU* apu) {
@@ -32,15 +36,26 @@ void apuReset(nesAPU* apu) {
 	apuResetChan(&apu->chd);
 	apu->cht.vol = 0;
 	apu->cht.dir = 1;
+	apu->chn.nseed = 1;
+	apu->wcnt = 0;
+	apu->wstp = 0;
+	apu->tstp = 0;
 }
 
 // duty
 
-static int dutyTab[4] = {1,2,4,6};
+static int dutyTab[4][8] = {
+	{0,1,0,0,0,0,0,0},
+	{0,1,1,0,0,0,0,0},
+	{0,1,1,1,1,0,0,0},
+	{1,0,0,1,1,1,1,1}
+};
 
-void apuToneDuty(apuChannel* ch) {
-	ch->per1 = (ch->hper + 1) * dutyTab[ch->duty] / 4;
-	ch->per0 = (ch->hper + 1) * 2 - ch->per1;
+void apuTargetPeriod(apuChannel* ch) {
+	int sha = ch->hper >> (ch->sshi & 7);
+	if (ch->sdir) sha = -sha;
+	ch->tper = ch->hper + sha;
+	ch->mute = (ch->tper > 0x7ff) ? 1 : 0;
 }
 
 // tone channel
@@ -49,9 +64,10 @@ void apuToneSync(apuChannel* ch) {
 	if (!ch->en) return;
 	if (!ch->len) return;
 	ch->pcnt--;
-	if ((ch->pcnt < 0) && ch->hper) {
-		ch->lev ^= 1;
-		ch->pcnt += ch->lev ? ch->per1 : ch->per0;
+	if (ch->pcnt < 0) {
+		ch->pcnt = ch->hper;
+		ch->pstp++;
+		ch->lev = dutyTab[ch->duty & 3][ch->pstp & 7] & 1;
 	}
 }
 
@@ -59,19 +75,10 @@ void apuToneSweep(apuChannel* ch) {
 	if (!ch->en) return;
 	if (!ch->len) return;
 	if (!ch->sweep) return;
-	int scha;
 	ch->scnt--;
-	if (ch->scnt == 0) {
-		ch->scnt = ch->sper;
-		if (ch->sshi) {
-			scha = (ch->hper & 0x7ff) >> ch->sshi;
-			if (ch->sdir) scha = -scha;
-			if ((ch->hper > 8) && ((ch->hper + scha) < 0x7ff))
-				ch->hper += scha;
-			else
-				ch->len = 0;
-			apuToneDuty(ch);
-		}
+	if (ch->scnt < 0) {
+		ch->hper = ch->tper;
+		apuTargetPeriod(ch);
 	}
 }
 
@@ -84,9 +91,7 @@ void apuToneEnv(apuChannel* ch) {
 		ch->ecnt = ch->eper;
 		if (ch->vol > 0) {
 			ch->vol--;
-		} else if (ch->elen) {
-			ch->len = 0;
-		} else {
+		} else if (ch->elen) {		// elen: 1 if envelope loop
 			ch->vol = 0x0f;
 		}
 	}
@@ -100,13 +105,15 @@ void apuToneLen(apuChannel* ch) {
 }
 
 int apuToneVolume(apuChannel* ch) {
-	if (ch->off) return 0;
-//	if (!ch->en) return 0;
-//	if (!ch->len) return 0;
-	return ch->lev ? (ch->vol << 1) : 0;
+	if (!ch->off && ch->en && ch->len && (ch->hper > 8) && !ch->mute) {
+		ch->out = ch->lev ? ch->vol : 0;
+	}
+	return ch->out;
 }
 
 // triangle
+
+static unsigned char triSeq[32] = {15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
 
 void apuTriSync(apuChannel* ch) {
 	if (!ch->en) return;
@@ -115,19 +122,8 @@ void apuTriSync(apuChannel* ch) {
 	ch->pcnt--;
 	if (ch->pcnt < 0) {
 		ch->pcnt = ch->hper;
-		if (ch->dir) {
-			if (ch->vol < 0x0f) {
-				ch->vol++;
-			} else {
-				ch->dir = 0;
-			}
-		} else {
-			if (ch->vol > 0) {
-				ch->vol--;
-			} else {
-				ch->dir = 1;
-			}
-		}
+		ch->pstp++;
+		ch->vol = triSeq[ch->pstp & 0x1f];
 	}
 }
 
@@ -140,21 +136,21 @@ void apuTriLen(apuChannel* ch) {
 
 void apuTriLinear(apuChannel* ch) {
 	if (!ch->en) return;
-	if (!ch->elen) return;
-	if (ch->sweep) {
+	if (ch->sweep) {		// linear counter reload flag
 		ch->sweep = 0;
 		ch->lcnt = ch->lval;
 	} else if (ch->lcnt > 0) {
-		ch->lcnt++;
+		ch->lcnt--;
 	}
+	if (ch->elen)			// control flag = 0 (inverse = 1)
+		ch->sweep = 0;
 }
 
 int apuTriVolume(apuChannel* ch) {
-	if (ch->off) return  0;
-//	if (!ch->en) return 0;
-//	if (!ch->len) return 0;
-//	if (!ch->lcnt) return 0;
-	return ch->vol << 2;
+	if (!ch->off && ch->en && ch->lcnt && ch->len) {
+		ch->out = ch->vol;
+	}
+	return ch->out;
 }
 
 // noise
@@ -162,11 +158,18 @@ int apuTriVolume(apuChannel* ch) {
 void apuNoiseSync(apuChannel* ch) {
 	if (!ch->en) return;
 	if (!ch->len) return;
+	int fbk;
+	if (ch->mode) {
+		fbk = ((ch->nseed ^ (ch->nseed >> 6)) & 1) ? 0x4000 : 0;
+	} else {
+		fbk = ((ch->nseed ^ (ch->nseed >> 1)) & 1) ? 0x4000 : 0;
+	}
+	ch->nseed >>= 1;
+	ch->nseed |= fbk;
 	ch->pcnt--;
 	if (ch->pcnt < 0) {
 		ch->pcnt = ch->hper;
-		ch->pstp++;
-		ch->lev = noizes[ch->pstp & 0x1ffff] ? 1 : 0;
+		ch->lev = fbk ? 1 : 0;
 	}
 }
 
@@ -197,72 +200,69 @@ void apuDigiSync(apuChannel* ch, extmrd mrd, void* data) {
 			if (ch->elen) {		// loop
 				ch->len = ch->lcnt;
 				ch->cadr = ch->sadr;
-			} else if (ch->env) {	// irq enable
-				ch->irq = 1;
+			} else {		// irq enable
+				ch->irq = ch->env;
 			}
 		}
 	}
 }
 
 int apuDigiVolume(apuChannel* ch) {
-	if (ch->off) return 0;
-	return  ch->vol;			// 00..7f -> 00..3f
+	if (!ch->off) {
+		ch->out = ch->vol;
+	}
+	return ch->out;
 }
 
 // ...
 
+static const int seqMode0[5] = {1,3,1,7,0};		// e--|el-|e--|elf
+static const int seqMode1[5] = {3,1,3,1,0};		// el-|e--|el-|e--|---
+
 void apuSync(nesAPU* apu, int ns) {
-	// Waveform generator clock = CPU/16
+	int tmp;
 //	apu->time += ns;
+// Waveform generator clock = CPU/2	~890KHz (NTSC)
 	apu->wcnt -= ns;
 	while (apu->wcnt < 0) {
-		// 222 KHz here (CPU/8)
-//		printf("apu frm time : %i ns (%f Hz)\n",apu->time,1e9/apu->time);
-//		apu->time = 0;
 		apu->wcnt += apu->wper;
 		apu->wstp++;
 		apuToneSync(&apu->ch0);
 		apuToneSync(&apu->ch1);
-		apuNoiseSync(&apu->chn);
-		apuDigiSync(&apu->chd, apu->mrd, apu->data);
-		if (!(apu->wstp & 3))			// triangle step = CPU/32
-			apuTriSync(&apu->cht);
-	}
-	if (apu->chd.irq) {
-		apu->chd.irq = 0;
-		apu->dirq = 1;
-	}
-
-	// 240Hz clock
-	apu->tcnt -= ns;
-	while (apu->tcnt < 0) {
-		apu->tcnt += apu->tper;
-		if (apu->tstp > 0)
-			apu->tstp--;
-		else
-			apu->tstp = apu->step5 ? 4 : 3;
-
-		if (apu->tstp < 4) {		// tick 5 on pal mode is skiped
-			// each tick : envelope & trinagle linear counter
-			// 240Hz (192Hz)
-			apuToneEnv(&apu->ch0);
-			apuToneEnv(&apu->ch1);
-			apuToneEnv(&apu->chn);
-			apuTriLinear(&apu->cht);
-			// each %xx1 tick : sweep
-			if (apu->tstp & 1) {				// 120Hz (96Hz)
+		apuNoiseSync(&apu->chn);			// noise channel
+		apuDigiSync(&apu->chd, apu->mrd, apu->data);	// pcm channel
+		//if (!(apu->wstp & 15))				// triangle step = CPU/32 = APU/16
+		apuTriSync(&apu->cht);
+		if (apu->chd.irq) {				// pcm irq
+			apu->chd.irq = 0;
+			apu->dirq = 1;
+		}
+		if ((apu->wstp % 3729) == 0) {				// 14915 / 4 = ~3729 : ~240Hz here (NTSC)
+			//printf("%i ns (%f Hz)\n",apu->time, 1e9/apu->time); apu->time = 0;	// 4136450ns = 240Hz (tested)
+			apu->tstp++;
+			if (apu->step5) {
+				tmp = apu->tstp % 5;
+				tmp = seqMode1[tmp];
+			} else {
+				tmp = apu->tstp % 4;
+				tmp = seqMode0[tmp];
+			}
+			if (tmp & 1) {		// 240Hz (192Hz)
+				apuToneEnv(&apu->ch0);
+				apuToneEnv(&apu->ch1);
+				apuToneEnv(&apu->chn);
+				apuTriLinear(&apu->cht);
+			}			// 120Hz (96Hz)
+			if (tmp & 2) {
 				apuToneSweep(&apu->ch0);
 				apuToneSweep(&apu->ch1);
-			}
-			// each %x11 tick : length counters & frame IRQ (step5 must be 0)
-			if ((apu->tstp & 3) == 3) {			// correct (tested): 60Hz (48Hz)
 				apuToneLen(&apu->ch0);
 				apuToneLen(&apu->ch1);
 				apuTriLen(&apu->cht);
 				apuToneLen(&apu->chn);
-				if (!apu->step5 && apu->irqen) {
-					apu->firq = 1;
-				}
+			}
+			if (tmp & 4) {		// 60Hz (48Hz)
+				apu->firq = apu->irqen;
 			}
 		}
 	}
@@ -272,19 +272,35 @@ void apuSync(nesAPU* apu, int ns) {
 
 sndPair apuVolume(nesAPU* apu) {
 	sndPair res;
-	int lev = apuToneVolume(&apu->ch0);		// tone channel 0
-	res.left = lev;
-	res.right = lev;
-	lev = apuToneVolume(&apu->ch1);			// tone channel 1
+#if 0
+	int v1 = apuToneVolume(&apu->ch0);
+	int v2 = apuToneVolume(&apu->ch1);
+	double pout = 0.0;
+	if (v1 || v2)
+		pout = 95.88 / (100.0 + (8128.0 / (v1 + v2)));			// 0,4149 max
+	v1 = apuTriVolume(&apu->cht);
+	v2 = apuToneVolume(&apu->chn);
+	int v3 = apuDigiVolume(&apu->chd);
+	double tnd = 0.0;
+	if (v1 || v2 || v3)
+		tnd = 159.79 / (100.0 + (1.0 / ((v1 / 8227.0) + (v2 / 12241.0) + (v3 / 22638.0))));		// 0,8686 max
+	//printf("%f : %f\n",pout,tnd);
+	pout += tnd;
+	res.left = (int)((pout + tnd) * 64.0);
+	res.right = res.left;
+#else
+	int lev;
+	res.left = apuToneVolume(&apu->ch0);		// tone channel 0
+	res.right = res.left;
+	lev = apuToneVolume(&apu->ch1);
 	res = mixer(res, lev, lev, 100);
-	lev = apuTriVolume(&apu->cht);			// triangle channel
+	lev = apuTriVolume(&apu->cht);
 	res = mixer(res, lev, lev, 100);
-	lev = apuToneVolume(&apu->chn);			// noise
+	lev = apuToneVolume(&apu->chn);
 	res = mixer(res, lev, lev, 100);
-	lev = apuDigiVolume(&apu->chd);
+	lev = apuDigiVolume(&apu->chd) >> 1;		// 00..7F -> 00..3F ?
 	res = mixer(res, lev, lev, 100);
-//	res.left <<= 2;
-//	res.right <<= 2;
+#endif
 	return res;
 }
 
@@ -308,6 +324,7 @@ int apuGetLC(unsigned char val) {
 // write to registers 00..13
 
 void apuWrite(nesAPU* apu, int reg, unsigned char val) {
+	// printf("%.2X = %.2X\n",reg,val);
 	switch (reg & 0x1f) {
 		case 0x00:
 			apu->ch0.duty = (val >> 6) & 3;
@@ -321,10 +338,9 @@ void apuWrite(nesAPU* apu, int reg, unsigned char val) {
 			} else {
 				apu->ch0.vol = val & 15;
 			}
-			apuToneDuty(&apu->ch0);
 			break;
 		case 0x01:
-//				printf("ch0 sweep %.2X\n",val);
+//			printf("ch0 sweep %.2X\n",val);
 			apu->ch0.sweep = (val & 0x80) ? 1 : 0;
 			apu->ch0.sper = ((val >> 4) & 7) + 1;
 			apu->ch0.sdir = (val & 0x08) ? 1 : 0;
@@ -334,24 +350,21 @@ void apuWrite(nesAPU* apu, int reg, unsigned char val) {
 		case 0x02:
 			apu->ch0.hper &= 0x700;
 			apu->ch0.hper |= (val & 0xff);
-			apuToneDuty(&apu->ch0);
+			apuTargetPeriod(&apu->ch0);
 			break;
 		case 0x03:
-			//printf("wr 4003,%.2X\n",val);
+			//printf("3:2X\n",val);
 			apu->ch0.hper &= 0xff;
 			apu->ch0.hper |= ((val << 8) & 0x0700);
-			switch (val & 0x88) {
-				case 0x00: apu->ch0.len = apuLenPAL[(val >> 4) & 7]; break;
-				case 0x80: apu->ch0.len = apuLenNTSC[(val >> 4) & 7]; break;
-				default: apu->ch0.len = apuLenGeneral[(val >> 4) & 15]; break;
-			}
-			apuToneDuty(&apu->ch0);
-			apu->ch0.pcnt = apu->ch0.lev ? apu->ch0.per1 : apu->ch0.per0;
+			apu->ch0.len = apuGetLC(val);
+			apu->ch0.pstp = 0;
+			apu->ch0.pcnt = apu->ch0.hper;
 			apu->ch0.ecnt = apu->ch0.eper;
-			//printf("CH0 len = %i, p0 = %i, p1 = %i\n", apu->ch0.len, apu->ch0.per0, apu->ch0.per1);
+			apuTargetPeriod(&apu->ch0);
 			break;
 		// ch1 : tone 1
 		case 0x04:
+//			printf("4:%.2X\n",val);
 			apu->ch1.duty = (val >> 6) & 3;
 			apu->ch1.env = (val & 0x10) ? 0 : 1;
 			apu->ch1.elen = (val & 0x20) ? 0 : 1;
@@ -362,9 +375,9 @@ void apuWrite(nesAPU* apu, int reg, unsigned char val) {
 			} else {
 				apu->ch1.vol = val & 15;
 			}
-			apuToneDuty(&apu->ch1);
 			break;
 		case 0x05:
+			//printf("5:%.2X\n",val);
 			apu->ch1.sweep = (val & 0x80) ? 1 : 0;
 			apu->ch1.sper = ((val >> 4) & 7) + 1;
 			apu->ch1.sdir = (val & 0x08) ? 1 : 0;
@@ -372,21 +385,24 @@ void apuWrite(nesAPU* apu, int reg, unsigned char val) {
 			apu->ch1.scnt = apu->ch1.sper;
 			break;
 		case 0x06:
+			//printf("6:%.2X\n",val);
 			apu->ch1.hper &= 0x700;
 			apu->ch1.hper |= val;
-			apuToneDuty(&apu->ch1);
+			apuTargetPeriod(&apu->ch1);
 			break;
 		case 0x07:
+			//printf("7:%.2X\n",val);
 			apu->ch1.hper &= 0xff;
 			apu->ch1.hper |= ((val << 8) & 0x0700);
 			apu->ch1.len = apuGetLC(val);
-			apuToneDuty(&apu->ch1);
-			apu->ch1.pcnt = apu->ch1.lev ? apu->ch1.per1 : apu->ch1.per0;
+			apu->ch1.pstp = 0;
+			apu->ch1.pcnt = apu->ch1.hper;
 			apu->ch1.ecnt = apu->ch1.eper;
+			apuTargetPeriod(&apu->ch1);
 			break;
 		// ch2 : triangle
 		case 0x08:
-			apu->cht.elen = (val & 0x80) ? 0 : 1;
+			apu->cht.elen = (val & 0x80) ? 0 : 1;		// inverse control flag
 			apu->cht.lcnt = (val & 0x7f);
 			apu->cht.lval = (val & 0x7f);
 			break;
@@ -395,11 +411,11 @@ void apuWrite(nesAPU* apu, int reg, unsigned char val) {
 		case 0x0a:
 			apu->cht.hper &= 0x700;
 			apu->cht.hper |= val & 0xff;
-			apu->cht.pcnt = apu->cht.hper;
 			break;
 		case 0x0b:
 			apu->cht.hper &= 0xff;
 			apu->cht.hper |= (val << 8) & 0x700;
+			apu->cht.pcnt = apu->cht.hper;
 			apu->cht.len = apuGetLC(val);
 			apu->cht.sweep = 1;
 			break;
@@ -420,6 +436,7 @@ void apuWrite(nesAPU* apu, int reg, unsigned char val) {
 		case 0x0e:
 			apu->chn.hper = apuNoisePer[val & 15];
 			apu->chn.pcnt = apu->chn.hper;
+			apu->chn.mode = (val & 0x80) ? 1 : 0;
 			// b7:loop noise (short generator)
 			break;
 		case 0x0f:
@@ -429,7 +446,7 @@ void apuWrite(nesAPU* apu, int reg, unsigned char val) {
 		case 0x10:
 			apu->chd.env = (val & 0x80) ? 1 : 0;		// IRQ enable
 			apu->chd.elen = (val & 0x40) ? 1 : 0;		// loop
-			apu->chd.hper = apuPcmPer[val & 0x0f];		// period
+			apu->chd.hper = apuPcmPer[val & 0x0f] << 2;	// period
 			apu->chd.pcnt = apu->chd.hper;
 			break;
 		case 0x11:

@@ -1,5 +1,5 @@
-#ifndef _OPT_ROMSET_H
-#define _OPT_ROMSET_H
+#ifndef X_OPT_ROMSET_H
+#define X_OPT_ROMSET_H
 
 #include <QAbstractTableModel>
 #include <QDialog>

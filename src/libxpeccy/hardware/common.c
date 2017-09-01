@@ -66,15 +66,15 @@ sndPair zx_vol(Computer* comp) {
 	// tape sound
 	if (comp->tape->on) {
 		if (comp->tape->rec) {
-			lev = comp->tape->levRec ? 0x7f : 0x00;
+			lev = comp->tape->levRec ? 0x3f : 0x00;
 		} else {
-			lev = comp->tape->levPlay ? 0x7f : 0x00;
+			lev = comp->tape->levPlay ? 0x3f : 0x00;
 		}
 	}
 	vol = mixer(vol, lev, lev, 100);
 	// beeper
 	bcSync(comp->beep, -1);
-	lev = comp->beep->val;
+	lev = comp->beep->val >> 2;			// ff -> 3f
 	vol = mixer(vol, lev, lev, 100);
 	// turbo sound
 	svol = tsGetVolume(comp->ts);

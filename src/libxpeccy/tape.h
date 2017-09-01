@@ -81,7 +81,7 @@ void tapNextBlock(Tape*);
 
 TapeBlockInfo tapGetBlockInfo(Tape*,int);
 int tapGetBlocksInfo(Tape*,TapeBlockInfo*);
-int tapGetBlockData(Tape*,int,unsigned char*);
+int tapGetBlockData(Tape*,int,unsigned char*,int);
 int tapGetBlockTime(Tape*,int,int);
 
 void tapAddBlock(Tape*,TapeBlock);

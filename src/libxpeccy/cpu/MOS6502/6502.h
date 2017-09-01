@@ -23,7 +23,7 @@ enum {
 
 #define MOS6502_INT_NMI	1
 #define MOS6502_INT_RES	2
-#define MOS6502_INT_BRK	4
+#define MOS6502_INT_IRQ	4
 
 void m6502_reset(CPU*);
 int m6502_exec(CPU*);

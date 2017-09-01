@@ -225,6 +225,7 @@ struct xConfig {
 		unsigned keepRatio:1;	// keep ratio in fullscreen (add black borders)
 		int scale;		// x1..x4
 		int noflic;		// 0 (noflic) .. 50 (full flick)
+		int fps;
 	} vid;
 	struct {
 		unsigned enabled:1;

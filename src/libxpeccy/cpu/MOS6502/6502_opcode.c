@@ -120,15 +120,14 @@ void mosGetINDY(CPU* cpu) {
 
 // opcodes
 
-// brk : 7T
+// brk
 void mosop00(CPU* cpu) {
-	cpu->pc++;						// increment pc???
-	cpu->f |= (MFB | 0x20);
+//	cpu->f |= (MFB | 0x20);
 	cpu->mwr(cpu->sp, cpu->hpc, cpu->data);
 	cpu->lsp--;
 	cpu->mwr(cpu->sp, cpu->lpc, cpu->data);
 	cpu->lsp--;
-	cpu->mwr(cpu->sp, cpu->f, cpu->data);
+	cpu->mwr(cpu->sp, cpu->f | MFB | 0x20, cpu->data);		// set B flag
 	cpu->lsp--;
 	cpu->lpc = cpu->mrd(0xfffe, 0, cpu->data);
 	cpu->hpc = cpu->mrd(0xffff, 0, cpu->data);
@@ -527,6 +526,7 @@ void mosop40(CPU* cpu) {
 	cpu->lsp++;
 	cpu->f = cpu->mrd(cpu->sp, 0, cpu->data);
 	cpu->f |= MF5;			// set bit 5
+	cpu->f &= ~MFI;
 	cpu->lsp++;
 	cpu->lpc = cpu->mrd(cpu->sp, 0, cpu->data);
 	cpu->lsp++;

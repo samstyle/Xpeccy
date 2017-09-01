@@ -261,46 +261,68 @@ void compReset(Computer* comp,int res) {
 
 // cpu freq
 
+// NES...
+// NTSC	89342 dots/f	60fps	5360520 dot/sec	186.55 ns/dot
+// PAL	106392 dots/f	50fps	5319600 dot/sec	188 ns/dot
+// ~185 ns/dot	PAL:x3.2=592ns/tick	NTSC:x3=555ns/tick
+// ~190 ns/dot	PAL:608 ns/tick		NTSC:570ns/tick
+// NTSC:base/14915
+// PAL:base/12430
+
 void compUpdateTimings(Computer* comp) {
 	int perNoTurbo = 1e3 / comp->cpuFrq;		// ns for full cpu tick
-//	if (perNoTurbo & 1) perNoTurbo++;
-//	comp->nsPerTick = perNoTurbo / comp->frqMul;	// apply frequence multiplier
+	if (perNoTurbo & 1) perNoTurbo++;
 	int type = comp->hw ? comp->hw->id : HW_NULL;
 	switch (type) {
 		case HW_MSX:
 		case HW_MSX2:
-			perNoTurbo = perNoTurbo * 6 / 5;				// convert 60Hz->50Hz
+			comp->fps = 60;
+			// perNoTurbo = perNoTurbo * 6 / 5;				// convert 60Hz->50Hz
 			vidUpdateTimings(comp->vid, perNoTurbo >> 1);
 			break;
 		case HW_GBC:
+			comp->fps = 50;
 			comp->gbsnd->wav.period = perNoTurbo << 5;			// 128KHz period for wave generator = cpu.frq / 32
 			comp->gb.timer.div.per = (perNoTurbo / comp->frqMul) << 8;	// 16KHz timer divider tick. this timer depends on turbo speed
 			vidUpdateTimings(comp->vid, perNoTurbo << 1);
 			break;
 		case HW_NES:
-			// cpu frq (1.78MHz)
-			// smallest wave period = cpu frq / 16		(~112KHz)
-			// pal:ntsc = 48:60 Hz frame irq
+			// base frq (21.477MHz | 26.602MHz)
+			// cpu frq (base:12 | base:16)
+			// ppu frq (base:4 | base:5)
+			// apu frame (60Hz | 50Hz)
+			// apu frq = cpu / 2
+			// smallest wave period = cpu / 16
 			comp->vid->lockLayout = 0;
 			if (comp->nes.pal) {
-				perNoTurbo = 1e3 / 1.66;
+				comp->fps = 50;
+				perNoTurbo = 1e3 / 1.66;		// ~601
+				//perNoTurbo = 608;
 				vidSetLayout(comp->vid, nesPALLay);
 				comp->vid->ppu->vbsline = 241;
 				comp->vid->ppu->vbrline = 311;
 				vidUpdateTimings(comp->vid, perNoTurbo / 3.2);		// 16 ticks = 5 dots
+				//comp->nesapu->tper = perNoTurbo * 12430 / 2;
+				//comp->nesapu->tper = perNoTurbo * 17898 / 2;
 			} else {
-				perNoTurbo = 1e3 / 1.79;
-				perNoTurbo = perNoTurbo * 6 / 5;			// 60Hz(NTSC)->50Hz(emulator)
+				comp->fps = 60;
+				perNoTurbo = 1e3 / 1.79;		// ~559
+				//perNoTurbo = 570;
 				vidSetLayout(comp->vid, nesNTSCLay);
 				comp->vid->ppu->vbsline = 241;
 				comp->vid->ppu->vbrline = 261;
 				vidUpdateTimings(comp->vid, perNoTurbo / 3);		// 15 ticks = 5 dots
+				//comp->nesapu->tper = perNoTurbo * 14915 / 2;
 			}
-			comp->nesapu->tper = perNoTurbo * 14915 / 2;			// ~240 Hz @ 1.78MHz (full period)
-			comp->nesapu->wper = perNoTurbo * 16 / 2;			// most high tone frq = CPU/16
+			//vidUpdateTimings(comp->vid, 190);
+			//comp->nesapu->tper = 4166667;	//89490e3 / 21.477;		// ~240 Hz (regardless PAL/NTSC video)
+			//comp->nesapu->wper = perNoTurbo * 16 / 2;			// HALF period of most high tone frq = CPU/16
+			//comp->nesapu->tper = perNoTurbo * 14915 / 2;
+			comp->nesapu->wper = perNoTurbo << 1;				// 1 APU tick = 2 CPU ticks
 			comp->vid->lockLayout = 1;
 			break;
 		default:
+			comp->fps = 50;
 			vidUpdateTimings(comp->vid, perNoTurbo >> 1);
 			break;
 	}

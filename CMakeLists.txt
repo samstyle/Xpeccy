@@ -163,6 +163,7 @@ set(MOCFILES
 	./src/xgui/options/setupwin.h
 	./src/xgui/options/padbinder.h
 	./src/xgui/options/opt_romset.h
+	./src/xgui/options/opt_diskcat.h
 	./src/vkeyboard.h
 	./src/xgui/xgui.h
 )

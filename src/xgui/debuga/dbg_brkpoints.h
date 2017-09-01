@@ -1,5 +1,5 @@
-#ifndef _DBG_BREAKS_H
-#define _DBG_BREAKS_H
+#ifndef X_DBG_BREAKS_H
+#define X_DBG_BREAKS_H
 
 #include <QAbstractTableModel>
 #include <QModelIndex>

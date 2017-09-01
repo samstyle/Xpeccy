@@ -32,7 +32,7 @@ void xThread::tapeCatch() {
 		unsigned short ix = comp->cpu->ix;
 		TapeBlockInfo inf = tapGetBlockInfo(comp->tape,blk);
 		blkData = (unsigned char*)realloc(blkData,inf.size + 2);
-		tapGetBlockData(comp->tape,blk,blkData);
+		tapGetBlockData(comp->tape,blk,blkData, inf.size + 2);
 		if (inf.size == de) {
 			for (int i = 0; i < de; i++) {
 				memWr(comp->mem,ix,blkData[i + 1]);

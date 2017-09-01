@@ -90,6 +90,7 @@ void DebugWin::start(Computer* c) {
 	if (memViewer->vis) {
 		memViewer->move(memViewer->winPos);
 		memViewer->show();
+		memViewer->fillImage();
 	}
 	activateWindow();
 }
@@ -584,14 +585,14 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 				case Qt::Key_Space:
 					//switchBP(0);
 					break;
-				case Qt::Key_Up:
-					disasmAdr--;
-					fillDisasm();
-					break;
-				case Qt::Key_Down:
-					disasmAdr++;
-					fillDisasm();
-					break;
+//				case Qt::Key_Up:
+//					disasmAdr--;
+//					fillDisasm();
+//					break;
+//				case Qt::Key_Down:
+//					disasmAdr++;
+//					fillDisasm();
+//					break;
 			}
 			break;
 /*

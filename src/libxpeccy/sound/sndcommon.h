@@ -1,6 +1,16 @@
 #ifndef _SNDCOMMON_H
 #define _SNDCOMMON_H
 
+typedef  struct {
+	int beepvol;
+	int tapevol;
+	int ayvol;
+	int gsvol;
+	int sdrvol;
+	int gbcvol;
+	int nesvol;
+} sndVolume;
+
 typedef struct {
 	int left;
 	int right;
