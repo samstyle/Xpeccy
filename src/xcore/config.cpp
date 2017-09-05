@@ -147,13 +147,16 @@ void saveConfig() {
 
 	fprintf(cfile, "\n[SOUND]\n\n");
 	fprintf(cfile, "enabled = %s\n", YESNO(conf.snd.enabled));
-	fprintf(cfile, "dontmute = %s\n", YESNO(conf.snd.mute));
+//	fprintf(cfile, "dontmute = %s\n", YESNO(conf.snd.mute));
 	fprintf(cfile, "soundsys = %s\n", sndOutput->name);
 	fprintf(cfile, "rate = %i\n", conf.snd.rate);
+	fprintf(cfile, "volume.master = %i\n", conf.snd.vol.master);
 	fprintf(cfile, "volume.beep = %i\n", conf.snd.vol.beep);
 	fprintf(cfile, "volume.tape = %i\n", conf.snd.vol.tape);
 	fprintf(cfile, "volume.ay = %i\n", conf.snd.vol.ay);
 	fprintf(cfile, "volume.gs = %i\n", conf.snd.vol.gs);
+	fprintf(cfile, "volume.sdrv = %i\n", conf.snd.vol.sdrv);
+	fprintf(cfile, "volume.saa = %i\n", conf.snd.vol.saa);
 
 	fprintf(cfile, "\n[TAPE]\n\n");
 	fprintf(cfile, "autoplay = %s\n", YESNO(conf.tape.autostart));
@@ -252,6 +255,15 @@ void loadConfig() {
 		newrs.roms[i].path = "";
 		newrs.roms[i].part = 0;
 	}
+
+	conf.snd.vol.master = 100;
+	conf.snd.vol.beep = 100;
+	conf.snd.vol.tape = 100;
+	conf.snd.vol.ay = 100;
+	conf.snd.vol.gs = 100;
+	conf.snd.vol.sdrv = 100;
+	conf.snd.vol.saa = 100;
+
 	while (!file.eof()) {
 		file.getline(buf,2048);
 		line = std::string(buf);
@@ -367,13 +379,16 @@ void loadConfig() {
 					break;
 				case SECT_SOUND:
 					if (pnam=="enabled") conf.snd.enabled = str2bool(pval) ? 1 : 0;
-					if (pnam=="dontmute") conf.snd.mute = str2bool(pval) ? 1 : 0;
+//					if (pnam=="dontmute") conf.snd.mute = str2bool(pval) ? 1 : 0;
 					if (pnam=="soundsys") soutnam = pval;
 					if (pnam=="rate") conf.snd.rate = atoi(pval.c_str());
+					if (pnam=="volume.master") conf.snd.vol.master = getRanged(pval.c_str(), 0, 100);
 					if (pnam=="volume.beep") conf.snd.vol.beep = getRanged(pval.c_str(), 0, 100);
 					if (pnam=="volume.tape") conf.snd.vol.tape = getRanged(pval.c_str(), 0, 100);
 					if (pnam=="volume.ay") conf.snd.vol.ay = getRanged(pval.c_str(), 0, 100);
 					if (pnam=="volume.gs") conf.snd.vol.gs = getRanged(pval.c_str(), 0, 100);
+					if (pnam=="volume.sdrv") conf.snd.vol.sdrv = getRanged(pval.c_str(), 0, 100);
+					if (pnam=="volume.saa") conf.snd.vol.saa = getRanged(pval.c_str(), 0, 100);
 					break;
 				case SECT_TOOLS:
 					break;

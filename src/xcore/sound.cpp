@@ -16,99 +16,40 @@ typedef struct {
 	unsigned pos:12;
 } sndBuffa;
 
-sndBuffa bufA;		// ring buffer @ real freq
-sndBuffa bufB;		// 1 frame buffer for output
+static sndBuffa bufA;		// ring buffer @ real freq
+static sndBuffa bufB;		// 1 frame buffer for output
 
-unsigned short playPos = 0;
-int pass = 0;
+static unsigned short playPos = 0;
+static int pass = 0;
 
-int smpCount = 0;
+static int smpCount = 0;
 
 OutSys *sndOutput = NULL;
-int sndChunks = 882;
-int sndBufSize = 1764;
+static int sndChunks = 882;
+static int sndBufSize = 1764;
 int nsPerSample = 23143;
+static int32_t sndFormat;
 
-sndPair sndLev;
+static sndPair sndLev;
 // sndPair sndLast;
 
 OutSys* findOutSys(const char*);
 
-#ifdef __linux
-	int32_t ossHandle;			// oss
-	int32_t sndFormat;
-#if defined(HAVEALSA)
-	snd_pcm_t* alsaHandle = NULL;
-#endif
-
-#elif _WIN32
-	WAVEFORMATEX wf;
-	WAVEHDR whdr;
-	HWAVEOUT wout;
-	HANDLE event;
-#endif
+//#ifdef __linux
+//	int32_t ossHandle;			// oss
+//#if defined(HAVEALSA)
+//	snd_pcm_t* alsaHandle = NULL;
+//#endif
+//#elif _WIN32
+//	WAVEFORMATEX wf;
+//	WAVEHDR whdr;
+//	HWAVEOUT wout;
+//	HANDLE event;
+//#endif
 
 // output
 
 #include "hardware.h"
-
-/*
-void sndMix(Computer* comp) {
-	int lev = 0;
-	sndLev.left = 0;
-	sndLev.right = 0;
-	// tape
-	if (comp->tape->on) {
-		if (comp->tape->rec) {
-			lev = comp->tape->levRec ? 0x7f : 0x00;
-		} else {
-			lev = comp->tape->levPlay ? 0x7f : 0x00;
-		}
-	}
-//	lev = (comp->tape->on && (comp->tape->levRec || comp->tape->levPlay)) ? 0x7f : 0x00;
-	sndLev = mixer(sndLev, lev, lev, conf.snd.vol.tape);
-	// beeper
-	bcSync(comp->beep, -1);
-	lev = comp->beep->val;
-	sndLev = mixer(sndLev, lev, lev, conf.snd.vol.beep);
-	// turbosound
-	svol = tsGetVolume(comp->ts);
-	sndLev = mixer(sndLev, svol.left, svol.right, conf.snd.vol.ay);
-	// gameboy
-	svol = gbsVolume(comp->gbsnd);
-	sndLev = mixer(sndLev, svol.left, svol.right, 100);
-	// general sound
-	//svol = gsGetVolume(comp->gs);
-	//sndLev = mixer(sndLev, svol.left, svol.right, conf.snd.vol.gs);
-	// soundrive
-//	svol = sdrvGetVolume(comp->sdrv);
-//	sndLev = mixer(sndLev, svol.left, svol.right, conf.snd.vol.beep);
-	// saa
-//	svol = saaGetVolume(comp->saa);		// TODO : saa volume control
-//	sndLev = mixer(sndLev, svol.left, svol.right, 100);
-	// DEVICES
-	int idx = 0;
-	xDevice* dev;
-	int vol = 0;
-	while ((idx < MAX_DEV_COUNT) && comp->devList[idx]) {
-		dev = comp->devList[idx];
-		if (dev->vol) {
-			switch(dev->type) {
-				case DEV_SAA: vol = 100; break;
-				case DEV_SDRIVE: vol = 100; break;
-				case DEV_GSOUND: vol = conf.snd.vol.gs; break;
-				default: vol = 0; break;
-			}
-			svol = dev->vol(dev->ptr.ptr);
-			sndLev = mixer(sndLev, svol.left, svol.right, vol);
-		}
-		idx++;
-	}
-	// cut
-	if (sndLev.left > 0xff) sndLev.left = 0xff;
-	if (sndLev.right > 0xff) sndLev.right = 0xff;
-}
-*/
 
 // return 1 when buffer is full
 int sndSync(Computer* comp, int nosync, int fast) {
@@ -120,7 +61,11 @@ int sndSync(Computer* comp, int nosync, int fast) {
 		saaFlush(comp->saa);
 
 		if (!fast) {
-			sndLev = comp->hw->vol(comp);
+			sndLev = comp->hw->vol(comp, &conf.snd.vol);
+
+			sndLev.left = sndLev.left * conf.snd.vol.master / 100;
+			sndLev.right = sndLev.right * conf.snd.vol.master / 100;
+
 			if (sndLev.left > 127) sndLev.left = 127;
 			if (sndLev.right > 127) sndLev.right = 127;
 		}
@@ -449,16 +394,16 @@ void sndInit() {
 	conf.snd.rate = 44100;
 	conf.snd.chans = 2;
 	conf.snd.enabled = 1;
-	conf.snd.mute = 1;
+//	conf.snd.mute = 1;
 	sndOutput = NULL;
 	conf.snd.vol.beep = 100;
 	conf.snd.vol.tape = 100;
 	conf.snd.vol.ay = 100;
 	conf.snd.vol.gs = 100;
 	initNoise();							// ay/ym
-    bufA.pos = 0;
-    bufB.pos = 0;
-//    bufBig.pos = 0;
+	bufA.pos = 0;
+	bufB.pos = 0;
+//	bufBig.pos = 0;
 }
 
 // debug

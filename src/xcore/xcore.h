@@ -229,16 +229,11 @@ struct xConfig {
 	} vid;
 	struct {
 		unsigned enabled:1;
-		unsigned mute:1;
+//		unsigned mute:1;
 		unsigned fill:1;	// 1 while snd buffer not filled, 0 at end of snd buffer
 		int rate;
 		int chans;
-		struct {
-			int beep;
-			int tape;
-			int ay;
-			int gs;
-		} vol;
+		sndVolume vol;
 	} snd;
 	struct {
 		unsigned autostart:1;

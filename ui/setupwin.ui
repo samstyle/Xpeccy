@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>505</width>
-    <height>448</height>
+    <height>428</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -150,17 +150,6 @@
               <item row="2" column="2">
                <layout class="QHBoxLayout" name="horizontalLayout_2">
                 <item>
-                 <widget class="QToolButton" name="rsedit">
-                  <property name="text">
-                   <string>...</string>
-                  </property>
-                  <property name="icon">
-                   <iconset resource="../xpeccy.qrc">
-                    <normaloff>:/images/other.png</normaloff>:/images/other.png</iconset>
-                  </property>
-                 </widget>
-                </item>
-                <item>
                  <widget class="QToolButton" name="addrset">
                   <property name="text">
                    <string>...</string>
@@ -168,6 +157,17 @@
                   <property name="icon">
                    <iconset resource="../xpeccy.qrc">
                     <normaloff>:/images/add.png</normaloff>:/images/add.png</iconset>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QToolButton" name="rsedit">
+                  <property name="text">
+                   <string>...</string>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="../xpeccy.qrc">
+                    <normaloff>:/images/edit.png</normaloff>:/images/edit.png</iconset>
                   </property>
                  </widget>
                 </item>
@@ -352,17 +352,6 @@
               <item row="0" column="2">
                <layout class="QHBoxLayout" name="horizontalLayout_26">
                 <item>
-                 <widget class="QToolButton" name="layEdit">
-                  <property name="text">
-                   <string>...</string>
-                  </property>
-                  <property name="icon">
-                   <iconset resource="../xpeccy.qrc">
-                    <normaloff>:/images/other.png</normaloff>:/images/other.png</iconset>
-                  </property>
-                 </widget>
-                </item>
-                <item>
                  <widget class="QToolButton" name="layAdd">
                   <property name="text">
                    <string>...</string>
@@ -370,6 +359,17 @@
                   <property name="icon">
                    <iconset resource="../xpeccy.qrc">
                     <normaloff>:/images/add.png</normaloff>:/images/add.png</iconset>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QToolButton" name="layEdit">
+                  <property name="text">
+                   <string>...</string>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="../xpeccy.qrc">
+                    <normaloff>:/images/edit.png</normaloff>:/images/edit.png</iconset>
                   </property>
                  </widget>
                 </item>
@@ -679,7 +679,7 @@
         <attribute name="title">
          <string>Sound</string>
         </attribute>
-        <layout class="QVBoxLayout" name="verticalLayout_40">
+        <layout class="QVBoxLayout" name="verticalLayout_43" stretch="0,0,10">
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_25">
            <item>
@@ -725,9 +725,16 @@
                </widget>
               </item>
               <item>
-               <widget class="QCheckBox" name="mutbox">
+               <widget class="Line" name="line_3">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="gsrbox">
                 <property name="text">
-                 <string>Don't mute if inactive</string>
+                 <string>GS reset</string>
                 </property>
                </widget>
               </item>
@@ -750,90 +757,236 @@
           </layout>
          </item>
          <item>
-          <layout class="QGridLayout" name="gridLayout_17">
-           <item row="0" column="0">
-            <widget class="QGroupBox" name="groupBox_3">
+          <layout class="QHBoxLayout" name="horizontalLayout_32">
+           <item>
+            <widget class="QGroupBox" name="groupBox_12">
              <property name="title">
-              <string>Speaker</string>
+              <string>Volumes</string>
              </property>
-             <property name="checkable">
-              <bool>false</bool>
-             </property>
-             <layout class="QVBoxLayout" name="verticalLayout_20">
-              <item>
-               <layout class="QGridLayout" name="gridLayout_12">
-                <item row="0" column="0">
-                 <widget class="QLabel" name="label_9">
-                  <property name="text">
-                   <string>Beeper</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="1">
-                 <widget class="QSlider" name="bvsld">
-                  <property name="maximum">
-                   <number>100</number>
-                  </property>
-                  <property name="tracking">
-                   <bool>true</bool>
-                  </property>
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="tickPosition">
-                   <enum>QSlider::TicksBelow</enum>
-                  </property>
-                  <property name="tickInterval">
-                   <number>10</number>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="2">
-                 <widget class="QLabel" name="bvlab">
-                  <property name="minimumSize">
-                   <size>
-                    <width>32</width>
-                    <height>0</height>
-                   </size>
-                  </property>
-                  <property name="text">
-                   <string>1</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="0">
-                 <widget class="QLabel" name="label_10">
-                  <property name="text">
-                   <string>Tape</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="1">
-                 <widget class="QSlider" name="tvsld">
-                  <property name="maximum">
-                   <number>100</number>
-                  </property>
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="tickPosition">
-                   <enum>QSlider::TicksBelow</enum>
-                  </property>
-                  <property name="tickInterval">
-                   <number>10</number>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="2">
-                 <widget class="QLabel" name="tvlab">
-                  <property name="text">
-                   <string>1</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
+             <layout class="QGridLayout" name="gridLayout_14">
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_10">
+                <property name="text">
+                 <string>Tape</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
               </item>
-              <item>
+              <item row="4" column="0">
+               <widget class="QToolButton" name="tbGS">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text">
+                 <string>GS</string>
+                </property>
+                <property name="checkable">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="QLabel" name="label_30">
+                <property name="text">
+                 <string>Sdrv</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="2">
+               <widget class="QSpinBox" name="sbBeepVol">
+                <property name="frame">
+                 <bool>false</bool>
+                </property>
+                <property name="maximum">
+                 <number>100</number>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="2">
+               <widget class="QSpinBox" name="sbMasterVol">
+                <property name="frame">
+                 <bool>false</bool>
+                </property>
+                <property name="maximum">
+                 <number>100</number>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="2">
+               <widget class="QSpinBox" name="sbSAAVol">
+                <property name="frame">
+                 <bool>false</bool>
+                </property>
+                <property name="maximum">
+                 <number>100</number>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_14">
+                <property name="text">
+                 <string>Master</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="1">
+               <widget class="QSlider" name="sldSdrvVol">
+                <property name="maximum">
+                 <number>100</number>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0">
+               <widget class="QToolButton" name="tbSAA">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text">
+                 <string>SAA</string>
+                </property>
+                <property name="checkable">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="2">
+               <widget class="QSpinBox" name="sbAYVol">
+                <property name="frame">
+                 <bool>false</bool>
+                </property>
+                <property name="maximum">
+                 <number>100</number>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="2">
+               <widget class="QSpinBox" name="sbSdrvVol">
+                <property name="frame">
+                 <bool>false</bool>
+                </property>
+                <property name="maximum">
+                 <number>100</number>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QSlider" name="sldBeepVol">
+                <property name="maximum">
+                 <number>100</number>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="1">
+               <widget class="QSlider" name="sldSAAVol">
+                <property name="maximum">
+                 <number>100</number>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="label_11">
+                <property name="text">
+                 <string>AY</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QSlider" name="sldMasterVol">
+                <property name="maximum">
+                 <number>100</number>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QSlider" name="sldGSVol">
+                <property name="maximum">
+                 <number>100</number>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="2">
+               <widget class="QSpinBox" name="sbGSVol">
+                <property name="frame">
+                 <bool>false</bool>
+                </property>
+                <property name="maximum">
+                 <number>100</number>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QSlider" name="sldAYVol">
+                <property name="maximum">
+                 <number>100</number>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QSlider" name="sldTapeVol">
+                <property name="maximum">
+                 <number>100</number>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="2">
+               <widget class="QSpinBox" name="sbTapeVol">
+                <property name="frame">
+                 <bool>false</bool>
+                </property>
+                <property name="maximum">
+                 <number>100</number>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_9">
+                <property name="text">
+                 <string>Beep</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="0">
                <spacer name="verticalSpacer_8">
                 <property name="orientation">
                  <enum>Qt::Vertical</enum>
@@ -849,271 +1002,88 @@
              </layout>
             </widget>
            </item>
-           <item row="0" column="1">
-            <widget class="QGroupBox" name="aygroup">
-             <property name="title">
-              <string>AY/YM</string>
-             </property>
-             <property name="checkable">
-              <bool>false</bool>
-             </property>
-             <layout class="QVBoxLayout" name="verticalLayout_9">
-              <item>
-               <layout class="QGridLayout" name="gridLayout_13">
-                <item row="0" column="0">
-                 <widget class="QLabel" name="label_15">
-                  <property name="text">
-                   <string>Chip 1</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="1">
-                 <widget class="QComboBox" name="schip1box"/>
-                </item>
-                <item row="0" column="2">
-                 <widget class="QComboBox" name="stereo1box"/>
-                </item>
-                <item row="1" column="0">
-                 <widget class="QLabel" name="label_16">
-                  <property name="text">
-                   <string>Chip 2</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="1">
-                 <widget class="QComboBox" name="schip2box"/>
-                </item>
-                <item row="1" column="2">
-                 <widget class="QComboBox" name="stereo2box"/>
-                </item>
-                <item row="2" column="0">
-                 <widget class="QLabel" name="label_25">
-                  <property name="text">
-                   <string>TS</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="1">
-                 <widget class="QComboBox" name="tsbox"/>
-                </item>
-               </layout>
-              </item>
-              <item>
-               <layout class="QGridLayout" name="gridLayout_14">
-                <item row="0" column="0">
-                 <widget class="QLabel" name="label_11">
-                  <property name="text">
-                   <string>Volume</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="1">
-                 <widget class="QSlider" name="avsld">
-                  <property name="maximum">
-                   <number>100</number>
-                  </property>
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="tickPosition">
-                   <enum>QSlider::TicksBelow</enum>
-                  </property>
-                  <property name="tickInterval">
-                   <number>10</number>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="2">
-                 <widget class="QLabel" name="avlab">
-                  <property name="minimumSize">
-                   <size>
-                    <width>32</width>
-                    <height>0</height>
-                   </size>
-                  </property>
-                  <property name="text">
-                   <string>1</string>
-                  </property>
-                 </widget>
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_20">
+             <item>
+              <widget class="QGroupBox" name="aygroup">
+               <property name="title">
+                <string>AY/YM</string>
+               </property>
+               <property name="checkable">
+                <bool>false</bool>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_9">
+                <item>
+                 <layout class="QGridLayout" name="gridLayout_13">
+                  <item row="0" column="0">
+                   <widget class="QLabel" name="label_15">
+                    <property name="text">
+                     <string>Chip 1</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="1">
+                   <widget class="QComboBox" name="schip1box"/>
+                  </item>
+                  <item row="0" column="2">
+                   <widget class="QComboBox" name="stereo1box"/>
+                  </item>
+                  <item row="1" column="0">
+                   <widget class="QLabel" name="label_16">
+                    <property name="text">
+                     <string>Chip 2</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="1">
+                   <widget class="QComboBox" name="schip2box"/>
+                  </item>
+                  <item row="1" column="2">
+                   <widget class="QComboBox" name="stereo2box"/>
+                  </item>
+                  <item row="2" column="0">
+                   <widget class="QLabel" name="label_25">
+                    <property name="text">
+                     <string>TS</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="2" column="1">
+                   <widget class="QComboBox" name="tsbox"/>
+                  </item>
+                 </layout>
                 </item>
                </layout>
-              </item>
-              <item>
-               <spacer name="verticalSpacer_2">
-                <property name="orientation">
-                 <enum>Qt::Vertical</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>20</width>
-                  <height>40</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QGroupBox" name="gsgroup">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="title">
-              <string>Genera&amp;l Sound</string>
-             </property>
-             <property name="checkable">
-              <bool>true</bool>
-             </property>
-             <layout class="QVBoxLayout" name="verticalLayout_21">
-              <item>
-               <layout class="QGridLayout" name="gridLayout_16">
-                <item row="0" column="0">
-                 <widget class="QCheckBox" name="gsrbox">
-                  <property name="text">
-                   <string>Reset GS on /RES</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="1">
-                 <spacer name="horizontalSpacer_2">
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>40</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
-              </item>
-              <item>
-               <layout class="QGridLayout" name="gridLayout_18" columnstretch="0,10">
-                <item row="0" column="0">
-                 <widget class="QLabel" name="label_14">
-                  <property name="text">
-                   <string>Stereo</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="1">
-                 <widget class="QComboBox" name="gstereobox"/>
-                </item>
-               </layout>
-              </item>
-              <item>
-               <layout class="QGridLayout" name="gridLayout_15">
-                <item row="0" column="0">
-                 <widget class="QLabel" name="label_24">
-                  <property name="text">
-                   <string>Volume</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="1">
-                 <widget class="QSlider" name="gvsld">
-                  <property name="maximum">
-                   <number>100</number>
-                  </property>
-                  <property name="orientation">
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="tickPosition">
-                   <enum>QSlider::TicksBelow</enum>
-                  </property>
-                  <property name="tickInterval">
-                   <number>10</number>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="2">
-                 <widget class="QLabel" name="gslab">
-                  <property name="minimumSize">
-                   <size>
-                    <width>32</width>
-                    <height>0</height>
-                   </size>
-                  </property>
-                  <property name="text">
-                   <string>1</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <item>
-               <spacer name="verticalSpacer_9">
-                <property name="orientation">
-                 <enum>Qt::Vertical</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>20</width>
-                  <height>40</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QGroupBox" name="groupBox_7">
-             <property name="title">
-              <string>Others</string>
-             </property>
-             <layout class="QGridLayout" name="gridLayout_6" columnstretch="0,10">
-              <item row="0" column="0">
-               <widget class="QLabel" name="label_41">
-                <property name="text">
-                 <string>Soundrive</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QComboBox" name="sdrvBox"/>
-              </item>
-              <item row="2" column="0">
-               <spacer name="verticalSpacer_17">
-                <property name="orientation">
-                 <enum>Qt::Vertical</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>20</width>
-                  <height>40</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item row="1" column="0">
-               <widget class="QCheckBox" name="saaEn">
-                <property name="text">
-                 <string>SAA1099</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="1">
-               <widget class="QCheckBox" name="saaStereo">
-                <property name="text">
-                 <string>Stereo</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
+              </widget>
+             </item>
+             <item>
+              <layout class="QGridLayout" name="gridLayout_12" columnstretch="0,10">
+               <item row="0" column="0">
+                <widget class="QLabel" name="label_41">
+                 <property name="text">
+                  <string>Soundrive</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1">
+                <widget class="QComboBox" name="sdrvBox"/>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <spacer name="verticalSpacer_2">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
            </item>
           </layout>
          </item>
@@ -1267,7 +1237,7 @@
                     </property>
                     <property name="icon">
                      <iconset resource="../xpeccy.qrc">
-                      <normaloff>:/images/other.png</normaloff>:/images/other.png</iconset>
+                      <normaloff>:/images/edit.png</normaloff>:/images/edit.png</iconset>
                     </property>
                    </widget>
                   </item>

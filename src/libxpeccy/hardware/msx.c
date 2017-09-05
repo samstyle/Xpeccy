@@ -202,7 +202,7 @@ void msx_keyr(Computer* comp, keyEntry ent) {
 	keyRelease(comp->keyb, ent.msxKey, 2);
 }
 
-sndPair msx_vol(Computer* comp) {
+sndPair msx_vol(Computer* comp, sndVolume* sv) {
 	sndPair vol = aymGetVolume(comp->ts->chipA);
 	return vol;
 }

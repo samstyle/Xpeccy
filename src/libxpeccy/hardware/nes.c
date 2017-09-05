@@ -77,11 +77,11 @@ unsigned char nesMMrd(unsigned short adr, void* data) {
 				switch (adr & 0x1f) {
 					case 0x15:
 						res = 0;
-						if (apu->ch0.en && apu->ch0.len) res |= 0x01;
-						if (apu->ch1.en && apu->ch1.len) res |= 0x02;
-						if (apu->cht.en && apu->cht.len) res |= 0x04;
-						if (apu->chn.en && apu->chn.len) res |= 0x08;
-						if (apu->chd.en && apu->chd.len) res |= 0x10;
+						if (apu->ch0.len) res |= 0x01;
+						if (apu->ch1.len) res |= 0x02;
+						if (apu->cht.len) res |= 0x04;
+						if (apu->chn.len) res |= 0x08;
+						if (apu->chd.len) res |= 0x10;
 						if (apu->firq) res |= 0x40;
 						if (apu->dirq) res |= 0x80;
 						apu->firq = 0;
@@ -134,11 +134,11 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 						comp->cpu->t += 0x201;	// DMA eats 512+1+1 cpu ticks, cpu is halted during operation
 						break;
 					case 0x15:
-						apu->ch0.en = (val & 0x01) ? 1 : 0;
-						apu->ch1.en = (val & 0x02) ? 1 : 0;
-						apu->cht.en = (val & 0x04) ? 1 : 0;
-						apu->chn.en = (val & 0x08) ? 1 : 0;
-						apu->chd.en = (val & 0x10) ? 1 : 0;
+						apu->ch0.en = (val & 0x01) ? 1 : 0; if (!apu->ch0.en) apu->ch0.len = 0;
+						apu->ch1.en = (val & 0x02) ? 1 : 0; if (!apu->ch1.en) apu->ch1.len = 0;
+						apu->cht.en = (val & 0x04) ? 1 : 0; if (!apu->cht.en) apu->cht.len = 0;
+						apu->chn.en = (val & 0x08) ? 1 : 0; if (!apu->chn.en) apu->chn.len = 0;
+						apu->chd.en = (val & 0x10) ? 1 : 0; if (!apu->ch0.en) apu->chd.len = 0;
 						apu->dirq = 0;
 						break;
 					case 0x16:
@@ -249,6 +249,7 @@ static char nesSpOn[] = " SPR layer on ";
 static char nesSpOff[] = " SPR layer off ";
 static char nesPAL[] = " PAL ";
 static char nesNTSC[] = " NTSC ";
+static char nesDendy[] = " Dendy ";
 static char nesC0off[] = " CH0 off ";
 static char nesC0on[] = " CH0 on ";
 static char nesC1off[] = " CH1 off ";
@@ -265,8 +266,20 @@ void nes_keyp(Computer* comp, keyEntry ent) {
 	comp->nes.priPadState |= mask;
 	switch (ent.key) {
 		case XKEY_0:
-			comp->nes.pal ^= 1;
-			comp->msg = comp->nes.pal ? nesPAL : nesNTSC;
+			switch(comp->nes.type) {
+				case NES_NTSC:
+					comp->nes.type = NES_PAL;
+					comp->msg = nesPAL;
+					break;
+				case NES_PAL:
+					comp->nes.type = NES_DENDY;
+					comp->msg = nesDendy;
+					break;
+				default:
+					comp->nes.type = NES_NTSC;
+					comp->msg = nesNTSC;
+					break;
+			}
 			compUpdateTimings(comp);
 			break;
 		case XKEY_1:
@@ -306,6 +319,6 @@ void nes_keyr(Computer* comp, keyEntry ent) {
 	comp->nes.priPadState &= ~mask;
 }
 
-sndPair nes_vol(Computer* comp) {
+sndPair nes_vol(Computer* comp, sndVolume* sv) {
 	return apuVolume(comp->nesapu);
 }

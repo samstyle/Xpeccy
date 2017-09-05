@@ -1,14 +1,14 @@
-#ifndef _SNDCOMMON_H
-#define _SNDCOMMON_H
+#ifndef X_SNDCOMMON_H
+#define X_SNDCOMMON_H
 
 typedef  struct {
-	int beepvol;
-	int tapevol;
-	int ayvol;
-	int gsvol;
-	int sdrvol;
-	int gbcvol;
-	int nesvol;
+	int master;
+	int beep;
+	int tape;
+	int ay;
+	int gs;
+	int sdrv;
+	int saa;
 } sndVolume;
 
 typedef struct {

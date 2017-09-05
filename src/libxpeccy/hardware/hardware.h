@@ -29,6 +29,12 @@ enum {
 	HW_NES		// Nintendo Entertaiment System (Dendy)
 };
 
+enum {
+	NES_DENDY = 0,
+	NES_NTSC,
+	NES_PAL
+};
+
 // mem size
 #define	MEM_48	0
 #define	MEM_128	1
@@ -57,7 +63,7 @@ typedef void(*cbHwIwr)(Computer*, unsigned short, unsigned char, int);
 // key press/release
 typedef void(*cbHwKey)(Computer*, keyEntry);
 // get volume
-typedef sndPair(*cbHwVol)(Computer*);
+typedef sndPair(*cbHwVol)(Computer*, sndVolume*);
 
 struct HardWare {
 	int id;			// id
@@ -98,7 +104,7 @@ unsigned char stdMRd(Computer*,unsigned short,int);
 void stdMWr(Computer*,unsigned short,unsigned char);
 
 void zx_sync(Computer*, int);
-sndPair zx_vol(Computer*);
+sndPair zx_vol(Computer*, sndVolume*);
 
 // debug IO
 
@@ -205,7 +211,7 @@ void msxMWr(Computer*,unsigned short,unsigned char);
 void msx_sync(Computer*, int);
 void msx_keyp(Computer*, keyEntry);
 void msx_keyr(Computer*, keyEntry);
-sndPair msx_vol(Computer*);
+sndPair msx_vol(Computer*, sndVolume*);
 
 // msx2
 void msx2mapper(Computer*);
@@ -223,7 +229,7 @@ void gbMemWr(Computer*, unsigned short, unsigned char);
 void gbcSync(Computer*, int);
 void gbc_keyp(Computer*, keyEntry);
 void gbc_keyr(Computer*, keyEntry);
-sndPair gbc_vol(Computer*);
+sndPair gbc_vol(Computer*, sndVolume*);
 
 // nes
 void nesMaper(Computer*);
@@ -233,7 +239,7 @@ void nesMemWr(Computer*, unsigned short, unsigned char);
 void nesSync(Computer*, int);
 void nes_keyp(Computer*, keyEntry);
 void nes_keyr(Computer*, keyEntry);
-sndPair nes_vol(Computer*);
+sndPair nes_vol(Computer*, sndVolume*);
 unsigned char nes_apu_ext_rd(unsigned short, void*);
 unsigned char nes_ppu_ext_rd(unsigned short, void*);
 unsigned char nes_apu_ext_wr(unsigned short, unsigned char, void*);

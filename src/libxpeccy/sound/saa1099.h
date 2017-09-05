@@ -53,7 +53,7 @@ typedef struct {
 
 typedef struct {
 	unsigned enabled:1;	// options : present/not present
-	unsigned mono:1;
+//	unsigned mono:1;
 	unsigned off:1;		// software control : Reg 1C bit 0
 	int time;
 	int curReg;

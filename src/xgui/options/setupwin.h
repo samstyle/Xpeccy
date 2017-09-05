@@ -76,7 +76,7 @@ class SetupWin : public QDialog {
 		void umadd(); void umdel(); void umup(); void umdn();
 		void umedit(QModelIndex);
 		void umaselp(); void umaconf();
-		void updvolumes();
+//		void updvolumes();
 		void chablock(QModelIndex);
 		void setTapeBreak(int,int);
 		void hddcap();

@@ -691,7 +691,7 @@ void gbc_keyr(Computer* comp, keyEntry ent) {
 	comp->gb.buttons |= mask;
 }
 
-sndPair gbc_vol(Computer* comp) {
+sndPair gbc_vol(Computer* comp, sndVolume* sv) {
 	sndPair vol = gbsVolume(comp->gbsnd);
 	return vol;
 }

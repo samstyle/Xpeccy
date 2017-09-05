@@ -127,8 +127,8 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.stereo1box->addItem("CBA",AY_CBA); ui.stereo2box->addItem("CBA",AY_BCA);
 	ui.tsbox->addItem("None",TS_NONE);
 	ui.tsbox->addItem("NedoPC",TS_NEDOPC);
-	ui.gstereobox->addItem("Mono",GS_MONO);
-	ui.gstereobox->addItem("L:1,2; R:3,4",GS_12_34);
+//	ui.gstereobox->addItem("Mono",GS_MONO);
+//	ui.gstereobox->addItem("L:1,2; R:3,4",GS_12_34);
 	ui.sdrvBox->addItem("None",SDRV_NONE);
 	ui.sdrvBox->addItem("Covox only",SDRV_COVOX);
 	ui.sdrvBox->addItem("Soundrive 1.05 mode 1",SDRV_105_1);
@@ -218,10 +218,28 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	connect(layUi.okButton,SIGNAL(released()),this,SLOT(layEditorOK()));
 	connect(layUi.cnButton,SIGNAL(released()),layeditor,SLOT(hide()));
 // sound
+/*
 	connect(ui.bvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
 	connect(ui.tvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
 	connect(ui.avsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
 	connect(ui.gvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
+*/
+	connect(ui.sldMasterVol,SIGNAL(valueChanged(int)),ui.sbMasterVol,SLOT(setValue(int)));
+	connect(ui.sldBeepVol,SIGNAL(valueChanged(int)),ui.sbBeepVol,SLOT(setValue(int)));
+	connect(ui.sldTapeVol,SIGNAL(valueChanged(int)),ui.sbTapeVol,SLOT(setValue(int)));
+	connect(ui.sldAYVol,SIGNAL(valueChanged(int)),ui.sbAYVol,SLOT(setValue(int)));
+	connect(ui.sldGSVol,SIGNAL(valueChanged(int)),ui.sbGSVol,SLOT(setValue(int)));
+	connect(ui.sldSdrvVol,SIGNAL(valueChanged(int)),ui.sbSdrvVol,SLOT(setValue(int)));
+	connect(ui.sldSAAVol,SIGNAL(valueChanged(int)),ui.sbSAAVol,SLOT(setValue(int)));
+
+	connect(ui.sbMasterVol,SIGNAL(valueChanged(int)),ui.sldMasterVol,SLOT(setValue(int)));
+	connect(ui.sbBeepVol,SIGNAL(valueChanged(int)),ui.sldBeepVol,SLOT(setValue(int)));
+	connect(ui.sbTapeVol,SIGNAL(valueChanged(int)),ui.sldTapeVol,SLOT(setValue(int)));
+	connect(ui.sbAYVol,SIGNAL(valueChanged(int)),ui.sldAYVol,SLOT(setValue(int)));
+	connect(ui.sbGSVol,SIGNAL(valueChanged(int)),ui.sldGSVol,SLOT(setValue(int)));
+	connect(ui.sbSdrvVol,SIGNAL(valueChanged(int)),ui.sldSdrvVol,SLOT(setValue(int)));
+	connect(ui.sbSAAVol,SIGNAL(valueChanged(int)),ui.sldSAAVol,SLOT(setValue(int)));
+
 // dos
 	connect(ui.newatb,SIGNAL(released()),this,SLOT(newa()));
 	connect(ui.newbtb,SIGNAL(released()),this,SLOT(newb()));
@@ -353,23 +371,30 @@ void SetupWin::start(xProfile* p) {
 	ui.geombox->setCurrentIndex(ui.geombox->findText(QString::fromLocal8Bit(conf.prof.cur->layName.c_str())));
 	ui.ulaPlus->setChecked(comp->vid->ula->enabled);
 // sound
-	ui.gsgroup->setChecked(comp->gs->enable);
+//	ui.gsgroup->setChecked(comp->gs->enable);
+	ui.tbGS->setChecked(comp->gs->enable);
 	ui.gsrbox->setChecked(comp->gs->reset);
-	setRFIndex(ui.gstereobox, comp->gs->stereo);
+	// setRFIndex(ui.gstereobox, comp->gs->stereo);
 
 	ui.sdrvBox->setCurrentIndex(ui.sdrvBox->findData(comp->sdrv->type));
 
-	ui.saaEn->setChecked(comp->saa->enabled);
-	ui.saaStereo->setChecked(!comp->saa->mono);
+	ui.tbSAA->setChecked(comp->saa->enabled);
+//	ui.saaEn->setChecked(comp->saa->enabled);
+//	ui.saaStereo->setChecked(!comp->saa->mono);
 
 	ui.senbox->setChecked(conf.snd.enabled);
-	ui.mutbox->setChecked(conf.snd.mute);
+//	ui.mutbox->setChecked(conf.snd.mute);
 	ui.outbox->setCurrentIndex(ui.outbox->findText(QString::fromLocal8Bit(sndOutput->name)));
 	ui.ratbox->setCurrentIndex(ui.ratbox->findData(QVariant(conf.snd.rate)));
-	ui.bvsld->setValue(conf.snd.vol.beep);
-	ui.tvsld->setValue(conf.snd.vol.tape);
-	ui.avsld->setValue(conf.snd.vol.ay);
-	ui.gvsld->setValue(conf.snd.vol.gs);
+
+	ui.sbMasterVol->setValue(conf.snd.vol.master);
+	ui.sbBeepVol->setValue(conf.snd.vol.beep);
+	ui.sbTapeVol->setValue(conf.snd.vol.tape);
+	ui.sbAYVol->setValue(conf.snd.vol.ay);
+	ui.sbGSVol->setValue(conf.snd.vol.gs);
+	ui.sbSdrvVol->setValue(conf.snd.vol.sdrv);
+	ui.sbSAAVol->setValue(conf.snd.vol.saa);
+
 	ui.schip1box->setCurrentIndex(ui.schip1box->findData(QVariant(comp->ts->chipA->type)));
 	ui.schip2box->setCurrentIndex(ui.schip2box->findData(QVariant(comp->ts->chipB->type)));
 	ui.stereo1box->setCurrentIndex(ui.stereo1box->findData(QVariant(comp->ts->chipA->stereo)));
@@ -498,12 +523,17 @@ void SetupWin::apply() {
 // sound
 	std::string nname = getRFText(ui.outbox);
 	conf.snd.enabled = ui.senbox->isChecked() ? 1 : 0;
-	conf.snd.mute = ui.mutbox->isChecked() ? 1 : 0;
+//	conf.snd.mute = ui.mutbox->isChecked() ? 1 : 0;
 	conf.snd.rate = getRFIData(ui.ratbox);
-	conf.snd.vol.beep = ui.bvsld->value();
-	conf.snd.vol.tape = ui.tvsld->value();
-	conf.snd.vol.ay = ui.avsld->value();
-	conf.snd.vol.gs = ui.gvsld->value();
+
+	conf.snd.vol.master = ui.sbMasterVol->value();
+	conf.snd.vol.beep = ui.sbBeepVol->value();
+	conf.snd.vol.tape = ui.sbTapeVol->value();
+	conf.snd.vol.ay = ui.sbAYVol->value();
+	conf.snd.vol.gs = ui.sbGSVol->value();
+	conf.snd.vol.sdrv = ui.sbSdrvVol->value();
+	conf.snd.vol.saa = ui.sbSAAVol->value();
+
 	setOutput(nname.c_str());
 	aymSetType(comp->ts->chipA, getRFIData(ui.schip1box));
 	aymSetType(comp->ts->chipB, getRFIData(ui.schip2box));
@@ -511,14 +541,16 @@ void SetupWin::apply() {
 	comp->ts->chipB->stereo = getRFIData(ui.stereo2box);
 	comp->ts->type = getRFIData(ui.tsbox);
 
-	comp->gs->enable = ui.gsgroup->isChecked() ? 1 : 0;
+//	comp->gs->enable = ui.gsgroup->isChecked() ? 1 : 0;
+	comp->gs->enable = ui.tbGS->isChecked() ? 1 : 0;
 	comp->gs->reset = ui.gsrbox->isChecked() ? 1 : 0;
-	comp->gs->stereo = getRFIData(ui.gstereobox);
+//	comp->gs->stereo = getRFIData(ui.gstereobox);
 
 	comp->sdrv->type = getRFIData(ui.sdrvBox);
 
-	comp->saa->enabled = ui.saaEn->isChecked() ? 1 : 0;
-	comp->saa->mono = ui.saaStereo->isChecked() ? 0 : 1;
+	comp->saa->enabled = ui.tbSAA->isChecked() ? 1 : 0;
+//	comp->saa->enabled = ui.saaEn->isChecked() ? 1 : 0;
+//	comp->saa->mono = ui.saaStereo->isChecked() ? 0 : 1;
 
 	sndCalibrate(comp);
 // input
@@ -1073,7 +1105,6 @@ void SetupWin::fillDiskCat() {
 				cat.append(ct[i]);
 		}
 	}
-	qDebug() << cat.size();
 	ui.disklist->setCatalog(cat);
 }
 
@@ -1089,12 +1120,14 @@ void SetupWin::selsspath() {
 
 // sound
 
+/*
 void SetupWin::updvolumes() {
 	ui.bvlab->setText(QString::number(ui.bvsld->value()));
 	ui.tvlab->setText(QString::number(ui.tvsld->value()));
 	ui.avlab->setText(QString::number(ui.avsld->value()));
 	ui.gslab->setText(QString::number(ui.gvsld->value()));
 }
+*/
 
 // disk
 

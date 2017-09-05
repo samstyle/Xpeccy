@@ -231,7 +231,7 @@ int ayGetChanVol(aymChip* ay, aymChan* ch) {
 	if (ch->ten || ch->nen) {
 		vol = ((ch->lev && ch->ten) || (ay->chanN.lev && ch->nen)) ? vol : 0;
 	}
-	return (vol << 1) | (vol >> 3);		// 0..1f (env) -> 00..3f
+	return vol;		// 0..1f (env) -> 00..3f
 	// return ayDACvol[vol];
 }
 
@@ -275,8 +275,8 @@ sndPair aymGetVolume(aymChip* ay) {
 			res.right = res.left;
 			break;
 	}
-	res.left >>= 1;
-	res.right >>= 1;
+	//res.left >>= 1;
+	//res.right >>= 1;
 	return res;
 }
 

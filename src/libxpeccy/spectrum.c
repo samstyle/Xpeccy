@@ -294,30 +294,32 @@ void compUpdateTimings(Computer* comp) {
 			// apu frq = cpu / 2
 			// smallest wave period = cpu / 16
 			comp->vid->lockLayout = 0;
-			if (comp->nes.pal) {
-				comp->fps = 50;
-				perNoTurbo = 1e3 / 1.66;		// ~601
-				//perNoTurbo = 608;
-				vidSetLayout(comp->vid, nesPALLay);
-				comp->vid->ppu->vbsline = 241;
-				comp->vid->ppu->vbrline = 311;
-				vidUpdateTimings(comp->vid, perNoTurbo / 3.2);		// 16 ticks = 5 dots
-				//comp->nesapu->tper = perNoTurbo * 12430 / 2;
-				//comp->nesapu->tper = perNoTurbo * 17898 / 2;
-			} else {
-				comp->fps = 60;
-				perNoTurbo = 1e3 / 1.79;		// ~559
-				//perNoTurbo = 570;
-				vidSetLayout(comp->vid, nesNTSCLay);
-				comp->vid->ppu->vbsline = 241;
-				comp->vid->ppu->vbrline = 261;
-				vidUpdateTimings(comp->vid, perNoTurbo / 3);		// 15 ticks = 5 dots
-				//comp->nesapu->tper = perNoTurbo * 14915 / 2;
+			switch(comp->nes.type) {
+				case NES_PAL:
+					comp->fps = 50;
+					perNoTurbo = 1e3 / 1.66;		// ~601
+					vidSetLayout(comp->vid, nesPALLay);
+					comp->vid->ppu->vbsline = 241;
+					comp->vid->ppu->vbrline = 311;
+					vidUpdateTimings(comp->vid, perNoTurbo / 3.2);		// 16 ticks = 5 dots
+					break;
+				case NES_NTSC:
+					comp->fps = 60;
+					perNoTurbo = 1e3 / 1.79;		// ~559
+					vidSetLayout(comp->vid, nesNTSCLay);
+					comp->vid->ppu->vbsline = 241;
+					comp->vid->ppu->vbrline = 261;
+					vidUpdateTimings(comp->vid, perNoTurbo / 3);		// 15 ticks = 5 dots
+					break;
+				default:							// dendy
+					comp->fps = 59;
+					perNoTurbo = 1e3 / 1.77;
+					vidSetLayout(comp->vid, nesPALLay);
+					comp->vid->ppu->vbsline = 291;
+					comp->vid->ppu->vbrline = 311;
+					vidUpdateTimings(comp->vid, perNoTurbo / 3);
+					break;
 			}
-			//vidUpdateTimings(comp->vid, 190);
-			//comp->nesapu->tper = 4166667;	//89490e3 / 21.477;		// ~240 Hz (regardless PAL/NTSC video)
-			//comp->nesapu->wper = perNoTurbo * 16 / 2;			// HALF period of most high tone frq = CPU/16
-			//comp->nesapu->tper = perNoTurbo * 14915 / 2;
 			comp->nesapu->wper = perNoTurbo << 1;				// 1 APU tick = 2 CPU ticks
 			comp->vid->lockLayout = 1;
 			break;

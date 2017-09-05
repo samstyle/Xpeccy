@@ -364,7 +364,7 @@ int prfLoad(std::string nm) {
 					if (pnam == "soundrive_type") comp->sdrv->type = arg.i;
 
 					if (pnam == "saa") comp->saa->enabled = arg.b;
-					if (pnam == "saa.stereo") comp->saa->mono = !arg.b;
+					// if (pnam == "saa.stereo") comp->saa->mono = !arg.b;
 
 					break;
 				case PS_TAPE:
@@ -539,7 +539,7 @@ int prfSave(std::string nm) {
 	fprintf(file, "soundrive_type = %i\n", comp->sdrv->type);
 
 	fprintf(file, "saa = %s\n", YESNO(comp->saa->enabled));
-	fprintf(file, "saa.stereo = %s\n", YESNO(!comp->saa->mono));
+	// fprintf(file, "saa.stereo = %s\n", YESNO(!comp->saa->mono));
 
 	fprintf(file, "\n[INPUT]\n\n");
 	fprintf(file, "mouse = %s\n", YESNO(comp->mouse->enable));

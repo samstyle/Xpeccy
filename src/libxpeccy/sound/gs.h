@@ -1,5 +1,5 @@
-#ifndef _XPGSOUND
-#define _XPGSOUND
+#ifndef X_GSOUND
+#define X_GSOUND
 
 #ifdef __cplusplus
 extern "C" {
