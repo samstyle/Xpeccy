@@ -30,10 +30,11 @@ int loadNes(Computer* comp, const char* name) {
 
 	int res = ERR_OK;
 	int type;
-	int pal = 1;
+	int mode = NES_DENDY;
 	int maper;
 
-	if (strstr(name, "(U)")) pal = 0;		// (E):PAL (U):NTSC
+	if (!strstr(name, "(U)")) mode = NES_NTSC;		// (E):PAL (U):NTSC
+	if (!strstr(name, "(E)")) mode = NES_PAL;
 
 	xNesHeader hd;
 	fread((char*)&hd, sizeof(xNesHeader), 1, file);
@@ -57,7 +58,7 @@ int loadNes(Computer* comp, const char* name) {
 				break;
 			case NES_HD_20:
 				maper = ((hd.flag6 >> 4) & 0x0f) | (hd.flag7 & 0xf0);		// | 4 bits more
-				pal = (hd.flag9 & 1) ? 0 : 1;
+				mode = (hd.flag9 & 1) ? NES_NTSC : NES_PAL;
 				break;
 			default:
 				maper = (hd.flag6 >> 4) & 0x0f;
@@ -95,17 +96,7 @@ int loadNes(Computer* comp, const char* name) {
 				fread(slot->chrrom, hd.nchr << 13, 1, file);
 			}
 			printf("CHRROM:%i x  8K, mask %X\n",hd.nchr, slot->chrMask);
-/*
-			slot->regCT = 0;
-			slot->reg00 = 0;
-			slot->reg01 = 0;
-			slot->reg02 = 0;
-			slot->reg03 = 0;
-			slot->reg04 = 0;
-			slot->reg05 = 0;
-			slot->reg06 = 0;
-			slot->reg07 = 0;
-*/
+
 			if (hd.flag6 & 8) {
 				printf("Mirroring : quatro\n");
 				slot->mirror = NES_NT_QUATRO;		// full 4-screen nametable
@@ -123,7 +114,7 @@ int loadNes(Computer* comp, const char* name) {
 			slot->irqen = 0;
 			slot->irq = 0;
 
-			comp->nes.pal = pal ? 1 : 0;
+			comp->nes.type = mode;
 			compUpdateTimings(comp);
 		}
 	}

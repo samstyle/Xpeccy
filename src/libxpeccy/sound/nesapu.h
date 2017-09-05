@@ -22,7 +22,7 @@ typedef struct {
 	unsigned nseed:15;	// noise seed
 
 	unsigned char vol;	// current volume	(generated regardless of OFF & EN flags)
-//	unsigned char evol;	// envelope volume
+	unsigned char evol;	// envelope volume
 	unsigned char out;	// output volume;	(respect OFF & EN flags and update from VOL if enabled)
 	unsigned char buf;	// readed byte (digital)
 	int len;		// length counter

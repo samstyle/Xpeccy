@@ -29,6 +29,12 @@ enum {
 	HW_NES		// Nintendo Entertaiment System (Dendy)
 };
 
+enum {
+	NES_DENDY = 0,
+	NES_NTSC,
+	NES_PAL
+};
+
 // mem size
 #define	MEM_48	0
 #define	MEM_128	1

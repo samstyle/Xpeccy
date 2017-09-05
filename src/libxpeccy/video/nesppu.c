@@ -65,6 +65,7 @@ void ppuReset(nesPPU* ppu) {
 	ppu->tadr = 0;
 	ppu->finex = 0;
 	memset(ppu->oam, 0xff, 0x100);
+	memset(ppu->mem, 0x00, 0x4000);
 	memcpy(ppu->mem + 0x3f00, nesInitIdx, 32);
 }
 
@@ -313,7 +314,6 @@ unsigned char ppuRead(nesPPU* ppu, int reg) {
 	unsigned short adr;
 	switch (reg & 7) {
 		case 2:
-			// b7:vblank, b6:spr0 hit, b5:spr overflow
 			res = 0x1f;
 			if (ppu->vbl) res |= 0x80;
 			if (ppu->sp0hit) res |= 0x40;

@@ -11,11 +11,11 @@ extern unsigned char papTab[128];
 
 void vidDrawByteDD(Video*);
 
-int fadr;
-int tile;
-int sadr;	// adr in sprites dsc
-int xadr;	// = pos with XFlip
-unsigned char* mptr;
+static int fadr;
+static int tile;
+static int sadr;	// adr in sprites dsc
+static int xadr;	// = pos with XFlip
+//unsigned char* mptr;
 
 int vidTSLRenderTiles(Video* vid, int lay, unsigned short yoffs, unsigned short xoffs, unsigned char gpage, unsigned char palhi) {
 	int j;
@@ -83,8 +83,8 @@ typedef struct {
 	unsigned xs:3;		// 3[1:3]
 	unsigned res2:3;	// 3[4:6]
 	unsigned xf:1;		// 3:7
-	unsigned tnum:12;	// 4[0:7], 4[0:3]
-	unsigned pal:4;		// 4[4:7]
+	unsigned tnum:12;	// 4[0:7], 5[0:3]
+	unsigned pal:4;		// 5[4:7]
 } TSpr;
 
 int vidTSLRenderSprites(Video* vid) {
