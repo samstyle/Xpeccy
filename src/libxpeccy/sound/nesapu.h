@@ -51,9 +51,7 @@ typedef struct {
 	int wper;		// wave tick = CPU/16
 	int wcnt;
 	int wstp;
-
-//	int tper;		// 240Hz period
-//	int tcnt;
+	int wdiv;
 	int tstp;
 
 	apuChannel ch0;		// square 0

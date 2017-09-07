@@ -115,4 +115,6 @@ class SetupWin : public QDialog {
 		void layNameCheck(QString);
 };
 
+int getRFIData(QComboBox*);
+
 #endif

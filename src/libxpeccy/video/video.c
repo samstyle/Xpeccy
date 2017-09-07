@@ -650,10 +650,11 @@ void vidSetMode(Video* vid, int mode) {
 
 void vidSync(Video* vid, int ns) {
 	vid->nsDraw += ns;
+	vid->time += ns;
 	while (vid->nsDraw >= vid->nsPerDot) {
 
 		vid->nsDraw -= vid->nsPerDot;
-		vid->time += vid->nsPerDot;
+//		vid->time += vid->nsPerDot;
 
 		if ((vid->ray.x & vid->brdstep) == 0)
 			vid->brdcol = vid->nextbrd;

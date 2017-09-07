@@ -302,6 +302,7 @@ void compUpdateTimings(Computer* comp) {
 					comp->vid->ppu->vbsline = 241;
 					comp->vid->ppu->vbrline = 311;
 					vidUpdateTimings(comp->vid, perNoTurbo / 3.2);		// 16 ticks = 5 dots
+					comp->nesapu->wdiv = 3107;		// 5/6 = 3107? or 166/179 = 3458
 					break;
 				case NES_NTSC:
 					comp->fps = 60;
@@ -310,6 +311,7 @@ void compUpdateTimings(Computer* comp) {
 					comp->vid->ppu->vbsline = 241;
 					comp->vid->ppu->vbrline = 261;
 					vidUpdateTimings(comp->vid, perNoTurbo / 3);		// 15 ticks = 5 dots
+					comp->nesapu->wdiv = 3729;
 					break;
 				default:							// dendy
 					comp->fps = 59;
@@ -318,6 +320,7 @@ void compUpdateTimings(Computer* comp) {
 					comp->vid->ppu->vbsline = 291;
 					comp->vid->ppu->vbrline = 311;
 					vidUpdateTimings(comp->vid, perNoTurbo / 3);
+					comp->nesapu->wdiv = 3729;
 					break;
 			}
 			comp->nesapu->wper = perNoTurbo << 1;				// 1 APU tick = 2 CPU ticks

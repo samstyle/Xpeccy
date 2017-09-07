@@ -11,6 +11,7 @@ nesAPU* apuCreate(extmrd cb, void* d) {
 	memset(apu, 0x00, sizeof(nesAPU));
 	apu->mrd = cb;
 	apu->data = d;
+	apu->wdiv = 3729;
 	return apu;
 }
 
@@ -26,6 +27,10 @@ void apuResetChan(apuChannel* ch) {
 	ch->hper = 0;
 	ch->eper = 0;
 	ch->mute = 0;
+	ch->vol = 0;
+	ch->evol = 0x0f;
+	ch->dir = 1;
+	ch->nseed = 1;
 }
 
 void apuReset(nesAPU* apu) {
@@ -34,9 +39,7 @@ void apuReset(nesAPU* apu) {
 	apuResetChan(&apu->cht);
 	apuResetChan(&apu->chn);
 	apuResetChan(&apu->chd);
-	apu->cht.vol = 0;
-	apu->cht.dir = 1;
-	apu->chn.nseed = 1;
+	apu->step5 = 0;
 	apu->wcnt = 0;
 	apu->wstp = 0;
 	apu->tstp = 0;
@@ -249,7 +252,7 @@ void apuSync(nesAPU* apu, int ns) {
 			apu->dirq = 1;
 		}
 		// frame counter
-		if ((apu->wstp % 3729) == 0) {				// 14915 / 4 = ~3729 : ~240Hz here (NTSC)
+		if ((apu->wstp % apu->wdiv) == 0) {				// 14915 / 4 = ~3729 : ~240Hz here (NTSC)
 			//printf("%i ns (%f Hz)\n",apu->time, 1e9/apu->time); apu->time = 0;	// 4136450ns = 240Hz (tested)
 			apu->tstp++;
 			if (apu->step5) {

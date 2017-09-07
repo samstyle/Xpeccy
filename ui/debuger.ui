@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>813</width>
-    <height>574</height>
+    <height>570</height>
    </rect>
   </property>
   <property name="font">
@@ -1911,14 +1911,7 @@
             <widget class="QComboBox" name="nesScrType"/>
            </item>
            <item>
-            <widget class="QComboBox" name="nesTileType"/>
-           </item>
-           <item>
-            <widget class="QCheckBox" name="nesShowSpr">
-             <property name="text">
-              <string>Sprites</string>
-             </property>
-            </widget>
+            <widget class="QComboBox" name="nesBGTileset"/>
            </item>
            <item>
             <spacer name="verticalSpacer">
@@ -2549,8 +2542,7 @@
   <tabstop>cbScrGrid</tabstop>
   <tabstop>tbEditBrk</tabstop>
   <tabstop>nesScrType</tabstop>
-  <tabstop>nesTileType</tabstop>
-  <tabstop>nesShowSpr</tabstop>
+  <tabstop>nesBGTileset</tabstop>
  </tabstops>
  <resources>
   <include location="../xpeccy.qrc"/>

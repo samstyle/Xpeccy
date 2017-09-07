@@ -138,6 +138,8 @@ int ppuRenderSpriteLine(nesPPU* ppu, int line, unsigned char* sbuf, unsigned cha
 	unsigned char tmpbuf[0x100];
 	if (!sbuf) sbuf = tmpbuf;
 	if (!pbuf) pbuf = tmpbuf;
+	memset(sbuf, 0x00, 0x100);
+	memset(pbuf, 0x00, 0x100);
 	int cnt = 0;					// visible sprites count
 	int lin = 0;					// oam sprites count (0-63)
 	int adr = 0;					// oam addr
@@ -181,12 +183,14 @@ int ppuRenderSpriteLine(nesPPU* ppu, int line, unsigned char* sbuf, unsigned cha
 						}
 						col |= (flag & 3) << 2;			// add sprite palete
 						col |= 0x10;				// sprite colors are 10-1f
-						if (!(ppu->spline[x + y] & 3)) {
-							ppu->spline[x + y] = col;
-							ppu->prline[x + y] = flag & 0x20;	// !0 -> sprite behind bg, visible where bg col = 0
+						if (x + y < 0x100) {
+							if (!(sbuf[x + y] & 3)) {
+								sbuf[x + y] = col;
+								pbuf[x + y] = flag & 0x20;	// !0 -> sprite behind bg, visible where bg col = 0
+							}
+							if ((lin == 0) && (col & 3))
+								pbuf[x + y] |= 0x80;		// non-transparent sprite 0 pixel
 						}
-						if ((lin == 0) && (col & 3))
-							ppu->prline[x + y] |= 0x80;		// non-transparent sprite 0 pixel
 					}
 				}
 				cnt++;

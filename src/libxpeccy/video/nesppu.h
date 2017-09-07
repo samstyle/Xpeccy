@@ -67,6 +67,7 @@ void ppuWrite(nesPPU*, int, unsigned char);
 unsigned char ppuRead(nesPPU*, int);
 
 void ppuRenderBGLine(nesPPU*, unsigned char*, unsigned short, int, unsigned short);
+int ppuRenderSpriteLine(nesPPU*, int, unsigned char*, unsigned char*, unsigned short, int);
 unsigned short ppuYinc(unsigned short);
 
 #endif

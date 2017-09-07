@@ -11,8 +11,8 @@
 
 #include "debuger.h"
 #include "dbg_sprscan.h"
-#include "../../filer.h"
-#include "../xgui.h"
+#include "filer.h"
+#include "xgui.h"
 
 QColor colPC(32,200,32);	// pc
 QColor colBRK(200,128,128);	// breakpoint
@@ -46,8 +46,8 @@ enum {
 };
 
 enum {
-	NES_TILE_0000 = 0,
-	NES_TILE_1000
+	NES_TILE_0000 = 0x0000,
+	NES_TILE_1000 = 0x1000
 };
 
 typedef struct {
@@ -62,14 +62,12 @@ void DebugWin::start(Computer* c) {
 	chLayout();
 	disasmAdr = comp->cpu->pc;
 	fillAll();
-//	fillBrkTable();
 	updateScreen();
 	if (!comp->vid->tail)
 		vidDarkTail(comp->vid);
 	ui.tabsPanel->setTabEnabled(ui.tabsPanel->indexOf(ui.gbTab), comp->hw->id == HW_GBC);
 	ui.tabsPanel->setTabEnabled(ui.tabsPanel->indexOf(ui.nesTab), comp->hw->id == HW_NES);
 
-//	ui.dasmTable->comp = comp;
 	move(winPos);
 	ui.dasmTable->setFocus();
 	comp->vid->debug = 1;
@@ -78,12 +76,9 @@ void DebugWin::start(Computer* c) {
 
 	show();
 
-	//int wd = 17;
-	//ui.dasmTable->setRowCount(ui.dasmTable->height() / wd);
 	int wd = ui.dasmTable->height() / ui.dasmTable->rows();
 	ui.dasmTable->verticalHeader()->setDefaultSectionSize(wd);
 
-	//ui.dumpTable->setRowCount(ui.dumpTable->height() / wd);
 	wd = ui.dumpTable->height() / ui.dumpTable->rows();
 	ui.dumpTable->verticalHeader()->setDefaultSectionSize(wd);
 
@@ -343,12 +338,11 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.nesScrType->addItem(trUtf8("BG scr 3"), NES_SCR_3);
 	ui.nesScrType->addItem(trUtf8("All in 1"), NES_SCR_ALL);
 
-	ui.nesTileType->addItem(trUtf8("Tiles #0000"), NES_TILE_0000);
-	ui.nesTileType->addItem(trUtf8("Tiles #1000"), NES_TILE_1000);
+	ui.nesBGTileset->addItem(trUtf8("Tiles #0000"), NES_TILE_0000);
+	ui.nesBGTileset->addItem(trUtf8("Tiles #1000"), NES_TILE_1000);
 
 	connect(ui.nesScrType,SIGNAL(currentIndexChanged(int)), this, SLOT(drawNes()));
-	connect(ui.nesTileType,SIGNAL(currentIndexChanged(int)), this, SLOT(drawNes()));
-	connect(ui.nesShowSpr,SIGNAL(stateChanged(int)), this, SLOT(drawNes()));
+	connect(ui.nesBGTileset,SIGNAL(currentIndexChanged(int)), this, SLOT(drawNes()));
 
 // subwindows
 	dumpwin = new QDialog(this);
@@ -897,37 +891,55 @@ void DebugWin::fillGBoy() {
 
 extern xColor nesPal[64];
 
-QImage dbgNesScreenImg(nesPPU* ppu, unsigned short adr, unsigned short tadr) {
-	QImage img(256, 240, QImage::Format_RGB888);
-	img.fill(Qt::black);
-	unsigned char scrmap[256 * 240];
-	int x,y;
+void dbgNesConvertColors(nesPPU* ppu, unsigned char* buf, QImage& img, int trn) {
+	int x, y;
 	unsigned char col;
 	xColor xcol;
-	if (adr != 0) {
-		for(y = 0; y < 240; y++) {
-			ppuRenderBGLine(ppu, scrmap + (y << 8), adr, 0, tadr);
-			adr = ppuYinc(adr);
-		}
-	} else {
-		memset(scrmap, 0x00, 256*240);
-	}
-	uchar* ptr = img.bits();
-	adr = 0;
+	int adr = 0;
 	for (y = 0; y < 240; y++) {
 		for (x = 0; x < 256; x++) {
-			col = scrmap[adr];
+			col = buf[adr];
 			if (!(col & 3)) col = 0;
 			col = ppu->mem[0x3f00 | (col & 0x3f)];
 			xcol = nesPal[col & 0x3f];
-			*(ptr++) = xcol.r;
-			*(ptr++) = xcol.g;
-			*(ptr++) = xcol.b;
+			if (!trn || (col & 3)) {
+				img.setPixel(x, y, qRgba(xcol.r, xcol.g, xcol.b, 0xff));
+			} else {
+				img.setPixel(x, y, Qt::transparent);
+			}
 			adr++;
 		}
 	}
+}
+
+QImage dbgNesScreenImg(nesPPU* ppu, unsigned short adr, unsigned short tadr) {
+	QImage img(256, 240, QImage::Format_ARGB32);
+	img.fill(Qt::black);
+	unsigned char scrmap[256 * 240];
+	memset(scrmap, 0x00, 256 * 240);
+	if (adr != 0) {
+		for(int y = 0; y < 240; y++) {
+			ppuRenderBGLine(ppu, scrmap + (y << 8), adr, 0, tadr);
+			adr = ppuYinc(adr);
+		}
+	}
+	dbgNesConvertColors(ppu, scrmap, img, 0);
 	return img;
 }
+
+QImage dbgNesSpriteImg(nesPPU* ppu, unsigned short tadr) {
+	QImage img(256, 240, QImage::Format_ARGB32);
+	img.fill(Qt::transparent);
+	unsigned char scrmap[256 * 240];
+	memset(scrmap, 0x00, 256 * 240);
+	for (int y = 0; y < 240; y++) {
+		ppuRenderSpriteLine(ppu, y, scrmap + (y << 8), NULL, tadr, 64);
+	}
+	dbgNesConvertColors(ppu, scrmap, img, 1);
+	return img;
+}
+
+int getRFIData(QComboBox*);
 
 void DebugWin::drawNes() {
 	nesPPU* ppu = comp->vid->ppu;
@@ -947,16 +959,16 @@ void DebugWin::drawNes() {
 		case NES_SCR_3: adr = 0x2c00; break;
 		case NES_SCR_ALL: adr = 0xffff; break;
 	}
-	switch(ui.nesTileType->itemData(ui.nesTileType->currentIndex()).toInt()) {
-		case NES_TILE_0000: tadr = 0x0000; break;
-		case NES_TILE_1000: tadr = 0x1000; break;
-	}
+	tadr = getRFIData(ui.nesBGTileset) & 0xffff;
+	QPainter pnt;
+	pic = QPixmap(256, 240);
 	if (adr != 0xffff) {
 		img = dbgNesScreenImg(ppu, adr, tadr);
-		ui.nesScreen->setPixmap(QPixmap::fromImage(img));
+		pnt.begin(&pic);
+		pnt.drawImage(0,0,img);
+		pnt.end();
+		ui.nesScreen->setPixmap(pic);
 	} else {
-		pic = QPixmap(256, 240);
-		QPainter pnt;
 		pnt.begin(&pic);
 		pnt.drawImage(0, 0, dbgNesScreenImg(ppu, 0x2000, tadr).scaled(128, 120));
 		pnt.drawImage(128, 0, dbgNesScreenImg(ppu, 0x2400, tadr).scaled(128, 120));

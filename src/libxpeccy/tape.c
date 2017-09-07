@@ -421,8 +421,8 @@ void tapAddFile(Tape* tap, const char* nm, int tp, unsigned short st, unsigned s
 	if (hdr) {
 		unsigned char hdbuf[19];
 		hdbuf[0] = tp & 0xff;						// type (0:basic, 3:code)
-		memset(&hdbuf[1],10,' ');
-		memcpy(&hdbuf[1],nm,(strlen(nm) < 10) ? strlen(nm) : 10);
+		memset(hdbuf + 1,' ',10);
+		memcpy(hdbuf + 1, nm, (strlen(nm) < 10) ? strlen(nm) : 10);
 		if (tp == 0) {
 			hdbuf[11] = st & 0xff; hdbuf[12] = ((st & 0xff00) >> 8);
 			hdbuf[13] = as & 0xff; hdbuf[14] = ((as & 0xff00) >> 8);

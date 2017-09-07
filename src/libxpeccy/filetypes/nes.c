@@ -23,6 +23,10 @@ enum {
 	NES_HD_20
 };
 
+static char nesPal[] = "PAL";
+static char nesNtsc[] = "NTSC";
+static char nesDendy[] = "Dendy";
+
 int loadNes(Computer* comp, const char* name) {
 	xCartridge* slot = comp->slot;
 	FILE* file = fopen(name, "rb");
@@ -33,8 +37,8 @@ int loadNes(Computer* comp, const char* name) {
 	int mode = NES_DENDY;
 	int maper;
 
-	if (!strstr(name, "(U)")) mode = NES_NTSC;		// (E):PAL (U):NTSC
-	if (!strstr(name, "(E)")) mode = NES_PAL;
+	if (strstr(name, "(U)")) mode = NES_NTSC;		// (E):PAL (U):NTSC
+	if (strstr(name, "(E)")) mode = NES_PAL;
 
 	xNesHeader hd;
 	fread((char*)&hd, sizeof(xNesHeader), 1, file);
@@ -116,6 +120,12 @@ int loadNes(Computer* comp, const char* name) {
 
 			comp->nes.type = mode;
 			compUpdateTimings(comp);
+
+			switch(mode) {
+				case NES_PAL: comp->msg = nesPal; break;
+				case NES_NTSC: comp->msg = nesNtsc; break;
+				case NES_DENDY: comp->msg = nesDendy; break;
+			}
 		}
 	}
 
