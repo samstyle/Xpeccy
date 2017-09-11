@@ -6,7 +6,7 @@
 
 // extern char noizes[0x20000];
 
-nesAPU* apuCreate(extmrd cb, void* d) {
+nesAPU* apuCreate(aextmrd cb, void* d) {
 	nesAPU* apu = (nesAPU*)malloc(sizeof(nesAPU));
 	memset(apu, 0x00, sizeof(nesAPU));
 	apu->mrd = cb;
@@ -79,7 +79,7 @@ void apuToneSync(apuChannel* ch) {
 	if (ch->pcnt < 0) {
 		ch->pcnt = ch->hper;
 		ch->pstp++;
-		ch->lev = dutyTab[ch->duty & 3][ch->pstp & 7] & 1;
+//		ch->lev = dutyTab[ch->duty & 3][ch->pstp & 7] & 1;
 	}
 }
 
@@ -119,6 +119,7 @@ void apuToneLen(apuChannel* ch) {
 
 int apuToneVolume(apuChannel* ch) {
 	if (!ch->off && ch->en && ch->len && ch->hper && !ch->mute) {
+		ch->lev = dutyTab[ch->duty & 3][ch->pstp & 7] & 1;
 		ch->out = ch->lev ? (ch->env ? ch->evol : ch->vol) : 0;
 	}
 	return ch->out;
@@ -186,9 +187,16 @@ void apuNoiseSync(apuChannel* ch) {
 	}
 }
 
+int apuNoiseVolume(apuChannel* ch) {
+	if (!ch->off && ch->en && ch->len && ch->hper && !ch->mute) {
+		ch->out = ch->lev ? (ch->env ? ch->evol : ch->vol) : 0;
+	}
+	return ch->out;
+}
+
 // digital
 
-void apuDigiSync(apuChannel* ch, extmrd mrd, void* data) {
+void apuDigiSync(apuChannel* ch, aextmrd mrd, void* data) {
 	if (!ch->en) return;
 	if (!ch->len) return;
 	ch->pcnt--;
@@ -233,10 +241,14 @@ static const int seqMode0[4] = {1,3,1,7};		// e--|el-|e--|elf
 static const int seqMode1[5] = {3,1,3,1,0};		// el-|e--|el-|e--|---
 
 void apuSync(nesAPU* apu, int ns) {
+	apu->wcnt -= ns;
+}
+
+void apuFlush(nesAPU* apu) {
 	int tmp;
 //	apu->time += ns;
 // Waveform generator clock = CPU/2	~890KHz (NTSC)
-	apu->wcnt -= ns;
+//	apu->wcnt -= ns;
 	while (apu->wcnt < 0) {
 		apu->wcnt += apu->wper;
 		apu->wstp++;
@@ -284,15 +296,16 @@ void apuSync(nesAPU* apu, int ns) {
 // TODO: http://wiki.nesdev.com/w/index.php/APU_Mixer
 
 sndPair apuVolume(nesAPU* apu) {
+	apuFlush(apu);
 	sndPair res;
 #if 0
 	int v1 = apuToneVolume(&apu->ch0);
 	int v2 = apuToneVolume(&apu->ch1);
 	double pout = 0.0;
 	if (v1 || v2)
-		pout = 95.88 / (100.0 + (8128.0 / (v1 + v2)));			// 0,4149 max
+		pout = 95.88 / (100.0 + (8128.0 / (v1 + v2)));			// 0,2584 max
 	v1 = apuTriVolume(&apu->cht);
-	v2 = apuToneVolume(&apu->chn);
+	v2 = apuNoiseVolume(&apu->chn);
 	int v3 = apuDigiVolume(&apu->chd);
 	double tnd = 0.0;
 	if (v1 || v2 || v3)
@@ -309,7 +322,7 @@ sndPair apuVolume(nesAPU* apu) {
 	res = mixer(res, lev, lev, 100);
 	lev = apuTriVolume(&apu->cht);
 	res = mixer(res, lev, lev, 100);
-	lev = apuToneVolume(&apu->chn);
+	lev = apuNoiseVolume(&apu->chn);
 	res = mixer(res, lev, lev, 100);
 	lev = apuDigiVolume(&apu->chd) >> 1;
 	res = mixer(res, lev, lev, 100);
@@ -331,6 +344,7 @@ int apuGetLen(apuChannel* ch, unsigned char val) {
 
 void apuWrite(nesAPU* apu, int reg, unsigned char val) {
 	// printf("%.2X = %.2X\n",reg,val);
+	apuFlush(apu);
 	switch (reg & 0x1f) {
 		case 0x00:
 			apu->ch0.duty = (val >> 6) & 3;

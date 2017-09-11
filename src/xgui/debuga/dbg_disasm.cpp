@@ -94,7 +94,7 @@ unsigned char dasmrd(unsigned short adr, void* ptr) {
 void placeLabel(dasmData& drow) {
 	QString lab = findLabel(drow.oadr, -1, -1);
 	if (lab.isEmpty()) return;
-	QString num = QString::number(drow.oadr, 16).prepend("#");
+	QString num = QString::number(drow.oadr + 0x10000, 16).right(4).prepend("#").toUpper();
 	drow.command.replace(num, lab);
 }
 

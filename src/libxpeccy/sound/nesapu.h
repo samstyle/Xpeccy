@@ -3,7 +3,7 @@
 
 #include "sndcommon.h"
 
-typedef unsigned char(*extmrd)(unsigned short, void*);
+typedef unsigned char(*aextmrd)(unsigned short, void*);
 
 typedef struct {
 	unsigned off:1;		// external on/off channel volume. sound generation doesn't stop
@@ -62,11 +62,11 @@ typedef struct {
 
 	int time;
 
-	extmrd mrd;
+    aextmrd mrd;
 	void* data;
 } nesAPU;
 
-nesAPU* apuCreate(extmrd, void*);
+nesAPU* apuCreate(aextmrd, void*);
 void apuDestroy(nesAPU*);
 
 void apuReset(nesAPU*);
