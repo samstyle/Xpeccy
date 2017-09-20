@@ -445,6 +445,7 @@ int xDisasmTable::updContent() {
 void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 	QModelIndex idx = currentIndex();
 	int bpt = MEM_BRK_FETCH;
+	int bpr = BRK_MEMCELL;
 	switch (ev->key()) {
 		case Qt::Key_Up:
 			if ((ev->modifiers() & Qt::ControlModifier) || (idx.row() == 0)) {
@@ -475,13 +476,17 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			ev->ignore();
 			break;
 		case Qt::Key_F2:
-			if (ev->modifiers() & Qt::AltModifier)
+			if (ev->modifiers() & Qt::AltModifier) {
 				bpt = MEM_BRK_RD;
-			else if (ev->modifiers() & Qt::ControlModifier)
+			} else if (ev->modifiers() & Qt::ControlModifier) {
 				bpt = MEM_BRK_WR;
-			else
+			} else if (ev->modifiers() & Qt::ShiftModifier) {
 				bpt = MEM_BRK_FETCH;
-			brkXor(BRK_MEMCELL, bpt, getData(idx.row(), 0, Qt::UserRole).toInt(), -1);
+			} else {
+				bpr = BRK_CPUADR;
+				bpt = MEM_BRK_FETCH;
+			}
+			brkXor(bpr, bpt, getData(idx.row(), 0, Qt::UserRole).toInt(), -1);
 			emit rqRefill();
 			ev->ignore();
 			break;

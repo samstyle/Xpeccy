@@ -694,12 +694,15 @@ void sltEject(xCartridge* slot) {
 	if (slot->data == NULL) return;
 	// save cartrige ram
 	char rname[FILENAME_MAX];
-	strcpy(rname, slot->name);
-	strcat(rname, ".ram");
-	FILE* file = fopen(rname, "wb");
-	if (file) {
-		fwrite(slot->ram, 0x8000, 1, file);
-		fclose(file);
+	FILE* file;
+	if (strlen(slot->name)) {
+		strcpy(rname, slot->name);
+		strcat(rname, ".ram");
+		file = fopen(rname, "wb");
+		if (file) {
+			fwrite(slot->ram, 0x8000, 1, file);
+			fclose(file);
+		}
 	}
 	// free rom
 	if (slot->data) {
