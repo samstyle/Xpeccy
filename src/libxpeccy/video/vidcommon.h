@@ -1,5 +1,5 @@
-#ifndef _VIDCOMMON_H
-#define _VIDCOMMON_H
+#ifndef X_VIDCOMMON_H
+#define X_VIDCOMMON_H
 
 #ifdef WORDS_BIG_ENDIAN
 	#define ePair(p,h,l) union{unsigned short p; struct {unsigned char h; unsigned char l;};}
@@ -25,6 +25,8 @@ typedef struct {
 	int y;
 	int xb;
 	int yb;
+	int xs;
+	int ys;
 } vRay;
 
 typedef struct {

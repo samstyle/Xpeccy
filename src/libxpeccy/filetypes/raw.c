@@ -47,8 +47,9 @@ int loadRaw(Floppy* flp, const char* name) {
 				memcpy(fext, ptr + 1, strlen(ptr + 1));
 			} else {
 				memcpy(fnam, name, strlen(name));
+				fext[0] = 0x00;
 			}
-			printf("%s\n%s\n",fnam,fext);
+			// printf("%s\n%s\n",fnam,fext);
 			TRFile nfle = diskMakeDescriptor(fnam, fext[0], 0, len);
 			nfle.lst = fext[1];
 			nfle.hst = fext[2];

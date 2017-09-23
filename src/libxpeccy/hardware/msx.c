@@ -136,6 +136,15 @@ unsigned char msxMemIn(Computer* comp, unsigned short port) {
 
 // v9938
 
+void msx9938wr(Computer* comp, unsigned short adr, unsigned char val) {
+	vdpWrite(&comp->vid->v9938, adr & 3, val);
+}
+
+unsigned char msx9938rd(Computer* comp, unsigned short adr) {
+	return vdpRead(&comp->vid->v9938, adr & 3);
+}
+
+/*
 void msx98Out(Computer* comp, unsigned short port, unsigned char val) {
 	vdpMemWr(&comp->vid->v9938, val);
 }
@@ -153,6 +162,7 @@ unsigned char msx98In(Computer* comp, unsigned short port) {
 unsigned char msx99In(Computer* comp, unsigned short port) {		// status register 0
 	return vdpReadSR(&comp->vid->v9938);
 }
+*/
 
 // Port map
 
@@ -161,8 +171,9 @@ static xPort msxPortMap[] = {
 	{0xff,0x90,2,2,2,dummyIn,	dummyOut},	// 90	RW	ULA5RA087 Centronic BUSY state (bit 1=1) / ULA5RA087 Centronic STROBE output (bit 0=0)
 	{0xff,0x91,2,2,2,NULL,		dummyOut},	// 91	W	ULA5RA087 Centronic Printer Data
 
-	{0xff,0x98,2,2,2,msx98In,	msx98Out},	// 98	RW	9918,9929,9938,9958,9978 VRAM Data Read/Write
-	{0xff,0x99,2,2,2,msx99In,	msx99Out},	// 99	RW	9918,9929,9938,9958,9978 VDP Status Registers / VRAM Address setup (VDP Register write)
+	{0xfe,0x98,2,2,2,msx9938rd,	msx9938wr},	// 98/99	VDP
+//	{0xff,0x98,2,2,2,msx98In,	msx98Out},	// 98	RW	9918,9929,9938,9958,9978 VRAM Data Read/Write
+//	{0xff,0x99,2,2,2,msx99In,	msx99Out},	// 99	RW	9918,9929,9938,9958,9978 VDP Status Registers / VRAM Address setup (VDP Register write)
 
 	{0xff,0xa0,2,2,2,NULL,		msxAYIdxOut},	// A0	W	I AY-3-8910 PSG Sound Generator Index
 	{0xff,0xa1,2,2,2,NULL,		msxAYDataOut},	// A1	W	I AY-3-8910 PSG Sound Generator Data write
@@ -188,7 +199,8 @@ void msxOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
 }
 
 void msx_sync(Computer* comp, int ns) {
-	if ((comp->vid->v9938.reg[1] & 0x40) && comp->vid->newFrame && comp->cpu->iff1) {
+	if (comp->vid->v9938.istrb && comp->cpu->iff1) {
+		comp->vid->v9938.istrb = 0;
 		comp->cpu->intrq |= 1;
 		comp->intVector = 0xff;
 	}

@@ -92,10 +92,36 @@ void MainWin::updateWindow() {
 }
 
 bool MainWin::saveChanged() {
+	xProfile* prf;
+	bool yep = true;
+	int res;
+	int i;
+	QString str;
+	Floppy* flp;
+	foreach(prf, conf.prof.list) {
+		for(i = 0; (i < 4) && yep; i++) {
+			flp = prf->zx->dif->fdc->flop[i];
+			if (flp->changed) {
+				str = QString("Disk %0 of profile '%1' was changed<br>Save it?").arg(QChar('A' + i)).arg(prf->name.c_str());
+				res = askYNC(str.toLocal8Bit().data());
+				switch(res) {
+					case QMessageBox::Yes:
+						yep &= saveFile(comp,flp->path,FT_DISK,i);
+						break;
+					case QMessageBox::Cancel:
+						yep = false;
+						break;
+				}
+			}
+		}
+		if (!yep) break;
+	}
+/*
 	bool yep = saveChangedDisk(comp,0);
 	yep &= saveChangedDisk(comp,1);
 	yep &= saveChangedDisk(comp,2);
 	yep &= saveChangedDisk(comp,3);
+*/
 	return yep;
 }
 

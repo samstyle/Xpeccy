@@ -1,12 +1,30 @@
-#ifndef _V9938_H
-#define _V9938_H
+#ifndef X_V9938_H
+#define X_V9938_H
 
 #include "vidcommon.h"
 
+typedef struct VDP9938 VDP9938;
+
+typedef struct {
+	int id;
+	int wid;	// screen width (256|512)
+	int dpb;	// dots per byte (bitmaps: 1|2|4)
+	void(*draw)(VDP9938*);
+	void(*line)(VDP9938*);
+	void(*fram)(VDP9938*);
+	void(*pset)(VDP9938*,int,int,unsigned char);
+	unsigned char(*col)(VDP9938*,int,int);
+} vdpMode;
+
 struct VDP9938 {
 	unsigned high:1;		// indicates hi byte in 2-byte writing
-	unsigned wr:1;			// data direction (b6.hi during writing VADR)
-	int vmode;			// current mode
+	unsigned palhi:1;
+
+	unsigned istrb:1;
+	int intf;			// VINT
+	int inth;			// HINT (@ iLine)
+
+//	int vmode;			// current mode
 	int vadr;			// VRAM address (128K)
 	int memMask;
 	unsigned char data;		// 1st byte in 2-byte writing
@@ -22,7 +40,7 @@ struct VDP9938 {
 	vCoord pos;
 	vCoord size;
 	int count;
-	int regIdx;
+//	int regIdx;
 	int BGTiles;
 	int BGMap;
 	int BGColors;
@@ -33,21 +51,25 @@ struct VDP9938 {
 	xColor pal[256];
 	unsigned char sr[16];			// ststus registers (0..9 actually)
 	unsigned char reg[0x40];		// VDP registers (8 for v9918, 48 for v9938)
-	unsigned char ram[0x20000];	// VRAM (16K for v9918, 128K for v9938)
+	unsigned char ram[0x30000];	// VRAM (16K for v9918, 128K+64K for v9938)
 	unsigned char sprImg[0x10000];	// 256x256 image with foreground sprites (rebuild @ frame start)
+	vdpMode* core;
+/*
 	void(*draw)(struct VDP9938*);
 	void(*cbLine)(struct VDP9938*);
 	void(*cbFram)(struct VDP9938*);
 	void(*plot)(struct VDP9938*, int, int, unsigned char);		// put dot
 	unsigned char(*color)(struct VDP9938*, int, int);		// pick dot color
+*/
 };
 
-typedef struct VDP9938 VDP9938;
-
 void vdpReset(VDP9938*);
-void vdpMemWr(VDP9938*, unsigned char);
-void vdpRegWr(VDP9938*, unsigned char);
-void vdpPalWr(VDP9938*, unsigned char);
-unsigned char vdpReadSR(VDP9938*);
+void vdpWrite(VDP9938*, int, unsigned char);
+unsigned char vdpRead(VDP9938*, int);
+
+void vdpDraw(VDP9938*);
+void vdpLine(VDP9938*);
+void vdpHBlk(VDP9938*);
+void vdpVBlk(VDP9938*);
 
 #endif

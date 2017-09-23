@@ -130,6 +130,7 @@ unsigned char msx2mapIn(Computer* comp, unsigned short port) {
 
 // vdp
 
+/*
 void msx2_9AOut(Computer* comp, unsigned short port, unsigned char val) {
 	vdpPalWr(&comp->vid->v9938, val);
 }
@@ -144,6 +145,7 @@ void msx2_9Bout(Computer* comp, unsigned short port, unsigned char val) {
 		comp->vid->v9938.regIdx++;
 	}
 }
+*/
 
 // reset
 
@@ -219,10 +221,15 @@ unsigned char msx2_b5in(Computer* comp, unsigned short port) {
 
 // tab
 
+/*
 void msx98Out(Computer*,unsigned short,unsigned char);
 unsigned char msx98In(Computer*, unsigned short);
 void msx99Out(Computer*,unsigned short,unsigned char);
 unsigned char msx99In(Computer*, unsigned short);
+*/
+
+void msx9938wr(Computer*, unsigned short, unsigned char);
+unsigned char msx9938rd(Computer*, unsigned short);
 
 unsigned char msxA9In(Computer*, unsigned short);
 unsigned char msxAAIn(Computer*, unsigned short);
@@ -233,7 +240,7 @@ void msxAYIdxOut(Computer*,unsigned short,unsigned char);
 void msxAYDataOut(Computer*,unsigned short,unsigned char);
 unsigned char msxAYDataIn(Computer*, unsigned short);
 
-xPort msx2ioTab[] = {
+static xPort msx2ioTab[] = {
 //	{0xff,0x60,2,2,2,dummyIn,NULL},				// 60? really?
 
 	{0xf8,0x80,2,2,2,dummyIn,	dummyOut},		// 80..87 : rs232
@@ -241,10 +248,11 @@ xPort msx2ioTab[] = {
 	{0xff,0x90,2,2,2,dummyIn,	dummyOut},		// printer
 	{0xff,0x91,2,2,2,NULL,		dummyOut},
 
-	{0xff,0x98,2,2,2,msx98In,	msx98Out},
-	{0xff,0x99,2,2,2,msx99In,	msx99Out},
-	{0xff,0x9a,2,2,2,NULL,		msx2_9AOut},
-	{0xff,0x9b,2,2,2,NULL,		msx2_9Bout},
+	{0xfc,0x98,2,2,2,msx9938rd,	msx9938wr},
+//	{0xff,0x98,2,2,2,msx98In,	msx98Out},
+//	{0xff,0x99,2,2,2,msx99In,	msx99Out},
+//	{0xff,0x9a,2,2,2,NULL,		msx2_9AOut},
+//	{0xff,0x9b,2,2,2,NULL,		msx2_9Bout},
 
 	{0xff,0xa0,2,2,2,NULL,		msxAYIdxOut},		// PSG
 	{0xff,0xa1,2,2,2,NULL,		msxAYDataOut},

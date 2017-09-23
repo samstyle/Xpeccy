@@ -269,6 +269,11 @@ void compReset(Computer* comp,int res) {
 // NTSC:base/14915
 // PAL:base/12430
 
+// MSX...
+// master clock		10.74MHz
+// v9918 clock		master/2 = 5.37MHz : 2 dots/period
+// CPU clock		master/3 = 3.58MHz : 1T = 3 dots
+
 void compUpdateTimings(Computer* comp) {
 	int perNoTurbo = 1e3 / comp->cpuFrq;		// ns for full cpu tick
 	if (perNoTurbo & 1) perNoTurbo++;
@@ -277,8 +282,7 @@ void compUpdateTimings(Computer* comp) {
 		case HW_MSX:
 		case HW_MSX2:
 			comp->fps = 60;
-			// perNoTurbo = perNoTurbo * 6 / 5;				// convert 60Hz->50Hz
-			vidUpdateTimings(comp->vid, perNoTurbo >> 1);
+			vidUpdateTimings(comp->vid, perNoTurbo / 3);			// 3 dots / 1 CPU tick
 			break;
 		case HW_GBC:
 			comp->fps = 50;

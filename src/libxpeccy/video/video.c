@@ -553,17 +553,15 @@ void vidDrawEvoText(Video*);
 // v9938
 
 void vidDrawV9938(Video* vid) {
-	vid->v9938.draw(&vid->v9938);
+	vdpDraw(&vid->v9938);
 }
 
 void vidLineV9938(Video* vid) {
-	if (vid->v9938.cbLine)
-		vid->v9938.cbLine(&vid->v9938);
+	vdpLine(&vid->v9938);
 }
 
 void vidFrameV9938(Video* vid) {
-	if (vid->v9938.cbFram)
-		vid->v9938.cbFram(&vid->v9938);
+	vdpVBlk(&vid->v9938);
 }
 
 // gameboy
@@ -703,11 +701,21 @@ void vidSync(Video* vid, int ns) {
 				vid->lineCall(vid);
 			}
 		}
+		// screen corner aligned coordinates
+		if (vid->ray.x == vid->lay.scr.x) {
+			vid->ray.xs = 0;
+			if (vid->ray.y == vid->lay.scr.y) {
+				vid->ray.ys = 0;
+			} else {
+				vid->ray.ys++;
+			}
+		} else {
+			vid->ray.xs++;
+		}
 		// generate int
 		if (vid->intFRAME) vid->intFRAME--;
 		if ((vid->ray.yb == vid->lay.intpos.y) && (vid->ray.xb == vid->lay.intpos.x)) {
 			vid->intFRAME = vid->lay.intSize;
-			vid->v9938.sr[0] |= 0x80;
 		}
 	}
 }

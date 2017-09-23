@@ -7,6 +7,7 @@
 
 void shitHappens(const char*);
 bool areSure(const char*);
+int askYNC(const char*);
 void showInfo(const char*);
 
 // tape player

@@ -13,6 +13,11 @@ bool areSure(const char* msg) {
 }
 
 void showInfo(const char* msg) {
-	QMessageBox mbx(QMessageBox::Information,QDialog::trUtf8("Message"), QDialog::trUtf8(msg),QMessageBox::Ok);
+	QMessageBox mbx(QMessageBox::Information,"Message", QDialog::trUtf8(msg),QMessageBox::Ok);
 	mbx.exec();
+}
+
+int askYNC(const char* msg) {
+	QMessageBox mbx(QMessageBox::Question,"That is the question", QDialog::trUtf8(msg), QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+	return mbx.exec();
 }

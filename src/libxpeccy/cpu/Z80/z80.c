@@ -100,7 +100,8 @@ int z80_exec(CPU* cpu) {
 		res = 1;
 	} else if (cpu->intrq & cpu->inten) {
 		res = z80_int(cpu);
-	} else {
+	}
+	if (!res) {
 		cpu->t = 0;
 		cpu->noint = 0;
 		cpu->opTab = npTab;
