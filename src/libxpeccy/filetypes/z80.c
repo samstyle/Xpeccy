@@ -129,7 +129,7 @@ int loadZ80_f(Computer* comp, FILE* file) {
 	comp->cpu->imode = hd.flag29 & 3;
 	comp->cpu->iff1 = hd.iff1;
 	comp->cpu->iff2 = hd.iff2;
-	comp->cpu->inten = hd.iff1 ? 3 : 2;
+	comp->cpu->inten = Z80_NMI | (hd.iff1 ? Z80_INT : 0);
 	comp->vid->brdcol = (hd.flag12 >> 1) & 7;
 	comp->vid->nextbrd = comp->vid->brdcol;
 // unsupported things list

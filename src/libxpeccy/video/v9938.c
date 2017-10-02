@@ -6,6 +6,14 @@
 
 #include <assert.h>
 
+// master clock: 21.48MHz (v9938)
+// 1365(1368) master ticks / line (341.25 | 342 dots)
+// 4 ticks / dot = 5.37MHz
+// text: | 23 border | 240 screen | 22 border | 57 blank | = 342
+// gra:  | 15 border | 256 screen | 14 border | 57 blank | = 342
+// 192:  | 13 border | 192 screen | 12 border | 96 blank | = 313 (PAL)
+// 212:  | 11 border | 212 screen | 10 border | 80 blank | = 313 (PAL)
+
 extern int xscr, yscr, adr;
 extern unsigned char scrbyte, atrbyte, col, ink, pap;
 
@@ -304,6 +312,8 @@ void vdpGra4(VDP9938* vdp) {
 				col = ink & 15;
 			} else {
 				adr = (vdp->BGMap & 0x18000) + (xscr >> 1) + (yscr << 7);
+				if (vdp->bpage)
+					adr ^= 0x8000;
 				ink = vdp->ram[adr & 0x1ffff];			// color byte
 				col = (ink >> 4) & 15;
 			}
@@ -624,6 +634,29 @@ void vdpExec(VDP9938* vdp) {
 				vdpSend(vdp, vdp->reg[0x2c]);
 			}
 			break;
+		case 0x0d:
+			// printf("com D : (%i,%i)x(%i,%i)->(%i,%i):%.2X\n",vdp->src.x, vdp->src.y, vdp->size.x, vdp->size.y, vdp->dst.x, vdp->dst.y, vdp->reg[45]);
+			if (vdp->reg[45] & 0x04) {			// dX left
+				vdp->src.x -= vdp->size.x;
+				vdp->dst.x -= vdp->size.x;
+			}
+			if (vdp->reg[45] & 0x08) {			// dY up
+				vdp->src.y -= vdp->size.y;
+				vdp->dst.y -= vdp->size.y;
+			}
+			spx = vdp->BGMap | vdpDotAddr(vdp, vdp->src.x, vdp->src.y);	// source addr
+			dpx = vdp->BGMap | vdpDotAddr(vdp, vdp->dst.x, vdp->dst.y);	// dest addr
+			if (vdp->reg[45] & 0x10) spx = ((spx & 0xffff) | 0x20000);	// src exp ram
+			if (vdp->reg[45] & 0x20) dpx = ((dpx & 0xffff) | 0x20000);	// dst exp ram
+			vdp->cnt.x = vdp->size.x / vdp->core->dpb;			// dX bytes
+			vdp->delta.y = vdp->core->wid / vdp->core->dpb;			// bytes / line
+			while ((vdp->size.y > 0) && (spx >= 0) && (dpx >= 0)) {
+				memcpy(vdp->ram + dpx, vdp->ram + spx, vdp->cnt.x);
+				spx += vdp->delta.y;
+				dpx += vdp->delta.y;
+				vdp->size.y--;
+			}
+			break;
 		case 0x0e:
 			vdp->delta.x = (vdp->reg[0x2d] & 4) ? -1 : 1;
 			vdp->delta.y = (vdp->reg[0x2d] & 8) ? -1 : 1;
@@ -701,7 +734,13 @@ void vdpRegWr(VDP9938* vdp, int reg, unsigned char val) {
 			// color registers
 		case 0x07: break;			// border color = BG in R7
 		case 0x0c: break;			// inv/blink colors
-		case 0x0d: break;			// blink period
+		case 0x0d:			// blink period
+			vdp->blink0 = ((val >> 4) & 0x0f) * 6;		// 1 = ~6 frames
+			vdp->blink1 = (val & 0x0f) * 6;
+			if (!vdp->blink0) vdp->bpage = 1;
+			if (!vdp->blink1) vdp->bpage = 0;
+			vdp->blink = vdp->bpage ? vdp->blink1 : vdp->blink0;
+			break;
 		case 0x14: break;			// 14,15,16 : color burst registers
 		case 0x15: break;
 		case 0x16: break;
@@ -760,8 +799,6 @@ void vdpRegWr(VDP9938* vdp, int reg, unsigned char val) {
 void vdpDraw(VDP9938* vdp) {
 	if (vdp->inth) vdp->inth--;
 	if (vdp->intf) vdp->intf--;
-	if (!vdp->intf && !vdp->inth)
-		vdp->istrb = 0;
 	vdp->core->draw(vdp);
 }
 
@@ -771,21 +808,29 @@ void vdpLine(VDP9938* vdp) {
 }
 
 void vdpHBlk(VDP9938* vdp) {
+/*
 	if ((vdp->ray->ys < vdp->lines) && (vdp->ray->ys == vdp->iLine)) {		// HINT
 		vdp->sr[1] |= 1;
 		if (vdp->reg[0] & 0x10) {
 			vdp->inth = 64;
-			vdp->istrb = 1;
 		}
 	}
+*/
 }
 
 void vdpVBlk(VDP9938* vdp) {
 	vdp->sr[0] |= 0x80;
 	if (vdp->reg[1] & 0x20) {
 		vdp->intf = 64;
-		vdp->istrb = 1;
 	}
+
+	vdp->blink--;
+	if (vdp->blink < 0) {
+		vdp->blink = vdp->bpage ? vdp->blink0 : vdp->blink1;
+		if (vdp->blink)
+			vdp->bpage ^= 1;
+	}
+
 	if (vdp->core->fram)
 		vdp->core->fram(vdp);
 }

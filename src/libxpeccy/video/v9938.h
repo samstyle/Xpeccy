@@ -20,11 +20,14 @@ struct VDP9938 {
 	unsigned high:1;		// indicates hi byte in 2-byte writing
 	unsigned palhi:1;
 
-	unsigned istrb:1;
 	int intf;			// VINT
 	int inth;			// HINT (@ iLine)
 
-//	int vmode;			// current mode
+	int bpage:1;		// blink trigger
+	int blink;		// blink current period
+	int blink0;		// blink periods (frames)
+	int blink1;
+
 	int vadr;			// VRAM address (128K)
 	int memMask;
 	unsigned char data;		// 1st byte in 2-byte writing

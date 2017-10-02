@@ -67,6 +67,7 @@ typedef struct {
 	unsigned contMem:1;		// contended mem
 	unsigned contIO:1;		// contended IO
 
+	unsigned irq:1;
 	unsigned brkirq:1;		// break on irq
 
 	double fps;

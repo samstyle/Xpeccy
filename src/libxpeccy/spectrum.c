@@ -270,9 +270,9 @@ void compReset(Computer* comp,int res) {
 // PAL:base/12430
 
 // MSX...
-// master clock		10.74MHz
-// v9918 clock		master/2 = 5.37MHz : 2 dots/period
-// CPU clock		master/3 = 3.58MHz : 1T = 3 dots
+// master clock		MSX2:21.48MHz | MSX1:10.74
+// v99xx clock		master/4 = 5.37MHz : 2 dots/period	MSX2. MSX1: master/2
+// CPU clock		master/6 = 3.58MHz : 1T = 3 dots	MSX2. MSX1: master/3
 
 void compUpdateTimings(Computer* comp) {
 	int perNoTurbo = 1e3 / comp->cpuFrq;		// ns for full cpu tick
@@ -282,7 +282,7 @@ void compUpdateTimings(Computer* comp) {
 		case HW_MSX:
 		case HW_MSX2:
 			comp->fps = 60;
-			vidUpdateTimings(comp->vid, perNoTurbo / 3);			// 3 dots / 1 CPU tick
+			vidUpdateTimings(comp->vid, perNoTurbo * 2 / 3);
 			break;
 		case HW_GBC:
 			comp->fps = 50;
@@ -437,10 +437,13 @@ int compExec(Computer* comp) {
 	}
 // breakpoints
 	if (!comp->debug) {
-		unsigned char* ptr = getBrkPtr(comp, comp->cpu->pc);
-		if (*ptr & (MEM_BRK_FETCH | MEM_BRK_TFETCH)) {
+		unsigned char brk = getBrk(comp, comp->cpu->pc);
+		if (brk & (MEM_BRK_FETCH | MEM_BRK_TFETCH)) {
 			comp->brk = 1;
-			*ptr &= ~MEM_BRK_TFETCH;
+			if (brk & MEM_BRK_TFETCH) {
+				unsigned char *ptr = getBrkPtr(comp, comp->cpu->pc);
+				*ptr &= ~MEM_BRK_TFETCH;
+			}
 		}
 		if (comp->cpu->intrq && comp->brkirq)
 			comp->brk = 1;

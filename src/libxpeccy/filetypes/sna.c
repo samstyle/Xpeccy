@@ -42,7 +42,7 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 	comp->cpu->imode = hd.imod & 3;
 	comp->cpu->iff1 = (hd.flag19 & 4) ? 1 : 0;
 	comp->cpu->iff2 = 1;
-	comp->cpu->inten = comp->cpu->iff1 ? 3 : 2;
+	comp->cpu->inten = Z80_NMI | (comp->cpu->iff1 ? Z80_INT : 0);
 	comp->vid->brdcol = hd.border & 7;
 	comp->vid->nextbrd = hd.border & 7;
 

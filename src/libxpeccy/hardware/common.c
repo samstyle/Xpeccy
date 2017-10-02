@@ -27,18 +27,18 @@ void dummyOut(Computer* comp, unsigned short port, unsigned char val) {
 // INT handle/check
 
 void zx_sync(Computer* comp, int ns) {
-	if (!comp->cpu->iff1 || comp->cpu->noint) return;
+//	if (!comp->cpu->iff1 || comp->cpu->noint) return;
 	if (comp->vid->intFRAME && (comp->vid->intMask & 1)) {
 		comp->intVector = 0xff;
-		comp->cpu->intrq |= 1;
+		comp->cpu->intrq |= Z80_INT;
 		comp->vid->intFRAME = 0;
 	} else if (comp->vid->intLINE) {
 		comp->intVector = 0xfd;
-		comp->cpu->intrq |= 1;
+		comp->cpu->intrq |= Z80_INT;
 		comp->vid->intLINE = 0;
 	} else if (comp->vid->intDMA) {
 		comp->intVector = 0xfb;
-		comp->cpu->intrq |= 1;
+		comp->cpu->intrq |= Z80_INT;
 		comp->vid->intDMA = 0;
 	}
 }

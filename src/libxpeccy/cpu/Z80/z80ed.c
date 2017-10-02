@@ -82,7 +82,7 @@ void ed4B(CPU* cpu) {
 
 // 4d	reti	4 3rd 3rd
 void ed4D(CPU* cpu) {
-	cpu->iff1 = cpu->iff2;
+	// cpu->iff1 = cpu->iff2;
 	RET;
 }
 

@@ -34,10 +34,10 @@ HardWare hwTab[] = {
 		HW_NULL,"","",50,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// separator
 	},{
 		HW_PLUS2,"Spectrum +2","Spectrum +2",50,MEM_128,
-		pl2MapMem,pl2Out,pl2In,stdMRd,stdMWr,NULL,zx_sync,zx_keyp,zx_keyr,zx_vol
+		pl2MapMem,pl2Out,pl2In,stdMRd,stdMWr,plusRes,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
 		HW_PLUS3,"Spectrum +3","Spectrum +3",50,MEM_128,
-		pl2MapMem,pl3Out,pl3In,stdMRd,stdMWr,NULL,zx_sync,zx_keyp,zx_keyr,zx_vol
+		pl2MapMem,pl3Out,pl3In,stdMRd,stdMWr,plusRes,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
 		HW_NULL,"","",50,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// separator
 	},{

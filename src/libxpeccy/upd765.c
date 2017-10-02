@@ -580,7 +580,7 @@ uCom uComTab[] = {
 };
 
 void uWrite(FDC* fdc, int adr, unsigned char val) {
-	if (adr != FDC_DATA) return;
+	if (!(adr & 1)) return;			// wr data only
 	if (fdc->idle) {			// 1st byte, command
 		// DBGOUT("updCom %.2X\n",val);
 		fdc->com = val;
@@ -623,32 +623,29 @@ void uWrite(FDC* fdc, int adr, unsigned char val) {
 
 unsigned char uRead(FDC* fdc, int adr) {
 	unsigned char res = 0xff;
-	switch (adr) {
-		case FDC_COM:
-			if (fdc->idle) {
-				res = 0x80 | ((fdc->resCnt > 0) ? 0x40 : 0x00);
-			} else {
-				res = (fdc->state & 0x1f) | (fdc->drq << 7) | (fdc->dir << 6) | (fdc->irq << 5);
+	if (adr & 1) {					// 1: data
+		if (fdc->drq && fdc->dir) {
+			if (fdc->irq) {			// execution
+				res = fdc->data;
+				fdc->drq = 0;
+				//DBGOUT("%.2X ",res);
+			} else if (fdc->resCnt > 0) {	// result
+				res = fdc->resBuf[fdc->resPos];
+				fdc->resPos++;
+				fdc->resCnt--;
+				if (fdc->resCnt == 0)
+					fdc->dir = 0;
+				//DBGOUT("resp : %.2X\n",res);
+			} else {			// other
+				res = 0xff;
 			}
-			break;
-		case FDC_DATA:
-			if (fdc->drq && fdc->dir) {
-				if (fdc->irq) {			// execution
-					res = fdc->data;
-					fdc->drq = 0;
-					//DBGOUT("%.2X ",res);
-				} else if (fdc->resCnt > 0) {	// result
-					res = fdc->resBuf[fdc->resPos];
-					fdc->resPos++;
-					fdc->resCnt--;
-					if (fdc->resCnt == 0)
-						fdc->dir = 0;
-					//DBGOUT("resp : %.2X\n",res);
-				} else {			// other
-					res = 0xff;
-				}
-			}
-			break;
+		}
+	} else {			// RD 0 : main status register
+		if (fdc->idle) {
+			res = 0x80 | ((fdc->resCnt > 0) ? 0x40 : 0x00);
+		} else {
+			res = (fdc->state & 0x1f) | (fdc->drq << 7) | (fdc->dir << 6) | (fdc->irq << 5);
+		}
 	}
 	return res;
 }

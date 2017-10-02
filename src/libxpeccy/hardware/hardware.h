@@ -163,6 +163,7 @@ unsigned char pl2In(Computer*,unsigned short,int);
 // void pl3MapMem(ZXComp*);		// = pl2MapMem
 void pl3Out(Computer*,unsigned short,unsigned char,int);
 unsigned char pl3In(Computer*,unsigned short,int);
+void plusRes(Computer*);
 
 // atm 2
 void atm2MapMem(Computer*);

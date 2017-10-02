@@ -26,6 +26,12 @@ void pl2MapMem(Computer* comp) {
 	}
 }
 
+void plusRes(Computer* comp) {
+	comp->p1FFD = 0;
+	comp->p7FFD = 0;
+	comp->rom = 0;
+}
+
 // out
 
 /*

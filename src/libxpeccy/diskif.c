@@ -109,15 +109,15 @@ unsigned char uRead(FDC*, int);
 void uWrite(FDC*, int, unsigned char);
 
 int pdosGetPort(int p) {
-	int port = 0;
-	if ((p & 0xf002) == 0x2000) port = FDC_COM;
-	if ((p & 0xf002) == 0x3000) port = FDC_DATA;
+	int port = -1;
+	if ((p & 0xf002) == 0x2000) port = 0;		// A0 input of upd765
+	if ((p & 0xf002) == 0x3000) port = 1;		// 0:status(r), 1:data(rw)
 	return port;
 }
 
 int pdosIn(DiskIF* dif, int port, unsigned char* res, int dos) {
 	port = pdosGetPort(port);
-	if (port == 0) return 0;
+	if (port < 0) return 0;
 //	printf("in %.4X\n",port);
 	*res = uRead(dif->fdc, port);
 	return 1;
@@ -125,7 +125,7 @@ int pdosIn(DiskIF* dif, int port, unsigned char* res, int dos) {
 
 int pdosOut(DiskIF* dif, int port, unsigned char val, int dos) {
 	port = pdosGetPort(port);
-	if (port == 0) return 0;
+	if (port < 0) return 0;
 	uWrite(dif->fdc, port, val);
 	return 1;
 }

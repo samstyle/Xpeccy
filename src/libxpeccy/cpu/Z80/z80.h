@@ -33,6 +33,9 @@ enum {
 #define	FN	0x02
 #define	FC	0x01
 
+#define Z80_INT	1
+#define Z80_NMI	(1<<1)
+
 // typedef struct CPU CPU;
 
 void z80_reset(CPU*);
