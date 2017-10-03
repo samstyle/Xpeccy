@@ -72,7 +72,7 @@ int lr_exec(CPU* cpu) {
 			cpu->op = &cpu->opTab[cpu->tmp];
 			cpu->t += cpu->op->t;
 			cpu->op->exec(cpu);
-		} while (cpu->op->prefix);
+		} while (cpu->op->flag & OF_PREFIX);
 		if (cpu->dihalt) {		// LR35902 bug (?) : repeat opcode after HALT with disabled interrupts (DI)
 			cpu->dihalt = 0;
 			cpu->pc = cpu->tmpw;
@@ -97,28 +97,74 @@ xAsmScan lr_asm(const char* cbuf, char* buf) {
 	return res;
 }
 
+static unsigned char lr_cnd[4] = {FZ, FC, FP, FS};
+
 xMnem lr_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 	int res = 0;
 	opCode* opt = lrTab;
 	opCode* opc;
 	unsigned char op;
+	unsigned short madr;
 	do {
 		op = mrd(adr++,data);
 		res++;
 		opc = &opt[op];
-		if (opc->prefix) opt = opc->tab;
-	} while (opc->prefix);
+		if (opc->flag & OF_PREFIX) opt = opc->tab;
+	} while (opc->flag & OF_PREFIX);
 	xMnem mn;
 	mn.len = res;
 	mn.mnem = opc->mnem;
-	mn.mem = 0;		// TODO
+	mn.flag = opc->flag;
+	// mem
+	if (strstr(mn.mnem, "(hl)") && strcmp(mn.mnem, "jp (hl)")) {
+		mn.mem = 1;
+		mn.mop = mrd(cpu->hl, data);
+	} else if (strstr(mn.mnem, "(de)")) {
+		mn.mem = 1;
+		mn.mop = mrd(cpu->de, data);
+	} else if (strstr(mn.mnem, "(bc)")) {
+		mn.mem = 1;
+		mn.mop = mrd(cpu->bc, data);
+	} else if (strstr(mn.mnem, "(:1)")) {
+		mn.mem = 1;
+		madr = mrd(adr, data) & 0xff;
+		madr |= (mrd(adr+1, data) << 8);
+		mn.mop = mrd(madr, data);
+	} else if (strstr(mn.mnem, "ldh")) {
+		if ((op & 0xef) == 0xe0) {		// ldh (:1)
+			madr = mrd(adr, data) & 0xff;
+		} else {				// ldh (c)
+			madr = cpu->c & 0xff;
+		}
+		mn.mem = 1;
+		mn.mop = mrd(madr | 0xff00, data);
+	}
+	// cond (TODO)
 	mn.cond = 0;
+	mn.met = 0;
+	if (strstr(opc->mnem, "djnz")) {
+		mn.cond = 1;
+		mn.met = (cpu->b == 1) ? 0 : 1;
+	} else if (opt == lrTab) {
+		if (((op & 0xc7) == 0xc2) || ((op & 0xc7) == 0xc4) || ((op & 0xc7) == 0xc0)) {		// call, jp, ret
+			mn.cond = 1;
+			mn.met = (cpu->f & lr_cnd[(op & 0x30) >> 4]) ? 0 : 1;
+			if (op & 8)
+				mn.met ^= 1;
+		} else if ((op & 0xe7) == 0x20) {							// jr
+			mn.cond = 1;
+			mn.met = (cpu->f & lr_cnd[(op & 0x10) >> 4] ? 0 : 1);
+			if (op & 8)
+				mn.met ^= 1;
+		}
+	}
+
 	return mn;
 }
 
 // registers
 
-xRegDsc lrRegTab[] = {
+static xRegDsc lrRegTab[] = {
 	{LR_REG_PC, "PC", 0},
 	{LR_REG_AF, "AF", 0},
 	{LR_REG_BC, "BC", 0},

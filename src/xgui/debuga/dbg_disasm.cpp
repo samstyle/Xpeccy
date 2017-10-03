@@ -1,4 +1,5 @@
 #include "dbg_disasm.h"
+#include "dbg_dump.h"
 
 #include <QDebug>
 
@@ -12,6 +13,9 @@ extern QColor colSEL;
 
 extern QMap<QString, xAdr> labels;
 QString findLabel(int, int, int);
+
+static int mode = XVIEW_CPU;
+static int page = 0;
 
 // MODEL
 
@@ -88,7 +92,33 @@ QVariant xDisasmModel::data(const QModelIndex& idx, int role) const {
 
 unsigned char dasmrd(unsigned short adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	return memRd(comp->mem, adr);
+	unsigned char res = 0xff;
+	switch (mode) {
+		case XVIEW_CPU:
+			res = memRd(comp->mem, adr);
+			break;
+		case XVIEW_RAM:
+			res = comp->mem->ramData[((adr & 0x3fff) | (page << 14)) & 0x3fffff];
+			break;
+		case XVIEW_ROM:
+			res = comp->mem->romData[((adr & 0x3fff) | (page << 14)) & 0x7ffff];
+			break;
+	}
+	return res;
+}
+
+void dasmwr(Computer* comp, unsigned short adr, unsigned char bt) {
+	switch(mode) {
+		case XVIEW_CPU:
+			memWr(comp->mem, adr, bt);
+			break;
+		case XVIEW_RAM:
+			comp->mem->ramData[((adr & 0x3fff) | (page << 14)) & 0x3fffff] = bt;
+			break;
+		case XVIEW_ROM:
+			// comp->mem->romData[((adr & 0x3fff) | (page << 14)) & 0x7ffff] = bt;
+			break;
+	}
 }
 
 void placeLabel(dasmData& drow) {
@@ -99,20 +129,20 @@ void placeLabel(dasmData& drow) {
 }
 
 int dasmByte(Computer* comp, unsigned short adr, dasmData& drow) {
-	drow.command = QString("DB #%0").arg(gethexbyte(memRd(comp->mem, adr)));
+	drow.command = QString("DB #%0").arg(gethexbyte(dasmrd(adr, comp)));
 	return 1;
 }
 
 int dasmWord(Computer* comp, unsigned short adr, dasmData& drow) {
-	int word = memRd(comp->mem, adr);
-	word |= (memRd(comp->mem, adr + 1) << 8);
+	int word = dasmrd(adr, comp);
+	word |= (dasmrd(adr + 1, comp) << 8);
 	drow.command = QString("DW #%0").arg(gethexword(word));
 	return 2;
 }
 
 int dasmAddr(Computer* comp, unsigned short adr, dasmData& drow) {
-	int word = memRd(comp->mem, adr);
-	word |= (memRd(comp->mem, adr + 1) << 8);
+	int word = dasmrd(adr, comp->mem);
+	word |= (dasmrd(adr + 1, comp) << 8);
 	QString lab = findLabel(word & 0xffff, -1, -1);
 	if (lab.isEmpty()) {
 		lab = gethexword(word).prepend("#");
@@ -126,18 +156,18 @@ int dasmText(Computer* comp, unsigned short adr, dasmData& drow) {
 	int clen = 0;
 	drow.command = QString("DB \"");
 	unsigned char fl = getBrk(comp, adr);
-	unsigned char bt = memRd(comp->mem, adr);
+	unsigned char bt = dasmrd(adr, comp);
 	while (((fl & 0xf0) == DBG_VIEW_TEXT) && (bt > 31) && (bt < 128) && (clen < 250)) {
 		drow.command.append(QChar(bt));
 		clen++;
-		bt = memRd(comp->mem, (adr + clen) & 0xffff);
+		bt = dasmrd((adr + clen) & 0xffff, comp);
 		fl = getBrk(comp, (adr + clen) & 0xffff);
 	}
 	if (clen == 0) {
 		drow.flag = (getBrk(comp, adr) & 0x0f) | DBG_VIEW_BYTE;
 		setBrk(comp, adr, drow.flag);
 		clen = 1;
-		drow.command = QString("DB #%0").arg(memRd(comp->mem, adr));
+		drow.command = QString("DB #%0").arg(dasmrd(adr, comp));
 	} else {
 		drow.command.append("\"");
 	}
@@ -149,6 +179,7 @@ int dasmCode(Computer* comp, unsigned short adr, dasmData& drow) {
 	xMnem mnm = cpuDisasm(comp->cpu, adr, buf, dasmrd, comp);
 	drow.command = QString(buf).toUpper();
 	drow.oadr = mnm.oadr;
+	drow.oflag = mnm.flag;
 	placeLabel(drow);
 	if (drow.ispc) {
 		if (mnm.mem) {
@@ -170,6 +201,7 @@ int dasmSome(Computer* comp, unsigned short adr, dasmData& drow) {
 	int clen = 0;
 	drow.adr = adr;
 	drow.flag = getBrk(comp, drow.adr);
+	drow.oflag = 0;
 	drow.oadr = -1;
 	switch(drow.flag & 0xf0) {
 		case DBG_VIEW_WORD: clen = dasmWord(comp, adr, drow); break;
@@ -184,22 +216,45 @@ int dasmSome(Computer* comp, unsigned short adr, dasmData& drow) {
 dasmData getDisasm(Computer* comp, unsigned short& adr) {
 	dasmData drow;
 	drow.adr = adr;
-	drow.flag = getBrk(comp, drow.adr);
-	drow.ispc = (adr == comp->cpu->pc) ? 1 : 0;
-	drow.isbrk = (drow.flag & MEM_BRK_ANY) ? 1 : 0;
-	drow.issel = ((adr >= blockStart) && (adr <= blockEnd)) ? 1 : 0;
+	drow.oflag = 0;
+	drow.ispc = 0;
+	drow.issel = 0;
 	drow.info.clear();
 	drow.icon.clear();
 	int clen = 0;
 	// 0:adr
-	xAdr xadr = memGetXAdr(comp->mem, adr);
 	QString lab;
+	xAdr xadr;
+	switch (mode) {
+		case XVIEW_RAM:
+			xadr.type = MEM_RAM;
+			xadr.bank = page;
+			xadr.adr = adr & 0x3fff;
+			xadr.abs = xadr.adr | (page << 14);
+			drow.flag = comp->brkRamMap[xadr.abs];
+			break;
+		case XVIEW_ROM:
+			xadr.type = MEM_ROM;
+			xadr.bank = page;
+			xadr.adr = adr & 0x3fff;
+			xadr.abs = xadr.adr | (page << 14);
+			drow.flag = comp->brkRomMap[xadr.abs];
+			break;
+		default:
+			xadr = memGetXAdr(comp->mem, adr);
+			drow.flag = getBrk(comp, drow.adr);
+			drow.ispc = (adr == comp->cpu->pc) ? 1 : 0;
+			drow.issel = ((adr >= blockStart) && (adr <= blockEnd)) ? 1 : 0;
+			break;
+	}
+	drow.isbrk = (drow.flag & MEM_BRK_ANY) ? 1 : 0;
+
 	if (conf.dbg.labels) {
 		lab = findLabel(xadr.adr, xadr.type, xadr.bank);
 	}
 	if (lab.isEmpty()) {
 		drow.islab = 0;
-		if (conf.dbg.segment) {
+		if (conf.dbg.segment || (mode != XVIEW_CPU)) {
 			switch(xadr.type) {
 				case MEM_RAM: drow.aname = "RAM:"; break;
 				case MEM_ROM: drow.aname = "ROM:"; break;
@@ -207,9 +262,9 @@ dasmData getDisasm(Computer* comp, unsigned short& adr) {
 				case MEM_EXT: drow.aname = "EXT:"; break;
 				default: drow.aname = "???"; break;
 			}
-			drow.aname.append(QString("%1:%2").arg(gethexbyte(xadr.bank)).arg(gethexword(xadr.adr & 0x3fff)));
+			drow.aname.append(QString("%1:%2").arg(gethexbyte(xadr.bank & 0xff)).arg(gethexword(xadr.adr & 0x3fff)));
 		} else {
-			drow.aname = gethexword(adr);
+			drow.aname = gethexword(xadr.adr);
 		}
 	} else {
 		drow.islab = 1;
@@ -220,7 +275,7 @@ dasmData getDisasm(Computer* comp, unsigned short& adr) {
 	// 1:bytes
 	drow.bytes.clear();
 	while(clen > 0) {
-		drow.bytes.append(gethexbyte(memRd(comp->mem, adr)));
+		drow.bytes.append(gethexbyte(dasmrd(adr, comp)));
 		adr++;
 		clen--;
 	}
@@ -311,7 +366,7 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 	int idx;
 	int len;
 	QString str;
-	QString lab;
+	// QString lab;
 	QStringList lst;
 	xAdr xadr;
 	int adr = dasm[row].adr;
@@ -330,9 +385,10 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 			break;
 		case 1:	// bytes
 			lst = val.toString().split(":", QString::SkipEmptyParts);
+			qDebug() << adr;
 			foreach(str, lst) {
 				cbyte = str.toInt(NULL,16) & 0xff;
-				memWr((*cptr)->mem, adr & 0xffff, cbyte);
+				dasmwr(*cptr, adr & 0xffff, cbyte);
 				adr++;
 			}
 			emit rqRefill();
@@ -406,7 +462,7 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 			}
 			idx = 0;
 			while (idx < len) {
-				memWr((*cptr)->mem, (adr + idx) & 0xffff, buf[idx]);
+				dasmwr(*cptr, (adr + idx) & 0xffff, buf[idx]);
 				idx++;
 			}
 			emit rqRefill();
@@ -438,6 +494,12 @@ void xDisasmTable::setComp(Computer** comp) {
 	model->cptr = comp;
 }
 
+void xDisasmTable::setMode(int md, int pg) {
+	mode = md;
+	page = pg;
+	model->update();
+}
+
 int xDisasmTable::updContent() {
 	return model->update();
 }
@@ -457,21 +519,23 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			break;
 		case Qt::Key_Down:
 			if ((ev->modifiers() & Qt::ControlModifier) || (idx.row() == model->rowCount() - 1)) {
-				scrolUp(ev->modifiers());
+				scrolDn(ev->modifiers());
 			} else {
 				QTableView::keyPressEvent(ev);
 			}
 			ev->ignore();
 			break;
 		case Qt::Key_Home:
+			if (mode != XVIEW_CPU) break;
 			if (!cptr) break;
 			disasmAdr = (*cptr)->cpu->pc;
 			model->update();
 			ev->ignore();
 			break;
 		case Qt::Key_End:
+			if (mode != XVIEW_CPU) break;
 			if (!cptr) break;
-			(*cptr)->cpu->pc = getData(idx.row(), 0, Qt::UserRole).toInt();
+			(*cptr)->cpu->pc = getData(idx.row(), 0, Qt::UserRole).toInt() & 0xffff;
 			emit rqRefillAll();
 			ev->ignore();
 			break;
@@ -508,7 +572,9 @@ void xDisasmTable::mousePressEvent(QMouseEvent* ev) {
 			ev->ignore();
 			break;
 		case Qt::LeftButton:
-			if (ev->modifiers() & Qt::ControlModifier) {
+			if (mode != XVIEW_CPU) {
+				QTableView::mousePressEvent(ev);
+			} else if (ev->modifiers() & Qt::ControlModifier) {
 				blockStart = adr;
 				if (blockEnd < blockStart) blockEnd = blockStart;
 				emit rqRefill();
@@ -536,6 +602,7 @@ void xDisasmTable::mouseReleaseEvent(QMouseEvent* ev) {
 }
 
 void xDisasmTable::mouseMoveEvent(QMouseEvent* ev) {
+	if (mode != XVIEW_CPU) return;
 	int row = rowAt(ev->pos().y());
 	if ((row < 0) || (row >= model->rowCount())) return;
 	int adr = model->data(model->index(row, 0), Qt::UserRole).toInt();	// item(row,0)->data(Qt::UserRole).toInt();

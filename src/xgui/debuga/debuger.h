@@ -103,7 +103,7 @@ class DebugWin : public QDialog {
 		void fillMem();
 		void fillStack();
 		void fillFDC();
-		void fillRZX();
+		// void fillRZX();
 		void fillAY();
 
 		void setFlagNames(const char*);
@@ -116,8 +116,9 @@ class DebugWin : public QDialog {
 	private slots:
 		void setShowLabels(bool);
 		void setShowSegment(bool);
-		// void setDumpView(QAction*);
-		void setDumpCP(QAction*);
+		void chDumpView();
+		void setDasmMode();
+		void setDumpCP();
 
 		void loadMap();
 		void saveMap();

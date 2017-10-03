@@ -144,26 +144,6 @@ unsigned char msx9938rd(Computer* comp, unsigned short adr) {
 	return vdpRead(&comp->vid->v9938, adr & 3);
 }
 
-/*
-void msx98Out(Computer* comp, unsigned short port, unsigned char val) {
-	vdpMemWr(&comp->vid->v9938, val);
-}
-
-void msx99Out(Computer* comp, unsigned short port, unsigned char val) {
-	vdpRegWr(&comp->vid->v9938, val);
-}
-
-unsigned char msx98In(Computer* comp, unsigned short port) {
-	unsigned char res = comp->vid->v9938.ram[comp->vid->v9938.vadr & comp->vid->v9938.memMask];
-	comp->vid->v9938.vadr++;
-	return res;
-}
-
-unsigned char msx99In(Computer* comp, unsigned short port) {		// status register 0
-	return vdpReadSR(&comp->vid->v9938);
-}
-*/
-
 // Port map
 
 static xPort msxPortMap[] = {

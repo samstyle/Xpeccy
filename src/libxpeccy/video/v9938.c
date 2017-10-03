@@ -73,7 +73,7 @@ unsigned char vdpMixColor(unsigned char colS, unsigned char colD, unsigned char 
 // convert addr bus to absolute memory addr (main ram / expansion ram)
 int vdpGetAddr(VDP9938* vdp, int adr) {
 	adr &= vdp->memMask;
-	if (adr & 0x10000) return adr;	// hi 64K
+	if (adr & 0x10000) return adr;	// high 64K
 	if (vdp->reg[45] & 0x40)	// expansion ram on
 		adr |= 0x20000;
 	return  adr;
@@ -159,7 +159,7 @@ void vdpFillSprites(VDP9938* vdp) {
 }
 
 void vdpFillSprites2(VDP9938* vdp) {
-	memset(vdp->sprImg, 0x00, 0xd400);
+	memset(vdp->sprImg, 0x00, 0x10000);
 	if (vdp->reg[8] & 2) return;			// disable OBJ sprites
 	int i,sh;
 	int tadr = (vdp->OBJAttr & 0x1fc00) | 0x200;	// a16...a10.1.x..x
@@ -190,7 +190,7 @@ void vdpFillSprites2(VDP9938* vdp) {
 	}
 }
 
-// v9918 scr 0 (40 x 24 text)
+// v9918 TEXT1 (40 x 24 text)
 
 void vdpText1(VDP9938* vdp) {
 	yscr = vdp->ray->y - vdp->lay->bord.y;
@@ -215,7 +215,7 @@ void vdpText1(VDP9938* vdp) {
 	vidPutDot(vdp->ray, vdp->pal, col);
 }
 
-// v9918 scr 1 (32 x 24 text)
+// v9918 G1 (32 x 24 text)
 
 void vdpGra1(VDP9938* vdp) {
 	yscr = vdp->ray->y - vdp->lay->bord.y;
@@ -243,7 +243,7 @@ void vdpGra1(VDP9938* vdp) {
 	vidPutDot(vdp->ray, vdp->pal, col);
 }
 
-// v9918 scr 2 (256 x 192)
+// v9918 G2 (256 x 192)
 
 void vdpGra2(VDP9938* vdp) {
 	yscr = vdp->ray->y - vdp->lay->bord.y;
@@ -271,7 +271,7 @@ void vdpGra2(VDP9938* vdp) {
 	vidPutDot(vdp->ray, vdp->pal, col);
 }
 
-// v9918 scr 3 (multicolor)
+// v9918 MC (multicolor)
 
 void vdpMultcol(VDP9938* vdp) {
 	yscr = vdp->ray->y - vdp->lay->bord.y;
@@ -294,7 +294,7 @@ void vdpMultcol(VDP9938* vdp) {
 	vidPutDot(vdp->ray, vdp->pal, col);
 }
 
-// v9938 scr 5 (256x212 4bpp)
+// v9938 G4 (256x212 4bpp)
 
 void vdpGra4(VDP9938* vdp) {
 	yscr = vdp->ray->y - vdp->lay->bord.y - vdp->vAdj;
@@ -311,10 +311,8 @@ void vdpGra4(VDP9938* vdp) {
 			if (xscr & 1) {
 				col = ink & 15;
 			} else {
-				adr = (vdp->BGMap & 0x18000) + (xscr >> 1) + (yscr << 7);
-				if (vdp->bpage)
-					adr ^= 0x8000;
-				ink = vdp->ram[adr & 0x1ffff];			// color byte
+				adr = (vdp->BGMap & 0x18000) | (xscr >> 1) | (yscr << 7);
+				ink = vdp->ram[adr & vdp->memMask];		// color byte
 				col = (ink >> 4) & 15;
 			}
 			pap = vdp->sprImg[(yscr << 8) | xscr];
@@ -325,9 +323,9 @@ void vdpGra4(VDP9938* vdp) {
 }
 
 void vdpG4pset(VDP9938* vdp, int x, int y, unsigned char col) {
-	if ((x < 0) || (x > 255) || (y < 0) || (y > 212)) return;
-	adr = (vdp->BGMap & 0x18000) + (x >> 1) + (y << 7);
-	scrbyte = vdp->ram[adr];
+	//adr = (vdp->BGMap & 0x18000) + (x >> 1) + (y << 7);
+	adr = ((x & 0xff) >> 1) | (y << 7);
+	scrbyte = vdp->ram[adr & vdp->memMask];
 	if (x & 1) {
 		pap = vdpMixColor((scrbyte & 0xf0) >> 4, col & 0x0f, vdp->arg) & 0x0f;
 		scrbyte = (scrbyte & 0xf0) | (pap & 0x0f);
@@ -339,12 +337,12 @@ void vdpG4pset(VDP9938* vdp, int x, int y, unsigned char col) {
 }
 
 unsigned char vdpG4col(VDP9938* vdp, int x, int y) {
-	if ((x < 0) || (x > 255) || (y < 0) || (y > 212)) return 0;
-	adr = (vdp->BGMap & 0x18000) + (x >> 1) + (y << 7);
+	// adr = (vdp->BGMap & 0x18000) + (x >> 1) + (y << 7);
+	adr = ((x & 0xff) >> 1) | (y << 7);
 	return (x & 1) ? vdp->ram[adr] & 0x0f : (vdp->ram[adr] & 0xf0) >> 4;
 }
 
-// v9938 scr 6 (512x212 2bpp)
+// v9938 G5 (512x212 2bpp)
 
 void vdpGra5(VDP9938* vdp) {
 	yscr = vdp->ray->y - vdp->lay->bord.y - vdp->vAdj;
@@ -370,9 +368,8 @@ void vdpGra5(VDP9938* vdp) {
 }
 
 void vdpG5pset(VDP9938* vdp, int x, int y, unsigned char col) {
-	if ((x < 0) || (x > 511) || (y < 0) || (y > 212)) return;
-	adr = (vdp->BGMap & 0x18000) + (x >> 2) + (y << 7);
-	scrbyte = vdp->ram[adr];
+	adr = ((x & 0x1ff) >> 2) | (y << 7);
+	scrbyte = vdp->ram[adr & vdp->memMask];
 	col &= 3;
 	switch (x & 3) {
 		case 0:
@@ -396,8 +393,7 @@ void vdpG5pset(VDP9938* vdp, int x, int y, unsigned char col) {
 }
 
 unsigned char vdpG5col(VDP9938* vdp, int x, int y) {
-	if ((x < 0) || (x > 511) || (y < 0) || (y > 212)) return 0;
-	adr = (vdp->BGMap & 0x18000) + (x >> 2) + (y << 7);
+	adr = ((x & 0x1ff) >> 2) | (y << 7);
 	switch (x & 3) {
 		case 0: pap = (vdp->ram[adr] & 0xc0) >> 6; break;
 		case 1: pap = (vdp->ram[adr] & 0x30) >> 4; break;
@@ -407,7 +403,7 @@ unsigned char vdpG5col(VDP9938* vdp, int x, int y) {
 	return pap;
 }
 
-// v9938 scr 7 (512x212 4bpp)
+// v9938 G6 (512x212 4bpp)
 
 void vdpGra6(VDP9938* vdp) {
 	yscr = vdp->ray->y - vdp->lay->bord.y - vdp->vAdj;
@@ -430,8 +426,7 @@ void vdpGra6(VDP9938* vdp) {
 }
 
 void vdpG6pset(VDP9938* vdp, int x, int y, unsigned char col) {
-	if ((x < 0) || (x > 511) || (y < 0) || (y > 212)) return;
-	adr = (vdp->BGMap & 0x18000) + (x >> 1) + (y << 8);
+	adr = ((x & 0x1ff) >> 1) | (y << 8);
 	scrbyte = vdp->ram[adr];
 	if (x & 1) {
 		pap = vdpMixColor((scrbyte & 0xf0) >> 4, col & 0x0f, vdp->arg) & 0x0f;
@@ -444,9 +439,43 @@ void vdpG6pset(VDP9938* vdp, int x, int y, unsigned char col) {
 }
 
 unsigned char vdpG6col(VDP9938* vdp, int x, int y) {
-	if ((x < 0) || (x > 511) || (y < 0) || (y > 212)) return 0;
-	adr = (vdp->BGMap & 0x18000) + (x >> 1) + (y << 8);
+	adr = ((x & 0x1ff) >> 1) | (y << 8);
 	return (x & 1) ? vdp->ram[adr] & 0x0f : (vdp->ram[adr] & 0xf0) >> 4;
+}
+
+// v9938 G6 (256x212 8bpp)
+// note:sprites color is different
+
+void vdpGra7(VDP9938* vdp) {
+	unsigned char col;
+	yscr = vdp->ray->y - vdp->lay->bord.y - vdp->vAdj;
+	if ((yscr < 0) || (yscr >= vdp->lines)) {
+		col = vdp->reg[7];
+	} else {
+		xscr = vdp->ray->x - vdp->lay->bord.x - vdp->hAdj;
+		if (xscr & ~0xff) {
+			col = vdp->reg[7];
+		} else {
+			adr = ((vdp->reg[2] & 0x20) ? 0x10000 : 0) | xscr | (yscr << 8);
+			col = vdp->ram[adr & vdp->memMask];
+		}
+	}
+	(*vdp->ray->ptr++) = (col << 3) & 0xe0;		// r:3
+	(*vdp->ray->ptr++) = col & 0xe0;		// g:3
+	(*vdp->ray->ptr++) = (col << 6) & 0xe0;		// b:2
+	(*vdp->ray->ptr++) = (col << 3) & 0xe0;
+	(*vdp->ray->ptr++) = col & 0xe0;
+	(*vdp->ray->ptr++) = (col << 6) & 0xe0;
+}
+
+void vdpG7pset(VDP9938* vdp, int x, int y, unsigned char col) {
+	adr = (x & 0xff) | (y << 8);
+	vdp->ram[adr & vdp->memMask] = col;
+}
+
+unsigned char vdpG7col(VDP9938* vdp, int x, int y) {
+	adr = (x & 0xff) | (y << 8);
+	return vdp->ram[adr & vdp->memMask];
 }
 
 // dummy
@@ -463,21 +492,20 @@ void vdpDummy(VDP9938* vdp) {
 
 static vdpMode vdpTab[] = {
 	{VDP_TEXT1, 256, 1, vdpText1, NULL, vdpFillSprites, NULL, NULL},
+	{VDP_TEXT2, 256, 1, vdpDummy, NULL, NULL, NULL, NULL},
+	{VDP_MCOL, 256, 1, vdpMultcol, NULL, vdpFillSprites, NULL, NULL},
 	{VDP_GRA1, 256, 1, vdpGra1, NULL, vdpFillSprites, NULL, NULL},
 	{VDP_GRA2, 256, 1, vdpGra2, NULL, vdpFillSprites, NULL, NULL},
-	{VDP_MCOL, 256, 1, vdpMultcol, NULL, vdpFillSprites, NULL, NULL},
 	{VDP_GRA3, 256, 1, vdpGra2, NULL, vdpFillSprites2, NULL, NULL},
 	{VDP_GRA4, 256, 2, vdpGra4, NULL, vdpFillSprites2, vdpG4pset, vdpG4col},
 	{VDP_GRA5, 512, 4, vdpGra5, NULL, vdpFillSprites2, vdpG5pset, vdpG5col},
 	{VDP_GRA6, 512, 2, vdpGra6, NULL, vdpFillSprites2, vdpG6pset, vdpG6col},
-	{VDP_GRA7, 256, 1, vdpDummy, NULL, NULL, NULL, NULL},
-	{VDP_TEXT2, 256, 1, vdpDummy, NULL, NULL, NULL, NULL},
+	{VDP_GRA7, 256, 1, vdpGra7, NULL, vdpFillSprites2, vdpG7pset, vdpG7col},
 	{VDP_UNKNOWN, 256, 1, vdpDummy, NULL, NULL, NULL, NULL}
 };
 
 void vdpSetMode(VDP9938* vdp, int mode) {
 	int idx = 0;
-	//vdp->vmode = mode;
 	//printf("v9938 mode = %i\n",vdp->vmode);
 	while((vdpTab[idx].id != mode) && (vdpTab[idx].id != VDP_UNKNOWN)) {
 		idx++;
@@ -506,6 +534,8 @@ void vdpReset(VDP9938* vdp) {
 unsigned char vdpReadSR(VDP9938* vdp) {
 	unsigned char idx = vdp->reg[0x0f] & 0x0f;
 	unsigned char res = vdp->sr[idx];
+	xscr = vdp->ray->x - vdp->lay->scr.x;
+	yscr = vdp->ray->y - vdp->lay->scr.y;
 	switch (idx) {
 		case 0:
 			vdp->sr[0] &= 0x7f;		// reset VINT flag
@@ -515,18 +545,19 @@ unsigned char vdpReadSR(VDP9938* vdp) {
 			break;
 		case 2:
 			res &= 0x9f;
-			if (vdp->ray->xs < 256)			// horizontal retrace (border + HBlank)
+			if ((xscr < 0) || (xscr > 255))			// horizontal retrace (border + HBlank)
 				res |= 0x20;
-			if (vdp->ray->ys < vdp->lines)		// vertical retrace (border + VBlank)
+			if ((yscr < 0) || (yscr >= vdp->lines))		// vertical retrace (border + VBlank)
 				res |= 0x40;
 			break;
-		case 3: res = vdp->ray->xs & 0xff; break;
-		case 4: res = ((vdp->ray->xs >> 8) & 1) | 0xfe; break;
-		case 5: res = vdp->ray->ys & 0xff; break;
-		case 6: res = ((vdp->ray->ys >> 8) & 3) | 0xfc; break;
+		case 3: res = xscr & 0xff; break;
+		case 4: res = (xscr >> 8) & 1; break;
+		case 5: res = yscr & 0xff; break;
+		case 6: res = (yscr >> 8) & 3; break;
 		default:
 			break;
 	}
+//	printf("SR %i = %.2X\n",idx,res);
 	return res;
 }
 
@@ -588,7 +619,7 @@ void vdpExec(VDP9938* vdp) {
 				vdp->count--;
 			}
 			break;
-		case 9:
+		case 9:					// LMMM
 			vdp->delta.x = (vdp->reg[0x2d] & 4) ? -1 : 1;
 			vdp->delta.y = (vdp->reg[0x2d] & 8) ? -1 : 1;
 			vdp->cnt.x = 0;
@@ -695,6 +726,7 @@ void vdpRegWr(VDP9938* vdp, int reg, unsigned char val) {
 	int vmode;
 	reg &= 0x3f;
 	vdp->reg[reg] = val;
+	// printf("%i:#%.2X\n",reg,val);
 	switch (reg) {
 		// mode registers
 		case 0x00:
@@ -722,7 +754,10 @@ void vdpRegWr(VDP9938* vdp, int reg, unsigned char val) {
 		case 0x08: break;						// mode reg 2
 		case 0x09: vdp->lines = (val & 0x80) ? 212 : 192; break;	// mode reg 3
 			// address registers
-		case 0x02: vdp->BGMap = (val & 0x7f) << 10; break;
+		case 0x02:
+			vdp->BGMap = (val & 0x7f) << 10;
+			// printf("BGMap = %X (%.2X)\n",vdp->BGMap,val);
+			break;
 		case 0x04: vdp->BGTiles = (val & 0x3f) << 11; break;
 		case 0x06: vdp->OBJTiles = (val & 0x3f) << 11; break;
 
@@ -751,7 +786,10 @@ void vdpRegWr(VDP9938* vdp, int reg, unsigned char val) {
 		case 0x17: break;			// display Y offset
 		case 0x13: vdp->iLine = val; break;
 			// access registers
-		case 0x0e: vdp->vadr = (vdp->vadr & 0x3fff) | ((val & 7) << 14); break;
+		case 0x0e:
+			vdp->vadr = (vdp->vadr & 0x3fff) | ((val & 7) << 14);
+			// printf("%.2X:%X\n",val,vdp->vadr);
+			break;
 		case 0x0f: break;			// status reg num (0..9)
 		case 0x10: break;			// palette num
 		case 0x11: /*vdp->regIdx = val & 0x3f*/; break;
@@ -808,14 +846,13 @@ void vdpLine(VDP9938* vdp) {
 }
 
 void vdpHBlk(VDP9938* vdp) {
-/*
-	if ((vdp->ray->ys < vdp->lines) && (vdp->ray->ys == vdp->iLine)) {		// HINT
+	yscr = vdp->ray->x - vdp->lay->scr.y;
+	if (yscr == vdp->iLine) {		// HINT
 		vdp->sr[1] |= 1;
 		if (vdp->reg[0] & 0x10) {
 			vdp->inth = 64;
 		}
 	}
-*/
 }
 
 void vdpVBlk(VDP9938* vdp) {
@@ -837,6 +874,7 @@ void vdpVBlk(VDP9938* vdp) {
 
 unsigned char vdpRead(VDP9938* vdp, int port) {
 	unsigned char res = 0xff;
+	vdp->high = 0;
 	switch (port & 3) {
 		case 0:
 			res = vdp->ram[vdpGetAddr(vdp, vdp->vadr)];
@@ -857,6 +895,7 @@ void vdpWrite(VDP9938* vdp, int port, unsigned char val) {
 			vdp->vadr++;
 			break;
 		case 1:
+//			printf("port1.%i:%.2X\n",vdp->high,val);
 			if (vdp->high) {
 				if (val & 0x80) {
 					vdpRegWr(vdp, val & 0x3f, vdp->data);

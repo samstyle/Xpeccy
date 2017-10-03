@@ -701,17 +701,6 @@ void vidSync(Video* vid, int ns) {
 				vid->lineCall(vid);
 			}
 		}
-		// screen corner aligned coordinates
-		if (vid->ray.x == vid->lay.scr.x) {
-			vid->ray.xs = 0;
-			if (vid->ray.y == vid->lay.scr.y) {
-				vid->ray.ys = 0;
-			} else {
-				vid->ray.ys++;
-			}
-		} else {
-			vid->ray.xs++;
-		}
 		// generate int
 		if (vid->intFRAME) vid->intFRAME--;
 		if ((vid->ray.yb == vid->lay.intpos.y) && (vid->ray.xb == vid->lay.intpos.x)) {

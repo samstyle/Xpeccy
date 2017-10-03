@@ -43,7 +43,6 @@ struct VDP9938 {
 	vCoord pos;
 	vCoord size;
 	int count;
-//	int regIdx;
 	int BGTiles;
 	int BGMap;
 	int BGColors;
@@ -57,13 +56,6 @@ struct VDP9938 {
 	unsigned char ram[0x30000];	// VRAM (16K for v9918, 128K+64K for v9938)
 	unsigned char sprImg[0x10000];	// 256x256 image with foreground sprites (rebuild @ frame start)
 	vdpMode* core;
-/*
-	void(*draw)(struct VDP9938*);
-	void(*cbLine)(struct VDP9938*);
-	void(*cbFram)(struct VDP9938*);
-	void(*plot)(struct VDP9938*, int, int, unsigned char);		// put dot
-	unsigned char(*color)(struct VDP9938*, int, int);		// pick dot color
-*/
 };
 
 void vdpReset(VDP9938*);

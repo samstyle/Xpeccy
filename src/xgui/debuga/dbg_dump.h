@@ -1,5 +1,5 @@
-#ifndef _DBG_DUMP_H
-#define _DBG_DUMP_H
+#ifndef X_DBG_DUMP_H
+#define X_DBG_DUMP_H
 
 #include <QTableView>
 #include <QAbstractTableModel>
@@ -14,15 +14,20 @@ enum {
 	XCP_KOI8R
 };
 
-typedef int(*dmpMrd)(unsigned short, void*);
-typedef void(*dmpMwr)(unsigned short, unsigned char, void*);
+enum {
+	XVIEW_CPU = 1,
+	XVIEW_RAM,
+	XVIEW_ROM,
+	XVIEW_SLT
+};
 
-class xDumpModel:public QAbstractTableModel {
+class xDumpModel : public QAbstractTableModel {
 	Q_OBJECT
 	public:
 		xDumpModel(QObject* = NULL);
 		int codePage;
-		void setMachine(void**, dmpMrd, dmpMwr);
+		void setComp(Computer**);
+		void setMode(int, int);
 		int rowCount(const QModelIndex& = QModelIndex()) const;
 		int columnCount(const QModelIndex& = QModelIndex()) const;
 		Qt::ItemFlags flags(const QModelIndex&) const;
@@ -36,9 +41,11 @@ class xDumpModel:public QAbstractTableModel {
 	public slots:
 		void update();
 	private:
-		void** pptr;
-		dmpMrd mrd;
-		dmpMwr mwr;
+		Computer** cptr;
+		int mode;
+		int page;
+		int mrd(int) const;
+		void mwr(int, unsigned char);
 };
 
 class xDumpTable:public QTableView {
@@ -46,9 +53,10 @@ class xDumpTable:public QTableView {
 	public:
 		xDumpTable(QWidget* = NULL);
 		Computer** cptr;
-		void setMachine(void**, dmpMrd, dmpMwr);
+		void setComp(Computer**);
 		int rows();
 		void setCodePage(int);
+		void setMode(int, int);
 		void update();
 	signals:
 		void rqRefill();

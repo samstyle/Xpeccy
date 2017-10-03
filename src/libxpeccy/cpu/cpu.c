@@ -89,7 +89,7 @@ void cpuDestroy(CPU* cpu) {
 
 // disasm
 
-const char halfByte[] = "0123456789ABCDEF";
+static const char halfByte[] = "0123456789ABCDEF";
 
 xMnem cpuDisasm(CPU* cpu, unsigned short adr, char* buf, cbdmr mrd, void* data) {
 	xMnem mn;
@@ -100,6 +100,7 @@ xMnem cpuDisasm(CPU* cpu, unsigned short adr, char* buf, cbdmr mrd, void* data) 
 	unsigned char dth;
 	unsigned short dtw;
 	mn.mnem = NULL;
+	mn.flag = 0;
 	if (opt == NULL) {			// no opcode tab
 		strcpy(buf, "undef");
 		mn.len = 1;
@@ -136,7 +137,7 @@ xMnem cpuDisasm(CPU* cpu, unsigned short adr, char* buf, cbdmr mrd, void* data) 
 					case '3':		// word = adr + [e = (adr)]
 						dtl = mrd(adr++,data);
 						mn.len++;
-						dtw = adr + (signed char)dtl;
+						dtw = (adr + (signed char)dtl) & 0xffff;
 						mn.oadr = dtw;
 						*buf++ = '#';
 						*buf++ = halfByte[(dtw >> 12) & 0x0f];

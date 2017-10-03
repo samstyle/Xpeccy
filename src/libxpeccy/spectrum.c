@@ -553,7 +553,7 @@ void cmsWr(Computer* comp, unsigned char val) {
 
 // breaks
 
-unsigned char dumBrk = 0x00;
+static unsigned char dumBrk = 0x00;
 
 unsigned char* getBrkPtr(Computer* comp, unsigned short madr) {
 	xAdr xadr = memGetXAdr(comp->mem, madr);
@@ -583,5 +583,5 @@ unsigned char getBrk(Computer* comp, unsigned short adr) {
 	unsigned char* ptr = getBrkPtr(comp, adr);
 	unsigned char res = ptr ? *ptr : 0x00;
 	res |= (comp->brkAdrMap[adr] & 0x0f);
-	return res & 0x0f;
+	return res;
 }

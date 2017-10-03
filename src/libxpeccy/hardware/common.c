@@ -40,6 +40,8 @@ void zx_sync(Computer* comp, int ns) {
 		comp->intVector = 0xfb;
 		comp->cpu->intrq |= Z80_INT;
 		comp->vid->intDMA = 0;
+	} else {
+		comp->cpu->intrq &= ~Z80_INT;
 	}
 }
 

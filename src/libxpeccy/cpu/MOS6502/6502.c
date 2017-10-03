@@ -57,20 +57,38 @@ int m6502_exec(CPU* cpu) {
 		com = cpu->mrd(cpu->pc++, 1, cpu->data);
 		opCode* op = &mosTab[com];
 		cpu->t = op->t;
-		cpu->sta = op->prefix;
+		cpu->sta = op->flag & OF_EXT;
 		op->exec(cpu);
 		res = cpu->t;
 	}
 	return res;
 }
 
+// cond:
+// 00x : MFN = x
+// 01x : MFV = x
+// 10x : MFC = x
+// 11x : MFZ = x
+
+static unsigned char m6502_cond[4] = {MFN, MFV, MFC, MFZ};
+
 xMnem m6502_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 	xMnem mn;
 	unsigned char op = mrd(adr++,data);
 	mn.len = 1;
 	mn.mnem = mosTab[op].mnem;
-	mn.cond = 0;		// TODO
-	mn.mem = 0;
+	mn.flag = mosTab[op].flag;
+	// cond
+	if ((op & 0x1f) == 0x10) {		// all banch ops; b5-7 = condition
+		mn.cond = 1;
+		mn.met = (cpu->f & m6502_cond[(op >> 6) & 3]) ? 0 : 1;		// true if 0
+		if (op & 0x20)							// true if 1
+			mn.met ^= 1;
+	} else {
+		mn.cond = 0;
+	}
+	// mem
+	mn.mem = 0;				// todo
 	return mn;
 }
 
@@ -83,7 +101,7 @@ xAsmScan m6502_asm(const char* cbuf, char* buf) {
 	return res;
 }
 
-xRegDsc m6502RegTab[] = {
+static xRegDsc m6502RegTab[] = {
 	{M6502_REG_PC, "PC", 0},
 	{M6502_REG_A, "A", 1},
 	{M6502_REG_X, "X", 1},
@@ -93,7 +111,7 @@ xRegDsc m6502RegTab[] = {
 	{M6502_REG_S, "S", 1},
 	{M6502_REG_F, "P", 1},
 	{M6502_REG_Y, "Y", 1},
-	{REG_NONE, ""}
+	{REG_NONE, "", 0}
 };
 
 void m6502_get_regs(CPU* cpu, xRegBunch* bunch) {

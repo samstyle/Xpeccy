@@ -949,7 +949,7 @@ opCode npTab[256]={
 	{0,4,npr0E,NULL,"ld c,:1"},
 	{0,4,npr0F,NULL,"rrca"},
 
-	{0,5,npr10,NULL,"djnz :3"},
+	{OF_SKIPABLE | OF_RELJUMP,5,npr10,NULL,"djnz :3"},
 	{0,4,npr11,NULL,"ld de,:2"},
 	{0,4,npr12,NULL,"ld (de),a"},
 	{0,6,npr13,NULL,"inc de"},
@@ -958,7 +958,7 @@ opCode npTab[256]={
 	{0,4,npr16,NULL,"ld d,:1"},
 	{0,4,npr17,NULL,"rla"},
 
-	{0,4,npr18,NULL,"jr :3"},
+	{OF_RELJUMP,4,npr18,NULL,"jr :3"},
 	{0,11,npr19,NULL,"add hl,de"},
 	{0,4,npr1A,NULL,"ld a,(de)"},
 	{0,6,npr1B,NULL,"dec de"},
@@ -967,7 +967,7 @@ opCode npTab[256]={
 	{0,4,npr1E,NULL,"ld e,:1"},
 	{0,4,npr1F,NULL,"rra"},
 
-	{0,4,npr20,NULL,"jr nz,:3"},
+	{OF_RELJUMP,4,npr20,NULL,"jr nz,:3"},
 	{0,4,npr21,NULL,"ld hl,:2"},
 	{0,4,npr22,NULL,"ld (:2),hl"},		// 4,3rd,3rd,3wr,3wr
 	{0,6,npr23,NULL,"inc hl"},
@@ -976,7 +976,7 @@ opCode npTab[256]={
 	{0,4,npr26,NULL,"ld h,:1"},
 	{0,4,npr27,NULL,"daa"},
 
-	{0,4,npr28,NULL,"jr z,:3"},
+	{OF_RELJUMP,4,npr28,NULL,"jr z,:3"},
 	{0,11,npr29,NULL,"add hl,hl"},
 	{0,4,npr2A,NULL,"ld hl,(:2)"},		// 4,3rd,3rd,3rd,3rd
 	{0,6,npr2B,NULL,"dec hl"},
@@ -985,7 +985,7 @@ opCode npTab[256]={
 	{0,4,npr2E,NULL,"ld l,:1"},
 	{0,4,npr2F,NULL,"cpl"},
 
-	{0,4,npr30,NULL,"jr nc,:3"},
+	{OF_RELJUMP,4,npr30,NULL,"jr nc,:3"},
 	{0,4,npr31,NULL,"ld sp,:2"},
 	{0,4,npr32,NULL,"ld (:2),a"},		// 4,3rd,3rd,3wr
 	{0,6,npr33,NULL,"inc sp"},
@@ -994,7 +994,7 @@ opCode npTab[256]={
 	{0,4,npr36,NULL,"ld (hl),:1"},
 	{0,4,npr37,NULL,"scf"},
 
-	{0,4,npr38,NULL,"jr c,:3"},
+	{OF_RELJUMP,4,npr38,NULL,"jr c,:3"},
 	{0,11,npr39,NULL,"add hl,sp"},
 	{0,4,npr3A,NULL,"ld a,(:2)"},		// 4,3rd,3rd,3rd
 	{0,6,npr3B,NULL,"dec sp"},
@@ -1151,71 +1151,71 @@ opCode npTab[256]={
 	{0,4,nprC1,NULL,"pop bc"},
 	{0,4,nprC2,NULL,"jp nz,:2"},
 	{0,4,nprC3,NULL,"jp :2"},
-	{0,4,nprC4,NULL,"call nz,:2"},		// 4 3rd 3(4)rd [3wr] [3wr]
+	{OF_SKIPABLE,4,nprC4,NULL,"call nz,:2"},		// 4 3rd 3(4)rd [3wr] [3wr]
 	{0,5,nprC5,NULL,"push bc"},		// 5 3wr 3wr
 	{0,4,nprC6,NULL,"add a,:1"},
-	{0,5,nprC7,NULL,"rst #00"},		// 5 3wr 3wr
+	{OF_SKIPABLE,5,nprC7,NULL,"rst #00"},		// 5 3wr 3wr
 
 	{0,5,nprC8,NULL,"ret z"},
 	{0,4,nprC9,NULL,"ret"},
 	{0,4,nprCA,NULL,"jp z,:2"},
-	{1,4,nprCB,cbTab,"#CB"},
-	{0,4,nprCC,NULL,"call z,:2"},
-	{0,4,nprCD,NULL,"call :2"},		// 4 3rd 4rd 3wr 3wr
+	{OF_PREFIX,4,nprCB,cbTab,"#CB"},
+	{OF_SKIPABLE,4,nprCC,NULL,"call z,:2"},
+	{OF_SKIPABLE,4,nprCD,NULL,"call :2"},		// 4 3rd 4rd 3wr 3wr
 	{0,4,nprCE,NULL,"adc a,:1"},
-	{0,5,nprCF,NULL,"rst #08"},
+	{OF_SKIPABLE,5,nprCF,NULL,"rst #08"},
 
 	{0,5,nprD0,NULL,"ret nc"},
 	{0,4,nprD1,NULL,"pop de"},
 	{0,4,nprD2,NULL,"jp nc,:2"},
 	{0,4,nprD3,NULL,"out (:1),a"},
-	{0,4,nprD4,NULL,"call nc,:2"},
+	{OF_SKIPABLE,4,nprD4,NULL,"call nc,:2"},
 	{0,5,nprD5,NULL,"push de"},
 	{0,4,nprD6,NULL,"sub :1"},
-	{0,5,nprD7,NULL,"rst #10"},
+	{OF_SKIPABLE,5,nprD7,NULL,"rst #10"},
 
 	{0,5,nprD8,NULL,"ret c"},
 	{0,4,nprD9,NULL,"exx"},
 	{0,4,nprDA,NULL,"jp c,:2"},
 	{0,4,nprDB,NULL,"in a,(:1)"},
-	{0,4,nprDC,NULL,"call c,:2"},
-	{1,4,nprDD,ddTab,"#DD"},
+	{OF_SKIPABLE,4,nprDC,NULL,"call c,:2"},
+	{OF_PREFIX,4,nprDD,ddTab,"#DD"},
 	{0,4,nprDE,NULL,"sbc a,:1"},
-	{0,5,nprDF,NULL,"rst #18"},
+	{OF_SKIPABLE,5,nprDF,NULL,"rst #18"},
 
 	{0,5,nprE0,NULL,"ret po"},
 	{0,4,nprE1,NULL,"pop hl"},
 	{0,4,nprE2,NULL,"jp po,:2"},
 	{0,4,nprE3,NULL,"ex (sp),hl"},		// 4 3rd 4rd 3wr 5wr
-	{0,4,nprE4,NULL,"call po,:2"},
+	{OF_SKIPABLE,4,nprE4,NULL,"call po,:2"},
 	{0,5,nprE5,NULL,"push hl"},
 	{0,4,nprE6,NULL,"and :1"},
-	{0,5,nprE7,NULL,"rst #20"},
+	{OF_SKIPABLE,5,nprE7,NULL,"rst #20"},
 
 	{0,5,nprE8,NULL,"ret pe"},
 	{0,4,nprE9,NULL,"jp (hl)"},
 	{0,4,nprEA,NULL,"jp pe,:2"},
 	{0,4,nprEB,NULL,"ex de,hl"},
-	{0,4,nprEC,NULL,"call pe,:2"},
-	{1,4,nprED,edTab,"#ED"},
+	{OF_SKIPABLE,4,nprEC,NULL,"call pe,:2"},
+	{OF_PREFIX,4,nprED,edTab,"#ED"},
 	{0,4,nprEE,NULL,"xor :1"},
-	{0,5,nprEF,NULL,"rst #28"},
+	{OF_SKIPABLE,5,nprEF,NULL,"rst #28"},
 
 	{0,5,nprF0,NULL,"ret p"},
 	{0,4,nprF1,NULL,"pop af"},
 	{0,4,nprF2,NULL,"jp p,:2"},
 	{0,4,nprF3,NULL,"di"},
-	{0,4,nprF4,NULL,"call p,:2"},
+	{OF_SKIPABLE,4,nprF4,NULL,"call p,:2"},
 	{0,5,nprF5,NULL,"push af"},
 	{0,4,nprF6,NULL,"or :1"},
-	{0,5,nprF7,NULL,"rst #30"},
+	{OF_SKIPABLE,5,nprF7,NULL,"rst #30"},
 
 	{0,5,nprF8,NULL,"ret m"},
 	{0,6,nprF9,NULL,"ld sp,hl"},
 	{0,4,nprFA,NULL,"jp m,:2"},
 	{0,4,nprFB,NULL,"ei"},
-	{0,4,nprFC,NULL,"call m,:2"},
-	{1,4,nprFD,fdTab,"#FD"},
+	{OF_SKIPABLE,4,nprFC,NULL,"call m,:2"},
+	{OF_PREFIX,4,nprFD,fdTab,"#FD"},
 	{0,4,nprFE,NULL,"cp :1"},
-	{0,5,nprFF,NULL,"rst #38"}
+	{OF_SKIPABLE,5,nprFF,NULL,"rst #38"}
 };

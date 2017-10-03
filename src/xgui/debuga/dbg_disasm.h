@@ -25,7 +25,8 @@ typedef struct {
 	unsigned islab:1;		// address have label
 	unsigned short adr;		// command addr
 	int oadr;			// word operand like nn : jp nn; ld hl,(nn)
-	unsigned char flag;		// address cell flags
+	int flag;			// address cell flags
+	int oflag;			// opcode flag
 	QString aname;			// label/segment/address
 	QString bytes;			// all bytes inside command
 	QString command;		// command with replace addr->label
@@ -60,6 +61,7 @@ class xDisasmTable : public QTableView {
 		int rows();
 		int updContent();
 		void setComp(Computer**);
+		void setMode(int, int);
 	private:
 		int markAdr;
 		xDisasmModel* model;

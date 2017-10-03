@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>813</width>
-    <height>570</height>
+    <height>598</height>
    </rect>
   </property>
   <property name="font">
@@ -717,6 +717,19 @@
         </widget>
        </item>
        <item>
+        <widget class="QComboBox" name="cbDasmMode"/>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="sbDasmPage">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="maximum">
+          <number>255</number>
+         </property>
+        </widget>
+       </item>
+       <item>
         <spacer name="horizontalSpacer_3">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -800,39 +813,17 @@
        <attribute name="verticalHeaderMinimumSectionSize">
         <number>17</number>
        </attribute>
+       <attribute name="verticalHeaderStretchLastSection">
+        <bool>true</bool>
+       </attribute>
       </widget>
      </item>
     </layout>
    </item>
    <item>
-    <layout class="QVBoxLayout" name="verticalLayout_4" stretch="0,0,0">
+    <layout class="QVBoxLayout" name="verticalLayout_4" stretch="0,0,0,0">
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_8">
-       <item>
-        <widget class="QToolButton" name="tbDumpView">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>55</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>16777215</width>
-           <height>14</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>MEM</string>
-         </property>
-         <property name="popupMode">
-          <enum>QToolButton::InstantPopup</enum>
-         </property>
-        </widget>
-       </item>
+      <layout class="QHBoxLayout" name="horizontalLayout_8" stretch="10">
        <item>
         <widget class="QLabel" name="label_28">
          <property name="styleSheet">
@@ -846,25 +837,62 @@
          </property>
         </widget>
        </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_7">
        <item>
-        <widget class="QToolButton" name="tbCodepage">
-         <property name="minimumSize">
+        <widget class="QComboBox" name="cbDumpView">
+         <property name="maximumSize">
           <size>
-           <width>55</width>
-           <height>0</height>
+           <width>16777215</width>
+           <height>16</height>
           </size>
+         </property>
+         <property name="frame">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="sbDumpPage">
+         <property name="enabled">
+          <bool>false</bool>
          </property>
          <property name="maximumSize">
           <size>
            <width>16777215</width>
-           <height>14</height>
+           <height>16</height>
           </size>
          </property>
-         <property name="text">
-          <string>WIN</string>
+         <property name="frame">
+          <bool>false</bool>
          </property>
-         <property name="popupMode">
-          <enum>QToolButton::InstantPopup</enum>
+         <property name="maximum">
+          <number>255</number>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_4">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QComboBox" name="cbCodePage">
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>16</height>
+          </size>
          </property>
         </widget>
        </item>
@@ -935,7 +963,7 @@
         <number>17</number>
        </attribute>
        <attribute name="verticalHeaderStretchLastSection">
-        <bool>false</bool>
+        <bool>true</bool>
        </attribute>
       </widget>
      </item>
@@ -2424,31 +2452,6 @@
     <string>Hide address</string>
    </property>
   </action>
-  <action name="act1251">
-   <property name="text">
-    <string>cp1251</string>
-   </property>
-  </action>
-  <action name="act866">
-   <property name="text">
-    <string>ibm866</string>
-   </property>
-  </action>
-  <action name="actKoi8r">
-   <property name="text">
-    <string>Koi8R</string>
-   </property>
-  </action>
-  <action name="actDumpMem">
-   <property name="text">
-    <string>Memory dump</string>
-   </property>
-  </action>
-  <action name="actDumpReg">
-   <property name="text">
-    <string>Registers</string>
-   </property>
-  </action>
   <action name="actTraceLog">
    <property name="icon">
     <iconset resource="../xpeccy.qrc">
@@ -2533,8 +2536,6 @@
   <tabstop>cbF1</tabstop>
   <tabstop>tbTool</tabstop>
   <tabstop>tbDbgOpt</tabstop>
-  <tabstop>tbDumpView</tabstop>
-  <tabstop>tbCodepage</tabstop>
   <tabstop>dumpTable</tabstop>
   <tabstop>cbScrPix</tabstop>
   <tabstop>sbScrBank</tabstop>
@@ -2549,11 +2550,11 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
+  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

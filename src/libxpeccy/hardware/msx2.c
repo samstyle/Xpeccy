@@ -128,25 +128,6 @@ unsigned char msx2mapIn(Computer* comp, unsigned short port) {
 	return comp->msx.memMap[port & 3];
 }
 
-// vdp
-
-/*
-void msx2_9AOut(Computer* comp, unsigned short port, unsigned char val) {
-	vdpPalWr(&comp->vid->v9938, val);
-}
-
-void msx2_9Bout(Computer* comp, unsigned short port, unsigned char val) {
-	if (comp->vid->v9938.regIdx != 0x11) {
-		comp->vid->v9938.data = val;
-		comp->vid->v9938.high = 1;
-		vdpRegWr(&comp->vid->v9938, (comp->vid->v9938.regIdx & 0x3f) | 0x80);
-	}
-	if (~comp->vid->v9938.reg[0x11] & 0x80) {		// b7 = 1 : autoincrement off
-		comp->vid->v9938.regIdx++;
-	}
-}
-*/
-
 // reset
 
 void msxResetSlot(xCartridge*);
@@ -249,10 +230,6 @@ static xPort msx2ioTab[] = {
 	{0xff,0x91,2,2,2,NULL,		dummyOut},
 
 	{0xfc,0x98,2,2,2,msx9938rd,	msx9938wr},
-//	{0xff,0x98,2,2,2,msx98In,	msx98Out},
-//	{0xff,0x99,2,2,2,msx99In,	msx99Out},
-//	{0xff,0x9a,2,2,2,NULL,		msx2_9AOut},
-//	{0xff,0x9b,2,2,2,NULL,		msx2_9Bout},
 
 	{0xff,0xa0,2,2,2,NULL,		msxAYIdxOut},		// PSG
 	{0xff,0xa1,2,2,2,NULL,		msxAYDataOut},

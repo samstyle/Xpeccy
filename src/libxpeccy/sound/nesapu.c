@@ -298,7 +298,7 @@ void apuFlush(nesAPU* apu) {
 sndPair apuVolume(nesAPU* apu) {
 	apuFlush(apu);
 	sndPair res;
-#if 0
+#if 1
 	int v1 = apuToneVolume(&apu->ch0);
 	int v2 = apuToneVolume(&apu->ch1);
 	double pout = 0.0;
@@ -312,7 +312,7 @@ sndPair apuVolume(nesAPU* apu) {
 		tnd = 159.79 / (100.0 + (1.0 / ((v1 / 8227.0) + (v2 / 12241.0) + (v3 / 22638.0))));		// 0,8686 max
 	//printf("%f : %f\n",pout,tnd);
 	pout += tnd;
-	res.left = (int)((pout + tnd) * 64.0);
+	res.left = (int)((pout + tnd) * 128.0);
 	res.right = res.left;
 #else
 	int lev;

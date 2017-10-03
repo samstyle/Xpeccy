@@ -28,6 +28,9 @@ int blockEnd = -1;
 
 QMap<QString, xAdr> labels;
 
+int getRFIData(QComboBox*);
+int dasmSome(Computer*, unsigned short, dasmData&);
+
 // trace type
 enum {
 	DBG_TRACE_ALL = 0x100,
@@ -60,7 +63,8 @@ void DebugWin::start(Computer* c) {
 	blockStart = -1;
 	blockEnd = -1;
 	chLayout();
-	disasmAdr = comp->cpu->pc;
+	if (getRFIData(ui.cbDasmMode) == XVIEW_CPU)
+		disasmAdr = comp->cpu->pc;
 	fillAll();
 	updateScreen();
 	if (!comp->vid->tail)
@@ -76,10 +80,10 @@ void DebugWin::start(Computer* c) {
 
 	show();
 
-	int wd = ui.dasmTable->height() / ui.dasmTable->rows();
+	int wd = (ui.dasmTable->height() - 2) / ui.dasmTable->rows();
 	ui.dasmTable->verticalHeader()->setDefaultSectionSize(wd);
 
-	wd = ui.dumpTable->height() / ui.dumpTable->rows();
+	wd = (ui.dumpTable->height() - 2) / ui.dumpTable->rows();
 	ui.dumpTable->verticalHeader()->setDefaultSectionSize(wd);
 
 	if (memViewer->vis) {
@@ -157,7 +161,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 		dbgRegEdit[i] = arre[i];
 	}
 
-	ui.dumpTable->setMachine((void**)(&comp), dmpmrd, dmpmwr);
+	ui.dumpTable->setComp(&comp);
 	ui.dasmTable->setComp(&comp);
 
 	setFont(QFont("://DejaVuSansMono.ttf",10));
@@ -188,6 +192,14 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.dasmTable->setColumnWidth(2,130);
 	ui.dasmTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_LABEL));
 	ui.dasmTable->setItemDelegateForColumn(1, new xItemDelegate(XTYPE_DUMP));
+
+	ui.cbDasmMode->addItem("CPU", XVIEW_CPU);
+	ui.cbDasmMode->addItem("RAM", XVIEW_RAM);
+	ui.cbDasmMode->addItem("ROM", XVIEW_ROM);
+
+	connect(ui.cbDasmMode, SIGNAL(currentIndexChanged(int)),this,SLOT(setDasmMode()));
+	connect(ui.sbDasmPage, SIGNAL(valueChanged(int)),this,SLOT(setDasmMode()));
+
 // actions
 	ui.tbBreak->addAction(ui.actFetch);
 	ui.tbBreak->addAction(ui.actRead);
@@ -261,28 +273,25 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 // dump table
 
-	ui.act1251->setData(XCP_1251);
-	ui.act866->setData(XCP_866);
-	ui.actKoi8r->setData(XCP_KOI8R);
-	ui.tbCodepage->addAction(ui.act1251);
-	ui.tbCodepage->addAction(ui.act866);
-	ui.tbCodepage->addAction(ui.actKoi8r);
+	ui.cbCodePage->addItem("WIN", XCP_1251);
+	ui.cbCodePage->addItem("DOS", XCP_866);
+	ui.cbCodePage->addItem("KOI8R", XCP_KOI8R);
 
-	ui.actDumpMem->setData(DMP_MEM);
-	ui.actDumpReg->setData(DMP_REG);
-	ui.tbDumpView->addAction(ui.actDumpMem);
-	ui.tbDumpView->addAction(ui.actDumpReg);
+	ui.cbDumpView->addItem("CPU", XVIEW_CPU);
+	ui.cbDumpView->addItem("RAM", XVIEW_RAM);
+	ui.cbDumpView->addItem("ROM", XVIEW_ROM);
 
 	ui.dumpTable->setColumnWidth(0,60);
 	ui.dumpTable->setItemDelegate(new xItemDelegate(XTYPE_BYTE));
 	ui.dumpTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_ADR));
 	ui.dumpTable->setItemDelegateForColumn(9, new xItemDelegate(XTYPE_NONE));
 
-//	connect(ui.dumpTable,SIGNAL(cellChanged(int,int)),this,SLOT(dumpEdited(int,int)));
 	connect(ui.dumpTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
+	connect(ui.cbCodePage, SIGNAL(currentIndexChanged(int)), this, SLOT(setDumpCP()));
+	connect(ui.cbDumpView, SIGNAL(currentIndexChanged(int)), this, SLOT(chDumpView()));
+	connect(ui.sbDumpPage, SIGNAL(valueChanged(int)), this, SLOT(chDumpView()));
 
-	connect(ui.tbCodepage, SIGNAL(triggered(QAction*)), this, SLOT(setDumpCP(QAction*)));
-	// connect(ui.tbDumpView, SIGNAL(triggered(QAction*)), this, SLOT(setDumpView(QAction*)));
+	ui.cbDumpView->setCurrentIndex(0);
 
 // registers
 	connect(ui.editReg00, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
@@ -421,49 +430,25 @@ void DebugWin::setShowSegment(bool f) {
 	fillDisasm();
 }
 
-/*
-void DebugWin::wheelEvent(QWheelEvent* ev) {
-	if (ev->modifiers() & Qt::ControlModifier) {
-		if (ev->delta() < 0) {
-			disasmAdr++;
-			fillDisasm();
-		} else if (ev->delta() > 0) {
-			disasmAdr--;
-			fillDisasm();
-		}
-	} else {
-		if (ev->delta() < 0) {
-			scrollDown();
-		} else if (ev->delta() > 0) {
-			scrollUp();
-		}
-	}
-}
-*/
-
-void DebugWin::setDumpCP(QAction* act) {
-	int cp = act->data().toInt();
+void DebugWin::setDumpCP() {
+	int cp = getRFIData(ui.cbCodePage);
 	ui.dumpTable->setCodePage(cp);
-	switch(cp) {
-		case XCP_1251: ui.tbCodepage->setText("WIN"); break;
-		case XCP_866: ui.tbCodepage->setText("DOS"); break;
-		case XCP_KOI8R: ui.tbCodepage->setText("KOI"); break;
-		default: ui.tbCodepage->setText("???"); break;
-	}
 	fillDump();
 }
 
-/*
-void DebugWin::setDumpView(QAction* act) {
-	dumpMode = act->data().toInt();
-	switch(dumpMode) {
-		case DMP_MEM: ui.tbDumpView->setText("MEM"); break;
-		case DMP_REG: ui.tbDumpView->setText("REG"); break;
-		default: ui.tbDumpView->setText("???"); break;
-	}
-	fillDump();
+void DebugWin::chDumpView() {
+	int mode = getRFIData(ui.cbDumpView);
+	int page = ui.sbDumpPage->value();
+	ui.sbDumpPage->setDisabled(mode == XVIEW_CPU);
+	ui.dumpTable->setMode(mode, page);
 }
-*/
+
+void DebugWin::setDasmMode() {
+	int mode = getRFIData(ui.cbDasmMode);
+	int page = ui.sbDasmPage->value();
+	ui.sbDasmPage->setDisabled(mode == XVIEW_CPU);
+	ui.dasmTable->setMode(mode, page);
+}
 
 static QFile logfile;
 
@@ -529,22 +514,6 @@ void DebugWin::doTrace(QAction* act) {
 	doStep();
 }
 
-/*
-void DebugWin::switchBP(unsigned char mask) {
-	if (!ui.dasmTable->hasFocus()) return;
-	int adr = getAdr();
-	unsigned char* ptr = getBrkPtr(comp, adr);
-	if (mask == 0) {
-		*ptr = 0;
-	} else {
-		*ptr ^= mask;
-	}
-	fillDisasm();
-	fillDump();
-//	fillBrkTable();
-}
-*/
-
 void DebugWin::keyPressEvent(QKeyEvent* ev) {
 	if (trace) {
 		trace = 0;
@@ -554,9 +523,12 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 	unsigned short pc = comp->cpu->pc;
 	unsigned char* ptr;
 	int offset = (ui.dumpTable->rows() - 1) << 3;
-	QString com;
+	// QString com;
 	int row;
 	int pos;
+	int adr;
+	int len;
+	dasmData drow;
 	QModelIndex idx;
 	switch(ev->modifiers()) {
 		case Qt::ControlModifier:
@@ -576,34 +548,8 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 				case Qt::Key_L:
 					ui.actShowLabels->setChecked(!conf.dbg.labels);
 					break;
-				case Qt::Key_Space:
-					//switchBP(0);
-					break;
-//				case Qt::Key_Up:
-//					disasmAdr--;
-//					fillDisasm();
-//					break;
-//				case Qt::Key_Down:
-//					disasmAdr++;
-//					fillDisasm();
-//					break;
 			}
 			break;
-/*
-		case Qt::AltModifier:
-			switch (ev->key()) {
-				case Qt::Key_F:
-					//switchBP(MEM_BRK_FETCH);
-					break;
-				case Qt::Key_R:
-					//switchBP(MEM_BRK_RD);
-					break;
-				case Qt::Key_W:
-					//switchBP(MEM_BRK_WR);
-					break;
-			}
-			break;
-*/
 		default:
 			switch(ev->key()) {
 				case Qt::Key_Escape:
@@ -615,7 +561,9 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					break;
 				case Qt::Key_End:
 					// if (!ui.dasmTable->hasFocus()) break;
-					comp->cpu->pc = getAdr();
+					adr = getAdr();
+					if (adr < 0) break;
+					comp->cpu->pc = adr & 0xffff;
 					fillCPU();
 					fillDisasm();
 					break;
@@ -660,12 +608,6 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 						fillDisasm();
 					}
 					break;
-//				case Qt::Key_Up:
-//					scrollUp();
-//					break;
-//				case Qt::Key_Down:
-//					scrollDown();
-//					break;
 				case Qt::Key_F3:
 					loadFile(comp,"",FT_ALL,-1);
 					disasmAdr = comp->cpu->pc;
@@ -676,6 +618,15 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					break;
 				case Qt::Key_F8:
 					// if (!ui.dasmTable->hasFocus()) break;
+					len = dasmSome(comp, comp->cpu->pc, drow);
+					if (drow.oflag & OF_SKIPABLE) {
+						ptr = getBrkPtr(comp, (comp->cpu->pc + len) & 0xffff);
+						*ptr ^= MEM_BRK_TFETCH;
+						stop();
+					} else {
+						doStep();
+					}
+/*
 					i = memRd(comp->mem, pc);
 					if (((i & 0xc7) == 0xc4) || (i == 0xcd)) {		// call
 						ptr = getBrkPtr(comp, pc + 3);
@@ -701,6 +652,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					} else {
 						doStep();
 					}
+*/
 					break;
 				case Qt::Key_F9:
 					if (!ui.dasmTable->hasFocus()) break;
@@ -770,7 +722,6 @@ bool DebugWin::fillAll() {
 	ui.brkTab->update();
 	if (ui.scrLabel->isVisible())
 		updateScreen();
-	if (comp->rzx.play) fillRZX();
 
 	ui.labRX->setNum(comp->vid->ray.x);
 	if (comp->vid->ray.x < comp->vid->ssze.x)
@@ -939,8 +890,6 @@ QImage dbgNesSpriteImg(nesPPU* ppu, unsigned short tadr) {
 	return img;
 }
 
-int getRFIData(QComboBox*);
-
 void DebugWin::drawNes() {
 	nesPPU* ppu = comp->vid->ppu;
 	unsigned short adr = 0;
@@ -1018,8 +967,8 @@ void dbgSetRzxIO(QLabel* lab, Computer* comp, int pos) {
 	}
 }
 
-void DebugWin::fillRZX() {
 /*
+void DebugWin::fillRZX() {
 	ui.rzxFrm->setText(QString::number(comp->rzx.frame).append(" / ").append(QString::number(comp->rzx.size)));
 	ui.rzxFetch->setText(QString::number(comp->rzx.fetches));
 	ui.rzxFSize->setText(QString::number(comp->rzx.data[comp->rzx.frame].frmSize));
@@ -1029,8 +978,8 @@ void DebugWin::fillRZX() {
 	dbgSetRzxIO(ui.rzxIO3, comp, pos++);
 	dbgSetRzxIO(ui.rzxIO4, comp, pos++);
 	dbgSetRzxIO(ui.rzxIO5, comp, pos);
-*/
 }
+*/
 
 // fdc
 

@@ -25,8 +25,6 @@ typedef struct {
 	int y;
 	int xb;
 	int yb;
-	int xs;
-	int ys;
 } vRay;
 
 typedef struct {

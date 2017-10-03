@@ -40,28 +40,66 @@ QString getDumpString(QByteArray bts, int cp) {
 	return res;
 }
 
+int xDumpModel::mrd(int adr) const {
+	int res = 0xff;
+	switch(mode) {
+		case XVIEW_CPU:
+			res = memRd((*cptr)->mem, adr & 0xffff);
+			res |= getBrk(*cptr, adr & 0xffff) << 8;
+			break;
+		case XVIEW_RAM:
+			adr &= 0x3fff;
+			adr |= (page << 14);
+			res = (*cptr)->mem->ramData[adr & 0x3fffff];
+			res |= (*cptr)->brkRamMap[adr & 0x3fffff] << 8;
+			break;
+		case XVIEW_ROM:
+			adr &= 0x3fff;
+			adr |= (page << 14);
+			res = (*cptr)->mem->romData[adr & 0x7ffff];
+			res |= (*cptr)->brkRomMap[adr & 0x7ffff] << 8;
+			break;
+	}
+	return res;
+}
+
+void xDumpModel::mwr(int adr, unsigned char bt) {
+	switch(mode) {
+		case XVIEW_CPU:
+			memWr((*cptr)->mem, adr & 0xffff, bt);
+			break;
+		case XVIEW_RAM:
+			adr &= 0x3fff;
+			adr |= (page << 14);
+			(*cptr)->mem->ramData[adr & 0x3ffff] = bt;
+			break;
+// write to ROM?
+		case XVIEW_ROM:
+//			adr &= 0x3fff;
+//			adr |= (page << 14);
+//			(*cptr)->mem->romData[adr & 0x7fff] = bt;
+			break;
+	}
+}
+
 xDumpModel::xDumpModel(QObject* par):QAbstractTableModel(par) {
 	codePage = XCP_1251;
+	mode = XVIEW_CPU;
+	page = 0;
 }
 
-void xDumpModel::setMachine(void** pp, dmpMrd cr, dmpMwr cw) {
-	pptr = pp;
-	mrd = cr;
-	mwr = cw;
+void xDumpModel::setComp(Computer** ptr) {
+	cptr = ptr;
 }
 
-/*
-QModelIndex xDumpModel::index(int row, int col, const QModelIndex& par) const {
-	return createIndex(row, col);
+void xDumpModel::setMode(int md, int pg) {
+	mode = md;
+	page = pg;
+	update();
 }
-
-QModelIndex xDumpModel::parent(const QModelIndex& idx) const {
-	return QModelIndex();
-}
-*/
 
 int xDumpModel::rowCount(const QModelIndex& idx) const {
-	return 12;
+	return 11;
 }
 
 int xDumpModel::columnCount(const QModelIndex& idx) const {
@@ -93,17 +131,17 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 	if (row >= rowCount()) return res;
 	if (col < 0) return res;
 	if (col >= columnCount()) return res;
-	unsigned short adr = dumpAdr + (row << 3);
-	unsigned short cadr = adr + col - 1;
-	int flg = mrd(cadr, *pptr) >> 8;
+	unsigned short adr = (dumpAdr + (row << 3)) & 0xffff;
+	unsigned short cadr = (adr + col - 1) & 0xffff;
+	int flg = mrd(cadr) >> 8;
 	QByteArray arr;
 	switch(role) {
 		case Qt::BackgroundColorRole:
 			if (col < 1) break;
 			if (col > 8) break;
-			if (flg & 0x0f) {						// breakpoint
+			if (flg & 0x0f) {								// breakpoint
 				res = colBRK;
-			} else if ((cadr >= blockStart) && (cadr <= blockEnd)) {	// selection
+			} else if ((cadr >= blockStart) && (cadr <= blockEnd) && (mode == XVIEW_CPU)) {	// selection
 				res = colSEL;
 			}
 			break;
@@ -116,15 +154,19 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 			break;
 		case Qt::DisplayRole:
 			switch(col) {
-				case 0: res = gethexword(adr);
+				case 0:
+					if ((mode == XVIEW_RAM) || (mode == XVIEW_ROM)) {
+						adr &= 0x3fff;
+					}
+					res = gethexword(adr);
 					break;
 				case 9:
 					for(int i = 0; i < 8; i++)
-						arr.append(mrd(adr + i, *pptr) & 0xff);
+						arr.append(mrd((adr + i) & 0xffff) & 0xff);
 					res = getDumpString(arr, codePage);
 					break;
 				default:
-					res = gethexbyte(mrd(adr + col - 1, *pptr) & 0xff);
+					res = gethexbyte(mrd((adr + col - 1) & 0xffff) & 0xff);
 					break;
 			}
 			break;
@@ -157,7 +199,7 @@ bool xDumpModel::setData(const QModelIndex& idx, const QVariant& val, int role) 
 	} else if (col < 9) {
 		bt = val.toString().toInt(NULL, 16) & 0xff;
 		nadr = (adr + col - 1) & 0xffff;
-		mwr(nadr, bt, *pptr);
+		mwr(nadr, bt);
 		updateRow(row);
 		emit rqRefill();
 	}
@@ -174,9 +216,13 @@ xDumpTable::xDumpTable(QWidget* p):QTableView(p) {
 	connect(model, SIGNAL(rqRefill()), this, SIGNAL(rqRefill()));
 }
 
-void xDumpTable::setMachine(void** pp, dmpMrd cr, dmpMwr cw) {
-	cptr = (Computer**)pp;
-	model->setMachine(pp, cr, cw);
+void xDumpTable::setComp(Computer** ptr) {
+	cptr = ptr;
+	model->setComp(ptr);
+}
+
+void xDumpTable::setMode(int md, int pg) {
+	model->setMode(md, pg);
 }
 
 int xDumpTable::rows() {

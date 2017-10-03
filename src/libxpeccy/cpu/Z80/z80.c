@@ -53,7 +53,7 @@ int z80_int(CPU* cpu) {
 					cpu->r++;
 					cpu->t += cpu->op->t;		// +5 (RST38 fetch)
 					cpu->op->exec(cpu);		// +3 +3 execution. 13 total
-					while (cpu->op->prefix) {
+					while (cpu->op->flag & OF_PREFIX) {
 						cpu->op = &cpu->opTab[cpu->mrd(cpu->pc++,1,cpu->data)];
 						cpu->r++;
 						cpu->t += cpu->op->t;
@@ -112,7 +112,7 @@ int z80_exec(CPU* cpu) {
 			cpu->r++;
 			cpu->t += cpu->op->t;
 			cpu->op->exec(cpu);
-		} while (cpu->op->prefix);
+		} while (cpu->op->flag & OF_PREFIX);
 		res = cpu->t;
 	}
 	return res;
@@ -120,7 +120,7 @@ int z80_exec(CPU* cpu) {
 
 // disasm
 
-unsigned char z80_cnd[4] = {FZ, FC, FP, FS};
+static unsigned char z80_cnd[4] = {FZ, FC, FP, FS};
 
 xMnem z80_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 	xMnem mn;
@@ -134,7 +134,7 @@ xMnem z80_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 		op = mrd(adr++,data);
 		mn.len++;
 		opc = &opt[op];
-		if (opc->prefix) {
+		if (opc->flag & OF_PREFIX) {
 			opt = opc->tab;
 			if ((opt == ddcbTab) || (opt == fdcbTab)) {
 				e = mrd(adr, data);
@@ -142,8 +142,9 @@ xMnem z80_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 				mn.len++;
 			}
 		}
-	} while (opc->prefix);
+	} while (opc->flag & OF_PREFIX);
 	mn.mnem = opc->mnem;
+	mn.flag = opc->flag;
 	// mem reading
 	mn.mem = 0;
 	mn.mop = 0xff;
@@ -179,12 +180,12 @@ xMnem z80_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 	} else if (opt == npTab) {
 		if (((op & 0xc7) == 0xc2) || ((op & 0xc7) == 0xc4) || ((op & 0xc7) == 0xc0)) {		// call, jp, ret
 			mn.cond = 1;
-			mn.met = (cpu->f & z80_cnd[(op & 0x30) >> 4]) ? 0 : 1;
+			mn.met = (cpu->f & z80_cnd[(op >> 4) & 3]) ? 0 : 1;
 			if (op & 8)
 				mn.met ^= 1;
 		} else if ((op & 0xe7) == 0x20) {							// jr
 			mn.cond = 1;
-			mn.met = (cpu->f & z80_cnd[(op & 0x10) >> 4] ? 0 : 1);
+			mn.met = (cpu->f & z80_cnd[(op >> 4) & 1] ? 0 : 1);
 			if (op & 8)
 				mn.met ^= 1;
 		}
@@ -237,7 +238,7 @@ xAsmScan z80_asm(const char* cbuf, char* buf) {
 
 // registers
 
-xRegDsc z80RegTab[] = {
+static xRegDsc z80RegTab[] = {
 	{Z80_REG_PC, "PC", 0},
 	{Z80_REG_AF, "AF", 0},
 	{Z80_REG_BC, "BC", 0},

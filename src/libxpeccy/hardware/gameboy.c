@@ -71,8 +71,10 @@ unsigned char gbIORd(Computer* comp, unsigned short port) {
 			res = comp->gb.wbank & 7;
 			break;
 		default:
+#ifdef ISDEBUG
 			printf("GB: in %.4X\n",port);
 			assert(0);
+#endif
 			break;
 	}
 	return res;

@@ -5,6 +5,7 @@ typedef struct {
 	unsigned cond:1;	// condition present
 	unsigned met:1;		// condition met
 	unsigned mem:1;		// operand mem rd :(nn),(hl),(de) etc
+	int flag;
 	int len;
 	int oadr;		// direct addressation adr
 	unsigned char mop;	// operand
@@ -19,7 +20,7 @@ typedef struct {
 	int id;
 	unsigned byte:1;
 	char name[8];
-	int value;
+	unsigned short value;
 } xRegister;
 
 typedef struct {
@@ -52,9 +53,14 @@ typedef unsigned char(*cbdmr)(unsigned short,void*);
 	#define PAIR(p,h,l) union{unsigned short p; struct {unsigned char l; unsigned char h;};}
 #endif
 
+#define OF_PREFIX	1
+#define OF_EXT		OF_PREFIX
+#define OF_SKIPABLE	(1<<1)
+#define OF_RELJUMP	(1<<2)
+
 struct CPU;
 struct opCode {
-	unsigned prefix:1;
+	int flag;
 	int t;				// T-states
 	void(*exec)(struct CPU *);	// fuction to exec
 	struct opCode *tab;		// next opCode tab (for prefixes)
