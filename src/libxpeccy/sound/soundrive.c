@@ -45,26 +45,7 @@ int sdrvWrite(SDrive* sdrv, unsigned short adr, unsigned char data) {
 
 sndPair sdrvVolume(SDrive* sdrv) {
 	sndPair res;
-	res.left = ((sdrv->chan[0] >> 2) + (sdrv->chan[1] >> 2));		// FF >>2 3F + 3F = 7F max
-	res.right = ((sdrv->chan[2] >> 2) + (sdrv->chan[3] >> 2));
+	res.left = ((sdrv->chan[0] >> 3) + (sdrv->chan[1] >> 3));		// FF >> 3 = 1F + 1F = 3F max
+	res.right = ((sdrv->chan[2] >> 3) + (sdrv->chan[3] >> 3));
 	return res;
 }
-
-/*
-// arguments
-void sdSet(void* ptr, int type, xArg arg) {
-	SDrive* sdrv = (SDrive*)ptr;
-	switch(type) {
-		case SDRV_ARG_MODE: sdrv->type = arg.i; break;
-	}
-}
-
-xArg sdGet(void* ptr, int type) {
-	SDrive* sdrv = (SDrive*)ptr;
-	xArg arg = {0, 0, NULL};
-	switch(type) {
-		case SDRV_ARG_MODE: arg.i = sdrv->type; break;
-	}
-	return arg;
-}
-*/

@@ -262,7 +262,7 @@ sndPair saaVolume(saaChip* ptr) {
 //		levl = (levl + levr) / 2;
 //		levr = levl;
 //	}
-	res.left = levl; // << 3;
-	res.right = levr; // << 3;
+	res.left = levl >> 1; // << 3;
+	res.right = levr >> 1; // << 3;
 	return res;
 }

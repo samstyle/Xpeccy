@@ -90,7 +90,6 @@ sndPair zx_vol(Computer* comp, sndVolume* sv) {
 	// saa
 	svol = saaVolume(comp->saa);
 	vol = mixer(vol, svol.left, svol.right, sv->saa);
-
 	return vol;
 }
 

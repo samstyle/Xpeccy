@@ -5,24 +5,24 @@
 #include <string.h>
 
 // mixer
+#define XMAXVOL 64
 
 sndPair mixer(sndPair cur, int levL, int levR, int vol) {
-	levL = levL * vol / 100.0;
-	levR = levR * vol / 100.0;
-	double fl = cur.left / 256.0;
-	double fr = cur.right / 256.0;
-	double sl = levL / 256.0;
-	double sr = levR / 256.0;
-	double xl = (fl + sl) / (1.0 + fl * sl);
-	double xr = (fr + sr) / (1.0 + fr * sr);
-	cur.left = xl * 256;
-	cur.right = xr * 256;
+
+	levL = levL * vol / 100;
+	levR = levR * vol / 100;
+
+	// max (64 + 64) * 64 / (64 + 64) = 64
+	// min (0 + 0) * 64 / (64 + 0) = 0
+	// one (64 + 0) * 64 / (64 + 0) = 64
+	// mix (32 + 32) * 64 / (64 + (32 * 32) / 64) = 51
+	cur.left = (cur.left + levL) * XMAXVOL / (XMAXVOL + (cur.left * levL) / XMAXVOL);
+	cur.right = (cur.right + levR) * XMAXVOL / (XMAXVOL + (cur.right * levR) / XMAXVOL);
 	return cur;
 }
 
 // 1-bit channel with transient response
 
-//#define OVERSHOOT 22500			// ns to overshoot process
 #define OVERDIV 88			// ns/256 : transient const (ns to rise/lower sound level 1 step)
 #define OVERLIM (OVERDIV * 256)		// ns to full sound level restore
 

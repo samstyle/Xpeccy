@@ -183,51 +183,13 @@ sndPair gsVolume(GSound* gs) {
 			res.left = ((gs->ch1 * gs->vol1 + \
 				gs->ch2 * gs->vol2 + \
 				gs->ch3 * gs->vol3 + \
-				gs->ch4 * gs->vol4) >> 9);		// 4000 x 4 - 1 = FFFF -> 7F
+				gs->ch4 * gs->vol4) >> 10);		// 4000 x 4 - 1 = FFFF -> 3F
 			res.right = res.left;
 			break;
 		case GS_12_34:
-			res.left = ((gs->ch1 * gs->vol1 + gs->ch2 * gs->vol2) >> 8);
-			res.right = ((gs->ch3 * gs->vol3 + gs->ch4 * gs->vol4) >> 8);
+			res.left = ((gs->ch1 * gs->vol1 + gs->ch2 * gs->vol2) >> 9);
+			res.right = ((gs->ch3 * gs->vol3 + gs->ch4 * gs->vol4) >> 9);
 			break;
 	}
 	return res;
 }
-
-// arguments
-
-/*
-void gsSet(void* ptr, int type, xArg arg) {
-	GSound* gs = (GSound*)ptr;
-	FILE* file;
-	switch(type) {
-		case GS_ARG_ENABLE: gs->enable = arg.b; break;
-		case GS_ARG_RESET: gs->reset = arg.b; break;
-		case GS_ARG_STEREO: gs->stereo = arg.i; break;
-		case GS_ARG_ROM:
-			if (!arg.s) {
-				memset(gs->mem->romData, 0xff, 0x8000);
-			} else {
-				file = fopen(arg.s, "rb");
-				if (file) {
-					fread(gs->mem->romData, 0x8000, 1, file);
-					fclose(file);
-				} else {
-					memset(gs->mem->romData, 0xff, 0x8000);
-				}
-			}
-			break;
-	}
-}
-
-xArg gsGet(void* ptr, int type) {
-	GSound* gs = (GSound*)ptr;
-	xArg arg = {0, 0, NULL};
-	switch(type) {
-		case GS_ARG_ENABLE: arg.b = gs->enable; break;
-		case GS_ARG_RESET: arg.b = gs->reset; break;
-		case GS_ARG_STEREO: arg.i = gs->stereo; break;
-	}
-	return arg;
-}
-*/

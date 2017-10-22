@@ -122,7 +122,7 @@ int apuToneVolume(apuChannel* ch) {
 		ch->lev = dutyTab[ch->duty & 3][ch->pstp & 7] & 1;
 		ch->out = ch->lev ? (ch->env ? ch->evol : ch->vol) : 0;
 	}
-	return ch->out;
+	return ch->out;		// 00..0f
 }
 
 // triangle
@@ -164,7 +164,7 @@ int apuTriVolume(apuChannel* ch) {
 	if (!ch->off && ch->en && ch->lcnt && ch->len) {
 		ch->out = ch->vol;
 	}
-	return ch->out;
+	return ch->out;			// 00..0f
 }
 
 // noise
@@ -191,7 +191,7 @@ int apuNoiseVolume(apuChannel* ch) {
 	if (!ch->off && ch->en && ch->len && ch->hper && !ch->mute) {
 		ch->out = ch->lev ? (ch->env ? ch->evol : ch->vol) : 0;
 	}
-	return ch->out;
+	return ch->out;		// 00..0f
 }
 
 // digital
@@ -232,7 +232,7 @@ int apuDigiVolume(apuChannel* ch) {
 	if (!ch->off) {
 		ch->out = ch->vol;
 	}
-	return ch->out;
+	return ch->out;		// 00..7F
 }
 
 // ...
@@ -311,8 +311,8 @@ sndPair apuVolume(nesAPU* apu) {
 	if (v1 || v2 || v3)
 		tnd = 159.79 / (100.0 + (1.0 / ((v1 / 8227.0) + (v2 / 12241.0) + (v3 / 22638.0))));		// 0,8686 max
 	//printf("%f : %f\n",pout,tnd);
-	pout += tnd;
-	res.left = (int)((pout + tnd) * 128.0);
+	//pout += tnd;
+	res.left = (int)((pout + tnd) * 100);
 	res.right = res.left;
 #else
 	int lev;
@@ -324,7 +324,7 @@ sndPair apuVolume(nesAPU* apu) {
 	res = mixer(res, lev, lev, 100);
 	lev = apuNoiseVolume(&apu->chn);
 	res = mixer(res, lev, lev, 100);
-	lev = apuDigiVolume(&apu->chd) >> 1;
+	lev = apuDigiVolume(&apu->chd);
 	res = mixer(res, lev, lev, 100);
 #endif
 	return res;

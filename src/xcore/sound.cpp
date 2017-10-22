@@ -35,18 +35,6 @@ static sndPair sndLev;
 
 OutSys* findOutSys(const char*);
 
-//#ifdef __linux
-//	int32_t ossHandle;			// oss
-//#if defined(HAVEALSA)
-//	snd_pcm_t* alsaHandle = NULL;
-//#endif
-//#elif _WIN32
-//	WAVEFORMATEX wf;
-//	WAVEHDR whdr;
-//	HWAVEOUT wout;
-//	HANDLE event;
-//#endif
-
 // output
 
 #include "hardware.h"

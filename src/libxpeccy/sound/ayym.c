@@ -231,7 +231,7 @@ int ayGetChanVol(aymChip* ay, aymChan* ch) {
 	if (ch->ten || ch->nen) {
 		vol = ((ch->lev && ch->ten) || (ay->chanN.lev && ch->nen)) ? vol : 0;
 	}
-	return vol << 1;		// 0..1f (env) -> 0..3f
+	return vol << 1;		// 0..1f (env) -> 0..3e
 	// return ayDACvol[vol];
 }
 
@@ -271,7 +271,7 @@ sndPair aymGetVolume(aymChip* ay) {
 			res.right = volA + STEREOFACTOR * volB;
 			break;
 		default:
-			res.left = (volA + volB + volC) * STEREOFACTOR;
+			res.left = (volA + volB + volC) / 3;
 			res.right = res.left;
 			break;
 	}
@@ -360,7 +360,7 @@ void initNoise() {
 	int i;
 	for (i=0; i<0x20000; i++) {
 		lev = (cur & 0x10000) ? 1 : 0;
-		noizes[i] = lev & 1;
+		noizes[i] = lev;
 		cur = ((cur << 1) + ((lev == (((cur & 0x2000) == 0x2000) ? 1 : 0)) ? 0 : 1)) & 0x1ffff;
 	}
 }
