@@ -968,6 +968,7 @@ void addLed(int x, int y, QString name, int time) {
 }
 
 void MainWin::putLeds() {
+	if (!comp) return;
 	QPainter pnt;
 	QImage kled(":/images/scanled.png");
 	if (conf.led.keys) {

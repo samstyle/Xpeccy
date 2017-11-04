@@ -28,12 +28,16 @@ typedef struct {
 } TapeBlockInfo;
 
 typedef struct {
+	int size;
+	unsigned char vol;
+} TapeSignal;
+
+typedef struct {
 	unsigned breakPoint:1;
 	unsigned hasBytes:1;
 	unsigned isHeader:1;
+	unsigned vol;
 
-//	int size;
-//	int pause;
 	int plen;
 	int s1len;
 	int s2len;
@@ -42,7 +46,7 @@ typedef struct {
 	int pdur;
 	int dataPos;
 	int sigCount;
-	int* sigData;
+	TapeSignal* data;
 } TapeBlock;
 
 typedef struct {
@@ -52,14 +56,12 @@ typedef struct {
 	unsigned wait:1;
 	unsigned blkChange:1;
 	unsigned newBlock:1;
-	unsigned levPlay:1;	// signal from tape
 	unsigned levRec:1;	// signal to tape
 	unsigned oldRec:1;	// previous rec signal
 
+	unsigned char volPlay;
 	int block;
 	int pos;
-//	int toutold;
-//	int outsig;
 	int sigLen;
 	char* path;
 	TapeBlock tmpBlock;

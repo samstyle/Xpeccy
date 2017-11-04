@@ -1,5 +1,5 @@
-#ifndef _SOUND_H
-#define _SOUND_H
+#ifndef X_SOUND_H
+#define X_SOUND_H
 
 #include <vector>
 #include <string>
@@ -29,13 +29,13 @@ enum xSoundOutput {
 	xOutputWave
 };
 
-struct OutSys {
+typedef struct {
 	int id;
 	const char* name;
 	int (*open)();
 	void (*play)();
 	void (*close)();
-};
+} OutSys;
 
 extern OutSys sndTab[];
 extern OutSys* sndOutput;

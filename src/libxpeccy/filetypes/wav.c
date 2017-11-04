@@ -37,7 +37,6 @@ int loadWAV(Tape* tap, const char* name) {
 		int dur = 0;
 		int i;
 		TapeBlock blk;
-		blk.sigData = NULL;
 		blkClear(&blk);
 
 		while (!feof(file)) {
@@ -45,7 +44,7 @@ int loadWAV(Tape* tap, const char* name) {
 			for (i = 0; i < hd.numChannels; i++) {			// read (numChans) amps and get middle
 				amp += freadLen(file, hd.bitsPerSample >> 3);
 			}
-			amp = amp / hd.numChannels;
+			amp = hd.numChannels ? amp / hd.numChannels : 0;
 			if (((amp & mask) && lev) || (!(amp & mask) && !lev)) {	// check level change
 				dur += tPerSample;
 			} else {

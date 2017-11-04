@@ -70,7 +70,7 @@ sndPair zx_vol(Computer* comp, sndVolume* sv) {
 		if (comp->tape->rec) {
 			lev = comp->tape->levRec ? 0x3f : 0x00;
 		} else {
-			lev = comp->tape->levPlay ? 0x3f : 0x00;
+			lev = comp->tape->volPlay >> 2;
 		}
 	}
 	vol = mixer(vol, lev, lev, sv->tape);
@@ -116,7 +116,7 @@ unsigned char xIn1F(Computer* comp, unsigned short port) {
 
 unsigned char xInFE(Computer* comp, unsigned short port) {
 	unsigned char res = keyInput(comp->keyb, (port & 0xff00) | 0xfe);
-	res |= (comp->tape->levPlay ? 0x40 : 0x00);
+	res |= ((comp->tape->volPlay & 0x80) ? 0x40 : 0x00);
 	return res;
 }
 

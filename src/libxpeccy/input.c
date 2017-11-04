@@ -94,7 +94,6 @@ void keyPress(Keyboard* keyb, xKey key, int mode) {
 		}
 		i++;
 	}
-	i = 0;
 }
 
 void keyReleaseAll(Keyboard* keyb) {
@@ -124,7 +123,6 @@ void keyRelease(Keyboard* keyb, xKey key, int mode) {
 		}
 		i++;
 	}
-	i = 0;
 }
 
 void keyTrigger(Keyboard* keyb, xKey key, int mode) {
@@ -147,7 +145,6 @@ void keyTrigger(Keyboard* keyb, xKey key, int mode) {
 		}
 		i++;
 	}
-	i = 0;
 }
 
 // read 40-key zxKeyboard port.

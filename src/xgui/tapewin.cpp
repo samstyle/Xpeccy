@@ -50,6 +50,7 @@ void TapeWin::buildList(Tape *tape) {
 		ui.tapeList->setItem(i,3,itm);
 	}
 	drawStops(tape);
+	delete[](tinf);
 }
 
 void TapeWin::drawStops(Tape *tape) {

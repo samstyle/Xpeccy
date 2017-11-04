@@ -19,8 +19,8 @@
 #include "libxpeccy/spectrum.h"
 #include "libxpeccy/filetypes/filetypes.h"
 
-#include "ui_padbinder.h"
-Ui::PadBinder padui;
+//#include "ui_padbinder.h"
+//Ui::PadBinder padui;
 
 void fillRFBox(QComboBox* box, QStringList lst) {
 	box->clear();
@@ -1040,12 +1040,13 @@ void SetupWin::copyToDisk() {
 		}
 	}
 	if (headBlock < 0) {
-		const char* nm = "FILE    ";
+		const char nm[] = "FILE    ";
 		memcpy(&dsc.name[0],nm,8);
 		dsc.ext = 'C';
 		dsc.lst = dsc.hst = 0;
 		TapeBlockInfo binf = tapGetBlockInfo(comp->tape,dataBlock);
 		int len = binf.size;
+		qDebug() << len;
 		if (len > 0xff00) {
 			shitHappens("Too much data for TRDos file");
 			return;
@@ -1070,12 +1071,12 @@ void SetupWin::copyToDisk() {
 		case ERR_MANYFILES: shitHappens("Too many files @ disk"); break;
 		case ERR_NOSPACE: shitHappens("Not enough space @ disk"); break;
 		case ERR_OK:
-			pos = 1;
+			pos = 0;
 			while (pos < inf.size) {
 				do {
-					buf[(pos-1) & 0xff] = (pos < inf.size) ? dt[pos] : 0x00;
+					buf[pos & 0xff] = (pos < inf.size) ? dt[pos+1] : 0x00;
 					pos++;
-				} while ((pos & 0xff) != 1);
+				} while (pos & 0xff);
 
 				diskPutSectorData(comp->dif->fdc->flop[dsk],dsc.trk, dsc.sec+1, buf, 256);
 

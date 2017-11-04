@@ -16,7 +16,8 @@ nesAPU* apuCreate(aextmrd cb, void* d) {
 }
 
 void apuDestroy(nesAPU* apu) {
-	if (apu) free(apu);
+	if (apu)
+		free(apu);
 }
 
 void apuResetChan(apuChannel* ch) {

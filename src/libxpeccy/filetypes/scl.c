@@ -75,7 +75,7 @@ int saveSCL(Floppy* flp,const char* name) {
 	const char* sign = "SINCLAIR";
 	unsigned char img[0xA0000];
 	unsigned char buf[256];
-	unsigned char* dptr = img;
+	unsigned char* dptr;
 	unsigned char* bptr;
 	FilePos newfp;
 	FilePos fplist[256];

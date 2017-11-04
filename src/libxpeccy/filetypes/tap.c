@@ -31,7 +31,7 @@ void blkFromData(TapeBlock* blk, char* data, int len, int* sigLens) {
 TapeBlock tapDataToBlock(char* data,int len,int* sigLens) {
 	TapeBlock block;
 	block.sigCount = 0;
-	block.sigData = NULL;
+	block.data = NULL;
 	blkFromData(&block, data, len, sigLens);
 //	printf("tapDataToBlock: %i bytes -> %i signals\t datapos = %i\n",len,block.sigCount,block.dataPos);
 	return block;

@@ -6,6 +6,7 @@
 
 Memory* memCreate() {
 	Memory* mem = (Memory*)malloc(sizeof(Memory));
+	memset(mem, 0x00, sizeof(Memory));
 	mem->romMask = 0x03;
 	memSetSize(mem,48);
 	memSetBank(mem, MEM_BANK0, MEM_ROM, 0, NULL, NULL, NULL);

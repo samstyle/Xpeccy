@@ -87,9 +87,8 @@ void xThread::emuCycle() {
 
 void xThread::run() {
 	waitpic = 1;
+	emutex.lock();
 	do {
-		if (!fast) emutex.lock();		// wait until unlocked (MainWin::onTimer() or at exit)
-		if (finish) break;
 		if (comp->rzx.start) {
 			comp->rzx.start = 0;
 			comp->rzx.play = 1;
@@ -104,7 +103,7 @@ void xThread::run() {
 				emit dbgRequest();
 			}
 		}
-	} while (1);
-	emutex.unlock();
+		if (!fast) emutex.lock();		// wait until unlocked (MainWin::onTimer() or at exit)
+	} while (!finish);
 	exit(0);
 }

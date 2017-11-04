@@ -145,8 +145,14 @@ std::string sndGetName() {
 
 void fillBuffer(int len) {
 	int pos = 0;
+	unsigned char lev;
 	while (pos < len) {
-		bufB.data[pos++] = bufA.data[playPos++] + 0x80;
+		lev = bufA.data[playPos++];
+		if (playPos & 1) {
+			bufB.data[pos++] = 0x80 - lev;
+		} else {
+			bufB.data[pos++] = 0x80 + lev;
+		}
 		playPos &= 0xfff;
 	}
 }
@@ -162,8 +168,8 @@ void null_close() {}
 
 // SDL
 
-void sdlPlayAudio(void*,Uint8* stream, int len) {
-	if (pass > 3) {
+void sdlPlayAudio(void*, Uint8* stream, int len) {
+	if (pass > 2) {
 		int diff = bufA.pos - playPos;
 		if (diff < 0) {
 			diff += 0x1000;
@@ -172,7 +178,7 @@ void sdlPlayAudio(void*,Uint8* stream, int len) {
 			fillBuffer(len);
 		}
 	} else {
-		memset(bufB.data, 0x7f, len);
+		memset(bufB.data, 0x80, len);
 		pass++;
 	}
 	SDL_MixAudio(stream, bufB.data, len, SDL_MIX_MAXVOLUME);
@@ -208,7 +214,7 @@ void sdlplay() {
 }
 
 void sdlclose() {
-//	SDL_RemoveTimer(tid);
+	SDL_PauseAudio(1);
 	SDL_CloseAudio();
 }
 
