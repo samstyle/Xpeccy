@@ -143,8 +143,8 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.disklist->addAction(ui.actSaveHobeta);
 	ui.disklist->addAction(ui.actSaveRaw);
 // tape
-	ui.tapelist->setColumnWidth(0,20);
-	ui.tapelist->setColumnWidth(1,20);
+	ui.tapelist->setColumnWidth(0,25);
+	ui.tapelist->setColumnWidth(1,25);
 	ui.tapelist->setColumnWidth(2,50);
 	ui.tapelist->setColumnWidth(3,50);
 	ui.tapelist->setColumnWidth(4,100);
@@ -270,7 +270,8 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	connect(ui.tbToRaw,SIGNAL(released()),this,SLOT(diskToRaw()));
 // tape
 	connect(ui.tapelist,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(chablock(QModelIndex)));
-	connect(ui.tapelist,SIGNAL(cellClicked(int,int)),this,SLOT(setTapeBreak(int,int)));
+	connect(ui.tapelist,SIGNAL(clicked(QModelIndex)),this,SLOT(tlistclick(QModelIndex)));
+	// connect(ui.tapelist,SIGNAL(cellClicked(int,int)),this,SLOT(setTapeBreak(int,int)));
 	connect(ui.tloadtb,SIGNAL(released()),this,SLOT(loatape()));
 	connect(ui.tsavetb,SIGNAL(released()),this,SLOT(savtape()));
 	connect(ui.tremotb,SIGNAL(released()),this,SLOT(ejctape()));
@@ -844,6 +845,8 @@ void SetupWin::buildrsetlist() {
 }
 
 void SetupWin::buildtapelist() {
+	ui.tapelist->fill(comp->tape);
+/*
 	TapeBlockInfo* inf = new TapeBlockInfo[comp->tape->blkCount];
 	tapGetBlocksInfo(comp->tape,inf);
 	ui.tapelist->setRowCount(comp->tape->blkCount);
@@ -883,6 +886,7 @@ void SetupWin::buildtapelist() {
 		ui.tapelist->setItem(i,5,itm);
 	}
 	ui.tapelist->selectRow(0);
+*/
 }
 
 void SetupWin::buildmenulist() {
@@ -1009,7 +1013,9 @@ void SetupWin::copyToDisk() {
 	TapeBlockInfo inf;
 	TRFile dsc;
 
-	int blk = ui.tapelist->currentRow();
+	QModelIndexList idl = ui.tapelist->selectionModel()->selectedRows();
+	if (idl.size() < 1) return;
+	int blk = idl.first().row();
 	if (blk < 0) return;
 	int dsk = ui.disktabs->currentIndex();
 	if (dsk < 0) dsk = 0;
@@ -1223,12 +1229,24 @@ void SetupWin::chablock(QModelIndex idx) {
 	ui.tapelist->selectRow(row);
 }
 
+void SetupWin::tlistclick(QModelIndex idx) {
+	int row = idx.row();
+	int col = idx.column();
+	if ((row < 0) || (row >= comp->tape->blkCount)) return;
+	if (col != 1) return;
+	comp->tape->blkData[row].breakPoint ^= 1;
+	buildtapelist();
+	ui.tapelist->selectRow(row);
+}
+
+/*
 void SetupWin::setTapeBreak(int row,int col) {
 	if ((row < 0) || (col != 1)) return;
 	comp->tape->blkData[row].breakPoint ^= 1;
 	buildtapelist();
 	ui.tapelist->selectRow(row);
 }
+*/
 
 // hdd
 

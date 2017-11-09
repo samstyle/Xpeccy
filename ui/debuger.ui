@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>813</width>
-    <height>598</height>
+    <height>594</height>
    </rect>
   </property>
   <property name="font">
@@ -825,12 +825,12 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_8" stretch="10">
        <item>
-        <widget class="QLabel" name="label_28">
+        <widget class="QLabel" name="labDump">
          <property name="styleSheet">
           <string notr="true">background-color: rgb(160, 160, 255)</string>
          </property>
          <property name="text">
-          <string>Dump</string>
+          <string>Dump : ????</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>

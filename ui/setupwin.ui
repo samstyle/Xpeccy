@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>505</width>
-    <height>428</height>
+    <height>420</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -1519,7 +1519,7 @@
                </property>
                <layout class="QHBoxLayout" name="horizontalLayout_8">
                 <item>
-                 <widget class="QTableWidget" name="tapelist">
+                 <widget class="xTapeCatTable" name="tapelist">
                   <property name="contextMenuPolicy">
                    <enum>Qt::ActionsContextMenu</enum>
                   </property>
@@ -1538,18 +1538,6 @@
                   <property name="gridStyle">
                    <enum>Qt::DotLine</enum>
                   </property>
-                  <property name="rowCount">
-                   <number>0</number>
-                  </property>
-                  <property name="columnCount">
-                   <number>6</number>
-                  </property>
-                  <attribute name="horizontalHeaderVisible">
-                   <bool>false</bool>
-                  </attribute>
-                  <attribute name="horizontalHeaderCascadingSectionResizes">
-                   <bool>false</bool>
-                  </attribute>
                   <attribute name="horizontalHeaderStretchLastSection">
                    <bool>true</bool>
                   </attribute>
@@ -1559,12 +1547,9 @@
                   <attribute name="verticalHeaderDefaultSectionSize">
                    <number>17</number>
                   </attribute>
-                  <column/>
-                  <column/>
-                  <column/>
-                  <column/>
-                  <column/>
-                  <column/>
+                  <attribute name="verticalHeaderMinimumSectionSize">
+                   <number>17</number>
+                  </attribute>
                  </widget>
                 </item>
                 <item>
@@ -3139,6 +3124,11 @@
  <customwidgets>
   <customwidget>
    <class>xDiskCatTable</class>
+   <extends>QTableView</extends>
+   <header location="global">stdlib.h</header>
+  </customwidget>
+  <customwidget>
+   <class>xTapeCatTable</class>
    <extends>QTableView</extends>
    <header location="global">stdlib.h</header>
   </customwidget>

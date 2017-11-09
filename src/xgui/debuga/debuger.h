@@ -133,6 +133,7 @@ class DebugWin : public QDialog {
 		void setCPU();
 		void setFlags();
 		void updateScreen();
+		void dumpChadr(QModelIndex);
 
 //		void dasmEdited(int, int);
 //		void dumpEdited(int, int);

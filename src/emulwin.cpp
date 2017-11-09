@@ -37,9 +37,6 @@ unsigned char sbufa[1024 * 512 * 3];		// Emulation render -> (this)buffer -> scr
 unsigned char prvScr[1024 * 512 * 3];		// copy of last 2:1 image (for noflic)
 extern int bytesPerLine;
 
-// temp emulation
-unsigned short pc,af,de,ix;
-
 // mainwin
 
 void MainWin::updateHead() {

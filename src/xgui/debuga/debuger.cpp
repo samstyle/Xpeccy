@@ -91,6 +91,9 @@ void DebugWin::start(Computer* c) {
 		memViewer->show();
 		memViewer->fillImage();
 	}
+
+	chDumpView();
+
 	activateWindow();
 }
 
@@ -246,6 +249,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.dumpTable,SIGNAL(rqRefill()),this,SLOT(fillDisasm()));
 	connect(ui.dumpTable,SIGNAL(rqRefill()),ui.bpList,SLOT(update()));
 	connect(ui.dumpTable,SIGNAL(rqRefill()),this,SLOT(updateScreen()));
+	connect(ui.dumpTable->selectionModel(), SIGNAL(currentChanged(QModelIndex, QModelIndex)), this, SLOT(dumpChadr(QModelIndex)));
 
 	connect(ui.bpList,SIGNAL(rqDisasm()),this,SLOT(fillDisasm()));
 	connect(ui.bpList,SIGNAL(rqDasmDump()),this,SLOT(fillDisasm()));
@@ -449,6 +453,11 @@ void DebugWin::setDasmMode() {
 	ui.sbDasmPage->setDisabled(mode == XVIEW_CPU);
 	ui.dasmTable->setMode(mode, page);
 }
+
+//void DebugWin::dumpClicked(QModelIndex) {
+//	int adr = getAdr();
+//	ui.labDump->setText(QString("Dump : %0").arg(gethexword(adr & 0xffff)));
+//}
 
 static QFile logfile;
 
@@ -1447,36 +1456,20 @@ void DebugWin::fillDump() {
 	block = 1;
 	ui.dumpTable->update();
 	fillStack();
+	dumpChadr(ui.dumpTable->selectionModel()->currentIndex());
 	block = 0;
 }
 
-/*
-void DebugWin::dumpEdited(int row, int col) {
-	if (block) return;
-	if (col == 0) {
-		dumpAdr = ui.dumpTable->item(row, 0)->text().toInt(NULL,16) - row * 8;
-	} else if (col < 9) {
-		unsigned short adr = (dumpAdr + (col - 1) + row * 8) & 0xffff;
-		memWr(comp->mem, adr, ui.dumpTable->item(row, col)->text().toInt(NULL,16) & 0xff);
-//		fillDisasm();
-
-		col++;
-		if (col > 8) {
-			col = 1;
-			row++;
-			if (row >= ui.dumpTable->rowCount()) {
-				row--;
-				dumpAdr += 8;
-			}
-		}
-		// ui.dumpTable->selectionModel()->select(ui.dumpTable->model()->index(row,col), QItemSelectionModel::Clear | QItemSelectionModel::SelectCurrent);
-		ui.dumpTable->setCurrentCell(row,col);
+void DebugWin::dumpChadr(QModelIndex idx) {
+	int col = idx.column();
+	int adr = dumpAdr + (idx.row() << 3);
+	if ((col > 0) && (col < 9)) {
+		 adr += (idx.column() - 1);
 	}
-	fillDump();
-	fillDisasm();
-	updateScreen();
+	if (ui.dumpTable->mode != XVIEW_CPU)
+		adr &= 0x3fff;
+	ui.labDump->setText(QString("Dump : %0").arg(gethexword(adr & 0xffff)));
 }
-*/
 
 // stack
 

@@ -196,6 +196,7 @@ bool xDumpModel::setData(const QModelIndex& idx, const QVariant& val, int role) 
 		nadr = val.toString().toInt(NULL, 16) & 0xffff;
 		dumpAdr = (nadr - (row << 3)) & 0xffff;
 		update();
+		emit rqRefill();
 	} else if (col < 9) {
 		bt = val.toString().toInt(NULL, 16) & 0xff;
 		nadr = (adr + col - 1) & 0xffff;
@@ -222,7 +223,9 @@ void xDumpTable::setComp(Computer** ptr) {
 }
 
 void xDumpTable::setMode(int md, int pg) {
+	mode = md;
 	model->setMode(md, pg);
+	emit rqRefill();
 }
 
 int xDumpTable::rows() {

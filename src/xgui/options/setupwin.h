@@ -1,5 +1,5 @@
-#ifndef _SETWIN_H
-#define _SETWIN_H
+#ifndef X_SETWIN_H
+#define X_SETWIN_H
 
 #include <QDialog>
 #include <QModelIndex>
@@ -9,6 +9,7 @@
 #include "padbinder.h"
 #include "opt_romset.h"
 #include "opt_diskcat.h"
+#include "opt_tapecat.h"
 
 #include "ui_rsedit.h"
 #include "ui_setupwin.h"
@@ -78,7 +79,8 @@ class SetupWin : public QDialog {
 		void umaselp(); void umaconf();
 //		void updvolumes();
 		void chablock(QModelIndex);
-		void setTapeBreak(int,int);
+		void tlistclick(QModelIndex);
+		// void setTapeBreak(int,int);
 		void hddcap();
 
 		void selSDCimg();

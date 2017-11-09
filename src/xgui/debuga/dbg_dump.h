@@ -58,6 +58,7 @@ class xDumpTable:public QTableView {
 		void setCodePage(int);
 		void setMode(int, int);
 		void update();
+		int mode;
 	signals:
 		void rqRefill();
 	private:
