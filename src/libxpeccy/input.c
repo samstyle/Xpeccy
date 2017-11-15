@@ -216,7 +216,9 @@ unsigned char joyInput(Joystick* joy) {
 	joy->used = 1;
 	switch (joy->type) {
 		case XJ_KEMPSTON:
-			res = (joy->state & 0x1f) | 0xe0;	// high 3 bits is set
+			res = joy->state;
+			if (!joy->extbuttons)
+				res |= 0xe0;
 			break;
 	}
 	return res;

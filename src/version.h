@@ -1,1 +1,1 @@
-#define VERSION 0.6.20171111
+#define VERSION 0.6.20171115

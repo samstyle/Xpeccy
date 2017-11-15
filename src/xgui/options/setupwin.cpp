@@ -409,6 +409,7 @@ void SetupWin::start(xProfile* p) {
 	ui.ratEnable->setChecked(comp->mouse->enable);
 	ui.ratWheel->setChecked(comp->mouse->hasWheel);
 	ui.cbSwapButtons->setChecked(comp->mouse->swapButtons);
+	ui.cbKbuttons->setChecked(comp->joy->extbuttons);
 	ui.sldDeadZone->setValue(conf.joy.dead);
 	ui.lePadName->setText(conf.joy.joy ? SDL_JoystickName(0) : "none");
 	padModel->update();
@@ -558,6 +559,7 @@ void SetupWin::apply() {
 	comp->mouse->enable = ui.ratEnable->isChecked() ? 1 : 0;
 	comp->mouse->hasWheel = ui.ratWheel->isChecked() ? 1 : 0;
 	comp->mouse->swapButtons = ui.cbSwapButtons->isChecked() ? 1 : 0;
+	comp->joy->extbuttons = ui.cbKbuttons->isChecked() ? 1 : 0;
 	conf.joy.dead = ui.sldDeadZone->value();
 	std::string kmname = getRFText(ui.keyMapBox);
 	if (kmname == "none") kmname = "default";

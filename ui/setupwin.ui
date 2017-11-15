@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>505</width>
-    <height>420</height>
+    <height>416</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -1363,7 +1363,23 @@
             </widget>
            </item>
            <item>
-            <spacer name="verticalSpacer_13">
+            <widget class="QGroupBox" name="groupBox_3">
+             <property name="title">
+              <string>Kempston joystick</string>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_21">
+              <item>
+               <widget class="QCheckBox" name="cbKbuttons">
+                <property name="text">
+                 <string>4 buttons</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_9">
              <property name="orientation">
               <enum>Qt::Vertical</enum>
              </property>

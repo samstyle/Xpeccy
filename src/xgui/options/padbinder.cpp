@@ -17,6 +17,9 @@ xPadBinder::xPadBinder(QWidget* p):QDialog(p) {
 	ui.cbJoyList->addItem("Left", XJ_LEFT);
 	ui.cbJoyList->addItem("Right", XJ_RIGHT);
 	ui.cbJoyList->addItem("Fire", XJ_FIRE);
+	ui.cbJoyList->addItem("Button 2", XJ_BUT2);
+	ui.cbJoyList->addItem("Button 3", XJ_BUT3);
+	ui.cbJoyList->addItem("Button 4", XJ_BUT4);
 
 	ui.cbMouseList->addItem("Up", XM_UP);
 	ui.cbMouseList->addItem("Down", XM_DOWN);
@@ -283,6 +286,9 @@ QVariant xPadMapModel::data(const QModelIndex& idx, int role) const {
 								case XJ_RIGHT: str.append("right"); break;
 								case XJ_LEFT: str.append("left"); break;
 								case XJ_FIRE: str.append("fire"); break;
+								case XJ_BUT2: str.append("button2"); break;
+								case XJ_BUT3: str.append("button3"); break;
+								case XJ_BUT4: str.append("button4"); break;
 								default: str.append("??"); break;
 							}
 							break;

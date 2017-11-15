@@ -434,6 +434,7 @@ int prfLoad(std::string nm) {
 					if (pnam == "mouse") comp->mouse->enable = str2bool(pval) ? 1 : 0;
 					if (pnam == "mouse.wheel") comp->mouse->hasWheel = str2bool(pval) ? 1 : 0;
 					if (pnam == "mouse.swapButtons") comp->mouse->swapButtons = str2bool(pval) ? 1 : 0;
+					if (pnam == "joy.extbuttons") comp->joy->extbuttons = str2bool(pval) ? 1 : 0;
 					if (pnam == "gamepad.map") prf->jmapName = pval;
 					break;
 				case PS_SDC:
@@ -545,6 +546,7 @@ int prfSave(std::string nm) {
 	fprintf(file, "mouse = %s\n", YESNO(comp->mouse->enable));
 	fprintf(file, "mouse.wheel = %s\n", YESNO(comp->mouse->hasWheel));
 	fprintf(file, "mouse.swapButtons = %s\n", YESNO(comp->mouse->swapButtons));
+	fprintf(file, "joy.extbuttons = %s\n", YESNO(comp->joy->extbuttons));
 	fprintf(file, "gamepad.map = %s\n", prf->jmapName.c_str());
 
 	fprintf(file, "\n[TAPE]\n\n");

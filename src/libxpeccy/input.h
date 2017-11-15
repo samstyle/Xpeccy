@@ -38,6 +38,9 @@ enum {
 #define	XJ_DOWN		(1<<2)
 #define	XJ_UP		(1<<3)
 #define	XJ_FIRE		(1<<4)
+#define XJ_BUT2		(1<<5)
+#define XJ_BUT3		(1<<6)
+#define XJ_BUT4		(1<<7)
 // msx extend keys
 #define MSXK_SHIFT	'S'
 #define MSXK_CTRL	'C'
@@ -178,6 +181,7 @@ typedef struct {
 
 typedef struct {
 	unsigned used:1;
+	unsigned extbuttons:1;
 	int type;
 	unsigned char state;
 } Joystick;

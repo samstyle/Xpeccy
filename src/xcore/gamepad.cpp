@@ -13,6 +13,9 @@ const xCharDir kjoyChars[] = {
 	{'L', XJ_LEFT},
 	{'R', XJ_RIGHT},
 	{'F', XJ_FIRE},
+	{'2', XJ_BUT2},
+	{'3', XJ_BUT3},
+	{'4', XJ_BUT4},
 	{'-', XJ_NONE}
 };
 
