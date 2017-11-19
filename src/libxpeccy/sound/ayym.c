@@ -235,8 +235,6 @@ int ayGetChanVol(aymChip* ay, aymChan* ch) {
 	// return ayDACvol[vol];
 }
 
-#define STEREOFACTOR 0.5
-
 sndPair aymGetVolume(aymChip* ay) {
 	sndPair res;
 	// ay->chanN.lev = noizes[ay->chanN.step & 0x1ffff] ? 1 : 0;	// noise value
@@ -244,37 +242,49 @@ sndPair aymGetVolume(aymChip* ay) {
 	int volA = ayGetChanVol(ay, &ay->chanA);
 	int volB = ayGetChanVol(ay, &ay->chanB);
 	int volC = ayGetChanVol(ay, &ay->chanC);
+	int lef,cen,rig;
 
 	switch (ay->stereo) {
 		case AY_ABC:
-			res.left = volA + STEREOFACTOR * volB;			// max = 7F (SF = 1.0)
-			res.right = volC + STEREOFACTOR * volB;
+			lef = volA;
+			cen = volB;
+			rig = volC;
 			break;
 		case AY_ACB:
-			res.left = volA + STEREOFACTOR * volC;
-			res.right = volB + STEREOFACTOR * volC;
+			lef = volA;
+			cen = volC;
+			rig = volB;
 			break;
 		case AY_BAC:
-			res.left = volB + STEREOFACTOR * volA;
-			res.right = volC + STEREOFACTOR * volA;
+			lef = volB;
+			cen = volA;
+			rig = volC;
 			break;
 		case AY_BCA:
-			res.left = volB + STEREOFACTOR * volC;
-			res.right = volA + STEREOFACTOR * volC;
+			lef = volB;
+			cen = volC;
+			rig = volA;
 			break;
 		case AY_CAB:
-			res.left = volC + STEREOFACTOR * volA;
-			res.right = volB + STEREOFACTOR * volA;
+			lef = volC;
+			cen = volA;
+			rig = volB;
 			break;
 		case AY_CBA:
-			res.left = volC + STEREOFACTOR * volB;
-			res.right = volA + STEREOFACTOR * volB;
+			lef = volC;
+			cen = volB;
+			rig = volA;
 			break;
 		default:
-			res.left = (volA + volB + volC) / 3;
-			res.right = res.left;
+			lef = (volA + volB + volC) / 3;
+			cen = lef;
+			rig = lef;
 			break;
 	}
+
+	res.left = lef;
+	res.right = rig;
+	res = mixer(res, cen, cen, 70);
 	return res;
 }
 

@@ -148,11 +148,15 @@ void fillBuffer(int len) {
 	unsigned char lev;
 	while (pos < len) {
 		lev = bufA.data[playPos++];
+#if 0
+		bufB.data[pos++] = 0x60 + lev;
+#else
 		if (playPos & 1) {
 			bufB.data[pos++] = 0x80 - lev;
 		} else {
 			bufB.data[pos++] = 0x80 + lev;
 		}
+#endif
 		playPos &= 0xfff;
 	}
 }

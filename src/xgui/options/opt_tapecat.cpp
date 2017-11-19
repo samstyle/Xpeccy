@@ -90,6 +90,8 @@ xTapeCatTable::xTapeCatTable(QWidget* p):QTableView(p) {
 }
 
 void xTapeCatTable::fill(Tape* tape) {
+	int row = currentIndex().row();
 	model->fill(tape);
+	selectRow(row);
 	setEnabled(tape->blkCount > 0);
 }

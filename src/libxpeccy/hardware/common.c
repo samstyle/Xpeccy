@@ -65,7 +65,7 @@ sndPair zx_vol(Computer* comp, sndVolume* sv) {
 	int lev = 0;
 	vol.left = 0;
 	vol.right = 0;
-	// tape sound
+	// 1:tape sound
 	if (comp->tape->on) {
 		if (comp->tape->rec) {
 			lev = comp->tape->levRec ? 0x3f : 0x00;
@@ -74,22 +74,23 @@ sndPair zx_vol(Computer* comp, sndVolume* sv) {
 		}
 	}
 	vol = mixer(vol, lev, lev, sv->tape);
-	// beeper
+	// 2:beeper
 	bcSync(comp->beep, -1);
-	lev = comp->beep->val >> 2;			// ff -> 3f
+	lev += comp->beep->val >> 2;			// ff -> 3f
 	vol = mixer(vol, lev, lev, sv->beep);
-	// turbo sound
+	// 3:turbo sound
 	svol = tsGetVolume(comp->ts);
 	vol = mixer(vol, svol.left, svol.right, sv->ay);
-	// general sound
+	// 4:general sound
 	svol = gsVolume(comp->gs);
 	vol = mixer(vol, svol.left, svol.right, sv->gs);
-	// soundrive
+	// 5:soundrive
 	svol = sdrvVolume(comp->sdrv);
 	vol = mixer(vol, svol.left, svol.right, sv->sdrv);
-	// saa
+	// 6:saa
 	svol = saaVolume(comp->saa);
 	vol = mixer(vol, svol.left, svol.right, sv->saa);
+	// end
 	return vol;
 }
 

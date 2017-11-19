@@ -1,5 +1,5 @@
-#ifndef _XGUI_H
-#define _XGUI_H
+#ifndef X_GUI_H
+#define X_GUI_H
 
 #include <QDialog>
 
@@ -12,8 +12,9 @@ void showInfo(const char*);
 
 // tape player
 
+#include "xgui/options/opt_tapecat.h"
 #include "ui_tapewin.h"
-#include "../libxpeccy/tape.h"
+#include "libxpeccy/tape.h"
 
 enum {
 	TW_STATE = 0,
@@ -48,8 +49,8 @@ class TapeWin : public QDialog {
 		void doRec();
 		void doStop();
 		void doLoad();
-		void doRewind(int,int);
-		void doSwitchBreak(int,int);
+		void doDClick(QModelIndex);
+		void doClick(QModelIndex);
 };
 
 // rzx player

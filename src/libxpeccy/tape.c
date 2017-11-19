@@ -31,7 +31,6 @@ void tapDestroy(Tape* tap) {
 // blocks
 
 void blkClear(TapeBlock *blk) {
-	blk->sigCount = 0;
 	if(blk->data) {
 		free(blk->data);
 		blk->data = NULL;
@@ -39,6 +38,7 @@ void blkClear(TapeBlock *blk) {
 	blk->breakPoint = 0;
 	blk->isHeader = 0;
 	blk->hasBytes = 0;
+	blk->sigCount = 0;
 	blk->dataPos = -1;
 	blk->vol = 0;
 }
@@ -201,13 +201,15 @@ void tapStoreBlock(Tape* tap) {
 	unsigned int i,j;
 	int same;
 	int diff;
-	int siglens[10];
+	int siglens[11];
 	int cnt = 0;
 	TapeBlock* tblk = &tap->tmpBlock;
-	if (tblk->sigCount == 0) return;
-	for (i=0; i < tblk->sigCount; i++) {
+	if (tblk->sigCount < 1) return;
+	if (!tblk->data) return;
+	for (i = 0; i < tblk->sigCount; i++) {
 		same = 0;
 		for (j = 0; j < cnt; j++) {
+			// printf("%i %i %p %i\n",i,j,tblk->data,tblk->data->size);
 			diff = (tblk->data[i].size - siglens[j]) * 100 / siglens[j];
 			if ((diff > -5) && (diff < 5)) {
 				same = 1;

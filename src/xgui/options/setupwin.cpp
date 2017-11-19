@@ -1220,7 +1220,7 @@ void SetupWin::tblkrm() {
 	if (ps != -1) {
 		tapDelBlock(comp->tape,ps);
 		buildtapelist();
-		ui.tapelist->selectRow(ps);
+//		ui.tapelist->selectRow(ps);
 	}
 }
 
@@ -1228,7 +1228,7 @@ void SetupWin::chablock(QModelIndex idx) {
 	int row = idx.row();
 	tapRewind(comp->tape,row);
 	buildtapelist();
-	ui.tapelist->selectRow(row);
+//	ui.tapelist->selectRow(row);
 }
 
 void SetupWin::tlistclick(QModelIndex idx) {
@@ -1238,7 +1238,7 @@ void SetupWin::tlistclick(QModelIndex idx) {
 	if (col != 1) return;
 	comp->tape->blkData[row].breakPoint ^= 1;
 	buildtapelist();
-	ui.tapelist->selectRow(row);
+//	ui.tapelist->selectRow(row);
 }
 
 /*

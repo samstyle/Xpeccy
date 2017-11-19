@@ -480,13 +480,14 @@ void MainWin::tapStateChanged(int wut, int val) {
 					pause(true,PR_FILE);
 					loadFile(comp,"",FT_TAPE,-1);
 					tapeWin->buildList(comp->tape);
-					tapeWin->setCheck(comp->tape->block);
+					//tapeWin->setCheck(comp->tape->block);
 					pause(false,PR_FILE);
 					break;
 			}
 			break;
 		case TW_REWIND:
 			tapRewind(comp->tape,val);
+			tapeWin->buildList(comp->tape);
 			break;
 		case TW_BREAK:
 			comp->tape->blkData[val].breakPoint ^= 1;
@@ -1073,7 +1074,7 @@ void MainWin::updateSatellites() {
 			if (!comp->tape->on) {
 				tapStateChanged(TW_STATE,TWS_STOP);
 			}
-			tapeWin->setCheck(comp->tape->block);
+			tapeWin->buildList(comp->tape);
 			comp->tape->blkChange = 0;
 		}
 		if (comp->tape->newBlock) {
