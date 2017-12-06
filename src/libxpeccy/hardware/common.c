@@ -103,11 +103,13 @@ int zx_dev_wr(Computer* comp, unsigned short adr, unsigned char val, int dos) {
 		res |= saaWrite(comp->saa, adr, val);
 		res |= sdrvWrite(comp->sdrv, adr, val);
 	}
+	res |= ideOut(comp->ide, adr, val, dos);
 	return res;
 }
 
 int zx_dev_rd(Computer* comp, unsigned short adr, unsigned char* ptr, int dos) {
 	if (gsRead(comp->gs, adr, ptr)) return 1;
+	if (ideIn(comp->ide, adr, ptr, dos)) return 1;
 	return 0;
 }
 

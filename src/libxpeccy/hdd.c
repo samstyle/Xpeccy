@@ -84,10 +84,10 @@ void ataSetSector(ATADev* dev, int nr) {
 		dev->reg.head |= ((nr >> 24) & 0x0f);
 	} else {
 		if (nr < dev->maxlba) {
-			dev->reg.sec = nr / dev->pass.spt + 1;
-			dev->reg.head &= 0xf0;
-			dev->reg.head |= ((nr + 1 - dev->reg.sec) / (dev->pass.hds * dev->pass.spt)) / dev->pass.spt;
-			dev->reg.cyl = (nr + 1 - dev->reg.sec - dev->pass.spt * (dev->reg.head & 0x0f)) / (dev->pass.hds * dev->pass.spt);
+			dev->reg.cyl = nr / (dev->pass.hds * dev->pass.spt);
+			int tmp = nr % (dev->pass.hds * dev->pass.spt);
+			dev->reg.head = tmp / dev->pass.spt;
+			dev->reg.sec = tmp % dev->pass.spt + 1;
 		}
 	}
 }
@@ -103,11 +103,7 @@ void ataSetLBA(ATADev* dev) {
 	if (dev->hasLBA && (dev->reg.head & HDF_LBA)) {
 		dev->lba = dev->reg.sec | (dev->reg.cyl << 8) | ((dev->reg.head & 0x0f) << 24);		// LBA28
 	} else {
-		if ((dev->reg.sec <= dev->pass.spt) && (dev->reg.cyl < dev->pass.cyls) && ((dev->reg.head & 15) < dev->pass.hds)) {
-			dev->lba = ((dev->reg.cyl * dev->pass.hds + (dev->reg.head & 0x0f)) * dev->pass.spt) + dev->reg.sec - 1;
-		} else {
-			dev->lba = dev->maxlba + 1;			// CHS is out of range : sector not dound
-		}
+		dev->lba = ((dev->reg.cyl * dev->pass.hds + (dev->reg.head & 0x0f)) * dev->pass.spt) + dev->reg.sec - 1;
 	}
 }
 
@@ -115,7 +111,7 @@ void ataReadSector(ATADev* dev) {
 	long nps;
 	ataSetLBA(dev);
 #ifdef ISDEBUG
-//	printf("ataReadSector %X (hd:%.2X cyl:%.4X sec:%.2X)\n",dev->lba,dev->reg.head & 15, dev->reg.cyl, dev->reg.sec);
+	printf("ataReadSector %X (hd:%.2X cyl:%.4X sec:%.2X)\n",dev->lba,dev->reg.head & 15, dev->reg.cyl, dev->reg.sec);
 #endif
 	if (dev->lba >= dev->maxlba) {					// sector not found
 		dev->reg.state |= HDF_ERR;
@@ -155,7 +151,7 @@ void ataExec(ATADev* dev, unsigned char cm) {
 	switch (dev->type) {
 	case IDE_ATA:
 #ifdef ISDEBUG
-//	printf("ATA exec %.2X\n",cm);
+	printf("ATA exec %.2X\n",cm);
 #endif
 		switch (cm) {
 			case 0x00:			// NOP
@@ -197,7 +193,7 @@ void ataExec(ATADev* dev, unsigned char cm) {
 			case 0x90:			// execute drive diagnostic; FIXME: both drives must do this
 				dev->reg.err = 0x01;
 				break;
-			case 0x91:			// initialize drive parameters; TODO: pass.spt = reg.count; pass.heads = (reg.head & 15) + 1;
+			case 0x91:			// initialize drive parameters; pass.spt = reg.count; pass.heads = (reg.head & 15) + 1;
 				dev->pass.spt = dev->reg.count;
 				dev->pass.hds = (dev->reg.head & 0x0f) + 1;
 				break;

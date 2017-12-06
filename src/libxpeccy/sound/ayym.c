@@ -282,9 +282,9 @@ sndPair aymGetVolume(aymChip* ay) {
 			break;
 	}
 
-	res.left = lef;
-	res.right = rig;
-	res = mixer(res, cen, cen, 70);
+	res.left = lef + 0.5 * cen;
+	res.right = rig + 0.5 * cen;
+//	res = mixer(res, cen, cen, 70);
 	return res;
 }
 

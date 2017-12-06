@@ -1264,13 +1264,7 @@ void SetupWin::hddSlaveImg() {
 
 void SetupWin::hddcap() {
 	unsigned int sz;
-	if (ui.hm_islba->checkState() == Qt::Checked) {
-		sz = (ui.hm_glba->value() >> 11);
-	} else {
-		sz = ((ui.hm_gsec->value() * (ui.hm_ghd->value() + 1) * (ui.hm_gcyl->value() + 1)) >> 11);
-	}
-	ui.hm_capacity->setValue(sz);
-	if (ui.hs_islba->checkState() == Qt::Checked) {
+	if (ui.hs_islba->isChecked()) {
 		sz = (ui.hs_glba->value() >> 11);
 	} else {
 		sz = ((ui.hs_gsec->value() * (ui.hs_ghd->value() + 1) * (ui.hs_gcyl->value() + 1)) >> 11);

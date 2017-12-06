@@ -468,8 +468,8 @@ void vidDrawATMhwmc(Video* vid) {
 	if ((yscr < 0) || (yscr > 199) || (xscr < 0) || (xscr > 319)) {
 		vidPutDot(&vid->ray, vid->pal, vid->brdcol);
 	} else {
-		xscr = vid->ray.x - 96;
-		yscr = vid->ray.y - 76;
+		//xscr = vid->ray.x - 96;
+		//yscr = vid->ray.y - 76;
 		adr = (yscr * 40) + (xscr >> 3);
 		if ((xscr & 3) == 0) {
 			if ((xscr & 7) == 0) {
