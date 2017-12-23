@@ -141,12 +141,37 @@ typedef struct {
 	unsigned char pval;
 
 	struct {
+		struct {
+			unsigned wcom:1;	// waiting for command (after 55FE)
+			unsigned warg:1;	// waiting for argument
+
+			unsigned shift:1;	// modifiers
+			unsigned rshift:1;
+			unsigned ctrl:1;
+			unsigned alt:1;
+			unsigned caps:1;
+			unsigned numlock:1;
+			unsigned scrlock:1;
+			unsigned lat:1;
+
+			unsigned char keycode;
+			unsigned char lastkey;
+
+			int mode;		// zx/keycode/cpm/direct
+			unsigned char com;	// command code
+			unsigned char arg;
+//			unsigned char kbpos;
+			unsigned char srow;
+//			unsigned char keybuf[8];
+		} kbd;
+	} atm2;
+	struct {
 		unsigned char evoBF;		// PentEvo rw ports
 		unsigned char evo2F;
 		unsigned char evo4F;
 		unsigned char evo6F;
 		unsigned char evo8F;
-		int hiTrig;			// trigger for hi-low byte in IDE
+//		int hiTrig;			// trigger for hi-low byte in IDE
 		unsigned char blVer[16];	// bootloader info
 		unsigned char bcVer[16];	// baseconf info
 	} evo;

@@ -170,6 +170,8 @@ void atm2MapMem(Computer*);
 void atm2Out(Computer*,unsigned short,unsigned char,int);
 unsigned char atm2In(Computer*,unsigned short,int);
 void atm2Reset(Computer*);
+void atm2_keyp(Computer*, keyEntry);
+void atm2_keyr(Computer*, keyEntry);
 
 // Evo baseconf
 void evoMapMem(Computer*);

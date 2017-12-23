@@ -192,11 +192,17 @@ typedef struct {
 } xKey;
 
 typedef struct {
+	unsigned char cpmCode;
+	unsigned char rowScan;
+} atmKey;
+
+typedef struct {
 	const char* name;
 	signed int key;		// XKEY_*
 	xKey zxKey;
 	xKey extKey;
 	xKey msxKey;
+	atmKey atmCode;
 	int keyCode;		// 0xXXYYZZ = ZZ,YY,XX in buffer ([ZZ],[YY],0xf0,XX if released)
 } keyEntry;
 

@@ -17,7 +17,7 @@ HardWare hwTab[] = {
 		scoMapMem,scoOut,scoIn,scoMRd,stdMWr,NULL,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
 		HW_ATM2,"ATM2","ATM Turbo 2+",50,MEM_128 | MEM_256 | MEM_512 | MEM_1M,
-		atm2MapMem,atm2Out,atm2In,stdMRd,stdMWr,atm2Reset,zx_sync,zx_keyp,zx_keyr,zx_vol
+		atm2MapMem,atm2Out,atm2In,stdMRd,stdMWr,atm2Reset,zx_sync,atm2_keyp,atm2_keyr,zx_vol
 	},{
 		HW_PROFI,"Profi","Profi",50,MEM_512 | MEM_1M,
 		prfMapMem,prfOut,prfIn,stdMRd,stdMWr,prfReset,zx_sync,prf_keyp,prf_keyr,zx_vol
