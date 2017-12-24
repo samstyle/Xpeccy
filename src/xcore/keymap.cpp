@@ -52,24 +52,24 @@ keyEntry keyMapInit[] = {
 	{"RS",XKEY_RSHIFT,{'C',0},{0,0},{MSXK_SHIFT,0},{0,0x08},0x59},
 	{"RC",XKEY_RCTRL,{'S',0},{0,0},{MSXK_CTRL,0},{0,0x88},0x14e0},
 
-	{"LEFT",XKEY_LEFT,{'C','5'},{'C','5'},{MSXK_LEFT,0},{0x72,0x72},0x6be0},
-	{"RIGHT",XKEY_RIGHT,{'C','8'},{'C','8'},{MSXK_RIGHT,0},{0x73,0x73},0x74e0},
-	{"DOWN",XKEY_DOWN,{'C','6'},{'C','6'},{MSXK_DOWN,0},{0x71,0x71},0x72e0},
-	{"UP",XKEY_UP,{'C','7'},{'C','7'},{MSXK_UP,0},{0x70,0x70},0x75e0},
+	{"LEFT",XKEY_LEFT,{'C','5'},{'C','5'},{MSXK_LEFT,0},{0x72,0x3d},0x6be0},
+	{"RIGHT",XKEY_RIGHT,{'C','8'},{'C','8'},{MSXK_RIGHT,0},{0x73,0x4b},0x74e0},
+	{"DOWN",XKEY_DOWN,{'C','6'},{'C','6'},{MSXK_DOWN,0},{0x71,0x4d},0x72e0},
+	{"UP",XKEY_UP,{'C','7'},{'C','7'},{MSXK_UP,0},{0x70,0x4c},0x75e0},
 
 	{"BSP",XKEY_BSP,{'C','0'},{'C','0'},{MSXK_BSP,0},{0x08,0x49},0x66},
-	{"CAPS",XKEY_CAPS,{'C','2'},{'C','2'},{MSXK_CAP,0},{0,0},0x58},
+	{"CAPS",XKEY_CAPS,{'C','2'},{'C','2'},{MSXK_CAP,0},{0,0x3a},0x58},
 	{"TAB",XKEY_TAB,{'C',' '},{'C','i'},{MSXK_TAB,0},{0x09,0x3b},0x0d},
 	{"[",XKEY_LBRACK,{'S','8'},{'S','y'},{'[',0},{'[',0xd5},0x54},
 	{"]",XKEY_RBRACK,{'S','9'},{'S','u'},{']',0},{']',0xd4},0x5b},
 	{"`",XKEY_TILDA,{'C','S'},{'S','x'},{'`',0},{0x60,0x91},0x0e},
 	{"\\",XKEY_SLASH,{'S','C'},{0,0},{'\\',0},{0x2f,0x92},0x5d},
 
-	{"PGDN",XKEY_PGUP,{'C','3'},{'m'|0x80,0},{MSXK_CODE,0},{0x75,0},0x7de0},
-	{"PGUP",XKEY_PGDN,{'C','4'},{'n'|0x80,0},{MSXK_SEL,0},{0x74,0},0x7ae0},
+	{"PGDN",XKEY_PGUP,{'C','3'},{'m'|0x80,0},{MSXK_CODE,0},{0x75,0x49},0x7de0},
+	{"PGUP",XKEY_PGDN,{'C','4'},{'n'|0x80,0},{MSXK_SEL,0},{0x74,0x51},0x7ae0},
 
-	{"DEL",XKEY_DEL,{'C','9'},{'p'|0x80,0},{MSXK_DEL,0},{0x79,0},0x71e0},
-	{"INS",XKEY_INS,{0,0},{'o'|0x80,0},{0,MSXK_INS},{0x78,0},0x70e0},
+	{"DEL",XKEY_DEL,{'C','9'},{'p'|0x80,0},{MSXK_DEL,0},{0x79,0x49},0x71e0},
+	{"INS",XKEY_INS,{0,0},{'o'|0x80,0},{0,MSXK_INS},{0x78,0x84},0x70e0},
 	{"HOME",XKEY_HOME,{'S','q'},{'k'|0x80,0},{MSXK_HOME,0},{0x76,0},0x6ce0},
 	{"END",XKEY_END,{'S','e'},{'l'|0x80,0},{MSXK_STOP,0},{0x77,0},0x69e0},
 

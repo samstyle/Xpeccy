@@ -142,6 +142,8 @@ typedef struct {
 
 	struct {
 		struct {
+			unsigned enable:1;
+
 			unsigned wcom:1;	// waiting for command (after 55FE)
 			unsigned warg:1;	// waiting for argument
 
@@ -161,7 +163,6 @@ typedef struct {
 			unsigned char com;	// command code
 			unsigned char arg;
 //			unsigned char kbpos;
-			unsigned char srow;
 //			unsigned char keybuf[8];
 		} kbd;
 	} atm2;

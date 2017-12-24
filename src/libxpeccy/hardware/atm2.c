@@ -13,6 +13,7 @@ enum {
 void atm2Reset(Computer* comp) {
 	comp->dos = 1;
 	comp->p77hi = 0;
+	comp->atm2.kbd.enable = 1;
 	comp->atm2.kbd.mode = kbdZX;
 	comp->atm2.kbd.wcom = 0;
 }
@@ -64,6 +65,7 @@ void atm2Out77(Computer* comp, unsigned short port, unsigned char val) {		// dos
 		default: vidSetMode(comp->vid,VID_UNKNOWN); break;
 	}
 	compSetTurbo(comp,(val & 0x08) ? 2 : 1);
+	comp->atm2.kbd.enable = (val & 0x40) ? 0 : 1;
 	comp->p77hi = (port & 0xff00) >> 8;
 	atm2MapMem(comp);
 }
@@ -105,7 +107,9 @@ static unsigned char kmodTab[4] = {kbdZX, kbdCODE, kbdCPM, kbdDIRECT};
 static unsigned char kmodVer[4] = {6,0,1,0};
 
 unsigned char atm2inFE(Computer* comp, unsigned short port) {
-#if 1
+
+//	if (!comp->atm2.kbd.enable) return xInFE(comp, port);
+
 	time_t rtime;
 	time(&rtime);
 	struct tm* ctime = localtime(&rtime);
@@ -126,8 +130,13 @@ unsigned char atm2inFE(Computer* comp, unsigned short port) {
 				break;
 			case 0x09:
 				switch(hi) {
-					case 0: res = comp->atm2.kbd.lastkey; break;
-					case 1: res = comp->atm2.kbd.keycode; break;
+					case 0:
+						res = comp->atm2.kbd.keycode;
+						comp->atm2.kbd.keycode = 0;
+						break;
+					case 1:
+						res = comp->atm2.kbd.lastkey;
+						break;
 					case 2:
 						res = (comp->atm2.kbd.shift ? 1 : 0) | \
 							(comp->atm2.kbd.ctrl ? 2 : 0) | \
@@ -141,6 +150,7 @@ unsigned char atm2inFE(Computer* comp, unsigned short port) {
 						res = comp->atm2.kbd.rshift ? 1 : 0;
 						break;
 				}
+				printf("%i:%.2X\n",hi,res);
 				break;
 			case 0x0a:				// rus
 				comp->atm2.kbd.lat = 0;
@@ -154,17 +164,17 @@ unsigned char atm2inFE(Computer* comp, unsigned short port) {
 				compReset(comp, RES_DEFAULT);
 				break;
 			case 0x10:			// read time (not BCD format!)
-				switch(port & 0xc000) {
-					case 0x0000: res = ctime->tm_sec & 0xff; break;
-					case 0x4000: res = ctime->tm_min & 0xff; break;
-					case 0x8000: res = ctime->tm_hour & 0xff; break;
+				switch(hi) {
+					case 0: res = ctime->tm_sec & 0xff; break;
+					case 1: res = ctime->tm_min & 0xff; break;
+					case 2: res = ctime->tm_hour & 0xff; break;
 				}
 				break;
 			case 0x12:
-				switch(port & 0xc000) {
-					case 0x0000: res = ctime->tm_mday & 0xff; break;
-					case 0x4000: res = ctime->tm_mon & 0xff; break;
-					case 0x8000: res = ctime->tm_year & 0xff; break;
+				switch(hi) {
+					case 0: res = ctime->tm_mday & 0xff; break;
+					case 1: res = ctime->tm_mon & 0xff; break;
+					case 2: res = ctime->tm_year & 0xff; break;
 				}
 				break;
 			case 0x16: break;
@@ -189,56 +199,44 @@ unsigned char atm2inFE(Computer* comp, unsigned short port) {
 				printf("mode:%.2X\n",comp->atm2.kbd.mode);
 				break;
 		}
+	} else if ((port & 0xff00) == 0x5500) {		// switch to command mode
+		comp->atm2.kbd.wcom = 1;
+		comp->atm2.kbd.warg = 0;
+		res = 0xaa;
 	} else {
-		switch (port & 0xff00) {
-			case 0x5500:
-				comp->atm2.kbd.wcom = 1;
-				comp->atm2.kbd.warg = 0;
-				res = 0xaa;
-				// printf("in 55FE:AA\n");
+		switch (comp->atm2.kbd.mode) {
+			case kbdZX:
+				res = xInFE(comp, port);
 				break;
-			case 0x8000:
-				res = (comp->atm2.kbd.shift ? 1 : 0) | \
-					(comp->atm2.kbd.ctrl ? 2 : 0) | \
-					(comp->atm2.kbd.alt ? 4 : 0) | \
-					(comp->atm2.kbd.caps ? 16 : 0) | \
-					(comp->atm2.kbd.numlock ? 32 : 0) | \
-					(comp->atm2.kbd.scrlock ? 64 : 0) | \
-					(comp->atm2.kbd.lat ? 0 : 128);
+			case kbdCODE:
+				res = comp->atm2.kbd.keycode;
+				comp->atm2.kbd.keycode = 0;
 				break;
-			case 0x4000:
-				res = comp->atm2.kbd.rshift ? 1 : 0;
-				break;
-			case 0x0000:
-				switch(comp->atm2.kbd.mode) {
-					case kbdZX:
-						res = comp->atm2.kbd.srow;
-						if (comp->atm2.kbd.shift) res |= 0x80;
-						if (comp->atm2.kbd.ctrl) res |= 0x08;
-						// if (res & 0x77) printf("%.2X = %c\n",res, res);
-						break;
-					case kbdCODE:
-						res = comp->atm2.kbd.keycode;		// keycode
-						comp->atm2.kbd.keycode = 0;
-						break;
-					case kbdCPM:
+			case kbdCPM:
+				switch (port & 0xf000) {
+					case 0x0000:
 						res = comp->atm2.kbd.keycode;
 						comp->atm2.kbd.keycode = 0;
 						break;
-					case kbdDIRECT:
+					case 0x4000:
+						res = comp->atm2.kbd.rshift ? 1 : 0;
+						break;
+					case 0x8000:
+						res = (comp->atm2.kbd.shift ? 1 : 0) | \
+							(comp->atm2.kbd.ctrl ? 2 : 0) | \
+							(comp->atm2.kbd.alt ? 4 : 0) | \
+							(comp->atm2.kbd.caps ? 16 : 0) | \
+							(comp->atm2.kbd.numlock ? 32 : 0) | \
+							(comp->atm2.kbd.scrlock ? 64 : 0) | \
+							(comp->atm2.kbd.lat ? 0 : 128);
 						break;
 				}
-				//printf("in 00FE:%.2X\n",res);
 				break;
-			default:
-				res = xInFE(comp, port);
+			case kbdDIRECT:
 				break;
 		}
 	}
 	return res;
-#else
-	return xInFE(comp, port);
-#endif
 }
 
 static xPort atm2PortMap[] = {
@@ -273,6 +271,8 @@ unsigned char atm2In(Computer* comp, unsigned short port, int dos) {
 }
 
 void atm2_keyp(Computer* comp, keyEntry kent) {
+	int row = ((kent.atmCode.rowScan >> 4) & 7) ^ 7;
+	int msk = 1 << ((kent.atmCode.rowScan & 7) - 1);
 	switch (kent.key) {
 		case XKEY_RALT:
 		case XKEY_LALT:
@@ -293,14 +293,31 @@ void atm2_keyp(Computer* comp, keyEntry kent) {
 		// num lock
 		// scroll lock
 		default:
-			comp->atm2.kbd.keycode = kent.atmCode.cpmCode;
-			comp->atm2.kbd.srow = kent.atmCode.rowScan;
 			break;
 	}
-	zx_keyp(comp, kent);
+	if (comp->atm2.kbd.enable) {
+		switch (comp->atm2.kbd.mode) {
+			case kbdZX:
+//				printf("%i:%.2X:%.2X\n",row,msk,kent.atmCode.rowScan);
+				comp->atm2.kbd.keycode = kent.atmCode.rowScan;
+				comp->keyb->map[row] &= ~msk;
+				if (kent.atmCode.rowScan & 0x80) comp->keyb->map[0] &= ~2;	// sym.shift
+				if (kent.atmCode.rowScan & 0x08) comp->keyb->map[7] &= ~1;	// cap.shift
+				break;
+			case kbdCODE:
+			case kbdCPM:
+				comp->atm2.kbd.keycode = kent.atmCode.cpmCode;
+				break;
+		}
+		comp->atm2.kbd.lastkey = comp->atm2.kbd.keycode;
+	} else {
+		zx_keyp(comp, kent);
+	}
 }
 
 void atm2_keyr(Computer* comp, keyEntry kent) {
+	int row = ((kent.atmCode.rowScan >> 4) & 7) ^ 7;
+	int msk = (0x80 << (kent.atmCode.rowScan & 7)) >> 8;
 	switch (kent.key) {
 		case XKEY_RALT:
 		case XKEY_LALT:
@@ -316,9 +333,23 @@ void atm2_keyr(Computer* comp, keyEntry kent) {
 			comp->atm2.kbd.shift = 0;
 			break;
 		default:
-			comp->atm2.kbd.keycode = 0;
-			comp->atm2.kbd.srow = 0;
 			break;
 	}
-	zx_keyr(comp, kent);
+	if (comp->atm2.kbd.enable) {
+		switch(comp->atm2.kbd.mode) {
+			case kbdZX:
+				comp->atm2.kbd.keycode = 0;
+				comp->keyb->map[row] |= msk;
+				if (kent.atmCode.rowScan & 0x80) comp->keyb->map[0] |= 2;	// sym.shift
+				if (kent.atmCode.rowScan & 0x08) comp->keyb->map[7] |= 1;	// cap.shift
+				break;
+			case kbdCODE:
+			case kbdCPM:
+				comp->atm2.kbd.keycode = 0;
+				break;
+
+		}
+	} else {
+		zx_keyr(comp, kent);
+	}
 }
