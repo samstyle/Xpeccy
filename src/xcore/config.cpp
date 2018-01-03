@@ -36,32 +36,49 @@ std::map<std::string, int> shotFormat;
 xConfig conf;
 
 void initPaths(char* wpath) {
-	conf.scrShot.dir = std::string(getenv(ENVHOME));
+    conf.scrShot.dir = std::string(getenv(ENVHOME));
 #if __linux || __APPLE__
-	conf.path.confDir = conf.scrShot.dir + "/.config";
-	mkdir(conf.path.confDir.c_str(),0777);
-	conf.path.confDir += "/samstyle";
-	mkdir(conf.path.confDir.c_str(),0777);
-	conf.path.confDir += "/xpeccy";
-	mkdir(conf.path.confDir.c_str(),0777);
-	conf.path.romDir = conf.path.confDir + "/roms";
-	mkdir(conf.path.romDir.c_str(),0777);
-	conf.path.confFile = conf.path.confDir + "/config.conf";
-	conf.path.boot = conf.path.confDir + "/boot.$B";
+	strcpy(conf.path.confDir, getenv(ENVHOME));
+	strcat(conf.path.confDir, "/.config");
+	mkdir(conf.path.confDir, 0777);
+	strcat(conf.path.confDir, "/samstyle");
+	mkdir(conf.path.confDir, 0777);
+	strcat(conf.path.confDir, "/xpeccy");
+	mkdir(conf.path.confDir, 0777);
+	strcpy(conf.path.romDir, conf.path.confDir);
+	strcat(conf.path.romDir, "/roms");
+	mkdir(conf.path.romDir ,0777);
+	strcpy(conf.path.confFile, conf.path.confDir);
+	strcat(conf.path.confFile, "/config.conf");
+	strcpy(conf.path.boot, conf.path.confDir);
+	strcat(conf.path.boot, "/boot.$B");
 	//conf.path.font = conf.path.confDir + "/appfont.ttf";
 #elif __WIN32
-	std::string wdir(wpath);
-	size_t pos = wdir.find_last_of("/\\");
-	if (pos > 0) {
-		wdir = wdir.substr(0, pos);
+//    std::string wdir(wpath);
+//	size_t pos = wdir.find_last_of("/\\");
+//	if (pos > 0) {
+//		wdir = wdir.substr(0, pos);
+//	}
+	char wdir[FILENAME_MAX];
+	char* pos = strrchr(wpath, SLSH);
+	if (pos) {
+		strncpy(wdir, wpath, pos - wpath);
+		wdir[pos - wpath] = 0x00;
+	} else {
+		strcpy(wdir, wpath);
 	}
-	conf.path.confDir = wdir + "\\config";
-	conf.path.romDir = conf.path.confDir + "\\roms";
-	conf.path.confFile = conf.path.confDir + "\\config.conf";
-	conf.path.boot = conf.path.confDir + "\\boot.$B";
+	// strcpy(wdir, ".");
+	strcpy(conf.path.confDir, wdir);
+	strcat(conf.path.confDir, "\\config");
+	strcpy(conf.path.romDir, conf.path.confDir);
+	strcat(conf.path.romDir, "\\roms");
+	strcpy(conf.path.confFile, conf.path.confDir);
+	strcat(conf.path.confFile, "\\config.conf");
+	strcpy(conf.path.boot, conf.path.confDir);
+	strcat(conf.path.boot, "\\boot.$B");
 	//conf.path.font = conf.path.confDir + "\\appfont.ttf";
-	mkdir(conf.path.confDir.c_str());
-	mkdir(conf.path.romDir.c_str());
+	mkdir(conf.path.confDir);
+	mkdir(conf.path.romDir);
 #endif
 	/*
 	// check user app font or use built-in DejaVuSansMono.ttf
@@ -76,7 +93,7 @@ void initPaths(char* wpath) {
 }
 
 void saveConfig() {
-	FILE* cfile = fopen(conf.path.confFile.c_str(),"wb");
+	FILE* cfile = fopen(conf.path.confFile, "wb");
 	if (!cfile) {
 		shitHappens("Can't write main config");
 		throw(0);
@@ -91,7 +108,7 @@ void saveConfig() {
 	fprintf(cfile, "savepaths = %s\n", YESNO(conf.storePaths));
 	fprintf(cfile, "fdcturbo = %s\n", YESNO(fdcFlag & FDC_FAST));
 //	fprintf(cfile, "systime = %s\n", YESNO(conf.sysclock));
-	fprintf(cfile, "lastdir = %s\n",conf.path.lastDir.c_str());
+	fprintf(cfile, "lastdir = %s\n",conf.path.lastDir);
 
 	fprintf(cfile, "\n[BOOKMARKS]\n\n");
 	foreach(xBookmark bkm, conf.bookmarkList) {
@@ -178,10 +195,13 @@ void saveConfig() {
 
 
 void loadKeys() {
-	std::string sfnam = conf.path.confDir + SLASH + conf.keyMapName;
+	char sfnam[FILENAME_MAX];
+	strcpy(sfnam, conf.path.confDir);
+	strcat(sfnam, SLASH);
+	strcat(sfnam, conf.keyMapName.c_str());
 	initKeyMap();
 	if ((conf.keyMapName == "") || (conf.keyMapName == "default")) return;
-	std::ifstream file(sfnam.c_str());
+	std::ifstream file(sfnam);
 	if (!file.good()) {
 		printf("Can't open keyboard layout. Default one will be used\n");
 		return;
@@ -207,11 +227,11 @@ void loadKeys() {
 }
 
 void copyFile(const char* src, const char* dst) {
-	QFile fle(src);
+	QFile fle(QString::fromLocal8Bit(src));
 	fle.open(QFile::ReadOnly);
 	QByteArray fdata = fle.readAll();
 	fle.close();
-	fle.setFileName(dst);
+	fle.setFileName(QString::fromLocal8Bit(dst));
 	if (fle.open(QFile::WriteOnly)) {
 		fle.write(fdata);
 		fle.close();
@@ -222,15 +242,23 @@ void copyFile(const char* src, const char* dst) {
 
 void loadConfig() {
 	std::string soutnam = "NULL";
-	std::ifstream file(conf.path.confFile.c_str());
+	//printf("%s\n",conf.path.confFile);
+	std::ifstream file(conf.path.confFile);
+	char fname[FILENAME_MAX];
 	if (!file.good()) {
 		printf("Main config is missing. Default files will be copied\n");
-		copyFile(":/conf/config.conf",conf.path.confFile.c_str());
-		copyFile(":/conf/xpeccy.conf",std::string(conf.path.confDir + SLASH + "xpeccy.conf").c_str());
-		copyFile(":/conf/1982.rom",std::string(conf.path.romDir + SLASH + "1982.rom").c_str());
-		file.open(conf.path.confFile.c_str());
+		copyFile(":/conf/config.conf", conf.path.confFile);
+		strcpy(fname, conf.path.confDir);
+		strcat(fname, SLASH);
+		strcat(fname, "xpeccy.conf");
+		copyFile(":/conf/xpeccy.conf", fname);
+		strcpy(fname, conf.path.romDir);
+		strcat(fname, SLASH);
+		strcat(fname, "1982.rom");
+		copyFile(":/conf/1982.rom", fname);
+		file.open(conf.path.confFile);
 		if (!file.good()) {
-			printf("%s\n",conf.path.confFile.c_str());
+			printf("%s\n",conf.path.confFile);
 			shitHappens("<b>Doh! Something going wrong</b>");
 			throw(0);
 		}
@@ -401,7 +429,7 @@ void loadConfig() {
 					if (pnam=="savepaths") conf.storePaths = str2bool(pval) ? 1 : 0;
 					if (pnam == "fdcturbo") setFlagBit(str2bool(pval),&fdcFlag,FDC_FAST);
 //					if (pnam == "systime") conf.sysclock = str2bool(pval) ? 1 : 0;
-					if (pnam == "lastdir") conf.path.lastDir = pval;
+					if (pnam == "lastdir") strcpy(conf.path.lastDir, pval.c_str());
 					break;
 				case SECT_TAPE:
 					if (pnam=="autoplay") conf.tape.autostart = str2bool(pval) ? 1 : 0;

@@ -36,6 +36,8 @@ typedef struct {
 
 // brk points
 
+#define DELBREAKS 0		// delete breakpoint on FRW=000
+
 enum {
 	BRK_IOPORT = 1,
 	BRK_CPUADR,
@@ -261,12 +263,12 @@ struct xConfig {
 		unsigned message:1;
 	} led;
 	struct {
-		std::string lastDir;
-		std::string confDir;
-		std::string confFile;
-		std::string romDir;
-		std::string font;
-		std::string boot;
+		char lastDir[FILENAME_MAX];
+		char confDir[FILENAME_MAX];
+		char confFile[FILENAME_MAX];
+		char romDir[FILENAME_MAX];
+		char font[FILENAME_MAX];
+		char boot[FILENAME_MAX];
 	} path;
 	struct {
 		unsigned labels:1;

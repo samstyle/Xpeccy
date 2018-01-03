@@ -52,6 +52,7 @@ void msxResetSlot(xCartridge* slot) {
 }
 
 void msxReset(Computer* comp) {
+	kbdSetMode(comp->keyb, KBD_MSX);
 	comp->vid->v9938.memMask = 0x3fff;
 	comp->vid->v9938.high = 0;
 	comp->vid->v9938.lines = 192;
@@ -84,6 +85,7 @@ unsigned char msxAYDataIn(Computer* comp, unsigned short port) {
 
 unsigned char msxA9In(Computer* comp, unsigned short port) {
 	return comp->keyb->msxMap[comp->msx.keyLine];
+	//return kbdRead(comp->keyb, comp->msx.keyLine);
 }
 
 void msxAAOut(Computer* comp, unsigned short port, unsigned char val) {
@@ -188,11 +190,11 @@ void msx_sync(Computer* comp, int ns) {
 }
 
 void msx_keyp(Computer* comp, keyEntry ent) {
-	keyPress(comp->keyb, ent.msxKey, 2);
+	kbdPress(comp->keyb, ent);
 }
 
 void msx_keyr(Computer* comp, keyEntry ent) {
-	keyRelease(comp->keyb, ent.msxKey, 2);
+	kbdRelease(comp->keyb, ent);
 }
 
 sndPair msx_vol(Computer* comp, sndVolume* sv) {

@@ -238,6 +238,8 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.tbDbgOpt->addAction(ui.actShowSeg);
 
 // connections
+	connect(this,SIGNAL(needStep()),this,SLOT(doStep()));
+
 	connect(ui.dasmTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
 	connect(ui.dasmTable,SIGNAL(rqRefill()),this,SLOT(fillDisasm()));
 	connect(ui.dasmTable,SIGNAL(rqRefill()),this,SLOT(fillDump()));
@@ -462,6 +464,7 @@ void DebugWin::setDasmMode() {
 static QFile logfile;
 
 void DebugWin::doStep() {
+#ifdef ISDEBUG
 	QString str;
 	if (traceType == DBG_TRACE_LOG) {
 		str = gethexword(comp->cpu->pc).append(" ");
@@ -476,7 +479,7 @@ void DebugWin::doStep() {
 		if (comp->cpu->pc == 0xc66e)
 			trace = 0;
 	}
-
+#endif
 	tCount = comp->tickCount;
 	compExec(comp);
 	if (!fillAll()) {
@@ -494,6 +497,7 @@ void DebugWin::doStep() {
 			break;
 	}
 	if (trace) {
+		//emit needStep();
 		QTimer::singleShot(1,this,SLOT(doStep()));
 	} else {
 		ui.tbTrace->setEnabled(true);
@@ -556,6 +560,13 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					break;
 				case Qt::Key_L:
 					ui.actShowLabels->setChecked(!conf.dbg.labels);
+					break;
+			}
+			break;
+		case Qt::AltModifier:
+			switch (ev->key()) {
+				case Qt::Key_K:
+					emit wannaKeys();
 					break;
 			}
 			break;
@@ -635,33 +646,6 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					} else {
 						doStep();
 					}
-/*
-					i = memRd(comp->mem, pc);
-					if (((i & 0xc7) == 0xc4) || (i == 0xcd)) {		// call
-						ptr = getBrkPtr(comp, pc + 3);
-						*ptr ^= MEM_BRK_TFETCH;
-						stop();
-					} else if (((i & 0xc7) == 0xc7) || (i == 0x76)) {	// rst, halt
-						ptr = getBrkPtr(comp, pc + 1);
-						*ptr ^= MEM_BRK_TFETCH;
-						stop();
-					} else if (i == 0x10) {
-						ptr = getBrkPtr(comp, pc + 2);			// djnz
-						*ptr ^= MEM_BRK_TFETCH;
-						stop();
-					} else if (i == 0xed) {
-						i = memRd(comp->mem, pc + 1);
-						if ((i & 0xf4) == 0xb0) {			// block cmds
-							ptr = getBrkPtr(comp, pc + 2);
-							*ptr ^= MEM_BRK_TFETCH;
-							stop();
-						} else {
-							doStep();
-						}
-					} else {
-						doStep();
-					}
-*/
 					break;
 				case Qt::Key_F9:
 					if (!ui.dasmTable->hasFocus()) break;

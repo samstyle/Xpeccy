@@ -81,8 +81,11 @@ void brkInstall(xBrkPoint brk) {
 	}
 	*ptr &= 0xf0;
 	*ptr |= (msk & 0x0f);
+// don't delete breakpoint on FRW=000
+#if DELBREAKS
 	if (brk.fetch || brk.read || brk.write) return;
 	brkDelete(brk);
+#endif
 }
 
 void brkAdd(xBrkPoint brk) {

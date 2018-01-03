@@ -15,7 +15,7 @@ class keyWindow : public QLabel {
 		keyWindow(QWidget* = NULL);
 		Keyboard* kb;
 	private:
-		xKey xk;
+		keyEntry xent;
 	protected:
 		void paintEvent(QPaintEvent*);
 		void mousePressEvent(QMouseEvent*);

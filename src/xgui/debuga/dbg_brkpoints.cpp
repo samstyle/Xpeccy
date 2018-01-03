@@ -1,4 +1,4 @@
-#include "../../xcore/xcore.h"
+#include "xcore/xcore.h"
 #include "dbg_brkpoints.h"
 
 extern unsigned short disasmAdr;
@@ -158,6 +158,7 @@ void xBreakTable::onCellClick(QModelIndex idx) {
 		case 2: brk->read ^= 1; break;
 		case 3: brk->write ^= 1; break;
 	}
+#if DELBREAKS
 	if (brk->fetch || brk->read || brk->write) {
 		model->updateCell(row, col);
 		brkInstall(prf->brkList[row]);
@@ -165,6 +166,10 @@ void xBreakTable::onCellClick(QModelIndex idx) {
 		brkInstall(prf->brkList[row]);		// when row removed
 		update();
 	}
+#else
+	model->updateCell(row, col);
+	brkInstall(prf->brkList[row]);
+#endif
 	emit rqDasmDump();
 }
 

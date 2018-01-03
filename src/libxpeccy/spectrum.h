@@ -140,6 +140,7 @@ typedef struct {
 	unsigned short padr;
 	unsigned char pval;
 
+/*
 	struct {
 		struct {
 			unsigned enable:1;
@@ -166,6 +167,7 @@ typedef struct {
 //			unsigned char keybuf[8];
 		} kbd;
 	} atm2;
+*/
 	struct {
 		unsigned char evoBF;		// PentEvo rw ports
 		unsigned char evo2F;

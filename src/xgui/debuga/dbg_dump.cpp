@@ -152,12 +152,24 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 				default: res = Qt::AlignCenter; break;
 			}
 			break;
+		case Qt::EditRole:
+			switch(col) {
+				case 0:
+					if ((mode == XVIEW_RAM) || (mode == XVIEW_ROM))
+						adr &= 0x3fff;
+					res = gethexword(adr);
+					break;
+				case 9: break;
+				default:
+					res = gethexbyte(mrd((adr + col - 1) & 0xffff) & 0xff);
+					break;
+			}
+			break;
 		case Qt::DisplayRole:
 			switch(col) {
 				case 0:
-					if ((mode == XVIEW_RAM) || (mode == XVIEW_ROM)) {
+					if ((mode == XVIEW_RAM) || (mode == XVIEW_ROM))
 						adr &= 0x3fff;
-					}
 					res = gethexword(adr);
 					break;
 				case 9:
@@ -260,6 +272,10 @@ void xDumpTable::keyPressEvent(QKeyEvent* ev) {
 				dumpAdr += 8;
 				emit rqRefill();
 			}
+			break;
+		case Qt::Key_Return:
+			edit(currentIndex());
+			ev->ignore();
 			break;
 		default:
 			QTableView::keyPressEvent(ev);

@@ -9,7 +9,7 @@ typedef struct {
 	unsigned char mask;
 } keyScan;
 
-keyScan keyTab[] = {
+static keyScan keyTab[] = {
 	{'1',4,1},{'2',4,2},{'3',4,4},{'4',4,8},{'5',4,16},{'6',3,16},{'7',3,8},{'8',3,4},{'9',3,2},{'0',3,1},
 	{'q',5,1},{'w',5,2},{'e',5,4},{'r',5,8},{'t',5,16},{'y',2,16},{'u',2,8},{'i',2,4},{'o',2,2},{'p',2,1},
 	{'a',6,1},{'s',6,2},{'d',6,4},{'f',6,8},{'g',6,16},{'h',1,16},{'j',1,8},{'k',1,4},{'l',1,2},{'E',1,1},
@@ -32,7 +32,7 @@ keyScan keyTab[] = {
  ( 10   NUM.  NUM,  NUM-  NUM9  NUM8  NUM7  NUM6  NUM5  )
 */
 
-keyScan msxKeyTab[] = {
+static keyScan msxKeyTab[] = {
 	{'0',0,1},{'1',0,2},{'2',0,4},{'3',0,8},{'4',0,16},{'5',0,32},{'6',0,64},{'7',0,128},
 	{'8',1,1},{'9',1,2},{'-',1,4},{'=',1,8},{'\\',1,16},{'[',1,32},{']',1,64},{';',1,128},
 	{'`',2,1},{0X27,2,2},{',',2,4},{'.',2,8},{'/',2,16},{255,2,32},{'a',2,64},{'b',2,128},
@@ -58,9 +58,20 @@ keyScan msxKeyTab[] = {
 	{MSXK_HOME,8,2},
 	{MSXK_INS,8,4},
 	{MSXK_DEL,8,8},
-	{MSXK_LEFT,8,16},{MSXK_UP,8,32},{MSXK_DOWN,8,64},{MSXK_RIGHT,8,128},	// space,home,ins,del,left,up,down,right
+	{MSXK_LEFT,8,16},
+	{MSXK_UP,8,32},
+	{MSXK_DOWN,8,64},
+	{MSXK_RIGHT,8,128},
 	{0,0,0}
 };
+
+keyScan findKey(keyScan* tab, char key) {
+	int idx = 0;
+	while (tab[idx].key && (tab[idx].key != key)) {
+		idx++;
+	}
+	return tab[idx];
+}
 
 // keyboard
 
@@ -74,112 +85,11 @@ void keyDestroy(Keyboard* keyb) {
 	free(keyb);
 }
 
-void keyPress(Keyboard* keyb, xKey key, int mode) {
-	unsigned char* tab;
-	keyScan* ktab;
-	switch (mode) {
-		case 1: tab = keyb->extMap; ktab = keyTab; break;	// Profi ext
-		case 2: tab = keyb->msxMap; ktab = msxKeyTab; break;	// MSX
-		default: tab = keyb->map; ktab = keyTab; break;	// common
-	}
-	int i = 0;
-	while (ktab[i].key) {
-		if (ktab[i].key == (key.key1 & 0x7f)) {
-			tab[ktab[i].row] &= ~ktab[i].mask;
-			if (key.key1 & 0x80) tab[keyTab[i].row] &= ~0x20;
-		}
-		if (ktab[i].key == (key.key2 & 0x7f)) {
-			tab[ktab[i].row] &= ~ktab[i].mask;
-			if (key.key2 & 0x80) tab[keyTab[i].row] &= ~0x20;
-		}
-		i++;
-	}
+void kbdSetMode(Keyboard* kbd, int mode) {
+	kbd->mode = mode;
 }
 
-void keyReleaseAll(Keyboard* keyb) {
-	memset(keyb->map, 0x3f, 8);
-	memset(keyb->extMap, 0x3f, 8);
-	memset(keyb->msxMap, 0xff, 16);
-	keyb->kBufPos = 0;
-}
-
-void keyRelease(Keyboard* keyb, xKey key, int mode) {
-	unsigned char* tab;
-	keyScan* ktab;
-	switch (mode) {
-		case 1: tab = keyb->extMap; ktab = keyTab; break;	// Profi ext
-		case 2: tab = keyb->msxMap; ktab = msxKeyTab; break;	// MSX
-		default: tab = keyb->map; ktab = keyTab; break;	// common
-	}
-	int i = 0;
-	while (ktab[i].key) {
-		if (ktab[i].key == (key.key1 & 0x7f)) {
-			tab[ktab[i].row] |= ktab[i].mask;
-			if (key.key1 & 0x80) tab[ktab[i].row] |= 0x20;
-		}
-		if (ktab[i].key == (key.key2 & 0x7f)) {
-			tab[ktab[i].row] |= ktab[i].mask;
-			if (key.key2 & 0x80) tab[ktab[i].row] |= 0x20;
-		}
-		i++;
-	}
-}
-
-void keyTrigger(Keyboard* keyb, xKey key, int mode) {
-	unsigned char* tab;
-	keyScan* ktab;
-	switch (mode) {
-		case 1: tab = keyb->extMap; ktab = keyTab; break;	// Profi ext
-		case 2: tab = keyb->msxMap; ktab = msxKeyTab; break;	// MSX
-		default: tab = keyb->map; ktab = keyTab; break;	// common
-	}
-	int i = 0;
-	while (ktab[i].key) {
-		if (ktab[i].key == (key.key1 & 0x7f)) {
-			tab[ktab[i].row] ^= ktab[i].mask;
-			if (key.key1 & 0x80) tab[ktab[i].row] |= 0x20;
-		}
-		if (ktab[i].key == (key.key2 & 0x7f)) {
-			tab[ktab[i].row] ^= ktab[i].mask;
-			if (key.key2 & 0x80) tab[ktab[i].row] |= 0x20;
-		}
-		i++;
-	}
-}
-
-// read 40-key zxKeyboard port.
-// prt.high = rows selector.
-// prt.bit0 = use profi ext keys
-unsigned char keyInput(Keyboard* keyb, unsigned short prt) {
-	unsigned char* ptr = (prt & 1) ? keyb->extMap : keyb->map;
-	prt >>= 8;
-	unsigned char res = 0x3f;
-	keyb->port &= prt;
-	keyb->used = 1;
-	int i;
-	for (i = 0; i < 8; i++) {
-		if (~prt & 0x80) res &= ptr[i];
-		prt <<= 1;
-	}
-	return res;
-}
-
-void keyPressXT(Keyboard* keyb, int kcod) {
-	if (keyb->kBufPos > 13) return;
-	while (kcod) {
-		keyb->kbdBuf[keyb->kBufPos++] = (kcod & 0xff);
-		kcod >>= 8;
-	}
-}
-
-void keyReleaseXT(Keyboard* keyb, int kcod) {
-	if (keyb->kBufPos > 13) return;
-	while (kcod) {
-		if (kcod < 0x100) keyb->kbdBuf[keyb->kBufPos++] = 0xf0;
-		keyb->kbdBuf[keyb->kBufPos++] = (kcod & 0xff);
-		kcod >>= 8;
-	}
-}
+// at/xt buffer reading
 
 unsigned char keyReadCode(Keyboard* keyb) {
 	if (keyb->kBufPos < 1) return 0x00;		// empty
@@ -187,6 +97,289 @@ unsigned char keyReadCode(Keyboard* keyb) {
 	unsigned char res = keyb->kbdBuf[0];		// read code
 	memcpy(keyb->kbdBuf,keyb->kbdBuf + 1,15);	// delete code
 	keyb->kBufPos--;
+	return res;
+}
+
+// key press/release/trigger
+
+void kbd_press(keyScan* tab, unsigned char* mtrx, xKey xk) {
+	keyScan key = findKey(tab, xk.key1 & 0x7f);
+	if (xk.key1 & 0x80) key.mask |= 0x20;
+	mtrx[key.row] &= ~key.mask;
+	key = findKey(tab, xk.key2 & 0x7f);
+	if (xk.key2 & 0x80) key.mask |= 0x20;
+	mtrx[key.row] &= ~key.mask;
+}
+
+void kbdPress(Keyboard* kbd, keyEntry ent) {
+	switch(kbd->mode) {
+		case KBD_SPECTRUM:
+			kbd_press(keyTab, kbd->map, ent.zxKey);
+			break;
+		case KBD_PROFI:					// profi = spectrum + ext
+			kbd_press(keyTab, kbd->extMap, ent.extKey);
+			kbd_press(keyTab, kbd->map, ent.zxKey);
+			break;
+		case KBD_MSX:
+			kbd_press(msxKeyTab, kbd->msxMap, ent.msxKey);
+			break;
+		case KBD_ATM2:
+			switch(ent.key) {
+				case XKEY_LSHIFT: kbd->flag1 |= KFL_SHIFT; break;
+				case XKEY_RSHIFT: kbd->flag2 |= KFL_RSHIFT; break;
+				case XKEY_RCTRL:
+				case XKEY_LCTRL: kbd->flag1 |= KFL_CTRL; break;
+				case XKEY_RALT:
+				case XKEY_LALT: kbd->flag1 |= KFL_ALT; break;
+				case XKEY_CAPS: kbd->flag1 ^= KFL_CAPS; break;
+			}
+			switch (kbd->submode) {
+				case kbdZX:
+					kbd->keycode = ent.atmCode.rowScan;
+					kbd->lastkey = kbd->keycode;
+					kbd->map[((ent.atmCode.rowScan >> 4) & 7) ^ 7] &= ~(1 << ((ent.atmCode.rowScan & 7) - 1));
+					if (ent.atmCode.rowScan & 0x80) kbd->map[0] &= ~2;	// sym.shift
+					if (ent.atmCode.rowScan & 0x08) kbd->map[7] &= ~1;	// cap.shift
+					break;
+				case kbdCODE:
+				case kbdCPM:
+					kbd->keycode = ent.atmCode.cpmCode;
+					kbd->lastkey = kbd->keycode;
+					break;
+				case kbdDIRECT:
+					break;
+			}
+			break;
+	}
+	// at/xt
+	while (ent.keyCode && (kbd->kBufPos < 16)) {
+		kbd->kbdBuf[kbd->kBufPos++] = (ent.keyCode & 0xff);
+		ent.keyCode >>= 8;
+	}
+}
+
+void kbd_release(keyScan* tab, unsigned char* mtrx, xKey xk) {
+	keyScan key = findKey(tab, xk.key1 & 0x7f);
+	if (xk.key1 & 0x80) key.mask |= 0x20;
+	mtrx[key.row] |= key.mask;
+	key = findKey(tab, xk.key2 & 0x7f);
+	if (xk.key2 & 0x80) key.mask |= 0x20;
+	mtrx[key.row] |= key.mask;
+}
+
+void kbdRelease(Keyboard* kbd, keyEntry ent) {
+	switch(kbd->mode) {
+		case KBD_SPECTRUM:
+			kbd_release(keyTab, kbd->map, ent.zxKey);
+			break;
+		case KBD_PROFI:
+			kbd_release(keyTab, kbd->extMap, ent.extKey);
+			kbd_release(keyTab, kbd->map, ent.zxKey);
+			break;
+		case KBD_MSX:
+			kbd_release(msxKeyTab, kbd->msxMap, ent.msxKey);
+			break;
+		case KBD_ATM2:
+			switch(ent.key) {
+				case XKEY_LSHIFT: kbd->flag1 &= ~KFL_SHIFT; break;
+				case XKEY_RSHIFT: kbd->flag2 &= ~KFL_RSHIFT; break;
+				case XKEY_RCTRL:
+				case XKEY_LCTRL: kbd->flag1 &= ~KFL_CTRL; break;
+				case XKEY_RALT:
+				case XKEY_LALT: kbd->flag1 &= ~KFL_ALT; break;
+			}
+			switch (kbd->submode) {
+				case kbdZX:
+					kbd->keycode = 0;
+					kbd->map[((ent.atmCode.rowScan >> 4) & 7) ^ 7] |= (1 << ((ent.atmCode.rowScan & 7) - 1));
+					if (ent.atmCode.rowScan & 0x80) kbd->map[0] |= 2;	// sym.shift
+					if (ent.atmCode.rowScan & 0x08) kbd->map[7] |= 1;	// cap.shift
+					break;
+				case kbdCODE:
+				case kbdCPM:
+					kbd->keycode = 0;
+					break;
+				case kbdDIRECT:
+					break;
+			}
+			break;
+	}
+	// at/xt
+	while (ent.keyCode && (kbd->kBufPos < 16)) {
+		if (ent.keyCode < 0x100) kbd->kbdBuf[kbd->kBufPos++] = 0xf0;
+		kbd->kbdBuf[kbd->kBufPos++] = (ent.keyCode & 0xff);
+		ent.keyCode >>= 8;
+	}
+}
+
+void kbdReleaseAll(Keyboard* kbd) {
+	memset(kbd->map, 0x1f, 8);
+	memset(kbd->extMap, 0x3f, 8);
+	memset(kbd->msxMap, 0xff, 16);
+	kbd->keycode = 0;
+	kbd->lastkey = 0;
+	kbd->kBufPos = 0;
+}
+
+void kbd_trigger(keyScan* tab, unsigned char* mtrx, xKey xk) {
+	keyScan key = findKey(tab, xk.key1 & 0x7f);
+	if (xk.key1 & 0x80) key.mask |= 0x20;
+	mtrx[key.row] ^= key.mask;
+	key = findKey(tab, xk.key2 & 0x7f);
+	if (xk.key2 & 0x80) key.mask |= 0x20;
+	mtrx[key.row] ^= key.mask;
+}
+
+void kbdTrigger(Keyboard* kbd, keyEntry ent) {
+	switch(kbd->mode) {
+		case KBD_SPECTRUM:
+			kbd_trigger(keyTab, kbd->map, ent.zxKey);
+			break;
+		case KBD_PROFI:
+			kbd_trigger(keyTab, kbd->extMap, ent.extKey);
+			kbd_trigger(keyTab, kbd->map, ent.zxKey);
+			break;
+		case KBD_MSX:
+			kbd_trigger(msxKeyTab, kbd->msxMap, ent.msxKey);
+			break;
+	}
+	// at/xt ???
+}
+
+#include <time.h>
+
+static unsigned char kmodTab[4] = {kbdZX, kbdCODE, kbdCPM, kbdDIRECT};
+static unsigned char kmodVer[4] = {6,0,1,0};
+
+unsigned char kbdScanZX(Keyboard* kbd, unsigned short port) {
+	unsigned char res = 0x3f;
+	for (int i = 0; i < 8; i++) {
+		if (!(port & 0x8000))
+			res &= kbd->map[i];
+		port <<= 1;
+	}
+	return res;
+}
+
+unsigned char kbdScanProfi(Keyboard* kbd, unsigned short port) {
+	unsigned char res = 0x3f;
+	for (int i = 0; i < 8; i++) {
+		if (!(port & 0x8000)) {
+			res &= kbd->extMap[i];
+			res &= (kbd->map[i] | 0x20);
+		}
+		port <<= 1;
+	}
+	return res;
+}
+
+unsigned char kbdRead(Keyboard* kbd, unsigned short port) {
+	unsigned char res = 0xff;
+	int hi;
+
+	time_t rtime;
+	time(&rtime);
+	struct tm* ctime = localtime(&rtime);
+
+	switch (kbd->mode) {
+		case KBD_SPECTRUM:
+			res = kbdScanZX(kbd, port);
+			break;
+		case KBD_PROFI:
+			res = kbdScanProfi(kbd, port);
+			break;
+		case KBD_MSX:			// port = row register
+			res = kbd->msxMap[port & 0x0f];
+			break;
+		case KBD_ATM2:
+			hi = (port >> 14) & 3;
+			if (kbd->wcom) {
+				kbd->com = (port >> 8) & 0x3f;
+				kbd->wcom = 0;
+				switch(kbd->com) {
+					case 0x01: res = kmodVer[hi]; break;
+					case 0x07: kbd->kBufPos = 0; break;
+					case 0x09:
+						switch(hi) {
+							case 0:
+								res = kbd->keycode;
+								kbd->keycode = 0;
+								break;
+							case 1: res = kbd->lastkey; break;
+							case 2: res = kbd->flag1; break;
+							case 3: res = kbd->flag2; break;
+						}
+						break;
+					case 0x0a: kbd->flag1 |= KFL_RUS; break;
+					case 0x0b: kbd->flag1 &= ~KFL_RUS; break;
+					case 0x0c: break;			// TODO: pause
+					case 0x0d:
+						kbd->reset = 1;
+						break;
+					case 0x10:
+						switch(hi) {
+							case 0: res = ctime->tm_sec & 0xff; break;
+							case 1: res = ctime->tm_min & 0xff; break;
+							case 2: res = ctime->tm_hour & 0xff; break;
+						}
+						break;
+					case 0x12:
+						switch(hi) {
+							case 0: res = ctime->tm_mday & 0xff; break;
+							case 1: res = ctime->tm_mon & 0xff; break;
+							case 2: res = ctime->tm_year & 0xff; break;
+						}
+						//printf("%i = %i\n",hi,res);
+						break;
+					case 0x16: break;
+					case 0x17: break;
+					case 0x11:				// set time
+					case 0x13:				// set date
+					case 0x14:				// set P1 bits
+					case 0x15:				// res P1 bits
+					case 0x08:				// set mode
+						kbd->warg = 1;
+						break;
+					default: res = 0xff; break;
+				}
+			} else if (kbd->warg) {
+				kbd->arg = (port >> 8) & 0xff;
+				kbd->warg = 0;
+				switch (kbd->com) {
+					case 0x08:
+						kbd->submode = kmodTab[kbd->arg & 3];
+						break;
+				}
+			} else if ((port & 0xff00) == 0x5500) {
+				kbd->wcom = 1;
+				kbd->warg = 0;
+				res = 0xaa;
+			} else {
+				switch(kbd->submode) {
+					case kbdZX:
+						res = kbdScanZX(kbd, port);
+						break;
+					case kbdCODE:
+						res = kbd->keycode;
+						kbd->keycode = 0;
+						break;
+					case kbdCPM:
+						switch(hi) {
+							case 0: res = kbd->keycode;
+								kbd->keycode = 0;
+								break;
+							case 1: res = kbd->flag2;
+								break;
+							case 2: res = kbd->flag1;
+								break;
+						}
+						break;
+					case kbdDIRECT:
+						break;
+				}
+			}
+			break;
+	}
 	return res;
 }
 

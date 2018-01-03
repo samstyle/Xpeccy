@@ -44,6 +44,13 @@ QVariant xDisasmModel::data(const QModelIndex& idx, int role) const {
 	if (row >= dasm.size()) return res;
 	QFont font;
 	switch(role) {
+		case Qt::EditRole:
+			switch(col) {
+				case 0: res = dasm[row].aname; break;
+				case 1: res = dasm[row].bytes; break;
+				case 2: res = dasm[row].command; break;
+			}
+			break;
 		case Qt::FontRole:
 			if ((col == 0) && dasm[row].islab) {
 				font = QFont();
@@ -385,7 +392,7 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 			break;
 		case 1:	// bytes
 			lst = val.toString().split(":", QString::SkipEmptyParts);
-			qDebug() << adr;
+			// qDebug() << adr;
 			foreach(str, lst) {
 				cbyte = str.toInt(NULL,16) & 0xff;
 				dasmwr(*cptr, adr & 0xffff, cbyte);
@@ -539,10 +546,13 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			emit rqRefillAll();
 			ev->ignore();
 			break;
+		case Qt::Key_Space:
 		case Qt::Key_F2:
 			if (ev->modifiers() & Qt::AltModifier) {
+				bpr = BRK_CPUADR;
 				bpt = MEM_BRK_RD;
 			} else if (ev->modifiers() & Qt::ControlModifier) {
+				bpr = BRK_CPUADR;
 				bpt = MEM_BRK_WR;
 			} else if (ev->modifiers() & Qt::ShiftModifier) {
 				bpt = MEM_BRK_FETCH;
@@ -552,6 +562,10 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			}
 			brkXor(bpr, bpt, getData(idx.row(), 0, Qt::UserRole).toInt(), -1);
 			emit rqRefill();
+			ev->ignore();
+			break;
+		case Qt::Key_Return:
+			edit(currentIndex());
 			ev->ignore();
 			break;
 		default:

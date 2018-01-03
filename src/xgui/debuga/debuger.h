@@ -60,6 +60,8 @@ class DebugWin : public QDialog {
 		bool fillAll();
 	signals:
 		void closed();
+		void wannaKeys();
+		void needStep();
 	private:
 		unsigned block:1;
 		// tracer

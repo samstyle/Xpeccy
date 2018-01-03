@@ -2,7 +2,7 @@
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
 
-QFileDialog *filer;
+static QFileDialog *filer;
 // QDir lastDir;
 
 #include <QIcon>
@@ -16,9 +16,9 @@ void initFileDialog(QWidget* par) {
 	filer->setConfirmOverwrite(true);
 	filer->setOption(QFileDialog::DontUseNativeDialog,0);
 #ifdef _WIN32
-	conf.path.lastDir = ".";
+	strcpy(conf.path.lastDir, ".");
 #else
-	conf.path.lastDir = std::string(QDir::home().absolutePath().toLocal8Bit().data());
+	strcpy(conf.path.lastDir, getenv("HOME"));
 #endif
 }
 
@@ -114,7 +114,7 @@ int testSlotOn(Computer* comp) {
 
 void loadFile(Computer* comp,const char* name, int flags, int drv) {
 	QString opath = QDialog::trUtf8(name);
-	filer->setDirectory(conf.path.lastDir.c_str());
+	filer->setDirectory(conf.path.lastDir);
 	if (opath == "") {
 		QString filters = "";
 		if (flags == FT_ALL) filters = QString("All known types (%0)").arg(getFilter(flags));
@@ -136,7 +136,7 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 		if (filters.startsWith(";;")) filters.remove(0,2);
 		filer->setWindowTitle("Open file");
 		filer->setNameFilter(filters);
-		filer->setDirectory(conf.path.lastDir.c_str());
+		filer->setDirectory(conf.path.lastDir);
 		filer->setAcceptMode(QFileDialog::AcceptOpen);
 		if (!filer->exec()) return;
 		filters = filer->selectedNameFilter();
@@ -147,7 +147,7 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 //		if (filters.contains("Cartrige slot A")) drv = 0;
 		if (filters.contains("Raw")) drv = 10;
 		opath = filer->selectedFiles().first();
-		conf.path.lastDir = std::string(filer->directory().absolutePath().toLocal8Bit().data());
+		strcpy(conf.path.lastDir, filer->directory().absolutePath().toLocal8Bit().data());
 	}
 	if (drv == -1) drv = 0;
 	int type;
@@ -209,7 +209,7 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 		case ERR_NES_HEAD: shitHappens("Wrong NES header"); break;
 		case ERR_NES_MAPPER: shitHappens("Unsupported mapper"); break;
 		case ERR_OK:
-			if (type & FT_DISK) loadBoot(flp, conf.path.boot.c_str());
+			if (type & FT_DISK) loadBoot(flp, conf.path.boot);
 			if ((type & FT_SLOT) && testSlotOn(comp)) compReset(comp, RES_DEFAULT);
 			break;
 	}
@@ -230,7 +230,7 @@ bool saveFile(Computer* comp,const char* name,int flags,int drv) {
 	filer->setWindowTitle("Save file");
 	filer->setNameFilter(filters);
 	filer->setAcceptMode(QFileDialog::AcceptSave);
-	filer->setDirectory(conf.path.lastDir.c_str());
+	filer->setDirectory(conf.path.lastDir);
 	if (path != "") filer->selectFile(path);
 	if (!filer->exec()) return false;
 	filters = filer->selectedNameFilter();
@@ -240,7 +240,7 @@ bool saveFile(Computer* comp,const char* name,int flags,int drv) {
 	if (filters.contains("Disk D")) drv = 3;
 	if (drv == -1) drv = 0;
 	path = filer->selectedFiles().first();
-	conf.path.lastDir = std::string(filer->directory().absolutePath().toLocal8Bit().data());
+	strcpy(conf.path.lastDir, filer->directory().absolutePath().toLocal8Bit().data());
 	std::string sfnam(path.toUtf8().data());
 	int type = getFileType(path);
 	int err = ERR_OK;

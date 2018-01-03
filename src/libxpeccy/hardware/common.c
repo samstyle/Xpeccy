@@ -28,7 +28,7 @@ void dummyOut(Computer* comp, unsigned short port, unsigned char val) {
 
 void zx_sync(Computer* comp, int ns) {
 //	if (!comp->cpu->iff1 || comp->cpu->noint) return;
-	if (comp->vid->intFRAME && (comp->vid->intMask & 1)) {
+	if (comp->vid->intFRAME && (comp->vid->intMask & Z80_INT)) {
 		comp->intVector = 0xff;
 		comp->cpu->intrq |= Z80_INT;
 		comp->vid->intFRAME = 0;
@@ -48,13 +48,11 @@ void zx_sync(Computer* comp, int ns) {
 // zx keypress/release
 
 void zx_keyp(Computer* comp, keyEntry ent) {
-	keyPressXT(comp->keyb, ent.keyCode);
-	keyPress(comp->keyb, ent.zxKey, 0);
+	kbdPress(comp->keyb, ent);
 }
 
 void zx_keyr(Computer* comp, keyEntry ent) {
-	keyReleaseXT(comp->keyb, ent.keyCode);
-	keyRelease(comp->keyb, ent.zxKey, 0);
+	kbdRelease(comp->keyb, ent);
 }
 
 // volume
@@ -68,15 +66,15 @@ sndPair zx_vol(Computer* comp, sndVolume* sv) {
 	// 1:tape sound
 	if (comp->tape->on) {
 		if (comp->tape->rec) {
-			lev = comp->tape->levRec ? 0x3f : 0x00;
+			lev = comp->tape->levRec ? 0x1f : 0x00;
 		} else {
-			lev = comp->tape->volPlay >> 2;
+			lev = comp->tape->volPlay >> 3;
 		}
 	}
 	vol = mixer(vol, lev, lev, sv->tape);
 	// 2:beeper
 	bcSync(comp->beep, -1);
-	lev += comp->beep->val >> 2;			// ff -> 3f
+	lev += comp->beep->val >> 3;			// ff -> 1f
 	vol = mixer(vol, lev, lev, sv->beep);
 	// 3:turbo sound
 	svol = tsGetVolume(comp->ts);
@@ -118,7 +116,7 @@ unsigned char xIn1F(Computer* comp, unsigned short port) {
 }
 
 unsigned char xInFE(Computer* comp, unsigned short port) {
-	unsigned char res = keyInput(comp->keyb, (port & 0xff00) | 0xfe);
+	unsigned char res = kbdRead(comp->keyb, port);
 	res |= ((comp->tape->volPlay & 0x80) ? 0x40 : 0x00);
 	return res;
 }

@@ -244,6 +244,8 @@ void compReset(Computer* comp,int res) {
 	comp->rom = (comp->p7FFD & 0x10) ? 1 : 0;
 	comp->cpm = 0;
 
+	kbdSetMode(comp->keyb, KBD_SPECTRUM);
+
 	vidReset(comp->vid);
 	comp->prt2 = 0;
 	comp->p1FFD = 0;

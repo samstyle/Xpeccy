@@ -5,7 +5,7 @@
 
 #include <QPainter>
 
-unsigned char kwMap[4][10] = {
+static unsigned char kwMap[4][10] = {
 	{'1','2','3','4','5','6','7','8','9','0'},
 	{'q','w','e','r','t','y','u','i','o','p'},
 	{'a','s','d','f','g','h','j','k','l','E'},
@@ -14,8 +14,9 @@ unsigned char kwMap[4][10] = {
 
 keyWindow::keyWindow(QWidget* p):QLabel(p) {
 	kb = NULL;
-	xk.key1 = 0;
-	xk.key2 = 0;
+	xent.key = ENDKEY;
+	xent.zxKey.key1 = 0;
+	xent.zxKey.key2 = 0;
 	// setWindowModality(Qt::WindowModal);
 }
 
@@ -52,19 +53,19 @@ void keyWindow::mousePressEvent(QMouseEvent* ev) {
 	int col;
 	row = ev->y() * 4 / height();
 	col = ev->x() * 10 / width();
-	xk.key1 = kwMap[row][col];
+	xent.zxKey.key1 = kwMap[row][col];
 	switch(ev->button()) {
 		case Qt::LeftButton:
-			keyPress(kb, xk, 0);
+			kbdPress(kb, xent);
 			update();
 			break;
 		case Qt::RightButton:
-			keyTrigger(kb, xk, 0);
+			kbdTrigger(kb, xent);
 			update();
 			break;
 		case Qt::MiddleButton:
-			keyReleaseAll(kb);
-			xk.key1 = 0;
+			kbdReleaseAll(kb);
+			xent.zxKey.key1 = 0;
 			update();
 			break;
 		default:
@@ -75,7 +76,7 @@ void keyWindow::mousePressEvent(QMouseEvent* ev) {
 void keyWindow::mouseReleaseEvent(QMouseEvent* ev) {
 	if (!kb) return;
 	if (ev->button() == Qt::LeftButton) {
-		keyRelease(kb, xk, 0);
+		kbdRelease(kb, xent);
 	}
 	update();
 }
@@ -87,9 +88,7 @@ void keyWindow::keyPressEvent(QKeyEvent* ev) {
 		if (ev->key() == Qt::Key_K)
 			close();
 	} else {
-		keyPress(kb, kent.zxKey, 0);
-		if (kent.msxKey.key1)
-			keyPress(kb,kent.msxKey,2);
+		kbdPress(kb, kent);
 		update();
 	}
 }
@@ -97,7 +96,6 @@ void keyWindow::keyPressEvent(QKeyEvent* ev) {
 void keyWindow::keyReleaseEvent(QKeyEvent* ev) {
 	int keyid = qKey2id(ev->key());
 	keyEntry kent = getKeyEntry(keyid);
-	keyRelease(kb, kent.zxKey, 0);
-	if (kent.msxKey.key1) keyRelease(kb,kent.msxKey,2);
+	kbdRelease(kb, kent);
 	update();
 }

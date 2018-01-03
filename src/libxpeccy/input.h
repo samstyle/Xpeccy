@@ -31,6 +31,32 @@ enum {
 	XM_WHEELDN
 };
 
+// keyboard mode
+enum {
+	KBD_NONE = 0,
+	KBD_SPECTRUM,
+	KBD_PROFI,
+	KBD_MSX,
+	KBD_ATM2
+};
+
+// atm2 mode submodes
+enum {
+	kbdZX = 0,
+	kbdCODE,
+	kbdCPM,
+	kbdDIRECT
+};
+
+#define KFL_SHIFT	(1)
+#define KFL_CTRL	(1<<1)
+#define KFL_ALT		(1<<2)
+#define KFL_CAPS	(1<<4)
+#define KFL_NUMLOCK	(1<<5)
+#define KFL_SCRLOCK	(1<<6)
+#define KFL_RUS		(1<<7)
+#define KFL_RSHIFT	KFL_SHIFT
+
 // joystick contacts
 #define XJ_NONE		0
 #define	XJ_RIGHT	1
@@ -170,12 +196,26 @@ typedef struct {
 } Mouse;
 
 typedef struct {
+	unsigned reset:1;		// RES signal to CPU
 	unsigned used:1;
-	unsigned char port;
+	unsigned char port;		// high byte of xxFE port
+	int mode;
+	// i8031 block
+	unsigned wcom:1;		// i8031 waiting for command
+	unsigned warg:1;		// i8031 waiting for argument
+	int submode;			// i8031 mode
+	unsigned char com;
+	unsigned char arg;
+	unsigned char keycode;		// current pressed key code
+	unsigned char lastkey;		// last pressed key code
+	unsigned char flag1;		// [7] rus.scrlock.numlock.caps.0.alt.ctrl.shift [0]
+	unsigned char flag2;		// [7] 0.0.0.0.0.0.0.rshift [0]
+	// key matrix
 	unsigned char map[8];		// ZX keyboard half-row bits
 	unsigned char extMap[8];	// Profi XT-keyboard extend
-	unsigned char kbdBuf[16];	// PS/2 key buffer
 	unsigned char msxMap[16];	// MSX keys map
+	// pc keyboard keybuffer
+	unsigned char kbdBuf[16];	// PS/2 key buffer
 	int kBufPos;
 } Keyboard;
 
@@ -208,16 +248,12 @@ typedef struct {
 
 Keyboard* keyCreate();
 void keyDestroy(Keyboard*);
-
-unsigned char keyInput(Keyboard*,unsigned short);
-
-void keyPress(Keyboard*,xKey,int);
-void keyRelease(Keyboard*,xKey,int);
-void keyReleaseAll(Keyboard*);
-void keyTrigger(Keyboard*, xKey, int);
-
-void keyPressXT(Keyboard*,int);
-void keyReleaseXT(Keyboard*,int);
+void kbdSetMode(Keyboard*, int);
+void kbdPress(Keyboard*, keyEntry);
+void kbdRelease(Keyboard*, keyEntry);
+void kbdTrigger(Keyboard*, keyEntry);
+void kbdReleaseAll(Keyboard*);
+unsigned char kbdRead(Keyboard*, unsigned short);
 unsigned char keyReadCode(Keyboard*);
 
 Mouse* mouseCreate();

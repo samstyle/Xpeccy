@@ -2,15 +2,12 @@
 <ui version="4.0">
  <class>Debuger</class>
  <widget class="QDialog" name="Debuger">
-  <property name="windowModality">
-   <enum>Qt::ApplicationModal</enum>
-  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>813</width>
-    <height>594</height>
+    <height>590</height>
    </rect>
   </property>
   <property name="font">
@@ -24,9 +21,6 @@
   <property name="windowIcon">
    <iconset resource="../xpeccy.qrc">
     <normaloff>:/images/bug.png</normaloff>:/images/bug.png</iconset>
-  </property>
-  <property name="modal">
-   <bool>true</bool>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="10,0,0">
    <item>
@@ -2550,11 +2544,11 @@
  </resources>
  <connections/>
  <buttongroups>
+  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
-  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

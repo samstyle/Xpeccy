@@ -26,17 +26,24 @@ bool addProfile(std::string nm, std::string fp) {
 	nprof->file = fp;
 	nprof->layName = std::string("default");
 	nprof->zx = compCreate();
-	std::string fname = conf.path.confDir + SLASH + nprof->name + ".cmos";
-	std::ifstream file(fname.c_str());
-	if (file.good()) {
-		file.read((char*)nprof->zx->cmos.data,256);
-		file.close();
+	char fname[FILENAME_MAX];
+	strcpy(fname, conf.path.confDir);
+	strcat(fname, SLASH);
+	strcat(fname, nprof->name.c_str());
+	strcat(fname, ".cmos");
+	FILE* file = fopen(fname, "rb");
+	if (file) {
+		fread((char*)nprof->zx->cmos.data,256,1,file);
+		fclose(file);
 	}
-	fname = conf.path.confDir + SLASH + nprof->name + ".nvram";
-	file.open(fname.c_str());
-	if (file.good()) {
-		file.read((char*)nprof->zx->ide->smuc.nv->mem,0x800);
-		file.close();
+	strcpy(fname, conf.path.confDir);
+	strcat(fname, SLASH);
+	strcat(fname, nprof->name.c_str());
+	strcat(fname, ".nvram");
+	file = fopen(fname, "rb");
+	if (file) {
+		fread((char*)nprof->zx->ide->smuc.nv->mem,0x800,1,file);
+		fclose(file);
 	}
 	compSetHardware(nprof->zx,"ZX48K");
 	conf.prof.list.push_back(nprof);
@@ -54,7 +61,7 @@ int delProfile(std::string nm) {
 	if (prf == NULL) return DELP_ERR;		// no such profile
 	if (prf->name == "default") return DELP_ERR;	// can't touch this
 	int res = DELP_OK;
-	std::string cpath;
+	char cpath[FILENAME_MAX];
 	// set default profile if current deleted
 	if (conf.prof.cur) {
 		if (conf.prof.cur->name == nm) {
@@ -67,13 +74,21 @@ int delProfile(std::string nm) {
 	// remove all such profiles from list & free mem
 	for (uint i = 0; i < conf.prof.list.size(); i++) {
 		if (conf.prof.list[i]->name == nm) {
-			cpath = conf.path.confDir + SLASH + prf->file;
-			remove(cpath.c_str());				// remove config file
-			cpath = conf.path.confDir + SLASH + prf->name + ".cmos";
-			remove(cpath.c_str());
-			cpath = conf.path.confDir + SLASH + prf->name + ".nvram";
-			remove(cpath.c_str());
-			compDestroy(prf->zx);				// delete ZX
+			strcpy(cpath, conf.path.confDir);
+			strcat(cpath, SLASH);
+			strcat(cpath, prf->file.c_str());
+			remove(cpath);					// remove config file
+			strcpy(cpath, conf.path.confDir);
+			strcat(cpath, SLASH);
+			strcat(cpath, prf->name.c_str());
+			strcat(cpath, ".cmos");
+			remove(cpath);					// remove cmos dump
+			strcpy(cpath, conf.path.confDir);
+			strcat(cpath, SLASH);
+			strcat(cpath, prf->name.c_str());
+			strcat(cpath, ".nvram");
+			remove(cpath);					// remove nvram dump
+			compDestroy(prf->zx);				// delete computer
 			delete(prf);
 			conf.prof.list.erase(conf.prof.list.begin() + i);
 		}
@@ -89,7 +104,7 @@ bool prfSetCurrent(std::string nm) {
 	ideOpenFiles(nprf->zx->ide);
 	sdcOpenFile(nprf->zx->sdc);
 	prfSetLayout(nprf, nprf->layName);
-	keyReleaseAll(nprf->zx->keyb);
+	kbdReleaseAll(nprf->zx->keyb);
 	mouseReleaseAll(nprf->zx->mouse);
 	padLoadConfig(nprf->jmapName);
 //	prfFillBreakpoints(nprf);
@@ -190,7 +205,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 	xRomset* rset = findRomset(rnm);
 	int i;
 //	xArg xarg;
-	std::string fpath = "";
+	char fpath[FILENAME_MAX];
 	std::ifstream file;
 	char pageBuf[0x4000];
 	int prts = 0;
@@ -203,11 +218,13 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 		}
 	} else {			// romset found
 		if (rset->file.size() != 0) {			// single rom file
-			fpath = conf.path.romDir + SLASH + rset->file;
-			file.open(fpath.c_str(),std::ios::binary);
+			strcpy(fpath, conf.path.romDir);
+			strcat(fpath, SLASH);
+			strcat(fpath, rset->file.c_str());
+			file.open(fpath, std::ios::binary);
 			if (file.good()) {
 				file.seekg(0,std::ios_base::end);
-				prts = file.tellg() / 0x4000;
+				prts = file.tellg() >> 14;		// 16K pages
 				if (file.tellg() & 0x3fff) prts++;
 				if (prts > 4) prf->zx->mem->romMask = 0x07;
 				if (prts > 8) prf->zx->mem->romMask = 0x0f;
@@ -234,8 +251,10 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 				if (rset->roms[i].path == "") {
 					memset(pageBuf,0xff,0x4000);
 				} else {
-					fpath = conf.path.romDir + SLASH + rset->roms[i].path;
-					file.open(fpath.c_str(),std::ios::binary);
+					strcpy(fpath, conf.path.romDir);
+					strcat(fpath, SLASH);
+					strcat(fpath, rset->roms[i].path.c_str());
+					file.open(fpath, std::ios::binary);
 					if (file.good()) {
 						file.seekg(rset->roms[i].part << 14);
 						file.read(pageBuf,0x4000);
@@ -249,8 +268,10 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 			}
 		}
 // load GS ROM
-		fpath = conf.path.romDir + SLASH + rset->gsFile;
-		file.open(fpath.c_str(), std::ios::binary);
+		strcpy(fpath, conf.path.romDir);
+		strcat(fpath, SLASH);
+		strcat(fpath, rset->gsFile.c_str());
+		file.open(fpath, std::ios::binary);
 		if (file.good()) {
 			file.read((char*)prf->zx->gs->mem->romData, 0x8000);
 			file.close();
@@ -260,8 +281,10 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 
 // load ATM2 font data
 		if (!rset->fntFile.empty()) {
-			fpath = conf.path.romDir + SLASH + rset->fntFile;
-			file.open(fpath.c_str(),std::ios::binary);
+			strcpy(fpath, conf.path.romDir);
+			strcat(fpath, SLASH);
+			strcat(fpath, rset->fntFile.c_str());
+			file.open(fpath, std::ios::binary);
 			if (file.good()) {
 				file.read(pageBuf,0x800);
 				vidSetFont(prf->zx->vid,pageBuf);
@@ -283,8 +306,11 @@ int prfLoad(std::string nm) {
 	Computer* comp = prf->zx;
 //	xDevice* dev = NULL;
 
-	std::string cfname = conf.path.confDir + SLASH + prf->file;
-	std::ifstream file(cfname.c_str());
+	char cfname[FILENAME_MAX];
+	strcpy(cfname, conf.path.confDir);
+	strcat(cfname, SLASH);
+	strcat(cfname, prf->file.c_str());
+	std::ifstream file(cfname);
 	std::pair<std::string,std::string> spl;
 	std::string line,pnam,pval;
 	std::vector<std::string> vect;
@@ -298,8 +324,8 @@ int prfLoad(std::string nm) {
 	ATAPassport slavePass = ideGetPassport(comp->ide,IDE_SLAVE);
 	if (!file.good()) {
 		printf("Profile config is missing. Default one will be created\n");
-		copyFile(":/conf/xpeccy.conf",cfname.c_str());
-		file.open(cfname.c_str(),std::ifstream::in);
+		copyFile(":/conf/xpeccy.conf", cfname);
+		file.open(cfname, std::ifstream::in);
 	}
 	if (!file.good()) {
 		printf("Damn! I can't open config file");
@@ -494,8 +520,11 @@ int prfSave(std::string nm) {
 	if (prf == NULL) return PSAVE_NF;
 	Computer* comp = prf->zx;
 
-	std::string cfname = conf.path.confDir + SLASH + prf->file;
-	FILE* file = fopen(cfname.c_str(),"wb");
+	char cfname[FILENAME_MAX];
+	strcpy(cfname, conf.path.confDir);
+	strcat(cfname, SLASH);
+	strcat(cfname, prf->file.c_str());
+	FILE* file = fopen(cfname, "wb");
 	if (!file) {
 		printf("Can't write settings\n");
 		return PSAVE_OF;

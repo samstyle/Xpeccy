@@ -786,13 +786,13 @@ void SetupWin::rscomplete(int idx, QString nam) {
 // lists
 
 void SetupWin::buildpadlist() {
-	QDir dir(conf.path.confDir.c_str());
+	QDir dir(conf.path.confDir);
 	QStringList lst = dir.entryList(QStringList() << "*.pad",QDir::Files,QDir::Name);
 	fillRFBox(ui.cbPadMap, lst);
 }
 
 void SetupWin::buildkeylist() {
-	QDir dir(conf.path.confDir.c_str());
+	QDir dir(conf.path.confDir);
 	QStringList lst = dir.entryList(QStringList() << "*.map",QDir::Files,QDir::Name);
 	fillRFBox(ui.keyMapBox,lst);
 }

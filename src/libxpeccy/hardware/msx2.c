@@ -132,6 +132,7 @@ unsigned char msx2mapIn(Computer* comp, unsigned short port) {
 
 void msxResetSlot(xCartridge*);
 void msx2Reset(Computer* comp) {
+	kbdSetMode(comp->keyb, KBD_MSX);
 	comp->vid->v9938.memMask = 0x1ffff;
 	vidSetMode(comp->vid, VID_V9938);
 	vdpReset(&comp->vid->v9938);

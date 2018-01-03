@@ -1,5 +1,5 @@
-#ifndef _CPU_H
-#define _CPU_H
+#ifndef X_CPU_H
+#define X_CPU_H
 
 typedef struct {
 	unsigned cond:1;	// condition present

@@ -113,12 +113,6 @@ bool MainWin::saveChanged() {
 		}
 		if (!yep) break;
 	}
-/*
-	bool yep = saveChangedDisk(comp,0);
-	yep &= saveChangedDisk(comp,1);
-	yep &= saveChangedDisk(comp,2);
-	yep &= saveChangedDisk(comp,3);
-*/
 	return yep;
 }
 
@@ -194,8 +188,6 @@ MainWin::MainWin() {
 	}
 
 	initFileDialog(this);
-	connect(opt,SIGNAL(closed()),this,SLOT(optApply()));
-	connect(dbg,SIGNAL(closed()),this,SLOT(dbgReturn()));
 
 	tapeWin = new TapeWin(this);
 	connect(tapeWin,SIGNAL(stateChanged(int,int)),this,SLOT(tapStateChanged(int,int)));
@@ -224,6 +216,10 @@ MainWin::MainWin() {
 	scrImg = QImage(100,100,QImage::Format_RGB888);
 	connect(userMenu,SIGNAL(aboutToShow()),SLOT(menuShow()));
 	connect(userMenu,SIGNAL(aboutToHide()),SLOT(menuHide()));
+
+	connect(opt,SIGNAL(closed()),this,SLOT(optApply()));
+	connect(dbg,SIGNAL(closed()),this,SLOT(dbgReturn()));
+	connect(dbg,SIGNAL(wannaKeys()),keywin,SLOT(show()));
 
 	loadConfig();
 	fillUserMenu();
@@ -420,7 +416,7 @@ void MainWin::onTimer() {
 // if window is not active release keys & buttons, release mouse
 	if (!isActiveWindow()) {
 		if (!keywin->isVisible())
-			keyReleaseAll(comp->keyb);
+			kbdReleaseAll(comp->keyb);
 		mouseReleaseAll(comp->mouse);
 		unsetCursor();
 		if (grabMice) {
@@ -529,7 +525,10 @@ void MainWin::paintEvent(QPaintEvent*) {
 }
 
 void MainWin::keyPressEvent(QKeyEvent *ev) {
-	// if (ev->isAutoRepeat()) return;
+	if (comp->debug) {
+		ev->ignore();
+		return;
+	}
 	int keyid = qKey2id(ev->key());
 	keyEntry kent = getKeyEntry(keyid);
 	if (pckAct->isChecked()) {
@@ -734,6 +733,10 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 }
 
 void MainWin::keyReleaseEvent(QKeyEvent *ev) {
+	if (comp->debug) {
+		ev->ignore();
+		return;
+	}
 	int keyid = qKey2id(ev->key());
 	keyEntry kent = getKeyEntry(keyid);
 	if (comp->hw->keyr)
@@ -755,6 +758,10 @@ void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 }
 
 void MainWin::mousePressEvent(QMouseEvent *ev){
+	if (comp->debug) {
+		ev->ignore();
+		return;
+	}
 	switch (ev->button()) {
 		case Qt::LeftButton:
 			if (!grabMice) break;
@@ -774,6 +781,10 @@ void MainWin::mousePressEvent(QMouseEvent *ev){
 
 void MainWin::mouseReleaseEvent(QMouseEvent *ev) {
 	if (pauseFlags != 0) return;
+	if (comp->debug) {
+		ev->ignore();
+		return;
+	}
 	switch (ev->button()) {
 		case Qt::LeftButton:
 			if (!grabMice) break;
@@ -798,6 +809,10 @@ void MainWin::mouseReleaseEvent(QMouseEvent *ev) {
 }
 
 void MainWin::wheelEvent(QWheelEvent* ev) {
+	if (comp->debug) {
+		ev->ignore();
+		return;
+	}
 	if (grabMice && comp->mouse->hasWheel) {
 		mousePress(comp->mouse, (ev->delta() < 0) ? XM_WHEELDN : XM_WHEELUP, 0);
 	}
@@ -831,23 +846,29 @@ void MainWin::dropEvent(QDropEvent* ev) {
 
 
 void MainWin::closeEvent(QCloseEvent* ev) {
-	std::ofstream file;
-	std::string fname;
+	FILE* file;
+	char fname[FILENAME_MAX];
 	pause(true,PR_EXIT);
 	foreach(xProfile* prf, conf.prof.list) {
 		prfSave(prf->name);
-		fname = conf.path.confDir + SLASH + prf->name + ".cmos";
-		file.open(fname.c_str());
-		if (file.good()) {
-			file.write((const char*)prf->zx->cmos.data,256);
-			file.close();
+		strcpy(fname, conf.path.confDir);
+		strcat(fname, SLASH);
+		strcat(fname, prf->name.c_str());
+		strcat(fname, ".cmos");
+		file = fopen(fname, "wb");
+		if (file) {
+			fwrite((const char*)prf->zx->cmos.data,256,1,file);
+			fclose(file);
 		}
 		if (prf->zx->ide->type == IDE_SMUC) {
-			fname = conf.path.confDir + SLASH + prf->name + ".nvram";
-			file.open(fname.c_str());
-			if (file.good()) {
-				file.write((const char*)prf->zx->ide->smuc.nv->mem,0x800);
-				file.close();
+			strcpy(fname, conf.path.confDir);
+			strcat(fname, SLASH);
+			strcat(fname, prf->name.c_str());
+			strcat(fname, ".nvram");
+			file = fopen(fname, "wb");
+			if (file) {
+				fwrite((const char*)prf->zx->ide->smuc.nv->mem,0x800,1,file);
+				fclose(file);
 			}
 		}
 	}

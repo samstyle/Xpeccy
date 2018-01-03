@@ -78,9 +78,7 @@ void prfOutDFFD(Computer* comp, unsigned short port, unsigned char val) {
 // in
 
 unsigned char prfInFE(Computer* comp, unsigned short port) {
-	unsigned char res = keyInput(comp->keyb, (port & 0xff00) | 0xfe);
-	unsigned char ext = keyInput(comp->keyb, (port & 0xff00) | 0xff);
-	if (ext != 0x3f) res = ext;
+	unsigned char res = kbdRead(comp->keyb, port);
 	res |= ((comp->tape->volPlay & 0x80) ? 0x40 : 0x00);
 	return res;
 }
@@ -173,16 +171,19 @@ unsigned char prfIn(Computer* comp, unsigned short port, int dos) {
 }
 
 void prfReset(Computer* comp) {
+	kbdSetMode(comp->keyb, KBD_PROFI);
 }
 
 void prf_keyp(Computer* comp, keyEntry ent) {
-	keyPressXT(comp->keyb, ent.keyCode);
-	keyPress(comp->keyb, ent.zxKey, 0);
-	keyPress(comp->keyb, ent.extKey, 1);
+	kbdPress(comp->keyb, ent);
+//	keyPressXT(comp->keyb, ent.keyCode);
+//	keyPress(comp->keyb, ent.zxKey, 0);
+//	keyPress(comp->keyb, ent.extKey, 1);
 }
 
 void prf_keyr(Computer* comp, keyEntry ent) {
-	keyReleaseXT(comp->keyb, ent.keyCode);
-	keyRelease(comp->keyb, ent.zxKey, 0);
-	keyRelease(comp->keyb, ent.extKey, 1);
+	kbdRelease(comp->keyb, ent);
+//	keyReleaseXT(comp->keyb, ent.keyCode);
+//	keyRelease(comp->keyb, ent.zxKey, 0);
+//	keyRelease(comp->keyb, ent.extKey, 1);
 }

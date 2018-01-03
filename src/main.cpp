@@ -4,6 +4,8 @@
 #include <QDebug>
 #include <QFontDatabase>
 
+#include <locale.h>
+
 #include "xcore/xcore.h"
 #include "xcore/sound.h"
 #include "xgui/xgui.h"

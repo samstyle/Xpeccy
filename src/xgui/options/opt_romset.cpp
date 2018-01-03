@@ -45,7 +45,7 @@ void xRomsetEditor::edit(int ix) {
 		}
 	}
 
-	QDir rdir(QString(conf.path.romDir.c_str()));
+	QDir rdir(QString(conf.path.romDir));
 	QStringList rlst = rdir.entryList(QStringList() << "*.rom", QDir::Files, QDir::Name);
 	fillRFBox(ui.rse_singlefile,rlst);
 	fillRFBox(ui.rse_file0,rlst);

@@ -73,7 +73,7 @@ unsigned char gbIORd(Computer* comp, unsigned short port) {
 		default:
 #ifdef ISDEBUG
 			printf("GB: in %.4X\n",port);
-			assert(0);
+//			assert(0);
 #endif
 			break;
 	}
@@ -476,7 +476,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 				comp->gbsnd->wave[dadr] = (val & 0x0f) | ((val & 0x0f) << 4);		// LL : low 4 bits
 			} else {
 				printf("GB: out %.4X,%.2X\n",port,val);
-				assert(0);
+//				assert(0);
 			}
 			break;
 	}
