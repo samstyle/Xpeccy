@@ -2,6 +2,9 @@
 #define X_GUI_H
 
 #include <QDialog>
+#include <QLineEdit>
+#include <QWheelEvent>
+#include <QKeyEvent>
 
 // common
 
@@ -9,6 +12,26 @@ void shitHappens(const char*);
 bool areSure(const char*);
 int askYNC(const char*);
 void showInfo(const char*);
+
+// subclasses
+
+class xHexSpin : public QLineEdit {
+	Q_OBJECT
+	public:
+		xHexSpin(QWidget* = NULL);
+		void setValue(int);
+		int getValue();
+	signals:
+		void valueChanged(int);
+	private slots:
+		void onChange(int);
+		void onTextChange(QString);
+	private:
+		int value;
+	protected:
+		void keyPressEvent(QKeyEvent*);
+		void wheelEvent(QWheelEvent*);
+};
 
 // tape player
 

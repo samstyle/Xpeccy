@@ -3,16 +3,16 @@
 #include <QFile>
 #include <QFileDialog>
 
+#include "xcore.h"
+#include "xgui.h"
 #include "dbg_sprscan.h"
-#include "../../xcore/xcore.h"
-#include "../xgui.h"
 
 MemViewer::MemViewer(QWidget* p):QDialog(p) {
 	ui.setupUi(this);
 
 	vis = 0;
 
-	connect(ui.sbAddr, SIGNAL(valueChanged(int)), this, SLOT(fillImage()));
+	connect(ui.adrHex, SIGNAL(valueChanged(int)), this, SLOT(fillImage()));
 	connect(ui.sbWidth, SIGNAL(valueChanged(int)), this, SLOT(fillImage()));
 	connect(ui.sbHeight, SIGNAL(valueChanged(int)), this, SLOT(fillImage()));
 	connect(ui.sbPage, SIGNAL(valueChanged(int)), this, SLOT(fillImage()));
@@ -21,32 +21,31 @@ MemViewer::MemViewer(QWidget* p):QDialog(p) {
 	connect(ui.cbGrid, SIGNAL(toggled(bool)), this, SLOT(fillImage()));
 	connect(ui.cbScreen, SIGNAL(toggled(bool)), this, SLOT(fillImage()));
 
-	connect(ui.adrHex, SIGNAL(textChanged(QString)), this, SLOT(hexChanged()));
-	connect(ui.sbAddr, SIGNAL(valueChanged(int)), this, SLOT(adrChanged(int)));
+	connect(ui.adrHex, SIGNAL(valueChanged(int)), this, SLOT(adrChanged(int)));
 	connect(ui.scrollbar, SIGNAL(valueChanged(int)), this, SLOT(memScroll(int)));
 
 	connect(ui.tbSave, SIGNAL(released()), this, SLOT(saveSprite()));
 }
 
 void MemViewer::wheelEvent(QWheelEvent* ev) {
-	int adr = ui.sbAddr->value();
+	int adr = ui.adrHex->getValue();
 	if (ev->delta() < 0) {
 		adr += (ui.sbWidth->value() << 3);
 	} else {
 		adr -= (ui.sbWidth->value() << 3);
 	}
-	ui.sbAddr->setValue(adr & 0xffff);
+	ui.adrHex->setValue(adr & 0xffff);
 }
 
 void MemViewer::saveSprite() {
-	int adr = ui.sbAddr->value();
+	int adr = ui.adrHex->getValue();
 	int siz = ui.sbWidth->value() * ui.sbHeight->value() * 8;
 	QByteArray spr;
 	if (ui.cbScreen->isChecked()) {
 		siz = 0x1800;
 	}
 	for(int i = 0; i < siz; i++) {
-		spr.append(rdMem(adr));
+		spr.append(rdMem(adr & 0xffff));
 		adr++;
 	}
 	QString path = QFileDialog::getSaveFileName(this, "Save sprite");
@@ -75,7 +74,7 @@ unsigned char MemViewer::rdMem(int adr) {
 void MemViewer::fillImage() {
 	QImage img(256,256, QImage::Format_RGB888);
 	img.fill(qRgb(64,64,64));
-	int adr = ui.sbAddr->value();
+	int adr = ui.adrHex->getValue();
 	int wid, high;
 	if (ui.cbScreen->isChecked()) {
 		wid = 32;
@@ -128,16 +127,9 @@ void MemViewer::fillImage() {
 
 void MemViewer::adrChanged(int adr) {
 	ui.scrollbar->setValue(adr);
-	QString hw = gethexword(adr);
-	if (ui.adrHex->text() != hw)
-		ui.adrHex->setText(hw);
-}
-
-void MemViewer::hexChanged() {
-	ui.sbAddr->setValue(ui.adrHex->text().toInt(NULL, 16));
 }
 
 void MemViewer::memScroll(int adr) {
-	adr = adr - ((adr - ui.sbAddr->value()) % ui.sbWidth->value());
-	ui.sbAddr->setValue(adr);
+	adr = adr - ((adr - ui.adrHex->getValue()) % ui.sbWidth->value());
+	ui.adrHex->setValue(adr);
 }

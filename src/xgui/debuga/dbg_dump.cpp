@@ -189,7 +189,7 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 Qt::ItemFlags xDumpModel::flags(const QModelIndex& idx) const {
 	Qt::ItemFlags res = QAbstractItemModel::flags(idx);
 	if (!idx.isValid()) return res;
-	if (idx.row() < 9)
+	if (idx.column() < columnCount())
 		res |= Qt::ItemIsEditable;
 	return res;
 }

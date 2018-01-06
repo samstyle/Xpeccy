@@ -7,13 +7,13 @@
 
 #include <SDL.h>
 
+#include "xcore.h"
+#include "xgui.h"
 #include "spectrum.h"
 #include "setupwin.h"
 #include "debuger.h"
 #include "watcher.h"
 #include "vkeyboard.h"
-#include "xcore.h"
-#include "xgui.h"
 #include "ethread.h"
 
 // pause reasons

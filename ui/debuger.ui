@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>813</width>
-    <height>590</height>
+    <width>811</width>
+    <height>586</height>
    </rect>
   </property>
   <property name="font">
@@ -1060,11 +1060,7 @@
               </widget>
              </item>
              <item row="1" column="1">
-              <widget class="QSpinBox" name="sbScrAdr">
-               <property name="maximum">
-                <number>16383</number>
-               </property>
-              </widget>
+              <widget class="xHexSpin" name="leScrAdr"/>
              </item>
             </layout>
            </item>
@@ -2455,6 +2451,15 @@
     <string>Trace log</string>
    </property>
   </action>
+  <action name="actShowKeys">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/keyboardzx.png</normaloff>:/images/keyboardzx.png</iconset>
+   </property>
+   <property name="text">
+    <string>Keyboard</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -2470,6 +2475,11 @@
   <customwidget>
    <class>xBreakTable</class>
    <extends>QTableView</extends>
+   <header location="global">stdlib.h</header>
+  </customwidget>
+  <customwidget>
+   <class>xHexSpin</class>
+   <extends>QLineEdit</extends>
    <header location="global">stdlib.h</header>
   </customwidget>
  </customwidgets>
@@ -2533,7 +2543,6 @@
   <tabstop>dumpTable</tabstop>
   <tabstop>cbScrPix</tabstop>
   <tabstop>sbScrBank</tabstop>
-  <tabstop>sbScrAdr</tabstop>
   <tabstop>cbScrGrid</tabstop>
   <tabstop>tbEditBrk</tabstop>
   <tabstop>nesScrType</tabstop>

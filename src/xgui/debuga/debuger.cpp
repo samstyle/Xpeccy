@@ -73,7 +73,7 @@ void DebugWin::start(Computer* c) {
 	ui.tabsPanel->setTabEnabled(ui.tabsPanel->indexOf(ui.nesTab), comp->hw->id == HW_NES);
 
 	move(winPos);
-	ui.dasmTable->setFocus();
+	// ui.dasmTable->setFocus();
 	comp->vid->debug = 1;
 	comp->debug = 1;
 	comp->brk = 0;
@@ -232,6 +232,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.tbTool->addAction(ui.actSearch);
 	ui.tbTool->addAction(ui.actFill);
 	ui.tbTool->addAction(ui.actSprScan);
+	ui.tbTool->addAction(ui.actShowKeys);
 
 	ui.tbDbgOpt->addAction(ui.actShowLabels);
 	ui.tbDbgOpt->addAction(ui.actHideAddr);
@@ -260,6 +261,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.actSearch,SIGNAL(triggered(bool)),this,SLOT(doFind()));
 	connect(ui.actFill,SIGNAL(triggered(bool)),this,SLOT(doFill()));
 	connect(ui.actSprScan,SIGNAL(triggered(bool)),this,SLOT(doMemView()));
+	connect(ui.actShowKeys,SIGNAL(triggered(bool)),this,SIGNAL(wannaKeys()));
 
 	connect(ui.actShowLabels,SIGNAL(toggled(bool)),this,SLOT(setShowLabels(bool)));
 	connect(ui.actHideAddr,SIGNAL(toggled(bool)),this,SLOT(fillDisasm()));
@@ -324,7 +326,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	scrImg = QImage(256, 192, QImage::Format_RGB888);
 	// ui.scrLabel->setFixedSize(256,192);
 	connect(ui.sbScrBank,SIGNAL(valueChanged(int)),this,SLOT(updateScreen()));
-	connect(ui.sbScrAdr,SIGNAL(valueChanged(int)),this,SLOT(updateScreen()));
+	connect(ui.leScrAdr,SIGNAL(textChanged(QString)),this,SLOT(updateScreen()));
 	connect(ui.cbScrAtr,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
 	connect(ui.cbScrPix,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
 	connect(ui.cbScrGrid,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
@@ -480,29 +482,33 @@ void DebugWin::doStep() {
 			trace = 0;
 	}
 #endif
-	tCount = comp->tickCount;
-	compExec(comp);
-	if (!fillAll()) {
-		disasmAdr = comp->cpu->pc;
-		fillDisasm();
+	while(trace) {
+		tCount = comp->tickCount;
+		compExec(comp);
+		if (!fillAll()) {
+			disasmAdr = comp->cpu->pc;
+			fillDisasm();
+		}
+		switch(traceType) {
+			case DBG_TRACE_INT:
+				if (comp->cpu->intrq & comp->cpu->inten)
+					trace = 0;
+				break;
+			case DBG_TRACE_HERE:
+				if (comp->cpu->pc == traceAdr)
+					trace = 0;
+				break;
+		}
+		QApplication::processEvents();
 	}
-	switch(traceType) {
-		case DBG_TRACE_INT:
-			if (comp->cpu->intrq & comp->cpu->inten)
-				trace = 0;
-			break;
-		case DBG_TRACE_HERE:
-			if (comp->cpu->pc == traceAdr)
-				trace = 0;
-			break;
-	}
-	if (trace) {
+//	if (trace) {
 		//emit needStep();
-		QTimer::singleShot(1,this,SLOT(doStep()));
-	} else {
-		ui.tbTrace->setEnabled(true);
-		if (logfile.isOpen()) logfile.close();
-	}
+		//QTimer::singleShot(1,this,SLOT(doStep()));
+		//QApplication::processEvents();
+//	} else {
+	ui.tbTrace->setEnabled(true);
+	if (logfile.isOpen()) logfile.close();
+//	}
 }
 
 void DebugWin::doTraceHere() {
@@ -532,6 +538,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 		trace = 0;
 		return;
 	}
+	if (ev->isAutoRepeat()) return;
 	int i;
 	unsigned short pc = comp->cpu->pc;
 	unsigned char* ptr;
@@ -1732,7 +1739,7 @@ void DebugWin::updateScreen() {
 	int flag = ui.cbScrAtr->isChecked() ? 1 : 0;
 	flag |= ui.cbScrPix->isChecked() ? 2 : 0;
 	flag |= ui.cbScrGrid->isChecked() ? 4 : 0;
-	vidGetScreen(comp->vid, scrImg.bits(), ui.sbScrBank->value(), ui.sbScrAdr->value(), flag);
+	vidGetScreen(comp->vid, scrImg.bits(), ui.sbScrBank->value(), ui.leScrAdr->getValue(), flag);
 	ui.scrLabel->setPixmap(QPixmap::fromImage(scrImg));
 }
 

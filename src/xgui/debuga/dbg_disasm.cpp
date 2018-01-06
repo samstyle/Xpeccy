@@ -148,7 +148,7 @@ int dasmWord(Computer* comp, unsigned short adr, dasmData& drow) {
 }
 
 int dasmAddr(Computer* comp, unsigned short adr, dasmData& drow) {
-	int word = dasmrd(adr, comp->mem);
+	int word = dasmrd(adr, comp);
 	word |= (dasmrd(adr + 1, comp) << 8);
 	QString lab = findLabel(word & 0xffff, -1, -1);
 	if (lab.isEmpty()) {

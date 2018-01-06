@@ -12,6 +12,8 @@
 #include <QMenu>
 #include <QTableWidget>
 
+#include "xgui.h"
+
 #include "dbg_dump.h"
 #include "dbg_disasm.h"
 

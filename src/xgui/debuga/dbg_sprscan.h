@@ -4,8 +4,9 @@
 #include <QDialog>
 #include <QWheelEvent>
 
+#include "xgui.h"
 #include "ui_memviewer.h"
-#include "../../libxpeccy/spectrum.h"
+#include "libxpeccy/spectrum.h"
 
 class MemViewer : public QDialog {
 	Q_OBJECT
@@ -21,7 +22,7 @@ class MemViewer : public QDialog {
 		void fillImage();
 	private slots:
 		void adrChanged(int);
-		void hexChanged();
+//		void hexChanged();
 		void memScroll(int);
 		void saveSprite();
 	protected:
