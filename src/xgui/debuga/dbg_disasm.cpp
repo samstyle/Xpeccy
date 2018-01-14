@@ -58,14 +58,15 @@ QVariant xDisasmModel::data(const QModelIndex& idx, int role) const {
 				res = font;
 			}
 			break;
-		case Qt::TextColorRole:
-			if (!dasm[row].islab && conf.dbg.hideadr && (col == 0))
+		case Qt::ForegroundRole:
+			if (dasm[row].isbrk) {
+				res = QColor(Qt::red);
+			} else if ((col == 0) && !dasm[row].islab && conf.dbg.hideadr) {
 				res = QColor(Qt::gray);
+			}
 			break;
 		case Qt::BackgroundColorRole:
-			if (dasm[row].isbrk && (col == 3)) {
-				res = colBRK;			// breakpoint
-			} else if (dasm[row].ispc) {
+			if (dasm[row].ispc) {
 				res = colPC;			// pc
 			} else if (dasm[row].issel) {
 				res = colSEL;			// selected
@@ -383,20 +384,21 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 			idx = asmAddr(val, xadr);
 			if (idx >= 0) {
 				while (row > 0) {
-					idx = getPrevAdr(*cptr, idx);
+					idx = getPrevAdr(*cptr, idx & 0xffff);
 					row--;
 				}
-				disasmAdr = idx;
+				disasmAdr = idx & 0xffff;
 			}
 			// update();
 			break;
 		case 1:	// bytes
-			lst = val.toString().split(":", QString::SkipEmptyParts);
-			// qDebug() << adr;
-			foreach(str, lst) {
-				cbyte = str.toInt(NULL,16) & 0xff;
-				dasmwr(*cptr, adr & 0xffff, cbyte);
+			str = val.toString();
+			while(!str.isEmpty()) {
+				cbyte = str.left(2).toInt(&flag,16) & 0xff;
+				if (flag)
+					dasmwr(*cptr, adr & 0xffff, cbyte);
 				adr++;
+				str.remove(0, 2);
 			}
 			emit rqRefill();
 			break;
@@ -560,7 +562,7 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 				bpr = BRK_CPUADR;
 				bpt = MEM_BRK_FETCH;
 			}
-			brkXor(bpr, bpt, getData(idx.row(), 0, Qt::UserRole).toInt(), -1);
+			brkXor(bpr, bpt, getData(idx.row(), 0, Qt::UserRole).toInt(), -1, 1);
 			emit rqRefill();
 			ev->ignore();
 			break;

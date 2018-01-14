@@ -158,18 +158,8 @@ void xBreakTable::onCellClick(QModelIndex idx) {
 		case 2: brk->read ^= 1; break;
 		case 3: brk->write ^= 1; break;
 	}
-#if DELBREAKS
-	if (brk->fetch || brk->read || brk->write) {
-		model->updateCell(row, col);
-		brkInstall(prf->brkList[row]);
-	} else {
-		brkInstall(prf->brkList[row]);		// when row removed
-		update();
-	}
-#else
+	brkInstall(prf->brkList[row], 0);
 	model->updateCell(row, col);
-	brkInstall(prf->brkList[row]);
-#endif
 	emit rqDasmDump();
 }
 

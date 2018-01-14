@@ -122,6 +122,7 @@ typedef struct {
 #endif
 
 	int tickCount;
+	int frmtCount;
 	int nsPerTick;
 
 	unsigned char p7FFD;		// stored port out

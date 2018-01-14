@@ -56,7 +56,7 @@ xBrkPoint brkCreate(int type, int flag, int adr, int mask) {
 	return brk;
 }
 
-void brkInstall(xBrkPoint brk) {
+void brkInstall(xBrkPoint brk, int del) {
 	unsigned char* ptr = NULL;
 	unsigned char msk;
 	Computer* comp = conf.prof.cur->zx;
@@ -81,11 +81,8 @@ void brkInstall(xBrkPoint brk) {
 	}
 	*ptr &= 0xf0;
 	*ptr |= (msk & 0x0f);
-// don't delete breakpoint on FRW=000
-#if DELBREAKS
-	if (brk.fetch || brk.read || brk.write) return;
+	if (!del || brk.fetch || brk.read || brk.write) return;
 	brkDelete(brk);
-#endif
 }
 
 void brkAdd(xBrkPoint brk) {
@@ -98,7 +95,7 @@ void brkAdd(xBrkPoint brk) {
 	} else {
 		conf.prof.cur->brkList.push_back(brk);
 	}
-	brkInstall(brk);
+	brkInstall(brk, 0);
 }
 
 void brkSet(int type, int flag, int adr, int mask) {
@@ -106,7 +103,7 @@ void brkSet(int type, int flag, int adr, int mask) {
 	brkAdd(brk);
 }
 
-void brkXor(int type, int flag, int adr, int mask) {
+void brkXor(int type, int flag, int adr, int mask, int del) {
 	xBrkPoint brk = brkCreate(type, flag, adr, mask);
 	xbpIndex idx = brkFind(brk);
 	if (idx.ptr) {
@@ -117,7 +114,7 @@ void brkXor(int type, int flag, int adr, int mask) {
 	} else {
 		conf.prof.cur->brkList.push_back(brk);
 	}
-	brkInstall(brk);
+	brkInstall(brk, del);
 }
 
 void brkDelete(xBrkPoint dbrk) {
@@ -127,7 +124,7 @@ void brkDelete(xBrkPoint dbrk) {
 	xBrkPoint brk = conf.prof.cur->brkList[idx];
 	brk.off = 1;
 	brk.fetch = 1;
-	brkInstall(brk);
+	brkInstall(brk, 0);
 	conf.prof.cur->brkList.erase(conf.prof.cur->brkList.begin() + idx);
 }
 
@@ -147,6 +144,6 @@ void brkInstallAll() {
 	if (comp->slot->brkMap)
 		clearMap(comp->slot->brkMap, comp->slot->memMask + 1);
 	foreach(xBrkPoint brk, conf.prof.cur->brkList) {
-		brkInstall(brk);
+		brkInstall(brk, 0);
 	}
 }

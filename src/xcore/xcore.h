@@ -63,9 +63,9 @@ typedef struct {
 } xBrkPoint;
 
 void brkSet(int, int, int, int);
-void brkXor(int, int, int, int);
+void brkXor(int, int, int, int, int);
 void brkAdd(xBrkPoint);
-void brkInstall(xBrkPoint);
+void brkInstall(xBrkPoint, int);
 void brkDelete(xBrkPoint);
 void brkInstallAll();
 

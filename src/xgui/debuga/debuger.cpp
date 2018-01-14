@@ -59,6 +59,7 @@ typedef struct {
 } dbgRegPlace;
 
 void DebugWin::start(Computer* c) {
+	onStart = 1;
 	comp = c;
 	blockStart = -1;
 	blockEnd = -1;
@@ -93,7 +94,6 @@ void DebugWin::start(Computer* c) {
 	}
 
 	chDumpView();
-
 	activateWindow();
 }
 
@@ -122,7 +122,7 @@ QWidget* xItemDelegate::createEditor(QWidget* par, const QStyleOptionViewItem&, 
 		case XTYPE_NONE: delete(edt); edt = NULL; break;
 		case XTYPE_ADR: edt->setInputMask("Hhhh"); break;
 		case XTYPE_LABEL: break;
-		case XTYPE_DUMP: edt->setInputMask("Hh:hh:hh:hh:hh"); break;
+		case XTYPE_DUMP: edt->setInputMask("Hhhhhhhhhh"); break;
 		case XTYPE_BYTE: edt->setInputMask("Hh"); break;
 	}
 	return edt;
@@ -482,7 +482,7 @@ void DebugWin::doStep() {
 			trace = 0;
 	}
 #endif
-	while(trace) {
+	do {
 		tCount = comp->tickCount;
 		compExec(comp);
 		if (!fillAll()) {
@@ -500,7 +500,7 @@ void DebugWin::doStep() {
 				break;
 		}
 		QApplication::processEvents();
-	}
+	} while(trace);
 //	if (trace) {
 		//emit needStep();
 		//QTimer::singleShot(1,this,SLOT(doStep()));
@@ -538,7 +538,9 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 		trace = 0;
 		return;
 	}
-	if (ev->isAutoRepeat()) return;
+	if (ev->isAutoRepeat() && onStart) return;
+	onStart = 0;
+
 	int i;
 	unsigned short pc = comp->cpu->pc;
 	unsigned char* ptr;
@@ -711,7 +713,7 @@ void DebugWin::fillAY() {
 }
 
 bool DebugWin::fillAll() {
-	ui.labTcount->setText(QString::number(comp->tickCount - tCount));
+	ui.labTcount->setText(QString("%0 / %1").arg(comp->tickCount - tCount).arg(comp->frmtCount));
 	fillCPU();
 	fillMem();
 	fillDump();

@@ -66,6 +66,7 @@ class DebugWin : public QDialog {
 		void needStep();
 	private:
 		unsigned block:1;
+		unsigned onStart:1;
 		// tracer
 		unsigned trace:1;
 		int traceType;
@@ -75,8 +76,6 @@ class DebugWin : public QDialog {
 		QPoint winPos;
 		QImage scrImg;
 		QList<unsigned short> jumpHistory;
-
-//		xDumpModel* dumpodel;
 
 		Computer* comp;
 		long tCount;

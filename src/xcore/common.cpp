@@ -4,12 +4,24 @@
 #include <stdlib.h>
 #include <QString>
 
+static const char* hexhalf = "0123456789ABCDEF";
+static char hexbuf[5] = {'0','0','0','0',0x00};
+
+void formbufword(int num) {
+	for(int idx = 3; idx >= 0; idx--) {
+		hexbuf[idx] = hexhalf[num & 0x0f];
+		num >>= 4;
+	}
+}
+
 QString gethexword(int num) {
-	return QString::number(num+0x10000,16).right(4).toUpper();
+	formbufword(num);
+	return QString(hexbuf);
 }
 
 QString gethexbyte(uchar num) {
-	return QString::number(num+0x100,16).right(2).toUpper();
+	formbufword(num);
+	return QString(hexbuf+2);
 }
 
 QString gethexshift(char shft) {

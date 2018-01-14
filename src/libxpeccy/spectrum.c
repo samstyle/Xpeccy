@@ -420,6 +420,11 @@ int compExec(Computer* comp) {
 // execution completed : get eated time
 	nsTime = comp->vid->time;
 	comp->tickCount += res2;
+	if (comp->vid->intFRAME) {
+		comp->frmtCount = res2;
+	} else {
+		comp->frmtCount += res2;
+	}
 // sync / INT detection
 	if (comp->rzx.play) {
 		if (comp->rzx.frm.fetches < 1) {
