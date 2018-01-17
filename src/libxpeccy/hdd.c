@@ -627,8 +627,8 @@ int ideOut(IDE* ide,unsigned short port,unsigned char val,int dosen) {
 		if (ide->type == IDE_NEMO_EVO) {
 			if (adr.port == 0) {
 				if (adr.high) {
-					ide->bus &= 0xff00;
-					ide->bus |= val;
+					ide->bus &= 0x00ff;
+					ide->bus |= (val << 8);
 					ide->hiTrig = 2;		// 11 : high, next 10 is low
 				} else {
 					if (ide->hiTrig == 0) {		// 10 : low

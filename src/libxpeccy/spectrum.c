@@ -399,7 +399,7 @@ int compExec(Computer* comp) {
 		tapSync(comp->tape,comp->tapCount);
 		comp->tapCount = 0;
 		bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
-		ideOut(comp->ide, comp->padr, comp->pval, bdiz);
+//		ideOut(comp->ide, comp->padr, comp->pval, bdiz);		// already done
 		if (ulaOut(comp->vid->ula, comp->padr, comp->pval)) {
 			if (comp->vid->ula->palchan) {
 				zxSetUlaPalete(comp);
