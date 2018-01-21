@@ -152,7 +152,9 @@ unsigned char tsInBDI(Computer* comp, unsigned short port) {			// dos
 }
 
 unsigned char tsIn57(Computer* comp, unsigned short port) {
-	return sdcRead(comp->sdc);
+	unsigned char res = sdcRead(comp->sdc);
+//	printf("in #57(%.4X) = %.2X\n",port,res);
+	return res;
 }
 
 unsigned char tsIn77(Computer* comp, unsigned short port) {
@@ -208,6 +210,7 @@ void tsOutFB(Computer* comp, unsigned short port, unsigned char val) {
 */
 
 void tsOut57(Computer* comp, unsigned short port, unsigned char val) {
+//	printf("out #57(%.4X),%.2X\n",port,val);
 	sdcWrite(comp->sdc,val);
 }
 
@@ -381,6 +384,7 @@ void tsOut27AF(Computer* comp, unsigned short port, unsigned char val) {
 			}
 			break;
 		case 0x02:		// SPI->RAM
+//			printf("spi->ram\t%.2X:%.4X,%.2X:%.3X\n",comp->dma.dst.x,dadr & 0x3fff,comp->dma.num,lcnt);
 			for (cnt = 0; cnt <= comp->dma.num; cnt++) {
 				for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
 					comp->mem->ramData[dadr + cnt2] = sdcRead(comp->sdc);

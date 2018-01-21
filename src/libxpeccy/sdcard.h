@@ -1,20 +1,23 @@
-#ifndef _SDCARD_H
-#define _SDCARD_H
+#ifndef X_SDCARD_H
+#define X_SDCARD_H
 
 #include <stdio.h>
 
+/*
 // mode
 enum {
 	SDC_INACTIVE = 0,
 	SDC_IDLE,
-	SDC_WAIT
 };
-// action
+*/
+// state
 enum {
-	SDC_FREE = 0,
-	SDC_READ,
-	SDC_WRITE
+	SDC_FREE = 0,		// ready to accept a command
+	SDC_WAIT,		// waiting for command arguments
+	SDC_READ,		// send data to CPU
+	SDC_WRITE		// accept data from CPU
 };
+
 // R1 flags
 #define	R1_IDLE		1
 #define	R1_ERASE_RESET	(1<<1)
@@ -41,7 +44,7 @@ typedef struct {
 	unsigned lock:1;
 	unsigned busy:1;
 
-	unsigned char mode;	// page 18 of SDCard specification 3.01
+//	unsigned char mode;	// page 18 of SDCard specification 3.01
 	unsigned char state;	// current action
 
 	unsigned char argCnt;	// arguments countdown for command (4 + 1)

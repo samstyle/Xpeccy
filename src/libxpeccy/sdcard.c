@@ -9,7 +9,7 @@
 #define	CMD08		0x08	// +
 #define	CMD09		0x09	// ask card to send card speficic data (CSD)
 #define	CMD10		0x0a	// ask card to send card identification (CID)
-#define	CMD12		0x0c	// stop transmission on multiple block read
+#define	CMD12		0x0c	// + stop transmission on multiple block read
 #define	CMD13		0x0d	// ask the card to send it's status register
 #define	CMD16		0x10    // + sets the block length used by the memory card
 #define	CMD17		0x11	// + read single block
@@ -52,8 +52,9 @@ void sdcDestroy(SDCard* sdc) {
 }
 
 void sdcReset(SDCard* sdc) {
-	sdc->mode = SDC_IDLE;
+//	sdc->mode = SDC_IDLE;
 	sdc->state = SDC_FREE;
+	sdc->argCnt = 0;
 }
 
 void sdcSetImage(SDCard* sdc, const char* name) {
@@ -117,7 +118,7 @@ unsigned char sdcRead(SDCard* sdc) {
 					sdc->buf.pos = 0;
 				}
 				res = sdc->buf.data[sdc->buf.pos];
-//				printf("buf %X = %.2X\n",sdc->buf.pos,res);
+				// printf("buf %X = %.2X\n",sdc->buf.pos,res);
 				sdc->buf.pos++;
 				if (sdc->buf.pos > 514) {		// 1token.512b.2crc = 0..514 = 515 bytes
 					sdc->buf.pos = -1;
@@ -146,14 +147,11 @@ unsigned int sdcGetArg(SDCard* sdc, unsigned int mask) {
 }
 
 void sdcExec(SDCard* sdc) {
-//	printf("SD exec %.2X\n",sdc->arg[0]);
-	if (sdc->state != SDC_FREE) {
-		if (sdc->arg[0] == CMD12) {
-			sdcR1(sdc,0);		// ok
-			sdc->mode = SDC_FREE;
-		}
-	}
-	if ((sdc->arg[0] & 0x40) == 0x40) {
+	//printf("SD exec %.2X\n",sdc->arg[0] & 0x3f);
+	if ((sdc->arg[0] & 0x3f) == CMD12) {		// break
+		sdcR1(sdc,0);				// ok
+		sdc->state = SDC_FREE;
+	} else if ((sdc->arg[0] & 0xc0) == 0x40) {	// ??? allways true
 		if (sdc->acmd) {
 //			printf("SD ACMD%.2i\n",sdc->arg[0] & 0x3f);
 			sdc->acmd = 0;		// reset ACMD
@@ -248,7 +246,7 @@ void sdcExec(SDCard* sdc) {
 
 void sdcWrite(SDCard* sdc, unsigned char val) {
 	if (!sdc->image || !sdc->on || sdc->cs) return;
-//	printf("SD out %.2X\n",val);
+//	printf("SD wr %.2X\n",val);
 	if (sdc->state == SDC_WRITE) {
 		if ((sdc->arg[0] = CMD25) && (sdc->buf.pos == 0) && (val == 0xfd)) {		// stop token for com25
 			sdc->state = SDC_FREE;
@@ -273,12 +271,20 @@ void sdcWrite(SDCard* sdc, unsigned char val) {
 				}
 			}
 		}
-	} else {
+	} else if (sdc->state == SDC_WAIT) {		// waiting for command arguments
 		sdc->arg[6 - sdc->argCnt] = val;
 		sdc->argCnt--;
 		if (sdc->argCnt == 0) {
+//			printf("SD exec: %.2X:%.2X:%.2X:%.2X:%.2X:%.2X\n",sdc->arg[0],sdc->arg[1],sdc->arg[2],sdc->arg[3],sdc->arg[4],sdc->arg[5]);
+			sdc->state = SDC_FREE;
 			sdcExec(sdc);
 			sdc->argCnt = 6;
+		}
+	} else if ((sdc->state == SDC_FREE) || (val == (CMD12 | 0x40))) {	// waiting for command | block operation break command
+		if ((val & 0xc0) == 0x40) {			// %01xxxxxx accepted as a command token
+			sdc->arg[0] = val;
+			sdc->argCnt = 5;
+			sdc->state = SDC_WAIT;
 		}
 	}
 }
