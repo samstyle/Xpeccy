@@ -1063,7 +1063,7 @@ opCode npTab[256]={
 	{0,4,npr73,NULL,"ld (hl),e"},
 	{0,4,npr74,NULL,"ld (hl),h"},
 	{0,4,npr75,NULL,"ld (hl),l"},
-	{0,4,npr76,NULL,"halt"},
+	{OF_SKIPABLE,4,npr76,NULL,"halt"},
 	{0,4,npr77,NULL,"ld (hl),a"},
 
 	{0,4,npr78,NULL,"ld a,b"},

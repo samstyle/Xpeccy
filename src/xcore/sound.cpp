@@ -42,6 +42,7 @@ OutSys* findOutSys(const char*);
 // return 1 when buffer is full
 int sndSync(Computer* comp, int nosync, int fast) {
 	if (!nosync) {
+
 		tapSync(comp->tape,comp->tapCount);
 		comp->tapCount = 0;
 		tsSync(comp->ts,nsPerSample);

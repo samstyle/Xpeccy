@@ -59,7 +59,7 @@ typedef struct {
 } dbgRegPlace;
 
 void DebugWin::start(Computer* c) {
-	onStart = 1;
+	// onStart = 1;
 	comp = c;
 	blockStart = -1;
 	blockEnd = -1;
@@ -538,8 +538,9 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 		trace = 0;
 		return;
 	}
-	if (ev->isAutoRepeat() && onStart) return;
-	onStart = 0;
+
+//	if (ev->isAutoRepeat() && onStart) return;
+//	onStart = 0;
 
 	int i;
 	unsigned short pc = comp->cpu->pc;

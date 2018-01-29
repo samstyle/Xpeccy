@@ -399,7 +399,6 @@ int compExec(Computer* comp) {
 		tapSync(comp->tape,comp->tapCount);
 		comp->tapCount = 0;
 		bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
-//		ideOut(comp->ide, comp->padr, comp->pval, bdiz);		// already done
 		if (ulaOut(comp->vid->ula, comp->padr, comp->pval)) {
 			if (comp->vid->ula->palchan) {
 				zxSetUlaPalete(comp);
@@ -410,22 +409,15 @@ int compExec(Computer* comp) {
 		comp->padr = 0;
 	}
 	// vidSync(comp->vid, comp->nsPerTick);
-// NMI (!!! ZX ONLY)
-	if ((comp->cpu->pc > 0x3fff) && comp->nmiRequest && !comp->rzx.play) {
-		comp->cpu->intrq |= 2;		// request nmi
-		comp->dos = 1;			// set dos page
-		comp->rom = 1;
-		comp->hw->mapMem(comp);
-	}
 // execution completed : get eated time
 	nsTime = comp->vid->time;
 	comp->tickCount += res2;
 	if (comp->vid->intFRAME) {
-		comp->frmtCount = res2;
+		comp->frmtCount = 0;
 	} else {
 		comp->frmtCount += res2;
 	}
-// sync / INT detection
+// sync hardware
 	if (comp->rzx.play) {
 		if (comp->rzx.frm.fetches < 1) {
 			comp->intVector = 0xff;
@@ -454,47 +446,6 @@ int compExec(Computer* comp) {
 		}
 		if (comp->cpu->intrq && comp->brkirq)
 			comp->brk = 1;
-	}
-
-// sync devices
-
-	comp->beep->accum += nsTime;			// TODO: move to ZX/MSX sync
-	comp->tapCount += nsTime;
-	difSync(comp->dif, nsTime);
-	gsSync(comp->gs, nsTime);
-	saaSync(comp->saa, nsTime);
-
-	if (comp->hw->id == HW_GBC) {			// TODO: move to GBC HW Sync
-		// sound
-		gbsSync(comp->gbsnd, nsTime);
-		// timer
-		if (comp->gb.timer.div.per) {
-			comp->gb.timer.div.cnt -= nsTime;
-			if (comp->gb.timer.div.cnt < 0) {
-				comp->gb.timer.div.cnt += comp->gb.timer.div.per;
-				comp->gb.iomap[0x04]++;
-			}
-		}
-		if (comp->gb.timer.t.on && (comp->gb.timer.t.per > 0)) {
-			comp->gb.timer.t.cnt -= nsTime;
-			if (comp->gb.timer.t.cnt < 0) {
-				comp->gb.timer.t.cnt += comp->gb.timer.t.per;
-				if (comp->gb.iomap[0x05] == 0xff) {		// overflow
-					comp->gb.iomap[0x05] = comp->gb.iomap[0x06];
-					comp->gb.timer.t.intrq = 1;
-				} else {
-					comp->gb.iomap[0x05]++;
-				}
-			}
-		}
-		// cpu speed change
-		if (comp->cpu->stop && comp->cpu->speedrq) {
-			comp->cpu->stop = 0;
-			comp->cpu->pc++;
-			comp->cpu->speedrq = 0;
-			comp->cpu->speed ^= 1;
-			compSetTurbo(comp, comp->cpu->speed ? 2.0 : 1.0);
-		}
 	}
 // return ns eated @ this step
 	return nsTime;

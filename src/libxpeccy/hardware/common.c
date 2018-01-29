@@ -27,7 +27,20 @@ void dummyOut(Computer* comp, unsigned short port, unsigned char val) {
 // INT handle/check
 
 void zx_sync(Computer* comp, int ns) {
-//	if (!comp->cpu->iff1 || comp->cpu->noint) return;
+	// devices
+	comp->beep->accum += ns;
+	comp->tapCount += ns;
+	difSync(comp->dif, ns);
+	gsSync(comp->gs, ns);
+	saaSync(comp->saa, ns);
+	// nmi
+	if ((comp->cpu->pc > 0x3fff) && comp->nmiRequest && !comp->rzx.play) {
+		comp->cpu->intrq |= Z80_NMI;	// request nmi
+		comp->dos = 1;			// set dos page
+		comp->rom = 1;
+		comp->hw->mapMem(comp);
+	}
+	// int
 	if (comp->vid->intFRAME && (comp->vid->intMask & Z80_INT)) {
 		comp->intVector = 0xff;
 		comp->cpu->intrq |= Z80_INT;
@@ -40,7 +53,7 @@ void zx_sync(Computer* comp, int ns) {
 		comp->intVector = 0xfb;
 		comp->cpu->intrq |= Z80_INT;
 		comp->vid->intDMA = 0;
-	} else {
+	} else if (comp->cpu->intrq & Z80_INT) {
 		comp->cpu->intrq &= ~Z80_INT;
 	}
 }

@@ -535,14 +535,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 		if (comp->hw->keyp) {
 			comp->hw->keyp(comp, kent);
 		}
-/*
-		keyPressXT(comp->keyb, kent.keyCode);
-		if (!kent.zxKey.key2)			// don't press 2-key keys in PC-mode
-			keyPress(comp->keyb,kent.zxKey,0);
-		keyPress(comp->keyb, kent.extKey, 1);
-		keyPress(comp->keyb, kent.msxKey, 2);
-*/
-		if (ev->key() == Qt::Key_ScrollLock) {
+		if (ev->key() == Qt::Key_F12) {
 			compReset(comp,RES_DEFAULT);
 			rzxWin->stop();
 		}
@@ -632,10 +625,6 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;
 		}
 	} else {
-//		if (comp->hw->id == HW_GBC)
-//			gbPress(comp, kent.name);
-//		keyPress(comp->keyb, kent.zxKey, 0);
-//		if (kent.msxKey.key1) keyPress(comp->keyb,kent.msxKey,2);
 		switch(ev->key()) {
 			case Qt::Key_Pause:
 				pauseFlags ^= PR_PAUSE;
@@ -694,11 +683,13 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				}
 				break;
 			case Qt::Key_F8:
+				/*
 				if (rzxWin->isVisible()) {
 					rzxWin->hide();
 				} else {
 					rzxWin->show();
 				}
+				*/
 				break;
 			case Qt::Key_F9:
 				pause(true,PR_FILE);
@@ -710,12 +701,14 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				comp->nmiRequest = 1;
 				break;
 			case Qt::Key_F11:
+				/*
 				if (tapeWin->isVisible()) {
 					tapeWin->hide();
 				} else {
 					tapeWin->buildList(comp->tape);
 					tapeWin->show();
 				}
+				*/
 				break;
 			case Qt::Key_F12:
 				compReset(comp,RES_DEFAULT);

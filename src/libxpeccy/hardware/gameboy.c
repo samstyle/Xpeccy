@@ -615,6 +615,37 @@ void gbMemWr(Computer* comp, unsigned short adr, unsigned char val) {
 
 void gbcSync(Computer* comp, int ns) {
 	unsigned char req = 0;
+	// sound
+	gbsSync(comp->gbsnd, ns);
+	// timer
+	if (comp->gb.timer.div.per) {
+		comp->gb.timer.div.cnt -= ns;
+		if (comp->gb.timer.div.cnt < 0) {
+			comp->gb.timer.div.cnt += comp->gb.timer.div.per;
+			comp->gb.iomap[0x04]++;
+		}
+	}
+	if (comp->gb.timer.t.on && (comp->gb.timer.t.per > 0)) {
+		comp->gb.timer.t.cnt -= ns;
+		if (comp->gb.timer.t.cnt < 0) {
+			comp->gb.timer.t.cnt += comp->gb.timer.t.per;
+			if (comp->gb.iomap[0x05] == 0xff) {		// overflow
+				comp->gb.iomap[0x05] = comp->gb.iomap[0x06];
+				comp->gb.timer.t.intrq = 1;
+			} else {
+				comp->gb.iomap[0x05]++;
+			}
+		}
+	}
+	// cpu speed change
+	if (comp->cpu->stop && comp->cpu->speedrq) {
+		comp->cpu->stop = 0;
+		comp->cpu->pc++;
+		comp->cpu->speedrq = 0;
+		comp->cpu->speed ^= 1;
+		compSetTurbo(comp, comp->cpu->speed ? 2.0 : 1.0);
+	}
+	// interrupts
 	if (comp->vid->vbstrb) {
 		comp->vid->vbstrb = 0;
 		req |= 1;

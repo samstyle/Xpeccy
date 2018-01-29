@@ -66,7 +66,7 @@ class DebugWin : public QDialog {
 		void needStep();
 	private:
 		unsigned block:1;
-		unsigned onStart:1;
+		//unsigned onStart:1;
 		// tracer
 		unsigned trace:1;
 		int traceType;
