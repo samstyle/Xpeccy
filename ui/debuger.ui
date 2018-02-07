@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>811</width>
-    <height>586</height>
+    <width>886</width>
+    <height>607</height>
    </rect>
   </property>
   <property name="font">
@@ -22,9 +22,9 @@
    <iconset resource="../xpeccy.qrc">
     <normaloff>:/images/bug.png</normaloff>:/images/bug.png</iconset>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="10,0,0">
+  <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0,10,0,0">
    <item>
-    <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,0,0,0,0,10">
+    <layout class="QVBoxLayout" name="verticalLayout_9" stretch="0,10">
      <item>
       <widget class="QLabel" name="label_26">
        <property name="styleSheet">
@@ -39,101 +39,16 @@
       </widget>
      </item>
      <item>
-      <layout class="QGridLayout" name="cpuGrid">
-       <item row="4" column="2">
-        <widget class="QLabel" name="labReg09">
+      <layout class="QFormLayout" name="formLayout">
+       <item row="0" column="0">
+        <widget class="QLabel" name="labReg00">
          <property name="text">
-          <string>9</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="4">
-        <widget class="QLabel" name="labReg12">
-         <property name="text">
-          <string>12</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="3">
-        <widget class="QLineEdit" name="editReg08">
-         <property name="inputMask">
-          <string>HHHH</string>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <widget class="QLineEdit" name="editReg03">
-         <property name="inputMask">
-          <string>HHHH</string>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QLineEdit" name="editReg04">
-         <property name="inputMask">
-          <string>HHHH</string>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="5">
-        <widget class="QLineEdit" name="editReg11">
-         <property name="inputMask">
-          <string>HHHH</string>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="3">
-        <widget class="QLineEdit" name="editReg05">
-         <property name="inputMask">
-          <string>HHHH</string>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
+          <string>0</string>
          </property>
         </widget>
        </item>
        <item row="0" column="1">
         <widget class="QLineEdit" name="editReg00">
-         <property name="inputMask">
-          <string>HHHH</string>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="3">
-        <widget class="QLineEdit" name="editReg09">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -152,27 +67,6 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="2">
-        <widget class="QLabel" name="labReg08">
-         <property name="text">
-          <string>8</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="labReg02">
-         <property name="text">
-          <string>2</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="4">
-        <widget class="QLabel" name="labReg11">
-         <property name="text">
-          <string>11</string>
-         </property>
-        </widget>
-       </item>
        <item row="1" column="1">
         <widget class="QLineEdit" name="editReg01">
          <property name="inputMask">
@@ -186,116 +80,15 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="4">
-        <widget class="QLabel" name="labReg13">
+       <item row="2" column="0">
+        <widget class="QLabel" name="labReg02">
          <property name="text">
-          <string>13</string>
+          <string>2</string>
          </property>
         </widget>
        </item>
        <item row="2" column="1">
         <widget class="QLineEdit" name="editReg02">
-         <property name="inputMask">
-          <string>HHHH</string>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="6">
-        <widget class="QCheckBox" name="flagIFF1">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="7">
-        <widget class="QSpinBox" name="boxIM">
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-         <property name="maximum">
-          <number>2</number>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="6">
-        <widget class="QLabel" name="label_10">
-         <property name="text">
-          <string>IM</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="5">
-        <widget class="QLineEdit" name="editReg12">
-         <property name="inputMask">
-          <string>HHHH</string>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="2">
-        <widget class="QLabel" name="labReg05">
-         <property name="text">
-          <string>5</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="0">
-        <widget class="QLabel" name="labReg04">
-         <property name="text">
-          <string>4</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="6">
-        <widget class="QCheckBox" name="flagIFF2">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="7">
-        <widget class="QLabel" name="label_8">
-         <property name="text">
-          <string>IFF1</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="labReg00">
-         <property name="text">
-          <string>0</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="5">
-        <widget class="QLineEdit" name="editReg10">
-         <property name="inputMask">
-          <string>HHHH</string>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="3">
-        <widget class="QLineEdit" name="editReg07">
          <property name="inputMask">
           <string>HHHH</string>
          </property>
@@ -314,7 +107,67 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="3">
+       <item row="3" column="1">
+        <widget class="QLineEdit" name="editReg03">
+         <property name="inputMask">
+          <string>HHHH</string>
+         </property>
+         <property name="frame">
+          <bool>false</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="labReg04">
+         <property name="text">
+          <string>4</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QLineEdit" name="editReg04">
+         <property name="inputMask">
+          <string>HHHH</string>
+         </property>
+         <property name="frame">
+          <bool>false</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLabel" name="labReg05">
+         <property name="text">
+          <string>5</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QLineEdit" name="editReg05">
+         <property name="inputMask">
+          <string>HHHH</string>
+         </property>
+         <property name="frame">
+          <bool>false</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QLabel" name="labReg06">
+         <property name="text">
+          <string>6</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="1">
         <widget class="QLineEdit" name="editReg06">
          <property name="inputMask">
           <string>HHHH</string>
@@ -327,28 +180,134 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="7">
-        <widget class="QLabel" name="label_11">
-         <property name="text">
-          <string>IFF2</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="4">
-        <widget class="QLabel" name="labReg10">
-         <property name="text">
-          <string>10</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="2">
+       <item row="7" column="0">
         <widget class="QLabel" name="labReg07">
          <property name="text">
           <string>7</string>
          </property>
         </widget>
        </item>
-       <item row="3" column="5">
+       <item row="7" column="1">
+        <widget class="QLineEdit" name="editReg07">
+         <property name="inputMask">
+          <string>HHHH</string>
+         </property>
+         <property name="frame">
+          <bool>false</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="0">
+        <widget class="QLabel" name="labReg08">
+         <property name="text">
+          <string>8</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="1">
+        <widget class="QLineEdit" name="editReg08">
+         <property name="inputMask">
+          <string>HHHH</string>
+         </property>
+         <property name="frame">
+          <bool>false</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="0">
+        <widget class="QLabel" name="labReg09">
+         <property name="text">
+          <string>9</string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="1">
+        <widget class="QLineEdit" name="editReg09">
+         <property name="inputMask">
+          <string>HHHH</string>
+         </property>
+         <property name="frame">
+          <bool>false</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="0">
+        <widget class="QLabel" name="labReg10">
+         <property name="text">
+          <string>10</string>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="1">
+        <widget class="QLineEdit" name="editReg10">
+         <property name="inputMask">
+          <string>HHHH</string>
+         </property>
+         <property name="frame">
+          <bool>false</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="0">
+        <widget class="QLabel" name="labReg11">
+         <property name="text">
+          <string>11</string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="1">
+        <widget class="QLineEdit" name="editReg11">
+         <property name="inputMask">
+          <string>HHHH</string>
+         </property>
+         <property name="frame">
+          <bool>false</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="12" column="0">
+        <widget class="QLabel" name="labReg12">
+         <property name="text">
+          <string>12</string>
+         </property>
+        </widget>
+       </item>
+       <item row="12" column="1">
+        <widget class="QLineEdit" name="editReg12">
+         <property name="inputMask">
+          <string>HHHH</string>
+         </property>
+         <property name="frame">
+          <bool>false</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="0">
+        <widget class="QLabel" name="labReg13">
+         <property name="text">
+          <string>13</string>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="1">
         <widget class="QLineEdit" name="editReg13">
          <property name="inputMask">
           <string>HHHH</string>
@@ -361,7 +320,14 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="5">
+       <item row="14" column="0">
+        <widget class="QLabel" name="labReg14">
+         <property name="text">
+          <string>14</string>
+         </property>
+        </widget>
+       </item>
+       <item row="14" column="1">
         <widget class="QLineEdit" name="editReg14">
          <property name="inputMask">
           <string>HHHH</string>
@@ -374,143 +340,65 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="4">
-        <widget class="QLabel" name="labReg14">
+       <item row="15" column="0">
+        <widget class="QLabel" name="label_10">
          <property name="text">
-          <string>14</string>
+          <string>IM</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="2">
-        <widget class="QLabel" name="labReg06">
-         <property name="text">
-          <string>6</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <layout class="QGridLayout" name="flagGrid">
-       <item row="0" column="7">
-        <widget class="QLabel" name="labF0">
-         <property name="text">
-          <string>C</string>
+       <item row="15" column="1">
+        <widget class="QSpinBox" name="boxIM">
+         <property name="frame">
+          <bool>false</bool>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
          </property>
+         <property name="maximum">
+          <number>2</number>
+         </property>
         </widget>
        </item>
-       <item row="1" column="6">
-        <widget class="QCheckBox" name="cbF1">
-         <property name="maximumSize">
-          <size>
-           <width>15</width>
-           <height>15</height>
-          </size>
+       <item row="16" column="0">
+        <widget class="QLabel" name="label_8">
+         <property name="text">
+          <string>IFF1</string>
          </property>
+        </widget>
+       </item>
+       <item row="16" column="1">
+        <widget class="QCheckBox" name="flagIFF1">
          <property name="text">
           <string/>
          </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
         </widget>
        </item>
-       <item row="0" column="2">
-        <widget class="QLabel" name="labF5">
+       <item row="17" column="0">
+        <widget class="QLabel" name="label_11">
          <property name="text">
-          <string>5</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
+          <string>IFF2</string>
          </property>
         </widget>
        </item>
-       <item row="0" column="4">
-        <widget class="QLabel" name="labF3">
-         <property name="text">
-          <string>3</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QLabel" name="labF6">
-         <property name="text">
-          <string>Z</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="6">
-        <widget class="QLabel" name="labF1">
-         <property name="text">
-          <string>N</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="3">
-        <widget class="QCheckBox" name="cbF4">
-         <property name="maximumSize">
-          <size>
-           <width>15</width>
-           <height>15</height>
-          </size>
-         </property>
+       <item row="17" column="1">
+        <widget class="QCheckBox" name="flagIFF2">
          <property name="text">
           <string/>
          </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
         </widget>
        </item>
-       <item row="1" column="7">
-        <widget class="QCheckBox" name="cbF0">
-         <property name="maximumSize">
-          <size>
-           <width>15</width>
-           <height>15</height>
-          </size>
-         </property>
+       <item row="18" column="0">
+        <widget class="QLabel" name="labF7">
          <property name="text">
-          <string/>
-         </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
-        </widget>
-       </item>
-       <item row="0" column="5">
-        <widget class="QLabel" name="labF2">
-         <property name="text">
-          <string>P</string>
+          <string>S</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
-       <item row="0" column="3">
-        <widget class="QLabel" name="labF4">
-         <property name="text">
-          <string>H</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
+       <item row="18" column="1">
         <widget class="QCheckBox" name="cbF7">
          <property name="maximumSize">
           <size>
@@ -526,7 +414,17 @@
          </attribute>
         </widget>
        </item>
-       <item row="1" column="1">
+       <item row="19" column="0">
+        <widget class="QLabel" name="labF6">
+         <property name="text">
+          <string>Z</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="19" column="1">
         <widget class="QCheckBox" name="cbF6">
          <property name="maximumSize">
           <size>
@@ -542,49 +440,17 @@
          </attribute>
         </widget>
        </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="labF7">
+       <item row="20" column="0">
+        <widget class="QLabel" name="labF5">
          <property name="text">
-          <string>S</string>
+          <string>5</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
-       <item row="1" column="4">
-        <widget class="QCheckBox" name="cbF3">
-         <property name="maximumSize">
-          <size>
-           <width>15</width>
-           <height>15</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
-        </widget>
-       </item>
-       <item row="1" column="5">
-        <widget class="QCheckBox" name="cbF2">
-         <property name="maximumSize">
-          <size>
-           <width>15</width>
-           <height>15</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
-        </widget>
-       </item>
-       <item row="1" column="2">
+       <item row="20" column="1">
         <widget class="QCheckBox" name="cbF5">
          <property name="maximumSize">
           <size>
@@ -600,31 +466,142 @@
          </attribute>
         </widget>
        </item>
-       <item row="1" column="8">
-        <widget class="QLabel" name="labTcount">
+       <item row="21" column="0">
+        <widget class="QLabel" name="labF4">
          <property name="text">
-          <string/>
+          <string>H</string>
          </property>
          <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
-       <item row="0" column="8">
-        <spacer name="horizontalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
+       <item row="21" column="1">
+        <widget class="QCheckBox" name="cbF4">
+         <property name="maximumSize">
           <size>
-           <width>40</width>
-           <height>20</height>
+           <width>15</width>
+           <height>15</height>
           </size>
          </property>
-        </spacer>
+         <property name="text">
+          <string/>
+         </property>
+         <attribute name="buttonGroup">
+          <string notr="true">flagGroup</string>
+         </attribute>
+        </widget>
+       </item>
+       <item row="22" column="0">
+        <widget class="QLabel" name="labF3">
+         <property name="text">
+          <string>3</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="22" column="1">
+        <widget class="QCheckBox" name="cbF3">
+         <property name="maximumSize">
+          <size>
+           <width>15</width>
+           <height>15</height>
+          </size>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <attribute name="buttonGroup">
+          <string notr="true">flagGroup</string>
+         </attribute>
+        </widget>
+       </item>
+       <item row="23" column="0">
+        <widget class="QLabel" name="labF2">
+         <property name="text">
+          <string>P</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="23" column="1">
+        <widget class="QCheckBox" name="cbF2">
+         <property name="maximumSize">
+          <size>
+           <width>15</width>
+           <height>15</height>
+          </size>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <attribute name="buttonGroup">
+          <string notr="true">flagGroup</string>
+         </attribute>
+        </widget>
+       </item>
+       <item row="24" column="0">
+        <widget class="QLabel" name="labF1">
+         <property name="text">
+          <string>N</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="24" column="1">
+        <widget class="QCheckBox" name="cbF1">
+         <property name="maximumSize">
+          <size>
+           <width>15</width>
+           <height>15</height>
+          </size>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <attribute name="buttonGroup">
+          <string notr="true">flagGroup</string>
+         </attribute>
+        </widget>
+       </item>
+       <item row="25" column="0">
+        <widget class="QLabel" name="labF0">
+         <property name="text">
+          <string>C</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="25" column="1">
+        <widget class="QCheckBox" name="cbF0">
+         <property name="maximumSize">
+          <size>
+           <width>15</width>
+           <height>15</height>
+          </size>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <attribute name="buttonGroup">
+          <string notr="true">flagGroup</string>
+         </attribute>
+        </widget>
        </item>
       </layout>
      </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,0,0,10">
      <item>
       <widget class="QLabel" name="label_48">
        <property name="styleSheet">
@@ -753,6 +730,16 @@
       </layout>
      </item>
      <item>
+      <widget class="QLabel" name="labTcount">
+       <property name="text">
+        <string/>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="xDisasmTable" name="dasmTable">
        <property name="minimumSize">
         <size>
@@ -806,9 +793,6 @@
        </attribute>
        <attribute name="verticalHeaderMinimumSectionSize">
         <number>17</number>
-       </attribute>
-       <attribute name="verticalHeaderStretchLastSection">
-        <bool>true</bool>
        </attribute>
       </widget>
      </item>
@@ -2484,35 +2468,12 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>editReg00</tabstop>
-  <tabstop>editReg01</tabstop>
-  <tabstop>editReg02</tabstop>
-  <tabstop>editReg03</tabstop>
-  <tabstop>editReg04</tabstop>
-  <tabstop>editReg05</tabstop>
-  <tabstop>editReg06</tabstop>
-  <tabstop>editReg07</tabstop>
-  <tabstop>editReg08</tabstop>
-  <tabstop>editReg09</tabstop>
-  <tabstop>editReg10</tabstop>
-  <tabstop>editReg11</tabstop>
-  <tabstop>editReg12</tabstop>
-  <tabstop>editReg13</tabstop>
-  <tabstop>editReg14</tabstop>
-  <tabstop>boxIM</tabstop>
-  <tabstop>flagIFF1</tabstop>
-  <tabstop>flagIFF2</tabstop>
   <tabstop>tbAddBrk</tabstop>
   <tabstop>bpList</tabstop>
   <tabstop>rbTilesetView</tabstop>
-  <tabstop>cbF7</tabstop>
   <tabstop>rbPaleteView</tabstop>
-  <tabstop>cbF5</tabstop>
   <tabstop>leMixA</tabstop>
-  <tabstop>cbF3</tabstop>
-  <tabstop>cbF2</tabstop>
   <tabstop>leVolC</tabstop>
-  <tabstop>cbF0</tabstop>
   <tabstop>leMixB</tabstop>
   <tabstop>leEnvForm</tabstop>
   <tabstop>leVolB</tabstop>
@@ -2524,20 +2485,17 @@
   <tabstop>leVolE</tabstop>
   <tabstop>tabsPanel</tabstop>
   <tabstop>rbTilemapView</tabstop>
-  <tabstop>cbF4</tabstop>
   <tabstop>tbView</tabstop>
   <tabstop>leVolA</tabstop>
   <tabstop>sbTilemap</tabstop>
   <tabstop>cbScrAtr</tabstop>
   <tabstop>sbTileset</tabstop>
-  <tabstop>cbF6</tabstop>
   <tabstop>dasmTable</tabstop>
   <tabstop>tbSaveDasm</tabstop>
   <tabstop>tbTrace</tabstop>
   <tabstop>tbDelBrk</tabstop>
   <tabstop>tbBreak</tabstop>
   <tabstop>leToneC</tabstop>
-  <tabstop>cbF1</tabstop>
   <tabstop>tbTool</tabstop>
   <tabstop>tbDbgOpt</tabstop>
   <tabstop>dumpTable</tabstop>
@@ -2553,11 +2511,11 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
+  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

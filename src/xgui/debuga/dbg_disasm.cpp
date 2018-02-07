@@ -28,7 +28,7 @@ int xDisasmModel::columnCount(const QModelIndex& idx) const {
 }
 
 int xDisasmModel::rowCount(const QModelIndex& idx) const {
-	return 17;
+	return 25;
 }
 
 QVariant xDisasmModel::data(const QModelIndex& idx, int role) const {

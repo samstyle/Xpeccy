@@ -1,4 +1,4 @@
-#include "../../xcore/xcore.h"
+#include "xcore/xcore.h"
 
 #include <stdio.h>
 
@@ -1052,7 +1052,7 @@ void DebugWin::fillCPU() {
 			case REG_EMPTY:
 			case REG_NONE:
 				dbgRegLabs[i]->clear();
-				dbgRegEdit[i]->setEnabled(false);
+				dbgRegEdit[i]->setVisible(false);
 				dbgRegEdit[i]->clear();
 				break;
 			default:
@@ -1065,7 +1065,7 @@ void DebugWin::fillCPU() {
 					dbgRegEdit[i]->setInputMask("HHHH");
 					dbgRegEdit[i]->setText(gethexword(bunch.regs[i].value));
 				}
-				dbgRegEdit[i]->setEnabled(true);
+				dbgRegEdit[i]->setVisible(true);
 				break;
 		}
 		i++;

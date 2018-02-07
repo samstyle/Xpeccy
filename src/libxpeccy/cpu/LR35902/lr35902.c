@@ -170,9 +170,7 @@ static xRegDsc lrRegTab[] = {
 	{LR_REG_BC, "BC", 0},
 	{LR_REG_DE, "DE", 0},
 	{LR_REG_HL, "HL", 0},
-
 	{LR_REG_SP, "SP", 0},
-
 	{REG_NONE, "", 0}
 };
 
