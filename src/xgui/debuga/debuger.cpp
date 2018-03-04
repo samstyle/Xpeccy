@@ -73,7 +73,7 @@ void DebugWin::start(Computer* c) {
 	ui.tabsPanel->setTabEnabled(ui.tabsPanel->indexOf(ui.gbTab), comp->hw->id == HW_GBC);
 	ui.tabsPanel->setTabEnabled(ui.tabsPanel->indexOf(ui.nesTab), comp->hw->id == HW_NES);
 
-	move(winPos);
+	this->move(winPos);
 	// ui.dasmTable->setFocus();
 	comp->vid->debug = 1;
 	comp->debug = 1;
@@ -100,6 +100,7 @@ void DebugWin::start(Computer* c) {
 void DebugWin::stop() {
 	comp->debug = 0;
 	comp->vid->debug = 0;
+	comp->maping = ui.actMaping->isChecked() ? 1 : 0;
 	tCount = comp->tickCount;
 	winPos = pos();
 	trace = 0;
@@ -178,7 +179,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.actRead->setData(MEM_BRK_RD);
 	ui.actWrite->setData(MEM_BRK_WR);
 
-	ui.actViewOpcode->setData(DBG_VIEW_CODE);
+	ui.actViewOpcode->setData(DBG_VIEW_EXEC);
 	ui.actViewByte->setData(DBG_VIEW_BYTE);
 	ui.actViewWord->setData(DBG_VIEW_WORD);
 	ui.actViewAddr->setData(DBG_VIEW_ADDR);
@@ -237,9 +238,13 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.tbDbgOpt->addAction(ui.actShowLabels);
 	ui.tbDbgOpt->addAction(ui.actHideAddr);
 	ui.tbDbgOpt->addAction(ui.actShowSeg);
+	ui.tbDbgOpt->addAction(ui.actMaping);
+	ui.tbDbgOpt->addAction(ui.actMapingClear);
 
 // connections
 	connect(this,SIGNAL(needStep()),this,SLOT(doStep()));
+
+	connect(ui.actMapingClear,SIGNAL(triggered()),this,SLOT(mapClear()));
 
 	connect(ui.dasmTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
 	connect(ui.dasmTable,SIGNAL(rqRefill()),this,SLOT(fillDisasm()));
@@ -1396,6 +1401,7 @@ int getCommandSize(Computer* comp, unsigned short adr) {
 				res++;
 			break;
 		case DBG_VIEW_CODE:
+		case DBG_VIEW_EXEC:
 			mn = cpuDisasm(comp->cpu, adr, buf, &rdbyte, comp);
 			res = mn.len;
 			break;
@@ -1463,6 +1469,24 @@ void DebugWin::dumpChadr(QModelIndex idx) {
 	if (ui.dumpTable->mode != XVIEW_CPU)
 		adr &= 0x3fff;
 	ui.labDump->setText(QString("Dump : %0").arg(gethexword(adr & 0xffff)));
+}
+
+// maping
+
+void DebugWin::mapClear() {
+	if (!areSure("Clear memory mapping?")) return;
+	int adr;
+	for (adr = 0; adr < 0x400000; adr++) {
+		comp->brkRamMap[adr] &= 0x0f;
+		if (adr < 0x80000) comp->brkRomMap[adr] &= 0x0f;
+		if (comp->slot->data && (adr <= comp->slot->memMask))
+			comp->slot->brkMap[adr] &= 0x0f;
+	}
+	fillDisasm();
+}
+
+void DebugWin::mapAuto() {
+
 }
 
 // stack

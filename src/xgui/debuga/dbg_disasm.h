@@ -10,13 +10,6 @@
 #include "xcore/xcore.h"
 
 // memory cell type (bits 4..7)
-enum {
-	DBG_VIEW_CODE = 0x00,
-	DBG_VIEW_BYTE = 0x10,
-	DBG_VIEW_WORD = 0x20,
-	DBG_VIEW_ADDR = 0x30,
-	DBG_VIEW_TEXT = 0x40
-};
 
 typedef struct {
 	unsigned ispc:1;		// address is PC

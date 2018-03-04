@@ -215,7 +215,10 @@ int dasmSome(Computer* comp, unsigned short adr, dasmData& drow) {
 		case DBG_VIEW_WORD: clen = dasmWord(comp, adr, drow); break;
 		case DBG_VIEW_ADDR: clen = dasmAddr(comp, adr, drow); break;
 		case DBG_VIEW_TEXT: clen = dasmText(comp, adr, drow); break;
-		case DBG_VIEW_CODE: clen = dasmCode(comp, adr, drow); break;
+		case DBG_VIEW_CODE:
+		case DBG_VIEW_EXEC:
+			clen = dasmCode(comp, adr, drow);
+			break;
 		default: clen = dasmByte(comp, adr, drow); break;		// DBG_VIEW_BYTE
 	}
 	return clen;
@@ -465,7 +468,7 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 				if (len > 0) {
 					for(idx = 0; idx < len; idx++) {
 						*ptr &= 0x0f;
-						*ptr |= DBG_VIEW_CODE;
+						*ptr |= DBG_VIEW_EXEC;
 					}
 				}
 			}

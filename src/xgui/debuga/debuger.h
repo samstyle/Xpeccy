@@ -32,7 +32,7 @@ enum {
 	XTYPE_ADR = 0,
 	XTYPE_LABEL,
 	XTYPE_DUMP,
-	XTYPE_BYTE
+	XTYPE_BYTE,
 };
 
 enum {
@@ -127,6 +127,9 @@ class DebugWin : public QDialog {
 		void saveMap();
 		void saveDasm();
 		void saveLabels();
+
+		void mapClear();
+		void mapAuto();
 
 		int fillDisasm();
 		void fillDump();

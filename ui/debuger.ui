@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>886</width>
+    <width>884</width>
     <height>607</height>
    </rect>
   </property>
@@ -2442,6 +2442,19 @@
    </property>
    <property name="text">
     <string>Keyboard</string>
+   </property>
+  </action>
+  <action name="actMaping">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Rutime maping</string>
+   </property>
+  </action>
+  <action name="actMapingClear">
+   <property name="text">
+    <string>Clear maping</string>
    </property>
   </action>
  </widget>

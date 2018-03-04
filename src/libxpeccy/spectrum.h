@@ -40,6 +40,15 @@ enum {
 #define IO_BRK_RD	1
 #define IO_BRK_WR	(1<<1)
 
+enum {
+	DBG_VIEW_CODE = 0x00,
+	DBG_VIEW_BYTE = 0x10,
+	DBG_VIEW_WORD = 0x20,
+	DBG_VIEW_ADDR = 0x30,
+	DBG_VIEW_TEXT = 0x40,
+	DBG_VIEW_EXEC = 0x50
+};
+
 typedef struct {
 	unsigned char l;
 	unsigned char h;
@@ -54,6 +63,7 @@ typedef struct {
 typedef struct {
 	unsigned brk:1;			// breakpoint
 	unsigned debug:1;		// dont' do breakpoints
+	unsigned maping:1;		// map memory during execution
 	unsigned frmStrobe:1;		// new frame started
 	unsigned intStrobe:1;		// int front
 	unsigned nmiRequest:1;		// Magic button pressed
@@ -141,41 +151,12 @@ typedef struct {
 	unsigned short padr;
 	unsigned char pval;
 
-/*
-	struct {
-		struct {
-			unsigned enable:1;
-
-			unsigned wcom:1;	// waiting for command (after 55FE)
-			unsigned warg:1;	// waiting for argument
-
-			unsigned shift:1;	// modifiers
-			unsigned rshift:1;
-			unsigned ctrl:1;
-			unsigned alt:1;
-			unsigned caps:1;
-			unsigned numlock:1;
-			unsigned scrlock:1;
-			unsigned lat:1;
-
-			unsigned char keycode;
-			unsigned char lastkey;
-
-			int mode;		// zx/keycode/cpm/direct
-			unsigned char com;	// command code
-			unsigned char arg;
-//			unsigned char kbpos;
-//			unsigned char keybuf[8];
-		} kbd;
-	} atm2;
-*/
 	struct {
 		unsigned char evoBF;		// PentEvo rw ports
 		unsigned char evo2F;
 		unsigned char evo4F;
 		unsigned char evo6F;
 		unsigned char evo8F;
-//		int hiTrig;			// trigger for hi-low byte in IDE
 		unsigned char blVer[16];	// bootloader info
 		unsigned char bcVer[16];	// baseconf info
 	} evo;

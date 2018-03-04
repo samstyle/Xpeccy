@@ -36,7 +36,19 @@ unsigned char memrd(unsigned short adr,int m1,void* ptr) {
 		comp->rzx.frm.fetches--;
 	}
 	// zxMemRW(comp,adr);
-	if (getBrk(comp, adr) & MEM_BRK_RD) {
+	unsigned char* fptr = getBrkPtr(comp, adr);
+	unsigned char flag = *fptr;
+	if (comp->maping) {
+		if ((comp->cpu->pc-1) == adr) {		// cuz pc is already incremented
+			flag &= 0x0f;
+			flag |= DBG_VIEW_EXEC;
+			*fptr = flag;
+		} else if (!(flag & 0xf0)) {
+			flag |= DBG_VIEW_BYTE;
+			*fptr = flag;
+		}
+	}
+	if (flag & MEM_BRK_RD) {
 		comp->brk = 1;
 	}
 	return comp->hw->mrd(comp,adr,m1);
@@ -45,7 +57,15 @@ unsigned char memrd(unsigned short adr,int m1,void* ptr) {
 void memwr(unsigned short adr, unsigned char val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	//zxMemRW(comp,adr);
-	if (getBrk(comp, adr) & MEM_BRK_WR) {
+	unsigned char* fptr = getBrkPtr(comp, adr);
+	unsigned char flag = *fptr;
+	if (comp->maping) {
+		if (!(flag & 0xf0)) {
+			flag |= DBG_VIEW_BYTE;
+			*fptr = flag;
+		}
+	}
+	if (flag & MEM_BRK_WR) {
 		comp->brk = 1;
 	}
 	comp->hw->mwr(comp,adr,val);
