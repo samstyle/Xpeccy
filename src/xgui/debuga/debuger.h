@@ -149,6 +149,8 @@ class DebugWin : public QDialog {
 		void delBrk();
 		void confirmBrk(xBrkPoint, xBrkPoint);
 		void goToBrk(QModelIndex);
+		void openBrk();
+		void saveBrk(QString = QString());
 
 		void putBreakPoint();
 		void chaCellProperty(QAction*);

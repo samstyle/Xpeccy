@@ -39,7 +39,8 @@ typedef struct {
 #define DELBREAKS 0		// delete breakpoint on FRW=000
 
 enum {
-	BRK_IOPORT = 1,
+	BRK_UNKNOWN = 0,
+	BRK_IOPORT,
 	BRK_CPUADR,
 	BRK_MEMCELL,
 	BRK_MEMRAM,

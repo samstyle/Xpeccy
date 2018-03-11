@@ -339,6 +339,8 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.tbAddBrk, SIGNAL(clicked()), this, SLOT(addBrk()));
 	connect(ui.tbEditBrk, SIGNAL(clicked()), this, SLOT(editBrk()));
 	connect(ui.tbDelBrk, SIGNAL(clicked()), this, SLOT(delBrk()));
+	connect(ui.tbBrkOpen, SIGNAL(clicked()), this, SLOT(openBrk()));
+	connect(ui.tbBrkSave, SIGNAL(clicked()), this, SLOT(saveBrk()));
 	connect(ui.bpList, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(goToBrk(QModelIndex)));
 // gb tab
 	connect(ui.gbModeGroup, SIGNAL(buttonClicked(int)), this, SLOT(fillGBoy()));
@@ -1296,12 +1298,14 @@ void DebugWin::saveMap() {
 		strm << QString("XDBG");		// [new] signature
 		strm << XDBGVER;			// version
 		strmLabels(strm);
-		int bit = 0b011;			// b0:ram cells, b1:rom cells, b2:slt cells
-		if (comp->slot->brkMap) bit |= 0b100;
+		int bit = 3;				// b0:ram cells, b1:rom cells, b2:slt cells
+		if (comp->slot->brkMap)
+			bit |= 4;
 		strm << bit;
 		fwritepack(strm, comp->brkRamMap, 0x400000);
 		fwritepack(strm, comp->brkRomMap, 0x80000);
-		if (bit & 0b100) fwritepack(strm, comp->slot->brkMap, comp->slot->memMask + 1);
+		if (bit & 4)
+			fwritepack(strm, comp->slot->brkMap, comp->slot->memMask + 1);
 #else
 
 		strm << QString("deBUGa");		// signature
@@ -1336,14 +1340,17 @@ void DebugWin::loadMap() {
 				memset(comp->brkRamMap, 0x00, 0x400000);
 				memset(comp->brkRomMap, 0x00, 0x80000);
 				if (comp->slot->brkMap) memset(comp->slot->brkMap, 0x00, comp->slot->memMask + 1);
-				if (bt & 1) freadpack(strm, comp->brkRamMap, 0x400000);
-				if (bt & 2) freadpack(strm, comp->brkRomMap, 0x80000);
-				if ((bt & 4) && comp->slot->brkMap) freadpack(strm, comp->slot->brkMap, comp->slot->memMask + 1);
+				if (bt & 1)
+					freadpack(strm, comp->brkRamMap, 0x400000);
+				if (bt & 2)
+					freadpack(strm, comp->brkRomMap, 0x80000);
+				if ((bt & 4) && comp->slot->brkMap)
+					freadpack(strm, comp->slot->brkMap, comp->slot->memMask + 1);
 			}
-
 		} else {
 			shitHappens("Wrong signature");
 		}
+		file.close();
 		brkInstallAll();
 		fillAll();
 	}
@@ -1828,4 +1835,121 @@ void DebugWin::goToBrk(QModelIndex idx) {
 	if (adr < 0) return;
 	disasmAdr = adr & 0xffff;
 	fillDisasm();
+}
+
+void DebugWin::saveBrk(QString path) {
+	if (path.isEmpty())
+		path = QFileDialog::getSaveFileName(this, "Save breakpoints", "", "deBUGa breakpoints (*.xbrk)");
+	if (path.isEmpty())
+		return;
+	if (!path.endsWith(".xbrk"))
+		path.append(".xbrk");
+	xBrkPoint brk;
+	QFile file(path);
+	QString nm,ar1,ar2,flag;
+	if (file.open(QFile::WriteOnly)) {
+		file.write("; Xpeccy deBUGa breakpoints list\n");
+		foreach(brk, conf.prof.cur->brkList) {
+			if (!brk.off) {
+				switch(brk.type) {
+					case BRK_IOPORT:
+						nm = "IO";
+						ar1 = gethexword(brk.adr & 0xffff);
+						ar2 = gethexword(brk.mask & 0xffff);
+						break;
+					case BRK_CPUADR:
+						nm = "CPU";
+						ar1 = gethexword(brk.adr & 0xffff);
+						ar2.clear();
+						break;
+					case BRK_MEMRAM:
+						nm = "RAM";
+						ar1 = gethexbyte((brk.adr >> 14) & 0xff);	// 16K page
+						ar2 = gethexword(brk.adr & 0x3fff);		// adr in page
+						break;
+					case BRK_MEMROM:
+						nm = "ROM";
+						ar1 = gethexbyte((brk.adr >> 14) & 0xff);
+						ar2 = gethexword(brk.adr & 0x3fff);
+						break;
+					case BRK_MEMSLT:
+						nm = "SLT";
+						ar1 = gethexbyte((brk.adr >> 14) & 0xff);
+						ar2 = gethexword(brk.adr & 0x3fff);
+						break;
+					default:
+						nm.clear();
+						break;
+				}
+				if (!nm.isEmpty()) {
+					flag.clear();
+					if (brk.fetch) flag.append("F");
+					if (brk.read) flag.append("R");
+					if (brk.write) flag.append("W");
+					file.write(QString("%0:%1:%2:%3\n").arg(nm).arg(ar1).arg(ar2).arg(flag).toUtf8());
+				}
+			}
+		}
+		file.close();
+	} else {
+		shitHappens("Can't open file for writing");
+	}
+}
+
+void DebugWin::openBrk() {
+	QString path = QFileDialog::getOpenFileName(this, "Open breakpoints list", "", "deBUGa breakpoints (*.xbrk)");
+	if (path.isEmpty()) return;
+	QFile file(path);
+	QString line;
+	QStringList list;
+	xBrkPoint brk;
+	bool b0,b1;
+	if (file.open(QFile::ReadOnly)) {
+		conf.prof.cur->brkList.clear();
+		while(!file.atEnd()) {
+			line = trUtf8(file.readLine());
+			if (!line.startsWith(";")) {
+				b0 = true;
+				b1 = true;
+				list = line.split(":", QString::KeepEmptyParts);
+				while(list.size() < 4)
+					list.append(QString());
+				brk.fetch = list.at(3).contains("F") ? 1 : 0;
+				brk.read = list.at(3).contains("R") ? 1 : 0;
+				brk.write = list.at(3).contains("W") ? 1 : 0;
+				if (list.at(0) == "IO") {
+					brk.type = BRK_IOPORT;
+					brk.adr = list.at(1).toInt(&b0, 16) & 0xffff;
+					brk.mask = list.at(2).toInt(&b1, 16) & 0xffff;
+				} else if (list.at(0) == "CPU") {
+					brk.type = BRK_CPUADR;
+					brk.adr = list.at(1).toInt(&b0, 16) & 0xffff;
+				} else if (list.at(0) == "ROM") {
+					brk.type = BRK_MEMROM;
+					brk.adr = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
+					brk.adr |= (list.at(2).toInt(&b1, 16) & 0x3fff);
+				} else if (list.at(0) == "RAM") {
+					brk.type = BRK_MEMRAM;
+					brk.adr = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
+					brk.adr |= (list.at(2).toInt(&b1, 16) & 0x3fff);
+				} else if (list.at(0) == "SLT") {
+					brk.type = BRK_MEMSLT;
+					brk.adr = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
+					brk.adr |= (list.at(2).toInt(&b1, 16) & 0x3fff);
+				} else {
+					b0 = false;
+				}
+				if (b0 && b1) {
+					conf.prof.cur->brkList.push_back(brk);
+				}
+			}
+		}
+		file.close();
+		brkInstallAll();
+		ui.bpList->update();
+		fillDisasm();
+		fillDump();
+	} else {
+		shitHappens("Can't open file for reading");
+	}
 }

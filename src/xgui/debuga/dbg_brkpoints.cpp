@@ -187,7 +187,7 @@ xBrkManager::xBrkManager(QWidget* p):QDialog(p) {
 //	ui.brkType->addItem("IO address", BRK_IOPORT);
 	ui.brkType->addItem("RAM cell", BRK_MEMRAM);
 	ui.brkType->addItem("ROM cell", BRK_MEMROM);
-	ui.brkType->addItem("SLT cell", BRK_MEMCELL);
+	ui.brkType->addItem("SLT cell", BRK_MEMSLT);
 	ui.brkType->addItem("IRQ", BRK_IRQ);
 
 	connect(ui.brkAdrDec, SIGNAL(valueChanged(int)), this, SLOT(adrDec2hex(int)));
