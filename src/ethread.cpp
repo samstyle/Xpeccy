@@ -89,6 +89,7 @@ void xThread::run() {
 	waitpic = 1;
 	emutex.lock();
 	do {
+#ifdef HAVEZLIB
 		if (comp->rzx.start) {
 			comp->rzx.start = 0;
 			comp->rzx.play = 1;
@@ -97,6 +98,7 @@ void xThread::run() {
 			rewind(comp->rzx.file);
 			rzxGetFrame(comp);
 		}
+#endif
 		if (!block && !comp->brk) {
 			emuCycle();
 			if (comp->brk) {

@@ -3,55 +3,63 @@
 QString gethexword(int);
 
 xHexSpin::xHexSpin(QWidget* p):QLineEdit(p) {
-	setInputMask("HHHH");
+	setInputMask("Hhhh");
 	setText("0000");
+	min = 0x0000;
+	max = 0xffff;
 	connect(this, SIGNAL(valueChanged(int)), SLOT(onChange(int)));
 	connect(this, SIGNAL(textChanged(QString)), SLOT(onTextChange(QString)));
 }
 
 int xHexSpin::getValue() {
-	return value & 0xffff;
+	return value;
+}
+
+int minMaxCorrect(int val, int min, int max) {
+	if (val < min) return min;
+	if (val > max) return max;
+	return val;
 }
 
 void xHexSpin::setValue(int nval) {
-	nval &= 0xffff;
+	nval = minMaxCorrect(nval, min, max);
 	if (value == nval) return;
-	value = nval & 0xffff;
-	emit valueChanged(value & 0xffff);
+	value = nval;
+	emit valueChanged(value);
 }
 
 void xHexSpin::onChange(int val) {
-	val &= 0xffff;
 	int pos = cursorPosition();
 	setText(gethexword(val));
 	setCursorPosition(pos);
 }
 
 void xHexSpin::onTextChange(QString txt) {
-	unsigned short nval = txt.toInt(NULL, 16) & 0xffff;
+	unsigned short nval = txt.toInt(NULL, 16);
+	nval = minMaxCorrect(nval, min, max);
 	if (value != nval) {
 		value = nval;
-		emit valueChanged(value & 0xffff);
+		emit valueChanged(value);
 	}
 }
 
 void xHexSpin::keyPressEvent(QKeyEvent* ev) {
 	switch(ev->key()) {
 		case Qt::Key_Up:
-			value++;
-			emit valueChanged(value & 0xffff);
+			value = minMaxCorrect(value + 1, min, max);
+			emit valueChanged(value);
 			break;
 		case Qt::Key_Down:
-			value--;
-			emit valueChanged(value & 0xffff);
+			value = minMaxCorrect(value - 1, min, max);
+			emit valueChanged(value);
 			break;
 		case Qt::Key_PageUp:
-			value += 0x100;
-			emit valueChanged(value & 0xffff);
+			value = minMaxCorrect(value + 0x100, min, max);
+			emit valueChanged(value);
 			break;
 		case Qt::Key_PageDown:
-			value -= 0x100;
-			emit valueChanged(value & 0xffff);
+			value = minMaxCorrect(value - 0x100, min, max);
+			emit valueChanged(value);
 			break;
 		default:
 			QLineEdit::keyPressEvent(ev);
@@ -61,10 +69,10 @@ void xHexSpin::keyPressEvent(QKeyEvent* ev) {
 
 void xHexSpin::wheelEvent(QWheelEvent* ev) {
 	if (ev->delta() < 0) {
-		value++;
-		emit valueChanged(value & 0xffff);
+		value = minMaxCorrect(value + 1, min, max);
+		emit valueChanged(value);
 	} else if (ev->delta() > 0) {
-		value--;
-		emit valueChanged(value & 0xffff);
+		value = minMaxCorrect(value - 1, min, max);
+		emit valueChanged(value);
 	}
 }

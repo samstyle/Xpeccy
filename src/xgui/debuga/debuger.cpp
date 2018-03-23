@@ -970,11 +970,13 @@ void DebugWin::chLayout() {
 // rzx
 
 void dbgSetRzxIO(QLabel* lab, Computer* comp, int pos) {
+#ifdef HAVEZLIB
 	if (pos < comp->rzx.frm.size) {
 		lab->setText(gethexbyte(comp->rzx.frm.data[pos]));
 	} else {
 		lab->setText("--");
 	}
+#endif
 }
 
 /*

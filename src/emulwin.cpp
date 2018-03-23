@@ -339,7 +339,7 @@ void MainWin::mapJoystick(Computer* comp, int type, int num, int state) {
 						}
 						break;
 					case JOY_HAT:
-						if (state == xjm.state)
+						if (state & xjm.state)
 							mapPress(comp, xjm);
 						break;
 					case JOY_BUTTON:
@@ -361,6 +361,7 @@ void MainWin::onTimer() {
 		opt->prfChanged = 0;
 	}
 	if (block) return;
+#if HAVEZLIB
 	if (comp->rzx.start) {
 		rzxWin->startPlay();
 	}
@@ -371,6 +372,7 @@ void MainWin::onTimer() {
 		rzxWin->stop();
 		pause(false, PR_RZX);
 	}
+#endif
 // process sdl event (gamepad)
 
 /* TODO : rewrite using this:
@@ -494,6 +496,7 @@ void MainWin::tapStateChanged(int wut, int val) {
 
 // connection between rzx player and emulation state
 void MainWin::rzxStateChanged(int state) {
+#ifdef HAVEZLIB
 	switch(state) {
 		case RWS_PLAY:
 			pause(false,PR_RZX);
@@ -514,6 +517,7 @@ void MainWin::rzxStateChanged(int state) {
 			pause(false,PR_RZX);
 			break;
 	}
+#endif
 }
 
 void MainWin::paintEvent(QPaintEvent*) {
@@ -885,7 +889,10 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 }
 
 void MainWin::checkState() {
-	if (comp->rzx.start) rzxWin->startPlay();
+#ifdef HAVEZLIB
+	if (comp->rzx.start)
+		rzxWin->startPlay();
+#endif
 	tapeWin->buildList(comp->tape);
 	tapeWin->setCheck(comp->tape->block);
 }
@@ -1076,9 +1083,11 @@ void MainWin::drawMessage() {
 void MainWin::updateSatellites() {
 	if (block) return;
 // update rzx window
+#ifdef HAVEZLIB
 	if (comp->rzx.play && rzxWin->isVisible()) {
 		rzxWin->setProgress(comp->rzx.fCurrent, comp->rzx.fTotal);
 	}
+#endif
 // update tape window
 	if (tapeWin->isVisible()) {
 		if (comp->tape->on && !comp->tape->rec) {

@@ -61,6 +61,17 @@ void brkInstall(xBrkPoint brk, int del) {
 	unsigned char msk;
 	Computer* comp = conf.prof.cur->zx;
 	switch(brk.type) {
+		case BRK_IOPORT:
+			for (int adr = 0; adr < 0x10000; adr++) {
+				if ((adr & brk.mask) == (brk.adr & brk.mask)) {
+					comp->brkIOMap[adr] = 0;
+					if (!brk.off) {
+						if (brk.read) comp->brkIOMap[adr] |= MEM_BRK_RD;
+						if (brk.write) comp->brkIOMap[adr] |= MEM_BRK_WR;
+					}
+				}
+			}
+			break;
 		case BRK_CPUADR: ptr = comp->brkAdrMap + (brk.adr & 0xffff); break;
 		case BRK_MEMRAM: ptr = comp->brkRamMap + (brk.adr & 0x3fffff); break;
 		case BRK_MEMROM: ptr = comp->brkRomMap + (brk.adr & 0x7ffff); break;

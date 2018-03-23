@@ -9,6 +9,7 @@
 #include <QVariant>
 #include <QDialog>
 
+#include "xgui/xgui.h"
 #include "ui_brkmanager.h"
 #include "xcore/xcore.h"
 
@@ -53,9 +54,8 @@ class xBrkManager : public QDialog {
 		Ui::BrkManager ui;
 		xBrkPoint obrk;
 	private slots:
-		void adrDec2hex(int);
-		void adrHex2dec(QString);
 		void confirm();
+		void chaType(int);
 	signals:
 		void completed(xBrkPoint, xBrkPoint);
 };

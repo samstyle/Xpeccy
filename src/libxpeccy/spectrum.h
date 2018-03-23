@@ -36,10 +36,6 @@ enum {
 	RES_SHADOW
 };
 
-// io breaks
-#define IO_BRK_RD	1
-#define IO_BRK_WR	(1<<1)
-
 enum {
 	DBG_VIEW_CODE = 0x00,
 	DBG_VIEW_BYTE = 0x10,

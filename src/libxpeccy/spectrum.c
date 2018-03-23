@@ -32,9 +32,11 @@ void zxMemRW(Computer* comp, int adr) {
 
 unsigned char memrd(unsigned short adr,int m1,void* ptr) {
 	Computer* comp = (Computer*)ptr;
+#ifdef HAVEZLIB
 	if (m1 && comp->rzx.play) {
 		comp->rzx.frm.fetches--;
 	}
+#endif
 	// zxMemRW(comp,adr);
 	unsigned char* fptr = getBrkPtr(comp, adr);
 	unsigned char flag = *fptr;
@@ -111,6 +113,7 @@ unsigned char iord(unsigned short port, void* ptr) {
 	tapSync(comp->tape,comp->tapCount);
 	comp->tapCount = 0;
 // play rzx
+#ifdef HAVEZLIB
 	if (comp->rzx.play) {
 		if (comp->rzx.frm.pos < comp->rzx.frm.size) {
 			res = comp->rzx.frm.data[comp->rzx.frm.pos];
@@ -123,9 +126,10 @@ unsigned char iord(unsigned short port, void* ptr) {
 			return 0xff;
 		}
 	}
+#endif
 	bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
 // brk
-	if (comp->brkIOMap[port] & IO_BRK_RD)
+	if (comp->brkIOMap[port] & MEM_BRK_RD)
 		comp->brk = 1;
 
 	return comp->hw->in(comp, port, bdiz);
@@ -136,7 +140,7 @@ void iowr(unsigned short port, unsigned char val, void* ptr) {
 	comp->padr = port;
 	comp->pval = val;
 // brk
-	if (comp->brkIOMap[port] & IO_BRK_WR)
+	if (comp->brkIOMap[port] & MEM_BRK_WR)
 		comp->brk = 1;
 }
 
@@ -145,11 +149,13 @@ unsigned char intrq(void* ptr) {
 }
 
 void rzxStop(Computer* zx) {
+#ifdef HAVEZLIB
 	zx->rzx.play = 0;
 	if (zx->rzx.file) fclose(zx->rzx.file);
 	zx->rzx.file = NULL;
 	zx->rzx.fCount = 0;
 	zx->rzx.frm.size = 0;
+#endif
 }
 
 void zxSetUlaPalete(Computer* comp) {
@@ -215,12 +221,13 @@ Computer* compCreate() {
 	comp->tsconf.pwr_up = 1;
 	comp->tsconf.vdos = 0;
 // rzx
+#ifdef HAVEZLIB
 	comp->rzx.start = 0;
 	comp->rzx.play = 0;
 	comp->rzx.overio = 0;
 	comp->rzx.fCount = 0;
 	comp->rzx.file = NULL;
-
+#endif
 	comp->tapCount = 0;
 	comp->tickCount = 0;
 
@@ -255,7 +262,10 @@ void compDestroy(Computer* comp) {
 }
 
 void compReset(Computer* comp,int res) {
-	if (comp->rzx.play) rzxStop(comp);
+#ifdef HAVEZLIB
+	if (comp->rzx.play)
+		rzxStop(comp);
+#endif
 
 	if (res == RES_DEFAULT)
 		res = comp->resbank;
@@ -438,6 +448,7 @@ int compExec(Computer* comp) {
 		comp->frmtCount += res2;
 	}
 // sync hardware
+#ifdef HAVEZLIB
 	if (comp->rzx.play) {
 		if (comp->rzx.frm.fetches < 1) {
 			comp->intVector = 0xff;
@@ -449,6 +460,10 @@ int compExec(Computer* comp) {
 	} else if (comp->hw->sync) {
 		comp->hw->sync(comp, nsTime);
 	}
+#else
+	if (comp->hw->sync)
+		comp->hw->sync(comp, nsTime);
+#endif
 // new frame
 	if (comp->vid->newFrame) {
 		comp->vid->newFrame = 0;

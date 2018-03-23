@@ -28,6 +28,8 @@ class xHexSpin : public QLineEdit {
 		void onTextChange(QString);
 	private:
 		int value;
+		int min;
+		int max;
 	protected:
 		void keyPressEvent(QKeyEvent*);
 		void wheelEvent(QWheelEvent*);

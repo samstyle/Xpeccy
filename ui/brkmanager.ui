@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>280</width>
+    <width>276</width>
     <height>182</height>
    </rect>
   </property>
@@ -18,7 +18,7 @@
     <widget class="QComboBox" name="brkType"/>
    </item>
    <item row="4" column="1">
-    <widget class="QLineEdit" name="brkMaskHex">
+    <widget class="xHexSpin" name="brkMaskHex">
      <property name="enabled">
       <bool>false</bool>
      </property>
@@ -51,7 +51,7 @@
    <item row="4" column="0">
     <widget class="QLabel" name="label_4">
      <property name="text">
-      <string>Addr Mask</string>
+      <string>Mask</string>
      </property>
     </widget>
    </item>
@@ -65,20 +65,7 @@
    <item row="3" column="1">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QSpinBox" name="brkAdrDec">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="maximum">
-        <number>65535</number>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="brkAdrHex">
+      <widget class="xHexSpin" name="brkAdrHex">
        <property name="inputMask">
         <string>HHHH</string>
        </property>
@@ -148,6 +135,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>xHexSpin</class>
+   <extends>QLineEdit</extends>
+   <header location="global">stdlib.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../xpeccy.qrc"/>
  </resources>
