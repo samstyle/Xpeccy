@@ -145,9 +145,11 @@ QLabel* dbgRegLabs[16];
 QLineEdit* dbgRegEdit[16];
 
 DebugWin::DebugWin(QWidget* par):QDialog(par) {
+	int i;
+
 	ui.setupUi(this);
 
-	QLabel* arrl[16] = {
+	xLabel* arrl[16] = {
 		ui.labReg00, ui.labReg01, ui.labReg02, ui.labReg03, ui.labReg04,
 		ui.labReg05, ui.labReg06, ui.labReg07, ui.labReg08, ui.labReg09,
 		ui.labReg10, ui.labReg11, ui.labReg12, ui.labReg13, ui.labReg14,
@@ -160,9 +162,13 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 		ui.editReg10, ui.editReg11, ui.editReg12, ui.editReg13, ui.editReg14,
 		NULL
 	};
-	for (int i = 0; i < 16; i++) {
+	for (i = 0; i < 16; i++) {
 		dbgRegLabs[i] = arrl[i];
 		dbgRegEdit[i] = arre[i];
+		if (arrl[i]) {
+			arrl[i]->id = i;
+			connect(arrl[i], SIGNAL(clicked(QMouseEvent*)), this, SLOT(regClick(QMouseEvent*)));
+		}
 	}
 
 	ui.dumpTable->setComp(&comp);
@@ -464,11 +470,6 @@ void DebugWin::setDasmMode() {
 	ui.sbDasmPage->setDisabled(mode == XVIEW_CPU);
 	ui.dasmTable->setMode(mode, page);
 }
-
-//void DebugWin::dumpClicked(QModelIndex) {
-//	int adr = getAdr();
-//	ui.labDump->setText(QString("Dump : %0").arg(gethexword(adr & 0xffff)));
-//}
 
 static QFile logfile;
 
@@ -967,8 +968,32 @@ void DebugWin::chLayout() {
 	}
 }
 
+void DebugWin::regClick(QMouseEvent* ev) {
+	xLabel* lab = (xLabel*)sender();
+	int id = lab->id;
+	if (id < 0) return;
+	if (id > 15) return;
+	CPU* cpu = comp->cpu;
+	xRegBunch bunch = cpuGetRegs(cpu);
+	xRegister reg = bunch.regs[id];
+	unsigned short val = reg.value;
+	switch (ev->button()) {
+		case Qt::RightButton:
+			dumpAdr = val;
+			fillDump();
+			break;
+		case Qt::LeftButton:
+			disasmAdr = val;
+			fillDisasm();
+			break;
+		default:
+			break;
+	}
+}
+
 // rzx
 
+/*
 void dbgSetRzxIO(QLabel* lab, Computer* comp, int pos) {
 #ifdef HAVEZLIB
 	if (pos < comp->rzx.frm.size) {
@@ -979,7 +1004,6 @@ void dbgSetRzxIO(QLabel* lab, Computer* comp, int pos) {
 #endif
 }
 
-/*
 void DebugWin::fillRZX() {
 	ui.rzxFrm->setText(QString::number(comp->rzx.frame).append(" / ").append(QString::number(comp->rzx.size)));
 	ui.rzxFetch->setText(QString::number(comp->rzx.fetches));

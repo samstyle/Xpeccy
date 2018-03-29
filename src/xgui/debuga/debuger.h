@@ -58,15 +58,12 @@ class DebugWin : public QDialog {
 		void start(Computer*);
 		void stop();
 
-	public slots:
-		bool fillAll();
 	signals:
 		void closed();
 		void wannaKeys();
 		void needStep();
 	private:
 		unsigned block:1;
-		//unsigned onStart:1;
 		// tracer
 		unsigned trace:1;
 		int traceType;
@@ -98,15 +95,11 @@ class DebugWin : public QDialog {
 		void doBreakPoint(unsigned short);
 		int getAdr();
 
-
-		// int dumpMode;
-
 		void fillCPU();
 		void fillFlags();
 		void fillMem();
 		void fillStack();
 		void fillFDC();
-		// void fillRZX();
 		void fillAY();
 
 		void setFlagNames(const char*);
@@ -116,6 +109,7 @@ class DebugWin : public QDialog {
 
 	public slots:
 		void loadLabels(QString = QString());
+		bool fillAll();
 	private slots:
 		void setShowLabels(bool);
 		void setShowSegment(bool);
@@ -135,14 +129,12 @@ class DebugWin : public QDialog {
 		void fillDump();
 		void fillGBoy();
 		void drawNes();
+		void regClick(QMouseEvent*);
 
 		void setCPU();
 		void setFlags();
 		void updateScreen();
 		void dumpChadr(QModelIndex);
-
-//		void dasmEdited(int, int);
-//		void dumpEdited(int, int);
 
 		void addBrk();
 		void editBrk();

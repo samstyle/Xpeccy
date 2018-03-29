@@ -76,3 +76,11 @@ void xHexSpin::wheelEvent(QWheelEvent* ev) {
 		emit valueChanged(value);
 	}
 }
+
+// xLabel
+
+xLabel::xLabel(QWidget* p):QLabel(p) {}
+
+void xLabel::mousePressEvent(QMouseEvent* ev) {
+	emit clicked(ev);
+}

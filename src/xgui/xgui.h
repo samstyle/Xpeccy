@@ -2,6 +2,7 @@
 #define X_GUI_H
 
 #include <QDialog>
+#include <QLabel>
 #include <QLineEdit>
 #include <QWheelEvent>
 #include <QKeyEvent>
@@ -33,6 +34,17 @@ class xHexSpin : public QLineEdit {
 	protected:
 		void keyPressEvent(QKeyEvent*);
 		void wheelEvent(QWheelEvent*);
+};
+
+class xLabel : public QLabel {
+	Q_OBJECT
+	public:
+		xLabel(QWidget* p = NULL);
+		int id;
+	signals:
+		void clicked(QMouseEvent*);
+	protected:
+		void mousePressEvent(QMouseEvent*);
 };
 
 // tape player
