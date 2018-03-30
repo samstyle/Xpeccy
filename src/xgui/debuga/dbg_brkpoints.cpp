@@ -183,8 +183,8 @@ void xBreakTable::onDoubleClick(QModelIndex idx) {
 xBrkManager::xBrkManager(QWidget* p):QDialog(p) {
 	ui.setupUi(this);
 
-	ui.brkType->addItem("CPU ADR bus", BRK_CPUADR);
-	ui.brkType->addItem("IO address", BRK_IOPORT);
+	ui.brkType->addItem("ADR bus (MEM)", BRK_CPUADR);
+	ui.brkType->addItem("ADR bus (IO)", BRK_IOPORT);
 	ui.brkType->addItem("RAM cell", BRK_MEMRAM);
 	ui.brkType->addItem("ROM cell", BRK_MEMROM);
 	ui.brkType->addItem("SLT cell", BRK_MEMSLT);

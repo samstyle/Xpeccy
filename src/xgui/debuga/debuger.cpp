@@ -141,8 +141,8 @@ void dmpmwr(unsigned short adr, unsigned char val, void* ptr) {
 	memWr(comp->mem, adr, val);
 }
 
-QLabel* dbgRegLabs[16];
-QLineEdit* dbgRegEdit[16];
+xLabel* dbgRegLabs[16];
+xHexSpin* dbgRegEdit[16];
 
 DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	int i;
@@ -156,7 +156,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 		NULL
 	};
 
-	QLineEdit* arre[16] = {
+	xHexSpin* arre[16] = {
 		ui.editReg00, ui.editReg01, ui.editReg02, ui.editReg03, ui.editReg04,
 		ui.editReg05, ui.editReg06, ui.editReg07, ui.editReg08, ui.editReg09,
 		ui.editReg10, ui.editReg11, ui.editReg12, ui.editReg13, ui.editReg14,
@@ -168,6 +168,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 		if (arrl[i]) {
 			arrl[i]->id = i;
 			connect(arrl[i], SIGNAL(clicked(QMouseEvent*)), this, SLOT(regClick(QMouseEvent*)));
+			dbgRegEdit[i]->setXFlag(XHS_BGR | XHS_DEC);
 		}
 	}
 
@@ -1091,13 +1092,8 @@ void DebugWin::fillCPU() {
 			default:
 				dbgRegLabs[i]->setText(bunch.regs[i].name);
 				dbgRegEdit[i]->setProperty("regid", bunch.regs[i].id);
-				if (bunch.regs[i].byte) {
-					dbgRegEdit[i]->setInputMask("HH");
-					dbgRegEdit[i]->setText(gethexbyte(bunch.regs[i].value & 0xff));
-				} else {
-					dbgRegEdit[i]->setInputMask("HHHH");
-					dbgRegEdit[i]->setText(gethexword(bunch.regs[i].value));
-				}
+				dbgRegEdit[i]->setMax(bunch.regs[i].byte ? 0xff : 0xffff);
+				dbgRegEdit[i]->setValue(bunch.regs[i].value);
 				dbgRegEdit[i]->setVisible(true);
 				break;
 		}
@@ -1137,7 +1133,7 @@ void DebugWin::setCPU() {
 	while (dbgRegEdit[idx] != NULL) {
 		if (dbgRegEdit[idx]->isEnabled()) {
 			bunch.regs[i].id = dbgRegEdit[idx]->property("regid").toInt();
-			bunch.regs[i].value = dbgRegEdit[idx]->text().toInt(NULL, 16);
+			bunch.regs[i].value = dbgRegEdit[idx]->getValue();
 			i++;
 		} else {
 			bunch.regs[i].id = REG_NONE;

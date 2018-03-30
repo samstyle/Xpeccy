@@ -16,21 +16,31 @@ void showInfo(const char*);
 
 // subclasses
 
+#define	XHS_BGR	1		// change background if value changed
+#define	XHS_DEC	(1<<1)		// hex/dec switch enabled
+
 class xHexSpin : public QLineEdit {
 	Q_OBJECT
 	public:
 		xHexSpin(QWidget* = NULL);
 		void setValue(int);
 		int getValue();
+		void setMin(int);
+		void setMax(int);
+		void setXFlag(int);
 	signals:
 		void valueChanged(int);
 	private slots:
 		void onChange(int);
 		void onTextChange(QString);
 	private:
+		int hsflag;
+		int base;
 		int value;
 		int min;
 		int max;
+		void setBase(int);
+		QString getText(int);
 	protected:
 		void keyPressEvent(QKeyEvent*);
 		void wheelEvent(QWheelEvent*);
