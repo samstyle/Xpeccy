@@ -72,7 +72,7 @@ void sdcSetImage(SDCard* sdc, const char* name) {
 
 void sdcSetCapacity(SDCard* sdc, int cpc) {
 	if (cpc < SDC_32M) cpc = SDC_32M;
-	if (cpc > SDC_1G) cpc = SDC_1G;
+	if (cpc > SDC_8G) cpc = SDC_8G;
 	sdc->capacity = cpc;
 	sdc->maxlba = cpc * 1024 * 2;	// sec x 2 = 1K x 1024 = 1M
 }

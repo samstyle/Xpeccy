@@ -170,6 +170,9 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.sdcapbox->addItem("256 M",SDC_256M);
 	ui.sdcapbox->addItem("512 M",SDC_512M);
 	ui.sdcapbox->addItem("1024 M",SDC_1G);
+	ui.sdcapbox->addItem("2048 M",SDC_2G);
+	ui.sdcapbox->addItem("4096 M",SDC_4G);
+	ui.sdcapbox->addItem("8192 M",SDC_8G);
 	ui.cSlotType->addItem("No mapper",MAP_MSX_NOMAPPER);
 	ui.cSlotType->addItem("Konami 4",MAP_MSX_KONAMI4);
 	ui.cSlotType->addItem("Konami 5",MAP_MSX_KONAMI5);

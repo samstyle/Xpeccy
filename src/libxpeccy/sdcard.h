@@ -33,6 +33,9 @@ enum {
 #define	SDC_256M	256
 #define	SDC_512M	512
 #define	SDC_1G		1024
+#define	SDC_2G		2048
+#define	SDC_4G		4096
+#define	SDC_8G		8192
 #define	SDC_DEFAULT	SDC_128M
 
 typedef struct {
