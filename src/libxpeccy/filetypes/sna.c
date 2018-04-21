@@ -66,10 +66,12 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 		comp->cpu->sp = adr;
 		comp->cpu->pc = tmp | (tmp2 << 8);
 	} else {
-		adr = fgetc(file);
-		adr |= fgetc(file) << 8;
-		comp->cpu->pc = adr;
-		tmp = fgetc(file);
+		comp->cpu->lpc = fgetc(file);
+		comp->cpu->hpc = fgetc(file);
+//		adr = fgetc(file);
+//		adr |= fgetc(file) << 8;
+//		comp->cpu->pc = adr;
+		tmp = fgetc(file);		// byte out to 7ffd. b0..2 current page
 		if (comp->hw->out)
 			comp->hw->out(comp,0x7ffd,tmp,0);
 		tmp2 = fgetc(file);

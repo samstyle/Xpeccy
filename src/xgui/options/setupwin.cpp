@@ -777,7 +777,7 @@ void SetupWin::editrset() {
 void SetupWin::rscomplete(int idx, QString nam) {
 // idx < 0: new romset with name NAM created
 // idx >= 0: romset IDX edited, NAM = new name
-	if (idx == 0) {
+	if (idx < 0) {
 		ui.rsetbox->addItem(nam);
 		ui.rsetbox->setCurrentIndex(ui.rsetbox->count() - 1);
 	} else {
