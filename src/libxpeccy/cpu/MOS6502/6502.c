@@ -105,8 +105,6 @@ static xRegDsc m6502RegTab[] = {
 	{M6502_REG_PC, "PC", 0},
 	{M6502_REG_A, "A", 1},
 	{M6502_REG_X, "X", 1},
-//	{REG_EMPTY, "", 0},
-//	{REG_EMPTY, "", 0},
 	{M6502_REG_S, "S", 1},
 	{M6502_REG_F, "P", 1},
 	{M6502_REG_Y, "Y", 1},

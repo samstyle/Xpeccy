@@ -26,7 +26,8 @@ enum {
 	HW_MSX,		// MSX 1
 	HW_MSX2,	// MSX 2
 	HW_GBC,		// Game boy color (gameboy capatible)
-	HW_NES		// Nintendo Entertaiment System (Dendy)
+	HW_NES,		// Nintendo Entertaiment System (Dendy)
+	HW_C64		// Commodore 64
 };
 
 enum {
@@ -72,15 +73,15 @@ struct HardWare {
 	int fps;
 	int mask;		// mem size bits (b0:128, b1:256, b2:512, b3:1M, b4:2M, b5:4M); =0 for 48K
 	cbHwMap mapMem;
-	cbHwIwr out;
-	cbHwIrd in;
-	cbHwMrd mrd;
-	cbHwMwr mwr;
-	cbHwRes reset;
-	cbHwSnc sync;
-	cbHwKey keyp;
-	cbHwKey keyr;
-	cbHwVol vol;
+	cbHwIwr out;		// io wr
+	cbHwIrd in;		// io rd
+	cbHwMrd mrd;		// mem rd
+	cbHwMwr mwr;		// mem wr
+	cbHwRes reset;		// reset
+	cbHwSnc sync;		// sync time
+	cbHwKey keyp;		// key press
+	cbHwKey keyr;		// key release
+	cbHwVol vol;		// read volume
 };
 
 typedef struct {
@@ -246,6 +247,12 @@ sndPair nes_vol(Computer*, sndVolume*);
 unsigned char nes_apu_ext_rd(unsigned short, void*);
 unsigned char nes_ppu_ext_rd(unsigned short, void*);
 unsigned char nes_apu_ext_wr(unsigned short, unsigned char, void*);
+
+// c64
+void c64_maper(Computer*);
+void c64_reset(Computer*);
+void c64_mwr(Computer*, unsigned short, unsigned char);
+unsigned char c64_mrd(Computer*, unsigned short);
 
 #ifdef __cplusplus
 }

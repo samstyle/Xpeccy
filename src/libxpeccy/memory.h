@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#define MEM_SMALL_PAGES 0
+
 // mempage type
 enum {
 	MEM_RAM	= 1,
@@ -39,7 +41,7 @@ typedef struct {
 } MemPage;
 
 typedef struct {
-	MemPage map[4];				// 4 x 16K
+	MemPage map[256];			// 4 x 16K | 256 x 256
 	unsigned char ramData[0x400000];	// 4M
 	unsigned char romData[0x80000];		// 512K
 	int memSize;

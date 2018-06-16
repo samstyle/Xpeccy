@@ -129,6 +129,10 @@ struct CPU {
 	PAIR(de_,d_,e_);
 	PAIR(hl_,h_,l_);
 
+	unsigned short pdat;		// pdp11 data bus
+	unsigned short pflag;		// pdp11 flag
+	unsigned short preg[8];		// pdp11 registers
+
 	cbmr mrd;
 	cbmw mwr;
 	cbir ird;

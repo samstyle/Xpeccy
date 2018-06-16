@@ -211,11 +211,12 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 	int prts = 0;
 	prf->zx->mem->romMask = 0x03;
 	prf->zx->romsize = 0x10000;
+	memset(prf->zx->mem->romData, 0xff, 0x80000);
 	if (rset == NULL) {		// romset not found : fill all ROM with 0xFF
-		memset(pageBuf,0xff,0x4000);
-		for (i = 0; i < 32; i++) {
-			memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
-		}
+//		memset(pageBuf,0xff,0x4000);
+//		for (i = 0; i < 32; i++) {
+//			memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
+//		}
 	} else {			// romset found
 		if (rset->file.size() != 0) {			// single rom file
 			strcpy(fpath, conf.path.romDir);
@@ -224,6 +225,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 			file.open(fpath, std::ios::binary);
 			if (file.good()) {
 				file.seekg(0,std::ios_base::end);
+			// TODO:set rom mask, romsize
 				prts = file.tellg() >> 14;		// 16K pages
 				if (file.tellg() & 0x3fff) prts++;
 				if (prts > 4) prf->zx->mem->romMask = 0x07;
@@ -231,7 +233,11 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 				if (prts > 16) prf->zx->mem->romMask = 0x1f;
 				if (prts > 32) prts = 32;
 				prf->zx->romsize = (prts << 14);	// not really
+			// load all rom file
 				file.seekg(0,std::ios_base::beg);
+				//memset(prf->zx->mem->romData, 0xff, 0x80000);
+				file.read((char*)prf->zx->mem->romData, 0x80000);
+/*
 				for (i = 0; i < prts; i++) {
 					file.read(pageBuf,0x4000);
 					memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
@@ -239,11 +245,12 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 				memset(pageBuf,0xff,0x4000);
 				for (i = prts; i < 32; i++)
 					memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
+*/
 			} else {
 				printf("Can't open single rom '%s'\n",rset->file.c_str());
-				memset(pageBuf,0xff,0x4000);
-				for (i = 0; i < 32; i++)
-					memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
+//				memset(pageBuf,0xff,0x4000);
+//				for (i = 0; i < 32; i++)
+//					memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
 			}
 			file.close();
 		} else {					// separate files
