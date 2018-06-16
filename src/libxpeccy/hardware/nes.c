@@ -177,10 +177,10 @@ void nesSLwr(unsigned short adr, unsigned char val, void* data) {
 }
 
 void nesMaper(Computer* comp) {
-	memSetBank(comp->mem, MEM_BANK0, MEM_EXT, 0, nesMMrd, nesMMwr, comp);
-	memSetBank(comp->mem, MEM_BANK1, MEM_EXT, 1, nesMMrd, nesMMwr, comp);
-	memSetBank(comp->mem, MEM_BANK2, MEM_SLOT, 0, nesSLrd, nesSLwr, comp->slot);
-	memSetBank(comp->mem, MEM_BANK3, MEM_SLOT, 1, nesSLrd, nesSLwr, comp->slot);
+	memSetBank(comp->mem, 0x00, MEM_EXT, 0, MEM_16K, nesMMrd, nesMMwr, comp);
+	memSetBank(comp->mem, 0x40, MEM_EXT, 1, MEM_16K, nesMMrd, nesMMwr, comp);
+	memSetBank(comp->mem, 0x80, MEM_SLOT, 0, MEM_16K, nesSLrd, nesSLwr, comp->slot);
+	memSetBank(comp->mem, 0xc0, MEM_SLOT, 1, MEM_16K, nesSLrd, nesSLwr, comp->slot);
 }
 
 void nesSync(Computer* comp, int ns) {

@@ -104,8 +104,8 @@ int loadZ80_f(Computer* comp, FILE* file) {
 	z80v1Header hd;
 	comp->p7FFD = 0x10;
 	comp->pEFF7 = 0x00;
-	memSetBank(comp->mem,MEM_BANK0,MEM_ROM,1,NULL,NULL,NULL);
-	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0,NULL,NULL,NULL);
+	memSetBank(comp->mem,0x00,MEM_ROM,1,MEM_16K,NULL,NULL,NULL);
+	memSetBank(comp->mem,0xc0,MEM_RAM,0,MEM_16K,NULL,NULL,NULL);
 	comp->vid->curscr = 5;
 
 	fread((char*)&hd, sizeof(z80v1Header), 1, file);
@@ -188,9 +188,9 @@ printf(".z80 version 2\n");
 				do {
 					tmp = z80readblock(file,pageBuf);
 					switch (tmp) {
-						case 4: memSetPageData(comp->mem,MEM_RAM,2,pageBuf); break;
-						case 5: memSetPageData(comp->mem,MEM_RAM,0,pageBuf); break;
-						case 8: memSetPageData(comp->mem,MEM_RAM,5,pageBuf); break;
+						case 4: memPutData(comp->mem,MEM_RAM,2,MEM_16K,pageBuf); break;
+						case 5: memPutData(comp->mem,MEM_RAM,0,MEM_16K,pageBuf); break;
+						case 8: memPutData(comp->mem,MEM_RAM,5,MEM_16K,pageBuf); break;
 						default: btm = 0; break;
 					}
 				} while (btm && !feof(file));
@@ -200,7 +200,7 @@ printf(".z80 version 2\n");
 				do {
 					tmp = z80readblock(file,pageBuf);
 					if ((tmp > 2) && (tmp < 11)) {
-						memSetPageData(comp->mem,MEM_RAM,tmp-3,pageBuf);
+						memPutData(comp->mem,MEM_RAM,tmp-3,MEM_16K,pageBuf);
 					} else {
 						btm = 0;
 					}
@@ -211,7 +211,7 @@ printf(".z80 version 2\n");
 				do {
 					tmp = z80readblock(file,pageBuf);
 					if ((tmp > 2) && (tmp < 19)) {
-						memSetPageData(comp->mem,MEM_RAM,tmp-3,pageBuf);
+						memPutData(comp->mem,MEM_RAM,tmp-3,MEM_16K,pageBuf);
 					} else {
 						btm = 0;
 					}
@@ -228,17 +228,17 @@ printf(".z80 version 1\n");
 		if (hd.flag12 & 0x20) {
 			printf("data is compressed\n");
 			z80uncompress(file,pageBuf,0xc000);
-			memSetPageData(comp->mem,MEM_RAM,5,pageBuf);
-			memSetPageData(comp->mem,MEM_RAM,2,pageBuf + 0x4000);
-			memSetPageData(comp->mem,MEM_RAM,0,pageBuf + 0x8000);
+			memPutData(comp->mem,MEM_RAM,5,MEM_16K,pageBuf);
+			memPutData(comp->mem,MEM_RAM,2,MEM_16K,pageBuf + 0x4000);
+			memPutData(comp->mem,MEM_RAM,0,MEM_16K,pageBuf + 0x8000);
 		} else {
 			printf("data is not compressed\n");
 			fread(pageBuf, 0x4000, 1, file);
-			memSetPageData(comp->mem,MEM_RAM,5,pageBuf);
+			memPutData(comp->mem,MEM_RAM,5,MEM_16K,pageBuf);
 			fread(pageBuf, 0x4000, 1, file);
-			memSetPageData(comp->mem,MEM_RAM,2,pageBuf);
+			memPutData(comp->mem,MEM_RAM,2,MEM_16K,pageBuf);
 			fread(pageBuf, 0x4000, 1, file);
-			memSetPageData(comp->mem,MEM_RAM,0,pageBuf);
+			memPutData(comp->mem,MEM_RAM,0,MEM_16K,pageBuf);
 		}
 	}
 	tsReset(comp->ts);

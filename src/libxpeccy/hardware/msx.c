@@ -26,13 +26,13 @@ void msxSetMem(Computer* comp, int bank, unsigned char slot) {
 	mPageNr pg = msxMemTab[slot][bank];
 	switch(pg.type) {
 		case MEM_SLOT:
-			memSetBank(comp->mem, bank, MEM_SLOT, comp->slot->memMap[bank], msxSlotRd, msxSlotWr, comp->slot);
+			memSetBank(comp->mem, bank << 6, MEM_SLOT, comp->slot->memMap[bank], MEM_16K, msxSlotRd, msxSlotWr, comp->slot);
 			break;
 		case MEM_RAM:
-			memSetBank(comp->mem, bank, MEM_RAM, comp->msx.memMap[bank & 3] & 7, NULL, NULL, NULL);
+			memSetBank(comp->mem, bank << 6, MEM_RAM, comp->msx.memMap[bank & 3] & 7, MEM_16K, NULL, NULL, NULL);
 			break;
 		case MEM_ROM:
-			memSetBank(comp->mem, bank, MEM_ROM, pg.num, NULL, NULL, NULL);
+			memSetBank(comp->mem, bank << 6, MEM_ROM, pg.num, MEM_16K, NULL, NULL, NULL);
 			break;
 	}
 }

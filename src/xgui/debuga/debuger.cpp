@@ -1644,18 +1644,18 @@ void DebugWin::dmpLenChanged() {
 }
 
 QByteArray DebugWin::getDumpData() {
-	MemPage curBank = comp->mem->map[MEM_BANK3];
-	int bank = dui.leBank->text().toInt(NULL,16);
+//	MemPage curBank = comp->mem->map[MEM_BANK3];
+//	int bank = dui.leBank->text().toInt(NULL,16);
 	int adr = dui.leStart->text().toInt(NULL,16);
 	int len = dui.leLen->text().toInt(NULL,16);
-	memSetBank(comp->mem, MEM_BANK3, MEM_RAM, bank, NULL, NULL, NULL);
+//	memSetBank(comp->mem, MEM_BANK3, MEM_RAM, bank, NULL, NULL, NULL);
 	QByteArray res;
 	while (len > 0) {
 		res.append(memRd(comp->mem,adr));
 		adr++;
 		len--;
 	}
-	comp->mem->map[3] = curBank;
+//	comp->mem->map[3] = curBank;
 	return res;
 }
 

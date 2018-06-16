@@ -24,14 +24,14 @@ unsigned char ZSLays[4][4] = {
 void scoMapMem(Computer* comp) {
 	int rp;
 	if (comp->p1FFD & 0x01) {
-		memSetBank(comp->mem,MEM_BANK0,MEM_RAM,0, NULL, NULL, NULL);
+		memSetBank(comp->mem,0x00,MEM_RAM,0, MEM_16K, NULL, NULL, NULL);
 	} else {
 		rp = (comp->p1FFD & 0x02) ? 2 : ((comp->dos ? 2 : 0) | ((comp->rom) ? 1 : 0));
 		rp |= ((comp->prt2 & 3) << 2);
-		memSetBank(comp->mem,MEM_BANK0,MEM_ROM,rp, NULL, NULL, NULL);
+		memSetBank(comp->mem,0x00,MEM_ROM,rp, MEM_16K, NULL, NULL, NULL);
 	}
 	rp = (comp->p7FFD & 7) | ((comp->p1FFD & 0x10) >> 1) | ((comp->p1FFD & 0xc0) >> 2);
-	memSetBank(comp->mem,MEM_BANK3,MEM_RAM, rp, NULL, NULL, NULL);
+	memSetBank(comp->mem,0xc0,MEM_RAM, rp, MEM_16K, NULL, NULL, NULL);
 }
 
 unsigned char scoMRd(Computer* comp, unsigned short adr, int m1) {

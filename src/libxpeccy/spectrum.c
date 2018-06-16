@@ -15,13 +15,13 @@ static vLayout nesPALLay = {{341,312},{0,0},{85,72},{256,240},{0,0},64};
 // ...
 
 void zxMemRW(Computer* comp, int adr) {
-	MemPage* mptr = memGetBankPtr(comp->mem,adr);
-	if (comp->contMem && (mptr->type == MEM_RAM) && (mptr->num & 1)) {	// pages 1,3,5,7 (48K model)
-		res3 = comp->cpu->t;					// until RD/WR cycle
+	MemPage* mptr = &comp->mem->map[(adr >> 8) & 0xff];
+	if (comp->contMem && (mptr->type == MEM_RAM) && (mptr->num & 0x40)) {	// 16K pages 1,3,5,7 (48K model)
+		res3 = comp->cpu->t;						// until RD/WR cycle
 		vidSync(comp->vid, comp->nsPerTick * (res3 - res4));
 		res4 = res3;
-		vidWait(comp->vid);					// contended WAIT
-		vidSync(comp->vid, comp->nsPerTick * 3);		// 3T rd/wr cycle
+		vidWait(comp->vid);						// contended WAIT
+		vidSync(comp->vid, comp->nsPerTick * 3);			// 3T rd/wr cycle
 		res4 += 3;
 	} else {
 		res3 = comp->cpu->t + 3;

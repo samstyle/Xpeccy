@@ -207,11 +207,10 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 //	xArg xarg;
 	char fpath[FILENAME_MAX];
 	std::ifstream file;
-	char pageBuf[0x4000];
-	int prts = 0;
-	prf->zx->mem->romMask = 0x03;
-	prf->zx->romsize = 0x10000;
-	memset(prf->zx->mem->romData, 0xff, 0x80000);
+	char pageBuf[MEM_16K];
+//	int prts = 0;
+	memSetSize(prf->zx->mem, -1, MEM_16K);		// default rom size
+	memset(prf->zx->mem->romData, 0xff, MEM_512K);
 	if (rset == NULL) {		// romset not found : fill all ROM with 0xFF
 //		memset(pageBuf,0xff,0x4000);
 //		for (i = 0; i < 32; i++) {
@@ -225,7 +224,11 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 			file.open(fpath, std::ios::binary);
 			if (file.good()) {
 				file.seekg(0,std::ios_base::end);
-			// TODO:set rom mask, romsize
+				i = file.tellg();
+				i = toPower(i);
+				i = toLimits(i, MEM_256, MEM_512K);
+				memSetSize(prf->zx->mem, -1, i);
+/*
 				prts = file.tellg() >> 14;		// 16K pages
 				if (file.tellg() & 0x3fff) prts++;
 				if (prts > 4) prf->zx->mem->romMask = 0x07;
@@ -233,10 +236,11 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 				if (prts > 16) prf->zx->mem->romMask = 0x1f;
 				if (prts > 32) prts = 32;
 				prf->zx->romsize = (prts << 14);	// not really
+*/
 			// load all rom file
 				file.seekg(0,std::ios_base::beg);
 				//memset(prf->zx->mem->romData, 0xff, 0x80000);
-				file.read((char*)prf->zx->mem->romData, 0x80000);
+				file.read((char*)prf->zx->mem->romData, MEM_512K);
 /*
 				for (i = 0; i < prts; i++) {
 					file.read(pageBuf,0x4000);
@@ -271,7 +275,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 					}
 					file.close();
 				}
-				memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
+				memPutData(prf->zx->mem,MEM_ROM,i,MEM_16K,pageBuf);
 			}
 		}
 // load GS ROM
@@ -323,10 +327,10 @@ int prfLoad(std::string nm) {
 	std::vector<std::string> vect;
 	size_t pos;
 	char* buf = new char[0x4000];
-	int tmask = 0xff;
+	int tmask = -1;
 	int tmp2;
 	int section = PS_NONE;
-	int memsz = 48;
+//	int memsz = MEM_128K;
 	ATAPassport masterPass = ideGetPassport(comp->ide,IDE_MASTER);
 	ATAPassport slavePass = ideGetPassport(comp->ide,IDE_SLAVE);
 	if (!file.good()) {
@@ -421,15 +425,21 @@ int prfLoad(std::string nm) {
 						compSetBaseFrq(comp, tmp2 / 1e6);
 					}
 					if (pnam == "memory") {
-						memsz = atoi(pval.c_str());
+						tmp2 = atoi(pval.c_str());
+						tmp2 <<= 10;			// KB to bytes
+						tmp2 = toPower(tmp2);
+						tmp2 = toLimits(tmp2, MEM_256, MEM_4M);
+						tmask = tmp2;
+/*
 						switch (memsz) {
-							case 128: tmask = MEM_128; break;
-							case 256: tmask = MEM_256; break;
-							case 512: tmask = MEM_512; break;
+							case 128: tmask = MEM_128K; break;
+							case 256: tmask = MEM_256K; break;
+							case 512: tmask = MEM_512K; break;
 							case 1024: tmask = MEM_1M; break;
 							case 2048: tmask = MEM_2M; break;
 							case 4096: tmask = MEM_4M; break;
 						}
+*/
 					}
 					if (pnam == "contmem") comp->contMem = str2bool(pval) ? 1 : 0;
 					//if (pnam == "contmemP3") setFlagBit(str2bool(pval),&comp->vid->flags,VID_CONT2);
@@ -501,7 +511,7 @@ int prfLoad(std::string nm) {
 	}
 
 	if ((comp->hw->mask != 0) && (~comp->hw->mask & tmask)) throw("Incorrect memory size for this machine");
-	memSetSize(comp->mem,memsz);
+	memSetSize(comp->mem, tmask, -1);
 	if (!prfSetLayout(prf, prf->layName)) prfSetLayout(prf,"default");
 
 	sndCalibrate(comp);
@@ -539,7 +549,7 @@ int prfSave(std::string nm) {
 
 	fprintf(file, "[MACHINE]\n\n");
 	fprintf(file, "current = %s\n", prf->hwName.c_str());
-	fprintf(file, "memory = %i\n", comp->mem->memSize);
+	fprintf(file, "memory = %i\n", comp->mem->ramSize >> 10);		// bytes to KB
 	fprintf(file, "cpu.type = %s\n", getCoreName(comp->cpu->type));
 	fprintf(file, "cpu.frq = %i\n", int(comp->cpuFrq * 1e6));
 	fprintf(file, "scrp.wait = %s\n", YESNO(comp->evenM1));

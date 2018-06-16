@@ -23,7 +23,7 @@ void evoSetVideoMode(Computer* comp) {
 
 unsigned char evoMRd(Computer* comp, unsigned short adr, int m1) {
 	if (m1 && (comp->dif->type == DIF_BDI)) {
-		if (comp->dos && (memGetBankPtr(comp->mem,adr)->type == MEM_RAM) && (comp->prt2 & 0x40)) {
+		if (comp->dos && (comp->mem->map[(adr >> 8) & 0xff].type == MEM_RAM) && (comp->prt2 & 0x40)) {
 			comp->dos = 0;
 			if (comp->rom) comp->hw->mapMem(comp);
 		}
@@ -53,25 +53,25 @@ void evoSetBank(Computer* comp, int bank, memEntry me) {
 			page = (page & 0x3e) | (comp->dos ? 1 : 0);				// mix with dosen
 		}
 	}
-	memSetBank(comp->mem,bank,(me.flag & 0x40) ? MEM_RAM : MEM_ROM, page, NULL, NULL, NULL);
+	memSetBank(comp->mem, bank, (me.flag & 0x40) ? MEM_RAM : MEM_ROM, page, MEM_16K, NULL, NULL, NULL);
 }
 
 void evoMapMem(Computer* comp) {
 	if (comp->prt2 & 0x20) {		// A8.xx77
 		int adr = (comp->rom) ? 4 : 0;
-		evoSetBank(comp,MEM_BANK0,comp->memMap[adr]);
-		evoSetBank(comp,MEM_BANK1,comp->memMap[adr+1]);
-		evoSetBank(comp,MEM_BANK2,comp->memMap[adr+2]);
-		evoSetBank(comp,MEM_BANK3,comp->memMap[adr+3]);
+		evoSetBank(comp,0x00,comp->memMap[adr]);
+		evoSetBank(comp,0x40,comp->memMap[adr+1]);
+		evoSetBank(comp,0x80,comp->memMap[adr+2]);
+		evoSetBank(comp,0xc0,comp->memMap[adr+3]);
 	} else {
 		comp->dos = 1;
-		memSetBank(comp->mem,MEM_BANK0,MEM_ROM,0xff, NULL, NULL, NULL);
-		memSetBank(comp->mem,MEM_BANK1,MEM_ROM,0xff, NULL, NULL, NULL);
-		memSetBank(comp->mem,MEM_BANK2,MEM_ROM,0xff, NULL, NULL, NULL);
-		memSetBank(comp->mem,MEM_BANK3,MEM_ROM,0xff, NULL, NULL, NULL);
+		memSetBank(comp->mem,0x00,MEM_ROM,0xff, MEM_16K, NULL, NULL, NULL);
+		memSetBank(comp->mem,0x40,MEM_ROM,0xff, MEM_16K, NULL, NULL, NULL);
+		memSetBank(comp->mem,0x80,MEM_ROM,0xff, MEM_16K, NULL, NULL, NULL);
+		memSetBank(comp->mem,0xc0,MEM_ROM,0xff, MEM_16K, NULL, NULL, NULL);
 	}
 	if (comp->pEFF7 & 8)				// b3.EFF7: ram0 @ 0x0000 : high priority
-		memSetBank(comp->mem,MEM_BANK0,MEM_RAM,0x00, NULL, NULL, NULL);
+		memSetBank(comp->mem,0x00,MEM_RAM,0x00, MEM_16K, NULL, NULL, NULL);
 }
 
 // in

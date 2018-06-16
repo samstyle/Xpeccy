@@ -22,22 +22,22 @@ void atmSetBank(Computer* comp, int bank, memEntry me) {
 			page = (page & 0x3e) | (comp->dos ? 1 : 0);	// mix with dosen
 		}
 	}
-	memSetBank(comp->mem, bank, (me.flag & 0x40) ? MEM_RAM : MEM_ROM, page, NULL, NULL, NULL);
+	memSetBank(comp->mem, bank, (me.flag & 0x40) ? MEM_RAM : MEM_ROM, page, MEM_16K, NULL, NULL, NULL);
 }
 
 void atm2MapMem(Computer* comp) {
 	if (comp->p77hi & 1) {			// pen = 0: last rom page in every bank && dosen on
 		int adr = (comp->rom) ? 4 : 0;
-		atmSetBank(comp,MEM_BANK0,comp->memMap[adr]);
-		atmSetBank(comp,MEM_BANK1,comp->memMap[adr+1]);
-		atmSetBank(comp,MEM_BANK2,comp->memMap[adr+2]);
-		atmSetBank(comp,MEM_BANK3,comp->memMap[adr+3]);
+		atmSetBank(comp,0x00,comp->memMap[adr]);
+		atmSetBank(comp,0x40,comp->memMap[adr+1]);
+		atmSetBank(comp,0x80,comp->memMap[adr+2]);
+		atmSetBank(comp,0xc0,comp->memMap[adr+3]);
 	} else {
 		comp->dos = 1;
-		memSetBank(comp->mem,MEM_BANK0,MEM_ROM,0xff, NULL, NULL, NULL);
-		memSetBank(comp->mem,MEM_BANK1,MEM_ROM,0xff, NULL, NULL, NULL);
-		memSetBank(comp->mem,MEM_BANK2,MEM_ROM,0xff, NULL, NULL, NULL);
-		memSetBank(comp->mem,MEM_BANK3,MEM_ROM,0xff, NULL, NULL, NULL);
+		memSetBank(comp->mem,0x00,MEM_ROM,0xff,MEM_16K, NULL, NULL, NULL);
+		memSetBank(comp->mem,0x40,MEM_ROM,0xff,MEM_16K, NULL, NULL, NULL);
+		memSetBank(comp->mem,0x80,MEM_ROM,0xff,MEM_16K, NULL, NULL, NULL);
+		memSetBank(comp->mem,0xc0,MEM_ROM,0xff,MEM_16K, NULL, NULL, NULL);
 	}
 }
 

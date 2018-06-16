@@ -36,14 +36,16 @@ enum {
 	NES_PAL
 };
 
+/*
 // mem size
-#define	MEM_48	0
-#define	MEM_128	1
-#define	MEM_256 (1<<1)
-#define	MEM_512	(1<<2)
-#define	MEM_1M	(1<<3)
-#define	MEM_2M	(1<<4)
-#define	MEM_4M	(1<<5)
+#define	AMEM_48	0
+#define	AMEM_128	1
+#define	AMEM_256 (1<<1)
+#define	AMEM_512	(1<<2)
+#define	AMEM_1M	(1<<3)
+#define	AMEM_2M	(1<<4)
+#define	AMEM_4M	(1<<5)
+*/
 
 // Hardware callbacks
 
@@ -71,7 +73,7 @@ struct HardWare {
 	const char* name;	// name used for conf file
 	const char* optName;	// name used for setup window
 	int fps;
-	int mask;		// mem size bits (b0:128, b1:256, b2:512, b3:1M, b4:2M, b5:4M); =0 for 48K
+	int mask;		// mem size bits (see memory.h)
 	cbHwMap mapMem;
 	cbHwIwr out;		// io wr
 	cbHwIrd in;		// io rd

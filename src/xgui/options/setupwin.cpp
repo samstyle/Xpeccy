@@ -346,7 +346,7 @@ void SetupWin::start(xProfile* p) {
 	ui.rsetbox->setCurrentIndex(ui.rsetbox->findText(QString::fromUtf8(prof->rsName.c_str())));
 	ui.resbox->setCurrentIndex(ui.resbox->findData(comp->resbank));
 	setmszbox(ui.machbox->currentIndex());
-	ui.mszbox->setCurrentIndex(ui.mszbox->findData(comp->mem->memSize));
+	ui.mszbox->setCurrentIndex(ui.mszbox->findData(comp->mem->ramSize));
 	if (ui.mszbox->currentIndex() < 0) ui.mszbox->setCurrentIndex(ui.mszbox->count() - 1);
 	ui.cbCpu->setCurrentIndex(ui.cbCpu->findData(comp->cpu->type));
 	ui.sbFreq->setValue(comp->cpuFrq);
@@ -501,7 +501,7 @@ void SetupWin::apply() {
 	prof->rsName = getRFText(ui.rsetbox);
 	prfSetRomset(prof, prof->rsName);
 	comp->resbank = getRFIData(ui.resbox);
-	memSetSize(comp->mem, getRFIData(ui.mszbox));
+	memSetSize(comp->mem, getRFIData(ui.mszbox), -1);
 	cpuSetType(comp->cpu, getRFIData(ui.cbCpu));
 	compSetBaseFrq(comp, ui.sbFreq->value());
 	comp->evenM1 = ui.scrpwait->isChecked() ? 1 : 0;
@@ -810,6 +810,22 @@ std::vector<HardWare> getHardwareList() {
 	return res;
 }
 
+struct xMemName {
+	int mask;
+	const char* name;
+};
+
+static xMemName memNameTab[] = {
+	{MEM_64K, "64K"},
+	{MEM_128K, "128K"},
+	{MEM_256K, "256K"},
+	{MEM_512K, "512K"},
+	{MEM_1M, "1024K"},
+	{MEM_2M, "2048K"},
+	{MEM_4M, "4096K"},
+	{-1, ""}
+};
+
 void SetupWin::setmszbox(int idx) {
 	std::vector<HardWare> list = getHardwareList();
 	int t = list[idx].mask;
@@ -818,12 +834,20 @@ void SetupWin::setmszbox(int idx) {
 	if (t == 0x00) {
 		ui.mszbox->addItem("48K",48);
 	} else {
-		if (t & 1) ui.mszbox->addItem("128K",128);
-		if (t & 2) ui.mszbox->addItem("256K",256);
+		int idx = 0;
+		while (memNameTab[idx].mask > 0) {
+			if (t & memNameTab[idx].mask)
+				ui.mszbox->addItem(memNameTab[idx].name, memNameTab[idx].mask);
+			idx++;
+		}
+/*
+		if (t & 1) ui.mszbox->addItem("128K",MEM_128K);
+		if (t & 2) ui.mszbox->addItem("256K",MEM_256K);
 		if (t & 4) ui.mszbox->addItem("512K",512);
 		if (t & 8) ui.mszbox->addItem("1024K",1024);
 		if (t & 16) ui.mszbox->addItem("2048K",2048);
 		if (t & 32) ui.mszbox->addItem("4096K",4096);
+*/
 	}
 	ui.mszbox->setCurrentIndex(ui.mszbox->findText(oldText));
 	if (ui.mszbox->currentIndex() < 0) ui.mszbox->setCurrentIndex(ui.mszbox->count() - 1);

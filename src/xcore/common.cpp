@@ -56,11 +56,22 @@ std::string float2str(float num) {
 	return str.str();
 }
 
+int toPower(int src) {
+	int dst = 1;
+	while (dst < src)
+		dst <<= 1;
+	return dst;
+}
+
+int toLimits(int src, int min, int max) {
+	if (src < min) return min;
+	if (src > max) return max;
+	return src;
+}
+
 int getRanged(const char* str, int min, int max) {
 	int res = atoi(str);
-	if (res < min) res = min;
-	if (res > max) res = max;
-	return res;
+	return toLimits(res, min, max);
 }
 
 std::string getTimeString(int tsec) {

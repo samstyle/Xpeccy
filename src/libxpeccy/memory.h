@@ -15,12 +15,32 @@ enum {
 	MEM_EXT
 };
 // memory banks
+/*
 enum {
 	MEM_BANK0 = 0,
 	MEM_BANK1,
 	MEM_BANK2,
 	MEM_BANK3
 };
+*/
+
+// memory size
+#define MEM_48K	(1<<0)		// "special" value
+#define MEM_256	(1<<8)
+#define MEM_512	(1<<9)
+#define MEM_1K	(1<<10)
+#define MEM_2K	(1<<11)
+#define MEM_4K	(1<<12)
+#define MEM_8K	(1<<13)
+#define MEM_16K	(1<<14)
+#define MEM_32K	(1<<15)
+#define MEM_64K	(1<<16)
+#define MEM_128K	(1<<17)
+#define MEM_256K	(1<<18)
+#define MEM_512K	(1<<19)
+#define MEM_1M	(1<<20)
+#define MEM_2M	(1<<21)
+#define MEM_4M	(1<<22)
 
 typedef struct {
     int type;
@@ -44,27 +64,33 @@ typedef struct {
 	MemPage map[256];			// 4 x 16K | 256 x 256
 	unsigned char ramData[0x400000];	// 4M
 	unsigned char romData[0x80000];		// 512K
-	int memSize;
-	int memMask;
-	int romMask;	// 0:16K, 1:32K, 3:64K, 7:128K, 15:256K, 31:512K
+	int ramSize;
+	int ramMask;
+	int romSize;
+	int romMask;
 } Memory;
 
-Memory* memCreate();
+Memory* memCreate(void);
 void memDestroy(Memory*);
 
 unsigned char memRd(Memory*,unsigned short);
 void memWr(Memory*,unsigned short,unsigned char);
 
-void memSetSize(Memory*, int);
-void memSetBank(Memory*, int, int, int, extmrd, extmwr, void*);
+void memSetSize(Memory*, int, int);
+void memSetBank(Memory*, int, int, int, int, extmrd, extmwr, void*);
 
-void memSetPageData(Memory*,int,int,char*);
-void memGetPageData(Memory*,int,int,char*);
+void memGetData(Memory*,int,int,int,char*);
+void memPutData(Memory*,int,int,int,char*);
+
+xAdr memGetXAdr(Memory*, unsigned short);
+int memFindAdr(Memory*, int, int);
+
+/*
 
 unsigned char* memGetPagePtr(Memory*,int,int);
 MemPage* memGetBankPtr(Memory*,unsigned short);
-xAdr memGetXAdr(Memory*, unsigned short);
-int memFindAdr(Memory*, int, int);
+
+*/
 
 #if __cplusplus
 }

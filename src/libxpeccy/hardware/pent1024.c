@@ -3,13 +3,13 @@
 void p1mMapMem(Computer* comp) {
 	int pg;
 	if (comp->pEFF7 & 8) {
-		memSetBank(comp->mem,MEM_BANK0,MEM_RAM,0, NULL, NULL, NULL);
+		memSetBank(comp->mem, 0x00, MEM_RAM, 0, MEM_16K, NULL, NULL, NULL);
 	} else {
 		pg = (comp->dos ? 2 : 0) | ((comp->rom) ? 1 : 0);
-		memSetBank(comp->mem, MEM_BANK0, MEM_ROM, pg, NULL, NULL, NULL);
+		memSetBank(comp->mem, 0x00, MEM_ROM, pg, MEM_16K, NULL, NULL, NULL);
 	}
 	pg = (comp->p7FFD & 7) | ((comp->pEFF7 & 4) ? 0 : ((comp->p7FFD & 0x20) | ((comp->p7FFD & 0xc0) >> 3)));
-	memSetBank(comp->mem, MEM_BANK3, MEM_RAM, pg, NULL, NULL, NULL);
+	memSetBank(comp->mem, 0xc0, MEM_RAM, pg, MEM_16K, NULL, NULL, NULL);
 }
 
 // in

@@ -53,9 +53,9 @@ void msx2mapper(Computer* comp) {
 			bn = comp->msx.memMap[i];
 		}
 		if (bt == MEM_SLOT) {
-			memSetBank(comp->mem, i, MEM_SLOT, comp->slot->memMap[i], msxSlotRd, msxSlotWr, comp->slot);
+			memSetBank(comp->mem, i << 6, MEM_SLOT, comp->slot->memMap[i], MEM_16K, msxSlotRd, msxSlotWr, comp->slot);
 		} else {
-			memSetBank(comp->mem, i, bt, bn, NULL, NULL, NULL);
+			memSetBank(comp->mem, i << 6, bt, bn, MEM_16K, NULL, NULL, NULL);
 		}
 	}
 }

@@ -5,8 +5,8 @@ void speReset(Computer* comp) {
 }
 
 void speMapMem(Computer* comp) {
-	memSetBank(comp->mem,MEM_BANK0,MEM_ROM,(comp->dos) ? 1 : 0,NULL,NULL,NULL);
-	memSetBank(comp->mem,MEM_BANK3,MEM_RAM,0,NULL,NULL,NULL);
+	memSetBank(comp->mem,0x00,MEM_ROM,(comp->dos) ? 1 : 0, MEM_16K,NULL,NULL,NULL);
+	memSetBank(comp->mem,0xc0,MEM_RAM,0, MEM_16K,NULL,NULL,NULL);
 }
 
 // out

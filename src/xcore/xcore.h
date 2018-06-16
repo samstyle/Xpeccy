@@ -22,6 +22,9 @@ std::vector<std::string> splitstr(std::string,const char*);
 std::pair<std::string,std::string> splitline(std::string);
 void copyFile(const char*, const char*);
 
+int toPower(int);
+int toLimits(int, int, int);
+
 QString getbinbyte(unsigned char);
 QString gethexshift(char);
 QString getdecshift(char);

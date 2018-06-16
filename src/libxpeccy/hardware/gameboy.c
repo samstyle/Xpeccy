@@ -499,7 +499,7 @@ unsigned char gbSlotRd(unsigned short adr, void* data) {
 void gbSlotWr(unsigned short adr, unsigned char val, void* data) {
 	Computer* comp = (Computer*)data;
 	sltWrite(comp->slot, SLT_PRG, adr, val);
-	memSetBank(comp->mem, MEM_BANK1, MEM_SLOT, comp->slot->memMap[0], gbSlotRd, gbSlotWr, comp);
+	memSetBank(comp->mem, 0x40, MEM_SLOT, comp->slot->memMap[0], MEM_16K, gbSlotRd, gbSlotWr, comp);
 }
 
 // 8000..9fff : video mem (bank 0,1 gbc)
@@ -597,10 +597,10 @@ void gbrWr(unsigned short adr, unsigned char val, void* data) {
 // maper
 
 void gbMaper(Computer* comp) {
-	memSetBank(comp->mem, MEM_BANK0, MEM_SLOT, 0, gbSlotRd, gbSlotWr, comp);
-	memSetBank(comp->mem, MEM_BANK1, MEM_SLOT, comp->slot->memMap[0], gbSlotRd, gbSlotWr, comp);
-	memSetBank(comp->mem, MEM_BANK2, MEM_EXT, 0, gbvRd, gbvWr, comp);	// VRAM (8K), slot ram (8K)
-	memSetBank(comp->mem, MEM_BANK3, MEM_EXT, 1, gbrRd, gbrWr, comp);	// internal RAM/OAM/IOMap
+	memSetBank(comp->mem, 0x00, MEM_SLOT, 0, MEM_16K, gbSlotRd, gbSlotWr, comp);
+	memSetBank(comp->mem, 0x40, MEM_SLOT, comp->slot->memMap[0], MEM_16K, gbSlotRd, gbSlotWr, comp);
+	memSetBank(comp->mem, 0x80, MEM_EXT, 0, MEM_16K, gbvRd, gbvWr, comp);	// VRAM (8K), slot ram (8K)
+	memSetBank(comp->mem, 0xc0, MEM_EXT, 1, MEM_16K, gbrRd, gbrWr, comp);	// internal RAM/OAM/IOMap
 }
 
 unsigned char gbMemRd(Computer* comp, unsigned short adr, int m1) {

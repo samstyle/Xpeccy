@@ -918,7 +918,8 @@ void MainWin::screenShot() {
 	QImage img(screen, width(), height(), QImage::Format_RGB888);
 	int x,y,dx,dy;
 	char pageBuf[0x4000];
-	memGetPageData(comp->mem,MEM_RAM,comp->vid->curscr,pageBuf);
+	memGetData(comp->mem, MEM_RAM, MEM_16K, comp->vid->curscr, pageBuf);
+	// memGetPageData(comp->mem,MEM_RAM,comp->vid->curscr,pageBuf);
 	switch (frm) {
 		case SCR_HOB:
 			file.open(fnam.c_str(),std::ios::binary);
