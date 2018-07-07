@@ -254,7 +254,11 @@ unsigned char nes_apu_ext_wr(unsigned short, unsigned char, void*);
 void c64_maper(Computer*);
 void c64_reset(Computer*);
 void c64_mwr(Computer*, unsigned short, unsigned char);
-unsigned char c64_mrd(Computer*, unsigned short);
+unsigned char c64_mrd(Computer*, unsigned short, int);
+sndPair c64_vol(Computer*, sndVolume*);
+void c64_sync(Computer*, int);
+void c64_keyp(Computer*, keyEntry);
+void c64_keyr(Computer*, keyEntry);
 
 #ifdef __cplusplus
 }

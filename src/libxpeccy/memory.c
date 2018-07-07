@@ -85,22 +85,26 @@ void memSetBank(Memory* mem, int page, int type, int bank, int siz, extmrd rd, e
 	pg.type = type;
 	pg.num = bank;
 	if (type == MEM_RAM) {
-		pg.rd = memStdRd;
-		pg.wr = memStdWr;
+		pg.rd = rd ? rd : memStdRd;		// replace std callback if not NULL
+		pg.wr = wr ? wr : memStdWr;
 	} else if (type == MEM_ROM) {
-		pg.rd = memStdRd;
-		pg.wr = NULL;
+		pg.rd = rd ? rd : memStdRd;
+		pg.wr = wr;
 	} else {
 		pg.rd = rd;
 		pg.wr = wr;
-		pg.data = data;
+		// pg.data = data;
 	}
 	while(cnt > 0) {
 		page &= 0xff;
-		if (type == MEM_RAM) {
+		if (data) {
+			pg.data = data;
+		} else if (type == MEM_RAM) {
 			pg.data = mem->ramData + ((pg.num << 8) & mem->ramMask);
 		} else if (type == MEM_ROM) {
 			pg.data = mem->romData + ((pg.num << 8) & mem->romMask);
+		} else {
+			pg.data = NULL;
 		}
 		mem->map[page] = pg;
 		page++;

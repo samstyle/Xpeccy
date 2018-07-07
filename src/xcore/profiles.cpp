@@ -510,6 +510,7 @@ int prfLoad(std::string nm) {
 		tmp2 = PLOAD_RS;
 	}
 
+	// printf("%i: %.X & %.X\n",comp->hw->id,comp->hw->mask, tmask);
 	if ((comp->hw->mask != 0) && (~comp->hw->mask & tmask)) throw("Incorrect memory size for this machine");
 	memSetSize(comp->mem, tmask, -1);
 	if (!prfSetLayout(prf, prf->layName)) prfSetLayout(prf,"default");

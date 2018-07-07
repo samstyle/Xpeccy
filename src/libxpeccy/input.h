@@ -37,7 +37,8 @@ enum {
 	KBD_SPECTRUM,
 	KBD_PROFI,
 	KBD_MSX,
-	KBD_ATM2
+	KBD_ATM2,
+	KBD_C64
 };
 
 // atm2 mode submodes

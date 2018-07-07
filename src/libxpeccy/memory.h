@@ -12,7 +12,8 @@ enum {
 	MEM_RAM	= 1,
 	MEM_ROM,
 	MEM_SLOT,
-	MEM_EXT
+	MEM_EXT,
+	MEM_IO
 };
 // memory banks
 /*
@@ -25,7 +26,7 @@ enum {
 */
 
 // memory size
-#define MEM_48K	(1<<0)		// "special" value
+#define MEM_48K	0		// "special" value
 #define MEM_256	(1<<8)
 #define MEM_512	(1<<9)
 #define MEM_1K	(1<<10)

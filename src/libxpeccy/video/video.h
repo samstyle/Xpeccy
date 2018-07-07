@@ -14,6 +14,13 @@ extern "C" {
 #include "gbcvideo.h"
 #include "nesppu.h"
 
+// C64 vic interrupts
+#define VIC_IRQ_RASTER	0x01
+#define	VIC_IRQ_SPRBGR	0x02
+#define VIC_IRQ_SPRSPR	0x04
+#define VIC_IRQ_LPEN	0x08
+#define VIC_IRQ_ALL	(VIC_IRQ_RASTER | VIC_IRQ_SPRBGR | VIC_IRQ_SPRSPR | VIC_IRQ_LPEN)
+
 // screen mode
 enum {
 	VID_NORMAL = 0,
@@ -31,6 +38,7 @@ enum {
 	VID_V9938,	// MSX2
 	VID_GBC,	// Gameboy
 	VID_NES,	// NES PPU
+	VID_C64,
 	VID_UNKNOWN = -1
 };
 
@@ -70,7 +78,8 @@ struct Video {
 	size_t frmsz;
 	size_t vBytes;
 	int vmode;
-	unsigned char intMask;		// tsconf only, other machines have 1 here
+	unsigned char inten;	// interrupts enable (8 bits = 8 signals)
+	unsigned char intout;	// interrupt output signals (8 bits)
 	vRay ray;
 	vLayout lay;
 	vCoord lcut;
@@ -109,7 +118,8 @@ struct Video {
 		unsigned char sfile[0x200];	// sprites
 		int dmabytes;
 	} tsconf;
-	unsigned char font[0x800];		// ATM text mode font
+	unsigned char regs[0x100];		// internal small video mem
+	unsigned char font[0x800];		// ATM/C64 text mode font
 	void(*callback)(struct Video*);		// call every dot
 	void(*lineCall)(struct Video*);		// call every line
 	void(*hbendCall)(struct Video*);	// @ hblank end

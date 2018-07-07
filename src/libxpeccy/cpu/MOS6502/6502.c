@@ -8,7 +8,7 @@ extern opCode mosTab[256];
 void m6502_reset(CPU* cpu) {
 	cpu->lock = 0;
 	cpu->intrq = 0;
-	cpu->inten = MOS6502_INT_IRQ | MOS6502_INT_NMI;		// brk/nmi enabled
+	cpu->inten = /*MOS6502_INT_IRQ | */MOS6502_INT_NMI;		// brk/nmi enabled
 	cpu->sp = 0x1fd;	// segment 01xx is stack
 	cpu->f = MF5 | MFI;
 	cpu->a = 0;

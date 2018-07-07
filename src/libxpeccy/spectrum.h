@@ -57,6 +57,35 @@ typedef struct {
 } memEntry;
 
 typedef struct {
+	int ns;
+	unsigned char tenth;	// 1/10 sec (each 1e8 ns)
+	unsigned char sec;
+	unsigned char min;
+	unsigned char hour;
+} ciaTime;
+
+typedef struct {
+	unsigned on:1;
+	unsigned char flags;		// cia E/F registers
+	int period;	// in NS
+	int ns;		// countdown. overflow = dec value;
+	PAIR(inival,inih,inil);	// initial value
+	PAIR(value,valh,vall);	// countdown
+} ciaTimer;
+
+typedef struct {
+	unsigned char portA_mask;
+	unsigned char portB_mask;
+	ciaTimer timerA;
+	ciaTimer timerB;
+	ciaTime time;
+	ciaTime alarm;
+	unsigned char ssr;		// serial shift register
+	unsigned char ctrl;		// reg D write;
+	unsigned char state;		// reg D read;
+} c64cia;
+
+typedef struct {
 	unsigned brk:1;			// breakpoint
 	unsigned debug:1;		// dont' do breakpoints
 	unsigned maping:1;		// map memory during execution
@@ -227,6 +256,17 @@ typedef struct {
 		unsigned char iram[256];	// internal ram (FF80..FFFE)
 		unsigned short iomap[128];
 	} gb;
+	struct {
+		unsigned char reg00;
+		unsigned char reg01;
+		unsigned char memMode;
+		unsigned char keyrow;
+		unsigned char vicBank;	// b0,1 = b14,15 of VIC address
+		unsigned char rs232a;	// rs232 output line
+		unsigned char rs232b;
+		c64cia cia1;
+		c64cia cia2;
+	} c64;
 	int romsize;
 	CMOS cmos;
 	int resbank;			// rompart active after reset

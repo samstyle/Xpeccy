@@ -141,8 +141,8 @@ void dmpmwr(unsigned short adr, unsigned char val, void* ptr) {
 	memWr(comp->mem, adr, val);
 }
 
-xLabel* dbgRegLabs[16];
-xHexSpin* dbgRegEdit[16];
+static xLabel* dbgRegLabs[16];
+static xHexSpin* dbgRegEdit[16];
 
 DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	int i;
@@ -196,6 +196,8 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.actTraceHere->setData(DBG_TRACE_HERE);
 	ui.actTraceINT->setData(DBG_TRACE_INT);
 	ui.actTraceLog->setData(DBG_TRACE_LOG);
+
+	ui.dasmTable->setFocus();
 
 // disasm table
 	ui.dasmTable->setColumnWidth(0,100);

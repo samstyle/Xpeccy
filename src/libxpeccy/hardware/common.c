@@ -41,7 +41,7 @@ void zx_sync(Computer* comp, int ns) {
 		comp->hw->mapMem(comp);
 	}
 	// int
-	if (comp->vid->intFRAME && (comp->vid->intMask & Z80_INT)) {
+	if (comp->vid->intFRAME && (comp->vid->inten & Z80_INT)) {
 		comp->intVector = 0xff;
 		comp->cpu->intrq |= Z80_INT;
 		comp->vid->intFRAME = 0;

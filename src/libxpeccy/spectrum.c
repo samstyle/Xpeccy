@@ -282,13 +282,15 @@ void compReset(Computer* comp,int res) {
 	comp->pEFF7 = 0;
 
 	difReset(comp->dif);	//	bdiReset(comp->bdi);
-	if (comp->gs->reset) gsReset(comp->gs);
+	if (comp->gs->reset)
+		gsReset(comp->gs);
 	tsReset(comp->ts);
 	ideReset(comp->ide);
 	saaReset(comp->saa);
-	if (comp->hw->reset) comp->hw->reset(comp);
-	comp->cpu->reset(comp->cpu);
+	if (comp->hw->reset)
+		comp->hw->reset(comp);
 	comp->hw->mapMem(comp);
+	comp->cpu->reset(comp->cpu);
 }
 
 // cpu freq
@@ -306,6 +308,11 @@ void compReset(Computer* comp,int res) {
 // v99xx clock		master/4 = 5.37MHz : 2 dots/period	MSX2. MSX1: master/2
 // CPU clock		master/6 = 3.58MHz : 1T = 3 dots	MSX2. MSX1: master/3
 
+// Commodore
+// dotClock	8.18MHz (ntsc) / 7.88MHz (pal)
+// colorCLK	14.31818MHz (ntsc) / 17.734472MHz (pal)
+// CPU clock	~1MHz
+
 void compUpdateTimings(Computer* comp) {
 	int perNoTurbo = 1e3 / comp->cpuFrq;		// ns for full cpu tick
 	if (perNoTurbo & 1) perNoTurbo++;
@@ -321,6 +328,9 @@ void compUpdateTimings(Computer* comp) {
 			comp->gbsnd->wav.period = perNoTurbo << 5;			// 128KHz period for wave generator = cpu.frq / 32
 			comp->gb.timer.div.per = (perNoTurbo / comp->frqMul) << 8;	// 16KHz timer divider tick. this timer depends on turbo speed
 			vidUpdateTimings(comp->vid, perNoTurbo << 1);
+			break;
+		case HW_C64:
+			vidUpdateTimings(comp->vid, perNoTurbo >> 2);
 			break;
 		case HW_NES:
 			// base frq (21.477MHz | 26.602MHz)

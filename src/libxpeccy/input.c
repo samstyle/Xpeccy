@@ -65,6 +65,10 @@ static keyScan msxKeyTab[] = {
 	{0,0,0}
 };
 
+static keyScan c64KeyTab[] = {
+	{0,0,0}
+};
+
 keyScan findKey(keyScan* tab, char key) {
 	int idx = 0;
 	while (tab[idx].key && (tab[idx].key != key)) {
@@ -122,6 +126,9 @@ void kbdPress(Keyboard* kbd, keyEntry ent) {
 			break;
 		case KBD_MSX:
 			kbd_press(msxKeyTab, kbd->msxMap, ent.msxKey);
+			break;
+		case KBD_C64:
+			kbd_press(c64KeyTab, kbd->map, ent.zxKey);
 			break;
 		case KBD_ATM2:
 			switch(ent.key) {

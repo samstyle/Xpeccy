@@ -27,7 +27,7 @@ void tslReset(Computer* comp) {
 	comp->vid->tsconf.intLine = 0;
 	comp->vid->lay.intpos.x = 0;
 	comp->vid->lay.intpos.y = 0;
-	comp->vid->intMask = 1;
+	comp->vid->inten = 1;
 	comp->tsconf.vdos = 0;
 	tslUpdatePorts(comp->vid);
 	tslMapMem(comp);
@@ -441,7 +441,7 @@ void tsOut27AF(Computer* comp, unsigned short port, unsigned char val) {
 	comp->dma.dst.x = ((dadr & 0x3fc000) >> 14);
 	comp->dma.dst.h = ((dadr & 0x3f00) >> 8);
 	comp->dma.dst.l = dadr & 0xff;
-	if (comp->vid->intMask & 4)
+	if (comp->vid->inten & 4)
 		comp->vid->intDMA = 1;
 }
 
@@ -458,7 +458,7 @@ void tsOut29AF(Computer* comp, unsigned short port, unsigned char val) {
 }
 
 void tsOut2AAF(Computer* comp, unsigned short port, unsigned char val) {
-	comp->vid->intMask = val;
+	comp->vid->inten = val;
 	if (~val & 2) comp->vid->intLINE = 0;
 	if (~val & 4) comp->vid->intDMA = 0;
 }

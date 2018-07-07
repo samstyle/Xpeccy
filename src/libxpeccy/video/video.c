@@ -65,7 +65,7 @@ Video* vidCreate(Memory* me) {
 	vLayout vlay = {{448,320},{74,48},{64,32},{256,192},{0,0},64};
 	vidSetLayout(vid, vlay);
 	vid->frmsz = vid->lay.full.x * vid->lay.full.y;
-	vid->intMask = 0x01;		// FRAME INT for all
+	vid->inten = 0x01;		// FRAME INT for all
 
 	vid->ula = ulaCreate();
 	vid->gbc = gbcvCreate(&vid->ray, &vid->lay);
@@ -597,6 +597,43 @@ void vidNESFram(Video* vid) {
 	ppuFram(vid->ppu);
 }
 
+// c64 vic-II
+
+void vidC64Draw(Video* vid) {
+	yscr = vid->ray.y - vid->lay.bord.y;
+	if ((yscr < 0) || (yscr >= vid->lay.scr.y)) {
+		col = vid->regs[0x20];				// border color
+	} else {
+		xscr = vid->ray.x - vid->lay.bord.x;
+		if ((xscr < 0) || (xscr >= vid->lay.scr.x)) {
+			col = vid->regs[0x20];			// border color
+		} else {
+			if ((xscr & 7) == 0) {
+				adr = 0x0400 + ((yscr >> 3) * 40) + (xscr >> 3);
+				ink = vid->mem->ramData[adr];			// tile nr
+				scrbyte = vid->font[(ink << 3) + (yscr & 7)];	// tile data
+				ink = vid->mem->ramData[MADR(255,ink)];		// tile color
+				pap = vid->regs[0x21]; // mem->ramData[MADR(254,0x21)];	// background color
+			}
+			col = (scrbyte & 0x80) ? ink : pap;
+			scrbyte <<= 1;
+		}
+	}
+	vidPutDot(&vid->ray, vid->pal, col & 0x0f);
+}
+
+void vidC64Fram(Video* vid) {
+	vid->regs[0x12]++;		// increase raster counter
+}
+
+void vidC64Line(Video* vid) {
+	if (vid->lay.intpos.y == vid->ray.y) {		// if current line == interrupt line and raster interrupt is enabled
+		vid->intout |= (vid->inten & VIC_IRQ_RASTER);
+	} else if (vid->intout & VIC_IRQ_RASTER) {
+		vid->intout &= ~VIC_IRQ_RASTER;
+	}
+}
+
 // debug
 
 void vidBreak(Video* vid) {
@@ -631,6 +668,7 @@ static xVideoMode vidModeTab[] = {
 	{VID_V9938, vidDrawV9938, NULL, NULL, vidFrameV9938},
 	{VID_GBC, vidGBDraw, vidGBLine, NULL, vidGBFram},
 	{VID_NES, vidNESDraw, vidNES_HB, vidNESLine, vidNESFram},
+	{VID_C64, vidC64Draw, NULL, vidC64Line, vidC64Fram},
 	{VID_UNKNOWN, vidDrawBorder, NULL, NULL, NULL}
 };
 

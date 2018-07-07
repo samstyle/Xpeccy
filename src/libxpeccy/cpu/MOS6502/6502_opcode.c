@@ -679,6 +679,7 @@ void mosop57(CPU* cpu) {
 // cli
 void mosop58(CPU* cpu) {
 	cpu->f &= ~MFI;
+	cpu->inten |= MOS6502_INT_IRQ;
 	cpu->noint = 1;
 }
 
@@ -888,6 +889,7 @@ void mosop77(CPU* cpu) {
 // sei
 void mosop78(CPU* cpu) {
 	cpu->f |= MFI;
+	cpu->inten &= ~MOS6502_INT_IRQ;
 }
 
 // 79: adc abs,y nn
