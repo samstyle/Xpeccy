@@ -60,6 +60,7 @@ QString getFilter(int flags) {
 	if (flags & FT_HOBETA) res.append(" *.$?");
 	if (flags & FT_SLOT_A) res.append(" *.rom *.mx1 *.mx2 *.gb *.gbc");
 	if (flags & FT_NES) res.append(" *.nes");
+	if (flags & FT_T64) res.append(" *.t64");
 	if (res.startsWith(" ")) res.remove(0,1);
 	return res;
 }
@@ -83,6 +84,7 @@ int getFileType(QString path) {
 	if (path.endsWith(".gb",Qt::CaseInsensitive)) return FT_SLOT_A;
 	if (path.endsWith(".gbc",Qt::CaseInsensitive)) return FT_SLOT_A;
 	if (path.endsWith(".nes",Qt::CaseInsensitive)) return FT_NES;
+	if (path.endsWith(".t64",Qt::CaseInsensitive)) return FT_T64;
 #ifdef HAVEZLIB
 	if (path.endsWith(".rzx",Qt::CaseInsensitive)) return FT_RZX;
 #endif
@@ -95,20 +97,22 @@ int getFileType(QString path) {
 
 int testSlotOn(Computer* comp) {
 	int res = 0;
+/*
 	switch (comp->hw->id) {
 		case HW_MSX:
 		case HW_MSX2:
 		case HW_GBC:
 		case HW_NES:
-			if (comp->mem->map[0].type == MEM_EXT) res = 1;
-			if (comp->mem->map[1].type == MEM_EXT) res = 1;
-			if (comp->mem->map[2].type == MEM_EXT) res = 1;
-			if (comp->mem->map[3].type == MEM_EXT) res = 1;
+			if (comp->mem->map[0].type == MEM_SLOT) res = 1;
+			if (comp->mem->map[1].type == MEM_SLOT) res = 1;
+			if (comp->mem->map[2].type == MEM_SLOT) res = 1;
+			if (comp->mem->map[3].type == MEM_SLOT) res = 1;
 			break;
 		default:
 			res = 0;
 			break;
 	}
+*/
 	return res;
 }
 
@@ -133,6 +137,7 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 		if (flags & FT_RZX) filters.append(";;RZX file (").append(getFilter(flags & FT_RZX)).append(")");
 #endif
 		if (flags & FT_RAW) filters.append(";;Raw file to disk A (*.*)");
+		if (flags & FT_T64) filters.append(";;C64 tape file (*.t64)");
 		if (filters.startsWith(";;")) filters.remove(0,2);
 		filer->setWindowTitle("Open file");
 		filer->setNameFilter(filters);
@@ -180,6 +185,7 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 		case FT_SPG: ferr = loadSPG(comp,sfnam.c_str()); break;
 		case FT_SLOT_A: ferr = loadSlot(comp->slot,sfnam.c_str()); break;
 		case FT_NES: ferr = loadNes(comp, sfnam.c_str()); break;
+		case FT_T64: ferr = loadT64(comp,sfnam.c_str()); break;
 #ifdef HAVEZLIB
 		case FT_RZX: ferr = loadRZX(comp,sfnam.c_str()); break;
 #endif
@@ -208,6 +214,7 @@ void loadFile(Computer* comp,const char* name, int flags, int drv) {
 		case ERR_WAV_FORMAT: shitHappens("Unsupported WAV format"); break;
 		case ERR_NES_HEAD: shitHappens("Wrong NES header"); break;
 		case ERR_NES_MAPPER: shitHappens("Unsupported mapper"); break;
+		case ERR_T64_SIGN: shitHappens("Wrong T64 header"); break;
 		case ERR_OK:
 			if (type & FT_DISK) loadBoot(flp, conf.path.boot);
 			if ((type & FT_SLOT) && testSlotOn(comp)) compReset(comp, RES_DEFAULT);

@@ -33,6 +33,8 @@ enum {
 	ERR_TZX_SIGN,		// tzx signature error
 	ERR_TZX_UNKNOWN,	// tzx unsupported block
 
+	ERR_T64_SIGN,		// T64 signature
+
 	ERR_WAV_HEAD,		// wrong wave header
 	ERR_WAV_FORMAT,		// unsupported wav format
 
@@ -142,6 +144,8 @@ int saveSNA(Computer*, const char*, int);
 int loadSNA_f(Computer*, FILE*, size_t);
 
 int loadSPG(Computer*,const char*);
+
+int loadT64(Computer*,const char*);
 
 // tape
 

@@ -1,5 +1,5 @@
-#ifndef _FILER_H
-#define _FILER_H
+#ifndef X_FILER_H
+#define X_FILER_H
 
 #include "libxpeccy/filetypes/filetypes.h"
 #include "libxpeccy/spectrum.h"
@@ -28,6 +28,7 @@
 #define FT_SLOT_A	(1<<15)			// raw images (msx, gbc)
 #define FT_NES		(1<<16)			// +nes header
 #define FT_SLOT		(FT_SLOT_A | FT_NES)
+#define FT_T64		(1<<17)
 
 void initFileDialog(QWidget*);
 void loadFile(Computer*,const char*, int, int);

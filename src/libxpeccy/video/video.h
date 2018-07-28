@@ -38,9 +38,14 @@ enum {
 	VID_V9938,	// MSX2
 	VID_GBC,	// Gameboy
 	VID_NES,	// NES PPU
-	VID_C64,
+	VID_C64_TEXT,
+	VID_C64_TEXT_MC,
+	VID_C64_BITMAP,
+	VID_C64_BITMAP_MC,
 	VID_UNKNOWN = -1
 };
+
+typedef unsigned char(*vcbmrd)(int, void*);
 
 struct Video {
 	unsigned nogfx:1;	// tsl : nogfx flag
@@ -112,12 +117,12 @@ struct Video {
 		ePair(T1YOffset,t1yh,t1yl);
 		ePair(scrLine, loffh, loffl);
 		ePair(intLine, ilinh, ilinl);	// INT line
-		unsigned char linb[0x200];	// buffer for rendered bitplane
-		unsigned char line[0x200];	// buffer for render sprites & tiles
 		unsigned char cram[0x200];	// pal
 		unsigned char sfile[0x200];	// sprites
 		int dmabytes;
 	} tsconf;
+	unsigned char line[0x200];		// buffer for render sprites & tiles
+	unsigned char linb[0x200];		// buffer for rendered bitplane
 	unsigned char regs[0x100];		// internal small video mem
 	unsigned char font[0x800];		// ATM/C64 text mode font
 	void(*callback)(struct Video*);		// call every dot
@@ -125,7 +130,18 @@ struct Video {
 	void(*hbendCall)(struct Video*);	// @ hblank end
 	void(*framCall)(struct Video*);		// call every frame
 	xColor pal[256];
-	Memory* mem;				// TODO: replace with external mrd(adr, void*) callback: zx modes only?
+	unsigned char sprxspr;	// c64 spr-spr collisions
+	unsigned char sprxbgr;	// c64 spr-bgr collisions
+
+	unsigned char vbank;			// vicII bank (from CIA2)
+	unsigned char sbank;			// screen offset (reg#18 b1..3)
+	unsigned char cbank;			// char data offset (reg#18 b4..7)
+	unsigned char colram[0x1000];		// vicII color ram
+
+	// external data request callback
+	vcbmrd mrd;
+	void* data;
+
 	ulaPlus* ula;
 	VDP9938 v9938;
 	GBCVid* gbc;
@@ -137,7 +153,7 @@ typedef struct Video Video;
 
 extern int vidFlag;
 
-Video* vidCreate(Memory*);
+Video* vidCreate(vcbmrd, void*);
 void vidDestroy(Video*);
 
 void vidInitAdrs();

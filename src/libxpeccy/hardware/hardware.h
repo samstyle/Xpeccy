@@ -259,6 +259,7 @@ sndPair c64_vol(Computer*, sndVolume*);
 void c64_sync(Computer*, int);
 void c64_keyp(Computer*, keyEntry);
 void c64_keyr(Computer*, keyEntry);
+unsigned char c64_vic_mrd(int, void*);
 
 #ifdef __cplusplus
 }

@@ -83,6 +83,7 @@ typedef struct {
 	unsigned char ssr;		// serial shift register
 	unsigned char ctrl;		// reg D write;
 	unsigned char state;		// reg D read;
+	unsigned char reg[16];
 } c64cia;
 
 typedef struct {

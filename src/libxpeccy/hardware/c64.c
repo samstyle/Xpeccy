@@ -1,13 +1,26 @@
-#include "../spectrum.h"
 #include <assert.h>
+#include <string.h>
 #include <time.h>
+
+#include "../spectrum.h"
 
 #define F_LORAM		1
 #define	F_HIRAM		(1<<1)
 #define	F_CHAREN	(1<<2)
 
+// vicII read byte
+// bits 00..13:vic ADR bus
+// bits 14..15:cia2 reg #00 bit 0,1 inverted
+
+unsigned char c64_vic_mrd(int adr, void* ptr) {
+	Computer* comp = (Computer*)ptr;
+	adr &= 0x3fff;
+	adr |= ((comp->vid->vbank & 3) << 14);
+	return comp->mem->ramData[adr & comp->mem->ramMask];
+}
+
 // rom
-// writing to rom will write to ram below rom placed above ram...
+// writing to rom will write to ram under rom placed above ram...
 
 unsigned char c64_rom_rd(unsigned short adr, void* data) {
 	Computer* comp = (Computer*)data;
@@ -49,7 +62,21 @@ unsigned char c64_vic_rd(unsigned short adr, void* data) {
 	return res;
 }
 
+void c64_vic_set_mode(Computer* comp) {
+	int mode = ((comp->vid->regs[0x11] & 0x60) | (comp->vid->regs[0x16] & 0x10));
+//	printf("mode:%.2X\n",mode);
+	switch (mode) {
+		case 0x00: vidSetMode(comp->vid, VID_C64_TEXT); break;
+		case 0x10: vidSetMode(comp->vid, VID_C64_TEXT_MC); break;
+		case 0x20: vidSetMode(comp->vid, VID_C64_BITMAP); break;
+		case 0x30: vidSetMode(comp->vid, VID_C64_BITMAP_MC); break;
+		// and extend modes
+		default: vidSetMode(comp->vid, VID_UNKNOWN); break;
+	}
+}
+
 void c64_vic_wr(unsigned short adr, unsigned char val, void* data) {
+//	printf("vic wr %.4X,%.2X\n",adr,val);
 	Computer* comp = (Computer*)data;
 	adr &= 0x3f;
 	comp->vid->regs[adr] = val;
@@ -58,13 +85,21 @@ void c64_vic_wr(unsigned short adr, unsigned char val, void* data) {
 			comp->vid->lay.intpos.y &= 0xff;
 			if (val & 0x80)
 				comp->vid->lay.intpos.y |= 0x100;
+			c64_vic_set_mode(comp);
 			break;
 		case 0x12:				// b0..7 of INT line
 			comp->vid->lay.intpos.y &= 0x100;
 			comp->vid->lay.intpos.y |= (val & 0xff);
 			break;
+		case 0x16:
+			c64_vic_set_mode(comp);
+			break;
+		case 0x18:
+			comp->vid->sbank = (val & 0x0e) >> 1;
+			comp->vid->cbank = (val & 0xf0) >> 4;
+			break;
 		case 0x19:
-			comp->vid->inten = val;	// b0:line int, b1:spr-bgr collision, b2:spr-spr collision, b3:light pen
+			comp->vid->inten = val & 0x0f;	// b0:line int, b1:spr-bgr collision, b2:spr-spr collision, b3:light pen
 			break;
 	}
 }
@@ -80,16 +115,16 @@ void c64_sid_wr(unsigned short adr, unsigned char val, void* data) {
 }
 
 // d800..dbff	palette (screen attributes 40x25 = 1000 bytes)
-// let it be page 255 of RAM
+// vid->colram
 
 unsigned char c64_pal_rd(unsigned short adr, void* data) {
 	Computer* comp = (Computer*)data;
-	return comp->mem->ramData[MADR(0xff, adr & 0x3ff)];
+	return comp->vid->colram[adr & 0x3ff];
 }
 
 void c64_pal_wr(unsigned short adr, unsigned char val, void* data) {
 	Computer* comp = (Computer*)data;
-	comp->mem->ramData[MADR(0xff, adr & 0x3ff)] = val;
+	comp->vid->colram[adr & 0x3ff] = val;
 }
 
 // dc00/dd00 : cia 1 & cia 2 common ports
@@ -163,7 +198,7 @@ unsigned char c64_cia1_rd(unsigned short adr, void* data) {
 			res = 0xff;
 			for (idx = 0; idx < 8; idx++) {
 				if ((row & 1) == 0) {
-					res &= ~comp->keyb->map[idx];
+					res &= comp->keyb->msxMap[idx];
 				}
 				row >>= 1;
 			}
@@ -173,14 +208,15 @@ unsigned char c64_cia1_rd(unsigned short adr, void* data) {
 			break;
 
 	}
-	printf("cia1 rd %.2X = %.2X\n",adr,res);
+	//printf("cia1 rd %.2X = %.2X\n",adr,res);
 	return res;
 }
 
 void c64_cia1_wr(unsigned short adr, unsigned char val, void* data) {
 	Computer* comp = (Computer*)data;
 	adr &= 0x0f;
-	printf("cia1 wr %.2X,%.2X\n",adr,val);
+	comp->c64.cia1.reg[adr] = val;
+	//printf("cia1 wr %.2X,%.2X\n",adr,val);
 	switch (adr) {
 		case 0x00: comp->c64.keyrow = val; break;
 		case 0x01:			// no write to port b?
@@ -209,17 +245,18 @@ unsigned char c64_cia2_rd(unsigned short adr, void* data) {
 			break;
 
 	}
-	printf("cia2 rd %.2X = %.2X\n",adr,res);
+	//printf("cia2 rd %.2X = %.2X\n",adr,res);
 	return res;
 }
 
 void c64_cia2_wr(unsigned short adr, unsigned char val, void* data) {
 	Computer* comp = (Computer*)data;
 	adr &= 0x0f;
-	printf("cia2 wr %.2X,%.2X\n",adr,val);
+	comp->c64.cia2.reg[adr] = val;
+	//printf("cia2 wr %.2X,%.2X\n",adr,val);
 	switch (adr) {
 		case 0x00:
-			comp->c64.vicBank = (val & 3);
+			comp->vid->vbank = ~val & 3;
 			// rs232 bits
 			break;
 		case 0x01:
@@ -259,34 +296,36 @@ unsigned char c64_chrd(unsigned short adr, void* data) {
 }
 
 void c64_maper(Computer* comp) {
-	memSetBank(comp->mem, 0x00, MEM_RAM, 0, MEM_4K, NULL, NULL, NULL);	// allways RAM 4K
-	memSetBank(comp->mem, 0x10, MEM_RAM, 1, MEM_4K, NULL, NULL, NULL);
-	memSetBank(comp->mem, 0x20, MEM_RAM, 1, MEM_8K, NULL, NULL, NULL);
-	memSetBank(comp->mem, 0x40, MEM_RAM, 2, MEM_8K, NULL, NULL, NULL);
-	memSetBank(comp->mem, 0x60, MEM_RAM, 3, MEM_8K, NULL, NULL, NULL);
+	// low 32K allways RAM
+	memSetBank(comp->mem, 0x00, MEM_RAM, 0, MEM_32K, NULL, NULL, NULL);
+	// 0x8000: RAM or cartrige rom (TODO)
 	memSetBank(comp->mem, 0x80, MEM_RAM, 4, MEM_8K, NULL, NULL, NULL);
+	// 0xa000: RAM or BASIC (8K)
 	if ((comp->c64.reg01 & (F_LORAM | F_HIRAM)) == (F_LORAM | F_HIRAM)) {			// 11:basic, others:ram
 		memSetBank(comp->mem, 0xa0, MEM_ROM, 0, MEM_8K, c64_rom_rd, c64_rom_wr, comp);	// BASIC (A000..BFFF)
 	} else {
 		memSetBank(comp->mem, 0xa0, MEM_RAM, 5, MEM_8K, NULL, NULL, NULL);
 	}
-	memSetBank(comp->mem, 0xc0, MEM_RAM, 12, MEM_4K, NULL, NULL, NULL);	// 8K page 6 =  4K page 12
-	if ((comp->c64.reg01 & (F_LORAM | F_HIRAM)) == 0) {
+	// 0xc000: RAM (4K)
+	memSetBank(comp->mem, 0xc0, MEM_RAM, 12, MEM_4K, NULL, NULL, NULL);
+	// 0xd000: RAM, CHARROM or IO
+	if ((comp->c64.reg01 & (F_LORAM | F_HIRAM)) == 0) {	// x00:RAM
 		memSetBank(comp->mem, 0xd0, MEM_RAM, 13, MEM_4K, NULL, NULL, NULL);
-	} else if (comp->c64.reg01 & F_CHAREN) {
-		memSetBank(comp->mem, 0xd0, MEM_IO, 0, MEM_1K, c64_vic_rd, c64_vic_wr, comp);	// IO (not memmory, used from c64_mrd/mwr)
-		memSetBank(comp->mem, 0xd4, MEM_IO, 0, MEM_1K, c64_sid_rd, c64_sid_wr, comp);
-		memSetBank(comp->mem, 0xd8, MEM_IO, 0, MEM_1K, c64_pal_rd, c64_pal_wr, comp);
-		memSetBank(comp->mem, 0xdc, MEM_IO, 0, MEM_256, c64_cia1_rd, c64_cia1_wr, comp);
-		memSetBank(comp->mem, 0xdd, MEM_IO, 0, MEM_256, c64_cia2_rd, c64_cia2_wr, comp);
-		memSetBank(comp->mem, 0xde, MEM_IO, 0, MEM_256, c64_io1_rd, c64_io1_wr, comp);
-		memSetBank(comp->mem, 0xdf, MEM_IO, 0, MEM_256, c64_io2_rd, c64_io2_wr, comp);
-	} else {
-		memSetBank(comp->mem, 0xd0, MEM_EXT, 3, MEM_4K, c64_chrd, NULL, comp);	// char rom (vid->font, rd only)
+	} else if (comp->c64.reg01 & F_CHAREN) {		// 1xx:IO
+		memSetBank(comp->mem, 0xd0, MEM_IO, 0, MEM_1K, c64_vic_rd, c64_vic_wr, comp);		// vicII
+		memSetBank(comp->mem, 0xd4, MEM_IO, 0, MEM_1K, c64_sid_rd, c64_sid_wr, comp);		// sid
+		memSetBank(comp->mem, 0xd8, MEM_IO, 0, MEM_1K, c64_pal_rd, c64_pal_wr, comp);		// palette
+		memSetBank(comp->mem, 0xdc, MEM_IO, 0, MEM_256, c64_cia1_rd, c64_cia1_wr, comp);	// cia1
+		memSetBank(comp->mem, 0xdd, MEM_IO, 0, MEM_256, c64_cia2_rd, c64_cia2_wr, comp);	// cia
+		memSetBank(comp->mem, 0xde, MEM_IO, 0, MEM_256, c64_io1_rd, c64_io1_wr, comp);		// io1
+		memSetBank(comp->mem, 0xdf, MEM_IO, 0, MEM_256, c64_io2_rd, c64_io2_wr, comp);		// io2
+	} else {						// 0xx:CHARROM
+		memSetBank(comp->mem, 0xd0, MEM_EXT, 3, MEM_4K, c64_chrd, NULL, comp);
 	}
-	if (comp->c64.reg01 & F_HIRAM) {
-		memSetBank(comp->mem, 0xe0, MEM_ROM, 1, MEM_8K, c64_rom_rd, c64_rom_wr, comp);	// KERNAL (E000..FFFF)
-	} else {
+	// 0xe000: RAM or KERNAL
+	if (comp->c64.reg01 & F_HIRAM) {			// x1x:KERNAL
+		memSetBank(comp->mem, 0xe0, MEM_ROM, 1, MEM_8K, c64_rom_rd, c64_rom_wr, comp);
+	} else {						// x0x:RAM
 		memSetBank(comp->mem, 0xe0, MEM_RAM, 7, MEM_8K, NULL, NULL, NULL);
 	}
 }
@@ -303,36 +342,49 @@ static xColor c64_palette[16] = {
 
 void c64_reset(Computer* comp) {
 	comp->c64.reg00 = 0x2f;
-	comp->c64.reg01 = 0xe7;
-	for (int i = 0; i < 16; i++) {
+	comp->c64.reg01 = 0x37;
+	int i;
+	for (i = 0; i < 16; i++) {
+		comp->c64.cia1.reg[i] = 0x00;
+		comp->c64.cia2.reg[i] = 0x00;
 		comp->vid->pal[i] = c64_palette[i];
 	}
+	memset(comp->vid->regs, 0x00, 256);
+//	comp->vid->regs[0x11] = 0x1b;
+//	comp->vid->regs[0x18] = 0xc8;
 	c64_maper(comp);
-	vidSetMode(comp->vid, VID_C64);
+	vidSetMode(comp->vid, VID_C64_TEXT);
 }
 
 unsigned char c64_mrd(Computer* comp, unsigned short adr, int m1) {
 	unsigned char res = 0xff;
-	if (adr == 0x0000) {
-		res = comp->c64.reg00;
-	} else if (adr == 0x0001) {
-		res = comp->c64.reg01;		// output bits is set
-	} else {
-		res = memRd(comp->mem, adr);
+	switch (adr) {
+		case 0x0000:
+			res = comp->c64.reg00;
+			break;
+		case 0x0001:
+			res = comp->c64.reg01;
+			break;
+		default:
+			res = memRd(comp->mem, adr);
 	}
 	return res;
 }
 
 void c64_mwr(Computer* comp, unsigned short adr, unsigned char val) {
-	if (adr == 0x0000) {
-		comp->c64.reg00 = val;
-	} else if (adr == 0x0001) {
-		comp->c64.reg01 &= ~comp->c64.reg00;			// reset output bits
-		val &= comp->c64.reg00;					// reset input bits
-		comp->c64.reg01 |= val;					// set new output bits
-		c64_maper(comp);
-	} else {
-		memWr(comp->mem, adr, val);
+	switch (adr) {
+		case 0x0000:
+			comp->c64.reg00 = val;
+			break;
+		case 0x0001:
+			comp->c64.reg01 &= ~comp->c64.reg00;			// reset output bits in R0
+			val &= comp->c64.reg00;					// reset ro bits in value
+			comp->c64.reg01 |= val;					// set new output bits in R0
+			c64_maper(comp);
+			break;
+		default:
+			memWr(comp->mem, adr, val);
+			break;
 	}
 }
 
@@ -382,13 +434,13 @@ typedef struct {
 } c64Key;
 
 static c64Key c64matrix[] = {
-	{XKEY_DEL,0,1},{XKEY_ENTER,0,2},{XKEY_RIGHT,0,4},{XKEY_F7,0,8}, {XKEY_F1,0,16},{XKEY_F3,0,32},{XKEY_F5,0,64},{XKEY_DOWN,0,128},
+	{XKEY_BSP,0,1},{XKEY_ENTER,0,2},{XKEY_RIGHT,0,4},{XKEY_F7,0,8}, {XKEY_F1,0,16},{XKEY_F3,0,32},{XKEY_F5,0,64},{XKEY_DOWN,0,128},
 	{XKEY_3,1,1},{XKEY_W,1,2},{XKEY_A,1,4},{XKEY_4,1,8},{XKEY_Z,1,16},{XKEY_S,1,32},{XKEY_E,1,64},{XKEY_LSHIFT,1,128},
 	{XKEY_5,2,1},{XKEY_R,2,2},{XKEY_D,2,4},{XKEY_6,2,8},{XKEY_C,2,16},{XKEY_F,2,32},{XKEY_T,2,64},{XKEY_X,2,128},
 	{XKEY_7,3,1},{XKEY_Y,3,2},{XKEY_G,3,4},{XKEY_8,3,8},{XKEY_B,3,16},{XKEY_H,3,32},{XKEY_U,3,64},{XKEY_V,3,128},
 	{XKEY_9,4,1},{XKEY_I,4,2},{XKEY_J,4,4},{XKEY_0,4,8},{XKEY_M,4,16},{XKEY_K,4,32},{XKEY_O,4,64},{XKEY_N,4,128},
 	{XKEY_PLUS,5,1},{XKEY_P,5,2},{XKEY_L,5,4},{XKEY_MINUS,5,8},{XKEY_PERIOD,5,16},{XKEY_QUOTE,5,32},{XKEY_TILDA,5,64},{XKEY_SLASH,5,128},
-	{XKEY_RBRACE,6,1},{XKEY_COMMA,6,2},{XKEY_DOTCOM,6,4},{XKEY_HOME,6,8},{XKEY_RSHIFT,6,16},{XKEY_QUEST,6,32},{XKEY_UP,6,64},{XKEY_BSLASH,6,128},
+	{XKEY_RBRACE,6,1},{XKEY_COMMA,5,128},{XKEY_DOTCOM,6,4},{XKEY_HOME,6,8},{XKEY_RSHIFT,6,16},{XKEY_QUEST,6,32},{XKEY_UP,6,64},{XKEY_BSLASH,6,128},
 	{XKEY_1,7,1},{XKEY_LEFT,7,2},{XKEY_LCTRL,7,4},{XKEY_2,7,8},{XKEY_SPACE,7,16},{XKEY_RCTRL,7,32},{XKEY_Q,7,64},{XKEY_ESC,7,128},
 	{0,0,0}
 };
@@ -397,7 +449,7 @@ void c64_keyp(Computer* comp, keyEntry ent) {
 	int idx = 0;
 	while(c64matrix[idx].code > 0) {
 		if (c64matrix[idx].code == ent.key) {
-			comp->keyb->map[c64matrix[idx].row] |= c64matrix[idx].mask;
+			comp->keyb->msxMap[c64matrix[idx].row] &= ~c64matrix[idx].mask;
 		}
 		idx++;
 	}
@@ -407,7 +459,7 @@ void c64_keyr(Computer* comp, keyEntry ent) {
 	int idx = 0;
 	while(c64matrix[idx].code > 0) {
 		if (c64matrix[idx].code == ent.key) {
-			comp->keyb->map[c64matrix[idx].row] &= ~c64matrix[idx].mask;
+			comp->keyb->msxMap[c64matrix[idx].row] |= c64matrix[idx].mask;
 		}
 		idx++;
 	}

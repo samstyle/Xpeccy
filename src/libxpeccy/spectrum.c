@@ -14,6 +14,11 @@ static vLayout nesPALLay = {{341,312},{0,0},{85,72},{256,240},{0,0},64};
 
 // ...
 
+unsigned char vid_mrd_cb(int adr, void* ptr) {
+	Computer* comp = (Computer*)ptr;
+	return comp->mem->ramData[adr];
+}
+
 void zxMemRW(Computer* comp, int adr) {
 	MemPage* mptr = &comp->mem->map[(adr >> 8) & 0xff];
 	if (comp->contMem && (mptr->type == MEM_RAM) && (mptr->num & 0x40)) {	// 16K pages 1,3,5,7 (48K model)
@@ -168,24 +173,24 @@ void zxSetUlaPalete(Computer* comp) {
 
 Computer* compCreate() {
 	Computer* comp = (Computer*)malloc(sizeof(Computer));
-	void* ptr = (void*)comp;
+//	void* ptr = (void*)comp;
 //	int i;
-	memset(ptr,0,sizeof(Computer));
-	memset(comp->brkIOMap, 0, 0x10000);
+	memset(comp, 0x00, sizeof(Computer));
+//	memset(comp->brkIOMap, 0x00, 0x10000);
 	comp->resbank = RES_48;
 	comp->firstRun = 1;
 
-	comp->cpu = cpuCreate(CPU_Z80,&memrd,&memwr,&iord,&iowr,&intrq,ptr);
+	comp->cpu = cpuCreate(CPU_Z80,memrd,memwr,iord,iowr,intrq,comp);
 	comp->mem = memCreate();
-	comp->vid = vidCreate(comp->mem);
+	comp->vid = vidCreate(vid_mrd_cb, comp);
 
 	comp->frqMul = 1;
 	compSetBaseFrq(comp, 3.5);
 
-	memset(comp->brkIOMap, 0, 0x10000);
-	memset(comp->brkRomMap, 0, 0x80000);
-	memset(comp->brkRamMap, 0, 0x400000);
-	memset(comp->brkAdrMap, 0, 0x1000);
+//	memset(comp->brkIOMap, 0, 0x10000);
+//	memset(comp->brkRomMap, 0, 0x80000);
+//	memset(comp->brkRamMap, 0, 0x400000);
+//	memset(comp->brkAdrMap, 0, 0x1000);
 
 // input
 	comp->keyb = keyCreate();
@@ -207,34 +212,34 @@ Computer* compCreate() {
 	comp->beep = bcCreate();
 	comp->nesapu = apuCreate(nes_apu_ext_rd, comp);
 // baseconf
-	comp->evo.evo2F = 0;
-	comp->evo.evo4F = 0;
-	comp->evo.evo6F = 0;
-	comp->evo.evo8F = 0;
+//	comp->evo.evo2F = 0;
+//	comp->evo.evo4F = 0;
+//	comp->evo.evo6F = 0;
+//	comp->evo.evo8F = 0;
 //					0   1   2   3   4   5   6   7   8    9    A    B    C    D    E    F
 	char blnm[] = {'x','B','o','o','t',000,000,000,000,000,000,000,0x38,0x98,0x00,0x00};
 	char bcnm[] = {'x','E','v','o',' ','0','.','5','2',000,000,000,0x89,0x99,0x00,0x00};
 	memcpy(comp->evo.blVer,blnm,16);
 	memcpy(comp->evo.bcVer,bcnm,16);
-	comp->cmos.mode = 0;
+//	comp->cmos.mode = 0;
 //tsconf
 	comp->tsconf.pwr_up = 1;
-	comp->tsconf.vdos = 0;
+//	comp->tsconf.vdos = 0;
 // rzx
 #ifdef HAVEZLIB
-	comp->rzx.start = 0;
-	comp->rzx.play = 0;
-	comp->rzx.overio = 0;
-	comp->rzx.fCount = 0;
+//	comp->rzx.start = 0;
+//	comp->rzx.play = 0;
+//	comp->rzx.overio = 0;
+//	comp->rzx.fCount = 0;
 	comp->rzx.file = NULL;
 #endif
-	comp->tapCount = 0;
-	comp->tickCount = 0;
+//	comp->tapCount = 0;
+//	comp->tickCount = 0;
 
 	gsReset(comp->gs);
 
-	comp->cmos.adr = 0;
-	memset(comp->cmos.data, 0x00, 256);
+//	comp->cmos.adr = 0;
+//	memset(comp->cmos.data, 0x00, 256);
 	comp->cmos.data[17] = 0xaa;
 	return comp;
 }
@@ -330,7 +335,7 @@ void compUpdateTimings(Computer* comp) {
 			vidUpdateTimings(comp->vid, perNoTurbo << 1);
 			break;
 		case HW_C64:
-			vidUpdateTimings(comp->vid, perNoTurbo >> 2);
+			vidUpdateTimings(comp->vid, perNoTurbo >> 3);
 			break;
 		case HW_NES:
 			// base frq (21.477MHz | 26.602MHz)
@@ -402,6 +407,7 @@ void compSetHardware(Computer* comp, const char* name) {
 	comp->hw = hw;
 	comp->vid->lockLayout = 0;
 	comp->cpu->nod = 0;
+	comp->vid->mrd = vid_mrd_cb;
 	switch(hw->id) {
 		case HW_NES:
 			comp->vid->lockLayout = 1;
@@ -416,7 +422,9 @@ void compSetHardware(Computer* comp, const char* name) {
 		case HW_MSX:
 		case HW_MSX2:
 			break;
-
+		case HW_C64:
+			comp->vid->mrd = c64_vic_mrd;
+			break;
 	}
 	compUpdateTimings(comp);
 }
