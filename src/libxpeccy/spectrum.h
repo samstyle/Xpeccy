@@ -268,7 +268,7 @@ typedef struct {
 		c64cia cia1;
 		c64cia cia2;
 	} c64;
-	int romsize;
+//	int romsize;
 	CMOS cmos;
 	int resbank;			// rompart active after reset
 	int tapCount;

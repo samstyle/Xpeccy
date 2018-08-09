@@ -23,6 +23,8 @@ extern "C" {
 
 // screen mode
 enum {
+	VID_UNKNOWN = -1,
+// spectrum
 	VID_NORMAL = 0,
 	VID_ALCO,
 	VID_ATM_EGA,
@@ -35,17 +37,34 @@ enum {
 	VID_TSL_NORMAL,	// TSConf common screen
 	VID_TSL_TEXT,
 	VID_PRF_MC,	// Profi multicolor
-	VID_V9938,	// MSX2
+// v99xx
+//	VID_V9938,	// MSX2
+	VDP_TEXT1,
+	VDP_GRA1,
+	VDP_GRA2,
+	VDP_MCOL,
+	VDP_GRA3,
+	VDP_GRA4,
+	VDP_GRA5,
+	VDP_GRA6,
+	VDP_GRA7,
+	VDP_TEXT2,
+// game boy color
 	VID_GBC,	// Gameboy
+// nes
 	VID_NES,	// NES PPU
+// c64
 	VID_C64_TEXT,
 	VID_C64_TEXT_MC,
 	VID_C64_BITMAP,
 	VID_C64_BITMAP_MC,
-	VID_UNKNOWN = -1
 };
 
+typedef struct Video Video;
+
 typedef unsigned char(*vcbmrd)(int, void*);
+typedef void(*vcbmwr)(int, unsigned char, void*);
+typedef void(*cbvid)(Video*);
 
 struct Video {
 	unsigned nogfx:1;	// tsl : nogfx flag
@@ -63,6 +82,9 @@ struct Video {
 	unsigned vblank:1;	// VBlank signal
 	unsigned vbstrb:1;	// VBlank strobe 0->1
 
+	unsigned hbrd:1;	// border.H
+	unsigned vbrd:1;	// border.V
+
 	int nsPerFrame;
 	int nsPerLine;
 	int nsPerDot;
@@ -77,26 +99,126 @@ struct Video {
 	unsigned char brdcol;
 	unsigned char nextbrd;
 
+	unsigned char inten;	// interrupts enable (8 bits = 8 signals)
+	unsigned char intrq;	// interrupt output signals (8 bits)
+
+	xColor pal[256];	// palete. 256 colors rgb888
+
+	int vmode;
+	cbvid cbDot;		// call every dot
+	cbvid cbHBlank;		// call every line
+	cbvid cbLine;		// @ hblank end
+	cbvid cbFrame;		// call every frame
+
+	vcbmrd mrd;		// external memory reading
+	vcbmwr mwr;		// external memory writing
+	void* data;
+
 	int fcnt;
 	unsigned char atrbyte;
-	unsigned char scrimg[1024 * 512 * 3];	// 512x512 rgb (dX x2)
 	size_t frmsz;
 	size_t vBytes;
-	int vmode;
-	unsigned char inten;	// interrupts enable (8 bits = 8 signals)
-	unsigned char intout;	// interrupt output signals (8 bits)
 	vRay ray;
-	vLayout lay;
+//	vLayout lay;
+	vCoord full;
+	vCoord blank;
+	vCoord bord;
+	vCoord scrn;
+	vCoord send;
+	vCoord vend;
 	vCoord lcut;
 	vCoord rcut;
-	vCoord ssze;
-	vCoord vsze;
+	vCoord vsze;		// visible area size (cutted)
+	vCoord intp;		// intp.y = gbc lyc = 9938 iLine
+	int intsize;
+
 	int idx;
+
+	unsigned sprblock:1;	// hw block sprites
+	unsigned bgblock:1;	// hw block bg
+	unsigned greyscale:1;
+	vCoord scrsize;		// << tsconf.xSize, tsconf.ySize, v9938::wid
+	vCoord sc;		// screen scroll registers
+	// nes
+	ePair(vadr,vah,val);	// nes videomem access addr
+	unsigned short tadr;	// nes tmp vadr
+	int vbsline;
+	int vbrline;
+	unsigned char oamadr;
+	// gbc
+	unsigned lcdon:1;
+	unsigned altile:1;
+	unsigned bigspr:1;
+	unsigned spren:1;	// sw enable sprites
+	unsigned bgen:1;	// sw enable bg
+	unsigned bgprior:1;
+	unsigned winen:1;	// sw enable win
+	unsigned winblock:1;	// hw block win
+	unsigned gbmode:1;	// gameboy capatible
+	unsigned char gbcmode;
+	unsigned short winmapadr;
+	unsigned short tilesadr;
+	unsigned short bgmapadr;
+	unsigned char wline;
+	int xpos;
+	unsigned char wtline[256];	// win layer with priority
+	unsigned char wbline[256];	// win layer without priority
+	unsigned char stline[256];	// spr layer with priority
+	unsigned char sbline[256];	// spr layer without priority
+	vCoord win;			// win layout position
+	// v9938
+	unsigned high:1;
+	unsigned latch:1;
+	unsigned vastep:1;
+	unsigned spleft8:1;
+	unsigned bgleft8:1;
+	unsigned sp0hit:1;
+	unsigned spover:1;
+	unsigned master:1;
+	unsigned palhi:1;
+
+	unsigned bpage:1;
+	int blink0;
+	int blink1;
+	int blink;
+
+	unsigned char vbuf;
+	unsigned short spadr;
+	unsigned short bgadr;
+	int memMask;
+	int finex;
+	int finey;
+	int lines;
+	int inth;	// interrupts
+	int intf;
+	int nt;
+	int dpb;	// dots per byte
+	int count;
+	unsigned char com;		// executed command
+	unsigned char arg;		// command argument
+	unsigned char dat;
+	int BGTiles;
+	int BGMap;
+	int BGColors;
+	int OBJTiles;
+	int OBJAttr;
+	vCoord pos;
+	vCoord delta;
+	vCoord src;
+	vCoord dst;
+	vCoord size;
+	vCoord cnt;
+	unsigned char sr[16];			// ststus registers (0..9 actually)
+	unsigned char bgline[0x200];		// bg (full 2 screens)
+	unsigned char spline[0x108];		// sprites (8 max)
+	unsigned char prline[0x108];		// sprites priority
+	unsigned char sprImg[256 * 256];
+	void(*pset)(Video*,int,int,unsigned char);
+	unsigned char(*col)(Video*,int,int);
+
 	struct {
 		int xPos;			// position of screen @ monitor [32|12] x [44|24|0]
 		int yPos;
-		int xSize;			// size of tsconf screen ([320|360] x [200|240|288])
-		int ySize;
 		unsigned char tconfig;		// port 06AF
 		unsigned char TMPage;		// tiles map page
 		unsigned char T0GPage;		// lay 0 graphics
@@ -121,42 +243,32 @@ struct Video {
 		unsigned char sfile[0x200];	// sprites
 		int dmabytes;
 	} tsconf;
+
 	unsigned char line[0x200];		// buffer for render sprites & tiles
 	unsigned char linb[0x200];		// buffer for rendered bitplane
 	unsigned char regs[0x100];		// internal small video mem
 	unsigned char font[0x800];		// ATM/C64 text mode font
-	void(*callback)(struct Video*);		// call every dot
-	void(*lineCall)(struct Video*);		// call every line
-	void(*hbendCall)(struct Video*);	// @ hblank end
-	void(*framCall)(struct Video*);		// call every frame
-	xColor pal[256];
+
 	unsigned char sprxspr;	// c64 spr-spr collisions
 	unsigned char sprxbgr;	// c64 spr-bgr collisions
-
 	unsigned char vbank;			// vicII bank (from CIA2)
 	unsigned char sbank;			// screen offset (reg#18 b1..3)
 	unsigned char cbank;			// char data offset (reg#18 b4..7)
 	unsigned char colram[0x1000];		// vicII color ram
 
-	// external data request callback
-	vcbmrd mrd;
-	void* data;
+	unsigned char ram[128 * 1024];			// 128K of video memory
+	unsigned char oam[0x100];			// nes oam memory
+	unsigned char reg[256];				// max 256 registers
+	unsigned char scrimg[2 * 512 * 512 * 3];	// 512x512 rgb (dX x2)
 
 	ulaPlus* ula;
-	VDP9938 v9938;
-	GBCVid* gbc;
-	nesPPU* ppu;
 
 };
-
-typedef struct Video Video;
 
 extern int vidFlag;
 
 Video* vidCreate(vcbmrd, void*);
 void vidDestroy(Video*);
-
-void vidInitAdrs();
 
 void vidReset(Video*);
 void vidSync(Video*,int);

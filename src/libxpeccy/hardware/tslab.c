@@ -25,8 +25,8 @@ void tslReset(Computer* comp) {
 	comp->vid->tsconf.T1YOffset = 0;
 	comp->vid->tsconf.tconfig = 0;
 	comp->vid->tsconf.intLine = 0;
-	comp->vid->lay.intpos.x = 0;
-	comp->vid->lay.intpos.y = 0;
+	comp->vid->intp.x = 0;
+	comp->vid->intp.y = 0;
 	comp->vid->inten = 1;
 	comp->tsconf.vdos = 0;
 	tslUpdatePorts(comp->vid);
@@ -321,17 +321,17 @@ void tsOut21AF(Computer* comp, unsigned short port, unsigned char val) {
 
 void tsOut22AF(Computer* comp, unsigned short port, unsigned char val) {
 	comp->vid->tsconf.hsint = (val << 1);		// base value, real pos = base + shift by line rendering
-	comp->vid->lay.intpos.x = (val << 1);
+	comp->vid->intp.x = (val << 1);
 }
 
 void tsOut23AF(Computer* comp, unsigned short port, unsigned char val) {
 	comp->vid->tsconf.ilinl = val;
-	comp->vid->lay.intpos.y = comp->vid->tsconf.intLine;
+	comp->vid->intp.y = comp->vid->tsconf.intLine;
 }
 
 void tsOut24AF(Computer* comp, unsigned short port, unsigned char val) {
 	comp->vid->tsconf.ilinh = val;
-	comp->vid->lay.intpos.y = comp->vid->tsconf.intLine;
+	comp->vid->intp.y = comp->vid->tsconf.intLine;
 }
 
 void tsOut26AF(Computer* comp, unsigned short port, unsigned char val) {

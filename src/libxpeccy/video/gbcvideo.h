@@ -1,8 +1,9 @@
-#ifndef _GBC_VID_H
-#define _GBC_VID_H
+#ifndef X_GBC_VID_H
+#define X_GBC_VID_H
 
 #include "vidcommon.h"
 
+/*
 struct GBCVid {
 	unsigned lcdon:1;
 	unsigned winen:1;		// window layer enabled
@@ -52,6 +53,12 @@ typedef struct GBCVid GBCVid;
 
 GBCVid* gbcvCreate(vRay*, vLayout*);
 void gbcvDestroy(GBCVid*);
-void gbcvReset(GBCVid*);
+*/
+typedef struct Video Video;
+
+void gbcvReset(Video*);
+void gbcvDraw(Video*);
+void gbcvLine(Video*);
+void gbcvFram(Video*);
 
 #endif

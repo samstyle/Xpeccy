@@ -28,6 +28,12 @@ enum {
 };
 
 typedef struct {
+	unsigned char mark;	// f8/fb
+	unsigned char size;	// code 0..3
+	unsigned short pos;	// position in track
+} xSecPos;
+
+typedef struct {
 	unsigned trk80:1;	// fdd is 80T
 	unsigned doubleSide:1;	// fdd is DS
 	unsigned motor:1;	// fdd motor is on
@@ -48,6 +54,7 @@ typedef struct {
 	struct {
 		unsigned char byte[TRACKLEN];
 		unsigned char field[TRACKLEN];
+		int map[256];		// position of sector n = 1+
 	} data[256];
 } Floppy;
 

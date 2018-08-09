@@ -229,8 +229,8 @@ printf(".z80 version 1\n");
 			printf("data is compressed\n");
 			z80uncompress(file,pageBuf,0xc000);
 			memPutData(comp->mem,MEM_RAM,5,MEM_16K,pageBuf);
-			memPutData(comp->mem,MEM_RAM,2,MEM_16K,pageBuf + 0x4000);
-			memPutData(comp->mem,MEM_RAM,0,MEM_16K,pageBuf + 0x8000);
+			memPutData(comp->mem,MEM_RAM,2,MEM_16K,pageBuf + MEM_16K);
+			memPutData(comp->mem,MEM_RAM,0,MEM_16K,pageBuf + MEM_32K);
 		} else {
 			printf("data is not compressed\n");
 			fread(pageBuf, 0x4000, 1, file);

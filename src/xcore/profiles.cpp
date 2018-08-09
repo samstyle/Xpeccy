@@ -258,15 +258,21 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 			}
 			file.close();
 		} else {					// separate files
+			//printf("1:%i\n",prf->zx->mem->romSize);
+			memSetSize(prf->zx->mem, -1, MEM_64K);
+			//printf("2:%i\n",prf->zx->mem->romSize);
 			for (i = 0; i < 4; i++) {
+				//printf("3:%i:%s\n",i,rset->roms[i].path.c_str());
 				if (rset->roms[i].path == "") {
 					memset(pageBuf,0xff,0x4000);
 				} else {
 					strcpy(fpath, conf.path.romDir);
 					strcat(fpath, SLASH);
 					strcat(fpath, rset->roms[i].path.c_str());
+					//printf("4:%s\n",fpath);
 					file.open(fpath, std::ios::binary);
 					if (file.good()) {
+						//printf("5:good\n");
 						file.seekg(rset->roms[i].part << 14);
 						file.read(pageBuf,0x4000);
 					} else {

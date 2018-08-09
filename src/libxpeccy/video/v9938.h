@@ -3,6 +3,10 @@
 
 #include "vidcommon.h"
 
+#define VDP_IE1	0x10		// R0.4 = hint enable
+#define VDP_IE0 0x20		// R1.5 = vint enable
+
+/*
 typedef struct VDP9938 VDP9938;
 
 typedef struct {
@@ -57,14 +61,35 @@ struct VDP9938 {
 	unsigned char sprImg[0x10000];	// 256x256 image with foreground sprites (rebuild @ frame start)
 	vdpMode* core;
 };
+*/
 
-void vdpReset(VDP9938*);
-void vdpWrite(VDP9938*, int, unsigned char);
-unsigned char vdpRead(VDP9938*, int);
+typedef struct Video Video;
 
-void vdpDraw(VDP9938*);
-void vdpLine(VDP9938*);
-void vdpHBlk(VDP9938*);
-void vdpVBlk(VDP9938*);
+void vdpReset(Video*);
+void vdpWrite(Video*, int, unsigned char);
+unsigned char vdpRead(Video*, int);
 
+/*
+void vdpDraw(Video*);
+//void vdpLine(Video*);
+void vdpHBlk(Video*);
+void vdpVBlk(Video*);
+*/
+
+// drawers
+void vdpText1(Video*);
+void vdpMultcol(Video*);
+void vdpGra1(Video*);
+void vdpGra2(Video*);
+void vdpGra3(Video*);
+void vdpGra4(Video*);
+void vdpGra5(Video*);
+void vdpGra6(Video*);
+void vdpGra7(Video*);
+void vdpDummy(Video*);
+// blank
+void vdpFillSprites(Video*);
+void vdpFillSprites2(Video*);
+void vdpHBlk(Video*);
+void vdpVBlk(Video*);
 #endif

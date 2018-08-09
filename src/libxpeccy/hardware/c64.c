@@ -54,7 +54,7 @@ unsigned char c64_vic_rd(unsigned short adr, void* data) {
 			res = comp->vid->ray.y & 0xff;
 			break;
 		case 0x19:
-			res = comp->vid->intout & VIC_IRQ_ALL;
+			res = comp->vid->intrq & VIC_IRQ_ALL;
 			if (res)
 				res |= 0x80;
 			break;
@@ -82,14 +82,14 @@ void c64_vic_wr(unsigned short adr, unsigned char val, void* data) {
 	comp->vid->regs[adr] = val;
 	switch (adr) {
 		case 0x11:				// b7 = b8 of INT line
-			comp->vid->lay.intpos.y &= 0xff;
+			comp->vid->intp.y &= 0xff;
 			if (val & 0x80)
-				comp->vid->lay.intpos.y |= 0x100;
+				comp->vid->intp.y |= 0x100;
 			c64_vic_set_mode(comp);
 			break;
 		case 0x12:				// b0..7 of INT line
-			comp->vid->lay.intpos.y &= 0x100;
-			comp->vid->lay.intpos.y |= (val & 0xff);
+			comp->vid->intp.y &= 0x100;
+			comp->vid->intp.y |= (val & 0xff);
 			break;
 		case 0x16:
 			c64_vic_set_mode(comp);
@@ -419,9 +419,9 @@ void c64_sync_time(ciaTime* xt, int ns) {
 }
 
 void c64_sync(Computer* comp, int ns) {
-	if (comp->vid->intout & VIC_IRQ_ALL) {
+	if (comp->vid->intrq & VIC_IRQ_ALL) {
 		comp->cpu->intrq = (comp->cpu->inten & MOS6502_INT_IRQ);
-		comp->vid->intout = 0;
+		comp->vid->intrq = 0;
 	}
 	c64_sync_time(&comp->c64.cia1.time, ns);
 	c64_sync_time(&comp->c64.cia2.time, ns);

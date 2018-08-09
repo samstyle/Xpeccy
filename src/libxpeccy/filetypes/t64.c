@@ -21,7 +21,7 @@ int loadT64(Computer* comp, const char* fname) {
 	unsigned short ver;
 	unsigned short maxent;
 	unsigned short totent;
-	unsigned short start = 0;
+//	unsigned short start = 0;
 	int i;
 	t64file desc;
 	long offset;
@@ -49,8 +49,8 @@ int loadT64(Computer* comp, const char* fname) {
 				fseek(file, desc.offset, SEEK_SET);
 				fread(comp->mem->ramData + desc.start, desc.end - desc.start + 1, 1, file);
 				fseek(file, offset, SEEK_SET);
-				if (i == 0)
-					start = desc.start;
+//				if (i == 0)
+//					start = desc.start;
 			}
 		}
 //		if (start)

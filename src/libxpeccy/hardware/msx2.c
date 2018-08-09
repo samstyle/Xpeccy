@@ -133,9 +133,9 @@ unsigned char msx2mapIn(Computer* comp, unsigned short port) {
 void msxResetSlot(xCartridge*);
 void msx2Reset(Computer* comp) {
 	kbdSetMode(comp->keyb, KBD_MSX);
-	comp->vid->v9938.memMask = 0x1ffff;
-	vidSetMode(comp->vid, VID_V9938);
-	vdpReset(&comp->vid->v9938);
+	comp->vid->memMask = 0x1ffff;
+	vidSetMode(comp->vid, VDP_TEXT1);
+	vdpReset(comp->vid);
 	msxResetSlot(comp->slot);
 	msx2_A8out(comp, 0xa8, 0xf0);
 	msx2mapper(comp);

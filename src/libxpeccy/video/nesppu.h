@@ -3,6 +3,7 @@
 
 #include "vidcommon.h"
 
+/*
 typedef struct {
 	unsigned vbl:1;			// vertical blank (lines 241-260) : ack by status register bit
 	unsigned vblstrb:1;		// strobe of vbl, can be reset
@@ -54,20 +55,23 @@ typedef struct {
 
 nesPPU* ppuCreate(vRay*);
 void ppuDestroy(nesPPU*);
+*/
 
-void ppuReset(nesPPU*);
+typedef struct Video Video;
 
-void ppuDraw(nesPPU*);
-void ppuHBL(nesPPU*);
-void ppuLine(nesPPU*);
-void ppuFram(nesPPU*);
+void ppuReset(Video*);
+
+void ppuDraw(Video*);
+void ppuHBL(Video*);
+void ppuLine(Video*);
+void ppuFram(Video*);
 
 // rd/wr ppu registers
-void ppuWrite(nesPPU*, int, unsigned char);
-unsigned char ppuRead(nesPPU*, int);
+void ppuWrite(Video*, int, unsigned char);
+unsigned char ppuRead(Video*, int);
 
-void ppuRenderBGLine(nesPPU*, unsigned char*, unsigned short, int, unsigned short);
-int ppuRenderSpriteLine(nesPPU*, int, unsigned char*, unsigned char*, unsigned short, int);
+void ppuRenderBGLine(Video*, unsigned char*, unsigned short, int, unsigned short);
+int ppuRenderSpriteLine(Video*, int, unsigned char*, unsigned char*, unsigned short, int);
 unsigned short ppuYinc(unsigned short);
 
 #endif

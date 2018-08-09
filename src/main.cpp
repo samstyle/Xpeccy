@@ -57,7 +57,7 @@ int main(int ac,char** av) {
 
 	conf.running = 0;
 	conf.joy.dead = 8192;
-	vidInitAdrs();
+//	vidInitAdrs();
 	sndInit();
 	initPaths(av[0]);
 	addProfile("default","xpeccy.conf");

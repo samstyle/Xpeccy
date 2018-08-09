@@ -1,4 +1,4 @@
-#include "v9938.h"
+#include "video.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -17,6 +17,7 @@
 extern int xscr, yscr, adr;
 extern unsigned char scrbyte, atrbyte, col, ink, pap;
 
+/*
 // v9938 modes
 enum {
 	VDP_UNKNOWN = -1,
@@ -31,6 +32,7 @@ enum {
 	VDP_GRA7,
 	VDP_TEXT2,
 };
+*/
 
 static unsigned char m2lev[8] = {0x00,0x33,0x5c,0x7f,0xa2,0xc1,0xe1,0xff};
 
@@ -71,19 +73,19 @@ unsigned char vdpMixColor(unsigned char colS, unsigned char colD, unsigned char 
 }
 
 // convert addr bus to absolute memory addr (main ram / expansion ram)
-int vdpGetAddr(VDP9938* vdp, int adr) {
-	adr &= vdp->memMask;
+int vdpGetAddr(Video* vid, int adr) {
+	adr &= vid->memMask;
 	if (adr & 0x10000) return adr;	// high 64K
-	if (vdp->reg[45] & 0x40)	// expansion ram on
+	if (vid->reg[45] & 0x40)	// expansion ram on
 		adr |= 0x20000;
 	return  adr;
 }
 
 // return relative dot addr for coordinates (x,y) and current video mode (bitmaps only)
-int vdpDotAddr(VDP9938* vdp, int x, int y) {
-	int adr = y * vdp->core->wid;
+int vdpDotAddr(Video* vid, int x, int y) {
+	int adr = y * vid->scrsize.x; // vdp->core->wid;
 	adr += x;
-	adr /= vdp->core->dpb;
+	adr /= vid->dpb;
 	return  adr;
 }
 
@@ -91,21 +93,21 @@ int vdpDotAddr(VDP9938* vdp, int x, int y) {
 
 unsigned char atrp[8];
 
-void vdpPutSpriteDot(VDP9938* vdp, int adr, unsigned char atr) {
+void vdpPutSpriteDot(Video* vid, int adr, unsigned char atr) {
 	if (atr & 0x40) {
-		vdp->sprImg[adr] |= (atr & 0x0f);
-	} else if (!vdp->sprImg[adr]) {
-		vdp->sprImg[adr] = atr & 0x0f;
+		vid->sprImg[adr] |= (atr & 0x0f);
+	} else if (!vid->sprImg[adr]) {
+		vid->sprImg[adr] = atr & 0x0f;
 	}
 }
 
-void vdpDrawTile(VDP9938* vdp, int xpos, int ypos, int pat) {
+void vdpDrawTile(Video* vid, int xpos, int ypos, int pat) {
 	unsigned char src;
 	int i,j,adr,xsav;
-	int tadr = vdp->OBJTiles + (pat << 3);
+	int tadr = vid->OBJTiles + (pat << 3);
 	for (i = 0; i < 8; i++) {
-		src = vdp->ram[tadr & vdp->memMask];			// tile byte
-		if ((ypos >= 0) && (ypos < vdp->lines)) {		// if line onscreen
+		src = vid->ram[tadr & vid->memMask];			// tile byte
+		if ((ypos >= 0) && (ypos < vid->lines)) {		// if line onscreen
 			xsav = xpos;
 			if (atrp[i] & 0x80) {				// early clock (shift left 32 pix)
 				xpos -= 32;
@@ -113,11 +115,11 @@ void vdpDrawTile(VDP9938* vdp, int xpos, int ypos, int pat) {
 			for (j = 0; j < 8; j++) {
 				if ((xpos >= 0) && (xpos < 256) && (src & 0x80)) {	// if sprite has dot onscreen
 					adr = (ypos << 8) + xpos;
-					vdpPutSpriteDot(vdp, adr, atrp[i]);
-					if (vdp->reg[1] & 1) {
-						vdpPutSpriteDot(vdp, adr+1, atrp[i]);
-						vdpPutSpriteDot(vdp, adr+256, atrp[i]);
-						vdpPutSpriteDot(vdp, adr+257, atrp[i]);
+					vdpPutSpriteDot(vid, adr, atrp[i]);
+					if (vid->reg[1] & 1) {
+						vdpPutSpriteDot(vid, adr+1, atrp[i]);
+						vdpPutSpriteDot(vid, adr+256, atrp[i]);
+						vdpPutSpriteDot(vid, adr+257, atrp[i]);
 						xpos++;
 					}
 				}
@@ -127,62 +129,64 @@ void vdpDrawTile(VDP9938* vdp, int xpos, int ypos, int pat) {
 			xpos = xsav;
 		}
 		tadr++;
-		ypos += (vdp->reg[1] & 1) ? 2 : 1;
+		ypos += (vid->reg[1] & 1) ? 2 : 1;
 	}
 }
 
-void vdpFillSprites(VDP9938* vdp) {
-	memset(vdp->sprImg, 0x00, 0xd400);
-	if (vdp->reg[8] & 2) return;
+void vdpFillSprites(Video* vid) {
+	vdpVBlk(vid);
+	memset(vid->sprImg, 0x00, 0xd400);
+	if (vid->reg[8] & 2) return;
 	int i,sh;
-	int adr = vdp->OBJAttr;
+	int adr = vid->OBJAttr;
 	int ypos, xpos, pat, atr;
 	for (i = 0; i < 32; i++) {
-		if (vdp->ram[adr] == 0xd0) break;
-		ypos = (vdp->ram[adr] + 1) & 0xff;
-		xpos = vdp->ram[adr+1] & 0xff;
-		pat = vdp->ram[adr+2] & 0xff;
-		atr = vdp->ram[adr+3] & 0xff;
+		if (vid->ram[adr] == 0xd0) break;
+		ypos = (vid->ram[adr] + 1) & 0xff;
+		xpos = vid->ram[adr+1] & 0xff;
+		pat = vid->ram[adr+2] & 0xff;
+		atr = vid->ram[adr+3] & 0xff;
 		memset(atrp, atr & 0x8f, 8);
-		if (vdp->reg[1] & 2) {
+		if (vid->reg[1] & 2) {
 			pat &= 0xfc;
-			sh = (vdp->reg[1] & 1) ? 16 : 8;
-			vdpDrawTile(vdp, xpos, ypos, pat);
-			vdpDrawTile(vdp, xpos, ypos+sh, pat+1);
-			vdpDrawTile(vdp, xpos+sh, ypos, pat+2);
-			vdpDrawTile(vdp, xpos+sh, ypos+sh, pat+3);
+			sh = (vid->reg[1] & 1) ? 16 : 8;
+			vdpDrawTile(vid, xpos, ypos, pat);
+			vdpDrawTile(vid, xpos, ypos+sh, pat+1);
+			vdpDrawTile(vid, xpos+sh, ypos, pat+2);
+			vdpDrawTile(vid, xpos+sh, ypos+sh, pat+3);
 		} else {
-			vdpDrawTile(vdp, xpos, ypos, pat);
+			vdpDrawTile(vid, xpos, ypos, pat);
 		}
 		adr += 4;
 	}
 }
 
-void vdpFillSprites2(VDP9938* vdp) {
-	memset(vdp->sprImg, 0x00, 0x10000);
-	if (vdp->reg[8] & 2) return;			// disable OBJ sprites
+void vdpFillSprites2(Video* vid) {
+	vdpVBlk(vid);
+	memset(vid->sprImg, 0x00, 0x10000);
+	if (vid->reg[8] & 2) return;			// disable OBJ sprites
 	int i,sh;
-	int tadr = (vdp->OBJAttr & 0x1fc00) | 0x200;	// a16...a10.1.x..x
+	int tadr = (vid->OBJAttr & 0x1fc00) | 0x200;	// a16...a10.1.x..x
 	int aadr = tadr - 0x200;			// sprite color table
 	int ypos, xpos, pat;
 	for (i = 0; i < 32; i++) {
-		if (vdp->ram[tadr] == 0xd8) {
+		if (vid->ram[tadr] == 0xd8) {
 			i = 32;
 		} else {
-			ypos = (vdp->ram[tadr] + 1) & 0xff;
-			xpos = vdp->ram[tadr + 1] & 0xff;
-			pat = vdp->ram[tadr + 2] & 0xff;
-			memcpy(atrp, &vdp->ram[aadr], 8);
-			if (vdp->reg[1] & 2) {
+			ypos = (vid->ram[tadr] + 1) & 0xff;
+			xpos = vid->ram[tadr + 1] & 0xff;
+			pat = vid->ram[tadr + 2] & 0xff;
+			memcpy(atrp, &vid->ram[aadr], 8);
+			if (vid->reg[1] & 2) {
 				pat &= 0xfc;
-				sh = (vdp->reg[1] & 1) ? 16 : 8;
-				vdpDrawTile(vdp, xpos, ypos, pat);		// UL
-				vdpDrawTile(vdp, xpos+sh, ypos, pat+2);		// UR
-				memcpy(atrp, &vdp->ram[aadr + 8], 8);
-				vdpDrawTile(vdp, xpos, ypos+sh, pat+1);		// DL
-				vdpDrawTile(vdp, xpos+sh, ypos+sh, pat+3);	// DR
+				sh = (vid->reg[1] & 1) ? 16 : 8;
+				vdpDrawTile(vid, xpos, ypos, pat);		// UL
+				vdpDrawTile(vid, xpos+sh, ypos, pat+2);		// UR
+				memcpy(atrp, &vid->ram[aadr + 8], 8);
+				vdpDrawTile(vid, xpos, ypos+sh, pat+1);		// DL
+				vdpDrawTile(vid, xpos+sh, ypos+sh, pat+3);	// DR
 			} else {
-				vdpDrawTile(vdp, xpos, ypos, pat);
+				vdpDrawTile(vid, xpos, ypos, pat);
 			}
 			aadr += 0x10;
 			tadr += 4;
@@ -192,307 +196,320 @@ void vdpFillSprites2(VDP9938* vdp) {
 
 // v9918 TEXT1 (40 x 24 text)
 
-void vdpText1(VDP9938* vdp) {
-	yscr = vdp->ray->y - vdp->lay->bord.y;
+void vdpText1(Video* vid) {
+	yscr = vid->ray.y - vid->bord.y;
 	if ((yscr < 0) || (yscr > 191)) {
-		col = vdp->reg[7] & 15;
+		col = vid->reg[7] & 15;
 	} else {
-		xscr = vdp->ray->x - vdp->lay->bord.x;
+		xscr = vid->ray.x - vid->bord.x;
 		if ((xscr < 0) || (xscr > 239)) {
-			col = vdp->reg[7] & 15;
+			col = vid->reg[7] & 15;
 		} else {
 			col = 0;
 			if ((xscr % 6) == 0) {
-				adr = vdp->ram[((yscr & 0xf8) * 5) + (xscr / 6)];
-				scrbyte = vdp->ram[0x800 + ((adr << 3) | (yscr & 7))];
-				ink = (vdp->reg[7] & 0xf0) >> 4;
-				pap = vdp->reg[7] & 0x0f;
+				adr = vid->ram[((yscr & 0xf8) * 5) + (xscr / 6)];
+				scrbyte = vid->ram[0x800 + ((adr << 3) | (yscr & 7))];
+				ink = (vid->reg[7] & 0xf0) >> 4;
+				pap = vid->reg[7] & 0x0f;
 			}
 			col = (scrbyte & 0x80) ? ink : pap;
 			scrbyte <<= 1;
 		}
 	}
-	vidPutDot(vdp->ray, vdp->pal, col);
+	vidPutDot(&vid->ray, vid->pal, col);
 }
 
 // v9918 G1 (32 x 24 text)
 
-void vdpGra1(VDP9938* vdp) {
-	yscr = vdp->ray->y - vdp->lay->bord.y;
+void vdpGra1(Video* vid) {
+	yscr = vid->ray.y - vid->bord.y;
 	if ((yscr < 0) || (yscr > 191)) {
-		col = vdp->reg[7] & 15;
+		col = vid->reg[7] & 15;
 	} else {
-		xscr = vdp->ray->x - vdp->lay->bord.x;
+		xscr = vid->ray.x - vid->bord.x;
 		if ((xscr < 0) || (xscr > 255)) {
-			col = vdp->reg[7] & 15;
+			col = vid->reg[7] & 15;
 		} else {
 			if ((xscr & 7) == 0) {
-				adr = vdp->ram[vdp->BGMap + (xscr >> 3) + ((yscr & 0xf8) << 2)];
-				scrbyte = vdp->ram[vdp->BGTiles + (adr << 3) + (yscr & 7)];
-				atrbyte = vdp->ram[vdp->BGColors + (adr >> 3)];
+				adr = vid->ram[vid->BGMap + (xscr >> 3) + ((yscr & 0xf8) << 2)];
+				scrbyte = vid->ram[vid->BGTiles + (adr << 3) + (yscr & 7)];
+				atrbyte = vid->ram[vid->BGColors + (adr >> 3)];
 				ink = (atrbyte & 0xf0) >> 4;
 				pap = atrbyte & 0x0f;
 			}
-			col = vdp->sprImg[(yscr << 8) | xscr];
+			col = vid->sprImg[(yscr << 8) | xscr];
 			if (!col) {
 				col = (scrbyte & 0x80) ? ink : pap;
 			}
 			scrbyte <<= 1;
 		}
 	}
-	vidPutDot(vdp->ray, vdp->pal, col);
+	vidPutDot(&vid->ray, vid->pal, col);
 }
 
 // v9918 G2 (256 x 192)
 
-void vdpGra2(VDP9938* vdp) {
-	yscr = vdp->ray->y - vdp->lay->bord.y;
+void vdpGra2(Video* vid) {
+	yscr = vid->ray.y - vid->bord.y;
 	if ((yscr < 0) || (yscr > 191)) {
-		col = vdp->reg[7];
+		col = vid->reg[7];
 	} else {
-		xscr = vdp->ray->x - vdp->lay->bord.x;
+		xscr = vid->ray.x - vid->bord.x;
 		if ((xscr < 0) || (xscr > 255)) {
-			col = vdp->reg[7];
+			col = vid->reg[7];
 		} else {
 			if ((xscr & 7) == 0) {
-				adr = vdp->ram[vdp->BGMap + (xscr >> 3) + ((yscr & 0xf8) << 2)] | ((yscr & 0xc0) << 2);	// tile nr
-				scrbyte = vdp->ram[(vdp->BGTiles & ~0x1fff) + (adr << 3) + (yscr & 7)];
-				atrbyte = vdp->ram[(vdp->BGColors & ~0x1fff) + (adr << 3) + (yscr & 7)];
+				adr = vid->ram[vid->BGMap + (xscr >> 3) + ((yscr & 0xf8) << 2)] | ((yscr & 0xc0) << 2);	// tile nr
+				scrbyte = vid->ram[(vid->BGTiles & ~0x1fff) + (adr << 3) + (yscr & 7)];
+				atrbyte = vid->ram[(vid->BGColors & ~0x1fff) + (adr << 3) + (yscr & 7)];
 				ink = (atrbyte & 0xf0) >> 4;
 				pap = atrbyte & 0x0f;
 			}
-			col = vdp->sprImg[(yscr << 8) | xscr];
+			col = vid->sprImg[(yscr << 8) | xscr];
 			if (!col) {
 				col = (scrbyte & 0x80) ? ink : pap;
 			}
 			scrbyte <<= 1;
 		}
 	}
-	vidPutDot(vdp->ray, vdp->pal, col);
+	vidPutDot(&vid->ray, vid->pal, col);
 }
 
 // v9918 MC (multicolor)
 
-void vdpMultcol(VDP9938* vdp) {
-	yscr = vdp->ray->y - vdp->lay->bord.y;
+void vdpMultcol(Video* vid) {
+	yscr = vid->ray.y - vid->bord.y;
 	if ((yscr < 0) || (yscr > 191)) {
-		col = vdp->reg[7];
+		col = vid->reg[7];
 	} else {
-		xscr = vdp->ray->x - vdp->lay->bord.x;
+		xscr = vid->ray.x - vid->bord.x;
 		if ((xscr < 0) || (xscr > 255)) {
-			col = vdp->reg[7];
+			col = vid->reg[7];
 		} else {
-			adr = vdp->ram[vdp->BGMap + (xscr >> 3) + ((yscr & 0xf8) << 2)];		// color index
-			adr = vdp->BGTiles + (adr << 3) + ((yscr & 0x18) >> 2) + ((yscr & 4) >> 2);	// color adr
-			col = vdp->ram[adr];								// color for 2 dots
+			adr = vid->ram[vid->BGMap + (xscr >> 3) + ((yscr & 0xf8) << 2)];		// color index
+			adr = vid->BGTiles + (adr << 3) + ((yscr & 0x18) >> 2) + ((yscr & 4) >> 2);	// color adr
+			col = vid->ram[adr];								// color for 2 dots
 			if (!(xscr & 4)) {
 				col >>= 4;
 			}
 			col &= 0x0f;
 		}
 	}
-	vidPutDot(vdp->ray, vdp->pal, col);
+	vidPutDot(&vid->ray, vid->pal, col);
 }
 
 // v9938 G4 (256x212 4bpp)
 
-void vdpGra4(VDP9938* vdp) {
-	yscr = vdp->ray->y - vdp->lay->bord.y - vdp->vAdj;
-	if ((yscr < 0) || (yscr >= vdp->lines)) {
-		col = vdp->reg[7] & 15;
+void vdpGra4(Video* vid) {
+	yscr = vid->ray.y - vid->bord.y - vid->sc.y;
+	if ((yscr < 0) || (yscr >= vid->lines)) {
+		col = vid->reg[7] & 15;
 	} else {
-		xscr = vdp->ray->x - vdp->lay->bord.x - vdp->hAdj;
+		xscr = vid->ray.x - vid->bord.x - vid->sc.x;
 		if ((xscr < 0) || (xscr > 255)) {
-			col = vdp->reg[7] & 15;
+			col = vid->reg[7] & 15;
 		} else {
-			yscr += vdp->reg[0x17];
+			yscr += vid->reg[0x17];
 			yscr &= 0xff;
 			xscr &= 0xff;
 			if (xscr & 1) {
 				col = ink & 15;
 			} else {
-				adr = (vdp->BGMap & 0x18000) | (xscr >> 1) | (yscr << 7);
-				ink = vdp->ram[adr & vdp->memMask];		// color byte
+				adr = (vid->BGMap & 0x18000) | (xscr >> 1) | (yscr << 7);
+				ink = vid->ram[adr & vid->memMask];		// color byte
 				col = (ink >> 4) & 15;
 			}
-			pap = vdp->sprImg[(yscr << 8) | xscr];
+			pap = vid->sprImg[(yscr << 8) | xscr];
 			if (pap) col = pap;
 		}
 	}
-	vidPutDot(vdp->ray, vdp->pal, col);
+	vidPutDot(&vid->ray, vid->pal, col);
 }
 
-void vdpG4pset(VDP9938* vdp, int x, int y, unsigned char col) {
+void vdpG4pset(Video* vid, int x, int y, unsigned char col) {
 	//adr = (vdp->BGMap & 0x18000) + (x >> 1) + (y << 7);
 	adr = ((x & 0xff) >> 1) | (y << 7);
-	scrbyte = vdp->ram[adr & vdp->memMask];
+	scrbyte = vid->ram[adr & vid->memMask];
 	if (x & 1) {
-		pap = vdpMixColor((scrbyte & 0xf0) >> 4, col & 0x0f, vdp->arg) & 0x0f;
+		pap = vdpMixColor((scrbyte & 0xf0) >> 4, col & 0x0f, vid->arg) & 0x0f;
 		scrbyte = (scrbyte & 0xf0) | (pap & 0x0f);
 	} else {
-		pap = vdpMixColor(scrbyte & 0x0f, col & 0x0f, vdp->arg) & 0x0f;
+		pap = vdpMixColor(scrbyte & 0x0f, col & 0x0f, vid->arg) & 0x0f;
 		scrbyte = (scrbyte & 0x0f) | ((pap << 4) & 0xf0);
 	}
-	vdp->ram[adr] = scrbyte;
+	vid->ram[adr] = scrbyte;
 }
 
-unsigned char vdpG4col(VDP9938* vdp, int x, int y) {
+unsigned char vdpG4col(Video* vid, int x, int y) {
 	// adr = (vdp->BGMap & 0x18000) + (x >> 1) + (y << 7);
 	adr = ((x & 0xff) >> 1) | (y << 7);
-	return (x & 1) ? vdp->ram[adr] & 0x0f : (vdp->ram[adr] & 0xf0) >> 4;
+	return (x & 1) ? vid->ram[adr] & 0x0f : (vid->ram[adr] & 0xf0) >> 4;
 }
 
 // v9938 G5 (512x212 2bpp)
 
-void vdpGra5(VDP9938* vdp) {
-	yscr = vdp->ray->y - vdp->lay->bord.y - vdp->vAdj;
-	if ((yscr < 0) || (yscr >= vdp->lines)) {
-		vidPutDot(vdp->ray, vdp->pal, vdp->reg[7] & 3);
+void vdpGra5(Video* vid) {
+	yscr = vid->ray.y - vid->bord.y - vid->sc.y;
+	if ((yscr < 0) || (yscr >= vid->lines)) {
+		vidPutDot(&vid->ray, vid->pal, vid->reg[7] & 3);
 	} else {
-		xscr = vdp->ray->x - vdp->lay->bord.x - vdp->hAdj;
+		xscr = vid->ray.x - vid->bord.x - vid->sc.x;
 		if ((xscr < 0) || (xscr > 255)) {
-			vidPutDot(vdp->ray, vdp->pal, vdp->reg[7] & 3);
+			vidPutDot(&vid->ray, vid->pal, vid->reg[7] & 3);
 		} else {
-			yscr += vdp->reg[0x17];
+			yscr += vid->reg[0x17];
 			yscr &= 0xff;
 			xscr &= 0xff;
 			if (xscr & 1) {
-				adr = (vdp->BGMap & 0x18000) + (xscr >> 1) + (yscr << 7);
-				col = vdp->ram[adr];
+				adr = (vid->BGMap & 0x18000) + (xscr >> 1) + (yscr << 7);
+				col = vid->ram[adr];
 			}
-			vidSingleDot(vdp->ray, vdp->pal, (col & 0xc0) >> 6);
-			vidSingleDot(vdp->ray, vdp->pal, (col & 0x30) >> 4);
+			vidSingleDot(&vid->ray, vid->pal, (col & 0xc0) >> 6);
+			vidSingleDot(&vid->ray, vid->pal, (col & 0x30) >> 4);
 			col <<= 4;
 		}
 	}
 }
 
-void vdpG5pset(VDP9938* vdp, int x, int y, unsigned char col) {
+void vdpG5pset(Video* vid, int x, int y, unsigned char col) {
 	adr = ((x & 0x1ff) >> 2) | (y << 7);
-	scrbyte = vdp->ram[adr & vdp->memMask];
+	scrbyte = vid->ram[adr & vid->memMask];
 	col &= 3;
 	switch (x & 3) {
 		case 0:
-			pap = vdpMixColor((scrbyte & 0x3f) >> 6, col, vdp->arg) & 3;
+			pap = vdpMixColor((scrbyte & 0x3f) >> 6, col, vid->arg) & 3;
 			scrbyte = (scrbyte & 0x3f) | ((pap << 6) & 0xc0);
 			break;
 		case 1:
-			pap = vdpMixColor((scrbyte & 0xcf) >> 4, col, vdp->arg) & 3;
+			pap = vdpMixColor((scrbyte & 0xcf) >> 4, col, vid->arg) & 3;
 			scrbyte = (scrbyte & 0xcf) | ((pap << 4) & 0x30);
 			break;
 		case 2:
-			pap = vdpMixColor((scrbyte & 0xf3) >> 2, col, vdp->arg) & 3;
+			pap = vdpMixColor((scrbyte & 0xf3) >> 2, col, vid->arg) & 3;
 			scrbyte = (scrbyte & 0xf3) | ((pap << 2) & 0x0c);
 			break;
 		case 3:
-			pap = vdpMixColor(scrbyte & 0xfc, col, vdp->arg) & 3;
+			pap = vdpMixColor(scrbyte & 0xfc, col, vid->arg) & 3;
 			scrbyte = (scrbyte & 0xfc) | (pap & 0x03);
 			break;
 	}
-	vdp->ram[adr] = scrbyte;
+	vid->ram[adr] = scrbyte;
 }
 
-unsigned char vdpG5col(VDP9938* vdp, int x, int y) {
+unsigned char vdpG5col(Video* vid, int x, int y) {
 	adr = ((x & 0x1ff) >> 2) | (y << 7);
 	switch (x & 3) {
-		case 0: pap = (vdp->ram[adr] & 0xc0) >> 6; break;
-		case 1: pap = (vdp->ram[adr] & 0x30) >> 4; break;
-		case 2: pap = (vdp->ram[adr] & 0x0c) >> 2; break;
-		case 3: pap = vdp->ram[adr] & 0x03; break;
+		case 0: pap = (vid->ram[adr] & 0xc0) >> 6; break;
+		case 1: pap = (vid->ram[adr] & 0x30) >> 4; break;
+		case 2: pap = (vid->ram[adr] & 0x0c) >> 2; break;
+		case 3: pap = vid->ram[adr] & 0x03; break;
 	}
 	return pap;
 }
 
 // v9938 G6 (512x212 4bpp)
 
-void vdpGra6(VDP9938* vdp) {
-	yscr = vdp->ray->y - vdp->lay->bord.y - vdp->vAdj;
-	if ((yscr < 0) || (yscr >= vdp->lines)) {
-		vidPutDot(vdp->ray, vdp->pal, vdp->reg[7]);
+void vdpGra6(Video* vid) {
+	yscr = vid->ray.y - vid->bord.y - vid->sc.y;
+	if ((yscr < 0) || (yscr >= vid->lines)) {
+		vidPutDot(&vid->ray, vid->pal, vid->reg[7]);
 	} else {
-		xscr = vdp->ray->x - vdp->lay->bord.x - vdp->hAdj;
+		xscr = vid->ray.x - vid->bord.x - vid->sc.x;
 		if ((xscr < 0) || (xscr > 255)) {
-			vidPutDot(vdp->ray, vdp->pal, vdp->reg[7]);
+			vidPutDot(&vid->ray, vid->pal, vid->reg[7]);
 		} else {
-			yscr += vdp->reg[0x17];
+			yscr += vid->reg[0x17];
 			yscr &= 0xff;
 			xscr &= 0xff;
-			adr = (vdp->BGMap & 0x18000) + xscr + (yscr << 8);
-			col = vdp->ram[adr];
-			vidSingleDot(vdp->ray, vdp->pal, (col & 0xf0) >> 4);
-			vidSingleDot(vdp->ray, vdp->pal, col & 0x0f);
+			adr = (vid->BGMap & 0x18000) + xscr + (yscr << 8);
+			col = vid->ram[adr];
+			vidSingleDot(&vid->ray, vid->pal, (col & 0xf0) >> 4);
+			vidSingleDot(&vid->ray, vid->pal, col & 0x0f);
 		}
 	}
 }
 
-void vdpG6pset(VDP9938* vdp, int x, int y, unsigned char col) {
+void vdpG6pset(Video* vid, int x, int y, unsigned char col) {
 	adr = ((x & 0x1ff) >> 1) | (y << 8);
-	scrbyte = vdp->ram[adr];
+	scrbyte = vid->ram[adr];
 	if (x & 1) {
-		pap = vdpMixColor((scrbyte & 0xf0) >> 4, col & 0x0f, vdp->arg) & 0x0f;
+		pap = vdpMixColor((scrbyte & 0xf0) >> 4, col & 0x0f, vid->arg) & 0x0f;
 		scrbyte = (scrbyte & 0xf0) | (pap & 0x0f);
 	} else {
-		pap = vdpMixColor(scrbyte & 0x0f, col & 0x0f, vdp->arg) & 0x0f;
+		pap = vdpMixColor(scrbyte & 0x0f, col & 0x0f, vid->arg) & 0x0f;
 		scrbyte = (scrbyte & 0x0f) | ((pap << 4) & 0xf0);
 	}
-	vdp->ram[adr] = scrbyte;
+	vid->ram[adr] = scrbyte;
 }
 
-unsigned char vdpG6col(VDP9938* vdp, int x, int y) {
+unsigned char vdpG6col(Video* vid, int x, int y) {
 	adr = ((x & 0x1ff) >> 1) | (y << 8);
-	return (x & 1) ? vdp->ram[adr] & 0x0f : (vdp->ram[adr] & 0xf0) >> 4;
+	return (x & 1) ? vid->ram[adr] & 0x0f : (vid->ram[adr] & 0xf0) >> 4;
 }
 
 // v9938 G6 (256x212 8bpp)
 // note:sprites color is different
 
-void vdpGra7(VDP9938* vdp) {
+void vdpGra7(Video* vid) {
 	unsigned char col;
-	yscr = vdp->ray->y - vdp->lay->bord.y - vdp->vAdj;
-	if ((yscr < 0) || (yscr >= vdp->lines)) {
-		col = vdp->reg[7];
+	yscr = vid->ray.y - vid->bord.y - vid->sc.y;
+	if ((yscr < 0) || (yscr >= vid->lines)) {
+		col = vid->reg[7];
 	} else {
-		xscr = vdp->ray->x - vdp->lay->bord.x - vdp->hAdj;
+		xscr = vid->ray.x - vid->bord.x - vid->sc.x;
 		if (xscr & ~0xff) {
-			col = vdp->reg[7];
+			col = vid->reg[7];
 		} else {
-			adr = ((vdp->reg[2] & 0x20) ? 0x10000 : 0) | xscr | (yscr << 8);
-			col = vdp->ram[adr & vdp->memMask];
+			adr = ((vid->reg[2] & 0x20) ? 0x10000 : 0) | xscr | (yscr << 8);
+			col = vid->ram[adr & vid->memMask];
 		}
 	}
-	(*vdp->ray->ptr++) = (col << 3) & 0xe0;		// r:3
-	(*vdp->ray->ptr++) = col & 0xe0;		// g:3
-	(*vdp->ray->ptr++) = (col << 6) & 0xe0;		// b:2
-	(*vdp->ray->ptr++) = (col << 3) & 0xe0;
-	(*vdp->ray->ptr++) = col & 0xe0;
-	(*vdp->ray->ptr++) = (col << 6) & 0xe0;
+	(*vid->ray.ptr++) = (col << 3) & 0xe0;		// r:3
+	(*vid->ray.ptr++) = col & 0xe0;			// g:3
+	(*vid->ray.ptr++) = (col << 6) & 0xe0;		// b:2
+	(*vid->ray.ptr++) = (col << 3) & 0xe0;
+	(*vid->ray.ptr++) = col & 0xe0;
+	(*vid->ray.ptr++) = (col << 6) & 0xe0;
 }
 
-void vdpG7pset(VDP9938* vdp, int x, int y, unsigned char col) {
+void vdpG7pset(Video* vid, int x, int y, unsigned char col) {
 	adr = (x & 0xff) | (y << 8);
-	vdp->ram[adr & vdp->memMask] = col;
+	vid->ram[adr & vid->memMask] = col;
 }
 
-unsigned char vdpG7col(VDP9938* vdp, int x, int y) {
+unsigned char vdpG7col(Video* vid, int x, int y) {
 	adr = (x & 0xff) | (y << 8);
-	return vdp->ram[adr & vdp->memMask];
+	return vid->ram[adr & vid->memMask];
 }
 
 // dummy
 
-void vdpBreak(VDP9938* vdp) {
+void vdpBreak(Video* vid) {
 	// assert(0);
 }
 
-void vdpDummy(VDP9938* vdp) {
-	vidPutDot(vdp->ray, vdp->pal, 0);
+void vdpDummy(Video* vid) {
+	vidPutDot(&vid->ray, vid->pal, 0);
 }
 
 // tab
 
+#if 0
+typedef struct {
+	int id;
+	int wid;	// screen width (256|512)
+	int dpb;	// dots per byte (bitmaps: 1|2|4)
+	void(*draw)(Video*);
+	void(*line)(Video*);
+	void(*fram)(Video*);
+	void(*pset)(Video*,int,int,unsigned char);
+	unsigned char(*col)(Video*,int,int);
+} vdpMode;
+
+
 static vdpMode vdpTab[] = {
 	{VDP_TEXT1, 256, 1, vdpText1, NULL, vdpFillSprites, NULL, NULL},
-	{VDP_TEXT2, 256, 1, vdpDummy, NULL, NULL, NULL, NULL},
+	{VDP_TEXT2, 256, 1, vdpDummy, NULL, vdpHBlk, NULL, NULL},
 	{VDP_MCOL, 256, 1, vdpMultcol, NULL, vdpFillSprites, NULL, NULL},
 	{VDP_GRA1, 256, 1, vdpGra1, NULL, vdpFillSprites, NULL, NULL},
 	{VDP_GRA2, 256, 1, vdpGra2, NULL, vdpFillSprites, NULL, NULL},
@@ -503,51 +520,87 @@ static vdpMode vdpTab[] = {
 	{VDP_GRA7, 256, 1, vdpGra7, NULL, vdpFillSprites2, vdpG7pset, vdpG7col},
 	{VDP_UNKNOWN, 256, 1, vdpDummy, NULL, NULL, NULL, NULL}
 };
+#else
 
-void vdpSetMode(VDP9938* vdp, int mode) {
+typedef struct {
+	int id;
+	int wid;	// screen width (256|512)
+	int dpb;	// dots per byte (bitmaps: 1|2|4)
+	void(*pset)(Video*,int,int,unsigned char);
+	unsigned char(*col)(Video*,int,int);
+} vdpMode;
+
+
+static vdpMode vdpTab[] = {
+	{VDP_TEXT1, 256, 1, NULL, NULL},
+	{VDP_TEXT2, 256, 1, NULL, NULL},
+	{VDP_MCOL, 256, 1, NULL, NULL},
+	{VDP_GRA1, 256, 1, NULL, NULL},
+	{VDP_GRA2, 256, 1, NULL, NULL},
+	{VDP_GRA3, 256, 1, NULL, NULL},
+	{VDP_GRA4, 256, 2, vdpG4pset, vdpG4col},
+	{VDP_GRA5, 512, 4, vdpG5pset, vdpG5col},
+	{VDP_GRA6, 512, 2, vdpG6pset, vdpG6col},
+	{VDP_GRA7, 256, 1, vdpG7pset, vdpG7col},
+	{VID_UNKNOWN, 256, 1, NULL, NULL}
+};
+
+#endif
+
+void vdpSetMode(Video* vid, int mode) {
 	int idx = 0;
 	//printf("v9938 mode = %i\n",vdp->vmode);
-	while((vdpTab[idx].id != mode) && (vdpTab[idx].id != VDP_UNKNOWN)) {
+	while((vdpTab[idx].id != mode) && (vdpTab[idx].id != VID_UNKNOWN)) {
 		idx++;
 	}
-	vdp->core = &vdpTab[idx];
+//	vid->vmode = vdpTab[idx].id;
+//	vid->cbDot = vdpTab[idx].draw;
+//	vid->cbLine = vdpTab[idx].line;
+//	vid->cbFrame = vdpTab[idx].fram;
+	vidSetMode(vid, vdpTab[idx].id);
+	vid->pset = vdpTab[idx].pset;
+	vid->col = vdpTab[idx].col;
+	vid->scrsize.x = vdpTab[idx].wid;
+	vid->dpb = vdpTab[idx].dpb;
 }
 
-void vdpReset(VDP9938* vdp) {
-	for (int i = 0; i < 64; i++) vdp->reg[i] = 0;
-	memset(vdp->ram, 0x00, 0x20000);
-	vdpSetMode(vdp, VDP_TEXT1);
+void vdpReset(Video* vid) {
+//	for (int i = 0; i < 64; i++)
+//		vid->reg[i] = 0;
+	memset(vid->reg, 0x00, 64);
+	memset(vid->ram, 0x00, MEM_128K);
+	vdpSetMode(vid, VDP_TEXT1);
 	for (int i = 0; i < 16; i++)
-		vdp->pal[i] = msxPalete[i];
-	vdp->BGColors = 0;
-	vdp->BGMap = 0;
-	vdp->BGTiles = 0;
-	vdp->OBJAttr = 0;
-	vdp->OBJTiles = 0;
-	vdp->hAdj = 0;
-	vdp->vAdj = 0;
-	vdp->vadr = 0;
-	vdp->high = 0;
-	vdp->palhi = 0;
+		vid->pal[i] = msxPalete[i];
+	vid->BGColors = 0;
+	vid->BGMap = 0;
+	vid->BGTiles = 0;
+	vid->OBJAttr = 0;
+	vid->OBJTiles = 0;
+	vid->sc.x = 0;
+	vid->sc.y = 0;
+	vid->vadr = 0;
+	vid->high = 0;
+	vid->palhi = 0;
 }
 
-unsigned char vdpReadSR(VDP9938* vdp) {
-	unsigned char idx = vdp->reg[0x0f] & 0x0f;
-	unsigned char res = vdp->sr[idx];
-	xscr = vdp->ray->x - vdp->lay->scr.x;
-	yscr = vdp->ray->y - vdp->lay->scr.y;
+unsigned char vdpReadSR(Video* vid) {
+	unsigned char idx = vid->reg[0x0f] & 0x0f;
+	unsigned char res = vid->sr[idx];
+	xscr = vid->ray.x - vid->scrn.x;
+	yscr = vid->ray.y - vid->scrn.y;
 	switch (idx) {
 		case 0:
-			vdp->sr[0] &= 0x7f;		// reset VINT flag
+			vid->sr[0] &= 0x7f;		// reset VINT flag
 			break;
 		case 1:
-			vdp->sr[1] &= 0xfe;		// reset HINT flag
+			vid->sr[1] &= 0xfe;		// reset HINT flag
 			break;
 		case 2:
 			res &= 0x9f;
 			if ((xscr < 0) || (xscr > 255))			// horizontal retrace (border + HBlank)
 				res |= 0x20;
-			if ((yscr < 0) || (yscr >= vdp->lines))		// vertical retrace (border + VBlank)
+			if ((yscr < 0) || (yscr >= vid->lines))		// vertical retrace (border + VBlank)
 				res |= 0x40;
 			break;
 		case 3: res = xscr & 0xff; break;
@@ -561,16 +614,16 @@ unsigned char vdpReadSR(VDP9938* vdp) {
 	return res;
 }
 
-void vdpSend(VDP9938* vdp, unsigned char val) {
-	if (vdp->core->pset)
-		vdp->core->pset(vdp, vdp->pos.x, vdp->pos.y, val);
-	vdp->pos.x += vdp->delta.x;
-	if (++vdp->cnt.x >= vdp->size.x) {
-		vdp->pos.x = vdp->dst.x;
-		vdp->cnt.x = 0;
-		vdp->pos.y += vdp->delta.y;
-		if (++vdp->cnt.y >= vdp->size.y) {
-			vdp->sr[2] &= 0xfe;
+void vdpSend(Video* vid, unsigned char val) {
+	if (vid->pset)
+		vid->pset(vid, vid->pos.x, vid->pos.y, val);
+	vid->pos.x += vid->delta.x;
+	if (++vid->cnt.x >= vid->size.x) {
+		vid->pos.x = vid->dst.x;
+		vid->cnt.x = 0;
+		vid->pos.y += vid->delta.y;
+		if (++vid->cnt.y >= vid->size.y) {
+			vid->sr[2] &= 0xfe;
 		}
 	}
 }
@@ -585,131 +638,131 @@ void vdpSend(VDP9938* vdp, unsigned char val) {
 // * D : copy rect
 // ~ E : move right side of lines up
 
-void vdpExec(VDP9938* vdp) {
+void vdpExec(Video* vid) {
 	int spx,dpx;
-	switch (vdp->com) {
+	switch (vid->com) {
 		case 0:
-			vdp->sr[2] &= 0xfe;
+			vid->sr[2] &= 0xfe;
 			break;
 		case 5:
-			if (vdp->core->pset)
-				vdp->core->pset(vdp, vdp->dst.x, vdp->dst.y, vdp->reg[0x2c]);
+			if (vid->pset)
+				vid->pset(vid, vid->dst.x, vid->dst.y, vid->reg[0x2c]);
 			break;
 		case 7:
-			vdp->pos.x = (vdp->dst.x << 4) + 8;
-			vdp->pos.y = (vdp->dst.y << 4) + 8;
-			vdp->count = (vdp->size.x > vdp->size.y) ? vdp->size.x : vdp->size.y;
+			vid->pos.x = (vid->dst.x << 4) + 8;
+			vid->pos.y = (vid->dst.y << 4) + 8;
+			vid->count = (vid->size.x > vid->size.y) ? vid->size.x : vid->size.y;
 			// printf("size = %i %i\n",vdp->size.x,vdp->size.y);
-			if (vdp->reg[0x2d] & 1) {
-				vdp->delta.x = vdp->size.y ? (vdp->size.x << 4) / vdp->size.y : 0;
-				vdp->delta.y = 0x10;
+			if (vid->reg[0x2d] & 1) {
+				vid->delta.x = vid->size.y ? (vid->size.x << 4) / vid->size.y : 0;
+				vid->delta.y = 0x10;
 			} else {
-				vdp->delta.x = 0x10;
-				vdp->delta.y = vdp->size.y ? (vdp->size.x << 4) / vdp->size.y : 0;
+				vid->delta.x = 0x10;
+				vid->delta.y = vid->size.y ? (vid->size.x << 4) / vid->size.y : 0;
 			}
-			if (vdp->reg[0x2d] & 4)
-				vdp->delta.x = -vdp->delta.x;
-			if (vdp->reg[0x2d] & 8)
-				vdp->delta.y = -vdp->delta.y;
-			while (vdp->count > 0) {
-				if (vdp->core->pset)
-					vdp->core->pset(vdp, vdp->pos.x >> 4, vdp->pos.y >> 4, vdp->reg[0x2c]);
-				vdp->pos.x += vdp->delta.x;
-				vdp->pos.y += vdp->delta.y;
-				vdp->count--;
+			if (vid->reg[0x2d] & 4)
+				vid->delta.x = -vid->delta.x;
+			if (vid->reg[0x2d] & 8)
+				vid->delta.y = -vid->delta.y;
+			while (vid->count > 0) {
+				if (vid->pset)
+					vid->pset(vid, vid->pos.x >> 4, vid->pos.y >> 4, vid->reg[0x2c]);
+				vid->pos.x += vid->delta.x;
+				vid->pos.y += vid->delta.y;
+				vid->count--;
 			}
 			break;
 		case 9:					// LMMM
-			vdp->delta.x = (vdp->reg[0x2d] & 4) ? -1 : 1;
-			vdp->delta.y = (vdp->reg[0x2d] & 8) ? -1 : 1;
-			vdp->cnt.x = 0;
-			vdp->cnt.y = 0;
-			vdp->sr[2] |= 1;
-			spx = vdp->src.x;
-			dpx = vdp->dst.x;
-			while (vdp->sr[2] & 1) {
-				pap = vdp->core->col ? vdp->core->col(vdp, vdp->src.x, vdp->src.y) : 0;
-				if (vdp->core->pset)
-					vdp->core->pset(vdp, vdp->dst.x, vdp->dst.y, pap);
-				vdp->dst.x += vdp->delta.x;
-				vdp->src.x += vdp->delta.x;
-				if (++vdp->cnt.x >= vdp->size.x) {
-					vdp->cnt.x = 0;
-					vdp->dst.x = dpx;
-					vdp->src.x = spx;
-					vdp->dst.y += vdp->delta.y;
-					vdp->src.y += vdp->delta.y;
-					if (++vdp->cnt.y >= vdp->size.y) {
-						vdp->sr[2] &= 0xfe;
+			vid->delta.x = (vid->reg[0x2d] & 4) ? -1 : 1;
+			vid->delta.y = (vid->reg[0x2d] & 8) ? -1 : 1;
+			vid->cnt.x = 0;
+			vid->cnt.y = 0;
+			vid->sr[2] |= 1;
+			spx = vid->src.x;
+			dpx = vid->dst.x;
+			while (vid->sr[2] & 1) {
+				pap = vid->col ? vid->col(vid, vid->src.x, vid->src.y) : 0;
+				if (vid->pset)
+					vid->pset(vid, vid->dst.x, vid->dst.y, pap);
+				vid->dst.x += vid->delta.x;
+				vid->src.x += vid->delta.x;
+				if (++vid->cnt.x >= vid->size.x) {
+					vid->cnt.x = 0;
+					vid->dst.x = dpx;
+					vid->src.x = spx;
+					vid->dst.y += vid->delta.y;
+					vid->src.y += vid->delta.y;
+					if (++vid->cnt.y >= vid->size.y) {
+						vid->sr[2] &= 0xfe;
 					}
 				}
 			}
 			break;
 		case 0xb:
-			vdp->cnt.x = 0;
-			vdp->cnt.y = 0;
-			vdp->delta.x = (vdp->reg[0x2d] & 4) ? -1 : 1;
-			vdp->delta.y = (vdp->reg[0x2d] & 8) ? -1 : 1;
-			vdp->pos = vdp->dst;
-			vdp->sr[2] |= 1;
-			vdpSend(vdp, vdp->reg[0x2c]);
+			vid->cnt.x = 0;
+			vid->cnt.y = 0;
+			vid->delta.x = (vid->reg[0x2d] & 4) ? -1 : 1;
+			vid->delta.y = (vid->reg[0x2d] & 8) ? -1 : 1;
+			vid->pos = vid->dst;
+			vid->sr[2] |= 1;
+			vdpSend(vid, vid->reg[0x2c]);
 			break;
 		case 0xc:
-			vdp->cnt.x = 0;
-			vdp->cnt.y = 0;
-			vdp->delta.x = (vdp->reg[0x2d] & 4) ? -1 : 1;
-			vdp->delta.y = (vdp->reg[0x2d] & 8) ? -1 : 1;
-			vdp->pos = vdp->dst;
-			vdp->sr[2] |= 1;
-			while (vdp->sr[2] & 1) {
-				vdpSend(vdp, vdp->reg[0x2c]);
+			vid->cnt.x = 0;
+			vid->cnt.y = 0;
+			vid->delta.x = (vid->reg[0x2d] & 4) ? -1 : 1;
+			vid->delta.y = (vid->reg[0x2d] & 8) ? -1 : 1;
+			vid->pos = vid->dst;
+			vid->sr[2] |= 1;
+			while (vid->sr[2] & 1) {
+				vdpSend(vid, vid->reg[0x2c]);
 			}
 			break;
 		case 0x0d:
 			// printf("com D : (%i,%i)x(%i,%i)->(%i,%i):%.2X\n",vdp->src.x, vdp->src.y, vdp->size.x, vdp->size.y, vdp->dst.x, vdp->dst.y, vdp->reg[45]);
-			if (vdp->reg[45] & 0x04) {			// dX left
-				vdp->src.x -= vdp->size.x;
-				vdp->dst.x -= vdp->size.x;
+			if (vid->reg[45] & 0x04) {			// dX left
+				vid->src.x -= vid->size.x;
+				vid->dst.x -= vid->size.x;
 			}
-			if (vdp->reg[45] & 0x08) {			// dY up
-				vdp->src.y -= vdp->size.y;
-				vdp->dst.y -= vdp->size.y;
+			if (vid->reg[45] & 0x08) {			// dY up
+				vid->src.y -= vid->size.y;
+				vid->dst.y -= vid->size.y;
 			}
-			spx = vdp->BGMap | vdpDotAddr(vdp, vdp->src.x, vdp->src.y);	// source addr
-			dpx = vdp->BGMap | vdpDotAddr(vdp, vdp->dst.x, vdp->dst.y);	// dest addr
-			if (vdp->reg[45] & 0x10) spx = ((spx & 0xffff) | 0x20000);	// src exp ram
-			if (vdp->reg[45] & 0x20) dpx = ((dpx & 0xffff) | 0x20000);	// dst exp ram
-			vdp->cnt.x = vdp->size.x / vdp->core->dpb;			// dX bytes
-			vdp->delta.y = vdp->core->wid / vdp->core->dpb;			// bytes / line
-			while ((vdp->size.y > 0) && (spx >= 0) && (dpx >= 0)) {
-				memcpy(vdp->ram + dpx, vdp->ram + spx, vdp->cnt.x);
-				spx += vdp->delta.y;
-				dpx += vdp->delta.y;
-				vdp->size.y--;
+			spx = vid->BGMap | vdpDotAddr(vid, vid->src.x, vid->src.y);	// source addr
+			dpx = vid->BGMap | vdpDotAddr(vid, vid->dst.x, vid->dst.y);	// dest addr
+			if (vid->reg[45] & 0x10) spx = ((spx & 0xffff) | 0x20000);	// src exp ram
+			if (vid->reg[45] & 0x20) dpx = ((dpx & 0xffff) | 0x20000);	// dst exp ram
+			vid->cnt.x = vid->size.x / vid->dpb;			// dX bytes
+			vid->delta.y = vid->scrsize.x / vid->dpb;			// bytes / line
+			while ((vid->size.y > 0) && (spx >= 0) && (dpx >= 0)) {
+				memcpy(vid->ram + dpx, vid->ram + spx, vid->cnt.x);
+				spx += vid->delta.y;
+				dpx += vid->delta.y;
+				vid->size.y--;
 			}
 			break;
 		case 0x0e:
-			vdp->delta.x = (vdp->reg[0x2d] & 4) ? -1 : 1;
-			vdp->delta.y = (vdp->reg[0x2d] & 8) ? -1 : 1;
-			vdp->size.x = (vdp->delta.x < 0) ? vdp->dst.x : (512 - vdp->dst.x);		// TODO: get X-size of screen
-			vdp->cnt.y = vdp->size.y;
-			while (vdp->cnt.y > 0) {
-				vdp->pos.x = vdp->dst.x;
-				vdp->cnt.x = vdp->size.x;
-				while (vdp->cnt.x > 0) {
-					vdp->cnt.x--;
-					pap = vdp->core->col ? vdp->core->col(vdp, vdp->pos.x, vdp->src.y) : 0;
-					if (vdp->core->pset)
-						vdp->core->pset(vdp, vdp->pos.x, vdp->dst.y, pap);
-					vdp->pos.x += vdp->delta.x;
+			vid->delta.x = (vid->reg[0x2d] & 4) ? -1 : 1;
+			vid->delta.y = (vid->reg[0x2d] & 8) ? -1 : 1;
+			vid->size.x = (vid->delta.x < 0) ? vid->dst.x : (512 - vid->dst.x);		// TODO: get X-size of screen
+			vid->cnt.y = vid->size.y;
+			while (vid->cnt.y > 0) {
+				vid->pos.x = vid->dst.x;
+				vid->cnt.x = vid->size.x;
+				while (vid->cnt.x > 0) {
+					vid->cnt.x--;
+					pap = vid->col ? vid->col(vid, vid->pos.x, vid->src.y) : 0;
+					if (vid->pset)
+						vid->pset(vid, vid->pos.x, vid->dst.y, pap);
+					vid->pos.x += vid->delta.x;
 				}
-				vdp->dst.y += vdp->delta.y;
-				vdp->src.y += vdp->delta.y;
-				vdp->cnt.y--;
+				vid->dst.y += vid->delta.y;
+				vid->src.y += vid->delta.y;
+				vid->cnt.y--;
 			}
 			break;
 		default:
-			printf("vdp9938 command %.2X, arg %.2X\n",vdp->com, vdp->arg);
+			printf("vdp9938 command %.2X, arg %.2X\n",vid->com, vid->arg);
 #ifdef ISDEBUG
 			printf("src : %i : %i\n", vdp->src.x, vdp->src.y);
 			printf("dst : %i : %i\n", vdp->dst.x, vdp->dst.y);
@@ -722,72 +775,72 @@ void vdpExec(VDP9938* vdp) {
 	}
 }
 
-void vdpRegWr(VDP9938* vdp, int reg, unsigned char val) {
+void vdpRegWr(Video* vid, int reg, unsigned char val) {
 	int vmode;
 	reg &= 0x3f;
-	vdp->reg[reg] = val;
+	vid->reg[reg] = val;
 	// printf("%i:#%.2X\n",reg,val);
 	switch (reg) {
 		// mode registers
 		case 0x00:
 		case 0x01:
-			vmode = ((vdp->reg[1] & 0x10) >> 4) | ((vdp->reg[1] & 8) >> 2) | ((vdp->reg[0] & 0x0e) << 1);
+			vmode = ((vid->reg[1] & 0x10) >> 4) | ((vid->reg[1] & 8) >> 2) | ((vid->reg[0] & 0x0e) << 1);
 			// printf("v9938 mode = %.2X\n",vmode);
 			switch (vmode) {
-				case 0x01: vdpSetMode(vdp, VDP_TEXT1); break;	// text 40x24
-				case 0x09: vdpSetMode(vdp, VDP_TEXT2); break;	// text 80x24
-				case 0x02: vdpSetMode(vdp, VDP_MCOL); break;	// multicolor 4x4
-				case 0x00: vdpSetMode(vdp, VDP_GRA1); break;	// text 32x24
-				case 0x04: vdpSetMode(vdp, VDP_GRA2); break;	// 256x192
-				case 0x08: vdpSetMode(vdp, VDP_GRA3); break;	// scr2 8spr/line
-				case 0x0c: vdpSetMode(vdp, VDP_GRA4); break;	// 256x212,4bpp
-				case 0x10: vdpSetMode(vdp, VDP_GRA5); break;	// 512x212,2bpp
-				case 0x14: vdpSetMode(vdp, VDP_GRA6); break;	// 512x212,4bpp
-				case 0x1c: vdpSetMode(vdp, VDP_GRA7); break;	// 256x212,8bpp
+				case 0x01: vdpSetMode(vid, VDP_TEXT1); break;	// text 40x24
+				case 0x09: vdpSetMode(vid, VDP_TEXT2); break;	// text 80x24
+				case 0x02: vdpSetMode(vid, VDP_MCOL); break;	// multicolor 4x4
+				case 0x00: vdpSetMode(vid, VDP_GRA1); break;	// text 32x24
+				case 0x04: vdpSetMode(vid, VDP_GRA2); break;	// 256x192
+				case 0x08: vdpSetMode(vid, VDP_GRA3); break;	// scr2 8spr/line
+				case 0x0c: vdpSetMode(vid, VDP_GRA4); break;	// 256x212,4bpp
+				case 0x10: vdpSetMode(vid, VDP_GRA5); break;	// 512x212,2bpp
+				case 0x14: vdpSetMode(vid, VDP_GRA6); break;	// 512x212,4bpp
+				case 0x1c: vdpSetMode(vid, VDP_GRA7); break;	// 256x212,8bpp
 				default:
 					printf("v9938 mode %.2X\n",vmode);
 					// assert(0);
-					vdpSetMode(vdp, VDP_UNKNOWN);
+					vdpSetMode(vid, VID_UNKNOWN);
 					break;
 			}
 			break;
 		case 0x08: break;						// mode reg 2
-		case 0x09: vdp->lines = (val & 0x80) ? 212 : 192; break;	// mode reg 3
+		case 0x09: vid->lines = (val & 0x80) ? 212 : 192; break;	// mode reg 3
 			// address registers
 		case 0x02:
-			vdp->BGMap = (val & 0x7f) << 10;
+			vid->BGMap = (val & 0x7f) << 10;
 			// printf("BGMap = %X (%.2X)\n",vdp->BGMap,val);
 			break;
-		case 0x04: vdp->BGTiles = (val & 0x3f) << 11; break;
-		case 0x06: vdp->OBJTiles = (val & 0x3f) << 11; break;
+		case 0x04: vid->BGTiles = (val & 0x3f) << 11; break;
+		case 0x06: vid->OBJTiles = (val & 0x3f) << 11; break;
 
 		case 0x03:
-		case 0x0a: vdp->BGColors  = ((vdp->reg[0x0a] & 7) << 14) | (vdp->reg[0x03] << 6); break;
+		case 0x0a: vid->BGColors  = ((vid->reg[0x0a] & 7) << 14) | (vid->reg[0x03] << 6); break;
 
 		case 0x05:
-		case 0x0b: vdp->OBJAttr = ((vdp->reg[0x0b] & 3) << 15) | (vdp->reg[0x05] << 7); break;
+		case 0x0b: vid->OBJAttr = ((vid->reg[0x0b] & 3) << 15) | (vid->reg[0x05] << 7); break;
 			// color registers
 		case 0x07: break;			// border color = BG in R7
 		case 0x0c: break;			// inv/blink colors
 		case 0x0d:			// blink period
-			vdp->blink0 = ((val >> 4) & 0x0f) * 6;		// 1 = ~6 frames
-			vdp->blink1 = (val & 0x0f) * 6;
-			if (!vdp->blink0) vdp->bpage = 1;
-			if (!vdp->blink1) vdp->bpage = 0;
-			vdp->blink = vdp->bpage ? vdp->blink1 : vdp->blink0;
+			vid->blink0 = ((val >> 4) & 0x0f) * 6;		// 1 = ~6 frames
+			vid->blink1 = (val & 0x0f) * 6;
+			if (!vid->blink0) vid->bpage = 1;
+			if (!vid->blink1) vid->bpage = 0;
+			vid->blink = vid->bpage ? vid->blink1 : vid->blink0;
 			break;
 		case 0x14: break;			// 14,15,16 : color burst registers
 		case 0x15: break;
 		case 0x16: break;
 			// display registers
-		case 0x12: vdp->hAdj = (val & 15) - (val & 8) ? 16 : 0;
-			vdp->hAdj = ((val & 0xf0) >> 4) - (val & 0x80) ? 16 : 0;
+		case 0x12: vid->sc.x = (val & 15) - (val & 8) ? 16 : 0;
+			vid->sc.y = ((val & 0xf0) >> 4) - (val & 0x80) ? 16 : 0;
 			break;
 		case 0x17: break;			// display Y offset
-		case 0x13: vdp->iLine = val; break;
+		case 0x13: vid->intp.y = val; break;
 			// access registers
 		case 0x0e:
-			vdp->vadr = (vdp->vadr & 0x3fff) | ((val & 7) << 14);
+			vid->vadr = (vid->vadr & 0x3fff) | ((val & 7) << 14);
 			// printf("%.2X:%X\n",val,vdp->vadr);
 			break;
 		case 0x0f: break;			// status reg num (0..9)
@@ -795,33 +848,33 @@ void vdpRegWr(VDP9938* vdp, int reg, unsigned char val) {
 		case 0x11: /*vdp->regIdx = val & 0x3f*/; break;
 			// command registers
 		case 0x20:
-		case 0x21: vdp->src.x = (vdp->reg[0x20] | (vdp->reg[0x21] << 8)) & 0x1ff; break;
+		case 0x21: vid->src.x = (vid->reg[0x20] | (vid->reg[0x21] << 8)) & 0x1ff; break;
 
 		case 0x22:
-		case 0x23: vdp->src.y = (vdp->reg[0x22] | (vdp->reg[0x23] << 8)) & 0x3ff; break;
+		case 0x23: vid->src.y = (vid->reg[0x22] | (vid->reg[0x23] << 8)) & 0x3ff; break;
 
 		case 0x24:
-		case 0x25: vdp->dst.x = (vdp->reg[0x24] | (vdp->reg[0x25] << 8)) & 0x1ff; break;
+		case 0x25: vid->dst.x = (vid->reg[0x24] | (vid->reg[0x25] << 8)) & 0x1ff; break;
 
 		case 0x26:
-		case 0x27: vdp->dst.y = (vdp->reg[0x26] | (vdp->reg[0x27] << 8)) & 0x3ff; break;
+		case 0x27: vid->dst.y = (vid->reg[0x26] | (vid->reg[0x27] << 8)) & 0x3ff; break;
 
 		case 0x28:
-		case 0x29: vdp->size.x = (vdp->reg[0x28] | (vdp->reg[0x29] << 8)) & 0x1ff; break;
+		case 0x29: vid->size.x = (vid->reg[0x28] | (vid->reg[0x29] << 8)) & 0x1ff; break;
 
 		case 0x2a:
-		case 0x2b: vdp->size.y = (vdp->reg[0x2a] | (vdp->reg[0x2b] << 8)) & 0x3ff; break;
+		case 0x2b: vid->size.y = (vid->reg[0x2a] | (vid->reg[0x2b] << 8)) & 0x3ff; break;
 
 		case 0x2c:			// color code | block data transfer cpu->vdp
-			if (vdp->sr[2] & 1) {
-				vdpSend(vdp, val);
+			if (vid->sr[2] & 1) {
+				vdpSend(vid, val);
 			}
 			break;
 		case 0x2d: break;		// command argument
 		case 0x2e:
-			vdp->arg = val & 15;
-			vdp->com = (val & 0xf0) >> 4;
-			vdpExec(vdp);
+			vid->arg = val & 15;
+			vid->com = (val & 0xf0) >> 4;
+			vdpExec(vid);
 			break;
 		case 0x2f:			// WUT???
 			break;
@@ -834,103 +887,106 @@ void vdpRegWr(VDP9938* vdp, int reg, unsigned char val) {
 
 // 20150923
 
-void vdpDraw(VDP9938* vdp) {
-	if (vdp->inth) vdp->inth--;
-	if (vdp->intf) vdp->intf--;
-	vdp->core->draw(vdp);
+void vdpDraw(Video* vid) {
+//	if (vid->inth) vid->inth--;
+//	if (vid->intf) vid->intf--;
+	//vdp->draw(vdp);
 }
 
-void vdpLine(VDP9938* vdp) {
-	if (vdp->core->line)
-		vdp->core->line(vdp);
+/*
+void vdpLine(Video* vdp) {
+	if (vdp->line)
+		vdp->line(vdp);
 }
+*/
 
-void vdpHBlk(VDP9938* vdp) {
-	yscr = vdp->ray->x - vdp->lay->scr.y;
-	if (yscr == vdp->iLine) {		// HINT
-		vdp->sr[1] |= 1;
-		if (vdp->reg[0] & 0x10) {
-			vdp->inth = 64;
+void vdpHBlk(Video* vid) {
+	yscr = vid->ray.x - vid->bord.y;
+	if (yscr == vid->intp.y) {		// HINT
+		vid->sr[1] |= 1;
+		if (vid->reg[0] & VDP_IE1) {
+			vid->inth = 64;
 		}
 	}
 }
 
-void vdpVBlk(VDP9938* vdp) {
-	vdp->sr[0] |= 0x80;
-	if (vdp->reg[1] & 0x20) {
-		vdp->intf = 64;
+void vdpVBlk(Video* vid) {
+	vid->sr[0] |= 0x80;
+	if (vid->reg[1] & VDP_IE0) {
+		vid->intf = 64;
 	}
 
-	vdp->blink--;
-	if (vdp->blink < 0) {
-		vdp->blink = vdp->bpage ? vdp->blink0 : vdp->blink1;
-		if (vdp->blink)
-			vdp->bpage ^= 1;
+	vid->blink--;
+	if (vid->blink < 0) {
+		vid->blink = vid->bpage ? vid->blink0 : vid->blink1;
+		if (vid->blink)
+			vid->bpage ^= 1;
 	}
-
+/*
 	if (vdp->core->fram)
 		vdp->core->fram(vdp);
+*/
 }
 
-unsigned char vdpRead(VDP9938* vdp, int port) {
+unsigned char vdpRead(Video* vid, int port) {
 	unsigned char res = 0xff;
-	vdp->high = 0;
+	vid->high = 0;
 	switch (port & 3) {
 		case 0:
-			res = vdp->ram[vdpGetAddr(vdp, vdp->vadr)];
-			vdp->vadr++;
+			res = vid->ram[vdpGetAddr(vid, vid->vadr)];
+			vid->vadr++;
 			break;
 		case 1:
-			res = vdpReadSR(vdp);
+			res = vdpReadSR(vid);
 			break;
 	}
 	return res;
 }
 
-void vdpWrite(VDP9938* vdp, int port, unsigned char val) {
+void vdpWrite(Video* vid, int port, unsigned char val) {
 	int num;
 	switch (port & 3) {
 		case 0:
-			vdp->ram[vdpGetAddr(vdp, vdp->vadr)] = val;
-			vdp->vadr++;
+			vid->ram[vdpGetAddr(vid, vid->vadr)] = val;
+			vid->vadr++;
 			break;
 		case 1:
 //			printf("port1.%i:%.2X\n",vdp->high,val);
-			if (vdp->high) {
+			if (vid->high) {
 				if (val & 0x80) {
-					vdpRegWr(vdp, val & 0x3f, vdp->data);
+					vdpRegWr(vid, val & 0x3f, vid->dat);
 				} else {
-					vdp->vadr &= 0x1c000;
-					vdp->vadr |= vdp->data;
-					vdp->vadr |= ((val & 0x3f) << 8);
+					vid->vadr &= 0x1c000;
+					vid->vadr |= vid->dat;
+					vid->vadr |= ((val & 0x3f) << 8);
 				}
-				vdp->high = 0;
+				vid->high = 0;
 			} else {
-				vdp->data = val;
-				vdp->high = 1;
+				vid->dat = val;
+				vid->high = 1;
 			}
 			break;
 		case 2:
-			num = vdp->reg[16] & 15;
-			if (vdp->palhi) {
-				vdp->pal[num].g = m2lev[val & 7];
-				vdp->reg[16] = (num + 1) & 15;
-				vdp->palhi = 0;
+			num = vid->reg[16] & 15;
+			if (vid->palhi) {
+				vid->pal[num].g = m2lev[val & 7];
+				vid->reg[16] = (num + 1) & 15;
+				vid->palhi = 0;
 			} else {
-				vdp->pal[num].b = m2lev[val & 7];
-				vdp->pal[num].r = m2lev[(val >> 4) & 7];
-				vdp->palhi = 1;
+				vid->pal[num].b = m2lev[val & 7];
+				vid->pal[num].r = m2lev[(val >> 4) & 7];
+				vid->palhi = 1;
 			}
 			break;
 		case 3:
-			num = vdp->reg[17] & 0x3f;
+			num = vid->reg[17] & 0x3f;
 			if (num != 17) {
-				vdpRegWr(vdp, num, val);
+				vdpRegWr(vid, num, val);
 			}
-			if (!(vdp->reg[17] & 0x80)) {
+			if (!(vid->reg[17] & 0x80)) {
 				num++;
-				vdp->reg[17] &= 0x80;
-				vdp->reg[17] |= (num & 0x3f);
+				vid->reg[17] &= 0x80;
+				vid->reg[17] |= (num & 0x3f);
 			}
 			break;
 	}

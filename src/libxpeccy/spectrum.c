@@ -16,7 +16,7 @@ static vLayout nesPALLay = {{341,312},{0,0},{85,72},{256,240},{0,0},64};
 
 unsigned char vid_mrd_cb(int adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	return comp->mem->ramData[adr];
+	return comp->mem->ramData[adr & comp->mem->ramMask];
 }
 
 void zxMemRW(Computer* comp, int adr) {
@@ -350,8 +350,8 @@ void compUpdateTimings(Computer* comp) {
 					comp->fps = 50;
 					perNoTurbo = 1e3 / 1.66;		// ~601
 					vidSetLayout(comp->vid, nesPALLay);
-					comp->vid->ppu->vbsline = 241;
-					comp->vid->ppu->vbrline = 311;
+					comp->vid->vbsline = 241;
+					comp->vid->vbrline = 311;
 					vidUpdateTimings(comp->vid, perNoTurbo / 3.2);		// 16 ticks = 5 dots
 					comp->nesapu->wdiv = 3107;		// 5/6 = 3107? or 166/179 = 3458
 					break;
@@ -359,8 +359,8 @@ void compUpdateTimings(Computer* comp) {
 					comp->fps = 60;
 					perNoTurbo = 1e3 / 1.79;		// ~559
 					vidSetLayout(comp->vid, nesNTSCLay);
-					comp->vid->ppu->vbsline = 241;
-					comp->vid->ppu->vbrline = 261;
+					comp->vid->vbsline = 241;
+					comp->vid->vbrline = 261;
 					vidUpdateTimings(comp->vid, perNoTurbo / 3);		// 15 ticks = 5 dots
 					comp->nesapu->wdiv = 3729;
 					break;
@@ -368,8 +368,8 @@ void compUpdateTimings(Computer* comp) {
 					comp->fps = 59;
 					perNoTurbo = 1e3 / 1.77;
 					vidSetLayout(comp->vid, nesPALLay);
-					comp->vid->ppu->vbsline = 291;
-					comp->vid->ppu->vbrline = 311;
+					comp->vid->vbsline = 291;
+					comp->vid->vbrline = 311;
 					vidUpdateTimings(comp->vid, perNoTurbo / 3);
 					comp->nesapu->wdiv = 3729;
 					break;

@@ -105,12 +105,17 @@ unsigned short getCrc(unsigned char* ptr, int len) {
 }
 
 void flpFillFields(Floppy* flp,int tr, int fcrc) {
-	int i, bcnt = 0, sct = 1;
+	int i, bcnt = 0;
 	unsigned char fld = 0;
 	unsigned char* cpos = flp->data[tr].byte;
 	unsigned char* bpos = cpos;
 	unsigned short crc;
+	unsigned char scn = 0;		// sector number (1+)
+	unsigned char sct = 1;		// sector size code
 	if (tr > 255) return;
+	for (i = 0; i < 256; i++) {
+		flp->data[tr].map[i] = 0;
+	}
 	for (i = 0; i < TRACKLEN; i++) {
 		flp->data[tr].field[i] = fld;
 		if (fcrc) {
@@ -142,17 +147,26 @@ void flpFillFields(Floppy* flp,int tr, int fcrc) {
 				cpos = bpos;
 				fld = 1;
 				bcnt = 4;
+				scn = flp->data[tr].byte[i+3];
 				sct = flp->data[tr].byte[i+4];
 			}
 			if (flp->data[tr].byte[i] == 0xfb) {
 				cpos = bpos;
 				fld = 2;
 				bcnt = (128 << (sct & 3));
+				if (scn > 0) {
+					flp->data[tr].map[scn] = i + 1;
+					scn = 0;
+				}
 			}
 			if (flp->data[tr].byte[i] == 0xf8) {
 				cpos = bpos;
 				fld = 3;
 				bcnt = (128 << (sct & 3));
+				if (scn > 0) {
+					flp->data[tr].map[scn] = i + 1;
+					scn = 0;
+				}
 			}
 		}
 		bpos++;

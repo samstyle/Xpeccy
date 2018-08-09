@@ -123,7 +123,7 @@ void memGetData(Memory* mem, int type, int sz, int page, char* dst) {
 }
 
 // set page data
-void memPutData(Memory* mem, int type, int sz, int page, char* src) {
+void memPutData(Memory* mem, int type, int page, int sz, char* src) {
 	if (type == MEM_RAM) {
 		memcpy(mem->ramData + ((page * sz) & mem->ramMask), src, sz);
 	} else if (type == MEM_ROM) {

@@ -53,17 +53,17 @@ void msxResetSlot(xCartridge* slot) {
 
 void msxReset(Computer* comp) {
 	kbdSetMode(comp->keyb, KBD_MSX);
-	comp->vid->v9938.memMask = 0x3fff;
-	comp->vid->v9938.high = 0;
-	comp->vid->v9938.lines = 192;
+	comp->vid->memMask = 0x3fff;
+	comp->vid->high = 0;
+	comp->vid->lines = 192;
 	comp->msx.pA8 = 0x00;
 	comp->msx.memMap[0] = 3;
 	comp->msx.memMap[1] = 2;
 	comp->msx.memMap[2] = 1;
 	comp->msx.memMap[3] = 0;
-	vidSetMode(comp->vid, VID_V9938);
+	vidSetMode(comp->vid, VDP_TEXT1);
 	msxResetSlot(comp->slot);
-	vdpReset(&comp->vid->v9938);
+	vdpReset(comp->vid);
 	msxMapMem(comp);
 }
 
@@ -139,11 +139,11 @@ unsigned char msxMemIn(Computer* comp, unsigned short port) {
 // v9938
 
 void msx9938wr(Computer* comp, unsigned short adr, unsigned char val) {
-	vdpWrite(&comp->vid->v9938, adr & 3, val);
+	vdpWrite(comp->vid, adr & 3, val);
 }
 
 unsigned char msx9938rd(Computer* comp, unsigned short adr) {
-	return vdpRead(&comp->vid->v9938, adr & 3);
+	return vdpRead(comp->vid, adr & 3);
 }
 
 // Port map
@@ -178,8 +178,11 @@ void msxOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
 	hwOut(msxPortMap,comp, port, val, dos);
 }
 
+static int nsx;
+
 void msx_sync(Computer* comp, int ns) {
-	unsigned irq = (comp->vid->v9938.inth || comp->vid->v9938.intf) ? 1 : 0;
+	unsigned irq = (comp->vid->inth || comp->vid->intf) ? 1 : 0;
+	nsx += ns;
 	if (irq && !comp->irq) {		// 0->1 : TESTED 20ms | NOTE : sometimes iff1=0 ?
 		comp->cpu->intrq |= Z80_INT;
 		comp->intVector = 0xff;

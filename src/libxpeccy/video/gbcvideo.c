@@ -1,12 +1,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "gbcvideo.h"
+#include "video.h"
 
 #include <stdio.h>
 #include <assert.h>
 
-void gbcvDraw(GBCVid* vid) {
+void gbcvDraw(Video* vid) {
 	unsigned char col = 0xff;		// color FF = white
 	int x,y;
 	unsigned char tile;
@@ -15,8 +15,8 @@ void gbcvDraw(GBCVid* vid) {
 
 	if (vid->lcdon) {
 		// get bg color & flag
-		x = (vid->sc.x + vid->ray->x) & 0xff;
-		y = (vid->sc.y + vid->ray->y) & 0xff;
+		x = (vid->sc.x + vid->ray.x) & 0xff;
+		y = (vid->sc.y + vid->ray.y) & 0xff;
 		adr = vid->bgmapadr + ((y & 0xf8) << 2) + (x >> 3);		// tile adr
 		tile = vid->ram[adr & 0x1fff];					// tile nr
 		flag = vid->gbmode ? 0 : vid->ram[0x2000 | (adr & 0x1fff)];	// tile flags (GBC)
@@ -33,51 +33,51 @@ void gbcvDraw(GBCVid* vid) {
 		data <<= (x & 7);
 
 		int bgen = vid->bgen && !vid->bgblock;
-		int winen = vid->winen && !vid->winblock && (vid->ray->y >= vid->win.y) && (vid->ray->x >= vid->win.x);
+		int winen = vid->winen && !vid->winblock && (vid->ray.y >= vid->win.y) && (vid->ray.x >= vid->win.x);
 		int spen = vid->spren && !vid->sprblock;
 
-		if (winen && vid->bgprior && (vid->wtline[vid->ray->x] != 0xff)) {	// WIN + priority
-			col = vid->wtline[vid->ray->x];
+		if (winen && vid->bgprior && (vid->wtline[vid->ray.x] != 0xff)) {	// WIN + priority
+			col = vid->wtline[vid->ray.x];
 		} else if (bgen && vid->bgprior && (flag & 0x80)) {			// BG + priority
 			col = ((data & 0x80) ? 1 : 0) | ((data & 0x8000) ? 2 : 0);
 			col |= (flag & 7) << 2;
-		} else if (spen && vid->stline[vid->ray->x]) {				// top SPR
-			col = vid->stline[vid->ray->x];
+		} else if (spen && vid->stline[vid->ray.x]) {				// top SPR
+			col = vid->stline[vid->ray.x];
 		} else if (winen) {							// WIN
-			col = vid->wbline[vid->ray->x];
+			col = vid->wbline[vid->ray.x];
 		} else if (bgen) {							// BG
 			col = ((data & 0x80) ? 1 : 0) | ((data & 0x8000) ? 2 : 0);
 			col |= (flag & 7) << 2;
 		}
-		if (!col && vid->sbline[vid->ray->x]) {					// bottom sprites
-			col = vid->sbline[vid->ray->x];
+		if (!col && vid->sbline[vid->ray.x]) {					// bottom sprites
+			col = vid->sbline[vid->ray.x];
 		}
 	}
-	vidPutDot(vid->ray, vid->pal, col);
-	if (vid->ray->y < vid->lay->scr.y) {		// on visible screen
-		if (vid->ray->x == 0) {			// visible line start : mode 2
-			vid->mode = 2;
+	vidPutDot(&vid->ray, vid->pal, col);
+	if (vid->ray.y < vid->scrn.y) {		// on visible screen
+		if (vid->ray.x == 0) {			// visible line start : mode 2
+			vid->gbcmode = 2;
 			if (vid->inten & 32)
 				vid->intrq = 1;
-		} else if (vid->ray->x == 40) {		// end of oem/vmem access : mode 3
-			vid->mode = 3;
+		} else if (vid->ray.x == 40) {		// end of oem/vmem access : mode 3
+			vid->gbcmode = 3;
 		}
 	}
 }
 
 // line begin : create full line image in the buffer
-void gbcvLine(GBCVid* vid) {
+void gbcvLine(Video* vid) {
 	memset(vid->wtline, 0xff, 256);
 	memset(vid->wbline, 0xff, 256);
 	memset(vid->stline, 0x00, 256);
 	memset(vid->sbline, 0x00, 256);
 
-	vid->mode = 0;					// hblank start: mode 0
+	vid->gbcmode = 0;					// hblank start: mode 0
 	if (vid->inten & 8)
 		vid->intrq = 1;
 
 	if (!vid->lcdon) return;
-	if (vid->ray->y >= vid->lay->scr.y) return;
+	if (vid->ray.y >= vid->scrn.y) return;
 	unsigned char tile;
 	unsigned char flag;
 	unsigned char col;
@@ -90,7 +90,7 @@ void gbcvLine(GBCVid* vid) {
 	int adr;
 	int pos;
 // WIN
-	if (vid->winen && (vid->ray->y >= vid->win.y)) {
+	if (vid->winen && (vid->ray.y >= vid->win.y)) {
 		tadr = vid->winmapadr + ((vid->wline & 0xf8) << 2);
 		pos = vid->win.x;
 		for (tx = 0; tx < 32; tx++) {
@@ -134,7 +134,7 @@ void gbcvLine(GBCVid* vid) {
 			flag = vid->oam[adr++];
 			if (vid->bigspr)
 				tile &= 0xfe;
-			pos = (vid->ray->y - y) & 0xff;				// line inside sprite
+			pos = (vid->ray.y - y) & 0xff;				// line inside sprite
 			if (vid->gbmode) {					// start of palete color idx (0x40+ for sprites)
 				pal = (flag & 0x10) ? 0x44 : 0x40;
 				flag &= 0xf8;
@@ -179,14 +179,14 @@ void gbcvLine(GBCVid* vid) {
 		}
 	}
 
-	if ((vid->ray->y == vid->lyc) && (vid->inten & 64)) vid->intrq = 1;		// ly = lyc
+	if ((vid->ray.y == vid->intp.y) && (vid->inten & 64)) vid->intrq = 1;		// ly = lyc
 	vid->xpos = vid->sc.x;
 }
 
-void gbcvFram(GBCVid* vid) {
+void gbcvFram(Video* vid) {
 	vid->wline = 0;
 
-	vid->mode = 1;		// vblank start : mode 1
+	vid->gbcmode = 1;		// vblank start : mode 1
 	if (vid->inten & 16)
 		vid->intrq = 1;	// int @ vblank
 }
@@ -200,6 +200,7 @@ xColor iniCol[4] = {
 	{0x09, 0x20, 0x21}
 };
 
+/*
 GBCVid* gbcvCreate(vRay* ray, vLayout* lay) {
 	GBCVid* vid = malloc(sizeof(GBCVid));
 	memset(vid, 0x00, sizeof(GBCVid));
@@ -221,8 +222,9 @@ GBCVid* gbcvCreate(vRay* ray, vLayout* lay) {
 void gbcvDestroy(GBCVid* vid) {
 	free(vid);
 }
+*/
 
-void gbcvReset(GBCVid* vid) {
+void gbcvReset(Video* vid) {
 	vid->sc.x = 0;
 	vid->sc.y = 0;
 	vid->win.x = 0;
@@ -233,4 +235,7 @@ void gbcvReset(GBCVid* vid) {
 	vid->gbmode = 0;
 	memset(vid->ram, 0x00, 0x4000);
 	memset(vid->oam, 0x00, 0x100);
+	for (int i = 0; i < 4; i++) {
+		vid->pal[i] = iniCol[i];
+	}
 }

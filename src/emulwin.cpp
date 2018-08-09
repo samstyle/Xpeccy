@@ -937,10 +937,10 @@ void MainWin::screenShot() {
 		case SCR_PNG:
 			if (img.isNull()) break;
 			if (conf.scrShot.noBorder) {
-				x = (comp->vid->lay.bord.x - comp->vid->lcut.x) * conf.vid.scale;
-				y = (comp->vid->lay.bord.y - comp->vid->lcut.y) * conf.vid.scale;
-				dx = comp->vid->lay.scr.x * conf.vid.scale;
-				dy = comp->vid->lay.scr.y * conf.vid.scale;
+				x = (comp->vid->bord.x - comp->vid->lcut.x) * conf.vid.scale;
+				y = (comp->vid->bord.y - comp->vid->lcut.y) * conf.vid.scale;
+				dx = comp->vid->scrn.x * conf.vid.scale;
+				dy = comp->vid->scrn.y * conf.vid.scale;
 				img = img.copy(x, y, dx, dy);
 			}
 			img.save(QString(fnam.c_str()),fext.c_str());
@@ -1276,12 +1276,12 @@ void MainWin::saveVRAM() {
 	if (path.isEmpty()) return;
 	QFile file(path);
 	if (file.open(QFile::WriteOnly)) {
-		file.write((char*)comp->vid->v9938.ram, 0x20000);
-		file.write((char*)comp->vid->v9938.reg, 64);
+		file.write((char*)comp->vid->ram, 0x20000);
+		file.write((char*)comp->vid->reg, 64);
 		for (int i = 0; i < 16; i++) {
-			file.putChar(comp->vid->v9938.pal[i].r);
-			file.putChar(comp->vid->v9938.pal[i].g);
-			file.putChar(comp->vid->v9938.pal[i].b);
+			file.putChar(comp->vid->pal[i].r);
+			file.putChar(comp->vid->pal[i].g);
+			file.putChar(comp->vid->pal[i].b);
 		}
 
 		file.close();
@@ -1293,7 +1293,7 @@ void MainWin::saveGBVRAM() {
 	if (path.isEmpty()) return;
 	QFile file(path);
 	if (file.open(QFile::WriteOnly)) {
-		file.write((char*)comp->vid->gbc->ram, 0x2000);
+		file.write((char*)comp->vid->ram, 0x2000);
 		file.write((char*)comp->gb.iomap, 0x80);
 		file.close();
 	}
@@ -1304,12 +1304,11 @@ void MainWin::saveNESPPU() {
 	if (path.isEmpty()) return;
 	QFile file(path);
 	if (file.open(QFile::WriteOnly)) {
-		file.write((char*)comp->vid->ppu->mem, 0x4000);
-		file.write((char*)comp->vid->ppu->oam, 0x100);
+		file.write((char*)comp->vid->ram, 0x4000);
+		file.write((char*)comp->vid->oam, 0x100);
 		file.close();
 	}
 }
 
 void MainWin::debugAction() {
-	qDebug() << gethexword(comp->vid->gbc->bgmapadr) << comp->vid->gbc->gbmode;
 }

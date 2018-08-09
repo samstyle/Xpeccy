@@ -3,7 +3,6 @@
 #include "xgui/xgui.h"
 
 static QFileDialog *filer;
-// QDir lastDir;
 
 #include <QIcon>
 #include <QMessageBox>

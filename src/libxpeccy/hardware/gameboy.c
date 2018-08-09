@@ -42,8 +42,8 @@ unsigned char gbIORd(Computer* comp, unsigned short port) {
 // VIDEO
 		case 0x40: break;
 		case 0x41:
-			res = (comp->vid->ray.y == comp->vid->gbc->lyc) ? 4 : 0;
-			res |= comp->vid->gbc->mode & 3;
+			res = (comp->vid->ray.y == comp->vid->intp.y) ? 4 : 0;
+			res |= comp->vid->gbcmode & 3;
 			break;
 		case 0x42: break;
 		case 0x43: break;
@@ -149,7 +149,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 	gbsChan* ch3 = &comp->gbsnd->ch3;
 	gbsChan* ch4 = &comp->gbsnd->ch4;
 	// gbc video ptr
-	GBCVid* gbv = comp->vid->gbc;
+//	GBCVid* gbv = comp->vid->gbc;
 
 	comp->gb.iomap[port] = val;
 	switch (port) {
@@ -159,57 +159,60 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 		case 0x00: break;
 // VIDEO
 		case 0x40:
-			gbv->lcdon = (val & 0x80) ? 1 : 0;
-			gbv->winmapadr = (val & 0x40) ? 0x9c00 : 0x9800;
-			gbv->winen = (val & 0x20) ? 1 : 0;
-			gbv->altile = (val & 0x10) ? 0 : 1;			// signed tile num
-			gbv->tilesadr = (val & 0x10) ? 0x8000 : 0x8800;
-			gbv->bgmapadr = (val & 0x08) ? 0x9c00 : 0x9800;
-			gbv->bigspr = (val & 0x04) ? 1 : 0;
-			gbv->spren  = (val & 0x02) ? 1 : 0;
-			if (gbv->gbmode) {
-				gbv->bgen = (val & 1);		// gbc in gb mode has different effect
+			comp->vid->lcdon = (val & 0x80) ? 1 : 0;
+			comp->vid->winmapadr = (val & 0x40) ? 0x9c00 : 0x9800;
+			comp->vid->winen = (val & 0x20) ? 1 : 0;
+			comp->vid->altile = (val & 0x10) ? 0 : 1;			// signed tile num
+			comp->vid->tilesadr = (val & 0x10) ? 0x8000 : 0x8800;
+			comp->vid->bgmapadr = (val & 0x08) ? 0x9c00 : 0x9800;
+			comp->vid->bigspr = (val & 0x04) ? 1 : 0;
+			comp->vid->spren  = (val & 0x02) ? 1 : 0;
+			if (comp->vid->gbmode) {
+				comp->vid->bgen = (val & 1);		// gbc in gb mode has different effect
 			} else {
-				gbv->bgprior = (val & 1);	// change bg/win priority
+				comp->vid->bgprior = (val & 1);	// change bg/win priority
 			}
 			break;
 		case 0x41:						// lcd stat interrupts enabling
-			gbv->inten = val;
+			comp->vid->inten = val;
 			break;
 		case 0x42:
-			gbv->sc.y = val;
+			comp->vid->sc.y = val;
 			break;
 		case 0x43:
-			gbv->sc.x = val;
+			comp->vid->sc.x = val;
 			break;
 		case 0x44:						// TODO: writing will reset the counter (?)
 			break;
 		case 0x45:
-			gbv->lyc = val;
+			comp->vid->intp.y = val;
 			break;
 		case 0x46:						// TODO: block CPU memory access for 160 microsec (except ff80..fffe)
 			sadr = val << 8;
 			dadr = 0;
 			while (dadr < 0xa0) {
-				gbv->oam[dadr] = memRd(comp->mem, sadr);
+				comp->vid->oam[dadr] = memRd(comp->mem, sadr);
 				sadr++;
 				dadr++;
 			}
 			break;
 		case 0x47:							// palete for bg/win
-			if (gbv->gbmode) setGrayScale(gbv->pal, 0, val);
+			if (comp->vid->gbmode)
+				setGrayScale(comp->vid->pal, 0, val);
 			break;
 		case 0x48:
-			if (gbv->gbmode) setGrayScale(gbv->pal, 0x40, val);	// object pal 0
+			if (comp->vid->gbmode)
+				setGrayScale(comp->vid->pal, 0x40, val);	// object pal 0
 			break;
 		case 0x49:
-			if (gbv->gbmode) setGrayScale(gbv->pal, 0x44, val);	// object pal 1
+			if (comp->vid->gbmode)
+				setGrayScale(comp->vid->pal, 0x44, val);	// object pal 1
 			break;
 		case 0x4a:
-			gbv->win.y = val;
+			comp->vid->win.y = val;
 			break;
 		case 0x4b:
-			gbv->win.x = val - 7;
+			comp->vid->win.x = val - 7;
 			break;
 // SOUND
 // 1e9/frq(Hz) = full period ns
@@ -407,7 +410,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 		case 0x69:				// gbc lo/hi palete value
 			per = comp->gb.iomap[0x68];
 			frq = ((per & 0x3e) >> 1);	// color idx
-			col = gbv->pal[frq];		// current color;
+			col = comp->vid->pal[frq];		// current color;
 			if (per & 1) {			// B/g
 				col.b = (val & 0x7c) << 1;
 				col.g = (col.g & 0x3f) | ((val & 3) << 6);
@@ -415,7 +418,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 				col.r = (val & 0x1f) << 3;
 				col.g = (col.g & 0xc0) | ((val & 0xe0) >> 2);
 			}
-			gbv->pal[frq] = col;
+			comp->vid->pal[frq] = col;
 			if (per & 0x80) {
 				comp->gb.iomap[0x68] = (per & 0xc0) | ((per + 1) & 0x3f);
 			}
@@ -425,7 +428,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 		case 0x6b:
 			per= comp->gb.iomap[0x6a];
 			frq = 0x40 | ((per & 0x3e) >> 1);
-			col = gbv->pal[frq];
+			col = comp->vid->pal[frq];
 			if (per & 1) {
 				col.b = (val & 0x7c) << 1;
 				col.g = (col.g & 0x3f) | ((val & 3) << 6);
@@ -433,7 +436,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 				col.r = (val & 0x1f) << 3;
 				col.g = (col.g & 0xc0) | ((val & 0xe0) >> 2);
 			}
-			gbv->pal[frq] = col;
+			comp->vid->pal[frq] = col;
 			if (per & 0x80) {
 				comp->gb.iomap[0x6a] = (per & 0xc0) | ((per + 1) & 0x3f);
 			}
@@ -462,7 +465,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 		case 0x56:			// IR port
 			break;
 		case 0x6c:			// b0: 1:GB mode, 0:GBC mode
-			comp->vid->gbc->gbmode = val & 1;
+			comp->vid->gbmode = val & 1;
 			break;
 // MISC
 		case 0x50:
@@ -488,7 +491,7 @@ unsigned char gbSlotRd(unsigned short adr, void* data) {
 	Computer* comp = (Computer*)data;
 	xCartridge* slot = comp->slot;
 	unsigned char res = 0xff;
-	if (comp->gb.boot && (adr < comp->romsize) && ((adr & 0xff00) != 0x0100)) {
+	if (comp->gb.boot && (adr < comp->mem->romSize) && ((adr & 0xff00) != 0x0100)) {
 		res = comp->mem->romData[adr & 0x3fff];
 	} else if (slot->data) {
 		res = sltRead(slot, SLT_PRG, adr);
@@ -514,7 +517,7 @@ unsigned char gbvRd(unsigned short adr, void* data) {
 		res = sltRead(slot, SLT_PRG, adr);
 	} else {			// video ram
 		radr = (comp->gb.vbank << 13) | (adr & 0x1fff);
-		res = comp->vid->gbc->ram[radr];
+		res = comp->vid->ram[radr];
 	}
 	return res;
 }
@@ -530,7 +533,7 @@ void gbvWr(unsigned short adr, unsigned char val, void* data) {
 		//}
 	} else {			// video ram
 		radr = (comp->gb.vbank << 13) | (adr & 0x1fff);
-		comp->vid->gbc->ram[radr & 0x3fff] = val;
+		comp->vid->ram[radr & 0x3fff] = val;
 	}
 }
 
@@ -556,8 +559,8 @@ unsigned char gbrRd(unsigned short adr, void* data) {
 			res = comp->mem->ramData[adr & 0xfff];
 		}
 	} else if (adr < 0xfea0) {					// video oam not accessible @ mode 2
-		if (comp->vid->gbc->mode != 2)
-			res = comp->vid->gbc->oam[adr & 0xff];
+		if (comp->vid->gbcmode != 2)
+			res = comp->vid->oam[adr & 0xff];
 	} else if (adr < 0xff00) {
 		res = 0xff;						// unused
 	} else if (adr < 0xff80) {
@@ -581,8 +584,8 @@ void gbrWr(unsigned short adr, unsigned char val, void* data) {
 			comp->mem->ramData[adr & 0xfff] = val;
 		}
 	} else if (adr < 0xfea0) {					// video oam not accessible @ mode 2
-		if (comp->vid->gbc->mode != 2)
-			comp->vid->gbc->oam[adr & 0xff] = val;
+		if (comp->vid->gbcmode != 2)
+			comp->vid->oam[adr & 0xff] = val;
 	} else if (adr < 0xff00) {
 		// nothing
 	} else if (adr < 0xff80) {
@@ -649,8 +652,8 @@ void gbcSync(Computer* comp, int ns) {
 	if (comp->vid->vbstrb) {
 		comp->vid->vbstrb = 0;
 		req |= 1;
-	} else if (comp->vid->gbc->intrq) {
-		comp->vid->gbc->intrq = 0;
+	} else if (comp->vid->intrq) {
+		comp->vid->intrq = 0;
 		req |= 2;
 	} else if (comp->gb.timer.t.intrq) {
 		comp->gb.timer.t.intrq = 0;
@@ -707,14 +710,14 @@ void gbc_keyp(Computer* comp, keyEntry ent) {
 		comp->gb.buttons &= ~mask;
 		comp->gb.inpint = 1;			// input interrupt request
 	} else if (ent.key == XKEY_1) {
-		comp->vid->gbc->bgblock ^= 1;
-		comp->msg = comp->vid->gbc->bgblock ? gbMsgBG0 :gbMsgBG1;
+		comp->vid->bgblock ^= 1;
+		comp->msg = comp->vid->bgblock ? gbMsgBG0 :gbMsgBG1;
 	} else if (ent.key == XKEY_2) {
-		comp->vid->gbc->winblock ^= 1;
-		comp->msg = comp->vid->gbc->winblock ? gbMsgWIN0 :gbMsgWIN1;
+		comp->vid->winblock ^= 1;
+		comp->msg = comp->vid->winblock ? gbMsgWIN0 :gbMsgWIN1;
 	} else if (ent.key == XKEY_3) {
-		comp->vid->gbc->sprblock ^= 1;
-		comp->msg = comp->vid->gbc->sprblock ? gbMsgSPR0 :gbMsgSPR1;
+		comp->vid->sprblock ^= 1;
+		comp->msg = comp->vid->sprblock ? gbMsgSPR0 :gbMsgSPR1;
 	}
 }
 
@@ -733,13 +736,13 @@ sndPair gbc_vol(Computer* comp, sndVolume* sv) {
 
 void gbReset(Computer* comp) {
 	comp->gb.boot = 1;
-	comp->vid->gbc->gbmode = 0;
+	comp->vid->gbmode = 0;
 	vidSetMode(comp->vid, VID_GBC);
-	gbcvReset(comp->vid->gbc);
+	gbcvReset(comp->vid);
 
 	compSetTurbo(comp, 1);
 	comp->cpu->inten = 0;
-	comp->vid->gbc->inten = 0;
+	comp->vid->inten = 0;
 	comp->gb.buttons = 0xff;
 
 	comp->gbsnd->ch1.on = 0;

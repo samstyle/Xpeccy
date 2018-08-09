@@ -6,35 +6,35 @@
 // NOTE: Cartridges have potentially 255+ mappers
 
 // PPU reads byte (except palette)
-unsigned char nes_ppu_ext_rd(unsigned short adr, void* ptr) {
+unsigned char nes_ppu_ext_rd(int adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	unsigned char res;
 	adr = nes_nt_vadr(comp->slot, adr);
 	sltChecker(comp->slot, adr);
 	if (adr & 0x2000) {	// nametable
-		res = comp->vid->ppu->mem[adr];
+		res = comp->vid->ram[adr];
 	} else {
 		if (comp->slot->chrrom) {
 			res = sltRead(comp->slot, SLT_CHR, adr);
 		} else {
-			res = comp->vid->ppu->mem[adr];
+			res = comp->vid->ram[adr];
 		}
 	}
 	return res;
 }
 
 // PPU writes byte (except palette)
-void nes_ppu_ext_wr(unsigned short adr, unsigned char val, void* ptr) {
+void nes_ppu_ext_wr(int adr, unsigned char val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	adr = nes_nt_vadr(comp->slot, adr);
 	sltChecker(comp->slot, adr);
 	if (adr & 0x2000) {
-		comp->vid->ppu->mem[adr] = val;
+		comp->vid->ram[adr] = val;
 	} else {
 		if (comp->slot->chrrom) {
 			// CHR-RAM?
 		} else {
-			comp->vid->ppu->mem[adr & 0x1fff] = val;
+			comp->vid->ram[adr & 0x1fff] = val;
 		}
 	}
 }
@@ -46,14 +46,14 @@ unsigned char nes_apu_ext_rd(unsigned short adr, void* ptr) {
 }
 
 void nesReset(Computer* comp) {
-	comp->vid->ppu->mrd = nes_ppu_ext_rd;
-	comp->vid->ppu->mwr = nes_ppu_ext_wr;
-	comp->vid->ppu->data = comp;
+	comp->vid->mrd = nes_ppu_ext_rd;
+	comp->vid->mwr = nes_ppu_ext_wr;
+	comp->vid->data = comp;
 	comp->slot->reg00 = 0x0c;	// MMC1
 	comp->slot->reg06 = 0;
 	comp->slot->reg07 = 1;
 	apuReset(comp->nesapu);
-	ppuReset(comp->vid->ppu);
+	ppuReset(comp->vid);
 	vidSetMode(comp->vid, VID_NES);
 }
 
@@ -68,7 +68,7 @@ unsigned char nesMMrd(unsigned short adr, void* data) {
 			res = mem[adr & 0x7ff];
 			break;
 		case 0x2000:		// 2000..3fff : 8 ppu registers + mirrors
-			res = ppuRead(comp->vid->ppu, adr & 7);
+			res = ppuRead(comp->vid, adr & 7);
 			break;
 		case 0x4000:		// 4000..5fff : IO mapping
 			if (adr > 0x401f) {
@@ -117,7 +117,7 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 			comp->mem->ramData[adr & 0x7ff] = val;
 			break;
 		case 0x2000:			// 2000..3fff : 8 PPU registers + mirrors
-			ppuWrite(comp->vid->ppu, adr & 7, val);
+			ppuWrite(comp->vid, adr & 7, val);
 			break;
 		case 0x4000:			// 4000..5fff : IO mappings
 			if (adr < 0x4014) {	// 4000..4013 : APU
@@ -127,8 +127,8 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 					case 0x14:		// OAMDMA
 						adr = (val << 8);
 						do {
-							comp->vid->ppu->oam[comp->vid->ppu->oamadr & 0xff] = memRd(comp->mem, adr);
-							comp->vid->ppu->oamadr++;
+							comp->vid->oam[comp->vid->oamadr & 0xff] = memRd(comp->mem, adr);
+							comp->vid->oamadr++;
 							adr++;
 						} while (adr & 0xff);
 						comp->cpu->t += 0x201;	// DMA eats 512+1+1 cpu ticks, cpu is halted during operation
@@ -184,8 +184,8 @@ void nesMaper(Computer* comp) {
 }
 
 void nesSync(Computer* comp, int ns) {
-	if (comp->vid->ppu->vblstrb && comp->vid->ppu->inten) {	// @ start of VBlank
-		comp->vid->ppu->vblstrb = 0;
+	if (comp->vid->vbstrb && comp->vid->inten) {	// @ start of VBlank
+		comp->vid->vbstrb = 0;
 		comp->cpu->intrq |= MOS6502_INT_NMI;		// request NMI...
 	}
 
@@ -283,12 +283,12 @@ void nes_keyp(Computer* comp, keyEntry ent) {
 			compUpdateTimings(comp);
 			break;
 		case XKEY_1:
-			comp->vid->ppu->bglock ^= 1;
-			comp->msg = comp->vid->ppu->bglock ? nesBgOff : nesBgOn;
+			comp->vid->bgblock ^= 1;
+			comp->msg = comp->vid->bgblock ? nesBgOff : nesBgOn;
 			break;
 		case XKEY_2:
-			comp->vid->ppu->splock ^= 1;
-			comp->msg = comp->vid->ppu->splock ? nesSpOff : nesSpOn;
+			comp->vid->sprblock ^= 1;
+			comp->msg = comp->vid->sprblock ? nesSpOff : nesSpOn;
 			break;
 		case XKEY_3:
 			comp->nesapu->ch0.off ^= 1;

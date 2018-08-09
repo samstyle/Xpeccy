@@ -738,16 +738,16 @@ bool DebugWin::fillAll() {
 		updateScreen();
 
 	ui.labRX->setNum(comp->vid->ray.x);
-	if (comp->vid->ray.x < comp->vid->ssze.x)
-		ui.labRX->setStyleSheet("");
-	else
+	if (comp->vid->hblank)
 		ui.labRX->setStyleSheet("background-color: rgb(255,160,160);");
+	else
+		ui.labRX->setStyleSheet("");
 
 	ui.labRY->setNum(comp->vid->ray.y);
-	if (comp->vid->ray.y < comp->vid->ssze.y)
-		ui.labRY->setStyleSheet("");
-	else
+	if (comp->vid->vblank)
 		ui.labRY->setStyleSheet("background-color: rgb(255,160,160);");
+	else
+		ui.labRY->setStyleSheet("");
 
 	setSignal(ui.labDOS, comp->dos);
 	setSignal(ui.labROM, comp->rom);
@@ -761,15 +761,15 @@ bool DebugWin::fillAll() {
 // gameboy
 
 extern xColor iniCol[4];
-void drawGBTile(QImage& img, GBCVid* gbv, int x, int y, int adr) {
+void drawGBTile(QImage& img, Video* vid, int x, int y, int adr) {
 	int row, bit;
 	int data;
 	unsigned char col;
 	xColor xcol;
 	for (row = 0; row < 8; row++) {
-		data = gbv->ram[adr & 0x3fff] & 0xff;
+		data = vid->ram[adr & 0x3fff] & 0xff;
 		adr++;
-		data |= (gbv->ram[adr & 0x3fff] & 0xff) << 8;
+		data |= (vid->ram[adr & 0x3fff] & 0xff) << 8;
 		adr++;
 		for (bit = 0; bit < 8; bit++) {
 			col = ((data & 0x80) ? 1 : 0) | ((data & 0x8000) ? 2 : 0);
@@ -780,21 +780,21 @@ void drawGBTile(QImage& img, GBCVid* gbv, int x, int y, int adr) {
 	}
 }
 
-QImage getGBTiles(GBCVid* gbv, int tset) {
+QImage getGBTiles(Video* vid, int tset) {
 	int tadr = (tset & 1) ? 0x800 : 0;
 	if (tset & 2) tadr |= 0x2000;
 	int x,y;
 	QImage img(128, 128, QImage::Format_RGB888);
 	for (y = 0; y < 16; y++) {
 		for (x = 0; x < 16; x++) {
-			drawGBTile(img, gbv, x << 3, y << 3, tadr);
+			drawGBTile(img, vid, x << 3, y << 3, tadr);
 			tadr += 16;
 		}
 	}
 	return img.scaled(256,256);
 }
 
-QImage getGBMap(GBCVid* gbv, int tmap, int tset) {
+QImage getGBMap(Video* vid, int tmap, int tset) {
 	QImage img(256, 256, QImage::Format_RGB888);
 	img.fill(qRgb(0,0,0));
 	int adr = tmap ? 0x1c00 : 0x1800;
@@ -805,7 +805,7 @@ QImage getGBMap(GBCVid* gbv, int tmap, int tset) {
 	int x,y;
 	for (y = 0; y < 32; y++) {
 		for (x = 0; x < 32; x++) {
-			tile = gbv->ram[adr & 0x1fff];
+			tile = vid->ram[adr & 0x1fff];
 			adr++;
 			tadr = badr;
 			if (tset & 1) {
@@ -813,13 +813,13 @@ QImage getGBMap(GBCVid* gbv, int tmap, int tset) {
 			} else {
 				tadr += tile << 4;
 			}
-			drawGBTile(img, gbv, x << 3, y << 3, tadr);
+			drawGBTile(img, vid, x << 3, y << 3, tadr);
 		}
 	}
 	return img;
 }
 
-QImage getGBPal(GBCVid* gbv) {
+QImage getGBPal(Video* gbv) {
 	QImage img(256,256,QImage::Format_RGB888);
 	img.fill(Qt::black);
 	int x,y;
@@ -843,11 +843,11 @@ void DebugWin::fillGBoy() {
 	int tset = ui.sbTileset->value();
 	int tmap = ui.sbTilemap->value();
 	if (ui.rbTilesetView->isChecked()) {
-		img = getGBTiles(comp->vid->gbc, tset);
+		img = getGBTiles(comp->vid, tset);
 	} else if (ui.rbTilemapView->isChecked()) {
-		img = getGBMap(comp->vid->gbc, tmap, tset);
+		img = getGBMap(comp->vid, tmap, tset);
 	} else {
-		img = getGBPal(comp->vid->gbc);
+		img = getGBPal(comp->vid);
 	}
 	ui.gbImage->setPixmap(QPixmap::fromImage(img));
 }
@@ -856,7 +856,7 @@ void DebugWin::fillGBoy() {
 
 extern xColor nesPal[64];
 
-void dbgNesConvertColors(nesPPU* ppu, unsigned char* buf, QImage& img, int trn) {
+void dbgNesConvertColors(Video* vid, unsigned char* buf, QImage& img, int trn) {
 	int x, y;
 	unsigned char col;
 	xColor xcol;
@@ -865,7 +865,7 @@ void dbgNesConvertColors(nesPPU* ppu, unsigned char* buf, QImage& img, int trn) 
 		for (x = 0; x < 256; x++) {
 			col = buf[adr];
 			if (!(col & 3)) col = 0;
-			col = ppu->mem[0x3f00 | (col & 0x3f)];
+			col = vid->ram[0x3f00 | (col & 0x3f)];
 			xcol = nesPal[col & 0x3f];
 			if (!trn || (col & 3)) {
 				img.setPixel(x, y, qRgba(xcol.r, xcol.g, xcol.b, 0xff));
@@ -877,42 +877,41 @@ void dbgNesConvertColors(nesPPU* ppu, unsigned char* buf, QImage& img, int trn) 
 	}
 }
 
-QImage dbgNesScreenImg(nesPPU* ppu, unsigned short adr, unsigned short tadr) {
+QImage dbgNesScreenImg(Video* vid, unsigned short adr, unsigned short tadr) {
 	QImage img(256, 240, QImage::Format_ARGB32);
 	img.fill(Qt::black);
 	unsigned char scrmap[256 * 240];
 	memset(scrmap, 0x00, 256 * 240);
 	if (adr != 0) {
 		for(int y = 0; y < 240; y++) {
-			ppuRenderBGLine(ppu, scrmap + (y << 8), adr, 0, tadr);
+			ppuRenderBGLine(vid, scrmap + (y << 8), adr, 0, tadr);
 			adr = ppuYinc(adr);
 		}
 	}
-	dbgNesConvertColors(ppu, scrmap, img, 0);
+	dbgNesConvertColors(vid, scrmap, img, 0);
 	return img;
 }
 
-QImage dbgNesSpriteImg(nesPPU* ppu, unsigned short tadr) {
+QImage dbgNesSpriteImg(Video* vid, unsigned short tadr) {
 	QImage img(256, 240, QImage::Format_ARGB32);
 	img.fill(Qt::transparent);
 	unsigned char scrmap[256 * 240];
 	memset(scrmap, 0x00, 256 * 240);
 	for (int y = 0; y < 240; y++) {
-		ppuRenderSpriteLine(ppu, y, scrmap + (y << 8), NULL, tadr, 64);
+		ppuRenderSpriteLine(vid, y, scrmap + (y << 8), NULL, tadr, 64);
 	}
-	dbgNesConvertColors(ppu, scrmap, img, 1);
+	dbgNesConvertColors(vid, scrmap, img, 1);
 	return img;
 }
 
 void DebugWin::drawNes() {
-	nesPPU* ppu = comp->vid->ppu;
 	unsigned short adr = 0;
 	unsigned short tadr = 0;
 	QImage img;
 	QPixmap pic;
 
-	ui.labVAdr->setText(gethexword(ppu->vadr & 0x7fff));
-	ui.labTAdr->setText(gethexword(ppu->tadr & 0x7fff));
+	ui.labVAdr->setText(gethexword(comp->vid->vadr & 0x7fff));
+	ui.labTAdr->setText(gethexword(comp->vid->tadr & 0x7fff));
 
 	switch(ui.nesScrType->itemData(ui.nesScrType->currentIndex()).toInt()) {
 		case NES_SCR_OFF: adr = 0; break;
@@ -926,17 +925,17 @@ void DebugWin::drawNes() {
 	QPainter pnt;
 	pic = QPixmap(256, 240);
 	if (adr != 0xffff) {
-		img = dbgNesScreenImg(ppu, adr, tadr);
+		img = dbgNesScreenImg(comp->vid, adr, tadr);
 		pnt.begin(&pic);
 		pnt.drawImage(0,0,img);
 		pnt.end();
 		ui.nesScreen->setPixmap(pic);
 	} else {
 		pnt.begin(&pic);
-		pnt.drawImage(0, 0, dbgNesScreenImg(ppu, 0x2000, tadr).scaled(128, 120));
-		pnt.drawImage(128, 0, dbgNesScreenImg(ppu, 0x2400, tadr).scaled(128, 120));
-		pnt.drawImage(0, 120, dbgNesScreenImg(ppu, 0x2800, tadr).scaled(128, 120));
-		pnt.drawImage(128, 120, dbgNesScreenImg(ppu, 0x2c00, tadr).scaled(128, 120));
+		pnt.drawImage(0, 0, dbgNesScreenImg(comp->vid, 0x2000, tadr).scaled(128, 120));
+		pnt.drawImage(128, 0, dbgNesScreenImg(comp->vid, 0x2400, tadr).scaled(128, 120));
+		pnt.drawImage(0, 120, dbgNesScreenImg(comp->vid, 0x2800, tadr).scaled(128, 120));
+		pnt.drawImage(128, 120, dbgNesScreenImg(comp->vid, 0x2c00, tadr).scaled(128, 120));
 		pnt.end();
 		ui.nesScreen->setPixmap(pic);
 	}

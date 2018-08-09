@@ -247,8 +247,8 @@ void nes_keyp(Computer*, keyEntry);
 void nes_keyr(Computer*, keyEntry);
 sndPair nes_vol(Computer*, sndVolume*);
 unsigned char nes_apu_ext_rd(unsigned short, void*);
-unsigned char nes_ppu_ext_rd(unsigned short, void*);
-unsigned char nes_apu_ext_wr(unsigned short, unsigned char, void*);
+//unsigned char nes_ppu_ext_rd(int, void*);
+//unsigned char nes_apu_ext_wr(int, unsigned char, void*);
 
 // c64
 void c64_maper(Computer*);
