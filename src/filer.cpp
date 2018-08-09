@@ -95,7 +95,7 @@ int getFileType(QString path) {
 }
 
 int testSlotOn(Computer* comp) {
-	int res = 0;
+	int res = 1;
 /*
 	switch (comp->hw->id) {
 		case HW_MSX:

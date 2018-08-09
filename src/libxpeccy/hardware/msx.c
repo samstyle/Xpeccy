@@ -178,11 +178,8 @@ void msxOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
 	hwOut(msxPortMap,comp, port, val, dos);
 }
 
-static int nsx;
-
 void msx_sync(Computer* comp, int ns) {
 	unsigned irq = (comp->vid->inth || comp->vid->intf) ? 1 : 0;
-	nsx += ns;
 	if (irq && !comp->irq) {		// 0->1 : TESTED 20ms | NOTE : sometimes iff1=0 ?
 		comp->cpu->intrq |= Z80_INT;
 		comp->intVector = 0xff;

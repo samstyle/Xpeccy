@@ -69,13 +69,6 @@ void vdpReset(Video*);
 void vdpWrite(Video*, int, unsigned char);
 unsigned char vdpRead(Video*, int);
 
-/*
-void vdpDraw(Video*);
-//void vdpLine(Video*);
-void vdpHBlk(Video*);
-void vdpVBlk(Video*);
-*/
-
 // drawers
 void vdpText1(Video*);
 void vdpMultcol(Video*);

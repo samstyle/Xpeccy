@@ -1014,15 +1014,19 @@ void MainWin::putLeds() {
 		comp->mouse->used = 0;
 	}
 	if (comp->tape->on && conf.led.tape) {
-		addLed(3, 70, ":/images/tape.png", 50);
+		if (comp->tape->rec) {
+			addLed(3, 70, ":/images/tapeRed.png", 50);
+		} else {
+			addLed(3, 70, ":/images/tapeYellow.png", 50);
+		}
 	}
 	if (conf.led.disk) {
 		if (comp->dif->fdc->flp->rd) {
 			comp->dif->fdc->flp->rd = 0;
-			addLed(3, 90, ":/images/floppy.png", 50);
+			addLed(3, 90, ":/images/diskGreen.png", 50);
 		} else if (comp->dif->fdc->flp->wr) {
 			comp->dif->fdc->flp->wr = 0;
-			addLed(3, 90, ":/images/floppyRed.png", 50);
+			addLed(3, 90, ":/images/diskRed.png", 50);
 		}
 	}
 	pnt.begin(&scrImg);

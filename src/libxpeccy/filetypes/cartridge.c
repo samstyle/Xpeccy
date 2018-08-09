@@ -29,10 +29,10 @@ int loadSlot(xCartridge* slot, const char* name) {
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
 	fseek(file,0,SEEK_END);
-	size_t siz = ftell(file);
+	long siz = ftell(file);
 	rewind(file);
 	int err = ERR_OK;
-	if (siz > (4 * 1024 * 1024)) {
+	if (siz > MEM_4M) {
 		err = ERR_RAW_LONG;
 		fclose(file);
 	} else {

@@ -511,57 +511,6 @@ void vidTSline(Video*);
 void vidDrawTSLText(Video*);
 void vidDrawEvoText(Video*);
 
-// v9938
-
-/*
-void vidDrawV9938(Video* vid) {
-	vdpDraw(&vid->v9938);
-}
-
-void vidLineV9938(Video* vid) {
-	vdpLine(&vid->v9938);
-}
-
-void vidFrameV9938(Video* vid) {
-	vdpVBlk(&vid->v9938);
-}
-*/
-
-// gameboy
-
-/*
-void vidGBDraw(Video* vid) {
-	vid->gbc->draw(vid->gbc);
-}
-
-void vidGBLine(Video* vid) {
-	if (vid->gbc->cbLine)
-		vid->gbc->cbLine(vid->gbc);
-}
-
-void vidGBFram(Video* vid) {
-	if (vid->gbc->cbFram)
-		vid->gbc->cbFram(vid->gbc);
-}
-
-// nes
-void vidNESDraw(Video* vid) {
-	ppuDraw(vid->ppu);
-}
-
-void vidNESLine(Video* vid) {
-	ppuLine(vid->ppu);
-}
-
-void vidNES_HB(Video* vid) {
-	ppuHBL(vid->ppu);
-}
-
-void vidNESFram(Video* vid) {
-	ppuFram(vid->ppu);
-}
-*/
-
 // c64 vic-II
 
 // text mode
@@ -744,7 +693,7 @@ void vidC64Fram(Video* vid) {
 // d015	bits	sprite enabled
 // d017 bits	sprite is double height
 // d01b	bits	sprite priority (0:above screen, 1:behind screen)
-// d01c	bist	sprite multicolor
+// d01c	bits	sprite multicolor
 // d01d bits	sprite is double width
 // d01e	bits	wr:spr-bgr collision enabled; rd:detected collisions
 // d01f bits	wr:spr-spr collision enabled; rd:detected collisions
@@ -881,11 +830,10 @@ static xVideoMode vidModeTab[] = {
 	{VID_PRF_MC, vidProfiScr, NULL, NULL, NULL},
 
 	{VID_GBC, gbcvDraw, gbcvLine, NULL, gbcvFram},
-//	{VID_V9938, vdpDraw, NULL, NULL, vdpVBlk},
 	{VID_NES, ppuDraw, ppuHBL, ppuLine, ppuFram},
 
 	{VDP_TEXT1, vdpText1, vdpHBlk, NULL, vdpFillSprites},
-	{VDP_TEXT2, vdpDummy, vdpHBlk, NULL, vdpVBlk},
+	{VDP_TEXT2, vdpDummy, vdpHBlk, NULL, NULL},
 	{VDP_MCOL, vdpMultcol, vdpHBlk, NULL, vdpFillSprites},
 	{VDP_GRA1, vdpGra1, vdpHBlk, NULL, vdpFillSprites},
 	{VDP_GRA2, vdpGra2, vdpHBlk, NULL, vdpFillSprites},

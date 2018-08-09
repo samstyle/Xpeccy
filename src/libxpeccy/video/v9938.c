@@ -134,7 +134,7 @@ void vdpDrawTile(Video* vid, int xpos, int ypos, int pat) {
 }
 
 void vdpFillSprites(Video* vid) {
-	vdpVBlk(vid);
+//	vdpVBlk(vid);
 	memset(vid->sprImg, 0x00, 0xd400);
 	if (vid->reg[8] & 2) return;
 	int i,sh;
@@ -162,7 +162,7 @@ void vdpFillSprites(Video* vid) {
 }
 
 void vdpFillSprites2(Video* vid) {
-	vdpVBlk(vid);
+//	vdpVBlk(vid);
 	memset(vid->sprImg, 0x00, 0x10000);
 	if (vid->reg[8] & 2) return;			// disable OBJ sprites
 	int i,sh;
@@ -908,6 +908,9 @@ void vdpHBlk(Video* vid) {
 			vid->inth = 64;
 		}
 	}
+	if (vid->ray.y == vid->vend.y) {
+		vdpVBlk(vid);
+	}
 }
 
 void vdpVBlk(Video* vid) {
@@ -915,17 +918,12 @@ void vdpVBlk(Video* vid) {
 	if (vid->reg[1] & VDP_IE0) {
 		vid->intf = 64;
 	}
-
 	vid->blink--;
 	if (vid->blink < 0) {
 		vid->blink = vid->bpage ? vid->blink0 : vid->blink1;
 		if (vid->blink)
 			vid->bpage ^= 1;
 	}
-/*
-	if (vdp->core->fram)
-		vdp->core->fram(vdp);
-*/
 }
 
 unsigned char vdpRead(Video* vid, int port) {

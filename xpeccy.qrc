@@ -69,5 +69,10 @@
         <file>images/gamepad.png</file>
         <file>images/edit.png</file>
         <file>images/nespad.png</file>
+        <file>images/diskGreen.png</file>
+        <file>images/diskRed.png</file>
+        <file>images/tapeRed.png</file>
+        <file>images/tapeYellow.png</file>
+        <file>images/mouseWhite.png</file>
     </qresource>
 </RCC>
