@@ -1161,15 +1161,15 @@ QString getPageName(MemPage& pg) {
 		case MEM_SLOT: res = "SLT:"; break;
 		default: res = "---:"; break;
 	}
-	res.append(gethexbyte(pg.num));
+	res.append(gethexbyte(pg.num >> 6));
 	return res;
 }
 
 void DebugWin::fillMem() {
-	ui.labPG0->setText(getPageName(comp->mem->map[0]));
-	ui.labPG1->setText(getPageName(comp->mem->map[1]));
-	ui.labPG2->setText(getPageName(comp->mem->map[2]));
-	ui.labPG3->setText(getPageName(comp->mem->map[3]));
+	ui.labPG0->setText(getPageName(comp->mem->map[0x00]));
+	ui.labPG1->setText(getPageName(comp->mem->map[0x40]));
+	ui.labPG2->setText(getPageName(comp->mem->map[0x80]));
+	ui.labPG3->setText(getPageName(comp->mem->map[0xc0]));
 }
 
 // labels

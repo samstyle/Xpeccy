@@ -49,7 +49,7 @@ QString getBankType(int type) {
 }
 
 QString getBankName(MemPage pg) {
-	return QString("%0:%1").arg(getBankType(pg.type)).arg(gethexbyte(pg.num));
+	return QString("%0:%1").arg(getBankType(pg.type)).arg(gethexbyte(pg.num >> 6));
 }
 
 void xWatcher::fillFields(Computer* comp) {
@@ -69,10 +69,10 @@ void xWatcher::fillFields(Computer* comp) {
 	ui.wchIY->setText(gethexword(comp->cpu->iy));
 	ui.wchIR->setText(gethexbyte(comp->cpu->i));
 
-	ui.wchBank0->setText(getBankName(comp->mem->map[0]));
-	ui.wchBank1->setText(getBankName(comp->mem->map[1]));
-	ui.wchBank2->setText(getBankName(comp->mem->map[2]));
-	ui.wchBank3->setText(getBankName(comp->mem->map[3]));
+	ui.wchBank0->setText(getBankName(comp->mem->map[0x00]));
+	ui.wchBank1->setText(getBankName(comp->mem->map[0x40]));
+	ui.wchBank2->setText(getBankName(comp->mem->map[0x80]));
+	ui.wchBank3->setText(getBankName(comp->mem->map[0xc0]));
 
 	model->update();
 }
