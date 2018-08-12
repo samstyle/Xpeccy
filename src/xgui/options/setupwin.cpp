@@ -350,12 +350,12 @@ void SetupWin::start(xProfile* p) {
 	if (ui.mszbox->currentIndex() < 0) ui.mszbox->setCurrentIndex(ui.mszbox->count() - 1);
 	ui.cbCpu->setCurrentIndex(ui.cbCpu->findData(comp->cpu->type));
 	ui.sbFreq->setValue(comp->cpuFrq);
+	ui.sbMult->setValue(comp->frqMul);
 	ui.scrpwait->setChecked(comp->evenM1);
 // video
 	ui.cbFullscreen->setChecked(conf.vid.fullScreen);
 	ui.cbKeepRatio->setChecked(conf.vid.keepRatio);
 	ui.sbScale->setValue(conf.vid.scale);
-//	ui.noflichk->setChecked(conf.vid.noFlick);
 	ui.sldNoflic->setValue(conf.vid.noflic); chaflc();
 	ui.grayscale->setChecked(conf.vid.grayScale);
 	ui.border4T->setChecked(comp->vid->brdstep & 0x06);
@@ -375,19 +375,14 @@ void SetupWin::start(xProfile* p) {
 	ui.geombox->setCurrentIndex(ui.geombox->findText(QString::fromLocal8Bit(conf.prof.cur->layName.c_str())));
 	ui.ulaPlus->setChecked(comp->vid->ula->enabled);
 // sound
-//	ui.gsgroup->setChecked(comp->gs->enable);
 	ui.tbGS->setChecked(comp->gs->enable);
 	ui.gsrbox->setChecked(comp->gs->reset);
-	// setRFIndex(ui.gstereobox, comp->gs->stereo);
 
 	ui.sdrvBox->setCurrentIndex(ui.sdrvBox->findData(comp->sdrv->type));
 
 	ui.tbSAA->setChecked(comp->saa->enabled);
-//	ui.saaEn->setChecked(comp->saa->enabled);
-//	ui.saaStereo->setChecked(!comp->saa->mono);
 
 	ui.senbox->setChecked(conf.snd.enabled);
-//	ui.mutbox->setChecked(conf.snd.mute);
 	ui.outbox->setCurrentIndex(ui.outbox->findText(QString::fromLocal8Bit(sndOutput->name)));
 	ui.ratbox->setCurrentIndex(ui.ratbox->findData(QVariant(conf.snd.rate)));
 
@@ -504,6 +499,7 @@ void SetupWin::apply() {
 	memSetSize(comp->mem, getRFIData(ui.mszbox), -1);
 	cpuSetType(comp->cpu, getRFIData(ui.cbCpu));
 	compSetBaseFrq(comp, ui.sbFreq->value());
+	compSetTurbo(comp, ui.sbMult->value());
 	comp->evenM1 = ui.scrpwait->isChecked() ? 1 : 0;
 	if (comp->hw != oldmac) compReset(comp,RES_DEFAULT);
 // video

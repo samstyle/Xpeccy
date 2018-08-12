@@ -331,7 +331,7 @@ void compUpdateTimings(Computer* comp) {
 		case HW_GBC:
 			comp->fps = 50;
 			comp->gbsnd->wav.period = perNoTurbo << 5;			// 128KHz period for wave generator = cpu.frq / 32
-			comp->gb.timer.div.per = (perNoTurbo / comp->frqMul) << 8;	// 16KHz timer divider tick. this timer depends on turbo speed
+			comp->gb.timer.div.per = (perNoTurbo / comp->frqMul) * 256;	// 16KHz timer divider tick. this timer depends on turbo speed
 			vidUpdateTimings(comp->vid, perNoTurbo << 1);
 			break;
 		case HW_C64:
@@ -393,7 +393,7 @@ void compSetBaseFrq(Computer* comp, double frq) {
 	compUpdateTimings(comp);
 }
 
-void compSetTurbo(Computer* comp, int mult) {
+void compSetTurbo(Computer* comp, double mult) {
 	comp->frqMul = mult;
 	comp->cpu->speed = (mult > 1) ? 1 : 0;
 	compUpdateTimings(comp);

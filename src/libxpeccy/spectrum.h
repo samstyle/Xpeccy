@@ -108,7 +108,7 @@ typedef struct {
 
 	double fps;
 	double cpuFrq;
-	int frqMul;
+	double frqMul;
 	unsigned char intVector;
 
 	char* msg;			// message ptr for displaying outside
@@ -285,7 +285,7 @@ void compKeyPress(Computer*, int, keyEntry*);
 void compKeyRelease(Computer*, int, keyEntry*);
 
 void compSetBaseFrq(Computer*,double);
-void compSetTurbo(Computer*,int);
+void compSetTurbo(Computer*,double);
 void compSetHardware(Computer*,const char*);
 void compUpdateTimings(Computer*);
 

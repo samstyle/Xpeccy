@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <fstream>
@@ -430,6 +431,12 @@ int prfLoad(std::string nm) {
 						if (tmp2 > 14e6) tmp2 = 14e6;
 						compSetBaseFrq(comp, tmp2 / 1e6);
 					}
+					if (pnam == "frq.mul") {
+						tmp2 = strtod(pval.c_str(), NULL);
+						if (tmp2 < 0.1) tmp2 = 0.1;
+						if (tmp2 > 8.0) tmp2 = 8.0;
+						compSetTurbo(comp, tmp2);
+					}
 					if (pnam == "memory") {
 						tmp2 = atoi(pval.c_str());
 						tmp2 <<= 10;			// KB to bytes
@@ -559,6 +566,7 @@ int prfSave(std::string nm) {
 	fprintf(file, "memory = %i\n", comp->mem->ramSize >> 10);		// bytes to KB
 	fprintf(file, "cpu.type = %s\n", getCoreName(comp->cpu->type));
 	fprintf(file, "cpu.frq = %i\n", int(comp->cpuFrq * 1e6));
+	fprintf(file, "frq.mul = %f\n", comp->frqMul);
 	fprintf(file, "scrp.wait = %s\n", YESNO(comp->evenM1));
 	fprintf(file, "contio = %s\n", YESNO(comp->contIO));
 	fprintf(file, "contmem = %s\n", YESNO(comp->contMem));
