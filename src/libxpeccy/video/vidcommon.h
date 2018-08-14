@@ -19,7 +19,6 @@ typedef struct {
 } xColor;
 
 typedef struct {
-	unsigned char* img;
 	unsigned char* ptr;
 	int x;
 	int y;

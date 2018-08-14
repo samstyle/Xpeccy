@@ -179,14 +179,13 @@ void msxOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
 }
 
 void msx_sync(Computer* comp, int ns) {
-	unsigned irq = (comp->vid->inth || comp->vid->intf) ? 1 : 0;
-	if (irq && !comp->irq) {		// 0->1 : TESTED 20ms | NOTE : sometimes iff1=0 ?
+	int irq = (comp->vid->inth || comp->vid->intf) ? 1 : 0;
+	if (irq && !(comp->cpu->intrq & Z80_INT)) {		// 0->1 : TESTED 20ms | NOTE : sometimes iff1=0 ?
 		comp->cpu->intrq |= Z80_INT;
 		comp->intVector = 0xff;
-	} else if (!irq && comp->irq) {		// 1->0 : clear
+	} else if (!irq && (comp->cpu->intrq & Z80_INT)) {		// 1->0 : clear
 		comp->cpu->intrq &= ~Z80_INT;
 	}
-	comp->irq = irq;
 }
 
 void msx_keyp(Computer* comp, keyEntry ent) {

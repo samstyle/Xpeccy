@@ -17,14 +17,10 @@ Video* vidCreate(vcbmrd cb, void* dptr) {
 	vidSetMode(vid, VID_UNKNOWN);
 	vLayout vlay = {{448,320},{74,48},{64,32},{256,192},{0,0},64};
 	vidSetLayout(vid, vlay);
-//	vid->frmsz = vid->full.x * vid->full.y;
 	vid->inten = 0x01;		// FRAME INT for all
 
 	vid->ula = ulaCreate();
-//	vid->gbc = gbcvCreate(&vid->ray, &vid->lay);
-//	vid->ppu = ppuCreate(&vid->ray);
 
-//	vidSetFps(vid, 50);
 	vidSetBorder(vid, 0.5);
 
 	vid->brdstep = 1;
@@ -37,19 +33,13 @@ Video* vidCreate(vcbmrd cb, void* dptr) {
 	vid->ray.y = 0;
 	vid->idx = 0;
 
-	vid->ray.img = vid->scrimg;
 	vid->ray.ptr = vid->scrimg;
-//	vid->v9938.lay = &vid->lay;
-//	vid->v9938.ray = &vid->ray;
-//	vid->gbc->ray = &vid->ray;
 
 	return vid;
 }
 
 void vidDestroy(Video* vid) {
 	ulaDestroy(vid->ula);
-//	gbcvDestroy(vid->gbc);
-//	ppuDestroy(vid->ppu);
 	free(vid);
 }
 
@@ -76,7 +66,7 @@ void vidReset(Video* vid) {
 	vid->ray.xb = vid->blank.x;
 	vid->ray.yb = vid->blank.y;
 	vid->idx = 0;
-	vid->ray.ptr = vid->ray.img;
+	vid->ray.ptr = vid->scrimg;
 	vid->nsDraw = 0;
 	vidSetMode(vid, VID_NORMAL);
 }
@@ -894,7 +884,7 @@ void vidSync(Video* vid, int ns) {
 			vid->ray.xb = 0;
 			vid->ray.yb++;
 			if (vid->ray.y >= vid->full.y) {		// new frame
-				vid->ray.ptr = vid->ray.img;
+				vid->ray.ptr = vid->scrimg;
 				vid->vblank = 0;
 				vid->vbstrb = 0;
 				vid->ray.y = 0;
