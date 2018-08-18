@@ -114,6 +114,7 @@ void memSetBank(Memory* mem, int page, int type, int bank, int siz, extmrd rd, e
 }
 
 // get page data
+/*
 void memGetData(Memory* mem, int type, int sz, int page, char* dst) {
 	if (type == MEM_RAM) {
 		memcpy(dst, mem->ramData + ((page * sz) & mem->ramMask), sz);
@@ -121,6 +122,7 @@ void memGetData(Memory* mem, int type, int sz, int page, char* dst) {
 		memcpy(dst, mem->romData + ((page * sz) & mem->romMask), sz);
 	}
 }
+*/
 
 // set page data
 void memPutData(Memory* mem, int type, int page, int sz, char* src) {

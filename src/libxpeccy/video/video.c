@@ -508,7 +508,13 @@ void vidC64TDraw(Video* vid) {
 	if (vid->regs[0x11] & 0x10)
 	yscr = vid->ray.y - vid->bord.y;
 	if ((yscr < 0) || (yscr >= vid->scrn.y) || !(vid->regs[0x11] & 0x10)) {
-		col = vid->regs[0x20];				// border color
+		if (vid->line[vid->ray.xb] != 0xff) {
+			col = vid->line[vid->ray.xb];
+		} else if (vid->linb[vid->ray.x] != 0xff) {
+			col = vid->linb[vid->ray.xb];
+		} else {
+			col = vid->regs[0x20];				// border color
+		}
 	} else {
 		xscr = vid->ray.x - vid->bord.x;
 		if ((xscr < 0) || (xscr >= vid->scrn.x)) {
@@ -525,12 +531,12 @@ void vidC64TDraw(Video* vid) {
 				ink = vid->colram[adr & 0x3ff];			// tile color
 				pap = vid->regs[0x21];				// background color
 			}
-			if (vid->line[xscr] != 0xff) {
-				col = vid->line[xscr];
+			if (vid->line[vid->ray.xb] != 0xff) {
+				col = vid->line[vid->ray.xb];
 			} else if (scrbyte & 0x80) {
 				col = ink;
-			} else if (vid->linb[xscr] != 0xff) {
-				col = vid->linb[xscr];
+			} else if (vid->linb[vid->ray.x] != 0xff) {
+				col = vid->linb[vid->ray.xb];
 			} else {
 				col = pap;
 			}
@@ -547,7 +553,13 @@ void vidC64TDraw(Video* vid) {
 void vidC64TMDraw(Video* vid) {
 	yscr = vid->ray.y - vid->bord.y;
 	if ((yscr < 0) || (yscr >= vid->scrn.y) || !(vid->regs[0x11] & 0x10)) {
-		col = vid->regs[0x20];				// border color
+		if (vid->line[vid->ray.xb] != 0xff) {
+			col = vid->line[vid->ray.xb];
+		} else if (vid->linb[vid->ray.xb] != 0xff) {
+			col = vid->linb[vid->ray.xb];
+		} else {
+			col = vid->regs[0x20];				// border color
+		}
 	} else {
 		xscr = vid->ray.x - vid->bord.x;
 		if ((xscr < 0) || (xscr >= vid->scrn.x)) {
@@ -569,8 +581,8 @@ void vidC64TMDraw(Video* vid) {
 			} else if (atrbyte & 8) {
 				switch (scrbyte & 0xc0) {
 					case 0x00:
-						if (vid->linb[xscr] != 0xff) {
-							col = vid->linb[xscr] & 0x0f;
+						if (vid->linb[vid->ray.xb] != 0xff) {
+							col = vid->linb[vid->ray.xb] & 0x0f;
 						} else {
 							col = vid->regs[0x21];
 						}
@@ -587,10 +599,12 @@ void vidC64TMDraw(Video* vid) {
 				}
 				if (xscr & 1) scrbyte <<= 2;
 			} else {			// not multicolor
-				if (scrbyte & 0x80) {
+				if (vid->line[vid->ray.xb] != 0xff) {
+					col = vid->line[vid->ray.xb];
+				} else if (scrbyte & 0x80) {
 					col = atrbyte;
-				} else if (vid->linb[xscr] != 0xff) {
-					col = vid->linb[xscr];
+				} else if (vid->linb[vid->ray.xb] != 0xff) {
+					col = vid->linb[vid->ray.xb];
 				} else {
 					col = pap;
 				}
@@ -700,7 +714,7 @@ void vidC64Line(Video* vid) {
 	// sprites
 	memset(vid->line, 0xff, 512);	// ff as transparent color
 	memset(vid->linb, 0xff, 512);
-	int yscr = vid->ray.y;// - vid->lay.bord.y;	// current screen line
+	int yscr = vid->ray.yb;// - vid->lay.bord.y;	// current screen line
 	unsigned char sprxh = vid->regs[0x10];	// bit x : sprite x X 8th bit
 	unsigned char spren = vid->regs[0x15];	// bit x : sprite x enabled
 	unsigned char sprmc = vid->regs[0x1c];	// bit x : sprite x multicolor

@@ -738,19 +738,6 @@ void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 	keyEntry kent = getKeyEntry(keyid);
 	if (comp->hw->keyr)
 		comp->hw->keyr(comp, kent);
-/*
-	gbRelease(comp, kent.name);
-	if (pckAct->isChecked()) {
-		keyReleaseXT(comp->keyb, kent.keyCode);
-		if (!kent.zxKey.key2)
-			keyRelease(comp->keyb, kent.zxKey, 0);
-		keyRelease(comp->keyb, kent.extKey, 1);
-		keyRelease(comp->keyb, kent.msxKey, 2);
-	} else {
-		keyRelease(comp->keyb, kent.zxKey, 0);
-		if (kent.msxKey.key1) keyRelease(comp->keyb,kent.msxKey,2);
-	}
-*/
 	if (keywin->isVisible()) keywin->update();
 }
 
@@ -917,19 +904,17 @@ void MainWin::screenShot() {
 	std::ofstream file;
 	QImage img(screen, width(), height(), QImage::Format_RGB888);
 	int x,y,dx,dy;
-	char pageBuf[0x4000];
-	memGetData(comp->mem, MEM_RAM, MEM_16K, comp->vid->curscr, pageBuf);
-	// memGetPageData(comp->mem,MEM_RAM,comp->vid->curscr,pageBuf);
+	char* sptr = (char*)(comp->mem->ramData + (comp->vid->curscr << 14));
 	switch (frm) {
 		case SCR_HOB:
 			file.open(fnam.c_str(),std::ios::binary);
 			file.write((char*)hobHead,17);
-			file.write(pageBuf,0x1b00);
+			file.write(sptr, 0x1b00);
 			file.close();
 			break;
 		case SCR_SCR:
 			file.open(fnam.c_str(),std::ios::binary);
-			file.write(pageBuf,0x1b00);
+			file.write(sptr, 0x1b00);
 			file.close();
 			break;
 		case SCR_BMP:
