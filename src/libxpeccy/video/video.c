@@ -7,7 +7,7 @@
 
 #include "video.h"
 
-int vidFlag = 0;
+// int vidFlag = 0;
 
 Video* vidCreate(vcbmrd cb, void* dptr) {
 	Video* vid = (Video*)malloc(sizeof(Video));

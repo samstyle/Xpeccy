@@ -37,10 +37,25 @@ typedef struct {
 
 #define MADR(_bnk,_adr)	((_bnk) << 14) + (_adr)
 
+#if 1
+
+#define vidPutOneColor(_ray, _pal, _idx, _c)\
+	if ((*(_ray)->ptr) != _pal[_idx]._c) {*((_ray)->ptr) = _pal[_idx]._c;}\
+	(_ray)->ptr++;
+
+#define vidSingleDot(_ray, _pal, _idx) \
+	vidPutOneColor(_ray, _pal, _idx, r);\
+	vidPutOneColor(_ray, _pal, _idx, g);\
+	vidPutOneColor(_ray, _pal, _idx, b);
+
+#else
+
 #define vidSingleDot(_ray, _pal, _idx)	\
 	*((_ray)->ptr++) = _pal[_idx].r;\
 	*((_ray)->ptr++) = _pal[_idx].g;\
 	*((_ray)->ptr++) = _pal[_idx].b;
+
+#endif
 
 #define vidPutDot(_ray, _pal, _idx) \
 	vidSingleDot(_ray, _pal, _idx);\

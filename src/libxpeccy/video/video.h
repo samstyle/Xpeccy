@@ -265,7 +265,7 @@ struct Video {
 
 };
 
-extern int vidFlag;
+// extern int vidFlag;
 
 Video* vidCreate(vcbmrd, void*);
 void vidDestroy(Video*);

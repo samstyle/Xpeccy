@@ -37,6 +37,8 @@ unsigned char sbufa[1024 * 512 * 3];		// Emulation render -> (this)buffer -> scr
 unsigned char prvScr[1024 * 512 * 3];		// copy of last 2:1 image (for noflic)
 extern int bytesPerLine;
 
+static QPainter pnt;
+
 // mainwin
 
 void MainWin::updateHead() {
@@ -522,7 +524,6 @@ void MainWin::rzxStateChanged(int state) {
 
 void MainWin::paintEvent(QPaintEvent*) {
 	if (block) return;
-	QPainter pnt;
 	pnt.begin(this);
 	pnt.drawImage(0,0,scrImg);
 	pnt.end();
