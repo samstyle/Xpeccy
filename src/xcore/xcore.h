@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <limits.h>
 #include <SDL_joystick.h>
 #include <QString>
 
@@ -222,6 +223,10 @@ struct xConfig {
 	std::vector<xLayout> layList;
 	std::vector<xBookmark> bookmarkList;
 	struct {
+		unsigned fast:1;
+		int pause;
+	} emu;
+	struct {
 		std::vector<xProfile*> list;
 		xProfile* cur;
 	} prof;
@@ -267,12 +272,12 @@ struct xConfig {
 		unsigned message:1;
 	} led;
 	struct {
-		char lastDir[FILENAME_MAX];
-		char confDir[FILENAME_MAX];
-		char confFile[FILENAME_MAX];
-		char romDir[FILENAME_MAX];
-		char font[FILENAME_MAX];
-		char boot[FILENAME_MAX];
+		char lastDir[PATH_MAX];
+		char confDir[PATH_MAX];
+		char confFile[PATH_MAX];
+		char romDir[PATH_MAX];
+		char font[PATH_MAX];
+		char boot[PATH_MAX];
 	} path;
 	struct {
 		unsigned labels:1;

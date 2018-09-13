@@ -51,7 +51,7 @@ typedef struct {
 } aymChan;
 
 typedef struct {
-	unsigned coarseEnv:1;	// 4-bit envelope volume
+	unsigned coarse:1;	// 4-bit DAC volume
 	int type;
 	int stereo;
 	double frq;		// in MHz

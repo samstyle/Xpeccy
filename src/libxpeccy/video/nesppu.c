@@ -69,6 +69,8 @@ void ppuReset(Video* vid) {
 	memset(vid->oam, 0xff, 0x100);
 	memset(vid->ram, 0x00, 0x4000);
 	memcpy(vid->ram + 0x3f00, nesInitIdx, 32);
+	for (int i = 0; i < 64; i++)
+		vid->pal[i] = nesPal[i];
 }
 
 // extern unsigned char col,ink,pap;

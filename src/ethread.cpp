@@ -1,6 +1,7 @@
 // emulation thread (non-GUI)
 
 #include "ethread.h"
+#include "xcore/xcore.h"
 #include "xgui/xgui.h"
 #include "xcore/sound.h"
 #include "xcore/vfilters.h"
@@ -21,7 +22,7 @@ void processPicture(unsigned char* src, int size) {
 
 xThread::xThread() {
 	sndNs = 0;
-	fast = 0;
+	conf.emu.fast = 0;
 	finish = 0;
 	emutex.lock();
 }
@@ -29,7 +30,7 @@ xThread::xThread() {
 void xThread::tapeCatch() {
 	int blk = comp->tape->block;
 	if (blk >= comp->tape->blkCount) return;
-	if (conf->tape.fast && comp->tape->blkData[blk].hasBytes) {
+	if (conf.tape.fast && comp->tape->blkData[blk].hasBytes) {
 		unsigned short de = comp->cpu->de;
 		unsigned short ix = comp->cpu->ix;
 		TapeBlockInfo inf = tapGetBlockInfo(comp->tape,blk);
@@ -49,7 +50,7 @@ void xThread::tapeCatch() {
 		}
 		comp->cpu->pc = 0x5df;
 	} else {
-		if (conf->tape.autostart)
+		if (conf.tape.autostart)
 			emit tapeSignal(TW_STATE,TWS_PLAY);
 	}
 }
@@ -58,29 +59,33 @@ void xThread::emuCycle() {
 //	int endBuf = 0;
 	comp->frmStrobe = 0;
 	sndNs = 0;
-	conf->snd.fill = 1;
+	conf.snd.fill = 1;
 	do {
 		// exec 1 opcode (or handle INT, NMI)
-		sndNs += compExec(comp);
+		if (conf.emu.pause) {
+			sndNs += 1000;
+		} else {
+			sndNs += compExec(comp);
 #if !VID_DIRECT_DRAW
-		if (comp->frmStrobe && !fast) {
-			comp->frmStrobe = 0;
-			processPicture(comp->vid->scrimg, comp->vid->vBytes);
-			emit picReady();
-		}
+		// tape trap
+			if (comp->frmStrobe && !fast) {
+				comp->frmStrobe = 0;
+				processPicture(comp->vid->scrimg, comp->vid->vBytes);
+				emit picReady();
+			}
 #endif
+			if ((comp->mem->map[0].type == MEM_ROM) && comp->rom && !comp->dos) {		// FIXME: shit
+				if (comp->cpu->pc == 0x56b) tapeCatch();
+				if ((comp->cpu->pc == 0x5e2) && conf.tape.autostart)
+					emit tapeSignal(TW_STATE,TWS_STOP);
+			}
+		}
 		// if need - request sound buffer update
 		if (sndNs > nsPerSample) {
-			sndSync(comp, 0, fast);
+			sndSync(comp);
 			sndNs -= nsPerSample;
 		}
-		// tape trap
-		if ((comp->mem->map[0].type == MEM_ROM) && comp->rom && !comp->dos) {		// FIXME: shit
-			if (comp->cpu->pc == 0x56b) tapeCatch();
-			if ((comp->cpu->pc == 0x5e2) && conf->tape.autostart)
-				emit tapeSignal(TW_STATE,TWS_STOP);
-		}
-	} while (!comp->brk && conf->snd.fill);
+	} while (!comp->brk && conf.snd.fill);
 	comp->nmiRequest = 0;
 }
 
@@ -103,7 +108,7 @@ void xThread::run() {
 				emit dbgRequest();
 			}
 		}
-		if (!fast) emutex.lock();		// wait until unlocked (MainWin::onTimer() or at exit)
+		if (!conf.emu.fast) emutex.lock();		// wait until unlocked (MainWin::onTimer() or at exit)
 	} while (!finish);
 	exit(0);
 }

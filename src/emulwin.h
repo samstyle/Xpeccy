@@ -61,7 +61,7 @@ class MainWin : public QWidget {
 		QImage scrImg;
 		QByteArray font;
 
-		int pauseFlags;
+//		int pauseFlags;
 		int scrCounter;
 		int scrInterval;
 		int lineBytes;

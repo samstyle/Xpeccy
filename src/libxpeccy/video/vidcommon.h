@@ -1,7 +1,7 @@
 #ifndef X_VIDCOMMON_H
 #define X_VIDCOMMON_H
 
-#define VID_DIRECT_DRAW	0
+#define VID_DIRECT_DRAW	1
 
 #ifdef WORDS_BIG_ENDIAN
 	#define ePair(p,h,l) union{unsigned short p; struct {unsigned char h; unsigned char l;};}

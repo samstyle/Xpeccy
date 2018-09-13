@@ -50,7 +50,6 @@ static unsigned char ayDACvol[32] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 				0x05,0x06,0x07,0x08,0x09,0x0b,0x0d,0x10,
 				0x13,0x16,0x1a,0x20,0x26,0x2d,0x35,0x3f};	// from manual
 #endif
-//unsigned char ayDACvol[16] = {0,0,0,0,0,0,0,1,1,3,4,5,7,9,12,15};		// from ayumi
 
 // AY/YM sound chip
 
@@ -59,11 +58,11 @@ void aymSetType(aymChip* ay, int tp) {
 	switch (tp) {
 		case SND_AY:
 			ay->frq = 1.774400;
-			ay->coarseEnv = 1;
+			ay->coarse = 1;
 			break;
 		case SND_YM:
 			ay->frq = 1.750000;
-			ay->coarseEnv = 0;
+			ay->coarse = 0;
 			break;
 		case SND_YM2203:		// 4.2 is base freq
 			ay->frq = 4.2;
@@ -235,9 +234,9 @@ void aymSync(aymChip* ay, int ns) {
 						break;
 				}
 				ay->chanE.vol = envforms[ay->eForm][ay->chanE.step];
-				if (ay->coarseEnv) {
-					ay->chanE.vol |= 1;
-				}
+//				if (ay->coarse) {
+//					ay->chanE.vol |= 1;
+//				}
 			}
 		}
 	}
@@ -252,6 +251,8 @@ int ayGetChanVol(aymChip* ay, aymChan* ch) {
 		vol = ch->een ? ay->chanE.vol : ch->vol;
 	else
 		vol = 0;
+	if (ay->coarse)
+		vol |= 1;
 	return ayDac ? ayDACvol[vol] : vol;
 }
 

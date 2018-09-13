@@ -40,24 +40,20 @@ OutSys* findOutSys(const char*);
 #include "hardware.h"
 
 // return 1 when buffer is full
-int sndSync(Computer* comp, int nosync, int fast) {
-	if (!nosync) {
-
+int sndSync(Computer* comp) {
+	if (!(conf.emu.fast || conf.emu.pause)) {
 		tapSync(comp->tape,comp->tapCount);
 		comp->tapCount = 0;
 		tsSync(comp->ts,nsPerSample);
 		gsFlush(comp->gs);
 		saaFlush(comp->saa);
+		sndLev = comp->hw->vol(comp, &conf.snd.vol);
 
-		if (!fast) {
-			sndLev = comp->hw->vol(comp, &conf.snd.vol);
+		sndLev.left = sndLev.left * conf.snd.vol.master / 100;
+		sndLev.right = sndLev.right * conf.snd.vol.master / 100;
 
-			sndLev.left = sndLev.left * conf.snd.vol.master / 100;
-			sndLev.right = sndLev.right * conf.snd.vol.master / 100;
-
-			if (sndLev.left > 127) sndLev.left = 127;
-			if (sndLev.right > 127) sndLev.right = 127;
-		}
+		if (sndLev.left > 127) sndLev.left = 127;
+		if (sndLev.right > 127) sndLev.right = 127;
 	}
 
 	bufA.data[bufA.pos++] = sndLev.left & 0xff;
@@ -146,18 +142,8 @@ std::string sndGetName() {
 
 void fillBuffer(int len) {
 	int pos = 0;
-	unsigned char lev;
 	while (pos < len) {
-		lev = bufA.data[playPos++];
-#if 0
-		bufB.data[pos++] = 0x60 + lev;
-#else
-		if (playPos & 1) {
-			bufB.data[pos++] = 0x80 - lev;
-		} else {
-			bufB.data[pos++] = 0x80 + lev;
-		}
-#endif
+		bufB.data[pos++] = 0x80 + bufA.data[playPos++];
 		playPos &= 0xfff;
 	}
 }

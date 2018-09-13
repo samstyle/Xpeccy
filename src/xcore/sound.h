@@ -49,7 +49,7 @@ void setOutput(const char*);
 int sndOpen();
 void sndPlay();
 void sndClose();
-int sndSync(Computer*, int, int);
+int sndSync(Computer*);
 
 void sndDbg();
 

@@ -53,7 +53,7 @@ void MainWin::updateHead() {
 		title.append(" | ").append(QString::fromLocal8Bit(conf.prof.cur->name.c_str()));
 		title.append(" | ").append(QString::fromLocal8Bit(conf.prof.cur->layName.c_str()));
 	}
-	if (ethread.fast) {
+	if (conf.emu.fast) {
 		title.append(" | fast");
 	}
 	setWindowTitle(title);
@@ -120,22 +120,23 @@ bool MainWin::saveChanged() {
 }
 
 void MainWin::pause(bool p, int msk) {
-	ethread.fast = 0;
+	conf.emu.fast = 0;
 	if (p) {
-		pauseFlags |= msk;
+		conf.emu.pause |= msk;
 	} else {
-		pauseFlags &= ~msk;
+		conf.emu.pause &= ~msk;
 	}
-	if (!grabMice || ((pauseFlags != 0) && grabMice)) {
+	if (!grabMice || (conf.emu.pause && grabMice)) {
 		releaseMouse();
 	}
-	if (pauseFlags == 0) {
+	if (!conf.emu.pause) {
 		setWindowIcon(icon);
-		if (grabMice) grabMouse(QCursor(Qt::BlankCursor));
-		ethread.block = 0;
+		if (grabMice)
+			grabMouse(QCursor(Qt::BlankCursor));
+//		ethread.block = 0;
 	} else {
 		setWindowIcon(QIcon(":/images/pause.png"));
-		ethread.block = 1;
+//		ethread.block = 1;
 	}
 	updateHead();
 }
@@ -150,7 +151,7 @@ MainWin::MainWin() {
 	setAcceptDrops(true);
 	setAutoFillBackground(false);
 	setUpdatesEnabled(false);
-	pauseFlags = 0;
+	conf.emu.pause = 0;
 	scrCounter = 0;
 	scrInterval = 0;
 	grabMice = 0;
@@ -211,7 +212,6 @@ MainWin::MainWin() {
 	timer.setInterval(20);
 	connect(&timer,SIGNAL(timeout()),this,SLOT(onTimer()));
 
-	ethread.conf = &conf;
 	connect(&ethread,SIGNAL(dbgRequest()),SLOT(doDebug()));
 	connect(&ethread,SIGNAL(tapeSignal(int,int)),this,SLOT(tapStateChanged(int,int)));
 #if !VID_DIRECT_DRAW
@@ -380,7 +380,7 @@ void MainWin::onTimer() {
 	SDL_JoystickGetButton(joy, 0);
 	SDL_JoystickGetHat(joy, 0);
 */
-	if (conf.joy.joy && !pauseFlags) {
+	if (conf.joy.joy && !conf.emu.pause) {
 		SDL_Event ev;
 		SDL_JoystickUpdate();
 		while(SDL_PollEvent(&ev)) {
@@ -704,11 +704,11 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 	} else {
 		switch(ev->key()) {
 			case Qt::Key_Pause:
-				pauseFlags ^= PR_PAUSE;
+				conf.emu.pause ^= PR_PAUSE;
 				pause(true,0);
 				break;
 			case Qt::Key_Escape:
-				ethread.fast = 0;
+				conf.emu.fast = 0;
 				pause(true, PR_DEBUG);
 				setUpdatesEnabled(true);
 				dbg->start(comp);
@@ -718,8 +718,8 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				userMenu->setFocus();
 				break;
 			case Qt::Key_Insert:
-				if (pauseFlags) break;
-				ethread.fast ^= 1;
+				if (conf.emu.pause) break;
+				conf.emu.fast ^= 1;
 				updateHead();
 				break;
 			case Qt::Key_F1:
@@ -837,7 +837,7 @@ void MainWin::mousePressEvent(QMouseEvent *ev){
 }
 
 void MainWin::mouseReleaseEvent(QMouseEvent *ev) {
-	if (pauseFlags != 0) return;
+	if (conf.emu.pause) return;
 	if (comp->debug) {
 		ev->ignore();
 		return;
@@ -876,7 +876,7 @@ void MainWin::wheelEvent(QWheelEvent* ev) {
 }
 
 void MainWin::mouseMoveEvent(QMouseEvent *ev) {
-	if (!grabMice || (pauseFlags !=0 )) return;
+	if (!grabMice || conf.emu.pause) return;
 	comp->mouse->xpos = ev->globalX() & 0xff;
 	comp->mouse->ypos = 256 - (ev->globalY() & 0xff);
 }
@@ -1276,7 +1276,7 @@ void MainWin::optApply() {
 }
 
 void MainWin::doDebug() {
-	ethread.fast = 0;
+	conf.emu.fast = 0;
 	pause(true, PR_DEBUG);
 	dbg->start(comp);
 }

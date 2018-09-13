@@ -30,7 +30,7 @@ static xColor xcol;
 void vid_dot(Video* vid, unsigned char col) {
 	xcol = vid->pal[col];
 	if (greyScale) {
-		pcol = (xcol.b * 12 + xcol.r * 3 + xcol.g * 58) / 100;
+		pcol = (xcol.b * 30 + xcol.r * 76 + xcol.g * 148) >> 8;
 		xcol.r = pcol;
 		xcol.g = pcol;
 		xcol.b = pcol;
@@ -87,10 +87,9 @@ void vid_line_fill(Video* vid) {
 	int ytmp = ypos;
 	unsigned char* ptr = vid->ray.lptr;
 	ytmp += ystep;
-	ytmp -= 0x100;
-	while (ytmp > 0) {
-		ypos -= 0x100;
-		memcpy(ptr, ptr - bytesPerLine, bytesPerLine);
+	while (ytmp > 0x100) {
+		ytmp -= 0x100;
+		memcpy(ptr + bytesPerLine, ptr, bytesPerLine);
 		ptr += bytesPerLine;
 	}
 }
@@ -220,26 +219,36 @@ unsigned char atrbyte = 0;
 unsigned char nxtbyte = 0;
 
 void vidDarkTail(Video* vid) {
+	if (vid->tail) return;				// no filling while current fill is active (till end of frame)
+#if VID_DIRECT_DRAW
+	unsigned char* ptr = vid->ray.ptr;		// fill current line till EOL
+	while (ptr - vid->ray.lptr < bytesPerLine) {
+		*ptr = ((*ptr - 0x80) >> 2) + 0x80;
+		ptr++;
+	}
+	vid_line_fill(vid);				// copy filled line due zoom value
+	int ytmp = ypos + ystep;
+	ptr = vid->ray.lptr;				// move ptr to start of next real line
+	while(ytmp > 0x100) {
+		ytmp -= 0x100;
+		ptr += bytesPerLine;
+	}						// fill all till end
+	while (ptr - vid->scrimg < sizeof(vid->scrimg)) {
+		*ptr = ((*ptr - 0x80) >> 2) + 0x80;
+		ptr++;
+	}
+#else
 	xscr = vid->ray.x;
 	yscr = vid->ray.y;
 	unsigned char* ptr = vid->ray.ptr;
 	do {
 		if ((yscr >= vid->lcut.y) && (yscr < vid->rcut.y) && (xscr >= vid->lcut.x) && (xscr < vid->rcut.x)) {
-#if 0
-			*(ptr++) >>= 1;
-			*(ptr++) >>= 1;
-			*(ptr++) >>= 1;
-			*(ptr++) >>= 1;
-			*(ptr++) >>= 1;
-			*(ptr++) >>= 1;
-#else
 			*ptr = ((*ptr - 0x80) >> 1) + 128; ptr++;
 			*ptr = ((*ptr - 0x80) >> 1) + 128; ptr++;
 			*ptr = ((*ptr - 0x80) >> 1) + 128; ptr++;
 			*ptr = ((*ptr - 0x80) >> 1) + 128; ptr++;
 			*ptr = ((*ptr - 0x80) >> 1) + 128; ptr++;
 			*ptr = ((*ptr - 0x80) >> 1) + 128; ptr++;
-#endif
 		}
 		if (++xscr >= vid->full.x) {
 			xscr = 0;
@@ -247,6 +256,7 @@ void vidDarkTail(Video* vid) {
 				ptr = NULL;
 		}
 	} while (ptr);
+#endif
 	vid->tail = 1;
 }
 
@@ -974,6 +984,9 @@ void vidSync(Video* vid, int ns) {
 			&& vid->cbDot) {
 				vid->cbDot(vid);		// put dot callback
 		}
+		// if debug, fill all line
+		if (vid->debug)
+			vid_line_fill(vid);
 		// move ray to next dot, update counters
 		vid->ray.x++;
 		vid->ray.xb++;
@@ -1003,7 +1016,9 @@ void vidSync(Video* vid, int ns) {
 				vid->vbstrb = 0;
 				vid->ray.y = 0;
 				vid->tsconf.scrLine = 0;
-				if (vid->debug) vidDarkTail(vid);
+				vid->tail = 0;
+				if (vid->debug)
+					vidDarkTail(vid);
 			}
 			if (vid->ray.y == vid->vend.y) {		// vblank start
 				vid->vblank = 1;
@@ -1013,7 +1028,6 @@ void vidSync(Video* vid, int ns) {
 				vid->flash = (vid->fcnt & 0x20) ? 1 : 0;
 				vid->idx = 0;
 				vid->newFrame = 1;
-				vid->tail = 0;
 				if (vid->cbFrame) vid->cbFrame(vid);
 			}
 			if (vid->ray.y == vid->send.y) {		// screen end V
