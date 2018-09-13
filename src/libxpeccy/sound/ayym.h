@@ -1,5 +1,5 @@
-#ifndef _XPAYYM
-#define _XPAYYM
+#ifndef X_AYYM_H
+#define X_AYYM_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -10,6 +10,8 @@ extern "C" {
 // TODO: move to own ticks as in gbsound
 // 1T = 1e9 / frq ns
 // sync: decrease current tick ns counter, change channels on tick borders
+
+extern int ayDac;
 
 // ay_type
 enum {

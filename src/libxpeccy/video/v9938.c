@@ -763,14 +763,6 @@ void vdpExec(Video* vid) {
 			break;
 		default:
 			printf("vdp9938 command %.2X, arg %.2X\n",vid->com, vid->arg);
-#ifdef ISDEBUG
-			printf("src : %i : %i\n", vdp->src.x, vdp->src.y);
-			printf("dst : %i : %i\n", vdp->dst.x, vdp->dst.y);
-			printf("siz : %i : %i\n", vdp->size.x, vdp->size.y);
-			printf("r2C : %.2X\n", vdp->reg[0x2c]);
-			printf("r2D : %.2X\n", vdp->reg[0x2d]);
-			assert(0);
-#endif
 			break;
 	}
 }

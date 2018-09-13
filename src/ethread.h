@@ -1,5 +1,5 @@
-#ifndef _ETHREAD_H
-#define _ETHREAD_H
+#ifndef X_ETHREAD_H
+#define X_ETHREAD_H
 
 #include <QThread>
 #include <QMutex>
@@ -14,7 +14,6 @@ class xThread : public QThread {
 		unsigned silent:1;	// don't produce sound
 		unsigned block:1;
 		unsigned finish:1;
-		unsigned waitpic:1;	// display thread waits for new picture (basicly: picReady signal enabled)
 		xConfig* conf;
 		Computer* comp;
 		int sndNs;

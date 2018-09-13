@@ -7,7 +7,108 @@
 
 #include "video.h"
 
-// int vidFlag = 0;
+int bytesPerLine = 100;
+int greyScale = 0;
+int noflic = 0;
+
+#if VID_DIRECT_DRAW
+
+static int xpos = 0;
+static int ypos = 0;
+int xstep = 0x100;
+int ystep = 0x100;
+int lefSkip = 0;
+int rigSkip = 0;
+int topSkip = 0;
+int botSkip = 0;
+
+static unsigned char pscr[2560 * 1440 * 3];
+static unsigned char* pptr = pscr;
+static unsigned char pcol;
+static xColor xcol;
+
+void vid_dot(Video* vid, unsigned char col) {
+	xcol = vid->pal[col];
+	if (greyScale) {
+		pcol = (xcol.b * 12 + xcol.r * 3 + xcol.g * 58) / 100;
+		xcol.r = pcol;
+		xcol.g = pcol;
+		xcol.b = pcol;
+	}
+	pcol = xcol.r;
+	*(vid->ray.ptr++) = (pcol * (100 - noflic) + *pptr * noflic) / 100;
+	*(pptr++) = pcol;
+	pcol = xcol.g;
+	*(vid->ray.ptr++) = (pcol * (100 - noflic) + *pptr * noflic) / 100;
+	*(pptr++) = pcol;
+	pcol = xcol.b;
+	*(vid->ray.ptr++) = (pcol * (100 - noflic) + *pptr * noflic) / 100;
+	*(pptr++) = pcol;
+
+}
+
+void vid_dot_full(Video* vid, unsigned char col) {
+	xpos += xstep;
+	while (xpos > 0xff) {
+		xpos -= 0x100;
+		vid_dot(vid, col);
+	}
+}
+
+void vid_dot_half(Video* vid, unsigned char col) {
+	xpos += xstep / 2;
+	while (xpos > 0xff) {
+		xpos -= 0x100;
+		vid_dot(vid, col);
+	}
+}
+
+void vid_line(Video* vid) {
+	vid_dot_full(vid, 0);
+	if (rigSkip)
+		memset(vid->ray.ptr, 0x00, rigSkip);
+	vid->ray.lptr += bytesPerLine;
+
+	ypos += ystep;
+	ypos -= 0x100;		// 1 line is already drawn
+	xpos = 0;
+	while (ypos > 0) {
+		ypos -= 0x100;
+		memcpy(vid->ray.lptr, vid->ray.lptr - bytesPerLine, bytesPerLine);
+		vid->ray.lptr += bytesPerLine;
+	}
+
+	if (lefSkip)
+		memset(vid->ray.lptr, 0x00, lefSkip);
+	vid->ray.ptr = vid->ray.lptr + lefSkip;
+}
+
+void vid_line_fill(Video* vid) {
+	int ytmp = ypos;
+	unsigned char* ptr = vid->ray.lptr;
+	ytmp += ystep;
+	ytmp -= 0x100;
+	while (ytmp > 0) {
+		ypos -= 0x100;
+		memcpy(ptr, ptr - bytesPerLine, bytesPerLine);
+		ptr += bytesPerLine;
+	}
+}
+
+void vid_frame(Video* vid) {
+	if (botSkip)
+		memset(vid->ray.lptr, 0x00, botSkip * bytesPerLine);
+	ypos = 0;
+	if (topSkip)
+		memset(vid->scrimg, 0x00, topSkip * bytesPerLine);
+	vid->ray.lptr = vid->scrimg + topSkip * bytesPerLine;
+	if (lefSkip)
+		memset(vid->ray.lptr, 0x00, lefSkip);
+	vid->ray.ptr = vid->ray.lptr + lefSkip;
+	pptr = pscr;
+}
+
+#endif
 
 Video* vidCreate(vcbmrd cb, void* dptr) {
 	Video* vid = (Video*)malloc(sizeof(Video));
@@ -34,6 +135,7 @@ Video* vidCreate(vcbmrd cb, void* dptr) {
 	vid->idx = 0;
 
 	vid->ray.ptr = vid->scrimg;
+	vid->ray.lptr = vid->scrimg;
 
 	return vid;
 }
@@ -61,12 +163,6 @@ void vidReset(Video* vid) {
 	}
 	vid->ula->active = 0;
 	vid->curscr = 5;
-	vid->ray.x = 0;
-	vid->ray.y = 0;
-	vid->ray.xb = vid->blank.x;
-	vid->ray.yb = vid->blank.y;
-	vid->idx = 0;
-	vid->ray.ptr = vid->scrimg;
 	vid->nsDraw = 0;
 	vidSetMode(vid, VID_NORMAL);
 }
@@ -91,10 +187,6 @@ void vidUpdateLayout(Video* vid) {
 	vid->send.y = vid->bord.y + vid->scrn.y;
 	vid->vBytes = vid->vsze.x * vid->vsze.y * 6;	// real size of image buffer (3 bytes/dot x2:x1)
 	vidUpdateTimings(vid, vid->nsPerDot);
-#ifdef ISDEBUG
-	printf("%i : ",vid->lay.bord.x);
-	printf("%i - %i, %i - %i\n",vid->lcut.x, vid->rcut.x, vid->lcut.y, vid->rcut.y);
-#endif
 }
 
 void vidSetLayout(Video* vid, vLayout lay) {
@@ -892,13 +984,21 @@ void vidSync(Video* vid, int ns) {
 			if (vid->cbLine) vid->cbLine(vid);
 		}
 		if (vid->ray.x == vid->vend.x) {			// hblank start
+#if VID_DIRECT_DRAW
+			if ((vid->ray.y >= vid->lcut.y) && (vid->ray.y < vid->rcut.y))
+				vid_line(vid);
+#endif
 			vid->hblank = 1;
 			vid->hbstrb = 1;
 			vid->ray.y++;
 			vid->ray.xb = 0;
 			vid->ray.yb++;
 			if (vid->ray.y >= vid->full.y) {		// new frame
+#if VID_DIRECT_DRAW
+				vid_frame(vid);
+#else
 				vid->ray.ptr = vid->scrimg;
+#endif
 				vid->vblank = 0;
 				vid->vbstrb = 0;
 				vid->ray.y = 0;

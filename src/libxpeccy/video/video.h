@@ -62,6 +62,24 @@ enum {
 
 typedef struct Video Video;
 
+extern int bytesPerLine;
+extern int greyScale;
+extern int noflic;
+
+#if VID_DIRECT_DRAW
+
+extern int xstep;
+extern int ystep;
+extern int lefSkip;
+extern int rigSkip;
+extern int topSkip;
+extern int botSkip;
+
+void vid_dot_full(Video*, unsigned char);
+void vid_dot_half(Video*, unsigned char);
+
+#endif
+
 typedef unsigned char(*vcbmrd)(int, void*);
 typedef void(*vcbmwr)(int, unsigned char, void*);
 typedef void(*cbvid)(Video*);
@@ -256,10 +274,10 @@ struct Video {
 	unsigned char cbank;			// char data offset (reg#18 b4..7)
 	unsigned char colram[0x1000];		// vicII color ram
 
-	unsigned char ram[128 * 1024];			// 128K of video memory
-	unsigned char oam[0x100];			// nes oam memory
+	unsigned char ram[MEM_128K];			// 128K of video memory
+	unsigned char oam[MEM_256];			// nes oam memory
 	unsigned char reg[256];				// max 256 registers
-	unsigned char scrimg[2 * 512 * 512 * 3];	// 512x512 rgb (dX x2)
+	unsigned char scrimg[2560 * 1440 * 3];
 
 	ulaPlus* ula;
 

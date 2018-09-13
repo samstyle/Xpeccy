@@ -127,7 +127,7 @@ class MainWin : public QWidget {
 		//void saveGSRAM();
 		void saveNESPPU();
 		void debugAction();
-	protected:
+	private:
 		void closeEvent(QCloseEvent*);
 		void dragEnterEvent(QDragEnterEvent*);
 		void dropEvent(QDropEvent*);
@@ -138,6 +138,7 @@ class MainWin : public QWidget {
 		void mouseReleaseEvent(QMouseEvent*);
 		void mouseMoveEvent(QMouseEvent*);
 		void wheelEvent(QWheelEvent*);
+		void focusOutEvent(QFocusEvent*);
 };
 
 #endif

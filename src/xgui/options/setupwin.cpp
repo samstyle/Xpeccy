@@ -356,8 +356,8 @@ void SetupWin::start(xProfile* p) {
 	ui.cbFullscreen->setChecked(conf.vid.fullScreen);
 	ui.cbKeepRatio->setChecked(conf.vid.keepRatio);
 	ui.sbScale->setValue(conf.vid.scale);
-	ui.sldNoflic->setValue(conf.vid.noflic); chaflc();
-	ui.grayscale->setChecked(conf.vid.grayScale);
+	ui.sldNoflic->setValue(noflic); chaflc();
+	ui.grayscale->setChecked(greyScale);
 	ui.border4T->setChecked(comp->vid->brdstep & 0x06);
 	ui.contMem->setChecked(comp->contMem);
 	ui.contIO->setChecked(comp->contIO);
@@ -377,6 +377,7 @@ void SetupWin::start(xProfile* p) {
 // sound
 	ui.tbGS->setChecked(comp->gs->enable);
 	ui.gsrbox->setChecked(comp->gs->reset);
+	ui.cbdac->setChecked(ayDac);
 
 	ui.sdrvBox->setCurrentIndex(ui.sdrvBox->findData(comp->sdrv->type));
 
@@ -507,8 +508,8 @@ void SetupWin::apply() {
 	conf.vid.keepRatio = ui.cbKeepRatio->isChecked() ? 1 : 0;
 	conf.vid.scale = ui.sbScale->value();
 //	conf.vid.noFlick = ui.noflichk->isChecked() ? 1 : 0;
-	conf.vid.noflic = ui.sldNoflic->value();
-	conf.vid.grayScale = ui.grayscale->isChecked() ? 1 : 0;
+	noflic = ui.sldNoflic->value();
+	greyScale = ui.grayscale->isChecked() ? 1 : 0;
 	conf.scrShot.dir = std::string(ui.pathle->text().toLocal8Bit().data());
 	conf.scrShot.format = getRFText(ui.ssfbox);
 	conf.scrShot.count = ui.scntbox->value();
@@ -524,7 +525,7 @@ void SetupWin::apply() {
 // sound
 	std::string nname = getRFText(ui.outbox);
 	conf.snd.enabled = ui.senbox->isChecked() ? 1 : 0;
-//	conf.snd.mute = ui.mutbox->isChecked() ? 1 : 0;
+	ayDac = ui.cbdac->isChecked() ? 1 : 0;
 	conf.snd.rate = getRFIData(ui.ratbox);
 
 	conf.snd.vol.master = ui.sbMasterVol->value();

@@ -226,11 +226,11 @@ struct xConfig {
 		xProfile* cur;
 	} prof;
 	struct {
-		unsigned grayScale:1;
+//		unsigned grayScale:1;
 		unsigned fullScreen:1;	// use fullscreen
 		unsigned keepRatio:1;	// keep ratio in fullscreen (add black borders)
 		int scale;		// x1..x4
-		int noflic;		// 0 (noflic) .. 50 (full flick)
+//		int noflic;		// 0 (noflic) .. 50 (full flick)
 		int fps;
 	} vid;
 	struct {

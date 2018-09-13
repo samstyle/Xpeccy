@@ -31,13 +31,16 @@
 
 // main
 
+#if !VID_DIRECT_DRAW
 unsigned char screen[4096 * 2048 * 3];		// scaled image (up to fullscreen)
 unsigned char scrn[1024 * 512 * 3];		// 2:1 image
 unsigned char sbufa[1024 * 512 * 3];		// Emulation render -> (this)buffer -> scrn for postprocessing
 unsigned char prvScr[1024 * 512 * 3];		// copy of last 2:1 image (for noflic)
+#endif
 extern int bytesPerLine;
 
 static QPainter pnt;
+static QImage alphabet;
 
 // mainwin
 
@@ -58,8 +61,8 @@ void MainWin::updateHead() {
 
 void MainWin::updateWindow() {
 	block = 1;
-	vidSetBorder(comp->vid, conf.brdsize);
-	sndCalibrate(comp);
+	vidSetBorder(comp->vid, conf.brdsize);		// to call vidUpdateLayout???
+	// sndCalibrate(comp);				// why?
 	ethread.sndNs = 0;
 	int szw = comp->vid->vsze.x * conf.vid.scale;
 	int szh = comp->vid->vsze.y * conf.vid.scale;
@@ -68,26 +71,24 @@ void MainWin::updateWindow() {
 		szw = wsz.width();
 		szh = wsz.height();
 		setWindowState(windowState() | Qt::WindowFullScreen);
-//		grabMice = 1;
-//		grabMouse();
 	} else {
 		setWindowState(windowState() & ~Qt::WindowFullScreen);
-//		grabMice = 0;
-//		releaseMouse();
 	}
-//	if (grabMice || conf.vid.fullScreen) {
-//		setCursor(Qt::BlankCursor);
-//	} else {
-//		unsetCursor();
-//	}
 	setFixedSize(szw, szh);
 	lineBytes = szw * 3;
 	frameBytes = szh * lineBytes;
+#if VID_DIRECT_DRAW
+	scrImg = QImage(comp->vid->scrimg, szw, szh, QImage::Format_RGB888);
+#else
 	scrImg = QImage(screen, szw, szh, QImage::Format_RGB888);
+#endif
 	bytesPerLine = scrImg.bytesPerLine();
+#if VID_DIRECT_DRAW
+	vid_set_zoom(conf.vid.scale);
+#endif
 	updateHead();
 	block = 0;
-	if (dbg->isVisible()) dbg->fillAll();		// hmmm... why?
+	// if (dbg->isVisible()) dbg->fillAll();		// hmmm... why?
 }
 
 bool MainWin::saveChanged() {
@@ -161,6 +162,7 @@ MainWin::MainWin() {
 	file.close();
 	msgTimer = 0;
 	msg.clear();
+	alphabet.load(":/font.png");
 
 	initKeyMap();
 	conf.scrShot.format = "png";
@@ -212,7 +214,9 @@ MainWin::MainWin() {
 	ethread.conf = &conf;
 	connect(&ethread,SIGNAL(dbgRequest()),SLOT(doDebug()));
 	connect(&ethread,SIGNAL(tapeSignal(int,int)),this,SLOT(tapStateChanged(int,int)));
+#if !VID_DIRECT_DRAW
 	connect(&ethread,SIGNAL(picReady()),this,SLOT(convImage()));
+#endif
 	ethread.start();
 
 	scrImg = QImage(100,100,QImage::Format_RGB888);
@@ -235,6 +239,7 @@ void processPicture(unsigned char*, int);
 
 void MainWin::convImage() {
 
+#if !VID_DIRECT_DRAW
 	if (!pauseFlags || comp->debug) {
 		if (ethread.fast || comp->debug) {
 			memcpy(scrn, comp->vid->scrimg, comp->vid->vBytes);
@@ -242,8 +247,7 @@ void MainWin::convImage() {
 			memcpy(scrn, sbufa, comp->vid->vBytes);
 			// processPicture(comp->vid->scrimg, comp->vid->vBytes);
 		}
-		// scrMix(prvScr, scrn, comp->vid->vBytes, conf.vid.noFlick ? 0.5 : 0.7);
-		if (conf.vid.grayScale)
+		if (greyScale)
 			scrGray(scrn, comp->vid->vBytes);
 	}
 
@@ -262,9 +266,8 @@ void MainWin::convImage() {
 				break;
 		}
 	}
-	ethread.waitpic = 1;
 // [put leds],make screenshot,[put leds]
-	if (!conf.scrShot.noLeds) putLeds();		// put leds before screenshot if on
+//	if (!conf.scrShot.noLeds) putLeds();		// put leds before screenshot if on
 	if (scrCounter > 0) {
 		if (scrInterval > 0) {
 			scrInterval--;
@@ -274,16 +277,11 @@ void MainWin::convImage() {
 			scrInterval = conf.scrShot.interval;
 		}
 	}
-	if (conf.scrShot.noLeds) putLeds();		// put leds if it isn't done yet
-// put messages
-	if (msgTimer > 0) {
-		if (conf.led.message)
-			drawMessage();
-		msgTimer--;
-	}
+//	if (conf.scrShot.noLeds) putLeds();		// put leds if it isn't done yet
 	setUpdatesEnabled(true);
 	repaint();
 	setUpdatesEnabled(false);
+#endif
 }
 
 // gamepad mapper
@@ -417,20 +415,10 @@ void MainWin::onTimer() {
 		setMessage(QString(comp->msg));
 		comp->msg = NULL;
 	}
-// if window is not active release keys & buttons, release mouse
-	if (!isActiveWindow()) {
-		if (!keywin->isVisible())
-			kbdReleaseAll(comp->keyb);
-		mouseReleaseAll(comp->mouse);
-		unsetCursor();
-		if (grabMice) {
-			grabMice = 0;
-			releaseMouse();
-		}
-	}
 // update satellites
 	updateSatellites();
 // fill fake buffer if paused
+#if !VID_DIRECT_DRAW
 	if (pauseFlags) {
 		conf.snd.fill = 1;
 		do {
@@ -440,8 +428,24 @@ void MainWin::onTimer() {
 	} else if (ethread.fast) {
 		convImage();
 	}
-
+#else
+	setUpdatesEnabled(true);
+	repaint();
+	setUpdatesEnabled(false);
+#endif
 	emutex.unlock();
+}
+
+// if window is not active release keys & buttons, release mouse
+void MainWin::focusOutEvent(QFocusEvent* ev) {
+	if (!keywin->isVisible())
+		kbdReleaseAll(comp->keyb);
+	mouseReleaseAll(comp->mouse);
+	unsetCursor();
+	if (grabMice) {
+		grabMice = 0;
+		releaseMouse();
+	}
 }
 
 void MainWin::menuShow() {
@@ -526,6 +530,44 @@ void MainWin::paintEvent(QPaintEvent*) {
 	if (block) return;
 	pnt.begin(this);
 	pnt.drawImage(0,0,scrImg);
+// put leds
+	if (comp->joy->used && conf.led.joy) {
+		pnt.drawImage(3, 30, QImage(":/images/joystick.png").scaled(16, 16));
+	}
+	if (comp->mouse->used && conf.led.mouse) {
+		pnt.drawImage(3, 50, QImage(":/images/mouse.png").scaled(16, 16));
+		comp->mouse->used = 0;
+	}
+	if (comp->tape->on && conf.led.tape) {
+		if (comp->tape->rec) {
+			pnt.drawImage(3, 70, QImage(":/images/tapeRed.png").scaled(16,16));
+		} else {
+			pnt.drawImage(3, 70, QImage(":/images/tapeYellow.png").scaled(16,16));
+		}
+	}
+	if (conf.led.disk) {
+		if (comp->dif->fdc->flp->rd) {
+			comp->dif->fdc->flp->rd = 0;
+			pnt.drawImage(3, 90, QImage(":/images/diskGreen.png").scaled(16,16));
+		} else if (comp->dif->fdc->flp->wr) {
+			comp->dif->fdc->flp->wr = 0;
+			pnt.drawImage(3, 90, QImage(":/images/diskRed.png").scaled(16,16));
+		}
+	}
+// put messages
+	if (msgTimer > 0) {
+		if (conf.led.message) {
+			int chr;
+			int x = 5;
+			int y = height() - 20;
+			for (int i = 0; i < msg.size(); i++) {
+				chr = msg.at(i).unicode() - 32;
+				pnt.drawImage(x, y, alphabet, 0, chr * 12, 12, 12);
+				x += 12;
+			}
+		}
+		msgTimer--;
+	}
 	pnt.end();
 }
 
@@ -547,7 +589,11 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 	} else if (ev->modifiers() & Qt::AltModifier) {
 		switch(ev->key()) {
 			case Qt::Key_Return:
+#if VID_DIRECT_DRAW
+				vid_set_fullscreen(!conf.vid.fullScreen);
+#else
 				conf.vid.fullScreen ^= 1;
+#endif
 				setMessage(conf.vid.fullScreen ? " fullscreen on " : " fullscreen off ");
 				updateWindow();
 				saveConfig();
@@ -556,28 +602,44 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				debugAction();
 				break;
 			case Qt::Key_1:
+#if VID_DIRECT_DRAW
+				vid_set_zoom(1);
+#else
 				conf.vid.scale = 1;
+#endif
 				updateWindow();
 				convImage();
 				saveConfig();
 				setMessage(" size x1 ");
 				break;
 			case Qt::Key_2:
+#if VID_DIRECT_DRAW
+				vid_set_zoom(2);
+#else
 				conf.vid.scale = 2;
+#endif
 				updateWindow();
 				convImage();
 				saveConfig();
 				setMessage(" size x2 ");
 				break;
 			case Qt::Key_3:
+#if VID_DIRECT_DRAW
+				vid_set_zoom(3);
+#else
 				conf.vid.scale = 3;
+#endif
 				updateWindow();
 				convImage();
 				saveConfig();
 				setMessage(" size x3 ");
 				break;
 			case Qt::Key_4:
+#if VID_DIRECT_DRAW
+				vid_set_zoom(4);
+#else
 				conf.vid.scale = 4;
+#endif
 				updateWindow();
 				convImage();
 				saveConfig();
@@ -594,6 +656,10 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				compReset(comp,RES_DOS);
 				rzxWin->stop();
 				break;
+			case Qt::Key_D:
+				ayDac = !ayDac;
+				setMessage(QString(" DAC %0 ").arg(ayDac ? "on" : "off"));
+				break;
 			case Qt::Key_K:
 				if (keywin->isVisible()) {
 					keywin->close();
@@ -604,17 +670,23 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				}
 				break;
 			case Qt::Key_N:
-				if (conf.vid.noflic < 15)
-					conf.vid.noflic = 25;
-				else if (conf.vid.noflic < 35)
-					conf.vid.noflic = 50;
-				else	conf.vid.noflic = 0;
+				if (noflic < 15)
+					noflic = 25;
+				else if (noflic < 35)
+					noflic = 50;
+				else noflic = 0;
 				saveConfig();
+#if !VID_DIRECT_DRAW
 				memcpy(prvScr, scrn, comp->vid->frmsz * 6);
-				setMessage(QString(" noflick %0% ").arg(conf.vid.noflic * 2));
+#endif
+				setMessage(QString(" noflick %0% ").arg(noflic * 2));
 				break;
 			case Qt::Key_R:
+#if VID_DIRECT_DRAW
+				vid_set_ratio(!conf.vid.keepRatio);
+#else
 				conf.vid.keepRatio ^= 1;
+#endif
 				setMessage(conf.vid.keepRatio ? " keep aspect ratio " : " ignore aspect ratio ");
 				saveConfig();
 				break;
@@ -903,7 +975,11 @@ void MainWin::screenShot() {
 	fnams.append(QString("xpeccy_%0.%1").arg(QTime::currentTime().toString("HHmmss_zzz")).arg(fext.c_str()));
 	std::string fnam(fnams.toUtf8().data());
 	std::ofstream file;
+#if VID_DIRECT_DRAW
+	QImage img(comp->vid->scrimg, width(), height(), QImage::Format_RGB888);
+#else
 	QImage img(screen, width(), height(), QImage::Format_RGB888);
+#endif
 	int x,y,dx,dy;
 	char* sptr = (char*)(comp->mem->ramData + (comp->vid->curscr << 14));
 	switch (frm) {
@@ -1033,6 +1109,9 @@ void drawChar(QByteArray chr, int scradr) {
 	int r,g,b;
 	int adr = 0;
 	int vadr;
+#if VID_DIRECT_DRAW
+	unsigned char* screen = conf.prof.cur->zx->vid->scrimg;
+#endif
 	for (y = 0; y < 12; y++) {
 		for (x = 0; x < 12*3; x+=3) {
 			r = chr.at(adr++);

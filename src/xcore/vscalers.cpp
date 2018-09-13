@@ -5,8 +5,6 @@
 
 #include "xcore.h"
 
-int bytesPerLine = 100;		// update on scrImg size changed
-
 // resize srcw x srch @ src -> dstw x dsth @ dst
 void scrFS(unsigned char* src, int srcw, int srch, unsigned char* dst, int dstw, int dsth) {
 	int scalex = (dstw << 8) / srcw;
@@ -136,3 +134,60 @@ void scrX1(unsigned char* src, int srcw, int srch, unsigned char* dst) {
 		srch--;
 	}
 }
+
+#if VID_DIRECT_DRAW
+
+#include <QApplication>
+#include <QDesktopWidget>
+
+void vid_upd_scale() {
+	int dwid;
+	int dhei;
+	if (conf.vid.fullScreen) {
+		dwid = QApplication::desktop()->width();
+		dhei = QApplication::desktop()->height();
+		xstep = dwid * 0x100 / conf.prof.cur->zx->vid->vsze.x;
+		ystep = dhei * 0x100 / conf.prof.cur->zx->vid->vsze.y;
+		if (conf.vid.keepRatio) {
+			int mstep = (xstep < ystep) ? xstep : ystep;
+			lefSkip = (xstep - mstep) * conf.prof.cur->zx->vid->vsze.x / 512 * 3;
+			rigSkip = lefSkip;
+			topSkip = (ystep - mstep) * conf.prof.cur->zx->vid->vsze.y / 512;
+			botSkip = topSkip;
+			xstep = mstep;
+			ystep = mstep;
+		} else {
+			lefSkip = 0;
+			rigSkip = 0;
+			topSkip = 0;
+			botSkip = 0;
+		}
+	} else {
+		lefSkip = 0;
+		rigSkip = 0;
+		topSkip = 0;
+		botSkip = 0;
+		xstep = conf.vid.scale << 8;
+		ystep = xstep;
+	}
+//	printf("%i x %i : %i %i %i : %X %X : %i %i %i %i\n",dwid,dhei,conf.vid.fullScreen, conf.vid.keepRatio, conf.vid.scale, xstep, ystep, topSkip, botSkip, lefSkip, rigSkip);
+}
+
+void vid_set_zoom(int zoom) {
+	if (zoom < 1) return;
+	if (zoom > 4) return;
+	conf.vid.scale = zoom;
+	vid_upd_scale();
+}
+
+void vid_set_fullscreen(int f) {
+	conf.vid.fullScreen = f ? 1 : 0;
+	vid_upd_scale();
+}
+
+void vid_set_ratio(int f) {
+	conf.vid.keepRatio = f ? 1 : 0;
+	vid_upd_scale();
+}
+
+#endif

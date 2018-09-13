@@ -5,6 +5,7 @@
 
 // tables
 
+int ayDac = 1;
 char noizes[0x20000];		// here iz noize values 1/0 [generated at start]
 
 static unsigned char envforms[16][34]={
@@ -30,8 +31,25 @@ static unsigned char envforms[16][34]={
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31, 0,255}	// F: 0->max, invert, stay
 };
 
+/*
+const SNDCHIP_VOLTAB SNDR_VOL_YM_S =
+{ { 0x0000,0x0000,0x00EF,0x01D0,0x0290,0x032A,0x03EE,0x04D2,0x0611,0x0782,0x0912,0x0A36,0x0C31,0x0EB6,0x1130,0x13A0,
+    0x1751,0x1BF5,0x20E2,0x2594,0x2CA1,0x357F,0x3E45,0x475E,0x5502,0x6620,0x7730,0x8844,0xA1D2,0xC102,0xE0A2,0xFFFF } };
+
+*/
+
 // try to use it somehow :)
-//unsigned char ayDACvol[16] = {0,0,0,0,0,1,1,1,1,2,2,3,4,7,10,15};		// from AY manual
+#if 0
+static unsigned char ayDACvol[32] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,
+			      0x01,0x01,0x02,0x02,0x03,0x03,0x04,0x04,
+			      0x05,0x06,0x08,0x09,0x0B,0x0D,0x0F,0x11,
+			      0x15,0x19,0x1D,0x22,0x28,0x30,0x38,0x3F};		// from unreal
+#else
+static unsigned char ayDACvol[32] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+				0x01,0x01,0x01,0x02,0x02,0x03,0x03,0x04,
+				0x05,0x06,0x07,0x08,0x09,0x0b,0x0d,0x10,
+				0x13,0x16,0x1a,0x20,0x26,0x2d,0x35,0x3f};	// from manual
+#endif
 //unsigned char ayDACvol[16] = {0,0,0,0,0,0,0,1,1,3,4,5,7,9,12,15};		// from ayumi
 
 // AY/YM sound chip
@@ -123,15 +141,15 @@ void aymSetReg(aymChip* ay, unsigned char val) {
 			ay->chanC.nen = (val & 32) ? 0 : 1;
 			break;
 		case 0x08:
-			ay->chanA.vol = val & 15;
+			ay->chanA.vol = (val & 15) << 1;
 			ay->chanA.een = (val & 16) ? 1 : 0;
 			break;
 		case 0x09:
-			ay->chanB.vol = val & 15;
+			ay->chanB.vol = (val & 15) << 1;
 			ay->chanB.een = (val & 16) ? 1 : 0;
 			break;
 		case 0x0a:
-			ay->chanC.vol = val & 15;
+			ay->chanC.vol = (val & 15) << 1;
 			ay->chanC.een = (val & 16) ? 1 : 0;
 			break;
 		case 0x0b:
@@ -226,19 +244,19 @@ void aymSync(aymChip* ay, int ns) {
 }
 
 // NOTE : if tone & noise disabled, signal is 1 - take amp/env for digital music
+
+static int vol;
+
 int ayGetChanVol(aymChip* ay, aymChan* ch) {
-	int vol = ch->een ? ay->chanE.vol : ch->vol;
-	if (ch->ten || ch->nen) {
-		vol = ((ch->lev && ch->ten) || (ay->chanN.lev && ch->nen)) ? vol : 0;
-	}
-	return vol << 1;		// 0..1f (env) -> 0..3e
-	// return ayDACvol[vol];
+	if ((ch->lev & ch->ten) || (ch->nen && ay->chanN.lev) || !(ch->ten || ch->nen))
+		vol = ch->een ? ay->chanE.vol : ch->vol;
+	else
+		vol = 0;
+	return ayDac ? ayDACvol[vol] : vol;
 }
 
 sndPair aymGetVolume(aymChip* ay) {
 	sndPair res;
-	// ay->chanN.lev = noizes[ay->chanN.step & 0x1ffff] ? 1 : 0;	// noise value
-	// ay->chanE.vol = envforms[ay->eForm][ay->chanE.step];		// envelope value
 	int volA = ayGetChanVol(ay, &ay->chanA);
 	int volB = ayGetChanVol(ay, &ay->chanB);
 	int volC = ayGetChanVol(ay, &ay->chanC);
@@ -351,7 +369,7 @@ void tsOut(TSound* ts, int port, unsigned char val) {
 					if ((val & 0xf8) == 0xf8) {
 						ts->curChip = (val & 1) ? ts->chipB : ts->chipA;
 					} else {
-						ts->curChip->curReg = val; break;
+						ts->curChip->curReg = val;
 					}
 					break;
 				default:

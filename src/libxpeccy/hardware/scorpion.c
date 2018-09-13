@@ -35,7 +35,7 @@ void scoMapMem(Computer* comp) {
 }
 
 unsigned char scoMRd(Computer* comp, unsigned short adr, int m1) {
-	if (((comp->mem->map[0].num & 3) == 2) && ((adr & 0xfffc) == 0x0100) && !m1 && (comp->cpu->com == 0x6e)) {
+	if (((comp->mem->map[0].num & 3) == 2) && ((adr & 0xfff3) == 0x0100) && !m1) {
 		comp->prt2 = ZSLays[(adr & 0x000c) >> 2][comp->prt2 & 3];
 		comp->hw->mapMem(comp);
 	}

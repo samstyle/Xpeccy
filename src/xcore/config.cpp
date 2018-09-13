@@ -6,7 +6,8 @@
 #include <QtCore>
 
 #include "xcore.h"
-#include "../xgui/xgui.h"
+#include "vscalers.h"
+#include "xgui.h"
 #include "sound.h"
 
 #ifdef _WIN32
@@ -140,9 +141,9 @@ void saveConfig() {
 	fprintf(cfile, "fullscreen = %s\n", YESNO(conf.vid.fullScreen));
 	fprintf(cfile, "keepratio = %s\n", YESNO(conf.vid.keepRatio));
 	fprintf(cfile, "scale = %i\n", conf.vid.scale);
-	fprintf(cfile, "greyscale = %s\n", YESNO(conf.vid.grayScale));
+	fprintf(cfile, "greyscale = %s\n", YESNO(greyScale));
 	fprintf(cfile, "bordersize = %i\n", int(conf.brdsize * 100));
-	fprintf(cfile, "noflick = %i%%\n", conf.vid.noflic);
+	fprintf(cfile, "noflick = %i%%\n", noflic);
 
 	fprintf(cfile, "\n[ROMSETS]\n");
 	foreach(xRomset rms, conf.rsList) {
@@ -167,6 +168,7 @@ void saveConfig() {
 //	fprintf(cfile, "dontmute = %s\n", YESNO(conf.snd.mute));
 	fprintf(cfile, "soundsys = %s\n", sndOutput->name);
 	fprintf(cfile, "rate = %i\n", conf.snd.rate);
+	fprintf(cfile, "dac = %s\n", YESNO(ayDac));
 	fprintf(cfile, "volume.master = %i\n", conf.snd.vol.master);
 	fprintf(cfile, "volume.beep = %i\n", conf.snd.vol.beep);
 	fprintf(cfile, "volume.tape = %i\n", conf.snd.vol.tape);
@@ -359,9 +361,9 @@ void loadConfig() {
 						if (conf.vid.scale < 1) conf.vid.scale = 1;
 						if (conf.vid.scale > 4) conf.vid.scale = 4;
 					}
-					if (pnam=="noflic") conf.vid.noflic = str2bool(pval) ? 50 : 25;		// old parameter
-					if (pnam=="noflick") conf.vid.noflic = getRanged(pval.c_str(), 0, 50);	// new parameter
-					if (pnam=="greyscale") conf.vid.grayScale = str2bool(pval) ? 1 : 0;
+					if (pnam=="noflic") noflic = str2bool(pval) ? 50 : 25;		// old parameter
+					if (pnam=="noflick") noflic = getRanged(pval.c_str(), 0, 50);	// new parameter
+					if (pnam=="greyscale") greyScale = str2bool(pval) ? 1 : 0;
 					break;
 				case SECT_ROMSETS:
 					pos = pval.find_last_of(":");
@@ -407,7 +409,7 @@ void loadConfig() {
 					break;
 				case SECT_SOUND:
 					if (pnam=="enabled") conf.snd.enabled = str2bool(pval) ? 1 : 0;
-//					if (pnam=="dontmute") conf.snd.mute = str2bool(pval) ? 1 : 0;
+					if (pnam=="dac") ayDac = str2bool(pval.c_str()) ? 1 : 0;
 					if (pnam=="soundsys") soutnam = pval;
 					if (pnam=="rate") conf.snd.rate = atoi(pval.c_str());
 					if (pnam=="volume.master") conf.snd.vol.master = getRanged(pval.c_str(), 0, 100);
@@ -446,6 +448,11 @@ void loadConfig() {
 			}
 		}
 	}
+#if VID_DIRECT_DRAW
+	vid_set_zoom(conf.vid.scale);
+	vid_set_fullscreen(conf.vid.fullScreen);
+	vid_set_ratio(conf.vid.keepRatio);
+#endif
 	uint i;
 	for (i=0; i<rsListist.size(); i++) addRomset(rsListist[i]);
 	prfLoadAll();

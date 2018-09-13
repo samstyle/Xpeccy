@@ -1,6 +1,8 @@
 #ifndef X_VIDCOMMON_H
 #define X_VIDCOMMON_H
 
+#define VID_DIRECT_DRAW	0
+
 #ifdef WORDS_BIG_ENDIAN
 	#define ePair(p,h,l) union{unsigned short p; struct {unsigned char h; unsigned char l;};}
 #else
@@ -20,6 +22,7 @@ typedef struct {
 
 typedef struct {
 	unsigned char* ptr;
+	unsigned char* lptr;
 	int x;
 	int y;
 	int xb;
@@ -37,28 +40,24 @@ typedef struct {
 
 #define MADR(_bnk,_adr)	((_bnk) << 14) + (_adr)
 
-#if 1
-
-#define vidPutOneColor(_ray, _pal, _idx, _c)\
-	if ((*(_ray)->ptr) != _pal[_idx]._c) {*((_ray)->ptr) = _pal[_idx]._c;}\
-	(_ray)->ptr++;
+#if VID_DIRECT_DRAW
 
 #define vidSingleDot(_ray, _pal, _idx) \
-	vidPutOneColor(_ray, _pal, _idx, r);\
-	vidPutOneColor(_ray, _pal, _idx, g);\
-	vidPutOneColor(_ray, _pal, _idx, b);
+	vid_dot_half(vid, _idx);
+
+#define vidPutDot(_ray, _pal, _idx) \
+	vid_dot_full(vid, _idx);
 
 #else
 
-#define vidSingleDot(_ray, _pal, _idx)	\
-	*((_ray)->ptr++) = _pal[_idx].r;\
-	*((_ray)->ptr++) = _pal[_idx].g;\
-	*((_ray)->ptr++) = _pal[_idx].b;
-
-#endif
+#define vidSingleDot(_ray, _pal, _idx) \
+	memcpy((_ray)->ptr, &(_pal)[_idx], 3);\
+	(_ray)->ptr += 3;
 
 #define vidPutDot(_ray, _pal, _idx) \
 	vidSingleDot(_ray, _pal, _idx);\
 	vidSingleDot(_ray, _pal, _idx);
+
+#endif
 
 #endif

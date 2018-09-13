@@ -8,14 +8,16 @@
 QMutex emutex;
 
 unsigned char* blkData = NULL;
+#if !VID_DIRECT_DRAW
 extern unsigned char sbufa[1024 * 512 * 3];
 extern unsigned char scrn[1024 * 512 * 3];
 extern unsigned char prvScr[1024 * 512 * 3];
 
 void processPicture(unsigned char* src, int size) {
 	memcpy(sbufa, src, size);
-	scrMix(prvScr, sbufa, size, conf.vid.noflic / 100.0);
+	scrMix(prvScr, sbufa, size, noflic / 100.0);
 }
+#endif
 
 xThread::xThread() {
 	sndNs = 0;
@@ -60,16 +62,13 @@ void xThread::emuCycle() {
 	do {
 		// exec 1 opcode (or handle INT, NMI)
 		sndNs += compExec(comp);
-		if (comp->frmStrobe) {
+#if !VID_DIRECT_DRAW
+		if (comp->frmStrobe && !fast) {
 			comp->frmStrobe = 0;
-			if (!fast) {
-				processPicture(comp->vid->scrimg, comp->vid->vBytes);
-				if (waitpic) {
-					waitpic = 0;
-					emit picReady();
-				}
-			}
+			processPicture(comp->vid->scrimg, comp->vid->vBytes);
+			emit picReady();
 		}
+#endif
 		// if need - request sound buffer update
 		if (sndNs > nsPerSample) {
 			sndSync(comp, 0, fast);
@@ -86,7 +85,6 @@ void xThread::emuCycle() {
 }
 
 void xThread::run() {
-	waitpic = 1;
 	emutex.lock();
 	do {
 #ifdef HAVEZLIB
