@@ -57,7 +57,7 @@ nesPPU* ppuCreate(vRay*);
 void ppuDestroy(nesPPU*);
 */
 
-typedef struct Video Video;
+//typedef struct Video Video;
 
 void ppuReset(Video*);
 

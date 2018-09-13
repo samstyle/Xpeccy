@@ -9,6 +9,8 @@ extern "C" {
 
 #include "../memory.h"
 
+typedef struct Video Video;
+
 #include "ulaplus.h"
 #include "v9938.h"
 #include "gbcvideo.h"
@@ -59,8 +61,6 @@ enum {
 	VID_C64_BITMAP,
 	VID_C64_BITMAP_MC,
 };
-
-typedef struct Video Video;
 
 extern int bytesPerLine;
 extern int greyScale;

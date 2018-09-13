@@ -54,7 +54,7 @@ typedef struct GBCVid GBCVid;
 GBCVid* gbcvCreate(vRay*, vLayout*);
 void gbcvDestroy(GBCVid*);
 */
-typedef struct Video Video;
+//typedef struct Video Video;
 
 void gbcvReset(Video*);
 void gbcvDraw(Video*);

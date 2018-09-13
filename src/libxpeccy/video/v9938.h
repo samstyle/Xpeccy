@@ -63,11 +63,11 @@ struct VDP9938 {
 };
 */
 
-typedef struct Video Video;
+// typedef struct Video Video;
 
 void vdpReset(Video*);
 void vdpWrite(Video*, int, unsigned char);
-unsigned char vdpRead(Video*, int);
+unsigned char vdpRead(struct Video*, int);
 
 // drawers
 void vdpText1(Video*);
