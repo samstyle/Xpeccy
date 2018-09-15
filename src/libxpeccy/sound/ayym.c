@@ -331,7 +331,8 @@ void tsSync(TSound* ts, int ns) {
 sndPair tsGetVolume(TSound* ts) {
 	sndPair res = aymGetVolume(ts->chipA);
 	sndPair tmp = aymGetVolume(ts->chipB);
-	res = mixer(res, tmp.left, tmp.right, 100);
+	res.left = (res.left + tmp.left);
+	res.right = (res.right + tmp.right);
 	return res;
 }
 

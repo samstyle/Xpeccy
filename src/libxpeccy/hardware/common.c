@@ -81,28 +81,32 @@ sndPair zx_vol(Computer* comp, sndVolume* sv) {
 	// 1:tape sound
 	if (comp->tape->on) {
 		if (comp->tape->rec) {
-			lev = comp->tape->levRec ? 0x1f : 0x00;
+			lev = comp->tape->levRec ? 0x0f * sv->tape / 100 : 0;
 		} else {
-			lev = comp->tape->volPlay >> 3;
+			lev = comp->tape->volPlay * sv->tape / 1600;
 		}
 	}
-	vol = mixer(vol, lev, lev, sv->tape);
 	// 2:beeper
 	bcSync(comp->beep, -1);
-	lev += comp->beep->val >> 3;			// ff -> 1f
-	vol = mixer(vol, lev, lev, sv->beep);
+	lev += comp->beep->val * sv->beep / 1600;
+	vol.left = lev;
+	vol.right = lev;
 	// 3:turbo sound
 	svol = tsGetVolume(comp->ts);
-	vol = mixer(vol, svol.left, svol.right, sv->ay);
+	vol.left += svol.left * sv->ay / 100;
+	vol.right += svol.right * sv->ay / 100;
 	// 4:general sound
 	svol = gsVolume(comp->gs);
-	vol = mixer(vol, svol.left, svol.right, sv->gs);
+	vol.left += svol.left * sv->gs / 100;
+	vol.right += svol.right * sv->gs / 100;
 	// 5:soundrive
 	svol = sdrvVolume(comp->sdrv);
-	vol = mixer(vol, svol.left, svol.right, sv->sdrv);
+	vol.left += svol.left * sv->sdrv / 100;
+	vol.right += svol.right * sv->sdrv / 100;
 	// 6:saa
 	svol = saaVolume(comp->saa);
-	vol = mixer(vol, svol.left, svol.right, sv->saa);
+	vol.left += svol.left * sv->saa / 100;
+	vol.right += svol.right * sv->saa / 100;
 	// end
 	return vol;
 }

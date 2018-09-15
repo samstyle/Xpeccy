@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+/*
 // mixer
 #define XMAXVOL 64
 
@@ -20,6 +21,7 @@ sndPair mixer(sndPair cur, int levL, int levR, int vol) {
 	cur.right = (cur.right + levR) * XMAXVOL / (XMAXVOL + (cur.right * levR) / XMAXVOL);
 	return cur;
 }
+*/
 
 // 1-bit channel with transient response
 
