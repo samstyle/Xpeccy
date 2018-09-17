@@ -8,6 +8,7 @@
 int ayDac = 1;
 char noizes[0x20000];		// here iz noize values 1/0 [generated at start]
 
+#if 0
 static unsigned char envforms[16][34]={
 /*	  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32	*/
 	{31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,255},		// 0..3: max->0,stay
@@ -30,26 +31,12 @@ static unsigned char envforms[16][34]={
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,254},		// E: 0->max, invert, repeat
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31, 0,255}	// F: 0->max, invert, stay
 };
-
-/*
-const SNDCHIP_VOLTAB SNDR_VOL_YM_S =
-{ { 0x0000,0x0000,0x00EF,0x01D0,0x0290,0x032A,0x03EE,0x04D2,0x0611,0x0782,0x0912,0x0A36,0x0C31,0x0EB6,0x1130,0x13A0,
-    0x1751,0x1BF5,0x20E2,0x2594,0x2CA1,0x357F,0x3E45,0x475E,0x5502,0x6620,0x7730,0x8844,0xA1D2,0xC102,0xE0A2,0xFFFF } };
-
-*/
-
-// try to use it somehow :)
-#if 0
-static unsigned char ayDACvol[32] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,
-			      0x01,0x01,0x02,0x02,0x03,0x03,0x04,0x04,
-			      0x05,0x06,0x08,0x09,0x0B,0x0D,0x0F,0x11,
-			      0x15,0x19,0x1D,0x22,0x28,0x30,0x38,0x3F};		// from unreal
-#else
-static unsigned char ayDACvol[32] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-				0x01,0x01,0x01,0x02,0x02,0x03,0x03,0x04,
-				0x05,0x06,0x07,0x08,0x09,0x0b,0x0d,0x10,
-				0x13,0x16,0x1a,0x20,0x26,0x2d,0x35,0x3f};	// from manual
 #endif
+
+static int ayDACvol[32] = {0x0000,0x0000,0x001D,0x003A,0x0052,0x0065,0x007D,0x009A,
+			   0x00C2,0x00F0,0x0122,0x0146,0x0186,0x01D6,0x0226,0x0274,
+			   0x02EA,0x037E,0x041C,0x04B2,0x0594,0x06AF,0x07C8,0x08EB,
+			   0x0AA0,0x0CC4,0x0EE6,0x1108,0x143A,0x1820,0x1C14,0x1FFF};	// from unreal (YM)
 
 // AY/YM sound chip
 
@@ -105,6 +92,7 @@ void aymReset(aymChip* ay) {
 	aymResetChan(&ay->chanE);
 	aymResetChan(&ay->chanN);
 	ay->chanN.per = 1;
+	ay->chanN.step = 0xffff;
 }
 
 void aymSetReg(aymChip* ay, unsigned char val) {
@@ -158,9 +146,9 @@ void aymSetReg(aymChip* ay, unsigned char val) {
 			break;
 		case 0x0d:
 			ay->eForm = val & 0x0f;
-			ay->chanE.step = 0;
 			ay->chanE.cnt = ay->chanE.per;
-			ay->chanE.lev = 0;
+			ay->chanE.vol = (val & 4) ? 0 : 31;
+			ay->chanE.step = (val & 4) ? 1 : -1;
 			break;
 		case 0x0e:
 			if (ay->reg[7] & 0x40)
@@ -180,63 +168,53 @@ void aymSync(aymChip* ay, int ns) {
 	while (ay->cnt < 0) {
 		ay->cnt += ay->per;
 		if (ay->chanA.per) {
-			ay->chanA.cnt--;
-			if (ay->chanA.cnt < 0) {
+			if (--ay->chanA.cnt < 0) {
 				ay->chanA.cnt = ay->chanA.per;
 				ay->chanA.lev ^= 1;
 			}
 		}
 		if (ay->chanB.per) {
-			ay->chanB.cnt--;
-			if (ay->chanB.cnt < 0) {
+			if (--ay->chanB.cnt < 0) {
 				ay->chanB.cnt = ay->chanB.per;
 				ay->chanB.lev ^= 1;
 			}
 		}
 		if (ay->chanC.per) {
-			ay->chanC.cnt--;
-			if (ay->chanC.cnt < 0) {
+			if (--ay->chanC.cnt < 0) {
 				ay->chanC.cnt = ay->chanC.per;
 				ay->chanC.lev ^= 1;
 			}
 		}
 		if (ay->chanN.per) {
-			ay->chanN.cnt--;
-			if (ay->chanN.cnt < 0) {
+			if (--ay->chanN.cnt < 0) {
 				ay->chanN.cnt = ay->chanN.per;
-				ay->chanN.step++;
-				ay->chanN.lev = noizes[ay->chanN.step & 0x1ffff] ? 1 : 0;
+				ay->chanN.step = (ay->chanN.step << 1) | ((((ay->chanN.step >> 13) ^ (ay->chanN.step >> 16)) & 1) ^ 1);
+				ay->chanN.lev = (ay->chanN.step >> 16) & 1;
 			}
 		}
 		if (ay->chanE.per) {
-			ay->chanE.cnt--;
-			if (ay->chanE.cnt < 0) {
+			if (--ay->chanE.cnt < 0) {
 				ay->chanE.cnt = ay->chanE.per;
-				if (ay->chanE.lev) {
-					ay->chanE.step--;
-					if (ay->chanE.step < 0) {
-						ay->chanE.lev = 0;
+				ay->chanE.vol += ay->chanE.step;
+				if (ay->chanE.vol & ~31) {		// 32 || -1
+					if (ay->eForm & 8) {
+						if (ay->eForm & 1) {			// 1xx1 : 9,B,D,F : stop
+							ay->chanE.vol -= ay->chanE.step;
+							ay->chanE.step = 0;
+							if (ay->eForm & 2) {		// 1x11 : B,F : invert volume
+								ay->chanE.vol ^= 0x1f;
+							}
+						} else if (ay->eForm & 2) {		// 1x10 : A,E : change direction (wave)
+							ay->chanE.step = -ay->chanE.step;
+							ay->chanE.vol += ay->chanE.step;
+						} else {				// 1x00 : 8,C : repeat (saw)
+							ay->chanE.vol &= 0x1f;
+						}
+					} else {					// 0..7 : silent, stop
+						ay->chanE.vol = 0;
 						ay->chanE.step = 0;
 					}
-				} else {
-					ay->chanE.step++;
 				}
-				switch (envforms[ay->eForm][ay->chanE.step]) {
-					case 253:
-						ay->chanE.step = 0;
-						break;
-					case 254:
-						ay->chanE.lev = 1;
-						ay->chanE.step--;
-						break;
-					case 255:
-						ay->chanE.step--;
-						break;
-				}
-				ay->chanE.vol = envforms[ay->eForm][ay->chanE.step];
-//				if (ay->coarse) {
-//					ay->chanE.vol |= 1;
-//				}
 			}
 		}
 	}
@@ -248,12 +226,12 @@ static int vol;
 
 int ayGetChanVol(aymChip* ay, aymChan* ch) {
 	if ((ch->lev & ch->ten) || (ch->nen && ay->chanN.lev) || !(ch->ten || ch->nen))
-		vol = ch->een ? ay->chanE.vol : ch->vol;
+		vol = ch->een ? ay->chanE.vol : (ch->vol | 1);
 	else
 		vol = 0;
 	if (ay->coarse)
 		vol |= 1;
-	return ayDac ? ayDACvol[vol] : vol;
+	return ayDac ? (ayDACvol[vol] << 1) : (vol << 8);
 }
 
 sndPair aymGetVolume(aymChip* ay) {
@@ -303,7 +281,6 @@ sndPair aymGetVolume(aymChip* ay) {
 
 	res.left = lef + 0.5 * cen;
 	res.right = rig + 0.5 * cen;
-//	res = mixer(res, cen, cen, 70);
 	return res;
 }
 

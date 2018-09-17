@@ -92,7 +92,7 @@ GSound* gsCreate() {
 	memset(res,0x00,sizeof(GSound));
 	res->cpu = cpuCreate(CPU_Z80, &gsmemrd, &gsmemwr, &gsiord, &gsiowr, &gsintrq, (void*)res);
 	res->mem = memCreate();
-	memSetSize(res->mem, MEM_2M, -1);
+	memSetSize(res->mem, MEM_2M, MEM_32K);
 	memSetBank(res->mem, 0x00, MEM_ROM, 0, MEM_16K, NULL, NULL, NULL);
 	memSetBank(res->mem, 0x40, MEM_RAM, 0, MEM_16K, NULL, NULL, NULL);
 	memSetBank(res->mem, 0x80, MEM_RAM, 0, MEM_16K, NULL, NULL, NULL);
@@ -183,12 +183,12 @@ sndPair gsVolume(GSound* gs) {
 			res.left = ((gs->ch1 * gs->vol1 + \
 				gs->ch2 * gs->vol2 + \
 				gs->ch3 * gs->vol3 + \
-				gs->ch4 * gs->vol4) >> 10);		// 4000 x 4 - 1 = FFFF -> 3F
+				gs->ch4 * gs->vol4) >> 2);
 			res.right = res.left;
 			break;
 		case GS_12_34:
-			res.left = ((gs->ch1 * gs->vol1 + gs->ch2 * gs->vol2) >> 9);
-			res.right = ((gs->ch3 * gs->vol3 + gs->ch4 * gs->vol4) >> 9);
+			res.left = ((gs->ch1 * gs->vol1 + gs->ch2 * gs->vol2) >> 1);
+			res.right = ((gs->ch3 * gs->vol3 + gs->ch4 * gs->vol4) >> 1);
 			break;
 	}
 	return res;

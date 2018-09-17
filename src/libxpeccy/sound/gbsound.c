@@ -110,12 +110,10 @@ sndPair gbsVolume(gbSound* gbs) {
 		if (gbs->ch4.so1) left += lev;			// 400
 		if (gbs->ch4.so2) right += lev;
 		// mix
-		left >>= 4;		// >> 2 = mix 4 chans div 4; result 00..3F
-		right >>= 4;
+		left <<= 4;
+		right <<= 4;
 	}
 	sndPair res;
-//	res.left = (left > 0x3f) ? 0x3f : left;
-//	res.right = (right > 0x3f) ? 0x3f : right;
 	res.left = left;
 	res.right = right;
 	return res;

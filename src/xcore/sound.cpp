@@ -40,16 +40,16 @@ int sndSync(Computer* comp) {
 		sndLev.left = sndLev.left * conf.snd.vol.master / 100;
 		sndLev.right = sndLev.right * conf.snd.vol.master / 100;
 
-		if (sndLev.left > 127) sndLev.left = 127;
-		if (sndLev.right > 127) sndLev.right = 127;
+		if (sndLev.left > 0x7fff) sndLev.left = 0x7fff;
+		if (sndLev.right > 0x7fff) sndLev.right = 0x7fff;
 	}
-	sbuf[posf & 0x1fff] = 0;
-	posf++;
 	sbuf[posf & 0x1fff] = sndLev.left & 0xff;
 	posf++;
-	sbuf[posf & 0x1fff] = 0;
+	sbuf[posf & 0x1fff] = (sndLev.left >> 8) & 0xff;
 	posf++;
 	sbuf[posf & 0x1fff] = sndLev.right & 0xff;
+	posf++;
+	sbuf[posf & 0x1fff] = (sndLev.right >> 8) & 0xff;
 	posf++;
 	smpCount++;
 	if (smpCount < sndChunks) return 0;
@@ -146,10 +146,10 @@ void null_close() {}
 void sdlPlayAudio(void*, Uint8* stream, int len) {
 	if (posf - posp < len) {
 		while (len > 0) {
-			*(stream++) = 0x00;
-			*(stream++) = sndLev.left & 0xff;
-			*(stream++) = 0x00;
+			*(stream++) = sndLev.left & 0xff;;
+			*(stream++) = (sndLev.left >> 8) & 0xff;
 			*(stream++) = sndLev.right & 0xff;
+			*(stream++) = (sndLev.right >> 8) & 0xff;
 			len -= 4;
 		}
 	} else {

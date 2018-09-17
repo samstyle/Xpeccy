@@ -45,7 +45,7 @@ int sdrvWrite(SDrive* sdrv, unsigned short adr, unsigned char data) {
 
 sndPair sdrvVolume(SDrive* sdrv) {
 	sndPair res;
-	res.left = ((sdrv->chan[0] >> 3) + (sdrv->chan[1] >> 3));		// FF >> 3 = 1F + 1F = 3F max
-	res.right = ((sdrv->chan[2] >> 3) + (sdrv->chan[3] >> 3));
+	res.left = ((sdrv->chan[0] << 3) + (sdrv->chan[1] << 3));
+	res.right = ((sdrv->chan[2] << 3) + (sdrv->chan[3] << 3));
 	return res;
 }

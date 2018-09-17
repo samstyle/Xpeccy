@@ -299,35 +299,19 @@ void apuFlush(nesAPU* apu) {
 sndPair apuVolume(nesAPU* apu) {
 	apuFlush(apu);
 	sndPair res;
-#if 1
 	int v1 = apuToneVolume(&apu->ch0);
 	int v2 = apuToneVolume(&apu->ch1);
-	double pout = 0.0;
+	float pout = 0.0;
 	if (v1 || v2)
 		pout = 95.88 / (100.0 + (8128.0 / (v1 + v2)));			// 0,2584 max
 	v1 = apuTriVolume(&apu->cht);
 	v2 = apuNoiseVolume(&apu->chn);
 	int v3 = apuDigiVolume(&apu->chd);
-	double tnd = 0.0;
+	float tnd = 0.0;
 	if (v1 || v2 || v3)
 		tnd = 159.79 / (100.0 + (1.0 / ((v1 / 8227.0) + (v2 / 12241.0) + (v3 / 22638.0))));		// 0,8686 max
-	//printf("%f : %f\n",pout,tnd);
-	//pout += tnd;
-	res.left = (int)((pout + tnd) * 100);
+	res.left = (int)((pout + tnd) * 0x4000);
 	res.right = res.left;
-#else
-	int lev;
-	res.left = apuToneVolume(&apu->ch0);		// tone channel 0
-	res.right = res.left;
-	lev = apuToneVolume(&apu->ch1);
-	res = mixer(res, lev, lev, 100);
-	lev = apuTriVolume(&apu->cht);
-	res = mixer(res, lev, lev, 100);
-	lev = apuNoiseVolume(&apu->chn);
-	res = mixer(res, lev, lev, 100);
-	lev = apuDigiVolume(&apu->chd);
-	res = mixer(res, lev, lev, 100);
-#endif
 	return res;
 }
 

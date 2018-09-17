@@ -81,14 +81,14 @@ sndPair zx_vol(Computer* comp, sndVolume* sv) {
 	// 1:tape sound
 	if (comp->tape->on) {
 		if (comp->tape->rec) {
-			lev = comp->tape->levRec ? 0x0f * sv->tape / 100 : 0;
+			lev = comp->tape->levRec ? 0x1000 * sv->tape / 100 : 0;
 		} else {
-			lev = comp->tape->volPlay * sv->tape / 1600;
+			lev = (comp->tape->volPlay << 8) * sv->tape / 1600;
 		}
 	}
 	// 2:beeper
 	bcSync(comp->beep, -1);
-	lev += comp->beep->val * sv->beep / 1600;
+	lev += comp->beep->val * sv->beep / 6;
 	vol.left = lev;
 	vol.right = lev;
 	// 3:turbo sound
