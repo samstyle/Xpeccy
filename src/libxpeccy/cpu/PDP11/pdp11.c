@@ -10,7 +10,46 @@ int pdp11_int(CPU* cpu) {
 	return 1;
 }
 
+typedef struct {
+	int mask;
+	int val;
+	void(*exec)(CPU*);
+} xpdp11com;
+
+/*
+static xpdp11com pdp_tab[] = {
+	{0x7000, 0x1000, pdp_mov},
+	{0x7000, 0x2000, pdp_cmp},
+	{0x7000, 0x3000, pdp_bit},
+	{0x7000, 0x4000, pdp_bic},
+	{0x7000, 0x5000, pdp_bis},
+	{0, 0, NULL}
+};
+*/
+
 int pdp11_exec(CPU* cpu) {
+	// tmpw = command
+	cpu->lcom = cpu->mrd(cpu->pc++, 1, cpu->data);
+	cpu->hcom = cpu->mrd(cpu->pc++, 1, cpu->data);
+	switch (cpu->com & 0x7000) {
+		case 0x1000:		// B1SSDD:mov
+			break;
+		case 0x2000:		// B2SSDD:cmp
+			break;
+		case 0x3000:		// B3SSDD:bit (and)
+			break;
+		case 0x4000:		// B4SSDD:bic (and not)
+			break;
+		case 0x5000:		// B4SSDD:bis (or)
+			break;
+		default:
+			switch (cpu->com & 0xf000) {
+				case 0x6000:	// 06SSDD:add
+					break;
+				case 0xe000:	// 16SSDD:sub
+					break;
+			}
+	}
 
 	return 1;
 }

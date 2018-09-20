@@ -168,7 +168,7 @@ void saveConfig() {
 //	fprintf(cfile, "dontmute = %s\n", YESNO(conf.snd.mute));
 	fprintf(cfile, "soundsys = %s\n", sndOutput->name);
 	fprintf(cfile, "rate = %i\n", conf.snd.rate);
-	fprintf(cfile, "dac = %s\n", YESNO(ayDac));
+//	fprintf(cfile, "dac = %s\n", YESNO(ayDac));
 	fprintf(cfile, "volume.master = %i\n", conf.snd.vol.master);
 	fprintf(cfile, "volume.beep = %i\n", conf.snd.vol.beep);
 	fprintf(cfile, "volume.tape = %i\n", conf.snd.vol.tape);
@@ -409,7 +409,7 @@ void loadConfig() {
 					break;
 				case SECT_SOUND:
 					if (pnam=="enabled") conf.snd.enabled = str2bool(pval) ? 1 : 0;
-					if (pnam=="dac") ayDac = str2bool(pval.c_str()) ? 1 : 0;
+//					if (pnam=="dac") ayDac = str2bool(pval.c_str()) ? 1 : 0;
 					if (pnam=="soundsys") soutnam = pval;
 					if (pnam=="rate") conf.snd.rate = atoi(pval.c_str());
 					if (pnam=="volume.master") conf.snd.vol.master = getRanged(pval.c_str(), 0, 100);

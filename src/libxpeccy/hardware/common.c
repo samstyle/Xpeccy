@@ -136,7 +136,10 @@ unsigned char xIn1F(Computer* comp, unsigned short port) {
 
 unsigned char xInFE(Computer* comp, unsigned short port) {
 	unsigned char res = kbdRead(comp->keyb, port);
-	res |= ((comp->tape->volPlay & 0x80) ? 0x40 : 0x00);
+	if (comp->tape->on)
+		res |= ((comp->tape->volPlay & 0x80) ? 0x40 : 0x00);
+	else if (comp->beep->lev)
+		res |= 0x40;
 	return res;
 }
 

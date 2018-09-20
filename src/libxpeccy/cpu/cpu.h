@@ -140,7 +140,7 @@ struct CPU {
 	cbirq irq;
 	void* data;
 
-	unsigned char com;
+	PAIR(com, hcom, lcom);
 	opCode* tab;
 	opCode* opTab;
 	opCode* op;

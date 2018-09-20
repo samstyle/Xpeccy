@@ -341,6 +341,8 @@ void MainWin::mapJoystick(Computer* comp, int type, int num, int state) {
 					case JOY_HAT:
 						if (state & xjm.state)
 							mapPress(comp, xjm);
+						else
+							mapRelease(comp, xjm);
 						break;
 					case JOY_BUTTON:
 						mapPress(comp, xjm);
@@ -655,10 +657,6 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			case Qt::Key_F12:
 				compReset(comp,RES_DOS);
 				rzxWin->stop();
-				break;
-			case Qt::Key_D:
-				ayDac = !ayDac;
-				setMessage(QString(" DAC %0 ").arg(ayDac ? "on" : "off"));
 				break;
 			case Qt::Key_K:
 				if (keywin->isVisible()) {

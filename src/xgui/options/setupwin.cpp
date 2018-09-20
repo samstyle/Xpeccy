@@ -377,7 +377,6 @@ void SetupWin::start(xProfile* p) {
 // sound
 	ui.tbGS->setChecked(comp->gs->enable);
 	ui.gsrbox->setChecked(comp->gs->reset);
-	ui.cbdac->setChecked(ayDac);
 
 	ui.sdrvBox->setCurrentIndex(ui.sdrvBox->findData(comp->sdrv->type));
 
@@ -525,7 +524,6 @@ void SetupWin::apply() {
 // sound
 	std::string nname = getRFText(ui.outbox);
 	conf.snd.enabled = ui.senbox->isChecked() ? 1 : 0;
-	ayDac = ui.cbdac->isChecked() ? 1 : 0;
 	conf.snd.rate = getRFIData(ui.ratbox);
 
 	conf.snd.vol.master = ui.sbMasterVol->value();

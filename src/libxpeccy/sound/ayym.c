@@ -5,38 +5,19 @@
 
 // tables
 
-int ayDac = 1;
 char noizes[0x20000];		// here iz noize values 1/0 [generated at start]
 
-#if 0
-static unsigned char envforms[16][34]={
-/*	  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32	*/
-	{31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,255},		// 0..3: max->0,stay
-	{31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,255},
-	{31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,255},
-	{31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,255},
-
-	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31, 0,255},	// 4..7: 0->max,invert,stay
-	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31, 0,255},
-	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31, 0,255},
-	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31, 0,255},
-
-	{31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,253},		// 8: max->0, repeat
-	{31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,255},		// 9: max->0, stay
-	{31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,254},		// A: max->0, invert, repeat
-	{31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,31,255},	// B: max->0, invert, stay
-
-	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,253},		// C: 0->max, repeat
-	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,255},		// D: 0->max, stay
-	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,254},		// E: 0->max, invert, repeat
-	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31, 0,255}	// F: 0->max, invert, stay
-};
-#endif
-
+#if 1
 static int ayDACvol[32] = {0x0000,0x0000,0x001D,0x003A,0x0052,0x0065,0x007D,0x009A,
 			   0x00C2,0x00F0,0x0122,0x0146,0x0186,0x01D6,0x0226,0x0274,
 			   0x02EA,0x037E,0x041C,0x04B2,0x0594,0x06AF,0x07C8,0x08EB,
-			   0x0AA0,0x0CC4,0x0EE6,0x1108,0x143A,0x1820,0x1C14,0x1FFF};	// from unreal (YM)
+			   0x0AA0,0x0CC4,0x0EE6,0x1108,0x143A,0x1820,0x1C14,0x1FFF};
+#elif 1
+static int ayDACvol[32] = {0x0000,0x0000,0x003B,0x0074,0x00A4,0x00CA,0x00FB,0x0134,
+			   0x0184,0x01E0,0x0244,0x028D,0x030C,0x03AD,0x044C,0x04E8,
+			   0x05D4,0x06FD,0x0838,0x0965,0x0B28,0x0D5F,0x0F91,0x11D7,
+			   0x1540,0x1988,0x1DCC,0x2211,0x2874,0x3040,0x3828,0x3FFF};
+#endif
 
 // AY/YM sound chip
 
@@ -79,6 +60,7 @@ void aymResetChan(aymChan* ch) {
 	ch->per = 0;
 	ch->step = 0;
 	ch->cnt = 0;
+	ch->lev = 0;
 	ch->ten = 0;
 	ch->nen = 0;
 	ch->een = 0;
@@ -117,7 +99,7 @@ void aymSetReg(aymChip* ay, unsigned char val) {
 			break;
 		case 0x06:					// noise
 			tone = val & 0x1f;
-			ay->chanN.per = (tone + 1) << 5;
+			ay->chanN.per = (tone + 1) << 6;
 			break;
 		case 0x07:
 			ay->chanA.ten = (val & 1) ? 0 : 1;
@@ -128,21 +110,21 @@ void aymSetReg(aymChip* ay, unsigned char val) {
 			ay->chanC.nen = (val & 32) ? 0 : 1;
 			break;
 		case 0x08:
-			ay->chanA.vol = (val & 15) << 1;
+			ay->chanA.vol = ((val & 15) << 1) | 1;
 			ay->chanA.een = (val & 16) ? 1 : 0;
 			break;
 		case 0x09:
-			ay->chanB.vol = (val & 15) << 1;
+			ay->chanB.vol = ((val & 15) << 1) | 1;
 			ay->chanB.een = (val & 16) ? 1 : 0;
 			break;
 		case 0x0a:
-			ay->chanC.vol = (val & 15) << 1;
+			ay->chanC.vol = ((val & 15) << 1) | 1;
 			ay->chanC.een = (val & 16) ? 1 : 0;
 			break;
 		case 0x0b:
 		case 0x0c:
 			tone = ay->reg[11] | (ay->reg[12] << 8);
-			ay->chanE.per = tone << 4;
+			ay->chanE.per = tone << 5;
 			break;
 		case 0x0d:
 			ay->eForm = val & 0x0f;
@@ -226,12 +208,12 @@ static int vol;
 
 int ayGetChanVol(aymChip* ay, aymChan* ch) {
 	if ((ch->lev & ch->ten) || (ch->nen && ay->chanN.lev) || !(ch->ten || ch->nen))
-		vol = ch->een ? ay->chanE.vol : (ch->vol | 1);
+		vol = ch->een ? ay->chanE.vol : ch->vol;
 	else
 		vol = 0;
 	if (ay->coarse)
 		vol |= 1;
-	return ayDac ? (ayDACvol[vol] << 1) : (vol << 8);
+	return ayDACvol[vol];
 }
 
 sndPair aymGetVolume(aymChip* ay) {
@@ -279,8 +261,8 @@ sndPair aymGetVolume(aymChip* ay) {
 			break;
 	}
 
-	res.left = lef + 0.5 * cen;
-	res.right = rig + 0.5 * cen;
+	res.left = lef + 0.6 * cen + 0.1 * rig;
+	res.right = rig + 0.6 * cen + 0.1 * lef;
 	return res;
 }
 

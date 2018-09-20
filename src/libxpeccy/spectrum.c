@@ -173,10 +173,7 @@ void zxSetUlaPalete(Computer* comp) {
 
 Computer* compCreate() {
 	Computer* comp = (Computer*)malloc(sizeof(Computer));
-//	void* ptr = (void*)comp;
-//	int i;
 	memset(comp, 0x00, sizeof(Computer));
-//	memset(comp->brkIOMap, 0x00, 0x10000);
 	comp->resbank = RES_48;
 	comp->firstRun = 1;
 
@@ -186,12 +183,6 @@ Computer* compCreate() {
 
 	comp->frqMul = 1;
 	compSetBaseFrq(comp, 3.5);
-
-//	memset(comp->brkIOMap, 0, 0x10000);
-//	memset(comp->brkRomMap, 0, 0x80000);
-//	memset(comp->brkRamMap, 0, 0x400000);
-//	memset(comp->brkAdrMap, 0, 0x1000);
-
 // input
 	comp->keyb = keyCreate();
 	comp->joy = joyCreate();
@@ -212,34 +203,18 @@ Computer* compCreate() {
 	comp->beep = bcCreate();
 	comp->nesapu = apuCreate(nes_apu_ext_rd, comp);
 // baseconf
-//	comp->evo.evo2F = 0;
-//	comp->evo.evo4F = 0;
-//	comp->evo.evo6F = 0;
-//	comp->evo.evo8F = 0;
 //					0   1   2   3   4   5   6   7   8    9    A    B    C    D    E    F
 	char blnm[] = {'x','B','o','o','t',000,000,000,000,000,000,000,0x38,0x98,0x00,0x00};
 	char bcnm[] = {'x','E','v','o',' ','0','.','5','2',000,000,000,0x89,0x99,0x00,0x00};
 	memcpy(comp->evo.blVer,blnm,16);
 	memcpy(comp->evo.bcVer,bcnm,16);
-//	comp->cmos.mode = 0;
 //tsconf
 	comp->tsconf.pwr_up = 1;
-//	comp->tsconf.vdos = 0;
 // rzx
 #ifdef HAVEZLIB
-//	comp->rzx.start = 0;
-//	comp->rzx.play = 0;
-//	comp->rzx.overio = 0;
-//	comp->rzx.fCount = 0;
 	comp->rzx.file = NULL;
 #endif
-//	comp->tapCount = 0;
-//	comp->tickCount = 0;
-
 	gsReset(comp->gs);
-
-//	comp->cmos.adr = 0;
-//	memset(comp->cmos.data, 0x00, 256);
 	comp->cmos.data[17] = 0xaa;
 	return comp;
 }

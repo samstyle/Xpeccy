@@ -7,12 +7,6 @@ extern "C" {
 
 #include "sndcommon.h"
 
-// TODO: move to own ticks as in gbsound
-// 1T = 1e9 / frq ns
-// sync: decrease current tick ns counter, change channels on tick borders
-
-extern int ayDac;
-
 // ay_type
 enum {
 	SND_NONE = 0,
@@ -47,7 +41,7 @@ typedef struct {
 	int vol;
 	int per;		// period in ticks (0:channel off)
 	int cnt;		// ticks countdown
-	int step;		// ++ each tick (used for envelope, noise)
+	int step;		// env:vol change direction (+1 -1); noise:seed
 } aymChan;
 
 typedef struct {

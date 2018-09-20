@@ -1739,7 +1739,7 @@ void DebugWin::doFill() {
 
 void DebugWin::doMemView() {
 	memViewer->mem = comp->mem;
-	memViewer->ui.sbPage->setValue(comp->mem->map[3].num);
+	memViewer->ui.sbPage->setValue(comp->mem->map[0xc0].num >> 14);
 	memViewer->fillImage();
 	memViewer->show();
 }
