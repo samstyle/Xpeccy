@@ -78,7 +78,7 @@ unsigned char memRd(Memory*,unsigned short);
 void memWr(Memory*,unsigned short,unsigned char);
 
 void memSetSize(Memory*, int, int);
-void memSetBank(Memory*, int, int, int, int, extmrd, extmwr, void*);
+void memSetBank(Memory* mem, int page, int type, int bank, int siz, extmrd rd, extmwr wr, void* data);
 
 // void memGetData(Memory*,int,int,int,char*);
 void memPutData(Memory*,int,int,int,char*);

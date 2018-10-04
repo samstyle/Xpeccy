@@ -58,15 +58,18 @@ typedef unsigned char(*cbdmr)(unsigned short,void*);
 #define OF_SKIPABLE	(1<<1)
 #define OF_RELJUMP	(1<<2)
 
-struct CPU;
+typedef struct CPU CPU;
+typedef struct opCode opCode;
+
+typedef void(*cbcpu)(CPU*);
+
 struct opCode {
 	int flag;
 	int t;				// T-states
-	void(*exec)(struct CPU *);	// fuction to exec
-	struct opCode *tab;		// next opCode tab (for prefixes)
+	cbcpu exec;			// fuction to exec
+	opCode *tab;			// next opCode tab (for prefixes)
 	const char* mnem;		// mnemonic
 };
-typedef struct opCode opCode;
 
 typedef struct {
 	unsigned match:1;
@@ -79,6 +82,7 @@ typedef struct {
 #include "Z80/z80.h"
 #include "LR35902/lr35902.h"
 #include "MOS6502/6502.h"
+#include "1801vm1/1801vm1.h"
 
 enum {
 	CPU_NONE = 0,		// dummy
@@ -99,7 +103,7 @@ struct CPU {
 	unsigned speed:1;		// LR35902: double speed mode (TODO)
 	unsigned speedrq:1;		// LR35902: request speed change after STOP command
 	unsigned dihalt:1;		// LR35902: HALT when DI: repeat next opcode
-	unsigned sta:1;			// MOS6502: don't add 1T on (ABSX,ABSY,INDY)
+	unsigned sta:1;			// MOS6502: don't add 1T on (ABSX,ABSY,INDY); PDP11:stack overflow
 	unsigned nod:1;			// MOS6502: ignore flag D in ADC/SBC
 
 	int type;			// cpu type id
@@ -129,7 +133,6 @@ struct CPU {
 	PAIR(de_,d_,e_);
 	PAIR(hl_,h_,l_);
 
-	unsigned short pdat;		// pdp11 data bus
 	unsigned short pflag;		// pdp11 flag
 	unsigned short preg[8];		// pdp11 registers
 

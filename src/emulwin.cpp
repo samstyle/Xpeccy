@@ -129,16 +129,13 @@ void MainWin::pause(bool p, int msk) {
 	if (!grabMice || (conf.emu.pause && grabMice)) {
 		releaseMouse();
 	}
-	if (!conf.emu.pause) {
+	if (conf.emu.pause) {
+		setWindowIcon(QIcon(":/images/pause.png"));
+	} else {
 		setWindowIcon(icon);
 		if (grabMice)
 			grabMouse(QCursor(Qt::BlankCursor));
-//		ethread.block = 0;
-	} else {
-		setWindowIcon(QIcon(":/images/pause.png"));
-//		ethread.block = 1;
 	}
-	updateHead();
 }
 
 // Main window
@@ -1378,4 +1375,5 @@ void MainWin::saveNESPPU() {
 }
 
 void MainWin::debugAction() {
+	sndDebug();
 }

@@ -1,8 +1,6 @@
 #ifndef X_PDP11_H
 #define X_PDP11_H
 
-#include "../cpu.h"
-
 enum {
 	PDP11_REG0 = 1,
 	PDP11_REG1,
@@ -14,6 +12,21 @@ enum {
 	PDP11_REG7,
 	PDP11_REGF
 };
+
+#define PDP_FC	(1 << 0)
+#define PDP_FV	(1 << 1)
+#define	PDP_FZ	(1 << 2)
+#define PDP_FN	(1 << 3)
+#define PDP_F7	(1 << 7)
+#define PDP_F10	(1 << 10)
+#define PDP_F11 (1 << 11)
+
+#define PDP_INT_IRQ1	(1 << 0)
+#define PDP_INT_IRQ2	(1 << 1)
+#define PDP_INT_IRQ3	(1 << 2)
+#define PDP_INT_VIRQ	(1 << 3)
+
+#include "../cpu.h"
 
 void pdp11_reset(CPU*);
 int pdp11_exec(CPU*);

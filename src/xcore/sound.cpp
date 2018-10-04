@@ -9,7 +9,7 @@
 #include <SDL.h>
 
 // new
-static unsigned char sbuf[0x2000];
+static unsigned char sbuf[0x4000];
 static unsigned long posf = 0;		// fill pos
 static unsigned long posp = 0;		// play pos
 
@@ -29,28 +29,28 @@ OutSys* findOutSys(const char*);
 
 // return 1 when buffer is full
 int sndSync(Computer* comp) {
-	if (!(conf.emu.fast || conf.emu.pause)) {
+	if (!conf.emu.pause) {
 		tapSync(comp->tape,comp->tapCount);
 		comp->tapCount = 0;
 		tsSync(comp->ts,nsPerSample);
 		gsFlush(comp->gs);
 		saaFlush(comp->saa);
-		sndLev = comp->hw->vol(comp, &conf.snd.vol);
-
-		sndLev.left = sndLev.left * conf.snd.vol.master / 100;
-		sndLev.right = sndLev.right * conf.snd.vol.master / 100;
-
-		if (sndLev.left > 0x7fff) sndLev.left = 0x7fff;
-		if (sndLev.right > 0x7fff) sndLev.right = 0x7fff;
+		if (!conf.emu.fast) {
+			sndLev = comp->hw->vol(comp, &conf.snd.vol);
+			sndLev.left = sndLev.left * conf.snd.vol.master / 100;
+			sndLev.right = sndLev.right * conf.snd.vol.master / 100;
+			if (sndLev.left > 0x7fff) sndLev.left = 0x7fff;
+			if (sndLev.right > 0x7fff) sndLev.right = 0x7fff;
+			sbuf[posf & 0x3fff] = sndLev.left & 0xff;
+			posf++;
+			sbuf[posf & 0x3fff] = (sndLev.left >> 8) & 0xff;
+			posf++;
+			sbuf[posf & 0x3fff] = sndLev.right & 0xff;
+			posf++;
+			sbuf[posf & 0x3fff] = (sndLev.right >> 8) & 0xff;
+			posf++;
+		}
 	}
-	sbuf[posf & 0x1fff] = sndLev.left & 0xff;
-	posf++;
-	sbuf[posf & 0x1fff] = (sndLev.left >> 8) & 0xff;
-	posf++;
-	sbuf[posf & 0x1fff] = sndLev.right & 0xff;
-	posf++;
-	sbuf[posf & 0x1fff] = (sndLev.right >> 8) & 0xff;
-	posf++;
 	smpCount++;
 	if (smpCount < sndChunks) return 0;
 	conf.snd.fill = 0;
@@ -74,6 +74,7 @@ std::string sndGetOutputName() {
 
 void setOutput(const char* name) {
 	if (sndOutput != NULL) {
+		if (!strcmp(name, sndOutput->name)) return;	// same
 		sndOutput->close();
 	}
 	sndOutput = findOutSys(name);
@@ -84,7 +85,6 @@ void setOutput(const char* name) {
 		printf("Can't open sound system '%s'. Reset to NULL\n",name);
 		setOutput("NULL");
 	}
-	// sndCalibrate();
 }
 
 int sndOpen() {
@@ -94,16 +94,16 @@ int sndOpen() {
 		setOutput("NULL");
 	}
 	posp = 0;
-	posf = 0;
+	posf = 0x2000;
 	return 1;
 }
 
+/*
 void sndPlay() {
-	if (sndOutput) {
-		sndOutput->play();
-	}
-	// playPos = (bufA.pos - sndBufSize) & 0xffff;
+	if (!sndOutput) return;
+	sndOutput->play();
 }
+*/
 
 void sndClose() {
 	if (sndOutput != NULL)
@@ -144,17 +144,23 @@ void null_close() {}
 // SDL
 
 void sdlPlayAudio(void*, Uint8* stream, int len) {
-	if (posf - posp < len) {
+	if ((posf - posp < len) || conf.emu.fast || conf.emu.pause) {
 		while (len > 0) {
+#if 1
 			*(stream++) = sndLev.left & 0xff;;
 			*(stream++) = (sndLev.left >> 8) & 0xff;
 			*(stream++) = sndLev.right & 0xff;
 			*(stream++) = (sndLev.right >> 8) & 0xff;
 			len -= 4;
+#else
+			*(stream++) = 0x80;
+			len--;
+#endif
 		}
+		posp = posf - len;
 	} else {
 		while(len > 0) {
-			*(stream++) = sbuf[posp & 0x1fff];
+			*(stream++) = sbuf[posp & 0x3fff];
 			posp++;
 			len--;
 		}
@@ -180,6 +186,8 @@ int sdlopen() {
 		SDL_PauseAudio(0);
 		res = 1;
 	}
+	posp = 0;
+	posf = 0x1000;
 	return res;
 }
 
@@ -224,4 +232,10 @@ void sndInit() {
 	conf.snd.vol.ay = 100;
 	conf.snd.vol.gs = 100;
 	initNoise();							// ay/ym
+}
+
+// debug
+
+void sndDebug() {
+	printf("%li - %li = %li\n",posf, posp, posf - posp);
 }

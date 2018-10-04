@@ -40,8 +40,9 @@ void addOutput(std::string, bool(*)(),void(*)(),void(*)());
 void setOutput(const char*);
 
 int sndOpen();
-void sndPlay();
 void sndClose();
 int sndSync(Computer*);
+
+void sndDebug();
 
 #endif

@@ -7,7 +7,7 @@
 
 char noizes[0x20000];		// here iz noize values 1/0 [generated at start]
 
-#if 1
+#if 0
 static int ayDACvol[32] = {0x0000,0x0000,0x001D,0x003A,0x0052,0x0065,0x007D,0x009A,
 			   0x00C2,0x00F0,0x0122,0x0146,0x0186,0x01D6,0x0226,0x0274,
 			   0x02EA,0x037E,0x041C,0x04B2,0x0594,0x06AF,0x07C8,0x08EB,
@@ -59,6 +59,7 @@ void aymDestroy(aymChip* ay) {
 void aymResetChan(aymChan* ch) {
 	ch->per = 0;
 	ch->step = 0;
+	ch->vol = 0;
 	ch->cnt = 0;
 	ch->lev = 0;
 	ch->ten = 0;
@@ -124,7 +125,7 @@ void aymSetReg(aymChip* ay, unsigned char val) {
 		case 0x0b:
 		case 0x0c:
 			tone = ay->reg[11] | (ay->reg[12] << 8);
-			ay->chanE.per = tone << 5;
+			ay->chanE.per = tone << 4;
 			break;
 		case 0x0d:
 			ay->eForm = val & 0x0f;
@@ -207,10 +208,11 @@ void aymSync(aymChip* ay, int ns) {
 static int vol;
 
 int ayGetChanVol(aymChip* ay, aymChan* ch) {
-	if ((ch->lev & ch->ten) || (ch->nen && ay->chanN.lev) || !(ch->ten || ch->nen))
+	if (((ch->lev && ch->ten) || (ch->nen && ay->chanN.lev)) || !(ch->ten || ch->nen)) {
 		vol = ch->een ? ay->chanE.vol : ch->vol;
-	else
+	} else {
 		vol = 0;
+	}
 	if (ay->coarse)
 		vol |= 1;
 	return ayDACvol[vol];
@@ -261,8 +263,8 @@ sndPair aymGetVolume(aymChip* ay) {
 			break;
 	}
 
-	res.left = lef + 0.6 * cen + 0.1 * rig;
-	res.right = rig + 0.6 * cen + 0.1 * lef;
+	res.left = lef + (cen >> 1);
+	res.right = rig + (cen >> 1);
 	return res;
 }
 

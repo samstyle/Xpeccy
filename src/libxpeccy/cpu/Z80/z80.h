@@ -1,5 +1,5 @@
-#ifndef _Z80_H
-#define _Z80_H
+#ifndef X_Z80_H
+#define X_Z80_H
 
 #include "../cpu.h"
 #include "z80_macro.h"
