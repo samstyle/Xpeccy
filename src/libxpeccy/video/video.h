@@ -60,6 +60,9 @@ enum {
 	VID_C64_TEXT_MC,
 	VID_C64_BITMAP,
 	VID_C64_BITMAP_MC,
+// bk
+	VID_BK_BW,
+	VID_BK_COL,
 };
 
 extern int bytesPerLine;

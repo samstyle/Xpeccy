@@ -60,6 +60,11 @@ HardWare hwTab[] = {
 		HW_C64,"Commodore64","Commodore64",50,MEM_128K,
 		c64_maper,NULL,NULL,c64_mrd,c64_mwr,c64_reset,c64_sync,c64_keyp,c64_keyr,c64_vol
 	},{
+		HW_NULL,"","",50,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// separator
+	},{
+		HW_BK0010, "BK0010","BK0010",50,MEM_64K,
+		bk_mem_map,NULL,NULL,bk_mrd,bk_mwr,bk_reset,NULL,bk_keyp,bk_keyr,bk_vol
+	},{
 		HW_NULL,NULL,NULL,50,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// eot
 	}
 };

@@ -11,6 +11,7 @@ int res4 = 0;	// save last res3 (vidSync on OUT/MWR process do res3-res4 ticks)
 static vLayout gbcLay = {{228,154},{0,0},{68,10},{160,144},{0,0},64};
 static vLayout nesNTSCLay = {{341,262},{0,0},{85,22},{256,240},{0,0},64};
 static vLayout nesPALLay = {{341,312},{0,0},{85,72},{256,240},{0,0},64};
+static vLayout bkLay = {{256,256},{0,0},{1,1},{256,256},{0,0},0};
 
 // ...
 
@@ -293,6 +294,9 @@ void compReset(Computer* comp,int res) {
 // colorCLK	14.31818MHz (ntsc) / 17.734472MHz (pal)
 // CPU clock	~1MHz
 
+// BK0010
+// dot: 25.175MHz (~40 ns/dot)
+
 void compUpdateTimings(Computer* comp) {
 	int perNoTurbo = 1e3 / comp->cpuFrq;		// ns for full cpu tick
 	if (perNoTurbo & 1) perNoTurbo++;
@@ -311,6 +315,11 @@ void compUpdateTimings(Computer* comp) {
 			break;
 		case HW_C64:
 			vidUpdateTimings(comp->vid, perNoTurbo >> 3);
+			break;
+		case HW_BK0010:
+			vidUpdateTimings(comp->vid, 40);
+			vidSetLayout(comp->vid, bkLay);
+			comp->vid->lockLayout = 1;
 			break;
 		case HW_NES:
 			// base frq (21.477MHz | 26.602MHz)

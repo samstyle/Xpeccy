@@ -20,12 +20,12 @@ void bk_bw_dot(Video* vid) {
 		xscr = vid->ray.x - vid->bord.x;
 		if ((vid->ray.x & 3) == 0) {
 			yscr = vid->ray.y - vid->bord.y;
-			xadr = 0x4000 | (yscr << 6) | ((xscr >> 2) & 0x1f);
+			xadr = 0x4000 | (yscr << 6) | ((xscr >> 2) & 0x3f);
 			sbyte = vid->mrd(xadr, vid->data);
 		}
-		cola = (sbyte & 0x80) ? 1 : 0;
-		colb = (sbyte & 0x40) ? 1 : 0;
-		sbyte <<= 2;
+		cola = (sbyte & 0x01) ? 1 : 0;
+		colb = (sbyte & 0x02) ? 1 : 0;
+		sbyte >>= 2;
 	}
 	vid_dot_half(vid, cola);
 	vid_dot_half(vid, colb);
@@ -43,11 +43,11 @@ void bk_col_dot(Video* vid) {
 		xscr = vid->ray.x - vid->bord.x;
 		if ((vid->ray.x & 3) == 0) {
 			yscr = vid->ray.y - vid->bord.y;
-			xadr = 0x4000 | (yscr << 6) | ((xscr >> 2) & 0x1f);
+			xadr = 0x4000 | (yscr << 6) | ((xscr >> 2) & 0x3f);
 			sbyte = vid->mrd(xadr, vid->data);
 		}
 		cola = (sbyte & 0xc0) >> 6;
 		sbyte <<= 2;
 	}
-	vid_dot_full(vid, cola);
+	vid_dot_full(vid, cola | 4);
 }

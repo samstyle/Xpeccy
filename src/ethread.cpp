@@ -105,6 +105,8 @@ void xThread::run() {
 		if (!block && !comp->brk) {
 			emuCycle();
 			if (comp->brk) {
+				conf.emu.pause |= PR_DEBUG;
+				comp->brk = 0;
 				emit dbgRequest();
 			}
 		}

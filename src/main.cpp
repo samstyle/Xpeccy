@@ -56,6 +56,8 @@ int main(int ac,char** av) {
 	QApplication app(ac,av,true);
 
 	conf.running = 0;
+	conf.emu.pause = 0;
+	conf.emu.fast = 0;
 	conf.joy.dead = 8192;
 //	vidInitAdrs();
 	sndInit();

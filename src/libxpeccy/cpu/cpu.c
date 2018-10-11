@@ -31,10 +31,11 @@ extern opCode lrTab[256];
 extern opCode mosTab[256];
 
 cpuCore cpuTab[] = {
-	{CPU_Z80, "Z80", npTab, z80_reset, z80_exec, /*z80_int,*/ z80_asm, z80_mnem, z80_get_regs, z80_set_regs},
-	{CPU_LR35902, "LR35902", lrTab, lr_reset, lr_exec, /*lr_int,*/ lr_asm, lr_mnem, lr_get_regs, lr_set_regs},
+	{CPU_Z80, "Z80", npTab, z80_reset, z80_exec, z80_asm, z80_mnem, z80_get_regs, z80_set_regs},
+	{CPU_LR35902, "LR35902", lrTab, lr_reset, lr_exec, lr_asm, lr_mnem, lr_get_regs, lr_set_regs},
 	{CPU_6502, "MOS6502", mosTab, m6502_reset, m6502_exec, m6502_asm, m6502_mnem, m6502_get_regs, m6502_set_regs},
-	{CPU_NONE, "none", NULL, nil_reset, nil_exec, /*nil_int,*/ nil_asm, nil_mnem, nil_get_regs, nil_set_regs}
+	{CPU_VM1, "1801VM1", NULL, pdp11_reset, pdp11_exec, pdp11_asm, pdp11_mnem, pdp11_get_regs, pdp11_set_regs},
+	{CPU_NONE, "none", NULL, nil_reset, nil_exec, nil_asm, nil_mnem, nil_get_regs, nil_set_regs}
 };
 
 cpuCore* findCore(int type) {
@@ -93,7 +94,7 @@ static const char halfByte[] = "0123456789ABCDEF";
 
 xMnem cpuDisasm(CPU* cpu, unsigned short adr, char* buf, cbdmr mrd, void* data) {
 	xMnem mn;
-	opCode* opt = cpu->tab;
+//	opCode* opt = cpu->tab;
 	unsigned char op;
 	unsigned char tmp;
 	unsigned char dtl;
@@ -101,10 +102,10 @@ xMnem cpuDisasm(CPU* cpu, unsigned short adr, char* buf, cbdmr mrd, void* data) 
 	unsigned short dtw;
 	mn.mnem = NULL;
 	mn.flag = 0;
-	if (opt == NULL) {			// no opcode tab
-		strcpy(buf, "undef");
-		mn.len = 1;
-	} else {
+//	if (opt == NULL) {			// no opcode tab
+//		strcpy(buf, "undef");
+//		mn.len = 1;
+//	} else {
 		mn = cpu->mnem(cpu, adr, mrd, data);
 		mn.oadr = -1;
 		adr += mn.len;
@@ -165,7 +166,7 @@ xMnem cpuDisasm(CPU* cpu, unsigned short adr, char* buf, cbdmr mrd, void* data) 
 			}
 		}
 		*buf = 0;
-	}
+//	}
 	return mn;
 }
 

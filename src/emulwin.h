@@ -16,17 +16,6 @@
 #include "vkeyboard.h"
 #include "ethread.h"
 
-// pause reasons
-#define	PR_MENU		1
-#define	PR_FILE		(1<<1)
-#define	PR_OPTS		(1<<2)
-#define	PR_DEBUG	(1<<3)
-#define	PR_QUIT		(1<<4)
-#define	PR_PAUSE	(1<<5)
-#define	PR_EXTRA	(1<<6)
-#define PR_RZX		(1<<7)
-#define	PR_EXIT		(1<<8)
-
 // Qt nativeScanCode
 
 typedef struct {

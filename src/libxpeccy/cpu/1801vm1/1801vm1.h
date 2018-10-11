@@ -17,6 +17,7 @@ enum {
 #define PDP_FV	(1 << 1)
 #define	PDP_FZ	(1 << 2)
 #define PDP_FN	(1 << 3)
+#define PDP_FT	(1 << 4)
 #define PDP_F7	(1 << 7)
 #define PDP_F10	(1 << 10)
 #define PDP_F11 (1 << 11)

@@ -36,6 +36,10 @@ void vid_dot(Video* vid, unsigned char col) {
 		xcol.b = pcol;
 	}
 	pcol = xcol.r;
+	if (vid->ray.ptr > (vid->scrimg + 2560 * 1440 * 3)) {
+		printf("ray overscan\n");
+		assert(0);
+	}
 	*(vid->ray.ptr++) = (pcol * (100 - noflic) + *pptr * noflic) / 100;
 	*(pptr++) = pcol;
 	pcol = xcol.g;
@@ -163,7 +167,7 @@ void vidReset(Video* vid) {
 	vid->ula->active = 0;
 	vid->curscr = 5;
 	vid->nsDraw = 0;
-	vidSetMode(vid, VID_NORMAL);
+//	vidSetMode(vid, VID_NORMAL);
 }
 
 // new layout:
@@ -910,6 +914,11 @@ void vidBreak(Video* vid) {
 	// assert(0);
 }
 
+// bk
+
+void bk_bw_dot(Video*);
+void bk_col_dot(Video*);
+
 // weiter
 
 typedef struct {
@@ -953,6 +962,10 @@ static xVideoMode vidModeTab[] = {
 	{VID_C64_TEXT_MC, vidC64TMDraw, NULL, vidC64Line, vidC64Fram},
 	{VID_C64_BITMAP, vidC64BDraw, NULL, vidC64Line, vidC64Fram},
 	{VID_C64_BITMAP_MC, vidC64BMDraw, NULL, vidC64Line, vidC64Fram},
+
+	{VID_BK_BW, bk_bw_dot, NULL, NULL, NULL},
+	{VID_BK_COL, bk_col_dot, NULL, NULL, NULL},
+
 	{VID_UNKNOWN, vidDrawBorder, NULL, NULL, NULL}
 };
 

@@ -88,7 +88,8 @@ enum {
 	CPU_NONE = 0,		// dummy
 	CPU_Z80,		// ZX, MSX
 	CPU_LR35902,		// GB, GBC
-	CPU_6502		// ...
+	CPU_6502,		// NES, Commodore
+	CPU_VM1			// BK
 };
 
 // typedef struct CPU CPU;
@@ -110,6 +111,7 @@ struct CPU {
 
 	unsigned char intrq;		// interrupts request. 8 bits = 8 INT types, 1 = requested
 	unsigned char inten;		// interrupts enabled mask
+	unsigned short intvec;
 
 	PAIR(pc,hpc,lpc);
 	PAIR(sp,hsp,lsp);
@@ -133,6 +135,8 @@ struct CPU {
 	PAIR(de_,d_,e_);
 	PAIR(hl_,h_,l_);
 
+	unsigned mcir:3;
+	unsigned vsel:4;
 	unsigned short pflag;		// pdp11 flag
 	unsigned short preg[8];		// pdp11 registers
 
@@ -150,7 +154,6 @@ struct CPU {
 
 	void (*reset)(CPU*);
 	int (*exec)(CPU*);
-//	int (*intr)(CPU*);		// handle interrupt. intrq = requested INT types
 	xAsmScan (*asmbl)(const char*, char*);
 	xMnem (*mnem)(CPU*, unsigned short, cbdmr, void*);
 	void (*getregs)(CPU*, xRegBunch*);
@@ -169,7 +172,6 @@ typedef struct {
 	opCode* tab;				// start opcode tab;
 	void (*reset)(CPU*);			// reset
 	int (*exec)(CPU*);			// exec opcode, return T
-//	int (*intr)(CPU*);			// handle interrupt, return T
 	xAsmScan (*asmbl)(const char*, char*);	// compile mnemonic
 	xMnem (*mnem)(CPU*, unsigned short, cbdmr, void*);
 	void(*getregs)(CPU*,xRegBunch*);	// get cpu registers: name,id,value
