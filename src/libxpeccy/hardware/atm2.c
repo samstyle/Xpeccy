@@ -80,14 +80,23 @@ void atm2Out7FFD(Computer* comp, unsigned short port, unsigned char val) {
 	atm2MapMem(comp);
 }
 
+static const unsigned char atm2clev[16] = {0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88,0x99,0xaa,0xbb,0xcc,0xdd,0xee,0xff};
+
 void atm2OutFF(Computer* comp, unsigned short port, unsigned char val) {		// dos. bdiOut already done
 	if (comp->p77hi & 0x40) return;			// pen2 = 1
 	val ^= 0xff;	// inverse colors
 	int adr = comp->vid->brdcol & 0x0f;
 	// printf("%.2X : %.2X\n",adr, val);
+#if 1			// ddp extend palete
+//	port = (port & 0xff) | (val << 8);
+	comp->vid->pal[adr].b = atm2clev[((val & 0x01) << 3) | ((val & 0x20) >> 3) | ((port & 0x0100) >> 7) | ((port & 0x2000) >> 13)];
+	comp->vid->pal[adr].r = atm2clev[((val & 0x02) << 2) | ((val & 0x40) >> 4) | ((port & 0x0200) >> 8) | ((port & 0x4000) >> 14)];
+	comp->vid->pal[adr].g = atm2clev[((val & 0x10) >> 1) | ((val & 0x80) >> 5) | ((port & 0x1000) >> 11)| ((port & 0x8000) >> 15)];
+#else
 	comp->vid->pal[adr].b = ((val & 0x01) ? 0xaa : 0x00) + ((val & 0x20) ? 0x55 : 0x00);
 	comp->vid->pal[adr].r = ((val & 0x02) ? 0xaa : 0x00) + ((val & 0x40) ? 0x55 : 0x00);
 	comp->vid->pal[adr].g = ((val & 0x10) ? 0xaa : 0x00) + ((val & 0x80) ? 0x55 : 0x00);
+#endif
 }
 
 // in

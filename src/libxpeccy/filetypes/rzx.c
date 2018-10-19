@@ -197,7 +197,7 @@ int rzxGetSnapType(char* ext) {
 	return res;
 }
 
-int loadRZX(Computer* comp, const char* name) {
+int loadRZX(Computer* comp, const char* name, int drv) {
 	int err = ERR_OK;
 	comp->rzx.play = 0;
 	comp->rzx.fTotal = 0;

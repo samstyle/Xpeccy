@@ -181,6 +181,7 @@ Computer* compCreate() {
 	comp->cpu = cpuCreate(CPU_Z80,memrd,memwr,iord,iowr,intrq,comp);
 	comp->mem = memCreate();
 	comp->vid = vidCreate(vid_mrd_cb, comp);
+	vidSetMode(comp->vid, VID_NORMAL);
 
 	comp->frqMul = 1;
 	compSetBaseFrq(comp, 3.5);

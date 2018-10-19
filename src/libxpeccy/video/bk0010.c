@@ -46,8 +46,8 @@ void bk_col_dot(Video* vid) {
 			xadr = 0x4000 | (yscr << 6) | ((xscr >> 2) & 0x3f);
 			sbyte = vid->mrd(xadr, vid->data);
 		}
-		cola = (sbyte & 0xc0) >> 6;
-		sbyte <<= 2;
+		cola = sbyte & 3;
+		sbyte >>= 2;
 	}
 	vid_dot_full(vid, cola | 4);
 }

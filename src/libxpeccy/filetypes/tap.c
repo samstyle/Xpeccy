@@ -37,7 +37,8 @@ TapeBlock tapDataToBlock(char* data,int len,int* sigLens) {
 	return block;
 }
 
-int loadTAP(Tape* tape, const char* name) {
+int loadTAP(Computer* comp, const char* name, int drv) {
+	Tape* tape = comp->tape;
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
 
@@ -67,7 +68,8 @@ int loadTAP(Tape* tape, const char* name) {
 	return ERR_OK;
 }
 
-int saveTAP(Tape* tape, const char* name) {
+int saveTAP(Computer* comp, const char* name, int drv) {
+	Tape* tape = comp->tape;
 	if (!tape->isData) return ERR_TAP_DATA;
 	FILE* file = fopen(name, "wb");
 	if (!file) return ERR_CANT_OPEN;

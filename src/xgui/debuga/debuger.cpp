@@ -650,7 +650,8 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					}
 					break;
 				case Qt::Key_F3:
-					loadFile(comp,"",FT_ALL,-1);
+					//loadFile(comp,"",FT_ALL,-1);
+					load_file(comp, NULL, FG_ALL, -1);
 					disasmAdr = comp->cpu->pc;
 					fillAll();
 					break;

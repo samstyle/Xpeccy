@@ -25,7 +25,8 @@ void detectType(xCartridge* slot) {
 	}
 }
 
-int loadSlot(xCartridge* slot, const char* name) {
+int loadSlot(Computer* comp, const char* name, int drv) {
+	xCartridge* slot = comp->slot;
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
 	fseek(file,0,SEEK_END);

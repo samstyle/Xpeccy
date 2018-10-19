@@ -27,7 +27,7 @@ static char nesPal[] = "PAL";
 static char nesNtsc[] = "NTSC";
 static char nesDendy[] = "Dendy";
 
-int loadNes(Computer* comp, const char* name) {
+int loadNes(Computer* comp, const char* name, int drv) {
 	xCartridge* slot = comp->slot;
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;

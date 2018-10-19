@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "hardware.h"
 
 // 0000..7FFF	RAM
@@ -61,6 +63,7 @@ void bk_io_wr(unsigned short adr, unsigned char val, void* ptr) {
 		case 0xffb5:
 			comp->vid->sc.y &= 0xff;
 			comp->vid->sc.y |= (val << 8);
+//			printf("%.4X : ffb4/5 = %X\n",comp->cpu->preg[7], comp->vid->sc.y);
 			break;
 		case 0xffcc:
 		case 0xffcd: break;
@@ -85,12 +88,14 @@ static xColor bk_pal[8] = {
 };
 
 void bk_reset(Computer* comp) {
+	memset(comp->mem->ramData, 0x00, MEM_256);
 	for (int i = 0; i < 8; i++) {
 		comp->vid->pal[i] = bk_pal[i];
 	}
 	comp->cpu->reset(comp->cpu);
 	vidSetMode(comp->vid, VID_BK_BW);
 	comp->keyb->map[7] = 0x40;
+	comp->keyb->map[0] = 0;
 }
 
 void bk_mwr(Computer* comp, unsigned short adr, unsigned char val) {
@@ -125,11 +130,17 @@ static bkKeyCode bkeyTab[] = {
 	{XKEY_H,'h'},{XKEY_J,'j'},{XKEY_K,'k'},{XKEY_L,'l'},{XKEY_ENTER,10},
 	{XKEY_Z,'z'},{XKEY_X,'x'},{XKEY_C,'c'},{XKEY_V,'v'},{XKEY_B,'b'},
 	{XKEY_N,'n'},{XKEY_M,'m'},{XKEY_SPACE,' '},
+	{XKEY_BSP,24},
+	{XKEY_DOWN,23},{XKEY_LEFT,8},{XKEY_RIGHT,25},{XKEY_UP,26},
 	{ENDKEY, 0}
 };
 
 void bk_keyp(Computer* comp, keyEntry xkey) {
 	int idx = 0;
+	switch(xkey.key) {
+		case XKEY_PGUP: vidSetMode(comp->vid, VID_BK_COL); break;
+		case XKEY_PGDN: vidSetMode(comp->vid, VID_BK_BW); break;
+	}
 	while ((bkeyTab[idx].xkey != ENDKEY) && (bkeyTab[idx].xkey != xkey.key))
 		idx++;
 	if (bkeyTab[idx].xkey != ENDKEY) {

@@ -16,7 +16,8 @@ typedef struct {
 
 #pragma pack(pop)
 
-int loadSCL(Floppy* flp,const char* name) {
+int loadSCL(Computer* comp, const char* name, int drv) {
+	Floppy* flp = comp->dif->fdc->flop[drv & 3];
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
 	int err = ERR_OK;
@@ -71,7 +72,8 @@ int loadSCL(Floppy* flp,const char* name) {
 	return err;
 }
 
-int saveSCL(Floppy* flp,const char* name) {
+int saveSCL(Computer* comp, const char* name, int drv) {
+	Floppy* flp = comp->dif->fdc->flop[drv & 3];
 	const char* sign = "SINCLAIR";
 	unsigned char img[0xA0000];
 	unsigned char buf[256];

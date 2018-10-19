@@ -57,7 +57,8 @@ void fgetLine(FILE* file, char* buf, int size, int term) {
 static const char edsksgn[] =	"EXTENDED CPC DSK File\r\n";
 static const char dsksgn[] =	"MV - CPCEMU Disk-File\r\n";
 
-int loadDSK(Floppy* flp, const char *name) {
+int loadDSK(Computer* comp, const char *name, int drv) {
+	Floppy* flp = comp->dif->fdc->flop[drv & 3];
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
 	int err = ERR_OK;

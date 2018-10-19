@@ -122,70 +122,70 @@ void fputwLE(FILE*, unsigned short);
 
 void putint(unsigned char*, unsigned int);
 void cutSpaces(char*);
-void loadBoot(Floppy*, const char*);
+void loadBoot(Computer*, const char*, int);
 
 unsigned short swap16(unsigned short);
 unsigned int swap32(unsigned int);
 
 // rzx
 
-int loadRZX(Computer*,const char*);
+int loadRZX(Computer*, const char*, int);
 void rzxGetFrame(Computer*);
 
 // memory (snapshot)
 
 int loadDUMP(Computer*, const char*, int);
 
-int loadZ80(Computer*,const char*);
+int loadZ80(Computer*,const char*, int);
 int loadZ80_f(Computer*, FILE*);
 
-int loadSNA(Computer*,const char*);
+int loadSNA(Computer*,const char*, int);
 int saveSNA(Computer*, const char*, int);
 int loadSNA_f(Computer*, FILE*, size_t);
 
-int loadSPG(Computer*,const char*);
+int loadSPG(Computer*,const char*, int);
 
-int loadT64(Computer*,const char*);
+int loadT64(Computer*,const char*,int);
 
 // tape
 
-int loadTAP(Tape*,const char*);
-int saveTAP(Tape*,const char*);
+int loadTAP(Computer*,const char*, int);
+int saveTAP(Computer*,const char*, int);
 void blkFromData(TapeBlock*, char*, int, int*);
 TapeBlock tapDataToBlock(char*,int,int*);
 
-int loadTZX(Tape*,const char*);
+int loadTZX(Computer*,const char*, int);
 
-int loadWAV(Tape*, const char*);
+int loadWAV(Computer*, const char*, int);
 
 // disk
 
-int loadRaw(Floppy*,const char*);
+int loadRaw(Computer*,const char*, int);
 int saveRawFile(Floppy*,int,const char*);
 
-int loadHobeta(Floppy*,const char*);
+int loadHobeta(Computer*,const char*,int);
 int saveHobetaFile(Floppy*,int,const char*);
 int saveHobeta(TRFile,char*,const char*);
 
-int loadSCL(Floppy*,const char*);
-int saveSCL(Floppy*,const char*);
+int loadSCL(Computer*,const char*,int);
+int saveSCL(Computer*,const char*,int);
 
-int loadTRD(Floppy*,const char*);
-int saveTRD(Floppy*,const char*);
+int loadTRD(Computer*,const char*,int);
+int saveTRD(Computer*,const char*,int);
 
-int loadUDI(Floppy*,const char*);
-int saveUDI(Floppy*,const char*);
+int loadUDI(Computer*,const char*,int);
+int saveUDI(Computer*,const char*,int);
 
-int loadFDI(Floppy*,const char*);
+int loadFDI(Computer*,const char*,int);
 
-int loadDSK(Floppy*,const char*);
+int loadDSK(Computer*,const char*,int);
 
-int loadTD0(Floppy*,const char*);
+int loadTD0(Computer*,const char*,int);
 
 // cartridge
 
-int loadSlot(xCartridge*,const char*);
-int loadNes(Computer*, const char*);
+int loadSlot(Computer*,const char*, int);
+int loadNes(Computer*, const char*, int);
 
 #ifdef __cplusplus
 }

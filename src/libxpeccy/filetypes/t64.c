@@ -15,7 +15,7 @@ typedef struct {
 
 #pragma pack (pop)
 
-int loadT64(Computer* comp, const char* fname) {
+int loadT64(Computer* comp, const char* fname, int drv) {
 	char buf[32];
 	int err = ERR_OK;
 	unsigned short ver;

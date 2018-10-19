@@ -91,7 +91,7 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 	return ERR_OK;
 }
 
-int loadSNA(Computer* comp, const char* name) {
+int loadSNA(Computer* comp, const char* name, int drv) {
 	FILE* file = fopen(name,"rb");
 	if (!file) return ERR_CANT_OPEN;
 	fseek(file, 0, SEEK_END);	// ?

@@ -1178,15 +1178,15 @@ void SetupWin::newb() {newdisk(1);}
 void SetupWin::newc() {newdisk(2);}
 void SetupWin::newd() {newdisk(3);}
 
-void SetupWin::loada() {loadFile(comp,"",FT_DISK,0); updatedisknams();}
-void SetupWin::loadb() {loadFile(comp,"",FT_DISK,1); updatedisknams();}
-void SetupWin::loadc() {loadFile(comp,"",FT_DISK,2); updatedisknams();}
-void SetupWin::loadd() {loadFile(comp,"",FT_DISK,3); updatedisknams();}
+void SetupWin::loada() {load_file(comp, NULL, FG_DISK, 0); updatedisknams();}
+void SetupWin::loadb() {load_file(comp, NULL, FG_DISK, 1); updatedisknams();}
+void SetupWin::loadc() {load_file(comp, NULL, FG_DISK, 2); updatedisknams();}
+void SetupWin::loadd() {load_file(comp, NULL, FG_DISK, 3); updatedisknams();}
 
-void SetupWin::savea() {Floppy* flp = comp->dif->fdc->flop[0]; if (flp->insert) saveFile(comp,flp->path,FT_DISK,0);}
-void SetupWin::saveb() {Floppy* flp = comp->dif->fdc->flop[1]; if (flp->insert) saveFile(comp,flp->path,FT_DISK,1);}
-void SetupWin::savec() {Floppy* flp = comp->dif->fdc->flop[2]; if (flp->insert) saveFile(comp,flp->path,FT_DISK,2);}
-void SetupWin::saved() {Floppy* flp = comp->dif->fdc->flop[3]; if (flp->insert) saveFile(comp,flp->path,FT_DISK,3);}
+void SetupWin::savea() {Floppy* flp = comp->dif->fdc->flop[0]; if (flp->insert) save_file(comp, flp->path, FG_DISK, 0);}
+void SetupWin::saveb() {Floppy* flp = comp->dif->fdc->flop[1]; if (flp->insert) save_file(comp, flp->path, FG_DISK, 1);}
+void SetupWin::savec() {Floppy* flp = comp->dif->fdc->flop[2]; if (flp->insert) save_file(comp, flp->path, FG_DISK, 2);}
+void SetupWin::saved() {Floppy* flp = comp->dif->fdc->flop[3]; if (flp->insert) save_file(comp, flp->path, FG_DISK, 3);}
 
 void SetupWin::ejcta() {saveChangedDisk(comp,0); flpEject(comp->dif->fdc->flop[0]); updatedisknams();}
 void SetupWin::ejctb() {saveChangedDisk(comp,1); flpEject(comp->dif->fdc->flop[1]); updatedisknams();}
@@ -1204,13 +1204,17 @@ void SetupWin::updatedisknams() {
 // tape
 
 void SetupWin::loatape() {
-	loadFile(comp,"",FT_TAPE,1);
+//	loadFile(comp,"",FT_TAPE,1);
+	load_file(comp, NULL, FG_TAPE, -1);
 	ui.tpathle->setText(QString::fromLocal8Bit(comp->tape->path));
 	buildtapelist();
 }
 
 void SetupWin::savtape() {
-	if (comp->tape->blkCount != 0) saveFile(comp,comp->tape->path,FT_TAP,-1);
+	if (comp->tape->blkCount != 0) {
+		//saveFile(comp,comp->tape->path,FT_TAP,-1);
+		save_file(comp, comp->tape->path, FG_TAPE, -1);
+	}
 }
 
 void SetupWin::ejctape() {
@@ -1302,10 +1306,13 @@ void SetupWin::selSDCimg() {
 }
 
 void SetupWin::openSlot() {
-	QString fnam = QFileDialog::getOpenFileName(this,"MSX cartridge A","","MSX cartridge (*.rom)");
-	if (fnam.isEmpty()) return;
-	ui.cSlotName->setText(fnam);
-	loadFile(comp, fnam.toLocal8Bit().data(), FT_SLOT_A, 0);
+//	QString fnam = QFileDialog::getOpenFileName(this,"Cartridge slot","","MSX cartridge (*.rom)");
+//	if (fnam.isEmpty()) return;
+//	ui.cSlotName->setText(fnam);
+//	loadFile(comp, fnam.toLocal8Bit().data(), FT_SLOT_A, 0);
+	if (load_file(comp, NULL, FH_SLOTS, 0) == ERR_OK) {
+		ui.cSlotName->setText(comp->slot->name);
+	}
 }
 
 int testSlotOn(Computer*);

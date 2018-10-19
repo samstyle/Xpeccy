@@ -17,7 +17,7 @@ typedef struct {
 	void(*callback)(FILE*, Tape*);
 } tzxBCall;
 
-int sigLens[] = {PILOTLEN,SYNC1LEN,SYNC2LEN,SIGN0LEN,SIGN1LEN,SYNC3LEN,-1};
+static int sigLens[] = {PILOTLEN,SYNC1LEN,SYNC2LEN,SIGN0LEN,SIGN1LEN,SYNC3LEN,-1};
 
 // #10: <pause:2>,<datalen:2>,{data}
 void tzxBlock10(FILE* file, Tape* tape) {
@@ -246,7 +246,8 @@ tzxBCall tzxBlockTab[] = {
 };
 
 
-int loadTZX(Tape* tape, const char* name) {
+int loadTZX(Computer* comp, const char* name, int drv) {
+	Tape* tape = comp->tape;
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
 

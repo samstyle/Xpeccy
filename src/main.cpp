@@ -108,10 +108,12 @@ int main(int ac,char** av) {
 				mwin.loadLabels(av[i]);
 				i++;
 			} else if (strlen(parg) > 0) {
-				loadFile(mwin.comp, parg, FT_ALL, 0);
+				//loadFile(mwin.comp, parg, FT_ALL, 0);
+				load_file(mwin.comp, parg, FG_ALL, 0);
 			}
 		} else if (strlen(parg) > 0) {
-			loadFile(mwin.comp, parg, FT_ALL, 0);
+			//loadFile(mwin.comp, parg, FT_ALL, 0);
+			load_file(mwin.comp, parg, FG_ALL, 0);
 		}
 	}
 	prfFillBreakpoints(conf.prof.cur);

@@ -73,7 +73,8 @@ void getUDIBitField(Floppy* flp, unsigned char tr, unsigned char* buf) {
 	buf++;
 }
 
-int loadUDI(Floppy* flp, const char* name) {
+int loadUDI(Computer* comp, const char* name, int drv) {
+	Floppy* flp = comp->dif->fdc->flop[drv & 3];
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
 	int err = ERR_OK;
@@ -102,7 +103,8 @@ int loadUDI(Floppy* flp, const char* name) {
 	return err;
 }
 
-int saveUDI(Floppy* flp, const char* name) {
+int saveUDI(Computer* comp, const char* name, int drv) {
+	Floppy* flp = comp->dif->fdc->flop[drv & 3];
 	const char sign[] = "UDI!";
 	unsigned char img[0x112cf4];	// 0x112cf4 for 160 tracks in UDI
 	unsigned char* dptr = img;

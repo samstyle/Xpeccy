@@ -106,7 +106,8 @@ bool MainWin::saveChanged() {
 				res = askYNC(str.toLocal8Bit().data());
 				switch(res) {
 					case QMessageBox::Yes:
-						yep &= saveFile(comp,flp->path,FT_DISK,i);
+						//yep &= saveFile(comp, flp->path, FT_DISK, i);
+						yep &= save_file(comp, flp->path, FG_DISK, i);
 						break;
 					case QMessageBox::Cancel:
 						yep = false;
@@ -481,7 +482,8 @@ void MainWin::tapStateChanged(int wut, int val) {
 					break;
 				case TWS_OPEN:
 					pause(true,PR_FILE);
-					loadFile(comp,"",FT_TAPE,-1);
+					//loadFile(comp,"",FT_TAPE,-1);
+					load_file(comp, NULL, FG_TAPE, -1);
 					tapeWin->buildList(comp->tape);
 					//tapeWin->setCheck(comp->tape->block);
 					pause(false,PR_FILE);
@@ -515,7 +517,8 @@ void MainWin::rzxStateChanged(int state) {
 			break;
 		case RWS_OPEN:
 			pause(true,PR_RZX);
-			loadFile(comp,"",FT_RZX,0);
+			//loadFile(comp,"",FT_RZX,0);
+			load_file(comp, NULL, FG_RZX, -1);
 			if (comp->rzx.play) {
 				rzxWin->startPlay();
 			}
@@ -723,12 +726,14 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;
 			case Qt::Key_F2:
 				pause(true,PR_FILE);
-				saveFile(comp,"",FT_ALL,-1);
+				//saveFile(comp,"",FT_ALL,-1);
+				save_file(comp, NULL, FG_ALL, -1);
 				pause(false,PR_FILE);
 				break;
 			case Qt::Key_F3:
 				pause(true,PR_FILE);
-				loadFile(comp,"",FT_ALL,-1);
+				//loadFile(comp,"",FT_ALL,-1);
+				load_file(comp, NULL, FG_ALL, -1);
 				pause(false,PR_FILE);
 				checkState();
 				break;
@@ -892,7 +897,8 @@ void MainWin::dropEvent(QDropEvent* ev) {
 #ifdef _WIN32
 		fpath.remove(0,1);	// by some reason path will start with /
 #endif
-		loadFile(comp,fpath.toUtf8().data(),FT_ALL,0);
+		//loadFile(comp,fpath.toUtf8().data(),FT_ALL,0);
+		load_file(comp, fpath.toLocal8Bit().data(), FG_ALL, 0);
 	}
 }
 
@@ -1203,9 +1209,12 @@ void MainWin::initUserMenu() {
 	connect(resMenu,SIGNAL(triggered(QAction*)),this,SLOT(reset(QAction*)));
 	connect(fileMenu,SIGNAL(triggered(QAction*)),this,SLOT(umOpen(QAction*)));
 
-	fileMenu->addAction(QIcon(":/images/memory.png"),"Snapshot")->setData(FT_SNAP | FT_SPG);
-	fileMenu->addAction(QIcon(":/images/tape.png"),"Tape")->setData(FT_TAPE);
-	fileMenu->addAction(QIcon(":/images/floppy.png"),"Floppy")->setData(FT_DISK);
+//	fileMenu->addAction(QIcon(":/images/memory.png"),"Snapshot")->setData(FT_SNAP | FT_SPG);
+//	fileMenu->addAction(QIcon(":/images/tape.png"),"Tape")->setData(FT_TAPE);
+//	fileMenu->addAction(QIcon(":/images/floppy.png"),"Floppy")->setData(FT_DISK);
+	fileMenu->addAction(QIcon(":/images/memory.png"),"Snapshot")->setData(FG_SNAPSHOT);
+	fileMenu->addAction(QIcon(":/images/tape.png"),"Tape")->setData(FG_TAPE);
+	fileMenu->addAction(QIcon(":/images/floppy.png"),"Floppy")->setData(FH_DISKS);
 
 	resMenu->addAction("default")->setData(RES_DEFAULT);
 	resMenu->addSeparator();
@@ -1281,7 +1290,8 @@ void MainWin::dbgReturn() {
 }
 
 void MainWin::bookmarkSelected(QAction* act) {
-	loadFile(comp,act->data().toString().toLocal8Bit().data(),FT_ALL,0);
+//	loadFile(comp,act->data().toString().toLocal8Bit().data(),FT_ALL,0);
+	load_file(comp, act->data().toString().toLocal8Bit().data(), FG_ALL, 0);
 	setFocus();
 }
 
@@ -1325,7 +1335,8 @@ void MainWin::chLayout(QAction* act) {
 }
 
 void MainWin::umOpen(QAction* act) {
-	loadFile(comp, NULL, act->data().toInt(), -1);
+//	loadFile(comp, NULL, act->data().toInt(), -1);
+	load_file(comp, NULL, act->data().toInt(), -1);
 }
 
 // labels

@@ -21,6 +21,8 @@ unsigned short pdp_rd(CPU* cpu, unsigned short adr) {
 // R7 = (0xffce + Ncpu * 16) & 0xff00;	??? 0x8000
 // F = 0xe0
 void pdp11_reset(CPU* cpu) {
+	for (int i = 0; i < 7; i++)
+		cpu->preg[i] = 0;
 	cpu->preg[7] = pdp_rd(cpu, 0xffce) & 0xff00;
 	cpu->pc = cpu->preg[7];
 	cpu->pflag = 0xe0;
@@ -119,7 +121,8 @@ unsigned short pdp_src(CPU* cpu, int type, int b) {
 			break;
 		case 0x10: cpu->mptr = cpu->preg[type & 7];		// (Rn)+
 			res = pdp_rd(cpu, cpu->mptr);
-			cpu->preg[type & 7] += b ? 1 : 2;
+			if ((type & 7) == 7) b = 0;
+			cpu->preg[type & 7] += b ? 1 : 2;		// !!! R7+2
 			break;
 		case 0x18:						// @(Rn)+
 			cpu->mptr = cpu->preg[type & 7];
@@ -1088,6 +1091,8 @@ void pdp_mov(CPU* cpu) {
 
 // movb works as RMW (read-modify-write)
 // movb (R1)+, @R3 : R1+=1 !!!
+// 1001 010 111 110 111 : movb. S:2.7, D:6.7
+// movb #N,#M(R7) : 6bytes
 void pdp_movb(CPU* cpu) {
 	twsrc = pdp_src(cpu, cpu->com >> 6, 1) & 0xff;
 	if (cpu->com & 0x38) {

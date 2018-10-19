@@ -196,7 +196,10 @@ void setDiskString(Computer* comp,Floppy* flp,std::string st) {
 	flp->protect = (st.substr(3,1) == "R") ? 1 : 0;
 	if (flp->path || (st.size() < 5) || !conf.storePaths) return;
 	st = st.substr(5);
-	if (st.size() > 1) loadFile(comp,st.c_str(),FT_DISK,flp->id);
+	if (st.size() > 1) {
+		//loadFile(comp,st.c_str(),FT_DISK,flp->id);
+		load_file(comp, st.c_str(), FG_DISK, flp->id);
+	}
 }
 
 // set specified romset to specified profile & load into ROM of this profile ZX
@@ -412,7 +415,10 @@ int prfLoad(std::string nm) {
 
 					break;
 				case PS_TAPE:
-					if (pnam == "path" && conf.storePaths) loadFile(comp,pval.c_str(),FT_TAPE,0);
+					if (pnam == "path" && conf.storePaths) {
+						//loadFile(comp,pval.c_str(),FT_TAPE,0);
+						load_file(comp, pval.c_str(), FG_TAPE, 0);
+					}
 					break;
 				case PS_DISK:
 					if (pnam == "A") setDiskString(comp,comp->dif->fdc->flop[0],pval);

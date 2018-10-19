@@ -29,7 +29,7 @@ typedef struct {
 
 #pragma pack (pop)
 
-int loadSPG(Computer* comp, const char* name) {
+int loadSPG(Computer* comp, const char* name, int drv) {
 	FILE* file = fopen(name,"rb");
 	if (!file) return ERR_CANT_OPEN;
 

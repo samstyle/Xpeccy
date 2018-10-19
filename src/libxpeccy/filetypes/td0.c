@@ -166,7 +166,8 @@ void doTD0(Floppy* flp, size_t(*getBytes)(void*, size_t,void*), void* dptr, int 
 	//for (i = 0; i < 256; i++) if (sec[i].data) free(sec[i].data);
 }
 
-int loadTD0(Floppy* flp, const char* name) {
+int loadTD0(Computer* comp, const char* name, int drv) {
+	Floppy* flp = comp->dif->fdc->flop[drv & 3];
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
 

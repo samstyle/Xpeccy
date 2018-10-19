@@ -29,7 +29,8 @@ typedef struct {
 
 #pragma pack (pop)
 
-int loadFDI(Floppy* flp,const char* name) {
+int loadFDI(Computer* comp, const char* name, int drv) {
+	Floppy* flp = comp->dif->fdc->flop[drv & 3];
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
 

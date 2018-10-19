@@ -68,7 +68,7 @@ void vid_dot_half(Video* vid, unsigned char col) {
 }
 
 void vid_line(Video* vid) {
-	vid_dot_full(vid, 0);
+	// vid_dot_full(vid, 0);
 	if (rigSkip)
 		memset(vid->ray.ptr, 0x00, rigSkip);
 	vid->ray.lptr += bytesPerLine;

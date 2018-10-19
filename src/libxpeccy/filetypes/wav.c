@@ -16,7 +16,8 @@ typedef struct {
 	unsigned int subchunk2Size;
 } wavHead;
 
-int loadWAV(Tape* tap, const char* name) {
+int loadWAV(Computer* comp, const char* name, int drv) {
+	Tape* tap = comp->tape;
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
 	int err = ERR_OK;
