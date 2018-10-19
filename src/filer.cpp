@@ -54,9 +54,11 @@ static xFileTypeInfo ft_tab[] = {
 	{FL_NES, 0, ".nes", "*.nes", loadNes, NULL, "NES cartrige"},
 //	{FL_T64, 0, ".t64", "*.t64", loadT64, NULL, "T64 tape image"},
 //	{FL_BKBIN, 0, ".bin", "*.bin", loadBKbin, NULL, "BK bin data"},
-//	{FL_RAW, 0, "*", "*.*", loadRaw, NULL, "RAW file"},
+	{FL_RAW, 0, NULL, "*.*", loadRaw, NULL, "RAW file"},
 	{0, 0, NULL, NULL, NULL, NULL, NULL}
 };
+
+static xFileTypeInfo ft_raw = {FL_RAW, 0, NULL, NULL, loadRaw, NULL, "RAW file to disk A"};
 
 static xFileGroupInfo fg_tab[] = {
 	{FG_SNAPSHOT, -1, "Snapshot", {FL_SNA, FL_Z80, FL_SPG, 0}},
@@ -74,6 +76,8 @@ static xFileGroupInfo fg_tab[] = {
 	{FG_BKDATA, -1, "BK bin data", {FL_BKBIN, 0}},
 	{0, -1, NULL, {0}}
 };
+
+static xFileGroupInfo fg_dum = {0, -1, NULL, {0}};
 
 static xFileHWInfo fh_tab[] = {
 	{FH_SPECTRUM, {FG_SNAPSHOT, FG_TAPE, FG_DISK_A, FG_DISK_B, FG_DISK_C, FG_DISK_D, FG_RAW, FG_RZX, 0}},
@@ -155,6 +159,8 @@ xFileTypeInfo* file_ext_type(QString path) {
 		if (ft_tab[i].id == FL_HOBETA) {
 			if (ext.startsWith("$"))
 				inf = &ft_tab[i];
+		} else if (ft_tab[i].ext == NULL) {
+			// skip it
 		} else if (path.endsWith(ft_tab[i].ext, Qt::CaseInsensitive)) {
 			inf = &ft_tab[i];
 		}
@@ -170,7 +176,7 @@ QString file_get_type_filter(int id, int sv) {
 	xFileTypeInfo* inf = file_find_type(id);
 	if (inf->filt && ((!sv && inf->load) || (sv && inf->save))) {
 		flt = QString(inf->filt);
-		if (!allfilt.contains(inf->filt))
+		if (!allfilt.contains(inf->filt) && inf->ext)
 			allfilt.append(inf->filt).append(" ");
 	}
 	return flt;
@@ -276,7 +282,7 @@ int load_file(Computer* comp, const char* name, int id, int drv) {
 	QString flt;
 	QString ext;
 	xFileTypeInfo* inf;
-	xFileGroupInfo* grp;
+	xFileGroupInfo* grp = &fg_dum;
 	if (id == FG_DISK)
 		id = grp_by_disk(id);
 	if (id == FG_ALL)
@@ -290,15 +296,26 @@ int load_file(Computer* comp, const char* name, int id, int drv) {
 				flt = file_get_type_filter(id, 0);
 		}
 		if (!flt.isEmpty()) {
-			path = filer->getOpenFileName(NULL, "Open file", "", flt);
-			flt = filer->selectedFilter();
-			grp = file_detect_grp(flt);
-			if (grp)
-				drv = grp->drv;
+			filer->setWindowTitle("Open file");
+			filer->setNameFilter(flt);
+			filer->setDirectory(conf.path.lastDir);
+			filer->setAcceptMode(QFileDialog::AcceptOpen);
+			if (filer->exec()) {
+				path = filer->selectedFiles().first();
+				flt = filer->selectedNameFilter();
+				qDebug() << flt;
+				grp = file_detect_grp(flt);
+				qDebug() << (void*)grp;
+				if (grp)
+					drv = grp->drv;
+
+			}
 		}
 	}
 	if (path.isEmpty()) return err;
 	inf = file_ext_type(path);
+	if (grp->id == FG_RAW)
+		inf = &ft_raw;
 	if (drv < 0) drv = 0;
 	if (inf) {
 		if (inf->load) {
@@ -337,10 +354,17 @@ int save_file(Computer* comp, const char* name, int id, int drv) {
 				flt = file_get_type_filter(id, 1);
 		}
 		if (!flt.isEmpty()) {
-			path = filer->getOpenFileName(NULL, "Open file", "", flt);
-			flt = filer->selectedFilter();
-			grp = file_detect_grp(flt);
-			if (grp) drv = grp->drv;
+			filer->setWindowTitle("Save file");
+			filer->setNameFilter(flt);
+			filer->setAcceptMode(QFileDialog::AcceptSave);
+			filer->setDirectory(conf.path.lastDir);
+			if (filer->exec()) {
+				path = filer->selectedFiles().first();
+				flt = filer->selectedFilter();
+				grp = file_detect_grp(flt);
+				if (grp)
+					drv = grp->drv;
+			}
 		}
 	}
 	if (path.isEmpty()) return err;
