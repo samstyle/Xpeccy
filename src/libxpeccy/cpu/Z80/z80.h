@@ -4,7 +4,7 @@
 #include "../cpu.h"
 #include "z80_macro.h"
 
-typedef struct CPU CPU;
+// typedef struct CPU CPU;
 
 enum {
 	Z80_REG_PC = 1,

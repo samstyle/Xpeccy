@@ -147,6 +147,8 @@ int loadSPG(Computer*,const char*, int);
 
 int loadT64(Computer*,const char*,int);
 
+int loadBIN(Computer*, const char*, int);
+
 // tape
 
 int loadTAP(Computer*,const char*, int);

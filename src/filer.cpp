@@ -53,12 +53,13 @@ static xFileTypeInfo ft_tab[] = {
 	{FL_MX2, 0, ".mx2", "*.mx2", loadSlot, NULL, "MSX2 cartrige"},
 	{FL_NES, 0, ".nes", "*.nes", loadNes, NULL, "NES cartrige"},
 //	{FL_T64, 0, ".t64", "*.t64", loadT64, NULL, "T64 tape image"},
-//	{FL_BKBIN, 0, ".bin", "*.bin", loadBKbin, NULL, "BK bin data"},
+	{FL_BKBIN, 0, ".bin", "*.bin", loadBIN, NULL, "BK bin data"},
 	{FL_RAW, 0, NULL, "*.*", loadRaw, NULL, "RAW file"},
 	{0, 0, NULL, NULL, NULL, NULL, NULL}
 };
 
 static xFileTypeInfo ft_raw = {FL_RAW, 0, NULL, NULL, loadRaw, NULL, "RAW file to disk A"};
+static xFileTypeInfo ft_dum = {FL_NONE, 0, NULL, NULL, NULL, NULL, "Dummy entry"};
 
 static xFileGroupInfo fg_tab[] = {
 	{FG_SNAPSHOT, -1, "Snapshot", {FL_SNA, FL_Z80, FL_SPG, 0}},
@@ -133,7 +134,7 @@ xFileGroupInfo* file_find_group(int id) {
 
 xFileGroupInfo* file_detect_grp(QString flt) {
 	int i = 0;
-	xFileGroupInfo* inf = NULL;
+	xFileGroupInfo* inf = &fg_dum;
 	while (fg_tab[i].id > 0) {
 		if (flt.startsWith(fg_tab[i].name, Qt::CaseInsensitive))
 			inf = &fg_tab[i];
@@ -154,7 +155,7 @@ xFileTypeInfo* file_find_type(int id) {
 xFileTypeInfo* file_ext_type(QString path) {
 	int i = 0;
 	QString ext = path.split(".").last();
-	xFileTypeInfo* inf = NULL;
+	xFileTypeInfo* inf = &ft_dum;
 	while (ft_tab[i].id > 0) {
 		if (ft_tab[i].id == FL_HOBETA) {
 			if (ext.startsWith("$"))
@@ -303,12 +304,8 @@ int load_file(Computer* comp, const char* name, int id, int drv) {
 			if (filer->exec()) {
 				path = filer->selectedFiles().first();
 				flt = filer->selectedNameFilter();
-				qDebug() << flt;
 				grp = file_detect_grp(flt);
-				qDebug() << (void*)grp;
-				if (grp)
-					drv = grp->drv;
-
+				drv = grp->drv;
 			}
 		}
 	}
@@ -400,7 +397,6 @@ bool saveChangedDisk(Computer* comp,int id) {
 	if (flp->changed) {
 		QMessageBox mbox;
 		mbox.setText(QString("<b>Disk %0: has been changed</b>").arg(QChar('A'+id)));
-		// mbox.setText(QString("<b>Disk ").append(QChar('A'+id)).append(": has been changed</b>"));
 		mbox.setInformativeText("Do you want to save it?");
 		mbox.setStandardButtons(QMessageBox::Yes|QMessageBox::No|QMessageBox::Cancel);
 		mbox.setIcon(QMessageBox::Warning);
