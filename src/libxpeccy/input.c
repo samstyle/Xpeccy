@@ -411,7 +411,7 @@ unsigned char joyInput(Joystick* joy) {
 		case XJ_KEMPSTON:
 			res = joy->state;
 			if (!joy->extbuttons)
-				res |= 0xe0;
+				res |= ~0x1f;
 			break;
 	}
 	return res;

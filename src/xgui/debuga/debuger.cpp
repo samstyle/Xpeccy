@@ -480,6 +480,7 @@ void DebugWin::doStep() {
 #ifdef ISDEBUG
 	QString str;
 	if (traceType == DBG_TRACE_LOG) {
+#if 0
 		str = gethexword(comp->cpu->pc).append(" ");
 		str.append(QString("A:%0 ").arg(gethexbyte(comp->cpu->a)));
 		str.append(QString("X:%0 ").arg(gethexbyte(comp->cpu->lx)));
@@ -491,6 +492,12 @@ void DebugWin::doStep() {
 		logfile.write("\r\n");
 		if (comp->cpu->pc == 0xc66e)
 			trace = 0;
+#elif 1
+		for (int i = 0; i < 8; i++) {
+			printf("%.4X ", comp->cpu->preg[i]);
+		}
+		printf("%.4X\n", comp->cpu->pflag);
+#endif
 	}
 #endif
 	do {
@@ -508,6 +515,12 @@ void DebugWin::doStep() {
 			case DBG_TRACE_HERE:
 				if (comp->cpu->pc == traceAdr)
 					trace = 0;
+				break;
+			case DBG_TRACE_LOG:
+				for (int i = 0; i < 8; i++) {
+					printf("%.4X ", comp->cpu->preg[i]);
+				}
+				printf("%.4X\n", comp->cpu->pflag);
 				break;
 		}
 		QApplication::processEvents();
@@ -605,6 +618,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					adr = getAdr();
 					if (adr < 0) break;
 					comp->cpu->pc = adr & 0xffff;
+					comp->cpu->preg[7] = adr & 0xffff;
 					fillCPU();
 					fillDisasm();
 					break;

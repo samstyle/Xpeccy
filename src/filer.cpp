@@ -61,9 +61,13 @@ static xFileTypeInfo ft_tab[] = {
 static xFileTypeInfo ft_raw = {FL_RAW, 0, NULL, NULL, loadRaw, NULL, "RAW file to disk A"};
 static xFileTypeInfo ft_dum = {FL_NONE, 0, NULL, NULL, NULL, NULL, "Dummy entry"};
 
+// 2nd parameter
+// < 0 : allways on
+// 0..3 : disk (must be inserted for save)
+// 4 : tape (block count > 0)
 static xFileGroupInfo fg_tab[] = {
 	{FG_SNAPSHOT, -1, "Snapshot", {FL_SNA, FL_Z80, FL_SPG, 0}},
-	{FG_TAPE, -1, "Tape", {FL_TAP, FL_TZX, FL_WAV, 0}},
+	{FG_TAPE, 4, "Tape", {FL_TAP, FL_TZX, FL_WAV, 0}},
 	{FG_DISK_A, 0,"Disk A", {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_HOBETA, 0}},
 	{FG_DISK_B, 1, "Disk B", {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_HOBETA, 0}},
 	{FG_DISK_C, 2, "Disk C", {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_HOBETA, 0}},
@@ -88,7 +92,7 @@ static xFileHWInfo fh_tab[] = {
 	{FH_CMD, {FG_CMDTAPE, 0}},
 	{FH_BK, {FG_BKDATA, 0}},
 	{FH_DISKS, {FG_DISK_A, FG_DISK_B, FG_DISK_C, FG_DISK_D, 0}},
-	{FH_SLOTS, {FG_GAMEBOY, FG_NES, 0}},
+	{FH_SLOTS, {FG_GAMEBOY, FG_NES, FG_MSX, 0}},
 	{0, {0}}
 };
 
@@ -183,28 +187,30 @@ QString file_get_type_filter(int id, int sv) {
 	return flt;
 }
 
-QString file_get_group_filter(int id, int sv) {
+QString file_get_group_filter(Computer* comp, int id, int sv) {
 	QString flt;
 	QString ftf;
 	QString ofl;
 	int i;
 	xFileGroupInfo* inf = file_find_group(id);
 	if (inf->id > 0) {
-		i = 0;
-		while(inf->child[i] > 0) {
-			ofl = file_get_type_filter(inf->child[i], sv);
-			if (!ofl.isEmpty())
-				ftf.append(ofl).append(" ");
-			i++;
+		if (!sv || (inf->drv < 0) || (sv && !(inf->drv & ~3) && comp->dif->fdc->flop[inf->drv & 3]->insert) || ((inf->drv == 4) && comp->tape->blkCount > 0)) {
+			i = 0;
+			while(inf->child[i] > 0) {
+				ofl = file_get_type_filter(inf->child[i], sv);
+				if (!ofl.isEmpty())
+					ftf.append(ofl).append(" ");
+				i++;
+			}
+			ftf = ftf.trimmed();
+			if (!ftf.isEmpty())
+				flt = QString("%0 (%1)").arg(inf->name, ftf);
 		}
-		ftf = ftf.trimmed();
-		if (!ftf.isEmpty())
-			flt = QString("%0 (%1)").arg(inf->name, ftf);
 	}
 	return flt;
 }
 
-QString file_get_hw_filter(int id, int sv) {
+QString file_get_hw_filter(Computer* comp, int id, int sv) {
 	QStringList flt;
 	QString gfl;
 	allfilt.clear();
@@ -213,7 +219,7 @@ QString file_get_hw_filter(int id, int sv) {
 	if (inf->id > 0) {
 		i = 0;
 		while (inf->child[i] > 0) {
-			gfl = file_get_group_filter(inf->child[i], sv);
+			gfl = file_get_group_filter(comp, inf->child[i], sv);
 			if (!gfl.isEmpty())
 				flt.append(gfl);
 			i++;
@@ -290,9 +296,9 @@ int load_file(Computer* comp, const char* name, int id, int drv) {
 		id = detect_hw_id(comp->hw->id);
 	int err = ERR_OK;
 	if (path.isEmpty()) {
-		flt = file_get_hw_filter(id, 0);
+		flt = file_get_hw_filter(comp, id, 0);
 		if (flt.isEmpty()) {
-			flt = file_get_group_filter(id, 0);
+			flt = file_get_group_filter(comp, id, 0);
 			if (flt.isEmpty())
 				flt = file_get_type_filter(id, 0);
 		}
@@ -301,12 +307,14 @@ int load_file(Computer* comp, const char* name, int id, int drv) {
 			filer->setNameFilter(flt);
 			filer->setDirectory(conf.path.lastDir);
 			filer->setAcceptMode(QFileDialog::AcceptOpen);
+			filer->setHistory(QStringList());
 			if (filer->exec()) {
 				path = filer->selectedFiles().first();
 				flt = filer->selectedNameFilter();
 				grp = file_detect_grp(flt);
 				drv = grp->drv;
 			}
+			strcpy(conf.path.lastDir, filer->directory().absolutePath().toLocal8Bit().data());
 		}
 	}
 	if (path.isEmpty()) return err;
@@ -324,7 +332,6 @@ int load_file(Computer* comp, const char* name, int id, int drv) {
 				}
 			} else {
 				err = inf->load(comp, path.toLocal8Bit().data(), drv);
-				printf("err = %i\n",err);
 			}
 		}
 	}
@@ -340,13 +347,13 @@ int save_file(Computer* comp, const char* name, int id, int drv) {
 	xFileGroupInfo* grp;
 	if (id == FG_DISK)
 		id = grp_by_disk(drv);
-	if (id < 1)
+	if (id == FG_ALL)
 		id = detect_hw_id(comp->hw->id);
 	int err = ERR_OK;
 	if (path.isEmpty()) {
-		flt = file_get_hw_filter(id, 1);
+		flt = file_get_hw_filter(comp, id, 1);
 		if (flt.isEmpty()) {
-			flt = file_get_group_filter(id, 1);
+			flt = file_get_group_filter(comp, id, 1);
 			if (flt.isEmpty())
 				flt = file_get_type_filter(id, 1);
 		}
@@ -355,6 +362,7 @@ int save_file(Computer* comp, const char* name, int id, int drv) {
 			filer->setNameFilter(flt);
 			filer->setAcceptMode(QFileDialog::AcceptSave);
 			filer->setDirectory(conf.path.lastDir);
+			filer->setHistory(QStringList());
 			if (filer->exec()) {
 				path = filer->selectedFiles().first();
 				flt = filer->selectedFilter();
@@ -362,6 +370,7 @@ int save_file(Computer* comp, const char* name, int id, int drv) {
 				if (grp)
 					drv = grp->drv;
 			}
+			strcpy(conf.path.lastDir, filer->directory().absolutePath().toLocal8Bit().data());
 		}
 	}
 	if (path.isEmpty()) return err;
