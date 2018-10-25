@@ -224,6 +224,7 @@ struct Video {
 	int OBJTiles;
 	int OBJAttr;
 	vCoord pos;
+	vCoord sps;
 	vCoord delta;
 	vCoord src;
 	vCoord dst;

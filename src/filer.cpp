@@ -45,7 +45,6 @@ static xFileTypeInfo ft_tab[] = {
 	{FL_UDI, 1, ".udi", "*.udi", loadUDI, saveUDI, "UDI disk image"},
 	{FL_DSK, 1, ".dsk", "*.dsk", loadDSK, NULL, "DSK disk image"},
 	{FL_HOBETA, 0, ".$", "*.$?", loadHobeta, NULL, "Hobeta file"},
-	{FL_RZX, 0, ".rzx", "*.rzx", loadRZX, NULL, "RZX playback"},
 	{FL_GB, 0, ".gb", "*.gb", loadSlot, NULL, "GB cartrige"},
 	{FL_GBC, 0, ".gbc", "*.gbc", loadSlot, NULL, "GBC cartrige"},
 	{FL_MSX, 0, ".rom", "*.rom", loadSlot, NULL, "MSX cartrige"},
@@ -54,6 +53,9 @@ static xFileTypeInfo ft_tab[] = {
 	{FL_NES, 0, ".nes", "*.nes", loadNes, NULL, "NES cartrige"},
 //	{FL_T64, 0, ".t64", "*.t64", loadT64, NULL, "T64 tape image"},
 	{FL_BKBIN, 0, ".bin", "*.bin", loadBIN, NULL, "BK bin data"},
+#ifdef HAVEZLIB
+	{FL_RZX, 0, ".rzx", "*.rzx", loadRZX, NULL, "RZX playback"},
+#endif
 	{FL_RAW, 0, NULL, "*.*", loadRaw, NULL, "RAW file"},
 	{0, 0, NULL, NULL, NULL, NULL, NULL}
 };

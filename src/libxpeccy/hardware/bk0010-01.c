@@ -16,28 +16,19 @@
 
 unsigned char bk_io_rd(unsigned short adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	unsigned char res = 0xff;
-	switch (adr) {
-		case 0xffb0:							// keyboard int control
-			res = comp->keyb->map[7] & 0xc0;
-			break;
-		case 0xffb1: res = 0; break;
+//	unsigned char res = 0xff;
+	switch (adr & 0xfffe) {
+		case 0xffb0: comp->wdata = comp->keyb->map[7] & 0xc0; break;	// keyboard int control
 		case 0xffb2:							// keyboard code
-			res = comp->keyb->map[0];
-			comp->keyb->map[7] &= ~0x80;
+			comp->wdata = comp->keyb->map[0] & 0x7f;
+			comp->keyb->map[7] &= 0x7f;
 			break;
-		case 0xffb3: res = 0; break;
-		case 0xffb4: res = comp->vid->sc.y & 0xff; break;		// vertical scroll register
-		case 0xffb5: res = (comp->vid->sc.y >> 8) & 0xff; break;
-		case 0xffcc:							// external port
-		case 0xffcd: res = 0xff;
-			break;
+		case 0xffb4: comp->wdata = comp->vid->sc.y & 0xffff; break;	// vertical scroll register
+		case 0xffcc: comp->wdata = 0xffff; break;							// external port
 		case 0xffce:							// system port
-			res = 0x80;
-			if (comp->keyb->map[7] & 0x20)
-				res |= 0x40;
-			break;
-		case 0xffcf: res = 0x80;
+			comp->wdata = 0x8080;
+			if (~comp->keyb->map[7] & 0x20)
+				comp->wdata |= 0x40;		// = 0 if any key pressed
 			break;
 		default:
 			if (!comp->debug) {
@@ -46,7 +37,7 @@ unsigned char bk_io_rd(unsigned short adr, void* ptr) {
 			}
 			break;
 	}
-	return res;
+	return  (adr & 1) ? (comp->wdata >> 8) & 0xff : comp->wdata & 0xff;
 }
 
 void bk_io_wr(unsigned short adr, unsigned char val, void* ptr) {
@@ -120,7 +111,6 @@ typedef struct {
 	unsigned char code;
 } bkKeyCode;
 
-
 static bkKeyCode bkeyTab[] = {
 	{XKEY_1,'1'},{XKEY_2,'2'},{XKEY_3,'3'},{XKEY_4,'4'},{XKEY_5,'5'},
 	{XKEY_6,'6'},{XKEY_7,'7'},{XKEY_8,'8'},{XKEY_9,'9'},{XKEY_0,'0'},
@@ -131,7 +121,8 @@ static bkKeyCode bkeyTab[] = {
 	{XKEY_Z,'z'},{XKEY_X,'x'},{XKEY_C,'c'},{XKEY_V,'v'},{XKEY_B,'b'},
 	{XKEY_N,'n'},{XKEY_M,'m'},{XKEY_SPACE,' '},
 	{XKEY_BSP,24},
-	{XKEY_DOWN,23},{XKEY_LEFT,8},{XKEY_RIGHT,25},{XKEY_UP,26},
+	{XKEY_TAB,13},
+	{XKEY_DOWN,27},{XKEY_LEFT,8},{XKEY_RIGHT,25},{XKEY_UP,26},
 	{ENDKEY, 0}
 };
 
@@ -159,5 +150,5 @@ void bk_keyp(Computer* comp, keyEntry xkey) {
 }
 
 void bk_keyr(Computer* comp, keyEntry xkey) {
-	comp->keyb->map[7] &= ~0x20;
+	comp->keyb->map[7] &= ~0x20;	// 0x20 | 0x80
 }

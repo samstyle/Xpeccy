@@ -83,13 +83,14 @@ int pdp11_int(CPU* cpu) {
 
 int pdp_adr(CPU* cpu, int type, int b) {
 	int res = -1;
+	if ((type & 7) == 6) b = 0;	// sp
+	if ((type & 7) == 7) b = 0;	// pc
 	switch (type & 0x38) {
 		case 0x00: res = -1;			// Rn (no addr)
 			break;
 		case 0x08: res = cpu->preg[type & 7];	// @Rn
 			break;
 		case 0x10: res = cpu->preg[type & 7];	// (Rn)+
-			if ((type & 7) == 7) b = 0;
 			cpu->preg[type & 7] += b ? 1 : 2;
 			break;
 		case 0x18: res = cpu->preg[type & 7];	// @(Rn)+
@@ -97,7 +98,6 @@ int pdp_adr(CPU* cpu, int type, int b) {
 			res = pdp_rd(cpu, res & 0xffff);
 			break;
 		case 0x20:				// -(Rn)
-			if ((type & 7) == 7) b = 0;
 			cpu->preg[type & 7] -= b ? 1 : 2;
 			res = cpu->preg[type & 7];
 			break;
@@ -123,8 +123,6 @@ int pdp_adr(CPU* cpu, int type, int b) {
 
 unsigned short pdp_src(CPU* cpu, int type, int b) {
 	unsigned short res;
-	int xb = b;
-	if (((cpu->com & 0xf000) >= 0x8000) && ((cpu->com & 0xf000) < 0xf000)) xb = 0;
 	int adr = pdp_adr(cpu, type, b);
 	if (adr < 0) {
 		res = cpu->preg[type & 7];

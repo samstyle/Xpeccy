@@ -328,7 +328,7 @@ void vdpGra4(Video* vid) {
 
 void vdpG4pset(Video* vid, int x, int y, unsigned char col) {
 	//adr = (vdp->BGMap & 0x18000) + (x >> 1) + (y << 7);
-	adr = ((x & 0xff) >> 1) | (y << 7);
+	adr = ((x & 0xff) >> 1) | ((y & 0x3ff) << 7);
 	scrbyte = vid->ram[adr & vid->memMask];
 	if (x & 1) {
 		pap = vdpMixColor((scrbyte & 0xf0) >> 4, col & 0x0f, vid->arg) & 0x0f;
@@ -341,8 +341,7 @@ void vdpG4pset(Video* vid, int x, int y, unsigned char col) {
 }
 
 unsigned char vdpG4col(Video* vid, int x, int y) {
-	// adr = (vdp->BGMap & 0x18000) + (x >> 1) + (y << 7);
-	adr = ((x & 0xff) >> 1) | (y << 7);
+	adr = ((x & 0xff) >> 1) | ((y & 0x3ff) << 7);
 	return (x & 1) ? vid->ram[adr] & 0x0f : (vid->ram[adr] & 0xf0) >> 4;
 }
 
@@ -372,24 +371,24 @@ void vdpGra5(Video* vid) {
 }
 
 void vdpG5pset(Video* vid, int x, int y, unsigned char col) {
-	adr = ((x & 0x1ff) >> 2) | (y << 7);
+	adr = ((x & 0x1ff) >> 2) | ((y & 0x3ff) << 7);
 	scrbyte = vid->ram[adr & vid->memMask];
 	col &= 3;
 	switch (x & 3) {
 		case 0:
-			pap = vdpMixColor((scrbyte & 0x3f) >> 6, col, vid->arg) & 3;
+			pap = vdpMixColor((scrbyte & 0xc0) >> 6, col, vid->arg) & 3;
 			scrbyte = (scrbyte & 0x3f) | ((pap << 6) & 0xc0);
 			break;
 		case 1:
-			pap = vdpMixColor((scrbyte & 0xcf) >> 4, col, vid->arg) & 3;
+			pap = vdpMixColor((scrbyte & 0x30) >> 4, col, vid->arg) & 3;
 			scrbyte = (scrbyte & 0xcf) | ((pap << 4) & 0x30);
 			break;
 		case 2:
-			pap = vdpMixColor((scrbyte & 0xf3) >> 2, col, vid->arg) & 3;
+			pap = vdpMixColor((scrbyte & 0x0c) >> 2, col, vid->arg) & 3;
 			scrbyte = (scrbyte & 0xf3) | ((pap << 2) & 0x0c);
 			break;
 		case 3:
-			pap = vdpMixColor(scrbyte & 0xfc, col, vid->arg) & 3;
+			pap = vdpMixColor(scrbyte & 0x03, col, vid->arg) & 3;
 			scrbyte = (scrbyte & 0xfc) | (pap & 0x03);
 			break;
 	}
@@ -397,7 +396,7 @@ void vdpG5pset(Video* vid, int x, int y, unsigned char col) {
 }
 
 unsigned char vdpG5col(Video* vid, int x, int y) {
-	adr = ((x & 0x1ff) >> 2) | (y << 7);
+	adr = ((x & 0x1ff) >> 2) | ((y & 0x3ff) << 7);
 	switch (x & 3) {
 		case 0: pap = (vid->ram[adr] & 0xc0) >> 6; break;
 		case 1: pap = (vid->ram[adr] & 0x30) >> 4; break;
@@ -430,7 +429,7 @@ void vdpGra6(Video* vid) {
 }
 
 void vdpG6pset(Video* vid, int x, int y, unsigned char col) {
-	adr = ((x & 0x1ff) >> 1) | (y << 8);
+	adr = ((x & 0x1ff) >> 1) | ((y & 0x3ff) << 8);
 	scrbyte = vid->ram[adr];
 	if (x & 1) {
 		pap = vdpMixColor((scrbyte & 0xf0) >> 4, col & 0x0f, vid->arg) & 0x0f;
@@ -494,34 +493,6 @@ void vdpDummy(Video* vid) {
 
 // tab
 
-#if 0
-typedef struct {
-	int id;
-	int wid;	// screen width (256|512)
-	int dpb;	// dots per byte (bitmaps: 1|2|4)
-	void(*draw)(Video*);
-	void(*line)(Video*);
-	void(*fram)(Video*);
-	void(*pset)(Video*,int,int,unsigned char);
-	unsigned char(*col)(Video*,int,int);
-} vdpMode;
-
-
-static vdpMode vdpTab[] = {
-	{VDP_TEXT1, 256, 1, vdpText1, NULL, vdpFillSprites, NULL, NULL},
-	{VDP_TEXT2, 256, 1, vdpDummy, NULL, vdpHBlk, NULL, NULL},
-	{VDP_MCOL, 256, 1, vdpMultcol, NULL, vdpFillSprites, NULL, NULL},
-	{VDP_GRA1, 256, 1, vdpGra1, NULL, vdpFillSprites, NULL, NULL},
-	{VDP_GRA2, 256, 1, vdpGra2, NULL, vdpFillSprites, NULL, NULL},
-	{VDP_GRA3, 256, 1, vdpGra2, NULL, vdpFillSprites2, NULL, NULL},
-	{VDP_GRA4, 256, 2, vdpGra4, NULL, vdpFillSprites2, vdpG4pset, vdpG4col},
-	{VDP_GRA5, 512, 4, vdpGra5, NULL, vdpFillSprites2, vdpG5pset, vdpG5col},
-	{VDP_GRA6, 512, 2, vdpGra6, NULL, vdpFillSprites2, vdpG6pset, vdpG6col},
-	{VDP_GRA7, 256, 1, vdpGra7, NULL, vdpFillSprites2, vdpG7pset, vdpG7col},
-	{VDP_UNKNOWN, 256, 1, vdpDummy, NULL, NULL, NULL, NULL}
-};
-#else
-
 typedef struct {
 	int id;
 	int wid;	// screen width (256|512)
@@ -545,18 +516,12 @@ static vdpMode vdpTab[] = {
 	{VID_UNKNOWN, 256, 1, NULL, NULL}
 };
 
-#endif
-
 void vdpSetMode(Video* vid, int mode) {
 	int idx = 0;
 	//printf("v9938 mode = %i\n",vdp->vmode);
 	while((vdpTab[idx].id != mode) && (vdpTab[idx].id != VID_UNKNOWN)) {
 		idx++;
 	}
-//	vid->vmode = vdpTab[idx].id;
-//	vid->cbDot = vdpTab[idx].draw;
-//	vid->cbLine = vdpTab[idx].line;
-//	vid->cbFrame = vdpTab[idx].fram;
 	vidSetMode(vid, vdpTab[idx].id);
 	vid->pset = vdpTab[idx].pset;
 	vid->col = vdpTab[idx].col;
@@ -565,8 +530,6 @@ void vdpSetMode(Video* vid, int mode) {
 }
 
 void vdpReset(Video* vid) {
-//	for (int i = 0; i < 64; i++)
-//		vid->reg[i] = 0;
 	memset(vid->reg, 0x00, 64);
 	memset(vid->ram, 0x00, MEM_128K);
 	vdpSetMode(vid, VDP_TEXT1);
@@ -598,10 +561,8 @@ unsigned char vdpReadSR(Video* vid) {
 			break;
 		case 2:
 			res &= 0x9f;
-			if ((xscr < 0) || (xscr > 255))			// horizontal retrace (border + HBlank)
-				res |= 0x20;
-			if ((yscr < 0) || (yscr >= vid->lines))		// vertical retrace (border + VBlank)
-				res |= 0x40;
+			if (vid->hblank) res |= 0x20;
+			if (vid->vbrd) res |= 0x40;
 			break;
 		case 3: res = xscr & 0xff; break;
 		case 4: res = (xscr >> 8) & 1; break;
@@ -618,14 +579,34 @@ void vdpSend(Video* vid, unsigned char val) {
 	if (vid->pset)
 		vid->pset(vid, vid->pos.x, vid->pos.y, val);
 	vid->pos.x += vid->delta.x;
+	vid->sr[2] |= 0x80;
 	if (++vid->cnt.x >= vid->size.x) {
 		vid->pos.x = vid->dst.x;
 		vid->cnt.x = 0;
 		vid->pos.y += vid->delta.y;
 		if (++vid->cnt.y >= vid->size.y) {
-			vid->sr[2] &= 0xfe;
+			vid->sr[2] &= ~0x81;
 		}
 	}
+}
+
+void vdpCopy(Video* vid) {
+	col = vid->col ? vid->col(vid, vid->sps.x, vid->sps.y) : 0xff;
+	if (vid->pset)
+		vid->pset(vid, vid->pos.x, vid->pos.y, col);
+	vid->sps.x += vid->delta.x;
+	vid->pos.x += vid->delta.x;
+	if (++vid->cnt.x >= vid->size.x) {
+		vid->sps.x = vid->src.x;
+		vid->pos.x = vid->dst.x;
+		vid->cnt.x = 0;
+		vid->sps.y += vid->delta.y;
+		vid->pos.y += vid->delta.y;
+		if (++vid->cnt.y >= vid->size.y) {
+			vid->sr[2] &= ~1;
+		}
+	}
+
 }
 
 // commands
@@ -640,9 +621,10 @@ void vdpSend(Video* vid, unsigned char val) {
 
 void vdpExec(Video* vid) {
 	int spx,dpx;
+	if ((vid->sr[2] & 1) && vid->com) return;	// busy & not stop command
 	switch (vid->com) {
 		case 0:
-			vid->sr[2] &= 0xfe;
+			vid->sr[2] &= 0x7e;
 			break;
 		case 5:
 			if (vid->pset)
@@ -681,21 +663,7 @@ void vdpExec(Video* vid) {
 			spx = vid->src.x;
 			dpx = vid->dst.x;
 			while (vid->sr[2] & 1) {
-				pap = vid->col ? vid->col(vid, vid->src.x, vid->src.y) : 0;
-				if (vid->pset)
-					vid->pset(vid, vid->dst.x, vid->dst.y, pap);
-				vid->dst.x += vid->delta.x;
-				vid->src.x += vid->delta.x;
-				if (++vid->cnt.x >= vid->size.x) {
-					vid->cnt.x = 0;
-					vid->dst.x = dpx;
-					vid->src.x = spx;
-					vid->dst.y += vid->delta.y;
-					vid->src.y += vid->delta.y;
-					if (++vid->cnt.y >= vid->size.y) {
-						vid->sr[2] &= 0xfe;
-					}
-				}
+				vdpCopy(vid);
 			}
 			break;
 		case 0xb:
@@ -728,11 +696,11 @@ void vdpExec(Video* vid) {
 				vid->src.y -= vid->size.y;
 				vid->dst.y -= vid->size.y;
 			}
-			spx = vid->BGMap | vdpDotAddr(vid, vid->src.x, vid->src.y);	// source addr
-			dpx = vid->BGMap | vdpDotAddr(vid, vid->dst.x, vid->dst.y);	// dest addr
+			spx = vdpDotAddr(vid, vid->src.x, vid->src.y);	// source addr
+			dpx = vdpDotAddr(vid, vid->dst.x, vid->dst.y);	// dest addr
 			if (vid->reg[45] & 0x10) spx = ((spx & 0xffff) | 0x20000);	// src exp ram
 			if (vid->reg[45] & 0x20) dpx = ((dpx & 0xffff) | 0x20000);	// dst exp ram
-			vid->cnt.x = vid->size.x / vid->dpb;			// dX bytes
+			vid->cnt.x = vid->size.x / vid->dpb;				// dX bytes
 			vid->delta.y = vid->scrsize.x / vid->dpb;			// bytes / line
 			while ((vid->size.y > 0) && (spx >= 0) && (dpx >= 0)) {
 				memcpy(vid->ram + dpx, vid->ram + spx, vid->cnt.x);
@@ -858,7 +826,7 @@ void vdpRegWr(Video* vid, int reg, unsigned char val) {
 		case 0x2b: vid->size.y = (vid->reg[0x2a] | (vid->reg[0x2b] << 8)) & 0x3ff; break;
 
 		case 0x2c:			// color code | block data transfer cpu->vdp
-			if (vid->sr[2] & 1) {
+			if (vid->sr[2] & 0x80) {
 				vdpSend(vid, val);
 			}
 			break;
