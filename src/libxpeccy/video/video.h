@@ -161,7 +161,7 @@ struct Video {
 	vCoord scrsize;		// << tsconf.xSize, tsconf.ySize, v9938::wid
 	vCoord sc;		// screen scroll registers
 	// nes
-	ePair(vadr,vah,val);	// nes videomem access addr
+	int vadr;		// nes videomem access addr
 	unsigned short tadr;	// nes tmp vadr
 	int vbsline;
 	int vbrline;
@@ -209,7 +209,7 @@ struct Video {
 	int memMask;
 	int finex;
 	int finey;
-	int lines;
+//	int lines;
 	int inth;	// interrupts
 	int intf;
 	int nt;
@@ -223,13 +223,14 @@ struct Video {
 	int BGColors;
 	int OBJTiles;
 	int OBJAttr;
-	vCoord pos;
-	vCoord sps;
-	vCoord delta;
+	// v9938 dma
 	vCoord src;
 	vCoord dst;
-	vCoord size;
-	vCoord cnt;
+	vCoord rct;
+	vCoord step;
+	int srcx;
+	int dstx;
+	int rctx;
 	unsigned char sr[16];			// ststus registers (0..9 actually)
 	unsigned char bgline[0x200];		// bg (full 2 screens)
 	unsigned char spline[0x108];		// sprites (8 max)
@@ -278,7 +279,7 @@ struct Video {
 	unsigned char cbank;			// char data offset (reg#18 b4..7)
 	unsigned char colram[0x1000];		// vicII color ram
 
-	unsigned char ram[MEM_128K];			// 128K of video memory
+	unsigned char ram[MEM_256K];			// video memory
 	unsigned char oam[MEM_256];			// nes oam memory
 	unsigned char reg[256];				// max 256 registers
 	unsigned char scrimg[2560 * 1440 * 3];
@@ -300,6 +301,7 @@ void vidDarkTail(Video*);
 
 void vidSetLayout(Video*, vLayout);
 void vidSetBorder(Video*, double);
+void vidUpdateLayout(Video*);
 void vidUpdateTimings(Video*, int);
 
 void vidSetFont(Video*,char*);

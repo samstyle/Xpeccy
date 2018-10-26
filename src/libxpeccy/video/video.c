@@ -923,50 +923,51 @@ void bk_col_dot(Video*);
 
 typedef struct {
 	int id;
+	void(*init)(Video*);
 	void(*cbDot)(Video*);		// each dot
-	void(*cbHBlank)(Video*);		// hblank start
-	void(*cbLine)(Video*);			// visible line start
+	void(*cbHBlank)(Video*);	// hblank start
+	void(*cbLine)(Video*);		// visible line start
 	void(*cbFrame)(Video*);		// vblank start
 } xVideoMode;
 
 // id,(@every_visible_dot),(@HBlank),(@LineStart),(@VBlank)
 static xVideoMode vidModeTab[] = {
-	{VID_NORMAL, vidDrawNormal, NULL, NULL, NULL},
-	{VID_ALCO, vidDrawAlco, NULL, NULL, NULL},
-	{VID_HWMC, vidDrawHwmc, NULL, NULL, NULL},
-	{VID_ATM_EGA, vidDrawATMega, NULL, NULL, NULL},
-	{VID_ATM_TEXT, vidDrawATMtext, NULL, NULL, NULL},
-	{VID_ATM_HWM, vidDrawATMhwmc, NULL, NULL, NULL},
-	{VID_EVO_TEXT, vidDrawEvoText, NULL, NULL, NULL},
-	{VID_TSL_NORMAL, vidDrawTSLNormal, vidTSline, NULL, NULL},
-	{VID_TSL_16, vidDrawTSLExt, vidTSline, NULL, NULL},			// vidDrawTSL16
-	{VID_TSL_256, vidDrawTSLExt, vidTSline, NULL, NULL},			// vidDrawTSL256
-	{VID_TSL_TEXT, vidDrawTSLText, vidTSline, NULL, NULL},
-	{VID_PRF_MC, vidProfiScr, NULL, NULL, NULL},
+	{VID_NORMAL, NULL, vidDrawNormal, NULL, NULL, NULL},
+	{VID_ALCO, NULL, vidDrawAlco, NULL, NULL, NULL},
+	{VID_HWMC, NULL, vidDrawHwmc, NULL, NULL, NULL},
+	{VID_ATM_EGA, NULL, vidDrawATMega, NULL, NULL, NULL},
+	{VID_ATM_TEXT, NULL, vidDrawATMtext, NULL, NULL, NULL},
+	{VID_ATM_HWM, NULL, vidDrawATMhwmc, NULL, NULL, NULL},
+	{VID_EVO_TEXT, NULL, vidDrawEvoText, NULL, NULL, NULL},
+	{VID_TSL_NORMAL, NULL, vidDrawTSLNormal, vidTSline, NULL, NULL},
+	{VID_TSL_16, NULL, vidDrawTSLExt, vidTSline, NULL, NULL},			// vidDrawTSL16
+	{VID_TSL_256, NULL, vidDrawTSLExt, vidTSline, NULL, NULL},			// vidDrawTSL256
+	{VID_TSL_TEXT, NULL, vidDrawTSLText, vidTSline, NULL, NULL},
+	{VID_PRF_MC, NULL, vidProfiScr, NULL, NULL, NULL},
 
-	{VID_GBC, gbcvDraw, gbcvLine, NULL, gbcvFram},
-	{VID_NES, ppuDraw, ppuHBL, ppuLine, ppuFram},
+	{VID_GBC, NULL, gbcvDraw, gbcvLine, NULL, gbcvFram},
+	{VID_NES, NULL, ppuDraw, ppuHBL, ppuLine, ppuFram},
 
-	{VDP_TEXT1, vdpText1, vdpHBlk, NULL, vdpFillSprites},
-	{VDP_TEXT2, vdpDummy, vdpHBlk, NULL, NULL},
-	{VDP_MCOL, vdpMultcol, vdpHBlk, NULL, vdpFillSprites},
-	{VDP_GRA1, vdpGra1, vdpHBlk, NULL, vdpFillSprites},
-	{VDP_GRA2, vdpGra2, vdpHBlk, NULL, vdpFillSprites},
-	{VDP_GRA3, vdpGra2, vdpHBlk, NULL, vdpFillSprites2},
-	{VDP_GRA4, vdpGra4, vdpHBlk, NULL, vdpFillSprites2},
-	{VDP_GRA5, vdpGra5, vdpHBlk, NULL, vdpFillSprites2},
-	{VDP_GRA6, vdpGra6, vdpHBlk, NULL, vdpFillSprites2},
-	{VDP_GRA7, vdpGra7, vdpHBlk, NULL, vdpFillSprites2},
+	{VDP_TEXT1, vdpT1ini, vdpText1, vdpHBlk, NULL, NULL},
+	{VDP_TEXT2, vdpT1ini, vdpDummy, vdpHBlk, NULL, NULL},
+	{VDP_MCOL, vdpG1ini, vdpMultcol, vdpHBlk, vdp_line, NULL},
+	{VDP_GRA1, vdpG1ini, vdpGra1, vdpHBlk, vdp_line, NULL},
+	{VDP_GRA2, vdpG1ini, vdpGra2, vdpHBlk, vdp_line, NULL},
+	{VDP_GRA3, vdpG1ini, vdpGra2, vdpHBlk, vdp_linex, NULL},
+	{VDP_GRA4, vdpG4ini, vdpGra4, vdpHBlk, vdp_linex, NULL},
+	{VDP_GRA5, vdpG4ini, vdpGra5, vdpHBlk, vdp_linex, NULL},
+	{VDP_GRA6, vdpG4ini, vdpGra6, vdpHBlk, vdp_linex, NULL},
+	{VDP_GRA7, vdpG4ini, vdpGra7, vdpHBlk, vdp_linex, NULL},
 
-	{VID_C64_TEXT, vidC64TDraw, NULL, vidC64Line, vidC64Fram},
-	{VID_C64_TEXT_MC, vidC64TMDraw, NULL, vidC64Line, vidC64Fram},
-	{VID_C64_BITMAP, vidC64BDraw, NULL, vidC64Line, vidC64Fram},
-	{VID_C64_BITMAP_MC, vidC64BMDraw, NULL, vidC64Line, vidC64Fram},
+	{VID_C64_TEXT, NULL, vidC64TDraw, NULL, vidC64Line, vidC64Fram},
+	{VID_C64_TEXT_MC, NULL, vidC64TMDraw, NULL, vidC64Line, vidC64Fram},
+	{VID_C64_BITMAP, NULL, vidC64BDraw, NULL, vidC64Line, vidC64Fram},
+	{VID_C64_BITMAP_MC, NULL, vidC64BMDraw, NULL, vidC64Line, vidC64Fram},
 
-	{VID_BK_BW, bk_bw_dot, NULL, NULL, NULL},
-	{VID_BK_COL, bk_col_dot, NULL, NULL, NULL},
+	{VID_BK_BW, NULL, bk_bw_dot, NULL, NULL, NULL},
+	{VID_BK_COL, NULL, bk_col_dot, NULL, NULL, NULL},
 
-	{VID_UNKNOWN, vidDrawBorder, NULL, NULL, NULL}
+	{VID_UNKNOWN, NULL, vidDrawBorder, NULL, NULL, NULL}
 };
 
 void vidSetMode(Video* vid, int mode) {
@@ -979,6 +980,8 @@ void vidSetMode(Video* vid, int mode) {
 	vid->cbHBlank = vidModeTab[i].cbHBlank;
 	vid->cbFrame = vidModeTab[i].cbFrame;
 	vid->cbLine = vidModeTab[i].cbLine;
+	if (vidModeTab[i].init)
+		vidModeTab[i].init(vid);
 }
 
 void vidSync(Video* vid, int ns) {
@@ -1003,10 +1006,13 @@ void vidSync(Video* vid, int ns) {
 		// move ray to next dot, update counters
 		vid->ray.x++;
 		vid->ray.xb++;
+		vid->ray.xs++;
 		if (vid->ray.x >= vid->full.x) {			// new line
 			vid->hblank = 0;
 			vid->hbstrb = 0;
 			vid->ray.x = 0;
+			vid->ray.xs = -vid->bord.x;
+			vid->ray.ys++;
 			if (vid->cbLine) vid->cbLine(vid);
 		}
 		if (vid->ray.x == vid->vend.x) {			// hblank start
@@ -1048,6 +1054,7 @@ void vidSync(Video* vid, int ns) {
 			}
 			if (vid->ray.y == vid->bord.y) {	// screen start V
 				vid->vbrd = 0;
+				vid->ray.ys = -1;		// will be 0 at start of next line, but during HBlank is -1
 			}
 			if (vid->cbHBlank) vid->cbHBlank(vid);
 		}

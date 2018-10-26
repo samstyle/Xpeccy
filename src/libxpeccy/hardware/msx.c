@@ -53,9 +53,6 @@ void msxResetSlot(xCartridge* slot) {
 
 void msxReset(Computer* comp) {
 	kbdSetMode(comp->keyb, KBD_MSX);
-	comp->vid->memMask = 0x3fff;
-	comp->vid->high = 0;
-	comp->vid->lines = 192;
 	comp->msx.pA8 = 0x00;
 	comp->msx.memMap[0] = 3;
 	comp->msx.memMap[1] = 2;
