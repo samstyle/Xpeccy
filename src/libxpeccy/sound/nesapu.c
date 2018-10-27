@@ -233,7 +233,7 @@ int apuDigiVolume(apuChannel* ch) {
 	if (!ch->off) {
 		ch->out = ch->vol;
 	}
-	return ch->out;		// 00..7F
+	return ch->out;
 }
 
 // ...
@@ -310,7 +310,7 @@ sndPair apuVolume(nesAPU* apu) {
 	float tnd = 0.0;
 	if (v1 || v2 || v3)
 		tnd = 159.79 / (100.0 + (1.0 / ((v1 / 8227.0) + (v2 / 12241.0) + (v3 / 22638.0))));		// 0,8686 max
-	res.left = (int)((pout + tnd) * 0x8000);
+	res.left = (int)((pout + tnd) * 0x4000);
 	res.right = res.left;
 	return res;
 }

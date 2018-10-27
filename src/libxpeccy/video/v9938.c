@@ -856,6 +856,8 @@ xVDPArgs vdp_get_hcom(Video* vid, vCoord crd, vCoord rect) {
 // ~ E : move right side of lines up
 //   F : put rect (bytes)
 
+// TODO: block commands executed line by line
+
 void vdpExec(Video* vid) {
 //	int spx,dpx;
 	if ((vid->sr[2] & 1) && vid->com) return;	// busy & not stop command
@@ -875,8 +877,8 @@ void vdpExec(Video* vid) {
 	vid->step.x = (vid->reg[0x2d] & 4) ? -1 : 1;
 	vid->step.y = (vid->reg[0x2d] & 8) ? -1 : 1;
 
-	printf("vdp9938 command %.2X, arg %.2X\n",vid->com, vid->arg);
-	printf("src:%i %i\ndst:%i %i\nrct:%i %i\n", vid->src.x, vid->src.y, vid->dst.x, vid->dst.y, vid->rct.x, vid->rct.y);
+//	printf("vdp9938 command %.2X, arg %.2X\n",vid->com, vid->arg);
+//	printf("src:%i %i\ndst:%i %i\nrct:%i %i\n", vid->src.x, vid->src.y, vid->dst.x, vid->dst.y, vid->rct.x, vid->rct.y);
 
 	vid->sr[2] |= 1;
 	switch (vid->com) {
@@ -973,7 +975,7 @@ void vdpRegWr(Video* vid, int reg, unsigned char val) {
 		case 0x00:
 		case 0x01:
 			vmode = ((vid->reg[1] & 0x10) >> 4) | ((vid->reg[1] & 8) >> 2) | ((vid->reg[0] & 0x0e) << 1);
-			printf("v9938 mode = %.2X\n",vmode);
+			// printf("v9938 mode = %.2X\n",vmode);
 			switch (vmode) {
 				case 0x01: vdpSetMode(vid, VDP_TEXT1); break;	// text 40x24
 				case 0x09: vdpSetMode(vid, VDP_TEXT2); break;	// text 80x24

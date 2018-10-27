@@ -1295,6 +1295,8 @@ static xRegDsc pdp11RegTab[] = {
 	{REG_NONE, "", 0}
 };
 
+static char* regNames[8] = {"R0","R1","R2","R3","R4","R5","SP","PC"};
+
 void pdp11_get_regs(CPU* cpu, xRegBunch* bunch) {
 	int idx = 0;
 	while (pdp11RegTab[idx].id != REG_NONE) {
@@ -1315,7 +1317,7 @@ void pdp11_get_regs(CPU* cpu, xRegBunch* bunch) {
 		idx++;
 	}
 	bunch->regs[idx].id = REG_NONE;
-	memcpy(bunch->flags, "----NZVC", 8);
+	memcpy(bunch->flags, "---TNZVC", 8);
 	cpu->f = cpu->pflag & 0xff;
 }
 
@@ -1430,36 +1432,49 @@ static char numF[16] = "0123456789ABCDEF";
 
 char* put_addressation(char* dst, unsigned short type) {
 	switch ((type >> 3) & 7) {
-		case 1: *(dst++) = '@';
-		case 0: *(dst++) = 'R';
-			*(dst++) = num7[type & 7];
+		case 1: *(dst++) = '@';				// @Rn
+		case 0:	strcpy(dst, regNames[type & 7]);	// Rn
+			dst += strlen(regNames[type & 7]);
 			break;
-		case 3: *(dst++) = '@';
-		case 2: if ((type & 7) == 7) {
-				*(dst++) = ':';		// :2 will be replaced with next word
-				*(dst++) = '2';
+		case 3: *(dst++) = '@';				// @(Rn)+
+		case 2: if ((type & 7) == 7) {			// (Rn)+
+				if (type & 8) {
+					dst--;
+					*dst++ = '(';
+					*dst++ = ':';
+					*dst++ = '2';
+					*dst++ = ')';
+				} else {
+					*(dst++) = ':';		// :2 will be replaced with next word
+					*(dst++) = '2';
+				}
 			} else {
 				*(dst++) = '(';
-				*(dst++) = 'R';
-				*(dst++) = num7[type & 7];
+				strcpy(dst, regNames[type & 7]);
+				dst += strlen(regNames[type & 7]);
 				*(dst++) = ')';
 				*(dst++) = '+';
 			}
 			break;
-		case 5: *(dst++) = '@';
-		case 4: *(dst++) = '-';
+		case 5: *(dst++) = '@';				// @-(Rn)
+		case 4: *(dst++) = '-';				// -(Rn)
 			*(dst++) = '(';
-			*(dst++) = 'R';
-			*(dst++) = num7[type & 7];
+			strcpy(dst, regNames[type & 7]);
+			dst += strlen(regNames[type & 7]);
 			*(dst++) = ')';
 			break;
-		case 7: *(dst++) = '@';
-		case 6: *(dst++) = ':';			// :2 will be replaced with next word
-			*(dst++) = '2';
-			*(dst++) = '(';
-			*(dst++) = 'R';
-			*(dst++) = num7[type & 7];
-			*(dst++) = ')';
+		case 7: *(dst++) = '@';				// @E(Rn)
+		case 6: if ((type & 7) == 7) {			// E(Rn)
+				*(dst++) = ':';			// (E + PC)
+				*(dst++) = '6';
+			} else {
+				*(dst++) = ':';			// :2 will be replaced with next word
+				*(dst++) = '2';
+				*(dst++) = '(';
+				strcpy(dst, regNames[type & 7]);
+				dst += strlen(regNames[type & 7]);
+				*(dst++) = ')';
+			}
 			break;
 	}
 	return dst;
@@ -1469,9 +1484,10 @@ xMnem pdp11_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* dat) {
 	xMnem res;
 	res.len = 2;
 	int idx = 0;
+	unsigned short dtw;
 	unsigned short com = mrd(adr++, dat);
 	com |= (mrd(adr++, dat) << 8);
-	adr += 2;
+//	adr += 2;
 	while ((pdp11_dasm_tab[idx].mask != 0) && ((com & pdp11_dasm_tab[idx].mask) != pdp11_dasm_tab[idx].code))
 		idx++;
 	const char* src = pdp11_dasm_tab[idx].mnem;
@@ -1493,16 +1509,25 @@ xMnem pdp11_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* dat) {
 					*(dst++) = numF[com & 0x0f];
 					break;
 				case 'e':
-					*(dst++) = '$';
-					*(dst++) = (com & 0x0080) ? '-' : '+';
-					*(dst++) = numF[(com & 0x78) >> 3];
-					*(dst++) = numF[(com & 0x07) << 1];
+					dtw = (com & 0xff);
+					if (com & 0x80) dtw |= 0xff00;
+					dtw <<= 1;
+					dtw += adr;
+					*(dst++) = '#';
+					*(dst++) = numF[(dtw >> 12) & 0x0f];
+					*(dst++) = numF[(dtw >> 8) & 0x0f];
+					*(dst++) = numF[(dtw >> 4) & 0x0f];
+					*(dst++) = numF[dtw & 0x0f];
 					break;
 				case 'j':
-					*(dst++) = '$';
-					*(dst++) = '-';
-					*(dst++) = numF[(com & 0x38) >> 3];
-					*(dst++) = numF[(com & 7) << 1];
+					dtw = com & 0x3f;
+					dtw <<= 1;
+					dtw = adr - dtw;
+					*(dst++) = '#';
+					*(dst++) = numF[(dtw >> 12) & 0x0f];
+					*(dst++) = numF[(dtw >> 8) & 0x0f];
+					*(dst++) = numF[(dtw >> 4) & 0x0f];
+					*(dst++) = numF[dtw & 0x0f];
 					break;
 				case 'f':
 					if (com & PDP_FC) *(dst++) = 'C';

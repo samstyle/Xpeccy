@@ -144,8 +144,8 @@ void vid_upd_scale() {
 	int dwid;
 	int dhei;
 	if (conf.vid.fullScreen) {
-		dwid = QApplication::desktop()->width();
-		dhei = QApplication::desktop()->height();
+		dwid = QApplication::desktop()->screenGeometry().width();
+		dhei = QApplication::desktop()->screenGeometry().height();
 		xstep = dwid * 0x100 / conf.prof.cur->zx->vid->vsze.x;
 		ystep = dhei * 0x100 / conf.prof.cur->zx->vid->vsze.y;
 		if (conf.vid.keepRatio) {

@@ -2,6 +2,7 @@
 #include "dbg_dump.h"
 
 #include <QDebug>
+#include <QFont>
 
 extern unsigned short disasmAdr;
 extern int blockStart;

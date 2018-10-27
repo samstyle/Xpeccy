@@ -123,7 +123,7 @@ QWidget* xItemDelegate::createEditor(QWidget* par, const QStyleOptionViewItem&, 
 		case XTYPE_NONE: delete(edt); edt = NULL; break;
 		case XTYPE_ADR: edt->setInputMask("Hhhh"); break;
 		case XTYPE_LABEL: break;
-		case XTYPE_DUMP: edt->setInputMask("Hhhhhhhhhh"); break;
+		case XTYPE_DUMP: edt->setInputMask("Hhhhhhhhhhhh"); break;		// 6 bytes max
 		case XTYPE_BYTE: edt->setInputMask("Hh"); break;
 	}
 	return edt;
@@ -146,6 +146,8 @@ static xHexSpin* dbgRegEdit[16];
 
 DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	int i;
+
+	setFont(QFont("://DejaVuSansMono.ttf",10));
 
 	ui.setupUi(this);
 
@@ -175,8 +177,6 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.dumpTable->setComp(&comp);
 	ui.dasmTable->setComp(&comp);
 
-	setFont(QFont("://DejaVuSansMono.ttf",10));
-
 	conf.dbg.labels = 1;
 	conf.dbg.segment = 0;
 	ui.actShowLabels->setChecked(conf.dbg.labels);
@@ -200,9 +200,9 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.dasmTable->setFocus();
 
 // disasm table
-	ui.dasmTable->setColumnWidth(0,100);
+	ui.dasmTable->setColumnWidth(0,80);
 	ui.dasmTable->setColumnWidth(1,85);
-	ui.dasmTable->setColumnWidth(2,130);
+	ui.dasmTable->setColumnWidth(2,150);
 	ui.dasmTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_LABEL));
 	ui.dasmTable->setItemDelegateForColumn(1, new xItemDelegate(XTYPE_DUMP));
 
