@@ -41,24 +41,6 @@ static xColor msxPalete[16] = {
 	{255,255,255},	// 15: white
 };
 
-/*
-// color mix
-// colS : old
-// colD : new
-unsigned char vdpMixColor(unsigned char colS, unsigned char colD, unsigned char mode) {
-	if ((mode & 8) && !colD) return colS;
-	switch (mode & 7) {
-		case 0: colS = colD; break;
-		case 1: colS &= colD; break;
-		case 2: colS |= colD; break;
-		case 3: colS ^= colD; break;
-		case 4: colS &= ~colD; break;
-		default: break;
-	}
-	return colS;
-}
-*/
-
 // colors mixer
 // scol : new color
 // dcol : old color
@@ -99,115 +81,6 @@ int vdpDotAddr(Video* vid, int x, int y, int ext) {
 	return  adr;
 }
 
-// sprites (mode 1, mode 2)
-
-#if 0
-
-unsigned char atrp[8];
-
-void vdpPutSpriteDot(Video* vid, int adr, unsigned char atr) {
-	if (atr & 0x40) {
-		vid->sprImg[adr] |= (atr & 0x0f);
-	} else if (!vid->sprImg[adr]) {
-		vid->sprImg[adr] = atr & 0x0f;
-	}
-}
-
-void vdpDrawTile(Video* vid, int xpos, int ypos, int pat) {
-	unsigned char src;
-	int i,j,adr,xsav;
-	int tadr = vid->OBJTiles + (pat << 3);
-	for (i = 0; i < 8; i++) {
-		src = vid->ram[tadr & vid->memMask];			// tile byte
-		if (!vid->hbrd) {					// if line onscreen
-			xsav = xpos;
-			if (atrp[i] & 0x80) {				// early clock (shift left 32 pix)
-				xpos -= 32;
-			}
-			for (j = 0; j < 8; j++) {
-				if ((xpos >= 0) && (xpos < 256) && (src & 0x80)) {	// if sprite has dot onscreen
-					adr = (ypos << 8) + xpos;
-					vdpPutSpriteDot(vid, adr, atrp[i]);
-					if (vid->reg[1] & 1) {
-						vdpPutSpriteDot(vid, adr+1, atrp[i]);
-						vdpPutSpriteDot(vid, adr+256, atrp[i]);
-						vdpPutSpriteDot(vid, adr+257, atrp[i]);
-						xpos++;
-					}
-				}
-				src <<= 1;
-				xpos++;
-			}
-			xpos = xsav;
-		}
-		tadr++;
-		ypos += (vid->reg[1] & 1) ? 2 : 1;
-	}
-}
-
-void vdpFillSprites(Video* vid) {
-//	vdpVBlk(vid);
-	memset(vid->sprImg, 0x00, 0xd400);
-	if (vid->reg[8] & 2) return;
-	int i,sh;
-	int adr = vid->OBJAttr;
-	int ypos, xpos, pat, atr;
-	for (i = 0; i < 32; i++) {
-		if (vid->ram[adr] == 0xd0) break;
-		ypos = (vid->ram[adr] + 1) & 0xff;
-		xpos = vid->ram[adr+1] & 0xff;
-		pat = vid->ram[adr+2] & 0xff;
-		atr = vid->ram[adr+3] & 0xff;
-		memset(atrp, atr & 0x8f, 8);
-		if (vid->reg[1] & 2) {
-			pat &= 0xfc;
-			sh = (vid->reg[1] & 1) ? 16 : 8;
-			vdpDrawTile(vid, xpos, ypos, pat);
-			vdpDrawTile(vid, xpos, ypos+sh, pat+1);
-			vdpDrawTile(vid, xpos+sh, ypos, pat+2);
-			vdpDrawTile(vid, xpos+sh, ypos+sh, pat+3);
-		} else {
-			vdpDrawTile(vid, xpos, ypos, pat);
-		}
-		adr += 4;
-	}
-}
-
-void vdpFillSprites2(Video* vid) {
-//	vdpVBlk(vid);
-	memset(vid->sprImg, 0x00, 0x10000);
-	if (vid->reg[8] & 2) return;			// disable OBJ sprites
-	int i,sh;
-	int tadr = (vid->OBJAttr & 0x1fc00) | 0x200;	// a16...a10.1.x..x
-	int aadr = tadr - 0x200;			// sprite color table
-	int ypos, xpos, pat;
-	for (i = 0; i < 32; i++) {
-		if (vid->ram[tadr] == 0xd8) {
-			i = 32;
-		} else {
-			ypos = (vid->ram[tadr] + 1) & 0xff;
-			xpos = vid->ram[tadr + 1] & 0xff;
-			pat = vid->ram[tadr + 2] & 0xff;
-			memcpy(atrp, &vid->ram[aadr], 8);
-			if (vid->reg[1] & 2) {
-				pat &= 0xfc;
-				sh = (vid->reg[1] & 1) ? 16 : 8;
-				vdpDrawTile(vid, xpos, ypos, pat);		// UL
-				vdpDrawTile(vid, xpos+sh, ypos, pat+2);		// UR
-				memcpy(atrp, &vid->ram[aadr + 8], 8);
-				vdpDrawTile(vid, xpos, ypos+sh, pat+1);		// DL
-				vdpDrawTile(vid, xpos+sh, ypos+sh, pat+3);	// DR
-			} else {
-				vdpDrawTile(vid, xpos, ypos, pat);
-			}
-			aadr += 0x10;
-			tadr += 4;
-		}
-	}
-}
-
-#else
-
 // start of scanline: prepare sprites line
 
 int vdp_sprcoll_chk(Video* gpu, int xpos, int dx) {
@@ -237,7 +110,7 @@ void vdp_draw_sprlin(Video* gpu, int xpos, int dx, unsigned char dt, unsigned ch
 		}
 		bt = 16;
 	} else {
-		data = (dt << 8);
+		data = (dt << 8) & 0xff00;
 		bt = 8;
 	}
 	if (atr & 0x40) {						// CC=1 lines
@@ -245,8 +118,7 @@ void vdp_draw_sprlin(Video* gpu, int xpos, int dx, unsigned char dt, unsigned ch
 			while (bt > 0) {
 				if (data & 0x8000) {
 					if (gpu->line[xpos & 0x1ff]) {		// x CC=0 : ORed color, no collision
-						col |= gpu->line[xpos & 0x1ff];
-						gpu->linb[xpos & 0x1ff] = col;
+						gpu->linb[xpos & 0x1ff] = gpu->line[xpos & 0x1ff] | col;
 					} else if (gpu->linb[xpos & 0x1ff]) {	// x CC=1 : collision
 						if (!(atr & 0x20))		// b5: don't cause conflict
 							gpu->sr[0] |= 0x20;
@@ -397,8 +269,6 @@ void vdp_linex(Video* gpu) {
 			gpu->line[i] = gpu->linb[i];
 	}
 }
-
-#endif
 
 // v9918 TEXT1 (40 x 24 text)
 
@@ -718,34 +588,6 @@ void vdpReset(Video* vid) {
 	vid->palhi = 0;
 }
 
-unsigned char vdpReadSR(Video* vid) {
-	unsigned char idx = vid->reg[0x0f] & 0x0f;
-	unsigned char res = vid->sr[idx];
-	xscr = vid->ray.x - vid->scrn.x;
-	yscr = vid->ray.y - vid->scrn.y;
-	switch (idx) {
-		case 0:
-			vid->sr[0] &= 0x7f;		// reset VINT flag
-			break;
-		case 1:
-			vid->sr[1] &= 0xfe;		// reset HINT flag
-			break;
-		case 2:
-			res &= 0x9f;
-			if (vid->hblank) res |= 0x20;
-			if (vid->vbrd) res |= 0x40;
-			break;
-		case 3: res = xscr & 0xff; break;
-		case 4: res = (xscr >> 8) & 1; break;
-		case 5: res = yscr & 0xff; break;
-		case 6: res = (yscr >> 8) & 3; break;
-		default:
-			break;
-	}
-//	printf("SR %i = %.2X\n",idx,res);
-	return res;
-}
-
 void vdpSend(Video* vid, unsigned char val) {
 	if (vid->pset)
 		vid->pset(vid, vid->dst.x, vid->dst.y, val);
@@ -796,6 +638,40 @@ void vdpCopy(Video* vid) {
 	}
 }
 
+unsigned char vdpReadSR(Video* vid) {
+	unsigned char idx = vid->reg[0x0f] & 0x0f;
+	unsigned char res = vid->sr[idx];
+	xscr = vid->ray.x - vid->scrn.x;
+	yscr = vid->ray.y - vid->scrn.y;
+	switch (idx) {
+		case 0:
+			vid->sr[0] &= 0x7f;		// reset VINT flag
+			break;
+		case 1:
+			vid->sr[1] &= 0xfe;		// reset HINT flag
+			break;
+		case 2:
+			res &= 0x9f;
+			if (vid->hblank) res |= 0x20;
+			if (vid->vbrd) res |= 0x40;
+			// if (vid->busy) res |= 0x01;
+			break;
+		case 3: res = xscr & 0xff; break;
+		case 4: res = (xscr >> 8) & 1; break;
+		case 5: res = yscr & 0xff; break;
+		case 6: res = (yscr >> 8) & 3; break;
+		case 7: if (vid->sr[2] & 0x80) {
+				vid->sr[7] = vdpGet(vid);
+			}
+			break;
+		default:
+			break;
+	}
+//	printf("SR %i = %.2X\n",idx,res);
+	return res;
+}
+
+
 typedef struct {
 	int adr;
 	int bpl;	// bytes per line
@@ -843,13 +719,13 @@ xVDPArgs vdp_get_hcom(Video* vid, vCoord crd, vCoord rect) {
 
 // commands
 // + 0 : STOP
-//   4 : get color
+// ~ 4 : get color
 // + 5 : PSET	(dstX, dstY)	col = r2C;
-//   6 : search color
+// ~ 6 : search color
 // + 7 : LINE	start:(dstX,dstY);	MAJ = r2D & 1;	dx = MAJ ? dLong : dShort;	dy = MAJ ? dShort : dLong;	col = r2C;
-//   8 : fill rect (dots)
+// ~ 8 : fill rect (dots)
 // * 9 : copy rect
-//   A : get rect (dots) vdp->cpu
+// ~ A : get rect (dots) vdp->cpu
 // + B : put rect (dots)
 // ~ C : fill rect (bytes)
 // * D : copy rect (bytes)
@@ -864,6 +740,7 @@ void vdpExec(Video* vid) {
 
 	xVDPArgs darg;
 	xVDPArgs sarg;
+	unsigned char xcol;
 
 	vid->src.x = (vid->reg[0x20] | (vid->reg[0x21] << 8)) & 0x1ff;
 	vid->src.y = (vid->reg[0x22] | (vid->reg[0x23] << 8)) & 0x3ff;
@@ -885,14 +762,36 @@ void vdpExec(Video* vid) {
 		case 0x00:
 			vid->sr[2] &= ~0x81;			// stop
 			break;
+		case 0x04:					// color
+			vid->sr[7] = vdpGet(vid);
+			vid->sr[2] &= ~0x81;
+			break;
 		case 0x05:					// pset
 			vdpSend(vid, vid->reg[0x2c]);
 			vid->sr[2] &= ~0x81;
+			break;
+		case 0x06:					// search
+			vid->rct.x = (vid->reg[0x2d] & 4) ? vid->src.x : vid->scrsize.x - vid->src.x;
+			vid->rct.y = 1;
+			vid->sr[2] &= ~0x40;
+			do {
+				xcol = vdpGet(vid);
+				if ((vid->reg[0x2d] & 2) && (xcol == vid->reg[0x2c])) {		// search equal color
+					vid->sr[2] |= 0x40;
+					vid->sr[2] &= ~0x81;
+				} else if (!(vid->reg[0x2d] & 2) && (xcol != vid->reg[0x2c])) {	// search not equal color
+					vid->sr[2] |= 0x40;
+					vid->sr[2] &= ~0x81;
+				}
+			} while (vid->sr[2] & 1);
+			vid->sr[8] = vid->src.x & 0xff;
+			vid->sr[9] = ((vid->src.x >> 8) & 1) | 0xfe;
 			break;
 		case 0x07:					// line
 			vid->dst.x = (vid->dst.x << 4) + 8;
 			vid->dst.y = (vid->dst.y << 4) + 8;
 			vid->count = (vid->rct.x > vid->rct.y) ? vid->rct.x : vid->rct.y;
+			vid->busy = 96 * vid->rct.x * vid->rct.y;
 			// printf("size = %i %i\n",vdp->size.x,vdp->size.y);
 			if (vid->reg[0x2d] & 1) {
 				vid->step.x = vid->rct.y ? (vid->rct.x << 4) / vid->rct.y : 0;
@@ -914,16 +813,29 @@ void vdpExec(Video* vid) {
 			} while (vid->count > 0);
 			vid->sr[2] &= ~1;
 			break;
-		case 0x09:					// copy rect (dots) src->dst TODO:copy each 2nd dot?
+		case 0x08:					// fill rect (dots)
+			do {
+				vdpSend(vid, vid->reg[0x2c]);
+			} while (vid->sr[2] & 1);
+			vid->sr[2] &= ~0x81;
+			break;
+		case 0x09:					// copy rect (dots) src->dst
+			vid->busy = 96 * vid->rct.x * vid->rct.y;
 			do {
 				vdpCopy(vid);
 			} while (vid->sr[2] & 0x80);
 			vid->sr[2] &= ~1;
 			break;
+		case 0x0a:				// get rect (dots)
+			vid->sr[7] = vdpGet(vid);
+			vid->sr[2] |= 0x80;
+			break;
 		case 0x0b:				// copy rect (dots) cpu->dst by reg 2C
+			vid->busy = 112 * vid->rct.x * vid->rct.y;
 			vdpSend(vid, vid->reg[0x2c]);
 			break;
 		case 0x0c:				// fill rect (bytes)
+			vid->busy = 64 * vid->rct.x * vid->rct.y;
 			darg = vdp_get_hcom(vid, vid->dst, vid->rct);
 			if (darg.bpl) {
 				if (vid->reg[0x2d] & 4)
@@ -940,6 +852,7 @@ void vdpExec(Video* vid) {
 			vid->src.x = vid->dst.x;
 			vid->rct.x = (vid->step.x < 0) ? vid->dst.x : (vid->scrsize.x - vid->dst.x);
 		case 0x0d:						// copy rect (bytes) src->dst
+			vid->busy = 96 * vid->rct.x * vid->rct.y;
 			sarg = vdp_get_hcom(vid, vid->src, vid->rct);
 			darg = vdp_get_hcom(vid, vid->dst, vid->rct);
 			if (sarg.bpl) {
@@ -1079,24 +992,11 @@ void vdpRegWr(Video* vid, int reg, unsigned char val) {
 
 // 20150923
 
-void vdpDraw(Video* vid) {
-//	if (vid->inth) vid->inth--;
-//	if (vid->intf) vid->intf--;
-	//vdp->draw(vdp);
-}
-
-/*
-void vdpLine(Video* vdp) {
-	if (vdp->line)
-		vdp->line(vdp);
-}
-*/
-
 void vdpHBlk(Video* vid) {
 	yscr = vid->ray.x - vid->bord.y;
 	if (yscr == vid->intp.y) {		// HINT
-		vid->sr[1] |= 1;
 		if (vid->reg[0] & VDP_IE1) {
+			vid->sr[1] |= 1;
 			vid->inth = 64;
 		}
 	}
@@ -1106,8 +1006,8 @@ void vdpHBlk(Video* vid) {
 }
 
 void vdpVBlk(Video* vid) {
-	vid->sr[0] |= 0x80;
 	if (vid->reg[1] & VDP_IE0) {
+		vid->sr[0] |= 0x80;
 		vid->intf = 64;
 	}
 	vid->blink--;

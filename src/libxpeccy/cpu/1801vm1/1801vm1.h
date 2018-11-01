@@ -26,6 +26,7 @@ enum {
 #define PDP_INT_IRQ2	(1 << 1)
 #define PDP_INT_IRQ3	(1 << 2)
 #define PDP_INT_VIRQ	(1 << 3)
+#define PDP_INT_TIMER	(1 << 4)
 
 #include "../cpu.h"
 

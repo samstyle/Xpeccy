@@ -28,8 +28,6 @@ void vdpT1ini(Video*);
 void vdpG1ini(Video*);
 void vdpG4ini(Video*);
 // blank
-//void vdpFillSprites(Video*);
-//void vdpFillSprites2(Video*);
 void vdp_line(Video*);
 void vdp_linex(Video*);
 void vdpHBlk(Video*);

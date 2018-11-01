@@ -267,6 +267,7 @@ void bk_mem_map(Computer*);
 void bk_reset(Computer*);
 void bk_mwr(Computer*, unsigned short, unsigned char);
 unsigned char bk_mrd(Computer* comp, unsigned short, int);
+void bk_sync(Computer*, int);
 void bk_keyp(Computer*, keyEntry);
 void bk_keyr(Computer*, keyEntry);
 sndPair bk_vol(Computer*, sndVolume*);

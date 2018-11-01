@@ -1071,7 +1071,7 @@ void vidSync(Video* vid, int ns) {
 		if ((vid->ray.yb == vid->intp.y) && (vid->ray.xb == vid->intp.x)) {
 			vid->intFRAME = vid->intsize;
 		}
-		// v99x8 int
+		if (vid->busy) vid->busy--;
 		if (vid->inth) vid->inth--;
 		if (vid->intf) vid->intf--;
 	}

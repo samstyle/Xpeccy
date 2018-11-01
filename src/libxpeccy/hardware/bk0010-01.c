@@ -16,14 +16,20 @@
 
 unsigned char bk_io_rd(unsigned short adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-//	unsigned char res = 0xff;
+	comp->wdata = 0xffff;
 	switch (adr & 0xfffe) {
 		case 0xffb0: comp->wdata = comp->keyb->map[7] & 0xc0; break;	// keyboard int control
 		case 0xffb2:							// keyboard code
 			comp->wdata = comp->keyb->map[0] & 0x7f;
 			comp->keyb->map[7] &= 0x7f;
 			break;
-		case 0xffb4: comp->wdata = comp->vid->sc.y & 0xffff; break;	// vertical scroll register
+		case 0xffb4: comp->wdata = comp->vid->sc.y & 0x00ff;
+			if (!comp->vid->curscr) comp->wdata |= 0x200;
+			break;	// vertical scroll register
+		case 0xffc6: comp->wdata = comp->timer.ival & 0xffff; break;	// timer:initial counter value
+		case 0xffc8: comp->wdata = comp->timer.val & 0xffff; break;	// timer:current counter
+		case 0xffca: comp->wdata = (comp->timer.flags & 0xff) | 0xff00;
+			break;	// timer flags
 		case 0xffcc: comp->wdata = 0xffff; break;							// external port
 		case 0xffce:							// system port
 			comp->wdata = 0x8080;
@@ -43,19 +49,39 @@ unsigned char bk_io_rd(unsigned short adr, void* ptr) {
 void bk_io_wr(unsigned short adr, unsigned char val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	switch (adr) {
+		// keyboard
 		case 0xffb0:
 			comp->keyb->map[7] &= ~0x40;
 			comp->keyb->map[7] |= (val & 0x40);
 			break;
 		case 0xffb1: break;
-		case 0xffb4: comp->vid->sc.y &= 0xff00;
-			comp->vid->sc.y |= val;
+		// scroll
+		case 0xffb4: comp->vid->sc.y = val;
 			break;
 		case 0xffb5:
-			comp->vid->sc.y &= 0xff;
-			comp->vid->sc.y |= (val << 8);
-//			printf("%.4X : ffb4/5 = %X\n",comp->cpu->preg[7], comp->vid->sc.y);
+			comp->vid->curscr = (val & 0x02) ? 0 : 1;
 			break;
+		// timer
+		case 0xffc6: comp->timer.ival &= 0xff00;
+			comp->timer.ival |= (val & 0xff);
+			break;
+		case 0xffc7: comp->timer.ival &= 0xff;
+			comp->timer.ival |= (val << 8) & 0xff00;
+			break;
+		case 0xffc8: comp->timer.val &= 0xff00;
+			comp->timer.val |= (val & 0xff);
+			break;
+		case 0xffc9: comp->timer.val &= 0xff;
+			comp->timer.val |= (val << 8) & 0xff00;
+			break;
+		case 0xffca: comp->timer.flags = val & 0xff;
+			comp->timer.per = comp->timer.bper;
+			if (val & 0x40) comp->timer.per *= 4;	// div 4
+			if (val & 0x20) comp->timer.per *= 16;	// div 16
+			if (val & 0x12) comp->timer.val = comp->timer.ival; // reload value
+			break;
+		case 0xffcb: break;
+		// register
 		case 0xffcc:
 		case 0xffcd: break;
 		case 0xffce:
@@ -87,6 +113,32 @@ void bk_reset(Computer* comp) {
 	vidSetMode(comp->vid, VID_BK_BW);
 	comp->keyb->map[7] = 0x40;
 	comp->keyb->map[0] = 0;
+	comp->timer.flags = 0x01;
+}
+
+void bk_sync(Computer* comp, int ns) {
+	if (!(comp->timer.flags & 1)) {
+		comp->timer.cnt -= ns;
+		while (comp->timer.cnt < 0) {
+			comp->timer.cnt += comp->timer.per;
+			if (comp->timer.flags & 0x10) {
+				comp->timer.val--;
+				if (comp->timer.val < 0) {
+					if (comp->timer.flags & 0x04) {		// signal
+						comp->timer.flags |= 0x80;
+						comp->cpu->intrq |= PDP_INT_TIMER;
+					}
+					if (comp->timer.flags & 2) {		// wraparound
+						comp->timer.val = 0xffff;
+					} else if (comp->timer.flags & 0x08) {	// one-shot (stop counter)
+						comp->timer.flags &= ~0x10;
+					} else {				// common
+						comp->timer.val = comp->timer.ival;
+					}
+				}
+			}
+		}
+	}
 }
 
 void bk_mwr(Computer* comp, unsigned short adr, unsigned char val) {

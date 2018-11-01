@@ -73,6 +73,9 @@ int pdp11_int(CPU* cpu) {
 	} else if (cpu->intrq & PDP_INT_VIRQ) {
 		cpu->intrq &= ~PDP_INT_VIRQ;
 		pdp_trap(cpu, cpu->intvec);
+	} else if (cpu->intrq & PDP_INT_TIMER) {	// timer
+		cpu->intrq &= ~PDP_INT_TIMER;
+		pdp_trap(cpu, 0xb8);
 	} else {
 		return 0;
 	}

@@ -179,6 +179,15 @@ typedef struct {
 	unsigned char pval;
 
 	struct {
+		int flags;
+		int cnt;	// ns counter
+		int bper;	// base
+		int per;	// current
+		int ival;	// initial value
+		int val;	// ticks counter
+	} timer;
+
+	struct {
 		unsigned char evoBF;		// PentEvo rw ports
 		unsigned char evo2F;
 		unsigned char evo4F;

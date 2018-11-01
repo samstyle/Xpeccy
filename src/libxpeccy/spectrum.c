@@ -297,6 +297,7 @@ void compReset(Computer* comp,int res) {
 
 // BK0010
 // dot: 25.175MHz (~40 ns/dot)
+// timer: cpu/128
 
 void compUpdateTimings(Computer* comp) {
 	int perNoTurbo = 1e3 / comp->cpuFrq;		// ns for full cpu tick
@@ -321,6 +322,8 @@ void compUpdateTimings(Computer* comp) {
 			vidUpdateTimings(comp->vid, 40);
 			vidSetLayout(comp->vid, bkLay);
 			comp->vid->lockLayout = 1;
+			comp->timer.bper = perNoTurbo * 128;
+			comp->timer.per = perNoTurbo * 128;
 			break;
 		case HW_NES:
 			// base frq (21.477MHz | 26.602MHz)

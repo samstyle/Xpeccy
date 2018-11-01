@@ -13,14 +13,15 @@ static int yscr;
 // line size = 512/8 = 64bytes
 // pal: 0-black 1-white
 void bk_bw_dot(Video* vid) {
-	if (vid->hbrd || vid->vbrd) {
+	if (vid->hbrd || vid->vbrd || (vid->curscr && (vid->ray.ys > 0x3f))) {
 		cola = 0;
 		colb = 0;
 	} else {
-		xscr = vid->ray.x - vid->bord.x;
+		xscr = vid->ray.xs;
 		if ((vid->ray.x & 3) == 0) {
-			yscr = vid->ray.y - vid->bord.y;
+			yscr = (vid->ray.ys + vid->sc.y - 0xd8) & 0xff;
 			xadr = 0x4000 | (yscr << 6) | ((xscr >> 2) & 0x3f);
+			if (vid->curscr) xadr |= 0x7000;
 			sbyte = vid->mrd(xadr, vid->data);
 		}
 		cola = (sbyte & 0x01) ? 1 : 0;
@@ -37,12 +38,12 @@ void bk_bw_dot(Video* vid) {
 // line size = 256/4 = 64bytes
 // pal: 0-black, 1-red, 2-green 3-blue
 void bk_col_dot(Video* vid) {
-	if (vid->hbrd || vid->vbrd) {
+	if (vid->hbrd || vid->vbrd || (vid->curscr && (vid->ray.ys > 0x3f))) {
 		cola = 0;
 	} else {
-		xscr = vid->ray.x - vid->bord.x;
+		xscr = vid->ray.xs;
 		if ((vid->ray.x & 3) == 0) {
-			yscr = vid->ray.y - vid->bord.y;
+			yscr = (vid->ray.ys + vid->sc.y - 0xd8) & 0xff;
 			xadr = 0x4000 | (yscr << 6) | ((xscr >> 2) & 0x3f);
 			sbyte = vid->mrd(xadr, vid->data);
 		}

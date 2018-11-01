@@ -111,6 +111,7 @@ struct Video {
 	int nsPerDot;
 	int nsDraw;
 	int time;		// +nsPerDot each dot
+	int busy;		// (cycles) to emulate busy period
 
 	int flash;
 	int curscr;
