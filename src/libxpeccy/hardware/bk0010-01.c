@@ -126,7 +126,7 @@ void bk_sync(Computer* comp, int ns) {
 				if (comp->timer.val < 0) {
 					if (comp->timer.flags & 0x04) {		// signal
 						comp->timer.flags |= 0x80;
-						comp->cpu->intrq |= PDP_INT_TIMER;
+						// comp->cpu->intrq |= PDP_INT_TIMER;
 					}
 					if (comp->timer.flags & 2) {		// wraparound
 						comp->timer.val = 0xffff;
