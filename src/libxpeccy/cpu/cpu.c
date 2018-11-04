@@ -160,16 +160,12 @@ xMnem cpuDisasm(CPU* cpu, unsigned short adr, char* buf, cbdmr mrd, void* data) 
 						*buf++ = halfByte[tmp >> 4];
 						*buf++ = halfByte[tmp & 0x0f];
 						break;
-					case '6':		// = (adr + wrd[adr])
+					case '6':		// = (adr + wrd[adr]) octal
 						dtw = mrd(adr++, data);
 						dtw |= (mrd(adr++, data) << 8);
 						mn.len += 2;
 						dtw += adr;
-						*buf++ = '#';
-						*buf++ = halfByte[(dtw >> 12) & 0x0f];
-						*buf++ = halfByte[(dtw >> 8) & 0x0f];
-						*buf++ = halfByte[(dtw >> 4) & 0x0f];
-						*buf++ = halfByte[dtw & 0x0f];
+						buf += sprintf(buf, "%o", dtw);
 						break;
 					case '7':		// = #adr
 						*buf++ = '#';
@@ -177,6 +173,12 @@ xMnem cpuDisasm(CPU* cpu, unsigned short adr, char* buf, cbdmr mrd, void* data) 
 						*buf++ = halfByte[(adr >> 8) & 0x0f];
 						*buf++ = halfByte[(adr >> 4) & 0x0f];
 						*buf++ = halfByte[adr & 0x0f];
+						break;
+					case '8':		// = word (adr) octal
+						dtw = mrd(adr++, data);
+						dtw |= (mrd(adr++, data) << 8);
+						mn.len += 2;
+						buf += sprintf(buf, "%o", dtw);
 						break;
 				}
 			} else {

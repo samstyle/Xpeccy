@@ -73,7 +73,7 @@ struct HardWare {
 	int id;			// id
 	const char* name;	// name used for conf file
 	const char* optName;	// name used for setup window
-	int fps;
+	int base;
 	int mask;		// mem size bits (see memory.h)
 	cbHwMap mapMem;
 	cbHwIwr out;		// io wr
@@ -267,7 +267,7 @@ void bk_mem_map(Computer*);
 void bk_reset(Computer*);
 void bk_mwr(Computer*, unsigned short, unsigned char);
 unsigned char bk_mrd(Computer* comp, unsigned short, int);
-void bk_sync(Computer*, int);
+//void bk_sync(Computer*, int);
 void bk_keyp(Computer*, keyEntry);
 void bk_keyr(Computer*, keyEntry);
 sndPair bk_vol(Computer*, sndVolume*);

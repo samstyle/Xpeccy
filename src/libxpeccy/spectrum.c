@@ -322,8 +322,6 @@ void compUpdateTimings(Computer* comp) {
 			vidUpdateTimings(comp->vid, 40);
 			vidSetLayout(comp->vid, bkLay);
 			comp->vid->lockLayout = 1;
-			comp->timer.bper = perNoTurbo * 128;
-			comp->timer.per = perNoTurbo * 128;
 			break;
 		case HW_NES:
 			// base frq (21.477MHz | 26.602MHz)

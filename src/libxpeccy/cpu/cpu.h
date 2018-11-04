@@ -72,6 +72,15 @@ struct opCode {
 };
 
 typedef struct {
+	int flag;
+	PAIR(ival,ivh,ivl);
+	PAIR(val,vh,vl);
+	int bper;
+	int per;
+	int cnt;
+} xTimer;
+
+typedef struct {
 	unsigned match:1;
 	int idx;
 	opCode* op;
@@ -139,6 +148,7 @@ struct CPU {
 	unsigned vsel:4;
 	unsigned short pflag;		// pdp11 flag
 	unsigned short preg[8];		// pdp11 registers
+	xTimer timer;
 
 	cbmr mrd;
 	cbmw mwr;

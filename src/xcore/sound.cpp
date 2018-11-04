@@ -10,8 +10,8 @@
 
 // new
 static unsigned char sbuf[0x4000];
-static unsigned long posf = 0;		// fill pos
-static unsigned long posp = 0;		// play pos
+static unsigned int posf = 0;		// fill pos
+static unsigned int posp = 0;		// play pos
 
 static int smpCount = 0;
 OutSys *sndOutput = NULL;
@@ -144,7 +144,7 @@ void null_close() {}
 // SDL
 
 void sdlPlayAudio(void*, Uint8* stream, int len) {
-	if ((posf - posp < len) || conf.emu.fast || conf.emu.pause) {
+	if ((posf - posp < (unsigned)len) || conf.emu.fast || conf.emu.pause) {
 		while (len > 0) {
 #if 1
 			*(stream++) = sndLev.left & 0xff;;
@@ -237,5 +237,5 @@ void sndInit() {
 // debug
 
 void sndDebug() {
-	printf("%li - %li = %li\n",posf, posp, posf - posp);
+	printf("%i - %i = %i\n",posf, posp, posf - posp);
 }

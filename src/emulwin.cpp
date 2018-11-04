@@ -1197,7 +1197,7 @@ void MainWin::initUserMenu() {
 	userMenu->addAction(QIcon(":/images/tape.png"),"Tape player",tapeWin,SLOT(show()));
 	userMenu->addAction(QIcon(":/images/video.png"),"RZX player",rzxWin,SLOT(show()));
 	userMenu->addSeparator();
-	pckAct = userMenu->addAction(QIcon(":/images/keyboard.png"),"PC keyboard");
+	pckAct = userMenu->addAction(QIcon(":/images/keyboard.png"),"Grab keyboard");
 	pckAct->setCheckable(true);
 	userMenu->addAction(QIcon(":/images/keyboardzx.png"),"ZX Keyboard",keywin,SLOT(show()));
 	userMenu->addAction(QIcon(":/images/objective.png"),"Watcher",watcher,SLOT(show()));
@@ -1209,9 +1209,6 @@ void MainWin::initUserMenu() {
 	connect(resMenu,SIGNAL(triggered(QAction*)),this,SLOT(reset(QAction*)));
 	connect(fileMenu,SIGNAL(triggered(QAction*)),this,SLOT(umOpen(QAction*)));
 
-//	fileMenu->addAction(QIcon(":/images/memory.png"),"Snapshot")->setData(FT_SNAP | FT_SPG);
-//	fileMenu->addAction(QIcon(":/images/tape.png"),"Tape")->setData(FT_TAPE);
-//	fileMenu->addAction(QIcon(":/images/floppy.png"),"Floppy")->setData(FT_DISK);
 	fileMenu->addAction(QIcon(":/images/memory.png"),"Snapshot")->setData(FG_SNAPSHOT);
 	fileMenu->addAction(QIcon(":/images/tape.png"),"Tape")->setData(FG_TAPE);
 	fileMenu->addAction(QIcon(":/images/floppy.png"),"Floppy")->setData(FH_DISKS);

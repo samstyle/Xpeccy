@@ -61,7 +61,7 @@ unsigned char vdp_mix_col(unsigned char scol, unsigned char dcol, unsigned char 
 int vdpGetAddr(Video* vid, int adr) {
 	adr &= vid->memMask;
 	if (adr & 0x10000) return adr;	// high 64K
-	if (vid->reg[45] & 0x40)	// expansion ram on
+	if (vid->reg[45] & 0x40)	// ext ram on
 		adr |= 0x20000;
 	return  adr;
 }
@@ -734,6 +734,13 @@ xVDPArgs vdp_get_hcom(Video* vid, vCoord crd, vCoord rect) {
 
 // TODO: block commands executed line by line
 
+void vdp_com_info(Video* vid) {
+	printf("vdp9938 command %.2X, arg %.2X\n",vid->com, vid->arg);
+	printf("src:%i %i\ndst:%i %i\nrct:%i %i\n", vid->src.x, vid->src.y, vid->dst.x, vid->dst.y, vid->rct.x, vid->rct.y);
+}
+
+// static unsigned char cbuf[512];
+
 void vdpExec(Video* vid) {
 //	int spx,dpx;
 	if ((vid->sr[2] & 1) && vid->com) return;	// busy & not stop command
@@ -754,8 +761,7 @@ void vdpExec(Video* vid) {
 	vid->step.x = (vid->reg[0x2d] & 4) ? -1 : 1;
 	vid->step.y = (vid->reg[0x2d] & 8) ? -1 : 1;
 
-//	printf("vdp9938 command %.2X, arg %.2X\n",vid->com, vid->arg);
-//	printf("src:%i %i\ndst:%i %i\nrct:%i %i\n", vid->src.x, vid->src.y, vid->dst.x, vid->dst.y, vid->rct.x, vid->rct.y);
+//	if ((vid->dst.y > 191) && (vid->dst.y < 256)) vdp_com_info(vid);
 
 	vid->sr[2] |= 1;
 	switch (vid->com) {
@@ -860,13 +866,13 @@ void vdpExec(Video* vid) {
 					sarg.adr = (sarg.adr - sarg.dx + 1);
 					darg.adr = (darg.adr - darg.dx + 1);
 				}
-				if (sarg.dx == 0) sarg.dx++;
+				vid->src.y += vid->step.y * vid->rct.y;
+				vid->dst.y += vid->step.y * vid->rct.y;
 				do {
 					memcpy(vid->ram + (darg.adr & vid->memMask), vid->ram + (sarg.adr & vid->memMask), sarg.dx);
 					sarg.adr += vid->step.y;
 					darg.adr += vid->step.y;
-					vid->rct.y--;
-				} while (vid->rct.y > 0);
+				} while (--vid->rct.y > 0);
 			}
 			vid->sr[2] &= ~1;
 			break;

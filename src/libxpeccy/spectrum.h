@@ -178,6 +178,7 @@ typedef struct {
 	unsigned short padr;
 	unsigned char pval;
 
+/*
 	struct {
 		int flags;
 		int cnt;	// ns counter
@@ -186,7 +187,7 @@ typedef struct {
 		int ival;	// initial value
 		int val;	// ticks counter
 	} timer;
-
+*/
 	struct {
 		unsigned char evoBF;		// PentEvo rw ports
 		unsigned char evo2F;

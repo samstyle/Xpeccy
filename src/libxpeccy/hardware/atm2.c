@@ -86,9 +86,10 @@ void atm2OutFF(Computer* comp, unsigned short port, unsigned char val) {		// dos
 	if (comp->p77hi & 0x40) return;			// pen2 = 1
 	val ^= 0xff;	// inverse colors
 	int adr = comp->vid->brdcol & 0x0f;
-	// printf("%.2X : %.2X\n",adr, val);
 #if 1			// ddp extend palete
 //	port = (port & 0xff) | (val << 8);
+	port ^= 0xff00;
+	printf("%.4X : %.2X\n",port, val);
 	comp->vid->pal[adr].b = atm2clev[((val & 0x01) << 3) | ((val & 0x20) >> 3) | ((port & 0x0100) >> 7) | ((port & 0x2000) >> 13)];
 	comp->vid->pal[adr].r = atm2clev[((val & 0x02) << 2) | ((val & 0x40) >> 4) | ((port & 0x0200) >> 8) | ((port & 0x4000) >> 14)];
 	comp->vid->pal[adr].g = atm2clev[((val & 0x10) >> 1) | ((val & 0x80) >> 5) | ((port & 0x1000) >> 11)| ((port & 0x8000) >> 15)];

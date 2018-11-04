@@ -276,7 +276,8 @@ dasmData getDisasm(Computer* comp, unsigned short& adr) {
 			}
 			drow.aname.append(QString("%1:%2").arg(gethexbyte(xadr.bank & 0xff)).arg(gethexword(xadr.adr & 0x3fff)));
 		} else {
-			drow.aname = gethexword(xadr.adr);
+			int wid = (comp->hw->base == 8) ? 6 : 4;
+			drow.aname = QString::number(xadr.adr, comp->hw->base).toUpper().rightJustified(wid, '0');
 		}
 	} else {
 		drow.islab = 1;
@@ -335,7 +336,7 @@ unsigned short getPrevAdr(Computer* comp, unsigned short adr) {
 	return adr;
 }
 
-int asmAddr(QVariant val, xAdr xadr) {
+int asmAddr(QVariant val, xAdr xadr, int base) {
 	QString str = val.toString();
 	QString lab;
 	int res = -1;
@@ -346,7 +347,7 @@ int asmAddr(QVariant val, xAdr xadr) {
 		if (!str.isEmpty())
 			labels.remove(str);
 	} else {
-		adr = str.toInt(&flag, 16);
+		adr = str.toInt(&flag, base);
 		if (flag) {
 			res = adr;
 		} else {
@@ -385,7 +386,7 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 	switch(col) {
 		case 0:
 			xadr = memGetXAdr((*cptr)->mem, dasm[row].adr);
-			idx = asmAddr(val, xadr);
+			idx = asmAddr(val, xadr, (*cptr)->hw->base);
 			if (idx >= 0) {
 				while (row > 0) {
 					idx = getPrevAdr(*cptr, idx & 0xffff);

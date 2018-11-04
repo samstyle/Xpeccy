@@ -4,28 +4,57 @@
 #include <stdio.h>
 #include <string.h>
 
-void pdp_wr(CPU* cpu, unsigned short adr, unsigned short val) {
-	adr &= ~1;
-	cpu->mwr(adr++, val & 0xff, cpu->data);
-	cpu->mwr(adr, (val >> 8) & 0xff, cpu->data);
-	cpu->t += 8;
+void pdp_wrb(CPU* cpu, unsigned short adr, unsigned char val) {
+	switch (adr) {
+		// timer
+		case 0xffc6: cpu->timer.ivl = val; break;
+		case 0xffc7: cpu->timer.ivh = val; break;
+		case 0xffc8: cpu->timer.vl = val; break;
+		case 0xffc9: cpu->timer.vh = val; break;
+		case 0xffca: cpu->timer.flag = val & 0xff;
+			cpu->timer.per = 128;
+			if (val & 0x40) cpu->timer.per <<= 2;	// div 4
+			if (val & 0x20) cpu->timer.per <<= 4;	// div 16
+			if (val & 0x12) cpu->timer.val = cpu->timer.ival; // reload value
+			break;
+		case 0xffcb: break;
+		// register
+		default:
+			cpu->mwr(adr, val & 0xff, cpu->data);
+			break;
+	}
+	cpu->t += 4;
 }
 
-void pdp_wrb(CPU* cpu, unsigned short adr, unsigned char val) {
-	cpu->mwr(adr, val & 0xff, cpu->data);
+void pdp_wr(CPU* cpu, unsigned short adr, unsigned short val) {
+	adr &= ~1;
+	pdp_wrb(cpu, adr++, val & 0xff);
+	pdp_wrb(cpu, adr, (val >> 8) & 0xff);
+}
+
+unsigned char pdp_rdb(CPU* cpu, unsigned short adr) {
+	unsigned char res = 0xff;
+	switch (adr) {
+		// internal timer
+		case 0xffc6: res = cpu->timer.ivl; break;	// timer:initial counter value
+		case 0xffc7: res = cpu->timer.ivh; break;
+		case 0xffc8: res = cpu->timer.vl; break;	// timer:current counter
+		case 0xffc9: res = cpu->timer.vh; break;
+		case 0xffca: res = cpu->timer.flag & 0xff; break;	// timer flags
+		case 0xffcb: res = 0xff; break;
+		default:
+			res = cpu->mrd(adr, 0, cpu->data);
+			break;
+	}
 	cpu->t += 4;
+	return res;
 }
 
 unsigned short pdp_rd(CPU* cpu, unsigned short adr) {
 	adr &= ~1;
-	unsigned short res = cpu->mrd(adr++, 0, cpu->data) & 0xff;
-	res |= (cpu->mrd(adr, 0, cpu->data) << 8);
-	cpu->t += 8;
+	unsigned short res = pdp_rdb(cpu, adr) & 0xff;
+	res |= pdp_rdb(cpu, adr+1) << 8;
 	return res;
-}
-
-unsigned char pdp_rdb(CPU* cpu, unsigned short adr) {
-	return cpu->mrd(adr, 0, cpu->data);
 }
 
 // reset
@@ -38,6 +67,7 @@ void pdp11_reset(CPU* cpu) {
 	cpu->pc = cpu->preg[7];
 	cpu->pflag = 0xe0;
 	cpu->inten = 0xff;
+	cpu->timer.flag = 0x01;
 }
 
 void pdp_push(CPU* cpu, unsigned short val) {
@@ -1254,6 +1284,28 @@ static cbcpu pdp_tab_a[16] = {
 	pdp_8xxx, pdp_movb, pdp_cmpb, pdp_bitb, pdp_bicb, pdp_bisb, pdp_sub, pdp_undef
 };
 
+void pdp_timer(CPU* cpu, int t) {
+	if (cpu->timer.flag & 1) return;		// stopped
+	cpu->timer.cnt -= t;
+	while (cpu->timer.cnt < 0) {
+		cpu->timer.cnt += cpu->timer.per;
+		if (cpu->timer.flag & 0x10) {
+			cpu->timer.val--;
+			if (cpu->timer.val == 0xffff) {
+				if (cpu->timer.flag & 0x04)
+					cpu->timer.flag |= 0x80;
+				if (cpu->timer.flag & 0x02) {
+					cpu->timer.val = 0xffff;
+				} else if (cpu->timer.flag & 0x08) {
+					cpu->timer.flag &= ~0x10;
+				} else {
+					cpu->timer.val = cpu->timer.ival;
+				}
+			}
+		}
+	}
+}
+
 int pdp11_exec(CPU* cpu) {
 #ifdef ISDEBUG
 //	printf("%.4X : %.4X\n", cpu->preg[7], pdp_rd(cpu, cpu->preg[7]));
@@ -1269,9 +1321,9 @@ int pdp11_exec(CPU* cpu) {
 		cpu->t += pdp11_int(cpu);
 	}
 	if (cpu->t == 0) {
-		cpu->lcom = cpu->mrd(cpu->preg[7]++, 1, cpu->data);
-		cpu->hcom = cpu->mrd(cpu->preg[7]++, 1, cpu->data);
-		cpu->t += 8;
+		cpu->com = pdp_rd(cpu, cpu->preg[7]);
+		cpu->preg[7] += 2;
+		cpu->t += 10;
 		// exec 1st tab #Nxxx
 		pdp_tab_a[(cpu->com >> 12) & 0x0f](cpu);
 		if (cpu->sta) {			// stack goes trough 0x400 : trap 4
@@ -1280,6 +1332,7 @@ int pdp11_exec(CPU* cpu) {
 		}
 	}
 	cpu->pc = cpu->preg[7];
+	pdp_timer(cpu, cpu->t);
 	return cpu->t;
 }
 
@@ -1431,7 +1484,7 @@ static xPdpDasm pdp11_dasm_tab[] = {
 
 static char mnbuf[128];
 static char num7[8] = "01234567";
-static char numF[16] = "0123456789ABCDEF";
+// static char numF[16] = "0123456789ABCDEF";
 
 char* put_addressation(char* dst, unsigned short type) {
 	switch ((type >> 3) & 7) {
@@ -1445,11 +1498,11 @@ char* put_addressation(char* dst, unsigned short type) {
 					dst--;
 					*dst++ = '(';
 					*dst++ = ':';
-					*dst++ = '2';
+					*dst++ = '8';
 					*dst++ = ')';
 				} else {
-					*(dst++) = ':';		// :2 will be replaced with next word
-					*(dst++) = '2';
+					*(dst++) = ':';		// :8 will be replaced with next word (oct)
+					*(dst++) = '8';
 				}
 			} else {
 				*(dst++) = '(';
@@ -1472,7 +1525,7 @@ char* put_addressation(char* dst, unsigned short type) {
 				*(dst++) = '6';
 			} else {
 				*(dst++) = ':';			// :2 will be replaced with next word
-				*(dst++) = '2';
+				*(dst++) = '8';
 				*(dst++) = '(';
 				strcpy(dst, regNames[type & 7]);
 				dst += strlen(regNames[type & 7]);
@@ -1490,7 +1543,6 @@ xMnem pdp11_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* dat) {
 	unsigned short dtw;
 	unsigned short com = mrd(adr++, dat);
 	com |= (mrd(adr++, dat) << 8);
-//	adr += 2;
 	while ((pdp11_dasm_tab[idx].mask != 0) && ((com & pdp11_dasm_tab[idx].mask) != pdp11_dasm_tab[idx].code))
 		idx++;
 	const char* src = pdp11_dasm_tab[idx].mnem;
@@ -1508,29 +1560,20 @@ xMnem pdp11_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* dat) {
 					dst++;
 					break;
 				case 'x':
-					*(dst++) = numF[(com & 0xf0) >> 4];
-					*(dst++) = numF[com & 0x0f];
+					dst += sprintf(dst, "%o", com & 0xff);
 					break;
 				case 'e':
 					dtw = (com & 0xff);
 					if (com & 0x80) dtw |= 0xff00;
 					dtw <<= 1;
 					dtw += adr;
-					*(dst++) = '#';
-					*(dst++) = numF[(dtw >> 12) & 0x0f];
-					*(dst++) = numF[(dtw >> 8) & 0x0f];
-					*(dst++) = numF[(dtw >> 4) & 0x0f];
-					*(dst++) = numF[dtw & 0x0f];
+					dst += sprintf(dst, "%o", dtw);
 					break;
 				case 'j':
 					dtw = com & 0x3f;
 					dtw <<= 1;
 					dtw = adr - dtw;
-					*(dst++) = '#';
-					*(dst++) = numF[(dtw >> 12) & 0x0f];
-					*(dst++) = numF[(dtw >> 8) & 0x0f];
-					*(dst++) = numF[(dtw >> 4) & 0x0f];
-					*(dst++) = numF[dtw & 0x0f];
+					dst += sprintf(dst, "%o", dtw);
 					break;
 				case 'f':
 					if (com & PDP_FC) *(dst++) = 'C';

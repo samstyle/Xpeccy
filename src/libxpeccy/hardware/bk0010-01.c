@@ -26,10 +26,6 @@ unsigned char bk_io_rd(unsigned short adr, void* ptr) {
 		case 0xffb4: comp->wdata = comp->vid->sc.y & 0x00ff;
 			if (!comp->vid->curscr) comp->wdata |= 0x200;
 			break;	// vertical scroll register
-		case 0xffc6: comp->wdata = comp->timer.ival & 0xffff; break;	// timer:initial counter value
-		case 0xffc8: comp->wdata = comp->timer.val & 0xffff; break;	// timer:current counter
-		case 0xffca: comp->wdata = (comp->timer.flags & 0xff) | 0xff00;
-			break;	// timer flags
 		case 0xffcc: comp->wdata = 0xffff; break;							// external port
 		case 0xffce:							// system port
 			comp->wdata = 0x8080;
@@ -61,27 +57,6 @@ void bk_io_wr(unsigned short adr, unsigned char val, void* ptr) {
 		case 0xffb5:
 			comp->vid->curscr = (val & 0x02) ? 0 : 1;
 			break;
-		// timer
-		case 0xffc6: comp->timer.ival &= 0xff00;
-			comp->timer.ival |= (val & 0xff);
-			break;
-		case 0xffc7: comp->timer.ival &= 0xff;
-			comp->timer.ival |= (val << 8) & 0xff00;
-			break;
-		case 0xffc8: comp->timer.val &= 0xff00;
-			comp->timer.val |= (val & 0xff);
-			break;
-		case 0xffc9: comp->timer.val &= 0xff;
-			comp->timer.val |= (val << 8) & 0xff00;
-			break;
-		case 0xffca: comp->timer.flags = val & 0xff;
-			comp->timer.per = comp->timer.bper;
-			if (val & 0x40) comp->timer.per *= 4;	// div 4
-			if (val & 0x20) comp->timer.per *= 16;	// div 16
-			if (val & 0x12) comp->timer.val = comp->timer.ival; // reload value
-			break;
-		case 0xffcb: break;
-		// register
 		case 0xffcc:
 		case 0xffcd: break;
 		case 0xffce:
@@ -113,9 +88,10 @@ void bk_reset(Computer* comp) {
 	vidSetMode(comp->vid, VID_BK_BW);
 	comp->keyb->map[7] = 0x40;
 	comp->keyb->map[0] = 0;
-	comp->timer.flags = 0x01;
+//	comp->timer.flags = 0x01;
 }
 
+/*
 void bk_sync(Computer* comp, int ns) {
 	if (!(comp->timer.flags & 1)) {
 		comp->timer.cnt -= ns;
@@ -140,6 +116,7 @@ void bk_sync(Computer* comp, int ns) {
 		}
 	}
 }
+*/
 
 void bk_mwr(Computer* comp, unsigned short adr, unsigned char val) {
 	memWr(comp->mem, adr, val);

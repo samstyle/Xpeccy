@@ -95,7 +95,9 @@ unsigned char keyReadCode(Keyboard* keyb) {
 	if (keyb->kBufPos < 1) return 0x00;		// empty
 	if (keyb->kBufPos > 14) return 0xff;		// overfill
 	unsigned char res = keyb->kbdBuf[0];		// read code
-	memcpy(keyb->kbdBuf,keyb->kbdBuf + 1,15);	// delete code
+	for (int i = 0; i < 15; i++) {
+		keyb->kbdBuf[i] = keyb->kbdBuf[i + 1];
+	}
 	keyb->kBufPos--;
 	return res;
 }
