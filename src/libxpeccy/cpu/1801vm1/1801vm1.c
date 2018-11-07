@@ -1495,11 +1495,11 @@ char* put_addressation(char* dst, unsigned short type) {
 		case 3: *(dst++) = '@';				// @(Rn)+
 		case 2: if ((type & 7) == 7) {			// (Rn)+
 				if (type & 8) {
-					dst--;
-					*dst++ = '(';
+					//dst--;
+					//*dst++ = '(';
 					*dst++ = ':';
 					*dst++ = '8';
-					*dst++ = ')';
+					//*dst++ = ')';
 				} else {
 					*(dst++) = ':';		// :8 will be replaced with next word (oct)
 					*(dst++) = '8';
@@ -1521,10 +1521,12 @@ char* put_addressation(char* dst, unsigned short type) {
 			break;
 		case 7: *(dst++) = '@';				// @E(Rn)
 		case 6: if ((type & 7) == 7) {			// E(Rn)
+				*(dst++) = '#';
 				*(dst++) = ':';			// (E + PC)
 				*(dst++) = '6';
 			} else {
-				*(dst++) = ':';			// :2 will be replaced with next word
+				*(dst++) = '#';
+				*(dst++) = ':';			// :8 will be replaced with next word
 				*(dst++) = '8';
 				*(dst++) = '(';
 				strcpy(dst, regNames[type & 7]);

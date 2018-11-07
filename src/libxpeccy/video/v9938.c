@@ -714,6 +714,11 @@ xVDPArgs vdp_get_hcom(Video* vid, vCoord crd, vCoord rect) {
 			break;
 	}
 	vid->step.y = (vid->reg[0x2d] & 8) ? -res.bpl : res.bpl;
+	if (res.dx == 0) {
+		res.dx = res.bpl - (res.adr & (res.bpl - 1));
+//		if (vid->reg[0x2d] & 4)
+//			res.dx = res.bpl - res.dx;
+	}
 	return res;
 }
 
@@ -748,20 +753,11 @@ void vdpExec(Video* vid) {
 	xVDPArgs darg;
 	xVDPArgs sarg;
 	unsigned char xcol;
+	int xpos;
+	int ypos;
 
-	vid->src.x = (vid->reg[0x20] | (vid->reg[0x21] << 8)) & 0x1ff;
-	vid->src.y = (vid->reg[0x22] | (vid->reg[0x23] << 8)) & 0x3ff;
-	vid->srcx = vid->src.x;
-	vid->dst.x = (vid->reg[0x24] | (vid->reg[0x25] << 8)) & 0x1ff;
-	vid->dst.y = (vid->reg[0x26] | (vid->reg[0x27] << 8)) & 0x3ff;
-	vid->dstx = vid->dst.x;
-	vid->rct.x = (vid->reg[0x28] | (vid->reg[0x29] << 8)) & 0x3ff;
-	vid->rct.y = (vid->reg[0x2a] | (vid->reg[0x2b] << 8)) & 0x3ff;
-	vid->rctx = vid->rct.x;
 	vid->step.x = (vid->reg[0x2d] & 4) ? -1 : 1;
 	vid->step.y = (vid->reg[0x2d] & 8) ? -1 : 1;
-
-//	if ((vid->dst.y > 191) && (vid->dst.y < 256)) vdp_com_info(vid);
 
 	vid->sr[2] |= 1;
 	switch (vid->com) {
@@ -794,8 +790,8 @@ void vdpExec(Video* vid) {
 			vid->sr[9] = ((vid->src.x >> 8) & 1) | 0xfe;
 			break;
 		case 0x07:					// line
-			vid->dst.x = (vid->dst.x << 4) + 8;
-			vid->dst.y = (vid->dst.y << 4) + 8;
+			xpos = (vid->dst.x << 4) + 8;
+			ypos = (vid->dst.y << 4) + 8;
 			vid->count = (vid->rct.x > vid->rct.y) ? vid->rct.x : vid->rct.y;
 			vid->busy = 96 * vid->rct.x * vid->rct.y;
 			// printf("size = %i %i\n",vdp->size.x,vdp->size.y);
@@ -812,12 +808,14 @@ void vdpExec(Video* vid) {
 				vid->step.y = -vid->step.y;
 			do {
 				if (vid->pset)
-					vid->pset(vid, vid->dst.x >> 4, vid->dst.y >> 4, vid->reg[0x2c]);
-				vid->dst.x += vid->step.x;
-				vid->dst.y += vid->step.y;
+					vid->pset(vid, xpos >> 4, ypos >> 4, vid->reg[0x2c]);
+				xpos += vid->step.x;
+				ypos += vid->step.y;
 				vid->count--;
 			} while (vid->count > 0);
-			vid->sr[2] &= ~1;
+			vid->dst.x = xpos >> 4;
+			vid->dst.y = ypos >> 4;
+			vid->sr[2] &= ~0x81;
 			break;
 		case 0x08:					// fill rect (dots)
 			do {
@@ -852,7 +850,7 @@ void vdpExec(Video* vid) {
 					vid->rct.y--;
 				} while (vid->rct.y > 0);
 			}
-			vid->sr[2] &= ~1;
+			vid->sr[2] &= ~0x81;
 			break;
 		case 0x0e:						// copy right (left) rect
 			vid->src.x = vid->dst.x;
@@ -866,15 +864,13 @@ void vdpExec(Video* vid) {
 					sarg.adr = (sarg.adr - sarg.dx + 1);
 					darg.adr = (darg.adr - darg.dx + 1);
 				}
-				vid->src.y += vid->step.y * vid->rct.y;
-				vid->dst.y += vid->step.y * vid->rct.y;
 				do {
 					memcpy(vid->ram + (darg.adr & vid->memMask), vid->ram + (sarg.adr & vid->memMask), sarg.dx);
 					sarg.adr += vid->step.y;
 					darg.adr += vid->step.y;
 				} while (--vid->rct.y > 0);
 			}
-			vid->sr[2] &= ~1;
+			vid->sr[2] &= ~0x81;
 			break;
 		default:
 			printf("vdp9938 command %.2X, arg %.2X\n",vid->com, vid->arg);
@@ -960,21 +956,30 @@ void vdpRegWr(Video* vid, int reg, unsigned char val) {
 			// command registers
 		case 0x20:
 		case 0x21:
+			vid->src.x = (vid->reg[0x20] | (vid->reg[0x21] << 8)) & 0x1ff;
+			vid->srcx = vid->src.x;
 			break;
 		case 0x22:
 		case 0x23:
+			vid->src.y = (vid->reg[0x22] | (vid->reg[0x23] << 8)) & 0x3ff;
 			break;
 		case 0x24:
 		case 0x25:
+			vid->dst.x = (vid->reg[0x24] | (vid->reg[0x25] << 8)) & 0x1ff;
+			vid->dstx = vid->dst.x;
 			break;
 		case 0x26:
 		case 0x27:
+			vid->dst.y = (vid->reg[0x26] | (vid->reg[0x27] << 8)) & 0x3ff;
 			break;
 		case 0x28:
 		case 0x29:
+			vid->rct.x = (vid->reg[0x28] | (vid->reg[0x29] << 8)) & 0x3ff;
+			vid->rctx = vid->rct.x;
 			break;
 		case 0x2a:
 		case 0x2b:
+			vid->rct.y = (vid->reg[0x2a] | (vid->reg[0x2b] << 8)) & 0x3ff;
 			break;
 		case 0x2c:			// color code | block data transfer cpu->vdp
 			if (vid->sr[2] & 0x80) {
