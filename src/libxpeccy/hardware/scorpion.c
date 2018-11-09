@@ -31,6 +31,8 @@ void scoMapMem(Computer* comp) {
 		memSetBank(comp->mem,0x00,MEM_ROM,rp, MEM_16K, NULL, NULL, NULL);
 	}
 	rp = (comp->p7FFD & 7) | ((comp->p1FFD & 0x10) >> 1) | ((comp->p1FFD & 0xc0) >> 2);
+	memSetBank(comp->mem,0x40,MEM_RAM, 5, MEM_16K, NULL, NULL, NULL);
+	memSetBank(comp->mem,0x80,MEM_RAM, 2, MEM_16K, NULL, NULL, NULL);
 	memSetBank(comp->mem,0xc0,MEM_RAM, rp, MEM_16K, NULL, NULL, NULL);
 }
 

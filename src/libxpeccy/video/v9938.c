@@ -306,15 +306,16 @@ void vdpGra1(Video* vid) {
 		col = vid->reg[7] & 0x0f;
 	} else {
 		yscr = (vid->ray.ys + vid->reg[0x17]) & 0xff;
-		if (!(xscr & 7)) {
+		if (!(vid->ray.xs & 7)) {
 			adr = vid->ram[vid->BGMap + (vid->ray.xs >> 3) + ((yscr & 0xf8) << 2)];
 			scrbyte = vid->ram[vid->BGTiles + (adr << 3) + (yscr & 7)];
 			atrbyte = vid->ram[vid->BGColors + (adr >> 3)];
 			ink = (atrbyte & 0xf0) >> 4;
 			pap = atrbyte & 0x0f;
 		}
-		if (vid->line[vid->ray.xs & 0x1ff])
-			col = vid->line[vid->ray.xs & 0x1ff];
+		col = vid->line[vid->ray.xs & 0x1ff];
+		if (!col)
+			col = (scrbyte & 0x80) ? ink : pap;
 		scrbyte <<= 1;
 
 	}
@@ -327,7 +328,7 @@ void vdpGra2(Video* vid) {
 	if (vid->vbrd || vid->hbrd || !(vid->reg[1] & 0x40)) {
 		col = vid->reg[7] & 0x0f;
 	} else {
-		yscr = (vid->ray.xs + vid->reg[0x17]) & 0xff;
+		yscr = (vid->ray.ys + vid->reg[0x17]) & 0xff;
 		if ((vid->ray.xs & 7) == 0) {
 			adr = vid->ram[vid->BGMap | (vid->ray.xs >> 3) | ((yscr & 0xf8) << 2)] | ((yscr & 0xc0) << 2);	// tile nr
 			scrbyte = vid->ram[(vid->BGTiles & ~0x1fff) | (adr << 3) | (yscr & 7)];
@@ -335,8 +336,9 @@ void vdpGra2(Video* vid) {
 			ink = (atrbyte >> 4) & 0x0f;
 			pap = atrbyte & 0x0f;
 		}
-		if (vid->line[vid->ray.xs & 0x1ff])
-			col = vid->line[vid->ray.xs & 0x1ff];
+		col = vid->line[vid->ray.xs & 0x1ff];
+		if (!col)
+			col = (scrbyte & 0x80) ? ink : pap;
 		scrbyte <<= 1;
 	}
 	vidPutDot(&vid->ray, vid->pal, col);
@@ -1008,7 +1010,7 @@ void vdpHBlk(Video* vid) {
 	if (yscr == vid->intp.y) {		// HINT
 		if (vid->reg[0] & VDP_IE1) {
 			vid->sr[1] |= 1;
-			vid->inth = 64;
+			vid->inth = vid->blank.x;
 		}
 	}
 	if (vid->ray.y == vid->vend.y) {
@@ -1019,7 +1021,7 @@ void vdpHBlk(Video* vid) {
 void vdpVBlk(Video* vid) {
 	if (vid->reg[1] & VDP_IE0) {
 		vid->sr[0] |= 0x80;
-		vid->intf = 64;
+		vid->intf = vid->full.x * 2;
 	}
 	vid->blink--;
 	if (vid->blink < 0) {

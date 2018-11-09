@@ -1,12 +1,14 @@
 #include "../spectrum.h"
 
 void speReset(Computer* comp) {
-
+	vidSetMode(comp->vid, VID_NORMAL);
 }
 
 void speMapMem(Computer* comp) {
 	memSetBank(comp->mem,0x00,MEM_ROM,(comp->dos) ? 1 : 0, MEM_16K,NULL,NULL,NULL);
-	memSetBank(comp->mem,0xc0,MEM_RAM,0, MEM_16K,NULL,NULL,NULL);
+	memSetBank(comp->mem,0x40,MEM_RAM,5,MEM_16K,NULL,NULL,NULL);		// 101 / x01
+	memSetBank(comp->mem,0x80,MEM_RAM,2,MEM_16K,NULL,NULL,NULL);		// 010 / x10
+	memSetBank(comp->mem,0xc0,MEM_RAM,0,MEM_16K,NULL,NULL,NULL);		// 000 / x00
 }
 
 // out

@@ -4,7 +4,7 @@
 
 HardWare hwTab[] = {
 	{
-		HW_ZX48,"ZX48K","ZX 48K",16,MEM_48K,
+		HW_ZX48,"ZX48K","ZX 48K",16,MEM_64K,
 		speMapMem,speOut,speIn,stdMRd,stdMWr,speReset,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
 		HW_PENT,"Pentagon","Pentagon",16,MEM_128K | MEM_512K,

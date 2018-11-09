@@ -445,6 +445,7 @@ int prfLoad(std::string nm) {
 					}
 					if (pnam == "memory") {
 						tmp2 = atoi(pval.c_str());
+						if (!tmp2) tmp2=64;
 						tmp2 <<= 10;			// KB to bytes
 						tmp2 = toPower(tmp2);
 						tmp2 = toLimits(tmp2, MEM_256, MEM_4M);

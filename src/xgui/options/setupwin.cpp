@@ -827,7 +827,7 @@ void SetupWin::setmszbox(int idx) {
 	QString oldText = ui.mszbox->currentText();
 	ui.mszbox->clear();
 	if (t == 0x00) {
-		ui.mszbox->addItem("48K",48);
+		ui.mszbox->addItem("48K",MEM_64K);
 	} else {
 		int idx = 0;
 		while (memNameTab[idx].mask > 0) {

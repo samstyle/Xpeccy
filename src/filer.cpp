@@ -286,6 +286,16 @@ int grp_by_disk(int drv) {
 	return id;
 }
 
+static int boot_ft[] = {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, 0};
+
+void disk_boot(Computer* comp, int drv, int id) {
+	int idx = 0;
+	while (boot_ft[idx] && (boot_ft[idx] != id))
+		idx++;
+	if (boot_ft[idx])
+		loadBoot(comp, conf.path.boot, drv);
+}
+
 int load_file(Computer* comp, const char* name, int id, int drv) {
 	QString path(name);
 	QString flt;
@@ -329,11 +339,13 @@ int load_file(Computer* comp, const char* name, int id, int drv) {
 			if (inf->ch) {
 				if (saveChangedDisk(comp, drv)) {
 					err = inf->load(comp, path.toLocal8Bit().data(), drv);
+					disk_boot(comp, drv, inf->id);
 				} else {
 					err = ERR_OK;
 				}
 			} else {
 				err = inf->load(comp, path.toLocal8Bit().data(), drv);
+				disk_boot(comp, drv, inf->id);
 			}
 		}
 	}
