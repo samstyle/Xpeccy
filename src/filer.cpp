@@ -379,7 +379,7 @@ int save_file(Computer* comp, const char* name, int id, int drv) {
 			filer->setHistory(QStringList());
 			if (filer->exec()) {
 				path = filer->selectedFiles().first();
-				flt = filer->selectedFilter();
+				flt = filer->selectedNameFilter();
 				grp = file_detect_grp(flt);
 				if (grp)
 					drv = grp->drv;
