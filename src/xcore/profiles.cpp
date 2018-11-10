@@ -388,7 +388,7 @@ int prfLoad(std::string nm) {
 						if ((pval == "basic128") || (pval=="0")) comp->resbank = RES_128;
 						if ((pval == "basic48") || (pval=="1")) comp->resbank = RES_48;
 						if ((pval == "shadow") || (pval=="2")) comp->resbank = RES_SHADOW;
-						if ((pval == "trdos") || (pval=="3")) comp->resbank = RES_DOS;
+						if ((pval == "dos") || (pval=="3")) comp->resbank = RES_DOS;
 					}
 					if (pnam=="current") prf->rsName = pval;
 					break;

@@ -875,10 +875,21 @@ void MainWin::wheelEvent(QWheelEvent* ev) {
 	}
 }
 
+static int dumove = 0;
+
 void MainWin::mouseMoveEvent(QMouseEvent *ev) {
 	if (!grabMice || conf.emu.pause) return;
-	comp->mouse->xpos = ev->globalX() & 0xff;
-	comp->mouse->ypos = 256 - (ev->globalY() & 0xff);
+	if (dumove) {			// it was dummy move to center of screen
+		dumove = 0;
+	} else {
+		QRect rct = QApplication::desktop()->screenGeometry();
+		rct.setWidth(rct.width() / 2);
+		rct.setHeight(rct.height() / 2);
+		comp->mouse->xpos += ev->globalX() - rct.width();
+		comp->mouse->ypos -= ev->globalY() - rct.height();
+		dumove = 1;
+		cursor().setPos(rct.width(), rct.height());
+	}
 }
 
 void MainWin::dragEnterEvent(QDragEnterEvent* ev) {
