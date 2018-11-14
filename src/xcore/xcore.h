@@ -171,13 +171,16 @@ void swapBookmarks(int,int);
 
 typedef struct {
 	std::string name;
-	std::string file;	// set when romfile is single file
+	int foffset;
+	int fsize;
+	int roffset;
+} xRomFile;
+
+typedef struct {
+	std::string name;
 	std::string gsFile;
 	std::string fntFile;
-	struct {
-		std::string path;
-		unsigned char part;
-	} roms[32];
+	std::vector<xRomFile> roms;
 } xRomset;
 
 xRomset* findRomset(std::string);

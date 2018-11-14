@@ -1001,8 +1001,10 @@ void vidSync(Video* vid, int ns) {
 				vid->cbDot(vid);		// put dot callback
 		}
 		// if debug, fill all line
+#if VID_DIRECT_DRAW
 		if (vid->debug)
 			vid_line_fill(vid);
+#endif
 		// move ray to next dot, update counters
 		vid->ray.x++;
 		vid->ray.xb++;

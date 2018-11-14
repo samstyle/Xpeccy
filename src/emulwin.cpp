@@ -155,10 +155,10 @@ MainWin::MainWin() {
 	grabMice = 0;
 	block = 0;
 
-	QFile file(":/font.bin");		// on-screen messages bitmap font 12x12
-	file.open(QFile::ReadOnly);
-	font = file.readAll();
-	file.close();
+//	QFile file(":/font.bin");		// on-screen messages bitmap font 12x12
+//	file.open(QFile::ReadOnly);
+//	font = file.readAll();
+//	file.close();
 	msgTimer = 0;
 	msg.clear();
 	alphabet.load(":/font.png");
@@ -238,8 +238,8 @@ void processPicture(unsigned char*, int);
 void MainWin::convImage() {
 
 #if !VID_DIRECT_DRAW
-	if (!pauseFlags || comp->debug) {
-		if (ethread.fast || comp->debug) {
+	if (!conf.emu.pause || comp->debug) {
+		if (conf.emu.fast || comp->debug) {
 			memcpy(scrn, comp->vid->scrimg, comp->vid->vBytes);
 		} else {
 			memcpy(scrn, sbufa, comp->vid->vBytes);
@@ -419,13 +419,13 @@ void MainWin::onTimer() {
 	updateSatellites();
 // fill fake buffer if paused
 #if !VID_DIRECT_DRAW
-	if (pauseFlags) {
+	if (conf.emu.pause) {
 		conf.snd.fill = 1;
 		do {
-			sndSync(comp, 1, 1);
+			sndSync(comp);
 		} while (conf.snd.fill);
 		convImage();
-	} else if (ethread.fast) {
+	} else if (conf.emu.fast) {
 		convImage();
 	}
 #else
@@ -1112,54 +1112,6 @@ void MainWin::putLeds() {
 void MainWin::setMessage(QString str, double dur) {
 	msgTimer = dur * 50;
 	msg = str;
-}
-
-#define CHSIZE (12*12*3)
-
-void drawChar(QByteArray chr, int scradr) {
-	int x, y;
-	int r,g,b;
-	int adr = 0;
-	int vadr;
-#if VID_DIRECT_DRAW
-	unsigned char* screen = conf.prof.cur->zx->vid->scrimg;
-#endif
-	for (y = 0; y < 12; y++) {
-		for (x = 0; x < 12*3; x+=3) {
-			r = chr.at(adr++);
-			g = chr.at(adr++);
-			b = chr.at(adr++);
-			vadr = scradr + x;
-			if (r || g || b) {
-				screen[vadr++] = r;
-				screen[vadr++] = g;
-				screen[vadr] = b;
-			} else {
-				screen[vadr++] >>= 2;
-				screen[vadr++] >>= 2;
-				screen[vadr] >>= 2;
-			}
-		}
-		scradr += bytesPerLine;
-	}
-}
-
-void MainWin::drawMessage() {
-	int wid = size().width();
-	int x = 5;
-	int y = size().height() - 17;
-	int scradr = y * bytesPerLine + x * 3;
-	int chr;
-	QByteArray chrdata;
-	for (int i = 0; i < msg.size(); i++) {
-		chr = msg.at(i).unicode() - 32;
-		if (chr > 95)
-			chr = '_' - 32;
-		chrdata = font.mid(chr * CHSIZE, CHSIZE);
-		drawChar(chrdata, scradr + x * 3);
-		x += 12;
-		if (x >= (wid - 12)) break;
-	}
 }
 
 void MainWin::updateSatellites() {

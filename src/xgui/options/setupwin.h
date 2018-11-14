@@ -40,7 +40,7 @@ class SetupWin : public QDialog {
 		xPadBinder* padial;
 
 		int eidx;
-		void editRomset();
+//		void editRomset();
 
 		xLayout nlay;
 		void editLayout();
@@ -88,10 +88,14 @@ class SetupWin : public QDialog {
 		void openSlot();
 		void ejectSlot();
 
-		void editrset();
+//		void editrset();
 		void addNewRomset();
 		void rmRomset();
-		void rscomplete(int, QString);
+//		void rscomplete(int, QString);
+		void addRom();
+		void editRom();
+		void delRom();
+		void setRom(xRomFile);
 
 		void newPadMap();
 		void delPadMap();

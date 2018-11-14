@@ -99,7 +99,7 @@ void saveConfig() {
 		shitHappens("Can't write main config");
 		throw(0);
 	}
-	uint j;
+//	uint j;
 
 	fprintf(cfile,"[GENERAL]\n\n");
 	if ((conf.keyMapName != "default") && (conf.keyMapName != "")) {
@@ -148,6 +148,7 @@ void saveConfig() {
 	fprintf(cfile, "\n[ROMSETS]\n");
 	foreach(xRomset rms, conf.rsList) {
 		fprintf(cfile, "\nname = %s\n", rms.name.c_str());
+#if 0
 		if (rms.file != "") {
 			fprintf(cfile, "file = %s\n", rms.file.c_str());
 		} else {
@@ -157,6 +158,11 @@ void saveConfig() {
 				}
 			}
 		}
+#else
+		foreach(xRomFile rf, rms.roms) {
+			fprintf(cfile, "rom = %s:%i:%i:%i\n",rf.name.c_str(), rf.foffset, rf.fsize, rf.roffset);
+		}
+#endif
 		if (!rms.gsFile.empty())
 			fprintf(cfile, "gs = %s\n", rms.gsFile.c_str());
 		if (!rms.fntFile.empty())
@@ -276,15 +282,18 @@ void loadConfig() {
 	vLayout vlay;
 	std::vector<xRomset> rsListist;
 	xRomset newrs;
+	xRomFile rfile;
 	size_t pos;
 	std::string tms,fnam;
 	int fprt;
-	newrs.file.clear();
+//	newrs.file.clear();
+	newrs.fntFile.clear();
 	newrs.gsFile.clear();
-	for (int i=0; i<32; i++) {
-		newrs.roms[i].path = "";
-		newrs.roms[i].part = 0;
-	}
+	newrs.roms.clear();
+//	for (int i=0; i<32; i++) {
+//		newrs.roms[i].path = "";
+//		newrs.roms[i].part = 0;
+//	}
 
 	conf.snd.vol.master = 100;
 	conf.snd.vol.beep = 100;
@@ -367,6 +376,7 @@ void loadConfig() {
 					break;
 				case SECT_ROMSETS:
 					pos = pval.find_last_of(":");
+					vect = splitstr(pval, ":");
 					if (pos != std::string::npos) {
 						fnam = std::string(pval,0,pos);
 						tms = std::string(pval,pos+1);
@@ -384,24 +394,45 @@ void loadConfig() {
 						rsListist.push_back(newrs);
 					}
 					if (rsListist.size() != 0) {
-						if (pnam=="file") {
-							rsListist.back().file = fnam;
-						}
-						if ((pnam=="basic128") || (pnam=="0")) {
-							rsListist.back().roms[0].path=fnam;
-							rsListist.back().roms[0].part=fprt;
-						}
-						if ((pnam=="basic48") || (pnam=="1")) {
-							rsListist.back().roms[1].path=fnam;
-							rsListist.back().roms[1].part=fprt;
-						}
-						if ((pnam=="shadow") || (pnam=="2")) {
-							rsListist.back().roms[2].path=fnam;
-							rsListist.back().roms[2].part=fprt;
-						}
-						if ((pnam=="trdos") || (pnam=="3")) {
-							rsListist.back().roms[3].path=fnam;
-							rsListist.back().roms[3].part=fprt;
+						if ((pnam == "rom") && (vect.size() > 0)) {
+							while (vect.size() < 4) {
+								vect.push_back("0");
+							}
+							rfile.name = vect[0];
+							rfile.foffset = atoi(vect[1].c_str());
+							rfile.fsize = atoi(vect[2].c_str());
+							rfile.roffset = atoi(vect[3].c_str());
+							rsListist.back().roms.push_back(rfile);
+						} else if (pnam=="file") {
+							rfile.name = fnam;
+							rfile.foffset = 0;
+							rfile.fsize = 0;
+							rfile.roffset = 0;
+							rsListist.back().roms.push_back(rfile);
+						} else if ((pnam=="basic128") || (pnam=="0")) {
+							rfile.name = fnam;
+							rfile.foffset = fprt * 16;
+							rfile.fsize = 16;
+							rfile.roffset = 0;
+							rsListist.back().roms.push_back(rfile);
+						} else if ((pnam=="basic48") || (pnam=="1")) {
+							rfile.name = fnam;
+							rfile.foffset = fprt * 16;
+							rfile.fsize = 16;
+							rfile.roffset = 16;
+							rsListist.back().roms.push_back(rfile);
+						} else if ((pnam=="shadow") || (pnam=="2")) {
+							rfile.name = fnam;
+							rfile.foffset = fprt * 16;
+							rfile.fsize = 16;
+							rfile.roffset = 32;
+							rsListist.back().roms.push_back(rfile);
+						} else if ((pnam=="trdos") || (pnam=="3")) {
+							rfile.name = fnam;
+							rfile.foffset = fprt * 16;
+							rfile.fsize = 16;
+							rfile.roffset = 48;
+							rsListist.back().roms.push_back(rfile);
 						}
 						if (pnam=="gs") rsListist.back().gsFile=fnam;
 						if (pnam=="font") rsListist.back().fntFile=fnam;

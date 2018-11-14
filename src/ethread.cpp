@@ -68,7 +68,7 @@ void xThread::emuCycle() {
 			sndNs += compExec(comp);
 #if !VID_DIRECT_DRAW
 		// tape trap
-			if (comp->frmStrobe && !fast) {
+			if (comp->frmStrobe && !conf.emu.fast) {
 				comp->frmStrobe = 0;
 				processPicture(comp->vid->scrimg, comp->vid->vBytes);
 				emit picReady();

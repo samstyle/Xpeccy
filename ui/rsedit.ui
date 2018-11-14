@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>363</width>
-    <height>331</height>
+    <width>316</width>
+    <height>151</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -21,149 +21,69 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_3">
-     <item>
-      <widget class="QLabel" name="label_4">
+    <layout class="QGridLayout" name="gridLayout" columnstretch="0,10">
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_2">
        <property name="text">
-        <string>Name</string>
+        <string>File offset</string>
        </property>
       </widget>
      </item>
-     <item>
-      <widget class="QLineEdit" name="rsName"/>
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>Size</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>File</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>Rom pos</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QComboBox" name="cbFile"/>
+     </item>
+     <item row="1" column="1">
+      <widget class="QSpinBox" name="cbFoffset">
+       <property name="suffix">
+        <string> KB</string>
+       </property>
+       <property name="maximum">
+        <number>1024</number>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QSpinBox" name="cbFsize">
+       <property name="suffix">
+        <string> KB</string>
+       </property>
+       <property name="maximum">
+        <number>512</number>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QSpinBox" name="cbRoffset">
+       <property name="suffix">
+        <string> KB</string>
+       </property>
+       <property name="maximum">
+        <number>512</number>
+       </property>
+      </widget>
      </item>
     </layout>
-   </item>
-   <item>
-    <widget class="QGroupBox" name="rse_grp_single">
-     <property name="title">
-      <string>&amp;Single file</string>
-     </property>
-     <property name="checkable">
-      <bool>true</bool>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,10,0">
-      <item>
-       <widget class="QLabel" name="label_2">
-        <property name="text">
-         <string>File</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QComboBox" name="rse_singlefile"/>
-      </item>
-      <item>
-       <spacer name="horizontalSpacer_2">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="QGroupBox" name="rse_grp_separate">
-     <property name="title">
-      <string>Separate &amp;Files</string>
-     </property>
-     <property name="checkable">
-      <bool>true</bool>
-     </property>
-     <property name="checked">
-      <bool>false</bool>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_20" columnstretch="0,10,0">
-      <item row="3" column="2">
-       <widget class="QSpinBox" name="rse_part3"/>
-      </item>
-      <item row="1" column="1">
-       <widget class="QComboBox" name="rse_file1"/>
-      </item>
-      <item row="1" column="2">
-       <widget class="QSpinBox" name="rse_part1"/>
-      </item>
-      <item row="3" column="1">
-       <widget class="QComboBox" name="rse_file3"/>
-      </item>
-      <item row="0" column="2">
-       <widget class="QSpinBox" name="rse_part0"/>
-      </item>
-      <item row="0" column="1">
-       <widget class="QComboBox" name="rse_file0"/>
-      </item>
-      <item row="2" column="1">
-       <widget class="QComboBox" name="rse_file2"/>
-      </item>
-      <item row="2" column="2">
-       <widget class="QSpinBox" name="rse_part2"/>
-      </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_34">
-        <property name="text">
-         <string>Page 0</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_35">
-        <property name="text">
-         <string>Page 1</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_36">
-        <property name="text">
-         <string>Page 2</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="label_37">
-        <property name="text">
-         <string>Page 3</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="QGroupBox" name="groupBox_5">
-     <property name="title">
-      <string>Other</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout" columnstretch="0,10,0,10">
-      <item row="0" column="2">
-       <widget class="QLabel" name="label_3">
-        <property name="text">
-         <string>Font</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>GS</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QComboBox" name="rse_gsfile"/>
-      </item>
-      <item row="0" column="3">
-       <widget class="QComboBox" name="rse_fntfile"/>
-      </item>
-     </layout>
-    </widget>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
@@ -193,9 +113,6 @@
      </item>
      <item>
       <widget class="QPushButton" name="rse_apply">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
        <property name="text">
         <string>OK</string>
        </property>

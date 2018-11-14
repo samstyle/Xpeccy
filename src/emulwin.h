@@ -48,9 +48,7 @@ class MainWin : public QWidget {
 		xThread ethread;
 		keyWindow* keywin;
 		QImage scrImg;
-		QByteArray font;
 
-//		int pauseFlags;
 		int scrCounter;
 		int scrInterval;
 		int lineBytes;
@@ -58,7 +56,6 @@ class MainWin : public QWidget {
 
 		int msgTimer;
 		QString msg;
-		void drawMessage();
 		void setMessage(QString, double = 2.0);
 
 		bool saveChanged();

@@ -23,18 +23,19 @@ class xRomsetEditor : public QDialog {
 	Q_OBJECT
 	public:
 		xRomsetEditor(QWidget* = NULL);
-		void edit(int = -1);
+		void edit(xRomFile);
 	signals:
-		void complete(int, QString);
+		void complete(xRomFile);
 	private:
 		Ui::RSEdialog ui;
-		int idx;
-		xRomset nrs;
+		//int idx;
+		//xRomset nrs;
+		xRomFile xrf;
 	private slots:
 		void store();
-		void check();
-		void grpSingle(bool);
-		void grpSeparate(bool);
+//		void check();
+//		void grpSingle(bool);
+//		void grpSeparate(bool);
 };
 
 #endif

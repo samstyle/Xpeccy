@@ -204,111 +204,67 @@ void setDiskString(Computer* comp,Floppy* flp,std::string st) {
 
 // set specified romset to specified profile & load into ROM of this profile ZX
 void prfSetRomset(xProfile* prf, std::string rnm) {
-	if (prf == NULL) prf = conf.prof.cur;
+	if (prf == NULL)
+		prf = conf.prof.cur;
 	prf->rsName = rnm;
 	xRomset* rset = findRomset(rnm);
-	int i;
-//	xArg xarg;
-	char fpath[FILENAME_MAX];
-	std::ifstream file;
-	char pageBuf[MEM_16K];
-//	int prts = 0;
-	memSetSize(prf->zx->mem, -1, MEM_16K);		// default rom size
-	memset(prf->zx->mem->romData, 0xff, MEM_512K);
-	if (rset == NULL) {		// romset not found : fill all ROM with 0xFF
-//		memset(pageBuf,0xff,0x4000);
-//		for (i = 0; i < 32; i++) {
-//			memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
-//		}
-	} else {			// romset found
-		if (rset->file.size() != 0) {			// single rom file
+	char fpath[PATH_MAX];
+	int romsz = prf->zx->mem->romSize;
+	int foff;
+	int fsze;
+	int roff;
+	FILE* file;
+	if (rset) {
+		memset(prf->zx->mem->romData, 0xff, MEM_512K);
+		foreach(xRomFile xrf, rset->roms) {
+			foff = xrf.foffset * 1024;
+			roff = xrf.roffset * 1024;
 			strcpy(fpath, conf.path.romDir);
 			strcat(fpath, SLASH);
-			strcat(fpath, rset->file.c_str());
-			file.open(fpath, std::ios::binary);
-			if (file.good()) {
-				file.seekg(0,std::ios_base::end);
-				i = file.tellg();
-				i = toPower(i);
-				i = toLimits(i, MEM_256, MEM_512K);
-				memSetSize(prf->zx->mem, -1, i);
-/*
-				prts = file.tellg() >> 14;		// 16K pages
-				if (file.tellg() & 0x3fff) prts++;
-				if (prts > 4) prf->zx->mem->romMask = 0x07;
-				if (prts > 8) prf->zx->mem->romMask = 0x0f;
-				if (prts > 16) prf->zx->mem->romMask = 0x1f;
-				if (prts > 32) prts = 32;
-				prf->zx->romsize = (prts << 14);	// not really
-*/
-			// load all rom file
-				file.seekg(0,std::ios_base::beg);
-				//memset(prf->zx->mem->romData, 0xff, 0x80000);
-				file.read((char*)prf->zx->mem->romData, MEM_512K);
-/*
-				for (i = 0; i < prts; i++) {
-					file.read(pageBuf,0x4000);
-					memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
-				}
-				memset(pageBuf,0xff,0x4000);
-				for (i = prts; i < 32; i++)
-					memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
-*/
-			} else {
-				printf("Can't open single rom '%s'\n",rset->file.c_str());
-//				memset(pageBuf,0xff,0x4000);
-//				for (i = 0; i < 32; i++)
-//					memSetPageData(prf->zx->mem,MEM_ROM,i,pageBuf);
-			}
-			file.close();
-		} else {					// separate files
-			//printf("1:%i\n",prf->zx->mem->romSize);
-			memSetSize(prf->zx->mem, -1, MEM_64K);
-			//printf("2:%i\n",prf->zx->mem->romSize);
-			for (i = 0; i < 4; i++) {
-				//printf("3:%i:%s\n",i,rset->roms[i].path.c_str());
-				if (rset->roms[i].path == "") {
-					memset(pageBuf,0xff,0x4000);
+			strcat(fpath, xrf.name.c_str());
+			file = fopen(fpath, "rb");
+			if (file) {
+				if (xrf.fsize <= 0) {			// check part size
+					fseek(file, 0, SEEK_END);
+					fsze = ftell(file);
+					rewind(file);
 				} else {
-					strcpy(fpath, conf.path.romDir);
-					strcat(fpath, SLASH);
-					strcat(fpath, rset->roms[i].path.c_str());
-					//printf("4:%s\n",fpath);
-					file.open(fpath, std::ios::binary);
-					if (file.good()) {
-						//printf("5:good\n");
-						file.seekg(rset->roms[i].part << 14);
-						file.read(pageBuf,0x4000);
-					} else {
-						printf("Can't open rom '%s:%i'\n",rset->roms[i].path.c_str(),rset->roms[i].part);
-						memset(pageBuf,0xff,0x4000);
-					}
-					file.close();
+					fsze = xrf.fsize;
 				}
-				memPutData(prf->zx->mem,MEM_ROM,i,MEM_16K,pageBuf);
+				if (roff + fsze > romsz) {	// check crossing rom top
+					romsz = toLimits(roff + fsze, MEM_256, MEM_512K);
+					romsz = toPower(romsz);
+				}
+				if (roff + fsze > romsz)
+					fsze = romsz - roff;
+				if ((foff >= 0) && (roff >= 0) && (roff < MEM_512K) && (fsze > 0)) {	// load rom if all is ok
+					fseek(file, foff, SEEK_SET);
+					fread(prf->zx->mem->romData + roff, fsze, 1, file);
+				}
+				fclose(file);
 			}
 		}
+		memSetSize(prf->zx->mem, -1, romsz);
 // load GS ROM
 		strcpy(fpath, conf.path.romDir);
 		strcat(fpath, SLASH);
 		strcat(fpath, rset->gsFile.c_str());
-		file.open(fpath, std::ios::binary);
-		if (file.good()) {
-			file.read((char*)prf->zx->gs->mem->romData, 0x8000);
-			file.close();
+		file = fopen(fpath, "rb");
+		if (file) {
+			fread(prf->zx->gs->mem->romData, MEM_32K, 1, file);
+			fclose(file);
 		} else {
-			memset((char*)prf->zx->gs->mem->romData, 0xff, 0x8000);
+			memset((char*)prf->zx->gs->mem->romData, 0xff, MEM_32K);
 		}
-
 // load ATM2 font data
 		if (!rset->fntFile.empty()) {
 			strcpy(fpath, conf.path.romDir);
 			strcat(fpath, SLASH);
 			strcat(fpath, rset->fntFile.c_str());
-			file.open(fpath, std::ios::binary);
-			if (file.good()) {
-				file.read(pageBuf,0x800);
-				vidSetFont(prf->zx->vid,pageBuf);
+			file = fopen(fpath, "rb");
+			if (file) {
+				fread(prf->zx->vid->font, MEM_2K, 1, file);
+				fclose(file);
 			}
 		}
 	}
@@ -396,6 +352,7 @@ int prfLoad(std::string nm) {
 					if (pnam == "geometry") prf->layName = pval;
 					if (pnam == "4t-border") comp->vid->brdstep = str2bool(pval) ? 7 : 1;
 					if (pnam == "ULAplus") comp->vid->ula->enabled = str2bool(pval) ? 1 : 0;
+					if (pnam == "DDpal") comp->ddpal = str2bool(pval) ? 1 : 0;
 					break;
 				case PS_SOUND:
 					if (pnam == "chip1") aymSetType(comp->ts->chipA,atoi(pval.c_str()));
@@ -592,6 +549,7 @@ int prfSave(std::string nm) {
 	fprintf(file, "geometry = %s\n", prf->layName.c_str());
 	fprintf(file, "4t-border = %s\n", YESNO(comp->vid->brdstep & 0x06));
 	fprintf(file, "ULAplus = %s\n", YESNO(comp->vid->ula->enabled));
+	fprintf(file, "DDpal = %s\n", YESNO(comp->ddpal));
 	// fprintf(file, "fps = %i\n",comp->vid->fps);
 
 	fprintf(file, "\n[SOUND]\n\n");

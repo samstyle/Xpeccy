@@ -19,9 +19,6 @@
 #include "libxpeccy/spectrum.h"
 #include "libxpeccy/filetypes/filetypes.h"
 
-//#include "ui_padbinder.h"
-//Ui::PadBinder padui;
-
 void fillRFBox(QComboBox* box, QStringList lst) {
 	box->clear();
 	box->addItem("none","");
@@ -92,6 +89,12 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.resbox->addItem("BASIC 128",RES_128);
 	ui.resbox->addItem("DOS",RES_DOS);
 	ui.resbox->addItem("SHADOW",RES_SHADOW);
+
+	ui.tvRomset->setColumnWidth(0,50);
+	ui.tvRomset->setColumnWidth(1,250);
+	ui.tvRomset->setColumnWidth(2,50);
+	ui.tvRomset->setColumnWidth(3,50);
+	ui.tvRomset->setColumnWidth(4,50);
 // video
 	std::map<std::string,int>::iterator it;
 	for (it = shotFormat.begin(); it != shotFormat.end(); it++) {
@@ -191,12 +194,13 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 // machine
 	connect(ui.rsetbox,SIGNAL(currentIndexChanged(int)),this,SLOT(buildrsetlist()));
 	connect(ui.machbox,SIGNAL(currentIndexChanged(int)),this,SLOT(setmszbox(int)));
-	connect(ui.tvRomset,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(editrset()));
+	connect(ui.tvRomset,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(editRom()));
 	connect(ui.addrset,SIGNAL(released()),this,SLOT(addNewRomset()));
 	connect(ui.rmrset,SIGNAL(released()),this,SLOT(rmRomset()));
-	connect(ui.rsedit,SIGNAL(released()),this,SLOT(editrset()));
-	connect(rseditor,SIGNAL(complete(int,QString)),this,SLOT(rscomplete(int,QString)));
-
+	connect(rseditor,SIGNAL(complete(xRomFile)),this,SLOT(setRom(xRomFile)));
+	connect(ui.tbAddRom,SIGNAL(released()),this,SLOT(addRom()));
+	connect(ui.tbEditRom,SIGNAL(released()),this,SLOT(editRom()));
+	connect(ui.tbDelRom,SIGNAL(released()),this,SLOT(delRom()));
 // video
 	connect(ui.pathtb,SIGNAL(released()),this,SLOT(selsspath()));
 	connect(ui.bszsld,SIGNAL(valueChanged(int)),this,SLOT(chabsz()));
@@ -374,6 +378,7 @@ void SetupWin::start(xProfile* p) {
 	}
 	ui.geombox->setCurrentIndex(ui.geombox->findText(QString::fromLocal8Bit(conf.prof.cur->layName.c_str())));
 	ui.ulaPlus->setChecked(comp->vid->ula->enabled);
+	ui.cbDDp->setChecked(comp->ddpal);
 // sound
 	ui.tbGS->setChecked(comp->gs->enable);
 	ui.gsrbox->setChecked(comp->gs->reset);
@@ -520,6 +525,7 @@ void SetupWin::apply() {
 	comp->contMem = ui.contMem->isChecked() ? 1 : 0;
 	comp->contIO = ui.contIO->isChecked() ? 1 : 0;
 	comp->vid->ula->enabled = ui.ulaPlus->isChecked() ? 1 : 0;
+	comp->ddpal = ui.cbDDp->isChecked() ? 1 : 0;
 	prfSetLayout(NULL, getRFText(ui.geombox));
 // sound
 	std::string nname = getRFText(ui.outbox);
@@ -760,9 +766,85 @@ void SetupWin::rmRomset() {
 }
 
 void SetupWin::addNewRomset() {
-	rseditor->edit();
+	QString nam = QInputDialog::getText(this, "Enter name", "Romset name");
+	if (nam.isEmpty()) return;
+	xRomset r;
+	r.name = std::string(nam.toLocal8Bit().data());
+	r.gsFile.clear();
+	r.fntFile.clear();
+	r.roms.clear();
+	if (addRomset(r)) {
+		ui.rsetbox->addItem(nam, nam);
+		setRFIndex(ui.rsetbox, nam);
+	} else {
+		shitHappens("Can't create romset with such name");
+	}
 }
 
+void SetupWin::addRom() {
+	int idx = ui.rsetbox->currentIndex();
+	if (idx < 0) return;
+	xRomFile f;
+	f.name[0] = 0;
+	f.foffset = 0;
+	f.fsize = 0;
+	f.roffset = 0;
+	eidx = -1;
+	rseditor->edit(f);
+}
+
+void SetupWin::delRom() {
+	int idx = ui.rsetbox->currentIndex();
+	QModelIndexList qmil = ui.tvRomset->selectionModel()->selectedRows();
+	int row = (qmil.size() > 0) ? qmil.first().row() : -1;
+	if ((idx < 0) || (row < 0)) return;
+	if (row < conf.rsList[idx].roms.size()) {
+		conf.rsList[idx].roms.erase(conf.rsList[idx].roms.begin() + row);
+	} else if (row == conf.rsList[idx].roms.size()) {
+		conf.rsList[idx].gsFile.clear();
+	} else {
+		conf.rsList[idx].fntFile.clear();
+	}
+	rsmodel->update(conf.rsList[idx]);
+}
+
+void SetupWin::editRom() {
+	int idx = ui.rsetbox->currentIndex();
+	QModelIndexList qmil = ui.tvRomset->selectionModel()->selectedRows();
+	int row = (qmil.size() > 0) ? qmil.first().row() : -1;
+	printf("%i %i\n",idx,row);
+	if ((idx < 0) || (row < 0)) return;
+	xRomFile f;
+	f.foffset = 0;
+	f.fsize = 0;
+	f.roffset = 0;
+	if (row < conf.rsList[idx].roms.size()) {
+		f = conf.rsList[idx].roms[row];
+	} else if (row == conf.rsList[idx].roms.size()) {
+		f.name = conf.rsList[idx].gsFile;
+	} else {
+		f.name = conf.rsList[idx].fntFile;
+	}
+	eidx = row;
+	rseditor->edit(f);
+}
+
+void SetupWin::setRom(xRomFile f) {
+	int idx = ui.rsetbox->currentIndex();
+	if (idx < 0) return;
+	if (eidx < 0) {
+		conf.rsList[idx].roms.push_back(f);
+	} else if (eidx < conf.rsList[idx].roms.size()) {
+		conf.rsList[idx].roms[eidx] = f;
+	} else if (eidx == conf.rsList[idx].roms.size()) {
+		conf.rsList[idx].gsFile = f.name;
+	} else {
+		conf.rsList[idx].fntFile = f.name;
+	}
+	rsmodel->update(conf.rsList[idx]);
+}
+
+/*
 void SetupWin::editrset() {
 	eidx = ui.rsetbox->currentIndex();
 	if (eidx < 0) return;
@@ -780,6 +862,7 @@ void SetupWin::rscomplete(int idx, QString nam) {
 		buildrsetlist();
 	}
 }
+*/
 
 // lists
 
@@ -854,16 +937,6 @@ void SetupWin::buildrsetlist() {
 	} else {
 		ui.tvRomset->setEnabled(true);
 		xRomset rset = conf.rsList[ui.rsetbox->currentIndex()];
-
-		if (rset.file == "") {
-			for (int i = 0; i < 4; i++) ui.tvRomset->showRow(i);
-			ui.tvRomset->hideRow(4);
-		} else {
-			for (int i = 0; i < 4; i++) ui.tvRomset->hideRow(i);
-			ui.tvRomset->showRow(4);
-		}
-		ui.tvRomset->setColumnWidth(0,100);
-		ui.tvRomset->setColumnWidth(1,300);
 		rsmodel->update(rset);
 	}
 }

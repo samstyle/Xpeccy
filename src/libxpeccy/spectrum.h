@@ -94,6 +94,7 @@ typedef struct {
 	unsigned intStrobe:1;		// int front
 	unsigned nmiRequest:1;		// Magic button pressed
 	unsigned firstRun:1;
+	unsigned ddpal:1;
 
 	unsigned rom:1;			// b4,7ffd
 	unsigned dos:1;			// BDI dos
