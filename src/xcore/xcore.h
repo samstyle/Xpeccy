@@ -232,7 +232,7 @@ struct xConfig {
 	unsigned storePaths:1;		// store tape/disk paths
 	unsigned defProfile:1;		// start @ default profile
 	std::string keyMapName;		// use this keymap
-	float brdsize;			// 0.0 - 1.0 : border size
+	double brdsize;			// 0.0 - 1.0 : border size
 	std::vector<xRomset> rsList;
 	std::vector<xLayout> layList;
 	std::vector<xBookmark> bookmarkList;

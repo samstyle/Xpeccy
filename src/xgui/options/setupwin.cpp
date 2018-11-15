@@ -69,10 +69,10 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	block = 0;
 	prfChanged = 0;
 
-	unsigned int i;
+	int i;
 // machine
 	i = 0;
-	while (hwTab[i].name != NULL) {
+	while (hwTab[i].name) {
 		if (hwTab[i].id != HW_NULL) {
 			ui.machbox->addItem(trUtf8(hwTab[i].optName),QString::fromLocal8Bit(hwTab[i].name));
 		} else {
@@ -103,7 +103,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	}
 // sound
 	i = 0;
-	while (sndTab[i].name != NULL) {
+	while (sndTab[i].name) {
 		ui.outbox->addItem(QString::fromLocal8Bit(sndTab[i].name));
 		i++;
 	}
@@ -201,6 +201,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	connect(ui.tbAddRom,SIGNAL(released()),this,SLOT(addRom()));
 	connect(ui.tbEditRom,SIGNAL(released()),this,SLOT(editRom()));
 	connect(ui.tbDelRom,SIGNAL(released()),this,SLOT(delRom()));
+	connect(ui.tbPreset,SIGNAL(released()),this,SLOT(romPreset()));
 // video
 	connect(ui.pathtb,SIGNAL(released()),this,SLOT(selsspath()));
 	connect(ui.bszsld,SIGNAL(valueChanged(int)),this,SLOT(chabsz()));
@@ -365,7 +366,7 @@ void SetupWin::start(xProfile* p) {
 	ui.border4T->setChecked(comp->vid->brdstep & 0x06);
 	ui.contMem->setChecked(comp->contMem);
 	ui.contIO->setChecked(comp->contIO);
-	ui.bszsld->setValue((int)(conf.brdsize * 100));
+	ui.bszsld->setValue(conf.brdsize * 100);
 	ui.pathle->setText(QString::fromLocal8Bit(conf.scrShot.dir.c_str()));
 	ui.ssfbox->setCurrentIndex(ui.ssfbox->findText(conf.scrShot.format.c_str()));
 	ui.scntbox->setValue(conf.scrShot.count);
@@ -526,7 +527,7 @@ void SetupWin::apply() {
 	comp->contIO = ui.contIO->isChecked() ? 1 : 0;
 	comp->vid->ula->enabled = ui.ulaPlus->isChecked() ? 1 : 0;
 	comp->ddpal = ui.cbDDp->isChecked() ? 1 : 0;
-	prfSetLayout(NULL, getRFText(ui.geombox));
+	prfSetLayout(nullptr, getRFText(ui.geombox));
 // sound
 	std::string nname = getRFText(ui.outbox);
 	conf.snd.enabled = ui.senbox->isChecked() ? 1 : 0;
@@ -601,9 +602,9 @@ void SetupWin::apply() {
 	comp->ide->master->type = getRFIData(ui.hm_type);
 	ideSetImage(comp->ide,IDE_MASTER,ui.hm_path->text().toLocal8Bit().data());
 	comp->ide->master->hasLBA = ui.hm_islba->isChecked() ? 1 : 0;
-	pass.spt = ui.hm_gsec->value();
-	pass.hds = ui.hm_ghd->value();
-	pass.cyls = ui.hm_gcyl->value();
+	pass.spt = ui.hm_gsec->value() & 0xffff;
+	pass.hds = ui.hm_ghd->value() & 0xffff;
+	pass.cyls = ui.hm_gcyl->value() & 0xffff;
 	comp->ide->master->maxlba = ui.hm_glba->value();
 	ideSetPassport(comp->ide,IDE_MASTER,pass);
 
@@ -611,9 +612,9 @@ void SetupWin::apply() {
 	comp->ide->slave->type = getRFIData(ui.hs_type);
 	ideSetImage(comp->ide,IDE_SLAVE,ui.hs_path->text().toLocal8Bit().data());
 	comp->ide->slave->hasLBA = ui.hs_islba->isChecked() ? 1 : 0;
-	pass.spt = ui.hs_gsec->value();
-	pass.hds = ui.hs_ghd->value();
-	pass.cyls = ui.hs_gcyl->value();
+	pass.spt = ui.hs_gsec->value() & 0xffff;
+	pass.hds = ui.hs_ghd->value() & 0xffff;
+	pass.cyls = ui.hs_gcyl->value() & 0xffff;
 	comp->ide->slave->maxlba = ui.hs_glba->value();
 	ideSetPassport(comp->ide,IDE_SLAVE,pass);
 // others
@@ -650,8 +651,8 @@ void SetupWin::reject() {
 
 void SetupWin::layNameCheck(QString nam) {
 	layUi.okButton->setEnabled(!layUi.layName->text().isEmpty());
-	for (uint i = 0; i < conf.layList.size(); i++) {
-		if ((QString(conf.layList[i].name.c_str()) == nam) && (eidx != (int)i)) {
+	for (int i = 0; i < conf.layList.size(); i++) {
+		if ((QString(conf.layList[i].name.c_str()) == nam) && (eidx != i)) {
 			layUi.okButton->setEnabled(false);
 		}
 	}
@@ -756,6 +757,57 @@ void SetupWin::layEditorOK() {
 
 // ROMSETS
 
+typedef struct {
+	int hwid;
+	std::string gsf;
+	std::string fnf;
+	xRomFile lst[4];
+} xRomPreset;
+
+static xRomPreset presets[] = {
+	{HW_ZX48, "gs105a.rom", "", {{"1982.rom",0,0,0},{"trdos503.rom",0,0,16},{"",0,0,0}}},
+	{HW_PENT, "gs105a.rom", "", {{"pentagon.rom",0,0,0},{"trdos503.rom",0,0,48},{"",0,0,0}}},
+	{HW_P1024, "gs105a.rom", "", {{"glukpen.rom",0,0,0},{"",0,0,0}}},
+	{HW_SCORP, "gs105a.rom", "", {{"scorpion.rom",0,0,0},{"",0,0,0}}},
+	{HW_PLUS2, "", "", {{"plus2a.rom",0,0,0},{"",0,0,0}}},
+	{HW_PLUS3, "", "", {{"plus3-41.rom",0,0,0},{"",0,0,0}}},
+	{HW_ATM2, "gs105a.rom", "SGEN.ROM", {{"xbios135.rom",0,0,0},{"",0,0,0}}},
+	{HW_PENTEVO, "gs105a.rom", "", {{"zxevo.rom",0,0,0},{"",0,0,0}}},
+	{HW_TSLAB, "gs105a.rom", "", {{"ts-bios.rom",0,0,0},{"",0,0,0}}},
+	{HW_PROFI, "gs105a.rom", "", {{"PROFI-P.ROM",0,0,0},{"",0,0,0}}},
+	{HW_PHOENIX, "gs105a.rom", "", {{"zxm_bios_5_03.rom",0,0,0},{"",0,0,0}}},
+	{HW_MSX, "", "", {{"MSX.ROM",0,0,0},{"",0,0,0}}},
+	{HW_MSX2, "", "", {{"msx2.rom",0,0,0},{"",0,0,0}}},
+	{HW_GBC, "", "", {{"GameBoyColorBIOS.rom",0,0,0},{"",0,0,0}}},
+	{HW_NES, "", "", {{"",0,0,0}}},
+	{HW_C64, "", "c64charset.rom", {{"commodore64.rom",0,0,0},{"",0,0,0}}},
+	{HW_BK0010, "", "", {{"bk0010.basic.rom",0,0,0},{"",0,0,0}}},
+	{HW_NULL, "", "", {{"",0,0,0}}}
+};
+
+void SetupWin::romPreset() {
+	int idx = ui.rsetbox->currentIndex();
+	if (idx < 0) return;
+	QString hwn = getRFSData(ui.machbox);
+	HardWare* hw = findHardware(hwn.toLocal8Bit().data());
+	if (!hw) return;
+	int i = 0;
+	while ((presets[i].hwid != HW_NULL) && (presets[i].hwid != hw->id))
+		i++;
+	if (presets[i].hwid == HW_NULL) return;
+	xRomset rs = conf.rsList[idx];
+	rs.gsFile = presets[i].gsf;
+	rs.fntFile = presets[i].fnf;
+	rs.roms.clear();
+	int dx = 0;
+	while (presets[i].lst[dx].name != "") {
+		rs.roms.push_back(presets[i].lst[dx]);
+		dx++;
+	}
+	conf.rsList[idx] = rs;
+	rsmodel->update(conf.rsList[idx]);
+}
+
 void SetupWin::rmRomset() {
 	int idx = ui.rsetbox->currentIndex();
 	if (idx < 0) return;
@@ -812,7 +864,6 @@ void SetupWin::editRom() {
 	int idx = ui.rsetbox->currentIndex();
 	QModelIndexList qmil = ui.tvRomset->selectionModel()->selectedRows();
 	int row = (qmil.size() > 0) ? qmil.first().row() : -1;
-	printf("%i %i\n",idx,row);
 	if ((idx < 0) || (row < 0)) return;
 	xRomFile f;
 	f.foffset = 0;
@@ -881,7 +932,7 @@ void SetupWin::buildkeylist() {
 std::vector<HardWare> getHardwareList() {
 	std::vector<HardWare> res;
 	int idx = 0;
-	while (hwTab[idx].name != NULL) {
+	while (hwTab[idx].name) {
 		res.push_back(hwTab[idx]);
 		idx++;
 	}
@@ -1027,7 +1078,7 @@ void SetupWin::copyToTape() {
 			if (cat[row].slen == (cat[row].hlen + ((cat[row].llen == 0) ? 0 : 1))) {
 				start = (cat[row].hst << 8) + cat[row].lst;
 				len = (cat[row].hlen << 8) + cat[row].llen;
-				line = (cat[row].ext == 'B') ? (buf[start] + (buf[start+1] << 8)) : 0x8000;
+				line = (cat[row].ext == 'B') ? (buf[start] + (buf[start+1] << 8)) & 0xffff : 0x8000;
 				memset(name,0x20,10);
 				memcpy(name,(char*)cat[row].name,8);
 				tapAddFile(comp->tape,name,(cat[row].ext == 'B') ? 0 : 3, start, len, line, buf,true);
@@ -1251,10 +1302,10 @@ void SetupWin::newb() {newdisk(1);}
 void SetupWin::newc() {newdisk(2);}
 void SetupWin::newd() {newdisk(3);}
 
-void SetupWin::loada() {load_file(comp, NULL, FG_DISK, 0); updatedisknams();}
-void SetupWin::loadb() {load_file(comp, NULL, FG_DISK, 1); updatedisknams();}
-void SetupWin::loadc() {load_file(comp, NULL, FG_DISK, 2); updatedisknams();}
-void SetupWin::loadd() {load_file(comp, NULL, FG_DISK, 3); updatedisknams();}
+void SetupWin::loada() {load_file(comp, nullptr, FG_DISK, 0); updatedisknams();}
+void SetupWin::loadb() {load_file(comp, nullptr, FG_DISK, 1); updatedisknams();}
+void SetupWin::loadc() {load_file(comp, nullptr, FG_DISK, 2); updatedisknams();}
+void SetupWin::loadd() {load_file(comp, nullptr, FG_DISK, 3); updatedisknams();}
 
 void SetupWin::savea() {Floppy* flp = comp->dif->fdc->flop[0]; if (flp->insert) save_file(comp, flp->path, FG_DISK, 0);}
 void SetupWin::saveb() {Floppy* flp = comp->dif->fdc->flop[1]; if (flp->insert) save_file(comp, flp->path, FG_DISK, 1);}
@@ -1278,7 +1329,7 @@ void SetupWin::updatedisknams() {
 
 void SetupWin::loatape() {
 //	loadFile(comp,"",FT_TAPE,1);
-	load_file(comp, NULL, FG_TAPE, -1);
+	load_file(comp, nullptr, FG_TAPE, -1);
 	ui.tpathle->setText(QString::fromLocal8Bit(comp->tape->path));
 	buildtapelist();
 }
@@ -1352,12 +1403,12 @@ void SetupWin::setTapeBreak(int row,int col) {
 // hdd
 
 void SetupWin::hddMasterImg() {
-	QString path = QFileDialog::getOpenFileName(this,"Image for master HDD","","All files (*.*)",NULL,QFileDialog::DontConfirmOverwrite);
+	QString path = QFileDialog::getOpenFileName(this,"Image for master HDD","","All files (*.*)",nullptr,QFileDialog::DontConfirmOverwrite);
 	if (path != "") ui.hm_path->setText(path);
 }
 
 void SetupWin::hddSlaveImg() {
-	QString path = QFileDialog::getOpenFileName(this,"Image for slave HDD","","All files (*.*)",NULL,QFileDialog::DontConfirmOverwrite);
+	QString path = QFileDialog::getOpenFileName(this,"Image for slave HDD","","All files (*.*)",nullptr,QFileDialog::DontConfirmOverwrite);
 	if (path != "") ui.hs_path->setText(path);
 }
 
@@ -1383,7 +1434,7 @@ void SetupWin::openSlot() {
 //	if (fnam.isEmpty()) return;
 //	ui.cSlotName->setText(fnam);
 //	loadFile(comp, fnam.toLocal8Bit().data(), FT_SLOT_A, 0);
-	if (load_file(comp, NULL, FH_SLOTS, 0) == ERR_OK) {
+	if (load_file(comp, nullptr, FH_SLOTS, 0) == ERR_OK) {
 		ui.cSlotName->setText(comp->slot->name);
 	}
 }
@@ -1495,7 +1546,7 @@ void SetupWin::umdel() {
 	if (ps != -1) {
 		delBookmark(ps);
 		buildmenulist();
-		if (ps == (int)conf.bookmarkList.size()) {
+		if (ps == conf.bookmarkList.size()) {
 			ui.umlist->selectRow(ps-1);
 		} else {
 			ui.umlist->selectRow(ps);
@@ -1518,7 +1569,7 @@ void SetupWin::umedit(QModelIndex idx) {
 }
 
 void SetupWin::umaselp() {
-	QString fpath = QFileDialog::getOpenFileName(NULL,"Select file","","Known formats (*.sna *.z80 *.tap *.tzx *.trd *.scl *.fdi *.udi)");
+	QString fpath = QFileDialog::getOpenFileName(nullptr,"Select file","","Known formats (*.sna *.z80 *.tap *.tzx *.trd *.scl *.fdi *.udi)");
 	if (fpath!="") uia.pathle->setText(fpath);
 }
 

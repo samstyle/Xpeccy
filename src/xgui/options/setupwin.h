@@ -96,6 +96,7 @@ class SetupWin : public QDialog {
 		void editRom();
 		void delRom();
 		void setRom(xRomFile);
+		void romPreset();
 
 		void newPadMap();
 		void delPadMap();
