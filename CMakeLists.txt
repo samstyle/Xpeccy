@@ -171,19 +171,7 @@ set(MOCFILES
 
 # Qt4 / Qt5
 
-if(${QT5BUILD})
-
-	find_package(Qt5Widgets)
-	set(LIBRARIES ${LIBRARIES} Qt5::Widgets)
-	qt5_add_resources(RESOURCES ${QRCFILES})
-	qt5_wrap_ui(UIHEADERS ${UIFILES})
-	qt5_wrap_cpp(MOCHEADERS ${MOCFILES})
-	set(CPACK_RPM_PACKAGE_REQUIRES "libQt5Gui5 >= 5.3, libQt5Widgets5 >= 5.3")
-	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5gui5 (>=5.3), libqt5widgets5 (>=5.3)")
-
-	set(QT_VER ${Qt5Widgets_VERSION})
-
-else(${QT5BUILD})
+if(${QT4BUILD})
 
 	find_package(Qt4 COMPONENTS QtCore QtGui REQUIRED)
 	include(${QT_USE_FILE})
@@ -195,7 +183,19 @@ else(${QT5BUILD})
 	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqtcore4 (>=4.6), libqtgui4 (>=4.6)")
 	set(QT_VER ${QT_VERSION_MAJOR}.${QT_VERSION_MINOR}.${QT_VERSION_PATCH})
 
-endif(${QT5BUILD})
+else(${QT4BUILD})
+
+	find_package(Qt5Widgets)
+	set(LIBRARIES ${LIBRARIES} Qt5::Widgets)
+	qt5_add_resources(RESOURCES ${QRCFILES})
+	qt5_wrap_ui(UIHEADERS ${UIFILES})
+	qt5_wrap_cpp(MOCHEADERS ${MOCFILES})
+	set(CPACK_RPM_PACKAGE_REQUIRES "libQt5Gui5 >= 5.3, libQt5Widgets5 >= 5.3")
+	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5gui5 (>=5.3), libqt5widgets5 (>=5.3)")
+
+	set(QT_VER ${Qt5Widgets_VERSION})
+
+endif(${QT4BUILD})
 
 # alsa (sound, linux)
 
@@ -212,7 +212,17 @@ endif(${QT5BUILD})
 
 # SDL (sound)
 
-if(${SDL2BUILD})
+if(${SDL1BUILD})
+	find_package(SDL)
+	if(${SDL_FOUND})
+		add_definitions(-DHAVESDL1)
+		set(INCLUDIRS ${INCLUDIRS} ${SDL_INCLUDE_DIR})
+		set(LIBRARIES ${LIBRARIES} ${SDL_LIBRARY})
+		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libSDL1.2debian (>=1.2)")
+		set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, SDL >= 1.2")
+		set(SDL_VER ${SDL_VERSION_STRING})
+	endif(${SDL_FOUND})
+else(${SDL1BUILD})
 	find_package(SDL2 REQUIRED)
 	if (${SDL2_FOUND})
 		add_definitions(-DHAVESDL2)
@@ -223,30 +233,18 @@ if(${SDL2BUILD})
 		set(SDL_VER "2.x")
 		message(STATUS "SDL2_INCLUDE_DIR = " ${SDL2_INCLUDE_DIR})
 	endif(${SDL2_FOUND})
-else(${SDL2BUILD})
-	find_package(SDL)
-	if(${SDL_FOUND})
-		add_definitions(-DHAVESDL1)
-		set(INCLUDIRS ${INCLUDIRS} ${SDL_INCLUDE_DIR})
-		set(LIBRARIES ${LIBRARIES} ${SDL_LIBRARY})
-		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libSDL1.2debian (>=1.2)")
-		set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, SDL >= 1.2")
-		set(SDL_VER ${SDL_VERSION_STRING})
-	endif(${SDL_FOUND})
-endif(${SDL2BUILD})
+endif(${SDL1BUILD})
 
 # zlib (for rzx)
 
-if(NOT ${NOZLIB})
-	find_package(ZLIB)
-	if(ZLIB_FOUND)
-		add_definitions(-DHAVEZLIB)
-		set(INCLUDIRS ${INCLUDIRS} ${ZLIB_INCLUDE_DIR})
-		set(LIBRARIES ${LIBRARIES} ${ZLIB_LIBRARY})
-		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, zlib1g (>=1.2)")
-		set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, zlib >= 1.2")
-	endif(ZLIB_FOUND)
-endif()
+find_package(ZLIB)
+if(ZLIB_FOUND)
+	add_definitions(-DHAVEZLIB)
+	set(INCLUDIRS ${INCLUDIRS} ${ZLIB_INCLUDE_DIR})
+	set(LIBRARIES ${LIBRARIES} ${ZLIB_LIBRARY})
+	set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, zlib1g (>=1.2)")
+	set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, zlib >= 1.2")
+endif(ZLIB_FOUND)
 
 # other
 

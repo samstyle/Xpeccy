@@ -5,7 +5,7 @@
 
 void tslReset(Computer* comp) {
 	comp->vid->tsconf.scrPal = 0xf0;
-	memset(comp->vid->tsconf.cram,0x00,0x1e0);
+	memset(comp->vid->tsconf.cram,0x00,0x200);
 	comp->rom = 0;
 	comp->dos = 0;
 	comp->tsconf.p21af = 0x04;
@@ -50,14 +50,14 @@ void tslMapMem(Computer* comp) {
 	}
 }
 
-const unsigned char tslCoLevs[32] = {
+static const unsigned char tslCoLevs[32] = {
 	0,11,21,32,42,53,64,74,
 	85,95,106,117,127,138,148,159,
 	170,180,191,201,212,223,233,244,
 	255,255,255,255,255,255,255,255
 };
 
-const unsigned char tsl5bLevs[32] = {
+static const unsigned char tsl5bLevs[32] = {
 	0,8,16,24,32,41,49,57,
 	65,74,82,90,98,106,115,123,
 	131,139,148,156,164,172,180,189,
@@ -105,27 +105,6 @@ void tslMWr(Computer* comp, unsigned short adr, unsigned char val) {
 	}
 	memWr(comp->mem,adr,val);
 }
-
-/*
-void tslUpdatePorts(Computer* comp) {
-	unsigned char val = comp->vid->tsconf.p00af;
-	comp->vid->tsconf.xSize = tslXRes[(val & 0xc0) >> 6];
-	comp->vid->tsconf.ySize = tslYRes[(val & 0xc0) >> 6];
-	comp->vid->tsconf.xPos = (comp->vid->ssze.x - comp->vid->tsconf.xSize) >> 1;
-	comp->vid->tsconf.yPos = (comp->vid->ssze.y - comp->vid->tsconf.ySize) >> 1;
-	switch(val & 3) {
-		case 0: vidSetMode(comp->vid,VID_TSL_NORMAL); break;
-		case 1: vidSetMode(comp->vid,VID_TSL_16); break;
-		case 2: vidSetMode(comp->vid,VID_TSL_256); break;
-		case 3: vidSetMode(comp->vid,VID_TSL_TEXT); break;
-	}
-	comp->vid->nogfx = (val & 0x20) ? 1 : 0;
-	val = comp->vid->tsconf.p07af;
-	comp->vid->tsconf.scrPal = (val & 0x0f) << 4;
-	comp->vid->tsconf.T0Pal76 = (val & 0x30) << 2;
-	comp->vid->tsconf.T1Pal76 = (val & 0xc0);
-}
-*/
 
 // in
 

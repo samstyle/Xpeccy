@@ -275,17 +275,7 @@ void file_errors(int err) {
 	}
 }
 
-int grp_by_disk(int drv) {
-	int id = -1;
-	switch (drv & 3) {
-		case 0: id = FG_DISK_A; break;
-		case 1: id = FG_DISK_B; break;
-		case 2: id = FG_DISK_C; break;
-		case 3: id = FG_DISK_D; break;
-	}
-	return id;
-}
-
+static int disk_id[] = {FG_DISK_A, FG_DISK_B, FG_DISK_C, FG_DISK_D};
 static int boot_ft[] = {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, 0};
 
 void disk_boot(Computer* comp, int drv, int id) {
@@ -297,13 +287,13 @@ void disk_boot(Computer* comp, int drv, int id) {
 }
 
 int load_file(Computer* comp, const char* name, int id, int drv) {
-	QString path(name);
+	QString path = QDialog::trUtf8(name);
 	QString flt;
 	QString ext;
 	xFileTypeInfo* inf;
 	xFileGroupInfo* grp = &fg_dum;
 	if (id == FG_DISK)
-		id = grp_by_disk(id);
+		id = disk_id[drv & 3];
 	if (id == FG_ALL)
 		id = detect_hw_id(comp->hw->id);
 	int err = ERR_OK;
@@ -354,13 +344,13 @@ int load_file(Computer* comp, const char* name, int id, int drv) {
 }
 
 int save_file(Computer* comp, const char* name, int id, int drv) {
-	QString path(name);
+	QString path = QDialog::trUtf8(name);
 	QString flt;
 	QString ext;
 	xFileTypeInfo* inf;
 	xFileGroupInfo* grp;
 	if (id == FG_DISK)
-		id = grp_by_disk(drv);
+		id = disk_id[drv & 3];
 	if (id == FG_ALL)
 		id = detect_hw_id(comp->hw->id);
 	int err = ERR_OK;
@@ -405,7 +395,7 @@ void initFileDialog(QWidget* par) {
 	filer->setWindowModality(Qt::ApplicationModal);
 	filer->setNameFilterDetailsVisible(true);
 	filer->setConfirmOverwrite(true);
-	filer->setOption(QFileDialog::DontUseNativeDialog,0);
+	filer->setOption(QFileDialog::DontUseNativeDialog, 1);
 #ifdef _WIN32
 	strcpy(conf.path.lastDir, ".");
 #else

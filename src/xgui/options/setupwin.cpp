@@ -1302,15 +1302,15 @@ void SetupWin::newb() {newdisk(1);}
 void SetupWin::newc() {newdisk(2);}
 void SetupWin::newd() {newdisk(3);}
 
-void SetupWin::loada() {load_file(comp, nullptr, FG_DISK, 0); updatedisknams();}
-void SetupWin::loadb() {load_file(comp, nullptr, FG_DISK, 1); updatedisknams();}
-void SetupWin::loadc() {load_file(comp, nullptr, FG_DISK, 2); updatedisknams();}
-void SetupWin::loadd() {load_file(comp, nullptr, FG_DISK, 3); updatedisknams();}
+void SetupWin::loada() {load_file(comp, nullptr, FG_DISK_A, 0); updatedisknams();}
+void SetupWin::loadb() {load_file(comp, nullptr, FG_DISK_B, 1); updatedisknams();}
+void SetupWin::loadc() {load_file(comp, nullptr, FG_DISK_C, 2); updatedisknams();}
+void SetupWin::loadd() {load_file(comp, nullptr, FG_DISK_D, 3); updatedisknams();}
 
-void SetupWin::savea() {Floppy* flp = comp->dif->fdc->flop[0]; if (flp->insert) save_file(comp, flp->path, FG_DISK, 0);}
-void SetupWin::saveb() {Floppy* flp = comp->dif->fdc->flop[1]; if (flp->insert) save_file(comp, flp->path, FG_DISK, 1);}
-void SetupWin::savec() {Floppy* flp = comp->dif->fdc->flop[2]; if (flp->insert) save_file(comp, flp->path, FG_DISK, 2);}
-void SetupWin::saved() {Floppy* flp = comp->dif->fdc->flop[3]; if (flp->insert) save_file(comp, flp->path, FG_DISK, 3);}
+void SetupWin::savea() {Floppy* flp = comp->dif->fdc->flop[0]; if (flp->insert) save_file(comp, flp->path, FG_DISK_A, 0);}
+void SetupWin::saveb() {Floppy* flp = comp->dif->fdc->flop[1]; if (flp->insert) save_file(comp, flp->path, FG_DISK_B, 1);}
+void SetupWin::savec() {Floppy* flp = comp->dif->fdc->flop[2]; if (flp->insert) save_file(comp, flp->path, FG_DISK_C, 2);}
+void SetupWin::saved() {Floppy* flp = comp->dif->fdc->flop[3]; if (flp->insert) save_file(comp, flp->path, FG_DISK_D, 3);}
 
 void SetupWin::ejcta() {saveChangedDisk(comp,0); flpEject(comp->dif->fdc->flop[0]); updatedisknams();}
 void SetupWin::ejctb() {saveChangedDisk(comp,1); flpEject(comp->dif->fdc->flop[1]); updatedisknams();}

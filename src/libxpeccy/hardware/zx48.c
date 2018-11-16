@@ -1,6 +1,7 @@
 #include "../spectrum.h"
 
 void speReset(Computer* comp) {
+	zx_set_pal(comp);
 	vidSetMode(comp->vid, VID_NORMAL);
 }
 

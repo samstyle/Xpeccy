@@ -8,13 +8,13 @@ HardWare hwTab[] = {
 		speMapMem,speOut,speIn,stdMRd,stdMWr,speReset,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
 		HW_PENT,"Pentagon","Pentagon",16,MEM_128K | MEM_512K,
-		penMapMem,penOut,penIn,stdMRd,stdMWr,NULL,zx_sync,zx_keyp,zx_keyr,zx_vol
+		penMapMem,penOut,penIn,stdMRd,stdMWr,speReset,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
 		HW_P1024,"Pentagon1024SL","Pentagon 1024 SL",16,MEM_1M,
-		p1mMapMem,p1mOut,p1mIn,stdMRd,stdMWr,NULL,zx_sync,zx_keyp,zx_keyr,zx_vol
+		p1mMapMem,p1mOut,p1mIn,stdMRd,stdMWr,speReset,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
 		HW_SCORP,"Scorpion","ZS Scorpion",16,MEM_256K | MEM_1M,
-		scoMapMem,scoOut,scoIn,scoMRd,stdMWr,NULL,zx_sync,zx_keyp,zx_keyr,zx_vol
+		scoMapMem,scoOut,scoIn,scoMRd,stdMWr,speReset,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
 		HW_ATM2,"ATM2","ATM Turbo 2+",16,MEM_128K | MEM_256K | MEM_512K | MEM_1M,
 		atm2MapMem,atm2Out,atm2In,stdMRd,stdMWr,atm2Reset,zx_sync,atm2_keyp,atm2_keyr,zx_vol

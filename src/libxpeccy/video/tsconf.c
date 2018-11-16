@@ -227,8 +227,8 @@ int vidTSRender(Video* vid) {
 	return res;
 }
 
-const int tslXRes[4] = {256,320,320,360};
-const int tslYRes[4] = {192,200,240,288};
+static const int tslXRes[4] = {256,320,320,360};
+static const int tslYRes[4] = {192,200,240,288};
 
 void tslUpdatePorts(Video* vid) {
 	unsigned char val = vid->tsconf.p00af;
@@ -292,10 +292,8 @@ void vidDrawTSLNormal(Video* vid) {
 				adr = 0x1800 | ((yscr & 0xc0) << 2) | ((yscr & 0x38) << 2) | (((xscr + 4) & 0xf8) >> 3);
 				vid->atrbyte = vid->mrd(MADR(xadr, adr), vid->data);
 				if ((vid->atrbyte & 0x80) && vid->flash) scrbyte ^= 0xff;
-				ink = (vid->atrbyte & 0x07) | ((vid->atrbyte & 0x38) >> 3);
+				ink = (vid->atrbyte & 0x07) | ((vid->atrbyte & 0x40) >> 3);
 				pap = (vid->atrbyte & 0x78) >> 3;
-				//ink = inkTab[vid->atrbyte & 0x7f];
-				//pap = papTab[vid->atrbyte & 0x7f];
 			}
 			col = vid->tsconf.scrPal | ((scrbyte & 0x80) ? ink : pap);
 			scrbyte <<= 1;

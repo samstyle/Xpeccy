@@ -111,6 +111,17 @@ sndPair zx_vol(Computer* comp, sndVolume* sv) {
 	return vol;
 }
 
+// set std zx palette
+
+void zx_set_pal(Computer* comp) {
+	int i;
+	for (i = 0; i < 16; i++) {
+		comp->vid->pal[i].b = (i & 1) ? ((i & 8) ? 0xff : 0xaa) : 0x00;
+		comp->vid->pal[i].r = (i & 2) ? ((i & 8) ? 0xff : 0xaa) : 0x00;
+		comp->vid->pal[i].g = (i & 4) ? ((i & 8) ? 0xff : 0xaa) : 0x00;
+	}
+}
+
 // in
 
 int zx_dev_wr(Computer* comp, unsigned short adr, unsigned char val, int dos) {

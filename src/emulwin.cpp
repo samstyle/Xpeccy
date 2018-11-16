@@ -49,7 +49,7 @@ void MainWin::updateHead() {
 #ifdef ISDEBUG
 	title.append(" | debug");
 #endif
-	if (conf.prof.cur != NULL) {
+	if (conf.prof.cur) {
 		title.append(" | ").append(QString::fromLocal8Bit(conf.prof.cur->name.c_str()));
 		title.append(" | ").append(QString::fromLocal8Bit(conf.prof.cur->layName.c_str()));
 	}
@@ -187,7 +187,7 @@ MainWin::MainWin() {
 		}
 	} else {
 		printf("Joystick not opened\n");
-		conf.joy.joy = NULL;
+		conf.joy.joy = nullptr;
 	}
 
 	initFileDialog(this);
@@ -413,7 +413,7 @@ void MainWin::onTimer() {
 // if computer sends a message, show it
 	if (comp->msg) {
 		setMessage(QString(comp->msg));
-		comp->msg = NULL;
+		comp->msg = nullptr;
 	}
 // update satellites
 	updateSatellites();
@@ -483,7 +483,7 @@ void MainWin::tapStateChanged(int wut, int val) {
 				case TWS_OPEN:
 					pause(true,PR_FILE);
 					//loadFile(comp,"",FT_TAPE,-1);
-					load_file(comp, NULL, FG_TAPE, -1);
+					load_file(comp, nullptr, FG_TAPE, -1);
 					tapeWin->buildList(comp->tape);
 					//tapeWin->setCheck(comp->tape->block);
 					pause(false,PR_FILE);
@@ -518,7 +518,7 @@ void MainWin::rzxStateChanged(int state) {
 		case RWS_OPEN:
 			pause(true,PR_RZX);
 			//loadFile(comp,"",FT_RZX,0);
-			load_file(comp, NULL, FG_RZX, -1);
+			load_file(comp, nullptr, FG_RZX, -1);
 			if (comp->rzx.play) {
 				rzxWin->startPlay();
 			}
@@ -584,13 +584,13 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 		if (comp->hw->keyp) {
 			comp->hw->keyp(comp, kent);
 		}
-		if (ev->key() == Qt::Key_F12) {
+		if (keyid == XKEY_F12) {
 			compReset(comp,RES_DEFAULT);
 			rzxWin->stop();
 		}
 	} else if (ev->modifiers() & Qt::AltModifier) {
-		switch(ev->key()) {
-			case Qt::Key_Return:
+		switch(keyid) {
+			case XKEY_ENTER:
 #if VID_DIRECT_DRAW
 				vid_set_fullscreen(!conf.vid.fullScreen);
 #else
@@ -600,10 +600,10 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				updateWindow();
 				saveConfig();
 				break;
-			case Qt::Key_Home:
+			case XKEY_HOME:
 				debugAction();
 				break;
-			case Qt::Key_1:
+			case XKEY_1:
 #if VID_DIRECT_DRAW
 				vid_set_zoom(1);
 #else
@@ -614,7 +614,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				saveConfig();
 				setMessage(" size x1 ");
 				break;
-			case Qt::Key_2:
+			case XKEY_2:
 #if VID_DIRECT_DRAW
 				vid_set_zoom(2);
 #else
@@ -625,7 +625,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				saveConfig();
 				setMessage(" size x2 ");
 				break;
-			case Qt::Key_3:
+			case XKEY_3:
 #if VID_DIRECT_DRAW
 				vid_set_zoom(3);
 #else
@@ -636,7 +636,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				saveConfig();
 				setMessage(" size x3 ");
 				break;
-			case Qt::Key_4:
+			case XKEY_4:
 #if VID_DIRECT_DRAW
 				vid_set_zoom(4);
 #else
@@ -647,18 +647,18 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				saveConfig();
 				setMessage(" size x4 ");
 				break;
-			case Qt::Key_F4:
+			case XKEY_F4:
 				close();
 				break;
-			case Qt::Key_F7:
+			case XKEY_F7:
 				scrCounter = conf.scrShot.count;
 				scrInterval = 0;
 				break;	// ALT+F7 combo
-			case Qt::Key_F12:
+			case XKEY_F12:
 				compReset(comp,RES_DOS);
 				rzxWin->stop();
 				break;
-			case Qt::Key_K:
+			case XKEY_K:
 				if (keywin->isVisible()) {
 					keywin->close();
 				} else {
@@ -667,7 +667,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 					// raise();
 				}
 				break;
-			case Qt::Key_N:
+			case XKEY_N:
 				if (noflic < 15)
 					noflic = 25;
 				else if (noflic < 35)
@@ -679,7 +679,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 #endif
 				setMessage(QString(" noflick %0% ").arg(noflic * 2));
 				break;
-			case Qt::Key_R:
+			case XKEY_R:
 #if VID_DIRECT_DRAW
 				vid_set_ratio(!conf.vid.keepRatio);
 #else
@@ -688,7 +688,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				setMessage(conf.vid.keepRatio ? " keep aspect ratio " : " ignore aspect ratio ");
 				saveConfig();
 				break;
-			case Qt::Key_M:
+			case XKEY_M:
 				grabMice = !grabMice;
 				if (grabMice) {
 					grabMouse(QCursor(Qt::BlankCursor));
@@ -700,58 +700,58 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;
 		}
 	} else {
-		switch(ev->key()) {
-			case Qt::Key_Pause:
+		switch(keyid) {
+			case XKEY_PAUSE:
 				conf.emu.pause ^= PR_PAUSE;
 				pause(true,0);
 				break;
-			case Qt::Key_Escape:
+			case XKEY_ESC:
 				conf.emu.fast = 0;
 				pause(true, PR_DEBUG);
 				setUpdatesEnabled(true);
 				dbg->start(comp);
 				break;
-			case Qt::Key_Menu:
+			case XKEY_MENU:
 				userMenu->popup(pos() + QPoint(20,20));
 				userMenu->setFocus();
 				break;
-			case Qt::Key_Insert:
+			case XKEY_INS:
 				if (conf.emu.pause) break;
 				conf.emu.fast ^= 1;
 				updateHead();
 				break;
-			case Qt::Key_F1:
+			case XKEY_F1:
 				pause(true, PR_OPTS);
 				opt->start(conf.prof.cur);
 				break;
-			case Qt::Key_F2:
+			case XKEY_F2:
 				pause(true,PR_FILE);
 				//saveFile(comp,"",FT_ALL,-1);
-				save_file(comp, NULL, FG_ALL, -1);
+				save_file(comp, nullptr, FG_ALL, -1);
 				pause(false,PR_FILE);
 				break;
-			case Qt::Key_F3:
+			case XKEY_F3:
 				pause(true,PR_FILE);
 				//loadFile(comp,"",FT_ALL,-1);
-				load_file(comp, NULL, FG_ALL, -1);
+				load_file(comp, nullptr, FG_ALL, -1);
 				pause(false,PR_FILE);
 				checkState();
 				break;
-			case Qt::Key_F4:
+			case XKEY_F4:
 				if (comp->tape->on) {
 					tapStateChanged(TW_STATE,TWS_STOP);
 				} else {
 					tapStateChanged(TW_STATE,TWS_PLAY);
 				}
 				break;
-			case Qt::Key_F5:
+			case XKEY_F5:
 				if (comp->tape->on) {
 					tapStateChanged(TW_STATE,TWS_STOP);
 				} else {
 					tapStateChanged(TW_STATE,TWS_REC);
 				}
 				break;
-			case Qt::Key_F7:
+			case XKEY_F7:
 				if (scrCounter == 0) {
 					scrCounter = 1;
 					scrInterval = 0;
@@ -759,7 +759,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 					scrCounter = 0;
 				}
 				break;
-			case Qt::Key_F8:
+			case XKEY_F8:
 				/*
 				if (rzxWin->isVisible()) {
 					rzxWin->hide();
@@ -768,16 +768,16 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				}
 				*/
 				break;
-			case Qt::Key_F9:
+			case XKEY_F9:
 				pause(true,PR_FILE);
 				saveChanged();
 				pause(false,PR_FILE);
 				break;
-			case Qt::Key_F10:
+			case XKEY_F10:
 				if (comp->cpu->type != CPU_Z80) break;
 				comp->nmiRequest = 1;
 				break;
-			case Qt::Key_F11:
+			case XKEY_F11:
 				/*
 				if (tapeWin->isVisible()) {
 					tapeWin->hide();
@@ -787,7 +787,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				}
 				*/
 				break;
-			case Qt::Key_F12:
+			case XKEY_F12:
 				compReset(comp,RES_DEFAULT);
 				rzxWin->stop();
 				break;
@@ -1110,7 +1110,7 @@ void MainWin::putLeds() {
 }
 
 void MainWin::setMessage(QString str, double dur) {
-	msgTimer = dur * 50;
+	msgTimer = (int)(dur * 50);
 	msg = str;
 }
 
@@ -1289,14 +1289,14 @@ void MainWin::reset(QAction* act) {
 
 void MainWin::chLayout(QAction* act) {
 	std::string str = QString(act->data().toByteArray()).toStdString();
-	prfSetLayout(NULL, str);
+	prfSetLayout(nullptr, str);
 	prfSave("");
 	updateWindow();
 }
 
 void MainWin::umOpen(QAction* act) {
 //	loadFile(comp, NULL, act->data().toInt(), -1);
-	load_file(comp, NULL, act->data().toInt(), -1);
+	load_file(comp, nullptr, act->data().toInt(), -1);
 }
 
 // labels

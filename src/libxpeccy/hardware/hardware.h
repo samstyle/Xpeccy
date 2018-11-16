@@ -109,6 +109,7 @@ void stdMWr(Computer*,unsigned short,unsigned char);
 
 void zx_sync(Computer*, int);
 sndPair zx_vol(Computer*, sndVolume*);
+void zx_set_pal(Computer*);
 
 // debug IO
 

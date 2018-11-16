@@ -237,7 +237,7 @@ keyTrans ktTab[] = {
 	{Qt::Key_F9, Qt::Key_F9, XKEY_F9},
 	{Qt::Key_F10, Qt::Key_F10, XKEY_F10},
 	{Qt::Key_F11, Qt::Key_F11, XKEY_F11},
-	// {Qt::Key_F12, Qt::Key_F12, XKEY_F12},
+	{Qt::Key_F12, Qt::Key_F12, XKEY_F12},
 
 	{Qt::Key_Up, Qt::Key_Up, XKEY_UP},
 	{Qt::Key_Down, Qt::Key_Down, XKEY_DOWN},
@@ -250,6 +250,11 @@ keyTrans ktTab[] = {
 	{Qt::Key_Delete, Qt::Key_Delete, XKEY_DEL},
 	{Qt::Key_PageUp, Qt::Key_PageUp, XKEY_PGUP},
 	{Qt::Key_PageDown, Qt::Key_PageDown, XKEY_PGDN},
+
+	{Qt::Key_SysReq, Qt::Key_SysReq, XKEY_SYSRQ},
+	{Qt::Key_Pause, Qt::Key_Pause, XKEY_PAUSE},
+	{Qt::Key_ScrollLock, Qt::Key_ScrollLock, XKEY_SCRLCK},
+	{Qt::Key_NumLock, Qt::Key_NumLock, XKEY_NUMLCK},
 
 	// TODO: complete this table
 	{Qt::Key_unknown, Qt::Key_unknown, ENDKEY}

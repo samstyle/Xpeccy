@@ -173,9 +173,14 @@ enum {
 #define XKEY_F9		75
 #define XKEY_F10	76
 #define XKEY_F11	95
+#define XKEY_F12	96
 #define XKEY_LBRACK	256	// {
 #define XKEY_RBRACK	257	// }
 #define XKEY_QUEST	258
+#define XKEY_SYSRQ	259
+#define XKEY_PAUSE	260
+#define XKEY_SCRLCK	261
+#define XKEY_NUMLCK	262
 #define ENDKEY 0
 
 typedef struct {

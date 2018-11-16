@@ -112,5 +112,6 @@ void xThread::run() {
 		}
 		if (!conf.emu.fast) emutex.lock();		// wait until unlocked (MainWin::onTimer() or at exit)
 	} while (!finish);
+	emutex.unlock();
 	exit(0);
 }
