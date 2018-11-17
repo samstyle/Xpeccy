@@ -527,7 +527,7 @@ void SetupWin::apply() {
 	comp->contIO = ui.contIO->isChecked() ? 1 : 0;
 	comp->vid->ula->enabled = ui.ulaPlus->isChecked() ? 1 : 0;
 	comp->ddpal = ui.cbDDp->isChecked() ? 1 : 0;
-	prfSetLayout(nullptr, getRFText(ui.geombox));
+	prfSetLayout(NULL, getRFText(ui.geombox));
 // sound
 	std::string nname = getRFText(ui.outbox);
 	conf.snd.enabled = ui.senbox->isChecked() ? 1 : 0;
@@ -1302,10 +1302,10 @@ void SetupWin::newb() {newdisk(1);}
 void SetupWin::newc() {newdisk(2);}
 void SetupWin::newd() {newdisk(3);}
 
-void SetupWin::loada() {load_file(comp, nullptr, FG_DISK_A, 0); updatedisknams();}
-void SetupWin::loadb() {load_file(comp, nullptr, FG_DISK_B, 1); updatedisknams();}
-void SetupWin::loadc() {load_file(comp, nullptr, FG_DISK_C, 2); updatedisknams();}
-void SetupWin::loadd() {load_file(comp, nullptr, FG_DISK_D, 3); updatedisknams();}
+void SetupWin::loada() {load_file(comp, NULL, FG_DISK_A, 0); updatedisknams();}
+void SetupWin::loadb() {load_file(comp, NULL, FG_DISK_B, 1); updatedisknams();}
+void SetupWin::loadc() {load_file(comp, NULL, FG_DISK_C, 2); updatedisknams();}
+void SetupWin::loadd() {load_file(comp, NULL, FG_DISK_D, 3); updatedisknams();}
 
 void SetupWin::savea() {Floppy* flp = comp->dif->fdc->flop[0]; if (flp->insert) save_file(comp, flp->path, FG_DISK_A, 0);}
 void SetupWin::saveb() {Floppy* flp = comp->dif->fdc->flop[1]; if (flp->insert) save_file(comp, flp->path, FG_DISK_B, 1);}
@@ -1329,7 +1329,7 @@ void SetupWin::updatedisknams() {
 
 void SetupWin::loatape() {
 //	loadFile(comp,"",FT_TAPE,1);
-	load_file(comp, nullptr, FG_TAPE, -1);
+	load_file(comp, NULL, FG_TAPE, -1);
 	ui.tpathle->setText(QString::fromLocal8Bit(comp->tape->path));
 	buildtapelist();
 }
@@ -1403,12 +1403,12 @@ void SetupWin::setTapeBreak(int row,int col) {
 // hdd
 
 void SetupWin::hddMasterImg() {
-	QString path = QFileDialog::getOpenFileName(this,"Image for master HDD","","All files (*.*)",nullptr,QFileDialog::DontConfirmOverwrite);
+	QString path = QFileDialog::getOpenFileName(this,"Image for master HDD","","All files (*.*)",NULL,QFileDialog::DontConfirmOverwrite);
 	if (path != "") ui.hm_path->setText(path);
 }
 
 void SetupWin::hddSlaveImg() {
-	QString path = QFileDialog::getOpenFileName(this,"Image for slave HDD","","All files (*.*)",nullptr,QFileDialog::DontConfirmOverwrite);
+	QString path = QFileDialog::getOpenFileName(this,"Image for slave HDD","","All files (*.*)",NULL,QFileDialog::DontConfirmOverwrite);
 	if (path != "") ui.hs_path->setText(path);
 }
 
@@ -1434,7 +1434,7 @@ void SetupWin::openSlot() {
 //	if (fnam.isEmpty()) return;
 //	ui.cSlotName->setText(fnam);
 //	loadFile(comp, fnam.toLocal8Bit().data(), FT_SLOT_A, 0);
-	if (load_file(comp, nullptr, FH_SLOTS, 0) == ERR_OK) {
+	if (load_file(comp, NULL, FH_SLOTS, 0) == ERR_OK) {
 		ui.cSlotName->setText(comp->slot->name);
 	}
 }
@@ -1569,7 +1569,7 @@ void SetupWin::umedit(QModelIndex idx) {
 }
 
 void SetupWin::umaselp() {
-	QString fpath = QFileDialog::getOpenFileName(nullptr,"Select file","","Known formats (*.sna *.z80 *.tap *.tzx *.trd *.scl *.fdi *.udi)");
+	QString fpath = QFileDialog::getOpenFileName(NULL,"Select file","","Known formats (*.sna *.z80 *.tap *.tzx *.trd *.scl *.fdi *.udi)");
 	if (fpath!="") uia.pathle->setText(fpath);
 }
 

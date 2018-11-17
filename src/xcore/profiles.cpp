@@ -229,7 +229,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 					fsze = ftell(file);
 					rewind(file);
 				} else {
-					fsze = xrf.fsize;
+					fsze = xrf.fsize * 1024;
 				}
 				if (roff + fsze > romsz) {	// check crossing rom top
 					romsz = toLimits(roff + fsze, MEM_256, MEM_512K);

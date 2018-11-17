@@ -187,7 +187,7 @@ MainWin::MainWin() {
 		}
 	} else {
 		printf("Joystick not opened\n");
-		conf.joy.joy = nullptr;
+		conf.joy.joy = NULL;
 	}
 
 	initFileDialog(this);
@@ -413,7 +413,7 @@ void MainWin::onTimer() {
 // if computer sends a message, show it
 	if (comp->msg) {
 		setMessage(QString(comp->msg));
-		comp->msg = nullptr;
+		comp->msg = NULL;
 	}
 // update satellites
 	updateSatellites();
@@ -483,7 +483,7 @@ void MainWin::tapStateChanged(int wut, int val) {
 				case TWS_OPEN:
 					pause(true,PR_FILE);
 					//loadFile(comp,"",FT_TAPE,-1);
-					load_file(comp, nullptr, FG_TAPE, -1);
+					load_file(comp, NULL, FG_TAPE, -1);
 					tapeWin->buildList(comp->tape);
 					//tapeWin->setCheck(comp->tape->block);
 					pause(false,PR_FILE);
@@ -518,7 +518,7 @@ void MainWin::rzxStateChanged(int state) {
 		case RWS_OPEN:
 			pause(true,PR_RZX);
 			//loadFile(comp,"",FT_RZX,0);
-			load_file(comp, nullptr, FG_RZX, -1);
+			load_file(comp, NULL, FG_RZX, -1);
 			if (comp->rzx.play) {
 				rzxWin->startPlay();
 			}
@@ -727,13 +727,13 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			case XKEY_F2:
 				pause(true,PR_FILE);
 				//saveFile(comp,"",FT_ALL,-1);
-				save_file(comp, nullptr, FG_ALL, -1);
+				save_file(comp, NULL, FG_ALL, -1);
 				pause(false,PR_FILE);
 				break;
 			case XKEY_F3:
 				pause(true,PR_FILE);
 				//loadFile(comp,"",FT_ALL,-1);
-				load_file(comp, nullptr, FG_ALL, -1);
+				load_file(comp, NULL, FG_ALL, -1);
 				pause(false,PR_FILE);
 				checkState();
 				break;
@@ -1289,14 +1289,14 @@ void MainWin::reset(QAction* act) {
 
 void MainWin::chLayout(QAction* act) {
 	std::string str = QString(act->data().toByteArray()).toStdString();
-	prfSetLayout(nullptr, str);
+	prfSetLayout(NULL, str);
 	prfSave("");
 	updateWindow();
 }
 
 void MainWin::umOpen(QAction* act) {
 //	loadFile(comp, NULL, act->data().toInt(), -1);
-	load_file(comp, nullptr, act->data().toInt(), -1);
+	load_file(comp, NULL, act->data().toInt(), -1);
 }
 
 // labels
