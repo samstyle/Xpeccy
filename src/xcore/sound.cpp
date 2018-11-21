@@ -16,7 +16,7 @@ static unsigned int posp = 0;		// play pos
 static int smpCount = 0;
 OutSys *sndOutput = NULL;
 static int sndChunks = 882;
-static int sndBufSize = 1764;
+// static int sndBufSize = 1764;
 int nsPerSample = 23143;
 
 static sndPair sndLev;
@@ -59,9 +59,9 @@ int sndSync(Computer* comp) {
 }
 
 void sndCalibrate(Computer* comp) {
-	sndChunks = conf.snd.rate / 50;			// samples / frame
-	sndBufSize = conf.snd.chans * sndChunks;	// buffer size
-	nsPerSample = 1e9 / conf.snd.rate;		// ns / sample
+	//sndChunks = conf.snd.rate / 50;			// samples / frame
+	//sndBufSize = conf.snd.chans * sndChunks;	// buffer size
+	//nsPerSample = 1e9 / conf.snd.rate;		// ns / sample
 }
 
 std::string sndGetOutputName() {
@@ -74,7 +74,7 @@ std::string sndGetOutputName() {
 
 void setOutput(const char* name) {
 	if (sndOutput != NULL) {
-		if (!strcmp(name, sndOutput->name)) return;	// same
+		// if (!strcmp(name, sndOutput->name)) return;	// same
 		sndOutput->close();
 	}
 	sndOutput = findOutSys(name);
@@ -85,18 +85,23 @@ void setOutput(const char* name) {
 		printf("Can't open sound system '%s'. Reset to NULL\n",name);
 		setOutput("NULL");
 	}
+	nsPerSample = 1e9 / conf.snd.rate;
 }
 
+/*
 int sndOpen() {
-	sndChunks = conf.snd.rate / 50;
+	// sndChunks = conf.snd.rate / 50;
 	if (sndOutput == NULL) return 0;
 	if (!sndOutput->open()) {
 		setOutput("NULL");
 	}
+	nsPerSample = 1e9 / conf.snd.rate;
+	printf("%i %i\n",nsPerSample,sndChunks);
 	posp = 0;
 	posf = 0x2000;
 	return 1;
 }
+*/
 
 /*
 void sndPlay() {
@@ -132,14 +137,31 @@ void fillBuffer(int len) {
 }
 */
 
+static SDL_TimerID tid;
+extern int sleepy;
+
+Uint32 sdl_timer_callback(Uint32 iv, void* ptr) {
+	sleepy = 0;
+	return iv;
+}
+
 // NULL
 
 int null_open() {
+	printf("NULL device opening...\n");
+	tid = SDL_AddTimer(20, sdl_timer_callback, NULL);
+	if (tid < 0) {
+		printf("Can't create SDL_Timer, syncronisation unavailable\n");
+		throw(0);
+	}
+	sndChunks = conf.snd.rate / 50;
 	return 1;
 }
 
 void null_play() {}
-void null_close() {}
+void null_close() {
+	SDL_RemoveTimer(tid);
+}
 
 // SDL
 
@@ -165,6 +187,7 @@ void sdlPlayAudio(void*, Uint8* stream, int len) {
 			len--;
 		}
 	}
+	sleepy = 0;
 }
 
 int sdlopen() {
@@ -175,7 +198,7 @@ int sdlopen() {
 	asp.freq = conf.snd.rate;
 	asp.format = AUDIO_U16LSB;
 	asp.channels = conf.snd.chans;
-	asp.samples = 512;
+	asp.samples = conf.snd.rate / 50;
 	asp.callback = &sdlPlayAudio;
 	asp.userdata = NULL;
 	if (SDL_OpenAudio(&asp, &dsp) != 0) {
@@ -183,6 +206,7 @@ int sdlopen() {
 		res = 0;
 	} else {
 		printf("SDL audio device opening...success: %i %i (%i / %i)\n",dsp.freq, dsp.samples,dsp.format,AUDIO_U16LSB);
+		sndChunks = dsp.samples;
 		SDL_PauseAudio(0);
 		res = 1;
 	}

@@ -153,6 +153,7 @@ void xHexSpin::wheelEvent(QWheelEvent* ev) {
 	} else if (ev->delta() > 0) {
 		setValue(minMaxCorrect(value - 1, min, max));
 	}
+	ev->accept();
 }
 
 // xLabel

@@ -14,19 +14,18 @@ class xThread : public QThread {
 		unsigned silent:1;	// don't produce sound
 		unsigned block:1;
 		unsigned finish:1;
-		Computer* comp;
 		int sndNs;
-		void run();
+		void stop();
 	signals:
 		void picReady();	// picture ready for display
-	private:
-		void emuCycle();
-		void tapeCatch();
-	signals:
 		void dbgRequest();
 		void tapeSignal(int,int);
+	private:
+		void run();
+		void emuCycle(Computer*);
+		void tapeCatch(Computer*);
 };
 
-extern QMutex emutex;
+// extern QMutex emutex;
 
 #endif

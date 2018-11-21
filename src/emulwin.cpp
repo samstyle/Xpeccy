@@ -63,7 +63,6 @@ void MainWin::updateWindow() {
 	block = 1;
 	vidSetBorder(comp->vid, conf.brdsize);		// to call vidUpdateLayout???
 	// sndCalibrate(comp);				// why?
-	ethread.sndNs = 0;
 	int szw = comp->vid->vsze.x * conf.vid.scale;
 	int szh = comp->vid->vsze.y * conf.vid.scale;
 	if (conf.vid.fullScreen) {
@@ -210,12 +209,9 @@ MainWin::MainWin() {
 	timer.setInterval(20);
 	connect(&timer,SIGNAL(timeout()),this,SLOT(onTimer()));
 
-	connect(&ethread,SIGNAL(dbgRequest()),SLOT(doDebug()));
-	connect(&ethread,SIGNAL(tapeSignal(int,int)),this,SLOT(tapStateChanged(int,int)));
 #if !VID_DIRECT_DRAW
 	connect(&ethread,SIGNAL(picReady()),this,SLOT(convImage()));
 #endif
-	ethread.start();
 
 	scrImg = QImage(100,100,QImage::Format_RGB888);
 	connect(userMenu,SIGNAL(aboutToShow()),SLOT(menuShow()));
@@ -357,7 +353,6 @@ void MainWin::onTimer() {
 	if (opt->block) return;
 	if (opt->prfChanged) {
 		comp = conf.prof.cur->zx;
-		ethread.comp = comp;
 		opt->prfChanged = 0;
 	}
 	if (block) return;
@@ -433,7 +428,8 @@ void MainWin::onTimer() {
 	repaint();
 	setUpdatesEnabled(false);
 #endif
-	emutex.unlock();
+	//emutex.unlock();
+	//emit s_emul();
 }
 
 // if window is not active release keys & buttons, release mouse
@@ -946,9 +942,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		ideCloseFiles(comp->ide);
 		sdcCloseFile(comp->sdc);
 		sltEject(comp->slot);		// this must save cartridge ram
-		ethread.finish = 1;
-		emutex.unlock();		// unlock emulation thread
-		ethread.wait();			// wait until it exits
+		// emutex.unlock();		// unlock emulation thread
 		keywin->close();
 		if (conf.joy.joy)
 			SDL_JoystickClose(conf.joy.joy);
@@ -1256,14 +1250,12 @@ void MainWin::bookmarkSelected(QAction* act) {
 }
 
 void MainWin::setProfile(std::string nm) {
-	ethread.block = 1;
 	if (nm != "") {
 		if (!prfSetCurrent(nm)) {
 			prfSetCurrent("default");
 		}
 	}
 	comp = conf.prof.cur->zx;
-	ethread.comp = comp;
 	keywin->kb = comp->keyb;
 //	nsAct->setChecked(comp->vid->noScreen);
 	updateWindow();
@@ -1274,7 +1266,6 @@ void MainWin::setProfile(std::string nm) {
 	saveConfig();
 //	timer.setInterval(1000 / comp->vid->fps);
 	opt->prfChanged = 1;
-	ethread.block = 0;
 }
 
 void MainWin::profileSelected(QAction* act) {

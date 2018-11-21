@@ -1,5 +1,5 @@
-#ifndef _EMULWIN_H
-#define _EMULWIN_H
+#ifndef X_EMULWIN_H
+#define X_EMULWIN_H
 
 #include <QLabel>
 #include <QTimer>
@@ -45,7 +45,6 @@ class MainWin : public QWidget {
 
 		QIcon icon;
 		QTimer timer;
-		xThread ethread;
 		keyWindow* keywin;
 		QImage scrImg;
 

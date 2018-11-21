@@ -39,7 +39,7 @@ void sndCalibrate(Computer*);
 void addOutput(std::string, bool(*)(),void(*)(),void(*)());
 void setOutput(const char*);
 
-int sndOpen();
+// int sndOpen();
 void sndClose();
 int sndSync(Computer*);
 

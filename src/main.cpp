@@ -66,8 +66,13 @@ int main(int ac,char** av) {
 
 	QFontDatabase::addApplicationFont("://DejaVuSansMono.ttf");
 
-	int i;
 	MainWin mwin;
+	xThread ethread;
+
+	app.connect(&ethread,SIGNAL(dbgRequest()),&mwin,SLOT(doDebug()));
+	app.connect(&ethread,SIGNAL(tapeSignal(int,int)),&mwin,SLOT(tapStateChanged(int,int)));
+
+	int i;
 	char* parg;
 //	unsigned char* ptr = NULL;
 	int adr = 0x4000;
@@ -124,7 +129,10 @@ int main(int ac,char** av) {
 	mwin.updateWindow();
 	mwin.checkState();
 	conf.running = 1;
+	ethread.start();
 	app.exec();
+	ethread.stop();
+	ethread.wait();
 	conf.running = 0;
 	sndClose();
 	return 0;

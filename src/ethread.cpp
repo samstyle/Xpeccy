@@ -6,7 +6,8 @@
 #include "xcore/sound.h"
 #include "xcore/vfilters.h"
 
-QMutex emutex;
+// QMutex emutex;
+int sleepy = 1;
 
 unsigned char* blkData = NULL;
 #if !VID_DIRECT_DRAW
@@ -24,10 +25,16 @@ xThread::xThread() {
 	sndNs = 0;
 	conf.emu.fast = 0;
 	finish = 0;
-	emutex.lock();
+//	mtx.lock();
 }
 
-void xThread::tapeCatch() {
+void xThread::stop() {
+	finish = 1;
+	sleepy = 0;
+//	mtx.unlock();
+}
+
+void xThread::tapeCatch(Computer* comp) {
 	int blk = comp->tape->block;
 	if (blk >= comp->tape->blkCount) return;
 	if (conf.tape.fast && comp->tape->blkData[blk].hasBytes) {
@@ -55,7 +62,7 @@ void xThread::tapeCatch() {
 	}
 }
 
-void xThread::emuCycle() {
+void xThread::emuCycle(Computer* comp) {
 //	int endBuf = 0;
 	comp->frmStrobe = 0;
 	sndNs = 0;
@@ -75,7 +82,7 @@ void xThread::emuCycle() {
 			}
 #endif
 			if ((comp->mem->map[0].type == MEM_ROM) && comp->rom && !comp->dos) {		// FIXME: shit
-				if (comp->cpu->pc == 0x56b) tapeCatch();
+				if (comp->cpu->pc == 0x56b) tapeCatch(comp);
 				if ((comp->cpu->pc == 0x5e2) && conf.tape.autostart)
 					emit tapeSignal(TW_STATE,TWS_STOP);
 			}
@@ -89,9 +96,17 @@ void xThread::emuCycle() {
 	comp->nmiRequest = 0;
 }
 
+//void xThread::s_frame() {
+//	mtx.unlock();
+//	sleepy = 0;
+//}
+
 void xThread::run() {
-	emutex.lock();
+//	mtx.lock();
+	Computer* comp;
 	do {
+		sleepy = 1;
+		comp = conf.prof.cur->zx;
 #ifdef HAVEZLIB
 		if (comp->rzx.start) {
 			comp->rzx.start = 0;
@@ -103,15 +118,17 @@ void xThread::run() {
 		}
 #endif
 		if (!block && !comp->brk) {
-			emuCycle();
+			emuCycle(comp);
 			if (comp->brk) {
 				conf.emu.pause |= PR_DEBUG;
 				comp->brk = 0;
 				emit dbgRequest();
 			}
 		}
-		if (!conf.emu.fast) emutex.lock();		// wait until unlocked (MainWin::onTimer() or at exit)
+		while (!conf.emu.fast && sleepy)
+			usleep(100);
+			//mtx.lock();		// wait until unlocked (MainWin::onTimer() or at exit)
 	} while (!finish);
-	emutex.unlock();
+	// mtx.unlock();
 	exit(0);
 }
