@@ -10,9 +10,10 @@
 #include "xcore/sound.h"
 #include "xgui/xgui.h"
 #include "libxpeccy/spectrum.h"
+
 #include "emulwin.h"
 #include "xgui/debuga/debuger.h"
-#include "setupwin.h"
+#include "xgui/options/setupwin.h"
 #include "filer.h"
 
 #include <SDL.h>
@@ -59,18 +60,50 @@ int main(int ac,char** av) {
 	conf.emu.pause = 0;
 	conf.emu.fast = 0;
 	conf.joy.dead = 8192;
-//	vidInitAdrs();
+	conf.prof.changed = 0;
 	sndInit();
 	initPaths(av[0]);
-	addProfile("default","xpeccy.conf");
 
+	addProfile("default","xpeccy.conf");
 	QFontDatabase::addApplicationFont("://DejaVuSansMono.ttf");
 
 	MainWin mwin;
 	xThread ethread;
+	DebugWin dbgw(&mwin);
+	SetupWin optw(&mwin);
+	TapeWin tapw(&mwin);
+	RZXWin rzxw(&mwin);
+	xWatcher wutw(&mwin);
+	keyWindow keyw;
 
-	app.connect(&ethread,SIGNAL(dbgRequest()),&mwin,SLOT(doDebug()));
-	app.connect(&ethread,SIGNAL(tapeSignal(int,int)),&mwin,SLOT(tapStateChanged(int,int)));
+	loadConfig();
+
+	app.connect(&ethread, SIGNAL(dbgRequest()), &mwin, SLOT(doDebug()));
+	app.connect(&ethread, SIGNAL(tapeSignal(int,int)), &mwin,SLOT(tapStateChanged(int,int)));
+	app.connect(&dbgw, SIGNAL(closed()), &mwin, SLOT(dbgReturn()));
+	app.connect(&dbgw, SIGNAL(wannaKeys()), &keyw, SLOT(show()));
+	app.connect(&mwin, SIGNAL(s_debug(Computer*)), &dbgw, SLOT(start(Computer*)));
+	app.connect(&mwin, SIGNAL(s_labels(QString)), &dbgw, SLOT(loadLabels(QString)));
+
+	app.connect(&mwin, SIGNAL(s_options(xProfile*)), &optw, SLOT(start(xProfile*)));
+	app.connect(&optw, SIGNAL(closed()), &mwin, SLOT(optApply()));
+
+	app.connect(&mwin, SIGNAL(s_tape_upd(Tape*)), &tapw, SLOT(upd(Tape*)));
+	app.connect(&mwin, SIGNAL(s_tape_progress(Tape*)), &tapw, SLOT(updProgress(Tape*)));
+	app.connect(&mwin, SIGNAL(s_tape_show()), &tapw, SLOT(show()));
+
+	app.connect(&rzxw, SIGNAL(stateChanged(int)), &mwin, SLOT(rzxStateChanged(int)));
+	app.connect(&mwin, SIGNAL(s_rzx_start()), &rzxw, SLOT(startPlay()));
+	app.connect(&mwin, SIGNAL(s_rzx_stop()), &rzxw, SLOT(stop()));
+	app.connect(&mwin, SIGNAL(s_rzx_upd(Computer*)), &rzxw, SLOT(upd(Computer*)));
+	app.connect(&mwin, SIGNAL(s_rzx_show()), &rzxw, SLOT(show()));
+
+	app.connect(&mwin, SIGNAL(s_watch_upd(Computer*)), &wutw, SLOT(fillFields(Computer*)));
+	app.connect(&mwin, SIGNAL(s_watch_show()), &wutw, SLOT(show()));
+
+	app.connect(&mwin, SIGNAL(s_keywin_shide()), &keyw, SLOT(switcher()));
+	app.connect(&mwin, SIGNAL(s_keywin_upd(Keyboard*)), &keyw, SLOT(upd(Keyboard*)));
+	app.connect(&mwin, SIGNAL(s_keywin_close()), &keyw, SLOT(close()));
 
 	int i;
 	char* parg;

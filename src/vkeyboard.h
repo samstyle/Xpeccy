@@ -13,10 +13,13 @@ class keyWindow : public QLabel {
 	Q_OBJECT
 	public:
 		keyWindow(QWidget* = NULL);
-		Keyboard* kb;
+//		Keyboard* kb;
+	public slots:
+		void switcher();
+		void upd(Keyboard*);
 	private:
+		Keyboard* kb;
 		keyEntry xent;
-	protected:
 		void paintEvent(QPaintEvent*);
 		void mousePressEvent(QMouseEvent*);
 		void mouseReleaseEvent(QMouseEvent*);

@@ -26,6 +26,12 @@ void RZXWin::setProgress(int val, int max) {
 
 // slots
 
+void RZXWin::upd(Computer* comp) {
+	if (comp->rzx.play && isVisible()) {
+		setProgress(comp->rzx.fCurrent, comp->rzx.fTotal);
+	}
+}
+
 void RZXWin::playPause() {
 	switch(state) {
 		case RWS_PLAY:

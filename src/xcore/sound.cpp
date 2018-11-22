@@ -179,7 +179,7 @@ void sdlPlayAudio(void*, Uint8* stream, int len) {
 			len--;
 #endif
 		}
-		posp = posf - len;
+//		posp = posf - len;
 	} else {
 		while(len > 0) {
 			*(stream++) = sbuf[posp & 0x3fff];

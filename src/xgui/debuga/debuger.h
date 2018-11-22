@@ -55,13 +55,16 @@ class DebugWin : public QDialog {
 		~DebugWin();
 
 		void reject();
-		void start(Computer*);
 		void stop();
 
 	signals:
 		void closed();
 		void wannaKeys();
 		void needStep();
+	public slots:
+		void start(Computer*);
+		void loadLabels(QString = QString());
+		bool fillAll();
 	private:
 		unsigned block:1;
 		// tracer
@@ -107,9 +110,6 @@ class DebugWin : public QDialog {
 
 		unsigned short getPrevAdr(unsigned short);
 
-	public slots:
-		void loadLabels(QString = QString());
-		bool fillAll();
 	private slots:
 		void setShowLabels(bool);
 		void setShowSegment(bool);

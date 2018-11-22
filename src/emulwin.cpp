@@ -173,9 +173,9 @@ MainWin::MainWin() {
 	shotFormat["scr"] = SCR_SCR;
 	shotFormat["hobeta"] = SCR_HOB;
 
-	opt = new SetupWin(this);
-	dbg = new DebugWin(this);
-	watcher = new xWatcher(this);
+//	opt = new SetupWin(this);
+//	dbg = new DebugWin(this);
+//	watcher = new xWatcher(this);
 
 	if (SDL_NumJoysticks() > 0) {
 		conf.joy.joy = SDL_JoystickOpen(0);
@@ -186,23 +186,18 @@ MainWin::MainWin() {
 		}
 	} else {
 		printf("Joystick not opened\n");
-		conf.joy.joy = NULL;
+		conf.joy.joy = nullptr;
 	}
 
 	initFileDialog(this);
 
-	tapeWin = new TapeWin(this);
-	connect(tapeWin,SIGNAL(stateChanged(int,int)),this,SLOT(tapStateChanged(int,int)));
+//	tapeWin = new TapeWin(this);
+//	connect(tapeWin,SIGNAL(stateChanged(int,int)),this,SLOT(tapStateChanged(int,int)));
 
-	rzxWin = new RZXWin(this);
-	connect(rzxWin,SIGNAL(stateChanged(int)),this,SLOT(rzxStateChanged(int)));
+//	rzxWin = new RZXWin(this);
+//	connect(rzxWin,SIGNAL(stateChanged(int)),this,SLOT(rzxStateChanged(int)));
 
-	keywin = new keyWindow();
-	QPixmap pxm(":/images/keymap.png");
-	keywin->setPixmap(pxm);
-	keywin->setFixedSize(pxm.size());
-	keywin->setWindowIcon(QIcon(":/images/keyboard.png"));
-	keywin->setWindowTitle("ZX Keyboard");
+//	keywin = new keyWindow();
 
 	initUserMenu();
 
@@ -217,11 +212,6 @@ MainWin::MainWin() {
 	connect(userMenu,SIGNAL(aboutToShow()),SLOT(menuShow()));
 	connect(userMenu,SIGNAL(aboutToHide()),SLOT(menuHide()));
 
-	connect(opt,SIGNAL(closed()),this,SLOT(optApply()));
-	connect(dbg,SIGNAL(closed()),this,SLOT(dbgReturn()));
-	connect(dbg,SIGNAL(wannaKeys()),keywin,SLOT(show()));
-
-	loadConfig();
 	fillUserMenu();
 
 	timer.start();
@@ -350,21 +340,23 @@ void MainWin::mapJoystick(Computer* comp, int type, int num, int state) {
 // calling on timer every 20ms
 
 void MainWin::onTimer() {
-	if (opt->block) return;
-	if (opt->prfChanged) {
+//	if (opt->block) return;
+	if (conf.prof.changed) {
 		comp = conf.prof.cur->zx;
-		opt->prfChanged = 0;
+		conf.prof.changed = 0;
 	}
 	if (block) return;
 #if HAVEZLIB
 	if (comp->rzx.start) {
-		rzxWin->startPlay();
+		emit s_rzx_start();
+		// rzxWin->startPlay();
 	}
 	if (comp->rzx.overio) {
 		comp->rzx.overio = 0;
 		pause(true, PR_RZX);
 		shitHappens("RZX playback error");
-		rzxWin->stop();
+		emit s_rzx_stop();
+		//rzxWin->stop();
 		pause(false, PR_RZX);
 	}
 #endif
@@ -434,7 +426,7 @@ void MainWin::onTimer() {
 
 // if window is not active release keys & buttons, release mouse
 void MainWin::focusOutEvent(QFocusEvent* ev) {
-	if (!keywin->isVisible())
+	//if (!keywin->isVisible())
 		kbdReleaseAll(comp->keyb);
 	mouseReleaseAll(comp->mouse);
 	unsetCursor();
@@ -463,24 +455,29 @@ void MainWin::tapStateChanged(int wut, int val) {
 			switch(val) {
 				case TWS_PLAY:
 					if (tapPlay(comp->tape)) {
-						tapeWin->setState(TWS_PLAY);
+						//emit s_tape_state(TWS_PLAY);
+						//tapeWin->setState(TWS_PLAY);
 					} else {
-						tapeWin->setState(TWS_STOP);
+						//emit s_tape_state(TWS_STOP);
+						//tapeWin->setState(TWS_STOP);
 					}
 					break;
 				case TWS_STOP:
 					tapStop(comp->tape);
-					tapeWin->setState(TWS_STOP);
+					//emit s_tape_state(TWS_STOP);
+					//tapeWin->setState(TWS_STOP);
 					break;
 				case TWS_REC:
 					tapRec(comp->tape);
-					tapeWin->setState(TWS_REC);
+					//emit s_tape_state(TWS_REC);
+					//tapeWin->setState(TWS_REC);
 					break;
 				case TWS_OPEN:
 					pause(true,PR_FILE);
 					//loadFile(comp,"",FT_TAPE,-1);
 					load_file(comp, NULL, FG_TAPE, -1);
-					tapeWin->buildList(comp->tape);
+					//emit s_tape_list(comp->tape);
+					//tapeWin->buildList(comp->tape);
 					//tapeWin->setCheck(comp->tape->block);
 					pause(false,PR_FILE);
 					break;
@@ -488,11 +485,13 @@ void MainWin::tapStateChanged(int wut, int val) {
 			break;
 		case TW_REWIND:
 			tapRewind(comp->tape,val);
-			tapeWin->buildList(comp->tape);
+			emit s_tape_upd(comp->tape);
+			//tapeWin->buildList(comp->tape);
 			break;
 		case TW_BREAK:
 			comp->tape->blkData[val].breakPoint ^= 1;
-			tapeWin->drawStops(comp->tape);
+			emit s_tape_upd(comp->tape);
+			//tapeWin->drawStops(comp->tape);
 			break;
 	}
 }
@@ -516,7 +515,8 @@ void MainWin::rzxStateChanged(int state) {
 			//loadFile(comp,"",FT_RZX,0);
 			load_file(comp, NULL, FG_RZX, -1);
 			if (comp->rzx.play) {
-				rzxWin->startPlay();
+				emit s_rzx_start();
+				//rzxWin->startPlay();
 			}
 			pause(false,PR_RZX);
 			break;
@@ -582,7 +582,8 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 		}
 		if (keyid == XKEY_F12) {
 			compReset(comp,RES_DEFAULT);
-			rzxWin->stop();
+			emit s_rzx_stop();
+			// rzxWin->stop();
 		}
 	} else if (ev->modifiers() & Qt::AltModifier) {
 		switch(keyid) {
@@ -652,16 +653,18 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;	// ALT+F7 combo
 			case XKEY_F12:
 				compReset(comp,RES_DOS);
-				rzxWin->stop();
+				emit s_rzx_stop();
+				//rzxWin->stop();
 				break;
 			case XKEY_K:
-				if (keywin->isVisible()) {
-					keywin->close();
-				} else {
-					keywin->show();
+				emit s_keywin_shide();
+				//if (keywin->isVisible()) {
+				//	keywin->close();
+				//} else {
+				//	keywin->show();
 					// activateWindow();
 					// raise();
-				}
+				//}
 				break;
 			case XKEY_N:
 				if (noflic < 15)
@@ -705,7 +708,8 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				conf.emu.fast = 0;
 				pause(true, PR_DEBUG);
 				setUpdatesEnabled(true);
-				dbg->start(comp);
+				emit s_debug(comp);
+				// dbg->start(comp);
 				break;
 			case XKEY_MENU:
 				userMenu->popup(pos() + QPoint(20,20));
@@ -718,7 +722,8 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;
 			case XKEY_F1:
 				pause(true, PR_OPTS);
-				opt->start(conf.prof.cur);
+				emit s_options(conf.prof.cur);
+				// opt->start(conf.prof.cur);
 				break;
 			case XKEY_F2:
 				pause(true,PR_FILE);
@@ -785,7 +790,8 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;
 			case XKEY_F12:
 				compReset(comp,RES_DEFAULT);
-				rzxWin->stop();
+				emit s_rzx_stop();
+				//rzxWin->stop();
 				break;
 			default:
 				if (comp->hw->keyp) {
@@ -795,7 +801,8 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;
 		}
 	}
-	if (keywin->isVisible()) keywin->update();
+	emit s_keywin_upd(comp->keyb);
+	// if (keywin->isVisible()) keywin->update();
 }
 
 void MainWin::keyReleaseEvent(QKeyEvent *ev) {
@@ -807,7 +814,8 @@ void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 	keyEntry kent = getKeyEntry(keyid);
 	if (comp->hw->keyr)
 		comp->hw->keyr(comp, kent);
-	if (keywin->isVisible()) keywin->update();
+	emit s_keywin_upd(comp->keyb);
+	//if (keywin->isVisible()) keywin->update();
 }
 
 void MainWin::mousePressEvent(QMouseEvent *ev){
@@ -943,7 +951,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		sdcCloseFile(comp->sdc);
 		sltEject(comp->slot);		// this must save cartridge ram
 		// emutex.unlock();		// unlock emulation thread
-		keywin->close();
+		emit s_keywin_close();
 		if (conf.joy.joy)
 			SDL_JoystickClose(conf.joy.joy);
 		saveConfig();
@@ -957,10 +965,12 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 void MainWin::checkState() {
 #ifdef HAVEZLIB
 	if (comp->rzx.start)
-		rzxWin->startPlay();
+		emit s_rzx_start();
+		//rzxWin->startPlay();
 #endif
-	tapeWin->buildList(comp->tape);
-	tapeWin->setCheck(comp->tape->block);
+	//emit s_tape_list(comp->tape);
+	//tapeWin->buildList(comp->tape);
+	//tapeWin->setCheck(comp->tape->block);
 }
 
 // ...
@@ -1112,31 +1122,16 @@ void MainWin::updateSatellites() {
 	if (block) return;
 // update rzx window
 #ifdef HAVEZLIB
-	if (comp->rzx.play && rzxWin->isVisible()) {
-		rzxWin->setProgress(comp->rzx.fCurrent, comp->rzx.fTotal);
-	}
+	emit s_rzx_upd(comp);
 #endif
 // update tape window
-	if (tapeWin->isVisible()) {
-		if (comp->tape->on && !comp->tape->rec) {
-			tapeWin->setProgress(tapGetBlockTime(comp->tape,comp->tape->block,comp->tape->pos),tapGetBlockTime(comp->tape,comp->tape->block,-1));
-		}
-		if (comp->tape->blkChange) {
-			if (!comp->tape->on) {
-				tapStateChanged(TW_STATE,TWS_STOP);
-			}
-			tapeWin->buildList(comp->tape);
-			comp->tape->blkChange = 0;
-		}
-		if (comp->tape->newBlock) {
-			tapeWin->buildList(comp->tape);
-			comp->tape->newBlock = 0;
-		}
+	if ((comp->tape->on && !comp->tape->rec) || comp->tape->blkChange || comp->tape->newBlock) {
+		emit s_tape_upd(comp->tape);
+		if (comp->tape->blkChange) comp->tape->blkChange = 0;
+		if (comp->tape->newBlock) comp->tape->newBlock = 0;
 	}
 // update watcher
-	if (watcher->isVisible()) {
-		watcher->fillFields(comp);
-	}
+	emit s_watch_upd(comp);
 }
 
 // USER MENU
@@ -1151,13 +1146,13 @@ void MainWin::initUserMenu() {
 	resMenu = userMenu->addMenu(QIcon(":/images/shutdown.png"),"Reset...");
 
 	userMenu->addSeparator();
-	userMenu->addAction(QIcon(":/images/tape.png"),"Tape player",tapeWin,SLOT(show()));
-	userMenu->addAction(QIcon(":/images/video.png"),"RZX player",rzxWin,SLOT(show()));
+	userMenu->addAction(QIcon(":/images/tape.png"), "Tape player", this, SIGNAL(s_tape_show()));
+	userMenu->addAction(QIcon(":/images/video.png"),"RZX player", this, SIGNAL(s_rzx_show()));
 	userMenu->addSeparator();
 	pckAct = userMenu->addAction(QIcon(":/images/keyboard.png"),"Grab keyboard");
 	pckAct->setCheckable(true);
-	userMenu->addAction(QIcon(":/images/keyboardzx.png"),"ZX Keyboard",keywin,SLOT(show()));
-	userMenu->addAction(QIcon(":/images/objective.png"),"Watcher",watcher,SLOT(show()));
+	userMenu->addAction(QIcon(":/images/keyboardzx.png"),"ZX Keyboard",this,SIGNAL(s_keywin_shide()));
+	userMenu->addAction(QIcon(":/images/objective.png"),"Watcher", this, SIGNAL(s_watch_show()));
 	userMenu->addAction(QIcon(":/images/other.png"),"Options",this,SLOT(doOptions()));
 
 	connect(bookmarkMenu,SIGNAL(triggered(QAction*)),this,SLOT(bookmarkSelected(QAction*)));
@@ -1223,7 +1218,8 @@ void MainWin::fillUserMenu() {
 
 void MainWin::doOptions() {
 	pause(true, PR_OPTS);
-	opt->start(conf.prof.cur);
+	emit s_options(conf.prof.cur);
+	// opt->start(conf.prof.cur);
 }
 
 void MainWin::optApply() {
@@ -1236,7 +1232,8 @@ void MainWin::optApply() {
 void MainWin::doDebug() {
 	conf.emu.fast = 0;
 	pause(true, PR_DEBUG);
-	dbg->start(comp);
+	emit s_debug(comp);
+	// dbg->start(comp);
 }
 
 void MainWin::dbgReturn() {
@@ -1256,16 +1253,14 @@ void MainWin::setProfile(std::string nm) {
 		}
 	}
 	comp = conf.prof.cur->zx;
-	keywin->kb = comp->keyb;
-//	nsAct->setChecked(comp->vid->noScreen);
+	emit s_keywin_upd(comp->keyb);
 	updateWindow();
 	if (comp->firstRun) {
 		compReset(comp, RES_DEFAULT);
 		comp->firstRun = 0;
 	}
 	saveConfig();
-//	timer.setInterval(1000 / comp->vid->fps);
-	opt->prfChanged = 1;
+	conf.prof.changed = 1;
 }
 
 void MainWin::profileSelected(QAction* act) {
@@ -1274,7 +1269,8 @@ void MainWin::profileSelected(QAction* act) {
 }
 
 void MainWin::reset(QAction* act) {
-	rzxWin->stop();
+	//rzxWin->stop();
+	emit s_rzx_stop();
 	compReset(comp,act->data().toInt());
 }
 
@@ -1293,7 +1289,8 @@ void MainWin::umOpen(QAction* act) {
 // labels
 
 void MainWin::loadLabels(const char* nm) {
-	dbg->loadLabels(QString(nm));
+	emit s_labels(QString(nm));
+	// dbg->loadLabels(QString(nm));
 }
 
 // debug stufffff

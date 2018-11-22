@@ -10,8 +10,6 @@
 #include "xcore.h"
 #include "xgui.h"
 #include "spectrum.h"
-#include "setupwin.h"
-#include "debuger.h"
 #include "watcher.h"
 #include "vkeyboard.h"
 #include "ethread.h"
@@ -33,19 +31,37 @@ class MainWin : public QWidget {
 		void checkState();
 		void setProfile(std::string);
 		void loadLabels(const char*);
+	signals:
+		void s_options(xProfile*);
+		void s_debug(Computer*);
+		void s_labels(QString);
+
+		void s_tape_show();
+		void s_tape_progress(Tape*);
+		void s_tape_upd(Tape*);
+
+		void s_rzx_start();
+		void s_rzx_stop();
+		void s_rzx_upd(Computer*);
+		void s_rzx_show();
+		void s_watch_upd(Computer*);
+		void s_watch_show();
+		void s_keywin_upd(Keyboard*);
+		void s_keywin_shide();
+		void s_keywin_close();
 	private:
 		unsigned grabMice:1;
 		unsigned block:1;
 
-		SetupWin* opt;
-		DebugWin* dbg;
-		TapeWin* tapeWin;
-		RZXWin* rzxWin;
-		xWatcher* watcher;
+//		SetupWin* opt;
+//		DebugWin* dbg;
+//		TapeWin* tapeWin;
+//		RZXWin* rzxWin;
+//		xWatcher* watcher;
 
 		QIcon icon;
 		QTimer timer;
-		keyWindow* keywin;
+//		keyWindow* keywin;
 		QImage scrImg;
 
 		int scrCounter;

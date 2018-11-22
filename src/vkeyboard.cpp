@@ -3,6 +3,7 @@
 #include "vkeyboard.h"
 #include "xcore/xcore.h"
 
+#include <QIcon>
 #include <QPainter>
 
 static unsigned char kwMap[4][10] = {
@@ -17,7 +18,24 @@ keyWindow::keyWindow(QWidget* p):QLabel(p) {
 	xent.key = ENDKEY;
 	xent.zxKey.key1 = 0;
 	xent.zxKey.key2 = 0;
-	// setWindowModality(Qt::WindowModal);
+	QPixmap pxm(":/images/keymap.png");
+	setPixmap(pxm);
+	setFixedSize(pxm.size());
+	setWindowIcon(QIcon(":/images/keyboard.png"));
+	setWindowTitle("ZX Keyboard");
+}
+
+void keyWindow::switcher() {
+	if (isVisible())
+		hide();
+	else
+		show();
+}
+
+void keyWindow::upd(Keyboard* k) {
+	kb = k;
+	if (isVisible())
+		repaint();
 }
 
 void keyWindow::paintEvent(QPaintEvent*) {

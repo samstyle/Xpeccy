@@ -81,13 +81,12 @@ class TapeWin : public QDialog {
 	Q_OBJECT
 	public:
 		TapeWin(QWidget*);
-		void setState(int);
-		void buildList(Tape*);
-		void drawStops(Tape*);
-		void setCheck(int);
-		void setProgress(int,int);
-	signals:
-		void stateChanged(int,int);
+		//void drawStops(Tape*);
+		//void setCheck(int);
+		//void setProgress(int,int);
+	public slots:
+		void updProgress(Tape*);
+		void upd(Tape*);
 	private:
 		Ui::TapeWin ui;
 		int state;
@@ -103,6 +102,7 @@ class TapeWin : public QDialog {
 // rzx player
 
 #include "ui_rzxplayer.h"
+#include "libxpeccy/spectrum.h"
 
 enum {
 	RWS_PLAY = 1,
@@ -115,15 +115,16 @@ class RZXWin : public QDialog {
 	Q_OBJECT
 	public:
 		RZXWin(QWidget*);
-		void startPlay();
 		void setProgress(int,int);
+	public slots:
+		void startPlay();
+		void stop();
+		void upd(Computer*);
 	signals:
 		void stateChanged(int);
 	private:
 		Ui::rzxPlayer ui;
 		int state;
-	public slots:
-		void stop();
 	private slots:
 		void playPause();
 		void open();

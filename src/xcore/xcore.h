@@ -241,6 +241,7 @@ struct xConfig {
 		int pause;
 	} emu;
 	struct {
+		unsigned changed:1;
 		std::vector<xProfile*> list;
 		xProfile* cur;
 	} prof;

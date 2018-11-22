@@ -66,8 +66,8 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 
 	padial = new xPadBinder(this);
 
-	block = 0;
-	prfChanged = 0;
+//	block = 0;
+//	prfChanged = 0;
 
 	int i;
 // machine
@@ -1413,7 +1413,7 @@ void SetupWin::hddSlaveImg() {
 }
 
 void SetupWin::hddcap() {
-	unsigned int sz;
+	int sz;
 	if (ui.hs_islba->isChecked()) {
 		sz = (ui.hs_glba->value() >> 11);
 	} else {
@@ -1600,13 +1600,13 @@ void SetupWin::newProfile() {
 void SetupWin::rmProfile() {
 	int idx = ui.twProfileList->currentRow();
 	if (idx < 0) return;
-	block = 1;
+//	block = 1;
 	if (areSure("Do you really want to delete this profile?")) {
 		std::string pnam(ui.twProfileList->item(idx,0)->text().toLocal8Bit().data());
 		idx = delProfile(pnam);
 		switch(idx) {
 			case DELP_OK_CURR:
-				prfChanged = 1;
+				conf.prof.changed = 1;
 				start(conf.prof.cur);
 				break;
 			case DELP_ERR:
@@ -1614,6 +1614,6 @@ void SetupWin::rmProfile() {
 				break;
 		}
 	}
-	block = 0;
+//	block = 0;
 	buildproflist();
 }

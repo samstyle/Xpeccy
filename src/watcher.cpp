@@ -53,6 +53,7 @@ QString getBankName(MemPage pg) {
 }
 
 void xWatcher::fillFields(Computer* comp) {
+	if (!isVisible()) return;
 	if (comp == NULL) return;
 	model->comp = comp;
 	ui.wchAF->setText(gethexword(comp->cpu->af));

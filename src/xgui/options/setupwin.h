@@ -19,10 +19,14 @@
 class SetupWin : public QDialog {
 	Q_OBJECT
 	public:
-		unsigned block:1;
-		unsigned prfChanged:1;
+		//unsigned block:1;
+		//unsigned prfChanged:1;
 
 		SetupWin(QWidget*);
+
+	public slots:
+		void start(xProfile*);
+
 	private:
 		xProfile* prof;
 		Computer* comp;
@@ -55,8 +59,6 @@ class SetupWin : public QDialog {
 
 	signals:
 		void closed();
-	public slots:
-		void start(xProfile*);
 	private slots:
 		void reject();
 		void apply();
