@@ -11,6 +11,8 @@
 #define IFL_P	0x04
 #define IFL_C	0x01
 
+extern opCode i8080_tab[256];
+
 void i8080_reset(CPU*);
 int i8080_exec(CPU*);
 
