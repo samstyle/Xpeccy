@@ -62,7 +62,7 @@ class MainWin : public QWidget {
 		QIcon icon;
 		QTimer timer;
 //		keyWindow* keywin;
-		QImage scrImg;
+//		QImage scrImg;
 
 		int scrCounter;
 		int scrInterval;
@@ -76,7 +76,7 @@ class MainWin : public QWidget {
 		bool saveChanged();
 		void updateHead();
 		void screenShot();
-		void putLeds();
+//		void putLeds();
 
 		void mapJoystick(Computer*, int, int, int);
 		void mapPress(Computer*, xJoyMapEntry);

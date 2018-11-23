@@ -31,6 +31,9 @@
 
 // main
 
+extern unsigned char* bufimg;
+extern unsigned char* scrimg;
+
 #if !VID_DIRECT_DRAW
 unsigned char screen[4096 * 2048 * 3];		// scaled image (up to fullscreen)
 unsigned char scrn[1024 * 512 * 3];		// 2:1 image
@@ -76,12 +79,17 @@ void MainWin::updateWindow() {
 	setFixedSize(szw, szh);
 	lineBytes = szw * 3;
 	frameBytes = szh * lineBytes;
+/*
 #if VID_DIRECT_DRAW
 	scrImg = QImage(comp->vid->scrimg, szw, szh, QImage::Format_RGB888);
 #else
 	scrImg = QImage(screen, szw, szh, QImage::Format_RGB888);
 #endif
-	bytesPerLine = scrImg.bytesPerLine();
+*/
+//	bytesPerLine = scrImg.bytesPerLine();
+	bytesPerLine = lineBytes;
+	if (bytesPerLine & 3)		// 4 bytes align for QImage data
+		bytesPerLine += 4 - (bytesPerLine & 3);
 #if VID_DIRECT_DRAW
 	vid_set_zoom(conf.vid.scale);
 #endif
@@ -208,7 +216,7 @@ MainWin::MainWin() {
 	connect(&ethread,SIGNAL(picReady()),this,SLOT(convImage()));
 #endif
 
-	scrImg = QImage(100,100,QImage::Format_RGB888);
+//	scrImg = QImage(100,100,QImage::Format_RGB888);
 	connect(userMenu,SIGNAL(aboutToShow()),SLOT(menuShow()));
 	connect(userMenu,SIGNAL(aboutToHide()),SLOT(menuHide()));
 
@@ -527,7 +535,7 @@ void MainWin::rzxStateChanged(int state) {
 void MainWin::paintEvent(QPaintEvent*) {
 	if (block) return;
 	pnt.begin(this);
-	pnt.drawImage(0,0,scrImg);
+	pnt.drawImage(0,0, QImage(comp->debug ? scrimg : bufimg, width(), height(), QImage::Format_RGB888));
 // put leds
 	if (comp->joy->used && conf.led.joy) {
 		pnt.drawImage(3, 30, QImage(":/images/joystick.png").scaled(16, 16));
@@ -992,7 +1000,7 @@ void MainWin::screenShot() {
 	std::string fnam(fnams.toUtf8().data());
 	std::ofstream file;
 #if VID_DIRECT_DRAW
-	QImage img(comp->vid->scrimg, width(), height(), QImage::Format_RGB888);
+	QImage img(bufimg, width(), height(), QImage::Format_RGB888);
 #else
 	QImage img(screen, width(), height(), QImage::Format_RGB888);
 #endif
@@ -1065,6 +1073,7 @@ void addLed(int x, int y, QString name, int time) {
 	}
 }
 
+/*
 void MainWin::putLeds() {
 	if (!comp) return;
 	QPainter pnt;
@@ -1112,6 +1121,7 @@ void MainWin::putLeds() {
 	if (conf.led.keys) pnt.drawImage(3,3,kled);
 	pnt.end();
 }
+*/
 
 void MainWin::setMessage(QString str, double dur) {
 	msgTimer = (int)(dur * 50);

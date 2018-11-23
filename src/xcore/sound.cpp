@@ -10,8 +10,8 @@
 
 // new
 static unsigned char sbuf[0x4000];
-static unsigned int posf = 0;		// fill pos
-static unsigned int posp = 0;		// play pos
+static int posf = 0;			// fill pos
+static int posp = 0;			// play pos
 
 static int smpCount = 0;
 OutSys *sndOutput = NULL;
@@ -166,21 +166,22 @@ void null_close() {
 // SDL
 
 void sdlPlayAudio(void*, Uint8* stream, int len) {
-	if ((posf - posp < (unsigned)len) || conf.emu.fast || conf.emu.pause) {
-		while (len > 0) {
-#if 1
+	if (conf.emu.fast || conf.emu.pause) {
+		while (len > 0) {				// silence : put last sample
 			*(stream++) = sndLev.left & 0xff;;
 			*(stream++) = (sndLev.left >> 8) & 0xff;
 			*(stream++) = sndLev.right & 0xff;
 			*(stream++) = (sndLev.right >> 8) & 0xff;
 			len -= 4;
-#else
-			*(stream++) = 0x80;
-			len--;
-#endif
 		}
-//		posp = posf - len;
-	} else {
+	} else if (posf - posp < len) {				// overfill : repeat last buffer one more time
+		int post = posp;
+		while(len > 0) {
+			*(stream++) = sbuf[post & 0x3fff];
+			post++;
+			len--;
+		}
+	} else {						// normal : play buffer
 		while(len > 0) {
 			*(stream++) = sbuf[posp & 0x3fff];
 			posp++;

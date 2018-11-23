@@ -117,7 +117,7 @@ void xThread::run() {
 			rzxGetFrame(comp);
 		}
 #endif
-		if (!block && !comp->brk) {
+		if (!comp->brk) {
 			emuCycle(comp);
 			if (comp->brk) {
 				conf.emu.pause |= PR_DEBUG;

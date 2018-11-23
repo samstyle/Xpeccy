@@ -283,7 +283,7 @@ struct Video {
 	unsigned char ram[MEM_256K];			// video memory
 	unsigned char oam[MEM_256];			// nes oam memory
 	unsigned char reg[256];				// max 256 registers
-	unsigned char scrimg[2560 * 1440 * 3];
+//	unsigned char scrimg[2560 * 1440 * 3];
 
 	ulaPlus* ula;
 

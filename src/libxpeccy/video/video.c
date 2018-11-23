@@ -11,6 +11,12 @@ int bytesPerLine = 100;
 int greyScale = 0;
 int noflic = 0;
 
+static unsigned char bufa[2560 * 1440 * 3];
+static unsigned char bufb[2560 * 1440 * 3];
+unsigned char* scrimg = bufa;
+unsigned char* bufimg = bufb;
+static int curbuf = 0;
+
 #if VID_DIRECT_DRAW
 
 static int xpos = 0;
@@ -36,10 +42,6 @@ void vid_dot(Video* vid, unsigned char col) {
 		xcol.b = pcol;
 	}
 	pcol = xcol.r;
-	if (vid->ray.ptr > (vid->scrimg + 2560 * 1440 * 3)) {
-		printf("ray overscan\n");
-		assert(0);
-	}
 	*(vid->ray.ptr++) = (pcol * (100 - noflic) + *pptr * noflic) / 100;
 	*(pptr++) = pcol;
 	pcol = xcol.g;
@@ -102,9 +104,14 @@ void vid_frame(Video* vid) {
 	if (botSkip)
 		memset(vid->ray.lptr, 0x00, botSkip * bytesPerLine);
 	ypos = 0;
+	if (!vid->debug) {
+		scrimg = curbuf ? bufb : bufa;
+		bufimg = curbuf ? bufa : bufb;
+		curbuf = !curbuf;
+	}
 	if (topSkip)
-		memset(vid->scrimg, 0x00, topSkip * bytesPerLine);
-	vid->ray.lptr = vid->scrimg + topSkip * bytesPerLine;
+		memset(scrimg, 0x00, topSkip * bytesPerLine);
+	vid->ray.lptr = scrimg + topSkip * bytesPerLine;
 	if (lefSkip)
 		memset(vid->ray.lptr, 0x00, lefSkip);
 	vid->ray.ptr = vid->ray.lptr + lefSkip;
@@ -137,8 +144,8 @@ Video* vidCreate(vcbmrd cb, void* dptr) {
 	vid->ray.y = 0;
 	vid->idx = 0;
 
-	vid->ray.ptr = vid->scrimg;
-	vid->ray.lptr = vid->scrimg;
+	vid->ray.ptr = scrimg;
+	vid->ray.lptr = scrimg;
 
 	return vid;
 }
@@ -226,6 +233,7 @@ void vidDarkTail(Video* vid) {
 	if (vid->tail) return;				// no filling while current fill is active (till end of frame)
 #if VID_DIRECT_DRAW
 	unsigned char* ptr = vid->ray.ptr;		// fill current line till EOL
+	unsigned char* btr = curbuf ? bufa : bufb;
 	while (ptr - vid->ray.lptr < bytesPerLine) {
 		*ptr = ((*ptr - 0x80) >> 2) + 0x80;
 		ptr++;
@@ -237,7 +245,7 @@ void vidDarkTail(Video* vid) {
 		ytmp -= 0x100;
 		ptr += bytesPerLine;
 	}						// fill all till end
-	while (ptr - vid->scrimg < sizeof(vid->scrimg)) {
+	while (ptr - btr < sizeof(bufa)) {
 		*ptr = ((*ptr - 0x80) >> 2) + 0x80;
 		ptr++;
 	}

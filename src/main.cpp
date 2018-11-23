@@ -67,6 +67,8 @@ int main(int ac,char** av) {
 	addProfile("default","xpeccy.conf");
 	QFontDatabase::addApplicationFont("://DejaVuSansMono.ttf");
 
+	loadConfig();
+
 	MainWin mwin;
 	xThread ethread;
 	DebugWin dbgw(&mwin);
@@ -75,8 +77,6 @@ int main(int ac,char** av) {
 	RZXWin rzxw(&mwin);
 	xWatcher wutw(&mwin);
 	keyWindow keyw;
-
-	loadConfig();
 
 	app.connect(&ethread, SIGNAL(dbgRequest()), &mwin, SLOT(doDebug()));
 	app.connect(&ethread, SIGNAL(tapeSignal(int,int)), &mwin,SLOT(tapStateChanged(int,int)));
