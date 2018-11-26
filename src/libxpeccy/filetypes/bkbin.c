@@ -9,7 +9,7 @@ int loadBIN(Computer* comp, const char* name, int drv) {
 	if (start + len > 0x8000) {
 		err = ERR_RAW_LONG;
 	} else {
-		fread(comp->mem->ramData + start, len, 1, file);
+		fread(comp->mem->ramData + (6 << 14) + start, len, 1, file);
 		err = ERR_OK;
 	}
 	fclose(file);

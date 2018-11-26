@@ -24,7 +24,7 @@ unsigned char bk_io_rd(unsigned short adr, void* ptr) {
 			comp->keyb->map[7] &= 0x7f;
 			break;
 		case 0xffb4: comp->wdata = comp->vid->sc.y & 0x00ff;
-			if (!comp->vid->curscr) comp->wdata |= 0x200;
+			if (!comp->vid->cutscr) comp->wdata |= 0x200;
 			break;	// vertical scroll register
 		case 0xffcc: comp->wdata = 0xffff; break;							// external port
 		case 0xffce:							// system port
@@ -51,16 +51,36 @@ void bk_io_wr(unsigned short adr, unsigned char val, void* ptr) {
 			comp->keyb->map[7] |= (val & 0x40);
 			break;
 		case 0xffb1: break;
+		// pal/timer/scrbuf
+		case 0xffb2: break;
+		case 0xffb3: comp->vid->paln = (val << 2) & 0x3c;
+			comp->cpu->timer.on = (val & 0x40) ? 1 : 0;
+			comp->vid->curscr = (val & 0x80) ? 1 : 0;
+			break;
 		// scroll
 		case 0xffb4: comp->vid->sc.y = val;
 			break;
 		case 0xffb5:
-			comp->vid->curscr = (val & 0x02) ? 0 : 1;
+			comp->vid->cutscr = (val & 0x02) ? 0 : 1;
 			break;
 		case 0xffcc:
 		case 0xffcd: break;
-		case 0xffce:
-		case 0xffcf: break;
+		case 0xffce: comp->reg[0xce] = val; break;
+		case 0xffcf:
+			if (val & 8) {	// extend
+				comp->reg[0] = (val >> 4) & 7;
+				if (val & 1) {
+					comp->reg[1] = 0x80;
+				} else if (val & 2) {
+					comp->reg[1] = 0x81;
+				} else {
+					comp->reg[1] = val & 7;
+				}
+				bk_mem_map(comp);
+			} else {	// tape control
+
+			}
+			break;
 		default:
 			printf("%.4X : wr %.4X,%.2X\n",comp->cpu->pc,adr,val);
 			comp->brk = 1;
@@ -69,26 +89,61 @@ void bk_io_wr(unsigned short adr, unsigned char val, void* ptr) {
 }
 
 void bk_mem_map(Computer* comp) {
-	memSetBank(comp->mem, 0x00, MEM_RAM, 0, MEM_32K, NULL, NULL, NULL);
-	memSetBank(comp->mem, 0x80, MEM_ROM, 0, MEM_32K, NULL, NULL, NULL);
+	memSetBank(comp->mem, 0x00, MEM_RAM, 6, MEM_16K, NULL, NULL, NULL);
+	memSetBank(comp->mem, 0x40, MEM_RAM, comp->reg[0] & 7, MEM_16K, NULL, NULL, NULL);
+	if (comp->reg[1] & 0x80) {
+		memSetBank(comp->mem, 0x80, MEM_ROM, comp->reg[1] & 3, MEM_16K, NULL, NULL, NULL);
+	} else {
+		memSetBank(comp->mem, 0x80, MEM_RAM, comp->reg[1] & 7, MEM_16K, NULL, NULL, NULL);
+	}
+	memSetBank(comp->mem, 0xc0, MEM_ROM, 2, MEM_8K, NULL, NULL, NULL);
+	memSetBank(comp->mem, 0xe0, MEM_EXT, 3, MEM_8K, NULL, NULL, NULL);
 	memSetBank(comp->mem, 0xff, MEM_IO, 0, MEM_256, bk_io_rd, bk_io_wr, comp);
 }
 
-static xColor bk_pal[8] = {
-	{0,0,0},{255,255,255},{255,255,255},{255,255,255},
-	{0,0,0},{0,0,255},{0,255,0},{255,0,0}
+#define BK_BLK	{0,0,0}
+#define BK_BLU	{0,0,255}
+#define BK_RED	{255,0,0}
+#define BK_MAG	{255,0,255}
+#define BK_GRN	{0,255,0}
+#define BK_CYA	{0,255,255}
+#define BK_YEL	{255,255,0}
+#define BK_WHT	{255,255,255}
+
+static xColor bk_pal[0x40] = {
+	BK_BLK,BK_BLU,BK_GRN,BK_RED,	// 0: standard
+	BK_BLK,BK_YEL,BK_MAG,BK_RED,
+	BK_BLK,BK_CYA,BK_BLU,BK_MAG,
+	BK_BLK,BK_GRN,BK_CYA,BK_YEL,
+	BK_BLK,BK_MAG,BK_CYA,BK_WHT,
+	BK_BLK,BK_WHT,BK_WHT,BK_WHT,	// 5: for b/w mode
+	BK_BLK,BK_RED,BK_RED,BK_RED,
+	BK_BLK,BK_GRN,BK_GRN,BK_GRN,
+	BK_BLK,BK_MAG,BK_MAG,BK_MAG,
+	BK_BLK,BK_GRN,BK_MAG,BK_RED,
+	BK_BLK,BK_GRN,BK_MAG,BK_RED,
+	BK_BLK,BK_CYA,BK_YEL,BK_RED,
+	BK_BLK,BK_RED,BK_GRN,BK_CYA,
+	BK_BLK,BK_CYA,BK_YEL,BK_WHT,
+	BK_BLK,BK_YEL,BK_GRN,BK_WHT,
+	BK_BLK,BK_CYA,BK_GRN,BK_WHT
 };
 
 void bk_reset(Computer* comp) {
+	memSetSize(comp->mem, MEM_128K, MEM_32K);
 	memset(comp->mem->ramData, 0x00, MEM_256);
-	for (int i = 0; i < 8; i++) {
+	for (int i = 0; i < 0x40; i++) {
 		comp->vid->pal[i] = bk_pal[i];
 	}
+	comp->reg[0] = 1;
+	comp->reg[1] = 0x80;
 	comp->cpu->reset(comp->cpu);
+	comp->vid->curscr = 0;
+	comp->vid->paln = 0;
 	vidSetMode(comp->vid, VID_BK_BW);
 	comp->keyb->map[7] = 0x40;
 	comp->keyb->map[0] = 0;
-//	comp->timer.flags = 0x01;
+	bk_mem_map(comp);
 }
 
 /*

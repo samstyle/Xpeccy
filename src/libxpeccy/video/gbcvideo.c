@@ -76,8 +76,12 @@ void gbcvLine(Video* vid) {
 	if (vid->inten & 8)
 		vid->intrq = 1;
 
+	if ((vid->lcnt == vid->intp.y) && (vid->inten & 64)) vid->intrq = 1;		// ly = lyc
+	vid->xpos = vid->sc.x;
+
 	if (!vid->lcdon) return;
 	if (vid->ray.y >= vid->scrn.y) return;
+
 	unsigned char tile;
 	unsigned char flag;
 	unsigned char col;
@@ -178,9 +182,6 @@ void gbcvLine(Video* vid) {
 			}
 		}
 	}
-
-	if ((vid->ray.y == vid->intp.y) && (vid->inten & 64)) vid->intrq = 1;		// ly = lyc
-	vid->xpos = vid->sc.x;
 }
 
 void gbcvFram(Video* vid) {

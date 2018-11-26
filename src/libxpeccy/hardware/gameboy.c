@@ -42,12 +42,12 @@ unsigned char gbIORd(Computer* comp, unsigned short port) {
 // VIDEO
 		case 0x40: break;
 		case 0x41:
-			res = (comp->vid->ray.y == comp->vid->intp.y) ? 4 : 0;
+			res = (comp->vid->lcnt == comp->vid->intp.y) ? 4 : 0;
 			res |= comp->vid->gbcmode & 3;
 			break;
 		case 0x42: break;
 		case 0x43: break;
-		case 0x44: res = comp->vid->ray.y; break;
+		case 0x44: res = comp->vid->lcnt; break;
 		case 0x45: break;
 		case 0x47: break;
 		case 0x48: break;
@@ -183,6 +183,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			comp->vid->sc.x = val;
 			break;
 		case 0x44:						// TODO: writing will reset the counter (?)
+			comp->vid->lcnt = 0;
 			break;
 		case 0x45:
 			comp->vid->intp.y = val;

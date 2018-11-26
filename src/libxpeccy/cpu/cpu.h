@@ -72,6 +72,7 @@ struct opCode {
 };
 
 typedef struct {
+	unsigned on:1;
 	int flag;
 	PAIR(ival,ivh,ivl);
 	PAIR(val,vh,vl);

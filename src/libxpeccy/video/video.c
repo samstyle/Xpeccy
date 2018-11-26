@@ -1023,6 +1023,7 @@ void vidSync(Video* vid, int ns) {
 			vid->ray.x = 0;
 			vid->ray.xs = -vid->bord.x;
 			vid->ray.ys++;
+			vid->lcnt++;
 			if (vid->cbLine) vid->cbLine(vid);
 		}
 		if (vid->ray.x == vid->vend.x) {			// hblank start
@@ -1041,6 +1042,7 @@ void vidSync(Video* vid, int ns) {
 #else
 				vid->ray.ptr = vid->scrimg;
 #endif
+				vid->lcnt = 0;
 				vid->vblank = 0;
 				vid->vbstrb = 0;
 				vid->ray.y = 0;

@@ -67,6 +67,7 @@ void pdp11_reset(CPU* cpu) {
 	cpu->pc = cpu->preg[7];
 	cpu->pflag = 0xe0;
 	cpu->inten = 0xff;
+	cpu->timer.on = 1;
 	cpu->timer.flag = 0x01;
 }
 
@@ -1285,6 +1286,7 @@ static cbcpu pdp_tab_a[16] = {
 };
 
 void pdp_timer(CPU* cpu, int t) {
+	if (!cpu->timer.on) return;
 	if (cpu->timer.flag & 1) return;		// stopped
 	cpu->timer.cnt -= t;
 	while (cpu->timer.cnt < 0) {

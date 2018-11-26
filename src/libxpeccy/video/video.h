@@ -97,6 +97,7 @@ struct Video {
 	unsigned noScreen:1;
 	unsigned debug:1;
 	unsigned tail:1;
+	unsigned cutscr:1;
 
 	unsigned hblank:1;	// HBlank signal
 	unsigned hbstrb:1;	// HBlank strobe 0->1
@@ -124,6 +125,7 @@ struct Video {
 	unsigned char inten;	// interrupts enable (8 bits = 8 signals)
 	unsigned char intrq;	// interrupt output signals (8 bits)
 
+	unsigned char paln;	// high bits = palete number
 	xColor pal[256];	// palete. 256 colors rgb888
 
 	int vmode;
@@ -137,6 +139,7 @@ struct Video {
 	void* data;
 
 	int fcnt;
+	int lcnt;
 	unsigned char atrbyte;
 	size_t frmsz;
 	size_t vBytes;
