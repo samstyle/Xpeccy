@@ -91,10 +91,10 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.resbox->addItem("SHADOW",RES_SHADOW);
 
 	ui.tvRomset->setColumnWidth(0,50);
-	ui.tvRomset->setColumnWidth(1,250);
-	ui.tvRomset->setColumnWidth(2,50);
-	ui.tvRomset->setColumnWidth(3,50);
-	ui.tvRomset->setColumnWidth(4,50);
+	ui.tvRomset->setColumnWidth(1,200);
+	ui.tvRomset->setColumnWidth(2,70);
+	ui.tvRomset->setColumnWidth(3,70);
+	ui.tvRomset->setColumnWidth(4,70);
 // video
 	std::map<std::string,int>::iterator it;
 	for (it = shotFormat.begin(); it != shotFormat.end(); it++) {
@@ -761,7 +761,7 @@ typedef struct {
 	int hwid;
 	std::string gsf;
 	std::string fnf;
-	xRomFile lst[4];
+	xRomFile lst[8];
 } xRomPreset;
 
 static xRomPreset presets[] = {
@@ -781,7 +781,7 @@ static xRomPreset presets[] = {
 	{HW_GBC, "", "", {{"GameBoyColorBIOS.rom",0,0,0},{"",0,0,0}}},
 	{HW_NES, "", "", {{"",0,0,0}}},
 	{HW_C64, "", "c64charset.rom", {{"commodore64.rom",0,0,0},{"",0,0,0}}},
-	{HW_BK0010, "", "", {{"bk0010.basic.rom",0,0,0},{"",0,0,0}}},
+	{HW_BK0011M, "", "", {{"BAS11M_0.ROM",0,0,0},{"BAS11M_1.ROM",0,0,16},{"B11M_EXT.ROM",0,0,24},{"B11M_BOS.ROM",0,0,32},{"",0,0,0}}},
 	{HW_NULL, "", "", {{"",0,0,0}}}
 };
 
@@ -1040,7 +1040,7 @@ void SetupWin::buildtapelist() {
 void SetupWin::buildmenulist() {
 	ui.umlist->setRowCount(conf.bookmarkList.size());
 	QTableWidgetItem* itm;
-	for (uint i = 0; i < conf.bookmarkList.size(); i++) {
+	for (int i = 0; i < conf.bookmarkList.size(); i++) {
 		itm = new QTableWidgetItem(QString(conf.bookmarkList[i].name.c_str()));
 		ui.umlist->setItem(i,0,itm);
 		itm = new QTableWidgetItem(QString(conf.bookmarkList[i].path.c_str()));
@@ -1053,7 +1053,7 @@ void SetupWin::buildmenulist() {
 void SetupWin::buildproflist() {
 	ui.twProfileList->setRowCount(conf.prof.list.size());
 	QTableWidgetItem* itm;
-	for (uint i = 0; i < conf.prof.list.size(); i++) {
+	for (int i = 0; i < conf.prof.list.size(); i++) {
 		itm = new QTableWidgetItem(QString::fromLocal8Bit(conf.prof.list[i]->name.c_str()));
 		ui.twProfileList->setItem(i,0,itm);
 		itm = new QTableWidgetItem(QString::fromLocal8Bit(conf.prof.list[i]->file.c_str()));

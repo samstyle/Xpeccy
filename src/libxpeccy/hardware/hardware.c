@@ -62,8 +62,8 @@ HardWare hwTab[] = {
 	},{
 		HW_NULL,"","",16,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// separator
 	},{
-		HW_BK0010, "BK0010","BK0010",8,MEM_64K | MEM_128K,
-		bk_mem_map,NULL,NULL,bk_mrd,bk_mwr,bk_reset,NULL,bk_keyp,bk_keyr,bk_vol
+		HW_BK0011M, "BK0011M","BK0011M",8,MEM_128K,
+		bk_mem_map,NULL,NULL,bk_mrd,bk_mwr,bk_reset,bk_sync,bk_keyp,bk_keyr,bk_vol
 	},{
 		HW_NULL,NULL,NULL,16,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// eot
 	}

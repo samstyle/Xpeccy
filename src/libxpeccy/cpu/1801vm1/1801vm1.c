@@ -67,7 +67,7 @@ void pdp11_reset(CPU* cpu) {
 	cpu->pc = cpu->preg[7];
 	cpu->pflag = 0xe0;
 	cpu->inten = 0xff;
-	cpu->timer.on = 1;
+	cpu->halt = 0;
 	cpu->timer.flag = 0x01;
 }
 
@@ -90,17 +90,21 @@ void pdp_trap(CPU* cpu, unsigned short adr) {
 }
 
 int pdp11_int(CPU* cpu) {
-	if ((cpu->intrq & PDP_INT_IRQ1) && !(cpu->pflag & (PDP_F10 | PDP_F11))) {
+	if (cpu->intrq & PDP_INT_IRQ1) {
 		cpu->intrq &= ~PDP_INT_IRQ1;
-		pdp_wr(cpu, 0xffbc, cpu->preg[7]);
-		pdp_wr(cpu, 0xffbe, cpu->pflag);
-		pdp_trap(cpu, 0xe002);
-	} else if ((cpu->intrq & PDP_INT_IRQ2) && !(cpu->pflag & (PDP_F10 | PDP_F7))) {
+		if (!(cpu->pflag & (PDP_F10 | PDP_F11))) {
+			pdp_wr(cpu, 0xffbc, cpu->preg[7]);
+			pdp_wr(cpu, 0xffbe, cpu->pflag);
+			pdp_trap(cpu, 0xe002);
+		}
+	} else if (cpu->intrq & PDP_INT_IRQ2) {
 		cpu->intrq &= ~PDP_INT_IRQ2;
-		pdp_trap(cpu, 0x0040);			// #40 = 100(8)
-	} else if ((cpu->intrq & PDP_INT_IRQ3) && !(cpu->pflag & (PDP_F10 | PDP_F7))) {
+		if (!(cpu->pflag & (PDP_F10 | PDP_F7)))
+			pdp_trap(cpu, 0x0040);			// #40 = 100(8)
+	} else if (cpu->intrq & PDP_INT_IRQ3) {
 		cpu->intrq &= ~PDP_INT_IRQ3;
-		pdp_trap(cpu, 0x00b8);			// #b8 = 270(8)
+		if (!(cpu->pflag & (PDP_F10 | PDP_F7)))
+			pdp_trap(cpu, 0x00b8);			// #b8 = 270(8)
 	} else if (cpu->intrq & PDP_INT_VIRQ) {
 		cpu->intrq &= ~PDP_INT_VIRQ;
 		pdp_trap(cpu, cpu->intvec);
@@ -1286,7 +1290,6 @@ static cbcpu pdp_tab_a[16] = {
 };
 
 void pdp_timer(CPU* cpu, int t) {
-	if (!cpu->timer.on) return;
 	if (cpu->timer.flag & 1) return;		// stopped
 	cpu->timer.cnt -= t;
 	while (cpu->timer.cnt < 0) {

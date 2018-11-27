@@ -28,7 +28,7 @@ enum {
 	HW_GBC,		// Game boy color (gameboy capatible)
 	HW_NES,		// Nintendo Entertaiment System (Dendy)
 	HW_C64,		// Commodore 64
-	HW_BK0010	// BK0010
+	HW_BK0011M	// BK0011m
 };
 
 enum {
@@ -268,7 +268,7 @@ void bk_mem_map(Computer*);
 void bk_reset(Computer*);
 void bk_mwr(Computer*, unsigned short, unsigned char);
 unsigned char bk_mrd(Computer* comp, unsigned short, int);
-//void bk_sync(Computer*, int);
+void bk_sync(Computer*, int);
 void bk_keyp(Computer*, keyEntry);
 void bk_keyr(Computer*, keyEntry);
 sndPair bk_vol(Computer*, sndVolume*);

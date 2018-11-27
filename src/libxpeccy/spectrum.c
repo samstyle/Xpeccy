@@ -318,7 +318,7 @@ void compUpdateTimings(Computer* comp) {
 		case HW_C64:
 			vidUpdateTimings(comp->vid, perNoTurbo >> 3);
 			break;
-		case HW_BK0010:
+		case HW_BK0011M:
 			vidUpdateTimings(comp->vid, 40);
 			vidSetLayout(comp->vid, bkLay);
 			comp->vid->lockLayout = 1;

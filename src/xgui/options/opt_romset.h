@@ -17,6 +17,7 @@ class xRomsetModel : public QAbstractTableModel {
 		int rowCount(const QModelIndex& = QModelIndex()) const;
 		int columnCount(const QModelIndex& = QModelIndex()) const;
 		QVariant data(const QModelIndex&, int) const;
+		QVariant headerData(int, Qt::Orientation, int) const;
 };
 
 class xRomsetEditor : public QDialog {
@@ -28,14 +29,9 @@ class xRomsetEditor : public QDialog {
 		void complete(xRomFile);
 	private:
 		Ui::RSEdialog ui;
-		//int idx;
-		//xRomset nrs;
 		xRomFile xrf;
 	private slots:
 		void store();
-//		void check();
-//		void grpSingle(bool);
-//		void grpSeparate(bool);
 };
 
 #endif

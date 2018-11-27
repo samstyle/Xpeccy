@@ -194,7 +194,7 @@ MainWin::MainWin() {
 		}
 	} else {
 		printf("Joystick not opened\n");
-		conf.joy.joy = nullptr;
+		conf.joy.joy = NULL;
 	}
 
 	initFileDialog(this);
