@@ -181,7 +181,8 @@ enum {
 #define XKEY_PAUSE	260
 #define XKEY_SCRLCK	261
 #define XKEY_NUMLCK	262
-#define ENDKEY 0
+#define XKEY_APOS	263
+#define ENDKEY		0
 
 typedef struct {
 	unsigned used:1;
@@ -204,6 +205,9 @@ typedef struct {
 typedef struct {
 	unsigned reset:1;		// RES signal to CPU
 	unsigned used:1;
+	unsigned caps:1;
+	unsigned shift:1;
+	unsigned lang:1;
 	unsigned char port;		// high byte of xxFE port
 	int mode;
 	// i8031 block

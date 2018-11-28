@@ -5,24 +5,7 @@
 #include <string.h>
 
 void pdp_wrb(CPU* cpu, unsigned short adr, unsigned char val) {
-	switch (adr) {
-		// timer
-		case 0xffc6: cpu->timer.ivl = val; break;
-		case 0xffc7: cpu->timer.ivh = val; break;
-		case 0xffc8: cpu->timer.vl = val; break;
-		case 0xffc9: cpu->timer.vh = val; break;
-		case 0xffca: cpu->timer.flag = val & 0xff;
-			cpu->timer.per = 128;
-			if (val & 0x40) cpu->timer.per <<= 2;	// div 4
-			if (val & 0x20) cpu->timer.per <<= 4;	// div 16
-			if (val & 0x12) cpu->timer.val = cpu->timer.ival; // reload value
-			break;
-		case 0xffcb: break;
-		// register
-		default:
-			cpu->mwr(adr, val & 0xff, cpu->data);
-			break;
-	}
+	cpu->mwr(adr, val & 0xff, cpu->data);
 	cpu->t += 4;
 }
 
@@ -33,21 +16,8 @@ void pdp_wr(CPU* cpu, unsigned short adr, unsigned short val) {
 }
 
 unsigned char pdp_rdb(CPU* cpu, unsigned short adr) {
-	unsigned char res = 0xff;
-	switch (adr) {
-		// internal timer
-		case 0xffc6: res = cpu->timer.ivl; break;	// timer:initial counter value
-		case 0xffc7: res = cpu->timer.ivh; break;
-		case 0xffc8: res = cpu->timer.vl; break;	// timer:current counter
-		case 0xffc9: res = cpu->timer.vh; break;
-		case 0xffca: res = cpu->timer.flag & 0xff; break;	// timer flags
-		case 0xffcb: res = 0xff; break;
-		default:
-			res = cpu->mrd(adr, 0, cpu->data);
-			break;
-	}
 	cpu->t += 4;
-	return res;
+	return cpu->mrd(adr, 0, cpu->data);
 }
 
 unsigned short pdp_rd(CPU* cpu, unsigned short adr) {
@@ -58,7 +28,7 @@ unsigned short pdp_rd(CPU* cpu, unsigned short adr) {
 }
 
 // reset
-// R7 = (0xffce + Ncpu * 16) & 0xff00;	??? 0x8000
+// R7 = (0xffce + Ncpu * 16) & 0xff00;
 // F = 0xe0
 void pdp11_reset(CPU* cpu) {
 	for (int i = 0; i < 7; i++)
@@ -67,6 +37,7 @@ void pdp11_reset(CPU* cpu) {
 	cpu->pc = cpu->preg[7];
 	cpu->pflag = 0xe0;
 	cpu->inten = 0xff;
+	cpu->wait = 0;
 	cpu->halt = 0;
 	cpu->timer.flag = 0x01;
 }
@@ -90,31 +61,39 @@ void pdp_trap(CPU* cpu, unsigned short adr) {
 }
 
 int pdp11_int(CPU* cpu) {
+	int res = 10;
 	if (cpu->intrq & PDP_INT_IRQ1) {
 		cpu->intrq &= ~PDP_INT_IRQ1;
 		if (!(cpu->pflag & (PDP_F10 | PDP_F11))) {
 			pdp_wr(cpu, 0xffbc, cpu->preg[7]);
 			pdp_wr(cpu, 0xffbe, cpu->pflag);
 			pdp_trap(cpu, 0xe002);
+			cpu->wait = 0;
 		}
 	} else if (cpu->intrq & PDP_INT_IRQ2) {
 		cpu->intrq &= ~PDP_INT_IRQ2;
-		if (!(cpu->pflag & (PDP_F10 | PDP_F7)))
+		if (!(cpu->pflag & (PDP_F10 | PDP_F7))) {
 			pdp_trap(cpu, 0x0040);			// #40 = 100(8)
+			cpu->wait = 0;
+		}
 	} else if (cpu->intrq & PDP_INT_IRQ3) {
 		cpu->intrq &= ~PDP_INT_IRQ3;
-		if (!(cpu->pflag & (PDP_F10 | PDP_F7)))
+		if (!(cpu->pflag & (PDP_F10 | PDP_F7))) {
 			pdp_trap(cpu, 0x00b8);			// #b8 = 270(8)
+			cpu->wait = 0;
+		}
 	} else if (cpu->intrq & PDP_INT_VIRQ) {
 		cpu->intrq &= ~PDP_INT_VIRQ;
 		pdp_trap(cpu, cpu->intvec);
-	} else if (cpu->intrq & PDP_INT_TIMER) {	// timer
+		cpu->wait = 0;
+	} else if (cpu->intrq & PDP_INT_TIMER) {		// timer
 		cpu->intrq &= ~PDP_INT_TIMER;
-		pdp_trap(cpu, 0xb8);
+		// pdp_trap(cpu, 0xb8);
+		cpu->wait = 0;
 	} else {
-		return 0;
+		res = 0;
 	}
-	return 10;
+	return res;
 }
 
 // addressation
@@ -213,7 +192,7 @@ void pdp_halt(CPU* cpu) {
 	cpu->mcir = 3;	// 011
 	cpu->vsel = 11;	// 1011
 	printf("halt\n");
-	assert(0);
+	cpu->halt = 1;
 	pdp_trap(cpu, 0160002);
 }
 
@@ -1297,8 +1276,10 @@ void pdp_timer(CPU* cpu, int t) {
 		if (cpu->timer.flag & 0x10) {
 			cpu->timer.val--;
 			if (cpu->timer.val == 0xffff) {
-				if (cpu->timer.flag & 0x04)
+				if (cpu->timer.flag & 0x04) {
 					cpu->timer.flag |= 0x80;
+					cpu->intrq |= PDP_INT_TIMER;
+				}
 				if (cpu->timer.flag & 0x02) {
 					cpu->timer.val = 0xffff;
 				} else if (cpu->timer.flag & 0x08) {
@@ -1316,15 +1297,10 @@ int pdp11_exec(CPU* cpu) {
 //	printf("%.4X : %.4X\n", cpu->preg[7], pdp_rd(cpu, cpu->preg[7]));
 #endif
 	cpu->preg[7] = cpu->pc;
-	if (cpu->wait) {
-		if (cpu->mcir)
-			cpu->wait = 0;
-		return 8;
-	}
-	cpu->t = 0;
-	if (cpu->inten & cpu->intrq) {
+	if (cpu->halt) return 8;
+	cpu->t = cpu->wait ? 8 : 0;
+	if (cpu->inten & cpu->intrq)
 		cpu->t += pdp11_int(cpu);
-	}
 	if (cpu->t == 0) {
 		cpu->com = pdp_rd(cpu, cpu->preg[7]);
 		cpu->preg[7] += 2;

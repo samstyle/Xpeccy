@@ -220,6 +220,7 @@ keyTrans ktTab[] = {
 	{Qt::Key_Period, 1041, XKEY_PERIOD},
 	{Qt::Key_Comma, Qt::Key_Comma, XKEY_COMMA},
 	{Qt::Key_Slash, Qt::Key_Slash, XKEY_BSLASH},		// ?
+	{Qt::Key_Apostrophe, Qt::Key_Apostrophe, XKEY_APOS},	// '
 
 	{Qt::Key_Control, Qt::Key_Control, XKEY_LCTRL},
 	{Qt::Key_Alt, Qt::Key_Alt, XKEY_LALT},
