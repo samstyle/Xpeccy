@@ -134,12 +134,33 @@ void pdosReset(DiskIF* dif) {
 	uReset(dif->fdc);
 }
 
+// bk
+
+void vp1_reset(FDC*);
+unsigned short vp1_rd(FDC*, int);
+void vp1_wr(FDC*, int, unsigned short);
+
+void bkdReset(DiskIF* dif) {
+	vp1_reset(dif->fdc);
+}
+
+// rd doesn't using *res as result, it will return full 16-bit value
+int bkdIn(DiskIF* dif, int port, unsigned char* res, int dos) {
+	return vp1_rd(dif->fdc, port & 1) & 0xffff;
+}
+
+// wr will use *dos* argument as 16-bit value to write
+int bkdOut(DiskIF* dif, int port, unsigned char val, int dos) {
+	vp1_wr(dif->fdc, port & 1, dos & 0xffff);
+}
+
 // common
 
 static DiskHW dhwTab[] = {
 	{DIF_NONE,&dumReset,&dumIn,&dumOut,&dumSync},
 	{DIF_BDI,&bdiReset,&bdiIn,&bdiOut,&dhwSync},
 	{DIF_P3DOS,&pdosReset,&pdosIn,&pdosOut,&dhwSync},
+	{DIF_SMK512,&bkdReset,&bkdIn,&bkdOut,&dhwSync},
 	{DIF_END,NULL,NULL,NULL,NULL}
 };
 

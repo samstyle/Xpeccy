@@ -1506,7 +1506,7 @@ char* put_addressation(char* dst, unsigned short type) {
 				*(dst++) = ':';			// (E + PC)
 				*(dst++) = '6';
 			} else {
-				*(dst++) = '#';
+				// *(dst++) = '#';
 				*(dst++) = ':';			// :8 will be replaced with next word
 				*(dst++) = '8';
 				*(dst++) = '(';

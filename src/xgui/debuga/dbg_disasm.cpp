@@ -351,8 +351,13 @@ int asmAddr(QVariant val, xAdr xadr, int base) {
 		if (flag) {
 			res = adr;
 		} else {
+			if (str.startsWith("0x")) {
+				adr = str.toInt(&flag, 16);
+			}
+			if (flag) {
+				res = adr;
+			} else if (labels.contains(str)) {
 			// if there is such label
-			if (labels.contains(str)) {
 				res = labels[str].adr;
 			} else {
 				lab = findLabel(xadr.adr, xadr.type, xadr.bank);

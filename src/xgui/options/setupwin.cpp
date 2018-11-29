@@ -142,6 +142,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.diskTypeBox->addItem("None",DIF_NONE);
 	ui.diskTypeBox->addItem("Beta disk (VG93)",DIF_BDI);
 	ui.diskTypeBox->addItem("+3 DOS (uPD765)",DIF_P3DOS);
+	ui.diskTypeBox->addItem("SMK512 (VP1-128)",DIF_SMK512);
 	ui.disklist->addAction(ui.actCopyToTape);
 	ui.disklist->addAction(ui.actSaveHobeta);
 	ui.disklist->addAction(ui.actSaveRaw);
@@ -805,7 +806,7 @@ void SetupWin::romPreset() {
 		dx++;
 	}
 	conf.rsList[idx] = rs;
-	rsmodel->update(conf.rsList[idx]);
+	rsmodel->update(&conf.rsList[idx]);
 }
 
 void SetupWin::rmRomset() {
@@ -857,7 +858,7 @@ void SetupWin::delRom() {
 	} else {
 		conf.rsList[idx].fntFile.clear();
 	}
-	rsmodel->update(conf.rsList[idx]);
+	rsmodel->update(&conf.rsList[idx]);
 }
 
 void SetupWin::editRom() {
@@ -892,7 +893,7 @@ void SetupWin::setRom(xRomFile f) {
 	} else {
 		conf.rsList[idx].fntFile = f.name;
 	}
-	rsmodel->update(conf.rsList[idx]);
+	rsmodel->update(&conf.rsList[idx]);
 }
 
 /*
@@ -987,54 +988,13 @@ void SetupWin::buildrsetlist() {
 		ui.tvRomset->setEnabled(false);
 	} else {
 		ui.tvRomset->setEnabled(true);
-		xRomset rset = conf.rsList[ui.rsetbox->currentIndex()];
+		xRomset* rset = &conf.rsList[ui.rsetbox->currentIndex()];
 		rsmodel->update(rset);
 	}
 }
 
 void SetupWin::buildtapelist() {
 	ui.tapelist->fill(comp->tape);
-/*
-	TapeBlockInfo* inf = new TapeBlockInfo[comp->tape->blkCount];
-	tapGetBlocksInfo(comp->tape,inf);
-	ui.tapelist->setRowCount(comp->tape->blkCount);
-	if (comp->tape->blkCount == 0) {
-		ui.tapelist->setEnabled(false);
-		return;
-	}
-	ui.tapelist->setEnabled(true);
-	QTableWidgetItem* itm;
-	uint tm,ts;
-	for (int i=0; i < comp->tape->blkCount; i++) {
-		if (comp->tape->block == i) {
-			itm = new QTableWidgetItem(QIcon(":/images/checkbox.png"),"");
-			ui.tapelist->setItem(i,0,itm);
-			ts = inf[i].curtime;
-			tm = ts/60;
-			ts -= tm * 60;
-			itm = new QTableWidgetItem(QString::number(tm).append(":").append(QString::number(ts+100).right(2)));
-			ui.tapelist->setItem(i,3,itm);
-		} else {
-			itm = new QTableWidgetItem;
-			ui.tapelist->setItem(i,0,itm);
-			itm = new QTableWidgetItem;
-			ui.tapelist->setItem(i,3,itm);
-		}
-		itm = new QTableWidgetItem;
-		if (inf[i].breakPoint) itm->setIcon(QIcon(":/images/cancel.png"));
-		ui.tapelist->setItem(i,1,itm);
-		ts = inf[i].time;
-		tm = ts/60;
-		ts -= tm * 60;
-		itm = new QTableWidgetItem(QString::number(tm).append(":").append(QString::number(ts+100).right(2)));
-		ui.tapelist->setItem(i,2,itm);
-		itm = new QTableWidgetItem(QString::number(inf[i].size));
-		ui.tapelist->setItem(i,4,itm);
-		itm = new QTableWidgetItem(QString::fromLocal8Bit(inf[i].name));
-		ui.tapelist->setItem(i,5,itm);
-	}
-	ui.tapelist->selectRow(0);
-*/
 }
 
 void SetupWin::buildmenulist() {

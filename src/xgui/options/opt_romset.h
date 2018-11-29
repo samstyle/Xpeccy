@@ -11,9 +11,9 @@
 class xRomsetModel : public QAbstractTableModel {
 	public:
 		xRomsetModel(QObject* = NULL);
-		void update(xRomset);
+		void update(xRomset*);
 	private:
-		xRomset rset;
+		xRomset* rset;
 		int rowCount(const QModelIndex& = QModelIndex()) const;
 		int columnCount(const QModelIndex& = QModelIndex()) const;
 		QVariant data(const QModelIndex&, int) const;

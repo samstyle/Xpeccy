@@ -9,13 +9,15 @@
 enum {
 	FDC_NONE = 0,
 	FDC_VG93,
-	FDC_UPD765
+	FDC_UPD765,
+	FDC_VP1_128,
 };
 
 enum {
 	DIF_NONE = 0,
 	DIF_BDI,
 	DIF_P3DOS,
+	DIF_SMK512,
 	DIF_END	= -1
 };
 

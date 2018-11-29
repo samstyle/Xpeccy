@@ -18,23 +18,35 @@ unsigned char bk_io_rd(unsigned short adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	comp->wdata = 0xffff;
 	switch (adr & 0xfffe) {
+		// fdc
+		case 0xfe58:
+			if (!(adr & 1))
+				comp->wreg = difIn(comp->dif, 0, NULL, 0) & 0xffff;
+			comp->wdata = comp->wreg;
+			break;
+		case 0xfe5a:
+			if (!(adr & 1))
+				comp->wtmp = difIn(comp->dif, 1, NULL, 0) & 0xffff;
+			comp->wdata = comp->wtmp;
+			break;
+		// keyboard
 		case 0xffb0: comp->wdata = comp->keyb->map[7] & 0xc0; break;	// keyboard int control
 		case 0xffb2:							// keyboard code
 			comp->wdata = comp->keyb->map[0] & 0x7f;
 			comp->keyb->map[7] &= 0x7f;
 			break;
+		// vertical scroll register
 		case 0xffb4: comp->wdata = comp->vid->sc.y & 0x00ff;
 			if (!comp->vid->cutscr) comp->wdata |= 0x200;
-			break;	// vertical scroll register
-
+			break;
+		// storage
 		case 0xffbc: comp->wdata = comp->reg[0xbc] | ((comp->reg[0xbd] << 8) & 0xff00); break;
 		case 0xffbe: comp->wdata = comp->reg[0xbe] | ((comp->reg[0xbf] << 8) & 0xff00); break;
-
 		// timer
 		case 0xffc6: comp->wdata = comp->cpu->timer.ival; break;		// timer:initial counter value
 		case 0xffc8: comp->wdata = comp->cpu->timer.val; break;			// timer:current counter
-		case 0xffca: comp->wdata = comp->cpu->timer.flag | 0xff00; break;	// timer flags
-
+		case 0xffca: comp->wdata = (comp->cpu->timer.flag & 0xff) | 0xff00; break;	// timer flags
+		// system
 		case 0xffcc: comp->wdata = 0xffff; break;							// external port
 		case 0xffce:							// system port
 			comp->wdata = 0xc080;
@@ -54,6 +66,15 @@ unsigned char bk_io_rd(unsigned short adr, void* ptr) {
 void bk_io_wr(unsigned short adr, unsigned char val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	switch (adr) {
+		// fdc
+		case 0xfe58: comp->reg[0x58] = val; break;
+		case 0xfe59:
+			difOut(comp->dif, 0, 0x00, comp->reg[0x58] | (val << 8));
+			break;
+		case 0xfe5a: comp->reg[0x5a] = val; break;
+		case 0xfe5b:
+			difOut(comp->dif, 1, 0x00, comp->reg[0x5a] | (val << 8));
+			break;
 		// keyboard
 		case 0xffb0:
 			comp->keyb->map[7] &= ~0x40;
@@ -102,6 +123,10 @@ void bk_io_wr(unsigned short adr, unsigned char val, void* ptr) {
 					comp->reg[1] = 0x80;
 				} else if (comp->reg[0xce] & 2) {
 					comp->reg[1] = 0x81;
+				} else if (comp->reg[0xce] & 8) {
+					comp->reg[1] = 0x82;
+				} else if (comp->reg[0xce] & 0x10) {
+					comp->reg[1] = 0x83;
 				} else {
 					comp->reg[1] = val & 7;
 				}
@@ -132,8 +157,13 @@ void bk_mem_map(Computer* comp) {
 		memSetBank(comp->mem, 0x80, MEM_RAM, comp->reg[1] & 7, MEM_16K, NULL, NULL, NULL);
 	}
 	memSetBank(comp->mem, 0xc0, MEM_ROM, 4, MEM_8K, NULL, NULL, NULL);
-	memSetBank(comp->mem, 0xe0, MEM_EXT, 7, MEM_8K, NULL, NULL, NULL);
-	memSetBank(comp->mem, 0xff, MEM_IO, 0, MEM_256, bk_io_rd, bk_io_wr, comp);
+	if (comp->dif->type == DIF_SMK512) {
+		memSetBank(comp->mem, 0xe0, MEM_ROM, 5, MEM_8K, NULL, NULL, NULL);			// disk interface rom
+		memSetBank(comp->mem, 0xf0, MEM_IO, 0xfe, MEM_4K, bk_io_rd, bk_io_wr, comp);		// 0170000..0177776 with disk interface
+	} else {
+		memSetBank(comp->mem, 0xe0, MEM_EXT, 7, MEM_8K, NULL, NULL, NULL);			// empty space
+		memSetBank(comp->mem, 0xff, MEM_IO, 0xff, MEM_256, bk_io_rd, bk_io_wr, comp);		// 0177600..0177776 without disk interface
+	}
 }
 
 #define BK_BLK	{0,0,0}
@@ -225,7 +255,8 @@ static bkKeyCode bkey_small_lat[] = {
 
 static bkKeyCode bkey_big_rus[] = {
 	{XKEY_Q,0152},{XKEY_W,0143},{XKEY_E,0165},{XKEY_R,0153},{XKEY_T,0145},
-	{XKEY_Y,0156},{XKEY_U,0147},{XKEY_I,0173},{XKEY_O,0175},{XKEY_P,0172},{XKEY_LBRACK,0150},{XKEY_RBRACK,0177},
+	{XKEY_Y,0156},{XKEY_U,0147},{XKEY_I,0173},{XKEY_O,0175},{XKEY_P,0172},
+	{XKEY_LBRACK,0150},{XKEY_RBRACK,0177},{XKEY_LBRACE,0150},{XKEY_RBRACE,0177},
 	{XKEY_A,0146},{XKEY_S,0171},{XKEY_D,0167},{XKEY_F,0141},{XKEY_G,0160},
 	{XKEY_H,0162},{XKEY_J,0157},{XKEY_K,0154},{XKEY_L,0144},{XKEY_DOTCOM,0166},{XKEY_APOS,0174},
 	{XKEY_Z,0161},{XKEY_X,0176},{XKEY_C,0163},{XKEY_V,0155},{XKEY_B,0111},
@@ -235,7 +266,8 @@ static bkKeyCode bkey_big_rus[] = {
 
 static bkKeyCode bkey_small_rus[] = {
 	{XKEY_Q,0112},{XKEY_W,0103},{XKEY_E,0125},{XKEY_R,0113},{XKEY_T,0105},
-	{XKEY_Y,0116},{XKEY_U,0107},{XKEY_I,0133},{XKEY_O,0135},{XKEY_P,0132},{XKEY_LBRACK,0110},{XKEY_RBRACK,0137},
+	{XKEY_Y,0116},{XKEY_U,0107},{XKEY_I,0133},{XKEY_O,0135},{XKEY_P,0132},
+	{XKEY_LBRACK,0110},{XKEY_RBRACK,0137},{XKEY_LBRACE,0110},{XKEY_RBRACE,0137},
 	{XKEY_A,0106},{XKEY_S,0131},{XKEY_D,0127},{XKEY_F,0101},{XKEY_G,0120},
 	{XKEY_H,0122},{XKEY_J,0117},{XKEY_K,0114},{XKEY_L,0104},{XKEY_DOTCOM,0126},{XKEY_APOS,0134},
 	{XKEY_Z,0121},{XKEY_X,0136},{XKEY_C,0123},{XKEY_V,0115},{XKEY_B,0111},
@@ -264,6 +296,11 @@ int bkey_code(bkKeyCode* tab, int xkey) {
 	return tab[idx].code;		// 0 if ENDKEY
 }
 
+static char bkcapson[] = " caps on ";
+static char bkcapsoff[] = " caps off ";
+static char bkkbdrus[] = " rus ";
+static char bkkbdlat[] = " lat ";
+
 void bk_keyp(Computer* comp, keyEntry xkey) {
 	int code = 0;
 	switch(xkey.key) {
@@ -273,10 +310,12 @@ void bk_keyp(Computer* comp, keyEntry xkey) {
 		case XKEY_CAPS:
 			comp->keyb->caps ^= 1;
 			code = comp->keyb->caps ? 0274 : 0273;
+			comp->msg = comp->keyb->caps ? bkcapson : bkcapsoff;
 			break;
 		case XKEY_LCTRL:
 			comp->keyb->lang ^= 1;
 			code = comp->keyb->lang ? 016 : 017;
+			comp->msg = comp->keyb->lang ? bkkbdrus : bkkbdlat;
 			break;
 	}
 	if (code == 0) {

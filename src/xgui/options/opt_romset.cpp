@@ -42,7 +42,14 @@ void xRomsetEditor::store() {
 
 // MODEL
 
+static xRomset initrs;
+
 xRomsetModel::xRomsetModel(QObject* p):QAbstractTableModel(p) {
+	initrs.fntFile.clear();
+	initrs.gsFile.clear();
+	initrs.name.clear();
+	initrs.roms.clear();
+	rset = &initrs;
 }
 
 int xRomsetModel::columnCount(const QModelIndex& idx) const {
@@ -52,7 +59,7 @@ int xRomsetModel::columnCount(const QModelIndex& idx) const {
 
 int xRomsetModel::rowCount(const QModelIndex& idx) const {
 	if (idx.isValid()) return 0;
-	return rset.roms.size() + 2;
+	return rset->roms.size() + 2;
 }
 
 
@@ -81,7 +88,7 @@ QVariant xRomsetModel::data(const QModelIndex& idx, int role) const {
 	int col = idx.column();
 	if ((row < 0) || (row >= rowCount())) return res;
 	if ((col < 0) || (col >= columnCount())) return res;
-	int rlsz = (int)rset.roms.size();
+	int rlsz = (int)rset->roms.size();
 	switch (role) {
 		case Qt::DisplayRole:
 			switch(col) {
@@ -96,32 +103,32 @@ QVariant xRomsetModel::data(const QModelIndex& idx, int role) const {
 					break;
 				case 1:
 					if (row < rlsz) {
-						res = trUtf8(rset.roms[row].name.c_str());
+						res = trUtf8(rset->roms[row].name.c_str());
 					} else if (row == rlsz) {
-						res = trUtf8(rset.gsFile.c_str());
+						res = trUtf8(rset->gsFile.c_str());
 					} else {
-						res = trUtf8(rset.fntFile.c_str());
+						res = trUtf8(rset->fntFile.c_str());
 					}
 					break;
 				case 2:
 					if (row >= rlsz) break;
-					res = rset.roms[row].foffset;
+					res = rset->roms[row].foffset;
 					break;
 				case 3:
 					if (row >= rlsz) break;
-					if (rset.roms[row].fsize > 0) {
-						res = rset.roms[row].fsize;
+					if (rset->roms[row].fsize > 0) {
+						res = rset->roms[row].fsize;
 					} else {
 						strcpy(buf, conf.path.romDir);
 						strcat(buf, SLASH);
-						strcat(buf, rset.roms[row].name.c_str());
+						strcat(buf, rset->roms[row].name.c_str());
 						inf.setFile(trUtf8(buf));
 						res = QString("( %0 )").arg(inf.size() >> 10);
 					}
 					break;
 				case 4:
 					if (row >= rlsz) break;
-					res = rset.roms[row].roffset;
+					res = rset->roms[row].roffset;
 					break;
 			}
 			break;
@@ -129,18 +136,18 @@ QVariant xRomsetModel::data(const QModelIndex& idx, int role) const {
 	return res;
 }
 
-void xRomsetModel::update(xRomset rs) {
+void xRomsetModel::update(xRomset* rs) {
 	xRomFile trf;
-	int mx = rs.roms.size();
-	int i;
+	unsigned long i;
+	unsigned long mx = rs->roms.size();
 	int cha;
 	do {
 		cha = 0;
 		for (i = 0; i < mx-1; i++) {
-			if (rs.roms[i].roffset > rs.roms[i+1].roffset) {
-				trf = rs.roms[i];
-				rs.roms[i] = rs.roms[i+1];
-				rs.roms[i+1] = trf;
+			if (rs->roms[i].roffset > rs->roms[i+1].roffset) {
+				trf = rs->roms[i];
+				rs->roms[i] = rs->roms[i+1];
+				rs->roms[i+1] = trf;
 				cha = 1;
 			}
 		}

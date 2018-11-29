@@ -320,6 +320,7 @@ void compUpdateTimings(Computer* comp) {
 			break;
 		case HW_BK0011M:
 			vidUpdateTimings(comp->vid, 40);
+			comp->vid->lockLayout = 0;
 			vidSetLayout(comp->vid, bkLay);
 			comp->vid->lockLayout = 1;
 			break;
