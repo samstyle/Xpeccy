@@ -152,6 +152,7 @@ int bkdIn(DiskIF* dif, int port, unsigned char* res, int dos) {
 // wr will use *dos* argument as 16-bit value to write
 int bkdOut(DiskIF* dif, int port, unsigned char val, int dos) {
 	vp1_wr(dif->fdc, port & 1, dos & 0xffff);
+	return 1;
 }
 
 // common

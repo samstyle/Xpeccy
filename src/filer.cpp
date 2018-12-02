@@ -53,6 +53,7 @@ static xFileTypeInfo ft_tab[] = {
 	{FL_NES, 0, ".nes", "*.nes", loadNes, NULL, "NES cartrige"},
 //	{FL_T64, 0, ".t64", "*.t64", loadT64, NULL, "T64 tape image"},
 	{FL_BKBIN, 0, ".bin", "*.bin", loadBIN, NULL, "BK bin data"},
+	{FL_BKIMG, 0, ".img", "*.img", loadBkIMG, NULL, "BK disk image"},
 #ifdef HAVEZLIB
 	{FL_RZX, 0, ".rzx", "*.rzx", loadRZX, NULL, "RZX playback"},
 #endif
@@ -81,6 +82,7 @@ static xFileGroupInfo fg_tab[] = {
 	{FG_NES, -1, "NES cartrige", {FL_NES, 0}},
 	{FG_CMDTAPE, -1, "Comodore tape", {FL_T64, 0}},
 	{FG_BKDATA, -1, "BK bin data", {FL_BKBIN, 0}},
+	{FG_BKDISK, 0, "BK disk image", {FL_BKIMG, 0}},
 	{0, -1, NULL, {0}}
 };
 
@@ -92,7 +94,7 @@ static xFileHWInfo fh_tab[] = {
 	{FH_MSX, {FG_MSX, 0}},
 	{FH_NES, {FG_NES, 0}},
 	{FH_CMD, {FG_CMDTAPE, 0}},
-	{FH_BK, {FG_BKDATA, 0}},
+	{FH_BK, {FG_BKDATA, FG_BKDISK, 0}},
 	{FH_DISKS, {FG_DISK_A, FG_DISK_B, FG_DISK_C, FG_DISK_D, 0}},
 	{FH_SLOTS, {FG_GAMEBOY, FG_NES, FG_MSX, 0}},
 	{0, {0}}

@@ -23,13 +23,15 @@ void flpDestroy(Floppy* flp) {
 
 void flpWr(Floppy* flp,unsigned char val) {
 	flp->wr = 1;
-	flp->changed = 1;
-	flp->data[flp->rtrk].byte[flp->pos] = val;
+	if (flp->insert) {
+		flp->changed = 1;
+		flp->data[flp->rtrk].byte[flp->pos] = val;
+	}
 }
 
 unsigned char flpRd(Floppy* flp) {
 	flp->rd = 1;
-	return flp->data[flp->rtrk].byte[flp->pos];
+	return flp->insert ? flp->data[flp->rtrk].byte[flp->pos] : 0xff;
 }
 
 unsigned char flpGetField(Floppy* flp) {
@@ -61,6 +63,68 @@ int flpNext(Floppy* flp, int fdcSide) {
 		flp->field = flp->data[flp->rtrk].field[flp->pos];
 	} else {
 		flp->field = 0;
+	}
+	return res;
+}
+
+static unsigned char trk_mark[4] = {0xa1,0xa1,0xa1,0xfc};
+static unsigned char hd_mark[4] = {0xa1,0xa1,0xa1,0xfe};
+static unsigned char dat_mark[4] = {0xa1,0xa1,0xa1,0xfb};
+
+int flp_format_trk(Floppy* flp, int trk, int spt, int slen, char* data) {
+	int res = 1;
+	int t = 128;
+	int n = 0;		// 0:128, 1:256, 2:512, 3:1024, 4:2048
+	int spc;
+	int tr;
+	int sc;
+	int hd;
+	unsigned char* ptr;
+	while (t < slen) {
+		t <<= 1;
+		n++;
+	}
+	if ((n > 4) || (trk > 255) || (spt < 1)) {
+		res = 0;
+	} else {
+		ptr = flp->data[trk].byte;
+		slen = t;
+		spc = (TRACKLEN - 20) / spt;
+		spc -= (72 + slen);		// space 3 size
+		if (spc < 10) {
+			res = 0;
+		} else {
+			hd = trk & 1;
+			tr = trk >> 1;
+			memset(ptr, 0x4e, TRACKLEN);
+			ptr += 12;
+			memcpy(ptr, trk_mark, 4); ptr += 4;
+			for (sc = 0; sc < spt; sc++) {
+				ptr += 10;
+				memset(ptr, 0x00, 12); ptr += 12;
+				memcpy(ptr, hd_mark, 4); ptr += 4;
+				*(ptr++) = tr & 0xff;
+				*(ptr++) = hd & 1;
+				*(ptr++) = sc & 0xff;
+				*(ptr++) = n & 0xff;
+				*(ptr++) = 0xf7;
+				*(ptr++) = 0xf7;
+				ptr += 22;
+				memset(ptr, 0x00, 12); ptr += 12;
+				memcpy(ptr, dat_mark, 4); ptr += 4;
+				if (data) {
+					memcpy(ptr, data, slen);
+					ptr += slen;
+					data += slen;
+				} else {
+					memset(ptr, 0x00, slen); ptr += slen;
+				}
+				*(ptr++) = 0xf7;
+				*(ptr++) = 0xf7;
+				ptr += spc;
+			}
+			flpFillFields(flp, trk, 1);
+		}
 	}
 	return res;
 }

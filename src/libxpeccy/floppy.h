@@ -1,5 +1,5 @@
-#ifndef _FLOPPY_H
-#define	_FLOPPY_H
+#ifndef X_FLOPPY_H
+#define	X_FLOPPY_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,6 +67,8 @@ void flpWr(Floppy*,unsigned char);
 int flpNext(Floppy*,int);		// return 1 if index strobe
 void flpPrev(Floppy*,int);
 void flpStep(Floppy*,int);
+
+int flp_format_trk(Floppy* flp, int trk, int spt, int slen, char*);
 
 unsigned char flpGetField(Floppy*);
 void flpFillFields(Floppy*,int,int);

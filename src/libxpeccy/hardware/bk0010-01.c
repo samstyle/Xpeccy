@@ -146,6 +146,7 @@ void bk_sync(Computer* comp, int ns) {
 	if ((comp->vid->newFrame) && (comp->reg[0xb3] & 0x40)) {
 		comp->cpu->intrq |= PDP_INT_IRQ2;
 	}
+	difSync(comp->dif, ns);
 }
 
 void bk_mem_map(Computer* comp) {

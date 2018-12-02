@@ -50,6 +50,7 @@ struct FDC {
 	unsigned char com;
 	unsigned char state;
 	unsigned char tmp;
+	unsigned short wdata;
 	Floppy* flop[4];
 	Floppy* flp;		// current floppy ptr
 	unsigned short crc;	// calculated crc
