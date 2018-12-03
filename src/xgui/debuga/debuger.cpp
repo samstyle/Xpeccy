@@ -1631,7 +1631,7 @@ void DebugWin::chaCellProperty(QAction* act) {
 // memDump
 
 void DebugWin::doSaveDump() {
-	dui.leBank->setText(QString::number(comp->mem->map[3].num,16));
+	dui.leBank->setText(QString::number(comp->mem->map[3].num >> 14, 16));
 	dumpwin->show();
 }
 
@@ -1660,18 +1660,19 @@ void DebugWin::dmpLenChanged() {
 }
 
 QByteArray DebugWin::getDumpData() {
-//	MemPage curBank = comp->mem->map[MEM_BANK3];
-//	int bank = dui.leBank->text().toInt(NULL,16);
+	int bank = dui.leBank->text().toInt(NULL,16);
 	int adr = dui.leStart->text().toInt(NULL,16);
 	int len = dui.leLen->text().toInt(NULL,16);
-//	memSetBank(comp->mem, MEM_BANK3, MEM_RAM, bank, NULL, NULL, NULL);
 	QByteArray res;
 	while (len > 0) {
-		res.append(memRd(comp->mem,adr));
+		if (adr < 0xc000) {
+			res.append(memRd(comp->mem,adr));
+		} else {
+			res.append(comp->mem->ramData[(bank << 14) | (adr & 0x3fff)]);
+		}
 		adr++;
 		len--;
 	}
-//	comp->mem->map[3] = curBank;
 	return res;
 }
 
@@ -1787,7 +1788,8 @@ void DebugWin::dmpStartOpen() {
 	int start = oui.leStart->text().toInt(NULL,16);
 	int len = oui.leLen->text().toInt(NULL,16);
 	int pos = oui.leStart->cursorPosition();
-	if (start + len > 0xffff) start = 0x10000 - len;
+	if (start + len > 0xffff)
+		start = 0x10000 - len;
 	int end = start + len - 1;
 	oui.leStart->setText(QString::number(start,16));
 	oui.leEnd->setText(QString::number(end,16));

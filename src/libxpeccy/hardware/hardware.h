@@ -11,6 +11,7 @@ extern "C" {
 // hw type
 enum {
 	HW_NULL = 0,
+	HW_DUMMY,	// nothing-to-do-here
 	HW_ZX48,	// ZX48K (Classic)
 	HW_PENT,	// Pentagon
 	HW_P1024,	// Pentagon1024SL
@@ -134,6 +135,14 @@ unsigned char xInFFFD(Computer*, unsigned short);
 unsigned char xInFADF(Computer*, unsigned short);
 unsigned char xInFBDF(Computer*, unsigned short);
 unsigned char xInFFDF(Computer*, unsigned short);
+
+// dummy
+
+void hw_dum_map(Computer*);
+unsigned char hw_dum_mrd(Computer*, unsigned short, int);
+void hw_dum_mwr(Computer*, unsigned short, unsigned char);
+unsigned char hw_dum_ird(Computer*, unsigned short);
+void hw_dum_iwr(Computer*, unsigned short, unsigned char);
 
 // zx48
 void speMapMem(Computer*);

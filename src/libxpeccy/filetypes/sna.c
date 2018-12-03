@@ -102,10 +102,11 @@ int loadSNA(Computer* comp, const char* name, int drv) {
 	return res;
 }
 
-int saveSNA(Computer* comp, const char* name, int sna48) {
+int saveSNA(Computer* comp, const char* name, int drv) {
 	FILE* file = fopen(name, "wb");
 	if (!file) return ERR_CANT_OPEN;
 	unsigned char bnk, i;
+	int sna48 = (comp->mem->ramSize < MEM_128K) ? 1 : 0;
 	if (sna48) {
 		unsigned short pc = comp->cpu->pc;
 		memWr(comp->mem, --comp->cpu->sp, (pc & 0xff00) >> 8);

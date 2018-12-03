@@ -4,6 +4,9 @@
 
 HardWare hwTab[] = {
 	{
+		HW_DUMMY,"Dummy","Dummy",16,MEM_256,
+		hw_dum_map, hw_dum_iwr, hw_dum_ird, hw_dum_mrd, hw_dum_mwr, NULL, NULL, NULL, NULL, NULL
+	},{
 		HW_ZX48,"ZX48K","ZX 48K",16,MEM_64K,
 		speMapMem,speOut,speIn,stdMRd,stdMWr,speReset,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{

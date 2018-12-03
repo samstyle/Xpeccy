@@ -5,6 +5,7 @@
 #include <math.h>
 
 #include "xcore.h"
+#include "../xgui/xgui.h"
 #include "sound.h"
 #include "filer.h"
 #include "gamepad.h"
@@ -479,8 +480,9 @@ int prfLoad(std::string nm) {
 	tmp2 = PLOAD_OK;
 
 	if (comp->hw == NULL) {
+		shitHappens("Hardware was set to 'dummy'");
 		tmp2 = PLOAD_HW;
-		compSetHardware(comp,"ZX48K");
+		compSetHardware(comp,"Dummy");
 	}
 
 	if (findRomset(prf->rsName) == NULL) {
@@ -488,7 +490,11 @@ int prfLoad(std::string nm) {
 	}
 
 	// printf("%i: %.X & %.X\n",comp->hw->id,comp->hw->mask, tmask);
-	if ((comp->hw->mask != 0) && (~comp->hw->mask & tmask)) throw("Incorrect memory size for this machine");
+	if ((comp->hw->mask != 0) && (~comp->hw->mask & tmask)) {
+		tmask = MEM_4M;
+		while (!(comp->hw->mask & tmask) && tmask)
+			tmask >>= 1;
+	}
 	memSetSize(comp->mem, tmask, -1);
 	if (!prfSetLayout(prf, prf->layName)) prfSetLayout(prf,"default");
 
