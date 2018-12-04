@@ -181,7 +181,7 @@ static int twres;
 
 void pdp_undef(CPU* cpu) {
 	printf("undef command %.4X : %.4X\n", cpu->preg[7] - 2, cpu->com);
-	assert(0);
+//	assert(0);
 	pdp_trap(cpu, 16);
 }
 

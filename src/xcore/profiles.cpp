@@ -47,7 +47,7 @@ bool addProfile(std::string nm, std::string fp) {
 		fread((char*)nprof->zx->ide->smuc.nv->mem,0x800,1,file);
 		fclose(file);
 	}
-	compSetHardware(nprof->zx,"ZX48K");
+	compSetHardware(nprof->zx,"Dummy");
 	conf.prof.list.push_back(nprof);
 	return true;
 }
@@ -474,16 +474,14 @@ int prfLoad(std::string nm) {
 	ideSetPassport(comp->ide,IDE_MASTER,masterPass);
 	ideSetPassport(comp->ide,IDE_SLAVE,slavePass);
 
-	compSetHardware(comp, prf->hwName.c_str());
-	prfSetRomset(prf, prf->rsName);
-
 	tmp2 = PLOAD_OK;
 
-	if (comp->hw == NULL) {
+	if (!compSetHardware(comp, prf->hwName.c_str())) {
 		shitHappens("Hardware was set to 'dummy'");
 		tmp2 = PLOAD_HW;
 		compSetHardware(comp,"Dummy");
 	}
+	prfSetRomset(prf, prf->rsName);
 
 	if (findRomset(prf->rsName) == NULL) {
 		tmp2 = PLOAD_RS;

@@ -300,7 +300,7 @@ void compKeyRelease(Computer*, int, keyEntry*);
 
 void compSetBaseFrq(Computer*,double);
 void compSetTurbo(Computer*,double);
-void compSetHardware(Computer*,const char*);
+int compSetHardware(Computer*,const char*);
 void compUpdateTimings(Computer*);
 
 // read-write cmos

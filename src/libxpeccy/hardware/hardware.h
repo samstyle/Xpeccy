@@ -141,8 +141,9 @@ unsigned char xInFFDF(Computer*, unsigned short);
 void hw_dum_map(Computer*);
 unsigned char hw_dum_mrd(Computer*, unsigned short, int);
 void hw_dum_mwr(Computer*, unsigned short, unsigned char);
-unsigned char hw_dum_ird(Computer*, unsigned short);
-void hw_dum_iwr(Computer*, unsigned short, unsigned char);
+unsigned char hw_dum_ird(Computer*, unsigned short, int);
+void hw_dum_iwr(Computer*, unsigned short, unsigned char, int);
+sndPair hw_dum_vol(Computer*, sndVolume*);
 
 // zx48
 void speMapMem(Computer*);

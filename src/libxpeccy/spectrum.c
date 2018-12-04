@@ -388,9 +388,9 @@ void compSetTurbo(Computer* comp, double mult) {
 
 // hardware
 
-void compSetHardware(Computer* comp, const char* name) {
+int compSetHardware(Computer* comp, const char* name) {
 	HardWare* hw = findHardware(name);
-	if (hw == NULL) return;
+	if (hw == NULL) return 0;
 	comp->hw = hw;
 	comp->vid->lockLayout = 0;
 	comp->cpu->nod = 0;
@@ -414,6 +414,7 @@ void compSetHardware(Computer* comp, const char* name) {
 			break;
 	}
 	compUpdateTimings(comp);
+	return 1;
 }
 
 // exec 1 opcode, sync devices, return eated ns
