@@ -68,7 +68,7 @@ int flpNext(Floppy*,int);		// return 1 if index strobe
 void flpPrev(Floppy*,int);
 void flpStep(Floppy*,int);
 
-int flp_format_trk(Floppy* flp, int trk, int spt, int slen, char*);
+int flp_format_trk(Floppy* flp, int trk, int spt, int slen, char* data, int flag);
 
 unsigned char flpGetField(Floppy*);
 void flpFillFields(Floppy*,int,int);

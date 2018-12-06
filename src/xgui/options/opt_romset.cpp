@@ -138,12 +138,12 @@ QVariant xRomsetModel::data(const QModelIndex& idx, int role) const {
 
 void xRomsetModel::update(xRomset* rs) {
 	xRomFile trf;
-	unsigned long i;
-	unsigned long mx = rs->roms.size();
+	int i;
+	int mx = rs->roms.size();
 	int cha;
 	do {
 		cha = 0;
-		for (i = 0; i < mx-1; i++) {
+		for (i = 0; i < mx - 1; i++) {
 			if (rs->roms[i].roffset > rs->roms[i+1].roffset) {
 				trf = rs->roms[i];
 				rs->roms[i] = rs->roms[i+1];

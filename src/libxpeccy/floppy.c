@@ -31,7 +31,7 @@ void flpWr(Floppy* flp,unsigned char val) {
 
 unsigned char flpRd(Floppy* flp) {
 	flp->rd = 1;
-	return flp->insert ? flp->data[flp->rtrk].byte[flp->pos] : 0xff;
+	return (flp->insert && flp->motor) ? flp->data[flp->rtrk].byte[flp->pos] : 0x00;
 }
 
 unsigned char flpGetField(Floppy* flp) {
@@ -71,7 +71,7 @@ static unsigned char trk_mark[4] = {0xc1,0xc1,0xc1,0xfc};
 static unsigned char hd_mark[4] = {0xa1,0xa1,0xa1,0xfe};
 static unsigned char dat_mark[4] = {0xa1,0xa1,0xa1,0xfb};
 
-int flp_format_trk(Floppy* flp, int trk, int spt, int slen, char* data) {
+int flp_format_trk(Floppy* flp, int trk, int spt, int slen, char* data, int flag) {
 	int res = 1;
 	int t = 128;
 	int n = 0;		// 0:128, 1:256, 2:512, 3:1024, 4:2048
@@ -123,7 +123,7 @@ int flp_format_trk(Floppy* flp, int trk, int spt, int slen, char* data) {
 				*(ptr++) = 0xf7;
 				ptr += spc;
 			}
-			flpFillFields(flp, trk, 1);
+			flpFillFields(flp, trk, flag | 1);
 		}
 	}
 	return res;
@@ -142,7 +142,6 @@ void flpPrev(Floppy* flp, int fdcSide) {
 	} else {
 		flp->field = 0;
 	}
-
 }
 
 void flpClearTrack(Floppy* flp,int tr) {
@@ -168,7 +167,9 @@ unsigned short getCrc(unsigned char* ptr, int len) {
 	return  (crc & 0xffff);
 }
 
-void flpFillFields(Floppy* flp,int tr, int fcrc) {
+// TODO: vp1 crc included starting A1,A1,A1,xx bytes, vg93/upd765 does not
+
+void flpFillFields(Floppy* flp,int tr, int flag) {
 	int i, bcnt = 0;
 	unsigned char fld = 0;
 	unsigned char* cpos = flp->data[tr].byte;
@@ -182,7 +183,7 @@ void flpFillFields(Floppy* flp,int tr, int fcrc) {
 	}
 	for (i = 0; i < TRACKLEN; i++) {
 		flp->data[tr].field[i] = fld;
-		if (fcrc) {
+		if (flag & 1) {
 			switch (fld) {
 				case 0:
 					if ((*bpos) == 0xf5) *bpos = 0xa1;
@@ -190,6 +191,8 @@ void flpFillFields(Floppy* flp,int tr, int fcrc) {
 					break;
 				case 4:
 					if (*bpos == 0xf7) {
+						if (flag & 2)
+							cpos -= 4;		// move to a1,a1,a1,xx
 						crc = getCrc(cpos, bpos - cpos);
 						*bpos = ((crc & 0xff00) >> 8);
 						*(bpos + 1) = (crc & 0xff);
@@ -207,30 +210,33 @@ void flpFillFields(Floppy* flp,int tr, int fcrc) {
 				}
 			}
 		} else {
-			if (flp->data[tr].byte[i] == 0xfe) {
-				cpos = bpos;
-				fld = 1;
-				bcnt = 4;
-				scn = flp->data[tr].byte[i+3];
-				sct = flp->data[tr].byte[i+4];
-			}
-			if (flp->data[tr].byte[i] == 0xfb) {
-				cpos = bpos;
-				fld = 2;
-				bcnt = (128 << (sct & 3));
-				if (scn > 0) {
-					flp->data[tr].map[scn] = i + 1;
-					scn = 0;
-				}
-			}
-			if (flp->data[tr].byte[i] == 0xf8) {
-				cpos = bpos;
-				fld = 3;
-				bcnt = (128 << (sct & 3));
-				if (scn > 0) {
-					flp->data[tr].map[scn] = i + 1;
-					scn = 0;
-				}
+			switch (flp->data[tr].byte[i]) {
+				case 0xfe:
+					cpos = bpos;
+					fld = 1;
+					bcnt = 4;
+					scn = flp->data[tr].byte[i+3];
+					sct = flp->data[tr].byte[i+4];
+					break;
+				case 0xfb:
+					cpos = bpos;
+					fld = 2;
+					bcnt = (128 << (sct & 3));
+					if (scn > 0) {
+						flp->data[tr].map[scn] = i + 1;
+						scn = 0;
+					}
+					break;
+				case 0xf8:
+					cpos = bpos;
+					fld = 3;
+					bcnt = (128 << (sct & 3));
+					if (scn > 0) {
+						flp->data[tr].map[scn] = i + 1;
+						scn = 0;
+					}
+					break;
+
 			}
 		}
 		bpos++;

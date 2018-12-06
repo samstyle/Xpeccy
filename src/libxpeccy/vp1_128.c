@@ -2,30 +2,60 @@
 
 #include <stdio.h>
 
+enum {
+	VP1_SEEK = 0,
+	VP1_RD,
+	VP1_WR
+};
+
 // job
 
-// constantly spin floppy & read data (words) to fdc->wdata
-void vpspin00(FDC* fdc) {
-	if (fdc->flp->pos & 1) {
-		flpNext(fdc->flp, fdc->side);
-		fdc->wait += BYTEDELAY;
-	} else {
-		fdc->wdata = flpRd(fdc->flp);
-		flpNext(fdc->flp, fdc->side);
-		fdc->wait += BYTEDELAY;
-		fdc->wdata |= flpRd(fdc->flp) << 8;
-		flpNext(fdc->flp, fdc->side);
-		fdc->wait += BYTEDELAY;
+// seek
+void vpseek(FDC* fdc) {
+	fdc->tdata <<= 8;
+	fdc->tdata |= flpRd(fdc->flp);
+	flpNext(fdc->flp, fdc->side);
+	fdc->wait += BYTEDELAY;
+	if (fdc->tdata == 0xa1a1) {	// marker
+		fdc->state = VP1_RD;
+		fdc->pos = 1;		// read mode
+		fdc->cnt = 0;
+		fdc->crchi = 0;
+		fdc->crc = 0xcdb4;	// init crc
+		fdcAddCrc(fdc, 0xa1);
+		fdcAddCrc(fdc, 0xa1);
+	}
+}
+
+void vpread(FDC* fdc) {
+	fdc->tdata <<= 8;
+	fdc->tmp = flpRd(fdc->flp);
+	fdc->tdata |= fdc->tmp;
+	fdcAddCrc(fdc, fdc->tmp);	// crc will be 0 after reading crc (hi-low)
+	if (fdc->crc == 0)
+		fdc->crchi = 1;
+	flpNext(fdc->flp, fdc->side);
+	fdc->wait += BYTEDELAY;
+	fdc->cnt++;
+	if (!(fdc->cnt & 1)) {		// each 2nd byte move word from temp register to data register and set drq
+		fdc->wdata = fdc->tdata;
 		fdc->drq = 1;
 	}
 }
 
-static fdcCall vpSpin[] = {vpspin00, NULL};
+void vpwrite(FDC* fdc) {
+		flpNext(fdc->flp, fdc->side);
+		fdc->wait += BYTEDELAY;
+}
+
+static fdcCall vpSpin[] = {vpseek, vpread, vpwrite, NULL};
 
 // extern
 
 void vp1_reset(FDC* fdc) {
-
+	fdc->state = VP1_SEEK;
+	fdc->pos = 0;
+	fdc->mr = 0;
 }
 
 // status
@@ -36,16 +66,16 @@ void vp1_reset(FDC* fdc) {
 // 14	??? crc
 // 15	index
 unsigned short vp1_rd(FDC* fdc, int port) {
-	unsigned short res = 0xffff;
+	unsigned short res = 0;
 	if (port & 1) {
-		res = fdc->wdata;
+		res = fdc->drq ? fdc->wdata : 0;
 		fdc->drq = 0;
 	} else {
-		res = 0x0000;
 		if (fdc->flp->trk == 0) res |= 1;
 		if (fdc->idle) res |= 2;
 		if (fdc->flp->protect) res |= 4;
 		if (fdc->drq) res |= 0x80;
+		if (fdc->crchi) res |= 0x4000;
 		if (fdc->flp->index) res |= 0x8000;
 	}
 	return res;
@@ -56,7 +86,7 @@ unsigned short vp1_rd(FDC* fdc, int port) {
 // 5	0:upper head, 1:bottom head
 // 6	step dir
 // 7	step
-// 8	??? start reading
+// 8	start reading (1 -> 0: set state to seek)
 // 9	??? write marker
 // 10	???
 void vp1_wr(FDC* fdc, int port, unsigned short val) {
@@ -83,9 +113,16 @@ void vp1_wr(FDC* fdc, int port, unsigned short val) {
 			fdc->plan = NULL;
 		}
 		fdc->side = (val & 0x20) ? 1 : 0;
-		if (val & 0x80) flpStep(fdc->flp, (val & 0x40) ? FLP_FORWARD : FLP_BACK);
+		if (val & 0x80)
+			flpStep(fdc->flp, (val & 0x40) ? FLP_FORWARD : FLP_BACK);
 		if (val & 0x100) {
-			// b8
+			fdc->mr = 1;
+		} else {
+			if (fdc->mr) {
+				fdc->state = VP1_SEEK;
+				fdc->pos = 0;
+			}
+			fdc->mr = 0;
 		}
 		if (val & 0x200) {
 			// b9

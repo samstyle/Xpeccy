@@ -1,5 +1,5 @@
-#ifndef _FDC_H
-#define _FDC_H
+#ifndef X_FDC_H
+#define X_FDC_H
 
 #include <stdlib.h>
 #include "floppy.h"
@@ -48,9 +48,10 @@ struct FDC {
 	unsigned char sec;
 	unsigned char data;
 	unsigned char com;
-	unsigned char state;
+	unsigned char state;	// vp1-128 : mode (seek/rd/wr)
 	unsigned char tmp;
 	unsigned short wdata;
+	unsigned short tdata;
 	Floppy* flop[4];
 	Floppy* flp;		// current floppy ptr
 	unsigned short crc;	// calculated crc
@@ -97,5 +98,7 @@ int difOut(DiskIF*,int,unsigned char,int);
 int difIn(DiskIF*,int,unsigned char*,int);
 
 void difSetHW(DiskIF*, int);
+
+void fdcAddCrc(FDC*, unsigned char);
 
 #endif

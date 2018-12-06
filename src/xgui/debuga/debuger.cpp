@@ -1049,6 +1049,7 @@ void DebugWin::fillFDC() {
 	ui.fdcSr0L->setText(gethexbyte(comp->dif->fdc->sr0));
 	ui.fdcSr1L->setText(gethexbyte(comp->dif->fdc->sr1));
 	ui.fdcSr2L->setText(gethexbyte(comp->dif->fdc->sr2));
+	ui.flpCRC->setText(gethexword(comp->dif->fdc->crc));
 
 	ui.flpCurL->setText(QString('A' + comp->dif->fdc->flp->id));
 	ui.flpRdyL->setText(comp->dif->fdc->flp->insert ? "1" : "0");

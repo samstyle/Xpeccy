@@ -14,7 +14,7 @@ int loadBkIMG(Computer* comp, const char* fname, int drv) {
 		trk = 0;
 		while (!feof(file) && (trk < 160)) {
 			fread(buf, 5120, 1, file);
-			flp_format_trk(flp, trk, 10, 512, buf);
+			flp_format_trk(flp, trk, 10, 512, buf, 3);
 			trk++;
 		}
 		fclose(file);

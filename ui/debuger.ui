@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>884</width>
-    <height>607</height>
+    <width>886</width>
+    <height>648</height>
    </rect>
   </property>
   <property name="font">
@@ -1679,6 +1679,20 @@
            </property>
           </widget>
          </item>
+         <item row="4" column="2">
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>CRC</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="3">
+          <widget class="QLabel" name="flpCRC">
+           <property name="text">
+            <string>00</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
        <widget class="QWidget" name="brkTab">
@@ -2551,11 +2565,11 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
+  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>
