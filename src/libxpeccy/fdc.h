@@ -99,6 +99,6 @@ int difIn(DiskIF*,int,unsigned char*,int);
 
 void difSetHW(DiskIF*, int);
 
-void fdcAddCrc(FDC*, unsigned char);
+void add_crc_16(FDC*, unsigned char);
 
 #endif

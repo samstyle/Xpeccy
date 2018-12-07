@@ -155,11 +155,12 @@ void flpClearDisk(Floppy* flp) {
 }
 
 unsigned short getCrc(unsigned char* ptr, int len) {
-	unsigned int crc = 0xcdb4;
+	//unsigned int crc = 0xcdb4;
+	unsigned int crc = 0xffff;
 	int i;
 	while (len--) {
 		crc ^= *ptr << 8;
-		for (i = 0; i<8 ; i++) {
+		for (i = 0; i < 8 ; i++) {
 			if ((crc *= 2) & 0x10000) crc ^= 0x1021;
 		}
 		ptr++;
@@ -191,8 +192,7 @@ void flpFillFields(Floppy* flp,int tr, int flag) {
 					break;
 				case 4:
 					if (*bpos == 0xf7) {
-						if (flag & 2)
-							cpos -= 4;		// move to a1,a1,a1,xx
+						cpos -= 3;		// including a1,a1,a1
 						crc = getCrc(cpos, bpos - cpos);
 						*bpos = ((crc & 0xff00) >> 8);
 						*(bpos + 1) = (crc & 0xff);

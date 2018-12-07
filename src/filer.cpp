@@ -380,6 +380,8 @@ int save_file(Computer* comp, const char* name, int id, int drv) {
 		}
 	}
 	if (path.isEmpty()) return err;
+	if (drv < 0)
+		drv = 0;
 	inf = file_ext_type(path);
 	if (inf) {
 		if (inf->save)

@@ -2,12 +2,15 @@
 
 #include <stdio.h>
 
-int pauses[4] = {6000,12000,20000,30000};	// pause in ns for 1st type commands
+// NOTE: cdb4 = crc for A1,A1,A1
+// init value of crc must be FFFF, accumulation starting from 1st A1
+
+static int pauses[4] = {6000,12000,20000,30000};	// pause in ns for 1st type commands
 
 // 1818vg93
 
 // add byte to CRC
-void fdcAddCrc(FDC* fdc, unsigned char val) {
+void add_crc_16(FDC* fdc, unsigned char val) {
 	unsigned int tkk = fdc->crc;
 	int i;
 	tkk ^= val << 8;
@@ -48,10 +51,10 @@ int seekADR(FDC* fdc) {
 	int res = waitADR(fdc);
 	if (res != 1) return res;
 	fdc->crc = 0xcdb4;
-	fdcAddCrc(fdc,0xfe);
+	add_crc_16(fdc,0xfe);
 	for (int i = 0; i < 4; i++) {
 		fdc->buf[i] = flpRd(fdc->flp);
-		fdcAddCrc(fdc, fdc->buf[i]);
+		add_crc_16(fdc, fdc->buf[i]);
 		flpNext(fdc->flp, fdc->side);
 	}
 	rdFCRC(fdc);
@@ -71,7 +74,7 @@ int vgSendByte(FDC* fdc) {
 				res = 1;
 			}
 		} else {
-			fdcAddCrc(fdc, fdc->data);
+			add_crc_16(fdc, fdc->data);
 			flpWr(fdc->flp, fdc->data);
 			flpNext(fdc->flp, fdc->side);
 			fdc->drq = 1;
@@ -83,7 +86,7 @@ int vgSendByte(FDC* fdc) {
 		if (fdc->drq) {			// time to write byte, but isn't get it from CPU
 			fdc->state |= 0x04;
 		}
-		fdcAddCrc(fdc, fdc->data);
+		add_crc_16(fdc, fdc->data);
 		flpWr(fdc->flp, fdc->data);
 		flpNext(fdc->flp, fdc->side);
 		fdc->drq = 1;
@@ -362,7 +365,7 @@ void vgrds02(FDC* fdc) {
 void vgrds03(FDC* fdc) {
 	if (fdc->buf[4] == 0xf8) fdc->state |= 0x20;
 	fdc->crc = 0xcdb4;
-	fdcAddCrc(fdc, fdc->buf[4]);			// add DATA mark (F8 | FB)
+	add_crc_16(fdc, fdc->buf[4]);			// add DATA mark (F8 | FB)
 	fdc->cnt = (0x80 << (fdc->buf[3] & 3));		// sector size (128,256,512,1024)
 	fdc->drq = 0;
 	fdc->dir = 1;					// dir: FDC to CPU
@@ -375,7 +378,7 @@ void vgrds03(FDC* fdc) {
 // transfer CNT bytes flp->cpu
 void vgrds04(FDC* fdc) {
 	if (!vgGetByte(fdc)) return;
-	fdcAddCrc(fdc, fdc->data);
+	add_crc_16(fdc, fdc->data);
 	fdc->cnt--;
 	if (fdc->cnt < 1) {
 		fdc->wait = BYTEDELAY;
@@ -423,7 +426,7 @@ void vgwrs01(FDC* fdc) {
 	flpPrev(fdc->flp, fdc->side);		// back to DATA mark
 	fdc->crc = 0xcdb4;
 	fdc->tmp = (fdc->com & 1) ? 0xf8 : 0xfb;
-	fdcAddCrc(fdc, fdc->tmp);
+	add_crc_16(fdc, fdc->tmp);
 	flpWr(fdc->flp, fdc->tmp);
 	flpNext(fdc->flp, fdc->side);
 	fdc->cnt = 0x80 << (fdc->buf[3] & 3);	// sector size
@@ -471,7 +474,7 @@ void vgrda00(FDC* fdc) {
 	} else if (res == 1) {
 		fdc->fcrc = 0;
 		fdc->crc = 0xcdb4;
-		fdcAddCrc(fdc,0xfe);				// add ADR mark
+		add_crc_16(fdc,0xfe);				// add ADR mark
 		fdc->cnt = 6;					// send 6 bytes FDC->CPU
 		fdc->drq = 0;
 		fdc->dir = 1;
@@ -492,7 +495,7 @@ void vgrda01(FDC* fdc) {
 		case 1: fdc->fcrc = (fdc->data << 8);
 			break;
 		case 5: fdc->sec = fdc->data;
-		default: fdcAddCrc(fdc, fdc->data);
+		default: add_crc_16(fdc, fdc->data);
 			break;
 
 	}
