@@ -71,7 +71,7 @@ static unsigned char trk_mark[4] = {0xc1,0xc1,0xc1,0xfc};
 static unsigned char hd_mark[4] = {0xa1,0xa1,0xa1,0xfe};
 static unsigned char dat_mark[4] = {0xa1,0xa1,0xa1,0xfb};
 
-int flp_format_trk(Floppy* flp, int trk, int spt, int slen, char* data, int flag) {
+int flp_format_trk(Floppy* flp, int trk, int spt, int slen, char* data) {
 	int res = 1;
 	int t = 128;
 	int n = 0;		// 0:128, 1:256, 2:512, 3:1024, 4:2048
@@ -99,7 +99,7 @@ int flp_format_trk(Floppy* flp, int trk, int spt, int slen, char* data, int flag
 			memset(ptr, 0x4e, TRACKLEN);
 			ptr += 12;
 			memcpy(ptr, trk_mark, 4); ptr += 4;
-			for (sc = 0; sc < spt; sc++) {
+			for (sc = 1; sc <= spt; sc++) {
 				ptr += 10;
 				memset(ptr, 0x00, 12); ptr += 12;
 				memcpy(ptr, hd_mark, 4); ptr += 4;
@@ -123,7 +123,7 @@ int flp_format_trk(Floppy* flp, int trk, int spt, int slen, char* data, int flag
 				*(ptr++) = 0xf7;
 				ptr += spc;
 			}
-			flpFillFields(flp, trk, flag | 1);
+			flpFillFields(flp, trk, 1);
 		}
 	}
 	return res;
@@ -191,12 +191,13 @@ void flpFillFields(Floppy* flp,int tr, int flag) {
 					if ((*bpos) == 0xf6) *bpos = 0xc2;
 					break;
 				case 4:
-					if (*bpos == 0xf7) {
-						cpos -= 3;		// including a1,a1,a1
-						crc = getCrc(cpos, bpos - cpos);
-						*bpos = ((crc & 0xff00) >> 8);
-						*(bpos + 1) = (crc & 0xff);
-					}
+					cpos -= 3;		// including a1,a1,a1
+					crc = getCrc(cpos, bpos - cpos);
+					*bpos++ = ((crc & 0xff00) >> 8);
+					*bpos++ = (crc & 0xff);
+					i += 2;
+					fld = 0;
+					bcnt = 0;
 					break;
 			}
 		}
@@ -204,7 +205,8 @@ void flpFillFields(Floppy* flp,int tr, int flag) {
 			bcnt--;
 			if (bcnt==0) {
 				if (fld < 4) {
-					fld = 4; bcnt = 2;
+					fld = 4;
+					bcnt = 2;
 				} else {
 					fld = 0;
 				}

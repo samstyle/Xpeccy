@@ -26,7 +26,7 @@ int loadSCL(Computer* comp, const char* name, int drv) {
 	unsigned char* bptr;
 	int tmpa;
 	int scnt;
-	unsigned int i;
+	int i;
 
 	sclHead hd;
 	fread((char*)&hd, sizeof(sclHead), 1, file);
@@ -35,7 +35,7 @@ int loadSCL(Computer* comp, const char* name, int drv) {
 	} else if (hd.files > 128) {
 		err = ERR_SCL_MANY;
 	} else {
-		diskFormat(flp);
+		// diskFormat(flp);
 		memset(buf,0x00,0x1000);
 		scnt = 0x10;
 		bptr = buf;					// start of TRK0
@@ -56,11 +56,18 @@ int loadSCL(Computer* comp, const char* name, int drv) {
 		buf[0x8e5] = (tmpa & 0xff);
 		buf[0x8e6] = ((tmpa & 0xff00) >> 8);
 		buf[0x8e7] = 0x10;			// trdos code
-		diskFormTRDTrack(flp,0,buf);
+		flp_format_trk(flp, 0, 16, 256, (char*)buf);
+		//diskFormTRDTrack(flp,0,buf);
 		i = 1;
-		while (!feof(file) && (i < 168)) {
+		while (!feof(file) && (i < 160)) {
 			fread((char*)buf, 0x1000, 1, file);
-			diskFormTRDTrack(flp,i,buf);
+			flp_format_trk(flp, i, 16, 256, (char*)buf);
+			//diskFormTRDTrack(flp,i,buf);
+			i++;
+		}
+		memset(buf, 0, 0x1000);
+		while (i < 160) {
+			flp_format_trk(flp, i, 16, 256, (char*)buf);
 			i++;
 		}
 		flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));

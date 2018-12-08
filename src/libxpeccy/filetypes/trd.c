@@ -9,14 +9,19 @@ int loadTRD(Computer* comp, const char* name, int drv) {
 	if (((len & 0xff) != 0) || (len == 0) || (len > 0xa8000)) {
 		err = ERR_TRD_LEN;
 	} else {
-		diskFormat(flp);
-		int i = 0;
-		unsigned char trackBuf[0x1000];
+//		diskFormat(flp);
+		int trk = 0;
+		char buf[0x1000];
 		do {
-			fread((char*)trackBuf, 0x1000, 1, file);
-			diskFormTRDTrack(flp, i, trackBuf);
-			i++;
+			fread(buf, 0x1000, 1, file);
+			flp_format_trk(flp, trk, 16, 256, buf);
+			trk++;
 		} while  (!feof(file));
+		memset(buf, 0, 0x1000);
+		while (trk < 160) {
+			flp_format_trk(flp, trk, 16, 256, buf);
+			trk++;
+		}
 
 		flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
 		strcpy(flp->path,name);

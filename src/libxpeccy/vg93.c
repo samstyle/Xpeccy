@@ -195,7 +195,6 @@ void vgchk01(FDC* fdc) {
 
 // check CRC
 void vgchk02(FDC* fdc) {
-//	printf("%.4X : %.4X\n",fdc->crc, fdc->fcrc);
 	if (fdc->crc != fdc->fcrc)
 		fdc->state |= 0x08;		// crc error
 	fdc->pos++;
@@ -488,11 +487,11 @@ void vgrda01(FDC* fdc) {
 	if (!vgGetByte(fdc)) return;
 	fdc->cnt--;
 	switch (fdc->cnt) {
-		case 0: fdc->fcrc |= fdc->data;
+		case 0: fdc->fcrc |= (fdc->data & 0xff);
 			fdc->wait = BYTEDELAY;
 			fdc->pos++;
 			break;
-		case 1: fdc->fcrc = (fdc->data << 8);
+		case 1: fdc->fcrc = (fdc->data << 8) & 0xff00;
 			break;
 		case 5: fdc->sec = fdc->data;
 		default: add_crc_16(fdc, fdc->data);
