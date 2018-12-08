@@ -46,8 +46,9 @@ typedef struct {
 	unsigned rd:1;
 	unsigned wr:1;
 
-	unsigned char id;
-	unsigned char trk,rtrk;
+	int id;
+	unsigned char trk;
+	unsigned char rtrk;
 	unsigned char field;
 	int pos;
 	char* path;

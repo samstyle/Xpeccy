@@ -623,7 +623,7 @@ unsigned char vgRead(FDC* fdc, int adr) {
 				if (fdc->flp->protect) fdc->state |= 0x40;
 				if (fdc->flp->motor) fdc->state |= 0x20;
 				if (fdc->flp->trk == 0) fdc->state |= 0x04;
-				if (fdc->flp->insert && fdc->flp->index) fdc->state |= 0x02;
+				if (fdc->flp->insert && fdc->flp->motor && fdc->flp->index) fdc->state |= 0x02;
 			} else if (fdc->fmode == 1) {
 				fdc->state &= 0xfd;
 				if (fdc->drq) fdc->state |= 0x02;

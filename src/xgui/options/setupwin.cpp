@@ -367,7 +367,7 @@ void SetupWin::start(xProfile* p) {
 	ui.border4T->setChecked(comp->vid->brdstep & 0x06);
 	ui.contMem->setChecked(comp->contMem);
 	ui.contIO->setChecked(comp->contIO);
-	ui.bszsld->setValue(conf.brdsize * 100);
+	ui.bszsld->setValue((int)(conf.brdsize * 100));
 	ui.pathle->setText(QString::fromLocal8Bit(conf.scrShot.dir.c_str()));
 	ui.ssfbox->setCurrentIndex(ui.ssfbox->findText(conf.scrShot.format.c_str()));
 	ui.scntbox->setValue(conf.scrShot.count);

@@ -31,7 +31,7 @@ void flpWr(Floppy* flp,unsigned char val) {
 
 unsigned char flpRd(Floppy* flp) {
 	flp->rd = 1;
-	return (flp->insert && flp->motor) ? flp->data[flp->rtrk].byte[flp->pos] : 0x00;
+	return flp->insert ? flp->data[flp->rtrk].byte[flp->pos] : 0x00;
 }
 
 unsigned char flpGetField(Floppy* flp) {
@@ -67,6 +67,21 @@ int flpNext(Floppy* flp, int fdcSide) {
 	return res;
 }
 
+unsigned short getCrc(unsigned char* ptr, int len) {
+	int crc = 0xffff;
+	unsigned char val;
+	int i;
+	while (len--) {
+		val = *ptr;
+		crc ^= val << 8;
+		for (i = 0; i < 8 ; i++) {
+			if ((crc *= 2) & 0x10000) crc ^= 0x1021;
+		}
+		ptr++;
+	}
+	return  (crc & 0xffff);
+}
+
 static unsigned char trk_mark[4] = {0xc1,0xc1,0xc1,0xfc};
 static unsigned char hd_mark[4] = {0xa1,0xa1,0xa1,0xfe};
 static unsigned char dat_mark[4] = {0xa1,0xa1,0xa1,0xfb};
@@ -80,6 +95,8 @@ int flp_format_trk(Floppy* flp, int trk, int spt, int slen, char* data) {
 	int sc;
 	int hd;
 	unsigned char* ptr;
+	unsigned char* stp;
+	unsigned short crc;
 	while (t < slen) {
 		t <<= 1;
 		n++;
@@ -102,28 +119,33 @@ int flp_format_trk(Floppy* flp, int trk, int spt, int slen, char* data) {
 			for (sc = 1; sc <= spt; sc++) {
 				ptr += 10;
 				memset(ptr, 0x00, 12); ptr += 12;
+				stp = ptr;
 				memcpy(ptr, hd_mark, 4); ptr += 4;
 				*(ptr++) = tr & 0xff;
 				*(ptr++) = hd & 1;
 				*(ptr++) = sc & 0xff;
 				*(ptr++) = n & 0xff;
-				*(ptr++) = 0xf7;
-				*(ptr++) = 0xf7;
+				crc = getCrc(stp, ptr - stp);
+				*(ptr++) = (crc >> 8) & 0xff;
+				*(ptr++) = crc & 0xff;
 				ptr += 22;
 				memset(ptr, 0x00, 12); ptr += 12;
+				stp = ptr;
 				memcpy(ptr, dat_mark, 4); ptr += 4;
 				if (data) {
 					memcpy(ptr, data, slen);
 					ptr += slen;
 					data += slen;
 				} else {
-					memset(ptr, 0x00, slen); ptr += slen;
+					memset(ptr, 0x00, slen);
+					ptr += slen;
 				}
-				*(ptr++) = 0xf7;
-				*(ptr++) = 0xf7;
+				crc = getCrc(stp, ptr - stp);
+				*(ptr++) = (crc >> 8) & 0xff;
+				*(ptr++) = crc & 0xff;
 				ptr += spc;
 			}
-			flpFillFields(flp, trk, 1);
+			flpFillFields(flp, trk, 0);
 		}
 	}
 	return res;
@@ -154,22 +176,6 @@ void flpClearDisk(Floppy* flp) {
 	for (i = 0; i < 160; i++) flpClearTrack(flp,i);
 }
 
-unsigned short getCrc(unsigned char* ptr, int len) {
-	//unsigned int crc = 0xcdb4;
-	unsigned int crc = 0xffff;
-	int i;
-	while (len--) {
-		crc ^= *ptr << 8;
-		for (i = 0; i < 8 ; i++) {
-			if ((crc *= 2) & 0x10000) crc ^= 0x1021;
-		}
-		ptr++;
-	}
-	return  (crc & 0xffff);
-}
-
-// TODO: vp1 crc included starting A1,A1,A1,xx bytes, vg93/upd765 does not
-
 void flpFillFields(Floppy* flp,int tr, int flag) {
 	int i, bcnt = 0;
 	unsigned char fld = 0;
@@ -185,26 +191,21 @@ void flpFillFields(Floppy* flp,int tr, int flag) {
 	for (i = 0; i < TRACKLEN; i++) {
 		flp->data[tr].field[i] = fld;
 		if (flag & 1) {
-			switch (fld) {
-				case 0:
+			if (fld == 0) {
 					if ((*bpos) == 0xf5) *bpos = 0xa1;
 					if ((*bpos) == 0xf6) *bpos = 0xc2;
-					break;
-				case 4:
-					cpos -= 3;		// including a1,a1,a1
-					crc = getCrc(cpos, bpos - cpos);
-					*bpos++ = ((crc & 0xff00) >> 8);
-					*bpos++ = (crc & 0xff);
-					i += 2;
-					fld = 0;
-					bcnt = 0;
-					break;
 			}
 		}
 		if (bcnt > 0) {
 			bcnt--;
 			if (bcnt==0) {
 				if (fld < 4) {
+					if (flag & 1) {
+						cpos -= 3;		// including a1,a1,a1
+						crc = getCrc(cpos, bpos - cpos + 1);
+						*(bpos + 1) = ((crc & 0xff00) >> 8);
+						*(bpos + 2) = (crc & 0xff);
+					}
 					fld = 4;
 					bcnt = 2;
 				} else {
