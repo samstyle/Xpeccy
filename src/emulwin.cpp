@@ -536,6 +536,16 @@ void MainWin::paintEvent(QPaintEvent*) {
 	if (block) return;
 	pnt.begin(this);
 	pnt.drawImage(0,0, QImage(comp->debug ? scrimg : bufimg, width(), height(), QImage::Format_RGB888));
+// screenshot
+	if (scrCounter > 0) {
+		if (scrInterval > 0) {
+			scrInterval--;
+		} else {
+			scrInterval = conf.scrShot.interval;
+			scrCounter--;
+			screenShot();
+		}
+	}
 // put leds
 	if (comp->joy->used && conf.led.joy) {
 		pnt.drawImage(3, 30, QImage(":/images/joystick.png").scaled(16, 16));
@@ -574,6 +584,7 @@ void MainWin::paintEvent(QPaintEvent*) {
 		}
 		msgTimer--;
 	}
+// end
 	pnt.end();
 }
 

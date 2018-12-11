@@ -1060,7 +1060,7 @@ void SetupWin::copyToTape() {
 void SetupWin::diskToHobeta() {
 	QModelIndexList idx = ui.disklist->selectionModel()->selectedRows();
 	if (idx.size() == 0) return;
-	QString dir = QFileDialog::getExistingDirectory(this,"Save file(s) to...",QDir::homePath());
+	QString dir = QFileDialog::getExistingDirectory(this,"Save file(s) to...","",QFileDialog::DontUseNativeDialog | QFileDialog::ShowDirsOnly);
 	if (dir == "") return;
 	std::string sdir = std::string(dir.toLocal8Bit().data()) + SLASH;
 	Floppy* flp = comp->dif->fdc->flop[ui.disktabs->currentIndex()];		// selected floppy
