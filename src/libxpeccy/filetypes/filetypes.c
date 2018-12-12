@@ -206,13 +206,29 @@ int diskCreateFile(Floppy* flp, TRFile dsc, unsigned char* data, int len) {
 TRFile diskGetCatalogEntry(Floppy* flp, int num) {
 	TRFile res;
 	memset(&res, 0x00, sizeof(TRFile));
-	int sec,pos;
-	if (diskGetType(flp) != DISK_TYPE_TRD) return res;
+	TRFile cat[128];
+	int cnt = diskGetTRCatalog(flp, cat);
+	int i = 0;
+	while (i < cnt) {
+		switch(cat[i].name[0]) {
+			case 0x00: i = cnt; break;	// end
+			case 0x01: break;		// skip
+			default: if (num == 0) {
+					res = cat[i];
+					i = cnt;
+				}
+				num--;
+				break;
+		}
+		i++;
+	}
+/*
 	if (num > 127) return res;
 	sec = ((num & 0xf0) >> 4);	// sector
 	pos = ((num & 0x0f) << 4);	// file number inside sector
 	if (!diskGetSectorData(flp,0,sec + 1,fbuf,256)) return res;
 	memcpy((char*)&res,fbuf + pos,16);
+*/
 	return res;
 }
 

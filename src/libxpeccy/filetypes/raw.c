@@ -69,6 +69,7 @@ int loadRaw(Computer* comp, const char* name, int drv) {
 
 int saveRawFile(Floppy* flp, int num, const char* dir) {
 	TRFile dsc = diskGetCatalogEntry(flp,num);
+	if (dsc.name[0] == 0x00) return ERR_TRD_SNF;
 	unsigned char buf[0x10000];
 	if (!diskGetSectorsData(flp,dsc.trk, dsc.sec+1, buf, dsc.slen)) return ERR_TRD_SNF;
 	char name[9];
