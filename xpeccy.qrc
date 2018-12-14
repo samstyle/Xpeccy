@@ -74,5 +74,6 @@
         <file>images/tapeYellow.png</file>
         <file>images/mouseWhite.png</file>
         <file>font.png</file>
+        <file>images/copy.png</file>
     </qresource>
 </RCC>

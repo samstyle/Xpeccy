@@ -29,7 +29,6 @@ class MainWin : public QWidget {
 		MainWin();
 		Computer* comp;
 		void checkState();
-		void setProfile(std::string);
 		void loadLabels(const char*);
 	signals:
 		void s_options(xProfile*);
@@ -49,20 +48,41 @@ class MainWin : public QWidget {
 		void s_keywin_upd(Keyboard*);
 		void s_keywin_shide();
 		void s_keywin_close();
+	public slots:
+		void doOptions();
+		void doDebug();
+		void updateWindow();
+		void pause(bool, int);
+		void tapStateChanged(int,int);
+		void setProfile(std::string);
+	private slots:
+		void onTimer();
+		void convImage();
+		void updateSatellites();
+//		void cmosTick();
+		void menuHide();
+		void menuShow();
+		void optApply();
+		void dbgReturn();
+		void rzxStateChanged(int);
+		void bookmarkSelected(QAction*);
+		void profileSelected(QAction*);
+		void reset(QAction*);
+		void chLayout(QAction*);
+		// void chVMode(QAction*);
+		void umOpen(QAction*);
+
+		void saveVRAM();
+		void saveGBVRAM();
+		//void saveGSRAM();
+		void saveNESPPU();
+		void debugAction();
 	private:
 		unsigned grabMice:1;
 		unsigned block:1;
 
-//		SetupWin* opt;
-//		DebugWin* dbg;
-//		TapeWin* tapeWin;
-//		RZXWin* rzxWin;
-//		xWatcher* watcher;
-
 		QIcon icon;
 		QTimer timer;
-//		keyWindow* keywin;
-//		QImage scrImg;
 
 		int scrCounter;
 		int scrInterval;
@@ -100,35 +120,6 @@ class MainWin : public QWidget {
 		void fillProfileMenu();
 		void fillBookmarkMenu();
 		void fillLayoutMenu();
-	public slots:
-		void doOptions();
-		void doDebug();
-		void updateWindow();
-		void pause(bool, int);
-		void tapStateChanged(int,int);
-	private slots:
-		void onTimer();
-		void convImage();
-		void updateSatellites();
-//		void cmosTick();
-		void menuHide();
-		void menuShow();
-		void optApply();
-		void dbgReturn();
-		void rzxStateChanged(int);
-		void bookmarkSelected(QAction*);
-		void profileSelected(QAction*);
-		void reset(QAction*);
-		void chLayout(QAction*);
-		// void chVMode(QAction*);
-		void umOpen(QAction*);
-
-		void saveVRAM();
-		void saveGBVRAM();
-		//void saveGSRAM();
-		void saveNESPPU();
-		void debugAction();
-	private:
 		void closeEvent(QCloseEvent*);
 		void dragEnterEvent(QDragEnterEvent*);
 		void dropEvent(QDropEvent*);

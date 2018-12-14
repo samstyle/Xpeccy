@@ -330,7 +330,14 @@ void vidDrawTSLText(Video* vid) {
 			ink = (col & 0x0f) | (vid->tsconf.scrPal);
 			pap = ((col & 0xf0) >> 4)  | (vid->tsconf.scrPal);
 			scrbyte = vid->mrd(MADR(vid->tsconf.vidPage ^ 1, (scrbyte << 3) | (yscr & 7)), vid->data);
-			vidDrawByteDD(vid);
+//			vidDrawByteDD(vid);
 		}
+		if (vid->line[xscr] & 0x0f) {							// put not-transparent tiles/sprites pixel
+			vidPutDot(&vid->ray, vid->pal, vid->line[xscr]);
+		} else {
+			vidSingleDot(&vid->ray, vid->pal, (scrbyte & 0x80) ? ink : pap);
+			vidSingleDot(&vid->ray, vid->pal, (scrbyte & 0x40) ? ink : pap);
+		}
+		scrbyte <<= 2;
 	}
 }

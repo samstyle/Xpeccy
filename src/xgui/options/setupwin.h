@@ -59,6 +59,7 @@ class SetupWin : public QDialog {
 
 	signals:
 		void closed();
+		void s_prf_change(std::string);
 	private slots:
 		void reject();
 		void apply();
@@ -113,7 +114,10 @@ class SetupWin : public QDialog {
 		void copyToDisk();
 		void diskToHobeta();
 		void diskToRaw();
+
 		void newProfile();
+		void copyProf();
+		void chProfile(int, int);
 		void rmProfile();
 
 		void edLayout();

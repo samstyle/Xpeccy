@@ -331,8 +331,9 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	connect(uia.umacn,SIGNAL(released()),umadial,SLOT(hide()));
 // profiles manager
 	connect(ui.tbNewProfile,SIGNAL(released()),this,SLOT(newProfile()));
+	connect(ui.tbCopyProfile,SIGNAL(released()),this,SLOT(copyProf()));
 	connect(ui.tbDelProfile,SIGNAL(released()),this,SLOT(rmProfile()));
-
+	connect(ui.twProfileList,SIGNAL(cellDoubleClicked(int, int)),this,SLOT(chProfile(int, int)));
 }
 
 void SetupWin::okay() {
@@ -997,6 +998,8 @@ void SetupWin::buildtapelist() {
 	ui.tapelist->fill(comp->tape);
 }
 
+// TODO : make bookmarks & profiles list as view-model
+
 void SetupWin::buildmenulist() {
 	ui.umlist->setRowCount(conf.bookmarkList.size());
 	QTableWidgetItem* itm;
@@ -1015,6 +1018,9 @@ void SetupWin::buildproflist() {
 	QTableWidgetItem* itm;
 	for (int i = 0; i < conf.prof.list.size(); i++) {
 		itm = new QTableWidgetItem(QString::fromLocal8Bit(conf.prof.list[i]->name.c_str()));
+		if (conf.prof.list[i] == conf.prof.cur) {
+			itm->setIcon(QIcon(":/images/checkbox.png"));
+		}
 		ui.twProfileList->setItem(i,0,itm);
 		itm = new QTableWidgetItem(QString::fromLocal8Bit(conf.prof.list[i]->file.c_str()));
 		ui.twProfileList->setItem(i,1,itm);
@@ -1555,6 +1561,27 @@ void SetupWin::newProfile() {
 	if (!addProfile(nm,fp))
 		shitHappens("Can't add such profile");
 	buildproflist();
+}
+
+void SetupWin::copyProf() {
+	int idx = ui.twProfileList->currentRow();
+	if (idx < 0) return;
+	QString nam = QInputDialog::getText(this,"Enter...","New profile name");
+	if (nam.isEmpty()) return;
+	std::string nm = std::string(nam.toLocal8Bit().data());
+	std::string pnam(ui.twProfileList->item(idx,0)->text().toLocal8Bit().data());
+	if (!copyProfile(pnam, nm))
+		shitHappens("Copying failed");
+	buildproflist();
+}
+
+void SetupWin::chProfile(int row, int col) {
+	if (row < 0) return;
+	if (row > conf.prof.list.size()) return;
+	std::string nm = conf.prof.list[row]->name;
+	prfSetCurrent(nm);
+	emit s_prf_change(nm);
+	start(conf.prof.cur);
 }
 
 void SetupWin::rmProfile() {

@@ -103,8 +103,9 @@ typedef struct {
 #define	DELP_OK_CURR	1
 
 xProfile* findProfile(std::string);
-bool addProfile(std::string,std::string);
+xProfile* addProfile(std::string,std::string);
 int delProfile(std::string);
+int copyProfile(std::string, std::string);
 void clearProfiles();
 void prfLoadAll();
 bool prfSetCurrent(std::string);

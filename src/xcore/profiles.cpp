@@ -20,9 +20,9 @@ xProfile* findProfile(std::string nm) {
 	return res;
 }
 
-bool addProfile(std::string nm, std::string fp) {
+xProfile* addProfile(std::string nm, std::string fp) {
 //	printf("add Profile: %s : %s\n",nm.c_str(),fp.c_str());
-	if (findProfile(nm) != NULL) return false;
+	if (findProfile(nm) != NULL) return NULL;
 	xProfile* nprof = new xProfile;
 	nprof->name = nm;
 	nprof->file = fp;
@@ -49,7 +49,31 @@ bool addProfile(std::string nm, std::string fp) {
 	}
 	compSetHardware(nprof->zx,"Dummy");
 	conf.prof.list.push_back(nprof);
-	return true;
+	return nprof;
+}
+
+int copyProfile(std::string src, std::string dst) {
+	xProfile* sprf = findProfile(src);
+	if (sprf == NULL)
+		return 0;
+	xProfile* dprf = findProfile(dst);
+	std::string dfile = dst + ".conf";
+	if (dprf == NULL) {
+		dprf = addProfile(dst, dfile);
+	} else {
+		dprf->file = dfile;
+	}
+
+	char sfname[FILENAME_MAX];
+	char dfname[FILENAME_MAX];
+	strcpy(sfname, conf.path.confDir);
+	strcat(sfname, SLASH);
+	strcpy(dfname, sfname);
+	strcat(sfname, sprf->file.c_str());
+	strcat(dfname, dfile.c_str());
+	copyFile(sfname, dfname);
+	prfLoad(dst);
+	return 1;
 }
 
 void prfClose() {
