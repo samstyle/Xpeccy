@@ -73,9 +73,10 @@ int saveRawFile(Floppy* flp, int num, const char* dir) {
 	unsigned char buf[0x10000];
 	if (!diskGetSectorsData(flp,dsc.trk, dsc.sec+1, buf, dsc.slen)) return ERR_TRD_SNF;
 	char name[9];
+	memset(name, 0x00, 9);
 	strncpy(name, (char*)dsc.name, 8);
 	cutSpaces(name);
-	char path[strlen(dir) + 16];
+	char path[PATH_MAX];
 	strcpy(path, dir);		// dir/name.e
 	strcat(path, SLASH);
 	strcat(path, name);

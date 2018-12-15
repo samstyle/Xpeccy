@@ -5,6 +5,8 @@
 // NOTE: cdb4 = crc for A1,A1,A1
 // init value of crc must be FFFF, accumulation starting from 1st A1
 
+#define TURBOBYTE 500
+
 static int pauses[4] = {6000,12000,20000,30000};	// pause in ns for 1st type commands
 
 // 1818vg93
@@ -39,7 +41,7 @@ void wrCRC(FDC* fdc) {
 // wait ADR
 // return: 0 : not ADR, 1 : ADR, 2 : IDX
 int waitADR(FDC* fdc) {
-	fdc->wait += turbo ? 1 : BYTEDELAY;
+	fdc->wait += turbo ? TURBOBYTE : BYTEDELAY;
 	if (flpNext(fdc->flp, fdc->side)) return 2;	// 2:IDX
 	if (fdc->flp->field != 1) return 0;		// 0:not ADR
 	return 1;
@@ -145,7 +147,7 @@ void vgstp00(FDC* fdc) {
 }
 
 void vgstp01(FDC* fdc) {
-	fdc->wait = turbo ? 1 : BYTEDELAY;
+	fdc->wait = turbo ? TURBOBYTE : BYTEDELAY;
 	if (flpNext(fdc->flp, fdc->side)) {	// turn floppy to next byte, check IDX
 		fdc->cnt--;
 		if (fdc->cnt < 1) {		// check 15 IDX pulses
@@ -257,11 +259,11 @@ void vgseek01(FDC* fdc) {
 	} else if (fdc->trk < fdc->data) {
 		flpStep(fdc->flp, FLP_FORWARD);
 		fdc->trk++;
-		fdc->wait += turbo ? 1 : BYTEDELAY;
+		fdc->wait += turbo ? TURBOBYTE : BYTEDELAY;
 	} else {
 		flpStep(fdc->flp, FLP_BACK);
 		fdc->trk--;
-		fdc->wait += turbo ? 1 : BYTEDELAY;
+		fdc->wait += turbo ? TURBOBYTE : BYTEDELAY;
 	}
 }
 
@@ -347,7 +349,7 @@ void vgrds02(FDC* fdc) {
 	if (fdc->cnt > 0) {
 		fdc->tmp = flpRd(fdc->flp);
 		flpNext(fdc->flp, fdc->side);
-		fdc->wait += turbo ? 1 : BYTEDELAY;
+		fdc->wait += turbo ? TURBOBYTE : BYTEDELAY;
 		if ((fdc->flp->field == 2) || (fdc->flp->field == 3)) {
 			fdc->buf[4] = fdc->tmp;
 			fdc->pos++;
@@ -507,7 +509,7 @@ fdcCall vgRdAdr[] = {&vgrds00,&vgrda00,&vgrda01,&vgchk02,&vgstp};
 
 // wait IDX
 void vgrdt00(FDC* fdc) {
-	fdc->wait += turbo ? 1 : BYTEDELAY;
+	fdc->wait += turbo ? TURBOBYTE : BYTEDELAY;
 	if (flpNext(fdc->flp, fdc->side)) {
 		fdc->drq = 0;
 		fdc->dir = 1;
@@ -525,7 +527,7 @@ fdcCall vgRdTrk[] = {&vgrds00,&vgrdt00,&vgrdt01,&vgstp};
 // write track
 
 void vgwrt00(FDC* fdc) {
-	fdc->wait += turbo ? 1 : BYTEDELAY;
+	fdc->wait += turbo ? TURBOBYTE : BYTEDELAY;
 	if (flpNext(fdc->flp, fdc->side)) {
 		fdc->pos++;
 		fdc->wait = BYTEDELAY;
