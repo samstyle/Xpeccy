@@ -14,9 +14,25 @@
 // b0..6:rd:key code
 // rd:reset b7,ffb0
 
+// hdd
+// ffe0	: wr:com rd:status (7)
+// ffe1 : #17
+// ffe2 : master/slave select, head (6)
+// ffe3 : rd: astate	(#16)
+// ffe4 : trk (hi)	(5)
+// ffe6 : trk (low)	(4)
+// ffe8 : sec		(3)
+// ffec	: rd:error code (1)
+// ffee : data.low	(0)
+// ffef : data.high	(#10 ? )
+// ~bit1..3 = register
+// bit 0 : alt.reg (#16, #17)
+// data reg is 16-bit, others 8-bit
+
 unsigned char bk_io_rd(unsigned short adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	comp->wdata = 0xffff;
+	unsigned char res;
 	switch (adr & 0xfffe) {
 		// fdc
 		case 0xfe58:
@@ -53,6 +69,19 @@ unsigned char bk_io_rd(unsigned short adr, void* ptr) {
 			if (~comp->keyb->map[7] & 0x20)
 				comp->wdata |= 0x40;		// = 0 if any key pressed
 			break;
+		// hdd
+		case 0xffe0:
+		case 0xffe2:
+		case 0xffe4:
+		case 0xffe6:
+		case 0xffe8:
+		case 0xffea:
+		case 0xffec:
+		case 0xffee:
+			ideIn(comp->ide, adr, &res, 0);
+			comp->wdata = res & 0xff;
+			adr &= ~1;
+			break;
 		default:
 			if (!comp->debug) {
 				printf("%.4X : rd %.4X\n",comp->cpu->pc, adr);
@@ -65,6 +94,7 @@ unsigned char bk_io_rd(unsigned short adr, void* ptr) {
 
 void bk_io_wr(unsigned short adr, unsigned char val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
+	comp->iomap[adr] = val;
 	switch (adr) {
 		// fdc
 		case 0xfe58: comp->reg[0x58] = val; break;

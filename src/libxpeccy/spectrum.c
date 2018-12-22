@@ -154,6 +154,54 @@ unsigned char intrq(void* ptr) {
 	return ((Computer*)ptr)->intVector;
 }
 
+// new (for future use)
+
+unsigned char comp_rom_rd(Computer* comp, int adr) {
+	adr &= comp->mem->romMask;
+	if (comp->brkRomMap[adr] & MEM_BRK_RD)
+		comp->brk = 1;
+	return comp->mem->romData[adr & comp->mem->romMask];
+}
+
+void comp_rom_wr(Computer* comp, int adr, unsigned char val) {
+	adr &= comp->mem->romMask;
+	if (comp->brkRomMap[adr] & MEM_BRK_WR)
+		comp->brk = 1;
+	comp->mem->romData[adr & comp->mem->romMask] = val;
+}
+
+unsigned char comp_ram_rd(Computer* comp, int adr) {
+	adr &= comp->mem->ramMask;
+	if (comp->brkRamMap[adr] & MEM_BRK_RD)
+		comp->brk = 1;
+	return comp->mem->ramData[adr & comp->mem->ramMask];
+}
+
+void comp_ram_wr(Computer* comp, int adr, unsigned char val) {
+	adr &= comp->mem->ramMask;
+	if (comp->brkRamMap[adr] & MEM_BRK_WR)
+		comp->brk = 1;
+	comp->mem->ramData[adr] = val;
+}
+
+unsigned char comp_slt_rd(Computer* comp, int adr) {
+	if (!comp->slot->data) return 0xff;
+	adr &= comp->slot->memMask;
+	if (comp->slot->brkMap[adr] & MEM_BRK_RD)
+		comp->brk = 1;
+	return comp->slot->data[adr];
+}
+
+void comp_slt_wr(Computer* comp, int adr, unsigned char val) {
+	if (!comp->slot->data) return;
+	adr &= comp->slot->memMask;
+	if (comp->slot->brkMap[adr] & MEM_BRK_WR)
+		comp->brk = 1;
+	comp->slot->data[adr & comp->slot->memMask] = val;
+}
+
+// rzx
+
 void rzxStop(Computer* zx) {
 #ifdef HAVEZLIB
 	zx->rzx.play = 0;

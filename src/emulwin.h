@@ -120,6 +120,7 @@ class MainWin : public QWidget {
 		void fillProfileMenu();
 		void fillBookmarkMenu();
 		void fillLayoutMenu();
+	protected:
 		void closeEvent(QCloseEvent*);
 		void dragEnterEvent(QDragEnterEvent*);
 		void dropEvent(QDropEvent*);

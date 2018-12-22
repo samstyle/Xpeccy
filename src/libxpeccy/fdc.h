@@ -28,6 +28,7 @@ enum {
 #define FDC_DATA	0x7f
 
 #define BYTEDELAY 32000		// 300 turns/min = 5 turns/sec = 31250 bytes/sec = 32mks/byte
+#define TURBOBYTE 500		// same for turbo
 #define turbo (fdcFlag & FDC_FAST)
 
 typedef struct FDC FDC;

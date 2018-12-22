@@ -56,7 +56,7 @@ int uGetByte(FDC* fdc) {
 		fdc->tmp = flpRd(fdc->flp);
 		flpNext(fdc->flp, fdc->side);
 		fdc->drq = 1;
-		fdc->wait += BYTEDELAY;
+		fdc->wait += turbo ? TURBOBYTE : BYTEDELAY;
 		res = 1;
 	}
 	return res;
@@ -96,10 +96,10 @@ typedef struct {
 
 void udrvst00(FDC* fdc) {
 	uSetDrive(fdc);
-	fdc->sr3 = (fdc->flp->protect << 6) |
-		   (fdc->flp->insert << 5) |
+	fdc->sr3 = (fdc->flp->protect ? 0x40 : 0x00) |
+		   (fdc->flp->insert ? 0x20 : 0x00) |
 		   ((fdc->flp->trk == 0) ? 0x10 : 0x00) |
-		   (fdc->flp->doubleSide << 3) |
+		   (fdc->flp->doubleSide ? 0x08 : 0x00) |
 		   (fdc->comBuf[0] & 7);
 	fdc->resBuf[0] = fdc->sr3;
 	uResp(fdc, 1);
@@ -268,7 +268,7 @@ void uread01(FDC* fdc) {
 int ureadCHK(FDC* fdc, int rt, int wt) {
 	fdc->tmp = flpRd(fdc->flp);
 	flpNext(fdc->flp, fdc->side);
-	fdc->wait += turbo ? 1 : BYTEDELAY;
+	fdc->wait += turbo ? TURBOBYTE : BYTEDELAY;
 	if (fdc->flp->field == rt) return 1;
 	if ((fdc->flp->field == wt) && (~fdc->com & 0x20)) {
 		fdc->sr2 |= 0x40;
@@ -312,7 +312,7 @@ void uread03(FDC* fdc) {
 	fdc->state |= 0x10;		// wr/rd operation
 	fdc->drq = 0;
 	fdc->dir = 1;
-	fdc->wait = BYTEDELAY;
+	fdc->wait = turbo ? TURBOBYTE : BYTEDELAY;
 	fdc->pos++;
 }
 
@@ -322,7 +322,7 @@ void uread04(FDC* fdc) {
 	fdc->cnt--;
 	if (fdc->cnt < 1) {
 		fdc->pos++;
-		fdc->wait = BYTEDELAY;
+		fdc->wait = turbo ? TURBOBYTE : BYTEDELAY;
 	}
 }
 
@@ -475,7 +475,7 @@ void uscan01(FDC* fdc) {
 	fdc->cnt = 0x80 << (fdc->buf[3] & 3);
 	fdc->drq = 0;
 	fdc->dir = 1;
-	fdc->wait = BYTEDELAY;
+	fdc->wait = turbo ? TURBOBYTE : BYTEDELAY;
 	fdc->pos++;
 }
 
@@ -501,7 +501,7 @@ void uscan02(FDC* fdc) {
 	fdc->cnt--;
 	if (fdc->cnt < 1) {
 		fdc->pos++;
-		fdc->wait = BYTEDELAY;
+		fdc->wait = turbo ? TURBOBYTE : BYTEDELAY;
 	}
 }
 

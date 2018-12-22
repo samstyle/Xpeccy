@@ -1,6 +1,9 @@
 #ifndef X_CPU_H
 #define X_CPU_H
 
+typedef unsigned char xbyte;
+typedef unsigned short xword;
+
 typedef struct {
 	unsigned cond:1;	// condition present
 	unsigned met:1;		// condition met

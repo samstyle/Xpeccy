@@ -1,5 +1,5 @@
-#ifndef _XSP_HDD
-#define _XSP_HDD
+#ifndef X_HDD
+#define X_HDD
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,7 +17,8 @@ enum {
 	IDE_SMUC,
 	IDE_ATM,
 	IDE_NEMO_EVO,	// with hi/low trigger
-	IDE_PROFI
+	IDE_PROFI,
+	IDE_SMK		// for BK
 };
 // device select
 enum {

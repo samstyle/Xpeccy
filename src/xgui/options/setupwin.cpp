@@ -161,6 +161,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.hiface->addItem("SMUC",IDE_SMUC);
 	ui.hiface->addItem("ATM",IDE_ATM);
 	ui.hiface->addItem("Profi",IDE_PROFI);
+	ui.hiface->addItem("SMK512",IDE_SMK);
 	ui.hm_type->addItem(QIcon(":/images/cancel.png"),"Not connected",IDE_NONE);
 	ui.hm_type->addItem(QIcon(":/images/hdd.png"),"HDD (ATA)",IDE_ATA);
 //	setupUi.hm_type->addItem(QIcon(":/images/cd.png"),"CD (ATAPI) not working yet",IDE_ATAPI);

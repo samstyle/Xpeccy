@@ -564,6 +564,17 @@ ataAddr ideDecoder(IDE* ide, unsigned short port, int dosen, int wr) {
 			res.port = (port & 0x700) >> 8;
 			res.high = ((port & 0x7ff) == 0xeb) ? 1 : 0;
 			break;
+		case IDE_SMK:
+			res.iorq = ((port & 0xfff0) == 0xffe0) ? 1 : 0;
+			res.hdd = 1;
+			res.port = ((port >> 1) & 7) ^ 7;
+			res.high = 0;
+			if (port & 1) res.port |= 0x10;	// 0x16, 0x17
+			if (res.port == 0x10) {
+				res.high = 1;
+				res.port = HDD_DATA;
+			}
+			break;
 	}
 	return res;
 }
@@ -625,7 +636,7 @@ int ideOut(IDE* ide,unsigned short port,unsigned char val,int dosen) {
 		if (adr.port == HDD_HEAD)
 			ide->curDev = (val & HDF_DRV) ? ide->slave : ide->master;	// write to head reg: select MASTER/SLAVE
 		if (ide->type == IDE_NEMO_EVO) {
-			if (adr.port == 0) {
+			if (adr.port == HDD_DATA) {
 				if (adr.high) {
 					ide->bus &= 0x00ff;
 					ide->bus |= (val << 8);
@@ -650,6 +661,21 @@ int ideOut(IDE* ide,unsigned short port,unsigned char val,int dosen) {
 			} else {
 				ide->hiTrig = 0;		// non-data ports : next 10 is low
 				ataWr(ide->curDev,adr.port,val);
+			}
+		} else if (ide->type == IDE_SMK) {
+			if (adr.port == HDD_DATA) {
+				if (adr.high) {
+					ide->bus &= 0x00ff;
+					ide->bus |= ((val << 8) & 0xff);
+					ataWr(ide->curDev,adr.port,ide->bus);
+				} else {
+					ide->bus &= 0xff00;
+					ide->bus |= (val & 0xff);
+				}
+			} else {
+				ide->bus &= 0xff00;
+				ide->bus |= (val & 0xff);
+				ataWr(ide->curDev,adr.port,ide->bus);
 			}
 		} else {
 			if (adr.high) {

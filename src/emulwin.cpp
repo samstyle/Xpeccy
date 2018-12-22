@@ -199,15 +199,8 @@ MainWin::MainWin() {
 
 	initFileDialog(this);
 
-//	tapeWin = new TapeWin(this);
-//	connect(tapeWin,SIGNAL(stateChanged(int,int)),this,SLOT(tapStateChanged(int,int)));
-
-//	rzxWin = new RZXWin(this);
-//	connect(rzxWin,SIGNAL(stateChanged(int)),this,SLOT(rzxStateChanged(int)));
-
-//	keywin = new keyWindow();
-
 	initUserMenu();
+	setFocus();
 
 	timer.setInterval(20);
 	connect(&timer,SIGNAL(timeout()),this,SLOT(onTimer()));
@@ -434,8 +427,8 @@ void MainWin::onTimer() {
 
 // if window is not active release keys & buttons, release mouse
 void MainWin::focusOutEvent(QFocusEvent* ev) {
-	//if (!keywin->isVisible())
-		kbdReleaseAll(comp->keyb);
+	printf("focus out\n");
+	kbdReleaseAll(comp->keyb);
 	mouseReleaseAll(comp->mouse);
 	unsetCursor();
 	if (grabMice) {

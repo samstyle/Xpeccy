@@ -1209,7 +1209,7 @@ void DebugWin::loadLabels(QString path) {
 				xadr.type = MEM_RAM;
 				xadr.bank = arr.at(0).toInt(NULL,16);
 				xadr.adr = arr.at(1).toInt(NULL,16) & 0x3fff;
-                xadr.abs = (xadr.bank << 14) | xadr.adr;
+				xadr.abs = (xadr.bank << 14) | xadr.adr;
 				name = arr.at(2);
 				switch (xadr.bank) {
 					case 0xff:
@@ -1266,7 +1266,7 @@ QString findLabel(int adr, int type, int bank) {
 	QStringList keys = labels.keys();
 	foreach(key, keys) {
 		xadr = labels[key];
-		if ((xadr.adr == adr)\
+		if (!((xadr.adr ^ adr) & 0x3fff) \
 				&& ((type < 0) || (xadr.type < 0) || (type == xadr.type))\
 				&& ((bank < 0) || (xadr.bank < 0) || (bank == xadr.bank))) {
 			lab = key;

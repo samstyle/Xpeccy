@@ -169,6 +169,7 @@ typedef struct {
 	unsigned char p77hi;
 	unsigned char prt2;		// scorpion ProfROM layer (0..3)
 	unsigned char reg[256];		// internal registers
+	unsigned char iomap[0x10000];
 	unsigned short wdata;
 	unsigned short wreg;
 	unsigned short wtmp;

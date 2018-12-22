@@ -5,8 +5,6 @@
 // NOTE: cdb4 = crc for A1,A1,A1
 // init value of crc must be FFFF, accumulation starting from 1st A1
 
-#define TURBOBYTE 500
-
 static int pauses[4] = {6000,12000,20000,30000};	// pause in ns for 1st type commands
 
 // 1818vg93

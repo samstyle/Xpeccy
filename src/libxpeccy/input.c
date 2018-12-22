@@ -215,8 +215,8 @@ void kbdRelease(Keyboard* kbd, keyEntry ent) {
 }
 
 void kbdReleaseAll(Keyboard* kbd) {
-	memset(kbd->map, 0x1f, 8);
-	memset(kbd->extMap, 0x3f, 8);
+	memset(kbd->map, 0xff, 8);
+	memset(kbd->extMap, 0xff, 8);
 	memset(kbd->msxMap, 0xff, 16);
 	kbd->keycode = 0;
 	kbd->lastkey = 0;
