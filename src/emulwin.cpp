@@ -427,7 +427,6 @@ void MainWin::onTimer() {
 
 // if window is not active release keys & buttons, release mouse
 void MainWin::focusOutEvent(QFocusEvent* ev) {
-	printf("focus out\n");
 	kbdReleaseAll(comp->keyb);
 	mouseReleaseAll(comp->mouse);
 	unsetCursor();

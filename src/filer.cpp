@@ -54,6 +54,7 @@ static xFileTypeInfo ft_tab[] = {
 //	{FL_T64, 0, ".t64", "*.t64", loadT64, NULL, "T64 tape image"},
 	{FL_BKBIN, 0, ".bin", "*.bin", loadBIN, NULL, "BK bin data"},
 	{FL_BKIMG, 0, ".img", "*.img", loadBkIMG, NULL, "BK disk image"},
+//	{FL_BKBKD, 0, ".bkd", "*.bkd", loadBkIMG, NULL, "BK disk image"},
 #ifdef HAVEZLIB
 	{FL_RZX, 0, ".rzx", "*.rzx", loadRZX, NULL, "RZX playback"},
 #endif
@@ -82,7 +83,7 @@ static xFileGroupInfo fg_tab[] = {
 	{FG_NES, -1, "NES cartrige", {FL_NES, 0}},
 	{FG_CMDTAPE, -1, "Comodore tape", {FL_T64, 0}},
 	{FG_BKDATA, -1, "BK bin data", {FL_BKBIN, 0}},
-	{FG_BKDISK, 0, "BK disk image", {FL_BKIMG, 0}},
+	{FG_BKDISK, 0, "BK disk image", {FL_BKIMG, FL_BKBKD, FL_UDI, 0}},
 	{0, -1, NULL, {0}}
 };
 
@@ -229,7 +230,7 @@ QString file_get_hw_filter(Computer* comp, int id, int sv) {
 			i++;
 		}
 	}
-	if (flt.size() > 1)
+	if ((flt.size() > 1) && !sv)
 		flt.prepend(QString("All files (%0)").arg(allfilt));
 	return flt.join(";;");
 }

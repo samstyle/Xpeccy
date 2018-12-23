@@ -190,7 +190,7 @@ void bk_mem_map(Computer* comp) {
 	memSetBank(comp->mem, 0xc0, MEM_ROM, 4, MEM_8K, NULL, NULL, NULL);
 	if (comp->dif->type == DIF_SMK512) {
 		memSetBank(comp->mem, 0xe0, MEM_ROM, 5, MEM_8K, NULL, NULL, NULL);			// disk interface rom
-		memSetBank(comp->mem, 0xf0, MEM_IO, 0xfe, MEM_4K, bk_io_rd, bk_io_wr, comp);		// 0170000..0177776 with disk interface
+		memSetBank(comp->mem, 0xfe, MEM_IO, 0xfe, MEM_512, bk_io_rd, bk_io_wr, comp);		// 0170000..0177776 with disk interface
 	} else {
 		memSetBank(comp->mem, 0xe0, MEM_EXT, 7, MEM_8K, NULL, NULL, NULL);			// empty space
 		memSetBank(comp->mem, 0xff, MEM_IO, 0xff, MEM_256, bk_io_rd, bk_io_wr, comp);		// 0177600..0177776 without disk interface
@@ -227,7 +227,7 @@ static xColor bk_pal[0x40] = {
 
 void bk_reset(Computer* comp) {
 	memSetSize(comp->mem, MEM_128K, MEM_64K);
-	memset(comp->mem->ramData, 0x00, MEM_256);
+//	memset(comp->mem->ramData, 0x00, MEM_256);
 	for (int i = 0; i < 0x40; i++) {
 		comp->vid->pal[i] = bk_pal[i];
 	}

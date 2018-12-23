@@ -10,38 +10,35 @@ enum {
 
 // seek
 void vpseek(FDC* fdc) {
-	fdc->tdata <<= 8;
 	fdc->data = flpRd(fdc->flp);
-	fdc->tdata |= fdc->data;
+	if ((fdc->flp->field == 0) && (fdc->data == 0xa1)) {	// catch syncro byte A1
+		fdc->tdata = fdc->data;				// copy to temp register
+		fdc->cnt = 0;					// next byte will complete word
+		fdc->drq = 0;					// word is still incomplete
+		fdc->crchi = 0;					// reset 'crc is valid' flag
+		fdc->crc = 0xffff;				// init crc
+		add_crc_16(fdc, 0xa1);				// add 1st byte to crc
+		fdc->state = VP1_RD;				// move to reading
+		fdc->pos = 1;
+	}
 	flpNext(fdc->flp, fdc->side);
 	fdc->wait += BYTEDELAY;
-	if (fdc->tdata == 0xa1a1) {	// marker
-		fdc->state = VP1_RD;
-		fdc->pos = 1;		// read mode
-		fdc->cnt = 1;
-		fdc->crchi = 0;
-		fdc->crc = 0xffff;	// init crc
-		add_crc_16(fdc, 0xa1);
-		add_crc_16(fdc, 0xa1);
-		fdc->wdata = fdc->tdata;
-		fdc->drq = 0;
-	}
 }
 
 void vpread(FDC* fdc) {
-	fdc->tdata <<= 8;
-	fdc->data = flpRd(fdc->flp);
-	fdc->tdata |= fdc->data;
-	add_crc_16(fdc, fdc->data);	// crc will be 0 after reading crc (hi-low)
-	if (fdc->crc == 0)
+	fdc->tdata <<= 8;		// shift temp register
+	fdc->data = flpRd(fdc->flp);	// read next byte from floppy
+	fdc->tdata |= fdc->data;	// add it to temp register
+	add_crc_16(fdc, fdc->data);	// add it to crc. crc will be 0 after reading crc (hi-low)
+	if (fdc->crc == 0)		// if crc is valid now, set flag
 		fdc->crchi = 1;
-	flpNext(fdc->flp, fdc->side);
-	fdc->wait += BYTEDELAY;
-	fdc->cnt = !fdc->cnt;
-	if (fdc->cnt) {			// each 2nd byte move word from temp register to data register and set drq
+	fdc->cnt++;			// inc byte counter
+	if (fdc->cnt & 1) {		// each 2nd byte (starting from 0) - move word from temp register to data register and set drq
 		fdc->wdata = fdc->tdata;
 		fdc->drq = 1;
 	}
+	flpNext(fdc->flp, fdc->side);	// move to next byte
+	fdc->wait += BYTEDELAY;		// set 32mks delay
 }
 
 void vpwrite(FDC* fdc) {
@@ -70,7 +67,7 @@ void vp1_reset(FDC* fdc) {
 unsigned short vp1_rd(FDC* fdc, int port) {
 	unsigned short res = 0;
 	if (port & 1) {
-		res = fdc->wdata;
+		res = fdc->drq ? fdc->wdata : 0x0000;
 		fdc->drq = 0;
 	} else {
 		if (fdc->flp->trk == 0) res |= 1;
@@ -78,7 +75,8 @@ unsigned short vp1_rd(FDC* fdc, int port) {
 		if (fdc->flp->protect) res |= 4;
 		if (fdc->drq) res |= 0x80;
 		if (fdc->crchi) res |= 0x4000;
-		if (fdc->flp->index) res |= 0x8000;
+		if (fdc->flp->index && fdc->flp->insert && fdc->flp->motor)
+			res |= 0x8000;
 	}
 	return res;
 }
@@ -114,7 +112,7 @@ void vp1_wr(FDC* fdc, int port, unsigned short val) {
 		} else {
 			fdc->plan = NULL;
 		}
-		fdc->side = (val & 0x20) ? 1 : 0;
+		fdc->side = (val & 0x20) ? 0 : 1;
 		if (val & 0x80)
 			flpStep(fdc->flp, (val & 0x40) ? FLP_FORWARD : FLP_BACK);
 		if (val & 0x100) {
@@ -123,6 +121,7 @@ void vp1_wr(FDC* fdc, int port, unsigned short val) {
 			if (fdc->mr) {
 				fdc->state = VP1_SEEK;
 				fdc->pos = 0;
+				fdc->drq = 0;
 			}
 			fdc->mr = 0;
 		}

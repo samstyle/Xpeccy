@@ -30,7 +30,8 @@ enum {
 	FL_NES,
 	FL_T64,
 	FL_BKBIN,
-	FL_BKIMG
+	FL_BKIMG,
+	FL_BKBKD
 };
 
 enum {
