@@ -5,25 +5,33 @@
 #include <string.h>
 
 void pdp_wrb(CPU* cpu, unsigned short adr, unsigned char val) {
-	cpu->mwr(adr, val & 0xff, cpu->data);
+	cpu->nod = 1;
 	cpu->t += 4;
+	cpu->mwr(adr, val & 0xff, cpu->data);
 }
 
 void pdp_wr(CPU* cpu, unsigned short adr, unsigned short val) {
+	cpu->nod = 0;
 	adr &= ~1;
-	pdp_wrb(cpu, adr++, val & 0xff);
-	pdp_wrb(cpu, adr, (val >> 8) & 0xff);
+	cpu->t += 4;
+	cpu->mwr(adr++, val & 0xff, cpu->data);
+	cpu->t += 4;
+	cpu->mwr(adr, (val >> 8) & 0xff, cpu->data);
 }
 
 unsigned char pdp_rdb(CPU* cpu, unsigned short adr) {
+	cpu->nod = 1;
 	cpu->t += 4;
 	return cpu->mrd(adr, 0, cpu->data);
 }
 
 unsigned short pdp_rd(CPU* cpu, unsigned short adr) {
+	cpu->nod = 0;
 	adr &= ~1;
-	unsigned short res = pdp_rdb(cpu, adr) & 0xff;
-	res |= pdp_rdb(cpu, adr+1) << 8;
+	cpu->t += 4;
+	unsigned short res = cpu->mrd(adr++, 0, cpu->data) & 0xff;
+	cpu->t += 4;
+	res |= cpu->mrd(adr, 0, cpu->data) << 8;
 	return res;
 }
 
@@ -1404,6 +1412,7 @@ static xPdpDasm pdp11_dasm_tab[] = {
 	{0xff00, 0x0500, "blt :e"},
 	{0xff00, 0x0600, "bgt :e"},
 	{0xff00, 0x0700, "ble :e"},
+	{0xffc0, 0x09c0, "call :d"},		// special jsr r7,nn = call nn
 	{0xfe00, 0x0800, "jsr r:6, :d"},	// :6 bits 6,7,8 number
 	{0xffc0, 0x0a00, "clr :d"},
 	{0xffc0, 0x0a40, "com :d"},
