@@ -19,20 +19,20 @@ void pdp_wr(CPU* cpu, unsigned short adr, unsigned short val) {
 	cpu->mwr(adr, (val >> 8) & 0xff, cpu->data);
 }
 
-unsigned char pdp_rdb(CPU* cpu, unsigned short adr) {
-	cpu->nod = 1;
+unsigned short pdp_rd(CPU* cpu, unsigned short adr) {
+	adr &= ~1;
+	xpair res;
 	cpu->t += 4;
-	return cpu->mrd(adr, 0, cpu->data);
+	res.l = cpu->mrd(adr++, 0, cpu->data);
+	cpu->t += 4;
+	res.h = cpu->mrd(adr, 0, cpu->data);
+	return res.w;
 }
 
-unsigned short pdp_rd(CPU* cpu, unsigned short adr) {
-	cpu->nod = 0;
-	adr &= ~1;
-	cpu->t += 4;
-	unsigned short res = cpu->mrd(adr++, 0, cpu->data) & 0xff;
-	cpu->t += 4;
-	res |= cpu->mrd(adr, 0, cpu->data) << 8;
-	return res;
+// read byte = read word and take high or low byte from there
+unsigned char pdp_rdb(CPU* cpu, unsigned short adr) {
+	unsigned short wrd = pdp_rd(cpu, adr);
+	return ((adr & 1) ? (wrd >> 8) : wrd) & 0xff;
 }
 
 // reset

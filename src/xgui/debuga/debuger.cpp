@@ -131,7 +131,22 @@ QWidget* xItemDelegate::createEditor(QWidget* par, const QStyleOptionViewItem&, 
 
 int dmpmrd(unsigned short adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	int res = memRd(comp->mem, adr) & 0xff;
+	MemPage* pg = &comp->mem->map[(adr >> 8) & 0xff];
+	int fadr = (pg->num << 8) | (adr & 0xff);
+	int res = 0xff;
+	switch (pg->type) {
+		case MEM_RAM:
+			res = comp->mem->ramData[fadr & comp->mem->ramMask];
+			break;
+		case MEM_ROM:
+			res = comp->mem->romData[fadr & comp->mem->romMask];
+			break;
+		case MEM_SLOT:
+			if (!comp->slot) break;
+			if (!comp->slot->data) break;
+			res = comp->slot->data[fadr & comp->slot->memMask];
+			break;
+	}
 	res |= getBrk(comp, adr) << 8;
 	return res;
 }

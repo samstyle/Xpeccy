@@ -56,6 +56,8 @@ typedef unsigned char(*cbdmr)(unsigned short,void*);
 	#define PAIR(p,h,l) union{unsigned short p; struct {unsigned char l; unsigned char h;};}
 #endif
 
+typedef PAIR(w,h,l) xpair;
+
 #define OF_PREFIX	1
 #define OF_EXT		OF_PREFIX
 #define OF_SKIPABLE	(1<<1)
@@ -116,8 +118,8 @@ struct CPU {
 	unsigned speed:1;		// LR35902: double speed mode (TODO)
 	unsigned speedrq:1;		// LR35902: request speed change after STOP command
 	unsigned dihalt:1;		// LR35902: HALT when DI: repeat next opcode
-	unsigned sta:1;			// MOS6502: don't add 1T on (ABSX,ABSY,INDY); PDP11:stack overflow
-	unsigned nod:1;			// MOS6502: ignore flag D in ADC/SBC
+	unsigned sta:1;			// MOS6502: don't add 1T on (ABSX,ABSY,INDY)
+	unsigned nod:1;			// MOS6502: ignore flag D in ADC/SBC; PDP11: write byte
 
 	int type;			// cpu type id
 

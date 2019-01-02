@@ -41,43 +41,71 @@ QString getDumpString(QByteArray bts, int cp) {
 }
 
 int xDumpModel::mrd(int adr) const {
+	Computer* comp = *cptr;
+	MemPage* pg;
+	int fadr;
 	int res = 0xff;
 	switch(mode) {
 		case XVIEW_CPU:
-			res = memRd((*cptr)->mem, adr & 0xffff);
-			res |= getBrk(*cptr, adr & 0xffff) << 8;
+			pg = &comp->mem->map[(adr >> 8) & 0xffff];
+			fadr = (pg->num << 8) | (adr & 0xff);
+			switch (pg->type) {
+				case MEM_ROM: res = comp->mem->romData[fadr & comp->mem->romMask]; break;
+				case MEM_RAM: res = comp->mem->ramData[fadr & comp->mem->ramMask]; break;
+				case MEM_SLOT:
+					if (!comp->slot) break;
+					if (!comp->slot->data) break;
+					res = comp->slot->data[fadr & comp->slot->memMask];
+					break;
+			}
+			//res = memRd(comp->mem, adr & 0xffff);
+			res |= getBrk(comp, adr & 0xffff) << 8;
 			break;
 		case XVIEW_RAM:
 			adr &= 0x3fff;
 			adr |= (page << 14);
-			res = (*cptr)->mem->ramData[adr & 0x3fffff];
-			res |= (*cptr)->brkRamMap[adr & 0x3fffff] << 8;
+			res = comp->mem->ramData[adr & 0x3fffff];
+			res |= comp->brkRamMap[adr & 0x3fffff] << 8;
 			break;
 		case XVIEW_ROM:
 			adr &= 0x3fff;
 			adr |= (page << 14);
-			res = (*cptr)->mem->romData[adr & 0x7ffff];
-			res |= (*cptr)->brkRomMap[adr & 0x7ffff] << 8;
+			res = comp->mem->romData[adr & 0x7ffff];
+			res |= comp->brkRomMap[adr & 0x7ffff] << 8;
 			break;
 	}
 	return res;
 }
 
 void xDumpModel::mwr(int adr, unsigned char bt) {
+	Computer* comp = *cptr;
+	MemPage* pg;
+	int fadr;
 	switch(mode) {
 		case XVIEW_CPU:
-			memWr((*cptr)->mem, adr & 0xffff, bt);
+			pg = &comp->mem->map[(adr >> 8) & 0xffff];
+			fadr = (pg->num << 8) | (adr & 0xff);
+			switch (pg->type) {
+				// case MEM_ROM: comp->mem->romData[fadr & comp->mem->romMask] = bt; break;
+				case MEM_RAM: comp->mem->ramData[fadr & comp->mem->ramMask] = bt; break;
+//				case MEM_SLOT:
+//					if (!comp->slot) break;
+//					if (!comp->slot->data) break;
+//					comp->slot->data[fadr & comp->slot->memMask] = bt;
+//					break;
+			}
+//			memWr((*cptr)->mem, adr & 0xffff, bt);
 			break;
 		case XVIEW_RAM:
 			adr &= 0x3fff;
 			adr |= (page << 14);
-			(*cptr)->mem->ramData[adr & 0x3ffff] = bt;
+			comp->mem->ramData[adr & comp->mem->ramMask] = bt;
 			break;
 // write to ROM?
 		case XVIEW_ROM:
 //			adr &= 0x3fff;
 //			adr |= (page << 14);
-//			(*cptr)->mem->romData[adr & 0x7fff] = bt;
+//			comp->mem->romData[adr & comp->mem->romMask] = bt;
 			break;
 	}
 }

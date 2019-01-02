@@ -102,30 +102,51 @@ QVariant xDisasmModel::data(const QModelIndex& idx, int role) const {
 unsigned char dasmrd(unsigned short adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	unsigned char res = 0xff;
+	int fadr;
+	MemPage* pg;
 	switch (mode) {
 		case XVIEW_CPU:
-			res = memRd(comp->mem, adr);
+			pg = &comp->mem->map[adr >> 8];
+			fadr = (pg->num << 8) | (adr & 0xff);
+			switch (pg->type) {
+				case MEM_ROM: res = comp->mem->romData[fadr & comp->mem->romMask]; break;
+				case MEM_RAM: res = comp->mem->ramData[fadr & comp->mem->ramMask]; break;
+				case MEM_SLOT:
+					if (!comp->slot) break;
+					if (!comp->slot->data) break;
+					res = comp->slot->data[fadr & comp->slot->memMask];
+					break;
+			}
+//			res = memRd(comp->mem, adr);
 			break;
 		case XVIEW_RAM:
-			res = comp->mem->ramData[((adr & 0x3fff) | (page << 14)) & 0x3fffff];
+			res = comp->mem->ramData[((adr & 0x3fff) | (page << 14)) & comp->mem->ramMask];
 			break;
 		case XVIEW_ROM:
-			res = comp->mem->romData[((adr & 0x3fff) | (page << 14)) & 0x7ffff];
+			res = comp->mem->romData[((adr & 0x3fff) | (page << 14)) & comp->mem->romMask];
 			break;
 	}
 	return res;
 }
 
 void dasmwr(Computer* comp, unsigned short adr, unsigned char bt) {
+	int fadr;
+	MemPage* pg;
 	switch(mode) {
 		case XVIEW_CPU:
-			memWr(comp->mem, adr, bt);
+			pg = &comp->mem->map[adr >> 8];
+			fadr = (pg->num << 8) | (adr & 0xff);
+			switch (pg->type) {
+				// no writing to rom or slot
+				case MEM_RAM: comp->mem->ramData[fadr & comp->mem->ramMask] = bt; break;
+			}
+//			memWr(comp->mem, adr, bt);
 			break;
 		case XVIEW_RAM:
-			comp->mem->ramData[((adr & 0x3fff) | (page << 14)) & 0x3fffff] = bt;
+			comp->mem->ramData[((adr & 0x3fff) | (page << 14)) & comp->mem->ramMask] = bt;
 			break;
 		case XVIEW_ROM:
-			// comp->mem->romData[((adr & 0x3fff) | (page << 14)) & 0x7ffff] = bt;
+			// comp->mem->romData[((adr & 0x3fff) | (page << 14)) & comp->mem->romMask] = bt;
 			break;
 	}
 }

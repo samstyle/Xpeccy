@@ -2,18 +2,6 @@
 
 #include "hardware.h"
 
-// 0000..7FFF	RAM
-// 8000..FF7F	ROM
-// FF80..FFFF	IO
-
-// 0xffb0 (0177660)
-// b6:rd/wr:disable keyboard INT
-// b7:rd:keycode present in keyboard data reg
-
-// 0xffb2 (0177662)
-// b0..6:rd:key code
-// rd:reset b7,ffb0
-
 // hdd
 // ffe0	: wr:com rd:status (7)
 // ffe1 : #17
@@ -29,67 +17,75 @@
 // bit 0 : alt.reg (#16, #17)
 // data reg is 16-bit, others 8-bit
 
+// FDC
+
+unsigned char bk_fdc_rd(Computer* comp, unsigned short adr) {
+	comp->wdata = difIn(comp->dif, (adr & 2) ? 1 : 0, NULL, 0) & 0xffff;
+	return 0;
+}
+
+void bk_fdc_wr(Computer* comp, unsigned short adr, unsigned char val) {
+	// TODO
+}
+
+static xPort bk_io_tab[] = {
+	{0xfffc, 0xfe58, 2, 2, 2, bk_fdc_rd, bk_fdc_wr},
+	{0x0000, 0x0000, 2, 2, 2, NULL, NULL}
+};
+
+// cpu allways read whole word from even adr
+// even adr : update comp->wdata & take low byte
+// odd adr  : take high byte of comp->wdata
 unsigned char bk_io_rd(unsigned short adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	comp->wdata = 0xffff;
 	unsigned char res;
-	switch (adr & 0xfffe) {
-		// fdc
-		case 0xfe58:
-			if (!(adr & 1))
-				comp->wreg = difIn(comp->dif, 0, NULL, 0) & 0xffff;
-			comp->wdata = comp->wreg;
-			break;
-		case 0xfe5a:
-			if (!(adr & 1))
-				comp->wtmp = difIn(comp->dif, 1, NULL, 0) & 0xffff;
-			comp->wdata = comp->wtmp;
-			break;
-		// keyboard
-		case 0xffb0: comp->wdata = comp->keyb->map[7] & 0xc0; break;	// keyboard int control
-		case 0xffb2:							// keyboard code
-			comp->wdata = comp->keyb->map[0] & 0x7f;
-			comp->keyb->map[7] &= 0x7f;
-			break;
-		// vertical scroll register
-		case 0xffb4: comp->wdata = comp->vid->sc.y & 0x00ff;
-			if (!comp->vid->cutscr) comp->wdata |= 0x200;
-			break;
-		// storage
-		case 0xffbc: comp->wdata = comp->reg[0xbc] | ((comp->reg[0xbd] << 8) & 0xff00); break;
-		case 0xffbe: comp->wdata = comp->reg[0xbe] | ((comp->reg[0xbf] << 8) & 0xff00); break;
-		// timer
-		case 0xffc6: comp->wdata = comp->cpu->timer.ival; break;		// timer:initial counter value
-		case 0xffc8: comp->wdata = comp->cpu->timer.val; break;			// timer:current counter
-		case 0xffca: comp->wdata = (comp->cpu->timer.flag & 0xff) | 0xff00; break;	// timer flags
-		// system
-		case 0xffcc: comp->wdata = 0xffff; break;							// external port
-		case 0xffce:							// system port
-			comp->wdata = 0xc080;
-			if (~comp->keyb->map[7] & 0x20)
-				comp->wdata |= 0x40;		// = 0 if any key pressed
-			break;
-		// hdd
-		case 0xffe0:
-		case 0xffe2:
-		case 0xffe4:
-		case 0xffe6:
-		case 0xffe8:
-		case 0xffea:
-		case 0xffec:
-		case 0xffee:
-			ideIn(comp->ide, adr, &res, 0);
-			comp->wdata = res & 0xff;
-			adr &= ~1;
-			break;
-		default:
-			if (!comp->debug) {
-				printf("%.4X : rd %.4X\n",comp->cpu->pc, adr);
-				assert(0);
-			}
-			break;
+	if (adr & 1) {			// high byte
+		res = (comp->wdata >> 8) & 0xff;
+	} else {			// low byte : update comp->wdata
+		comp->wdata = 0xffff;
+		switch (adr) {
+			// fdc
+			case 0xfe58:
+				comp->wdata = difIn(comp->dif, 0, NULL, 0) & 0xffff;
+				break;
+			case 0xfe5a:
+				comp->wdata = difIn(comp->dif, 1, NULL, 0) & 0xffff;
+				break;
+				// keyboard
+			case 0xffb0: comp->wdata = comp->keyb->map[7] & 0xc0; break;	// keyboard int control
+			case 0xffb2:							// keyboard code
+				comp->wdata = comp->keyb->map[0] & 0x7f;
+				comp->keyb->map[7] &= 0x7f;
+				break;
+				// vertical scroll register
+			case 0xffb4: comp->wdata = comp->vid->sc.y & 0x00ff;
+				if (!comp->vid->cutscr) comp->wdata |= 0x200;
+				break;
+				// storage
+			case 0xffbc: comp->wdata = comp->reg[0xbc] | ((comp->reg[0xbd] << 8) & 0xff00); break;
+			case 0xffbe: comp->wdata = comp->reg[0xbe] | ((comp->reg[0xbf] << 8) & 0xff00); break;
+				// timer
+			case 0xffc6: comp->wdata = comp->cpu->timer.ival; break;		// timer:initial counter value
+			case 0xffc8: comp->wdata = comp->cpu->timer.val; break;			// timer:current counter
+			case 0xffca: comp->wdata = (comp->cpu->timer.flag & 0xff) | 0xff00; break;	// timer flags
+				// system
+			case 0xffcc: break;							// external port
+			case 0xffce:								// system port
+				comp->wdata = 0xc080;
+				if (~comp->keyb->map[7] & 0x20)
+					comp->wdata |= 0x40;		// = 0 if any key pressed
+				break;
+				// hdd
+			default:
+				if (!comp->debug) {
+					printf("%.4X : rd %.4X\n",comp->cpu->pc, adr);
+					assert(0);
+				}
+				break;
+		}
+		res = comp->wdata & 0xff;
 	}
-	return  (adr & 1) ? (comp->wdata >> 8) & 0xff : comp->wdata & 0xff;
+	return res;
 }
 
 void bk_io_wr(unsigned short adr, unsigned char val, void* ptr) {
