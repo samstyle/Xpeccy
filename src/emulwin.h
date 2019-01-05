@@ -4,6 +4,7 @@
 #include <QLabel>
 #include <QTimer>
 #include <QWidget>
+#include <QString>
 
 #include <SDL.h>
 
@@ -33,7 +34,7 @@ class MainWin : public QWidget {
 	signals:
 		void s_options(xProfile*);
 		void s_debug(Computer*);
-		void s_labels(QString);
+//		void s_labels(QString);
 
 		void s_tape_show();
 		void s_tape_progress(Tape*);

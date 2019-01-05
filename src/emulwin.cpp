@@ -1301,10 +1301,12 @@ void MainWin::umOpen(QAction* act) {
 
 // labels
 
+/*
 void MainWin::loadLabels(const char* nm) {
 	emit s_labels(QString(nm));
 	// dbg->loadLabels(QString(nm));
 }
+*/
 
 // debug stufffff
 void MainWin::saveVRAM() {

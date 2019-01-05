@@ -26,7 +26,7 @@ unsigned short disasmAdr = 0;
 int blockStart = -1;
 int blockEnd = -1;
 
-QMap<QString, xAdr> labels;
+// QMap<QString, xAdr> labels;
 
 int getRFIData(QComboBox*);
 int dasmSome(Computer*, unsigned short, dasmData&);
@@ -241,10 +241,10 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 	ui.tbSaveDasm->addAction(ui.actDisasm);
 	ui.tbSaveDasm->addAction(ui.actLoadDump);
-	ui.tbSaveDasm->addAction(ui.actLoadMap);
+//	ui.tbSaveDasm->addAction(ui.actLoadMap);
 	ui.tbSaveDasm->addAction(ui.actLoadLabels);
 	ui.tbSaveDasm->addAction(ui.actSaveDump);
-	ui.tbSaveDasm->addAction(ui.actSaveMap);
+//	ui.tbSaveDasm->addAction(ui.actSaveMap);
 	ui.tbSaveDasm->addAction(ui.actSaveLabels);
 
 	ui.tbTrace->addAction(ui.actTrace);
@@ -302,10 +302,10 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 	connect(ui.actLoadDump, SIGNAL(triggered(bool)),this,SLOT(doOpenDump()));
 	connect(ui.actSaveDump, SIGNAL(triggered(bool)),this,SLOT(doSaveDump()));
-	connect(ui.actLoadLabels, SIGNAL(triggered(bool)),this,SLOT(loadLabels()));
-	connect(ui.actSaveLabels, SIGNAL(triggered(bool)),this,SLOT(saveLabels()));
-	connect(ui.actLoadMap, SIGNAL(triggered(bool)),this,SLOT(loadMap()));
-	connect(ui.actSaveMap, SIGNAL(triggered(bool)),this,SLOT(saveMap()));
+	connect(ui.actLoadLabels, SIGNAL(triggered(bool)),this,SLOT(dbgLLab()));
+	connect(ui.actSaveLabels, SIGNAL(triggered(bool)),this,SLOT(dbgSLab()));
+//	connect(ui.actLoadMap, SIGNAL(triggered(bool)),this,SLOT(loadMap()));
+//	connect(ui.actSaveMap, SIGNAL(triggered(bool)),this,SLOT(saveMap()));
 	connect(ui.actDisasm, SIGNAL(triggered(bool)),this,SLOT(saveDasm()));
 
 // dump table
@@ -1205,12 +1205,16 @@ void DebugWin::fillMem() {
 
 // labels
 
+void DebugWin::dbgLLab() {loadLabels(NULL); fillDisasm();}
+void DebugWin::dbgSLab() {saveLabels(NULL);}
+
+/*
 void DebugWin::loadLabels(QString path) {
 	if (path.isEmpty())
 		path = QFileDialog::getOpenFileName(this, "Load SJASM labels");
 	if (path.isEmpty())
 		return;
-	labels.clear();
+	conf.labels.clear();
 	QString line;
 	QString name;
 	QStringList arr;
@@ -1242,7 +1246,7 @@ void DebugWin::loadLabels(QString path) {
 						xadr.adr |= 0xc000;
 						break;
 				}
-				labels[name] = xadr;
+				conf.labels[name] = xadr;
 			}
 		}
 	} else {
@@ -1259,9 +1263,9 @@ void DebugWin::saveLabels() {
 	QString line;
 	QFile file(path);
 	if (file.open(QFile::WriteOnly)) {
-		keys = labels.keys();
+		keys = conf.labels.keys();
 		foreach(key, keys) {
-			xadr = labels[key];
+			xadr = conf.labels[key];
 			line = (xadr.type == MEM_RAM) ? gethexbyte(xadr.bank) : "FF";
 			line.append(QString(":%0 %1\n").arg(gethexword(xadr.adr & 0x3fff)).arg(key));
 			file.write(line.toUtf8());
@@ -1271,16 +1275,18 @@ void DebugWin::saveLabels() {
 		shitHappens("Can't open file for writing");
 	}
 }
+*/
 
+/*
 QString findLabel(int adr, int type, int bank) {
 	QString lab;
 	if (!conf.dbg.labels)
 		return lab;
 	QString key;
 	xAdr xadr;
-	QStringList keys = labels.keys();
+	QStringList keys = conf.labels.keys();
 	foreach(key, keys) {
-		xadr = labels[key];
+		xadr = conf.labels[key];
 		if (!((xadr.adr ^ adr) & 0x3fff) \
 				&& ((type < 0) || (xadr.type < 0) || (type == xadr.type))\
 				&& ((bank < 0) || (xadr.bank < 0) || (bank == xadr.bank))) {
@@ -1290,9 +1296,11 @@ QString findLabel(int adr, int type, int bank) {
 	}
 	return lab;
 }
-
+*/
 
 // map
+
+/*
 
 void fwritepack(QDataStream& strm, unsigned char* data, int size) {
 	QByteArray pack = qCompress(data, size);
@@ -1309,11 +1317,11 @@ void freadpack(QDataStream& strm, unsigned char* data, int maxsize) {
 }
 
 void strmLabels(QDataStream& strm) {
-	QStringList keys = labels.keys();
+	QStringList keys = conf.labels.keys();
 	QString key;
 	xAdr xadr;
 	foreach(key, keys) {			// labels list
-		xadr = labels[key];
+		xadr = conf.labels[key];
 		strm << xadr.type;
 		strm << xadr.bank;
 		strm << xadr.adr;
@@ -1326,14 +1334,14 @@ void strmLabels(QDataStream& strm) {
 void strdLabels(QDataStream& strm) {
 	xAdr xadr;
 	QString key;
-	labels.clear();
+	conf.labels.clear();
 	do {
 		strm >> xadr.type;
 		strm >> xadr.bank;
 		strm >> xadr.adr;
 		strm >> key;
 		if (!key.isEmpty()) {
-			labels[key] = xadr;
+			conf.labels[key] = xadr;
 		}
 	} while (!key.isEmpty());
 }
@@ -1409,12 +1417,24 @@ void DebugWin::loadMap() {
 		fillAll();
 	}
 }
+*/
 
 // disasm table
 
 unsigned char rdbyte(unsigned short adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	return memRd(comp->mem, adr);
+	MemPage* pg = &comp->mem->map[adr >> 8];
+	unsigned char res = 0xff;
+	int fadr = (pg->num << 8) | (adr & 0xff);
+	switch (pg->type) {
+		case MEM_RAM: res = comp->mem->ramData[fadr & comp->mem->ramMask]; break;
+		case MEM_ROM: res = comp->mem->romData[fadr & comp->mem->romMask]; break;
+		case MEM_SLOT:
+			if (!comp->slot) break;
+			if (!comp->slot->data) break;
+			res = comp->slot->data[fadr & comp->slot->memMask]; break;
+	}
+	return res;
 }
 
 int checkCond(Computer* comp, int num) {
@@ -1450,12 +1470,12 @@ int getCommandSize(Computer* comp, unsigned short adr) {
 			break;
 		case DBG_VIEW_TEXT:
 			fl = getBrk(comp, adr);
-			bt = memRd(comp->mem, adr);
+			bt = rdbyte(adr, comp);
 			res = 0;
 			while (((fl & 0xc0) == DBG_VIEW_TEXT) && (bt > 31) && (bt < 128) && (res < 250)) {
 				res++;
 				adr++;
-				bt = memRd(comp->mem, adr & 0xffff);
+				bt = rdbyte(adr & 0xffff, comp);
 				fl = getBrk(comp, adr & 0xffff);
 			}
 			if (res == 0)
@@ -1556,8 +1576,8 @@ void DebugWin::fillStack() {
 	int adr = comp->cpu->sp;
 	QString str;
 	for (int i = 0; i < 4; i++) {
-		str.append(gethexbyte(memRd(comp->mem, adr+1)));
-		str.append(gethexbyte(memRd(comp->mem, adr)));
+		str.append(gethexbyte(rdbyte(adr+1, comp)));
+		str.append(gethexbyte(rdbyte(adr, comp)));
 		adr += 2;
 	}
 	ui.labSP->setText(str.left(4));
@@ -1627,7 +1647,7 @@ void DebugWin::chaCellProperty(QAction* act) {
 		} else {
 			*ptr &= 0x0f;
 			if ((data & 0xf0) == DBG_VIEW_TEXT) {
-				bt = memRd(comp->mem, adr);
+				bt = rdbyte(adr, comp);
 				if ((bt < 32) || (bt > 127)) {
 					*ptr |= DBG_VIEW_BYTE;
 				} else {
@@ -1682,7 +1702,7 @@ QByteArray DebugWin::getDumpData() {
 	QByteArray res;
 	while (len > 0) {
 		if (adr < 0xc000) {
-			res.append(memRd(comp->mem,adr));
+			res.append(rdbyte(adr, comp));
 		} else {
 			res.append(comp->mem->ramData[(bank << 14) | (adr & 0x3fff)]);
 		}

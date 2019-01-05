@@ -12,7 +12,6 @@ extern QColor colPC;
 extern QColor colBRK;
 extern QColor colSEL;
 
-extern QMap<QString, xAdr> labels;
 QString findLabel(int, int, int);
 
 static int mode = XVIEW_CPU;
@@ -366,25 +365,27 @@ int asmAddr(QVariant val, xAdr xadr, int base) {
 	if (str.isEmpty()) {
 		str = findLabel(xadr.adr, xadr.type, xadr.bank);
 		if (!str.isEmpty())
-			labels.remove(str);
+			conf.labels.remove(str);
 	} else {
 		adr = str.toInt(&flag, base);
 		if (flag) {
 			res = adr;
 		} else {
+			if (str.startsWith("#"))
+				str.replace(0, 1, "0x");
 			if (str.startsWith("0x")) {
 				adr = str.toInt(&flag, 16);
 			}
 			if (flag) {
 				res = adr;
-			} else if (labels.contains(str)) {
-			// if there is such label
-				res = labels[str].adr;
+			} else if (conf.labels.contains(str)) {
+				// if there is such label
+				res = conf.labels[str].adr;
 			} else {
 				lab = findLabel(xadr.adr, xadr.type, xadr.bank);
 				if (!lab.isEmpty())
-					labels.remove(lab);
-				labels[str] = xadr;
+					conf.labels.remove(lab);
+				conf.labels[str] = xadr;
 			}
 		}
 	}
@@ -466,8 +467,8 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 				}
 			} else if (str.startsWith("dw ", Qt::CaseInsensitive)) {	// word/addr
 				str = str.mid(3);
-				if (labels.contains(str)) {				// check label
-					idx = labels[str].adr;
+				if (conf.labels.contains(str)) {				// check label
+					idx = conf.labels[str].adr;
 					*ptr &= 0x0f;
 					*ptr |= DBG_VIEW_ADDR;
 					ptr++;

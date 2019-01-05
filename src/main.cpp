@@ -83,7 +83,7 @@ int main(int ac,char** av) {
 	app.connect(&dbgw, SIGNAL(closed()), &mwin, SLOT(dbgReturn()));
 	app.connect(&dbgw, SIGNAL(wannaKeys()), &keyw, SLOT(show()));
 	app.connect(&mwin, SIGNAL(s_debug(Computer*)), &dbgw, SLOT(start(Computer*)));
-	app.connect(&mwin, SIGNAL(s_labels(QString)), &dbgw, SLOT(loadLabels(QString)));
+	// app.connect(&mwin, SIGNAL(s_labels(QString)), &dbgw, SLOT(loadLabels(QString)));
 
 	app.connect(&mwin, SIGNAL(s_options(xProfile*)), &optw, SLOT(start(xProfile*)));
 	app.connect(&optw, SIGNAL(closed()), &mwin, SLOT(optApply()));
@@ -144,7 +144,8 @@ int main(int ac,char** av) {
 				brkSet(BRK_MEMCELL, MEM_BRK_FETCH, strtol(av[i],NULL,0) & 0xffff, -1);
 				i++;
 			} else if (!strcmp(parg,"-l") || !strcmp(parg,"--labels")) {
-				mwin.loadLabels(av[i]);
+				// mwin.loadLabels(av[i]);
+				loadLabels(av[i]);
 				i++;
 			} else if (strlen(parg) > 0) {
 				//loadFile(mwin.comp, parg, FT_ALL, 0);

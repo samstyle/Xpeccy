@@ -63,7 +63,6 @@ class DebugWin : public QDialog {
 		void needStep();
 	public slots:
 		void start(Computer*);
-		void loadLabels(QString = QString());
 		bool fillAll();
 	private:
 		unsigned block:1;
@@ -117,10 +116,12 @@ class DebugWin : public QDialog {
 		void setDasmMode();
 		void setDumpCP();
 
-		void loadMap();
-		void saveMap();
+//		void loadMap();
+//		void saveMap();
 		void saveDasm();
-		void saveLabels();
+
+		void dbgLLab();
+		void dbgSLab();
 
 		void mapClear();
 		void mapAuto();

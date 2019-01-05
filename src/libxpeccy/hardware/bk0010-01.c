@@ -17,20 +17,96 @@
 // bit 0 : alt.reg (#16, #17)
 // data reg is 16-bit, others 8-bit
 
-// FDC
+// fdc
 
 unsigned char bk_fdc_rd(Computer* comp, unsigned short adr) {
 	comp->wdata = difIn(comp->dif, (adr & 2) ? 1 : 0, NULL, 0) & 0xffff;
 	return 0;
 }
 
-void bk_fdc_wr(Computer* comp, unsigned short adr, unsigned char val) {
-	// TODO
+// keboard
+
+unsigned char bk_kbd_rd(Computer* comp, unsigned short adr) {
+	comp->wdata = comp->keyb->map[7] & 0xc0;
+	return 0;
+}
+
+unsigned char bk_kbf_rd(Computer* comp, unsigned short adr) {
+	comp->wdata = comp->keyb->map[0] & 0x7f;
+	comp->keyb->map[7] &= 0x7f;
+	return 0;
+}
+
+// scroller
+
+unsigned char bk_scr_rd(Computer* comp, unsigned short adr) {
+	comp->wdata = comp->vid->sc.y & 0x00ff;
+	if (!comp->vid->cutscr)
+		comp->wdata |= 0x200;
+	return 0;
+}
+
+// pc/psw
+
+unsigned char bk_str_rd(Computer* comp, unsigned short adr) {
+	comp->wdata = (comp->reg[adr & ~1] & 0xff) | ((comp->reg[adr | 1] << 8) & 0xff00);
+	return 0;
+}
+
+// timer
+
+unsigned char bk_tiv_rd(Computer* comp, unsigned short adr) {
+	comp->wdata = comp->cpu->timer.ival;
+	return 0;
+}
+
+unsigned char bk_tva_rd(Computer* comp, unsigned short adr) {
+	comp->wdata = comp->cpu->timer.val;
+	return 0;
+}
+
+unsigned char bk_tfl_rd(Computer* comp, unsigned short adr) {
+	comp->wdata = (comp->cpu->timer.flag & 0xff) | 0xff00;
+	return 0;
+}
+
+// external
+
+unsigned char bk_fcc_rd(Computer* comp, unsigned short adr) {
+	comp->wdata = 0xffff;
+	return 0;
+}
+
+// system
+
+unsigned char bk_sys_rd(Computer* comp, unsigned short adr) {
+	comp->wdata = 0xc080;
+	if (~comp->keyb->map[7] & 0x20)
+		comp->wdata |= 0x40;		// = 0 if any key pressed
+	return 0;
+}
+
+// * debug
+
+unsigned char bk_dbg_rd(Computer* comp, unsigned short adr) {
+	comp->wdata = 0xffff;
+	printf("%.4X : rd %.4X\n",comp->cpu->pc, adr);
+	assert(0);
+	return 1;
 }
 
 static xPort bk_io_tab[] = {
-	{0xfffc, 0xfe58, 2, 2, 2, bk_fdc_rd, bk_fdc_wr},
-	{0x0000, 0x0000, 2, 2, 2, NULL, NULL}
+	{0xfffc, 0xfe58, 2, 2, 2, bk_fdc_rd, NULL},	// fdc
+	{0xfffe, 0xffb0, 2, 2, 2, bk_kbd_rd, NULL},	// keycode
+	{0xfffe, 0xffb2, 2, 2, 2, bk_kbf_rd, NULL},	// keyflag
+	{0xfffe, 0xffb4, 2, 2, 2, bk_scr_rd, NULL},	// scroller
+	{0xfffc, 0xffbc, 2, 2, 2, bk_str_rd, NULL},	// storage (pc/psw)
+	{0xfffe, 0xffc6, 2, 2, 2, bk_tiv_rd, NULL},	// timer
+	{0xfffe, 0xffc8, 2, 2, 2, bk_tva_rd, NULL},
+	{0xfffe, 0xffca, 2, 2, 2, bk_tfl_rd, NULL},
+	{0xfffe, 0xffcc, 2, 2, 2, bk_fcc_rd, NULL},	// ext
+	{0xfffe, 0xffce, 2, 2, 2, bk_sys_rd, NULL},	// system
+	{0x0000, 0x0000, 2, 2, 2, bk_dbg_rd, NULL}
 };
 
 // cpu allways read whole word from even adr
@@ -42,6 +118,10 @@ unsigned char bk_io_rd(unsigned short adr, void* ptr) {
 	if (adr & 1) {			// high byte
 		res = (comp->wdata >> 8) & 0xff;
 	} else {			// low byte : update comp->wdata
+#if 1
+		hwIn(bk_io_tab, comp, adr, 0);
+		res = comp->wdata & 0xff;
+#else
 		comp->wdata = 0xffff;
 		switch (adr) {
 			// fdc
@@ -84,6 +164,7 @@ unsigned char bk_io_rd(unsigned short adr, void* ptr) {
 				break;
 		}
 		res = comp->wdata & 0xff;
+#endif
 	}
 	return res;
 }

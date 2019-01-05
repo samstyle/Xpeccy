@@ -1,12 +1,14 @@
-#ifndef XCORE_H
-#define	XCORE_H
+#ifndef X_CORE_H
+#define	X_CORE_H
 
 #include <string>
 #include <vector>
 #include <map>
 #include <limits.h>
 #include <SDL_joystick.h>
+
 #include <QString>
+#include <QMap>
 
 #include "spectrum.h"
 #include "filetypes.h"
@@ -48,6 +50,12 @@ typedef struct {
 #define	PR_EXTRA	(1<<6)
 #define PR_RZX		(1<<7)
 #define	PR_EXIT		(1<<8)
+
+// labels
+
+int loadLabels(const char*);
+int saveLabels(const char*);
+QString findLabel(int, int, int);
 
 // brk points
 
@@ -237,6 +245,7 @@ struct xConfig {
 	std::vector<xRomset> rsList;
 	std::vector<xLayout> layList;
 	std::vector<xBookmark> bookmarkList;
+	QMap<QString, xAdr> labels;
 	struct {
 		unsigned fast:1;
 		int pause;

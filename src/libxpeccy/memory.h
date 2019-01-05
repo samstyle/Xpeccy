@@ -1,5 +1,5 @@
-#ifndef _MEMOR_H
-#define _MEMOR_H
+#ifndef X_MEMORY_H
+#define X_MEMORY_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,18 +15,8 @@ enum {
 	MEM_EXT,
 	MEM_IO
 };
-// memory banks
-/*
-enum {
-	MEM_BANK0 = 0,
-	MEM_BANK1,
-	MEM_BANK2,
-	MEM_BANK3
-};
-*/
 
 // memory size
-#define MEM_48K	0		// "special" value
 #define MEM_256	(1<<8)
 #define MEM_512	(1<<9)
 #define MEM_1K	(1<<10)

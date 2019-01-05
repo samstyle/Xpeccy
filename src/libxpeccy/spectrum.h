@@ -1,5 +1,5 @@
-#ifndef _XPECTR
-#define _XPECTR
+#ifndef X_COMP_H
+#define X_COMP_H
 
 #ifdef __cplusplus
 extern "C" {
