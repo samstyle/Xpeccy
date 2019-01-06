@@ -32,7 +32,7 @@ void xHexSpin::setBase(int b) {
 			base = 10;
 			msk = "N";
 			mx = 10;
-			while (mx < max) {
+			while (mx <= max) {
 				msk.append("n");
 				mx *= 10;
 			}
@@ -43,7 +43,7 @@ void xHexSpin::setBase(int b) {
 			base = 16;
 			msk = "H";
 			mx = 16;
-			while (mx < max) {
+			while (mx <= max) {
 				msk.append("h");
 				mx *= 16;
 			}
@@ -67,11 +67,13 @@ int minMaxCorrect(int val, int min, int max) {
 
 void xHexSpin::setMin(int v) {
 	min = v;
+	setBase(base);
 	if (value < min) setValue(min);
 }
 
 void xHexSpin::setMax(int v) {
 	max = v;
+	setBase(base);
 	if (value > max) setValue(max);
 }
 
@@ -94,24 +96,16 @@ void xHexSpin::setValue(int nval) {
 
 QString xHexSpin::getText(int val) {
 	QString res;
-	int sz = inputMask().size();
-	if (sz > 5) sz = 5;
 	switch(base) {
 		case 10: res = QString::number(val, 10); break;
-		default:
-			if (max < 0x100) {
-				res = gethexbyte(val);
-			} else {
-				res = gethexword(val);
-			}
-			break;
+		default: res = QString::number(val, 16); break;
 	}
 	return res;
 }
 
 void xHexSpin::onChange(int val) {
 	int pos = cursorPosition();
-	setText(getText(val));
+	setText(getText(val).toUpper());
 	setCursorPosition(pos);
 }
 
@@ -120,6 +114,7 @@ void xHexSpin::onTextChange(QString txt) {
 	int xval = minMaxCorrect(nval, min, max);
 	if (value != xval)
 		setValue(xval);
+	onChange(value);
 }
 
 void xHexSpin::keyPressEvent(QKeyEvent* ev) {

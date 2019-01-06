@@ -19,10 +19,6 @@
 #include <SDL.h>
 #undef main
 
-//#ifdef _WIN32
-//	#include <mmsystem.h>
-//#endif
-
 void help() {
 	printf("Xpeccy command line arguments:\n");
 	printf("-h | --help\t\tshow this help\n");
@@ -46,9 +42,6 @@ int main(int ac,char** av) {
 	SDL_VERSION(&sdlver);
 	printf("Using SDL ver %u.%u.%u\n", sdlver.major, sdlver.minor, sdlver.patch);
 
-//#ifdef HAVEALSA
-//	printf("Using ALSA ver %s\n",SND_LIB_VERSION_STR);
-//#endif
 #ifdef HAVEZLIB
 	printf("Using ZLIB ver %s\n",ZLIB_VERSION);
 #endif
@@ -83,7 +76,6 @@ int main(int ac,char** av) {
 	app.connect(&dbgw, SIGNAL(closed()), &mwin, SLOT(dbgReturn()));
 	app.connect(&dbgw, SIGNAL(wannaKeys()), &keyw, SLOT(show()));
 	app.connect(&mwin, SIGNAL(s_debug(Computer*)), &dbgw, SLOT(start(Computer*)));
-	// app.connect(&mwin, SIGNAL(s_labels(QString)), &dbgw, SLOT(loadLabels(QString)));
 
 	app.connect(&mwin, SIGNAL(s_options(xProfile*)), &optw, SLOT(start(xProfile*)));
 	app.connect(&optw, SIGNAL(closed()), &mwin, SLOT(optApply()));
@@ -108,12 +100,10 @@ int main(int ac,char** av) {
 
 	int i;
 	char* parg;
-//	unsigned char* ptr = NULL;
 	int adr = 0x4000;
 	i = 1;
 	mwin.setProfile("");
 	int dbg = 0;
-	// int hlp = 0;
 	while (i < ac) {
 		parg = av[i++];
 		if ((strcmp(parg,"-d") == 0) || (strcmp(parg,"--debug") == 0)) {
@@ -144,15 +134,12 @@ int main(int ac,char** av) {
 				brkSet(BRK_MEMCELL, MEM_BRK_FETCH, strtol(av[i],NULL,0) & 0xffff, -1);
 				i++;
 			} else if (!strcmp(parg,"-l") || !strcmp(parg,"--labels")) {
-				// mwin.loadLabels(av[i]);
 				loadLabels(av[i]);
 				i++;
 			} else if (strlen(parg) > 0) {
-				//loadFile(mwin.comp, parg, FT_ALL, 0);
 				load_file(mwin.comp, parg, FG_ALL, 0);
 			}
 		} else if (strlen(parg) > 0) {
-			//loadFile(mwin.comp, parg, FT_ALL, 0);
 			load_file(mwin.comp, parg, FG_ALL, 0);
 		}
 	}

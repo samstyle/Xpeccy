@@ -27,12 +27,9 @@
    <item>
     <layout class="QGridLayout" name="gridLayout" columnstretch="0,0,0">
      <item row="2" column="1">
-      <widget class="QLineEdit" name="leEnd">
-       <property name="inputMask">
-        <string>HHHH</string>
-       </property>
+      <widget class="xHexSpin" name="leEnd">
        <property name="text">
-        <string>FFFF</string>
+        <string/>
        </property>
       </widget>
      </item>
@@ -65,22 +62,16 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QLineEdit" name="leStart">
-       <property name="inputMask">
-        <string>HHHH</string>
-       </property>
+      <widget class="xHexSpin" name="leStart">
        <property name="text">
-        <string>8000</string>
+        <string/>
        </property>
       </widget>
      </item>
      <item row="3" column="1">
-      <widget class="QLineEdit" name="leLen">
-       <property name="inputMask">
-        <string>HHHH</string>
-       </property>
+      <widget class="xHexSpin" name="leLen">
        <property name="text">
-        <string>8000</string>
+        <string/>
        </property>
       </widget>
      </item>
@@ -163,6 +154,13 @@
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>xHexSpin</class>
+   <extends>QLineEdit</extends>
+   <header>stdlib.h</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>leBank</tabstop>
   <tabstop>leStart</tabstop>

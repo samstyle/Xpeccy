@@ -183,7 +183,10 @@ xMnem z80_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 			mn.met = (cpu->f & z80_cnd[(op >> 4) & 3]) ? 0 : 1;
 			if (op & 8)
 				mn.met ^= 1;
-		} else if ((op & 0xe7) == 0x20) {							// jr
+		} else if (op == 0x18) {								// jr
+			mn.cond = 1;
+			mn.met = 1;
+		} else if ((op & 0xe7) == 0x20) {							// jr cc
 			mn.cond = 1;
 			mn.met = (cpu->f & z80_cnd[(op >> 4) & 1] ? 0 : 1);
 			if (op & 8)

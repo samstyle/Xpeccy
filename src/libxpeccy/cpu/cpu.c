@@ -91,6 +91,7 @@ void cpuDestroy(CPU* cpu) {
 // disasm
 
 static const char halfByte[] = "0123456789ABCDEF";
+static char tmpbuf[1024];
 
 xMnem cpuDisasm(CPU* cpu, unsigned short adr, char* buf, cbdmr mrd, void* data) {
 	xMnem mn;
@@ -102,6 +103,7 @@ xMnem cpuDisasm(CPU* cpu, unsigned short adr, char* buf, cbdmr mrd, void* data) 
 	unsigned short dtw;
 	mn.mnem = NULL;
 	mn.flag = 0;
+	if (!buf) buf = tmpbuf;
 //	if (opt == NULL) {			// no opcode tab
 //		strcpy(buf, "undef");
 //		mn.len = 1;

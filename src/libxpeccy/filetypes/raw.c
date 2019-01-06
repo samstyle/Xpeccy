@@ -11,6 +11,8 @@ void cutSpaces(char* name) {
 	}
 }
 
+static char hexnum[16] = "0123456789ABCDEF";
+
 int loadRaw(Computer* comp, const char* name, int drv) {
 	Floppy* flp = comp->dif->fdc->flop[drv & 3];
 	FILE* file = fopen(name, "rb");
@@ -21,9 +23,9 @@ int loadRaw(Computer* comp, const char* name, int drv) {
 	size_t len = ftell(file);
 	rewind(file);
 
-	if (len > 0xff00) {
-		err = ERR_RAW_LONG;
-	} else {
+//	if (len > 0xff00) {
+//		err = ERR_RAW_LONG;
+//	} else {
 		if (!flp->insert) {
 			diskFormat(flp);
 			flp->insert = 1;
@@ -31,11 +33,11 @@ int loadRaw(Computer* comp, const char* name, int drv) {
 		if (diskGetType(flp) != DISK_TYPE_TRD) {
 			err = ERR_NOTRD;
 		} else {
-			char fpath[1024];
-			char fnam[1024];
-			char fext[1024];
-			memset(fnam,' ',1024);
-			memset(fext,' ',1024);
+			char fpath[PATH_MAX];
+			char fnam[FILENAME_MAX];
+			char fext[FILENAME_MAX];
+			memset(fnam,' ',FILENAME_MAX);
+			memset(fext,' ',FILENAME_MAX);
 			char* ptr = strrchr(name, SLSH);
 			if (ptr) {
 				strcpy(fpath, ptr + 1);
@@ -51,18 +53,29 @@ int loadRaw(Computer* comp, const char* name, int drv) {
 				fext[0] = 0x00;
 			}
 			// printf("%s\n%s\n",fnam,fext);
-			TRFile nfle = diskMakeDescriptor(fnam, fext[0], 0, len);
-			nfle.lst = fext[1];
-			nfle.hst = fext[2];
+			TRFile nfle;
+			int num = 0;
+			int flen;
 			unsigned char buf[0x10000];
-			fread((char*)buf, len, 1, file);
-			if (diskCreateFile(flp, nfle, buf, len) != ERR_OK) {
-				err = ERR_HOB_CANT;
-			} else {
-				for (int i = 0; i < 256; i++) flpFillFields(flp, i, 1);
+			while ((len > 0) && (err == ERR_OK)) {
+				flen = (len > 0xff00) ? 0xff00 : len;		// part size
+				len -= flen;
+				nfle = diskMakeDescriptor(fnam, fext[0], 0, flen);
+				nfle.lst = fext[1];
+				nfle.hst = fext[2];
+				if (num) {
+					nfle.ext = hexnum[num & 0x0f];
+				}
+				num++;
+				fread((char*)buf, flen, 1, file);
+				if (diskCreateFile(flp, nfle, buf, flen) != ERR_OK) {
+					err = ERR_HOB_CANT;
+				}
 			}
+			if (err == ERR_OK)
+				for (int i = 0; i < 256; i++) flpFillFields(flp, i, 1);
 		}
-	}
+//	}
 	fclose(file);
 	return err;
 }

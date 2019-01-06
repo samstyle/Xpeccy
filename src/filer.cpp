@@ -58,7 +58,7 @@ static xFileTypeInfo ft_tab[] = {
 #ifdef HAVEZLIB
 	{FL_RZX, 0, ".rzx", "*.rzx", loadRZX, NULL, "RZX playback"},
 #endif
-	{FL_RAW, 0, NULL, "*.*", loadRaw, NULL, "RAW file"},
+	{FL_RAW, 0, NULL, "*", loadRaw, NULL, "RAW file"},			// * for all files; *.* for all files that have extension
 	{0, 0, NULL, NULL, NULL, NULL, NULL}
 };
 

@@ -331,6 +331,15 @@ int xDisasmModel::fill() {
 
 int xDisasmModel::update() {
 	int res = fill();
+	int i;
+	xMnem mnm = cpuDisasm((*cptr)->cpu, (*cptr)->cpu->pc, NULL, dasmrd, *cptr);
+	if (mnm.cond && mnm.met) {
+		for (i = 0; i < dasm.size(); i++) {
+			if ((dasm[i].adr == mnm.oadr) && (mnm.oadr != (*cptr)->cpu->pc)) {
+				dasm[i].icon = QString(":/images/arrleft.png");
+			}
+		}
+	}
 	emit dataChanged(index(0, 0), index(rowCount() - 1, columnCount() - 1));
 	return res;
 }

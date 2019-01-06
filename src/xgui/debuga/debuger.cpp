@@ -64,9 +64,12 @@ void DebugWin::start(Computer* c) {
 	blockStart = -1;
 	blockEnd = -1;
 	chLayout();
-	if (getRFIData(ui.cbDasmMode) == XVIEW_CPU)
+//	if (getRFIData(ui.cbDasmMode) == XVIEW_CPU)
+//		disasmAdr = comp->cpu->pc;
+	if (!fillAll()) {
 		disasmAdr = comp->cpu->pc;
-	fillAll();
+		fillDisasm();
+	}
 	updateScreen();
 	if (!comp->vid->tail)
 		vidDarkTail(comp->vid);
@@ -401,6 +404,12 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	dui.tbSave->addAction(dui.aSaveToB);
 	dui.tbSave->addAction(dui.aSaveToC);
 	dui.tbSave->addAction(dui.aSaveToD);
+	dui.leStart->setMin(0);
+	dui.leStart->setMax(0xffff);
+	dui.leEnd->setMin(0);
+	dui.leEnd->setMax(0xffff);
+	dui.leLen->setMin(1);
+	dui.leLen->setMax(0x10000);
 
 	connect(dui.aSaveBin,SIGNAL(triggered()),this,SLOT(saveDumpBin()));
 	connect(dui.aSaveHobeta,SIGNAL(triggered()),this,SLOT(saveDumpHobeta()));
@@ -408,9 +417,9 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(dui.aSaveToB,SIGNAL(triggered()),this,SLOT(saveDumpToB()));
 	connect(dui.aSaveToC,SIGNAL(triggered()),this,SLOT(saveDumpToC()));
 	connect(dui.aSaveToD,SIGNAL(triggered()),this,SLOT(saveDumpToD()));
-	connect(dui.leStart,SIGNAL(textChanged(QString)),this,SLOT(dmpLimChanged()));
-	connect(dui.leEnd,SIGNAL(textChanged(QString)),this,SLOT(dmpLimChanged()));
-	connect(dui.leLen,SIGNAL(textChanged(QString)),this,SLOT(dmpLenChanged()));
+	connect(dui.leStart,SIGNAL(valueChanged(int)),this,SLOT(dmpLimChanged()));
+	connect(dui.leEnd,SIGNAL(valueChanged(int)),this,SLOT(dmpLimChanged()));
+	connect(dui.leLen,SIGNAL(valueChanged(int)),this,SLOT(dmpLenChanged()));
 
 	openDumpDialog = new QDialog(this);
 	oui.setupUi(openDumpDialog);
@@ -679,7 +688,6 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					}
 					break;
 				case Qt::Key_F3:
-					//loadFile(comp,"",FT_ALL,-1);
 					load_file(comp, NULL, FG_ALL, -1);
 					disasmAdr = comp->cpu->pc;
 					fillAll();
@@ -702,7 +710,6 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					if (!ui.dasmTable->hasFocus()) break;
 					idx = ui.dasmTable->currentIndex();
 					i = ui.dasmTable->getData(idx.row(), 0, Qt::UserRole).toInt() & 0xffff;
-					// qDebug() << idx << i;
 					ptr = getBrkPtr(comp, i);
 					*ptr |= MEM_BRK_TFETCH;
 					stop();
@@ -1667,38 +1674,38 @@ void DebugWin::chaCellProperty(QAction* act) {
 // memDump
 
 void DebugWin::doSaveDump() {
-	dui.leBank->setText(QString::number(comp->mem->map[3].num >> 14, 16));
+	dui.leBank->setText(QString::number(comp->mem->map[0xc0].num >> 14, 16));
 	dumpwin->show();
 }
 
 void DebugWin::dmpLimChanged() {
-	int start = dui.leStart->text().toInt(NULL,16);
-	int end = dui.leEnd->text().toInt(NULL,16);
+	int start = dui.leStart->getValue();
+	int end = dui.leEnd->getValue();
 	if (end < start) end = start;
-	int len = end-start+1;
+	int len = end - start + 1;
 	start = dui.leEnd->cursorPosition();
-	dui.leEnd->setText(QString::number(end,16));
-	dui.leLen->setText(QString::number(len,16));
+	dui.leEnd->setValue(end);
+	dui.leLen->setValue(len);
 	dui.leEnd->setCursorPosition(start);
 }
 
 void DebugWin::dmpLenChanged() {
-	int start = dui.leStart->text().toInt(NULL,16);
-	int len = dui.leLen->text().toInt(NULL,16);
-	if (start + len > 0xffff) {
+	int start = dui.leStart->getValue();
+	int len = dui.leLen->getValue();
+	if (start + len > 0x10000) {
 		len = 0x10000 - start;
-		dui.leLen->setText(QString::number(len,16));
+		dui.leLen->setValue(len);
 	}
 	int end = start + len - 1;
 	start = dui.leLen->cursorPosition();
-	dui.leEnd->setText(QString::number(end,16));
+	dui.leEnd->setValue(end);
 	dui.leLen->setCursorPosition(start);
 }
 
 QByteArray DebugWin::getDumpData() {
 	int bank = dui.leBank->text().toInt(NULL,16);
-	int adr = dui.leStart->text().toInt(NULL,16);
-	int len = dui.leLen->text().toInt(NULL,16);
+	int adr = dui.leStart->getValue();
+	int len = dui.leLen->getValue();
 	QByteArray res;
 	while (len > 0) {
 		if (adr < 0xc000) {
@@ -1734,7 +1741,7 @@ void DebugWin::saveDumpHobeta() {
 	nms.resize(8,' ');
 	memcpy(dsc.name,nms.c_str(),8);
 	dsc.ext = 'C';
-	int start = dui.leStart->text().toInt(NULL,16);
+	int start = dui.leStart->getValue();
 	int len = data.size();
 	dsc.hst = (start >> 8) & 0xff;
 	dsc.lst = start & 0xff;
@@ -1754,8 +1761,8 @@ void DebugWin::saveDumpToDisk(int idx) {
 	QByteArray data = getDumpData();
 	if (data.size() == 0) return;
 	if (data.size() > 0xff00) return;
-	int start = dui.leStart->text().toInt(NULL,16);
-	int len = dui.leLen->text().toInt(NULL,16);
+	int start = dui.leStart->getValue();
+	int len = dui.leLen->getValue();
 	QString name = dui.leStart->text();
 	name.append(".").append(dui.leBank->text());
 	Floppy* flp = comp->dif->fdc->flop[idx & 3];
@@ -1764,7 +1771,8 @@ void DebugWin::saveDumpToDisk(int idx) {
 		flp->insert = 1;
 	}
 	TRFile dsc = diskMakeDescriptor(name.toStdString().c_str(), 'C', start, len);
-	if (diskCreateFile(flp, dsc, (unsigned char*)data.data(), data.size()) == ERR_OK) dumpwin->hide();
+	if (diskCreateFile(flp, dsc, (unsigned char*)data.data(), data.size()) == ERR_OK)
+		dumpwin->hide();
 
 }
 
@@ -1801,7 +1809,7 @@ void DebugWin::doMemView() {
 void DebugWin::doOpenDump() {
 	dumpPath.clear();
 	oui.laPath->clear();
-	oui.leBank->setText(QString::number(comp->mem->map[3].num,16));
+	oui.leBank->setText(QString::number(comp->mem->map[0xc0].num >> 14, 16));
 	oui.leStart->setText("4000");
 	openDumpDialog->show();
 }
