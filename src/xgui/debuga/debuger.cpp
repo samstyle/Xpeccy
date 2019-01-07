@@ -1674,7 +1674,7 @@ void DebugWin::chaCellProperty(QAction* act) {
 // memDump
 
 void DebugWin::doSaveDump() {
-	dui.leBank->setText(QString::number(comp->mem->map[0xc0].num >> 14, 16));
+	dui.leBank->setText(QString::number(comp->mem->map[0xc0].num >> 6, 16));
 	dumpwin->show();
 }
 
@@ -1799,7 +1799,7 @@ void DebugWin::doFill() {
 
 void DebugWin::doMemView() {
 	memViewer->mem = comp->mem;
-	memViewer->ui.sbPage->setValue(comp->mem->map[0xc0].num >> 14);
+	memViewer->ui.sbPage->setValue(comp->mem->map[0xc0].num >> 6);
 	memViewer->fillImage();
 	memViewer->show();
 }
@@ -1809,7 +1809,7 @@ void DebugWin::doMemView() {
 void DebugWin::doOpenDump() {
 	dumpPath.clear();
 	oui.laPath->clear();
-	oui.leBank->setText(QString::number(comp->mem->map[0xc0].num >> 14, 16));
+	oui.leBank->setText(QString::number(comp->mem->map[0xc0].num >> 6, 16));
 	oui.leStart->setText("4000");
 	openDumpDialog->show();
 }

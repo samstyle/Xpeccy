@@ -100,6 +100,7 @@ QString xHexSpin::getText(int val) {
 		case 10: res = QString::number(val, 10); break;
 		default: res = QString::number(val, 16); break;
 	}
+	res = res.rightJustified(inputMask().size(), '0');
 	return res;
 }
 
