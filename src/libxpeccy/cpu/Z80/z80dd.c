@@ -268,7 +268,7 @@ opCode ddTab[256]={
 
 	{OF_RELJUMP,4,npr20,NULL,"jr nz,:3"},
 	{0,4,dd21,NULL,"ld ix,:2"},
-	{0,4,dd22,NULL,"ld (:2),ix"},		// 4,3rd,3rd,3wr,3wr
+	{OF_MWORD,4,dd22,NULL,"ld (:2),ix"},		// 4,3rd,3rd,3wr,3wr
 	{0,6,dd23,NULL,"inc ix"},
 	{0,4,dd24,NULL,"inc hx"},
 	{0,4,dd25,NULL,"dec hx"},
@@ -277,7 +277,7 @@ opCode ddTab[256]={
 
 	{OF_RELJUMP,4,npr28,NULL,"jr z,:3"},
 	{0,11,dd29,NULL,"add ix,ix"},
-	{0,4,dd2A,NULL,"ld ix,(:2)"},		// 4,3rd,3rd,3rd,3rd
+	{OF_MWORD,4,dd2A,NULL,"ld ix,(:2)"},		// 4,3rd,3rd,3rd,3rd
 	{0,6,dd2B,NULL,"dec ix"},
 	{0,4,dd2C,NULL,"inc lx"},
 	{0,4,dd2D,NULL,"dec lx"},

@@ -969,7 +969,7 @@ opCode npTab[256]={
 
 	{OF_RELJUMP,4,npr20,NULL,"jr nz,:3"},
 	{0,4,npr21,NULL,"ld hl,:2"},
-	{0,4,npr22,NULL,"ld (:2),hl"},		// 4,3rd,3rd,3wr,3wr
+	{OF_MWORD,4,npr22,NULL,"ld (:2),hl"},		// 4,3rd,3rd,3wr,3wr
 	{0,6,npr23,NULL,"inc hl"},
 	{0,4,npr24,NULL,"inc h"},
 	{0,4,npr25,NULL,"dec h"},
@@ -978,7 +978,7 @@ opCode npTab[256]={
 
 	{OF_RELJUMP,4,npr28,NULL,"jr z,:3"},
 	{0,11,npr29,NULL,"add hl,hl"},
-	{0,4,npr2A,NULL,"ld hl,(:2)"},		// 4,3rd,3rd,3rd,3rd
+	{OF_MWORD,4,npr2A,NULL,"ld hl,(:2)"},		// 4,3rd,3rd,3rd,3rd
 	{0,6,npr2B,NULL,"dec hl"},
 	{0,4,npr2C,NULL,"inc l"},
 	{0,4,npr2D,NULL,"dec l"},

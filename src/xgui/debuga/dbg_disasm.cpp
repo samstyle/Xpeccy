@@ -3,6 +3,7 @@
 
 #include <QDebug>
 #include <QFont>
+#include <QPainter>
 
 extern unsigned short disasmAdr;
 extern int blockStart;
@@ -43,6 +44,9 @@ QVariant xDisasmModel::data(const QModelIndex& idx, int role) const {
 	if (col >= columnCount()) return res;
 	if (row >= dasm.size()) return res;
 	QFont font;
+	QPixmap pxm;
+	QPixmap icn;
+	QPainter pnt;
 	switch(role) {
 		case Qt::EditRole:
 			switch(col) {
@@ -73,11 +77,18 @@ QVariant xDisasmModel::data(const QModelIndex& idx, int role) const {
 			}
 			break;
 		case Qt::DecorationRole:
-			if ((col == 3) && !dasm[row].icon.isEmpty())
-				res = QIcon(dasm[row].icon);
+			if ((col == 3) && !dasm[row].icon.isEmpty()) {
+				pxm = QPixmap(45,15);
+				pxm.fill(Qt::transparent);
+				icn.load(dasm[row].icon);
+				pnt.begin(&pxm);
+				pnt.drawPixmap(pxm.width() - icn.width(),0,icn.scaled(16,16));
+				pnt.end();
+				res = pxm;
+			}
 			break;
 		case Qt::TextAlignmentRole:
-			if (col == 3) res = Qt::AlignRight;
+			if (col == 3) res = Qt::AlignLeft;
 			break;
 		case Qt::DisplayRole:
 			switch(col) {
@@ -212,7 +223,11 @@ int dasmCode(Computer* comp, unsigned short adr, dasmData& drow) {
 	placeLabel(drow);
 	if (drow.ispc) {
 		if (mnm.mem) {
-			drow.info = gethexbyte(mnm.mop);
+			if (mnm.flag & OF_MWORD) {
+				drow.info = QString::number(mnm.mop, 16).toUpper().rightJustified(4, '0');
+			} else {
+				drow.info = QString::number(mnm.mop & 0xff, 16).toUpper().rightJustified(2, '0');
+			}
 		} else if (mnm.cond && mnm.met && (drow.oadr >= 0)) {
 			if (drow.adr < drow.oadr) {
 				drow.icon = QString(":/images/arrdn.png");

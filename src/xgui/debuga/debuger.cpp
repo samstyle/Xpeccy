@@ -220,13 +220,15 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 // disasm table
 	ui.dasmTable->setColumnWidth(0,80);
 	ui.dasmTable->setColumnWidth(1,85);
-	ui.dasmTable->setColumnWidth(2,150);
+	ui.dasmTable->setColumnWidth(2,140);
 	ui.dasmTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_LABEL));
 	ui.dasmTable->setItemDelegateForColumn(1, new xItemDelegate(XTYPE_DUMP));
 
 	ui.cbDasmMode->addItem("CPU", XVIEW_CPU);
 	ui.cbDasmMode->addItem("RAM", XVIEW_RAM);
 	ui.cbDasmMode->addItem("ROM", XVIEW_ROM);
+
+	ui.dasmTable->setFont(QFont("://DejaVuSansMono.ttf",8));
 
 	connect(ui.cbDasmMode, SIGNAL(currentIndexChanged(int)),this,SLOT(setDasmMode()));
 	connect(ui.sbDasmPage, SIGNAL(valueChanged(int)),this,SLOT(setDasmMode()));
@@ -1597,10 +1599,15 @@ void DebugWin::fillStack() {
 
 int DebugWin::getAdr() {
 	int adr = -1;
+	int col;
 	QModelIndex idx;
 	if (ui.dumpTable->hasFocus()) {
 		idx = ui.dumpTable->currentIndex();
-		adr = (dumpAdr + idx.column() - 1 + (idx.row() << 3)) & 0xffff;
+		col = idx.column();
+		adr = (dumpAdr + (idx.row() << 3)) & 0xffff;
+		if ((col > 0) && (col < 9)) {
+			adr += idx.column() - 1;
+		}
 	} else {
 		idx = ui.dasmTable->currentIndex();
 		adr = ui.dasmTable->getData(idx.row(), 0, Qt::UserRole).toInt();

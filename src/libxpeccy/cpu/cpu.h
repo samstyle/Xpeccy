@@ -11,7 +11,7 @@ typedef struct {
 	int flag;
 	int len;
 	int oadr;		// direct addressation adr
-	unsigned char mop;	// operand
+	unsigned short mop;	// operand
 	const char* mnem;
 } xMnem;
 
@@ -60,8 +60,10 @@ typedef PAIR(w,h,l) xpair;
 
 #define OF_PREFIX	1
 #define OF_EXT		OF_PREFIX
-#define OF_SKIPABLE	(1<<1)
+#define OF_SKIPABLE	(1<<1)		// opcode is skipable by f8
 #define OF_RELJUMP	(1<<2)
+#define OF_MBYTE	(1<<3)		// operand is byte from memory
+#define OF_MWORD	(1<<4)		// operand is word from memory
 
 typedef struct CPU CPU;
 typedef struct opCode opCode;

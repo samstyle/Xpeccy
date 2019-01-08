@@ -267,7 +267,7 @@ opCode fdTab[256]={
 
 	{OF_RELJUMP,4,npr20,NULL,"jr nz,:3"},
 	{0,4,fd21,NULL,"ld iy,:2"},
-	{0,4,fd22,NULL,"ld (:2),iy"},		// 4,3rd,3rd,3wr,3wr
+	{OF_MWORD,4,fd22,NULL,"ld (:2),iy"},		// 4,3rd,3rd,3wr,3wr
 	{0,6,fd23,NULL,"inc iy"},
 	{0,4,fd24,NULL,"inc hy"},
 	{0,4,fd25,NULL,"dec hy"},
@@ -276,7 +276,7 @@ opCode fdTab[256]={
 
 	{OF_RELJUMP,4,npr28,NULL,"jr z,:3"},
 	{0,11,fd29,NULL,"add iy,iy"},
-	{0,4,fd2A,NULL,"ld iy,(:2)"},		// 4,3rd,3rd,3rd,3rd
+	{OF_MWORD,4,fd2A,NULL,"ld iy,(:2)"},		// 4,3rd,3rd,3rd,3rd
 	{0,6,fd2B,NULL,"dec iy"},
 	{0,4,fd2C,NULL,"inc ly"},
 	{0,4,fd2D,NULL,"dec ly"},
