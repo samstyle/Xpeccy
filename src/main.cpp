@@ -104,6 +104,7 @@ int main(int ac,char** av) {
 	i = 1;
 	mwin.setProfile("");
 	int dbg = 0;
+	xAdr xadr;
 	while (i < ac) {
 		parg = av[i++];
 		if ((strcmp(parg,"-d") == 0) || (strcmp(parg,"--debug") == 0)) {
@@ -131,7 +132,12 @@ int main(int ac,char** av) {
 				loadDUMP(mwin.comp, av[i], adr);
 				i++;
 			} else if (!strcmp(parg,"--bp")) {
-				brkSet(BRK_MEMCELL, MEM_BRK_FETCH, strtol(av[i],NULL,0) & 0xffff, -1);
+				xadr = getLabel(av[i]);
+				if (xadr.abs < 0) {
+					brkSet(BRK_CPUADR, MEM_BRK_FETCH, strtol(av[i],NULL,0) & 0xffff, -1);
+				} else {
+					brkSet(BRK_CPUADR, MEM_BRK_FETCH, xadr.adr & 0xffff, -1);
+				}
 				i++;
 			} else if (!strcmp(parg,"-l") || !strcmp(parg,"--labels")) {
 				loadLabels(av[i]);

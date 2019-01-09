@@ -56,6 +56,7 @@ typedef struct {
 int loadLabels(const char*);
 int saveLabels(const char*);
 QString findLabel(int, int, int);
+xAdr getLabel(const char*);
 
 // brk points
 

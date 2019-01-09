@@ -165,7 +165,7 @@ keyTrans ktTab[] = {
 	{Qt::Key_Minus, Qt::Key_Minus, XKEY_MINUS},
 	{Qt::Key_Equal, Qt::Key_Equal, XKEY_PLUS},
 	{Qt::Key_Backspace, Qt::Key_Backspace, XKEY_BSP},
-	{Qt::Key_QuoteLeft, 1025, XKEY_TILDA},
+	{Qt::Key_QuoteLeft, 1025, XKEY_TILDA},		// Ё
 
 	{Qt::Key_Exclam, Qt::Key_Exclam, XKEY_1},		// !
 	{Qt::Key_At, Qt::Key_QuoteDbl, XKEY_2},			// @ (")
@@ -217,10 +217,10 @@ keyTrans ktTab[] = {
 	{Qt::Key_B, 1048, XKEY_B},
 	{Qt::Key_N, 1058, XKEY_N},
 	{Qt::Key_M, 1068, XKEY_M},
-	{Qt::Key_Period, 1041, XKEY_PERIOD},
-	{Qt::Key_Comma, Qt::Key_Comma, XKEY_COMMA},
+	{Qt::Key_Comma, 0x411, XKEY_COMMA},		// ,
+	{Qt::Key_Period, 0x42e, XKEY_PERIOD},		// .
 	{Qt::Key_Slash, Qt::Key_Slash, XKEY_BSLASH},		// ?
-	{Qt::Key_Apostrophe, Qt::Key_Apostrophe, XKEY_APOS},	// '
+	{Qt::Key_Apostrophe, 0x44d, XKEY_APOS},	// '
 
 	{Qt::Key_Control, Qt::Key_Control, XKEY_LCTRL},
 	{Qt::Key_Alt, Qt::Key_Alt, XKEY_LALT},

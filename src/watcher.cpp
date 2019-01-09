@@ -49,7 +49,7 @@ QString getBankType(int type) {
 }
 
 QString getBankName(MemPage pg) {
-	return QString("%0:%1").arg(getBankType(pg.type)).arg(gethexbyte(pg.num >> 6));
+	return QString("%0:%1").arg(getBankType(pg.type), gethexbyte(pg.num >> 6));
 }
 
 void xWatcher::fillFields(Computer* comp) {
@@ -200,8 +200,8 @@ xWatchModel::xWatchModel() {
 }
 
 void xWatchModel::update() {
-	QModelIndex sti = index(0, 3);
-	QModelIndex ste = index(list.size() - 1, 4);
+	QModelIndex sti = index(0, 2);
+	QModelIndex ste = index(list.size() - 1, 3);
 	emit QAbstractItemModel::dataChanged(sti, ste);
 }
 
@@ -219,7 +219,7 @@ int xWatchModel::rowCount(const QModelIndex&) const {
 }
 
 int xWatchModel::columnCount(const QModelIndex&) const {
-	return 5;
+	return 4;
 }
 
 void xWatchModel::insertRow(int row, const QModelIndex& idx) {
@@ -233,7 +233,7 @@ void xWatchModel::removeRow(int row, const QModelIndex& idx) {
 }
 
 xAdr xWatchModel::getItem(int idx) {
-    xAdr xadr = {MEM_ROM, 0, 0, 0};
+	xAdr xadr = {MEM_ROM, 0, 0, 0};
 	if (idx < 0) return xadr;
 	if (idx >= list.size()) return xadr;
 	return list[idx];
@@ -249,7 +249,7 @@ void xWatchModel::updItem(int idx, xAdr xadr) {
 	if (idx >= list.size()) return;
 	list[idx] = xadr;
 	QModelIndex sti = index(idx, 0);
-	QModelIndex ste = index(idx, 4);
+	QModelIndex ste = index(idx, 3);
 	emit QAbstractItemModel::dataChanged(sti, ste);
 }
 
@@ -267,6 +267,8 @@ QVariant xWatchModel::data(const QModelIndex& idx, int role) const {
 	if ((row < 0) || (row >= rowCount(idx))) return res;
 	if ((col < 0) || (col >= columnCount(idx))) return res;
 	QString adrs;
+	QString bytz;
+	int i;
 	switch (role) {
 		case Qt::BackgroundColorRole:
 			if (row == currow) {
@@ -277,21 +279,28 @@ QVariant xWatchModel::data(const QModelIndex& idx, int role) const {
 			break;
 		case Qt::DisplayRole:
 			xAdr xadr = list[row];
-			int wrd = 0xffff;
 			int adr;
+			int msk = 0x3fffff;
+			unsigned char* dat = NULL;
 			if (xadr.abs == wchCell) {
 				adr = (xadr.bank << 14) | (xadr.adr & 0x3fff);
 				switch(xadr.type) {
 					case MEM_ROM:
-						adr &= 0x7ffff;
-						wrd = comp->mem->romData[adr] | (comp->mem->romData[(adr + 1) & 0x7ffff] << 8);
+						msk = comp->mem->romMask;
+						dat = comp->mem->romData;
 						break;
 					case MEM_RAM:
-						adr &= 0x3fffff;
-						wrd = comp->mem->ramData[adr] | (comp->mem->ramData[(adr + 1) & 0x3fffff] << 8);
+						msk = comp->mem->ramMask;
+						dat = comp->mem->ramData;
 						break;
 				}
 				adrs = gethexword(xadr.adr & 0x3fff);
+				bytz.clear();
+				for (i = 0; i < 8; i++) {
+					if (!bytz.isEmpty())
+						bytz.append(":");
+					bytz.append(gethexbyte(dat ? dat[(adr + i) & msk] : 0xff));
+				}
 			} else {
 				adr = -1;
 				switch(xadr.abs) {
@@ -339,7 +348,12 @@ QVariant xWatchModel::data(const QModelIndex& idx, int role) const {
 				if (xadr.abs != wchAbsolute) {
 					adrs.append(getdecshift(xadr.adr & 0xff));
 				}
-				wrd = memRd(comp->mem, adr & 0xffff) | (memRd(comp->mem, (adr + 1) & 0xffff) << 8);
+				bytz.clear();
+				for (i = 0; i < 8; i++) {
+					if (!bytz.isEmpty())
+						bytz.append(":");
+					bytz.append(gethexbyte(memRd(comp->mem, (adr + i) & 0xffff)));
+				}
 			}
 			switch (col) {
 				case 0:
@@ -351,14 +365,14 @@ QVariant xWatchModel::data(const QModelIndex& idx, int role) const {
 						res = gethexbyte(xadr.bank);
 					break;
 				case 2:	res = adrs; break;
-				case 3: res = gethexbyte(wrd & 0xff); break;
-				case 4: res = gethexword(wrd & 0xffff); break;
+				case 3: res = bytz; break;
+//				case 4: res = gethexword(wrd & 0xffff); break;
 			}
 	}
 	return res;
 }
 
-QString xwhdname[5] = {"Type","Page","Addr","Byte","Word"};
+QString xwhdname[5] = {"Type","Page","Addr","Bytes","(old)"};
 
 QVariant xWatchModel::headerData(int col, Qt::Orientation orien, int role) const {
 	QVariant res;

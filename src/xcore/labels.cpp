@@ -105,3 +105,14 @@ QString findLabel(int adr, int type, int bank) {
 	}
 	return lab;
 }
+
+xAdr getLabel(const char* n) {
+	QString name(n);
+	xAdr adr;
+	if (conf.labels.contains(name)) {
+		adr = conf.labels[name];
+	} else {
+		adr.abs = -1;		// not found
+	}
+	return adr;
+}

@@ -79,23 +79,14 @@ void MainWin::updateWindow() {
 	setFixedSize(szw, szh);
 	lineBytes = szw * 3;
 	frameBytes = szh * lineBytes;
-/*
-#if VID_DIRECT_DRAW
-	scrImg = QImage(comp->vid->scrimg, szw, szh, QImage::Format_RGB888);
-#else
-	scrImg = QImage(screen, szw, szh, QImage::Format_RGB888);
-#endif
-*/
-//	bytesPerLine = scrImg.bytesPerLine();
 	bytesPerLine = lineBytes;
 	if (bytesPerLine & 3)		// 4 bytes align for QImage data
-		bytesPerLine += 4 - (bytesPerLine & 3);
+		bytesPerLine = (bytesPerLine & ~3) + 4;
 #if VID_DIRECT_DRAW
 	vid_set_zoom(conf.vid.scale);
 #endif
 	updateHead();
 	block = 0;
-	// if (dbg->isVisible()) dbg->fillAll();		// hmmm... why?
 }
 
 bool MainWin::saveChanged() {
@@ -720,7 +711,6 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				pause(true, PR_DEBUG);
 				setUpdatesEnabled(true);
 				emit s_debug(comp);
-				// dbg->start(comp);
 				break;
 			case XKEY_MENU:
 				userMenu->popup(pos() + QPoint(20,20));
@@ -734,17 +724,14 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			case XKEY_F1:
 				pause(true, PR_OPTS);
 				emit s_options(conf.prof.cur);
-				// opt->start(conf.prof.cur);
 				break;
 			case XKEY_F2:
 				pause(true,PR_FILE);
-				//saveFile(comp,"",FT_ALL,-1);
 				save_file(comp, NULL, FG_ALL, -1);
 				pause(false,PR_FILE);
 				break;
 			case XKEY_F3:
 				pause(true,PR_FILE);
-				//loadFile(comp,"",FT_ALL,-1);
 				load_file(comp, NULL, FG_ALL, -1);
 				pause(false,PR_FILE);
 				checkState();
@@ -802,18 +789,15 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			case XKEY_F12:
 				compReset(comp,RES_DEFAULT);
 				emit s_rzx_stop();
-				//rzxWin->stop();
 				break;
 			default:
 				if (comp->hw->keyp) {
 					comp->hw->keyp(comp, kent);
 				}
-				//keyPressXT(comp->keyb, kent.keyCode);
 				break;
 		}
 	}
 	emit s_keywin_upd(comp->keyb);
-	// if (keywin->isVisible()) keywin->update();
 }
 
 void MainWin::keyReleaseEvent(QKeyEvent *ev) {
