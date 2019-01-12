@@ -228,7 +228,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.cbDasmMode->addItem("RAM", XVIEW_RAM);
 	ui.cbDasmMode->addItem("ROM", XVIEW_ROM);
 
-	ui.dasmTable->setFont(QFont("://DejaVuSansMono.ttf",8));
+	// ui.dasmTable->setFont(QFont("://DejaVuSansMono.ttf",8));
 
 	connect(ui.cbDasmMode, SIGNAL(currentIndexChanged(int)),this,SLOT(setDasmMode()));
 	connect(ui.sbDasmPage, SIGNAL(valueChanged(int)),this,SLOT(setDasmMode()));
