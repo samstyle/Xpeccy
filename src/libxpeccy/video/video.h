@@ -69,8 +69,6 @@ extern int bytesPerLine;
 extern int greyScale;
 extern int noflic;
 
-#if VID_DIRECT_DRAW
-
 extern int xstep;
 extern int ystep;
 extern int lefSkip;
@@ -80,8 +78,6 @@ extern int botSkip;
 
 void vid_dot_full(Video*, unsigned char);
 void vid_dot_half(Video*, unsigned char);
-
-#endif
 
 typedef unsigned char(*vcbmrd)(int, void*);
 typedef void(*vcbmwr)(int, unsigned char, void*);

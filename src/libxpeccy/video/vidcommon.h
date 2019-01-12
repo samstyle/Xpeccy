@@ -42,24 +42,10 @@ typedef struct {
 
 #define MADR(_bnk,_adr)	((_bnk) << 14) + (_adr)
 
-#if VID_DIRECT_DRAW
-
 #define vidSingleDot(_ray, _pal, _idx) \
 	vid_dot_half(vid, _idx);
 
 #define vidPutDot(_ray, _pal, _idx) \
 	vid_dot_full(vid, _idx);
-
-#else
-
-#define vidSingleDot(_ray, _pal, _idx) \
-	memcpy((_ray)->ptr, &(_pal)[_idx], 3);\
-	(_ray)->ptr += 3;
-
-#define vidPutDot(_ray, _pal, _idx) \
-	vidSingleDot(_ray, _pal, _idx);\
-	vidSingleDot(_ray, _pal, _idx);
-
-#endif
 
 #endif

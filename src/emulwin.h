@@ -50,6 +50,7 @@ class MainWin : public QWidget {
 		void s_keywin_shide();
 		void s_keywin_close();
 	public slots:
+		void d_frame();
 		void doOptions();
 		void doDebug();
 		void updateWindow();
@@ -58,9 +59,7 @@ class MainWin : public QWidget {
 		void setProfile(std::string);
 	private slots:
 		void onTimer();
-		void convImage();
 		void updateSatellites();
-//		void cmosTick();
 		void menuHide();
 		void menuShow();
 		void optApply();
@@ -70,12 +69,10 @@ class MainWin : public QWidget {
 		void profileSelected(QAction*);
 		void reset(QAction*);
 		void chLayout(QAction*);
-		// void chVMode(QAction*);
 		void umOpen(QAction*);
 
 		void saveVRAM();
 		void saveGBVRAM();
-		//void saveGSRAM();
 		void saveNESPPU();
 		void debugAction();
 	private:

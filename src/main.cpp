@@ -71,8 +71,10 @@ int main(int ac,char** av) {
 	xWatcher wutw(&mwin);
 	keyWindow keyw;
 
+	app.connect(&ethread, SIGNAL(s_frame()), &mwin, SLOT(d_frame()));
 	app.connect(&ethread, SIGNAL(dbgRequest()), &mwin, SLOT(doDebug()));
 	app.connect(&ethread, SIGNAL(tapeSignal(int,int)), &mwin,SLOT(tapStateChanged(int,int)));
+
 	app.connect(&dbgw, SIGNAL(closed()), &mwin, SLOT(dbgReturn()));
 	app.connect(&dbgw, SIGNAL(wannaKeys()), &keyw, SLOT(show()));
 	app.connect(&mwin, SIGNAL(s_debug(Computer*)), &dbgw, SLOT(start(Computer*)));

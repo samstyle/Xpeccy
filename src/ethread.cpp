@@ -10,16 +10,6 @@
 int sleepy = 1;
 
 unsigned char* blkData = NULL;
-#if !VID_DIRECT_DRAW
-extern unsigned char sbufa[1024 * 512 * 3];
-extern unsigned char scrn[1024 * 512 * 3];
-extern unsigned char prvScr[1024 * 512 * 3];
-
-void processPicture(unsigned char* src, int size) {
-	memcpy(sbufa, src, size);
-	scrMix(prvScr, sbufa, size, noflic / 100.0);
-}
-#endif
 
 xThread::xThread() {
 	sndNs = 0;
@@ -63,8 +53,7 @@ void xThread::tapeCatch(Computer* comp) {
 }
 
 void xThread::emuCycle(Computer* comp) {
-//	int endBuf = 0;
-	comp->frmStrobe = 0;
+//	comp->frmStrobe = 0;
 	sndNs = 0;
 	conf.snd.fill = 1;
 	do {
@@ -73,14 +62,7 @@ void xThread::emuCycle(Computer* comp) {
 			sndNs += 1000;
 		} else {
 			sndNs += compExec(comp);
-#if !VID_DIRECT_DRAW
-		// tape trap
-			if (comp->frmStrobe && !conf.emu.fast) {
-				comp->frmStrobe = 0;
-				processPicture(comp->vid->scrimg, comp->vid->vBytes);
-				emit picReady();
-			}
-#endif
+			// tape trap
 			if ((comp->mem->map[0].type == MEM_ROM) && comp->rom && !comp->dos) {		// FIXME: shit
 				if (comp->cpu->pc == 0x56b) tapeCatch(comp);
 				if ((comp->cpu->pc == 0x5e2) && conf.tape.autostart)
@@ -92,17 +74,16 @@ void xThread::emuCycle(Computer* comp) {
 			sndSync(comp);
 			sndNs -= nsPerSample;
 		}
+		if (comp->frmStrobe) {
+			comp->frmStrobe = 0;
+			conf.vid.fcount++;
+			emit s_frame();
+		}
 	} while (!comp->brk && conf.snd.fill);
 	comp->nmiRequest = 0;
 }
 
-//void xThread::s_frame() {
-//	mtx.unlock();
-//	sleepy = 0;
-//}
-
 void xThread::run() {
-//	mtx.lock();
 	Computer* comp;
 	do {
 		sleepy = 1;
@@ -127,8 +108,6 @@ void xThread::run() {
 		}
 		while (!conf.emu.fast && sleepy)
 			usleep(100);
-			//mtx.lock();		// wait until unlocked (MainWin::onTimer() or at exit)
 	} while (!finish);
-	// mtx.unlock();
 	exit(0);
 }

@@ -17,8 +17,6 @@ unsigned char* scrimg = bufa;
 unsigned char* bufimg = bufb;
 static int curbuf = 0;
 
-#if VID_DIRECT_DRAW
-
 static int xpos = 0;
 static int ypos = 0;
 int xstep = 0x100;
@@ -117,8 +115,6 @@ void vid_frame(Video* vid) {
 	vid->ray.ptr = vid->ray.lptr + lefSkip;
 	pptr = pscr;
 }
-
-#endif
 
 Video* vidCreate(vcbmrd cb, void* dptr) {
 	Video* vid = (Video*)malloc(sizeof(Video));
@@ -231,7 +227,6 @@ unsigned char nxtbyte = 0;
 
 void vidDarkTail(Video* vid) {
 	if (vid->tail) return;				// no filling while current fill is active (till end of frame)
-#if VID_DIRECT_DRAW
 	unsigned char* ptr = vid->ray.ptr;		// fill current line till EOL
 	unsigned char* btr = curbuf ? bufa : bufb;
 	while (ptr - vid->ray.lptr < bytesPerLine) {
@@ -249,26 +244,6 @@ void vidDarkTail(Video* vid) {
 		*ptr = ((*ptr - 0x80) >> 2) + 0x80;
 		ptr++;
 	}
-#else
-	xscr = vid->ray.x;
-	yscr = vid->ray.y;
-	unsigned char* ptr = vid->ray.ptr;
-	do {
-		if ((yscr >= vid->lcut.y) && (yscr < vid->rcut.y) && (xscr >= vid->lcut.x) && (xscr < vid->rcut.x)) {
-			*ptr = ((*ptr - 0x80) >> 1) + 128; ptr++;
-			*ptr = ((*ptr - 0x80) >> 1) + 128; ptr++;
-			*ptr = ((*ptr - 0x80) >> 1) + 128; ptr++;
-			*ptr = ((*ptr - 0x80) >> 1) + 128; ptr++;
-			*ptr = ((*ptr - 0x80) >> 1) + 128; ptr++;
-			*ptr = ((*ptr - 0x80) >> 1) + 128; ptr++;
-		}
-		if (++xscr >= vid->full.x) {
-			xscr = 0;
-			if (++yscr >= vid->full.y)
-				ptr = NULL;
-		}
-	} while (ptr);
-#endif
 	vid->tail = 1;
 }
 
@@ -1009,10 +984,8 @@ void vidSync(Video* vid, int ns) {
 				vid->cbDot(vid);		// put dot callback
 		}
 		// if debug, fill all line
-#if VID_DIRECT_DRAW
 		if (vid->debug)
 			vid_line_fill(vid);
-#endif
 		// move ray to next dot, update counters
 		vid->ray.x++;
 		vid->ray.xb++;
@@ -1027,21 +1000,15 @@ void vidSync(Video* vid, int ns) {
 			if (vid->cbLine) vid->cbLine(vid);
 		}
 		if (vid->ray.x == vid->vend.x) {			// hblank start
-#if VID_DIRECT_DRAW
 			if ((vid->ray.y >= vid->lcut.y) && (vid->ray.y < vid->rcut.y))
 				vid_line(vid);
-#endif
 			vid->hblank = 1;
 			vid->hbstrb = 1;
 			vid->ray.y++;
 			vid->ray.xb = 0;
 			vid->ray.yb++;
 			if (vid->ray.y >= vid->full.y) {		// new frame
-#if VID_DIRECT_DRAW
 				vid_frame(vid);
-#else
-				vid->ray.ptr = vid->scrimg;
-#endif
 				vid->lcnt = 0;
 				vid->vblank = 0;
 				vid->vbstrb = 0;

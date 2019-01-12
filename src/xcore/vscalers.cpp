@@ -5,6 +5,7 @@
 
 #include "xcore.h"
 
+/*
 // resize srcw x srch @ src -> dstw x dsth @ dst
 void scrFS(unsigned char* src, int srcw, int srch, unsigned char* dst, int dstw, int dsth) {
 	int scalex = (dstw << 8) / srcw;
@@ -134,8 +135,7 @@ void scrX1(unsigned char* src, int srcw, int srch, unsigned char* dst) {
 		srch--;
 	}
 }
-
-#if VID_DIRECT_DRAW
+*/
 
 #include <QApplication>
 #include <QDesktopWidget>
@@ -190,4 +190,3 @@ void vid_set_ratio(int f) {
 	vid_upd_scale();
 }
 
-#endif

@@ -17,7 +17,8 @@ class xThread : public QThread {
 		int sndNs;
 		void stop();
 	signals:
-		void picReady();	// picture ready for display
+		void s_frame();
+		//void picReady();	// picture ready for display
 		void dbgRequest();
 		void tapeSignal(int,int);
 	private:

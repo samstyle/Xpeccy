@@ -257,12 +257,12 @@ struct xConfig {
 		xProfile* cur;
 	} prof;
 	struct {
-//		unsigned grayScale:1;
 		unsigned fullScreen:1;	// use fullscreen
 		unsigned keepRatio:1;	// keep ratio in fullscreen (add black borders)
 		int scale;		// x1..x4
-//		int noflic;		// 0 (noflic) .. 50 (full flick)
-		int fps;
+		//int fps;
+		int fcount;		// frames counter (for fps showing)
+		int curfps;
 	} vid;
 	struct {
 		unsigned enabled:1;
@@ -296,6 +296,7 @@ struct xConfig {
 		unsigned tape:1;
 		unsigned disk:1;
 		unsigned message:1;
+		unsigned fps:1;
 	} led;
 	struct {
 		char lastDir[PATH_MAX];

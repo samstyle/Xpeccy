@@ -490,6 +490,7 @@ void SetupWin::start(xProfile* p) {
 	ui.cbTapeLed->setChecked(conf.led.tape);
 	ui.cbDiskLed->setChecked(conf.led.disk);
 	ui.cbMessage->setChecked(conf.led.message);
+	ui.cbFpsLed->setChecked(conf.led.fps);
 // profiles
 	ui.defstart->setChecked(conf.defProfile);
 	buildproflist();
@@ -638,6 +639,7 @@ void SetupWin::apply() {
 	conf.led.tape = ui.cbTapeLed->isChecked() ? 1 : 0;
 	conf.led.disk = ui.cbDiskLed->isChecked() ? 1 : 0;
 	conf.led.message = ui.cbMessage->isChecked() ? 1 : 0;
+	conf.led.fps = ui.cbFpsLed->isChecked() ? 1 : 0;
 // profiles
 	conf.defProfile = ui.defstart->isChecked() ? 1 : 0;
 

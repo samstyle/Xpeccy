@@ -197,6 +197,7 @@ void saveConfig() {
 	fprintf(cfile, "tape = %s\n", YESNO(conf.led.tape));
 	fprintf(cfile, "disk = %s\n", YESNO(conf.led.disk));
 	fprintf(cfile, "message = %s\n", YESNO(conf.led.message));
+	fprintf(cfile, "fps = %s\n", YESNO(conf.led.fps));
 
 	fclose(cfile);
 }
@@ -475,15 +476,14 @@ void loadConfig() {
 					if (pnam=="tape") conf.led.tape = str2bool(pval) ? 1 : 0;
 					if (pnam=="disk") conf.led.disk = str2bool(pval) ? 1 : 0;
 					if (pnam=="message") conf.led.message = str2bool(pval) ? 1 : 0;
+					if (pnam=="fps") conf.led.fps = str2bool(pval) ? 1 : 0;
 					break;
 			}
 		}
 	}
-#if VID_DIRECT_DRAW
 	vid_set_zoom(conf.vid.scale);
 	vid_set_fullscreen(conf.vid.fullScreen);
 	vid_set_ratio(conf.vid.keepRatio);
-#endif
 	uint i;
 	for (i=0; i<rsListist.size(); i++) addRomset(rsListist[i]);
 	prfLoadAll();

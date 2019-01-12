@@ -30,13 +30,8 @@ void bk_bw_dot(Video* vid) {
 		colb = (sbyte & 0x02) ? 0x15 : 0x14;
 		sbyte >>= 2;
 	}
-#if VID_DIRECT_DRAW
 	vid_dot_half(vid, cola);
 	vid_dot_half(vid, colb);
-#else
-	vidSingleDot(&vid->ray, &vid->pal, cola);
-	vidSingleDot(&vid->ray, &vid->pal, colb);
-#endif
 }
 
 // color mode
@@ -58,9 +53,5 @@ void bk_col_dot(Video* vid) {
 		cola = sbyte & 3;
 		sbyte >>= 2;
 	}
-#if VID_DIRECT_DRAW
 	vid_dot_full(vid, cola | vid->paln);
-#else
-	vidPutDot(&vid->ray, &vid->pal, cola | 4);
-#endif
 }
