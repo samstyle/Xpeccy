@@ -21,6 +21,7 @@ typedef struct {
 
 typedef struct {
 	int id;
+	const char* defext;
 	int drv;
 	const char* name;
 	int child[32];
@@ -70,24 +71,24 @@ static xFileTypeInfo ft_dum = {FL_NONE, 0, NULL, NULL, NULL, NULL, "Dummy entry"
 // 0..3 : disk (must be inserted for save)
 // 4 : tape (block count > 0)
 static xFileGroupInfo fg_tab[] = {
-	{FG_SNAPSHOT, -1, "Snapshot", {FL_SNA, FL_Z80, FL_SPG, 0}},
-	{FG_TAPE, 4, "Tape", {FL_TAP, FL_TZX, FL_WAV, 0}},
-	{FG_DISK_A, 0,"Disk A", {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_HOBETA, 0}},
-	{FG_DISK_B, 1, "Disk B", {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_HOBETA, 0}},
-	{FG_DISK_C, 2, "Disk C", {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_HOBETA, 0}},
-	{FG_DISK_D, 3, "Disk D", {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_HOBETA, 0}},
-	{FG_RAW, 0, "Raw file to disk A",{FL_RAW, 0}},
-	{FG_RZX, -1, "RZX playback", {FL_RZX, 0}},
-	{FG_GAMEBOY, -1, "GB cartrige", {FL_GB, FL_GBC, 0}},
-	{FG_MSX, -1, "MSX cartrige", {FL_MSX, FL_MX1, FL_MX2, 0}},
-	{FG_NES, -1, "NES cartrige", {FL_NES, 0}},
-	{FG_CMDTAPE, -1, "Comodore tape", {FL_T64, 0}},
-	{FG_BKDATA, -1, "BK bin data", {FL_BKBIN, 0}},
-	{FG_BKDISK, 0, "BK disk image", {FL_BKIMG, FL_BKBKD, FL_UDI, 0}},
-	{0, -1, NULL, {0}}
+	{FG_SNAPSHOT, ".sna", -1, "Snapshot", {FL_SNA, FL_Z80, FL_SPG, 0}},
+	{FG_TAPE, ".tap", 4, "Tape", {FL_TAP, FL_TZX, FL_WAV, 0}},
+	{FG_DISK_A, ".trd", 0,"Disk A", {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_HOBETA, 0}},
+	{FG_DISK_B, ".trd", 1, "Disk B", {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_HOBETA, 0}},
+	{FG_DISK_C, ".trd", 2, "Disk C", {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_HOBETA, 0}},
+	{FG_DISK_D, ".trd", 3, "Disk D", {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_HOBETA, 0}},
+	{FG_RAW, "", 0, "Raw file to disk A",{FL_RAW, 0}},
+	{FG_RZX, "", -1, "RZX playback", {FL_RZX, 0}},
+	{FG_GAMEBOY, "", -1, "GB cartrige", {FL_GB, FL_GBC, 0}},
+	{FG_MSX, "", -1, "MSX cartrige", {FL_MSX, FL_MX1, FL_MX2, 0}},
+	{FG_NES, "", -1, "NES cartrige", {FL_NES, 0}},
+	{FG_CMDTAPE, "", -1, "Comodore tape", {FL_T64, 0}},
+	{FG_BKDATA, "", -1, "BK bin data", {FL_BKBIN, 0}},
+	{FG_BKDISK, "", 0, "BK disk image", {FL_BKIMG, FL_BKBKD, FL_UDI, 0}},
+	{0, "", -1, NULL, {0}}
 };
 
-static xFileGroupInfo fg_dum = {0, -1, NULL, {0}};
+static xFileGroupInfo fg_dum = {0, "", -1, NULL, {0}};
 
 static xFileHWInfo fh_tab[] = {
 	{FH_SPECTRUM, {FG_SNAPSHOT, FG_TAPE, FG_DISK_A, FG_DISK_B, FG_DISK_C, FG_DISK_D, FG_RAW, FG_RZX, 0}},
@@ -157,6 +158,18 @@ xFileTypeInfo* file_find_type(int id) {
 	while ((ft_tab[i].id > 0) && (ft_tab[i].id != id))
 		i++;
 	return &ft_tab[i];
+}
+
+xFileTypeInfo* file_detect_type(QString flt) {
+	int i = 0;
+	xFileTypeInfo* inf = &ft_dum;
+	while (ft_tab[i].id > 0) {
+		if (flt.startsWith(ft_tab[i].name, Qt::CaseInsensitive)) {
+			inf = &ft_tab[i];
+		}
+		i++;
+	}
+	return inf;
 }
 
 #include <QDebug>
@@ -350,8 +363,11 @@ int save_file(Computer* comp, const char* name, int id, int drv) {
 	QString path = QDialog::trUtf8(name);
 	QString flt;
 	QString ext;
-	xFileTypeInfo* inf;
+	xFileTypeInfo* inf = NULL;
+	xFileTypeInfo* tin;
 	xFileGroupInfo* grp;
+	int i;
+	int flg;
 	if (id == FG_DISK)
 		id = disk_id[drv & 3];
 	if (id == FG_ALL)
@@ -374,8 +390,31 @@ int save_file(Computer* comp, const char* name, int id, int drv) {
 				path = filer->selectedFiles().first();
 				flt = filer->selectedNameFilter();
 				grp = file_detect_grp(flt);
-				if (grp)
+				if (grp->id != FL_NONE) {
 					drv = grp->drv;
+					i = 0;
+					flg = 1;
+					// scan group file types and check if path extension is the same
+					while ((grp->child[i] != FL_NONE) && flg) {
+						tin = file_find_type(grp->child[i]);
+						if (tin) {
+							if (path.endsWith(tin->ext, Qt::CaseInsensitive)) {
+								flg = 0;
+								inf = tin;
+							}
+						}
+						i++;
+					}
+					// if no filetypes found, add default extension
+					if (flg) {
+						path.append(grp->defext);
+					}
+				} else {
+					tin = file_detect_type(flt);
+					if (tin->id != FL_NONE) {
+						path.append(tin->ext);
+					}
+				}
 			}
 			strcpy(conf.path.lastDir, filer->directory().absolutePath().toLocal8Bit().data());
 		}
@@ -383,10 +422,16 @@ int save_file(Computer* comp, const char* name, int id, int drv) {
 	if (path.isEmpty()) return err;
 	if (drv < 0)
 		drv = 0;
-	inf = file_ext_type(path);
+	if (!inf)
+		inf = file_ext_type(path);
 	if (inf) {
-		if (inf->save)
+		if (inf->save) {
 			err = inf->save(comp, path.toLocal8Bit().data(), drv);
+		} else {
+			shitHappens("Can't save that");
+		}
+	} else {
+		shitHappens("Don't know such extension");
 	}
 	file_errors(err);
 	return err;
@@ -427,63 +472,6 @@ bool saveChangedDisk(Computer* comp,int id) {
 	return res;
 }
 
-/*
-QString getFilter(int flags) {
-	QString res = "";
-	if (flags & FT_SNA) res.append(" *.sna");
-	if (flags & FT_Z80) res.append(" *.z80");
-	if (flags & FT_TAP) res.append(" *.tap");
-	if (flags & FT_TZX) res.append(" *.tzx");
-	if (flags & FT_WAV) res.append(" *.wav");
-	if (flags & FT_SCL) res.append(" *.scl");
-	if (flags & FT_TRD) res.append(" *.trd");
-	if (flags & FT_FDI) res.append(" *.fdi");
-	if (flags & FT_UDI) res.append(" *.udi");
-	if (flags & FT_DSK) res.append(" *.dsk");
-	if (flags & FT_TD0) res.append(" *.td0");
-#ifdef HAVEZLIB
-	if (flags & FT_RZX) res.append(" *.rzx");
-#endif
-	if (flags & FT_SPG) res.append(" *.spg");
-	if (flags & FT_HOBETA) res.append(" *.$?");
-	if (flags & FT_SLOT_A) res.append(" *.rom *.mx1 *.mx2 *.gb *.gbc");
-	if (flags & FT_NES) res.append(" *.nes");
-	if (flags & FT_T64) res.append(" *.t64");
-	if (res.startsWith(" ")) res.remove(0,1);
-	return res;
-}
-
-int getFileType(QString path) {
-	if (path.endsWith(".sna",Qt::CaseInsensitive)) return FT_SNA;
-	if (path.endsWith(".z80",Qt::CaseInsensitive)) return FT_Z80;
-	if (path.endsWith(".tap",Qt::CaseInsensitive)) return FT_TAP;
-	if (path.endsWith(".tzx",Qt::CaseInsensitive)) return FT_TZX;
-	if (path.endsWith(".wav",Qt::CaseInsensitive)) return FT_WAV;
-	if (path.endsWith(".scl",Qt::CaseInsensitive)) return FT_SCL;
-	if (path.endsWith(".trd",Qt::CaseInsensitive)) return FT_TRD;
-	if (path.endsWith(".fdi",Qt::CaseInsensitive)) return FT_FDI;
-	if (path.endsWith(".udi",Qt::CaseInsensitive)) return FT_UDI;
-	if (path.endsWith(".dsk",Qt::CaseInsensitive)) return FT_DSK;
-	if (path.endsWith(".td0",Qt::CaseInsensitive)) return FT_TD0;
-	if (path.endsWith(".spg",Qt::CaseInsensitive)) return FT_SPG;
-	if (path.endsWith(".rom",Qt::CaseInsensitive)) return FT_SLOT_A;
-	if (path.endsWith(".mx1",Qt::CaseInsensitive)) return FT_SLOT_A;
-	if (path.endsWith(".mx2",Qt::CaseInsensitive)) return FT_SLOT_A;
-	if (path.endsWith(".gb",Qt::CaseInsensitive)) return FT_SLOT_A;
-	if (path.endsWith(".gbc",Qt::CaseInsensitive)) return FT_SLOT_A;
-	if (path.endsWith(".nes",Qt::CaseInsensitive)) return FT_NES;
-	if (path.endsWith(".t64",Qt::CaseInsensitive)) return FT_T64;
-#ifdef HAVEZLIB
-	if (path.endsWith(".rzx",Qt::CaseInsensitive)) return FT_RZX;
-#endif
-	QStringList pspl = path.split(".");
-	if (pspl.size() > 0) {
-		if (pspl.last().startsWith("$")) return FT_HOBETA;
-	}
-	return FT_NONE;
-}
-*/
-
 int testSlotOn(Computer* comp) {
 	int res = 0;
 	for (int i = 0; i < 256; i++) {
@@ -494,174 +482,3 @@ int testSlotOn(Computer* comp) {
 	}
 	return res;
 }
-
-/*
-void loadFile(Computer* comp,const char* name, int flags, int drv) {
-	QString opath = QDialog::trUtf8(name);
-	filer->setDirectory(conf.path.lastDir);
-	if (opath == "") {
-		QString filters = "";
-		if (flags == FT_ALL) filters = QString("All known types (%0)").arg(getFilter(flags));
-		if (flags & FT_DISK) {
-			if ((drv == -1) || (drv == 0)) filters.append(QString(";;Disk A (%0)").arg(getFilter(flags & (FT_DISK | FT_HOBETA))));
-			if ((drv == -1) || (drv == 1)) filters.append(QString(";;Disk B (%0)").arg(getFilter(flags & (FT_DISK | FT_HOBETA))));
-			if ((drv == -1) || (drv == 2)) filters.append(QString(";;Disk C (%0)").arg(getFilter(flags & (FT_DISK | FT_HOBETA))));
-			if ((drv == -1) || (drv == 3)) filters.append(QString(";;Disk D (%0)").arg(getFilter(flags & (FT_DISK | FT_HOBETA))));
-		}
-		if (flags & FT_SNAP) filters.append(QString(";;Snapshot (%0)").arg(getFilter(flags & FT_SNAP)));
-		if (flags & FT_TAPE) filters.append(QString(";;Tape (%0)").arg(getFilter(flags & FT_TAPE)));
-		if (flags & FT_SLOT_A) filters.append(QString(";;Cartrige data (%0)").arg(getFilter(flags & FT_SLOT_A)));
-		if (flags & FT_NES) filters.append(QString(";;NES cartrige (%0)").arg(getFilter(flags & FT_NES)));
-		if (flags & FT_SPG) filters.append(";;SPG file (*.spg)");
-#ifdef HAVEZLIB
-		if (flags & FT_RZX) filters.append(";;RZX file (").append(getFilter(flags & FT_RZX)).append(")");
-#endif
-		if (flags & FT_RAW) filters.append(";;Raw file to disk A (*.*)");
-		if (flags & FT_T64) filters.append(";;C64 tape file (*.t64)");
-		if (filters.startsWith(";;")) filters.remove(0,2);
-		filer->setWindowTitle("Open file");
-		filer->setNameFilter(filters);
-		filer->setDirectory(conf.path.lastDir);
-		filer->setAcceptMode(QFileDialog::AcceptOpen);
-		if (!filer->exec()) return;
-		filters = filer->selectedNameFilter();
-		if (filters.contains("Disk A")) drv = 0;
-		if (filters.contains("Disk B")) drv = 1;
-		if (filters.contains("Disk C")) drv = 2;
-		if (filters.contains("Disk D")) drv = 3;
-//		if (filters.contains("Cartrige slot A")) drv = 0;
-		if (filters.contains("Raw")) drv = 10;
-		opath = filer->selectedFiles().first();
-		strcpy(conf.path.lastDir, filer->directory().absolutePath().toLocal8Bit().data());
-	}
-	if (drv == -1) drv = 0;
-	int type;
-	if (drv == 10) {
-		type = FT_RAW;
-		drv = 0;
-	} else {
-		type = getFileType(opath);
-	}
-	if (!QFile::exists(opath)) return;
-	std::string sfnam(opath.toLocal8Bit().data());
-	int ferr = ERR_OK;
-	rzxStop(comp);
-//	Floppy* flp = comp->dif->fdc->flop[drv & 3];
-	// xCartridge* slot = drv ? &comp->msx.slotB : &comp->msx.slotA;
-	switch (type) {
-		case FT_SNA: ferr = loadSNA(comp,sfnam.c_str(), -1); break;
-		case FT_Z80: ferr = loadZ80(comp,sfnam.c_str(), -1); break;
-		case FT_TAP: ferr = loadTAP(comp,sfnam.c_str(),-1); break;
-		case FT_TZX: ferr = loadTZX(comp,sfnam.c_str(),-1); break;
-		case FT_WAV: ferr = loadWAV(comp,sfnam.c_str(),-1); break;
-		case FT_SCL: if (saveChangedDisk(comp,drv)) {ferr = loadSCL(comp, sfnam.c_str(), drv);} break;
-		case FT_TRD: if (saveChangedDisk(comp,drv)) {ferr = loadTRD(comp, sfnam.c_str(), drv);} break;
-		case FT_FDI: if (saveChangedDisk(comp,drv)) {ferr = loadFDI(comp, sfnam.c_str(), drv);} break;
-		case FT_UDI: if (saveChangedDisk(comp,drv)) {ferr = loadUDI(comp, sfnam.c_str(), drv);} break;
-		case FT_HOBETA: ferr = loadHobeta(comp, sfnam.c_str(), drv); break;
-		case FT_RAW: ferr = loadRaw(comp, sfnam.c_str(), 0); break;
-		case FT_DSK: ferr = loadDSK(comp, sfnam.c_str(), drv); break;
-		case FT_TD0: ferr = loadTD0(comp, sfnam.c_str(), drv); break;
-		case FT_SPG: ferr = loadSPG(comp, sfnam.c_str(),-1); break;
-		case FT_SLOT_A: ferr = loadSlot(comp, sfnam.c_str(),-1); break;
-		case FT_NES: ferr = loadNes(comp, sfnam.c_str(), -1); break;
-		case FT_T64: ferr = loadT64(comp,sfnam.c_str(), -1); break;
-#ifdef HAVEZLIB
-		case FT_RZX: ferr = loadRZX(comp, sfnam.c_str(), -1); break;
-#endif
-	}
-	switch (ferr) {
-		case ERR_CANT_OPEN: shitHappens("Can't open file"); break;
-		case ERR_RZX_SIGN: shitHappens("Wrong RZX signature"); break;
-		case ERR_RZX_CRYPT: shitHappens("Xpeccy cannot into crypted RZX"); break;
-		case ERR_RZX_UNPACK: shitHappens("RZX unpack error"); break;
-		case ERR_TZX_SIGN: shitHappens("Wrong TZX signature"); break;
-		case ERR_TZX_UNKNOWN: shitHappens("Unknown TZX block"); break;
-		case ERR_TRD_LEN: shitHappens("Incorrect TRD size"); break;
-		case ERR_TRD_SIGN: shitHappens("Not TRDOS disk"); break;
-		case ERR_UDI_SIGN: shitHappens("Wrong UDI signature"); break;
-		case ERR_FDI_SIGN: shitHappens("Wrong FDI signature"); break;
-		case ERR_FDI_HEAD: shitHappens("Wrong FDI heads count"); break;
-		case ERR_HOB_CANT: shitHappens("Can't create file at disk"); break;
-		case ERR_SCL_SIGN: shitHappens("Wrong SCL signature"); break;
-		case ERR_SCL_MANY: shitHappens("Too many files in SCL"); break;
-		case ERR_RAW_LONG: shitHappens("File is too big"); break;
-		case ERR_DSK_SIGN: shitHappens("Wrong DSK signature"); break;
-		case ERR_TD0_SIGN: shitHappens("Wrong TD0 signature"); break;
-		case ERR_TD0_TYPE: shitHappens("Unsupported TD0"); break;
-		case ERR_TD0_VERSION: shitHappens("Unsupported TD0 version"); break;
-		case ERR_WAV_HEAD: shitHappens("Wrong WAV header"); break;
-		case ERR_WAV_FORMAT: shitHappens("Unsupported WAV format"); break;
-		case ERR_NES_HEAD: shitHappens("Wrong NES header"); break;
-		case ERR_NES_MAPPER: shitHappens("Unsupported mapper"); break;
-		case ERR_T64_SIGN: shitHappens("Wrong T64 header"); break;
-		case ERR_OK:
-			if (type & FT_DISK) loadBoot(comp, conf.path.boot, drv);
-			if ((type & FT_SLOT) && testSlotOn(comp)) compReset(comp, RES_DEFAULT);
-			break;
-	}
-}
-
-bool saveFile(Computer* comp,const char* name,int flags,int drv) {
-	QString path = QDialog::trUtf8(name);
-	QString filters = "";
-	if (flags & FT_DISK) {
-		if (((drv == -1) || (drv == 0)) && (comp->dif->fdc->flop[0]->insert)) filters.append(";;Disk A (*.scl *.trd *.udi)");
-		if ((drv == 1) && (comp->dif->fdc->flop[1]->insert)) filters.append(";;Disk B (*.scl *.trd *.udi)");
-		if ((drv == 2) && (comp->dif->fdc->flop[2]->insert)) filters.append(";;Disk C (*.scl *.trd *.udi)");
-		if ((drv == 3) && (comp->dif->fdc->flop[3]->insert)) filters.append(";;Disk D (*.scl *.trd *.udi)");
-	}
-	if (flags & FT_SNAP) filters.append(";;Snapshot (*.sna)");
-	if ((flags & FT_TAPE) && (comp->tape->blkCount != 0)) filters.append(";;Tape (*.tap)");
-	if (filters.startsWith(";;")) filters.remove(0,2);
-	filer->setWindowTitle("Save file");
-	filer->setNameFilter(filters);
-	filer->setAcceptMode(QFileDialog::AcceptSave);
-	filer->setDirectory(conf.path.lastDir);
-	if (path != "") filer->selectFile(path);
-	if (!filer->exec()) return false;
-	filters = filer->selectedNameFilter();
-	if (filters.contains("Disk A")) drv = 0;
-	if (filters.contains("Disk B")) drv = 1;
-	if (filters.contains("Disk C")) drv = 2;
-	if (filters.contains("Disk D")) drv = 3;
-	if (drv == -1) drv = 0;
-	path = filer->selectedFiles().first();
-	strcpy(conf.path.lastDir, filer->directory().absolutePath().toLocal8Bit().data());
-	std::string sfnam(path.toUtf8().data());
-	int type = getFileType(path);
-	int err = ERR_OK;
-	if (filters.contains("Disk")) {
-//		Floppy* flp = comp->dif->fdc->flop[drv];
-		switch (type) {
-			case FT_SCL: err = saveSCL(comp, sfnam.c_str(), drv); break;
-			case FT_TRD: err = saveTRD(comp, sfnam.c_str(), drv); break;
-			case FT_UDI: err = saveUDI(comp, sfnam.c_str(), drv); break;
-			default: sfnam += ".trd"; err = saveTRD(comp, sfnam.c_str(), drv); break;
-		}
-	}
-	if (filters.contains("Tape")) {
-		switch (type) {
-			case FT_TAP: err = saveTAP(comp, sfnam.c_str(), -1); break;
-			default: sfnam += ".tap"; err = saveTAP(comp, sfnam.c_str(), -1); break;
-		}
-	}
-	if (filters.contains("Snap")) {
-		bool mt = (conf.prof.cur->hwName == "ZX48K");
-		switch (type) {
-			case FT_SNA:
-				err = saveSNA(comp,sfnam.c_str(),mt);
-				break;
-			default:
-				sfnam += ".sna";
-				err = saveSNA(comp,sfnam.c_str(),mt);
-				break;
-		}
-	}
-	switch (err) {
-		case ERR_CANT_OPEN: shitHappens("Can't open file"); break;
-		case ERR_TRD_SNF: shitHappens("Wrong disk structure for TRD file"); break;
-	}
-	return true;
-}
-*/
