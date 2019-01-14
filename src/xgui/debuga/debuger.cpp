@@ -101,6 +101,7 @@ void DebugWin::start(Computer* c) {
 }
 
 void DebugWin::stop() {
+	compExec(comp);		// to prevent double breakpoint catch
 	comp->debug = 0;
 	comp->vid->debug = 0;
 	comp->maping = ui.actMaping->isChecked() ? 1 : 0;
@@ -218,9 +219,9 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.dasmTable->setFocus();
 
 // disasm table
-	ui.dasmTable->setColumnWidth(0,80);
+	ui.dasmTable->setColumnWidth(0,90);
 	ui.dasmTable->setColumnWidth(1,85);
-	ui.dasmTable->setColumnWidth(2,140);
+	ui.dasmTable->setColumnWidth(2,130);
 	ui.dasmTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_LABEL));
 	ui.dasmTable->setItemDelegateForColumn(1, new xItemDelegate(XTYPE_DUMP));
 
@@ -325,7 +326,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 	ui.dumpTable->setColumnWidth(0,60);
 	ui.dumpTable->setItemDelegate(new xItemDelegate(XTYPE_BYTE));
-	ui.dumpTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_ADR));
+	ui.dumpTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_LABEL));
 	ui.dumpTable->setItemDelegateForColumn(9, new xItemDelegate(XTYPE_NONE));
 
 	connect(ui.dumpTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
@@ -1520,6 +1521,7 @@ void DebugWin::saveDasm() {
 	if (path.isEmpty()) return;
 	QFile file(path);
 	dasmData drow;
+	QList<dasmData> list;
 	if (file.open(QFile::WriteOnly)) {
 		QTextStream strm(&file);
 		unsigned short adr = (blockStart < 0) ? 0 : (blockStart & 0xffff);
@@ -1528,11 +1530,17 @@ void DebugWin::saveDasm() {
 		strm << "; Created by Xpeccy deBUGa\n\n";
 		strm << "\tORG 0x" << gethexword(adr) << "\n\n";
 		while ((adr <= end) && work) {
-			drow = getDisasm(comp, adr);
-			if (adr < drow.adr) work = 0;		// address overfill (FFFF+)
-			if (drow.islab)
-				strm << drow.aname << ":\n";
-			strm << "\t" << drow.command << "\n";
+			// TODO: check equ $-e
+			list = getDisasm(comp, adr);
+			foreach (drow, list) {
+				if (adr < drow.adr) work = 0;		// address overfill (FFFF+)
+				if (drow.isequ) {
+					strm << drow.aname << ":";
+				} else if (drow.islab) {
+					strm << drow.aname << ":\n";
+				}
+				strm << "\t" << drow.command << "\n";
+			}
 		}
 		file.close();
 	} else {

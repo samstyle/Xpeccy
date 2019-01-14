@@ -70,7 +70,7 @@ QVariant xDisasmModel::data(const QModelIndex& idx, int role) const {
 			}
 			break;
 		case Qt::BackgroundColorRole:
-			if (dasm[row].ispc) {
+			if (dasm[row].ispc && !dasm[row].islab) {
 				res = colPC;			// pc
 			} else if (dasm[row].issel) {
 				res = colSEL;			// selected
@@ -161,11 +161,36 @@ void dasmwr(Computer* comp, unsigned short adr, unsigned char bt) {
 	}
 }
 
-void placeLabel(dasmData& drow) {
-	QString lab = findLabel(drow.oadr, -1, -1);
-	if (lab.isEmpty()) return;
-	QString num = QString::number(drow.oadr + 0x10000, 16).right(4).prepend("#").toUpper();
-	drow.command.replace(num, lab);
+void placeLabel(Computer* comp, dasmData& drow) {
+	int shift = 0;
+	int work = 1;
+	QString lab;
+	QString num;
+	xMnem mn;
+	while (work && (shift < 8)) {
+		lab = findLabel(drow.oadr - shift, -1, -1);
+		if (lab.isEmpty()) {
+			if (drow.oflag & OF_MEMADR) {
+				shift++;
+			} else {
+				work = 0;
+			}
+		} else {
+			mn.len = 8;					// default seek range
+			if ((drow.flag & 0xf0) == DBG_VIEW_CODE) {	// for code - size of opcode only
+				mn = cpuDisasm(comp->cpu, (drow.oadr - shift) & 0xffff, NULL, dasmrd, comp);
+			}
+			if (shift < mn.len) {
+				num = gethexword(drow.oadr).prepend("#").toUpper();
+				if (shift == 0) {
+					drow.command.replace(num, QString("%0").arg(lab));
+				} else {
+					drow.command.replace(num, QString("%0 + %1").arg(lab).arg(shift));
+				}
+			}
+			work = 0;
+		}
+	}
 }
 
 int dasmByte(Computer* comp, unsigned short adr, dasmData& drow) {
@@ -188,7 +213,7 @@ int dasmAddr(Computer* comp, unsigned short adr, dasmData& drow) {
 		lab = gethexword(word).prepend("#");
 	}
 	drow.command = QString("DW %0").arg(lab);
-	placeLabel(drow);
+	placeLabel(comp, drow);
 	return 2;
 }
 
@@ -220,7 +245,7 @@ int dasmCode(Computer* comp, unsigned short adr, dasmData& drow) {
 	drow.command = QString(buf).toUpper();
 	drow.oadr = mnm.oadr;
 	drow.oflag = mnm.flag;
-	placeLabel(drow);
+	placeLabel(comp, drow);
 	if (drow.ispc) {
 		if (mnm.mem) {
 			if (mnm.flag & OF_MWORD) {
@@ -260,12 +285,16 @@ int dasmSome(Computer* comp, unsigned short adr, dasmData& drow) {
 	return clen;
 }
 
-dasmData getDisasm(Computer* comp, unsigned short& adr) {
+QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
+	QList<dasmData> list;
 	dasmData drow;
+	unsigned short oadr = adr;
 	drow.adr = adr;
 	drow.oflag = 0;
 	drow.ispc = 0;
 	drow.issel = 0;
+	drow.islab = 0;
+	drow.isequ = 0;
 	drow.info.clear();
 	drow.icon.clear();
 	int clen = 0;
@@ -300,7 +329,6 @@ dasmData getDisasm(Computer* comp, unsigned short& adr) {
 		lab = findLabel(xadr.adr, xadr.type, xadr.bank);
 	}
 	if (lab.isEmpty()) {
-		drow.islab = 0;
 		if (conf.dbg.segment || (mode != XVIEW_CPU)) {
 			switch(xadr.type) {
 				case MEM_RAM: drow.aname = "RAM:"; break;
@@ -309,7 +337,7 @@ dasmData getDisasm(Computer* comp, unsigned short& adr) {
 				case MEM_EXT: drow.aname = "EXT:"; break;
 				default: drow.aname = "???"; break;
 			}
-			drow.aname.append(QString("%1:%2").arg(gethexbyte(xadr.bank & 0xff)).arg(gethexword(xadr.adr & 0x3fff)));
+			drow.aname.append(QString("%1:%2").arg(gethexbyte((xadr.bank >> 6) & 0xff)).arg(gethexword(xadr.adr & 0x3fff)));
 		} else {
 			int wid = (comp->hw->base == 8) ? 6 : 4;
 			drow.aname = QString::number(xadr.adr, comp->hw->base).toUpper().rightJustified(wid, '0');
@@ -327,18 +355,44 @@ dasmData getDisasm(Computer* comp, unsigned short& adr) {
 		adr++;
 		clen--;
 	}
-	return drow;
+	list.append(drow);
+// add equ's
+	clen = adr - oadr;
+	while (clen > 1) {
+		oadr++;
+		clen--;
+		lab = findLabel(oadr, -1, -1);
+		if (!lab.isEmpty()) {
+			drow.islab = 1;
+			drow.isequ = 1;
+			drow.adr = oadr;
+			drow.aname = lab;
+			drow.command = QString("EQU $-%0").arg(clen);
+			list.append(drow);
+		}
+	}
+
+	return list;
 }
 
 int xDisasmModel::fill() {
 	dasmData drow;
+	QList<dasmData> list;
 	int row;
-	unsigned short adr = disasmAdr;
+	unsigned short adr = disasmAdr & 0xffff;
 	int res = 0;
+	QString lab;
 	dasm.clear();
 	for(row = 0; row < rowCount(); row++) {
-		drow = getDisasm(*cptr, adr);
-		dasm.append(drow);
+		list = getDisasm(*cptr, adr);
+		foreach(drow, list) {
+			dasm.append(drow);
+			if (drow.islab && !drow.isequ) {
+				drow.islab = 0;
+				drow.aname = gethexword(drow.adr);
+				dasm.append(drow);
+			}
+		}
 		res |= drow.ispc;
 	}
 	return res;
@@ -361,8 +415,9 @@ int xDisasmModel::update() {
 
 Qt::ItemFlags xDisasmModel::flags(const QModelIndex& idx) const {
 	Qt::ItemFlags res = QAbstractItemModel::flags(idx);
-	if (idx.column() < 3)
+	if ((idx.column() < 3) && !((idx.column() == 2) && dasm[idx.row()].isequ)) {
 		res |= Qt::ItemIsEditable;
+	}
 	return res;
 }
 
@@ -445,7 +500,7 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 				}
 				disasmAdr = idx & 0xffff;
 			}
-			// update();
+			emit s_adrch();
 			break;
 		case 1:	// bytes
 			str = val.toString();
@@ -516,7 +571,8 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 					buf[0] = idx & 0xff;
 					buf[1] = (idx >> 8) & 0xff;
 				}
-			} else {			// byte
+			} else {			// code
+				// TODO: replace label name
 				len = cpuAsm((*cptr)->cpu, str.toLocal8Bit().data(), buf, adr);
 				if (len > 0) {
 					for(idx = 0; idx < len; idx++) {
@@ -543,6 +599,7 @@ xDisasmTable::xDisasmTable(QWidget* p):QTableView(p) {
 	cptr = NULL;
 	model = new xDisasmModel();
 	setModel(model);
+	connect(model, SIGNAL(s_adrch()), this, SLOT(updContent()));
 	connect(model, SIGNAL(rqRefill()), this, SIGNAL(rqRefill()));
 }
 
@@ -562,11 +619,23 @@ void xDisasmTable::setComp(Computer** comp) {
 void xDisasmTable::setMode(int md, int pg) {
 	mode = md;
 	page = pg;
-	model->update();
+	updContent();
 }
 
 int xDisasmTable::updContent() {
-	return model->update();
+	int res = model->update();
+	clearSpans();
+	for (int i = 0; i < model->dasm.size(); i++) {
+		if (model->dasm[i].isequ) {
+			setSpan(i, 0, 1, 2);
+			setSpan(i, 2, 1, 2);
+		} else if (model->dasm[i].islab) {
+			setSpan(i, 0, 1, model->columnCount());
+		} else if (model->dasm[i].icon.isEmpty() && model->dasm[i].info.isEmpty()) {
+			setSpan(i, 2, 1, model->columnCount() - 2);
+		}
+	}
+	return res;
 }
 
 void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
@@ -594,7 +663,7 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			if (mode != XVIEW_CPU) break;
 			if (!cptr) break;
 			disasmAdr = (*cptr)->cpu->pc;
-			model->update();
+			updContent();
 			ev->ignore();
 			break;
 		case Qt::Key_End:
@@ -692,12 +761,15 @@ void xDisasmTable::mouseMoveEvent(QMouseEvent* ev) {
 }
 
 void xDisasmTable::scrolDn(Qt::KeyboardModifiers mod) {
+	int i = 1;
 	if (mod & Qt::ControlModifier) {
 		disasmAdr++;
 	} else {
-		disasmAdr = getData(1, 0, Qt::UserRole).toInt() & 0xffff;
+		while (disasmAdr == (getData(i, 0, Qt::UserRole).toInt() & 0xffff))
+			i++;
+		disasmAdr = getData(i, 0, Qt::UserRole).toInt() & 0xffff;
 	}
-	model->update();
+	updContent();
 }
 
 void xDisasmTable::scrolUp(Qt::KeyboardModifiers mod) {
@@ -706,7 +778,7 @@ void xDisasmTable::scrolUp(Qt::KeyboardModifiers mod) {
 	} else {
 		disasmAdr = getPrevAdr(*cptr, disasmAdr);
 	}
-	model->update();
+	updContent();
 }
 
 void xDisasmTable::wheelEvent(QWheelEvent* ev) {

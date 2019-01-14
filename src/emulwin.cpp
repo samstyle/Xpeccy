@@ -145,10 +145,6 @@ MainWin::MainWin() {
 	grabMice = 0;
 	block = 0;
 
-//	QFile file(":/font.bin");		// on-screen messages bitmap font 12x12
-//	file.open(QFile::ReadOnly);
-//	font = file.readAll();
-//	file.close();
 	msgTimer = 0;
 	msg.clear();
 	alphabet.load(":/font.png");
@@ -163,10 +159,6 @@ MainWin::MainWin() {
 	shotFormat["jpg"] = SCR_JPG;
 	shotFormat["scr"] = SCR_SCR;
 	shotFormat["hobeta"] = SCR_HOB;
-
-//	opt = new SetupWin(this);
-//	dbg = new DebugWin(this);
-//	watcher = new xWatcher(this);
 
 	if (SDL_NumJoysticks() > 0) {
 		conf.joy.joy = SDL_JoystickOpen(0);
@@ -185,15 +177,15 @@ MainWin::MainWin() {
 	initUserMenu();
 	setFocus();
 
-	timer.setInterval(20);
-	connect(&timer,SIGNAL(timeout()),this,SLOT(onTimer()));
+	timid = startTimer(100);
+	secid = startTimer(1000);
 
 	connect(userMenu,SIGNAL(aboutToShow()),SLOT(menuShow()));
 	connect(userMenu,SIGNAL(aboutToHide()),SLOT(menuHide()));
 
 	fillUserMenu();
 
-	timer.start();
+//	timer.start();
 }
 
 // gamepad mapper
@@ -269,86 +261,75 @@ void MainWin::mapJoystick(Computer* comp, int type, int num, int state) {
 
 static QList<int> fpsmem;
 
-void MainWin::onTimer() {
-//	if (opt->block) return;
-	if (conf.prof.changed) {
-		comp = conf.prof.cur->zx;
-		conf.prof.changed = 0;
-	}
-	if (block) return;
+void MainWin::timerEvent(QTimerEvent* ev) {
+// fps (1000 ms)
+	if (ev->timerId() == secid) {
+		if (!conf.emu.pause) {
+			conf.vid.curfps = conf.vid.fcount;
+			conf.vid.fcount = 0;
+		}
+	} else {
+// updater
+		if (conf.prof.changed) {
+			comp = conf.prof.cur->zx;
+			conf.prof.changed = 0;
+		}
+		if (block) return;
 #if HAVEZLIB
-	if (comp->rzx.start) {
-		emit s_rzx_start();
-		// rzxWin->startPlay();
-	}
-	if (comp->rzx.overio) {
-		comp->rzx.overio = 0;
-		pause(true, PR_RZX);
-		shitHappens("RZX playback error");
-		emit s_rzx_stop();
-		//rzxWin->stop();
-		pause(false, PR_RZX);
-	}
+		if (comp->rzx.start) {
+			emit s_rzx_start();
+		}
+		if (comp->rzx.overio) {
+			comp->rzx.overio = 0;
+			pause(true, PR_RZX);
+			shitHappens("RZX playback error");
+			emit s_rzx_stop();
+			pause(false, PR_RZX);
+		}
 #endif
 // process sdl event (gamepad)
-
-/* TODO : rewrite using this:
-	SDL_JoystickGetAxis(joy, 0);
-	SDL_JoystickGetButton(joy, 0);
-	SDL_JoystickGetHat(joy, 0);
-*/
-	if (conf.joy.joy && !conf.emu.pause) {
-		SDL_Event ev;
-		SDL_JoystickUpdate();
-		while(SDL_PollEvent(&ev)) {
-			// printf("%i\n", ev.type);
-			switch(ev.type) {
-				case SDL_JOYAXISMOTION:
-					if (abs(ev.jaxis.value) < conf.joy.dead)
-						ev.jaxis.value = 0;
-					mapJoystick(comp, JOY_AXIS, ev.jaxis.axis, ev.jaxis.value);
-					//printf("Axis %i %i\n", ev.jaxis.axis, ev.jaxis.value);
-					break;
-				case SDL_JOYBUTTONDOWN:
-					mapJoystick(comp, JOY_BUTTON, ev.jbutton.button, 32768);
-					//printf("Button %i down\n", ev.jbutton.button);
-					break;
-				case SDL_JOYBUTTONUP:
-					mapJoystick(comp, JOY_BUTTON, ev.jbutton.button, 0);
-					//printf("Button %i up\n", ev.jbutton.button);
-					break;
-				case SDL_JOYHATMOTION:
-					mapJoystick(comp, JOY_HAT, ev.jhat.hat, ev.jhat.value);
-					// printf("hat %i %i\n", ev.jhat.hat, ev.jhat.value);
-					break;
+		if (conf.joy.joy && !conf.emu.pause) {
+			SDL_Event ev;
+			SDL_JoystickUpdate();
+			while(SDL_PollEvent(&ev)) {
+				switch(ev.type) {
+					case SDL_JOYAXISMOTION:
+						if (abs(ev.jaxis.value) < conf.joy.dead)
+							ev.jaxis.value = 0;
+						mapJoystick(comp, JOY_AXIS, ev.jaxis.axis, ev.jaxis.value);
+						//printf("Axis %i %i\n", ev.jaxis.axis, ev.jaxis.value);
+						break;
+					case SDL_JOYBUTTONDOWN:
+						mapJoystick(comp, JOY_BUTTON, ev.jbutton.button, 32768);
+						//printf("Button %i down\n", ev.jbutton.button);
+						break;
+					case SDL_JOYBUTTONUP:
+						mapJoystick(comp, JOY_BUTTON, ev.jbutton.button, 0);
+						//printf("Button %i up\n", ev.jbutton.button);
+						break;
+					case SDL_JOYHATMOTION:
+						mapJoystick(comp, JOY_HAT, ev.jhat.hat, ev.jhat.value);
+						// printf("hat %i %i\n", ev.jhat.hat, ev.jhat.value);
+						break;
+				}
 			}
 		}
-	}
 // process mouse auto move
-	comp->mouse->xpos += comp->mouse->autox;
-	comp->mouse->ypos += comp->mouse->autoy;
+		comp->mouse->xpos += comp->mouse->autox;
+		comp->mouse->ypos += comp->mouse->autoy;
 // if computer sends a message, show it
-	if (comp->msg) {
-		setMessage(QString(comp->msg));
-		comp->msg = NULL;
-	}
-// fps counter
-	if (!conf.emu.pause) {
-		fpsmem.append(conf.vid.fcount);
-		while (fpsmem.size() > 50)
-			fpsmem.removeFirst();
-	}
-	if (!fpsmem.isEmpty())
-		conf.vid.curfps = conf.vid.fcount - fpsmem.first();
-	else
-		conf.vid.curfps = 0;
-// update satellites
-	updateSatellites();
-// redraw window (if fast)
-	if (conf.emu.fast || comp->debug) {
-		setUpdatesEnabled(true);
-		repaint();
-		setUpdatesEnabled(false);
+		if (comp->msg) {
+			setMessage(QString(comp->msg));
+			comp->msg = NULL;
+		}
+// satelites
+		updateSatellites();
+// redraw window (if fast || paused)
+		if (conf.emu.fast || conf.emu.pause) {
+			setUpdatesEnabled(true);
+			repaint();
+			setUpdatesEnabled(false);
+		}
 	}
 }
 
@@ -860,7 +841,8 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		}
 	}
 	if (saveChanged()) {
-		timer.stop();
+		killTimer(timid);
+		killTimer(secid);
 		ideCloseFiles(comp->ide);
 		sdcCloseFile(comp->sdc);
 		sltEject(comp->slot);		// this must save cartridge ram

@@ -31,6 +31,7 @@ void help() {
 	printf("--pc ADR\t\tset PC\n");
 	printf("--sp ADR\t\tset SP\n");
 	printf("--bp ADR\t\tset fetch brakepoint to address ADR\n");
+	printf("--bp NAME\t\tset fetch brakepoint to label NAME (see -l key)\n");
 }
 
 int main(int ac,char** av) {

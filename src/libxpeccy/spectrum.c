@@ -5,6 +5,8 @@
 #include "spectrum.h"
 #include "filetypes/filetypes.h"
 
+static int nsTime;
+static int res2;
 int res3 = 0;	// tick in op, wich has last OUT/MWR (and vidSync)
 int res4 = 0;	// save last res3 (vidSync on OUT/MWR process do res3-res4 ticks)
 
@@ -367,7 +369,7 @@ void compUpdateTimings(Computer* comp) {
 			vidUpdateTimings(comp->vid, perNoTurbo >> 3);
 			break;
 		case HW_BK0011M:
-			vidUpdateTimings(comp->vid, 40);
+			vidUpdateTimings(comp->vid, 302);
 			comp->vid->lockLayout = 0;
 			vidSetLayout(comp->vid, bkLay);
 			comp->vid->lockLayout = 1;
@@ -468,10 +470,25 @@ int compSetHardware(Computer* comp, const char* name) {
 // exec 1 opcode, sync devices, return eated ns
 
 int compExec(Computer* comp) {
-	int nsTime;
-	int res2 = 0;
-	res4 = 0;
 	comp->vid->time = 0;
+// breakpoints
+	if (!comp->debug) {
+		unsigned char brk = getBrk(comp, comp->cpu->pc);
+		if (brk & (MEM_BRK_FETCH | MEM_BRK_TFETCH)) {
+			comp->brk = 1;
+			if (brk & MEM_BRK_TFETCH) {
+				unsigned char *ptr = getBrkPtr(comp, comp->cpu->pc);
+				*ptr &= ~MEM_BRK_TFETCH;
+			}
+			return 0;
+		}
+		if (comp->cpu->intrq && comp->brkirq) {
+			comp->brk = 1;
+			return 0;
+		}
+	}
+// start
+	res4 = 0;
 // exec cpu opcode OR handle interrupt. get T states back
 	res2 = comp->cpu->exec(comp->cpu);
 // scorpion WAIT: add 1T to odd-T command
@@ -492,7 +509,6 @@ int compExec(Computer* comp) {
 		comp->hw->out(comp, comp->padr, comp->pval, bdiz);
 		comp->padr = 0;
 	}
-	// vidSync(comp->vid, comp->nsPerTick);
 // execution completed : get eated time
 	nsTime = comp->vid->time;
 	comp->tickCount += res2;
@@ -522,19 +538,6 @@ int compExec(Computer* comp) {
 	if (comp->vid->newFrame) {
 		comp->vid->newFrame = 0;
 		comp->frmStrobe = 1;
-	}
-// breakpoints
-	if (!comp->debug) {
-		unsigned char brk = getBrk(comp, comp->cpu->pc);
-		if (brk & (MEM_BRK_FETCH | MEM_BRK_TFETCH)) {
-			comp->brk = 1;
-			if (brk & MEM_BRK_TFETCH) {
-				unsigned char *ptr = getBrkPtr(comp, comp->cpu->pc);
-				*ptr &= ~MEM_BRK_TFETCH;
-			}
-		}
-		if (comp->cpu->intrq && comp->brkirq)
-			comp->brk = 1;
 	}
 // return ns eated @ this step
 	return nsTime;

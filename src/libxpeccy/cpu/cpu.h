@@ -64,6 +64,7 @@ typedef PAIR(w,h,l) xpair;
 #define OF_RELJUMP	(1<<2)
 #define OF_MBYTE	(1<<3)		// operand is byte from memory
 #define OF_MWORD	(1<<4)		// operand is word from memory
+#define OF_MEMADR	(1<<5)		// operand contains memory address (nn)
 
 typedef struct CPU CPU;
 typedef struct opCode opCode;

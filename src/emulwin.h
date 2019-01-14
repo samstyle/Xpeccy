@@ -58,7 +58,7 @@ class MainWin : public QWidget {
 		void tapStateChanged(int,int);
 		void setProfile(std::string);
 	private slots:
-		void onTimer();
+		// void onTimer();
 		void updateSatellites();
 		void menuHide();
 		void menuShow();
@@ -80,7 +80,9 @@ class MainWin : public QWidget {
 		unsigned block:1;
 
 		QIcon icon;
-		QTimer timer;
+		//QTimer timer;
+		int timid;
+		int secid;
 
 		int scrCounter;
 		int scrInterval;
@@ -130,6 +132,7 @@ class MainWin : public QWidget {
 		void mouseMoveEvent(QMouseEvent*);
 		void wheelEvent(QWheelEvent*);
 		void focusOutEvent(QFocusEvent*);
+		void timerEvent(QTimerEvent*);
 };
 
 #endif

@@ -969,7 +969,7 @@ opCode npTab[256]={
 
 	{OF_RELJUMP,4,npr20,NULL,"jr nz,:3"},
 	{0,4,npr21,NULL,"ld hl,:2"},
-	{OF_MWORD,4,npr22,NULL,"ld (:2),hl"},		// 4,3rd,3rd,3wr,3wr
+	{OF_MWORD | OF_MEMADR,4,npr22,NULL,"ld (:2),hl"},		// 4,3rd,3rd,3wr,3wr
 	{0,6,npr23,NULL,"inc hl"},
 	{0,4,npr24,NULL,"inc h"},
 	{0,4,npr25,NULL,"dec h"},
@@ -978,7 +978,7 @@ opCode npTab[256]={
 
 	{OF_RELJUMP,4,npr28,NULL,"jr z,:3"},
 	{0,11,npr29,NULL,"add hl,hl"},
-	{OF_MWORD,4,npr2A,NULL,"ld hl,(:2)"},		// 4,3rd,3rd,3rd,3rd
+	{OF_MWORD | OF_MEMADR,4,npr2A,NULL,"ld hl,(:2)"},		// 4,3rd,3rd,3rd,3rd
 	{0,6,npr2B,NULL,"dec hl"},
 	{0,4,npr2C,NULL,"inc l"},
 	{0,4,npr2D,NULL,"dec l"},
@@ -987,7 +987,7 @@ opCode npTab[256]={
 
 	{OF_RELJUMP,4,npr30,NULL,"jr nc,:3"},
 	{0,4,npr31,NULL,"ld sp,:2"},
-	{0,4,npr32,NULL,"ld (:2),a"},		// 4,3rd,3rd,3wr
+	{OF_MEMADR,4,npr32,NULL,"ld (:2),a"},		// 4,3rd,3rd,3wr
 	{0,6,npr33,NULL,"inc sp"},
 	{0,4,npr34,NULL,"inc (hl)"},
 	{0,4,npr35,NULL,"dec (hl)"},
@@ -996,7 +996,7 @@ opCode npTab[256]={
 
 	{OF_RELJUMP,4,npr38,NULL,"jr c,:3"},
 	{0,11,npr39,NULL,"add hl,sp"},
-	{0,4,npr3A,NULL,"ld a,(:2)"},		// 4,3rd,3rd,3rd
+	{OF_MEMADR,4,npr3A,NULL,"ld a,(:2)"},		// 4,3rd,3rd,3rd
 	{0,6,npr3B,NULL,"dec sp"},
 	{0,4,npr3C,NULL,"inc a"},
 	{0,4,npr3D,NULL,"dec a"},

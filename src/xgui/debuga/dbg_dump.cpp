@@ -222,6 +222,21 @@ Qt::ItemFlags xDumpModel::flags(const QModelIndex& idx) const {
 	return res;
 }
 
+unsigned short adr_of_reg(CPU* cpu, bool* flag, QString nam) {
+	xRegBunch bch = cpuGetRegs(cpu);
+	int i = 0;
+	nam = nam.toUpper();
+	while ((bch.regs[i].id != REG_NONE) && (QString(bch.regs[i].name).toUpper() != nam))
+		i++;
+	if (bch.regs[i].id == REG_NONE) {
+		*flag = false;
+		return 0;
+	} else {
+		*flag = true;
+		return bch.regs[i].value;
+	}
+}
+
 bool xDumpModel::setData(const QModelIndex& idx, const QVariant& val, int role) {
 	if (!idx.isValid()) return false;
 	if (role != Qt::EditRole) return false;
@@ -229,16 +244,24 @@ bool xDumpModel::setData(const QModelIndex& idx, const QVariant& val, int role) 
 	int col = idx.column();
 	if ((row < 0) || (row >= rowCount())) return false;
 	if ((col < 0) || (col >= columnCount())) return false;
+	bool flag;
 	unsigned short adr = (dumpAdr + (row << 3)) & 0xffff;
 	unsigned short nadr;
 	unsigned char bt;
+	QString str = val.toString();
 	if (col == 0) {
-		nadr = val.toString().toInt(NULL, 16) & 0xffff;
-		dumpAdr = (nadr - (row << 3)) & 0xffff;
-		update();
-		emit rqRefill();
+		if (val.toString().startsWith(".")) {
+			nadr = adr_of_reg((*cptr)->cpu, &flag, str.mid(1));
+		} else {
+			nadr = str.toInt(&flag, 16) & 0xffff;
+		}
+		if (flag) {
+			dumpAdr = nadr - (row << 3);
+			update();
+			emit rqRefill();
+		}
 	} else if (col < 9) {
-		bt = val.toString().toInt(NULL, 16) & 0xff;
+		bt = str.toInt(NULL, 16) & 0xff;
 		nadr = (adr + col - 1) & 0xffff;
 		mwr(nadr, bt);
 		updateRow(row);

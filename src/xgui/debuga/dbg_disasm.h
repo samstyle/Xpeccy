@@ -16,6 +16,7 @@ typedef struct {
 	unsigned issel:1;		// address inside selection
 	unsigned isbrk:1;		// breakpoint here
 	unsigned islab:1;		// address have label
+	unsigned isequ:1;		// this is equ
 	unsigned short adr;		// command addr
 	int oadr;			// word operand like nn : jp nn; ld hl,(nn)
 	int flag;			// address cell flags
@@ -37,12 +38,13 @@ class xDisasmModel : public QAbstractTableModel {
 		QVariant data(const QModelIndex&, int) const;
 		bool setData(const QModelIndex&, const QVariant&, int);
 		Computer** cptr;
+		QList<dasmData> dasm;
 	signals:
 		void rqRefill();
+		void s_adrch();
 	public slots:
 		int update();
 	private:
-		QList<dasmData> dasm;
 		int fill();
 };
 
@@ -52,17 +54,18 @@ class xDisasmTable : public QTableView {
 		xDisasmTable(QWidget* = NULL);
 		QVariant getData(int, int, int);
 		int rows();
-		int updContent();
 		void setComp(Computer**);
 		void setMode(int, int);
+	signals:
+		void rqRefill();
+		void rqRefillAll();
+	public slots:
+		int updContent();
 	private:
 		int markAdr;
 		xDisasmModel* model;
 		Computer** cptr;
-	signals:
-		void rqRefill();
-		void rqRefillAll();
-	private:
+
 		void scrolUp(Qt::KeyboardModifiers = 0);
 		void scrolDn(Qt::KeyboardModifiers = 0);
 
@@ -73,6 +76,6 @@ class xDisasmTable : public QTableView {
 		void wheelEvent(QWheelEvent*);
 };
 
-dasmData getDisasm(Computer*, unsigned short&);
+QList<dasmData> getDisasm(Computer*, unsigned short&);
 
 #endif
