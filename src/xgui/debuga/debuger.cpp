@@ -189,7 +189,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 		if (arrl[i]) {
 			arrl[i]->id = i;
 			connect(arrl[i], SIGNAL(clicked(QMouseEvent*)), this, SLOT(regClick(QMouseEvent*)));
-			dbgRegEdit[i]->setXFlag(XHS_BGR | XHS_DEC);
+			dbgRegEdit[i]->setXFlag(XHS_BGR | XHS_DEC | XHS_FILL);
 		}
 	}
 
@@ -264,6 +264,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.tbTool->addAction(ui.actFill);
 	ui.tbTool->addAction(ui.actSprScan);
 	ui.tbTool->addAction(ui.actShowKeys);
+	ui.tbTool->addAction(ui.actWutcha);
 
 	ui.tbDbgOpt->addAction(ui.actShowLabels);
 	ui.tbDbgOpt->addAction(ui.actHideAddr);
@@ -297,6 +298,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.actFill,SIGNAL(triggered(bool)),this,SLOT(doFill()));
 	connect(ui.actSprScan,SIGNAL(triggered(bool)),this,SLOT(doMemView()));
 	connect(ui.actShowKeys,SIGNAL(triggered(bool)),this,SIGNAL(wannaKeys()));
+	connect(ui.actWutcha,SIGNAL(triggered(bool)),this,SIGNAL(wannaWutch()));
 
 	connect(ui.actShowLabels,SIGNAL(toggled(bool)),this,SLOT(setShowLabels(bool)));
 	connect(ui.actHideAddr,SIGNAL(toggled(bool)),this,SLOT(fillDisasm()));

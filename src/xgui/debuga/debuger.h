@@ -60,6 +60,7 @@ class DebugWin : public QDialog {
 	signals:
 		void closed();
 		void wannaKeys();
+		void wannaWutch();
 		void needStep();
 	public slots:
 		void start(Computer*);

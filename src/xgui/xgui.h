@@ -18,6 +18,7 @@ void showInfo(const char*);
 
 #define	XHS_BGR	1		// change background if value changed
 #define	XHS_DEC	(1<<1)		// hex/dec switch enabled
+#define XHS_FILL (1<<2)		// leading zeros
 
 class xHexSpin : public QLineEdit {
 	Q_OBJECT
@@ -40,7 +41,7 @@ class xHexSpin : public QLineEdit {
 		int min;
 		int max;
 		void setBase(int);
-		QString getText(int);
+//		QString getText(int);
 	protected:
 		void keyPressEvent(QKeyEvent*);
 		void wheelEvent(QWheelEvent*);

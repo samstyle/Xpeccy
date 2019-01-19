@@ -5,39 +5,17 @@
 
 xMemFiller::xMemFiller(QWidget* p):QDialog(p) {
 	ui.setupUi(this);
-
-	connect(ui.sbStart, SIGNAL(valueChanged(int)),this,SLOT(adrChange()));
-	connect(ui.sbEnd, SIGNAL(valueChanged(int)),this,SLOT(adrChange()));
-	connect(ui.leStartHex, SIGNAL(textChanged(QString)),this,SLOT(hexChange()));
-	connect(ui.leEndHex, SIGNAL(textChanged(QString)),this,SLOT(hexChange()));
 	connect(ui.cbMethod, SIGNAL(currentIndexChanged(int)),this,SLOT(metChange()));
-
 	connect(ui.pbFill,SIGNAL(clicked(bool)),this,SLOT(fill()));
 }
 
 void xMemFiller::start(Memory* me, int bgn, int end) {
 	mem = me;
 	if ((bgn > -1) && (end > -1)) {
-		ui.sbStart->setValue(bgn);
-		ui.sbEnd->setValue(end);
+		ui.leStartHex->setValue(bgn);
+		ui.leEndHex->setValue(end);
 	}
 	show();
-}
-
-void xMemFiller::adrChange() {
-	QString str = gethexword(ui.sbStart->value()).toUpper();
-	if (ui.leStartHex->text().toUpper() != str)
-		ui.leStartHex->setText(str);
-	str = gethexword(ui.sbEnd->value()).toUpper();
-	if (ui.leEndHex->text().toUpper() != str)
-		ui.leEndHex->setText(str);
-	ui.pbFill->setEnabled(ui.sbStart->value() <= ui.sbEnd->value());
-}
-
-void xMemFiller::hexChange() {
-	ui.sbStart->setValue(ui.leStartHex->text().toInt(NULL, 16));
-	ui.sbEnd->setValue(ui.leEndHex->text().toInt(NULL, 16));
-	ui.pbFill->setEnabled(ui.sbStart->value() <= ui.sbEnd->value());
 }
 
 void xMemFiller::metChange() {
@@ -64,8 +42,8 @@ void xMemFiller::fill() {
 			msk[idx] = 0xff;
 		}
 	}
-	int adr = ui.sbStart->value();	// start addr
-	int end = ui.sbEnd->value();	// end addr
+	int adr = ui.leStartHex->getValue();	// start addr
+	int end = ui.leEndHex->getValue();	// end addr
 	unsigned char byt;
 	idx = 0;
 	do {				// fill by pattern and mask

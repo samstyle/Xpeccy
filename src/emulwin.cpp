@@ -177,8 +177,8 @@ MainWin::MainWin() {
 	initUserMenu();
 	setFocus();
 
-	timid = startTimer(100);
-	secid = startTimer(1000);
+	timid = startTimer(20);
+	secid = startTimer(200);
 
 	connect(userMenu,SIGNAL(aboutToShow()),SLOT(menuShow()));
 	connect(userMenu,SIGNAL(aboutToHide()),SLOT(menuHide()));
@@ -265,8 +265,10 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 // fps (1000 ms)
 	if (ev->timerId() == secid) {
 		if (!conf.emu.pause) {
-			conf.vid.curfps = conf.vid.fcount;
-			conf.vid.fcount = 0;
+			fpsmem.append(conf.vid.fcount);
+			conf.vid.curfps = conf.vid.fcount - fpsmem.first();
+			while(fpsmem.size() > 5)
+				fpsmem.removeFirst();
 		}
 	} else {
 // updater

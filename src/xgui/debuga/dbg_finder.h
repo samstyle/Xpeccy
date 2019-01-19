@@ -2,6 +2,7 @@
 #define _DBG_FINDER_H
 
 #include <QDialog>
+#include "../xgui.h"
 #include "ui_dbgfinder.h"
 #include "../../libxpeccy/memory.h"
 

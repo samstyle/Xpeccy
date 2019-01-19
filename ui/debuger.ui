@@ -2493,6 +2493,15 @@
     <string>Clear maping</string>
    </property>
   </action>
+  <action name="actWutcha">
+   <property name="icon">
+    <iconset resource="../xpeccy.qrc">
+     <normaloff>:/images/objective.png</normaloff>:/images/objective.png</iconset>
+   </property>
+   <property name="text">
+    <string>Watcher</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -2565,11 +2574,11 @@
  </resources>
  <connections/>
  <buttongroups>
+  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
-  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

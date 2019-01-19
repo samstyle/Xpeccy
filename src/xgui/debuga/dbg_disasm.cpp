@@ -18,6 +18,8 @@ QString findLabel(int, int, int);
 static int mode = XVIEW_CPU;
 static int page = 0;
 
+extern unsigned short adr_of_reg(CPU* cpu, bool* flag, QString nam);
+
 // MODEL
 
 xDisasmModel::xDisasmModel(QObject* p):QAbstractTableModel(p) {
@@ -435,40 +437,53 @@ unsigned short getPrevAdr(Computer* comp, unsigned short adr) {
 	return adr;
 }
 
-int asmAddr(QVariant val, xAdr xadr, int base) {
-	QString str = val.toString();
-	QString lab;
-	int res = -1;
-	int adr;
-	bool flag;
-	if (str.isEmpty()) {
-		str = findLabel(xadr.adr, xadr.type, xadr.bank);
-		if (!str.isEmpty())
-			conf.labels.remove(str);
+unsigned short adr_of_reg(CPU* cpu, bool* flag, QString nam) {
+	xRegBunch bch = cpuGetRegs(cpu);
+	int i = 0;
+	nam = nam.toUpper();
+	while ((bch.regs[i].id != REG_NONE) && (QString(bch.regs[i].name).toUpper() != nam))
+		i++;
+	if (bch.regs[i].id == REG_NONE) {
+		*flag = false;
+		return 0;
 	} else {
-		adr = str.toInt(&flag, base);
-		if (flag) {
-			res = adr;
-		} else {
-			if (str.startsWith("#"))
-				str.replace(0, 1, "0x");
-			if (str.startsWith("0x")) {
-				adr = str.toInt(&flag, 16);
-			}
-			if (flag) {
-				res = adr;
-			} else if (conf.labels.contains(str)) {
-				// if there is such label
-				res = conf.labels[str].adr;
-			} else {
-				lab = findLabel(xadr.adr, xadr.type, xadr.bank);
-				if (!lab.isEmpty())
-					conf.labels.remove(lab);
-				conf.labels[str] = xadr;
-			}
-		}
+		*flag = true;
+		return bch.regs[i].value;
 	}
-	return res;
+}
+
+int str_to_adr(Computer* comp, QString str) {
+	bool flag;
+	int adr;
+	if (str.startsWith(".")) {				// .REG : name of CPU register
+		adr = adr_of_reg(comp->cpu, &flag, str.mid(1));
+	} else if (str.startsWith("#")) {			// #nnnn : hex adr
+		str.replace(0, 1, "0x");
+		adr = str.toInt(&flag, 16);
+	} else if (str.startsWith("0x")) {			// 0xnnnn : hex adr
+		adr = str.toInt(&flag, 16);
+	} else if (conf.labels.contains(str)) {			// NAME : label name
+		adr = conf.labels[str].adr;
+		flag = true;
+	} else {						// other : adr in base of comp hardware (16 | 8)
+		adr = str.toInt(&flag, comp->hw->base);
+	}
+	if (!flag) adr = -1;
+	return adr;
+}
+
+int asmAddr(Computer* comp, QVariant val, xAdr xadr) {
+	QString lab;
+	QString str = val.toString();
+	int adr = str_to_adr(comp, str);
+	if (adr < 0) {
+		lab = findLabel(xadr.adr, xadr.type, xadr.bank);
+		if (!lab.isEmpty())
+			conf.labels.remove(lab);
+		if (!str.contains(" "))
+			conf.labels[str] = xadr;
+	}
+	return adr;
 }
 
 bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int role) {
@@ -491,8 +506,15 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 	int adr = dasm[row].adr;
 	switch(col) {
 		case 0:
-			xadr = memGetXAdr((*cptr)->mem, dasm[row].adr);
-			idx = asmAddr(val, xadr, (*cptr)->hw->base);
+			str = val.toString();
+			if (str.startsWith(".")) {
+				idx = adr_of_reg((*cptr)->cpu, &flag, str.mid(1));
+				if (!flag)
+					idx = -1;
+			} else {
+				xadr = memGetXAdr((*cptr)->mem, dasm[row].adr);
+				idx = asmAddr(*cptr, val, xadr);
+			}
 			if (idx >= 0) {
 				while (row > 0) {
 					idx = getPrevAdr(*cptr, idx & 0xffff);

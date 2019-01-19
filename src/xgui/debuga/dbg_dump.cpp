@@ -126,11 +126,11 @@ void xDumpModel::setMode(int md, int pg) {
 	update();
 }
 
-int xDumpModel::rowCount(const QModelIndex& idx) const {
+int xDumpModel::rowCount(const QModelIndex&) const {
 	return 11;
 }
 
-int xDumpModel::columnCount(const QModelIndex& idx) const {
+int xDumpModel::columnCount(const QModelIndex&) const {
 	return 10;
 }
 
@@ -152,6 +152,7 @@ void xDumpModel::updateColumn(int col) {
 
 QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 	QVariant res;
+	QString str;
 	if (!idx.isValid()) return res;
 	int row = idx.row();
 	int col = idx.column();
@@ -198,7 +199,8 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 				case 0:
 					if ((mode == XVIEW_RAM) || (mode == XVIEW_ROM))
 						adr &= 0x3fff;
-					res = gethexword(adr);
+					str = QString::number(adr, (*cptr)->hw->base).toUpper().rightJustified(((*cptr)->hw->base == 16) ? 4 : 6, '0');
+					res = str;
 					break;
 				case 9:
 					for(int i = 0; i < 8; i++)
@@ -222,20 +224,7 @@ Qt::ItemFlags xDumpModel::flags(const QModelIndex& idx) const {
 	return res;
 }
 
-unsigned short adr_of_reg(CPU* cpu, bool* flag, QString nam) {
-	xRegBunch bch = cpuGetRegs(cpu);
-	int i = 0;
-	nam = nam.toUpper();
-	while ((bch.regs[i].id != REG_NONE) && (QString(bch.regs[i].name).toUpper() != nam))
-		i++;
-	if (bch.regs[i].id == REG_NONE) {
-		*flag = false;
-		return 0;
-	} else {
-		*flag = true;
-		return bch.regs[i].value;
-	}
-}
+extern int str_to_adr(Computer* comp, QString str);
 
 bool xDumpModel::setData(const QModelIndex& idx, const QVariant& val, int role) {
 	if (!idx.isValid()) return false;
@@ -244,19 +233,15 @@ bool xDumpModel::setData(const QModelIndex& idx, const QVariant& val, int role) 
 	int col = idx.column();
 	if ((row < 0) || (row >= rowCount())) return false;
 	if ((col < 0) || (col >= columnCount())) return false;
-	bool flag;
+	int fadr;
 	unsigned short adr = (dumpAdr + (row << 3)) & 0xffff;
 	unsigned short nadr;
 	unsigned char bt;
 	QString str = val.toString();
 	if (col == 0) {
-		if (val.toString().startsWith(".")) {
-			nadr = adr_of_reg((*cptr)->cpu, &flag, str.mid(1));
-		} else {
-			nadr = str.toInt(&flag, 16) & 0xffff;
-		}
-		if (flag) {
-			dumpAdr = nadr - (row << 3);
+		fadr = str_to_adr(*cptr, str);
+		if (fadr >= 0) {
+			dumpAdr = (fadr - (row << 3)) & 0xffff;
 			update();
 			emit rqRefill();
 		}

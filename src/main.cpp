@@ -78,6 +78,7 @@ int main(int ac,char** av) {
 
 	app.connect(&dbgw, SIGNAL(closed()), &mwin, SLOT(dbgReturn()));
 	app.connect(&dbgw, SIGNAL(wannaKeys()), &keyw, SLOT(show()));
+	app.connect(&dbgw, SIGNAL(wannaWutch()), &wutw, SLOT(show()));
 	app.connect(&mwin, SIGNAL(s_debug(Computer*)), &dbgw, SLOT(start(Computer*)));
 
 	app.connect(&mwin, SIGNAL(s_options(xProfile*)), &optw, SLOT(start(xProfile*)));

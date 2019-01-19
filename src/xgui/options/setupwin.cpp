@@ -656,7 +656,7 @@ void SetupWin::reject() {
 
 void SetupWin::layNameCheck(QString nam) {
 	layUi.okButton->setEnabled(!layUi.layName->text().isEmpty());
-	for (int i = 0; i < conf.layList.size(); i++) {
+	for (uint i = 0; i < conf.layList.size(); i++) {
 		if ((QString(conf.layList[i].name.c_str()) == nam) && (eidx != i)) {
 			layUi.okButton->setEnabled(false);
 		}

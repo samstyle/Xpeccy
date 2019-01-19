@@ -94,23 +94,20 @@ void xHexSpin::setValue(int nval) {
 	setPalette(pal);
 }
 
-QString xHexSpin::getText(int val) {
-	QString res;
-	switch(base) {
-		case 10: res = QString::number(val, 10); break;
-		default: res = QString::number(val, 16); break;
-	}
-	res = res.rightJustified(inputMask().size(), '0');
-	return res;
-}
-
 void xHexSpin::onChange(int val) {
 	int pos = cursorPosition();
-	setText(getText(val).toUpper());
-	setCursorPosition(pos);
+	QString res = QString::number(val, base).toUpper();
+	res = res.rightJustified(inputMask().size(), '0');
+	if (text() != res) {
+		setText(res);
+		setCursorPosition(pos);
+	}
 }
 
 void xHexSpin::onTextChange(QString txt) {
+	if (txt.size() < inputMask().size()) {
+		txt = txt.leftJustified(inputMask().size(), '0');
+	}
 	int nval = txt.toInt(NULL, base);
 	int xval = minMaxCorrect(nval, min, max);
 	if (value != xval)
