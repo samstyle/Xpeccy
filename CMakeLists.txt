@@ -197,20 +197,7 @@ else(${QT4BUILD})
 
 endif(${QT4BUILD})
 
-# alsa (sound, linux)
-
-#if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-#	find_package(ALSA)
-#	if (ALSA_FOUND)
-#		add_definitions(-DHAVEALSA)
-#		set(INCLUDIRS ${INCLUDIRS} ${ALSA_INCLUDE_DIR})
-#		set(LIBRARIES ${LIBRARIES} ${ALSA_LIBRARY})
-#		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libasound2 (>=1.0)")
-#		set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, libasound2 >= 1.0")
-#	endif(ALSA_FOUND)
-#endif()
-
-# SDL (sound)
+# SDL
 
 if(${SDL1BUILD})
 	find_package(SDL)

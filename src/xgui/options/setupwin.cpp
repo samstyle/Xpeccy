@@ -418,7 +418,11 @@ void SetupWin::start(xProfile* p) {
 	ui.cbSwapButtons->setChecked(comp->mouse->swapButtons);
 	ui.cbKbuttons->setChecked(comp->joy->extbuttons);
 	ui.sldDeadZone->setValue(conf.joy.dead);
+#ifdef HAVESDL2
+	ui.lePadName->setText(conf.joy.joy ? SDL_JoystickName(conf.joy.joy) : "none");
+#elif HAVESDL1
 	ui.lePadName->setText(conf.joy.joy ? SDL_JoystickName(0) : "none");
+#endif
 	padModel->update();
 // dos
 	ui.diskTypeBox->setCurrentIndex(ui.diskTypeBox->findData(comp->dif->type));

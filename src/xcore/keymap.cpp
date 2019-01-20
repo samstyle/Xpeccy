@@ -46,11 +46,11 @@ keyEntry keyMapInit[] = {
 	{"B",XKEY_B,{'b',0},{0,0},{'b',0},{'B',0x75},0x32},
 	{"N",XKEY_N,{'n',0},{0,0},{'n',0},{'N',0x74},0x31},
 	{"M",XKEY_M,{'m',0},{0,0},{'m',0},{'M',0x73},0x3a},
-	{"LC",XKEY_LCTRL,{'S',0},{0,0},{MSXK_CTRL,0},{0,0x88},0x14},
+	{"LC",XKEY_LCTRL,{'S',0},{0,0},{MSXK_CTRL,0},{0,0x80},0x14},
 	{"SPC",XKEY_SPACE,{' ',0},{0,0},{' ',0},{0x20,0x71},0x29},
 
 	{"RS",XKEY_RSHIFT,{'C',0},{0,0},{MSXK_SHIFT,0},{0,0x08},0x59},
-	{"RC",XKEY_RCTRL,{'S',0},{0,0},{MSXK_CTRL,0},{0,0x88},0x14e0},
+	{"RC",XKEY_RCTRL,{'S',0},{0,0},{MSXK_CTRL,0},{0,0x80},0x14e0},
 
 	{"LEFT",XKEY_LEFT,{'C','5'},{'C','5'},{MSXK_LEFT,0},{0x72,0x3d},0x6be0},
 	{"RIGHT",XKEY_RIGHT,{'C','8'},{'C','8'},{MSXK_RIGHT,0},{0x73,0x4b},0x74e0},
