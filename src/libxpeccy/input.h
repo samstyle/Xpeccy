@@ -92,97 +92,105 @@ enum {
 #define	MSXK_DOWN	0x1e
 #define	MSXK_RIGHT	0x1f
 // pc keys
-#define	XKEY_1	10
-#define	XKEY_2	11
-#define	XKEY_3	12
-#define	XKEY_4	13
-#define	XKEY_5	14
-#define	XKEY_6	15
-#define	XKEY_7	16
-#define	XKEY_8	17
-#define	XKEY_9	18
-#define	XKEY_0	19
-#define	XKEY_MINUS	20
-#define	XKEY_PLUS	21
-#define	XKEY_BSP	22
-#define	XKEY_TAB	23
-#define	XKEY_Q	24
-#define	XKEY_W	25
-#define	XKEY_E	26
-#define	XKEY_R	27
-#define	XKEY_T	28
-#define	XKEY_Y	29
-#define	XKEY_U	30
-#define	XKEY_I	31
-#define	XKEY_O	32
-#define	XKEY_P	33
-#define	XKEY_LBRACE	34
-#define	XKEY_RBRACE	35
-#define	XKEY_ENTER	36
-#define	XKEY_LCTRL	37
-#define	XKEY_A	38
-#define	XKEY_S	39
-#define	XKEY_D	40
-#define	XKEY_F	41
-#define	XKEY_G	42
-#define	XKEY_H	43
-#define	XKEY_J	44
-#define	XKEY_K	45
-#define	XKEY_L	46
-#define	XKEY_DOTCOM	47	// ;
-#define	XKEY_QUOTE	48	// "
-#define	XKEY_TILDA	49	// ~
-#define	XKEY_LSHIFT	50
-#define	XKEY_SLASH	51
-#define	XKEY_Z	52
-#define	XKEY_X	53
-#define	XKEY_C	54
-#define	XKEY_V	55
-#define	XKEY_B	56
-#define	XKEY_N	57
-#define	XKEY_M	58
-#define	XKEY_PERIOD	59
-#define	XKEY_COMMA	60
-#define	XKEY_BSLASH	61	// /
-#define	XKEY_SPACE	65
-#define	XKEY_CAPS	66
-#define	XKEY_RSHIFT	62
-#define	XKEY_RCTRL	105
-#define XKEY_LALT	64
-#define	XKEY_RALT	108
-#define	XKEY_HOME	110
-#define	XKEY_UP		111
-#define	XKEY_PGUP	112
-#define	XKEY_LEFT	113
-#define	XKEY_RIGHT	114
-#define	XKEY_END	115
-#define	XKEY_DOWN	116
-#define	XKEY_PGDN	117
-#define	XKEY_INS	118
-#define	XKEY_DEL	119
-#define	XKEY_MENU	135
-#define XKEY_ESC	9
-#define XKEY_F1		67
-#define XKEY_F2		68
-#define XKEY_F3		69
-#define XKEY_F4		70
-#define XKEY_F5		71
-#define XKEY_F6		72
-#define XKEY_F7		73
-#define XKEY_F8		74
-#define XKEY_F9		75
-#define XKEY_F10	76
-#define XKEY_F11	95
-#define XKEY_F12	96
-#define XKEY_LBRACK	256	// {
-#define XKEY_RBRACK	257	// }
-#define XKEY_QUEST	258
-#define XKEY_SYSRQ	259
-#define XKEY_PAUSE	260
-#define XKEY_SCRLCK	261
-#define XKEY_NUMLCK	262
-#define XKEY_APOS	263
-#define ENDKEY		0
+enum {
+	ENDKEY = 0,
+
+	XKEY_ESC,
+	XKEY_F1,
+	XKEY_F2,
+	XKEY_F3,
+	XKEY_F4,
+	XKEY_F5,
+	XKEY_F6,
+	XKEY_F7,
+	XKEY_F8,
+	XKEY_F9,
+	XKEY_F10,
+	XKEY_F11,
+	XKEY_F12,
+
+	XKEY_TILDA,
+	XKEY_1,
+	XKEY_2,
+	XKEY_3,
+	XKEY_4,
+	XKEY_5,
+	XKEY_6,
+	XKEY_7,
+	XKEY_8,
+	XKEY_9,
+	XKEY_0,
+	XKEY_MINUS,XKEY_BLINE,
+	XKEY_EQUAL,XKEY_PLUS,
+	XKEY_BSP,
+
+	XKEY_TAB,
+	XKEY_Q,
+	XKEY_W,
+	XKEY_E,
+	XKEY_R,
+	XKEY_T,
+	XKEY_Y,
+	XKEY_U,
+	XKEY_I,
+	XKEY_O,
+	XKEY_P,
+	XKEY_LBRACE,XKEY_LBRACK,
+	XKEY_RBRACE,XKEY_RBRACK,
+	XKEY_SLASH,
+
+	XKEY_CAPS,
+	XKEY_A,
+	XKEY_S,
+	XKEY_D,
+	XKEY_F,
+	XKEY_G,
+	XKEY_H,
+	XKEY_J,
+	XKEY_K,
+	XKEY_L,
+	XKEY_DOTCOM,
+	XKEY_QUOTE,XKEY_APOS,
+	XKEY_ENTER,
+
+	XKEY_LSHIFT,
+	XKEY_Z,
+	XKEY_X,
+	XKEY_C,
+	XKEY_V,
+	XKEY_B,
+	XKEY_N,
+	XKEY_M,
+	XKEY_PERIOD,
+	XKEY_COMMA,
+	XKEY_BSLASH,XKEY_QUEST,
+	XKEY_RSHIFT,
+
+	XKEY_LCTRL,
+	XKEY_LALT,
+	XKEY_SPACE,
+	XKEY_RALT,
+	XKEY_MENU,
+	XKEY_RCTRL,
+
+	XKEY_UP,
+	XKEY_LEFT,
+	XKEY_DOWN,
+	XKEY_RIGHT,
+
+	XKEY_DEL,
+	XKEY_INS,
+	XKEY_HOME,
+	XKEY_END,
+	XKEY_PGUP,
+	XKEY_PGDN,
+
+	XKEY_SYSRQ,
+	XKEY_PAUSE,
+	XKEY_SCRLCK,
+
+	XKEY_NUMLCK
+};
 
 typedef struct {
 	unsigned used:1;
@@ -199,7 +207,6 @@ typedef struct {
 	unsigned char ypos;
 	int autox;
 	int autoy;
-//	unsigned char buttons;	// b0=LMB; b1=RMB; b2=MMB; b4-7=wheel
 } Mouse;
 
 typedef struct {

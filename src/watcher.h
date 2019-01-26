@@ -3,6 +3,7 @@
 
 #include "libxpeccy/spectrum.h"
 
+#include "xgui/xgui.h"
 #include "ui_watcher.h"
 #include "ui_wch_new.h"
 #include <QDialog>
@@ -67,10 +68,7 @@ class xWatcher : public QDialog {
 		void newWatcher();
 		void delWatcher();
 		void edtWatcher();
-
 		void dialChanged();
-		void hexAdrChanged(QString);
-		void decAdrChanged(int);
 };
 
 #endif

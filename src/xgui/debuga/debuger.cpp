@@ -82,6 +82,17 @@ void DebugWin::start(Computer* c) {
 	comp->debug = 1;
 	comp->brk = 0;
 
+	ui.tabsPanel->clear();
+	QList<QPair<QIcon, QWidget*>> lst = tablist[comp->hw->grp];
+	QPair<QIcon, QWidget*> p;
+	p.first = QIcon(":/images/stop.png");
+	p.second = ui.brkTab;
+	lst.append(p);
+	while(lst.size() > 0) {
+		ui.tabsPanel->addTab(lst.first().second, lst.first().first, "");
+		lst.removeFirst();
+	}
+
 	show();
 
 	int wd = (ui.dasmTable->height() - 2) / ui.dasmTable->rows();
@@ -169,6 +180,21 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	setFont(QFont("://DejaVuSansMono.ttf",10));
 
 	ui.setupUi(this);
+
+	QList<QPair<QIcon, QWidget*>> lst;
+	QPair<QIcon, QWidget*> p;
+	tablist.clear();
+
+	p.first = QIcon(":/images/floppy.png"); p.second = ui.fdcTab; lst.append(p);
+	tablist[HWG_BK] = lst;
+	p.first = QIcon(":/images/display.png"); p.second = ui.scrTab; lst.append(p);
+	p.first = QIcon(":/images/note.png"); p.second = ui.ayTab; lst.append(p);
+	tablist[HWG_ZX] = lst;
+	lst.clear();
+	p.first = QIcon(":/images/nespad.png"); p.second = ui.nesTab; lst.append(p);
+	tablist[HWG_NES] = lst;
+	p.first = QIcon(":/images/gameboy.png"); p.second = ui.gbTab; lst.append(p);
+	tablist[HWG_GB] = lst;
 
 	xLabel* arrl[16] = {
 		ui.labReg00, ui.labReg01, ui.labReg02, ui.labReg03, ui.labReg04,

@@ -1066,7 +1066,7 @@
          </item>
         </layout>
        </widget>
-       <widget class="QWidget" name="tab">
+       <widget class="QWidget" name="ayTab">
         <attribute name="icon">
          <iconset resource="../xpeccy.qrc">
           <normaloff>:/images/note.png</normaloff>:/images/note.png</iconset>
@@ -2574,11 +2574,11 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
+  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

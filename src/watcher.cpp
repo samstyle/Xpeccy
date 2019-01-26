@@ -33,8 +33,8 @@ xWatcher::xWatcher(QWidget* p):QDialog(p) {
 
 	connect(nui.cbType, SIGNAL(currentIndexChanged(int)), this, SLOT(dialChanged()));
 	connect(nui.cbSrcReg, SIGNAL(currentIndexChanged(int)), this, SLOT(dialChanged()));
-	connect(nui.leAdrHex, SIGNAL(textChanged(QString)), this, SLOT(hexAdrChanged(QString)));
-	connect(nui.sbAdrDec, SIGNAL(valueChanged(int)), this, SLOT(decAdrChanged(int)));
+//	connect(nui.leAdrHex, SIGNAL(textChanged(QString)), this, SLOT(hexAdrChanged(QString)));
+//	connect(nui.sbAdrDec, SIGNAL(valueChanged(int)), this, SLOT(decAdrChanged(int)));
 }
 
 QString getBankType(int type) {
@@ -89,7 +89,7 @@ void xWatcher::addWatcher() {
 			xadr.adr = 0;
 			xadr.abs = nui.cbSrcReg->itemData(nui.cbSrcReg->currentIndex()).toInt();	// addressation type
 			if (xadr.abs == wchAbsolute) {
-				xadr.adr = nui.sbAdrDec->value();
+				xadr.adr = nui.leAdrHex->getValue();
 			} else {
 				xadr.adr = nui.sbShift->value();
 			}
@@ -97,7 +97,7 @@ void xWatcher::addWatcher() {
 		case wchCell:
 			xadr.type = nui.cbMemType->itemData(nui.cbMemType->currentIndex()).toInt();	// ram/rom
 			xadr.bank = nui.sbMemPage->value();
-			xadr.adr = nui.sbAdrDec->value();
+			xadr.adr = nui.leAdrHex->getValue();
 			xadr.abs = wchCell;
 			break;
 	}
@@ -141,7 +141,7 @@ void xWatcher::fillDial() {
 		nui.cbMemType->setCurrentIndex(0);
 		nui.cbSrcReg->setCurrentIndex(0);
 		nui.cbType->setCurrentIndex(0);
-		nui.sbAdrDec->setValue(0);
+		nui.leAdrHex->setValue(0);
 		nui.sbMemPage->setValue(0);
 		nui.sbShift->setValue(0);
 	} else {
@@ -150,12 +150,12 @@ void xWatcher::fillDial() {
 			nui.cbType->setCurrentIndex(nui.cbType->findData(wchCell));
 			nui.cbMemType->setCurrentIndex(nui.cbMemType->findData(xadr.type));
 			nui.sbMemPage->setValue(xadr.bank);
-			nui.sbAdrDec->setValue(xadr.adr);
+			nui.leAdrHex->setValue(xadr.adr);
 		} else {
 			nui.cbType->setCurrentIndex(nui.cbType->findData(wchAddress));
 			nui.cbSrcReg->setCurrentIndex(nui.cbSrcReg->findData(xadr.abs));
 			if (xadr.abs == wchAbsolute) {
-				nui.sbAdrDec->setValue(xadr.adr);
+				nui.leAdrHex->setValue(xadr.adr);
 			} else {
 				nui.sbShift->setValue(xadr.adr);
 			}
@@ -168,7 +168,7 @@ void xWatcher::dialChanged() {
 	if (type == wchCell) {
 		nui.cbMemType->setEnabled(true);
 		nui.sbMemPage->setEnabled(true);
-		nui.sbAdrDec->setEnabled(true);
+//		nui.sbAdrDec->setEnabled(true);
 		nui.leAdrHex->setEnabled(true);
 		nui.cbSrcReg->setEnabled(false);
 		nui.sbShift->setEnabled(false);
@@ -178,20 +178,8 @@ void xWatcher::dialChanged() {
 		nui.cbSrcReg->setEnabled(true);
 		type = nui.cbSrcReg->itemData(nui.cbSrcReg->currentIndex()).toInt();
 		nui.sbShift->setDisabled(type == wchAbsolute);
-		nui.sbAdrDec->setEnabled(type == wchAbsolute);
 		nui.leAdrHex->setEnabled(type == wchAbsolute);
 	}
-}
-
-void xWatcher::hexAdrChanged(QString str) {
-	int num = str.toInt(NULL, 16);
-	nui.sbAdrDec->setValue(num);
-}
-
-void xWatcher::decAdrChanged(int num) {
-	QString str = gethexword(num).toUpper();
-	if (nui.leAdrHex->text().toUpper() == str) return;
-	nui.leAdrHex->setText(str);
 }
 
 // watcher view model
@@ -205,7 +193,7 @@ void xWatchModel::update() {
 	emit QAbstractItemModel::dataChanged(sti, ste);
 }
 
-QModelIndex xWatchModel::index(int row, int col, const QModelIndex& idx) const {
+QModelIndex xWatchModel::index(int row, int col, const QModelIndex&) const {
 	QModelIndex res = createIndex(row, col, (void*)this);
 	return res;
 }

@@ -32,22 +32,22 @@ enum {
 	HW_BK0011M	// BK0011m
 };
 
+// hw group
+enum {
+	HWG_NULL = 0,
+	HWG_ZX,
+	HWG_MSX,
+	HWG_GB,
+	HWG_NES,
+	HWG_COMMODORE,
+	HWG_BK
+};
+
 enum {
 	NES_DENDY = 0,
 	NES_NTSC,
 	NES_PAL
 };
-
-/*
-// mem size
-#define	AMEM_48	0
-#define	AMEM_128	1
-#define	AMEM_256 (1<<1)
-#define	AMEM_512	(1<<2)
-#define	AMEM_1M	(1<<3)
-#define	AMEM_2M	(1<<4)
-#define	AMEM_4M	(1<<5)
-*/
 
 // Hardware callbacks
 
@@ -72,6 +72,7 @@ typedef sndPair(*cbHwVol)(Computer*, sndVolume*);
 
 struct HardWare {
 	int id;			// id
+	int grp;
 	const char* name;	// name used for conf file
 	const char* optName;	// name used for setup window
 	int base;

@@ -129,16 +129,9 @@
      <item row="4" column="1">
       <layout class="QHBoxLayout" name="horizontalLayout_2">
        <item>
-        <widget class="QLineEdit" name="leAdrHex">
+        <widget class="xHexSpin" name="leAdrHex">
          <property name="inputMask">
           <string>HHHH</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QSpinBox" name="sbAdrDec">
-         <property name="maximum">
-          <number>65535</number>
          </property>
         </widget>
        </item>
@@ -176,6 +169,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>xHexSpin</class>
+   <extends>QLineEdit</extends>
+   <header location="global">stdlib.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../xpeccy.qrc"/>
  </resources>

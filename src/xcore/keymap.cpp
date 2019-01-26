@@ -80,6 +80,7 @@ keyEntry keyMapInit[] = {
 	{",",XKEY_COMMA,{'S','n'},{'S','n'},{',',0},{0x2c,0xf4},0x41},
 	{".",XKEY_PERIOD,{'S','m'},{'S','m'},{'.',0},{0x2e,0xf3},0x49},
 	{"/",XKEY_BSLASH,{'S','c'},{'S','c'},{'/',0},{0x5c,0x85},0x4a},
+	{"_",XKEY_BLINE,{'S','0'},{'S','0'},{0,0},{'_',0x00},0x00},			// _
 
 	{"ESC",XKEY_ESC,{0,0},{'C','1'},{0,MSXK_ESC},{0x1b,0x39},0x76},
 	{"F1",XKEY_F1,{0,0},{'a'|0x80,0},{0,MSXK_F1},{0x61,0xb1},0x05},
@@ -163,6 +164,7 @@ keyTrans ktTab[] = {
 	{Qt::Key_8, Qt::Key_8, XKEY_8},
 	{Qt::Key_9, Qt::Key_9, XKEY_9},
 	{Qt::Key_Minus, Qt::Key_Minus, XKEY_MINUS},
+	{Qt::Key_Plus, Qt::Key_Plus, XKEY_EQUAL},
 	{Qt::Key_Equal, Qt::Key_Equal, XKEY_PLUS},
 	{Qt::Key_Backspace, Qt::Key_Backspace, XKEY_BSP},
 	{Qt::Key_QuoteLeft, 1025, XKEY_TILDA},		// Ё
@@ -191,8 +193,8 @@ keyTrans ktTab[] = {
 	{Qt::Key_P, 1047, XKEY_P},
 	{Qt::Key_BracketLeft, 1061, XKEY_LBRACK},		// [
 	{Qt::Key_BracketRight, 1066, XKEY_RBRACK},		// ]
-//	{Qt::Key_BraceLeft, 1061, XKEY_LBRACE},			// { == Shift + [
-//	{Qt::Key_BraceRight, 1066, XKEY_LBRACE},		// } == Shift + ]
+	{Qt::Key_BraceLeft, 1061, XKEY_LBRACE},			// { == Shift + [
+	{Qt::Key_BraceRight, 1066, XKEY_LBRACE},		// } == Shift + ]
 	{Qt::Key_Backslash, Qt::Key_Backslash, XKEY_SLASH},	// |
 
 	{Qt::Key_CapsLock, Qt::Key_CapsLock, XKEY_CAPS},
@@ -217,10 +219,11 @@ keyTrans ktTab[] = {
 	{Qt::Key_B, 1048, XKEY_B},
 	{Qt::Key_N, 1058, XKEY_N},
 	{Qt::Key_M, 1068, XKEY_M},
-	{Qt::Key_Comma, 0x411, XKEY_COMMA},		// ,
-	{Qt::Key_Period, 0x42e, XKEY_PERIOD},		// .
+	{Qt::Key_Comma, 0x411, XKEY_COMMA},			// ,
+	{Qt::Key_Period, 0x42e, XKEY_PERIOD},			// .
 	{Qt::Key_Slash, Qt::Key_Slash, XKEY_BSLASH},		// ?
-	{Qt::Key_Apostrophe, 0x44d, XKEY_APOS},	// '
+	{Qt::Key_Apostrophe, 0x44d, XKEY_APOS},			// '
+	{Qt::Key_Underscore, Qt::Key_Underscore, XKEY_BLINE},	// _
 
 	{Qt::Key_Control, Qt::Key_Control, XKEY_LCTRL},
 	{Qt::Key_Alt, Qt::Key_Alt, XKEY_LALT},

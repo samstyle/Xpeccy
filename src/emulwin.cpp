@@ -513,12 +513,14 @@ void MainWin::paintEvent(QPaintEvent*) {
 }
 
 void MainWin::keyPressEvent(QKeyEvent *ev) {
+//	qDebug() << "press " << ev->key();
 	if (comp->debug) {
 		ev->ignore();
 		return;
 	}
 	int keyid = qKey2id(ev->key());
 	keyEntry kent = getKeyEntry(keyid);
+
 	if (pckAct->isChecked()) {
 		if (comp->hw->keyp) {
 			comp->hw->keyp(comp, kent);
@@ -703,6 +705,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 }
 
 void MainWin::keyReleaseEvent(QKeyEvent *ev) {
+//	qDebug() << "release " << ev->key();
 	if (comp->debug) {
 		ev->ignore();
 		return;
@@ -712,7 +715,6 @@ void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 	if (comp->hw->keyr)
 		comp->hw->keyr(comp, kent);
 	emit s_keywin_upd(comp->keyb);
-	//if (keywin->isVisible()) keywin->update();
 }
 
 void MainWin::mousePressEvent(QMouseEvent *ev){
@@ -771,8 +773,20 @@ void MainWin::wheelEvent(QWheelEvent* ev) {
 		ev->ignore();
 		return;
 	}
-	if (grabMice && comp->mouse->hasWheel) {
-		mousePress(comp->mouse, (ev->delta() < 0) ? XM_WHEELDN : XM_WHEELUP, 0);
+	if (grabMice) {
+		if (comp->mouse->hasWheel)
+			mousePress(comp->mouse, (ev->delta() < 0) ? XM_WHEELDN : XM_WHEELUP, 0);
+	} else {
+		if (ev->delta() < 0) {
+			conf.snd.vol.master -= 5;
+			if (conf.snd.vol.master < 0)
+				conf.snd.vol.master = 0;
+		} else {
+			conf.snd.vol.master += 5;
+			if (conf.snd.vol.master > 100)
+				conf.snd.vol.master = 100;
+		}
+		setMessage(QString(" volume %0% ").arg(conf.snd.vol.master));
 	}
 }
 
