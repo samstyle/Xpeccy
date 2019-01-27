@@ -185,16 +185,18 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	QPair<QIcon, QWidget*> p;
 	tablist.clear();
 
-	p.first = QIcon(":/images/floppy.png"); p.second = ui.fdcTab; lst.append(p);
-	tablist[HWG_BK] = lst;
 	p.first = QIcon(":/images/display.png"); p.second = ui.scrTab; lst.append(p);
 	p.first = QIcon(":/images/note.png"); p.second = ui.ayTab; lst.append(p);
+	p.first = QIcon(":/images/floppy.png"); p.second = ui.fdcTab; lst.append(p);
 	tablist[HWG_ZX] = lst;
 	lst.clear();
 	p.first = QIcon(":/images/nespad.png"); p.second = ui.nesTab; lst.append(p);
 	tablist[HWG_NES] = lst;
 	p.first = QIcon(":/images/gameboy.png"); p.second = ui.gbTab; lst.append(p);
 	tablist[HWG_GB] = lst;
+	lst.clear();
+	p.first = QIcon(":/images/floppy.png"); p.second = ui.fdcTab; lst.append(p);
+	tablist[HWG_BK] = lst;
 
 	xLabel* arrl[16] = {
 		ui.labReg00, ui.labReg01, ui.labReg02, ui.labReg03, ui.labReg04,
@@ -772,6 +774,7 @@ QString getAYmix(aymChan* ch) {
 }
 
 void DebugWin::fillAY() {
+	if (ui.tabsPanel->indexOf(ui.ayTab) < 0) return;
 	aymChip* chp = comp->ts->chipA;
 	ui.leToneA->setText(gethexword(((chp->reg[0] << 8) | chp->reg[1]) & 0x0fff));
 	ui.leToneB->setText(gethexword(((chp->reg[2] << 8) | chp->reg[3]) & 0x0fff));
@@ -801,9 +804,8 @@ bool DebugWin::fillAll() {
 	fillGBoy();
 	drawNes();
 	fillAY();
+	updateScreen();
 	ui.brkTab->update();
-	if (ui.scrLabel->isVisible())
-		updateScreen();
 
 	ui.labRX->setNum(comp->vid->ray.x);
 	if (comp->vid->hblank)
@@ -907,6 +909,7 @@ QImage getGBPal(Video* gbv) {
 }
 
 void DebugWin::fillGBoy() {
+	if (ui.tabsPanel->indexOf(ui.gbTab) < 0) return;
 	QImage img;
 	int tset = ui.sbTileset->value();
 	int tmap = ui.sbTilemap->value();
@@ -973,6 +976,7 @@ QImage dbgNesSpriteImg(Video* vid, unsigned short tadr) {
 }
 
 void DebugWin::drawNes() {
+	if (ui.tabsPanel->indexOf(ui.nesTab) < 0) return;
 	unsigned short adr = 0;
 	unsigned short tadr = 0;
 	QImage img;
@@ -1090,6 +1094,7 @@ void DebugWin::fillRZX() {
 // fdc
 
 void DebugWin::fillFDC() {
+	if (ui.tabsPanel->indexOf(ui.fdcTab) < 0) return;
 	ui.fdcBusyL->setText(comp->dif->fdc->idle ? "0" : "1");
 	ui.fdcComL->setText(comp->dif->fdc->idle ? "--" : gethexbyte(comp->dif->fdc->com));
 	ui.fdcIrqL->setText(comp->dif->fdc->irq ? "1" : "0");
@@ -1897,11 +1902,19 @@ void DebugWin::loadDump() {
 // screen
 
 void DebugWin::updateScreen() {
+	if (ui.tabsPanel->indexOf(ui.scrTab) < 0) return;
 	int flag = ui.cbScrAtr->isChecked() ? 1 : 0;
 	flag |= ui.cbScrPix->isChecked() ? 2 : 0;
 	flag |= ui.cbScrGrid->isChecked() ? 4 : 0;
 	vidGetScreen(comp->vid, scrImg.bits(), ui.sbScrBank->value(), ui.leScrAdr->getValue(), flag);
-	ui.scrLabel->setPixmap(QPixmap::fromImage(scrImg));
+	xColor bcol = comp->vid->pal[comp->vid->brdcol];
+	QPainter pnt;
+	QPixmap xpxm(276, 212);
+	pnt.begin(&xpxm);
+	pnt.fillRect(0,0,276,212,qRgb(bcol.r, bcol.g, bcol.b));
+	pnt.drawImage(10,10,scrImg);
+	pnt.end();
+	ui.scrLabel->setPixmap(xpxm);
 }
 
 // breakpoints
