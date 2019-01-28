@@ -123,10 +123,7 @@ unsigned char dasmrd(unsigned short adr, void* ptr) {
 			switch (pg->type) {
 				case MEM_ROM: res = comp->mem->romData[fadr & comp->mem->romMask]; break;
 				case MEM_RAM: res = comp->mem->ramData[fadr & comp->mem->ramMask]; break;
-				case MEM_SLOT:
-					if (!comp->slot) break;
-					if (!comp->slot->data) break;
-					res = comp->slot->data[fadr & comp->slot->memMask];
+				case MEM_SLOT: res = memRd(comp->mem, adr);
 					break;
 			}
 //			res = memRd(comp->mem, adr);

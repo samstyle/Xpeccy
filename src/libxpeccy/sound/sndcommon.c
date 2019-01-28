@@ -60,10 +60,10 @@ void bcTransient(bitChan* ch, int ns) {
 
 void bcSync(bitChan* ch, int ns) {
 	int per;
-	if (ns < 1) {
-		ns = ch->accum;
-		ch->accum = 0;
-	}
+//	if (ns < 1) {
+//		ns = ch->accum;
+//		ch->accum = 0;
+//	}
 	if (ns < 1) return;
 
 	bcTransient(ch, ns);		// transient process of current wave

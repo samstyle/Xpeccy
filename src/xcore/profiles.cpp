@@ -520,7 +520,7 @@ int prfLoad(std::string nm) {
 	memSetSize(comp->mem, tmask, -1);
 	if (!prfSetLayout(prf, prf->layName)) prfSetLayout(prf,"default");
 
-	sndCalibrate(comp);
+//	sndCalibrate(comp);
 	compReset(comp,RES_DEFAULT);
 
 	return tmp2;

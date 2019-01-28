@@ -28,11 +28,14 @@ void dummyOut(Computer* comp, unsigned short port, unsigned char val) {
 
 void zx_sync(Computer* comp, int ns) {
 	// devices
-	comp->beep->accum += ns;
-	comp->tapCount += ns;
+//	comp->beep->accum += ns;
+//	comp->tapCount += ns;
 	difSync(comp->dif, ns);
 	gsSync(comp->gs, ns);
 	saaSync(comp->saa, ns);
+	tsSync(comp->ts, ns);
+	tapSync(comp->tape, ns);
+	bcSync(comp->beep, ns);
 	// nmi
 	if ((comp->cpu->pc > 0x3fff) && comp->nmiRequest) {
 		comp->cpu->intrq |= Z80_NMI;	// request nmi
@@ -87,7 +90,7 @@ sndPair zx_vol(Computer* comp, sndVolume* sv) {
 		}
 	}
 	// 2:beeper
-	bcSync(comp->beep, -1);
+	// bcSync(comp->beep, -1);
 	lev += comp->beep->val * sv->beep / 6;
 	vol.left = lev;
 	vol.right = lev;
@@ -191,7 +194,6 @@ unsigned char xInFFDF(Computer* comp, unsigned short port) {
 
 void xOutFE(Computer* comp, unsigned short port, unsigned char val) {
 	comp->vid->nextbrd = val & 0x07;
-	bcSync(comp->beep, -1);
 	comp->beep->lev = (val & 0x10) ? 1 : 0;
 	comp->tape->levRec = (val & 0x08) ? 1 : 0;
 }

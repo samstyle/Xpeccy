@@ -1170,6 +1170,7 @@ void MainWin::setProfile(std::string nm) {
 		comp->firstRun = 0;
 	}
 	saveConfig();
+	emit s_prf_change(conf.prof.cur);
 	conf.prof.changed = 1;
 }
 

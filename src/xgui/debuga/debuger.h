@@ -65,6 +65,7 @@ class DebugWin : public QDialog {
 	public slots:
 		void start(Computer*);
 		bool fillAll();
+		void onPrfChange(xProfile*);
 	private:
 		unsigned block:1;
 		// tracer

@@ -60,7 +60,7 @@ typedef struct {
 
 void DebugWin::start(Computer* c) {
 	// onStart = 1;
-	comp = c;
+//	comp = c;
 	blockStart = -1;
 	blockEnd = -1;
 	chLayout();
@@ -73,25 +73,14 @@ void DebugWin::start(Computer* c) {
 	updateScreen();
 	if (!comp->vid->tail)
 		vidDarkTail(comp->vid);
-	ui.tabsPanel->setTabEnabled(ui.tabsPanel->indexOf(ui.gbTab), comp->hw->id == HW_GBC);
-	ui.tabsPanel->setTabEnabled(ui.tabsPanel->indexOf(ui.nesTab), comp->hw->id == HW_NES);
+//	ui.tabsPanel->setTabEnabled(ui.tabsPanel->indexOf(ui.gbTab), comp->hw->id == HW_GBC);
+//	ui.tabsPanel->setTabEnabled(ui.tabsPanel->indexOf(ui.nesTab), comp->hw->id == HW_NES);
 
 	this->move(winPos);
 	// ui.dasmTable->setFocus();
 	comp->vid->debug = 1;
 	comp->debug = 1;
 	comp->brk = 0;
-
-	ui.tabsPanel->clear();
-	QList<QPair<QIcon, QWidget*>> lst = tablist[comp->hw->grp];
-	QPair<QIcon, QWidget*> p;
-	p.first = QIcon(":/images/stop.png");
-	p.second = ui.brkTab;
-	lst.append(p);
-	while(lst.size() > 0) {
-		ui.tabsPanel->addTab(lst.first().second, lst.first().first, "");
-		lst.removeFirst();
-	}
 
 	show();
 
@@ -126,6 +115,20 @@ void DebugWin::stop() {
 	memViewer->hide();
 	hide();
 	emit closed();
+}
+
+void DebugWin::onPrfChange(xProfile* prf) {
+	comp = prf->zx;
+	ui.tabsPanel->clear();
+	QList<QPair<QIcon, QWidget*>> lst = tablist[prf->zx->hw->grp];
+	QPair<QIcon, QWidget*> p;
+	p.first = QIcon(":/images/stop.png");
+	p.second = ui.brkTab;
+	lst.append(p);
+	while(lst.size() > 0) {
+		ui.tabsPanel->addTab(lst.first().second, lst.first().first, "");
+		lst.removeFirst();
+	}
 }
 
 void DebugWin::reject() {stop();}
@@ -582,14 +585,8 @@ void DebugWin::doStep() {
 		}
 		QApplication::processEvents();
 	} while(trace);
-//	if (trace) {
-		//emit needStep();
-		//QTimer::singleShot(1,this,SLOT(doStep()));
-		//QApplication::processEvents();
-//	} else {
 	ui.tbTrace->setEnabled(true);
 	if (logfile.isOpen()) logfile.close();
-//	}
 }
 
 void DebugWin::doTraceHere() {
@@ -620,14 +617,10 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 		return;
 	}
 
-//	if (ev->isAutoRepeat() && onStart) return;
-//	onStart = 0;
-
 	int i;
 	unsigned short pc = comp->cpu->pc;
 	unsigned char* ptr;
 	int offset = (ui.dumpTable->rows() - 1) << 3;
-	// QString com;
 	int row;
 	int pos;
 	int adr;
@@ -773,6 +766,20 @@ QString getAYmix(aymChan* ch) {
 	return res;
 }
 
+void drawBar(QLabel* lab, int lev, int max) {
+	if (lev > max) lev = max;
+	if (lev < 0) lev = 0;
+	QPixmap pxm(100, lab->height() / 2);
+	QPainter pnt;
+	pxm.fill(Qt::black);
+	pnt.begin(&pxm);
+	pnt.fillRect(0,0,pxm.width() * lev / max, pxm.height(), Qt::green);
+	pnt.setPen(Qt::red);
+	pnt.drawLine(pxm.width() / 2, 0, pxm.width() / 2, pxm.height());
+	pnt.end();
+	lab->setPixmap(pxm);
+}
+
 void DebugWin::fillAY() {
 	if (ui.tabsPanel->indexOf(ui.ayTab) < 0) return;
 	aymChip* chp = comp->ts->chipA;
@@ -793,6 +800,10 @@ void DebugWin::fillAY() {
 	ui.labLevB->setText(chp->chanB.lev ? "1" : "0");
 	ui.labLevC->setText(chp->chanC.lev ? "1" : "0");
 	ui.labLevN->setText(chp->chanN.lev ? "1" : "0");
+
+	drawBar(ui.labBeep, comp->beep->val, 256);
+	drawBar(ui.labTapein, comp->tape->volPlay, 256);
+	drawBar(ui.labTapeout, comp->tape->levRec, 1);
 }
 
 bool DebugWin::fillAll() {

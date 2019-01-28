@@ -332,7 +332,7 @@ void tapRewind(Tape* tap, int blk) {
 
 // input : tks is time (ns) to sync
 void tapSync(Tape* tap,int tks) {
-	tks = tks / 280;		// and here is T-states (@ 3.5MHz)
+	tks = tks / 280;
 	if (tap->on) {
 		if (tap->rec) {
 			if (tap->wait) {

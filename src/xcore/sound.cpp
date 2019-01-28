@@ -28,14 +28,15 @@ OutSys* findOutSys(const char*);
 #include "hardware.h"
 
 // return 1 when buffer is full
+// NOTE: need sync|flush devices if debug
 int sndSync(Computer* comp) {
-	if (!conf.emu.pause) {
-		tapSync(comp->tape,comp->tapCount);
-		comp->tapCount = 0;
-		tsSync(comp->ts,nsPerSample);
+	if (!conf.emu.pause || comp->debug) {
+//		tapSync(comp->tape,comp->tapCount);
+//		comp->tapCount = 0;
+//		tsSync(comp->ts,nsPerSample);
 		gsFlush(comp->gs);
 		saaFlush(comp->saa);
-		if (!conf.emu.fast) {
+		if (!conf.emu.fast && !conf.emu.pause) {
 			sndLev = comp->hw->vol(comp, &conf.snd.vol);
 			sndLev.left = sndLev.left * conf.snd.vol.master / 100;
 			sndLev.right = sndLev.right * conf.snd.vol.master / 100;
@@ -58,11 +59,13 @@ int sndSync(Computer* comp) {
 	return 1;
 }
 
+/*
 void sndCalibrate(Computer* comp) {
 	//sndChunks = conf.snd.rate / 50;			// samples / frame
 	//sndBufSize = conf.snd.chans * sndChunks;	// buffer size
 	//nsPerSample = 1e9 / conf.snd.rate;		// ns / sample
 }
+*/
 
 std::string sndGetOutputName() {
 	std::string res = "NULL";

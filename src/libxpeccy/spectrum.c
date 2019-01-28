@@ -118,8 +118,8 @@ unsigned char iord(unsigned short port, void* ptr) {
 	vidSync(comp->vid,(res3 - res4) * comp->nsPerTick);
 	res4 = res3;
 // tape sync
-	tapSync(comp->tape,comp->tapCount);
-	comp->tapCount = 0;
+//	tapSync(comp->tape,comp->tapCount);
+//	comp->tapCount = 0;
 // play rzx
 #ifdef HAVEZLIB
 	if (comp->rzx.play) {
@@ -497,8 +497,8 @@ int compExec(Computer* comp) {
 // out @ last tick
 	vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
 	if (comp->padr) {
-		tapSync(comp->tape,comp->tapCount);
-		comp->tapCount = 0;
+//		tapSync(comp->tape,comp->tapCount);
+//		comp->tapCount = 0;
 		bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
 		if (ulaOut(comp->vid->ula, comp->padr, comp->pval)) {
 			if (comp->vid->ula->palchan) {

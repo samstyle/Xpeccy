@@ -284,7 +284,7 @@ typedef struct {
 //	int romsize;
 	CMOS cmos;
 	int resbank;			// rompart active after reset
-	int tapCount;
+//	int tapCount;
 } Computer;
 
 #include "hardware.h"
