@@ -46,6 +46,7 @@ class MainWin : public QWidget {
 		void s_rzx_show();
 		void s_watch_upd(Computer*);
 		void s_watch_show();
+		void s_keywin_rall(Keyboard*);
 		void s_keywin_upd(Keyboard*);
 		void s_keywin_shide();
 		void s_keywin_close();

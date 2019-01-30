@@ -38,6 +38,12 @@ void keyWindow::upd(Keyboard* k) {
 		repaint();
 }
 
+void keyWindow::rall(Keyboard* k) {
+	if (!isVisible()) {
+		kbdReleaseAll(k);
+	}
+}
+
 void keyWindow::paintEvent(QPaintEvent*) {
 	QPainter pnt;
 	int wid = width() / 10 + 1;

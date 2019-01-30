@@ -17,6 +17,7 @@ class keyWindow : public QLabel {
 	public slots:
 		void switcher();
 		void upd(Keyboard*);
+		void rall(Keyboard*);
 	private:
 		Keyboard* kb;
 		keyEntry xent;

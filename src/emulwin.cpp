@@ -337,13 +337,14 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 
 // if window is not active release keys & buttons, release mouse
 void MainWin::focusOutEvent(QFocusEvent* ev) {
-	kbdReleaseAll(comp->keyb);
+//	kbdReleaseAll(comp->keyb);
 	mouseReleaseAll(comp->mouse);
 	unsetCursor();
 	if (grabMice) {
 		grabMice = 0;
 		releaseMouse();
 	}
+	emit s_keywin_rall(comp->keyb);
 }
 
 void MainWin::menuShow() {

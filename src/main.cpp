@@ -103,6 +103,7 @@ int main(int ac,char** av) {
 	app.connect(&mwin, SIGNAL(s_keywin_shide()), &keyw, SLOT(switcher()));
 	app.connect(&mwin, SIGNAL(s_keywin_upd(Keyboard*)), &keyw, SLOT(upd(Keyboard*)));
 	app.connect(&mwin, SIGNAL(s_keywin_close()), &keyw, SLOT(close()));
+	app.connect(&mwin, SIGNAL(s_keywin_rall(Keyboard*)), &keyw, SLOT(rall(Keyboard*)));
 
 
 	int i;
