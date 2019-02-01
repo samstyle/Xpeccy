@@ -26,11 +26,11 @@ xDisasmModel::xDisasmModel(QObject* p):QAbstractTableModel(p) {
 	cptr = NULL;
 }
 
-int xDisasmModel::columnCount(const QModelIndex& idx) const {
+int xDisasmModel::columnCount(const QModelIndex&) const {
 	return 4;
 }
 
-int xDisasmModel::rowCount(const QModelIndex& idx) const {
+int xDisasmModel::rowCount(const QModelIndex&) const {
 	return 25;
 }
 
@@ -297,6 +297,7 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 	drow.info.clear();
 	drow.icon.clear();
 	int clen = 0;
+	int wid;
 	// 0:adr
 	QString lab;
 	xAdr xadr;
@@ -338,12 +339,16 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 			}
 			drow.aname.append(QString("%1:%2").arg(gethexbyte((xadr.bank >> 6) & 0xff)).arg(gethexword(xadr.adr & 0x3fff)));
 		} else {
-			int wid = (comp->hw->base == 8) ? 6 : 4;
+			wid = (comp->hw->base == 8) ? 6 : 4;
 			drow.aname = QString::number(xadr.adr, comp->hw->base).toUpper().rightJustified(wid, '0');
 		}
 	} else {
 		drow.islab = 1;
 		drow.aname = lab;
+		list.append(drow);	// label line
+		drow.islab = 0;
+		wid = (comp->hw->base == 8) ? 6 : 4;
+		drow.aname = QString::number(xadr.adr, comp->hw->base).toUpper().rightJustified(wid, '0');
 	}
 	// 2:command / 3:info
 	clen = dasmSome(comp, adr, drow);
@@ -384,15 +389,15 @@ int xDisasmModel::fill() {
 	dasm.clear();
 	for(row = 0; row < rowCount(); row++) {
 		list = getDisasm(*cptr, adr);
-		foreach(drow, list) {
-			dasm.append(drow);
-			if (drow.islab && !drow.isequ) {
-				drow.islab = 0;
-				drow.aname = gethexword(drow.adr);
+		foreach (drow, list) {
+			if (dasm.size() < rowCount()) {
 				dasm.append(drow);
+				res |= drow.ispc;
+			} else {
+				row = rowCount();		// it will prevent next iteration
+//				dasm = dasm.mid(0, row);	// remove lines below rowCount
 			}
 		}
-		res |= drow.ispc;
 	}
 	return res;
 }
@@ -494,7 +499,9 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 	unsigned char cbyte;
 	char buf[256];
 	unsigned char* ptr;
-	int idx;
+	int idx = -1;
+	int nladr = -1;
+	unsigned short zadr;
 	int len;
 	QString str;
 	// QString lab;
@@ -504,7 +511,12 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 	switch(col) {
 		case 0:
 			str = val.toString();
-			if (str.startsWith(".")) {
+			if (str.isEmpty()) {
+				str = findLabel(adr, -1, -1);
+				if (!str.isEmpty()) {
+					conf.labels.remove(str);
+				}
+			} else if (str.startsWith(".")) {
 				idx = adr_of_reg((*cptr)->cpu, &flag, str.mid(1));
 				if (!flag)
 					idx = -1;
@@ -513,13 +525,15 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 				idx = asmAddr(*cptr, val, xadr);
 			}
 			if (idx >= 0) {
+				nladr = idx;		// address to select after
 				while (row > 0) {
 					idx = getPrevAdr(*cptr, idx & 0xffff);
-					row--;
+					zadr = idx & 0xffff;
+					row -= getDisasm(*cptr, zadr).size();
 				}
 				disasmAdr = idx & 0xffff;
 			}
-			emit s_adrch();
+			emit s_adrch(nladr);
 			break;
 		case 1:	// bytes
 			str = val.toString();
@@ -618,7 +632,7 @@ xDisasmTable::xDisasmTable(QWidget* p):QTableView(p) {
 	cptr = NULL;
 	model = new xDisasmModel();
 	setModel(model);
-	connect(model, SIGNAL(s_adrch()), this, SLOT(updContent()));
+	connect(model, SIGNAL(s_adrch(int)), this, SLOT(t_update(int)));
 	connect(model, SIGNAL(rqRefill()), this, SIGNAL(rqRefill()));
 }
 
@@ -654,7 +668,26 @@ int xDisasmTable::updContent() {
 			setSpan(i, 2, 1, model->columnCount() - 2);
 		}
 	}
+	// prevent case if current cell is invisible (eated by span)
+	QModelIndex idx = currentIndex();
+	if (idx.isValid()) {
+		if (model->dasm[idx.row()].islab) {
+			if ((idx.row() == 0) || (idx.row() == rows() - 1)) {
+				setCurrentIndex(model->index(idx.row(), 0));
+			}
+		}
+	}
 	return res;
+}
+
+void xDisasmTable::t_update(int nadr) {
+	updContent();
+	for(int r = 0; r < rows(); r++) {
+		if (model->dasm[r].adr == (nadr & 0xffff)) {
+			setCurrentIndex(model->index(r, 0));
+			r = rows();
+		}
+	}
 }
 
 void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
@@ -784,9 +817,9 @@ void xDisasmTable::scrolDn(Qt::KeyboardModifiers mod) {
 	if (mod & Qt::ControlModifier) {
 		disasmAdr++;
 	} else {
-		while (disasmAdr == (getData(i, 0, Qt::UserRole).toInt() & 0xffff))
+		while (disasmAdr == model->dasm[i].adr)
 			i++;
-		disasmAdr = getData(i, 0, Qt::UserRole).toInt() & 0xffff;
+		disasmAdr = model->dasm[i].adr;
 	}
 	updContent();
 }

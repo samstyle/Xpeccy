@@ -2,10 +2,12 @@
 #define _WATCHER_H
 
 #include "libxpeccy/spectrum.h"
-
 #include "xgui/xgui.h"
+#include "xgui/labelist.h"
+
 #include "ui_watcher.h"
 #include "ui_wch_new.h"
+
 #include <QDialog>
 
 enum {
@@ -61,6 +63,7 @@ class xWatcher : public QDialog {
 		Ui::WatcherAdd nui;
 		QDialog* addial;
 		xWatchModel* model;
+		xLabeList* listwin;
 		int getCurRow();
 		void fillDial();
 	private slots:
@@ -69,6 +72,7 @@ class xWatcher : public QDialog {
 		void delWatcher();
 		void edtWatcher();
 		void dialChanged();
+		void setLabel(QString);
 };
 
 #endif

@@ -167,6 +167,7 @@ set(MOCFILES
 	./src/xgui/options/opt_tapecat.h
 	./src/vkeyboard.h
 	./src/xgui/xgui.h
+	./src/xgui/labelist.h
 )
 
 # Qt4 / Qt5

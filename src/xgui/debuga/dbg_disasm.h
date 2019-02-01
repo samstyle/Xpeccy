@@ -41,7 +41,7 @@ class xDisasmModel : public QAbstractTableModel {
 		QList<dasmData> dasm;
 	signals:
 		void rqRefill();
-		void s_adrch();
+		void s_adrch(int);
 	public slots:
 		int update();
 	private:
@@ -61,6 +61,7 @@ class xDisasmTable : public QTableView {
 		void rqRefillAll();
 	public slots:
 		int updContent();
+		void t_update(int);
 	private:
 		int markAdr;
 		xDisasmModel* model;
