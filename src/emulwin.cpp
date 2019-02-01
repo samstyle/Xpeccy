@@ -59,7 +59,6 @@ void MainWin::updateHead() {
 void MainWin::updateWindow() {
 	block = 1;
 	vidSetBorder(comp->vid, conf.brdsize);		// to call vidUpdateLayout???
-	// sndCalibrate(comp);				// why?
 	int szw = comp->vid->vsze.x * conf.vid.scale;
 	int szh = comp->vid->vsze.y * conf.vid.scale;
 	if (conf.vid.fullScreen) {
@@ -96,7 +95,6 @@ bool MainWin::saveChanged() {
 				res = askYNC(str.toLocal8Bit().data());
 				switch(res) {
 					case QMessageBox::Yes:
-						//yep &= saveFile(comp, flp->path, FT_DISK, i);
 						yep &= save_file(comp, flp->path, FG_DISK, i);
 						break;
 					case QMessageBox::Cancel:
@@ -184,8 +182,6 @@ MainWin::MainWin() {
 	connect(userMenu,SIGNAL(aboutToHide()),SLOT(menuHide()));
 
 	fillUserMenu();
-
-//	timer.start();
 }
 
 // gamepad mapper
@@ -195,7 +191,6 @@ void MainWin::mapRelease(Computer* comp, xJoyMapEntry ent) {
 	switch(ent.dev) {
 		case JMAP_KEY:
 			keyReleaseEvent(&ev);
-			// keyRelease(comp->keyb, kent.zxKey, 0);
 			break;
 		case JMAP_JOY:
 			joyRelease(comp->joy, ent.dir);
@@ -229,7 +224,6 @@ int sign(int v) {
 }
 
 void MainWin::mapJoystick(Computer* comp, int type, int num, int state) {
-	// printf("map %i %i %i\n",type, num, state);
 	foreach(xJoyMapEntry xjm, conf.joy.map) {
 		if ((type == xjm.type) && (num == xjm.num)) {
 			if (state == 0) {
@@ -299,19 +293,15 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 						if (abs(ev.jaxis.value) < conf.joy.dead)
 							ev.jaxis.value = 0;
 						mapJoystick(comp, JOY_AXIS, ev.jaxis.axis, ev.jaxis.value);
-						//printf("Axis %i %i\n", ev.jaxis.axis, ev.jaxis.value);
 						break;
 					case SDL_JOYBUTTONDOWN:
 						mapJoystick(comp, JOY_BUTTON, ev.jbutton.button, 32768);
-						//printf("Button %i down\n", ev.jbutton.button);
 						break;
 					case SDL_JOYBUTTONUP:
 						mapJoystick(comp, JOY_BUTTON, ev.jbutton.button, 0);
-						//printf("Button %i up\n", ev.jbutton.button);
 						break;
 					case SDL_JOYHATMOTION:
 						mapJoystick(comp, JOY_HAT, ev.jhat.hat, ev.jhat.value);
-						// printf("hat %i %i\n", ev.jhat.hat, ev.jhat.value);
 						break;
 				}
 			}
@@ -974,56 +964,6 @@ void addLed(int x, int y, QString name, int time) {
 	}
 }
 
-/*
-void MainWin::putLeds() {
-	if (!comp) return;
-	QPainter pnt;
-	QImage kled(":/images/scanled.png");
-	if (conf.led.keys) {
-		pnt.begin(&kled);
-		unsigned char prt = ~comp->keyb->port;
-		comp->keyb->port = 0xff;
-		if (prt & 0x01) pnt.fillRect(3,17,8,2,Qt::white);
-		if (prt & 0x02) pnt.fillRect(3,14,8,2,Qt::white);
-		if (prt & 0x04) pnt.fillRect(3,11,8,2,Qt::white);
-		if (prt & 0x08) pnt.fillRect(3,8,8,2,Qt::white);
-		if (prt & 0x10) pnt.fillRect(12,8,8,2,Qt::white);
-		if (prt & 0x20) pnt.fillRect(12,11,8,2,Qt::white);
-		if (prt & 0x40) pnt.fillRect(12,14,8,2,Qt::white);
-		if (prt & 0x80) pnt.fillRect(12,17,8,2,Qt::white);
-		pnt.end();
-	}
-	if (comp->joy->used && conf.led.joy) {
-		addLed(3, 30, ":/images/joystick.png", 50);
-		comp->joy->used = 0;
-	}
-	if (comp->mouse->used && conf.led.mouse) {
-		addLed(3, 50, ":/images/mouse.png", 50);
-		comp->mouse->used = 0;
-	}
-	if (comp->tape->on && conf.led.tape) {
-		if (comp->tape->rec) {
-			addLed(3, 70, ":/images/tapeRed.png", 50);
-		} else {
-			addLed(3, 70, ":/images/tapeYellow.png", 50);
-		}
-	}
-	if (conf.led.disk) {
-		if (comp->dif->fdc->flp->rd) {
-			comp->dif->fdc->flp->rd = 0;
-			addLed(3, 90, ":/images/diskGreen.png", 50);
-		} else if (comp->dif->fdc->flp->wr) {
-			comp->dif->fdc->flp->wr = 0;
-			addLed(3, 90, ":/images/diskRed.png", 50);
-		}
-	}
-	pnt.begin(&scrImg);
-	drawLeds(pnt);
-	if (conf.led.keys) pnt.drawImage(3,3,kled);
-	pnt.end();
-}
-*/
-
 void MainWin::setMessage(QString str, double dur) {
 	msgTimer = (int)(dur * 50);
 	msg = str;
@@ -1036,6 +976,8 @@ void MainWin::updateSatellites() {
 	emit s_rzx_upd(comp);
 #endif
 // update tape window
+	if (comp->tape->on && !comp->tape->rec)
+		emit s_tape_progress(comp->tape);
 	if ((comp->tape->on && !comp->tape->rec) || comp->tape->blkChange || comp->tape->newBlock) {
 		emit s_tape_upd(comp->tape);
 		if (comp->tape->blkChange) comp->tape->blkChange = 0;
@@ -1130,7 +1072,6 @@ void MainWin::fillUserMenu() {
 void MainWin::doOptions() {
 	pause(true, PR_OPTS);
 	emit s_options(conf.prof.cur);
-	// opt->start(conf.prof.cur);
 }
 
 void MainWin::optApply() {
@@ -1144,7 +1085,6 @@ void MainWin::doDebug() {
 	conf.emu.fast = 0;
 	pause(true, PR_DEBUG);
 	emit s_debug(comp);
-	// dbg->start(comp);
 }
 
 void MainWin::dbgReturn() {
@@ -1152,7 +1092,6 @@ void MainWin::dbgReturn() {
 }
 
 void MainWin::bookmarkSelected(QAction* act) {
-//	loadFile(comp,act->data().toString().toLocal8Bit().data(),FT_ALL,0);
 	load_file(comp, act->data().toString().toLocal8Bit().data(), FG_ALL, 0);
 	setFocus();
 }
@@ -1181,7 +1120,6 @@ void MainWin::profileSelected(QAction* act) {
 }
 
 void MainWin::reset(QAction* act) {
-	//rzxWin->stop();
 	emit s_rzx_stop();
 	compReset(comp,act->data().toInt());
 }
@@ -1194,18 +1132,8 @@ void MainWin::chLayout(QAction* act) {
 }
 
 void MainWin::umOpen(QAction* act) {
-//	loadFile(comp, NULL, act->data().toInt(), -1);
 	load_file(comp, NULL, act->data().toInt(), -1);
 }
-
-// labels
-
-/*
-void MainWin::loadLabels(const char* nm) {
-	emit s_labels(QString(nm));
-	// dbg->loadLabels(QString(nm));
-}
-*/
 
 // debug stufffff
 void MainWin::saveVRAM() {

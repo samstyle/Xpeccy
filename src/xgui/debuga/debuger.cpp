@@ -120,7 +120,7 @@ void DebugWin::stop() {
 void DebugWin::onPrfChange(xProfile* prf) {
 	comp = prf->zx;
 	ui.tabsPanel->clear();
-	QList<QPair<QIcon, QWidget*>> lst = tablist[prf->zx->hw->grp];
+	QList<QPair<QIcon, QWidget*> > lst = tablist[prf->zx->hw->grp];
 	QPair<QIcon, QWidget*> p;
 	p.first = QIcon(":/images/stop.png");
 	p.second = ui.brkTab;
@@ -184,7 +184,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 	ui.setupUi(this);
 
-	QList<QPair<QIcon, QWidget*>> lst;
+	QList<QPair<QIcon, QWidget*> > lst;
 	QPair<QIcon, QWidget*> p;
 	tablist.clear();
 

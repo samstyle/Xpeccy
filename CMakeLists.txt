@@ -167,6 +167,7 @@ set(MOCFILES
 	./src/xgui/options/opt_tapecat.h
 	./src/vkeyboard.h
 	./src/xgui/xgui.h
+	./src/xgui/labelist.h
 )
 
 # Qt4 / Qt5
@@ -245,7 +246,7 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 		COMMAND ${MACDEPLOYQTEXE} ARGS ${BUNDLE_PATH} -always-overwrite
 #		COMMAND mkdir ARGS -p ${BUNDLE_PATH}/Contents/Frameworks
-		COMMAND cp ARGS -R /Library/Frameworks/SDL.framework ${BUNDLE_PATH}/Contents/Frameworks
+#		COMMAND cp ARGS -R /Library/Frameworks/SDL.framework ${BUNDLE_PATH}/Contents/Frameworks
 	)
 	set(CMAKE_INSTALL_PREFIX "/Applications")
 #	install(CODE "

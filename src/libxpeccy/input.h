@@ -217,6 +217,7 @@ typedef struct {
 	unsigned lang:1;
 	unsigned char port;		// high byte of xxFE port
 	int mode;
+	unsigned char flag;
 	// i8031 block
 	unsigned wcom:1;		// i8031 waiting for command
 	unsigned warg:1;		// i8031 waiting for argument

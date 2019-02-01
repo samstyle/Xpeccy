@@ -108,7 +108,7 @@ static xFileHWInfo hw_tab[] = {
 	{FH_MSX, {HW_MSX, HW_MSX2, 0}},
 	{FH_NES, {HW_NES, 0}},
 	{FH_CMD, {HW_C64, 0}},
-	{FH_BK, {HW_BK0011M, 0}},
+	{FH_BK, {HW_BK0010, HW_BK0011M, 0}},
 	{0, {0}}
 };
 

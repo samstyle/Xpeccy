@@ -27,13 +27,13 @@ unsigned char bk_fdc_rd(Computer* comp, unsigned short adr) {
 // keboard
 
 unsigned char bk_kbd_rd(Computer* comp, unsigned short adr) {
-	comp->wdata = comp->keyb->map[7] & 0xc0;
+	comp->wdata = comp->keyb->flag & 0xc0;
 	return 0;
 }
 
 unsigned char bk_kbf_rd(Computer* comp, unsigned short adr) {
-	comp->wdata = comp->keyb->map[0] & 0x7f;
-	comp->keyb->map[7] &= 0x7f;
+	comp->wdata = comp->keyb->keycode & 0x7f;
+	comp->keyb->flag &= 0x7f;
 	return 0;
 }
 
@@ -80,8 +80,8 @@ unsigned char bk_fcc_rd(Computer* comp, unsigned short adr) {
 // system
 
 unsigned char bk_sys_rd(Computer* comp, unsigned short adr) {
-	comp->wdata = 0xc080;
-	if (~comp->keyb->map[7] & 0x20)
+	comp->wdata = 0x8080;		// 8080 for 0010, c080 for 0011
+	if (~comp->keyb->flag & 0x20)
 		comp->wdata |= 0x40;		// = 0 if any key pressed
 	return 0;
 }
@@ -132,10 +132,10 @@ unsigned char bk_io_rd(unsigned short adr, void* ptr) {
 				comp->wdata = difIn(comp->dif, 1, NULL, 0) & 0xffff;
 				break;
 				// keyboard
-			case 0xffb0: comp->wdata = comp->keyb->map[7] & 0xc0; break;	// keyboard int control
+			case 0xffb0: comp->wdata = comp->keyb->flag & 0xc0; break;	// keyboard int control
 			case 0xffb2:							// keyboard code
-				comp->wdata = comp->keyb->map[0] & 0x7f;
-				comp->keyb->map[7] &= 0x7f;
+				comp->wdata = comp->keyb->keycode & 0x7f;
+				comp->keyb->flag &= 0x7f;
 				break;
 				// vertical scroll register
 			case 0xffb4: comp->wdata = comp->vid->sc.y & 0x00ff;
@@ -152,7 +152,7 @@ unsigned char bk_io_rd(unsigned short adr, void* ptr) {
 			case 0xffcc: break;							// external port
 			case 0xffce:								// system port
 				comp->wdata = 0xc080;
-				if (~comp->keyb->map[7] & 0x20)
+				if (~comp->keyb->flag & 0x20)
 					comp->wdata |= 0x40;		// = 0 if any key pressed
 				break;
 				// hdd
@@ -184,16 +184,16 @@ void bk_io_wr(unsigned short adr, unsigned char val, void* ptr) {
 			break;
 		// keyboard
 		case 0xffb0:
-			comp->keyb->map[7] &= ~0x40;
-			comp->keyb->map[7] |= (val & 0x40);
+			comp->keyb->flag &= ~0x40;
+			comp->keyb->flag |= (val & 0x40);
 			break;
 		case 0xffb1: break;
 		// pal/timer/scrbuf
 		case 0xffb2: break;
 		case 0xffb3:
 			comp->reg[0xb3] = val;
-			comp->vid->paln = (val << 2) & 0x3c;
-			comp->vid->curscr = (val & 0x80) ? 1 : 0;
+			//comp->vid->paln = (val << 2) & 0x3c;
+			//comp->vid->curscr = (val & 0x80) ? 1 : 0;
 			break;
 		// scroll
 		case 0xffb4: comp->vid->sc.y = val;
@@ -224,6 +224,8 @@ void bk_io_wr(unsigned short adr, unsigned char val, void* ptr) {
 		case 0xffcd: break;
 		case 0xffce: comp->reg[0xce] = val; break;
 		case 0xffcf:
+			// tape control
+/* for 0011
 			if (val & 8) {	// extend
 				comp->reg[0] = (val >> 4) & 7;
 				if (comp->reg[0xce] & 1) {
@@ -241,6 +243,7 @@ void bk_io_wr(unsigned short adr, unsigned char val, void* ptr) {
 			} else {	// tape control
 
 			}
+*/
 			break;
 		default:
 			printf("%.4X : wr %.4X,%.2X\n",comp->cpu->pc,adr,val);
@@ -257,8 +260,12 @@ void bk_sync(Computer* comp, int ns) {
 }
 
 void bk_mem_map(Computer* comp) {
-	memSetBank(comp->mem, 0x00, MEM_RAM, 6, MEM_16K, NULL, NULL, NULL);
-	memSetBank(comp->mem, 0x40, MEM_RAM, comp->reg[0] & 7, MEM_16K, NULL, NULL, NULL);
+	memSetBank(comp->mem, 0x00, MEM_RAM, 6, MEM_16K, NULL, NULL, NULL);		// page 6 (0)
+	memSetBank(comp->mem, 0x40, MEM_RAM, 1, MEM_16K, NULL, NULL, NULL);		// page 1 : scr 0
+	memSetBank(comp->mem, 0x80, MEM_ROM, 0, MEM_32K, NULL, NULL, NULL);
+	memSetBank(comp->mem, 0xff, MEM_IO, 0xff, MEM_256, bk_io_rd, bk_io_wr, comp);
+// for 11
+/*
 	if (comp->reg[1] & 0x80) {
 		memSetBank(comp->mem, 0x80, MEM_ROM, comp->reg[1] & 3, MEM_16K, NULL, NULL, NULL);
 	} else {
@@ -272,6 +279,7 @@ void bk_mem_map(Computer* comp) {
 		memSetBank(comp->mem, 0xe0, MEM_EXT, 7, MEM_8K, NULL, NULL, NULL);			// empty space
 		memSetBank(comp->mem, 0xff, MEM_IO, 0xff, MEM_256, bk_io_rd, bk_io_wr, comp);		// 0177600..0177776 without disk interface
 	}
+*/
 }
 
 #define BK_BLK	{0,0,0}
@@ -303,7 +311,7 @@ static xColor bk_pal[0x40] = {
 };
 
 void bk_reset(Computer* comp) {
-	memSetSize(comp->mem, MEM_128K, MEM_64K);
+	memSetSize(comp->mem, MEM_32K, MEM_32K);
 //	memset(comp->mem->ramData, 0x00, MEM_256);
 	for (int i = 0; i < 0x40; i++) {
 		comp->vid->pal[i] = bk_pal[i];
@@ -314,8 +322,8 @@ void bk_reset(Computer* comp) {
 	comp->vid->curscr = 0;
 	comp->vid->paln = 0;
 	vidSetMode(comp->vid, VID_BK_BW);
-	comp->keyb->map[7] = 0x40;
-	comp->keyb->map[0] = 0;
+	comp->keyb->flag = 0x40;
+	comp->keyb->keycode = 0;
 	bk_mem_map(comp);
 }
 
@@ -436,12 +444,11 @@ void bk_keyp(Computer* comp, keyEntry xkey) {
 	if (code == 0)
 		code = bkey_code(bkeyTab, xkey.key);
 	if (code != 0) {
-		comp->keyb->map[7] |= 0x20;
-		if (!(comp->keyb->map[7] & 0x80)) {
-			comp->keyb->map[0] = code & 0x7f;
-			comp->keyb->map[7] |= 0x80;
-//			printf("code %.2X\n",comp->keyb->map[0]);
-			if (!(comp->keyb->map[7] & 0x40)) {		// keyboard interrupt enabled
+		comp->keyb->flag |= 0x20;
+		if (!(comp->keyb->flag & 0x80)) {
+			comp->keyb->keycode = code & 0x7f;
+			comp->keyb->flag |= 0x80;
+			if (!(comp->keyb->flag & 0x40)) {		// keyboard interrupt enabled
 				comp->cpu->intvec = (code & 0x80) ? 0274 : 060;
 				comp->cpu->intrq |= PDP_INT_VIRQ;
 //				printf("intrq %X\n", comp->cpu->intvec);
@@ -454,5 +461,5 @@ void bk_keyr(Computer* comp, keyEntry xkey) {
 	switch (xkey.key) {
 		case XKEY_LSHIFT: comp->keyb->shift = 0; break;
 	}
-	comp->keyb->map[7] &= ~0x20;	// 0x20 | 0x80
+	comp->keyb->flag &= ~0x20;	// 0x20 | 0x80
 }

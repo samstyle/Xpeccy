@@ -20,21 +20,32 @@ xWatcher::xWatcher(QWidget* p):QDialog(p) {
 	nui.cbSrcReg->addItem("SP", wchSP);
 	nui.cbSrcReg->addItem("IX", wchIX);
 	nui.cbSrcReg->addItem("IY", wchIY);
-	connect(nui.pbOK, SIGNAL(clicked(bool)),this,SLOT(addWatcher()));
 
 	ui.setupUi(this);
 	model = new xWatchModel;
 	ui.wchMemTab->setModel(model);
 	ui.wchMemTab->addAction(ui.actAddWatcher);
 	ui.wchMemTab->addAction(ui.actDelWatcher);
+
+	listwin = new xLabeList(addial);
+
 	connect(ui.actAddWatcher, SIGNAL(triggered(bool)), this, SLOT(newWatcher()));
 	connect(ui.actDelWatcher, SIGNAL(triggered(bool)), this, SLOT(delWatcher()));
 	connect(ui.wchMemTab, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(edtWatcher()));
 
+	connect(nui.tbLabel, SIGNAL(clicked()), listwin, SLOT(show()));
 	connect(nui.cbType, SIGNAL(currentIndexChanged(int)), this, SLOT(dialChanged()));
 	connect(nui.cbSrcReg, SIGNAL(currentIndexChanged(int)), this, SLOT(dialChanged()));
-//	connect(nui.leAdrHex, SIGNAL(textChanged(QString)), this, SLOT(hexAdrChanged(QString)));
-//	connect(nui.sbAdrDec, SIGNAL(valueChanged(int)), this, SLOT(decAdrChanged(int)));
+	connect(nui.pbOK, SIGNAL(clicked(bool)),this,SLOT(addWatcher()));
+
+	connect(listwin, SIGNAL(labSelected(QString)), this, SLOT(setLabel(QString)));
+}
+
+void xWatcher::setLabel(QString str) {
+	if (conf.labels.contains(str)) {
+		xAdr xadr = conf.labels[str];
+		nui.leAdrHex->setValue(xadr.adr);
+	}
 }
 
 QString getBankType(int type) {
@@ -207,7 +218,7 @@ int xWatchModel::rowCount(const QModelIndex&) const {
 }
 
 int xWatchModel::columnCount(const QModelIndex&) const {
-	return 4;
+	return 2;
 }
 
 void xWatchModel::insertRow(int row, const QModelIndex& idx) {
@@ -276,13 +287,14 @@ QVariant xWatchModel::data(const QModelIndex& idx, int role) const {
 					case MEM_ROM:
 						msk = comp->mem->romMask;
 						dat = comp->mem->romData;
+						adrs = QString("ROM:%0:%1").arg(gethexbyte(xadr.bank)).arg(gethexword(xadr.adr & 0x3fff));
 						break;
 					case MEM_RAM:
 						msk = comp->mem->ramMask;
 						dat = comp->mem->ramData;
+						adrs = QString("RAM:%0:%1").arg(gethexbyte(xadr.bank)).arg(gethexword(xadr.adr & 0x3fff));
 						break;
 				}
-				adrs = gethexword(xadr.adr & 0x3fff);
 				bytz.clear();
 				for (i = 0; i < 8; i++) {
 					if (!bytz.isEmpty())
@@ -294,7 +306,10 @@ QVariant xWatchModel::data(const QModelIndex& idx, int role) const {
 				switch(xadr.abs) {
 					case wchAbsolute:
 						adr = xadr.adr;
-						adrs = gethexword(adr);
+						adrs = findLabel(xadr.adr, -1, -1);
+						if (adrs.isEmpty()) {
+							adrs = gethexword(adr);
+						}
 						break;
 					case wchBC:
 						adr = comp->cpu->bc + xadr.adr;
@@ -344,23 +359,14 @@ QVariant xWatchModel::data(const QModelIndex& idx, int role) const {
 				}
 			}
 			switch (col) {
-				case 0:
-					if (xadr.abs == wchCell)
-						res = getBankType(xadr.type);
-					break;
-				case 1:
-					if (xadr.abs == wchCell)
-						res = gethexbyte(xadr.bank);
-					break;
-				case 2:	res = adrs; break;
-				case 3: res = bytz; break;
-//				case 4: res = gethexword(wrd & 0xffff); break;
+				case 0:	res = adrs; break;
+				case 1: res = bytz; break;
 			}
 	}
 	return res;
 }
 
-QString xwhdname[5] = {"Type","Page","Addr","Bytes","(old)"};
+QString xwhdname[5] = {"Addr","Bytes"};
 
 QVariant xWatchModel::headerData(int col, Qt::Orientation orien, int role) const {
 	QVariant res;
@@ -370,7 +376,7 @@ QVariant xWatchModel::headerData(int col, Qt::Orientation orien, int role) const
 				case Qt::Vertical:
 					break;
 				case Qt::Horizontal:
-					if (col < 5) res = xwhdname[col];
+					if (col < 2) res = xwhdname[col];
 					break;
 			}
 			break;

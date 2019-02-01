@@ -790,6 +790,7 @@ static xRomPreset presets[] = {
 	{HW_GBC, "", "", {{"GameBoyColorBIOS.rom",0,0,0},{"",0,0,0}}},
 	{HW_NES, "", "", {{"",0,0,0}}},
 	{HW_C64, "", "c64charset.rom", {{"commodore64.rom",0,0,0},{"",0,0,0}}},
+	{HW_BK0010, "", "", {{"MONIT10.ROM",0,0,0},{"BASIC10.ROM",0,0,8},{"",0,0,0}}},
 	{HW_BK0011M, "", "", {{"BAS11M_0.ROM",0,0,0},{"BAS11M_1.ROM",0,0,16},{"B11M_EXT.ROM",0,0,24},{"B11M_BOS.ROM",0,0,32},{"",0,0,0}}},
 	{HW_NULL, "", "", {{"",0,0,0}}}
 };
@@ -954,6 +955,7 @@ struct xMemName {
 };
 
 static xMemName memNameTab[] = {
+	{MEM_32K, "32K"},
 	{MEM_64K, "64K"},
 	{MEM_128K, "128K"},
 	{MEM_256K, "256K"},

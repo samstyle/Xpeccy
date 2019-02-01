@@ -21,10 +21,12 @@ TapeWin::TapeWin(QWidget *par):QDialog(par) {
 
 void TapeWin::updProgress(Tape* tape) {
 	if (!isVisible()) return;
-	if (!tape->on) return;
-	if (tape->rec) return;
-	ui.tapeBar->setMaximum(tapGetBlockTime(tape, tape->block, -1));
-	ui.tapeBar->setValue(tapGetBlockTime(tape, tape->block, tape->pos));
+	if (!tape->on || tape->rec) {
+		ui.tapeBar->setValue(0);
+	} else {
+		ui.tapeBar->setMaximum(tapGetBlockTime(tape, tape->block, -1));
+		ui.tapeBar->setValue(tapGetBlockTime(tape, tape->block, tape->pos));
+	}
 }
 
 void TapeWin::upd(Tape* tape) {

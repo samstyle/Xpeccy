@@ -317,7 +317,7 @@ int prfLoad(std::string nm) {
 	std::string line,pnam,pval;
 	std::vector<std::string> vect;
 	size_t pos;
-	char* buf = new char[0x4000];
+	char buf[0x4000];
 	int tmask = -1;
 	int tmp2;
 	int section = PS_NONE;
@@ -501,7 +501,8 @@ int prfLoad(std::string nm) {
 	tmp2 = PLOAD_OK;
 
 	if (!compSetHardware(comp, prf->hwName.c_str())) {
-		shitHappens("Hardware was set to 'dummy'");
+		sprintf(buf, "Profile: %s\nHardware was set to 'dummy'", prf->name.c_str());
+		shitHappens(buf);
 		tmp2 = PLOAD_HW;
 		compSetHardware(comp,"Dummy");
 	}
@@ -520,7 +521,6 @@ int prfLoad(std::string nm) {
 	memSetSize(comp->mem, tmask, -1);
 	if (!prfSetLayout(prf, prf->layName)) prfSetLayout(prf,"default");
 
-//	sndCalibrate(comp);
 	compReset(comp,RES_DEFAULT);
 
 	return tmp2;

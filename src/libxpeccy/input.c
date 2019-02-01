@@ -221,6 +221,7 @@ void kbdReleaseAll(Keyboard* kbd) {
 	kbd->keycode = 0;
 	kbd->lastkey = 0;
 	kbd->kBufPos = 0;
+	kbd->flag = 0;
 }
 
 void kbd_trigger(keyScan* tab, unsigned char* mtrx, xKey xk) {
