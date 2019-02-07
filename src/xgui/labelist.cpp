@@ -13,19 +13,9 @@ int xLabelistModel::rowCount(const QModelIndex&) const {
 	return list.size();
 }
 
-QStringList filter(QStringList lst, QString f) {
-	QStringList res;
-	QString str;
-	foreach(str, lst) {
-		if (str.contains(f, Qt::CaseInsensitive))
-			res.append(str);
-	}
-	return res;
-}
-
 void xLabelistModel::reset(QString f) {
-	list = filter(conf.labels.keys(), f);
-	list.sort();
+	list = conf.labels.keys().filter(f);
+	list.sort(Qt::CaseInsensitive);
 	emit dataChanged(index(0,0), index(0, list.size() - 1));
 }
 
