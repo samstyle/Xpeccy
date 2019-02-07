@@ -41,7 +41,6 @@ class xHexSpin : public QLineEdit {
 		int min;
 		int max;
 		void setBase(int);
-//		QString getText(int);
 	protected:
 		void keyPressEvent(QKeyEvent*);
 		void wheelEvent(QWheelEvent*);

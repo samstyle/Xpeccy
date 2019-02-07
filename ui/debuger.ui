@@ -22,7 +22,7 @@
    <iconset resource="../xpeccy.qrc">
     <normaloff>:/images/bug.png</normaloff>:/images/bug.png</iconset>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0,10,0,0">
+  <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0,10,5,1">
    <item>
     <layout class="QVBoxLayout" name="verticalLayout_9" stretch="0,10">
      <item>
@@ -2616,11 +2616,11 @@
  </resources>
  <connections/>
  <buttongroups>
+  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
-  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>
