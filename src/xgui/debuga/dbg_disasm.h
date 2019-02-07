@@ -41,7 +41,7 @@ class xDisasmModel : public QAbstractTableModel {
 		QList<dasmData> dasm;
 	signals:
 		void rqRefill();
-		void s_adrch(int);
+		void s_adrch(int, int);
 	public slots:
 		int update();
 	private:
@@ -61,11 +61,12 @@ class xDisasmTable : public QTableView {
 		void rqRefillAll();
 	public slots:
 		int updContent();
-		void t_update(int);
+		void t_update(int, int);
 	private:
 		int markAdr;
 		xDisasmModel* model;
 		Computer** cptr;
+		QList<unsigned short> history;
 
 		void scrolUp(Qt::KeyboardModifiers = 0);
 		void scrolDn(Qt::KeyboardModifiers = 0);

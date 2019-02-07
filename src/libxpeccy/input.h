@@ -210,6 +210,17 @@ typedef struct {
 } Mouse;
 
 typedef struct {
+	int key;
+	const char seq[8];
+} xKeySeq;
+
+typedef struct {
+	char key;
+	unsigned char row;
+	unsigned char mask;
+} xKeyMtrx;
+
+typedef struct {
 	unsigned reset:1;		// RES signal to CPU
 	unsigned used:1;
 	unsigned caps:1;

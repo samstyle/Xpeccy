@@ -76,7 +76,7 @@ class DebugWin : public QDialog {
 		Ui::Debuger ui;
 		QPoint winPos;
 		QImage scrImg;
-		QList<unsigned short> jumpHistory;
+//		QList<unsigned short> jumpHistory;
 
 		QMap<int, QList<QPair<QIcon, QWidget*> > > tablist;
 

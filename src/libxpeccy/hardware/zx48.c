@@ -1,5 +1,7 @@
 #include "../spectrum.h"
 
+#include <string.h>
+
 void speReset(Computer* comp) {
 	zx_set_pal(comp);
 	vidSetMode(comp->vid, VID_NORMAL);
@@ -11,16 +13,6 @@ void speMapMem(Computer* comp) {
 	memSetBank(comp->mem,0x80,MEM_RAM,2,MEM_16K,NULL,NULL,NULL);		// 010 / x10
 	memSetBank(comp->mem,0xc0,MEM_RAM,0,MEM_16K,NULL,NULL,NULL);		// 000 / x00
 }
-
-// out
-
-/*
-void spOutFE(Computer* comp, unsigned short port, unsigned char val) {
-	comp->vid->nextbrd = val & 0x07;
-	comp->beep->lev = (val & 0x10) ? 1 : 0;
-	comp->tape->levRec = (val & 0x08) ? 1 : 0;
-}
-*/
 
 // in
 
@@ -55,4 +47,80 @@ unsigned char speIn(Computer* comp, unsigned short port, int dos) {
 	if (difIn(comp->dif, port, &res, dos)) return res;
 	if (zx_dev_rd(comp, port, &res, dos)) return res;
 	return hwIn(spePortMap, comp, port, dos);
+}
+
+// keyboard (for future use)
+
+static const xKeySeq zx_keytab[] = {
+	{XKEY_1,"1"},{XKEY_2,"2"},{XKEY_3,"4"},{XKEY_4,"4"},{XKEY_5,"5"},
+	{XKEY_Q,"q"},{XKEY_W,"w"},{XKEY_E,"e"},{XKEY_R,"r"},{XKEY_T,"t"},
+	{XKEY_A,"a"},{XKEY_S,"s"},{XKEY_D,"d"},{XKEY_F,"f"},{XKEY_G,"g"},
+	{XKEY_LSHIFT,"C"},{XKEY_Z,"z"},{XKEY_X,"x"},{XKEY_C,"c"},{XKEY_V,"v"},
+
+	{XKEY_6,"6"},{XKEY_7,"7"},{XKEY_8,"8"},{XKEY_9,"9"},{XKEY_0,"0"},
+	{XKEY_Y,"y"},{XKEY_U,"u"},{XKEY_I,"i"},{XKEY_O,"o"},{XKEY_P,"p"},
+	{XKEY_H,"h"},{XKEY_J,"j"},{XKEY_K,"k"},{XKEY_L,"l"},{XKEY_ENTER,"E"},
+	{XKEY_B,"b"},{XKEY_N,"n"},{XKEY_M,"m"},{XKEY_LCTRL,"S"},{XKEY_SPACE," "},
+
+	{XKEY_MINUS,"Sj"},{XKEY_PLUS,"Sk"},{XKEY_EQUAL,"Sl"},
+	{XKEY_BSP,"C0"},{XKEY_TAB,"C "},{XKEY_CAPS,"C2"},{XKEY_TILDA,"CS"},
+	{XKEY_LBRACE,"S8"},{XKEY_RBRACE,"S9"},{XKEY_SLASH,"CS"},
+	{XKEY_DOTCOM,"So"},{XKEY_APOS,"Sp"},
+	{XKEY_PERIOD,"Sn"},{XKEY_COMMA,"Sm"},{XKEY_QUEST,"Sc"},
+	{XKEY_LEFT,"C5"},{XKEY_DOWN,"C6"},{XKEY_UP,"C7"},{XKEY_RIGHT,"C8"},
+	{XKEY_PGDN,"C3"},{XKEY_PGUP,"C4"},
+
+	{ENDKEY,""}
+};
+
+const char* get_key_seq(const xKeySeq* tab, int key) {
+	int i = 0;
+	while ((tab[i].key != ENDKEY) && (tab[i].key != key))
+		i++;
+	return tab[i].seq;
+}
+
+static xKeyMtrx keyTab[] = {
+	{'1',4,1},{'2',4,2},{'3',4,4},{'4',4,8},{'5',4,16},{'6',3,16},{'7',3,8},{'8',3,4},{'9',3,2},{'0',3,1},
+	{'q',5,1},{'w',5,2},{'e',5,4},{'r',5,8},{'t',5,16},{'y',2,16},{'u',2,8},{'i',2,4},{'o',2,2},{'p',2,1},
+	{'a',6,1},{'s',6,2},{'d',6,4},{'f',6,8},{'g',6,16},{'h',1,16},{'j',1,8},{'k',1,4},{'l',1,2},{'E',1,1},
+	{'C',7,1},{'z',7,2},{'x',7,4},{'c',7,8},{'v',7,16},{'b',0,16},{'n',0,8},{'m',0,4},{'S',0,2},{' ',0,1},
+	{0,0,0}
+};
+
+xKeyMtrx* get_key_mtrx(xKeyMtrx* tab, char key) {
+	int i = 0;
+	while ((tab[i].key != 0) && (tab[i].key != key))
+		i++;
+	return &tab[i];
+}
+
+void key_mtrx_press(Keyboard* kbd, xKeyMtrx* tab, char key) {
+	xKeyMtrx* km = get_key_mtrx(tab, key);
+	kbd->map[km->row] &= ~km->mask;
+}
+
+void key_mtrx_rel(Keyboard* kbd, xKeyMtrx* tab, char key) {
+	xKeyMtrx* km = get_key_mtrx(tab, key);
+	kbd->map[km->row] |= km->mask;
+}
+
+void zx_keypr(Computer* comp, int key) {
+	const char* seq = get_key_seq(zx_keytab, key);
+	while (*seq) {
+		key_mtrx_press(comp->keyb, keyTab, *seq);
+		seq++;
+	}
+}
+
+void zx_keyrl(Computer* comp, int key) {
+	if (key == ENDKEY) {
+		memset(comp->keyb->map, 0xff, 8);
+	} else {
+		const char* seq = get_key_seq(zx_keytab, key);
+		while (*seq) {
+			key_mtrx_rel(comp->keyb, keyTab, *seq);
+			seq++;
+		}
+	}
 }

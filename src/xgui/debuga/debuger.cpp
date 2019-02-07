@@ -59,13 +59,9 @@ typedef struct {
 } dbgRegPlace;
 
 void DebugWin::start(Computer* c) {
-	// onStart = 1;
-//	comp = c;
 	blockStart = -1;
 	blockEnd = -1;
 	chLayout();
-//	if (getRFIData(ui.cbDasmMode) == XVIEW_CPU)
-//		disasmAdr = comp->cpu->pc;
 	if (!fillAll()) {
 		disasmAdr = comp->cpu->pc;
 		fillDisasm();
@@ -73,11 +69,9 @@ void DebugWin::start(Computer* c) {
 	updateScreen();
 	if (!comp->vid->tail)
 		vidDarkTail(comp->vid);
-//	ui.tabsPanel->setTabEnabled(ui.tabsPanel->indexOf(ui.gbTab), comp->hw->id == HW_GBC);
-//	ui.tabsPanel->setTabEnabled(ui.tabsPanel->indexOf(ui.nesTab), comp->hw->id == HW_NES);
 
 	this->move(winPos);
-	// ui.dasmTable->setFocus();
+//	ui.dasmTable->setFocus();
 	comp->vid->debug = 1;
 	comp->debug = 1;
 	comp->brk = 0;
@@ -621,8 +615,6 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 	unsigned short pc = comp->cpu->pc;
 	unsigned char* ptr;
 	int offset = (ui.dumpTable->rows() - 1) << 3;
-	int row;
-	int pos;
 	int adr;
 	int len;
 	dasmData drow;
@@ -675,6 +667,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 				case Qt::Key_F2:
 					// switchBP(MEM_BRK_FETCH);
 					break;
+					/*
 				case Qt::Key_F4:
 					idx = ui.dasmTable->currentIndex();
 					if (!idx.isValid()) break;
@@ -693,6 +686,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					disasmAdr = jumpHistory.takeLast();
 					fillDisasm();
 					break;
+*/
 				case Qt::Key_PageUp:
 					if (ui.dumpTable->hasFocus()) {
 						dumpAdr = (dumpAdr - offset) & 0xffff;
@@ -754,9 +748,11 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 }
 
 void setSignal(QLabel* lab, int on) {
-	QString col(on ? "160,255,160" : "255,160,160");
-	// QString bld(on ? "font-weight:bold" : "");
-	lab->setStyleSheet(QString("background-color: rgb(%0)").arg(col));
+	if (on) {
+		lab->setStyleSheet(QString("font: bold;"));
+	} else {
+		lab->setStyleSheet(QString());
+	}
 }
 
 QString getAYmix(aymChan* ch) {
@@ -819,16 +815,10 @@ bool DebugWin::fillAll() {
 	ui.brkTab->update();
 
 	ui.labRX->setNum(comp->vid->ray.x);
-	if (comp->vid->hblank)
-		ui.labRX->setStyleSheet("background-color: rgb(255,160,160);");
-	else
-		ui.labRX->setStyleSheet("");
+	setSignal(ui.labRX, comp->vid->hblank);
 
 	ui.labRY->setNum(comp->vid->ray.y);
-	if (comp->vid->vblank)
-		ui.labRY->setStyleSheet("background-color: rgb(255,160,160);");
-	else
-		ui.labRY->setStyleSheet("");
+	setSignal(ui.labRY, comp->vid->vblank);
 
 	setSignal(ui.labDOS, comp->dos);
 	setSignal(ui.labROM, comp->rom);

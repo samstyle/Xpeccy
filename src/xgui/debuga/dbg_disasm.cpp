@@ -502,6 +502,7 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 	int idx = -1;
 	int nladr = -1;
 	unsigned short zadr;
+	unsigned short oadr = disasmAdr;
 	int len;
 	QString str;
 	// QString lab;
@@ -533,7 +534,7 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 				}
 				disasmAdr = idx & 0xffff;
 			}
-			emit s_adrch(nladr);
+			emit s_adrch(oadr, nladr);
 			break;
 		case 1:	// bytes
 			str = val.toString();
@@ -632,7 +633,7 @@ xDisasmTable::xDisasmTable(QWidget* p):QTableView(p) {
 	cptr = NULL;
 	model = new xDisasmModel();
 	setModel(model);
-	connect(model, SIGNAL(s_adrch(int)), this, SLOT(t_update(int)));
+	connect(model, SIGNAL(s_adrch(int, int)), this, SLOT(t_update(int, int)));
 	connect(model, SIGNAL(rqRefill()), this, SIGNAL(rqRefill()));
 }
 
@@ -680,7 +681,10 @@ int xDisasmTable::updContent() {
 	return res;
 }
 
-void xDisasmTable::t_update(int nadr) {
+void xDisasmTable::t_update(int oadr, int nadr) {
+	if (oadr >= 0) {
+		history.append(oadr);
+	}
 	updContent();
 	for(int r = 0; r < rows(); r++) {
 		if (model->dasm[r].adr == (nadr & 0xffff)) {
@@ -694,6 +698,7 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 	QModelIndex idx = currentIndex();
 	int bpt = MEM_BRK_FETCH;
 	int bpr = BRK_MEMCELL;
+	int adr;
 	switch (ev->key()) {
 		case Qt::Key_Up:
 			if ((ev->modifiers() & Qt::ControlModifier) || (idx.row() == 0)) {
@@ -741,6 +746,21 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			}
 			brkXor(bpr, bpt, getData(idx.row(), 0, Qt::UserRole).toInt(), -1, 1);
 			emit rqRefill();
+			ev->ignore();
+			break;
+		case Qt::Key_F4:
+			if (!idx.isValid()) break;
+			adr = model->dasm[idx.row()].oadr;
+			if (adr < 0) break;
+			history.append(disasmAdr);
+			disasmAdr = adr & 0xffff;
+			updContent();
+			ev->ignore();
+			break;
+		case Qt::Key_F5:
+			if (history.size() < 1) break;
+			disasmAdr = history.takeLast();
+			updContent();
 			ev->ignore();
 			break;
 		case Qt::Key_Return:

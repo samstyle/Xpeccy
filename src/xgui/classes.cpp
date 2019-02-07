@@ -9,6 +9,8 @@ QString gethexbyte(uchar);
 xHexSpin::xHexSpin(QWidget* p):QLineEdit(p) {
 	setInputMask("Hhhh");
 	setText("0000");
+	setMinimumWidth(60);
+	setMinimumHeight(22);
 	min = 0x0000;
 	max = 0xffff;
 	value = 0x0000;
@@ -79,19 +81,22 @@ void xHexSpin::setMax(int v) {
 
 void xHexSpin::setValue(int nval) {
 	nval = minMaxCorrect(nval, min, max);
-	QPalette pal = palette();
+//	QPalette pal = palette();
 	if (value == nval) {
-		pal.setColor(QPalette::Base, QColor(255,255,255));
+		//pal.setColor(QPalette::Base, QWidget::palette().color(QPalette::Base));
+		setStyleSheet("");
 	} else {
 		value = nval;
 		if (hsflag & XHS_BGR) {
-			pal.setColor(QPalette::Base, QColor(160,255,160));
+			//pal.setColor(QPalette::Base, QColor(160,255,160));
+			setStyleSheet("font:bold;");
 		} else {
-			pal.setColor(QPalette::Base, QColor(255,255,255));
+			setStyleSheet("");
+			//pal.setColor(QPalette::Base, QColor(255,255,255));
 		}
 		emit valueChanged(value);
 	}
-	setPalette(pal);
+	//setPalette(pal);
 }
 
 void xHexSpin::onChange(int val) {
