@@ -782,9 +782,6 @@
        <attribute name="horizontalHeaderDefaultSectionSize">
         <number>20</number>
        </attribute>
-       <attribute name="horizontalHeaderStretchLastSection">
-        <bool>true</bool>
-       </attribute>
        <attribute name="verticalHeaderVisible">
         <bool>false</bool>
        </attribute>
@@ -2077,9 +2074,6 @@
      </item>
      <item>
       <widget class="QLabel" name="labPG0">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(255, 255, 255);</string>
-       </property>
        <property name="text">
         <string>ROM:00</string>
        </property>
@@ -2090,9 +2084,6 @@
      </item>
      <item>
       <widget class="QLabel" name="labPG1">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(255, 255, 255);</string>
-       </property>
        <property name="text">
         <string>RAM:05</string>
        </property>
@@ -2103,9 +2094,6 @@
      </item>
      <item>
       <widget class="QLabel" name="labPG2">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(255, 255, 255);</string>
-       </property>
        <property name="text">
         <string>RAM:02</string>
        </property>
@@ -2116,9 +2104,6 @@
      </item>
      <item>
       <widget class="QLabel" name="labPG3">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(255, 255, 255);</string>
-       </property>
        <property name="text">
         <string>RAM:00</string>
        </property>
@@ -2142,9 +2127,6 @@
      </item>
      <item>
       <widget class="QLabel" name="labSP">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(240,240,240)</string>
-       </property>
        <property name="text">
         <string>0000</string>
        </property>
@@ -2155,9 +2137,6 @@
      </item>
      <item>
       <widget class="QLabel" name="labSP2">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(240,240,240)</string>
-       </property>
        <property name="text">
         <string>0000</string>
        </property>
@@ -2168,9 +2147,6 @@
      </item>
      <item>
       <widget class="QLabel" name="labSP4">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(240,240,240)</string>
-       </property>
        <property name="text">
         <string>0000</string>
        </property>
@@ -2181,9 +2157,6 @@
      </item>
      <item>
       <widget class="QLabel" name="labSP6">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(240,240,240)</string>
-       </property>
        <property name="text">
         <string>0000</string>
        </property>
@@ -2207,6 +2180,9 @@
      </item>
      <item>
       <widget class="QLabel" name="labDOS">
+       <property name="autoFillBackground">
+        <bool>true</bool>
+       </property>
        <property name="text">
         <string>DOS</string>
        </property>
@@ -2217,6 +2193,9 @@
      </item>
      <item>
       <widget class="QLabel" name="labROM">
+       <property name="autoFillBackground">
+        <bool>true</bool>
+       </property>
        <property name="text">
         <string>ROM</string>
        </property>
@@ -2227,6 +2206,9 @@
      </item>
      <item>
       <widget class="QLabel" name="labCPM">
+       <property name="autoFillBackground">
+        <bool>true</bool>
+       </property>
        <property name="text">
         <string>CPM</string>
        </property>
@@ -2237,6 +2219,9 @@
      </item>
      <item>
       <widget class="QLabel" name="labINT">
+       <property name="autoFillBackground">
+        <bool>true</bool>
+       </property>
        <property name="text">
         <string>INT</string>
        </property>
@@ -2260,8 +2245,8 @@
      </item>
      <item>
       <widget class="QLabel" name="labRX">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(240,240,240)</string>
+       <property name="autoFillBackground">
+        <bool>true</bool>
        </property>
        <property name="text">
         <string>000</string>
@@ -2273,8 +2258,8 @@
      </item>
      <item>
       <widget class="QLabel" name="labRY">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(240,240,240)</string>
+       <property name="autoFillBackground">
+        <bool>true</bool>
        </property>
        <property name="text">
         <string>000</string>

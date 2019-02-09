@@ -76,6 +76,7 @@ class xDisasmTable : public QTableView {
 		void mouseReleaseEvent(QMouseEvent*);
 		void mouseMoveEvent(QMouseEvent*);
 		void wheelEvent(QWheelEvent*);
+		void resizeEvent(QResizeEvent*);
 };
 
 QList<dasmData> getDisasm(Computer*, unsigned short&);

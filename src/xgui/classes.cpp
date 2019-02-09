@@ -10,7 +10,7 @@ xHexSpin::xHexSpin(QWidget* p):QLineEdit(p) {
 	setInputMask("Hhhh");
 	setText("0000");
 	setMinimumWidth(60);
-	setMinimumHeight(22);
+	setAutoFillBackground(true);
 	min = 0x0000;
 	max = 0xffff;
 	value = 0x0000;
@@ -27,7 +27,6 @@ int xHexSpin::getValue() {
 void xHexSpin::setBase(int b) {
 	int mx;
 	QString msk;
-	QPalette pal = palette();
 	switch(b) {
 		case 10:
 			b = value;
@@ -38,7 +37,6 @@ void xHexSpin::setBase(int b) {
 				msk.append("n");
 				mx *= 10;
 			}
-			pal.setColor(QPalette::Text, QColor(0,0,255));
 			break;
 		default:
 			b = value;
@@ -49,10 +47,8 @@ void xHexSpin::setBase(int b) {
 				msk.append("h");
 				mx *= 16;
 			}
-			pal.setColor(QPalette::Text, QColor(0,0,0));
 			break;
 	}
-	setPalette(pal);
 	setInputMask(msk);
 	setValue(b);
 }
@@ -81,22 +77,20 @@ void xHexSpin::setMax(int v) {
 
 void xHexSpin::setValue(int nval) {
 	nval = minMaxCorrect(nval, min, max);
-//	QPalette pal = palette();
+	QPalette pal;
 	if (value == nval) {
-		//pal.setColor(QPalette::Base, QWidget::palette().color(QPalette::Base));
-		setStyleSheet("");
+		// pal.setBrush(QPalette::Base, pal.window());
 	} else {
 		value = nval;
 		if (hsflag & XHS_BGR) {
-			//pal.setColor(QPalette::Base, QColor(160,255,160));
-			setStyleSheet("font:bold;");
+			pal.setBrush(QPalette::Base, pal.toolTipBase());
+			pal.setBrush(QPalette::Text, pal.toolTipText());
 		} else {
-			setStyleSheet("");
-			//pal.setColor(QPalette::Base, QColor(255,255,255));
+			// pal.setBrush(QPalette::Base, pal.window());
 		}
 		emit valueChanged(value);
 	}
-	//setPalette(pal);
+	setPalette(pal);
 }
 
 void xHexSpin::onChange(int val) {
