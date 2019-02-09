@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QFont>
 #include <QPainter>
+#include <QHeaderView>
 
 extern unsigned short disasmAdr;
 extern int blockStart;
@@ -635,6 +636,14 @@ xDisasmTable::xDisasmTable(QWidget* p):QTableView(p) {
 	setModel(model);
 	connect(model, SIGNAL(s_adrch(int, int)), this, SLOT(t_update(int, int)));
 	connect(model, SIGNAL(rqRefill()), this, SIGNAL(rqRefill()));
+}
+
+void xDisasmTable::resizeEvent(QResizeEvent* ev) {
+	int wid = ev->size().width();
+	setColumnWidth(0, 90);
+	setColumnWidth(1, 90);
+	setColumnWidth(2, wid - 90 - 90 - 40);
+	setColumnWidth(3, 40);
 }
 
 QVariant xDisasmTable::getData(int row, int col, int role) {

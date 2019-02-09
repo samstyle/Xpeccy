@@ -62,11 +62,11 @@ static const xKeySeq zx_keytab[] = {
 	{XKEY_H,"h"},{XKEY_J,"j"},{XKEY_K,"k"},{XKEY_L,"l"},{XKEY_ENTER,"E"},
 	{XKEY_B,"b"},{XKEY_N,"n"},{XKEY_M,"m"},{XKEY_LCTRL,"S"},{XKEY_SPACE," "},
 
-	{XKEY_MINUS,"Sj"},{XKEY_PLUS,"Sk"},{XKEY_EQUAL,"Sl"},
+	{XKEY_MINUS,"Sj"},{XKEY_EQUAL,"Sk"},{XKEY_EQUAL,"Sl"},
 	{XKEY_BSP,"C0"},{XKEY_TAB,"C "},{XKEY_CAPS,"C2"},{XKEY_TILDA,"CS"},
-	{XKEY_LBRACE,"S8"},{XKEY_RBRACE,"S9"},{XKEY_SLASH,"CS"},
+	{XKEY_LBRACK,"S8"},{XKEY_RBRACK,"S9"},{XKEY_SLASH,"CS"},
 	{XKEY_DOTCOM,"So"},{XKEY_APOS,"Sp"},
-	{XKEY_PERIOD,"Sn"},{XKEY_COMMA,"Sm"},{XKEY_QUEST,"Sc"},
+	{XKEY_PERIOD,"Sn"},{XKEY_COMMA,"Sm"},{XKEY_BSLASH,"Sc"},
 	{XKEY_LEFT,"C5"},{XKEY_DOWN,"C6"},{XKEY_UP,"C7"},{XKEY_RIGHT,"C8"},
 	{XKEY_PGDN,"C3"},{XKEY_PGUP,"C4"},
 

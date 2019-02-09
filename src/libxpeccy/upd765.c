@@ -8,6 +8,9 @@
 #define DBGOUT(args...)
 #endif
 
+#define TRBBYTE 15000	// 15mks min
+#define TRBSRT 1
+
 int seekADR(FDC*);	// from VG93: wait & read ADR mark in fdc->buf
 
 // wait until all args is done
@@ -56,7 +59,7 @@ int uGetByte(FDC* fdc) {
 		fdc->tmp = flpRd(fdc->flp);
 		flpNext(fdc->flp, fdc->side);
 		fdc->drq = 1;
-		fdc->wait += turbo ? TURBOBYTE : BYTEDELAY;
+		fdc->wait += turbo ? TRBBYTE : BYTEDELAY;
 		res = 1;
 	}
 	return res;
@@ -116,7 +119,7 @@ void ucalib00(FDC* fdc) {
 	fdc->comBuf[0] |= 4;
 	uSetDrive(fdc);
 	fdc->cnt = 77;			// do 77 step back
-	fdc->wait += turbo ? 1 : fdc->srt;
+	fdc->wait += turbo ? TRBSRT : fdc->srt;
 	fdc->state |= (1 << drv);	// set "flp is in seek mode"
 	fdc->pos++;
 }
@@ -129,7 +132,7 @@ void ucalib01(FDC* fdc) {
 		fdc->pos++;
 	} else if (fdc->cnt > 0) {
 		flpStep(fdc->flp, FLP_BACK);
-		fdc->wait += turbo ? 1 : fdc->srt;
+		fdc->wait += turbo ? TRBSRT : fdc->srt;
 		fdc->cnt--;
 	} else {
 		fdc->sr0 &= 0x0f;
@@ -161,7 +164,7 @@ fdcCall uSenseInt[] = {&uwargs,&usint00,&uTerm};
 void useek00(FDC* fdc) {
 	uSetDrive(fdc);
 	fdc->trk = fdc->flp->trk;
-	fdc->wait += turbo ? 1 : fdc->srt;
+	fdc->wait += turbo ? TRBSRT : fdc->srt;
 	fdc->pos++;
 }
 
@@ -172,11 +175,11 @@ void useek01(FDC* fdc) {
 		fdc->pos++;
 	} else if (fdc->trk < fdc->comBuf[1]) {
 		flpStep(fdc->flp, FLP_FORWARD);
-		fdc->wait += turbo ? 1 : fdc->srt;
+		fdc->wait += turbo ? TRBSRT : fdc->srt;
 		fdc->trk++;
 	} else {
 		flpStep(fdc->flp, FLP_BACK);
-		fdc->wait += turbo ? 1 : fdc->srt;
+		fdc->wait += turbo ? TRBSRT : fdc->srt;
 		fdc->trk--;
 	}
 }
@@ -268,7 +271,7 @@ void uread01(FDC* fdc) {
 int ureadCHK(FDC* fdc, int rt, int wt) {
 	fdc->tmp = flpRd(fdc->flp);
 	flpNext(fdc->flp, fdc->side);
-	fdc->wait += turbo ? TURBOBYTE : BYTEDELAY;
+	fdc->wait += turbo ? TRBBYTE : BYTEDELAY;
 	if (fdc->flp->field == rt) return 1;
 	if ((fdc->flp->field == wt) && (~fdc->com & 0x20)) {
 		fdc->sr2 |= 0x40;
@@ -312,7 +315,7 @@ void uread03(FDC* fdc) {
 	fdc->state |= 0x10;		// wr/rd operation
 	fdc->drq = 0;
 	fdc->dir = 1;
-	fdc->wait = turbo ? TURBOBYTE : BYTEDELAY;
+	fdc->wait = turbo ? TRBBYTE : BYTEDELAY;
 	fdc->pos++;
 }
 
@@ -322,7 +325,7 @@ void uread04(FDC* fdc) {
 	fdc->cnt--;
 	if (fdc->cnt < 1) {
 		fdc->pos++;
-		fdc->wait = turbo ? TURBOBYTE : BYTEDELAY;
+		fdc->wait = turbo ? TRBBYTE : BYTEDELAY;
 	}
 }
 
@@ -358,7 +361,7 @@ void uread00(FDC* fdc) {
 		uTerm(fdc);		// terminate
 	} else {
 		fdc->cnt = 2;
-		fdc->wait += turbo ? 1 : fdc->hlt;	// load head
+		fdc->wait += turbo ? TRBBYTE : fdc->hlt;	// load head
 		fdc->pos++;
 	}
 }
@@ -475,7 +478,7 @@ void uscan01(FDC* fdc) {
 	fdc->cnt = 0x80 << (fdc->buf[3] & 3);
 	fdc->drq = 0;
 	fdc->dir = 1;
-	fdc->wait = turbo ? TURBOBYTE : BYTEDELAY;
+	fdc->wait = turbo ? TRBBYTE : BYTEDELAY;
 	fdc->pos++;
 }
 
@@ -501,7 +504,7 @@ void uscan02(FDC* fdc) {
 	fdc->cnt--;
 	if (fdc->cnt < 1) {
 		fdc->pos++;
-		fdc->wait = turbo ? TURBOBYTE : BYTEDELAY;
+		fdc->wait = turbo ? TRBBYTE : BYTEDELAY;
 	}
 }
 
@@ -660,7 +663,7 @@ void uReset(FDC* fdc) {
 	fdc->sec = 0;
 	fdc->data = 0;
 	fdc->state = 0;
-	fdc->srt = 0;
+	fdc->srt = 1000;
 	fdc->hlt = 0;
 	fdc->hut = 0;
 	fdc->resCnt = 0;

@@ -185,12 +185,12 @@ MainWin::MainWin() {
 }
 
 // gamepad mapper
+// xJoyMapEntry::key is XKEY_*
 
 void MainWin::mapRelease(Computer* comp, xJoyMapEntry ent) {
-	QKeyEvent ev(QEvent::KeyRelease, key2qid(ent.key), Qt::NoModifier);
 	switch(ent.dev) {
 		case JMAP_KEY:
-			keyReleaseEvent(&ev);
+			xkey_release(ent.key, 0);
 			break;
 		case JMAP_JOY:
 			joyRelease(comp->joy, ent.dir);
@@ -203,10 +203,9 @@ void MainWin::mapRelease(Computer* comp, xJoyMapEntry ent) {
 }
 
 void MainWin::mapPress(Computer* comp, xJoyMapEntry ent) {
-	QKeyEvent ev(QEvent::KeyPress, key2qid(ent.key), Qt::NoModifier);
 	switch(ent.dev) {
 		case JMAP_KEY:
-			keyPressEvent(&ev);
+			xkey_press(ent.key, 0);
 			break;
 		case JMAP_JOY:
 			joyPress(comp->joy, ent.dir);
@@ -224,7 +223,9 @@ int sign(int v) {
 }
 
 void MainWin::mapJoystick(Computer* comp, int type, int num, int state) {
-	foreach(xJoyMapEntry xjm, conf.joy.map) {
+	xJoyMapEntry xjm;
+	QList<xJoyMapEntry> presslist;
+	foreach(xjm, conf.joy.map) {
 		if ((type == xjm.type) && (num == xjm.num)) {
 			if (state == 0) {
 				mapRelease(comp, xjm);
@@ -233,22 +234,27 @@ void MainWin::mapJoystick(Computer* comp, int type, int num, int state) {
 					case JOY_AXIS:
 						if (sign(state) == sign(xjm.state)) {
 							xjm.state = state;
-							mapPress(comp, xjm);
+							presslist.append(xjm);
+							//mapPress(comp, xjm);
 						}
 						break;
 					case JOY_HAT:
 						if (state & xjm.state)
-							mapPress(comp, xjm);
+							// mapPress(comp, xjm);
+							presslist.append(xjm);
 						else
 							mapRelease(comp, xjm);
 						break;
 					case JOY_BUTTON:
-						mapPress(comp, xjm);
+						presslist.append(xjm);
+						//mapPress(comp, xjm);
 						break;
 				}
 			}
 		}
 	}
+	foreach (xjm, presslist)
+		mapPress(comp, xjm);
 }
 
 // calling on timer every 20ms
@@ -504,25 +510,32 @@ void MainWin::paintEvent(QPaintEvent*) {
 }
 
 void MainWin::keyPressEvent(QKeyEvent *ev) {
-//	qDebug() << "press " << ev->key();
 	if (comp->debug) {
 		ev->ignore();
 		return;
 	}
+#if defined(__linux) || defined(_WIN32)
+	int keyid = ev->nativeScanCode();
+#else
 	int keyid = qKey2id(ev->key());
-	keyEntry kent = getKeyEntry(keyid);
+#endif
+	xkey_press(keyid, ev->modifiers());
+}
+
+void MainWin::xkey_press(int xkey, Qt::KeyboardModifiers mod) {
+	keyEntry kent = getKeyEntry(xkey);
 
 	if (pckAct->isChecked()) {
 		if (comp->hw->keyp) {
 			comp->hw->keyp(comp, kent);
 		}
-		if (keyid == XKEY_F12) {
+		if (xkey == XKEY_F12) {
 			compReset(comp,RES_DEFAULT);
 			emit s_rzx_stop();
 			// rzxWin->stop();
 		}
-	} else if (ev->modifiers() & Qt::AltModifier) {
-		switch(keyid) {
+	} else if (mod & Qt::AltModifier) {
+		switch(xkey) {
 			case XKEY_ENTER:
 				vid_set_fullscreen(!conf.vid.fullScreen);
 				setMessage(conf.vid.fullScreen ? " fullscreen on " : " fullscreen off ");
@@ -596,7 +609,11 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				break;
 		}
 	} else {
-		switch(keyid) {
+//		if (ev->modifiers() & Qt::ShiftModifier) {
+//			if (comp->hw->keyr)
+//				comp->hw->keyr(comp, getKeyEntry(XKEY_LSHIFT));
+//		}
+		switch(xkey) {
 			case XKEY_PAUSE:
 				conf.emu.pause ^= PR_PAUSE;
 				pause(true,0);
@@ -686,6 +703,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				emit s_rzx_stop();
 				break;
 			default:
+				// printf("%s %c %c\n", kent.name, kent.zxKey.key1, kent.zxKey.key2);
 				if (comp->hw->keyp) {
 					comp->hw->keyp(comp, kent);
 				}
@@ -701,7 +719,16 @@ void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 		ev->ignore();
 		return;
 	}
-	int keyid = qKey2id(ev->key());
+	int keyid;
+#if defined(__linux) || defined(_WIN32)
+	keyid = ev->nativeScanCode();
+#else
+	keyid = qKey2id(ev->key());
+#endif
+	xkey_release(keyid, ev->modifiers());
+}
+
+void MainWin::xkey_release(int keyid, Qt::KeyboardModifiers mod) {
 	keyEntry kent = getKeyEntry(keyid);
 	if (comp->hw->keyr)
 		comp->hw->keyr(comp, kent);

@@ -122,6 +122,9 @@ class MainWin : public QWidget {
 		void fillBookmarkMenu();
 		void fillLayoutMenu();
 
+		void xkey_press(int, Qt::KeyboardModifiers = Qt::NoModifier);
+		void xkey_release(int, Qt::KeyboardModifiers = Qt::NoModifier);
+
 		void closeEvent(QCloseEvent*);
 		void dragEnterEvent(QDragEnterEvent*);
 		void dropEvent(QDropEvent*);

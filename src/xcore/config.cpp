@@ -55,11 +55,6 @@ void initPaths(char* wpath) {
 	strcat(conf.path.boot, "/boot.$B");
 	//conf.path.font = conf.path.confDir + "/appfont.ttf";
 #elif __WIN32
-//    std::string wdir(wpath);
-//	size_t pos = wdir.find_last_of("/\\");
-//	if (pos > 0) {
-//		wdir = wdir.substr(0, pos);
-//	}
 	char wdir[FILENAME_MAX];
 	char* pos = strrchr(wpath, SLSH);
 	if (pos) {
@@ -455,10 +450,7 @@ void loadConfig() {
 				case SECT_TOOLS:
 					break;
 				case SECT_GENERAL:
-					if (pnam=="keys") {
-						conf.keyMapName = pval;
-						loadKeys();
-					}
+					if (pnam=="keys") conf.keyMapName = pval;
 					if (pnam=="startdefault") conf.defProfile = str2bool(pval) ? 1 : 0;
 					if (pnam=="savepaths") conf.storePaths = str2bool(pval) ? 1 : 0;
 					if (pnam == "fdcturbo") setFlagBit(str2bool(pval),&fdcFlag,FDC_FAST);
@@ -488,6 +480,7 @@ void loadConfig() {
 	for (i=0; i<rsListist.size(); i++) addRomset(rsListist[i]);
 	prfLoadAll();
 	setOutput(soutnam.c_str());
+	loadKeys();
 	if (conf.defProfile) {
 		if (!prfSetCurrent("default")) {
 			printf("Can't set default profile! Yes, it happens\n");

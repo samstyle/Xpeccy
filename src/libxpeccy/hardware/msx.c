@@ -183,6 +183,7 @@ void msx_sync(Computer* comp, int ns) {
 	} else if (!irq && (comp->cpu->intrq & Z80_INT)) {		// 1->0 : clear
 		comp->cpu->intrq &= ~Z80_INT;
 	}
+	tsSync(comp->ts, ns);
 }
 
 void msx_keyp(Computer* comp, keyEntry ent) {

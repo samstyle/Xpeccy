@@ -183,7 +183,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	tablist.clear();
 
 	p.first = QIcon(":/images/display.png"); p.second = ui.scrTab; lst.append(p);
-	p.first = QIcon(":/images/note.png"); p.second = ui.ayTab; lst.append(p);
+	p.first = QIcon(":/images/speaker2.png"); p.second = ui.ayTab; lst.append(p);
 	p.first = QIcon(":/images/floppy.png"); p.second = ui.fdcTab; lst.append(p);
 	tablist[HWG_ZX] = lst;
 	lst.clear();
@@ -244,9 +244,9 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.dasmTable->setFocus();
 
 // disasm table
-	ui.dasmTable->setColumnWidth(0,90);
-	ui.dasmTable->setColumnWidth(1,85);
-	ui.dasmTable->setColumnWidth(2,130);
+//	ui.dasmTable->setColumnWidth(0,90);
+//	ui.dasmTable->setColumnWidth(1,85);
+//	ui.dasmTable->setColumnWidth(3,50);
 	ui.dasmTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_LABEL));
 	ui.dasmTable->setItemDelegateForColumn(1, new xItemDelegate(XTYPE_DUMP));
 
@@ -749,9 +749,13 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 
 void setSignal(QLabel* lab, int on) {
 	if (on) {
-		lab->setStyleSheet(QString("font: bold;"));
+		lab->setBackgroundRole(QPalette::ToolTipBase);
+		lab->setForegroundRole(QPalette::ToolTipText);
+		lab->setStyleSheet("font:bold;");
 	} else {
-		lab->setStyleSheet(QString());
+		lab->setBackgroundRole(QPalette::NoRole);
+		lab->setForegroundRole(QPalette::NoRole);
+		lab->setStyleSheet("");
 	}
 }
 
@@ -1123,9 +1127,9 @@ void DebugWin::fillFDC() {
 
 void setCBFlag(QCheckBox* cb, int state) {
 	if ((cb->isChecked() && !state) || (!cb->isChecked() && state)) {
-		cb->setStyleSheet("background-color: rgb(160,255,160);");
+		cb->setBackgroundRole(QPalette::Highlight);
 	} else {
-		cb->setStyleSheet("");
+		cb->setBackgroundRole(QPalette::NoRole);
 	}
 	cb->setChecked(state);
 }
@@ -1140,16 +1144,6 @@ void DebugWin::fillFlags() {
 	setCBFlag(ui.cbF2, flg & 0x04);
 	setCBFlag(ui.cbF1, flg & 0x02);
 	setCBFlag(ui.cbF0, flg & 0x01);
-}
-
-void setLEReg(QLineEdit* le, int num) {
-	QString txt = gethexword(num);
-	if (le->text() == txt) {
-		le->setStyleSheet("");
-	} else {
-		le->setStyleSheet("background-color: rgb(160,255,160);");
-	}
-	le->setText(txt);
 }
 
 void DebugWin::fillCPU() {
@@ -1908,7 +1902,7 @@ void DebugWin::updateScreen() {
 	flag |= ui.cbScrPix->isChecked() ? 2 : 0;
 	flag |= ui.cbScrGrid->isChecked() ? 4 : 0;
 	vidGetScreen(comp->vid, scrImg.bits(), ui.sbScrBank->value(), ui.leScrAdr->getValue(), flag);
-	xColor bcol = comp->vid->pal[comp->vid->brdcol];
+	xColor bcol = comp->vid->pal[comp->vid->nextbrd];
 	QPainter pnt;
 	QPixmap xpxm(276, 212);
 	pnt.begin(&xpxm);

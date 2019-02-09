@@ -9,12 +9,12 @@ xBreakListModel::xBreakListModel(QObject* par):QAbstractTableModel(par) {
 
 }
 
-int xBreakListModel::rowCount(const QModelIndex& idx) const {
+int xBreakListModel::rowCount(const QModelIndex&) const {
 	if (!conf.prof.cur) return 0;
 	return conf.prof.cur->brkList.size();
 }
 
-int xBreakListModel::columnCount(const QModelIndex& idx) const {
+int xBreakListModel::columnCount(const QModelIndex&) const {
 	return 5;
 }
 

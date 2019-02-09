@@ -480,7 +480,10 @@ int prfLoad(std::string nm) {
 					if (pnam == "mouse.wheel") comp->mouse->hasWheel = str2bool(pval) ? 1 : 0;
 					if (pnam == "mouse.swapButtons") comp->mouse->swapButtons = str2bool(pval) ? 1 : 0;
 					if (pnam == "joy.extbuttons") comp->joy->extbuttons = str2bool(pval) ? 1 : 0;
-					if (pnam == "gamepad.map") prf->jmapName = pval;
+					if (pnam == "gamepad.map") {
+						prf->jmapName = pval;
+						padLoadConfig(prf->jmapName);
+					}
 					break;
 				case PS_SDC:
 					if (pnam == "sdcimage") sdcSetImage(comp->sdc,pval.c_str());
