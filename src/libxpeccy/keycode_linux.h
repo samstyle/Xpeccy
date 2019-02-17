@@ -106,16 +106,16 @@
 #define XKEY_NMINUS	82
 #define XKEY_NPLUS	86
 #define XKEY_NENTER	104
-#define XKEY_N7		79
-#define XKEY_N8		80
-#define XKEY_N9		81
-#define XKEY_N4		83
-#define XKEY_N5		84
-#define XKEY_N6		85
+#define XKEY_N0		90
 #define XKEY_N1		87
 #define XKEY_N2		88
 #define XKEY_N3		89
-#define XKEY_N0		90
+#define XKEY_N4		83
+#define XKEY_N5		84
+#define XKEY_N6		85
+#define XKEY_N7		79
+#define XKEY_N8		80
+#define XKEY_N9		81
 
 #endif
 
