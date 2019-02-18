@@ -174,25 +174,26 @@ set(MOCFILES
 
 if(${QT4BUILD})
 
-	find_package(Qt4 COMPONENTS QtCore QtGui REQUIRED)
+	find_package(Qt4 COMPONENTS QtCore QtGui QtNetwork REQUIRED)
 	include(${QT_USE_FILE})
 	qt4_add_resources(RESOURCES ${QRCFILES})
 	qt4_wrap_ui(UIHEADERS ${UIFILES})
 	qt4_wrap_cpp(MOCHEADERS ${MOCFILES})
 	set(LIBRARIES ${LIBRARIES} ${QT_LIBRARIES})
 	set(CPACK_RPM_PACKAGE_REQUIRES "libqt4 >= 4.6, libqt4-x11 >= 4.6")
-	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqtcore4 (>=4.6), libqtgui4 (>=4.6)")
+	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqtcore4 (>=4.6), libqtgui4 (>=4.6) libqt4-network (>=4.6)")
 	set(QT_VER ${QT_VERSION_MAJOR}.${QT_VERSION_MINOR}.${QT_VERSION_PATCH})
 
 else(${QT4BUILD})
 
-	find_package(Qt5Widgets)
-	set(LIBRARIES ${LIBRARIES} Qt5::Widgets)
+	find_package(Qt5Widgets REQUIRED)
+	find_package(Qt5Network REQUIRED)
+	set(LIBRARIES ${LIBRARIES} Qt5::Widgets Qt5::Network)
 	qt5_add_resources(RESOURCES ${QRCFILES})
 	qt5_wrap_ui(UIHEADERS ${UIFILES})
 	qt5_wrap_cpp(MOCHEADERS ${MOCFILES})
 	set(CPACK_RPM_PACKAGE_REQUIRES "libQt5Gui5 >= 5.3, libQt5Widgets5 >= 5.3")
-	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5gui5 (>=5.3), libqt5widgets5 (>=5.3)")
+	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5gui5 (>=5.3), libqt5widgets5 (>=5.3) libqt5network5 (>=5.3)")
 
 	set(QT_VER ${Qt5Widgets_VERSION})
 

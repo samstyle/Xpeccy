@@ -247,6 +247,7 @@ struct xConfig {
 	std::vector<xLayout> layList;
 	std::vector<xBookmark> bookmarkList;
 	QMap<QString, xAdr> labels;
+	unsigned short port;
 	struct {
 		unsigned fast:1;
 		int pause;

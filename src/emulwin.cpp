@@ -182,6 +182,13 @@ MainWin::MainWin() {
 	connect(userMenu,SIGNAL(aboutToHide()),SLOT(menuHide()));
 
 	fillUserMenu();
+
+	srv.listen(QHostAddress::LocalHost, conf.port);
+	if (!srv.isListening()) {
+		shitHappens("Listen server can't start");
+	}
+
+	connect(&srv, SIGNAL(newConnection()),this,SLOT(connected()));
 }
 
 // gamepad mapper
@@ -332,7 +339,7 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 }
 
 // if window is not active release keys & buttons, release mouse
-void MainWin::focusOutEvent(QFocusEvent* ev) {
+void MainWin::focusOutEvent(QFocusEvent*) {
 //	kbdReleaseAll(comp->keyb);
 	mouseReleaseAll(comp->mouse);
 	unsetCursor();
@@ -728,7 +735,7 @@ void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 	xkey_release(keyid, ev->modifiers());
 }
 
-void MainWin::xkey_release(int keyid, Qt::KeyboardModifiers mod) {
+void MainWin::xkey_release(int keyid, Qt::KeyboardModifiers) {
 	keyEntry kent = getKeyEntry(keyid);
 	if (comp->hw->keyr)
 		comp->hw->keyr(comp, kent);
@@ -885,6 +892,13 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		if (conf.joy.joy)
 			SDL_JoystickClose(conf.joy.joy);
 		saveConfig();
+
+		foreach(QTcpSocket* sock, clients) {
+			sock->close();
+			sock->deleteLater();
+		}
+		srv.close();
+
 		ev->accept();
 	} else {
 		ev->ignore();
@@ -1105,6 +1119,16 @@ void MainWin::optApply() {
 	comp = conf.prof.cur->zx;
 	fillUserMenu();
 	updateWindow();
+	if (srv.serverPort() != conf.port) {
+		if (srv.isListening()) {
+			foreach(QTcpSocket* sock, clients)
+				sock->close();
+			srv.close();
+		}
+		srv.listen(QHostAddress::LocalHost, conf.port);
+		if (!srv.isListening())
+			shitHappens("Listen server can't start");
+	}
 	pause(false, PR_OPTS);
 }
 
@@ -1160,6 +1184,29 @@ void MainWin::chLayout(QAction* act) {
 
 void MainWin::umOpen(QAction* act) {
 	load_file(comp, NULL, act->data().toInt(), -1);
+}
+
+// socket
+
+void MainWin::connected() {
+	QTcpSocket* sock = srv.nextPendingConnection();
+	clients.append(sock);
+	sock->write("hello\n");
+	connect(sock,SIGNAL(destroyed()),this,SLOT(disconnected()));
+	connect(sock,SIGNAL(readyRead()),this,SLOT(socketRead()));
+}
+
+void MainWin::disconnected() {
+	QTcpSocket* sock = (QTcpSocket*)sender();
+	disconnect(sock);
+	clients.removeAll(sock);
+	sock->deleteLater();
+}
+
+void MainWin::socketRead() {
+	QTcpSocket* sock = (QTcpSocket*)sender();
+	QByteArray arr = sock->readAll();
+	// and do something with this
 }
 
 // debug stufffff

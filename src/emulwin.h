@@ -6,6 +6,9 @@
 #include <QWidget>
 #include <QString>
 
+#include <QTcpServer>
+#include <QTcpSocket>
+
 #include <SDL.h>
 
 #include "xcore.h"
@@ -72,6 +75,10 @@ class MainWin : public QWidget {
 		void chLayout(QAction*);
 		void umOpen(QAction*);
 
+		void connected();
+		void disconnected();
+		void socketRead();
+
 		void saveVRAM();
 		void saveGBVRAM();
 		void saveNESPPU();
@@ -89,6 +96,9 @@ class MainWin : public QWidget {
 		int scrInterval;
 		int lineBytes;
 		int frameBytes;
+
+		QTcpServer srv;
+		QList<QTcpSocket*> clients;
 
 		int msgTimer;
 		QString msg;

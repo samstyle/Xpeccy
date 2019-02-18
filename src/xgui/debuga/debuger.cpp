@@ -189,6 +189,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	lst.clear();
 	p.first = QIcon(":/images/nespad.png"); p.second = ui.nesTab; lst.append(p);
 	tablist[HWG_NES] = lst;
+	lst.clear();
 	p.first = QIcon(":/images/gameboy.png"); p.second = ui.gbTab; lst.append(p);
 	tablist[HWG_GB] = lst;
 	lst.clear();

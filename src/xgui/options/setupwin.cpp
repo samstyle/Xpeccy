@@ -486,6 +486,7 @@ void SetupWin::start(xProfile* p) {
 	buildpadlist();
 	setRFIndex(ui.cbPadMap, trUtf8(conf.prof.cur->jmapName.c_str()));
 // tools
+	ui.sbPort->setValue(conf.port);
 	buildmenulist();
 // leds
 	ui.cbMouseLed->setChecked(conf.led.mouse);
@@ -636,6 +637,8 @@ void SetupWin::apply() {
 	conf.tape.fast = ui.cbTapeFast->isChecked() ? 1 : 0;
 // input
 	conf.prof.cur->jmapName = getRFSData(ui.cbPadMap).toStdString();
+// tools
+	conf.port = ui.sbPort->value();
 // leds
 	conf.led.mouse = ui.cbMouseLed->isChecked() ? 1 : 0;
 	conf.led.joy = ui.cbJoyLed->isChecked() ? 1 : 0;
