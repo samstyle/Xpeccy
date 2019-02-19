@@ -6,8 +6,10 @@
 #include <QWidget>
 #include <QString>
 
+#ifdef USENETWORK
 #include <QTcpServer>
 #include <QTcpSocket>
+#endif
 
 #include <SDL.h>
 
@@ -62,7 +64,6 @@ class MainWin : public QWidget {
 		void tapStateChanged(int,int);
 		void setProfile(std::string);
 	private slots:
-		// void onTimer();
 		void updateSatellites();
 		void menuHide();
 		void menuShow();
@@ -74,11 +75,9 @@ class MainWin : public QWidget {
 		void reset(QAction*);
 		void chLayout(QAction*);
 		void umOpen(QAction*);
-
 		void connected();
 		void disconnected();
 		void socketRead();
-
 		void saveVRAM();
 		void saveGBVRAM();
 		void saveNESPPU();
@@ -88,7 +87,6 @@ class MainWin : public QWidget {
 		unsigned block:1;
 
 		QIcon icon;
-		//QTimer timer;
 		int timid;
 		int secid;
 
@@ -97,8 +95,10 @@ class MainWin : public QWidget {
 		int lineBytes;
 		int frameBytes;
 
+		#ifdef USENETWORK
 		QTcpServer srv;
 		QList<QTcpSocket*> clients;
+		#endif
 
 		int msgTimer;
 		QString msg;
@@ -107,7 +107,6 @@ class MainWin : public QWidget {
 		bool saveChanged();
 		void updateHead();
 		void screenShot();
-//		void putLeds();
 
 		void mapJoystick(Computer*, int, int, int);
 		void mapPress(Computer*, xJoyMapEntry);
@@ -117,14 +116,12 @@ class MainWin : public QWidget {
 		QMenu* bookmarkMenu;
 		QMenu* profileMenu;
 		QMenu* layoutMenu;
-//		QMenu* vmodeMenu;
 		QMenu* resMenu;
 		QMenu* fileMenu;
 #ifdef ISDEBUG
 		QMenu* dbgMenu;
 #endif
 		QAction* pckAct;
-//		QAction* nsAct;
 
 		void initUserMenu();
 		void fillUserMenu();

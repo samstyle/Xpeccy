@@ -16,8 +16,11 @@ static int posp = 0;			// play pos
 static int smpCount = 0;
 OutSys *sndOutput = NULL;
 static int sndChunks = 882;
-// static int sndBufSize = 1764;
-int nsPerSample = 23143;
+
+#define DISCRATE 32
+int nsPerSample = 22675;
+static int disCount = 0;
+static sndPair prebuf[DISCRATE];
 
 static sndPair sndLev;
 
@@ -31,9 +34,6 @@ OutSys* findOutSys(const char*);
 // NOTE: need sync|flush devices if debug
 int sndSync(Computer* comp) {
 	if (!conf.emu.pause || comp->debug) {
-//		tapSync(comp->tape,comp->tapCount);
-//		comp->tapCount = 0;
-//		tsSync(comp->ts,nsPerSample);
 		gsFlush(comp->gs);
 		saaFlush(comp->saa);
 		if (!conf.emu.fast && !conf.emu.pause) {
@@ -42,14 +42,30 @@ int sndSync(Computer* comp) {
 			sndLev.right = sndLev.right * conf.snd.vol.master / 100;
 			if (sndLev.left > 0x7fff) sndLev.left = 0x7fff;
 			if (sndLev.right > 0x7fff) sndLev.right = 0x7fff;
-			sbuf[posf & 0x3fff] = sndLev.left & 0xff;
-			posf++;
-			sbuf[posf & 0x3fff] = (sndLev.left >> 8) & 0xff;
-			posf++;
-			sbuf[posf & 0x3fff] = sndLev.right & 0xff;
-			posf++;
-			sbuf[posf & 0x3fff] = (sndLev.right >> 8) & 0xff;
-			posf++;
+
+			prebuf[disCount] = sndLev;
+			disCount--;
+			if (disCount < 0) {
+				sndLev.left = 0;
+				sndLev.right = 0;
+				for (disCount = 0; disCount < DISCRATE; disCount++) {
+					sndLev.left += prebuf[disCount].left;
+					sndLev.right += prebuf[disCount].right;
+				}
+				sndLev.left /= DISCRATE;
+				sndLev.right /= DISCRATE;
+
+				sbuf[posf & 0x3fff] = sndLev.left & 0xff;
+				posf++;
+				sbuf[posf & 0x3fff] = (sndLev.left >> 8) & 0xff;
+				posf++;
+				sbuf[posf & 0x3fff] = sndLev.right & 0xff;
+				posf++;
+				sbuf[posf & 0x3fff] = (sndLev.right >> 8) & 0xff;
+				posf++;
+
+				disCount = DISCRATE - 1;
+			}
 		}
 	}
 	smpCount++;
@@ -58,14 +74,6 @@ int sndSync(Computer* comp) {
 	smpCount = 0;
 	return 1;
 }
-
-/*
-void sndCalibrate(Computer* comp) {
-	//sndChunks = conf.snd.rate / 50;			// samples / frame
-	//sndBufSize = conf.snd.chans * sndChunks;	// buffer size
-	//nsPerSample = 1e9 / conf.snd.rate;		// ns / sample
-}
-*/
 
 std::string sndGetOutputName() {
 	std::string res = "NULL";
@@ -77,7 +85,6 @@ std::string sndGetOutputName() {
 
 void setOutput(const char* name) {
 	if (sndOutput != NULL) {
-		// if (!strcmp(name, sndOutput->name)) return;	// same
 		sndOutput->close();
 	}
 	sndOutput = findOutSys(name);
@@ -88,30 +95,8 @@ void setOutput(const char* name) {
 		printf("Can't open sound system '%s'. Reset to NULL\n",name);
 		setOutput("NULL");
 	}
-	nsPerSample = 1e9 / conf.snd.rate;
+	nsPerSample = 1e9 / conf.snd.rate / DISCRATE;
 }
-
-/*
-int sndOpen() {
-	// sndChunks = conf.snd.rate / 50;
-	if (sndOutput == NULL) return 0;
-	if (!sndOutput->open()) {
-		setOutput("NULL");
-	}
-	nsPerSample = 1e9 / conf.snd.rate;
-	printf("%i %i\n",nsPerSample,sndChunks);
-	posp = 0;
-	posf = 0x2000;
-	return 1;
-}
-*/
-
-/*
-void sndPlay() {
-	if (!sndOutput) return;
-	sndOutput->play();
-}
-*/
 
 void sndClose() {
 	if (sndOutput != NULL)
@@ -130,16 +115,6 @@ std::string sndGetName() {
 // Sound output
 //------------------------
 
-/*
-void fillBuffer(int len) {
-	int pos = 0;
-	while (pos < len) {
-		bufB.data[pos++] = 0x80 + bufA.data[playPos++];
-		playPos &= 0x1fff;
-	}
-}
-*/
-
 static SDL_TimerID tid;
 extern int sleepy;
 
@@ -157,7 +132,7 @@ int null_open() {
 		printf("Can't create SDL_Timer, syncronisation unavailable\n");
 		throw(0);
 	}
-	sndChunks = conf.snd.rate / 50;
+	sndChunks = conf.snd.rate / 50 * DISCRATE;
 	return 1;
 }
 
@@ -195,7 +170,6 @@ void sdlPlayAudio(void*, Uint8* stream, int len) {
 }
 
 int sdlopen() {
-//	printf("Open SDL audio device...");
 	int res;
 	SDL_AudioSpec asp;
 	SDL_AudioSpec dsp;
@@ -210,7 +184,7 @@ int sdlopen() {
 		res = 0;
 	} else {
 		printf("SDL audio device opening...success: %i %i (%i / %i)\n",dsp.freq, dsp.samples,dsp.format,AUDIO_S16LSB);
-		sndChunks = dsp.samples;
+		sndChunks = dsp.samples * DISCRATE;
 		SDL_PauseAudio(0);
 		res = 1;
 	}

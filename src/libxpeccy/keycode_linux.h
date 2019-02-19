@@ -71,8 +71,8 @@
 #define XKEY_B		56
 #define XKEY_N		57
 #define XKEY_M		58
-#define XKEY_PERIOD	59
-#define XKEY_COMMA	60
+#define XKEY_COMMA	59
+#define XKEY_PERIOD	60
 #define XKEY_BSLASH	61
 #define XKEY_RSHIFT	62
 

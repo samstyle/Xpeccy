@@ -125,6 +125,7 @@ void aymSetReg(aymChip* ay, unsigned char val) {
 		case 0x0b:
 		case 0x0c:
 			tone = ay->reg[11] | (ay->reg[12] << 8);
+			if (!tone) tone++;
 			ay->chanE.per = tone << 4;
 			break;
 		case 0x0d:

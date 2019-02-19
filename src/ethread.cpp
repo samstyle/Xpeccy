@@ -63,14 +63,15 @@ void xThread::emuCycle(Computer* comp) {
 		} else {
 			sndNs += compExec(comp);
 			// tape trap
-			if ((comp->mem->map[0].type == MEM_ROM) && comp->rom && !comp->dos) {		// FIXME: shit
+			// FIXME: shit
+			if ((comp->mem->map[0].type == MEM_ROM) && comp->rom && !comp->dos) {
 				if (comp->cpu->pc == 0x56b) tapeCatch(comp);
 				if ((comp->cpu->pc == 0x5e2) && conf.tape.autostart)
 					emit tapeSignal(TW_STATE,TWS_STOP);
 			}
 		}
-		// if need - request sound buffer update
-		if (sndNs > nsPerSample) {
+		// sound buffer update
+		while (sndNs > nsPerSample) {
 			sndSync(comp);
 			sndNs -= nsPerSample;
 		}

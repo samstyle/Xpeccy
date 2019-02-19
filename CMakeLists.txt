@@ -174,26 +174,42 @@ set(MOCFILES
 
 if(${QT4BUILD})
 
-	find_package(Qt4 COMPONENTS QtCore QtGui QtNetwork REQUIRED)
+	if (${USEQTNETWORK})
+		find_package(Qt4 COMPONENTS QtCore QtGui QtNetwork REQUIRED)
+	else (${USEQTNETWORK})
+		find_package(Qt4 COMPONENTS QtCore QtGui REQUIRED)
+	endif(${USEQTNETWORK})
 	include(${QT_USE_FILE})
 	qt4_add_resources(RESOURCES ${QRCFILES})
 	qt4_wrap_ui(UIHEADERS ${UIFILES})
 	qt4_wrap_cpp(MOCHEADERS ${MOCFILES})
-	set(LIBRARIES ${LIBRARIES} ${QT_LIBRARIES})
 	set(CPACK_RPM_PACKAGE_REQUIRES "libqt4 >= 4.6, libqt4-x11 >= 4.6")
-	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqtcore4 (>=4.6), libqtgui4 (>=4.6) libqt4-network (>=4.6)")
+	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqtcore4 (>=4.6), libqtgui4 (>=4.6)")
+
+	if(${USEQTNETWORK})
+		set(CPACK_DEBIAN_PACKAGE_DEPENDS ${CPACK_DEBIAN_PACKAGE_DEPENDS} "libqt4-network (>=4.6)")
+		add_definitions("-DUSENETWORK")
+	endif(${USEQTNETWORK)
+
+	set(LIBRARIES ${LIBRARIES} ${QT_LIBRARIES})
 	set(QT_VER ${QT_VERSION_MAJOR}.${QT_VERSION_MINOR}.${QT_VERSION_PATCH})
 
 else(${QT4BUILD})
 
 	find_package(Qt5Widgets REQUIRED)
-	find_package(Qt5Network REQUIRED)
-	set(LIBRARIES ${LIBRARIES} Qt5::Widgets Qt5::Network)
+	set(LIBRARIES ${LIBRARIES} Qt5::Widgets)
 	qt5_add_resources(RESOURCES ${QRCFILES})
 	qt5_wrap_ui(UIHEADERS ${UIFILES})
 	qt5_wrap_cpp(MOCHEADERS ${MOCFILES})
 	set(CPACK_RPM_PACKAGE_REQUIRES "libQt5Gui5 >= 5.3, libQt5Widgets5 >= 5.3")
-	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5gui5 (>=5.3), libqt5widgets5 (>=5.3) libqt5network5 (>=5.3)")
+	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5gui5 (>=5.3), libqt5widgets5 (>=5.3)")
+
+	if(${USEQTNETWORK})
+		find_package(Qt5Network REQUIRED)
+		set(LIBRARIES ${LIBRARIES} Qt5::Network)
+		set(CPACK_DEBIAN_PACKAGE_DEPENDS ${CPACK_DEBIAN_PACKAGE_DEPENDS} "libqt5network5 (>=5.3)")
+		add_definitions("-DUSENETWORK")
+	endif(${USEQTNETWORK})
 
 	set(QT_VER ${Qt5Widgets_VERSION})
 
@@ -276,6 +292,12 @@ message(STATUS "Xpeccy version : ${XVER}")
 message(STATUS "OS : ${CMAKE_SYSTEM_NAME}")
 message(STATUS "Qt version : ${QT_VER}")
 message(STATUS "SDL version : ${SDL_VER}")
+
+if (${USEQTNETWORK})
+	message(STATUS "Network: yes")
+else()
+	message(STATUS "Network: no")
+endif()
 
 if (BIG_ENDIAN)
 	message(STATUS "Endianness: BE")

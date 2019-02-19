@@ -183,12 +183,16 @@ MainWin::MainWin() {
 
 	fillUserMenu();
 
+#ifdef USENETWORK
 	srv.listen(QHostAddress::LocalHost, conf.port);
 	if (!srv.isListening()) {
 		shitHappens("Listen server can't start");
+	} else {
+		printf("Listening port %i\n",conf.port);
 	}
 
 	connect(&srv, SIGNAL(newConnection()),this,SLOT(connected()));
+#endif
 }
 
 // gamepad mapper
@@ -549,9 +553,11 @@ void MainWin::xkey_press(int xkey, Qt::KeyboardModifiers mod) {
 				updateWindow();
 				saveConfig();
 				break;
+#ifdef ISDEBUG
 			case XKEY_HOME:
 				debugAction();
 				break;
+#endif
 			case XKEY_1:
 				vid_set_zoom(1);
 				updateWindow();
@@ -892,13 +898,13 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		if (conf.joy.joy)
 			SDL_JoystickClose(conf.joy.joy);
 		saveConfig();
-
+#ifdef USENETWORK
 		foreach(QTcpSocket* sock, clients) {
 			sock->close();
 			sock->deleteLater();
 		}
 		srv.close();
-
+#endif
 		ev->accept();
 	} else {
 		ev->ignore();
@@ -1119,6 +1125,7 @@ void MainWin::optApply() {
 	comp = conf.prof.cur->zx;
 	fillUserMenu();
 	updateWindow();
+#ifdef USENETWORK
 	if (srv.serverPort() != conf.port) {
 		if (srv.isListening()) {
 			foreach(QTcpSocket* sock, clients)
@@ -1126,9 +1133,13 @@ void MainWin::optApply() {
 			srv.close();
 		}
 		srv.listen(QHostAddress::LocalHost, conf.port);
-		if (!srv.isListening())
+		if (!srv.isListening()) {
 			shitHappens("Listen server can't start");
+		} else {
+			printf("Listening port %i\n", conf.port);
+		}
 	}
+#endif
 	pause(false, PR_OPTS);
 }
 
@@ -1189,27 +1200,34 @@ void MainWin::umOpen(QAction* act) {
 // socket
 
 void MainWin::connected() {
+#ifdef USENETWORK
 	QTcpSocket* sock = srv.nextPendingConnection();
 	clients.append(sock);
 	sock->write("hello\n");
 	connect(sock,SIGNAL(destroyed()),this,SLOT(disconnected()));
 	connect(sock,SIGNAL(readyRead()),this,SLOT(socketRead()));
+#endif
 }
 
 void MainWin::disconnected() {
+#ifdef USENETWORK
 	QTcpSocket* sock = (QTcpSocket*)sender();
 	disconnect(sock);
 	clients.removeAll(sock);
 	sock->deleteLater();
+#endif
 }
 
 void MainWin::socketRead() {
+#ifdef USENETWORK
 	QTcpSocket* sock = (QTcpSocket*)sender();
 	QByteArray arr = sock->readAll();
 	// and do something with this
+#endif
 }
 
 // debug stufffff
+
 void MainWin::saveVRAM() {
 	QString path = QFileDialog::getSaveFileName(this,"Save VRAM");
 	if (path.isEmpty()) return;
