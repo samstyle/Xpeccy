@@ -20,8 +20,7 @@ static int sndChunks = 882;
 #define DISCRATE 32
 int nsPerSample = 22675;
 static int disCount = 0;
-static sndPair prebuf[DISCRATE];
-
+static sndPair tmpLev = {0, 0};
 static sndPair sndLev;
 
 OutSys* findOutSys(const char*);
@@ -43,17 +42,15 @@ int sndSync(Computer* comp) {
 			if (sndLev.left > 0x7fff) sndLev.left = 0x7fff;
 			if (sndLev.right > 0x7fff) sndLev.right = 0x7fff;
 
-			prebuf[disCount] = sndLev;
+			tmpLev.left += sndLev.left;
+			tmpLev.right += sndLev.right;
 			disCount--;
 			if (disCount < 0) {
-				sndLev.left = 0;
-				sndLev.right = 0;
-				for (disCount = 0; disCount < DISCRATE; disCount++) {
-					sndLev.left += prebuf[disCount].left;
-					sndLev.right += prebuf[disCount].right;
-				}
-				sndLev.left /= DISCRATE;
-				sndLev.right /= DISCRATE;
+				sndLev.left = tmpLev.left / DISCRATE;
+				sndLev.right = tmpLev.right / DISCRATE;
+				tmpLev.left = 0;
+				tmpLev.right = 0;
+				disCount = DISCRATE - 1;
 
 				sbuf[posf & 0x3fff] = sndLev.left & 0xff;
 				posf++;
@@ -63,8 +60,6 @@ int sndSync(Computer* comp) {
 				posf++;
 				sbuf[posf & 0x3fff] = (sndLev.right >> 8) & 0xff;
 				posf++;
-
-				disCount = DISCRATE - 1;
 			}
 		}
 	}
