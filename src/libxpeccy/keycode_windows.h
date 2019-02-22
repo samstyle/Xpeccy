@@ -82,7 +82,7 @@
 #define XKEY_SPACE	57
 #define XKEY_RALT	312
 #define XKEY_MENU	349
-#define	XKEY_RCTRL	-1		// TODO
+#define	XKEY_RCTRL	9999		// TODO
 
 #define XKEY_HOME	327
 #define XKEY_END	335
@@ -96,11 +96,11 @@
 #define XKEY_DOWN	336
 #define XKEY_RIGHT	333
 
-#define XKEY_SYSRQ	-1
+#define XKEY_SYSRQ	9999
 #define	XKEY_PAUSE	69
 #define	XKEY_SCRLCK	70
 
-#define XKEY_NUMLCK	-1		// TODO
+#define XKEY_NUMLCK	9999		// TODO
 #define XKEY_NSLASH	309
 #define XKEY_NMUL	55
 #define XKEY_NMINUS	74

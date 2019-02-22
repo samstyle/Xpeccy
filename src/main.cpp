@@ -70,7 +70,7 @@ int main(int ac,char** av) {
 	TapeWin tapw(&mwin);
 	RZXWin rzxw(&mwin);
 	xWatcher wutw(&mwin);
-	keyWindow keyw;
+	keyWindow keyw(&mwin);
 
 	app.connect(&ethread, SIGNAL(s_frame()), &mwin, SLOT(d_frame()));
 	app.connect(&ethread, SIGNAL(dbgRequest()), &mwin, SLOT(doDebug()));
@@ -104,7 +104,8 @@ int main(int ac,char** av) {
 	app.connect(&mwin, SIGNAL(s_keywin_upd(Keyboard*)), &keyw, SLOT(upd(Keyboard*)));
 	app.connect(&mwin, SIGNAL(s_keywin_close()), &keyw, SLOT(close()));
 	app.connect(&mwin, SIGNAL(s_keywin_rall(Keyboard*)), &keyw, SLOT(rall(Keyboard*)));
-
+	app.connect(&keyw, SIGNAL(s_key_press(QKeyEvent*)), &mwin, SLOT(kPress(QKeyEvent*)));
+	app.connect(&keyw, SIGNAL(s_key_release(QKeyEvent*)), &mwin, SLOT(kRelease(QKeyEvent*)));
 
 	int i;
 	char* parg;

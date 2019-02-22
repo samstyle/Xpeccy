@@ -4,7 +4,10 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <limits.h>
+#ifdef __linux
+#include <linux/limits.h>
+#endif
+
 #include <SDL_joystick.h>
 
 #include <QString>
@@ -151,13 +154,13 @@ int prfSave(std::string);
 void initPaths(char*);
 void loadConfig();
 void saveConfig();
-void loadKeys();
 
 extern std::map<std::string, int> shotFormat;
 
 // keymap
 
-void initKeyMap();
+void loadKeys();
+// void initKeyMap();
 void setKey(const char*,const char,const char);
 keyEntry getKeyEntry(int);
 int getKeyIdByName(const char*);

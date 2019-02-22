@@ -147,7 +147,6 @@ MainWin::MainWin() {
 	msg.clear();
 	alphabet.load(":/font.png");
 
-	initKeyMap();
 	conf.scrShot.format = "png";
 	vLayout vlay = {{448,320},{74,48},{64,32},{256,192},{0,0},64};
 	addLayout("default", vlay);
@@ -520,6 +519,14 @@ void MainWin::paintEvent(QPaintEvent*) {
 	pnt.end();
 }
 
+void MainWin::kPress(QKeyEvent* ev) {
+	keyPressEvent(ev);
+}
+
+void MainWin::kRelease(QKeyEvent* ev) {
+	keyReleaseEvent(ev);
+}
+
 void MainWin::keyPressEvent(QKeyEvent *ev) {
 	if (comp->debug) {
 		ev->ignore();
@@ -535,6 +542,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 
 void MainWin::xkey_press(int xkey, Qt::KeyboardModifiers mod) {
 	keyEntry kent = getKeyEntry(xkey);
+//	qDebug() << kent.name << kent.zxKey.key1 << kent.zxKey.key2;
 
 	if (pckAct->isChecked()) {
 		if (comp->hw->keyp) {

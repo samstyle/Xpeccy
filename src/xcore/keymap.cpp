@@ -1,3 +1,5 @@
+#include <fstream>
+
 #include <string.h>
 #include <math.h>
 
@@ -49,8 +51,6 @@ keyEntry keyMapInit[] = {
 	{"LC",XKEY_LCTRL,{'S',0},{0,0},{MSXK_CTRL,0},{0,0x80},0x14},
 	{"SPC",XKEY_SPACE,{' ',0},{0,0},{' ',0},{0x20,0x71},0x29},
 
-//	{"RS",XKEY_RSHIFT,{'C',0},{0,0},{MSXK_SHIFT,0},{0,0x08},0x59},
-//	{"RC",XKEY_RCTRL,{'S',0},{0,0},{MSXK_CTRL,0},{0,0x80},0x14e0},
 	{"RS",XKEY_RSHIFT,{0,0},{0,0},{0,0},{0,0},0},
 	{"RC",XKEY_RCTRL,{0,0},{0,0},{0,0},{0,0},0},
 
@@ -129,20 +129,55 @@ const char* getKeyNameById(int id) {
 void setKey(const char* key,const char key1, const char key2) {
 	int idx = 0;
 	while (keyMap[idx].key != ENDKEY) {
-		if (strcmp(key,keyMap[idx].name) == 0) {
+		if (!strcmp(key, keyMap[idx].name)) {
 			keyMap[idx].zxKey.key1 = key1;
 			keyMap[idx].zxKey.key2 = key2;
+//			printf("%s -> %c %c\n", keyMap[idx].name, key1, key2);
 		}
 		idx++;
 	}
 }
 
 void initKeyMap() {
+//	printf("init keys\n");
 	int idx = -1;
 	do {
 		idx++;
 		keyMap[idx] = keyMapInit[idx];
 	} while (keyMapInit[idx].key != ENDKEY);
+}
+
+void loadKeys() {
+	char sfnam[FILENAME_MAX];
+	strcpy(sfnam, conf.path.confDir);
+	strcat(sfnam, SLASH);
+	strcat(sfnam, conf.keyMapName.c_str());
+	initKeyMap();
+	if ((conf.keyMapName == "") || (conf.keyMapName == "default")) return;
+	std::ifstream file(sfnam);
+	if (!file.good()) {
+		printf("Can't open keyboard layout. Default one will be used\n");
+		return;
+	}
+	char buf[1024];
+	std::pair<std::string,std::string> spl;
+	std::string line;
+	std::vector<std::string> vec;
+	char key1;
+	char key2;
+	while (!file.eof()) {
+		file.getline(buf,1023);
+		line = std::string(buf);
+		vec = splitstr(line,"\t");
+		if (vec.size() > 0) {
+			while (vec.size() < 3)
+				vec.push_back("");
+			key1 = (vec[1].size() > 0) ? vec[1].at(0) : 0;
+			key2 = (vec[2].size() > 0) ? vec[2].at(0) : 0;
+//			printf("%s %c %c\n", vec[0].c_str(), key1, key2);
+			setKey(vec[0].c_str(),key1,key2);
+		}
+	}
 }
 
 // key translation

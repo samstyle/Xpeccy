@@ -63,6 +63,8 @@ class MainWin : public QWidget {
 		void pause(bool, int);
 		void tapStateChanged(int,int);
 		void setProfile(std::string);
+		void kPress(QKeyEvent*);
+		void kRelease(QKeyEvent*);
 	private slots:
 		void updateSatellites();
 		void menuHide();

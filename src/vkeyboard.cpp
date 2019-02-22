@@ -13,13 +13,12 @@ static unsigned char kwMap[4][10] = {
 	{'C','z','x','c','v','b','n','m','S',' '}
 };
 
-keyWindow::keyWindow(QWidget* p):QLabel(p) {
+keyWindow::keyWindow(QWidget* p):QDialog(p) {
 	kb = NULL;
 	xent.key = ENDKEY;
 	xent.zxKey.key1 = 0;
 	xent.zxKey.key2 = 0;
 	QPixmap pxm(":/images/keymap.png");
-	setPixmap(pxm);
 	setFixedSize(pxm.size());
 	setWindowIcon(QIcon(":/images/keyboard.png"));
 	setWindowTitle("ZX Keyboard");
@@ -52,8 +51,6 @@ void keyWindow::paintEvent(QPaintEvent*) {
 	int row, pos;
 	pnt.begin(this);
 	pnt.fillRect(QRectF(0,0,1,1), qRgba(0,0,0,0));
-//	pnt.setPen(qRgb(0, 200, 255));
-//	pnt.setBrush(QBrush(qRgb(0, 180, 235)));
 	for(int i = 0; i < 8; i++) {
 		pos = (i & 4) ? 0 : 9;
 		row = (i & 4) ? (i & 3) : (~i & 3);
@@ -61,7 +58,6 @@ void keyWindow::paintEvent(QPaintEvent*) {
 		while(val) {
 			if (val & 1) {
 				pnt.fillRect(pos * wid, 10 + row * hig, wid, hig, qRgb(0, 200, 255));
-				//pnt.drawRoundRect(pos * wid, row * hig, wid, hig);
 			}
 			val >>= 1;
 			pos += (i & 4) ? 1 : -1;
@@ -106,6 +102,8 @@ void keyWindow::mouseReleaseEvent(QMouseEvent* ev) {
 }
 
 void keyWindow::keyPressEvent(QKeyEvent* ev) {
+	emit s_key_press(ev);
+#if 0
 	int keyid = qKey2id(ev->key());
 	keyEntry kent = getKeyEntry(keyid);
 	if (ev->modifiers() & Qt::AltModifier) {
@@ -115,11 +113,15 @@ void keyWindow::keyPressEvent(QKeyEvent* ev) {
 		kbdPress(kb, kent);
 		update();
 	}
+#endif
 }
 
 void keyWindow::keyReleaseEvent(QKeyEvent* ev) {
+	emit s_key_release(ev);
+#if 0
 	int keyid = qKey2id(ev->key());
 	keyEntry kent = getKeyEntry(keyid);
 	kbdRelease(kb, kent);
 	update();
+#endif
 }

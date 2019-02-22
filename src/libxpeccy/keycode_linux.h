@@ -96,7 +96,7 @@
 #define XKEY_DOWN	116
 #define XKEY_RIGHT	114
 
-#define XKEY_SYSRQ	-1
+#define XKEY_SYSRQ	9999
 #define	XKEY_PAUSE	127
 #define	XKEY_SCRLCK	78
 

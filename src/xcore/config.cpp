@@ -200,38 +200,6 @@ void saveConfig() {
 }
 
 
-void loadKeys() {
-	char sfnam[FILENAME_MAX];
-	strcpy(sfnam, conf.path.confDir);
-	strcat(sfnam, SLASH);
-	strcat(sfnam, conf.keyMapName.c_str());
-	initKeyMap();
-	if ((conf.keyMapName == "") || (conf.keyMapName == "default")) return;
-	std::ifstream file(sfnam);
-	if (!file.good()) {
-		printf("Can't open keyboard layout. Default one will be used\n");
-		return;
-	}
-	char* buf = new char[1024];
-	std::pair<std::string,std::string> spl;
-	std::string line;
-	std::vector<std::string> vec;
-	char key1;
-	char key2;
-	while (!file.eof()) {
-		file.getline(buf,1023);
-		line = std::string(buf);
-		vec = splitstr(line,"\t");
-		if (vec.size() > 1) {
-			if (vec.size() == 2) vec.push_back("");
-			key1 = (vec[1].size() > 0) ? vec[1].at(0) : 0;
-			key2 = (vec[2].size() > 0) ? vec[2].at(0) : 0;
-			setKey(vec[0].c_str(),key1,key2);
-		}
-	}
-	free(buf);
-}
-
 void copyFile(const char* src, const char* dst) {
 	QFile fle(QString::fromLocal8Bit(src));
 	fle.open(QFile::ReadOnly);
