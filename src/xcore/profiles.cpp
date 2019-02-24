@@ -133,7 +133,7 @@ bool prfSetCurrent(std::string nm) {
 	kbdReleaseAll(nprf->zx->keyb);
 	mouseReleaseAll(nprf->zx->mouse);
 	padLoadConfig(nprf->jmapName);
-//	prfFillBreakpoints(nprf);
+	loadKeys();
 	return true;
 }
 
@@ -320,8 +320,8 @@ int prfLoad(std::string nm) {
 	char buf[0x4000];
 	int tmask = -1;
 	int tmp2;
+	double tmpd;
 	int section = PS_NONE;
-//	int memsz = MEM_128K;
 	ATAPassport masterPass = ideGetPassport(comp->ide,IDE_MASTER);
 	ATAPassport slavePass = ideGetPassport(comp->ide,IDE_SLAVE);
 	if (!file.good()) {
@@ -420,10 +420,10 @@ int prfLoad(std::string nm) {
 						compSetBaseFrq(comp, tmp2 / 1e6);
 					}
 					if (pnam == "frq.mul") {
-						tmp2 = strtod(pval.c_str(), NULL);
-						if (tmp2 < 0.1) tmp2 = 0.1;
-						if (tmp2 > 8.0) tmp2 = 8.0;
-						compSetTurbo(comp, tmp2);
+						tmpd = strtod(pval.c_str(), NULL);
+						if (tmpd < 0.1) tmpd = 0.1;
+						if (tmpd > 8.0) tmpd = 8.0;
+						compSetTurbo(comp, tmpd);
 					}
 					if (pnam == "memory") {
 						tmp2 = atoi(pval.c_str());
@@ -480,6 +480,10 @@ int prfLoad(std::string nm) {
 					if (pnam == "mouse.wheel") comp->mouse->hasWheel = str2bool(pval) ? 1 : 0;
 					if (pnam == "mouse.swapButtons") comp->mouse->swapButtons = str2bool(pval) ? 1 : 0;
 					if (pnam == "joy.extbuttons") comp->joy->extbuttons = str2bool(pval) ? 1 : 0;
+					if (pnam == "keymap") {
+						prf->kmapName = pval;
+						loadKeys();
+					}
 					if (pnam == "gamepad.map") {
 						prf->jmapName = pval;
 						padLoadConfig(prf->jmapName);
@@ -605,6 +609,8 @@ int prfSave(std::string nm) {
 	fprintf(file, "mouse.swapButtons = %s\n", YESNO(comp->mouse->swapButtons));
 	fprintf(file, "joy.extbuttons = %s\n", YESNO(comp->joy->extbuttons));
 	fprintf(file, "gamepad.map = %s\n", prf->jmapName.c_str());
+	if ((prf->kmapName != "") && (prf->kmapName != "default"))
+		fprintf(file, "keymap = %s\n", prf->kmapName.c_str());
 
 	fprintf(file, "\n[TAPE]\n\n");
 	fprintf(file, "path = %s\n", comp->tape->path ? comp->tape->path : "");

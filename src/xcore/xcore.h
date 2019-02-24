@@ -106,6 +106,7 @@ typedef struct {
 	std::string hwName;
 	std::string rsName;
 	std::string jmapName;
+	std::string kmapName;
 	std::vector<xBrkPoint> brkList;
 	Computer* zx;
 } xProfile;
@@ -244,7 +245,7 @@ struct xConfig {
 	unsigned running:1;
 	unsigned storePaths:1;		// store tape/disk paths
 	unsigned defProfile:1;		// start @ default profile
-	std::string keyMapName;		// use this keymap
+	// std::string keyMapName;		// use this keymap
 	double brdsize;			// 0.0 - 1.0 : border size
 	std::vector<xRomset> rsList;
 	std::vector<xLayout> layList;

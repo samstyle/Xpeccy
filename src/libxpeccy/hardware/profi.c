@@ -171,19 +171,13 @@ unsigned char prfIn(Computer* comp, unsigned short port, int dos) {
 }
 
 void prfReset(Computer* comp) {
-	kbdSetMode(comp->keyb, KBD_PROFI);
+	kbdSetMode(comp->keyb, KBD_SPECTRUM);
 }
 
 void prf_keyp(Computer* comp, keyEntry ent) {
 	kbdPress(comp->keyb, ent);
-//	keyPressXT(comp->keyb, ent.keyCode);
-//	keyPress(comp->keyb, ent.zxKey, 0);
-//	keyPress(comp->keyb, ent.extKey, 1);
 }
 
 void prf_keyr(Computer* comp, keyEntry ent) {
 	kbdRelease(comp->keyb, ent);
-//	keyReleaseXT(comp->keyb, ent.keyCode);
-//	keyRelease(comp->keyb, ent.zxKey, 0);
-//	keyRelease(comp->keyb, ent.extKey, 1);
 }

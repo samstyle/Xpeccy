@@ -410,7 +410,7 @@ void SetupWin::start(xProfile* p) {
 	ui.tsbox->setCurrentIndex(ui.tsbox->findData(QVariant(comp->ts->type)));
 // input
 	buildkeylist();
-	int idx = ui.keyMapBox->findText(QString(conf.keyMapName.c_str()));
+	int idx = ui.keyMapBox->findText(QString(prof->kmapName.c_str()));
 	if (idx < 1) idx = 0;
 	ui.keyMapBox->setCurrentIndex(idx);
 	ui.ratEnable->setChecked(comp->mouse->enable);
@@ -521,7 +521,6 @@ void SetupWin::apply() {
 	conf.vid.fullScreen = ui.cbFullscreen->isChecked() ? 1 : 0;
 	conf.vid.keepRatio = ui.cbKeepRatio->isChecked() ? 1 : 0;
 	conf.vid.scale = ui.sbScale->value();
-//	conf.vid.noFlick = ui.noflichk->isChecked() ? 1 : 0;
 	noflic = ui.sldNoflic->value();
 	greyScale = ui.grayscale->isChecked() ? 1 : 0;
 	conf.scrShot.dir = std::string(ui.pathle->text().toLocal8Bit().data());
@@ -557,18 +556,12 @@ void SetupWin::apply() {
 	comp->ts->chipB->stereo = getRFIData(ui.stereo2box);
 	comp->ts->type = getRFIData(ui.tsbox);
 
-//	comp->gs->enable = ui.gsgroup->isChecked() ? 1 : 0;
 	comp->gs->enable = ui.tbGS->isChecked() ? 1 : 0;
 	comp->gs->reset = ui.gsrbox->isChecked() ? 1 : 0;
-//	comp->gs->stereo = getRFIData(ui.gstereobox);
 
 	comp->sdrv->type = getRFIData(ui.sdrvBox);
 
 	comp->saa->enabled = ui.tbSAA->isChecked() ? 1 : 0;
-//	comp->saa->enabled = ui.saaEn->isChecked() ? 1 : 0;
-//	comp->saa->mono = ui.saaStereo->isChecked() ? 0 : 1;
-
-//	sndCalibrate(comp);
 // input
 	comp->mouse->enable = ui.ratEnable->isChecked() ? 1 : 0;
 	comp->mouse->hasWheel = ui.ratWheel->isChecked() ? 1 : 0;
@@ -577,7 +570,7 @@ void SetupWin::apply() {
 	conf.joy.dead = ui.sldDeadZone->value();
 	std::string kmname = getRFText(ui.keyMapBox);
 	if (kmname == "none") kmname = "default";
-	conf.keyMapName = kmname;
+	prof->kmapName = kmname;
 	loadKeys();
 // bdi
 	difSetHW(comp->dif, getRFIData(ui.diskTypeBox));

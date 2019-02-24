@@ -98,9 +98,9 @@ void saveConfig() {
 //	uint j;
 
 	fprintf(cfile,"[GENERAL]\n\n");
-	if ((conf.keyMapName != "default") && (conf.keyMapName != "")) {
-		fprintf(cfile,"keys = %s\n",conf.keyMapName.c_str());
-	}
+//	if ((conf.keyMapName != "default") && (conf.keyMapName != "")) {
+//		fprintf(cfile,"keys = %s\n",conf.keyMapName.c_str());
+//	}
 	fprintf(cfile, "startdefault = %s\n", YESNO(conf.defProfile));
 	fprintf(cfile, "savepaths = %s\n", YESNO(conf.storePaths));
 	fprintf(cfile, "fdcturbo = %s\n", YESNO(fdcFlag & FDC_FAST));
@@ -420,7 +420,7 @@ void loadConfig() {
 				case SECT_TOOLS:
 					break;
 				case SECT_GENERAL:
-					if (pnam=="keys") conf.keyMapName = pval;
+					// if (pnam=="keys") conf.keyMapName = pval;
 					if (pnam=="startdefault") conf.defProfile = str2bool(pval) ? 1 : 0;
 					if (pnam=="savepaths") conf.storePaths = str2bool(pval) ? 1 : 0;
 					if (pnam == "fdcturbo") setFlagBit(str2bool(pval),&fdcFlag,FDC_FAST);
@@ -451,7 +451,7 @@ void loadConfig() {
 	for (i=0; i<rsListist.size(); i++) addRomset(rsListist[i]);
 	prfLoadAll();
 	setOutput(soutnam.c_str());
-	loadKeys();
+	//loadKeys();
 	if (conf.defProfile) {
 		if (!prfSetCurrent("default")) {
 			printf("Can't set default profile! Yes, it happens\n");

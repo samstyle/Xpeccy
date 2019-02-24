@@ -148,12 +148,14 @@ void initKeyMap() {
 }
 
 void loadKeys() {
+	xProfile* prf = conf.prof.cur;
+	if (!prf) return;
 	char sfnam[FILENAME_MAX];
 	strcpy(sfnam, conf.path.confDir);
 	strcat(sfnam, SLASH);
-	strcat(sfnam, conf.keyMapName.c_str());
+	strcat(sfnam, prf->kmapName.c_str());
 	initKeyMap();
-	if ((conf.keyMapName == "") || (conf.keyMapName == "default")) return;
+	if ((prf->kmapName == "") || (prf->kmapName == "default")) return;
 	std::ifstream file(sfnam);
 	if (!file.good()) {
 		printf("Can't open keyboard layout. Default one will be used\n");
