@@ -530,14 +530,14 @@ void MainWin::kRelease(QKeyEvent* ev) {
 void MainWin::keyPressEvent(QKeyEvent *ev) {
 	if (comp->debug) {
 		ev->ignore();
-		return;
-	}
+	} else {
 #if defined(__linux) || defined(_WIN32)
-	int keyid = ev->nativeScanCode();
+		int keyid = ev->nativeScanCode();
 #else
-	int keyid = qKey2id(ev->key());
+		int keyid = qKey2id(ev->key());
 #endif
-	xkey_press(keyid, ev->modifiers());
+		xkey_press(keyid, ev->modifiers());
+	}
 }
 
 void MainWin::xkey_press(int xkey, Qt::KeyboardModifiers mod) {
@@ -545,6 +545,7 @@ void MainWin::xkey_press(int xkey, Qt::KeyboardModifiers mod) {
 //	qDebug() << kent.name << kent.zxKey.key1 << kent.zxKey.key2;
 
 	if (pckAct->isChecked()) {
+		xt_press(comp->keyb, kent.keyCode);
 		if (comp->hw->keyp) {
 			comp->hw->keyp(comp, kent);
 		}
@@ -725,6 +726,7 @@ void MainWin::xkey_press(int xkey, Qt::KeyboardModifiers mod) {
 				break;
 			default:
 				// printf("%s %c %c\n", kent.name, kent.zxKey.key1, kent.zxKey.key2);
+				xt_press(comp->keyb, kent.keyCode);
 				if (comp->hw->keyp) {
 					comp->hw->keyp(comp, kent);
 				}
@@ -735,22 +737,22 @@ void MainWin::xkey_press(int xkey, Qt::KeyboardModifiers mod) {
 }
 
 void MainWin::keyReleaseEvent(QKeyEvent *ev) {
-//	qDebug() << "release " << ev->key();
+	int keyid;
 	if (comp->debug) {
 		ev->ignore();
-		return;
-	}
-	int keyid;
+	} else {
 #if defined(__linux) || defined(_WIN32)
-	keyid = ev->nativeScanCode();
+		keyid = ev->nativeScanCode();
 #else
-	keyid = qKey2id(ev->key());
+		keyid = qKey2id(ev->key());
 #endif
-	xkey_release(keyid, ev->modifiers());
+		xkey_release(keyid, ev->modifiers());
+	}
 }
 
 void MainWin::xkey_release(int keyid, Qt::KeyboardModifiers) {
 	keyEntry kent = getKeyEntry(keyid);
+	xt_release(comp->keyb, kent.keyCode);
 	if (comp->hw->keyr)
 		comp->hw->keyr(comp, kent);
 	emit s_keywin_upd(comp->keyb);

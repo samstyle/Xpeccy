@@ -146,6 +146,7 @@ typedef struct {
 	unsigned char flag1;		// [7] rus.scrlock.numlock.caps.0.alt.ctrl.shift [0]
 	unsigned char flag2;		// [7] 0.0.0.0.0.0.0.rshift [0]
 	// key matrix
+	int matrix[16][8];
 	unsigned char map[8];		// ZX keyboard half-row bits
 	unsigned char extMap[8];	// Profi XT-keyboard extend
 	unsigned char msxMap[16];	// MSX keys map
@@ -190,6 +191,8 @@ void kbdTrigger(Keyboard*, keyEntry);
 void kbdReleaseAll(Keyboard*);
 unsigned char kbdRead(Keyboard*, unsigned short);
 unsigned char keyReadCode(Keyboard*);
+void xt_press(Keyboard*, int);
+void xt_release(Keyboard*, int);
 
 Mouse* mouseCreate();
 void mouseDestroy(Mouse*);

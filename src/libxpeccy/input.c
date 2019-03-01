@@ -89,41 +89,36 @@ void kbdSetMode(Keyboard* kbd, int mode) {
 	kbd->mode = mode;
 }
 
-// at/xt buffer reading
-
-unsigned char keyReadCode(Keyboard* keyb) {
-	if (keyb->kBufPos < 1) return 0x00;		// empty
-	if (keyb->kBufPos > 14) return 0xff;		// overfill
-	unsigned char res = keyb->kbdBuf[0];		// read code
-	for (int i = 0; i < 15; i++) {
-		keyb->kbdBuf[i] = keyb->kbdBuf[i + 1];
-	}
-	keyb->kBufPos--;
-	return res;
-}
-
 // key press/release/trigger
 
-void kbd_press(keyScan* tab, unsigned char* mtrx, xKey xk) {
-	keyScan key = findKey(tab, xk.key1 & 0x7f);
-	if (xk.key1 & 0x80) key.mask |= 0x20;
+void kbd_press_key(Keyboard* kbd, keyScan* tab, unsigned char* mtrx, char ch) {
+	keyScan key = findKey(tab, ch & 0x7f);
+	key.row &= 0x0f;
 	mtrx[key.row] &= ~key.mask;
-	key = findKey(tab, xk.key2 & 0x7f);
-	if (xk.key2 & 0x80) key.mask |= 0x20;
-	mtrx[key.row] &= ~key.mask;
+	if (ch & 0x80)
+		mtrx[key.row] &= ~0x20;
+	for (int i = 0; i < 8; i++) {
+		if (key.mask & (1 << i))
+			kbd->matrix[key.row][i]++;
+	}
+}
+
+void kbd_press(Keyboard* kbd, keyScan* tab, unsigned char* mtrx, xKey xk) {
+	kbd_press_key(kbd, tab, mtrx, xk.key1);
+	kbd_press_key(kbd, tab, mtrx, xk.key2);
 }
 
 void kbdPress(Keyboard* kbd, keyEntry ent) {
 	switch(kbd->mode) {
 		case KBD_SPECTRUM:
-			kbd_press(keyTab, kbd->map, ent.zxKey);
+			kbd_press(kbd, keyTab, kbd->map, ent.zxKey);
 			break;
 		case KBD_PROFI:					// profi = spectrum + ext
-			kbd_press(keyTab, kbd->extMap, ent.extKey);
-			kbd_press(keyTab, kbd->map, ent.zxKey);
+			kbd_press(kbd, keyTab, kbd->extMap, ent.extKey);
+			kbd_press(kbd, keyTab, kbd->map, ent.zxKey);
 			break;
 		case KBD_MSX:
-			kbd_press(msxKeyTab, kbd->msxMap, ent.msxKey);
+			kbd_press(kbd, msxKeyTab, kbd->msxMap, ent.msxKey);
 			break;
 		case KBD_ATM2:
 			switch(ent.key) {
@@ -153,33 +148,37 @@ void kbdPress(Keyboard* kbd, keyEntry ent) {
 			}
 			break;
 	}
-	// at/xt
-	while (ent.keyCode && (kbd->kBufPos < 16)) {
-		kbd->kbdBuf[kbd->kBufPos++] = (ent.keyCode & 0xff);
-		ent.keyCode >>= 8;
+}
+
+void kbd_release_key(Keyboard* kbd, keyScan* tab, unsigned char* mtrx, char ch) {
+	keyScan key = findKey(tab, ch & 0x7f);
+	key.row &= 0x0f;
+	for (int i = 0; i < 8; i++) {
+		if (key.mask & (1 << i)) {
+			kbd->matrix[key.row][i]--;
+			if (!kbd->matrix[key.row][i]) {
+				mtrx[key.row] |= key.mask;
+			}
+		}
 	}
 }
 
-void kbd_release(keyScan* tab, unsigned char* mtrx, xKey xk) {
-	keyScan key = findKey(tab, xk.key1 & 0x7f);
-	if (xk.key1 & 0x80) key.mask |= 0x20;
-	mtrx[key.row] |= key.mask;
-	key = findKey(tab, xk.key2 & 0x7f);
-	if (xk.key2 & 0x80) key.mask |= 0x20;
-	mtrx[key.row] |= key.mask;
+void kbd_release(Keyboard* kbd, keyScan* tab, unsigned char* mtrx, xKey xk) {
+	kbd_release_key(kbd, tab, mtrx, xk.key1);
+	kbd_release_key(kbd, tab, mtrx, xk.key2);
 }
 
 void kbdRelease(Keyboard* kbd, keyEntry ent) {
 	switch(kbd->mode) {
 		case KBD_SPECTRUM:
-			kbd_release(keyTab, kbd->map, ent.zxKey);
+			kbd_release(kbd, keyTab, kbd->map, ent.zxKey);
 			break;
 		case KBD_PROFI:
-			kbd_release(keyTab, kbd->extMap, ent.extKey);
-			kbd_release(keyTab, kbd->map, ent.zxKey);
+			kbd_release(kbd, keyTab, kbd->extMap, ent.extKey);
+			kbd_release(kbd, keyTab, kbd->map, ent.zxKey);
 			break;
 		case KBD_MSX:
-			kbd_release(msxKeyTab, kbd->msxMap, ent.msxKey);
+			kbd_release(kbd, msxKeyTab, kbd->msxMap, ent.msxKey);
 			break;
 		case KBD_ATM2:
 			switch(ent.key) {
@@ -206,18 +205,18 @@ void kbdRelease(Keyboard* kbd, keyEntry ent) {
 			}
 			break;
 	}
-	// at/xt
-	while (ent.keyCode && (kbd->kBufPos < 16)) {
-		if (ent.keyCode < 0x100) kbd->kbdBuf[kbd->kBufPos++] = 0xf0;
-		kbd->kbdBuf[kbd->kBufPos++] = (ent.keyCode & 0xff);
-		ent.keyCode >>= 8;
-	}
 }
 
 void kbdReleaseAll(Keyboard* kbd) {
+	int r,k;
 	memset(kbd->map, 0xff, 8);
 	memset(kbd->extMap, 0xff, 8);
 	memset(kbd->msxMap, 0xff, 16);
+	for (r = 0; r < 16; r++) {
+		for (k = 0; k < 8; k++) {
+			kbd->matrix[r][k] = 0;
+		}
+	}
 	kbd->keycode = 0;
 	kbd->lastkey = 0;
 	kbd->kBufPos = 0;
@@ -247,6 +246,36 @@ void kbdTrigger(Keyboard* kbd, keyEntry ent) {
 			break;
 	}
 	// at/xt ???
+}
+
+// at/xt keyboard buffer
+
+void xt_press(Keyboard* kbd, int code) {
+	while (code && (kbd->kBufPos < 16)) {
+		kbd->kbdBuf[kbd->kBufPos++] = code & 0xff;
+		code >>= 8;
+	}
+}
+
+void xt_release(Keyboard* kbd, int code) {
+	while (code && (kbd->kBufPos < 16)) {
+		if (code < 0x100)
+			kbd->kbdBuf[kbd->kBufPos++] = 0xf0;
+		kbd->kbdBuf[kbd->kBufPos++] = (code & 0xff);
+		code >>= 8;
+	}
+}
+
+// at/xt buffer reading
+unsigned char keyReadCode(Keyboard* keyb) {
+	if (keyb->kBufPos < 1) return 0x00;		// empty
+	if (keyb->kBufPos > 14) return 0xff;		// overfill
+	unsigned char res = keyb->kbdBuf[0];		// read code
+	for (int i = 0; i < 15; i++) {
+		keyb->kbdBuf[i] = keyb->kbdBuf[i + 1];
+	}
+	keyb->kBufPos--;
+	return res;
 }
 
 #include <time.h>
