@@ -262,7 +262,11 @@ keyTrans ktTab[] = {
 	{Qt::Key_Slash, Qt::Key_Slash, XKEY_BSLASH},		// ?
 	{Qt::Key_Apostrophe, 0x44d, XKEY_APOS},			// '
 
+#if __APPLE__
+	{Qt::Key_Meta, Qt::Key_Meta, XKEY_LCTRL},
+#else
 	{Qt::Key_Control, Qt::Key_Control, XKEY_LCTRL},
+#endif
 	{Qt::Key_Alt, Qt::Key_Alt, XKEY_LALT},
 	{Qt::Key_Space, Qt::Key_Space, XKEY_SPACE},
 

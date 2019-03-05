@@ -528,6 +528,9 @@ void MainWin::kRelease(QKeyEvent* ev) {
 }
 
 void MainWin::keyPressEvent(QKeyEvent *ev) {
+#if __APPLE__
+	if (ev->isAutoRepeat()) return;
+#endif
 	if (comp->debug) {
 		ev->ignore();
 	} else {
@@ -543,7 +546,6 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 void MainWin::xkey_press(int xkey, Qt::KeyboardModifiers mod) {
 	keyEntry kent = getKeyEntry(xkey);
 //	qDebug() << kent.name << kent.zxKey.key1 << kent.zxKey.key2;
-
 	if (pckAct->isChecked()) {
 		xt_press(comp->keyb, kent.keyCode);
 		if (comp->hw->keyp) {
@@ -752,6 +754,7 @@ void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 
 void MainWin::xkey_release(int keyid, Qt::KeyboardModifiers) {
 	keyEntry kent = getKeyEntry(keyid);
+//	qDebug() << "release" << kent.name;
 	xt_release(comp->keyb, kent.keyCode);
 	if (comp->hw->keyr)
 		comp->hw->keyr(comp, kent);
