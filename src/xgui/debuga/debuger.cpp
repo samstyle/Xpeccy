@@ -26,8 +26,6 @@ unsigned short disasmAdr = 0;
 int blockStart = -1;
 int blockEnd = -1;
 
-// QMap<QString, xAdr> labels;
-
 int getRFIData(QComboBox*);
 int dasmSome(Computer*, unsigned short, dasmData&);
 
@@ -58,6 +56,8 @@ typedef struct {
 	QLineEdit* edit;
 } dbgRegPlace;
 
+#define SETCOLOR(_n, _r) col = conf.pal[_n]; if (col.isValid()) pal.setColor(_r, col);
+
 void DebugWin::start(Computer* c) {
 	blockStart = -1;
 	blockEnd = -1;
@@ -75,6 +75,24 @@ void DebugWin::start(Computer* c) {
 	comp->vid->debug = 1;
 	comp->debug = 1;
 	comp->brk = 0;
+
+	QColor col;
+	QColor cot;
+	QPalette pal;
+	SETCOLOR("dbg.window", QPalette::Window);
+	SETCOLOR("dbg.text", QPalette::WindowText);
+	setPalette(pal);
+
+	col = conf.pal["dbg.header.bg"];
+	cot = conf.pal["dbg.header.txt"];
+	QString str = QString("background-color:%0;color:%1").arg(col.name()).arg(cot.name());
+	ui.labHeadCpu->setStyleSheet(str);
+	ui.labHeadDump->setStyleSheet(str);
+	ui.labHeadDisasm->setStyleSheet(str);
+	ui.labHeadMem->setStyleSheet(str);
+	ui.labHeadRay->setStyleSheet(str);
+	ui.labHeadStack->setStyleSheet(str);
+	ui.labHeadSignal->setStyleSheet(str);
 
 	show();
 
@@ -750,12 +768,8 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 
 void setSignal(QLabel* lab, int on) {
 	if (on) {
-		lab->setBackgroundRole(QPalette::ToolTipBase);
-		lab->setForegroundRole(QPalette::ToolTipText);
 		lab->setStyleSheet("font:bold;");
 	} else {
-		lab->setBackgroundRole(QPalette::NoRole);
-		lab->setForegroundRole(QPalette::NoRole);
 		lab->setStyleSheet("");
 	}
 }
@@ -1595,7 +1609,7 @@ void DebugWin::dumpChadr(QModelIndex idx) {
 	}
 	if (ui.dumpTable->mode != XVIEW_CPU)
 		adr &= 0x3fff;
-	ui.labDump->setText(QString("Dump : %0").arg(gethexword(adr & 0xffff)));
+	ui.labHeadDump->setText(QString("Dump : %0").arg(gethexword(adr & 0xffff)));
 }
 
 // maping

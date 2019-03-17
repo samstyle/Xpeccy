@@ -1,4 +1,5 @@
 #include "xgui.h"
+#include "../xcore/xcore.h"
 
 #include <QDebug>
 #include <QPalette>
@@ -78,15 +79,23 @@ void xHexSpin::setMax(int v) {
 void xHexSpin::setValue(int nval) {
 	nval = minMaxCorrect(nval, min, max);
 	QPalette pal;
+//	QColor col;
+//	QColor cot;
 	if (value == nval) {
 		// pal.setBrush(QPalette::Base, pal.window());
+		pal.setColor(QPalette::Base, conf.pal["dbg.input.bg"].isValid() ? conf.pal["dbg.input.bg"] : pal.base().color());
+		pal.setColor(QPalette::Text, conf.pal["dbg.input.txt"].isValid() ? conf.pal["dbg.input.txt"] : pal.text().color());
 	} else {
 		value = nval;
 		if (hsflag & XHS_BGR) {
-			pal.setBrush(QPalette::Base, pal.toolTipBase());
-			pal.setBrush(QPalette::Text, pal.toolTipText());
+			//pal.setBrush(QPalette::Base, pal.toolTipBase());
+			//pal.setBrush(QPalette::Text, pal.toolTipText());
+			pal.setColor(QPalette::Base, conf.pal["dbg.changed.bg"].isValid() ? conf.pal["dbg.changed.bg"] : pal.toolTipBase().color());
+			pal.setColor(QPalette::Text, conf.pal["dbg.changed.txt"].isValid() ? conf.pal["dbg.changed.txt"] : pal.toolTipText().color());
 		} else {
 			// pal.setBrush(QPalette::Base, pal.window());
+			pal.setColor(QPalette::Base, conf.pal["dbg.input.bg"].isValid() ? conf.pal["dbg.input.bg"] : pal.base().color());
+			pal.setColor(QPalette::Text, conf.pal["dbg.input.txt"].isValid() ? conf.pal["dbg.input.txt"] : pal.text().color());
 		}
 		emit valueChanged(value);
 	}

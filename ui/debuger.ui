@@ -26,10 +26,7 @@
    <item>
     <layout class="QVBoxLayout" name="verticalLayout_9" stretch="0,1">
      <item>
-      <widget class="QLabel" name="label_26">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(160, 160, 255)</string>
-       </property>
+      <widget class="QLabel" name="labHeadCpu">
        <property name="text">
         <string>CPU</string>
        </property>
@@ -603,10 +600,7 @@
    <item>
     <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,0,0,10">
      <item>
-      <widget class="QLabel" name="label_48">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(160, 160, 255)</string>
-       </property>
+      <widget class="QLabel" name="labHeadDisasm">
        <property name="text">
         <string>Disasm</string>
        </property>
@@ -800,10 +794,7 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_8" stretch="10">
        <item>
-        <widget class="QLabel" name="labDump">
-         <property name="styleSheet">
-          <string notr="true">background-color: rgb(160, 160, 255)</string>
-         </property>
+        <widget class="QLabel" name="labHeadDump">
          <property name="text">
           <string>Dump : ????</string>
          </property>
@@ -2060,10 +2051,7 @@
    <item>
     <layout class="QVBoxLayout" name="verticalLayout_8">
      <item>
-      <widget class="QLabel" name="label_24">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(160, 160, 255);</string>
-       </property>
+      <widget class="QLabel" name="labHeadMem">
        <property name="text">
         <string>MEM</string>
        </property>
@@ -2113,10 +2101,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="label_27">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(160, 160, 255);</string>
-       </property>
+      <widget class="QLabel" name="labHeadStack">
        <property name="text">
         <string>SP</string>
        </property>
@@ -2166,10 +2151,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="label_55">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(160, 160, 255);</string>
-       </property>
+      <widget class="QLabel" name="labHeadSignal">
        <property name="text">
         <string>SIG</string>
        </property>
@@ -2231,10 +2213,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="label_22">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(160, 160, 255);</string>
-       </property>
+      <widget class="QLabel" name="labHeadRay">
        <property name="text">
         <string>RAY</string>
        </property>
@@ -2601,11 +2580,11 @@
  </resources>
  <connections/>
  <buttongroups>
+  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
-  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

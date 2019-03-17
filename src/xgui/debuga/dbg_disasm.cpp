@@ -1,5 +1,6 @@
 #include "dbg_disasm.h"
 #include "dbg_dump.h"
+#include "../xcore/xcore.h"
 
 #include <QDebug>
 #include <QFont>
@@ -47,6 +48,7 @@ QVariant xDisasmModel::data(const QModelIndex& idx, int role) const {
 	if (col >= columnCount()) return res;
 	if (row >= dasm.size()) return res;
 	QFont font;
+	QColor clr;
 	QPixmap pxm;
 	QPixmap icn;
 	QPainter pnt;
@@ -66,18 +68,29 @@ QVariant xDisasmModel::data(const QModelIndex& idx, int role) const {
 			}
 			break;
 		case Qt::ForegroundRole:
+			clr = conf.pal["dbg.table.txt"];
 			if (dasm[row].isbrk) {
-				res = QColor(Qt::red);
+				//res = QColor(Qt::red);
+				clr = conf.pal["dbg.brk.txt"];
 			} else if ((col == 0) && !dasm[row].islab && conf.dbg.hideadr) {
-				res = QColor(Qt::gray);
+				clr = QColor(Qt::gray);
+			} else if (dasm[row].ispc && !dasm[row].islab) {
+				clr = conf.pal["dbg.pc.txt"];
+			} else if (dasm[row].issel) {
+				clr = conf.pal["dbg.sel.txt"];
 			}
+			if (clr.isValid()) res = clr;
 			break;
 		case Qt::BackgroundColorRole:
+			clr = conf.pal["dbg.table.bg"];
 			if (dasm[row].ispc && !dasm[row].islab) {
-				res = colPC;			// pc
+				//res = colPC;			// pc
+				clr = conf.pal["dbg.pc.bg"];
 			} else if (dasm[row].issel) {
-				res = colSEL;			// selected
+				//res = colSEL;			// selected
+				clr = conf.pal["dbg.sel.bg"];
 			}
+			if (clr.isValid()) res = clr;
 			break;
 		case Qt::DecorationRole:
 			if ((col == 3) && !dasm[row].icon.isEmpty()) {
@@ -338,7 +351,7 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 				case MEM_EXT: drow.aname = "EXT:"; break;
 				default: drow.aname = "???"; break;
 			}
-			drow.aname.append(QString("%1:%2").arg(gethexbyte((xadr.bank >> 6) & 0xff)).arg(gethexword(xadr.adr & 0x3fff)));
+			drow.aname.append(QString("%1:%2").arg(gethexbyte(xadr.bank & 0xff)).arg(gethexword(xadr.adr & 0x3fff)));
 		} else {
 			wid = (comp->hw->base == 8) ? 6 : 4;
 			drow.aname = QString::number(xadr.adr, comp->hw->base).toUpper().rightJustified(wid, '0');

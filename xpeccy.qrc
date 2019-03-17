@@ -77,5 +77,6 @@
         <file>images/copy.png</file>
         <file>images/arrleft.png</file>
         <file>images/speaker2.png</file>
+        <file>images/palette.png</file>
     </qresource>
 </RCC>

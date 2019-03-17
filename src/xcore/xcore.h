@@ -11,6 +11,7 @@
 #include <SDL_joystick.h>
 
 #include <QString>
+#include <QColor>
 #include <QMap>
 
 #include "spectrum.h"
@@ -251,6 +252,7 @@ struct xConfig {
 	std::vector<xLayout> layList;
 	std::vector<xBookmark> bookmarkList;
 	QMap<QString, xAdr> labels;
+	QMap<QString, QColor> pal;
 	unsigned short port;
 	struct {
 		unsigned fast:1;

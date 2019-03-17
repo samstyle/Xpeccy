@@ -1,5 +1,6 @@
 #include <QStandardItemModel>
 #include <QInputDialog>
+#include <QColorDialog>
 #include <QFileDialog>
 #include <QVector3D>
 #include <QPainter>
@@ -330,6 +331,21 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	connect(uia.umasptb,SIGNAL(released()),this,SLOT(umaselp()));
 	connect(uia.umaok,SIGNAL(released()),this,SLOT(umaconf()));
 	connect(uia.umacn,SIGNAL(released()),umadial,SLOT(hide()));
+// palette
+	QToolButton* tbarr[] = {
+		ui.tbDbgChaBG, ui.tbDbgChaFG, ui.tbDbgHeadBG, ui.tbDbgHeadFG,
+		ui.tbDbgTxtCol, ui.tbDbgWinCol, ui.tbDbgInputBG, ui.tbDbgInputFG,
+		ui.tbDbgTableBG, ui.tbDbgTableFG, ui.tbDbgPcBG, ui.tbDbgPcFG,
+		ui.tbDbgSelBG, ui.tbDbgSelFG,
+		ui.tbDbgBrkFG,
+		NULL
+	};
+	i = 0;
+	while (tbarr[i] != NULL) {
+		connect(tbarr[i], SIGNAL(released()), this, SLOT(selectColor()));
+		connect(tbarr[i], SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(triggerColor()));
+		i++;
+	}
 // profiles manager
 	connect(ui.tbNewProfile,SIGNAL(released()),this,SLOT(newProfile()));
 	connect(ui.tbCopyProfile,SIGNAL(released()),this,SLOT(copyProf()));
@@ -340,6 +356,25 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 void SetupWin::okay() {
 	apply();
 	reject();
+}
+
+void setToolButtonColor(QToolButton* tb, QString nm, QString dc) {
+	QPalette pal;
+	QColor col = conf.pal[nm];
+	if (col.isValid()) {
+		pal.setColor(QPalette::Button, col);
+		tb->setText("");
+	} else {
+		col = QColor(dc);
+		if (col.isValid()) {
+			conf.pal[nm] = col;
+			pal.setColor(QPalette::Button, col);
+		}
+		tb->setText("X");
+	}
+	tb->setPalette(pal);
+	tb->setProperty("colorName", nm);
+	tb->setProperty("defaultColor", dc);
 }
 
 void SetupWin::start(xProfile* p) {
@@ -496,6 +531,22 @@ void SetupWin::start(xProfile* p) {
 	ui.cbDiskLed->setChecked(conf.led.disk);
 	ui.cbMessage->setChecked(conf.led.message);
 	ui.cbFpsLed->setChecked(conf.led.fps);
+// palette
+	setToolButtonColor(ui.tbDbgWinCol, "dbg.window","");
+	setToolButtonColor(ui.tbDbgTxtCol, "dbg.text","");
+	setToolButtonColor(ui.tbDbgChaBG, "dbg.changed.bg","#e0c0c0");
+	setToolButtonColor(ui.tbDbgChaFG, "dbg.changed.txt","#000000");
+	setToolButtonColor(ui.tbDbgHeadBG, "dbg.header.bg","#c0c0e0");
+	setToolButtonColor(ui.tbDbgHeadFG, "dbg.header.txt","#000000");
+	setToolButtonColor(ui.tbDbgInputBG, "dbg.input.bg","");
+	setToolButtonColor(ui.tbDbgInputFG, "dbg.input.txt","");
+	setToolButtonColor(ui.tbDbgTableBG, "dbg.table.bg","");
+	setToolButtonColor(ui.tbDbgTableFG, "dbg.table.txt","");
+	setToolButtonColor(ui.tbDbgPcBG, "dbg.pc.bg","#80e080");
+	setToolButtonColor(ui.tbDbgPcFG, "dbg.pc.txt","#000000");
+	setToolButtonColor(ui.tbDbgSelBG, "dbg.sel.bg","#c0e0c0");
+	setToolButtonColor(ui.tbDbgSelFG, "dbg.sel.txt","#000000");
+	setToolButtonColor(ui.tbDbgBrkFG, "dbg.brk.txt","#e08080");
 // profiles
 	ui.defstart->setChecked(conf.defProfile);
 	buildproflist();
@@ -1608,4 +1659,32 @@ void SetupWin::rmProfile() {
 	}
 //	block = 0;
 	buildproflist();
+}
+
+// palette
+
+void SetupWin::selectColor() {
+	QToolButton* obj = (QToolButton*)sender();
+	QString cn = obj->property("colorName").toString();
+	QString dn = obj->property("defaultColor").toString();
+	if (cn.isEmpty()) return;
+	QColor col = QColorDialog::getColor(conf.pal[cn]);
+	if (!col.isValid()) return;
+	conf.pal[cn] = col;
+	setToolButtonColor(obj, cn, dn);
+}
+
+void SetupWin::triggerColor() {
+	QToolButton* obj = (QToolButton*)sender();
+	QString cn = obj->property("colorName").toString();
+	QString dn = obj->property("defaultColor").toString();
+	if (cn.isEmpty()) return;
+	if (dn.isEmpty()) {
+		conf.pal.remove(cn);
+	} else {
+		QColor col(dn);
+		if (col.isValid())
+			conf.pal[cn] = col;
+	}
+	setToolButtonColor(obj, cn, dn);
 }

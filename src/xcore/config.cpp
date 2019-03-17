@@ -32,6 +32,7 @@
 #define	SECT_LEDS	15
 #define	SECT_INPUT	16
 #define	SECT_SDC	17
+#define	SECT_PALETTE	17
 
 std::map<std::string, int> shotFormat;
 xConfig conf;
@@ -185,7 +186,7 @@ void saveConfig() {
 	fprintf(cfile, "fast = %s\n", YESNO(conf.tape.fast));
 
 	fprintf(cfile, "\n[INPUT]\n\n");
-	fprintf(cfile, "deadzone = %i", conf.joy.dead);
+	fprintf(cfile, "deadzone = %i\n", conf.joy.dead);
 
 	fprintf(cfile, "\n[LEDS]\n\n");
 	fprintf(cfile, "mouse = %s\n", YESNO(conf.led.mouse));
@@ -196,9 +197,17 @@ void saveConfig() {
 	fprintf(cfile, "message = %s\n", YESNO(conf.led.message));
 	fprintf(cfile, "fps = %s\n", YESNO(conf.led.fps));
 
+	fprintf(cfile, "\n[PALETTE]\n\n");
+	QStringList lst = conf.pal.keys();
+	QString nam;
+	QColor col;
+	foreach(nam, lst) {
+		col = conf.pal[nam];
+		if (col.isValid())
+			fprintf(cfile, "%s = %s\n", nam.toLocal8Bit().data(), col.name().toLocal8Bit().data());
+	}
 	fclose(cfile);
 }
-
 
 void copyFile(const char* src, const char* dst) {
 	QFile fle(QString::fromLocal8Bit(src));
@@ -240,6 +249,8 @@ void loadConfig() {
 	clearProfiles();
 	conf.bookmarkList.clear();
 	char buf[0x4000];
+	QColor col;
+//	QPalette pal;
 	std::pair<std::string,std::string> spl;
 	std::string line,pnam,pval;
 	std::string pnm = "default";
@@ -252,14 +263,10 @@ void loadConfig() {
 	size_t pos;
 	std::string tms,fnam;
 	int fprt;
-//	newrs.file.clear();
 	newrs.fntFile.clear();
 	newrs.gsFile.clear();
 	newrs.roms.clear();
-//	for (int i=0; i<32; i++) {
-//		newrs.roms[i].path = "";
-//		newrs.roms[i].part = 0;
-//	}
+	conf.pal.clear();
 
 	conf.snd.vol.master = 100;
 	conf.snd.vol.beep = 100;
@@ -286,8 +293,14 @@ void loadConfig() {
 			if (pnam=="[TAPE]") section = SECT_TAPE;
 			if (pnam=="[LEDS]") section = SECT_LEDS;
 			if (pnam=="[INPUT]") section = SECT_INPUT;
+			if (pnam=="[PALETTE]") section = SECT_PALETTE;
 		} else {
 			switch (section) {
+				case SECT_PALETTE:
+					col = QColor(pval.c_str());
+					if (col.isValid())
+						conf.pal[QString(pnam.c_str())] = col;
+					break;
 				case SECT_BOOKMARK:
 					addBookmark(pnam,pval);
 					break;

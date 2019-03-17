@@ -1,4 +1,5 @@
 #include "dbg_dump.h"
+#include "../xcore/xcore.h"
 
 #include <QDebug>
 
@@ -161,15 +162,28 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 	unsigned short cadr = (adr + col - 1) & 0xffff;
 	int flg = mrd(cadr) >> 8;
 	QByteArray arr;
+	QColor clr;
 	switch(role) {
 		case Qt::BackgroundColorRole:
-			if (col < 1) break;
-			if (col > 8) break;
-			if (flg & 0x0f) {								// breakpoint
-				res = colBRK;
-			} else if ((cadr >= blockStart) && (cadr <= blockEnd) && (mode == XVIEW_CPU)) {	// selection
-				res = colSEL;
+			clr = conf.pal["dbg.table.bg"];
+			if ((col > 0) && (col < 9)) {
+				if ((cadr >= blockStart) && (cadr <= blockEnd) && (mode == XVIEW_CPU)) {	// selection
+					//res = colSEL;
+					clr = conf.pal["dbg.sel.bg"];
+				}
 			}
+			if (clr.isValid()) res = clr;
+			break;
+		case Qt::ForegroundRole:
+			clr = conf.pal["dbg.table.txt"];
+			if ((col > 0) && (col < 9)) {
+				if (flg & 0x0f) {								// breakpoint
+					clr = conf.pal["dbg.brk.txt"];
+				} else if ((cadr >= blockStart) && (cadr <= blockEnd) && (mode == XVIEW_CPU)) {	// selection
+					clr = conf.pal["dbg.sel.txt"];
+				}
+			}
+			if (clr.isValid()) res = clr;
 			break;
 		case Qt::TextAlignmentRole:
 			switch (col) {

@@ -126,6 +126,9 @@ class SetupWin : public QDialog {
 		void layEditorChanged();
 		void layEditorOK();
 		void layNameCheck(QString);
+
+		void selectColor();
+		void triggerColor();
 };
 
 int getRFIData(QComboBox*);
