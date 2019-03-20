@@ -165,25 +165,32 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 	QColor clr;
 	switch(role) {
 		case Qt::BackgroundColorRole:
-			clr = conf.pal["dbg.table.bg"];
 			if ((col > 0) && (col < 9)) {
 				if ((cadr >= blockStart) && (cadr <= blockEnd) && (mode == XVIEW_CPU)) {	// selection
-					//res = colSEL;
 					clr = conf.pal["dbg.sel.bg"];
+				} else {
+					clr = conf.pal["dbg.table.bg"];
 				}
+			} else {
+				clr = conf.pal["dbg.table.bg"];
 			}
-			if (clr.isValid()) res = clr;
+			if (clr.isValid())
+				res = clr;
 			break;
 		case Qt::ForegroundRole:
-			clr = conf.pal["dbg.table.txt"];
 			if ((col > 0) && (col < 9)) {
 				if (flg & 0x0f) {								// breakpoint
 					clr = conf.pal["dbg.brk.txt"];
 				} else if ((cadr >= blockStart) && (cadr <= blockEnd) && (mode == XVIEW_CPU)) {	// selection
 					clr = conf.pal["dbg.sel.txt"];
+				} else {
+					clr = conf.pal["dbg.table.txt"];
 				}
+			} else {
+				clr = conf.pal["dbg.table.txt"];
 			}
-			if (clr.isValid()) res = clr;
+			if (clr.isValid())
+				res = clr;
 			break;
 		case Qt::TextAlignmentRole:
 			switch (col) {

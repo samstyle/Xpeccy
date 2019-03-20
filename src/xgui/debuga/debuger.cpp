@@ -80,7 +80,9 @@ void DebugWin::start(Computer* c) {
 	QColor cot;
 	QPalette pal;
 	SETCOLOR("dbg.window", QPalette::Window);
+	SETCOLOR("dbg.window", QPalette::Button);
 	SETCOLOR("dbg.text", QPalette::WindowText);
+	SETCOLOR("dbg.input.bg", QPalette::Base);
 	setPalette(pal);
 
 	col = conf.pal["dbg.header.bg"];
@@ -141,6 +143,7 @@ void DebugWin::onPrfChange(xProfile* prf) {
 		ui.tabsPanel->addTab(lst.first().second, lst.first().first, "");
 		lst.removeFirst();
 	}
+	ui.tabsPanel->setPalette(QPalette());
 }
 
 void DebugWin::reject() {stop();}
@@ -767,11 +770,9 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 }
 
 void setSignal(QLabel* lab, int on) {
-	if (on) {
-		lab->setStyleSheet("font:bold;");
-	} else {
-		lab->setStyleSheet("");
-	}
+	QFont fnt = lab->font();
+	fnt.setBold(on);
+	lab->setFont(fnt);
 }
 
 QString getAYmix(aymChan* ch) {
