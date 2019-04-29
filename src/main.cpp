@@ -167,8 +167,10 @@ int main(int ac,char** av) {
 				i++;
 			} else if (!strcmp(parg, "-r") || !strcmp(parg, "--ratio")) {
 				conf.vid.keepRatio = atoi(av[i]) ? 1 : 0;
+				i++;
 			} else if (!strcmp(parg,"--fullscreen")) {
 				conf.vid.fullScreen = atoi(av[i]) ? 1 : 0;
+				i++;
 			} else if (strlen(parg) > 0) {
 				load_file(mwin.comp, parg, FG_ALL, 0);
 			}
