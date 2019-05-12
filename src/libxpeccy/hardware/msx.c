@@ -58,9 +58,9 @@ void msxReset(Computer* comp) {
 	comp->msx.memMap[1] = 2;
 	comp->msx.memMap[2] = 1;
 	comp->msx.memMap[3] = 0;
-	vidSetMode(comp->vid, VDP_TEXT1);
 	msxResetSlot(comp->slot);
 	vdpReset(comp->vid);
+	comp->vid->memMask = MEM_16K - 1;
 	msxMapMem(comp);
 }
 
@@ -150,7 +150,8 @@ static xPort msxPortMap[] = {
 	{0xff,0x90,2,2,2,dummyIn,	dummyOut},	// 90	RW	ULA5RA087 Centronic BUSY state (bit 1=1) / ULA5RA087 Centronic STROBE output (bit 0=0)
 	{0xff,0x91,2,2,2,NULL,		dummyOut},	// 91	W	ULA5RA087 Centronic Printer Data
 
-	{0xfe,0x98,2,2,2,msx9938rd,	msx9938wr},	// 98/99	VDP
+	{0xfc,0x88,2,2,2,msx9938rd,	msx9938wr},	// 88..8D	VDP9938 extension
+	{0xfe,0x98,2,2,2,msx9938rd,	msx9938wr},	// 98/99	VDP9918
 
 	{0xff,0xa0,2,2,2,NULL,		msxAYIdxOut},	// A0	W	I AY-3-8910 PSG Sound Generator Index
 	{0xff,0xa1,2,2,2,NULL,		msxAYDataOut},	// A1	W	I AY-3-8910 PSG Sound Generator Data write
