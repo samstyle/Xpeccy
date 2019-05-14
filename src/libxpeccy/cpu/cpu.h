@@ -100,10 +100,12 @@ typedef struct {
 #include "LR35902/lr35902.h"
 #include "MOS6502/6502.h"
 #include "1801vm1/1801vm1.h"
+#include "i8080/i8080.h"
 
 enum {
 	CPU_NONE = 0,		// dummy
 	CPU_Z80,		// ZX, MSX
+	CPU_I8080,
 	CPU_LR35902,		// GB, GBC
 	CPU_6502,		// NES, Commodore
 	CPU_VM1			// BK

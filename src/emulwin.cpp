@@ -652,6 +652,7 @@ void MainWin::xkey_press(int xkey, Qt::KeyboardModifiers mod) {
 				userMenu->popup(pos() + QPoint(20,20));
 				userMenu->setFocus();
 				break;
+			case XKEY_NUMLCK:
 			case XKEY_INS:
 				if (conf.emu.pause) break;
 				conf.emu.fast ^= 1;

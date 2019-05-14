@@ -43,7 +43,6 @@ int z80_int(CPU* cpu) {
 			}
 			if (cpu->resPV) {
 				cpu->f &= ~FP;
-				cpu->resPV = 0;
 			}
 			cpu->opTab = npTab;
 			switch(cpu->imode) {
@@ -102,6 +101,7 @@ int z80_exec(CPU* cpu) {
 	} else if (cpu->intrq & cpu->inten) {
 		res = z80_int(cpu);
 	}
+	cpu->resPV = 0;
 	if (!res) {
 		cpu->t = 0;
 		cpu->noint = 0;
