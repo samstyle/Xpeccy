@@ -407,6 +407,7 @@ TapeBlock makeTapeBlock(unsigned char* ptr, int ln, int hd) {
 	nblk.isHeader = 0;
 	nblk.sigCount = 0;
 	nblk.data = NULL;
+	nblk.vol = 0;
 	if (hd) {
 		nblk.pdur = 8063;
 		pause = 500 * MSDOTS;

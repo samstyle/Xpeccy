@@ -237,7 +237,7 @@ void MainWin::mapJoystick(Computer* comp, int type, int num, int state) {
 	QList<xJoyMapEntry> presslist;
 	foreach(xjm, conf.joy.map) {
 		if ((type == xjm.type) && (num == xjm.num)) {
-			if (state == 0) {
+			if ((state == 0) && (type != JOY_HAT)) {
 				mapRelease(comp, xjm);
 			} else {
 				switch(type) {
@@ -306,9 +306,11 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 			while(SDL_PollEvent(&ev)) {
 				switch(ev.type) {
 					case SDL_JOYAXISMOTION:
-						if (abs(ev.jaxis.value) < conf.joy.dead)
-							ev.jaxis.value = 0;
-						mapJoystick(comp, JOY_AXIS, ev.jaxis.axis, ev.jaxis.value);
+						if (abs(ev.jaxis.value) < conf.joy.dead) {
+							mapJoystick(comp, JOY_AXIS, ev.jaxis.axis, 0);
+						} else {
+							mapJoystick(comp, JOY_AXIS, ev.jaxis.axis, ev.jaxis.value);
+						}
 						break;
 					case SDL_JOYBUTTONDOWN:
 						mapJoystick(comp, JOY_BUTTON, ev.jbutton.button, 32768);
