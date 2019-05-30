@@ -236,7 +236,15 @@ int sign(int v) {
 static QMap<int, QMap<int, int> > jState;
 
 void MainWin::mapJoystick(Computer* comp, int type, int num, int st) {
-	int state = (type == JOY_HAT) ? st : sign(st);
+	int state;
+	int hst;
+	if (type == JOY_HAT) {
+		state = st;
+		hst = jState[type][num] ^ st;		// changed only
+	} else {
+		state = sign(st);
+		hst = 0;
+	}
 	if (jState[type][num] == state) return;
 	jState[type][num] = state;
 	xJoyMapEntry xjm;
@@ -256,10 +264,12 @@ void MainWin::mapJoystick(Computer* comp, int type, int num, int st) {
 						}
 						break;
 					case JOY_HAT:
-						if (state & xjm.state)
-							presslist.append(xjm);
-						else
-							mapRelease(comp, xjm);
+						if (hst & xjm.state) {		// state changed
+							if (state & xjm.state)	// pressed
+								presslist.append(xjm);
+							else			// released
+								mapRelease(comp, xjm);
+						}
 						break;
 					case JOY_BUTTON:
 						presslist.append(xjm);
