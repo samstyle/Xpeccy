@@ -97,6 +97,11 @@ void kbd_press_key(Keyboard* kbd, keyScan* tab, unsigned char* mtrx, char ch) {
 	mtrx[key.row] &= ~key.mask;
 	if (ch & 0x80)
 		mtrx[key.row] &= ~0x20;
+	// update matrix
+	for (int i = 0; i < 8; i++) {
+		if (key.mask & (1 << i))
+			kbd->matrix[key.row][i]++;
+	}
 }
 
 void kbd_press(Keyboard* kbd, keyScan* tab, unsigned char* mtrx, xKey xk) {
@@ -149,11 +154,23 @@ void kbdPress(Keyboard* kbd, keyEntry ent) {
 void kbd_release_key(Keyboard* kbd, keyScan* tab, unsigned char* mtrx, char ch) {
 	keyScan key = findKey(tab, ch & 0x7f);
 	key.row &= 0x0f;
+#if 1
+	for (int i = 0; i < 8; i++) {
+		if (key.mask & (1 << i)) {
+			if (kbd->matrix[key.row][i] > 0)
+				kbd->matrix[key.row][i]--;
+			if (kbd->matrix[key.row][i] == 0) {
+				mtrx[key.row] |= key.mask;
+			}
+		}
+	}
+#else
 	for (int i = 0; i < 8; i++) {
 		if (key.mask & (1 << i)) {
 			mtrx[key.row] |= key.mask;
 		}
 	}
+#endif
 }
 
 void kbd_release(Keyboard* kbd, keyScan* tab, unsigned char* mtrx, xKey xk) {
@@ -204,6 +221,9 @@ void kbdReleaseAll(Keyboard* kbd) {
 	memset(kbd->map, 0xff, 8);
 	memset(kbd->extMap, 0xff, 8);
 	memset(kbd->msxMap, 0xff, 16);
+	for (int i = 0; i < 16 * 8; i++) {
+		kbd->matrix[(i >> 3) & 15][i & 7] = 0;
+	}
 	kbd->keycode = 0;
 	kbd->lastkey = 0;
 	kbd->kBufPos = 0;

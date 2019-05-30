@@ -208,7 +208,6 @@ void MainWin::mapRelease(Computer* comp, xJoyMapEntry ent) {
 		case JMAP_MOUSE:
 			mouseRelease(comp->mouse, ent.dir);
 			break;
-
 	}
 }
 
@@ -232,7 +231,14 @@ int sign(int v) {
 	return 0;
 }
 
-void MainWin::mapJoystick(Computer* comp, int type, int num, int state) {
+// NOTE: -1 -> 1 | 1 -> -1 = release old one
+
+static QMap<int, QMap<int, int> > jState;
+
+void MainWin::mapJoystick(Computer* comp, int type, int num, int st) {
+	int state = (type == JOY_HAT) ? st : sign(st);
+	if (jState[type][num] == state) return;
+	jState[type][num] = state;
 	xJoyMapEntry xjm;
 	QList<xJoyMapEntry> presslist;
 	foreach(xjm, conf.joy.map) {
@@ -243,21 +249,20 @@ void MainWin::mapJoystick(Computer* comp, int type, int num, int state) {
 				switch(type) {
 					case JOY_AXIS:
 						if (sign(state) == sign(xjm.state)) {
-							xjm.state = state;
+							xjm.state = st;
 							presslist.append(xjm);
-							//mapPress(comp, xjm);
+						} else {
+							mapRelease(comp, xjm);
 						}
 						break;
 					case JOY_HAT:
 						if (state & xjm.state)
-							// mapPress(comp, xjm);
 							presslist.append(xjm);
 						else
 							mapRelease(comp, xjm);
 						break;
 					case JOY_BUTTON:
 						presslist.append(xjm);
-						//mapPress(comp, xjm);
 						break;
 				}
 			}
@@ -530,9 +535,9 @@ void MainWin::kRelease(QKeyEvent* ev) {
 }
 
 void MainWin::keyPressEvent(QKeyEvent *ev) {
-#if __APPLE__
+// #if __APPLE__
 	if (ev->isAutoRepeat()) return;
-#endif
+// #endif
 	if (comp->debug) {
 		ev->ignore();
 	} else {
@@ -742,6 +747,8 @@ void MainWin::xkey_press(int xkey, Qt::KeyboardModifiers mod) {
 }
 
 void MainWin::keyReleaseEvent(QKeyEvent *ev) {
+	if (ev->isAutoRepeat())
+		return;
 	int keyid;
 	if (comp->debug) {
 		ev->ignore();
