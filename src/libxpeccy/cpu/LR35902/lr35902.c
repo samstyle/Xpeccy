@@ -179,7 +179,7 @@ void lr_get_regs(CPU* cpu, xRegBunch* bunch) {
 	int idx = 0;
 	while(lrRegTab[idx].id != REG_NONE) {
 		bunch->regs[idx].id = lrRegTab[idx].id;
-		strncpy(bunch->regs[idx].name, lrRegTab[idx].name, 7);
+		bunch->regs[idx].name = lrRegTab[idx].name;
 		bunch->regs[idx].byte = lrRegTab[idx].byte;
 		switch(lrRegTab[idx].id) {
 			case LR_REG_PC: bunch->regs[idx].value = cpu->pc; break;

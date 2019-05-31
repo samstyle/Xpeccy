@@ -275,7 +275,7 @@ void z80_get_regs(CPU* cpu, xRegBunch* bunch) {
 	int idx = 0;
 	while(z80RegTab[idx].id != REG_NONE) {
 		bunch->regs[idx].id = z80RegTab[idx].id;
-		strncpy(bunch->regs[idx].name, z80RegTab[idx].name, 7);
+		bunch->regs[idx].name = z80RegTab[idx].name;
 		bunch->regs[idx].byte = z80RegTab[idx].byte;
 		switch(z80RegTab[idx].id) {
 			case Z80_REG_PC: bunch->regs[idx].value = cpu->pc; break;

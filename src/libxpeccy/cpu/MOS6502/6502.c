@@ -116,7 +116,7 @@ void m6502_get_regs(CPU* cpu, xRegBunch* bunch) {
 	int idx = 0;
 	while(m6502RegTab[idx].id != REG_NONE) {
 		bunch->regs[idx].id = m6502RegTab[idx].id;
-		strncpy(bunch->regs[idx].name, m6502RegTab[idx].name, 7);
+		bunch->regs[idx].name = m6502RegTab[idx].name;
 		bunch->regs[idx].byte = m6502RegTab[idx].byte;
 		switch(m6502RegTab[idx].id) {
 			case M6502_REG_PC: bunch->regs[idx].value = cpu->pc; break;

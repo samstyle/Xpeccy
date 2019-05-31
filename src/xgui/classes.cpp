@@ -8,7 +8,8 @@ QString gethexword(int);
 QString gethexbyte(uchar);
 
 xHexSpin::xHexSpin(QWidget* p):QLineEdit(p) {
-	setInputMask("Hhhh");
+	imask = "Hhhh";
+	setInputMask(imask);
 	setText("0000");
 	setMinimumWidth(60);
 	setAutoFillBackground(true);
@@ -50,6 +51,7 @@ void xHexSpin::setBase(int b) {
 			}
 			break;
 	}
+	imask = msk;
 	setInputMask(msk);
 	setValue(b);
 }
@@ -79,21 +81,15 @@ void xHexSpin::setMax(int v) {
 void xHexSpin::setValue(int nval) {
 	nval = minMaxCorrect(nval, min, max);
 	QPalette pal;
-//	QColor col;
-//	QColor cot;
 	if (value == nval) {
-		// pal.setBrush(QPalette::Base, pal.window());
 		pal.setColor(QPalette::Base, conf.pal["dbg.input.bg"].isValid() ? conf.pal["dbg.input.bg"] : pal.base().color());
 		pal.setColor(QPalette::Text, conf.pal["dbg.input.txt"].isValid() ? conf.pal["dbg.input.txt"] : pal.text().color());
 	} else {
 		value = nval;
 		if (hsflag & XHS_BGR) {
-			//pal.setBrush(QPalette::Base, pal.toolTipBase());
-			//pal.setBrush(QPalette::Text, pal.toolTipText());
 			pal.setColor(QPalette::Base, conf.pal["dbg.changed.bg"].isValid() ? conf.pal["dbg.changed.bg"] : pal.toolTipBase().color());
 			pal.setColor(QPalette::Text, conf.pal["dbg.changed.txt"].isValid() ? conf.pal["dbg.changed.txt"] : pal.toolTipText().color());
 		} else {
-			// pal.setBrush(QPalette::Base, pal.window());
 			pal.setColor(QPalette::Base, conf.pal["dbg.input.bg"].isValid() ? conf.pal["dbg.input.bg"] : pal.base().color());
 			pal.setColor(QPalette::Text, conf.pal["dbg.input.txt"].isValid() ? conf.pal["dbg.input.txt"] : pal.text().color());
 		}
@@ -105,7 +101,7 @@ void xHexSpin::setValue(int nval) {
 void xHexSpin::onChange(int val) {
 	int pos = cursorPosition();
 	QString res = QString::number(val, base).toUpper();
-	res = res.rightJustified(inputMask().size(), '0');
+	res = res.rightJustified(imask.size(), '0');
 	if (text() != res) {
 		setText(res);
 		setCursorPosition(pos);
@@ -113,8 +109,8 @@ void xHexSpin::onChange(int val) {
 }
 
 void xHexSpin::onTextChange(QString txt) {
-	if (txt.size() < inputMask().size()) {
-		txt = txt.leftJustified(inputMask().size(), '0');
+	if (txt.size() < imask.size()) {
+		txt = txt.leftJustified(imask.size(), '0');
 	}
 	int nval = txt.toInt(NULL, base);
 	int xval = minMaxCorrect(nval, min, max);

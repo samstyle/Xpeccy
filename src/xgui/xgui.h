@@ -40,6 +40,7 @@ class xHexSpin : public QLineEdit {
 		int value;
 		int min;
 		int max;
+		QString imask;
 		void setBase(int);
 	protected:
 		void keyPressEvent(QKeyEvent*);

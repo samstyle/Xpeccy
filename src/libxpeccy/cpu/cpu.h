@@ -21,8 +21,8 @@ typedef struct {
 
 typedef struct {
 	int id;
-	unsigned byte:1;
-	char name[8];
+	int byte;
+	const char* name;
 	unsigned short value;
 } xRegister;
 
@@ -34,7 +34,7 @@ typedef struct {
 typedef struct {
 	int id;
 	const char* name;
-	unsigned byte:1;
+	int byte;
 } xRegDsc;
 
 // memrq rd

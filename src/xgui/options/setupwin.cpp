@@ -359,20 +359,12 @@ void SetupWin::okay() {
 }
 
 void setToolButtonColor(QToolButton* tb, QString nm, QString dc) {
-	QPalette pal;
 	QColor col = conf.pal[nm];
-	if (col.isValid()) {
-		pal.setColor(QPalette::Button, col);
-		tb->setText("");
-	} else {
-		col = QColor(dc);
-		if (col.isValid()) {
-			conf.pal[nm] = col;
-			pal.setColor(QPalette::Button, col);
-		}
-		tb->setText("X");
-	}
-	tb->setPalette(pal);
+	if (!col.isValid()) col = dc;
+	if (!col.isValid()) col = QColor(0,0,0,0);	// transparent
+	QPixmap pxm(16,16);
+	pxm.fill(col);
+	tb->setIcon(QIcon(pxm));
 	tb->setProperty("colorName", nm);
 	tb->setProperty("defaultColor", dc);
 }
@@ -1668,7 +1660,7 @@ void SetupWin::selectColor() {
 	QString cn = obj->property("colorName").toString();
 	QString dn = obj->property("defaultColor").toString();
 	if (cn.isEmpty()) return;
-	QColor col = QColorDialog::getColor(conf.pal[cn]);
+	QColor col = QColorDialog::getColor(conf.pal[cn], this, "Select color", QColorDialog::DontUseNativeDialog);
 	if (!col.isValid()) return;
 	conf.pal[cn] = col;
 	setToolButtonColor(obj, cn, dn);

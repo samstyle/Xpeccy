@@ -1346,7 +1346,7 @@ void pdp11_get_regs(CPU* cpu, xRegBunch* bunch) {
 	int idx = 0;
 	while (pdp11RegTab[idx].id != REG_NONE) {
 		bunch->regs[idx].id = pdp11RegTab[idx].id;
-		strncpy(bunch->regs[idx].name, pdp11RegTab[idx].name, 7);
+		bunch->regs[idx].name = pdp11RegTab[idx].name;
 		bunch->regs[idx].byte = pdp11RegTab[idx].byte;
 		switch(pdp11RegTab[idx].id) {
 			case PDP11_REG0: bunch->regs[idx].value = cpu->preg[0]; break;

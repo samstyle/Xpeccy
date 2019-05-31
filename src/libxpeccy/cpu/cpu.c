@@ -324,13 +324,16 @@ int cpuAsm(CPU* cpu, const char* com, char* buf, unsigned short adr) {
 
 // get/set reg bunch
 
+static const char noname[] = "undef";
+
 xRegBunch cpuGetRegs(CPU* cpu) {
 	xRegBunch bunch;
 	int i;
 	for (i = 0; i < 32; i++) {
-		bunch.regs[i].name[0] = 0x00;
+		bunch.regs[i].name = noname;
 		bunch.regs[i].id = REG_NONE;
 		bunch.regs[i].value = 0;
+		bunch.regs[i].byte = 0;
 	}
 	memcpy(bunch.flags, "--------", 8);
 	if (cpu->getregs) cpu->getregs(cpu, &bunch);

@@ -90,7 +90,7 @@ void i8080_get_regs(CPU* cpu, xRegBunch* bunch) {
 	int idx = 0;
 	while(i8080RegTab[idx].id != REG_NONE) {
 		bunch->regs[idx].id = i8080RegTab[idx].id;
-		strncpy(bunch->regs[idx].name, i8080RegTab[idx].name, 7);
+		bunch->regs[idx].name = i8080RegTab[idx].name;
 		bunch->regs[idx].byte = i8080RegTab[idx].byte;
 		switch(i8080RegTab[idx].id) {
 			case I8080_REG_PC: bunch->regs[idx].value = cpu->pc; break;

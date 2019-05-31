@@ -1178,7 +1178,12 @@ void DebugWin::fillCPU() {
 			default:
 				dbgRegLabs[i]->setText(bunch.regs[i].name);
 				dbgRegEdit[i]->setProperty("regid", bunch.regs[i].id);
-				dbgRegEdit[i]->setMax(bunch.regs[i].byte ? 0xff : 0xffff);
+				if (bunch.regs[i].byte) {
+					dbgRegEdit[i]->setMax(0xff);
+				} else {
+					dbgRegEdit[i]->setMax(0xffff);
+				}
+				// dbgRegEdit[i]->setMax(bunch.regs[i].byte ? 0xff : 0xffff);
 				dbgRegEdit[i]->setValue(bunch.regs[i].value);
 				dbgRegEdit[i]->setVisible(true);
 				break;
