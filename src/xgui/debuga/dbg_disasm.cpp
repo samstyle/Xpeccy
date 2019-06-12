@@ -755,8 +755,10 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			emit rqRefillAll();
 			ev->ignore();
 			break;
-		case Qt::Key_Space:
 		case Qt::Key_F2:
+			ev->ignore();
+			break;
+		case Qt::Key_Space:
 			if (ev->modifiers() & Qt::AltModifier) {
 				bpr = BRK_CPUADR;
 				bpt = MEM_BRK_RD;

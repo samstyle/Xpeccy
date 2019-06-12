@@ -331,6 +331,9 @@ void xDumpTable::keyPressEvent(QKeyEvent* ev) {
 			edit(currentIndex());
 			ev->ignore();
 			break;
+		case Qt::Key_F2:
+			ev->ignore();
+			break;
 		default:
 			QTableView::keyPressEvent(ev);
 			break;

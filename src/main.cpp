@@ -83,12 +83,14 @@ int main(int ac,char** av) {
 	app.connect(&dbgw, SIGNAL(closed()), &mwin, SLOT(dbgReturn()));
 	app.connect(&dbgw, SIGNAL(wannaKeys()), &keyw, SLOT(show()));
 	app.connect(&dbgw, SIGNAL(wannaWutch()), &wutw, SLOT(show()));
+	app.connect(&dbgw, SIGNAL(wannaOptions(xProfile*)), &optw, SLOT(start(xProfile*)));
 
 	app.connect(&mwin, SIGNAL(s_debug(Computer*)), &dbgw, SLOT(start(Computer*)));
 	app.connect(&mwin, SIGNAL(s_prf_change(xProfile*)), &dbgw, SLOT(onPrfChange(xProfile*)));
 
 	app.connect(&mwin, SIGNAL(s_options(xProfile*)), &optw, SLOT(start(xProfile*)));
 	app.connect(&optw, SIGNAL(closed()), &mwin, SLOT(optApply()));
+	app.connect(&optw, SIGNAL(closed()), &dbgw, SLOT(chaPal()));
 	app.connect(&optw, SIGNAL(s_prf_change(std::string)), &mwin, SLOT(setProfile(std::string)));
 
 	app.connect(&mwin, SIGNAL(s_tape_upd(Tape*)), &tapw, SLOT(upd(Tape*)));

@@ -61,11 +61,13 @@ class DebugWin : public QDialog {
 		void closed();
 		void wannaKeys();
 		void wannaWutch();
+		void wannaOptions(xProfile*);
 		void needStep();
 	public slots:
 		void start(Computer*);
 		bool fillAll();
 		void onPrfChange(xProfile*);
+		void chaPal();
 	private:
 		unsigned block:1;
 		// tracer
@@ -76,7 +78,6 @@ class DebugWin : public QDialog {
 		Ui::Debuger ui;
 		QPoint winPos;
 		QImage scrImg;
-//		QList<unsigned short> jumpHistory;
 
 		QMap<int, QList<QPair<QIcon, QWidget*> > > tablist;
 
@@ -178,6 +179,7 @@ class DebugWin : public QDialog {
 		void saveDumpToD();
 	protected:
 		void keyPressEvent(QKeyEvent*);
+		void keyReleaseEvent(QKeyEvent*);
 };
 
 #endif

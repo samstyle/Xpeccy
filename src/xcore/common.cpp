@@ -5,23 +5,25 @@
 #include <QString>
 
 static const char* hexhalf = "0123456789ABCDEF";
-static char hexbuf[5] = {'0','0','0','0',0x00};
+// static char hexbuf[5] = {'0','0','0','0',0x00};
 
-void formbufword(int num) {
-	for(int idx = 3; idx >= 0; idx--) {
-		hexbuf[idx] = hexhalf[num & 0x0f];
+QString formbufword(int num) {
+	QString res;
+	while (num) {
+		res.prepend(hexhalf[num & 0x0f]);
 		num >>= 4;
 	}
+	return res;
 }
 
 QString gethexword(int num) {
-	formbufword(num);
-	return QString(hexbuf);
+	QString res = formbufword(num & 0xffff);
+	return res.rightJustified(4, '0');
 }
 
 QString gethexbyte(uchar num) {
-	formbufword(num);
-	return QString(hexbuf+2);
+	QString res = formbufword(num & 0xff);
+	return res.rightJustified(2, '0');
 }
 
 QString gethexshift(char shft) {

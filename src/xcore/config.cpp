@@ -146,21 +146,9 @@ void saveConfig() {
 	fprintf(cfile, "\n[ROMSETS]\n");
 	foreach(xRomset rms, conf.rsList) {
 		fprintf(cfile, "\nname = %s\n", rms.name.c_str());
-#if 0
-		if (rms.file != "") {
-			fprintf(cfile, "file = %s\n", rms.file.c_str());
-		} else {
-			for (j = 0; j < 4; j++) {
-				if (rms.roms[j].path != "") {
-					fprintf(cfile, "%i = %s:%i\n", j, rms.roms[j].path.c_str(), rms.roms[j].part);
-				}
-			}
-		}
-#else
 		foreach(xRomFile rf, rms.roms) {
 			fprintf(cfile, "rom = %s:%i:%i:%i\n",rf.name.c_str(), rf.foffset, rf.fsize, rf.roffset);
 		}
-#endif
 		if (!rms.gsFile.empty())
 			fprintf(cfile, "gs = %s\n", rms.gsFile.c_str());
 		if (!rms.fntFile.empty())
@@ -169,10 +157,8 @@ void saveConfig() {
 
 	fprintf(cfile, "\n[SOUND]\n\n");
 	fprintf(cfile, "enabled = %s\n", YESNO(conf.snd.enabled));
-//	fprintf(cfile, "dontmute = %s\n", YESNO(conf.snd.mute));
 	fprintf(cfile, "soundsys = %s\n", sndOutput->name);
 	fprintf(cfile, "rate = %i\n", conf.snd.rate);
-//	fprintf(cfile, "dac = %s\n", YESNO(ayDac));
 	fprintf(cfile, "volume.master = %i\n", conf.snd.vol.master);
 	fprintf(cfile, "volume.beep = %i\n", conf.snd.vol.beep);
 	fprintf(cfile, "volume.tape = %i\n", conf.snd.vol.tape);
@@ -267,7 +253,7 @@ void loadConfig() {
 	newrs.gsFile.clear();
 	newrs.roms.clear();
 	conf.pal.clear();
-
+// init volumes
 	conf.snd.vol.master = 100;
 	conf.snd.vol.beep = 100;
 	conf.snd.vol.tape = 100;
@@ -275,6 +261,16 @@ void loadConfig() {
 	conf.snd.vol.gs = 100;
 	conf.snd.vol.sdrv = 100;
 	conf.snd.vol.saa = 100;
+// init palette
+	conf.pal["dbg.brk.txt"] = "ef2929";
+	conf.pal["dbg.changed.bg"] = "#ffcece";
+	conf.pal["dbg.changed.txt"] = "#000000";
+	conf.pal["dbg.header.bg"] = "#4f96ed";
+	conf.pal["dbg.header.txt"] = "#000000";
+	conf.pal["dbg.pc.bg"] = "#2ccc00";
+	conf.pal["dbg.pc.txt"] = "#000000";
+	conf.pal["dbg.sel.bg"] = "#98ff98";
+	conf.pal["dbg.sel.txt"] = "#000000";
 
 	while (!file.eof()) {
 		file.getline(buf,2048);

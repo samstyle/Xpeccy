@@ -337,12 +337,6 @@ xRegBunch cpuGetRegs(CPU* cpu) {
 	}
 	memcpy(bunch.flags, "--------", 8);
 	if (cpu->getregs) cpu->getregs(cpu, &bunch);
-#ifdef ISDEBUG
-	bunch.regs[14].id = REG_MPTR;
-	strcpy(bunch.regs[14].name, "WZ");
-	bunch.regs[14].value = cpu->mptr;
-	bunch.regs[14].byte = 0;
-#endif
 	return bunch;
 }
 

@@ -268,6 +268,9 @@ static xRegDsc z80RegTab[] = {
 	{Z80_REG_IY, "IY", 0},
 	{Z80_REG_I, "I", 1},
 	{Z80_REG_R, "R", 1},
+#ifdef ISDEBUG
+	{REG_MPTR, "WZ", 0},
+#endif
 	{REG_NONE, "", 0}
 };
 
@@ -292,6 +295,7 @@ void z80_get_regs(CPU* cpu, xRegBunch* bunch) {
 			case Z80_REG_IY: bunch->regs[idx].value = cpu->iy; break;
 			case Z80_REG_I: bunch->regs[idx].value = cpu->i; break;
 			case Z80_REG_R: bunch->regs[idx].value = (cpu->r & 0x7f) | (cpu->r7 & 0x80); break;
+			case REG_MPTR: bunch->regs[idx].value = cpu->mptr; break;
 		}
 		idx++;
 	}
@@ -320,6 +324,7 @@ void z80_set_regs(CPU* cpu, xRegBunch bunch) {
 				cpu->r = bunch.regs[idx].value & 0x7f;
 				cpu->r7 = bunch.regs[idx].value & 0x80;
 				break;
+			case REG_MPTR: cpu->mptr = bunch.regs[idx].value; break;
 			case REG_NONE: idx = 100; break;
 		}
 	}

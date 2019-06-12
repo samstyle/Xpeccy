@@ -33,6 +33,7 @@ int dasmSome(Computer*, unsigned short, dasmData&);
 enum {
 	DBG_TRACE_ALL = 0x100,
 	DBG_TRACE_INT,
+	DBG_TRACE_KEY,
 	DBG_TRACE_HERE,
 	DBG_TRACE_LOG
 };
@@ -58,24 +59,7 @@ typedef struct {
 
 #define SETCOLOR(_n, _r) col = conf.pal[_n]; if (col.isValid()) pal.setColor(_r, col);
 
-void DebugWin::start(Computer* c) {
-	blockStart = -1;
-	blockEnd = -1;
-	chLayout();
-	if (!fillAll()) {
-		disasmAdr = comp->cpu->pc;
-		fillDisasm();
-	}
-	updateScreen();
-	if (!comp->vid->tail)
-		vidDarkTail(comp->vid);
-
-	this->move(winPos);
-//	ui.dasmTable->setFocus();
-	comp->vid->debug = 1;
-	comp->debug = 1;
-	comp->brk = 0;
-
+void DebugWin::chaPal() {
 	QColor col;
 	QColor cot;
 	QPalette pal;
@@ -95,6 +79,29 @@ void DebugWin::start(Computer* c) {
 	ui.labHeadRay->setStyleSheet(str);
 	ui.labHeadStack->setStyleSheet(str);
 	ui.labHeadSignal->setStyleSheet(str);
+
+	fillAll();
+}
+
+void DebugWin::start(Computer* c) {
+	blockStart = -1;
+	blockEnd = -1;
+	chLayout();
+	if (!fillAll()) {
+		disasmAdr = comp->cpu->pc;
+		fillDisasm();
+	}
+	updateScreen();
+	if (!comp->vid->tail)
+		vidDarkTail(comp->vid);
+
+	this->move(winPos);
+//	ui.dasmTable->setFocus();
+	comp->vid->debug = 1;
+	comp->debug = 1;
+	comp->brk = 0;
+
+	chaPal();
 
 	show();
 
@@ -144,6 +151,7 @@ void DebugWin::onPrfChange(xProfile* prf) {
 		lst.removeFirst();
 	}
 	ui.tabsPanel->setPalette(QPalette());
+	fillAll();
 }
 
 void DebugWin::reject() {stop();}
@@ -599,7 +607,7 @@ void DebugWin::doStep() {
 				printf("%.4X\n", comp->cpu->pflag);
 				break;
 		}
-		QApplication::processEvents();
+		if (trace) QApplication::processEvents();
 	} while(trace);
 	ui.tbTrace->setEnabled(true);
 	if (logfile.isOpen()) logfile.close();
@@ -628,11 +636,10 @@ void DebugWin::doTrace(QAction* act) {
 }
 
 void DebugWin::keyPressEvent(QKeyEvent* ev) {
-	if (trace) {
+	if (trace && !ev->isAutoRepeat()) {
 		trace = 0;
 		return;
 	}
-
 	int i;
 	unsigned short pc = comp->cpu->pc;
 	unsigned char* ptr;
@@ -666,6 +673,11 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 				case Qt::Key_K:
 					emit wannaKeys();
 					break;
+				case Qt::Key_F7:
+					for (i = 10; i > 0; i--) {
+						doStep();
+					}
+					break;
 			}
 			break;
 		default:
@@ -686,29 +698,6 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					fillCPU();
 					fillDisasm();
 					break;
-				case Qt::Key_F2:
-					// switchBP(MEM_BRK_FETCH);
-					break;
-					/*
-				case Qt::Key_F4:
-					idx = ui.dasmTable->currentIndex();
-					if (!idx.isValid()) break;
-					row = idx.row();
-					if (row < 0) break;
-					pos = ui.dasmTable->getData(row, 2, Qt::UserRole).toInt();
-					if (pos < 0) break;
-					jumpHistory.append(disasmAdr);
-					if (jumpHistory.size() > 64)
-						jumpHistory.takeFirst();
-					disasmAdr = pos;
-					fillDisasm();
-					break;
-				case Qt::Key_F5:
-					if (jumpHistory.size() == 0) break;
-					disasmAdr = jumpHistory.takeLast();
-					fillDisasm();
-					break;
-*/
 				case Qt::Key_PageUp:
 					if (ui.dumpTable->hasFocus()) {
 						dumpAdr = (dumpAdr - offset) & 0xffff;
@@ -729,6 +718,12 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 						fillDisasm();
 					}
 					break;
+				case Qt::Key_F1:
+					emit wannaOptions(conf.prof.cur);
+					break;
+				case Qt::Key_F2:
+					save_file(comp, NULL, FG_ALL, -1);
+					break;
 				case Qt::Key_F3:
 					load_file(comp, NULL, FG_ALL, -1);
 					disasmAdr = comp->cpu->pc;
@@ -738,7 +733,6 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					doStep();
 					break;
 				case Qt::Key_F8:
-					// if (!ui.dasmTable->hasFocus()) break;
 					len = dasmSome(comp, comp->cpu->pc, drow);
 					if (drow.oflag & OF_SKIPABLE) {
 						ptr = getBrkPtr(comp, (comp->cpu->pc + len) & 0xffff);
@@ -767,6 +761,9 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			}
 		break;
 	}
+}
+
+void DebugWin::keyReleaseEvent(QKeyEvent *ev) {
 }
 
 void setSignal(QLabel* lab, int on) {
