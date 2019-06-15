@@ -247,39 +247,50 @@ void MainWin::mapJoystick(Computer* comp, int type, int num, int st) {
 	}
 	if (jState[type][num] == state) return;
 	jState[type][num] = state;
-	xJoyMapEntry xjm;
+	// xJoyMapEntry xjm;
 	QList<xJoyMapEntry> presslist;
-	foreach(xjm, conf.joy.map) {
+	for(xJoyMapEntry& xjm : conf.joy.map) {
 		if ((type == xjm.type) && (num == xjm.num)) {
 			if ((state == 0) && (type != JOY_HAT)) {
 				mapRelease(comp, xjm);
+				xjm.cnt = 0;
 			} else {
 				switch(type) {
 					case JOY_AXIS:
 						if (sign(state) == sign(xjm.state)) {
 							xjm.state = st;
+							xjm.cnt = xjm.rpt;
+							xjm.rps = 1;
 							presslist.append(xjm);
 						} else {
+							xjm.cnt = 0;
 							mapRelease(comp, xjm);
 						}
 						break;
 					case JOY_HAT:
-						if (hst & xjm.state) {		// state changed
-							if (state & xjm.state)	// pressed
+						if (hst & xjm.state) {			// state changed
+							if (state & xjm.state) {	// pressed
+								xjm.cnt = xjm.rpt;
+								xjm.rps = 1;
 								presslist.append(xjm);
-							else			// released
+							} else {			// released
 								mapRelease(comp, xjm);
+								xjm.cnt = 0;
+							}
 						}
 						break;
 					case JOY_BUTTON:
+						xjm.cnt = xjm.rpt;
+						xjm.rps = 1;
 						presslist.append(xjm);
 						break;
 				}
 			}
 		}
 	}
-	foreach (xjm, presslist)
+	foreach(xJoyMapEntry xjm, presslist) {
 		mapPress(comp, xjm);
+	}
 }
 
 // calling on timer every 20ms
@@ -314,6 +325,21 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 			pause(false, PR_RZX);
 		}
 #endif
+// buttons autorepeat switcher
+		for(xJoyMapEntry& xjm : conf.joy.map) {
+			if (xjm.cnt > 0) {
+				xjm.cnt--;
+				if (xjm.cnt == 0) {
+					xjm.cnt = xjm.rpt;
+					xjm.rps = !xjm.rps;
+					if (xjm.rps) {
+						mapPress(comp, xjm);
+					} else {
+						mapRelease(comp, xjm);
+					}
+				}
+			}
+		}
 // process sdl event (gamepad)
 		if (conf.joy.joy && !conf.emu.pause) {
 			SDL_Event ev;

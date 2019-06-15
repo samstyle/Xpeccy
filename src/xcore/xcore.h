@@ -234,6 +234,9 @@ typedef struct {
 	int dev;		// device for action JMAP_*
 	int key;		// key XKEY_* for keyboard
 	int dir;		// XJ_* for kempston
+	int rps;		// repeat state (0:released, !0:pressed)
+	int rpt;		// repeat period (0 = no repeat)
+	int cnt;		// repeat counter
 } xJoyMapEntry;
 
 void mapJoystick(Computer*, int, int, int);

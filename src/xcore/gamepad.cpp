@@ -76,6 +76,7 @@ void padLoadConfig(std::string name) {
 	int num;
 	int idx;
 	char buf[1024];
+	char* ptr;
 
 	strcpy(path, conf.path.confDir);
 	strcat(path, SLASH);
@@ -86,46 +87,57 @@ void padLoadConfig(std::string name) {
 		while(!feof(file)) {
 			memset(buf, 0x00, 1024);
 			fgets(buf, 1023, file);
-			strtok(buf, "\n\a");
-			jent.type = padGetId(buf[0], pabhChars);
-			num = 0;
-			idx = 1;
-			while ((buf[idx] >= '0') && (buf[idx] <= '9')) {
-				num = num * 10 + buf[idx] - '0';
-				idx++;
-			}
-			jent.num = num;
-
-			switch(jent.type) {
-				case JOY_AXIS:
-					jent.state = (buf[idx] == '-') ? -1 : +1;
+			ptr = strtok(buf, ":\n");
+			if (ptr) {
+				jent.type = padGetId(ptr[0], pabhChars);
+				jent.num = atoi(&ptr[1]);
+				idx = 1;
+				num = 0;
+				while ((ptr[idx] >= '0') && (ptr[idx] <= '9')) {
+					num = num * 10 + ptr[idx] - '0';
 					idx++;
-					break;
-				case JOY_BUTTON:
-					break;
-				case JOY_HAT:
-					jent.state = padGetId(buf[idx], hatChars);
-					idx++;
-					break;
-			}
-			if (buf[idx] == ':') {
-				idx++;
-				jent.dev = padGetId(buf[idx], devChars);
-				idx++;
-				switch(jent.dev) {
-					case JMAP_KEY:
-						jent.key = getKeyIdByName(&buf[idx]);
-						if ((jent.type != JOY_NONE) && (jent.key != ENDKEY))
-							conf.joy.map.push_back(jent);
+				}
+				jent.num = num;
+				// get direction for axis & hat
+				switch(jent.type) {
+					case JOY_AXIS:		// A0+ A0-
+						jent.state = (ptr[idx] == '-') ? -1 : +1;
+						idx++;
 						break;
-					case JMAP_JOY:
-						jent.dir = padGetId(buf[idx], kjoyChars);
+					case JOY_BUTTON:
+						break;
+					case JOY_HAT:		// HU HD HR HL
+						jent.state = padGetId(ptr[idx], hatChars);
+						idx++;
+						break;
+				}
+				ptr = strtok(NULL, ":\n");
+				if (ptr) {		// there was 1st :
+					jent.dev = padGetId(ptr[0], devChars);
+					idx = 1;
+					switch (jent.dev) {
+						case JMAP_KEY:		// KUP, KLEFT, KQ, KA
+							jent.key = getKeyIdByName(&ptr[1]);
+							if (jent.key == ENDKEY)
+								jent.dev = JMAP_NONE;
+							break;
+						case JMAP_JOY:		// JU, JD, JF, J2, J4
+							jent.dir = padGetId(ptr[1], kjoyChars);
+							break;
+						case JMAP_MOUSE:	// MD, ML, M[ M| M] M^ Mv
+							jent.dir = padGetId(ptr[1], kmouChars);
+							break;
+						default:
+							jent.dev = JMAP_NONE;	// ignore it
+							break;
+					}
+					jent.rpt = 0;
+					jent.cnt = 0;
+					ptr = strtok(NULL, ":\n");
+					if (ptr)
+						jent.rpt = atoi(ptr);
+					if (jent.dev != JMAP_NONE)
 						conf.joy.map.push_back(jent);
-						break;
-					case JMAP_MOUSE:
-						jent.dir = padGetId(buf[idx], kmouChars);
-						conf.joy.map.push_back(jent);
-						break;
 				}
 			}
 		}
@@ -166,6 +178,8 @@ void padSaveConfig(std::string name) {
 				default:
 					fprintf(file, "?");
 			}
+			if (jent.rpt > 0)
+				fprintf(file, ":%i", jent.rpt);
 			fputc('\n', file);
 		}
 		fclose(file);

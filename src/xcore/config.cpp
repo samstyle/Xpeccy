@@ -14,25 +14,27 @@
 	#include <direct.h>
 #endif
 
-#define	SECT_NONE	0
-#define SECT_BOOKMARK	1
-#define	SECT_PROFILES	2
-#define	SECT_VIDEO	3
-#define	SECT_ROMSETS	4
-#define	SECT_SOUND	5
-#define	SECT_TOOLS	6
-#define	SECT_GAMEPAD	7
-#define	SECT_GENERAL	8
-#define	SECT_SCRSHOT	9
-#define	SECT_DISK	10
-#define	SECT_IDE	11
-#define	SECT_MACHINE	12
-#define	SECT_MENU	13
-#define	SECT_TAPE	14
-#define	SECT_LEDS	15
-#define	SECT_INPUT	16
-#define	SECT_SDC	17
-#define	SECT_PALETTE	17
+enum {
+	SECT_NONE = 0,
+	SECT_BOOKMARK,
+	SECT_PROFILES,
+	SECT_VIDEO,
+	SECT_ROMSETS,
+	SECT_SOUND,
+	SECT_TOOLS,
+	SECT_GAMEPAD,
+	SECT_GENERAL,
+	SECT_SCRSHOT,
+	SECT_DISK,
+	SECT_IDE,
+	SECT_MACHINE,
+	SECT_MENU,
+	SECT_TAPE,
+	SECT_LEDS,
+	SECT_INPUT,
+	SECT_SDC,
+	SECT_PALETTE
+};
 
 std::map<std::string, int> shotFormat;
 xConfig conf;

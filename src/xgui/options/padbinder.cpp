@@ -37,6 +37,7 @@ xPadBinder::xPadBinder(QWidget* p):QDialog(p) {
 	connect(ui.cbJoyList, SIGNAL(currentIndexChanged(int)), this, SLOT(setJoyDir()));
 	connect(ui.cbMouseList, SIGNAL(currentIndexChanged(int)), this, SLOT(setMouseDir()));
 	connect(ui.pbOk, SIGNAL(clicked(bool)), this, SLOT(okPress()));
+	connect(ui.pbRepSlider, SIGNAL(valueChanged(int)), this, SLOT(onRepSlider(int)));
 
 }
 
@@ -44,6 +45,7 @@ void xPadBinder::start(xJoyMapEntry e) {
 	ent = e;
 	setPadButtonText();
 	setKeyButtonText();
+	ui.pbRepSlider->setValue(ent.rpt);
 	timer.start(20);
 	show();
 }
@@ -51,6 +53,11 @@ void xPadBinder::start(xJoyMapEntry e) {
 void xPadBinder::close() {
 	timer.stop();
 	QDialog::close();
+}
+
+void xPadBinder::onRepSlider(int val) {
+	QString num = QString::number(val / 50.0);
+	ui.pbRepLabel->setText(QString("%0 sec").arg(num));
 }
 
 void xPadBinder::setKeyButtonText() {
@@ -155,6 +162,7 @@ void xPadBinder::keyPressEvent(QKeyEvent* ev) {
 
 void xPadBinder::okPress() {
 	if (ent.type == JOY_NONE) return;
+	ent.rpt = ui.pbRepSlider->value();
 	if (ui.rbKey->isChecked()) {
 		ent.dev = JMAP_KEY;
 		ent.dir = XJ_NONE;
@@ -236,7 +244,7 @@ int xPadMapModel::rowCount(const QModelIndex& par) const {
 
 int xPadMapModel::columnCount(const QModelIndex& par) const {
 	if (par.isValid()) return 0;
-	return 2;
+	return 3;
 }
 
 QVariant xPadMapModel::data(const QModelIndex& idx, int role) const {
@@ -308,6 +316,10 @@ QVariant xPadMapModel::data(const QModelIndex& idx, int role) const {
 							}
 					}
 					res = str;
+					break;
+				case 2:
+					if (jent.rpt > 0)
+						res = QString("%0 sec").arg(jent.rpt / 50.0);
 					break;
 			}
 			break;

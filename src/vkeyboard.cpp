@@ -102,26 +102,14 @@ void keyWindow::mouseReleaseEvent(QMouseEvent* ev) {
 }
 
 void keyWindow::keyPressEvent(QKeyEvent* ev) {
-	emit s_key_press(ev);
-#if 0
-	int keyid = qKey2id(ev->key());
-	keyEntry kent = getKeyEntry(keyid);
-	if (ev->modifiers() & Qt::AltModifier) {
-		if (ev->key() == Qt::Key_K)
-			close();
+	if (ev->key() == Qt::Key_Escape) {
+		hide();
 	} else {
-		kbdPress(kb, kent);
-		update();
+		emit s_key_press(ev);
 	}
-#endif
 }
 
 void keyWindow::keyReleaseEvent(QKeyEvent* ev) {
-	emit s_key_release(ev);
-#if 0
-	int keyid = qKey2id(ev->key());
-	keyEntry kent = getKeyEntry(keyid);
-	kbdRelease(kb, kent);
-	update();
-#endif
+	if (ev->key() != Qt::Key_Escape)
+		emit s_key_release(ev);
 }
