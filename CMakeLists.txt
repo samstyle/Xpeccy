@@ -196,7 +196,7 @@ if(${QT4BUILD})
 
 else(${QT4BUILD})
 
-	find_package(Qt5Widgets REQUIRED)
+	find_package(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
 	set(LIBRARIES ${LIBRARIES} Qt5::Widgets)
 	qt5_add_resources(RESOURCES ${QRCFILES})
 	qt5_wrap_ui(UIHEADERS ${UIFILES})
@@ -205,7 +205,7 @@ else(${QT4BUILD})
 	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5gui5 (>=5.3), libqt5widgets5 (>=5.3)")
 
 	if(${USEQTNETWORK})
-		find_package(Qt5Network REQUIRED)
+		find_package(Qt5 COMPONENTS Network REQUIRED)
 		set(LIBRARIES ${LIBRARIES} Qt5::Network)
 		set(CPACK_DEBIAN_PACKAGE_DEPENDS ${CPACK_DEBIAN_PACKAGE_DEPENDS} "libqt5network5 (>=5.3)")
 		add_definitions("-DUSENETWORK")

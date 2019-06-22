@@ -54,8 +54,10 @@ void fgetLine(FILE* file, char* buf, int size, int term) {
 	} while (!feof(file) && (size > 0) && (ch != term));
 }
 
-static const char edsksgn[] =	"EXTENDED CPC DSK File\r\n";
-static const char dsksgn[] =	"MV - CPCEMU Disk-File\r\n";
+//static const char edsksgn[] =	"EXTENDED CPC DSK File\r\n";
+//static const char dsksgn[] =	"MV - CPCEMU Disk-File\r\n";
+static const char edsksgn[] =	"EXTENDED";
+static const char dsksgn[] =	"MV - CPC";
 
 int loadDSK(Computer* comp, const char *name, int drv) {
 	Floppy* flp = comp->dif->fdc->flop[drv & 3];
