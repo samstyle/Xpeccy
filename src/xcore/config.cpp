@@ -264,7 +264,7 @@ void loadConfig() {
 	conf.snd.vol.sdrv = 100;
 	conf.snd.vol.saa = 100;
 // init palette
-	conf.pal["dbg.brk.txt"] = "ef2929";
+	conf.pal["dbg.brk.txt"] = "#ef2929";
 	conf.pal["dbg.changed.bg"] = "#ffcece";
 	conf.pal["dbg.changed.txt"] = "#000000";
 	conf.pal["dbg.header.bg"] = "#4f96ed";

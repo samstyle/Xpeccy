@@ -249,7 +249,10 @@ void MainWin::mapJoystick(Computer* comp, int type, int num, int st) {
 	jState[type][num] = state;
 	// xJoyMapEntry xjm;
 	QList<xJoyMapEntry> presslist;
-	for(xJoyMapEntry& xjm : conf.joy.map) {
+	// foreach(xJoyMapEntry& xjm, conf.joy.map) {
+	// for(xJoyMapEntry& xjm : conf.joy.map) {
+	for (size_t i = 0; i < conf.joy.map.size(); i++) {
+		xJoyMapEntry& xjm = conf.joy.map[i];
 		if ((type == xjm.type) && (num == xjm.num)) {
 			if ((state == 0) && (type != JOY_HAT)) {
 				mapRelease(comp, xjm);
@@ -326,7 +329,9 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 		}
 #endif
 // buttons autorepeat switcher
-		for(xJoyMapEntry& xjm : conf.joy.map) {
+		// for(xJoyMapEntry& xjm : conf.joy.map) {
+		for (size_t i = 0; i < conf.joy.map.size(); i++) {
+			xJoyMapEntry& xjm = conf.joy.map[i];
 			if (xjm.cnt > 0) {
 				xjm.cnt--;
 				if (xjm.cnt == 0) {
