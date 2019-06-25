@@ -22,7 +22,8 @@ void lr_reset(CPU* cpu) {
 	cpu->imode = 0;
 	cpu->af_ = cpu->bc_ = cpu->de_ = cpu->hl_ = 0xffff;
 	cpu->ix = cpu->iy = 0xffff;
-	cpu->i = cpu->r = cpu->r7 = 0xff;
+	cpu->i = cpu->r = 0xff;
+	cpu->r7 = 0x80;
 }
 
 typedef struct {

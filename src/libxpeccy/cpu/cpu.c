@@ -342,5 +342,5 @@ xRegBunch cpuGetRegs(CPU* cpu) {
 
 void cpuSetRegs(CPU* cpu, xRegBunch bunch) {
 	cpu->setregs(cpu, bunch);
-	cpu->r7 = cpu->r & 0x80;
+	// cpu->r7 = cpu->r & 0x80;
 }

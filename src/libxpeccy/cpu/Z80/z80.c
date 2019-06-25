@@ -321,7 +321,7 @@ void z80_set_regs(CPU* cpu, xRegBunch bunch) {
 			case Z80_REG_IY: cpu->iy = bunch.regs[idx].value; break;
 			case Z80_REG_I: cpu->i = bunch.regs[idx].value & 0xff; break;
 			case Z80_REG_R:
-				cpu->r = bunch.regs[idx].value & 0x7f;
+				cpu->r = bunch.regs[idx].value;
 				cpu->r7 = bunch.regs[idx].value & 0x80;
 				break;
 			case REG_MPTR: cpu->mptr = bunch.regs[idx].value; break;
