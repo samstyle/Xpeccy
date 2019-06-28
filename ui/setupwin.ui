@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>545</width>
-    <height>443</height>
+    <height>426</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -1111,6 +1111,13 @@
                <layout class="QVBoxLayout" name="verticalLayout_9">
                 <item>
                  <layout class="QGridLayout" name="gridLayout_13">
+                  <item row="4" column="0">
+                   <widget class="QLabel" name="label_25">
+                    <property name="text">
+                     <string>TS</string>
+                    </property>
+                   </widget>
+                  </item>
                   <item row="0" column="0">
                    <widget class="QLabel" name="label_15">
                     <property name="text">
@@ -1124,28 +1131,61 @@
                   <item row="0" column="2">
                    <widget class="QComboBox" name="stereo1box"/>
                   </item>
-                  <item row="1" column="0">
+                  <item row="2" column="0">
                    <widget class="QLabel" name="label_16">
                     <property name="text">
                      <string>Chip 2</string>
                     </property>
                    </widget>
                   </item>
-                  <item row="1" column="1">
+                  <item row="2" column="1">
                    <widget class="QComboBox" name="schip2box"/>
                   </item>
-                  <item row="1" column="2">
+                  <item row="2" column="2">
                    <widget class="QComboBox" name="stereo2box"/>
                   </item>
-                  <item row="2" column="0">
-                   <widget class="QLabel" name="label_25">
-                    <property name="text">
-                     <string>TS</string>
+                  <item row="1" column="1">
+                   <widget class="QDoubleSpinBox" name="chip1freq">
+                    <property name="decimals">
+                     <number>6</number>
+                    </property>
+                    <property name="maximum">
+                     <double>10.000000000000000</double>
+                    </property>
+                    <property name="value">
+                     <double>1.750000000000000</double>
                     </property>
                    </widget>
                   </item>
-                  <item row="2" column="1">
+                  <item row="4" column="1">
                    <widget class="QComboBox" name="tsbox"/>
+                  </item>
+                  <item row="1" column="2">
+                   <widget class="QLabel" name="label_51">
+                    <property name="text">
+                     <string>MHz</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="3" column="1">
+                   <widget class="QDoubleSpinBox" name="chip2freq">
+                    <property name="decimals">
+                     <number>6</number>
+                    </property>
+                    <property name="maximum">
+                     <double>10.000000000000000</double>
+                    </property>
+                    <property name="value">
+                     <double>1.750000000000000</double>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="3" column="2">
+                   <widget class="QLabel" name="label_52">
+                    <property name="text">
+                     <string>MHz</string>
+                    </property>
+                   </widget>
                   </item>
                  </layout>
                 </item>

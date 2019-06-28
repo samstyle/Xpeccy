@@ -53,7 +53,11 @@ int main(int ac,char** av) {
 	printf("Using Qt ver %s\n",qVersion());
 
 	QApplication app(ac,av,true);
-
+#ifdef _WIN32
+	QStringList paths = QCoreApplication::libraryPaths();
+	paths.append(".");
+	QCoreApplication::setLibraryPaths(paths);
+#endif
 	conf.running = 0;
 	conf.emu.pause = 0;
 	conf.emu.fast = 0;

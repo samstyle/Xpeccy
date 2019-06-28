@@ -320,6 +320,8 @@ int prfLoad(std::string nm) {
 	char buf[0x4000];
 	int tmask = -1;
 	int tmp2;
+	int chatype = SND_NONE;
+	int chbtype = SND_NONE;
 	double tmpd;
 	int section = PS_NONE;
 	ATAPassport masterPass = ideGetPassport(comp->ide,IDE_MASTER);
@@ -380,10 +382,12 @@ int prfLoad(std::string nm) {
 					if (pnam == "DDpal") comp->ddpal = str2bool(pval) ? 1 : 0;
 					break;
 				case PS_SOUND:
-					if (pnam == "chip1") aymSetType(comp->ts->chipA,atoi(pval.c_str()));
+					if (pnam == "chip1") chatype = atoi(pval.c_str());
 					if (pnam == "chip1.stereo") comp->ts->chipA->stereo = atoi(pval.c_str());
-					if (pnam == "chip2") aymSetType(comp->ts->chipB,atoi(pval.c_str()));
+					if (pnam == "chip1.frq") comp->ts->chipA->frq = atof(pval.c_str());
+					if (pnam == "chip2") chbtype = atoi(pval.c_str());
 					if (pnam == "chip2.stereo") comp->ts->chipB->stereo = atoi(pval.c_str());
+					if (pnam == "chip2.frq") comp->ts->chipB->frq = atof(pval.c_str());
 					if (pnam == "ts.type") comp->ts->type = atoi(pval.c_str());
 
 					if (pnam == "gs") comp->gs->enable = arg.b;
@@ -432,16 +436,6 @@ int prfLoad(std::string nm) {
 						tmp2 = toPower(tmp2);
 						tmp2 = toLimits(tmp2, MEM_256, MEM_4M);
 						tmask = tmp2;
-/*
-						switch (memsz) {
-							case 128: tmask = MEM_128K; break;
-							case 256: tmask = MEM_256K; break;
-							case 512: tmask = MEM_512K; break;
-							case 1024: tmask = MEM_1M; break;
-							case 2048: tmask = MEM_2M; break;
-							case 4096: tmask = MEM_4M; break;
-						}
-*/
 					}
 					if (pnam == "contmem") comp->contMem = str2bool(pval) ? 1 : 0;
 					//if (pnam == "contmemP3") setFlagBit(str2bool(pval),&comp->vid->flags,VID_CONT2);
@@ -504,6 +498,9 @@ int prfLoad(std::string nm) {
 
 	ideSetPassport(comp->ide,IDE_MASTER,masterPass);
 	ideSetPassport(comp->ide,IDE_SLAVE,slavePass);
+
+	aymSetType(comp->ts->chipA, chatype);
+	aymSetType(comp->ts->chipB, chbtype);
 
 	tmp2 = PLOAD_OK;
 
@@ -590,8 +587,10 @@ int prfSave(std::string nm) {
 	fprintf(file, "\n[SOUND]\n\n");
 	fprintf(file, "chip1 = %i\n", comp->ts->chipA->type);
 	fprintf(file, "chip1.stereo = %i\n", comp->ts->chipA->stereo);
+	fprintf(file, "chip1.frq = %f\n", comp->ts->chipA->frq);
 	fprintf(file, "chip2 = %i\n", comp->ts->chipB->type);
 	fprintf(file, "chip2.stereo = %i\n", comp->ts->chipB->stereo);
+	fprintf(file, "chip2.frq = %f\n", comp->ts->chipB->frq);
 	fprintf(file, "ts.type = %i\n", comp->ts->type);
 
 	fprintf(file, "gs = %s\n", YESNO(comp->gs->enable));

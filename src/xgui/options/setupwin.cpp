@@ -67,9 +67,6 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 
 	padial = new xPadBinder(this);
 
-//	block = 0;
-//	prfChanged = 0;
-
 	int i;
 // machine
 	i = 0;
@@ -434,6 +431,8 @@ void SetupWin::start(xProfile* p) {
 	ui.schip2box->setCurrentIndex(ui.schip2box->findData(QVariant(comp->ts->chipB->type)));
 	ui.stereo1box->setCurrentIndex(ui.stereo1box->findData(QVariant(comp->ts->chipA->stereo)));
 	ui.stereo2box->setCurrentIndex(ui.stereo2box->findData(QVariant(comp->ts->chipB->stereo)));
+	ui.chip1freq->setValue(comp->ts->chipA->frq);
+	ui.chip2freq->setValue(comp->ts->chipB->frq);
 	ui.tsbox->setCurrentIndex(ui.tsbox->findData(QVariant(comp->ts->type)));
 // input
 	buildkeylist();
@@ -593,6 +592,8 @@ void SetupWin::apply() {
 	conf.snd.vol.saa = ui.sbSAAVol->value();
 
 	setOutput(nname.c_str());
+	comp->ts->chipA->frq = ui.chip1freq->value();
+	comp->ts->chipB->frq = ui.chip2freq->value();
 	aymSetType(comp->ts->chipA, getRFIData(ui.schip1box));
 	aymSetType(comp->ts->chipB, getRFIData(ui.schip2box));
 	comp->ts->chipA->stereo = getRFIData(ui.stereo1box);

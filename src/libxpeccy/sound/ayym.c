@@ -25,18 +25,22 @@ void aymSetType(aymChip* ay, int tp) {
 	ay->type = tp;
 	switch (tp) {
 		case SND_AY:
-			ay->frq = 1.774400;
+			if (ay->frq == 0)
+				ay->frq = 1.774400;
 			ay->coarse = 1;
 			break;
 		case SND_YM:
-			ay->frq = 1.750000;
+			if (ay->frq == 0)
+				ay->frq = 1.750000;
 			ay->coarse = 0;
 			break;
 		case SND_YM2203:		// 4.2 is base freq
-			ay->frq = 4.2;
+			if (ay->frq == 0)
+				ay->frq = 4.2;
 			break;
 		default:
-			ay->frq = 1;
+			if (ay->frq == 0)
+				ay->frq = 1;
 			ay->type = SND_NONE;
 	}
 	if (ay->type == SND_NONE) return;
