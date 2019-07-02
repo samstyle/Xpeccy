@@ -15,10 +15,11 @@ enum {
 };
 
 enum {
-	XVIEW_CPU = 1,
+	XVIEW_NONE = 0,
+	XVIEW_CPU,
 	XVIEW_RAM,
 	XVIEW_ROM,
-	XVIEW_SLT
+	XVIEW_SLT,
 };
 
 class xDumpModel : public QAbstractTableModel {

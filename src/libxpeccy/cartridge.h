@@ -69,6 +69,10 @@ enum {
 #define	MEM_BRK_WR	(1<<2)
 #define	MEM_BRK_ANY	(MEM_BRK_FETCH | MEM_BRK_RD | MEM_BRK_WR)
 #define MEM_BRK_TFETCH	(1<<3)
+#define MEM_BRK_RAM	(0<<6)	// 00xxxxxx
+#define MEM_BRK_ROM	(1<<6)	// 01xxxxxx
+#define MEM_BRK_SLT	(2<<6)	// 10xxxxxx
+#define MEM_BRK_TMASK	(3<<6)	// 11xxxxxx
 
 typedef struct xCartridge xCartridge;
 

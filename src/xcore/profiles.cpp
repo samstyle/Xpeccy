@@ -222,8 +222,9 @@ void setDiskString(Computer* comp,Floppy* flp,std::string st) {
 	if (flp->path || (st.size() < 5) || !conf.storePaths) return;
 	st = st.substr(5);
 	if (st.size() > 1) {
-		//loadFile(comp,st.c_str(),FT_DISK,flp->id);
-		load_file(comp, st.c_str(), FG_DISK, flp->id);
+		if (load_file(comp, st.c_str(), FG_DISK, flp->id) != ERR_OK) {
+			flpEject(flp);
+		}
 	}
 }
 

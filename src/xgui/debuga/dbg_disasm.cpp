@@ -84,10 +84,8 @@ QVariant xDisasmModel::data(const QModelIndex& idx, int role) const {
 			break;
 		case Qt::BackgroundColorRole:
 			if (dasm[row].ispc && !dasm[row].islab) {
-				//res = colPC;			// pc
 				clr = conf.pal["dbg.pc.bg"];
 			} else if (dasm[row].issel) {
-				//res = colSEL;			// selected
 				clr = conf.pal["dbg.sel.bg"];
 			} else {
 				clr = conf.pal["dbg.table.bg"];
@@ -317,7 +315,8 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 	int wid;
 	// 0:adr
 	QString lab;
-	xAdr xadr;
+	xAdr xadr = memGetXAdr(comp->mem, comp->cpu->pc);
+	int abs = xadr.abs;
 	switch (mode) {
 		case XVIEW_RAM:
 			xadr.type = MEM_RAM;
@@ -325,6 +324,7 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 			xadr.adr = adr & 0x3fff;
 			xadr.abs = xadr.adr | (page << 14);
 			drow.flag = comp->brkRamMap[xadr.abs];
+			drow.ispc = (abs == xadr.abs) ? 1 : 0;
 			break;
 		case XVIEW_ROM:
 			xadr.type = MEM_ROM;
@@ -332,6 +332,7 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 			xadr.adr = adr & 0x3fff;
 			xadr.abs = xadr.adr | (page << 14);
 			drow.flag = comp->brkRomMap[xadr.abs];
+			drow.ispc = (abs == xadr.abs) ? 1 : 0;
 			break;
 		default:
 			xadr = memGetXAdr(comp->mem, adr);
@@ -412,7 +413,6 @@ int xDisasmModel::fill() {
 				res |= drow.ispc;
 			} else {
 				row = rowCount();		// it will prevent next iteration
-//				dasm = dasm.mid(0, row);	// remove lines below rowCount
 			}
 		}
 	}
@@ -721,9 +721,10 @@ void xDisasmTable::t_update(int oadr, int nadr) {
 
 void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 	QModelIndex idx = currentIndex();
-	int bpt = MEM_BRK_FETCH;
-	int bpr = BRK_MEMCELL;
+	int bpt;
+	int bpr;
 	int adr;
+	xAdr xadr;
 	switch (ev->key()) {
 		case Qt::Key_Up:
 			if ((ev->modifiers() & Qt::ControlModifier) || (idx.row() == 0)) {
@@ -759,19 +760,46 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			ev->ignore();
 			break;
 		case Qt::Key_Space:
-			if (ev->modifiers() & Qt::AltModifier) {
-				bpr = BRK_CPUADR;
-				bpt = MEM_BRK_RD;
-			} else if (ev->modifiers() & Qt::ControlModifier) {
-				bpr = BRK_CPUADR;
-				bpt = MEM_BRK_WR;
-			} else if (ev->modifiers() & Qt::ShiftModifier) {
-				bpt = MEM_BRK_FETCH;
-			} else {
-				bpr = BRK_CPUADR;
-				bpt = MEM_BRK_FETCH;
+			adr = getData(idx.row(), 0, Qt::UserRole).toInt();
+			bpr = mode;
+			if ((mode == XVIEW_CPU) && (ev->modifiers() & Qt::ShiftModifier))
+				bpr = XVIEW_NONE;
+			switch(bpr) {
+				case XVIEW_CPU:
+					bpr = BRK_CPUADR;
+					bpt = 0;
+					break;
+				case XVIEW_RAM:
+					bpr = BRK_MEMCELL;
+					bpt = MEM_BRK_RAM;
+					adr &= 0x3fff;
+					adr |= (page << 14);
+					break;
+				case XVIEW_ROM:
+					bpr = BRK_MEMCELL;
+					bpt = MEM_BRK_ROM;
+					adr &= 0x3fff;
+					adr |= (page << 14);
+					break;
+				default:
+					bpr = BRK_MEMCELL;
+					xadr = memGetXAdr(conf.prof.cur->zx->mem, adr & 0xffff);
+					switch(xadr.type) {
+						case MEM_RAM: bpt = MEM_BRK_RAM; break;
+						case MEM_ROM: bpt = MEM_BRK_ROM; break;
+						default: bpt = MEM_BRK_SLT; break;
+					}
+					adr = xadr.abs;
+					break;
 			}
-			brkXor(bpr, bpt, getData(idx.row(), 0, Qt::UserRole).toInt(), -1, 1);
+			if (ev->modifiers() & Qt::AltModifier) {
+				bpt |= MEM_BRK_RD;
+			} else if (ev->modifiers() & Qt::ControlModifier) {
+				bpt |= MEM_BRK_WR;
+			} else {
+				bpt |= MEM_BRK_FETCH;
+			}
+			brkXor(bpr, bpt, adr, -1, 1);
 			emit rqRefill();
 			ev->ignore();
 			break;

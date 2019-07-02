@@ -32,16 +32,17 @@ xbpIndex brkFind(xBrkPoint brk) {
 
 xBrkPoint brkCreate(int type, int flag, int adr, int mask) {
 	xBrkPoint brk;
-	xAdr xadr;
+//	xAdr xadr;
 	if (type == BRK_MEMCELL) {
-		xadr = memGetXAdr(conf.prof.cur->zx->mem, adr & 0xffff);
-		switch(xadr.type) {
-			case MEM_ROM: brk.type = BRK_MEMROM; break;
-			case MEM_RAM: brk.type = BRK_MEMRAM; break;
-			case MEM_SLOT: brk.type = BRK_MEMSLT; break;
+
+//		xadr = memGetXAdr(conf.prof.cur->zx->mem, adr & 0xffff);		// nope
+		switch(flag  & MEM_BRK_TMASK) {
+			case MEM_BRK_ROM: brk.type = BRK_MEMROM; break;
+			case MEM_BRK_RAM: brk.type = BRK_MEMRAM; break;
+			case MEM_BRK_SLT: brk.type = BRK_MEMSLT; break;
 			default: brk.type = BRK_MEMEXT; break;
 		}
-		brk.adr = xadr.abs;
+		brk.adr = adr;
 	} else {
 		brk.type = type;
 		brk.adr = adr & 0xffff;

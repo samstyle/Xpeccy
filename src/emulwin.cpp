@@ -857,6 +857,7 @@ void MainWin::mouseReleaseEvent(QMouseEvent *ev) {
 			} else {
 				releaseMouse();
 				setMessage(" release mouse ");
+				cursor().setPos(pos().x() + width() / 2, pos().y() + height() / 2);
 			}
 			break;
 		default: break;
