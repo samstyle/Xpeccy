@@ -587,8 +587,27 @@ void DebugWin::doStep() {
 	do {
 		tCount = comp->tickCount;
 		compExec(comp);
+		int mod;
+		xAdr xadr;
 		if (!fillAll()) {
-			disasmAdr = comp->cpu->pc;
+			mod = ui.cbDasmMode->itemData(ui.cbDasmMode->currentIndex()).toInt();
+			xadr = memGetXAdr(comp->mem, comp->cpu->pc);
+			if (mod == XVIEW_CPU) {
+				disasmAdr = comp->cpu->pc;
+			} else {
+				switch(xadr.type) {
+					case MEM_RAM:
+						disasmAdr = comp->cpu->pc;
+						ui.sbDasmPage->setValue(xadr.bank >> 6);
+						ui.cbDasmMode->setCurrentIndex(ui.cbDasmMode->findData(XVIEW_RAM, Qt::UserRole));
+						break;
+					case MEM_ROM:
+						disasmAdr = comp->cpu->pc;
+						ui.sbDasmPage->setValue(xadr.bank >> 6);
+						ui.cbDasmMode->setCurrentIndex(ui.cbDasmMode->findData(XVIEW_ROM, Qt::UserRole));
+						break;
+				}
+			}
 			fillDisasm();
 		}
 		switch(traceType) {

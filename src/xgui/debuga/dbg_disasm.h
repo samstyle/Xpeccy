@@ -56,6 +56,7 @@ class xDisasmTable : public QTableView {
 		int rows();
 		void setComp(Computer**);
 		void setMode(int, int);
+		int getMode(int);
 	signals:
 		void rqRefill();
 		void rqRefillAll();

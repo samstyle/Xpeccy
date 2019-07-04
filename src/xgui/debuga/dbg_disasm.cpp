@@ -317,6 +317,7 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 	QString lab;
 	xAdr xadr = memGetXAdr(comp->mem, comp->cpu->pc);
 	int abs = xadr.abs;
+	int pct = xadr.type;
 	switch (mode) {
 		case XVIEW_RAM:
 			xadr.type = MEM_RAM;
@@ -324,7 +325,7 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 			xadr.adr = adr & 0x3fff;
 			xadr.abs = xadr.adr | (page << 14);
 			drow.flag = comp->brkRamMap[xadr.abs];
-			drow.ispc = (abs == xadr.abs) ? 1 : 0;
+			drow.ispc = ((xadr.type == pct) && (abs == xadr.abs)) ? 1 : 0;
 			break;
 		case XVIEW_ROM:
 			xadr.type = MEM_ROM;
@@ -332,7 +333,7 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 			xadr.adr = adr & 0x3fff;
 			xadr.abs = xadr.adr | (page << 14);
 			drow.flag = comp->brkRomMap[xadr.abs];
-			drow.ispc = (abs == xadr.abs) ? 1 : 0;
+			drow.ispc = ((xadr.type == pct) && (abs == xadr.abs)) ? 1 : 0;
 			break;
 		default:
 			xadr = memGetXAdr(comp->mem, adr);
@@ -355,7 +356,7 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 				case MEM_EXT: drow.aname = "EXT:"; break;
 				default: drow.aname = "???"; break;
 			}
-			drow.aname.append(QString("%1:%2").arg(gethexbyte(xadr.bank & 0xff)).arg(gethexword(xadr.adr & 0x3fff)));
+			drow.aname.append(QString("%1:%2").arg(gethexbyte((xadr.bank >> 6) & 0xff)).arg(gethexword(xadr.adr & 0x3fff)));
 		} else {
 			wid = (comp->hw->base == 8) ? 6 : 4;
 			drow.aname = QString::number(xadr.adr, comp->hw->base).toUpper().rightJustified(wid, '0');
