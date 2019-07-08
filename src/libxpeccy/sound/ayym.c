@@ -134,7 +134,7 @@ void aymSetReg(aymChip* ay, unsigned char val) {
 			break;
 		case 0x0d:
 			ay->eForm = val & 0x0f;
-			ay->chanE.cnt = ay->chanE.per;
+			ay->chanE.cnt = 0;			// only if form changed?
 			ay->chanE.vol = (val & 4) ? 0 : 31;
 			ay->chanE.step = (val & 4) ? 1 : -1;
 			break;
@@ -156,33 +156,33 @@ void aymSync(aymChip* ay, int ns) {
 	while (ay->cnt < 0) {
 		ay->cnt += ay->per;
 		if (ay->chanA.per) {
-			if (--ay->chanA.cnt < 0) {
-				ay->chanA.cnt = ay->chanA.per;
+			if (++ay->chanA.cnt >= ay->chanA.per) {
+				ay->chanA.cnt = 0;
 				ay->chanA.lev ^= 1;
 			}
 		}
 		if (ay->chanB.per) {
-			if (--ay->chanB.cnt < 0) {
-				ay->chanB.cnt = ay->chanB.per;
+			if (++ay->chanB.cnt >= ay->chanB.per) {
+				ay->chanB.cnt = 0;
 				ay->chanB.lev ^= 1;
 			}
 		}
 		if (ay->chanC.per) {
-			if (--ay->chanC.cnt < 0) {
-				ay->chanC.cnt = ay->chanC.per;
+			if (++ay->chanC.cnt >= ay->chanC.per) {
+				ay->chanC.cnt = 0;
 				ay->chanC.lev ^= 1;
 			}
 		}
 		if (ay->chanN.per) {
-			if (--ay->chanN.cnt < 0) {
-				ay->chanN.cnt = ay->chanN.per;
+			if (++ay->chanN.cnt >= ay->chanN.per) {
+				ay->chanN.cnt = 0;
 				ay->chanN.step = (ay->chanN.step << 1) | ((((ay->chanN.step >> 13) ^ (ay->chanN.step >> 16)) & 1) ^ 1);
 				ay->chanN.lev = (ay->chanN.step >> 16) & 1;
 			}
 		}
 		if (ay->chanE.per) {
-			if (--ay->chanE.cnt < 0) {
-				ay->chanE.cnt = ay->chanE.per;
+			if (++ay->chanE.cnt >= ay->chanE.per) {
+				ay->chanE.cnt = 0;
 				ay->chanE.vol += ay->chanE.step;
 				if (ay->chanE.vol & ~31) {		// 32 || -1
 					if (ay->eForm & 8) {

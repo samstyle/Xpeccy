@@ -321,7 +321,7 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 	switch (mode) {
 		case XVIEW_RAM:
 			xadr.type = MEM_RAM;
-			xadr.bank = page;
+			xadr.bank = page << 6;
 			xadr.adr = adr & 0x3fff;
 			xadr.abs = xadr.adr | (page << 14);
 			drow.flag = comp->brkRamMap[xadr.abs];
@@ -329,7 +329,7 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 			break;
 		case XVIEW_ROM:
 			xadr.type = MEM_ROM;
-			xadr.bank = page;
+			xadr.bank = page << 6;
 			xadr.adr = adr & 0x3fff;
 			xadr.abs = xadr.adr | (page << 14);
 			drow.flag = comp->brkRomMap[xadr.abs];

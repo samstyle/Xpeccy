@@ -2494,7 +2494,10 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Rutime maping</string>
+    <string>Runtime maping</string>
+   </property>
+   <property name="toolTip">
+    <string>Runtime maping</string>
    </property>
   </action>
   <action name="actMapingClear">
