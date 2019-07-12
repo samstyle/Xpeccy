@@ -187,9 +187,9 @@ void saaFlush(saaChip* saa) {
 				cha->count -= cha->period;
 				cha->lev ^= 1;
 
-				if ( i == 1 && !saa->env[0].extCLK )
+				if ( ( i == 1) && !saa->env[0].extCLK )
 					saaEnvStep(&saa->env[0], cha);
-				else if ( i == 4  && !saa->env[1].extCLK )
+				else if ( (i == 4)  && !saa->env[1].extCLK )
 					saaEnvStep(&saa->env[1], cha);
 			}
 		}

@@ -76,9 +76,8 @@ void apuTargetPeriod(apuChannel* ch) {
 void apuToneSync(apuChannel* ch) {
 	if (!ch->en) return;
 	if (!ch->len) return;
-	ch->pcnt--;
-	if (ch->pcnt < 0) {
-		ch->pcnt = ch->hper;
+	if (++ch->pcnt >= ch->hper) {
+		ch->pcnt = 0;
 		ch->pstp++;
 //		ch->lev = dutyTab[ch->duty & 3][ch->pstp & 7] & 1;
 	}
@@ -88,9 +87,8 @@ void apuToneSweep(apuChannel* ch) {
 	if (!ch->en) return;
 	if (!ch->len) return;
 	if (!ch->sweep) return;
-	ch->scnt--;
-	if (ch->scnt < 0) {
-		ch->scnt = ch->sper;
+	if (++ch->scnt >= ch->sper) {
+		ch->scnt = 0;
 		ch->hper = ch->tper;		// load new freq
 		apuTargetPeriod(ch);		// calculate next freq
 	}
@@ -100,9 +98,8 @@ void apuToneEnv(apuChannel* ch) {
 	if (!ch->en) return;
 	if (!ch->len) return;
 	if (!ch->env) return;
-	ch->ecnt--;
-	if (ch->ecnt < 0) {
-		ch->ecnt = ch->eper;
+	if (++ch->ecnt >= ch->eper) {
+		ch->ecnt = 0;
 		if (ch->evol > 0) {
 			ch->evol--;
 		} else if (ch->elen) {		// elen: 1 if envelope loop
@@ -134,9 +131,8 @@ void apuTriSync(apuChannel* ch) {
 	if (!ch->en) return;
 	if (!ch->len) return;
 	if (!ch->lcnt) return;
-	ch->pcnt--;
-	if (ch->pcnt < 0) {
-		ch->pcnt = ch->hper;
+	if (++ch->pcnt >= ch->hper) {
+		ch->pcnt = 0;
 		ch->pstp++;
 		ch->vol = triSeq[ch->pstp & 0x1f];
 	}
@@ -181,9 +177,8 @@ void apuNoiseSync(apuChannel* ch) {
 	ch->nseed |= fbk;
 	if (!ch->en) return;
 	if (!ch->len) return;
-	ch->pcnt--;
-	if (ch->pcnt < 0) {
-		ch->pcnt = ch->hper;
+	if (++ch->pcnt >= ch->hper) {
+		ch->pcnt = 0;
 		ch->lev = fbk ? 1 : 0;
 	}
 }
@@ -200,9 +195,8 @@ int apuNoiseVolume(apuChannel* ch) {
 void apuDigiSync(apuChannel* ch, aextmrd mrd, void* data) {
 	if (!ch->en) return;
 	if (!ch->len) return;
-	ch->pcnt--;
-	if (ch->pcnt < 0) {
-		ch->pcnt = ch->hper;			// restore period
+	if (++ch->pcnt >= ch->hper) {
+		ch->pcnt = 0;
 
 		if ((ch->scnt & 7) == 0) {		// let it be bits counter (b0,1,2)
 			ch->buf = mrd((ch->cadr & 0x7fff) | 0x8000, data);
