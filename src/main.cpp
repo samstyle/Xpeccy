@@ -3,6 +3,7 @@
 #include <QTimer>
 #include <QDebug>
 #include <QFontDatabase>
+#include <QStyleFactory>
 
 #include <locale.h>
 
@@ -57,6 +58,9 @@ int main(int ac,char** av) {
 	QStringList paths = QCoreApplication::libraryPaths();
 	paths.append(".");
 	QCoreApplication::setLibraryPaths(paths);
+#endif
+#ifdef __APPLE__
+	app.setStyle(QStyleFactory::create("Fusion"));
 #endif
 	conf.running = 0;
 	conf.emu.pause = 0;

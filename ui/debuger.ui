@@ -869,7 +869,7 @@
        <property name="minimumSize">
         <size>
          <width>330</width>
-         <height>0</height>
+         <height>250</height>
         </size>
        </property>
        <property name="font">
@@ -2586,11 +2586,11 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
+  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

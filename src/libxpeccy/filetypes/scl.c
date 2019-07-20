@@ -35,7 +35,6 @@ int loadSCL(Computer* comp, const char* name, int drv) {
 	} else if (hd.files > 128) {
 		err = ERR_SCL_MANY;
 	} else {
-		// diskFormat(flp);
 		memset(buf,0x00,0x1000);
 		scnt = 0x10;
 		bptr = buf;					// start of TRK0
@@ -56,13 +55,13 @@ int loadSCL(Computer* comp, const char* name, int drv) {
 		buf[0x8e5] = (tmpa & 0xff);
 		buf[0x8e6] = ((tmpa & 0xff00) >> 8);
 		buf[0x8e7] = 0x10;			// trdos code
+		memset(buf + 0x8ea, 0x20, 9);		// blank9
+		memset(buf + 0x8f5, 0x20, 8);		// disk label
 		flp_format_trk(flp, 0, 16, 256, (char*)buf);
-		//diskFormTRDTrack(flp,0,buf);
 		i = 1;
 		while (!feof(file) && (i < 160)) {
 			fread((char*)buf, 0x1000, 1, file);
 			flp_format_trk(flp, i, 16, 256, (char*)buf);
-			//diskFormTRDTrack(flp,i,buf);
 			i++;
 		}
 		memset(buf, 0, 0x1000);
