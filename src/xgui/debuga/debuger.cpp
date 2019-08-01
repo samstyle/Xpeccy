@@ -101,8 +101,10 @@ void DebugWin::start(Computer* c) {
 	comp->debug = 1;
 	comp->brk = 0;
 
+	if (comp->hw->grp != tabMode) {
+		onPrfChange(conf.prof.cur);		// update tabs
+	}
 	chaPal();
-
 	show();
 
 	int wd = (ui.dasmTable->height() - 2) / ui.dasmTable->rows();
@@ -139,6 +141,8 @@ void DebugWin::stop() {
 }
 
 void DebugWin::onPrfChange(xProfile* prf) {
+	if (!prf) prf = conf.prof.cur;
+	if (!prf) return;
 	comp = prf->zx;
 	ui.tabsPanel->clear();
 	QList<QPair<QIcon, QWidget*> > lst = tablist[prf->zx->hw->grp];
@@ -151,6 +155,7 @@ void DebugWin::onPrfChange(xProfile* prf) {
 		lst.removeFirst();
 	}
 	ui.tabsPanel->setPalette(QPalette());
+	tabMode = prf->zx->hw->grp;
 	fillAll();
 }
 
@@ -204,8 +209,9 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	int i;
 
 	setFont(QFont("://DejaVuSansMono.ttf",10));
-
 	ui.setupUi(this);
+
+	tabMode = HW_NULL;
 
 	QList<QPair<QIcon, QWidget*> > lst;
 	QPair<QIcon, QWidget*> p;
@@ -815,9 +821,9 @@ void drawBar(QLabel* lab, int lev, int max) {
 void DebugWin::fillAY() {
 	if (ui.tabsPanel->indexOf(ui.ayTab) < 0) return;
 	aymChip* chp = comp->ts->chipA;
-	ui.leToneA->setText(gethexword(((chp->reg[0] << 8) | chp->reg[1]) & 0x0fff));
-	ui.leToneB->setText(gethexword(((chp->reg[2] << 8) | chp->reg[3]) & 0x0fff));
-	ui.leToneC->setText(gethexword(((chp->reg[4] << 8) | chp->reg[5]) & 0x0fff));
+	ui.leToneA->setText(gethexword(((chp->reg[1] << 8) | chp->reg[0]) & 0x0fff));
+	ui.leToneB->setText(gethexword(((chp->reg[3] << 8) | chp->reg[2]) & 0x0fff));
+	ui.leToneC->setText(gethexword(((chp->reg[5] << 8) | chp->reg[4]) & 0x0fff));
 	ui.leVolA->setText(gethexbyte(chp->chanA.vol));
 	ui.leVolB->setText(gethexbyte(chp->chanB.vol));
 	ui.leVolC->setText(gethexbyte(chp->chanC.vol));
@@ -825,7 +831,7 @@ void DebugWin::fillAY() {
 	ui.leMixB->setText(getAYmix(&chp->chanB));
 	ui.leMixC->setText(getAYmix(&chp->chanC));
 	ui.leToneN->setText(gethexbyte(chp->reg[6]));
-	ui.leEnvTone->setText(gethexword((chp->reg[11] << 8) | chp->reg[12]));
+	ui.leEnvTone->setText(gethexword((chp->reg[12] << 8) | chp->reg[11]));
 	ui.leEnvForm->setText(gethexbyte(chp->reg[13]));
 	ui.leVolE->setText(gethexbyte(chp->chanE.vol));
 	ui.labLevA->setText(chp->chanA.lev ? "1" : "0");
@@ -1708,8 +1714,8 @@ void DebugWin::chaCellProperty(QAction* act) {
 	int data = act->data().toInt();
 	int adr = getAdr();
 	int bgn, end;
-//	unsigned short eadr;
 	unsigned char bt;
+	int fadr;
 	unsigned char* ptr;
 	if ((adr < blockStart) || (adr > blockEnd)) {	// pointer outside block : process 1 cell
 		bgn = adr;
@@ -1723,15 +1729,27 @@ void DebugWin::chaCellProperty(QAction* act) {
 		end += 0x10000;
 	adr = bgn;
 	while (adr <= end) {
-		ptr = getBrkPtr(comp, adr);
 		if (data & MEM_BRK_ANY) {
 			bt = 0;
 			if (ui.actFetch->isChecked()) bt |= MEM_BRK_FETCH;
 			if (ui.actRead->isChecked()) bt |= MEM_BRK_RD;
 			if (ui.actWrite->isChecked()) bt |= MEM_BRK_WR;
-			brkSet(BRK_MEMCELL, bt, adr, -1);
+			switch (getRFIData(ui.cbDumpView)) {
+				case XVIEW_RAM:
+					fadr = (adr & 0x3fff) | (ui.sbDumpPage->value() << 14);
+					brkSet(BRK_MEMCELL, bt | MEM_BRK_RAM, fadr, -1);
+					break;
+				case XVIEW_ROM:
+					fadr = (adr & 0x3fff) | (ui.sbDumpPage->value() << 14);
+					brkSet(BRK_MEMCELL, bt | MEM_BRK_ROM, fadr, -1);
+					break;
+				default:
+					brkSet(BRK_CPUADR, bt, adr, -1);
+					break;
+			}
 			ui.bpList->update();
 		} else {
+			ptr = getBrkPtr(comp, adr);
 			*ptr &= 0x0f;
 			if ((data & 0xf0) == DBG_VIEW_TEXT) {
 				bt = rdbyte(adr, comp);

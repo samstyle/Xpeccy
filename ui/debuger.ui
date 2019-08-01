@@ -2488,6 +2488,9 @@
    <property name="text">
     <string>Keyboard</string>
    </property>
+   <property name="shortcut">
+    <string>Alt+K</string>
+   </property>
   </action>
   <action name="actMaping">
    <property name="checkable">
@@ -2586,11 +2589,11 @@
  </resources>
  <connections/>
  <buttongroups>
+  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
-  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

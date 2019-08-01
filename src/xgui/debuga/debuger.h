@@ -70,6 +70,7 @@ class DebugWin : public QDialog {
 		void chaPal();
 	private:
 		unsigned block:1;
+		int tabMode;
 		// tracer
 		unsigned trace:1;
 		int traceType;

@@ -22,10 +22,18 @@ void uwargs(FDC* fdc) {
 	fdc->wait = 1;
 }
 
+// do dothing, just spin floppy if motor is on
+void unothing(FDC* fdc) {
+	if (fdc->flp->motor) {
+		flpNext(fdc->flp, fdc->side);
+	}
+	fdc->wait += turbo ? TRBBYTE : BYTEDELAY;
+}
+
 void ustp(FDC* fdc) {
 	fdc->idle = 1;
 	fdc->irq = 0;
-	fdc->plan = NULL;
+	fdc->pos++;
 	fdc->drq = 1;
 	fdc->dir = (fdc->resCnt > 0) ? 1 : 0;
 }
@@ -37,7 +45,7 @@ void uResp(FDC* fdc, int len) {
 }
 
 void uSetDrive(FDC* fdc) {
-	fdc->flp = fdc->flop[fdc->comBuf[0] & 1];
+	fdc->flp = fdc->flop[fdc->comBuf[0] & 3];
 	fdc->trk = fdc->flp->trk;
 	fdc->side = (fdc->comBuf[0] & 4) ? 0 : 1;
 }
@@ -65,7 +73,7 @@ int uGetByte(FDC* fdc) {
 	return res;
 }
 
-fdcCall utermTab[] = {&ustp,NULL};
+fdcCall utermTab[] = {&ustp, &unothing};
 
 void uTerm(FDC* fdc) {
 	fdc->plan = utermTab;
@@ -336,8 +344,8 @@ void uread05(FDC* fdc) {
 	if (fdc->sr2 & 0x40) {				// SR2:CM flag set - not right sector & SK=0
 		fdc->pos++;
 	} else if (fdc->sec > fdc->comBuf[5]) {		// check EOT
-		if ((fdc->com & 0x80) && (fdc->side == 1)) {		// multitrack (side 1->0 only)
-			fdc->side = 0;
+		if (fdc->com & 0x80) {		// multitrack (side 1->0 only)
+			fdc->side = !fdc->side;
 			fdc->cnt = 2;
 			fdc->sec = 1;
 			fdc->pos = 0;
@@ -584,30 +592,25 @@ uCom uComTab[] = {
 
 void uWrite(FDC* fdc, int adr, unsigned char val) {
 	if (!(adr & 1)) return;			// wr data only
+	printf("wr : %.2X\n", val);
 	if (fdc->idle) {			// 1st byte, command
 		// DBGOUT("updCom %.2X\n",val);
 		fdc->com = val;
 		int idx = 0;
-		while (1) {
-			if ((val & uComTab[idx].mask) == uComTab[idx].val) {
-				fdc->comCnt = uComTab[idx].argCount;
-				fdc->plan = uComTab[idx].plan;
-				// if (!fdc->plan) DBGOUT("Command %.2X not implemented\n",fdc->com);
-				// assert(fdc->plan);
-				fdc->pos = 0;
-				fdc->comPos = 0;
-				fdc->idle = 0;
-				fdc->drq = 1;	// wait for args
-				fdc->dir = 0;	//	from cpu
-				fdc->wait = 0;
-				if (fdc->com != 0x08) {
-					fdc->sr0 = 0x00;
-					fdc->sr1 = 0x00;
-					fdc->sr2 = 0x00;
-				}
-				break;
-			}
+		while ((uComTab[idx].mask & val) != uComTab[idx].val)
 			idx++;
+		fdc->comCnt = uComTab[idx].argCount;
+		fdc->plan = uComTab[idx].plan;
+		fdc->pos = 0;
+		fdc->comPos = 0;
+		fdc->idle = 0;
+		fdc->drq = 1;	// wait for args
+		fdc->dir = 0;	//	from cpu
+		fdc->wait = 0;
+		if (fdc->com != 0x08) {
+			fdc->sr0 = 0x00;
+			fdc->sr1 = 0x00;
+			fdc->sr2 = 0x00;
 		}
 	} else if (fdc->comCnt > 0) {		// command
 		// DBGOUT("arg %.2X\n",val);
@@ -650,6 +653,7 @@ unsigned char uRead(FDC* fdc, int adr) {
 			res = (fdc->state & 0x1f) | (fdc->drq << 7) | (fdc->dir << 6) | (fdc->irq << 5);
 		}
 	}
+	printf("rd %i = %.2X\n",adr & 1, res);
 	return res;
 }
 

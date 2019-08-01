@@ -114,7 +114,7 @@ int loadDSK(Computer* comp, const char *name, int drv) {
 		}
 		flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
 		strcpy(flp->path,name);
-		flp->doubleSide = (sidcnt > 1) ? 1 : 0;
+		// flp->doubleSide = (sidcnt > 1) ? 1 : 0;
 		flp->trk80 = 1;
 		flp->insert = 1;
 		flp->changed = 0;
