@@ -37,6 +37,7 @@ void help() {
 	printf("--sp ADR\t\tset SP\n");
 	printf("--bp ADR\t\tset fetch brakepoint to address ADR\n");
 	printf("--bp NAME\t\tset fetch brakepoint to label NAME (see -l key)\n");
+	printf("--disk X\t\tselect drive to loading file (0..4 | a..d | A..D)\n");
 }
 
 int main(int ac,char** av) {
@@ -126,6 +127,8 @@ int main(int ac,char** av) {
 	int adr = 0x4000;
 	mwin.setProfile("");
 	int dbg = 0;
+	int hlp = 0;
+	int drv = 0;
 	xAdr xadr;
 	int tmpi;
 	while (i < ac) {
@@ -134,7 +137,7 @@ int main(int ac,char** av) {
 			dbg = 1;
 		} else if (!strcmp(parg,"-h") || !strcmp(parg,"--help")) {
 			help();
-			exit(0);
+			hlp = 1;
 		} else if (i < ac) {
 			if (!strcmp(parg,"-p") || !strcmp(parg,"--profile")) {
 				mwin.setProfile(std::string(av[i]));
@@ -181,25 +184,38 @@ int main(int ac,char** av) {
 			} else if (!strcmp(parg,"--fullscreen")) {
 				conf.vid.fullScreen = atoi(av[i]) ? 1 : 0;
 				i++;
+			} else if (!strcmp(parg, "--disk")) {
+				parg = av[i];
+				if (strlen(parg) == 1) {
+					switch(parg[0]) {
+						case '0': case 'a': case 'A': drv = 0; break;
+						case '1': case 'b': case 'B': drv = 1; break;
+						case '2': case 'c': case 'C': drv = 2; break;
+						case '3': case 'd': case 'D': drv = 3; break;
+					}
+				}
+				i++;
 			} else if (strlen(parg) > 0) {
-				load_file(mwin.comp, parg, FG_ALL, 0);
+				load_file(mwin.comp, parg, FG_ALL, drv);
 			}
 		} else if (strlen(parg) > 0) {
-			load_file(mwin.comp, parg, FG_ALL, 0);
+			load_file(mwin.comp, parg, FG_ALL, drv);
 		}
 	}
-	prfFillBreakpoints(conf.prof.cur);
-	mwin.updateWindow();
-	mwin.checkState();
-	if (dbg) mwin.doDebug();
-	mwin.show();
-	mwin.raise();
-	mwin.activateWindow();
-	conf.running = 1;
-	ethread.start();
-	app.exec();
-	ethread.stop();
-	ethread.wait();
+	if (!hlp) {
+		prfFillBreakpoints(conf.prof.cur);
+		mwin.updateWindow();
+		mwin.checkState();
+		if (dbg) mwin.doDebug();
+		mwin.show();
+		mwin.raise();
+		mwin.activateWindow();
+		conf.running = 1;
+		ethread.start();
+		app.exec();
+		ethread.stop();
+		ethread.wait();
+	}
 	conf.running = 0;
 	sndClose();
 	return 0;
