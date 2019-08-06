@@ -1286,7 +1286,12 @@ void DebugWin::fillMem() {
 
 // labels
 
-void DebugWin::dbgLLab() {loadLabels(NULL); fillDisasm();}
+void DebugWin::dbgLLab() {
+	if (!loadLabels(NULL)) {
+		shitHappens("Can't open file");
+	}
+	fillDisasm();
+}
 void DebugWin::dbgSLab() {saveLabels(NULL);}
 
 /*

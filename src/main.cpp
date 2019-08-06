@@ -129,6 +129,7 @@ int main(int ac,char** av) {
 	int dbg = 0;
 	int hlp = 0;
 	int drv = 0;
+	int lab = 1;
 	xAdr xadr;
 	int tmpi;
 	while (i < ac) {
@@ -166,7 +167,7 @@ int main(int ac,char** av) {
 				}
 				i++;
 			} else if (!strcmp(parg,"-l") || !strcmp(parg,"--labels")) {
-				loadLabels(av[i]);
+				lab = loadLabels(av[i]);
 				i++;
 			} else if (!strcmp(parg,"-s") || !strcmp(parg, "--size")) {
 				tmpi = atoi(av[i]);
@@ -212,6 +213,7 @@ int main(int ac,char** av) {
 		mwin.activateWindow();
 		conf.running = 1;
 		ethread.start();
+		if (!lab) shitHappens("Can't open labels file");
 		app.exec();
 		ethread.stop();
 		ethread.wait();
