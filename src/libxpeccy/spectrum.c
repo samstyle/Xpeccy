@@ -58,7 +58,7 @@ unsigned char memrd(unsigned short adr,int m1,void* ptr) {
 			*fptr = flag;
 		}
 	}
-	if (flag & MEM_BRK_RD) {
+	if ((flag | comp->brkAdrMap[adr]) & MEM_BRK_RD) {
 		comp->brk = 1;
 	}
 	return comp->hw->mrd(comp,adr,m1);
@@ -75,7 +75,7 @@ void memwr(unsigned short adr, unsigned char val, void* ptr) {
 			*fptr = flag;
 		}
 	}
-	if (flag & MEM_BRK_WR) {
+	if ((flag | comp->brkAdrMap[adr]) & MEM_BRK_WR) {
 		comp->brk = 1;
 	}
 	comp->hw->mwr(comp,adr,val);
@@ -113,7 +113,7 @@ inline void zxIORW(Computer* comp, int port) {
 unsigned char iord(unsigned short port, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	unsigned char res = 0xff;
-
+// TODO: zx only
 	res3 = comp->cpu->t + 3;
 	vidSync(comp->vid,(res3 - res4) * comp->nsPerTick);
 	res4 = res3;
