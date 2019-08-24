@@ -10,7 +10,7 @@ enum {
 
 // seek
 void vpseek(FDC* fdc) {
-	fdc->data = flpRd(fdc->flp);
+	fdc->data = flpRd(fdc->flp, fdc->side);
 	if ((fdc->flp->field == 0) && (fdc->data == 0xa1)) {	// catch syncro byte A1
 		fdc->tdata = fdc->data;				// copy to temp register
 		fdc->cnt = 0;					// next byte will complete word
@@ -27,7 +27,7 @@ void vpseek(FDC* fdc) {
 
 void vpread(FDC* fdc) {
 	fdc->tdata <<= 8;		// shift temp register
-	fdc->data = flpRd(fdc->flp);	// read next byte from floppy
+	fdc->data = flpRd(fdc->flp, fdc->side);	// read next byte from floppy
 	fdc->tdata |= fdc->data;	// add it to temp register
 	add_crc_16(fdc, fdc->data);	// add it to crc. crc will be 0 after reading crc (hi-low)
 	if (fdc->crc == 0)		// if crc is valid now, set flag

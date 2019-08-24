@@ -22,17 +22,17 @@ void add_crc_16(FDC* fdc, unsigned char val) {
 
 // read FCRC from disk (hi-low)
 void rdFCRC(FDC* fdc) {
-	fdc->fcrc = (flpRd(fdc->flp) << 8);
+	fdc->fcrc = (flpRd(fdc->flp, fdc->side) << 8);
 	flpNext(fdc->flp, fdc->side);
-	fdc->fcrc |= flpRd(fdc->flp);
+	fdc->fcrc |= flpRd(fdc->flp, fdc->side);
 	flpNext(fdc->flp, fdc->side);
 }
 
 // save CRC to disk (hi-low)
 void wrCRC(FDC* fdc) {
-	flpWr(fdc->flp, (fdc->crc >> 8) & 0xff);
+	flpWr(fdc->flp, fdc->side, (fdc->crc >> 8) & 0xff);
 	flpNext(fdc->flp, fdc->side);
-	flpWr(fdc->flp, fdc->crc & 0xff);
+	flpWr(fdc->flp, fdc->side, fdc->crc & 0xff);
 	flpNext(fdc->flp, fdc->side);
 }
 
@@ -53,7 +53,7 @@ int seekADR(FDC* fdc) {
 	fdc->crc = 0xcdb4;
 	add_crc_16(fdc,0xfe);
 	for (int i = 0; i < 4; i++) {
-		fdc->buf[i] = flpRd(fdc->flp);
+		fdc->buf[i] = flpRd(fdc->flp, fdc->side);
 		add_crc_16(fdc, fdc->buf[i]);
 		flpNext(fdc->flp, fdc->side);
 	}
@@ -75,7 +75,7 @@ int vgSendByte(FDC* fdc) {
 			}
 		} else {
 			add_crc_16(fdc, fdc->data);
-			flpWr(fdc->flp, fdc->data);
+			flpWr(fdc->flp, fdc->side, fdc->data);
 			flpNext(fdc->flp, fdc->side);
 			fdc->drq = 1;
 			fdc->tns = 1;
@@ -87,7 +87,7 @@ int vgSendByte(FDC* fdc) {
 			fdc->state |= 0x04;
 		}
 		add_crc_16(fdc, fdc->data);
-		flpWr(fdc->flp, fdc->data);
+		flpWr(fdc->flp, fdc->side, fdc->data);
 		flpNext(fdc->flp, fdc->side);
 		fdc->drq = 1;
 		fdc->wait += BYTEDELAY;
@@ -109,7 +109,7 @@ int vgGetByte(FDC* fdc) {
 				res = 1;
 			}
 		} else {
-			fdc->data = flpRd(fdc->flp);
+			fdc->data = flpRd(fdc->flp, fdc->side);
 			flpNext(fdc->flp, fdc->side);
 			fdc->drq = 1;
 			fdc->tns = 0;
@@ -120,7 +120,7 @@ int vgGetByte(FDC* fdc) {
 		if (fdc->drq) {
 			fdc->state |= 0x04;		// data lost - time to read next byte, but previous is not transfered
 		}
-		fdc->data = flpRd(fdc->flp);
+		fdc->data = flpRd(fdc->flp, fdc->side);
 		flpNext(fdc->flp, fdc->side);
 		fdc->drq = 1;
 		fdc->wait += BYTEDELAY;
@@ -345,7 +345,7 @@ void vgrds01(FDC* fdc) {
 // seek sector DATA in next CNT bytes, else - array not found
 void vgrds02(FDC* fdc) {
 	if (fdc->cnt > 0) {
-		fdc->tmp = flpRd(fdc->flp);
+		fdc->tmp = flpRd(fdc->flp, fdc->side);
 		flpNext(fdc->flp, fdc->side);
 		fdc->wait += turbo ? TURBOBYTE : BYTEDELAY;
 		if ((fdc->flp->field == 2) || (fdc->flp->field == 3)) {
@@ -426,7 +426,7 @@ void vgwrs01(FDC* fdc) {
 	fdc->crc = 0xcdb4;
 	fdc->tmp = (fdc->com & 1) ? 0xf8 : 0xfb;
 	add_crc_16(fdc, fdc->tmp);
-	flpWr(fdc->flp, fdc->tmp);
+	flpWr(fdc->flp, fdc->side, fdc->tmp);
 	flpNext(fdc->flp, fdc->side);
 	fdc->cnt = 0x80 << (fdc->buf[3] & 3);	// sector size
 	fdc->wait = BYTEDELAY;

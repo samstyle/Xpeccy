@@ -1157,7 +1157,7 @@ void DebugWin::fillFDC() {
 	ui.flpTrkL->setText(gethexbyte(comp->dif->fdc->flp->trk));
 	ui.flpPosL->setText(QString::number(comp->dif->fdc->flp->pos));
 	ui.flpIdxL->setText(comp->dif->fdc->flp->index ? "1" : "0");
-	ui.flpDataL->setText(comp->dif->fdc->flp->insert ? gethexbyte(flpRd(comp->dif->fdc->flp)): "--"); comp->dif->fdc->flp->rd = 0;
+	ui.flpDataL->setText(comp->dif->fdc->flp->insert ? gethexbyte(flpRd(comp->dif->fdc->flp, comp->dif->fdc->side)): "--"); comp->dif->fdc->flp->rd = 0;
 	ui.flpMotL->setText(comp->dif->fdc->flp->motor ? "1" : "0");
 }
 

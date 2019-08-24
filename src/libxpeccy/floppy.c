@@ -21,24 +21,30 @@ void flpDestroy(Floppy* flp) {
 	free(flp);
 }
 
-void flpWr(Floppy* flp,unsigned char val) {
+// hd: 1 is 1st side, 0 is 2nd side
+void flpWr(Floppy* flp, int hd, unsigned char val) {
 	flp->wr = 1;
+	hd = (~hd & 1);
 	if (flp->insert) {
 		flp->changed = 1;
-		flp->data[flp->rtrk].byte[flp->pos] = val;
+		flp->data[(flp->trk << 1) | hd].byte[flp->pos] = val;
 	}
 }
 
-unsigned char flpRd(Floppy* flp) {
+unsigned char flpRd(Floppy* flp, int hd) {
 	flp->rd = 1;
-	return flp->insert ? flp->data[flp->rtrk].byte[flp->pos] : 0x00;
+	hd = (~hd & 1);
+	return flp->insert ? flp->data[(flp->trk << 1) | hd].byte[flp->pos] : 0xff;
 }
 
-unsigned char flpGetField(Floppy* flp) {
-	return flp->data[flp->rtrk].field[flp->pos];
+/*
+unsigned char flpGetField(Floppy* flp, int hd) {
+	hd = (~hd & 1);
+	return flp->data[(flp->trk << 1) | hd].field[flp->pos];
 }
+*/
 
-void flpStep(Floppy* flp,int dir) {
+void flpStep(Floppy* flp, int dir) {
 	switch (dir) {
 		case FLP_FORWARD:
 			if (flp->trk < (flp->trk80 ? 86 : 43)) flp->trk++;

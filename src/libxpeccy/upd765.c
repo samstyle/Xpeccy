@@ -54,7 +54,7 @@ int uGetByte(FDC* fdc) {
 	int res = 0;
 	if (turbo) {
 		if (!fdc->drq) {
-			fdc->tmp = flpRd(fdc->flp);
+			fdc->tmp = flpRd(fdc->flp, fdc->side);
 			flpNext(fdc->flp, fdc->side);
 			fdc->drq = 1;
 			res = 1;
@@ -64,7 +64,7 @@ int uGetByte(FDC* fdc) {
 		if (fdc->drq) {
 			fdc->sr1 |= 0x10;		// data lost
 		}
-		fdc->tmp = flpRd(fdc->flp);
+		fdc->tmp = flpRd(fdc->flp, fdc->side);
 		flpNext(fdc->flp, fdc->side);
 		fdc->drq = 1;
 		fdc->wait += turbo ? TRBBYTE : BYTEDELAY;
@@ -277,7 +277,7 @@ void uread01(FDC* fdc) {
 }
 
 int ureadCHK(FDC* fdc, int rt, int wt) {
-	fdc->tmp = flpRd(fdc->flp);
+	fdc->tmp = flpRd(fdc->flp, fdc->side);
 	flpNext(fdc->flp, fdc->side);
 	fdc->wait += turbo ? TRBBYTE : BYTEDELAY;
 	if (fdc->flp->field == rt) return 1;

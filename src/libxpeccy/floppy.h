@@ -63,15 +63,15 @@ Floppy* flpCreate(int);
 void flpDestroy(Floppy*);
 
 int flpEject(Floppy*);
-unsigned char flpRd(Floppy*);
-void flpWr(Floppy*,unsigned char);
+unsigned char flpRd(Floppy*, int);
+void flpWr(Floppy*, int, unsigned char);
 int flpNext(Floppy*,int);		// return 1 if index strobe
 void flpPrev(Floppy*,int);
 void flpStep(Floppy*,int);
 
 int flp_format_trk(Floppy* flp, int trk, int spt, int slen, char* data);
 
-unsigned char flpGetField(Floppy*);
+// unsigned char flpGetField(Floppy*,int);
 void flpFillFields(Floppy*,int,int);
 
 void flpPutTrack(Floppy*,int,unsigned char*,int);
