@@ -3,13 +3,23 @@ How to compile
 - open terminal emulator and make this:
 	mkdir build
 	cd build
-	cmake ..
-If something going wrong, fix it - install qt4 and sdl libraries and headers
-Additionally you need install libz80ex.
-Optionally you can install alsa, sdl sound and zlib libs and headers for more functional
+	cmake [options] ..
+
+Options are:
+
+-DQT4BUILD=1 or 0 if you wand Qt4 or Qt5 build
+-DSDL1BUILD=1 or 0 if you wand SDL1.2 or SDL2 build
+
+If something going wrong, fix it - install Qt and sdl libraries and headers
+Optionally you can install zlib libs and headers for more functional
 And...
 	make
 Result should be './build/xpeccy' executable file
+
+Linux and MacOSX users can make a deb/rpm/dmg package:
+	make package
+...or install it in /usr/local/ (linux only):
+	make install
 
 By default there is only ZX Spectrum 48K romset w/o TRDOS.
 

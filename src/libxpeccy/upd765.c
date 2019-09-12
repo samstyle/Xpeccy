@@ -2,6 +2,10 @@
 
 #include "fdc.h"
 
+#define F_COM_MT	0x80
+#define F_COM_MF	0x40
+#define F_COM_SK	0x20
+
 #ifdef ISDEBUG
 #define DBGOUT(args...) printf(args)
 #else
@@ -48,6 +52,8 @@ void uSetDrive(FDC* fdc) {
 	fdc->flp = fdc->flop[fdc->comBuf[0] & 3];
 	fdc->trk = fdc->flp->trk;
 	fdc->side = (fdc->comBuf[0] & 4) ? 0 : 1;
+	fdc->sr0 &= 0xf8;
+	fdc->sr0 |= fdc->comBuf[0] & 7;	// hd & drive
 }
 
 int uGetByte(FDC* fdc) {
@@ -94,7 +100,6 @@ void uspcf00(FDC* fdc) {
 
 fdcCall uSpecify[] = {&uwargs, &uspcf00, &uTerm};
 
-
 typedef struct {
 	int mask;
 	int val;
@@ -130,6 +135,7 @@ void ucalib00(FDC* fdc) {
 	fdc->wait += turbo ? TRBSRT : fdc->srt;
 	fdc->state |= (1 << drv);	// set "flp is in seek mode"
 	fdc->pos++;
+	fdc->intr = 1;
 }
 
 void ucalib01(FDC* fdc) {
@@ -157,10 +163,14 @@ fdcCall uCalib[] = {&uwargs,&ucalib00,&ucalib01,&uTerm};
 
 void usint00(FDC* fdc) {
 	fdc->state &= 0xf0;		// clear b0..3 of main status register
+	if (!fdc->intr) {		// invalid command if no interrupt pending
+		fdc->sr0 &= 0x3f;
+		fdc->sr0 |= 0x80;
+	}
 	fdc->resBuf[0] = fdc->sr0;
 	fdc->resBuf[1] = fdc->flp->trk;
 	uResp(fdc, 2);
-	fdc->sr0 |= 0x80;
+	fdc->intr = 0;
 	fdc->pos++;
 }
 
@@ -174,6 +184,7 @@ void useek00(FDC* fdc) {
 	fdc->trk = fdc->flp->trk;
 	fdc->wait += turbo ? TRBSRT : fdc->srt;
 	fdc->pos++;
+	fdc->intr = 1;
 }
 
 void useek01(FDC* fdc) {
@@ -212,6 +223,7 @@ void urdaRS(FDC* fdc) {
 	fdc->resBuf[6] = fdc->buf[3];	// N
 	uResp(fdc, 7);
 	fdc->pos++;
+	fdc->intr = 1;
 }
 
 void urda00(FDC* fdc) {
@@ -256,6 +268,7 @@ void ureadRS(FDC* fdc) {
 	fdc->resBuf[6] = fdc->buf[3];
 	uResp(fdc, 7);
 	fdc->pos++;
+	fdc->intr = 1;
 }
 
 // wait ADR
@@ -281,7 +294,7 @@ int ureadCHK(FDC* fdc, int rt, int wt) {
 	flpNext(fdc->flp, fdc->side);
 	fdc->wait += turbo ? TRBBYTE : BYTEDELAY;
 	if (fdc->flp->field == rt) return 1;
-	if ((fdc->flp->field == wt) && (~fdc->com & 0x20)) {
+	if ((fdc->flp->field == wt) && (~fdc->com & F_COM_SK)) {
 		fdc->sr2 |= 0x40;
 		return 1;
 	}
@@ -344,8 +357,8 @@ void uread05(FDC* fdc) {
 	if (fdc->sr2 & 0x40) {				// SR2:CM flag set - not right sector & SK=0
 		fdc->pos++;
 	} else if (fdc->sec > fdc->comBuf[5]) {		// check EOT
-		if (fdc->com & 0x80) {		// multitrack (side 1->0 only)
-			fdc->side = !fdc->side;
+		if ((fdc->com & F_COM_MT) && !fdc->side) {		// multitrack (side 0->1 only)
+			fdc->side = 1;
 			fdc->cnt = 2;
 			fdc->sec = 1;
 			fdc->pos = 0;
@@ -394,6 +407,7 @@ void urdtrkRS(FDC* fdc) {
 	fdc->resBuf[6] = fdc->buf[3];
 	uResp(fdc, 7);
 	fdc->pos++;
+	fdc->intr = 1;
 }
 
 void urdtrk00(FDC* fdc) {
@@ -592,7 +606,7 @@ uCom uComTab[] = {
 
 void uWrite(FDC* fdc, int adr, unsigned char val) {
 	if (!(adr & 1)) return;			// wr data only
-	printf("wr : %.2X\n", val);
+	// printf("wr : %.2X\n", val);
 	if (fdc->idle) {			// 1st byte, command
 		// DBGOUT("updCom %.2X\n",val);
 		fdc->com = val;
@@ -653,7 +667,7 @@ unsigned char uRead(FDC* fdc, int adr) {
 			res = (fdc->state & 0x1f) | (fdc->drq << 7) | (fdc->dir << 6) | (fdc->irq << 5);
 		}
 	}
-	printf("rd %i = %.2X\n",adr & 1, res);
+	// printf("rd %i = %.2X\n",adr & 1, res);
 	return res;
 }
 
@@ -672,4 +686,5 @@ void uReset(FDC* fdc) {
 	fdc->hut = 0;
 	fdc->resCnt = 0;
 	fdc->resPos = 0;
+	fdc->intr = 0;
 }

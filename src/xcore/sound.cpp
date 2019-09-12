@@ -171,7 +171,7 @@ int sdlopen() {
 	asp.freq = conf.snd.rate;
 	asp.format = AUDIO_S16LSB;
 	asp.channels = conf.snd.chans;
-	asp.samples = conf.snd.rate / 50;
+	asp.samples = conf.snd.rate * conf.snd.chans / 50;
 	asp.callback = &sdlPlayAudio;
 	asp.userdata = NULL;
 	if (SDL_OpenAudio(&asp, &dsp) != 0) {

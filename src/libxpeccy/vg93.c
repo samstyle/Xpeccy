@@ -654,7 +654,7 @@ void vgReset(FDC* fdc) {
 	fdc->idle = 0;
 	fdc->irq = 1;
 	fdc->drq = 0;
-	fdc->side= 0;
+	fdc->side = 0;
 	fdc->plan = NULL;
 	fdc->pos = 0;
 	fdc->wait = -1;

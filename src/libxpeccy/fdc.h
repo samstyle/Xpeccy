@@ -66,9 +66,10 @@ struct FDC {
 	int pos;		// pos in plan
 
 	unsigned dma:1;		// not implemented yet
-	int hlt;	// head load time (all ns)
-	int hut;	// head unload time
-	int srt;	// step rate time
+	unsigned intr:1;	// uPD765 interrupt pending. reset @ com08
+	int hlt;		// head load time (all ns)
+	int hut;		// head unload time
+	int srt;		// step rate time
 	unsigned char comBuf[8]; // uPD765 command args
 	int comCnt;		// arg count for command
 	int comPos;		// pos in comBuf

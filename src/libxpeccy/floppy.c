@@ -66,7 +66,7 @@ int flpNext(Floppy* flp, int fdcSide) {
 			res = 1;
 		}
 		flp->index = (flp->pos < 4) ? 1 : 0;		// ~90ms index pulse
-		flp->field = flp->data[flp->rtrk].field[flp->pos];
+		flp->field = flp->data[flp->rtrk].field[flp->pos] & 0x0f;
 	} else {
 		flp->field = 0;
 	}
@@ -166,7 +166,7 @@ void flpPrev(Floppy* flp, int fdcSide) {
 		} else {
 			flp->pos = TRACKLEN - 1;
 		}
-		flp->field = flp->data[flp->rtrk].field[flp->pos];
+		flp->field = flp->data[flp->rtrk].field[flp->pos] & 0x0f;
 	} else {
 		flp->field = 0;
 	}
@@ -196,6 +196,7 @@ void flpFillFields(Floppy* flp,int tr, int flag) {
 	}
 	for (i = 0; i < TRACKLEN; i++) {
 		flp->data[tr].field[i] = fld;
+		fld &= 0x0f;		// reset flags
 		if (flag & 1) {
 			if (fld == 0) {
 					if ((*bpos) == 0xf5) *bpos = 0xa1;
@@ -220,25 +221,25 @@ void flpFillFields(Floppy* flp,int tr, int flag) {
 			}
 		} else {
 			switch (flp->data[tr].byte[i]) {
-				case 0xfe:
+				case 0xfe:			// head
 					cpos = bpos;
-					fld = 1;
+					fld = 0x01;
 					bcnt = 4;
 					scn = flp->data[tr].byte[i+3];
 					sct = flp->data[tr].byte[i+4];
 					break;
-				case 0xfb:
+				case 0xfb:			// data
 					cpos = bpos;
-					fld = 2;
+					fld = 0x02;
 					bcnt = (128 << (sct & 3));
 					if (scn > 0) {
 						flp->data[tr].map[scn] = i + 1;
 						scn = 0;
 					}
 					break;
-				case 0xf8:
+				case 0xf8:			// deleted data
 					cpos = bpos;
-					fld = 3;
+					fld = 0x03;
 					bcnt = (128 << (sct & 3));
 					if (scn > 0) {
 						flp->data[tr].map[scn] = i + 1;
