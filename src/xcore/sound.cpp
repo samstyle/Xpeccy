@@ -6,7 +6,11 @@
 #include <iostream>
 #include <QMutex>
 
-#include <SDL.h>
+#ifdef HAVESDL2
+#include <SDL2/SDL.h>
+#else
+#include <SDL/SDL.h>
+#endif
 
 // new
 static unsigned char sbuf[0x4000];
@@ -123,7 +127,11 @@ Uint32 sdl_timer_callback(Uint32 iv, void* ptr) {
 int null_open() {
 	printf("NULL device opening...\n");
 	tid = SDL_AddTimer(20, sdl_timer_callback, NULL);
+#ifdef HAVESDL1
+	if (tid == NULL) {
+#else
 	if (tid < 0) {
+#endif
 		printf("Can't create SDL_Timer, syncronisation unavailable\n");
 		throw(0);
 	}

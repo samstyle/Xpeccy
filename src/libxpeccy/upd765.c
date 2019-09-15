@@ -294,13 +294,13 @@ int ureadCHK(FDC* fdc, int rt, int wt) {
 	flpNext(fdc->flp, fdc->side);
 	fdc->wait += turbo ? TRBBYTE : BYTEDELAY;
 	if (fdc->flp->field == rt) return 1;
-	if ((fdc->flp->field == wt) && (~fdc->com & F_COM_SK)) {
+	if ((fdc->flp->field == wt) && (~fdc->com & F_COM_SK)) {	// wrong data field type, skip off: set b4,sr2, read sector & terminate execution
 		fdc->sr2 |= 0x40;
 		return 1;
 	}
 	fdc->cnt--;
-	if (fdc->cnt > 0) return 0;
-	fdc->sr0 |= 0x40;
+	if (fdc->cnt > 0) return 0;	// seek in progress
+	fdc->sr0 |= 0x40;		// error
 	fdc->sr1 |= 0x04;		// no data
 	return 2;
 }
@@ -309,13 +309,13 @@ void uread02(FDC* fdc) {		// for read data
 	int res = (fdc->com & 0x08) ? ureadCHK(fdc,3,2) : ureadCHK(fdc,2,3);
 	if (res == 1) {
 		fdc->pos++;
-		fdc->wait = 0;
+		fdc->wait = 1;
 	} else if (res == 2) {
 		ureadRS(fdc);
 		uTerm(fdc);
 	}
 }
-
+/*
 void uread02d(FDC* fdc) {		// for read deleted data
 	int res = ureadCHK(fdc,3,2);
 	if (res == 1) {
@@ -326,10 +326,11 @@ void uread02d(FDC* fdc) {		// for read deleted data
 		uTerm(fdc);
 	}
 }
-
+*/
 void uread03(FDC* fdc) {
+	// TODO: check this moment (data size)
 	if (fdc->comBuf[4] & 3) {
-		fdc->cnt = 0x80 << (fdc->comBuf[4] & 3);
+		fdc->cnt = 0x80 << (fdc->comBuf[4] & 3);	// N
 	} else {
 		fdc->cnt = fdc->comBuf[7] + 1;			// DTL
 	}
@@ -375,7 +376,12 @@ fdcCall uReadD01[] = {&uread01,&uread02,&uread03,&uread04,&uread05,&ureadRS,&uTe
 
 void uread00(FDC* fdc) {
 	uSetDrive(fdc);
-	fdc->sec = fdc->comBuf[3];		// R, sec.num
+	if (fdc->com & F_COM_MT) {		// multitrack: start from sec 1 on side 0
+		fdc->side = 0;
+		fdc->sec = 1;
+	} else {
+		fdc->sec = fdc->comBuf[3];	// R, sec.num
+	}
 	if (!fdc->flp->insert) {
 		fdc->sr0 |= 0x48;	// not ready
 		ureadRS(fdc);		// prepare resp

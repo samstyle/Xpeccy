@@ -1,4 +1,8 @@
-#include <SDL.h>
+#ifdef HAVESDL2
+#include <SDL2/SDL.h>
+#else
+#include <SDL/SDL.h>
+#endif
 
 #include "padbinder.h"
 

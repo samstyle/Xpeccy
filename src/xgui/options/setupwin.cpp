@@ -6,10 +6,13 @@
 #include <QPainter>
 #include <QDebug>
 #include <stdlib.h>
-#ifdef HAVESDL
-	#include <SDL.h>
-	#undef main
+
+#ifdef HAVESDL2
+#include <SDL2/SDL.h>
+#else
+#include <SDL/SDL.h>
 #endif
+#undef main
 
 #include "filer.h"
 #include "setupwin.h"
