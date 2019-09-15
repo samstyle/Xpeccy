@@ -657,10 +657,13 @@ xDisasmTable::xDisasmTable(QWidget* p):QTableView(p) {
 
 void xDisasmTable::resizeEvent(QResizeEvent* ev) {
 	int wid = ev->size().width();
-	setColumnWidth(0, 90);
-	setColumnWidth(1, 90);
-	setColumnWidth(2, wid - 90 - 90 - 40);
-	setColumnWidth(3, 40);
+	QFontMetrics qfm(font());
+	int adw = qfm.width("000:00:0000") + 10;
+	int btw = qfm.width("0000000000") + 10;
+	setColumnWidth(0, adw);
+	setColumnWidth(1, btw);
+	setColumnWidth(2, wid - adw - btw - 50);
+	setColumnWidth(3, 50);
 }
 
 QVariant xDisasmTable::getData(int row, int col, int role) {
