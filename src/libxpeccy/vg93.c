@@ -541,7 +541,7 @@ void vgwrt01(FDC* fdc) {
 }
 
 void vgwrt02(FDC* fdc) {
-	flpFillFields(fdc->flp, fdc->flp->rtrk, 1);
+	flpFillFields(fdc->flp, (fdc->flp->trk << 1) | fdc->side, 1);
 	fdc->pos++;
 }
 

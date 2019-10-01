@@ -12,6 +12,7 @@ typedef struct {
 	unsigned lev:1;
 	int perH;		// 128KHz ticks to change level
 	int perL;
+	int per;
 	int cnt;		// countdown
 	int step;
 

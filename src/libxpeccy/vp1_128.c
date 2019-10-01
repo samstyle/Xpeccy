@@ -112,7 +112,7 @@ void vp1_wr(FDC* fdc, int port, unsigned short val) {
 		} else {
 			fdc->plan = NULL;
 		}
-		fdc->side = (val & 0x20) ? 0 : 1;
+		fdc->side = (val & 0x20) ? 1 : 0;
 		if (val & 0x80)
 			flpStep(fdc->flp, (val & 0x40) ? FLP_FORWARD : FLP_BACK);
 		if (val & 0x100) {

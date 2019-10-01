@@ -11,7 +11,7 @@ Floppy* flpCreate(int id) {
 	flp->trk80 = 1;
 	flp->doubleSide = 1;
 	flp->trk = 0;
-	flp->rtrk = 0;
+	// flp->rtrk = 0;
 	flp->pos = 0;
 	flp->path = NULL;
 	return flp;
@@ -21,10 +21,9 @@ void flpDestroy(Floppy* flp) {
 	free(flp);
 }
 
-// hd: 1 is 1st side, 0 is 2nd side
 void flpWr(Floppy* flp, int hd, unsigned char val) {
 	flp->wr = 1;
-	hd = (~hd & 1);
+	hd &= 1;
 	if (flp->insert) {
 		flp->changed = 1;
 		flp->data[(flp->trk << 1) | hd].byte[flp->pos] = val;
@@ -33,16 +32,9 @@ void flpWr(Floppy* flp, int hd, unsigned char val) {
 
 unsigned char flpRd(Floppy* flp, int hd) {
 	flp->rd = 1;
-	hd = (~hd & 1);
+	hd &= 1;
 	return flp->insert ? flp->data[(flp->trk << 1) | hd].byte[flp->pos] : 0xff;
 }
-
-/*
-unsigned char flpGetField(Floppy* flp, int hd) {
-	hd = (~hd & 1);
-	return flp->data[(flp->trk << 1) | hd].field[flp->pos];
-}
-*/
 
 void flpStep(Floppy* flp, int dir) {
 	switch (dir) {
@@ -57,8 +49,8 @@ void flpStep(Floppy* flp, int dir) {
 
 int flpNext(Floppy* flp, int fdcSide) {
 	int res = 0;
-	flp->rtrk = (flp->trk << 1);
-	if (flp->doubleSide && !fdcSide) flp->rtrk++;		// /SIDE1 = 0 when upper head (1) selected
+	int rtrk = (flp->trk << 1);
+	if (flp->doubleSide && fdcSide) rtrk++;
 	if (flp->insert) {
 		flp->pos++;
 		if (flp->pos >= TRACKLEN) {
@@ -66,7 +58,7 @@ int flpNext(Floppy* flp, int fdcSide) {
 			res = 1;
 		}
 		flp->index = (flp->pos < 4) ? 1 : 0;		// ~90ms index pulse
-		flp->field = flp->data[flp->rtrk].field[flp->pos] & 0x0f;
+		flp->field = flp->data[rtrk].field[flp->pos] & 0x0f;
 	} else {
 		flp->field = 0;
 	}
@@ -158,15 +150,15 @@ int flp_format_trk(Floppy* flp, int trk, int spt, int slen, char* data) {
 }
 
 void flpPrev(Floppy* flp, int fdcSide) {
-	flp->rtrk = (flp->trk << 1);
-	if (flp->doubleSide && !fdcSide) flp->rtrk++;
+	int rtrk = (flp->trk << 1);
+	if (flp->doubleSide && fdcSide) rtrk++;
 	if (flp->insert) {
 		if (flp->pos > 0) {
 			flp->pos--;
 		} else {
 			flp->pos = TRACKLEN - 1;
 		}
-		flp->field = flp->data[flp->rtrk].field[flp->pos] & 0x0f;
+		flp->field = flp->data[rtrk].field[flp->pos] & 0x0f;
 	} else {
 		flp->field = 0;
 	}

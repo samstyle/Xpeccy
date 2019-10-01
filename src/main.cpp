@@ -41,8 +41,8 @@ void help() {
 	printf("--sp ADR\t\tset SP\n");
 	printf("--bp ADR\t\tset fetch brakepoint to address ADR\n");
 	printf("--bp NAME\t\tset fetch brakepoint to label NAME (see -l key)\n");
-	printf("--disk X\t\tselect drive to loading file (0..4 | a..d | A..D)\n");
-	printf("--style\t\tMacOSX only: use native qt style, else 'fusion' will be forced");
+	printf("--disk X\t\tselect drive to loading file (0..3 | a..d | A..D)\n");
+	printf("--style\t\t\tMacOSX only: use native qt style, else 'fusion' will be forced\n");
 }
 
 int main(int ac,char** av) {

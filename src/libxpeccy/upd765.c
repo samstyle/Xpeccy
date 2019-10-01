@@ -51,7 +51,7 @@ void uResp(FDC* fdc, int len) {
 void uSetDrive(FDC* fdc) {
 	fdc->flp = fdc->flop[fdc->comBuf[0] & 3];
 	fdc->trk = fdc->flp->trk;
-	fdc->side = (fdc->comBuf[0] & 4) ? 0 : 1;
+	fdc->side = (fdc->comBuf[0] & 4) ? 1 : 0;
 	fdc->sr0 &= 0xf8;
 	fdc->sr0 |= fdc->comBuf[0] & 7;	// hd & drive
 }

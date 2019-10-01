@@ -20,10 +20,11 @@ void gbsDestroy(gbSound* gbs) {
 
 void gbchSync(gbsChan* ch, long tick) {	// input ticks @ 128KHz
 	if (!ch->on) return;
-	ch->cnt--;
-	if (ch->cnt < 0) {
+	ch->cnt++;
+	if (ch->cnt >= ch->per) {
 		ch->lev ^= 1;
-		ch->cnt = ch->lev ? ch->perH : ch->perL;
+		ch->per = ch->lev ? ch->perH : ch->perL;
+		ch->cnt = 0;
 		ch->step++;
 	}
 	if (tick & 0x1ff) return;	// 256Hz (len)
@@ -34,9 +35,9 @@ void gbchSync(gbsChan* ch, long tick) {	// input ticks @ 128KHz
 	}
 	if (tick & 0x3ff) return;	// 128Hz (sweep)
 	if (ch->sweep.step) {		// step = 0 : sweep off
-		ch->sweep.cnt--;
-		if (ch->sweep.cnt < 0) {
-			ch->sweep.cnt = ch->sweep.per;
+		ch->sweep.cnt++;
+		if (ch->sweep.cnt >= ch->sweep.per) {
+			ch->sweep.cnt = 0; // ch->sweep.per;
 			if (ch->sweep.dir) {
 				ch->perH -= ch->perH / (2 ^ ch->sweep.step);
 				ch->perL -= ch->perL / (2 ^ ch->sweep.step);
@@ -47,9 +48,9 @@ void gbchSync(gbsChan* ch, long tick) {	// input ticks @ 128KHz
 		}
 	}
 	if (tick & 0x7ff) return;	// 64Hz (env)
-	ch->env.cnt--;
-	if (ch->env.cnt < 0) {
-		ch->env.cnt = ch->env.per;
+	ch->env.cnt++;
+	if (ch->env.cnt >= ch->env.per) {
+		ch->env.cnt = 0;
 		if (ch->env.on) {
 			if (ch->env.dir) {
 				if (ch->env.vol < 15)
