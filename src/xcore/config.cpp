@@ -98,17 +98,11 @@ void saveConfig() {
 		shitHappens("Can't write main config");
 		throw(0);
 	}
-//	uint j;
 
 	fprintf(cfile,"[GENERAL]\n\n");
-//	if ((conf.keyMapName != "default") && (conf.keyMapName != "")) {
-//		fprintf(cfile,"keys = %s\n",conf.keyMapName.c_str());
-//	}
 	fprintf(cfile, "startdefault = %s\n", YESNO(conf.defProfile));
 	fprintf(cfile, "savepaths = %s\n", YESNO(conf.storePaths));
 	fprintf(cfile, "fdcturbo = %s\n", YESNO(fdcFlag & FDC_FAST));
-//	fprintf(cfile, "systime = %s\n", YESNO(conf.sysclock));
-	fprintf(cfile, "lastdir = %s\n",conf.path.lastDir);
 	fprintf(cfile, "port = %i\n", conf.port);
 
 	fprintf(cfile, "\n[BOOKMARKS]\n\n");
@@ -238,7 +232,6 @@ void loadConfig() {
 	conf.bookmarkList.clear();
 	char buf[0x4000];
 	QColor col;
-//	QPalette pal;
 	std::pair<std::string,std::string> spl;
 	std::string line,pnam,pval;
 	std::string pnm = "default";
@@ -417,7 +410,6 @@ void loadConfig() {
 					break;
 				case SECT_SOUND:
 					if (pnam=="enabled") conf.snd.enabled = str2bool(pval) ? 1 : 0;
-//					if (pnam=="dac") ayDac = str2bool(pval.c_str()) ? 1 : 0;
 					if (pnam=="soundsys") soutnam = pval;
 					if (pnam=="rate") conf.snd.rate = strtol(pval.c_str(), NULL, 10);
 					if (pnam=="volume.master") conf.snd.vol.master = getRanged(pval.c_str(), 0, 100);
@@ -431,12 +423,9 @@ void loadConfig() {
 				case SECT_TOOLS:
 					break;
 				case SECT_GENERAL:
-					// if (pnam=="keys") conf.keyMapName = pval;
 					if (pnam=="startdefault") conf.defProfile = str2bool(pval) ? 1 : 0;
 					if (pnam=="savepaths") conf.storePaths = str2bool(pval) ? 1 : 0;
 					if (pnam == "fdcturbo") setFlagBit(str2bool(pval),&fdcFlag,FDC_FAST);
-//					if (pnam == "systime") conf.sysclock = str2bool(pval) ? 1 : 0;
-					if (pnam == "lastdir") strcpy(conf.path.lastDir, pval.c_str());
 					if (pnam == "port") conf.port = strtol(pval.c_str(), NULL, 10);
 					break;
 				case SECT_TAPE:
@@ -462,7 +451,6 @@ void loadConfig() {
 	for (i=0; i<rsListist.size(); i++) addRomset(rsListist[i]);
 	prfLoadAll();
 	setOutput(soutnam.c_str());
-	//loadKeys();
 	if (conf.defProfile) {
 		if (!prfSetCurrent("default")) {
 			printf("Can't set default profile! Yes, it happens\n");

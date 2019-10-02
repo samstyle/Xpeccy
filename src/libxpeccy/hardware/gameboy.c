@@ -295,13 +295,13 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			break;
 		case 0x1d:
 			frq = ((comp->gb.iomap[0x1e] << 8) | val) & 0x07ff;
-			per = (2048 - frq) >> 5;	// 2048-frq @ 64KHz | << 1 @ 128KHz. / 32 for 1 sample
+			per = (2048 - frq) >> 4;	// 2048-frq @ 64KHz | << 1 @ 128KHz. / 32 for 1 sample
 			ch3->perH = per;
 			ch3->perL = per;
 			break;
 		case 0x1e:
 			frq = ((val << 8) | comp->gb.iomap[0x1d]) & 0x07ff;
-			per = (2048 - frq) >> 5;
+			per = (2048 - frq) >> 4;
 			ch3->perH = per;
 			ch3->perL = per;
 			ch3->cont = (val & 0x40) ? 0 : 1;
@@ -704,21 +704,51 @@ static char gbMsgWIN0[] = " WIN layer off ";
 static char gbMsgWIN1[] = " WIN layer on ";
 static char gbMsgSPR0[] = " SPR layer off ";
 static char gbMsgSPR1[] = " SPR layer on ";
+static char gbMsgCh10[] = " CH1 off ";
+static char gbMsgCh11[] = " CH1 on ";
+static char gbMsgCh20[] = " CH2 off ";
+static char gbMsgCh21[] = " CH2 on ";
+static char gbMsgCh30[] = " CH3 off ";
+static char gbMsgCh31[] = " CH3 on ";
+static char gbMsgCh40[] = " CH4 off ";
+static char gbMsgCh41[] = " CH4 on ";
 
 void gbc_keyp(Computer* comp, keyEntry ent) {
 	unsigned char mask = gbGetInputMask(ent.key);
 	if (mask) {
 		comp->gb.buttons &= ~mask;
 		comp->gb.inpint = 1;			// input interrupt request
-	} else if (ent.key == XKEY_1) {
-		comp->vid->bgblock ^= 1;
-		comp->msg = comp->vid->bgblock ? gbMsgBG0 :gbMsgBG1;
-	} else if (ent.key == XKEY_2) {
-		comp->vid->winblock ^= 1;
-		comp->msg = comp->vid->winblock ? gbMsgWIN0 :gbMsgWIN1;
-	} else if (ent.key == XKEY_3) {
-		comp->vid->sprblock ^= 1;
-		comp->msg = comp->vid->sprblock ? gbMsgSPR0 :gbMsgSPR1;
+	} else {
+		switch (ent.key) {
+			case XKEY_1:
+				comp->vid->bgblock ^= 1;
+				comp->msg = comp->vid->bgblock ? gbMsgBG0 :gbMsgBG1;
+				break;
+			case XKEY_2:
+				comp->vid->winblock ^= 1;
+				comp->msg = comp->vid->winblock ? gbMsgWIN0 :gbMsgWIN1;
+				break;
+			case XKEY_3:
+				comp->vid->sprblock ^= 1;
+				comp->msg = comp->vid->sprblock ? gbMsgSPR0 :gbMsgSPR1;
+				break;
+			case XKEY_4:
+				comp->gbsnd->ch1.blk ^= 1;
+				comp->msg = comp->gbsnd->ch1.blk ? gbMsgCh10 : gbMsgCh11;
+				break;
+			case XKEY_5:
+				comp->gbsnd->ch2.blk ^= 1;
+				comp->msg = comp->gbsnd->ch2.blk ? gbMsgCh20 : gbMsgCh21;
+				break;
+			case XKEY_6:
+				comp->gbsnd->ch3.blk ^= 1;
+				comp->msg = comp->gbsnd->ch3.blk ? gbMsgCh30 : gbMsgCh31;
+				break;
+			case XKEY_7:
+				comp->gbsnd->ch4.blk ^= 1;
+				comp->msg = comp->gbsnd->ch4.blk ? gbMsgCh40 : gbMsgCh41;
+				break;
+		}
 	}
 }
 

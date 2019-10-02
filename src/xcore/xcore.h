@@ -108,6 +108,7 @@ typedef struct {
 	std::string rsName;
 	std::string jmapName;
 	std::string kmapName;
+	std::string lastDir;
 	std::vector<xBrkPoint> brkList;
 	Computer* zx;
 } xProfile;
@@ -309,7 +310,7 @@ struct xConfig {
 		unsigned fps:1;
 	} led;
 	struct {
-		char lastDir[PATH_MAX];
+		// char lastDir[PATH_MAX];
 		char confDir[PATH_MAX];
 		char confFile[PATH_MAX];
 		char romDir[PATH_MAX];

@@ -336,6 +336,11 @@ int prfLoad(std::string nm) {
 		printf("Damn! I can't open config file");
 		return PLOAD_OF;
 	}
+#ifdef __win32
+	prf->lastDir = ".";
+#elif __linux || __APPLE
+	prf->lastDir = std::string(getenv("HOME"));
+#endif
 
 	xArg arg;
 
@@ -442,6 +447,7 @@ int prfLoad(std::string nm) {
 					//if (pnam == "contmemP3") setFlagBit(str2bool(pval),&comp->vid->flags,VID_CONT2);
 					if (pnam == "contio") comp->contIO = str2bool(pval) ? 1 : 0;
 					if (pnam == "scrp.wait") comp->evenM1 = str2bool(pval) ? 1 : 0;
+					if (pnam == "lastdir") prf->lastDir = pval;
 					break;
 				case PS_IDE:
 					if (pnam == "iface") comp->ide->type = atoi(pval.c_str());
@@ -557,6 +563,9 @@ int prfSave(std::string nm) {
 		printf("Can't write settings\n");
 		return PSAVE_OF;
 	}
+
+	fprintf(file, "[GENERAL]\n\n");
+	fprintf(file, "lastdir = %s\n", prf->lastDir.c_str());
 
 	fprintf(file, "[MACHINE]\n\n");
 	fprintf(file, "current = %s\n", prf->hwName.c_str());

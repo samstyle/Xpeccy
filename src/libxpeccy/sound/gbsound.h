@@ -4,6 +4,7 @@
 #include "sndcommon.h"
 
 typedef struct {
+	unsigned blk:1;
 	unsigned on:1;
 	unsigned cont:1;
 	unsigned so1:1;

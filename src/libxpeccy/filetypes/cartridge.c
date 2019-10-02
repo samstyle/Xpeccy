@@ -61,6 +61,13 @@ int loadSlot(Computer* comp, const char* name, int drv) {
 			memset(slot->ram, 0x00, 0x8000);
 		}
 		err = ERR_OK;
+		switch (comp->hw->grp) {
+			case HWG_MSX:
+			case HWG_NES:
+			case HWG_GB:
+				compReset(comp, RES_DEFAULT);
+				break;
+		}
 	}
 	return err;
 }

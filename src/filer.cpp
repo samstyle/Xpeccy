@@ -323,7 +323,7 @@ int load_file(Computer* comp, const char* name, int id, int drv) {
 		if (!flt.isEmpty()) {
 			filer->setWindowTitle("Open file");
 			filer->setNameFilter(flt);
-			filer->setDirectory(conf.path.lastDir);
+			filer->setDirectory(conf.prof.cur->lastDir.c_str());
 			filer->setAcceptMode(QFileDialog::AcceptOpen);
 			filer->setHistory(QStringList());
 			if (filer->exec()) {
@@ -331,8 +331,8 @@ int load_file(Computer* comp, const char* name, int id, int drv) {
 				flt = filer->selectedNameFilter();
 				grp = file_detect_grp(flt);
 				drv = grp->drv;
+				conf.prof.cur->lastDir = std::string(QFileInfo(path).dir().absolutePath().toLocal8Bit().data());
 			}
-			strcpy(conf.path.lastDir, filer->directory().absolutePath().toLocal8Bit().data());
 		}
 	}
 	if (path.isEmpty()) return err;
@@ -384,7 +384,7 @@ int save_file(Computer* comp, const char* name, int id, int drv) {
 			filer->setWindowTitle("Save file");
 			filer->setNameFilter(flt);
 			filer->setAcceptMode(QFileDialog::AcceptSave);
-			filer->setDirectory(conf.path.lastDir);
+			filer->setDirectory(conf.prof.cur->lastDir.c_str());
 			filer->setHistory(QStringList());
 			if (filer->exec()) {
 				path = filer->selectedFiles().first();
@@ -415,8 +415,8 @@ int save_file(Computer* comp, const char* name, int id, int drv) {
 						path.append(tin->ext);
 					}
 				}
+				conf.prof.cur->lastDir = std::string(QFileInfo(path).dir().absolutePath().toLocal8Bit().data());
 			}
-			strcpy(conf.path.lastDir, filer->directory().absolutePath().toLocal8Bit().data());
 		}
 	}
 	if (path.isEmpty()) return err;
@@ -446,11 +446,6 @@ void initFileDialog(QWidget* par) {
 	filer->setNameFilterDetailsVisible(true);
 	filer->setConfirmOverwrite(true);
 	filer->setOption(QFileDialog::DontUseNativeDialog, 1);
-#ifdef _WIN32
-	strcpy(conf.path.lastDir, ".");
-#else
-	strcpy(conf.path.lastDir, getenv("HOME"));
-#endif
 }
 
 bool saveChangedDisk(Computer* comp,int id) {
