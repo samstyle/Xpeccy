@@ -64,11 +64,11 @@ enum {
 };
 
 // memory flags
-#define	MEM_BRK_FETCH	1
-#define	MEM_BRK_RD	(1<<1)
-#define	MEM_BRK_WR	(1<<2)
+#define	MEM_BRK_FETCH	(1<<0)	// xxxxxxx1
+#define	MEM_BRK_RD	(1<<1)	// xxxxxx1x
+#define	MEM_BRK_WR	(1<<2)	// xxxxx1xx
 #define	MEM_BRK_ANY	(MEM_BRK_FETCH | MEM_BRK_RD | MEM_BRK_WR)
-#define MEM_BRK_TFETCH	(1<<3)
+#define MEM_BRK_TFETCH	(1<<3)	// xxxx1xxx
 #define MEM_BRK_RAM	(0<<6)	// 00xxxxxx
 #define MEM_BRK_ROM	(1<<6)	// 01xxxxxx
 #define MEM_BRK_SLT	(2<<6)	// 10xxxxxx

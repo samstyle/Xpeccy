@@ -761,7 +761,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					len = dasmSome(comp, comp->cpu->pc, drow);
 					if (drow.oflag & OF_SKIPABLE) {
 						ptr = getBrkPtr(comp, (comp->cpu->pc + len) & 0xffff);
-						*ptr ^= MEM_BRK_TFETCH;
+						*ptr |= MEM_BRK_TFETCH;
 						stop();
 					} else {
 						doStep();

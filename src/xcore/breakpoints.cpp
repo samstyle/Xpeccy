@@ -30,12 +30,19 @@ xbpIndex brkFind(xBrkPoint brk) {
 	return res;
 }
 
+// create breakpoint
+// type		BRK_MEMCELL	memory cell
+//		BRK_CPUADR	cpu address
+//		BRK_IOPORT	io address
+//		BRK_IRQ		interrupt
+// flag		MEM_BRK_ROM | MEM_BRK_RAM | MEM_BRK_SLT | 0 : memory type for BRK_MEMCELL
+//		BRK_FETCH || BRK_RD || BRK_WR		: break conditions
+// adr		0000..FFFF for BRK_CPUADR
+//		full memory address for BRK_MEMCELL
+// mask		address mask for BRK_IOADR
 xBrkPoint brkCreate(int type, int flag, int adr, int mask) {
 	xBrkPoint brk;
-//	xAdr xadr;
 	if (type == BRK_MEMCELL) {
-
-//		xadr = memGetXAdr(conf.prof.cur->zx->mem, adr & 0xffff);		// nope
 		switch(flag  & MEM_BRK_TMASK) {
 			case MEM_BRK_ROM: brk.type = BRK_MEMROM; break;
 			case MEM_BRK_RAM: brk.type = BRK_MEMRAM; break;
@@ -47,7 +54,6 @@ xBrkPoint brkCreate(int type, int flag, int adr, int mask) {
 		brk.type = type;
 		brk.adr = adr & 0xffff;
 	}
-	brk.block = 0;
 	brk.off = 0;
 	brk.size = 1;
 	brk.fetch = (flag & MEM_BRK_FETCH) ? 1 : 0;
