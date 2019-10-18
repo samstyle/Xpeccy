@@ -7,8 +7,8 @@ How to compile
 
 Options are:
 
--DQT4BUILD=1 or 0 if you wand Qt4 or Qt5 build
--DSDL1BUILD=1 or 0 if you wand SDL1.2 or SDL2 build
+-DQT4BUILD=1 or 0 if you want Qt4 or Qt5 build
+-DSDL1BUILD=1 or 0 if you want SDL1.2 or SDL2 build
 
 If something going wrong, fix it - install Qt and sdl libraries and headers
 Optionally you can install zlib libs and headers for more functional

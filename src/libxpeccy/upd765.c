@@ -6,6 +6,10 @@
 #define F_COM_MF	0x40
 #define F_COM_SK	0x20
 
+#define F_SR1_OR	0x10	// data lost
+#define F_SR1_ND	0x04	// no data
+#define F_SR1_NW	0x02	// write protect
+
 #ifdef ISDEBUG
 #define DBGOUT(args...) printf(args)
 #else
@@ -79,7 +83,7 @@ int uGetByte(FDC* fdc) {
 	return res;
 }
 
-fdcCall utermTab[] = {&ustp, &unothing};
+static fdcCall utermTab[] = {&ustp, &unothing};
 
 void uTerm(FDC* fdc) {
 	fdc->plan = utermTab;
@@ -98,7 +102,7 @@ void uspcf00(FDC* fdc) {
 	fdc->pos++;
 }
 
-fdcCall uSpecify[] = {&uwargs, &uspcf00, &uTerm};
+static fdcCall uSpecify[] = {&uwargs, &uspcf00, &uTerm};
 
 typedef struct {
 	int mask;
@@ -122,7 +126,7 @@ void udrvst00(FDC* fdc) {
 	fdc->pos++;
 }
 
-fdcCall uDrvStat[] = {&uwargs, &udrvst00, &uTerm};
+static fdcCall uDrvStat[] = {&uwargs, &udrvst00, &uTerm};
 
 // 00000111 [xxxxx0.DRV:2]
 // recalibrate
@@ -156,7 +160,7 @@ void ucalib01(FDC* fdc) {
 	}
 }
 
-fdcCall uCalib[] = {&uwargs,&ucalib00,&ucalib01,&uTerm};
+static fdcCall uCalib[] = {&uwargs,&ucalib00,&ucalib01,&uTerm};
 
 // 00001000 R [ST0],[PCN]
 // sense interrupt status
@@ -174,7 +178,7 @@ void usint00(FDC* fdc) {
 	fdc->pos++;
 }
 
-fdcCall uSenseInt[] = {&uwargs,&usint00,&uTerm};
+static fdcCall uSenseInt[] = {&uwargs,&usint00,&uTerm};
 
 // 00001111 [xxxxx.H.DRV:2,NCN]
 // seek
@@ -208,7 +212,7 @@ void useek02(FDC* fdc) {
 	fdc->pos++;
 }
 
-fdcCall uSeek[] = {&uwargs,&useek00,&useek01,&useek02,&uTerm};
+static fdcCall uSeek[] = {&uwargs,&useek00,&useek01,&useek02,&uTerm};
 
 // 0.MF.001010 [xxxxx.H.DRV:2] R [ST0,ST1,ST2,C,H,R,N]
 // read ID
@@ -252,7 +256,7 @@ void urda01(FDC* fdc) {
 	}
 }
 
-fdcCall uReadID[] = {&uwargs,&urda00,&urda01,&urdaRS,&uTerm};
+static fdcCall uReadID[] = {&uwargs,&urda00,&urda01,&urdaRS,&uTerm};
 
 // MT.MF.SK.00110 [xxxxx.HD.DRV:2,C,H,R,N,EOT,GPL,DTL] R [SR0,SR1,SR2,C,H,R,N]
 // MT.MF.SK.01000 [xxxxx.HD.DRV:2,C,H,R,N,EOT,GPL,DTL] R [SR0,SR1,SR2,C,H,R,N]
@@ -315,18 +319,7 @@ void uread02(FDC* fdc) {		// for read data
 		uTerm(fdc);
 	}
 }
-/*
-void uread02d(FDC* fdc) {		// for read deleted data
-	int res = ureadCHK(fdc,3,2);
-	if (res == 1) {
-		fdc->pos++;
-		fdc->wait = 0;
-	} else if (res == 2) {
-		ureadRS(fdc);
-		uTerm(fdc);
-	}
-}
-*/
+
 void uread03(FDC* fdc) {
 	// TODO: check this moment (data size)
 	if (fdc->comBuf[4] & 3) {
@@ -372,7 +365,7 @@ void uread05(FDC* fdc) {
 	}
 }
 
-fdcCall uReadD01[] = {&uread01,&uread02,&uread03,&uread04,&uread05,&ureadRS,&uTerm};
+static fdcCall uReadD01[] = {&uread01,&uread02,&uread03,&uread04,&uread05,&ureadRS,&uTerm};
 
 void uread00(FDC* fdc) {
 	uSetDrive(fdc);
@@ -398,7 +391,7 @@ void uread00a(FDC* fdc) {
 	fdc->pos = 0;
 }
 
-fdcCall uRdData[] = {&uwargs,&uread00,&uread00a};
+static fdcCall uRdData[] = {&uwargs,&uread00,&uread00a};
 
 // 0.MF.SK.00010 [xxxxx.HD.DRV:2,C,H,R,N,EOT,GPL,DTL] R [SR0,SR1,SR2,C,H,R,N]
 // read track
@@ -479,7 +472,7 @@ void urdtrk04(FDC* fdc) {
 	}
 }
 
-fdcCall uRdTrk[] = {&uwargs, &urdtrk00, &urdtrk01, &urdtrk02, &urdtrk03, &uread03, &uread04, &urdtrk04, &urdtrkRS, &uTerm};
+static fdcCall uRdTrk[] = {&uwargs, &urdtrk00, &urdtrk01, &urdtrk02, &urdtrk03, &uread03, &uread04, &urdtrk04, &urdtrkRS, &uTerm};
 
 // MT.MF.SK.10001 [xxxxx.HD.DRV:2,C,H,R,N,EOT,GPL,STP] R [SR0,SR1,SR2,C,H,R,N]	scan equal
 // MT.MF.SK.11001 [xxxxx.HD.DRV:2,C,H,R,N,EOT,GPL,STP] R [SR0,SR1,SR2,C,H,R,N]	scan low or equal
@@ -551,7 +544,7 @@ void uscan03(FDC* fdc) {
 	}
 }
 
-fdcCall uScan[] = {&uwargs, &uread00, &uread01, &uscan00, &uscan01, &uscan02, &uscan03, &ureadRS, &uTerm};
+static fdcCall uScan[] = {&uwargs, &uread00, &uread01, &uscan00, &uscan01, &uscan02, &uscan03, &ureadRS, &uTerm};
 
 // MT.MF.SK.00101 [xxxxx.HD.DRV:2,C,H,R,N,EOT,GPL,DTL] R [SR0,SR1,SR2,C,H,R,N]
 // MT.MF.SK.01001 [xxxxx.HD.DRV:2,C,H,R,N,EOT,GPL,DTL] R [SR0,SR1,SR2,C,H,R,N]
@@ -564,19 +557,129 @@ void uwrdat00(FDC* fdc) {
 		fdc->sr0 |= 0x48;		// not ready
 		ureadRS(fdc);
 		uTerm(fdc);
+	} else if (fdc->flp->protect || 1) {		// trick: force 'write protect' error
+		fdc->sr1 |= F_SR1_NW;
+		fdc->sr0 |= 0x40;
+		ureadRS(fdc);
+		uTerm(fdc);
+	} else {
+		fdc->cnt = 2;
+		fdc->pos++;
+		fdc->drq = 1;
+		fdc->dir = 0;
+	}
+}
+
+void uwrdat01(FDC* fdc) {
+	int res = seekADR(fdc);
+	if (res == 2) {
+		fdc->cnt--;
+		if (fdc->cnt < 1) {
+			fdc->sr0 |= 0x40;	// error
+			fdc->sr1 |= F_SR1_ND;	// no data
+			ureadRS(fdc);
+			uTerm(fdc);
+		}
+	} else if (res == 1) {
+		if (fdc->sec == fdc->buf[2]) {
+			fdc->cnt = 52;
+			fdc->pos++;
+		}
+	}
+}
+
+void uwrdat02(FDC* fdc) {
+	flpNext(fdc->flp, fdc->side);
+	if ((fdc->flp->field == 2) || (fdc->flp->field == 3)) {
+		flpPrev(fdc->flp, fdc->side);
+		fdc->crc = 0;
+		add_crc_16(fdc, 0xa1);
+		add_crc_16(fdc, 0xa1);
+		add_crc_16(fdc, 0xa1);
+		unsigned char mark = (fdc->com & 8) ? 0xf8 : 0xfb;
+		flpWr(fdc->flp, fdc->side, mark);
+		add_crc_16(fdc, mark);
+		fdc->wait = BYTEDELAY;
+		// todo : data lenght
+		fdc->cnt = 128 << (fdc->buf[3] & 7);
+		fdc->pos++;
+	} else {
+		fdc->wait += turbo ? TRBBYTE : BYTEDELAY;
+		fdc->cnt--;
+		if (fdc->cnt < 1) {
+			fdc->sr0 |= 0x40;		// error
+			fdc->sr1 |= F_SR1_ND;		// no data
+			ureadRS(fdc);
+			uTerm(fdc);
+		}
+	}
+}
+
+void uwrdat03(FDC* fdc) {
+	if (fdc->drq) {				// data lost
+		fdc->sr1 |= F_SR1_OR;		// overrun
+		fdc->sr0 |= 0x40;		// error
+		ureadRS(fdc);
+		uTerm(fdc);
+	}
+	flpWr(fdc->flp, fdc->side, fdc->data);
+	flpNext(fdc->flp, fdc->side);
+	fdc->drq = 1;
+	fdc->wait += BYTEDELAY;
+	fdc->cnt--;
+	if (fdc->cnt < 1)
+		fdc->pos++;
+}
+
+void uwrdat04(FDC* fdc) {
+	flpWr(fdc->flp, fdc->side, (fdc->crc >> 8) & 0xff);
+	flpNext(fdc->flp, fdc->side);
+	fdc->wait += BYTEDELAY;
+	flpWr(fdc->flp, fdc->side, fdc->crc & 0xff);
+	flpNext(fdc->flp, fdc->side);
+	fdc->wait += BYTEDELAY;
+	fdc->pos++;
+}
+
+void uwrdat05(FDC* fdc) {
+	if (fdc->sec > fdc->comBuf[5]) {		// check EOT
+		if ((fdc->com & F_COM_MT) && !fdc->side) {		// multitrack (side 0->1 only)
+			fdc->side = 1;
+			fdc->cnt = 2;
+			fdc->sec = 1;
+			fdc->pos = 2;	// to uwrdat01
+			fdc->drq = 1;
+			fdc->dir = 0;
+		} else {
+			fdc->pos++;
+		}
+	} else {
+		fdc->pos = 2;	// to uwrdat01
+		fdc->drq = 1;
+		fdc->dir = 0;
+	}
+}
+
+static fdcCall uWrData[] = {&uwargs,&uwrdat00,&uwrdat01,&uwrdat02,&uwrdat03,&uwrdat04,&uwrdat05,&ureadRS,&uTerm};
+
+// 0.MF.001101 [xxxxx.H.DRV:1, N, SC, GPL, D] R [SR0,SR1,SR2,C,H,R,N]
+
+void utrkfrm00(FDC* fdc) {
+	uSetDrive(fdc);
+	fdc->sec = fdc->comBuf[3];		// R, sec.num
+	if (!fdc->flp->insert) {
+		fdc->sr0 |= 0x48;		// not ready
+		ureadRS(fdc);
+		uTerm(fdc);
 	} else {
 		fdc->sr0 |= 0x40;
-		fdc->sr1 |= 0x02;		// TRICK : force NW flag (write protect), termination
+		fdc->sr1 |= F_SR1_NW;		// TRICK : force NW flag (write protect), termination
 		ureadRS(fdc);
 		uTerm(fdc);
 	}
 }
 
-fdcCall uWrData[] = {&uwargs,&uwrdat00,&uTerm};
-
-// 0.MF.001101 [xxxxx.H.DRV:1, N, SC, GPL, D] R [SR0,SR1,SR2,C,H,R,N]
-
-fdcCall uFormat[] = {&uwargs,&uwrdat00,&uTerm};
+static fdcCall uFormat[] = {&uwargs,&utrkfrm00,&uTerm};
 
 // invalid op : R [SR0 = 0x80]
 
@@ -587,11 +690,11 @@ void uinv00(FDC* fdc) {
 	fdc->pos++;
 }
 
-fdcCall uInvalid[] = {&uwargs,&uinv00,&uTerm};
+static fdcCall uInvalid[] = {&uwargs,&uinv00,&uTerm};
 
 // common
 
-uCom uComTab[] = {
+static uCom uComTab[] = {
 	{0x1f, 0x06, 8, uRdData},	// xxx00110 read data
 	{0x1f, 0x0c, 8, uRdData},	// xxx01100 read deleted data
 	{0x3f, 0x05, 8, uWrData},	// xx000101 write data

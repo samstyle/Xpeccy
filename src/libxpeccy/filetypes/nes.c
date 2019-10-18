@@ -126,6 +126,7 @@ int loadNes(Computer* comp, const char* name, int drv) {
 				case NES_NTSC: comp->msg = nesNtsc; break;
 				case NES_DENDY: comp->msg = nesDendy; break;
 			}
+			compReset(comp, RES_DEFAULT);
 		}
 	}
 
