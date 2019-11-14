@@ -210,8 +210,9 @@ int main(int ac,char** av) {
 	}
 
 #ifdef __APPLE__
-	if (!style)
+	if (!style) {
 		app.setStyle(QStyleFactory::create("Fusion"));
+	}
 #endif
 
 	if (!hlp) {

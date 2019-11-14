@@ -4,9 +4,11 @@
 
 #include "tape.h"
 
+/*
 #define	FRAMEDOTS	71680
 #define SECDOTS		(FRAMEDOTS * 50)
 #define	MSDOTS		(FRAMEDOTS / 20)
+*/
 
 // NEW STUFF
 
@@ -49,14 +51,14 @@ void blkAddPulse(TapeBlock* blk, int len) {
 		blk->data = realloc(blk->data,(blk->sigCount + 0x10000) * sizeof(TapeSignal));	// allocate mem for next 0x10000 signals
 	}
 	blk->data[blk->sigCount].size = len;
-	blk->data[blk->sigCount].vol = blk->vol ? 0x60 : 0xa0;
+	blk->data[blk->sigCount].vol = blk->vol ? 0xa0 : 0x60;
 	blk->vol ^= 1;
 	blk->sigCount++;
 }
 
-// add pause. duration in ms
+// add pause. duration in mks
 void blkAddPause(TapeBlock* blk, int len) {
-	blkAddPulse(blk,len * MSDOTS * 2);
+	blkAddPulse(blk,len);
 }
 
 // add pulse (2 signals)
@@ -80,7 +82,7 @@ int tapGetBlockTime(Tape* tape, int blk, int pos) {
 	if (pos < 0) pos = tape->blkData[blk].sigCount;
 	for (i = 0; i < pos; i++)
 		totsz += tape->blkData[blk].data[i].size;
-	return (totsz / SECDOTS);
+	return (totsz / 1e6);			// mks -> sec
 }
 
 int tapGetBlockSize(TapeBlock* block) {
@@ -92,7 +94,7 @@ unsigned char tapGetBlockByte(TapeBlock* block, int bytePos) {
 	int i;
 	int sigPos = block->dataPos + (bytePos << 4);
 	for (i = 0; i < 8; i++) {
-		res = res << 1;
+		res <<= 1;
 		if (sigPos < (int)(block->sigCount - 1)) {
 			if ((block->data[sigPos].size == block->len1) && (block->data[sigPos + 1].size == block->len1)) {
 				res |= 1;
@@ -105,7 +107,7 @@ unsigned char tapGetBlockByte(TapeBlock* block, int bytePos) {
 
 int tapGetBlockData(Tape* tape, int blockNum, unsigned char* dst,int maxsize) {
 	TapeBlock* block = &tape->blkData[blockNum];
-	unsigned int pos = block->dataPos;
+	int pos = block->dataPos;
 	int bytePos = 0;
 	do {
 		dst[bytePos] = tapGetBlockByte(block,bytePos);
@@ -191,7 +193,6 @@ void tapDelBlock(Tape* tap, int blk) {
 			idx++;
 		}
 		tap->blkCount--;
-//		tap->data.erase(tap->data.begin() + blk);		// TODO: do
 	}
 }
 
@@ -220,7 +221,7 @@ void tapStoreBlock(Tape* tap) {
 			cnt++;
 		}
 	}
-	tblk->data[tblk->sigCount-1].size = 1000 * MSDOTS;		// last signal is 1 sec (pause)
+	tblk->data[tblk->sigCount-1].size = 1e6;		// last signal is 1 sec (pause)
 	tblk->data[tblk->sigCount-1].vol = 0x80;
 
 	printf("size: %i\n",cnt);
@@ -331,8 +332,12 @@ void tapRewind(Tape* tap, int blk) {
 }
 
 // input : tks is time (ns) to sync
-void tapSync(Tape* tap,int tks) {
-	tks = tks / 280;
+void tapSync(Tape* tap,int ns) {
+	//tks = tks / 280;
+	tap->time += ns;
+	if (tap->time < 1000) return;
+	int tks = tap->time / 1000;
+	tap->time = tap->time % 1000;
 	if (tap->on) {
 		if (tap->rec) {
 			if (tap->wait) {
@@ -348,7 +353,7 @@ void tapSync(Tape* tap,int tks) {
 				} else {
 					tap->tmpBlock.data[tap->tmpBlock.sigCount - 1].size += tks;
 				}
-				if (tap->tmpBlock.data[tap->tmpBlock.sigCount - 1].size > FRAMEDOTS) {
+				if (tap->tmpBlock.data[tap->tmpBlock.sigCount - 1].size > 20000) {
 					tap->tmpBlock.sigCount--;
 					tapStoreBlock(tap);
 				}
@@ -375,7 +380,7 @@ void tapSync(Tape* tap,int tks) {
 		tap->sigLen -= tks;
 		while (tap->sigLen < 1) {
 			tap->volPlay = 0;
-			tap->sigLen += FRAMEDOTS * 25;	// .5 sec
+			tap->sigLen += 5e5;	// .5 sec
 		}
 	}
 }
@@ -410,12 +415,12 @@ TapeBlock makeTapeBlock(unsigned char* ptr, int ln, int hd) {
 	nblk.vol = 0;
 	if (hd) {
 		nblk.pdur = 8063;
-		pause = 500 * MSDOTS;
+		pause = 5e5;
 		nblk.isHeader = 1;
 		crc = 0x00;
 	} else {
 		nblk.pdur = 3223;
-		pause = 1000 * MSDOTS;
+		pause = 1e6;
 		crc = 0xff;
 	}
 	for (i=0; i < nblk.pdur; i++)

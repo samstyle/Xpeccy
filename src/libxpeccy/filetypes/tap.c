@@ -53,8 +53,7 @@ int loadTAP(Computer* comp, const char* name, int drv) {
 		if (!feof(file)) {
 			fread(blockBuf, len, 1, file);
 			block = tapDataToBlock(blockBuf, len, sigLens);
-			// blkAddPulse(&block, sigLens[5]);
-			blkAddPause(&block, (block.pdur == 8063) ? 500 : 1000);		// pause
+			blkAddPause(&block, (block.pdur == 8063) ? 5e5 : 1e6);		// pause
 			tapAddBlock(tape, block);
 			blkClear(&block);
 		}

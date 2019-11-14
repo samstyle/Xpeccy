@@ -19,6 +19,11 @@ TapeWin::TapeWin(QWidget *par):QDialog(par) {
 	connect(ui.tapeList,SIGNAL(clicked(QModelIndex)), this, SLOT(doClick(QModelIndex)));
 }
 
+void TapeWin::show() {
+	upd(conf.prof.cur->zx->tape);
+	QDialog::show();
+}
+
 void TapeWin::updProgress(Tape* tape) {
 	if (!isVisible()) return;
 	if (!tape->on || tape->rec) {

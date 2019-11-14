@@ -83,7 +83,7 @@ static xFileGroupInfo fg_tab[] = {
 	{FG_GAMEBOY, "", -1, "GB cartrige", {FL_GB, FL_GBC, 0}},
 	{FG_MSX, "", -1, "MSX cartrige", {FL_MSX, FL_MX1, FL_MX2, 0}},
 	{FG_NES, "", -1, "NES cartrige", {FL_NES, 0}},
-	{FG_CMDTAPE, "", -1, "Comodore tape", {FL_T64, FL_C64TAP, 0}},
+	{FG_CMDTAPE, "", -1, "Commodore tape", {FL_T64, FL_C64TAP, 0}},
 	{FG_BKDATA, "", -1, "BK bin data", {FL_BKBIN, 0}},
 	{FG_BKDISK, "", 0, "BK disk image", {FL_BKIMG, FL_BKBKD, FL_UDI, 0}},
 	{0, "", -1, NULL, {0}}
@@ -173,7 +173,40 @@ xFileTypeInfo* file_detect_type(QString flt) {
 	return inf;
 }
 
-#include <QDebug>
+xFileTypeInfo* file_find_hw_ext(int hw, QString path) {
+	xFileTypeInfo* inf = NULL;
+	xFileHWInfo* hwinf;
+	xFileGroupInfo* fginf;
+	xFileTypeInfo* ftinf;
+	QString ext = path.split(".").last();
+	int ig;
+	int iz;
+	hw = detect_hw_id(hw);
+	if (hw != 0) {
+		hwinf = file_find_hw(hw);
+		ig = 0;
+		while ((hwinf->child[ig] != 0) && (inf == NULL)) {
+			fginf = file_find_group(hwinf->child[ig]);
+			iz = 0;
+			while ((fginf->child[iz] != 0) && (inf == NULL)) {
+				ftinf = file_find_type(fginf->child[iz]);
+				if (ftinf->id != 0) {
+					if (ftinf->id == FL_HOBETA) {
+						if (ext.startsWith("$"))
+							inf = ftinf;
+					} else if (ftinf->ext == NULL) {
+
+					} else if (path.endsWith(ftinf->ext, Qt::CaseInsensitive)) {
+						inf = ftinf;
+					}
+				}
+				iz++;
+			}
+			ig++;
+		}
+	}
+	return inf;
+}
 
 xFileTypeInfo* file_ext_type(QString path) {
 	int i = 0;
@@ -338,7 +371,8 @@ int load_file(Computer* comp, const char* name, int id, int drv) {
 		}
 	}
 	if (path.isEmpty()) return err;
-	inf = file_ext_type(path);
+	//inf = file_ext_type(path);		// TODO: use hardware id
+	inf = file_find_hw_ext(comp->hw->id, path);
 	if (grp->id == FG_RAW)
 		inf = &ft_raw;
 	if (drv < 0) drv = 0;

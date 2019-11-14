@@ -1,16 +1,23 @@
-#ifndef _TAPE_H
-#define _TAPE_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define	PILOTLEN	2168
-#define	SYNC1LEN	667
-#define	SYNC2LEN	735
-#define	SIGN0LEN	855
-#define	SIGN1LEN	1710
-#define	SYNC3LEN	954
+// ZX spectrum signal timings
+// 1T ~ 284ns ~ 0.284mks @ 3.51MHz
+// pilot	2168T	615 mks
+// sync1	667T	189 mks
+// sync2	735T	208 mks
+// 0		855T	242 mks
+// 1		1710T	485 mks
+// sync3	954T	270 mks
+#define	PILOTLEN	615
+#define	SYNC1LEN	189
+#define	SYNC2LEN	208
+#define	SIGN0LEN	242
+#define	SIGN1LEN	485
+#define	SYNC3LEN	270
 
 enum {
 	TAPE_HEAD = 0,
@@ -28,7 +35,7 @@ typedef struct {
 } TapeBlockInfo;
 
 typedef struct {
-	int size;
+	int size;		// mks (1e6 = 1sec)
 	unsigned char vol;
 } TapeSignal;
 
@@ -59,6 +66,7 @@ typedef struct {
 	unsigned levRec:1;	// signal to tape
 	unsigned oldRec:1;	// previous rec signal
 
+	int time;
 	unsigned char volPlay;
 	int block;
 	int pos;
@@ -100,6 +108,4 @@ void blkAddPause(TapeBlock*, int);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

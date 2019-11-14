@@ -82,12 +82,10 @@ class TapeWin : public QDialog {
 	Q_OBJECT
 	public:
 		TapeWin(QWidget*);
-		//void drawStops(Tape*);
-		//void setCheck(int);
-		//void setProgress(int,int);
 	public slots:
 		void updProgress(Tape*);
 		void upd(Tape*);
+		void show();
 	private:
 		Ui::TapeWin ui;
 		int state;
