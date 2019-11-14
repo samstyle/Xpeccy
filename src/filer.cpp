@@ -53,6 +53,7 @@ static xFileTypeInfo ft_tab[] = {
 	{FL_MX2, 0, ".mx2", "*.mx2", loadSlot, NULL, "MSX2 cartrige"},
 	{FL_NES, 0, ".nes", "*.nes", loadNes, NULL, "NES cartrige"},
 //	{FL_T64, 0, ".t64", "*.t64", loadT64, NULL, "T64 tape image"},
+	{FL_C64TAP, 0, ".tap", "*.tap", loadC64RawTap, NULL, "C64 raw tape image"},
 	{FL_BKBIN, 0, ".bin", "*.bin", loadBIN, NULL, "BK bin data"},
 	{FL_BKIMG, 0, ".img", "*.img", loadBkIMG, NULL, "BK disk image"},
 //	{FL_BKBKD, 0, ".bkd", "*.bkd", loadBkIMG, NULL, "BK disk image"},
@@ -82,7 +83,7 @@ static xFileGroupInfo fg_tab[] = {
 	{FG_GAMEBOY, "", -1, "GB cartrige", {FL_GB, FL_GBC, 0}},
 	{FG_MSX, "", -1, "MSX cartrige", {FL_MSX, FL_MX1, FL_MX2, 0}},
 	{FG_NES, "", -1, "NES cartrige", {FL_NES, 0}},
-	{FG_CMDTAPE, "", -1, "Comodore tape", {FL_T64, 0}},
+	{FG_CMDTAPE, "", -1, "Comodore tape", {FL_T64, FL_C64TAP, 0}},
 	{FG_BKDATA, "", -1, "BK bin data", {FL_BKBIN, 0}},
 	{FG_BKDISK, "", 0, "BK disk image", {FL_BKIMG, FL_BKBKD, FL_UDI, 0}},
 	{0, "", -1, NULL, {0}}
@@ -278,6 +279,7 @@ static xFilerError err_tab[] = {
 	{ERR_NES_HEAD, "Wrong NES header"},
 	{ERR_NES_MAPPER, "Unsupported mapper"},
 	{ERR_T64_SIGN, "Wrong T64 header"},
+	{ERR_C64T_SIGN, "Wrong C64 raw tape header"},
 	{ERR_TRD_SNF, "Wrong disk structure for TRD file"},
 	{ERR_OK, ""}
 };

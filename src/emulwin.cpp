@@ -655,6 +655,11 @@ void MainWin::xkey_press(int xkey, Qt::KeyboardModifiers mod) {
 			case XKEY_K:
 				emit s_keywin_shide();
 				break;
+			case XKEY_F:
+				if (conf.emu.pause) break;
+				conf.emu.fast ^= 1;
+				updateHead();
+				break;
 			case XKEY_N:
 				if (noflic < 15)
 					noflic = 25;

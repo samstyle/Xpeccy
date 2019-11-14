@@ -544,8 +544,8 @@ typedef struct {
 
 
 static vdpMode vdpTab[] = {
-	{VDP_TEXT1, 256, 1, 40, NULL, NULL},
-	{VDP_TEXT2, 256, 1, 80, NULL, NULL},
+	{VDP_TEXT1, 250, 1, 40, NULL, NULL},
+	{VDP_TEXT2, 250, 1, 80, NULL, NULL},
 	{VDP_MCOL, 256, 1, 32, NULL, NULL},
 	{VDP_GRA1, 256, 1, 32, NULL, NULL},
 	{VDP_GRA2, 256, 1, 32, NULL, NULL},

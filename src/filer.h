@@ -29,6 +29,7 @@ enum {
 	FL_MX2,
 	FL_NES,
 	FL_T64,
+	FL_C64TAP,
 	FL_BKBIN,
 	FL_BKIMG,
 	FL_BKBKD
@@ -66,8 +67,6 @@ enum {
 };
 
 void initFileDialog(QWidget*);
-//void loadFile(Computer*,const char*, int, int);
-//bool saveFile(Computer*,const char*, int, int);
 int load_file(Computer* comp, const char* name, int id, int drv);
 int save_file(Computer* comp, const char* name, int id, int drv);
 

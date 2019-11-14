@@ -35,6 +35,7 @@ enum {
 	ERR_TZX_UNKNOWN,	// tzx unsupported block
 
 	ERR_T64_SIGN,		// T64 signature
+	ERR_C64T_SIGN,		// C64 raw tape signature
 
 	ERR_WAV_HEAD,		// wrong wave header
 	ERR_WAV_FORMAT,		// unsupported wav format
@@ -113,6 +114,7 @@ TRFile diskMakeDescriptor(const char*, char, int, int);
 // common
 
 int fgeti(FILE*);
+int fgett(FILE*);
 unsigned short fgetw(FILE*);
 void fputi(int, FILE*);
 void fputw(unsigned short, FILE*);
@@ -160,6 +162,8 @@ TapeBlock tapDataToBlock(char*,int,int*);
 int loadTZX(Computer*,const char*, int);
 
 int loadWAV(Computer*, const char*, int);
+
+int loadC64RawTap(Computer*, const char*, int);
 
 // disk
 

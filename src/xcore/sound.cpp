@@ -67,6 +67,7 @@ int sndSync(Computer* comp) {
 			}
 		}
 	}
+	// NOTE: why need to count samples on pause? just send last sample to output
 	smpCount++;
 	if (smpCount < sndChunks) return 0;
 	conf.snd.fill = 0;
@@ -147,6 +148,9 @@ void null_close() {
 // SDL
 
 void sdlPlayAudio(void*, Uint8* stream, int len) {
+	int dist = posf - posp;
+//	while (dist < 0) dist += 0x4000;
+//	while (dist > 0x3fff) dist -= 0x4000;
 	if (conf.emu.fast || conf.emu.pause) {
 		while (len > 0) {				// silence : put last sample
 			*(stream++) = sndLev.left & 0xff;;
@@ -155,12 +159,13 @@ void sdlPlayAudio(void*, Uint8* stream, int len) {
 			*(stream++) = (sndLev.right >> 8) & 0xff;
 			len -= 4;
 		}
-	} else if (posf - posp < len) {				// overfill : repeat last buffer one more time
-		int post = posp;
+	} else if (dist < len) {				// overfill : fill with last sample of previous buf
 		while(len > 0) {
-			*(stream++) = sbuf[post & 0x3fff];
-			post++;
-			len--;
+			*(stream++) = sbuf[(posp - 4) & 0x3fff];
+			*(stream++) = sbuf[(posp - 3) & 0x3fff];
+			*(stream++) = sbuf[(posp - 2) & 0x3fff];
+			*(stream++) = sbuf[(posp - 1) & 0x3fff];
+			len -= 4;
 		}
 	} else {						// normal : play buffer
 		while(len > 0) {
@@ -179,7 +184,7 @@ int sdlopen() {
 	asp.freq = conf.snd.rate;
 	asp.format = AUDIO_S16LSB;
 	asp.channels = conf.snd.chans;
-	asp.samples = conf.snd.rate * conf.snd.chans / 50;
+	asp.samples = conf.snd.rate / 50;
 	asp.callback = &sdlPlayAudio;
 	asp.userdata = NULL;
 	if (SDL_OpenAudio(&asp, &dsp) != 0) {

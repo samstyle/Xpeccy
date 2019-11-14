@@ -1,6 +1,6 @@
 #include "filetypes.h"
 
-#pragma pack (push, 1)
+#pragma pack(push, 1)
 
 typedef struct {
 	char type_c64;
@@ -13,7 +13,7 @@ typedef struct {
 	char name[16];
 } t64file;
 
-#pragma pack (pop)
+#pragma pack(pop)
 
 int loadT64(Computer* comp, const char* fname, int drv) {
 	char buf[32];
@@ -56,6 +56,67 @@ int loadT64(Computer* comp, const char* fname, int drv) {
 //		if (start)
 //			comp->cpu->pc = start;
 		fclose(file);
+	}
+	return err;
+}
+
+// tap : c64 raw tape file
+// +0	C64-TAPE-RAW	signature
+// +12	1		version
+// +13	3		0,0,0
+// +16	4		lenght
+// +20	...		data
+// each data byte = period of amplitude change its sign in 1/8 T
+// pulse length (in seconds) = (8 * data byte) / (clock cycles)
+// 0 = overflow. #00,#11,#22,#33 = period #332211
+// (N * 8) / 985248 (pal) <-- use this
+// (N * 8) / 1022730 (ntsc)
+
+int loadC64RawTap(Computer* comp, const char* name, int dsk) {
+	char buf[20];
+	int err = ERR_OK;
+	int ver;
+	int len;
+	int per;
+	TapeBlock blk;
+	blk.data = NULL;
+	FILE* file = fopen(name, "rb");
+	if (file) {
+		fread(buf, 12, 1, file);
+		if (!strncmp(buf, "C64-TAPE-RAW", 12)) {
+			ver = fgetc(file);
+			if (ver < 2) {
+				fseek(file, 3, SEEK_CUR);	// skip 3 bytes
+				len = fgeti(file);		// data length
+				tapEject(comp->tape);		// clear old tape
+				blkClear(&blk);
+				while (len > 0) {
+					per = fgetc(file) & 0xff;
+					if (per == 0) {
+						per = fgett(file);
+					}
+					per = 8e3 * per / comp->cpuFrq;		// comp->cpuFrq - MHz (1e6), result period in ns (1e-9)
+					if (per > 5e8) {
+						blkAddPause(&blk, 1000);		// 1 sec pause
+						tapAddBlock(comp->tape, blk);
+						blkClear(&blk);
+					} else {
+						blkAddWave(&blk, per);
+					}
+					len--;
+				}
+				tapAddBlock(comp->tape, blk);
+			} else {
+				printf("2:err\n");
+				err = ERR_C64T_SIGN;	// version 2+
+			}
+		} else {
+			printf("1:err\n");
+			err = ERR_C64T_SIGN;
+		}
+		fclose(file);
+	} else {
+		err = ERR_CANT_OPEN;
 	}
 	return err;
 }

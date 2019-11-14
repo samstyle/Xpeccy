@@ -8,6 +8,10 @@
 #define	F_HIRAM		(1<<1)
 #define	F_CHAREN	(1<<2)
 
+// tape signal
+// 3284T / bit, or 300 bit/s
+// high amp = 1, low amp = 0
+
 // vicII read byte
 // bits 00..13:vic ADR bus
 // bits 14..15:cia2 reg #00 bit 0,1 inverted
