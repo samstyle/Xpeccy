@@ -101,7 +101,7 @@ void tapSwapBlocks(Tape*,int,int);
 void tapAddFile(Tape*,const char*,int,unsigned short,unsigned short,unsigned short,unsigned char*,int);
 
 void blkClear(TapeBlock*);
-void blkAddPulse(TapeBlock*, int);
+void blkAddPulse(TapeBlock*, int, int);
 void blkAddWave(TapeBlock*, int);
 void blkAddByte(TapeBlock*, unsigned char, int, int);
 void blkAddPause(TapeBlock*, int);

@@ -20,8 +20,8 @@ TapeWin::TapeWin(QWidget *par):QDialog(par) {
 }
 
 void TapeWin::show() {
-	upd(conf.prof.cur->zx->tape);
 	QDialog::show();
+	upd(conf.prof.cur->zx->tape);
 }
 
 void TapeWin::updProgress(Tape* tape) {

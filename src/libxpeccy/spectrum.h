@@ -81,8 +81,8 @@ typedef struct {
 	ciaTime time;
 	ciaTime alarm;
 	unsigned char ssr;		// serial shift register
-	unsigned char ctrl;		// reg D write;
-	unsigned char state;		// reg D read;
+	unsigned char state;		// reg D - interrupt state
+	unsigned char imask;		// reg D - interrupt mask
 	unsigned char reg[16];
 } c64cia;
 

@@ -31,9 +31,9 @@ int loadWAV(Computer* comp, const char* name, int drv) {
 	} else if ((hd.audioFormat != 1) || (hd.sampleRate == 0)) {
 		err = ERR_WAV_FORMAT;
 	} else {
-		int tPerSample = 3584000 / hd.sampleRate;	// 3.5MHz ticks per sample
+		int tPerSample = 1e6 / hd.sampleRate;		// mks per sample
 		int mask = 0x80 << (hd.bitsPerSample - 8);
-		unsigned int amp;
+		int amp;
 		int lev = 0;
 		int dur = 0;
 		int i;
@@ -49,7 +49,7 @@ int loadWAV(Computer* comp, const char* name, int drv) {
 			if (((amp & mask) && lev) || (!(amp & mask) && !lev)) {	// check level change
 				dur += tPerSample;
 			} else {
-				blkAddPulse(&blk, dur);
+				blkAddPulse(&blk, dur, -1);
 				if (dur > 1792000) {			// 0.5 sec pause is block-breaking signal
 					tapAddBlock(tap, blk);
 					blkClear(&blk);

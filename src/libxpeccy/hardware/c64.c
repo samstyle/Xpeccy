@@ -8,10 +8,6 @@
 #define	F_HIRAM		(1<<1)
 #define	F_CHAREN	(1<<2)
 
-// tape signal
-// 3284T / bit, or 300 bit/s
-// high amp = 1, low amp = 0
-
 // vicII read byte
 // bits 00..13:vic ADR bus
 // bits 14..15:cia2 reg #00 bit 0,1 inverted
@@ -155,7 +151,12 @@ unsigned char c64_cia_rd(c64cia* cia, unsigned char adr) {
 			}
 			break;
 		case 0x0c: res = cia->ssr; break;
-		case 0x0d: res = cia->state; break;		// cia1:INT; cia2:NMI bits
+		case 0x0d:
+			res = cia->state & cia->imask;
+			res &= 0x7f;
+			if (res)
+				res |= 0x80;
+			break;		// cia1:INT; cia2:NMI bits
 		case 0x0e: res = cia->timerA.flags; break;
 		case 0x0f: res = cia->timerB.flags; break;
 	}
@@ -170,15 +171,17 @@ void c64_cia_wr(c64cia* cia, unsigned char adr, unsigned char val) {
 		case 0x05: cia->timerA.inih = val; break;
 		case 0x06: cia->timerB.inil = val; break;
 		case 0x07: cia->timerB.inih = val; break;
-		case 0x08: if (cia->timerB.flags & 0x80) {cia->alarm.tenth = val;} else {cia->time.tenth = val;}; break;
-		case 0x09: if (cia->timerB.flags & 0x80) {cia->alarm.sec = val;} else {cia->time.sec = val;}; break;
-		case 0x0a: if (cia->timerB.flags & 0x80) {cia->alarm.min = val;} else {cia->time.min = val;}; break;
-		case 0x0b: if (cia->timerB.flags & 0x80) {cia->alarm.hour = val;} else {cia->time.hour = val;}; break;
+		// NOTE: wait... wut?
+		case 0x08: if (cia->timerB.flags & 0x80) {cia->alarm.tenth = val;} else {cia->time.tenth = val;} break;
+		case 0x09: if (cia->timerB.flags & 0x80) {cia->alarm.sec = val;} else {cia->time.sec = val;} break;
+		case 0x0a: if (cia->timerB.flags & 0x80) {cia->alarm.min = val;} else {cia->time.min = val;} break;
+		case 0x0b: if (cia->timerB.flags & 0x80) {cia->alarm.hour = val;} else {cia->time.hour = val;} break;
 		case 0x0c: cia->ssr = val; break;
 		case 0x0d:
-			cia->ctrl &= (~val & 0x7f);		// 0-bits 0..6 unchanged
 			if (val & 0x80)
-				cia->ctrl |= (val & 0x7f);	// 1-bits 0..6 set equal to bit 7
+				cia->imask |= (val & 0x7f);		// 1 - set state bits 0..6 where val bits is 1
+			else
+				cia->imask &= (~val & 0x7f);		// 0 - same but reset bits 0..6
 			break;
 		case 0x0e: cia->timerA.flags = val; break;
 		case 0x0f: cia->timerB.flags = val; break;
@@ -392,10 +395,19 @@ void c64_mwr(Computer* comp, unsigned short adr, unsigned char val) {
 	}
 }
 
-sndPair c64_vol(Computer* comp, sndVolume* vol) {
+sndPair c64_vol(Computer* comp, sndVolume* sv) {
 	sndPair res;
-	res.left = 0;
-	res.right = 0;
+	int lev = 0;
+	// 1:tape sound
+	if (comp->tape->on) {
+		if (comp->tape->rec) {
+			lev = comp->tape->levRec ? 0x1000 * sv->tape / 100 : 0;
+		} else {
+			lev = (comp->tape->volPlay << 8) * sv->tape / 1600;
+		}
+	}
+	res.left = lev;
+	res.right = lev;
 	return res;
 }
 
@@ -429,6 +441,15 @@ void c64_sync(Computer* comp, int ns) {
 	}
 	c64_sync_time(&comp->c64.cia1.time, ns);
 	c64_sync_time(&comp->c64.cia2.time, ns);
+	// if tape signal goes hi->low, set b4,0D@CIA1
+	if (comp->tape->on) {
+		int vol = comp->tape->volPlay;
+		tapSync(comp->tape, ns);
+		if ((vol > 0x7f) && (comp->tape->volPlay < 0x80)) {		// front 1->0
+			comp->c64.cia1.state |= 0x10;
+			comp->c64.cia1.state &= comp->c64.cia1.imask;
+		}
+	}
 }
 
 typedef struct {

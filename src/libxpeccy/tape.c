@@ -46,25 +46,27 @@ void blkClear(TapeBlock *blk) {
 }
 
 // add signal (1 level change)
-void blkAddPulse(TapeBlock* blk, int len) {
+void blkAddPulse(TapeBlock* blk, int len, int vol) {
 	if ((blk->sigCount & 0xffff) == 0) {
 		blk->data = realloc(blk->data,(blk->sigCount + 0x10000) * sizeof(TapeSignal));	// allocate mem for next 0x10000 signals
 	}
+	if (vol < 0)
+		vol = blk->vol ? 0xa0 : 0x60;
 	blk->data[blk->sigCount].size = len;
-	blk->data[blk->sigCount].vol = blk->vol ? 0xa0 : 0x60;
+	blk->data[blk->sigCount].vol = vol & 0xff;
 	blk->vol ^= 1;
 	blk->sigCount++;
 }
 
 // add pause. duration in mks
 void blkAddPause(TapeBlock* blk, int len) {
-	blkAddPulse(blk,len);
+	blkAddPulse(blk,len,0x80);
 }
 
 // add pulse (2 signals)
 void blkAddWave(TapeBlock* blk, int len) {
-	blkAddPulse(blk,len);
-	blkAddPulse(blk,len);
+	blkAddPulse(blk,len,0x60);
+	blkAddPulse(blk,len,0xa0);
 }
 
 // add byte. b0len/b1len = duration of 0/1 bits. When 0, it takes from block signals data
@@ -333,7 +335,6 @@ void tapRewind(Tape* tap, int blk) {
 
 // input : tks is time (ns) to sync
 void tapSync(Tape* tap,int ns) {
-	//tks = tks / 280;
 	tap->time += ns;
 	if (tap->time < 1000) return;
 	int tks = tap->time / 1000;
@@ -344,12 +345,12 @@ void tapSync(Tape* tap,int ns) {
 				if (tap->oldRec != tap->levRec) {
 					tap->oldRec = tap->levRec;
 					tap->wait = 0;
-					blkAddPulse(&tap->tmpBlock,0);
+					blkAddPulse(&tap->tmpBlock,0,-1);
 				}
 			} else {
 				if (tap->oldRec != tap->levRec) {
 					tap->oldRec = tap->levRec;
-					blkAddPulse(&tap->tmpBlock,tks);
+					blkAddPulse(&tap->tmpBlock,tks,-1);
 				} else {
 					tap->tmpBlock.data[tap->tmpBlock.sigCount - 1].size += tks;
 				}
@@ -424,11 +425,11 @@ TapeBlock makeTapeBlock(unsigned char* ptr, int ln, int hd) {
 		crc = 0xff;
 	}
 	for (i=0; i < nblk.pdur; i++)
-		blkAddPulse(&nblk,nblk.plen);
+		blkAddPulse(&nblk,nblk.plen,-1);
 	if (nblk.s1len != 0)
-		blkAddPulse(&nblk,nblk.s1len);
+		blkAddPulse(&nblk,nblk.s1len,-1);
 	if (nblk.s2len != 0)
-		blkAddPulse(&nblk,nblk.s2len);
+		blkAddPulse(&nblk,nblk.s2len,-1);
 	nblk.dataPos = nblk.sigCount;
 	blkAddByte(&nblk,crc,0,0);
 	for (i=0; i < ln; i++) {
@@ -438,8 +439,8 @@ TapeBlock makeTapeBlock(unsigned char* ptr, int ln, int hd) {
 		ptr++;
 	}
 	blkAddByte(&nblk,crc,0,0);
-	blkAddPulse(&nblk,SYNC3LEN);
-	blkAddPulse(&nblk,pause);
+	blkAddPulse(&nblk,SYNC3LEN,-1);
+	blkAddPulse(&nblk,pause,-1);
 	return nblk;
 }
 

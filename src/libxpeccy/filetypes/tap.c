@@ -16,11 +16,11 @@ void blkFromData(TapeBlock* blk, char* data, int len, int* sigLens) {
 	blk->hasBytes = 1;
 	blk->isHeader = (tmp == 0) ? 1 : 0;
 	for (i = 0; i < (int)blk->pdur; i++)
-		blkAddPulse(blk, blk->plen);
+		blkAddPulse(blk, blk->plen,-1);
 	if (blk->s1len)
-		blkAddPulse(blk, blk->s1len);
+		blkAddPulse(blk, blk->s1len,-1);
 	if (blk->s2len)
-		blkAddPulse(blk, blk->s2len);
+		blkAddPulse(blk, blk->s2len,-1);
 	blk->dataPos = blk->sigCount;
 	for (i = 0; i < len; i++) {
 		blkAddByte(blk,*ptr,0,0);
@@ -53,7 +53,7 @@ int loadTAP(Computer* comp, const char* name, int drv) {
 		if (!feof(file)) {
 			fread(blockBuf, len, 1, file);
 			block = tapDataToBlock(blockBuf, len, sigLens);
-			blkAddPause(&block, (block.pdur == 8063) ? 5e5 : 1e6);		// pause
+			blkAddPause(&block, (block.pdur == 8063) ? 1e6 : 2e6);		// pause
 			tapAddBlock(tape, block);
 			blkClear(&block);
 		}

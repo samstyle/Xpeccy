@@ -1,6 +1,6 @@
 #include "filetypes.h"
 
-#pragma pack(push, 1)
+#pragma pack (push, 1)
 
 typedef struct {
 	char type_c64;
@@ -13,7 +13,7 @@ typedef struct {
 	char name[16];
 } t64file;
 
-#pragma pack(pop)
+#pragma pack (pop)
 
 int loadT64(Computer* comp, const char* fname, int drv) {
 	char buf[32];
@@ -95,13 +95,13 @@ int loadC64RawTap(Computer* comp, const char* name, int dsk) {
 					if (per == 0) {
 						per = fgett(file);
 					}
-					per = 8e3 * per / comp->cpuFrq;		// comp->cpuFrq - MHz (1e6), result period in ns (1e-9)
-					if (per > 5e8) {
+					per = 8 * per / comp->cpuFrq;		// comp->cpuFrq - MHz (1e6), result period in mks (1e-6)
+					if (per > 5e5) {
 						blkAddPause(&blk, 1e6);		// 1 sec pause
 						tapAddBlock(comp->tape, blk);
 						blkClear(&blk);
 					} else {
-						blkAddWave(&blk, per);
+						blkAddWave(&blk, per / 2);
 					}
 					len--;
 				}

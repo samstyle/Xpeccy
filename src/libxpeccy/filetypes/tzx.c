@@ -118,7 +118,7 @@ void tzxBlock15(FILE* file, Tape* tape) {
 				memt += size;
 				first = 0;
 			} else {
-				blkAddPulse(&tape->tmpBlock, memt);
+				blkAddPulse(&tape->tmpBlock, memt, -1);
 				memt = 0;
 			}
 		} else {
@@ -128,7 +128,7 @@ void tzxBlock15(FILE* file, Tape* tape) {
 		data <<= 1;
 	}
 	if (memt > 0)
-		blkAddPulse(&tape->tmpBlock, memt);
+		blkAddPulse(&tape->tmpBlock, memt, -1);
 	blkAddPause(&tape->tmpBlock, pause);
 }
 

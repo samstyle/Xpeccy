@@ -149,8 +149,8 @@ void null_close() {
 
 void sdlPlayAudio(void*, Uint8* stream, int len) {
 	int dist = posf - posp;
-//	while (dist < 0) dist += 0x4000;
-//	while (dist > 0x3fff) dist -= 0x4000;
+	while (dist < 0) dist += 0x4000;
+	while (dist > 0x3fff) dist -= 0x4000;
 	if (conf.emu.fast || conf.emu.pause) {
 		while (len > 0) {				// silence : put last sample
 			*(stream++) = sndLev.left & 0xff;;
@@ -184,7 +184,7 @@ int sdlopen() {
 	asp.freq = conf.snd.rate;
 	asp.format = AUDIO_S16LSB;
 	asp.channels = conf.snd.chans;
-	asp.samples = conf.snd.rate / 50;
+	asp.samples = conf.snd.rate / 50 * conf.snd.chans;
 	asp.callback = &sdlPlayAudio;
 	asp.userdata = NULL;
 	if (SDL_OpenAudio(&asp, &dsp) != 0) {

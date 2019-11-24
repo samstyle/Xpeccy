@@ -39,8 +39,9 @@ QString gethexbyte(unsigned char);
 QString gethexword(int);
 
 typedef struct {
-	int b:1;
+	unsigned b:1;
 	int i;
+	double d;
 	const char* s;
 } xArg;
 

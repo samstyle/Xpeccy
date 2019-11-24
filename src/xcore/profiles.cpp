@@ -356,6 +356,7 @@ int prfLoad(std::string nm) {
 		arg.b = str2bool(pval) ? 1 : 0;
 		arg.s = pval.c_str();
 		arg.i = strtol(arg.s, NULL, 0);
+		arg.d = strtod(arg.s, NULL);
 
 		if (pval=="") {
 			if (pnam=="[MACHINE]") section = PS_MACHINE;
@@ -383,18 +384,18 @@ int prfLoad(std::string nm) {
 					break;
 				case PS_VIDEO:
 					if (pnam == "geometry") prf->layName = pval;
-					if (pnam == "4t-border") comp->vid->brdstep = str2bool(pval) ? 7 : 1;
-					if (pnam == "ULAplus") comp->vid->ula->enabled = str2bool(pval) ? 1 : 0;
-					if (pnam == "DDpal") comp->ddpal = str2bool(pval) ? 1 : 0;
+					if (pnam == "4t-border") comp->vid->brdstep = arg.b ? 7 : 1;
+					if (pnam == "ULAplus") comp->vid->ula->enabled = arg.b ? 1 : 0;
+					if (pnam == "DDpal") comp->ddpal = arg.b ? 1 : 0;
 					break;
 				case PS_SOUND:
-					if (pnam == "chip1") chatype = atoi(pval.c_str());
-					if (pnam == "chip1.stereo") comp->ts->chipA->stereo = atoi(pval.c_str());
-					if (pnam == "chip1.frq") comp->ts->chipA->frq = atof(pval.c_str());
-					if (pnam == "chip2") chbtype = atoi(pval.c_str());
-					if (pnam == "chip2.stereo") comp->ts->chipB->stereo = atoi(pval.c_str());
-					if (pnam == "chip2.frq") comp->ts->chipB->frq = atof(pval.c_str());
-					if (pnam == "ts.type") comp->ts->type = atoi(pval.c_str());
+					if (pnam == "chip1") chatype = arg.i;
+					if (pnam == "chip1.stereo") comp->ts->chipA->stereo = arg.i;
+					if (pnam == "chip1.frq") comp->ts->chipA->frq = arg.d;
+					if (pnam == "chip2") chbtype = arg.i;
+					if (pnam == "chip2.stereo") comp->ts->chipB->stereo = arg.i;
+					if (pnam == "chip2.frq") comp->ts->chipB->frq = arg.d;
+					if (pnam == "ts.type") comp->ts->type = arg.i;
 
 					if (pnam == "gs") comp->gs->enable = arg.b;
 					if (pnam == "gs.reset") comp->gs->reset = arg.b;
@@ -403,58 +404,54 @@ int prfLoad(std::string nm) {
 					if (pnam == "soundrive_type") comp->sdrv->type = arg.i;
 
 					if (pnam == "saa") comp->saa->enabled = arg.b;
-					// if (pnam == "saa.stereo") comp->saa->mono = !arg.b;
 
 					break;
 				case PS_TAPE:
-					if (pnam == "path" && conf.storePaths) {
-						//loadFile(comp,pval.c_str(),FT_TAPE,0);
+					if (pnam == "path" && conf.storePaths)
 						load_file(comp, pval.c_str(), FG_TAPE, 0);
-					}
 					break;
 				case PS_DISK:
 					if (pnam == "A") setDiskString(comp,comp->dif->fdc->flop[0],pval);
 					if (pnam == "B") setDiskString(comp,comp->dif->fdc->flop[1],pval);
 					if (pnam == "C") setDiskString(comp,comp->dif->fdc->flop[2],pval);
 					if (pnam == "D") setDiskString(comp,comp->dif->fdc->flop[3],pval);
-					if (pnam == "type") difSetHW(comp->dif, atoi(pval.c_str()));
+					if (pnam == "type") difSetHW(comp->dif, arg.i);
 					break;
 				case PS_MACHINE:
 					if (pnam == "current") prf->hwName = pval;
-					if (pnam == "cpu.type") cpuSetType(comp->cpu, getCoreID(pval.c_str()));
+					if (pnam == "cpu.type") cpuSetType(comp->cpu, getCoreID(arg.s));
 					if (pnam == "cpu.frq") {
-						tmp2 = atoi(pval.c_str());
+						tmp2 = arg.i;
 						if ((tmp2 > 1) && (tmp2 < 29)) tmp2 *= 5e5;	// old 2..28 -> 500000..14000000
-						if (tmp2 < 1e6) tmp2 = 1e6;
+						if (tmp2 < 1e5) tmp2 = 1e5;
 						if (tmp2 > 14e6) tmp2 = 14e6;
 						compSetBaseFrq(comp, tmp2 / 1e6);
 					}
 					if (pnam == "frq.mul") {
-						tmpd = strtod(pval.c_str(), NULL);
+						tmpd = arg.d;
 						if (tmpd < 0.1) tmpd = 0.1;
 						if (tmpd > 8.0) tmpd = 8.0;
 						compSetTurbo(comp, tmpd);
 					}
 					if (pnam == "memory") {
-						tmp2 = atoi(pval.c_str());
+						tmp2 = arg.i;
 						if (!tmp2) tmp2=64;
 						tmp2 <<= 10;			// KB to bytes
 						tmp2 = toPower(tmp2);
 						tmp2 = toLimits(tmp2, MEM_256, MEM_4M);
 						tmask = tmp2;
 					}
-					if (pnam == "contmem") comp->contMem = str2bool(pval) ? 1 : 0;
-					//if (pnam == "contmemP3") setFlagBit(str2bool(pval),&comp->vid->flags,VID_CONT2);
-					if (pnam == "contio") comp->contIO = str2bool(pval) ? 1 : 0;
-					if (pnam == "scrp.wait") comp->evenM1 = str2bool(pval) ? 1 : 0;
+					if (pnam == "contmem") comp->contMem = arg.b;
+					if (pnam == "contio") comp->contIO = arg.b;
+					if (pnam == "scrp.wait") comp->evenM1 = arg.b;
 					if (pnam == "lastdir") prf->lastDir = pval;
 					break;
 				case PS_IDE:
-					if (pnam == "iface") comp->ide->type = atoi(pval.c_str());
-					if (pnam == "master.type") comp->ide->master->type = atoi(pval.c_str());
-					if (pnam == "master.lba") comp->ide->master->hasLBA = str2bool(pval) ? 1 : 0;
-					if (pnam == "master.maxlba") comp->ide->master->maxlba = atoi(pval.c_str());
-					if (pnam == "master.image") ideSetImage(comp->ide,IDE_MASTER,pval.c_str());
+					if (pnam == "iface") comp->ide->type = arg.i;
+					if (pnam == "master.type") comp->ide->master->type = arg.i;
+					if (pnam == "master.lba") comp->ide->master->hasLBA = arg.b;
+					if (pnam == "master.maxlba") comp->ide->master->maxlba = arg.i;
+					if (pnam == "master.image") ideSetImage(comp->ide,IDE_MASTER, arg.s);
 					if (pnam == "master.chs") {
 						vect = splitstr(pval,"/");
 						if (vect.size() > 2) {
@@ -463,10 +460,10 @@ int prfLoad(std::string nm) {
 							masterPass.cyls = atoi(vect.at(2).c_str());
 						}
 					}
-					if (pnam == "slave.type") comp->ide->slave->type = atoi(pval.c_str());
-					if (pnam == "slave.lba") comp->ide->slave->hasLBA = str2bool(pval) ? 1 : 0;
-					if (pnam == "slave.maxlba") comp->ide->slave->maxlba = atoi(pval.c_str());
-					if (pnam == "slave.image") ideSetImage(comp->ide,IDE_SLAVE,pval.c_str());
+					if (pnam == "slave.type") comp->ide->slave->type = arg.i;
+					if (pnam == "slave.lba") comp->ide->slave->hasLBA = arg.b;
+					if (pnam == "slave.maxlba") comp->ide->slave->maxlba = arg.i;
+					if (pnam == "slave.image") ideSetImage(comp->ide,IDE_SLAVE, arg.s);
 					if (pnam == "slave.chs") {
 						vect = splitstr(pval,"/");
 						if (vect.size() > 2) {
@@ -477,10 +474,10 @@ int prfLoad(std::string nm) {
 					}
 					break;
 				case PS_INPUT:
-					if (pnam == "mouse") comp->mouse->enable = str2bool(pval) ? 1 : 0;
-					if (pnam == "mouse.wheel") comp->mouse->hasWheel = str2bool(pval) ? 1 : 0;
-					if (pnam == "mouse.swapButtons") comp->mouse->swapButtons = str2bool(pval) ? 1 : 0;
-					if (pnam == "joy.extbuttons") comp->joy->extbuttons = str2bool(pval) ? 1 : 0;
+					if (pnam == "mouse") comp->mouse->enable = arg.b;
+					if (pnam == "mouse.wheel") comp->mouse->hasWheel = arg.b;
+					if (pnam == "mouse.swapButtons") comp->mouse->swapButtons = arg.b;
+					if (pnam == "joy.extbuttons") comp->joy->extbuttons = arg.b;
 					if (pnam == "keymap") {
 						prf->kmapName = pval;
 						loadKeys();
@@ -491,13 +488,13 @@ int prfLoad(std::string nm) {
 					}
 					break;
 				case PS_SDC:
-					if (pnam == "sdcimage") sdcSetImage(comp->sdc,pval.c_str());
-					if (pnam == "sdclock") comp->sdc->lock = str2bool(pval) ? 1 : 0;
-					if (pnam == "capacity") sdcSetCapacity(comp->sdc,atoi(pval.c_str()));
+					if (pnam == "sdcimage") sdcSetImage(comp->sdc, arg.s);
+					if (pnam == "sdclock") comp->sdc->lock = arg.b;
+					if (pnam == "capacity") sdcSetCapacity(comp->sdc, arg.i);
 					break;
 				case PS_SLOT:
 					if ((pnam == "slot.type") || (pnam == "slotA.type"))
-						comp->slot->mapType = atoi(pval.c_str());
+						comp->slot->mapType = arg.i;
 					break;
 			}
 		}
