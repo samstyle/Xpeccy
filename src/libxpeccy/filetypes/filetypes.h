@@ -152,6 +152,8 @@ int loadT64(Computer*,const char*,int);
 
 int loadBIN(Computer*, const char*, int);
 
+int loadC64prg(Computer*, const char*, int);
+
 // tape
 
 int loadTAP(Computer*,const char*, int);

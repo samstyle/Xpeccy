@@ -339,7 +339,7 @@ void tapSync(Tape* tap,int ns) {
 	if (tap->time < 1000) return;
 	int tks = tap->time / 1000;
 	tap->time = tap->time % 1000;
-	if (tap->on) {
+	if (tap->on && (tap->blkCount > 0)) {
 		if (tap->rec) {
 			if (tap->wait) {
 				if (tap->oldRec != tap->levRec) {

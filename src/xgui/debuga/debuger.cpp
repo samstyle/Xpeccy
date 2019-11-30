@@ -14,11 +14,11 @@
 #include "filer.h"
 #include "xgui.h"
 
-QColor colPC(32,200,32);	// pc
-QColor colBRK(200,128,128);	// breakpoint
-QColor colBG0(255,255,255);	// background
-QColor colBG1(230,230,230);	// background alternative
-QColor colSEL(128,255,128);	// background selected
+static QColor colPC(32,200,32);	// pc
+static QColor colBRK(200,128,128);	// breakpoint
+static QColor colBG0(255,255,255);	// background
+static QColor colBG1(230,230,230);	// background alternative
+static QColor colSEL(128,255,128);	// background selected
 
 unsigned short dumpAdr = 0;
 unsigned short disasmAdr = 0;
@@ -57,7 +57,7 @@ typedef struct {
 	QLineEdit* edit;
 } dbgRegPlace;
 
-#define SETCOLOR(_n, _r) col = conf.pal[_n]; if (col.isValid()) pal.setColor(_r, col);
+#define SETCOLOR(_n, _r) col = conf.pal[_n]; if (col.isValid()) pal.setColor(_r, col)
 
 void DebugWin::chaPal() {
 	QColor col;
@@ -87,16 +87,10 @@ void DebugWin::start(Computer* c) {
 	blockStart = -1;
 	blockEnd = -1;
 	chLayout();
-	if (!fillAll()) {
-		disasmAdr = comp->cpu->pc;
-		fillDisasm();
-	}
-	updateScreen();
 	if (!comp->vid->tail)
 		vidDarkTail(comp->vid);
 
 	this->move(winPos);
-//	ui.dasmTable->setFocus();
 	comp->vid->debug = 1;
 	comp->debug = 1;
 	comp->brk = 0;
@@ -106,6 +100,11 @@ void DebugWin::start(Computer* c) {
 	}
 	chaPal();
 	show();
+	if (!fillAll()) {
+		disasmAdr = comp->cpu->pc;
+		fillDisasm();
+	}
+	updateScreen();
 
 	int wd = (ui.dasmTable->height() - 2) / ui.dasmTable->rows();
 	ui.dasmTable->verticalHeader()->setDefaultSectionSize(wd);
@@ -230,6 +229,9 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	lst.clear();
 	p.first = QIcon(":/images/floppy.png"); p.second = ui.fdcTab; lst.append(p);
 	tablist[HWG_BK] = lst;
+	lst.clear();
+	p.first = QIcon(":/images/commodore.png"); p.second = ui.ciaTab; lst.append(p);
+	tablist[HWG_COMMODORE] = lst;
 
 	xLabel* arrl[16] = {
 		ui.labReg00, ui.labReg01, ui.labReg02, ui.labReg03, ui.labReg04,
@@ -853,6 +855,16 @@ bool DebugWin::fillAll() {
 	fillGBoy();
 	drawNes();
 	fillAY();
+	// cia
+	ui.cia1timera->setText(gethexword(comp->c64.cia1.timerA.value));
+	ui.cia1timerb->setText(gethexword(comp->c64.cia1.timerB.value));
+	ui.cia1irq->setText(getbinbyte(comp->c64.cia1.intrq));
+	ui.cia1inten->setText(getbinbyte(comp->c64.cia1.inten));
+	ui.cia2timera->setText(gethexword(comp->c64.cia2.timerA.value));
+	ui.cia2timerb->setText(gethexword(comp->c64.cia2.timerB.value));
+	ui.cia2irq->setText(getbinbyte(comp->c64.cia2.intrq));
+	ui.cia2inten->setText(getbinbyte(comp->c64.cia2.inten));
+
 	updateScreen();
 	ui.brkTab->update();
 

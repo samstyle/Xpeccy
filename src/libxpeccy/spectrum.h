@@ -65,24 +65,24 @@ typedef struct {
 } ciaTime;
 
 typedef struct {
-	unsigned on:1;
+	unsigned overflow:1;
 	unsigned char flags;		// cia E/F registers
-	int period;	// in NS
-	int ns;		// countdown. overflow = dec value;
-	PAIR(inival,inih,inil);	// initial value
-	PAIR(value,valh,vall);	// countdown
+	PAIR(inival,inih,inil);		// initial value
+	PAIR(value,valh,vall);		// countdown
 } ciaTimer;
 
 typedef struct {
+	unsigned irq:1;
 	unsigned char portA_mask;
 	unsigned char portB_mask;
 	ciaTimer timerA;
 	ciaTimer timerB;
 	ciaTime time;
 	ciaTime alarm;
+	int ns;
 	unsigned char ssr;		// serial shift register
-	unsigned char state;		// reg D - interrupt state
-	unsigned char imask;		// reg D - interrupt mask
+	unsigned char intrq;		// reg D - interrupt state
+	unsigned char inten;		// reg D - interrupt mask
 	unsigned char reg[16];
 } c64cia;
 

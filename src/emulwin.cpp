@@ -451,12 +451,10 @@ void MainWin::tapStateChanged(int wut, int val) {
 		case TW_REWIND:
 			tapRewind(comp->tape,val);
 			emit s_tape_upd(comp->tape);
-			//tapeWin->buildList(comp->tape);
 			break;
 		case TW_BREAK:
 			comp->tape->blkData[val].breakPoint ^= 1;
 			emit s_tape_upd(comp->tape);
-			//tapeWin->drawStops(comp->tape);
 			break;
 	}
 }

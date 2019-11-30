@@ -78,5 +78,6 @@
         <file>images/arrleft.png</file>
         <file>images/speaker2.png</file>
         <file>images/palette.png</file>
+        <file>images/commodore.png</file>
     </qresource>
 </RCC>

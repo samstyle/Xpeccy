@@ -48,7 +48,6 @@ void TapeWin::upd(Tape* tape) {
 			ui.stopBut->setEnabled(false);
 			ui.tapeList->setEnabled(false);
 		}
-
 	}
 }
 

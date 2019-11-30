@@ -8,8 +8,8 @@ extern opCode mosTab[256];
 void m6502_reset(CPU* cpu) {
 	cpu->lock = 0;
 	cpu->intrq = 0;
-	cpu->inten = /*MOS6502_INT_IRQ | */MOS6502_INT_NMI;		// brk/nmi enabled
-	cpu->sp = 0x1fd;	// segment 01xx is stack
+	cpu->inten = MOS6502_INT_IRQ | MOS6502_INT_NMI;	// brk/nmi enabled. irq is allways enabled, controlled by I flag
+	cpu->sp = 0x1fd;				// segment 01xx is stack
 	cpu->f = MF5 | MFI;
 	cpu->a = 0;
 	cpu->lx = 0;
@@ -36,11 +36,13 @@ int m6502_int(CPU* cpu) {
 		cpu->hpc = cpu->mrd(0xfffb, 0, cpu->data);
 	} else if (cpu->intrq & MOS6502_INT_IRQ) {	// IRQ
 		cpu->intrq &= ~MOS6502_INT_IRQ;
-		cpu->f &= ~MFB;				// reset B flag
-		cpu->f |= MFI;
-		m6502_push_int(cpu);
-		cpu->lpc = cpu->mrd(0xfffe, 0, cpu->data);
-		cpu->hpc = cpu->mrd(0xffff, 0, cpu->data);
+		if (!(cpu->f & MFI)) {			// IRQ disabled
+			cpu->f &= ~MFB;			// reset B flag
+			cpu->f |= MFI;			// disable IRQ
+			m6502_push_int(cpu);
+			cpu->lpc = cpu->mrd(0xfffe, 0, cpu->data);
+			cpu->hpc = cpu->mrd(0xffff, 0, cpu->data);
+		}
 	}
 	return 7;				// real: 7T
 }
@@ -106,9 +108,9 @@ static xRegDsc m6502RegTab[] = {
 	{M6502_REG_PC, "PC", 0},
 	{M6502_REG_A, "A", 1},
 	{M6502_REG_X, "X", 1},
+	{M6502_REG_Y, "Y", 1},
 	{M6502_REG_S, "S", 1},
 	{M6502_REG_F, "P", 1},
-	{M6502_REG_Y, "Y", 1},
 	{REG_NONE, "", 0}
 };
 
@@ -120,7 +122,7 @@ void m6502_get_regs(CPU* cpu, xRegBunch* bunch) {
 		bunch->regs[idx].byte = m6502RegTab[idx].byte;
 		switch(m6502RegTab[idx].id) {
 			case M6502_REG_PC: bunch->regs[idx].value = cpu->pc; break;
-			case M6502_REG_S: bunch->regs[idx].value = 0x100 | cpu->lsp; break;
+			case M6502_REG_S: bunch->regs[idx].value = cpu->lsp; break;
 			case M6502_REG_A: bunch->regs[idx].value = cpu->a; break;
 			case M6502_REG_F: bunch->regs[idx].value = cpu->f; break;
 			case M6502_REG_X: bunch->regs[idx].value = cpu->lx; break;

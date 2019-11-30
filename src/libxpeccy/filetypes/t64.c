@@ -1,5 +1,6 @@
 #include "filetypes.h"
 
+/*
 #pragma pack (push, 1)
 
 typedef struct {
@@ -14,6 +15,13 @@ typedef struct {
 } t64file;
 
 #pragma pack (pop)
+*/
+
+// There are three types of pulses: short (352 µs), medium (512 µs) and long (672 µs)
+// S/M	0
+// M/S	1
+// L/M	byte boundary
+// L/S	end of file
 
 int loadT64(Computer* comp, const char* fname, int drv) {
 	char buf[32];
@@ -21,16 +29,23 @@ int loadT64(Computer* comp, const char* fname, int drv) {
 	unsigned short ver;
 	unsigned short maxent;
 	unsigned short totent;
-//	unsigned short start = 0;
+
+	unsigned char filetype;
+	unsigned char ft_1541;
+	unsigned short start;
+	unsigned short end;
+	int dataoff;
+	char name[16];
+
 	int i;
-	t64file desc;
+//	t64file desc;
 	long offset;
 	FILE* file = fopen(fname, "rb");
 	if (!file) {
 		err = ERR_CANT_OPEN;
 	} else {
 		fread(buf, 32, 1, file);
-		if (memcmp(buf, "C64", 3)) {
+		if (strcmp(buf, "C64 tape image file")) {
 			err = ERR_T64_SIGN;
 		} else {
 			ver = fgetw(file);
@@ -44,13 +59,21 @@ int loadT64(Computer* comp, const char* fname, int drv) {
 			printf("tot ent: %i\n",totent);
 			printf("container: %s\n",buf);
 			for(i = 0; i < totent; i++) {
-				fread((char*)(&desc), sizeof(t64file), 1, file);
+				// fread((char*)(&desc), sizeof(t64file), 1, file);
+				filetype = fgetc(file) & 0xff;
+				ft_1541 = fgetc(file) & 0xff;
+				start = fgetw(file);
+				end = fgetw(file);
+				fseek(file, 2, SEEK_SET);
+				dataoff = fgeti(file);
+				fseek(file, 2, SEEK_SET);
+				fread(name, 16, 1, file);
 				offset = ftell(file);
-				fseek(file, desc.offset, SEEK_SET);
-				fread(comp->mem->ramData + desc.start, desc.end - desc.start + 1, 1, file);
+				fseek(file, dataoff, SEEK_SET);		// ???
+
+				//fread(comp->mem->ramData + start, end - start + 1, 1, file);
+
 				fseek(file, offset, SEEK_SET);
-//				if (i == 0)
-//					start = desc.start;
 			}
 		}
 //		if (start)
@@ -90,18 +113,20 @@ int loadC64RawTap(Computer* comp, const char* name, int dsk) {
 				len = fgeti(file);		// data length
 				tapEject(comp->tape);		// clear old tape
 				blkClear(&blk);
+				blk.vol = 0;
 				while (len > 0) {
 					per = fgetc(file) & 0xff;
 					if (per == 0) {
 						per = fgett(file);
+						// printf("%i\n",per);
 					}
 					per = 8 * per / comp->cpuFrq;		// comp->cpuFrq - MHz (1e6), result period in mks (1e-6)
-					if (per > 5e5) {
-						blkAddPause(&blk, 1e6);		// 1 sec pause
+					if (per > 1e5) {
+						blkAddPause(&blk, per / 2);		// pause
 						tapAddBlock(comp->tape, blk);
 						blkClear(&blk);
 					} else {
-						blkAddWave(&blk, per / 2);
+						blkAddWave(&blk, per/2);
 					}
 					len--;
 				}

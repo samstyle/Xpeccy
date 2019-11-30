@@ -8,6 +8,12 @@
 #define	F_HIRAM		(1<<1)
 #define	F_CHAREN	(1<<2)
 
+#define CIA_IRQ_TIMA	(1<<0)
+#define CIA_IRQ_TIMB	(1<<1)
+#define CIA_IRQ_ALARM	(1<<2)
+#define CIA_IRQ_SP	(1<<3)
+#define CIA_IRQ_FLAG	(1<<4)
+
 // vicII read byte
 // bits 00..13:vic ADR bus
 // bits 14..15:cia2 reg #00 bit 0,1 inverted
@@ -129,6 +135,7 @@ void c64_pal_wr(unsigned short adr, unsigned char val, void* data) {
 
 // dc00/dd00 : cia 1 & cia 2 common ports
 // all registers except 0,1 is the same (timer, tod, interrupts)
+// Reading the ICR (reg D) will read the interrupt flags and automatically clear them.
 
 extern unsigned char toBCD(unsigned char);
 
@@ -152,10 +159,8 @@ unsigned char c64_cia_rd(c64cia* cia, unsigned char adr) {
 			break;
 		case 0x0c: res = cia->ssr; break;
 		case 0x0d:
-			res = cia->state & cia->imask;
-			res &= 0x7f;
-			if (res)
-				res |= 0x80;
+			res = cia->intrq & cia->inten;
+			cia->intrq = 0;
 			break;		// cia1:INT; cia2:NMI bits
 		case 0x0e: res = cia->timerA.flags; break;
 		case 0x0f: res = cia->timerB.flags; break;
@@ -171,7 +176,6 @@ void c64_cia_wr(c64cia* cia, unsigned char adr, unsigned char val) {
 		case 0x05: cia->timerA.inih = val; break;
 		case 0x06: cia->timerB.inil = val; break;
 		case 0x07: cia->timerB.inih = val; break;
-		// NOTE: wait... wut?
 		case 0x08: if (cia->timerB.flags & 0x80) {cia->alarm.tenth = val;} else {cia->time.tenth = val;} break;
 		case 0x09: if (cia->timerB.flags & 0x80) {cia->alarm.sec = val;} else {cia->time.sec = val;} break;
 		case 0x0a: if (cia->timerB.flags & 0x80) {cia->alarm.min = val;} else {cia->time.min = val;} break;
@@ -179,12 +183,18 @@ void c64_cia_wr(c64cia* cia, unsigned char adr, unsigned char val) {
 		case 0x0c: cia->ssr = val; break;
 		case 0x0d:
 			if (val & 0x80)
-				cia->imask |= (val & 0x7f);		// 1 - set state bits 0..6 where val bits is 1
+				cia->inten |= (val & 0x7f);		// 1 - set state bits 0..6 where val bits is 1
 			else
-				cia->imask &= (~val & 0x7f);		// 0 - same but reset bits 0..6
+				cia->inten &= (~val & 0x7f);		// 0 - same but reset bits 0..6
 			break;
-		case 0x0e: cia->timerA.flags = val; break;
-		case 0x0f: cia->timerB.flags = val; break;
+		case 0x0e: cia->timerA.flags = val;
+			if (val & 1)
+				cia->timerA.value = cia->timerA.inival;
+			break;
+		case 0x0f: cia->timerB.flags = val;
+			if (val & 1)
+				cia->timerB.value = cia->timerB.inival;
+			break;
 	}
 }
 
@@ -370,13 +380,20 @@ unsigned char c64_mrd(Computer* comp, unsigned short adr, int m1) {
 			res = comp->c64.reg00;
 			break;
 		case 0x0001:
-			res = comp->c64.reg01;
+			res = comp->c64.reg01 & 0xef;
+			if (!comp->tape->on) res |= 0x10;	// 1:no buttons pressed, 0:button pressed
 			break;
 		default:
 			res = memRd(comp->mem, adr);
 	}
 	return res;
 }
+
+// 0001
+// b0..2	memory configuration
+// b3		datasette output level (rec)
+// b4		0:one of datasette buttons pressed (play,rec,rew,ffwd), 1:no buttons
+// b5		wr:datasette motor control (1:off, 0:on)
 
 void c64_mwr(Computer* comp, unsigned short adr, unsigned char val) {
 	switch (adr) {
@@ -388,6 +405,13 @@ void c64_mwr(Computer* comp, unsigned short adr, unsigned char val) {
 			val &= comp->c64.reg00;					// reset ro bits in value
 			comp->c64.reg01 |= val;					// set new output bits in R0
 			c64_maper(comp);
+			comp->tape->levRec = (val & 8) ? 0xa0 : 0x60;		// datasette output
+			if (val & 0x20) {
+				comp->tape->on = 0;
+				comp->tape->rec = 0;
+			} else {
+				comp->tape->on = 1;
+			}
 			break;
 		default:
 			memWr(comp->mem, adr, val);
@@ -411,10 +435,10 @@ sndPair c64_vol(Computer* comp, sndVolume* sv) {
 	return res;
 }
 
-void c64_sync_time(ciaTime* xt, int ns) {
+void cia_sync_time(ciaTime* xt, int ns) {
 	xt->ns += ns;
 	while (xt->ns >= 1e8) {		// 1/10 sec
-		xt->ns -= 1e9;
+		xt->ns -= 1e8;
 		xt->tenth++;
 		if (xt->tenth > 9) {
 			xt->tenth = 0;
@@ -434,21 +458,89 @@ void c64_sync_time(ciaTime* xt, int ns) {
 	}
 }
 
+void cia_irq(c64cia* cia, int msk) {
+	msk &= cia->inten;	// reset disabled signals
+	int t = cia->intrq & 0x7f;
+	cia->intrq |= msk;	// set irq
+	cia->intrq &= 0x1f;
+	t &= cia->intrq;	// reset bits with 1->0 front
+	t ^= cia->intrq;	// reset not changed bits. result: only 0->1 front is set
+	cia->irq = t ? 1 : 0;
+	if (cia->intrq)
+		cia->intrq |= 0x80;
+}
+
+void cia_timer_tick(ciaTimer* tmr) {
+	if (!(tmr->flags & 1)) return;
+	tmr->value--;
+	if (tmr->value == 0xffff) {			// overflow
+		if (tmr->flags & 0x08) {		// one-shot - stop timer
+			tmr->flags &= ~1;
+		} else if (tmr->flags & 0x10) {		// reload init value
+			tmr->value = tmr->inival;
+		}
+		tmr->overflow = 1;
+	}
+}
+
+// ~1MHz ticks
+void cia_sync(c64cia* cia, int ns, int nspt) {
+	cia_sync_time(&cia->time, ns);
+	cia->ns += ns;
+	while (cia->ns >= nspt) {	// to mks
+		cia->ns -= nspt;
+		cia_timer_tick(&cia->timerA);
+		if ((cia->timerA.flags & 6) == 4)		// reset b6, reg b if it was set by timer A in 1-pulse mode
+			cia->reg[11] &= ~0x40;
+		if (cia->timerA.overflow) {
+			cia->timerA.overflow = 0;
+			if (cia->timerA.flags & 2) {		// overflow appears in bit 6 of reg B
+				if (cia->timerA.flags & 4) {	// 1: inverse bit 6, 0:set 1 bit but reset it on next cycle
+					cia->reg[11] ^= 0x40;
+				} else {
+					cia->reg[11] |= 0x40;
+				}
+			}
+			cia_irq(cia, CIA_IRQ_TIMA);
+		}
+		cia_timer_tick(&cia->timerB);
+		if ((cia->timerB.flags & 6) == 4)
+			cia->reg[11] &= ~0x80;
+		if (cia->timerB.overflow) {
+			cia->timerB.overflow = 0;
+			if (cia->timerB.flags & 2) {
+				if (cia->timerB.flags & 4) {
+					cia->reg[11] ^= 0x80;
+				} else {
+					cia->reg[11] |= 0x80;
+				}
+			}
+			cia_irq(cia, CIA_IRQ_TIMB);
+		}
+	}
+}
+
 void c64_sync(Computer* comp, int ns) {
+	// vic->cpu irq
 	if (comp->vid->intrq & VIC_IRQ_ALL) {
-		comp->cpu->intrq = (comp->cpu->inten & MOS6502_INT_IRQ);
+		comp->cpu->intrq |= MOS6502_INT_IRQ;
 		comp->vid->intrq = 0;
 	}
-	c64_sync_time(&comp->c64.cia1.time, ns);
-	c64_sync_time(&comp->c64.cia2.time, ns);
-	// if tape signal goes hi->low, set b4,0D@CIA1
+
 	if (comp->tape->on) {
 		int vol = comp->tape->volPlay;
 		tapSync(comp->tape, ns);
-		if ((vol > 0x7f) && (comp->tape->volPlay < 0x80)) {		// front 1->0
-			comp->c64.cia1.state |= 0x10;
-			comp->c64.cia1.state &= comp->c64.cia1.imask;
+		if ((vol > 0x7f) && (comp->tape->volPlay < 0x80)) {	// front 1->0
+			cia_irq(&comp->c64.cia1, CIA_IRQ_FLAG);
 		}
+	}
+	cia_sync(&comp->c64.cia1, ns, comp->nsPerTick);
+	cia_sync(&comp->c64.cia2, ns, comp->nsPerTick);
+
+	if (comp->c64.cia1.irq || comp->c64.cia2.irq) {
+		comp->c64.cia1.irq = 0;
+		comp->c64.cia2.irq = 0;
+		comp->cpu->intrq |= MOS6502_INT_IRQ;
 	}
 }
 
