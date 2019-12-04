@@ -38,8 +38,8 @@ int m6502_int(CPU* cpu) {
 		cpu->intrq &= ~MOS6502_INT_IRQ;
 		if (!(cpu->f & MFI)) {			// IRQ disabled
 			cpu->f &= ~MFB;			// reset B flag
-			cpu->f |= MFI;			// disable IRQ
 			m6502_push_int(cpu);
+			cpu->f |= MFI;			// disable IRQ
 			cpu->lpc = cpu->mrd(0xfffe, 0, cpu->data);
 			cpu->hpc = cpu->mrd(0xffff, 0, cpu->data);
 		}
@@ -82,7 +82,7 @@ xMnem m6502_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 	mn.mnem = mosTab[op].mnem;
 	mn.flag = mosTab[op].flag;
 	// cond
-	if ((op & 0x1f) == 0x10) {		// all banch ops; b5-7 = condition
+	if ((op & 0x1f) == 0x10) {		// all branch ops; b5-7 = condition
 		mn.cond = 1;
 		mn.met = (cpu->f & m6502_cond[(op >> 6) & 3]) ? 0 : 1;		// true if 0
 		if (op & 0x20)							// true if 1

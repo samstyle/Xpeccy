@@ -526,7 +526,7 @@ void mosop40(CPU* cpu) {
 	cpu->lsp++;
 	cpu->f = cpu->mrd(cpu->sp, 0, cpu->data);
 	cpu->f |= MF5;			// set bit 5
-	cpu->f &= ~MFI;
+//	cpu->f &= ~MFI;
 	cpu->lsp++;
 	cpu->lpc = cpu->mrd(cpu->sp, 0, cpu->data);
 	cpu->lsp++;

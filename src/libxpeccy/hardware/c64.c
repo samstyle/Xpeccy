@@ -14,6 +14,12 @@
 #define CIA_IRQ_SP	(1<<3)
 #define CIA_IRQ_FLAG	(1<<4)
 
+#define CIA_CR_START	(1<<0)	// start timer
+#define CIA_CR_PBXON	(1<<1)	// use reg B bits
+#define CIA_CR_TOGGLE	(1<<2)	// 0:pulse, 1:toggle
+#define CIA_CR_ONESHOT	(1<<3)	// 0:continuous, 1:oneshot
+#define CIA_CR_RELOAD	(1<<4)	// 0:no effect, 1:load latch on overflow
+
 // vicII read byte
 // bits 00..13:vic ADR bus
 // bits 14..15:cia2 reg #00 bit 0,1 inverted
@@ -159,7 +165,7 @@ unsigned char c64_cia_rd(c64cia* cia, unsigned char adr) {
 			break;
 		case 0x0c: res = cia->ssr; break;
 		case 0x0d:
-			res = cia->intrq & cia->inten;
+			res = cia->intrq;
 			cia->intrq = 0;
 			break;		// cia1:INT; cia2:NMI bits
 		case 0x0e: res = cia->timerA.flags; break;
@@ -173,9 +179,17 @@ void c64_cia_wr(c64cia* cia, unsigned char adr, unsigned char val) {
 		case 0x02: cia->portA_mask = val; break;
 		case 0x03: cia->portB_mask = val; break;
 		case 0x04: cia->timerA.inil = val; break;
-		case 0x05: cia->timerA.inih = val; break;
+		case 0x05:
+			cia->timerA.inih = val;
+			if (!(cia->timerA.flags & CIA_CR_START))
+				cia->timerA.value = cia->timerA.inival;
+			break;
 		case 0x06: cia->timerB.inil = val; break;
-		case 0x07: cia->timerB.inih = val; break;
+		case 0x07:
+			cia->timerB.inih = val;
+			if (!(cia->timerB.flags & CIA_CR_START))
+				cia->timerB.value = cia->timerB.inival;
+			break;
 		case 0x08: if (cia->timerB.flags & 0x80) {cia->alarm.tenth = val;} else {cia->time.tenth = val;} break;
 		case 0x09: if (cia->timerB.flags & 0x80) {cia->alarm.sec = val;} else {cia->time.sec = val;} break;
 		case 0x0a: if (cia->timerB.flags & 0x80) {cia->alarm.min = val;} else {cia->time.min = val;} break;
@@ -185,14 +199,14 @@ void c64_cia_wr(c64cia* cia, unsigned char adr, unsigned char val) {
 			if (val & 0x80)
 				cia->inten |= (val & 0x7f);		// 1 - set state bits 0..6 where val bits is 1
 			else
-				cia->inten &= (~val & 0x7f);		// 0 - same but reset bits 0..6
+				cia->inten &= ~val;			// 0 - same but reset bits 0..6
 			break;
 		case 0x0e: cia->timerA.flags = val;
-			if (val & 1)
+			if (val & CIA_CR_RELOAD)
 				cia->timerA.value = cia->timerA.inival;
 			break;
 		case 0x0f: cia->timerB.flags = val;
-			if (val & 1)
+			if (val & CIA_CR_RELOAD)
 				cia->timerB.value = cia->timerB.inival;
 			break;
 	}
@@ -367,8 +381,6 @@ void c64_reset(Computer* comp) {
 		comp->vid->pal[i] = c64_palette[i];
 	}
 	memset(comp->vid->regs, 0x00, 256);
-//	comp->vid->regs[0x11] = 0x1b;
-//	comp->vid->regs[0x18] = 0xc8;
 	c64_maper(comp);
 	vidSetMode(comp->vid, VID_C64_TEXT);
 }
@@ -459,27 +471,21 @@ void cia_sync_time(ciaTime* xt, int ns) {
 }
 
 void cia_irq(c64cia* cia, int msk) {
-	msk &= cia->inten;	// reset disabled signals
-	int t = cia->intrq & 0x7f;
 	cia->intrq |= msk;	// set irq
 	cia->intrq &= 0x1f;
-	t &= cia->intrq;	// reset bits with 1->0 front
-	t ^= cia->intrq;	// reset not changed bits. result: only 0->1 front is set
-	cia->irq = t ? 1 : 0;
-	if (cia->intrq)
+	cia->irq = (cia->intrq & cia->inten) ? 1 : 0;
+	if (cia->irq)
 		cia->intrq |= 0x80;
 }
 
 void cia_timer_tick(ciaTimer* tmr) {
-	if (!(tmr->flags & 1)) return;
+	if (!(tmr->flags & CIA_CR_START)) return;
 	tmr->value--;
-	if (tmr->value == 0xffff) {			// overflow
-		if (tmr->flags & 0x08) {		// one-shot - stop timer
-			tmr->flags &= ~1;
-		} else if (tmr->flags & 0x10) {		// reload init value
-			tmr->value = tmr->inival;
-		}
+	if (tmr->value == 0xffff) {				// overflow
+		tmr->value = tmr->inival;
 		tmr->overflow = 1;
+		if (tmr->flags & CIA_CR_ONESHOT)		// one-shot - stop timer
+			tmr->flags &= ~CIA_CR_START;
 	}
 }
 
@@ -490,12 +496,12 @@ void cia_sync(c64cia* cia, int ns, int nspt) {
 	while (cia->ns >= nspt) {	// to mks
 		cia->ns -= nspt;
 		cia_timer_tick(&cia->timerA);
-		if ((cia->timerA.flags & 6) == 4)		// reset b6, reg b if it was set by timer A in 1-pulse mode
+		if ((cia->timerA.flags & (CIA_CR_PBXON | CIA_CR_TOGGLE)) == CIA_CR_PBXON)	// reset b6, reg b if it was set by timer A in 1-pulse mode
 			cia->reg[11] &= ~0x40;
 		if (cia->timerA.overflow) {
 			cia->timerA.overflow = 0;
-			if (cia->timerA.flags & 2) {		// overflow appears in bit 6 of reg B
-				if (cia->timerA.flags & 4) {	// 1: inverse bit 6, 0:set 1 bit but reset it on next cycle
+			if (cia->timerA.flags & CIA_CR_PBXON) {			// overflow appears in bit 6 of reg B
+				if (cia->timerA.flags & CIA_CR_TOGGLE) {	// 1: inverse bit 6, 0:set 1 bit but reset it on next cycle
 					cia->reg[11] ^= 0x40;
 				} else {
 					cia->reg[11] |= 0x40;
@@ -504,12 +510,12 @@ void cia_sync(c64cia* cia, int ns, int nspt) {
 			cia_irq(cia, CIA_IRQ_TIMA);
 		}
 		cia_timer_tick(&cia->timerB);
-		if ((cia->timerB.flags & 6) == 4)
+		if ((cia->timerB.flags & (CIA_CR_PBXON | CIA_CR_TOGGLE)) == CIA_CR_PBXON)
 			cia->reg[11] &= ~0x80;
 		if (cia->timerB.overflow) {
 			cia->timerB.overflow = 0;
-			if (cia->timerB.flags & 2) {
-				if (cia->timerB.flags & 4) {
+			if (cia->timerB.flags & CIA_CR_PBXON) {
+				if (cia->timerB.flags & CIA_CR_TOGGLE) {
 					cia->reg[11] ^= 0x80;
 				} else {
 					cia->reg[11] |= 0x80;

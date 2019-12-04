@@ -108,7 +108,7 @@ void xThread::run() {
 			}
 		}
 		while (!conf.emu.fast && sleepy)
-			usleep(100);
+			usleep(1);
 	} while (!finish);
 	exit(0);
 }
