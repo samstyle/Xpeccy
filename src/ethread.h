@@ -10,15 +10,12 @@ class xThread : public QThread {
 	Q_OBJECT
 	public:
 		xThread();
-//		unsigned fast:1;
-//		unsigned silent:1;	// don't produce sound
-//		unsigned block:1;
 		unsigned finish:1;
 		int sndNs;
+	public slots:
 		void stop();
 	signals:
 		void s_frame();
-		//void picReady();	// picture ready for display
 		void dbgRequest();
 		void tapeSignal(int,int);
 	private:

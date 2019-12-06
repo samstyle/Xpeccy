@@ -65,10 +65,9 @@ int sndSync(Computer* comp) {
 				sbuf[posf & 0x3fff] = (sndLev.right >> 8) & 0xff;
 				posf++;
 			}
+			smpCount++;
 		}
 	}
-	// NOTE: why need to count samples on pause? just send last sample to output
-	smpCount++;
 	if (smpCount < sndChunks) return 0;
 	conf.snd.fill = 0;
 	smpCount = 0;
@@ -147,13 +146,15 @@ void null_close() {
 
 // SDL
 
+#include <QDebug>
+
 void sdlPlayAudio(void*, Uint8* stream, int len) {
 	int dist = posf - posp;
 	while (dist < 0) dist += 0x4000;
 	while (dist > 0x3fff) dist -= 0x4000;
 	if (conf.emu.fast || conf.emu.pause) {
 		while (len > 0) {				// silence : put last sample
-			*(stream++) = sndLev.left & 0xff;;
+			*(stream++) = sndLev.left & 0xff;
 			*(stream++) = (sndLev.left >> 8) & 0xff;
 			*(stream++) = sndLev.right & 0xff;
 			*(stream++) = (sndLev.right >> 8) & 0xff;

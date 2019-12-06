@@ -16,13 +16,6 @@ typedef struct Video Video;
 #include "gbcvideo.h"
 #include "nesppu.h"
 
-// C64 vic interrupts
-#define VIC_IRQ_RASTER	0x01
-#define	VIC_IRQ_SPRBGR	0x02
-#define VIC_IRQ_SPRSPR	0x04
-#define VIC_IRQ_LPEN	0x08
-#define VIC_IRQ_ALL	(VIC_IRQ_RASTER | VIC_IRQ_SPRBGR | VIC_IRQ_SPRSPR | VIC_IRQ_LPEN)
-
 // screen mode
 enum {
 	VID_UNKNOWN = -1,
@@ -94,6 +87,7 @@ struct Video {
 	unsigned debug:1;
 	unsigned tail:1;
 	unsigned cutscr:1;
+	unsigned irq:1;
 
 	unsigned hblank:1;	// HBlank signal
 	unsigned hbstrb:1;	// HBlank strobe 0->1
@@ -269,7 +263,6 @@ struct Video {
 
 	unsigned char line[0x200];		// buffer for render sprites & tiles
 	unsigned char linb[0x200];		// buffer for rendered bitplane
-	unsigned char regs[0x100];		// internal small video mem
 	unsigned char font[0x800];		// ATM/C64 text mode font
 
 	unsigned char sprxspr;	// c64 spr-spr collisions
@@ -282,13 +275,10 @@ struct Video {
 	unsigned char ram[MEM_256K];			// video memory
 	unsigned char oam[MEM_256];			// nes oam memory
 	unsigned char reg[256];				// max 256 registers
-//	unsigned char scrimg[2560 * 1440 * 3];
 
 	ulaPlus* ula;
 
 };
-
-// extern int vidFlag;
 
 Video* vidCreate(vcbmrd, void*);
 void vidDestroy(Video*);

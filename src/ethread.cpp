@@ -80,7 +80,7 @@ void xThread::emuCycle(Computer* comp) {
 			conf.vid.fcount++;
 			emit s_frame();
 		}
-	} while (!comp->brk && conf.snd.fill);
+	} while (!comp->brk && conf.snd.fill && !finish);
 	comp->nmiRequest = 0;
 }
 
@@ -107,8 +107,8 @@ void xThread::run() {
 				emit dbgRequest();
 			}
 		}
-		while (!conf.emu.fast && sleepy)
-			usleep(1);
+		while (!conf.emu.fast && sleepy && !finish)
+			usleep(10);
 	} while (!finish);
 	exit(0);
 }

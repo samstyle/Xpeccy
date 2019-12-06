@@ -59,6 +59,7 @@ class MainWin : public QWidget {
 		void s_keywin_upd(Keyboard*);
 		void s_keywin_shide();
 		void s_keywin_close();
+		void s_emulwin_close();
 	public slots:
 		void d_frame();
 		void doOptions();

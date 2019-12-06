@@ -52,6 +52,8 @@ int m6502_exec(CPU* cpu) {
 	if (cpu->lock) return 1;
 	unsigned char com;
 	cpu->intrq &= cpu->inten;
+	if (cpu->f & MFI)
+		cpu->intrq &= ~MOS6502_INT_IRQ;
 	if (cpu->intrq && !cpu->noint) {
 		res = m6502_int(cpu);
 	} else {

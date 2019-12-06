@@ -961,7 +961,6 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		ideCloseFiles(comp->ide);
 		sdcCloseFile(comp->sdc);
 		sltEject(comp->slot);		// this must save cartridge ram
-		// emutex.unlock();		// unlock emulation thread
 		emit s_keywin_close();
 		if (conf.joy.joy)
 			SDL_JoystickClose(conf.joy.joy);
@@ -973,6 +972,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 		}
 		srv.close();
 #endif
+		emit s_emulwin_close();
 		ev->accept();
 	} else {
 		ev->ignore();

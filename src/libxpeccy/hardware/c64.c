@@ -52,68 +52,18 @@ void c64_rom_wr(unsigned short adr, unsigned char val, void* data) {
 
 // d000..d3ff	vicII (0x3f registers + mirrors)
 
+unsigned char vic_rd(Video*, unsigned short);
+void vic_wr(Video*, unsigned short, unsigned char);
+
 unsigned char c64_vic_rd(unsigned short adr, void* data) {
 	Computer* comp = (Computer*)data;
-	adr &= 0x3f;
-	unsigned char res = comp->vid->regs[adr];
-	switch (adr) {
-		case 0x11:
-			res &= 0x7f;
-			if (comp->vid->ray.y & 0x100)
-				res |= 0x80;
-			break;
-		case 0x12:
-			res = comp->vid->ray.y & 0xff;
-			break;
-		case 0x19:
-			res = comp->vid->intrq & VIC_IRQ_ALL;
-			if (res)
-				res |= 0x80;
-			break;
-	}
-	return res;
-}
-
-void c64_vic_set_mode(Computer* comp) {
-	int mode = ((comp->vid->regs[0x11] & 0x60) | (comp->vid->regs[0x16] & 0x10));
-//	printf("mode:%.2X\n",mode);
-	switch (mode) {
-		case 0x00: vidSetMode(comp->vid, VID_C64_TEXT); break;
-		case 0x10: vidSetMode(comp->vid, VID_C64_TEXT_MC); break;
-		case 0x20: vidSetMode(comp->vid, VID_C64_BITMAP); break;
-		case 0x30: vidSetMode(comp->vid, VID_C64_BITMAP_MC); break;
-		// and extend modes
-		default: vidSetMode(comp->vid, VID_UNKNOWN); break;
-	}
+	return vic_rd(comp->vid, adr);
 }
 
 void c64_vic_wr(unsigned short adr, unsigned char val, void* data) {
 //	printf("vic wr %.4X,%.2X\n",adr,val);
 	Computer* comp = (Computer*)data;
-	adr &= 0x3f;
-	comp->vid->regs[adr] = val;
-	switch (adr) {
-		case 0x11:				// b7 = b8 of INT line
-			comp->vid->intp.y &= 0xff;
-			if (val & 0x80)
-				comp->vid->intp.y |= 0x100;
-			c64_vic_set_mode(comp);
-			break;
-		case 0x12:				// b0..7 of INT line
-			comp->vid->intp.y &= 0x100;
-			comp->vid->intp.y |= (val & 0xff);
-			break;
-		case 0x16:
-			c64_vic_set_mode(comp);
-			break;
-		case 0x18:
-			comp->vid->sbank = (val & 0x0e) >> 1;
-			comp->vid->cbank = (val & 0xf0) >> 4;
-			break;
-		case 0x19:
-			comp->vid->inten = val & 0x0f;	// b0:line int, b1:spr-bgr collision, b2:spr-spr collision, b3:light pen
-			break;
-	}
+	vic_wr(comp->vid, adr, val);
 }
 
 // d400..d7ff	sid
@@ -380,7 +330,7 @@ void c64_reset(Computer* comp) {
 		comp->c64.cia2.reg[i] = 0x00;
 		comp->vid->pal[i] = c64_palette[i];
 	}
-	memset(comp->vid->regs, 0x00, 256);
+	memset(comp->vid->reg, 0x00, 256);
 	c64_maper(comp);
 	vidSetMode(comp->vid, VID_C64_TEXT);
 }
@@ -478,9 +428,19 @@ void cia_irq(c64cia* cia, int msk) {
 		cia->intrq |= 0x80;
 }
 
-void cia_timer_tick(ciaTimer* tmr) {
+void cia_timer_tick(ciaTimer* tmr, int mod) {
 	if (!(tmr->flags & CIA_CR_START)) return;
-	tmr->value--;
+	switch (mod & 3) {
+		case 0:	tmr->value--;	// CLK
+			break;
+		case 1:			// CNT input (TODO)
+			break;
+		case 2:	if (mod & 0x80)	// TB: TA overflows
+				tmr->value--;
+			break;
+		case 3:			// TB: TA overflows while CNT is high (TODO)
+			break;
+	}
 	if (tmr->value == 0xffff) {				// overflow
 		tmr->value = tmr->inival;
 		tmr->overflow = 1;
@@ -495,10 +455,12 @@ void cia_sync(c64cia* cia, int ns, int nspt) {
 	cia->ns += ns;
 	while (cia->ns >= nspt) {	// to mks
 		cia->ns -= nspt;
-		cia_timer_tick(&cia->timerA);
+		int mod = ((cia->timerB.flags & 0x60) >> 5);
+		cia_timer_tick(&cia->timerA, (cia->timerA.flags & 0x20) >> 5);
 		if ((cia->timerA.flags & (CIA_CR_PBXON | CIA_CR_TOGGLE)) == CIA_CR_PBXON)	// reset b6, reg b if it was set by timer A in 1-pulse mode
 			cia->reg[11] &= ~0x40;
 		if (cia->timerA.overflow) {
+			mod |= 0x80;
 			cia->timerA.overflow = 0;
 			if (cia->timerA.flags & CIA_CR_PBXON) {			// overflow appears in bit 6 of reg B
 				if (cia->timerA.flags & CIA_CR_TOGGLE) {	// 1: inverse bit 6, 0:set 1 bit but reset it on next cycle
@@ -509,7 +471,7 @@ void cia_sync(c64cia* cia, int ns, int nspt) {
 			}
 			cia_irq(cia, CIA_IRQ_TIMA);
 		}
-		cia_timer_tick(&cia->timerB);
+		cia_timer_tick(&cia->timerB, mod);
 		if ((cia->timerB.flags & (CIA_CR_PBXON | CIA_CR_TOGGLE)) == CIA_CR_PBXON)
 			cia->reg[11] &= ~0x80;
 		if (cia->timerB.overflow) {
@@ -528,15 +490,15 @@ void cia_sync(c64cia* cia, int ns, int nspt) {
 
 void c64_sync(Computer* comp, int ns) {
 	// vic->cpu irq
-	if (comp->vid->intrq & VIC_IRQ_ALL) {
+	if (comp->vid->irq) {
 		comp->cpu->intrq |= MOS6502_INT_IRQ;
-		comp->vid->intrq = 0;
+		comp->vid->irq = 0;
 	}
 
 	if (comp->tape->on) {
 		int vol = comp->tape->volPlay;
 		tapSync(comp->tape, ns);
-		if ((vol > 0x7f) && (comp->tape->volPlay < 0x80)) {	// front 1->0
+		if ((vol > 0x80) && (comp->tape->volPlay < 0x80)) {	// front 1->0
 			cia_irq(&comp->c64.cia1, CIA_IRQ_FLAG);
 		}
 	}
