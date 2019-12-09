@@ -339,7 +339,7 @@ void tapSync(Tape* tap,int ns) {
 	if (tap->time < 1000) return;
 	int tks = tap->time / 1000;
 	tap->time = tap->time % 1000;
-	if (tap->on && (tap->blkCount > 0)) {
+	if (tap->on) {
 		if (tap->rec) {
 			if (tap->wait) {
 				if (tap->oldRec != tap->levRec) {
@@ -359,7 +359,7 @@ void tapSync(Tape* tap,int ns) {
 					tapStoreBlock(tap);
 				}
 			}
-		} else {
+		} else if (tap->blkCount > 0) {
 			tap->sigLen -= tks;
 			while (tap->sigLen < 1) {
 				tap->sigLen += tap->blkData[tap->block].data[tap->pos].size;
@@ -375,6 +375,12 @@ void tapSync(Tape* tap,int ns) {
 						if (tap->blkData[tap->block].breakPoint) tap->on = 0;
 					}
 				}
+			}
+		} else {
+			tap->sigLen -= tks;
+			while (tap->sigLen < 1) {
+				tap->volPlay = 0;
+				tap->sigLen += 5e5;	// .5 sec
 			}
 		}
 	} else {

@@ -463,6 +463,7 @@ int save_file(Computer* comp, const char* name, int id, int drv) {
 	if (!inf)
 		inf = file_ext_type(path);
 	if (inf) {
+		printf("filetype: %s\n", inf->name);
 		if (inf->save) {
 			err = inf->save(comp, path.toLocal8Bit().data(), drv);
 		} else {
