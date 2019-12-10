@@ -1,40 +1,44 @@
 #include <stdlib.h>
 #include "filetypes.h"
 
+static int zx_std_siglens[] = {PILOTLEN,SYNC1LEN,SYNC2LEN,SIGN0LEN,SIGN1LEN,0,-1};		// 0->SYNC3LEN
+
 void blkFromData(TapeBlock* blk, char* data, int len, int* sigLens) {
-	int i;
-	char* ptr = data;
-	char tmp = data[0];		// block type (00:head, xx:data)
-	blkClear(blk);
-	blk->plen = sigLens[0];
-	blk->s1len = sigLens[1];
-	blk->s2len = sigLens[2];
-	blk->len0 = sigLens[3];
-	blk->len1 = sigLens[4];
-	blk->pdur = (sigLens[6] == -1) ? ((tmp == 0) ? 8063 : 3223) : sigLens[6];
-	blk->breakPoint = 0;
-	blk->hasBytes = 1;
-	blk->isHeader = (tmp == 0) ? 1 : 0;
-	for (i = 0; i < (int)blk->pdur; i++)
-		blkAddPulse(blk, blk->plen,-1);
-	if (blk->s1len)
-		blkAddPulse(blk, blk->s1len,-1);
-	if (blk->s2len)
-		blkAddPulse(blk, blk->s2len,-1);
-	blk->dataPos = blk->sigCount;
-	for (i = 0; i < len; i++) {
-		blkAddByte(blk,*ptr,0,0);
-		ptr++;
-	}
 }
 
 TapeBlock tapDataToBlock(char* data,int len,int* sigLens) {
-	TapeBlock block;
-	block.sigCount = 0;
-	block.data = NULL;
-	blkFromData(&block, data, len, sigLens);
-//	printf("tapDataToBlock: %i bytes -> %i signals\t datapos = %i\n",len,block.sigCount,block.dataPos);
-	return block;
+	TapeBlock blk;
+	blk.data = NULL;
+	blkClear(&blk);
+	// blkAddPause(&blk, (data[0] & 0x80) ? 1e6 : 5e5);
+
+//	blkFromData(&block, data, len, sigLens);
+	int i;
+	char* ptr = data;
+	char tmp = data[0] & 0x80;	// block type (00:head, 80:data)
+	if (sigLens == NULL)
+		sigLens = zx_std_siglens;
+	blk.plen = sigLens[0];
+	blk.s1len = sigLens[1];
+	blk.s2len = sigLens[2];
+	blk.len0 = sigLens[3];
+	blk.len1 = sigLens[4];
+	blk.pdur = (sigLens[6] == -1) ? ((tmp == 0) ? 8063 : 3223) : sigLens[6];
+	blk.breakPoint = 0;
+	blk.hasBytes = 1;
+	blk.isHeader = (tmp == 0) ? 1 : 0;
+	for (i = 0; i < (int)blk.pdur; i++)
+		blkAddPulse(&blk, blk.plen,-1);
+	if (blk.s1len)
+		blkAddPulse(&blk, blk.s1len,-1);
+	if (blk.s2len)
+		blkAddPulse(&blk, blk.s2len,-1);
+	blk.dataPos = blk.sigCount;
+	for (i = 0; i < len; i++) {
+		blkAddByte(&blk,*ptr,0,0);
+		ptr++;
+	}
+	return blk;
 }
 
 int loadTAP(Computer* comp, const char* name, int drv) {
@@ -45,15 +49,13 @@ int loadTAP(Computer* comp, const char* name, int drv) {
 	unsigned short len;
 	char blockBuf[0x10000];
 	TapeBlock block;
-	int sigLens[] = {PILOTLEN,SYNC1LEN,SYNC2LEN,SIGN0LEN,SIGN1LEN,SYNC3LEN,-1};
 	tapEject(tape);
 
 	while (!feof(file)) {
 		len = fgetw(file);
 		if (!feof(file)) {
 			fread(blockBuf, len, 1, file);
-			block = tapDataToBlock(blockBuf, len, sigLens);
-			blkAddPause(&block, (block.pdur == 8063) ? 1e6 : 2e6);		// pause
+			block = tapDataToBlock(blockBuf, len, NULL);
 			tapAddBlock(tape, block);
 			blkClear(&block);
 		}

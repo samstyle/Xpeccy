@@ -281,10 +281,10 @@
              <property name="gridStyle">
               <enum>Qt::DotLine</enum>
              </property>
-             <attribute name="horizontalHeaderDefaultSectionSize">
+             <attribute name="horizontalHeaderMinimumSectionSize">
               <number>32</number>
              </attribute>
-             <attribute name="horizontalHeaderMinimumSectionSize">
+             <attribute name="horizontalHeaderDefaultSectionSize">
               <number>32</number>
              </attribute>
              <attribute name="horizontalHeaderStretchLastSection">
@@ -293,10 +293,10 @@
              <attribute name="verticalHeaderVisible">
               <bool>false</bool>
              </attribute>
-             <attribute name="verticalHeaderDefaultSectionSize">
+             <attribute name="verticalHeaderMinimumSectionSize">
               <number>17</number>
              </attribute>
-             <attribute name="verticalHeaderMinimumSectionSize">
+             <attribute name="verticalHeaderDefaultSectionSize">
               <number>17</number>
              </attribute>
             </widget>
@@ -1426,10 +1426,10 @@
                   <attribute name="horizontalHeaderVisible">
                    <bool>false</bool>
                   </attribute>
-                  <attribute name="horizontalHeaderDefaultSectionSize">
+                  <attribute name="horizontalHeaderMinimumSectionSize">
                    <number>100</number>
                   </attribute>
-                  <attribute name="horizontalHeaderMinimumSectionSize">
+                  <attribute name="horizontalHeaderDefaultSectionSize">
                    <number>100</number>
                   </attribute>
                   <attribute name="horizontalHeaderStretchLastSection">
@@ -1438,10 +1438,10 @@
                   <attribute name="verticalHeaderVisible">
                    <bool>false</bool>
                   </attribute>
-                  <attribute name="verticalHeaderDefaultSectionSize">
+                  <attribute name="verticalHeaderMinimumSectionSize">
                    <number>17</number>
                   </attribute>
-                  <attribute name="verticalHeaderMinimumSectionSize">
+                  <attribute name="verticalHeaderDefaultSectionSize">
                    <number>17</number>
                   </attribute>
                  </widget>
@@ -1626,7 +1626,7 @@
                   <item>
                    <widget class="QCheckBox" name="cbTapeFast">
                     <property name="text">
-                     <string>Fast loading</string>
+                     <string>Turbo</string>
                     </property>
                    </widget>
                   </item>
@@ -1683,10 +1683,10 @@
                   <attribute name="verticalHeaderVisible">
                    <bool>false</bool>
                   </attribute>
-                  <attribute name="verticalHeaderDefaultSectionSize">
+                  <attribute name="verticalHeaderMinimumSectionSize">
                    <number>17</number>
                   </attribute>
-                  <attribute name="verticalHeaderMinimumSectionSize">
+                  <attribute name="verticalHeaderDefaultSectionSize">
                    <number>17</number>
                   </attribute>
                  </widget>
@@ -2200,10 +2200,10 @@
                  <attribute name="verticalHeaderVisible">
                   <bool>false</bool>
                  </attribute>
-                 <attribute name="verticalHeaderDefaultSectionSize">
+                 <attribute name="verticalHeaderMinimumSectionSize">
                   <number>17</number>
                  </attribute>
-                 <attribute name="verticalHeaderMinimumSectionSize">
+                 <attribute name="verticalHeaderDefaultSectionSize">
                   <number>17</number>
                  </attribute>
                 </widget>

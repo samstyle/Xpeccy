@@ -21,7 +21,8 @@ class xThread : public QThread {
 	private:
 		void run();
 		void emuCycle(Computer*);
-		void tapeCatch(Computer*);
+		void tap_catch_load(Computer*);
+		void tap_catch_save(Computer*);
 };
 
 // extern QMutex emutex;

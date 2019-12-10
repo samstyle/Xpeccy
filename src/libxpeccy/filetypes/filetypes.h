@@ -30,6 +30,7 @@ enum {
 	ERR_Z80_HW,		// Z80 hw mode not supported
 
 	ERR_TAP_DATA,		// can't save tap because of not-standart blocks
+	ERR_TAP_EMPTY,		// 0 blocks at tape
 
 	ERR_TZX_SIGN,		// tzx signature error
 	ERR_TZX_UNKNOWN,	// tzx unsupported block
@@ -158,12 +159,12 @@ int loadC64prg(Computer*, const char*, int);
 
 int loadTAP(Computer*,const char*, int);
 int saveTAP(Computer*,const char*, int);
-void blkFromData(TapeBlock*, char*, int, int*);
 TapeBlock tapDataToBlock(char*,int,int*);
 
 int loadTZX(Computer*,const char*, int);
 
 int loadWAV(Computer*, const char*, int);
+int saveWAV(Computer*, const char*, int);
 
 int loadC64RawTap(Computer*, const char*, int);
 

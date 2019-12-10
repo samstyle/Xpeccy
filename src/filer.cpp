@@ -38,7 +38,7 @@ static xFileTypeInfo ft_tab[] = {
 	{FL_SPG, 0, ".spg", "*.spg", loadSPG, NULL, "SPG snapshot"},
 	{FL_TAP, 0, ".tap", "*.tap", loadTAP, saveTAP, "TAP tape image"},
 	{FL_TZX, 0, ".tzx", "*.tzx", loadTZX, NULL, "TZX tape image"},
-	{FL_WAV, 0, ".wav", "*.wav", loadWAV, NULL, "WAV tape image"},
+	{FL_WAV, 0, ".wav", "*.wav", loadWAV, saveWAV, "WAV tape image"},
 	{FL_SCL, 1, ".scl", "*.scl", loadSCL, saveSCL, "SCL disk image"},
 	{FL_TRD, 1, ".trd", "*.trd", loadTRD, saveTRD, "TRD disk image"},
 	{FL_TD0, 1, ".td0", "*.td0", loadTD0, NULL, "TD0 disk image"},
@@ -210,6 +210,7 @@ xFileTypeInfo* file_find_hw_ext(int hw, QString path) {
 	return inf;
 }
 
+/*
 xFileTypeInfo* file_ext_type(QString path) {
 	int i = 0;
 	QString ext = path.split(".").last();
@@ -227,6 +228,7 @@ xFileTypeInfo* file_ext_type(QString path) {
 	}
 	return inf;
 }
+*/
 
 static QString allfilt;
 
@@ -461,7 +463,8 @@ int save_file(Computer* comp, const char* name, int id, int drv) {
 	if (drv < 0)
 		drv = 0;
 	if (!inf)
-		inf = file_ext_type(path);
+		// inf = file_ext_type(path);
+		inf = file_find_hw_ext(comp->hw->id, path);
 	if (inf) {
 		printf("filetype: %s\n", inf->name);
 		if (inf->save) {

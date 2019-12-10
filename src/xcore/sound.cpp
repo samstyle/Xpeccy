@@ -65,9 +65,9 @@ int sndSync(Computer* comp) {
 				sbuf[posf & 0x3fff] = (sndLev.right >> 8) & 0xff;
 				posf++;
 			}
-			smpCount++;
 		}
 	}
+	smpCount++;
 	if (smpCount < sndChunks) return 0;
 	conf.snd.fill = 0;
 	smpCount = 0;

@@ -82,13 +82,13 @@ sndPair zx_vol(Computer* comp, sndVolume* sv) {
 	vol.left = 0;
 	vol.right = 0;
 	// 1:tape sound
-	if (comp->tape->on) {
+//	if (comp->tape->on) {
 		if (comp->tape->rec) {
 			lev = comp->tape->levRec ? 0x1000 * sv->tape / 100 : 0;
 		} else {
 			lev = (comp->tape->volPlay << 8) * sv->tape / 1600;
 		}
-	}
+//	}
 	// 2:beeper
 	// bcSync(comp->beep, -1);
 	lev += comp->beep->val * sv->beep / 6;
@@ -150,10 +150,7 @@ unsigned char xIn1F(Computer* comp, unsigned short port) {
 
 unsigned char xInFE(Computer* comp, unsigned short port) {
 	unsigned char res = kbdRead(comp->keyb, port) | 0xa0;		// set bits 7,5
-	if (comp->tape->on)
-		res |= ((comp->tape->volPlay & 0x80) ? 0x40 : 0x00);
-	else if (comp->beep->lev)
-		res |= 0x40;
+	res |= ((comp->tape->volPlay & 0x80) ? 0x40 : 0x00);
 	return res;
 }
 

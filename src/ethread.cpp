@@ -24,7 +24,7 @@ void xThread::stop() {
 //	mtx.unlock();
 }
 
-void xThread::tapeCatch(Computer* comp) {
+void xThread::tap_catch_load(Computer* comp) {
 	int blk = comp->tape->block;
 	if (blk >= comp->tape->blkCount) return;
 	if (conf.tape.fast && comp->tape->blkData[blk].hasBytes) {
@@ -41,14 +41,39 @@ void xThread::tapeCatch(Computer* comp) {
 			comp->cpu->ix = ix;
 			comp->cpu->de = 0;
 			comp->cpu->hl = 0;
-			tapNextBlock(comp->tape);
 		} else {
 			comp->cpu->hl = 0xff00;
 		}
 		comp->cpu->pc = 0x5df;
-	} else {
-		if (conf.tape.autostart)
-			emit tapeSignal(TW_STATE,TWS_PLAY);
+	} else if (conf.tape.autostart) {
+		emit tapeSignal(TW_STATE,TWS_PLAY);
+	}
+}
+
+void xThread::tap_catch_save(Computer* comp) {
+	if (conf.tape.fast) {
+		unsigned short de = comp->cpu->de;	// len
+		unsigned short ix = comp->cpu->ix;	// adr
+		unsigned char crc = comp->cpu->a;	// block type
+		unsigned char* buf = (unsigned char*)malloc(de + 2);
+
+		buf[0] = crc;
+		for(int i = 0; i < de; i++) {
+			buf[i + 1] = memRd(comp->mem, (ix + i) & 0xffff);
+			crc ^= buf[i + 1];
+		}
+		buf[de + 1] = crc;
+
+		TapeBlock blk = tapDataToBlock((char*)buf, de + 2, NULL);
+		tapAddBlock(comp->tape, blk);
+		blkClear(&blk);
+		comp->cpu->pc = 0x053e;
+		comp->cpu->bc = 0x000e;
+		comp->cpu->de = 0xffff;
+		comp->cpu->hl = 0x0000;
+		comp->cpu->af = 0x0051;
+	} else if (conf.tape.autostart) {
+		emit tapeSignal(TW_STATE, TWS_REC);
 	}
 }
 
@@ -63,11 +88,15 @@ void xThread::emuCycle(Computer* comp) {
 		} else {
 			sndNs += compExec(comp);
 			// tape trap
-			// FIXME: shit
-			if ((comp->mem->map[0].type == MEM_ROM) && comp->rom && !comp->dos) {
-				if (comp->cpu->pc == 0x56b) tapeCatch(comp);
-				if ((comp->cpu->pc == 0x5e2) && conf.tape.autostart)
+			if ((comp->hw->grp == HWG_ZX) && (comp->mem->map[0].type == MEM_ROM) && comp->rom && !comp->dos) {
+				if (comp->cpu->pc == 0x559) {			// load: ix:addr, de:len
+					tap_catch_load(comp);
+				} else if (comp->cpu->pc == 0x4d0) {		// save: ix:addr, de:len, a:block type(b7), hl:pilot len (1f80/0c98)?
+					tap_catch_save(comp);
+				}
+				if (conf.tape.autostart && !conf.tape.fast && ((comp->cpu->pc == 0x5df) || (comp->cpu->pc == 0x53a))) {
 					emit tapeSignal(TW_STATE,TWS_STOP);
+				}
 			}
 		}
 		// sound buffer update

@@ -17,7 +17,7 @@ extern "C" {
 #define	SYNC2LEN	208
 #define	SIGN0LEN	242
 #define	SIGN1LEN	485
-#define	SYNC3LEN	270
+// #define	SYNC3LEN	270
 
 enum {
 	TAPE_HEAD = 0,
@@ -99,6 +99,7 @@ void tapDelBlock(Tape*,int);
 void tapSwapBlocks(Tape*,int,int);
 
 void tapAddFile(Tape*,const char*,int,unsigned short,unsigned short,unsigned short,unsigned char*,int);
+TapeBlock makeTapeBlock(unsigned char*, int, int);
 
 void blkClear(TapeBlock*);
 void blkAddPulse(TapeBlock*, int, int);
