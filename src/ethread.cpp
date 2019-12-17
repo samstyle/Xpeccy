@@ -67,6 +67,7 @@ void xThread::tap_catch_save(Computer* comp) {
 		TapeBlock blk = tapDataToBlock((char*)buf, de + 2, NULL);
 		tapAddBlock(comp->tape, blk);
 		blkClear(&blk);
+		free(buf);
 		comp->cpu->pc = 0x053e;
 		comp->cpu->bc = 0x000e;
 		comp->cpu->de = 0xffff;
@@ -109,7 +110,7 @@ void xThread::emuCycle(Computer* comp) {
 			conf.vid.fcount++;
 			emit s_frame();
 		}
-	} while (!comp->brk && conf.snd.fill && !finish);
+	} while (!comp->brk && conf.snd.fill && !finish && !conf.emu.pause);
 	comp->nmiRequest = 0;
 }
 
@@ -128,7 +129,7 @@ void xThread::run() {
 			rzxGetFrame(comp);
 		}
 #endif
-		if (!comp->brk) {
+		if (!conf.emu.pause) {
 			emuCycle(comp);
 			if (comp->brk) {
 				conf.emu.pause |= PR_DEBUG;

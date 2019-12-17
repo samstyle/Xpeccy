@@ -14,8 +14,8 @@
 
 // new
 static unsigned char sbuf[0x4000];
-static int posf = 0;			// fill pos
-static int posp = 0;			// play pos
+static int posf = 0x1000;			// fill pos
+static int posp = 0x0004;			// play pos
 
 static int smpCount = 0;
 OutSys *sndOutput = NULL;
@@ -65,9 +65,9 @@ int sndSync(Computer* comp) {
 				sbuf[posf & 0x3fff] = (sndLev.right >> 8) & 0xff;
 				posf++;
 			}
+			smpCount++;
 		}
 	}
-	smpCount++;
 	if (smpCount < sndChunks) return 0;
 	conf.snd.fill = 0;
 	smpCount = 0;
@@ -152,15 +152,8 @@ void sdlPlayAudio(void*, Uint8* stream, int len) {
 	int dist = posf - posp;
 	while (dist < 0) dist += 0x4000;
 	while (dist > 0x3fff) dist -= 0x4000;
-	if (conf.emu.fast || conf.emu.pause) {
-		while (len > 0) {				// silence : put last sample
-			*(stream++) = sndLev.left & 0xff;
-			*(stream++) = (sndLev.left >> 8) & 0xff;
-			*(stream++) = sndLev.right & 0xff;
-			*(stream++) = (sndLev.right >> 8) & 0xff;
-			len -= 4;
-		}
-	} else if (dist < len) {				// overfill : fill with last sample of previous buf
+	if ((dist < len) || conf.emu.fast || conf.emu.pause) {				// overfill : fill with last sample of previous buf
+		// printf("overfill : %i %i\n", posf, posp);
 		while(len > 0) {
 			*(stream++) = sbuf[(posp - 4) & 0x3fff];
 			*(stream++) = sbuf[(posp - 3) & 0x3fff];
@@ -197,8 +190,9 @@ int sdlopen() {
 		SDL_PauseAudio(0);
 		res = 1;
 	}
-	posp = 0;
+	posp = 0x0004;
 	posf = 0x1000;
+	memset(sbuf, 0x00, 0x4000);
 	return res;
 }
 

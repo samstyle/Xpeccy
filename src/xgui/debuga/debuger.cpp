@@ -232,6 +232,9 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	lst.clear();
 	p.first = QIcon(":/images/commodore.png"); p.second = ui.ciaTab; lst.append(p);
 	tablist[HWG_COMMODORE] = lst;
+	lst.clear();
+	p.first = QIcon(":/images/speaker2.png"); p.second = ui.ayTab; lst.append(p);
+	tablist[HWG_MSX] = lst;
 
 	xLabel* arrl[16] = {
 		ui.labReg00, ui.labReg01, ui.labReg02, ui.labReg03, ui.labReg04,
@@ -2061,7 +2064,7 @@ void DebugWin::saveBrk(QString path) {
 	if (file.open(QFile::WriteOnly)) {
 		file.write("; Xpeccy deBUGa breakpoints list\n");
 		foreach(brk, conf.prof.cur->brkList) {
-			if (!brk.off) {
+			//if (!brk.off) {
 				switch(brk.type) {
 					case BRK_IOPORT:
 						nm = "IO";
@@ -2088,6 +2091,11 @@ void DebugWin::saveBrk(QString path) {
 						ar1 = gethexbyte((brk.adr >> 14) & 0xff);
 						ar2 = gethexword(brk.adr & 0x3fff);
 						break;
+					case BRK_IRQ:
+						nm = "IRQ";
+						ar1.clear();
+						ar2.clear();
+						break;
 					default:
 						nm.clear();
 						break;
@@ -2097,9 +2105,10 @@ void DebugWin::saveBrk(QString path) {
 					if (brk.fetch) flag.append("F");
 					if (brk.read) flag.append("R");
 					if (brk.write) flag.append("W");
+					if (brk.off) flag.append("0");
 					file.write(QString("%0:%1:%2:%3\n").arg(nm).arg(ar1).arg(ar2).arg(flag).toUtf8());
 				}
-			}
+			//}
 		}
 		file.close();
 	} else {
@@ -2128,6 +2137,7 @@ void DebugWin::openBrk() {
 				brk.fetch = list.at(3).contains("F") ? 1 : 0;
 				brk.read = list.at(3).contains("R") ? 1 : 0;
 				brk.write = list.at(3).contains("W") ? 1 : 0;
+				brk.off = list.at(3).contains("0") ? 1 : 0;
 				if (list.at(0) == "IO") {
 					brk.type = BRK_IOPORT;
 					brk.adr = list.at(1).toInt(&b0, 16) & 0xffff;
@@ -2147,6 +2157,8 @@ void DebugWin::openBrk() {
 					brk.type = BRK_MEMSLT;
 					brk.adr = (list.at(1).toInt(&b0, 16) & 0xff) << 14;
 					brk.adr |= (list.at(2).toInt(&b1, 16) & 0x3fff);
+				} else if (list.at(0) == "IRQ") {
+					brk.type = BRK_IRQ;
 				} else {
 					b0 = false;
 				}

@@ -723,6 +723,7 @@ void MainWin::xkey_press(int xkey, Qt::KeyboardModifiers mod) {
 				load_file(comp, NULL, FG_ALL, -1);
 				pause(false,PR_FILE);
 				checkState();
+				emit s_tape_upd(comp->tape);
 				break;
 			case XKEY_F4:
 				if (comp->tape->on) {
@@ -1208,6 +1209,7 @@ void MainWin::optApply() {
 		}
 	}
 #endif
+	emit s_tape_upd(comp->tape);
 	pause(false, PR_OPTS);
 }
 
