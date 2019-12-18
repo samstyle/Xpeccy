@@ -564,7 +564,7 @@ int prfSave(std::string nm) {
 	fprintf(file, "[GENERAL]\n\n");
 	fprintf(file, "lastdir = %s\n", prf->lastDir.c_str());
 
-	fprintf(file, "[MACHINE]\n\n");
+	fprintf(file, "\n[MACHINE]\n\n");
 	fprintf(file, "current = %s\n", prf->hwName.c_str());
 	fprintf(file, "memory = %i\n", comp->mem->ramSize >> 10);		// bytes to KB
 	fprintf(file, "cpu.type = %s\n", getCoreName(comp->cpu->type));

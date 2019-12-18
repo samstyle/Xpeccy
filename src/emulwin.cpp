@@ -401,6 +401,11 @@ void MainWin::focusOutEvent(QFocusEvent*) {
 	emit s_keywin_rall(comp->keyb);
 }
 
+void MainWin::moveEvent(QMoveEvent* ev) {
+	conf.xpos = ev->pos().x();
+	conf.ypos = ev->pos().y();
+}
+
 void MainWin::menuShow() {
 	layoutMenu->setDisabled(comp->vid->lockLayout);
 	pause(true,PR_MENU);

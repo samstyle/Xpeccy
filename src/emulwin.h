@@ -151,6 +151,7 @@ class MainWin : public QWidget {
 		void wheelEvent(QWheelEvent*);
 		void focusOutEvent(QFocusEvent*);
 		void timerEvent(QTimerEvent*);
+		void moveEvent(QMoveEvent*);
 };
 
 #endif

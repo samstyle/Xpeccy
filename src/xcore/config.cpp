@@ -104,6 +104,7 @@ void saveConfig() {
 	fprintf(cfile, "savepaths = %s\n", YESNO(conf.storePaths));
 	fprintf(cfile, "fdcturbo = %s\n", YESNO(fdcFlag & FDC_FAST));
 	fprintf(cfile, "port = %i\n", conf.port);
+	fprintf(cfile, "winpos = %i,%i\n",conf.xpos,conf.ypos);
 
 	fprintf(cfile, "\n[BOOKMARKS]\n\n");
 	foreach(xBookmark bkm, conf.bookmarkList) {
@@ -248,6 +249,8 @@ void loadConfig() {
 	newrs.gsFile.clear();
 	newrs.roms.clear();
 	conf.pal.clear();
+	conf.xpos = -1;
+	conf.ypos = -1;
 // init volumes
 	conf.snd.vol.master = 100;
 	conf.snd.vol.beep = 100;
@@ -427,6 +430,13 @@ void loadConfig() {
 					if (pnam=="savepaths") conf.storePaths = str2bool(pval) ? 1 : 0;
 					if (pnam == "fdcturbo") setFlagBit(str2bool(pval),&fdcFlag,FDC_FAST);
 					if (pnam == "port") conf.port = strtol(pval.c_str(), NULL, 10);
+					if (pnam == "winpos") {
+						vect = splitstr(pval, ",");
+						if (vect.size() > 1) {
+							conf.xpos = strtol(vect[0].c_str(), NULL, 10);
+							conf.ypos = strtol(vect[1].c_str(), NULL, 10);
+						}
+					}
 					break;
 				case SECT_TAPE:
 					if (pnam=="autoplay") conf.tape.autostart = str2bool(pval) ? 1 : 0;

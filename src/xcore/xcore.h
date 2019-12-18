@@ -163,7 +163,6 @@ extern std::map<std::string, int> shotFormat;
 // keymap
 
 void loadKeys();
-// void initKeyMap();
 void setKey(const char*,const char,const char);
 keyEntry getKeyEntry(int);
 int getKeyIdByName(const char*);
@@ -250,8 +249,9 @@ struct xConfig {
 	unsigned running:1;
 	unsigned storePaths:1;		// store tape/disk paths
 	unsigned defProfile:1;		// start @ default profile
-	// std::string keyMapName;		// use this keymap
 	double brdsize;			// 0.0 - 1.0 : border size
+	int xpos;			// window position
+	int ypos;
 	std::vector<xRomset> rsList;
 	std::vector<xLayout> layList;
 	std::vector<xBookmark> bookmarkList;

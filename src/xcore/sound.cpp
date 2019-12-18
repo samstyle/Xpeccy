@@ -153,7 +153,7 @@ void sdlPlayAudio(void*, Uint8* stream, int len) {
 	while (dist < 0) dist += 0x4000;
 	while (dist > 0x3fff) dist -= 0x4000;
 	if ((dist < len) || conf.emu.fast || conf.emu.pause) {				// overfill : fill with last sample of previous buf
-		// printf("overfill : %i %i\n", posf, posp);
+//		printf("overfill : %i %i\n", posf, posp);
 		while(len > 0) {
 			*(stream++) = sbuf[(posp - 4) & 0x3fff];
 			*(stream++) = sbuf[(posp - 3) & 0x3fff];
@@ -200,7 +200,7 @@ void sdlplay() {
 }
 
 void sdlclose() {
-	SDL_PauseAudio(1);
+//	SDL_PauseAudio(1);
 	SDL_CloseAudio();
 }
 

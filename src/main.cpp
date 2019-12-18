@@ -87,6 +87,9 @@ int main(int ac,char** av) {
 	xWatcher wutw(&mwin);
 	keyWindow keyw(&mwin);
 
+	if ((conf.xpos >= 0) && (conf.ypos >= 0))
+		mwin.move(conf.xpos, conf.ypos);
+
 	app.connect(&ethread, SIGNAL(s_frame()), &mwin, SLOT(d_frame()));
 	app.connect(&ethread, SIGNAL(dbgRequest()), &mwin, SLOT(doDebug()));
 	app.connect(&ethread, SIGNAL(tapeSignal(int,int)), &mwin,SLOT(tapStateChanged(int,int)));
@@ -150,10 +153,10 @@ int main(int ac,char** av) {
 				mwin.setProfile(std::string(av[i]));
 				i++;
 			} else if (!strcmp(parg,"--pc")) {
-				mwin.comp->cpu->pc = strtol(av[i],NULL,0);
+				mwin.comp->cpu->pc = strtol(av[i],NULL,0) & 0xffff;
 				i++;
 			} else if (!strcmp(parg,"--sp")) {
-				mwin.comp->cpu->sp = strtol(av[i],NULL,0);
+				mwin.comp->cpu->sp = strtol(av[i],NULL,0) & 0xffff;
 				i++;
 			} else if (!strcmp(parg,"-b") || !strcmp(parg,"--bank")) {
 				memSetBank(mwin.comp->mem, 0xc0, MEM_RAM, strtol(av[i],NULL,0), MEM_16K, NULL, NULL, NULL);
