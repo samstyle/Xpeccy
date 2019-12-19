@@ -29,8 +29,8 @@ void TapeWin::updProgress(Tape* tape) {
 	if (!tape->on || tape->rec) {
 		ui.tapeBar->setValue(0);
 	} else {
-		ui.tapeBar->setMaximum(tapGetBlockTime(tape, tape->block, -1));
-		ui.tapeBar->setValue(tapGetBlockTime(tape, tape->block, tape->pos));
+		ui.tapeBar->setMaximum(tape->blkData[tape->block].sigCount);
+		ui.tapeBar->setValue(tape->pos);
 	}
 }
 

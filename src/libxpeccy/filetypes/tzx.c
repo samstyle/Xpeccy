@@ -26,7 +26,7 @@ void tzxBlock10(FILE* file, Tape* tape) {
 	char* buf = (char*)malloc(len);
 	fread(buf, len, 1, file);
 	tape->tmpBlock = tapDataToBlock(buf, len, sigLens);
-	blkAddPause(&tape->tmpBlock, pause);
+	tape->tmpBlock.pause = pause;
 	tapAddBlock(tape, tape->tmpBlock);
 	blkClear(&tape->tmpBlock);
 	free(buf);
@@ -47,7 +47,7 @@ void tzxBlock11(FILE* file, Tape* tape) {
 	char* buf = (char*)malloc(len);
 	fread(buf, len, 1, file);
 	tape->tmpBlock = tapDataToBlock(buf, len, altLens);
-	blkAddPause(&tape->tmpBlock, pause);
+	tape->tmpBlock.pause = pause;
 	tapAddBlock(tape, tape->tmpBlock);
 	blkClear(&tape->tmpBlock);
 	free(buf);
@@ -61,8 +61,8 @@ void tzxBlock12(FILE* file, Tape* tape) {
 		blkAddWave(&tape->tmpBlock, len);	// pulse is 1+0 : 2 signals
 		count--;
 	}
-	tapAddBlock(tape, tape->tmpBlock);
-	blkClear(&tape->tmpBlock);
+//	tapAddBlock(tape, tape->tmpBlock);
+//	blkClear(&tape->tmpBlock);
 	tape->isData = 0;
 }
 
@@ -75,8 +75,8 @@ void tzxBlock13(FILE* file, Tape* tape) {
 		blkAddWave(&tape->tmpBlock, len);
 		count--;
 	}
-	tapAddBlock(tape, tape->tmpBlock);
-	blkClear(&tape->tmpBlock);
+//	tapAddBlock(tape, tape->tmpBlock);
+//	blkClear(&tape->tmpBlock);
 	tape->isData = 0;
 }
 
@@ -93,7 +93,7 @@ void tzxBlock14(FILE* file, Tape* tape) {
 		blkAddByte(&tape->tmpBlock, data & 0xff, bit0, bit1);
 		len--;
 	}
-	blkAddPause(&tape->tmpBlock, pause);
+	tape->tmpBlock.pause = pause;
 	tapAddBlock(tape, tape->tmpBlock);
 	blkClear(&tape->tmpBlock);
 }
@@ -129,7 +129,7 @@ void tzxBlock15(FILE* file, Tape* tape) {
 	}
 	if (memt > 0)
 		blkAddPulse(&tape->tmpBlock, memt, -1);
-	blkAddPause(&tape->tmpBlock, pause);
+	tape->tmpBlock.pause = pause;
 }
 
 // #16: c64 block data	TODO
@@ -139,7 +139,7 @@ void tzxBlock15(FILE* file, Tape* tape) {
 void tzxBlock20(FILE* file, Tape* tape) {
 	int len = fgetw(file) * 1000;
 	if (len) {
-		blkAddPause(&tape->tmpBlock, len);
+		tape->tmpBlock.pause = len;
 	} else {
 		tape->tmpBlock.breakPoint = 1;
 	}
@@ -148,7 +148,12 @@ void tzxBlock20(FILE* file, Tape* tape) {
 // #21,<len:1>,{text:len}		group start
 void tzxBlock21(FILE* file, Tape* tape) {
 	int len = fgetc(file);
-	fseek(file, len, SEEK_CUR);
+	char* buf = (char*)malloc(len + 1);
+	fread(buf, len, 1, file);
+	buf[len] = 0;
+	printf("%s\n", buf);
+	free(buf);
+//	fseek(file, len, SEEK_CUR);
 }
 
 // #22					group end
@@ -306,13 +311,10 @@ int loadTZX(Computer* comp, const char* name, int drv) {
 			type = fgetc(file);		// block type (will be FF @ eof)
 			if (feof(file)) break;		// is it the end?
 			i = 0;
-			while(i < 256) {
-				if ((tzxBlockTab[i].id == 0xff) || (tzxBlockTab[i].id == type)) {
-					tzxBlockTab[i].callback(file, tape);
-					i = 256;
-				}
+			printf("block %.2X\n", type);
+			while((tzxBlockTab[i].id != 0xff) && (tzxBlockTab[i].id != type))
 				i++;
-			}
+			tzxBlockTab[i].callback(file, tape);
 		}
 		tape->path = (char*)realloc(tape->path,sizeof(char) * (strlen(name) + 1));
 		strcpy(tape->path,name);

@@ -10,9 +10,6 @@ TapeBlock tapDataToBlock(char* data,int len,int* sigLens) {
 	TapeBlock blk;
 	blk.data = NULL;
 	blkClear(&blk);
-	// blkAddPause(&blk, (data[0] & 0x80) ? 1e6 : 5e5);
-
-//	blkFromData(&block, data, len, sigLens);
 	int i;
 	char* ptr = data;
 	char tmp = data[0] & 0x80;	// block type (00:head, 80:data)
@@ -27,6 +24,7 @@ TapeBlock tapDataToBlock(char* data,int len,int* sigLens) {
 	blk.breakPoint = 0;
 	blk.hasBytes = 1;
 	blk.isHeader = (tmp == 0) ? 1 : 0;
+	blk.pause = 1e6;
 	for (i = 0; i < (int)blk.pdur; i++)
 		blkAddPulse(&blk, blk.plen,-1);
 	if (blk.s1len)

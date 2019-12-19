@@ -52,6 +52,7 @@ typedef struct {
 	int len1;
 	int pdur;
 	int dataPos;
+	int pause;		// pause after block (mks)
 	int sigCount;
 	TapeSignal* data;
 } TapeBlock;

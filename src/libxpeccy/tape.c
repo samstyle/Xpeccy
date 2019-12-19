@@ -307,7 +307,6 @@ int tapPlay(Tape* tap) {
 	if (tap->block < tap->blkCount) {
 		tap->rec = 0;
 		tap->on = 1;
-		tap->sigLen = 1e6;		// 1sec pause before 1st block. for (turbo || autostart) - before each block
 		tap->volPlay = (tap->volPlay & 0x80) ? 0x7f : 0x81;
 	}
 	return tap->on;
@@ -358,16 +357,18 @@ void tapSync(Tape* tap, int ns) {
 			}
 		} else if (tap->blkCount > 0) {
 			tap->sigLen -= mks;
-			while (tap->sigLen < 1) {
+			while ((tap->sigLen < 1) && tap->on) {
 				if (tap->pos >= (int)tap->blkData[tap->block].sigCount) {
-					tap->sigLen = 1e6;					// 1sec pause after block (working only for !turbo !autostart)
 					tap->volPlay = (tap->volPlay & 0x80) ? 0x7f : 0x81;	// change amplitude to close last signal pulse
+					tap->sigLen = tap->blkData[tap->block].pause;
 					tap->blkChange = 1;
 					tap->block++;
 					tap->pos = 0;
 					if (tap->block >= (int)tap->blkCount) {
 						tap->on = 0;
 					} else {
+						//tap->sigLen = tap->blkData[tap->block].pause;		// pause after block (working only for !turbo !autostart)
+						// tap->volPlay = (tap->volPlay & 0x80) ? 0x7f : 0x81;	// change level
 						if (tap->blkData[tap->block].breakPoint)
 							tap->on = 0;
 					}

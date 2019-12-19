@@ -273,7 +273,8 @@ int dasmCode(Computer* comp, unsigned short adr, dasmData& drow) {
 			} else if (drow.adr > drow.oadr) {
 				drow.icon = QString(":/images/arrup.png");
 			} else {
-				drow.icon = QString(":/images/redCircle.png");
+				//drow.icon = QString(":/images/redCircle.png");
+				drow.icon = QString(":/images/arrleft.png");
 			}
 		}
 	}
