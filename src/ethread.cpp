@@ -41,6 +41,7 @@ void xThread::tap_catch_load(Computer* comp) {
 			comp->cpu->ix = ix;
 			comp->cpu->de = 0;
 			comp->cpu->hl = 0;
+			tapNextBlock(comp->tape);
 		} else {
 			comp->cpu->hl = 0xff00;
 		}
