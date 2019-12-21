@@ -15,13 +15,11 @@ xThread::xThread() {
 	sndNs = 0;
 	conf.emu.fast = 0;
 	finish = 0;
-//	mtx.lock();
 }
 
 void xThread::stop() {
 	finish = 1;
 	sleepy = 0;
-//	mtx.unlock();
 }
 
 void xThread::tap_catch_load(Computer* comp) {
@@ -41,10 +39,10 @@ void xThread::tap_catch_load(Computer* comp) {
 			comp->cpu->ix = ix;
 			comp->cpu->de = 0;
 			comp->cpu->hl = 0;
-			tapNextBlock(comp->tape);
 		} else {
 			comp->cpu->hl = 0xff00;
 		}
+		tapNextBlock(comp->tape);
 		comp->cpu->pc = 0x5df;
 	} else if (conf.tape.autostart) {
 		emit tapeSignal(TW_STATE,TWS_PLAY);
@@ -80,7 +78,6 @@ void xThread::tap_catch_save(Computer* comp) {
 }
 
 void xThread::emuCycle(Computer* comp) {
-//	comp->frmStrobe = 0;
 	sndNs = 0;
 	conf.snd.fill = 1;
 	do {
@@ -91,7 +88,7 @@ void xThread::emuCycle(Computer* comp) {
 			sndNs += compExec(comp);
 			// tape trap
 			if ((comp->hw->grp == HWG_ZX) && (comp->mem->map[0].type == MEM_ROM) && comp->rom && !comp->dos) {
-				if (comp->cpu->pc == 0x559) {			// load: ix:addr, de:len
+				if (comp->cpu->pc == 0x559) {			// load: ix:addr, de:len (0x580 ?)
 					tap_catch_load(comp);
 				} else if (comp->cpu->pc == 0x4d0) {		// save: ix:addr, de:len, a:block type(b7), hl:pilot len (1f80/0c98)?
 					tap_catch_save(comp);
