@@ -1,9 +1,9 @@
-#ifndef X_CORE_H
-#define	X_CORE_H
+#pragma once
 
 #include <string>
 #include <vector>
 #include <map>
+
 #ifdef __linux
 #include <linux/limits.h>
 #endif
@@ -170,6 +170,18 @@ const char* getKeyNameById(int);
 int qKey2id(int);
 int key2qid(int);
 
+typedef struct {
+	int xkey;		// xkey code
+	int xdef;		// xkey default
+	int xfoo;		// function code
+	const char* fname;	// function name
+} xKeyMapper;
+
+extern xKeyMapper fmap_tab[];
+int key_to_func(int, int);
+int set_func_key(int, const char*);
+void clear_func_tab();
+
 // bookmarks
 
 typedef struct {
@@ -195,7 +207,7 @@ typedef struct {
 	std::string name;
 	std::string gsFile;
 	std::string fntFile;
-	std::vector<xRomFile> roms;
+	QList<xRomFile> roms;
 } xRomset;
 
 xRomset* findRomset(std::string);
@@ -252,9 +264,9 @@ struct xConfig {
 	double brdsize;			// 0.0 - 1.0 : border size
 	int xpos;			// window position
 	int ypos;
-	std::vector<xRomset> rsList;
-	std::vector<xLayout> layList;
-	std::vector<xBookmark> bookmarkList;
+	QList<xRomset> rsList;
+	QList<xLayout> layList;
+	QList<xBookmark> bookmarkList;
 	QMap<QString, xAdr> labels;
 	QMap<QString, QColor> pal;
 	unsigned short port;
@@ -264,7 +276,7 @@ struct xConfig {
 	} emu;
 	struct {
 		unsigned changed:1;
-		std::vector<xProfile*> list;
+		QList<xProfile*> list;
 		xProfile* cur;
 	} prof;
 	struct {
@@ -290,7 +302,7 @@ struct xConfig {
 	struct {
 		SDL_Joystick* joy;
 		int dead;
-		std::vector<xJoyMapEntry> map;	// gamepad map for current profile
+		QList<xJoyMapEntry> map;	// gamepad map for current profile
 	} joy;
 	struct {
 		unsigned noLeds:1;
@@ -325,5 +337,3 @@ struct xConfig {
 };
 
 extern xConfig conf;
-
-#endif

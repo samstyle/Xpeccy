@@ -33,7 +33,8 @@ enum {
 	SECT_LEDS,
 	SECT_INPUT,
 	SECT_SDC,
-	SECT_PALETTE
+	SECT_PALETTE,
+	SECT_KEYS,
 };
 
 std::map<std::string, int> shotFormat;
@@ -189,6 +190,20 @@ void saveConfig() {
 		if (col.isValid())
 			fprintf(cfile, "%s = %s\n", nam.toLocal8Bit().data(), col.name().toLocal8Bit().data());
 	}
+
+	fprintf(cfile, "\n[KEYS]\n\n");
+	int i = 0;
+	keyEntry kent;
+	while (fmap_tab[i].xfoo != ENDKEY) {
+		fprintf(cfile, "%s = ", fmap_tab[i].fname);
+		if (fmap_tab[i].xkey != ENDKEY) {
+			kent = getKeyEntry(fmap_tab[i].xkey);
+			fprintf(cfile, "%s", kent.name);
+		}
+		fprintf(cfile, "\n");
+		i++;
+	}
+
 	fclose(cfile);
 }
 
@@ -229,6 +244,7 @@ void loadConfig() {
 			throw(0);
 		}
 	}
+	clear_func_tab();
 	clearProfiles();
 	conf.bookmarkList.clear();
 	char buf[0x4000];
@@ -244,6 +260,7 @@ void loadConfig() {
 	xRomFile rfile;
 	size_t pos;
 	std::string tms,fnam;
+	int xkey;
 	int fprt;
 	newrs.fntFile.clear();
 	newrs.gsFile.clear();
@@ -288,8 +305,14 @@ void loadConfig() {
 			if (pnam=="[LEDS]") section = SECT_LEDS;
 			if (pnam=="[INPUT]") section = SECT_INPUT;
 			if (pnam=="[PALETTE]") section = SECT_PALETTE;
+			if (pnam=="[KEYS]") section = SECT_KEYS;
 		} else {
 			switch (section) {
+				case SECT_KEYS:
+					// pnam = func.name, pval = key.name
+					xkey = getKeyIdByName(pval.c_str());
+					set_func_key(xkey, pnam.c_str());
+					break;
 				case SECT_PALETTE:
 					col = QColor(pval.c_str());
 					if (col.isValid())
@@ -429,7 +452,7 @@ void loadConfig() {
 					if (pnam=="startdefault") conf.defProfile = str2bool(pval) ? 1 : 0;
 					if (pnam=="savepaths") conf.storePaths = str2bool(pval) ? 1 : 0;
 					if (pnam == "fdcturbo") setFlagBit(str2bool(pval),&fdcFlag,FDC_FAST);
-					if (pnam == "port") conf.port = strtol(pval.c_str(), NULL, 10);
+					if (pnam == "port") conf.port = strtol(pval.c_str(), NULL, 10) & 0xffff;
 					if (pnam == "winpos") {
 						vect = splitstr(pval, ",");
 						if (vect.size() > 1) {

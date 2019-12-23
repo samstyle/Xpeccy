@@ -251,7 +251,7 @@ void MainWin::mapJoystick(Computer* comp, int type, int num, int st) {
 	QList<xJoyMapEntry> presslist;
 	// foreach(xJoyMapEntry& xjm, conf.joy.map) {
 	// for(xJoyMapEntry& xjm : conf.joy.map) {
-	for (size_t i = 0; i < conf.joy.map.size(); i++) {
+	for (int i = 0; i < conf.joy.map.size(); i++) {
 		xJoyMapEntry& xjm = conf.joy.map[i];
 		if ((type == xjm.type) && (num == xjm.num)) {
 			if ((state == 0) && (type != JOY_HAT)) {
@@ -330,7 +330,7 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 #endif
 // buttons autorepeat switcher
 		// for(xJoyMapEntry& xjm : conf.joy.map) {
-		for (size_t i = 0; i < conf.joy.map.size(); i++) {
+		for (int i = 0; i < conf.joy.map.size(); i++) {
 			xJoyMapEntry& xjm = conf.joy.map[i];
 			if (xjm.cnt > 0) {
 				xjm.cnt--;
@@ -402,8 +402,8 @@ void MainWin::focusOutEvent(QFocusEvent*) {
 }
 
 void MainWin::moveEvent(QMoveEvent* ev) {
-	conf.xpos = ev->pos().x();
-	conf.ypos = ev->pos().y();
+	conf.xpos = pos().x();
+	conf.ypos = pos().y();
 }
 
 void MainWin::menuShow() {
@@ -596,7 +596,6 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 
 void MainWin::xkey_press(int xkey, Qt::KeyboardModifiers mod) {
 	keyEntry kent = getKeyEntry(xkey);
-//	qDebug() << kent.name << kent.zxKey.key1 << kent.zxKey.key2;
 	if (pckAct->isChecked()) {
 		xt_press(comp->keyb, kent.keyCode);
 		if (comp->hw->keyp) {
@@ -608,6 +607,7 @@ void MainWin::xkey_press(int xkey, Qt::KeyboardModifiers mod) {
 			// rzxWin->stop();
 		}
 	} else if (mod & Qt::AltModifier) {
+		xkey = key_to_func(xkey, 2);
 		switch(xkey) {
 			case XKEY_ENTER:
 				vid_set_fullscreen(!conf.vid.fullScreen);
@@ -647,11 +647,13 @@ void MainWin::xkey_press(int xkey, Qt::KeyboardModifiers mod) {
 			case XKEY_F4:
 				close();
 				break;
-			case XKEY_F7:
+			//case XKEY_F7:
+			case XKEY_SCRSHOT:
 				scrCounter = conf.scrShot.count;
 				scrInterval = 0;
 				break;	// ALT+F7 combo
-			case XKEY_F12:
+			//case XKEY_F12:
+			case XKEY_RESET:
 				compReset(comp,RES_DOS);
 				emit s_rzx_stop();
 				break;
@@ -689,10 +691,7 @@ void MainWin::xkey_press(int xkey, Qt::KeyboardModifiers mod) {
 				break;
 		}
 	} else {
-//		if (ev->modifiers() & Qt::ShiftModifier) {
-//			if (comp->hw->keyr)
-//				comp->hw->keyr(comp, getKeyEntry(XKEY_LSHIFT));
-//		}
+		xkey = key_to_func(xkey, 1);
 		switch(xkey) {
 			case XKEY_PAUSE:
 				conf.emu.pause ^= PR_PAUSE;
@@ -714,37 +713,43 @@ void MainWin::xkey_press(int xkey, Qt::KeyboardModifiers mod) {
 				conf.emu.fast ^= 1;
 				updateHead();
 				break;
-			case XKEY_F1:
+			//case XKEY_F1:
+			case XKEY_OPTIONS:
 				pause(true, PR_OPTS);
 				emit s_options(conf.prof.cur);
 				break;
-			case XKEY_F2:
+			//case XKEY_F2:
+			case XKEY_SAVE:
 				pause(true,PR_FILE);
 				save_file(comp, NULL, FG_ALL, -1);
 				pause(false,PR_FILE);
 				break;
-			case XKEY_F3:
+			//case XKEY_F3:
+			case XKEY_LOAD:
 				pause(true,PR_FILE);
 				load_file(comp, NULL, FG_ALL, -1);
 				pause(false,PR_FILE);
 				checkState();
 				emit s_tape_upd(comp->tape);
 				break;
-			case XKEY_F4:
+			//case XKEY_F4:
+			case XKEY_TAP_PLAY:
 				if (comp->tape->on) {
 					tapStateChanged(TW_STATE,TWS_STOP);
 				} else {
 					tapStateChanged(TW_STATE,TWS_PLAY);
 				}
 				break;
-			case XKEY_F5:
+			//case XKEY_F5:
+			case XKEY_TAP_REC:
 				if (comp->tape->on) {
 					tapStateChanged(TW_STATE,TWS_STOP);
 				} else {
 					tapStateChanged(TW_STATE,TWS_REC);
 				}
 				break;
-			case XKEY_F7:
+			//case XKEY_F7:
+			case XKEY_SCRSHOT:
 				if (scrCounter == 0) {
 					scrCounter = 1;
 					scrInterval = 0;
@@ -761,26 +766,22 @@ void MainWin::xkey_press(int xkey, Qt::KeyboardModifiers mod) {
 				}
 				*/
 				break;
-			case XKEY_F9:
+			//case XKEY_F9:
+			case XKEY_SAVECHA:
 				pause(true,PR_FILE);
 				saveChanged();
 				pause(false,PR_FILE);
 				break;
-			case XKEY_F10:
+			//case XKEY_F10:
+			case XKEY_NMI:
 				if (comp->cpu->type != CPU_Z80) break;
 				comp->nmiRequest = 1;
 				break;
-			case XKEY_F11:
-				/*
-				if (tapeWin->isVisible()) {
-					tapeWin->hide();
-				} else {
-					tapeWin->buildList(comp->tape);
-					tapeWin->show();
-				}
-				*/
+			case XKEY_TAP_SHOW:
+				emit s_tape_show();
 				break;
-			case XKEY_F12:
+			//case XKEY_F12:
+			case XKEY_RESET:
 				compReset(comp,RES_DEFAULT);
 				emit s_rzx_stop();
 				break;

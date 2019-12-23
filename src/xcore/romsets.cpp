@@ -6,7 +6,7 @@
 
 xRomset* findRomset(std::string nm) {
 	xRomset* res = NULL;
-	for (unsigned int i=0; i < conf.rsList.size(); i++) {
+	for (int i=0; i < conf.rsList.size(); i++) {
 		if (conf.rsList[i].name == nm) {
 			res = &conf.rsList[i];
 		}

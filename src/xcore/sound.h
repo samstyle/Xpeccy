@@ -1,5 +1,4 @@
-#ifndef X_SOUND_H
-#define X_SOUND_H
+#pragma once
 
 #include <vector>
 #include <string>
@@ -35,14 +34,10 @@ extern OutSys* sndOutput;
 extern int nsPerSample;
 
 void sndInit();
-// void sndCalibrate(Computer*);
 void addOutput(std::string, bool(*)(),void(*)(),void(*)());
 void setOutput(const char*);
 
-// int sndOpen();
 void sndClose();
 int sndSync(Computer*);
 
 void sndDebug();
-
-#endif

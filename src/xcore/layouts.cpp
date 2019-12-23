@@ -4,7 +4,7 @@
 
 xLayout* findLayout(std::string nm) {
 	xLayout* res = NULL;
-	for (unsigned int i = 0; i < conf.layList.size(); i++) {
+	for (int i = 0; i < conf.layList.size(); i++) {
 		if (conf.layList[i].name == nm) res = &conf.layList[i];
 	}
 	return res;

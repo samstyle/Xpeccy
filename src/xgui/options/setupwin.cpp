@@ -678,7 +678,7 @@ void SetupWin::apply() {
 // input
 	conf.prof.cur->jmapName = getRFSData(ui.cbPadMap).toStdString();
 // tools
-	conf.port = ui.sbPort->value();
+	conf.port = ui.sbPort->value() & 0xffff;
 // leds
 	conf.led.mouse = ui.cbMouseLed->isChecked() ? 1 : 0;
 	conf.led.joy = ui.cbJoyLed->isChecked() ? 1 : 0;
@@ -703,7 +703,7 @@ void SetupWin::reject() {
 
 void SetupWin::layNameCheck(QString nam) {
 	layUi.okButton->setEnabled(!layUi.layName->text().isEmpty());
-	for (uint i = 0; i < conf.layList.size(); i++) {
+	for (int i = 0; i < conf.layList.size(); i++) {
 		if ((QString(conf.layList[i].name.c_str()) == nam) && (eidx != i)) {
 			layUi.okButton->setEnabled(false);
 		}
@@ -982,8 +982,8 @@ void SetupWin::buildkeylist() {
 	fillRFBox(ui.keyMapBox,lst);
 }
 
-std::vector<HardWare> getHardwareList() {
-	std::vector<HardWare> res;
+QList<HardWare> getHardwareList() {
+	QList<HardWare> res;
 	int idx = 0;
 	while (hwTab[idx].name) {
 		res.push_back(hwTab[idx]);
@@ -1010,7 +1010,7 @@ static xMemName memNameTab[] = {
 };
 
 void SetupWin::setmszbox(int idx) {
-	std::vector<HardWare> list = getHardwareList();
+	QList<HardWare> list = getHardwareList();
 	int t = list[idx].mask;
 	QString oldText = ui.mszbox->currentText();
 	ui.mszbox->clear();
@@ -1094,8 +1094,8 @@ void SetupWin::copyToTape() {
 		row = idx[i].row();
 		if (diskGetSectorsData(comp->dif->fdc->flop[dsk],cat[row].trk, cat[row].sec+1, buf, cat[row].slen)) {
 			if (cat[row].slen == (cat[row].hlen + ((cat[row].llen == 0) ? 0 : 1))) {
-				start = (cat[row].hst << 8) + cat[row].lst;
-				len = (cat[row].hlen << 8) + cat[row].llen;
+				start = ((cat[row].hst << 8) + cat[row].lst) & 0xffff;
+				len = ((cat[row].hlen << 8) + cat[row].llen) & 0xffff;
 				line = (cat[row].ext == 'B') ? (buf[start] + (buf[start+1] << 8)) & 0xffff : 0x8000;
 				memset(name,0x20,10);
 				memcpy(name,(char*)cat[row].name,8);

@@ -7,9 +7,9 @@
 
 // KEYMAPS
 
-keyEntry keyMap[256];			// current keymap (init at start from keyMapInit[]
+static keyEntry keyMap[256];			// current keymap (init at start from keyMapInit[]
 
-keyEntry keyMapInit[] = {
+static keyEntry keyMapInit[] = {
 	{"1",XKEY_1,{'1',0},{0,0},{'1',0},{'1',0x31},0x16},
 	{"2",XKEY_2,{'2',0},{0,0},{'2',0},{'2',0x32},0x1e},
 	{"3",XKEY_3,{'3',0},{0,0},{'3',0},{'3',0x33},0x26},
@@ -182,7 +182,61 @@ void loadKeys() {
 	}
 }
 
-// key translation
+// redefine keys xkey->function
+
+xKeyMapper fmap_tab[] = {
+	{ENDKEY, XKEY_F1, XKEY_OPTIONS, "key.options"},
+	{ENDKEY, XKEY_F2, XKEY_SAVE, "key.save"},
+	{ENDKEY, XKEY_F3, XKEY_LOAD, "key.load"},
+	{ENDKEY, XKEY_F4, XKEY_TAP_PLAY, "key.tape.play"},
+	{ENDKEY, XKEY_F5, XKEY_TAP_REC, "key.tape.rec"},
+	{ENDKEY, XKEY_F7, XKEY_SCRSHOT, "key.screenshot"},
+	{ENDKEY, XKEY_F9, XKEY_SAVECHA, "key.fast.save"},
+	{ENDKEY, XKEY_F10, XKEY_NMI, "key.nmi"},
+	{ENDKEY, XKEY_F12, XKEY_RESET, "key.reset"},
+	{ENDKEY, ENDKEY, XKEY_TAP_SHOW, "key.tape.show"},
+	{ENDKEY, ENDKEY, ENDKEY, NULL}
+};
+
+int key_to_func(int xkey, int zone) {
+	if (xkey == ENDKEY) return xkey;
+	int i = 0;
+	int fnd = 0;
+	while ((fmap_tab[i].xfoo != ENDKEY) && !fnd) {
+		if (fmap_tab[i].xkey == ENDKEY) {
+			if (fmap_tab[i].xdef == xkey)
+				fnd = 1;
+			else
+				i++;
+		} else if (fmap_tab[i].xkey == xkey) {
+			fnd = 1;
+		} else {
+			i++;
+		}
+	}
+	if (((((fmap_tab[i].xfoo & 0xff0000) >> 16) == zone) || !zone) && (fmap_tab[i].xfoo != ENDKEY))
+		xkey = fmap_tab[i].xfoo;
+	return xkey;
+}
+
+int set_func_key(int xkey, const char* fname) {
+	int i = 0;
+	while ((strcmp(fname, fmap_tab[i].fname)) && (fmap_tab[i].xfoo != ENDKEY))
+		i++;
+	if (fmap_tab[i].xfoo != ENDKEY)
+		fmap_tab[i].xkey = xkey;
+	return fmap_tab[i].xfoo;
+}
+
+void clear_func_tab() {
+	int i = 0;
+	while (fmap_tab[i].xfoo != ENDKEY) {
+		fmap_tab[i].xkey = ENDKEY;
+		i++;
+	}
+}
+
+// key translation qt->xkey
 
 struct keyTrans {
 	int keyLat;		// Qt::Key_Q : qt keycode @ QWERTY layout
@@ -190,7 +244,7 @@ struct keyTrans {
 	int keyId;		// internal key id = XKEY_*
 };
 
-keyTrans ktTab[] = {
+static keyTrans ktTab[] = {
 	{Qt::Key_0, Qt::Key_0, XKEY_0},
 	{Qt::Key_1, Qt::Key_1, XKEY_1},
 	{Qt::Key_2, Qt::Key_2, XKEY_2},

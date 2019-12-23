@@ -13,7 +13,7 @@
 xProfile* findProfile(std::string nm) {
 	if (nm == "") return conf.prof.cur;
 	xProfile* res = NULL;
-	for (uint i = 0; i < conf.prof.list.size(); i++) {
+	for (int i = 0; i < conf.prof.list.size(); i++) {
 		if (conf.prof.list[i]->name == nm)
 			res = conf.prof.list[i];
 	}
@@ -98,7 +98,7 @@ int delProfile(std::string nm) {
 		prfSetCurrent("default");
 	}
 	// remove all such profiles from list & free mem
-	for (uint i = 0; i < conf.prof.list.size(); i++) {
+	for (int i = 0; i < conf.prof.list.size(); i++) {
 		if (conf.prof.list[i]->name == nm) {
 			strcpy(cpath, conf.path.confDir);
 			strcat(cpath, SLASH);
@@ -155,14 +155,14 @@ bool prfSetLayout(xProfile* prf, std::string nm) {
 }
 
 void prfChangeRsName(std::string oldName, std::string newName) {
-	for (uint i = 0; i < conf.prof.list.size(); i++) {
+	for (int i = 0; i < conf.prof.list.size(); i++) {
 		if (conf.prof.list[i]->rsName == oldName)
 			conf.prof.list[i]->rsName = newName;
 	}
 }
 
 void prfChangeLayName(std::string oldName, std::string newName) {
-	for (uint i = 0; i < conf.prof.list.size(); i++) {
+	for (int i = 0; i < conf.prof.list.size(); i++) {
 		if (conf.prof.list[i]->layName == oldName)
 			conf.prof.list[i]->layName = newName;
 	}

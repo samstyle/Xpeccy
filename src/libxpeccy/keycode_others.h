@@ -1,8 +1,7 @@
+#pragma once
+
 #ifndef __linux
 #ifndef __win32
-
-#ifndef X_KEYCODE_H
-#define X_KEYCODE_H
 
 enum {
 	ENDKEY = 0,
@@ -116,10 +115,20 @@ enum {
 	XKEY_N6,
 	XKEY_N7,
 	XKEY_N8,
-	XKEY_N9
-};
+	XKEY_N9,
 
-#endif
+	XKEY_OPTIONS,
+	XKEY_SAVE,
+	XKEY_LOAD,
+	XKEY_TAP_PLAY,
+	XKEY_TAP_REC,
+	XKEY_SHOWTAPE,
+	XKEY_SCRSHOT,
+	XKEY_SAVECHA,
+	XKEY_NMI,
+	XKEY_RESET
+
+};
 
 #endif
 #endif
