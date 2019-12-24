@@ -24,7 +24,6 @@ TapeBlock tapDataToBlock(char* data,int len,int* sigLens) {
 	blk.breakPoint = 0;
 	blk.hasBytes = 1;
 	blk.isHeader = (tmp == 0) ? 1 : 0;
-	blk.pause = 1e6;
 	for (i = 0; i < (int)blk.pdur; i++)
 		blkAddPulse(&blk, blk.plen,-1);
 	if (blk.s1len)
@@ -54,6 +53,7 @@ int loadTAP(Computer* comp, const char* name, int drv) {
 		if (!feof(file)) {
 			fread(blockBuf, len, 1, file);
 			block = tapDataToBlock(blockBuf, len, NULL);
+			blkAddPause(&block, 1e6);
 			tapAddBlock(tape, block);
 			blkClear(&block);
 		}

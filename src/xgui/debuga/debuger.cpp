@@ -218,6 +218,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 	p.first = QIcon(":/images/display.png"); p.second = ui.scrTab; lst.append(p);
 	p.first = QIcon(":/images/speaker2.png"); p.second = ui.ayTab; lst.append(p);
+	p.first = QIcon(":/images/tape.png"); p.second = ui.tapeTab; lst.append(p);
 	p.first = QIcon(":/images/floppy.png"); p.second = ui.fdcTab; lst.append(p);
 	tablist[HWG_ZX] = lst;
 	lst.clear();
@@ -231,9 +232,11 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	tablist[HWG_BK] = lst;
 	lst.clear();
 	p.first = QIcon(":/images/commodore.png"); p.second = ui.ciaTab; lst.append(p);
+	p.first = QIcon(":/images/tape.png"); p.second = ui.tapeTab; lst.append(p);
 	tablist[HWG_COMMODORE] = lst;
 	lst.clear();
 	p.first = QIcon(":/images/speaker2.png"); p.second = ui.ayTab; lst.append(p);
+	p.first = QIcon(":/images/tape.png"); p.second = ui.tapeTab; lst.append(p);
 	tablist[HWG_MSX] = lst;
 
 	xLabel* arrl[16] = {
@@ -285,17 +288,12 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.dasmTable->setFocus();
 
 // disasm table
-//	ui.dasmTable->setColumnWidth(0,90);
-//	ui.dasmTable->setColumnWidth(1,85);
-//	ui.dasmTable->setColumnWidth(3,50);
 	ui.dasmTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_LABEL));
 	ui.dasmTable->setItemDelegateForColumn(1, new xItemDelegate(XTYPE_DUMP));
 
 	ui.cbDasmMode->addItem("CPU", XVIEW_CPU);
 	ui.cbDasmMode->addItem("RAM", XVIEW_RAM);
 	ui.cbDasmMode->addItem("ROM", XVIEW_ROM);
-
-	// ui.dasmTable->setFont(QFont("://DejaVuSansMono.ttf",8));
 
 	connect(ui.cbDasmMode, SIGNAL(currentIndexChanged(int)),this,SLOT(setDasmMode()));
 	connect(ui.sbDasmPage, SIGNAL(valueChanged(int)),this,SLOT(setDasmMode()));
@@ -444,6 +442,8 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.gbModeGroup, SIGNAL(buttonClicked(int)), this, SLOT(fillGBoy()));
 	connect(ui.sbTileset, SIGNAL(valueChanged(int)), this, SLOT(fillGBoy()));
 	connect(ui.sbTilemap, SIGNAL(valueChanged(int)), this, SLOT(fillGBoy()));
+
+	connect(ui.tabsPanel, SIGNAL(currentChanged(int)), this, SLOT(fillAll()));
 
 	// setFixedSize(size());
 	setFixedHeight(size().height());
@@ -824,7 +824,7 @@ void drawBar(QLabel* lab, int lev, int max) {
 }
 
 void DebugWin::fillAY() {
-	if (ui.tabsPanel->indexOf(ui.ayTab) < 0) return;
+	if (ui.tabsPanel->currentWidget() != ui.ayTab) return;
 	aymChip* chp = comp->ts->chipA;
 	ui.leToneA->setText(gethexword(((chp->reg[1] << 8) | chp->reg[0]) & 0x0fff));
 	ui.leToneB->setText(gethexword(((chp->reg[3] << 8) | chp->reg[2]) & 0x0fff));
@@ -845,8 +845,61 @@ void DebugWin::fillAY() {
 	ui.labLevN->setText(chp->chanN.lev ? "1" : "0");
 
 	drawBar(ui.labBeep, comp->beep->val, 256);
+}
+
+void DebugWin::fillTape() {
+	if (ui.tabsPanel->currentWidget() != ui.tapeTab) return;
 	drawBar(ui.labTapein, comp->tape->volPlay, 256);
 	drawBar(ui.labTapeout, comp->tape->levRec, 1);
+	// draw tape diagram
+	int wid = 330;
+	int hei = 100;
+	int pos;
+	int bnr;
+	int amp;
+	int oamp = -1;
+	int x = 0;
+	int time = 0;
+	Tape* tape = comp->tape;
+	TapeBlock* blk;
+	QPixmap pxm(wid, hei);
+	QPainter pnt;
+	pxm.fill(Qt::black);
+	pnt.begin(&pxm);
+	bnr = tape->block;
+	pnt.setPen(Qt::green);
+	if ((tape->blkCount > 0) && (bnr < comp->tape->blkCount)) {
+		blk = &tape->blkData[bnr];
+		pos = tape->pos;
+		time = tape->on ? tape->sigLen : 0;
+		while (x < wid) {
+			if (pos < blk->sigCount) {		// check end of block
+				amp = blk->data[pos].vol * hei / 256;
+				if (oamp < 0)
+					oamp = amp;
+				while ((time > 0) && (x < wid)) {
+					pnt.drawLine(x, oamp, x + 1, amp);
+					oamp = amp;
+					time -= 20;
+					x++;
+				}
+				time += blk->data[pos].size;
+				pos++;
+			} else {
+				bnr++;
+				if (bnr < tape->blkCount) {	// not the last block
+					blk = &tape->blkData[bnr];
+					pos = 0;
+				} else {			// end of tape: stop
+					x = wid;
+				}
+			}
+		}
+	}
+	pnt.setPen(Qt::red);
+	pnt.drawLine(0, hei/2, wid, hei/2);
+	pnt.end();
+	ui.labTapeDiag->setPixmap(pxm);
 }
 
 bool DebugWin::fillAll() {
@@ -858,22 +911,27 @@ bool DebugWin::fillAll() {
 	fillGBoy();
 	drawNes();
 	fillAY();
+	fillTape();
 	// cia
-	ui.cia1timera->setText(QString("%0 / %1").arg(gethexword(comp->c64.cia1.timerA.value)).arg(gethexword(comp->c64.cia1.timerA.inival)));
-	ui.cia1timerb->setText(QString("%0 / %1").arg(gethexword(comp->c64.cia1.timerB.value)).arg(gethexword(comp->c64.cia1.timerB.inival)));
-	ui.cia1irq->setText(getbinbyte(comp->c64.cia1.intrq));
-	ui.cia1inten->setText(getbinbyte(comp->c64.cia1.inten));
-	ui.cia1cra->setText(getbinbyte(comp->c64.cia1.timerA.flags));
-	ui.cia1crb->setText(getbinbyte(comp->c64.cia1.timerB.flags));
-	ui.cia2timera->setText(QString("%0 / %1").arg(gethexword(comp->c64.cia2.timerA.value)).arg(gethexword(comp->c64.cia2.timerA.inival)));
-	ui.cia2timerb->setText(QString("%0 / %1").arg(gethexword(comp->c64.cia2.timerB.value)).arg(gethexword(comp->c64.cia2.timerB.inival)));
-	ui.cia2irq->setText(getbinbyte(comp->c64.cia2.intrq));
-	ui.cia2inten->setText(getbinbyte(comp->c64.cia2.inten));
-	ui.cia2cra->setText(getbinbyte(comp->c64.cia2.timerA.flags));
-	ui.cia2crb->setText(getbinbyte(comp->c64.cia2.timerB.flags));
+	if (ui.tabsPanel->currentWidget() == ui.ciaTab)	{
+		ui.cia1timera->setText(QString("%0 / %1").arg(gethexword(comp->c64.cia1.timerA.value)).arg(gethexword(comp->c64.cia1.timerA.inival)));
+		ui.cia1timerb->setText(QString("%0 / %1").arg(gethexword(comp->c64.cia1.timerB.value)).arg(gethexword(comp->c64.cia1.timerB.inival)));
+		ui.cia1irq->setText(getbinbyte(comp->c64.cia1.intrq));
+		ui.cia1inten->setText(getbinbyte(comp->c64.cia1.inten));
+		ui.cia1cra->setText(getbinbyte(comp->c64.cia1.timerA.flags));
+		ui.cia1crb->setText(getbinbyte(comp->c64.cia1.timerB.flags));
+		ui.cia2timera->setText(QString("%0 / %1").arg(gethexword(comp->c64.cia2.timerA.value)).arg(gethexword(comp->c64.cia2.timerA.inival)));
+		ui.cia2timerb->setText(QString("%0 / %1").arg(gethexword(comp->c64.cia2.timerB.value)).arg(gethexword(comp->c64.cia2.timerB.inival)));
+		ui.cia2irq->setText(getbinbyte(comp->c64.cia2.intrq));
+		ui.cia2inten->setText(getbinbyte(comp->c64.cia2.inten));
+		ui.cia2cra->setText(getbinbyte(comp->c64.cia2.timerA.flags));
+		ui.cia2crb->setText(getbinbyte(comp->c64.cia2.timerB.flags));
+	}
 
 	updateScreen();
-	ui.brkTab->update();
+	if (ui.tabsPanel->currentWidget() == ui.brkTab)	{
+		ui.brkTab->update();
+	}
 
 	ui.labRX->setNum(comp->vid->ray.x);
 	setSignal(ui.labRX, comp->vid->hblank);
@@ -971,7 +1029,7 @@ QImage getGBPal(Video* gbv) {
 }
 
 void DebugWin::fillGBoy() {
-	if (ui.tabsPanel->indexOf(ui.gbTab) < 0) return;
+	if (ui.tabsPanel->currentWidget() != ui.gbTab) return;
 	QImage img;
 	int tset = ui.sbTileset->value();
 	int tmap = ui.sbTilemap->value();
@@ -1038,7 +1096,7 @@ QImage dbgNesSpriteImg(Video* vid, unsigned short tadr) {
 }
 
 void DebugWin::drawNes() {
-	if (ui.tabsPanel->indexOf(ui.nesTab) < 0) return;
+	if (ui.tabsPanel->currentWidget() != ui.nesTab) return;
 	unsigned short adr = 0;
 	unsigned short tadr = 0;
 	QImage img;
@@ -1156,7 +1214,7 @@ void DebugWin::fillRZX() {
 // fdc
 
 void DebugWin::fillFDC() {
-	if (ui.tabsPanel->indexOf(ui.fdcTab) < 0) return;
+	if (ui.tabsPanel->currentWidget() != ui.fdcTab) return;
 	ui.fdcBusyL->setText(comp->dif->fdc->idle ? "0" : "1");
 	ui.fdcComL->setText(comp->dif->fdc->idle ? "--" : gethexbyte(comp->dif->fdc->com));
 	ui.fdcIrqL->setText(comp->dif->fdc->irq ? "1" : "0");
@@ -1976,7 +2034,7 @@ void DebugWin::loadDump() {
 // screen
 
 void DebugWin::updateScreen() {
-	if (ui.tabsPanel->indexOf(ui.scrTab) < 0) return;
+	if (ui.tabsPanel->currentWidget() != ui.scrTab) return;
 	int flag = ui.cbScrAtr->isChecked() ? 1 : 0;
 	flag |= ui.cbScrPix->isChecked() ? 2 : 0;
 	flag |= ui.cbScrGrid->isChecked() ? 4 : 0;

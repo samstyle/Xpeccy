@@ -17,7 +17,7 @@ extern "C" {
 #define	SYNC2LEN	208
 #define	SIGN0LEN	242
 #define	SIGN1LEN	485
-// #define	SYNC3LEN	270
+#define	SYNC3LEN	270
 
 enum {
 	TAPE_HEAD = 0,
@@ -52,7 +52,7 @@ typedef struct {
 	int len1;
 	int pdur;
 	int dataPos;
-	int pause;		// pause after block (mks)
+//	int pause;		// pause after block (mks)
 	int sigCount;
 	TapeSignal* data;
 } TapeBlock;

@@ -88,12 +88,14 @@ void xThread::emuCycle(Computer* comp) {
 			sndNs += compExec(comp);
 			// tape trap
 			if ((comp->hw->grp == HWG_ZX) && (comp->mem->map[0].type == MEM_ROM) && comp->rom && !comp->dos) {
-				if (comp->cpu->pc == 0x559) {			// load: ix:addr, de:len (0x580 ?)
+				if (comp->cpu->pc == 0x562) {			// load: ix:addr, de:len (0x580 ?)
 					tap_catch_load(comp);
 				} else if (comp->cpu->pc == 0x4d0) {		// save: ix:addr, de:len, a:block type(b7), hl:pilot len (1f80/0c98)?
 					tap_catch_save(comp);
 				}
 				if (conf.tape.autostart && !conf.tape.fast && ((comp->cpu->pc == 0x5df) || (comp->cpu->pc == 0x53a))) {
+					comp->tape->sigLen += 1e6;
+					tapNextBlock(comp->tape);
 					emit tapeSignal(TW_STATE,TWS_STOP);
 				}
 			}

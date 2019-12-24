@@ -109,6 +109,7 @@ class DebugWin : public QDialog {
 		void fillStack();
 		void fillFDC();
 		void fillAY();
+		void fillTape();
 
 		void setFlagNames(const char*);
 		void chLayout();

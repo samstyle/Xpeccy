@@ -41,6 +41,7 @@ void blkClear(TapeBlock *blk) {
 
 // add signal (1 level change)
 void blkAddPulse(TapeBlock* blk, int len, int vol) {
+	if (len < 1) return;
 	if ((blk->sigCount & 0xffff) == 0) {
 		blk->data = realloc(blk->data,(blk->sigCount + 0x10000) * sizeof(TapeSignal));	// allocate mem for next 0x10000 signals
 	}
@@ -48,27 +49,31 @@ void blkAddPulse(TapeBlock* blk, int len, int vol) {
 		vol = blk->vol ? 0xb0 : 0x50;
 	blk->data[blk->sigCount].size = len;
 	blk->data[blk->sigCount].vol = vol & 0xff;
-	blk->vol ^= 1;
+	blk->vol = (vol & 0x80) ? 0 : 1;
 	blk->sigCount++;
 }
 
 // add pause. duration in mks
 void blkAddPause(TapeBlock* blk, int len) {
-	blkAddPulse(blk,len,-1);
+	if (len < 1) return;
+	blkAddPulse(blk,len/2, 0x81);
+	blkAddPulse(blk,len/2, 0x7f);
 }
 
 // add pulse (2 signals)
 void blkAddWave(TapeBlock* blk, int len) {
-	blkAddPulse(blk,len, -1);
-	blkAddPulse(blk,len, -1);
+	if (len < 1) return;
+	blkAddPulse(blk,len, 0xb0);
+	blkAddPulse(blk,len, 0x50);
 }
 
 // add byte. b0len/b1len = duration of 0/1 bits. When 0, it takes from block signals data
 void blkAddByte(TapeBlock* blk, unsigned char data, int b0len, int b1len) {
 	if (b0len == 0) b0len = blk->len0;
 	if (b1len == 0) b1len = blk->len1;
-	for (int msk = 0x80; msk > 0; msk >>= 1) {
-		blkAddWave(blk, (data & msk) ? b1len : b0len);
+	for (int i = 0; i < 8; i++) {
+		blkAddWave(blk, (data & 0x80) ? b1len : b0len);
+		data <<= 1;
 	}
 }
 
@@ -116,6 +121,7 @@ int tapGetBlockData(Tape* tape, int blockNum, unsigned char* dst,int maxsize) {
 	return bytePos;
 }
 
+// TODO: leak ?
 char* tapGetBlockHeader(Tape* tap, int blk) {
 	char* res = (char*)malloc(16 * sizeof(char));
 	TapeBlock* block = &tap->blkData[blk];
@@ -359,18 +365,15 @@ void tapSync(Tape* tap, int ns) {
 			tap->sigLen -= mks;
 			while ((tap->sigLen < 1) && tap->on) {
 				if (tap->pos >= (int)tap->blkData[tap->block].sigCount) {
-					tap->volPlay = (tap->volPlay & 0x80) ? 0x7f : 0x81;	// change amplitude to close last signal pulse
-					tap->sigLen = tap->blkData[tap->block].pause;
+//					tap->volPlay = (tap->volPlay & 0x80) ? 0x7f : 0x81;	// change amplitude to close last signal pulse
+//					tap->sigLen += tap->blkData[tap->block].pause;
 					tap->blkChange = 1;
 					tap->block++;
 					tap->pos = 0;
 					if (tap->block >= (int)tap->blkCount) {
 						tap->on = 0;
-					} else {
-						//tap->sigLen = tap->blkData[tap->block].pause;		// pause after block (working only for !turbo !autostart)
-						// tap->volPlay = (tap->volPlay & 0x80) ? 0x7f : 0x81;	// change level
-						if (tap->blkData[tap->block].breakPoint)
-							tap->on = 0;
+					} else if (tap->blkData[tap->block].breakPoint) {
+						tap->on = 0;
 					}
 				} else {
 					tap->sigLen += tap->blkData[tap->block].data[tap->pos].size;

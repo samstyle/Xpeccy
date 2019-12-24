@@ -233,8 +233,6 @@ Computer* compCreate() {
 	comp->vid = vidCreate(vid_mrd_cb, comp);
 	vidSetMode(comp->vid, VID_NORMAL);
 
-	comp->frqMul = 1;
-	compSetBaseFrq(comp, 3.5);
 // input
 	comp->keyb = keyCreate();
 	comp->joy = joyCreate();
@@ -255,7 +253,7 @@ Computer* compCreate() {
 	comp->beep = bcCreate();
 	comp->nesapu = apuCreate(nes_apu_ext_rd, comp);
 // baseconf
-//					0   1   2   3   4   5   6   7   8    9    A    B    C    D    E    F
+//			0   1   2   3   4   5   6   7   8   9   A   B   C    D    E    F
 	char blnm[] = {'x','B','o','o','t',000,000,000,000,000,000,000,0x38,0x98,0x00,0x00};
 	char bcnm[] = {'x','E','v','o',' ','0','.','5','2',000,000,000,0x89,0x99,0x00,0x00};
 	memcpy(comp->evo.blVer,blnm,16);
@@ -268,6 +266,8 @@ Computer* compCreate() {
 #endif
 	gsReset(comp->gs);
 	comp->cmos.data[17] = 0xaa;
+	comp->frqMul = 1;
+	compSetBaseFrq(comp, 3.5);
 	return comp;
 }
 
