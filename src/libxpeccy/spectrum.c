@@ -421,6 +421,7 @@ void compUpdateTimings(Computer* comp) {
 			vidUpdateTimings(comp->vid, perNoTurbo >> 1);
 			break;
 	}
+	comp->tape->t_ns = perNoTurbo;
 	comp->nsPerTick = perNoTurbo / comp->frqMul;
 #ifdef ISDEBUG
 	// printf("%f x %i : %i ns\n",comp->cpuFrq,comp->frqMul,comp->nsPerTick);

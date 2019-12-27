@@ -36,7 +36,6 @@ void blkClear(TapeBlock *blk) {
 	blk->hasBytes = 0;
 	blk->sigCount = 0;
 	blk->dataPos = -1;
-	blk->vol = 0;
 }
 
 // add signal (1 level change)
@@ -56,15 +55,14 @@ void blkAddPulse(TapeBlock* blk, int len, int vol) {
 // add pause. duration in mks
 void blkAddPause(TapeBlock* blk, int len) {
 	if (len < 1) return;
-	blkAddPulse(blk,len/2, 0x81);
-	blkAddPulse(blk,len/2, 0x7f);
+	blkAddPulse(blk, len, -1);
 }
 
-// add pulse (2 signals)
+// add wave (2 pulses)
 void blkAddWave(TapeBlock* blk, int len) {
 	if (len < 1) return;
-	blkAddPulse(blk,len, 0xb0);
-	blkAddPulse(blk,len, 0x50);
+	blkAddPulse(blk,len, -1);
+	blkAddPulse(blk,len, -1);
 }
 
 // add byte. b0len/b1len = duration of 0/1 bits. When 0, it takes from block signals data
@@ -365,8 +363,6 @@ void tapSync(Tape* tap, int ns) {
 			tap->sigLen -= mks;
 			while ((tap->sigLen < 1) && tap->on) {
 				if (tap->pos >= (int)tap->blkData[tap->block].sigCount) {
-//					tap->volPlay = (tap->volPlay & 0x80) ? 0x7f : 0x81;	// change amplitude to close last signal pulse
-//					tap->sigLen += tap->blkData[tap->block].pause;
 					tap->blkChange = 1;
 					tap->block++;
 					tap->pos = 0;
@@ -389,6 +385,7 @@ void tapSync(Tape* tap, int ns) {
 			}
 		}
 	} else {
+		// tape stoped
 		tap->sigLen -= mks;
 		while (tap->sigLen < 1) {
 			tap->volPlay = (tap->volPlay & 0x80) ? 0x7f : 0x81;
@@ -400,9 +397,13 @@ void tapSync(Tape* tap, int ns) {
 void tapNextBlock(Tape* tap) {
 	tap->block++;
 	tap->blkChange = 1;
-	if (tap->block < tap->blkCount) return;
-	tap->block = 0;
-	tapStop(tap);
+	if (tap->block < tap->blkCount) {
+		tap->blkData[tap->block].vol = 0;
+		tap->volPlay = 0x7f;
+	} else {
+		tap->block = 0;
+		tapStop(tap);
+	}
 }
 
 // add file to tape

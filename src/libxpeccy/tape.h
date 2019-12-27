@@ -17,7 +17,7 @@ extern "C" {
 #define	SYNC2LEN	208
 #define	SIGN0LEN	242
 #define	SIGN1LEN	485
-#define	SYNC3LEN	270
+// #define	SYNC3LEN	270
 
 enum {
 	TAPE_HEAD = 0,
@@ -68,6 +68,7 @@ typedef struct {
 	unsigned oldRec:1;	// previous rec signal
 
 	int time;
+	int t_ns;
 	unsigned char volPlay;
 	int block;
 	int pos;

@@ -17,9 +17,11 @@ typedef struct {
 	void(*callback)(FILE*, Tape*);
 } tzxBCall;
 
-#define NS_TICK 282
+// 1T = 1/3500000 sec
+#define NS_TICK 285
+// #define NS_TICK tape->t_ns
 
-static int sigLens[] = {PILOTLEN,SYNC1LEN,SYNC2LEN,SIGN0LEN,SIGN1LEN,SYNC3LEN,-1};	// 0->SYNC3LEN
+static int sigLens[] = {PILOTLEN,SYNC1LEN,SYNC2LEN,SIGN0LEN,SIGN1LEN,0,-1};	// 0->SYNC3LEN
 
 // #10: <pause:2>,<datalen:2>,{data}
 void tzxBlock10(FILE* file, Tape* tape) {
@@ -33,7 +35,7 @@ void tzxBlock10(FILE* file, Tape* tape) {
 	blkClear(&tape->tmpBlock);
 }
 
-// #11: <pilot:2>,<sync1:2>,<sync2:2>,<bit0:2>,<bit1:2>,<pilotcnt:2>,<pause:2>,<datalen:3>,{data}
+// #11: <pilot:2>,<sync1:2>,<sync2:2>,<bit0:2>,<bit1:2>,<pilotcnt:2>,<usedbits:1>,<pause:2>,<datalen:3>,{data}
 void tzxBlock11(FILE* file, Tape* tape) {
 	int altLens[7];
 	altLens[0] = fgetw(file) * NS_TICK / 1000;	// pilot
@@ -47,10 +49,17 @@ void tzxBlock11(FILE* file, Tape* tape) {
 	int pause = fgetw(file) * 1000;
 	int len = fgett(file);		// freadLen(file, 3);
 	char* buf = (char*)malloc(len);
-	fread(buf, len, 1, file);
-	tape->tmpBlock = tapDataToBlock(buf, len, altLens);
+	fread(buf, len-1, 1, file);
+	tape->tmpBlock = tapDataToBlock(buf, len-1, altLens);
+	int data = fgetc(file);		// last byte
+	if (bits > 8) bits = 8;
+	if (bits != 8) tape->isData = 0;
+	while (bits > 0) {
+		blkAddWave(&tape->tmpBlock, (data & 0x80) ? altLens[4] : altLens[3]);
+		bits--;
+		data <<= 1;
+	}
 	blkAddPause(&tape->tmpBlock, pause);
-	//tape->tmpBlock.pause = pause;
 	tapAddBlock(tape, tape->tmpBlock);
 	blkClear(&tape->tmpBlock);
 	free(buf);
@@ -61,21 +70,19 @@ void tzxBlock12(FILE* file, Tape* tape) {
 	int len = fgetw(file) * NS_TICK / 1000;	// Length of one pulse in T-states -> mks
 	int count = fgetw(file);		// Number of pulses
 	while (count > 0) {
-		blkAddWave(&tape->tmpBlock, len);	// pulse is 1+0 : 2 signals
+		blkAddPulse(&tape->tmpBlock, len, -1);
 		count--;
 	}
-//	tapAddBlock(tape, tape->tmpBlock);
-//	blkClear(&tape->tmpBlock);
 	tape->isData = 0;
 }
 
-// #13: <count:1>,{len:2}		pulse seq
+// #13: <count:1>,{len:2*count}		pulse seq
 void tzxBlock13(FILE* file, Tape* tape) {
 	int len;
 	int count = fgetc(file);
 	while (count > 0) {
 		len = fgetw(file) * NS_TICK / 1000;
-		blkAddWave(&tape->tmpBlock, len);
+		blkAddPulse(&tape->tmpBlock, len, -1);
 		count--;
 	}
 	tape->isData = 0;
@@ -86,18 +93,22 @@ void tzxBlock14(FILE* file, Tape* tape) {
 	int bit0 = fgetw(file) * NS_TICK / 1000;
 	int bit1 = fgetw(file) * NS_TICK / 1000;
 	int data;
-	int i;
 	int bits = fgetc(file);			// used bits in last byte
 	printf("%i : %i : last bits %i\n",bit0,bit1,bits);
 	int pause = fgetw(file) * 1000;	// ms -> mks
 	int len = fgett(file);
-	while (len > 0) {
+	while (len > 1) {
 		data = fgetc(file);
-		for (i = 0; i < 8; i++) {
-			blkAddWave(&tape->tmpBlock, (data & 0x80) ? bit1 : bit0);
-			data <<= 1;
-		}
+		blkAddByte(&tape->tmpBlock, data & 0xff, bit0, bit1);
 		len--;
+	}
+	// last byte
+	data = fgetc(file);
+	if (bits > 8) bits = 8;
+	while (bits > 0) {
+		blkAddWave(&tape->tmpBlock, (data & 0x80) ? bit1 : bit0);
+		bits--;
+		data <<= 1;
 	}
 	blkAddPause(&tape->tmpBlock, pause);
 	tape->isData = 0;
@@ -135,7 +146,7 @@ void tzxBlock15(FILE* file, Tape* tape) {
 	if (memt > 0)
 		blkAddPulse(&tape->tmpBlock, memt, -1);
 	blkAddPause(&tape->tmpBlock, pause);
-	//tape->tmpBlock.pause = pause;
+	tape->isData = 0;
 }
 
 // #16: c64 block data	TODO
@@ -146,7 +157,6 @@ void tzxBlock20(FILE* file, Tape* tape) {
 	int len = fgetw(file) * 1000;
 	if (len) {
 		blkAddPause(&tape->tmpBlock, len);
-		//tape->tmpBlock.pause = len;
 	} else {
 		tape->tmpBlock.breakPoint = 1;
 	}

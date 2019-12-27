@@ -28,8 +28,6 @@ void dummyOut(Computer* comp, unsigned short port, unsigned char val) {
 
 void zx_sync(Computer* comp, int ns) {
 	// devices
-//	comp->beep->accum += ns;
-//	comp->tapCount += ns;
 	difSync(comp->dif, ns);
 	gsSync(comp->gs, ns);
 	saaSync(comp->saa, ns);
