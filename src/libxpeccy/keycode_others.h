@@ -1,7 +1,7 @@
 #pragma once
 
 #ifndef __linux
-#ifndef __win32
+#ifndef __WIN32
 
 enum {
 	ENDKEY = 0,
@@ -122,7 +122,7 @@ enum {
 	XKEY_LOAD,
 	XKEY_TAP_PLAY,
 	XKEY_TAP_REC,
-	XKEY_SHOWTAPE,
+	XKEY_TAP_SHOW,
 	XKEY_SCRSHOT,
 	XKEY_SAVECHA,
 	XKEY_NMI,
