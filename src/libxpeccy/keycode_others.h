@@ -1,7 +1,6 @@
 #pragma once
 
-#ifndef __linux
-#ifndef __WIN32
+#ifdef __APPLE__
 
 enum {
 	ENDKEY = 0,
@@ -117,7 +116,7 @@ enum {
 	XKEY_N8,
 	XKEY_N9,
 
-	XKEY_OPTIONS,
+	XKEY_OPTIONS = 0x10001,
 	XKEY_SAVE,
 	XKEY_LOAD,
 	XKEY_TAP_PLAY,
@@ -130,5 +129,4 @@ enum {
 
 };
 
-#endif
 #endif
