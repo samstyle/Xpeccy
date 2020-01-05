@@ -79,5 +79,6 @@
         <file>images/speaker2.png</file>
         <file>images/palette.png</file>
         <file>images/commodore.png</file>
+        <file>images/rewind.png</file>
     </qresource>
 </RCC>

@@ -99,12 +99,13 @@ typedef struct {
 	unsigned rom:1;			// b4,7ffd
 	unsigned dos:1;			// BDI dos
 	unsigned cpm:1;
+	unsigned ext:1;
 
 	unsigned evenM1:1;		// scorpion wait mode
 	unsigned contMem:1;		// contended mem
 	unsigned contIO:1;		// contended IO
 
-	unsigned irq:1;
+//	unsigned irq:1;
 	unsigned brkirq:1;		// break on irq
 
 	double fps;

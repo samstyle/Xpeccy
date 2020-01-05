@@ -748,11 +748,9 @@ void vidSync(Video* vid, int ns) {
 		}
 		if (vid->ray.x == vid->send.x) {		// screen end H
 			vid->hbrd = 1;
-		}
-		if (vid->ray.x == vid->bord.x) {	// screen start H
+		} else if (vid->ray.x == vid->bord.x) {	// screen start H
 			vid->hbrd = 0;
 		}
-
 		// generate int
 		// TODO: ray.xb(yb) used here only
 		if (vid->intFRAME) vid->intFRAME--;

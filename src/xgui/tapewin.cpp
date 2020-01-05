@@ -15,6 +15,7 @@ TapeWin::TapeWin(QWidget *par):QDialog(par) {
 	connect(ui.recBut,SIGNAL(released()),this,SLOT(doRec()));
 	connect(ui.stopBut,SIGNAL(released()),this,SLOT(doStop()));
 	connect(ui.loadBut,SIGNAL(released()),this,SLOT(doLoad()));
+	connect(ui.tbRewind,SIGNAL(released()),this,SLOT(doRewind()));
 	connect(ui.tapeList,SIGNAL(doubleClicked(QModelIndex)), this, SLOT(doDClick(QModelIndex)));
 	connect(ui.tapeList,SIGNAL(clicked(QModelIndex)), this, SLOT(doClick(QModelIndex)));
 }
@@ -41,12 +42,14 @@ void TapeWin::upd(Tape* tape) {
 			ui.recBut->setEnabled(!tape->on);
 			ui.stopBut->setEnabled(tape->on);
 			ui.tapeList->setEnabled(true);
+			ui.tbRewind->setEnabled(!tape->on);
 			ui.tapeList->fill(tape);
 		} else {
 			ui.playBut->setEnabled(false);
 			ui.recBut->setEnabled(false);
 			ui.stopBut->setEnabled(false);
 			ui.tapeList->setEnabled(false);
+			ui.tbRewind->setEnabled(false);
 		}
 	}
 }
@@ -72,6 +75,14 @@ void TapeWin::doRec() {
 	tap->rec = 1;
 	tap->on = 1;
 	upd(tap);
+}
+
+void TapeWin::doRewind() {
+	Tape* tap = conf.prof.cur->zx->tape;
+	if (!tap->on) {
+		tapRewind(tap, 0);
+		upd(tap);
+	}
 }
 
 void TapeWin::doLoad() {

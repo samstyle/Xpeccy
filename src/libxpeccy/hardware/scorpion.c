@@ -66,15 +66,6 @@ void scrpOutDD(Computer* comp, unsigned short port, unsigned char val) {
 	sdrvWrite(comp->sdrv, 0xfb, val);
 }
 
-/*
-void scrpOutFE(ZXComp* comp, unsigned short port, unsigned char val) {
-	comp->vid->nextbrd = val & 0x07;
-	if (!comp->vid->border4t) comp->vid->brdcol = val & 0x07;
-	comp->beeplev = (val & 0x10) ? 1 : 0;
-	comp->tape->levRec = (val & 0x08) ? 1 : 0;
-}
-*/
-
 void scrpOut7FFD(Computer* comp, unsigned short port, unsigned char val) {
 	if (comp->p7FFD & 0x20) return;
 	comp->p7FFD = val;
@@ -85,6 +76,7 @@ void scrpOut7FFD(Computer* comp, unsigned short port, unsigned char val) {
 
 void scrpOut1FFD(Computer* comp, unsigned short port, unsigned char val) {
 	comp->p1FFD = val;
+	comp->ext = (val & 2) ? 1 : 0;
 	scoMapMem(comp);
 }
 

@@ -1,5 +1,8 @@
 #include "hardware.h"
 
+// TODO: recheck memory map (A8 port)
+
+/*
 typedef struct {
 	int type;
 	int num;
@@ -10,6 +13,21 @@ static mPageNr msxMemTab[4][4] = {
 	{{MEM_SLOT,0},{MEM_SLOT,0},{MEM_SLOT,0},{MEM_SLOT,0}},
 	{{MEM_SLOT,1},{MEM_SLOT,1},{MEM_SLOT,1},{MEM_SLOT,1}},
 	{{MEM_RAM, 3},{MEM_RAM, 2},{MEM_RAM, 1},{MEM_RAM, 0}}
+};
+*/
+
+static int msx_mem_tab_t[4][4] = {
+	{MEM_ROM, MEM_ROM, MEM_RAM, MEM_RAM},
+	{MEM_SLOT, MEM_SLOT, MEM_SLOT, MEM_SLOT},
+	{MEM_SLOT, MEM_SLOT, MEM_SLOT, MEM_SLOT},
+	{MEM_RAM, MEM_RAM, MEM_RAM, MEM_RAM}
+};
+
+static int msx_mem_tab_n[4][4] = {
+	{0, 1, 1, 0},
+	{0, 0, 0, 0},
+	{1, 1, 1, 1},
+	{3, 2, 1, 0}
 };
 
 unsigned char msxSlotRd(unsigned short adr, void* data) {
@@ -23,8 +41,10 @@ void msxSlotWr(unsigned short adr, unsigned char val, void* data) {
 }
 
 void msxSetMem(Computer* comp, int bank, unsigned char slot) {
-	mPageNr pg = msxMemTab[slot][bank];
-	switch(pg.type) {
+	//mPageNr pg = msxMemTab[slot][bank];
+	int type = msx_mem_tab_t[slot][bank];
+	int num = msx_mem_tab_n[slot][bank];
+	switch(type) {
 		case MEM_SLOT:
 			memSetBank(comp->mem, bank << 6, MEM_SLOT, comp->slot->memMap[bank], MEM_16K, msxSlotRd, msxSlotWr, comp->slot);
 			break;
@@ -32,7 +52,7 @@ void msxSetMem(Computer* comp, int bank, unsigned char slot) {
 			memSetBank(comp->mem, bank << 6, MEM_RAM, comp->msx.memMap[bank & 3] & 7, MEM_16K, NULL, NULL, NULL);
 			break;
 		case MEM_ROM:
-			memSetBank(comp->mem, bank << 6, MEM_ROM, pg.num, MEM_16K, NULL, NULL, NULL);
+			memSetBank(comp->mem, bank << 6, MEM_ROM, num, MEM_16K, NULL, NULL, NULL);
 			break;
 	}
 }
@@ -75,7 +95,13 @@ void msxAYDataOut(Computer* comp, unsigned short port, unsigned char val) {
 }
 
 unsigned char msxAYDataIn(Computer* comp, unsigned short port) {
-	return tsIn(comp->ts, 0xbffd);
+	unsigned char res = 0xff;
+	if (comp->ts->curChip->curReg == 0x0e) {		// b7:tape in, b6:?, b0..5 = joystick u/d/l/r/fa/fb (0:active)
+		res = 0x7f | (comp->tape->volPlay & 0x80);
+	} else {
+		res = tsIn(comp->ts, 0xfffd);
+	}
+	return res;
 }
 
 // 8255A
@@ -107,9 +133,9 @@ void msxABOut(Computer* comp, unsigned short port, unsigned char val) {
 	} else {
 		unsigned char mask = 0x01 << ((val >> 1) & 7);
 		if (val & 1) {
-			comp->msx.ppi.regC |= mask;
+			msxAAOut(comp, port, comp->msx.pAA | mask);
 		} else {
-			comp->msx.ppi.regC &= ~mask;
+			msxAAOut(comp, port, comp->msx.pAA & ~mask);
 		}
 	}
 }
@@ -178,13 +204,14 @@ void msxOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
 
 void msx_sync(Computer* comp, int ns) {
 	int irq = (comp->vid->inth || comp->vid->intf) ? 1 : 0;
-	if (irq && !(comp->cpu->intrq & Z80_INT)) {		// 0->1 : TESTED 20ms | NOTE : sometimes iff1=0 ?
+	if (irq && !(comp->cpu->intrq & Z80_INT)) {			// 0->1 : TESTED 20ms
 		comp->cpu->intrq |= Z80_INT;
 		comp->intVector = 0xff;
 	} else if (!irq && (comp->cpu->intrq & Z80_INT)) {		// 1->0 : clear
 		comp->cpu->intrq &= ~Z80_INT;
 	}
 	tsSync(comp->ts, ns);
+	tapSync(comp->tape, ns);
 }
 
 void msx_keyp(Computer* comp, keyEntry ent) {
@@ -196,6 +223,14 @@ void msx_keyr(Computer* comp, keyEntry ent) {
 }
 
 sndPair msx_vol(Computer* comp, sndVolume* sv) {
-	sndPair vol = aymGetVolume(comp->ts->chipA);
+	int amp = 0;
+	if (comp->tape->on)
+		amp = (comp->tape->volPlay << 8) * sv->tape / 1600;
+	sndPair vol;
+	vol.left = amp;
+	vol.right = amp;
+	sndPair tv = aymGetVolume(comp->ts->chipA);
+	vol.left += tv.left * sv->ay / 100;
+	vol.right += tv.right * sv->ay / 100;
 	return vol;
 }

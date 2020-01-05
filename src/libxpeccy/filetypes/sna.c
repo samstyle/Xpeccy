@@ -21,7 +21,7 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 	char* pageBuf = malloc(0x4000);
 	char* tmpgBuf = malloc(0x4000);
 
-	compReset(comp, (fileSize < 49180) ? RES_48 : RES_128);
+//	compReset(comp, (fileSize < 49180) ? RES_48 : RES_128);
 
 	snaHead hd;
 	fread((char*)&hd, sizeof(snaHead), 1, file);

@@ -310,6 +310,7 @@ void compReset(Computer* comp,int res) {
 	kbdSetMode(comp->keyb, KBD_SPECTRUM);
 
 	vidReset(comp->vid);
+	comp->ext = 0;
 	comp->prt2 = 0;
 	comp->p1FFD = 0;
 	comp->pEFF7 = 0;

@@ -122,7 +122,7 @@ int loadC64RawTap(Computer* comp, const char* name, int dsk) {
 					}
 					per = 8 * per / comp->cpuFrq;		// comp->cpuFrq - MHz (1e6), result period in mks (1e-6)
 					if (per > 1e5) {
-						blkAddPause(&blk, per / 2);		// pause
+						blkAddPause(&blk, per);		// pause
 						tapAddBlock(comp->tape, blk);
 						blkClear(&blk);
 					} else {

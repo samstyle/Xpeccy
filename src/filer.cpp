@@ -51,6 +51,7 @@ static xFileTypeInfo ft_tab[] = {
 	{FL_MSX, 0, ".rom", "*.rom", loadSlot, NULL, "MSX cartrige"},
 	{FL_MX1, 0, ".mx1", "*.mx1", loadSlot, NULL, "MSX1 cartrige"},
 	{FL_MX2, 0, ".mx2", "*.mx2", loadSlot, NULL, "MSX2 cartrige"},
+	{FL_CAS, 0, ".cas", "*.cas", loadCAS, NULL, "MSX cassette"},
 	{FL_NES, 0, ".nes", "*.nes", loadNes, NULL, "NES cartrige"},
 //	{FL_T64, 0, ".t64", "*.t64", loadT64, NULL, "T64 tape image"},
 	{FL_C64TAP, 0, ".tap", "*.tap", loadC64RawTap, NULL, "C64 raw tape image"},
@@ -83,6 +84,7 @@ static xFileGroupInfo fg_tab[] = {
 	{FG_RZX, "", -1, "RZX playback", {FL_RZX, 0}},
 	{FG_GAMEBOY, "", -1, "GB cartrige", {FL_GB, FL_GBC, 0}},
 	{FG_MSX, "", -1, "MSX cartrige", {FL_MSX, FL_MX1, FL_MX2, 0}},
+	{FG_MSXTAPE, "", 4, "MSX cassette", {FL_CAS, 0}},
 	{FG_NES, "", -1, "NES cartrige", {FL_NES, 0}},
 	{FG_CMDTAPE, "", -1, "Commodore tape", {FL_T64, FL_C64TAP, 0}},
 	{FG_CMDSNAP, "", -1, "Commodore snapshot", {FL_C64PRG, 0}},
@@ -96,7 +98,7 @@ static xFileGroupInfo fg_dum = {0, "", -1, NULL, {0}};
 static xFileHWInfo fh_tab[] = {
 	{FH_SPECTRUM, {FG_SNAPSHOT, FG_TAPE, FG_DISK_A, FG_DISK_B, FG_DISK_C, FG_DISK_D, FG_RAW, FG_RZX, 0}},
 	{FH_GAMEBOY, {FG_GAMEBOY, 0}},
-	{FH_MSX, {FG_MSX, 0}},
+	{FH_MSX, {FG_MSX, FG_MSXTAPE, 0}},
 	{FH_NES, {FG_NES, 0}},
 	{FH_CMD, {FG_CMDTAPE, FG_CMDSNAP, 0}},
 	{FH_BK, {FG_BKDATA, FG_BKDISK, 0}},
@@ -210,26 +212,6 @@ xFileTypeInfo* file_find_hw_ext(int hw, QString path) {
 	return inf;
 }
 
-/*
-xFileTypeInfo* file_ext_type(QString path) {
-	int i = 0;
-	QString ext = path.split(".").last();
-	xFileTypeInfo* inf = &ft_dum;
-	while (ft_tab[i].id > 0) {
-		if (ft_tab[i].id == FL_HOBETA) {
-			if (ext.startsWith("$"))
-				inf = &ft_tab[i];
-		} else if (ft_tab[i].ext == NULL) {
-			// skip it
-		} else if (path.endsWith(ft_tab[i].ext, Qt::CaseInsensitive)) {
-			inf = &ft_tab[i];
-		}
-		i++;
-	}
-	return inf;
-}
-*/
-
 static QString allfilt;
 
 QString file_get_type_filter(int id, int sv) {
@@ -318,6 +300,9 @@ static xFilerError err_tab[] = {
 	{ERR_T64_SIGN, "Wrong T64 header"},
 	{ERR_C64T_SIGN, "Wrong C64 raw tape header"},
 	{ERR_TRD_SNF, "Wrong disk structure for TRD file"},
+	{ERR_CAS_EOF, "CAS: unexpected end of file"},
+	{ERR_CAS_SIGN, "CAS: wrong block signature"},
+	{ERR_CAS_TYPE, "CAS: wrong block type"},
 	{ERR_OK, ""}
 };
 

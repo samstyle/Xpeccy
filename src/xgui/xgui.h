@@ -94,6 +94,7 @@ class TapeWin : public QDialog {
 		void doRec();
 		void doStop();
 		void doLoad();
+		void doRewind();
 		void doDClick(QModelIndex);
 		void doClick(QModelIndex);
 };

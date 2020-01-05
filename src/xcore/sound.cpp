@@ -56,6 +56,11 @@ int sndSync(Computer* comp) {
 				tmpLev.right = 0;
 				disCount = DISCRATE - 1;
 
+				if (!conf.snd.enabled) {
+					sndLev.left = 0;
+					sndLev.right = 0;
+				}
+
 				sbuf[posf & 0x3fff] = sndLev.left & 0xff;
 				posf++;
 				sbuf[posf & 0x3fff] = (sndLev.left >> 8) & 0xff;

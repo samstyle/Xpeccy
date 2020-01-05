@@ -45,7 +45,7 @@ void tzxBlock11(FILE* file, Tape* tape) {
 	altLens[4] = fgetw(file) * NS_TICK / 1000;	// 1
 	altLens[6] = fgetw(file);			// pilot pulses
 	int bits = fgetc(file);				// TODO: used bits in last byte
-	printf("bits:%i\n",bits);
+	// printf("bits:%i\n",bits);
 	int pause = fgetw(file) * 1000;
 	int len = fgett(file);		// freadLen(file, 3);
 	char* buf = (char*)malloc(len);
@@ -94,7 +94,7 @@ void tzxBlock14(FILE* file, Tape* tape) {
 	int bit1 = fgetw(file) * NS_TICK / 1000;
 	int data;
 	int bits = fgetc(file);			// used bits in last byte
-	printf("%i : %i : last bits %i\n",bit0,bit1,bits);
+	// printf("%i : %i : last bits %i\n",bit0,bit1,bits);
 	int pause = fgetw(file) * 1000;	// ms -> mks
 	int len = fgett(file);
 	while (len > 1) {
@@ -110,7 +110,11 @@ void tzxBlock14(FILE* file, Tape* tape) {
 		bits--;
 		data <<= 1;
 	}
-	blkAddPause(&tape->tmpBlock, pause);
+	if (pause > 1e5) {		// .1 sec will be block separator
+		blkAddPause(&tape->tmpBlock, pause);
+		tapAddBlock(tape, tape->tmpBlock);
+		blkClear(&tape->tmpBlock);
+	}
 	tape->isData = 0;
 }
 
@@ -168,7 +172,7 @@ void tzxBlock21(FILE* file, Tape* tape) {
 	char* buf = (char*)malloc(len + 1);
 	fread(buf, len, 1, file);
 	buf[len] = 0;
-	printf("%s\n", buf);
+	// printf("%s\n", buf);
 	free(buf);
 }
 
@@ -325,7 +329,7 @@ int loadTZX(Computer* comp, const char* name, int drv) {
 
 		while (!feof(file)) {
 			type = fgetc(file);		// block type (will be FF @ eof)
-			printf("block %.2X @ %.6X\n",type, ftell(file) - 1);
+//			printf("block %.2X @ %.6X\n",type, ftell(file) - 1);
 			if (feof(file)) break;		// is it the end?
 			i = 0;
 			while((tzxBlockTab[i].id != 0xff) && (tzxBlockTab[i].id != type))

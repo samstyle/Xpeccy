@@ -38,6 +38,10 @@ enum {
 	ERR_T64_SIGN,		// T64 signature
 	ERR_C64T_SIGN,		// C64 raw tape signature
 
+	ERR_CAS_SIGN,		// CAS block signature
+	ERR_CAS_TYPE,		// CAS unknown block type
+	ERR_CAS_EOF,		// CAS unexpected end of file
+
 	ERR_WAV_HEAD,		// wrong wave header
 	ERR_WAV_FORMAT,		// unsupported wav format
 
@@ -167,6 +171,8 @@ int loadWAV(Computer*, const char*, int);
 int saveWAV(Computer*, const char*, int);
 
 int loadC64RawTap(Computer*, const char*, int);
+
+int loadCAS(Computer*, const char*, int);
 
 // disk
 

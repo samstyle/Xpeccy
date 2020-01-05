@@ -424,31 +424,21 @@ void MainWin::tapStateChanged(int wut, int val) {
 		case TW_STATE:
 			switch(val) {
 				case TWS_PLAY:
-					if (tapPlay(comp->tape)) {
-						//emit s_tape_state(TWS_PLAY);
-						//tapeWin->setState(TWS_PLAY);
-					} else {
-						//emit s_tape_state(TWS_STOP);
-						//tapeWin->setState(TWS_STOP);
-					}
+					tapPlay(comp->tape);
+					emit s_tape_upd(comp->tape);
 					break;
 				case TWS_STOP:
 					tapStop(comp->tape);
-					//emit s_tape_state(TWS_STOP);
-					//tapeWin->setState(TWS_STOP);
+					emit s_tape_upd(comp->tape);
 					break;
 				case TWS_REC:
 					tapRec(comp->tape);
-					//emit s_tape_state(TWS_REC);
-					//tapeWin->setState(TWS_REC);
+					emit s_tape_upd(comp->tape);
 					break;
 				case TWS_OPEN:
 					pause(true,PR_FILE);
-					//loadFile(comp,"",FT_TAPE,-1);
 					load_file(comp, NULL, FG_TAPE, -1);
-					//emit s_tape_list(comp->tape);
-					//tapeWin->buildList(comp->tape);
-					//tapeWin->setCheck(comp->tape->block);
+					emit s_tape_upd(comp->tape);
 					pause(false,PR_FILE);
 					break;
 			}

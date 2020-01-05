@@ -87,7 +87,7 @@ void xThread::emuCycle(Computer* comp) {
 		} else {
 			sndNs += compExec(comp);
 			// tape trap
-			if ((comp->hw->grp == HWG_ZX) && (comp->mem->map[0].type == MEM_ROM) && comp->rom && !comp->dos) {
+			if ((comp->hw->grp == HWG_ZX) && (comp->mem->map[0].type == MEM_ROM) && comp->rom && !comp->dos && !comp->ext) {
 				if (comp->cpu->pc == 0x562) {			// load: ix:addr, de:len (0x580 ?)
 					tap_catch_load(comp);
 				} else if (comp->cpu->pc == 0x4d0) {		// save: ix:addr, de:len, a:block type(b7), hl:pilot len (1f80/0c98)?

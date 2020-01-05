@@ -270,7 +270,7 @@ void vdp_linex(Video* gpu) {
 	}
 }
 
-// v9918 TEXT1 (40 x 24 text)
+// v9918 TEXT1
 
 void vdpT1ini(Video* vid) {
 	vid->scrn.x = 240;	// 40 * 6
@@ -294,10 +294,10 @@ void vdpText1(Video* vid) {
 	vidPutDot(&vid->ray, vid->pal, col);
 }
 
-// v9918 G1 (32 x 24 text)
+// v9918 G1
 
 void vdpG1ini(Video* vid) {
-	vid->scrn.x = 256;	// 40 * 6
+	vid->scrn.x = 256;
 	vidUpdateLayout(vid);
 }
 

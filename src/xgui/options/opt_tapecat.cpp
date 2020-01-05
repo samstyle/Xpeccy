@@ -72,7 +72,8 @@ QVariant xTapeCatModel::data(const QModelIndex& idx, int role) const {
 				case 3: if (row == rcur)
 						res = QString(getTimeString(inf[row].curtime).c_str());
 					break;
-				case 4: res = inf[row].size;
+				case 4:	if (inf[row].size > 0)
+						res = inf[row].size;
 					break;
 				case 5: res = QString::fromLocal8Bit(inf[row].name);
 					break;
@@ -89,6 +90,7 @@ xTapeCatTable::xTapeCatTable(QWidget* p):QTableView(p) {
 	setModel(model);
 }
 
+// tape player window will reset scroll on update
 void xTapeCatTable::fill(Tape* tape) {
 	int row = currentIndex().row();
 	model->fill(tape);

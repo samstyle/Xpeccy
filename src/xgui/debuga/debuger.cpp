@@ -851,6 +851,8 @@ void DebugWin::fillTape() {
 	if (ui.tabsPanel->currentWidget() != ui.tapeTab) return;
 	drawBar(ui.labTapein, comp->tape->volPlay, 256);
 	drawBar(ui.labTapeout, comp->tape->levRec, 1);
+	ui.labSigLen->setText(comp->tape->on ? QString("%0 mks").arg(comp->tape->sigLen) : "");
+	ui.labTapeState->setText(comp->tape->on ? (comp->tape->rec ? "rec" : "play") : "stop");
 	// draw tape diagram
 	int wid = 330;
 	int hei = 100;
