@@ -303,12 +303,13 @@ void tapStop(Tape* tap) {
 		tap->on = 0;
 		if (tap->rec)
 			tapStoreBlock(tap);
-		tap->pos = 0;
+		tap->volPlay = (tap->volPlay & 0x80) ? 0x7f : 0x81;
+		// tap->pos = 0;
 	}
 }
 
 int tapPlay(Tape* tap) {
-	if (tap->block < tap->blkCount) {
+	if ((tap->block < tap->blkCount) && !tap->on) {
 		tap->rec = 0;
 		tap->on = 1;
 		tap->volPlay = (tap->volPlay & 0x80) ? 0x7f : 0x81;

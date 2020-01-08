@@ -42,8 +42,8 @@ void msxSlotWr(unsigned short adr, unsigned char val, void* data) {
 
 void msxSetMem(Computer* comp, int bank, unsigned char slot) {
 	//mPageNr pg = msxMemTab[slot][bank];
-	int type = msx_mem_tab_t[slot][bank];
-	int num = msx_mem_tab_n[slot][bank];
+	int type = msx_mem_tab_t[slot & 3][bank & 3];
+	int num = msx_mem_tab_n[slot & 3][bank & 3];
 	switch(type) {
 		case MEM_SLOT:
 			memSetBank(comp->mem, bank << 6, MEM_SLOT, comp->slot->memMap[bank], MEM_16K, msxSlotRd, msxSlotWr, comp->slot);
