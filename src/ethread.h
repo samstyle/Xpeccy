@@ -25,6 +25,4 @@ class xThread : public QThread {
 		void tap_catch_save(Computer*);
 };
 
-// extern QMutex emutex;
-
 #endif

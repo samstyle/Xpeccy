@@ -73,11 +73,9 @@ int loadFDI(Computer* comp, const char* name, int drv) {
 					trkImg[sec].sec = shd.sec;
 					trkImg[sec].sz = shd.len;
 					trkImg[sec].type = (shd.flag & 0x80) ? 0xf8 : 0xfb;
-					// trkImg[sec].data = (unsigned char*)malloc(4096 * sizeof(unsigned char));
 					shd.len = shd.len & 3;
 					pos = ftell(file);
 					fseek(file, hd.dData + thd.dData + shd.dData, SEEK_SET);
-					//if (!trkImg[sec].data) trkImg[sec].data = malloc(1024);
 					fread((char*)trkImg[sec].data, (128 << (shd.len & 3)), 1, file);
 					fseek(file, pos, SEEK_SET);
 				}

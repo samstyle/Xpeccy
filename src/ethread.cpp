@@ -1,13 +1,19 @@
 // emulation thread (non-GUI)
 
+#include <QWaitCondition>
+
 #include "ethread.h"
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
 #include "xcore/sound.h"
 #include "xcore/vfilters.h"
 
-// QMutex emutex;
+#if USEMUTEX
+QMutex emutex;
+QWaitCondition qwc;
+#else
 int sleepy = 1;
+#endif
 
 unsigned char* blkData = NULL;
 
@@ -19,7 +25,11 @@ xThread::xThread() {
 
 void xThread::stop() {
 	finish = 1;
+#if USEMUTEX
+	qwc.wakeAll();
+#else
 	sleepy = 0;
+#endif
 }
 
 void xThread::tap_catch_load(Computer* comp) {
@@ -117,7 +127,9 @@ void xThread::emuCycle(Computer* comp) {
 void xThread::run() {
 	Computer* comp;
 	do {
+#if !USEMUTEX
 		sleepy = 1;
+#endif
 		comp = conf.prof.cur->zx;
 #ifdef HAVEZLIB
 		if (comp->rzx.start) {
@@ -137,8 +149,16 @@ void xThread::run() {
 				emit dbgRequest();
 			}
 		}
+#if USEMUTEX
+		if (!conf.emu.fast && !finish) {
+			emutex.lock();
+			qwc.wait(&emutex);
+			emutex.unlock();
+		}
+#else
 		while (!conf.emu.fast && sleepy && !finish)
 			usleep(10);
+#endif
 	} while (!finish);
 	exit(0);
 }

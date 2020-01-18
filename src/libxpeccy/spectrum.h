@@ -232,7 +232,7 @@ typedef struct {
 		unsigned char pF5;
 		unsigned char pslot[4];
 		unsigned char sslot[4];
-		unsigned char memMap[4];	// RAM pages (ports FC..FF)
+//		unsigned char memMap[4];	// RAM pages (ports FC..FF)
 		struct {
 			unsigned char regA;
 			unsigned char regB;

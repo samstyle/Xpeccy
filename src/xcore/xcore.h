@@ -17,6 +17,8 @@
 #include "spectrum.h"
 #include "filetypes.h"
 
+#define USEMUTEX 0
+
 // common
 
 std::string getTimeString(int);

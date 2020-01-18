@@ -1307,7 +1307,8 @@ void SetupWin::updvolumes() {
 void SetupWin::newdisk(int idx) {
 	Floppy *flp = comp->dif->fdc->flop[idx];
 	if (!saveChangedDisk(comp,idx & 3)) return;
-	diskFormat(flp);
+//	diskFormat(flp);
+	diskClear(flp);
 	flp->path = (char*)realloc(flp->path,sizeof(char));
 	flp->path[0] = 0x00;
 	flp->insert = 1;

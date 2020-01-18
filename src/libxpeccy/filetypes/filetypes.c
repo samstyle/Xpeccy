@@ -78,6 +78,13 @@ void loadBoot(Computer* comp, const char* path, int drv) {
 	flp->changed = 0;
 }
 
+void diskClear(Floppy* flp) {
+	for (int i = 0; i < 168; i++) {
+		memset(flp->data[i].byte, 0, TRACKLEN);
+		flpFillFields(flp, i, 0);
+	}
+}
+
 // trdos
 
 static unsigned char trd_8e0[] = {

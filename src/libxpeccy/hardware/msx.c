@@ -2,7 +2,6 @@
 
 // TODO: recheck memory map (A8 port)
 
-/*
 typedef struct {
 	int type;
 	int num;
@@ -13,21 +12,6 @@ static mPageNr msxMemTab[4][4] = {
 	{{MEM_SLOT,0},{MEM_SLOT,0},{MEM_SLOT,0},{MEM_SLOT,0}},
 	{{MEM_SLOT,1},{MEM_SLOT,1},{MEM_SLOT,1},{MEM_SLOT,1}},
 	{{MEM_RAM, 3},{MEM_RAM, 2},{MEM_RAM, 1},{MEM_RAM, 0}}
-};
-*/
-
-static int msx_mem_tab_t[4][4] = {
-	{MEM_ROM, MEM_ROM, MEM_RAM, MEM_RAM},
-	{MEM_SLOT, MEM_SLOT, MEM_SLOT, MEM_SLOT},
-	{MEM_SLOT, MEM_SLOT, MEM_SLOT, MEM_SLOT},
-	{MEM_RAM, MEM_RAM, MEM_RAM, MEM_RAM}
-};
-
-static int msx_mem_tab_n[4][4] = {
-	{0, 1, 1, 0},
-	{0, 0, 0, 0},
-	{1, 1, 1, 1},
-	{3, 2, 1, 0}
 };
 
 unsigned char msxSlotRd(unsigned short adr, void* data) {
@@ -41,15 +25,16 @@ void msxSlotWr(unsigned short adr, unsigned char val, void* data) {
 }
 
 void msxSetMem(Computer* comp, int bank, unsigned char slot) {
-	//mPageNr pg = msxMemTab[slot][bank];
-	int type = msx_mem_tab_t[slot & 3][bank & 3];
-	int num = msx_mem_tab_n[slot & 3][bank & 3];
+	slot &= 3;
+	bank &= 3;
+	int type = msxMemTab[slot][bank].type;
+	int num = msxMemTab[slot][bank].num;
 	switch(type) {
 		case MEM_SLOT:
 			memSetBank(comp->mem, bank << 6, MEM_SLOT, comp->slot->memMap[bank], MEM_16K, msxSlotRd, msxSlotWr, comp->slot);
 			break;
 		case MEM_RAM:
-			memSetBank(comp->mem, bank << 6, MEM_RAM, comp->msx.memMap[bank & 3] & 7, MEM_16K, NULL, NULL, NULL);
+			memSetBank(comp->mem, bank << 6, MEM_RAM, comp->reg[0xfc | bank] & 7, MEM_16K, NULL, NULL, NULL);
 			break;
 		case MEM_ROM:
 			memSetBank(comp->mem, bank << 6, MEM_ROM, num, MEM_16K, NULL, NULL, NULL);
@@ -74,10 +59,10 @@ void msxResetSlot(xCartridge* slot) {
 void msxReset(Computer* comp) {
 	kbdSetMode(comp->keyb, KBD_MSX);
 	comp->msx.pA8 = 0x00;
-	comp->msx.memMap[0] = 3;
-	comp->msx.memMap[1] = 2;
-	comp->msx.memMap[2] = 1;
-	comp->msx.memMap[3] = 0;
+	comp->reg[0xfc] = 3;
+	comp->reg[0xfd] = 2;
+	comp->reg[0xfe] = 1;
+	comp->reg[0xff] = 0;
 	msxResetSlot(comp->slot);
 	vdpReset(comp->vid);
 	comp->vid->memMask = MEM_16K - 1;
@@ -152,11 +137,7 @@ unsigned char msxA8In(Computer* comp, unsigned short port) {
 }
 
 void msxMemOut(Computer* comp, unsigned short port, unsigned char val) {
-	comp->msx.memMap[port & 3] = val;
-}
-
-unsigned char msxMemIn(Computer* comp, unsigned short port) {
-	return comp->msx.memMap[port & 3];
+	comp->reg[port] = val;
 }
 
 // v9938
@@ -188,7 +169,7 @@ static xPort msxPortMap[] = {
 	{0xff,0xaa,2,2,2,msxAAIn,	msxAAOut},	// AA	RW	I 8255A/ULA9RA041 PPI Port C Kbd Row sel,LED,CASo,CASm
 	{0xff,0xab,2,2,2,NULL,		msxABOut},	// AB	W	I 8255A/ULA9RA041 Mode select and I/O setup of A,B,C
 
-	{0xfc,0xfc,2,2,2,msxMemIn,	msxMemOut},	// FC..FF RW	RAM pages for memBanks
+	{0xfc,0xfc,2,2,2,NULL,	msxMemOut},		// FC..FF W	RAM pages for memBanks
 
 //	{0x00,0x00,2,2,2,brkIn,brkOut}
 	{0x00,0x00,2,2,2,dummyIn,dummyOut},

@@ -81,16 +81,6 @@ extern "C" {
 // disk specific operations
 
 typedef struct {
-	unsigned char trk;
-	unsigned char head;
-	unsigned char sec;
-	unsigned char sz;	// 0..3 = 128..1024
-	unsigned char type;
-	int crc;
-	unsigned char data[4096];
-} Sector;
-
-typedef struct {
 	unsigned char name[8];
 	unsigned char ext;
 	unsigned char lst,hst;
@@ -100,6 +90,7 @@ typedef struct {
 	unsigned char trk;
 } TRFile;
 
+void diskClear(Floppy*);
 void diskFormat(Floppy*);
 void diskFormTrack(Floppy*,int,Sector*,int);
 void diskFormTRDTrack(Floppy*,int,unsigned char*);
@@ -195,6 +186,7 @@ int saveUDI(Computer*,const char*,int);
 int loadFDI(Computer*,const char*,int);
 
 int loadDSK(Computer*,const char*,int);
+int saveDSK(Computer*,const char*,int);
 
 int loadTD0(Computer*,const char*,int);
 

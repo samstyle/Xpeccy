@@ -31,8 +31,19 @@ enum {
 #define TURBOBYTE 500		// same for turbo
 #define turbo (fdcFlag & FDC_FAST)
 
+typedef struct {
+	unsigned char trk;
+	unsigned char head;
+	unsigned char sec;
+	unsigned char sz;	// 0..3 = 128..1024
+	unsigned char type;
+	int crc;
+	unsigned char data[0x1800];
+} Sector;
+
 typedef struct FDC FDC;
 typedef void(*fdcCall)(FDC*);
+
 struct FDC {
 	const int id;
 	unsigned irq:1;		// VG93:irq ; uPD765:exec
@@ -77,6 +88,9 @@ struct FDC {
 	int resCnt;
 	int resPos;
 	unsigned char sr0,sr1,sr2,sr3;	// status registers
+
+	Sector slst[64];
+	int scnt;
 };
 
 typedef struct DiskHW DiskHW;

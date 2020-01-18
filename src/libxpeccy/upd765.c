@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "fdc.h"
 
@@ -209,6 +210,7 @@ void useek01(FDC* fdc) {
 
 void useek02(FDC* fdc) {
 	fdc->trk = fdc->flp->trk;
+	printf("seek flp trk: %.2X\n", fdc->flp->trk);
 	fdc->pos++;
 }
 
@@ -557,7 +559,7 @@ void uwrdat00(FDC* fdc) {
 		fdc->sr0 |= 0x48;		// not ready
 		ureadRS(fdc);
 		uTerm(fdc);
-	} else if (fdc->flp->protect || 1) {		// trick: force 'write protect' error
+	} else if (fdc->flp->protect || 0) {	// trick: force 'write protect' error
 		fdc->sr1 |= F_SR1_NW;
 		fdc->sr0 |= 0x40;
 		ureadRS(fdc);
@@ -590,18 +592,20 @@ void uwrdat01(FDC* fdc) {
 
 void uwrdat02(FDC* fdc) {
 	flpNext(fdc->flp, fdc->side);
-	if ((fdc->flp->field == 2) || (fdc->flp->field == 3)) {
-		flpPrev(fdc->flp, fdc->side);
-		fdc->crc = 0;
+	if ((fdc->flp->field == 2) || (fdc->flp->field == 3)) {		// data filed (excluding A1 A1 A1 F8(FB))
+		flpPrev(fdc->flp, fdc->side);				// to data mark (F8 | FB)
+		fdc->crc = 0;						// form crc for A1 A1 A1
 		add_crc_16(fdc, 0xa1);
 		add_crc_16(fdc, 0xa1);
 		add_crc_16(fdc, 0xa1);
 		unsigned char mark = (fdc->com & 8) ? 0xf8 : 0xfb;
 		flpWr(fdc->flp, fdc->side, mark);
 		add_crc_16(fdc, mark);
+		flpNext(fdc->flp, fdc->side);
 		fdc->wait = BYTEDELAY;
-		// todo : data lenght
+		// todo : data length
 		fdc->cnt = 128 << (fdc->buf[3] & 7);
+		printf("cnt = %i\n", fdc->cnt);
 		fdc->pos++;
 	} else {
 		fdc->wait += turbo ? TRBBYTE : BYTEDELAY;
@@ -621,14 +625,16 @@ void uwrdat03(FDC* fdc) {
 		fdc->sr0 |= 0x40;		// error
 		ureadRS(fdc);
 		uTerm(fdc);
+	} else {
+		flpWr(fdc->flp, fdc->side, fdc->data);
+		flpNext(fdc->flp, fdc->side);
+		fdc->wait += BYTEDELAY;
+		fdc->cnt--;
+		if (fdc->cnt < 1)
+			fdc->pos++;
+		else
+			fdc->drq = 1;
 	}
-	flpWr(fdc->flp, fdc->side, fdc->data);
-	flpNext(fdc->flp, fdc->side);
-	fdc->drq = 1;
-	fdc->wait += BYTEDELAY;
-	fdc->cnt--;
-	if (fdc->cnt < 1)
-		fdc->pos++;
 }
 
 void uwrdat04(FDC* fdc) {
@@ -642,6 +648,7 @@ void uwrdat04(FDC* fdc) {
 }
 
 void uwrdat05(FDC* fdc) {
+	fdc->sec++;
 	if (fdc->sec > fdc->comBuf[5]) {		// check EOT
 		if ((fdc->com & F_COM_MT) && !fdc->side) {		// multitrack (side 0->1 only)
 			fdc->side = 1;
@@ -663,23 +670,80 @@ void uwrdat05(FDC* fdc) {
 static fdcCall uWrData[] = {&uwargs,&uwrdat00,&uwrdat01,&uwrdat02,&uwrdat03,&uwrdat04,&uwrdat05,&ureadRS,&uTerm};
 
 // 0.MF.001101 [xxxxx.H.DRV:1, N, SC, GPL, D] R [SR0,SR1,SR2,C,H,R,N]
+// 1:N:bytes/sector
+// 2:SC:sectors/trk
+// 3:GPL:gap3 size
+// 4:D:filler byte
+// fdc wants C,H,R,N for each sector.
+// writing start @ index, stop @ next index
 
 void utrkfrm00(FDC* fdc) {
 	uSetDrive(fdc);
-	fdc->sec = fdc->comBuf[3];		// R, sec.num
 	if (!fdc->flp->insert) {
 		fdc->sr0 |= 0x48;		// not ready
 		ureadRS(fdc);
 		uTerm(fdc);
-	} else {
+	} else if (fdc->flp->protect || 0) {	// TRICK : force NW flag (write protect), termination
 		fdc->sr0 |= 0x40;
-		fdc->sr1 |= F_SR1_NW;		// TRICK : force NW flag (write protect), termination
+		fdc->sr1 |= F_SR1_NW;
 		ureadRS(fdc);
 		uTerm(fdc);
+	} else {
+		fdc->pos++;
 	}
 }
 
-static fdcCall uFormat[] = {&uwargs,&utrkfrm00,&uTerm};
+void utrkfrm01(FDC* fdc) {		// wait for index
+	flpNext(fdc->flp, fdc->side);
+	fdc->wait += BYTEDELAY;
+	if (fdc->flp->index) {
+		DBGOUT("index\n");
+		fdc->cnt = 0;
+		fdc->scnt = 0;
+		fdc->dir = 0;
+		fdc->drq = 1;						// waiting for 1st C
+		fdc->pos++;
+	}
+}
+
+void diskFormTrack(Floppy* flp, int tr, Sector* sdata, int scount);
+
+void utrkfrm02(FDC* fdc) {		// recieve cnt (4 * spt) bytes from cpu = sectors header data
+	if (fdc->drq) {
+		fdc->sr1 |= F_SR1_OR;		// overrun
+		fdc->sr0 |= 0x40;		// error
+	}
+	fdc->buf[fdc->cnt & 3] = fdc->data;
+	fdc->cnt++;
+	fdc->wait += BYTEDELAY;
+	fdc->drq = 1;			// want next byte
+	if (fdc->cnt >= 4) {
+		fdc->cnt = 0;
+		fdc->slst[fdc->scnt].trk = fdc->buf[0];		// C cylinder
+		fdc->slst[fdc->scnt].head = fdc->buf[1];	// H head
+		fdc->slst[fdc->scnt].sec = fdc->buf[2];		// R sec.num
+		fdc->slst[fdc->scnt].sz = fdc->buf[3];	// N sec.size
+		fdc->slst[fdc->scnt].crc = -1;
+		fdc->slst[fdc->scnt].type = 0xfb;
+		memset(fdc->slst[fdc->scnt].data, fdc->comBuf[4], 4096);
+		fdc->scnt++;
+		if (fdc->scnt >= fdc->comBuf[2]) {	// sectors/track
+			diskFormTrack(fdc->flp, (fdc->trk << 1) | fdc->side, fdc->slst, fdc->comBuf[2]);
+			fdc->pos++;
+			fdc->drq = 0;
+		}
+	}
+}
+
+void utrkfrm03(FDC* fdc) {		// emulate whole track writing
+	if (flpNext(fdc->flp, fdc->side)) {
+		fdc->pos++;
+	} else {
+		fdc->wait += BYTEDELAY;
+	}
+}
+
+static fdcCall uFormat[] = {&uwargs,&utrkfrm00,&utrkfrm01,&utrkfrm02,&utrkfrm03,&ureadRS,&uTerm};
 
 // invalid op : R [SR0 = 0x80]
 
@@ -717,7 +781,7 @@ void uWrite(FDC* fdc, int adr, unsigned char val) {
 	if (!(adr & 1)) return;			// wr data only
 	// printf("wr : %.2X\n", val);
 	if (fdc->idle) {			// 1st byte, command
-		// DBGOUT("updCom %.2X\n",val);
+		DBGOUT("updCom %.2X\n",val);
 		fdc->com = val;
 		int idx = 0;
 		while ((uComTab[idx].mask & val) != uComTab[idx].val)
@@ -736,7 +800,7 @@ void uWrite(FDC* fdc, int adr, unsigned char val) {
 			fdc->sr2 = 0x00;
 		}
 	} else if (fdc->comCnt > 0) {		// command
-		// DBGOUT("arg %.2X\n",val);
+		DBGOUT("arg %.2X\n",val);
 		fdc->comBuf[fdc->comPos] = val;
 		fdc->comPos++;
 		fdc->comCnt--;
@@ -744,7 +808,8 @@ void uWrite(FDC* fdc, int adr, unsigned char val) {
 			fdc->irq = 1;		// exec
 			fdc->drq = 0;
 		}
-	} else if (fdc->drq && !fdc->dir) {	// execution
+	} else if (fdc->drq && !fdc->dir) {	// data cpu->fdc
+		DBGOUT("data %.2X\n",val);
 		fdc->data = val;
 		fdc->drq = 0;
 	}
@@ -764,7 +829,7 @@ unsigned char uRead(FDC* fdc, int adr) {
 				fdc->resCnt--;
 				if (fdc->resCnt == 0)
 					fdc->dir = 0;
-				//DBGOUT("resp : %.2X\n",res);
+				DBGOUT("resp : %.2X\n",res);
 			} else {			// other
 				res = 0xff;
 			}

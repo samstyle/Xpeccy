@@ -122,24 +122,15 @@ set(INCLUDIRS
 	)
 
 # sources
-file(GLOB SOURCES
+file(GLOB_RECURSE SOURCES
 	./src/*.cpp
-	./src/*/*.cpp
-	./src/*/*/*.cpp
-	./src/*/*.c
-	./src/*/*/*.c
-	./src/*/*/*/*.c
-	./src/*/*/*/*/*.c
-	./xpeccy.rc
+	./src/*.c
+#	./xpeccy.rc
 )
 
 # headers
-file(GLOB HEADERS
+file(GLOB_RECURSE HEADERS
 	./src/*.h
-	./src/*/*.h
-	./src/*/*/*.h
-	./src/*/*/*/*.h
-	./src/*/*/*/*/*.h
 )
 
 # Qt user interface

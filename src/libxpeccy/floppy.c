@@ -84,7 +84,7 @@ static unsigned char trk_mark[4] = {0xc1,0xc1,0xc1,0xfc};
 static unsigned char hd_mark[4] = {0xa1,0xa1,0xa1,0xfe};
 static unsigned char dat_mark[4] = {0xa1,0xa1,0xa1,0xfb};
 
-int flp_format_trk(Floppy* flp, int trk, int spt, int slen, char* data) {
+int flp_format_trk_buf(int trk, int spt, int slen, char* data, unsigned char* buf) {
 	int res = 1;
 	int t = 128;
 	int n = 0;		// 0:128, 1:256, 2:512, 3:1024, 4:2048
@@ -102,7 +102,7 @@ int flp_format_trk(Floppy* flp, int trk, int spt, int slen, char* data) {
 	if ((n > 4) || (trk > 255) || (spt < 1)) {
 		res = 0;
 	} else {
-		ptr = flp->data[trk].byte;
+		ptr = buf;
 		slen = t;
 		spc = (TRACKLEN - 20) / spt;
 		spc -= (72 + slen);		// space 3 size
@@ -143,8 +143,18 @@ int flp_format_trk(Floppy* flp, int trk, int spt, int slen, char* data) {
 				*(ptr++) = crc & 0xff;
 				ptr += spc;
 			}
-			flpFillFields(flp, trk, 0);
 		}
+	}
+	return res;
+}
+
+int flp_format_trk(Floppy* flp, int trk, int spt, int slen, char* data) {
+	int res = 1;
+	if (trk > 255) {
+		res = 0;
+	} else {
+		res = flp_format_trk_buf(trk, spt, slen, data, flp->data[trk].byte);
+		if (res) flpFillFields(flp, trk, 0);
 	}
 	return res;
 }

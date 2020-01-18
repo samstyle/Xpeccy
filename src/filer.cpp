@@ -44,7 +44,7 @@ static xFileTypeInfo ft_tab[] = {
 	{FL_TD0, 1, ".td0", "*.td0", loadTD0, NULL, "TD0 disk image"},
 	{FL_FDI, 1, ".fdi", "*.fdi", loadFDI, NULL, "FDI disk image"},
 	{FL_UDI, 1, ".udi", "*.udi", loadUDI, saveUDI, "UDI disk image"},
-	{FL_DSK, 1, ".dsk", "*.dsk", loadDSK, NULL, "DSK disk image"},
+	{FL_DSK, 1, ".dsk", "*.dsk", loadDSK, saveDSK, "DSK disk image"},
 	{FL_HOBETA, 0, ".$", "*.$?", loadHobeta, NULL, "Hobeta file"},
 	{FL_GB, 0, ".gb", "*.gb", loadSlot, NULL, "GB cartrige"},
 	{FL_GBC, 0, ".gbc", "*.gbc", loadSlot, NULL, "GBC cartrige"},

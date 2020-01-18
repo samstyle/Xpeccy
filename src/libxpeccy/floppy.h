@@ -70,8 +70,8 @@ void flpPrev(Floppy*,int);
 void flpStep(Floppy*,int);
 
 int flp_format_trk(Floppy* flp, int trk, int spt, int slen, char* data);
+int flp_format_trk_buf(int trk, int spt, int slen, char* data, unsigned char* buf);
 
-// unsigned char flpGetField(Floppy*,int);
 void flpFillFields(Floppy*,int,int);
 
 void flpPutTrack(Floppy*,int,unsigned char*,int);

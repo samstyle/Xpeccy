@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <QMutex>
+#include <QWaitCondition>
 
 #ifdef HAVESDL2
 #include <SDL2/SDL.h>
@@ -120,10 +121,19 @@ std::string sndGetName() {
 //------------------------
 
 static SDL_TimerID tid;
+#if USEMUTEX
+extern QMutex emutex;
+extern QWaitCondition qwc;
+#else
 extern int sleepy;
+#endif
 
 Uint32 sdl_timer_callback(Uint32 iv, void* ptr) {
+#if USEMUTEX
+	qwc.wakeAll();
+#else
 	sleepy = 0;
+#endif
 	return iv;
 }
 
@@ -173,7 +183,11 @@ void sdlPlayAudio(void*, Uint8* stream, int len) {
 			len--;
 		}
 	}
+#if USEMUTEX
+	qwc.wakeAll();
+#else
 	sleepy = 0;
+#endif
 }
 
 int sdlopen() {

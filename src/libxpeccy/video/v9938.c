@@ -278,7 +278,7 @@ void vdpT1ini(Video* vid) {
 }
 
 void vdpText1(Video* vid) {
-	if (vid->vbrd || vid->hbrd || !(vid->reg[1] & 0x40)) {
+	if (vid->vbrd || vid->hbrd || !(vid->reg[1] & 0x40) || (vid->ray.xs > 240)) {
 		col = vid->reg[7] & 0x0f;
 	} else {
 		yscr = (vid->ray.ys + vid->reg[0x17]) & 0xff;

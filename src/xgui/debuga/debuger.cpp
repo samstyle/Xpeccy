@@ -1597,11 +1597,13 @@ unsigned char rdbyte(unsigned short adr, void* ptr) {
 		case MEM_SLOT:
 			if (!comp->slot) break;
 			if (!comp->slot->data) break;
-			res = comp->slot->data[fadr & comp->slot->memMask]; break;
+			res = sltRead(comp->slot, SLT_PRG, adr); break;
+			// res = comp->slot->data[fadr & comp->slot->memMask]; break;
 	}
 	return res;
 }
 
+/*
 int checkCond(Computer* comp, int num) {
 	int res = 0;
 	unsigned char flg = comp->cpu->f;
@@ -1617,6 +1619,7 @@ int checkCond(Computer* comp, int num) {
 	}
 	return res;
 }
+*/
 
 int getCommandSize(Computer* comp, unsigned short adr) {
 	int type = getBrk(comp, adr) & 0xf0;

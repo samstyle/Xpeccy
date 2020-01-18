@@ -50,7 +50,7 @@ void msx2mapper(Computer* comp) {
 			bn = msx2mtabD[slot][i];
 		}
 		if (bn < 0) {
-			bn = comp->msx.memMap[i];
+			bn = comp->reg[0xfc | i];
 		}
 		if (bt == MEM_SLOT) {
 			memSetBank(comp->mem, i << 6, MEM_SLOT, comp->slot->memMap[i], MEM_16K, msxSlotRd, msxSlotWr, comp->slot);
@@ -120,12 +120,12 @@ void msx2_A8out(Computer* comp, unsigned short port, unsigned char val) {
 }
 
 void msx2mapOut(Computer* comp, unsigned short port, unsigned char val) {
-	comp->msx.memMap[port & 3] = val;
+	comp->reg[port] = val;
 	msx2mapper(comp);
 }
 
 unsigned char msx2mapIn(Computer* comp, unsigned short port) {
-	return comp->msx.memMap[port & 3];
+	return 0xff; // comp->msx.memMap[port & 3];
 }
 
 // reset
@@ -137,6 +137,11 @@ void msx2Reset(Computer* comp) {
 	vdpReset(comp->vid);
 	msxResetSlot(comp->slot);
 	msx2_A8out(comp, 0xa8, 0xf0);
+	msx2mwr(comp, 0xffff, 0xaa);
+	comp->reg[0xfc] = 3;
+	comp->reg[0xfd] = 2;
+	comp->reg[0xfe] = 1;
+	comp->reg[0xff] = 0;
 	msx2mapper(comp);
 }
 
