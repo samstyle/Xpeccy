@@ -62,7 +62,6 @@ int loadDSK(Computer* comp, const char *name, int drv) {
 	int sidcnt;
 	int tlen;
 	int slen;
-//	DiskInfBlock dib;
 	TrackInfBlock tib;
 	SectorInfBlock* sib;
 	Sector secs[256];
@@ -76,6 +75,7 @@ int loadDSK(Computer* comp, const char *name, int drv) {
 	if (ext < 0) {
 		err = ERR_DSK_SIGN;
 	} else {
+		diskClear(flp);
 		trkcnt = sigBuf[0x30] & 0xff;
 		sidcnt = sigBuf[0x31] & 0xff;
 		tlen = (sigBuf[0x32] & 0xff) | ((sigBuf[0x33] & 0xff) << 8);
@@ -114,8 +114,8 @@ int loadDSK(Computer* comp, const char *name, int drv) {
 		}
 		flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
 		strcpy(flp->path,name);
-		// flp->doubleSide = (sidcnt > 1) ? 1 : 0;
-		// flp->trk80 = 1;
+		//flp->doubleSide = (sidcnt > 1) ? 1 : 0;
+		//flp->trk80 = (trkcnt > 42) ? 1 : 0;
 		flp->insert = 1;
 		flp->changed = 0;
 	}
@@ -127,20 +127,21 @@ long dsk_save_track(Floppy* flp, int trk, int side, FILE* file) {
 	TrackInfBlock tinf;
 	Sector sdata[29];
 	long fpos = ftell(file);
-	side &= 1;
 	int sec = 0;
 	int pos = 0;
 	int i, dsz, dps;
 	int mdsz = 0;
 	int rtrk = (trk << 1) | side;
+	side &= 1;
 	memset(&tinf, 0, sizeof(TrackInfBlock));
 	// scan track & collect sectors info & data
 	for (pos = 0; (pos < TRACKLEN) && (sec < 29); pos++) {
-		if (flp->data[rtrk].field[pos] == 1) {	// sector info
+		if (flp->data[rtrk].field[pos] == 1) {			// sector info
 			sdata[sec].trk = flp->data[rtrk].byte[pos++];	// C
 			sdata[sec].head = flp->data[rtrk].byte[pos++];	// H
 			sdata[sec].sec = flp->data[rtrk].byte[pos++];	// R
 			sdata[sec].sz = flp->data[rtrk].byte[pos++] & 7;// N
+			pos += 2;					// skip crc
 			if (sdata[sec].sz > mdsz)			// max N
 				mdsz = sdata[sec].sz;
 			dsz = 128 << sdata[sec].sz;			// sector data size
@@ -153,12 +154,14 @@ long dsk_save_track(Floppy* flp, int trk, int side, FILE* file) {
 			sec++;
 		}
 	}
+	if (sec < 1)		// no sectors found, no data written, size = 0
+		return 0;
 	// fill track info
 	tinf.track = trk & 0xff;
 	tinf.side = side & 1;
-	tinf.secSize = mdsz & 7;
+	tinf.secSize = mdsz & 7;		// 0 @ extend dsk ?
 	tinf.secCount = sec & 0xff;
-	tinf.gap3Size = 0x4e;
+	tinf.gap3Size = 0x1a;
 	tinf.filler = 0xe5;
 	pos = 0;
 	for (i = 0; i < sec; i++) {
@@ -167,11 +170,11 @@ long dsk_save_track(Floppy* flp, int trk, int side, FILE* file) {
 		tinf.sectorInfo[pos + 2] = sdata[i].sec;
 		tinf.sectorInfo[pos + 3] = sdata[i].sz;
 		dsz = 128 << sdata[i].sz;
-		 if (i == (sec - 1))				// end of cylinder
-			 tinf.sectorInfo[pos + 4] = 0x80;
+		if (i == (sec - 1))				// end of cylinder
+			tinf.sectorInfo[pos + 4] = 0x80;
 		tinf.sectorInfo[pos + 6] = dsz & 0xff;
 		tinf.sectorInfo[pos + 7] = (dsz >> 8) & 0xff;
-		 pos += 8;
+		pos += 8;
 	}
 	// save track info block
 	fwrite("Track-Info\r\n", 12, 1, file);
@@ -183,8 +186,11 @@ long dsk_save_track(Floppy* flp, int trk, int side, FILE* file) {
 			dsz = 0x1800;
 		fwrite(sdata[i].data, dsz, 1, file);
 	}
-	return ftell(file) - fpos;	// size of track image
+	return ftell(file) - fpos;
 }
+
+static const char sign[] = "EXTENDED CPC DSK File\r\nDisk-Info\r\n";
+static const char crea[] = "Xpeccy        ";	// 14 bytes
 
 int saveDSK(Computer* comp, const char* name, int drv) {
 	int err = ERR_OK;
@@ -192,13 +198,10 @@ int saveDSK(Computer* comp, const char* name, int drv) {
 	if (file) {
 		Floppy* flp = comp->dif->fdc->flop[drv & 3];
 		char buf[256];
-		const char sign[] = "EXTENDED CPC DSK File\r\nDisk-Info\r\n";
-		const char crea[] = "Xpeccy        ";	// 14 bytes
-		char trk = flp->trk80 ? 80 : 40;
 		memset(buf, 0, 0x100);
 		memcpy(buf, sign, 0x22);
 		memcpy(buf + 0x22, crea, 0x0e);
-		buf[0x30] = trk;
+		// 30 = track count, will be updated later
 		buf[0x31] = flp->doubleSide ? 2 : 1;
 		// 32,33 = 0 @ extend format
 		// 34+N = size of track N (from Track-Info to Track-Info)
@@ -206,13 +209,16 @@ int saveDSK(Computer* comp, const char* name, int drv) {
 		int cpos = 0x34;
 		long isize;
 		long fpos;
-		for (int i = 0; i < trk; i++) {
+		int tcount = 0;
+		for (int i = 0; i < 86; i++) {
 			isize = dsk_save_track(flp, i, 0, file);
 			fpos = ftell(file);
 			fseek(file, cpos, SEEK_SET);
 			fputc((isize >> 8) & 0xff, file);
 			fseek(file, fpos, SEEK_SET);
 			cpos++;
+			if (isize > 0)
+				tcount = i + 1;
 			if (flp->doubleSide) {
 				isize = dsk_save_track(flp, i, 1, file);
 				fpos = ftell(file);
@@ -220,10 +226,14 @@ int saveDSK(Computer* comp, const char* name, int drv) {
 				fputc((isize >> 8) & 0xff, file);
 				fseek(file, fpos, SEEK_SET);
 				cpos++;
+				if (isize > 0)
+					tcount = i + 1;
 			}
 		}
+		fseek(file, 0x30, SEEK_SET);	// write tracks counter
+		fputc(tcount & 0xff, file);
 		fclose(file);
-
+		// update name
 		flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
 		strcpy(flp->path,name);
 		flp->changed = 0;

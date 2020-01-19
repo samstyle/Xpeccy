@@ -124,16 +124,25 @@ void diskFormTRDTrack(Floppy* flp, int tr, unsigned char* bpos) {
 
 // format a single track from sectors list
 // <sdata> is list of <scount> sectors
+// TODO: calculate GAP3 len !!!
 void diskFormTrack(Floppy* flp, int tr, Sector* sdata, int scount) {
 	unsigned char *ppos = flp->data[tr].byte;
 	int i,ln;
-	unsigned int sc;
+	int sc;
 	if (tr > 255) return;
-	for (i=0; i<12; i++) *(ppos++) = 0x00;		// 12	space
-	*(ppos++) = 0xc2; *(ppos++) = 0xc2;		// 	track mark
-	*(ppos++) = 0xc2; *(ppos++) = 0xfc;
+	int dsz = 0;
+	for (i = 0; i < scount; i++) {
+		dsz += (128 << sdata[i].sz);
+	}
+	dsz = (TRACKLEN - dsz) / scount - 72;
+	if (dsz < 10) return;
+	memset(ppos, 0x00, 12); ppos += 12;		// 12	space
+	*(ppos++) = 0xc2;				// 	track mark
+	*(ppos++) = 0xc2;
+	*(ppos++) = 0xc2;
+	*(ppos++) = 0xfc;
 	for (sc = 0; sc < scount; sc++) {
-		memset(ppos, 0x4e, 10); ppos += 10;		// 10	sync
+		memset(ppos, 0x4e, 10); ppos += 10;		// 10	sync (GAP1)
 		memset(ppos, 0x00, 12); ppos += 12;		// 12	space
 		*(ppos++) = 0xa1;				//	address mark
 		*(ppos++) = 0xa1;
@@ -144,7 +153,7 @@ void diskFormTrack(Floppy* flp, int tr, Sector* sdata, int scount) {
 		*(ppos++) = sdata[sc].sec;
 		*(ppos++) = sdata[sc].sz;
 		*(ppos++) = 0xf7; *(ppos++) = 0xf7;
-		memset(ppos, 0x4e, 22); ppos += 22;		// 22	sync
+		memset(ppos, 0x4e, 22); ppos += 22;		// 22	sync (GAP2)
 		memset(ppos, 0x00, 12); ppos += 12;		// 12	space
 		*(ppos++) = 0xa1;				//	data mark
 		*(ppos++) = 0xa1;
@@ -153,9 +162,9 @@ void diskFormTrack(Floppy* flp, int tr, Sector* sdata, int scount) {
 		ln = (128 << (sdata[sc].sz & 3));		//	data
 		memcpy(ppos, sdata[sc].data, ln); ppos += ln;
 		*(ppos++) = 0xf7; *(ppos++) = 0xf7;
-		memset(ppos, 0x4e, 60); ppos += 60;		// 60	sync
+		memset(ppos, 0x4e, dsz); ppos += dsz;		// 60	sync (GAP3)
 	}
-	while ((ppos - flp->data[tr].byte) < TRACKLEN) *(ppos++) = 0x4e;		// ?	last sync
+	while ((ppos - flp->data[tr].byte) < TRACKLEN) *(ppos++) = 0x4e;		// last sync (GAP4)
 	flpFillFields(flp,tr,1);
 }
 
