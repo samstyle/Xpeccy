@@ -210,7 +210,6 @@ void useek01(FDC* fdc) {
 
 void useek02(FDC* fdc) {
 	fdc->trk = fdc->flp->trk;
-	printf("seek flp trk: %.2X\n", fdc->flp->trk);
 	fdc->pos++;
 }
 

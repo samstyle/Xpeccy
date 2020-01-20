@@ -130,6 +130,18 @@ int vgGetByte(FDC* fdc) {
 	return res;
 }
 
+// wait fdc->cnt ms & spin flop if motor is on
+void vgwait(FDC* fdc) {
+	fdc->cnt -= BYTEDELAY;
+	if (fdc->cnt < 0) {
+		fdc->pos++;
+	} else {
+		fdc->wait += BYTEDELAY;
+		if (fdc->flp->motor)
+			flpNext(fdc->flp, fdc->side);
+	}
+}
+
 // idle : wait 15 IDX pulses & stop motor
 
 void vgstp00(FDC* fdc) {
@@ -214,7 +226,7 @@ void vgchk(FDC* fdc) {
 void vgres00(FDC* fdc) {
 	fdc->fmode = 0;
 	fdc->trk = 0xff;
-	fdc->wait += 1000000;		// delay for BV
+	fdc->cnt = 1000000;		// delay for BV
 	if (fdc->com & 8) {		// if h=1 : start motor, pause 15 ms
 		fdc->wait += turbo ? 5000 : 15000;
 		fdc->flp->motor = 1;
@@ -236,14 +248,14 @@ void vgres01(FDC* fdc) {
 	}
 }
 
-fdcCall vgRest[] = {&vgres00, &vgres01, &vgchk};
+fdcCall vgRest[] = {&vgres00, &vgwait, &vgres01, &vgchk};
 
 // ====
 // seek
 
 void vgseek00(FDC* fdc) {
 	fdc->fmode = 0;
-	fdc->wait += 1000000;		// 1ms delay for BV :)
+	fdc->cnt = 1000000;		// 1ms delay for BV :)
 	if (fdc->com & 8) {
 		fdc->wait += turbo ? 1 : 15000;
 		fdc->flp->motor = 1;
@@ -265,7 +277,7 @@ void vgseek01(FDC* fdc) {
 	}
 }
 
-fdcCall vgSeek[] = {&vgseek00, &vgseek01, &vgchk};
+fdcCall vgSeek[] = {&vgseek00, &vgwait, &vgseek01, &vgchk};
 
 // ===========================
 // step/step forward/step back

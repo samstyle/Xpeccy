@@ -24,6 +24,7 @@ void flpDestroy(Floppy* flp) {
 void flpWr(Floppy* flp, int hd, unsigned char val) {
 	flp->wr = 1;
 	hd &= 1;
+	if (hd & !flp->doubleSide) return;	// saving on HD1 for SS Floppy
 	if (flp->insert) {
 		flp->changed = 1;
 		flp->data[(flp->trk << 1) | hd].byte[flp->pos] = val;
@@ -33,7 +34,9 @@ void flpWr(Floppy* flp, int hd, unsigned char val) {
 unsigned char flpRd(Floppy* flp, int hd) {
 	flp->rd = 1;
 	hd &= 1;
-	return flp->insert ? flp->data[(flp->trk << 1) | hd].byte[flp->pos] : 0xff;
+	if (!flp->insert) return 0xff;
+	if (hd && !flp->doubleSide) return 0xff;
+	return flp->data[(flp->trk << 1) | hd].byte[flp->pos];
 }
 
 void flpStep(Floppy* flp, int dir) {
