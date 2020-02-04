@@ -338,8 +338,7 @@ int loadTZX(Computer* comp, const char* name, int drv) {
 		}
 		if (comp->tape->tmpBlock.sigCount > 0)
 			tapAddBlock(comp->tape, comp->tape->tmpBlock);
-		tape->path = (char*)realloc(tape->path,sizeof(char) * (strlen(name) + 1));
-		strcpy(tape->path,name);
+		tape_set_path(tape, name);
 	}
 	fclose(file);
 	return err;

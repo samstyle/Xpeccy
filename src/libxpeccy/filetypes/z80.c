@@ -74,13 +74,13 @@ unsigned char z80readblock(FILE* file, char* buf) {
 	return tmp;
 }
 
-const char* v2hardware[16] = {
+static const char* v2hardware[16] = {
 	"48k","48k + If.1","SamRam","128k","128k + If.1","unknown","unknown",
 	"Spectrum +3","unknown","Pentagon 128K","Scorpion 256K","Didaktik",
 	"Spectrum +2","Spectrum +2A","TC1048","TC2068"
 };
 
-const char* v3hardware[16] = {
+static const char* v3hardware[16] = {
 	"48k","48k + If.1","SamRam","48k + M.G.T","128k","128k + If.1","128k + M.G.T.",
 	"Spectrum +3","unknown","Pentagon 128K","Scorpion 256K","Didaktik",
 	"Spectrum +2","Spectrum +2A","TC1048","TC2068"
@@ -91,6 +91,8 @@ int loadZ80(Computer* comp, const char* name, int drv) {
 	if (!file) return ERR_CANT_OPEN;
 	int res = loadZ80_f(comp, file);
 	fclose(file);
+	if (res == ERR_OK)
+		mem_set_path(comp->mem, name);
 	return res;
 }
 

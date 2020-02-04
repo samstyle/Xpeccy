@@ -61,7 +61,7 @@ int loadTAP(Computer* comp, const char* name, int drv) {
 	fclose(file);
 
 	tape->isData = 1;
-	tape->path = (char*)realloc(tape->path,sizeof(char) * (strlen(name) + 1));
+	tape_set_path(tape, name);
 	strcpy(tape->path,name);
 
 	return ERR_OK;
@@ -85,8 +85,7 @@ int saveTAP(Computer* comp, const char* name, int drv) {
 	}
 	fclose(file);
 
-	tape->path = (char*)realloc(tape->path,sizeof(char) * (strlen(name) + 1));
-	strcpy(tape->path,name);
+	tape_set_path(tape, name);
 
 	return ERR_OK;
 }

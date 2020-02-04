@@ -24,6 +24,16 @@ void tapDestroy(Tape* tap) {
 	free(tap);
 }
 
+void tape_set_path(Tape* tap, const char* path) {
+	if (path != NULL) {
+		tap->path = realloc(tap->path, strlen(path) + 1);
+		strcpy(tap->path, path);
+	} else {
+		free(tap->path);
+		tap->path = NULL;
+	}
+}
+
 // blocks
 
 void blkClear(TapeBlock *blk) {
@@ -283,8 +293,7 @@ void tapEject(Tape* tap) {
 	tap->isData = 1;
 	tap->block = 0;
 	tap->pos = 0;
-	free(tap->path);
-	tap->path = NULL;
+	tape_set_path(tap, NULL);
 	if (tap->blkData) {
 		for (i = 0; i < tap->blkCount; i++) {
 			if (tap->blkData[i].data) {

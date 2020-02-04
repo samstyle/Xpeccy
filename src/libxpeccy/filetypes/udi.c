@@ -94,8 +94,7 @@ int loadUDI(Computer* comp, const char* name, int drv) {
 			loadUDITrack(flp, file, i, 0);
 			if (dbSide) loadUDITrack(flp, file, i, 1);
 		}
-		flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
-		strcpy(flp->path,name);
+		flp_set_path(flp, name);
 		flp->insert = 1;
 		flp->changed = 0;
 	}
@@ -145,8 +144,7 @@ int saveUDI(Computer* comp, const char* name, int drv) {
 	fwrite((char*)img, dptr - img, 1, file);
 	fclose(file);
 
-	flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
-	strcpy(flp->path,name);
+	flp_set_path(flp, name);
 	flp->changed = 0;
 	return ERR_OK;
 }

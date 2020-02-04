@@ -59,6 +59,7 @@ typedef struct {
 	int ramMask;
 	int romSize;
 	int romMask;
+	char* snapath;
 } Memory;
 
 Memory* memCreate(void);
@@ -76,14 +77,9 @@ void memPutData(Memory*,int,int,int,char*);
 xAdr memGetXAdr(Memory*, unsigned short);
 int memFindAdr(Memory*, int, int);
 
-/*
+void mem_set_path(Memory*, const char*);
 
-unsigned char* memGetPagePtr(Memory*,int,int);
-MemPage* memGetBankPtr(Memory*,unsigned short);
-
-*/
-
-#if __cplusplus
+#ifdef __cplusplus
 }
 #endif
 

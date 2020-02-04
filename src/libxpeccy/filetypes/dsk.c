@@ -120,8 +120,7 @@ int loadDSK(Computer* comp, const char *name, int drv) {
 				if (sidcnt == 1) tr++;
 			}
 		}
-		flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
-		strcpy(flp->path,name);
+		flp_set_path(flp, name);
 		//flp->doubleSide = (sidcnt > 1) ? 1 : 0;
 		//flp->trk80 = (trkcnt > 42) ? 1 : 0;
 		flp->insert = 1;
@@ -250,8 +249,7 @@ int saveDSK(Computer* comp, const char* name, int drv) {
 		fwrite(buf, 256, 1, file);
 		fclose(file);
 		// update name
-		flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
-		strcpy(flp->path,name);
+		flp_set_path(flp, name);
 		flp->changed = 0;
 	} else {
 		err = ERR_CANT_OPEN;

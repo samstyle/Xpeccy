@@ -1232,6 +1232,7 @@ void MainWin::setProfile(std::string nm) {
 	}
 	comp = conf.prof.cur->zx;
 	emit s_keywin_upd(comp->keyb);
+	vid_upd_scale();
 	updateWindow();
 	if (comp->firstRun) {
 		compReset(comp, RES_DEFAULT);

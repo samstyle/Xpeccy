@@ -82,6 +82,8 @@ typedef struct {
 Tape* tapCreate();
 void tapDestroy(Tape*);
 
+void tape_set_path(Tape*, const char*);
+
 void tapEject(Tape*);
 int tapPlay(Tape*);
 void tapRec(Tape*);

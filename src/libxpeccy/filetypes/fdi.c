@@ -85,8 +85,7 @@ int loadFDI(Computer* comp, const char* name, int drv) {
 		flp->protect = hd.wp ? 1 : 0;
 		flp->insert = 1;
 		flp->changed = 0;
-		flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
-		strcpy(flp->path,name);
+		flp_set_path(flp, name);
 	}
 	//for (i = 0; i < 256; i++) if (trkImg[i].data) free(trkImg[i].data);
 	fclose(file);

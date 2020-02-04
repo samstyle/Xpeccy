@@ -271,6 +271,7 @@ struct xConfig {
 	QList<xBookmark> bookmarkList;
 	QMap<QString, xAdr> labels;
 	QMap<QString, QColor> pal;
+	QString labpath;
 	unsigned short port;
 	struct {
 		unsigned fast:1;

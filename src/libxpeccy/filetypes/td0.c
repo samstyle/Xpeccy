@@ -191,8 +191,7 @@ int loadTD0(Computer* comp, const char* name, int drv) {
 		} else {
 			doTD0(flp, fGetData, file, hd.flag & 0x80);
 		}
-		flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
-		strcpy(flp->path,name);
+		flp_set_path(flp, name);
 		flp->insert = 1;
 		flp->changed = 0;
 	}

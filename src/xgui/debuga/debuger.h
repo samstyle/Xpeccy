@@ -138,6 +138,7 @@ class DebugWin : public QDialog {
 		void fillGBoy();
 		void drawNes();
 		void regClick(QMouseEvent*);
+		void reload();
 
 		void setCPU();
 		void setFlags();

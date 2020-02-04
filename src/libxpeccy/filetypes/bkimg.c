@@ -19,8 +19,7 @@ int loadBkIMG(Computer* comp, const char* fname, int drv) {
 		}
 		fclose(file);
 		flp->insert = 1;
-		flp->path = realloc(flp->path, strlen(fname) + 1);
-		strcpy(flp->path, fname);
+		flp_set_path(flp, fname);
 	}
 	return err;
 }

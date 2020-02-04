@@ -23,8 +23,7 @@ int loadTRD(Computer* comp, const char* name, int drv) {
 			trk++;
 		}
 
-		flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
-		strcpy(flp->path,name);
+		flp_set_path(flp, name);
 		flp->insert = 1;
 		flp->changed = 0;
 	}
@@ -50,8 +49,7 @@ int saveTRD(Computer* comp, const char* name, int drv) {
 	fwrite((char*)img, 0xa0000, 1, file);
 	fclose(file);
 
-	flp->path = (char*)realloc(flp->path,sizeof(char) * (strlen(name) + 1));
-	strcpy(flp->path,name);
+	flp_set_path(flp, name);
 	flp->changed = 0;
 	return ERR_OK;
 }

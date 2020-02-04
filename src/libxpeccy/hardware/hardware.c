@@ -4,7 +4,7 @@
 
 HardWare hwTab[] = {
 	{
-		HW_DUMMY,HWG_NULL,"Dummy","Dummy",16,MEM_256,
+		HW_DUMMY,HWG_NULL,"Dummy","Dummy",16,MEM_64K,
 		hw_dum_map, hw_dum_iwr, hw_dum_ird, hw_dum_mrd, hw_dum_mwr, NULL, NULL, NULL, NULL, hw_dum_vol
 	},{
 		HW_ZX48,HWG_ZX,"ZX48K","ZX 48K",16,MEM_64K,
@@ -117,7 +117,7 @@ unsigned char hwIn(xPort* ptab, Computer* comp, unsigned short port, int dos) {
 	unsigned char res = 0xff;
 	int idx = 0;
 	xPort* itm;
-	while (1) {
+	while (ptab[idx].mask != 0) {
 		itm = &ptab[idx];
 		if (((port & itm->mask) == (itm->value & itm->mask)) &&\
 				(itm->in != NULL) &&\
@@ -129,14 +129,14 @@ unsigned char hwIn(xPort* ptab, Computer* comp, unsigned short port, int dos) {
 		}
 		if (itm->mask == 0) break;
 		idx++;
-	};
+	}
 	return res;
 }
 
 void hwOut(xPort* ptab, Computer* comp, unsigned short port, unsigned char val, int dos) {
 	int idx = 0;
 	xPort* itm;
-	while (1) {
+	while (ptab[idx].mask != 0) {
 		itm = &ptab[idx];
 		if (((port & itm->mask) == (itm->value & itm->mask)) &&\
 				(itm->out != NULL) &&\
@@ -144,7 +144,7 @@ void hwOut(xPort* ptab, Computer* comp, unsigned short port, unsigned char val, 
 				((itm->rom & 2) || (itm->rom == comp->rom)) &&\
 				((itm->cpm & 2) || (itm->cpm == comp->cpm))) {
 			itm->out(comp, port, val);
-			break;
+//			break;		// write to every matched port
 		}
 		if (itm->mask == 0) break;
 		idx++;

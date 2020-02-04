@@ -379,6 +379,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 //	connect(ui.actLoadMap, SIGNAL(triggered(bool)),this,SLOT(loadMap()));
 //	connect(ui.actSaveMap, SIGNAL(triggered(bool)),this,SLOT(saveMap()));
 	connect(ui.actDisasm, SIGNAL(triggered(bool)),this,SLOT(saveDasm()));
+	connect(ui.tbRefresh, SIGNAL(released()), this, SLOT(reload()));
 
 // dump table
 
@@ -665,6 +666,16 @@ void DebugWin::doTrace(QAction* act) {
 	doStep();
 }
 
+void DebugWin::reload() {
+	if (comp->mem->snapath) {
+		load_file(comp, comp->mem->snapath, FG_SNAPSHOT, 0);
+		disasmAdr = comp->cpu->pc;
+		fillAll();
+	}
+	if (!conf.labpath.isEmpty())
+		loadLabels(conf.labpath.toLocal8Bit().data());
+}
+
 void DebugWin::keyPressEvent(QKeyEvent* ev) {
 	if (trace && !ev->isAutoRepeat()) {
 		trace = 0;
@@ -681,18 +692,12 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 	switch(ev->modifiers()) {
 		case Qt::ControlModifier:
 			switch(ev->key()) {
-				case Qt::Key_F:
-					doFind();
-					break;
-				case Qt::Key_S:
-					doSaveDump();
-					break;
-				case Qt::Key_O:
-					doOpenDump();
-					break;
-				case Qt::Key_T:
-					doTrace(ui.actTrace);
-					break;
+//				case Qt::Key_F:
+//					doFind();
+//					break;
+//				case Qt::Key_T:
+//					doTrace(ui.actTrace);
+//					break;
 				case Qt::Key_L:
 					ui.actShowLabels->setChecked(!conf.dbg.labels);
 					break;
@@ -700,9 +705,9 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			break;
 		case Qt::AltModifier:
 			switch (ev->key()) {
-				case Qt::Key_K:
-					emit wannaKeys();
-					break;
+//				case Qt::Key_K:
+//					emit wannaKeys();
+//					break;
 				case Qt::Key_F7:
 					for (i = 10; i > 0; i--) {
 						doStep();
@@ -715,6 +720,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 				case Qt::Key_Escape:
 					if (!ev->isAutoRepeat()) stop();
 					break;
+				/*
 				case Qt::Key_Home:
 					disasmAdr = pc;
 					fillDisasm();
@@ -748,6 +754,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 						fillDisasm();
 					}
 					break;
+				*/
 				case Qt::Key_F1:
 					emit wannaOptions(conf.prof.cur);
 					break;
@@ -758,6 +765,9 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					load_file(comp, NULL, FG_ALL, -1);
 					disasmAdr = comp->cpu->pc;
 					fillAll();
+					break;
+				case Qt::Key_F6:
+					reload();
 					break;
 				case Qt::Key_F7:
 					doStep();

@@ -21,6 +21,16 @@ void flpDestroy(Floppy* flp) {
 	free(flp);
 }
 
+void flp_set_path(Floppy* flp, const char* path) {
+	if (path != NULL) {
+		flp->path = realloc(flp->path, strlen(path) + 1);
+		strcpy(flp->path, path);
+	} else {
+		free(flp->path);
+		flp->path = NULL;
+	}
+}
+
 void flpWr(Floppy* flp, int hd, unsigned char val) {
 	flp->wr = 1;
 	hd &= 1;
@@ -259,8 +269,7 @@ void flpFillFields(Floppy* flp,int tr, int flag) {
 }
 
 int flpEject(Floppy* flp) {
-	free(flp->path);
-	flp->path = NULL;
+	flp_set_path(flp, NULL);
 	flp->insert = 0;
 	flp->changed = 0;
 	return 1;

@@ -18,10 +18,10 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 
 	unsigned char tmp, tmp2;
 	unsigned short adr;
-	char* pageBuf = malloc(0x4000);
-	char* tmpgBuf = malloc(0x4000);
+	char pageBuf[0x4000];
+	char tmpgBuf[0x4000];
 
-//	compReset(comp, (fileSize < 49180) ? RES_48 : RES_128);
+	compReset(comp, (fileSize < 49180) ? RES_48 : RES_128);
 
 	snaHead hd;
 	fread((char*)&hd, sizeof(snaHead), 1, file);
@@ -55,22 +55,19 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 	if (fileSize < 49180) {
 		comp->p7FFD = 0x10;
 		comp->pEFF7 = 0x00;
+		comp->rom = 1;		// set basic 48
 		comp->dos = 0;
 		comp->hw->mapMem(comp);
 		memSetBank(comp->mem, 0xc0, MEM_RAM, 0, MEM_16K, NULL,NULL,NULL);
 		memPutData(comp->mem, MEM_RAM, 0, MEM_16K, tmpgBuf);
 		comp->vid->curscr = 5;
-		adr = (hd.hsp << 8) | hd.lsp;
+		adr =(hd.hsp << 8) | hd.lsp;
 		tmp = memRd(comp->mem, adr++);
 		tmp2 = memRd(comp->mem, adr++);
 		comp->cpu->sp = adr;
 		comp->cpu->pc = tmp | (tmp2 << 8);
 	} else {
-		comp->cpu->lpc = fgetc(file);
-		comp->cpu->hpc = fgetc(file);
-//		adr = fgetc(file);
-//		adr |= fgetc(file) << 8;
-//		comp->cpu->pc = adr;
+		comp->cpu->pc = fgetw(file);
 		tmp = fgetc(file);		// byte out to 7ffd. b0..2 current page
 		if (comp->hw->out)
 			comp->hw->out(comp,0x7ffd,tmp,0);
@@ -86,19 +83,19 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 		memPutData(comp->mem, MEM_RAM, tmp & 7, MEM_16K, tmpgBuf);
 	}
 	tsReset(comp->ts);
-	free(pageBuf);
-	free(tmpgBuf);
 	return ERR_OK;
 }
 
 int loadSNA(Computer* comp, const char* name, int drv) {
 	FILE* file = fopen(name,"rb");
 	if (!file) return ERR_CANT_OPEN;
-	fseek(file, 0, SEEK_END);	// ?
+	fseek(file, 0, SEEK_END);
 	size_t fileSize = ftell(file);
-	rewind(file);		// ?
+	rewind(file);
 	int res = loadSNA_f(comp, file, fileSize);
 	fclose(file);
+	if (res == ERR_OK)
+		mem_set_path(comp->mem, name);
 	return res;
 }
 
@@ -108,9 +105,8 @@ int saveSNA(Computer* comp, const char* name, int drv) {
 	unsigned char bnk, i;
 	int sna48 = (comp->mem->ramSize < MEM_128K) ? 1 : 0;
 	if (sna48) {
-		unsigned short pc = comp->cpu->pc;
-		memWr(comp->mem, --comp->cpu->sp, (pc & 0xff00) >> 8);
-		memWr(comp->mem, --comp->cpu->sp, pc & 0xff);
+		memWr(comp->mem, --comp->cpu->sp, comp->cpu->hpc);
+		memWr(comp->mem, --comp->cpu->sp, comp->cpu->lpc);
 	}
 	snaHead hd;
 	hd._h = comp->cpu->h_; hd._l = comp->cpu->l_;
@@ -131,14 +127,13 @@ int saveSNA(Computer* comp, const char* name, int drv) {
 	hd.border = comp->vid->brdcol & 7;
 	fwrite((char*)&hd, sizeof(snaHead), 1, file);
 
-	fwrite(comp->mem->ramData + (5 << 14), MEM_16K, 1, file);	// page 5
-	fwrite(comp->mem->ramData + (2 << 14), MEM_16K, 1, file);	// page 2
-
+	fwrite(comp->mem->ramData + ((5 << 14) & comp->mem->ramMask), MEM_16K, 1, file);	// page 5
+	fwrite(comp->mem->ramData + ((2 << 14) & comp->mem->ramMask), MEM_16K, 1, file);	// page 2
 	if (sna48) {
 		fwrite(comp->mem->ramData, MEM_16K, 1, file);		// page 0
 	} else {
 		bnk = comp->p7FFD & 7;
-		fwrite(comp->mem->ramData + (bnk << 14), MEM_16K, 1, file);	// current page
+		fwrite(comp->mem->ramData + ((bnk << 14) & comp->mem->ramMask), MEM_16K, 1, file);	// current page
 		fputc(comp->cpu->lpc, file);				// pc
 		fputc(comp->cpu->hpc, file);
 		fputc(comp->p7FFD, file);				// 7ffd
@@ -146,10 +141,11 @@ int saveSNA(Computer* comp, const char* name, int drv) {
 		for (i = 0; i < 8; i++) {				// all others pages
 			if ((i == 2) || (i == 5)) i++;
 			if (i != bnk) {
-				fwrite(comp->mem->ramData + (i << 14), MEM_16K, 1, file);
+				fwrite(comp->mem->ramData + ((i << 14) & comp->mem->ramMask), MEM_16K, 1, file);
 			}
 		}
 	}
 	fclose(file);
+	mem_set_path(comp->mem, name);
 	return ERR_OK;
 }

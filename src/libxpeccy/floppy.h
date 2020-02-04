@@ -62,6 +62,8 @@ typedef struct {
 Floppy* flpCreate(int);
 void flpDestroy(Floppy*);
 
+void flp_set_path(Floppy*, const char*);
+
 int flpEject(Floppy*);
 unsigned char flpRd(Floppy*, int);
 void flpWr(Floppy*, int, unsigned char);

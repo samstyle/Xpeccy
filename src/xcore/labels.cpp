@@ -50,6 +50,7 @@ int loadLabels(const char* fn) {
 					conf.labels[name] = xadr;
 				}
 			}
+			conf.labpath = path;
 		} else {
 			res = 0;		// can't open file
 		}

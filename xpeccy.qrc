@@ -80,5 +80,6 @@
         <file>images/palette.png</file>
         <file>images/commodore.png</file>
         <file>images/rewind.png</file>
+        <file>images/refresh.png</file>
     </qresource>
 </RCC>
