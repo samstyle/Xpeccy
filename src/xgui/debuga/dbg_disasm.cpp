@@ -737,7 +737,7 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			} else {
 				QTableView::keyPressEvent(ev);
 			}
-			ev->accept();
+//			ev->ignore();
 			break;
 		case Qt::Key_Down:
 			if ((ev->modifiers() & Qt::ControlModifier) || (idx.row() == model->rowCount() - 1)) {
@@ -745,25 +745,25 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			} else {
 				QTableView::keyPressEvent(ev);
 			}
-			ev->accept();
+//			ev->ignore();
 			break;
 		case Qt::Key_Home:
 			if (mode != XVIEW_CPU) break;
 			if (!cptr) break;
 			disasmAdr = (*cptr)->cpu->pc;
 			updContent();
-			ev->accept();
+//			ev->ignore();
 			break;
 		case Qt::Key_End:
 			if (mode != XVIEW_CPU) break;
 			if (!cptr) break;
 			(*cptr)->cpu->pc = getData(idx.row(), 0, Qt::UserRole).toInt() & 0xffff;
 			emit rqRefillAll();
-			ev->accept();
-			break;
-//		case Qt::Key_F2:
 //			ev->ignore();
-//			break;
+			break;
+		case Qt::Key_F2:
+			ev->ignore();
+			break;
 		case Qt::Key_Space:
 			adr = getData(idx.row(), 0, Qt::UserRole).toInt();
 			bpr = mode;
@@ -806,7 +806,7 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			}
 			brkXor(bpr, bpt, adr, -1, 1);
 			emit rqRefill();
-			ev->accept();
+//			ev->ignore();
 			break;
 		case Qt::Key_F4:
 			if (!idx.isValid()) break;
@@ -815,20 +815,20 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			history.append(disasmAdr);
 			disasmAdr = adr & 0xffff;
 			updContent();
-			ev->accept();
+//			ev->ignore();
 			break;
 		case Qt::Key_F5:
 			if (history.size() < 1) break;
 			disasmAdr = history.takeLast();
 			updContent();
-			ev->accept();
+//			ev->ignore();
 			break;
 		case Qt::Key_Return:
 			edit(currentIndex());
-			ev->accept();
+//			ev->ignore();
 			break;
 		default:
-			ev->ignore();
+			QTableView::keyPressEvent(ev);
 			break;
 	}
 }

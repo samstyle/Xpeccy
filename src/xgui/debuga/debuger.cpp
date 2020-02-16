@@ -760,11 +760,13 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 					break;
 				case Qt::Key_F2:
 					save_file(comp, NULL, FG_ALL, -1);
+					activateWindow();
 					break;
 				case Qt::Key_F3:
 					load_file(comp, NULL, FG_ALL, -1);
 					disasmAdr = comp->cpu->pc;
 					fillAll();
+					activateWindow();
 					break;
 				case Qt::Key_F6:
 					reload();

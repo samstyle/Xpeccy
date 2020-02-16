@@ -48,14 +48,14 @@ void vgSetMR(FDC*, int);
 
 int bdiGetPort(int port) {
 	int res = 0;
-	if ((port & 0x9f) == 0x9f) {
+	if ((port & 0x9f) == 0x9f) {			// 1xxxxx11 : bdi system port
 		res = BDI_SYS;
 	} else {
-		switch (port & 0xff) {
-			case 0x1f: res = FDC_COM; break;
-			case 0x3f: res = FDC_TRK; break;
-			case 0x5f: res = FDC_SEC; break;
-			case 0x7f: res = FDC_DATA; break;
+		switch (port & 0xff) {			// 0xxxxx11 : vg93 registers
+			case 0x1f: res = FDC_COM; break;	// 000xxx11
+			case 0x3f: res = FDC_TRK; break;	// 001xxx11
+			case 0x5f: res = FDC_SEC; break;	// 010xxx11
+			case 0x7f: res = FDC_DATA; break;	// 011xxx11
 		}
 	}
 	return res;
