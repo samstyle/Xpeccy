@@ -8,7 +8,11 @@
 #include <linux/limits.h>
 #endif
 
-#include <SDL_joystick.h>
+#ifdef HAVESDL2
+#include <SDL2/SDL_joystick.h>
+#else
+#include <SDL/SDL_joystick.h>
+#endif
 
 #include <QString>
 #include <QColor>

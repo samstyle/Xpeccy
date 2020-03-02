@@ -89,7 +89,6 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	set(BUNDLE_ICON_PATH ${CMAKE_SOURCE_DIR}/images/${MACOSX_BUNDLE_ICON_FILE})
 	set(BUNDLE_PATH ${CMAKE_BINARY_DIR}/${MACOSX_BUNDLE_BUNDLE_NAME})
 
-
 	set_source_files_properties(${CMAKE_BINARY_DIR}/${PROJECT_NAME} PROPERTIES MACOSX_PACKAGE_LOCATION MacOSX)
 	set_source_files_properties(${BUNDLE_ICON_PATH} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 
@@ -253,16 +252,11 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	find_program(MACDEPLOYQTEXE macdeployqt)
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 		COMMAND ${MACDEPLOYQTEXE} ARGS ${BUNDLE_PATH} -always-overwrite
-#		COMMAND mkdir ARGS -p ${BUNDLE_PATH}/Contents/Frameworks
-#		COMMAND cp ARGS -R /Library/Frameworks/SDL.framework ${BUNDLE_PATH}/Contents/Frameworks
+		COMMAND mkdir ARGS -p ${BUNDLE_PATH}/Contents/Frameworks
+		COMMAND cp ARGS -R /Library/Frameworks/SDL.framework ${BUNDLE_PATH}/Contents/Frameworks
+		COMMAND install_name_tool -change @rpath/SDL.framework/Versions/A/SDL @executable_path/../Frameworks/SDL.framework/Versions/A/SDL ${BUNDLE_PATH}/Contents/MacOS/xpeccy
 	)
 	set(CMAKE_INSTALL_PREFIX "/Applications")
-#	install(CODE "
-#		include(BundleUtilities)
-#		fixup_bundle(${BUNDLE_PATH} \"\" ${LIBDIRS})
-#		find_program(MACDEPLOYQTEXE macdeployqt)
-#		execute_process(COMMAND ${MACDEPLOYQTEXE} ARGS ${BUNDLE_PATH} -always-overwrite)
-#		" COMPONENT Runtime)
 	install(TARGETS ${PROJECT_NAME} BUNDLE DESTINATION .)
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS})

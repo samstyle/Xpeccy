@@ -682,10 +682,10 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 		return;
 	}
 	int i;
-	unsigned short pc = comp->cpu->pc;
+//	unsigned short pc = comp->cpu->pc;
 	unsigned char* ptr;
-	int offset = (ui.dumpTable->rows() - 1) << 3;
-	int adr;
+//	int offset = (ui.dumpTable->rows() - 1) << 3;
+//	int adr;
 	int len;
 	dasmData drow;
 	QModelIndex idx;
@@ -757,6 +757,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 				*/
 				case Qt::Key_F1:
 					emit wannaOptions(conf.prof.cur);
+					activateWindow();
 					break;
 				case Qt::Key_F2:
 					save_file(comp, NULL, FG_ALL, -1);
