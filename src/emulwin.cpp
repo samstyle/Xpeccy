@@ -200,7 +200,7 @@ MainWin::MainWin() {
 void MainWin::mapRelease(Computer* comp, xJoyMapEntry ent) {
 	switch(ent.dev) {
 		case JMAP_KEY:
-			xkey_release(ent.key, 0);
+			xkey_release(ent.key);
 			break;
 		case JMAP_JOY:
 			joyRelease(comp->joy, ent.dir);
@@ -214,7 +214,7 @@ void MainWin::mapRelease(Computer* comp, xJoyMapEntry ent) {
 void MainWin::mapPress(Computer* comp, xJoyMapEntry ent) {
 	switch(ent.dev) {
 		case JMAP_KEY:
-			xkey_press(ent.key, 0);
+			xkey_press(ent.key);
 			break;
 		case JMAP_JOY:
 			joyPress(comp->joy, ent.dir);
@@ -575,16 +575,19 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 	if (comp->debug) {
 		ev->ignore();
 	} else {
+		int keyid = shortcut_check(QKeySequence(ev->key() | ev->modifiers()));
+		if (keyid < 0) {
 #if defined(__linux) || defined(_WIN32)
-		int keyid = ev->nativeScanCode();
+			keyid = ev->nativeScanCode();
 #else
-		int keyid = qKey2id(ev->key());
+			keyid = qKey2id(ev->key());
 #endif
-		xkey_press(keyid, ev->modifiers());
+		}
+		xkey_press(keyid);
 	}
 }
 
-void MainWin::xkey_press(int xkey, Qt::KeyboardModifiers mod) {
+void MainWin::xkey_press(int xkey) {
 	keyEntry kent = getKeyEntry(xkey);
 	if (pckAct->isChecked()) {
 		xt_press(comp->keyb, kent.keyCode);
@@ -594,68 +597,56 @@ void MainWin::xkey_press(int xkey, Qt::KeyboardModifiers mod) {
 		if (xkey == XKEY_F12) {
 			compReset(comp,RES_DEFAULT);
 			emit s_rzx_stop();
-			// rzxWin->stop();
 		}
-	} else if (mod & Qt::AltModifier) {
-		xkey = key_to_func(xkey, 2);
-		switch(xkey) {
-			case XKEY_ENTER:
+	} else {
+		switch (xkey) {
+			case XCUT_FULLSCR:
 				vid_set_fullscreen(!conf.vid.fullScreen);
 				setMessage(conf.vid.fullScreen ? " fullscreen on " : " fullscreen off ");
 				updateWindow();
 				saveConfig();
 				break;
-#ifdef ISDEBUG
-			case XKEY_HOME:
-				debugAction();
-				break;
-#endif
-			case XKEY_1:
+			case XCUT_SIZEX1:
 				vid_set_zoom(1);
 				updateWindow();
 				saveConfig();
 				setMessage(" size x1 ");
 				break;
-			case XKEY_2:
+			case XCUT_SIZEX2:
 				vid_set_zoom(2);
 				updateWindow();
 				saveConfig();
 				setMessage(" size x2 ");
 				break;
-			case XKEY_3:
+			case XCUT_SIZEX3:
 				vid_set_zoom(3);
 				updateWindow();
 				saveConfig();
 				setMessage(" size x3 ");
 				break;
-			case XKEY_4:
+			case XCUT_SIZEX4:
 				vid_set_zoom(4);
 				updateWindow();
 				saveConfig();
 				setMessage(" size x4 ");
 				break;
-			case XKEY_F4:
-				close();
-				break;
-			//case XKEY_F7:
-			case XKEY_SCRSHOT:
+			case XCUT_COMBOSHOT:
 				scrCounter = conf.scrShot.count;
 				scrInterval = 0;
-				break;	// ALT+F7 combo
-			//case XKEY_F12:
-			case XKEY_RESET:
+				break;
+			case XCUT_RES_DOS:
 				compReset(comp,RES_DOS);
 				emit s_rzx_stop();
 				break;
-			case XKEY_K:
+			case XCUT_KEYBOARD:
 				emit s_keywin_shide();
 				break;
-			case XKEY_F:
+			case XCUT_FAST:
 				if (conf.emu.pause) break;
 				conf.emu.fast ^= 1;
 				updateHead();
 				break;
-			case XKEY_N:
+			case XCUT_NOFLICK:
 				if (noflic < 15)
 					noflic = 25;
 				else if (noflic < 35)
@@ -664,12 +655,12 @@ void MainWin::xkey_press(int xkey, Qt::KeyboardModifiers mod) {
 				saveConfig();
 				setMessage(QString(" noflick %0% ").arg(noflic * 2));
 				break;
-			case XKEY_R:
+			case XCUT_RATIO:
 				vid_set_ratio(!conf.vid.keepRatio);
 				setMessage(conf.vid.keepRatio ? " keep aspect ratio " : " ignore aspect ratio ");
 				saveConfig();
 				break;
-			case XKEY_M:
+			case XCUT_MOUSE:
 				grabMice = !grabMice;
 				if (grabMice) {
 					grabMouse(QCursor(Qt::BlankCursor));
@@ -679,59 +670,44 @@ void MainWin::xkey_press(int xkey, Qt::KeyboardModifiers mod) {
 					setMessage(" release mouse ");
 				}
 				break;
-		}
-	} else {
-		xkey = key_to_func(xkey, 1);
-		switch(xkey) {
-			case XKEY_PAUSE:
+			case XCUT_PAUSE:
 				conf.emu.pause ^= PR_PAUSE;
 				pause(true,0);
 				break;
-			case XKEY_ESC:
+			case XCUT_DEBUG:
 				conf.emu.fast = 0;
 				pause(true, PR_DEBUG);
 				setUpdatesEnabled(true);
 				emit s_debug(comp);
 				break;
-			case XKEY_MENU:
+			case XCUT_MENU:
 				userMenu->popup(pos() + QPoint(20,20));
 				userMenu->setFocus();
 				break;
-			case XKEY_NUMLCK:
-			case XKEY_INS:
-				if (conf.emu.pause) break;
-				conf.emu.fast ^= 1;
-				updateHead();
-				break;
-			//case XKEY_F1:
-			case XKEY_OPTIONS:
+			case XCUT_OPTIONS:
 				pause(true, PR_OPTS);
 				emit s_options(conf.prof.cur);
 				break;
-			//case XKEY_F2:
-			case XKEY_SAVE:
+			case XCUT_SAVE:
 				pause(true,PR_FILE);
 				save_file(comp, NULL, FG_ALL, -1);
 				pause(false,PR_FILE);
 				break;
-			//case XKEY_F3:
-			case XKEY_LOAD:
+			case XCUT_LOAD:
 				pause(true,PR_FILE);
 				load_file(comp, NULL, FG_ALL, -1);
 				pause(false,PR_FILE);
 				checkState();
 				emit s_tape_upd(comp->tape);
 				break;
-			//case XKEY_F4:
-			case XKEY_TAP_PLAY:
+			case XCUT_TAPLAY:
 				if (comp->tape->on) {
 					tapStateChanged(TW_STATE,TWS_STOP);
 				} else {
 					tapStateChanged(TW_STATE,TWS_PLAY);
 				}
 				break;
-			//case XKEY_F5:
-			case XKEY_TAP_REC:
+			case XCUT_TAPREC:
 				if (comp->tape->on) {
 					tapStateChanged(TW_STATE,TWS_STOP);
 				} else {
@@ -739,7 +715,7 @@ void MainWin::xkey_press(int xkey, Qt::KeyboardModifiers mod) {
 				}
 				break;
 			//case XKEY_F7:
-			case XKEY_SCRSHOT:
+			case XCUT_SCRSHOT:
 				if (scrCounter == 0) {
 					scrCounter = 1;
 					scrInterval = 0;
@@ -747,31 +723,22 @@ void MainWin::xkey_press(int xkey, Qt::KeyboardModifiers mod) {
 					scrCounter = 0;
 				}
 				break;
-			case XKEY_F8:
-				/*
-				if (rzxWin->isVisible()) {
-					rzxWin->hide();
-				} else {
-					rzxWin->show();
-				}
-				*/
+			case XCUT_RZXWIN:
+				emit s_rzx_show();
 				break;
-			//case XKEY_F9:
-			case XKEY_SAVECHA:
+			case XCUT_FASTSAVE:
 				pause(true,PR_FILE);
 				saveChanged();
 				pause(false,PR_FILE);
 				break;
-			//case XKEY_F10:
-			case XKEY_NMI:
+			case XCUT_NMI:
 				if (comp->cpu->type != CPU_Z80) break;
 				comp->nmiRequest = 1;
 				break;
-			case XKEY_TAP_SHOW:
+			case XCUT_TAPWIN:
 				emit s_tape_show();
 				break;
-			//case XKEY_F12:
-			case XKEY_RESET:
+			case XCUT_RESET:
 				compReset(comp,RES_DEFAULT);
 				emit s_rzx_stop();
 				break;
@@ -799,11 +766,11 @@ void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 #else
 		keyid = qKey2id(ev->key());
 #endif
-		xkey_release(keyid, ev->modifiers());
+		xkey_release(keyid);
 	}
 }
 
-void MainWin::xkey_release(int keyid, Qt::KeyboardModifiers) {
+void MainWin::xkey_release(int keyid) {
 	keyEntry kent = getKeyEntry(keyid);
 //	qDebug() << "release" << kent.name;
 	xt_release(comp->keyb, kent.keyCode);

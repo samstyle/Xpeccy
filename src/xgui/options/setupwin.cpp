@@ -22,6 +22,7 @@
 #include "xcore/sound.h"
 #include "libxpeccy/spectrum.h"
 #include "libxpeccy/filetypes/filetypes.h"
+#include "libxpeccy/input.h"
 
 void fillRFBox(QComboBox* box, QStringList lst) {
 	box->clear();
@@ -69,6 +70,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	layeditor->setModal(true);
 
 	padial = new xPadBinder(this);
+	kedit = new xKeyEditor(this);
 
 	int i;
 // machine
@@ -169,6 +171,28 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.hs_type->addItem(QIcon(":/images/cancel.png"),"Not connected",IDE_NONE);
 	ui.hs_type->addItem(QIcon(":/images/hdd.png"),"HDD (ATA)",IDE_ATA);
 //	setupUi.hs_type->addItem(QIcon(":/images/cd.png"),"CD (ATAPI) not working yet",IDE_ATAPI);
+// keys
+	ui.tbOptionsKey->setProperty("xkey", XCUT_OPTIONS);
+	ui.tbSaveKey->setProperty("xkey", XCUT_SAVE);
+	ui.tbOpenKey->setProperty("xkey", XCUT_LOAD);
+	ui.tbTPlayKey->setProperty("xkey", XCUT_TAPLAY);
+	ui.tbTRecKey->setProperty("xkey", XCUT_TAPREC);
+	ui.tbSShotKey->setProperty("xkey", XCUT_SCRSHOT);
+	ui.tbComboShotKey->setProperty("xkey", XCUT_COMBOSHOT);
+	ui.tbFSaveKey->setProperty("xkey", XCUT_FASTSAVE);
+	ui.tbNmiKey->setProperty("xkey", XCUT_NMI);
+	ui.tbResetKey->setProperty("xkey", XCUT_RESET);
+	ui.tbDebugKey->setProperty("xkey", XCUT_DEBUG);
+	ui.tbSize1Key->setProperty("xkey", XCUT_SIZEX1);
+	ui.tbSize2Key->setProperty("xkey", XCUT_SIZEX2);
+	ui.tbSize3Key->setProperty("xkey", XCUT_SIZEX3);
+	ui.tbSize4Key->setProperty("xkey", XCUT_SIZEX4);
+	ui.tbFullscreenKey->setProperty("xkey", XCUT_FULLSCR);
+	ui.tbRatioKey->setProperty("xkey", XCUT_RATIO);
+	ui.tbNoflickKey->setProperty("xkey", XCUT_NOFLICK);
+	ui.tbFastKey->setProperty("xkey", XCUT_FAST);
+	ui.tbGrabMiceKey->setProperty("xkey", XCUT_MOUSE);
+	ui.tbKeyboardKey->setProperty("xkey", XCUT_KEYBOARD);
 // others
 	ui.sdcapbox->addItem("32 M",SDC_32M);
 	ui.sdcapbox->addItem("64 M",SDC_64M);
@@ -351,6 +375,32 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	connect(ui.tbCopyProfile,SIGNAL(released()),this,SLOT(copyProf()));
 	connect(ui.tbDelProfile,SIGNAL(released()),this,SLOT(rmProfile()));
 	connect(ui.twProfileList,SIGNAL(cellDoubleClicked(int, int)),this,SLOT(chProfile(int, int)));
+// keys
+	connect(ui.tbOptionsKey, SIGNAL(released()), this, SLOT(doHotKey()));
+	connect(ui.tbSaveKey, SIGNAL(released()), this, SLOT(doHotKey()));
+	connect(ui.tbOpenKey, SIGNAL(released()), this, SLOT(doHotKey()));
+	connect(ui.tbTPlayKey, SIGNAL(released()), this, SLOT(doHotKey()));
+	connect(ui.tbTRecKey, SIGNAL(released()), this, SLOT(doHotKey()));
+	connect(ui.tbSShotKey, SIGNAL(released()), this, SLOT(doHotKey()));
+	connect(ui.tbComboShotKey, SIGNAL(released()), this, SLOT(doHotKey()));
+	connect(ui.tbFSaveKey, SIGNAL(released()), this, SLOT(doHotKey()));
+	connect(ui.tbNmiKey, SIGNAL(released()), this, SLOT(doHotKey()));
+	connect(ui.tbResetKey, SIGNAL(released()), this, SLOT(doHotKey()));
+	connect(ui.tbDebugKey, SIGNAL(released()), this, SLOT(doHotKey()));
+
+	connect(ui.tbSize1Key, SIGNAL(released()), this, SLOT(doHotKey()));
+	connect(ui.tbSize2Key, SIGNAL(released()), this, SLOT(doHotKey()));
+	connect(ui.tbSize3Key, SIGNAL(released()), this, SLOT(doHotKey()));
+	connect(ui.tbSize4Key, SIGNAL(released()), this, SLOT(doHotKey()));
+	connect(ui.tbFullscreenKey, SIGNAL(released()), this, SLOT(doHotKey()));
+	connect(ui.tbRatioKey, SIGNAL(released()), this, SLOT(doHotKey()));
+	connect(ui.tbNoflickKey, SIGNAL(released()), this, SLOT(doHotKey()));
+
+	connect(ui.tbFastKey, SIGNAL(released()), this, SLOT(doHotKey()));
+	connect(ui.tbGrabMiceKey, SIGNAL(released()), this, SLOT(doHotKey()));
+	connect(ui.tbKeyboardKey, SIGNAL(released()), this, SLOT(doHotKey()));
+
+	connect(kedit, SIGNAL(s_done(int, QKeySequence)), this, SLOT(setHotKey(int, QKeySequence)));
 }
 
 void SetupWin::okay() {
@@ -544,6 +594,8 @@ void SetupWin::start(xProfile* p) {
 // profiles
 	ui.defstart->setChecked(conf.defProfile);
 	buildproflist();
+// keys
+	fillKeys();
 
 	show();
 }
@@ -1682,4 +1734,81 @@ void SetupWin::triggerColor() {
 			conf.pal[cn] = col;
 	}
 	setToolButtonColor(obj, cn, dn);
+}
+
+// keys
+
+xKeyEditor::xKeyEditor(QWidget* p):QDialog(p) {
+	QVBoxLayout* lay = new QVBoxLayout;
+	lab.clear();
+	but.setText("Confirm");
+	lab.setAlignment(Qt::AlignCenter);
+	lay->addWidget(&lab);
+	lay->addWidget(&but);
+	setLayout(lay);
+	setModal(true);
+	connect(&but, SIGNAL(released()), this, SLOT(okay()));
+}
+
+void xKeyEditor::keyPressEvent(QKeyEvent* ev) {
+	kseq = QKeySequence(ev->key() | ev->modifiers());
+	lab.setText(kseq.toString());
+}
+
+void xKeyEditor::keyReleaseEvent(QKeyEvent* ev) {
+}
+
+void xKeyEditor::edit(int f) {
+	foo = f;
+	lab.clear();
+	grabKeyboard();
+	show();
+}
+
+void xKeyEditor::okay() {
+	emit s_done(foo, kseq);
+	reject();
+}
+
+void xKeyEditor::reject() {
+	releaseKeyboard();
+	hide();
+}
+
+#define XSETBUTEXT(_but, _id) cut = find_shortcut_id(_id); _but->setText(cut ? cut->seq.toString() : ""); _but->setProperty("id", cut ? cut->id : 0)
+
+void SetupWin::fillKeys() {
+	xShortcut* cut;
+	XSETBUTEXT(ui.tbOptionsKey, XCUT_OPTIONS);
+	XSETBUTEXT(ui.tbSaveKey, XCUT_SAVE);
+	XSETBUTEXT(ui.tbOpenKey, XCUT_LOAD);
+	XSETBUTEXT(ui.tbTPlayKey, XCUT_TAPLAY);
+	XSETBUTEXT(ui.tbTRecKey, XCUT_TAPREC);
+	XSETBUTEXT(ui.tbSShotKey, XCUT_SCRSHOT);
+	XSETBUTEXT(ui.tbComboShotKey, XCUT_COMBOSHOT);
+	XSETBUTEXT(ui.tbFSaveKey, XCUT_FASTSAVE);
+	XSETBUTEXT(ui.tbNmiKey, XCUT_NMI);
+	XSETBUTEXT(ui.tbResetKey, XCUT_RESET);
+	XSETBUTEXT(ui.tbDebugKey, XCUT_DEBUG);
+
+	XSETBUTEXT(ui.tbSize1Key, XCUT_SIZEX1);
+	XSETBUTEXT(ui.tbSize2Key, XCUT_SIZEX2);
+	XSETBUTEXT(ui.tbSize3Key, XCUT_SIZEX3);
+	XSETBUTEXT(ui.tbSize4Key, XCUT_SIZEX4);
+	XSETBUTEXT(ui.tbFullscreenKey, XCUT_FULLSCR);
+	XSETBUTEXT(ui.tbRatioKey, XCUT_RATIO);
+	XSETBUTEXT(ui.tbNoflickKey, XCUT_NOFLICK);
+	XSETBUTEXT(ui.tbFastKey, XCUT_FAST);
+	XSETBUTEXT(ui.tbGrabMiceKey, XCUT_MOUSE);
+	XSETBUTEXT(ui.tbKeyboardKey, XCUT_KEYBOARD);
+}
+
+void SetupWin::doHotKey() {
+	int id = sender()->property("id").toInt();
+	kedit->edit(id);
+}
+
+void SetupWin::setHotKey(int id, QKeySequence seq) {
+	set_shortcut_id(id, seq);
+	fillKeys();
 }

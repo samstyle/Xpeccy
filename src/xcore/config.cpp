@@ -81,16 +81,6 @@ void initPaths(char* wpath) {
 	mkdir(conf.path.confDir);
 	mkdir(conf.path.romDir);
 #endif
-	/*
-	// check user app font or use built-in DejaVuSansMono.ttf
-	FILE* file = fopen(conf.path.font.c_str(), "rb");
-	if (file != NULL) {
-		fclose(file);
-	} else {
-		conf.path.font = "://DejaVuSansMono.ttf";
-	}
-	// printf("Used font : %s\n",conf.path.font.c_str());
-	*/
 }
 
 void saveConfig() {
@@ -139,7 +129,7 @@ void saveConfig() {
 	fprintf(cfile, "scale = %i\n", conf.vid.scale);
 	fprintf(cfile, "greyscale = %s\n", YESNO(greyScale));
 	fprintf(cfile, "bordersize = %i\n", int(conf.brdsize * 100));
-	fprintf(cfile, "noflick = %i%%\n", noflic);
+	fprintf(cfile, "noflick = %i\n", noflic);
 
 	fprintf(cfile, "\n[ROMSETS]\n");
 	foreach(xRomset rms, conf.rsList) {
@@ -192,18 +182,12 @@ void saveConfig() {
 	}
 
 	fprintf(cfile, "\n[KEYS]\n\n");
+	xShortcut* tab = shortcut_tab();
 	int i = 0;
-	keyEntry kent;
-	while (fmap_tab[i].xfoo != ENDKEY) {
-		fprintf(cfile, "%s = ", fmap_tab[i].fname);
-		if (fmap_tab[i].xkey != ENDKEY) {
-			kent = getKeyEntry(fmap_tab[i].xkey);
-			fprintf(cfile, "%s", kent.name);
-		}
-		fprintf(cfile, "\n");
+	while (tab[i].id > 0) {
+		fprintf(cfile, "%s = %s\n", tab[i].name, tab[i].seq.toString().toLocal8Bit().data());
 		i++;
 	}
-
 	fclose(cfile);
 }
 
@@ -244,7 +228,6 @@ void loadConfig() {
 			throw(0);
 		}
 	}
-	clear_func_tab();
 	clearProfiles();
 	conf.bookmarkList.clear();
 	char buf[0x4000];
@@ -260,12 +243,12 @@ void loadConfig() {
 	xRomFile rfile;
 	size_t pos;
 	std::string tms,fnam;
-	int xkey;
 	int fprt;
 	newrs.fntFile.clear();
 	newrs.gsFile.clear();
 	newrs.roms.clear();
 	conf.pal.clear();
+	shortcut_init();
 	conf.xpos = -1;
 	conf.ypos = -1;
 // init volumes
@@ -309,9 +292,7 @@ void loadConfig() {
 		} else {
 			switch (section) {
 				case SECT_KEYS:
-					// pnam = func.name, pval = key.name
-					xkey = getKeyIdByName(pval.c_str());
-					set_func_key(xkey, pnam.c_str());
+					set_shortcut_name(pnam.c_str(), QKeySequence(pval.c_str()));
 					break;
 				case SECT_PALETTE:
 					col = QColor(pval.c_str());

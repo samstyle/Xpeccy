@@ -14,6 +14,7 @@
 #include <SDL/SDL_joystick.h>
 #endif
 
+#include <QKeySequence>
 #include <QString>
 #include <QColor>
 #include <QMap>
@@ -168,6 +169,35 @@ extern std::map<std::string, int> shotFormat;
 
 // keymap
 
+enum {
+	XCUT_SIZEX1 = 0x10000,
+	XCUT_SIZEX2,
+	XCUT_SIZEX3,
+	XCUT_SIZEX4,
+	XCUT_FULLSCR,
+	XCUT_RATIO,
+	XCUT_SCRSHOT,
+	XCUT_COMBOSHOT,
+	XCUT_RES_DOS,
+	XCUT_KEYBOARD,
+	XCUT_FAST,
+	XCUT_NOFLICK,
+	XCUT_MOUSE,
+	XCUT_PAUSE,
+	XCUT_DEBUG,
+	XCUT_MENU,
+	XCUT_OPTIONS,
+	XCUT_SAVE,
+	XCUT_LOAD,
+	XCUT_TAPLAY,
+	XCUT_TAPREC,
+	XCUT_TAPWIN,
+	XCUT_RZXWIN,
+	XCUT_FASTSAVE,
+	XCUT_NMI,
+	XCUT_RESET
+};
+
 void loadKeys();
 void setKey(const char*,const char,const char);
 keyEntry getKeyEntry(int);
@@ -177,16 +207,18 @@ int qKey2id(int);
 int key2qid(int);
 
 typedef struct {
-	int xkey;		// xkey code
-	int xdef;		// xkey default
-	int xfoo;		// function code
-	const char* fname;	// function name
-} xKeyMapper;
+	int id;
+	const char* name;
+	QKeySequence seq;
+} xShortcut;
 
-extern xKeyMapper fmap_tab[];
-int key_to_func(int, int);
-int set_func_key(int, const char*);
-void clear_func_tab();
+void shortcut_init();
+xShortcut* find_shortcut_id(int);
+xShortcut* find_shortcut_name(const char*);
+void set_shortcut_id(int, QKeySequence);
+void set_shortcut_name(const char*, QKeySequence);
+xShortcut* shortcut_tab();
+int shortcut_check(QKeySequence);
 
 // bookmarks
 

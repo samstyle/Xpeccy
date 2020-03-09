@@ -1,15 +1,14 @@
-#ifndef _KEYB_H
-#define _KEYB_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// mouse
-//enum {
-//	XM_WHEELUP = 0,
-//	XM_WHEELDN
-//};
+// pc keys
+#include "keycode_linux.h"
+#include "keycode_windows.h"
+#include "keycode_others.h"
+
 // joystick type
 enum {
 	XJ_NONE = 0,
@@ -91,11 +90,6 @@ enum {
 #define MSXK_UP		0x1d
 #define	MSXK_DOWN	0x1e
 #define	MSXK_RIGHT	0x1f
-// pc keys
-
-#include "keycode_linux.h"
-#include "keycode_windows.h"
-#include "keycode_others.h"
 
 
 typedef struct {
@@ -208,6 +202,4 @@ unsigned char joyInput(Joystick*);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

@@ -81,5 +81,6 @@
         <file>images/commodore.png</file>
         <file>images/rewind.png</file>
         <file>images/refresh.png</file>
+        <file>images/button-k.png</file>
     </qresource>
 </RCC>

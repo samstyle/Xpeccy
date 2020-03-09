@@ -116,15 +116,4 @@
 #define XKEY_N3		81
 #define XKEY_N0		82
 
-#define XKEY_OPTIONS	0x10001
-#define XKEY_SAVE	0x10002
-#define XKEY_LOAD	0x10003
-#define XKEY_TAP_PLAY	0x10004
-#define XKEY_TAP_REC	0x10005
-#define XKEY_TAP_SHOW	0x10006
-#define XKEY_SCRSHOT	0x10007
-#define XKEY_SAVECHA	0x10009
-#define XKEY_NMI	0x1000a
-#define XKEY_RESET	0x1000b
-
 #endif

@@ -182,60 +182,6 @@ void loadKeys() {
 	}
 }
 
-// redefine keys xkey->function
-
-xKeyMapper fmap_tab[] = {
-	{ENDKEY, XKEY_F1, XKEY_OPTIONS, "key.options"},
-	{ENDKEY, XKEY_F2, XKEY_SAVE, "key.save"},
-	{ENDKEY, XKEY_F3, XKEY_LOAD, "key.load"},
-	{ENDKEY, XKEY_F4, XKEY_TAP_PLAY, "key.tape.play"},
-	{ENDKEY, XKEY_F5, XKEY_TAP_REC, "key.tape.rec"},
-	{ENDKEY, XKEY_F7, XKEY_SCRSHOT, "key.screenshot"},
-	{ENDKEY, XKEY_F9, XKEY_SAVECHA, "key.fast.save"},
-	{ENDKEY, XKEY_F10, XKEY_NMI, "key.nmi"},
-	{ENDKEY, XKEY_F12, XKEY_RESET, "key.reset"},
-	{ENDKEY, ENDKEY, XKEY_TAP_SHOW, "key.tape.show"},
-	{ENDKEY, ENDKEY, ENDKEY, NULL}
-};
-
-int key_to_func(int xkey, int zone) {
-	if (xkey == ENDKEY) return xkey;
-	int i = 0;
-	int fnd = 0;
-	while ((fmap_tab[i].xfoo != ENDKEY) && !fnd) {
-		if (fmap_tab[i].xkey == ENDKEY) {
-			if (fmap_tab[i].xdef == xkey)
-				fnd = 1;
-			else
-				i++;
-		} else if (fmap_tab[i].xkey == xkey) {
-			fnd = 1;
-		} else {
-			i++;
-		}
-	}
-	if (((((fmap_tab[i].xfoo & 0xff0000) >> 16) == zone) || !zone) && (fmap_tab[i].xfoo != ENDKEY))
-		xkey = fmap_tab[i].xfoo;
-	return xkey;
-}
-
-int set_func_key(int xkey, const char* fname) {
-	int i = 0;
-	while ((strcmp(fname, fmap_tab[i].fname)) && (fmap_tab[i].xfoo != ENDKEY))
-		i++;
-	if (fmap_tab[i].xfoo != ENDKEY)
-		fmap_tab[i].xkey = xkey;
-	return fmap_tab[i].xfoo;
-}
-
-void clear_func_tab() {
-	int i = 0;
-	while (fmap_tab[i].xfoo != ENDKEY) {
-		fmap_tab[i].xkey = ENDKEY;
-		i++;
-	}
-}
-
 // key translation qt->xkey
 
 struct keyTrans {
@@ -316,7 +262,7 @@ static keyTrans ktTab[] = {
 	{Qt::Key_Slash, Qt::Key_Slash, XKEY_BSLASH},		// ?
 	{Qt::Key_Apostrophe, 0x44d, XKEY_APOS},			// '
 
-#if __APPLE__
+#ifdef __APPLE__
 	{Qt::Key_Meta, Qt::Key_Meta, XKEY_LCTRL},
 #else
 	{Qt::Key_Control, Qt::Key_Control, XKEY_LCTRL},
@@ -373,4 +319,87 @@ int key2qid(int key) {
 		idx++;
 	}
 	return ktTab[idx].keyLat;
+}
+
+// shortcuts
+
+#define XSCSIZE 32
+
+static xShortcut short_init[XSCSIZE] = {
+	{XCUT_OPTIONS, "key.options", QKeySequence(Qt::Key_F1)},
+	{XCUT_SAVE, "key.save", QKeySequence(Qt::Key_F2)},
+	{XCUT_LOAD, "key.load", QKeySequence(Qt::Key_F3)},
+	{XCUT_TAPLAY, "key.tape.play", QKeySequence(Qt::Key_F4)},
+	{XCUT_TAPREC, "key.tape.rec", QKeySequence(Qt::Key_F5)},
+	{XCUT_SCRSHOT, "key.scrshot", QKeySequence(Qt::Key_F7)},
+	{XCUT_COMBOSHOT, "key.scrshot.combo", QKeySequence(Qt::ALT + Qt::Key_F7)},
+	{XCUT_FASTSAVE, "key.fastsave", QKeySequence(Qt::Key_F9)},
+	{XCUT_NMI, "key.nmi", QKeySequence(Qt::Key_F10)},
+	{XCUT_RESET, "key.reset", QKeySequence(Qt::Key_F12)},
+	{XCUT_RES_DOS, "key.reset.dos", QKeySequence(Qt::ALT + Qt::Key_F12)},
+	{XCUT_DEBUG, "key.debuger", QKeySequence(Qt::Key_Escape)},
+	{XCUT_SIZEX1, "key.size.x1", QKeySequence(Qt::ALT + Qt::Key_1)},
+	{XCUT_SIZEX2, "key.size.x2", QKeySequence(Qt::ALT + Qt::Key_2)},
+	{XCUT_SIZEX3, "key.size.x3", QKeySequence(Qt::ALT + Qt::Key_3)},
+	{XCUT_SIZEX4, "key.size.x4", QKeySequence(Qt::ALT + Qt::Key_4)},
+	{XCUT_FULLSCR, "key.fullscreen", QKeySequence(Qt::ALT + Qt::Key_Return)},
+	{XCUT_RATIO, "key.ratio", QKeySequence(Qt::ALT + Qt::Key_R)},
+	{XCUT_NOFLICK, "key.noflick", QKeySequence(Qt::ALT + Qt::Key_N)},
+	{XCUT_MOUSE, "key.mouse.grab", QKeySequence(Qt::ALT + Qt::Key_M)},
+	{XCUT_KEYBOARD, "key.keywin", QKeySequence(Qt::ALT + Qt::Key_K)},
+	{XCUT_PAUSE, "key.pause", QKeySequence(Qt::Key_Pause)},
+	{XCUT_FAST, "key.fast", QKeySequence(Qt::Key_Insert)},
+	{-1, NULL, QKeySequence()}
+};
+
+static xShortcut short_tab[XSCSIZE];
+
+void shortcut_init() {
+	int i = -1;
+	do {
+		i++;
+		short_tab[i] = short_init[i];
+	} while (short_init[i].id >= 0);
+}
+
+xShortcut* find_shortcut_id(int id) {
+	int i = 0;
+	while ((short_tab[i].id != id) && (short_tab[i].id >= 0))
+		i++;
+	return (short_tab[i].id < 0) ? NULL : &short_tab[i];
+}
+
+xShortcut* find_shortcut_name(const char* name) {
+	int i = 0;
+	while ((short_tab[i].id >= 0) && (strcmp(name, short_tab[i].name)))
+		i++;
+	return (short_tab[i].id < 0) ? NULL : &short_tab[i];
+}
+
+void set_shortcut_id(int id, QKeySequence seq) {
+	xShortcut* cut = find_shortcut_id(id);
+	if (cut != NULL)
+		cut->seq = seq;
+}
+
+void set_shortcut_name(const char* name, QKeySequence seq) {
+	xShortcut* cut = find_shortcut_name(name);
+	if (cut != NULL)
+		cut->seq = seq;
+}
+
+int shortcut_check(QKeySequence seq) {
+	int res = -1;
+	int i = 0;
+	while (short_tab[i].id >= 0) {
+		if (short_tab[i].seq.matches(seq) && !short_tab[i].seq.isEmpty()) {
+			res = short_tab[i].id;
+		}
+		i++;
+	}
+	return res;
+}
+
+xShortcut* shortcut_tab() {
+	return short_tab;
 }

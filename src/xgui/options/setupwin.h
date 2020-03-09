@@ -1,8 +1,10 @@
-#ifndef X_SETWIN_H
-#define X_SETWIN_H
+#pragma once
 
 #include <QDialog>
+#include <QKeyEvent>
+#include <QShortcut>
 #include <QModelIndex>
+#include <QKeySequence>
 #include <QAbstractTableModel>
 
 #include "xcore.h"
@@ -16,6 +18,27 @@
 #include "ui_umadial.h"
 #include "ui_layedit.h"
 
+// Since Qt5.2 there is QKeySequenceEdit class
+
+class xKeyEditor : public QDialog {
+	Q_OBJECT
+	public:
+		xKeyEditor(QWidget* p = NULL);
+		void edit(int);
+	signals:
+		void s_done(int, QKeySequence);
+	private:
+		int foo;
+		QLabel lab;
+		QPushButton but;
+		QKeySequence kseq;
+		void keyPressEvent(QKeyEvent*);
+		void keyReleaseEvent(QKeyEvent*);
+	private slots:
+		void okay();
+		void reject();
+};
+
 class SetupWin : public QDialog {
 	Q_OBJECT
 	public:
@@ -26,7 +49,6 @@ class SetupWin : public QDialog {
 
 	public slots:
 		void start(xProfile*);
-
 	private:
 		xProfile* prof;
 		Computer* comp;
@@ -42,9 +64,9 @@ class SetupWin : public QDialog {
 		QDialog *umadial;
 		xPadMapModel* padModel;
 		xPadBinder* padial;
+		xKeyEditor* kedit;
 
 		int eidx;
-//		void editRomset();
 
 		xLayout nlay;
 		void editLayout();
@@ -65,6 +87,7 @@ class SetupWin : public QDialog {
 		void apply();
 		void okay();
 		void buildrsetlist();
+		void fillKeys();
 		void setmszbox(int);
 		void selsspath();
 		void chabsz();
@@ -80,10 +103,8 @@ class SetupWin : public QDialog {
 		void umadd(); void umdel(); void umup(); void umdn();
 		void umedit(QModelIndex);
 		void umaselp(); void umaconf();
-//		void updvolumes();
 		void chablock(QModelIndex);
 		void tlistclick(QModelIndex);
-		// void setTapeBreak(int,int);
 		void hddcap();
 
 		void selSDCimg();
@@ -91,10 +112,8 @@ class SetupWin : public QDialog {
 		void openSlot();
 		void ejectSlot();
 
-//		void editrset();
 		void addNewRomset();
 		void rmRomset();
-//		void rscomplete(int, QString);
 		void addRom();
 		void editRom();
 		void delRom();
@@ -127,10 +146,11 @@ class SetupWin : public QDialog {
 		void layEditorOK();
 		void layNameCheck(QString);
 
+		void doHotKey();
+		void setHotKey(int, QKeySequence);
+
 		void selectColor();
 		void triggerColor();
 };
 
 int getRFIData(QComboBox*);
-
-#endif
