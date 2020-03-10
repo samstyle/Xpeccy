@@ -1751,16 +1751,38 @@ xKeyEditor::xKeyEditor(QWidget* p):QDialog(p) {
 }
 
 void xKeyEditor::keyPressEvent(QKeyEvent* ev) {
-	kseq = QKeySequence(ev->key() | ev->modifiers());
-	lab.setText(kseq.toString());
+	QString str;
+	if (ev->modifiers() & Qt::AltModifier) str += "Alt + ";
+	if (ev->modifiers() & Qt::ControlModifier) str += "Ctrl + ";
+	if (ev->modifiers() & Qt::ShiftModifier) str += "Shift + ";
+	if (ev->modifiers() & Qt::MetaModifier) str += "Meta + ";
+	switch (ev->key()) {
+		case Qt::Key_Alt:
+		case Qt::Key_Multi_key:		// TODO: this is right-alt?
+		case Qt::Key_Shift:
+		case Qt::Key_Control:
+		case Qt::Key_Meta:
+			kseq = QKeySequence();
+			break;
+		default:
+			str += QKeySequence(ev->key()).toString();
+			kseq = QKeySequence(ev->key() | ev->modifiers());
+			break;
+	}
+	if (str.isEmpty()) str = QString("<press now>");
+	lab.setText(str);
 }
 
 void xKeyEditor::keyReleaseEvent(QKeyEvent* ev) {
+	if (kseq.isEmpty())
+		lab.setText("<press now>");
 }
 
 void xKeyEditor::edit(int f) {
 	foo = f;
-	lab.clear();
+	xShortcut* cut = find_shortcut_id(f);
+	kseq = cut->seq;
+	lab.setText(kseq.isEmpty() ? "<press now>" : kseq.toString());
 	grabKeyboard();
 	show();
 }
