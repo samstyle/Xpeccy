@@ -12,32 +12,12 @@
 #include "opt_romset.h"
 #include "opt_diskcat.h"
 #include "opt_tapecat.h"
+#include "opt_hotkeytab.h"
 
 #include "ui_rsedit.h"
 #include "ui_setupwin.h"
 #include "ui_umadial.h"
 #include "ui_layedit.h"
-
-// Since Qt5.2 there is QKeySequenceEdit class
-
-class xKeyEditor : public QDialog {
-	Q_OBJECT
-	public:
-		xKeyEditor(QWidget* p = NULL);
-		void edit(int);
-	signals:
-		void s_done(int, QKeySequence);
-	private:
-		int foo;
-		QLabel lab;
-		QPushButton but;
-		QKeySequence kseq;
-		void keyPressEvent(QKeyEvent*);
-		void keyReleaseEvent(QKeyEvent*);
-	private slots:
-		void okay();
-		void reject();
-};
 
 class SetupWin : public QDialog {
 	Q_OBJECT
@@ -87,7 +67,6 @@ class SetupWin : public QDialog {
 		void apply();
 		void okay();
 		void buildrsetlist();
-		void fillKeys();
 		void setmszbox(int);
 		void selsspath();
 		void chabsz();
@@ -145,9 +124,6 @@ class SetupWin : public QDialog {
 		void layEditorChanged();
 		void layEditorOK();
 		void layNameCheck(QString);
-
-		void doHotKey();
-		void setHotKey(int, QKeySequence);
 
 		void selectColor();
 		void triggerColor();

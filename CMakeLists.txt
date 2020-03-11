@@ -155,6 +155,7 @@ set(MOCFILES
 	./src/xgui/options/opt_romset.h
 	./src/xgui/options/opt_diskcat.h
 	./src/xgui/options/opt_tapecat.h
+	./src/xgui/options/opt_hotkeytab.h
 	./src/vkeyboard.h
 	./src/xgui/xgui.h
 	./src/xgui/labelist.h

@@ -1,5 +1,4 @@
-#ifndef _FILETYPES_H
-#define _FILETYPES_H
+#pragma once
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -198,6 +197,4 @@ int loadNes(Computer*, const char*, int);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

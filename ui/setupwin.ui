@@ -3440,246 +3440,34 @@
             <attribute name="title">
              <string>Keys</string>
             </attribute>
-            <layout class="QGridLayout" name="gridLayout_17">
-             <item row="7" column="1">
-              <widget class="QPushButton" name="tbFSaveKey"/>
-             </item>
-             <item row="0" column="6">
-              <spacer name="horizontalSpacer_8">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
+            <layout class="QVBoxLayout" name="verticalLayout_40">
+             <item>
+              <widget class="xHotkeyTable" name="tvHotkeys">
+               <property name="selectionMode">
+                <enum>QAbstractItemView::SingleSelection</enum>
                </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
+               <property name="selectionBehavior">
+                <enum>QAbstractItemView::SelectRows</enum>
                </property>
-              </spacer>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="label_55">
-               <property name="text">
-                <string>Open</string>
+               <property name="gridStyle">
+                <enum>Qt::DotLine</enum>
                </property>
+               <attribute name="horizontalHeaderVisible">
+                <bool>false</bool>
+               </attribute>
+               <attribute name="horizontalHeaderDefaultSectionSize">
+                <number>150</number>
+               </attribute>
+               <attribute name="horizontalHeaderStretchLastSection">
+                <bool>true</bool>
+               </attribute>
+               <attribute name="verticalHeaderVisible">
+                <bool>false</bool>
+               </attribute>
+               <attribute name="verticalHeaderDefaultSectionSize">
+                <number>17</number>
+               </attribute>
               </widget>
-             </item>
-             <item row="0" column="2">
-              <widget class="QLabel" name="label_63">
-               <property name="text">
-                <string>Size x1</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="1">
-              <widget class="QPushButton" name="tbTPlayKey"/>
-             </item>
-             <item row="1" column="3">
-              <widget class="QPushButton" name="tbSize2Key"/>
-             </item>
-             <item row="1" column="4">
-              <widget class="QLabel" name="label_71">
-               <property name="text">
-                <string>Grab mouse</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QPushButton" name="tbOptionsKey"/>
-             </item>
-             <item row="0" column="3">
-              <widget class="QPushButton" name="tbSize1Key">
-               <property name="text">
-                <string/>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_53">
-               <property name="text">
-                <string>Options</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="3">
-              <widget class="QPushButton" name="tbSize4Key"/>
-             </item>
-             <item row="4" column="1">
-              <widget class="QPushButton" name="tbTRecKey"/>
-             </item>
-             <item row="1" column="2">
-              <widget class="QLabel" name="label_64">
-               <property name="text">
-                <string>Size x2</string>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="2">
-              <widget class="QLabel" name="label_68">
-               <property name="text">
-                <string>Ratio</string>
-               </property>
-              </widget>
-             </item>
-             <item row="7" column="0">
-              <widget class="QLabel" name="label_59">
-               <property name="text">
-                <string>Fast save</string>
-               </property>
-              </widget>
-             </item>
-             <item row="8" column="1">
-              <widget class="QPushButton" name="tbNmiKey"/>
-             </item>
-             <item row="5" column="0">
-              <widget class="QLabel" name="label_58">
-               <property name="text">
-                <string>Screenshot</string>
-               </property>
-              </widget>
-             </item>
-             <item row="4" column="2">
-              <widget class="QLabel" name="label_67">
-               <property name="text">
-                <string>Fullscreen</string>
-               </property>
-              </widget>
-             </item>
-             <item row="10" column="1">
-              <widget class="QPushButton" name="tbDebugKey"/>
-             </item>
-             <item row="9" column="0">
-              <widget class="QLabel" name="label_61">
-               <property name="text">
-                <string>Reset</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="2">
-              <widget class="QLabel" name="label_66">
-               <property name="text">
-                <string>Size x4</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="3">
-              <widget class="QPushButton" name="tbSize3Key"/>
-             </item>
-             <item row="3" column="0">
-              <widget class="QLabel" name="label_56">
-               <property name="text">
-                <string>Tape play</string>
-               </property>
-              </widget>
-             </item>
-             <item row="11" column="1">
-              <spacer name="verticalSpacer_16">
-               <property name="orientation">
-                <enum>Qt::Vertical</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>20</width>
-                 <height>40</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item row="4" column="3">
-              <widget class="QPushButton" name="tbFullscreenKey"/>
-             </item>
-             <item row="4" column="0">
-              <widget class="QLabel" name="label_57">
-               <property name="text">
-                <string>Tape rec</string>
-               </property>
-              </widget>
-             </item>
-             <item row="6" column="3">
-              <widget class="QPushButton" name="tbNoflickKey"/>
-             </item>
-             <item row="5" column="3">
-              <widget class="QPushButton" name="tbRatioKey"/>
-             </item>
-             <item row="6" column="0">
-              <widget class="QLabel" name="label_62">
-               <property name="text">
-                <string>Comboshot</string>
-               </property>
-              </widget>
-             </item>
-             <item row="6" column="1">
-              <widget class="QPushButton" name="tbComboShotKey"/>
-             </item>
-             <item row="5" column="1">
-              <widget class="QPushButton" name="tbSShotKey"/>
-             </item>
-             <item row="2" column="4">
-              <widget class="QLabel" name="label_72">
-               <property name="text">
-                <string>Keyboard</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QPushButton" name="tbSaveKey"/>
-             </item>
-             <item row="0" column="4">
-              <widget class="QLabel" name="label_70">
-               <property name="text">
-                <string>Fast mode</string>
-               </property>
-              </widget>
-             </item>
-             <item row="9" column="1">
-              <widget class="QPushButton" name="tbResetKey"/>
-             </item>
-             <item row="2" column="1">
-              <widget class="QPushButton" name="tbOpenKey"/>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="label_54">
-               <property name="text">
-                <string>Save</string>
-               </property>
-              </widget>
-             </item>
-             <item row="8" column="0">
-              <widget class="QLabel" name="label_60">
-               <property name="text">
-                <string>NMI</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="2">
-              <widget class="QLabel" name="label_65">
-               <property name="text">
-                <string>Size x3</string>
-               </property>
-              </widget>
-             </item>
-             <item row="6" column="2">
-              <widget class="QLabel" name="label_69">
-               <property name="text">
-                <string>Noflick</string>
-               </property>
-              </widget>
-             </item>
-             <item row="10" column="0">
-              <widget class="QLabel" name="label_73">
-               <property name="text">
-                <string>DeBUGa</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="5">
-              <widget class="QPushButton" name="tbFastKey"/>
-             </item>
-             <item row="1" column="5">
-              <widget class="QPushButton" name="tbGrabMiceKey"/>
-             </item>
-             <item row="2" column="5">
-              <widget class="QPushButton" name="tbKeyboardKey"/>
              </item>
             </layout>
            </widget>
@@ -3813,6 +3601,11 @@
   </customwidget>
   <customwidget>
    <class>xTapeCatTable</class>
+   <extends>QTableView</extends>
+   <header location="global">stdlib.h</header>
+  </customwidget>
+  <customwidget>
+   <class>xHotkeyTable</class>
    <extends>QTableView</extends>
    <header location="global">stdlib.h</header>
   </customwidget>

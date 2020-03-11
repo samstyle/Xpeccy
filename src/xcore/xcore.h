@@ -209,6 +209,7 @@ int key2qid(int);
 typedef struct {
 	int id;
 	const char* name;
+	const char* text;
 	QKeySequence seq;
 } xShortcut;
 
