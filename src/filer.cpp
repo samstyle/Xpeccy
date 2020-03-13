@@ -360,7 +360,6 @@ int load_file(Computer* comp, const char* name, int id, int drv) {
 		}
 	}
 	if (path.isEmpty()) return err;
-	//inf = file_ext_type(path);		// TODO: use hardware id
 	inf = file_find_hw_ext(comp->hw->id, path);
 	if (grp->id == FG_RAW)
 		inf = &ft_raw;

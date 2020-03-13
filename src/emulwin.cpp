@@ -575,7 +575,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 	if (comp->debug) {
 		ev->ignore();
 	} else {
-		int keyid = shortcut_check(QKeySequence(ev->key() | ev->modifiers()));
+		int keyid = shortcut_check(SCG_MAIN, QKeySequence(ev->key() | ev->modifiers()));
 		if (keyid < 0) {
 #if defined(__linux) || defined(_WIN32)
 			keyid = ev->nativeScanCode();

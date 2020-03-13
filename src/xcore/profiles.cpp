@@ -221,10 +221,9 @@ void setDiskString(Computer* comp,Floppy* flp,std::string st) {
 	flp->protect = (st.substr(3,1) == "R") ? 1 : 0;
 	if (flp->path || (st.size() < 5) || !conf.storePaths) return;
 	st = st.substr(5);
+	// TODO: do not load files before set hw
 	if (st.size() > 1) {
-		if (load_file(comp, st.c_str(), FG_DISK, flp->id) != ERR_OK) {
-			flpEject(flp);
-		}
+		flp_set_path(flp, st.c_str());		// delayed loading after set hw
 	}
 }
 
@@ -307,8 +306,8 @@ int prfLoad(std::string nm) {
 	xProfile* prf = findProfile(nm);
 	if (prf == NULL) return PLOAD_NF;
 	Computer* comp = prf->zx;
-//	xDevice* dev = NULL;
-
+	Floppy* flp;
+	int i;
 	char cfname[FILENAME_MAX];
 	strcpy(cfname, conf.path.confDir);
 	strcat(cfname, SLASH);
@@ -513,6 +512,12 @@ int prfLoad(std::string nm) {
 		shitHappens(buf);
 		tmp2 = PLOAD_HW;
 		compSetHardware(comp,"Dummy");
+	} else {			// loading files
+		for (i = 0; i < 4; i++) {
+			flp = comp->dif->fdc->flop[i];
+			if (flp->path)
+				load_file(comp, flp->path, FG_DISK, flp->id);
+		}
 	}
 	prfSetRomset(prf, prf->rsName);
 

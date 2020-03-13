@@ -198,6 +198,12 @@ enum {
 	XCUT_RESET
 };
 
+enum {
+	SCG_ALL = -1,
+	SCG_MAIN = (1 << 0),
+	SCG_DEBUGA = (1 << 1)
+};
+
 void loadKeys();
 void setKey(const char*,const char,const char);
 keyEntry getKeyEntry(int);
@@ -207,6 +213,7 @@ int qKey2id(int);
 int key2qid(int);
 
 typedef struct {
+	int grp;
 	int id;
 	const char* name;
 	const char* text;
@@ -219,7 +226,7 @@ xShortcut* find_shortcut_name(const char*);
 void set_shortcut_id(int, QKeySequence);
 void set_shortcut_name(const char*, QKeySequence);
 xShortcut* shortcut_tab();
-int shortcut_check(QKeySequence);
+int shortcut_check(int, QKeySequence);
 
 // bookmarks
 

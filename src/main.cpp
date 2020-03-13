@@ -60,6 +60,12 @@ int main(int ac,char** av) {
 	printf("Using Qt ver %s\n",qVersion());
 
 	QApplication app(ac,av,true);
+
+// this works since Qt5.6
+#if QT_VERSION >= 0x050600
+	app.setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
+
 #ifdef _WIN32
 	QStringList paths = QCoreApplication::libraryPaths();
 	paths.append(".");

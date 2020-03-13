@@ -326,30 +326,30 @@ int key2qid(int key) {
 #define XSCSIZE 32
 
 static xShortcut short_init[XSCSIZE] = {
-	{XCUT_OPTIONS, "key.options", "Options", QKeySequence(Qt::Key_F1)},
-	{XCUT_DEBUG, "key.debuger", "deBUGa", QKeySequence(Qt::Key_Escape)},
-	{XCUT_PAUSE, "key.pause", "Pause", QKeySequence(Qt::Key_Pause)},
-	{XCUT_FAST, "key.fast", "Fast mode", QKeySequence(Qt::Key_Insert)},
-	{XCUT_SAVE, "key.save", "Save", QKeySequence(Qt::Key_F2)},
-	{XCUT_LOAD, "key.load", "Open", QKeySequence(Qt::Key_F3)},
-	{XCUT_MOUSE, "key.mouse.grab", "Grab mouse", QKeySequence(Qt::ALT + Qt::Key_M)},
-	{XCUT_KEYBOARD, "key.keywin", "Show keyboard", QKeySequence(Qt::ALT + Qt::Key_K)},
-	{XCUT_TAPLAY, "key.tape.play", "Tape play", QKeySequence(Qt::Key_F4)},
-	{XCUT_TAPREC, "key.tape.rec", "Tape rec", QKeySequence(Qt::Key_F5)},
-	{XCUT_SCRSHOT, "key.scrshot", "Screenshot", QKeySequence(Qt::Key_F7)},
-	{XCUT_COMBOSHOT, "key.scrshot.combo", "Screenshot combo", QKeySequence(Qt::ALT + Qt::Key_F7)},
-	{XCUT_FASTSAVE, "key.fastsave", "Fast saving", QKeySequence(Qt::Key_F9)},
-	{XCUT_SIZEX1, "key.size.x1", "Size x1", QKeySequence(Qt::ALT + Qt::Key_1)},
-	{XCUT_SIZEX2, "key.size.x2", "Size x2", QKeySequence(Qt::ALT + Qt::Key_2)},
-	{XCUT_SIZEX3, "key.size.x3", "Size x3", QKeySequence(Qt::ALT + Qt::Key_3)},
-	{XCUT_SIZEX4, "key.size.x4", "Size x4", QKeySequence(Qt::ALT + Qt::Key_4)},
-	{XCUT_FULLSCR, "key.fullscreen", "Fullscreen", QKeySequence(Qt::ALT + Qt::Key_Return)},
-	{XCUT_RATIO, "key.ratio", "Keep aspect ratio", QKeySequence(Qt::ALT + Qt::Key_R)},
-	{XCUT_NOFLICK, "key.noflick", "Noflick", QKeySequence(Qt::ALT + Qt::Key_N)},
-	{XCUT_NMI, "key.nmi", "NMI", QKeySequence(Qt::Key_F10)},
-	{XCUT_RESET, "key.reset", "Reset", QKeySequence(Qt::Key_F12)},
-	{XCUT_RES_DOS, "key.reset.dos", "Reset to DOS", QKeySequence(Qt::ALT + Qt::Key_F12)},
-	{-1, NULL, NULL, QKeySequence()}
+	{SCG_MAIN, XCUT_OPTIONS, "key.options", "Options", QKeySequence(Qt::Key_F1)},
+	{SCG_MAIN, XCUT_DEBUG, "key.debuger", "deBUGa", QKeySequence(Qt::Key_Escape)},
+	{SCG_MAIN, XCUT_PAUSE, "key.pause", "Pause", QKeySequence(Qt::Key_Pause)},
+	{SCG_MAIN, XCUT_FAST, "key.fast", "Fast mode", QKeySequence(Qt::Key_Insert)},
+	{SCG_MAIN, XCUT_SAVE, "key.save", "Save", QKeySequence(Qt::Key_F2)},
+	{SCG_MAIN, XCUT_LOAD, "key.load", "Open", QKeySequence(Qt::Key_F3)},
+	{SCG_MAIN, XCUT_MOUSE, "key.mouse.grab", "Grab mouse", QKeySequence(Qt::ALT + Qt::Key_M)},
+	{SCG_MAIN, XCUT_KEYBOARD, "key.keywin", "Show keyboard", QKeySequence(Qt::ALT + Qt::Key_K)},
+	{SCG_MAIN, XCUT_TAPLAY, "key.tape.play", "Tape play", QKeySequence(Qt::Key_F4)},
+	{SCG_MAIN, XCUT_TAPREC, "key.tape.rec", "Tape rec", QKeySequence(Qt::Key_F5)},
+	{SCG_MAIN, XCUT_SCRSHOT, "key.scrshot", "Screenshot", QKeySequence(Qt::Key_F7)},
+	{SCG_MAIN, XCUT_COMBOSHOT, "key.scrshot.combo", "Screenshot combo", QKeySequence(Qt::ALT + Qt::Key_F7)},
+	{SCG_MAIN, XCUT_FASTSAVE, "key.fastsave", "Fast saving", QKeySequence(Qt::Key_F9)},
+	{SCG_MAIN, XCUT_SIZEX1, "key.size.x1", "Size x1", QKeySequence(Qt::ALT + Qt::Key_1)},
+	{SCG_MAIN, XCUT_SIZEX2, "key.size.x2", "Size x2", QKeySequence(Qt::ALT + Qt::Key_2)},
+	{SCG_MAIN, XCUT_SIZEX3, "key.size.x3", "Size x3", QKeySequence(Qt::ALT + Qt::Key_3)},
+	{SCG_MAIN, XCUT_SIZEX4, "key.size.x4", "Size x4", QKeySequence(Qt::ALT + Qt::Key_4)},
+	{SCG_MAIN, XCUT_FULLSCR, "key.fullscreen", "Fullscreen", QKeySequence(Qt::ALT + Qt::Key_Return)},
+	{SCG_MAIN, XCUT_RATIO, "key.ratio", "Keep aspect ratio", QKeySequence(Qt::ALT + Qt::Key_R)},
+	{SCG_MAIN, XCUT_NOFLICK, "key.noflick", "Noflick", QKeySequence(Qt::ALT + Qt::Key_N)},
+	{SCG_MAIN, XCUT_NMI, "key.nmi", "NMI", QKeySequence(Qt::Key_F10)},
+	{SCG_MAIN, XCUT_RESET, "key.reset", "Reset", QKeySequence(Qt::Key_F12)},
+	{SCG_MAIN, XCUT_RES_DOS, "key.reset.dos", "Reset to DOS", QKeySequence(Qt::ALT + Qt::Key_F12)},
+	{0, -1, NULL, NULL, QKeySequence()}
 };
 
 static xShortcut short_tab[XSCSIZE];
@@ -388,11 +388,11 @@ void set_shortcut_name(const char* name, QKeySequence seq) {
 		cut->seq = seq;
 }
 
-int shortcut_check(QKeySequence seq) {
+int shortcut_check(int grp, QKeySequence seq) {
 	int res = -1;
 	int i = 0;
 	while (short_tab[i].id >= 0) {
-		if (short_tab[i].seq.matches(seq) && !short_tab[i].seq.isEmpty()) {
+		if (short_tab[i].seq.matches(seq) && !short_tab[i].seq.isEmpty() && (short_tab[i].grp == grp)) {
 			res = short_tab[i].id;
 		}
 		i++;
