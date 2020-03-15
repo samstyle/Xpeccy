@@ -323,22 +323,24 @@ int key2qid(int key) {
 
 // shortcuts
 
-#define XSCSIZE 32
+#define XSCSIZE 50
 
 static xShortcut short_init[XSCSIZE] = {
-	{SCG_MAIN, XCUT_OPTIONS, "key.options", "Options", QKeySequence(Qt::Key_F1)},
+	{SCG_MAIN | SCG_DEBUGA, XCUT_OPTIONS, "key.options", "Options", QKeySequence(Qt::Key_F1)},
 	{SCG_MAIN, XCUT_DEBUG, "key.debuger", "deBUGa", QKeySequence(Qt::Key_Escape)},
 	{SCG_MAIN, XCUT_PAUSE, "key.pause", "Pause", QKeySequence(Qt::Key_Pause)},
 	{SCG_MAIN, XCUT_FAST, "key.fast", "Fast mode", QKeySequence(Qt::Key_Insert)},
-	{SCG_MAIN, XCUT_SAVE, "key.save", "Save", QKeySequence(Qt::Key_F2)},
-	{SCG_MAIN, XCUT_LOAD, "key.load", "Open", QKeySequence(Qt::Key_F3)},
+	{SCG_MAIN | SCG_DEBUGA | SCG_DISASM, XCUT_SAVE, "key.save", "Save", QKeySequence(Qt::Key_F2)},
+	{SCG_MAIN | SCG_DEBUGA, XCUT_LOAD, "key.load", "Open", QKeySequence(Qt::Key_F3)},
+	{SCG_MAIN, XCUT_FASTSAVE, "key.fastsave", "Fast saving", QKeySequence(Qt::Key_F9)},
 	{SCG_MAIN, XCUT_MOUSE, "key.mouse.grab", "Grab mouse", QKeySequence(Qt::ALT + Qt::Key_M)},
-	{SCG_MAIN, XCUT_KEYBOARD, "key.keywin", "Show keyboard", QKeySequence(Qt::ALT + Qt::Key_K)},
+	{SCG_MAIN | SCG_DEBUGA, XCUT_KEYBOARD, "key.keywin", "Show keyboard", QKeySequence(Qt::ALT + Qt::Key_K)},
+	{SCG_MAIN, XCUT_TAPWIN, "key.tapewin", "Show tape player", QKeySequence()},
+	{SCG_MAIN, XCUT_RZXWIN, "key.rzxwin", "Show rzx player", QKeySequence()},
 	{SCG_MAIN, XCUT_TAPLAY, "key.tape.play", "Tape play", QKeySequence(Qt::Key_F4)},
 	{SCG_MAIN, XCUT_TAPREC, "key.tape.rec", "Tape rec", QKeySequence(Qt::Key_F5)},
 	{SCG_MAIN, XCUT_SCRSHOT, "key.scrshot", "Screenshot", QKeySequence(Qt::Key_F7)},
 	{SCG_MAIN, XCUT_COMBOSHOT, "key.scrshot.combo", "Screenshot combo", QKeySequence(Qt::ALT + Qt::Key_F7)},
-	{SCG_MAIN, XCUT_FASTSAVE, "key.fastsave", "Fast saving", QKeySequence(Qt::Key_F9)},
 	{SCG_MAIN, XCUT_SIZEX1, "key.size.x1", "Size x1", QKeySequence(Qt::ALT + Qt::Key_1)},
 	{SCG_MAIN, XCUT_SIZEX2, "key.size.x2", "Size x2", QKeySequence(Qt::ALT + Qt::Key_2)},
 	{SCG_MAIN, XCUT_SIZEX3, "key.size.x3", "Size x3", QKeySequence(Qt::ALT + Qt::Key_3)},
@@ -347,8 +349,25 @@ static xShortcut short_init[XSCSIZE] = {
 	{SCG_MAIN, XCUT_RATIO, "key.ratio", "Keep aspect ratio", QKeySequence(Qt::ALT + Qt::Key_R)},
 	{SCG_MAIN, XCUT_NOFLICK, "key.noflick", "Noflick", QKeySequence(Qt::ALT + Qt::Key_N)},
 	{SCG_MAIN, XCUT_NMI, "key.nmi", "NMI", QKeySequence(Qt::Key_F10)},
-	{SCG_MAIN, XCUT_RESET, "key.reset", "Reset", QKeySequence(Qt::Key_F12)},
+	{SCG_MAIN | SCG_DEBUGA, XCUT_RESET, "key.reset", "Reset", QKeySequence(Qt::Key_F12)},
 	{SCG_MAIN, XCUT_RES_DOS, "key.reset.dos", "Reset to DOS", QKeySequence(Qt::ALT + Qt::Key_F12)},
+
+	{SCG_DEBUGA, XCUT_STEPIN, "key.dbg.stepin", "DeBUGa: Step in", QKeySequence(Qt::Key_F7)},
+	{SCG_DEBUGA, XCUT_STEPOVER, "key.dbg.stepover", "DeBUGa: Step over", QKeySequence(Qt::Key_F8)},
+	{SCG_DEBUGA, XCUT_FASTSTEP, "key.dbg.faststep", "DeBUGa: Fast step", QKeySequence(Qt::ALT + Qt::Key_F7)},
+	{SCG_DEBUGA, XCUT_TMPBRK, "key.dbg.runtohere", "DeBUGa: Stop here", QKeySequence(Qt::Key_F9)},
+	{SCG_DEBUGA, XCUT_TRACE, "key.dbg.trace", "DeBUGa: Trace", QKeySequence(Qt::CTRL + Qt::Key_T)},
+	{SCG_DEBUGA, XCUT_OPEN_DUMP, "key.dbg.opendump", "DeBUGa: Load dump", QKeySequence(Qt::CTRL + Qt::Key_O)},
+	{SCG_DEBUGA, XCUT_SAVE_DUMP, "key.dbg.savedump", "DeBUGa: Save dump", QKeySequence(Qt::CTRL + Qt::Key_S)},
+	{SCG_DEBUGA, XCUT_FINDER, "key.dbg.finder", "DeBUGa: Find pattern", QKeySequence(Qt::CTRL + Qt::Key_F)},
+	{SCG_DEBUGA, XCUT_LABELS, "key.dbg.labels", "DeBUGa: Switch labels", QKeySequence(Qt::CTRL + Qt::Key_L)},
+
+	{SCG_DISASM, XCUT_TOPC, "key.disasm.topc", "Diasm: Jump to PC", QKeySequence(Qt::Key_Home)},
+	{SCG_DISASM, XCUT_SETPC, "key.disasm.setpc", "Diasm: Set PC", QKeySequence(Qt::Key_End)},
+	{SCG_DISASM, XCUT_SETBRK, "key.disasm.setbrk", "Diasm: Breakpoint", QKeySequence(Qt::Key_Space)},
+	{SCG_DISASM, XCUT_JUMPTO, "key.disasm.jump", "Diasm: Jump to operand", QKeySequence(Qt::Key_F4)},
+	{SCG_DISASM, XCUT_RETFROM, "key.disasm.ret", "Diasm: Return", QKeySequence(Qt::Key_F5)},
+
 	{0, -1, NULL, NULL, QKeySequence()}
 };
 
@@ -359,7 +378,7 @@ void shortcut_init() {
 	do {
 		i++;
 		short_tab[i] = short_init[i];
-	} while (short_init[i].id >= 0);
+	} while (short_init[i].text != NULL);
 }
 
 xShortcut* find_shortcut_id(int id) {
@@ -392,7 +411,7 @@ int shortcut_check(int grp, QKeySequence seq) {
 	int res = -1;
 	int i = 0;
 	while (short_tab[i].id >= 0) {
-		if (short_tab[i].seq.matches(seq) && !short_tab[i].seq.isEmpty() && (short_tab[i].grp == grp)) {
+		if (short_tab[i].seq.matches(seq) && !short_tab[i].seq.isEmpty() && (short_tab[i].grp & grp)) {
 			res = short_tab[i].id;
 		}
 		i++;

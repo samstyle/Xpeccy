@@ -8,8 +8,9 @@
 xHotkeyModel::xHotkeyModel(QObject* p):QAbstractTableModel(p) {
 	rows = 0;
 	xShortcut* tab = shortcut_tab();
-	while (tab[rows].id > 0)
+	while (tab[rows].text != NULL) {
 		rows++;
+	}
 }
 
 int xHotkeyModel::columnCount(const QModelIndex&) const {

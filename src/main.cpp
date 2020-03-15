@@ -59,30 +59,22 @@ int main(int ac,char** av) {
 #endif
 	printf("Using Qt ver %s\n",qVersion());
 
+// this works since Qt5.6 (must be set before QCoreApplication is created)
+	#if QT_VERSION >= 0x050600
+		QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+	#endif
 	QApplication app(ac,av,true);
-
-// this works since Qt5.6
-#if QT_VERSION >= 0x050600
-	app.setAttribute(Qt::AA_EnableHighDpiScaling);
-#endif
 
 #ifdef _WIN32
 	QStringList paths = QCoreApplication::libraryPaths();
 	paths.append(".");
 	QCoreApplication::setLibraryPaths(paths);
 #endif
-	conf.running = 0;
-	conf.emu.pause = 0;
-	conf.emu.fast = 0;
-	conf.joy.dead = 8192;
-	conf.prof.changed = 0;
 	sndInit();
-	initPaths(av[0]);
+	conf_init(av[0]);
+	shortcut_init();
 
-	addProfile("default","xpeccy.conf");
 	QFontDatabase::addApplicationFont("://DejaVuSansMono.ttf");
-
-	loadConfig();
 
 	MainWin mwin;
 	xThread ethread;
@@ -92,6 +84,8 @@ int main(int ac,char** av) {
 	RZXWin rzxw(&mwin);
 	xWatcher wutw(&mwin);
 	keyWindow keyw(&mwin);
+
+	loadConfig();
 
 	if ((conf.xpos >= 0) && (conf.ypos >= 0))
 		mwin.move(conf.xpos, conf.ypos);

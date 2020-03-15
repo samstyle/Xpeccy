@@ -119,6 +119,10 @@ static xPort atm2PortMap[] = {
 	{0x8202,0x7dfd,2,2,2,NULL,	NULL},		// 7DFD
 	{0xc202,0xbffd,2,2,2,NULL,	xOutBFFD},	// ay
 	{0xc202,0xfffd,2,2,2,xInFFFD,	xOutFFFD},
+	// !dos
+	{0xffff,0xfadf,0,2,2,xInFADF,	NULL},		// k-mouse
+	{0xffff,0xfbdf,0,2,2,xInFBDF,	NULL},
+	{0xffff,0xffdf,0,2,2,xInFFDF,	NULL},
 	// dos
 	{0x009f,0x00ff,1,2,2,NULL,	atm2OutFF},	// palette (dos)
 	{0x009f,0x00f7,1,2,2,NULL,	atm2OutF7},

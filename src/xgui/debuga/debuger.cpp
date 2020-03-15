@@ -682,13 +682,95 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 		return;
 	}
 	int i;
-//	unsigned short pc = comp->cpu->pc;
+	int key = shortcut_check(SCG_DEBUGA, QKeySequence(ev->key() | ev->modifiers()));
+	if (key < 0)
+		key = ev->key() | ev->modifiers();
 	unsigned char* ptr;
-//	int offset = (ui.dumpTable->rows() - 1) << 3;
-//	int adr;
 	int len;
 	dasmData drow;
 	QModelIndex idx;
+	switch (key) {
+		case XCUT_OPTIONS:
+			emit wannaOptions(conf.prof.cur);
+			break;
+		case XCUT_LOAD:
+			load_file(comp, NULL, FG_ALL, -1);
+			disasmAdr = comp->cpu->pc;
+			fillAll();
+			activateWindow();
+			break;
+		case XCUT_SAVE:
+			save_file(comp, NULL, FG_ALL, -1);
+			activateWindow();
+			break;
+		case XCUT_STEPIN:
+			doStep();
+			break;
+		case XCUT_STEPOVER:
+			len = dasmSome(comp, comp->cpu->pc, drow);
+			if (drow.oflag & OF_SKIPABLE) {
+				ptr = getBrkPtr(comp, (comp->cpu->pc + len) & 0xffff);
+				*ptr |= MEM_BRK_TFETCH;
+				stop();
+			} else {
+				doStep();
+			}
+			break;
+		case XCUT_FASTSTEP:
+			for (i = 10; i > 0; i--)
+				doStep();
+			break;
+		case XCUT_TMPBRK:
+			if (!ui.dasmTable->hasFocus()) break;
+			idx = ui.dasmTable->currentIndex();
+			i = ui.dasmTable->getData(idx.row(), 0, Qt::UserRole).toInt();
+			ptr = getBrkPtr(comp, i & 0xffff);
+			*ptr |= MEM_BRK_TFETCH;
+			stop();
+			break;
+		case XCUT_RESET:
+			rzxStop(comp);
+			compReset(comp, RES_DEFAULT);
+			if (!fillAll()) {
+				disasmAdr = comp->cpu->pc;
+				fillDisasm();
+			}
+			break;
+		case XCUT_TRACE:
+			doTrace(ui.actTrace);
+			break;
+		case XCUT_LABELS:
+			ui.actShowLabels->setChecked(!conf.dbg.labels);
+			break;
+		case XCUT_KEYBOARD:
+			emit wannaKeys();
+			break;
+		case XCUT_OPEN_DUMP:
+			doOpenDump();
+			break;
+		case XCUT_SAVE_DUMP:
+			doSaveDump();
+			break;
+		case XCUT_FINDER:
+			doFind();
+			break;
+		case Qt::Key_Escape:
+			if (!ev->isAutoRepeat())
+				stop();
+			break;
+		case Qt::Key_PageUp:
+			for (i = 0; i < ui.dasmTable->rows() - 1; i++) {
+				disasmAdr = getPrevAdr(disasmAdr);
+			}
+			fillDisasm();
+			break;
+		case Qt::Key_PageDown:
+			disasmAdr = ui.dasmTable->getData(ui.dasmTable->rows() - 1, 0, Qt::UserRole).toInt();
+			fillDisasm();
+			break;
+	}
+
+/*
 	switch(ev->modifiers()) {
 		case Qt::ControlModifier:
 			switch(ev->key()) {
@@ -698,9 +780,9 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 //				case Qt::Key_T:
 //					doTrace(ui.actTrace);
 //					break;
-				case Qt::Key_L:
-					ui.actShowLabels->setChecked(!conf.dbg.labels);
-					break;
+//				case Qt::Key_L:
+//					ui.actShowLabels->setChecked(!conf.dbg.labels);
+//					break;
 			}
 			break;
 		case Qt::AltModifier:
@@ -708,19 +790,18 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 //				case Qt::Key_K:
 //					emit wannaKeys();
 //					break;
-				case Qt::Key_F7:
-					for (i = 10; i > 0; i--) {
-						doStep();
-					}
-					break;
+//				case Qt::Key_F7:
+//					for (i = 10; i > 0; i--) {
+//						doStep();
+//					}
+//					break;
 			}
 			break;
 		default:
 			switch(ev->key()) {
-				case Qt::Key_Escape:
-					if (!ev->isAutoRepeat()) stop();
-					break;
-				/*
+//				case Qt::Key_Escape:
+//					if (!ev->isAutoRepeat()) stop();
+//					break;
 				case Qt::Key_Home:
 					disasmAdr = pc;
 					fillDisasm();
@@ -754,10 +835,8 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 						fillDisasm();
 					}
 					break;
-				*/
 				case Qt::Key_F1:
 					emit wannaOptions(conf.prof.cur);
-					activateWindow();
 					break;
 				case Qt::Key_F2:
 					save_file(comp, NULL, FG_ALL, -1);
@@ -804,6 +883,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			}
 		break;
 	}
+*/
 }
 
 void DebugWin::keyReleaseEvent(QKeyEvent *ev) {

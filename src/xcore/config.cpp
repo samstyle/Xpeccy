@@ -40,7 +40,7 @@ enum {
 std::map<std::string, int> shotFormat;
 xConfig conf;
 
-void initPaths(char* wpath) {
+void conf_init(char* wpath) {
     conf.scrShot.dir = std::string(getenv(ENVHOME));
     conf.port = 30000;
 #if __linux || __APPLE__
@@ -81,6 +81,15 @@ void initPaths(char* wpath) {
 	mkdir(conf.path.confDir);
 	mkdir(conf.path.romDir);
 #endif
+	conf.scrShot.format = "png";
+	vLayout vlay = {{448,320},{74,48},{64,32},{256,192},{0,0},64};
+	addLayout("default", vlay);
+	conf.running = 0;
+	conf.emu.pause = 0;
+	conf.emu.fast = 0;
+	conf.joy.dead = 8192;
+	conf.prof.changed = 0;
+	addProfile("default","xpeccy.conf");
 }
 
 void saveConfig() {

@@ -59,14 +59,18 @@ void MainWin::updateHead() {
 void MainWin::updateWindow() {
 	block = 1;
 	vidSetBorder(comp->vid, conf.brdsize);		// to call vidUpdateLayout???
-	int szw = comp->vid->vsze.x * conf.vid.scale;
-	int szh = comp->vid->vsze.y * conf.vid.scale;
+	int szw;
+	int szh;
 	if (conf.vid.fullScreen) {
 		QSize wsz = QApplication::desktop()->screenGeometry().size();
 		szw = wsz.width();
 		szh = wsz.height();
 		setWindowState(windowState() | Qt::WindowFullScreen);
 	} else {
+		szw = comp->vid->vsze.x * conf.vid.scale;
+		szh = comp->vid->vsze.y * conf.vid.scale;
+		if (conf.prof.cur->zx->hw->grp == HWG_BK)
+			szw *= 1.5;
 		setWindowState(windowState() & ~Qt::WindowFullScreen);
 	}
 	setFixedSize(szw, szh);
@@ -146,10 +150,6 @@ MainWin::MainWin() {
 	msgTimer = 0;
 	msg.clear();
 	alphabet.load(":/font.png");
-
-	conf.scrShot.format = "png";
-	vLayout vlay = {{448,320},{74,48},{64,32},{256,192},{0,0},64};
-	addLayout("default", vlay);
 
 	shotFormat["bmp"] = SCR_BMP;
 	shotFormat["png"] = SCR_PNG;

@@ -161,7 +161,7 @@ int prfSave(std::string);
 #define	SCR_HOB		5
 #define	SCR_DISK	6
 
-void initPaths(char*);
+void conf_init(char*);
 void loadConfig();
 void saveConfig();
 
@@ -195,13 +195,30 @@ enum {
 	XCUT_RZXWIN,
 	XCUT_FASTSAVE,
 	XCUT_NMI,
-	XCUT_RESET
+	XCUT_RESET,
+
+	XCUT_STEPIN,
+	XCUT_STEPOVER,
+	XCUT_FASTSTEP,
+	XCUT_TMPBRK,
+	XCUT_TRACE,
+	XCUT_OPEN_DUMP,
+	XCUT_SAVE_DUMP,
+	XCUT_FINDER,
+	XCUT_LABELS,
+
+	XCUT_TOPC,
+	XCUT_SETPC,
+	XCUT_SETBRK,
+	XCUT_JUMPTO,
+	XCUT_RETFROM,
 };
 
 enum {
 	SCG_ALL = -1,
 	SCG_MAIN = (1 << 0),
-	SCG_DEBUGA = (1 << 1)
+	SCG_DEBUGA = (1 << 1),
+	SCG_DISASM = (1 << 2)
 };
 
 void loadKeys();

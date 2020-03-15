@@ -149,13 +149,21 @@ void vid_upd_scale() {
 		xstep = dwid * 0x100 / conf.prof.cur->zx->vid->vsze.x;
 		ystep = dhei * 0x100 / conf.prof.cur->zx->vid->vsze.y;
 		if (conf.vid.keepRatio) {
-			int mstep = (xstep < ystep) ? xstep : ystep;
-			lefSkip = (xstep - mstep) * conf.prof.cur->zx->vid->vsze.x / 512 * 3;
-			rigSkip = lefSkip;
-			topSkip = (ystep - mstep) * conf.prof.cur->zx->vid->vsze.y / 512;
+			// minimal step is default
+			if (xstep < ystep) {
+				ystep = xstep;
+			} else {
+				xstep = ystep;
+			}
+			// for BK stretch by X
+			if (conf.prof.cur->zx->hw->grp == HWG_BK) {
+				xstep *= 1.5;
+			}
+			// calculate black spaces
+			lefSkip = (dwid - (conf.prof.cur->zx->vid->vsze.x * xstep / 256)) / 2 * 3;
+			rigSkip = lefSkip + 3;
+			topSkip = (dhei - (conf.prof.cur->zx->vid->vsze.y * ystep / 256)) / 2;
 			botSkip = topSkip;
-			xstep = mstep;
-			ystep = mstep;
 		} else {
 			lefSkip = 0;
 			rigSkip = 0;
@@ -167,8 +175,10 @@ void vid_upd_scale() {
 		rigSkip = 0;
 		topSkip = 0;
 		botSkip = 0;
-		xstep = conf.vid.scale << 8;
-		ystep = xstep;
+		xstep = conf.vid.scale << 8;		// :xzoom
+		if (conf.prof.cur->zx->hw->grp == HWG_BK)
+			xstep *= 1.5;
+		ystep = conf.vid.scale << 8;
 	}
 //	printf("%i x %i : %i %i %i : %X %X : %i %i %i %i\n",dwid,dhei,conf.vid.fullScreen, conf.vid.keepRatio, conf.vid.scale, xstep, ystep, topSkip, botSkip, lefSkip, rigSkip);
 }

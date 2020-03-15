@@ -2618,9 +2618,6 @@
    <property name="text">
     <string>Trace</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+T</string>
-   </property>
   </action>
   <action name="actTraceINT">
    <property name="icon">
@@ -2712,9 +2709,6 @@
    <property name="text">
     <string>Search</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+F</string>
-   </property>
   </action>
   <action name="actLoadDump">
    <property name="icon">
@@ -2724,9 +2718,6 @@
    <property name="text">
     <string>Load dump</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+O</string>
-   </property>
   </action>
   <action name="actSaveDump">
    <property name="icon">
@@ -2735,9 +2726,6 @@
    </property>
    <property name="text">
     <string>Save dump</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+S</string>
    </property>
   </action>
   <action name="actHideAddr">
@@ -2772,9 +2760,6 @@
    </property>
    <property name="text">
     <string>Keyboard</string>
-   </property>
-   <property name="shortcut">
-    <string>Alt+K</string>
    </property>
   </action>
   <action name="actMaping">

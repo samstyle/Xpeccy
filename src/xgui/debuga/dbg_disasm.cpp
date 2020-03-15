@@ -730,14 +730,16 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 	int bpr;
 	int adr;
 	xAdr xadr;
-	switch (ev->key()) {
+	int key = shortcut_check(SCG_DISASM, QKeySequence(ev->key() | ev->modifiers()));
+	if (key < 0)
+		key = ev->key();
+	switch (key) {
 		case Qt::Key_Up:
 			if ((ev->modifiers() & Qt::ControlModifier) || (idx.row() == 0)) {
 				scrolUp(ev->modifiers());
 			} else {
 				QTableView::keyPressEvent(ev);
 			}
-//			ev->ignore();
 			break;
 		case Qt::Key_Down:
 			if ((ev->modifiers() & Qt::ControlModifier) || (idx.row() == model->rowCount() - 1)) {
@@ -745,26 +747,23 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			} else {
 				QTableView::keyPressEvent(ev);
 			}
-//			ev->ignore();
 			break;
-		case Qt::Key_Home:
+		case XCUT_TOPC:
 			if (mode != XVIEW_CPU) break;
 			if (!cptr) break;
 			disasmAdr = (*cptr)->cpu->pc;
 			updContent();
-//			ev->ignore();
 			break;
-		case Qt::Key_End:
+		case XCUT_SETPC:
 			if (mode != XVIEW_CPU) break;
 			if (!cptr) break;
 			(*cptr)->cpu->pc = getData(idx.row(), 0, Qt::UserRole).toInt() & 0xffff;
 			emit rqRefillAll();
-//			ev->ignore();
 			break;
-		case Qt::Key_F2:
+		case XCUT_SAVE:
 			ev->ignore();
 			break;
-		case Qt::Key_Space:
+		case XCUT_SETBRK:
 			adr = getData(idx.row(), 0, Qt::UserRole).toInt();
 			bpr = mode;
 			if ((mode == XVIEW_CPU) && (ev->modifiers() & Qt::ShiftModifier))
@@ -806,26 +805,22 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			}
 			brkXor(bpr, bpt, adr, -1, 1);
 			emit rqRefill();
-//			ev->ignore();
 			break;
-		case Qt::Key_F4:
+		case XCUT_JUMPTO:
 			if (!idx.isValid()) break;
 			adr = model->dasm[idx.row()].oadr;
 			if (adr < 0) break;
 			history.append(disasmAdr);
 			disasmAdr = adr & 0xffff;
 			updContent();
-//			ev->ignore();
 			break;
-		case Qt::Key_F5:
+		case XCUT_RETFROM:
 			if (history.size() < 1) break;
 			disasmAdr = history.takeLast();
 			updContent();
-//			ev->ignore();
 			break;
 		case Qt::Key_Return:
 			edit(currentIndex());
-//			ev->ignore();
 			break;
 		default:
 			QTableView::keyPressEvent(ev);
