@@ -86,6 +86,7 @@ int main(int ac,char** av) {
 	keyWindow keyw(&mwin);
 
 	loadConfig();
+	mwin.fillUserMenu();
 
 	if ((conf.xpos >= 0) && (conf.ypos >= 0))
 		mwin.move(conf.xpos, conf.ypos);

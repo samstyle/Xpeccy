@@ -310,7 +310,7 @@ void file_errors(int err) {
 	int i = 0;
 	while ((err_tab[i].err != ERR_OK) && (err_tab[i].err != err))
 		i++;
-	if (err_tab[i].err != ERR_OK) {
+	if ((err_tab[i].err != ERR_OK) && conf.running) {
 		shitHappens(err_tab[i].text);
 	}
 }
@@ -367,7 +367,7 @@ int load_file(Computer* comp, const char* name, int id, int drv) {
 	if (inf) {
 		if (inf->load) {
 			if (inf->ch) {
-				if (saveChangedDisk(comp, drv)) {
+				if (saveChangedDisk(comp, drv) == ERR_OK) {
 					err = inf->load(comp, path.toLocal8Bit().data(), drv);
 					disk_boot(comp, drv, inf->id);
 				} else {
@@ -474,8 +474,8 @@ void initFileDialog(QWidget* par) {
 	filer->setOption(QFileDialog::DontUseNativeDialog, 1);
 }
 
-bool saveChangedDisk(Computer* comp,int id) {
-	bool res=true;
+int saveChangedDisk(Computer* comp,int id) {
+	int res = ERR_OK;
 	id &= 3;
 	Floppy* flp = comp->dif->fdc->flop[id];
 	if (flp->changed) {
@@ -486,8 +486,8 @@ bool saveChangedDisk(Computer* comp,int id) {
 		mbox.setIcon(QMessageBox::Warning);
 		switch (mbox.exec()) {
 			case QMessageBox::Yes: res = save_file(comp, flp->path, FG_DISK, id); break;	// save
-			case QMessageBox::No: res=true; break;						// don't save
-			case QMessageBox::Cancel: res=false; break;					// cancel
+			case QMessageBox::No: res = ERR_OK; break;						// don't save
+			case QMessageBox::Cancel: res = ERR_CANCEL; break;					// cancel
 		}
 	}
 	return res;

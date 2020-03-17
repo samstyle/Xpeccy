@@ -40,6 +40,7 @@ class MainWin : public QWidget {
 		Computer* comp;
 		void checkState();
 		void loadLabels(const char*);
+		void fillUserMenu();
 	signals:
 		void s_options(xProfile*);
 		void s_debug(Computer*);
@@ -131,7 +132,6 @@ class MainWin : public QWidget {
 		QAction* pckAct;
 
 		void initUserMenu();
-		void fillUserMenu();
 		void fillProfileMenu();
 		void fillBookmarkMenu();
 		void fillLayoutMenu();

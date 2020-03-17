@@ -20,6 +20,7 @@
 
 enum {
 	ERR_OK = 0,
+	ERR_CANCEL,
 	ERR_CANT_OPEN,		// can't open file
 
 	ERR_RZX_SIGN,		// rzx signature error

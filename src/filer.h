@@ -74,6 +74,6 @@ void initFileDialog(QWidget*);
 int load_file(Computer* comp, const char* name, int id, int drv);
 int save_file(Computer* comp, const char* name, int id, int drv);
 
-bool saveChangedDisk(Computer*,int);
+int saveChangedDisk(Computer*,int);
 
 #endif
