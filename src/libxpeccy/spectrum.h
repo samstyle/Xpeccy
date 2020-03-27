@@ -181,16 +181,6 @@ typedef struct {
 	unsigned short padr;
 	unsigned char pval;
 
-/*
-	struct {
-		int flags;
-		int cnt;	// ns counter
-		int bper;	// base
-		int per;	// current
-		int ival;	// initial value
-		int val;	// ticks counter
-	} timer;
-*/
 	struct {
 		unsigned char evoBF;		// PentEvo rw ports
 		unsigned char evo2F;
@@ -282,10 +272,8 @@ typedef struct {
 		c64cia cia1;
 		c64cia cia2;
 	} c64;
-//	int romsize;
 	CMOS cmos;
 	int resbank;			// rompart active after reset
-//	int tapCount;
 } Computer;
 
 #include "hardware.h"

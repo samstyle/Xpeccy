@@ -58,7 +58,7 @@ static int dutyTab[4][8] = {
 void apuTargetPeriod(apuChannel* ch) {
 	int sha = ch->hper >> (ch->sshi & 7);
 	if (ch->sdir) sha = -sha;
-	ch->tper = ch->hper + sha;
+	ch->tper = ch->hper + sha;	// next sweep period
 	// if (ch->sweep) printf("%i > %i\n",ch->hper,ch->tper);
 	if (ch->sdir && (ch->hper < 8)) {
 		ch->mute = 1;
@@ -73,19 +73,14 @@ void apuTargetPeriod(apuChannel* ch) {
 
 // tone channel
 
-void apuToneSync(apuChannel* ch) {
-	if (!ch->en) return;
-	if (!ch->len) return;
-	if (++ch->pcnt >= ch->hper) {
+void apu_tone_tick(apuChannel* ch) {
+	if (++ch->pcnt > ch->hper) {
 		ch->pcnt = 0;
 		ch->pstp++;
-//		ch->lev = dutyTab[ch->duty & 3][ch->pstp & 7] & 1;
 	}
 }
 
 void apuToneSweep(apuChannel* ch) {
-	if (!ch->en) return;
-	if (!ch->len) return;
 	if (!ch->sweep) return;
 	if (++ch->scnt >= ch->sper) {
 		ch->scnt = 0;
@@ -95,8 +90,6 @@ void apuToneSweep(apuChannel* ch) {
 }
 
 void apuToneEnv(apuChannel* ch) {
-	if (!ch->en) return;
-	if (!ch->len) return;
 	if (!ch->env) return;
 	if (++ch->ecnt >= ch->eper) {
 		ch->ecnt = 0;
@@ -109,15 +102,14 @@ void apuToneEnv(apuChannel* ch) {
 }
 
 void apuToneLen(apuChannel* ch) {
-	if (!ch->en) return;
 	if (!ch->elen) return;
 	if (ch->len > 0)
 		ch->len--;
 }
 
 int apuToneVolume(apuChannel* ch) {
-	if (!ch->off && ch->en && ch->len && ch->hper && !ch->mute) {
-		ch->lev = dutyTab[ch->duty & 3][ch->pstp & 7] & 1;
+	if (!ch->off && ch->en && ch->len && ch->hper && !ch->mute && (ch->hper > 7)) {
+		ch->lev = dutyTab[~ch->duty & 3][ch->pstp & 7] & 1;
 		ch->out = ch->lev ? (ch->env ? ch->evol : ch->vol) : 0;
 	}
 	return ch->out;		// 00..0f
@@ -235,21 +227,21 @@ int apuDigiVolume(apuChannel* ch) {
 static const int seqMode0[4] = {1,3,1,7};		// e--|el-|e--|elf
 static const int seqMode1[5] = {3,1,3,1,0};		// el-|e--|el-|e--|---
 
-void apuSync(nesAPU* apu, int ns) {
-	apu->wcnt -= ns;
-}
+void apuFlush(nesAPU* apu) {}
 
-void apuFlush(nesAPU* apu) {
+// tone
+// F = Fcpu / (16 * (t + 1))	1 channel tick = 16 * (t + 1) cpu ticks = 8 * (t + 1) wf ticks; (t + 1) because of 8-step duty
+
+void apuSync(nesAPU* apu, int ns) {
 	int tmp;
-//	apu->time += ns;
 // Waveform generator clock = CPU/2	~890KHz (NTSC)
-//	apu->wcnt -= ns;
+	apu->wcnt -= ns;
 	while (apu->wcnt < 0) {
 		apu->wcnt += apu->wper;
 		apu->wstp++;
 		// sync all channels
-		apuToneSync(&apu->ch0);
-		apuToneSync(&apu->ch1);
+		apu_tone_tick(&apu->ch0);
+		apu_tone_tick(&apu->ch1);
 		apuNoiseSync(&apu->chn);			// noise channel
 		apuDigiSync(&apu->chd, apu->mrd, apu->data);	// pcm channel
 		apuTriSync(&apu->cht);
@@ -291,7 +283,7 @@ void apuFlush(nesAPU* apu) {
 // TODO: http://wiki.nesdev.com/w/index.php/APU_Mixer
 
 sndPair apuVolume(nesAPU* apu) {
-	apuFlush(apu);
+//	apuFlush(apu);
 	sndPair res;
 	int v1 = apuToneVolume(&apu->ch0);
 	int v2 = apuToneVolume(&apu->ch1);
@@ -323,7 +315,7 @@ int apuGetLen(apuChannel* ch, unsigned char val) {
 
 void apuWrite(nesAPU* apu, int reg, unsigned char val) {
 	// printf("%.2X = %.2X\n",reg,val);
-	apuFlush(apu);
+	// apuFlush(apu);
 	switch (reg & 0x1f) {
 		case 0x00:
 			apu->ch0.duty = (val >> 6) & 3;
@@ -346,7 +338,7 @@ void apuWrite(nesAPU* apu, int reg, unsigned char val) {
 			apu->ch0.sshi = val & 7;
 			apu->ch0.scnt = apu->ch0.sper;
 			break;
-		case 0x02:
+		case 0x02:			// update only on writing high byte?
 			apu->ch0.hper &= 0x700;
 			apu->ch0.hper |= (val & 0xff);
 			apuTargetPeriod(&apu->ch0);
@@ -395,8 +387,8 @@ void apuWrite(nesAPU* apu, int reg, unsigned char val) {
 			apu->ch1.hper &= 0xff;
 			apu->ch1.hper |= ((val << 8) & 0x0700);
 			apu->ch1.len = apuGetLen(&apu->ch1, val);
-//			apu->ch1.pstp = 0;
-//			apu->ch1.pcnt = apu->ch1.hper;
+			apu->ch1.pstp = 0;
+			apu->ch1.pcnt = apu->ch1.hper;
 //			apu->ch1.ecnt = apu->ch1.eper;
 //			apu->ch1.evol = 0x0f;
 			apuTargetPeriod(&apu->ch1);

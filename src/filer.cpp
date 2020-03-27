@@ -308,10 +308,13 @@ static xFilerError err_tab[] = {
 
 void file_errors(int err) {
 	int i = 0;
+	char buf[1024];
 	while ((err_tab[i].err != ERR_OK) && (err_tab[i].err != err))
 		i++;
-	if ((err_tab[i].err != ERR_OK) && conf.running) {
+	if (err_tab[i].err != ERR_OK) {
 		shitHappens(err_tab[i].text);
+	} else if (err != ERR_OK) {
+		sprintf(buf, "Error #%i", err);
 	}
 }
 
@@ -361,8 +364,9 @@ int load_file(Computer* comp, const char* name, int id, int drv) {
 	}
 	if (path.isEmpty()) return err;
 	inf = file_find_hw_ext(comp->hw->id, path);
-	if (grp->id == FG_RAW)
-		inf = &ft_raw;
+	switch(grp->id) {
+		case FG_RAW: inf = &ft_raw; break;
+	}
 	if (drv < 0) drv = 0;
 	if (inf) {
 		if (inf->load) {

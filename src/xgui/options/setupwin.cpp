@@ -1236,11 +1236,15 @@ void SetupWin::copyToDisk() {
 			return;
 		}
 	}
-	if (!(comp->dif->fdc->flop[dsk]->insert)) newdisk(dsk);
+	Floppy* flp = comp->dif->fdc->flop[dsk];
+	if (!flp->insert) {
+		newdisk(dsk);
+		diskFormat(flp);
+	}
 	inf = tapGetBlockInfo(comp->tape,dataBlock);
 	dt = (unsigned char*)malloc(inf.size+2);		// +2 = +mark +crc
 	tapGetBlockData(comp->tape,dataBlock,dt,inf.size+2);
-	switch(diskCreateDescriptor(comp->dif->fdc->flop[dsk],&dsc)) {
+	switch(diskCreateDescriptor(flp,&dsc)) {
 		case ERR_SHIT: shitHappens("Yes, it happens"); break;
 		case ERR_MANYFILES: shitHappens("Too many files @ disk"); break;
 		case ERR_NOSPACE: shitHappens("Not enough space @ disk"); break;
@@ -1252,7 +1256,7 @@ void SetupWin::copyToDisk() {
 					pos++;
 				} while (pos & 0xff);
 
-				diskPutSectorData(comp->dif->fdc->flop[dsk],dsc.trk, dsc.sec+1, buf, 256);
+				diskPutSectorData(flp,dsc.trk, dsc.sec+1, buf, 256);
 
 				dsc.sec++;
 				if (dsc.sec > 15) {

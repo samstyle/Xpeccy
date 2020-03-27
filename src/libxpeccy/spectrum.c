@@ -81,7 +81,7 @@ void memwr(unsigned short adr, unsigned char val, void* ptr) {
 	comp->hw->mwr(comp,adr,val);
 }
 
-int bdiz;
+static int bdiz;
 
 inline void zxIORW(Computer* comp, int port) {
 	if (comp->contIO) {

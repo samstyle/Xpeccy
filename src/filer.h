@@ -34,7 +34,7 @@ enum {
 	FL_C64PRG,
 	FL_BKBIN,
 	FL_BKIMG,
-	FL_BKBKD
+	FL_BKBKD,
 };
 
 enum {

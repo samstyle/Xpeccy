@@ -77,13 +77,33 @@ unsigned char bk_fcc_rd(Computer* comp, unsigned short adr) {
 	return 0;
 }
 
-// system
-
+// 177776: system
+// input on TLG line:
+//	send a byte to line
+//	recieve same byte
+//	recieve data
 unsigned char bk_sys_rd(Computer* comp, unsigned short adr) {
-	comp->wdata = 0x8080;		// 8080 for 0010, c080 for 0011
+	comp->wdata = 0x8000;		// 8000 for 0010, c000 for 0011
+	// comp->wdata |= 0x80;		// TL ready
+	if (comp->tape->on && !comp->tape->rec && (comp->tape->volPlay & 0x80))	// tape signal
+		comp->wdata |= 0x20;
 	if (~comp->keyb->flag & 0x20)
 		comp->wdata |= 0x40;		// = 0 if any key pressed
 	return 0;
+}
+
+void bk_sys_wr(Computer* comp, unsigned short adr, unsigned char val) {
+	// b7: tape motor control (1:stop, 0:play)
+	if (!(val & 0x80) && !comp->tape->on) {
+		tapPlay(comp->tape);
+	} else if ((val & 0x80) && comp->tape->on) {
+		tapStop(comp->tape);
+	}
+	// b6 : beep
+	comp->beep->lev = (val & 0x40) ? 1 : 0;
+	// b5,6 : tape rec
+	// comp->tape->levRec = (val << 1) & 0xc0;
+	// b4: TL write
 }
 
 // * debug
@@ -101,11 +121,11 @@ static xPort bk_io_tab[] = {
 	{0xfffe, 0xffb2, 2, 2, 2, bk_kbf_rd, NULL},	// keyflag
 	{0xfffe, 0xffb4, 2, 2, 2, bk_scr_rd, NULL},	// scroller
 	{0xfffc, 0xffbc, 2, 2, 2, bk_str_rd, NULL},	// storage (pc/psw)
-	{0xfffe, 0xffc6, 2, 2, 2, bk_tiv_rd, NULL},	// timer
-	{0xfffe, 0xffc8, 2, 2, 2, bk_tva_rd, NULL},
-	{0xfffe, 0xffca, 2, 2, 2, bk_tfl_rd, NULL},
-	{0xfffe, 0xffcc, 2, 2, 2, bk_fcc_rd, NULL},	// ext
-	{0xfffe, 0xffce, 2, 2, 2, bk_sys_rd, NULL},	// system
+	{0xfffe, 0xffc6, 2, 2, 2, bk_tiv_rd, NULL},		// 177706: timer
+	{0xfffe, 0xffc8, 2, 2, 2, bk_tva_rd, NULL},		// 177710
+	{0xfffe, 0xffca, 2, 2, 2, bk_tfl_rd, NULL},		// 177712
+	{0xfffe, 0xffcc, 2, 2, 2, bk_fcc_rd, NULL},		// 177714: ext
+	{0xfffe, 0xffce, 2, 2, 2, bk_sys_rd, bk_sys_wr},	// 177716: system
 	{0x0000, 0x0000, 2, 2, 2, bk_dbg_rd, NULL}
 };
 
@@ -118,53 +138,8 @@ unsigned char bk_io_rd(unsigned short adr, void* ptr) {
 	if (adr & 1) {			// high byte
 		res = (comp->wdata >> 8) & 0xff;
 	} else {			// low byte : update comp->wdata
-#if 1
 		hwIn(bk_io_tab, comp, adr, 0);
 		res = comp->wdata & 0xff;
-#else
-		comp->wdata = 0xffff;
-		switch (adr) {
-			// fdc
-			case 0xfe58:
-				comp->wdata = difIn(comp->dif, 0, NULL, 0) & 0xffff;
-				break;
-			case 0xfe5a:
-				comp->wdata = difIn(comp->dif, 1, NULL, 0) & 0xffff;
-				break;
-				// keyboard
-			case 0xffb0: comp->wdata = comp->keyb->flag & 0xc0; break;	// keyboard int control
-			case 0xffb2:							// keyboard code
-				comp->wdata = comp->keyb->keycode & 0x7f;
-				comp->keyb->flag &= 0x7f;
-				break;
-				// vertical scroll register
-			case 0xffb4: comp->wdata = comp->vid->sc.y & 0x00ff;
-				if (!comp->vid->cutscr) comp->wdata |= 0x200;
-				break;
-				// storage
-			case 0xffbc: comp->wdata = comp->reg[0xbc] | ((comp->reg[0xbd] << 8) & 0xff00); break;
-			case 0xffbe: comp->wdata = comp->reg[0xbe] | ((comp->reg[0xbf] << 8) & 0xff00); break;
-				// timer
-			case 0xffc6: comp->wdata = comp->cpu->timer.ival; break;		// timer:initial counter value
-			case 0xffc8: comp->wdata = comp->cpu->timer.val; break;			// timer:current counter
-			case 0xffca: comp->wdata = (comp->cpu->timer.flag & 0xff) | 0xff00; break;	// timer flags
-				// system
-			case 0xffcc: break;							// external port
-			case 0xffce:								// system port
-				comp->wdata = 0xc080;
-				if (~comp->keyb->flag & 0x20)
-					comp->wdata |= 0x40;		// = 0 if any key pressed
-				break;
-				// hdd
-			default:
-				if (!comp->debug) {
-					printf("%.4X : rd %.4X\n",comp->cpu->pc, adr);
-					assert(0);
-				}
-				break;
-		}
-		res = comp->wdata & 0xff;
-#endif
 	}
 	return res;
 }
@@ -337,8 +312,9 @@ unsigned char bk_mrd(Computer* comp, unsigned short adr, int m1) {
 
 sndPair bk_vol(Computer* comp, sndVolume* vol) {
 	sndPair res;
-	res.left = 0;
-	res.right = 0;
+	int lev = (comp->beep->val * vol->beep) >> 2;
+	res.left = lev;
+	res.right = lev;
 	return res;
 }
 

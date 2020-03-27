@@ -103,6 +103,7 @@ void aymSetReg(aymChip* ay, unsigned char val) {
 			ay->chanC.per = tone << 4;
 			break;
 		case 0x06:					// noise
+			ay->reg[0x06] &= 0x1f;			// 5bit reg
 			tone = val & 0x1f;
 			ay->chanN.per = (tone + 1) << 6;
 			break;
@@ -185,7 +186,7 @@ void aymSync(aymChip* ay, int ns) {
 				ay->chanE.cnt = 0;
 				ay->chanE.vol += ay->chanE.step;
 				if (ay->chanE.vol & ~31) {		// 32 || -1
-					if (ay->eForm & 8) {
+					if (ay->eForm & 8) {				// 1xxx
 						if (ay->eForm & 1) {			// 1xx1 : 9,B,D,F : stop
 							ay->chanE.vol -= ay->chanE.step;
 							ay->chanE.step = 0;
@@ -198,7 +199,7 @@ void aymSync(aymChip* ay, int ns) {
 						} else {				// 1x00 : 8,C : repeat (saw)
 							ay->chanE.vol &= 0x1f;
 						}
-					} else {					// 0..7 : silent, stop
+					} else {					// 0xxx : silent, stop
 						ay->chanE.vol = 0;
 						ay->chanE.step = 0;
 					}

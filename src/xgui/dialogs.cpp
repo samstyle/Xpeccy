@@ -1,7 +1,9 @@
 #include "xgui.h"
+#include "../xcore/xcore.h"
 #include <QMessageBox>
 
 void shitHappens(const char* msg) {
+	if (!conf.running) return;
 	QMessageBox mbx(QMessageBox::Critical,"Shit happens",QDialog::trUtf8(msg),QMessageBox::Ok);
 	mbx.exec();
 }
