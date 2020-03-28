@@ -1,5 +1,4 @@
-#ifndef _DEBUGER_H
-#define _DEBUGER_H
+#pragma once
 
 #include <QDialog>
 #include <QLineEdit>
@@ -114,8 +113,6 @@ class DebugWin : public QDialog {
 		void setFlagNames(const char*);
 		void chLayout();
 
-		unsigned short getPrevAdr(unsigned short);
-
 	private slots:
 		void setShowLabels(bool);
 		void setShowSegment(bool);
@@ -184,5 +181,3 @@ class DebugWin : public QDialog {
 		void keyPressEvent(QKeyEvent*);
 		void keyReleaseEvent(QKeyEvent*);
 };
-
-#endif

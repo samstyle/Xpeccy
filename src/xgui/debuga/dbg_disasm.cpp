@@ -22,6 +22,8 @@ static int page = 0;
 
 extern unsigned short adr_of_reg(CPU* cpu, bool* flag, QString nam);
 
+// TODO: comp as external data & data request on update
+
 // MODEL
 
 xDisasmModel::xDisasmModel(QObject* p):QAbstractTableModel(p) {
@@ -726,6 +728,7 @@ void xDisasmTable::t_update(int oadr, int nadr) {
 
 void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 	QModelIndex idx = currentIndex();
+	int i;
 	int bpt;
 	int bpr;
 	int adr;
@@ -747,6 +750,16 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			} else {
 				QTableView::keyPressEvent(ev);
 			}
+			break;
+		case Qt::Key_PageUp:
+			for (i = 0; i < rows() - 1; i++) {
+				disasmAdr = getPrevAdr(*cptr, disasmAdr);
+			}
+			updContent();
+			break;
+		case Qt::Key_PageDown:
+			disasmAdr = getData(rows() - 1, 0, Qt::UserRole).toInt() & 0xffff;
+			updContent();
 			break;
 		case XCUT_TOPC:
 			if (mode != XVIEW_CPU) break;

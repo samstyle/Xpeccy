@@ -327,6 +327,14 @@ void xDumpTable::keyPressEvent(QKeyEvent* ev) {
 				emit rqRefill();
 			}
 			break;
+		case Qt::Key_PageUp:
+			dumpAdr = (dumpAdr - (rows() * 8)) & 0xffff;
+			update();
+			break;
+		case Qt::Key_PageDown:
+			dumpAdr = (dumpAdr + (rows() * 8)) & 0xffff;
+			update();
+			break;
 		case Qt::Key_Return:
 			edit(currentIndex());
 			ev->ignore();

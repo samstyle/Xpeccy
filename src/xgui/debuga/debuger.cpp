@@ -758,132 +758,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			if (!ev->isAutoRepeat())
 				stop();
 			break;
-		case Qt::Key_PageUp:
-			for (i = 0; i < ui.dasmTable->rows() - 1; i++) {
-				disasmAdr = getPrevAdr(disasmAdr);
-			}
-			fillDisasm();
-			break;
-		case Qt::Key_PageDown:
-			disasmAdr = ui.dasmTable->getData(ui.dasmTable->rows() - 1, 0, Qt::UserRole).toInt();
-			fillDisasm();
-			break;
 	}
-
-/*
-	switch(ev->modifiers()) {
-		case Qt::ControlModifier:
-			switch(ev->key()) {
-//				case Qt::Key_F:
-//					doFind();
-//					break;
-//				case Qt::Key_T:
-//					doTrace(ui.actTrace);
-//					break;
-//				case Qt::Key_L:
-//					ui.actShowLabels->setChecked(!conf.dbg.labels);
-//					break;
-			}
-			break;
-		case Qt::AltModifier:
-			switch (ev->key()) {
-//				case Qt::Key_K:
-//					emit wannaKeys();
-//					break;
-//				case Qt::Key_F7:
-//					for (i = 10; i > 0; i--) {
-//						doStep();
-//					}
-//					break;
-			}
-			break;
-		default:
-			switch(ev->key()) {
-//				case Qt::Key_Escape:
-//					if (!ev->isAutoRepeat()) stop();
-//					break;
-				case Qt::Key_Home:
-					disasmAdr = pc;
-					fillDisasm();
-					break;
-				case Qt::Key_End:
-					// if (!ui.dasmTable->hasFocus()) break;
-					adr = getAdr();
-					if (adr < 0) break;
-					comp->cpu->pc = adr & 0xffff;
-					comp->cpu->preg[7] = adr & 0xffff;
-					fillCPU();
-					fillDisasm();
-					break;
-				case Qt::Key_PageUp:
-					if (ui.dumpTable->hasFocus()) {
-						dumpAdr = (dumpAdr - offset) & 0xffff;
-						fillDump();
-					} else if (ui.dasmTable->hasFocus()) {
-						for (i = 0; i < ui.dasmTable->rows() - 1; i++) {
-							disasmAdr = getPrevAdr(disasmAdr);
-						}
-						fillDisasm();
-					}
-					break;
-				case Qt::Key_PageDown:
-					if (ui.dumpTable->hasFocus()) {
-						dumpAdr = (dumpAdr + offset) & 0xffff;
-						fillDump();
-					} else if (ui.dasmTable->hasFocus()) {
-						disasmAdr = ui.dasmTable->getData(ui.dasmTable->rows() - 1, 0, Qt::UserRole).toInt();
-						fillDisasm();
-					}
-					break;
-				case Qt::Key_F1:
-					emit wannaOptions(conf.prof.cur);
-					break;
-				case Qt::Key_F2:
-					save_file(comp, NULL, FG_ALL, -1);
-					activateWindow();
-					break;
-				case Qt::Key_F3:
-					load_file(comp, NULL, FG_ALL, -1);
-					disasmAdr = comp->cpu->pc;
-					fillAll();
-					activateWindow();
-					break;
-				case Qt::Key_F6:
-					reload();
-					break;
-				case Qt::Key_F7:
-					doStep();
-					break;
-				case Qt::Key_F8:
-					len = dasmSome(comp, comp->cpu->pc, drow);
-					if (drow.oflag & OF_SKIPABLE) {
-						ptr = getBrkPtr(comp, (comp->cpu->pc + len) & 0xffff);
-						*ptr |= MEM_BRK_TFETCH;
-						stop();
-					} else {
-						doStep();
-					}
-					break;
-				case Qt::Key_F9:
-					if (!ui.dasmTable->hasFocus()) break;
-					idx = ui.dasmTable->currentIndex();
-					i = ui.dasmTable->getData(idx.row(), 0, Qt::UserRole).toInt() & 0xffff;
-					ptr = getBrkPtr(comp, i);
-					*ptr |= MEM_BRK_TFETCH;
-					stop();
-					break;
-				case Qt::Key_F12:
-					rzxStop(comp);
-					compReset(comp, RES_DEFAULT);
-					if (!fillAll()) {
-						disasmAdr = comp->cpu->pc;
-						fillDisasm();
-					}
-					break;
-			}
-		break;
-	}
-*/
 }
 
 void DebugWin::keyReleaseEvent(QKeyEvent *ev) {
@@ -1757,14 +1632,6 @@ int getCommandSize(Computer* comp, unsigned short adr) {
 int DebugWin::fillDisasm() {
 	conf.dbg.hideadr = ui.actHideAddr->isChecked() ? 1 : 0;
 	return ui.dasmTable->updContent();
-}
-
-unsigned short DebugWin::getPrevAdr(unsigned short adr) {
-	for (int i = 16; i > 0; i--) {
-		if (getCommandSize(comp, adr - i) == i)
-			return adr - i;
-	}
-	return (adr - 1);
 }
 
 void DebugWin::saveDasm() {
