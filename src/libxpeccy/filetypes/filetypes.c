@@ -168,12 +168,15 @@ void diskFormTrack(Floppy* flp, int tr, Sector* sdata, int scount) {
 	flpFillFields(flp,tr,1);
 }
 
-unsigned char fbuf[0x100];
+static unsigned char fbuf[0x100];
 
 int diskGetType(Floppy* flp) {
 	int res = -1;
-	if (diskGetSectorData(flp,0,9,fbuf,0x100)) {
-		if (fbuf[0xe7] == 0x10) res = DISK_TYPE_TRD;
+	// trdos
+	if (!diskGetSectorData(flp,0,15,fbuf,0x100)) {			// at least 16 sectors
+		if (diskGetSectorData(flp,0,9,fbuf,0x100)) {
+			if (fbuf[0xe7] == 0x10) res = DISK_TYPE_TRD;
+		}
 	}
 	return res;
 }

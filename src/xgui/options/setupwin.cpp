@@ -1240,6 +1240,9 @@ void SetupWin::copyToDisk() {
 	if (!flp->insert) {
 		newdisk(dsk);
 		diskFormat(flp);
+	} else if (diskGetType(flp) != DISK_TYPE_TRD) {
+		shitHappens("Not TR-DOS disk inserted");
+		return;
 	}
 	inf = tapGetBlockInfo(comp->tape,dataBlock);
 	dt = (unsigned char*)malloc(inf.size+2);		// +2 = +mark +crc
@@ -1265,7 +1268,7 @@ void SetupWin::copyToDisk() {
 				}
 			}
 			fillDiskCat();
-			showInfo("File was copied");
+			showInfo("File(s) was copied");
 			break;
 	}
 	free(dt);

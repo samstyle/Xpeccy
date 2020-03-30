@@ -69,8 +69,7 @@ void MainWin::updateWindow() {
 	} else {
 		szw = comp->vid->vsze.x * conf.vid.scale;
 		szh = comp->vid->vsze.y * conf.vid.scale;
-		if (conf.prof.cur->zx->hw->grp == HWG_BK)
-			szw *= 1.5;
+		szw *= conf.prof.cur->zx->hw->xscale;
 		setWindowState(windowState() & ~Qt::WindowFullScreen);
 	}
 	setFixedSize(szw, szh);
@@ -589,6 +588,8 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 
 void MainWin::xkey_press(int xkey) {
 	keyEntry kent = getKeyEntry(xkey);
+	int x;
+	int y;
 	if (pckAct->isChecked()) {
 		xt_press(comp->keyb, kent.keyCode);
 		if (comp->hw->keyp) {
@@ -605,6 +606,11 @@ void MainWin::xkey_press(int xkey) {
 				setMessage(conf.vid.fullScreen ? " fullscreen on " : " fullscreen off ");
 				updateWindow();
 				saveConfig();
+				if (!conf.vid.fullScreen) {
+					x = (QApplication::desktop()->screenGeometry().width() - width()) / 2;
+					y = (QApplication::desktop()->screenGeometry().height() - height()) / 2;
+					move(x, y);
+				}
 				break;
 			case XCUT_SIZEX1:
 				vid_set_zoom(1);

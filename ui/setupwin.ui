@@ -1846,7 +1846,11 @@
                  <item>
                   <layout class="QHBoxLayout" name="horizontalLayout_4">
                    <item>
-                    <widget class="QLineEdit" name="apathle"/>
+                    <widget class="QLineEdit" name="apathle">
+                     <property name="readOnly">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
                    </item>
                    <item>
                     <widget class="QToolButton" name="newatb">
@@ -1929,7 +1933,11 @@
                  <item>
                   <layout class="QHBoxLayout" name="horizontalLayout_10">
                    <item>
-                    <widget class="QLineEdit" name="bpathle"/>
+                    <widget class="QLineEdit" name="bpathle">
+                     <property name="readOnly">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
                    </item>
                    <item>
                     <widget class="QToolButton" name="newbtb">
@@ -2012,7 +2020,11 @@
                  <item>
                   <layout class="QHBoxLayout" name="horizontalLayout_12">
                    <item>
-                    <widget class="QLineEdit" name="cpathle"/>
+                    <widget class="QLineEdit" name="cpathle">
+                     <property name="readOnly">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
                    </item>
                    <item>
                     <widget class="QToolButton" name="newctb">
@@ -2095,7 +2107,11 @@
                  <item>
                   <layout class="QHBoxLayout" name="horizontalLayout_14">
                    <item>
-                    <widget class="QLineEdit" name="dpathle"/>
+                    <widget class="QLineEdit" name="dpathle">
+                     <property name="readOnly">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
                    </item>
                    <item>
                     <widget class="QToolButton" name="newdtb">

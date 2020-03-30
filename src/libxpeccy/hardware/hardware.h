@@ -76,8 +76,9 @@ struct HardWare {
 	int grp;
 	const char* name;	// name used for conf file
 	const char* optName;	// name used for setup window
-	int base;
+	int base;		// numbers base (8/10/16)
 	int mask;		// mem size bits (see memory.h)
+	double xscale;
 	cbHwMap mapMem;
 	cbHwIwr out;		// io wr
 	cbHwIrd in;		// io rd
