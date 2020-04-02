@@ -17,11 +17,7 @@
 #include "xgui/options/setupwin.h"
 #include "filer.h"
 
-#ifdef HAVESDL2
-#include <SDL2/SDL.h>
-#else
-#include <SDL/SDL.h>
-#endif
+#include <SDL.h>
 #undef main
 
 void help() {

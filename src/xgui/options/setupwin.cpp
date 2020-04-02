@@ -7,12 +7,7 @@
 #include <QDebug>
 #include <stdlib.h>
 
-#ifdef HAVESDL2
-#include <SDL2/SDL.h>
-#else
-#include <SDL/SDL.h>
-#endif
-#undef main
+#include <SDL.h>
 
 #include "filer.h"
 #include "setupwin.h"

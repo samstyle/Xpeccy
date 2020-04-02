@@ -24,16 +24,25 @@ unsigned char bk_fdc_rd(Computer* comp, unsigned short adr) {
 	return 0;
 }
 
+void bk_fdc_wr(Computer* comp, unsigned short adr, unsigned char val) {
+	// difOut(comp->dif, (adr & 2) ? 1 : 0, 0, comp->wdata);
+}
+
 // keboard
 
-unsigned char bk_kbd_rd(Computer* comp, unsigned short adr) {
+unsigned char bk_kbf_rd(Computer* comp, unsigned short adr) {
 	comp->wdata = comp->keyb->flag & 0xc0;
 	return 0;
 }
 
-unsigned char bk_kbf_rd(Computer* comp, unsigned short adr) {
+void bk_kbf_wr(Computer* comp, unsigned short adr, unsigned char val) {
+	comp->keyb->flag &= ~0x40;
+	comp->keyb->flag |= (comp->wdata & 0x40);
+}
+
+unsigned char bk_kbd_rd(Computer* comp, unsigned short adr) {
 	comp->wdata = comp->keyb->keycode & 0x7f;
-	comp->keyb->flag &= 0x7f;
+	comp->keyb->flag &= 0x7f;		// reset b7,flag
 	return 0;
 }
 
@@ -46,10 +55,15 @@ unsigned char bk_scr_rd(Computer* comp, unsigned short adr) {
 	return 0;
 }
 
+void bk_scr_wr(Computer* comp, unsigned short adr, unsigned char val) {
+	comp->vid->sc.y = comp->wdata & 0xff;
+	comp->vid->cutscr = (comp->wdata & 0x0200) ? 0 : 1;
+}
+
 // pc/psw
 
 unsigned char bk_str_rd(Computer* comp, unsigned short adr) {
-	comp->wdata = (comp->reg[adr & ~1] & 0xff) | ((comp->reg[adr | 1] << 8) & 0xff00);
+	comp->wdata = (comp->iomap[adr & ~1] & 0xff) | ((comp->iomap[adr | 1] << 8) & 0xff00);
 	return 0;
 }
 
@@ -70,6 +84,22 @@ unsigned char bk_tfl_rd(Computer* comp, unsigned short adr) {
 	return 0;
 }
 
+void bk_tiv_wr(Computer* comp, unsigned short adr, unsigned char val) {
+	comp->cpu->timer.ival = comp->wdata;
+}
+
+void bk_tva_wr(Computer* comp, unsigned short adr, unsigned char val) {
+	comp->cpu->timer.val = comp->wdata;
+}
+
+void bk_tfl_wr(Computer* comp, unsigned short adr, unsigned char val) {
+	comp->cpu->timer.flag = comp->wdata & 0xff;
+	comp->cpu->timer.per = 128;
+	if (comp->wdata & 0x40) comp->cpu->timer.per <<= 2;	// div 4
+	if (comp->wdata & 0x20) comp->cpu->timer.per <<= 4;	// div 16
+	if (comp->wdata & 0x12) comp->cpu->timer.val = comp->cpu->timer.ival;	// reload
+}
+
 // external
 
 unsigned char bk_fcc_rd(Computer* comp, unsigned short adr) {
@@ -78,32 +108,35 @@ unsigned char bk_fcc_rd(Computer* comp, unsigned short adr) {
 }
 
 // 177776: system
-// input on TLG line:
-//	send a byte to line
-//	recieve same byte
-//	recieve data
 unsigned char bk_sys_rd(Computer* comp, unsigned short adr) {
 	comp->wdata = 0x8000;		// 8000 for 0010, c000 for 0011
 	// comp->wdata |= 0x80;		// TL ready
-	if (comp->tape->on && !comp->tape->rec && (comp->tape->volPlay & 0x80))	// tape signal
+	if (comp->reg[0xce]) {		// b2: write to system port flag
+		comp->wdata |= 4;
+		comp->reg[0xce] = 0;	// reset on reading
+	// b4: TL signal
+	if (comp->tape->on && !comp->tape->rec && (comp->tape->volPlay & 0x80))	// b5: tape signal
 		comp->wdata |= 0x20;
-	if (~comp->keyb->flag & 0x20)
-		comp->wdata |= 0x40;		// = 0 if any key pressed
+	if (!(comp->keyb->flag & 0x20))		// b6: any key pressed
+		comp->wdata |= 0x40;		// = 0 if any key pressed, 1 if not
+	}
+	// b7: TL ready
 	return 0;
 }
 
 void bk_sys_wr(Computer* comp, unsigned short adr, unsigned char val) {
 	// b7: tape motor control (1:stop, 0:play)
-	if (!(val & 0x80) && !comp->tape->on) {
+	if (!(comp->wdata & 0x80) && !comp->tape->on) {
 		tapPlay(comp->tape);
-	} else if ((val & 0x80) && comp->tape->on) {
+	} else if ((comp->wdata & 0x80) && comp->tape->on) {
 		tapStop(comp->tape);
 	}
 	// b6 : beep
-	comp->beep->lev = (val & 0x40) ? 1 : 0;
-	// b5,6 : tape rec
-	// comp->tape->levRec = (val << 1) & 0xc0;
+	comp->beep->lev = (comp->wdata & 0x40) ? 1 : 0;
+	// b5 : tape rec
+	comp->tape->levRec = (comp->wdata & 0x20) ? 1 : 0;
 	// b4: TL write
+	comp->reg[0xce] = 1;	// write to system port
 }
 
 // * debug
@@ -115,18 +148,23 @@ unsigned char bk_dbg_rd(Computer* comp, unsigned short adr) {
 	return 1;
 }
 
+void bk_dbg_wr(Computer* comp, unsigned short adr, unsigned char val) {
+	printf("%.4X : wr %.4X, %.4X\n",comp->cpu->pc, adr, comp->wdata);
+	assert(0);
+}
+
 static xPort bk_io_tab[] = {
-	{0xfffc, 0xfe58, 2, 2, 2, bk_fdc_rd, NULL},	// fdc
-	{0xfffe, 0xffb0, 2, 2, 2, bk_kbd_rd, NULL},	// keycode
-	{0xfffe, 0xffb2, 2, 2, 2, bk_kbf_rd, NULL},	// keyflag
-	{0xfffe, 0xffb4, 2, 2, 2, bk_scr_rd, NULL},	// scroller
-	{0xfffc, 0xffbc, 2, 2, 2, bk_str_rd, NULL},	// storage (pc/psw)
-	{0xfffe, 0xffc6, 2, 2, 2, bk_tiv_rd, NULL},		// 177706: timer
-	{0xfffe, 0xffc8, 2, 2, 2, bk_tva_rd, NULL},		// 177710
-	{0xfffe, 0xffca, 2, 2, 2, bk_tfl_rd, NULL},		// 177712
-	{0xfffe, 0xffcc, 2, 2, 2, bk_fcc_rd, NULL},		// 177714: ext
+	{0xfffc, 0xfe58, 2, 2, 2, bk_fdc_rd, bk_fdc_wr},	// 177130..32:fdc
+	{0xfffe, 0xffb0, 2, 2, 2, bk_kbf_rd, bk_kbf_wr},	// 177660: keyflag
+	{0xfffe, 0xffb2, 2, 2, 2, bk_kbd_rd, NULL},		// 177662: keycode
+	{0xfffe, 0xffb4, 2, 2, 2, bk_scr_rd, bk_scr_wr},	// 177664: scroller
+	{0xfffc, 0xffbc, 2, 2, 2, bk_str_rd, NULL},		// 177704: storage (pc/psw)
+	{0xfffe, 0xffc6, 2, 2, 2, bk_tiv_rd, bk_tiv_wr},	// 177706: timer
+	{0xfffe, 0xffc8, 2, 2, 2, bk_tva_rd, bk_tva_wr},	// 177710
+	{0xfffe, 0xffca, 2, 2, 2, bk_tfl_rd, bk_tfl_wr},	// 177712
+	{0xfffe, 0xffcc, 2, 2, 2, bk_fcc_rd, NULL},		// 177714: ext (printer / ay / joystick)
 	{0xfffe, 0xffce, 2, 2, 2, bk_sys_rd, bk_sys_wr},	// 177716: system
-	{0x0000, 0x0000, 2, 2, 2, bk_dbg_rd, NULL}
+	{0x0000, 0x0000, 2, 2, 2, bk_dbg_rd, bk_dbg_wr}
 };
 
 // cpu allways read whole word from even adr
@@ -144,93 +182,32 @@ unsigned char bk_io_rd(unsigned short adr, void* ptr) {
 	return res;
 }
 
+// if cpu->nod = 1, write 1 byte immediately
+// if cpu->nod = 0:
+//	even adr : store low byte in wdata
+//	odd adr : is high byte, add stored low byte, write whole word
 void bk_io_wr(unsigned short adr, unsigned char val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	comp->iomap[adr] = val;
-	switch (adr) {
-		// fdc
-		case 0xfe58: comp->reg[0x58] = val; break;
-		case 0xfe59:
-			difOut(comp->dif, 0, 0x00, comp->reg[0x58] | (val << 8));
-			break;
-		case 0xfe5a: comp->reg[0x5a] = val; break;
-		case 0xfe5b:
-			difOut(comp->dif, 1, 0x00, comp->reg[0x5a] | (val << 8));
-			break;
-		// keyboard
-		case 0xffb0:
-			comp->keyb->flag &= ~0x40;
-			comp->keyb->flag |= (val & 0x40);
-			break;
-		case 0xffb1: break;
-		// pal/timer/scrbuf
-		case 0xffb2: break;
-		case 0xffb3:
-			comp->reg[0xb3] = val;
-			//comp->vid->paln = (val << 2) & 0x3c;
-			//comp->vid->curscr = (val & 0x80) ? 1 : 0;
-			break;
-		// scroll
-		case 0xffb4: comp->vid->sc.y = val;
-			break;
-		case 0xffb5:
-			comp->vid->cutscr = (val & 0x02) ? 0 : 1;
-			break;
-		case 0xffbc:
-		case 0xffbd:
-		case 0xffbe:
-		case 0xffbf:
-			comp->reg[adr & 0xff] = val;
-			break;
-		// timer
-		case 0xffc6: comp->cpu->timer.ivl = val; break;
-		case 0xffc7: comp->cpu->timer.ivh = val; break;
-		case 0xffc8: comp->cpu->timer.vl = val; break;
-		case 0xffc9: comp->cpu->timer.vh = val; break;
-		case 0xffca: comp->cpu->timer.flag = val & 0xff;
-			comp->cpu->timer.per = 128;
-			if (val & 0x40) comp->cpu->timer.per <<= 2;	// div 4
-			if (val & 0x20) comp->cpu->timer.per <<= 4;	// div 16
-			if (val & 0x12) comp->cpu->timer.val = comp->cpu->timer.ival; // reload value
-			break;
-		case 0xffcb: break;
-
-		case 0xffcc:
-		case 0xffcd: break;
-		case 0xffce: comp->reg[0xce] = val; break;
-		case 0xffcf:
-			// tape control
-/* for 0011
-			if (val & 8) {	// extend
-				comp->reg[0] = (val >> 4) & 7;
-				if (comp->reg[0xce] & 1) {
-					comp->reg[1] = 0x80;
-				} else if (comp->reg[0xce] & 2) {
-					comp->reg[1] = 0x81;
-				} else if (comp->reg[0xce] & 8) {
-					comp->reg[1] = 0x82;
-				} else if (comp->reg[0xce] & 0x10) {
-					comp->reg[1] = 0x83;
-				} else {
-					comp->reg[1] = val & 7;
-				}
-				bk_mem_map(comp);
-			} else {	// tape control
-
-			}
-*/
-			break;
-		default:
-			printf("%.4X : wr %.4X,%.2X\n",comp->cpu->pc,adr,val);
-			assert(0);
-			break;
+	if (comp->cpu->nod) {	// write byte
+		comp->wdata = (comp->iomap[adr & ~1] | (comp->iomap[adr | 1] << 8)) & 0xffff;
+		hwOut(bk_io_tab, comp, adr & ~1, 0, 0);
+	} else {
+		if (adr & 1) {
+			comp->wdata &= 0xff;
+			comp->wdata |= (val << 8);
+			hwOut(bk_io_tab, comp, adr & ~1, 0, 0);		// all data in comp->wdata
+		} else {
+			comp->wdata = val & 0xff;
+		}
 	}
 }
 
 void bk_sync(Computer* comp, int ns) {
-	if ((comp->vid->newFrame) && (comp->reg[0xb3] & 0x40)) {
+	if ((comp->vid->newFrame) && (comp->iomap[0xffb3] & 0x40)) {
 		comp->cpu->intrq |= PDP_INT_IRQ2;
 	}
+	bcSync(comp->beep, ns);
 	difSync(comp->dif, ns);
 }
 
@@ -297,7 +274,7 @@ void bk_reset(Computer* comp) {
 	comp->vid->curscr = 0;
 	comp->vid->paln = 0;
 	vidSetMode(comp->vid, VID_BK_BW);
-	comp->keyb->flag = 0x40;
+	comp->keyb->flag = 0x00;
 	comp->keyb->keycode = 0;
 	bk_mem_map(comp);
 }
@@ -310,12 +287,12 @@ unsigned char bk_mrd(Computer* comp, unsigned short adr, int m1) {
 	return memRd(comp->mem, adr);
 }
 
-sndPair bk_vol(Computer* comp, sndVolume* vol) {
-	sndPair res;
-	int lev = (comp->beep->val * vol->beep) >> 2;
-	res.left = lev;
-	res.right = lev;
-	return res;
+sndPair bk_vol(Computer* comp, sndVolume* sv) {
+	sndPair vol;
+	int lev = comp->beep->val * sv->beep / 6;
+	vol.left = lev;
+	vol.right = lev;
+	return vol;
 }
 
 // keys
@@ -378,6 +355,7 @@ static bkKeyCode bkeyTab[] = {
 	{XKEY_BSP,24},
 	{XKEY_TAB,13},
 	{XKEY_DOWN,27},{XKEY_LEFT,8},{XKEY_RIGHT,25},{XKEY_UP,26},
+//	{XKEY_ESC,3},
 	{ENDKEY, 0}
 };
 

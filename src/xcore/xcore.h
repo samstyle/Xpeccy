@@ -8,11 +8,7 @@
 #include <linux/limits.h>
 #endif
 
-#ifdef HAVESDL2
-#include <SDL2/SDL_joystick.h>
-#else
-#include <SDL/SDL_joystick.h>
-#endif
+#include <SDL_joystick.h>
 
 #include <QKeySequence>
 #include <QString>

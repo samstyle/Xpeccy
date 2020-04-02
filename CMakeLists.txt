@@ -124,7 +124,6 @@ set(INCLUDIRS
 file(GLOB_RECURSE SOURCES
 	./src/*.cpp
 	./src/*.c
-#	./xpeccy.rc
 )
 
 # headers
@@ -209,10 +208,10 @@ endif(${QT4BUILD})
 # SDL
 
 if(${SDL1BUILD})
-	find_package(SDL)
+	find_package(SDL REQUIRED)
 	if(${SDL_FOUND})
 		add_definitions(-DHAVESDL1)
-		set(INCLUDIRS ${INCLUDIRS} ${SDL_INCLUDE_DIR})
+		include_directories(${SDL_INCLUDE_DIR})
 		set(LIBRARIES ${LIBRARIES} ${SDL_LIBRARY})
 		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libSDL1.2debian (>=1.2)")
 		set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, SDL >= 1.2")
@@ -222,7 +221,7 @@ else(${SDL1BUILD})
 	find_package(SDL2 REQUIRED)
 	if (${SDL2_FOUND})
 		add_definitions(-DHAVESDL2)
-		set(INCLUDIRS ${INCLUDIRS} ${SDL2_INCLUDE_DIR})
+		include_directories(${SDL2_INCLUDE_DIR})
 		set(LIBRARIES ${LIBRARIES} ${SDL2_LIBRARY})
 		set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libsdl2-2.0-0 (>=2.0) | libSDL2 (>=2.0)")
 		set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, SDL2 >= 2.0")
@@ -244,8 +243,6 @@ endif(ZLIB_FOUND)
 
 # other
 
-include_directories(${INCLUDIRS})
-
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS})
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -260,9 +257,10 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	set(CMAKE_INSTALL_PREFIX "/Applications")
 	install(TARGETS ${PROJECT_NAME} BUNDLE DESTINATION .)
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS})
+	add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS} ${CMAKE_SOURCE_DIR}/xpeccy.rc)
 endif()
 
+include_directories(${INCLUDIRS})
 target_link_libraries(${PROJECT_NAME} ${LIBRARIES})
 
 include(${CMAKE_ROOT}/Modules/CPack.cmake)
