@@ -79,18 +79,22 @@ SET(SDL2_SEARCH_PATHS
 	${SDL2_PATH}
 )
 
+set(INC_SUFFIXES include/SDL2 include)
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	set(PATH_SUFFIXES lib64 lib/x64 lib x86_64-linux-gnu)
+	set(INC_SUFFIXES ${INC_SUFFIXES} include/x86_64-linux-gnu/SDL2)
+else()
+	set(PATH_SUFFIXES lib/x86 lib i386-linux-gnu)
+	set(INC_SUFFIXES ${INC_SUFFIXES} include/i386-linux-gnu/SDL2)
+endif()
+
+
 FIND_PATH(SDL2_INCLUDE_DIR SDL.h
 	HINTS
 	$ENV{SDL2DIR}
-	PATH_SUFFIXES include/SDL2 include
+	PATH_SUFFIXES ${INC_SUFFIXES}
 	PATHS ${SDL2_SEARCH_PATHS}
 )
-
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-	set(PATH_SUFFIXES lib64 lib/x64 lib)
-else()
-	set(PATH_SUFFIXES lib/x86 lib)
-endif()
 
 FIND_LIBRARY(SDL2_LIBRARY_TEMP
 	NAMES SDL2

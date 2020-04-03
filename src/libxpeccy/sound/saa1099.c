@@ -4,17 +4,20 @@
 
 #include "saa1099.h"
 
-// 253 : pos=0 (repeat)
-// 255 : pos-- (stay)
-static unsigned char saaEnvForms[8][33] = {
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,255},	// 000 : 0 stay
-	{15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,253},	// 001 : F repeat = F stay
-	{15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,255},	// 010 : down stay
-	{15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,253},	// 011 : down repeat
-	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 255},	// 100 : up-down stay
-	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 253},	// 101 : up-down repeat
-	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 255},	// 110 : up,0 stay
-	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,253},		// 111 : up repeat
+#define TSTEP 256
+
+// xx0 : stay
+// xx1 : repeat
+// pos++; if (pos & 31 == 0): if (form & 1) pos = 0, else pos = 31
+static unsigned char saaEnvForms[8][32] = {
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},	// 000 : 0 stay
+	{15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15},	// 001 : F repeat = F stay
+	{15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},	// 010 : down stay
+	{15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0},	// 011 : down repeat
+	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0},	// 100 : up-down stay
+	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0},	// 101 : up-down repeat
+	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},	// 110 : up,0 stay
+	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15},	// 111 : up repeat
 };
 
 saaChip* saaCreate() {
@@ -31,69 +34,78 @@ void saaDestroy(saaChip* saa) {
 void saaReset(saaChip* saa) {
 	int i;
 	for (i = 0; i < 6; i++) {
+		saa->chan[i].freqEn = 0;
+		saa->chan[i].noizEn = 0;
 		saa->chan[i].period = 0;
 		saa->chan[i].count = 0;
 	}
 	for (i = 0; i < 2; i++) {
 		saa->noiz[i].period = 0;
-		saa->noiz[i].period = 0;
 		saa->env[i].period = 0;
+		saa->env[i].form = 0;
 		saa->env[i].count = 0;
 		saa->env[i].pos = 0;
+		saa->env[i].enable = 0;
 	}
 }
 
 void saaSetNoise(saaNoise* nch, int val, saaChan* fch) {
 	if ( val != 3 )
-		nch->period = 0x8000 << val;
+		nch->period = 0x100 << val;
 	else
-		nch->period = (511 - fch->freq) << (14 - fch->octave);
+		nch->period = (512 - fch->freq) << (8 - fch->octave);
 }
 
-void saaUpdateEnv(saaEnv* env, saaChan* ch) {
+void saaUpdateEnv(saaEnv* env) {
 	env->buf.update = 0;
 	env->count = 0;
 	env->pos = 0;
 	env->form = env->buf.form;
 	env->invRight = env->buf.invRight;
 	env->extCLK = env->buf.extCLK;
-	if (!env->extCLK) {
-		env->period = ch->period;
-	} else {
-		env->period = 0;
-	}
+	env->period = env->buf.period;
 }
 
-void saaEnvStep(saaEnv* env, saaChan* ch) {
+void saaEnvStep(saaEnv* env) {
 	env->pos++;
-	if (env->lowRes) env->pos = (env->pos + 1) & ~1;
-	switch (saaEnvForms[env->form][env->pos]) {
-		case 255:			// non-cycled env end : can be updated immediately
-			env->busy = 0;
-			if (env->buf.update) saaUpdateEnv(env, ch);
-			env->pos--;
-			if (env->lowRes) env->pos &= ~1;
-			break;
-		case 253:			// cycled env : can be updated @ end of cycle
-			if (env->buf.update) saaUpdateEnv(env, ch);
+	if (!(env->pos & 0x1f)) {		// @ end of cycle
+		if (env->form & 1) {		// xx1 : repeat
 			env->pos = 0;
-			break;
+			if (env->buf.update)	// cycled env updated @ end of cycle
+				saaUpdateEnv(env);
+		} else {			// xx0 : stay
+			env->pos = 0x1f;
+		}
+		env->pos = (env->form & 1) ? 0x00 : 0x1f;
 	}
-	env->vol = saaEnvForms[env->form][env->pos];
-//	if (env->lowRes) env->vol &= 0x0e;	// 3bit control (ORLY?)
+	env->vol = saaEnvForms[env->form][env->pos | (env->lowRes ? 1 : 0)];
 }
+
+// input CLK: 8MHz (125ns/T)
+//		doc.min	doc.max		T		T
+// oct	0	31Hz	61Hz		0x40000 (30.51)	0x20000
+//	1	61Hz	122Hz		0x20000		0x10000
+//	2	122Hz	244Hz		0x10000		0x8000
+//	3	244Hz	488Hz		0x8000		0x4000
+//	4	488Hz	976Hz		0x4000		0x2000
+//	5	976Hz	1952Hz		0x2000		0x1000
+//	6	1952Hz	3904Hz		0x1000		0x800
+//	7	3904hz	7808Hz		0x800		0x400 (7812.5Hz)
+// tone: 0x00..0xFF
+// (512 - tone) : 0x200..0x100
+// (512 - tone) << (9 - oct) : 0x800..0x400 (7 oct), 0x1000..0x800 (6 oct), ticks
 
 int saaWrite(saaChip* saa, unsigned short adr, unsigned char data) {
 	int i, num;
 	if ((adr & 0xff) != 0xff) return 0;
-	saaFlush(saa);
+//	saaFlush(saa);
 	if (adr & 0x100) {
 		saa->curReg = data & 0x1f;
 // ORLY: external envelope clock (address write pulse)
 		if (saa->env[0].extCLK && saa->env[0].enable)
-			saaEnvStep(&saa->env[0], &saa->chan[1]);
+			saaEnvStep(&saa->env[0]);
 		if (saa->env[1].extCLK && saa->env[1].enable)
-			saaEnvStep(&saa->env[1], &saa->chan[4]);
+			saaEnvStep(&saa->env[1]);
 	} else {
 		switch (saa->curReg) {
 			case 0x00:
@@ -141,11 +153,12 @@ int saaWrite(saaChip* saa, unsigned short adr, unsigned char data) {
 				saa->env[num].buf.form = (data >> 1) & 7;
 				saa->env[num].buf.extCLK = (data & 0x20) ? 1 : 0;
 				saa->env[num].buf.update = 1;
+				saa->env[num].buf.period = saa->chan[num ? 4 : 1].period >> 1;
 				saa->env[num].lowRes = (data & 0x10) ? 1 : 0;
-				if (!saa->env[num].busy)
-					saaUpdateEnv(&saa->env[num], &saa->chan[num ? 4 : 1]);
+				if (!(saa->env[num].form & 1)) {		// not-cycled env can be updated immediately, cycled - @ end of cycle
+					saaUpdateEnv(&saa->env[num]);
+				}
 				saa->env[num].enable = (data & 0x80) ? 1 : 0;
-				saa->env[num].busy = saa->env[num].enable;
 				break;
 			case 0x1c:
 //				if (val & 2) printf("saa out 1C,%X\n",val);
@@ -161,48 +174,55 @@ int saaWrite(saaChip* saa, unsigned short adr, unsigned char data) {
 				break;
 		}
 		for (i = 0; i < 6; i++) {
-			saa->chan[i].period = (511 - saa->chan[i].freq) << (15 - saa->chan[i].octave);
+			saa->chan[i].period = (512 - saa->chan[i].freq) << (9 - saa->chan[i].octave);		// in ticks @ 8MHz
 		}
 	}
 	return 1;
 }
 
+// every 1T @ 8MHz, period is calculated in ticks
+void saa_tone_tick(saaChan* cha) {
+	if (cha->period < 1) return;
+	cha->count += TSTEP;
+	if (cha->count >= cha->period) {
+		cha->count -= cha->period;
+		cha->lev ^= 1;
+	}
+}
+
+void saa_env_tick(saaEnv* env) {
+	if (env->extCLK) return;
+	if (env->period < 0) return;
+	env->count += TSTEP;
+	if (env->count >= env->period) {
+		env->count = 0;
+		saaEnvStep(env);
+	}
+}
+
+void saa_noiz_tick(saaNoise* cha) {
+	cha->count += TSTEP;
+	if (cha->count >= cha->period) {
+		cha->count -= cha->period;
+		cha->pos++;
+	}
+}
+
 void saaSync(saaChip* saa, int ns) {
 	if (!saa->enabled) return;
 	saa->time += ns;
-}
-
-void saaFlush(saaChip* saa) {
-	if (!saa->enabled) return;
-	int ns = saa->time;
-	saa->time = 0;
-	int i;
-	saaNoise* noiz;
-	saaChan* cha;
-	for (i = 0; i < 6; i++) {
-		cha = &saa->chan[i];
-		if (cha->period != 0) {
-			cha->count += ns;
-			while (cha->count > 0) {
-				cha->count -= cha->period;
-				cha->lev ^= 1;
-
-				if ( ( i == 1) && !saa->env[0].extCLK )
-					saaEnvStep(&saa->env[0], cha);
-				else if ( (i == 4)  && !saa->env[1].extCLK )
-					saaEnvStep(&saa->env[1], cha);
-			}
-		}
-	}
-	for (i = 0; i < 2; i++) {
-		noiz = &saa->noiz[i];
-		if (noiz->period != 0) {
-			noiz->count += ns;
-			while (noiz->count > 0) {
-				noiz->count -= noiz->period;
-				noiz->pos++;
-			}
-		}
+	while (saa->time > 0) {
+		saa->time -= 125 * TSTEP;		// 125ns/T @ CLK 8MHz
+		saa_tone_tick(&saa->chan[0]);
+		saa_tone_tick(&saa->chan[1]);
+		saa_tone_tick(&saa->chan[2]);
+		saa_tone_tick(&saa->chan[3]);
+		saa_tone_tick(&saa->chan[4]);
+		saa_tone_tick(&saa->chan[5]);
+		saa_env_tick(&saa->env[0]);
+		saa_env_tick(&saa->env[1]);
+		saa_noiz_tick(&saa->noiz[0]);
+		saa_noiz_tick(&saa->noiz[1]);
 	}
 }
 
@@ -221,6 +241,9 @@ sndPair saaMixTN(saaChan* ch, saaNoise* noiz) {
 sndPair saaMixTNE(saaChan* ch, saaNoise* noiz, saaEnv* env) {
 	if (!env->enable) return saaMixTN(ch, noiz);
 	sndPair res;
+	res.left = env->vol;
+	res.right = (env->invRight) ? (env->vol ^ 0x0f) : env->vol;
+	/*
 	if (!ch->freqEn && !ch->noizEn) {
 		res.left = env->vol;
 		res.right = (env->invRight) ? (env->vol ^ 0x0f) : env->vol;
@@ -233,6 +256,7 @@ sndPair saaMixTNE(saaChan* ch, saaNoise* noiz, saaEnv* env) {
 			res.right = 0;
 		}
 	}
+	*/
 	return res;
 }
 
@@ -258,7 +282,7 @@ sndPair saaVolume(saaChip* ptr) {
 			levr += res.right;
 		}
 	}
-	res.left = levl << 7;
-	res.right = levr << 7;
+	res.left = levl << 8;
+	res.right = levr << 8;
 	return res;
 }

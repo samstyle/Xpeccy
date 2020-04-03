@@ -35,7 +35,7 @@ OutSys* findOutSys(const char*);
 int sndSync(Computer* comp) {
 	if (!conf.emu.pause || comp->debug) {
 		gsFlush(comp->gs);
-		saaFlush(comp->saa);
+//		saaFlush(comp->saa);
 		if (!conf.emu.fast && !conf.emu.pause) {
 			sndLev = comp->hw->vol(comp, &conf.snd.vol);
 			sndLev.left = sndLev.left * conf.snd.vol.master / 100;

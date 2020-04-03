@@ -31,12 +31,13 @@ typedef struct {
 		unsigned extCLK:1;
 		unsigned invRight:1;
 		int form;
+		int period;
 	} buf;
 	unsigned enable:1;
 	unsigned invRight:1;	// inverse right channel
 	unsigned lowRes:1;	// 3-bit env control;
 	unsigned extCLK:1;	// external frq control (8MHz)
-	unsigned busy:1;
+//	unsigned busy:1;
 	unsigned char vol;
 	int form;
 	int period;
@@ -68,7 +69,7 @@ void saaReset(saaChip*);
 int saaWrite(saaChip*, unsigned short, unsigned char);
 void saaSync(saaChip*, int);
 sndPair saaGetVolume(saaChip*);
-void saaFlush(saaChip*);
+// void saaFlush(saaChip*);
 sndPair saaVolume(saaChip*);
 
 #endif
