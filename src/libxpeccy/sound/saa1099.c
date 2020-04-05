@@ -9,14 +9,14 @@
 
 // xx0 : stay
 // xx1 : repeat
-static unsigned char saaEnvForms[8][34] = {
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 253, 254},	// 000 : 0 stay
+static unsigned char saaEnvForms[8][33] = {
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 253},		// 000 : 0 stay
 	{15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15, 255},		// 001 : F repeat = F stay
-	{15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 253, 254},	// 010 : down stay
+	{15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 253},		// 010 : down stay
 	{15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 255},		// 011 : down repeat
-	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 253, 254},	// 100 : up-down stay
-	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 255},		// 101 : up-down repeat
-	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 253, 254},	// 110 : up,0 stay
+	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 253},	// 100 : up-down stay
+	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 255},	// 101 : up-down repeat
+	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 253},		// 110 : up,0 stay
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 255},		// 111 : up repeat
 };
 
@@ -74,12 +74,10 @@ void saaUpdateEnv(saaEnv* env) {
 void saaEnvStep(saaEnv* env) {
 	env->pos++;
 	switch (saaEnvForms[env->form][env->pos]) {
-		case 253:			// update buffered values at this point
+		case 253:
+			env->pos--;
 			if (env->buf.update)
 				saaUpdateEnv(env);
-			break;
-		case 254:			// do nothing after 253 code
-			env->pos--;
 			break;
 		case 255:			// return to start of cycle
 			env->pos = 0;
@@ -227,9 +225,9 @@ void saaSync(saaChip* saa, int ns) {
 	if (!saa->enabled) return;
 	saa->time += ns;
 	while (saa->time > 0) {
-		saa->time -= 125 * TSTEP;		// 125ns/T @ CLK 8MHz
+		saa->time -= 125 * TSTEP;			// 125ns/T @ CLK 8MHz
 		saa_tone_tick(&saa->chan[0], NULL);
-		saa_tone_tick(&saa->chan[1], &saa->env[0]);
+		saa_tone_tick(&saa->chan[1], &saa->env[0]);	// env.frq.generator taken from FG1 & FG4, but mixed with CH2 & CH5
 		saa_tone_tick(&saa->chan[2], NULL);
 		saa_tone_tick(&saa->chan[3], NULL);
 		saa_tone_tick(&saa->chan[4], &saa->env[1]);
@@ -245,8 +243,8 @@ void saaSync(saaChip* saa, int ns) {
 
 sndPair saaMixTN(saaChan* ch, saaNoise* noiz) {
 	sndPair res;
-	if ((ch->freqEn && ch->lev) || (ch->noizEn && noiz->lev)) {
-		res.left = ch->ampLeft;				// 0..F
+	if ((ch->freqEn && ch->lev) || (ch->noizEn && noiz->lev) || !(ch->noizEn || ch->freqEn)) {
+		res.left = ch->ampLeft;
 		res.right = ch->ampRight;
 	} else {
 		res.left = 0;
@@ -256,10 +254,19 @@ sndPair saaMixTN(saaChan* ch, saaNoise* noiz) {
 }
 
 sndPair saaMixTNE(saaChan* ch, saaNoise* noiz, saaEnv* env) {
-	if (!env->enable) return saaMixTN(ch, noiz);
 	sndPair res;
-	res.left = env->vol;
-	res.right = (env->invRight) ? (env->vol ^ 0x0f) : env->vol;
+	if ((ch->freqEn && ch->lev) || (ch->noizEn && noiz->lev) || !(ch->noizEn || ch->freqEn)) {
+		if (env->enable) {
+			res.left = env->vol;
+			res.right = env->invRight ? (env->vol ^ 0x0f) : env->vol;
+		} else {
+			res.left = ch->ampLeft;
+			res.right = ch->ampRight;
+		}
+	} else {
+		res.left = 0;
+		res.right = 0;
+	}
 	return res;
 }
 
