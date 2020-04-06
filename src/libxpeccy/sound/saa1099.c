@@ -16,7 +16,7 @@ static unsigned char saaEnvForms[8][33] = {
 	{15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 255},		// 011 : down repeat
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 253},	// 100 : up-down stay
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 255},	// 101 : up-down repeat
-	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 253},		// 110 : up,0 stay
+	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 253},		// 110 : up,0 stay
 	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 255},		// 111 : up repeat
 };
 
@@ -192,26 +192,12 @@ void saa_tone_tick(saaChan* cha, saaEnv* env) {
 	if (cha->count >= cha->period) {
 		cha->count -= cha->period;
 		cha->lev ^= 1;
-#if USE_TONE_ENV
 		if (env != NULL) {			// envelope step on half tone period
 			if (!env->extCLK)
 				saaEnvStep(env);
 		}
-#endif
 	}
 }
-
-#if !USE_TONE_ENV
-void saa_env_tick(saaEnv* env) {
-	if (env->extCLK) return;
-	if (env->period < 0) return;
-	env->count += TSTEP;
-	if (env->count >= env->period) {
-		env->count = 0;
-		saaEnvStep(env);
-	}
-}
-#endif
 
 void saa_noiz_tick(saaNoise* cha) {
 	cha->count += TSTEP;
@@ -232,44 +218,34 @@ void saaSync(saaChip* saa, int ns) {
 		saa_tone_tick(&saa->chan[3], NULL);
 		saa_tone_tick(&saa->chan[4], &saa->env[1]);
 		saa_tone_tick(&saa->chan[5], NULL);
-#if !USE_TONE_ENV
-		saa_env_tick(&saa->env[0]);
-		saa_env_tick(&saa->env[1]);
-#endif
 		saa_noiz_tick(&saa->noiz[0]);
 		saa_noiz_tick(&saa->noiz[1]);
 	}
 }
 
-sndPair saaMixTN(saaChan* ch, saaNoise* noiz) {
-	sndPair res;
-	if ((ch->freqEn && ch->lev) || (ch->noizEn && noiz->lev) || !(ch->noizEn || ch->freqEn)) {
-		res.left = ch->ampLeft;
-		res.right = ch->ampRight;
-	} else {
-		res.left = 0;
-		res.right = 0;
-	}
-	return res;
-}
-
 sndPair saaMixTNE(saaChan* ch, saaNoise* noiz, saaEnv* env) {
 	sndPair res;
-	if ((ch->freqEn && ch->lev) || (ch->noizEn && noiz->lev) || !(ch->noizEn || ch->freqEn)) {
-		if (env->enable) {
-			res.left = env->vol;
-			res.right = env->invRight ? (env->vol ^ 0x0f) : env->vol;
-		} else {
-			res.left = ch->ampLeft;
-			res.right = ch->ampRight;
-		}
-	} else {
+	if ((ch->freqEn && !ch->lev) || (ch->noizEn && !noiz->lev)) {
 		res.left = 0;
 		res.right = 0;
+	} else {
+		res.left = ch->ampLeft;
+		res.right = ch->ampRight;
+	}
+	if (env == NULL) {		// channel without envelope
+		res.left <<= 4;
+		res.right <<= 4;
+	} else if (env->enable) {	// envelope enabled
+		res.left *= env->vol;
+		res.right *= env->invRight ? env->vol ^ 0x0f : env->vol;
+		res.left &= 0xe0;
+		res.right &= 0xe0;
+	} else {			// envelope disabled
+		res.left <<= 4;
+		res.right <<= 4;
 	}
 	return res;
 }
-
 
 sndPair saaVolume(saaChip* ptr) {
 	saaChip* saa = (saaChip*)ptr;
@@ -282,17 +258,17 @@ sndPair saaVolume(saaChip* ptr) {
 		for (int i = 0; i < 6; i++) {
 			switch (i) {
 				case 0:
-				case 1: res = saaMixTN(&saa->chan[i], &saa->noiz[0]); break;
+				case 1: res = saaMixTNE(&saa->chan[i], &saa->noiz[0], NULL); break;
 				case 2:	res = saaMixTNE(&saa->chan[i], &saa->noiz[0], &saa->env[0]); break;
 				case 3:
-				case 4:	res = saaMixTN(&saa->chan[i], &saa->noiz[1]); break;
+				case 4:	res = saaMixTNE(&saa->chan[i], &saa->noiz[1], NULL); break;
 				case 5:	res = saaMixTNE(&saa->chan[i], &saa->noiz[1], &saa->env[1]); break;
 			}
 			levl += res.left;
 			levr += res.right;
 		}
 	}
-	res.left = levl << 8;
-	res.right = levr << 8;
+	res.left = levl << 4;
+	res.right = levr << 4;
 	return res;
 }
