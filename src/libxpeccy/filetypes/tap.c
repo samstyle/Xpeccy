@@ -77,7 +77,7 @@ int saveTAP(Computer* comp, const char* name, int drv) {
 	unsigned char blockData[0x100000];
 
 	for (int i = 0; i < tape->blkCount; i++) {
-		inf = tapGetBlockInfo(tape, i);
+		inf = tapGetBlockInfo(tape, i, TFRM_ZX);
 		inf.size += 2;	// +flag +crc
 		tapGetBlockData(tape, i, blockData,inf.size);
 		fputwLE(file, inf.size);

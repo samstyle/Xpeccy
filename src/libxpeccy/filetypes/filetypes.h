@@ -191,6 +191,7 @@ int saveDSK(Computer*,const char*,int);
 int loadTD0(Computer*,const char*,int);
 
 int loadBkIMG(Computer*,const char*,int);
+int bkLoadToTape(Computer*,const char*,int);
 
 // cartridge
 

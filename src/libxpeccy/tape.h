@@ -24,11 +24,16 @@ enum {
 	TAPE_DATA
 };
 
+enum {
+	TFRM_ZX = 0,
+	TFRM_BK
+};
+
 typedef struct {
 	unsigned breakPoint:1;
 
 	int type;
-	const char* name;
+	char name[32];
 	int size;
 	int time;
 	int curtime;
@@ -52,7 +57,6 @@ typedef struct {
 	int len1;
 	int pdur;
 	int dataPos;
-//	int pause;		// pause after block (mks)
 	int sigCount;
 	TapeSignal* data;
 } TapeBlock;
@@ -64,7 +68,7 @@ typedef struct {
 	unsigned wait:1;
 	unsigned blkChange:1;
 	unsigned newBlock:1;
-	unsigned levRec:1;	// signal to tape
+	int levRec;	// signal to tape
 	unsigned oldRec:1;	// previous rec signal
 
 	int time;
@@ -93,8 +97,8 @@ void tapRewind(Tape*,int);
 void tapSync(Tape*,int);
 void tapNextBlock(Tape*);
 
-TapeBlockInfo tapGetBlockInfo(Tape*,int);
-int tapGetBlocksInfo(Tape*,TapeBlockInfo*);
+TapeBlockInfo tapGetBlockInfo(Tape*,int,int);
+int tapGetBlocksInfo(Tape*,TapeBlockInfo*, int);
 int tapGetBlockData(Tape*,int,unsigned char*,int);
 int tapGetBlockTime(Tape*,int,int);
 

@@ -22,11 +22,23 @@ void xTapeCatModel::fill(Tape* tap) {
 	emit beginResetModel();
 	rcnt = tap->blkCount;
 	rcur = tap->block;
-	inf = (TapeBlockInfo*)realloc(inf, rcnt * sizeof(TapeBlockInfo));
+	int fsz = rcnt * sizeof(TapeBlockInfo);
+	inf = (TapeBlockInfo*)realloc(inf, fsz);
 	if (rcnt == 0) {
 		inf = NULL;
 	} else {
-		tapGetBlocksInfo(tap, inf);
+		switch(conf.prof.cur->zx->hw->grp) {
+			case HWG_ZX:
+				tapGetBlocksInfo(tap, inf, TFRM_ZX);
+				break;
+			case HWG_BK:
+				tapGetBlocksInfo(tap, inf, TFRM_BK);
+				break;
+			default:
+				memset(inf, 0, fsz);
+				break;
+		}
+
 	}
 	emit endResetModel();
 }

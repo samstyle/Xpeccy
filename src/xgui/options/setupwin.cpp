@@ -1144,7 +1144,7 @@ void SetupWin::diskToRaw() {
 
 TRFile getHeadInfo(Tape* tape, int blk) {
 	TRFile res;
-	TapeBlockInfo inf = tapGetBlockInfo(tape,blk);
+	TapeBlockInfo inf = tapGetBlockInfo(tape,blk,TFRM_ZX);
 	unsigned char* dt = (unsigned char*)malloc(inf.size + 2);
 	tapGetBlockData(tape,blk,dt,inf.size+2);
 	for (int i=0; i<8; i++) res.name[i] = dt[i+2];
@@ -1213,7 +1213,7 @@ void SetupWin::copyToDisk() {
 		memcpy(&dsc.name[0],nm,8);
 		dsc.ext = 'C';
 		dsc.lst = dsc.hst = 0;
-		TapeBlockInfo binf = tapGetBlockInfo(comp->tape,dataBlock);
+		TapeBlockInfo binf = tapGetBlockInfo(comp->tape,dataBlock,TFRM_ZX);
 		int len = binf.size;
 		qDebug() << len;
 		if (len > 0xff00) {
@@ -1239,7 +1239,7 @@ void SetupWin::copyToDisk() {
 		shitHappens("Not TR-DOS disk inserted");
 		return;
 	}
-	inf = tapGetBlockInfo(comp->tape,dataBlock);
+	inf = tapGetBlockInfo(comp->tape,dataBlock,TFRM_ZX);
 	dt = (unsigned char*)malloc(inf.size+2);		// +2 = +mark +crc
 	tapGetBlockData(comp->tape,dataBlock,dt,inf.size+2);
 	switch(diskCreateDescriptor(flp,&dsc)) {

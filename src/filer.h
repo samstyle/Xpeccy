@@ -33,6 +33,7 @@ enum {
 	FL_C64TAP,
 	FL_C64PRG,
 	FL_BKBIN,
+	FL_BKTAP,
 	FL_BKIMG,
 	FL_BKBKD,
 };
@@ -56,6 +57,7 @@ enum {
 	FG_CMDTAPE,
 	FG_CMDSNAP,
 	FG_BKDATA,
+	FG_BKTAPE,
 	FG_BKDISK
 };
 

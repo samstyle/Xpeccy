@@ -6,25 +6,20 @@
 
 void pdp_wrb(CPU* cpu, unsigned short adr, unsigned char val) {
 	cpu->nod = 1;
-	cpu->t += 4;
 	cpu->mwr(adr, val & 0xff, cpu->data);
 }
 
 void pdp_wr(CPU* cpu, unsigned short adr, unsigned short val) {
 	cpu->nod = 0;
 	adr &= ~1;
-	cpu->t += 4;
 	cpu->mwr(adr++, val & 0xff, cpu->data);
-	cpu->t += 4;
 	cpu->mwr(adr, (val >> 8) & 0xff, cpu->data);
 }
 
 unsigned short pdp_rd(CPU* cpu, unsigned short adr) {
 	adr &= ~1;
 	xpair res;
-	cpu->t += 4;
 	res.l = cpu->mrd(adr++, 0, cpu->data);
-	cpu->t += 4;
 	res.h = cpu->mrd(adr, 0, cpu->data);
 	return res.w;
 }
@@ -106,6 +101,8 @@ int pdp11_int(CPU* cpu) {
 
 // addressation
 
+// 0b = 001011 = @r3
+
 int pdp_adr(CPU* cpu, int type, int b) {
 	int res = -1;
 	if ((type & 7) == 6) b = 0;	// sp
@@ -114,33 +111,45 @@ int pdp_adr(CPU* cpu, int type, int b) {
 		case 0x00: res = -1;			// Rn (no addr)
 			break;
 		case 0x08: res = cpu->preg[type & 7];	// @Rn
+			cpu->t += 13;
 			break;
 		case 0x10: res = cpu->preg[type & 7];	// (Rn)+
 			cpu->preg[type & 7] += b ? 1 : 2;
+			cpu->t += 12;
 			break;
 		case 0x18: res = cpu->preg[type & 7];	// @(Rn)+
 			cpu->preg[type & 7] += 2;
+			cpu->t += 12;
 			res = pdp_rd(cpu, res & 0xffff);
+			cpu->t += 7;
 			break;
 		case 0x20:				// -(Rn)
 			cpu->preg[type & 7] -= b ? 1 : 2;
+			cpu->t += 13;
 			res = cpu->preg[type & 7];
 			break;
 		case 0x28:				// @-(Rn)
 			cpu->preg[type & 7] -= 2;
 			res = cpu->preg[type & 7];
+			cpu->t += 13;
 			res = pdp_rd(cpu, res & 0xffff);
+			cpu->t += 7;
 			break;
 		case 0x30:				// E(Rn)
+			cpu->t += 12;
 			res = pdp_rd(cpu, cpu->preg[7]);
+			cpu->t += 7;
 			cpu->preg[7] += 2;
 			res += cpu->preg[type & 7];
 			break;
 		case 0x38:				// @E(Rn)
+			cpu->t += 12;
 			res = pdp_rd(cpu, cpu->preg[7]);
+			cpu->t += 7;
 			cpu->preg[7] += 2;
 			res += cpu->preg[type & 7];
 			res = pdp_rd(cpu, res & 0xffff);
+			cpu->t += 7;
 			break;
 	}
 	return res;
@@ -148,7 +157,7 @@ int pdp_adr(CPU* cpu, int type, int b) {
 
 unsigned short pdp_src(CPU* cpu, int type, int b) {
 	unsigned short res;
-	int adr = pdp_adr(cpu, type, b);
+	int adr = pdp_adr(cpu, type, b);		// adr = r3
 	if (adr < 0) {
 		res = cpu->preg[type & 7];
 	} else {
@@ -1131,6 +1140,12 @@ void pdp_cmpb(CPU* cpu) {
 	if (((twsrc ^ twdst) & 0x80) && ((twsrc ^ twres) & 0x80)) cpu->pflag |= PDP_FV;
 }
 
+// 0x314b
+// 0011 000101 001011
+// 030513
+// SS = 05
+// DD = 13
+
 // B3SSDD:bit (and)
 // check (DD & SS). don't write it back
 // Z: res = 0
@@ -1312,7 +1327,7 @@ int pdp11_exec(CPU* cpu) {
 	if (cpu->t == 0) {
 		cpu->com = pdp_rd(cpu, cpu->preg[7]);
 		cpu->preg[7] += 2;
-		cpu->t += 10;
+		cpu->t += 8;
 		// exec 1st tab #Nxxx
 		pdp_tab_a[(cpu->com >> 12) & 0x0f](cpu);
 		if (cpu->sta) {			// stack goes trough 0x400 : trap 4

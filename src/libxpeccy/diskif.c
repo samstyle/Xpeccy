@@ -82,7 +82,7 @@ int bdiOut(DiskIF* dif, int port, unsigned char val, int dos) {
 	if (port == 0) {
 		return 0;
 	} else if (port == BDI_SYS) {
-		dif->fdc->flp = dif->fdc->flop[val & 3];	// selet floppy
+		dif->fdc->flp = dif->fdc->flop[val & 3];	// select floppy
 		vgSetMR(dif->fdc,(val & 0x04) ? 1 : 0);		// master reset
 		dif->fdc->block = (val & 0x08) ? 1 : 0;
 		dif->fdc->side = (val & 0x10) ? 0 : 1;		// side

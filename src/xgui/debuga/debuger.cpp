@@ -228,6 +228,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	p.first = QIcon(":/images/gameboy.png"); p.second = ui.gbTab; lst.append(p);
 	tablist[HWG_GB] = lst;
 	lst.clear();
+	p.first = QIcon(":/images/tape.png"); p.second = ui.tapeTab; lst.append(p);
 	p.first = QIcon(":/images/floppy.png"); p.second = ui.fdcTab; lst.append(p);
 	tablist[HWG_BK] = lst;
 	lst.clear();
@@ -815,6 +816,8 @@ void DebugWin::fillAY() {
 	drawBar(ui.labBeep, comp->beep->val, 256);
 }
 
+#define TDSTEP 20	// mks/dot
+
 void DebugWin::fillTape() {
 	if (ui.tabsPanel->currentWidget() != ui.tapeTab) return;
 	drawBar(ui.labTapein, comp->tape->volPlay, 256);
@@ -828,7 +831,7 @@ void DebugWin::fillTape() {
 	int bnr;
 	int amp;
 	int oamp = -1;
-	int x = 0;
+	int x = wid / 2;
 	int time = 0;
 	Tape* tape = comp->tape;
 	TapeBlock* blk;
@@ -836,9 +839,69 @@ void DebugWin::fillTape() {
 	QPainter pnt;
 	pxm.fill(Qt::black);
 	pnt.begin(&pxm);
-	bnr = tape->block;
+	pnt.setPen(Qt::red);
+	pnt.drawLine(0, hei/2, wid, hei/2);
+	pnt.drawLine(wid / 2, 0, wid/2, hei);
 	pnt.setPen(Qt::green);
-	if ((tape->blkCount > 0) && (bnr < comp->tape->blkCount)) {
+#if 1
+	if (tape->blkCount > 0) {
+		bnr = tape->block;
+		blk = &tape->blkData[bnr];
+		pos = tape->pos;
+		time = tape->sigLen + (wid / 2) * TDSTEP;
+		while ((time >= 0) && (blk != NULL)) {
+			pos--;
+			if (pos < 0) {
+				bnr--;
+				if (bnr < 0) {
+					blk = NULL;
+				} else {
+					blk = &tape->blkData[bnr];
+					pos = blk->sigCount - 1;
+				}
+			} else {
+				time -= blk->data[pos].size;
+			}
+		}
+		if (blk == NULL) {
+			bnr = 0;
+			pos = 0;
+			blk = &tape->blkData[bnr];
+			x = time / TDSTEP;		// skip
+			time = blk->data[pos].size;
+		} else {
+			x = 0;
+			time += blk->data[pos].size;	// remaining time
+		}
+		while (x < wid) {
+			if (pos < blk->sigCount) {
+				amp = hei - blk->data[pos].vol * hei / 256;
+				if (oamp < 0)
+					oamp = amp;
+				while ((time > 0) && (x < wid)) {
+					pnt.drawLine(x, oamp, x + 1, amp);
+					oamp = amp;
+					time -= TDSTEP;
+					x++;
+				}
+				pos++;
+				if (pos < blk->sigCount)
+					time += blk->data[pos].size;
+			} else {
+				bnr++;
+				if (bnr < tape->blkCount) {
+					blk = &tape->blkData[bnr];
+					pos = 0;
+					time += blk->data[pos].size;
+				} else {
+					x = wid;
+				}
+			}
+		}
+	}
+#else
+	bnr = tape->block;
+	if ((tape->blkCount > 0) && (bnr < comp->tape->blkCount) && (bnr >= 0)) {
 		blk = &tape->blkData[bnr];
 		pos = tape->pos;
 		time = tape->on ? tape->sigLen : 0;
@@ -865,9 +928,49 @@ void DebugWin::fillTape() {
 				}
 			}
 		}
+		oamp = -1;
+		x = wid / 2;
+		bnr = tape->block;
+		blk = &tape->blkData[bnr];
+		pos = tape->pos - 1;
+		if (pos < 0) {
+			bnr--;
+			if (bnr < 0) {
+				x = -1;
+			} else {
+				blk = &tape->blkData[bnr];
+				pos = blk->sigCount - 1;
+			}
+		}
+		time = tape->on ? blk->data[pos].size - tape->sigLen : 0;
+		while (x >= 0) {
+			if (pos >= 0) {
+				amp = blk->data[pos].vol * hei / 256;
+				if (oamp < 0)
+					oamp = amp;
+				while ((time > 0) && (x >= 0)) {
+					pnt.drawLine(x, oamp, x - 1, amp);
+					oamp = amp;
+					time -= 20;
+					x--;
+				}
+				pos--;
+				if (pos < 0) {
+					bnr--;
+					if (bnr >= 0) {
+						blk = &tape->blkData[bnr];
+						pos = blk->sigCount - 1;
+						time += blk->data[pos].size;
+					} else {
+						x = -1;
+					}
+				} else {
+					time += blk->data[pos].size;
+				}
+			}
+		}
 	}
-	pnt.setPen(Qt::red);
-	pnt.drawLine(0, hei/2, wid, hei/2);
+#endif
 	pnt.end();
 	ui.labTapeDiag->setPixmap(pxm);
 }

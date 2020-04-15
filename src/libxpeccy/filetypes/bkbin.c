@@ -21,14 +21,15 @@ int loadBIN(Computer* comp, const char* name, int drv) {
 }
 
 // lenght in mks
-#define BKPILOT	300
-#define BKSYNC	1200
-#define BKONE	600		// 1 = BKONE + BKZERO  (pulses)
-#define BKZERO	300		// 0 = BKZERO + BKZERO
+#define BKPULSE 100
+#define BKPILOT	2*BKPULSE
+#define BKSYNC	8*BKPULSE
+#define BKONE	4*BKPULSE		// 1 = BKONE + BKZERO  (waves)
+#define BKZERO	2*BKPULSE		// 0 = BKZERO + BKZERO
 
 void bk_write_bit(TapeBlock* blk, int bit) {
-	blkAddWave(blk, bit ? BKONE : BKZERO);
-	blkAddWave(blk, BKZERO);
+	blkAddWave(blk, bit ? BKONE : BKZERO);		// data
+	blkAddWave(blk, BKZERO);			// skip (0)
 }
 
 void bk_write_byte(TapeBlock* blk, int byt) {
@@ -43,59 +44,69 @@ void bk_write_word(TapeBlock* blk, int wrd) {
 	bk_write_byte(blk, (wrd >> 8) & 0xff);
 }
 
+void bk_write_pilot(TapeBlock* blk, int len) {
+	while (len > 0) {
+		blkAddWave(blk, BKZERO);
+		len--;
+	}
+	blkAddWave(blk, BKSYNC);
+	bk_write_bit(blk, 1);
+}
+
 int bkLoadToTape(Computer* comp, const char* name, int drv) {
 	int i;
-	long sz;
 	int bt;
 	char buf[16];
 	char* ptr;
+	char* nptr;
+	char* dptr;
+	unsigned short start;
+	unsigned short len;
 	TapeBlock blk;
+	blk.data = NULL;
+	blk.vol = 1;
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
+
 	int err = ERR_OK;
-	fseek(file, 0, SEEK_END);
-	sz = ftell(file);
-	rewind(file);
-	if (sz < 0x10000) {
-		ptr = strrchr(name, SLSH);	// filename (max 16 chars) in buf
-		memset(buf, ' ', 16);
-		if (ptr == NULL) {
-			memcpy(buf, name, (strlen(name) < 16) ? strlen(name) : 16);
-		} else {
-			memcpy(buf, ptr + 1, (strlen(ptr + 1) < 16) ? strlen(ptr + 1) : 16);
+	start = fgetw(file);
+	len = fgetw(file);
+	memset(buf, ' ', 16);
+	ptr = strrchr(name, SLSH);	// last slash
+	nptr = ptr ? ptr + 1 : name;
+	dptr = strrchr(nptr, '.');	// last dot
+	if (dptr) *dptr = 0x00;		// cut extension
+	memcpy(buf, nptr, (strlen(nptr) < 16) ? strlen(nptr) : 16);
+	blkClear(&blk);
+
+	blkAddPause(&blk, 1000);
+
+	bk_write_pilot(&blk, 4096);	// long pilot (4096)
+
+	bk_write_pilot(&blk, 8);	// short pilot (8)
+	bk_write_word(&blk, start);	// start (data)
+	bk_write_word(&blk, len);	// size (data)
+	for(i = 0; i < 16; i++)		// filename
+		bk_write_byte(&blk, buf[i]);
+
+	bk_write_pilot(&blk, 8);	// short pilot (8)
+	int crc = 0;
+	while (len > 0) {		// all file data, byte to byte, except 1st 4 bytes (start, len), LSB first
+		len--;
+		bt = fgetc(file) & 0xff;
+		bk_write_byte(&blk, bt);
+		crc += bt;
+		if (crc > 0xffff) {
+			crc &= 0xffff;
+			crc++;
 		}
-		blkClear(&blk);
-		for (i = 0; i < 4096; i++)	// long pilot
-			blkAddWave(&blk, BKPILOT);
-		blkAddWave(&blk, BKSYNC);	// sync
-		bk_write_bit(&blk, 1);		// bit 1
-		bk_write_word(&blk, 0);		// start
-		bk_write_word(&blk, 16);	// size
-		for(i = 0; i < 16; i++)		// filename
-			bk_write_byte(&blk, buf[i]);
-		for (i = 0; i < 8; i++)		// short pilot
-			blkAddWave(&blk, BKPILOT);
-		blkAddWave(&blk, BKSYNC);	// sync
-		bk_write_bit(&blk, 1);		// bit 1
-		int crc = 0;
-		while (sz > 0) {		// all file data, byte to byte
-			sz--;
-			bt = fgetc(file) & 0xff;
-			bk_write_byte(&blk, bt);
-			crc += bt;
-			if (crc > 0xffff) {
-				crc &= 0xffff;
-				crc++;
-			}
-		}
-		bk_write_word(&blk, crc & 0xffff);
-		for(i = 0; i < 256; i++)	// final pilot
-			blkAddWave(&blk, BKPILOT);
-		blkAddPause(&blk, 1000);
-		tapAddBlock(comp->tape, blk);
-	} else {
-		err = ERR_RAW_LONG;
 	}
+	bk_write_word(&blk, crc & 0xffff);	// crc
+
+	bk_write_pilot(&blk, 256);	// final pilot (256 bytes)
+
+	tapAddBlock(comp->tape, blk);
+	blkClear(&blk);
 
 	fclose(file);
 	return err;

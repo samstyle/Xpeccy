@@ -81,8 +81,8 @@ int saveWAV(Computer* comp, const char* name, int drv) {
 		hd.subchunk1Size = 16;
 		hd.audioFormat = 1;
 		hd.numChannels = 1;
-		hd.sampleRate = 22050;
-		hd.byteRate = 22050;
+		hd.sampleRate = 44100;
+		hd.byteRate = 44100;
 		hd.blockAlign = 1;
 		hd.bitsPerSample = 8;
 		memcpy(hd.subchunk2Id, "data", 4);

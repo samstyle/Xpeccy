@@ -103,7 +103,7 @@ void bk_tfl_wr(Computer* comp, unsigned short adr, unsigned char val) {
 // external
 
 unsigned char bk_fcc_rd(Computer* comp, unsigned short adr) {
-	comp->wdata = 0xffff;
+	comp->wdata = 0;
 	return 0;
 }
 
@@ -114,10 +114,13 @@ unsigned char bk_sys_rd(Computer* comp, unsigned short adr) {
 	if (comp->reg[0xce]) {		// b2: write to system port flag
 		comp->wdata |= 4;
 		comp->reg[0xce] = 0;	// reset on reading
-	// b4: TL signal
-	if (comp->tape->on && !comp->tape->rec && (comp->tape->volPlay & 0x80))	// b5: tape signal
+	}
+	// b5: tape signal
+	if (comp->tape->on && !comp->tape->rec && (comp->tape->volPlay & 0x80)) {
 		comp->wdata |= 0x20;
-	if (!(comp->keyb->flag & 0x20))		// b6: any key pressed
+	}
+	// b6: key pressed
+	if (!(comp->keyb->flag & 0x20)) {
 		comp->wdata |= 0x40;		// = 0 if any key pressed, 1 if not
 	}
 	// b7: TL ready
@@ -128,7 +131,7 @@ void bk_sys_wr(Computer* comp, unsigned short adr, unsigned char val) {
 	// b7: tape motor control (1:stop, 0:play)
 	if (!(comp->wdata & 0x80) && !comp->tape->on) {
 		tapPlay(comp->tape);
-	} else if ((comp->wdata & 0x80) && comp->tape->on) {
+	} else if ((comp->wdata & 0x80) && comp->tape->on && !comp->tape->rec) {
 		tapStop(comp->tape);
 	}
 	// b6 : beep
@@ -203,18 +206,40 @@ void bk_io_wr(unsigned short adr, unsigned char val, void* ptr) {
 	}
 }
 
+unsigned char bk_ram_rd(unsigned short adr, void* ptr) {
+	Computer* comp = (Computer*)ptr;
+	comp->cpu->t += 2;
+	int fadr = (comp->mem->map[(adr >> 8) & 0xff].num << 8) | (adr & 0xff);
+	return comp->mem->ramData[fadr & comp->mem->ramMask];
+}
+
+void bk_ram_wr(unsigned short adr, unsigned char val, void* ptr) {
+	Computer* comp = (Computer*)ptr;
+	comp->cpu->t += 2;
+	int fadr = (comp->mem->map[(adr >> 8) & 0xff].num << 8) | (adr & 0xff);
+	comp->mem->ramData[fadr & comp->mem->ramMask] = val;
+}
+
+unsigned char bk_rom_rd(unsigned short adr, void* ptr) {
+	Computer* comp = (Computer*)ptr;
+	comp->cpu->t++;
+	int fadr = (comp->mem->map[(adr >> 8) & 0xff].num << 8) | (adr & 0xff);
+	return comp->mem->romData[fadr & comp->mem->romMask];
+}
+
 void bk_sync(Computer* comp, int ns) {
 	if ((comp->vid->newFrame) && (comp->iomap[0xffb3] & 0x40)) {
 		comp->cpu->intrq |= PDP_INT_IRQ2;
 	}
+	tapSync(comp->tape, ns);
 	bcSync(comp->beep, ns);
 	difSync(comp->dif, ns);
 }
 
 void bk_mem_map(Computer* comp) {
-	memSetBank(comp->mem, 0x00, MEM_RAM, 6, MEM_16K, NULL, NULL, NULL);		// page 6 (0)
-	memSetBank(comp->mem, 0x40, MEM_RAM, 1, MEM_16K, NULL, NULL, NULL);		// page 1 : scr 0
-	memSetBank(comp->mem, 0x80, MEM_ROM, 0, MEM_32K, NULL, NULL, NULL);
+	memSetBank(comp->mem, 0x00, MEM_RAM, 6, MEM_16K, bk_ram_rd, bk_ram_wr, comp);		// page 6 (0)
+	memSetBank(comp->mem, 0x40, MEM_RAM, 1, MEM_16K, bk_ram_rd, bk_ram_wr, comp);		// page 1 : scr 0
+	memSetBank(comp->mem, 0x80, MEM_ROM, 0, MEM_32K, bk_rom_rd, NULL, comp);
 	memSetBank(comp->mem, 0xff, MEM_IO, 0xff, MEM_256, bk_io_rd, bk_io_wr, comp);
 // for 11
 /*
@@ -290,6 +315,11 @@ unsigned char bk_mrd(Computer* comp, unsigned short adr, int m1) {
 sndPair bk_vol(Computer* comp, sndVolume* sv) {
 	sndPair vol;
 	int lev = comp->beep->val * sv->beep / 6;
+	if (comp->tape->rec) {
+		lev += comp->tape->levRec ? 0x1000 * sv->tape / 100 : 0;
+	} else {
+		lev += (comp->tape->volPlay << 8) * sv->tape / 1600;
+	}
 	vol.left = lev;
 	vol.right = lev;
 	return vol;
@@ -370,12 +400,24 @@ static char bkcapson[] = " caps on ";
 static char bkcapsoff[] = " caps off ";
 static char bkkbdrus[] = " rus ";
 static char bkkbdlat[] = " lat ";
+static char bkvidcol[] = " color mode ";
+static char bkvidbw[] = " b/w mode ";
 
 void bk_keyp(Computer* comp, keyEntry xkey) {
 	int code = 0;
 	switch(xkey.key) {
-		case XKEY_PGUP: vidSetMode(comp->vid, VID_BK_COL); break;
-		case XKEY_PGDN: vidSetMode(comp->vid, VID_BK_BW); break;
+		case XKEY_PGDN:
+			switch(comp->vid->vmode) {
+				case VID_BK_BW:
+					comp->msg = bkvidcol;
+					vidSetMode(comp->vid, VID_BK_COL);
+					break;
+				case VID_BK_COL:
+					comp->msg = bkvidbw;
+					vidSetMode(comp->vid, VID_BK_BW);
+					break;
+			}
+			break;
 		case XKEY_LSHIFT: comp->keyb->shift = 1; break;
 		case XKEY_CAPS:
 			comp->keyb->caps ^= 1;

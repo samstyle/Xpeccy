@@ -13,6 +13,7 @@ Tape* tapCreate() {
 	tap->path = NULL;
 	tap->blkData = NULL;
 	tap->tmpBlock.data = NULL;
+	blkClear(&tap->tmpBlock);
 	return tap;
 }
 
@@ -37,7 +38,7 @@ void tape_set_path(Tape* tap, const char* path) {
 // blocks
 
 void blkClear(TapeBlock *blk) {
-	if(blk->data) {
+	if (blk->data) {
 		free(blk->data);
 		blk->data = NULL;
 	}
@@ -97,8 +98,17 @@ int tapGetBlockTime(Tape* tape, int blk, int pos) {
 	return (totsz / 1e6);			// mks -> sec
 }
 
-int tapGetBlockSize(TapeBlock* block) {
-	return (((block->sigCount - block->dataPos) >> 4) - 2);
+int tapGetBlockSize(TapeBlock* block, int type) {
+	int res = 0;
+	switch (type) {
+		case TFRM_ZX:
+			res = ((block->sigCount - block->dataPos) >> 4) - 2;
+			break;
+		case TFRM_BK:
+			res = (block->sigCount - (4096 + 1 + 2 + 8 + 1 + 2 + 32 + 128 + 8 + 1 + 2 + 32 + 256) * 2) >> 5;
+			break;
+	}
+	return res;
 }
 
 unsigned char tapGetBlockByte(TapeBlock* block, int bytePos) {
@@ -129,9 +139,8 @@ int tapGetBlockData(Tape* tape, int blockNum, unsigned char* dst,int maxsize) {
 	return bytePos;
 }
 
-// TODO: leak ?
-char* tapGetBlockHeader(Tape* tap, int blk) {
-	char* res = (char*)malloc(16 * sizeof(char));
+void tapGetBlockHeader(Tape* tap, int blk, char* dst) {
+	char res[32];
 	TapeBlock* block = &tap->blkData[blk];
 	int i;
 	if (block->isHeader) {
@@ -147,26 +156,30 @@ char* tapGetBlockHeader(Tape* tap, int blk) {
 	} else {
 		res[0] = 0x00;
 	}
-	return res;
+	memcpy(dst, res, 32);
 }
 
-TapeBlockInfo tapGetBlockInfo(Tape* tap, int blk) {
+TapeBlockInfo tapGetBlockInfo(Tape* tap, int blk, int type) {
 	TapeBlock* block = &tap->blkData[blk];
 	TapeBlockInfo inf;
-	inf.name = tapGetBlockHeader(tap,blk);
-	inf.type = (strlen(inf.name) == 0) ? TAPE_DATA : TAPE_HEAD;
-	inf.size = tapGetBlockSize(block);
+	switch(type) {
+		case TFRM_ZX:
+			tapGetBlockHeader(tap,blk,inf.name);
+			inf.type = (strlen(inf.name) == 0) ? TAPE_DATA : TAPE_HEAD;
+			break;
+	}
+	inf.size = tapGetBlockSize(block, type);
 	inf.time = tapGetBlockTime(tap,blk,-1);
 	inf.curtime = (tap->block == blk) ? tapGetBlockTime(tap,blk,tap->pos) : -1;
 	inf.breakPoint = block->breakPoint;
 	return inf;
 }
 
-int tapGetBlocksInfo(Tape* tap, TapeBlockInfo* dst) {
+int tapGetBlocksInfo(Tape* tap, TapeBlockInfo* dst, int type) {
 	int cnt = 0;
 	int i;
 	for (i=0; i < (int)tap->blkCount; i++) {
-		dst[cnt] = tapGetBlockInfo(tap,i);
+		dst[cnt] = tapGetBlockInfo(tap,i,type);
 		cnt++;
 	}
 	return cnt;
@@ -330,8 +343,8 @@ void tapRec(Tape* tap) {
 	tap->on = 1;
 	tap->rec = 1;
 	tap->wait = 1;
-	tap->levRec = 0;
-	tap->oldRec = tap->levRec;
+	tap->levRec = 1;
+	tap->oldRec = 1;
 	blkClear(&tap->tmpBlock);
 }
 
@@ -361,12 +374,12 @@ void tapSync(Tape* tap, int ns) {
 				if (tap->oldRec != tap->levRec) {
 					tap->oldRec = tap->levRec;
 					blkAddPulse(&tap->tmpBlock,mks,-1);
-				} else {
+				} else if (tap->tmpBlock.sigCount > 0) {
 					tap->tmpBlock.data[tap->tmpBlock.sigCount - 1].size += mks;
-				}
-				if (tap->tmpBlock.data[tap->tmpBlock.sigCount - 1].size > 2e5) {
-					tap->tmpBlock.sigCount--;
-					tapStoreBlock(tap);
+					if (tap->tmpBlock.data[tap->tmpBlock.sigCount - 1].size > 2e5) {
+						tap->tmpBlock.sigCount--;
+						tapStoreBlock(tap);
+					}
 				}
 			}
 		} else if (tap->blkCount > 0) {

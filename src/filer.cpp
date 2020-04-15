@@ -62,11 +62,13 @@ static xFileTypeInfo ft_tab[] = {
 #ifdef HAVEZLIB
 	{FL_RZX, 0, ".rzx", "*.rzx", loadRZX, NULL, "RZX playback"},
 #endif
-	{FL_RAW, 0, NULL, "*", loadRaw, NULL, "RAW file"},			// * for all files; *.* for all files that have extension
+	{FL_BKTAP, 0, NULL, "*", bkLoadToTape, NULL, "RAW file to BK tape"},
+	{FL_RAW, 0, NULL, "*", loadRaw, NULL, "RAW file to TRDOS disk"},			// * for all files; *.* for all files that have extension
 	{0, 0, NULL, NULL, NULL, NULL, NULL}
 };
 
 static xFileTypeInfo ft_raw = {FL_RAW, 0, NULL, NULL, loadRaw, NULL, "RAW file to disk A"};
+static xFileTypeInfo ft_bktap = {FL_RAW, 0, NULL, NULL, bkLoadToTape, NULL, "RAW file to BK tape"};
 static xFileTypeInfo ft_dum = {FL_NONE, 0, NULL, NULL, NULL, NULL, "Dummy entry"};
 
 // 2nd parameter
@@ -88,8 +90,9 @@ static xFileGroupInfo fg_tab[] = {
 	{FG_NES, "", -1, "NES cartrige", {FL_NES, 0}},
 	{FG_CMDTAPE, "", -1, "Commodore tape", {FL_T64, FL_C64TAP, 0}},
 	{FG_CMDSNAP, "", -1, "Commodore snapshot", {FL_C64PRG, 0}},
-	{FG_BKDATA, "", -1, "BK bin data", {FL_BKBIN, 0}},
-	{FG_BKDISK, "", 0, "BK disk image", {FL_BKIMG, FL_BKBKD, FL_UDI, 0}},
+	{FG_BKDATA, "", -1, "BK bin data to mem", {FL_BKBIN, 0}},
+	{FG_BKTAPE, "", -1, "BK bin data to tape", {FL_BKTAP, 0}},
+	// {FG_BKDISK, "", 0, "BK disk image", {FL_BKIMG, FL_BKBKD, FL_UDI, 0}},
 	{0, "", -1, NULL, {0}}
 };
 
@@ -101,7 +104,7 @@ static xFileHWInfo fh_tab[] = {
 	{FH_MSX, {FG_MSX, FG_MSXTAPE, 0}},
 	{FH_NES, {FG_NES, 0}},
 	{FH_CMD, {FG_CMDTAPE, FG_CMDSNAP, 0}},
-	{FH_BK, {FG_BKDATA, FG_BKDISK, 0}},
+	{FH_BK, {FG_BKDATA, FG_BKTAPE, FG_BKDISK, 0}},
 	{FH_DISKS, {FG_DISK_A, FG_DISK_B, FG_DISK_C, FG_DISK_D, 0}},
 	{FH_SLOTS, {FG_GAMEBOY, FG_NES, FG_MSX, 0}},
 	{0, {0}}
@@ -366,6 +369,7 @@ int load_file(Computer* comp, const char* name, int id, int drv) {
 	inf = file_find_hw_ext(comp->hw->id, path);
 	switch(grp->id) {
 		case FG_RAW: inf = &ft_raw; break;
+		case FG_BKTAPE: inf = &ft_bktap; break;
 	}
 	if (drv < 0) drv = 0;
 	if (inf) {

@@ -38,7 +38,7 @@ void xThread::tap_catch_load(Computer* comp) {
 	if (conf.tape.fast && comp->tape->blkData[blk].hasBytes) {
 		unsigned short de = comp->cpu->de;
 		unsigned short ix = comp->cpu->ix;
-		TapeBlockInfo inf = tapGetBlockInfo(comp->tape,blk);
+		TapeBlockInfo inf = tapGetBlockInfo(comp->tape,blk,TFRM_ZX);
 		blkData = (unsigned char*)realloc(blkData,inf.size + 2);
 		tapGetBlockData(comp->tape,blk,blkData, inf.size + 2);
 		if (inf.size == de) {
