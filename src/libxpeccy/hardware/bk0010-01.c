@@ -136,8 +136,8 @@ void bk_sys_wr(Computer* comp, unsigned short adr, unsigned char val) {
 	}
 	// b6 : beep
 	comp->beep->lev = (comp->wdata & 0x40) ? 1 : 0;
-	// b5 : tape rec
-	comp->tape->levRec = (comp->wdata & 0x20) ? 1 : 0;
+	// b6 : tape rec (main)
+	comp->tape->levRec = (comp->wdata & 0x40) ? 1 : 0;
 	// b4: TL write
 	comp->reg[0xce] = 1;	// write to system port
 }

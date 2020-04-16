@@ -288,6 +288,7 @@ void tapStoreBlock(Tape* tap) {
 		tblk->len1 = SIGN1LEN;
 	}
 	tblk->dataPos = -1;
+#if 1
 	tapNormSignals(tblk);
 	i = 1;
 	while ((i < tblk->sigCount) && (tblk->data[i].size != tblk->s2len))
@@ -299,7 +300,7 @@ void tapStoreBlock(Tape* tap) {
 			tblk->isHeader = 1;
 		}
 	}
-
+#endif
 	tapAddBlock(tap,tap->tmpBlock);
 	blkClear(tblk);
 	tap->wait = 1;
@@ -347,8 +348,8 @@ void tapRec(Tape* tap) {
 	tap->on = 1;
 	tap->rec = 1;
 	tap->wait = 1;
-	tap->levRec = 0;
-	tap->oldRec = 0;
+	tap->levRec = 1;
+	tap->oldRec = 1;
 	blkClear(&tap->tmpBlock);
 }
 
