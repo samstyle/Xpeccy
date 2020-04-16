@@ -51,7 +51,6 @@ void blkClear(TapeBlock *blk) {
 
 // add signal (1 level change)
 void blkAddPulse(TapeBlock* blk, int len, int vol) {
-	if (len < 1) return;
 	if ((blk->sigCount & 0xffff) == 0) {
 		blk->data = realloc(blk->data,(blk->sigCount + 0x10000) * sizeof(TapeSignal));	// allocate mem for next 0x10000 signals
 	}
@@ -167,6 +166,10 @@ TapeBlockInfo tapGetBlockInfo(Tape* tap, int blk, int type) {
 			tapGetBlockHeader(tap,blk,inf.name);
 			inf.type = (strlen(inf.name) == 0) ? TAPE_DATA : TAPE_HEAD;
 			break;
+		default:
+			inf.type = TAPE_DATA;
+			inf.name[0] = 0;
+			break;
 	}
 	inf.size = tapGetBlockSize(block, type);
 	inf.time = tapGetBlockTime(tap,blk,-1);
@@ -224,6 +227,7 @@ void tapDelBlock(Tape* tap, int blk) {
 
 // tape
 
+// FIXME: non-zx must skip this part (do only tapAddBlock + blkClear + wait=1)
 void tapStoreBlock(Tape* tap) {
 	unsigned int i,j;
 	int same;
@@ -295,8 +299,8 @@ void tapStoreBlock(Tape* tap) {
 			tblk->isHeader = 1;
 		}
 	}
-	tapAddBlock(tap,tap->tmpBlock);
 
+	tapAddBlock(tap,tap->tmpBlock);
 	blkClear(tblk);
 	tap->wait = 1;
 }
@@ -343,8 +347,8 @@ void tapRec(Tape* tap) {
 	tap->on = 1;
 	tap->rec = 1;
 	tap->wait = 1;
-	tap->levRec = 1;
-	tap->oldRec = 1;
+	tap->levRec = 0;
+	tap->oldRec = 0;
 	blkClear(&tap->tmpBlock);
 }
 

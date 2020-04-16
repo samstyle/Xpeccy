@@ -64,7 +64,7 @@ int bkLoadToTape(Computer* comp, const char* name, int drv) {
 	unsigned short len;
 	TapeBlock blk;
 	blk.data = NULL;
-	blk.vol = 1;
+	blk.vol = 0;
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
 

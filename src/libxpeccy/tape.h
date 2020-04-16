@@ -48,7 +48,7 @@ typedef struct {
 	unsigned breakPoint:1;
 	unsigned hasBytes:1;
 	unsigned isHeader:1;
-	unsigned vol;
+	unsigned vol:1;
 
 	int plen;
 	int s1len;

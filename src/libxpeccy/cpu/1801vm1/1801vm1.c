@@ -36,6 +36,7 @@ unsigned char pdp_rdb(CPU* cpu, unsigned short adr) {
 void pdp11_reset(CPU* cpu) {
 	for (int i = 0; i < 7; i++)
 		cpu->preg[i] = 0;
+	cpu->t += 1016;
 	cpu->preg[7] = pdp_rd(cpu, 0xffce) & 0xff00;
 	cpu->pc = cpu->preg[7];
 	cpu->pflag = 0xe0;
@@ -221,9 +222,12 @@ void pdp_wait(CPU* cpu) {
 
 // 0002:rti
 void pdp_rti(CPU* cpu) {
+	cpu->t += 3;
 	cpu->preg[7] = pdp_rd(cpu, cpu->preg[6]);
+	cpu->t += 8;
 	cpu->preg[6] += 2;
 	cpu->pflag = pdp_rd(cpu, cpu->preg[6]);
+	cpu->t += 8;
 	cpu->preg[6] += 2;
 	cpu->pflag &= 0xff;
 	if (cpu->pflag & PDP_FT) {
@@ -306,12 +310,14 @@ void pdp_jmp(CPU* cpu) {
 //0000 0000 1000 0rrr	rts		r7=reg:pop reg
 //0000 0000 1000 1xxx	?
 void pdp_008x(CPU* cpu) {
+	cpu->t += 8;
 	if (cpu->com & 8) {
 		pdp_undef(cpu);
 	} else {
 		cpu->mcir = 3;
 		cpu->preg[7] = cpu->preg[cpu->com & 7];
 		cpu->preg[cpu->com & 7] = pdp_rd(cpu, cpu->preg[6]);
+		cpu->t += 8;
 		cpu->preg[6] += 2;
 	}
 }
@@ -358,6 +364,7 @@ void pdp_00xx(CPU* cpu) {
 
 // br
 void pdp_01xx(CPU* cpu) {
+	cpu->t += 4;
 	twsrc = (cpu->com << 1) & 0x1fe;
 	if (twsrc & 0x100)
 		twsrc |= 0xff00;
@@ -1061,6 +1068,7 @@ void pdp_xor(CPU* cpu) {
 
 // 07ruu
 void pdp_sob(CPU* cpu) {
+	cpu->t += 8;
 	twsrc = (cpu->com >> 6) & 7;
 	cpu->preg[twsrc]--;
 	if (cpu->preg[twsrc]) {
