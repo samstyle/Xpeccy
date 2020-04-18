@@ -14,17 +14,17 @@ static mPageNr msxMemTab[4][4] = {
 	{{MEM_RAM, 3},{MEM_RAM, 2},{MEM_RAM, 1},{MEM_RAM, 0}}
 };
 
-unsigned char msxSlotRd(unsigned short adr, void* data) {
+int msxSlotRd(int adr, void* data) {
 	xCartridge* slot = (xCartridge*)data;
 	return sltRead(slot, SLT_PRG, adr);
 }
 
-void msxSlotWr(unsigned short adr, unsigned char val, void* data) {
+void msxSlotWr(int adr, int val, void* data) {
 	xCartridge* slot = (xCartridge*)data;
 	sltWrite(slot, SLT_PRG, adr, val);
 }
 
-void msxSetMem(Computer* comp, int bank, unsigned char slot) {
+void msxSetMem(Computer* comp, int bank, int slot) {
 	slot &= 3;
 	bank &= 3;
 	int type = msxMemTab[slot][bank].type;
@@ -71,16 +71,16 @@ void msxReset(Computer* comp) {
 
 // AY
 
-void msxAYIdxOut(Computer* comp, unsigned short port, unsigned char val) {
-	tsOut(comp->ts, 0xfffd, val);
+void msxAYIdxOut(Computer* comp, int port, int val) {
+	tsOut(comp->ts, 0xfffd, val & 0xff);
 }
 
-void msxAYDataOut(Computer* comp, unsigned short port, unsigned char val) {
-	tsOut(comp->ts, 0xbffd, val);
+void msxAYDataOut(Computer* comp, int port, int val) {
+	tsOut(comp->ts, 0xbffd, val & 0xff);
 }
 
-unsigned char msxAYDataIn(Computer* comp, unsigned short port) {
-	unsigned char res = 0xff;
+int msxAYDataIn(Computer* comp, int port) {
+	int res = 0xff;
 	if (comp->ts->curChip->curReg == 0x0e) {		// b7:tape in, b6:?, b0..5 = joystick u/d/l/r/fa/fb (0:active)
 		res = 0x7f | (comp->tape->volPlay & 0x80);
 	} else {
@@ -91,13 +91,12 @@ unsigned char msxAYDataIn(Computer* comp, unsigned short port) {
 
 // 8255A
 
-unsigned char msxA9In(Computer* comp, unsigned short port) {
+int msxA9In(Computer* comp, int port) {
 	return comp->keyb->msxMap[comp->msx.keyLine];
-	//return kbdRead(comp->keyb, comp->msx.keyLine);
 }
 
-void msxAAOut(Computer* comp, unsigned short port, unsigned char val) {
-	comp->msx.pAA = val;
+void msxAAOut(Computer* comp, int port, int val) {
+	comp->msx.pAA = val & 0xff;
 	comp->msx.keyLine = val & 0x0f;
 	if (val & 0x10) {
 		tapStop(comp->tape);
@@ -108,15 +107,16 @@ void msxAAOut(Computer* comp, unsigned short port, unsigned char val) {
 	comp->beep->lev = (val & 0x80) ? 1 : 0;
 }
 
-unsigned char msxAAIn(Computer* comp, unsigned short port) {
+int msxAAIn(Computer* comp, int port) {
 	return comp->msx.pAA;
 }
 
-void msxABOut(Computer* comp, unsigned short port, unsigned char val) {
+void msxABOut(Computer* comp, int port, int val) {
+	int mask;
 	if (val & 0x80) {
-		comp->msx.ppi.regC = val;
+		comp->msx.ppi.regC = val & 0xff;
 	} else {
-		unsigned char mask = 0x01 << ((val >> 1) & 7);
+		mask = 0x01 << ((val >> 1) & 7);
 		if (val & 1) {
 			msxAAOut(comp, port, comp->msx.pAA | mask);
 		} else {
@@ -127,26 +127,26 @@ void msxABOut(Computer* comp, unsigned short port, unsigned char val) {
 
 // memory
 
-void msxA8Out(Computer* comp, unsigned short port, unsigned char val) {
-	comp->msx.pA8 = val;
+void msxA8Out(Computer* comp, int port, int val) {
+	comp->msx.pA8 = val & 0xff;
 	msxMapMem(comp);
 }
 
-unsigned char msxA8In(Computer* comp, unsigned short port) {
+int msxA8In(Computer* comp, int port) {
 	return comp->msx.pA8;
 }
 
-void msxMemOut(Computer* comp, unsigned short port, unsigned char val) {
-	comp->reg[port] = val;
+void msxMemOut(Computer* comp, int port, int val) {
+	comp->reg[port] = val & 0xff;
 }
 
 // v9938
 
-void msx9938wr(Computer* comp, unsigned short adr, unsigned char val) {
-	vdpWrite(comp->vid, adr & 3, val);
+void msx9938wr(Computer* comp, int adr, int val) {
+	vdpWrite(comp->vid, adr & 3, val & 0xff);
 }
 
-unsigned char msx9938rd(Computer* comp, unsigned short adr) {
+int msx9938rd(Computer* comp, int adr) {
 	return vdpRead(comp->vid, adr & 3);
 }
 
@@ -175,11 +175,11 @@ static xPort msxPortMap[] = {
 	{0x00,0x00,2,2,2,dummyIn,dummyOut},
 };
 
-unsigned char msxIn(Computer* comp, unsigned short port, int dos) {
+int msxIn(Computer* comp, int port, int dos) {
 	return hwIn(msxPortMap, comp, port, dos);
 }
 
-void msxOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
+void msxOut(Computer* comp, int port, int val, int dos) {
 	hwOut(msxPortMap,comp, port, val, dos);
 }
 

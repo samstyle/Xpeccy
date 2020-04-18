@@ -72,8 +72,8 @@ extern int botSkip;
 void vid_dot_full(Video*, unsigned char);
 void vid_dot_half(Video*, unsigned char);
 
-typedef unsigned char(*vcbmrd)(int, void*);
-typedef void(*vcbmwr)(int, unsigned char, void*);
+typedef int(*vcbmrd)(int, void*);
+typedef void(*vcbmwr)(int, int, void*);
 typedef void(*cbvid)(Video*);
 
 struct Video {

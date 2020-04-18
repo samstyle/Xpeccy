@@ -9,9 +9,9 @@
 // [mode 2 : ~80T][mode 3 : ~170T][mode 0 : ~206T] = 456T
 // [mode 1] during VBlank
 
-unsigned char gbIORd(Computer* comp, unsigned short port) {
+int gbIORd(Computer* comp, int port) {
 	port &= 0x7f;
-	unsigned char res = comp->gb.iomap[port];
+	int res = comp->gb.iomap[port];
 	switch(port) {
 // JOYSTICK
 		case 0x00:
@@ -140,9 +140,9 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 	int s,r;
 	xColor col;
 	// old env values
-	unsigned char env1 = comp->gb.iomap[0x12];
-	unsigned char env2 = comp->gb.iomap[0x17];
-	unsigned char env4 = comp->gb.iomap[0x21];
+	unsigned char env1 = comp->gb.iomap[0x12] & 0xff;
+	unsigned char env2 = comp->gb.iomap[0x17] & 0xff;
+	unsigned char env4 = comp->gb.iomap[0x21] & 0xff;
 	// snd chans ptr
 	gbsChan* ch1 = &comp->gbsnd->ch1;
 	gbsChan* ch2 = &comp->gbsnd->ch2;
@@ -189,10 +189,10 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			comp->vid->intp.y = val;
 			break;
 		case 0x46:						// TODO: block CPU memory access for 160 microsec (except ff80..fffe)
-			sadr = val << 8;
+			sadr = (val << 8) & 0xffff;
 			dadr = 0;
 			while (dadr < 0xa0) {
-				comp->vid->oam[dadr] = memRd(comp->mem, sadr);
+				comp->vid->oam[dadr] = memRd(comp->mem, sadr) & 0xff;
 				sadr++;
 				dadr++;
 			}
@@ -413,10 +413,10 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			frq = ((per & 0x3e) >> 1);	// color idx
 			col = comp->vid->pal[frq];		// current color;
 			if (per & 1) {			// B/g
-				col.b = (val & 0x7c) << 1;
-				col.g = (col.g & 0x3f) | ((val & 3) << 6);
+				col.b = ((val & 0x7c) << 1) & 0xff;
+				col.g = ((col.g & 0x3f) | ((val & 3) << 6)) & 0xff;
 			} else {			// g/R
-				col.r = (val & 0x1f) << 3;
+				col.r = ((val & 0x1f) << 3) & 0xff;
 				col.g = (col.g & 0xc0) | ((val & 0xe0) >> 2);
 			}
 			comp->vid->pal[frq] = col;
@@ -431,10 +431,10 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			frq = 0x40 | ((per & 0x3e) >> 1);
 			col = comp->vid->pal[frq];
 			if (per & 1) {
-				col.b = (val & 0x7c) << 1;
-				col.g = (col.g & 0x3f) | ((val & 3) << 6);
+				col.b = ((val & 0x7c) << 1) & 0xff;
+				col.g = ((col.g & 0x3f) | ((val & 3) << 6)) & 0xff;
 			} else {			// g/R
-				col.r = (val & 0x1f) << 3;
+				col.r = ((val & 0x1f) << 3) & 0xff;
 				col.g = (col.g & 0xc0) | ((val & 0xe0) >> 2);
 			}
 			comp->vid->pal[frq] = col;
@@ -475,9 +475,9 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 
 		default:
 			if ((port & 0xf0) == 0x30) {	// ff30..ff3f : wave pattern ram for chan 3
-				dadr = (port & 0x0f) << 1;
-				comp->gbsnd->wave[dadr++] = (val & 0xf0) | ((val & 0xf0) >> 4);		// HH : high 4 bits
-				comp->gbsnd->wave[dadr] = (val & 0x0f) | ((val & 0x0f) << 4);		// LL : low 4 bits
+				dadr = ((port & 0x0f) << 1) & 0xffff;
+				comp->gbsnd->wave[dadr++] = ((val & 0xf0) | ((val & 0xf0) >> 4)) & 0xff;	// HH : high 4 bits
+				comp->gbsnd->wave[dadr] = ((val & 0x0f) | ((val & 0x0f) << 4)) & 0xff;		// LL : low 4 bits
 			} else {
 				printf("GB: out %.4X,%.2X\n",port,val);
 //				assert(0);
@@ -488,7 +488,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 
 // 0000..7fff : slot
 
-unsigned char gbSlotRd(unsigned short adr, void* data) {
+int gbSlotRd(int adr, void* data) {
 	Computer* comp = (Computer*)data;
 	xCartridge* slot = comp->slot;
 	unsigned char res = 0xff;
@@ -500,7 +500,7 @@ unsigned char gbSlotRd(unsigned short adr, void* data) {
 	return res;
 }
 
-void gbSlotWr(unsigned short adr, unsigned char val, void* data) {
+void gbSlotWr(int adr, int val, void* data) {
 	Computer* comp = (Computer*)data;
 	sltWrite(comp->slot, SLT_PRG, adr, val);
 	memSetBank(comp->mem, 0x40, MEM_SLOT, comp->slot->memMap[0], MEM_16K, gbSlotRd, gbSlotWr, comp);
@@ -509,7 +509,7 @@ void gbSlotWr(unsigned short adr, unsigned char val, void* data) {
 // 8000..9fff : video mem (bank 0,1 gbc)
 // a000..bfff : external ram
 
-unsigned char gbvRd(unsigned short adr, void* data) {
+int gbvRd(int adr, void* data) {
 	Computer* comp = (Computer*)data;
 	xCartridge* slot = comp->slot;
 	unsigned char res = 0xff;
@@ -523,7 +523,7 @@ unsigned char gbvRd(unsigned short adr, void* data) {
 	return res;
 }
 
-void gbvWr(unsigned short adr, unsigned char val, void* data) {
+void gbvWr(int adr, int val, void* data) {
 	Computer* comp = (Computer*)data;
 	// xCartridge* slot = comp->slot;
 	int radr;
@@ -548,7 +548,7 @@ void gbvWr(unsigned short adr, unsigned char val, void* data) {
 // FF80..FFFE : RAM2
 // FFFF..FFFF : INT mask
 
-unsigned char gbrRd(unsigned short adr, void* data) {
+int gbrRd(int adr, void* data) {
 	Computer* comp = (Computer*)data;
 	unsigned char res = 0xff;
 	if (adr < 0xfe00) {
@@ -574,7 +574,7 @@ unsigned char gbrRd(unsigned short adr, void* data) {
 	return res;
 }
 
-void gbrWr(unsigned short adr, unsigned char val, void* data) {
+void gbrWr(int adr, int val, void* data) {
 	Computer* comp = (Computer*)data;
 	if (adr < 0xfe00) {
 		adr &= 0x1fff;
@@ -607,11 +607,11 @@ void gbMaper(Computer* comp) {
 	memSetBank(comp->mem, 0xc0, MEM_EXT, 1, MEM_16K, gbrRd, gbrWr, comp);	// internal RAM/OAM/IOMap
 }
 
-unsigned char gbMemRd(Computer* comp, unsigned short adr, int m1) {
+int gbMemRd(Computer* comp, int adr, int m1) {
 	return memRd(comp->mem, adr);
 }
 
-void gbMemWr(Computer* comp, unsigned short adr, unsigned char val) {
+void gbMemWr(Computer* comp, int adr, int val) {
 	memWr(comp->mem, adr, val);
 }
 

@@ -38,7 +38,7 @@ int toLimits(int, int, int);
 QString getbinbyte(unsigned char);
 QString gethexshift(char);
 QString getdecshift(char);
-QString gethexbyte(unsigned char);
+QString gethexbyte(int);
 QString gethexword(int);
 
 typedef struct {

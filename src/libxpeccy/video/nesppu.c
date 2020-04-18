@@ -42,19 +42,6 @@ static unsigned char nesInitIdx[32] = {
 	0x08,0x3a,0x00,0x02,0x00,0x20,0x2c,0x08
 };
 
-/*
-nesPPU* ppuCreate(vRay* rp) {
-	nesPPU* ppu = (nesPPU*)malloc(sizeof(nesPPU));
-	memset(ppu, 0x00, sizeof(nesPPU));
-	ppu->ray = rp;
-	return ppu;
-}
-
-void ppuDestroy(nesPPU* ppu) {
-	if (ppu) free(ppu);
-}
-*/
-
 void ppuReset(Video* vid) {
 	vid->inten = 0;
 	vid->latch = 0;
@@ -112,11 +99,11 @@ unsigned short ppuXcoarse(unsigned short v) {
 void ppuRenderTile(Video* vid, unsigned char* buf, int offset, unsigned short adr, unsigned short tadr) {
 	int cnt;
 	unsigned char col;
-	unsigned char tile = vid->mrd(0x2000 | (adr & 0x0fff), vid->data);						// tile num
-	unsigned char atr = vid->mrd(0x23c0 | (adr & 0x0c00) | ((adr >> 4) & 0x38) | ((adr >> 2) & 7), vid->data);	// attribute
+	unsigned char tile = vid->mrd(0x2000 | (adr & 0x0fff), vid->data) & 0xff;						// tile num
+	unsigned char atr = vid->mrd(0x23c0 | (adr & 0x0c00) | ((adr >> 4) & 0x38) | ((adr >> 2) & 7), vid->data) & 0xff;	// attribute
 	unsigned short bgadr = tadr | ((tile << 4) & 0x0ff0) | ((adr >> 12) & 7);					// tile adr
-	unsigned short data = vid->mrd(bgadr, vid->data);								// tile data (2 bytes)
-	data |= (vid->mrd(bgadr + 8, vid->data) << 8);
+	unsigned short data = vid->mrd(bgadr, vid->data) & 0xff;								// tile data (2 bytes)
+	data |= ((vid->mrd(bgadr + 8, vid->data) << 8) & 0xff00);
 	if (adr & 0x0040) atr >>= 4;							// bit 2,3 = attribute of current tile
 	if (~adr & 0x0002) atr <<= 2;
 	for (cnt = 0; cnt < 8; cnt++) {							// put 8 color indexes in buffer
@@ -173,8 +160,8 @@ int ppuRenderSpriteLine(Video* vid, int line, unsigned char* sbuf, unsigned char
 						bgadr = ppuspa | ((tile << 4) & 0x0ff0) | (sln & 7);
 					}
 					// fetch tile data
-					data = vid->mrd(bgadr, vid->data);
-					data |= (vid->mrd(bgadr + 8, vid->data) << 8);
+					data = vid->mrd(bgadr, vid->data) & 0xff;
+					data |= ((vid->mrd(bgadr + 8, vid->data) << 8) & 0xff00);
 					for (y = 0; y < 8; y++) {
 						if (flag & 0x40) {			// HFlip
 							col = (data & 0x01) ? 1 : 0;
@@ -317,9 +304,9 @@ void ppuFram(Video* vid) {
 
 // rd/wr registers
 
-unsigned char ppuRead(Video* vid, int reg) {
-	unsigned char res = 0xff;
-	unsigned short adr;
+int ppuRead(Video* vid, int reg) {
+	int res = -1;
+	int adr;
 	switch (reg & 7) {
 		case 2:
 			res = 0x1f;
@@ -335,10 +322,10 @@ unsigned char ppuRead(Video* vid, int reg) {
 			adr = vid->vadr & 0x3fff;
 			if (adr < 0x3f00) {
 				res = vid->vbuf;
-				vid->vbuf = vid->mrd(adr, vid->data);
+				vid->vbuf = vid->mrd(adr, vid->data) & 0xff;
 			} else {
 				res = vid->ram[(adr & 0x1f) | 0x3f00];		// palette
-				vid->vbuf = vid->mrd(adr & 0x2fff, vid->data);
+				vid->vbuf = vid->mrd(adr & 0x2fff, vid->data) & 0xff;
 			}
 			vid->vadr += vid->vastep ? 32 : 1;
 			break;
@@ -348,7 +335,7 @@ unsigned char ppuRead(Video* vid, int reg) {
 
 // #define ALT_ZADR
 
-void ppuWrite(Video* vid, int reg, unsigned char val) {
+void ppuWrite(Video* vid, int reg, int val) {
 	unsigned short adr;
 	switch (reg & 7) {
 		case 0:		// PPUCTRL
@@ -372,10 +359,10 @@ void ppuWrite(Video* vid, int reg, unsigned char val) {
 			// TODO: b5,6,7 = color tint
 			break;
 		case 3:
-			vid->oamadr = val;
+			vid->oamadr = val & 0xff;
 			break;
 		case 4:
-			vid->oam[vid->oamadr & 0xff] = val;
+			vid->oam[vid->oamadr & 0xff] = val & 0xff;
 			vid->oamadr++;
 			break;
 		case 5:
@@ -427,11 +414,11 @@ void ppuWrite(Video* vid, int reg, unsigned char val) {
 			if (adr < 0x3f00) {
 				vid->mwr(adr, val, vid->data);
 			} else {
-				vid->ram[(adr & 0x1f) | 0x3f00] = val;
+				vid->ram[(adr & 0x1f) | 0x3f00] = val & 0xff;
 				if ((adr & 0x1f) == 0x10)
-					vid->ram[0x3f00] = val;
+					vid->ram[0x3f00] = val & 0xff;
 				else if ((adr & 0x1f) == 0x00)
-					vid->ram[0x3f10] = val;
+					vid->ram[0x3f10] = val & 0xff;
 			}
 #ifndef ALT_ZADR
 			vid->vadr += vid->vastep ? 32 : 1;

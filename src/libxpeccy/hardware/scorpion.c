@@ -14,7 +14,7 @@ ProfROM table :
 0113 | 1 0 1 0
 */
 
-unsigned char ZSLays[4][4] = {
+static int ZSLays[4][4] = {
 	{0,1,2,3},
 	{3,3,3,2},
 	{2,2,0,1},
@@ -36,9 +36,9 @@ void scoMapMem(Computer* comp) {
 	memSetBank(comp->mem,0xc0,MEM_RAM, rp, MEM_16K, NULL, NULL, NULL);
 }
 
-unsigned char scoMRd(Computer* comp, unsigned short adr, int m1) {
+int scoMRd(Computer* comp, int adr, int m1) {
 	if (((comp->mem->map[0].num & 3) == 2) && ((adr & 0xfff3) == 0x0100) && !m1) {
-		comp->prt2 = ZSLays[(adr & 0x000c) >> 2][comp->prt2 & 3];
+		comp->prt2 = ZSLays[(adr & 0x000c) >> 2][comp->prt2 & 3] & 0xff;
 		comp->hw->mapMem(comp);
 	}
 	return stdMRd(comp,adr,m1);
@@ -46,27 +46,27 @@ unsigned char scoMRd(Computer* comp, unsigned short adr, int m1) {
 
 // in
 
-unsigned char scrpIn1F(Computer* comp, unsigned short port) {
+int scrpIn1F(Computer* comp, int port) {
 	return joyInput(comp->joy);
 }
 
-unsigned char scrpIn1FFD(Computer* comp, unsigned short port) {
+int scrpIn1FFD(Computer* comp, int port) {
 	compSetTurbo(comp, 1);
 	return 0xff;
 }
 
-unsigned char scrpIn7FFD(Computer* comp, unsigned short port) {
+int scrpIn7FFD(Computer* comp, int port) {
 	compSetTurbo(comp, 2);
 	return 0xff;
 }
 
 // out
 
-void scrpOutDD(Computer* comp, unsigned short port, unsigned char val) {
+void scrpOutDD(Computer* comp, int port, int val) {
 	sdrvWrite(comp->sdrv, 0xfb, val);
 }
 
-void scrpOut7FFD(Computer* comp, unsigned short port, unsigned char val) {
+void scrpOut7FFD(Computer* comp, int port, int val) {
 	if (comp->p7FFD & 0x20) return;
 	comp->p7FFD = val;
 	comp->rom = (val & 0x10) ? 1 : 0;
@@ -74,7 +74,7 @@ void scrpOut7FFD(Computer* comp, unsigned short port, unsigned char val) {
 	scoMapMem(comp);
 }
 
-void scrpOut1FFD(Computer* comp, unsigned short port, unsigned char val) {
+void scrpOut1FFD(Computer* comp, int port, int val) {
 	comp->p1FFD = val;
 	comp->ext = (val & 2) ? 1 : 0;
 	scoMapMem(comp);
@@ -94,14 +94,14 @@ static xPort scrpPortMap[] = {
 	{0x0000,0x0000,2,2,2,NULL,NULL}
 };
 
-void scoOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
+void scoOut(Computer* comp, int port, int val, int dos) {
 	difOut(comp->dif, port, val, dos);
 	zx_dev_wr(comp, port, val, dos);
 	hwOut(scrpPortMap, comp, port, val, dos);
 }
 
-unsigned char scoIn(Computer* comp, unsigned short port, int dos) {
-	unsigned char res = 0xff;
+int scoIn(Computer* comp, int port, int dos) {
+	int res = -1;
 	if (difIn(comp->dif, port, &res, dos)) return res;
 	if (zx_dev_rd(comp, port, &res, dos)) return res;
 	res = hwIn(scrpPortMap, comp, port, dos);

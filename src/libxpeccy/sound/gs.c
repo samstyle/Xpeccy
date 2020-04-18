@@ -5,9 +5,9 @@
 #include "gs.h"
 
 // internam MEMRQ
-unsigned char gsmemrd(unsigned short adr,int m1,void* ptr) {
+int gsmemrd(int adr, int m1, void* ptr) {
 	GSound* gs = (GSound*)ptr;
-	unsigned char res = memRd(gs->mem,adr);
+	unsigned char res = memRd(gs->mem, adr & 0xffff);
 	switch (adr & 0xe300) {
 		case 0x6000:
 			gs->ch1 = res;
@@ -25,15 +25,15 @@ unsigned char gsmemrd(unsigned short adr,int m1,void* ptr) {
 	return res;
 }
 
-void gsmemwr(unsigned short adr,unsigned char val,void* ptr) {
+void gsmemwr(int adr, int val, void* ptr) {
 	GSound* gs = (GSound*)ptr;
-	memWr(gs->mem,adr,val);
+	memWr(gs->mem, adr & 0xffff, val & 0xff);
 }
 
 // internal IORQ
-unsigned char gsiord(unsigned short port,void* ptr) {
+int gsiord(int port,void* ptr) {
 	GSound* gs = (GSound*)ptr;
-	unsigned char res = 0xff;
+	int res = 0xff;
 	port &= 0x0f;
 	switch (port) {
 		case 0: break;
@@ -52,11 +52,11 @@ unsigned char gsiord(unsigned short port,void* ptr) {
 	return res;
 }
 
-void gsiowr(unsigned short port,unsigned char val,void* ptr) {
+void gsiowr(int port, int val, void* ptr) {
 	GSound* gs = (GSound*)ptr;
 	port &= 0x0f;
 	switch (port) {
-		case 0: gs->rp0 = val;
+		case 0: gs->rp0 = val & 0xff;
 			val &= 0x1f;
 			if (val == 0) {
 				memSetBank(gs->mem, 0x80, MEM_ROM, 0, MEM_16K, NULL, NULL, NULL);
@@ -68,20 +68,36 @@ void gsiowr(unsigned short port,unsigned char val,void* ptr) {
 			}
 			break;
 		case 1: break;
-		case 2: gs->pstate &= 0x7f; break;
-		case 3: gs->pstate |= 0x80; gs->pb3_gs = val; break;
+		case 2: gs->pstate &= 0x7f;
+			break;
+		case 3: gs->pstate |= 0x80;
+			gs->pb3_gs = val & 0xff;
+			break;
 		case 4: break;
-		case 5: gs->pstate &= 0xfe; break;
-		case 6: gs->vol1 = val & 0x3f; break;
-		case 7: gs->vol2 = val & 0x3f; break;
-		case 8: gs->vol3 = val & 0x3f; break;
-		case 9: gs->vol4 = val & 0x3f; break;
-		case 10: if (gs->rp0 & 0x01) gs->pstate &= 0x7f; else gs->pstate |= 0x80; break;
-		case 11: if (gs->vol1 & 0x20) gs->pstate |= 1; else gs->pstate &= 0xfe; break;
+		case 5: gs->pstate &= 0xfe;
+			break;
+		case 6: gs->vol1 = val & 0x3f;
+			break;
+		case 7: gs->vol2 = val & 0x3f;
+			break;
+		case 8: gs->vol3 = val & 0x3f;
+			break;
+		case 9: gs->vol4 = val & 0x3f;
+			break;
+		case 10: if (gs->rp0 & 0x01)
+				gs->pstate &= 0x7f;
+			else
+				gs->pstate |= 0x80;
+			break;
+		case 11: if (gs->vol1 & 0x20)
+				gs->pstate |= 1;
+			else
+				gs->pstate &= 0xfe;
+			break;
 	}
 }
 
-unsigned char gsintrq(void* ptr) {
+int gsintrq(void* ptr) {
 	return 0xff;
 }
 
@@ -138,26 +154,26 @@ void gsFlush(GSound* gs) {
 	gs->time = 0;
 }
 
-int gsCheck(GSound* gs, unsigned short adr) {
+int gsCheck(GSound* gs, int adr) {
 	if (!gs->enable) return 0;
 	if (adr & 0x0044) return 0;
 	return 1;
 }
 
-int gsWrite(GSound* gs, unsigned short adr, unsigned char data) {
+int gsWrite(GSound* gs, int adr, int data) {
 	if (!gsCheck(gs, adr)) return 0;
 	gsFlush(gs);
 	if (adr & 8) {
-		gs->pbb_zx = data;
+		gs->pbb_zx = data & 0xff;
 		gs->pstate |= 1;
 	} else {
-		gs->pb3_zx = data;
+		gs->pb3_zx = data & 0xff;
 		gs->pstate |= 0x80;		// set b7,state
 	}
 	return 1;
 }
 
-int gsRead(GSound* gs, unsigned short adr, unsigned char* dptr) {
+int gsRead(GSound* gs, int adr, int* dptr) {
 	if (!gsCheck(gs, adr)) return 0;
 	gsFlush(gs);
 	if (adr & 8) {

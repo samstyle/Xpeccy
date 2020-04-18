@@ -141,8 +141,8 @@ typedef struct {
 
 IDE* ideCreate(int);
 void ideDestroy(IDE*);
-int ideIn(IDE*,unsigned short,unsigned char*,int);
-int ideOut(IDE*,unsigned short,unsigned char,int);
+int ideIn(IDE*, int, int*, int);
+int ideOut(IDE*, int, int, int);
 void ideReset(IDE*);
 void ideOpenFiles(IDE*);
 void ideCloseFiles(IDE*);

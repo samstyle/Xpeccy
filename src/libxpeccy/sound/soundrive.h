@@ -24,7 +24,7 @@ typedef struct {
 
 SDrive* sdrvCreate(int);
 void sdrvDestroy(SDrive*);
-int sdrvWrite(SDrive*, unsigned short, unsigned char);
+int sdrvWrite(SDrive*, int, int);
 sndPair sdrvVolume(SDrive*);
 
 #endif

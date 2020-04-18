@@ -21,7 +21,7 @@ QString gethexword(int num) {
 	return res.rightJustified(4, '0');
 }
 
-QString gethexbyte(uchar num) {
+QString gethexbyte(int num) {
 	QString res = formbufword(num & 0xff);
 	return res.rightJustified(2, '0');
 }

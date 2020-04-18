@@ -56,28 +56,28 @@ void memSetSize(Memory* mem, int ramSz, int romSz) {
 	}
 }
 
-unsigned char memRd(Memory* mem, unsigned short adr) {
-	unsigned char res = 0xff;
+int memRd(Memory* mem, int adr) {
+	int res = -1;
 	MemPage* ptr = &mem->map[(adr >> 8) & 0xff];
 	if (ptr->rd)
 		res = ptr->rd(adr, ptr->data);
 	return res;
 }
 
-void memWr(Memory* mem, unsigned short adr, unsigned char val) {
+void memWr(Memory* mem, int adr, int val) {
 	MemPage* ptr = &mem->map[(adr >> 8) & 0xff];
 	if (ptr->wr)
 		ptr->wr(adr, val, ptr->data);
 }
 
-unsigned char memStdRd(unsigned short adr, void* data) {
+int memStdRd(int adr, void* data) {
 	unsigned char* ptr = (unsigned char*)data;
 	return ptr[adr & 0xff];
 }
 
-void memStdWr(unsigned short adr, unsigned char val, void* data) {
+void memStdWr(int adr, int val, void* data) {
 	unsigned char* ptr = (unsigned char*)data;
-	ptr[adr & 0xff] = val;
+	ptr[adr & 0xff] = val & 0xff;
 }
 
 void memSetBank(Memory* mem, int page, int type, int bank, int siz, extmrd rd, extmwr wr, void* data) {

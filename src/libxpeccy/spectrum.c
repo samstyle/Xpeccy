@@ -17,7 +17,7 @@ static vLayout bkLay = {{256,256},{0,0},{1,1},{256,256},{0,0},0};
 
 // ...
 
-unsigned char vid_mrd_cb(int adr, void* ptr) {
+int vid_mrd_cb(int adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	return comp->mem->ramData[adr & comp->mem->ramMask];
 }
@@ -38,7 +38,7 @@ void zxMemRW(Computer* comp, int adr) {
 	}
 }
 
-unsigned char memrd(unsigned short adr,int m1,void* ptr) {
+int memrd(int adr, int m1, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 #ifdef HAVEZLIB
 	if (m1 && comp->rzx.play) {
@@ -46,7 +46,7 @@ unsigned char memrd(unsigned short adr,int m1,void* ptr) {
 	}
 #endif
 	// zxMemRW(comp,adr);
-	unsigned char* fptr = getBrkPtr(comp, adr);
+	unsigned char* fptr = getBrkPtr(comp, adr & 0xffff);
 	unsigned char flag = *fptr;
 	if (comp->maping) {
 		if ((comp->cpu->pc-1) == adr) {		// cuz pc is already incremented
@@ -64,10 +64,10 @@ unsigned char memrd(unsigned short adr,int m1,void* ptr) {
 	return comp->hw->mrd(comp,adr,m1);
 }
 
-void memwr(unsigned short adr, unsigned char val, void* ptr) {
+void memwr(int adr, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	//zxMemRW(comp,adr);
-	unsigned char* fptr = getBrkPtr(comp, adr);
+	unsigned char* fptr = getBrkPtr(comp, adr & 0xffff);
 	unsigned char flag = *fptr;
 	if (comp->maping) {
 		if (!(flag & 0xf0)) {
@@ -110,16 +110,13 @@ inline void zxIORW(Computer* comp, int port) {
 	}
 }
 
-unsigned char iord(unsigned short port, void* ptr) {
+int iord(int port, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	unsigned char res = 0xff;
 // TODO: zx only
 	res3 = comp->cpu->t + 3;
 	vidSync(comp->vid,(res3 - res4) * comp->nsPerTick);
 	res4 = res3;
-// tape sync
-//	tapSync(comp->tape,comp->tapCount);
-//	comp->tapCount = 0;
 // play rzx
 #ifdef HAVEZLIB
 	if (comp->rzx.play) {
@@ -143,7 +140,7 @@ unsigned char iord(unsigned short port, void* ptr) {
 	return comp->hw->in(comp, port, bdiz);
 }
 
-void iowr(unsigned short port, unsigned char val, void* ptr) {
+void iowr(int port, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	comp->padr = port;
 	comp->pval = val;
@@ -152,54 +149,54 @@ void iowr(unsigned short port, unsigned char val, void* ptr) {
 		comp->brk = 1;
 }
 
-unsigned char intrq(void* ptr) {
-	return ((Computer*)ptr)->intVector;
+int intrq(void* ptr) {
+	return ((Computer*)ptr)->intVector & 0xff;
 }
 
 // new (for future use)
 
-unsigned char comp_rom_rd(Computer* comp, int adr) {
+int comp_rom_rd(Computer* comp, int adr) {
 	adr &= comp->mem->romMask;
 	if (comp->brkRomMap[adr] & MEM_BRK_RD)
 		comp->brk = 1;
-	return comp->mem->romData[adr & comp->mem->romMask];
+	return comp->mem->romData[adr] & 0xff;
 }
 
-void comp_rom_wr(Computer* comp, int adr, unsigned char val) {
+void comp_rom_wr(Computer* comp, int adr, int val) {
 	adr &= comp->mem->romMask;
 	if (comp->brkRomMap[adr] & MEM_BRK_WR)
 		comp->brk = 1;
-	comp->mem->romData[adr & comp->mem->romMask] = val;
+	comp->mem->romData[adr] = val & 0xff;
 }
 
-unsigned char comp_ram_rd(Computer* comp, int adr) {
+int comp_ram_rd(Computer* comp, int adr) {
 	adr &= comp->mem->ramMask;
 	if (comp->brkRamMap[adr] & MEM_BRK_RD)
 		comp->brk = 1;
-	return comp->mem->ramData[adr & comp->mem->ramMask];
+	return comp->mem->ramData[adr] & 0xff;
 }
 
-void comp_ram_wr(Computer* comp, int adr, unsigned char val) {
+void comp_ram_wr(Computer* comp, int adr, int val) {
 	adr &= comp->mem->ramMask;
 	if (comp->brkRamMap[adr] & MEM_BRK_WR)
 		comp->brk = 1;
-	comp->mem->ramData[adr] = val;
+	comp->mem->ramData[adr] = val & 0xff;
 }
 
-unsigned char comp_slt_rd(Computer* comp, int adr) {
+int comp_slt_rd(Computer* comp, int adr) {
 	if (!comp->slot->data) return 0xff;
 	adr &= comp->slot->memMask;
 	if (comp->slot->brkMap[adr] & MEM_BRK_RD)
 		comp->brk = 1;
-	return comp->slot->data[adr];
+	return comp->slot->data[adr] & 0xff;
 }
 
-void comp_slt_wr(Computer* comp, int adr, unsigned char val) {
+void comp_slt_wr(Computer* comp, int adr, int val) {
 	if (!comp->slot->data) return;
 	adr &= comp->slot->memMask;
 	if (comp->slot->brkMap[adr] & MEM_BRK_WR)
 		comp->brk = 1;
-	comp->slot->data[adr & comp->slot->memMask] = val;
+	comp->slot->data[adr] = val & 0xff;
 }
 
 // rzx
@@ -590,7 +587,7 @@ unsigned char cmsRd(Computer* comp) {
 	return res;
 }
 
-void cmsWr(Computer* comp, unsigned char val) {
+void cmsWr(Computer* comp, int val) {
 	switch (comp->cmos.adr) {
 		case 0x0c:
 			if (val & 1) comp->keyb->kBufPos = 0;		// reset PC-keyboard buffer

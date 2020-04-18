@@ -78,10 +78,10 @@ typedef struct xCartridge xCartridge;
 
 typedef struct {
 	int id;
-	unsigned char (*rd)(xCartridge*, int, unsigned short, int);
-	void (*wr)(xCartridge*, int, unsigned short, int, unsigned char);
-	int (*adr)(xCartridge*, int, unsigned short);
-	void (*chk)(xCartridge*, unsigned short);
+	int (*rd)(xCartridge*, int, int, int);
+	void (*wr)(xCartridge*, int, int, int, int);
+	int (*adr)(xCartridge*, int, int);
+	void (*chk)(xCartridge*, int);
 } xCardCallback;
 
 struct xCartridge {
@@ -134,12 +134,12 @@ void sltEject(xCartridge*);
 xCardCallback* sltFindMaper(int,int);
 int sltSetMaper(xCartridge*,int, int);
 
-unsigned char sltRead(xCartridge*, int, unsigned short);
-void sltWrite(xCartridge*, int, unsigned short, unsigned char);
-void sltChecker(xCartridge*, unsigned short);
+int sltRead(xCartridge*, int, int);
+void sltWrite(xCartridge*, int, int, int);
+void sltChecker(xCartridge*, int);
 
 // translate ppu nt vadr according mirroring type
-unsigned short nes_nt_vadr(xCartridge*, unsigned short);
+int nes_nt_vadr(xCartridge*, int);
 
 #if __cplusplus
 }

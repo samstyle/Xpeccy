@@ -313,7 +313,7 @@ int apuGetLen(apuChannel* ch, unsigned char val) {
 
 // write to registers 00..13
 
-void apuWrite(nesAPU* apu, int reg, unsigned char val) {
+void apuWrite(nesAPU* apu, int reg, int val) {
 	// printf("%.2X = %.2X\n",reg,val);
 	// apuFlush(apu);
 	switch (reg & 0x1f) {

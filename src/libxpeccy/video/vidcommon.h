@@ -40,7 +40,7 @@ typedef struct {
 	int intSize;
 } vLayout;
 
-#define MADR(_bnk,_adr)	((_bnk) << 14) + (_adr)
+#define MADR(_bnk,_adr)	((_bnk) << 14) + ((_adr) & 0x3fff)
 
 #define vidSingleDot(_ray, _pal, _idx) \
 	vid_dot_half(vid, _idx);

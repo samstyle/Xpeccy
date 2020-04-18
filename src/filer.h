@@ -1,5 +1,4 @@
-#ifndef X_FILER_H
-#define X_FILER_H
+#pragma once
 
 #include "libxpeccy/filetypes/filetypes.h"
 #include "libxpeccy/spectrum.h"
@@ -33,7 +32,7 @@ enum {
 	FL_C64TAP,
 	FL_C64PRG,
 	FL_BKBIN,
-	FL_BKTAP,
+	FL_BKRAWTAP,
 	FL_BKIMG,
 	FL_BKBKD,
 };
@@ -58,6 +57,7 @@ enum {
 	FG_CMDSNAP,
 	FG_BKDATA,
 	FG_BKTAPE,
+	FG_BKRAW,
 	FG_BKDISK
 };
 
@@ -77,5 +77,3 @@ int load_file(Computer* comp, const char* name, int id, int drv);
 int save_file(Computer* comp, const char* name, int id, int drv);
 
 int saveChangedDisk(Computer*,int);
-
-#endif

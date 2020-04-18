@@ -442,19 +442,19 @@ void vidDrawATMega(Video* vid) {
 		adr = (yscr * 40) + (xscr >> 3);
 		switch (xscr & 7) {
 			case 0:
-				scrbyte = vid->mrd(MADR(vid->curscr ^ 4, adr), vid->data);
+				scrbyte = vid->mrd(MADR(vid->curscr ^ 4, adr), vid->data) & 0xff;
 				col = (scrbyte & 7) | ((scrbyte & 0x40) >> 3); // inkTab[scrbyte & 0x7f];
 				break;
 			case 2:
-				scrbyte = vid->mrd(MADR(vid->curscr, adr), vid->data);
+				scrbyte = vid->mrd(MADR(vid->curscr, adr), vid->data) & 0xff;
 				col = (scrbyte & 7) | ((scrbyte & 0x40) >> 3);
 				break;
 			case 4:
-				scrbyte = vid->mrd(MADR(vid->curscr ^ 4, adr + 0x2000), vid->data);
+				scrbyte = vid->mrd(MADR(vid->curscr ^ 4, adr + 0x2000), vid->data) & 0xff;
 				col = (scrbyte & 7) | ((scrbyte & 0x40) >> 3);
 				break;
 			case 6:
-				scrbyte = vid->mrd(MADR(vid->curscr, adr + 0x2000), vid->data);
+				scrbyte = vid->mrd(MADR(vid->curscr, adr + 0x2000), vid->data) & 0xff;
 				col = (scrbyte & 7) | ((scrbyte & 0x40) >> 3);
 				break;
 			default:
@@ -475,7 +475,7 @@ void vidDrawByteDD(Video* vid) {		// draw byte $scrbyte with colors $ink,$pap at
 
 void vidATMDoubleDot(Video* vid,unsigned char colr) {
 	ink = (colr & 0x07) | ((colr & 0x40) >> 3);
-	pap = (colr & 0x78) >> 3;
+	pap = ((colr & 0x38) >> 3) | ((colr & 0x80) >> 4);
 	vidDrawByteDD(vid);
 }
 
@@ -488,11 +488,11 @@ void vidDrawATMtext(Video* vid) {
 		adr = 0x1c0 + ((yscr & 0xf8) << 3) + (xscr >> 3);
 		if ((xscr & 3) == 0) {
 			if ((xscr & 7) == 0) {
-				scrbyte = vid->mrd(MADR(vid->curscr, adr), vid->data);
-				col = vid->mrd(MADR(vid->curscr ^ 4, adr + 0x2000), vid->data);
+				scrbyte = vid->mrd(MADR(vid->curscr, adr), vid->data) & 0xff;
+				col = vid->mrd(MADR(vid->curscr ^ 4, adr ^ 0x2000), vid->data) & 0xff;
 			} else {
-				scrbyte = vid->mrd(MADR(vid->curscr, adr + 0x2000), vid->data);
-				col = vid->mrd(MADR(vid->curscr ^ 4, adr + 1), vid->data);
+				scrbyte = vid->mrd(MADR(vid->curscr, adr ^ 0x2000), vid->data) & 0xff;
+				col = vid->mrd(MADR(vid->curscr ^ 4, adr + 1), vid->data) & 0xff;
 			}
 			scrbyte = vid->font[(scrbyte << 3) | (yscr & 7)];
 			vidATMDoubleDot(vid,col);

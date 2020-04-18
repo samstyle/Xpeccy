@@ -21,11 +21,11 @@ void speMapMem(Computer* comp) {
 
 // in
 
-unsigned char spIn1F(Computer* comp, unsigned short port) {
+int spIn1F(Computer* comp, int port) {
 	return joyInput(comp->joy);
 }
 
-unsigned char spInFF(Computer* comp, unsigned short port) {
+int spInFF(Computer* comp, int port) {
 	return comp->vid->atrbyte;
 }
 
@@ -41,14 +41,14 @@ static xPort spePortMap[] = {
 	{0x0000,0x0000,2,2,2,spInFF,	NULL}
 };
 
-void speOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
+void speOut(Computer* comp, int port, int val, int dos) {
 	difOut(comp->dif, port, val, dos);
 	zx_dev_wr(comp, port, val, dos);
 	hwOut(spePortMap, comp, port, val, dos);
 }
 
-unsigned char speIn(Computer* comp, unsigned short port, int dos) {
-	unsigned char res;
+int speIn(Computer* comp, int port, int dos) {
+	int res;
 	if (difIn(comp->dif, port, &res, dos)) return res;
 	if (zx_dev_rd(comp, port, &res, dos)) return res;
 	return hwIn(spePortMap, comp, port, dos);

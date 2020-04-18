@@ -15,7 +15,7 @@ void sdrvDestroy(SDrive* sdrv) {
 	free(sdrv);
 }
 
-int sdrvWrite(SDrive* sdrv, unsigned short adr, unsigned char data) {
+int sdrvWrite(SDrive* sdrv, int adr, int data) {
 	int ch = -1;
 	switch (sdrv->type) {
 		case SDRV_COVOX:

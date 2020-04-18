@@ -4,29 +4,38 @@
 #include <stdio.h>
 #include <string.h>
 
-void pdp_wrb(CPU* cpu, unsigned short adr, unsigned char val) {
-	cpu->nod = 1;
-	cpu->mwr(adr, val & 0xff, cpu->data);
+// nod: b0:write LSB, b1:write MSB
+void pdp_wrb(CPU* cpu, int adr, int val) {	// val is 00..FF
+	if (adr & 1) {
+		cpu->nod = 2;			// MSB
+		val = (val << 8) & 0xff00;	// move LSB to MSB in val
+	} else {
+		cpu->nod = 1;			// LSB
+		val &= 0xff;
+	}
+	adr &= ~1;
+	cpu->mwr(adr, val, cpu->data);
 }
 
-void pdp_wr(CPU* cpu, unsigned short adr, unsigned short val) {
-	cpu->nod = 0;
+// nod = 3: write both bytes
+void pdp_wr(CPU* cpu, int adr, int val) {
+	cpu->nod = 3;
 	adr &= ~1;
+#if 1
+	cpu->mwr(adr, val, cpu->data);
+#else
 	cpu->mwr(adr++, val & 0xff, cpu->data);
 	cpu->mwr(adr, (val >> 8) & 0xff, cpu->data);
+#endif
 }
 
-unsigned short pdp_rd(CPU* cpu, unsigned short adr) {
-	adr &= ~1;
-	xpair res;
-	res.l = cpu->mrd(adr++, 0, cpu->data);
-	res.h = cpu->mrd(adr, 0, cpu->data);
-	return res.w;
+int pdp_rd(CPU* cpu, int adr) {
+	return cpu->mrd(adr & 0xfffe, 0, cpu->data) & 0xffff;
 }
 
 // read byte = read word and take high or low byte from there
-unsigned char pdp_rdb(CPU* cpu, unsigned short adr) {
-	unsigned short wrd = pdp_rd(cpu, adr);
+int pdp_rdb(CPU* cpu, int adr) {
+	int wrd = pdp_rd(cpu, adr);
 	return ((adr & 1) ? (wrd >> 8) : wrd) & 0xff;
 }
 
@@ -1328,7 +1337,7 @@ int pdp11_exec(CPU* cpu) {
 //	printf("%.4X : %.4X\n", cpu->preg[7], pdp_rd(cpu, cpu->preg[7]));
 #endif
 	cpu->preg[7] = cpu->pc;
-	if (cpu->halt) return 8;
+	if (cpu->halt) return 4;
 	cpu->t = cpu->wait ? 8 : 0;
 	if (cpu->inten & cpu->intrq)
 		cpu->t += pdp11_int(cpu);
@@ -1462,7 +1471,7 @@ static xPdpDasm pdp11_dasm_tab[] = {
 //	{0xfe00, 0x7000, 0, "mul r:6, :d"},
 //	{0xfe00, 0x7200, 0, "div r:6, :d"},
 	{0xfe00, 0x7800, 0, "xor r:6, :d"},
-	{0xfe00, 0x7e00, 0, "sob r:6, :j"},		// :j = lower 6 bits, back relative adr
+	{0xfe00, 0x7e00, OF_SKIPABLE, "sob r:6, :j"},		// :j = lower 6 bits, back relative adr
 	{0xff00, 0x8000, 0, "bpl :e"},
 	{0xff00, 0x8100, 0, "bmi :e"},
 	{0xff00, 0x8200, 0, "bhi :e"},
@@ -1498,7 +1507,6 @@ static xPdpDasm pdp11_dasm_tab[] = {
 
 static char mnbuf[128];
 static char num7[8] = "01234567";
-// static char numF[16] = "0123456789ABCDEF";
 
 char* put_addressation(char* dst, unsigned short type) {
 	switch ((type >> 3) & 7) {
@@ -1535,9 +1543,11 @@ char* put_addressation(char* dst, unsigned short type) {
 			break;
 		case 7: *(dst++) = '@';				// @E(Rn)
 		case 6: if ((type & 7) == 7) {			// E(Rn)
+				*(dst++) = '(';
 				*(dst++) = '#';
 				*(dst++) = ':';			// (E + PC)
 				*(dst++) = '6';
+				*(dst++) = ')';
 			} else {
 				// *(dst++) = '#';
 				*(dst++) = ':';			// :8 will be replaced with next word

@@ -73,8 +73,8 @@ SDCard* sdcCreate();
 void sdcDestroy(SDCard*);
 void sdcReset(SDCard*);
 
-unsigned char sdcRead(SDCard*);
-void sdcWrite(SDCard*,unsigned char);
+int sdcRead(SDCard*);
+void sdcWrite(SDCard*, int);
 
 void sdcSetImage(SDCard*,const char*);
 void sdcSetCapacity(SDCard*,int);

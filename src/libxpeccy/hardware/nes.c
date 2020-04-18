@@ -6,25 +6,25 @@
 // NOTE: Cartridges have potentially 255+ mappers
 
 // PPU reads byte (except palette)
-unsigned char nes_ppu_ext_rd(int adr, void* ptr) {
+int nes_ppu_ext_rd(int adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	unsigned char res;
+	int res = -1;
 	adr = nes_nt_vadr(comp->slot, adr);
 	sltChecker(comp->slot, adr);
 	if (adr & 0x2000) {	// nametable
-		res = comp->vid->ram[adr];
+		res = comp->vid->ram[adr] & 0xff;
 	} else {
 		if (comp->slot->chrrom) {
-			res = sltRead(comp->slot, SLT_CHR, adr);
+			res = sltRead(comp->slot, SLT_CHR, adr) & 0xff;
 		} else {
-			res = comp->vid->ram[adr];
+			res = comp->vid->ram[adr] & 0xff;
 		}
 	}
 	return res;
 }
 
 // PPU writes byte (except palette)
-void nes_ppu_ext_wr(int adr, unsigned char val, void* ptr) {
+void nes_ppu_ext_wr(int adr, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	adr = nes_nt_vadr(comp->slot, adr);
 	sltChecker(comp->slot, adr);
@@ -34,13 +34,13 @@ void nes_ppu_ext_wr(int adr, unsigned char val, void* ptr) {
 		if (comp->slot->chrrom) {
 			// CHR-RAM?
 		} else {
-			comp->vid->ram[adr & 0x1fff] = val;
+			comp->vid->ram[adr & 0x1fff] = val & 0xff;
 		}
 	}
 }
 
 // APU reads byte (DMC channel)
-unsigned char nes_apu_ext_rd(unsigned short adr, void* ptr) {
+int nes_apu_ext_rd(int adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	return comp->hw->mrd(comp, adr, 0);
 }
@@ -57,11 +57,11 @@ void nesReset(Computer* comp) {
 	vidSetMode(comp->vid, VID_NES);
 }
 
-unsigned char nesMMrd(unsigned short adr, void* data) {
+int nesMMrd(int adr, void* data) {
 	Computer* comp = (Computer*)data;
 	nesAPU* apu = comp->nesapu;
 	unsigned char* mem = comp->mem->ramData;
-	unsigned char res = 0xff;
+	int res = -1;
 	adr &= 0x7fff;
 	switch(adr & 0xe000) {
 		case 0x0000:		// 0000..1fff : SRAM 2K + mirrors
@@ -108,13 +108,13 @@ unsigned char nesMMrd(unsigned short adr, void* data) {
 // 4000..4fff : IO block
 // 5000..5fff : ?
 // 6000..7fff : cartrige ram
-void nesMMwr(unsigned short adr, unsigned char val, void* data) {
+void nesMMwr(int adr, int val, void* data) {
 	Computer* comp = (Computer*)data;
 	nesAPU* apu = comp->nesapu;
 	adr &= 0x7fff;
 	switch (adr & 0xe000) {
 		case 0x0000:			// 0000..1fff : 2K SRAM + mirrors
-			comp->mem->ramData[adr & 0x7ff] = val;
+			comp->mem->ramData[adr & 0x7ff] = val & 0xff;
 			break;
 		case 0x2000:			// 2000..3fff : 8 PPU registers + mirrors
 			ppuWrite(comp->vid, adr & 7, val);
@@ -166,12 +166,12 @@ void nesMMwr(unsigned short adr, unsigned char val, void* data) {
 	}
 }
 
-unsigned char nesSLrd(unsigned short adr, void* data) {
+int nesSLrd(int adr, void* data) {
 	xCartridge* slot = (xCartridge*)data;
 	return sltRead(slot, SLT_PRG, adr);
 }
 
-void nesSLwr(unsigned short adr, unsigned char val, void* data) {
+void nesSLwr(int adr, int val, void* data) {
 	xCartridge* slot = (xCartridge*)data;
 	sltWrite(slot, SLT_PRG, adr, val);
 }
@@ -201,13 +201,13 @@ void nesSync(Computer* comp, int ns) {
 
 extern int res4;
 
-unsigned char nesMemRd(Computer* comp, unsigned short adr, int m1) {
+int nesMemRd(Computer* comp, int adr, int m1) {
 	vidSync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
 	res4 = comp->cpu->t;
 	return memRd(comp->mem, adr);
 }
 
-void nesMemWr(Computer* comp, unsigned short adr, unsigned char val) {
+void nesMemWr(Computer* comp, int adr, int val) {
 	vidSync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
 	res4 = comp->cpu->t;
 	memWr(comp->mem, adr, val);

@@ -40,8 +40,8 @@ typedef struct {
     int abs;
 } xAdr;
 
-typedef unsigned char(*extmrd)(unsigned short, void*);
-typedef void(*extmwr)(unsigned short, unsigned char, void*);
+typedef int(*extmrd)(int, void*);
+typedef void(*extmwr)(int, int, void*);
 
 typedef struct {
 	int type;			// type of page data
@@ -65,8 +65,8 @@ typedef struct {
 Memory* memCreate(void);
 void memDestroy(Memory*);
 
-unsigned char memRd(Memory*,unsigned short);
-void memWr(Memory*,unsigned short,unsigned char);
+int memRd(Memory*, int);
+void memWr(Memory*, int, int);
 
 void memSetSize(Memory*, int, int);
 void memSetBank(Memory* mem, int page, int type, int bank, int siz, extmrd rd, extmwr wr, void* data);

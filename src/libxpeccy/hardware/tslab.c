@@ -80,7 +80,7 @@ void tslUpdatePal(Computer* comp) {
 	}
 }
 
-unsigned char tslMRd(Computer* comp, unsigned short adr, int m1) {
+int tslMRd(Computer* comp, int adr, int m1) {
 	if (m1 && (comp->dif->type == DIF_BDI)) {
 		if (comp->dos && (adr > 0x4000) && (!comp->tsconf.vdos)) {
 			comp->dos = 0;
@@ -94,13 +94,13 @@ unsigned char tslMRd(Computer* comp, unsigned short adr, int m1) {
 	return memRd(comp->mem,adr);
 }
 
-void tslMWr(Computer* comp, unsigned short adr, unsigned char val) {
+void tslMWr(Computer* comp, int adr, int val) {
 	if ((comp->tsconf.flag & 0x10) && ((adr & 0xf000) == comp->tsconf.tsMapAdr)) {
 		if ((adr & 0xe00) == 0x000) {				// palete
-			comp->vid->tsconf.cram[adr & 0x1ff] = val;
+			comp->vid->tsconf.cram[adr & 0x1ff] = val & 0xff;
 			tslUpdatePal(comp);
 		} else if ((adr & 0xe00) == 0x200) {			// sprites
-			comp->vid->tsconf.sfile[adr & 0x1ff] = val;
+			comp->vid->tsconf.sfile[adr & 0x1ff] = val & 0xff;
 		}
 	}
 	memWr(comp->mem,adr,val);
@@ -108,8 +108,8 @@ void tslMWr(Computer* comp, unsigned short adr, unsigned char val) {
 
 // in
 
-unsigned char tsInFF(Computer* comp, unsigned short port) {			// dos
-	unsigned char res = 0xff;
+int tsInFF(Computer* comp, int port) {			// dos
+	int res = -1;
 	if (comp->dif->fdc->flp->virt) {
 		comp->tsconf.vdos = 1;
 		tslMapMem(comp);
@@ -119,8 +119,8 @@ unsigned char tsInFF(Computer* comp, unsigned short port) {			// dos
 	return res;
 }
 
-unsigned char tsInBDI(Computer* comp, unsigned short port) {			// dos
-	unsigned char res = 0xff;
+int tsInBDI(Computer* comp, int port) {			// dos
+	int res = -1;
 	if (comp->tsconf.vdos) {
 		comp->tsconf.vdos = 0;
 		tslMapMem(comp);
@@ -130,26 +130,26 @@ unsigned char tsInBDI(Computer* comp, unsigned short port) {			// dos
 	return res;
 }
 
-unsigned char tsIn57(Computer* comp, unsigned short port) {
-	unsigned char res = sdcRead(comp->sdc);
+int tsIn57(Computer* comp, int port) {
+	int res = sdcRead(comp->sdc);
 //	printf("in #57(%.4X) = %.2X\n",port,res);
 	return res;
 }
 
-unsigned char tsIn77(Computer* comp, unsigned short port) {
-	unsigned char res = 0x00;
+int tsIn77(Computer* comp, int port) {
+	int res = 0;
 	if (comp->sdc->image != NULL) res |= 0x01;	// inserted
 	if (comp->sdc->lock) res |= 0x02;		// wrprt
 	return res;
 }
 
-unsigned char tsInBFF7(Computer* comp, unsigned short port) {
+int tsInBFF7(Computer* comp, int port) {
 	return (comp->pEFF7 & 0x80) ? cmsRd(comp) : 0xff;
 }
 
 // out
 
-void tsOutBDI(Computer* comp, unsigned short port, unsigned char val) {		// dos
+void tsOutBDI(Computer* comp, int port, int val) {		// dos
 	if (comp->tsconf.vdos) {
 		comp->tsconf.vdos = 0;
 		tslMapMem(comp);
@@ -163,7 +163,7 @@ void tsOutBDI(Computer* comp, unsigned short port, unsigned char val) {		// dos
 	}
 }
 
-void tsOutFF(Computer* comp, unsigned short port, unsigned char val) {		// dos
+void tsOutFF(Computer* comp, int port, int val) {		// dos
 	comp->dif->fdc->flp = comp->dif->fdc->flop[val & 3];
 	if (comp->dif->fdc->flp->virt) {
 		comp->tsconf.vdos = 1;
@@ -175,7 +175,7 @@ void tsOutFF(Computer* comp, unsigned short port, unsigned char val) {		// dos
 	}
 }
 
-void tsOutFE(Computer* comp, unsigned short port, unsigned char val) {
+void tsOutFE(Computer* comp, int port, int val) {
 	comp->vid->brdcol = 0xf0 | (val & 7);
 	comp->vid->nextbrd = comp->vid->brdcol;
 	comp->beep->lev = (val & 0x10) ? 1 : 0;
@@ -188,19 +188,19 @@ void tsOutFB(Computer* comp, unsigned short port, unsigned char val) {
 }
 */
 
-void tsOut57(Computer* comp, unsigned short port, unsigned char val) {
+void tsOut57(Computer* comp, int port, int val) {
 //	printf("out #57(%.4X),%.2X\n",port,val);
 	sdcWrite(comp->sdc,val);
 }
 
-void tsOut77(Computer* comp, unsigned short port, unsigned char val) {
+void tsOut77(Computer* comp, int port, int val) {
 	comp->sdc->on = val & 1;
 	comp->sdc->cs = (val & 2) ? 1 : 0;
 }
 
-void tsOut7FFD(Computer* comp, unsigned short port, unsigned char val) {
+void tsOut7FFD(Computer* comp, int port, int val) {
 	if (comp->p7FFD & 0x20) return;
-	comp->p7FFD = val;
+	comp->p7FFD = val & 0xff;
 	comp->rom = (val & 0x10) ? 1 : 0;
 	int num = (val & 7) | ((val & 0xc0) >> 3);	// page (512K)
 	if (comp->tsconf.p21af & 0x80) {				// 1x : !a13
@@ -213,76 +213,78 @@ void tsOut7FFD(Computer* comp, unsigned short port, unsigned char val) {
 	tslMapMem(comp);
 }
 
-void tsOutBFF7(Computer* comp, unsigned short port, unsigned char val) {
-	if (comp->pEFF7 & 0x80) cmsWr(comp,val);
+void tsOutBFF7(Computer* comp, int port, int val) {
+	if (comp->pEFF7 & 0x80)
+		cmsWr(comp,val);
 }
 
-void tsOutDFF7(Computer* comp, unsigned short port, unsigned char val) {
-	if (comp->pEFF7 & 0x80) comp->cmos.adr = val;
+void tsOutDFF7(Computer* comp, int port, int val) {
+	if (comp->pEFF7 & 0x80)
+		comp->cmos.adr = val & 0xff;
 }
 
-void tsOutEFF7(Computer* comp, unsigned short port, unsigned char val) {
-	comp->pEFF7 = val;
+void tsOutEFF7(Computer* comp, int port, int val) {
+	comp->pEFF7 = val & 0xff;
 }
 
 // xxaf
 
-unsigned char tsIn00AF(Computer* comp, unsigned short port) {
-	unsigned char res = comp->tsconf.pwr_up ? 0x40 : 0x00;	// b6: PWR_UP (1st run)
+int tsIn00AF(Computer* comp, int port) {
+	int res = comp->tsconf.pwr_up ? 0x40 : 0x00;	// b6: PWR_UP (1st run)
 	comp->tsconf.pwr_up = 0;
 	res |= 3;						// 11 : 5bit VDAC
 	return res;
 }
 
-void tsOut00AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.p00af = val;}
-void tsOut01AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.vidPage = val;}
-void tsOut02AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.soxl = val;}
-void tsOut03AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.soxh = val & 1;}
+void tsOut00AF(Computer* comp, int port, int val) {comp->vid->tsconf.p00af = val & 0xff;}
+void tsOut01AF(Computer* comp, int port, int val) {comp->vid->tsconf.vidPage = val & 0xff;}
+void tsOut02AF(Computer* comp, int port, int val) {comp->vid->tsconf.soxl = val & 0xff;}
+void tsOut03AF(Computer* comp, int port, int val) {comp->vid->tsconf.soxh = val & 1;}
 
-void tsOut04AF(Computer* comp, unsigned short port, unsigned char val) {
-	comp->vid->tsconf.soyl = val;
+void tsOut04AF(Computer* comp, int port, int val) {
+	comp->vid->tsconf.soyl = val & 0xff;
 	comp->vid->tsconf.scrLine = 0;
 }
 
-void tsOut05AF(Computer* comp, unsigned short port, unsigned char val) {
+void tsOut05AF(Computer* comp, int port, int val) {
 	comp->vid->tsconf.soyh = val & 1;
 	comp->vid->tsconf.scrLine = 0;
 }
 
-void tsOut06AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.tconfig = val;}
-void tsOut07AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.p07af = val;}
-void tsOut0FAF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->nextbrd = val;}
+void tsOut06AF(Computer* comp, int port, int val) {comp->vid->tsconf.tconfig = val & 0xff;}
+void tsOut07AF(Computer* comp, int port, int val) {comp->vid->tsconf.p07af = val & 0xff;}
+void tsOut0FAF(Computer* comp, int port, int val) {comp->vid->nextbrd = val & 0xff;}
 
-void tsOut10AF(Computer* comp, unsigned short port, unsigned char val) {
-	comp->tsconf.Page0 = val;
+void tsOut10AF(Computer* comp, int port, int val) {
+	comp->tsconf.Page0 = val & 0xff;
 	tslMapMem(comp);
 }
 
-void tsOut11AF(Computer* comp, unsigned short port, unsigned char val) {memSetBank(comp->mem,0x40,MEM_RAM,val, MEM_16K,NULL,NULL,NULL);}
-void tsOut12AF(Computer* comp, unsigned short port, unsigned char val) {memSetBank(comp->mem,0x80,MEM_RAM,val, MEM_16K,NULL,NULL,NULL);}
-void tsOut13AF(Computer* comp, unsigned short port, unsigned char val) {memSetBank(comp->mem,0xc0,MEM_RAM,val, MEM_16K,NULL,NULL,NULL);}
+void tsOut11AF(Computer* comp, int port, int val) {memSetBank(comp->mem,0x40,MEM_RAM,val, MEM_16K,NULL,NULL,NULL);}
+void tsOut12AF(Computer* comp, int port, int val) {memSetBank(comp->mem,0x80,MEM_RAM,val, MEM_16K,NULL,NULL,NULL);}
+void tsOut13AF(Computer* comp, int port, int val) {memSetBank(comp->mem,0xc0,MEM_RAM,val, MEM_16K,NULL,NULL,NULL);}
 
-unsigned char tsIn12AF(Computer* comp, unsigned short port) {return comp->mem->map[2].num;}
-unsigned char tsIn13AF(Computer* comp, unsigned short port) {return comp->mem->map[3].num;}
+int tsIn12AF(Computer* comp, int port) {return comp->mem->map[2].num;}
+int tsIn13AF(Computer* comp, int port) {return comp->mem->map[3].num;}
 
-void tsOut15AF(Computer* comp, unsigned short port, unsigned char val) {
+void tsOut15AF(Computer* comp, int port, int val) {
 	comp->tsconf.flag = val & 0x10;		// FM_EN
-	comp->tsconf.tsMapAdr = ((val & 0x0f) << 12);
+	comp->tsconf.tsMapAdr = ((val & 0x0f) << 12) & 0xffff;
 }
 
-void tsOut16AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.TMPage = val;}
-void tsOut17AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.T0GPage = val & 0xf8;}
-void tsOut18AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.T1GPage = val & 0xf8;}
-void tsOut19AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.SGPage = val & 0xf8;}
+void tsOut16AF(Computer* comp, int port, int val) {comp->vid->tsconf.TMPage = val & 0xff;}
+void tsOut17AF(Computer* comp, int port, int val) {comp->vid->tsconf.T0GPage = val & 0xf8;}
+void tsOut18AF(Computer* comp, int port, int val) {comp->vid->tsconf.T1GPage = val & 0xf8;}
+void tsOut19AF(Computer* comp, int port, int val) {comp->vid->tsconf.SGPage = val & 0xf8;}
 
-void tsOut1AAF(Computer* comp, unsigned short port, unsigned char val) {comp->dma.src.l = val;}
-void tsOut1BAF(Computer* comp, unsigned short port, unsigned char val) {comp->dma.src.h = val;}
-void tsOut1CAF(Computer* comp, unsigned short port, unsigned char val) {comp->dma.src.x = val;}
-void tsOut1DAF(Computer* comp, unsigned short port, unsigned char val) {comp->dma.dst.l = val;}
-void tsOut1EAF(Computer* comp, unsigned short port, unsigned char val) {comp->dma.dst.h = val;}
-void tsOut1FAF(Computer* comp, unsigned short port, unsigned char val) {comp->dma.dst.x = val;}
+void tsOut1AAF(Computer* comp, int port, int val) {comp->dma.src.l = val & 0xff;}
+void tsOut1BAF(Computer* comp, int port, int val) {comp->dma.src.h = val & 0xff;}
+void tsOut1CAF(Computer* comp, int port, int val) {comp->dma.src.x = val & 0xff;}
+void tsOut1DAF(Computer* comp, int port, int val) {comp->dma.dst.l = val & 0xff;}
+void tsOut1EAF(Computer* comp, int port, int val) {comp->dma.dst.h = val & 0xff;}
+void tsOut1FAF(Computer* comp, int port, int val) {comp->dma.dst.x = val & 0xff;}
 
-void tsOut20AF(Computer* comp, unsigned short port, unsigned char val) {
+void tsOut20AF(Computer* comp, int port, int val) {
 	switch (val & 3) {
 		case 0: compSetTurbo(comp,1); break;
 		case 1: compSetTurbo(comp,2); break;
@@ -291,37 +293,37 @@ void tsOut20AF(Computer* comp, unsigned short port, unsigned char val) {
 	}
 }
 
-void tsOut21AF(Computer* comp, unsigned short port, unsigned char val) {
-	comp->tsconf.p21af = val;
+void tsOut21AF(Computer* comp, int port, int val) {
+	comp->tsconf.p21af = val & 0xff;
 	comp->p7FFD &= ~0x10;
 	if (val & 1) comp->p7FFD |= 0x10;
 	tslMapMem(comp);
 }
 
-void tsOut22AF(Computer* comp, unsigned short port, unsigned char val) {
+void tsOut22AF(Computer* comp, int port, int val) {
 	comp->vid->tsconf.hsint = (val << 1);		// base value, real pos = base + shift by line rendering
 	comp->vid->intp.x = (val << 1);
 }
 
-void tsOut23AF(Computer* comp, unsigned short port, unsigned char val) {
-	comp->vid->tsconf.ilinl = val;
+void tsOut23AF(Computer* comp, int port, int val) {
+	comp->vid->tsconf.ilinl = val & 0xff;
 	comp->vid->intp.y = comp->vid->tsconf.intLine;
 }
 
-void tsOut24AF(Computer* comp, unsigned short port, unsigned char val) {
-	comp->vid->tsconf.ilinh = val;
+void tsOut24AF(Computer* comp, int port, int val) {
+	comp->vid->tsconf.ilinh = val & 0xff;
 	comp->vid->intp.y = comp->vid->tsconf.intLine;
 }
 
-void tsOut26AF(Computer* comp, unsigned short port, unsigned char val) {
-	comp->dma.len = val;
+void tsOut26AF(Computer* comp, int port, int val) {
+	comp->dma.len = val & 0xff;
 }
 
-unsigned char tsIn27AF(Computer* comp, unsigned short port) {return 0x00;}
+int tsIn27AF(Computer* comp, int port) {return 0x00;}
 
-void tsOut27AF(Computer* comp, unsigned short port, unsigned char val) {
+void tsOut27AF(Computer* comp, int port, int val) {
 	int cnt, cnt2;
-	unsigned char tmp;
+	int tmp;
 	unsigned char* ptr = NULL;
 	int sadr = (comp->dma.src.x << 14) | ((comp->dma.src.h & 0x3f) << 8) | (comp->dma.src.l & 0xfe);
 	int dadr = (comp->dma.dst.x << 14) | ((comp->dma.dst.h & 0x3f) << 8) | (comp->dma.dst.l & 0xfe);
@@ -342,7 +344,7 @@ void tsOut27AF(Computer* comp, unsigned short port, unsigned char val) {
 				for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
 					tmp = comp->mem->ramData[sadr + cnt2];
 					if (val & 0x08) {
-						if (tmp != 0) comp->mem->ramData[dadr + cnt2] = tmp;
+						if (tmp != 0) comp->mem->ramData[dadr + cnt2] = tmp & 0xff;
 					} else {
 						if (tmp & 0xf0) {
 							comp->mem->ramData[dadr + cnt2] &= 0x0f;
@@ -363,7 +365,7 @@ void tsOut27AF(Computer* comp, unsigned short port, unsigned char val) {
 //			printf("spi->ram\t%.2X:%.4X,%.2X:%.3X\n",comp->dma.dst.x,dadr & 0x3fff,comp->dma.num,lcnt);
 			for (cnt = 0; cnt <= comp->dma.num; cnt++) {
 				for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
-					comp->mem->ramData[dadr + cnt2] = sdcRead(comp->sdc);
+					comp->mem->ramData[dadr + cnt2] = sdcRead(comp->sdc) & 0xff;
 				}
 				dadr += (val & 0x10) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;
 			}
@@ -380,7 +382,7 @@ void tsOut27AF(Computer* comp, unsigned short port, unsigned char val) {
 			for (cnt = 0; cnt <= comp->dma.num; cnt++) {
 				for (cnt2 = 0; cnt2 < lcnt; cnt2++) {
 					if (!ideIn(comp->ide, 0x00, &tmp, 1)) tmp = 0xff;
-					comp->mem->ramData[dadr + cnt2] = tmp;
+					comp->mem->ramData[dadr + cnt2] = tmp & 0xff;
 				}
 				dadr += (val & 0x10) ? ((val & 0x08) ? 0x200 : 0x100) : lcnt;
 			}
@@ -424,11 +426,11 @@ void tsOut27AF(Computer* comp, unsigned short port, unsigned char val) {
 		comp->vid->intDMA = 1;
 }
 
-void tsOut28AF(Computer* comp, unsigned short port, unsigned char val) {
-	comp->dma.num = val;
+void tsOut28AF(Computer* comp, int port, int val) {
+	comp->dma.num = val & 0xff;
 }
 
-void tsOut29AF(Computer* comp, unsigned short port, unsigned char val) {
+void tsOut29AF(Computer* comp, int port, int val) {
 	// comp->tsconf.FDDVirt = val;
 	comp->dif->fdc->flop[0]->virt = (val & 0x01) ? 1 : 0;
 	comp->dif->fdc->flop[1]->virt = (val & 0x02) ? 1 : 0;
@@ -436,20 +438,20 @@ void tsOut29AF(Computer* comp, unsigned short port, unsigned char val) {
 	comp->dif->fdc->flop[3]->virt = (val & 0x08) ? 1 : 0;
 }
 
-void tsOut2AAF(Computer* comp, unsigned short port, unsigned char val) {
-	comp->vid->inten = val;
+void tsOut2AAF(Computer* comp, int port, int val) {
+	comp->vid->inten = val & 0xff;
 	if (~val & 2) comp->vid->intLINE = 0;
 	if (~val & 4) comp->vid->intDMA = 0;
 }
 
-void tsOut40AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.t0xl = val;}
-void tsOut41AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.t0xh = val & 1;}
-void tsOut42AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.t0yl = val;}
-void tsOut43AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.t0yh = val & 1;}
-void tsOut44AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.t1xl = val;}
-void tsOut45AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.t1xh = val & 1;}
-void tsOut46AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.t1yl = val;}
-void tsOut47AF(Computer* comp, unsigned short port, unsigned char val) {comp->vid->tsconf.t1yh = val & 1;}
+void tsOut40AF(Computer* comp, int port, int val) {comp->vid->tsconf.t0xl = val & 0xff;}
+void tsOut41AF(Computer* comp, int port, int val) {comp->vid->tsconf.t0xh = val & 1;}
+void tsOut42AF(Computer* comp, int port, int val) {comp->vid->tsconf.t0yl = val & 0xff;}
+void tsOut43AF(Computer* comp, int port, int val) {comp->vid->tsconf.t0yh = val & 1;}
+void tsOut44AF(Computer* comp, int port, int val) {comp->vid->tsconf.t1xl = val & 0xff;}
+void tsOut45AF(Computer* comp, int port, int val) {comp->vid->tsconf.t1xh = val & 1;}
+void tsOut46AF(Computer* comp, int port, int val) {comp->vid->tsconf.t1yl = val & 0xff;}
+void tsOut47AF(Computer* comp, int port, int val) {comp->vid->tsconf.t1yh = val & 1;}
 
 // catch
 
@@ -526,13 +528,13 @@ static xPort tsPortMap[] = {
 	{0x0000,0x0000,2,2,2,NULL,	NULL},
 };
 
-void tslOut(Computer* comp,unsigned short port,unsigned char val,int dos) {
+void tslOut(Computer* comp, int port, int val, int dos) {
 	zx_dev_wr(comp, port, val, dos);
 	hwOut(tsPortMap, comp, port, val, dos);
 }
 
-unsigned char tslIn(Computer* comp,unsigned short port,int dos) {
-	unsigned char res = 0xff;
+int tslIn(Computer* comp, int port, int dos) {
+	int res = -1;
 	if (zx_dev_rd(comp, port, &res, dos)) return res;
 	res = hwIn(tsPortMap, comp, port, dos);
 	return  res;

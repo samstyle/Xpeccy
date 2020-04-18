@@ -88,11 +88,11 @@ HardWare* findHardware(const char* name) {
 	return hw;
 }
 
-unsigned char mbt;
+static int mbt;
 
 // mem
 
-unsigned char stdMRd(Computer* comp, unsigned short adr, int m1) {
+int stdMRd(Computer* comp, int adr, int m1) {
 	if (m1 && (comp->dif->type == DIF_BDI)) {
 		mbt = comp->mem->map[(adr >> 8) & 0xff].type;
 		if (comp->dos && (mbt == MEM_RAM)) {
@@ -104,17 +104,17 @@ unsigned char stdMRd(Computer* comp, unsigned short adr, int m1) {
 			comp->hw->mapMem(comp);
 		}
 	}
-	return memRd(comp->mem,adr);
+	return memRd(comp->mem, adr & 0xffff) & 0xff;
 }
 
-void stdMWr(Computer *comp, unsigned short adr, unsigned char val) {
+void stdMWr(Computer *comp, int adr, int val) {
 	memWr(comp->mem,adr,val);
 }
 
 // io
 
-unsigned char hwIn(xPort* ptab, Computer* comp, unsigned short port, int dos) {
-	unsigned char res = 0xff;
+int hwIn(xPort* ptab, Computer* comp, int port, int dos) {
+	int res = 0xff;
 	int idx = 0;
 	xPort* itm;
 	while (ptab[idx].mask != 0) {
@@ -133,7 +133,7 @@ unsigned char hwIn(xPort* ptab, Computer* comp, unsigned short port, int dos) {
 	return res;
 }
 
-void hwOut(xPort* ptab, Computer* comp, unsigned short port, unsigned char val, int dos) {
+void hwOut(xPort* ptab, Computer* comp, int port, int val, int dos) {
 	int idx = 0;
 	xPort* itm;
 	while (ptab[idx].mask != 0) {

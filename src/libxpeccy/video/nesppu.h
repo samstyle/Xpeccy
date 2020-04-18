@@ -67,8 +67,8 @@ void ppuLine(Video*);
 void ppuFram(Video*);
 
 // rd/wr ppu registers
-void ppuWrite(Video*, int, unsigned char);
-unsigned char ppuRead(Video*, int);
+void ppuWrite(Video*, int, int);
+int ppuRead(Video*, int);
 
 void ppuRenderBGLine(Video*, unsigned char*, unsigned short, int, unsigned short);
 int ppuRenderSpriteLine(Video*, int, unsigned char*, unsigned char*, unsigned short, int);

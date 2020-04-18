@@ -293,7 +293,7 @@ void compUpdateTimings(Computer*);
 
 // read-write cmos
 unsigned char cmsRd(Computer*);
-void cmsWr(Computer*,unsigned char);
+void cmsWr(Computer*, int);
 
 void rzxStop(Computer*);
 

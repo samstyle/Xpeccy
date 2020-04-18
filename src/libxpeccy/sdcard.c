@@ -99,9 +99,9 @@ void sdcWrSector(SDCard* sdc) {
 
 // io operations
 
-unsigned char sdcRead(SDCard* sdc) {
+int sdcRead(SDCard* sdc) {
 	if (!sdc->image || !sdc->on || sdc->cs) return 0xff;	// no image or OFF or !CS
-	unsigned char res = 0xff;
+	int res = -1;
 	if (sdc->respCnt > 0) {				// if have response
 		res = sdc->resp[sdc->respPos];
 //		printf("resp %.2X\n",res);
@@ -244,7 +244,7 @@ void sdcExec(SDCard* sdc) {
 	}
 }
 
-void sdcWrite(SDCard* sdc, unsigned char val) {
+void sdcWrite(SDCard* sdc, int val) {
 	if (!sdc->image || !sdc->on || sdc->cs) return;
 //	printf("SD wr %.2X\n",val);
 	if (sdc->state == SDC_WRITE) {
@@ -252,7 +252,7 @@ void sdcWrite(SDCard* sdc, unsigned char val) {
 			sdc->state = SDC_FREE;
 //			printf("CMD25 BREAK (%i)\n",sdc->argCnt);
 		} else {
-			sdc->buf.data[sdc->buf.pos] = val;
+			sdc->buf.data[sdc->buf.pos] = val & 0xff;
 			sdc->buf.pos++;
 			if (sdc->buf.pos > 514) {	// 0..514 = 515 bytes = {1token,512data,2crc}
 				if (sdc->lock) {
@@ -272,7 +272,7 @@ void sdcWrite(SDCard* sdc, unsigned char val) {
 			}
 		}
 	} else if (sdc->state == SDC_WAIT) {		// waiting for command arguments
-		sdc->arg[6 - sdc->argCnt] = val;
+		sdc->arg[6 - sdc->argCnt] = val & 0xff;
 		sdc->argCnt--;
 		if (sdc->argCnt == 0) {
 //			printf("SD exec: %.2X:%.2X:%.2X:%.2X:%.2X:%.2X\n",sdc->arg[0],sdc->arg[1],sdc->arg[2],sdc->arg[3],sdc->arg[4],sdc->arg[5]);
@@ -282,7 +282,7 @@ void sdcWrite(SDCard* sdc, unsigned char val) {
 		}
 	} else if ((sdc->state == SDC_FREE) || (val == (CMD12 | 0x40))) {	// waiting for command | block operation break command
 		if ((val & 0xc0) == 0x40) {			// %01xxxxxx accepted as a command token
-			sdc->arg[0] = val;
+			sdc->arg[0] = val & 0xff;
 			sdc->argCnt = 5;
 			sdc->state = SDC_WAIT;
 		}

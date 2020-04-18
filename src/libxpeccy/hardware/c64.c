@@ -24,7 +24,7 @@
 // bits 00..13:vic ADR bus
 // bits 14..15:cia2 reg #00 bit 0,1 inverted
 
-unsigned char c64_vic_mrd(int adr, void* ptr) {
+int c64_vic_mrd(int adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	adr &= 0x3fff;
 	adr |= ((comp->vid->vbank & 3) << 14);
@@ -34,9 +34,9 @@ unsigned char c64_vic_mrd(int adr, void* ptr) {
 // rom
 // writing to rom will write to ram under rom placed above ram...
 
-unsigned char c64_rom_rd(unsigned short adr, void* data) {
+int c64_rom_rd(int adr, void* data) {
 	Computer* comp = (Computer*)data;
-	unsigned char res = 0xff;
+	int res = -1;
 	if (adr & 0x4000) {		// e000..ffff:kernal (1110..1111)
 		res = comp->mem->romData[0x2000 + (adr & 0x1fff)];	// kernal (8K page 1)
 	} else {			// a000..bfff:basic (1010..1011)
@@ -45,46 +45,45 @@ unsigned char c64_rom_rd(unsigned short adr, void* data) {
 	return res;
 }
 
-void c64_rom_wr(unsigned short adr, unsigned char val, void* data) {
+void c64_rom_wr(int adr, int val, void* data) {
 	Computer* comp = (Computer*)data;
-	comp->mem->ramData[adr & 0xffff] = val;
+	comp->mem->ramData[adr & 0xffff] = val & 0xff;
 }
 
 // d000..d3ff	vicII (0x3f registers + mirrors)
 
-unsigned char vic_rd(Video*, unsigned short);
-void vic_wr(Video*, unsigned short, unsigned char);
+unsigned char vic_rd(Video*, int);
+void vic_wr(Video*, int, int);
 
-unsigned char c64_vic_rd(unsigned short adr, void* data) {
+int c64_vic_rd(int adr, void* data) {
 	Computer* comp = (Computer*)data;
 	return vic_rd(comp->vid, adr);
 }
 
-void c64_vic_wr(unsigned short adr, unsigned char val, void* data) {
-//	printf("vic wr %.4X,%.2X\n",adr,val);
+void c64_vic_wr(int adr, int val, void* data) {
 	Computer* comp = (Computer*)data;
 	vic_wr(comp->vid, adr, val);
 }
 
 // d400..d7ff	sid
 
-unsigned char c64_sid_rd(unsigned short adr, void* data) {
+int c64_sid_rd(int adr, void* data) {
 	return 0xff;
 }
 
-void c64_sid_wr(unsigned short adr, unsigned char val, void* data) {
+void c64_sid_wr(int adr, int val, void* data) {
 
 }
 
 // d800..dbff	palette (screen attributes 40x25 = 1000 bytes)
 // vid->colram
 
-unsigned char c64_pal_rd(unsigned short adr, void* data) {
+int c64_pal_rd(int adr, void* data) {
 	Computer* comp = (Computer*)data;
 	return comp->vid->colram[adr & 0x3ff];
 }
 
-void c64_pal_wr(unsigned short adr, unsigned char val, void* data) {
+void c64_pal_wr(int adr, int val, void* data) {
 	Computer* comp = (Computer*)data;
 	comp->vid->colram[adr & 0x3ff] = val;
 }
@@ -95,7 +94,7 @@ void c64_pal_wr(unsigned short adr, unsigned char val, void* data) {
 
 extern unsigned char toBCD(unsigned char);
 
-unsigned char c64_cia_rd(c64cia* cia, unsigned char adr) {
+int c64_cia_rd(c64cia* cia, int adr) {
 	unsigned char res = 0xff;
 	switch (adr & 0x0f) {
 		case 0x02: res = cia->portA_mask; break;
@@ -124,38 +123,38 @@ unsigned char c64_cia_rd(c64cia* cia, unsigned char adr) {
 	return res;
 }
 
-void c64_cia_wr(c64cia* cia, unsigned char adr, unsigned char val) {
+void c64_cia_wr(c64cia* cia, int adr, int val) {
 	switch (adr & 0x0f) {
-		case 0x02: cia->portA_mask = val; break;
-		case 0x03: cia->portB_mask = val; break;
-		case 0x04: cia->timerA.inil = val; break;
+		case 0x02: cia->portA_mask = val & 0xff; break;
+		case 0x03: cia->portB_mask = val & 0xff; break;
+		case 0x04: cia->timerA.inil = val & 0xff; break;
 		case 0x05:
-			cia->timerA.inih = val;
+			cia->timerA.inih = val & 0xff;
 			if (!(cia->timerA.flags & CIA_CR_START))
 				cia->timerA.value = cia->timerA.inival;
 			break;
-		case 0x06: cia->timerB.inil = val; break;
+		case 0x06: cia->timerB.inil = val & 0xff; break;
 		case 0x07:
 			cia->timerB.inih = val;
 			if (!(cia->timerB.flags & CIA_CR_START))
 				cia->timerB.value = cia->timerB.inival;
 			break;
-		case 0x08: if (cia->timerB.flags & 0x80) {cia->alarm.tenth = val;} else {cia->time.tenth = val;} break;
-		case 0x09: if (cia->timerB.flags & 0x80) {cia->alarm.sec = val;} else {cia->time.sec = val;} break;
-		case 0x0a: if (cia->timerB.flags & 0x80) {cia->alarm.min = val;} else {cia->time.min = val;} break;
-		case 0x0b: if (cia->timerB.flags & 0x80) {cia->alarm.hour = val;} else {cia->time.hour = val;} break;
-		case 0x0c: cia->ssr = val; break;
+		case 0x08: if (cia->timerB.flags & 0x80) {cia->alarm.tenth = val & 0xff;} else {cia->time.tenth = val & 0xff;} break;
+		case 0x09: if (cia->timerB.flags & 0x80) {cia->alarm.sec = val & 0xff;} else {cia->time.sec = val & 0xff;} break;
+		case 0x0a: if (cia->timerB.flags & 0x80) {cia->alarm.min = val & 0xff;} else {cia->time.min = val & 0xff;} break;
+		case 0x0b: if (cia->timerB.flags & 0x80) {cia->alarm.hour = val & 0xff;} else {cia->time.hour = val & 0xff;} break;
+		case 0x0c: cia->ssr = val & 0xff; break;
 		case 0x0d:
 			if (val & 0x80)
 				cia->inten |= (val & 0x7f);		// 1 - set state bits 0..6 where val bits is 1
 			else
 				cia->inten &= ~val;			// 0 - same but reset bits 0..6
 			break;
-		case 0x0e: cia->timerA.flags = val;
+		case 0x0e: cia->timerA.flags = val & 0xff;
 			if (val & CIA_CR_RELOAD)
 				cia->timerA.value = cia->timerA.inival;
 			break;
-		case 0x0f: cia->timerB.flags = val;
+		case 0x0f: cia->timerB.flags = val & 0xff;
 			if (val & CIA_CR_RELOAD)
 				cia->timerB.value = cia->timerB.inival;
 			break;
@@ -164,9 +163,9 @@ void c64_cia_wr(c64cia* cia, unsigned char adr, unsigned char val) {
 
 // dc00..dcff	cia1 (0x10 registers + mirrors)
 
-unsigned char c64_cia1_rd(unsigned short adr, void* data) {
+int c64_cia1_rd(int adr, void* data) {
 	Computer* comp = (Computer*)data;
-	unsigned char res = 0xff;
+	int res = -1;
 	int idx;
 	int row;
 	adr &= 0x0f;
@@ -193,13 +192,14 @@ unsigned char c64_cia1_rd(unsigned short adr, void* data) {
 	return res;
 }
 
-void c64_cia1_wr(unsigned short adr, unsigned char val, void* data) {
+void c64_cia1_wr(int adr, int val, void* data) {
 	Computer* comp = (Computer*)data;
 	adr &= 0x0f;
-	comp->c64.cia1.reg[adr] = val;
+	comp->c64.cia1.reg[adr] = val & 0xff;
 	//printf("cia1 wr %.2X,%.2X\n",adr,val);
 	switch (adr) {
-		case 0x00: comp->c64.keyrow = val; break;
+		case 0x00: comp->c64.keyrow = val & 0xff;
+			break;
 		case 0x01:			// no write to port b?
 			break;
 		default:
@@ -210,9 +210,9 @@ void c64_cia1_wr(unsigned short adr, unsigned char val, void* data) {
 
 // dd00..ddff	cia2 (0x10 registers + mirrors)
 
-unsigned char c64_cia2_rd(unsigned short adr, void* data) {
+int c64_cia2_rd(int adr, void* data) {
 	Computer* comp = (Computer*)data;
-	unsigned char res = 0xff;
+	int res = 0xff;
 	adr &= 0x0f;
 	switch (adr) {
 		case 0x00:
@@ -230,7 +230,7 @@ unsigned char c64_cia2_rd(unsigned short adr, void* data) {
 	return res;
 }
 
-void c64_cia2_wr(unsigned short adr, unsigned char val, void* data) {
+void c64_cia2_wr(int adr, int val, void* data) {
 	Computer* comp = (Computer*)data;
 	adr &= 0x0f;
 	comp->c64.cia2.reg[adr] = val;
@@ -251,27 +251,27 @@ void c64_cia2_wr(unsigned short adr, unsigned char val, void* data) {
 
 // de00..deff	io1
 
-unsigned char c64_io1_rd(unsigned short adr, void* data) {
-	return 0xff;
+int c64_io1_rd(int adr, void* data) {
+	return -1;
 }
 
-void c64_io1_wr(unsigned short adr, unsigned char val, void* data) {
+void c64_io1_wr(int adr, int val, void* data) {
 
 }
 
 // df00..dfff	io2
 
-unsigned char c64_io2_rd(unsigned short adr, void* data) {
-	return 0xff;
+int c64_io2_rd(int adr, void* data) {
+	return -1;
 }
 
-void c64_io2_wr(unsigned short adr, unsigned char val, void* data) {
+void c64_io2_wr(int adr, int val, void* data) {
 
 }
 
 // char rom
 
-unsigned char c64_chrd(unsigned short adr, void* data) {
+int c64_chrd(int adr, void* data) {
 	Computer* comp = (Computer*)data;
 	return comp->vid->font[adr & 0x7ff];
 }
@@ -335,8 +335,8 @@ void c64_reset(Computer* comp) {
 	vidSetMode(comp->vid, VID_C64_TEXT);
 }
 
-unsigned char c64_mrd(Computer* comp, unsigned short adr, int m1) {
-	unsigned char res = 0xff;
+int c64_mrd(Computer* comp, int adr, int m1) {
+	int res = -1;
 	switch (adr) {
 		case 0x0000:
 			res = comp->c64.reg00;
@@ -357,10 +357,10 @@ unsigned char c64_mrd(Computer* comp, unsigned short adr, int m1) {
 // b4		0:one of datasette buttons pressed (play,rec,rew,ffwd), 1:no buttons
 // b5		wr:datasette motor control (1:off, 0:on)
 
-void c64_mwr(Computer* comp, unsigned short adr, unsigned char val) {
+void c64_mwr(Computer* comp, int adr, int val) {
 	switch (adr) {
 		case 0x0000:
-			comp->c64.reg00 = val;
+			comp->c64.reg00 = val & 0xff;
 			break;
 		case 0x0001:
 			comp->c64.reg01 &= ~comp->c64.reg00;			// reset output bits in R0

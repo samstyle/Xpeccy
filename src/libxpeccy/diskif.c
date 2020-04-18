@@ -6,8 +6,8 @@
 struct DiskHW {
 	const int id;
 	void(*reset)(struct DiskIF*);
-	int(*in)(struct DiskIF*,int,unsigned char*,int);
-	int(*out)(struct DiskIF*,int,unsigned char,int);
+	int(*in)(struct DiskIF*,int,int*,int);
+	int(*out)(struct DiskIF*,int,int,int);
 	void(*sync)(struct DiskIF*,int);
 };
 
@@ -16,8 +16,8 @@ int fdcFlag = 0;
 // dummy (none)
 
 void dumReset(DiskIF* dif) {}
-int dumIn(DiskIF* dif, int port, unsigned char* res,int dos) {return 0;}
-int dumOut(DiskIF* dif, int port, unsigned char val,int dos) {return 0;}
+int dumIn(DiskIF* dif, int port, int* res,int dos) {return 0;}
+int dumOut(DiskIF* dif, int port, int val,int dos) {return 0;}
 void dumSync(DiskIF* dif, int ns) {}
 
 // overall
@@ -61,7 +61,7 @@ int bdiGetPort(int port) {
 	return res;
 }
 
-int bdiIn(DiskIF* dif, int port, unsigned char* res, int dos) {
+int bdiIn(DiskIF* dif, int port, int* res, int dos) {
 	if (!dos) return 0;
 	port = bdiGetPort(port);
 //	printf("in BDI port %.2X\n",port);
@@ -75,7 +75,7 @@ int bdiIn(DiskIF* dif, int port, unsigned char* res, int dos) {
 	return 1;
 }
 
-int bdiOut(DiskIF* dif, int port, unsigned char val, int dos) {
+int bdiOut(DiskIF* dif, int port, int val, int dos) {
 	if (!dos) return 0;
 	port = bdiGetPort(port);
 //	printf("out BDI port %.2X,%.2X\n",port,val);
@@ -115,7 +115,7 @@ int pdosGetPort(int p) {
 	return port;
 }
 
-int pdosIn(DiskIF* dif, int port, unsigned char* res, int dos) {
+int pdosIn(DiskIF* dif, int port, int* res, int dos) {
 	port = pdosGetPort(port);
 	if (port < 0) return 0;
 //	printf("in %.4X\n",port);
@@ -123,7 +123,7 @@ int pdosIn(DiskIF* dif, int port, unsigned char* res, int dos) {
 	return 1;
 }
 
-int pdosOut(DiskIF* dif, int port, unsigned char val, int dos) {
+int pdosOut(DiskIF* dif, int port, int val, int dos) {
 	port = pdosGetPort(port);
 	if (port < 0) return 0;
 	uWrite(dif->fdc, port, val);
@@ -145,12 +145,12 @@ void bkdReset(DiskIF* dif) {
 }
 
 // rd doesn't using *res as result, it will return full 16-bit value
-int bkdIn(DiskIF* dif, int port, unsigned char* res, int dos) {
+int bkdIn(DiskIF* dif, int port, int* res, int dos) {
 	return vp1_rd(dif->fdc, port & 1) & 0xffff;
 }
 
 // wr will use *dos* argument as 16-bit value to write
-int bkdOut(DiskIF* dif, int port, unsigned char val, int dos) {
+int bkdOut(DiskIF* dif, int port, int val, int dos) {
 	vp1_wr(dif->fdc, port & 1, dos & 0xffff);
 	return 1;
 }
@@ -218,10 +218,10 @@ void difSync(DiskIF* dif, int ns) {
 	dif->hw->sync(dif, ns);
 }
 
-int difOut(DiskIF* dif, int port, unsigned char val, int dos) {
+int difOut(DiskIF* dif, int port, int val, int dos) {
 	return dif->hw->out(dif,port,val,dos);
 }
 
-int difIn(DiskIF* dif, int port, unsigned char* res, int dos) {
+int difIn(DiskIF* dif, int port, int* res, int dos) {
 	return dif->hw->in(dif,port,res,dos);
 }

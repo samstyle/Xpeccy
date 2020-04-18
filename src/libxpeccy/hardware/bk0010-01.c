@@ -19,28 +19,30 @@
 
 // fdc
 
-unsigned char bk_fdc_rd(Computer* comp, unsigned short adr) {
-	comp->wdata = difIn(comp->dif, (adr & 2) ? 1 : 0, NULL, 0) & 0xffff;
+int bk_fdc_rd(Computer* comp, int adr) {
+	comp->wdata = difIn(comp->dif, (adr & 2) >> 1, NULL, 0) & 0xffff;
 	return 0;
 }
 
-void bk_fdc_wr(Computer* comp, unsigned short adr, unsigned char val) {
+void bk_fdc_wr(Computer* comp, int adr, int val) {
 	// difOut(comp->dif, (adr & 2) ? 1 : 0, 0, comp->wdata);
 }
 
 // keboard
 
-unsigned char bk_kbf_rd(Computer* comp, unsigned short adr) {
+int bk_kbf_rd(Computer* comp, int adr) {
 	comp->wdata = comp->keyb->flag & 0xc0;
 	return 0;
 }
 
-void bk_kbf_wr(Computer* comp, unsigned short adr, unsigned char val) {
-	comp->keyb->flag &= ~0x40;
-	comp->keyb->flag |= (comp->wdata & 0x40);
+void bk_kbf_wr(Computer* comp, int adr, int val) {
+	if (comp->cpu->nod & 1) {
+		comp->keyb->flag &= ~0x40;
+		comp->keyb->flag |= (val & 0x40);
+	}
 }
 
-unsigned char bk_kbd_rd(Computer* comp, unsigned short adr) {
+int bk_kbd_rd(Computer* comp, int adr) {
 	comp->wdata = comp->keyb->keycode & 0x7f;
 	comp->keyb->flag &= 0x7f;		// reset b7,flag
 	return 0;
@@ -48,67 +50,79 @@ unsigned char bk_kbd_rd(Computer* comp, unsigned short adr) {
 
 // scroller
 
-unsigned char bk_scr_rd(Computer* comp, unsigned short adr) {
+int bk_scr_rd(Computer* comp, int adr) {
 	comp->wdata = comp->vid->sc.y & 0x00ff;
 	if (!comp->vid->cutscr)
 		comp->wdata |= 0x200;
 	return 0;
 }
 
-void bk_scr_wr(Computer* comp, unsigned short adr, unsigned char val) {
-	comp->vid->sc.y = comp->wdata & 0xff;
-	comp->vid->cutscr = (comp->wdata & 0x0200) ? 0 : 1;
+void bk_scr_wr(Computer* comp, int adr, int val) {
+	if (comp->cpu->nod & 1) {
+		comp->vid->sc.y = val & 0xff;
+	}
+	if (comp->cpu->nod & 2) {
+		comp->vid->cutscr = (val & 0x0200) ? 0 : 1;
+	}
 }
 
 // pc/psw
 
-unsigned char bk_str_rd(Computer* comp, unsigned short adr) {
+int bk_str_rd(Computer* comp, int adr) {
 	comp->wdata = (comp->iomap[adr & ~1] & 0xff) | ((comp->iomap[adr | 1] << 8) & 0xff00);
 	return 0;
 }
 
 // timer
 
-unsigned char bk_tiv_rd(Computer* comp, unsigned short adr) {
+int bk_tiv_rd(Computer* comp, int adr) {
 	comp->wdata = comp->cpu->timer.ival;
 	return 0;
 }
 
-unsigned char bk_tva_rd(Computer* comp, unsigned short adr) {
+int bk_tva_rd(Computer* comp, int adr) {
 	comp->wdata = comp->cpu->timer.val;
 	return 0;
 }
 
-unsigned char bk_tfl_rd(Computer* comp, unsigned short adr) {
+int bk_tfl_rd(Computer* comp, int adr) {
 	comp->wdata = (comp->cpu->timer.flag & 0xff) | 0xff00;
 	return 0;
 }
 
-void bk_tiv_wr(Computer* comp, unsigned short adr, unsigned char val) {
-	comp->cpu->timer.ival = comp->wdata;
+void bk_tiv_wr(Computer* comp, int adr, int val) {
+	if (comp->cpu->nod & 1)
+		comp->cpu->timer.ivl = val & 0xff;
+	if (comp->cpu->nod & 2)
+		comp->cpu->timer.ivh = (val >> 8) & 0xff;
 }
 
-void bk_tva_wr(Computer* comp, unsigned short adr, unsigned char val) {
-	comp->cpu->timer.val = comp->wdata;
+void bk_tva_wr(Computer* comp, int adr, int val) {
+	if (comp->cpu->nod & 1)
+		comp->cpu->timer.vl = val & 0xff;
+	if (comp->cpu->nod & 2)
+		comp->cpu->timer.vh = (val >> 8) & 0xff;
 }
 
-void bk_tfl_wr(Computer* comp, unsigned short adr, unsigned char val) {
-	comp->cpu->timer.flag = comp->wdata & 0xff;
-	comp->cpu->timer.per = 128;
-	if (comp->wdata & 0x40) comp->cpu->timer.per <<= 2;	// div 4
-	if (comp->wdata & 0x20) comp->cpu->timer.per <<= 4;	// div 16
-	if (comp->wdata & 0x12) comp->cpu->timer.val = comp->cpu->timer.ival;	// reload
+void bk_tfl_wr(Computer* comp, int adr, int val) {
+	if (comp->cpu->nod & 1) {
+		comp->cpu->timer.flag = val & 0xff;
+		comp->cpu->timer.per = 128;
+		if (val & 0x40) comp->cpu->timer.per <<= 2;	// div 4
+		if (val & 0x20) comp->cpu->timer.per <<= 4;	// div 16
+		if (val & 0x12) comp->cpu->timer.val = comp->cpu->timer.ival;	// reload
+	}
 }
 
 // external
 
-unsigned char bk_fcc_rd(Computer* comp, unsigned short adr) {
+int bk_fcc_rd(Computer* comp, int adr) {
 	comp->wdata = 0;
 	return 0;
 }
 
 // 177776: system
-unsigned char bk_sys_rd(Computer* comp, unsigned short adr) {
+int bk_sys_rd(Computer* comp, int adr) {
 	comp->wdata = 0x8000;		// 8000 for 0010, c000 for 0011
 	// comp->wdata |= 0x80;		// TL ready
 	if (comp->reg[0xce]) {		// b2: write to system port flag
@@ -127,32 +141,34 @@ unsigned char bk_sys_rd(Computer* comp, unsigned short adr) {
 	return 0;
 }
 
-void bk_sys_wr(Computer* comp, unsigned short adr, unsigned char val) {
-	// b7: tape motor control (1:stop, 0:play)
-	if (!(comp->wdata & 0x80) && !comp->tape->on) {
-		tapPlay(comp->tape);
-	} else if ((comp->wdata & 0x80) && comp->tape->on && !comp->tape->rec) {
-		tapStop(comp->tape);
+void bk_sys_wr(Computer* comp, int adr, int val) {
+	if (comp->cpu->nod & 1) {
+		// b7: tape motor control (1:stop, 0:play)
+		if (!(val & 0x80) && !comp->tape->on) {
+			tapPlay(comp->tape);
+		} else if ((val & 0x80) && comp->tape->on && !comp->tape->rec) {
+			tapStop(comp->tape);
+		}
+		// b6 : beep
+		comp->beep->lev = (val & 0x40) ? 1 : 0;
+		// b6 : tape rec (main)
+		comp->tape->levRec = (val & 0x40) ? 1 : 0;
+		// b4: TL write
+		comp->reg[0xce] = 1;	// write to system port
 	}
-	// b6 : beep
-	comp->beep->lev = (comp->wdata & 0x40) ? 1 : 0;
-	// b6 : tape rec (main)
-	comp->tape->levRec = (comp->wdata & 0x40) ? 1 : 0;
-	// b4: TL write
-	comp->reg[0xce] = 1;	// write to system port
 }
 
 // * debug
 
-unsigned char bk_dbg_rd(Computer* comp, unsigned short adr) {
+int bk_dbg_rd(Computer* comp, int adr) {
 	comp->wdata = 0xffff;
 	printf("%.4X : rd %.4X\n",comp->cpu->pc, adr);
 	assert(0);
 	return 1;
 }
 
-void bk_dbg_wr(Computer* comp, unsigned short adr, unsigned char val) {
-	printf("%.4X : wr %.4X, %.4X\n",comp->cpu->pc, adr, comp->wdata);
+void bk_dbg_wr(Computer* comp, int adr, int val) {
+	printf("%.4X : wr %.4X, %.4X (nod = %i)\n",comp->cpu->pc, adr, val, comp->cpu->nod);
 	assert(0);
 }
 
@@ -171,26 +187,26 @@ static xPort bk_io_tab[] = {
 };
 
 // cpu allways read whole word from even adr
-// even adr : update comp->wdata & take low byte
-// odd adr  : take high byte of comp->wdata
-unsigned char bk_io_rd(unsigned short adr, void* ptr) {
+int bk_io_rd(int adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	unsigned char res;
-	if (adr & 1) {			// high byte
-		res = (comp->wdata >> 8) & 0xff;
-	} else {			// low byte : update comp->wdata
-		hwIn(bk_io_tab, comp, adr, 0);
-		res = comp->wdata & 0xff;
-	}
-	return res;
+	adr &= ~1;
+	hwIn(bk_io_tab, comp, adr, 0);
+	return comp->wdata;
 }
 
 // if cpu->nod = 1, write 1 byte immediately
 // if cpu->nod = 0:
 //	even adr : store low byte in wdata
 //	odd adr : is high byte, add stored low byte, write whole word
-void bk_io_wr(unsigned short adr, unsigned char val, void* ptr) {
+void bk_io_wr(int adr, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
+#if 1
+	if (comp->cpu->nod & 1)		// LSB
+		comp->iomap[(adr & ~1) & 0xffff] = val & 0xff;
+	if (comp->cpu->nod & 2)		// MSB
+		comp->iomap[(adr | 1) & 0xffff] = (val >> 1) & 0xff;
+	hwOut(bk_io_tab, comp, adr & ~1, val, 0);
+#else
 	comp->iomap[adr] = val;
 	if (comp->cpu->nod) {	// write byte
 		comp->wdata = (comp->iomap[adr & ~1] | (comp->iomap[adr | 1] << 8)) & 0xffff;
@@ -204,27 +220,45 @@ void bk_io_wr(unsigned short adr, unsigned char val, void* ptr) {
 			comp->wdata = val & 0xff;
 		}
 	}
+#endif
 }
 
-unsigned char bk_ram_rd(unsigned short adr, void* ptr) {
+int bk_ram_rd(int adr, void* ptr) {
+	Computer* comp = (Computer*)ptr;
+	int res;
+	adr &= ~1;
+	int fadr = (comp->mem->map[(adr >> 8) & 0xff].num << 8) | (adr & 0xff);
+	comp->cpu->t += 3;
+	res = comp->mem->ramData[fadr & comp->mem->ramMask] & 0xff;
+	fadr++;
+	res |= (comp->mem->ramData[fadr & comp->mem->ramMask] << 8) & 0xff00;
+	return res;
+}
+
+void bk_ram_wr(int adr, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	comp->cpu->t += 2;
 	int fadr = (comp->mem->map[(adr >> 8) & 0xff].num << 8) | (adr & 0xff);
-	return comp->mem->ramData[fadr & comp->mem->ramMask];
+	if (comp->cpu->nod & 1)
+		comp->mem->ramData[(fadr & ~1) & comp->mem->ramMask] = val & 0xff;
+	if (comp->cpu->nod & 2)
+		comp->mem->ramData[(fadr | 1) & comp->mem->ramMask] = (val >> 8) & 0xff;
 }
 
-void bk_ram_wr(unsigned short adr, unsigned char val, void* ptr) {
+int bk_rom_rd(int adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
+	int res;
+	adr &= ~1;
+	int fadr = (comp->mem->map[(adr >> 8) & 0xff].num << 8) | (adr & 0xff);
 	comp->cpu->t += 2;
-	int fadr = (comp->mem->map[(adr >> 8) & 0xff].num << 8) | (adr & 0xff);
-	comp->mem->ramData[fadr & comp->mem->ramMask] = val;
+	res = comp->mem->romData[fadr & comp->mem->romMask] & 0xff;
+	fadr++;
+	res |= (comp->mem->romData[fadr & comp->mem->romMask] << 8) & 0xff00;
+	return res;
 }
 
-unsigned char bk_rom_rd(unsigned short adr, void* ptr) {
-	Computer* comp = (Computer*)ptr;
-	comp->cpu->t++;
-	int fadr = (comp->mem->map[(adr >> 8) & 0xff].num << 8) | (adr & 0xff);
-	return comp->mem->romData[fadr & comp->mem->romMask];
+void bk_rom_wr(int adr, int val, void* ptr) {
+	// nothing to do
 }
 
 void bk_sync(Computer* comp, int ns) {
@@ -239,7 +273,7 @@ void bk_sync(Computer* comp, int ns) {
 void bk_mem_map(Computer* comp) {
 	memSetBank(comp->mem, 0x00, MEM_RAM, 6, MEM_16K, bk_ram_rd, bk_ram_wr, comp);		// page 6 (0)
 	memSetBank(comp->mem, 0x40, MEM_RAM, 1, MEM_16K, bk_ram_rd, bk_ram_wr, comp);		// page 1 : scr 0
-	memSetBank(comp->mem, 0x80, MEM_ROM, 0, MEM_32K, bk_rom_rd, NULL, comp);
+	memSetBank(comp->mem, 0x80, MEM_ROM, 0, MEM_32K, bk_rom_rd, bk_rom_wr, comp);
 	memSetBank(comp->mem, 0xff, MEM_IO, 0xff, MEM_256, bk_io_rd, bk_io_wr, comp);
 // for 11
 /*
@@ -304,11 +338,11 @@ void bk_reset(Computer* comp) {
 	bk_mem_map(comp);
 }
 
-void bk_mwr(Computer* comp, unsigned short adr, unsigned char val) {
+void bk_mwr(Computer* comp, int adr, int val) {
 	memWr(comp->mem, adr, val);
 }
 
-unsigned char bk_mrd(Computer* comp, unsigned short adr, int m1) {
+int bk_mrd(Computer* comp, int adr, int m1) {
 	return memRd(comp->mem, adr);
 }
 

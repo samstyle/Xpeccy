@@ -32,8 +32,8 @@ static int msx2mtabD[4][4] = {
 	{0,0,0,0}
 };
 
-void msxSlotWr(unsigned short, unsigned char, void*);
-unsigned char msxSlotRd(unsigned short, void*);
+void msxSlotWr(int, int, void*);
+int msxSlotRd(int, void*);
 
 void msx2mapper(Computer* comp) {
 	int slot;
@@ -60,8 +60,9 @@ void msx2mapper(Computer* comp) {
 	}
 }
 
-unsigned char msx2mrd(Computer* comp, unsigned short adr, int m1) {
-	unsigned char res = 0xff;
+int msx2mrd(Computer* comp, int adr, int m1) {
+	int res = -1;
+#if 0
 	if (0 & ((adr & 0xfff8) == 0x7ff8)) {					// fdc io
 		printf("rd %X\n",adr & 7);
 		comp->brk = 1;
@@ -72,7 +73,9 @@ unsigned char msx2mrd(Computer* comp, unsigned short adr, int m1) {
 			case 3: difIn(comp->dif, FDC_DATA, &res, 1); break;
 			case 7: res = (comp->dif->fdc->drq ? 0x80 : 0) | (comp->dif->fdc->irq ? 0x40 : 0); break;
 		}
-	} else if ((adr == 0xffff) && (comp->msx.pslot[3] == 3)) {	// sslot
+	} else
+#endif
+	if ((adr == 0xffff) && (comp->msx.pslot[3] == 3)) {	// sslot
 		res = comp->msx.mFFFF ^ 0xff;
 	} else {
 		res = stdMRd(comp, adr, m1);
@@ -80,7 +83,8 @@ unsigned char msx2mrd(Computer* comp, unsigned short adr, int m1) {
 	return res;
 }
 
-void msx2mwr(Computer* comp, unsigned short adr, unsigned char val) {
+void msx2mwr(Computer* comp, int adr, int val) {
+#if 0
 	if (0 & ((adr & 0xfff8) == 0x7ff8)) {					// fdc io
 	// printf("wr %X,%.2X\n",adr & 7, val);
 		switch(adr & 7) {
@@ -91,8 +95,10 @@ void msx2mwr(Computer* comp, unsigned short adr, unsigned char val) {
 			case 4: comp->dif->fdc->side = (val & 1) ? 1 : 0; break;
 			case 5: comp->dif->fdc->flp = comp->dif->fdc->flop[val & 1]; break;
 		}
-	} else if ((adr == 0xffff) && (comp->msx.pslot[3] == 3)) {	// sslot
-		comp->msx.mFFFF = val;
+	} else
+#endif
+	if ((adr == 0xffff) && (comp->msx.pslot[3] == 3)) {	// sslot
+		comp->msx.mFFFF = val & 0xff;
 		comp->msx.sslot[0] = val & 3;
 		comp->msx.sslot[1] = (val >> 2) & 3;
 		comp->msx.sslot[2] = (val >> 4) & 3;
@@ -105,12 +111,12 @@ void msx2mwr(Computer* comp, unsigned short adr, unsigned char val) {
 
 // mapper
 
-unsigned char msx2_A8in(Computer* comp, unsigned short port) {
+int msx2_A8in(Computer* comp, int port) {
 	return comp->msx.pA8;
 }
 
-void msx2_A8out(Computer* comp, unsigned short port, unsigned char val) {
-	comp->msx.pA8 = val;
+void msx2_A8out(Computer* comp, int port, int val) {
+	comp->msx.pA8 = val & 0xff;
 	comp->msx.pslot[0] = val & 3;
 	comp->msx.pslot[1] = (val >> 2) & 3;
 	comp->msx.pslot[2] = (val >> 4) & 3;
@@ -119,13 +125,13 @@ void msx2_A8out(Computer* comp, unsigned short port, unsigned char val) {
 	msx2mapper(comp);
 }
 
-void msx2mapOut(Computer* comp, unsigned short port, unsigned char val) {
-	comp->reg[port] = val;
+void msx2mapOut(Computer* comp, int port, int val) {
+	comp->reg[port] = val & 0xff;
 	msx2mapper(comp);
 }
 
-unsigned char msx2mapIn(Computer* comp, unsigned short port) {
-	return 0xff; // comp->msx.memMap[port & 3];
+int msx2mapIn(Computer* comp, int port) {
+	return -1; // comp->msx.memMap[port & 3];
 }
 
 // reset
@@ -147,25 +153,25 @@ void msx2Reset(Computer* comp) {
 
 // devices
 
-void msx2_F5out(Computer* comp, unsigned short port, unsigned char val) {
-	comp->msx.pF5 = val;
+void msx2_F5out(Computer* comp, int port, int val) {
+	comp->msx.pF5 = val & 0xff;
 }
 
 // rtc
 
-void msx2_b4out(Computer* comp, unsigned short port, unsigned char val) {
-	comp->cmos.adr = val & 15;
+void msx2_b4out(Computer* comp, int port, int val) {
+	comp->cmos.adr = val & 0x0f;
 }
 
-void msx2_b5out(Computer* comp, unsigned short port, unsigned char val) {
+void msx2_b5out(Computer* comp, int port, int val) {
 	int block = comp->cmos.data[0x0d];
-	int adr = comp->cmos.adr & 15;
+	int adr = comp->cmos.adr & 0x0f;
 	if (adr < 0x0d)
 		adr |= (block << 4);
-	comp->cmos.data[adr] = val & 15;
+	comp->cmos.data[adr] = val & 0x0f;
 }
 
-unsigned char msx2_b5in(Computer* comp, unsigned short port) {
+int msx2_b5in(Computer* comp, int port) {
 	unsigned char res = 0x0f;
 	int block;
 	int adr = comp->cmos.adr & 15;
@@ -207,24 +213,17 @@ unsigned char msx2_b5in(Computer* comp, unsigned short port) {
 
 // tab
 
-/*
-void msx98Out(Computer*,unsigned short,unsigned char);
-unsigned char msx98In(Computer*, unsigned short);
-void msx99Out(Computer*,unsigned short,unsigned char);
-unsigned char msx99In(Computer*, unsigned short);
-*/
+void msx9938wr(Computer*, int, int);
+int msx9938rd(Computer*, int);
 
-void msx9938wr(Computer*, unsigned short, unsigned char);
-unsigned char msx9938rd(Computer*, unsigned short);
+int msxA9In(Computer*, int);
+int msxAAIn(Computer*, int);
+void msxAAOut(Computer*, int, int);
+void msxABOut(Computer*, int, int);
 
-unsigned char msxA9In(Computer*, unsigned short);
-unsigned char msxAAIn(Computer*, unsigned short);
-void msxAAOut(Computer*,unsigned short,unsigned char);
-void msxABOut(Computer*,unsigned short,unsigned char);
-
-void msxAYIdxOut(Computer*,unsigned short,unsigned char);
-void msxAYDataOut(Computer*,unsigned short,unsigned char);
-unsigned char msxAYDataIn(Computer*, unsigned short);
+void msxAYIdxOut(Computer*, int, int);
+void msxAYDataOut(Computer*, int, int);
+int msxAYDataIn(Computer*, int);
 
 static xPort msx2ioTab[] = {
 //	{0xff,0x60,2,2,2,dummyIn,NULL},				// 60? really?
@@ -258,12 +257,12 @@ static xPort msx2ioTab[] = {
 	{0x00,0x00,2,2,2,brkIn,brkOut}
 };
 
-void msx2Out(Computer* comp, unsigned short port, unsigned char val, int dos) {
+void msx2Out(Computer* comp, int port, int val, int dos) {
 //	printf("msx2 out %.4X,%.2X\n",port,val);
 	hwOut(msx2ioTab, comp, port, val, dos);
 }
 
-unsigned char msx2In(Computer* comp, unsigned short port, int dos) {
+int msx2In(Computer* comp, int port, int dos) {
 //	printf("msx2 in %.4X\n",port);
 	return hwIn(msx2ioTab, comp, port, dos);
 }

@@ -3,24 +3,24 @@
 // debug
 
 
-unsigned char brkIn(Computer* comp, unsigned short port) {
+int brkIn(Computer* comp, int port) {
 	printf("IN %.4X (dos:rom:cpm = %i:%i:%i)\n",port,comp->dos,comp->rom,comp->cpm);
 	assert(0);
 	comp->brk = 1;
-	return 0xff;
+	return -1;
 }
 
-void brkOut(Computer* comp, unsigned short port, unsigned char val) {
+void brkOut(Computer* comp, int port, int val) {
 	printf("OUT %.4X,%.2X (dos:rom:cpm = %i:%i:%i)\n",port,val,comp->dos,comp->rom,comp->cpm);
 	assert(0);
 	comp->brk = 1;
 }
 
-unsigned char dummyIn(Computer* comp, unsigned short port) {
-	return 0xff;
+int dummyIn(Computer* comp, int port) {
+	return -1;
 }
 
-void dummyOut(Computer* comp, unsigned short port, unsigned char val) {
+void dummyOut(Computer* comp, int port, int val) {
 
 }
 
@@ -125,7 +125,7 @@ void zx_set_pal(Computer* comp) {
 
 // in
 
-int zx_dev_wr(Computer* comp, unsigned short adr, unsigned char val, int dos) {
+int zx_dev_wr(Computer* comp, int adr, int val, int dos) {
 	int res = 0;
 	res = gsWrite(comp->gs, adr, val);
 	if (!dos) {
@@ -136,28 +136,28 @@ int zx_dev_wr(Computer* comp, unsigned short adr, unsigned char val, int dos) {
 	return res;
 }
 
-int zx_dev_rd(Computer* comp, unsigned short adr, unsigned char* ptr, int dos) {
+int zx_dev_rd(Computer* comp, int adr, int* ptr, int dos) {
 	if (gsRead(comp->gs, adr, ptr)) return 1;
 	if (ideIn(comp->ide, adr, ptr, dos)) return 1;
 	return 0;
 }
 
-unsigned char xIn1F(Computer* comp, unsigned short port) {
+int xIn1F(Computer* comp, int port) {
 	return joyInput(comp->joy);
 }
 
-unsigned char xInFE(Computer* comp, unsigned short port) {
+int xInFE(Computer* comp, int port) {
 	unsigned char res = kbdRead(comp->keyb, port) | 0xa0;		// set bits 7,5
 	if (comp->tape->volPlay & 0x80)
 		res |= 0x40;
 	return res;
 }
 
-unsigned char xInFFFD(Computer* comp, unsigned short port) {
+int xInFFFD(Computer* comp, int port) {
 	return tsIn(comp->ts, 0xfffd);
 }
 
-unsigned char xInFADF(Computer* comp, unsigned short port) {
+int xInFADF(Computer* comp, int port) {
 	unsigned char res = 0xff;
 	comp->mouse->used = 1;
 	if (!comp->mouse->enable) return res;
@@ -176,28 +176,28 @@ unsigned char xInFADF(Computer* comp, unsigned short port) {
 	return res;
 }
 
-unsigned char xInFBDF(Computer* comp, unsigned short port) {
+int xInFBDF(Computer* comp, int port) {
 	comp->mouse->used = 1;
 	return comp->mouse->enable ? comp->mouse->xpos : 0xff;
 }
 
-unsigned char xInFFDF(Computer* comp, unsigned short port) {
+int xInFFDF(Computer* comp, int port) {
 	comp->mouse->used = 1;
 	return comp->mouse->enable ? comp->mouse->ypos : 0xff;
 }
 
 // out
 
-void xOutFE(Computer* comp, unsigned short port, unsigned char val) {
+void xOutFE(Computer* comp, int port, int val) {
 	comp->vid->nextbrd = val & 0x07;
 	comp->beep->lev = (val & 0x10) ? 1 : 0;
 	comp->tape->levRec = (val & 0x08) ? 1 : 0;
 }
 
-void xOutBFFD(Computer* comp, unsigned short port, unsigned char val) {
+void xOutBFFD(Computer* comp, int port, int val) {
 	tsOut(comp->ts, 0xbffd, val);
 }
 
-void xOutFFFD(Computer* comp, unsigned short port, unsigned char val) {
+void xOutFFFD(Computer* comp, int port, int val) {
 	tsOut(comp->ts, 0xfffd, val);
 }

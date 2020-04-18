@@ -38,17 +38,17 @@ typedef struct {
 } xRegDsc;
 
 // memrq rd
-typedef unsigned char(*cbmr)(unsigned short,int,void*);
+typedef int(*cbmr)(int, int, void*);
 // memrq wr
-typedef void(*cbmw)(unsigned short,unsigned char,void*);
+typedef void(*cbmw)(int, int, void*);
 // iorq rd
-typedef unsigned char(*cbir)(unsigned short,void*);
+typedef int(*cbir)(int, void*);
 // iorq wr
-typedef void(*cbiw)(unsigned short,unsigned char,void*);
+typedef void(*cbiw)(int, int, void*);
 // iorq int : interrupt vector request
-typedef unsigned char(*cbirq)(void*);
+typedef int(*cbirq)(void*);
 // memrd external
-typedef unsigned char(*cbdmr)(unsigned short,void*);
+typedef int(*cbdmr)(int, void*);
 
 #ifdef WORDS_BIG_ENDIAN
 	#define PAIR(p,h,l) union{unsigned short p; struct {unsigned char h; unsigned char l;};}
@@ -124,7 +124,7 @@ struct CPU {
 	unsigned speedrq:1;		// LR35902: request speed change after STOP command
 	unsigned dihalt:1;		// LR35902: HALT when DI: repeat next opcode
 	unsigned sta:1;			// MOS6502: don't add 1T on (ABSX,ABSY,INDY)
-	unsigned nod:1;			// MOS6502: ignore flag D in ADC/SBC; PDP11: write byte
+	unsigned nod:2;			// MOS6502: ignore flag D in ADC/SBC; PDP11: write flags
 
 	int type;			// cpu type id
 

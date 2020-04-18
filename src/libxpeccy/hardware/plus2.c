@@ -34,24 +34,15 @@ void plusRes(Computer* comp) {
 
 // out
 
-/*
-void p2OutFE(ZXComp* comp, unsigned short port, unsigned char val) {
-	comp->vid->nextbrd = val & 0x07;
-	if (!comp->vid->border4t) comp->vid->brdcol = val & 0x07;
-	comp->beeplev = (val & 0x10) ? 1 : 0;
-	comp->tape->levRec = (val & 0x08) ? 1 : 0;
-}
-*/
-
-void p2Out1FFD(Computer* comp, unsigned short port, unsigned char val) {
-	comp->p1FFD = val;
+void p2Out1FFD(Computer* comp, int port, int val) {
+	comp->p1FFD = val & 0xff;
 	pl2MapMem(comp);
 }
 
-void p2Out7FFD(Computer* comp, unsigned short port, unsigned char val) {
+void p2Out7FFD(Computer* comp, int port, int val) {
 	if (comp->p7FFD & 0x20) return;
 	comp->rom = (val & 0x10) ? 1 : 0;
-	comp->p7FFD = val;
+	comp->p7FFD = val & 0xff;
 	comp->vid->curscr = (val & 0x08) ? 7 : 5;
 	pl2MapMem(comp);
 }
@@ -65,13 +56,13 @@ static xPort p2PortMap[] = {
 	{0x0000,0x0000,2,2,2,NULL,	NULL}
 };
 
-void pl2Out(Computer* comp, unsigned short port, unsigned char val, int dos) {
+void pl2Out(Computer* comp, int port, int val, int dos) {
 	zx_dev_wr(comp, port, val, dos);
 	hwOut(p2PortMap, comp, port, val, 0);
 }
 
-unsigned char pl2In(Computer* comp, unsigned short port, int dos) {
-	unsigned char res = 0xff;
+int pl2In(Computer* comp, int port, int dos) {
+	int res = -1;
 	if (zx_dev_rd(comp, port, &res, dos)) return res;
 	res = hwIn(p2PortMap, comp, port, 0);
 	return  res;

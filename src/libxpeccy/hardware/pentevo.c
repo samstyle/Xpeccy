@@ -21,7 +21,7 @@ void evoSetVideoMode(Computer* comp) {
 	}
 }
 
-unsigned char evoMRd(Computer* comp, unsigned short adr, int m1) {
+int evoMRd(Computer* comp, int adr, int m1) {
 	if (m1 && (comp->dif->type == DIF_BDI)) {
 		if (comp->dos && (comp->mem->map[(adr >> 8) & 0xff].type == MEM_RAM) && (comp->prt2 & 0x40)) {
 			comp->dos = 0;
@@ -35,8 +35,8 @@ unsigned char evoMRd(Computer* comp, unsigned short adr, int m1) {
 	return memRd(comp->mem,adr);
 }
 
-void evoMWr(Computer* comp, unsigned short adr, unsigned char val) {
-	if (comp->evo.evoBF & 4) comp->vid->font[adr & 0x7ff] = val;	// PentEvo: write font byte
+void evoMWr(Computer* comp, int adr, int val) {
+	if (comp->evo.evoBF & 4) comp->vid->font[adr & 0x7ff] = val & 0xff;	// PentEvo: write font byte
 	memWr(comp->mem,adr,val);
 }
 
@@ -76,22 +76,22 @@ void evoMapMem(Computer* comp) {
 
 // in
 
-unsigned char evoIn1F(Computer* comp, unsigned short port) {	// !dos
+int evoIn1F(Computer* comp, int port) {	// !dos
 	return joyInput(comp->joy);
 }
 
-unsigned char evoIn57(Computer* comp, unsigned short port) {	// !dos
+int evoIn57(Computer* comp, int port) {	// !dos
 	return sdcRead(comp->sdc);
 }
 
-unsigned char evoIn77(Computer* comp, unsigned short port) {	// !dos
-	unsigned char res = 0x02;		// rd only
+int evoIn77(Computer* comp, int port) {	// !dos
+	int res = 0x02;		// rd only
 	if (comp->sdc->image != NULL) res |= 0x01;
 	return res;
 }
 
-unsigned char evoInBE(Computer* comp, unsigned short port) {
-	unsigned char res = 0xff;
+int evoInBE(Computer* comp, int port) {
+	int res = -1;
 	int i;
 	if ((port & 0xf800) == 0x0000) {
 		res = comp->memMap[(port & 0x0700) >> 8].page;
@@ -123,112 +123,97 @@ unsigned char evoInBE(Computer* comp, unsigned short port) {
 	return res;
 }
 
-unsigned char evoInBF(Computer* comp, unsigned short port) {
+int evoInBF(Computer* comp, int port) {
 	return comp->evo.evoBF;
 }
 
-unsigned char evoInBDI(Computer* comp, unsigned short port) {
-	unsigned char res;
+int evoInBDI(Computer* comp, int port) {
+	int res = -1;
 	difIn(comp->dif, port, &res, 1);
 	return res;
 }
 
-unsigned char evoIn2F(Computer* comp, unsigned short port) {
+int evoIn2F(Computer* comp, int port) {
 	return comp->evo.evo2F;
 }
 
-unsigned char evoIn4F(Computer* comp, unsigned short port) {
+int evoIn4F(Computer* comp, int port) {
 	return comp->evo.evo4F;
 }
 
-unsigned char evoIn6F(Computer* comp, unsigned short port) {
+int evoIn6F(Computer* comp, int port) {
 	return comp->evo.evo6F;
 }
 
-unsigned char evoIn8F(Computer* comp, unsigned short port) {
+int evoIn8F(Computer* comp, int port) {
 	return comp->evo.evo8F;
 }
 
-unsigned char evoInBEF7(Computer* comp, unsigned short port) {	// dos
+int evoInBEF7(Computer* comp, int port) {	// dos
 	return cmsRd(comp);
 }
 
-unsigned char evoInBFF7(Computer* comp, unsigned short port) {	// !dos
+int evoInBFF7(Computer* comp, int port) {	// !dos
 	return (comp->pEFF7 & 0x80) ? cmsRd(comp) : 0xff;
 }
 
 // out
 
-void evoOutBF(Computer* comp, unsigned short port, unsigned char val) {
-	comp->evo.evoBF = val;
+void evoOutBF(Computer* comp, int port, int val) {
+	comp->evo.evoBF = val & 0xff;
 }
 
-/*
-void evoOutFB(Computer* comp, unsigned short port, unsigned char val) {
-	sdrvOut(comp->sdrv,0xfb,val);
-}
-*/
-
-/*
-void evoOutFE(ZXComp* comp, unsigned short port, unsigned char val) {
-	comp->vid->nextbrd = (val & 0x07) | (~port & 8);
-	if (!comp->vid->border4t) comp->vid->brdcol = comp->vid->nextbrd;
-	comp->beeplev = (val & 0x10) ? 1 : 0;
-	comp->tape->levRec = (val & 0x08) ? 1 : 0;
-}
-*/
-
-void evoOut2F(Computer* comp, unsigned short port, unsigned char val) {
-	comp->evo.evo2F = val;
+void evoOut2F(Computer* comp, int port, int val) {
+	comp->evo.evo2F = val & 0xff;
 }
 
-void evoOut4F(Computer* comp, unsigned short port, unsigned char val) {
-	comp->evo.evo4F = val;
+void evoOut4F(Computer* comp, int port, int val) {
+	comp->evo.evo4F = val & 0xff;
 }
 
-void evoOut6F(Computer* comp, unsigned short port, unsigned char val) {
-	comp->evo.evo6F = val;
+void evoOut6F(Computer* comp, int port, int val) {
+	comp->evo.evo6F = val & 0xff;
 }
 
-void evoOut8F(Computer* comp, unsigned short port, unsigned char val) {
-	comp->evo.evo8F = val;
+void evoOut8F(Computer* comp, int port, int val) {
+	comp->evo.evo8F = val & 0xff;
 }
 
-void evoOut57(Computer* comp, unsigned short port, unsigned char val) {
-	sdcWrite(comp->sdc,val);
+void evoOut57(Computer* comp, int port, int val) {
+	sdcWrite(comp->sdc, val);
 }
 
-void evoOut77(Computer* comp, unsigned short port, unsigned char val) {
+void evoOut77(Computer* comp, int port, int val) {
 	comp->sdc->on = val & 1;
 	comp->sdc->cs = (val & 2) ? 1 : 0;
 }
 
-void evoOut77d(Computer* comp, unsigned short port, unsigned char val) {
+void evoOut77d(Computer* comp, int port, int val) {
 	comp->prt2 = ((port & 0x4000) >> 7) | ((port & 0x0300) >> 3) | (val & 0x0f);	// a14.a9.a8.0.b3.b2.b1.b0
 	compSetTurbo(comp,(val & 0x08) ? 4 : ((comp->pEFF7 & 0x10) ? 1 : 2));
 	evoSetVideoMode(comp);
 	evoMapMem(comp);
 }
 
-void evoOutF7(Computer* comp, unsigned short port, unsigned char val) {
+void evoOutF7(Computer* comp, int port, int val) {
 	int adr = ((comp->rom) ? 4 : 0) | ((port & 0xc000) >> 14);
 	if (port & 0x0800) {
 		comp->memMap[adr].flag = val & 0xc0;
-		comp->memMap[adr].page = val | 0xc0;
+		comp->memMap[adr].page = (val & 0xff) | 0xc0;
 	} else {
 		comp->memMap[adr].flag |= 0x40;		// ram
-		comp->memMap[adr].page = val;
+		comp->memMap[adr].page = val & 0xff;
 	}
 	evoMapMem(comp);
 }
 
-void evoOutBDI(Computer* comp, unsigned short port, unsigned char val) {		// dos
+void evoOutBDI(Computer* comp, int port, int val) {		// dos
 	difOut(comp->dif, port, val, 1);
 }
 
 static const unsigned char atm3clev[16] = {0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88,0x99,0xaa,0xbb,0xcc,0xdd,0xee,0xff};
 
-void evoOutFF(Computer* comp, unsigned short port, unsigned char val) {		// dos
+void evoOutFF(Computer* comp, int port, int val) {		// dos
 	difOut(comp->dif, 0xff, val, 1);
 	if (comp->prt2 & 0x80) return;
 	val ^= 0xff;	// inverse colors
@@ -246,31 +231,33 @@ void evoOutFF(Computer* comp, unsigned short port, unsigned char val) {		// dos
 #endif
 }
 
-void evoOut7FFD(Computer* comp, unsigned short port, unsigned char val) {
+void evoOut7FFD(Computer* comp, int port, int val) {
 	if ((comp->pEFF7 & 4) && (comp->p7FFD & 0x20)) return;
 	comp->rom = (val & 0x10) ? 1 : 0;
-	comp->p7FFD = val;
+	comp->p7FFD = val & 0xff;
 	comp->vid->curscr = (val & 0x08) ? 7 : 5;
 	evoMapMem(comp);
 }
 
-void evoOutBEF7(Computer* comp, unsigned short port, unsigned char val) {	// dos
+void evoOutBEF7(Computer* comp, int port, int val) {	// dos
 	cmsWr(comp,val);
 }
 
-void evoOutDEF7(Computer* comp, unsigned short port, unsigned char val) {	// dos
-	comp->cmos.adr = val;
+void evoOutDEF7(Computer* comp, int port, int val) {	// dos
+	comp->cmos.adr = val & 0xff;
 }
 
-void evoOutBFF7(Computer* comp, unsigned short port, unsigned char val) {	// !dos
-	if (comp->pEFF7 & 0x80) cmsWr(comp,val);
+void evoOutBFF7(Computer* comp, int port, int val) {	// !dos
+	if (comp->pEFF7 & 0x80)
+		cmsWr(comp,val);
 }
 
-void evoOutDFF7(Computer* comp, unsigned short port, unsigned char val) {	// !dos
-	if (comp->pEFF7 & 0x80) comp->cmos.adr = val;
+void evoOutDFF7(Computer* comp, int port, int val) {	// !dos
+	if (comp->pEFF7 & 0x80)
+		comp->cmos.adr = val & 0xff;
 }
 
-void evoOutEFF7(Computer* comp, unsigned short port, unsigned char val) {	// !dos
+void evoOutEFF7(Computer* comp, int port, int val) {	// !dos
 	comp->pEFF7 = val;
 	compSetTurbo(comp,(comp->prt2 & 0x08) ? 4 : (val & 0x08) ? 2 : 1);
 	evoSetVideoMode(comp);
@@ -311,14 +298,14 @@ static xPort evoPortMap[] = {
 	{0x0000,0x0000,2,2,2,NULL,	NULL}
 };
 
-void evoOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
+void evoOut(Computer* comp, int port, int val, int dos) {
 	if (comp->evo.evoBF & 0x01) dos = 1;	// force open ports
 	zx_dev_wr(comp, port, val, dos);
 	hwOut(evoPortMap, comp, port, val, dos);
 }
 
-unsigned char evoIn(Computer* comp, unsigned short port, int dos) {
-	unsigned char res = 0xff;
+int evoIn(Computer* comp, int port, int dos) {
+	int res = -1;
 	if (comp->evo.evoBF & 1) dos = 1;
 	if (zx_dev_rd(comp, port, &res, dos)) return res;
 	res = hwIn(evoPortMap, comp, port, dos);

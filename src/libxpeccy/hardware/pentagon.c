@@ -19,10 +19,10 @@ unsigned char penIn1F(ZXComp* comp, unsigned short port) {
 
 // out
 
-void penOut7FFD(Computer* comp, unsigned short port, unsigned char val) {
+void penOut7FFD(Computer* comp, int port, int val) {
 	if (comp->p7FFD & 0x20) return;
 	comp->rom = (val & 0x10) ? 1 : 0;
-	comp->p7FFD = val;
+	comp->p7FFD = val & 0xff;
 	comp->vid->curscr = (val & 0x08) ? 7 : 5;
 	penMapMem(comp);
 }
@@ -39,14 +39,14 @@ static xPort penPortMap[] = {
 	{0x0000,0x0000,2,2,2,NULL,	NULL}			// end
 };
 
-void penOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
+void penOut(Computer* comp, int port, int val, int dos) {
 	difOut(comp->dif, port, val, dos);
 	zx_dev_wr(comp, port, val, dos);
 	hwOut(penPortMap, comp, port, val, dos);
 }
 
-unsigned char penIn(Computer* comp, unsigned short port, int dos) {
-	unsigned char res = 0xff;
+int penIn(Computer* comp, int port, int dos) {
+	int res = -1;
 	if (difIn(comp->dif, port, &res, dos)) return res;
 	if (zx_dev_rd(comp, port, &res, dos)) return res;
 	res = hwIn(penPortMap, comp, port, dos);

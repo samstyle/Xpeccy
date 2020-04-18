@@ -53,8 +53,8 @@ void gsReset(GSound*);
 void gsSync(GSound*, int);
 void gsFlush(GSound*);
 sndPair gsVolume(GSound*);
-int gsWrite(GSound*, unsigned short, unsigned char);
-int gsRead(GSound*, unsigned short, unsigned char*);
+int gsWrite(GSound*, int, int);
+int gsRead(GSound*, int, int*);
 
 #ifdef __cplusplus
 }

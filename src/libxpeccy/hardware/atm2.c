@@ -43,7 +43,7 @@ void atm2MapMem(Computer* comp) {
 
 // out
 
-void atm2OutFE(Computer* comp, unsigned short port, unsigned char val) {
+void atm2OutFE(Computer* comp, int port, int val) {
 	xOutFE(comp, port, val);
 	if (~port & 0x08) {		// A3 = 0 : bright border
 		comp->vid->nextbrd |= 0x08;
@@ -51,7 +51,7 @@ void atm2OutFE(Computer* comp, unsigned short port, unsigned char val) {
 	}
 }
 
-void atm2Out77(Computer* comp, unsigned short port, unsigned char val) {		// dos
+void atm2Out77(Computer* comp, int port, int val) {		// dos
 	switch (val & 7) {
 		case 0: vidSetMode(comp->vid,VID_ATM_EGA); break;
 		case 2: vidSetMode(comp->vid,VID_ATM_HWM); break;
@@ -65,24 +65,24 @@ void atm2Out77(Computer* comp, unsigned short port, unsigned char val) {		// dos
 	atm2MapMem(comp);
 }
 
-void atm2OutF7(Computer* comp, unsigned short port, unsigned char val) {		// dos
+void atm2OutF7(Computer* comp, int port, int val) {			// dos
 	int adr = (comp->rom ? 4 : 0) | ((port & 0xc000) >> 14);	// rom2.a15.a14
-	comp->memMap[adr].flag = val & 0xc0;		// copy b6,7 to flag
-	comp->memMap[adr].page = (val & 0x3f) | 0xc0;	// set b6,7 for PentEvo capability
+	comp->memMap[adr].flag = val & 0xc0;				// copy b6,7 to flag
+	comp->memMap[adr].page = (val & 0x3f) | 0xc0;			// set b6,7 for PentEvo capability
 	atm2MapMem(comp);
 }
 
-void atm2Out7FFD(Computer* comp, unsigned short port, unsigned char val) {
+void atm2Out7FFD(Computer* comp, int port, int val) {
 	if (comp->p7FFD & 0x20) return;
 	comp->rom = (val & 0x10) ? 1 : 0;
-	comp->p7FFD = val;
+	comp->p7FFD = val & 0xff;
 	comp->vid->curscr = (val & 0x08) ? 7 : 5;
 	atm2MapMem(comp);
 }
 
 static const unsigned char atm2clev[16] = {0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88,0x99,0xaa,0xbb,0xcc,0xdd,0xee,0xff};
 
-void atm2OutFF(Computer* comp, unsigned short port, unsigned char val) {		// dos. bdiOut already done
+void atm2OutFF(Computer* comp, int port, int val) {		// dos. bdiOut already done
 	if (comp->p77hi & 0x40) return;			// pen2 = 1
 	val ^= 0xff;	// inverse colors
 	int adr = comp->vid->brdcol & 0x0f;
@@ -101,8 +101,8 @@ void atm2OutFF(Computer* comp, unsigned short port, unsigned char val) {		// dos
 
 // in
 
-unsigned char atm2inFE(Computer* comp, unsigned short port) {
-	unsigned char res = kbdRead(comp->keyb, port);
+int atm2inFE(Computer* comp, int port) {
+	int res = kbdRead(comp->keyb, port & 0xffff);
 	if (comp->keyb->mode == KBD_SPECTRUM) {
 		res |= (comp->tape->volPlay & 0x80) ? 0x40 : 0x00;
 	} else if (comp->keyb->submode == kbdZX) {
@@ -130,15 +130,15 @@ static xPort atm2PortMap[] = {
 	{0x0000,0x0000,2,2,2,NULL,	NULL}
 };
 
-void atm2Out(Computer* comp, unsigned short port, unsigned char val, int dos) {
+void atm2Out(Computer* comp, int port, int val, int dos) {
 	if (~comp->p77hi & 2) dos = 1;
 	zx_dev_wr(comp, port, val, dos);
 	difOut(comp->dif, port, val, dos);
 	hwOut(atm2PortMap, comp, port, val, dos);
 }
 
-unsigned char atm2In(Computer* comp, unsigned short port, int dos) {
-	unsigned char res = 0xff;
+int atm2In(Computer* comp, int port, int dos) {
+	int res = -1;
 	if (~comp->p77hi & 2) dos = 1;
 	if (zx_dev_rd(comp, port, &res, dos)) return res;
 	if (difIn(comp->dif, port, &res, dos)) return res;

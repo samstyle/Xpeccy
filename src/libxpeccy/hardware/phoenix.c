@@ -25,26 +25,26 @@ void phxReset(Computer* comp) {
 
 // out
 
-void phxOut1FFD(Computer* comp, unsigned short port, unsigned char val) {
-	comp->p1FFD = val;
+void phxOut1FFD(Computer* comp, int port, int val) {
+	comp->p1FFD = val & 0xff;
 	phxMapMem(comp);
 }
 
-void phxOut7FFD(Computer* comp, unsigned short port, unsigned char val) {
+void phxOut7FFD(Computer* comp, int port, int val) {
 	if (comp->p7FFD & 0x20) return;
-	comp->p7FFD = val;
+	comp->p7FFD = val & 0xff;
 	comp->rom = (val & 0x10) ? 1 : 0;
 	comp->vid->curscr = (val & 0x08) ? 7 : 5;
 	phxMapMem(comp);
 }
 
-void phxOutEFF7(Computer* comp, unsigned short port, unsigned char val) {
-	comp->pEFF7 = val;
+void phxOutEFF7(Computer* comp, int port, int val) {
+	comp->pEFF7 = val & 0xff;
 }
 
 // in
 
-unsigned char phxInF7(Computer* comp, unsigned short port) {
+int phxInF7(Computer* comp, int port) {
 	return 0x00;
 }
 
@@ -68,16 +68,16 @@ static xPort phxPortMap[] = {
 	// NEMO IDE set as external device
 };
 
-void phxOut(Computer* comp, unsigned short port, unsigned char val, int dos) {
+void phxOut(Computer* comp, int port, int val, int dos) {
 	if (comp->pEFF7 & 0x80) dos = 1;
 	if (difOut(comp->dif, port, val, dos)) return;
 	zx_dev_wr(comp, port, val, dos);
 	hwOut(phxPortMap, comp, port, val, dos);
 }
 
-unsigned char phxIn(Computer* comp, unsigned short port, int dos) {
+int phxIn(Computer* comp, int port, int dos) {
 	if (comp->pEFF7 & 0x80) dos = 1;
-	unsigned char res = 0xff;
+	int res = -1;
 	if (difIn(comp->dif, port, &res, dos)) return res;
 	if (zx_dev_rd(comp, port, &res, dos)) return res;
 	return hwIn(phxPortMap, comp, port, dos);

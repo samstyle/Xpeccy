@@ -109,9 +109,9 @@ DiskIF* difCreate(int);
 void difDestroy(DiskIF*);
 
 void difReset(DiskIF*);
-void difSync(DiskIF*,int);
-int difOut(DiskIF*,int,unsigned char,int);
-int difIn(DiskIF*,int,unsigned char*,int);
+void difSync(DiskIF*, int);
+int difOut(DiskIF*, int, int, int);
+int difIn(DiskIF*, int, int*, int);
 
 void difSetHW(DiskIF*, int);
 

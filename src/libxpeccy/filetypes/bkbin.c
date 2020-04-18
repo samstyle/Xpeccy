@@ -60,6 +60,8 @@ int bkLoadToTape(Computer* comp, const char* name, int drv) {
 	char* ptr;
 	char* nptr;
 	char* dptr;
+	char* cname = (char*)malloc(strlen(name) + 1);
+	strcpy(cname, name);
 	unsigned short start;
 	unsigned short len;
 	TapeBlock blk;
@@ -72,8 +74,8 @@ int bkLoadToTape(Computer* comp, const char* name, int drv) {
 	start = fgetw(file);
 	len = fgetw(file);
 	memset(buf, ' ', 16);
-	ptr = strrchr(name, SLSH);	// last slash
-	nptr = ptr ? ptr + 1 : name;
+	ptr = strrchr(cname, SLSH);	// last slash
+	nptr = ptr ? ptr + 1 : cname;
 	dptr = strrchr(nptr, '.');	// last dot
 	if (dptr) *dptr = 0x00;		// cut extension
 	memcpy(buf, nptr, (strlen(nptr) < 16) ? strlen(nptr) : 16);
@@ -108,6 +110,7 @@ int bkLoadToTape(Computer* comp, const char* name, int drv) {
 	tapAddBlock(comp->tape, blk);
 	blkClear(&blk);
 
+	free(cname);
 	fclose(file);
 	return err;
 }

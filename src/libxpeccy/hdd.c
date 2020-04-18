@@ -513,10 +513,10 @@ typedef struct {
 	unsigned iorq:1;
 	unsigned high:1;
 	unsigned hdd:1;
-	unsigned char port;
+	int port;
 } ataAddr;
 
-ataAddr ideDecoder(IDE* ide, unsigned short port, int dosen, int wr) {
+ataAddr ideDecoder(IDE* ide, int port, int dosen, int wr) {
 	ataAddr res;
 	res.port = 0xff;
 	res.iorq = 0;
@@ -579,7 +579,7 @@ ataAddr ideDecoder(IDE* ide, unsigned short port, int dosen, int wr) {
 	return res;
 }
 
-int ideIn(IDE* ide,unsigned short port,unsigned char* val,int dosen) {
+int ideIn(IDE* ide, int port, int* val, int dosen) {
 	ataAddr adr = ideDecoder(ide,port,dosen,0);
 	if (!adr.iorq) return 0;
 	if (adr.hdd) {
@@ -629,7 +629,7 @@ int ideIn(IDE* ide,unsigned short port,unsigned char* val,int dosen) {
 	return 1;
 }
 
-int ideOut(IDE* ide,unsigned short port,unsigned char val,int dosen) {
+int ideOut(IDE* ide, int port, int val,int dosen) {
 	ataAddr adr = ideDecoder(ide,port,dosen,1);
 	if (!adr.iorq) return 0;
 	if (adr.hdd) {

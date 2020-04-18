@@ -1657,10 +1657,10 @@ void DebugWin::loadMap() {
 
 // disasm table
 
-unsigned char rdbyte(unsigned short adr, void* ptr) {
+int rdbyte(int adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	MemPage* pg = &comp->mem->map[adr >> 8];
-	unsigned char res = 0xff;
+	MemPage* pg = &comp->mem->map[(adr >> 8) & 0xff];
+	int res = 0xff;
 	int fadr = (pg->num << 8) | (adr & 0xff);
 	switch (pg->type) {
 		case MEM_RAM: res = comp->mem->ramData[fadr & comp->mem->ramMask]; break;
@@ -1668,29 +1668,11 @@ unsigned char rdbyte(unsigned short adr, void* ptr) {
 		case MEM_SLOT:
 			if (!comp->slot) break;
 			if (!comp->slot->data) break;
-			res = sltRead(comp->slot, SLT_PRG, adr); break;
+			res = sltRead(comp->slot, SLT_PRG, adr & 0xffff); break;
 			// res = comp->slot->data[fadr & comp->slot->memMask]; break;
 	}
 	return res;
 }
-
-/*
-int checkCond(Computer* comp, int num) {
-	int res = 0;
-	unsigned char flg = comp->cpu->f;
-	switch (num) {
-		case 0: res = (flg & FZ) ? 0 : 1; break;	// NZ
-		case 1: res = (flg & FZ) ? 1 : 0; break;	// Z
-		case 2: res = (flg & FC) ? 0 : 1; break;	// NC
-		case 3: res = (flg & FC) ? 1 : 0; break;	// C
-		case 4: res = (flg & FP) ? 0 : 1; break;	// PO
-		case 5: res = (flg & FP) ? 1 : 0; break;	// PE
-		case 6: res = (flg & FS) ? 0 : 1; break;	// N
-		case 7: res = (flg & FS) ? 1 : 0; break;	// M
-	}
-	return res;
-}
-*/
 
 int getCommandSize(Computer* comp, unsigned short adr) {
 	int type = getBrk(comp, adr) & 0xf0;
@@ -1722,7 +1704,7 @@ int getCommandSize(Computer* comp, unsigned short adr) {
 			break;
 		case DBG_VIEW_CODE:
 		case DBG_VIEW_EXEC:
-			mn = cpuDisasm(comp->cpu, adr, buf, &rdbyte, comp);
+			mn = cpuDisasm(comp->cpu, adr, buf, rdbyte, comp);
 			res = mn.len;
 			break;
 		default:

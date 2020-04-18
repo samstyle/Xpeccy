@@ -3,7 +3,7 @@
 
 #include "sndcommon.h"
 
-typedef unsigned char(*aextmrd)(unsigned short, void*);
+typedef int(*aextmrd)(int, void*);
 
 typedef struct {
 	unsigned off:1;		// external on/off channel volume. sound generation doesn't stop
@@ -73,7 +73,7 @@ void apuReset(nesAPU*);
 void apuSync(nesAPU*, int);
 sndPair apuVolume(nesAPU*);
 
-void apuWrite(nesAPU*, int, unsigned char);
+void apuWrite(nesAPU*, int, int);
 
 // void apuToneDuty(apuChannel*);
 
