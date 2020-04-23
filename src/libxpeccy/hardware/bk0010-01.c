@@ -346,6 +346,15 @@ int bk_mrd(Computer* comp, int adr, int m1) {
 	return memRd(comp->mem, adr);
 }
 
+// only for sending control signals (like INIT)
+void bk_iowr(Computer* comp, int adr, int val, int dos) {
+	switch (val) {
+		case PDP11_INIT:
+			comp->keyb->flag = 0;
+			break;
+	}
+}
+
 sndPair bk_vol(Computer* comp, sndVolume* sv) {
 	sndPair vol;
 	int lev = comp->beep->val * sv->beep / 6;

@@ -21,12 +21,7 @@ void pdp_wrb(CPU* cpu, int adr, int val) {	// val is 00..FF
 void pdp_wr(CPU* cpu, int adr, int val) {
 	cpu->nod = 3;
 	adr &= ~1;
-#if 1
 	cpu->mwr(adr, val, cpu->data);
-#else
-	cpu->mwr(adr++, val & 0xff, cpu->data);
-	cpu->mwr(adr, (val >> 8) & 0xff, cpu->data);
-#endif
 }
 
 int pdp_rd(CPU* cpu, int adr) {
@@ -61,7 +56,7 @@ void pdp_push(CPU* cpu, unsigned short val) {
 }
 
 unsigned short pdp_pop(CPU* cpu) {
-	unsigned short res = pdp_rd(cpu, cpu->preg[6]);
+	unsigned short res = pdp_rd(cpu, cpu->preg[6]) & 0xffff;
 	cpu->preg[6] += 2;
 	return res;
 }
@@ -69,8 +64,8 @@ unsigned short pdp_pop(CPU* cpu) {
 void pdp_trap(CPU* cpu, unsigned short adr) {
 	pdp_push(cpu, cpu->pflag);
 	pdp_push(cpu, cpu->preg[7]);
-	cpu->preg[7] = pdp_rd(cpu, adr);
-	cpu->pflag = pdp_rd(cpu, adr+2);
+	cpu->preg[7] = pdp_rd(cpu, adr) & 0xffff;
+	cpu->pflag = pdp_rd(cpu, adr+2) & 0xffff;
 }
 
 int pdp11_int(CPU* cpu) {
@@ -173,9 +168,9 @@ unsigned short pdp_src(CPU* cpu, int type, int b) {
 	} else {
 		cpu->mptr = adr & 0xffff;
 		if (b) {
-			res = pdp_rdb(cpu, cpu->mptr);
+			res = pdp_rdb(cpu, cpu->mptr) & 0xffff;
 		} else {
-			res = pdp_rd(cpu, cpu->mptr);
+			res = pdp_rd(cpu, cpu->mptr) & 0xffff;
 		}
 	}
 	return res;
@@ -232,10 +227,10 @@ void pdp_wait(CPU* cpu) {
 // 0002:rti
 void pdp_rti(CPU* cpu) {
 	cpu->t += 3;
-	cpu->preg[7] = pdp_rd(cpu, cpu->preg[6]);
+	cpu->preg[7] = pdp_rd(cpu, cpu->preg[6]) & 0xffff;
 	cpu->t += 8;
 	cpu->preg[6] += 2;
-	cpu->pflag = pdp_rd(cpu, cpu->preg[6]);
+	cpu->pflag = pdp_rd(cpu, cpu->preg[6]) & 0xffff;
 	cpu->t += 8;
 	cpu->preg[6] += 2;
 	cpu->pflag &= 0xff;
@@ -262,13 +257,18 @@ void pdp_iot(CPU* cpu) {
 
 // 0005:reset
 void pdp_res(CPU* cpu) {
+	cpu->t += 448;
+	cpu->timer.val = 0xffff;
+	cpu->timer.ival = 0xffff;
+	cpu->timer.flag = 0xff;
+	cpu->iwr(0, PDP11_INIT, cpu->data);
 }
 
 // 0006:rtt
 void pdp_rtt(CPU* cpu) {
-	cpu->preg[7] = pdp_rd(cpu, cpu->preg[6]);
+	cpu->preg[7] = pdp_rd(cpu, cpu->preg[6]) & 0xffff;
 	cpu->preg[6] += 2;
-	cpu->pflag = pdp_rd(cpu, cpu->preg[6]);
+	cpu->pflag = pdp_rd(cpu, cpu->preg[6]) & 0xffff;
 	cpu->preg[6] += 2;
 	cpu->pflag &= 0xff;
 }
@@ -276,9 +276,9 @@ void pdp_rtt(CPU* cpu) {
 // 0007..000A : start
 
 void pdp_start(CPU* cpu) {
-	cpu->preg[7] = pdp_rd(cpu, 0177674);
-	cpu->pflag = pdp_rd(cpu, 0177676);
-	cpu->mptr = pdp_rd(cpu, 0177716);
+	cpu->preg[7] = pdp_rd(cpu, 0177674) & 0xffff;
+	cpu->pflag = pdp_rd(cpu, 0177676) & 0xffff;
+	cpu->mptr = pdp_rd(cpu, 0177716) & 0xffff;
 	cpu->mptr &= ~8;
 	pdp_wr(cpu, 0177716, cpu->mptr);
 }
@@ -286,9 +286,9 @@ void pdp_start(CPU* cpu) {
 // 000B..000F : step
 
 void pdp_step(CPU* cpu) {
-	cpu->preg[7] = pdp_rd(cpu, 0177674);
-	cpu->pflag = pdp_rd(cpu, 0177676);
-	cpu->mptr = pdp_rd(cpu, 0177716);
+	cpu->preg[7] = pdp_rd(cpu, 0177674) & 0xffff;
+	cpu->pflag = pdp_rd(cpu, 0177676) & 0xffff;
+	cpu->mptr = pdp_rd(cpu, 0177716) & 0xffff;
 	cpu->mptr &= ~8;
 	pdp_wr(cpu, 0177716, cpu->mptr);
 }
@@ -325,7 +325,7 @@ void pdp_008x(CPU* cpu) {
 	} else {
 		cpu->mcir = 3;
 		cpu->preg[7] = cpu->preg[cpu->com & 7];
-		cpu->preg[cpu->com & 7] = pdp_rd(cpu, cpu->preg[6]);
+		cpu->preg[cpu->com & 7] = pdp_rd(cpu, cpu->preg[6]) & 0xffff;
 		cpu->t += 8;
 		cpu->preg[6] += 2;
 	}
@@ -371,59 +371,69 @@ void pdp_00xx(CPU* cpu) {
 
 // conditional jumps
 
-// br
-void pdp_01xx(CPU* cpu) {
-	cpu->t += 4;
+void pdp_jr(CPU* cpu) {
 	twsrc = (cpu->com << 1) & 0x1fe;
 	if (twsrc & 0x100)
 		twsrc |= 0xff00;
 	cpu->preg[7] += twsrc;
 }
 
+// br
+void pdp_01xx(CPU* cpu) {
+	cpu->t += 12;
+	pdp_jr(cpu);
+}
+
 // bne
 void pdp_02xx(CPU* cpu) {
+	cpu->t += 12;
 	if (~cpu->pflag & PDP_FZ)
-		pdp_01xx(cpu);
+		pdp_jr(cpu);
 }
 
 // beq
 void pdp_03xx(CPU* cpu) {
+	cpu->t += 12;
 	if (cpu->pflag & PDP_FZ)
-		pdp_01xx(cpu);
+		pdp_jr(cpu);
 }
 
 // bge
 void pdp_04xx(CPU* cpu) {
+	cpu->t += 12;
 	twres = (cpu->pflag & PDP_FN) ? 1 : 0;
 	if (cpu->pflag & PDP_FV) twres ^= 1;
 	if (!twres)
-		pdp_01xx(cpu);
+		pdp_jr(cpu);
 }
 
 // blt
 void pdp_05xx(CPU* cpu) {
+	cpu->t += 12;
 	twres = (cpu->pflag & PDP_FN) ? 1 : 0;
 	if (cpu->pflag & PDP_FV) twres ^= 1;
 	if (twres)
-		pdp_01xx(cpu);
+		pdp_jr(cpu);
 }
 
 // bgt
 void pdp_06xx(CPU* cpu) {
+	cpu->t += 12;
 	twres = (cpu->pflag & PDP_FN) ? 1 : 0;
 	if (cpu->pflag & PDP_FV) twres ^= 1;
 	if (cpu->pflag & PDP_FZ) twres |= 1;
 	if (!twres)
-		pdp_01xx(cpu);
+		pdp_jr(cpu);
 }
 
 // ble
 void pdp_07xx(CPU* cpu) {
+	cpu->t += 12;
 	twres = (cpu->pflag & PDP_FN) ? 1 : 0;
 	if (cpu->pflag & PDP_FV) twres ^= 1;
 	if (cpu->pflag & PDP_FZ) twres |= 1;
 	if (twres)
-		pdp_01xx(cpu);
+		pdp_jr(cpu);
 }
 
 // 0000 100r rrdd dddd	jsr		push reg:reg=r7:r7=[dd]
@@ -700,50 +710,58 @@ void pdp_0xxx(CPU* cpu) {
 
 // bpl
 void pdp_80xx(CPU* cpu) {
+	cpu->t += 12;
 	if (~cpu->pflag & PDP_FN)
-		pdp_01xx(cpu);
+		pdp_jr(cpu);
 }
 
 // bmi
 void pdp_81xx(CPU* cpu) {
+	cpu->t += 12;
 	if (cpu->pflag & PDP_FN)
-		pdp_01xx(cpu);
+		pdp_jr(cpu);
 }
 
 // bhi
 void pdp_82xx(CPU* cpu) {
+	cpu->t += 12;
 	if (!((cpu->pflag & PDP_FC) || (cpu->pflag & PDP_FZ)))
-		pdp_01xx(cpu);
+		pdp_jr(cpu);
 }
 
 // blos
 void pdp_83xx(CPU* cpu) {
+	cpu->t += 12;
 	if ((cpu->pflag & PDP_FC) || (cpu->pflag & PDP_FZ))
-		pdp_01xx(cpu);
+		pdp_jr(cpu);
 }
 
 // bvc
 void pdp_84xx(CPU* cpu) {
+	cpu->t += 12;
 	if (~cpu->pflag & PDP_FV)
-		pdp_01xx(cpu);
+		pdp_jr(cpu);
 }
 
 // bvs
 void pdp_85xx(CPU* cpu) {
+	cpu->t += 12;
 	if (cpu->pflag & PDP_FV)
-		pdp_01xx(cpu);
+		pdp_jr(cpu);
 }
 
 // bcc (bhis)
 void pdp_86xx(CPU* cpu) {
+	cpu->t += 12;
 	if (~cpu->pflag & PDP_FC)
-		pdp_01xx(cpu);
+		pdp_jr(cpu);
 }
 
 // bcs (blo)
 void pdp_87xx(CPU* cpu) {
+	cpu->t += 12;
 	if (cpu->pflag & PDP_FC)
-		pdp_01xx(cpu);
+		pdp_jr(cpu);
 }
 
 // 10xxxx
@@ -1517,11 +1535,11 @@ char* put_addressation(char* dst, unsigned short type) {
 		case 3: *(dst++) = '@';				// @(Rn)+
 		case 2: if ((type & 7) == 7) {			// (Rn)+
 				if (type & 8) {
-					//dst--;
-					//*dst++ = '(';
+					dst--;
+					*dst++ = '(';
 					*dst++ = ':';
 					*dst++ = '8';
-					//*dst++ = ')';
+					*dst++ = ')';
 				} else {
 					*(dst++) = ':';		// :8 will be replaced with next word (oct)
 					*(dst++) = '8';

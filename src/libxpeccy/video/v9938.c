@@ -272,11 +272,6 @@ void vdp_linex(Video* gpu) {
 
 // v9918 TEXT1
 
-void vdpT1ini(Video* vid) {
-	vid->scrn.x = 240;	// 40 * 6
-	vidUpdateLayout(vid);
-}
-
 void vdpText1(Video* vid) {
 	if (vid->vbrd || vid->hbrd || !(vid->reg[1] & 0x40) || (vid->ray.xs > 240)) {
 		col = vid->reg[7] & 0x0f;
@@ -295,11 +290,6 @@ void vdpText1(Video* vid) {
 }
 
 // v9918 G1
-
-void vdpG1ini(Video* vid) {
-	vid->scrn.x = 256;
-	vidUpdateLayout(vid);
-}
 
 void vdpGra1(Video* vid) {
 	if (vid->vbrd || vid->hbrd || !(vid->reg[1] & 0x40)) {
@@ -365,11 +355,6 @@ void vdpMultcol(Video* vid) {
 }
 
 // v9938 G4 (256x212 4bpp)
-
-void vdpG4ini(Video* vid) {
-	vid->scrn.x = 256;	// 40 * 6
-	vidUpdateLayout(vid);
-}
 
 void vdpGra4(Video* vid) {
 	if (vid->vbrd || vid->hbrd || !(vid->reg[1] & 0x40)) {

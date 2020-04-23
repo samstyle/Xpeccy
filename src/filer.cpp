@@ -367,10 +367,10 @@ int load_file(Computer* comp, const char* name, int id, int drv) {
 		}
 	}
 	if (path.isEmpty()) return err;
-	inf = file_find_hw_ext(comp->hw->id, path);
 	switch(grp->id) {
 		case FG_RAW: inf = &ft_raw; break;
 		case FG_BKRAW: inf = &ft_bktap; break;
+		default: inf = file_find_hw_ext(comp->hw->id, path); break;		// detect file type by extension
 	}
 	if (drv < 0) drv = 0;
 	if (inf) {

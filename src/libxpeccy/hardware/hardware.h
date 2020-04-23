@@ -278,6 +278,7 @@ void bk_mem_map(Computer*);
 void bk_reset(Computer*);
 void bk_mwr(Computer*, int, int);
 int bk_mrd(Computer* comp, int, int);
+void bk_iowr(Computer*, int, int, int);
 void bk_sync(Computer*, int);
 void bk_keyp(Computer*, keyEntry);
 void bk_keyr(Computer*, keyEntry);

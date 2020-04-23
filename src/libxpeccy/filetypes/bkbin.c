@@ -4,15 +4,19 @@ int loadBIN(Computer* comp, const char* name, int drv) {
 	FILE* file = fopen(name, "rb");
 	if (!file) return ERR_CANT_OPEN;
 	int err = ERR_OK;
-	char buf[0x8000];
-	unsigned short start = fgetw(file);
+//	char buf[0x8000];
+	unsigned short adr = fgetw(file);
 	unsigned short len = fgetw(file);
-	if (start + len > 0x8000) {
+	int val;
+	if (adr + len > 0x8000) {
 		err = ERR_RAW_LONG;
 	} else {
-		fread(buf, len, 1, file);
-		for (int i = 0; i < len; i++) {
-			memWr(comp->mem, start + i, (unsigned char)buf[i]);
+//		fread(buf, len, 1, file);
+		while (len > 0) {
+			val = fgetw(file);
+			memWr(comp->mem, adr, val & 0xffff);
+			adr += 2;
+			len -= 2;
 		}
 		err = ERR_OK;
 	}

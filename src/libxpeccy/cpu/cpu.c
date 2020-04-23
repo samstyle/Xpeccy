@@ -181,7 +181,7 @@ xMnem cpuDisasm(CPU* cpu, unsigned short adr, char* buf, cbdmr mrd, void* data) 
 						dtw = mrd(adr++, data);
 						dtw |= (mrd(adr++, data) << 8);
 						mn.len += 2;
-						*buf++ = '#';
+						// *buf++ = '#';
 						buf += sprintf(buf, "%o", dtw);
 						break;
 				}

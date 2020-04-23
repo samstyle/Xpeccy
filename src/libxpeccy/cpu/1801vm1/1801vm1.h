@@ -13,6 +13,11 @@ enum {
 	PDP11_REGF
 };
 
+// external signals, working by IOWR
+enum {
+	PDP11_INIT = 1
+};
+
 #define PDP_FC	(1 << 0)
 #define PDP_FV	(1 << 1)
 #define	PDP_FZ	(1 << 2)
