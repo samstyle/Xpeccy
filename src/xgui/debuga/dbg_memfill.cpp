@@ -32,12 +32,12 @@ void xMemFiller::fill() {
 	int idx = 0;
 	for (idx = 0; idx < 8; idx++) {	// fill arrays
 		if (idx < strl.size()) {
-			pat[idx] = strl[idx].toInt(NULL, 16);
+			pat[idx] = strl[idx].toInt(NULL, 16) & 0xff;
 		} else {
 			pat[idx] = 0x00;
 		}
 		if (idx < strm.size()) {
-			msk[idx] = strm[idx].toInt(NULL, 16);
+			msk[idx] = strm[idx].toInt(NULL, 16) & 0xff;
 		} else {
 			msk[idx] = 0xff;
 		}

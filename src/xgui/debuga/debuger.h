@@ -84,6 +84,9 @@ class DebugWin : public QDialog {
 		Computer* comp;
 		long tCount;
 
+		xLabel* dbgRegLabs[16];
+		xHexSpin* dbgRegEdit[16];
+
 		QDialog* dumpwin;
 		Ui::DumpDial dui;
 		QByteArray getDumpData();

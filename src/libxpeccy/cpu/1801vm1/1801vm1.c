@@ -1562,7 +1562,7 @@ char* put_addressation(char* dst, unsigned short type) {
 		case 7: *(dst++) = '@';				// @E(Rn)
 		case 6: if ((type & 7) == 7) {			// E(Rn)
 				*(dst++) = '(';
-				*(dst++) = '#';
+				// *(dst++) = '#';
 				*(dst++) = ':';			// (E + PC)
 				*(dst++) = '6';
 				*(dst++) = ')';

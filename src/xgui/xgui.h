@@ -1,11 +1,11 @@
-#ifndef X_GUI_H
-#define X_GUI_H
+#pragma once
 
 #include <QDialog>
 #include <QLabel>
 #include <QLineEdit>
 #include <QWheelEvent>
 #include <QKeyEvent>
+#include <QRegExpValidator>
 
 // common
 
@@ -19,6 +19,7 @@ void showInfo(const char*);
 #define	XHS_BGR	1		// change background if value changed
 #define	XHS_DEC	(1<<1)		// hex/dec switch enabled
 #define XHS_FILL (1<<2)		// leading zeros
+#define XHS_UPD (1<<3)		// force update text, reset after using
 
 class xHexSpin : public QLineEdit {
 	Q_OBJECT
@@ -29,6 +30,7 @@ class xHexSpin : public QLineEdit {
 		void setMin(int);
 		void setMax(int);
 		void setXFlag(int);
+		void setBase(int);
 	signals:
 		void valueChanged(int);
 	private slots:
@@ -40,8 +42,8 @@ class xHexSpin : public QLineEdit {
 		int value;
 		int min;
 		int max;
-		QString imask;
-		void setBase(int);
+		int len;
+		QRegExpValidator vldtr;
 	protected:
 		void keyPressEvent(QKeyEvent*);
 		void wheelEvent(QWheelEvent*);
@@ -129,5 +131,3 @@ class RZXWin : public QDialog {
 		void playPause();
 		void open();
 };
-
-#endif

@@ -63,12 +63,12 @@ HardWare hwTab[] = {
 		HW_C64,HWG_COMMODORE,"Commodore64","Commodore64",16,MEM_128K,1.0,
 		c64_maper,NULL,NULL,c64_mrd,c64_mwr,c64_reset,c64_sync,c64_keyp,c64_keyr,c64_vol
 //	},{
-//		HW_NULL,HWG_NULL,"","",16,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// separator
+//		HW_NULL,HWG_NULL,"","",16,0,1.0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// separator
 	},{
 		HW_BK0010,HWG_BK,"BK0010","BK0010",8,MEM_32K,(double)29/23,
 		bk_mem_map,bk_iowr,NULL,bk_mrd,bk_mwr,bk_reset,bk_sync,bk_keyp,bk_keyr,bk_vol
 	},{
-//		HW_BK0011M,HWG_BK,"BK0011M","BK0011M",8,MEM_128K,
+//		HW_BK0011M,HWG_BK,"BK0011M","BK0011M",8,MEM_128K,(double)29/23,
 //		bk_mem_map,NULL,NULL,bk_mrd,bk_mwr,bk_reset,bk_sync,bk_keyp,bk_keyr,bk_vol
 //	},{
 		HW_NULL,HWG_NULL,NULL,NULL,16,0,1.0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// eot

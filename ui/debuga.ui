@@ -1,40 +1,230 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Debuger</class>
- <widget class="QDialog" name="Debuger">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>906</width>
-    <height>648</height>
+    <width>898</width>
+    <height>647</height>
    </rect>
   </property>
-  <property name="font">
-   <font>
-    <family>DejaVu Sans Mono</family>
-   </font>
-  </property>
   <property name="windowTitle">
-   <string>Xpeccy deBUGa</string>
+   <string>MainWindow</string>
   </property>
-  <property name="windowIcon">
-   <iconset resource="../xpeccy.qrc">
-    <normaloff>:/images/bug.png</normaloff>:/images/bug.png</iconset>
-  </property>
-  <layout class="QGridLayout" name="gridLayout_7" columnstretch="0,10,2,0">
-   <item row="0" column="0">
-    <layout class="QVBoxLayout" name="verticalLayout_9" stretch="0,1">
-     <item>
-      <widget class="QLabel" name="labHeadCpu">
-       <property name="text">
-        <string>CPU</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_4">
+      <item>
+       <widget class="QToolButton" name="tbBreak">
+        <property name="text">
+         <string>...</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../xpeccy.qrc">
+          <normaloff>:/images/stop.png</normaloff>:/images/stop.png</iconset>
+        </property>
+        <property name="popupMode">
+         <enum>QToolButton::InstantPopup</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="tbView">
+        <property name="text">
+         <string>...</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../xpeccy.qrc">
+          <normaloff>:/images/bars.png</normaloff>:/images/bars.png</iconset>
+        </property>
+        <property name="popupMode">
+         <enum>QToolButton::InstantPopup</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="tbTrace">
+        <property name="text">
+         <string>...</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../xpeccy.qrc">
+          <normaloff>:/images/arrGreen.png</normaloff>:/images/arrGreen.png</iconset>
+        </property>
+        <property name="popupMode">
+         <enum>QToolButton::InstantPopup</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="tbTool">
+        <property name="text">
+         <string>...</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../xpeccy.qrc">
+          <normaloff>:/images/other.png</normaloff>:/images/other.png</iconset>
+        </property>
+        <property name="popupMode">
+         <enum>QToolButton::InstantPopup</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="tbDbgOpt">
+        <property name="text">
+         <string>...</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../xpeccy.qrc">
+          <normaloff>:/images/settings.png</normaloff>:/images/settings.png</iconset>
+        </property>
+        <property name="popupMode">
+         <enum>QToolButton::InstantPopup</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="cbDasmMode"/>
+      </item>
+      <item>
+       <widget class="QSpinBox" name="sbDasmPage">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="maximum">
+         <number>255</number>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QToolButton" name="tbSaveDasm">
+        <property name="text">
+         <string>...</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../xpeccy.qrc">
+          <normaloff>:/images/floppy.png</normaloff>:/images/floppy.png</iconset>
+        </property>
+        <property name="popupMode">
+         <enum>QToolButton::InstantPopup</enum>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_5">
+      <item>
+       <widget class="QToolButton" name="tbRefresh">
+        <property name="toolTip">
+         <string>Reload snapshot &amp; labels</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="../xpeccy.qrc">
+          <normaloff>:/images/refresh.png</normaloff>:/images/refresh.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="labTcount">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <widget class="xDisasmTable" name="dasmTable">
+      <property name="minimumSize">
+       <size>
+        <width>350</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="font">
+       <font>
+        <family>DejaVu Sans Mono</family>
+       </font>
+      </property>
+      <property name="contextMenuPolicy">
+       <enum>Qt::CustomContextMenu</enum>
+      </property>
+      <property name="verticalScrollBarPolicy">
+       <enum>Qt::ScrollBarAlwaysOff</enum>
+      </property>
+      <property name="horizontalScrollBarPolicy">
+       <enum>Qt::ScrollBarAlwaysOff</enum>
+      </property>
+      <property name="tabKeyNavigation">
+       <bool>false</bool>
+      </property>
+      <property name="alternatingRowColors">
+       <bool>true</bool>
+      </property>
+      <property name="selectionMode">
+       <enum>QAbstractItemView::SingleSelection</enum>
+      </property>
+      <property name="showGrid">
+       <bool>false</bool>
+      </property>
+      <property name="wordWrap">
+       <bool>true</bool>
+      </property>
+      <attribute name="horizontalHeaderVisible">
+       <bool>false</bool>
+      </attribute>
+      <attribute name="horizontalHeaderDefaultSectionSize">
+       <number>20</number>
+      </attribute>
+      <attribute name="verticalHeaderVisible">
+       <bool>false</bool>
+      </attribute>
+      <attribute name="verticalHeaderMinimumSectionSize">
+       <number>17</number>
+      </attribute>
+      <attribute name="verticalHeaderDefaultSectionSize">
+       <number>17</number>
+      </attribute>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QDockWidget" name="dockWidget">
+   <property name="features">
+    <set>QDockWidget::AllDockWidgetFeatures</set>
+   </property>
+   <property name="windowTitle">
+    <string>CPU</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents">
+    <layout class="QVBoxLayout" name="verticalLayout_2">
      <item>
       <layout class="QFormLayout" name="formLayout">
        <item row="0" column="0">
@@ -63,9 +253,6 @@
        </item>
        <item row="1" column="1">
         <widget class="xHexSpin" name="editReg01">
-         <property name="maxLength">
-          <number>32767</number>
-         </property>
          <property name="frame">
           <bool>false</bool>
          </property>
@@ -83,9 +270,6 @@
        </item>
        <item row="2" column="1">
         <widget class="xHexSpin" name="editReg02">
-         <property name="maxLength">
-          <number>32767</number>
-         </property>
          <property name="frame">
           <bool>false</bool>
          </property>
@@ -367,9 +551,6 @@
          <property name="text">
           <string/>
          </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
         </widget>
        </item>
        <item row="19" column="0">
@@ -393,9 +574,6 @@
          <property name="text">
           <string/>
          </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
         </widget>
        </item>
        <item row="20" column="0">
@@ -419,9 +597,6 @@
          <property name="text">
           <string/>
          </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
         </widget>
        </item>
        <item row="21" column="0">
@@ -445,9 +620,6 @@
          <property name="text">
           <string/>
          </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
         </widget>
        </item>
        <item row="22" column="0">
@@ -471,9 +643,6 @@
          <property name="text">
           <string/>
          </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
         </widget>
        </item>
        <item row="23" column="0">
@@ -497,9 +666,6 @@
          <property name="text">
           <string/>
          </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
         </widget>
        </item>
        <item row="24" column="0">
@@ -523,9 +689,6 @@
          <property name="text">
           <string/>
          </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
         </widget>
        </item>
        <item row="25" column="0">
@@ -549,456 +712,22 @@
          <property name="text">
           <string/>
          </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
         </widget>
        </item>
       </layout>
      </item>
     </layout>
-   </item>
-   <item row="0" column="3">
-    <layout class="QVBoxLayout" name="verticalLayout_8">
-     <item>
-      <widget class="QLabel" name="labHeadMem">
-       <property name="text">
-        <string>MEM</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labPG0">
-       <property name="text">
-        <string>ROM:00</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labPG1">
-       <property name="text">
-        <string>RAM:05</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labPG2">
-       <property name="text">
-        <string>RAM:02</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labPG3">
-       <property name="text">
-        <string>RAM:00</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labHeadStack">
-       <property name="text">
-        <string>SP</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labSP">
-       <property name="text">
-        <string>0000</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labSP2">
-       <property name="text">
-        <string>0000</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labSP4">
-       <property name="text">
-        <string>0000</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labSP6">
-       <property name="text">
-        <string>0000</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labHeadSignal">
-       <property name="text">
-        <string>SIG</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labDOS">
-       <property name="autoFillBackground">
-        <bool>true</bool>
-       </property>
-       <property name="text">
-        <string>DOS</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labROM">
-       <property name="autoFillBackground">
-        <bool>true</bool>
-       </property>
-       <property name="text">
-        <string>ROM</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labCPM">
-       <property name="autoFillBackground">
-        <bool>true</bool>
-       </property>
-       <property name="text">
-        <string>CPM</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labINT">
-       <property name="autoFillBackground">
-        <bool>true</bool>
-       </property>
-       <property name="text">
-        <string>INT</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labHeadRay">
-       <property name="text">
-        <string>RAY</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labRX">
-       <property name="autoFillBackground">
-        <bool>true</bool>
-       </property>
-       <property name="text">
-        <string>000</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labRY">
-       <property name="autoFillBackground">
-        <bool>true</bool>
-       </property>
-       <property name="text">
-        <string>000</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="verticalSpacer_10">
-       <property name="orientation">
-        <enum>Qt::Vertical</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>20</width>
-         <height>40</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-    </layout>
-   </item>
-   <item row="0" column="1">
-    <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,0,0,10">
-     <item>
-      <widget class="QLabel" name="labHeadDisasm">
-       <property name="text">
-        <string>Disasm</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_4">
-       <item>
-        <widget class="QToolButton" name="tbBreak">
-         <property name="text">
-          <string>...</string>
-         </property>
-         <property name="icon">
-          <iconset resource="../xpeccy.qrc">
-           <normaloff>:/images/stop.png</normaloff>:/images/stop.png</iconset>
-         </property>
-         <property name="popupMode">
-          <enum>QToolButton::InstantPopup</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QToolButton" name="tbView">
-         <property name="text">
-          <string>...</string>
-         </property>
-         <property name="icon">
-          <iconset resource="../xpeccy.qrc">
-           <normaloff>:/images/bars.png</normaloff>:/images/bars.png</iconset>
-         </property>
-         <property name="popupMode">
-          <enum>QToolButton::InstantPopup</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QToolButton" name="tbTrace">
-         <property name="text">
-          <string>...</string>
-         </property>
-         <property name="icon">
-          <iconset resource="../xpeccy.qrc">
-           <normaloff>:/images/arrGreen.png</normaloff>:/images/arrGreen.png</iconset>
-         </property>
-         <property name="popupMode">
-          <enum>QToolButton::InstantPopup</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QToolButton" name="tbTool">
-         <property name="text">
-          <string>...</string>
-         </property>
-         <property name="icon">
-          <iconset resource="../xpeccy.qrc">
-           <normaloff>:/images/other.png</normaloff>:/images/other.png</iconset>
-         </property>
-         <property name="popupMode">
-          <enum>QToolButton::InstantPopup</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QToolButton" name="tbDbgOpt">
-         <property name="text">
-          <string>...</string>
-         </property>
-         <property name="icon">
-          <iconset resource="../xpeccy.qrc">
-           <normaloff>:/images/settings.png</normaloff>:/images/settings.png</iconset>
-         </property>
-         <property name="popupMode">
-          <enum>QToolButton::InstantPopup</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QComboBox" name="cbDasmMode"/>
-       </item>
-       <item>
-        <widget class="QSpinBox" name="sbDasmPage">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="maximum">
-          <number>255</number>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="horizontalSpacer_3">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QToolButton" name="tbSaveDasm">
-         <property name="text">
-          <string>...</string>
-         </property>
-         <property name="icon">
-          <iconset resource="../xpeccy.qrc">
-           <normaloff>:/images/floppy.png</normaloff>:/images/floppy.png</iconset>
-         </property>
-         <property name="popupMode">
-          <enum>QToolButton::InstantPopup</enum>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_5">
-       <item>
-        <widget class="QToolButton" name="tbRefresh">
-         <property name="toolTip">
-          <string>Reload snapshot &amp; labels</string>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="icon">
-          <iconset resource="../xpeccy.qrc">
-           <normaloff>:/images/refresh.png</normaloff>:/images/refresh.png</iconset>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="labTcount">
-         <property name="text">
-          <string/>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <widget class="xDisasmTable" name="dasmTable">
-       <property name="minimumSize">
-        <size>
-         <width>350</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <family>DejaVu Sans Mono</family>
-        </font>
-       </property>
-       <property name="contextMenuPolicy">
-        <enum>Qt::CustomContextMenu</enum>
-       </property>
-       <property name="verticalScrollBarPolicy">
-        <enum>Qt::ScrollBarAlwaysOff</enum>
-       </property>
-       <property name="horizontalScrollBarPolicy">
-        <enum>Qt::ScrollBarAlwaysOff</enum>
-       </property>
-       <property name="tabKeyNavigation">
-        <bool>false</bool>
-       </property>
-       <property name="alternatingRowColors">
-        <bool>true</bool>
-       </property>
-       <property name="selectionMode">
-        <enum>QAbstractItemView::SingleSelection</enum>
-       </property>
-       <property name="showGrid">
-        <bool>false</bool>
-       </property>
-       <property name="wordWrap">
-        <bool>true</bool>
-       </property>
-       <attribute name="horizontalHeaderVisible">
-        <bool>false</bool>
-       </attribute>
-       <attribute name="horizontalHeaderDefaultSectionSize">
-        <number>20</number>
-       </attribute>
-       <attribute name="verticalHeaderVisible">
-        <bool>false</bool>
-       </attribute>
-       <attribute name="verticalHeaderMinimumSectionSize">
-        <number>17</number>
-       </attribute>
-       <attribute name="verticalHeaderDefaultSectionSize">
-        <number>17</number>
-       </attribute>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item row="0" column="2">
-    <layout class="QVBoxLayout" name="verticalLayout_4" stretch="0,0,0,0">
-     <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_8" stretch="10">
-       <item>
-        <widget class="QLabel" name="labHeadDump">
-         <property name="text">
-          <string>Dump : ????</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="dockWidget_2">
+   <property name="windowTitle">
+    <string>Dump: xxxx</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_2">
+    <layout class="QVBoxLayout" name="verticalLayout_3">
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_7">
        <item>
@@ -1127,13 +856,28 @@
        </attribute>
       </widget>
      </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="dockWidget_3">
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_3">
+    <layout class="QVBoxLayout" name="verticalLayout_9">
      <item>
       <widget class="QTabWidget" name="tabsPanel">
+       <property name="acceptDrops">
+        <bool>true</bool>
+       </property>
        <property name="autoFillBackground">
         <bool>true</bool>
        </property>
        <property name="currentIndex">
         <number>0</number>
+       </property>
+       <property name="movable">
+        <bool>true</bool>
        </property>
        <widget class="QWidget" name="scrTab">
         <attribute name="icon">
@@ -1148,7 +892,7 @@
         </attribute>
         <layout class="QHBoxLayout" name="horizontalLayout_3">
          <item>
-          <layout class="QVBoxLayout" name="verticalLayout_3">
+          <layout class="QVBoxLayout" name="verticalLayout_4">
            <item>
             <widget class="QLabel" name="scrLabel">
              <property name="minimumSize">
@@ -2053,7 +1797,7 @@
           </widget>
          </item>
          <item>
-          <layout class="QVBoxLayout" name="verticalLayout">
+          <layout class="QVBoxLayout" name="verticalLayout_5">
            <item>
             <widget class="QToolButton" name="tbAddBrk">
              <property name="text">
@@ -2158,9 +1902,6 @@
              <property name="checked">
               <bool>true</bool>
              </property>
-             <attribute name="buttonGroup">
-              <string notr="true">gbModeGroup</string>
-             </attribute>
             </widget>
            </item>
            <item>
@@ -2168,9 +1909,6 @@
              <property name="text">
               <string>T&amp;ilemap</string>
              </property>
-             <attribute name="buttonGroup">
-              <string notr="true">gbModeGroup</string>
-             </attribute>
             </widget>
            </item>
            <item>
@@ -2178,9 +1916,6 @@
              <property name="text">
               <string>&amp;Palete</string>
              </property>
-             <attribute name="buttonGroup">
-              <string notr="true">gbModeGroup</string>
-             </attribute>
             </widget>
            </item>
            <item>
@@ -2255,7 +1990,7 @@
           </widget>
          </item>
          <item>
-          <layout class="QVBoxLayout" name="verticalLayout_2">
+          <layout class="QVBoxLayout" name="verticalLayout_8">
            <item>
             <widget class="QComboBox" name="nesScrType"/>
            </item>
@@ -2499,255 +2234,8 @@
       </widget>
      </item>
     </layout>
-   </item>
-  </layout>
-  <action name="actFetch">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Fetch break</string>
-   </property>
-  </action>
-  <action name="actRead">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Read break</string>
-   </property>
-  </action>
-  <action name="actWrite">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Write break</string>
-   </property>
-  </action>
-  <action name="actViewOpcode">
-   <property name="text">
-    <string>Opcode</string>
-   </property>
-  </action>
-  <action name="actViewByte">
-   <property name="text">
-    <string>Byte</string>
-   </property>
-  </action>
-  <action name="actViewWord">
-   <property name="text">
-    <string>Word</string>
-   </property>
-  </action>
-  <action name="actViewAddr">
-   <property name="text">
-    <string>Address</string>
-   </property>
-  </action>
-  <action name="actShowLabels">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Show labels</string>
-   </property>
-  </action>
-  <action name="actLoadLabels">
-   <property name="icon">
-    <iconset resource="../xpeccy.qrc">
-     <normaloff>:/images/fileopen.png</normaloff>:/images/fileopen.png</iconset>
-   </property>
-   <property name="text">
-    <string>Load labels</string>
-   </property>
-  </action>
-  <action name="actSaveLabels">
-   <property name="icon">
-    <iconset resource="../xpeccy.qrc">
-     <normaloff>:/images/floppy.png</normaloff>:/images/floppy.png</iconset>
-   </property>
-   <property name="text">
-    <string>Save labels</string>
-   </property>
-  </action>
-  <action name="actTrace">
-   <property name="icon">
-    <iconset resource="../xpeccy.qrc">
-     <normaloff>:/images/arrGreen.png</normaloff>:/images/arrGreen.png</iconset>
-   </property>
-   <property name="text">
-    <string>Trace</string>
-   </property>
-  </action>
-  <action name="actTraceINT">
-   <property name="icon">
-    <iconset resource="../xpeccy.qrc">
-     <normaloff>:/images/arrRed.png</normaloff>:/images/arrRed.png</iconset>
-   </property>
-   <property name="text">
-    <string>Trace and stop on INT</string>
-   </property>
-   <property name="toolTip">
-    <string>Trace, stop on INT</string>
-   </property>
-  </action>
-  <action name="actTraceHere">
-   <property name="icon">
-    <iconset resource="../xpeccy.qrc">
-     <normaloff>:/images/arrOrange.png</normaloff>:/images/arrOrange.png</iconset>
-   </property>
-   <property name="text">
-    <string>Trace and stop here</string>
-   </property>
-   <property name="toolTip">
-    <string>Trace, stop here</string>
-   </property>
-  </action>
-  <action name="actViewText">
-   <property name="text">
-    <string>Ascii</string>
-   </property>
-  </action>
-  <action name="actSaveMap">
-   <property name="icon">
-    <iconset resource="../xpeccy.qrc">
-     <normaloff>:/images/floppy.png</normaloff>:/images/floppy.png</iconset>
-   </property>
-   <property name="text">
-    <string>Save map</string>
-   </property>
-  </action>
-  <action name="actLoadMap">
-   <property name="icon">
-    <iconset resource="../xpeccy.qrc">
-     <normaloff>:/images/fileopen.png</normaloff>:/images/fileopen.png</iconset>
-   </property>
-   <property name="text">
-    <string>Load map</string>
-   </property>
-  </action>
-  <action name="actDisasm">
-   <property name="icon">
-    <iconset resource="../xpeccy.qrc">
-     <normaloff>:/images/floppyRed.png</normaloff>:/images/floppyRed.png</iconset>
-   </property>
-   <property name="text">
-    <string>Disasm to file</string>
-   </property>
-  </action>
-  <action name="actShowSeg">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Show segment</string>
-   </property>
-  </action>
-  <action name="actFill">
-   <property name="icon">
-    <iconset resource="../xpeccy.qrc">
-     <normaloff>:/images/fill.png</normaloff>:/images/fill.png</iconset>
-   </property>
-   <property name="text">
-    <string>Fill...</string>
-   </property>
-  </action>
-  <action name="actSprScan">
-   <property name="icon">
-    <iconset resource="../xpeccy.qrc">
-     <normaloff>:/images/pixels.png</normaloff>:/images/pixels.png</iconset>
-   </property>
-   <property name="text">
-    <string>Sprite scanner</string>
-   </property>
-  </action>
-  <action name="actSearch">
-   <property name="icon">
-    <iconset resource="../xpeccy.qrc">
-     <normaloff>:/images/search.png</normaloff>:/images/search.png</iconset>
-   </property>
-   <property name="text">
-    <string>Search</string>
-   </property>
-  </action>
-  <action name="actLoadDump">
-   <property name="icon">
-    <iconset resource="../xpeccy.qrc">
-     <normaloff>:/images/fileopen.png</normaloff>:/images/fileopen.png</iconset>
-   </property>
-   <property name="text">
-    <string>Load dump</string>
-   </property>
-  </action>
-  <action name="actSaveDump">
-   <property name="icon">
-    <iconset resource="../xpeccy.qrc">
-     <normaloff>:/images/floppy.png</normaloff>:/images/floppy.png</iconset>
-   </property>
-   <property name="text">
-    <string>Save dump</string>
-   </property>
-  </action>
-  <action name="actHideAddr">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Hide address</string>
-   </property>
-  </action>
-  <action name="actHideAddr_2">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Hide address</string>
-   </property>
-  </action>
-  <action name="actTraceLog">
-   <property name="icon">
-    <iconset resource="../xpeccy.qrc">
-     <normaloff>:/images/bug.png</normaloff>:/images/bug.png</iconset>
-   </property>
-   <property name="text">
-    <string>Trace log</string>
-   </property>
-  </action>
-  <action name="actShowKeys">
-   <property name="icon">
-    <iconset resource="../xpeccy.qrc">
-     <normaloff>:/images/keyboardzx.png</normaloff>:/images/keyboardzx.png</iconset>
-   </property>
-   <property name="text">
-    <string>Keyboard</string>
-   </property>
-  </action>
-  <action name="actMaping">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Runtime maping</string>
-   </property>
-   <property name="toolTip">
-    <string>Runtime maping</string>
-   </property>
-  </action>
-  <action name="actMapingClear">
-   <property name="text">
-    <string>Clear maping</string>
-   </property>
-  </action>
-  <action name="actWutcha">
-   <property name="icon">
-    <iconset resource="../xpeccy.qrc">
-     <normaloff>:/images/objective.png</normaloff>:/images/objective.png</iconset>
-   </property>
-   <property name="text">
-    <string>Watcher</string>
-   </property>
-  </action>
+   </widget>
+  </widget>
  </widget>
  <customwidgets>
   <customwidget>
@@ -2776,55 +2264,8 @@
    <header location="global">stdlib.h</header>
   </customwidget>
  </customwidgets>
- <tabstops>
-  <tabstop>tbAddBrk</tabstop>
-  <tabstop>bpList</tabstop>
-  <tabstop>rbTilesetView</tabstop>
-  <tabstop>rbPaleteView</tabstop>
-  <tabstop>leMixA</tabstop>
-  <tabstop>leVolC</tabstop>
-  <tabstop>leMixB</tabstop>
-  <tabstop>leEnvForm</tabstop>
-  <tabstop>leVolB</tabstop>
-  <tabstop>leToneB</tabstop>
-  <tabstop>leMixC</tabstop>
-  <tabstop>leToneA</tabstop>
-  <tabstop>leToneN</tabstop>
-  <tabstop>leEnvTone</tabstop>
-  <tabstop>leVolE</tabstop>
-  <tabstop>tabsPanel</tabstop>
-  <tabstop>rbTilemapView</tabstop>
-  <tabstop>tbView</tabstop>
-  <tabstop>leVolA</tabstop>
-  <tabstop>sbTilemap</tabstop>
-  <tabstop>cbScrAtr</tabstop>
-  <tabstop>sbTileset</tabstop>
-  <tabstop>dasmTable</tabstop>
-  <tabstop>tbSaveDasm</tabstop>
-  <tabstop>tbTrace</tabstop>
-  <tabstop>tbDelBrk</tabstop>
-  <tabstop>tbBreak</tabstop>
-  <tabstop>leToneC</tabstop>
-  <tabstop>tbTool</tabstop>
-  <tabstop>tbDbgOpt</tabstop>
-  <tabstop>dumpTable</tabstop>
-  <tabstop>cbScrPix</tabstop>
-  <tabstop>sbScrBank</tabstop>
-  <tabstop>cbScrGrid</tabstop>
-  <tabstop>tbEditBrk</tabstop>
-  <tabstop>nesScrType</tabstop>
-  <tabstop>nesBGTileset</tabstop>
- </tabstops>
  <resources>
   <include location="../xpeccy.qrc"/>
  </resources>
  <connections/>
- <buttongroups>
-  <buttongroup name="gbModeGroup"/>
-  <buttongroup name="flagGroup">
-   <property name="exclusive">
-    <bool>false</bool>
-   </property>
-  </buttongroup>
- </buttongroups>
 </ui>

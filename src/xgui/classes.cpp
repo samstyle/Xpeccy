@@ -8,17 +8,17 @@ QString gethexword(int);
 QString gethexbyte(uchar);
 
 xHexSpin::xHexSpin(QWidget* p):QLineEdit(p) {
-	imask = "Hhhh";
-	setInputMask(imask);
-	setText("0000");
 	setMinimumWidth(60);
 	setAutoFillBackground(true);
+	vldtr.setRegExp(QRegExp(""));
 	min = 0x0000;
 	max = 0xffff;
 	value = 0x0000;
-	base = 16;
 	hsflag = XHS_DEC;
-	connect(this, SIGNAL(valueChanged(int)), SLOT(onChange(int)));
+	len = 6;
+	setValidator(&vldtr);
+	setBase(16);
+	setText("000000");
 	connect(this, SIGNAL(textChanged(QString)), SLOT(onTextChange(QString)));
 }
 
@@ -28,32 +28,45 @@ int xHexSpin::getValue() {
 
 void xHexSpin::setBase(int b) {
 	int mx;
-	QString msk;
+	int tmp = value;
+	QString rxp;
+	QString digxp;
 	switch(b) {
+		case 8:
+			base = 8;
+			digxp = "[0-7]";
+			setStyleSheet("border:1px solid red;");
+			break;
 		case 10:
-			b = value;
 			base = 10;
-			msk = "N";
-			mx = 10;
-			while (mx <= max) {
-				msk.append("n");
-				mx *= 10;
-			}
+			digxp = "[0-9]";
+			setStyleSheet("border:1px solid black;");
 			break;
 		default:
-			b = value;
 			base = 16;
-			msk = "H";
-			mx = 16;
-			while (mx <= max) {
-				msk.append("h");
-				mx *= 16;
-			}
+			digxp = "[A-Fa-f0-9]";
+			setStyleSheet("border:1px solid green;");
 			break;
 	}
-	imask = msk;
-	setInputMask(msk);
-	setValue(b);
+	if (conf.prof.cur) {
+		if (base == conf.prof.cur->zx->hw->base) {
+			setStyleSheet("border:1px solid white;");
+		}
+	}
+	len = 1;
+	rxp = digxp;
+	mx = base;
+	while (mx <= max) {
+		rxp.append(digxp);
+		mx *= base;
+		len++;
+	}
+
+	setMaxLength(len);
+	setInputMask(QString(len, 'H'));	// to enter overwrite cursor mode. TODO:is there some legit method?
+	vldtr.setRegExp(QRegExp(rxp));		// set available chars
+	hsflag |= XHS_UPD;			// update even if value doesn't changed
+	setValue(tmp);
 }
 
 void xHexSpin::setXFlag(int xf) {
@@ -81,7 +94,7 @@ void xHexSpin::setMax(int v) {
 void xHexSpin::setValue(int nval) {
 	nval = minMaxCorrect(nval, min, max);
 	QPalette pal;
-	if (value == nval) {
+	if ((value == nval) && !(hsflag & XHS_UPD)) {
 		pal.setColor(QPalette::Base, conf.pal["dbg.input.bg"].isValid() ? conf.pal["dbg.input.bg"] : pal.base().color());
 		pal.setColor(QPalette::Text, conf.pal["dbg.input.txt"].isValid() ? conf.pal["dbg.input.txt"] : pal.text().color());
 	} else {
@@ -93,7 +106,7 @@ void xHexSpin::setValue(int nval) {
 			pal.setColor(QPalette::Base, conf.pal["dbg.input.bg"].isValid() ? conf.pal["dbg.input.bg"] : pal.base().color());
 			pal.setColor(QPalette::Text, conf.pal["dbg.input.txt"].isValid() ? conf.pal["dbg.input.txt"] : pal.text().color());
 		}
-		emit valueChanged(value);
+		onChange(value);
 	}
 	setPalette(pal);
 }
@@ -101,22 +114,24 @@ void xHexSpin::setValue(int nval) {
 void xHexSpin::onChange(int val) {
 	int pos = cursorPosition();
 	QString res = QString::number(val, base).toUpper();
-	res = res.rightJustified(imask.size(), '0');
-	if (text() != res) {
+	res = res.rightJustified(len, '0');
+	if ((text() != res) || (hsflag & XHS_UPD)) {
+		hsflag &= ~XHS_UPD;
 		setText(res);
 		setCursorPosition(pos);
 	}
 }
 
 void xHexSpin::onTextChange(QString txt) {
-	if (txt.size() < imask.size()) {
-		txt = txt.leftJustified(imask.size(), '0');
+	if (txt.size() < len) {
+		txt = txt.leftJustified(len, '0');
 	}
 	int nval = txt.toInt(NULL, base);
 	int xval = minMaxCorrect(nval, min, max);
 	if (value != xval)
 		setValue(xval);
-	onChange(value);
+	else
+		onChange(value);
 }
 
 void xHexSpin::keyPressEvent(QKeyEvent* ev) {
@@ -135,7 +150,13 @@ void xHexSpin::keyPressEvent(QKeyEvent* ev) {
 			break;
 		case Qt::Key_X:
 			if (hsflag & XHS_DEC) {
-				setBase((base == 10) ? 16 : 10);
+				if (base == 8) {
+					setBase(10);
+				} else if (base == 10) {
+					setBase(16);
+				} else {
+					setBase(8);
+				}
 			}
 			break;
 		default:

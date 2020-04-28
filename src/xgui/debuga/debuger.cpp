@@ -98,6 +98,7 @@ void DebugWin::start(Computer* c) {
 	if (comp->hw->grp != tabMode) {
 		onPrfChange(conf.prof.cur);		// update tabs
 	}
+
 	chaPal();
 	show();
 	if (!fillAll()) {
@@ -155,6 +156,12 @@ void DebugWin::onPrfChange(xProfile* prf) {
 	}
 	ui.tabsPanel->setPalette(QPalette());
 	tabMode = prf->zx->hw->grp;
+	// set input line base
+	for (int i = 0; i < 16; i++) {
+		if (dbgRegEdit[i] != NULL) {
+			dbgRegEdit[i]->setBase(conf.prof.cur->zx->hw->base);
+		}
+	}
 	fillAll();
 }
 
@@ -200,9 +207,6 @@ void dmpmwr(unsigned short adr, unsigned char val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	memWr(comp->mem, adr, val);
 }
-
-static xLabel* dbgRegLabs[16];
-static xHexSpin* dbgRegEdit[16];
 
 DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	int i;
@@ -1345,7 +1349,7 @@ void DebugWin::fillCPU() {
 			case REG_NONE:
 				dbgRegLabs[i]->clear();
 				dbgRegEdit[i]->setVisible(false);
-				dbgRegEdit[i]->clear();
+				// dbgRegEdit[i]->clear();
 				break;
 			default:
 				dbgRegLabs[i]->setText(bunch.regs[i].name);
@@ -1355,7 +1359,6 @@ void DebugWin::fillCPU() {
 				} else {
 					dbgRegEdit[i]->setMax(0xffff);
 				}
-				// dbgRegEdit[i]->setMax(bunch.regs[i].byte ? 0xff : 0xffff);
 				dbgRegEdit[i]->setValue(bunch.regs[i].value);
 				dbgRegEdit[i]->setVisible(true);
 				break;
@@ -1396,7 +1399,7 @@ void DebugWin::setCPU() {
 	while (dbgRegEdit[idx] != NULL) {
 		if (dbgRegEdit[idx]->isEnabled()) {
 			bunch.regs[i].id = dbgRegEdit[idx]->property("regid").toInt();
-			bunch.regs[i].value = dbgRegEdit[idx]->getValue();
+			bunch.regs[i].value = dbgRegEdit[idx]->getValue() & 0xffff;
 			i++;
 		} else {
 			bunch.regs[i].id = REG_NONE;
