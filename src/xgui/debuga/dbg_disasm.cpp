@@ -833,6 +833,7 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			updContent();
 			break;
 		case Qt::Key_Return:
+			if (state() == QAbstractItemView::EditingState) break;
 			edit(currentIndex());
 			break;
 		default:

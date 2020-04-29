@@ -162,21 +162,47 @@ void DebugWin::onPrfChange(xProfile* prf) {
 			dbgRegEdit[i]->setBase(conf.prof.cur->zx->hw->base);
 		}
 	}
+	switch(conf.prof.cur->zx->hw->base) {
+		case 8:
+			ui.dumpTable->setItemDelegateForColumn(1, xid_octw);
+			ui.dumpTable->setItemDelegateForColumn(3, xid_octw);
+			ui.dumpTable->setItemDelegateForColumn(5, xid_octw);
+			ui.dumpTable->setItemDelegateForColumn(7, xid_octw);
+			ui.dumpTable->setView(XVIEW_OCTWRD);
+			break;
+		default:
+			ui.dumpTable->setItemDelegateForColumn(1, xid_byte);
+			ui.dumpTable->setItemDelegateForColumn(3, xid_byte);
+			ui.dumpTable->setItemDelegateForColumn(5, xid_byte);
+			ui.dumpTable->setItemDelegateForColumn(7, xid_byte);
+			ui.dumpTable->setView(XVIEW_DEF);
+			break;
+	}
 	fillAll();
 }
 
 void DebugWin::reject() {stop();}
 
-xItemDelegate::xItemDelegate(int t) {type = t;}
+xItemDelegate::xItemDelegate(int t) {
+	type = t;
+}
 
 QWidget* xItemDelegate::createEditor(QWidget* par, const QStyleOptionViewItem&, const QModelIndex&) const {
 	QLineEdit* edt = new QLineEdit(par);
+	QString pat("[0-9A-Fa-f\\s]");
+	int rpt = 0;
 	switch (type) {
 		case XTYPE_NONE: delete(edt); edt = NULL; break;
-		case XTYPE_ADR: edt->setInputMask("Hhhh"); break;
+		case XTYPE_ADR: rpt = 4; break;
 		case XTYPE_LABEL: break;
-		case XTYPE_DUMP: edt->setInputMask("Hhhhhhhhhhhh"); break;		// 6 bytes max
-		case XTYPE_BYTE: edt->setInputMask("Hh"); break;
+		case XTYPE_DUMP: rpt = 12; break;		// 6 bytes max
+		case XTYPE_BYTE: rpt = 2; break;
+		case XTYPE_OCTWRD: pat = "[0-7\\s]"; rpt = 6; break;
+	}
+	if (edt && (rpt > 0)) {
+		edt->setInputMask(QString(rpt,'h'));
+		edt->setMaxLength(rpt);
+		edt->setValidator(new QRegExpValidator(QRegExp(QString("%0+").arg(pat))));
 	}
 	return edt;
 }
@@ -274,6 +300,13 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	conf.dbg.segment = 0;
 	ui.actShowLabels->setChecked(conf.dbg.labels);
 	ui.actShowSeg->setChecked(conf.dbg.segment);
+
+	xid_none = new xItemDelegate(XTYPE_NONE);
+	xid_byte = new xItemDelegate(XTYPE_BYTE);
+	xid_labl = new xItemDelegate(XTYPE_LABEL);
+	xid_octw = new xItemDelegate(XTYPE_OCTWRD);
+	xid_dump = new xItemDelegate(XTYPE_DUMP);
+
 // actions data
 	ui.actFetch->setData(MEM_BRK_FETCH);
 	ui.actRead->setData(MEM_BRK_RD);
@@ -293,8 +326,8 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.dasmTable->setFocus();
 
 // disasm table
-	ui.dasmTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_LABEL));
-	ui.dasmTable->setItemDelegateForColumn(1, new xItemDelegate(XTYPE_DUMP));
+	ui.dasmTable->setItemDelegateForColumn(0, xid_labl);
+	ui.dasmTable->setItemDelegateForColumn(1, xid_dump);
 
 	ui.cbDasmMode->addItem("CPU", XVIEW_CPU);
 	ui.cbDasmMode->addItem("RAM", XVIEW_RAM);
@@ -397,9 +430,9 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.cbDumpView->addItem("ROM", XVIEW_ROM);
 
 	ui.dumpTable->setColumnWidth(0,60);
-	ui.dumpTable->setItemDelegate(new xItemDelegate(XTYPE_BYTE));
-	ui.dumpTable->setItemDelegateForColumn(0, new xItemDelegate(XTYPE_LABEL));
-	ui.dumpTable->setItemDelegateForColumn(9, new xItemDelegate(XTYPE_NONE));
+	ui.dumpTable->setItemDelegate(xid_byte);
+	ui.dumpTable->setItemDelegateForColumn(0, xid_labl);
+	ui.dumpTable->setItemDelegateForColumn(9, xid_none);
 
 	connect(ui.dumpTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
 	connect(ui.cbCodePage, SIGNAL(currentIndexChanged(int)), this, SLOT(setDumpCP()));

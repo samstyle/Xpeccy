@@ -22,6 +22,11 @@ enum {
 	XVIEW_SLT,
 };
 
+enum {
+	XVIEW_DEF = 0,
+	XVIEW_OCTWRD
+};
+
 class xDumpModel : public QAbstractTableModel {
 	Q_OBJECT
 	public:
@@ -34,6 +39,7 @@ class xDumpModel : public QAbstractTableModel {
 		Qt::ItemFlags flags(const QModelIndex&) const;
 		QVariant data(const QModelIndex&, int) const;
 		bool setData(const QModelIndex&, const QVariant&, int);
+		void setView(int);
 		void updateCell(int, int);
 		void updateRow(int);
 		void updateColumn(int);
@@ -44,6 +50,7 @@ class xDumpModel : public QAbstractTableModel {
 	private:
 		Computer** cptr;
 		int mode;
+		int view;
 		int page;
 		int mrd(int) const;
 		void mwr(int, unsigned char);
@@ -58,8 +65,10 @@ class xDumpTable:public QTableView {
 		int rows();
 		void setCodePage(int);
 		void setMode(int, int);
+		void setView(int);
 		void update();
 		int mode;
+		int view;
 	signals:
 		void rqRefill();
 	private:

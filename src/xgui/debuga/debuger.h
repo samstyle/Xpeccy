@@ -10,6 +10,7 @@
 #include <QItemDelegate>
 #include <QMenu>
 #include <QTableWidget>
+#include <QRegExpValidator>
 
 #include "xgui.h"
 
@@ -32,6 +33,7 @@ enum {
 	XTYPE_LABEL,
 	XTYPE_DUMP,
 	XTYPE_BYTE,
+	XTYPE_OCTWRD,
 };
 
 enum {
@@ -43,8 +45,10 @@ class xItemDelegate : public QItemDelegate {
 	public:
 		xItemDelegate(int);
 		int type;
-		QWidget* createEditor (QWidget*, const QStyleOptionViewItem&, const QModelIndex&) const;
-
+		// QWidget* createEditor (QWidget*, const QStyleOptionViewItem&, const QModelIndex&) const;
+	private:
+		QRegExpValidator vld;
+		QWidget* createEditor(QWidget*, const QStyleOptionViewItem&, const QModelIndex&) const;
 };
 
 class DebugWin : public QDialog {
@@ -104,6 +108,12 @@ class DebugWin : public QDialog {
 		unsigned short bpAdr;
 		void doBreakPoint(unsigned short);
 		int getAdr();
+
+		xItemDelegate* xid_none;
+		xItemDelegate* xid_byte;
+		xItemDelegate* xid_labl;
+		xItemDelegate* xid_octw;
+		xItemDelegate* xid_dump;
 
 		void fillCPU();
 		void fillFlags();

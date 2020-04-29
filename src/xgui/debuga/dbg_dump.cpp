@@ -124,6 +124,11 @@ void xDumpModel::setMode(int md, int pg) {
 	update();
 }
 
+void xDumpModel::setView(int t) {
+	view = t;
+	update();
+}
+
 int xDumpModel::rowCount(const QModelIndex&) const {
 	return 11;
 }
@@ -160,6 +165,7 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 	if (col >= columnCount()) return res;
 	unsigned short adr = (dumpAdr + (row << 3)) & 0xffff;
 	unsigned short cadr = (adr + col - 1) & 0xffff;
+	unsigned short wrd;
 	int flg = mrd(cadr) >> 8;
 	QByteArray arr;
 	QColor clr;
@@ -204,11 +210,27 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 				case 0:
 					if ((mode == XVIEW_RAM) || (mode == XVIEW_ROM))
 						adr &= 0x3fff;
-					res = gethexword(adr);
+					switch(view) {
+						case XVIEW_OCTWRD:
+							res = QString::number(adr, 8).rightJustified(6, '0');
+							break;
+						default:
+							res = gethexword(adr);
+							break;
+					}
 					break;
 				case 9: break;
 				default:
-					res = gethexbyte(mrd((adr + col - 1) & 0xffff) & 0xff);
+					switch(view) {
+						case XVIEW_OCTWRD:
+							wrd = mrd(cadr) & 0xff;
+							wrd += (mrd((cadr + 1) & 0xffff) << 8) & 0xff00;
+							res = QString::number(wrd, 8).rightJustified(6,'0');
+							break;
+						default:
+							res = gethexbyte(mrd(cadr) & 0xff);
+							break;
+					}
 					break;
 			}
 			break;
@@ -226,7 +248,16 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 					res = getDumpString(arr, codePage);
 					break;
 				default:
-					res = gethexbyte(mrd((adr + col - 1) & 0xffff) & 0xff);
+					switch (view) {
+						case XVIEW_OCTWRD:
+							wrd = mrd(cadr) & 0xff;
+							wrd += (mrd((cadr + 1) & 0xffff) << 8) & 0xff00;
+							res = QString::number(wrd, 8).rightJustified(6,'0');
+							break;
+						default:
+							res = gethexbyte(mrd(cadr) & 0xff);
+							break;
+					}
 					break;
 			}
 			break;
@@ -264,9 +295,18 @@ bool xDumpModel::setData(const QModelIndex& idx, const QVariant& val, int role) 
 			emit rqRefill();
 		}
 	} else if (col < 9) {
-		bt = str.toInt(NULL, 16) & 0xff;
 		nadr = (adr + col - 1) & 0xffff;
-		mwr(nadr, bt);
+		switch(view) {
+			case XVIEW_OCTWRD:
+				fadr = str.toInt(NULL, 8) & 0xffff;
+				mwr(nadr++, fadr & 0xff);
+				mwr(nadr, (fadr >> 8) & 0xff);
+				break;
+			default:
+				bt = str.toInt(NULL, 16) & 0xff;
+				mwr(nadr, bt);
+				break;
+		}
 		updateRow(row);
 		emit rqRefill();
 	}
@@ -292,6 +332,24 @@ void xDumpTable::setMode(int md, int pg) {
 	mode = md;
 	model->setMode(md, pg);
 	emit rqRefill();
+}
+
+void xDumpTable::setView(int t) {
+	view = t;
+	switch(t) {
+		case XVIEW_OCTWRD:
+			for (int i = 0; i < model->rowCount(); i++) {
+				setSpan(i, 1, 1, 2);
+				setSpan(i, 3, 1, 2);
+				setSpan(i, 5, 1, 2);
+				setSpan(i, 7, 1, 2);
+			}
+			break;
+		default:
+			clearSpans();
+			break;
+	}
+	model->setView(t);
 }
 
 int xDumpTable::rows() {
@@ -336,6 +394,7 @@ void xDumpTable::keyPressEvent(QKeyEvent* ev) {
 			update();
 			break;
 		case Qt::Key_Return:
+			if (state() == QAbstractItemView::EditingState) break;
 			edit(currentIndex());
 			ev->ignore();
 			break;
