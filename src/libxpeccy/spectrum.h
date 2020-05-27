@@ -93,6 +93,7 @@ typedef struct {
 	unsigned frmStrobe:1;		// new frame started
 	unsigned intStrobe:1;		// int front
 	unsigned nmiRequest:1;		// Magic button pressed
+	unsigned halt:1;
 	unsigned firstRun:1;
 	unsigned ddpal:1;
 
@@ -161,6 +162,8 @@ typedef struct {
 
 	int tickCount;
 	int frmtCount;
+	int hCount;		// T before HALT
+	int fCount;		// T in last frame
 	int nsPerTick;
 
 	unsigned char p7FFD;		// stored port out

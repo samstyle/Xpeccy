@@ -192,6 +192,7 @@ enum {
 	XCUT_FASTSAVE,
 	XCUT_NMI,
 	XCUT_RESET,
+	XCUT_TURBO,
 
 	XCUT_STEPIN,
 	XCUT_STEPOVER,
@@ -380,6 +381,7 @@ struct xConfig {
 		unsigned disk:1;
 		unsigned message:1;
 		unsigned fps:1;
+		unsigned halt:1;
 	} led;
 	struct {
 		// char lastDir[PATH_MAX];

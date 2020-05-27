@@ -514,9 +514,24 @@ int compExec(Computer* comp) {
 	nsTime = comp->vid->time;
 	comp->tickCount += res2;
 	if (comp->vid->intFRAME) {
-		comp->frmtCount = 0;
+		if (!comp->intStrobe) {
+			comp->intStrobe = 1;
+			comp->fCount = comp->frmtCount;
+			if (!comp->halt) {
+				comp->hCount = comp->fCount;
+			}
+			comp->frmtCount = 0;
+		}
 	} else {
 		comp->frmtCount += res2;
+		if (comp->intStrobe)
+			comp->intStrobe = 0;
+	}
+	if (comp->cpu->halt && !comp->halt) {
+		comp->halt = 1;
+		comp->hCount = comp->frmtCount;
+	} else if (!comp->cpu->halt && comp->halt) {
+		comp->halt = 0;
 	}
 // sync hardware
 #ifdef HAVEZLIB

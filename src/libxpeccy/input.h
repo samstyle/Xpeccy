@@ -196,8 +196,8 @@ void mouseReleaseAll(Mouse*);
 
 Joystick* joyCreate();
 void joyDestroy(Joystick*);
-void joyPress(Joystick*,unsigned char);
-void joyRelease(Joystick*,unsigned char);
+void joyPress(Joystick*, int);
+void joyRelease(Joystick*, int);
 unsigned char joyInput(Joystick*);
 
 #ifdef __cplusplus

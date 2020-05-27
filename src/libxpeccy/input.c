@@ -435,11 +435,11 @@ void joyDestroy(Joystick* joy) {
 	free(joy);
 }
 
-void joyPress(Joystick* joy, unsigned char mask) {
+void joyPress(Joystick* joy, int mask) {
 	joy->state |= mask;
 }
 
-void joyRelease(Joystick* joy, unsigned char mask) {
+void joyRelease(Joystick* joy, int mask) {
 	joy->state &= ~mask;
 }
 

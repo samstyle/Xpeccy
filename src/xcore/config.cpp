@@ -179,6 +179,7 @@ void saveConfig() {
 	fprintf(cfile, "disk = %s\n", YESNO(conf.led.disk));
 	fprintf(cfile, "message = %s\n", YESNO(conf.led.message));
 	fprintf(cfile, "fps = %s\n", YESNO(conf.led.fps));
+	fprintf(cfile, "halt = %s\n", YESNO(conf.led.halt));
 
 	fprintf(cfile, "\n[PALETTE]\n\n");
 	QStringList lst = conf.pal.keys();
@@ -463,6 +464,7 @@ void loadConfig() {
 					if (pnam=="disk") conf.led.disk = str2bool(pval) ? 1 : 0;
 					if (pnam=="message") conf.led.message = str2bool(pval) ? 1 : 0;
 					if (pnam=="fps") conf.led.fps = str2bool(pval) ? 1 : 0;
+					if (pnam=="halt") conf.led.halt = str2bool(pval) ? 1 : 0;
 					break;
 			}
 		}

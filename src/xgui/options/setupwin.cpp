@@ -522,6 +522,7 @@ void SetupWin::start(xProfile* p) {
 	ui.cbDiskLed->setChecked(conf.led.disk);
 	ui.cbMessage->setChecked(conf.led.message);
 	ui.cbFpsLed->setChecked(conf.led.fps);
+	ui.cbHaltLed->setChecked(conf.led.halt);
 // palette
 	setToolButtonColor(ui.tbDbgWinCol, "dbg.window","");
 	setToolButtonColor(ui.tbDbgTxtCol, "dbg.text","");
@@ -684,6 +685,7 @@ void SetupWin::apply() {
 	conf.led.disk = ui.cbDiskLed->isChecked() ? 1 : 0;
 	conf.led.message = ui.cbMessage->isChecked() ? 1 : 0;
 	conf.led.fps = ui.cbFpsLed->isChecked() ? 1 : 0;
+	conf.led.halt = ui.cbHaltLed->isChecked() ? 1 : 0;
 // profiles
 	conf.defProfile = ui.defstart->isChecked() ? 1 : 0;
 

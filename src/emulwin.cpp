@@ -69,7 +69,7 @@ void MainWin::updateWindow() {
 	} else {
 		szw = comp->vid->vsze.x * conf.vid.scale;
 		szh = comp->vid->vsze.y * conf.vid.scale;
-		szw *= conf.prof.cur->zx->hw->xscale;
+		szw *= static_cast<int>(conf.prof.cur->zx->hw->xscale);
 		setWindowState(windowState() & ~Qt::WindowFullScreen);
 	}
 	setFixedSize(szw, szh);
@@ -490,9 +490,17 @@ void MainWin::d_frame() {
 
 static char numbuf[32];
 
+void drawText(QPainter* pnt, int x, int y, const char* buf) {
+	size_t len = strlen(buf);
+	for (size_t i = 0; i < len; i++) {
+		pnt->drawImage(x, y, alphabet, 0, (buf[i] - 32) * 12, 12, 12);
+		x += 12;
+	}
+}
+
 void MainWin::paintEvent(QPaintEvent*) {
 	if (block) return;
-	int i,x,y,chr;
+//	int i,x,y,chr;
 	pnt.begin(this);
 	pnt.drawImage(0,0, QImage(comp->debug ? scrimg : bufimg, width(), height(), QImage::Format_RGB888));
 // screenshot
@@ -532,26 +540,17 @@ void MainWin::paintEvent(QPaintEvent*) {
 // put fps
 	if (conf.led.fps) {
 		sprintf(numbuf, " %d ", conf.vid.curfps);
-		x = 5;
-		y = 5;
-		i = 0;
-		while (numbuf[i] != 0) {
-			chr = numbuf[i] - 32;
-			pnt.drawImage(x, y, alphabet, 0, chr * 12, 12, 12);
-			x += 12;
-			i++;
-		}
+		drawText(&pnt, 5, 5, numbuf);
+	}
+// put halt counter
+	if (conf.led.halt) {
+		sprintf(numbuf, " %d : %d ",comp->hCount, comp->fCount);
+		drawText(&pnt, width() - strlen(numbuf) * 12 - 8, height() - 20, numbuf);
 	}
 // put messages
 	if (msgTimer > 0) {
 		if (conf.led.message) {
-			x = 5;
-			y = height() - 20;
-			for (int i = 0; i < msg.size(); i++) {
-				chr = msg.at(i).unicode() - 32;
-				pnt.drawImage(x, y, alphabet, 0, chr * 12, 12, 12);
-				x += 12;
-			}
+			drawText(&pnt, 5, height() - 20, msg.toLocal8Bit().data());
 		}
 		msgTimer--;
 	}
@@ -652,6 +651,15 @@ void MainWin::xkey_press(int xkey) {
 				conf.emu.fast ^= 1;
 				updateHead();
 				break;
+			case XCUT_TURBO:
+				if (comp->frqMul < 2) {
+					compSetTurbo(comp, 2.0);
+					setMessage(" turbo on ");
+				} else {
+					compSetTurbo(comp, 1.0);
+					setMessage(" turbo off ");
+				}
+				break;
 			case XCUT_NOFLICK:
 				if (noflic < 15)
 					noflic = 25;
@@ -720,7 +728,6 @@ void MainWin::xkey_press(int xkey) {
 					tapStateChanged(TW_STATE,TWS_REC);
 				}
 				break;
-			//case XKEY_F7:
 			case XCUT_SCRSHOT:
 				if (scrCounter == 0) {
 					scrCounter = 1;

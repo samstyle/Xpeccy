@@ -351,6 +351,7 @@ static xShortcut short_init[XSCSIZE] = {
 	{SCG_MAIN, XCUT_NMI, "key.nmi", "NMI", QKeySequence(Qt::Key_F10)},
 	{SCG_MAIN | SCG_DEBUGA, XCUT_RESET, "key.reset", "Reset", QKeySequence(Qt::Key_F12)},
 	{SCG_MAIN, XCUT_RES_DOS, "key.reset.dos", "Reset to DOS", QKeySequence(Qt::ALT + Qt::Key_F12)},
+	{SCG_MAIN, XCUT_TURBO, "key.turbo", "Switch turbo", QKeySequence(Qt::ALT + Qt::Key_T)},
 
 	{SCG_DEBUGA, XCUT_STEPIN, "key.dbg.stepin", "DeBUGa: Step in", QKeySequence(Qt::Key_F7)},
 	{SCG_DEBUGA, XCUT_STEPOVER, "key.dbg.stepover", "DeBUGa: Step over", QKeySequence(Qt::Key_F8)},
