@@ -42,12 +42,9 @@ void zx_sync(Computer* comp, int ns) {
 		comp->hw->mapMem(comp);
 	}
 	// int
-	if (comp->vid->intFRAME && !(comp->cpu->intrq & Z80_INT)) {		// so something with int video->cpu
+	if (comp->vid->intFRAME) {
 		comp->intVector = 0xff;
 		comp->cpu->intrq |= Z80_INT;
-		// comp->vid->intFRAME = 0;	// ??
-	} else if (!comp->vid->intFRAME && (comp->cpu->intrq & Z80_INT)) {
-		comp->cpu->intrq &= ~Z80_INT;
 	} else if (comp->vid->intLINE) {
 		comp->intVector = 0xfd;
 		comp->cpu->intrq |= Z80_INT;

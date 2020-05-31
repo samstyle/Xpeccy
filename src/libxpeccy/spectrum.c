@@ -538,7 +538,7 @@ int compExec(Computer* comp) {
 	if (comp->rzx.play) {
 		if (comp->rzx.frm.fetches < 1) {
 			comp->intVector = 0xff;
-			comp->cpu->intrq |= 1;
+			comp->cpu->intrq |= Z80_INT;
 			comp->rzx.fCurrent++;
 			comp->rzx.fCount--;
 			rzxGetFrame(comp);
