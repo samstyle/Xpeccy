@@ -7,4 +7,5 @@ To make it on macOS you'll need installed:
 
 Fix QT5 path in mac_build.sh and run it.
 
-It builds version for macOS 10.13(last curently supported version) - you'll in build directory application and package.
+It builds version with targetting to macOS 10.13(last supported version) - you'll get 
+application and installation image in build directory.
