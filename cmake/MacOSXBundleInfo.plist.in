@@ -54,7 +54,7 @@
 	<string>public.app-category.productivity</string>
 
 	<key>LSMinimumSystemVersion</key>
-	<string>10.12</string>
+	<string>10.13</string>
 
 	<key>NSSupportsAutomaticGraphicsSwitching</key>
 	<true/>
