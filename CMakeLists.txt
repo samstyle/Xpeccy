@@ -252,7 +252,7 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 		COMMAND ${MACDEPLOYQTEXE} ARGS ${BUNDLE_PATH} -always-overwrite
 		COMMAND mkdir ARGS -p ${BUNDLE_PATH}/Contents/Frameworks
 		COMMAND cp ARGS -R /Library/Frameworks/SDL2.framework ${BUNDLE_PATH}/Contents/Frameworks
-		COMMAND install_name_tool -change @rpath/SDL2.framework/Versions/A/SDL @executable_path/../Frameworks/SDL2.framework/Versions/A/SDL ${BUNDLE_PATH}/Contents/MacOS/xpeccy
+		COMMAND install_name_tool -change @rpath/SDL2.framework/Versions/A/SDL2 @executable_path/../Frameworks/SDL2.framework/Versions/A/SDL2 ${BUNDLE_PATH}/Contents/MacOS/xpeccy
 	)
 	set(CMAKE_INSTALL_PREFIX "/Applications")
 	install(TARGETS ${PROJECT_NAME} BUNDLE DESTINATION .)
