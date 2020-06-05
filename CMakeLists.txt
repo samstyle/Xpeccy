@@ -83,8 +83,8 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 	set(MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}.app)
 	set(MACOSX_BUNDLE_ICON_FILE ${PROJECT_NAME}.icns)
-	set(MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/Info.plist)
-	set(MACOSX_BUNDLE_BUNDLE_VERSION ${XVER})
+	set(MACOSX_BUNDLE_BUNDLE_VERSION ${XVER}) 
+	set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13")
 
 	set(BUNDLE_ICON_PATH ${CMAKE_SOURCE_DIR}/images/${MACOSX_BUNDLE_ICON_FILE})
 	set(BUNDLE_PATH ${CMAKE_BINARY_DIR}/${MACOSX_BUNDLE_BUNDLE_NAME})
@@ -251,8 +251,8 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 		COMMAND ${MACDEPLOYQTEXE} ARGS ${BUNDLE_PATH} -always-overwrite
 		COMMAND mkdir ARGS -p ${BUNDLE_PATH}/Contents/Frameworks
-		COMMAND cp ARGS -R /Library/Frameworks/SDL.framework ${BUNDLE_PATH}/Contents/Frameworks
-		COMMAND install_name_tool -change @rpath/SDL.framework/Versions/A/SDL @executable_path/../Frameworks/SDL.framework/Versions/A/SDL ${BUNDLE_PATH}/Contents/MacOS/xpeccy
+		COMMAND cp ARGS -R /Library/Frameworks/SDL2.framework ${BUNDLE_PATH}/Contents/Frameworks
+		COMMAND install_name_tool -change @rpath/SDL2.framework/Versions/A/SDL @executable_path/../Frameworks/SDL2.framework/Versions/A/SDL ${BUNDLE_PATH}/Contents/MacOS/xpeccy
 	)
 	set(CMAKE_INSTALL_PREFIX "/Applications")
 	install(TARGETS ${PROJECT_NAME} BUNDLE DESTINATION .)
