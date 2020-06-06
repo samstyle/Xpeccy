@@ -146,9 +146,9 @@ IF(SDL2_LIBRARY_TEMP)
 	# I think it has something to do with the CACHE STRING.
 	# So I use a temporary variable until the end so I can set the
 	# "real" variable in one-shot.
-	#IF(APPLE)
-	#	SET(SDL2_LIBRARY_TEMP ${SDL2_LIBRARY_TEMP} "-framework Cocoa")
-	#ENDIF(APPLE)
+	IF(APPLE)
+		SET(SDL2_LIBRARY_TEMP ${SDL2_LIBRARY_TEMP} "-framework Cocoa")
+	ENDIF(APPLE)
 
 	# For threads, as mentioned Apple doesn't need this.
 	# In fact, there seems to be a problem if I used the Threads package
