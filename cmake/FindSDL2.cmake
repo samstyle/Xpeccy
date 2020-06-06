@@ -65,8 +65,6 @@
 # (To distribute this file outside of CMake, substitute the full
 #  License text for the above reference.)
 
-message("<FindSDL2.cmake>")
-
 SET(SDL2_SEARCH_PATHS
 	~/Library/Frameworks
 	/Library/Frameworks
@@ -88,8 +86,7 @@ else()
 	set(INC_SUFFIXES ${INC_SUFFIXES} include/i386-linux-gnu/SDL2)
 endif()
 
-
-FIND_PATH(SDL2_INCLUDE_DIR SDL.h
+FIND_PATH(SDL2_INCLUDE_DIR SDL_hints.h
 	HINTS
 	$ENV{SDL2DIR}
 	PATH_SUFFIXES ${INC_SUFFIXES}
@@ -103,6 +100,7 @@ FIND_LIBRARY(SDL2_LIBRARY_TEMP
 	PATH_SUFFIXES ${PATH_SUFFIXES}
 	PATHS ${SDL2_SEARCH_PATHS}
 )
+
 
 IF(NOT SDL2_BUILDING_LIBRARY)
 	IF(NOT ${SDL2_INCLUDE_DIR} MATCHES ".framework")
@@ -148,9 +146,9 @@ IF(SDL2_LIBRARY_TEMP)
 	# I think it has something to do with the CACHE STRING.
 	# So I use a temporary variable until the end so I can set the
 	# "real" variable in one-shot.
-	IF(APPLE)
-		SET(SDL2_LIBRARY_TEMP ${SDL2_LIBRARY_TEMP} "-framework Cocoa")
-	ENDIF(APPLE)
+	#IF(APPLE)
+	#	SET(SDL2_LIBRARY_TEMP ${SDL2_LIBRARY_TEMP} "-framework Cocoa")
+	#ENDIF(APPLE)
 
 	# For threads, as mentioned Apple doesn't need this.
 	# In fact, there seems to be a problem if I used the Threads package
@@ -169,8 +167,6 @@ IF(SDL2_LIBRARY_TEMP)
 	# Set the temp variable to INTERNAL so it is not seen in the CMake GUI
 	SET(SDL2_LIBRARY_TEMP "${SDL2_LIBRARY_TEMP}" CACHE INTERNAL "")
 ENDIF(SDL2_LIBRARY_TEMP)
-
-message("</FindSDL2.cmake>")
 
 INCLUDE(FindPackageHandleStandardArgs)
 
