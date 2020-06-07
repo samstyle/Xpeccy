@@ -1,4 +1,4 @@
-#include <QApplication>
+
 #include <QMessageBox>
 #include <QTimer>
 #include <QDebug>
@@ -16,6 +16,7 @@
 #include "xgui/debuga/debuger.h"
 #include "xgui/options/setupwin.h"
 #include "filer.h"
+#include "emulapp.h"
 
 #include <SDL.h>
 #if __APPLE__
@@ -41,7 +42,9 @@ void help() {
 	printf("--bp ADR\t\tset fetch brakepoint to address ADR\n");
 	printf("--bp NAME\t\tset fetch brakepoint to label NAME (see -l key)\n");
 	printf("--disk X\t\tselect drive to loading file (0..3 | a..d | A..D)\n");
+#ifdef __APPLE__
 	printf("--style\t\t\tMacOSX only: use native qt style, else 'fusion' will be forced\n");
+#endif
 }
 
 int main(int ac,char** av) {
@@ -63,7 +66,7 @@ int main(int ac,char** av) {
 		QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 		QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 	#endif
-	QApplication app(ac,av,true);
+	EmulatorApp app(ac,av,true);
 
 #ifdef _WIN32
 	QStringList paths = QCoreApplication::libraryPaths();
@@ -77,6 +80,7 @@ int main(int ac,char** av) {
 	QFontDatabase::addApplicationFont("://DejaVuSansMono.ttf");
 
 	MainWin mwin;
+	app.mwin = &mwin;
 	xThread ethread;
 	DebugWin dbgw(&mwin);
 	SetupWin optw(&mwin);

@@ -18,8 +18,9 @@
 #include "spectrum.h"
 #include "filetypes.h"
 
+#ifndef __APPLE__
 #define USEMUTEX 0
-
+#endif
 // common
 
 std::string getTimeString(int);
