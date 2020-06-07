@@ -106,6 +106,7 @@ void xThread::emuCycle(Computer* comp) {
 				if (conf.tape.autostart && !conf.tape.fast && ((comp->cpu->pc == 0x5df) || (comp->cpu->pc == 0x53a))) {
 					comp->tape->sigLen += 1e6;
 					tapNextBlock(comp->tape);
+					tapStop(comp->tape);
 					emit tapeSignal(TW_STATE,TWS_STOP);
 				}
 			}

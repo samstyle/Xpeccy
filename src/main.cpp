@@ -58,6 +58,7 @@ int main(int ac,char** av) {
 // this works since Qt5.6 (must be set before QCoreApplication is created)
 	#if QT_VERSION >= 0x050600
 		QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+		QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 	#endif
 	QApplication app(ac,av,true);
 

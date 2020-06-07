@@ -1,12 +1,14 @@
 #include "i8080.h"
 
+#include <stdio.h>
+
 extern const unsigned char sz53pTab[0x100];
 
 // common
 
 unsigned char iop_inr(CPU* cpu, unsigned char val) {
 	val++;
-	cpu->f &= (IFL_S | IFL_Z | IFL_A | IFL_P);
+	cpu->f &= ~(IFL_S | IFL_Z | IFL_A | IFL_P);
 	cpu->f |= sz53pTab[val] & (IFL_S | IFL_Z | IFL_P);
 	if (!(val & 0x0f)) cpu->f |= IFL_A;
 	return val;
@@ -14,7 +16,7 @@ unsigned char iop_inr(CPU* cpu, unsigned char val) {
 
 unsigned char iop_dcr(CPU* cpu, unsigned char val) {
 	val--;
-	cpu->f &= (IFL_S | IFL_Z | IFL_A | IFL_P);
+	cpu->f &= ~(IFL_S | IFL_Z | IFL_A | IFL_P);
 	cpu->f |= sz53pTab[val] & (IFL_S | IFL_Z | IFL_P);
 	if ((val & 0x0f) == 0x0f) cpu->f |= IFL_A;
 	return val;
@@ -22,7 +24,7 @@ unsigned char iop_dcr(CPU* cpu, unsigned char val) {
 
 unsigned char iop_add(CPU* cpu, unsigned char val, unsigned short add) {
 	cpu->tmpw = val + add;
-	cpu->f = 2 | (sz53pTab[val] & (IFL_S | IFL_Z | IFL_P));
+	cpu->f = 2 | (sz53pTab[cpu->ltw] & (IFL_S | IFL_Z | IFL_P));
 	if (cpu->htw) cpu->f |= IFL_C;
 	if ((cpu->ltw ^ val) & 0xf0) cpu->f |= IFL_A;
 	return cpu->ltw;
@@ -35,7 +37,7 @@ unsigned char iop_adc(CPU* cpu, unsigned char val, unsigned short add) {
 
 unsigned char iop_sub(CPU* cpu, unsigned char val, unsigned short sub) {
 	cpu->tmpw = val - sub;
-	cpu->f = 2 | (sz53pTab[val] & (IFL_S | IFL_Z | IFL_P));
+	cpu->f = 2 | (sz53pTab[cpu->ltw] & (IFL_S | IFL_Z | IFL_P));
 	if (cpu->htw) cpu->f |= IFL_C;
 	if ((cpu->ltw ^ val) & 0xf0) cpu->f |= IFL_A;
 	return cpu->ltw;
@@ -47,8 +49,8 @@ unsigned char iop_sbb(CPU* cpu, unsigned char val, unsigned short sub) {
 }
 
 // TODO: A,C flags ?
-unsigned char iop_ana(CPU* cpu, unsigned char val, unsigned char ana) {
-	cpu->tmpb = val & ana;
+unsigned char iop_ana(CPU* cpu, unsigned char val, unsigned char arg) {
+	cpu->tmpb = val & arg;
 	cpu->f &= ~(IFL_S | IFL_Z | IFL_A | IFL_P | IFL_C);
 	if (!cpu->tmpb) cpu->f |= IFL_Z;
 	if (cpu->tmpb & 0x80) cpu->f |= IFL_S;
@@ -76,18 +78,18 @@ unsigned char iop_ora(CPU* cpu, unsigned char val, unsigned char arg) {
 
 unsigned short iop_pop(CPU* cpu) {
 	cpu->t += 3;
-	cpu->hptr = cpu->mrd(cpu->sp++, 0, cpu->data);
-	cpu->t += 3;
 	cpu->lptr = cpu->mrd(cpu->sp++, 0, cpu->data);
+	cpu->t += 3;
+	cpu->hptr = cpu->mrd(cpu->sp++, 0, cpu->data);
 	return cpu->mptr;
 }
 
 void iop_push(CPU* cpu, unsigned short val) {
 	cpu->mptr = val;
 	cpu->t += 3;
-	cpu->mwr(--cpu->sp, cpu->lptr, cpu->data);
-	cpu->t += 3;
 	cpu->mwr(--cpu->sp, cpu->hptr, cpu->data);
+	cpu->t += 3;
+	cpu->mwr(--cpu->sp, cpu->lptr, cpu->data);
 }
 
 // 00, 08, 10, 18, 20, 28 : nop
@@ -216,8 +218,10 @@ void iop_16(CPU* cpu) {
 void iop_17(CPU* cpu) {
 	cpu->htw = cpu->a;
 	cpu->ltw = (cpu->f & IFL_C) ? 0xff : 0x00;
-	cpu->f = (cpu->f & ~IFL_C) | ((cpu->a & 0x80) ? IFL_C : 0);
 	cpu->tmpw <<= 1;
+	if (cpu->f & IFL_C) cpu->ltw |= 1;
+	cpu->f &= ~IFL_C;
+	if (cpu->htw & 1) cpu->f |= IFL_C;
 	cpu->a = cpu->htw;
 }
 
@@ -260,7 +264,8 @@ void iop_1e(CPU* cpu) {
 void iop_1f(CPU* cpu) {
 	cpu->htw = (cpu->f & IFL_C) ? 0xff : 0x00;
 	cpu->ltw = cpu->a;
-	cpu->f = (cpu->f & ~IFL_C) | ((cpu->a & 0x01) ? IFL_C : 0);
+	cpu->f &= ~IFL_C;
+	if (cpu->a & 0x01) cpu->f |= IFL_C;
 	cpu->tmpw >>= 1;
 	cpu->a = cpu->ltw;
 }
@@ -309,6 +314,7 @@ void iop_26(CPU* cpu) {
 
 // 27:daa
 void iop_27(CPU* cpu) {
+	// printf("i8080 daa\n");
 	// TODO: daa
 }
 
@@ -339,7 +345,7 @@ void iop_2b(CPU* cpu) {
 
 // 2c:inr l
 void iop_2c(CPU* cpu) {
-	cpu->l = iop_inr(cpu, cpu->e);
+	cpu->l = iop_inr(cpu, cpu->l);
 }
 
 // 2d:dcr l
@@ -655,12 +661,12 @@ void iop_c3(CPU* cpu) {
 // c4: cnz nn
 void iop_c4(CPU* cpu) {
 	cpu->t += 3;
-	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->ltw = cpu->mrd(cpu->pc++, 0, cpu->data);
 	cpu->t += 3;
-	cpu->hptr = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->htw = cpu->mrd(cpu->pc++, 0, cpu->data);
 	if (!(cpu->f & IFL_Z)) {
 		iop_push(cpu, cpu->pc);
-		cpu->pc = cpu->mptr;
+		cpu->pc = cpu->tmpw;
 	}
 }
 // c5: push b
@@ -692,22 +698,22 @@ void iop_ca(CPU* cpu) {
 // cc: cz nn
 void iop_cc(CPU* cpu) {
 	cpu->t += 3;
-	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->ltw = cpu->mrd(cpu->pc++, 0, cpu->data);
 	cpu->t += 3;
-	cpu->hptr = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->htw = cpu->mrd(cpu->pc++, 0, cpu->data);
 	if (cpu->f & IFL_Z) {
 		iop_push(cpu, cpu->pc);
-		cpu->pc = cpu->mptr;
+		cpu->pc = cpu->tmpw;
 	}
 }
 // cd: call nn
 void iop_cd(CPU* cpu) {
 	cpu->t += 3;
-	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->ltw = cpu->mrd(cpu->pc++, 0, cpu->data);
 	cpu->t += 3;
-	cpu->hptr = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->htw = cpu->mrd(cpu->pc++, 0, cpu->data);
 	iop_push(cpu, cpu->pc);
-	cpu->pc = cpu->mptr;
+	cpu->pc = cpu->tmpw;
 }
 // ce: aci n
 void iop_ce(CPU* cpu) {
@@ -739,12 +745,12 @@ void iop_d3(CPU* cpu) {
 // d4: cnc nn
 void iop_d4(CPU* cpu) {
 	cpu->t += 3;
-	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->ltw = cpu->mrd(cpu->pc++, 0, cpu->data);
 	cpu->t += 3;
-	cpu->hptr = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->htw = cpu->mrd(cpu->pc++, 0, cpu->data);
 	if (!(cpu->f & IFL_C)) {
 		iop_push(cpu, cpu->pc);
-		cpu->pc = cpu->mptr;
+		cpu->pc = cpu->tmpw;
 	}
 }
 // d5: push d
@@ -778,12 +784,12 @@ void iop_db(CPU* cpu) {
 // dc: cc nn
 void iop_dc(CPU* cpu) {
 	cpu->t += 3;
-	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->ltw = cpu->mrd(cpu->pc++, 0, cpu->data);
 	cpu->t += 3;
-	cpu->hptr = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->htw = cpu->mrd(cpu->pc++, 0, cpu->data);
 	if (cpu->f & IFL_C) {
 		iop_push(cpu, cpu->pc);
-		cpu->pc = cpu->mptr;
+		cpu->pc = cpu->tmpw;
 	}
 }
 // dd: *call nn
@@ -823,12 +829,12 @@ void iop_e3(CPU* cpu) {
 // e4: cpo nn
 void iop_e4(CPU* cpu) {
 	cpu->t += 3;
-	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->ltw = cpu->mrd(cpu->pc++, 0, cpu->data);
 	cpu->t += 3;
-	cpu->hptr = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->htw = cpu->mrd(cpu->pc++, 0, cpu->data);
 	if (!(cpu->f & IFL_P)) {
 		iop_push(cpu, cpu->pc);
-		cpu->pc = cpu->mptr;
+		cpu->pc = cpu->tmpw;
 	}
 }
 // e5: push h
@@ -861,12 +867,12 @@ void iop_eb(CPU* cpu) {
 // ec: cpe nn
 void iop_ec(CPU* cpu) {
 	cpu->t += 3;
-	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->ltw = cpu->mrd(cpu->pc++, 0, cpu->data);
 	cpu->t += 3;
-	cpu->hptr = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->htw = cpu->mrd(cpu->pc++, 0, cpu->data);
 	if (cpu->f & IFL_P) {
 		iop_push(cpu, cpu->pc);
-		cpu->pc = cpu->mptr;
+		cpu->pc = cpu->tmpw;
 	}
 }
 // ed: *call nn
@@ -884,10 +890,10 @@ void iop_f1(CPU* cpu) {cpu->af = iop_pop(cpu);}
 // f2: jp nn
 void iop_f2(CPU* cpu) {
 	cpu->t += 3;
-	cpu->ltw = cpu->mrd(cpu->sp, 0, cpu->data);
+	cpu->ltw = cpu->mrd(cpu->pc++, 0, cpu->data);
 	cpu->t += 3;
-	cpu->htw = cpu->mrd(cpu->sp + 1, 0, cpu->data);
-	cpu->pc = cpu->tmpw;
+	cpu->hpc = cpu->mrd(cpu->pc, 0, cpu->data);
+	cpu->lpc = cpu->ltw;
 }
 // f3: di
 void iop_f3(CPU* cpu) {
@@ -897,12 +903,12 @@ void iop_f3(CPU* cpu) {
 // f4: cp nn
 void iop_f4(CPU* cpu) {
 	cpu->t += 3;
-	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->ltw = cpu->mrd(cpu->pc++, 0, cpu->data);
 	cpu->t += 3;
-	cpu->hptr = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->htw = cpu->mrd(cpu->pc++, 0, cpu->data);
 	if (!(cpu->f & IFL_S)) {
 		iop_push(cpu, cpu->pc);
-		cpu->pc = cpu->mptr;
+		cpu->pc = cpu->tmpw;
 	}
 }
 // f5: push psw
@@ -938,12 +944,12 @@ void iop_fb(CPU* cpu) {
 // fc: cm nn
 void iop_fc(CPU* cpu) {
 	cpu->t += 3;
-	cpu->lptr = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->ltw = cpu->mrd(cpu->pc++, 0, cpu->data);
 	cpu->t += 3;
-	cpu->hptr = cpu->mrd(cpu->pc++, 0, cpu->data);
+	cpu->htw = cpu->mrd(cpu->pc++, 0, cpu->data);
 	if (cpu->f & IFL_S) {
 		iop_push(cpu, cpu->pc);
-		cpu->pc = cpu->mptr;
+		cpu->pc = cpu->tmpw;
 	}
 }
 // fd: *call nn
@@ -1003,7 +1009,7 @@ opCode i8080_tab[256] = {
 
 	{0, 4, iop_00, 0, "nop"},
 	{0, 10, iop_29, 0, "dad h"},
-	{0, 4, iop_2a, 0, "ldax h"},
+	{0, 4, iop_2a, 0, "lhld :2"},
 	{0, 5, iop_2b, 0, "dcx h"},
 	{0, 5, iop_2c, 0, "inr l"},
 	{0, 5, iop_2d, 0, "dcr l"},
@@ -1176,71 +1182,71 @@ opCode i8080_tab[256] = {
 	{0, 4, iop_c1, 0, "pop b"},
 	{0, 4, iop_c2, 0, "jnz :2"},
 	{0, 4, iop_c3, 0, "jmp :2"},
-	{0, 5, iop_c4, 0, "cnz :2"},
+	{OF_SKIPABLE, 5, iop_c4, 0, "cnz :2"},
 	{0, 5, iop_c5, 0, "push b"},
 	{0, 4, iop_c6, 0, "adi :1"},
-	{0, 5, iop_rst, 0, "rst 0"},
+	{OF_SKIPABLE, 5, iop_rst, 0, "rst 0"},
 
 	{0, 5, iop_c8, 0, "rz"},
 	{0, 4, iop_c9, 0, "ret"},
 	{0, 4, iop_ca, 0, "jz :2"},
 	{0, 4, iop_c3, 0, "jmp :2"},
-	{0, 5, iop_cc, 0, "cz :2"},
-	{0, 5, iop_cd, 0, "call :2"},
+	{OF_SKIPABLE, 5, iop_cc, 0, "cz :2"},
+	{OF_SKIPABLE, 5, iop_cd, 0, "call :2"},
 	{0, 4, iop_ce, 0, "aci :1"},
-	{0, 5, iop_rst, 0, "rst 1"},
+	{OF_SKIPABLE, 5, iop_rst, 0, "rst 1"},
 
 	{0, 5, iop_d0, 0, "rnc"},
 	{0, 4, iop_d1, 0, "pop d"},
 	{0, 4, iop_d2, 0, "jnc :2"},
 	{0, 4, iop_d3, 0, "out :1"},
-	{0, 5, iop_d4, 0, "cnc :2"},
+	{OF_SKIPABLE, 5, iop_d4, 0, "cnc :2"},
 	{0, 5, iop_d5, 0, "push d"},
 	{0, 4, iop_d6, 0, "sui :1"},
-	{0, 5, iop_rst, 0, "rst 2"},
+	{OF_SKIPABLE, 5, iop_rst, 0, "rst 2"},
 
 	{0, 5, iop_d8, 0, "rc"},
 	{0, 4, iop_c9, 0, "ret"},
 	{0, 4, iop_da, 0, "jc :2"},
 	{0, 4, iop_db, 0, "in :1"},
-	{0, 5, iop_dc, 0, "cc :2"},
-	{0, 5, iop_cd, 0, "call :2"},
+	{OF_SKIPABLE, 5, iop_dc, 0, "cc :2"},
+	{OF_SKIPABLE, 5, iop_cd, 0, "call :2"},
 	{0, 4, iop_de, 0, "sbi :1"},
-	{0, 5, iop_rst, 0, "rst 3"},
+	{OF_SKIPABLE, 5, iop_rst, 0, "rst 3"},
 
 	{0, 5, iop_e0, 0, "rpo"},
 	{0, 4, iop_e1, 0, "pop h"},
 	{0, 4, iop_e2, 0, "jpo :2"},
 	{0, 4, iop_e3, 0, "xthl"},
-	{0, 5, iop_e4, 0, "cpo :2"},
+	{OF_SKIPABLE, 5, iop_e4, 0, "cpo :2"},
 	{0, 5, iop_e5, 0, "push h"},
 	{0, 4, iop_e6, 0, "ani :1"},
-	{0, 5, iop_rst, 0, "rst 4"},
+	{OF_SKIPABLE, 5, iop_rst, 0, "rst 4"},
 
 	{0, 5, iop_e8, 0, "rpe"},
 	{0, 5, iop_e9, 0, "pchl"},
 	{0, 4, iop_ea, 0, "jpe :2"},
 	{0, 5, iop_eb, 0, "xchg"},
-	{0, 5, iop_ec, 0, "cpe :2"},
-	{0, 5, iop_cd, 0, "call :2"},
+	{OF_SKIPABLE, 5, iop_ec, 0, "cpe :2"},
+	{OF_SKIPABLE, 5, iop_cd, 0, "call :2"},
 	{0, 4, iop_ee, 0, "xri :1"},
-	{0, 5, iop_rst, 0, "rst 5"},
+	{OF_SKIPABLE, 5, iop_rst, 0, "rst 5"},
 
 	{0, 5, iop_f0, 0, "rp"},
 	{0, 4, iop_f1, 0, "pop psw"},
 	{0, 4, iop_f2, 0, "jp :2"},
 	{0, 4, iop_f3, 0, "di"},
-	{0, 5, iop_f4, 0, "cp :2"},
+	{OF_SKIPABLE, 5, iop_f4, 0, "cp :2"},
 	{0, 5, iop_f5, 0, "push psw"},
 	{0, 4, iop_f6, 0, "ori :1"},
-	{0, 5, iop_rst, 0, "rst 6"},
+	{OF_SKIPABLE, 5, iop_rst, 0, "rst 6"},
 
 	{0, 5, iop_f8, 0, "rm"},
 	{0, 5, iop_f9, 0, "sphl"},
 	{0, 4, iop_fa, 0, "jm :2"},
 	{0, 4, iop_fb, 0, "ei"},
-	{0, 5, iop_fc, 0, "cm :2"},
-	{0, 5, iop_cd, 0, "call :2"},
+	{OF_SKIPABLE, 5, iop_fc, 0, "cm :2"},
+	{OF_SKIPABLE, 5, iop_cd, 0, "call :2"},
 	{0, 4, iop_fe, 0, "cpi :1"},
-	{0, 5, iop_rst, 0, "rst 7"},
+	{OF_SKIPABLE, 5, iop_rst, 0, "rst 7"},
 };

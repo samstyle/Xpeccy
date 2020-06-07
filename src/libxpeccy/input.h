@@ -140,10 +140,10 @@ typedef struct {
 	unsigned char flag1;		// [7] rus.scrlock.numlock.caps.0.alt.ctrl.shift [0]
 	unsigned char flag2;		// [7] 0.0.0.0.0.0.0.rshift [0]
 	// key matrix
-	int matrix[16][8];
-	unsigned char map[8];		// ZX keyboard half-row bits
-	unsigned char extMap[8];	// Profi XT-keyboard extend
-	unsigned char msxMap[16];	// MSX keys map
+	int matrix[16][16];
+	int map[8];			// ZX keyboard half-row bits (0-5)
+	int extMap[8];	// Profi XT-keyboard extend
+	int msxMap[16];	// MSX keys map
 	// pc keyboard keybuffer
 	unsigned char kbdBuf[16];	// PS/2 key buffer
 	int kBufPos;
@@ -176,6 +176,12 @@ typedef struct {
 	int keyCode;		// 0xXXYYZZ = ZZ,YY,XX in buffer ([ZZ],[YY],0xf0,XX if released)
 } keyEntry;
 
+typedef struct {
+	char key;
+	int row;
+	int mask;
+} keyScan;
+
 Keyboard* keyCreate();
 void keyDestroy(Keyboard*);
 void kbdSetMode(Keyboard*, int);
@@ -187,6 +193,8 @@ unsigned char kbdRead(Keyboard*, unsigned short);
 unsigned char keyReadCode(Keyboard*);
 void xt_press(Keyboard*, int);
 void xt_release(Keyboard*, int);
+void kbd_press(Keyboard* kbd, keyScan* tab, int* mtrx, xKey xk);
+void kbd_release(Keyboard* kbd, keyScan* tab, int* mtrx, xKey xk);
 
 Mouse* mouseCreate();
 void mouseDestroy(Mouse*);

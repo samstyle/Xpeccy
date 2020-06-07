@@ -150,6 +150,8 @@ int loadBIN(Computer*, const char*, int);
 
 int loadC64prg(Computer*, const char*, int);
 
+int loadRKSmem(Computer*, const char*, int);
+
 // tape
 
 int loadTAP(Computer*,const char*, int);
@@ -164,6 +166,8 @@ int saveWAV(Computer*, const char*, int);
 int loadC64RawTap(Computer*, const char*, int);
 
 int loadCAS(Computer*, const char*, int);
+
+int loadRKStap(Computer*, const char*, int);
 
 // disk
 

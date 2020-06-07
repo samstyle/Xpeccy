@@ -120,7 +120,8 @@ void zx_keypr(Computer* comp, int key) {
 
 void zx_keyrl(Computer* comp, int key) {
 	if (key == ENDKEY) {
-		memset(comp->keyb->map, 0xff, 8);
+		for (int i = 0; i < 8; i++)
+			comp->keyb->map[i] = -1;
 	} else {
 		const char* seq = get_key_seq(zx_keytab, key);
 		while (*seq) {

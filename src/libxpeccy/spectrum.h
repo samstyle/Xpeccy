@@ -1,5 +1,4 @@
-#ifndef X_COMP_H
-#define X_COMP_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -85,6 +84,12 @@ typedef struct {
 	unsigned char inten;		// reg D - interrupt mask
 	unsigned char reg[16];
 } c64cia;
+
+typedef struct {
+	unsigned rd:1;
+	int mode;
+	unsigned char val;
+} ppiChan;
 
 typedef struct {
 	unsigned brk:1;			// breakpoint
@@ -184,6 +189,14 @@ typedef struct {
 	unsigned short padr;
 	unsigned char pval;
 
+	struct {				// msx ppi, specialist 580vv55
+		ppiChan a;
+		ppiChan b;
+		ppiChan ch;
+		ppiChan cl;
+		unsigned char ctrl;
+	} ppi;
+
 	struct {
 		unsigned char evoBF;		// PentEvo rw ports
 		unsigned char evo2F;
@@ -225,12 +238,6 @@ typedef struct {
 		unsigned char pF5;
 		unsigned char pslot[4];
 		unsigned char sslot[4];
-//		unsigned char memMap[4];	// RAM pages (ports FC..FF)
-		struct {
-			unsigned char regA;
-			unsigned char regB;
-			unsigned char regC;
-		} ppi;
 	} msx;
 	struct {
 		int type;			// DENDY | NTSC | PAL
@@ -306,6 +313,4 @@ void setBrk(Computer*, unsigned short, unsigned char);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

@@ -114,7 +114,8 @@ int msxAAIn(Computer* comp, int port) {
 void msxABOut(Computer* comp, int port, int val) {
 	int mask;
 	if (val & 0x80) {
-		comp->msx.ppi.regC = val & 0xff;
+		comp->ppi.ch.val = val & 0xf0;
+		comp->ppi.cl.val = val & 0x0f;
 	} else {
 		mask = 0x01 << ((val >> 1) & 7);
 		if (val & 1) {
