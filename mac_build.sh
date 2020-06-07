@@ -7,5 +7,5 @@ export CMAKE_PREFIX_PATH=$QT_PATH:$CMAKE_PREFIX_PATH
 rm -rf build
 mkdir build
 cd build
-cmake -DQT4BUILD=0 -DSDL1BUILD=0 ..
+cmake -DQT4BUILD=0 -DSDL1BUILD=1 ..
 make package

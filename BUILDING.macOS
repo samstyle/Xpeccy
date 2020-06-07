@@ -2,7 +2,7 @@ To make it on macOS you'll need installed:
 
 0. XCode installed
 1. cmake(install it via brew)
-2. SDL2 - download it from official site and place into /Library/Frameworks/ directory
+2. SDL1 - download it from official site and place into /Library/Frameworks/ or install via brew
 3. QT5
 
 Fix QT5 path in mac_build.sh and run it.

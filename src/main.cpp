@@ -18,6 +18,9 @@
 #include "filer.h"
 
 #include <SDL.h>
+#if __APPLE__
+#define USEMUTEX
+#endif
 #undef main
 
 void help() {
