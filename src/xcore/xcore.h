@@ -19,6 +19,8 @@
 #include "filetypes.h"
 
 #ifndef __APPLE__
+#define USEMUTEX 1
+#else
 #define USEMUTEX 0
 #endif
 // common
