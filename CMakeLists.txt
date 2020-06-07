@@ -40,6 +40,7 @@ set(CPACK_PACKAGE_DESCRIPTION "ZX Spectrum emulator")
 set(CPACK_PACKAGE_VENDOR "SAM style")
 set(CPACK_PACKAGE_CONTACT "samstyle@list.ru")
 
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 	set(INC_PATHS local/include include)
@@ -80,6 +81,8 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	set(CPACK_GENERATOR "DragNDrop")
 	set(CPACK_DMG_NAME ${PROJECT_NAME})
 	set(CPACK_DMG_FORMAT UDZO)
+	set(CPACK_DMG_BACKGROUND_IMAGE ${CMAKE_SOURCE_DIR}/packaging/background.png)
+	set(CPACK_DMG_DS_STORE_SETUP_SCRIPT ${CMAKE_SOURCE_DIR}/packaging/dmgsetup.scpt)
 
 	set(MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}.app)
 	set(MACOSX_BUNDLE_ICON_FILE ${PROJECT_NAME}.icns)
