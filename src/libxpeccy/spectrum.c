@@ -416,7 +416,9 @@ void compUpdateTimings(Computer* comp) {
 			comp->vid->lockLayout = 1;
 			break;
 		case HW_SPCLST:
+			comp->vid->lockLayout = 0;
 			vidSetLayout(comp->vid, spclstLay);
+			comp->vid->lockLayout = 1;
 			vidSetMode(comp->vid, VID_SPCLST);
 			vidUpdateTimings(comp->vid, perNoTurbo >> 2);			// CPU:2MHz, dots:8MHz
 			break;
@@ -451,7 +453,6 @@ int compSetHardware(Computer* comp, const char* name) {
 	comp->hw = hw;
 	comp->vid->lockLayout = 0;
 	comp->cpu->nod = 0;
-	comp->vid->mrd = vid_mrd_cb;
 	switch(hw->id) {
 		case HW_NES:
 			comp->vid->lockLayout = 1;
@@ -468,6 +469,12 @@ int compSetHardware(Computer* comp, const char* name) {
 			break;
 		case HW_C64:
 			comp->vid->mrd = c64_vic_mrd;
+			break;
+		case HW_SPCLST:
+			comp->vid->mrd = spc_vid_rd;
+			break;
+		default:
+			comp->vid->mrd = vid_mrd_cb;
 			break;
 	}
 	compUpdateTimings(comp);

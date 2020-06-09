@@ -30,6 +30,8 @@ int i8080_exec(CPU* cpu) {
 	cpu->op = &i8080_tab[cpu->com];
 	cpu->t = cpu->op->t;
 	cpu->op->exec(cpu);
+	cpu->f &= ~(IFL_5 | IFL_3);
+	cpu->f |= IFL_1;
 	return cpu->t;
 }
 
@@ -104,7 +106,7 @@ void i8080_get_regs(CPU* cpu, xRegBunch* bunch) {
 		idx++;
 	}
 	bunch->regs[idx].id = REG_NONE;
-	memcpy(bunch->flags, "SZ5H3PNC", 8);
+	memcpy(bunch->flags, "SZ5A3P1C", 8);
 }
 
 void i8080_set_regs(CPU* cpu, xRegBunch bunch) {

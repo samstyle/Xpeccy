@@ -7,8 +7,11 @@
 
 #define IFL_S	0x80
 #define	IFL_Z	0x40
+#define IFL_5	0x20
 #define IFL_A	0x10
+#define	IFL_3	0x08
 #define IFL_P	0x04
+#define IFL_1	0x02
 #define IFL_C	0x01
 
 enum {

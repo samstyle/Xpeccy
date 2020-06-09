@@ -290,6 +290,7 @@ sndPair bk_vol(Computer*, sndVolume*);
 void spc_mem_map(Computer*);
 void spc_reset(Computer*);
 int spc_mrd(Computer*, int, int);
+int spc_vid_rd(int, void*);
 void spc_mwr(Computer*, int, int);
 void spc_sync(Computer*, int);
 void spc_keyp(Computer*, keyEntry);

@@ -69,7 +69,7 @@ void MainWin::updateWindow() {
 	} else {
 		szw = comp->vid->vsze.x * conf.vid.scale;
 		szh = comp->vid->vsze.y * conf.vid.scale;
-		szw *= static_cast<int>(conf.prof.cur->zx->hw->xscale);
+		szw *= conf.prof.cur->zx->hw->xscale;
 		setWindowState(windowState() & ~Qt::WindowFullScreen);
 	}
 	setFixedSize(szw, szh);
