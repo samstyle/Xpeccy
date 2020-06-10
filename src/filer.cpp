@@ -59,6 +59,7 @@ static xFileTypeInfo ft_tab[] = {
 	{FL_BKBIN, 0, ".bin", "*.bin", loadBIN, NULL, "BK bin data"},
 	{FL_BKIMG, 0, ".img", "*.img", loadBkIMG, NULL, "BK disk image"},
 //	{FL_BKBKD, 0, ".bkd", "*.bkd", loadBkIMG, NULL, "BK disk image"},
+	{FL_RKS, 0, ".rks", "*.rks", loadRKStap, NULL, "RKS to tape"},
 #ifdef HAVEZLIB
 	{FL_RZX, 0, ".rzx", "*.rzx", loadRZX, NULL, "RZX playback"},
 #endif
@@ -69,9 +70,10 @@ static xFileTypeInfo ft_tab[] = {
 
 static xFileTypeInfo ft_raw = {FL_RAW, 0, NULL, NULL, loadRaw, NULL, "RAW file to disk A"};
 static xFileTypeInfo ft_bktap = {FL_RAW, 0, NULL, NULL, bkLoadToTape, NULL, "RAW file to BK tape"};
+static xFileTypeInfo ft_rksmem = {FL_RKS, 0, NULL, NULL, loadRKSmem, NULL, "RKS to memory"};
 static xFileTypeInfo ft_dum = {FL_NONE, 0, NULL, NULL, NULL, NULL, "Dummy entry"};
 
-// 2nd parameter
+// 3rd parameter
 // < 0 : allways on
 // 0..3 : disk (must be inserted for save)
 // 4 : tape (block count > 0)
@@ -94,6 +96,8 @@ static xFileGroupInfo fg_tab[] = {
 	{FG_BKTAPE, ".wav", -1, "BK tape", {FL_WAV, 0}},
 	{FG_BKRAW, "", -1, "BK raw file to tape",  {FL_BKRAWTAP, 0}},
 	// {FG_BKDISK, "", 0, "BK disk image", {FL_BKIMG, FL_BKBKD, FL_UDI, 0}},
+	{FG_RKSTAP, "", -1, "RKS to tape", {FL_RKS, 0}},
+	{FG_RKSMEM, "", -1, "RKS to memory", {FL_RKS, 0}},
 	{0, "", -1, NULL, {0}}
 };
 
@@ -108,6 +112,7 @@ static xFileHWInfo fh_tab[] = {
 	{FH_BK, {FG_BKDATA, FG_BKTAPE, FG_BKRAW, FG_BKDISK, 0}},
 	{FH_DISKS, {FG_DISK_A, FG_DISK_B, FG_DISK_C, FG_DISK_D, 0}},
 	{FH_SLOTS, {FG_GAMEBOY, FG_NES, FG_MSX, 0}},
+	{FH_SPCLST, {FG_RKSMEM, 0}},
 	{0, {0}}
 };
 
@@ -118,6 +123,7 @@ static xFileHWInfo hw_tab[] = {
 	{FH_NES, {HW_NES, 0}},
 	{FH_CMD, {HW_C64, 0}},
 	{FH_BK, {HW_BK0010, HW_BK0011M, 0}},
+	{FH_SPCLST, {HW_SPCLST, 0}},
 	{0, {0}}
 };
 
@@ -370,6 +376,7 @@ int load_file(Computer* comp, const char* name, int id, int drv) {
 	switch(grp->id) {
 		case FG_RAW: inf = &ft_raw; break;
 		case FG_BKRAW: inf = &ft_bktap; break;
+		case FG_RKSMEM: inf = &ft_rksmem; break;
 		default: inf = file_find_hw_ext(comp->hw->id, path); break;		// detect file type by extension
 	}
 	if (drv < 0) drv = 0;

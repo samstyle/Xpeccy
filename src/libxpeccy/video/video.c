@@ -611,6 +611,11 @@ void vidBreak(Video* vid) {
 void bk_bw_dot(Video*);
 void bk_col_dot(Video*);
 
+// specialist
+
+void spc_dot(Video*);
+void spcv_ini(Video*);
+
 // weiter
 
 typedef struct {
@@ -622,7 +627,7 @@ typedef struct {
 	void(*cbFrame)(Video*);		// vblank start
 } xVideoMode;
 
-// id,(@every_visible_dot),(@HBlank),(@LineStart),(@VBlank)
+// id,(@on),(@every_visible_dot),(@HBlank),(@LineStart),(@VBlank)
 static xVideoMode vidModeTab[] = {
 	{VID_NORMAL, NULL, vidDrawNormal, NULL, NULL, NULL},
 	{VID_ALCO, NULL, vidDrawAlco, NULL, NULL, NULL},
@@ -658,6 +663,8 @@ static xVideoMode vidModeTab[] = {
 
 	{VID_BK_BW, NULL, bk_bw_dot, NULL, NULL, NULL},
 	{VID_BK_COL, NULL, bk_col_dot, NULL, NULL, NULL},
+
+	{VID_SPCLST, spcv_ini, spc_dot, NULL, NULL, NULL},
 
 	{VID_UNKNOWN, NULL, vidDrawBorder, NULL, NULL, NULL}
 };

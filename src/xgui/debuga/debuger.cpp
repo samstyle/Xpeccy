@@ -269,6 +269,9 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	p.first = QIcon(":/images/speaker2.png"); p.second = ui.ayTab; lst.append(p);
 	p.first = QIcon(":/images/tape.png"); p.second = ui.tapeTab; lst.append(p);
 	tablist[HWG_MSX] = lst;
+	lst.clear();
+	p.first = QIcon(":/images/tape.png"); p.second = ui.tapeTab; lst.append(p);
+	tablist[HWG_SPCLST] = lst;
 
 	xLabel* arrl[16] = {
 		ui.labReg00, ui.labReg01, ui.labReg02, ui.labReg03, ui.labReg04,

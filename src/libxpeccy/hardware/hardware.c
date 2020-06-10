@@ -71,6 +71,9 @@ HardWare hwTab[] = {
 //		HW_BK0011M,HWG_BK,"BK0011M","BK0011M",8,MEM_128K,(double)29/23,
 //		bk_mem_map,NULL,NULL,bk_mrd,bk_mwr,bk_reset,bk_sync,bk_keyp,bk_keyr,bk_vol
 //	},{
+		HW_SPCLST,HWG_SPCLST,"Specualist","Specialist",16,MEM_64K,1.0,
+		spc_mem_map,NULL,NULL,spc_mrd,spc_mwr,spc_reset,spc_sync,spc_keyp,spc_keyr,spc_vol
+	},{
 		HW_NULL,HWG_NULL,NULL,NULL,16,0,1.0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// eot
 	}
 };

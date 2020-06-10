@@ -69,7 +69,7 @@ void MainWin::updateWindow() {
 	} else {
 		szw = comp->vid->vsze.x * conf.vid.scale;
 		szh = comp->vid->vsze.y * conf.vid.scale;
-		szw *= static_cast<int>(conf.prof.cur->zx->hw->xscale);
+		szw *= conf.prof.cur->zx->hw->xscale;
 		setWindowState(windowState() & ~Qt::WindowFullScreen);
 	}
 	setFixedSize(szw, szh);
@@ -573,7 +573,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 	if (comp->debug) {
 		ev->ignore();
 	} else {
-		int keyid = shortcut_check(SCG_MAIN, QKeySequence(ev->key() | ev->modifiers()));
+		int keyid = pckAct->isChecked() ? -1 : shortcut_check(SCG_MAIN, QKeySequence(ev->key() | ev->modifiers()));
 		if (keyid < 0) {
 #if defined(__linux) || defined(_WIN32)
 			keyid = ev->nativeScanCode();

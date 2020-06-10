@@ -30,7 +30,8 @@ enum {
 	HW_NES,		// Nintendo Entertaiment System (Dendy)
 	HW_C64,		// Commodore 64
 	HW_BK0010,	// BK0010
-	HW_BK0011M	// BK0011m
+	HW_BK0011M,	// BK0011m
+	HW_SPCLST,	// PC Specialist
 };
 
 // hw group
@@ -41,7 +42,8 @@ enum {
 	HWG_GB,
 	HWG_NES,
 	HWG_COMMODORE,
-	HWG_BK
+	HWG_BK,
+	HWG_SPCLST
 };
 
 enum {
@@ -283,6 +285,17 @@ void bk_sync(Computer*, int);
 void bk_keyp(Computer*, keyEntry);
 void bk_keyr(Computer*, keyEntry);
 sndPair bk_vol(Computer*, sndVolume*);
+
+// pc specialist
+void spc_mem_map(Computer*);
+void spc_reset(Computer*);
+int spc_mrd(Computer*, int, int);
+int spc_vid_rd(int, void*);
+void spc_mwr(Computer*, int, int);
+void spc_sync(Computer*, int);
+void spc_keyp(Computer*, keyEntry);
+void spc_keyr(Computer*, keyEntry);
+sndPair spc_vol(Computer*, sndVolume*);
 
 #ifdef __cplusplus
 }

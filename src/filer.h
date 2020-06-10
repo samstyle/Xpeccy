@@ -35,6 +35,7 @@ enum {
 	FL_BKRAWTAP,
 	FL_BKIMG,
 	FL_BKBKD,
+	FL_RKS,
 };
 
 enum {
@@ -58,7 +59,9 @@ enum {
 	FG_BKDATA,
 	FG_BKTAPE,
 	FG_BKRAW,
-	FG_BKDISK
+	FG_BKDISK,
+	FG_RKSMEM,
+	FG_RKSTAP,
 };
 
 enum {
@@ -68,6 +71,7 @@ enum {
 	FH_NES,
 	FH_CMD,
 	FH_BK,
+	FH_SPCLST,
 	FH_DISKS,
 	FH_SLOTS
 };

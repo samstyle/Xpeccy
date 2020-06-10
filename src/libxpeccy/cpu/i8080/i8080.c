@@ -4,6 +4,7 @@
 void i8080_reset(CPU* cpu) {
 	cpu->pc = 0x0000;
 	cpu->bc = cpu->de = cpu->hl = 0xffff;
+	cpu->sp = 0xffff;
 	cpu->a = 0xff;
 	cpu->f = 0x02;
 	cpu->inten = 0;
@@ -25,10 +26,12 @@ int i8080_exec(CPU* cpu) {
 	if (cpu->intrq & cpu->inten)
 		cpu->t = i8080_int(cpu);
 	if (cpu->t) return cpu->t;
-	cpu->com = cpu->mrd(cpu->pc++, 1, cpu->data);
+	cpu->com = cpu->mrd(cpu->pc++, 1, cpu->data) & 0xff;
 	cpu->op = &i8080_tab[cpu->com];
 	cpu->t = cpu->op->t;
 	cpu->op->exec(cpu);
+	cpu->f &= ~(IFL_5 | IFL_3);
+	cpu->f |= IFL_1;
 	return cpu->t;
 }
 
@@ -103,7 +106,7 @@ void i8080_get_regs(CPU* cpu, xRegBunch* bunch) {
 		idx++;
 	}
 	bunch->regs[idx].id = REG_NONE;
-	memcpy(bunch->flags, "SZ5H3PNC", 8);
+	memcpy(bunch->flags, "SZ5A3P1C", 8);
 }
 
 void i8080_set_regs(CPU* cpu, xRegBunch bunch) {

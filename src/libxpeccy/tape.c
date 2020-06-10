@@ -339,7 +339,8 @@ int tapPlay(Tape* tap) {
 	if ((tap->block < tap->blkCount) && !tap->on) {
 		tap->rec = 0;
 		tap->on = 1;
-		tap->volPlay = (tap->volPlay & 0x80) ? 0x7f : 0x81;
+		tap->sigLen = 0;
+		// tap->volPlay = (tap->volPlay & 0x80) ? 0x7f : 0x81;
 	}
 	return tap->on;
 }
@@ -408,7 +409,8 @@ void tapSync(Tape* tap, int ns) {
 		} else {
 			tap->sigLen -= mks;
 			while (tap->sigLen < 1) {
-				tap->volPlay = (tap->volPlay & 0x80) ? 0x7f : 0x81;
+				tap->volPlay = 0x7f;
+				// tap->volPlay = (tap->volPlay & 0x80) ? 0x7f : 0x81;
 				tap->sigLen += 5e5;	// .5 sec
 			}
 		}
@@ -416,7 +418,8 @@ void tapSync(Tape* tap, int ns) {
 		// tape stoped
 		tap->sigLen -= mks;
 		while (tap->sigLen < 1) {
-			tap->volPlay = (tap->volPlay & 0x80) ? 0x7f : 0x81;
+			tap->volPlay = 0x7f;
+			// tap->volPlay = (tap->volPlay & 0x80) ? 0x7f : 0x81;
 			tap->sigLen += 5e5;	// .5 sec
 		}
 	}
@@ -424,6 +427,7 @@ void tapSync(Tape* tap, int ns) {
 
 void tapNextBlock(Tape* tap) {
 	tap->block++;
+	tap->pos = 0;
 	tap->blkChange = 1;
 	if (tap->block < tap->blkCount) {
 		tap->blkData[tap->block].vol = 0;

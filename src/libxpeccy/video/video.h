@@ -56,6 +56,8 @@ enum {
 // bk
 	VID_BK_BW,
 	VID_BK_COL,
+// specialist
+	VID_SPCLST,
 };
 
 extern int bytesPerLine;

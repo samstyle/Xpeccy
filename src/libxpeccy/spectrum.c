@@ -14,6 +14,7 @@ static vLayout gbcLay = {{228,154},{0,0},{68,10},{160,144},{0,0},64};
 static vLayout nesNTSCLay = {{341,262},{0,0},{85,22},{256,240},{0,0},64};
 static vLayout nesPALLay = {{341,312},{0,0},{85,72},{256,240},{0,0},64};
 static vLayout bkLay = {{256,256},{0,0},{1,1},{256,256},{0,0},0};
+static vLayout spclstLay = {{384,256},{0,0},{1,1},{384,256},{0,0},0};
 
 // ...
 
@@ -213,8 +214,8 @@ void rzxStop(Computer* zx) {
 
 void zxSetUlaPalete(Computer* comp) {
 	for (int i = 0; i < 64; i++) {
-		comp->vid->pal[i].b = (comp->vid->ula->pal[i] & 0x03) << 6;		// Bb0 : must me Bbb
-		comp->vid->pal[i].r = (comp->vid->ula->pal[i] & 0x1c) << 3;
+		comp->vid->pal[i].b = (comp->vid->ula->pal[i] << 6) & 0xe0;		// Bb0 : must me Bbb
+		comp->vid->pal[i].r = (comp->vid->ula->pal[i] << 3) & 0xe0;
 		comp->vid->pal[i].g = (comp->vid->ula->pal[i] & 0xe0);
 	}
 }
@@ -414,6 +415,13 @@ void compUpdateTimings(Computer* comp) {
 			comp->nesapu->wper = perNoTurbo << 1;				// 1 APU tick = 2 CPU ticks
 			comp->vid->lockLayout = 1;
 			break;
+		case HW_SPCLST:
+			comp->vid->lockLayout = 0;
+			vidSetLayout(comp->vid, spclstLay);
+			comp->vid->lockLayout = 1;
+			vidSetMode(comp->vid, VID_SPCLST);
+			vidUpdateTimings(comp->vid, perNoTurbo >> 2);			// CPU:2MHz, dots:8MHz
+			break;
 		default:
 			comp->fps = 50;
 			vidUpdateTimings(comp->vid, perNoTurbo >> 1);
@@ -445,7 +453,6 @@ int compSetHardware(Computer* comp, const char* name) {
 	comp->hw = hw;
 	comp->vid->lockLayout = 0;
 	comp->cpu->nod = 0;
-	comp->vid->mrd = vid_mrd_cb;
 	switch(hw->id) {
 		case HW_NES:
 			comp->vid->lockLayout = 1;
@@ -462,6 +469,12 @@ int compSetHardware(Computer* comp, const char* name) {
 			break;
 		case HW_C64:
 			comp->vid->mrd = c64_vic_mrd;
+			break;
+		case HW_SPCLST:
+			comp->vid->mrd = spc_vid_rd;
+			break;
+		default:
+			comp->vid->mrd = vid_mrd_cb;
 			break;
 	}
 	compUpdateTimings(comp);
@@ -507,7 +520,8 @@ int compExec(Computer* comp) {
 				comp->vid->ula->palchan = 0;
 			}
 		}
-		comp->hw->out(comp, comp->padr, comp->pval, bdiz);
+		if (comp->hw->out)
+			comp->hw->out(comp, comp->padr, comp->pval, bdiz);
 		comp->padr = 0;
 	}
 // execution completed : get eated time
