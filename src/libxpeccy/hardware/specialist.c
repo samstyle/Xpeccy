@@ -1,138 +1,78 @@
 #include "hardware.h"
 
-int spc_rd_io_a(Computer* comp) {
+int spc_rd_io_a(void* p) {
+	Computer* comp = (Computer*)p;
 	int res;
-	int msk;
-	if (comp->ppi.a.rd) {	// A in
-		msk =  comp->ppi.b.rd ? 0xff : comp->ppi.b.val;
-		res = -1;
-		for (int row = 2; row < 8; row++) {
-			if (!(msk & (1 << row)))
-				res &= comp->keyb->map[row];
-		}
-	} else {
-		res = 0xff; // comp->ppi.a.val;
+	int msk =  (comp->ppi->b.dir == PPI_OUT) ? comp->ppi->b.val : 0xff;
+	res = -1;
+	for (int row = 2; row < 8; row++) {
+		if (!(msk & (1 << row)))
+			res &= comp->keyb->map[row];
 	}
 	return res;
 }
 
 // technically, if A out, C.low out, then B in do keyboard scan too
-int spc_rd_io_b(Computer* comp) {
-	int res;
+int spc_rd_io_b(void* p) {
+	Computer* comp = (Computer*)p;
+	int res = ~1;
 	int row;
 	int mask;
-	if (comp->ppi.b.rd) {
-		res = ~1;
-		// scan keyb.rows by bits A & C
-		mask = ~(((comp->ppi.cl.val << 4) & 0xf00) | (comp->ppi.a.val & 0xff));	// bits set on scanned columns
-		mask &= 0xfff;
-		for (row = 2; row < 8; row++) {
-			if ((comp->keyb->map[row] & mask) != mask) {
-				res &= ~(1 << row);
-			}
+	// scan keyb.rows by bits A & C
+	mask = ((comp->ppi->cl.val << 8) & 0xf00) | (comp->ppi->a.val & 0x0ff);
+	if (comp->ppi->cl.dir != PPI_OUT) mask |= 0xf00;
+	if (comp->ppi->a.dir != PPI_OUT) mask |= 0xff;
+	mask = ~mask;
+	for (row = 2; row < 8; row++) {
+		if ((comp->keyb->map[row] & mask) != mask) {
+			res &= ~(1 << row);
 		}
-		if (comp->keyb->map[1] != -1)	// HP key
-			res ^= 2;
-		if (comp->tape->volPlay & 0x80)
-			res |= 1;
-	} else {
-		res = 0xff; // comp->ppi.b.val;
 	}
+	if (comp->keyb->map[1] != -1)	// HP key
+		res ^= 2;
+	if (comp->tape->volPlay & 0x80)
+		res |= 1;
 	return res;
 }
 
-int spc_rd_io_c(Computer* comp) {
+int spc_rd_io_c(void* p) {
+	Computer* comp = (Computer*)p;
 	int res = -1;
 	// form full regC
+	int msk = (comp->ppi->b.dir == PPI_OUT) ? comp->ppi->b.val : 0xff;
 	for (int row = 2; row < 8; row++) {
-		if (!(comp->ppi.b.val & (1 << row)))
+		if (!(msk & (1 << row)))
 			res &= (comp->keyb->map[row] >> 8) & 0x0f;
-	}
-	// mask blocked halfes
-	if (!comp->ppi.cl.rd) {
-		res |= 0x0f;
-	}
-	if (!comp->ppi.ch.rd) {
-		res |= 0xf0;
 	}
 	return res;
 }
 
 int spc_rd_io(int adr, void* p) {
 	Computer* comp = (Computer*)p;
-	int res = -1;
-	switch (adr & 3) {
-		case 0: res = spc_rd_io_a(comp);
-			break;
-		case 1: res = spc_rd_io_b(comp);
-			break;
-		case 2: res = spc_rd_io_c(comp);
-			break;
-	}
-	//printf("rd %i = %.2X\n", adr & 3, res & 0xff);
-	return res;
+	return ppi_rd(comp->ppi, adr & 3);
 }
 
-void spc_wr_io_a(Computer* comp, int val) {
-	if (!comp->ppi.a.rd) {
-		comp->ppi.a.val = val & 0xff;
-	}
-}
+// reset -> set NP
+// b4,C = 0 -> reset NP & never set again until comp reset (!)
+// NP = 1: ROM/IO in every 16K
+// NP = 0: RAM in 0x0000..0xbfff
+// comp->rom = NP
 
-void spc_wr_io_b(Computer* comp, int val) {
-	if (!comp->ppi.b.rd)
-		comp->ppi.b.val = val & 0xff;
-}
-
-void spc_wr_io_c(Computer* comp, int val) {
-	if (!comp->ppi.cl.rd) {
-		comp->ppi.cl.val = (val & 0x0f);
+void spc_wr_io_ch(int val, void* p) {
+	Computer* comp = (Computer*)p;
+	if (comp->rom && !(val & 0x10)) {		// b4: 0 will reset NP till next RESET
+		comp->rom = 0;
+		spc_mem_map(comp);
 	}
-	if (!comp->ppi.ch.rd) {
-		comp->ppi.ch.val = (val & 0xf0);
-		spc_mem_map(comp);				// b4:memory map
-		comp->beep->lev = (val & 0x20) ? 1 : 0;		// b5:beeper
-		comp->tape->levRec = (val & 0x80) ? 1 : 0;	// b7:tape out
-	}
+	comp->beep->lev = (val & 0x20) ? 1 : 0;		// b5:beeper
+	comp->tape->levRec = (val & 0x80) ? 1 : 0;	// b7:tape out
 }
 
 void spc_wr_io(int adr, int val, void* p) {
 	Computer* comp = (Computer*)p;
 	comp->firstRun = 0;
-	int mask;
-	// printf("wr %i,%.2X\n", adr & 3, val);
-	switch (adr & 3) {
-		case 0: spc_wr_io_a(comp, val);
-			break;
-		case 1: spc_wr_io_b(comp, val);
-			break;
-		case 2: spc_wr_io_b(comp, val);
-			break;
-		case 3:			// ctrl
-			if (val & 0x80) {
-				comp->ppi.ctrl = val & 0xff;
-				comp->ppi.a.rd = (val & 0x10) ? 1 : 0;
-				comp->ppi.b.rd = (val & 0x02) ? 1 : 0;
-				comp->ppi.cl.rd = (val & 0x01) ? 1 : 0;
-				comp->ppi.ch.rd = (val & 0x08) ? 1 : 0;
-				comp->ppi.a.mode = (val & 0x40) ? 2 : ((val & 0x20) ? 1 : 0);
-				comp->ppi.ch.mode = comp->ppi.a.mode;
-				comp->ppi.b.mode = (val & 4) ? 1 : 0;
-				comp->ppi.cl.mode = comp->ppi.b.mode;
-				comp->ppi.a.val = 0;
-				comp->ppi.b.val = 0;
-				comp->ppi.cl.val = 0;
-			} else {
-				mask = (1 << ((val & 0xe0) >> 1));	// bit mask
-				if (val & 1) {		// set
-					spc_wr_io_c(comp, (comp->ppi.cl.val | comp->ppi.ch.val) | mask);
-				} else {
-					spc_wr_io_c(comp, (comp->ppi.cl.val | comp->ppi.ch.val) & ~mask);
-				}
-			}
-			spc_mem_map(comp);
-			break;
-	}
+	ppi_wr(comp->ppi, adr & 3, val);
+	spc_mem_map(comp);
 }
 
 int spc_vid_rd(int adr, void* p) {
@@ -140,8 +80,19 @@ int spc_vid_rd(int adr, void* p) {
 	return memRd(comp->mem, 0x9000 + (adr & 0x3fff));
 }
 
+void spc_init(Computer* comp) {
+	int perNoTurbo = (int)(1e3 / comp->cpuFrq);		// ns for full cpu tick	comp->vid->mrd = spc_vid_rd;
+	vidSetMode(comp->vid, VID_SPCLST);
+	vidUpdateTimings(comp->vid, perNoTurbo >> 2);			// CPU:2MHz, dots:8MHz
+	comp->vid->mrd = spc_vid_rd;
+	ppi_set_cb(comp->ppi, comp, spc_rd_io_a, NULL,\
+				spc_rd_io_b, NULL,\
+				spc_rd_io_c, spc_wr_io_ch,\
+				spc_rd_io_c, NULL);
+}
+
 void spc_mem_map(Computer* comp) {
-	if ((!(comp->ppi.ch.val & 0x10) && !comp->ppi.ch.rd) || comp->firstRun) {
+	if (comp->rom) {
 		memSetBank(comp->mem, 0x00, MEM_ROM, 0, MEM_16K, NULL, NULL, NULL);		// 0xc000...0xf7ff ROM
 		memSetBank(comp->mem, 0x38, MEM_IO, 0, MEM_2K, spc_rd_io, spc_wr_io, comp);	// 0xf800...0xffff IO
 		memSetBank(comp->mem, 0x40, MEM_ROM, 0, MEM_16K, NULL, NULL, NULL);		// 0xc000...0xf7ff ROM
@@ -155,23 +106,13 @@ void spc_mem_map(Computer* comp) {
 	memSetBank(comp->mem, 0xf8, MEM_IO, 0, MEM_2K, spc_rd_io, spc_wr_io, comp);	// 0xf800...0xffff IO
 }
 
-// reset: all channel IN mode
-
 void spc_reset(Computer* comp) {
-	comp->ppi.a.rd = 1;
-	comp->ppi.a.val = 0xff;
-	comp->ppi.b.rd = 1;
-	comp->ppi.b.val = 0xff;
-	comp->ppi.cl.rd = 1;
-	comp->ppi.cl.val = 0x0f;
-	comp->ppi.ch.rd = 1;
-	comp->ppi.ch.val = 0xf0;
-	comp->ppi.ctrl = 0xff;
+	ppi_reset(comp->ppi);
 	comp->vid->mrd = spc_vid_rd;
 	vidSetMode(comp->vid, VID_SPCLST);
 	comp->cpu->reset(comp->cpu);
 	// kbdReleaseAll(comp->keyb);
-	comp->firstRun = 1;
+	comp->rom = 1;
 }
 
 int spc_mrd(Computer* comp, int adr, int m1) {

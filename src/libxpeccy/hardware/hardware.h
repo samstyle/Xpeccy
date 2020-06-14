@@ -54,10 +54,8 @@ enum {
 
 // Hardware callbacks
 
-// reset
-typedef void(*cbHwRes)(Computer*);
-// map memory
-typedef void(*cbHwMap)(Computer*);
+// std callback
+typedef void(*cbhwcomp)(Computer*);
 // sync: calls after every CPU command
 typedef void(*cbHwSnc)(Computer*, int);
 // memory read
@@ -80,13 +78,15 @@ struct HardWare {
 	const char* optName;	// name used for setup window
 	int base;		// numbers base (8/10/16)
 	int mask;		// mem size bits (see memory.h)
-	double xscale;
-	cbHwMap mapMem;
+	double xscale;		// pixel ratio (x:y)
+	vLayout* lay;		// fixed layout ptr. if NULL, use from config
+	cbhwcomp init;		// init (call on setting comp hardware)
+	cbhwcomp mapMem;	// map memory
 	cbHwIwr out;		// io wr
 	cbHwIrd in;		// io rd
 	cbHwMrd mrd;		// mem rd
 	cbHwMwr mwr;		// mem wr
-	cbHwRes reset;		// reset
+	cbhwcomp reset;		// reset
 	cbHwSnc sync;		// sync time
 	cbHwKey keyp;		// key press
 	cbHwKey keyr;		// key release
@@ -224,6 +224,7 @@ int phxIn(Computer*, int, int);
 void phxReset(Computer*);
 
 // msx
+void msx_init(Computer*);
 void msxMapMem(Computer*);
 void msxOut(Computer*, int, int, int);
 int msxIn(Computer*, int, int);
@@ -236,6 +237,7 @@ void msx_keyr(Computer*, keyEntry);
 sndPair msx_vol(Computer*, sndVolume*);
 
 // msx2
+void msx2_init(Computer*);
 void msx2mapper(Computer*);
 void msx2Out(Computer*, int, int, int);
 int msx2In(Computer*, int, int);
@@ -254,6 +256,7 @@ void gbc_keyr(Computer*, keyEntry);
 sndPair gbc_vol(Computer*, sndVolume*);
 
 // nes
+void nes_init(Computer*);
 void nesMaper(Computer*);
 void nesReset(Computer*);
 int nesMemRd(Computer*, int, int);
@@ -287,6 +290,7 @@ void bk_keyr(Computer*, keyEntry);
 sndPair bk_vol(Computer*, sndVolume*);
 
 // pc specialist
+void spc_init(Computer*);
 void spc_mem_map(Computer*);
 void spc_reset(Computer*);
 int spc_mrd(Computer*, int, int);

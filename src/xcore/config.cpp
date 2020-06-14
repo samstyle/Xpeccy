@@ -44,42 +44,29 @@ void conf_init(char* wpath) {
     conf.scrShot.dir = std::string(getenv(ENVHOME));
     conf.port = 30000;
 #if __linux || __APPLE__
-	strcpy(conf.path.confDir, getenv(ENVHOME));
-	strcat(conf.path.confDir, "/.config");
-	mkdir(conf.path.confDir, 0777);
-	strcat(conf.path.confDir, "/samstyle");
-	mkdir(conf.path.confDir, 0777);
-	strcat(conf.path.confDir, "/xpeccy");
-	mkdir(conf.path.confDir, 0777);
-	strcpy(conf.path.romDir, conf.path.confDir);
-	strcat(conf.path.romDir, "/roms");
-	mkdir(conf.path.romDir ,0777);
-	strcpy(conf.path.confFile, conf.path.confDir);
-	strcat(conf.path.confFile, "/config.conf");
-	strcpy(conf.path.boot, conf.path.confDir);
-	strcat(conf.path.boot, "/boot.$B");
-	//conf.path.font = conf.path.confDir + "/appfont.ttf";
+	conf.path.confDir = std::string(getenv(ENVHOME)) + "/.config";
+	mkdir(conf.path.confDir.c_str(), 0777);
+	conf.path.confDir += "/samstyle";
+	mkdir(conf.path.confDir.c_str(), 0777);
+	conf.path.confDir += "/xpeccy";
+	mkdir(conf.path.confDir.c_str(), 0777);
+	conf.path.romDir = conf.path.confDir + "/roms";
+	mkdir(conf.path.romDir.c_str() ,0777);
+	conf.path.confFile = conf.path.confDir + "/config.conf";
+	conf.path.boot = conf.path.confDir + "/boot.$B";
+	// conf.path.font = conf.path.confDir + "/appfont.ttf";
 #elif __WIN32
-	char wdir[FILENAME_MAX];
-	char* pos = strrchr(wpath, SLSH);
-	if (pos) {
-		strncpy(wdir, wpath, pos - wpath);
-		wdir[pos - wpath] = 0x00;
-	} else {
-		strcpy(wdir, wpath);
+	conf.path.confDir = std::string(wpath);
+	size_t pos = conf.path.confDir.find_last_of(SLSH);
+	if (pos != std::string::npos) {
+		conf.path.confDir = conf.path.confDir.substr(0, pos);
 	}
-	// strcpy(wdir, ".");
-	strcpy(conf.path.confDir, wdir);
-	strcat(conf.path.confDir, "\\config");
-	strcpy(conf.path.romDir, conf.path.confDir);
-	strcat(conf.path.romDir, "\\roms");
-	strcpy(conf.path.confFile, conf.path.confDir);
-	strcat(conf.path.confFile, "\\config.conf");
-	strcpy(conf.path.boot, conf.path.confDir);
-	strcat(conf.path.boot, "\\boot.$B");
-	//conf.path.font = conf.path.confDir + "\\appfont.ttf";
-	mkdir(conf.path.confDir);
-	mkdir(conf.path.romDir);
+	conf.path.confDir + "\\config";
+	conf.path.romDir = conf.path.confDir + "\\roms";
+	conf.path.confFile = conf.path.confDir + "\\config.conf";
+	conf.path.boot = conf.path.confDir + "\\boot.$B";
+	mkdir(conf.path.confDir.c_str());
+	mkdir(conf.path.romDir.c_str());
 #endif
 	conf.scrShot.format = "png";
 	vLayout vlay = {{448,320},{74,48},{64,32},{256,192},{0,0},64};
@@ -93,7 +80,7 @@ void conf_init(char* wpath) {
 }
 
 void saveConfig() {
-	FILE* cfile = fopen(conf.path.confFile, "wb");
+	FILE* cfile = fopen(conf.path.confFile.c_str(), "wb");
 	if (!cfile) {
 		shitHappens("Can't write main config");
 		throw(0);
@@ -222,18 +209,18 @@ void loadConfig() {
 	char fname[FILENAME_MAX];
 	if (!file.good()) {
 		printf("Main config is missing. Default files will be copied\n");
-		copyFile(":/conf/config.conf", conf.path.confFile);
-		strcpy(fname, conf.path.confDir);
+		copyFile(":/conf/config.conf", conf.path.confFile.c_str());
+		strcpy(fname, conf.path.confDir.c_str());
 		strcat(fname, SLASH);
 		strcat(fname, "xpeccy.conf");
 		copyFile(":/conf/xpeccy.conf", fname);
-		strcpy(fname, conf.path.romDir);
+		strcpy(fname, conf.path.romDir.c_str());
 		strcat(fname, SLASH);
 		strcat(fname, "1982.rom");
 		copyFile(":/conf/1982.rom", fname);
 		file.open(conf.path.confFile);
 		if (!file.good()) {
-			printf("%s\n",conf.path.confFile);
+			printf("%s\n",conf.path.confFile.c_str());
 			shitHappens("<b>Doh! Something going wrong</b>");
 			throw(0);
 		}

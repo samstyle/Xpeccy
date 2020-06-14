@@ -2,6 +2,9 @@
 
 #include <stdio.h>
 
+static vLayout nesNTSCLay = {{341,262},{0,0},{85,22},{256,240},{0,0},64};
+static vLayout nesPALLay = {{341,312},{0,0},{85,72},{256,240},{0,0},64};
+
 // NOTE: NES is fukkeen trash. why did i start this?
 // NOTE: Cartridges have potentially 255+ mappers
 
@@ -29,7 +32,7 @@ void nes_ppu_ext_wr(int adr, int val, void* ptr) {
 	adr = nes_nt_vadr(comp->slot, adr);
 	sltChecker(comp->slot, adr);
 	if (adr & 0x2000) {
-		comp->vid->ram[adr] = val;
+		comp->vid->ram[adr] = val & 0xff;
 	} else {
 		if (comp->slot->chrrom) {
 			// CHR-RAM?
@@ -127,7 +130,7 @@ void nesMMwr(int adr, int val, void* data) {
 					case 0x14:		// OAMDMA
 						adr = (val << 8);
 						do {
-							comp->vid->oam[comp->vid->oamadr & 0xff] = memRd(comp->mem, adr);
+							comp->vid->oam[comp->vid->oamadr & 0xff] = memRd(comp->mem, adr) & 0xff;
 							comp->vid->oamadr++;
 							adr++;
 						} while (adr & 0xff);
@@ -211,6 +214,48 @@ void nesMemWr(Computer* comp, int adr, int val) {
 	vidSync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
 	res4 = comp->cpu->t;
 	memWr(comp->mem, adr, val);
+}
+
+// base frq (21.477MHz | 26.602MHz)
+// cpu frq (base:12 | base:16)
+// ppu frq (base:4 | base:5)
+// apu frame (60Hz | 50Hz)
+// apu frq = cpu / 2
+// smallest wave period = cpu / 16
+
+void nes_init(Computer* comp) {
+	int perNoTurbo;
+	switch(comp->nes.type) {
+		case NES_PAL:
+			comp->fps = 50;
+			perNoTurbo = (int)(1e3 / 1.66);		// ~601
+			vidSetLayout(comp->vid, &nesPALLay);
+			comp->vid->vbsline = 241;
+			comp->vid->vbrline = 311;
+			vidUpdateTimings(comp->vid, (int)(perNoTurbo / 3.2));		// 16 ticks = 5 dots
+			comp->nesapu->wdiv = 3107;		// 5/6 = 3107? or 166/179 = 3458
+			break;
+		case NES_NTSC:
+			comp->fps = 60;
+			perNoTurbo = (int)(1e3 / 1.79);		// ~559
+			vidSetLayout(comp->vid, &nesNTSCLay);
+			comp->vid->vbsline = 241;
+			comp->vid->vbrline = 261;
+			vidUpdateTimings(comp->vid, perNoTurbo / 3);		// 15 ticks = 5 dots
+			comp->nesapu->wdiv = 3729;
+			break;
+		default:							// dendy
+			comp->fps = 59;
+			perNoTurbo = (int)(1e3 / 1.77);
+			vidSetLayout(comp->vid, &nesPALLay);
+			comp->vid->vbsline = 291;
+			comp->vid->vbrline = 311;
+			vidUpdateTimings(comp->vid, perNoTurbo / 3);
+			comp->nesapu->wdiv = 3729;
+			break;
+	}
+	comp->nesapu->wper = perNoTurbo << 1;				// 1 APU tick = 2 CPU ticks
+	comp->cpu->nod = 1;	// no daa in cpu
 }
 
 // keypress

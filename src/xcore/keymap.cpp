@@ -150,16 +150,17 @@ void initKeyMap() {
 void loadKeys() {
 	xProfile* prf = conf.prof.cur;
 	if (!prf) return;
-	char sfnam[FILENAME_MAX];
-	strcpy(sfnam, conf.path.confDir);
-	strcat(sfnam, SLASH);
-	strcat(sfnam, prf->kmapName.c_str());
+	std::string sfnam = conf.path.confDir + SLASH + prf->kmapName;
 	initKeyMap();
 	if ((prf->kmapName == "") || (prf->kmapName == "default")) return;
 	std::ifstream file(sfnam);
 	if (!file.good()) {
-		printf("Can't open keyboard layout. Default one will be used\n");
-		return;
+		sfnam = conf.path.confDir + SLASH + "keymaps" + SLASH + prf->kmapName;
+		file.open(sfnam);
+		if (!file.good()) {
+			printf("Can't open keyboard layout. Default one will be used\n");
+			return;
+		}
 	}
 	char buf[1024];
 	std::pair<std::string,std::string> spl;

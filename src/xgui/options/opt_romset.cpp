@@ -16,7 +16,7 @@ xRomsetEditor::xRomsetEditor(QWidget* par):QDialog(par) {
 
 void xRomsetEditor::edit(xRomFile f) {
 	xrf = f;
-	QDir rdir(QString(conf.path.romDir));
+	QDir rdir(QString(conf.path.romDir.c_str()));
 	QStringList rlst = rdir.entryList(QStringList() << "*.rom", QDir::Files, QDir::Name);
 	QString str;
 	ui.cbFile->clear();
@@ -82,7 +82,7 @@ QVariant xRomsetModel::headerData(int sect, Qt::Orientation ori, int role) const
 QVariant xRomsetModel::data(const QModelIndex& idx, int role) const {
 	QVariant res;
 	QFileInfo inf;
-	char buf[PATH_MAX];
+	std::string buf;
 	if (!idx.isValid()) return res;
 	int row = idx.row();
 	int col = idx.column();
@@ -119,10 +119,8 @@ QVariant xRomsetModel::data(const QModelIndex& idx, int role) const {
 					if (rset->roms[row].fsize > 0) {
 						res = rset->roms[row].fsize;
 					} else {
-						strcpy(buf, conf.path.romDir);
-						strcat(buf, SLASH);
-						strcat(buf, rset->roms[row].name.c_str());
-						inf.setFile(trUtf8(buf));
+						buf = conf.path.romDir + SLASH + rset->roms[row].name;
+						inf.setFile(trUtf8(buf.c_str()));
 						res = QString("( %0 )").arg(inf.size() >> 10);
 					}
 					break;

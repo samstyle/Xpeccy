@@ -385,11 +385,11 @@ struct xConfig {
 	} led;
 	struct {
 		// char lastDir[PATH_MAX];
-		char confDir[PATH_MAX];
-		char confFile[PATH_MAX];
-		char romDir[PATH_MAX];
-		char font[PATH_MAX];
-		char boot[PATH_MAX];
+		std::string confDir;
+		std::string confFile;
+		std::string romDir;
+		std::string font;
+		std::string boot;
 	} path;
 	struct {
 		unsigned labels:1;

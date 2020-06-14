@@ -71,17 +71,15 @@ int padGetId(char ch, const xCharDir* tab) {
 void padLoadConfig(std::string name) {
 	if (name.empty()) return;
 	xJoyMapEntry jent;
-	char path[FILENAME_MAX];
+	// char path[FILENAME_MAX];
 	FILE* file;
 	int num;
 	int idx;
 	char buf[1024];
 	char* ptr;
 
-	strcpy(path, conf.path.confDir);
-	strcat(path, SLASH);
-	strcat(path, name.c_str());
-	file = fopen(path, "rb");
+	std::string path = conf.path.confDir + SLASH + name;
+	file = fopen(path.c_str(), "rb");
 	if (file) {
 		conf.joy.map.clear();
 		while(!feof(file)) {
@@ -147,12 +145,9 @@ void padLoadConfig(std::string name) {
 
 void padSaveConfig(std::string name) {
 	if (name.size() == 0) return;
-	char path[FILENAME_MAX];
-	strcpy(path, conf.path.confDir);
-	strcat(path, SLASH);
-	strcat(path, name.c_str());
+	std::string path = conf.path.confDir + SLASH + name;
 	FILE* file;
-	file = fopen(path, "wb");
+	file = fopen(path.c_str(), "wb");
 	if (file) {
 		foreach(xJoyMapEntry jent, conf.joy.map) {
 			fprintf(file, "%c%i", padGetChar(jent.type, pabhChars), jent.num);
@@ -187,11 +182,8 @@ void padSaveConfig(std::string name) {
 }
 
 int padExists(std::string name) {
-	char path[FILENAME_MAX];
-	strcpy(path, conf.path.confDir);
-	strcat(path, SLASH);
-	strcat(path, name.c_str());
-	FILE* file = fopen(path, "rb");
+	std::string path = conf.path.confDir + SLASH + name;
+	FILE* file = fopen(path.c_str(), "rb");
 	if (!file) return 0;
 	fclose(file);
 	return 1;
@@ -199,20 +191,14 @@ int padExists(std::string name) {
 
 int padCreate(std::string name) {
 	if (padExists(name)) return 0;
-	char path[FILENAME_MAX];
-	strcpy(path, conf.path.confDir);
-	strcat(path, SLASH);
-	strcat(path, name.c_str());
-	FILE* file = fopen(path, "wb");
+	std::string path = conf.path.confDir + SLASH + name;
+	FILE* file = fopen(path.c_str(), "wb");
 	if (!file) return 0;
 	fclose(file);
 	return 1;
 }
 
 void padDelete(std::string name) {
-	char path[FILENAME_MAX];
-	strcpy(path, conf.path.confDir);
-	strcat(path, SLASH);
-	strcat(path, name.c_str());
-	remove(path);
+	std::string path = conf.path.confDir + SLASH + name;
+	remove(path.c_str());
 }

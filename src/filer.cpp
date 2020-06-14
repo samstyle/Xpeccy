@@ -2,6 +2,8 @@
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
 
+#include <QFileDialog>
+
 static QFileDialog* filer;
 
 #include <QIcon>
@@ -24,6 +26,7 @@ typedef struct {
 	const char* defext;
 	int drv;
 	const char* name;
+	xFileTypeInfo* fti;
 	int child[32];
 } xFileGroupInfo;
 
@@ -78,27 +81,27 @@ static xFileTypeInfo ft_dum = {FL_NONE, 0, NULL, NULL, NULL, NULL, "Dummy entry"
 // 0..3 : disk (must be inserted for save)
 // 4 : tape (block count > 0)
 static xFileGroupInfo fg_tab[] = {
-	{FG_SNAPSHOT, ".sna", -1, "Snapshot", {FL_SNA, FL_Z80, FL_SPG, 0}},
-	{FG_TAPE, ".tap", 4, "Tape", {FL_TAP, FL_TZX, FL_WAV, 0}},
-	{FG_DISK_A, ".trd", 0,"Disk A", {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_HOBETA, 0}},
-	{FG_DISK_B, ".trd", 1, "Disk B", {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_HOBETA, 0}},
-	{FG_DISK_C, ".trd", 2, "Disk C", {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_HOBETA, 0}},
-	{FG_DISK_D, ".trd", 3, "Disk D", {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_HOBETA, 0}},
-	{FG_RAW, "", 0, "Raw file to disk A",{FL_RAW, 0}},
-	{FG_RZX, "", -1, "RZX playback", {FL_RZX, 0}},
-	{FG_GAMEBOY, "", -1, "GB cartrige", {FL_GB, FL_GBC, 0}},
-	{FG_MSX, "", -1, "MSX cartrige", {FL_MSX, FL_MX1, FL_MX2, 0}},
-	{FG_MSXTAPE, "", 4, "MSX cassette", {FL_CAS, 0}},
-	{FG_NES, "", -1, "NES cartrige", {FL_NES, 0}},
-	{FG_CMDTAPE, "", -1, "Commodore tape", {FL_T64, FL_C64TAP, 0}},
-	{FG_CMDSNAP, "", -1, "Commodore snapshot", {FL_C64PRG, 0}},
-	{FG_BKDATA, "", -1, "BK bin data to mem", {FL_BKBIN, 0}},
-	{FG_BKTAPE, ".wav", -1, "BK tape", {FL_WAV, 0}},
-	{FG_BKRAW, "", -1, "BK raw file to tape",  {FL_BKRAWTAP, 0}},
-	// {FG_BKDISK, "", 0, "BK disk image", {FL_BKIMG, FL_BKBKD, FL_UDI, 0}},
-	{FG_RKSTAP, "", -1, "RKS to tape", {FL_RKS, 0}},
-	{FG_RKSMEM, "", -1, "RKS to memory", {FL_RKS, 0}},
-	{0, "", -1, NULL, {0}}
+	{FG_SNAPSHOT, ".sna", -1, "Snapshot", NULL, {FL_SNA, FL_Z80, FL_SPG, 0}},
+	{FG_TAPE, ".tap", 4, "Tape", NULL, {FL_TAP, FL_TZX, FL_WAV, 0}},
+	{FG_DISK_A, ".trd", 0,"Disk A", NULL, {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_HOBETA, 0}},
+	{FG_DISK_B, ".trd", 1, "Disk B", NULL, {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_HOBETA, 0}},
+	{FG_DISK_C, ".trd", 2, "Disk C", NULL, {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_HOBETA, 0}},
+	{FG_DISK_D, ".trd", 3, "Disk D", NULL, {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_HOBETA, 0}},
+	{FG_RAW, "", 0, "Raw file to disk A", &ft_raw, {FL_RAW, 0}},
+	{FG_RZX, "", -1, "RZX playback", NULL, {FL_RZX, 0}},
+	{FG_GAMEBOY, "", -1, "GB cartrige", NULL, {FL_GB, FL_GBC, 0}},
+	{FG_MSX, "", -1, "MSX cartrige", NULL, {FL_MSX, FL_MX1, FL_MX2, 0}},
+	{FG_MSXTAPE, "", 4, "MSX cassette", NULL, {FL_CAS, 0}},
+	{FG_NES, "", -1, "NES cartrige", NULL, {FL_NES, 0}},
+	{FG_CMDTAPE, "", -1, "Commodore tape", NULL, {FL_T64, FL_C64TAP, 0}},
+	{FG_CMDSNAP, "", -1, "Commodore snapshot", NULL, {FL_C64PRG, 0}},
+	{FG_BKDATA, "", -1, "BK bin data to mem", NULL, {FL_BKBIN, 0}},
+	{FG_BKTAPE, ".wav", -1, "BK tape", NULL, {FL_WAV, 0}},
+	{FG_BKRAW, "", -1, "BK raw file to tape", &ft_bktap,  {FL_BKRAWTAP, 0}},
+	// {FG_BKDISK, "", 0, "BK disk image", NULL, {FL_BKIMG, FL_BKBKD, FL_UDI, 0}},
+	{FG_RKSTAP, "", -1, "RKS to tape", &ft_rksmem, {FL_RKS, 0}},
+	{FG_RKSMEM, "", -1, "RKS to memory", NULL, {FL_RKS, 0}},
+	{0, "", -1, NULL, NULL, {0}}
 };
 
 static xFileGroupInfo fg_dum = {0, "", -1, NULL, {0}};
@@ -112,7 +115,7 @@ static xFileHWInfo fh_tab[] = {
 	{FH_BK, {FG_BKDATA, FG_BKTAPE, FG_BKRAW, FG_BKDISK, 0}},
 	{FH_DISKS, {FG_DISK_A, FG_DISK_B, FG_DISK_C, FG_DISK_D, 0}},
 	{FH_SLOTS, {FG_GAMEBOY, FG_NES, FG_MSX, 0}},
-	{FH_SPCLST, {FG_RKSMEM, 0}},
+	{FH_SPCLST, {FG_RKSMEM, FG_RKSTAP, 0}},
 	{0, {0}}
 };
 
@@ -336,7 +339,7 @@ void disk_boot(Computer* comp, int drv, int id) {
 	while (boot_ft[idx] && (boot_ft[idx] != id))
 		idx++;
 	if (boot_ft[idx])
-		loadBoot(comp, conf.path.boot, drv);
+		loadBoot(comp, conf.path.boot.c_str(), drv);
 }
 
 int load_file(Computer* comp, const char* name, int id, int drv) {
@@ -373,12 +376,20 @@ int load_file(Computer* comp, const char* name, int id, int drv) {
 		}
 	}
 	if (path.isEmpty()) return err;
+#if 1
+	if (grp->fti != NULL) {
+		inf = grp->fti;
+	} else {
+		inf = file_find_hw_ext(comp->hw->id, path);		// detect file type by extension
+	}
+#else
 	switch(grp->id) {
 		case FG_RAW: inf = &ft_raw; break;
 		case FG_BKRAW: inf = &ft_bktap; break;
 		case FG_RKSMEM: inf = &ft_rksmem; break;
 		default: inf = file_find_hw_ext(comp->hw->id, path); break;		// detect file type by extension
 	}
+#endif
 	if (drv < 0) drv = 0;
 	if (inf) {
 		if (inf->load) {

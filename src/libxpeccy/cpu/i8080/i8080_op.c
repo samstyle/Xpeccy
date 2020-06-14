@@ -4,6 +4,9 @@
 
 extern const unsigned char sz53pTab[0x100];
 
+static int iop_add_h[8] = {0, 0, IFL_A, 0, IFL_A, 0, IFL_A, IFL_A};
+static int iop_sub_h[8] = {0, IFL_A, IFL_A, IFL_A, 0, 0, 0, IFL_A};
+
 // common
 
 int iop_parity(unsigned char val) {
@@ -19,8 +22,8 @@ unsigned char iop_inr(CPU* cpu, unsigned char val) {
 	val++;
 	cpu->f &= IFL_C;
 	if (val & 0x80) cpu->f |= IFL_S;
-	if (val == 0x00) cpu->f |= IFL_Z;
-	if ((val & 0x0f) == 0x00) cpu->f |= IFL_A;
+	if (!val) cpu->f |= IFL_Z;
+	if (!(val & 0x0f)) cpu->f |= IFL_A;
 	if (iop_parity(val)) cpu->f |= IFL_P;
 	return val;
 }
@@ -29,50 +32,66 @@ unsigned char iop_dcr(CPU* cpu, unsigned char val) {
 	val--;
 	cpu->f &= IFL_C;
 	if (val & 0x80) cpu->f |= IFL_S;
-	if (val == 0x00) cpu->f |= IFL_Z;
+	if (!val) cpu->f |= IFL_Z;
 	if ((val & 0x0f) == 0x0f) cpu->f |= IFL_A;
 	if (iop_parity(val)) cpu->f |= IFL_P;
 	return val;
 }
 
-unsigned char iop_add(CPU* cpu, unsigned char val, unsigned short add) {
+unsigned char iop_add(CPU* cpu, unsigned char val, unsigned char add) {
 	cpu->tmpw = val + add;
 	cpu->f = 0;
 	if (cpu->ltw & 0x80) cpu->f |= IFL_S;
 	if (cpu->ltw == 0) cpu->f |= IFL_Z;
-	if ((cpu->ltw ^ val ^ add) & 0x10) cpu->f |= IFL_A;
+	cpu->f |= iop_add_h[((val & 8) >> 1) | ((add & 8) >> 2) | ((cpu->ltw & 8) >> 3)];
 	if (iop_parity(cpu->ltw)) cpu->f |= IFL_P;
 	if (cpu->htw != 0) cpu->f |= IFL_C;
 	return cpu->ltw;
 }
 
-unsigned char iop_adc(CPU* cpu, unsigned char val, unsigned short add) {
-	if (cpu->f & IFL_C) add++;
-	return iop_add(cpu, val, add);
+unsigned char iop_adc(CPU* cpu, unsigned char val, unsigned char add) {
+	unsigned char cf = (cpu->f & IFL_C) ? 1 : 0;
+	unsigned char adc = add + cf;
+	cpu->tmpw = val + add + cf;
+	cpu->f = 0;
+	if (cpu->ltw & 0x80) cpu->f |= IFL_S;
+	if (cpu->ltw == 0) cpu->f |= IFL_Z;
+	cpu->f |= iop_add_h[((val & 8) >> 1) | ((adc & 8) >> 2) | ((cpu->ltw & 8) >> 3)];
+	if (iop_parity(cpu->ltw)) cpu->f |= IFL_P;
+	if (cpu->htw != 0) cpu->f |= IFL_C;
+	return cpu->ltw;
 }
 
-unsigned char iop_sub(CPU* cpu, unsigned char val, unsigned short sub) {
+unsigned char iop_sub(CPU* cpu, unsigned char val, unsigned char sub) {
 	cpu->tmpw = val - sub;
 	cpu->f = 0;
 	if (cpu->ltw & 0x80) cpu->f |= IFL_S;
 	if (cpu->ltw == 0) cpu->f |= IFL_Z;
-	if ((cpu->ltw ^ val ^ sub) & 0x10) cpu->f |= IFL_A;
+	cpu->f |= iop_sub_h[((val & 8) >> 1) | ((sub & 8) >> 2) | ((cpu->ltw & 8) >> 3)];
 	if (iop_parity(cpu->ltw)) cpu->f |= IFL_P;
 	if (cpu->htw != 0) cpu->f |= IFL_C;
 	return cpu->ltw;
 }
 
-unsigned char iop_sbb(CPU* cpu, unsigned char val, unsigned short sub) {
-	if (cpu->f & IFL_C) sub++;
-	return iop_sub(cpu, val, sub);
+unsigned char iop_sbb(CPU* cpu, unsigned char val, unsigned char sub) {
+	unsigned char cf = (cpu->f & IFL_C) ? 1 : 0;
+	unsigned char sbc = sub + cf;
+	cpu->tmpw = val - sub - cf;
+	cpu->f = 0;
+	if (cpu->ltw & 0x80) cpu->f |= IFL_S;
+	if (cpu->ltw == 0) cpu->f |= IFL_Z;
+	cpu->f |= iop_sub_h[((val & 8) >> 1) | ((sbc & 8) >> 2) | ((cpu->ltw & 8) >> 3)];
+	if (iop_parity(cpu->ltw)) cpu->f |= IFL_P;
+	if (cpu->htw != 0) cpu->f |= IFL_C;
+	return cpu->ltw;
 }
 
-// flags A,C = 0
 unsigned char iop_ana(CPU* cpu, unsigned char val, unsigned char arg) {
 	val &= arg;
 	cpu->f &= ~(IFL_S | IFL_Z | IFL_A | IFL_P | IFL_C);
 	if (val & 0x80) cpu->f |= IFL_S;
 	if (val == 0) cpu->f |= IFL_Z;
+	if ((val | arg) & 0x08) cpu->f |= IFL_A;	// from sPycialist
 	if (iop_parity(val)) cpu->f |= IFL_P;
 	return  val;
 }
@@ -860,17 +879,10 @@ void iop_e2(CPU* cpu) {
 }
 // e3: xthl = ex (sp),hl
 void iop_e3(CPU* cpu) {
-	cpu->t += 3;
-	cpu->ltw = cpu->mrd(cpu->sp, 0, cpu->data) & 0xff;
-	cpu->t += 3;
-	cpu->htw = cpu->mrd(cpu->sp + 1, 0, cpu->data) & 0xff;
-	cpu->t += 3;
-	cpu->mwr(cpu->sp, cpu->l, cpu->data);
-	cpu->t += 3;
-	cpu->mwr(cpu->sp + 1, cpu->h, cpu->data);
+	cpu->tmpw = iop_pop(cpu);
+	iop_push(cpu, cpu->hl);
 	cpu->t += 2;
-	cpu->l = cpu->ltw;
-	cpu->h = cpu->htw;
+	cpu->hl = cpu->tmpw;
 }
 // e4: cpo nn
 void iop_e4(CPU* cpu) {
@@ -932,7 +944,9 @@ void iop_ee(CPU* cpu) {
 // f0: rp
 void iop_f0(CPU* cpu) {if (!(cpu->f & IFL_S)) cpu->pc = iop_pop(cpu);}
 // f1: pop psw
-void iop_f1(CPU* cpu) {cpu->af = iop_pop(cpu);}
+void iop_f1(CPU* cpu) {
+	cpu->af = iop_pop(cpu);
+}
 // f2: jp nn
 void iop_f2(CPU* cpu) {
 	cpu->t += 3;

@@ -10,12 +10,6 @@ static int res2;
 int res3 = 0;	// tick in op, wich has last OUT/MWR (and vidSync)
 int res4 = 0;	// save last res3 (vidSync on OUT/MWR process do res3-res4 ticks)
 
-static vLayout gbcLay = {{228,154},{0,0},{68,10},{160,144},{0,0},64};
-static vLayout nesNTSCLay = {{341,262},{0,0},{85,22},{256,240},{0,0},64};
-static vLayout nesPALLay = {{341,312},{0,0},{85,72},{256,240},{0,0},64};
-static vLayout bkLay = {{256,256},{0,0},{1,1},{256,256},{0,0},0};
-static vLayout spclstLay = {{384,256},{0,0},{1,1},{384,256},{0,0},0};
-
 // ...
 
 int vid_mrd_cb(int adr, void* ptr) {
@@ -235,6 +229,7 @@ Computer* compCreate() {
 	comp->keyb = keyCreate();
 	comp->joy = joyCreate();
 	comp->mouse = mouseCreate();
+	comp->ppi = ppi_create();
 // storage
 	comp->tape = tapCreate();
 	comp->dif = difCreate(DIF_NONE);
@@ -288,6 +283,7 @@ void compDestroy(Computer* comp) {
 	bcDestroy(comp->beep);
 	apuDestroy(comp->nesapu);
 	sltDestroy(comp->slot);
+	ppi_destroy(comp->ppi);
 	free(comp);
 }
 
@@ -371,23 +367,23 @@ void compUpdateTimings(Computer* comp) {
 		case HW_BK0010:
 		case HW_BK0011M:
 			vidUpdateTimings(comp->vid, 302);
-			comp->vid->lockLayout = 0;
-			vidSetLayout(comp->vid, bkLay);
-			comp->vid->lockLayout = 1;
+//			comp->vid->lockLayout = 0;
+//			vidSetLayout(comp->vid, bkLay);
+//			comp->vid->lockLayout = 1;
 			break;
-		case HW_NES:
+//		case HW_NES:
 			// base frq (21.477MHz | 26.602MHz)
 			// cpu frq (base:12 | base:16)
 			// ppu frq (base:4 | base:5)
 			// apu frame (60Hz | 50Hz)
 			// apu frq = cpu / 2
 			// smallest wave period = cpu / 16
-			comp->vid->lockLayout = 0;
+/*
 			switch(comp->nes.type) {
 				case NES_PAL:
 					comp->fps = 50;
 					perNoTurbo = 1e3 / 1.66;		// ~601
-					vidSetLayout(comp->vid, nesPALLay);
+					comp_set_layout(comp, &nesPALLay);
 					comp->vid->vbsline = 241;
 					comp->vid->vbrline = 311;
 					vidUpdateTimings(comp->vid, perNoTurbo / 3.2);		// 16 ticks = 5 dots
@@ -396,7 +392,7 @@ void compUpdateTimings(Computer* comp) {
 				case NES_NTSC:
 					comp->fps = 60;
 					perNoTurbo = 1e3 / 1.79;		// ~559
-					vidSetLayout(comp->vid, nesNTSCLay);
+					comp_set_layout(comp, &nesNTSCLay);
 					comp->vid->vbsline = 241;
 					comp->vid->vbrline = 261;
 					vidUpdateTimings(comp->vid, perNoTurbo / 3);		// 15 ticks = 5 dots
@@ -405,7 +401,7 @@ void compUpdateTimings(Computer* comp) {
 				default:							// dendy
 					comp->fps = 59;
 					perNoTurbo = 1e3 / 1.77;
-					vidSetLayout(comp->vid, nesPALLay);
+					comp_set_layout(comp, &nesPALLay);
 					comp->vid->vbsline = 291;
 					comp->vid->vbrline = 311;
 					vidUpdateTimings(comp->vid, perNoTurbo / 3);
@@ -413,15 +409,15 @@ void compUpdateTimings(Computer* comp) {
 					break;
 			}
 			comp->nesapu->wper = perNoTurbo << 1;				// 1 APU tick = 2 CPU ticks
-			comp->vid->lockLayout = 1;
 			break;
-		case HW_SPCLST:
-			comp->vid->lockLayout = 0;
-			vidSetLayout(comp->vid, spclstLay);
-			comp->vid->lockLayout = 1;
-			vidSetMode(comp->vid, VID_SPCLST);
-			vidUpdateTimings(comp->vid, perNoTurbo >> 2);			// CPU:2MHz, dots:8MHz
-			break;
+*/
+//		case HW_SPCLST:
+//			comp->vid->lockLayout = 0;
+//			vidSetLayout(comp->vid, spclstLay);
+//			comp->vid->lockLayout = 1;
+//			vidSetMode(comp->vid, VID_SPCLST);
+//			vidUpdateTimings(comp->vid, perNoTurbo >> 2);			// CPU:2MHz, dots:8MHz
+//			break;
 		default:
 			comp->fps = 50;
 			vidUpdateTimings(comp->vid, perNoTurbo >> 1);
@@ -445,39 +441,51 @@ void compSetTurbo(Computer* comp, double mult) {
 	compUpdateTimings(comp);
 }
 
+void comp_set_layout(Computer* comp, vLayout* lay) {
+	if (comp->hw->lay)
+		lay = comp->hw->lay;
+	vidSetLayout(comp->vid, lay);
+}
+
 // hardware
 
 int compSetHardware(Computer* comp, const char* name) {
-	HardWare* hw = findHardware(name);
+	HardWare* hw;
+	if (name == NULL) {
+		hw = comp->hw;
+	} else {
+		hw = findHardware(name);
+	}
 	if (hw == NULL) return 0;
 	comp->hw = hw;
-	comp->vid->lockLayout = 0;
 	comp->cpu->nod = 0;
 	switch(hw->id) {
-		case HW_NES:
-			comp->vid->lockLayout = 1;
-			comp->cpu->nod = 1;
-			break;
-		case HW_GBC:
-			vidSetLayout(comp->vid, gbcLay);
-			comp->vid->lockLayout = 1;
-			break;
+//		case HW_NES:
+//			comp->vid->lockLayout = 1;
+//			comp->cpu->nod = 1;
+//			break;
+//		case HW_GBC:
+//			vidSetLayout(comp->vid, &gbcLay);
+//			comp->vid->lockLayout = 1;
+//			break;
 		case HW_TSLAB:
 			break;
-		case HW_MSX:
-		case HW_MSX2:
-			break;
+//		case HW_MSX:
+//		case HW_MSX2:
+//			break;
 		case HW_C64:
 			comp->vid->mrd = c64_vic_mrd;
 			break;
-		case HW_SPCLST:
-			comp->vid->mrd = spc_vid_rd;
-			break;
+//		case HW_SPCLST:
+//			comp->vid->mrd = spc_vid_rd;
+//			break;
 		default:
 			comp->vid->mrd = vid_mrd_cb;
 			break;
 	}
 	compUpdateTimings(comp);
+	if (comp->hw->init)
+		comp->hw->init(comp);
 	return 1;
 }
 
