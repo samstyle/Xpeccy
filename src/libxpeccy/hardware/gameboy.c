@@ -668,6 +668,14 @@ void gbcSync(Computer* comp, int ns) {
 	comp->cpu->intrq |= req;		// cpu int req
 }
 
+void gbc_init(Computer* comp) {
+	int perNoTurbo = 1e3 / comp->cpuFrq;		// ns for full cpu tick
+	comp->fps = 50;
+	comp->gbsnd->wav.period = perNoTurbo << 5;			// 128KHz period for wave generator = cpu.frq / 32
+	comp->gb.timer.div.per = (perNoTurbo / comp->frqMul) * 256;	// 16KHz timer divider tick. this timer depends on turbo speed
+	vidUpdateTimings(comp->vid, perNoTurbo << 1);
+}
+
 // keypress
 
 typedef struct {

@@ -5,6 +5,7 @@
 #include <QAbstractTableModel>
 #include <QKeyEvent>
 #include <QWheelEvent>
+#include <QMouseEvent>
 
 #include "libxpeccy/spectrum.h"
 
@@ -32,6 +33,7 @@ class xDumpModel : public QAbstractTableModel {
 	public:
 		xDumpModel(QObject* = NULL);
 		int codePage;
+		int dmpadr;
 		void setComp(Computer**);
 		void setMode(int, int);
 		int rowCount(const QModelIndex& = QModelIndex()) const;
@@ -67,6 +69,8 @@ class xDumpTable:public QTableView {
 		void setMode(int, int);
 		void setView(int);
 		void update();
+		void setAdr(int);
+		int getAdr();
 		int mode;
 		int view;
 	signals:

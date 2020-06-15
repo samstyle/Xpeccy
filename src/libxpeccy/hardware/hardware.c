@@ -1,11 +1,13 @@
 #include "hardware.h"
 #include <stdlib.h>
 #include <string.h>
+// layout = v9938:342:313:16:13:57:80:64:0:0:256:192
 
 static vLayout gbcLay = {{228,154},{0,0},{68,10},{160,144},{0,0},64};
-static vLayout bkLay = {{256,256},{0,0},{1,1},{256,256},{0,0},0};
-static vLayout spclstLay = {{384,256},{0,0},{1,1},{384,256},{0,0},0};
+static vLayout bkLay = {{256+96,256+24},{0,0},{96,24},{256,256},{0,0},0};
+static vLayout spclstLay = {{384+16,256+8},{0,0},{16,8},{384,256},{0,0},0};
 static vLayout nesPALLay = {{341,312},{0,0},{85,72},{256,240},{0,0},64};
+static vLayout v9938Lay = {{342,313},{16,13},{57,80},{256,192},{0,0},64};
 
 HardWare hwTab[] = {
 	{
@@ -49,16 +51,16 @@ HardWare hwTab[] = {
 	},{
 		HW_NULL,HWG_NULL,"","",16,0,1.0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// separator
 	},{
-		HW_MSX,HWG_MSX,"MSX","MSX-1",16,MEM_128K,1.0,NULL,
+		HW_MSX,HWG_MSX,"MSX","MSX-1",16,MEM_128K,1.0,&v9938Lay,
 		msx_init,msxMapMem,msxOut,msxIn,stdMRd,stdMWr,msxReset,msx_sync,msx_keyp,msx_keyr,msx_vol
 	},{
-		HW_MSX2,HWG_MSX,"MSX2","MSX-2 (alfa)",16,MEM_128K,1.0,NULL,
+		HW_MSX2,HWG_MSX,"MSX2","MSX-2 (alfa)",16,MEM_128K,1.0,&v9938Lay,
 		msx2_init,msx2mapper,msx2Out,msx2In,msx2mrd,msx2mwr,msx2Reset,msx_sync,msx_keyp,msx_keyr,msx_vol
 	},{
 		HW_NULL,HWG_NULL,"","",16,0,1.0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// separator
 	},{
 		HW_GBC,HWG_GB,"GameBoy","Game Boy",16,MEM_64K,1.0,&gbcLay,
-		NULL,gbMaper,NULL,NULL,gbMemRd,gbMemWr,gbReset,gbcSync,gbc_keyp,gbc_keyr,gbc_vol
+		gbc_init,gbMaper,NULL,NULL,gbMemRd,gbMemWr,gbReset,gbcSync,gbc_keyp,gbc_keyr,gbc_vol
 	},{
 		HW_NULL,HWG_NULL,"","",16,0,1.0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// separator
 	},{
@@ -66,15 +68,15 @@ HardWare hwTab[] = {
 		nes_init,nesMaper,NULL,NULL,nesMemRd,nesMemWr,nesReset,nesSync,nes_keyp,nes_keyr,nes_vol
 	},{
 		HW_C64,HWG_COMMODORE,"Commodore64","Commodore64",16,MEM_128K,1.0,NULL,
-		NULL,c64_maper,NULL,NULL,c64_mrd,c64_mwr,c64_reset,c64_sync,c64_keyp,c64_keyr,c64_vol
+		c64_init,c64_maper,NULL,NULL,c64_mrd,c64_mwr,c64_reset,c64_sync,c64_keyp,c64_keyr,c64_vol
 //	},{
 //		HW_NULL,HWG_NULL,"","",16,0,1.0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// separator
 	},{
 		HW_BK0010,HWG_BK,"BK0010","BK0010",8,MEM_32K,(double)29/23,&bkLay,
-		NULL,bk_mem_map,bk_iowr,NULL,bk_mrd,bk_mwr,bk_reset,bk_sync,bk_keyp,bk_keyr,bk_vol
+		bk_init,bk_mem_map,bk_iowr,NULL,bk_mrd,bk_mwr,bk_reset,bk_sync,bk_keyp,bk_keyr,bk_vol
 	},{
 //		HW_BK0011M,HWG_BK,"BK0011M","BK0011M",8,MEM_128K,(double)29/23,&bkLay,
-//		NULL,bk_mem_map,NULL,NULL,bk_mrd,bk_mwr,bk_reset,bk_sync,bk_keyp,bk_keyr,bk_vol
+//		bk_init,bk_mem_map,NULL,NULL,bk_mrd,bk_mwr,bk_reset,bk_sync,bk_keyp,bk_keyr,bk_vol
 //	},{
 		HW_SPCLST,HWG_SPCLST,"Specualist","Specialist",16,MEM_64K,1.0,&spclstLay,
 		spc_init,spc_mem_map,NULL,NULL,spc_mrd,spc_mwr,spc_reset,spc_sync,spc_keyp,spc_keyr,spc_vol

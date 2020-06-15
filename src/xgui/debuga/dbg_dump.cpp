@@ -9,7 +9,6 @@
 extern QColor colBRK;
 extern QColor colSEL;
 
-extern unsigned short dumpAdr;
 extern int blockStart;
 extern int blockEnd;
 
@@ -163,7 +162,7 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 	if (row >= rowCount()) return res;
 	if (col < 0) return res;
 	if (col >= columnCount()) return res;
-	unsigned short adr = (dumpAdr + (row << 3)) & 0xffff;
+	unsigned short adr = (dmpadr + (row << 3)) & 0xffff;
 	unsigned short cadr = (adr + col - 1) & 0xffff;
 	unsigned short wrd;
 	int flg = mrd(cadr) >> 8;
@@ -283,14 +282,14 @@ bool xDumpModel::setData(const QModelIndex& idx, const QVariant& val, int role) 
 	if ((row < 0) || (row >= rowCount())) return false;
 	if ((col < 0) || (col >= columnCount())) return false;
 	int fadr;
-	unsigned short adr = (dumpAdr + (row << 3)) & 0xffff;
+	unsigned short adr = (dmpadr + (row << 3)) & 0xffff;
 	unsigned short nadr;
 	unsigned char bt;
 	QString str = val.toString();
 	if (col == 0) {
 		fadr = str_to_adr(*cptr, str);
 		if (fadr >= 0) {
-			dumpAdr = (fadr - (row << 3)) & 0xffff;
+			dmpadr = (fadr - (row << 3)) & 0xffff;
 			update();
 			emit rqRefill();
 		}
@@ -366,6 +365,14 @@ void xDumpTable::update() {
 	QTableView::update();
 }
 
+void xDumpTable::setAdr(int adr) {
+	model->dmpadr = adr;
+}
+
+int xDumpTable::getAdr() {
+	return model->dmpadr;
+}
+
 void xDumpTable::keyPressEvent(QKeyEvent* ev) {
 	QModelIndex idx = currentIndex();
 	switch(ev->key()) {
@@ -373,7 +380,7 @@ void xDumpTable::keyPressEvent(QKeyEvent* ev) {
 			if (idx.row() > 0) {
 				QTableView::keyPressEvent(ev);
 			} else {
-				dumpAdr -= 8;
+				model->dmpadr -= 8;
 				emit rqRefill();
 			}
 			break;
@@ -381,16 +388,16 @@ void xDumpTable::keyPressEvent(QKeyEvent* ev) {
 			if (idx.row() < model->rowCount() - 1) {
 				QTableView::keyPressEvent(ev);
 			} else {
-				dumpAdr += 8;
+				model->dmpadr += 8;
 				emit rqRefill();
 			}
 			break;
 		case Qt::Key_PageUp:
-			dumpAdr = (dumpAdr - (rows() * 8)) & 0xffff;
+			model->dmpadr = (model->dmpadr - (rows() * 8)) & 0xffff;
 			update();
 			break;
 		case Qt::Key_PageDown:
-			dumpAdr = (dumpAdr + (rows() * 8)) & 0xffff;
+			model->dmpadr = (model->dmpadr + (rows() * 8)) & 0xffff;
 			update();
 			break;
 		case Qt::Key_Return:
@@ -417,9 +424,9 @@ void xDumpTable::mousePressEvent(QMouseEvent* ev) {
 	if (col > 8) return;
 	int adr;
 	if ((col == 0) || (col > 8)) {
-		adr = dumpAdr + (row << 3);
+		adr = model->dmpadr + (row << 3);
 	} else {
-		adr = dumpAdr + (row << 3) + col - 1;
+		adr = model->dmpadr + (row << 3) + col - 1;
 	}
 	adr &= 0xffff;
 	switch(ev->button()) {
@@ -464,9 +471,9 @@ void xDumpTable::mouseMoveEvent(QMouseEvent* ev) {
 	if ((col < 0) || (col >= model->columnCount())) return;
 	int adr;
 	if ((col == 0) || (col > 8)) {
-		adr = dumpAdr + (row << 3);
+		adr = model->dmpadr + (row << 3);
 	} else {
-		adr = dumpAdr + (row << 3) + col - 1;
+		adr = model->dmpadr + (row << 3) + col - 1;
 	}
 	adr &= 0xffff;
 	if ((ev->modifiers() == Qt::NoModifier) && (ev->buttons() & Qt::LeftButton) && (adr != blockStart) && (adr != blockEnd) && (adr != markAdr)) {
@@ -486,10 +493,10 @@ void xDumpTable::mouseMoveEvent(QMouseEvent* ev) {
 
 void xDumpTable::wheelEvent(QWheelEvent* ev) {
 	if (ev->delta() < 0) {
-		dumpAdr += 8;
+		model->dmpadr += 8;
 		emit rqRefill();
 	} else if (ev->delta() > 0) {
-		dumpAdr -= 8;
+		model->dmpadr -= 8;
 		emit rqRefill();
 	}
 }

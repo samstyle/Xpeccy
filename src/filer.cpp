@@ -99,8 +99,8 @@ static xFileGroupInfo fg_tab[] = {
 	{FG_BKTAPE, ".wav", -1, "BK tape", NULL, {FL_WAV, 0}},
 	{FG_BKRAW, "", -1, "BK raw file to tape", &ft_bktap,  {FL_BKRAWTAP, 0}},
 	// {FG_BKDISK, "", 0, "BK disk image", NULL, {FL_BKIMG, FL_BKBKD, FL_UDI, 0}},
-	{FG_RKSTAP, "", -1, "RKS to tape", &ft_rksmem, {FL_RKS, 0}},
-	{FG_RKSMEM, "", -1, "RKS to memory", NULL, {FL_RKS, 0}},
+	{FG_RKSTAP, "", -1, "RKS to tape", NULL, {FL_RKS, 0}},
+	{FG_RKSMEM, "", -1, "RKS to memory", &ft_rksmem, {FL_RKS, 0}},
 	{0, "", -1, NULL, NULL, {0}}
 };
 

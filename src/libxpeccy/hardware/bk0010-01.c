@@ -368,6 +368,11 @@ sndPair bk_vol(Computer* comp, sndVolume* sv) {
 	return vol;
 }
 
+void bk_init(Computer* comp) {
+	// int perNoTurbo = 1e3 / comp->cpuFrq;		// ns for full cpu tick
+	vidUpdateTimings(comp->vid, 302);
+}
+
 // keys
 
 typedef struct {

@@ -5,25 +5,27 @@
 extern const unsigned char sz53pTab[0x100];
 
 static int iop_add_h[8] = {0, 0, IFL_A, 0, IFL_A, 0, IFL_A, IFL_A};
-static int iop_sub_h[8] = {0, IFL_A, IFL_A, IFL_A, 0, 0, 0, IFL_A};
+// static int iop_sub_h[8] = {0, IFL_A, IFL_A, IFL_A, 0, 0, 0, IFL_A};
+static int iop_sub_h[8] = {IFL_A, 0, 0, 0, IFL_A, IFL_A, IFL_A, 0};
 
 // common
 
 int iop_parity(unsigned char val) {
-	int res = 1;
+	int parity = 1;
 	while (val) {
-		if (val & 1) res ^= 1;
+		if (val & 1)
+			parity = !parity;
 		val >>= 1;
 	}
-	return res;
+	return parity;
 }
 
 unsigned char iop_inr(CPU* cpu, unsigned char val) {
 	val++;
 	cpu->f &= IFL_C;
 	if (val & 0x80) cpu->f |= IFL_S;
-	if (!val) cpu->f |= IFL_Z;
-	if (!(val & 0x0f)) cpu->f |= IFL_A;
+	if (val == 0) cpu->f |= IFL_Z;
+	if ((val & 0x0f) == 0) cpu->f |= IFL_A;
 	if (iop_parity(val)) cpu->f |= IFL_P;
 	return val;
 }
@@ -32,8 +34,8 @@ unsigned char iop_dcr(CPU* cpu, unsigned char val) {
 	val--;
 	cpu->f &= IFL_C;
 	if (val & 0x80) cpu->f |= IFL_S;
-	if (!val) cpu->f |= IFL_Z;
-	if ((val & 0x0f) == 0x0f) cpu->f |= IFL_A;
+	if (val == 0) cpu->f |= IFL_Z;
+	if ((val & 0x0f) != 0x0f) cpu->f |= IFL_A;	// A flag is inverted (1:no b4-carry, 0:b4-carry)
 	if (iop_parity(val)) cpu->f |= IFL_P;
 	return val;
 }
@@ -50,13 +52,11 @@ unsigned char iop_add(CPU* cpu, unsigned char val, unsigned char add) {
 }
 
 unsigned char iop_adc(CPU* cpu, unsigned char val, unsigned char add) {
-	unsigned char cf = (cpu->f & IFL_C) ? 1 : 0;
-	unsigned char adc = add + cf;
-	cpu->tmpw = val + add + cf;
+	cpu->tmpw = val + add + ((cpu->f & IFL_C) ? 1 : 0);
 	cpu->f = 0;
 	if (cpu->ltw & 0x80) cpu->f |= IFL_S;
 	if (cpu->ltw == 0) cpu->f |= IFL_Z;
-	cpu->f |= iop_add_h[((val & 8) >> 1) | ((adc & 8) >> 2) | ((cpu->ltw & 8) >> 3)];
+	cpu->f |= iop_add_h[((val & 8) >> 1) | ((add & 8) >> 2) | ((cpu->ltw & 8) >> 3)];
 	if (iop_parity(cpu->ltw)) cpu->f |= IFL_P;
 	if (cpu->htw != 0) cpu->f |= IFL_C;
 	return cpu->ltw;
@@ -74,31 +74,29 @@ unsigned char iop_sub(CPU* cpu, unsigned char val, unsigned char sub) {
 }
 
 unsigned char iop_sbb(CPU* cpu, unsigned char val, unsigned char sub) {
-	unsigned char cf = (cpu->f & IFL_C) ? 1 : 0;
-	unsigned char sbc = sub + cf;
-	cpu->tmpw = val - sub - cf;
+	cpu->tmpw = val - sub - ((cpu->f & IFL_C) ? 1 : 0);
 	cpu->f = 0;
 	if (cpu->ltw & 0x80) cpu->f |= IFL_S;
 	if (cpu->ltw == 0) cpu->f |= IFL_Z;
-	cpu->f |= iop_sub_h[((val & 8) >> 1) | ((sbc & 8) >> 2) | ((cpu->ltw & 8) >> 3)];
+	cpu->f |= iop_sub_h[((val & 8) >> 1) | ((sub & 8) >> 2) | ((cpu->ltw & 8) >> 3)];
 	if (iop_parity(cpu->ltw)) cpu->f |= IFL_P;
 	if (cpu->htw != 0) cpu->f |= IFL_C;
 	return cpu->ltw;
 }
 
 unsigned char iop_ana(CPU* cpu, unsigned char val, unsigned char arg) {
+	cpu->f = 0;
+	if ((val | arg) & 0x08) cpu->f |= IFL_A;	// from sPycialist
 	val &= arg;
-	cpu->f &= ~(IFL_S | IFL_Z | IFL_A | IFL_P | IFL_C);
 	if (val & 0x80) cpu->f |= IFL_S;
 	if (val == 0) cpu->f |= IFL_Z;
-	if ((val | arg) & 0x08) cpu->f |= IFL_A;	// from sPycialist
 	if (iop_parity(val)) cpu->f |= IFL_P;
 	return  val;
 }
 
 unsigned char iop_xra(CPU* cpu, unsigned char val, unsigned char arg) {
 	val ^= arg;
-	cpu->f &= ~(IFL_S | IFL_Z | IFL_A | IFL_P | IFL_C);
+	cpu->f = 0;
 	if (val & 0x80) cpu->f |= IFL_S;
 	if (val == 0) cpu->f |= IFL_Z;
 	if (iop_parity(val)) cpu->f |= IFL_P;
@@ -107,7 +105,7 @@ unsigned char iop_xra(CPU* cpu, unsigned char val, unsigned char arg) {
 
 unsigned char iop_ora(CPU* cpu, unsigned char val, unsigned char arg) {
 	val |= arg;
-	cpu->f &= ~(IFL_S | IFL_Z | IFL_A | IFL_P | IFL_C);
+	cpu->f = 0;
 	if (val & 0x80) cpu->f |= IFL_S;
 	if (val == 0) cpu->f |= IFL_Z;
 	if (iop_parity(val)) cpu->f |= IFL_P;
@@ -357,30 +355,17 @@ void iop_26(CPU* cpu) {
 }
 
 // 27:daa
-// TODO: do
 void iop_27(CPU* cpu) {
-	if (((cpu->a & 0x0f) > 0x09) || (cpu->f & IFL_A)) {
-		if ((cpu->a & 0x0f) + 6 > 0x0f)
-			cpu->f |= IFL_A;
-		else
-			cpu->f &= ~IFL_A;
-		cpu->a += 6;
-	} else {
-		cpu->f &= ~IFL_A;
-	}
-	if (((cpu->a & 0xf0) > 0x90) || (cpu->f & IFL_C)) {
-		if ((cpu->a & 0xf0) + 0x60 > 0xf0)
-			cpu->f |= IFL_C;
-		else
-			cpu->f &= ~IFL_C;
-		cpu->a += 0x60;
-	} else {
-		cpu->f &= ~IFL_C;
-	}
-	cpu->f &= ~(IFL_S | IFL_Z | IFL_P);
-	if (cpu->a & 0x80) cpu->f |= IFL_S;
-	if (!cpu->a) cpu->f |= IFL_Z;
-	if (iop_parity(cpu->a)) cpu->f |= IFL_P;
+	unsigned char add = 0;
+	unsigned char cf = (cpu->f & IFL_C);
+	if ((cpu->f & IFL_A) || ((cpu->a & 0x0f) > 0x09))
+		add = 6;
+	if ((cpu->f & IFL_C) || (cpu->a > 0x9f) || ((cpu->a > 0x8f) && ((cpu->a & 0x0f) > 0x09)))
+		add |= 0x60;
+	if (cpu->a > 0x99)
+		cf = IFL_C;
+	cpu->a = iop_add(cpu, cpu->a, add);
+	cpu->f = (cpu->f & ~IFL_C) | cf;
 }
 
 // 29:dad h
@@ -984,9 +969,7 @@ void iop_f6(CPU* cpu) {
 void iop_f8(CPU* cpu) {if (cpu->f & IFL_S) cpu->pc = iop_pop(cpu);}
 // f9: sphl
 void iop_f9(CPU* cpu) {
-	cpu->tmpw = cpu->sp;
 	cpu->sp = cpu->hl;
-	cpu->hl = cpu->tmpw;
 }
 // fa: jm nn
 void iop_fa(CPU* cpu) {

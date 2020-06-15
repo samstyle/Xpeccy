@@ -20,7 +20,7 @@ static QColor colBG0(255,255,255);	// background
 static QColor colBG1(230,230,230);	// background alternative
 static QColor colSEL(128,255,128);	// background selected
 
-unsigned short dumpAdr = 0;
+// unsigned short dumpAdr = 0;
 unsigned short disasmAdr = 0;
 
 int blockStart = -1;
@@ -491,7 +491,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	setFixedHeight(size().height());
 	block = 0;
 	disasmAdr = 0;
-	dumpAdr = 0;
+	ui.dumpTable->setAdr(0);
 	tCount = 0;
 	trace = 0;
 // nes tab
@@ -1286,7 +1286,7 @@ void DebugWin::regClick(QMouseEvent* ev) {
 	unsigned short val = reg.value;
 	switch (ev->button()) {
 		case Qt::RightButton:
-			dumpAdr = val;
+			ui.dumpTable->setAdr(val);
 			fillDump();
 			break;
 		case Qt::LeftButton:
@@ -1802,7 +1802,7 @@ void DebugWin::fillDump() {
 
 void DebugWin::dumpChadr(QModelIndex idx) {
 	int col = idx.column();
-	int adr = dumpAdr + (idx.row() << 3);
+	int adr = ui.dumpTable->getAdr() + (idx.row() << 3);
 	if ((col > 0) && (col < 9)) {
 		 adr += (idx.column() - 1);
 	}
@@ -1854,7 +1854,7 @@ int DebugWin::getAdr() {
 	if (ui.dumpTable->hasFocus()) {
 		idx = ui.dumpTable->currentIndex();
 		col = idx.column();
-		adr = (dumpAdr + (idx.row() << 3)) & 0xffff;
+		adr = (ui.dumpTable->getAdr() + (idx.row() << 3)) & 0xffff;
 		if ((col > 0) && (col < 9)) {
 			adr += idx.column() - 1;
 		}

@@ -246,6 +246,7 @@ int msx2mrd(Computer*, int, int);
 void msx2mwr(Computer*, int, int);
 
 // gameboy
+void gbc_init(Computer*);
 void gbMaper(Computer*);
 void gbReset(Computer*);
 int gbMemRd(Computer*, int, int);
@@ -268,6 +269,7 @@ sndPair nes_vol(Computer*, sndVolume*);
 int nes_apu_ext_rd(int, void*);
 
 // c64
+void c64_init(Computer*);
 void c64_maper(Computer*);
 void c64_reset(Computer*);
 void c64_mwr(Computer*, int, int);
@@ -276,9 +278,10 @@ sndPair c64_vol(Computer*, sndVolume*);
 void c64_sync(Computer*, int);
 void c64_keyp(Computer*, keyEntry);
 void c64_keyr(Computer*, keyEntry);
-int c64_vic_mrd(int, void*);
+// int c64_vic_mrd(int, void*);
 
 // bk0010
+void bk_init(Computer*);
 void bk_mem_map(Computer*);
 void bk_reset(Computer*);
 void bk_mwr(Computer*, int, int);

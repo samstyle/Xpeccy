@@ -81,7 +81,7 @@ int spc_vid_rd(int adr, void* p) {
 }
 
 void spc_init(Computer* comp) {
-	int perNoTurbo = (int)(1e3 / comp->cpuFrq);		// ns for full cpu tick	comp->vid->mrd = spc_vid_rd;
+	int perNoTurbo = 1e3 / comp->cpuFrq;		// ns for full cpu tick	comp->vid->mrd = spc_vid_rd;
 	vidSetMode(comp->vid, VID_SPCLST);
 	vidUpdateTimings(comp->vid, perNoTurbo >> 2);			// CPU:2MHz, dots:8MHz
 	comp->vid->mrd = spc_vid_rd;
@@ -123,9 +123,22 @@ void spc_mwr(Computer* comp, int adr, int val) {
 	memWr(comp->mem, adr, val);
 }
 
+//static int pregz = 0;
+
 void spc_sync(Computer* comp, int ns) {
 	tapSync(comp->tape, ns);
 	bcSync(comp->beep, ns);
+#if 0
+	if (pregz) {
+		printf("PC: %.4X AF: %.4X BC: %.4X DE: %.4X HL: %.4X SP: %.4X\n", comp->cpu->pc, comp->cpu->af, comp->cpu->bc, comp->cpu->de, comp->cpu->hl, comp->cpu->sp);
+	}
+	if (comp->cpu->pc == 0xce5) {
+		pregz = 1;
+		printf("-----\n");
+	} else if (comp->cpu->pc == 0xd34) {
+		pregz = 0;
+	}
+#endif
 }
 
 static keyScan spc_keys[] = {

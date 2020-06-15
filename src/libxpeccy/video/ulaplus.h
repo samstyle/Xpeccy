@@ -14,7 +14,7 @@ typedef struct {
 ulaPlus* ulaCreate();
 void ulaDestroy(ulaPlus*);
 
-int ulaOut(ulaPlus*, unsigned short, unsigned char);
-int ulaIn(ulaPlus*, unsigned short, unsigned char*);
+int ulaOut(ulaPlus*, int, int);
+int ulaIn(ulaPlus*, int, int*);
 
 #endif

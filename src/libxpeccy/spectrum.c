@@ -247,8 +247,8 @@ Computer* compCreate() {
 	comp->nesapu = apuCreate(nes_apu_ext_rd, comp);
 // baseconf
 //			0   1   2   3   4   5   6   7   8   9   A   B   C    D    E    F
-	char blnm[] = {'x','B','o','o','t',000,000,000,000,000,000,000,0x38,0x98,0x00,0x00};
-	char bcnm[] = {'x','E','v','o',' ','0','.','5','2',000,000,000,0x89,0x99,0x00,0x00};
+	unsigned char blnm[] = {'x','B','o','o','t',000,000,000,000,000,000,000,0x38,0x98,0x00,0x00};
+	unsigned char bcnm[] = {'x','E','v','o',' ','0','.','5','2',000,000,000,0x89,0x99,0x00,0x00};
 	memcpy(comp->evo.blVer,blnm,16);
 	memcpy(comp->evo.bcVer,bcnm,16);
 //tsconf
@@ -257,6 +257,7 @@ Computer* compCreate() {
 #ifdef HAVEZLIB
 	comp->rzx.file = NULL;
 #endif
+	compSetHardware(comp, "Dummy");
 	gsReset(comp->gs);
 	comp->cmos.data[17] = 0xaa;
 	comp->frqMul = 1;
@@ -350,27 +351,27 @@ void compUpdateTimings(Computer* comp) {
 	if (perNoTurbo & 1) perNoTurbo++;
 	int type = comp->hw ? comp->hw->id : HW_NULL;
 	switch (type) {
-		case HW_MSX:
-		case HW_MSX2:
-			comp->fps = 60;
-			vidUpdateTimings(comp->vid, perNoTurbo * 2 / 3);
-			break;
-		case HW_GBC:
-			comp->fps = 50;
-			comp->gbsnd->wav.period = perNoTurbo << 5;			// 128KHz period for wave generator = cpu.frq / 32
-			comp->gb.timer.div.per = (perNoTurbo / comp->frqMul) * 256;	// 16KHz timer divider tick. this timer depends on turbo speed
-			vidUpdateTimings(comp->vid, perNoTurbo << 1);
-			break;
-		case HW_C64:
-			vidUpdateTimings(comp->vid, perNoTurbo >> 3);
-			break;
-		case HW_BK0010:
-		case HW_BK0011M:
-			vidUpdateTimings(comp->vid, 302);
+//		case HW_MSX:
+//		case HW_MSX2:
+//			comp->fps = 60;
+//			vidUpdateTimings(comp->vid, perNoTurbo * 2 / 3);
+//			break;
+//		case HW_GBC:
+//			comp->fps = 50;
+//			comp->gbsnd->wav.period = perNoTurbo << 5;			// 128KHz period for wave generator = cpu.frq / 32
+//			comp->gb.timer.div.per = (perNoTurbo / comp->frqMul) * 256;	// 16KHz timer divider tick. this timer depends on turbo speed
+//			vidUpdateTimings(comp->vid, perNoTurbo << 1);
+//			break;
+//		case HW_C64:
+//			vidUpdateTimings(comp->vid, perNoTurbo >> 3);
+//			break;
+//		case HW_BK0010:
+//		case HW_BK0011M:
+//			vidUpdateTimings(comp->vid, 302);
 //			comp->vid->lockLayout = 0;
 //			vidSetLayout(comp->vid, bkLay);
 //			comp->vid->lockLayout = 1;
-			break;
+//			break;
 //		case HW_NES:
 			// base frq (21.477MHz | 26.602MHz)
 			// cpu frq (base:12 | base:16)
@@ -433,6 +434,8 @@ void compUpdateTimings(Computer* comp) {
 void compSetBaseFrq(Computer* comp, double frq) {
 	comp->cpuFrq = frq;
 	compUpdateTimings(comp);
+	if (comp->hw->init)
+		comp->hw->init(comp);
 }
 
 void compSetTurbo(Computer* comp, double mult) {
@@ -459,30 +462,7 @@ int compSetHardware(Computer* comp, const char* name) {
 	if (hw == NULL) return 0;
 	comp->hw = hw;
 	comp->cpu->nod = 0;
-	switch(hw->id) {
-//		case HW_NES:
-//			comp->vid->lockLayout = 1;
-//			comp->cpu->nod = 1;
-//			break;
-//		case HW_GBC:
-//			vidSetLayout(comp->vid, &gbcLay);
-//			comp->vid->lockLayout = 1;
-//			break;
-		case HW_TSLAB:
-			break;
-//		case HW_MSX:
-//		case HW_MSX2:
-//			break;
-		case HW_C64:
-			comp->vid->mrd = c64_vic_mrd;
-			break;
-//		case HW_SPCLST:
-//			comp->vid->mrd = spc_vid_rd;
-//			break;
-		default:
-			comp->vid->mrd = vid_mrd_cb;
-			break;
-	}
+	comp->vid->mrd = vid_mrd_cb;
 	compUpdateTimings(comp);
 	if (comp->hw->init)
 		comp->hw->init(comp);
@@ -532,7 +512,7 @@ int compExec(Computer* comp) {
 			comp->hw->out(comp, comp->padr, comp->pval, bdiz);
 		comp->padr = 0;
 	}
-// execution completed : get eated time
+// execution completed : get eated time & translate signals
 	nsTime = comp->vid->time;
 	comp->tickCount += res2;
 	if (comp->vid->intFRAME) {
@@ -583,8 +563,8 @@ int compExec(Computer* comp) {
 
 // cmos
 
-unsigned char toBCD(unsigned char val) {
-	unsigned char rrt = val % 10;
+int toBCD(int val) {
+	int rrt = val % 10;
 	rrt |= ((val/10) << 4);
 	return rrt;
 }
@@ -592,7 +572,7 @@ unsigned char toBCD(unsigned char val) {
 #include <time.h>
 
 unsigned char cmsRd(Computer* comp) {
-	unsigned char res = 0x00;
+	int res = 0x00;
 
 	time_t rtime;
 	time(&rtime);
@@ -621,7 +601,7 @@ unsigned char cmsRd(Computer* comp) {
 			}
 			break;
 	}
-	return res;
+	return res & 0xff;
 }
 
 void cmsWr(Computer* comp, int val) {
@@ -630,7 +610,7 @@ void cmsWr(Computer* comp, int val) {
 			if (val & 1) comp->keyb->kBufPos = 0;		// reset PC-keyboard buffer
 			break;
 		default:
-			comp->cmos.data[comp->cmos.adr] = val;
+			comp->cmos.data[comp->cmos.adr] = val & 0xff;
 			if (comp->cmos.adr > 0xef) {
 				comp->cmos.mode = val;	// write to F0..FF : set F0..FF reading mode
 				//printf("cmos mode %i\n",val);
