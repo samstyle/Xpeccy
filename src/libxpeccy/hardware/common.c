@@ -58,6 +58,12 @@ void zx_sync(Computer* comp, int ns) {
 	}
 }
 
+void zx_init(Computer* comp) {
+	int perNoTurbo = 1e3 / comp->cpuFrq;
+	comp->fps = 50;
+	vidUpdateTimings(comp->vid, perNoTurbo >> 1);
+}
+
 // zx keypress/release
 
 void zx_keyp(Computer* comp, keyEntry ent) {

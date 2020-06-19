@@ -130,3 +130,4 @@ class SetupWin : public QDialog {
 };
 
 int getRFIData(QComboBox*);
+void setRFIndex(QComboBox* box, QVariant data);

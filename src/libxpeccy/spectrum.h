@@ -86,13 +86,6 @@ typedef struct {
 	unsigned char reg[16];
 } c64cia;
 
-/*
-typedef struct {
-	unsigned rd:1;
-	int mode;
-	unsigned char val;
-} ppiChan;
-*/
 typedef struct {
 	unsigned brk:1;			// breakpoint
 	unsigned debug:1;		// dont' do breakpoints

@@ -8,6 +8,14 @@ static vLayout nesPALLay = {{341,312},{0,0},{85,72},{256,240},{0,0},64};
 // NOTE: NES is fukkeen trash. why did i start this?
 // NOTE: Cartridges have potentially 255+ mappers
 
+// NES...
+// NTSC	89342 dots/f	60fps	5360520 dot/sec	186.55 ns/dot
+// PAL	106392 dots/f	50fps	5319600 dot/sec	188 ns/dot
+// ~185 ns/dot	PAL:x3.2=592ns/tick	NTSC:x3=555ns/tick
+// ~190 ns/dot	PAL:608 ns/tick		NTSC:570ns/tick
+// NTSC:base/14915
+// PAL:base/12430
+
 // PPU reads byte (except palette)
 int nes_ppu_ext_rd(int adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
@@ -228,16 +236,18 @@ void nes_init(Computer* comp) {
 	switch(comp->nes.type) {
 		case NES_PAL:
 			comp->fps = 50;
-			perNoTurbo = (int)(1e3 / 1.66);		// ~601
+			comp->cpuFrq = 1.66;
+			perNoTurbo = 1e3 / comp->cpuFrq;		// ~601
 			vidSetLayout(comp->vid, &nesPALLay);
 			comp->vid->vbsline = 241;
 			comp->vid->vbrline = 311;
-			vidUpdateTimings(comp->vid, (int)(perNoTurbo / 3.2));		// 16 ticks = 5 dots
+			vidUpdateTimings(comp->vid, perNoTurbo / 3.2);		// 16 ticks = 5 dots
 			comp->nesapu->wdiv = 3107;		// 5/6 = 3107? or 166/179 = 3458
 			break;
 		case NES_NTSC:
 			comp->fps = 60;
-			perNoTurbo = (int)(1e3 / 1.79);		// ~559
+			comp->cpuFrq = 1.79;
+			perNoTurbo = 1e3 / comp->cpuFrq;		// ~559
 			vidSetLayout(comp->vid, &nesNTSCLay);
 			comp->vid->vbsline = 241;
 			comp->vid->vbrline = 261;
@@ -246,7 +256,8 @@ void nes_init(Computer* comp) {
 			break;
 		default:							// dendy
 			comp->fps = 59;
-			perNoTurbo = (int)(1e3 / 1.77);
+			comp->cpuFrq = 1.77;
+			perNoTurbo = 1e3 / comp->cpuFrq;
 			vidSetLayout(comp->vid, &nesPALLay);
 			comp->vid->vbsline = 291;
 			comp->vid->vbrline = 311;
@@ -325,7 +336,7 @@ void nes_keyp(Computer* comp, keyEntry ent) {
 					comp->msg = nesNTSC;
 					break;
 			}
-			compUpdateTimings(comp);
+			nes_init(comp);
 			break;
 		case XKEY_1:
 			comp->vid->bgblock ^= 1;

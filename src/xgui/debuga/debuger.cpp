@@ -27,6 +27,7 @@ int blockStart = -1;
 int blockEnd = -1;
 
 int getRFIData(QComboBox*);
+void setRFIndex(QComboBox* box, QVariant data);
 int dasmSome(Computer*, unsigned short, dasmData&);
 
 // trace type
@@ -83,9 +84,32 @@ void DebugWin::chaPal() {
 	fillAll();
 }
 
+void DebugWin::save_mem_map() {
+	for (int i = 0; i < 256; i++) {
+		mem_map[i] = comp->mem->map[i];
+	}
+}
+
+void DebugWin::rest_mem_map() {
+	for (int i = 0; i < 256; i++) {
+		 comp->mem->map[i] = mem_map[i];
+	}
+	fillAll();
+}
+
+void DebugWin::remapMem() {
+	if (block) return;
+	memSetBank(comp->mem, 0x00, getRFIData(ui.cbBank0), ui.numBank0->getValue(), MEM_16K, NULL, NULL, NULL);
+	memSetBank(comp->mem, 0x40, getRFIData(ui.cbBank1), ui.numBank1->getValue(), MEM_16K, NULL, NULL, NULL);
+	memSetBank(comp->mem, 0x80, getRFIData(ui.cbBank2), ui.numBank2->getValue(), MEM_16K, NULL, NULL, NULL);
+	memSetBank(comp->mem, 0xc0, getRFIData(ui.cbBank3), ui.numBank3->getValue(), MEM_16K, NULL, NULL, NULL);
+	fillAll();
+}
+
 void DebugWin::start(Computer* c) {
 	blockStart = -1;
 	blockEnd = -1;
+	save_mem_map();
 	chLayout();
 	if (!comp->vid->tail)
 		vidDarkTail(comp->vid);
@@ -118,12 +142,12 @@ void DebugWin::start(Computer* c) {
 		memViewer->show();
 		memViewer->fillImage();
 	}
-
 	chDumpView();
 	activateWindow();
 }
 
 void DebugWin::stop() {
+	// rest_mem_map();
 	compExec(comp);		// to prevent double breakpoint catch
 	comp->debug = 0;
 	comp->vid->debug = 0;
@@ -143,12 +167,18 @@ void DebugWin::stop() {
 void DebugWin::onPrfChange(xProfile* prf) {
 	if (!prf) prf = conf.prof.cur;
 	if (!prf) return;
+	//if (!isHidden())
+	//	rest_mem_map();
 	comp = prf->zx;
+	save_mem_map();
 	ui.tabsPanel->clear();
 	QList<QPair<QIcon, QWidget*> > lst = tablist[prf->zx->hw->grp];
 	QPair<QIcon, QWidget*> p;
 	p.first = QIcon(":/images/stop.png");
 	p.second = ui.brkTab;
+	lst.append(p);
+	p.first = QIcon(":/images/memory.png");
+	p.second = ui.memTab;
 	lst.append(p);
 	while(lst.size() > 0) {
 		ui.tabsPanel->addTab(lst.first().second, lst.first().first, "");
@@ -239,6 +269,8 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 	setFont(QFont("://DejaVuSansMono.ttf",10));
 	ui.setupUi(this);
+
+	dumpwin = new QDialog(this);
 
 	tabMode = HW_NULL;
 
@@ -332,12 +364,12 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.dasmTable->setItemDelegateForColumn(0, xid_labl);
 	ui.dasmTable->setItemDelegateForColumn(1, xid_dump);
 
-	ui.cbDasmMode->addItem("CPU", XVIEW_CPU);
-	ui.cbDasmMode->addItem("RAM", XVIEW_RAM);
-	ui.cbDasmMode->addItem("ROM", XVIEW_ROM);
+//	ui.cbDasmMode->addItem("CPU", XVIEW_CPU);
+//	ui.cbDasmMode->addItem("RAM", XVIEW_RAM);
+//	ui.cbDasmMode->addItem("ROM", XVIEW_ROM);
 
-	connect(ui.cbDasmMode, SIGNAL(currentIndexChanged(int)),this,SLOT(setDasmMode()));
-	connect(ui.sbDasmPage, SIGNAL(valueChanged(int)),this,SLOT(setDasmMode()));
+//	connect(ui.cbDasmMode, SIGNAL(currentIndexChanged(int)),this,SLOT(setDasmMode()));
+//	connect(ui.sbDasmPage, SIGNAL(valueChanged(int)),this,SLOT(setDasmMode()));
 
 // actions
 	ui.tbBreak->addAction(ui.actFetch);
@@ -414,7 +446,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.tbTrace, SIGNAL(triggered(QAction*)),this,SLOT(doTrace(QAction*)));
 
 	connect(ui.actLoadDump, SIGNAL(triggered(bool)),this,SLOT(doOpenDump()));
-	connect(ui.actSaveDump, SIGNAL(triggered(bool)),this,SLOT(doSaveDump()));
+	connect(ui.actSaveDump, SIGNAL(triggered(bool)),dumpwin,SLOT(show()));
 	connect(ui.actLoadLabels, SIGNAL(triggered(bool)),this,SLOT(dbgLLab()));
 	connect(ui.actSaveLabels, SIGNAL(triggered(bool)),this,SLOT(dbgSLab()));
 //	connect(ui.actLoadMap, SIGNAL(triggered(bool)),this,SLOT(loadMap()));
@@ -507,9 +539,30 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 	connect(ui.nesScrType,SIGNAL(currentIndexChanged(int)), this, SLOT(drawNes()));
 	connect(ui.nesBGTileset,SIGNAL(currentIndexChanged(int)), this, SLOT(drawNes()));
+// mem tab
+	ui.cbBank0->addItem("ROM", MEM_ROM);
+	ui.cbBank0->addItem("RAM", MEM_RAM);
+	ui.cbBank1->addItem("ROM", MEM_ROM);
+	ui.cbBank1->addItem("RAM", MEM_RAM);
+	ui.cbBank2->addItem("ROM", MEM_ROM);
+	ui.cbBank2->addItem("RAM", MEM_RAM);
+	ui.cbBank3->addItem("ROM", MEM_ROM);
+	ui.cbBank3->addItem("RAM", MEM_RAM);
+	ui.numBank0->setMax(255);
+	ui.numBank1->setMax(255);
+	ui.numBank2->setMax(255);
+	ui.numBank3->setMax(255);
+	connect(ui.cbBank0, SIGNAL(currentIndexChanged(int)), this, SLOT(remapMem()));
+	connect(ui.cbBank1, SIGNAL(currentIndexChanged(int)), this, SLOT(remapMem()));
+	connect(ui.cbBank2, SIGNAL(currentIndexChanged(int)), this, SLOT(remapMem()));
+	connect(ui.cbBank3, SIGNAL(currentIndexChanged(int)), this, SLOT(remapMem()));
+	connect(ui.numBank0, SIGNAL(valueChanged(int)), this, SLOT(remapMem()));
+	connect(ui.numBank1, SIGNAL(valueChanged(int)), this, SLOT(remapMem()));
+	connect(ui.numBank2, SIGNAL(valueChanged(int)), this, SLOT(remapMem()));
+	connect(ui.numBank3, SIGNAL(valueChanged(int)), this, SLOT(remapMem()));
+	connect(ui.pbRestMemMap, SIGNAL(clicked()), this, SLOT(rest_mem_map()));
 
 // subwindows
-	dumpwin = new QDialog(this);
 	dui.setupUi(dumpwin);
 	dui.tbSave->addAction(dui.aSaveBin);
 	dui.tbSave->addAction(dui.aSaveHobeta);
@@ -605,10 +658,10 @@ void DebugWin::chDumpView() {
 }
 
 void DebugWin::setDasmMode() {
-	int mode = getRFIData(ui.cbDasmMode);
-	int page = ui.sbDasmPage->value();
-	ui.sbDasmPage->setDisabled(mode == XVIEW_CPU);
-	ui.dasmTable->setMode(mode, page);
+//	int mode = getRFIData(ui.cbDasmMode);
+//	int page = ui.sbDasmPage->value();
+//	ui.sbDasmPage->setDisabled(mode == XVIEW_CPU);
+//	ui.dasmTable->setMode(mode, page);
 }
 
 static QFile logfile;
@@ -640,13 +693,14 @@ void DebugWin::doStep() {
 	do {
 		tCount = comp->tickCount;
 		compExec(comp);
-		int mod;
+		//int mod;
 		xAdr xadr;
 		if (!fillAll()) {
-			mod = ui.cbDasmMode->itemData(ui.cbDasmMode->currentIndex()).toInt();
+			//mod = ui.cbDasmMode->itemData(ui.cbDasmMode->currentIndex()).toInt();
 			xadr = memGetXAdr(comp->mem, comp->cpu->pc);
-			if (mod == XVIEW_CPU) {
+			//if (mod == XVIEW_CPU) {
 				disasmAdr = comp->cpu->pc;
+			/*
 			} else {
 				switch(xadr.type) {
 					case MEM_RAM:
@@ -661,6 +715,7 @@ void DebugWin::doStep() {
 						break;
 				}
 			}
+			*/
 			fillDisasm();
 		}
 		switch(traceType) {
@@ -790,7 +845,8 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			doOpenDump();
 			break;
 		case XCUT_SAVE_DUMP:
-			doSaveDump();
+			//doSaveDump();
+			dumpwin->show();
 			break;
 		case XCUT_FINDER:
 			doFind();
@@ -1051,6 +1107,49 @@ bool DebugWin::fillAll() {
 
 	ui.labRY->setNum(comp->vid->ray.y);
 	setSignal(ui.labRY, comp->vid->vblank);
+
+	// memory
+	if (ui.tabsPanel->currentWidget() == ui.memTab) {
+		ui.widBank->setVisible(comp->hw->grp == HWG_ZX);
+		QPixmap img(256, 256);
+		QPainter pnt;
+		img.fill(Qt::black);
+		pnt.begin(&img);
+		int pg = 0;
+		int x,y;
+		QColor col;
+		for (y = 0; y < 16; y++) {
+			for (x = 0; x < 16; x++) {
+				switch(comp->mem->map[pg & 0xff].type) {
+					case MEM_RAM: col = Qt::darkGreen; break;
+					case MEM_ROM: col = Qt::darkRed; break;
+					case MEM_IO: col = Qt::darkBlue; break;
+					case MEM_SLOT: col = Qt::darkCyan; break;
+					default: col = Qt::darkGray; break;
+				}
+				pnt.fillRect(x << 4, y << 4, 15, 15, col);
+				pg++;
+			}
+		}
+		pnt.setPen(Qt::yellow);
+		pnt.drawLine(0, 63, 256, 63);
+		pnt.drawLine(0, 127, 256, 127);
+		pnt.drawLine(0, 191, 256, 191);
+		pnt.end();
+		ui.labMemMap->setPixmap(img);
+		block = 1;
+		if (comp->hw->grp == HWG_ZX) {
+			ui.numBank0->setValue(comp->mem->map[0x00].num >> 6);
+			ui.numBank1->setValue(comp->mem->map[0x40].num >> 6);
+			ui.numBank2->setValue(comp->mem->map[0x80].num >> 6);
+			ui.numBank3->setValue(comp->mem->map[0xc0].num >> 6);
+			setRFIndex(ui.cbBank0, comp->mem->map[0x00].type);
+			setRFIndex(ui.cbBank1, comp->mem->map[0x40].type);
+			setRFIndex(ui.cbBank2, comp->mem->map[0x80].type);
+			setRFIndex(ui.cbBank3, comp->mem->map[0xc0].type);
+		}
+		block = 0;
+	}
 
 	setSignal(ui.labDOS, comp->dos);
 	setSignal(ui.labROM, comp->rom);
@@ -1942,10 +2041,9 @@ void DebugWin::chaCellProperty(QAction* act) {
 
 // memDump
 
-void DebugWin::doSaveDump() {
-	dui.leBank->setText(QString::number(comp->mem->map[0xc0].num >> 6, 16));
-	dumpwin->show();
-}
+//void DebugWin::doSaveDump() {
+//	dumpwin->show();
+//}
 
 void DebugWin::dmpLimChanged() {
 	int start = dui.leStart->getValue();
@@ -1972,16 +2070,16 @@ void DebugWin::dmpLenChanged() {
 }
 
 QByteArray DebugWin::getDumpData() {
-	int bank = dui.leBank->text().toInt(NULL,16);
+	//int bank = dui.leBank->text().toInt(NULL,16);
 	int adr = dui.leStart->getValue();
 	int len = dui.leLen->getValue();
 	QByteArray res;
 	while (len > 0) {
-		if (adr < 0xc000) {
-			res.append(rdbyte(adr, comp));
-		} else {
-			res.append(comp->mem->ramData[(bank << 14) | (adr & 0x3fff)]);
-		}
+		//if (adr < 0xc000) {
+		res.append(rdbyte(adr, comp));
+		//} else {
+		//	res.append(comp->mem->ramData[(bank << 14) | (adr & 0x3fff)]);
+		//}
 		adr++;
 		len--;
 	}
@@ -2005,7 +2103,7 @@ void DebugWin::saveDumpHobeta() {
 	if (path.isEmpty()) return;
 	TRFile dsc;
 	QString name = dui.leStart->text();
-	name.append(".").append(dui.leBank->text());
+	// name.append(".").append(dui.leBank->text());
 	std::string nms = name.toStdString();
 	nms.resize(8,' ');
 	memcpy(dsc.name,nms.c_str(),8);
@@ -2033,7 +2131,7 @@ void DebugWin::saveDumpToDisk(int idx) {
 	int start = dui.leStart->getValue();
 	int len = dui.leLen->getValue();
 	QString name = dui.leStart->text();
-	name.append(".").append(dui.leBank->text());
+	// name.append(".").append(dui.leBank->text());
 	Floppy* flp = comp->dif->fdc->flop[idx & 3];
 	if (!flp->insert) {
 		diskFormat(flp);
@@ -2078,8 +2176,8 @@ void DebugWin::doMemView() {
 void DebugWin::doOpenDump() {
 	dumpPath.clear();
 	oui.laPath->clear();
-	oui.leBank->setText(QString::number(comp->mem->map[0xc0].num >> 6, 16));
-	oui.leStart->setText("4000");
+	// oui.leBank->setText(QString::number(comp->mem->map[0xc0].num >> 6, 16));
+	oui.leStart->setText("C000");
 	openDumpDialog->show();
 }
 
@@ -2111,7 +2209,7 @@ void DebugWin::dmpStartOpen() {
 
 void DebugWin::loadDump() {
 	if (dumpPath.isEmpty()) return;
-	int res = loadDUMP(comp, dumpPath.toStdString().c_str(),oui.leStart->text().toInt(NULL,16));
+	int res = loadDUMP(comp, dumpPath.toLocal8Bit().data(),oui.leStart->text().toInt(NULL,16));
 	fillAll();
 	if (res == ERR_OK) {
 		openDumpDialog->hide();

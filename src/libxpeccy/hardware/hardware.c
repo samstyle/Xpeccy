@@ -12,42 +12,42 @@ static vLayout v9938Lay = {{342,313},{16,13},{57,80},{256,192},{0,0},64};
 HardWare hwTab[] = {
 	{
 		HW_DUMMY,HWG_NULL,"Dummy","Dummy",16,MEM_64K,1.0,NULL,
-		NULL,hw_dum_map, hw_dum_iwr, hw_dum_ird, hw_dum_mrd, hw_dum_mwr, NULL, NULL, NULL, NULL, hw_dum_vol
+		zx_init,hw_dum_map, hw_dum_iwr, hw_dum_ird, hw_dum_mrd, hw_dum_mwr, NULL, NULL, NULL, NULL, hw_dum_vol
 	},{
 		HW_ZX48,HWG_ZX,"ZX48K","ZX 48K",16,MEM_64K,1.0,NULL,
-		NULL,speMapMem,speOut,speIn,stdMRd,stdMWr,speReset,zx_sync,zx_keyp,zx_keyr,zx_vol
+		zx_init,speMapMem,speOut,speIn,stdMRd,stdMWr,speReset,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
 		HW_PENT,HWG_ZX,"Pentagon","Pentagon",16,MEM_128K | MEM_512K,1.0,NULL,
-		NULL,penMapMem,penOut,penIn,stdMRd,stdMWr,speReset,zx_sync,zx_keyp,zx_keyr,zx_vol
+		zx_init,penMapMem,penOut,penIn,stdMRd,stdMWr,speReset,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
 		HW_P1024,HWG_ZX,"Pentagon1024SL","Pentagon 1024 SL",16,MEM_1M,1.0,NULL,
-		NULL,p1mMapMem,p1mOut,p1mIn,stdMRd,stdMWr,speReset,zx_sync,zx_keyp,zx_keyr,zx_vol
+		zx_init,p1mMapMem,p1mOut,p1mIn,stdMRd,stdMWr,speReset,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
 		HW_SCORP,HWG_ZX,"Scorpion","ZS Scorpion",16,MEM_256K | MEM_1M,1.0,NULL,
-		NULL,scoMapMem,scoOut,scoIn,scoMRd,stdMWr,speReset,zx_sync,zx_keyp,zx_keyr,zx_vol
+		zx_init,scoMapMem,scoOut,scoIn,scoMRd,stdMWr,speReset,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
 		HW_ATM2,HWG_ZX,"ATM2","ATM Turbo 2+",16,MEM_128K | MEM_256K | MEM_512K | MEM_1M,1.0,NULL,
-		NULL,atm2MapMem,atm2Out,atm2In,stdMRd,stdMWr,atm2Reset,zx_sync,atm2_keyp,atm2_keyr,zx_vol
+		zx_init,atm2MapMem,atm2Out,atm2In,stdMRd,stdMWr,atm2Reset,zx_sync,atm2_keyp,atm2_keyr,zx_vol
 	},{
 		HW_PROFI,HWG_ZX,"Profi","Profi",16,MEM_512K | MEM_1M,1.0,NULL,
-		NULL,prfMapMem,prfOut,prfIn,stdMRd,stdMWr,prfReset,zx_sync,prf_keyp,prf_keyr,zx_vol
+		zx_init,prfMapMem,prfOut,prfIn,stdMRd,stdMWr,prfReset,zx_sync,prf_keyp,prf_keyr,zx_vol
 	},{
 		HW_PHOENIX,HWG_ZX,"Phoenix","ZXM Phoenix",16,MEM_2M,1.0,NULL,
-		NULL,phxMapMem,phxOut,phxIn,stdMRd,stdMWr,phxReset,zx_sync,zx_keyp,zx_keyr,zx_vol
+		zx_init,phxMapMem,phxOut,phxIn,stdMRd,stdMWr,phxReset,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
 		HW_PENTEVO,HWG_ZX,"PentEvo","Evo Baseconf",16,MEM_4M,1.0,NULL,
-		NULL,evoMapMem,evoOut,evoIn,evoMRd,evoMWr,evoReset,zx_sync,zx_keyp,zx_keyr,zx_vol
+		zx_init,evoMapMem,evoOut,evoIn,evoMRd,evoMWr,evoReset,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
 		HW_TSLAB,HWG_ZX,"TSLab","Evo TSConf",16,MEM_4M,1.0,NULL,
-		NULL,tslMapMem,tslOut,tslIn,tslMRd,tslMWr,tslReset,zx_sync,zx_keyp,zx_keyr,zx_vol
+		zx_init,tslMapMem,tslOut,tslIn,tslMRd,tslMWr,tslReset,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
 		HW_NULL,HWG_NULL,"","",16,0,1.0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// separator
 	},{
 		HW_PLUS2,HWG_ZX,"Spectrum +2","Spectrum +2",16,MEM_128K,1.0,NULL,
-		NULL,pl2MapMem,pl2Out,pl2In,stdMRd,stdMWr,plusRes,zx_sync,zx_keyp,zx_keyr,zx_vol
+		zx_init,pl2MapMem,pl2Out,pl2In,stdMRd,stdMWr,plusRes,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
 		HW_PLUS3,HWG_ZX,"Spectrum +3","Spectrum +3",16,MEM_128K,1.0,NULL,
-		NULL,pl2MapMem,pl3Out,pl3In,stdMRd,stdMWr,plusRes,zx_sync,zx_keyp,zx_keyr,zx_vol
+		zx_init,pl2MapMem,pl3Out,pl3In,stdMRd,stdMWr,plusRes,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
 		HW_NULL,HWG_NULL,"","",16,0,1.0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// separator
 	},{

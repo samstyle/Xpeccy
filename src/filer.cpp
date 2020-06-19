@@ -62,7 +62,7 @@ static xFileTypeInfo ft_tab[] = {
 	{FL_BKBIN, 0, ".bin", "*.bin", loadBIN, NULL, "BK bin data"},
 	{FL_BKIMG, 0, ".img", "*.img", loadBkIMG, NULL, "BK disk image"},
 //	{FL_BKBKD, 0, ".bkd", "*.bkd", loadBkIMG, NULL, "BK disk image"},
-	{FL_RKS, 0, ".rks", "*.rks", loadRKStap, NULL, "RKS to tape"},
+	{FL_RKS, 0, ".rks", "*.rks", loadRKSmem, NULL, "RKS to memory"},
 #ifdef HAVEZLIB
 	{FL_RZX, 0, ".rzx", "*.rzx", loadRZX, NULL, "RZX playback"},
 #endif
@@ -73,7 +73,7 @@ static xFileTypeInfo ft_tab[] = {
 
 static xFileTypeInfo ft_raw = {FL_RAW, 0, NULL, NULL, loadRaw, NULL, "RAW file to disk A"};
 static xFileTypeInfo ft_bktap = {FL_RAW, 0, NULL, NULL, bkLoadToTape, NULL, "RAW file to BK tape"};
-static xFileTypeInfo ft_rksmem = {FL_RKS, 0, NULL, NULL, loadRKSmem, NULL, "RKS to memory"};
+static xFileTypeInfo ft_rkstap = {FL_RKS, 0, NULL, NULL, loadRKStap, NULL, "RKS to tape"};
 static xFileTypeInfo ft_dum = {FL_NONE, 0, NULL, NULL, NULL, NULL, "Dummy entry"};
 
 // 3rd parameter
@@ -99,12 +99,12 @@ static xFileGroupInfo fg_tab[] = {
 	{FG_BKTAPE, ".wav", -1, "BK tape", NULL, {FL_WAV, 0}},
 	{FG_BKRAW, "", -1, "BK raw file to tape", &ft_bktap,  {FL_BKRAWTAP, 0}},
 	// {FG_BKDISK, "", 0, "BK disk image", NULL, {FL_BKIMG, FL_BKBKD, FL_UDI, 0}},
-	{FG_RKSTAP, "", -1, "RKS to tape", NULL, {FL_RKS, 0}},
-	{FG_RKSMEM, "", -1, "RKS to memory", &ft_rksmem, {FL_RKS, 0}},
+	{FG_RKSTAP, "", -1, "RKS to tape", &ft_rkstap, {FL_RKS, 0}},
+	{FG_RKSMEM, "", -1, "RKS to memory", NULL, {FL_RKS, 0}},
 	{0, "", -1, NULL, NULL, {0}}
 };
 
-static xFileGroupInfo fg_dum = {0, "", -1, NULL, {0}};
+static xFileGroupInfo fg_dum = {0, "", -1, NULL, NULL, {0}};
 
 static xFileHWInfo fh_tab[] = {
 	{FH_SPECTRUM, {FG_SNAPSHOT, FG_TAPE, FG_DISK_A, FG_DISK_B, FG_DISK_C, FG_DISK_D, FG_RAW, FG_RZX, 0}},
@@ -115,7 +115,7 @@ static xFileHWInfo fh_tab[] = {
 	{FH_BK, {FG_BKDATA, FG_BKTAPE, FG_BKRAW, FG_BKDISK, 0}},
 	{FH_DISKS, {FG_DISK_A, FG_DISK_B, FG_DISK_C, FG_DISK_D, 0}},
 	{FH_SLOTS, {FG_GAMEBOY, FG_NES, FG_MSX, 0}},
-	{FH_SPCLST, {FG_RKSMEM, FG_RKSTAP, 0}},
+	{FH_SPCLST, {FG_RKSMEM, /*FG_RKSTAP,*/ 0}},
 	{0, {0}}
 };
 
@@ -335,6 +335,7 @@ static int disk_id[] = {FG_DISK_A, FG_DISK_B, FG_DISK_C, FG_DISK_D};
 static int boot_ft[] = {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, 0};
 
 void disk_boot(Computer* comp, int drv, int id) {
+	if (!conf.boot) return;
 	int idx = 0;
 	while (boot_ft[idx] && (boot_ft[idx] != id))
 		idx++;

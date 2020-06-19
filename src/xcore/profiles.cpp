@@ -151,8 +151,8 @@ void prfChangeLayName(std::string oldName, std::string newName) {
 
 // breakpoints
 
-void prfFillBreakpoints(xProfile* prf) {
 /*
+void prfFillBreakpoints(xProfile* prf) {
 	memset(prf->zx->brkRamMap, 0x00, 0x400000);
 	memset(prf->zx->brkRomMap, 0x00, 0x80000);
 	memset(prf->zx->brkAdrMap, 0x00, 0x10000);
@@ -178,8 +178,8 @@ void prfFillBreakpoints(xProfile* prf) {
 			*ptr = (*ptr & 0xf0) | mask;
 		}
 	}
-*/
 }
+*/
 
 // load-save
 

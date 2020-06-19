@@ -1,6 +1,9 @@
 #include "hardware.h"
 
-// TODO: recheck memory map (A8 port)
+// MSX...
+// master clock		MSX2:21.48MHz | MSX1:10.74
+// v99xx clock		master/4 = 5.37MHz : 2 dots/period	MSX2. MSX1: master/2
+// CPU clock		master/6 = 3.58MHz : 1T = 3 dots	MSX2. MSX1: master/3
 
 typedef struct {
 	int type;

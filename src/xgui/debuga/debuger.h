@@ -91,6 +91,8 @@ class DebugWin : public QDialog {
 		xLabel* dbgRegLabs[16];
 		xHexSpin* dbgRegEdit[16];
 
+		MemPage mem_map[256];
+
 		QDialog* dumpwin;
 		Ui::DumpDial dui;
 		QByteArray getDumpData();
@@ -136,6 +138,9 @@ class DebugWin : public QDialog {
 //		void loadMap();
 //		void saveMap();
 		void saveDasm();
+		void remapMem();
+		void save_mem_map();
+		void rest_mem_map();
 
 		void dbgLLab();
 		void dbgSLab();
@@ -177,7 +182,7 @@ class DebugWin : public QDialog {
 		void doStep();
 
 		void doOpenDump();
-		void doSaveDump();
+//		void doSaveDump();
 		void loadDump();
 		void chDumpFile();
 		void dmpStartOpen();

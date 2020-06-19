@@ -324,33 +324,11 @@ void compReset(Computer* comp,int res) {
 
 // cpu freq
 
-// NES...
-// NTSC	89342 dots/f	60fps	5360520 dot/sec	186.55 ns/dot
-// PAL	106392 dots/f	50fps	5319600 dot/sec	188 ns/dot
-// ~185 ns/dot	PAL:x3.2=592ns/tick	NTSC:x3=555ns/tick
-// ~190 ns/dot	PAL:608 ns/tick		NTSC:570ns/tick
-// NTSC:base/14915
-// PAL:base/12430
-
-// MSX...
-// master clock		MSX2:21.48MHz | MSX1:10.74
-// v99xx clock		master/4 = 5.37MHz : 2 dots/period	MSX2. MSX1: master/2
-// CPU clock		master/6 = 3.58MHz : 1T = 3 dots	MSX2. MSX1: master/3
-
-// Commodore
-// dotClock	8.18MHz (ntsc) / 7.88MHz (pal)
-// colorCLK	14.31818MHz (ntsc) / 17.734472MHz (pal)
-// CPU clock	~1MHz
-
-// BK0010
-// dot: 25.175MHz (~40 ns/dot)
-// timer: cpu/128
-
-void compUpdateTimings(Computer* comp) {
-	int perNoTurbo = 1e3 / comp->cpuFrq;		// ns for full cpu tick
-	if (perNoTurbo & 1) perNoTurbo++;
-	int type = comp->hw ? comp->hw->id : HW_NULL;
-	switch (type) {
+//void compUpdateTimings(Computer* comp) {
+//	int perNoTurbo = 1e3 / comp->cpuFrq;		// ns for full cpu tick
+//	if (perNoTurbo & 1) perNoTurbo++;
+//	int type = comp->hw ? comp->hw->id : HW_NULL;
+//	switch (type) {
 //		case HW_MSX:
 //		case HW_MSX2:
 //			comp->fps = 60;
@@ -419,29 +397,33 @@ void compUpdateTimings(Computer* comp) {
 //			vidSetMode(comp->vid, VID_SPCLST);
 //			vidUpdateTimings(comp->vid, perNoTurbo >> 2);			// CPU:2MHz, dots:8MHz
 //			break;
-		default:
-			comp->fps = 50;
-			vidUpdateTimings(comp->vid, perNoTurbo >> 1);
-			break;
-	}
-	comp->tape->t_ns = perNoTurbo;
-	comp->nsPerTick = perNoTurbo / comp->frqMul;
-#ifdef ISDEBUG
+//		default:
+//			comp->fps = 50;
+//			vidUpdateTimings(comp->vid, perNoTurbo >> 1);
+//			break;
+//	}
+//	comp->nsPerTick = perNoTurbo / comp->frqMul;
+//#ifdef ISDEBUG
 	// printf("%f x %i : %i ns\n",comp->cpuFrq,comp->frqMul,comp->nsPerTick);
-#endif
-}
+//#endif
+//}
 
 void compSetBaseFrq(Computer* comp, double frq) {
-	comp->cpuFrq = frq;
-	compUpdateTimings(comp);
+	if (frq > 0)
+		comp->cpuFrq = frq;
+	// compUpdateTimings(comp);
 	if (comp->hw->init)
 		comp->hw->init(comp);
+	comp->nsPerTick = 1e3 / comp->cpuFrq / comp->frqMul;
 }
 
 void compSetTurbo(Computer* comp, double mult) {
 	comp->frqMul = mult;
 	comp->cpu->speed = (mult > 1) ? 1 : 0;
-	compUpdateTimings(comp);
+	// compUpdateTimings(comp);
+	if (comp->hw->init)
+		comp->hw->init(comp);
+	comp->nsPerTick = 1e3 / comp->cpuFrq / comp->frqMul;
 }
 
 void comp_set_layout(Computer* comp, vLayout* lay) {
@@ -463,9 +445,8 @@ int compSetHardware(Computer* comp, const char* name) {
 	comp->hw = hw;
 	comp->cpu->nod = 0;
 	comp->vid->mrd = vid_mrd_cb;
-	compUpdateTimings(comp);
-	if (comp->hw->init)
-		comp->hw->init(comp);
+	// compUpdateTimings(comp);
+	compSetBaseFrq(comp, 0);	// recalculations
 	return 1;
 }
 

@@ -72,6 +72,7 @@ void conf_init(char* wpath) {
 	vLayout vlay = {{448,320},{74,48},{64,32},{256,192},{0,0},64};
 	addLayout("default", vlay);
 	conf.running = 0;
+	conf.boot = 1;
 	conf.emu.pause = 0;
 	conf.emu.fast = 0;
 	conf.joy.dead = 8192;
@@ -90,6 +91,7 @@ void saveConfig() {
 	fprintf(cfile, "startdefault = %s\n", YESNO(conf.defProfile));
 	fprintf(cfile, "savepaths = %s\n", YESNO(conf.storePaths));
 	fprintf(cfile, "fdcturbo = %s\n", YESNO(fdcFlag & FDC_FAST));
+	fprintf(cfile, "addboot = %s\n", YESNO(conf.boot));
 	fprintf(cfile, "port = %i\n", conf.port);
 	fprintf(cfile, "winpos = %i,%i\n",conf.xpos,conf.ypos);
 
@@ -438,6 +440,7 @@ void loadConfig() {
 							conf.ypos = strtol(vect[1].c_str(), NULL, 10);
 						}
 					}
+					if (pnam == "addboot") conf.boot = str2bool(pval.c_str()) ? 1 : 0;
 					break;
 				case SECT_TAPE:
 					if (pnam=="autoplay") conf.tape.autostart = str2bool(pval) ? 1 : 0;
@@ -459,8 +462,9 @@ void loadConfig() {
 	vid_set_zoom(conf.vid.scale);
 	vid_set_fullscreen(conf.vid.fullScreen);
 	vid_set_ratio(conf.vid.keepRatio);
-	uint i;
-	for (i=0; i<rsListist.size(); i++) addRomset(rsListist[i]);
+	foreach(xRomset rs, rsListist) addRomset(rs);
+	// uint i;
+	// for (i=0; i<rsListist.size(); i++) addRomset(rsListist[i]);
 	prfLoadAll();
 	setOutput(soutnam.c_str());
 	if (conf.defProfile) {

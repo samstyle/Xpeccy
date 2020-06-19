@@ -454,6 +454,7 @@ void SetupWin::start(xProfile* p) {
 	ui.diskTypeBox->setCurrentIndex(ui.diskTypeBox->findData(comp->dif->type));
 	ui.bdtbox->setChecked(fdcFlag & FDC_FAST);
 	ui.mempaths->setChecked(conf.storePaths);
+	ui.cbAddBoot->setChecked(conf.boot);
 	Floppy* flp = comp->dif->fdc->flop[0];
 	ui.apathle->setText(QString::fromLocal8Bit(flp->path));
 		ui.a80box->setChecked(flp->trk80);
@@ -620,6 +621,7 @@ void SetupWin::apply() {
 // bdi
 	difSetHW(comp->dif, getRFIData(ui.diskTypeBox));
 	setFlagBit(ui.bdtbox->isChecked(),&fdcFlag,FDC_FAST);
+	conf.boot = ui.cbAddBoot->isChecked() ? 1 : 0;
 	conf.storePaths = ui.mempaths->isChecked() ? 1 : 0;
 
 	Floppy* flp = comp->dif->fdc->flop[0];

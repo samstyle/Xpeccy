@@ -4,6 +4,11 @@
 
 #include "../spectrum.h"
 
+// Commodore
+// dotClock	8.18MHz (ntsc) / 7.88MHz (pal)
+// colorCLK	14.31818MHz (ntsc) / 17.734472MHz (pal)
+// CPU clock	~1MHz
+
 #define F_LORAM		1
 #define	F_HIRAM		(1<<1)
 #define	F_CHAREN	(1<<2)
