@@ -28,21 +28,14 @@ xProfile* addProfile(std::string nm, std::string fp) {
 	nprof->file = fp;
 	nprof->layName = std::string("default");
 	nprof->zx = compCreate();
-	char fname[FILENAME_MAX];
-	strcpy(fname, conf.path.confDir);
-	strcat(fname, SLASH);
-	strcat(fname, nprof->name.c_str());
-	strcat(fname, ".cmos");
-	FILE* file = fopen(fname, "rb");
+	std::string fname = conf.path.confDir + SLASH + nprof->name + ".cmos";
+	FILE* file = fopen(fname.c_str(), "rb");
 	if (file) {
 		fread((char*)nprof->zx->cmos.data,256,1,file);
 		fclose(file);
 	}
-	strcpy(fname, conf.path.confDir);
-	strcat(fname, SLASH);
-	strcat(fname, nprof->name.c_str());
-	strcat(fname, ".nvram");
-	file = fopen(fname, "rb");
+	fname = conf.path.confDir + SLASH + nprof->name + ".nvram";
+	file = fopen(fname.c_str(), "rb");
 	if (file) {
 		fread((char*)nprof->zx->ide->smuc.nv->mem,0x800,1,file);
 		fclose(file);
@@ -63,15 +56,9 @@ int copyProfile(std::string src, std::string dst) {
 	} else {
 		dprf->file = dfile;
 	}
-
-	char sfname[FILENAME_MAX];
-	char dfname[FILENAME_MAX];
-	strcpy(sfname, conf.path.confDir);
-	strcat(sfname, SLASH);
-	strcpy(dfname, sfname);
-	strcat(sfname, sprf->file.c_str());
-	strcat(dfname, dfile.c_str());
-	copyFile(sfname, dfname);
+	std::string sfname = conf.path.confDir + SLASH + sprf->file;
+	std::string dfname = conf.path.confDir + SLASH + dfile;
+	copyFile(sfname.c_str(), dfname.c_str());
 	prfLoad(dst);
 	return 1;
 }
@@ -87,7 +74,8 @@ int delProfile(std::string nm) {
 	if (prf == NULL) return DELP_ERR;		// no such profile
 	if (prf->name == "default") return DELP_ERR;	// can't touch this
 	int res = DELP_OK;
-	char cpath[FILENAME_MAX];
+	// char cpath[FILENAME_MAX];
+	std::string cpath;
 	// set default profile if current deleted
 	if (conf.prof.cur) {
 		if (conf.prof.cur->name == nm) {
@@ -100,21 +88,13 @@ int delProfile(std::string nm) {
 	// remove all such profiles from list & free mem
 	for (int i = 0; i < conf.prof.list.size(); i++) {
 		if (conf.prof.list[i]->name == nm) {
-			strcpy(cpath, conf.path.confDir);
-			strcat(cpath, SLASH);
-			strcat(cpath, prf->file.c_str());
-			remove(cpath);					// remove config file
-			strcpy(cpath, conf.path.confDir);
-			strcat(cpath, SLASH);
-			strcat(cpath, prf->name.c_str());
-			strcat(cpath, ".cmos");
-			remove(cpath);					// remove cmos dump
-			strcpy(cpath, conf.path.confDir);
-			strcat(cpath, SLASH);
-			strcat(cpath, prf->name.c_str());
-			strcat(cpath, ".nvram");
-			remove(cpath);					// remove nvram dump
-			compDestroy(prf->zx);				// delete computer
+			cpath = conf.path.confDir + SLASH + prf->file;
+			remove(cpath.c_str());					// remove config file
+			cpath = conf.path.confDir + SLASH + prf->name + ".cmos";
+			remove(cpath.c_str());					// remove cmos dump
+			cpath = conf.path.confDir + SLASH + prf->name + ".nvram";
+			remove(cpath.c_str());					// remove nvram dump
+			compDestroy(prf->zx);					// delete computer
 			delete(prf);
 			conf.prof.list.erase(conf.prof.list.begin() + i);
 		}
@@ -134,6 +114,7 @@ bool prfSetCurrent(std::string nm) {
 	mouseReleaseAll(nprf->zx->mouse);
 	padLoadConfig(nprf->jmapName);
 	loadKeys();
+	compSetHardware(nprf->zx, NULL);
 	return true;
 }
 
@@ -149,7 +130,7 @@ bool prfSetLayout(xProfile* prf, std::string nm) {
 	xLayout* lay = findLayout(nm);
 	if (lay == NULL) return false;
 	prf->layName = nm;
-	vidSetLayout(prf->zx->vid, lay->lay);
+	comp_set_layout(prf->zx, &lay->lay);
 	vidSetBorder(prf->zx->vid, conf.brdsize);
 	return true;
 }
@@ -170,8 +151,8 @@ void prfChangeLayName(std::string oldName, std::string newName) {
 
 // breakpoints
 
-void prfFillBreakpoints(xProfile* prf) {
 /*
+void prfFillBreakpoints(xProfile* prf) {
 	memset(prf->zx->brkRamMap, 0x00, 0x400000);
 	memset(prf->zx->brkRomMap, 0x00, 0x80000);
 	memset(prf->zx->brkAdrMap, 0x00, 0x10000);
@@ -197,8 +178,8 @@ void prfFillBreakpoints(xProfile* prf) {
 			*ptr = (*ptr & 0xf0) | mask;
 		}
 	}
-*/
 }
+*/
 
 // load-save
 
@@ -233,7 +214,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 		prf = conf.prof.cur;
 	prf->rsName = rnm;
 	xRomset* rset = findRomset(rnm);
-	char fpath[PATH_MAX];
+	std::string fpath;
 	int romsz = prf->zx->mem->romSize;
 	int foff;
 	int fsze;
@@ -244,10 +225,8 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 		foreach(xRomFile xrf, rset->roms) {
 			foff = xrf.foffset * 1024;
 			roff = xrf.roffset * 1024;
-			strcpy(fpath, conf.path.romDir);
-			strcat(fpath, SLASH);
-			strcat(fpath, xrf.name.c_str());
-			file = fopen(fpath, "rb");
+			fpath = conf.path.romDir + SLASH + xrf.name;
+			file = fopen(fpath.c_str(), "rb");
 			if (file) {
 				if (xrf.fsize <= 0) {			// check part size
 					fseek(file, 0, SEEK_END);
@@ -271,10 +250,8 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 		}
 		memSetSize(prf->zx->mem, -1, romsz);
 // load GS ROM
-		strcpy(fpath, conf.path.romDir);
-		strcat(fpath, SLASH);
-		strcat(fpath, rset->gsFile.c_str());
-		file = fopen(fpath, "rb");
+		fpath = conf.path.confDir + SLASH + rset->gsFile;
+		file = fopen(fpath.c_str(), "rb");
 		if (file) {
 			fread(prf->zx->gs->mem->romData, MEM_32K, 1, file);
 			fclose(file);
@@ -283,10 +260,8 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 		}
 // load ATM2 font data
 		if (!rset->fntFile.empty()) {
-			strcpy(fpath, conf.path.romDir);
-			strcat(fpath, SLASH);
-			strcat(fpath, rset->fntFile.c_str());
-			file = fopen(fpath, "rb");
+			fpath = conf.path.confDir + SLASH + rset->fntFile;
+			file = fopen(fpath.c_str(), "rb");
 			if (file) {
 				fread(prf->zx->vid->font, MEM_2K, 1, file);
 				fclose(file);
@@ -308,10 +283,8 @@ int prfLoad(std::string nm) {
 	Computer* comp = prf->zx;
 	Floppy* flp;
 	int i;
-	char cfname[FILENAME_MAX];
-	strcpy(cfname, conf.path.confDir);
-	strcat(cfname, SLASH);
-	strcat(cfname, prf->file.c_str());
+	//char cfname[FILENAME_MAX];
+	std::string cfname = conf.path.confDir + SLASH + prf->file;
 	std::ifstream file(cfname);
 	std::pair<std::string,std::string> spl;
 	std::string line,pnam,pval;
@@ -328,7 +301,7 @@ int prfLoad(std::string nm) {
 	ATAPassport slavePass = ideGetPassport(comp->ide,IDE_SLAVE);
 	if (!file.good()) {
 		printf("Profile config is missing. Default one will be created\n");
-		copyFile(":/conf/xpeccy.conf", cfname);
+		copyFile(":/conf/xpeccy.conf", cfname.c_str());
 		file.open(cfname, std::ifstream::in);
 	}
 	if (!file.good()) {
@@ -556,11 +529,8 @@ int prfSave(std::string nm) {
 	if (prf == NULL) return PSAVE_NF;
 	Computer* comp = prf->zx;
 
-	char cfname[FILENAME_MAX];
-	strcpy(cfname, conf.path.confDir);
-	strcat(cfname, SLASH);
-	strcat(cfname, prf->file.c_str());
-	FILE* file = fopen(cfname, "wb");
+	std::string cfname = conf.path.confDir + SLASH + prf->file;
+	FILE* file = fopen(cfname.c_str(), "wb");
 	if (!file) {
 		printf("Can't write settings\n");
 		return PSAVE_OF;

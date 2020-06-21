@@ -1,8 +1,9 @@
 #pragma once
 
+#include <QWidget>
+
 #include "libxpeccy/filetypes/filetypes.h"
 #include "libxpeccy/spectrum.h"
-#include <QFileDialog>
 
 enum {
 	FL_NONE = 0,

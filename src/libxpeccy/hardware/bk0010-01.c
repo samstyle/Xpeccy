@@ -2,6 +2,10 @@
 
 #include "hardware.h"
 
+// BK0010
+// dot: 25.175MHz (~40 ns/dot)
+// timer: cpu/128
+
 // hdd
 // ffe0	: wr:com rd:status (7)
 // ffe1 : #17
@@ -366,6 +370,11 @@ sndPair bk_vol(Computer* comp, sndVolume* sv) {
 	vol.left = lev;
 	vol.right = lev;
 	return vol;
+}
+
+void bk_init(Computer* comp) {
+	// int perNoTurbo = 1e3 / comp->cpuFrq;		// ns for full cpu tick
+	vidUpdateTimings(comp->vid, 302);
 }
 
 // keys

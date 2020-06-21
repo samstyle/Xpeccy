@@ -1816,6 +1816,13 @@
                    </widget>
                   </item>
                   <item>
+                   <widget class="QCheckBox" name="cbAddBoot">
+                    <property name="text">
+                     <string>Add boot</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
                    <spacer name="verticalSpacer_29">
                     <property name="orientation">
                      <enum>Qt::Vertical</enum>

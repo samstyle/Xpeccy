@@ -123,7 +123,7 @@ Video* vidCreate(vcbmrd cb, void* dptr) {
 	vid->data = dptr;
 	vidSetMode(vid, VID_UNKNOWN);
 	vLayout vlay = {{448,320},{74,48},{64,32},{256,192},{0,0},64};
-	vidSetLayout(vid, vlay);
+	vidSetLayout(vid, &vlay);
 	vid->inten = 0x01;		// FRAME INT for all
 
 	vid->ula = ulaCreate();
@@ -195,16 +195,14 @@ void vidUpdateLayout(Video* vid) {
 	vidUpdateTimings(vid, vid->nsPerDot);
 }
 
-void vidSetLayout(Video* vid, vLayout lay) {
-	if (vid->lockLayout) return;
-//	vid->lay = lay;
-	vid->full = lay.full;
-	vid->bord = lay.bord;
-	vid->blank = lay.blank;
-	vid->scrn = lay.scr;
-	vid->intp = lay.intpos;
-	vid->intsize = lay.intSize;
-	vid->frmsz = lay.full.x * lay.full.y;
+void vidSetLayout(Video* vid, vLayout* lay) {
+	vid->full = lay->full;
+	vid->bord = lay->bord;
+	vid->blank = lay->blank;
+	vid->scrn = lay->scr;
+	vid->intp = lay->intpos;
+	vid->intsize = lay->intSize;
+	vid->frmsz = lay->full.x * lay->full.y;
 	vidUpdateLayout(vid);
 }
 

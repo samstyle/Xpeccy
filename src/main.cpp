@@ -222,7 +222,7 @@ int main(int ac,char** av) {
 #endif
 
 	if (!hlp) {
-		prfFillBreakpoints(conf.prof.cur);
+//		prfFillBreakpoints(conf.prof.cur);
 		mwin.updateWindow();
 		mwin.checkState();
 		if (dbg) mwin.doDebug();

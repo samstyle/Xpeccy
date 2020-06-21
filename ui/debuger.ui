@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>906</width>
+    <width>915</width>
     <height>648</height>
    </rect>
   </property>
@@ -854,19 +854,6 @@
          </property>
          <property name="popupMode">
           <enum>QToolButton::InstantPopup</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QComboBox" name="cbDasmMode"/>
-       </item>
-       <item>
-        <widget class="QSpinBox" name="sbDasmPage">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="maximum">
-          <number>255</number>
          </property>
         </widget>
        </item>
@@ -2493,6 +2480,140 @@
             <bool>true</bool>
            </property>
           </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="memTab">
+        <attribute name="icon">
+         <iconset resource="../xpeccy.qrc">
+          <normaloff>:/images/memory.png</normaloff>:/images/memory.png</iconset>
+        </attribute>
+        <attribute name="title">
+         <string/>
+        </attribute>
+        <layout class="QHBoxLayout" name="horizontalLayout_9">
+         <item>
+          <widget class="QLabel" name="labMemMap">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>256</width>
+             <height>256</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QWidget" name="widBank" native="true">
+           <layout class="QGridLayout" name="gridLayout_10">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_28">
+              <property name="text">
+               <string>0000</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="xHexSpin" name="numBank0"/>
+            </item>
+            <item row="7" column="1">
+             <widget class="xHexSpin" name="numBank3"/>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="label_48">
+              <property name="text">
+               <string>4000</string>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="1">
+             <widget class="xHexSpin" name="numBank2"/>
+            </item>
+            <item row="9" column="1">
+             <spacer name="verticalSpacer_11">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="6" column="1">
+             <widget class="QComboBox" name="cbBank3"/>
+            </item>
+            <item row="6" column="0">
+             <widget class="QLabel" name="label_60">
+              <property name="text">
+               <string>c000</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="xHexSpin" name="numBank1"/>
+            </item>
+            <item row="4" column="0">
+             <widget class="QLabel" name="label_55">
+              <property name="text">
+               <string>8000</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="1">
+             <widget class="QComboBox" name="cbBank2"/>
+            </item>
+            <item row="2" column="1">
+             <widget class="QComboBox" name="cbBank1"/>
+            </item>
+            <item row="0" column="1">
+             <widget class="QComboBox" name="cbBank0"/>
+            </item>
+            <item row="8" column="1">
+             <widget class="QPushButton" name="pbRestMemMap">
+              <property name="text">
+               <string>Restore</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_5">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>105</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
          </item>
         </layout>
        </widget>

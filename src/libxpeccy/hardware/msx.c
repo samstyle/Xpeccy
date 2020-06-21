@@ -1,6 +1,9 @@
 #include "hardware.h"
 
-// TODO: recheck memory map (A8 port)
+// MSX...
+// master clock		MSX2:21.48MHz | MSX1:10.74
+// v99xx clock		master/4 = 5.37MHz : 2 dots/period	MSX2. MSX1: master/2
+// CPU clock		master/6 = 3.58MHz : 1T = 3 dots	MSX2. MSX1: master/3
 
 typedef struct {
 	int type;
@@ -43,10 +46,10 @@ void msxSetMem(Computer* comp, int bank, int slot) {
 }
 
 void msxMapMem(Computer* comp) {
-	msxSetMem(comp, 0, comp->msx.pA8 & 0x03);
-	msxSetMem(comp, 1, (comp->msx.pA8 & 0x0c) >> 2);
-	msxSetMem(comp, 2, (comp->msx.pA8 & 0x30) >> 4);
-	msxSetMem(comp, 3, (comp->msx.pA8 & 0xc0) >> 6);
+	msxSetMem(comp, 0, comp->ppi->a.val & 0x03);
+	msxSetMem(comp, 1, (comp->ppi->a.val & 0x0c) >> 2);
+	msxSetMem(comp, 2, (comp->ppi->a.val & 0x30) >> 4);
+	msxSetMem(comp, 3, (comp->ppi->a.val & 0xc0) >> 6);
 }
 
 void msxResetSlot(xCartridge* slot) {
@@ -58,7 +61,8 @@ void msxResetSlot(xCartridge* slot) {
 
 void msxReset(Computer* comp) {
 	kbdSetMode(comp->keyb, KBD_MSX);
-	comp->msx.pA8 = 0x00;
+	ppi_reset(comp->ppi);
+	// comp->msx.pA8 = 0x00;
 	comp->reg[0xfc] = 3;
 	comp->reg[0xfd] = 2;
 	comp->reg[0xfe] = 1;
@@ -91,13 +95,27 @@ int msxAYDataIn(Computer* comp, int port) {
 
 // 8255A
 
-int msxA9In(Computer* comp, int port) {
+// write ppi chan A (memory control)
+void msx_ppi_a_wr(int val, void* p) {
+	Computer* comp = (Computer*)p;
+	msxMapMem(comp);
+}
+
+// read ppi chan B (keyboard scan)
+int msx_ppi_b_rd(void* p) {
+	Computer* comp = (Computer*)p;
 	return comp->keyb->msxMap[comp->msx.keyLine];
 }
 
-void msxAAOut(Computer* comp, int port, int val) {
-	comp->msx.pAA = val & 0xff;
+// write ppi chan C (select keyboard row, tape control, tape out, beeper)
+void msx_ppi_cl_wr(int val, void* p) {
+	Computer* comp = (Computer*)p;
 	comp->msx.keyLine = val & 0x0f;
+}
+
+
+void msx_ppi_ch_wr(int val, void* p) {
+	Computer* comp = (Computer*)p;
 	if (val & 0x10) {
 		tapStop(comp->tape);
 	} else {
@@ -107,35 +125,15 @@ void msxAAOut(Computer* comp, int port, int val) {
 	comp->beep->lev = (val & 0x80) ? 1 : 0;
 }
 
-int msxAAIn(Computer* comp, int port) {
-	return comp->msx.pAA;
+int msx_ppi_rd(Computer* comp, int port) {
+	return ppi_rd(comp->ppi, port & 3);
 }
 
-void msxABOut(Computer* comp, int port, int val) {
-	int mask;
-	if (val & 0x80) {
-		comp->ppi.ch.val = val & 0xf0;
-		comp->ppi.cl.val = val & 0x0f;
-	} else {
-		mask = 0x01 << ((val >> 1) & 7);
-		if (val & 1) {
-			msxAAOut(comp, port, comp->msx.pAA | mask);
-		} else {
-			msxAAOut(comp, port, comp->msx.pAA & ~mask);
-		}
-	}
+void msx_ppi_wr(Computer* comp, int port, int val) {
+	ppi_wr(comp->ppi, port & 3, val);
 }
 
 // memory
-
-void msxA8Out(Computer* comp, int port, int val) {
-	comp->msx.pA8 = val & 0xff;
-	msxMapMem(comp);
-}
-
-int msxA8In(Computer* comp, int port) {
-	return comp->msx.pA8;
-}
 
 void msxMemOut(Computer* comp, int port, int val) {
 	comp->reg[port] = val & 0xff;
@@ -149,6 +147,16 @@ void msx9938wr(Computer* comp, int adr, int val) {
 
 int msx9938rd(Computer* comp, int adr) {
 	return vdpRead(comp->vid, adr & 3);
+}
+
+void msx_init(Computer* comp) {
+	int perNoTurbo = (int)(1e3 / comp->cpuFrq);
+	comp->fps = 60;
+	vidUpdateTimings(comp->vid, perNoTurbo * 2 / 3);
+	ppi_set_cb(comp->ppi, comp, NULL, msx_ppi_a_wr,\
+				msx_ppi_b_rd, NULL,\
+				NULL, msx_ppi_ch_wr, \
+				NULL, msx_ppi_cl_wr);
 }
 
 // Port map
@@ -165,14 +173,10 @@ static xPort msxPortMap[] = {
 	{0xff,0xa1,2,2,2,NULL,		msxAYDataOut},	// A1	W	I AY-3-8910 PSG Sound Generator Data write
 	{0xff,0xa2,2,2,2,msxAYDataIn,	NULL},		// A2	R	I AY-3-8910 PSG Sound Generator Data read
 
-	{0xff,0xa8,2,2,2,msxA8In,	msxA8Out},	// A8	RW	I 8255A/ULA9RA041 PPI Port A Memory PSLOT Register (RAM/ROM)
-	{0xff,0xa9,2,2,2,msxA9In,	NULL},		// A9	R	I 8255A/ULA9RA041 PPI Port B Keyboard column inputs
-	{0xff,0xaa,2,2,2,msxAAIn,	msxAAOut},	// AA	RW	I 8255A/ULA9RA041 PPI Port C Kbd Row sel,LED,CASo,CASm
-	{0xff,0xab,2,2,2,NULL,		msxABOut},	// AB	W	I 8255A/ULA9RA041 Mode select and I/O setup of A,B,C
+	{0xfc,0xa8,2,2,2,msx_ppi_rd,	msx_ppi_wr},
 
 	{0xfc,0xfc,2,2,2,NULL,	msxMemOut},		// FC..FF W	RAM pages for memBanks
 
-//	{0x00,0x00,2,2,2,brkIn,brkOut}
 	{0x00,0x00,2,2,2,dummyIn,dummyOut},
 };
 

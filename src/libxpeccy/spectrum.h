@@ -14,6 +14,7 @@ extern "C" {
 #include "hdd.h"
 #include "sdcard.h"
 #include "cartridge.h"
+#include "ppi.h"
 
 #include "sound/ayym.h"
 #include "sound/gs.h"
@@ -84,12 +85,6 @@ typedef struct {
 	unsigned char inten;		// reg D - interrupt mask
 	unsigned char reg[16];
 } c64cia;
-
-typedef struct {
-	unsigned rd:1;
-	int mode;
-	unsigned char val;
-} ppiChan;
 
 typedef struct {
 	unsigned brk:1;			// breakpoint
@@ -186,9 +181,9 @@ typedef struct {
 	unsigned char brkAdrMap[0x10000];	// adr brk
 	unsigned char brkIOMap[0x10000];	// io brk
 
-	unsigned short padr;
-	unsigned char pval;
-
+	int padr;
+	int pval;
+/*
 	struct {				// msx ppi, specialist 580vv55
 		ppiChan a;
 		ppiChan b;
@@ -196,7 +191,8 @@ typedef struct {
 		ppiChan cl;
 		unsigned char ctrl;
 	} ppi;
-
+*/
+	PPI* ppi;
 	struct {
 		unsigned char evoBF;		// PentEvo rw ports
 		unsigned char evo2F;
@@ -232,8 +228,8 @@ typedef struct {
 	} profi;
 	struct {
 		unsigned char keyLine;		// selected keyboard line
-		unsigned char pA8;		// port A8
-		unsigned char pAA;		// port AA
+		// unsigned char pA8;		// port A8
+		// unsigned char pAA;		// port AA
 		unsigned char mFFFF;		// mem FFFF : mapper secondary slot
 		unsigned char pF5;
 		unsigned char pslot[4];
@@ -299,6 +295,7 @@ void compKeyRelease(Computer*, int, keyEntry*);
 void compSetBaseFrq(Computer*,double);
 void compSetTurbo(Computer*,double);
 int compSetHardware(Computer*,const char*);
+void comp_set_layout(Computer*, vLayout*);
 void compUpdateTimings(Computer*);
 
 // read-write cmos

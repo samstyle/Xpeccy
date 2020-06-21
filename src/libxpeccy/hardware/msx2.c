@@ -111,17 +111,13 @@ void msx2mwr(Computer* comp, int adr, int val) {
 
 // mapper
 
-int msx2_A8in(Computer* comp, int port) {
-	return comp->msx.pA8;
-}
-
-void msx2_A8out(Computer* comp, int port, int val) {
-	comp->msx.pA8 = val & 0xff;
+void msx2_ppi_a_wr(int val, void* p) {
+	Computer* comp = (Computer*)p;
+	comp->ppi->a.val = val;
 	comp->msx.pslot[0] = val & 3;
 	comp->msx.pslot[1] = (val >> 2) & 3;
 	comp->msx.pslot[2] = (val >> 4) & 3;
 	comp->msx.pslot[3] = (val >> 6) & 3;
-//	printf("A8 out %.2X (%i,%i,%i,%i)\n",comp->msx.pA8, comp->msx.pslot[0], comp->msx.pslot[1], comp->msx.pslot[2], comp->msx.pslot[3]);
 	msx2mapper(comp);
 }
 
@@ -142,7 +138,9 @@ void msx2Reset(Computer* comp) {
 	vidSetMode(comp->vid, VDP_TEXT1);
 	vdpReset(comp->vid);
 	msxResetSlot(comp->slot);
-	msx2_A8out(comp, 0xa8, 0xf0);
+	ppi_reset(comp->ppi);
+	comp->ppi->a.val = 0xf0;
+	msx2_ppi_a_wr(0xf0, comp);
 	msx2mwr(comp, 0xffff, 0xaa);
 	comp->reg[0xfc] = 3;
 	comp->reg[0xfd] = 2;
@@ -210,16 +208,19 @@ int msx2_b5in(Computer* comp, int port) {
 	return (res & 0x0f);
 }
 
+void msx2_init(Computer* comp) {
+	msx_init(comp);
+	comp->ppi->a.rd = NULL;
+	comp->ppi->a.wr = msx2_ppi_a_wr;
+}
 
 // tab
 
 void msx9938wr(Computer*, int, int);
 int msx9938rd(Computer*, int);
 
-int msxA9In(Computer*, int);
-int msxAAIn(Computer*, int);
-void msxAAOut(Computer*, int, int);
-void msxABOut(Computer*, int, int);
+int msx_ppi_rd(Computer*, int);
+void msx_ppi_wr(Computer*, int, int);
 
 void msxAYIdxOut(Computer*, int, int);
 void msxAYDataOut(Computer*, int, int);
@@ -239,10 +240,7 @@ static xPort msx2ioTab[] = {
 	{0xff,0xa1,2,2,2,NULL,		msxAYDataOut},
 	{0xff,0xa2,2,2,2,msxAYDataIn,	NULL},
 
-	{0xff,0xa8,2,2,2,msx2_A8in,	msx2_A8out},
-	{0xff,0xa9,2,2,2,msxA9In,	NULL},
-	{0xff,0xaa,2,2,2,msxAAIn,	msxAAOut},
-	{0xff,0xab,2,2,2,NULL,		msxABOut},
+	{0xfc,0xa8,2,2,2,msx_ppi_rd,	msx_ppi_wr},		// 8255 ppi
 
 	{0xff,0xb4,2,2,2,NULL,		msx2_b4out},		// b4 : RTC : RP 5C01 (Not in 738) RTC Register select
 	{0xff,0xb5,2,2,2,msx2_b5in,	msx2_b5out},		// b5 : RTC : RP 5C01 (Not in 738) RTC data

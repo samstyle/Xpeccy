@@ -8,6 +8,7 @@
 #include <QMimeData>
 #include <QPainter>
 #include <QDesktopWidget>
+#include <QFileDialog>
 
 #include <fstream>
 #include <unistd.h>
@@ -406,7 +407,7 @@ void MainWin::moveEvent(QMoveEvent* ev) {
 }
 
 void MainWin::menuShow() {
-	layoutMenu->setDisabled(comp->vid->lockLayout);
+	layoutMenu->setDisabled(comp->hw->lay != NULL);
 	pause(true,PR_MENU);
 }
 
@@ -907,25 +908,19 @@ void MainWin::dropEvent(QDropEvent* ev) {
 
 void MainWin::closeEvent(QCloseEvent* ev) {
 	FILE* file;
-	char fname[FILENAME_MAX];
+	std::string fname;
 	pause(true,PR_EXIT);
 	foreach(xProfile* prf, conf.prof.list) {
 		prfSave(prf->name);
-		strcpy(fname, conf.path.confDir);
-		strcat(fname, SLASH);
-		strcat(fname, prf->name.c_str());
-		strcat(fname, ".cmos");
-		file = fopen(fname, "wb");
+		fname = conf.path.confDir + SLASH + prf->name + ".cmos";
+		file = fopen(fname.c_str(), "wb");
 		if (file) {
 			fwrite((const char*)prf->zx->cmos.data,256,1,file);
 			fclose(file);
 		}
 		if (prf->zx->ide->type == IDE_SMUC) {
-			strcpy(fname, conf.path.confDir);
-			strcat(fname, SLASH);
-			strcat(fname, prf->name.c_str());
-			strcat(fname, ".nvram");
-			file = fopen(fname, "wb");
+			fname = conf.path.confDir + SLASH + prf->name + ".nvram";
+			file = fopen(fname.c_str(), "wb");
 			if (file) {
 				fwrite((const char*)prf->zx->ide->smuc.nv->mem,0x800,1,file);
 				fclose(file);
@@ -1098,6 +1093,7 @@ void MainWin::initUserMenu() {
 	pckAct->setCheckable(true);
 	userMenu->addAction(QIcon(":/images/keyboardzx.png"),"ZX Keyboard",this,SIGNAL(s_keywin_shide()));
 	userMenu->addAction(QIcon(":/images/objective.png"),"Watcher", this, SIGNAL(s_watch_show()));
+	userMenu->addAction(QIcon(":/images/bug.png"), "deBUGa", this, SLOT(doDebug()));
 	userMenu->addAction(QIcon(":/images/other.png"),"Options",this,SLOT(doOptions()));
 
 	connect(bookmarkMenu,SIGNAL(triggered(QAction*)),this,SLOT(bookmarkSelected(QAction*)));

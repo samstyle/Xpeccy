@@ -28,7 +28,7 @@ typedef struct {
 
 PPI* ppi_create();
 void ppi_destroy(PPI*);
-
+void ppi_set_cb(PPI*, void*, cbppird, cbppiwr, cbppird, cbppiwr, cbppird, cbppiwr, cbppird, cbppiwr);
 void ppi_reset(PPI*);
 int ppi_rd(PPI*, int adr);
 void ppi_wr(PPI*, int adr, int val);

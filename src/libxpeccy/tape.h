@@ -72,7 +72,6 @@ typedef struct {
 	unsigned oldRec:1;	// previous rec signal
 
 	int time;
-	int t_ns;
 	unsigned char volPlay;
 	int block;
 	int pos;

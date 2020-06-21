@@ -106,6 +106,7 @@ void xHexSpin::setValue(int nval) {
 			pal.setColor(QPalette::Base, conf.pal["dbg.input.bg"].isValid() ? conf.pal["dbg.input.bg"] : pal.base().color());
 			pal.setColor(QPalette::Text, conf.pal["dbg.input.txt"].isValid() ? conf.pal["dbg.input.txt"] : pal.text().color());
 		}
+		emit valueChanged(nval);
 		onChange(value);
 	}
 	setPalette(pal);

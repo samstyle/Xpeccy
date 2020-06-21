@@ -84,7 +84,6 @@ struct Video {
 	int intFRAME;		// aka INT
 	unsigned intLINE:1;	// for TSConf
 	unsigned intDMA:1;	// for TSConf
-	unsigned lockLayout:1;	// fix layout & don't change it by vidSetLayout
 	unsigned noScreen:1;
 	unsigned debug:1;
 	unsigned tail:1;
@@ -291,7 +290,7 @@ void vidSetMode(Video*,int);
 void vidWait(Video*);
 void vidDarkTail(Video*);
 
-void vidSetLayout(Video*, vLayout);
+void vidSetLayout(Video*, vLayout*);
 void vidSetBorder(Video*, double);
 void vidUpdateLayout(Video*);
 void vidUpdateTimings(Video*, int);

@@ -119,7 +119,7 @@ int loadNes(Computer* comp, const char* name, int drv) {
 			slot->irq = 0;
 
 			comp->nes.type = mode;
-			compUpdateTimings(comp);
+			if (comp->hw->init) comp->hw->init(comp);
 
 			switch(mode) {
 				case NES_PAL: comp->msg = nesPal; break;

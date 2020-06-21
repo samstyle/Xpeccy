@@ -4,6 +4,11 @@
 
 #include "../spectrum.h"
 
+// Commodore
+// dotClock	8.18MHz (ntsc) / 7.88MHz (pal)
+// colorCLK	14.31818MHz (ntsc) / 17.734472MHz (pal)
+// CPU clock	~1MHz
+
 #define F_LORAM		1
 #define	F_HIRAM		(1<<1)
 #define	F_CHAREN	(1<<2)
@@ -486,6 +491,12 @@ void cia_sync(c64cia* cia, int ns, int nspt) {
 			cia_irq(cia, CIA_IRQ_TIMB);
 		}
 	}
+}
+
+void c64_init(Computer* comp) {
+	int perNoTurbo = 1e3 / comp->cpuFrq;		// ns for full cpu tick
+	vidUpdateTimings(comp->vid, perNoTurbo >> 3);
+	comp->vid->mrd = c64_vic_mrd;
 }
 
 void c64_sync(Computer* comp, int ns) {

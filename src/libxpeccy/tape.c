@@ -339,7 +339,7 @@ int tapPlay(Tape* tap) {
 	if ((tap->block < tap->blkCount) && !tap->on) {
 		tap->rec = 0;
 		tap->on = 1;
-		tap->sigLen = 0;
+		tap->sigLen = 5e5;
 		// tap->volPlay = (tap->volPlay & 0x80) ? 0x7f : 0x81;
 	}
 	return tap->on;

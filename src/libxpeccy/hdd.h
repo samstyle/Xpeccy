@@ -119,7 +119,7 @@ typedef struct {
 } ATADev;
 
 typedef struct {
-	unsigned char mode;		// mode for F0..FF reading
+	int mode;		// mode for F0..FF reading
 	unsigned char adr;
 	unsigned char data[256];
 } CMOS;

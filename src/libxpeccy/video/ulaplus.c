@@ -15,17 +15,17 @@ void ulaDestroy(ulaPlus* ula) {
 	if (ula) free(ula);
 }
 
-int ulaOut(ulaPlus* ula, unsigned short port, unsigned char val) {
+int ulaOut(ulaPlus* ula, int port, int val) {
 	if (!ula->enabled) return 0;
 	int res = 1;
 	switch (port) {
 		case 0xbf3b:
-			ula->reg = val;
+			ula->reg = val & 0xff;
 			break;
 		case 0xff3b:
 			switch (ula->reg & 0xc0) {
 				case 0x00:		// palette group
-					ula->pal[ula->reg & 0x3f] = val;
+					ula->pal[ula->reg & 0x3f] = val & 0xff;
 					ula->palchan = 1;
 					break;
 				case 0x40:		// mode group
@@ -38,11 +38,10 @@ int ulaOut(ulaPlus* ula, unsigned short port, unsigned char val) {
 			res = 0;
 			break;
 	}
-//	if (res == 1) printf("ULA+ out %.4X,%.2X\n",port,val);
 	return res;
 }
 
-int ulaIn(ulaPlus* ula, unsigned short port, unsigned char* val) {
+int ulaIn(ulaPlus* ula, int port, int* val) {
 	if (!ula->enabled) return 0;
 	int res = 1;
 	switch (port) {
@@ -63,6 +62,5 @@ int ulaIn(ulaPlus* ula, unsigned short port, unsigned char* val) {
 			res = 0;
 			break;
 	}
-//	if (res) printf("ULA+ in %.4X = %.2X\n",port,*val);
 	return res;
 }

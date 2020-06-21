@@ -192,10 +192,10 @@ void ddBE(CPU* cpu) {RDSHIFT(cpu->ix); cpu->tmpb = MEMRD(cpu->mptr,3); CP(cpu->t
 // cb	ddcb prefix	4 3rd
 void ddCB(CPU* cpu) {
 	cpu->opTab = ddcbTab;
-	cpu->tmp = MEMRD(cpu->pc++,3);
-	cpu->tmpb = MEMRD(cpu->pc++,0);		// not M1?
-	cpu->r++;
-	cpu->op = &ddcbTab[cpu->tmpb];
+	cpu->tmp = MEMRD(cpu->pc++,3);		// shift
+	cpu->com = MEMRD(cpu->pc++,0);		// not M1?
+//	cpu->r++;				// NO R incrementation, command read is not M1
+	cpu->op = &ddcbTab[cpu->com];
 	cpu->op->exec(cpu);
 }
 
