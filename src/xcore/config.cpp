@@ -61,7 +61,7 @@ void conf_init(char* wpath) {
 	if (pos != std::string::npos) {
 		conf.path.confDir = conf.path.confDir.substr(0, pos);
 	}
-	conf.path.confDir + "\\config";
+	conf.path.confDir += "\\config";
 	conf.path.romDir = conf.path.confDir + "\\roms";
 	conf.path.confFile = conf.path.confDir + "\\config.conf";
 	conf.path.boot = conf.path.confDir + "\\boot.$B";

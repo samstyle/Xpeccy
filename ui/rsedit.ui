@@ -126,6 +126,14 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>cbFile</tabstop>
+  <tabstop>cbFoffset</tabstop>
+  <tabstop>cbFsize</tabstop>
+  <tabstop>cbRoffset</tabstop>
+  <tabstop>rse_apply</tabstop>
+  <tabstop>rse_cancel</tabstop>
+ </tabstops>
  <resources>
   <include location="../xpeccy.qrc"/>
  </resources>

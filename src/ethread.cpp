@@ -47,8 +47,8 @@ void xThread::tap_catch_load(Computer* comp) {
 				ix++;
 			}
 			comp->cpu->ix = ix;
-			comp->cpu->de = 0;
-			comp->cpu->hl = 0;
+			comp->cpu->de = 0x0000;
+			comp->cpu->hl = 0x0000;
 		} else {
 			comp->cpu->hl = 0xff00;
 		}
@@ -104,7 +104,7 @@ void xThread::emuCycle(Computer* comp) {
 					tap_catch_save(comp);
 				}
 				if (conf.tape.autostart && !conf.tape.fast && ((comp->cpu->pc == 0x5df) || (comp->cpu->pc == 0x53a))) {
-					comp->tape->sigLen += 1e6;
+					comp->tape->sigLen = 1e6;
 					tapNextBlock(comp->tape);
 					tapStop(comp->tape);
 					emit tapeSignal(TW_STATE,TWS_STOP);

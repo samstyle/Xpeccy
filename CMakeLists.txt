@@ -141,6 +141,7 @@ set(QRCFILES ./xpeccy.qrc)
 set(MOCFILES
 	./src/ethread.h
 	./src/emulwin.h
+	./src/xapp.h
 	./src/xgui/debuga/debuger.h
 	./src/xgui/debuga/dbg_sprscan.h
 	./src/xgui/debuga/dbg_memfill.h

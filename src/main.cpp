@@ -1,4 +1,4 @@
-#include <QApplication>
+// #include <QApplication>
 #include <QMessageBox>
 #include <QTimer>
 #include <QDebug>
@@ -12,6 +12,7 @@
 #include "xgui/xgui.h"
 #include "libxpeccy/spectrum.h"
 
+#include "xapp.h"
 #include "emulwin.h"
 #include "xgui/debuga/debuger.h"
 #include "xgui/options/setupwin.h"
@@ -41,6 +42,18 @@ void help() {
 	printf("--style\t\t\tMacOSX only: use native qt style, else 'fusion' will be forced\n");
 }
 
+// for f*cking apple users
+bool xApp::event(QEvent* ev) {
+	if (ev->type() == QEvent::FileOpen) {
+		QFileOpenEvent* fev = static_cast<QFileOpenEvent*>(ev);
+		QString path = fev->url().path();
+		if (conf.prof.cur) {
+			load_file(conf.prof.cur->zx, path.toLocal8Bit().data(), FG_ALL, 0);
+		}
+	}
+	return QApplication::event(ev);
+}
+
 int main(int ac,char** av) {
 
 // NOTE:SDL_INIT_VIDEO must be here for SDL_Joystick event processing. Joystick doesn't works without video init
@@ -60,7 +73,7 @@ int main(int ac,char** av) {
 		QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 		QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 	#endif
-	QApplication app(ac,av,true);
+	xApp app(ac,av,true);
 
 #ifdef _WIN32
 	QStringList paths = QCoreApplication::libraryPaths();
@@ -136,7 +149,9 @@ int main(int ac,char** av) {
 	int lab = 1;
 	xAdr xadr;
 	int tmpi;
+#ifdef __APPLE__
 	int style = 0;
+#endif
 	while (i < ac) {
 		parg = av[i++];
 		if ((strcmp(parg,"-d") == 0) || (strcmp(parg,"--debug") == 0)) {
@@ -144,8 +159,10 @@ int main(int ac,char** av) {
 		} else if (!strcmp(parg,"-h") || !strcmp(parg,"--help")) {
 			help();
 			hlp = 1;
+#ifdef __APPLE__
 		} else if (!strcmp(parg, "--style")) {
 			style = 1;
+#endif
 		} else if (i < ac) {
 			if (!strcmp(parg,"-p") || !strcmp(parg,"--profile")) {
 				mwin.setProfile(std::string(av[i]));

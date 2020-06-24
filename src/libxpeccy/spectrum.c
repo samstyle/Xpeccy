@@ -301,7 +301,7 @@ void compReset(Computer* comp,int res) {
 	comp->rom = (comp->p7FFD & 0x10) ? 1 : 0;
 	comp->cpm = 0;
 
-	kbdReleaseAll(comp->keyb);
+	// kbdReleaseAll(comp->keyb);
 	kbdSetMode(comp->keyb, KBD_SPECTRUM);
 
 	vidReset(comp->vid);
