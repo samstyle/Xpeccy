@@ -115,7 +115,7 @@ static xFileHWInfo fh_tab[] = {
 	{FH_BK, {FG_BKDATA, FG_BKTAPE, FG_BKRAW, FG_BKDISK, 0}},
 	{FH_DISKS, {FG_DISK_A, FG_DISK_B, FG_DISK_C, FG_DISK_D, 0}},
 	{FH_SLOTS, {FG_GAMEBOY, FG_NES, FG_MSX, 0}},
-	{FH_SPCLST, {FG_RKSMEM, /*FG_RKSTAP,*/ 0}},
+	{FH_SPCLST, {FG_RKSMEM, FG_RKSTAP, 0}},
 	{0, {0}}
 };
 

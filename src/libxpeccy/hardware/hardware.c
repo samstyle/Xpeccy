@@ -2,12 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 // layout = v9938:342:313:16:13:57:80:64:0:0:256:192
+// {{full},{border},{blank},{screen},{ipos},ilen}
 
 static vLayout gbcLay = {{228,154},{0,0},{68,10},{160,144},{0,0},64};
 static vLayout bkLay = {{256+96,256+24},{0,0},{96,24},{256,256},{0,0},0};
 static vLayout spclstLay = {{384+16,256+8},{0,0},{16,8},{384,256},{0,0},0};
 static vLayout nesPALLay = {{341,312},{0,0},{85,72},{256,240},{0,0},64};
 static vLayout v9938Lay = {{342,313},{16,13},{57,80},{256,192},{0,0},64};
+static vLayout cmdrLay = {{504,312},{42,42},{100,28},{320,200},{0,0},64};
 
 HardWare hwTab[] = {
 	{
@@ -67,7 +69,7 @@ HardWare hwTab[] = {
 		HW_NES,HWG_NES,"NES","NES",16,MEM_64K,(double)8/7,&nesPALLay,
 		nes_init,nesMaper,NULL,NULL,nesMemRd,nesMemWr,nesReset,nesSync,nes_keyp,nes_keyr,nes_vol
 	},{
-		HW_C64,HWG_COMMODORE,"Commodore64","Commodore64",16,MEM_128K,1.0,NULL,
+		HW_C64,HWG_COMMODORE,"Commodore64","Commodore64",16,MEM_128K,1.0,&cmdrLay,
 		c64_init,c64_maper,NULL,NULL,c64_mrd,c64_mwr,c64_reset,c64_sync,c64_keyp,c64_keyr,c64_vol
 //	},{
 //		HW_NULL,HWG_NULL,"","",16,0,1.0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// separator

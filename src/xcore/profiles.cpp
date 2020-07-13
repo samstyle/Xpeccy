@@ -260,7 +260,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 		}
 // load ATM2 font data
 		if (!rset->fntFile.empty()) {
-			fpath = conf.path.confDir + SLASH + rset->fntFile;
+			fpath = conf.path.romDir + SLASH + rset->fntFile;
 			file = fopen(fpath.c_str(), "rb");
 			if (file) {
 				fread(prf->zx->vid->font, MEM_2K, 1, file);
@@ -357,8 +357,8 @@ int prfLoad(std::string nm) {
 				case PS_VIDEO:
 					if (pnam == "geometry") prf->layName = pval;
 					if (pnam == "4t-border") comp->vid->brdstep = arg.b ? 7 : 1;
-					if (pnam == "ULAplus") comp->vid->ula->enabled = arg.b ? 1 : 0;
-					if (pnam == "DDpal") comp->ddpal = arg.b ? 1 : 0;
+					if (pnam == "ULAplus") comp->vid->ula->enabled = arg.b;
+					if (pnam == "DDpal") comp->ddpal = arg.b;
 					break;
 				case PS_SOUND:
 					if (pnam == "chip1") chatype = arg.i;
@@ -394,9 +394,9 @@ int prfLoad(std::string nm) {
 					if (pnam == "cpu.type") cpuSetType(comp->cpu, getCoreID(arg.s));
 					if (pnam == "cpu.frq") {
 						tmp2 = arg.i;
-						if ((tmp2 > 1) && (tmp2 < 29)) tmp2 *= 5e5;	// old 2..28 -> 500000..14000000
+						if ((tmp2 > 1) && (tmp2 < 58)) tmp2 *= 5e5;	// old 2..28 -> 500000..14000000
 						if (tmp2 < 1e5) tmp2 = 1e5;
-						if (tmp2 > 14e6) tmp2 = 14e6;
+						if (tmp2 > 28e6) tmp2 = 28e6;
 						compSetBaseFrq(comp, tmp2 / 1e6);
 					}
 					if (pnam == "frq.mul") {
@@ -427,9 +427,9 @@ int prfLoad(std::string nm) {
 					if (pnam == "master.chs") {
 						vect = splitstr(pval,"/");
 						if (vect.size() > 2) {
-							masterPass.spt = atoi(vect.at(0).c_str());
-							masterPass.hds = atoi(vect.at(1).c_str());
-							masterPass.cyls = atoi(vect.at(2).c_str());
+							masterPass.spt = atoi(vect.at(0).c_str()) & 0xffff;
+							masterPass.hds = atoi(vect.at(1).c_str()) & 0xffff;
+							masterPass.cyls = atoi(vect.at(2).c_str()) & 0xffff;
 						}
 					}
 					if (pnam == "slave.type") comp->ide->slave->type = arg.i;
@@ -439,9 +439,9 @@ int prfLoad(std::string nm) {
 					if (pnam == "slave.chs") {
 						vect = splitstr(pval,"/");
 						if (vect.size() > 2) {
-							slavePass.spt = atoi(vect.at(0).c_str());
-							slavePass.hds = atoi(vect.at(1).c_str());
-							slavePass.cyls = atoi(vect.at(2).c_str());
+							slavePass.spt = atoi(vect.at(0).c_str()) & 0xffff;
+							slavePass.hds = atoi(vect.at(1).c_str()) & 0xffff;
+							slavePass.cyls = atoi(vect.at(2).c_str()) & 0xffff;
 						}
 					}
 					break;

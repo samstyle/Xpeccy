@@ -53,24 +53,24 @@ int loadRKStap(Computer* comp, const char* name, int drv) {
 	if (file) {
 		int i;
 		int ch;
-		int len;
+		int start;
+		int end;
 		TapeBlock blk;
 		tapEject(comp->tape);
 		blk.data = NULL;
-		blkClear(&blk);			// 255 x bit 0
-		for (i = 0; i < 255; i++)
+		blkClear(&blk);
+		for (i = 0; i < 255-8; i++)	// 255 x bit 0
 			rks_add_0(&blk);
-		ch = fgetc(file);		// start
-		rks_add_byte(&blk, ch);
-		ch = fgetc(file);
-		rks_add_byte(&blk, ch);
-		len = fgetw(file);		// data len
-		rks_add_byte(&blk, len & 0xff);
-		rks_add_byte(&blk, (len >> 8) & 0xff);
-		while (len > 0) {		// data
+		start = fgetw(file);		// start adr
+		rks_add_byte(&blk, start);
+		rks_add_byte(&blk, start >> 8);
+		end = fgetw(file);		// end adr
+		rks_add_byte(&blk, end);
+		rks_add_byte(&blk, end >> 8);
+		while (start < end) {		// data
 			ch = fgetc(file);
 			rks_add_byte(&blk, ch);
-			len--;
+			start++;
 		}
 		rks_add_byte(&blk, 0x00);	// 00,00,e6
 		rks_add_byte(&blk, 0x00);
