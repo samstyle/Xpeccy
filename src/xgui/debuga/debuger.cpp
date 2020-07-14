@@ -759,10 +759,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			activateWindow();
 			break;
 		case XCUT_STEPIN:
-			if (ev->isAutoRepeat())
-				doTrace(ui.actTrace);
-			else
-				doStep();
+			doStep();
 			break;
 		case XCUT_STEPOVER:
 			len = dasmSome(comp, comp->cpu->pc, drow);
@@ -821,10 +818,6 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 }
 
 void DebugWin::keyReleaseEvent(QKeyEvent *ev) {
-	QKeySequence seq(ev->key() | ev->modifiers());
-	if (shortcut_match(SCG_DEBUGA, XCUT_STEPIN, seq) != QKeySequence::NoMatch) {
-		trace = 0;
-	}
 }
 
 void setSignal(QLabel* lab, int on) {
