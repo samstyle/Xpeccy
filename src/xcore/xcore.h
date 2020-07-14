@@ -241,6 +241,7 @@ void set_shortcut_id(int, QKeySequence);
 void set_shortcut_name(const char*, QKeySequence);
 xShortcut* shortcut_tab();
 int shortcut_check(int, QKeySequence);
+int shortcut_match(int, int, QKeySequence);
 
 // bookmarks
 

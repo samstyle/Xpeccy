@@ -667,55 +667,13 @@ void DebugWin::setDasmMode() {
 static QFile logfile;
 
 void DebugWin::doStep() {
-#ifdef ISDEBUG
-	QString str;
-	if (traceType == DBG_TRACE_LOG) {
-#if 0
-		str = gethexword(comp->cpu->pc).append(" ");
-		str.append(QString("A:%0 ").arg(gethexbyte(comp->cpu->a)));
-		str.append(QString("X:%0 ").arg(gethexbyte(comp->cpu->lx)));
-		str.append(QString("Y:%0 ").arg(gethexbyte(comp->cpu->ly)));
-		str.append(QString("P:%0 ").arg(gethexbyte(comp->cpu->f)));
-		str.append(QString("SP:%0 ").arg(gethexbyte(comp->cpu->lsp)));
-		str.append(QString("CYC:%0").arg(comp->vid->ray.x));
-		logfile.write(str.toUtf8());
-		logfile.write("\r\n");
-		if (comp->cpu->pc == 0xc66e)
-			trace = 0;
-#elif 1
-		for (int i = 0; i < 8; i++) {
-			printf("%.4X ", comp->cpu->preg[i]);
-		}
-		printf("%.4X\n", comp->cpu->pflag);
-#endif
-	}
-#endif
 	do {
 		tCount = comp->tickCount;
 		compExec(comp);
-		//int mod;
 		xAdr xadr;
 		if (!fillAll()) {
-			//mod = ui.cbDasmMode->itemData(ui.cbDasmMode->currentIndex()).toInt();
 			xadr = memGetXAdr(comp->mem, comp->cpu->pc);
-			//if (mod == XVIEW_CPU) {
-				disasmAdr = comp->cpu->pc;
-			/*
-			} else {
-				switch(xadr.type) {
-					case MEM_RAM:
-						disasmAdr = comp->cpu->pc;
-						ui.sbDasmPage->setValue(xadr.bank >> 6);
-						ui.cbDasmMode->setCurrentIndex(ui.cbDasmMode->findData(XVIEW_RAM, Qt::UserRole));
-						break;
-					case MEM_ROM:
-						disasmAdr = comp->cpu->pc;
-						ui.sbDasmPage->setValue(xadr.bank >> 6);
-						ui.cbDasmMode->setCurrentIndex(ui.cbDasmMode->findData(XVIEW_ROM, Qt::UserRole));
-						break;
-				}
-			}
-			*/
+			disasmAdr = comp->cpu->pc;
 			fillDisasm();
 		}
 		switch(traceType) {
@@ -734,7 +692,8 @@ void DebugWin::doStep() {
 				printf("%.4X\n", comp->cpu->pflag);
 				break;
 		}
-		if (trace) QApplication::processEvents();
+		if (trace)
+			QApplication::processEvents();
 	} while(trace);
 	ui.tbTrace->setEnabled(true);
 	if (logfile.isOpen()) logfile.close();
@@ -800,7 +759,10 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			activateWindow();
 			break;
 		case XCUT_STEPIN:
-			doStep();
+			if (ev->isAutoRepeat())
+				doTrace(ui.actTrace);
+			else
+				doStep();
 			break;
 		case XCUT_STEPOVER:
 			len = dasmSome(comp, comp->cpu->pc, drow);
@@ -859,6 +821,10 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 }
 
 void DebugWin::keyReleaseEvent(QKeyEvent *ev) {
+	QKeySequence seq(ev->key() | ev->modifiers());
+	if (shortcut_match(SCG_DEBUGA, XCUT_STEPIN, seq) != QKeySequence::NoMatch) {
+		trace = 0;
+	}
 }
 
 void setSignal(QLabel* lab, int on) {

@@ -324,7 +324,7 @@ int key2qid(int key) {
 
 // shortcuts
 
-#define XSCSIZE 50
+#define XSCSIZE 128
 
 static xShortcut short_init[XSCSIZE] = {
 	{SCG_MAIN | SCG_DEBUGA, XCUT_OPTIONS, "key.options", "Options", QKeySequence(Qt::Key_F1)},
@@ -415,6 +415,18 @@ int shortcut_check(int grp, QKeySequence seq) {
 	while (short_tab[i].id >= 0) {
 		if (short_tab[i].seq.matches(seq) && !short_tab[i].seq.isEmpty() && (short_tab[i].grp & grp)) {
 			res = short_tab[i].id;
+		}
+		i++;
+	}
+	return res;
+}
+
+int shortcut_match(int grp, int id, QKeySequence seq) {
+	int res = QKeySequence::NoMatch;
+	int i = 0;
+	while(short_tab[i].id >= 0) {
+		if ((short_tab[i].id == id) && (short_tab[i].grp & grp) && !short_tab[i].seq.isEmpty()) {
+			res = short_tab[i].seq.matches(seq);
 		}
 		i++;
 	}
