@@ -41,6 +41,10 @@ enum {
 	DMP_REG
 };
 
+enum {
+	DBG_EVENT_STEP = QEvent::User
+};
+
 class xItemDelegate : public QItemDelegate {
 	public:
 		xItemDelegate(int);
@@ -179,6 +183,7 @@ class DebugWin : public QDialog {
 
 		void doTrace(QAction*);
 		void doTraceHere();
+		void stopTrace();
 		void doStep();
 
 		void doOpenDump();
@@ -198,4 +203,5 @@ class DebugWin : public QDialog {
 	protected:
 		void keyPressEvent(QKeyEvent*);
 		void keyReleaseEvent(QKeyEvent*);
+		void customEvent(QEvent*);
 };

@@ -154,7 +154,7 @@ void DebugWin::stop() {
 	comp->maping = ui.actMaping->isChecked() ? 1 : 0;
 	tCount = comp->tickCount;
 	winPos = pos();
-	trace = 0;
+	stopTrace();
 
 	memViewer->vis = memViewer->isVisible() ? 1 : 0;
 	memViewer->winPos = memViewer->pos();
@@ -667,36 +667,12 @@ void DebugWin::setDasmMode() {
 static QFile logfile;
 
 void DebugWin::doStep() {
-	do {
 		tCount = comp->tickCount;
 		compExec(comp);
-		xAdr xadr;
 		if (!fillAll()) {
-			xadr = memGetXAdr(comp->mem, comp->cpu->pc);
 			disasmAdr = comp->cpu->pc;
 			fillDisasm();
 		}
-		switch(traceType) {
-			case DBG_TRACE_INT:
-				if (comp->cpu->intrq & comp->cpu->inten)
-					trace = 0;
-				break;
-			case DBG_TRACE_HERE:
-				if (comp->cpu->pc == traceAdr)
-					trace = 0;
-				break;
-			case DBG_TRACE_LOG:
-				for (int i = 0; i < 8; i++) {
-					printf("%.4X ", comp->cpu->preg[i]);
-				}
-				printf("%.4X\n", comp->cpu->pflag);
-				break;
-		}
-		if (trace)
-			QApplication::processEvents();
-	} while(trace);
-	ui.tbTrace->setEnabled(true);
-	if (logfile.isOpen()) logfile.close();
 }
 
 void DebugWin::doTraceHere() {
@@ -718,7 +694,13 @@ void DebugWin::doTrace(QAction* act) {
 	trace = 1;
 	traceAdr = getAdr();
 	ui.tbTrace->setEnabled(false);
-	doStep();
+	QApplication::postEvent(this, new QEvent((QEvent::Type)DBG_EVENT_STEP));
+}
+
+void DebugWin::stopTrace() {
+	trace = 0;
+	ui.tbTrace->setEnabled(true);
+	if (logfile.isOpen()) logfile.close();
 }
 
 void DebugWin::reload() {
@@ -733,7 +715,7 @@ void DebugWin::reload() {
 
 void DebugWin::keyPressEvent(QKeyEvent* ev) {
 	if (trace && !ev->isAutoRepeat()) {
-		trace = 0;
+		stopTrace();
 		return;
 	}
 	int i;
@@ -759,7 +741,11 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			activateWindow();
 			break;
 		case XCUT_STEPIN:
-			doStep();
+			if (!ev->isAutoRepeat()) {
+				doStep();
+			} else if (!trace) {
+				doTrace(ui.actTrace);
+			}
 			break;
 		case XCUT_STEPOVER:
 			len = dasmSome(comp, comp->cpu->pc, drow);
@@ -817,7 +803,34 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 	}
 }
 
-void DebugWin::keyReleaseEvent(QKeyEvent *ev) {
+void DebugWin::keyReleaseEvent(QKeyEvent* ev) {
+	QKeySequence seq(ev->key() | ev->modifiers());
+	if (!ev->isAutoRepeat() && (shortcut_match(SCG_DEBUGA, XCUT_STEPIN, seq) != QKeySequence::NoMatch)) {
+		stopTrace();
+	}
+}
+
+void DebugWin::customEvent(QEvent* ev) {
+	switch(ev->type()) {
+		case DBG_EVENT_STEP:
+			doStep();
+			switch(traceType) {
+				case DBG_TRACE_INT:
+					if (comp->cpu->intrq & comp->cpu->inten)
+						stopTrace();
+					break;
+				case DBG_TRACE_HERE:
+					if (comp->cpu->pc == traceAdr)
+						stopTrace();
+					break;
+			}
+			if (trace) {
+				QApplication::postEvent(this, new QEvent((QEvent::Type)DBG_EVENT_STEP));
+			}
+			break;
+		default:
+			break;
+	}
 }
 
 void setSignal(QLabel* lab, int on) {
