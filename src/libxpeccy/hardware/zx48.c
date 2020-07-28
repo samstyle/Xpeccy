@@ -12,8 +12,25 @@ void speReset(Computer* comp) {
 	vidSetMode(comp->vid, VID_NORMAL);
 }
 
+int zx_slt_rd(int adr, void* ptr) {
+	Computer* comp = (Computer*)ptr;
+	int res = 0xff;
+	if (comp->slot->data) {
+		res = comp->slot->data[adr & comp->slot->memMask];
+	}
+	return res;
+}
+
+void zx_slt_wr(int adr, int val, void* ptr) {
+
+}
+
 void speMapMem(Computer* comp) {
-	memSetBank(comp->mem,0x00,MEM_ROM,(comp->dos) ? 1 : 0, MEM_16K,NULL,NULL,NULL);
+	if (comp->slot->data) {
+		memSetBank(comp->mem,0x00,MEM_SLOT, 0, MEM_16K, zx_slt_rd, zx_slt_wr, comp);
+	} else {
+		memSetBank(comp->mem,0x00,MEM_ROM,(comp->dos) ? 1 : 0, MEM_16K,NULL,NULL,NULL);
+	}
 	memSetBank(comp->mem,0x40,MEM_RAM,5,MEM_16K,NULL,NULL,NULL);		// 101 / x01
 	memSetBank(comp->mem,0x80,MEM_RAM,2,MEM_16K,NULL,NULL,NULL);		// 010 / x10
 	memSetBank(comp->mem,0xc0,MEM_RAM,0,MEM_16K,NULL,NULL,NULL);		// 000 / x00
@@ -38,7 +55,7 @@ static xPort spePortMap[] = {
 	{0x0720,0xffdf,2,2,2,xInFFDF,	NULL},
 	{0x0021,0x001f,0,2,2,spIn1F,	NULL},
 	{0x0000,0x0000,0,2,2,spInFF,	NULL},		// all unknown ports is FF (nodos)
-	{0x0000,0x0000,2,2,2,spInFF,	NULL}
+	{0x0000,0x0000,2,2,2,NULL,	NULL}
 };
 
 void speOut(Computer* comp, int port, int val, int dos) {

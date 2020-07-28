@@ -232,6 +232,7 @@ typedef struct {
 	const char* name;
 	const char* text;
 	QKeySequence seq;
+	QKeySequence def;
 } xShortcut;
 
 void shortcut_init();

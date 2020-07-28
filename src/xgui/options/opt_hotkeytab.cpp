@@ -78,13 +78,20 @@ void xHotkeyTable::set_seq(int id, QKeySequence seq) {
 
 xKeyEditor::xKeyEditor(QWidget* p):QDialog(p) {
 	QVBoxLayout* lay = new QVBoxLayout;
+	QHBoxLayout* hbx = new QHBoxLayout;
 	lab.clear();
+	but.setIcon(QIcon(":/images/ok-apply.png"));
 	but.setText("Confirm");
+	clr.setIcon(QIcon(":/images/cancel.png"));
+	clr.setText("Clear");
 	lab.setAlignment(Qt::AlignCenter);
 	lay->addWidget(&lab);
-	lay->addWidget(&but);
+	hbx->addWidget(&clr);
+	hbx->addWidget(&but);
+	lay->addLayout(hbx);
 	setLayout(lay);
 	setModal(true);
+	connect(&clr, SIGNAL(released()), this, SLOT(clear()));
 	connect(&but, SIGNAL(released()), this, SLOT(okay()));
 }
 
@@ -120,9 +127,14 @@ void xKeyEditor::edit(int f) {
 	foo = f;
 	xShortcut* cut = find_shortcut_id(f);
 	kseq = cut->seq;
-	lab.setText(kseq.isEmpty() ? "<press now>" : kseq.toString());
+	lab.setText(kseq.isEmpty() ? "<no key>" : kseq.toString());
 	grabKeyboard();
 	show();
+}
+
+void xKeyEditor::clear() {
+	kseq = QKeySequence();
+	lab.setText("<no key>");
 }
 
 void xKeyEditor::okay() {

@@ -82,6 +82,8 @@ void aymReset(aymChip* ay) {
 	ay->chanN.step = 0xffff;
 }
 
+static const int ay_val_mask[16] = {0xff,0x0f,0xff,0x0f,0xff,0x0f,0x1f,0xff,0x1f,0x1f,0x1f,0xff,0xff,0x0f,0xff,0xff};
+
 void aymSetReg(aymChip* ay, unsigned char val) {
 	if ((ay->curReg != 14) && (ay->curReg != 15))
 		ay->reg[ay->curReg] = val;
@@ -103,7 +105,6 @@ void aymSetReg(aymChip* ay, unsigned char val) {
 			ay->chanC.per = tone << 4;
 			break;
 		case 0x06:					// noise
-			ay->reg[0x06] &= 0x1f;			// 5bit reg
 			tone = val & 0x1f;
 			ay->chanN.per = (tone + 1) << 6;
 			break;
@@ -148,6 +149,34 @@ void aymSetReg(aymChip* ay, unsigned char val) {
 				ay->reg[15] = val;
 			break;
 	}
+}
+
+// todo: use chip rd/wr procedures
+void aymWr(aymChip* ay, int adr, unsigned char val) {
+	if (adr & 1) {				// set current reg
+		ay->curReg = val;
+		if (ay->type == SND_AY)
+			ay->curReg &= 0x0f;
+	} else {				// write data
+		aymSetReg(ay, val);
+	}
+}
+
+unsigned char aymRd(aymChip* ay, int adr) {
+	unsigned char res = 0xff;
+	if (adr & 1) {
+		switch(ay->curReg) {
+			case 14: if (ay->reg[7] & 0x40) res = ay->reg[14];
+				break;
+			case 15: if (ay->reg[7] & 0x80) res = ay->reg[15];
+				break;
+			default: res = ay->reg[ay->curReg];
+				if (ay->type == SND_AY)
+					res &= ay_val_mask[ay->curReg & 0x0f];
+				break;
+		}
+	}
+	return res;
 }
 
 void aymSync(aymChip* ay, int ns) {
@@ -309,6 +338,9 @@ void tsReset(TSound* ts) {
 	ts->curChip = ts->chipA;
 }
 
+// fffd (a14 = 1)	wr:reg.num	rd:reg.data
+// bffd (a14 = 0)	wr:reg.data	rd:FF
+
 unsigned char tsIn(TSound* ts, int port) {
 	unsigned char res = 0xff;
 	if (port == 0xfffd) {
@@ -322,6 +354,9 @@ unsigned char tsIn(TSound* ts, int port) {
 			default:
 				if (ts->curChip->curReg < 14) res = ts->curChip->reg[ts->curChip->curReg];
 				break;
+		}
+		if (ts->curChip->type == SND_AY) {
+			res &= ay_val_mask[ts->curChip->curReg & 0x0f];
 		}
 	}
 	return res;
@@ -338,10 +373,14 @@ void tsOut(TSound* ts, int port, unsigned char val) {
 					if ((val & 0xf8) == 0xf8) {
 						ts->curChip = (val & 1) ? ts->chipB : ts->chipA;
 					} else {
+						if (ts->curChip->type == SND_AY)
+							val &= 0x0f;
 						ts->curChip->curReg = val;
 					}
 					break;
 				default:
+					if (ts->curChip->type == SND_AY)
+						val &= 0x0f;
 					ts->curChip->curReg = val;
 					break;
 			}

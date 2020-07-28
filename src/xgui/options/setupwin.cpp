@@ -1002,6 +1002,7 @@ struct xMemName {
 };
 
 static xMemName memNameTab[] = {
+	{MEM_16K, "16K"},
 	{MEM_32K, "32K"},
 	{MEM_64K, "64K"},
 	{MEM_128K, "128K"},
@@ -1018,23 +1019,11 @@ void SetupWin::setmszbox(int idx) {
 	int t = list[idx].mask;
 	QString oldText = ui.mszbox->currentText();
 	ui.mszbox->clear();
-	if (t == 0x00) {
-		ui.mszbox->addItem("48K",MEM_64K);
-	} else {
-		int idx = 0;
-		while (memNameTab[idx].mask > 0) {
-			if (t & memNameTab[idx].mask)
-				ui.mszbox->addItem(memNameTab[idx].name, memNameTab[idx].mask);
-			idx++;
-		}
-/*
-		if (t & 1) ui.mszbox->addItem("128K",MEM_128K);
-		if (t & 2) ui.mszbox->addItem("256K",MEM_256K);
-		if (t & 4) ui.mszbox->addItem("512K",512);
-		if (t & 8) ui.mszbox->addItem("1024K",1024);
-		if (t & 16) ui.mszbox->addItem("2048K",2048);
-		if (t & 32) ui.mszbox->addItem("4096K",4096);
-*/
+	idx = 0;
+	while (memNameTab[idx].mask > 0) {
+		if (t & memNameTab[idx].mask)
+			ui.mszbox->addItem(memNameTab[idx].name, memNameTab[idx].mask);
+		idx++;
 	}
 	ui.mszbox->setCurrentIndex(ui.mszbox->findText(oldText));
 	if (ui.mszbox->currentIndex() < 0) ui.mszbox->setCurrentIndex(ui.mszbox->count() - 1);

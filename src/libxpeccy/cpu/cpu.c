@@ -325,6 +325,7 @@ int cpuAsm(CPU* cpu, const char* com, char* buf, unsigned short adr) {
 // get/set reg bunch
 
 static const char noname[] = "undef";
+static char* dumFlags = "--------";
 
 xRegBunch cpuGetRegs(CPU* cpu) {
 	xRegBunch bunch;
@@ -335,7 +336,8 @@ xRegBunch cpuGetRegs(CPU* cpu) {
 		bunch.regs[i].value = 0;
 		bunch.regs[i].byte = 0;
 	}
-	memcpy(bunch.flags, "--------", 8);
+	bunch.flags = dumFlags;
+	//memcpy(bunch.flags, "--------", 8);
 	if (cpu->getregs) cpu->getregs(cpu, &bunch);
 	return bunch;
 }

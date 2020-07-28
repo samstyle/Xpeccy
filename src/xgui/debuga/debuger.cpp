@@ -527,15 +527,15 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	tCount = 0;
 	trace = 0;
 // nes tab
-	ui.nesScrType->addItem(trUtf8("BG off"), NES_SCR_OFF);
-	ui.nesScrType->addItem(trUtf8("BG scr 0"), NES_SCR_0);
-	ui.nesScrType->addItem(trUtf8("BG scr 1"), NES_SCR_1);
-	ui.nesScrType->addItem(trUtf8("BG scr 2"), NES_SCR_2);
-	ui.nesScrType->addItem(trUtf8("BG scr 3"), NES_SCR_3);
-	ui.nesScrType->addItem(trUtf8("All in 1"), NES_SCR_ALL);
+	ui.nesScrType->addItem("BG off", NES_SCR_OFF);
+	ui.nesScrType->addItem("BG scr 0", NES_SCR_0);
+	ui.nesScrType->addItem("BG scr 1", NES_SCR_1);
+	ui.nesScrType->addItem("BG scr 2", NES_SCR_2);
+	ui.nesScrType->addItem("BG scr 3", NES_SCR_3);
+	ui.nesScrType->addItem("All in 1", NES_SCR_ALL);
 
-	ui.nesBGTileset->addItem(trUtf8("Tiles #0000"), NES_TILE_0000);
-	ui.nesBGTileset->addItem(trUtf8("Tiles #1000"), NES_TILE_1000);
+	ui.nesBGTileset->addItem("Tiles #0000", NES_TILE_0000);
+	ui.nesBGTileset->addItem("Tiles #1000", NES_TILE_1000);
 
 	connect(ui.nesScrType,SIGNAL(currentIndexChanged(int)), this, SLOT(drawNes()));
 	connect(ui.nesBGTileset,SIGNAL(currentIndexChanged(int)), this, SLOT(drawNes()));
@@ -796,7 +796,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 		case XCUT_FINDER:
 			doFind();
 			break;
-		case Qt::Key_Escape:
+		case XCUT_DEBUG:
 			if (!ev->isAutoRepeat())
 				stop();
 			break;
@@ -866,9 +866,9 @@ void DebugWin::fillAY() {
 	ui.leToneA->setText(gethexword(((chp->reg[1] << 8) | chp->reg[0]) & 0x0fff));
 	ui.leToneB->setText(gethexword(((chp->reg[3] << 8) | chp->reg[2]) & 0x0fff));
 	ui.leToneC->setText(gethexword(((chp->reg[5] << 8) | chp->reg[4]) & 0x0fff));
-	ui.leVolA->setText(gethexbyte(chp->chanA.vol));
-	ui.leVolB->setText(gethexbyte(chp->chanB.vol));
-	ui.leVolC->setText(gethexbyte(chp->chanC.vol));
+	ui.leVolA->setText(gethexbyte(chp->reg[8] & 0x0f));
+	ui.leVolB->setText(gethexbyte(chp->reg[9] & 0x0f));
+	ui.leVolC->setText(gethexbyte(chp->reg[10] & 0x0f));
 	ui.leMixA->setText(getAYmix(&chp->chanA));
 	ui.leMixB->setText(getAYmix(&chp->chanB));
 	ui.leMixC->setText(getAYmix(&chp->chanC));
@@ -1514,7 +1514,7 @@ void DebugWin::setCPU() {
 		idx++;
 	}
 	cpuSetRegs(cpu, bunch);
-	cpu->imode = ui.boxIM->value();
+	cpu->imode = ui.boxIM->value() & 0xff;
 	cpu->iff1 = ui.flagIFF1->isChecked() ? 1 : 0;
 	cpu->iff2 = ui.flagIFF2->isChecked() ? 1 : 0;
 	fillFlags();
@@ -2198,7 +2198,10 @@ void DebugWin::updateScreen() {
 	flag |= ui.cbScrPix->isChecked() ? 2 : 0;
 	flag |= ui.cbScrGrid->isChecked() ? 4 : 0;
 	vidGetScreen(comp->vid, scrImg.bits(), ui.sbScrBank->value(), ui.leScrAdr->getValue(), flag);
-	xColor bcol = comp->vid->pal[comp->vid->nextbrd];
+	xColor bcol;// = comp->vid->pal[comp->vid->nextbrd];
+	bcol.b = (comp->vid->nextbrd & 1) ? ((comp->vid->nextbrd & 8) ? 0xff : 0xa0) : 0x00;
+	bcol.r = (comp->vid->nextbrd & 2) ? ((comp->vid->nextbrd & 8) ? 0xff : 0xa0) : 0x00;
+	bcol.g = (comp->vid->nextbrd & 4) ? ((comp->vid->nextbrd & 8) ? 0xff : 0xa0) : 0x00;
 	QPainter pnt;
 	QPixmap xpxm(276, 212);
 	pnt.begin(&xpxm);

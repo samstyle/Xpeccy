@@ -13,10 +13,10 @@ static vLayout cmdrLay = {{504,312},{42,42},{100,28},{320,200},{0,0},64};
 
 HardWare hwTab[] = {
 	{
-		HW_DUMMY,HWG_NULL,"Dummy","Dummy",16,MEM_64K,1.0,NULL,
+		HW_DUMMY,HWG_NULL,"Dummy","Dummy",16,MEM_256,1.0,NULL,
 		zx_init,hw_dum_map, hw_dum_iwr, hw_dum_ird, hw_dum_mrd, hw_dum_mwr, NULL, NULL, NULL, NULL, hw_dum_vol
 	},{
-		HW_ZX48,HWG_ZX,"ZX48K","ZX 48K",16,MEM_64K,1.0,NULL,
+		HW_ZX48,HWG_ZX,"ZX48K","ZX 48K",16,MEM_64K | MEM_16K,1.0,NULL,
 		zx_init,speMapMem,speOut,speIn,stdMRd,stdMWr,speReset,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
 		HW_PENT,HWG_ZX,"Pentagon","Pentagon",16,MEM_128K | MEM_512K,1.0,NULL,

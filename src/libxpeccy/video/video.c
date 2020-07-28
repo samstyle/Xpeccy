@@ -256,6 +256,7 @@ void vidGetScreen(Video* vid, unsigned char* dst, int bank, int shift, int flag)
 	unsigned char sbyte, abyte, aink, apap;
 	int prt, lin, row, xpos, bitn, cidx;
 	int sadr, aadr;
+	unsigned char cr,cg,cb;
 	for (prt = 0; prt < 3; prt++) {
 		for (lin = 0; lin < 8; lin++) {
 			for (row = 0; row < 8; row++) {
@@ -268,14 +269,17 @@ void vidGetScreen(Video* vid, unsigned char* dst, int bank, int shift, int flag)
 					apap = (abyte & 0x78) >> 3;
 					for (bitn = 0; bitn < 8; bitn++) {
 						cidx = (sbyte & (128 >> bitn)) ? aink : apap;
+						cb = (cidx & 1) ? ((cidx & 8) ? 0xff : 0xa0) : 0x00;
+						cr = (cidx & 2) ? ((cidx & 8) ? 0xff : 0xa0) : 0x00;
+						cg = (cidx & 4) ? ((cidx & 8) ? 0xff : 0xa0) : 0x00;
 						if ((flag & 4) && ((lin ^ xpos) & 1)) {
-							*(dst++) = ((vid->pal[cidx].r - 0x80) >> 1) + 0x80;
-							*(dst++) = ((vid->pal[cidx].g - 0x80) >> 1) + 0x80;
-							*(dst++) = ((vid->pal[cidx].b - 0x80) >> 1) + 0x80;
+							*(dst++) = ((cr - 0x80) >> 1) + 0x80;
+							*(dst++) = ((cg - 0x80) >> 1) + 0x80;
+							*(dst++) = ((cb - 0x80) >> 1) + 0x80;
 						} else {
-							*(dst++) = vid->pal[cidx].r;
-							*(dst++) = vid->pal[cidx].g;
-							*(dst++) = vid->pal[cidx].b;
+							*(dst++) = cr;
+							*(dst++) = cg;
+							*(dst++) = cb;
 						}
 					}
 				}

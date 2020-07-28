@@ -10,6 +10,13 @@
 #include <QDesktopWidget>
 #include <QFileDialog>
 
+#if QT_VERSION >= 0x050000
+#include <QScreen>
+#define SCREENSIZE screen()->size()
+#else
+#define SCREENSIZE QApplication::desktop()->screenGeometry().size()
+#endif
+
 #include <fstream>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -62,8 +69,9 @@ void MainWin::updateWindow() {
 	vidSetBorder(comp->vid, conf.brdsize);		// to call vidUpdateLayout???
 	int szw;
 	int szh;
+	QSize wsz;
 	if (conf.vid.fullScreen) {
-		QSize wsz = QApplication::desktop()->screenGeometry().size();
+		wsz = SCREENSIZE;
 		szw = wsz.width();
 		szh = wsz.height();
 		setWindowState(windowState() | Qt::WindowFullScreen);
@@ -590,6 +598,7 @@ void MainWin::xkey_press(int xkey) {
 	keyEntry kent = getKeyEntry(xkey);
 	int x;
 	int y;
+	QSize wsz;
 	if (pckAct->isChecked()) {
 		xt_press(comp->keyb, kent.keyCode);
 		if (comp->hw->keyp) {
@@ -607,8 +616,9 @@ void MainWin::xkey_press(int xkey) {
 				updateWindow();
 				saveConfig();
 				if (!conf.vid.fullScreen) {
-					x = (QApplication::desktop()->screenGeometry().width() - width()) / 2;
-					y = (QApplication::desktop()->screenGeometry().height() - height()) / 2;
+					wsz = SCREENSIZE;
+					x = (wsz.width() - width()) / 2;
+					y = (wsz.height() - height()) / 2;
 					move(x, y);
 				}
 				break;
@@ -870,11 +880,12 @@ void MainWin::wheelEvent(QWheelEvent* ev) {
 static int dumove = 0;
 
 void MainWin::mouseMoveEvent(QMouseEvent *ev) {
+	QSize rct;
 	if (!grabMice || conf.emu.pause) return;
 	if (dumove) {			// it was dummy move to center of screen
 		dumove = 0;
 	} else {
-		QRect rct = QApplication::desktop()->screenGeometry();
+		rct = SCREENSIZE;
 		rct.setWidth(rct.width() / 2);
 		rct.setHeight(rct.height() / 2);
 		comp->mouse->xpos += ev->globalX() - rct.width();

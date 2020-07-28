@@ -27,7 +27,7 @@ typedef struct {
 } xRegister;
 
 typedef struct {
-	char flags[8];		// name of flags
+	char* flags;		// name of flags
 	xRegister regs[32];	// registers
 } xRegBunch;
 

@@ -1391,6 +1391,23 @@ static xRegDsc pdp11RegTab[] = {
 };
 
 static char* regNames[8] = {"R0","R1","R2","R3","R4","R5","SP","PC"};
+static char* pdpFlags = "---TNZVC";
+
+unsigned short pdp_get_reg(CPU* cpu, int id) {
+	unsigned short res = 0;
+	switch(id) {
+		case PDP11_REG0: res = cpu->preg[0]; break;
+		case PDP11_REG1: res = cpu->preg[1]; break;
+		case PDP11_REG2: res = cpu->preg[2]; break;
+		case PDP11_REG3: res = cpu->preg[3]; break;
+		case PDP11_REG4: res = cpu->preg[4]; break;
+		case PDP11_REG5: res = cpu->preg[5]; break;
+		case PDP11_REG6: res = cpu->preg[6]; break;
+		case PDP11_REG7: res = cpu->preg[7]; break;
+		case PDP11_REGF: res = cpu->pflag; break;
+	}
+	return res;
+}
 
 void pdp11_get_regs(CPU* cpu, xRegBunch* bunch) {
 	int idx = 0;
@@ -1398,21 +1415,12 @@ void pdp11_get_regs(CPU* cpu, xRegBunch* bunch) {
 		bunch->regs[idx].id = pdp11RegTab[idx].id;
 		bunch->regs[idx].name = pdp11RegTab[idx].name;
 		bunch->regs[idx].byte = pdp11RegTab[idx].byte;
-		switch(pdp11RegTab[idx].id) {
-			case PDP11_REG0: bunch->regs[idx].value = cpu->preg[0]; break;
-			case PDP11_REG1: bunch->regs[idx].value = cpu->preg[1]; break;
-			case PDP11_REG2: bunch->regs[idx].value = cpu->preg[2]; break;
-			case PDP11_REG3: bunch->regs[idx].value = cpu->preg[3]; break;
-			case PDP11_REG4: bunch->regs[idx].value = cpu->preg[4]; break;
-			case PDP11_REG5: bunch->regs[idx].value = cpu->preg[5]; break;
-			case PDP11_REG6: bunch->regs[idx].value = cpu->preg[6]; break;
-			case PDP11_REG7: bunch->regs[idx].value = cpu->preg[7]; break;
-			case PDP11_REGF: bunch->regs[idx].value = cpu->pflag; break;
-		}
+		bunch->regs[idx].value = pdp_get_reg(cpu, pdp11RegTab[idx].id);
 		idx++;
 	}
 	bunch->regs[idx].id = REG_NONE;
-	memcpy(bunch->flags, "---TNZVC", 8);
+	//memcpy(bunch->flags, "---TNZVC", 8);
+	bunch->flags = pdpFlags;
 	cpu->f = cpu->pflag & 0xff;
 }
 

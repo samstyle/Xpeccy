@@ -57,13 +57,13 @@ void xHexSpin::setBase(int b) {
 	rxp = digxp;
 	mx = base;
 	while (mx <= max) {
-		rxp.append(digxp);
 		mx *= base;
 		len++;
 	}
+	rxp.append(QString("{%0}").arg(len));	// 'len' times this char
 
 	setMaxLength(len);
-	setInputMask(QString(len, 'H'));	// to enter overwrite cursor mode. TODO:is there some legit method?
+	setInputMask(QString(len, 'h'));	// to enter overwrite cursor mode. TODO:is there some legit method?
 	vldtr.setRegExp(QRegExp(rxp));		// set available chars
 	hsflag |= XHS_UPD;			// update even if value doesn't changed
 	setValue(tmp);

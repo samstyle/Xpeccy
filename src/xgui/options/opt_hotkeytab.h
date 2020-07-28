@@ -19,11 +19,13 @@ class xKeyEditor : public QDialog {
 		int foo;
 		QLabel lab;
 		QPushButton but;
+		QPushButton clr;
 		QKeySequence kseq;
 		void keyPressEvent(QKeyEvent*);
 		void keyReleaseEvent(QKeyEvent*);
 	private slots:
 		void okay();
+		void clear();
 		void reject();
 };
 

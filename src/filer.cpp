@@ -49,6 +49,7 @@ static xFileTypeInfo ft_tab[] = {
 	{FL_UDI, 1, ".udi", "*.udi", loadUDI, saveUDI, "UDI disk image"},
 	{FL_DSK, 1, ".dsk", "*.dsk", loadDSK, saveDSK, "DSK disk image"},
 	{FL_HOBETA, 0, ".$", "*.$?", loadHobeta, NULL, "Hobeta file"},
+	{FL_IF2_ROM, 0, ".bin", "*.bin", loadSlot, NULL, "IF2 ROM file"},
 	{FL_GB, 0, ".gb", "*.gb", loadSlot, NULL, "GB cartrige"},
 	{FL_GBC, 0, ".gbc", "*.gbc", loadSlot, NULL, "GBC cartrige"},
 	{FL_MSX, 0, ".rom", "*.rom", loadSlot, NULL, "MSX cartrige"},
@@ -88,6 +89,7 @@ static xFileGroupInfo fg_tab[] = {
 	{FG_DISK_C, ".trd", 2, "Disk C", NULL, {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_HOBETA, 0}},
 	{FG_DISK_D, ".trd", 3, "Disk D", NULL, {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_HOBETA, 0}},
 	{FG_RAW, "", 0, "Raw file to disk A", &ft_raw, {FL_RAW, 0}},
+	{FG_IF2_ROM, "", 0, "IF2 ROM", NULL, {FL_IF2_ROM, 0}},
 	{FG_RZX, "", -1, "RZX playback", NULL, {FL_RZX, 0}},
 	{FG_GAMEBOY, "", -1, "GB cartrige", NULL, {FL_GB, FL_GBC, 0}},
 	{FG_MSX, "", -1, "MSX cartrige", NULL, {FL_MSX, FL_MX1, FL_MX2, 0}},
@@ -107,7 +109,7 @@ static xFileGroupInfo fg_tab[] = {
 static xFileGroupInfo fg_dum = {0, "", -1, NULL, NULL, {0}};
 
 static xFileHWInfo fh_tab[] = {
-	{FH_SPECTRUM, {FG_SNAPSHOT, FG_TAPE, FG_DISK_A, FG_DISK_B, FG_DISK_C, FG_DISK_D, FG_RAW, FG_RZX, 0}},
+	{FH_SPECTRUM, {FG_SNAPSHOT, FG_TAPE, FG_DISK_A, FG_DISK_B, FG_DISK_C, FG_DISK_D, FG_RAW, FG_RZX, FG_IF2_ROM, 0}},
 	{FH_GAMEBOY, {FG_GAMEBOY, 0}},
 	{FH_MSX, {FG_MSX, FG_MSXTAPE, 0}},
 	{FH_NES, {FG_NES, 0}},

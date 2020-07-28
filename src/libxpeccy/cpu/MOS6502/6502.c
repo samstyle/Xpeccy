@@ -116,6 +116,8 @@ static xRegDsc m6502RegTab[] = {
 	{REG_NONE, "", 0}
 };
 
+static char* mosFlags = "NV-BDIZC";
+
 void m6502_get_regs(CPU* cpu, xRegBunch* bunch) {
 	int idx = 0;
 	while(m6502RegTab[idx].id != REG_NONE) {
@@ -132,7 +134,8 @@ void m6502_get_regs(CPU* cpu, xRegBunch* bunch) {
 		}
 		idx++;
 	}
-	memcpy(bunch->flags, "NV-BDIZC", 8);
+	//memcpy(bunch->flags, "NV-BDIZC", 8);
+	bunch->flags = mosFlags;
 	bunch->regs[idx].id = REG_NONE;
 }
 

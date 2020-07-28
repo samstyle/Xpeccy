@@ -176,6 +176,8 @@ static xRegDsc lrRegTab[] = {
 	{REG_NONE, "", 0}
 };
 
+static char* lrFlags = "ZNHC----";
+
 void lr_get_regs(CPU* cpu, xRegBunch* bunch) {
 	int idx = 0;
 	while(lrRegTab[idx].id != REG_NONE) {
@@ -193,7 +195,8 @@ void lr_get_regs(CPU* cpu, xRegBunch* bunch) {
 		idx++;
 	}
 	bunch->regs[idx].id = REG_NONE;
-	memcpy(bunch->flags, "ZNHC----", 8);
+	bunch->flags = lrFlags;
+	//memcpy(bunch->flags, "ZNHC----", 8);
 }
 
 void lr_set_regs(CPU* cpu, xRegBunch bunch) {

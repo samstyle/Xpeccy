@@ -89,6 +89,8 @@ static xRegDsc i8080RegTab[] = {
 	{REG_NONE, "", 0}
 };
 
+static char* i8080_flags = "SZ5A3P1C";
+
 void i8080_get_regs(CPU* cpu, xRegBunch* bunch) {
 	int idx = 0;
 	while(i8080RegTab[idx].id != REG_NONE) {
@@ -106,7 +108,8 @@ void i8080_get_regs(CPU* cpu, xRegBunch* bunch) {
 		idx++;
 	}
 	bunch->regs[idx].id = REG_NONE;
-	memcpy(bunch->flags, "SZ5A3P1C", 8);
+	bunch->flags = i8080_flags;
+	//memcpy(bunch->flags, "SZ5A3P1C", 8);
 }
 
 void i8080_set_regs(CPU* cpu, xRegBunch bunch) {

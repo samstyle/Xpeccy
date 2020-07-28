@@ -274,6 +274,8 @@ static xRegDsc z80RegTab[] = {
 	{REG_NONE, "", 0}
 };
 
+static char* z80Flags = "SZ5H3PNC";
+
 void z80_get_regs(CPU* cpu, xRegBunch* bunch) {
 	int idx = 0;
 	while(z80RegTab[idx].id != REG_NONE) {
@@ -300,7 +302,8 @@ void z80_get_regs(CPU* cpu, xRegBunch* bunch) {
 		idx++;
 	}
 	bunch->regs[idx].id = REG_NONE;
-	memcpy(bunch->flags, "SZ5H3PNC", 8);
+	bunch->flags = z80Flags;
+	// memcpy(bunch->flags, "SZ5H3PNC", 8);
 }
 
 void z80_set_regs(CPU* cpu, xRegBunch bunch) {
