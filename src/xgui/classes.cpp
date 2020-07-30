@@ -16,9 +16,10 @@ xHexSpin::xHexSpin(QWidget* p):QLineEdit(p) {
 	value = 0x0000;
 	hsflag = XHS_DEC;
 	len = 6;
-	setValidator(&vldtr);
+	vtxt = "0000";
+	// setValidator(&vldtr);
 	setBase(16);
-	setText("000000");
+	setText(vtxt);
 	connect(this, SIGNAL(textChanged(QString)), SLOT(onTextChange(QString)));
 }
 
@@ -62,7 +63,7 @@ void xHexSpin::setBase(int b) {
 	}
 	rxp.append(QString("{%0}").arg(len));	// 'len' times this char
 
-	setMaxLength(len);
+	// setMaxLength(len);
 	setInputMask(QString(len, 'h'));	// to enter overwrite cursor mode. TODO:is there some legit method?
 	vldtr.setRegExp(QRegExp(rxp));		// set available chars
 	hsflag |= XHS_UPD;			// update even if value doesn't changed
@@ -126,16 +127,28 @@ void xHexSpin::onChange(int val) {
 void xHexSpin::onTextChange(QString txt) {
 	if (txt.size() < len) {
 		txt = txt.leftJustified(len, '0');
+	} else {
+		txt = txt.left(len);
 	}
-	int nval = txt.toInt(NULL, base);
-	int xval = minMaxCorrect(nval, min, max);
-	if (value != xval)
-		setValue(xval);
-	else
-		onChange(value);
+	int pos = 0;
+	if (vldtr.validate(txt, pos) == QValidator::Acceptable) {
+		vtxt = txt;
+		int nval = txt.toInt(NULL, base);
+		int xval = minMaxCorrect(nval, min, max);
+		if (value != xval)
+			setValue(xval);
+		else
+			onChange(value);
+	} else {
+		pos = cursorPosition();		// Qt moves cursor at end of field after setText
+		setText(vtxt);
+		setCursorPosition(pos-1);
+	}
 }
 
 void xHexSpin::keyPressEvent(QKeyEvent* ev) {
+	QString txt;
+	int pos;
 	switch(ev->key()) {
 		case Qt::Key_Up:
 			setValue(minMaxCorrect(value + 1, min, max));
@@ -148,6 +161,17 @@ void xHexSpin::keyPressEvent(QKeyEvent* ev) {
 			break;
 		case Qt::Key_PageDown:
 			setValue(minMaxCorrect(value - 0x100, min, max));
+			break;
+		case Qt::Key_Insert:
+			pos = cursorPosition();
+			txt = vtxt;
+			if (inputMask().isEmpty()) {
+				setInputMask(QString(len,'H'));
+			} else {
+				setInputMask(QString());
+			}
+			setText(txt);
+			setCursorPosition(pos);
 			break;
 		case Qt::Key_X:
 			if (hsflag & XHS_DEC) {

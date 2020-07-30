@@ -2148,7 +2148,6 @@ void DebugWin::doMemView() {
 void DebugWin::doOpenDump() {
 	dumpPath.clear();
 	oui.laPath->clear();
-	// oui.leBank->setText(QString::number(comp->mem->map[0xc0].num >> 6, 16));
 	oui.leStart->setText("C000");
 	openDumpDialog->show();
 }
@@ -2168,14 +2167,14 @@ void DebugWin::chDumpFile() {
 }
 
 void DebugWin::dmpStartOpen() {
-	int start = oui.leStart->text().toInt(NULL,16);
-	int len = oui.leLen->text().toInt(NULL,16);
+	int start = oui.leStart->getValue();
+	int len = oui.leLen->getValue();
 	int pos = oui.leStart->cursorPosition();
 	if (start + len > 0xffff)
 		start = 0x10000 - len;
 	int end = start + len - 1;
-	oui.leStart->setText(QString::number(start,16));
-	oui.leEnd->setText(QString::number(end,16));
+	oui.leStart->setValue(start);
+	oui.leEnd->setValue(end);
 	oui.leStart->setCursorPosition(pos);
 }
 

@@ -21,9 +21,13 @@ int zx_slt_rd(int adr, void* ptr) {
 	return res;
 }
 
-void zx_slt_wr(int adr, int val, void* ptr) {
+void zx_slt_wr(int adr, int val, void* ptr) {}
 
+int zx_rd_ff(int adr, void* ptr) {
+	return 0xff;
 }
+
+void zx_wr_null(int adr, int val, void* ptr) {}
 
 void speMapMem(Computer* comp) {
 	if (comp->slot->data) {
@@ -32,8 +36,12 @@ void speMapMem(Computer* comp) {
 		memSetBank(comp->mem,0x00,MEM_ROM,(comp->dos) ? 1 : 0, MEM_16K,NULL,NULL,NULL);
 	}
 	memSetBank(comp->mem,0x40,MEM_RAM,5,MEM_16K,NULL,NULL,NULL);		// 101 / x01
-	memSetBank(comp->mem,0x80,MEM_RAM,2,MEM_16K,NULL,NULL,NULL);		// 010 / x10
-	memSetBank(comp->mem,0xc0,MEM_RAM,0,MEM_16K,NULL,NULL,NULL);		// 000 / x00
+	if (comp->mem->ramSize > MEM_16K) {
+		memSetBank(comp->mem,0x80,MEM_RAM,2,MEM_16K,NULL,NULL,NULL);		// 010 / x10
+		memSetBank(comp->mem,0xc0,MEM_RAM,0,MEM_16K,NULL,NULL,NULL);		// 000 / x00
+	} else {
+		memSetBank(comp->mem,0x80,MEM_EXT,1,MEM_32K,zx_rd_ff,zx_wr_null,comp);
+	}
 }
 
 // in

@@ -10,7 +10,7 @@
 #include <QDesktopWidget>
 #include <QFileDialog>
 
-#if QT_VERSION >= 0x051400
+#if QT_VERSION >= 0x050e00
 #include <QScreen>
 #define SCREENSIZE screen()->size()
 #else

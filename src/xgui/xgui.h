@@ -43,6 +43,7 @@ class xHexSpin : public QLineEdit {
 		int min;
 		int max;
 		int len;
+		QString vtxt;
 		QRegExpValidator vldtr;
 	protected:
 		void keyPressEvent(QKeyEvent*);
