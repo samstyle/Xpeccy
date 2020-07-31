@@ -36,24 +36,24 @@ void xHexSpin::setBase(int b) {
 		case 8:
 			base = 8;
 			digxp = "[0-7]";
-			setStyleSheet("border:1px solid red;");
+			//setStyleSheet("border:1px solid red;");
 			break;
 		case 10:
 			base = 10;
 			digxp = "[0-9]";
-			setStyleSheet("border:1px solid black;");
+			//setStyleSheet("border:1px solid black;");
 			break;
 		default:
 			base = 16;
 			digxp = "[A-Fa-f0-9]";
-			setStyleSheet("border:1px solid green;");
+			//setStyleSheet("border:1px solid green;");
 			break;
 	}
-	if (conf.prof.cur) {
-		if (base == conf.prof.cur->zx->hw->base) {
-			setStyleSheet("border:1px solid white;");
-		}
-	}
+//	if (conf.prof.cur) {
+//		if (base == conf.prof.cur->zx->hw->base) {
+//			setStyleSheet("border:1px solid white;");
+//		}
+//	}
 	len = 1;
 	rxp = digxp;
 	mx = base;
@@ -110,6 +110,8 @@ void xHexSpin::setValue(int nval) {
 		emit valueChanged(nval);
 		onChange(value);
 	}
+//	if (objectName() == "editReg00")
+//		qDebug() << pal.color(QPalette::Base) << pal.color(QPalette::Text);
 	setPalette(pal);
 }
 
