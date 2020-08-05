@@ -379,8 +379,9 @@ int prfLoad(std::string nm) {
 
 					break;
 				case PS_TAPE:
-					if (pnam == "path" && conf.storePaths)
-						load_file(comp, pval.c_str(), FG_TAPE, 0);
+					if ((pnam == "path") && conf.storePaths) {
+						tape_set_path(comp->tape, pval.c_str());
+					}
 					break;
 				case PS_DISK:
 					if (pnam == "A") setDiskString(comp,comp->dif->fdc->flop[0],pval);
@@ -485,7 +486,10 @@ int prfLoad(std::string nm) {
 		shitHappens(buf);
 		tmp2 = PLOAD_HW;
 		compSetHardware(comp,"Dummy");
-	} else {			// loading files
+	} else if (conf.storePaths) {			// loading files
+		if (comp->tape->path) {
+			load_file(comp, comp->tape->path, FG_TAPE, 0);
+		}
 		for (i = 0; i < 4; i++) {
 			flp = comp->dif->fdc->flop[i];
 			if (flp->path)

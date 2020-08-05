@@ -62,7 +62,6 @@ int loadTAP(Computer* comp, const char* name, int drv) {
 
 	tape->isData = 1;
 	tape_set_path(tape, name);
-	strcpy(tape->path,name);
 
 	return ERR_OK;
 }

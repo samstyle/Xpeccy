@@ -48,7 +48,11 @@ int loadSlot(Computer* comp, const char* name, int drv) {
 		for (tsiz = 0; tsiz < 4; tsiz++) {
 			slot->memMap[tsiz] = 0;
 		}
-		detectType(slot);
+		if (comp->hw->grp == HWG_MSX) {
+			detectType(slot);
+		} else {
+			sltSetMaper(slot, MAPER_MSX, MAP_MSX_NOMAPPER);
+		}
 		fclose(file);
 		char rname[FILENAME_MAX];
 		strcpy(rname, name);
@@ -61,13 +65,19 @@ int loadSlot(Computer* comp, const char* name, int drv) {
 			memset(slot->ram, 0x00, 0x8000);
 		}
 		err = ERR_OK;
+		compReset(comp, RES_DEFAULT);
+		/*
 		switch (comp->hw->grp) {
 			case HWG_MSX:
 			case HWG_NES:
 			case HWG_GB:
 				compReset(comp, RES_DEFAULT);
 				break;
+			default:
+				comp->hw->mapMem(comp);
+				break;
 		}
+		*/
 	}
 	return err;
 }
