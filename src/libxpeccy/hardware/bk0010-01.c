@@ -373,7 +373,6 @@ sndPair bk_vol(Computer* comp, sndVolume* sv) {
 }
 
 void bk_init(Computer* comp) {
-	// int perNoTurbo = 1e3 / comp->cpuFrq;		// ns for full cpu tick
 	vidUpdateTimings(comp->vid, 302);
 }
 

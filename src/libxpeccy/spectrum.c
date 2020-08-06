@@ -408,22 +408,23 @@ void compReset(Computer* comp,int res) {
 //#endif
 //}
 
+void comp_update_timings(Computer* comp) {
+	comp->nsPerTick = 1e3 / comp->cpuFrq;
+	if (comp->hw->init)
+		comp->hw->init(comp);
+	comp->nsPerTick /= comp->frqMul;
+}
+
 void compSetBaseFrq(Computer* comp, double frq) {
 	if (frq > 0)
 		comp->cpuFrq = frq;
-	// compUpdateTimings(comp);
-	if (comp->hw->init)
-		comp->hw->init(comp);
-	comp->nsPerTick = 1e3 / comp->cpuFrq / comp->frqMul;
+	comp_update_timings(comp);
 }
 
 void compSetTurbo(Computer* comp, double mult) {
 	comp->frqMul = mult;
 	comp->cpu->speed = (mult > 1) ? 1 : 0;
-	// compUpdateTimings(comp);
-	if (comp->hw->init)
-		comp->hw->init(comp);
-	comp->nsPerTick = 1e3 / comp->cpuFrq / comp->frqMul;
+	comp_update_timings(comp);
 }
 
 void comp_set_layout(Computer* comp, vLayout* lay) {

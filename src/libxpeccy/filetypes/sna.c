@@ -46,6 +46,12 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 	comp->vid->brdcol = hd.border & 7;
 	comp->vid->nextbrd = hd.border & 7;
 
+	if (comp->cpu->iff1) {
+		comp->cpu->inten |= Z80_INT;
+	} else {
+		comp->cpu->inten &= ~Z80_INT;
+	}
+
 	fread(pageBuf, 0x4000, 1, file);
 	memPutData(comp->mem,MEM_RAM,5,MEM_16K,pageBuf);
 	fread(pageBuf, 0x4000, 1, file);

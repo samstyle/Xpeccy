@@ -81,9 +81,8 @@ int spc_vid_rd(int adr, void* p) {
 }
 
 void spc_init(Computer* comp) {
-	int perNoTurbo = 1e3 / comp->cpuFrq;		// ns for full cpu tick	comp->vid->mrd = spc_vid_rd;
 	vidSetMode(comp->vid, VID_SPCLST);
-	vidUpdateTimings(comp->vid, perNoTurbo >> 2);			// CPU:2MHz, dots:8MHz
+	vidUpdateTimings(comp->vid, comp->nsPerTick >> 2);			// CPU:2MHz, dots:8MHz
 	comp->vid->mrd = spc_vid_rd;
 	ppi_set_cb(comp->ppi, comp, spc_rd_io_a, NULL,\
 				spc_rd_io_b, NULL,\

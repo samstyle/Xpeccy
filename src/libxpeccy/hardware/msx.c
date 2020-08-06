@@ -150,9 +150,8 @@ int msx9938rd(Computer* comp, int adr) {
 }
 
 void msx_init(Computer* comp) {
-	int perNoTurbo = (int)(1e3 / comp->cpuFrq);
 	comp->fps = 60;
-	vidUpdateTimings(comp->vid, perNoTurbo * 2 / 3);
+	vidUpdateTimings(comp->vid, comp->nsPerTick * 2 / 3);
 	ppi_set_cb(comp->ppi, comp, NULL, msx_ppi_a_wr,\
 				msx_ppi_b_rd, NULL,\
 				NULL, msx_ppi_ch_wr, \

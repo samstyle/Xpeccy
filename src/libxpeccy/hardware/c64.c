@@ -494,8 +494,7 @@ void cia_sync(c64cia* cia, int ns, int nspt) {
 }
 
 void c64_init(Computer* comp) {
-	int perNoTurbo = 1e3 / comp->cpuFrq;		// ns for full cpu tick
-	vidUpdateTimings(comp->vid, perNoTurbo >> 3);
+	vidUpdateTimings(comp->vid, comp->nsPerTick >> 3);
 	comp->vid->mrd = c64_vic_mrd;
 }
 
