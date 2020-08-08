@@ -68,6 +68,7 @@ void nesReset(Computer* comp) {
 	vidSetMode(comp->vid, VID_NES);
 }
 
+/*
 int nesMMrd(int adr, void* data) {
 	Computer* comp = (Computer*)data;
 	nesAPU* apu = comp->nesapu;
@@ -176,22 +177,146 @@ void nesMMwr(int adr, int val, void* data) {
 			break;
 	}
 }
+*/
 
-int nesSLrd(int adr, void* data) {
+// 0000..1fff : ram 2K + mirrors
+int nes_ram_rd(int adr, void* ptr) {
+	Computer* comp = (Computer*)ptr;
+	return comp->mem->ramData[adr & 0x7ff] & 0xff;
+}
+
+void nes_ram_wr(int adr, int val, void* ptr) {
+	Computer* comp = (Computer*)ptr;
+	comp->mem->ramData[adr & 0x7ff] = val & 0xff;
+}
+
+// 2000..3fff : 8 PPU registers + mirrors
+int nes_ppu_rd(int adr, void* ptr) {
+	Computer* comp = (Computer*)ptr;
+	return ppuRead(comp->vid, adr & 7);
+}
+
+void nes_ppu_wr(int adr, int val, void* ptr) {
+	Computer* comp = (Computer*)ptr;
+	ppuWrite(comp->vid, adr & 7, val);
+}
+
+// 4000..5fff : IO
+
+int nes_io_rd(int adr, void* ptr) {
+	Computer* comp = (Computer*)ptr;
+	int res = 0xff;
+	if (adr > 0x401f) {
+		res = sltRead(comp->slot, SLT_EXT, adr);
+	} else {
+		switch (adr & 0x1f) {
+			case 0x15:
+				res = 0;
+				if (comp->nesapu->ch0.len) res |= 0x01;
+				if (comp->nesapu->ch1.len) res |= 0x02;
+				if (comp->nesapu->cht.len) res |= 0x04;
+				if (comp->nesapu->chn.len) res |= 0x08;
+				if (comp->nesapu->chd.len) res |= 0x10;
+				if (comp->nesapu->firq) res |= 0x40;
+				if (comp->nesapu->dirq) res |= 0x80;
+				comp->nesapu->firq = 0;
+				break;
+			case 0x16:		// joystick 1
+				res = comp->nes.priJoy & 1;
+				comp->nes.priJoy >>= 1;
+				break;
+			case 0x17:		// joystick 2
+				res = comp->nes.secJoy & 1;
+				comp->nes.secJoy >>= 1;
+				break;
+		}
+	}
+	return res;
+}
+
+void nes_io_wr(int adr, int val, void* ptr) {
+	Computer* comp = (Computer*)ptr;
+	if (adr < 0x4014) {	// 4000..4013 : APU
+		apuWrite(comp->nesapu, adr & 0x1f, val);
+	} else if (adr < 0x4020) {
+		switch (adr & 0x1f) {
+			case 0x14:		// OAMDMA
+				adr = (val << 8);
+				do {
+					comp->vid->oam[comp->vid->oamadr & 0xff] = memRd(comp->mem, adr) & 0xff;
+					comp->vid->oamadr++;
+					adr++;
+				} while (adr & 0xff);
+				comp->cpu->t += 0x202;	// DMA eats 512+1+1 cpu ticks, cpu is halted during operation
+				break;
+			case 0x15:
+				comp->nesapu->ch0.en = (val & 0x01) ? 1 : 0;
+				if (!comp->nesapu->ch0.en) comp->nesapu->ch0.len = 0;
+				comp->nesapu->ch1.en = (val & 0x02) ? 1 : 0;
+				if (!comp->nesapu->ch1.en) comp->nesapu->ch1.len = 0;
+				comp->nesapu->cht.en = (val & 0x04) ? 1 : 0;
+				if (!comp->nesapu->cht.en) comp->nesapu->cht.len = 0;
+				comp->nesapu->chn.en = (val & 0x08) ? 1 : 0;
+				if (!comp->nesapu->chn.en) comp->nesapu->chn.len = 0;
+				comp->nesapu->chd.en = (val & 0x10) ? 1 : 0;
+				if (!comp->nesapu->ch0.en) comp->nesapu->chd.len = 0;
+				comp->nesapu->dirq = 0;
+				break;
+			case 0x16:
+				if (val & 1) {		// b0: 0-1-0 = reload gamepads state
+					comp->nes.priJoy = comp->nes.priPadState;
+					comp->nes.secJoy = comp->nes.secPadState;
+				}
+				break;
+			case 0x17:
+				comp->nesapu->irqen = (val & 0x80) ? 0 : 1;
+				comp->nesapu->step5 = (val & 0x40) ? 1 : 0;
+				comp->nesapu->tstp = 0;
+				break;
+			default:
+				//printf("write %.4X,%.2X\n",adr,val);
+				break;
+		}
+	} else {		// 4020+ -> cartrige IO
+		sltWrite(comp->slot, SLT_EXT, adr, val);
+	}
+}
+
+// 6000..7fff : cartrige ram
+
+int nes_slot_ram_rd(int adr, void* data) {
+	xCartridge* slot = (xCartridge*)data;
+	return sltRead(slot, SLT_RAM, adr);
+}
+
+void nes_slot_ram_wr(int adr, int val, void* data) {
+	xCartridge* slot = (xCartridge*)data;
+	sltWrite(slot, SLT_RAM, adr, val);
+}
+
+// 8000..ffff :  cartrige prg rom
+
+int nes_slot_prg_rd(int adr, void* data) {
 	xCartridge* slot = (xCartridge*)data;
 	return sltRead(slot, SLT_PRG, adr);
 }
 
-void nesSLwr(int adr, int val, void* data) {
+void nes_slot_prg_wr(int adr, int val, void* data) {
 	xCartridge* slot = (xCartridge*)data;
 	sltWrite(slot, SLT_PRG, adr, val);
 }
 
 void nesMaper(Computer* comp) {
-	memSetBank(comp->mem, 0x00, MEM_EXT, 0, MEM_16K, nesMMrd, nesMMwr, comp);
-	memSetBank(comp->mem, 0x40, MEM_EXT, 1, MEM_16K, nesMMrd, nesMMwr, comp);
-	memSetBank(comp->mem, 0x80, MEM_SLOT, 0, MEM_16K, nesSLrd, nesSLwr, comp->slot);
-	memSetBank(comp->mem, 0xc0, MEM_SLOT, 1, MEM_16K, nesSLrd, nesSLwr, comp->slot);
+	memSetBank(comp->mem, 0x00, MEM_RAM, 0, MEM_8K, nes_ram_rd, nes_ram_wr, comp);	// 0000..1FFF ram
+	memSetBank(comp->mem, 0x20, MEM_IO, 0, MEM_8K, nes_ppu_rd, nes_ppu_wr, comp);	// 2000..3FFF ppu
+	memSetBank(comp->mem, 0x40, MEM_IO, 1, MEM_8K, nes_io_rd, nes_io_wr, comp);	// 2000..3FFF ppu
+	memSetBank(comp->mem, 0x60, MEM_SLOT, 0, MEM_8K, nes_slot_ram_rd, nes_slot_ram_wr, comp->slot);	// 6000..7FFF slot (ram)
+	memSetBank(comp->mem, 0x80, MEM_SLOT, 0, MEM_32K, nes_slot_prg_rd, nes_slot_prg_wr, comp->slot);// 8000..FFFF slot (prg)
+
+//	memSetBank(comp->mem, 0x00, MEM_EXT, 0, MEM_16K, nesMMrd, nesMMwr, comp);
+//	memSetBank(comp->mem, 0x40, MEM_EXT, 1, MEM_16K, nesMMrd, nesMMwr, comp);
+//	memSetBank(comp->mem, 0x80, MEM_SLOT, 0, MEM_16K, nesSLrd, nesSLwr, comp->slot);
+//	memSetBank(comp->mem, 0xc0, MEM_SLOT, 1, MEM_16K, nesSLrd, nesSLwr, comp->slot);
 }
 
 void nesSync(Computer* comp, int ns) {
