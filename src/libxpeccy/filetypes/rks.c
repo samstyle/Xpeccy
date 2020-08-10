@@ -59,7 +59,8 @@ int loadRKStap(Computer* comp, const char* name, int drv) {
 		tapEject(comp->tape);
 		blk.data = NULL;
 		blkClear(&blk);
-		for (i = 0; i < 255-8; i++)	// 255 x bit 0
+		blk.vol = 0;
+		for (i = 0; i < 255-7; i++)	// 248 x bit 0
 			rks_add_0(&blk);
 		start = fgetw(file);		// start adr
 		rks_add_byte(&blk, start);

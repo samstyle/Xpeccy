@@ -132,7 +132,7 @@ int iord(int port, void* ptr) {
 	if (comp->brkIOMap[port] & MEM_BRK_RD)
 		comp->brk = 1;
 
-	return comp->hw->in(comp, port, bdiz);
+	return comp->hw->in ? comp->hw->in(comp, port, bdiz) : 0xff;
 }
 
 void iowr(int port, int val, void* ptr) {
