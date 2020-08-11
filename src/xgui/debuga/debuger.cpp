@@ -888,10 +888,12 @@ void DebugWin::fillAY() {
 
 void DebugWin::fillTape() {
 	if (ui.tabsPanel->currentWidget() != ui.tapeTab) return;
-	drawBar(ui.labTapein, comp->tape->volPlay, 256);
-	drawBar(ui.labTapeout, comp->tape->levRec, 1);
-	ui.labSigLen->setText(comp->tape->on ? QString("%0 mks").arg(comp->tape->sigLen) : "");
-	ui.labTapeState->setText(comp->tape->on ? (comp->tape->rec ? "rec" : "play") : "stop");
+	Tape* tape = comp->tape;
+	drawBar(ui.labTapein, tape->volPlay, 256);
+	drawBar(ui.labTapeout, tape->levRec, 1);
+	ui.labSigLen->setText(tape->on ? QString("%0 mks").arg(tape->sigLen) : "");
+	ui.labTapeState->setText(tape->on ? (tape->rec ? "rec" : "play") : "stop");
+	ui.labTapePos->setText(tape->on ? QString::number(tape->pos - 1) : "--");
 	// draw tape diagram
 	int wid = 330;
 	int hei = 100;
@@ -901,7 +903,6 @@ void DebugWin::fillTape() {
 	int oamp = -1;
 	int x = wid / 2;
 	int time = 0;
-	Tape* tape = comp->tape;
 	TapeBlock* blk;
 	QPixmap pxm(wid, hei);
 	QPainter pnt;
@@ -911,7 +912,6 @@ void DebugWin::fillTape() {
 	pnt.drawLine(0, hei/2, wid, hei/2);
 	pnt.drawLine(wid / 2, 0, wid/2, hei);
 	pnt.setPen(Qt::green);
-#if 1
 	if (tape->blkCount > 0) {
 		bnr = tape->block;
 		blk = &tape->blkData[bnr];
@@ -967,78 +967,6 @@ void DebugWin::fillTape() {
 			}
 		}
 	}
-#else
-	bnr = tape->block;
-	if ((tape->blkCount > 0) && (bnr < comp->tape->blkCount) && (bnr >= 0)) {
-		blk = &tape->blkData[bnr];
-		pos = tape->pos;
-		time = tape->on ? tape->sigLen : 0;
-		while (x < wid) {
-			if (pos < blk->sigCount) {		// check end of block
-				amp = blk->data[pos].vol * hei / 256;
-				if (oamp < 0)
-					oamp = amp;
-				while ((time > 0) && (x < wid)) {
-					pnt.drawLine(x, oamp, x + 1, amp);
-					oamp = amp;
-					time -= 20;
-					x++;
-				}
-				time += blk->data[pos].size;
-				pos++;
-			} else {
-				bnr++;
-				if (bnr < tape->blkCount) {	// not the last block
-					blk = &tape->blkData[bnr];
-					pos = 0;
-				} else {			// end of tape: stop
-					x = wid;
-				}
-			}
-		}
-		oamp = -1;
-		x = wid / 2;
-		bnr = tape->block;
-		blk = &tape->blkData[bnr];
-		pos = tape->pos - 1;
-		if (pos < 0) {
-			bnr--;
-			if (bnr < 0) {
-				x = -1;
-			} else {
-				blk = &tape->blkData[bnr];
-				pos = blk->sigCount - 1;
-			}
-		}
-		time = tape->on ? blk->data[pos].size - tape->sigLen : 0;
-		while (x >= 0) {
-			if (pos >= 0) {
-				amp = blk->data[pos].vol * hei / 256;
-				if (oamp < 0)
-					oamp = amp;
-				while ((time > 0) && (x >= 0)) {
-					pnt.drawLine(x, oamp, x - 1, amp);
-					oamp = amp;
-					time -= 20;
-					x--;
-				}
-				pos--;
-				if (pos < 0) {
-					bnr--;
-					if (bnr >= 0) {
-						blk = &tape->blkData[bnr];
-						pos = blk->sigCount - 1;
-						time += blk->data[pos].size;
-					} else {
-						x = -1;
-					}
-				} else {
-					time += blk->data[pos].size;
-				}
-			}
-		}
-	}
-#endif
 	pnt.end();
 	ui.labTapeDiag->setPixmap(pxm);
 }

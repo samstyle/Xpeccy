@@ -30,7 +30,7 @@ int spc_rd_io_b(void* p) {
 	}
 	if (comp->keyb->map[1] != -1)	// HP key
 		res ^= 2;
-	if (comp->tape->volPlay & 0x80)
+	if ((comp->tape->volPlay & 0x80) || !comp->tape->on)	// if tape stopped, signal must be 1
 		res |= 1;
 	return res;
 }

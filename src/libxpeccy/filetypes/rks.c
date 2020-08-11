@@ -60,7 +60,7 @@ int loadRKStap(Computer* comp, const char* name, int drv) {
 		blk.data = NULL;
 		blkClear(&blk);
 		blk.vol = 0;
-		for (i = 0; i < 255-7; i++)	// 248 x bit 0
+		for (i = 0; i < 255-8; i++)	// pilot
 			rks_add_0(&blk);
 		start = fgetw(file);		// start adr
 		rks_add_byte(&blk, start);
@@ -68,7 +68,7 @@ int loadRKStap(Computer* comp, const char* name, int drv) {
 		end = fgetw(file);		// end adr
 		rks_add_byte(&blk, end);
 		rks_add_byte(&blk, end >> 8);
-		while (start < end) {		// data
+		while (start <= end) {		// data
 			ch = fgetc(file);
 			rks_add_byte(&blk, ch);
 			start++;

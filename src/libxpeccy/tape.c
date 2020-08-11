@@ -419,7 +419,7 @@ void tapSync(Tape* tap, int ns) {
 		// tape stoped
 		tap->sigLen -= mks;
 		while (tap->sigLen < 1) {
-			tap->volPlay = 0x7f;
+			tap->volPlay = 0x81;
 			// tap->volPlay = (tap->volPlay & 0x80) ? 0x7f : 0x81;
 			tap->sigLen += 5e5;	// .5 sec
 		}

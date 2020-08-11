@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>915</width>
+    <width>918</width>
     <height>648</height>
    </rect>
   </property>
@@ -1594,33 +1594,6 @@
          </item>
          <item>
           <layout class="QGridLayout" name="gridLayout_9" columnstretch="0,10">
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_12">
-             <property name="text">
-              <string>Tape out</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="label_26">
-             <property name="text">
-              <string>Current</string>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="0">
-            <spacer name="verticalSpacer_9">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>20</width>
-               <height>40</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
            <item row="0" column="1">
             <widget class="QLabel" name="labTapein">
              <property name="text">
@@ -1635,10 +1608,30 @@
              </property>
             </widget>
            </item>
-           <item row="3" column="1">
-            <widget class="QLabel" name="labSigLen">
+           <item row="5" column="0">
+            <widget class="QLabel" name="label_27">
              <property name="text">
-              <string/>
+              <string>State</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="0">
+            <spacer name="verticalSpacer_9">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_12">
+             <property name="text">
+              <string>Tape out</string>
              </property>
             </widget>
            </item>
@@ -1649,15 +1642,36 @@
              </property>
             </widget>
            </item>
-           <item row="4" column="0">
-            <widget class="QLabel" name="label_27">
+           <item row="5" column="1">
+            <widget class="QLabel" name="labTapeState">
              <property name="text">
-              <string>State</string>
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QLabel" name="labSigLen">
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_26">
+             <property name="text">
+              <string>Current</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="label_61">
+             <property name="text">
+              <string>Pos</string>
              </property>
             </widget>
            </item>
            <item row="4" column="1">
-            <widget class="QLabel" name="labTapeState">
+            <widget class="QLabel" name="labTapePos">
              <property name="text">
               <string/>
              </property>
