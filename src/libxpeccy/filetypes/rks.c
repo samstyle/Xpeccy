@@ -6,17 +6,15 @@ int loadRKSmem(Computer* comp, const char* name, int drv) {
 	if (!file) {
 		err = ERR_CANT_OPEN;
 	} else {
-		unsigned short start, end, len;
-		start = fgetw(file);
+		unsigned short adr, end;
+		adr = fgetw(file);
 		end = fgetw(file);
-		len = end - start + 1;
 		int ch;
-		comp->cpu->pc = start;
-		while (len > 0) {
+		comp->cpu->pc = adr;
+		while (adr <= end) {
 			ch = fgetc(file);
-			comp->hw->mwr(comp, start, ch);
-			start++;
-			len--;
+			comp->hw->mwr(comp, adr, ch);
+			adr++;
 		}
 		fclose(file);
 	}

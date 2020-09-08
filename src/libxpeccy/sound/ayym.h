@@ -33,6 +33,40 @@ enum {
 
 #include "sndcommon.h"
 
+typedef struct aymChip aymChip;
+
+// ay-3-8910
+void ay_reset(aymChip*);
+int ay_rd(aymChip*, int);
+void ay_wr(aymChip*, int, int);
+void ay_sync(aymChip*, int);
+sndPair ay_vol(aymChip*);
+
+// yamaha-2149
+//void ym_reset(aymChip*);
+int ym_rd(aymChip*, int);
+void ym_wr(aymChip*, int, int);
+//void ym_sync(aymChip*, int);
+sndPair ym_vol(aymChip*);
+
+typedef void(*sccbwr)(aymChip*, int, int);
+typedef int(*sccbrd)(aymChip*, int);
+typedef void(*sccbsync)(aymChip*, int);
+typedef sndPair(*sccbvol)(aymChip*);
+typedef void(*sccbcmn)(aymChip*);
+
+typedef struct {
+	int id;
+	const char* name;
+	const char* short_name;
+	double frq;
+	sccbcmn res;
+	sccbrd rd;
+	sccbwr wr;
+	sccbsync sync;
+	sccbvol vol;
+} scDesc;
+
 typedef struct {
 	unsigned ten:1;		// tone on
 	unsigned nen:1;		// noise on
@@ -44,11 +78,18 @@ typedef struct {
 	int step;		// env:vol change direction (+1 -1); noise:seed
 } aymChan;
 
-typedef struct {
+struct aymChip {
 	unsigned coarse:1;	// 4-bit DAC volume
-	int type;
 	int stereo;
+
+	int type;
 	double frq;		// in MHz
+	sccbcmn res;
+	sccbrd rd;
+	sccbwr wr;
+	sccbsync sync;
+	sccbvol vol;
+
 	aymChan chanA;
 	aymChan chanB;
 	aymChan chanC;
@@ -59,7 +100,7 @@ typedef struct {
 	int cnt;		// ns countdown
 	unsigned char curReg;
 	unsigned char reg[256];
-} aymChip;
+} ;
 
 typedef struct {
 	int type;
@@ -70,19 +111,20 @@ typedef struct {
 
 void initNoise();
 
-void aymSetType(aymChip*, int);
-int ayGetChanVol(aymChip*, aymChan*);
+void chip_set_type(aymChip*, int);
+//void aymSetType(aymChip*, int);
+//int ayGetChanVol(aymChip*, aymChan*);
 
 TSound* tsCreate(int,int,int);
 void tsDestroy(TSound*);
 void tsReset(TSound*);
-unsigned char tsIn(TSound*,int);
-void tsOut(TSound*,int,unsigned char);
+int tsIn(TSound*,int);
+void tsOut(TSound*,int,int);
 
 void tsSync(TSound*, int);
 
 sndPair tsGetVolume(TSound*);
-sndPair aymGetVolume(aymChip*);
+//sndPair aymGetVolume(aymChip*);
 
 #ifdef __cplusplus
 }

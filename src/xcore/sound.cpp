@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <cmath>
 
 #include "sound.h"
 #include "xcore.h"
@@ -20,15 +21,23 @@ static int sndChunks = 882;
 
 #define DISCRATE 32
 int nsPerSample = 22675;
-static int disCount = 0;
+// static int disCount = 0;
 static sndPair tmpLev = {0, 0};
 static sndPair sndLev;
 
 OutSys* findOutSys(const char*);
 
+static long double H[DISCRATE] = {0};
+
+static int sb_pos = 0;
+static int sp_pos = 0;
+static sndPair smpBuf[128] = {{0,0}};
+
 // output
 
 #include "hardware.h"
+
+#define USEKIH 0
 
 // return 1 when buffer is full
 // NOTE: need sync|flush devices if debug
@@ -44,15 +53,32 @@ int sndSync(Computer* comp) {
 			if (sndLev.left > 0x7fff) sndLev.left = 0x7fff;
 			if (sndLev.right > 0x7fff) sndLev.right = 0x7fff;
 
-			tmpLev.left += sndLev.left;
-			tmpLev.right += sndLev.right;
-			disCount--;
-			if (disCount < 0) {
-				sndLev.left = tmpLev.left / DISCRATE;
-				sndLev.right = tmpLev.right / DISCRATE;
+			smpBuf[sb_pos & 127] = sndLev;
+			sb_pos++;
+			if ((sb_pos % DISCRATE) == 0) {
 				tmpLev.left = 0;
 				tmpLev.right = 0;
-				disCount = DISCRATE - 1;
+#if USEKIH
+				sp_pos = sb_pos - DISCRATE;
+				for (int i = 0; i < DISCRATE; i++) {
+					tmpLev.left += smpBuf[sp_pos & 127].left * H[i];
+					tmpLev.right += smpBuf[sp_pos & 127].right * H[i];
+					sp_pos++;
+				}
+#else
+				sp_pos = sb_pos - DISCRATE;
+				for (int i = 0; i < DISCRATE; i++) {
+					tmpLev.left += smpBuf[sp_pos & 127].left;
+					tmpLev.right += smpBuf[sp_pos & 127].right;
+					sp_pos++;
+				}
+				tmpLev.left /= DISCRATE;
+				tmpLev.right /= DISCRATE;
+#endif
+				sndLev = tmpLev;
+				tmpLev.left = 0;
+				tmpLev.right = 0;
+//				disCount = 0;
 
 				if (!conf.snd.enabled) {
 					sndLev.left = 0;
@@ -243,6 +269,28 @@ OutSys* findOutSys(const char* name) {
 	return res;
 }
 
+void init_kih() {
+	long double Fd = conf.snd.rate * DISCRATE;
+	long double Fs = 20;
+	long double Fx = 40;
+	long double H_id [DISCRATE] = {0};
+	long double W[DISCRATE] = {0};
+	long double Fc = (Fs + Fx) / (2 * Fd);
+	int i;
+	for (i = 0; i < DISCRATE; i++) {
+		if (i == 0) {
+			H_id[i] = 2 * M_PI * Fc;
+		} else {
+			H_id[i] = sinl(2 * M_PI * Fc * i) / (M_PI * i);
+		}
+		W[i] = 0.42 + 0.5 * cosl((2 * M_PI * i) / (DISCRATE - 1)) + 0.08 * cosl((4 * M_PI * i) / (DISCRATE - 1));
+		H[i] = H_id[i] * W[i];
+	}
+	double sum = 0;
+	for (i = 0; i < DISCRATE; i++) sum += H[i];
+	for (i = 0; i < DISCRATE; i++) H[i] /= sum;
+}
+
 void sndInit() {
 	conf.snd.rate = 44100;
 	conf.snd.chans = 2;
@@ -253,6 +301,7 @@ void sndInit() {
 	conf.snd.vol.ay = 100;
 	conf.snd.vol.gs = 100;
 	initNoise();							// ay/ym
+	init_kih();
 }
 
 // debug

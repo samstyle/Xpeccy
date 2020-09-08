@@ -476,8 +476,10 @@ int prfLoad(std::string nm) {
 	ideSetPassport(comp->ide,IDE_MASTER,masterPass);
 	ideSetPassport(comp->ide,IDE_SLAVE,slavePass);
 
-	aymSetType(comp->ts->chipA, chatype);
-	aymSetType(comp->ts->chipB, chbtype);
+	chip_set_type(comp->ts->chipA, chatype);
+	chip_set_type(comp->ts->chipB, chbtype);
+	//aymSetType(comp->ts->chipA, chatype);
+	// aymSetType(comp->ts->chipB, chbtype);
 
 	tmp2 = PLOAD_OK;
 

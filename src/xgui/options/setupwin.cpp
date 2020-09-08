@@ -596,8 +596,10 @@ void SetupWin::apply() {
 	setOutput(nname.c_str());
 	comp->ts->chipA->frq = ui.chip1freq->value();
 	comp->ts->chipB->frq = ui.chip2freq->value();
-	aymSetType(comp->ts->chipA, getRFIData(ui.schip1box));
-	aymSetType(comp->ts->chipB, getRFIData(ui.schip2box));
+	chip_set_type(comp->ts->chipA, getRFIData(ui.schip1box));
+	chip_set_type(comp->ts->chipB, getRFIData(ui.schip2box));
+	//aymSetType(comp->ts->chipA, getRFIData(ui.schip1box));
+	//aymSetType(comp->ts->chipB, getRFIData(ui.schip2box));
 	comp->ts->chipA->stereo = getRFIData(ui.stereo1box);
 	comp->ts->chipB->stereo = getRFIData(ui.stereo2box);
 	comp->ts->type = getRFIData(ui.tsbox);

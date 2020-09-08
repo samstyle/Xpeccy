@@ -214,7 +214,7 @@ sndPair msx_vol(Computer* comp, sndVolume* sv) {
 	sndPair vol;
 	vol.left = amp;
 	vol.right = amp;
-	sndPair tv = aymGetVolume(comp->ts->chipA);
+	sndPair tv = comp->ts->chipA->vol(comp->ts->chipA); // aymGetVolume(comp->ts->chipA);
 	vol.left += tv.left * sv->ay / 100;
 	vol.right += tv.right * sv->ay / 100;
 	return vol;
