@@ -163,16 +163,22 @@ void dasmwr(Computer* comp, int adr, int bt) {
 			pg = &comp->mem->map[(adr >> 8) & 0xffff];
 			fadr = (pg->num << 8) | (adr & 0xff);
 			switch (pg->type) {
-				// no writing to rom or slot
-				case MEM_RAM: comp->mem->ramData[fadr & comp->mem->ramMask] = bt & 0xff; break;
+				// no writings to slot
+				case MEM_ROM:
+					if (conf.dbg.romwr)
+						comp->mem->romData[fadr & comp->mem->romMask] = bt & 0xff;
+					break;
+				case MEM_RAM:
+					comp->mem->ramData[fadr & comp->mem->ramMask] = bt & 0xff;
+					break;
 			}
-//			memWr(comp->mem, adr, bt);
 			break;
 		case XVIEW_RAM:
 			comp->mem->ramData[((adr & 0x3fff) | (page << 14)) & comp->mem->ramMask] = bt & 0xff;
 			break;
 		case XVIEW_ROM:
-			// comp->mem->romData[((adr & 0x3fff) | (page << 14)) & comp->mem->romMask] = bt;
+			if (conf.dbg.romwr)
+				comp->mem->romData[((adr & 0x3fff) | (page << 14)) & comp->mem->romMask] = bt & 0xff;
 			break;
 	}
 }

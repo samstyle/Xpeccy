@@ -83,26 +83,25 @@ void xDumpModel::mwr(int adr, unsigned char bt) {
 			pg = &comp->mem->map[(adr >> 8) & 0xffff];
 			fadr = (pg->num << 8) | (adr & 0xff);
 			switch (pg->type) {
-				// case MEM_ROM: comp->mem->romData[fadr & comp->mem->romMask] = bt; break;
-				case MEM_RAM: comp->mem->ramData[fadr & comp->mem->ramMask] = bt; break;
-//				case MEM_SLOT:
-//					if (!comp->slot) break;
-//					if (!comp->slot->data) break;
-//					comp->slot->data[fadr & comp->slot->memMask] = bt;
-//					break;
+				case MEM_ROM:
+					if (conf.dbg.romwr)
+						comp->mem->romData[fadr & comp->mem->romMask] = bt;
+					break;
+				case MEM_RAM:
+					comp->mem->ramData[fadr & comp->mem->ramMask] = bt;
+					break;
+				case MEM_SLOT:
+					break;
 			}
-//			memWr((*cptr)->mem, adr & 0xffff, bt);
 			break;
 		case XVIEW_RAM:
 			adr &= 0x3fff;
 			adr |= (page << 14);
 			comp->mem->ramData[adr & comp->mem->ramMask] = bt;
 			break;
-// write to ROM?
 		case XVIEW_ROM:
-//			adr &= 0x3fff;
-//			adr |= (page << 14);
-//			comp->mem->romData[adr & comp->mem->romMask] = bt;
+			if (conf.dbg.romwr)
+				comp->mem->romData[((adr & 0x3fff) | (page << 14)) & comp->mem->romMask] = bt;
 			break;
 	}
 }

@@ -2883,6 +2883,14 @@
     <string>Watcher</string>
    </property>
   </action>
+  <action name="actRomWr">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Allow ROM wr</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -2955,11 +2963,11 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
+  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

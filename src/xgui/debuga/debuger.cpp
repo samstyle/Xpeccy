@@ -237,6 +237,7 @@ QWidget* xItemDelegate::createEditor(QWidget* par, const QStyleOptionViewItem&, 
 	return edt;
 }
 
+/*
 int dmpmrd(unsigned short adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	MemPage* pg = &comp->mem->map[(adr >> 8) & 0xff];
@@ -263,6 +264,7 @@ void dmpmwr(unsigned short adr, unsigned char val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	memWr(comp->mem, adr, val);
 }
+*/
 
 DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	int i;
@@ -364,13 +366,6 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.dasmTable->setItemDelegateForColumn(0, xid_labl);
 	ui.dasmTable->setItemDelegateForColumn(1, xid_dump);
 
-//	ui.cbDasmMode->addItem("CPU", XVIEW_CPU);
-//	ui.cbDasmMode->addItem("RAM", XVIEW_RAM);
-//	ui.cbDasmMode->addItem("ROM", XVIEW_ROM);
-
-//	connect(ui.cbDasmMode, SIGNAL(currentIndexChanged(int)),this,SLOT(setDasmMode()));
-//	connect(ui.sbDasmPage, SIGNAL(valueChanged(int)),this,SLOT(setDasmMode()));
-
 // actions
 	ui.tbBreak->addAction(ui.actFetch);
 	ui.tbBreak->addAction(ui.actRead);
@@ -406,6 +401,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.tbDbgOpt->addAction(ui.actShowLabels);
 	ui.tbDbgOpt->addAction(ui.actHideAddr);
 	ui.tbDbgOpt->addAction(ui.actShowSeg);
+	ui.tbDbgOpt->addAction(ui.actRomWr);
 	ui.tbDbgOpt->addAction(ui.actMaping);
 	ui.tbDbgOpt->addAction(ui.actMapingClear);
 
@@ -440,6 +436,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.actShowLabels,SIGNAL(toggled(bool)),this,SLOT(setShowLabels(bool)));
 	connect(ui.actHideAddr,SIGNAL(toggled(bool)),this,SLOT(fillDisasm()));
 	connect(ui.actShowSeg,SIGNAL(toggled(bool)),this,SLOT(setShowSegment(bool)));
+	connect(ui.actRomWr, SIGNAL(toggled(bool)),this,SLOT(setRomWriteable(bool)));
 
 	connect(ui.tbView, SIGNAL(triggered(QAction*)),this,SLOT(chaCellProperty(QAction*)));
 	connect(ui.tbBreak, SIGNAL(triggered(QAction*)),this,SLOT(chaCellProperty(QAction*)));
@@ -642,6 +639,10 @@ void DebugWin::setShowLabels(bool f) {
 void DebugWin::setShowSegment(bool f) {
 	conf.dbg.segment = f ? 1 : 0;
 	fillDisasm();
+}
+
+void DebugWin::setRomWriteable(bool f) {
+	conf.dbg.romwr = f ? 1 : 0;
 }
 
 void DebugWin::setDumpCP() {

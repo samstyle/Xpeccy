@@ -135,6 +135,7 @@ class DebugWin : public QDialog {
 	private slots:
 		void setShowLabels(bool);
 		void setShowSegment(bool);
+		void setRomWriteable(bool);
 		void chDumpView();
 		void setDasmMode();
 		void setDumpCP();

@@ -398,6 +398,7 @@ struct xConfig {
 		unsigned labels:1;
 		unsigned segment:1;
 		unsigned hideadr:1;
+		unsigned romwr:1;
 	} dbg;
 };
 

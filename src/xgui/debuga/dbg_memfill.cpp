@@ -22,6 +22,26 @@ void xMemFiller::metChange() {
 	ui.leMask->setEnabled(ui.cbMethod->currentText() == "Mask");
 }
 
+int xMemFiller::mrd(int adr) {
+	return memRd(mem, adr);
+}
+
+void xMemFiller::mwr(int adr, int val) {
+	MemPage* pg = &mem->map[(adr >> 8) & 0xff];
+	int fadr = (pg->num << 8) | (adr & 0xff);
+	switch(pg->type) {
+		case MEM_RAM:
+			mem->ramData[fadr & mem->ramMask] = val & 0xff;
+			break;
+		case MEM_ROM:
+			if (conf.dbg.romwr)
+				mem->romData[fadr & mem->romMask] = val & 0xff;
+			break;
+		case MEM_SLOT:
+			break;
+	}
+}
+
 void xMemFiller::fill() {
 	QStringList strl = ui.leBytes->text().split(":",QString::SkipEmptyParts);
 	QStringList strm = ui.leMask->text().split(":",QString::SkipEmptyParts);
@@ -47,7 +67,7 @@ void xMemFiller::fill() {
 	unsigned char byt;
 	idx = 0;
 	do {				// fill by pattern and mask
-		byt = memRd(mem, adr & 0xffff);
+		byt = mrd(adr & 0xffff) & 0xff;
 		switch(ui.cbMethod->currentIndex()) {
 			case 0:				// mask
 				byt = (byt & ~msk[idx]) | (pat[idx] & msk[idx]);
@@ -65,7 +85,7 @@ void xMemFiller::fill() {
 				byt ^= pat[idx];
 				break;
 		}
-		memWr(mem, adr & 0xffff, byt);
+		mwr(adr & 0xffff, byt);
 		idx++;
 		if (idx >= psiz)
 			idx = 0;
