@@ -110,6 +110,7 @@ xDumpModel::xDumpModel(QObject* par):QAbstractTableModel(par) {
 	codePage = XCP_1251;
 	mode = XVIEW_CPU;
 	page = 0;
+	dmpadr = 0;
 }
 
 void xDumpModel::setComp(Computer** ptr) {

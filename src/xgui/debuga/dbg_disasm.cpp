@@ -25,6 +25,7 @@ extern unsigned short adr_of_reg(CPU* cpu, bool* flag, QString nam);
 
 xDisasmModel::xDisasmModel(QObject* p):QAbstractTableModel(p) {
 	cptr = NULL;
+	disasmAdr = 0;
 }
 
 int xDisasmModel::columnCount(const QModelIndex&) const {

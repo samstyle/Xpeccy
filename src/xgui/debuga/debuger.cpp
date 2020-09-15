@@ -516,8 +516,8 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	// setFixedSize(size());
 	setFixedHeight(size().height());
 	block = 0;
-	ui.dasmTable->setAdr(0);
-	ui.dumpTable->setAdr(0);
+	// ui.dasmTable->setAdr(0);
+	// ui.dumpTable->setAdr(0);
 	tCount = 0;
 	trace = 0;
 // nes tab
