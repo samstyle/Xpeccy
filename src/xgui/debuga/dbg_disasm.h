@@ -39,6 +39,7 @@ class xDisasmModel : public QAbstractTableModel {
 		bool setData(const QModelIndex&, const QVariant&, int);
 		Computer** cptr;
 		QList<dasmData> dasm;
+		unsigned short disasmAdr;
 	signals:
 		void rqRefill();
 		void s_adrch(int, int);
@@ -57,12 +58,14 @@ class xDisasmTable : public QTableView {
 		void setComp(Computer**);
 		void setMode(int, int);
 		int getMode(int);
+		unsigned short getAdr();
 	signals:
 		void rqRefill();
 		void rqRefillAll();
 	public slots:
 		int updContent();
 		void t_update(int, int);
+		void setAdr(int);
 	private:
 		int markAdr;
 		xDisasmModel* model;

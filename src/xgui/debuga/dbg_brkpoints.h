@@ -34,7 +34,7 @@ class xBreakTable : public QTableView {
 	public slots:
 		void update();
 	signals:
-		void rqDisasm();
+		void rqDisasm(int);
 		void rqDasmDump();
 	private:
 		xBreakListModel* model;

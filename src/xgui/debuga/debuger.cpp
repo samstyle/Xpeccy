@@ -20,9 +20,6 @@ static QColor colBG0(255,255,255);	// background
 static QColor colBG1(230,230,230);	// background alternative
 static QColor colSEL(128,255,128);	// background selected
 
-// unsigned short dumpAdr = 0;
-unsigned short disasmAdr = 0;
-
 int blockStart = -1;
 int blockEnd = -1;
 
@@ -126,8 +123,8 @@ void DebugWin::start(Computer* c) {
 	chaPal();
 	show();
 	if (!fillAll()) {
-		disasmAdr = comp->cpu->pc;
-		fillDisasm();
+		ui.dasmTable->setAdr(comp->cpu->pc);
+		// fillDisasm();
 	}
 	updateScreen();
 
@@ -423,7 +420,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.dumpTable,SIGNAL(rqRefill()),this,SLOT(updateScreen()));
 	connect(ui.dumpTable->selectionModel(), SIGNAL(currentChanged(QModelIndex, QModelIndex)), this, SLOT(dumpChadr(QModelIndex)));
 
-	connect(ui.bpList,SIGNAL(rqDisasm()),this,SLOT(fillDisasm()));
+	connect(ui.bpList,SIGNAL(rqDisasm(int)),ui.dasmTable,SLOT(setAdr(int)));
 	connect(ui.bpList,SIGNAL(rqDasmDump()),this,SLOT(fillDisasm()));
 	connect(ui.bpList,SIGNAL(rqDasmDump()),this,SLOT(fillDump()));
 
@@ -519,7 +516,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	// setFixedSize(size());
 	setFixedHeight(size().height());
 	block = 0;
-	disasmAdr = 0;
+	ui.dasmTable->setAdr(0);
 	ui.dumpTable->setAdr(0);
 	tCount = 0;
 	trace = 0;
@@ -671,8 +668,8 @@ void DebugWin::doStep() {
 		tCount = comp->tickCount;
 		compExec(comp);
 		if (!fillAll()) {
-			disasmAdr = comp->cpu->pc;
-			fillDisasm();
+			ui.dasmTable->setAdr(comp->cpu->pc);
+			//fillDisasm();
 		}
 }
 
@@ -707,7 +704,7 @@ void DebugWin::stopTrace() {
 void DebugWin::reload() {
 	if (comp->mem->snapath) {
 		load_file(comp, comp->mem->snapath, FG_SNAPSHOT, 0);
-		disasmAdr = comp->cpu->pc;
+		ui.dasmTable->setAdr(comp->cpu->pc);
 		fillAll();
 	}
 	if (!conf.labpath.isEmpty())
@@ -733,8 +730,8 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			break;
 		case XCUT_LOAD:
 			load_file(comp, NULL, FG_ALL, -1);
-			disasmAdr = comp->cpu->pc;
-			fillAll();
+			ui.dasmTable->setAdr(comp->cpu->pc);
+			//fillAll();
 			activateWindow();
 			break;
 		case XCUT_SAVE:
@@ -774,8 +771,8 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			rzxStop(comp);
 			compReset(comp, RES_DEFAULT);
 			if (!fillAll()) {
-				disasmAdr = comp->cpu->pc;
-				fillDisasm();
+				ui.dasmTable->setAdr(comp->cpu->pc);
+				//fillDisasm();
 			}
 			break;
 		case XCUT_TRACE:
@@ -1290,8 +1287,8 @@ void DebugWin::regClick(QMouseEvent* ev) {
 			fillDump();
 			break;
 		case Qt::LeftButton:
-			disasmAdr = val;
-			fillDisasm();
+			ui.dasmTable->setAdr(val);
+			// fillDisasm();
 			break;
 		default:
 			break;
@@ -2048,13 +2045,13 @@ void DebugWin::saveDumpToDisk(int idx) {
 
 void DebugWin::doFind() {
 	memFinder->mem = comp->mem;
-	memFinder->adr = (disasmAdr + 1) & 0xffff;
+	memFinder->adr = (ui.dasmTable->getAdr() + 1) & 0xffff;
 	memFinder->show();
 }
 
 void DebugWin::onFound(int adr) {
-	disasmAdr = adr & 0xffff;
-	fillDisasm();
+	ui.dasmTable->setAdr(adr & 0xffff);
+	// fillDisasm();
 }
 
 // memfiller
@@ -2073,6 +2070,33 @@ void DebugWin::doMemView() {
 }
 
 // open dump
+
+void dbg_mem_wr(Computer* comp, int adr, unsigned char bt) {
+	MemPage* pg = &comp->mem->map[(adr >> 8) & 0xff];
+	int fadr = (pg->num << 8) | (adr & 0xff);
+	switch (pg->type) {
+		case MEM_RAM:
+			comp->mem->ramData[fadr & comp->mem->ramMask] = bt;
+			break;
+		case MEM_ROM:
+			if (conf.dbg.romwr)
+				comp->mem->romData[fadr & comp->mem->romMask] = bt;
+			break;
+	}
+}
+
+int loadDUMP(Computer* comp, const char* name, int adr) {
+	FILE* file = fopen(name, "rb");
+	if (!file) return ERR_CANT_OPEN;
+	int bt;
+	while (adr < 0x10000) {
+		bt = fgetc(file);
+		if (feof(file)) break;
+		dbg_mem_wr(comp, adr & 0xffff, bt & 0xff);
+		adr++;
+	}
+	return ERR_OK;
+}
 
 void DebugWin::doOpenDump() {
 	dumpPath.clear();
@@ -2195,8 +2219,8 @@ void DebugWin::goToBrk(QModelIndex idx) {
 			break;
 	}
 	if (adr < 0) return;
-	disasmAdr = adr & 0xffff;
-	fillDisasm();
+	ui.dasmTable->setAdr(adr & 0xffff);
+	// fillDisasm();
 }
 
 void DebugWin::saveBrk(QString path) {

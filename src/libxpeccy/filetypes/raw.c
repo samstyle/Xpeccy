@@ -20,7 +20,7 @@ int loadRaw(Computer* comp, const char* name, int drv) {
 	int err = ERR_OK;
 
 	fseek(file, 0, SEEK_END);
-	size_t len = ftell(file);
+	int len = ftell(file);
 	rewind(file);
 
 //	if (len > 0xff00) {
@@ -33,7 +33,7 @@ int loadRaw(Computer* comp, const char* name, int drv) {
 		if (diskGetType(flp) != DISK_TYPE_TRD) {
 			err = ERR_NOTRD;
 		} else {
-			char fpath[PATH_MAX];
+			char fpath[FILENAME_MAX];
 			char fnam[FILENAME_MAX];
 			char fext[FILENAME_MAX];
 			memset(fnam,' ',FILENAME_MAX);
@@ -89,7 +89,7 @@ int saveRawFile(Floppy* flp, int num, const char* dir) {
 	memset(name, 0x00, 9);
 	strncpy(name, (char*)dsc.name, 8);
 	cutSpaces(name);
-	char path[PATH_MAX];
+	char* path = (char*)malloc(strlen(dir) + strlen(name) + 4);
 	strcpy(path, dir);		// dir/name.e
 	strcat(path, SLASH);
 	strcat(path, name);
@@ -105,21 +105,7 @@ int saveRawFile(Floppy* flp, int num, const char* dir) {
 	}
 	fwrite((char*)buf, len, 1, file);
 	fclose(file);
+	free(path);
 
-	return ERR_OK;
-}
-
-// dump (direct to mem)
-
-int loadDUMP(Computer* comp, const char* name, int adr) {
-	FILE* file = fopen(name, "rb");
-	if (!file) return ERR_CANT_OPEN;
-	int bt;
-	while (adr < 0x10000) {
-		bt = fgetc(file);
-		if (feof(file)) break;
-		memWr(comp->mem, adr & 0xffff, bt & 0xff);
-		adr++;
-	}
 	return ERR_OK;
 }

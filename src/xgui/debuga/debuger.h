@@ -206,3 +206,5 @@ class DebugWin : public QDialog {
 		void keyReleaseEvent(QKeyEvent*);
 		void customEvent(QEvent*);
 };
+
+int loadDUMP(Computer*, const char*, int);

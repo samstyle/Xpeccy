@@ -7,7 +7,6 @@
 #include <QPainter>
 #include <QHeaderView>
 
-extern unsigned short disasmAdr;
 extern int blockStart;
 extern int blockEnd;
 
@@ -21,8 +20,6 @@ static int mode = XVIEW_CPU;
 static int page = 0;
 
 extern unsigned short adr_of_reg(CPU* cpu, bool* flag, QString nam);
-
-// TODO: comp as external data & data request on update
 
 // MODEL
 
@@ -430,6 +427,8 @@ int xDisasmModel::fill() {
 }
 
 int xDisasmModel::update() {
+	if (cptr == NULL) return 0;
+	if (*cptr == NULL) return 0;
 	int res = fill();
 	int i;
 	xMnem mnm = cpuDisasm((*cptr)->cpu, (*cptr)->cpu->pc, NULL, dasmrd, *cptr);
@@ -694,6 +693,15 @@ void xDisasmTable::setMode(int md, int pg) {
 	updContent();
 }
 
+unsigned short xDisasmTable::getAdr() {
+	return model->disasmAdr;
+}
+
+void xDisasmTable::setAdr(int adr) {
+	model->disasmAdr = adr & 0xffff;
+	updContent();
+}
+
 int xDisasmTable::updContent() {
 	int res = model->update();
 	clearSpans();
@@ -759,18 +767,18 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			break;
 		case Qt::Key_PageUp:
 			for (i = 0; i < rows() - 1; i++) {
-				disasmAdr = getPrevAdr(*cptr, disasmAdr);
+				model->disasmAdr = getPrevAdr(*cptr, model->disasmAdr);
 			}
 			updContent();
 			break;
 		case Qt::Key_PageDown:
-			disasmAdr = getData(rows() - 1, 0, Qt::UserRole).toInt() & 0xffff;
+			model->disasmAdr = getData(rows() - 1, 0, Qt::UserRole).toInt() & 0xffff;
 			updContent();
 			break;
 		case XCUT_TOPC:
 			if (mode != XVIEW_CPU) break;
 			if (!cptr) break;
-			disasmAdr = (*cptr)->cpu->pc;
+			model->disasmAdr = (*cptr)->cpu->pc;
 			updContent();
 			break;
 		case XCUT_SETPC:
@@ -829,13 +837,13 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			if (!idx.isValid()) break;
 			adr = model->dasm[idx.row()].oadr;
 			if (adr < 0) break;
-			history.append(disasmAdr);
-			disasmAdr = adr & 0xffff;
+			history.append(model->disasmAdr);
+			model->disasmAdr = adr & 0xffff;
 			updContent();
 			break;
 		case XCUT_RETFROM:
 			if (history.size() < 1) break;
-			disasmAdr = history.takeLast();
+			model->disasmAdr = history.takeLast();
 			updContent();
 			break;
 		case Qt::Key_Return:
@@ -910,20 +918,20 @@ void xDisasmTable::mouseMoveEvent(QMouseEvent* ev) {
 void xDisasmTable::scrolDn(Qt::KeyboardModifiers mod) {
 	int i = 1;
 	if (mod & Qt::ControlModifier) {
-		disasmAdr++;
+		model->disasmAdr++;
 	} else {
-		while (disasmAdr == model->dasm[i].adr)
+		while (model->disasmAdr == model->dasm[i].adr)
 			i++;
-		disasmAdr = model->dasm[i].adr;
+		model->disasmAdr = model->dasm[i].adr;
 	}
 	updContent();
 }
 
 void xDisasmTable::scrolUp(Qt::KeyboardModifiers mod) {
 	if (mod & Qt::ControlModifier) {
-		disasmAdr--;
+		model->disasmAdr--;
 	} else {
-		disasmAdr = getPrevAdr(*cptr, disasmAdr);
+		model->disasmAdr = getPrevAdr(*cptr, model->disasmAdr);
 	}
 	updContent();
 }

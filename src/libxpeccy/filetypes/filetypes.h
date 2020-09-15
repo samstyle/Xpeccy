@@ -133,8 +133,6 @@ void rzxGetFrame(Computer*);
 
 // memory (snapshot)
 
-int loadDUMP(Computer*, const char*, int);
-
 int loadZ80(Computer*,const char*, int);
 int loadZ80_f(Computer*, FILE*);
 
