@@ -74,8 +74,8 @@ void aymResetChan(aymChan* ch) {
 	ch->vol = 0;
 	ch->cnt = 0;
 	ch->lev = 0;
-	ch->ten = 0;
-	ch->nen = 0;
+	ch->tdis = 1;
+	ch->ndis = 1;
 	ch->een = 0;
 }
 

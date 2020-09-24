@@ -250,7 +250,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 		}
 		memSetSize(prf->zx->mem, -1, romsz);
 // load GS ROM
-		fpath = conf.path.confDir + SLASH + rset->gsFile;
+		fpath = conf.path.romDir + SLASH + rset->gsFile;
 		file = fopen(fpath.c_str(), "rb");
 		if (file) {
 			fread(prf->zx->gs->mem->romData, MEM_32K, 1, file);

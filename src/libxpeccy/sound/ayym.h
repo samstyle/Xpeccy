@@ -68,8 +68,8 @@ typedef struct {
 } scDesc;
 
 typedef struct {
-	unsigned ten:1;		// tone on
-	unsigned nen:1;		// noise on
+	unsigned tdis:1;	// tone off
+	unsigned ndis:1;	// noise off
 	unsigned een:1;		// envelope on
 	unsigned lev:1;		// current signal level
 	int vol;

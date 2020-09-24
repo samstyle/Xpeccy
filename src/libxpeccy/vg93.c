@@ -167,7 +167,7 @@ void vgstp01(FDC* fdc) {
 	}
 }
 
-fdcCall vgStop[] = {&vgstp00, &vgstp01, NULL};
+static fdcCall vgStop[] = {&vgstp00, &vgstp01, NULL};
 
 void vgstp(FDC* fdc) {
 	fdc->plan = vgStop;
@@ -212,7 +212,7 @@ void vgchk02(FDC* fdc) {
 	fdc->pos++;
 }
 
-fdcCall vgCheck[] = {&vgchk00,&vgchk01,&vgchk02,&vgstp};	// prepare, seek/read ADR, check CRC, stop
+static fdcCall vgCheck[] = {&vgchk00,&vgchk01,&vgchk02,&vgstp};	// prepare, seek/read ADR, check CRC, stop
 
 void vgchk(FDC* fdc) {
 	fdc->plan = vgCheck;
@@ -248,7 +248,7 @@ void vgres01(FDC* fdc) {
 	}
 }
 
-fdcCall vgRest[] = {&vgres00, &vgwait, &vgres01, &vgchk};
+static fdcCall vgRest[] = {&vgres00, &vgwait, &vgres01, &vgchk};
 
 // ====
 // seek
@@ -277,7 +277,7 @@ void vgseek01(FDC* fdc) {
 	}
 }
 
-fdcCall vgSeek[] = {&vgseek00, &vgwait, &vgseek01, &vgchk};
+static fdcCall vgSeek[] = {&vgseek00, &vgwait, &vgseek01, &vgchk};
 
 // ===========================
 // step/step forward/step back
@@ -304,9 +304,9 @@ void vgstep(FDC* fdc) {
 	fdc->pos++;
 }
 
-fdcCall vgStepF[] = {&vgseek00,&vgstpf,&vgstep,&vgchk};
-fdcCall vgStepB[] = {&vgseek00,&vgstpb,&vgstep,&vgchk};
-fdcCall vgStep[] = {&vgseek00,&vgstep,&vgchk};
+static fdcCall vgStepF[] = {&vgseek00,&vgstpf,&vgstep,&vgchk};
+static fdcCall vgStepB[] = {&vgseek00,&vgstpb,&vgstep,&vgchk};
+static fdcCall vgStep[] = {&vgseek00,&vgstep,&vgchk};
 
 // ============
 // read sectors
@@ -415,7 +415,7 @@ void vgrds05(FDC* fdc) {
 	}
 }
 
-fdcCall vgRdSec[] = {&vgrds00,&vgrds01,&vgrds02,&vgrds03,&vgrds04,&vgrds05,&vgstp};
+static fdcCall vgRdSec[] = {&vgrds00,&vgrds01,&vgrds02,&vgrds03,&vgrds04,&vgrds05,&vgstp};
 
 // =============
 // write sectors
@@ -469,7 +469,7 @@ void vgwrs03(FDC* fdc) {
 	}
 }
 
-fdcCall vgWrSec[] = {&vgrds00,&vgwrs00,&vgrds01,&vgrds02,&vgwrs01,&vgwrs02,&vgwrs03,&vgstp};
+static fdcCall vgWrSec[] = {&vgrds00,&vgwrs00,&vgrds01,&vgrds02,&vgwrs01,&vgwrs02,&vgwrs03,&vgstp};
 
 // ============
 // read address
@@ -512,7 +512,7 @@ void vgrda01(FDC* fdc) {
 	}
 }
 
-fdcCall vgRdAdr[] = {&vgrds00,&vgrda00,&vgrda01,&vgchk02,&vgstp};
+static fdcCall vgRdAdr[] = {&vgrds00,&vgrda00,&vgrda01,&vgchk02,&vgstp};
 
 // ==========
 // read track
@@ -532,7 +532,7 @@ void vgrdt01(FDC* fdc) {
 	if (fdc->flp->pos == 0) fdc->pos++;		// end of trk (same as IDX)
 }
 
-fdcCall vgRdTrk[] = {&vgrds00,&vgrdt00,&vgrdt01,&vgstp};
+static fdcCall vgRdTrk[] = {&vgrds00,&vgrdt00,&vgrdt01,&vgstp};
 
 // write track
 
@@ -557,7 +557,7 @@ void vgwrt02(FDC* fdc) {
 	fdc->pos++;
 }
 
-fdcCall vgWrTrk[] = {&vgrds00,&vgwrs00,&vgwrt00,&vgwrt01,&vgwrt02,&vgstp};
+static fdcCall vgWrTrk[] = {&vgrds00,&vgwrs00,&vgwrt00,&vgwrt01,&vgwrt02,&vgstp};
 
 typedef struct {
 	int mask;
@@ -565,7 +565,7 @@ typedef struct {
 	fdcCall* plan;
 } vgComItem;
 
-vgComItem vgComTab[] = {
+static vgComItem vgComTab[] = {
 	{0xf0, 0x00, vgRest},		// 0000xxxx - restore
 	{0xf0, 0x10, vgSeek},		// 0001xxxx - seek
 	{0xe0, 0x20, vgStep},		// 001xxxxx - step
@@ -581,6 +581,7 @@ vgComItem vgComTab[] = {
 
 void vgExec(FDC* fdc, unsigned char com) {
 	int idx;
+	// printf("com:%.2X trk:%.2X sec:%.2X dat:%.2X\n",com,fdc->trk,fdc->sec,fdc->data);
 	if ((com & 0xf0) == 0xd0) {	// interrupt (doesn't mind about FDC is idle)
 		// printf("INT:%.2X\n",com);
 		fdc->wait = 0;

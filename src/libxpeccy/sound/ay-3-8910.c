@@ -22,11 +22,11 @@ int ay_rd(aymChip* ay, int adr) {
 	if (adr & 1) {
 		switch(ay->curReg & 0x0f) {					// AY:16 registers + mirrors
 			case 14:
-				if (ay->reg[7] & 0x40)
+				if (!(ay->reg[7] & 0x40))
 					res = ay->reg[14];
 				break;
 			case 15:
-				if (ay->reg[7] & 0x80)
+				if (!(ay->reg[7] & 0x80))
 					res = ay->reg[15];
 				break;
 			default:
@@ -67,12 +67,12 @@ void ay_set_reg(aymChip* chip, int val) {
 			chip->chanN.per = tone << 5;		// min 16T x2 half-periods
 			break;
 		case 0x07:
-			chip->chanA.ten = (val & 1) ? 0 : 1;
-			chip->chanB.ten = (val & 2) ? 0 : 1;
-			chip->chanC.ten = (val & 4) ? 0 : 1;
-			chip->chanA.nen = (val & 8) ? 0 : 1;
-			chip->chanB.nen = (val & 16) ? 0 : 1;
-			chip->chanC.nen = (val & 32) ? 0 : 1;
+			chip->chanA.tdis = (val & 1) ? 1 : 0;
+			chip->chanB.tdis = (val & 2) ? 1 : 0;
+			chip->chanC.tdis = (val & 4) ? 1 : 0;
+			chip->chanA.ndis = (val & 8) ? 1 : 0;
+			chip->chanB.ndis = (val & 16) ? 1 : 0;
+			chip->chanC.ndis = (val & 32) ? 1 : 0;
 			break;
 		case 0x08:
 			chip->chanA.vol = ((val & 15) << 1) | 1;
@@ -212,11 +212,15 @@ sndPair ay_mix_stereo(int volA, int volB, int volC, int id) {
 
 int ay_chan_vol(aymChip* ay, aymChan* ch) {
 	int vol;
-	if (((ch->lev && ch->ten) || (ch->nen && ay->chanN.lev)) || !(ch->ten || ch->nen)) {
-		vol = ch->een ? ay->chanE.vol : ch->vol;
-	} else {
-		vol = 0;
-	}
+#if 1
+	if ((ch->tdis || ch->lev) && (ch->ndis || ay->chanN.lev)) {
+#else
+	if (((ch->lev && ch->!tdis) || (!ch->ndis && ay->chanN.lev)) || (ch->tdis && ch->ndis)) {
+#endif
+		 vol = ch->een ? ay->chanE.vol : ch->vol;
+	 } else {
+		 vol = 0;
+	 }
 	return ayDACvol[vol | 1];						// AY:4-bit DAC volume
 }
 

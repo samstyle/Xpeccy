@@ -788,7 +788,7 @@ void iop_d2(CPU* cpu) {
 void iop_d3(CPU* cpu) {
 	cpu->t += 3;
 	cpu->ltw = cpu->mrd(cpu->pc++, 0, cpu->data) & 0xff;
-	cpu->htw = cpu->a;
+	cpu->htw = cpu->ltw;	// A8..15 = A0..7
 	cpu->t += 3;
 	cpu->iwr(cpu->tmpw, cpu->a, cpu->data);
 }

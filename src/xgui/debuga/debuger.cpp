@@ -838,8 +838,8 @@ void setSignal(QLabel* lab, int on) {
 }
 
 QString getAYmix(aymChan* ch) {
-	QString res = ch->ten ? "T" : "-";
-	res += ch->nen ? "N" : "-";
+	QString res = ch->tdis ? "-" : "T";
+	res += ch->ndis ? "-" : "N";
 	res += ch->een ? "E" : "-";
 	return res;
 }
