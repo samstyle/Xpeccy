@@ -44,6 +44,7 @@ typedef struct {
 	int cnt;
 	int stereo;
 	int time;
+	int ns_per_tick;
 	long counter;
 } GSound;
 

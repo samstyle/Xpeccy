@@ -101,8 +101,104 @@ void atm2OutFF(Computer* comp, int port, int val) {		// dos. bdiOut already done
 
 // in
 
+static unsigned char kmodTab[4] = {kbdZX, kbdCODE, kbdCPM, kbdDIRECT};
+static unsigned char kmodVer[4] = {6,0,1,0};
+extern unsigned char kbdScanZX(Keyboard*, int);
+
 int atm2inFE(Computer* comp, int port) {
-	int res = kbdRead(comp->keyb, port & 0xffff);
+	// int res = kbdRead(comp->keyb, port & 0xffff);
+	int res = 0xff;
+	int hi = (port >> 14) & 3;
+	time_t rtime;
+	time(&rtime);
+	struct tm* ctime = localtime(&rtime);
+	if (comp->keyb->wcom) {
+		comp->keyb->com = (port >> 8) & 0x3f;
+		comp->keyb->wcom = 0;
+		switch(comp->keyb->com) {
+			case 0x01: res = kmodVer[hi]; break;
+			case 0x07: comp->keyb->kBufPos = 0; break;
+			case 0x00:
+			case 0x09:
+				switch(hi) {
+					case 0:
+						res = comp->keyb->keycode;
+						comp->keyb->keycode = 0;
+						break;
+					case 1: res = comp->keyb->lastkey; break;
+					case 2: res = comp->keyb->flag1; break;
+					case 3: res = comp->keyb->flag2; break;
+				}
+				break;
+			case 0x0a: comp->keyb->flag1 |= KFL_RUS; break;
+			case 0x0b: comp->keyb->flag1 &= ~KFL_RUS; break;
+			case 0x0c: break;			// TODO: pause
+			case 0x0d:
+				comp->keyb->reset = 1;
+				break;
+			case 0x10:
+				switch(hi) {
+					case 0: res = ctime->tm_sec & 0xff; break;
+					case 1: res = ctime->tm_min & 0xff; break;
+					case 2: res = ctime->tm_hour & 0xff; break;
+				}
+				break;
+			case 0x12:
+				switch(hi) {
+					case 0: res = ctime->tm_mday & 0xff; break;
+					case 1: res = ctime->tm_mon & 0xff; break;
+					case 2: res = ctime->tm_year & 0xff; break;
+				}
+				//printf("%i = %i\n",hi,res);
+				break;
+			case 0x16: break;
+			case 0x17: break;
+			case 0x11:				// set time
+			case 0x13:				// set date
+			case 0x14:				// set P1 bits
+			case 0x15:				// res P1 bits
+			case 0x08:				// set mode
+				comp->keyb->warg = 1;
+				break;
+			default: res = 0xff; break;
+		}
+	} else if (comp->keyb->warg) {
+		comp->keyb->arg = (port >> 8) & 0xff;
+		comp->keyb->warg = 0;
+		switch (comp->keyb->com) {
+			case 0x08:
+				comp->keyb->submode = kmodTab[comp->keyb->arg & 3];
+				break;
+		}
+	} else if ((port & 0xff00) == 0x5500) {
+		comp->keyb->wcom = 1;
+		comp->keyb->warg = 0;
+		res = 0xaa;
+	} else {
+		switch(comp->keyb->submode) {
+			case kbdZX:
+				res = kbdScanZX(comp->keyb, port);
+				break;
+			case kbdCODE:
+				res = comp->keyb->keycode;
+				comp->keyb->keycode = 0;
+				break;
+			case kbdCPM:
+				switch(hi) {
+					case 0: res = comp->keyb->keycode;
+						comp->keyb->keycode = 0;
+						break;
+					case 1: res = comp->keyb->flag2;
+						break;
+					case 2: res = comp->keyb->flag1;
+						break;
+				}
+				break;
+			case kbdDIRECT:
+				break;
+		}
+	}
+
 	if (comp->keyb->mode == KBD_SPECTRUM) {
 		res |= (comp->tape->volPlay & 0x80) ? 0x40 : 0x00;
 	} else if (comp->keyb->submode == kbdZX) {
@@ -146,10 +242,59 @@ int atm2In(Computer* comp, int port, int dos) {
 	return res;
 }
 
+extern keyScan keyTab[];
 void atm2_keyp(Computer* comp, keyEntry kent) {
-	kbdPress(comp->keyb, kent);
+	switch(kent.key) {
+		case XKEY_LSHIFT: comp->keyb->flag1 |= KFL_SHIFT; break;
+		case XKEY_RSHIFT: comp->keyb->flag2 |= KFL_RSHIFT; break;
+		case XKEY_RCTRL:
+		case XKEY_LCTRL: comp->keyb->flag1 |= KFL_CTRL; break;
+		case XKEY_RALT:
+		case XKEY_LALT: comp->keyb->flag1 |= KFL_ALT; break;
+		case XKEY_CAPS: comp->keyb->flag1 ^= KFL_CAPS; break;
+	}
+	switch (comp->keyb->submode) {
+		case kbdZX:
+			kbd_press(comp->keyb, keyTab, comp->keyb->map, kent.zxKey);
+			//kbd->keycode = ent.atmCode.rowScan;
+			//kbd->lastkey = kbd->keycode;
+			//kbd->map[((ent.atmCode.rowScan >> 4) & 7) ^ 7] &= ~(1 << ((ent.atmCode.rowScan & 7) - 1));
+			//if (ent.atmCode.rowScan & 0x80) kbd->map[0] &= ~2;	// sym.shift
+			//if (ent.atmCode.rowScan & 0x08) kbd->map[7] &= ~1;	// cap.shift
+			break;
+		case kbdCODE:
+		case kbdCPM:
+			comp->keyb->keycode = kent.atmCode.cpmCode;
+			comp->keyb->lastkey = comp->keyb->keycode;
+			break;
+		case kbdDIRECT:
+			break;
+	}
 }
 
 void atm2_keyr(Computer* comp, keyEntry kent) {
-	kbdRelease(comp->keyb, kent);
+	//kbdRelease(comp->keyb, kent);
+	switch(kent.key) {
+		case XKEY_LSHIFT: comp->keyb->flag1 &= ~KFL_SHIFT; break;
+		case XKEY_RSHIFT: comp->keyb->flag2 &= ~KFL_RSHIFT; break;
+		case XKEY_RCTRL:
+		case XKEY_LCTRL: comp->keyb->flag1 &= ~KFL_CTRL; break;
+		case XKEY_RALT:
+		case XKEY_LALT: comp->keyb->flag1 &= ~KFL_ALT; break;
+	}
+	switch (comp->keyb->submode) {
+		case kbdZX:
+			kbd_release(comp->keyb, keyTab, comp->keyb->map, kent.zxKey);
+			//kbd->keycode = 0;
+			//kbd->map[((ent.atmCode.rowScan >> 4) & 7) ^ 7] |= (1 << ((ent.atmCode.rowScan & 7) - 1));
+			//if (ent.atmCode.rowScan & 0x80) kbd->map[0] |= 2;	// sym.shift
+			//if (ent.atmCode.rowScan & 0x08) kbd->map[7] |= 1;	// cap.shift
+			break;
+		case kbdCODE:
+		case kbdCPM:
+			comp->keyb->keycode = 0;
+			break;
+		case kbdDIRECT:
+			break;
+	}
 }

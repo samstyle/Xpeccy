@@ -4,7 +4,9 @@
 
 #include "gs.h"
 
-// internam MEMRQ
+#define GS_FLUSH 1
+
+// internal MEMRQ
 int gsmemrd(int adr, int m1, void* ptr) {
 	GSound* gs = (GSound*)ptr;
 	unsigned char res = memRd(gs->mem, adr & 0xffff);
@@ -119,6 +121,7 @@ GSound* gsCreate() {
 	res->ch2 = 0x80;
 	res->ch3 = 0x80;
 	res->ch4 = 0x80;
+	res->ns_per_tick = 1000 / GS_FRQ;
 	return res;
 }
 
@@ -133,6 +136,8 @@ void gsReset(GSound* gs) {
 	gs->cpu->reset(gs->cpu);
 }
 
+#if GS_FLUSH
+
 void gsSync(GSound* gs, int ns) {
 	if (!gs->enable) return;
 	gs->time += ns;
@@ -141,18 +146,39 @@ void gsSync(GSound* gs, int ns) {
 void gsFlush(GSound* gs) {
 	if (!gs->enable) return;
 	int res;
-	gs->counter += gs->time * GS_FRQ / 980;		// ticks to emulate
-	while (gs->counter > 0) {
+	while (gs->time > 0) {
 		res = gs->cpu->exec(gs->cpu);
-		gs->counter -= res;
+		gs->time -= res * gs->ns_per_tick;
 		gs->cnt += res;
 		if (gs->cnt > 320) {	// 12MHz CLK, 37.5KHz INT -> int in each 320 ticks
 			gs->cnt -= 320;
 			gs->cpu->intrq |= 1;
 		}
 	}
-	gs->time = 0;
 }
+
+#else
+
+void gsFlush(GSound* gs) {
+
+}
+
+void gsSync(GSound* gs, int ns) {
+	if (!gs->enable) return;
+	gs->time += ns;
+	int res;
+	while (gs->time > 0) {
+		res = gs->cpu->exec(gs->cpu);
+		gs->time -= res * gs->ns_per_tick;
+		gs->cnt += res;
+		if (gs->cnt > 320) {	// 12MHz CLK, 37.5KHz INT -> int in each 320 ticks
+			gs->cnt -= 320;
+			gs->cpu->intrq |= 1;
+		}
+	}
+}
+
+#endif
 
 int gsCheck(GSound* gs, int adr) {
 	if (!gs->enable) return 0;

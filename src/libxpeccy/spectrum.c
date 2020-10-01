@@ -208,7 +208,9 @@ void rzxStop(Computer* zx) {
 
 void zxSetUlaPalete(Computer* comp) {
 	for (int i = 0; i < 64; i++) {
-		comp->vid->pal[i].b = (comp->vid->ula->pal[i] << 6) & 0xe0;		// Bb0 : must me Bbb
+		comp->vid->pal[i].b = (comp->vid->ula->pal[i] << 6) & 0xe0;		// Bbb
+		if (comp->vid->pal[i].b & 0x40)
+			comp->vid->pal[i].b |= 0x20;
 		comp->vid->pal[i].r = (comp->vid->ula->pal[i] << 3) & 0xe0;
 		comp->vid->pal[i].g = (comp->vid->ula->pal[i] & 0xe0);
 	}

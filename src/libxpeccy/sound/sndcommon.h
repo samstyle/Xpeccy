@@ -12,8 +12,8 @@ typedef  struct {
 } sndVolume;
 
 typedef struct {
-	int left;
-	int right;
+	unsigned int left;
+	unsigned int right;
 } sndPair;
 
 extern char noizes[0x20000];

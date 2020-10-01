@@ -140,6 +140,8 @@ typedef struct {
 	unsigned char flag1;		// [7] rus.scrlock.numlock.caps.0.alt.ctrl.shift [0]
 	unsigned char flag2;		// [7] 0.0.0.0.0.0.0.rshift [0]
 	// key matrix
+	int row;
+	int mask;
 	int matrix[16][16];
 	int map[8];			// ZX keyboard half-row bits (0-5)
 	int extMap[8];	// Profi XT-keyboard extend
@@ -189,7 +191,7 @@ void kbdPress(Keyboard*, keyEntry);
 void kbdRelease(Keyboard*, keyEntry);
 void kbdTrigger(Keyboard*, keyEntry);
 void kbdReleaseAll(Keyboard*);
-unsigned char kbdRead(Keyboard*, unsigned short);
+unsigned char kbdRead(Keyboard*, int);
 unsigned char keyReadCode(Keyboard*);
 void xt_press(Keyboard*, int);
 void xt_release(Keyboard*, int);

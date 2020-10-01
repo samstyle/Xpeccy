@@ -3,7 +3,7 @@
 #include <string.h>
 #include "input.h"
 
-static keyScan keyTab[] = {
+keyScan keyTab[] = {
 	{'1',4,1},{'2',4,2},{'3',4,4},{'4',4,8},{'5',4,16},{'6',3,16},{'7',3,8},{'8',3,4},{'9',3,2},{'0',3,1},
 	{'q',5,1},{'w',5,2},{'e',5,4},{'r',5,8},{'t',5,16},{'y',2,16},{'u',2,8},{'i',2,4},{'o',2,2},{'p',2,1},
 	{'a',6,1},{'s',6,2},{'d',6,4},{'f',6,8},{'g',6,16},{'h',1,16},{'j',1,8},{'k',1,4},{'l',1,2},{'E',1,1},
@@ -86,8 +86,11 @@ void kbdSetMode(Keyboard* kbd, int mode) {
 // key press/release/trigger
 
 void kbd_press_key(Keyboard* kbd, keyScan* tab, int* mtrx, char ch) {
+	if (!ch) return;
 	keyScan key = findKey(tab, ch & 0x7f);
 	key.row &= 0x0f;
+	kbd->row = key.row;
+	kbd->mask = key.mask;
 	mtrx[key.row] &= ~key.mask;
 	// if (key.mask) printf("row %i : %X\n",key.row, mtrx[key.row]);
 	if (ch & 0x80)
@@ -116,6 +119,7 @@ void kbdPress(Keyboard* kbd, keyEntry ent) {
 		case KBD_MSX:
 			kbd_press(kbd, msxKeyTab, kbd->msxMap, ent.msxKey);
 			break;
+/*
 		case KBD_ATM2:
 			switch(ent.key) {
 				case XKEY_LSHIFT: kbd->flag1 |= KFL_SHIFT; break;
@@ -128,11 +132,12 @@ void kbdPress(Keyboard* kbd, keyEntry ent) {
 			}
 			switch (kbd->submode) {
 				case kbdZX:
-					kbd->keycode = ent.atmCode.rowScan;
-					kbd->lastkey = kbd->keycode;
-					kbd->map[((ent.atmCode.rowScan >> 4) & 7) ^ 7] &= ~(1 << ((ent.atmCode.rowScan & 7) - 1));
-					if (ent.atmCode.rowScan & 0x80) kbd->map[0] &= ~2;	// sym.shift
-					if (ent.atmCode.rowScan & 0x08) kbd->map[7] &= ~1;	// cap.shift
+					kbd_press(kbd, keyTab, kbd->map, ent.zxKey);
+					//kbd->keycode = ent.atmCode.rowScan;
+					//kbd->lastkey = kbd->keycode;
+					//kbd->map[((ent.atmCode.rowScan >> 4) & 7) ^ 7] &= ~(1 << ((ent.atmCode.rowScan & 7) - 1));
+					//if (ent.atmCode.rowScan & 0x80) kbd->map[0] &= ~2;	// sym.shift
+					//if (ent.atmCode.rowScan & 0x08) kbd->map[7] &= ~1;	// cap.shift
 					break;
 				case kbdCODE:
 				case kbdCPM:
@@ -143,6 +148,7 @@ void kbdPress(Keyboard* kbd, keyEntry ent) {
 					break;
 			}
 			break;
+*/
 	}
 }
 
@@ -177,6 +183,7 @@ void kbdRelease(Keyboard* kbd, keyEntry ent) {
 		case KBD_MSX:
 			kbd_release(kbd, msxKeyTab, kbd->msxMap, ent.msxKey);
 			break;
+/*
 		case KBD_ATM2:
 			switch(ent.key) {
 				case XKEY_LSHIFT: kbd->flag1 &= ~KFL_SHIFT; break;
@@ -188,10 +195,11 @@ void kbdRelease(Keyboard* kbd, keyEntry ent) {
 			}
 			switch (kbd->submode) {
 				case kbdZX:
-					kbd->keycode = 0;
-					kbd->map[((ent.atmCode.rowScan >> 4) & 7) ^ 7] |= (1 << ((ent.atmCode.rowScan & 7) - 1));
-					if (ent.atmCode.rowScan & 0x80) kbd->map[0] |= 2;	// sym.shift
-					if (ent.atmCode.rowScan & 0x08) kbd->map[7] |= 1;	// cap.shift
+					kbd_release(kbd, keyTab, kbd->map, ent.zxKey);
+					//kbd->keycode = 0;
+					//kbd->map[((ent.atmCode.rowScan >> 4) & 7) ^ 7] |= (1 << ((ent.atmCode.rowScan & 7) - 1));
+					//if (ent.atmCode.rowScan & 0x80) kbd->map[0] |= 2;	// sym.shift
+					//if (ent.atmCode.rowScan & 0x08) kbd->map[7] |= 1;	// cap.shift
 					break;
 				case kbdCODE:
 				case kbdCPM:
@@ -201,6 +209,7 @@ void kbdRelease(Keyboard* kbd, keyEntry ent) {
 					break;
 			}
 			break;
+*/
 	}
 }
 
@@ -278,10 +287,10 @@ unsigned char keyReadCode(Keyboard* keyb) {
 
 #include <time.h>
 
-static unsigned char kmodTab[4] = {kbdZX, kbdCODE, kbdCPM, kbdDIRECT};
-static unsigned char kmodVer[4] = {6,0,1,0};
+//static unsigned char kmodTab[4] = {kbdZX, kbdCODE, kbdCPM, kbdDIRECT};
+//static unsigned char kmodVer[4] = {6,0,1,0};
 
-unsigned char kbdScanZX(Keyboard* kbd, unsigned short port) {
+unsigned char kbdScanZX(Keyboard* kbd, int port) {
 	unsigned char res = 0x3f;
 	for (int i = 0; i < 8; i++) {
 		if (!(port & 0x8000))
@@ -291,7 +300,7 @@ unsigned char kbdScanZX(Keyboard* kbd, unsigned short port) {
 	return res;
 }
 
-unsigned char kbdScanProfi(Keyboard* kbd, unsigned short port) {
+unsigned char kbdScanProfi(Keyboard* kbd, int port) {
 	unsigned char res = 0x3f;
 	for (int i = 0; i < 8; i++) {
 		if (!(port & 0x8000)) {
@@ -303,13 +312,13 @@ unsigned char kbdScanProfi(Keyboard* kbd, unsigned short port) {
 	return res;
 }
 
-unsigned char kbdRead(Keyboard* kbd, unsigned short port) {
+unsigned char kbdRead(Keyboard* kbd, int port) {
 	unsigned char res = 0xff;
-	int hi;
+//	int hi;
 
-	time_t rtime;
-	time(&rtime);
-	struct tm* ctime = localtime(&rtime);
+//	time_t rtime;
+//	time(&rtime);
+//	struct tm* ctime = localtime(&rtime);
 
 	switch (kbd->mode) {
 		case KBD_SPECTRUM:
@@ -321,6 +330,7 @@ unsigned char kbdRead(Keyboard* kbd, unsigned short port) {
 		case KBD_MSX:			// port = row register
 			res = kbd->msxMap[port & 0x0f];
 			break;
+/*
 		case KBD_ATM2:
 			hi = (port >> 14) & 3;
 			if (kbd->wcom) {
@@ -409,6 +419,7 @@ unsigned char kbdRead(Keyboard* kbd, unsigned short port) {
 				}
 			}
 			break;
+*/
 	}
 	return res;
 }
