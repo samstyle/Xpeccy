@@ -206,13 +206,21 @@ void rzxStop(Computer* zx) {
 #endif
 }
 
+static unsigned char ula_levs[8] = {0x00, 0x24, 0x49, 0x6d, 0x92, 0xb6, 0xdb, 0xff};
+
 void zxSetUlaPalete(Computer* comp) {
-	for (int i = 0; i < 64; i++) {
-		comp->vid->pal[i].b = (comp->vid->ula->pal[i] << 6) & 0xe0;		// Bbb
-		if (comp->vid->pal[i].b & 0x40)
-			comp->vid->pal[i].b |= 0x20;
-		comp->vid->pal[i].r = (comp->vid->ula->pal[i] << 3) & 0xe0;
-		comp->vid->pal[i].g = (comp->vid->ula->pal[i] & 0xe0);
+	int i;
+	int col;
+	xColor xc;
+	for (i = 0; i < 64; i++) {
+		col = (comp->vid->ula->pal[i] << 1) & 7;	// blue
+		if (col & 2) col |= 1;
+		xc.b = ula_levs[col];
+		col = (comp->vid->ula->pal[i] >> 2) & 7;	// red
+		xc.r = ula_levs[col];
+		col = (comp->vid->ula->pal[i] >> 5) & 7;	// green
+		xc.g = ula_levs[col];
+		comp->vid->pal[i] = xc;
 	}
 }
 
@@ -486,7 +494,7 @@ int compExec(Computer* comp) {
 //		tapSync(comp->tape,comp->tapCount);
 //		comp->tapCount = 0;
 		bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
-		if (ulaOut(comp->vid->ula, comp->padr, comp->pval)) {
+		if (ula_wr(comp->vid->ula, comp->padr, comp->pval)) {
 			if (comp->vid->ula->palchan) {
 				zxSetUlaPalete(comp);
 				comp->vid->ula->palchan = 0;

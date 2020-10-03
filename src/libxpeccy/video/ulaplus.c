@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-ulaPlus* ulaCreate() {
+ulaPlus* ula_create() {
 	ulaPlus* ula = (ulaPlus*)malloc(sizeof(ulaPlus));
 	if (ula) {
 		memset(ula,0x00,sizeof(ulaPlus));
@@ -11,11 +11,11 @@ ulaPlus* ulaCreate() {
 	return ula;
 }
 
-void ulaDestroy(ulaPlus* ula) {
+void ula_destroy(ulaPlus* ula) {
 	if (ula) free(ula);
 }
 
-int ulaOut(ulaPlus* ula, int port, int val) {
+int ula_wr(ulaPlus* ula, int port, int val) {
 	if (!ula->enabled) return 0;
 	int res = 1;
 	switch (port) {
@@ -41,7 +41,7 @@ int ulaOut(ulaPlus* ula, int port, int val) {
 	return res;
 }
 
-int ulaIn(ulaPlus* ula, int port, int* val) {
+int ula_rd(ulaPlus* ula, int port, int* val) {
 	if (!ula->enabled) return 0;
 	int res = 1;
 	switch (port) {

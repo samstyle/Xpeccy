@@ -1,5 +1,4 @@
-#ifndef _ULAPLUS_H
-#define _ULAPLUS_H
+#pragma once
 
 typedef struct {
 	unsigned enabled:1;	// enabled by settings
@@ -11,10 +10,8 @@ typedef struct {
 	unsigned char pal[64];
 } ulaPlus;
 
-ulaPlus* ulaCreate();
-void ulaDestroy(ulaPlus*);
+ulaPlus* ula_create();
+void ula_destroy(ulaPlus*);
 
-int ulaOut(ulaPlus*, int, int);
-int ulaIn(ulaPlus*, int, int*);
-
-#endif
+int ula_wr(ulaPlus*, int, int);
+int ula_rd(ulaPlus*, int, int*);

@@ -142,7 +142,7 @@ int zx_dev_wr(Computer* comp, int adr, int val, int dos) {
 int zx_dev_rd(Computer* comp, int adr, int* ptr, int dos) {
 	if (gsRead(comp->gs, adr, ptr)) return 1;
 	if (ideIn(comp->ide, adr, ptr, dos)) return 1;
-	if (ulaIn(comp->vid->ula, adr, ptr)) return 1;
+	if (ula_rd(comp->vid->ula, adr, ptr)) return 1;
 	return 0;
 }
 

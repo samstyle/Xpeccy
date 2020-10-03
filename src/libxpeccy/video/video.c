@@ -126,7 +126,7 @@ Video* vidCreate(vcbmrd cb, void* dptr) {
 	vidSetLayout(vid, &vlay);
 	vid->inten = 0x01;		// FRAME INT for all
 
-	vid->ula = ulaCreate();
+	vid->ula = ula_create();
 
 	vidSetBorder(vid, 0.5);
 
@@ -147,7 +147,7 @@ Video* vidCreate(vcbmrd cb, void* dptr) {
 }
 
 void vidDestroy(Video* vid) {
-	ulaDestroy(vid->ula);
+	ula_destroy(vid->ula);
 	free(vid);
 }
 
