@@ -193,7 +193,7 @@ int xInFFDF(Computer* comp, int port) {
 // out
 
 void xOutFE(Computer* comp, int port, int val) {
-	comp->vid->nextbrd = val & 0x07;
+	comp->vid->nextbrd = (val & 0x07);
 	comp->beep->lev = (val & 0x10) ? 1 : 0;
 	comp->tape->levRec = (val & 0x08) ? 1 : 0;
 }

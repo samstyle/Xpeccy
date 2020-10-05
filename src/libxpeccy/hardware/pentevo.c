@@ -216,7 +216,7 @@ static const unsigned char atm3clev[16] = {0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x
 
 void evoOutFF(Computer* comp, int port, int val) {		// dos
 	difOut(comp->dif, 0xff, val, 1);
-//	if ((comp->evo.evoBF & 1) || !(comp->prt2 & 0x80)) {	// pBF.b1 = 1 || p77.a14 = 1
+	if (!(comp->prt2 & 0x80)) {	// pBF.b1 = 1 || p77.a14 = 1
 		val ^= 0xff;					// inverse colors
 		int adr = comp->vid->brdcol & 0x0f;
 #if 1		// ddp extend palete
@@ -230,7 +230,7 @@ void evoOutFF(Computer* comp, int port, int val) {		// dos
 		comp->vid->pal[adr].r = ((val & 0x02) ? 0xaa : 0x00) + ((val & 0x40) ? 0x55 : 0x00);
 		comp->vid->pal[adr].g = ((val & 0x10) ? 0xaa : 0x00) + ((val & 0x80) ? 0x55 : 0x00);
 #endif
-//	}
+	}
 }
 
 void evoOut7FFD(Computer* comp, int port, int val) {
@@ -260,14 +260,19 @@ void evoOutDFF7(Computer* comp, int port, int val) {	// !dos
 }
 
 void evoOutEFF7(Computer* comp, int port, int val) {	// !dos
-	comp->pEFF7 = val;
+	comp->pEFF7 = val & 0xff;
 	compSetTurbo(comp,(comp->prt2 & 0x08) ? 4 : (val & 0x08) ? 2 : 1);
 	evoSetVideoMode(comp);
 	evoMapMem(comp);
 }
 
+void evoOutFE(Computer* comp, int port, int val) {
+	xOutFE(comp, port, val);
+	comp->vid->nextbrd |= ((port ^ 8) & 8);
+}
+
 static xPort evoPortMap[] = {
-	{0x00f7,0x00fe,2,2,2,xInFE,	xOutFE},	// A3 = border bright
+	{0x00f7,0x00fe,2,2,2,xInFE,	evoOutFE},	// A3 = border bright
 //	{0x00ff,0x00fb,2,2,2,NULL,	evoOutFB},	// covox
 	{0x00ff,0x00be,2,2,2,evoInBE,	NULL},
 	{0x00ff,0x00bf,2,2,2,evoInBF,	evoOutBF},
