@@ -6,6 +6,7 @@ void evoReset(Computer* comp) {
 	comp->dos = 1;
 	comp->evo.evoBF = 0;
 	comp->prt2 = 0x03;
+	comp->sdc->on = 1;
 }
 
 void evoSetVideoMode(Computer* comp) {
@@ -82,13 +83,16 @@ int evoIn1F(Computer* comp, int port) {	// !dos
 }
 
 int evoIn57(Computer* comp, int port) {	// !dos
-	return sdcRead(comp->sdc);
+	int res = sdcRead(comp->sdc);
+	// sdcWrite(comp->sdc, 0xff);
+	return res;
 }
 
 int evoIn77(Computer* comp, int port) {	// !dos
-	int res = 0x02;		// rd only
-	if (comp->sdc->image != NULL) res |= 0x01;
-	return res;
+	return 0x00;
+	//int res = 0x02;		// rd only
+	//if (comp->sdc->image != NULL) res |= 0x01;
+	//return res;
 }
 
 int evoInBE(Computer* comp, int port) {
@@ -151,7 +155,18 @@ int evoIn8F(Computer* comp, int port) {
 }
 
 int evoInBEF7(Computer* comp, int port) {	// dos
-	return cmsRd(comp);
+	int res = cmsRd(comp);
+	switch (comp->cmos.adr & 0xff) {
+		case 0x0c:
+			res = 0x00;
+			// b2: 0 if sdc write only
+			res |= 4;
+			// b3: 1 if sdc is in slot (image present)
+			if (comp->sdc->image) res |= 8;
+			break;
+	}
+//	printf("cmos rd: %.2X\n", res);
+	return res;
 }
 
 int evoInBFF7(Computer* comp, int port) {	// !dos
@@ -180,13 +195,13 @@ void evoOut8F(Computer* comp, int port, int val) {
 	comp->evo.evo8F = val & 0xff;
 }
 
-void evoOut57(Computer* comp, int port, int val) {
+void evoOut57(Computer* comp, int port, int val) {	// !dos
 	sdcWrite(comp->sdc, val);
 }
 
 void evoOut77(Computer* comp, int port, int val) {
-	comp->sdc->on = val & 1;
-	comp->sdc->cs = (val & 2) ? 1 : 0;
+	// comp->sdc->on = (val & 1) ? 0 : 1;	// b0: must be 0
+	comp->sdc->cs = (val & 2) ? 1 : 0;	// b1: 0 if sdc is selected
 }
 
 void evoOut77d(Computer* comp, int port, int val) {
@@ -247,6 +262,7 @@ void evoOutBEF7(Computer* comp, int port, int val) {	// dos
 
 void evoOutDEF7(Computer* comp, int port, int val) {	// dos
 	comp->cmos.adr = val & 0xff;
+//	printf("cmos adr = %.2X\n", comp->cmos.adr);
 }
 
 void evoOutBFF7(Computer* comp, int port, int val) {	// !dos
@@ -289,7 +305,8 @@ static xPort evoPortMap[] = {
 	{0x00ff,0x004f,1,2,2,evoIn4F,	evoOut4F},
 	{0x00ff,0x006f,1,2,2,evoIn6F,	evoOut6F},
 	{0x00ff,0x008f,1,2,2,evoIn8F,	evoOut8F},
-	{0x00ff,0x0057,1,2,2,NULL,	evoOut77},	// 55,77 : spi. 55 dos = 77 !dos
+	{0x80ff,0x0057,1,2,2,evoIn57,	evoOut57},	// dos 57, a15=0: spi wr
+	{0x80ff,0x8057,1,2,2,evoIn57,	evoOut77},	// dos 57, a15=1: control spi
 	{0x00ff,0x0077,1,2,2,NULL,	evoOut77d},
 	{0xffff,0xbef7,1,2,2,evoInBEF7,	evoOutBEF7},	// nvram
 	{0xffff,0xdef7,1,2,2,NULL,	evoOutDEF7},

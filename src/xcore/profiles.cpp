@@ -463,7 +463,7 @@ int prfLoad(std::string nm) {
 				case PS_SDC:
 					if (pnam == "sdcimage") sdcSetImage(comp->sdc, arg.s);
 					if (pnam == "sdclock") comp->sdc->lock = arg.b;
-					if (pnam == "capacity") sdcSetCapacity(comp->sdc, arg.i);
+					// if (pnam == "capacity") sdcSetCapacity(comp->sdc, arg.i);
 					break;
 				case PS_SLOT:
 					if ((pnam == "slot.type") || (pnam == "slotA.type"))
@@ -627,7 +627,7 @@ int prfSave(std::string nm) {
 	fprintf(file, "\n[SDC]\n\n");
 	fprintf(file, "sdcimage = %s\n", comp->sdc->image ? comp->sdc->image : "");
 	fprintf(file, "sdclock = %s\n", YESNO(comp->sdc->lock));
-	fprintf(file, "capacity = %i\n", comp->sdc->capacity);
+//	fprintf(file, "capacity = %i\n", comp->sdc->capacity);
 
 	fprintf(file, "\n[SLOT]\n");
 	fprintf(file, "slot.type = %i\n",comp->slot->mapType);

@@ -326,6 +326,7 @@ void compReset(Computer* comp,int res) {
 	tsReset(comp->ts);
 	ideReset(comp->ide);
 	saaReset(comp->saa);
+	sdcReset(comp->sdc);
 	if (comp->hw->reset)
 		comp->hw->reset(comp);
 	comp->hw->mapMem(comp);

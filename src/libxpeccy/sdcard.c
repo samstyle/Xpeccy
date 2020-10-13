@@ -71,10 +71,12 @@ void sdcSetImage(SDCard* sdc, const char* name) {
 }
 
 void sdcSetCapacity(SDCard* sdc, int cpc) {
+/*
 	if (cpc < SDC_32M) cpc = SDC_32M;
 	if (cpc > SDC_8G) cpc = SDC_8G;
 	sdc->capacity = cpc;
 	sdc->maxlba = cpc * 1024 * 2;	// sec x 2 = 1K x 1024 = 1M
+*/
 }
 
 // file operation
@@ -147,7 +149,7 @@ unsigned int sdcGetArg(SDCard* sdc, unsigned int mask) {
 }
 
 void sdcExec(SDCard* sdc) {
-	//printf("SD exec %.2X\n",sdc->arg[0] & 0x3f);
+//	printf("SDC exec %.2X\n",sdc->arg[0] & 0x3f);
 	if ((sdc->arg[0] & 0x3f) == CMD12) {		// break
 		sdcR1(sdc,0);				// ok
 		sdc->state = SDC_FREE;
@@ -290,11 +292,23 @@ void sdcWrite(SDCard* sdc, int val) {
 }
 
 void sdcOpenFile(SDCard* sdc) {
-	if (sdc->file) fclose(sdc->file);
-	if (sdc->image) sdc->file = fopen(sdc->image,"rb+");
+	sdcCloseFile(sdc);
+	if (sdc->image) {
+		sdc->file = fopen(sdc->image,"rb+");
+		if (sdc->file) {
+			fseek(sdc->file, 0, SEEK_END);
+			int sz = ftell(sdc->file);
+			int sz2 = 256;
+			while (sz2 < sz)
+				sz2 <<= 1;
+			sdc->capacity = sz2 >> 20;	// MegaBytes
+			sdc->maxlba = sz2 >> 9;		// 512-byte sectors
+		}
+	}
 }
 
 void sdcCloseFile(SDCard* sdc) {
-	if (sdc->file) fclose(sdc->file);
+	if (sdc->file)
+		fclose(sdc->file);
 	sdc->file = NULL;
 }

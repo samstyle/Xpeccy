@@ -167,6 +167,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.hs_type->addItem(QIcon(":/images/hdd.png"),"HDD (ATA)",IDE_ATA);
 //	setupUi.hs_type->addItem(QIcon(":/images/cd.png"),"CD (ATAPI) not working yet",IDE_ATAPI);
 // others
+/*
 	ui.sdcapbox->addItem("32 M",SDC_32M);
 	ui.sdcapbox->addItem("64 M",SDC_64M);
 	ui.sdcapbox->addItem("128 M",SDC_128M);
@@ -176,6 +177,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.sdcapbox->addItem("2048 M",SDC_2G);
 	ui.sdcapbox->addItem("4096 M",SDC_4G);
 	ui.sdcapbox->addItem("8192 M",SDC_8G);
+*/
 	ui.cSlotType->addItem("No mapper",MAP_MSX_NOMAPPER);
 	ui.cSlotType->addItem("Konami 4",MAP_MSX_KONAMI4);
 	ui.cSlotType->addItem("Konami 5",MAP_MSX_KONAMI5);
@@ -498,8 +500,8 @@ void SetupWin::start(xProfile* p) {
 	ui.hs_glba->setValue(comp->ide->slave->maxlba);
 // external
 	ui.sdPath->setText(QString::fromLocal8Bit(comp->sdc->image));
-	ui.sdcapbox->setCurrentIndex(ui.sdcapbox->findData(comp->sdc->capacity));
-	if (ui.sdcapbox->currentIndex() < 0) ui.sdcapbox->setCurrentIndex(2);	// 128M
+//	ui.sdcapbox->setCurrentIndex(ui.sdcapbox->findData(comp->sdc->capacity));
+//	if (ui.sdcapbox->currentIndex() < 0) ui.sdcapbox->setCurrentIndex(2);	// 128M
 	ui.sdlock->setChecked(comp->sdc->lock);
 
 	ui.cSlotName->setText(comp->slot->name);
@@ -670,7 +672,7 @@ void SetupWin::apply() {
 	ideSetPassport(comp->ide,IDE_SLAVE,pass);
 // others
 	sdcSetImage(comp->sdc,ui.sdPath->text().isEmpty() ? "" : ui.sdPath->text().toLocal8Bit().data());
-	sdcSetCapacity(comp->sdc, getRFIData(ui.sdcapbox));
+//	sdcSetCapacity(comp->sdc, getRFIData(ui.sdcapbox));
 	comp->sdc->lock = ui.sdlock->isChecked() ? 1 : 0;
 
 	comp->slot->mapType = getRFIData(ui.cSlotType);
