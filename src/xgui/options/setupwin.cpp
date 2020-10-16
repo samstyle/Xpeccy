@@ -392,6 +392,7 @@ void SetupWin::start(xProfile* p) {
 	ui.sbScale->setValue(conf.vid.scale);
 	ui.sldNoflic->setValue(noflic); chaflc();
 	ui.grayscale->setChecked(greyScale);
+	ui.cbScanlines->setChecked(scanlines);
 	ui.border4T->setChecked(comp->vid->brdstep & 0x06);
 	ui.contMem->setChecked(comp->contMem);
 	ui.contIO->setChecked(comp->contIO);
@@ -569,6 +570,7 @@ void SetupWin::apply() {
 	conf.vid.scale = ui.sbScale->value();
 	noflic = ui.sldNoflic->value();
 	greyScale = ui.grayscale->isChecked() ? 1 : 0;
+	scanlines = ui.cbScanlines->isChecked() ? 1 : 0;
 	conf.scrShot.dir = std::string(ui.pathle->text().toLocal8Bit().data());
 	conf.scrShot.format = getRFText(ui.ssfbox);
 	conf.scrShot.count = ui.scntbox->value();

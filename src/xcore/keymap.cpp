@@ -351,6 +351,7 @@ static xShortcut short_tab[] = {
 	{SCG_MAIN | SCG_DEBUGA, XCUT_RESET, "key.reset", "Reset", QKeySequence(), QKeySequence(Qt::Key_F12)},
 	{SCG_MAIN, XCUT_RES_DOS, "key.reset.dos", "Reset to DOS", QKeySequence(), QKeySequence(Qt::ALT + Qt::Key_F12)},
 	{SCG_MAIN, XCUT_TURBO, "key.turbo", "Switch turbo", QKeySequence(), QKeySequence(Qt::ALT + Qt::Key_T)},
+	{SCG_MAIN, XCUT_TVLINES, "key.scanlines", "Switch scanlines", QKeySequence(), QKeySequence()},
 
 	{SCG_DEBUGA, XCUT_STEPIN, "key.dbg.stepin", "DeBUGa: Step in", QKeySequence(), QKeySequence(Qt::Key_F7)},
 	{SCG_DEBUGA, XCUT_STEPOVER, "key.dbg.stepover", "DeBUGa: Step over", QKeySequence(), QKeySequence(Qt::Key_F8)},

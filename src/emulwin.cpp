@@ -509,7 +509,6 @@ void drawText(QPainter* pnt, int x, int y, const char* buf) {
 
 void MainWin::paintEvent(QPaintEvent*) {
 	if (block) return;
-//	int i,x,y,chr;
 	pnt.begin(this);
 	pnt.drawImage(0,0, QImage(comp->debug ? scrimg : bufimg, width(), height(), QImage::Format_RGB888));
 // screenshot
@@ -684,6 +683,11 @@ void MainWin::xkey_press(int xkey) {
 				else noflic = 0;
 				saveConfig();
 				setMessage(QString(" noflick %0% ").arg(noflic * 2));
+				break;
+			case XCUT_TVLINES:
+				scanlines = !scanlines;
+				setMessage(scanlines ? " scanlines on " : " scanlines off ");
+				saveConfig();
 				break;
 			case XCUT_RATIO:
 				vid_set_ratio(!conf.vid.keepRatio);

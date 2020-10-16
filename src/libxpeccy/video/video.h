@@ -62,6 +62,7 @@ enum {
 
 extern int bytesPerLine;
 extern int greyScale;
+extern int scanlines;
 extern int noflic;
 
 extern int xstep;

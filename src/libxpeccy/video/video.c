@@ -7,14 +7,17 @@
 
 #include "video.h"
 
+#define SCRBUF_SIZE	3700*2050*3
+
 int bytesPerLine = 100;
 int greyScale = 0;
 int noflic = 0;
+int scanlines = 0;
 
-static unsigned char bufa[2560 * 1440 * 3];
-static unsigned char bufb[2560 * 1440 * 3];
-unsigned char* scrimg = bufa;
-unsigned char* bufimg = bufb;
+static unsigned char bufa[SCRBUF_SIZE];
+static unsigned char bufb[SCRBUF_SIZE];
+unsigned char* scrimg = bufa;			// current screen (raw)
+unsigned char* bufimg = bufb;			// previous screen (mixed)
 static int curbuf = 0;
 
 static int xpos = 0;
@@ -26,7 +29,7 @@ int rigSkip = 0;
 int topSkip = 0;
 int botSkip = 0;
 
-static unsigned char pscr[2560 * 1440 * 3];
+static unsigned char pscr[SCRBUF_SIZE];		// previous screen (raw)
 static unsigned char* pptr = pscr;
 static unsigned char pcol;
 static xColor xcol;
@@ -81,7 +84,6 @@ void vid_line(Video* vid) {
 		memcpy(vid->ray.lptr, vid->ray.lptr - bytesPerLine, bytesPerLine);
 		vid->ray.lptr += bytesPerLine;
 	}
-
 	if (lefSkip)
 		memset(vid->ray.lptr, 0x00, lefSkip);
 	vid->ray.ptr = vid->ray.lptr + lefSkip;
@@ -102,6 +104,18 @@ void vid_frame(Video* vid) {
 	if (botSkip)
 		memset(vid->ray.lptr, 0x00, botSkip * bytesPerLine);
 	ypos = 0;
+	// scanlines
+	int x,y;
+	unsigned char* ptr = scrimg + bytesPerLine;
+	if (scanlines) {
+		for (y = 0x100; y < vid->vsze.y * ystep; y += 0x200) {
+			for (x = 0; x < bytesPerLine; x++) {
+				*(ptr + x) = (*(ptr + x) * 100) >> 8;
+			}
+			ptr += bytesPerLine * 2;
+		}
+	}
+
 	if (!vid->debug) {
 		scrimg = curbuf ? bufb : bufa;
 		bufimg = curbuf ? bufa : bufb;
@@ -113,7 +127,7 @@ void vid_frame(Video* vid) {
 	if (lefSkip)
 		memset(vid->ray.lptr, 0x00, lefSkip);
 	vid->ray.ptr = vid->ray.lptr + lefSkip;
-	pptr = pscr;
+	pptr = pscr; //pptr = pscr;
 }
 
 Video* vidCreate(vcbmrd cb, void* dptr) {

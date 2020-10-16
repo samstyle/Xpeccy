@@ -193,6 +193,7 @@ enum {
 	XCUT_NMI,
 	XCUT_RESET,
 	XCUT_TURBO,
+	XCUT_TVLINES,
 
 	XCUT_STEPIN,
 	XCUT_STEPOVER,
@@ -346,6 +347,7 @@ struct xConfig {
 	struct {
 		unsigned fullScreen:1;	// use fullscreen
 		unsigned keepRatio:1;	// keep ratio in fullscreen (add black borders)
+//		unsigned scanLines:1;
 		int scale;		// x1..x4
 		//int fps;
 		int fcount;		// frames counter (for fps showing)

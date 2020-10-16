@@ -704,6 +704,13 @@
              </widget>
             </item>
             <item>
+             <widget class="QCheckBox" name="cbScanlines">
+              <property name="text">
+               <string>TV scanlines</string>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="Line" name="line">
               <property name="orientation">
                <enum>Qt::Horizontal</enum>

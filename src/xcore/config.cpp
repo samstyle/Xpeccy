@@ -126,6 +126,7 @@ void saveConfig() {
 	fprintf(cfile, "keepratio = %s\n", YESNO(conf.vid.keepRatio));
 	fprintf(cfile, "scale = %i\n", conf.vid.scale);
 	fprintf(cfile, "greyscale = %s\n", YESNO(greyScale));
+	fprintf(cfile, "scanlines = %s\n", YESNO(scanlines));
 	fprintf(cfile, "bordersize = %i\n", int(conf.brdsize * 100));
 	fprintf(cfile, "noflick = %i\n", noflic);
 
@@ -349,6 +350,7 @@ void loadConfig() {
 					if (pnam=="noflic") noflic = str2bool(pval) ? 50 : 25;		// old parameter
 					if (pnam=="noflick") noflic = getRanged(pval.c_str(), 0, 50);	// new parameter
 					if (pnam=="greyscale") greyScale = str2bool(pval) ? 1 : 0;
+					if (pnam=="scanlines") scanlines = str2bool(pval) ? 1 : 0;
 					break;
 				case SECT_ROMSETS:
 					pos = pval.find_last_of(":");
