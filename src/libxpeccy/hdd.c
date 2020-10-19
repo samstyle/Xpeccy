@@ -516,6 +516,59 @@ typedef struct {
 	int port;
 } ataAddr;
 
+// dummy
+
+int ide_dum_rd(IDE* ide, int port, int* val, int dos) {return 0;}
+int ide_dum_wr(IDE* ide, int port, int val, int dos) {return 0;}
+
+int ide_ata_rd(IDE* ide, int adr, int hi) {
+	int res;
+	if (hi) {
+		res = (ide->bus >> 8) & 0xff;
+	} else {
+		ide->bus = ataRd(ide->curDev, adr);
+		res = ide->bus & 0xff;
+	}
+	return res;
+}
+
+void ide_ata_wr(IDE* ide, int adr, int hi, int val) {
+	if (hi) {
+		ide->bus &= 0xff;
+		ide->bus |= (val << 8);
+	} else {
+		ide->bus &= 0xff00;
+		ide->bus |= (val & 0xff);
+		ataWr(ide->curDev, adr, ide->bus);
+	}
+}
+
+// atm2
+
+ataAddr ide_atm_chk(int port, int dos) {
+	ataAddr res;
+	res.iorq = (((port & 0x001f) == 0x000f) && dos) ? 1 : 0;
+	res.high = ((port & 0x1ff) == 0x10f) ? 1 : 0;
+	res.port = (port & 0xe0) >> 5;
+	return res;
+}
+
+int ide_atm_rd(IDE* ide, int port, int* val, int dos) {
+	ataAddr res = ide_atm_chk(port, dos);
+	if (res.iorq)
+		*val = ide_ata_rd(ide, res.port, res.high);
+	return res.iorq;
+}
+
+int ide_atm_wr(IDE* ide, int port, int val, int dos) {
+	ataAddr res = ide_atm_chk(port, dos);
+	if (res.iorq)
+		ide_ata_wr(ide, res.port, res.high, val);
+	return res.iorq;
+}
+
+// rewrite this
+
 ataAddr ideDecoder(IDE* ide, int port, int dosen, int wr) {
 	ataAddr res;
 	res.port = 0xff;

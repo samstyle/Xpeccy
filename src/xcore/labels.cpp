@@ -23,11 +23,22 @@ int loadLabels(const char* fn) {
 		if (file.open(QFile::ReadOnly)) {
 			while(!file.atEnd()) {
 				line = file.readLine();
+				if (line.startsWith(":"))
+					line.prepend("FF");
 				arr = line.split(QRegExp("[: \r\n]"),QString::SkipEmptyParts);
 				if (arr.size() > 2) {
 					xadr.type = MEM_RAM;
 					xadr.bank = arr.at(0).toInt(NULL,16);
-					xadr.adr = arr.at(1).toInt(NULL,16) & 0x3fff;
+					xadr.adr = arr.at(1).toInt(NULL,16);
+					if (xadr.bank == 0xff) {
+						switch (xadr.adr & 0xc000) {
+							case 0x0000: break;
+							case 0x4000: xadr.bank = 5; break;
+							case 0x8000: xadr.bank = 2; break;
+							case 0xc000: xadr.bank = 0; break;
+						}
+					}
+					xadr.adr &= 0x3fff;
 					xadr.abs = (xadr.bank << 14) | xadr.adr;
 					name = arr.at(2);
 					switch (xadr.bank) {
