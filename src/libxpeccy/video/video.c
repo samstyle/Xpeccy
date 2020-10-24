@@ -110,7 +110,7 @@ void vid_frame(Video* vid) {
 	if (scanlines) {
 		for (y = 0x100; y < vid->vsze.y * ystep; y += 0x200) {
 			for (x = 0; x < bytesPerLine; x++) {
-				*(ptr + x) = (*(ptr + x) * 100) >> 8;
+				*(ptr + x) = (*(ptr + x) * 200) >> 8;
 			}
 			ptr += bytesPerLine * 2;
 		}

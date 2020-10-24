@@ -2393,6 +2393,9 @@
                    </item>
                    <item row="0" column="3">
                     <widget class="QSpinBox" name="hm_gsec">
+                     <property name="readOnly">
+                      <bool>true</bool>
+                     </property>
                      <property name="minimum">
                       <number>1</number>
                      </property>
@@ -2401,24 +2404,14 @@
                      </property>
                      <property name="value">
                       <number>255</number>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="0" column="1">
-                    <widget class="QSpinBox" name="hm_gcyl">
-                     <property name="minimum">
-                      <number>1</number>
-                     </property>
-                     <property name="maximum">
-                      <number>65535</number>
-                     </property>
-                     <property name="value">
-                      <number>1023</number>
                      </property>
                     </widget>
                    </item>
                    <item row="0" column="2">
                     <widget class="QSpinBox" name="hm_ghd">
+                     <property name="readOnly">
+                      <bool>true</bool>
+                     </property>
                      <property name="minimum">
                       <number>1</number>
                      </property>
@@ -2433,7 +2426,7 @@
                    <item row="1" column="1">
                     <widget class="QSpinBox" name="hm_glba">
                      <property name="readOnly">
-                      <bool>false</bool>
+                      <bool>true</bool>
                      </property>
                      <property name="maximum">
                       <number>5000000</number>
@@ -2470,6 +2463,22 @@
                      </property>
                      <property name="maximum">
                       <number>128000</number>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QSpinBox" name="hm_gcyl">
+                     <property name="readOnly">
+                      <bool>true</bool>
+                     </property>
+                     <property name="minimum">
+                      <number>1</number>
+                     </property>
+                     <property name="maximum">
+                      <number>65535</number>
+                     </property>
+                     <property name="value">
+                      <number>1023</number>
                      </property>
                     </widget>
                    </item>
@@ -2545,6 +2554,9 @@
                    </item>
                    <item row="0" column="3">
                     <widget class="QSpinBox" name="hs_gsec">
+                     <property name="readOnly">
+                      <bool>true</bool>
+                     </property>
                      <property name="minimum">
                       <number>1</number>
                      </property>
@@ -2558,6 +2570,9 @@
                    </item>
                    <item row="0" column="1">
                     <widget class="QSpinBox" name="hs_gcyl">
+                     <property name="readOnly">
+                      <bool>true</bool>
+                     </property>
                      <property name="minimum">
                       <number>1</number>
                      </property>
@@ -2571,6 +2586,9 @@
                    </item>
                    <item row="0" column="2">
                     <widget class="QSpinBox" name="hs_ghd">
+                     <property name="readOnly">
+                      <bool>true</bool>
+                     </property>
                      <property name="minimum">
                       <number>1</number>
                      </property>
@@ -2585,7 +2603,7 @@
                    <item row="1" column="1">
                     <widget class="QSpinBox" name="hs_glba">
                      <property name="readOnly">
-                      <bool>false</bool>
+                      <bool>true</bool>
                      </property>
                      <property name="maximum">
                       <number>5000000</number>

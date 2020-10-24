@@ -291,17 +291,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	connect(ui.actCopyToDisk,SIGNAL(triggered()),this,SLOT(copyToDisk()));
 	connect(ui.tbToDisk,SIGNAL(released()),this,SLOT(copyToDisk()));
 // hdd
-	connect(ui.hm_islba,SIGNAL(stateChanged(int)),this,SLOT(hddcap()));
-	connect(ui.hm_glba,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
-	connect(ui.hm_gcyl,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
-	connect(ui.hm_ghd,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
-	connect(ui.hm_gsec,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
 	connect(ui.hm_pathtb,SIGNAL(released()),this,SLOT(hddMasterImg()));
-	connect(ui.hs_islba,SIGNAL(stateChanged(int)),this,SLOT(hddcap()));
-	connect(ui.hs_glba,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
-	connect(ui.hs_gcyl,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
-	connect(ui.hs_ghd,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
-	connect(ui.hs_gsec,SIGNAL(valueChanged(int)),this,SLOT(hddcap()));
 	connect(ui.hs_pathtb,SIGNAL(released()),this,SLOT(hddSlaveImg()));
 // external
 	connect(ui.tbSDCimg,SIGNAL(released()),this,SLOT(selSDCimg()));
@@ -490,6 +480,7 @@ void SetupWin::start(xProfile* p) {
 	ui.hm_ghd->setValue(pass.hds);
 	ui.hm_gcyl->setValue(pass.cyls);
 	ui.hm_glba->setValue(comp->ide->master->maxlba);
+	ui.hm_capacity->setValue(comp->ide->master->maxlba >> 11);
 
 	ui.hs_type->setCurrentIndex(ui.hm_type->findData(comp->ide->slave->type));
 	pass = ideGetPassport(comp->ide,IDE_SLAVE);
@@ -499,6 +490,7 @@ void SetupWin::start(xProfile* p) {
 	ui.hs_ghd->setValue(pass.hds);
 	ui.hs_gcyl->setValue(pass.cyls);
 	ui.hs_glba->setValue(comp->ide->slave->maxlba);
+	ui.hs_capacity->setValue(comp->ide->slave->maxlba >> 11);
 // external
 	ui.sdPath->setText(QString::fromLocal8Bit(comp->sdc->image));
 //	ui.sdcapbox->setCurrentIndex(ui.sdcapbox->findData(comp->sdc->capacity));
@@ -653,28 +645,15 @@ void SetupWin::apply() {
 // hdd
 	comp->ide->type = getRFIData(ui.hiface);
 
-	ATAPassport pass = ideGetPassport(comp->ide,IDE_MASTER);
 	comp->ide->master->type = getRFIData(ui.hm_type);
 	ideSetImage(comp->ide,IDE_MASTER,ui.hm_path->text().toLocal8Bit().data());
 	comp->ide->master->hasLBA = ui.hm_islba->isChecked() ? 1 : 0;
-	pass.spt = ui.hm_gsec->value() & 0xffff;
-	pass.hds = ui.hm_ghd->value() & 0xffff;
-	pass.cyls = ui.hm_gcyl->value() & 0xffff;
-	comp->ide->master->maxlba = ui.hm_glba->value();
-	ideSetPassport(comp->ide,IDE_MASTER,pass);
 
-	pass = ideGetPassport(comp->ide,IDE_SLAVE);
 	comp->ide->slave->type = getRFIData(ui.hs_type);
 	ideSetImage(comp->ide,IDE_SLAVE,ui.hs_path->text().toLocal8Bit().data());
 	comp->ide->slave->hasLBA = ui.hs_islba->isChecked() ? 1 : 0;
-	pass.spt = ui.hs_gsec->value() & 0xffff;
-	pass.hds = ui.hs_ghd->value() & 0xffff;
-	pass.cyls = ui.hs_gcyl->value() & 0xffff;
-	comp->ide->slave->maxlba = ui.hs_glba->value();
-	ideSetPassport(comp->ide,IDE_SLAVE,pass);
 // others
 	sdcSetImage(comp->sdc,ui.sdPath->text().isEmpty() ? "" : ui.sdPath->text().toLocal8Bit().data());
-//	sdcSetCapacity(comp->sdc, getRFIData(ui.sdcapbox));
 	comp->sdc->lock = ui.sdlock->isChecked() ? 1 : 0;
 
 	comp->slot->mapType = getRFIData(ui.cSlotType);
@@ -1414,31 +1393,38 @@ void SetupWin::tlistclick(QModelIndex idx) {
 //	ui.tapelist->selectRow(row);
 }
 
-/*
-void SetupWin::setTapeBreak(int row,int col) {
-	if ((row < 0) || (col != 1)) return;
-	comp->tape->blkData[row].breakPoint ^= 1;
-	buildtapelist();
-	ui.tapelist->selectRow(row);
-}
-*/
-
 // hdd
 
 void SetupWin::hddMasterImg() {
-	QString path = QFileDialog::getOpenFileName(this,"Image for master HDD","","All files (*.*)",NULL,QFileDialog::DontConfirmOverwrite);
-	if (path != "") ui.hm_path->setText(path);
+	QString path = QFileDialog::getOpenFileName(this,"Image for master HDD","","All files (*)",NULL,QFileDialog::DontConfirmOverwrite);
+	if (path != "") {
+		ui.hm_path->setText(path);
+		ideSetImage(comp->ide, IDE_MASTER, path.toLocal8Bit().data());
+		ui.hm_ghd->setValue(comp->ide->master->pass.cyls);
+		ui.hm_gsec->setValue(comp->ide->master->pass.spt);
+		ui.hm_ghd->setValue(comp->ide->master->pass.hds);
+		ui.hm_glba->setValue(comp->ide->master->maxlba);
+		ui.hm_capacity->setValue(comp->ide->master->maxlba >> 11);	// 512 (sector) -> 1024*1024 (Mb)
+	}
 }
 
 void SetupWin::hddSlaveImg() {
-	QString path = QFileDialog::getOpenFileName(this,"Image for slave HDD","","All files (*.*)",NULL,QFileDialog::DontConfirmOverwrite);
-	if (path != "") ui.hs_path->setText(path);
+	QString path = QFileDialog::getOpenFileName(this,"Image for slave HDD","","All files (*)",NULL,QFileDialog::DontConfirmOverwrite);
+	if (path != "") {
+		ui.hs_path->setText(path);
+		ideSetImage(comp->ide, IDE_SLAVE, path.toLocal8Bit().data());
+		ui.hs_ghd->setValue(comp->ide->slave->pass.cyls);
+		ui.hs_gsec->setValue(comp->ide->slave->pass.spt);
+		ui.hs_ghd->setValue(comp->ide->slave->pass.hds);
+		ui.hs_glba->setValue(comp->ide->slave->maxlba);
+		ui.hs_capacity->setValue(comp->ide->slave->maxlba >> 11);	// 512 (sector) -> 1024*1024 (Mb)
+	}
 }
 
 void SetupWin::hddcap() {
 	int sz;
 	if (ui.hs_islba->isChecked()) {
-		sz = (ui.hs_glba->value() >> 11);
+		sz = (ui.hs_glba->value() >> 9);
 	} else {
 		sz = ((ui.hs_gsec->value() * (ui.hs_ghd->value() + 1) * (ui.hs_gcyl->value() + 1)) >> 11);
 	}

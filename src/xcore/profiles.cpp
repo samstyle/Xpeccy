@@ -297,8 +297,8 @@ int prfLoad(std::string nm) {
 	int chbtype = SND_NONE;
 	double tmpd;
 	int section = PS_NONE;
-	ATAPassport masterPass = ideGetPassport(comp->ide,IDE_MASTER);
-	ATAPassport slavePass = ideGetPassport(comp->ide,IDE_SLAVE);
+//	ATAPassport masterPass = ideGetPassport(comp->ide,IDE_MASTER);
+//	ATAPassport slavePass = ideGetPassport(comp->ide,IDE_SLAVE);
 	if (!file.good()) {
 		printf("Profile config is missing. Default one will be created\n");
 		copyFile(":/conf/xpeccy.conf", cfname.c_str());
@@ -423,28 +423,10 @@ int prfLoad(std::string nm) {
 					if (pnam == "iface") comp->ide->type = arg.i;
 					if (pnam == "master.type") comp->ide->master->type = arg.i;
 					if (pnam == "master.lba") comp->ide->master->hasLBA = arg.b;
-					if (pnam == "master.maxlba") comp->ide->master->maxlba = arg.i;
 					if (pnam == "master.image") ideSetImage(comp->ide,IDE_MASTER, arg.s);
-					if (pnam == "master.chs") {
-						vect = splitstr(pval,"/");
-						if (vect.size() > 2) {
-							masterPass.spt = atoi(vect.at(0).c_str()) & 0xffff;
-							masterPass.hds = atoi(vect.at(1).c_str()) & 0xffff;
-							masterPass.cyls = atoi(vect.at(2).c_str()) & 0xffff;
-						}
-					}
 					if (pnam == "slave.type") comp->ide->slave->type = arg.i;
 					if (pnam == "slave.lba") comp->ide->slave->hasLBA = arg.b;
-					if (pnam == "slave.maxlba") comp->ide->slave->maxlba = arg.i;
 					if (pnam == "slave.image") ideSetImage(comp->ide,IDE_SLAVE, arg.s);
-					if (pnam == "slave.chs") {
-						vect = splitstr(pval,"/");
-						if (vect.size() > 2) {
-							slavePass.spt = atoi(vect.at(0).c_str()) & 0xffff;
-							slavePass.hds = atoi(vect.at(1).c_str()) & 0xffff;
-							slavePass.cyls = atoi(vect.at(2).c_str()) & 0xffff;
-						}
-					}
 					break;
 				case PS_INPUT:
 					if (pnam == "mouse") comp->mouse->enable = arg.b;
@@ -473,8 +455,8 @@ int prfLoad(std::string nm) {
 		}
 	}
 
-	ideSetPassport(comp->ide,IDE_MASTER,masterPass);
-	ideSetPassport(comp->ide,IDE_SLAVE,slavePass);
+//	ideSetPassport(comp->ide,IDE_MASTER,masterPass);
+//	ideSetPassport(comp->ide,IDE_SLAVE,slavePass);
 
 	chip_set_type(comp->ts->chipA, chatype);
 	chip_set_type(comp->ts->chipB, chbtype);
@@ -612,17 +594,11 @@ int prfSave(std::string nm) {
 	fprintf(file, "\n[IDE]\n\n");
 	fprintf(file, "iface = %i\n", comp->ide->type);
 	fprintf(file, "master.type = %i\n", comp->ide->master->type);
-	ATAPassport pass = ideGetPassport(comp->ide,IDE_MASTER);
 	fprintf(file, "master.image = %s\n", comp->ide->master->image ? comp->ide->master->image : "");
 	fprintf(file, "master.lba = %s\n", YESNO(comp->ide->master->hasLBA));
-	fprintf(file, "master.maxlba = %i\n", comp->ide->master->maxlba);
-	fprintf(file, "master.chs = %i/%i/%i\n", pass.spt, pass.hds, pass.cyls);
 	fprintf(file, "slave.type = %i\n", comp->ide->slave->type);
-	pass = ideGetPassport(comp->ide,IDE_SLAVE);
 	fprintf(file, "slave.image = %s\n", comp->ide->slave->image ? comp->ide->slave->image : "");
 	fprintf(file, "slave.lba = %s\n", YESNO(comp->ide->slave->hasLBA));
-	fprintf(file, "slave.maxlba = %i\n", comp->ide->slave->maxlba);
-	fprintf(file, "slave.chs = %i/%i/%i\n", pass.spt, pass.hds, pass.cyls);
 
 	fprintf(file, "\n[SDC]\n\n");
 	fprintf(file, "sdcimage = %s\n", comp->sdc->image ? comp->sdc->image : "");

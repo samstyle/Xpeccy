@@ -66,13 +66,13 @@ void ataClearBuf(ATADev* dev) {
 }
 
 void ataRefresh(ATADev* dev) {
-	if (dev->hasLBA) {
-		dev->pass.spt = 255;
-		dev->pass.hds = 16;
-	} else {
-		dev->maxlba = dev->pass.cyls * dev->pass.hds * dev->pass.spt;
-	}
-	dev->pass.bpt = dev->pass.bps * dev->pass.spt;
+//	if (dev->hasLBA) {
+//		dev->pass.spt = 64;
+//		dev->pass.hds = 16;
+//	} else {
+//		dev->maxlba = dev->pass.cyls * dev->pass.hds * dev->pass.spt;
+//	}
+//	dev->pass.bpt = dev->pass.bps * dev->pass.spt;
 }
 
 void ataSetSector(ATADev* dev, int nr) {
@@ -470,6 +470,19 @@ void ideSetImage(IDE *ide, int wut, const char *name) {
 		dev->image = realloc(dev->image,strlen(name) + 1);
 		strcpy(dev->image,name);
 		dev->file = fopen(dev->image,"rb+");
+		if (dev->file) {
+			fseek(dev->file, 0, SEEK_END);
+			long fsz = ftell(dev->file);
+			long rsz = 512;
+			while (rsz < fsz)			// in bytes (next 2^n from file size)
+				rsz <<= 1;
+			dev->maxlba = (rsz >> 9);		// in 512byte units
+			dev->pass.cyls = (dev->maxlba / dev->pass.hds / dev->pass.spt);
+			rewind(dev->file);
+		} else {
+			free(dev->image);
+			dev->image = NULL;
+		}
 	}
 }
 
@@ -486,7 +499,10 @@ ATAPassport ideGetPassport(IDE* ide, int iface) {
 	return res;
 }
 
+/*
 void ideSetPassport(IDE* ide, int iface, ATAPassport pass) {
+//	pass.hds = 16;
+//	pass.spt = 64;
 	pass.vol = 1;
 	pass.bps = 512 * pass.vol;
 	pass.bpt = pass.bps * pass.spt;
@@ -495,15 +511,18 @@ void ideSetPassport(IDE* ide, int iface, ATAPassport pass) {
 //	pass.mcver = "";
 	switch(iface) {
 		case IDE_MASTER:
+			pass.cyls = ide->master->pass.cyls;
 			ide->master->pass = pass;
 			ataRefresh(ide->master);
 			break;
 		case IDE_SLAVE:
+			pass.cyls = ide->slave->pass.cyls;
 			ide->slave->pass = pass;
 			ataRefresh(ide->slave);
 			break;
 	}
 }
+*/
 
 // IDE controller
 
@@ -583,9 +602,9 @@ ataAddr ideDecoder(IDE* ide, int port, int dosen, int wr) {
 			res.port = (port & 0xe0) >> 5;
 			break;
 		case IDE_NEMO_EVO:
-			res.iorq = (port & 6) ? 0 : 1;
+			res.iorq = (((port & 0xff) == 0xc8) || ((port & 0xff) == 0x11) || ((port & 0x1f) == 0x10)) ? 1 : 0;
 			res.hdd = 1;
-			res.high = ((port & 0xe1) == 0x01) ? 1 : 0;
+			res.high = ((port & 0xff) == 0x11) ? 1 : 0;
 			res.port = (port & 0xe0) >> 5;
 			break;
 		case IDE_NEMO:
@@ -682,6 +701,7 @@ int ideIn(IDE* ide, int port, int* val, int dosen) {
 	return 1;
 }
 
+// nedoos: write to 11:10 (nemo mode)
 int ideOut(IDE* ide, int port, int val,int dosen) {
 	ataAddr adr = ideDecoder(ide,port,dosen,1);
 	if (!adr.iorq) return 0;
@@ -693,15 +713,15 @@ int ideOut(IDE* ide, int port, int val,int dosen) {
 				if (adr.high) {
 					ide->bus &= 0x00ff;
 					ide->bus |= (val << 8);
-					ide->hiTrig = 2;		// 11 : high, next 10 is low
+					ide->hiTrig = 2;		// 11 : high, next 10 is low+wr
 				} else {
 					if (ide->hiTrig == 0) {		// 10 : low
 						ide->bus &= 0xff00;
-						ide->bus |= val;
+						ide->bus |= (val & 0xff);
 						ide->hiTrig = 1;
 					} else if (ide->hiTrig == 1) {	// 10 : high + wr
 						ide->bus &= 0x00ff;
-						ide->bus |= (val << 8);
+						ide->bus |= ((val & 0xff) << 8);
 						ataWr(ide->curDev,0,ide->bus);
 						ide->hiTrig = 0;
 					} else if (ide->hiTrig == 2) {	// 10 : low + wr (after 11)

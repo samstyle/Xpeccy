@@ -292,7 +292,7 @@ static xPort evoPortMap[] = {
 //	{0x00ff,0x00fb,2,2,2,NULL,	evoOutFB},	// covox
 	{0x00ff,0x00be,2,2,2,evoInBE,	NULL},
 	{0x00ff,0x00bf,2,2,2,evoInBF,	evoOutBF},
-	{0xc002,0x7ffd,2,2,2,NULL,	evoOut7FFD},
+	{0xc0fe,0x7ffd,2,2,2,NULL,	evoOut7FFD},
 	{0xffff,0xfadf,2,2,2,xInFADF,	NULL},		// k-mouse (fadf,fbdf,ffdf)
 	{0xffff,0xfbdf,2,2,2,xInFBDF,	NULL},
 	{0xffff,0xffdf,2,2,2,xInFFDF,	NULL},

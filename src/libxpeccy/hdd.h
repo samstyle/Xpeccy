@@ -149,7 +149,7 @@ void ideCloseFiles(IDE*);
 
 void ideSetImage(IDE*,int,const char*);
 ATAPassport ideGetPassport(IDE*,int);
-void ideSetPassport(IDE*,int,ATAPassport);
+// void ideSetPassport(IDE*,int,ATAPassport);
 
 #ifdef __cplusplus
 }
