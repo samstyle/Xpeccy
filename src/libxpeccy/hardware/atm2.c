@@ -207,6 +207,10 @@ int atm2inFE(Computer* comp, int port) {
 	return res;
 }
 
+int atm2InFF(Computer* comp, int port) {
+	return (comp->vid->vbrd || comp->vid->hbrd) ? 0xff : comp->vid->atrbyte & 0xff;
+}
+
 static xPort atm2PortMap[] = {
 	{0x0007,0x00fe,2,2,2,atm2inFE,	atm2OutFE},
 	{0x0007,0x00fa,2,2,2,NULL,	NULL},		// fa
@@ -223,7 +227,7 @@ static xPort atm2PortMap[] = {
 	{0x009f,0x00ff,1,2,2,NULL,	atm2OutFF},	// palette (dos)
 	{0x009f,0x00f7,1,2,2,NULL,	atm2OutF7},
 	{0x009f,0x0077,1,2,2,NULL,	atm2Out77},
-	{0x0000,0x0000,2,2,2,NULL,	NULL}
+	{0x0000,0x0000,2,2,2,atm2InFF,	NULL}
 };
 
 void atm2Out(Computer* comp, int port, int val, int dos) {

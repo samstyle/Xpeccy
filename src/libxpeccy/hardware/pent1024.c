@@ -24,6 +24,10 @@ int p1mInBFF7(Computer* comp, int port) {
 	return (comp->pEFF7 & 0x80) ? cmsRd(comp) : 0xff;
 }
 
+int p1mInFF(Computer* comp, int port) {
+	return (comp->vid->vbrd || comp->vid->hbrd) ? 0xff : comp->vid->atrbyte & 0xff;
+}
+
 // out
 
 void p1mOut7FFD(Computer* comp, int port, int val) {
@@ -63,7 +67,7 @@ static xPort p1mPortMap[] = {
 	{0x05a3,0xfbdf,0,2,2,xInFBDF,	NULL},
 	{0x05a3,0xffdf,0,2,2,xInFFDF,	NULL},
 	{0x00ff,0x001f,0,2,2,p1mIn1F,	NULL},		// TODO : ORLY (x & FF = 1F)
-	{0x0000,0x0000,2,2,2,NULL,	NULL}
+	{0x0000,0x0000,2,2,2,p1mInFF,	NULL}
 };
 
 void p1mOut(Computer* comp, int port, int val, int dos) {

@@ -66,7 +66,7 @@ typedef struct {
 saaChip* saaCreate();
 void saaDestroy(saaChip*);
 void saaReset(saaChip*);
-int saaWrite(saaChip*, unsigned short, unsigned char);
+int saaWrite(saaChip*, int, int);
 void saaSync(saaChip*, int);
 sndPair saaGetVolume(saaChip*);
 // void saaFlush(saaChip*);

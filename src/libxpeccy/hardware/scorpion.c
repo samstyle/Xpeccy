@@ -60,6 +60,10 @@ int scrpIn7FFD(Computer* comp, int port) {
 	return 0xff;
 }
 
+int scrpInFF(Computer* comp, int port) {
+	return (comp->vid->vbrd || comp->vid->hbrd) ? 0xff : comp->vid->atrbyte & 0xff;
+}
+
 // out
 
 void scrpOutDD(Computer* comp, int port, int val) {
@@ -91,7 +95,7 @@ static xPort scrpPortMap[] = {
 	{0x0523,0xfadf,0,2,2,xInFADF,	NULL},		// kmouse
 	{0x0523,0xfbdf,0,2,2,xInFBDF,	NULL},
 	{0x0523,0xffdf,0,2,2,xInFFDF,	NULL},
-	{0x0000,0x0000,2,2,2,NULL,NULL}
+	{0x0000,0x0000,2,2,2,scrpInFF,NULL}
 };
 
 void scoOut(Computer* comp, int port, int val, int dos) {

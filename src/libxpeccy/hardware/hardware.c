@@ -129,7 +129,8 @@ int hwIn(xPort* ptab, Computer* comp, int port, int dos) {
 	int res = 0xff;
 	int idx = 0;
 	xPort* itm;
-	while (ptab[idx].mask != 0) {
+	// while (ptab[idx].mask != 0) {
+	do {
 		itm = &ptab[idx];
 		if (((port & itm->mask) == (itm->value & itm->mask)) &&\
 				(itm->in != NULL) &&\
@@ -139,16 +140,17 @@ int hwIn(xPort* ptab, Computer* comp, int port, int dos) {
 			res = itm->in(comp, port);
 			break;
 		}
-		if (itm->mask == 0) break;
+	//	if (itm->mask == 0) break;
 		idx++;
-	}
+	} while (itm->mask != 0);
 	return res;
 }
 
 void hwOut(xPort* ptab, Computer* comp, int port, int val, int dos) {
 	int idx = 0;
 	xPort* itm;
-	while (ptab[idx].mask != 0) {
+	//while (ptab[idx].mask != 0) {
+	do {
 		itm = &ptab[idx];
 		if (((port & itm->mask) == (itm->value & itm->mask)) &&\
 				(itm->out != NULL) &&\
@@ -158,7 +160,7 @@ void hwOut(xPort* ptab, Computer* comp, int port, int val, int dos) {
 			itm->out(comp, port, val);
 //			break;		// write to every matched port
 		}
-		if (itm->mask == 0) break;
+//		if (itm->mask == 0) break;
 		idx++;
-	}
+	} while (itm->mask != 0);
 }

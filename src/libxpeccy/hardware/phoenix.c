@@ -48,6 +48,10 @@ int phxInF7(Computer* comp, int port) {
 	return 0x00;
 }
 
+int phxInFF(Computer* comp, int port) {
+	return (comp->vid->vbrd || comp->vid->hbrd) ? 0xff : comp->vid->atrbyte & 0xff;
+}
+
 static xPort phxPortMap[] = {
 	{0x0007,0x00fe,2,2,2,xInFE,	xOutFE},	// FE
 	{0xc007,0x1ffd,2,2,2,NULL,	phxOut1FFD},	// mem control
@@ -60,12 +64,7 @@ static xPort phxPortMap[] = {
 	{0xffff,0xffdf,2,2,2,xInFFDF,	NULL},
 
 	{0xffff,0x00f7,2,2,2,phxInF7,	NULL},		// version
-#ifdef ISDEBUG
-	{0,0,2,2,2,brkIn,brkOut}
-#else
-	{0,0,2,2,2,dummyIn,dummyOut}
-#endif
-	// NEMO IDE set as external device
+	{0x0000,0x0000,2,2,2,phxInFF,	NULL}
 };
 
 void phxOut(Computer* comp, int port, int val, int dos) {

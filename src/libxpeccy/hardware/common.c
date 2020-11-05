@@ -129,14 +129,11 @@ void zx_set_pal(Computer* comp) {
 // in
 
 int zx_dev_wr(Computer* comp, int adr, int val, int dos) {
-	int res = 0;
-	res = gsWrite(comp->gs, adr, val);
-	if (!dos) {
-		res |= saaWrite(comp->saa, adr, val);
-		res |= sdrvWrite(comp->sdrv, adr, val);
-	}
-	res |= ideOut(comp->ide, adr, val, dos);
-	return res;
+	if (gsWrite(comp->gs, adr, val)) return 1;
+	if (!dos && saaWrite(comp->saa, adr, val)) return 1;
+	if (!dos && sdrvWrite(comp->sdrv, adr, val)) return 1;
+	if (ideOut(comp->ide, adr, val, dos)) return 1;
+	return 0;
 }
 
 int zx_dev_rd(Computer* comp, int adr, int* ptr, int dos) {

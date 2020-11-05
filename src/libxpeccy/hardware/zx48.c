@@ -51,7 +51,8 @@ int spIn1F(Computer* comp, int port) {
 }
 
 int spInFF(Computer* comp, int port) {
-	return comp->vid->atrbyte;
+	return (comp->vid->vbrd || comp->vid->hbrd) ? 0xff : comp->vid->atrbyte & 0xff;
+	//return comp->vid->atrbyte;
 }
 
 static xPort spePortMap[] = {

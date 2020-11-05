@@ -1421,6 +1421,7 @@ void SetupWin::hddSlaveImg() {
 	}
 }
 
+/*
 void SetupWin::hddcap() {
 	int sz;
 	if (ui.hs_islba->isChecked()) {
@@ -1430,6 +1431,7 @@ void SetupWin::hddcap() {
 	}
 	ui.hs_capacity->setValue(sz);
 }
+*/
 
 // external
 

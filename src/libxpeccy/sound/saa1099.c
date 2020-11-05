@@ -104,7 +104,7 @@ void saaEnvStep(saaEnv* env) {
 // (512 - tone) : 0x200..0x100
 // (512 - tone) << (9 - oct) : 0x800..0x400 (7 oct), 0x1000..0x800 (6 oct), ticks
 
-int saaWrite(saaChip* saa, unsigned short adr, unsigned char data) {
+int saaWrite(saaChip* saa, int adr, int data) {
 	int i, num;
 	if ((adr & 0xff) != 0xff) return 0;
 //	saaFlush(saa);

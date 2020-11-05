@@ -32,6 +32,12 @@ void plusRes(Computer* comp) {
 	comp->rom = 0;
 }
 
+// in
+
+int p2InFF(Computer* comp, int port) {
+	return (comp->vid->vbrd || comp->vid->hbrd) ? 0xff : comp->vid->atrbyte & 0xff;
+}
+
 // out
 
 void p2Out1FFD(Computer* comp, int port, int val) {
@@ -53,7 +59,7 @@ static xPort p2PortMap[] = {
 	{0xf002,0x1ffd,2,2,2,NULL,	p2Out1FFD},
 	{0xc002,0xbffd,2,2,2,NULL,	xOutBFFD},
 	{0xc002,0xfffd,2,2,2,xInFFFD,	xOutFFFD},
-	{0x0000,0x0000,2,2,2,NULL,	NULL}
+	{0x0000,0x0000,2,2,2,p2InFF,	NULL}
 };
 
 void pl2Out(Computer* comp, int port, int val, int dos) {

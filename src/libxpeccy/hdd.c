@@ -473,7 +473,7 @@ void ideSetImage(IDE *ide, int wut, const char *name) {
 		if (dev->file) {
 			fseek(dev->file, 0, SEEK_END);
 			long fsz = ftell(dev->file);
-			long rsz = 512;
+			long rsz = 16*256*512;			// 1 cylinder size (16 heads, 256 sectors, 512 bytes/sec)
 			while (rsz < fsz)			// in bytes (next 2^n from file size)
 				rsz <<= 1;
 			dev->maxlba = (rsz >> 9);		// in 512byte units

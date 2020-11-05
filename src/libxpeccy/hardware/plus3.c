@@ -1,16 +1,12 @@
 #include "../spectrum.h"
 
-// out
+// in
 
-/*
-void p3OutFE(ZXComp* comp, unsigned short port, unsigned char val) {
-	comp->vid->nextbrd = val & 0x07;
-	if (!comp->vid->border4t)
-		comp->vid->brdcol = val & 0x07;
-	comp->beeplev = (val & 0x10) ? 1 : 0;
-	comp->tape->levRec = (val & 0x08) ? 1 : 0;
+int p3InFF(Computer* comp, int port) {
+	return (comp->vid->vbrd || comp->vid->hbrd) ? 0xff : comp->vid->atrbyte & 0xff;
 }
-*/
+
+// out
 
 void p3Out1FFD(Computer* comp, int port, int val) {
 	comp->p1FFD = val & 0xff;
@@ -32,7 +28,7 @@ static xPort p3PortMap[] = {
 	{0xc002,0xfffd,2,2,2,xInFFFD,	xOutFFFD},
 	{0xf002,0x1ffd,2,2,2,NULL,	p3Out1FFD},
 	{0x0003,0x00fe,2,2,2,xInFE,	xOutFE},
-	{0x0000,0x0000,2,2,2,NULL,	NULL}
+	{0x0000,0x0000,2,2,2,p3InFF,	NULL}
 };
 
 void pl3Out(Computer* comp, int port, int val, int dos) {

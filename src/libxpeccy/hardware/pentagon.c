@@ -11,11 +11,9 @@ void penMapMem(Computer* comp) {
 
 // in
 
-/*
-unsigned char penIn1F(ZXComp* comp, unsigned short port) {
-	return joyInput(comp->joy);
+int penInFF(Computer* comp, int port) {
+	return (comp->vid->vbrd || comp->vid->hbrd) ? 0xff : comp->vid->atrbyte & 0xff;
 }
-*/
 
 // out
 
@@ -36,7 +34,7 @@ static xPort penPortMap[] = {
 	{0x05a3,0xfadf,0,2,2,xInFADF,	NULL},		// mouse
 	{0x05a3,0xfbdf,0,2,2,xInFBDF,	NULL},
 	{0x05a3,0xffdf,0,2,2,xInFFDF,	NULL},
-	{0x0000,0x0000,2,2,2,NULL,	NULL}			// end
+	{0x0000,0x0000,2,2,2,penInFF,	NULL}
 };
 
 void penOut(Computer* comp, int port, int val, int dos) {
