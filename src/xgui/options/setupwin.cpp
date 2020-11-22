@@ -48,6 +48,21 @@ std::string getRFText(QComboBox* box) {
 
 // OBJECT
 
+void dbg_fill_chip_boxes(QComboBox* cbtype, QComboBox* cbstereo) {
+	cbtype->clear();
+	cbtype->addItem(QIcon(":/images/cancel.png"),"none",SND_NONE);
+	cbtype->addItem(QIcon(":/images/MicrochipLogo.png"),"AY-3-8910",SND_AY);
+	cbtype->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2149",SND_YM);
+	cbstereo->clear();
+	cbstereo->addItem("Mono",AY_MONO);
+	cbstereo->addItem("ABC",AY_ABC);
+	cbstereo->addItem("ACB",AY_ACB);
+	cbstereo->addItem("BAC",AY_BAC);
+	cbstereo->addItem("BCA",AY_BCA);
+	cbstereo->addItem("CAB",AY_CAB);
+	cbstereo->addItem("CBA",AY_CBA);
+}
+
 SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	setModal(true);
 	ui.setupUi(this);
@@ -109,27 +124,12 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.ratbox->addItem("44100",44100);
 	ui.ratbox->addItem("22050",22050);
 	ui.ratbox->addItem("11025",11025);
-	ui.schip1box->addItem(QIcon(":/images/cancel.png"),"none",SND_NONE);
-	ui.schip1box->addItem(QIcon(":/images/MicrochipLogo.png"),"AY-3-8910",SND_AY);
-	ui.schip1box->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2149",SND_YM);
-	ui.schip2box->addItem(QIcon(":/images/cancel.png"),"none",SND_NONE);
-	ui.schip2box->addItem(QIcon(":/images/MicrochipLogo.png"),"AY-3-8910",SND_AY);
-	ui.schip2box->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2149",SND_YM);
-#ifdef ISDEBUG
-	ui.schip1box->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2203",SND_YM2203);
-	ui.schip2box->addItem(QIcon(":/images/YamahaLogo.png"),"Yamaha 2203",SND_YM2203);
-#endif
-	ui.stereo1box->addItem("Mono",AY_MONO); ui.stereo2box->addItem("Mono",AY_MONO);
-	ui.stereo1box->addItem("ABC",AY_ABC); ui.stereo2box->addItem("ABC",AY_ABC);
-	ui.stereo1box->addItem("ACB",AY_ACB); ui.stereo2box->addItem("ACB",AY_ACB);
-	ui.stereo1box->addItem("BAC",AY_BAC); ui.stereo2box->addItem("BAC",AY_BAC);
-	ui.stereo1box->addItem("BCA",AY_BCA); ui.stereo2box->addItem("BCA",AY_BCA);
-	ui.stereo1box->addItem("CAB",AY_CAB); ui.stereo2box->addItem("CAB",AY_CAB);
-	ui.stereo1box->addItem("CBA",AY_CBA); ui.stereo2box->addItem("CBA",AY_BCA);
+	dbg_fill_chip_boxes(ui.schip1box, ui.stereo1box);
+	dbg_fill_chip_boxes(ui.schip2box, ui.stereo2box);
+	dbg_fill_chip_boxes(ui.schip3box, ui.stereo3box);
 	ui.tsbox->addItem("None",TS_NONE);
 	ui.tsbox->addItem("NedoPC",TS_NEDOPC);
-//	ui.gstereobox->addItem("Mono",GS_MONO);
-//	ui.gstereobox->addItem("L:1,2; R:3,4",GS_12_34);
+	ui.tsbox->addItem("ZXNext", TS_ZXNEXT);
 	ui.sdrvBox->addItem("None",SDRV_NONE);
 	ui.sdrvBox->addItem("Covox only",SDRV_COVOX);
 	ui.sdrvBox->addItem("Soundrive 1.05 mode 1",SDRV_105_1);
@@ -162,22 +162,9 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.hiface->addItem("SMK512",IDE_SMK);
 	ui.hm_type->addItem(QIcon(":/images/cancel.png"),"Not connected",IDE_NONE);
 	ui.hm_type->addItem(QIcon(":/images/hdd.png"),"HDD (ATA)",IDE_ATA);
-//	setupUi.hm_type->addItem(QIcon(":/images/cd.png"),"CD (ATAPI) not working yet",IDE_ATAPI);
 	ui.hs_type->addItem(QIcon(":/images/cancel.png"),"Not connected",IDE_NONE);
 	ui.hs_type->addItem(QIcon(":/images/hdd.png"),"HDD (ATA)",IDE_ATA);
-//	setupUi.hs_type->addItem(QIcon(":/images/cd.png"),"CD (ATAPI) not working yet",IDE_ATAPI);
 // others
-/*
-	ui.sdcapbox->addItem("32 M",SDC_32M);
-	ui.sdcapbox->addItem("64 M",SDC_64M);
-	ui.sdcapbox->addItem("128 M",SDC_128M);
-	ui.sdcapbox->addItem("256 M",SDC_256M);
-	ui.sdcapbox->addItem("512 M",SDC_512M);
-	ui.sdcapbox->addItem("1024 M",SDC_1G);
-	ui.sdcapbox->addItem("2048 M",SDC_2G);
-	ui.sdcapbox->addItem("4096 M",SDC_4G);
-	ui.sdcapbox->addItem("8192 M",SDC_8G);
-*/
 	ui.cSlotType->addItem("No mapper",MAP_MSX_NOMAPPER);
 	ui.cSlotType->addItem("Konami 4",MAP_MSX_KONAMI4);
 	ui.cSlotType->addItem("Konami 5",MAP_MSX_KONAMI5);
@@ -228,12 +215,6 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	connect(layUi.okButton,SIGNAL(released()),this,SLOT(layEditorOK()));
 	connect(layUi.cnButton,SIGNAL(released()),layeditor,SLOT(hide()));
 // sound
-/*
-	connect(ui.bvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
-	connect(ui.tvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
-	connect(ui.avsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
-	connect(ui.gvsld,SIGNAL(valueChanged(int)),this,SLOT(updvolumes()));
-*/
 	connect(ui.sldMasterVol,SIGNAL(valueChanged(int)),ui.sbMasterVol,SLOT(setValue(int)));
 	connect(ui.sldBeepVol,SIGNAL(valueChanged(int)),ui.sbBeepVol,SLOT(setValue(int)));
 	connect(ui.sldTapeVol,SIGNAL(valueChanged(int)),ui.sbTapeVol,SLOT(setValue(int)));
@@ -281,7 +262,6 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 // tape
 	connect(ui.tapelist,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(chablock(QModelIndex)));
 	connect(ui.tapelist,SIGNAL(clicked(QModelIndex)),this,SLOT(tlistclick(QModelIndex)));
-	// connect(ui.tapelist,SIGNAL(cellClicked(int,int)),this,SLOT(setTapeBreak(int,int)));
 	connect(ui.tloadtb,SIGNAL(released()),this,SLOT(loatape()));
 	connect(ui.tsavetb,SIGNAL(released()),this,SLOT(savtape()));
 	connect(ui.tremotb,SIGNAL(released()),this,SLOT(ejctape()));
@@ -386,7 +366,7 @@ void SetupWin::start(xProfile* p) {
 	ui.border4T->setChecked(comp->vid->brdstep & 0x06);
 	ui.contMem->setChecked(comp->contMem);
 	ui.contIO->setChecked(comp->contIO);
-	ui.bszsld->setValue((int)(conf.brdsize * 100));
+	ui.bszsld->setValue(static_cast<int>(conf.brdsize * 100));
 	ui.pathle->setText(QString::fromLocal8Bit(conf.scrShot.dir.c_str()));
 	ui.ssfbox->setCurrentIndex(ui.ssfbox->findText(conf.scrShot.format.c_str()));
 	ui.scntbox->setValue(conf.scrShot.count);
@@ -422,10 +402,13 @@ void SetupWin::start(xProfile* p) {
 
 	ui.schip1box->setCurrentIndex(ui.schip1box->findData(QVariant(comp->ts->chipA->type)));
 	ui.schip2box->setCurrentIndex(ui.schip2box->findData(QVariant(comp->ts->chipB->type)));
+	ui.schip3box->setCurrentIndex(ui.schip3box->findData(QVariant(comp->ts->chipC->type)));
 	ui.stereo1box->setCurrentIndex(ui.stereo1box->findData(QVariant(comp->ts->chipA->stereo)));
 	ui.stereo2box->setCurrentIndex(ui.stereo2box->findData(QVariant(comp->ts->chipB->stereo)));
+	ui.stereo3box->setCurrentIndex(ui.stereo3box->findData(QVariant(comp->ts->chipC->stereo)));
 	ui.chip1freq->setValue(comp->ts->chipA->frq);
 	ui.chip2freq->setValue(comp->ts->chipB->frq);
+	ui.chip3freq->setValue(comp->ts->chipC->frq);
 	ui.tsbox->setCurrentIndex(ui.tsbox->findData(QVariant(comp->ts->type)));
 // input
 	buildkeylist();
@@ -592,12 +575,13 @@ void SetupWin::apply() {
 	setOutput(nname.c_str());
 	comp->ts->chipA->frq = ui.chip1freq->value();
 	comp->ts->chipB->frq = ui.chip2freq->value();
+	comp->ts->chipC->frq = ui.chip3freq->value();
 	chip_set_type(comp->ts->chipA, getRFIData(ui.schip1box));
 	chip_set_type(comp->ts->chipB, getRFIData(ui.schip2box));
-	//aymSetType(comp->ts->chipA, getRFIData(ui.schip1box));
-	//aymSetType(comp->ts->chipB, getRFIData(ui.schip2box));
+	chip_set_type(comp->ts->chipC, getRFIData(ui.schip3box));
 	comp->ts->chipA->stereo = getRFIData(ui.stereo1box);
 	comp->ts->chipB->stereo = getRFIData(ui.stereo2box);
+	comp->ts->chipC->stereo = getRFIData(ui.stereo3box);
 	comp->ts->type = getRFIData(ui.tsbox);
 
 	comp->gs->enable = ui.tbGS->isChecked() ? 1 : 0;

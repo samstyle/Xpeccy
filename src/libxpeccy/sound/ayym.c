@@ -86,39 +86,53 @@ TSound* tsCreate(int tp,int tpA,int tpB) {
 	ts->type = tp;
 	ts->chipA = aymCreate(tpA);
 	ts->chipB = aymCreate(tpB);
+	ts->chipC = aymCreate(SND_NONE);
+	ts->chipD = aymCreate(SND_NONE);
+	ts->mute_l = 0;
+	ts->mute_r = 0;
 	return ts;
 }
 
 void tsDestroy(TSound* ts) {
 	aymDestroy(ts->chipA);
 	aymDestroy(ts->chipB);
+	aymDestroy(ts->chipC);
+	aymDestroy(ts->chipD);
 	free(ts);
 }
 
 void tsSync(TSound* ts, int ns) {
-	ts->chipA->sync(ts->chipA, ns);	//aymSync(ts->chipA,ns);
-	ts->chipB->sync(ts->chipB, ns);	//aymSync(ts->chipB,ns);
+	ts->chipA->sync(ts->chipA, ns);
+	ts->chipB->sync(ts->chipB, ns);
+	ts->chipC->sync(ts->chipC, ns);
+	ts->chipD->sync(ts->chipD, ns);
 }
 
 sndPair tsGetVolume(TSound* ts) {
-	sndPair res = ts->chipA->vol(ts->chipA); // aymGetVolume(ts->chipA);
-	sndPair tmp = ts->chipB->vol(ts->chipB); // aymGetVolume(ts->chipB);
-	res.left = (res.left + tmp.left);
-	res.right = (res.right + tmp.right);
+	sndPair res = ts->chipA->vol(ts->chipA);
+	sndPair tmp = ts->chipB->vol(ts->chipB);
+	sndPair vc = ts->chipC->vol(ts->chipC);
+	sndPair vd = ts->chipC->vol(ts->chipC);
+	res.left = ts->mute_l ? 0 : res.left + tmp.left + vc.left + vd.left;
+	res.right = ts->mute_r ? 0 : res.right + tmp.right + vc.right + vd.right;
 	return res;
 }
 
 void tsReset(TSound* ts) {
-	ts->chipA->res(ts->chipA); // aymReset(ts->chipA);
-	ts->chipB->res(ts->chipB); // aymReset(ts->chipB);
+	ts->chipA->res(ts->chipA);
+	ts->chipB->res(ts->chipB);
+	ts->chipC->res(ts->chipC);
+	ts->chipD->res(ts->chipD);
 	ts->curChip = ts->chipA;
+	ts->mute_l = 0;
+	ts->mute_r = 0;
 }
 
 // fffd (a14 = 1)	wr:reg.num	rd:reg.data
 // bffd (a14 = 0)	wr:reg.data	rd:FF
 
 int tsIn(TSound* ts, int port) {
-	return ts->curChip->rd(ts->curChip, port >> 14);
+	return ts->curChip->rd(ts->curChip, (port >> 14) & 1);
 }
 
 void tsOut(TSound* ts, int port, int val) {
@@ -128,6 +142,20 @@ void tsOut(TSound* ts, int port, int val) {
 			case TS_NEDOPC:
 				if ((val & 0xf8) == 0xf8) {
 					ts->curChip = (val & 1) ? ts->chipB : ts->chipA;
+				} else {
+					ts->curChip->wr(ts->curChip, port, val);
+				}
+				break;
+			case TS_ZXNEXT:
+				if ((val & 0x9c) == 0x9c) {
+					switch (val & 3) {
+						case 0: ts->curChip = ts->chipD; break;		// sid
+						case 1: ts->curChip = ts->chipC; break;		// psg 2
+						case 2: ts->curChip = ts->chipB; break;		// psg 1
+						case 3: ts->curChip = ts->chipA; break;		// psg 0 (default)
+					}
+					ts->mute_l = (val & 0x40) ? 1 : 0;
+					ts->mute_r = (val & 0x20) ? 1 : 0;
 				} else {
 					ts->curChip->wr(ts->curChip, port, val);
 				}

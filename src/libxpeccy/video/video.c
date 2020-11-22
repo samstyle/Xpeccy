@@ -755,7 +755,7 @@ void vidSync(Video* vid, int ns) {
 				vid->vbstrb = 1;
 				vid->ray.yb = 0;
 				vid->fcnt++;
-				vid->flash = (vid->fcnt & 0x20) ? 1 : 0;
+				vid->flash = (vid->fcnt & 0x10) ? 1 : 0;
 				vid->idx = 0;
 				vid->newFrame = 1;
 				if (vid->cbFrame) vid->cbFrame(vid);

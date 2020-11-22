@@ -1285,7 +1285,10 @@ void MainWin::socketRead() {
 #ifdef USENETWORK
 	QTcpSocket* sock = (QTcpSocket*)sender();
 	QByteArray arr = sock->readAll();
+	QString com(arr);
+	com = com.toLower().remove("\n");
 	// and do something with this
+	if (com == "debug") doDebug();
 #endif
 }
 

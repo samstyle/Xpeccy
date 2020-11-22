@@ -28,7 +28,8 @@ enum {
 // ts_type
 enum {
 	TS_NONE = 0,
-	TS_NEDOPC
+	TS_NEDOPC,
+	TS_ZXNEXT
 };
 
 #include "sndcommon.h"
@@ -103,17 +104,19 @@ struct aymChip {
 } ;
 
 typedef struct {
+	unsigned mute_l:1;
+	unsigned mute_r:1;
 	int type;
 	aymChip* chipA;
 	aymChip* chipB;
+	aymChip* chipC;
+	aymChip* chipD;
 	aymChip* curChip;
 } TSound;
 
 void initNoise();
 
 void chip_set_type(aymChip*, int);
-//void aymSetType(aymChip*, int);
-//int ayGetChanVol(aymChip*, aymChan*);
 
 TSound* tsCreate(int,int,int);
 void tsDestroy(TSound*);

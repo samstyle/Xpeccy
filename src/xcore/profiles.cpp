@@ -295,10 +295,9 @@ int prfLoad(std::string nm) {
 	int tmp2;
 	int chatype = SND_NONE;
 	int chbtype = SND_NONE;
+	int chctype = SND_NONE;
 	double tmpd;
 	int section = PS_NONE;
-//	ATAPassport masterPass = ideGetPassport(comp->ide,IDE_MASTER);
-//	ATAPassport slavePass = ideGetPassport(comp->ide,IDE_SLAVE);
 	if (!file.good()) {
 		printf("Profile config is missing. Default one will be created\n");
 		copyFile(":/conf/xpeccy.conf", cfname.c_str());
@@ -364,17 +363,21 @@ int prfLoad(std::string nm) {
 					if (pnam == "chip1") chatype = arg.i;
 					if (pnam == "chip1.stereo") comp->ts->chipA->stereo = arg.i;
 					if (pnam == "chip1.frq") comp->ts->chipA->frq = arg.d;
+
 					if (pnam == "chip2") chbtype = arg.i;
 					if (pnam == "chip2.stereo") comp->ts->chipB->stereo = arg.i;
 					if (pnam == "chip2.frq") comp->ts->chipB->frq = arg.d;
-					if (pnam == "ts.type") comp->ts->type = arg.i;
+
+					if (pnam == "chip3") chctype = arg.i;
+					if (pnam == "chip3.stereo") comp->ts->chipC->stereo = arg.i;
+					if (pnam == "chip3.frq") comp->ts->chipC->frq = arg.d;
 
 					if (pnam == "gs") comp->gs->enable = arg.b;
 					if (pnam == "gs.reset") comp->gs->reset = arg.b;
 					if (pnam == "gs.stereo") comp->gs->stereo = arg.b ? GS_12_34 : GS_MONO;
 
+					if (pnam == "ts.type") comp->ts->type = arg.i;
 					if (pnam == "soundrive_type") comp->sdrv->type = arg.i;
-
 					if (pnam == "saa") comp->saa->enabled = arg.b;
 
 					break;
@@ -455,13 +458,9 @@ int prfLoad(std::string nm) {
 		}
 	}
 
-//	ideSetPassport(comp->ide,IDE_MASTER,masterPass);
-//	ideSetPassport(comp->ide,IDE_SLAVE,slavePass);
-
 	chip_set_type(comp->ts->chipA, chatype);
 	chip_set_type(comp->ts->chipB, chbtype);
-	//aymSetType(comp->ts->chipA, chatype);
-	// aymSetType(comp->ts->chipB, chbtype);
+	chip_set_type(comp->ts->chipC, chctype);
 
 	tmp2 = PLOAD_OK;
 
@@ -561,6 +560,9 @@ int prfSave(std::string nm) {
 	fprintf(file, "chip2 = %i\n", comp->ts->chipB->type);
 	fprintf(file, "chip2.stereo = %i\n", comp->ts->chipB->stereo);
 	fprintf(file, "chip2.frq = %f\n", comp->ts->chipB->frq);
+	fprintf(file, "chip3 = %i\n", comp->ts->chipC->type);
+	fprintf(file, "chip3.stereo = %i\n", comp->ts->chipC->stereo);
+	fprintf(file, "chip3.frq = %f\n", comp->ts->chipC->frq);
 	fprintf(file, "ts.type = %i\n", comp->ts->type);
 
 	fprintf(file, "gs = %s\n", YESNO(comp->gs->enable));
