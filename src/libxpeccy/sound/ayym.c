@@ -154,8 +154,8 @@ void tsOut(TSound* ts, int port, int val) {
 						case 2: ts->curChip = ts->chipB; break;		// psg 1
 						case 3: ts->curChip = ts->chipA; break;		// psg 0 (default)
 					}
-					ts->mute_l = (val & 0x40) ? 1 : 0;
-					ts->mute_r = (val & 0x20) ? 1 : 0;
+					ts->mute_l = (val & 0x40) ? 0 : 1;
+					ts->mute_r = (val & 0x20) ? 0 : 1;
 				} else {
 					ts->curChip->wr(ts->curChip, port, val);
 				}
