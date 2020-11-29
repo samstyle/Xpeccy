@@ -4,24 +4,14 @@
 #include <stdio.h>
 #include <string.h>
 
-/*
 // mixer
-#define XMAXVOL 64
+#define XMAXVOL 16384
 
-sndPair mixer(sndPair cur, int levL, int levR, int vol) {
-
-	levL = levL * vol / 100;
-	levR = levR * vol / 100;
-
-	// max (64 + 64) * 64 / (64 + 64) = 64
-	// min (0 + 0) * 64 / (64 + 0) = 0
-	// one (64 + 0) * 64 / (64 + 0) = 64
-	// mix (32 + 32) * 64 / (64 + (32 * 32) / 64) = 51
-	cur.left = (cur.left + levL) * XMAXVOL / (XMAXVOL + (cur.left * levL) / XMAXVOL);
-	cur.right = (cur.right + levR) * XMAXVOL / (XMAXVOL + (cur.right * levR) / XMAXVOL);
-	return cur;
+sndPair mixer(sndPair vol1, sndPair vol2) {
+	vol1.left = (vol1.left + vol2.left) * XMAXVOL / (XMAXVOL + (vol1.left * vol2.left) / XMAXVOL);
+	vol1.right = (vol1.right + vol2.right) * XMAXVOL / (XMAXVOL + (vol1.right * vol2.right) / XMAXVOL);
+	return vol1;
 }
-*/
 
 // 1-bit channel with transient response
 

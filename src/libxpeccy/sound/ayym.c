@@ -111,10 +111,11 @@ void tsSync(TSound* ts, int ns) {
 sndPair tsGetVolume(TSound* ts) {
 	sndPair res = ts->chipA->vol(ts->chipA);
 	sndPair tmp = ts->chipB->vol(ts->chipB);
-	sndPair vc = ts->chipC->vol(ts->chipC);
-	sndPair vd = ts->chipC->vol(ts->chipC);
-	res.left = ts->mute_l ? 0 : res.left + tmp.left + vc.left + vd.left;
-	res.right = ts->mute_r ? 0 : res.right + tmp.right + vc.right + vd.right;
+	res = mixer(res, tmp);
+	tmp = ts->chipC->vol(ts->chipB);
+	res = mixer(res, tmp);
+	tmp = ts->chipD->vol(ts->chipB);
+	res = mixer(res, tmp);
 	return res;
 }
 

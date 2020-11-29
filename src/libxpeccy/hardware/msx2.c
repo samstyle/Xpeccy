@@ -252,7 +252,11 @@ static xPort msx2ioTab[] = {
 	{0xff,0xf7,2,2,2,dummyIn,	dummyOut},		// TODO: f7: a/v control
 	{0xfc,0xf8,2,2,2,dummyIn,	dummyOut},		// f8..fb : "Reserved (But somehow accessed by MSX2 BIOS ???)"
 	{0xfc,0xfc,2,2,2,msx2mapIn,	msx2mapOut},		// fe..ff : memory mapper
+#ifdef ISDEBUG
 	{0x00,0x00,2,2,2,brkIn,brkOut}
+#else
+	{0x00,0x00,2,2,2,NULL,		NULL}
+#endif
 };
 
 void msx2Out(Computer* comp, int port, int val, int dos) {

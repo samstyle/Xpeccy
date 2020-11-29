@@ -99,18 +99,6 @@ int prfInDS(Computer* comp, int port) {
 	return cmsRd(comp);
 }
 
-// debug
-
-int prfBrkIn(Computer* comp, int port) {
-	printf("CPM:%i, ROM:%i, DOS:%i\n", comp->cpm, comp->rom, comp->dos);
-	return brkIn(comp, port);
-}
-
-void prfBrkOut(Computer* comp, int port, int val) {
-	printf("CPM:%i, ROM:%i, DOS:%i\n", comp->cpm, comp->rom, comp->dos);
-	brkOut(comp, port, val);
-}
-
 static xPort prfPortMap[] = {
 	// common
 	{0x00f7,0x00fe,2,2,2,prfInFE,	prfOutFE},
