@@ -6,14 +6,14 @@
 int brkIn(Computer* comp, int port) {
 	printf("IN %.4X (dos:rom:cpm = %i:%i:%i)\n",port,comp->dos,comp->rom,comp->cpm);
 	assert(0);
-	comp->brk = 1;
+	//comp->brk = 1;
 	return -1;
 }
 
 void brkOut(Computer* comp, int port, int val) {
 	printf("OUT %.4X,%.2X (dos:rom:cpm = %i:%i:%i)\n",port,val,comp->dos,comp->rom,comp->cpm);
 	assert(0);
-	comp->brk = 1;
+	//comp->brk = 1;
 }
 
 int dummyIn(Computer* comp, int port) {
