@@ -819,8 +819,8 @@ void MainWin::mousePressEvent(QMouseEvent *ev){
 	}
 	switch (ev->button()) {
 		case Qt::LeftButton:
-			if (!grabMice) break;
-			comp->mouse->lmb = 1;
+			if (grabMice)
+				comp->mouse->lmb = 1;
 			break;
 		case Qt::RightButton:
 			if (grabMice) {
@@ -842,12 +842,19 @@ void MainWin::mouseReleaseEvent(QMouseEvent *ev) {
 	}
 	switch (ev->button()) {
 		case Qt::LeftButton:
-			if (!grabMice) break;
-			comp->mouse->lmb = 0;
+			if (grabMice) {
+				comp->mouse->lmb = 0;
+#ifdef __APPLE__
+			} else {
+				grabMice = 1;
+				grabMouse(QCursor(Qt::BlankCursor));
+				setMessage(" grab mouse ");
+#endif
+			}
 			break;
 		case Qt::RightButton:
-			if (!grabMice) break;
-			comp->mouse->rmb = 0;
+			if (grabMice)
+				comp->mouse->rmb = 0;
 			break;
 		case Qt::MidButton:
 			grabMice = !grabMice;

@@ -112,9 +112,9 @@ sndPair tsGetVolume(TSound* ts) {
 	sndPair res = ts->chipA->vol(ts->chipA);
 	sndPair tmp = ts->chipB->vol(ts->chipB);
 	res = mixer(res, tmp);
-	tmp = ts->chipC->vol(ts->chipB);
+	tmp = ts->chipC->vol(ts->chipC);
 	res = mixer(res, tmp);
-	tmp = ts->chipD->vol(ts->chipB);
+	tmp = ts->chipD->vol(ts->chipD);
 	res = mixer(res, tmp);
 	return res;
 }
