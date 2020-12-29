@@ -3,12 +3,46 @@
 #include <string.h>
 #include <fstream>
 #include <math.h>
+#include <sys/stat.h>
 
 #include "xcore.h"
 #include "../xgui/xgui.h"
 #include "sound.h"
 #include "filer.h"
 #include "gamepad.h"
+
+void prf_load_cmos(xProfile* prf, std::string path) {
+	FILE* file = fopen(path.c_str(), "rb");
+	if (file) {
+		fread((char*)prf->zx->cmos.data, 256, 1, file);
+		fclose(file);
+	}
+}
+
+void prf_save_cmos(xProfile* prf, std::string path) {
+	FILE* file = fopen(path.c_str(), "wb");
+	if (file) {
+		fwrite((char*)prf->zx->cmos.data, 256, 1, file);
+		fclose(file);
+	}
+}
+
+void prf_load_nvram(xProfile* prf, std::string path) {
+	FILE* file = fopen(path.c_str(), "rb");
+	if (file) {
+		fread((char*)prf->zx->ide->smuc.nv->mem, 256, 1, file);
+		fclose(file);
+	}
+}
+
+void prf_save_nvram(xProfile* prf, std::string path) {
+	if (prf->zx->ide->type != IDE_SMUC) return;
+	FILE* file = fopen(path.c_str(), "wb");
+	if (file) {
+		fwrite((char*)prf->zx->ide->smuc.nv->mem, 256, 1, file);
+		fclose(file);
+	}
+}
 
 xProfile* findProfile(std::string nm) {
 	if (nm == "") return conf.prof.cur;
@@ -28,18 +62,29 @@ xProfile* addProfile(std::string nm, std::string fp) {
 	nprof->file = fp;
 	nprof->layName = std::string("default");
 	nprof->zx = compCreate();
-	std::string fname = conf.path.confDir + SLASH + nprof->name + ".cmos";
+	std::string fname;
+	fname = conf.path.prfDir + SLASH + nprof->name;
+#if __linux || __APPLE__
+	mkdir(fname.c_str(), 0777);
+#elif __WIN32
+	mkdir(fname.c_str());
+#endif
+	prf_load_cmos(nprof, conf.path.prfDir + SLASH + nprof->name + SLASH + nprof->name + ".cmos");
+	prf_load_nvram(nprof, conf.path.prfDir + SLASH + nprof->name + SLASH + nprof->name + ".nvram");
+	/*
+	fname = conf.path.prfDir + SLASH + nprof->name + SLASH + nprof->name + ".cmos";
 	FILE* file = fopen(fname.c_str(), "rb");
 	if (file) {
 		fread((char*)nprof->zx->cmos.data,256,1,file);
 		fclose(file);
 	}
-	fname = conf.path.confDir + SLASH + nprof->name + ".nvram";
+	fname = conf.path.confDir + SLASH + nprof->name + SLASH + nprof->name + ".nvram";
 	file = fopen(fname.c_str(), "rb");
 	if (file) {
 		fread((char*)nprof->zx->ide->smuc.nv->mem,0x800,1,file);
 		fclose(file);
 	}
+	*/
 	compSetHardware(nprof->zx,"Dummy");
 	conf.prof.list.push_back(nprof);
 	return nprof;
@@ -56,8 +101,8 @@ int copyProfile(std::string src, std::string dst) {
 	} else {
 		dprf->file = dfile;
 	}
-	std::string sfname = conf.path.confDir + SLASH + sprf->file;
-	std::string dfname = conf.path.confDir + SLASH + dfile;
+	std::string sfname = conf.path.prfDir + SLASH + sprf->name + SLASH + sprf->file;
+	std::string dfname = conf.path.prfDir + SLASH + dprf->name + SLASH + dfile;
 	copyFile(sfname.c_str(), dfname.c_str());
 	prfLoad(dst);
 	return 1;
@@ -74,8 +119,8 @@ int delProfile(std::string nm) {
 	if (prf == NULL) return DELP_ERR;		// no such profile
 	if (prf->name == "default") return DELP_ERR;	// can't touch this
 	int res = DELP_OK;
-	// char cpath[FILENAME_MAX];
 	std::string cpath;
+	std::string cdir;
 	// set default profile if current deleted
 	if (conf.prof.cur) {
 		if (conf.prof.cur->name == nm) {
@@ -83,17 +128,19 @@ int delProfile(std::string nm) {
 			res = DELP_OK_CURR;
 		}
 	} else {
-		prfSetCurrent("default");
+		// prfSetCurrent("default");
 	}
 	// remove all such profiles from list & free mem
 	for (int i = 0; i < conf.prof.list.size(); i++) {
 		if (conf.prof.list[i]->name == nm) {
-			cpath = conf.path.confDir + SLASH + prf->file;
+			cdir = conf.path.prfDir + SLASH + prf->name + SLASH;
+			cpath = cdir + prf->file;
 			remove(cpath.c_str());					// remove config file
-			cpath = conf.path.confDir + SLASH + prf->name + ".cmos";
+			cpath = cdir + prf->name + ".cmos";
 			remove(cpath.c_str());					// remove cmos dump
-			cpath = conf.path.confDir + SLASH + prf->name + ".nvram";
+			cpath = cdir + prf->name + ".nvram";
 			remove(cpath.c_str());					// remove nvram dump
+			rmdir(cdir.c_str());					// remove directory (leave it if there is files)
 			compDestroy(prf->zx);					// delete computer
 			delete(prf);
 			conf.prof.list.erase(conf.prof.list.begin() + i);
@@ -148,38 +195,6 @@ void prfChangeLayName(std::string oldName, std::string newName) {
 			conf.prof.list[i]->layName = newName;
 	}
 }
-
-// breakpoints
-
-/*
-void prfFillBreakpoints(xProfile* prf) {
-	memset(prf->zx->brkRamMap, 0x00, 0x400000);
-	memset(prf->zx->brkRomMap, 0x00, 0x80000);
-	memset(prf->zx->brkAdrMap, 0x00, 0x10000);
-	memset(prf->zx->brkIOMap, 0x00, 0x10000);
-	xBrkPoint brk;
-	unsigned char mask;
-	unsigned char* ptr;
-	foreach(brk, prf->brkList) {
-		mask = 0;
-		if (brk.fetch) mask |= MEM_BRK_FETCH;
-		if (brk.read) mask |= MEM_BRK_RD;
-		if (brk.write) mask |= MEM_BRK_WR;
-		ptr = NULL;
-		switch(brk.type) {
-			case BRK_CPUADR: ptr = &prf->zx->brkAdrMap[brk.adr & 0xffff]; break;
-			case BRK_MEMRAM: ptr = &prf->zx->brkRamMap[brk.adr & 0x3fffff]; break;
-			case BRK_MEMROM: ptr = &prf->zx->brkRomMap[brk.adr & 0x7ffff]; break;
-			case BRK_MEMSLT: if (!prf->zx->slot->brkMap) break;
-				ptr = &prf->zx->slot->brkMap[brk.adr & prf->zx->slot->memMask];
-				break;
-		}
-		if (ptr) {
-			*ptr = (*ptr & 0xf0) | mask;
-		}
-	}
-}
-*/
 
 // load-save
 
@@ -270,21 +285,10 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 	}
 }
 
-void prfLoadAll() {
-	xProfile* prf;
-	foreach(prf, conf.prof.list) {
-		prfLoad(prf->name);
-	}
-}
-
-int prfLoad(std::string nm) {
-	xProfile* prf = findProfile(nm);
-	if (prf == NULL) return PLOAD_NF;
+int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 	Computer* comp = prf->zx;
 	Floppy* flp;
 	int i;
-	//char cfname[FILENAME_MAX];
-	std::string cfname = conf.path.confDir + SLASH + prf->file;
 	std::ifstream file(cfname);
 	std::pair<std::string,std::string> spl;
 	std::string line,pnam,pval;
@@ -298,13 +302,13 @@ int prfLoad(std::string nm) {
 	int chctype = SND_NONE;
 	double tmpd;
 	int section = PS_NONE;
-	if (!file.good()) {
+	if (!file.good() && flag) {
 		printf("Profile config is missing. Default one will be created\n");
 		copyFile(":/conf/xpeccy.conf", cfname.c_str());
 		file.open(cfname, std::ifstream::in);
 	}
 	if (!file.good()) {
-		printf("Damn! I can't open config file");
+		if (flag) printf("Damn! I can't open config file");
 		return PLOAD_OF;
 	}
 #ifdef __win32
@@ -499,6 +503,43 @@ int prfLoad(std::string nm) {
 	return tmp2;
 }
 
+int prfLoad(std::string nm) {
+	xProfile* prf = findProfile(nm);
+	if (prf == NULL) return PLOAD_NF;
+	//char cfname[FILENAME_MAX];
+	std::string cfname = conf.path.prfDir + SLASH + prf->name + SLASH + prf->file;		// new location: $CONFDIR/profiles/$PROFILENAME/$FILENAME
+	std::string ofname = conf.path.confDir + SLASH + prf->file;				// old location: $CONFDIR/$FILENAME
+
+	std::string ocmos = conf.path.confDir + SLASH + prf->name + ".cmos";
+	std::string ncmos = conf.path.prfDir + SLASH + prf->name + SLASH + prf->name + ".cmos";
+	std::string onvr = conf.path.confDir + SLASH + prf->name + ".nvram";
+	std::string nnvr = conf.path.prfDir + SLASH + prf->name + SLASH + prf->name + ".nvram";
+
+	int res = prf_load_conf(prf, ofname, 0);
+	if (res == PLOAD_OK) {
+		copyFile(ofname.c_str(), cfname.c_str());						// copy old file to new location
+		remove(ofname.c_str());									// remove old conf file
+		prf_load_cmos(prf, ocmos);
+		copyFile(ocmos.c_str(), ncmos.c_str());
+		remove(ocmos.c_str());
+		prf_load_nvram(prf, onvr);
+		copyFile(onvr.c_str(), nnvr.c_str());
+		remove(onvr.c_str());
+	} else {
+		res = prf_load_conf(prf, cfname, 1);
+		prf_load_cmos(prf, ncmos);
+		prf_load_nvram(prf, nnvr);
+	}
+	return res;
+}
+
+void prfLoadAll() {
+	xProfile* prf;
+	foreach(prf, conf.prof.list) {
+		prfLoad(prf->name);
+	}
+}
+
 std::string getDiskString(Floppy* flp) {
 	std::string res = "40SW";
 	if (flp->trk80) res[0]='8';
@@ -512,11 +553,25 @@ std::string getDiskString(Floppy* flp) {
 }
 
 int prfSave(std::string nm) {
-	xProfile* prf = conf.prof.cur;
+	xProfile* prf = findProfile(nm);
+	if (prf == NULL)
+		prf = conf.prof.cur;
 	if (prf == NULL) return PSAVE_NF;
 	Computer* comp = prf->zx;
 
-	std::string cfname = conf.path.confDir + SLASH + prf->file;
+	std::string cfname;
+	cfname = conf.path.prfDir + SLASH + prf->name;
+#if __linux || __APPLE__
+	mkdir(cfname.c_str(), 0777);
+#elif __WIN32
+	mkdir(cfname.c_str());
+#endif
+	cfname = cfname + SLASH + prf->file;
+//	cfname = conf.path.confDir + SLASH + prf->file;		// old file location
+
+	prf_save_cmos(prf, conf.path.prfDir + SLASH + prf->name + SLASH + prf->name + ".cmos");
+	prf_save_nvram(prf, conf.path.prfDir + SLASH + prf->name + SLASH + prf->name + ".nvram");
+
 	FILE* file = fopen(cfname.c_str(), "wb");
 	if (!file) {
 		printf("Can't write settings\n");

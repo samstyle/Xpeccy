@@ -88,14 +88,18 @@ void xThread::tap_catch_save(Computer* comp) {
 }
 
 void xThread::emuCycle(Computer* comp) {
+	int tm;
 	sndNs = 0;
+	wavNs = 0;
 	conf.snd.fill = 1;
 	do {
 		// exec 1 opcode (or handle INT, NMI)
 		if (conf.emu.pause) {
 			sndNs += 1000;
 		} else {
-			sndNs += compExec(comp);
+			tm = compExec(comp);
+			sndNs += tm;
+			wavNs += tm;
 			// tape trap
 			if ((comp->hw->grp == HWG_ZX) && (comp->mem->map[0].type == MEM_ROM) && comp->rom && !comp->dos && !comp->ext) {
 				if (comp->cpu->pc == 0x559) {			// load: ix:addr, de:len (0x580 ?)
@@ -109,6 +113,12 @@ void xThread::emuCycle(Computer* comp) {
 					tapStop(comp->tape);
 					emit tapeSignal(TW_STATE,TWS_STOP);
 				}
+			}
+			// write wav sample
+			if (wavNs > 22675) {		// ns per sample @ 44100Hz
+				wavNs -= 22675;
+				if (conf.snd.wavout)
+					snd_wav_write();
 			}
 		}
 		// sound buffer update

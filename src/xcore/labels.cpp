@@ -14,7 +14,7 @@ int loadLabels(const char* fn) {
 	QFile file;
 	xAdr xadr;
 	if (path.isEmpty())
-		path = QFileDialog::getOpenFileName(NULL, "Load SJASM labels");
+		path = QFileDialog::getOpenFileName(NULL, "Load SJASM labels",QString(),QString(),nullptr,QFileDialog::DontUseNativeDialog);
 	if (path.isEmpty()) {
 		res = 0;			// no file specified
 	} else {
@@ -78,7 +78,7 @@ int saveLabels(const char* fn) {
 	QFile file;
 	QString path(fn);
 	if (path.isEmpty())
-		path = QFileDialog::getSaveFileName(NULL, "save SJASM labels");
+		path = QFileDialog::getSaveFileName(NULL, "save SJASM labels",QString(),QString(),nullptr,QFileDialog::DontUseNativeDialog);
 	if (path.isEmpty()) {
 		res = 0;
 	} else {

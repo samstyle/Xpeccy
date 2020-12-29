@@ -302,8 +302,64 @@ void sndInit() {
 	conf.snd.vol.tape = 100;
 	conf.snd.vol.ay = 100;
 	conf.snd.vol.gs = 100;
-	initNoise();							// ay/ym
+	conf.snd.wavout = 0;
+	conf.snd.wavfile = NULL;
+	initNoise();
 	init_kih();
+}
+
+// output to wav
+
+wavHead wav_prepare(unsigned int rate, unsigned short chans) {
+	wavHead hd;
+	memcpy(hd.chunkId, "RIFF", 4);
+	hd.chunkSize = 0;
+	memcpy(hd.format, "WAVE", 4);
+	memcpy(hd.subchunk1Id, "fmt ", 4);
+	hd.subchunk1Size = 16;
+	hd.audioFormat = 1;
+	hd.numChannels = chans;
+	hd.sampleRate = rate;
+	hd.byteRate = rate * chans;
+	hd.blockAlign = chans;
+	hd.bitsPerSample = 8;
+	memcpy(hd.subchunk2Id, "data", 4);
+	hd.subchunk2Size = 0;				// later
+	return hd;
+}
+
+void snd_wav_close() {
+	if (conf.snd.wavfile) {
+		int sz = ftell(conf.snd.wavfile);			// file size
+		fseek(conf.snd.wavfile, 4, SEEK_SET);
+		fputi(sz - 8, conf.snd.wavfile);
+		fseek(conf.snd.wavfile, sizeof(wavHead) - 4, SEEK_SET);
+		fputi(sz - sizeof(wavHead), conf.snd.wavfile);
+		fclose(conf.snd.wavfile);
+		conf.snd.wavfile = NULL;
+		conf.snd.wavout = 0;
+	}
+}
+
+int snd_wav_open(const char* path) {
+	int res = ERR_OK;
+	wavHead hd = wav_prepare(44100, 2);
+	snd_wav_close();
+	conf.snd.wavfile = fopen(path, "wb");
+	if (conf.snd.wavfile) {
+		fwrite(&hd, sizeof(wavHead), 1, conf.snd.wavfile);
+		conf.snd.wavout = 1;
+	} else {
+		res = ERR_CANT_OPEN;
+	}
+	return res;
+}
+
+void snd_wav_write() {
+	if (conf.snd.wavfile) {
+		fputc(sndLev.left >> 8, conf.snd.wavfile);
+		fputc(sndLev.right >> 8, conf.snd.wavfile);
+	}
 }
 
 // debug

@@ -48,7 +48,7 @@ void MemViewer::saveSprite() {
 		spr.append(rdMem(adr & 0xffff));
 		adr++;
 	}
-	QString path = QFileDialog::getSaveFileName(this, "Save sprite");
+	QString path = QFileDialog::getSaveFileName(this, "Save sprite",QString(),QString(),nullptr,QFileDialog::DontUseNativeDialog);
 	if (path.isEmpty()) return;
 	QFile file(path);
 	if (file.open(QFile::WriteOnly)) {

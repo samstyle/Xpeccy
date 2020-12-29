@@ -82,5 +82,6 @@
         <file>images/rewind.png</file>
         <file>images/refresh.png</file>
         <file>images/button-k.png</file>
+        <file>images/wav.png</file>
     </qresource>
 </RCC>

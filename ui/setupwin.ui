@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>545</width>
-    <height>452</height>
+    <height>475</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -877,22 +877,6 @@
                 </property>
                </widget>
               </item>
-              <item row="4" column="0">
-               <widget class="QToolButton" name="tbGS">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="text">
-                 <string>GS</string>
-                </property>
-                <property name="checkable">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
               <item row="5" column="0">
                <widget class="QLabel" name="label_30">
                 <property name="text">
@@ -950,22 +934,6 @@
                 </property>
                 <property name="orientation">
                  <enum>Qt::Horizontal</enum>
-                </property>
-               </widget>
-              </item>
-              <item row="6" column="0">
-               <widget class="QToolButton" name="tbSAA">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="text">
-                 <string>SAA</string>
-                </property>
-                <property name="checkable">
-                 <bool>true</bool>
                 </property>
                </widget>
               </item>
@@ -1101,6 +1069,20 @@
                  </size>
                 </property>
                </spacer>
+              </item>
+              <item row="4" column="0">
+               <widget class="QCheckBox" name="cbGS">
+                <property name="text">
+                 <string>GS</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0">
+               <widget class="QCheckBox" name="cbSAA">
+                <property name="text">
+                 <string>SAA</string>
+                </property>
+               </widget>
               </item>
              </layout>
             </widget>

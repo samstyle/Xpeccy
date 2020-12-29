@@ -78,6 +78,28 @@ enum {
 extern "C" {
 #endif
 
+// wav header
+
+#pragma pack (push, 1)
+
+typedef struct {
+	char chunkId[4];		// "RIFF"
+	unsigned int chunkSize;
+	char format[4];			// "WAVE"
+	char subchunk1Id[4];		// "fmt "
+	unsigned int subchunk1Size;	// 16
+	unsigned short audioFormat;	// 1 = PCM
+	unsigned short numChannels;
+	unsigned int sampleRate;
+	unsigned int byteRate;		// sampleRate * numChannels * bitsPerSample/8
+	unsigned short blockAlign;	// numChannels * bitsPerSample/8
+	unsigned short bitsPerSample;
+	char subchunk2Id[4];		// "data"
+	unsigned int subchunk2Size;
+} wavHead;
+
+#pragma pack(pop)
+
 // disk specific operations
 
 typedef struct {

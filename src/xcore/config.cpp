@@ -52,6 +52,8 @@ void conf_init(char* wpath) {
 	mkdir(conf.path.confDir.c_str(), 0777);
 	conf.path.romDir = conf.path.confDir + "/roms";
 	mkdir(conf.path.romDir.c_str() ,0777);
+	conf.path.prfDir = conf.path.confDir + "/profiles";
+	mkdir(conf.path.prfDir.c_str() ,0777);
 	conf.path.confFile = conf.path.confDir + "/config.conf";
 	conf.path.boot = conf.path.confDir + "/boot.$B";
 	// conf.path.font = conf.path.confDir + "/appfont.ttf";
@@ -63,10 +65,12 @@ void conf_init(char* wpath) {
 	}
 	conf.path.confDir += "\\config";
 	conf.path.romDir = conf.path.confDir + "\\roms";
+	conf.path.prfDir = conf.path.confDir + "/profiles";
 	conf.path.confFile = conf.path.confDir + "\\config.conf";
 	conf.path.boot = conf.path.confDir + "\\boot.$B";
 	mkdir(conf.path.confDir.c_str());
 	mkdir(conf.path.romDir.c_str());
+	mkdir(conf.path.prfDir.c_str());
 #endif
 	conf.scrShot.format = "png";
 	vLayout vlay = {{448,320},{74,48},{64,32},{256,192},{0,0},64};

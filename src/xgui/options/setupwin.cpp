@@ -381,12 +381,12 @@ void SetupWin::start(xProfile* p) {
 	ui.ulaPlus->setChecked(comp->vid->ula->enabled);
 	ui.cbDDp->setChecked(comp->ddpal);
 // sound
-	ui.tbGS->setChecked(comp->gs->enable);
+	ui.cbGS->setChecked(comp->gs->enable);
 	ui.gsrbox->setChecked(comp->gs->reset);
 
 	ui.sdrvBox->setCurrentIndex(ui.sdrvBox->findData(comp->sdrv->type));
 
-	ui.tbSAA->setChecked(comp->saa->enabled);
+	ui.cbSAA->setChecked(comp->saa->enabled);
 
 	ui.senbox->setChecked(conf.snd.enabled);
 	ui.outbox->setCurrentIndex(ui.outbox->findText(QString::fromLocal8Bit(sndOutput->name)));
@@ -584,12 +584,12 @@ void SetupWin::apply() {
 	comp->ts->chipC->stereo = getRFIData(ui.stereo3box);
 	comp->ts->type = getRFIData(ui.tsbox);
 
-	comp->gs->enable = ui.tbGS->isChecked() ? 1 : 0;
+	comp->gs->enable = ui.cbGS->isChecked() ? 1 : 0;
 	comp->gs->reset = ui.gsrbox->isChecked() ? 1 : 0;
 
 	comp->sdrv->type = getRFIData(ui.sdrvBox);
 
-	comp->saa->enabled = ui.tbSAA->isChecked() ? 1 : 0;
+	comp->saa->enabled = ui.cbSAA->isChecked() ? 1 : 0;
 // input
 	comp->mouse->enable = ui.ratEnable->isChecked() ? 1 : 0;
 	comp->mouse->hasWheel = ui.ratWheel->isChecked() ? 1 : 0;
@@ -1380,7 +1380,7 @@ void SetupWin::tlistclick(QModelIndex idx) {
 // hdd
 
 void SetupWin::hddMasterImg() {
-	QString path = QFileDialog::getOpenFileName(this,"Image for master HDD","","All files (*)",NULL,QFileDialog::DontConfirmOverwrite);
+	QString path = QFileDialog::getOpenFileName(this,"Image for master HDD","","All files (*)",NULL,QFileDialog::DontUseNativeDialog | QFileDialog::DontConfirmOverwrite);
 	if (path != "") {
 		ui.hm_path->setText(path);
 		ideSetImage(comp->ide, IDE_MASTER, path.toLocal8Bit().data());
@@ -1393,7 +1393,7 @@ void SetupWin::hddMasterImg() {
 }
 
 void SetupWin::hddSlaveImg() {
-	QString path = QFileDialog::getOpenFileName(this,"Image for slave HDD","","All files (*)",NULL,QFileDialog::DontConfirmOverwrite);
+	QString path = QFileDialog::getOpenFileName(this,"Image for slave HDD","","All files (*)",NULL,QFileDialog::DontUseNativeDialog | QFileDialog::DontConfirmOverwrite);
 	if (path != "") {
 		ui.hs_path->setText(path);
 		ideSetImage(comp->ide, IDE_SLAVE, path.toLocal8Bit().data());
@@ -1420,7 +1420,7 @@ void SetupWin::hddcap() {
 // external
 
 void SetupWin::selSDCimg() {
-	QString fnam = QFileDialog::getOpenFileName(this,"Image for SD card","","All files (*.*)");
+	QString fnam = QFileDialog::getOpenFileName(this,"Image for SD card","","All files (*.*)",nullptr,QFileDialog::DontUseNativeDialog);
 	if (!fnam.isEmpty()) ui.sdPath->setText(fnam);
 }
 
@@ -1564,7 +1564,7 @@ void SetupWin::umedit(QModelIndex idx) {
 }
 
 void SetupWin::umaselp() {
-	QString fpath = QFileDialog::getOpenFileName(NULL,"Select file","","Known formats (*.sna *.z80 *.tap *.tzx *.trd *.scl *.fdi *.udi)");
+	QString fpath = QFileDialog::getOpenFileName(NULL,"Select file","","Known formats (*.sna *.z80 *.tap *.tzx *.trd *.scl *.fdi *.udi)",nullptr,QFileDialog::DontUseNativeDialog);
 	if (fpath!="") uia.pathle->setText(fpath);
 }
 

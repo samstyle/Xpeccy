@@ -194,6 +194,7 @@ enum {
 	XCUT_RESET,
 	XCUT_TURBO,
 	XCUT_TVLINES,
+	XCUT_WAV_OUT,
 
 	XCUT_STEPIN,
 	XCUT_STEPOVER,
@@ -355,11 +356,12 @@ struct xConfig {
 	} vid;
 	struct {
 		unsigned enabled:1;
-//		unsigned mute:1;
+		unsigned wavout:1;	// output to wav, rate 44100
 		unsigned fill:1;	// 1 while snd buffer not filled, 0 at end of snd buffer
 		int rate;
 		int chans;
 		sndVolume vol;
+		FILE* wavfile;
 	} snd;
 	struct {
 		unsigned autostart:1;
@@ -393,6 +395,7 @@ struct xConfig {
 		std::string confDir;
 		std::string confFile;
 		std::string romDir;
+		std::string prfDir;
 		std::string font;
 		std::string boot;
 	} path;

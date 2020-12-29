@@ -545,6 +545,9 @@ void MainWin::paintEvent(QPaintEvent*) {
 			pnt.drawImage(3, 90, QImage(":/images/diskRed.png").scaled(16,16));
 		}
 	}
+	if (conf.snd.wavout) {
+		pnt.drawImage(3, 110, QImage(":/images/wav.png").scaled(16,16));
+	}
 // put fps
 	if (conf.led.fps) {
 		sprintf(numbuf, " %d ", conf.vid.curfps);
@@ -602,7 +605,9 @@ void MainWin::xkey_press(int xkey) {
 	keyEntry kent = getKeyEntry(xkey);
 	int x;
 	int y;
+	int err;
 	QSize wsz;
+	QString path;
 	if (pckAct->isChecked()) {
 		xt_press(comp->keyb, kent.keyCode);
 		if (comp->hw->keyp) {
@@ -775,6 +780,24 @@ void MainWin::xkey_press(int xkey) {
 				compReset(comp,RES_DEFAULT);
 				emit s_rzx_stop();
 				break;
+			case XCUT_WAV_OUT:
+				pause(true, PR_FILE);
+				if (conf.snd.wavout) {
+					snd_wav_close();
+					setMessage("Stop WAV output");
+				} else {
+					path = QFileDialog::getSaveFileName(this, "Sound output to wav", "", "Wave files (*.wav)",nullptr,QFileDialog::DontUseNativeDialog);
+					if (!path.isEmpty()) {
+						if (!path.endsWith(".wav", Qt::CaseInsensitive))
+							path.append(".wav");
+						err = snd_wav_open(path.toLocal8Bit().data());
+						if (err == ERR_OK) {
+							setMessage("Start WAV output");
+						}
+					}
+				}
+				pause(false, PR_FILE);
+				break;
 			default:
 				// printf("%s %c %c\n", kent.name, kent.zxKey.key1, kent.zxKey.key2);
 				xt_press(comp->keyb, kent.keyCode);
@@ -939,22 +962,9 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 	pause(true,PR_EXIT);
 	foreach(xProfile* prf, conf.prof.list) {
 		prfSave(prf->name);
-		fname = conf.path.confDir + SLASH + prf->name + ".cmos";
-		file = fopen(fname.c_str(), "wb");
-		if (file) {
-			fwrite((const char*)prf->zx->cmos.data,256,1,file);
-			fclose(file);
-		}
-		if (prf->zx->ide->type == IDE_SMUC) {
-			fname = conf.path.confDir + SLASH + prf->name + ".nvram";
-			file = fopen(fname.c_str(), "wb");
-			if (file) {
-				fwrite((const char*)prf->zx->ide->smuc.nv->mem,0x800,1,file);
-				fclose(file);
-			}
-		}
 	}
 	if (saveChanged()) {
+		snd_wav_close();
 		killTimer(timid);
 		killTimer(secid);
 		ideCloseFiles(comp->ide);
@@ -1295,7 +1305,15 @@ void MainWin::socketRead() {
 	QString com(arr);
 	com = com.toLower().remove("\n");
 	// and do something with this
-	if (com == "debug") doDebug();
+	if (com == "debug") {
+		doDebug();
+	} else if (com == "exit") {
+		close();
+	} else if (com == "pause") {
+		pause(true, PR_PAUSE);
+	} else if (com == "cont") {
+		pause(false, PR_PAUSE);
+	}
 #endif
 }
 

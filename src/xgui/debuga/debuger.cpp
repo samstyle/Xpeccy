@@ -683,7 +683,7 @@ void DebugWin::doTrace(QAction* act) {
 	traceType = act->data().toInt();
 
 	if (traceType == DBG_TRACE_LOG) {
-		QString path = QFileDialog::getSaveFileName(this, "Log file");
+		QString path = QFileDialog::getSaveFileName(this, "Log file",QString(),QString(),nullptr,QFileDialog::DontUseNativeDialog);
 		if (path.isEmpty()) return;
 		logfile.setFileName(path);
 		if (!logfile.open(QFile::WriteOnly)) return;
@@ -1621,7 +1621,7 @@ void strdLabels(QDataStream& strm) {
 #define XDBGVER 0x00
 
 void DebugWin::saveMap() {
-	QString path = QFileDialog::getSaveFileName(this, "Save deBUGa project","","deBUGa project (*.xdbg)",NULL,QFileDialog::DontUseNativeDialog);
+	QString path = QFileDialog::getSaveFileName(this, "Save deBUGa project","","deBUGa project (*.xdbg)");
 	if (path.isEmpty()) return;
 	if (!path.endsWith(".xdbg",Qt::CaseInsensitive))
 		path.append(".xdbg");
@@ -1756,7 +1756,7 @@ int DebugWin::fillDisasm() {
 }
 
 void DebugWin::saveDasm() {
-	QString path = QFileDialog::getSaveFileName(this, "Save disasm");
+	QString path = QFileDialog::getSaveFileName(this, "Save disasm",QString(),QString(),nullptr,QFileDialog::DontUseNativeDialog);
 	if (path.isEmpty()) return;
 	QFile file(path);
 	dasmData drow;
@@ -1987,7 +1987,7 @@ QByteArray DebugWin::getDumpData() {
 void DebugWin::saveDumpBin() {
 	QByteArray data = getDumpData();
 	if (data.size() == 0) return;
-	QString path = QFileDialog::getSaveFileName(this,"Save memory dump");
+	QString path = QFileDialog::getSaveFileName(this,"Save memory dump",QString(),QString(),nullptr,QFileDialog::DontUseNativeDialog);
 	if (path.isEmpty()) return;
 	QFile file(path);
 	if (file.open(QFile::WriteOnly)) file.write(data);
@@ -1997,7 +1997,7 @@ void DebugWin::saveDumpBin() {
 void DebugWin::saveDumpHobeta() {
 	QByteArray data = getDumpData();
 	if (data.size() == 0) return;
-	QString path = QFileDialog::getSaveFileName(this,"Save memory dump as hobeta","","Hobeta files (*.$C)");
+	QString path = QFileDialog::getSaveFileName(this,"Save memory dump as hobeta","","Hobeta files (*.$C)",nullptr,QFileDialog::DontUseNativeDialog);
 	if (path.isEmpty()) return;
 	TRFile dsc;
 	QString name = dui.leStart->text();
@@ -2106,7 +2106,7 @@ void DebugWin::doOpenDump() {
 }
 
 void DebugWin::chDumpFile() {
-	QString path = QFileDialog::getOpenFileName(this,"Open dump");
+	QString path = QFileDialog::getOpenFileName(this,"Open dump",QString(),QString(),nullptr,QFileDialog::DontUseNativeDialog);
 	if (path.isEmpty()) return;
 	QFileInfo inf(path);
 	if ((inf.size() == 0) || (inf.size() > 0xff00)) {
@@ -2225,7 +2225,7 @@ void DebugWin::goToBrk(QModelIndex idx) {
 
 void DebugWin::saveBrk(QString path) {
 	if (path.isEmpty())
-		path = QFileDialog::getSaveFileName(this, "Save breakpoints", "", "deBUGa breakpoints (*.xbrk)");
+		path = QFileDialog::getSaveFileName(this, "Save breakpoints", "", "deBUGa breakpoints (*.xbrk)",nullptr,QFileDialog::DontUseNativeDialog);
 	if (path.isEmpty())
 		return;
 	if (!path.endsWith(".xbrk"))
@@ -2289,7 +2289,7 @@ void DebugWin::saveBrk(QString path) {
 }
 
 void DebugWin::openBrk() {
-	QString path = QFileDialog::getOpenFileName(this, "Open breakpoints list", "", "deBUGa breakpoints (*.xbrk)");
+	QString path = QFileDialog::getOpenFileName(this, "Open breakpoints list", "", "deBUGa breakpoints (*.xbrk)",nullptr,QFileDialog::DontUseNativeDialog);
 	if (path.isEmpty()) return;
 	QFile file(path);
 	QString line;

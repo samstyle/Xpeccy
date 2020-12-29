@@ -40,4 +40,8 @@ void setOutput(const char*);
 void sndClose();
 int sndSync(Computer*);
 
+int snd_wav_open(const char*);
+void snd_wav_close();
+void snd_wav_write();
+
 void sndDebug();

@@ -1,21 +1,5 @@
 #include "filetypes.h"
 
-typedef struct {
-	char chunkId[4];		// "RIFF"
-	unsigned int chunkSize;
-	char format[4];			// "WAVE"
-	char subchunk1Id[4];		// "fmt "
-	unsigned int subchunk1Size;	// 16
-	unsigned short audioFormat;	// 1 = PCM
-	unsigned short numChannels;
-	unsigned int sampleRate;
-	unsigned int byteRate;		// sampleRate * numChannels * bitsPerSample/8
-	unsigned short blockAlign;	// numChannels * bitsPerSample/8
-	unsigned short bitsPerSample;
-	char subchunk2Id[4];		// "data"
-	unsigned int subchunk2Size;
-} wavHead;
-
 int loadWAV(Computer* comp, const char* name, int drv) {
 	Tape* tap = comp->tape;
 	FILE* file = fopen(name, "rb");
