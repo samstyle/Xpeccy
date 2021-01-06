@@ -28,8 +28,8 @@ HardWare hwTab[] = {
 		HW_SCORP,HWG_ZX,"Scorpion","ZS Scorpion",16,MEM_256K | MEM_1M,1.0,NULL,
 		zx_init,scoMapMem,scoOut,scoIn,scoMRd,stdMWr,speReset,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
-		HW_ATM2,HWG_ZX,"ATM2","ATM Turbo 2+",16,MEM_128K | MEM_256K | MEM_512K | MEM_1M,1.0,NULL,
-		zx_init,atm2MapMem,atm2Out,atm2In,stdMRd,stdMWr,atm2Reset,zx_sync,atm2_keyp,atm2_keyr,zx_vol
+		HW_ATM2,HWG_ZX,"ATM2","ATM Turbo 2+ (v7.10)",16,MEM_128K | MEM_256K | MEM_512K | MEM_1M,1.0,NULL,
+		zx_init,atm2MapMem,atm2Out,atm2In,stdMRd,stdMWr,atm2Reset,atm2_sync,atm2_keyp,atm2_keyr,zx_vol
 	},{
 		HW_PROFI,HWG_ZX,"Profi","Profi",16,MEM_512K | MEM_1M,1.0,NULL,
 		zx_init,prfMapMem,prfOut,prfIn,stdMRd,stdMWr,prfReset,zx_sync,prf_keyp,prf_keyr,zx_vol

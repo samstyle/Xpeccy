@@ -10,6 +10,7 @@ void atm2Reset(Computer* comp) {
 	comp->keyb->submode = kbdZX;
 	comp->keyb->wcom = 0;
 	comp->keyb->warg = 0;
+	comp->z_i = 1;
 	kbdReleaseAll(comp->keyb);
 }
 
@@ -60,6 +61,7 @@ void atm2Out77(Computer* comp, int port, int val) {		// dos
 		default: vidSetMode(comp->vid,VID_UNKNOWN); break;
 	}
 	compSetTurbo(comp,(val & 0x08) ? 2 : 1);
+	comp->z_i = (val & 0x20) ? 1 : 0;
 	comp->keyb->mode = (val & 0x40) ? KBD_SPECTRUM : KBD_ATM2;
 	comp->p77hi = (port & 0xff00) >> 8;
 	atm2MapMem(comp);
@@ -244,6 +246,12 @@ int atm2In(Computer* comp, int port, int dos) {
 	if (difIn(comp->dif, port, &res, dos)) return res;
 	res = hwIn(atm2PortMap, comp, port, dos);
 	return res;
+}
+
+void atm2_sync(Computer* comp, int ns) {
+	if (!comp->z_i)
+		comp->vid->intFRAME = 0;
+	zx_sync(comp, ns);
 }
 
 extern keyScan keyTab[];

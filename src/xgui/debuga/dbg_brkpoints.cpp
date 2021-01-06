@@ -105,11 +105,11 @@ bool xbsName(xBrkPoint& bpa, xBrkPoint& bpb) {
 void xBreakListModel::sort(int col, Qt::SortOrder ord) {
 	if (!conf.prof.cur) return;
 	switch(col) {
-		case 0: qSort(conf.prof.cur->brkList.begin(), conf.prof.cur->brkList.end(), xbsOff); break;
-		case 1: qSort(conf.prof.cur->brkList.begin(), conf.prof.cur->brkList.end(), xbsFe); break;
-		case 2: qSort(conf.prof.cur->brkList.begin(), conf.prof.cur->brkList.end(), xbsRd); break;
-		case 3: qSort(conf.prof.cur->brkList.begin(), conf.prof.cur->brkList.end(), xbsWr); break;
-		case 4: qSort(conf.prof.cur->brkList.begin(), conf.prof.cur->brkList.end(), xbsName); break;
+		case 0: std::sort(conf.prof.cur->brkList.begin(), conf.prof.cur->brkList.end(), xbsOff); break;
+		case 1: std::sort(conf.prof.cur->brkList.begin(), conf.prof.cur->brkList.end(), xbsFe); break;
+		case 2: std::sort(conf.prof.cur->brkList.begin(), conf.prof.cur->brkList.end(), xbsRd); break;
+		case 3: std::sort(conf.prof.cur->brkList.begin(), conf.prof.cur->brkList.end(), xbsWr); break;
+		case 4: std::sort(conf.prof.cur->brkList.begin(), conf.prof.cur->brkList.end(), xbsName); break;
 	}
 	emit dataChanged(index(0,0), index(rowCount() - 1, columnCount() - 1));
 }

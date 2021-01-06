@@ -192,6 +192,7 @@ int atm2In(Computer*, int, int);
 void atm2Reset(Computer*);
 void atm2_keyp(Computer*, keyEntry);
 void atm2_keyr(Computer*, keyEntry);
+void atm2_sync(Computer*, int);
 
 // Evo baseconf
 void evoMapMem(Computer*);

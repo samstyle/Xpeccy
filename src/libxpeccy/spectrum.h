@@ -93,9 +93,10 @@ typedef struct {
 	unsigned frmStrobe:1;		// new frame started
 	unsigned intStrobe:1;		// int front
 	unsigned nmiRequest:1;		// Magic button pressed
-	unsigned halt:1;
+	unsigned halt:1;		// strobe of CPU HALT instruction
 	unsigned firstRun:1;
-	unsigned ddpal:1;
+	unsigned ddpal:1;		// ATM2+: use ddp palette
+	unsigned z_i:1;			// ATM2+: unblock VSYNC INT
 
 	unsigned rom:1;			// b4,7ffd
 	unsigned dos:1;			// BDI dos

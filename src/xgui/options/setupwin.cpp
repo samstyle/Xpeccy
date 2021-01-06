@@ -343,6 +343,7 @@ void SetupWin::start(xProfile* p) {
 	comp = p->zx;
 // machine
 	ui.rsetbox->clear();
+	int idx;
 	foreach(xRomset rs, conf.rsList) {
 		ui.rsetbox->addItem(QString::fromLocal8Bit(rs.name.c_str()));
 	}
@@ -412,7 +413,7 @@ void SetupWin::start(xProfile* p) {
 	ui.tsbox->setCurrentIndex(ui.tsbox->findData(QVariant(comp->ts->type)));
 // input
 	buildkeylist();
-	int idx = ui.keyMapBox->findText(QString(prof->kmapName.c_str()));
+	idx = ui.keyMapBox->findText(QString(prof->kmapName.c_str()));
 	if (idx < 1) idx = 0;
 	ui.keyMapBox->setCurrentIndex(idx);
 	ui.ratEnable->setChecked(comp->mouse->enable);
@@ -805,6 +806,7 @@ static xRomPreset presets[] = {
 	{HW_C64, "", "c64charset.rom", {{"commodore64.rom",0,0,0},{"",0,0,0}}},
 	{HW_BK0010, "", "", {{"MONIT10.ROM",0,0,0},{"BASIC10.ROM",0,0,8},{"",0,0,0}}},
 	{HW_BK0011M, "", "", {{"BAS11M_0.ROM",0,0,0},{"BAS11M_1.ROM",0,0,16},{"B11M_EXT.ROM",0,0,24},{"B11M_BOS.ROM",0,0,32},{"",0,0,0}}},
+	{HW_SPCLST, "", "", {{"specialist_boot2_1.rom",0,0,0},{"specialist_monitor2_2.rom",0,0,2},{"",0,0,0}}},
 	{HW_NULL, "", "", {{"",0,0,0}}}
 };
 
@@ -835,7 +837,7 @@ void SetupWin::rmRomset() {
 	int idx = ui.rsetbox->currentIndex();
 	if (idx < 0) return;
 	if (areSure("Do you really want to delete this romset?")) {
-		conf.rsList.erase(conf.rsList.begin() + idx);		// NOTE: should be moved to xcore/romsets.cpp as delRomset?
+		delRomset(idx);
 		ui.rsetbox->removeItem(idx);
 	}
 }

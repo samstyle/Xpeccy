@@ -276,6 +276,7 @@ typedef struct {
 
 xRomset* findRomset(std::string);
 bool addRomset(xRomset);
+void delRomset(int);
 
 // layouts
 

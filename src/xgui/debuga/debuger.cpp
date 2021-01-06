@@ -2179,7 +2179,7 @@ void DebugWin::editBrk() {
 
 void DebugWin::delBrk() {
 	QModelIndexList idxl = ui.bpList->selectionModel()->selectedRows();
-	qSort(idxl.begin(), idxl.end(), qGreater<QModelIndex>());
+	std::sort(idxl.begin(), idxl.end(), qGreater<QModelIndex>());
 	QModelIndex idx;
 	xBrkPoint brk;
 	foreach(idx, idxl) {

@@ -70,7 +70,7 @@ void spc_wr_io_ch(int val, void* p) {
 
 void spc_wr_io(int adr, int val, void* p) {
 	Computer* comp = (Computer*)p;
-	comp->firstRun = 0;
+	comp->rom = 0;
 	ppi_wr(comp->ppi, adr & 3, val);
 	spc_mem_map(comp);
 }

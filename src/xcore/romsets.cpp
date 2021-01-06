@@ -14,8 +14,22 @@ xRomset* findRomset(std::string nm) {
 	return res;
 }
 
+bool rs_compare(xRomset& rs1, xRomset& rs2) {
+	return (rs1.name < rs2.name);
+}
+
+void sortRomsetList() {
+	std::sort(conf.rsList.begin(), conf.rsList.end(), rs_compare);
+}
+
 bool addRomset(xRomset rs) {
 	if (findRomset(rs.name) != NULL) return false;
 	conf.rsList.push_back(rs);
+	sortRomsetList();
 	return true;
+}
+
+void delRomset(int idx) {
+	conf.rsList.erase(conf.rsList.begin() + idx);
+	sortRomsetList();
 }

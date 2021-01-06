@@ -37,7 +37,7 @@ void scoMapMem(Computer* comp) {
 }
 
 int scoMRd(Computer* comp, int adr, int m1) {
-	if (((comp->mem->map[0].num & 3) == 2) && ((adr & 0xfff3) == 0x0100) && !m1) {
+	if ((comp->p1FFD & 2) && ((adr & 0xfff3) == 0x0100) && !m1) {
 		comp->prt2 = ZSLays[(adr & 0x000c) >> 2][comp->prt2 & 3] & 0xff;
 		comp->hw->mapMem(comp);
 	}
