@@ -851,8 +851,12 @@ void SetupWin::addNewRomset() {
 	r.fntFile.clear();
 	r.roms.clear();
 	if (addRomset(r)) {
-		ui.rsetbox->addItem(nam, nam);
-		setRFIndex(ui.rsetbox, nam);
+		//ui.rsetbox->addItem(nam, nam);
+		ui.rsetbox->clear();
+		foreach(xRomset rs, conf.rsList) {
+			ui.rsetbox->addItem(QString::fromLocal8Bit(rs.name.c_str()));
+		}
+		ui.rsetbox->setCurrentIndex(ui.rsetbox->findText(nam));
 	} else {
 		shitHappens("Can't create romset with such name");
 	}
