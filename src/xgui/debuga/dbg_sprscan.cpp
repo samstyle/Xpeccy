@@ -23,6 +23,7 @@ MemViewer::MemViewer(QWidget* p):QDialog(p) {
 
 	connect(ui.adrHex, SIGNAL(valueChanged(int)), this, SLOT(adrChanged(int)));
 	connect(ui.scrollbar, SIGNAL(valueChanged(int)), this, SLOT(memScroll(int)));
+	connect(ui.scrollbar_h, SIGNAL(valueChanged(int)), this, SLOT(fillImage()));
 
 	connect(ui.tbSave, SIGNAL(released()), this, SLOT(saveSprite()));
 }
@@ -74,7 +75,7 @@ unsigned char MemViewer::rdMem(int adr) {
 void MemViewer::fillImage() {
 	QImage img(256,256, QImage::Format_RGB888);
 	img.fill(qRgb(64,64,64));
-	int adr = ui.adrHex->getValue();
+	int adr = ui.adrHex->getValue() + ui.scrollbar_h->value();
 	int wid, high;
 	if (ui.cbScreen->isChecked()) {
 		wid = 32;
@@ -98,16 +99,16 @@ void MemViewer::fillImage() {
 	QRgb clr;
 	int alt;
 	for (row = 0; row < high; row++) {
-		for (col = 0; col < wid; col++) {
-			byt = rdMem(adr) ^ inv;
+		for (col = 0; (col < wid) && (col < 32); col++) {
+			byt = rdMem(adr + col) ^ inv;
 			alt = ((row >> 3) ^ col) & 1;
-			adr++;
 			for (bit = 0; bit < 8; bit++) {
 				clr = (byt & 0x80) ? (alt ? wht : lgry) : (alt ? blk : dgry);
 				img.setPixel((col << 3) | bit, row, clr);
 				byt <<= 1;
 			}
 		}
+		adr += wid;
 		if (ui.cbScreen->isChecked()) {
 			adr += 0xe0;
 			if ((row & 0x07) == 0x07) {
@@ -123,10 +124,18 @@ void MemViewer::fillImage() {
 	int pg = wid << 3;
 	ui.scrollbar->setPageStep(pg);
 	ui.scrollbar->setSingleStep(pg);
+	ui.scrollbar_h->setPageStep(32);
+	if ((wid < 32) || ui.cbScreen->isChecked()) {
+		ui.scrollbar_h->setMaximum(0);
+		ui.scrollbar_h->setEnabled(false);
+	} else {
+		ui.scrollbar_h->setMaximum(wid - 32);
+		ui.scrollbar_h->setEnabled(true);
+	}
 }
 
 void MemViewer::adrChanged(int adr) {
-	ui.scrollbar->setValue(adr);
+	ui.scrollbar->setValue(adr - ui.scrollbar_h->value());
 }
 
 void MemViewer::memScroll(int adr) {

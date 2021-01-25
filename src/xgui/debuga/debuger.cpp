@@ -234,35 +234,6 @@ QWidget* xItemDelegate::createEditor(QWidget* par, const QStyleOptionViewItem&, 
 	return edt;
 }
 
-/*
-int dmpmrd(unsigned short adr, void* ptr) {
-	Computer* comp = (Computer*)ptr;
-	MemPage* pg = &comp->mem->map[(adr >> 8) & 0xff];
-	int fadr = (pg->num << 8) | (adr & 0xff);
-	int res = 0xff;
-	switch (pg->type) {
-		case MEM_RAM:
-			res = comp->mem->ramData[fadr & comp->mem->ramMask];
-			break;
-		case MEM_ROM:
-			res = comp->mem->romData[fadr & comp->mem->romMask];
-			break;
-		case MEM_SLOT:
-			if (!comp->slot) break;
-			if (!comp->slot->data) break;
-			res = comp->slot->data[fadr & comp->slot->memMask];
-			break;
-	}
-	res |= getBrk(comp, adr) << 8;
-	return res;
-}
-
-void dmpmwr(unsigned short adr, unsigned char val, void* ptr) {
-	Computer* comp = (Computer*)ptr;
-	memWr(comp->mem, adr, val);
-}
-*/
-
 DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	int i;
 

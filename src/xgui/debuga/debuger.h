@@ -75,6 +75,7 @@ class DebugWin : public QDialog {
 		bool fillAll();
 		void onPrfChange(xProfile*);
 		void chaPal();
+		void doStep();
 	private:
 		unsigned block:1;
 		int tabMode;
@@ -185,7 +186,6 @@ class DebugWin : public QDialog {
 		void doTrace(QAction*);
 		void doTraceHere();
 		void stopTrace();
-		void doStep();
 
 		void doOpenDump();
 //		void doSaveDump();

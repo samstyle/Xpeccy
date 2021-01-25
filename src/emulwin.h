@@ -46,6 +46,8 @@ class MainWin : public QWidget {
 		void s_tape_progress(Tape*);
 		void s_tape_upd(Tape*);
 
+		void s_step();
+
 		void s_rzx_start();
 		void s_rzx_stop();
 		void s_rzx_upd(Computer*);

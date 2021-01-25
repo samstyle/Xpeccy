@@ -93,13 +93,14 @@ void brkInstall(xBrkPoint brk, int del) {
 	if (!ptr) return;
 	msk = 0;
 	if (!brk.off) {
+		if (brk.temp) msk |= MEM_BRK_TFETCH;
 		if (brk.fetch) msk |= MEM_BRK_FETCH;
 		if (brk.read) msk |= MEM_BRK_RD;
 		if (brk.write) msk |= MEM_BRK_WR;
 	}
 	*ptr &= 0xf0;
 	*ptr |= (msk & 0x0f);
-	if (!del || brk.fetch || brk.read || brk.write) return;
+	if (!del || brk.fetch || brk.read || brk.write || brk.temp) return;
 	brkDelete(brk);
 }
 

@@ -88,6 +88,7 @@ typedef struct {
 	unsigned fetch:1;
 	unsigned read:1;
 	unsigned write:1;
+	unsigned temp:1;
 	int type;
 	int adr;
 	int size;	// size of block

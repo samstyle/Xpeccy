@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QFontDatabase>
 #include <QStyleFactory>
+#include <QUrl>
 
 #include <locale.h>
 
@@ -113,6 +114,7 @@ int main(int ac,char** av) {
 
 	app.connect(&mwin, SIGNAL(s_debug(Computer*)), &dbgw, SLOT(start(Computer*)));
 	app.connect(&mwin, SIGNAL(s_prf_change(xProfile*)), &dbgw, SLOT(onPrfChange(xProfile*)));
+	app.connect(&mwin, SIGNAL(s_step()), &dbgw, SLOT(doStep()));
 
 	app.connect(&mwin, SIGNAL(s_options(xProfile*)), &optw, SLOT(start(xProfile*)));
 	app.connect(&optw, SIGNAL(closed()), &mwin, SLOT(optApply()));

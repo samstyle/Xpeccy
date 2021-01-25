@@ -45,6 +45,14 @@ std::string getRFText(QComboBox* box) {
 	return std::string(res.toLocal8Bit().data());
 }
 
+void fill_romset_list(QComboBox* box) {
+	QString txt = box->currentText();
+	box->clear();
+	foreach(xRomset rs, conf.rsList) {
+		box->addItem(QString::fromLocal8Bit(rs.name.c_str()));
+	}
+	box->setCurrentIndex(box->findText(txt));
+}
 
 // OBJECT
 
@@ -342,11 +350,8 @@ void SetupWin::start(xProfile* p) {
 	prof = p;
 	comp = p->zx;
 // machine
-	ui.rsetbox->clear();
 	int idx;
-	foreach(xRomset rs, conf.rsList) {
-		ui.rsetbox->addItem(QString::fromLocal8Bit(rs.name.c_str()));
-	}
+	fill_romset_list(ui.rsetbox);
 	ui.machbox->setCurrentIndex(ui.machbox->findData(QString::fromUtf8(comp->hw->name)));
 	ui.rsetbox->setCurrentIndex(ui.rsetbox->findText(QString::fromUtf8(prof->rsName.c_str())));
 	ui.resbox->setCurrentIndex(ui.resbox->findData(comp->resbank));
@@ -851,11 +856,7 @@ void SetupWin::addNewRomset() {
 	r.fntFile.clear();
 	r.roms.clear();
 	if (addRomset(r)) {
-		//ui.rsetbox->addItem(nam, nam);
-		ui.rsetbox->clear();
-		foreach(xRomset rs, conf.rsList) {
-			ui.rsetbox->addItem(QString::fromLocal8Bit(rs.name.c_str()));
-		}
+		fill_romset_list(ui.rsetbox);
 		ui.rsetbox->setCurrentIndex(ui.rsetbox->findText(nam));
 	} else {
 		shitHappens("Can't create romset with such name");

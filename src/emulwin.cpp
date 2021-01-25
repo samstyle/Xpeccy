@@ -957,7 +957,6 @@ void MainWin::dropEvent(QDropEvent* ev) {
 
 
 void MainWin::closeEvent(QCloseEvent* ev) {
-	FILE* file;
 	std::string fname;
 	pause(true,PR_EXIT);
 	foreach(xProfile* prf, conf.prof.list) {
@@ -1303,7 +1302,8 @@ void MainWin::socketRead() {
 	QTcpSocket* sock = (QTcpSocket*)sender();
 	QByteArray arr = sock->readAll();
 	QString com(arr);
-	com = com.toLower().remove("\n");
+	QString str;
+	com = com.remove("\n");
 	// and do something with this
 	if (com == "debug") {
 		doDebug();
@@ -1313,6 +1313,16 @@ void MainWin::socketRead() {
 		pause(true, PR_PAUSE);
 	} else if (com == "cont") {
 		pause(false, PR_PAUSE);
+	} else if (com == "step") {
+		emit s_step();
+	} else if (com == "reset") {
+		compReset(comp, RES_DEFAULT);
+	} else if (com == "cpu") {
+		sock->write(getCoreName(comp->cpu->type));
+		sock->write("\n");
+	} else if (com.startsWith("load ")) {
+		str = com.mid(5);
+		load_file(comp, str.toLocal8Bit().data(), FG_ALL, 0);
 	}
 #endif
 }
