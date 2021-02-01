@@ -69,7 +69,7 @@ void doTD0(Floppy* flp, size_t(*getBytes)(void*, size_t,void*), void* dptr, int 
 	td0TrkHead thd;
 	td0SecHead shd;
 	Sector sec[256];
-	int work = 1;
+	//int work = 1;
 	int idx;
 	int i;
 	int icnt;
@@ -87,13 +87,13 @@ void doTD0(Floppy* flp, size_t(*getBytes)(void*, size_t,void*), void* dptr, int 
 #endif
 		getBytes(NULL, rhd.len, dptr);
 	}
-	while (work) {
+	while (1) {
 		idx = 0;
 		getBytes(&thd, sizeof(td0TrkHead), dptr);
 		//printf("== TRK %i:%i (nsec = %i)\n",thd.trk, thd.head, thd.nsec);
 		if (thd.nsec == 0xff) break;
 		for (i = 0; i < thd.nsec; i++) {
-			if (!work) break;
+			//if (!work) break;
 			getBytes(&shd, sizeof(td0SecHead), dptr);
 			//printf("%i: sec %i (sz = %i, ctrl = %.2X)\n",idx, shd.sec, shd.secz, shd.ctrl);
 			sec[idx].trk = shd.trk;

@@ -350,10 +350,8 @@ struct xConfig {
 	struct {
 		unsigned fullScreen:1;	// use fullscreen
 		unsigned keepRatio:1;	// keep ratio in fullscreen (add black borders)
-//		unsigned scanLines:1;
 		int scale;		// x1..x4
-		//int fps;
-		int fcount;		// frames counter (for fps showing)
+		int fcount;		// frames counter (for fps showing) (= fcnt ???)
 		int curfps;
 	} vid;
 	struct {

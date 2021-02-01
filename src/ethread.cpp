@@ -15,7 +15,7 @@ QWaitCondition qwc;
 int sleepy = 1;
 #endif
 
-unsigned char* blkData = NULL;
+// unsigned char* blkData = NULL;
 
 xThread::xThread() {
 	sndNs = 0;
@@ -39,7 +39,7 @@ void xThread::tap_catch_load(Computer* comp) {
 		unsigned short de = comp->cpu->de;
 		unsigned short ix = comp->cpu->ix;
 		TapeBlockInfo inf = tapGetBlockInfo(comp->tape,blk,TFRM_ZX);
-		blkData = (unsigned char*)realloc(blkData,inf.size + 2);
+		unsigned char* blkData = (unsigned char*)malloc(inf.size + 2);
 		tapGetBlockData(comp->tape,blk,blkData, inf.size + 2);
 		if (inf.size == de) {
 			for (int i = 0; i < de; i++) {
@@ -54,6 +54,7 @@ void xThread::tap_catch_load(Computer* comp) {
 		}
 		tapNextBlock(comp->tape);
 		comp->cpu->pc = 0x5df;
+		free(blkData);
 	} else if (conf.tape.autostart) {
 		emit tapeSignal(TW_STATE,TWS_PLAY);
 	}
@@ -129,6 +130,7 @@ void xThread::emuCycle(Computer* comp) {
 		if (comp->frmStrobe) {
 			comp->frmStrobe = 0;
 			conf.vid.fcount++;
+			// printf("s_frame\n");
 			emit s_frame();
 		}
 	} while (!comp->brk && conf.snd.fill && !finish && !conf.emu.pause);

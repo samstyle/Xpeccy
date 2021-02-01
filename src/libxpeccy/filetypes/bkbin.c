@@ -72,49 +72,50 @@ int bkLoadToTape(Computer* comp, const char* name, int drv) {
 	blk.data = NULL;
 	blk.vol = 0;
 	FILE* file = fopen(name, "rb");
-	if (!file) return ERR_CANT_OPEN;
-
 	int err = ERR_OK;
-	start = fgetw(file);
-	len = fgetw(file);
-	memset(buf, ' ', 16);
-	ptr = strrchr(cname, SLSH);	// last slash
-	nptr = ptr ? ptr + 1 : cname;
-	dptr = strrchr(nptr, '.');	// last dot
-	if (dptr) *dptr = 0x00;		// cut extension
-	memcpy(buf, nptr, (strlen(nptr) < 16) ? strlen(nptr) : 16);
-	blkClear(&blk);
+	if (!file) {
+		err = ERR_CANT_OPEN;
+	} else {
+		start = fgetw(file);
+		len = fgetw(file);
+		memset(buf, ' ', 16);
+		ptr = strrchr(cname, SLSH);	// last slash
+		nptr = ptr ? ptr + 1 : cname;
+		dptr = strrchr(nptr, '.');	// last dot
+		if (dptr) *dptr = 0x00;		// cut extension
+		memcpy(buf, nptr, (strlen(nptr) < 16) ? strlen(nptr) : 16);
+		blkClear(&blk);
 
-	blkAddPause(&blk, 1000);
+		blkAddPause(&blk, 1000);
 
-	bk_write_pilot(&blk, 4096);	// long pilot (4096)
+		bk_write_pilot(&blk, 4096);	// long pilot (4096)
 
-	bk_write_pilot(&blk, 8);	// short pilot (8)
-	bk_write_word(&blk, start);	// start (data)
-	bk_write_word(&blk, len);	// size (data)
-	for(i = 0; i < 16; i++)		// filename
-		bk_write_byte(&blk, buf[i]);
+		bk_write_pilot(&blk, 8);	// short pilot (8)
+		bk_write_word(&blk, start);	// start (data)
+		bk_write_word(&blk, len);	// size (data)
+		for(i = 0; i < 16; i++)		// filename
+			bk_write_byte(&blk, buf[i]);
 
-	bk_write_pilot(&blk, 8);	// short pilot (8)
-	int crc = 0;
-	while (len > 0) {		// all file data, byte to byte, except 1st 4 bytes (start, len), LSB first
-		len--;
-		bt = fgetc(file) & 0xff;
-		bk_write_byte(&blk, bt);
-		crc += bt;
-		if (crc > 0xffff) {
-			crc &= 0xffff;
-			crc++;
+		bk_write_pilot(&blk, 8);	// short pilot (8)
+		int crc = 0;
+		while (len > 0) {		// all file data, byte to byte, except 1st 4 bytes (start, len), LSB first
+			len--;
+			bt = fgetc(file) & 0xff;
+			bk_write_byte(&blk, bt);
+			crc += bt;
+			if (crc > 0xffff) {
+				crc &= 0xffff;
+				crc++;
+			}
 		}
+		bk_write_word(&blk, crc & 0xffff);	// crc
+		bk_write_pilot(&blk, 256);	// final pilot (256 bytes)
+
+		tapAddBlock(comp->tape, blk);
+		blkClear(&blk);
+		fclose(file);
 	}
-	bk_write_word(&blk, crc & 0xffff);	// crc
-
-	bk_write_pilot(&blk, 256);	// final pilot (256 bytes)
-
-	tapAddBlock(comp->tape, blk);
-	blkClear(&blk);
 
 	free(cname);
-	fclose(file);
 	return err;
 }

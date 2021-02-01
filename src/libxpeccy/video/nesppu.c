@@ -280,7 +280,7 @@ void ppuLine(Video* vid) {
 			vid->spover = 0;
 	}
 
-	if (vid->ray.y > 239) return;
+	if (vid->ray.y > 239) return;		// 239? vid->vbsline?
 
 	if (vid->ray.y == 0) {				// @ very 1st line
 		if (vid->bgen) {

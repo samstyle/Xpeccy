@@ -2085,7 +2085,7 @@ void DebugWin::chDumpFile() {
 	} else {
 		dumpPath = path;
 		oui.laPath->setText(path);
-		oui.leLen->setText(QString::number(inf.size(),16));
+		oui.leLen->setValue(inf.size() & 0xffff);
 		dmpStartOpen();
 	}
 }

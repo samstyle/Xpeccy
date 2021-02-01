@@ -423,7 +423,7 @@ void xDumpTable::mousePressEvent(QMouseEvent* ev) {
 	if ((col < 0) || (col >= model->columnCount())) return;
 	if (col > 8) return;
 	int adr;
-	if ((col == 0) || (col > 8)) {
+	if (col == 0) {
 		adr = model->dmpadr + (row << 3);
 	} else {
 		adr = model->dmpadr + (row << 3) + col - 1;

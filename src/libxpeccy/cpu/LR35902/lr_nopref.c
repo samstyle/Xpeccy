@@ -225,10 +225,10 @@ void lrnop27(CPU* cpu) {
 	const unsigned char* tdaa = daaTab + 2 * (cpu->a + 0x100 * (((cpu->f & FLC) ? 1 : 0) | ((cpu->f & FLN) ? 2 : 0) | ((cpu->f & FLH ? 4 : 0))));
 	cpu->tmp = *tdaa;			// this is z80 flag
 	cpu->a = *(tdaa + 1);
-	if (cpu->tmp & FZ) cpu->f = FLZ;	// convert z80 flag to lr35902 flag
-	if (cpu->tmp & FN) cpu->f |= FLN;
-	if (cpu->tmp & FH) cpu->f |= FLH;
-	if (cpu->tmp & FC) cpu->f |= FLC;
+	if (cpu->tmp & Z80_FZ) cpu->f = FLZ;	// convert z80 flag to lr35902 flag
+	if (cpu->tmp & Z80_FN) cpu->f |= FLN;
+	if (cpu->tmp & Z80_FH) cpu->f |= FLH;
+	if (cpu->tmp & Z80_FC) cpu->f |= FLC;
 }
 
 // 28	jr z,e		4 3rd [5jr]

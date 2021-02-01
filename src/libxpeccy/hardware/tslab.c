@@ -143,6 +143,10 @@ int tsIn77(Computer* comp, int port) {
 	return res;
 }
 
+int tsIn1F(Computer* comp, int port) {
+	return joyInput(comp->joy);
+}
+
 int tsInBFF7(Computer* comp, int port) {
 	return (comp->pEFF7 & 0x80) ? cmsRd(comp) : 0xff;
 }
@@ -516,6 +520,7 @@ static xPort tsPortMap[] = {
 	{0x00f7,0x00fe,0,2,2,xInFE,	tsOutFE},	// fe
 	{0x00ff,0x0057,0,2,2,tsIn57,	tsOut57},	// 57
 	{0x00ff,0x0077,0,2,2,tsIn77,	tsOut77},	// 77
+	{0x00ff,0x001f,0,2,2,tsIn1F,	NULL},
 //	{0x00ff,0x00fb,0,2,2,NULL,	tsOutFB},	// fb
 	{0x10ff,0xeff7,0,2,2,NULL,	tsOutEFF7},	// eff7
 	{0x20ff,0xdff7,0,2,2,NULL,	tsOutDFF7},	// dff7

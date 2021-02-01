@@ -1,5 +1,4 @@
-#ifndef X_EMULWIN_H
-#define X_EMULWIN_H
+#pragma once
 
 #include <QLabel>
 #include <QTimer>
@@ -29,7 +28,12 @@ typedef struct {
 	QString imgName;
 } xLed;
 
+#ifdef USEOPENGL
+#include <QtOpenGL>
+class MainWin : public QGLWidget {
+#else
 class MainWin : public QWidget {
+#endif
 	Q_OBJECT
 	public:
 		MainWin();
@@ -113,6 +117,7 @@ class MainWin : public QWidget {
 		bool saveChanged();
 		void updateHead();
 		void screenShot();
+		void drawIcons(QPainter&);
 
 		void mapJoystick(Computer*, int, int, int);
 		void mapPress(Computer*, xJoyMapEntry);
@@ -150,6 +155,12 @@ class MainWin : public QWidget {
 		void focusOutEvent(QFocusEvent*);
 		void timerEvent(QTimerEvent*);
 		void moveEvent(QMoveEvent*);
-};
 
+#ifdef USEOPENGL
+		GLuint texid;
+		GLuint ovrid;
+		void initializeGL();
+		// void paintGL();
+		void resizeGL(int,int);
 #endif
+};

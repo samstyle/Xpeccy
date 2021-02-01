@@ -42,7 +42,7 @@ int z80_int(CPU* cpu) {
 				cpu->halt = 0;
 			}
 			if (cpu->resPV) {
-				cpu->f &= ~FP;
+				cpu->f &= ~Z80_FP;
 			}
 			cpu->opTab = npTab;
 			switch(cpu->imode) {
@@ -120,7 +120,7 @@ int z80_exec(CPU* cpu) {
 
 // disasm
 
-static unsigned char z80_cnd[4] = {FZ, FC, FP, FS};
+static unsigned char z80_cnd[4] = {Z80_FZ, Z80_FC, Z80_FP, Z80_FS};
 
 xMnem z80_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 	xMnem mn;

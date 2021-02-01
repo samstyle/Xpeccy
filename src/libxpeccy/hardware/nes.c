@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-static vLayout nesNTSCLay = {{341,262},{0,0},{85,22},{256,240},{0,0},64};
+static vLayout nesNTSCLay = {{341,262},{1,1},{85,22},{256,240},{0,0},64};
 static vLayout nesPALLay = {{341,312},{0,0},{85,72},{256,240},{0,0},64};
 
 // NOTE: NES is fukkeen trash. why did i start this?

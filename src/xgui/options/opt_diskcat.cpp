@@ -20,7 +20,7 @@ QVariant xDiskCatModel::headerData(int sect, Qt::Orientation ori, int role) cons
 	QVariant res;
 	if (ori != Qt::Horizontal) return res;
 	if (role != Qt::DisplayRole) return res;
-	if ((sect < 0) || (sect > 7)) return res;
+	if ((sect < 0) || (sect > 6)) return res;
 	res = dchNames[sect];
 	return res;
 }

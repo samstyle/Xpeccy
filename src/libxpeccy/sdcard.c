@@ -87,7 +87,7 @@ void sdcRdSector(SDCard* sdc) {
 		fseek(sdc->file,sdc->addr << 9,SEEK_SET);
 		fread(sdc->buf.data + 1, 512, 1, sdc->file);
 	} else {
-		memset((void*)&sdc->buf.data[1],512,0xff);
+		memset((void*)&sdc->buf.data[1],0xff,512);
 	}
 }
 

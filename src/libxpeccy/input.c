@@ -221,7 +221,7 @@ void kbdReleaseAll(Keyboard* kbd) {
 		kbd->msxMap[i] = -1;
 		kbd->msxMap[i + 8] = -1;
 	}
-	for (int i = 0; i < 16 * 8; i++) {
+	for (i = 0; i < 16 * 8; i++) {
 		kbd->matrix[(i >> 3) & 15][i & 7] = 0;
 	}
 	kbd->keycode = 0;

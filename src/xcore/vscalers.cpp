@@ -1,6 +1,4 @@
-// 2:1 -> fullscreen
-
-#include <math.h>
+// #include <math.h>
 #include <string.h>
 
 #include "xcore.h"
@@ -9,11 +7,13 @@
 #include <QDesktopWidget>
 
 void vid_upd_scale() {
+	QSize scrsz;
 	int dwid;
 	int dhei;
 	if (conf.vid.fullScreen) {
-		dwid = QApplication::desktop()->screenGeometry().width();
-		dhei = QApplication::desktop()->screenGeometry().height();
+		scrsz = QApplication::desktop()->screenGeometry().size();
+		dwid = scrsz.width(); // QApplication::desktop()->screenGeometry().width();
+		dhei = scrsz.height(); // QApplication::desktop()->screenGeometry().height();
 		xstep = dwid * 0x100 / conf.prof.cur->zx->vid->vsze.x;
 		ystep = dhei * 0x100 / conf.prof.cur->zx->vid->vsze.y;
 		if (conf.vid.keepRatio) {
@@ -26,9 +26,15 @@ void vid_upd_scale() {
 			// for BK stretch by X
 			xstep *= conf.prof.cur->zx->hw->xscale;
 			// calculate black spaces
+			// TODO: recalculate for OpenGL
 			lefSkip = (dwid - (conf.prof.cur->zx->vid->vsze.x * xstep / 256)) / 2 * 3;
-			rigSkip = lefSkip + 3;
 			topSkip = (dhei - (conf.prof.cur->zx->vid->vsze.y * ystep / 256)) / 2;
+#ifdef USEOPENGL
+			lefSkip = lefSkip / 3;
+			lefSkip = lefSkip * conf.prof.cur->zx->vid->vsze.x / dwid;
+			lefSkip = lefSkip * 6;
+#endif
+			rigSkip = lefSkip;
 			botSkip = topSkip;
 		} else {
 			lefSkip = 0;

@@ -173,9 +173,9 @@ void dd9C(CPU* cpu) {SBC(cpu->hx);}
 void dd9D(CPU* cpu) {SBC(cpu->lx);}
 void dd9E(CPU* cpu) {RDSHIFT(cpu->ix); cpu->tmpb = MEMRD(cpu->mptr,3); SBC(cpu->tmpb);}
 // and x
-void ddA4(CPU* cpu) {cpu->a &= cpu->hx; cpu->f = sz53pTab[cpu->a] | FH;}
-void ddA5(CPU* cpu) {cpu->a &= cpu->lx; cpu->f = sz53pTab[cpu->a] | FH;}
-void ddA6(CPU* cpu) {RDSHIFT(cpu->ix); cpu->tmpb = MEMRD(cpu->mptr,3); cpu->a &= cpu->tmpb; cpu->f = sz53pTab[cpu->a] | FH;}
+void ddA4(CPU* cpu) {cpu->a &= cpu->hx; cpu->f = sz53pTab[cpu->a] | Z80_FH;}
+void ddA5(CPU* cpu) {cpu->a &= cpu->lx; cpu->f = sz53pTab[cpu->a] | Z80_FH;}
+void ddA6(CPU* cpu) {RDSHIFT(cpu->ix); cpu->tmpb = MEMRD(cpu->mptr,3); cpu->a &= cpu->tmpb; cpu->f = sz53pTab[cpu->a] | Z80_FH;}
 // xor x
 void ddAC(CPU* cpu) {cpu->a ^= cpu->hx; cpu->f = sz53pTab[cpu->a];}
 void ddAD(CPU* cpu) {cpu->a ^= cpu->lx; cpu->f = sz53pTab[cpu->a];}

@@ -7,7 +7,7 @@
 void ed40(CPU* cpu) {
 	cpu->mptr = cpu->bc;
 	cpu->b = IORD(cpu->mptr++,4);
-	cpu->f = (cpu->f & FC) | sz53pTab[cpu->b];
+	cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->b];
 }
 
 // 41	out (c),b	4 4out		mptr = (a<<8) | ((port + 1) & 0xff)
@@ -57,7 +57,7 @@ void ed47(CPU* cpu) {
 void ed48(CPU* cpu) {
 	cpu->mptr = cpu->bc;
 	cpu->c = IORD(cpu->mptr++,4);
-	cpu->f = (cpu->f & FC) | sz53pTab[cpu->c];
+	cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->c];
 }
 
 // 49	out (c),c	4 4out		mptr = (a<<8) | ((port + 1) & 0xff)
@@ -96,7 +96,7 @@ void ed4F(CPU* cpu) {
 void ed50(CPU* cpu) {
 	cpu->mptr = cpu->bc;
 	cpu->d = IORD(cpu->mptr++,4);
-	cpu->f = (cpu->f & FC) | sz53pTab[cpu->d];
+	cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->d];
 }
 
 // 51	out (c),d	4 4out	mptr = (a<<8) | ((port+1) & ff)
@@ -127,7 +127,7 @@ void ed56(CPU* cpu) {
 // 57	ld a,i		5
 void ed57(CPU* cpu) {
 	cpu->a = cpu->i;
-	cpu->f = (cpu->f & FC) | (cpu->a & (FS | F5 | F3)) | (cpu->a ? 0 : FZ) | (cpu->iff2 ? FV : 0);
+	cpu->f = (cpu->f & Z80_FC) | (cpu->a & (Z80_FS | Z80_F5 | Z80_F3)) | (cpu->a ? 0 : Z80_FZ) | (cpu->iff2 ? Z80_FV : 0);
 	cpu->resPV = 1;
 }
 
@@ -135,7 +135,7 @@ void ed57(CPU* cpu) {
 void ed58(CPU* cpu) {
 	cpu->mptr = cpu->bc;
 	cpu->e = IORD(cpu->mptr++,4);
-	cpu->f = (cpu->f & FC) | sz53pTab[cpu->e];
+	cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->e];
 }
 
 // 59	out (c),e	4 4out		mptr = ((port+1) & ff) | (a << 8)
@@ -166,7 +166,7 @@ void ed5E(CPU* cpu) {
 // 5f	ld a,r		5
 void ed5F(CPU* cpu) {
 	cpu->a = (cpu->r & 0x7f) | (cpu->r7 & 0x80);
-	cpu->f = (cpu->f & FC) | (cpu->a & (FS | F5 | F3)) | (cpu->a ? 0 : FZ) | (cpu->iff2 ? FV : 0);
+	cpu->f = (cpu->f & Z80_FC) | (cpu->a & (Z80_FS | Z80_F5 | Z80_F3)) | (cpu->a ? 0 : Z80_FZ) | (cpu->iff2 ? Z80_FV : 0);
 	cpu->resPV = 1;
 }
 
@@ -174,7 +174,7 @@ void ed5F(CPU* cpu) {
 void ed60(CPU* cpu) {
 	cpu->mptr = cpu->bc;
 	cpu->h = IORD(cpu->mptr++,4);
-	cpu->f = (cpu->f & FC) | sz53pTab[cpu->h];
+	cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->h];
 }
 
 // 61	out (c),h	4 4out		mptr = ((port + 1) & FF) | (a << 8)
@@ -195,14 +195,14 @@ void ed67(CPU* cpu) {
 	cpu->t += 4;
 	MEMWR(cpu->mptr++,(cpu->a << 4) | (cpu->tmpb >> 4),3);
 	cpu->a = (cpu->a & 0xf0) | (cpu->tmpb & 0x0f);
-	cpu->f = (cpu->f & FC) | sz53pTab[cpu->a];
+	cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->a];
 }
 
 // 68	in l,(c)	4 4in		mptr = port + 1
 void ed68(CPU* cpu) {
 	cpu->mptr = cpu->bc;
 	cpu->l = IORD(cpu->mptr++,4);
-	cpu->f = (cpu->f & FC) | sz53pTab[cpu->l];
+	cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->l];
 }
 
 // 69	out (c),l	4 4out		mptr = ((port+1)&FF)|(a<<8)
@@ -224,14 +224,14 @@ void ed6F(CPU* cpu) {
 	cpu->t += 4;
 	MEMWR(cpu->mptr++, (cpu->tmpb << 4 ) | (cpu->a & 0x0f), 3);
 	cpu->a = (cpu->a & 0xf0) | (cpu->tmpb >> 4);
-	cpu->f = (cpu->f & FC) | sz53pTab[cpu->a];
+	cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->a];
 }
 
 // 70	in (c)		4 4in		mptr = port + 1
 void ed70(CPU* cpu) {
 	cpu->mptr = cpu->bc;
 	cpu->tmp = IORD(cpu->mptr++,4);
-	cpu->f = (cpu->f & FC) | sz53pTab[cpu->tmp];
+	cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->tmp];
 }
 
 // 71	out (c),0	4 4out		mptr = ((port+1)&FF)|(a<<8)
@@ -258,7 +258,7 @@ void ed73(CPU* cpu) {
 void ed78(CPU* cpu) {
 	cpu->mptr = cpu->bc;
 	cpu->a = IORD(cpu->mptr++,4);
-	cpu->f = (cpu->f & FC) | sz53pTab[cpu->a];
+	cpu->f = (cpu->f & Z80_FC) | sz53pTab[cpu->a];
 }
 
 // 79	out (c),a	4 4out		mptr = ((port+1)&FF)|(a<<8)
@@ -287,7 +287,7 @@ void edA0(CPU* cpu) {
 	MEMWR(cpu->de++,cpu->tmp,5);
 	cpu->bc--;
 	cpu->tmp += cpu->a;
-	cpu->f = (cpu->f & (FC | FZ | FS)) | (cpu->bc ? FV : 0 ) | (cpu->tmp & F3) | ((cpu->tmp & 0x02) ? F5 : 0);
+	cpu->f = (cpu->f & (Z80_FC | Z80_FZ | Z80_FS)) | (cpu->bc ? Z80_FV : 0 ) | (cpu->tmp & Z80_F3) | ((cpu->tmp & 0x02) ? Z80_F5 : 0);
 }
 
 // a1	cpi	4 3rd 5?	mptr++
@@ -297,9 +297,9 @@ void edA1(CPU* cpu) {
 	cpu->tmp = ((cpu->a & 0x08) >> 3) | ((cpu->tmpb & 0x08) >> 2) | ((cpu->tmpw & 0x08 ) >> 1);
 	cpu->hl++;
 	cpu->bc--;
-	cpu->f = (cpu->f & FC) | (cpu->bc ? FV : 0) | FN | FHsubTab[cpu->tmp] | (cpu->tmpw ? 0 : FZ) | (cpu->tmpw & FS);
-	if (cpu->f & FH) cpu->tmpw--;
-	cpu->f |= (cpu->tmpw & F3) | ((cpu->tmpw & 0x02) ? F5 : 0);
+	cpu->f = (cpu->f & Z80_FC) | (cpu->bc ? Z80_FV : 0) | Z80_FN | FHsubTab[cpu->tmp] | (cpu->tmpw ? 0 : Z80_FZ) | (cpu->tmpw & Z80_FS);
+	if (cpu->f & Z80_FH) cpu->tmpw--;
+	cpu->f |= (cpu->tmpw & Z80_F3) | ((cpu->tmpw & 0x02) ? Z80_F5 : 0);
 	cpu->mptr++;
 	cpu->t += 5;
 }
@@ -310,11 +310,11 @@ void edA2(CPU* cpu) {
 	cpu->tmp = IORD(cpu->bc,4);
 	MEMWR(cpu->hl++,cpu->tmp,3);
 	cpu->b--;
-	cpu->f = (cpu->tmp & 0x80 ? FN : 0) | (cpu->b & (FS | F5 | F3)) | (cpu->b ? 0 : FZ);
+	cpu->f = (cpu->tmp & 0x80 ? Z80_FN : 0) | (cpu->b & (Z80_FS | Z80_F5 | Z80_F3)) | (cpu->b ? 0 : Z80_FZ);
 
 	cpu->tmpw = cpu->tmp + ((cpu->c + 1) & 0xff);
-	if (cpu->tmpw > 255) cpu->f |= (FC | FH);
-	cpu->f |= (sz53pTab[(cpu->tmpw & 7) ^ cpu->b] & FP);
+	if (cpu->tmpw > 255) cpu->f |= (Z80_FC | Z80_FH);
+	cpu->f |= (sz53pTab[(cpu->tmpw & 7) ^ cpu->b] & Z80_FP);
 }
 
 // a3	outi	5 3rd 4wr	mptr = bc + 1 (after dec)
@@ -324,11 +324,11 @@ void edA3(CPU* cpu) {
 	cpu->mptr = cpu->bc + 1;
 	IOWR(cpu->bc,cpu->tmp,4);
 	cpu->hl++;
-	cpu->f = (cpu->tmp & 0x80 ? FN : 0 ) | (cpu->b & (FS | F5 | F3)) | (cpu->b ? 0 : FZ);
+	cpu->f = (cpu->tmp & 0x80 ? Z80_FN : 0 ) | (cpu->b & (Z80_FS | Z80_F5 | Z80_F3)) | (cpu->b ? 0 : Z80_FZ);
 
 	cpu->tmpw = cpu->tmp + cpu->l;
-	if (cpu->tmpw > 255) cpu->f |= (FC | FH);
-	cpu->f |= (sz53pTab[(cpu->tmpw & 7) ^ cpu->b] & FP);
+	if (cpu->tmpw > 255) cpu->f |= (Z80_FC | Z80_FH);
+	cpu->f |= (sz53pTab[(cpu->tmpw & 7) ^ cpu->b] & Z80_FP);
 }
 
 // a8	ldd	4 3rd 5wr
@@ -337,7 +337,7 @@ void edA8(CPU* cpu) {
 	MEMWR(cpu->de--,cpu->tmp,5);
 	cpu->bc--;
 	cpu->tmp += cpu->a;
-	cpu->f = (cpu->f & (FC | FZ | FS)) | (cpu->bc ? FV : 0 ) | (cpu->tmp & F3) | ((cpu->tmp & 0x02) ? F5 : 0);
+	cpu->f = (cpu->f & (Z80_FC | Z80_FZ | Z80_FS)) | (cpu->bc ? Z80_FV : 0 ) | (cpu->tmp & Z80_F3) | ((cpu->tmp & 0x02) ? Z80_F5 : 0);
 }
 
 // a9	cpd	4 3rd 5?	mptr--
@@ -347,9 +347,9 @@ void edA9(CPU* cpu) {
 	cpu->tmp = ((cpu->a & 0x08) >> 3) | ((cpu->tmpb & 0x08) >> 2) | ((cpu->tmpw & 0x08 ) >> 1);
 	cpu->hl--;
 	cpu->bc--;
-	cpu->f = (cpu->f & FC) | (cpu->bc ? FV : 0) | FN | FHsubTab[cpu->tmp] | (cpu->tmpw ? 0 : FZ) | (cpu->tmpw & FS);
-	if (cpu->f & FH) cpu->tmpw--;
-	cpu->f |= (cpu->tmpw & F3) | ((cpu->tmpw & 0x02) ? F5 : 0);
+	cpu->f = (cpu->f & Z80_FC) | (cpu->bc ? Z80_FV : 0) | Z80_FN | FHsubTab[cpu->tmp] | (cpu->tmpw ? 0 : Z80_FZ) | (cpu->tmpw & Z80_FS);
+	if (cpu->f & Z80_FH) cpu->tmpw--;
+	cpu->f |= (cpu->tmpw & Z80_F3) | ((cpu->tmpw & 0x02) ? Z80_F5 : 0);
 	cpu->mptr--;
 	cpu->t += 5;
 }
@@ -360,11 +360,11 @@ void edAA(CPU* cpu) {
 	cpu->tmp = IORD(cpu->bc,4);
 	MEMWR(cpu->hl--,cpu->tmp,3);
 	cpu->b--;
-	cpu->f = ((cpu->tmp & 0x80) ? FN : 0) | (cpu->b & (FS | F5 | F3)) | (cpu->b ? 0 : FZ);
+	cpu->f = ((cpu->tmp & 0x80) ? Z80_FN : 0) | (cpu->b & (Z80_FS | Z80_F5 | Z80_F3)) | (cpu->b ? 0 : Z80_FZ);
 
 	cpu->tmpw = cpu->tmp + ((cpu->c - 1) & 0xff);
-	if (cpu->tmpw > 255) cpu->f |= (FC | FH);
-	cpu->f |= (sz53pTab[(cpu->tmpw & 7) ^ cpu->b] & FP);
+	if (cpu->tmpw > 255) cpu->f |= (Z80_FC | Z80_FH);
+	cpu->f |= (sz53pTab[(cpu->tmpw & 7) ^ cpu->b] & Z80_FP);
 }
 
 // ab	outd	5 3rd 4wr	mptr = bc - 1 (after dec)
@@ -374,11 +374,11 @@ void edAB(CPU* cpu) {
 	cpu->mptr = cpu->bc - 1;
 	IOWR(cpu->bc,cpu->tmp,4);
 	cpu->hl--;
-	cpu->f = (cpu->tmp & 0x80 ? FN : 0 ) | (cpu->b & (FS | F5 | F3)) | (cpu->b ? 0 : FZ);
+	cpu->f = (cpu->tmp & 0x80 ? Z80_FN : 0 ) | (cpu->b & (Z80_FS | Z80_F5 | Z80_F3)) | (cpu->b ? 0 : Z80_FZ);
 
 	cpu->tmpw = cpu->tmp + cpu->l;
-	if (cpu->tmpw > 255) cpu->f |= (FC | FH);
-	cpu->f |= (sz53pTab[(cpu->tmpw & 7) ^ cpu->b] & FP);
+	if (cpu->tmpw > 255) cpu->f |= (Z80_FC | Z80_FH);
+	cpu->f |= (sz53pTab[(cpu->tmpw & 7) ^ cpu->b] & Z80_FP);
 }
 
 // b0	ldir	= ldi until bc!=0	[+5T, mptr = pc+1]
@@ -394,7 +394,7 @@ void edB0(CPU* cpu) {
 // b1	cpir	= cpi until (FV & !FZ)
 void edB1(CPU* cpu) {
 	edA1(cpu);
-	if ((cpu->f & (FV | FZ)) == FV) {
+	if ((cpu->f & (Z80_FV | Z80_FZ)) == Z80_FV) {
 		cpu->pc -= 2;
 		cpu->t += 5;
 		cpu->mptr = cpu->pc + 1;
@@ -434,7 +434,7 @@ void edB8(CPU* cpu) {
 // b9	cpdr	= cpd until (FV & !FZ)
 void edB9(CPU* cpu) {
 	edA9(cpu);
-	if ((cpu->f & (FV | FZ)) == FV) {
+	if ((cpu->f & (Z80_FV | Z80_FZ)) == Z80_FV) {
 		cpu->pc -= 2;
 		cpu->t += 5;
 		cpu->mptr = cpu->pc + 1;

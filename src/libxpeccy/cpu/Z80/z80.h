@@ -1,5 +1,4 @@
-#ifndef X_Z80_H
-#define X_Z80_H
+#pragma once
 
 #include "../cpu.h"
 #include "z80_macro.h"
@@ -23,15 +22,15 @@ enum {
 	Z80_REG_R
 };
 
-#define FS	0x80
-#define	FZ	0x40
-#define	F5	0x20
-#define	FH	0x10
-#define	F3	0x08
-#define	FP	0x04
-#define	FV	FP
-#define	FN	0x02
-#define	FC	0x01
+#define Z80_FS	0x80
+#define	Z80_FZ	0x40
+#define	Z80_F5	0x20
+#define	Z80_FH	0x10
+#define	Z80_F3	0x08
+#define	Z80_FP	0x04
+#define	Z80_FV	Z80_FP
+#define	Z80_FN	0x02
+#define	Z80_FC	0x01
 
 #define Z80_INT	1
 #define Z80_NMI	(1<<1)
@@ -43,5 +42,3 @@ xMnem z80_mnem(CPU*, unsigned short, cbdmr, void*);
 
 void z80_get_regs(CPU*, xRegBunch*);
 void z80_set_regs(CPU*, xRegBunch);
-
-#endif

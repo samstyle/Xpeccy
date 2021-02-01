@@ -10,13 +10,6 @@
 #include <QDesktopWidget>
 #include <QFileDialog>
 
-#if QT_VERSION >= 0x050e00
-#include <QScreen>
-#define SCREENSIZE screen()->size()
-#else
-#define SCREENSIZE QApplication::desktop()->screenGeometry().size()
-#endif
-
 #include <fstream>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -33,9 +26,20 @@
 
 #include "version.h"
 
+#if QT_VERSION >= 0x050e00
+#include <QScreen>
+#define SCREENSIZE screen()->size()
+#else
+#define SCREENSIZE QApplication::desktop()->screenGeometry().size()
+#endif
+
 #define STR_EXPAND(tok) #tok
 #define	STR(tok) STR_EXPAND(tok)
+#ifdef USEOPENGL
+#define	XPTITLE	STR(Xpeccy VERSION (OpenGL))
+#else
 #define	XPTITLE	STR(Xpeccy VERSION)
+#endif
 
 // main
 
@@ -44,7 +48,7 @@ extern unsigned char* scrimg;
 
 extern int bytesPerLine;
 
-static QPainter pnt;
+//static QPainter pnt;
 static QImage alphabet;
 
 // mainwin
@@ -82,12 +86,17 @@ void MainWin::updateWindow() {
 		setWindowState(windowState() & ~Qt::WindowFullScreen);
 	}
 	setFixedSize(szw, szh);
+	vid_set_zoom(conf.vid.scale);
 	lineBytes = szw * 3;
 	frameBytes = szh * lineBytes;
+#ifdef USEOPENGL
+	bytesPerLine = (lefSkip + comp->vid->vsze.x * 6 + rigSkip) & ~3;		// texture width must be 4-dots aligned
+	// bytesPerLine = bytesPerLine * 6;		// rgb x 2
+#else
 	bytesPerLine = lineBytes;
 	if (bytesPerLine & 3)		// 4 bytes align for QImage data
 		bytesPerLine = (bytesPerLine & ~3) + 4;
-	vid_set_zoom(conf.vid.scale);
+#endif
 	updateHead();
 	block = 0;
 }
@@ -200,6 +209,11 @@ MainWin::MainWin() {
 
 	connect(&srv, SIGNAL(newConnection()),this,SLOT(connected()));
 #endif
+#ifdef USEOPENGL
+	QGLFormat fmt = format();
+	fmt.setDoubleBuffer(false);
+	setFormat(fmt);
+#endif
 }
 
 // gamepad mapper
@@ -309,13 +323,16 @@ void MainWin::mapJoystick(Computer* comp, int type, int num, int st) {
 static QList<int> fpsmem;
 
 void MainWin::timerEvent(QTimerEvent* ev) {
-// fps (1000 ms)
-	if (ev->timerId() == secid) {
+// fps (200 ms)
+	if (ev->timerId() == secid) {		// 0.2 sec timer
+		// printf("0.2 sec timer event\n");
 		if (!conf.emu.pause) {
+			// printf("%i (%i)\n", comp->vid->fcnt, fpsmem.first());
 			fpsmem.append(conf.vid.fcount);
 			conf.vid.curfps = conf.vid.fcount - fpsmem.first();
 			while(fpsmem.size() > 5)
 				fpsmem.removeFirst();
+			// printf("%i\n", conf.vid.curfps);
 		}
 	} else {
 // updater
@@ -491,6 +508,7 @@ void MainWin::rzxStateChanged(int state) {
 }
 
 void MainWin::d_frame() {
+	// printf("d_frame\n");
 	if (conf.emu.fast) return;
 	setUpdatesEnabled(true);
 	repaint();
@@ -508,9 +526,40 @@ void drawText(QPainter* pnt, int x, int y, const char* buf) {
 }
 
 void MainWin::paintEvent(QPaintEvent*) {
-	if (block) return;
-	pnt.begin(this);
+	// printf("paint event\n");
+#ifdef USEOPENGL
+	QPainter pnt(this);
+	pnt.beginNativePainting();
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_TEXTURE_2D);
+	glLoadIdentity();
+	// generate texture image
+	glBindTexture(GL_TEXTURE_2D, texid);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bytesPerLine / 3, comp->vid->vsze.y, 0, GL_RGB, GL_UNSIGNED_BYTE, comp->debug ? scrimg : bufimg);
+	// draw texture
+	glBegin(GL_POLYGON);
+	glTexCoord2f(0.0, 0.0); glVertex2i(0, 0);
+	glTexCoord2f(1.0, 0.0); glVertex2i(width(), 0);
+	glTexCoord2f(1.0, 1.0); glVertex2i(width(), height());
+	glTexCoord2f(0.0, 1.0); glVertex2i(0, height());
+	glEnd();
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+	pnt.endNativePainting();
+	drawIcons(pnt);
+	pnt.end();
+	glFlush();
+#else
+	QPainter pnt(this);
 	pnt.drawImage(0,0, QImage(comp->debug ? scrimg : bufimg, width(), height(), QImage::Format_RGB888));
+	drawIcons(pnt);
+	pnt.end();
+#endif
+}
+
+void MainWin::drawIcons(QPainter& pnt) {
 // screenshot
 	if (scrCounter > 0) {
 		if (scrInterval > 0) {
@@ -566,8 +615,55 @@ void MainWin::paintEvent(QPaintEvent*) {
 		msgTimer--;
 	}
 // end
-	pnt.end();
 }
+
+#ifdef USEOPENGL
+
+void MainWin::initializeGL() {
+	glGenTextures(1, &texid);	// create texture
+	glEnable(GL_TEXTURE_2D);
+	glEnable(GL_MULTISAMPLE);
+	// select texture
+	glBindTexture(GL_TEXTURE_2D, texid);
+	// set filters for this texture
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+}
+
+void MainWin::resizeGL(int w, int h) {
+	glViewport(0, 0, w, h);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0.0, w, h, 0.0, 1, 0);
+	glMatrixMode(GL_MODELVIEW);
+}
+
+/*
+void MainWin::paintGL() {
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_TEXTURE_2D);
+	glLoadIdentity();
+	// generate texture image
+	glBindTexture(GL_TEXTURE_2D, texid);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bytesPerLine / 3, comp->vid->vsze.y, 0, GL_RGB, GL_UNSIGNED_BYTE, comp->debug ? scrimg : bufimg);
+	// draw texture
+	glBegin(GL_POLYGON);
+	glTexCoord2f(0.0, 0.0); glVertex2i(0, 0);
+	glTexCoord2f(1.0, 0.0); glVertex2i(width(), 0);
+	glTexCoord2f(1.0, 1.0); glVertex2i(width(), height());
+	glTexCoord2f(0.0, 1.0); glVertex2i(0, height());
+	glEnd();
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+//	glFlush();
+	glFinish();
+	swapBuffers();
+}
+*/
+
+#endif
 
 void MainWin::kPress(QKeyEvent* ev) {
 	keyPressEvent(ev);
@@ -696,6 +792,7 @@ void MainWin::xkey_press(int xkey) {
 				break;
 			case XCUT_RATIO:
 				vid_set_ratio(!conf.vid.keepRatio);
+				updateWindow();
 				setMessage(conf.vid.keepRatio ? " keep aspect ratio " : " ignore aspect ratio ");
 				saveConfig();
 				break;
@@ -716,7 +813,7 @@ void MainWin::xkey_press(int xkey) {
 			case XCUT_DEBUG:
 				conf.emu.fast = 0;
 				pause(true, PR_DEBUG);
-				setUpdatesEnabled(true);
+				// setUpdatesEnabled(true);
 				emit s_debug(comp);
 				break;
 			case XCUT_MENU:
@@ -868,7 +965,7 @@ void MainWin::mouseReleaseEvent(QMouseEvent *ev) {
 			if (grabMice) {
 				comp->mouse->lmb = 0;
 #ifdef __APPLE__
-			} else {
+			} else if (comp->mouse->enable) {
 				grabMice = 1;
 				grabMouse(QCursor(Qt::BlankCursor));
 				setMessage(" grab mouse ");

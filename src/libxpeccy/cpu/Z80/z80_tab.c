@@ -1,9 +1,9 @@
 #include "../cpu.h"
 
-const unsigned char FHaddTab[] = {0, FH, FH, FH, 0, 0, 0, FH};
-const unsigned char FHsubTab[] = {0, 0, FH, 0, FH, 0, FH, FH};
-const unsigned char FVaddTab[] = {0, 0, 0, FV, FV, 0, 0, 0};
-const unsigned char FVsubTab[] = {0, FV, 0, 0, 0, 0, FV, 0};
+const unsigned char FHaddTab[] = {0, Z80_FH, Z80_FH, Z80_FH, 0, 0, 0, Z80_FH};
+const unsigned char FHsubTab[] = {0, 0, Z80_FH, 0, Z80_FH, 0, Z80_FH, Z80_FH};
+const unsigned char FVaddTab[] = {0, 0, 0, Z80_FV, Z80_FV, 0, 0, 0};
+const unsigned char FVsubTab[] = {0, Z80_FV, 0, 0, 0, 0, Z80_FV, 0};
 
 const unsigned char sz53pTab[0x100] = {
 	 0x44,0x00,0x00,0x04,0x00,0x04,0x04,0x00

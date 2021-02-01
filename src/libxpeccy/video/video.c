@@ -54,6 +54,8 @@ void vid_dot(Video* vid, unsigned char col) {
 
 }
 
+#ifndef USEOPENGL
+
 void vid_dot_full(Video* vid, unsigned char col) {
 	xpos += xstep;
 	while (xpos > 0xff) {
@@ -70,12 +72,14 @@ void vid_dot_half(Video* vid, unsigned char col) {
 	}
 }
 
+#endif
+
 void vid_line(Video* vid) {
-	memset(vid->ray.ptr, 0x00, 3);	// put black dot
-	if (rigSkip)
+	// memset(vid->ray.ptr, 0x00, 3);	// put black dot
+	if (rigSkip > 0)
 		memset(vid->ray.ptr, 0x00, rigSkip);
 	vid->ray.lptr += bytesPerLine;
-
+#ifndef USEOPENGL
 	ypos += ystep;
 	ypos -= 0x100;		// 1 line is already drawn
 	xpos = 0;
@@ -84,12 +88,14 @@ void vid_line(Video* vid) {
 		memcpy(vid->ray.lptr, vid->ray.lptr - bytesPerLine, bytesPerLine);
 		vid->ray.lptr += bytesPerLine;
 	}
-	if (lefSkip)
+#endif
+	if (lefSkip > 0)
 		memset(vid->ray.lptr, 0x00, lefSkip);
 	vid->ray.ptr = vid->ray.lptr + lefSkip;
 }
 
 void vid_line_fill(Video* vid) {
+#ifndef USEOPENGL
 	int ytmp = ypos;
 	unsigned char* ptr = vid->ray.lptr;
 	ytmp += ystep;
@@ -98,13 +104,15 @@ void vid_line_fill(Video* vid) {
 		memcpy(ptr + bytesPerLine, ptr, bytesPerLine);
 		ptr += bytesPerLine;
 	}
+#endif
 }
 
 void vid_frame(Video* vid) {
-	if (botSkip)
+	if (botSkip > 0)
 		memset(vid->ray.lptr, 0x00, botSkip * bytesPerLine);
 	ypos = 0;
 	// scanlines
+#ifndef USEOPENGL
 	int x,y;
 	unsigned char* ptr = scrimg + bytesPerLine;
 	if (scanlines) {
@@ -115,19 +123,20 @@ void vid_frame(Video* vid) {
 			ptr += bytesPerLine * 2;
 		}
 	}
-
+#endif
 	if (!vid->debug) {
 		scrimg = curbuf ? bufb : bufa;
 		bufimg = curbuf ? bufa : bufb;
 		curbuf = !curbuf;
 	}
-	if (topSkip)
+	if (topSkip > 0)
 		memset(scrimg, 0x00, topSkip * bytesPerLine);
 	vid->ray.lptr = scrimg + topSkip * bytesPerLine;
 	if (lefSkip)
 		memset(vid->ray.lptr, 0x00, lefSkip);
 	vid->ray.ptr = vid->ray.lptr + lefSkip;
-	pptr = pscr; //pptr = pscr;
+	pptr = pscr;				// previous screen ptr
+	vid->newFrame = 1;
 }
 
 Video* vidCreate(vcbmrd cb, void* dptr) {
@@ -193,19 +202,19 @@ void vidReset(Video* vid) {
 // ? = brdr = full - bord - scr - blank
 void vidUpdateLayout(Video* vid) {
 	vCoord brdr;	// size of right/bottom border parts
-	vid->vend.x = vid->full.x - vid->blank.x;
-	vid->vend.y = vid->full.y - vid->blank.y;
-	brdr.x = vid->vend.x - vid->bord.x - vid->scrn.x;
-	brdr.y = vid->vend.y - vid->bord.y - vid->scrn.y;
-	vid->lcut.x = (int)floor(vid->bord.x * (1.0 - vid->brdsize));
-	vid->lcut.y = (int)floor(vid->bord.y * (1.0 - vid->brdsize));
-	vid->rcut.x = (int)floor(vid->bord.x + vid->scrn.x + brdr.x * vid->brdsize);
-	vid->rcut.y = (int)floor(vid->bord.y + vid->scrn.y + brdr.y * vid->brdsize);
-	vid->vsze.x = vid->rcut.x - vid->lcut.x;
+	vid->vend.x = vid->full.x - vid->blank.x;		// visible right dot
+	vid->vend.y = vid->full.y - vid->blank.y;		// visible bottom line
+	brdr.x = vid->vend.x - vid->bord.x - vid->scrn.x;	// border right
+	brdr.y = vid->vend.y - vid->bord.y - vid->scrn.y;	// border bottom
+	vid->lcut.x = vid->bord.x * (1.0 - vid->brdsize);	// cut border left
+	vid->lcut.y = vid->bord.y * (1.0 - vid->brdsize);	// cut border top
+	vid->rcut.x = vid->bord.x + vid->scrn.x + brdr.x * vid->brdsize;	// cut border right
+	vid->rcut.y = vid->bord.y + vid->scrn.y + brdr.y * vid->brdsize;	// cut border bottom
+	vid->vsze.x = vid->rcut.x - vid->lcut.x;		// visible area size
 	vid->vsze.y = vid->rcut.y - vid->lcut.y;
-	vid->send.x = vid->bord.x + vid->scrn.x;
-	vid->send.y = vid->bord.y + vid->scrn.y;
-	vid->vBytes = vid->vsze.x * vid->vsze.y * 6;	// real size of image buffer (3 bytes/dot x2:x1)
+	vid->send.x = vid->bord.x + vid->scrn.x;		// screen end column
+	vid->send.y = vid->bord.y + vid->scrn.y;		// screen end line
+	vid->vBytes = vid->vsze.x * vid->vsze.y * 6;		// real size of image buffer (3 bytes/dot x2:x1)
 	vidUpdateTimings(vid, vid->nsPerDot);
 }
 
@@ -746,6 +755,9 @@ void vidSync(Video* vid, int ns) {
 				vid->vbstrb = 0;
 				vid->ray.y = 0;
 				vid->tsconf.scrLine = 0;
+				vid->fcnt++;
+				vid->flash = (vid->fcnt & 0x10) ? 1 : 0;
+				if (vid->cbFrame) vid->cbFrame(vid);
 				vid->tail = 0;
 				if (vid->debug)
 					vidDarkTail(vid);
@@ -754,11 +766,7 @@ void vidSync(Video* vid, int ns) {
 				vid->vblank = 1;
 				vid->vbstrb = 1;
 				vid->ray.yb = 0;
-				vid->fcnt++;
-				vid->flash = (vid->fcnt & 0x10) ? 1 : 0;
 				vid->idx = 0;
-				vid->newFrame = 1;
-				if (vid->cbFrame) vid->cbFrame(vid);
 			}
 			if (vid->ray.y == vid->send.y) {		// screen end V
 				vid->vbrd = 1;

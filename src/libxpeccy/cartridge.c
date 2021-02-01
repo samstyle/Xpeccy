@@ -181,7 +181,7 @@ void slt_gb_mbc3_wr(xCartridge* slot, int mt, int adr, int radr, int val) {
 			slot->ramen = ((val & 0x0f) == 0x0a) ? 1 : 0;
 			break;
 		case 0x2000:		// 2000..3fff : rom bank (1..127)
-			val = 0x7f;
+			// val = 0x7f;
 			if (val == 0) val++;
 			slot->memMap[0] = val;
 			break;
