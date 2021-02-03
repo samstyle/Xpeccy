@@ -73,9 +73,9 @@ void MainWin::updateWindow() {
 	vidSetBorder(comp->vid, conf.brdsize);		// to call vidUpdateLayout???
 	int szw;
 	int szh;
-	QSize wsz;
+	
 	if (conf.vid.fullScreen) {
-		wsz = SCREENSIZE;
+		auto wsz = SCREENSIZE;
 		szw = wsz.width();
 		szh = wsz.height();
 		setWindowState(windowState() | Qt::WindowFullScreen);
