@@ -212,7 +212,8 @@ MainWin::MainWin() {
 #ifdef USEOPENGL
 	QGLFormat fmt = format();
 	fmt.setDoubleBuffer(false);
-	setFormat(fmt);
+	setFormat(fmt);		// obsolete. but where is new version? context()=null
+	setAutoBufferSwap(false);
 #endif
 }
 
@@ -529,7 +530,60 @@ void MainWin::paintEvent(QPaintEvent*) {
 	// printf("paint event\n");
 #ifdef USEOPENGL
 	QPainter pnt(this);
-	pnt.beginNativePainting();
+//	pnt.beginNativePainting();
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_TEXTURE_2D);
+	glLoadIdentity();
+	// generate texture image
+	glBindTexture(GL_TEXTURE_2D, texid);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bytesPerLine / 3, comp->vid->vsze.y, 0, GL_RGB, GL_UNSIGNED_BYTE, comp->debug ? scrimg : bufimg);
+	// draw texture
+	glBegin(GL_POLYGON);
+	glTexCoord2f(0.0, 0.0); glVertex2f(0.0, 0.0);
+	glTexCoord2f(1.0, 0.0); glVertex2f(1.0, 0.0);
+	glTexCoord2f(1.0, 1.0); glVertex2f(1.0, 1.0);
+	glTexCoord2f(0.0, 1.0); glVertex2f(0.0, 1.0);
+	glEnd();
+	glDisable(GL_TEXTURE_2D);
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+//	pnt.endNativePainting();
+	drawIcons(pnt);
+	pnt.end();
+	glFlush();
+#else
+	QPainter pnt(this);
+	pnt.drawImage(0,0, QImage(comp->debug ? scrimg : bufimg, width(), height(), QImage::Format_RGB888));
+	drawIcons(pnt);
+	pnt.end();
+#endif
+}
+
+#ifdef USEOPENGL
+
+void MainWin::initializeGL() {
+	glGenTextures(1, &texid);	// create texture
+	glEnable(GL_TEXTURE_2D);
+	glEnable(GL_MULTISAMPLE);
+	// select texture
+	glBindTexture(GL_TEXTURE_2D, texid);
+	// set filters for this texture
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+}
+
+void MainWin::resizeGL(int w, int h) {
+	glViewport(0, 0, w, h);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0.0, 1.0, 1.0, 0.0, 1, 0);
+	glMatrixMode(GL_MODELVIEW);
+}
+
+/*
+void MainWin::paintGL() {
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -547,17 +601,13 @@ void MainWin::paintEvent(QPaintEvent*) {
 	glEnd();
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
-	pnt.endNativePainting();
-	drawIcons(pnt);
-	pnt.end();
-	glFlush();
-#else
-	QPainter pnt(this);
-	pnt.drawImage(0,0, QImage(comp->debug ? scrimg : bufimg, width(), height(), QImage::Format_RGB888));
-	drawIcons(pnt);
-	pnt.end();
-#endif
+//	glFlush();
+	glFinish();
+	swapBuffers();
 }
+*/
+
+#endif
 
 void MainWin::drawIcons(QPainter& pnt) {
 // screenshot
@@ -616,54 +666,6 @@ void MainWin::drawIcons(QPainter& pnt) {
 	}
 // end
 }
-
-#ifdef USEOPENGL
-
-void MainWin::initializeGL() {
-	glGenTextures(1, &texid);	// create texture
-	glEnable(GL_TEXTURE_2D);
-	glEnable(GL_MULTISAMPLE);
-	// select texture
-	glBindTexture(GL_TEXTURE_2D, texid);
-	// set filters for this texture
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-}
-
-void MainWin::resizeGL(int w, int h) {
-	glViewport(0, 0, w, h);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(0.0, w, h, 0.0, 1, 0);
-	glMatrixMode(GL_MODELVIEW);
-}
-
-/*
-void MainWin::paintGL() {
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_TEXTURE_2D);
-	glLoadIdentity();
-	// generate texture image
-	glBindTexture(GL_TEXTURE_2D, texid);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bytesPerLine / 3, comp->vid->vsze.y, 0, GL_RGB, GL_UNSIGNED_BYTE, comp->debug ? scrimg : bufimg);
-	// draw texture
-	glBegin(GL_POLYGON);
-	glTexCoord2f(0.0, 0.0); glVertex2i(0, 0);
-	glTexCoord2f(1.0, 0.0); glVertex2i(width(), 0);
-	glTexCoord2f(1.0, 1.0); glVertex2i(width(), height());
-	glTexCoord2f(0.0, 1.0); glVertex2i(0, height());
-	glEnd();
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
-//	glFlush();
-	glFinish();
-	swapBuffers();
-}
-*/
-
-#endif
 
 void MainWin::kPress(QKeyEvent* ev) {
 	keyPressEvent(ev);
@@ -1114,7 +1116,12 @@ void MainWin::screenShot() {
 	fnams.append(QString("xpeccy_%0.%1").arg(QTime::currentTime().toString("HHmmss_zzz")).arg(fext.c_str()));
 	std::string fnam(fnams.toUtf8().data());
 	std::ofstream file;
+#if USEOPENGL
+	QImage img(bufimg, bytesPerLine / 3, comp->vid->vsze.y, QImage::Format_RGB888);
+	img = img.scaled(width(), height());
+#else
 	QImage img(bufimg, width(), height(), QImage::Format_RGB888);
+#endif
 	int x,y,dx,dy;
 	char* sptr = (char*)(comp->mem->ramData + (comp->vid->curscr << 14));
 	switch (frm) {

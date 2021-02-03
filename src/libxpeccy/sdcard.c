@@ -35,8 +35,8 @@
 
 SDCard* sdcCreate() {
 	SDCard* sdc = (SDCard*)malloc(sizeof(SDCard));
-	memset(sdc,0x00,sizeof(SDCard));
 	if (!sdc) return NULL;
+	memset(sdc,0x00,sizeof(SDCard));
 	sdc->argCnt = 6;
 	sdc->image = NULL;
 	sdc->blkSize = 512;

@@ -112,18 +112,20 @@ void vid_frame(Video* vid) {
 		memset(vid->ray.lptr, 0x00, botSkip * bytesPerLine);
 	ypos = 0;
 	// scanlines
-#ifndef USEOPENGL
 	int x,y;
 	unsigned char* ptr = scrimg + bytesPerLine;
 	if (scanlines) {
+#ifndef USEOPENGL
 		for (y = 0x100; y < vid->vsze.y * ystep; y += 0x200) {
+#else
+		for (y = 1; y < vid->vsze.y; y++) {
+#endif
 			for (x = 0; x < bytesPerLine; x++) {
-				*(ptr + x) = (*(ptr + x) * 200) >> 8;
+				*(ptr + x) = (*(ptr + x) * 240) >> 8;
 			}
 			ptr += bytesPerLine * 2;
 		}
 	}
-#endif
 	if (!vid->debug) {
 		scrimg = curbuf ? bufb : bufa;
 		bufimg = curbuf ? bufa : bufb;
