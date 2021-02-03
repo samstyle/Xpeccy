@@ -1115,7 +1115,7 @@ void MainWin::screenShot() {
 	std::string fnam(fnams.toUtf8().data());
 	std::ofstream file;
 	QImage img(bufimg, width(), height(), QImage::Format_RGB888);
-	int x,y,dx,dy;
+	
 	char* sptr = (char*)(comp->mem->ramData + (comp->vid->curscr << 14));
 	switch (frm) {
 		case SCR_HOB:
@@ -1134,10 +1134,10 @@ void MainWin::screenShot() {
 		case SCR_PNG:
 			if (img.isNull()) break;
 			if (conf.scrShot.noBorder) {
-				x = (comp->vid->bord.x - comp->vid->lcut.x) * conf.vid.scale;
-				y = (comp->vid->bord.y - comp->vid->lcut.y) * conf.vid.scale;
-				dx = comp->vid->scrn.x * conf.vid.scale;
-				dy = comp->vid->scrn.y * conf.vid.scale;
+				auto x = (comp->vid->bord.x - comp->vid->lcut.x) * conf.vid.scale;
+				auto y = (comp->vid->bord.y - comp->vid->lcut.y) * conf.vid.scale;
+				auto dx = comp->vid->scrn.x * conf.vid.scale;
+				auto dy = comp->vid->scrn.y * conf.vid.scale;
 				img = img.copy(x, y, dx, dy);
 			}
 			img.save(QString(fnam.c_str()),fext.c_str());
