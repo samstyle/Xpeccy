@@ -9,7 +9,7 @@
 
 #define SCRBUF_SIZE	3700*2050*3
 
-int bytesPerLine = 100;
+int bytesPerLine = 768;
 int greyScale = 0;
 int noflic = 0;
 int scanlines = 0;
@@ -257,13 +257,18 @@ void vidDarkTail(Video* vid) {
 		*ptr = ((*ptr - 0x80) >> 2) + 0x80;
 		ptr++;
 	}
+#ifndef USEOPENGL
 	vid_line_fill(vid);				// copy filled line due zoom value
 	int ytmp = ypos + ystep;
 	ptr = vid->ray.lptr;				// move ptr to start of next real line
 	while(ytmp > 0x100) {
 		ytmp -= 0x100;
 		ptr += bytesPerLine;
-	}						// fill all till end
+	}
+#else
+	ptr = vid->ray.lptr + bytesPerLine;
+#endif
+// fill all till end
 	while (ptr - btr < sizeof(bufa)) {
 		*ptr = ((*ptr - 0x80) >> 2) + 0x80;
 		ptr++;

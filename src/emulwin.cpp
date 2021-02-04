@@ -217,7 +217,7 @@ MainWin::MainWin() {
 	QGLFormat fmt = format();
 	fmt.setDoubleBuffer(false);
 	setFormat(fmt);		// obsolete. but where is new version? context()=null
-	setAutoBufferSwap(false);
+	setAutoBufferSwap(true);
 	curtex = 0;
 #endif
 }
@@ -411,12 +411,6 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 		}
 // satelites
 		updateSatellites();
-// redraw window (if fast || paused)
-		if (conf.emu.fast || conf.emu.pause) {
-			setUpdatesEnabled(true);
-			repaint();
-			setUpdatesEnabled(false);
-		}
 	}
 }
 
@@ -516,9 +510,16 @@ void MainWin::rzxStateChanged(int state) {
 void MainWin::frame_timer() {
 	if (comp) {
 		frm_ns += comp->vid->nsPerFrame;
-		frm_tmr.setInterval(frm_ns / 1000000 - 1);	// 1e6 ns = 1 ms. next frame shot
+		frm_tmr.setInterval(frm_ns / 1000000);		// 1e6 ns = 1 ms. next frame shot
 		frm_ns = frm_ns % 1000000;			// remains
 	}
+#ifdef USEOPENGL
+	if (conf.emu.fast || conf.emu.pause) {
+		glBindTexture(GL_TEXTURE_2D, texids[curtex]);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bytesPerLine / 3, comp->vid->vsze.y, 0, GL_RGB, GL_UNSIGNED_BYTE, comp->debug ? scrimg : bufimg);
+		queue.append(texids[curtex]);
+	}
+#endif
 	setUpdatesEnabled(true);
 	repaint();
 	setUpdatesEnabled(false);
@@ -529,9 +530,11 @@ void MainWin::d_frame() {
 	if (conf.emu.fast) return;
 #ifdef USEOPENGL
 	queue.append(texids[curtex]);
+	if (queue.size() > 2)
+		queue.takeFirst();
 	// printf("> %i\n",queue.size());
 	glBindTexture(GL_TEXTURE_2D, texids[curtex]);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bytesPerLine / 3, comp->vid->vsze.y, 0, GL_RGB, GL_UNSIGNED_BYTE, conf.emu.pause ? scrimg : bufimg);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bytesPerLine / 3, comp->vid->vsze.y, 0, GL_RGB, GL_UNSIGNED_BYTE, comp->debug ? scrimg : bufimg);
 	curtex++;
 #endif
 }
@@ -556,7 +559,6 @@ void MainWin::paintEvent(QPaintEvent*) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_TEXTURE_2D);
 	glLoadIdentity();
-	glBindTexture(GL_TEXTURE_2D, texids[0]);
 	// draw texture
 	if (!queue.isEmpty()) {
 		curtxid = queue.takeFirst();
@@ -649,30 +651,30 @@ void MainWin::drawIcons(QPainter& pnt) {
 	}
 // put leds
 	if (comp->joy->used && conf.led.joy) {
-		pnt.drawImage(3, 30, QImage(":/images/joystick.png").scaled(16, 16));
+		pnt.drawImage(3, 30, QImage(":/images/joystick.png"));
 	}
 	if (comp->mouse->used && conf.led.mouse) {
-		pnt.drawImage(3, 50, QImage(":/images/mouse.png").scaled(16, 16));
+		pnt.drawImage(3, 50, QImage(":/images/mouse.png"));
 		comp->mouse->used = 0;
 	}
 	if (comp->tape->on && conf.led.tape) {
 		if (comp->tape->rec) {
-			pnt.drawImage(3, 70, QImage(":/images/tapeRed.png").scaled(16,16));
+			pnt.drawImage(3, 70, QImage(":/images/tapeRed.png"));
 		} else {
-			pnt.drawImage(3, 70, QImage(":/images/tapeYellow.png").scaled(16,16));
+			pnt.drawImage(3, 70, QImage(":/images/tapeYellow.png"));
 		}
 	}
 	if (conf.led.disk) {
 		if (comp->dif->fdc->flp->rd) {
 			comp->dif->fdc->flp->rd = 0;
-			pnt.drawImage(3, 90, QImage(":/images/diskGreen.png").scaled(16,16));
+			pnt.drawImage(3, 90, QImage(":/images/diskGreen.png"));
 		} else if (comp->dif->fdc->flp->wr) {
 			comp->dif->fdc->flp->wr = 0;
-			pnt.drawImage(3, 90, QImage(":/images/diskRed.png").scaled(16,16));
+			pnt.drawImage(3, 90, QImage(":/images/diskRed.png"));
 		}
 	}
 	if (conf.snd.wavout) {
-		pnt.drawImage(3, 110, QImage(":/images/wav.png").scaled(16,16));
+		pnt.drawImage(3, 110, QImage(":/images/wav.png"));
 	}
 // put fps
 	if (conf.led.fps) {
