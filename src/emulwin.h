@@ -92,6 +92,7 @@ class MainWin : public QWidget {
 		void saveGBVRAM();
 		void saveNESPPU();
 		void debugAction();
+		void frame_timer();
 	private:
 		unsigned grabMice:1;
 		unsigned block:1;
@@ -99,6 +100,9 @@ class MainWin : public QWidget {
 		QIcon icon;
 		int timid;
 		int secid;
+
+		QTimer frm_tmr;
+		int frm_ns;
 
 		int scrCounter;
 		int scrInterval;
@@ -157,10 +161,11 @@ class MainWin : public QWidget {
 		void moveEvent(QMoveEvent*);
 
 #ifdef USEOPENGL
-		GLuint texid;
-		GLuint ovrid;
+		unsigned curtex:2;
+		GLuint texids[4];
+		GLuint curtxid;
+		QList<GLuint> queue;
 		void initializeGL();
-		// void paintGL();
 		void resizeGL(int,int);
 #endif
 };

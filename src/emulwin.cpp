@@ -194,6 +194,10 @@ MainWin::MainWin() {
 	timid = startTimer(20);
 	secid = startTimer(200);
 
+	connect(&frm_tmr, SIGNAL(timeout()), this, SLOT(frame_timer()));
+	frm_tmr.setTimerType(Qt::PreciseTimer);
+	frm_tmr.start(20);
+
 	connect(userMenu,SIGNAL(aboutToShow()),SLOT(menuShow()));
 	connect(userMenu,SIGNAL(aboutToHide()),SLOT(menuHide()));
 
@@ -214,6 +218,7 @@ MainWin::MainWin() {
 	fmt.setDoubleBuffer(false);
 	setFormat(fmt);		// obsolete. but where is new version? context()=null
 	setAutoBufferSwap(false);
+	curtex = 0;
 #endif
 }
 
@@ -508,12 +513,27 @@ void MainWin::rzxStateChanged(int state) {
 #endif
 }
 
-void MainWin::d_frame() {
-	// printf("d_frame\n");
-	if (conf.emu.fast) return;
+void MainWin::frame_timer() {
+	if (comp) {
+		frm_ns += comp->vid->nsPerFrame;
+		frm_tmr.setInterval(frm_ns / 1000000 - 1);	// 1e6 ns = 1 ms. next frame shot
+		frm_ns = frm_ns % 1000000;			// remains
+	}
 	setUpdatesEnabled(true);
 	repaint();
 	setUpdatesEnabled(false);
+}
+
+void MainWin::d_frame() {
+	// printf("d_frame\n");
+	if (conf.emu.fast) return;
+#ifdef USEOPENGL
+	queue.append(texids[curtex]);
+	// printf("> %i\n",queue.size());
+	glBindTexture(GL_TEXTURE_2D, texids[curtex]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bytesPerLine / 3, comp->vid->vsze.y, 0, GL_RGB, GL_UNSIGNED_BYTE, conf.emu.pause ? scrimg : bufimg);
+	curtex++;
+#endif
 }
 
 static char numbuf[32];
@@ -536,15 +556,18 @@ void MainWin::paintEvent(QPaintEvent*) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_TEXTURE_2D);
 	glLoadIdentity();
-	// generate texture image
-	glBindTexture(GL_TEXTURE_2D, texid);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bytesPerLine / 3, comp->vid->vsze.y, 0, GL_RGB, GL_UNSIGNED_BYTE, comp->debug ? scrimg : bufimg);
+	glBindTexture(GL_TEXTURE_2D, texids[0]);
 	// draw texture
-	glBegin(GL_POLYGON);
-	glTexCoord2f(0.0, 0.0); glVertex2f(0.0, 0.0);
-	glTexCoord2f(1.0, 0.0); glVertex2f(1.0, 0.0);
-	glTexCoord2f(1.0, 1.0); glVertex2f(1.0, 1.0);
-	glTexCoord2f(0.0, 1.0); glVertex2f(0.0, 1.0);
+	if (!queue.isEmpty()) {
+		curtxid = queue.takeFirst();
+		//printf("* %i\n",queue.size());
+	}
+	glBindTexture(GL_TEXTURE_2D, curtxid);
+	glBegin(GL_TRIANGLE_STRIP);
+	glTexCoord2f(1.0, 0.0); glVertex2f(1.0, 0.0);	// RT
+	glTexCoord2f(0.0, 0.0); glVertex2f(0.0, 0.0);	// LT
+	glTexCoord2f(1.0, 1.0); glVertex2f(1.0, 1.0);	// RB
+	glTexCoord2f(0.0, 1.0); glVertex2f(0.0, 1.0);	// LB
 	glEnd();
 	glDisable(GL_TEXTURE_2D);
 	glMatrixMode(GL_MODELVIEW);
@@ -564,14 +587,18 @@ void MainWin::paintEvent(QPaintEvent*) {
 #ifdef USEOPENGL
 
 void MainWin::initializeGL() {
-	glGenTextures(1, &texid);	// create texture
+	glGenTextures(4, texids);	// create texture
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_MULTISAMPLE);
-	// select texture
-	glBindTexture(GL_TEXTURE_2D, texid);
-	// set filters for this texture
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	for (int i = 0; i < 4; i++) {
+		// select texture
+		glBindTexture(GL_TEXTURE_2D, texids[i]);
+		// set filters for this texture
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	}
 }
 
 void MainWin::resizeGL(int w, int h) {
@@ -1063,6 +1090,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 	}
 	if (saveChanged()) {
 		snd_wav_close();
+		frm_tmr.stop();
 		killTimer(timid);
 		killTimer(secid);
 		ideCloseFiles(comp->ide);

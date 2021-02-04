@@ -146,6 +146,7 @@ Video* vidCreate(vcbmrd cb, void* dptr) {
 	memset(vid,0x00,sizeof(Video));
 	vid->mrd = cb;
 	vid->data = dptr;
+	vid->nsPerDot = 150;
 	vidSetMode(vid, VID_UNKNOWN);
 	vLayout vlay = {{448,320},{74,48},{64,32},{256,192},{0,0},64};
 	vidSetLayout(vid, &vlay);
@@ -790,8 +791,8 @@ void vidSync(Video* vid, int ns) {
 		if ((vid->ray.yb == vid->intp.y) && (vid->ray.xb == vid->intp.x)) {
 			vid->intFRAME = vid->intsize;
 		}
-		if (vid->busy) vid->busy--;
-		if (vid->inth) vid->inth--;
-		if (vid->intf) vid->intf--;
+		if (vid->busy > 0) vid->busy--;
+		if (vid->inth > 0) vid->inth--;
+		if (vid->intf > 0) vid->intf--;
 	}
 }
