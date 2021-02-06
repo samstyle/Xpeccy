@@ -2277,8 +2277,36 @@
             </spacer>
            </item>
            <item>
-            <layout class="QGridLayout" name="gridLayout_3" columnstretch="0,10">
-             <item row="1" column="1">
+            <layout class="QGridLayout" name="gridLayout_3" columnstretch="0,0">
+             <item row="2" column="0">
+              <widget class="QLabel" name="label_64">
+               <property name="text">
+                <string>R2</string>
+               </property>
+              </widget>
+             </item>
+             <item row="8" column="0">
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>VADR</string>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="0">
+              <widget class="QLabel" name="label_66">
+               <property name="text">
+                <string>R5</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="0">
+              <widget class="QLabel" name="label_5">
+               <property name="text">
+                <string>R4</string>
+               </property>
+              </widget>
+             </item>
+             <item row="9" column="1">
               <widget class="QLabel" name="labTAdr">
                <property name="text">
                 <string>2</string>
@@ -2286,35 +2314,105 @@
               </widget>
              </item>
              <item row="0" column="0">
-              <widget class="QLabel" name="label">
+              <widget class="QLabel" name="label_62">
                <property name="text">
-                <string>VADR</string>
+                <string>R0</string>
                </property>
               </widget>
              </item>
-             <item row="1" column="0">
+             <item row="6" column="0">
+              <widget class="QLabel" name="label_67">
+               <property name="text">
+                <string>R6</string>
+               </property>
+              </widget>
+             </item>
+             <item row="9" column="0">
               <widget class="QLabel" name="label_3">
                <property name="text">
                 <string>TADR</string>
                </property>
               </widget>
              </item>
-             <item row="0" column="1">
+             <item row="3" column="0">
+              <widget class="QLabel" name="label_65">
+               <property name="text">
+                <string>R3</string>
+               </property>
+              </widget>
+             </item>
+             <item row="8" column="1">
               <widget class="QLabel" name="labVAdr">
                <property name="text">
                 <string>1</string>
                </property>
               </widget>
              </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="label_5">
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_63">
                <property name="text">
-                <string>*</string>
+                <string>R1</string>
+               </property>
+              </widget>
+             </item>
+             <item row="7" column="0">
+              <widget class="QLabel" name="label_68">
+               <property name="text">
+                <string>R7</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLabel" name="lab_ppu_r0">
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QLabel" name="lab_ppu_r1">
+               <property name="text">
+                <string/>
                </property>
               </widget>
              </item>
              <item row="2" column="1">
-              <widget class="QLabel" name="labSCY">
+              <widget class="QLabel" name="lab_ppu_r2">
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="QLabel" name="lab_ppu_r3">
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="1">
+              <widget class="QLabel" name="lab_ppu_r4">
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="1">
+              <widget class="QLabel" name="lab_ppu_r5">
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="1">
+              <widget class="QLabel" name="lab_ppu_r6">
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+             <item row="7" column="1">
+              <widget class="QLabel" name="lab_ppu_r7">
                <property name="text">
                 <string/>
                </property>
@@ -2963,11 +3061,11 @@
  </resources>
  <connections/>
  <buttongroups>
+  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
-  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

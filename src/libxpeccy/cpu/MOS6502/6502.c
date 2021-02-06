@@ -36,7 +36,7 @@ int m6502_int(CPU* cpu) {
 		cpu->hpc = cpu->mrd(0xfffb, 0, cpu->data);
 	} else if (cpu->intrq & MOS6502_INT_IRQ) {	// IRQ
 		cpu->intrq &= ~MOS6502_INT_IRQ;
-		if (!(cpu->f & MFI)) {			// IRQ disabled
+		if (!(cpu->f & MFI)) {			// IRQ enabled, I flag = 0
 			cpu->f &= ~MFB;			// reset B flag
 			m6502_push_int(cpu);
 			cpu->f |= MFI;			// disable IRQ

@@ -10,6 +10,7 @@
 	cpu->pc += (signed char)(_e);\
 	if (cpu->tmpb != cpu->hpc) cpu->t++;
 
+// TODO: check V flag
 #define MBIT(_op) \
 	cpu->f = (cpu->f & ~(MFN | MFZ | MFV)) | ((cpu->a & _op) ? 0 : MFZ) | ((_op & 0x80) ? MFN : 0) | ((_op & 0x40) ? MFV : 0);
 

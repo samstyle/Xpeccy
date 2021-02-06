@@ -162,6 +162,7 @@ struct Video {
 	vCoord scrsize;		// << tsconf.xSize, tsconf.ySize, v9938::wid
 	vCoord sc;		// screen scroll registers
 	// nes
+	unsigned ppu_vb;	// set at vbs line, reset at vbrline or reading reg2
 	int vadr;		// nes videomem access addr
 	unsigned short tadr;	// nes tmp vadr
 	int vbsline;

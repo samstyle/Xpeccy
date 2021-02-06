@@ -796,7 +796,7 @@ void mosop6A(CPU* cpu) {
 }
 
 // *arr n
-// A &= n; A <<> 1;
+// A &= n; A <<= 1;
 // V = b5 ^ b6, C = b6
 void mosop6B(CPU* cpu) {
 	mosGetImm(cpu->tmp);

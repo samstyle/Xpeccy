@@ -37,6 +37,7 @@ class MainWin : public QWidget {
 	Q_OBJECT
 	public:
 		MainWin();
+		~MainWin();
 		Computer* comp;
 		void checkState();
 		void loadLabels(const char*);
@@ -165,7 +166,10 @@ class MainWin : public QWidget {
 		GLuint texids[4];
 		GLuint curtxid;
 		QList<GLuint> queue;
+		QGLFormat frmt;
+		QGLContext* cont;
 		void initializeGL();
 		void resizeGL(int,int);
+		QGLShader* shd_gray;
 #endif
 };

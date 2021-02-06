@@ -271,13 +271,11 @@ void ppuLine(Video* vid) {
 
 	// NES NTSC: 241/261; NES PAL:241/311; Dendy: 291/311
 	if (vid->ray.y == vid->vbsline) {
-//			vid->vbl = 1;
-//			vid->vblstrb = 1;
+		//vid->ppu_vb = 1;
 	} else if (vid->ray.y == vid->vbrline) {
-//			ppu->vbl = 0;
-//			ppu->vblstrb = 0;
-			vid->sp0hit = 0;
-			vid->spover = 0;
+		//vid->ppu_vb = 0;
+		vid->sp0hit = 0;
+		vid->spover = 0;
 	}
 
 	if (vid->ray.y > 239) return;		// 239? vid->vbsline?
@@ -309,10 +307,11 @@ int ppuRead(Video* vid, int reg) {
 	int adr;
 	switch (reg & 7) {
 		case 2:
-			res = 0x1f;
-			if (vid->vblank) res |= 0x80;
+			res = vid->reg[2] & 0x1f;		// bits previously written to register
+			if (vid->vbstrb) res |= 0x80;		// clear this bit at reading
 			if (vid->sp0hit) res |= 0x40;
 			if (vid->spover) res |= 0x20;
+			vid->vbstrb = 0;
 			vid->latch = 0;
 			break;
 		case 4:
@@ -333,10 +332,9 @@ int ppuRead(Video* vid, int reg) {
 	return  res;
 }
 
-// #define ALT_ZADR
-
 void ppuWrite(Video* vid, int reg, int val) {
 	unsigned short adr;
+	vid->reg[reg & 7] = val & 0xff;
 	switch (reg & 7) {
 		case 0:		// PPUCTRL
 			vid->vastep = (val & 0x04) ? 1 : 0;
@@ -348,7 +346,6 @@ void ppuWrite(Video* vid, int reg, int val) {
 
 			vid->tadr = (vid->tadr & ~0x0c00) | ((val << 10) & 0x0c00);
 			vid->nt = val & 3;
-
 			break;
 		case 1:		// PPUMASK
 			vid->greyscale = (val & 0x01) ? 1 : 0;
@@ -382,7 +379,6 @@ void ppuWrite(Video* vid, int reg, int val) {
 			}
 			break;
 		case 6:
-#ifndef ALT_ZADR
 			if (vid->latch) {
 				vid->tadr &= 0xff00;
 				vid->tadr |= (val & 0xff);
@@ -393,24 +389,9 @@ void ppuWrite(Video* vid, int reg, int val) {
 				vid->tadr |= ((val << 8) & 0x3f00);
 				vid->latch = 1;
 			}
-#else
-			if (vid->latch) {
-				vid->zadr &= 0xff00;
-				vid->zadr |= (val & 0xff);
-				vid->latch = 0;
-			} else {
-				vid->zadr &= 0x00ff;
-				vid->zadr |= ((val << 8) & 0x3f00);
-				vid->latch = 1;
-			}
-#endif
 			break;
 		case 7:
-#ifndef ALT_ZADR
 			adr = vid->vadr & 0x3fff;
-#else
-			adr = vid->zadr & 0x3fff;
-#endif
 			if (adr < 0x3f00) {
 				vid->mwr(adr, val, vid->data);
 			} else {
@@ -420,11 +401,7 @@ void ppuWrite(Video* vid, int reg, int val) {
 				else if ((adr & 0x1f) == 0x00)
 					vid->ram[0x3f10] = val & 0xff;
 			}
-#ifndef ALT_ZADR
 			vid->vadr += vid->vastep ? 32 : 1;
-#else
-			vid->zadr += vid->vastep ? 32 : 1;
-#endif
 			break;
 	}
 }

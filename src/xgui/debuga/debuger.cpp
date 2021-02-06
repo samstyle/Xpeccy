@@ -1212,6 +1212,14 @@ void DebugWin::drawNes() {
 		pnt.end();
 		ui.nesScreen->setPixmap(pic);
 	}
+	ui.lab_ppu_r0->setText(gethexbyte(comp->vid->reg[0]));
+	ui.lab_ppu_r1->setText(gethexbyte(comp->vid->reg[1]));
+	ui.lab_ppu_r2->setText(gethexbyte(comp->vid->reg[2]));
+	ui.lab_ppu_r3->setText(gethexbyte(comp->vid->reg[3]));
+	ui.lab_ppu_r4->setText(gethexbyte(comp->vid->reg[4]));
+	ui.lab_ppu_r5->setText(gethexbyte(comp->vid->reg[5]));
+	ui.lab_ppu_r6->setText(gethexbyte(comp->vid->reg[6]));
+	ui.lab_ppu_r7->setText(gethexbyte(comp->vid->reg[7]));
 }
 
 // ...

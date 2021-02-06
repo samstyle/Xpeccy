@@ -214,12 +214,20 @@ MainWin::MainWin() {
 	connect(&srv, SIGNAL(newConnection()),this,SLOT(connected()));
 #endif
 #ifdef USEOPENGL
-	QGLFormat fmt = format();
-	fmt.setDoubleBuffer(false);
-	setFormat(fmt);		// obsolete. but where is new version? context()=null
+	frmt.setDoubleBuffer(false);
+	cont = new QGLContext(frmt);
+	setContext(cont);
 	setAutoBufferSwap(true);
 	curtex = 0;
+	makeCurrent();
+	shd_gray = new QGLShader(QGLShader::Fragment, cont);
+//	shd_gray->compileSourceFile(":/shaders/grayscale.shader");
 #endif
+}
+
+MainWin::~MainWin() {
+	delete(cont);
+	delete(shd_gray);
 }
 
 // gamepad mapper

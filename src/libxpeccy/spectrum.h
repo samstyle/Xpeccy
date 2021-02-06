@@ -237,6 +237,7 @@ typedef struct {
 		unsigned char sslot[4];
 	} msx;
 	struct {
+		unsigned vblank:1;		// vid->vblank for catching 0->1
 		int type;			// DENDY | NTSC | PAL
 		int priPadState;		// b0..7 = A,B,sel,start,up,down,left,right,0,0,0,0,....
 		int secPadState;

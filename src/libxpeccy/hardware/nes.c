@@ -206,10 +206,11 @@ void nesMaper(Computer* comp) {
 }
 
 void nesSync(Computer* comp, int ns) {
-	if (comp->vid->vbstrb && comp->vid->inten) {	// @ start of VBlank
-		comp->vid->vbstrb = 0;
-		comp->cpu->intrq |= MOS6502_INT_NMI;		// request NMI...
+	if (comp->vid->vblank && !comp->nes.vblank && comp->vid->inten) {	// @ start of VBlank
+		// comp->vid->vbstrb = 0;
+		comp->cpu->intrq |= MOS6502_INT_NMI;				// request NMI...
 	}
+	comp->nes.vblank = comp->vid->vblank;
 
 	apuSync(comp->nesapu, ns);
 	// irq

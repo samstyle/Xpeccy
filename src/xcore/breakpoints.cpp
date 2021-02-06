@@ -59,6 +59,7 @@ xBrkPoint brkCreate(int type, int flag, int adr, int mask) {
 	brk.fetch = (flag & MEM_BRK_FETCH) ? 1 : 0;
 	brk.read = (flag & MEM_BRK_RD) ? 1 : 0;
 	brk.write = (flag & MEM_BRK_WR) ? 1 : 0;
+	brk.temp = 0;
 	brk.mask = mask;
 	return brk;
 }
