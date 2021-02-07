@@ -219,15 +219,14 @@ MainWin::MainWin() {
 	setContext(cont);
 	setAutoBufferSwap(true);
 	curtex = 0;
-	makeCurrent();
-	shd_gray = new QGLShader(QGLShader::Fragment, cont);
+//	makeCurrent();
+//	shd_gray = new QGLShader(QGLShader::Fragment, cont);
 //	shd_gray->compileSourceFile(":/shaders/grayscale.shader");
 #endif
 }
 
 MainWin::~MainWin() {
 	delete(cont);
-	delete(shd_gray);
 }
 
 // gamepad mapper
