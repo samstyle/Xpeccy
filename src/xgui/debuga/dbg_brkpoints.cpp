@@ -94,11 +94,11 @@ QVariant xBreakListModel::headerData(int sect, Qt::Orientation ornt, int role) c
 	return res;
 }
 
-bool xbsOff(xBrkPoint& bpa, xBrkPoint& bpb) {return (bpa.off && !bpb.off);}
-bool xbsFe(xBrkPoint& bpa, xBrkPoint& bpb) {return (bpa.fetch && !bpb.fetch);}
-bool xbsRd(xBrkPoint& bpa, xBrkPoint& bpb) {return (bpa.read && !bpb.read);}
-bool xbsWr(xBrkPoint& bpa, xBrkPoint& bpb) {return (bpa.write && !bpb.write);}
-bool xbsName(xBrkPoint& bpa, xBrkPoint& bpb) {
+bool xbsOff(const xBrkPoint bpa, const xBrkPoint bpb) {return (bpa.off && !bpb.off);}
+bool xbsFe(const xBrkPoint bpa, const xBrkPoint bpb) {return (bpa.fetch && !bpb.fetch);}
+bool xbsRd(const xBrkPoint bpa, const xBrkPoint bpb) {return (bpa.read && !bpb.read);}
+bool xbsWr(const xBrkPoint bpa, const xBrkPoint bpb) {return (bpa.write && !bpb.write);}
+bool xbsName(const xBrkPoint bpa, const xBrkPoint bpb) {
 	return brkGetString(bpa) < brkGetString(bpb);
 }
 

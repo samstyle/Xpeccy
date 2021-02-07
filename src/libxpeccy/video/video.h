@@ -73,6 +73,7 @@ extern int topSkip;
 extern int botSkip;
 
 #ifdef USEOPENGL
+void vid_dot(Video*, unsigned char);
 #define vid_dot_full(_v, _c) vid_dot(_v, _c); vid_dot(_v, _c)
 #define vid_dot_half(_v, _c) vid_dot(_v, _c)
 #else

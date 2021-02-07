@@ -14,7 +14,7 @@ xRomset* findRomset(std::string nm) {
 	return res;
 }
 
-bool rs_compare(xRomset& rs1, xRomset& rs2) {
+bool rs_compare(const xRomset rs1, const xRomset rs2) {
 	return (rs1.name < rs2.name);
 }
 

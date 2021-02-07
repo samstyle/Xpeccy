@@ -1,7 +1,4 @@
-#ifndef X_VIDCOMMON_H
-#define X_VIDCOMMON_H
-
-#define VID_DIRECT_DRAW	1
+#pragma once
 
 #ifdef WORDS_BIG_ENDIAN
 	#define ePair(p,h,l) union{unsigned short p; struct {unsigned char h; unsigned char l;};}
@@ -43,9 +40,8 @@ typedef struct {
 #define MADR(_bnk,_adr)	((_bnk) << 14) + ((_adr) & 0x3fff)
 
 #define vidSingleDot(_ray, _pal, _idx) \
-	vid_dot_half(vid, _idx);
+	vid_dot_half(vid, _idx)
 
 #define vidPutDot(_ray, _pal, _idx) \
-	vid_dot_full(vid, _idx);
+	vid_dot_full(vid, _idx)
 
-#endif
