@@ -226,7 +226,9 @@ MainWin::MainWin() {
 }
 
 MainWin::~MainWin() {
+#ifdef USEOPENGL
 	delete(cont);
+#endif
 }
 
 // gamepad mapper
