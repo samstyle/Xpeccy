@@ -346,7 +346,7 @@ void disk_boot(Computer* comp, int drv, int id) {
 }
 
 int load_file(Computer* comp, const char* name, int id, int drv) {
-	QString path = QDialog::trUtf8(name);
+	QString path = QString::fromLocal8Bit(name);
 	QString flt;
 	QString ext;
 	xFileTypeInfo* inf;
@@ -414,7 +414,7 @@ int load_file(Computer* comp, const char* name, int id, int drv) {
 }
 
 int save_file(Computer* comp, const char* name, int id, int drv) {
-	QString path = QDialog::trUtf8(name);
+	QString path = QString::fromLocal8Bit(name);
 	QString flt;
 	QString ext;
 	xFileTypeInfo* inf = NULL;

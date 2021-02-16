@@ -16,12 +16,11 @@ int scanlines = 0;
 
 static unsigned char bufa[SCRBUF_SIZE];
 static unsigned char bufb[SCRBUF_SIZE];
-unsigned char* scrimg = bufa;			// current screen (raw)
+unsigned char* scrimg = bufa;			// current screen (raw/bw)
 unsigned char* bufimg = bufb;			// previous screen (mixed)
 static int curbuf = 0;
+int bufSize = 3;
 
-static int xpos = 0;
-static int ypos = 0;
 int xstep = 0x100;
 int ystep = 0x100;
 int lefSkip = 0;
@@ -29,32 +28,36 @@ int rigSkip = 0;
 int topSkip = 0;
 int botSkip = 0;
 
-static unsigned char pscr[SCRBUF_SIZE];		// previous screen (raw)
+unsigned char pscr[SCRBUF_SIZE];		// previous screen (raw)
 static unsigned char* pptr = pscr;
 static unsigned char pcol;
 static xColor xcol;
 
-void vid_dot(Video* vid, unsigned char col) {
-	xcol = vid->pal[col];
-	if (greyScale) {
-		pcol = (xcol.b * 30 + xcol.r * 76 + xcol.g * 148) >> 8;
-		xcol.r = pcol;
-		xcol.g = pcol;
-		xcol.b = pcol;
-	}
-	pcol = xcol.r;
-	*(vid->ray.ptr++) = (pcol * (100 - noflic) + *pptr * noflic) / 100;
-	*(pptr++) = pcol;
-	pcol = xcol.g;
-	*(vid->ray.ptr++) = (pcol * (100 - noflic) + *pptr * noflic) / 100;
-	*(pptr++) = pcol;
-	pcol = xcol.b;
-	*(vid->ray.ptr++) = (pcol * (100 - noflic) + *pptr * noflic) / 100;
-	*(pptr++) = pcol;
+typedef void(*cbdot)(Video*, unsigned char);
 
+// colored
+void vid_dot_col(Video* vid, unsigned char col) {
+	xcol = vid->pal[col];
+	*(vid->ray.ptr++) = xcol.r;
+	*(vid->ray.ptr++) = xcol.g;
+	*(vid->ray.ptr++) = xcol.b;
 }
 
+// b/w
+void vid_dot_bw(Video* vid, unsigned char col) {
+	xcol = vid->pal[col];
+	pcol = (xcol.b * 30 + xcol.r * 76 + xcol.g * 148) >> 8;
+	*(vid->ray.ptr++) = pcol;
+	*(vid->ray.ptr++) = pcol;
+	*(vid->ray.ptr++) = pcol;
+}
+
+void(*vid_dot)(Video*, unsigned char) = vid_dot_col;
+
 #ifndef USEOPENGL
+
+static int xpos = 0;
+static int ypos = 0;
 
 void vid_dot_full(Video* vid, unsigned char col) {
 	xpos += xstep;
@@ -75,7 +78,6 @@ void vid_dot_half(Video* vid, unsigned char col) {
 #endif
 
 void vid_line(Video* vid) {
-	// memset(vid->ray.ptr, 0x00, 3);	// put black dot
 	if (rigSkip > 0)
 		memset(vid->ray.ptr, 0x00, rigSkip);
 	vid->ray.lptr += bytesPerLine;
@@ -110,22 +112,30 @@ void vid_line_fill(Video* vid) {
 void vid_frame(Video* vid) {
 	if (botSkip > 0)
 		memset(vid->ray.lptr, 0x00, botSkip * bytesPerLine);
-	ypos = 0;
-	// scanlines
-	int x,y;
-	unsigned char* ptr = scrimg + bytesPerLine;
-	if (scanlines) {
+// scanlines TODO: bad @ fullscreen
 #ifndef USEOPENGL
-		for (y = 0x100; y < vid->vsze.y * ystep; y += 0x200) {
-#else
-		for (y = 1; y < vid->vsze.y; y++) {
-#endif
-			for (x = 0; x < bytesPerLine; x++) {
-				*(ptr + x) = (*(ptr + x) * 240) >> 8;
+	ypos = 0;
+	int x,y,ys;
+	double p, ps;
+	unsigned char* ptr;
+	if (scanlines) {
+		ptr = scrimg;
+		p = 0.0;
+		ps = 256.0 / ystep;
+		ys = 0;
+		y = 0;
+		while (y < vid->vsze.y) {
+			for (x = 0; x < bytesPerLine; x++)
+				*(ptr + x) = *(ptr + x) * (1.0 - p / 2);
+			ptr += bytesPerLine;
+			p += ps;
+			if (p >= 1.0) {
+				p = 0.0;
+				y++;
 			}
-			ptr += bytesPerLine * 2;
 		}
 	}
+#endif
 	if (!vid->debug) {
 		scrimg = curbuf ? bufb : bufa;
 		bufimg = curbuf ? bufa : bufb;
@@ -239,22 +249,23 @@ void vidSetBorder(Video* vid, double brd) {
 	vidUpdateLayout(vid);
 }
 
-int xscr = 0;
-int yscr = 0;
-int adr = 0;
-unsigned char col = 0;
-unsigned char ink = 0;
-unsigned char pap = 0;
-unsigned char scrbyte = 0;
-unsigned char atrbyte = 0;
-unsigned char nxtbyte = 0;
+static int xscr = 0;
+static int yscr = 0;
+static int adr = 0;
+static unsigned char col = 0;
+static unsigned char ink = 0;
+static unsigned char pap = 0;
+static unsigned char scrbyte = 0;
+static unsigned char nxtbyte = 0;
 
 void vidDarkTail(Video* vid) {
 	if (vid->tail) return;				// no filling while current fill is active (till end of frame)
 	unsigned char* ptr = vid->ray.ptr;		// fill current line till EOL
-	unsigned char* btr = curbuf ? bufa : bufb;
-	while (ptr - vid->ray.lptr < bytesPerLine) {
-		*ptr = ((*ptr - 0x80) >> 2) + 0x80;
+	unsigned char* pptr = bufimg; //curbuf ? bufb : bufa;	// ptr to prev.frame
+	unsigned char* btr = scrimg; // curbuf ? bufa : bufb;	// begin of current buffer
+	while (ptr - vid->ray.lptr < bytesPerLine) {	// dark tail from prev.frame to cur.frame
+		*ptr = ((*pptr - 0x80) >> 2) + 0x80;
+		pptr++;
 		ptr++;
 	}
 #ifndef USEOPENGL
@@ -269,7 +280,7 @@ void vidDarkTail(Video* vid) {
 	ptr = vid->ray.lptr + bytesPerLine;
 #endif
 // fill all till end
-	while (ptr - btr < sizeof(bufa)) {
+	while (ptr - btr < bufSize) {
 		*ptr = ((*ptr - 0x80) >> 2) + 0x80;
 		ptr++;
 	}
@@ -344,14 +355,10 @@ void vidSetFont(Video* vid, char* src) {
 	memcpy(vid->font,src,0x800);
 }
 
-/*
-void vidSetFps(Video* vid, int fps) {
-	if (fps < 10) fps = 10;
-	else if (fps > 100) fps = 100;
-	vid->fps = fps;
-	vidUpdateTimings(vid, vid->nsPerDot);
+void vid_set_grey(int f) {
+	greyScale = f;
+	vid_dot = f ? vid_dot_bw : vid_dot_col;
 }
-*/
 
 // video drawing
 

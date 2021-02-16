@@ -1,5 +1,4 @@
-#ifndef VIDEO_H
-#define VIDEO_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,10 +59,15 @@ enum {
 	VID_SPCLST,
 };
 
+extern int bufSize;
 extern int bytesPerLine;
 extern int greyScale;
 extern int scanlines;
 extern int noflic;
+
+extern unsigned char* scrimg;
+extern unsigned char* bufimg;
+extern unsigned char pscr[];
 
 extern int xstep;
 extern int ystep;
@@ -72,8 +76,8 @@ extern int rigSkip;
 extern int topSkip;
 extern int botSkip;
 
+extern void(*vid_dot)(Video*, unsigned char);
 #ifdef USEOPENGL
-void vid_dot(Video*, unsigned char);
 #define vid_dot_full(_v, _c) vid_dot(_v, _c); vid_dot(_v, _c)
 #define vid_dot_half(_v, _c) vid_dot(_v, _c)
 #else
@@ -306,10 +310,10 @@ void vidUpdateTimings(Video*, int);
 void vidSetFont(Video*,char*);
 void vidGetScreen(Video*, unsigned char*, int, int, int);
 
+void vid_set_grey(int);
+
 void tslUpdatePorts(Video*);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

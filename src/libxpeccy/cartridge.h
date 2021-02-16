@@ -1,7 +1,6 @@
-#ifndef CARTRIDGE_H
-#define CARTRIDGE_H
+#pragma once
 
-#if __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -44,7 +43,8 @@ enum {
 	MAP_NES_CAMERICA = 71,
 	MAP_NES_VRC3 = 73,
 	MAP_NES_VRC1 = 75,
-	MAP_NES_VRC7 = 85
+	MAP_NES_VRC7 = 85,
+	MAP_NES_063 = 0x63
 };
 
 // slot memory type
@@ -141,8 +141,6 @@ void sltChecker(xCartridge*, int);
 // translate ppu nt vadr according mirroring type
 int nes_nt_vadr(xCartridge*, int);
 
-#if __cplusplus
+#ifdef __cplusplus
 }
-#endif
-
 #endif

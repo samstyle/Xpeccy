@@ -18,7 +18,6 @@ void scrMix(unsigned char* src, unsigned char* dst, int size, double mass) {
 	while (size > 0) {
 		cur = *dst;
 		*dst = (*src * (1.0 - mass) + cur * mass);
-		// *dst = (*src + cur) >> 1;
 		*src = cur;
 		src++;
 		dst++;

@@ -938,9 +938,9 @@ void xDisasmTable::scrolUp(Qt::KeyboardModifiers mod) {
 }
 
 void xDisasmTable::wheelEvent(QWheelEvent* ev) {
-	if (ev->delta() < 0) {
+	if (ev->angleDelta().y() < 0) {
 		scrolDn(ev->modifiers());
-	} else if (ev->delta() > 0) {
+	} else if (ev->angleDelta().y() > 0) {
 		scrolUp(ev->modifiers());
 	}
 }

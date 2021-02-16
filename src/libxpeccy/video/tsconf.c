@@ -5,8 +5,8 @@
 
 // tsconf sprites & tiles
 
-extern int adr,xscr,yscr;
-extern unsigned char col, ink, pap, scrbyte, nxtbyte;
+static int adr,xscr,yscr;
+static unsigned char col, ink, pap, scrbyte, nxtbyte;
 
 void vidDrawByteDD(Video*);
 

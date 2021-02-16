@@ -572,6 +572,45 @@ void slt_nes_aorom_wr(xCartridge* slot, int mt, int adr, int radr, int val) {
 	slot->blk1 = (val & 0x10) ? 1 : 0;
 }
 
+// maper 0x63 : iNes063
+
+int slt_nes_063_adr(xCartridge* slot, int mt, int adr) {
+	int radr = -1;
+	switch (mt) {
+		case SLT_PRG:
+			if (slot->reg00 & 2) {	// nrom256: 32K banks
+				radr = (adr & 0x7fff) | ((slot->reg01 & 0xfe) << 14);
+			} else {		// nrom128: 16K bank
+				radr = (adr & 0x3fff) | (slot->reg01 << 14);
+			}
+			break;
+		case SLT_CHR:
+			radr = adr & 0x1fff;			// 8K chr-ram
+			break;
+	}
+
+	return radr;
+}
+
+void slt_nes_063_wr(xCartridge* slot, int mt, int adr, int radr, int val) {
+	switch (mt) {
+		case SLT_PRG:
+			if (adr & 0x8000) {
+				slot->reg00 = adr & 3;			// b0: horiz.scroll, b1:32k banking mode
+				slot->mirror = (adr & 1) ? NES_NT_HORIZ : NES_NT_VERT;
+				if (adr & 0x400)			// chr-ram wr enable bit
+					slot->reg00 |= 4;
+				slot->reg01 = (adr >> 2) & 0xff;	// bank
+			}
+			break;
+		case SLT_CHR:
+			if ((slot->reg00 & 0x04) && slot->chrrom) {
+				slot->chrrom[radr & slot->chrMask] = val & 0xff;
+			}
+			break;
+	}
+}
+
 // maper 071 : 2x16K PRG
 
 int slt_nes_camerica_adr(xCartridge* slot, int mt, int adr) {
@@ -639,6 +678,7 @@ static xCardCallback nesMapers[] = {
 	{MAP_NES_MMC3, slt_nes_all_rd, slt_nes_mmc3_wr, slt_nes_mmc3_adr, slt_nes_mmc3_chk},
 	{MAP_NES_AOROM, slt_nes_all_rd, slt_nes_aorom_wr, slt_nes_aorom_adr, NULL},
 	{MAP_NES_CAMERICA, slt_nes_all_rd, slt_nes_camerica_wr, slt_nes_camerica_adr, NULL},
+	{MAP_NES_063, slt_nes_all_rd, slt_nes_063_wr, slt_nes_063_adr, NULL},
 	{MAP_UNKNOWN, slt_rd_dum, slt_wr_dum, slt_adr_dum, NULL}
 };
 

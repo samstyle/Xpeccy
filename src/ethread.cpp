@@ -130,6 +130,11 @@ void xThread::emuCycle(Computer* comp) {
 		if (comp->frmStrobe) {
 			comp->frmStrobe = 0;
 			conf.vid.fcount++;
+// process noflic/scanlines (if !fast ???)
+// buffers is already switches, bufimg - just painted (greyscale, if flag is set), scrimg - new
+			if (!conf.emu.fast && (noflic > 0))
+				scrMix(pscr, bufimg, bufSize, noflic / 100.0);
+
 			// printf("s_frame\n");
 			emit s_frame();
 		}
@@ -144,7 +149,7 @@ void xThread::run() {
 		sleepy = 1;
 #endif
 		comp = conf.prof.cur->zx;
-#ifdef HAVEZLIB
+#if HAVEZLIB
 		if (comp->rzx.start) {
 			comp->rzx.start = 0;
 			comp->rzx.play = 1;

@@ -492,10 +492,10 @@ void xDumpTable::mouseMoveEvent(QMouseEvent* ev) {
 }
 
 void xDumpTable::wheelEvent(QWheelEvent* ev) {
-	if (ev->delta() < 0) {
+	if (ev->angleDelta().y() < 0) {
 		model->dmpadr += 8;
 		emit rqRefill();
-	} else if (ev->delta() > 0) {
+	} else if (ev->angleDelta().y() > 0) {
 		model->dmpadr -= 8;
 		emit rqRefill();
 	}

@@ -120,7 +120,6 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	std::map<std::string,int>::iterator it;
 	for (it = shotFormat.begin(); it != shotFormat.end(); it++) {
 		ui.ssfbox->addItem(QString(it->first.c_str()),it->second);
-
 	}
 // sound
 	i = 0;
@@ -550,7 +549,8 @@ void SetupWin::apply() {
 	conf.vid.keepRatio = ui.cbKeepRatio->isChecked() ? 1 : 0;
 	conf.vid.scale = ui.sbScale->value();
 	noflic = ui.sldNoflic->value();
-	greyScale = ui.grayscale->isChecked() ? 1 : 0;
+	//greyScale = ui.grayscale->isChecked() ? 1 : 0;
+	vid_set_grey(ui.grayscale->isChecked() ? 1 : 0);
 	scanlines = ui.cbScanlines->isChecked() ? 1 : 0;
 	conf.scrShot.dir = std::string(ui.pathle->text().toLocal8Bit().data());
 	conf.scrShot.format = getRFText(ui.ssfbox);

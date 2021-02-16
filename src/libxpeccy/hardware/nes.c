@@ -60,9 +60,17 @@ void nesReset(Computer* comp) {
 	comp->vid->mrd = nes_ppu_ext_rd;
 	comp->vid->mwr = nes_ppu_ext_wr;
 	comp->vid->data = comp;
-	comp->slot->reg00 = 0x0c;	// MMC1
-	comp->slot->reg06 = 0;
-	comp->slot->reg07 = 1;
+	switch (comp->slot->core->id) {
+		case MAP_NES_MMC1:
+			comp->slot->reg00 = 0x0c;	// MMC1
+			comp->slot->reg06 = 0;
+			comp->slot->reg07 = 1;
+			break;
+		case MAP_NES_063:
+			comp->slot->reg00 = 0xff;
+			comp->slot->reg01 = 0xff;
+			break;
+	}
 	apuReset(comp->nesapu);
 	ppuReset(comp->vid);
 	vidSetMode(comp->vid, VID_NES);
@@ -218,8 +226,9 @@ void nesSync(Computer* comp, int ns) {
 	comp->nesapu->firq = 0;
 	comp->nesapu->dirq = 0;
 	comp->slot->irq = 0;
-	if (irq && !(comp->cpu->f & MFI))
+	if (irq && !comp->nes.irq)
 		comp->cpu->intrq |= MOS6502_INT_IRQ;
+	comp->nes.irq = irq ? 1 : 0;
 }
 
 extern int res4;

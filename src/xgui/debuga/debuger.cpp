@@ -499,7 +499,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.nesScrType->addItem("BG scr 2", NES_SCR_2);
 	ui.nesScrType->addItem("BG scr 3", NES_SCR_3);
 	ui.nesScrType->addItem("All in 1", NES_SCR_ALL);
-	ui.nesScrType->addItem("Tiles", NES_SCR_TILES);
+	// ui.nesScrType->addItem("Tiles", NES_SCR_TILES);
 
 	ui.nesBGTileset->addItem("Tiles #0000", NES_TILE_0000);
 	ui.nesBGTileset->addItem("Tiles #1000", NES_TILE_1000);
@@ -1167,7 +1167,7 @@ QImage dbgNesScreenImg(Video* vid, unsigned short adr, unsigned short tadr) {
 }
 
 QImage dbgNesSpriteImg(Video* vid, unsigned short tadr) {
-	QImage img(256, 240, QImage::Format_ARGB32);
+	QImage img(256, 240, QImage::Format_ARGB32_Premultiplied);
 	img.fill(qRgba(0,0,0,0));
 	unsigned char scrmap[256 * 240];
 	memset(scrmap, 0x00, 256 * 240);
@@ -1224,7 +1224,9 @@ void DebugWin::drawNes() {
 	}
 	tadr = getRFIData(ui.nesBGTileset) & 0xffff;
 	pic = QPixmap(256, 240);
+	pic.fill(Qt::transparent);
 	QPainter pnt(&pic);
+	// pnt.setCompositionMode(QPainter::CompositionMode_SourceOver);
 	switch (type) {
 		case NES_SCR_ALL:
 			pnt.drawImage(0, 0, dbgNesScreenImg(comp->vid, 0x2000, tadr).scaled(128, 120));
@@ -1241,7 +1243,7 @@ void DebugWin::drawNes() {
 		case NES_SCR_2:
 		case NES_SCR_3:
 			pnt.drawImage(0, 0, dbgNesScreenImg(comp->vid, adr, tadr));
-			// pnt.drawImage(0, 0, dbgNesSpriteImg(comp->vid, tadr));
+			//pnt.drawImage(0, 0, dbgNesSpriteImg(comp->vid, tadr));		// why not tramsparent?
 			break;
 	}
 	pnt.end();

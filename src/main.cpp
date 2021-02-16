@@ -61,7 +61,7 @@ int main(int ac,char** av) {
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK | SDL_INIT_TIMER);
 	atexit(SDL_Quit);
 	SDL_version sdlver;
-	SDL_VERSION(&sdlver);
+	SDL_VERSION(&sdlver)
 	printf("Using SDL ver %u.%u.%u\n", sdlver.major, sdlver.minor, sdlver.patch);
 
 #ifdef HAVEZLIB

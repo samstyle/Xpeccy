@@ -10,14 +10,8 @@
 #define VIC_IRQ_SPRSPR	0x04
 #define VIC_IRQ_LPEN	0x08
 
-extern int xscr;
-extern int yscr;
-extern unsigned char col;
-extern unsigned char ink;
-extern unsigned char pap;
-extern unsigned char scrbyte;
-extern unsigned char atrbyte;
-extern int adr;
+static int xscr,yscr,adr;
+static unsigned char col,ink,pap,scrbyte,atrbyte;
 
 void vic_irq(Video* vid, int mask) {
 	vid->intrq |= mask;

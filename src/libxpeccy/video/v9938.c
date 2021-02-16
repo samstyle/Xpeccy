@@ -15,8 +15,8 @@
 // 192:  | 13 border | 192 screen | 12 border | 96 blank | = 313 (PAL)
 // 212:  | 11 border | 212 screen | 10 border | 80 blank | = 313 (PAL)
 
-extern int xscr, yscr, adr;
-extern unsigned char scrbyte, atrbyte, col, ink, pap;
+static int xscr, yscr, adr;
+static unsigned char scrbyte, atrbyte, col, ink, pap;
 static unsigned char m2lev[8] = {0x00,0x33,0x5c,0x7f,0xa2,0xc1,0xe1,0xff};
 static unsigned char tbyte;
 

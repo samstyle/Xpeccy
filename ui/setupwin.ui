@@ -394,7 +394,27 @@
            <item>
             <widget class="QGroupBox" name="vidViewGBox">
              <layout class="QGridLayout" name="gridLayout_2">
-              <item row="1" column="1">
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_8">
+                <property name="text">
+                 <string>Layout</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="2">
+               <widget class="QLabel" name="bszlab">
+                <property name="minimumSize">
+                 <size>
+                  <width>30</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>%</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
                <widget class="QSlider" name="bszsld">
                 <property name="maximum">
                  <number>100</number>
@@ -416,26 +436,7 @@
                 </property>
                </widget>
               </item>
-              <item row="0" column="1">
-               <widget class="QComboBox" name="geombox"/>
-              </item>
-              <item row="2" column="1">
-               <widget class="QSlider" name="sldNoflic">
-                <property name="maximum">
-                 <number>50</number>
-                </property>
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="tickPosition">
-                 <enum>QSlider::TicksBelow</enum>
-                </property>
-                <property name="tickInterval">
-                 <number>5</number>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="2">
+              <item row="1" column="2">
                <layout class="QHBoxLayout" name="horizontalLayout_26">
                 <item>
                  <widget class="QToolButton" name="layAdd">
@@ -472,41 +473,40 @@
                 </item>
                </layout>
               </item>
-              <item row="1" column="2">
-               <widget class="QLabel" name="bszlab">
-                <property name="minimumSize">
-                 <size>
-                  <width>30</width>
-                  <height>0</height>
-                 </size>
+              <item row="3" column="1">
+               <widget class="QSlider" name="sldNoflic">
+                <property name="maximum">
+                 <number>50</number>
                 </property>
-                <property name="text">
-                 <string>%</string>
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
                 </property>
-               </widget>
-              </item>
-              <item row="2" column="0">
-               <widget class="QLabel" name="label_12">
-                <property name="text">
-                 <string>Noflick</string>
+                <property name="tickPosition">
+                 <enum>QSlider::TicksBelow</enum>
+                </property>
+                <property name="tickInterval">
+                 <number>5</number>
                 </property>
                </widget>
               </item>
-              <item row="2" column="2">
+              <item row="3" column="2">
                <widget class="QLabel" name="labNoflic">
                 <property name="text">
                  <string>%</string>
                 </property>
                </widget>
               </item>
-              <item row="0" column="0">
-               <widget class="QLabel" name="label_8">
+              <item row="1" column="1">
+               <widget class="QComboBox" name="geombox"/>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="label_12">
                 <property name="text">
-                 <string>Layout</string>
+                 <string>Noflick</string>
                 </property>
                </widget>
               </item>
-              <item row="1" column="0">
+              <item row="2" column="0">
                <widget class="QLabel" name="label_3">
                 <property name="text">
                  <string>BorderSize</string>
@@ -1157,7 +1157,7 @@
                    <attribute name="title">
                     <string>PSG 2</string>
                    </attribute>
-                   <layout class="QGridLayout" name="gridLayout_17" columnstretch="0,10,0">
+                   <layout class="QGridLayout" name="gridLayout_17" columnstretch="0,10">
                     <item row="2" column="1">
                      <widget class="QComboBox" name="stereo2box"/>
                     </item>
@@ -1207,7 +1207,7 @@
                    <attribute name="title">
                     <string>PSG 3</string>
                    </attribute>
-                   <layout class="QGridLayout" name="gridLayout_18" columnstretch="0,10,0">
+                   <layout class="QGridLayout" name="gridLayout_18" columnstretch="0,10">
                     <item row="0" column="1">
                      <widget class="QComboBox" name="schip3box"/>
                     </item>

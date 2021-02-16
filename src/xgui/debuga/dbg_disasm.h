@@ -72,8 +72,8 @@ class xDisasmTable : public QTableView {
 		Computer** cptr;
 		QList<unsigned short> history;
 
-		void scrolUp(Qt::KeyboardModifiers = 0);
-		void scrolDn(Qt::KeyboardModifiers = 0);
+		void scrolUp(Qt::KeyboardModifiers = Qt::NoModifier);
+		void scrolDn(Qt::KeyboardModifiers = Qt::NoModifier);
 
 		void keyPressEvent(QKeyEvent*);
 		void mousePressEvent(QMouseEvent*);

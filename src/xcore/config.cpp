@@ -65,7 +65,7 @@ void conf_init(char* wpath) {
 	}
 	conf.path.confDir += "\\config";
 	conf.path.romDir = conf.path.confDir + "\\roms";
-	conf.path.prfDir = conf.path.confDir + "/profiles";
+	conf.path.prfDir = conf.path.confDir + "\\profiles";
 	conf.path.confFile = conf.path.confDir + "\\config.conf";
 	conf.path.boot = conf.path.confDir + "\\boot.$B";
 	mkdir(conf.path.confDir.c_str());
@@ -353,7 +353,8 @@ void loadConfig() {
 					}
 					if (pnam=="noflic") noflic = str2bool(pval) ? 50 : 25;		// old parameter
 					if (pnam=="noflick") noflic = getRanged(pval.c_str(), 0, 50);	// new parameter
-					if (pnam=="greyscale") greyScale = str2bool(pval) ? 1 : 0;
+					//if (pnam=="greyscale") greyScale = str2bool(pval) ? 1 : 0;
+					if (pnam=="greyscale") vid_set_grey(str2bool(pval) ? 1 : 0);
 					if (pnam=="scanlines") scanlines = str2bool(pval) ? 1 : 0;
 					break;
 				case SECT_ROMSETS:

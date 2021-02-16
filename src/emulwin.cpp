@@ -43,12 +43,6 @@
 
 // main
 
-extern unsigned char* bufimg;
-extern unsigned char* scrimg;
-
-extern int bytesPerLine;
-
-//static QPainter pnt;
 static QImage alphabet;
 
 // mainwin
@@ -91,11 +85,12 @@ void MainWin::updateWindow() {
 	frameBytes = szh * lineBytes;
 #ifdef USEOPENGL
 	bytesPerLine = (lefSkip + comp->vid->vsze.x * 6 + rigSkip) & ~3;		// texture width must be 4-dots aligned
-	// bytesPerLine = bytesPerLine * 6;		// rgb x 2
+	bufSize = bytesPerLine * comp->vid->vsze.y;
 #else
 	bytesPerLine = lineBytes;
 	if (bytesPerLine & 3)		// 4 bytes align for QImage data
 		bytesPerLine = (bytesPerLine & ~3) + 4;
+	bufSize = bytesPerLine * ((comp->vid->vsze.y * ystep) >> 8);
 #endif
 	updateHead();
 	block = 0;
@@ -539,9 +534,8 @@ void MainWin::d_frame() {
 	if (conf.emu.fast) return;
 #ifdef USEOPENGL
 	queue.append(texids[curtex]);
-	if (queue.size() > 2)
+	if (queue.size() > 3)
 		queue.takeFirst();
-	// printf("> %i\n",queue.size());
 	glBindTexture(GL_TEXTURE_2D, texids[curtex]);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bytesPerLine / 3, comp->vid->vsze.y, 0, GL_RGB, GL_UNSIGNED_BYTE, comp->debug ? scrimg : bufimg);
 	curtex++;
@@ -559,20 +553,16 @@ void drawText(QPainter* pnt, int x, int y, const char* buf) {
 }
 
 void MainWin::paintEvent(QPaintEvent*) {
-	// printf("paint event\n");
 #ifdef USEOPENGL
 	QPainter pnt(this);
-//	pnt.beginNativePainting();
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_TEXTURE_2D);
 	glLoadIdentity();
 	// draw texture
-	if (!queue.isEmpty()) {
+	if (!queue.isEmpty())
 		curtxid = queue.takeFirst();
-		//printf("* %i\n",queue.size());
-	}
 	glBindTexture(GL_TEXTURE_2D, curtxid);
 	glBegin(GL_TRIANGLE_STRIP);
 	glTexCoord2f(1.0, 0.0); glVertex2f(1.0, 0.0);	// RT
@@ -583,11 +573,11 @@ void MainWin::paintEvent(QPaintEvent*) {
 	glDisable(GL_TEXTURE_2D);
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
-//	pnt.endNativePainting();
 	drawIcons(pnt);
 	pnt.end();
 	glFlush();
 #else
+	// TODO: grayscale. why some frames are colorful?
 	QPainter pnt(this);
 	pnt.drawImage(0,0, QImage(comp->debug ? scrimg : bufimg, width(), height(), QImage::Format_RGB888));
 	drawIcons(pnt);
@@ -619,31 +609,6 @@ void MainWin::resizeGL(int w, int h) {
 	glOrtho(0.0, 1.0, 1.0, 0.0, 1, 0);
 	glMatrixMode(GL_MODELVIEW);
 }
-
-/*
-void MainWin::paintGL() {
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_TEXTURE_2D);
-	glLoadIdentity();
-	// generate texture image
-	glBindTexture(GL_TEXTURE_2D, texid);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bytesPerLine / 3, comp->vid->vsze.y, 0, GL_RGB, GL_UNSIGNED_BYTE, comp->debug ? scrimg : bufimg);
-	// draw texture
-	glBegin(GL_POLYGON);
-	glTexCoord2f(0.0, 0.0); glVertex2i(0, 0);
-	glTexCoord2f(1.0, 0.0); glVertex2i(width(), 0);
-	glTexCoord2f(1.0, 1.0); glVertex2i(width(), height());
-	glTexCoord2f(0.0, 1.0); glVertex2i(0, height());
-	glEnd();
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
-//	glFlush();
-	glFinish();
-	swapBuffers();
-}
-*/
 
 #endif
 
@@ -1038,9 +1003,9 @@ void MainWin::wheelEvent(QWheelEvent* ev) {
 	}
 	if (grabMice) {
 		if (comp->mouse->hasWheel)
-			mousePress(comp->mouse, (ev->delta() < 0) ? XM_WHEELDN : XM_WHEELUP, 0);
+			mousePress(comp->mouse, (ev->angleDelta().y() < 0) ? XM_WHEELDN : XM_WHEELUP, 0);
 	} else {
-		if (ev->delta() < 0) {
+		if (ev->angleDelta().y() < 0) {
 			conf.snd.vol.master -= 5;
 			if (conf.snd.vol.master < 0)
 				conf.snd.vol.master = 0;
