@@ -503,9 +503,13 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 	ui.nesBGTileset->addItem("Tiles #0000", NES_TILE_0000);
 	ui.nesBGTileset->addItem("Tiles #1000", NES_TILE_1000);
+	ui.nesSPTileset->addItem("No sprites", -1);
+	ui.nesSPTileset->addItem("Sprites #0000", NES_TILE_0000);
+	ui.nesSPTileset->addItem("Sprites #1000", NES_TILE_1000);
 
 	connect(ui.nesScrType,SIGNAL(currentIndexChanged(int)), this, SLOT(drawNes()));
 	connect(ui.nesBGTileset,SIGNAL(currentIndexChanged(int)), this, SLOT(drawNes()));
+	connect(ui.nesSPTileset,SIGNAL(currentIndexChanged(int)), this, SLOT(drawNes()));
 // mem tab
 	ui.cbBank0->addItem("ROM", MEM_ROM);
 	ui.cbBank0->addItem("RAM", MEM_RAM);
@@ -1132,19 +1136,19 @@ extern xColor nesPal[64];
 
 void dbgNesConvertColors(Video* vid, unsigned char* buf, QImage& img, int trn) {
 	int x, y;
-	unsigned char col;
+	unsigned char col, colidx;
 	xColor xcol;
 	int adr = 0;
 	for (y = 0; y < img.height(); y++) {
 		for (x = 0; x < img.width(); x++) {
-			col = buf[adr];
-			if (!(col & 3)) col = 0;
-			col = vid->ram[0x3f00 | (col & 0x3f)];
+			colidx = buf[adr];
+			if (!(colidx & 3)) colidx = 0;
+			col = vid->ram[0x3f00 | (colidx & 0x3f)];
 			xcol = nesPal[col & 0x3f];
-			if (!trn || (col & 3)) {
-				img.setPixel(x, y, qRgba(xcol.r, xcol.g, xcol.b, 0xff));
+			if (trn && !(colidx & 3)) {
+				img.setPixelColor(x, y, QColor(255, 0, 0, 0));
 			} else {
-				img.setPixel(x, y, qRgba(0, 0, 0, 0));
+				img.setPixelColor(x, y, QColor(xcol.r, xcol.g, xcol.b, 0xff));
 			}
 			adr++;
 		}
@@ -1152,13 +1156,18 @@ void dbgNesConvertColors(Video* vid, unsigned char* buf, QImage& img, int trn) {
 }
 
 QImage dbgNesScreenImg(Video* vid, unsigned short adr, unsigned short tadr) {
-	QImage img(256, 240, QImage::Format_ARGB32);
+	QImage img(256, 240, QImage::Format_RGB888);
 	img.fill(Qt::black);
+	//int x;
+	//unsigned char rendline[256];
 	unsigned char scrmap[256 * 240];
 	memset(scrmap, 0x00, 256 * 240);
 	if (adr != 0) {
 		for(int y = 0; y < 240; y++) {
 			ppuRenderBGLine(vid, scrmap + (y << 8), adr, 0, tadr);
+			//for (x = 0; x < 256; x++) {
+			//	scrmap[(y << 8) + x] = rendline[(x + vid->finex) & 0xff];
+			//}
 			adr = ppuYinc(adr);
 		}
 	}
@@ -1167,19 +1176,19 @@ QImage dbgNesScreenImg(Video* vid, unsigned short adr, unsigned short tadr) {
 }
 
 QImage dbgNesSpriteImg(Video* vid, unsigned short tadr) {
-	QImage img(256, 240, QImage::Format_ARGB32_Premultiplied);
-	img.fill(qRgba(0,0,0,0));
+	QImage img(256, 240, QImage::Format_RGBA8888);
+	img.fill(Qt::transparent);
 	unsigned char scrmap[256 * 240];
 	memset(scrmap, 0x00, 256 * 240);
 	for (int y = 0; y < 240; y++) {
-		ppuRenderSpriteLine(vid, y, scrmap + (y << 8), NULL, tadr, 64);
+		ppuRenderSpriteLine(vid, y + 2, scrmap + (y << 8), NULL, tadr, 8);
 	}
 	dbgNesConvertColors(vid, scrmap, img, 1);
 	return img;
 }
 
 QImage dbgNesTilesImg(Video* vid, unsigned short tadr) {
-	QImage img(256, 256, QImage::Format_ARGB32);
+	QImage img(256, 256, QImage::Format_RGB888);
 	unsigned char scrmap[256 * 256];
 	int x,y,lin,bit;
 	int adr = tadr;
@@ -1213,8 +1222,12 @@ void DebugWin::drawNes() {
 	unsigned short tadr = 0;
 	QPixmap pic;
 
+	unsigned short vidvadr = comp->vid->vadr;
+	unsigned short vidtadr = comp->vid->tadr;
+
 	// screen
 	int type = getRFIData(ui.nesScrType);
+	int sprt = getRFIData(ui.nesSPTileset);
 	switch(type) {
 		case NES_SCR_OFF: adr = 0; break;
 		case NES_SCR_0:	adr = 0x2000; break;
@@ -1224,9 +1237,8 @@ void DebugWin::drawNes() {
 	}
 	tadr = getRFIData(ui.nesBGTileset) & 0xffff;
 	pic = QPixmap(256, 240);
-	pic.fill(Qt::transparent);
+	pic.fill(Qt::black);
 	QPainter pnt(&pic);
-	// pnt.setCompositionMode(QPainter::CompositionMode_SourceOver);
 	switch (type) {
 		case NES_SCR_ALL:
 			pnt.drawImage(0, 0, dbgNesScreenImg(comp->vid, 0x2000, tadr).scaled(128, 120));
@@ -1238,16 +1250,24 @@ void DebugWin::drawNes() {
 			pnt.drawImage(0, 0, dbgNesTilesImg(comp->vid, tadr));
 			break;
 		case NES_SCR_OFF:
+			if (sprt > -1)
+				pnt.drawImage(0, 0, dbgNesSpriteImg(comp->vid, sprt & 0xffff));
+			break;
 		case NES_SCR_0:
 		case NES_SCR_1:
 		case NES_SCR_2:
 		case NES_SCR_3:
-			pnt.drawImage(0, 0, dbgNesScreenImg(comp->vid, adr, tadr));
-			//pnt.drawImage(0, 0, dbgNesSpriteImg(comp->vid, tadr));		// why not tramsparent?
+			pnt.drawImage(0, 0, dbgNesScreenImg(comp->vid, (comp->vid->tadr & ~0x2c00) | adr, tadr));
+			if (sprt > -1)
+				pnt.drawImage(0, 0, dbgNesSpriteImg(comp->vid, sprt & 0xffff));
 			break;
 	}
 	pnt.end();
 	ui.nesScreen->setPixmap(pic);
+
+	comp->vid->vadr = vidvadr;
+	comp->vid->tadr = vidtadr;
+
 	// registers
 	ui.lab_ppu_r0->setText(gethexbyte(comp->vid->reg[0]));
 	ui.lab_ppu_r1->setText(gethexbyte(comp->vid->reg[1]));

@@ -85,10 +85,22 @@ void vid_line(Video* vid) {
 	ypos += ystep;
 	ypos -= 0x100;		// 1 line is already drawn
 	xpos = 0;
-	while (ypos > 0) {
-		ypos -= 0x100;
-		memcpy(vid->ray.lptr, vid->ray.lptr - bytesPerLine, bytesPerLine);
-		vid->ray.lptr += bytesPerLine;
+	if (scanlines) {
+		int x;
+		double rs = 1.0 - 128.0 / ystep;
+		while (ypos > 0) {
+			ypos -= 0x100;
+			for (x = 0; x < bytesPerLine; x++) {
+				*(vid->ray.lptr + x) = *(vid->ray.lptr + x - bytesPerLine) * rs;
+			}
+			vid->ray.lptr += bytesPerLine;
+		}
+	} else {
+		while (ypos > 0) {
+			ypos -= 0x100;
+			memcpy(vid->ray.lptr, vid->ray.lptr - bytesPerLine, bytesPerLine);
+			vid->ray.lptr += bytesPerLine;
+		}
 	}
 #endif
 	if (lefSkip > 0)
@@ -97,6 +109,7 @@ void vid_line(Video* vid) {
 }
 
 void vid_line_fill(Video* vid) {
+	// TODO: apply scanlines here
 #ifndef USEOPENGL
 	int ytmp = ypos;
 	unsigned char* ptr = vid->ray.lptr;
@@ -115,6 +128,7 @@ void vid_frame(Video* vid) {
 // scanlines TODO: bad @ fullscreen
 #ifndef USEOPENGL
 	ypos = 0;
+	/*
 	int x,y,ys;
 	double p, ps;
 	unsigned char* ptr;
@@ -135,6 +149,7 @@ void vid_frame(Video* vid) {
 			}
 		}
 	}
+*/
 #endif
 	if (!vid->debug) {
 		scrimg = curbuf ? bufb : bufa;
@@ -261,30 +276,44 @@ static unsigned char nxtbyte = 0;
 void vidDarkTail(Video* vid) {
 	if (vid->tail) return;				// no filling while current fill is active (till end of frame)
 	unsigned char* ptr = vid->ray.ptr;		// fill current line till EOL
-	unsigned char* pptr = bufimg; //curbuf ? bufb : bufa;	// ptr to prev.frame
-	unsigned char* btr = scrimg; // curbuf ? bufa : bufb;	// begin of current buffer
+	unsigned char* zptr = bufimg + (vid->ray.ptr - scrimg); // ptr to prev.frame (place is same as ray at cur.frame)
+	unsigned char* btr = scrimg;			// begin of current buffer
+	// current line
 	while (ptr - vid->ray.lptr < bytesPerLine) {	// dark tail from prev.frame to cur.frame
-		*ptr = ((*pptr - 0x80) >> 2) + 0x80;
-		pptr++;
+		*ptr = ((*zptr - 0x80) >> 2) + 0x80;
+		zptr++;
 		ptr++;
 	}
 #ifndef USEOPENGL
+	// copy current line
 	vid_line_fill(vid);				// copy filled line due zoom value
 	int ytmp = ypos + ystep;
-	ptr = vid->ray.lptr;				// move ptr to start of next real line
+	// ptr = vid->ray.lptr;				// move ptr to start of next real line
 	while(ytmp > 0x100) {
 		ytmp -= 0x100;
 		ptr += bytesPerLine;
+		zptr += bytesPerLine;
 	}
 #else
-	ptr = vid->ray.lptr + bytesPerLine;
+	//ptr = vid->ray.lptr + bytesPerLine;		// already
 #endif
 // fill all till end
 	while (ptr - btr < bufSize) {
-		*ptr = ((*ptr - 0x80) >> 2) + 0x80;
+		*ptr = ((*zptr - 0x80) >> 2) + 0x80;
+		zptr++;
 		ptr++;
 	}
 	vid->tail = 1;
+}
+
+void vid_dark_all() {
+	unsigned char* ptr = scrimg;
+	int len = bufSize;
+	while (len > 0) {
+		*ptr = ((*ptr - 0x80) >> 2) + 0x80;
+		ptr++;
+		len--;
+	}
 }
 
 //const unsigned char emptyBox[8] = {0x00,0x18,0x3c,0x7e,0x7e,0x3c,0x18,0x00};
@@ -775,7 +804,7 @@ void vidSync(Video* vid, int ns) {
 				if (vid->cbFrame) vid->cbFrame(vid);
 				vid->tail = 0;
 				if (vid->debug)
-					vidDarkTail(vid);
+					vid_dark_all();
 			}
 			if (vid->ray.y == vid->vend.y) {		// vblank start
 				vid->vblank = 1;

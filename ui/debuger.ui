@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>918</width>
-    <height>648</height>
+    <height>657</height>
    </rect>
   </property>
   <property name="font">
@@ -1049,7 +1049,7 @@
       <widget class="xDumpTable" name="dumpTable">
        <property name="minimumSize">
         <size>
-         <width>370</width>
+         <width>380</width>
          <height>250</height>
         </size>
        </property>
@@ -1120,7 +1120,7 @@
         <bool>true</bool>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>6</number>
        </property>
        <widget class="QWidget" name="scrTab">
         <attribute name="icon">
@@ -2264,6 +2264,9 @@
             <widget class="QComboBox" name="nesBGTileset"/>
            </item>
            <item>
+            <widget class="QComboBox" name="nesSPTileset"/>
+           </item>
+           <item>
             <spacer name="verticalSpacer">
              <property name="orientation">
               <enum>Qt::Vertical</enum>
@@ -3061,11 +3064,11 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
+  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

@@ -222,7 +222,7 @@ MainWin::MainWin() {
 
 MainWin::~MainWin() {
 #ifdef USEOPENGL
-	delete(cont);
+//	delete(cont);
 #endif
 }
 
@@ -521,6 +521,7 @@ void MainWin::frame_timer() {
 	if (conf.emu.fast || conf.emu.pause) {
 		glBindTexture(GL_TEXTURE_2D, texids[curtex]);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bytesPerLine / 3, comp->vid->vsze.y, 0, GL_RGB, GL_UNSIGNED_BYTE, comp->debug ? scrimg : bufimg);
+		queue.clear();
 		queue.append(texids[curtex]);
 	}
 #endif
@@ -577,7 +578,6 @@ void MainWin::paintEvent(QPaintEvent*) {
 	pnt.end();
 	glFlush();
 #else
-	// TODO: grayscale. why some frames are colorful?
 	QPainter pnt(this);
 	pnt.drawImage(0,0, QImage(comp->debug ? scrimg : bufimg, width(), height(), QImage::Format_RGB888));
 	drawIcons(pnt);
