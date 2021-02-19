@@ -26,6 +26,8 @@
 
 #include "version.h"
 
+#define STICKY_KEY 1
+
 #if QT_VERSION >= 0x050e00
 #include <QScreen>
 #define SCREENSIZE screen()->size()
@@ -337,7 +339,7 @@ void MainWin::mapJoystick(Computer* comp, int type, int num, int st) {
 
 static QList<int> fpsmem;
 
-#if defined(__WIN32)
+#if defined(__WIN32) && STICKY_KEY
 
 static struct {
 	int vkey;
@@ -438,7 +440,7 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 		}
 // satelites
 		updateSatellites();
-#if defined(__WIN32)
+#if defined(__WIN32) && STICKY_KEY
 		if (isActiveWindow()) {
 			int state;
 			QKeyEvent* ev;
@@ -719,11 +721,11 @@ void MainWin::kRelease(QKeyEvent* ev) {
 	keyReleaseEvent(ev);
 }
 
+static QMap<qint32, int> key_press_map;
+
 void MainWin::keyPressEvent(QKeyEvent *ev) {
-//	printf("press %u\t%u\n", ev->nativeScanCode(), ev->nativeVirtualKey());
-// #if __APPLE__
 	if (ev->isAutoRepeat()) return;
-// #endif
+//	qDebug() << "keyPressEvent" << ev->text() << ev->nativeScanCode() << ev->count();
 	if (comp->debug) {
 		ev->ignore();
 	} else {
@@ -738,24 +740,30 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			keyid = ev->nativeScanCode();
 #elif defined(__WIN32)
 			keyid = ev->nativeScanCode();
+#if STICKY_KEY
 			if (keyid == 0) {
 				keyid = ev->nativeVirtualKey();
 			} else if ((ev->key() == Qt::Key_Shift) || (ev->key() == Qt::Key_Control) || (ev->key() == Qt::Key_Alt)) {
+				keyid = 0;
+			}
+#endif
+			if (key_press_map[keyid] == 0) {	// catch false press events
+				key_press_map[keyid] = 1;
+			} else {
 				keyid = 0;
 			}
 #else
 			keyid = qKey2id(ev->key());
 #endif
 		}
-		if (keyid > 0) {
-//			printf("press: %i\n", keyid);
-			xkey_press(keyid);
-		}
+//		printf("press: %i\n", keyid);
+		xkey_press(keyid);
 	}
 }
 
 void MainWin::xkey_press(int xkey) {
 	keyEntry kent = getKeyEntry(xkey);
+//	printf("xkey_press %s\n", kent.name);
 	int x;
 	int y;
 	int err;
@@ -965,9 +973,8 @@ void MainWin::xkey_press(int xkey) {
 }
 
 void MainWin::keyReleaseEvent(QKeyEvent *ev) {
-//	printf("release %u\t%u\n", ev->nativeScanCode(), ev->nativeVirtualKey());
-	if (ev->isAutoRepeat())
-		return;
+	if (ev->isAutoRepeat()) return;
+//	qDebug() << "keyReleaseEvent" << ev->text() << ev->nativeScanCode();
 	int keyid;
 	if (comp->debug) {
 		ev->ignore();
@@ -976,24 +983,28 @@ void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 		keyid = ev->nativeScanCode();
 #elif defined(__WIN32)
 		keyid = ev->nativeScanCode();
+#if STICKY_KEY
 		if (keyid == 0) {
 			keyid = ev->nativeVirtualKey();
 		} else if ((ev->key() == Qt::Key_Shift) || (ev->key() == Qt::Key_Control) || (ev->key() == Qt::Key_Alt)) {
 			keyid = 0;
 		}
+#endif
+		if (key_press_map[keyid] == 0) {
+			keyid = 0;
+		} else {
+			key_press_map[keyid] = 0;
+		}
 #else
 		keyid = qKey2id(ev->key());
 #endif
-		if (keyid > 0) {
-//			printf("release: %i\n", keyid);
-			xkey_release(keyid);
-		}
+//		printf("release: %i\n", keyid);
+		xkey_release(keyid);
 	}
 }
 
 void MainWin::xkey_release(int keyid) {
 	keyEntry kent = getKeyEntry(keyid);
-//	qDebug() << "release" << kent.name;
 	xt_release(comp->keyb, kent.keyCode);
 	if (comp->hw->keyr)
 		comp->hw->keyr(comp, kent);

@@ -87,6 +87,7 @@ void kbdSetMode(Keyboard* kbd, int mode) {
 
 void kbd_press_key(Keyboard* kbd, keyScan* tab, int* mtrx, char ch) {
 	if (!ch) return;
+//	printf("kbd_press_key %c\n", ch);
 	keyScan key = findKey(tab, ch & 0x7f);
 	key.row &= 0x0f;
 	kbd->row = key.row;
@@ -153,6 +154,7 @@ void kbdPress(Keyboard* kbd, keyEntry ent) {
 }
 
 void kbd_release_key(Keyboard* kbd, keyScan* tab, int* mtrx, char ch) {
+//	if (ch) printf("kbd_release_key %c\n", ch);
 	keyScan key = findKey(tab, ch & 0x7f);
 	key.row &= 0x0f;
 	for (int i = 0; i < 16; i++) {
