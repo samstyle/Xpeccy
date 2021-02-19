@@ -1120,7 +1120,7 @@
         <bool>true</bool>
        </property>
        <property name="currentIndex">
-        <number>6</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="scrTab">
         <attribute name="icon">
@@ -2243,17 +2243,53 @@
         </attribute>
         <layout class="QHBoxLayout" name="horizontalLayout">
          <item>
-          <widget class="QLabel" name="nesScreen">
-           <property name="minimumSize">
-            <size>
-             <width>256</width>
-             <height>240</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>TextLabel</string>
-           </property>
-          </widget>
+          <layout class="QVBoxLayout" name="verticalLayout_11">
+           <item>
+            <widget class="QLabel" name="nesScreen">
+             <property name="minimumSize">
+              <size>
+               <width>256</width>
+               <height>240</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>TextLabel</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_10">
+             <item>
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>VADR</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="labVAdr">
+               <property name="text">
+                <string>1</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_3">
+               <property name="text">
+                <string>TADR</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="labTAdr">
+               <property name="text">
+                <string>2</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
          </item>
          <item>
           <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -2288,13 +2324,6 @@
                </property>
               </widget>
              </item>
-             <item row="8" column="0">
-              <widget class="QLabel" name="label">
-               <property name="text">
-                <string>VADR</string>
-               </property>
-              </widget>
-             </item>
              <item row="5" column="0">
               <widget class="QLabel" name="label_66">
                <property name="text">
@@ -2306,13 +2335,6 @@
               <widget class="QLabel" name="label_5">
                <property name="text">
                 <string>R4</string>
-               </property>
-              </widget>
-             </item>
-             <item row="9" column="1">
-              <widget class="QLabel" name="labTAdr">
-               <property name="text">
-                <string>2</string>
                </property>
               </widget>
              </item>
@@ -2330,24 +2352,10 @@
                </property>
               </widget>
              </item>
-             <item row="9" column="0">
-              <widget class="QLabel" name="label_3">
-               <property name="text">
-                <string>TADR</string>
-               </property>
-              </widget>
-             </item>
              <item row="3" column="0">
               <widget class="QLabel" name="label_65">
                <property name="text">
                 <string>R3</string>
-               </property>
-              </widget>
-             </item>
-             <item row="8" column="1">
-              <widget class="QLabel" name="labVAdr">
-               <property name="text">
-                <string>1</string>
                </property>
               </widget>
              </item>

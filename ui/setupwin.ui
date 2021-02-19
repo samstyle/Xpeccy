@@ -401,6 +401,13 @@
                 </property>
                </widget>
               </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="label_12">
+                <property name="text">
+                 <string>Noflick</string>
+                </property>
+               </widget>
+              </item>
               <item row="2" column="2">
                <widget class="QLabel" name="bszlab">
                 <property name="minimumSize">
@@ -409,6 +416,36 @@
                   <height>0</height>
                  </size>
                 </property>
+                <property name="text">
+                 <string>%</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QSlider" name="sldNoflic">
+                <property name="maximum">
+                 <number>50</number>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="tickPosition">
+                 <enum>QSlider::TicksBelow</enum>
+                </property>
+                <property name="tickInterval">
+                 <number>5</number>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_3">
+                <property name="text">
+                 <string>BorderSize</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="2">
+               <widget class="QLabel" name="labNoflic">
                 <property name="text">
                  <string>%</string>
                 </property>
@@ -473,45 +510,18 @@
                 </item>
                </layout>
               </item>
-              <item row="3" column="1">
-               <widget class="QSlider" name="sldNoflic">
-                <property name="maximum">
-                 <number>50</number>
-                </property>
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="tickPosition">
-                 <enum>QSlider::TicksBelow</enum>
-                </property>
-                <property name="tickInterval">
-                 <number>5</number>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="2">
-               <widget class="QLabel" name="labNoflic">
-                <property name="text">
-                 <string>%</string>
-                </property>
-               </widget>
-              </item>
               <item row="1" column="1">
                <widget class="QComboBox" name="geombox"/>
               </item>
-              <item row="3" column="0">
-               <widget class="QLabel" name="label_12">
+              <item row="4" column="0">
+               <widget class="QLabel" name="labShader">
                 <property name="text">
-                 <string>Noflick</string>
+                 <string>Shader</string>
                 </property>
                </widget>
               </item>
-              <item row="2" column="0">
-               <widget class="QLabel" name="label_3">
-                <property name="text">
-                 <string>BorderSize</string>
-                </property>
-               </widget>
+              <item row="4" column="1">
+               <widget class="QComboBox" name="cbShader"/>
               </item>
              </layout>
             </widget>

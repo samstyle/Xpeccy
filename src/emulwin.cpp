@@ -439,19 +439,21 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 // satelites
 		updateSatellites();
 #if defined(__WIN32)
-		int state;
-		QKeyEvent* ev;
-		// events: nativeScanCode = 0, nativeVirtualKey = XKEY_*
-		for (int i = 0; i < 6; i++) {
-			state = GetKeyState(win_mod_tab[i].vkey) & 0x8000;
-			if (state != win_mod_tab[i].state) {	// state changed
-				if (state) {			// press
-					ev = new QKeyEvent(QKeyEvent::KeyPress, win_mod_tab[i].qkey, Qt::NoModifier, 0, win_mod_tab[i].nCode, 0);
-				} else {			// release
-					ev = new QKeyEvent(QKeyEvent::KeyRelease, win_mod_tab[i].qkey, Qt::NoModifier, 0, win_mod_tab[i].nCode, 0);
+		if (isActiveWindow()) {
+			int state;
+			QKeyEvent* ev;
+			// events: nativeScanCode = 0, nativeVirtualKey = XKEY_*
+			for (int i = 0; i < 6; i++) {
+				state = GetKeyState(win_mod_tab[i].vkey) & 0x8000;
+				if (state != win_mod_tab[i].state) {	// state changed
+					if (state) {			// press
+						ev = new QKeyEvent(QKeyEvent::KeyPress, win_mod_tab[i].qkey, Qt::NoModifier, 0, win_mod_tab[i].nCode, 0);
+					} else {			// release
+						ev = new QKeyEvent(QKeyEvent::KeyRelease, win_mod_tab[i].qkey, Qt::NoModifier, 0, win_mod_tab[i].nCode, 0);
+					}
+					QApplication::postEvent(this, ev);
+					win_mod_tab[i].state = state;
 				}
-				QApplication::postEvent(this, ev);
-				win_mod_tab[i].state = state;
 			}
 		}
 #endif
@@ -460,7 +462,6 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 
 // if window is not active release keys & buttons, release mouse
 void MainWin::focusOutEvent(QFocusEvent*) {
-//	kbdReleaseAll(comp->keyb);
 	mouseReleaseAll(comp->mouse);
 	unsetCursor();
 	if (grabMice) {
@@ -719,6 +720,7 @@ void MainWin::kRelease(QKeyEvent* ev) {
 }
 
 void MainWin::keyPressEvent(QKeyEvent *ev) {
+//	printf("press %u\t%u\n", ev->nativeScanCode(), ev->nativeVirtualKey());
 // #if __APPLE__
 	if (ev->isAutoRepeat()) return;
 // #endif
@@ -745,8 +747,10 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 			keyid = qKey2id(ev->key());
 #endif
 		}
-//		printf("press: %i\n", keyid);
-		xkey_press(keyid);
+		if (keyid > 0) {
+//			printf("press: %i\n", keyid);
+			xkey_press(keyid);
+		}
 	}
 }
 
@@ -961,6 +965,7 @@ void MainWin::xkey_press(int xkey) {
 }
 
 void MainWin::keyReleaseEvent(QKeyEvent *ev) {
+//	printf("release %u\t%u\n", ev->nativeScanCode(), ev->nativeVirtualKey());
 	if (ev->isAutoRepeat())
 		return;
 	int keyid;
@@ -969,7 +974,7 @@ void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 	} else {
 #if defined(__linux)
 		keyid = ev->nativeScanCode();
-#elif defined(_WIN32)
+#elif defined(__WIN32)
 		keyid = ev->nativeScanCode();
 		if (keyid == 0) {
 			keyid = ev->nativeVirtualKey();
@@ -979,8 +984,10 @@ void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 #else
 		keyid = qKey2id(ev->key());
 #endif
-//		printf("release: %i\n", keyid);
-		xkey_release(keyid);
+		if (keyid > 0) {
+//			printf("release: %i\n", keyid);
+			xkey_release(keyid);
+		}
 	}
 }
 
@@ -1105,7 +1112,7 @@ void MainWin::dropEvent(QDropEvent* ev) {
 	activateWindow();
 	for (int i = 0; i < urls.size(); i++) {
 		fpath = urls.at(i).path();
-#ifdef _WIN32
+#if defined(__WIN32)
 		fpath.remove(0,1);	// by some reason path will start with /
 #endif
 		//loadFile(comp,fpath.toUtf8().data(),FT_ALL,0);

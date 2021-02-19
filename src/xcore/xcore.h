@@ -353,6 +353,7 @@ struct xConfig {
 		int scale;		// x1..x4
 		int fcount;		// frames counter (for fps showing) (= fcnt ???)
 		int curfps;
+		std::string shader;
 	} vid;
 	struct {
 		unsigned enabled:1;
@@ -396,6 +397,7 @@ struct xConfig {
 		std::string confFile;
 		std::string romDir;
 		std::string prfDir;
+		std::string shdDir;
 		std::string font;
 		std::string boot;
 	} path;

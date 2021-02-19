@@ -54,9 +54,10 @@ void conf_init(char* wpath) {
 	mkdir(conf.path.romDir.c_str() ,0777);
 	conf.path.prfDir = conf.path.confDir + "/profiles";
 	mkdir(conf.path.prfDir.c_str() ,0777);
+	conf.path.shdDir = conf.path.confDir + "/shaders";
+	mkdir(conf.path.shdDir.c_str() ,0777);
 	conf.path.confFile = conf.path.confDir + "/config.conf";
 	conf.path.boot = conf.path.confDir + "/boot.$B";
-	// conf.path.font = conf.path.confDir + "/appfont.ttf";
 #elif __WIN32
 	conf.path.confDir = std::string(wpath);
 	size_t pos = conf.path.confDir.find_last_of(SLSH);
@@ -66,11 +67,13 @@ void conf_init(char* wpath) {
 	conf.path.confDir += "\\config";
 	conf.path.romDir = conf.path.confDir + "\\roms";
 	conf.path.prfDir = conf.path.confDir + "\\profiles";
+	conf.path.shdDir = conf.path.confDir + "\\shaders";
 	conf.path.confFile = conf.path.confDir + "\\config.conf";
 	conf.path.boot = conf.path.confDir + "\\boot.$B";
 	mkdir(conf.path.confDir.c_str());
 	mkdir(conf.path.romDir.c_str());
 	mkdir(conf.path.prfDir.c_str());
+	mkdir(conf.path.shdDir.c_str());
 #endif
 	conf.scrShot.format = "png";
 	vLayout vlay = {{448,320},{74,48},{64,32},{256,192},{0,0},64};
@@ -133,6 +136,7 @@ void saveConfig() {
 	fprintf(cfile, "scanlines = %s\n", YESNO(scanlines));
 	fprintf(cfile, "bordersize = %i\n", int(conf.brdsize * 100));
 	fprintf(cfile, "noflick = %i\n", noflic);
+	fprintf(cfile, "shader = %s\n", conf.vid.shader.c_str());
 
 	fprintf(cfile, "\n[ROMSETS]\n");
 	foreach(xRomset rms, conf.rsList) {
@@ -353,9 +357,9 @@ void loadConfig() {
 					}
 					if (pnam=="noflic") noflic = str2bool(pval) ? 50 : 25;		// old parameter
 					if (pnam=="noflick") noflic = getRanged(pval.c_str(), 0, 50);	// new parameter
-					//if (pnam=="greyscale") greyScale = str2bool(pval) ? 1 : 0;
 					if (pnam=="greyscale") vid_set_grey(str2bool(pval) ? 1 : 0);
 					if (pnam=="scanlines") scanlines = str2bool(pval) ? 1 : 0;
+					if (pnam=="shader") conf.vid.shader = pval;
 					break;
 				case SECT_ROMSETS:
 					pos = pval.find_last_of(":");

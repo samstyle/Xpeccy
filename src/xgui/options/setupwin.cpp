@@ -54,6 +54,19 @@ void fill_romset_list(QComboBox* box) {
 	box->setCurrentIndex(box->findText(txt));
 }
 
+void fill_shader_list(QComboBox* box) {
+	QDir dir(conf.path.shdDir.c_str());
+	QFileInfoList lst = dir.entryInfoList(QStringList() << "*.txt", QDir::Files, QDir::Name);
+	QFileInfo inf;
+	QString txt = box->currentText();
+	box->clear();
+	box->addItem("none", 0);
+	foreach(inf, lst) {
+		box->addItem(inf.fileName(), 1);
+	}
+	box->setCurrentIndex(box->findText(txt));
+}
+
 // OBJECT
 
 void dbg_fill_chip_boxes(QComboBox* cbtype, QComboBox* cbstereo) {
@@ -121,6 +134,13 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	for (it = shotFormat.begin(); it != shotFormat.end(); it++) {
 		ui.ssfbox->addItem(QString(it->first.c_str()),it->second);
 	}
+#if USEOPENGL
+	ui.cbScanlines->setVisible(false);
+#else
+	ui.labShader->setVisible(false);
+	ui.cbShader->setVisible(false);
+	fill_shader_list(ui.cbShader);
+#endif
 // sound
 	i = 0;
 	while (sndTab[i].name) {
@@ -549,7 +569,6 @@ void SetupWin::apply() {
 	conf.vid.keepRatio = ui.cbKeepRatio->isChecked() ? 1 : 0;
 	conf.vid.scale = ui.sbScale->value();
 	noflic = ui.sldNoflic->value();
-	//greyScale = ui.grayscale->isChecked() ? 1 : 0;
 	vid_set_grey(ui.grayscale->isChecked() ? 1 : 0);
 	scanlines = ui.cbScanlines->isChecked() ? 1 : 0;
 	conf.scrShot.dir = std::string(ui.pathle->text().toLocal8Bit().data());
@@ -565,6 +584,7 @@ void SetupWin::apply() {
 	comp->vid->ula->enabled = ui.ulaPlus->isChecked() ? 1 : 0;
 	comp->ddpal = ui.cbDDp->isChecked() ? 1 : 0;
 	prfSetLayout(NULL, getRFText(ui.geombox));
+	conf.vid.shader = std::string(ui.cbShader->currentText().toLocal8Bit().data());
 // sound
 	std::string nname = getRFText(ui.outbox);
 	conf.snd.enabled = ui.senbox->isChecked() ? 1 : 0;
