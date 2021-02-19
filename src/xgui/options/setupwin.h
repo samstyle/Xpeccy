@@ -84,7 +84,6 @@ class SetupWin : public QDialog {
 		void umaselp(); void umaconf();
 		void chablock(QModelIndex);
 		void tlistclick(QModelIndex);
-		// void hddcap();
 
 		void selSDCimg();
 

@@ -97,6 +97,7 @@ int main(int ac,char** av) {
 	keyWindow keyw(&mwin);
 
 	loadConfig();
+	mwin.loadShader();
 	mwin.fillUserMenu();
 
 	if ((conf.xpos >= 0) && (conf.ypos >= 0))

@@ -74,6 +74,7 @@ class MainWin : public QWidget {
 		void setProfile(std::string);
 		void kPress(QKeyEvent*);
 		void kRelease(QKeyEvent*);
+		void loadShader();
 	private slots:
 		void updateSatellites();
 		void menuHide();
@@ -83,6 +84,7 @@ class MainWin : public QWidget {
 		void rzxStateChanged(int);
 		void bookmarkSelected(QAction*);
 		void profileSelected(QAction*);
+		void shdSelected(QAction*);
 		void reset(QAction*);
 		void chLayout(QAction*);
 		void umOpen(QAction*);
@@ -134,15 +136,13 @@ class MainWin : public QWidget {
 		QMenu* layoutMenu;
 		QMenu* resMenu;
 		QMenu* fileMenu;
+		QMenu* shdMenu;
 #ifdef ISDEBUG
 		QMenu* dbgMenu;
 #endif
 		QAction* pckAct;
 
 		void initUserMenu();
-		void fillProfileMenu();
-		void fillBookmarkMenu();
-		void fillLayoutMenu();
 
 		void xkey_press(int);
 		void xkey_release(int);
@@ -162,6 +162,7 @@ class MainWin : public QWidget {
 		void moveEvent(QMoveEvent*);
 
 #ifdef USEOPENGL
+		bool shd_support;
 		unsigned curtex:2;
 		GLuint texids[4];
 		GLuint curtxid;
@@ -170,6 +171,8 @@ class MainWin : public QWidget {
 		QGLContext* cont;
 		void initializeGL();
 		void resizeGL(int,int);
-		QGLShader* shd_gray;
+		QGLShaderProgram prg;
+		QGLShader* vtx_shd;
+		QGLShader* frg_shd;
 #endif
 };

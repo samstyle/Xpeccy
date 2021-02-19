@@ -220,16 +220,19 @@ MainWin::MainWin() {
 	cont = new QGLContext(frmt);
 	setContext(cont);
 	setAutoBufferSwap(true);
+	makeCurrent();
+	shd_support = QGLShader::hasOpenGLShaders(QGLShader::Vertex) && QGLShader::hasOpenGLShaders(QGLShader::Vertex);
 	curtex = 0;
-//	makeCurrent();
-//	shd_gray = new QGLShader(QGLShader::Fragment, cont);
-//	shd_gray->compileSourceFile(":/shaders/grayscale.shader");
+	vtx_shd = new QGLShader(QGLShader::Vertex, cont);
+	frg_shd = new QGLShader(QGLShader::Fragment, cont);
+	if (!shd_support) setMessage(" Shaders is not supported ");
 #endif
 }
 
 MainWin::~MainWin() {
 #ifdef USEOPENGL
-//	delete(cont);
+	delete(vtx_shd);
+	delete(frg_shd);
 #endif
 }
 
@@ -599,6 +602,12 @@ void drawText(QPainter* pnt, int x, int y, const char* buf) {
 void MainWin::paintEvent(QPaintEvent*) {
 #ifdef USEOPENGL
 	QPainter pnt(this);
+	if (prg.isLinked() && shd_support) {
+		prg.bind();
+		prg.setUniformValue("rubyInputSize",GLfloat(bytesPerLine/3.0), GLfloat(conf.prof.cur->zx->vid->vsze.y));
+		prg.setUniformValue("rubyOutputSize",GLfloat(width()), GLfloat(height()));
+		prg.setUniformValue("rubyTextureSize",GLfloat(bytesPerLine/3.0), GLfloat(conf.prof.cur->zx->vid->vsze.y));
+	}
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -614,6 +623,8 @@ void MainWin::paintEvent(QPaintEvent*) {
 	glTexCoord2f(1.0, 1.0); glVertex2f(1.0, 1.0);	// RB
 	glTexCoord2f(0.0, 1.0); glVertex2f(0.0, 1.0);	// LB
 	glEnd();
+	if (prg.isLinked() && shd_support)
+		prg.release();
 	glDisable(GL_TEXTURE_2D);
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
@@ -654,6 +665,63 @@ void MainWin::resizeGL(int w, int h) {
 }
 
 #endif
+
+void MainWin::loadShader() {
+#ifdef USEOPENGL
+	QString path(std::string(conf.path.shdDir + SLASH + conf.vid.shader).c_str());
+	QFile file(path);
+	int mode = 0;
+	QString vtx;
+	QString frg;
+	QString lin;
+	prg.removeAllShaders();
+	if (!conf.vid.shader.empty() && shd_support) {			// no shader selected
+		if (file.open(QFile::ReadOnly)) {
+			while(!file.atEnd()) {
+				lin = file.readLine().trimmed().append("\n");
+				if (lin.startsWith("vertex:")) {
+					mode = 1;
+				} else if (lin.startsWith("fragment:")) {
+					mode = 2;
+				} else {
+					switch(mode) {
+						case 1: vtx.append(lin); break;
+						case 2: frg.append(lin); break;
+					}
+				}
+			}
+			file.close();
+			if (!vtx.isEmpty()) {
+				if (!vtx_shd->compileSourceCode(vtx)) {
+					qDebug() << vtx_shd->log();
+				}
+			}
+			if (!frg.isEmpty()) {
+				if (!frg_shd->compileSourceCode(frg)) {
+					qDebug() << frg_shd->log();
+				}
+			}
+			if (vtx_shd->isCompiled() && frg_shd->isCompiled()) {
+				prg.addShader(vtx_shd);
+				prg.addShader(frg_shd);
+				prg.link();
+				setMessage(" Shader compiled ");
+			} else {
+				setMessage(" Shader compile error ");
+				conf.vid.shader.clear();
+				loadShader();
+			}
+		} else {
+			shitHappens("Can't open shader file");
+		}
+	}
+#endif
+}
+
+void MainWin::shdSelected(QAction* act) {
+	conf.vid.shader = act->data().toString().toLocal8Bit().data();
+	loadShader();
+}
 
 void MainWin::drawIcons(QPainter& pnt) {
 // screenshot
@@ -854,6 +922,9 @@ void MainWin::xkey_press(int xkey) {
 				scanlines = !scanlines;
 				setMessage(scanlines ? " scanlines on " : " scanlines off ");
 				saveConfig();
+				break;
+			case XCUT_RELOAD_SHD:
+				loadShader();
 				break;
 			case XCUT_RATIO:
 				vid_set_ratio(!conf.vid.keepRatio);
@@ -1302,6 +1373,7 @@ void MainWin::initUserMenu() {
 	profileMenu = userMenu->addMenu(QIcon(":/images/profile.png"),"Profiles");
 	layoutMenu = userMenu->addMenu(QIcon(":/images/display.png"),"Layout");
 	resMenu = userMenu->addMenu(QIcon(":/images/shutdown.png"),"Reset...");
+	shdMenu = userMenu->addMenu(QIcon(":/images/shader.png"), "Shaders");
 
 	userMenu->addSeparator();
 	userMenu->addAction(QIcon(":/images/tape.png"), "Tape player", this, SIGNAL(s_tape_show()));
@@ -1319,6 +1391,7 @@ void MainWin::initUserMenu() {
 	connect(layoutMenu,SIGNAL(triggered(QAction*)),this,SLOT(chLayout(QAction*)));
 	connect(resMenu,SIGNAL(triggered(QAction*)),this,SLOT(reset(QAction*)));
 	connect(fileMenu,SIGNAL(triggered(QAction*)),this,SLOT(umOpen(QAction*)));
+	connect(shdMenu,SIGNAL(triggered(QAction*)),this,SLOT(shdSelected(QAction*)));
 
 	fileMenu->addAction(QIcon(":/images/memory.png"),"Snapshot")->setData(FG_SNAPSHOT);
 	fileMenu->addAction(QIcon(":/images/tape.png"),"Tape")->setData(FG_TAPE);
@@ -1340,7 +1413,8 @@ void MainWin::initUserMenu() {
 #endif
 }
 
-void MainWin::fillBookmarkMenu() {
+void MainWin::fillUserMenu() {
+	// fill bookmark menu
 	bookmarkMenu->clear();
 	QAction* act;
 	if (conf.bookmarkList.size() == 0) {
@@ -1351,26 +1425,28 @@ void MainWin::fillBookmarkMenu() {
 			act->setData(QVariant(QString::fromLocal8Bit(bkm.path.c_str())));
 		}
 	}
-}
-
-void MainWin::fillProfileMenu() {
+	// fill profile menu
 	profileMenu->clear();
 	foreach(xProfile* prf, conf.prof.list) {
 		profileMenu->addAction(prf->name.c_str())->setData(prf->name.c_str());
 	}
-}
-
-void MainWin::fillLayoutMenu() {
+	// fill layout menu
 	layoutMenu->clear();
 	foreach(xLayout lay, conf.layList) {
 		layoutMenu->addAction(lay.name.c_str())->setData(lay.name.c_str());
 	}
-}
-
-void MainWin::fillUserMenu() {
-	fillBookmarkMenu();
-	fillProfileMenu();
-	fillLayoutMenu();
+	// fill shader menu
+	shdMenu->clear();
+	shdMenu->addAction("none")->setData("");
+#ifdef USEOPENGL
+	if (shd_support) {
+		QDir dir(conf.path.shdDir.c_str());
+		QFileInfoList lst = dir.entryInfoList(QStringList() << "*.txt", QDir::Files, QDir::Name);
+		foreach(QFileInfo inf, lst) {
+			shdMenu->addAction(inf.fileName())->setData(inf.fileName());
+		}
+	}
+#endif
 }
 
 // SLOTS
@@ -1398,6 +1474,9 @@ void MainWin::optApply() {
 			printf("Listening port %i\n", conf.port);
 		}
 	}
+#endif
+#ifdef USEOPENGL
+	loadShader();
 #endif
 	emit s_tape_upd(comp->tape);
 	pause(false, PR_OPTS);

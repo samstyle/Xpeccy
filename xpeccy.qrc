@@ -83,5 +83,6 @@
         <file>images/refresh.png</file>
         <file>images/button-k.png</file>
         <file>images/wav.png</file>
+        <file>images/shader.png</file>
     </qresource>
 </RCC>
