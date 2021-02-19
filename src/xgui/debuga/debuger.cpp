@@ -1146,9 +1146,9 @@ void dbgNesConvertColors(Video* vid, unsigned char* buf, QImage& img, int trn) {
 			col = vid->ram[0x3f00 | (colidx & 0x3f)];
 			xcol = nesPal[col & 0x3f];
 			if (trn && !(colidx & 3)) {
-				img.setPixelColor(x, y, QColor(255, 0, 0, 0));
+				img.setPixel(x, y, qRgba(255, 0, 0, 0));
 			} else {
-				img.setPixelColor(x, y, QColor(xcol.r, xcol.g, xcol.b, 0xff));
+				img.setPixel(x, y, qRgba(xcol.r, xcol.g, xcol.b, 0xff));
 			}
 			adr++;
 		}

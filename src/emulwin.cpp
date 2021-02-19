@@ -41,6 +41,11 @@
 #define	XPTITLE	STR(Xpeccy VERSION)
 #endif
 
+#if defined(__WIN32)
+#include <windows.h>
+#include <winuser.h>
+#endif
+
 // main
 
 static QImage alphabet;
@@ -332,6 +337,24 @@ void MainWin::mapJoystick(Computer* comp, int type, int num, int st) {
 
 static QList<int> fpsmem;
 
+#if defined(__WIN32)
+
+static struct {
+	int vkey;
+	int state;
+	int qkey;		// Qt::Key
+	qint32 nCode;		// nativeScanCode = XKEY_* on windows
+} win_mod_tab[6] = {
+	{VK_RSHIFT, 0, Qt::Key_Shift, XKEY_RSHIFT},
+	{VK_LSHIFT, 0, Qt::Key_Shift, XKEY_LSHIFT},
+	{VK_RCONTROL, 0, Qt::Key_Control, XKEY_RCTRL},
+	{VK_LCONTROL, 0, Qt::Key_Control, XKEY_LCTRL},
+	{VK_RMENU, 0, Qt::Key_Alt, XKEY_RALT},
+	{VK_LMENU, 0, Qt::Key_Alt, XKEY_LALT}
+};
+
+#endif
+
 void MainWin::timerEvent(QTimerEvent* ev) {
 // fps (200 ms)
 	if (ev->timerId() == secid) {		// 0.2 sec timer
@@ -415,6 +438,23 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 		}
 // satelites
 		updateSatellites();
+#if defined(__WIN32)
+		int state;
+		QKeyEvent* ev;
+		// events: nativeScanCode = 0, nativeVirtualKey = XKEY_*
+		for (int i = 0; i < 6; i++) {
+			state = GetKeyState(win_mod_tab[i].vkey) & 0x8000;
+			if (state != win_mod_tab[i].state) {	// state changed
+				if (state) {			// press
+					ev = new QKeyEvent(QKeyEvent::KeyPress, win_mod_tab[i].qkey, Qt::NoModifier, 0, win_mod_tab[i].nCode, 0);
+				} else {			// release
+					ev = new QKeyEvent(QKeyEvent::KeyRelease, win_mod_tab[i].qkey, Qt::NoModifier, 0, win_mod_tab[i].nCode, 0);
+				}
+				QApplication::postEvent(this, ev);
+				win_mod_tab[i].state = state;
+			}
+		}
+#endif
 	}
 }
 
@@ -692,12 +732,20 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				keyid = shortcut_check(SCG_MAIN, QKeySequence(ev->key() | ev->modifiers()));
 		}
 		if (keyid < 0) {
-#if defined(__linux) || defined(_WIN32)
+#if defined(__linux)
 			keyid = ev->nativeScanCode();
+#elif defined(__WIN32)
+			keyid = ev->nativeScanCode();
+			if (keyid == 0) {
+				keyid = ev->nativeVirtualKey();
+			} else if ((ev->key() == Qt::Key_Shift) || (ev->key() == Qt::Key_Control) || (ev->key() == Qt::Key_Alt)) {
+				keyid = 0;
+			}
 #else
 			keyid = qKey2id(ev->key());
 #endif
 		}
+//		printf("press: %i\n", keyid);
 		xkey_press(keyid);
 	}
 }
@@ -919,11 +967,19 @@ void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 	if (comp->debug) {
 		ev->ignore();
 	} else {
-#if defined(__linux) || defined(_WIN32)
+#if defined(__linux)
 		keyid = ev->nativeScanCode();
+#elif defined(_WIN32)
+		keyid = ev->nativeScanCode();
+		if (keyid == 0) {
+			keyid = ev->nativeVirtualKey();
+		} else if ((ev->key() == Qt::Key_Shift) || (ev->key() == Qt::Key_Control) || (ev->key() == Qt::Key_Alt)) {
+			keyid = 0;
+		}
 #else
 		keyid = qKey2id(ev->key());
 #endif
+//		printf("release: %i\n", keyid);
 		xkey_release(keyid);
 	}
 }
