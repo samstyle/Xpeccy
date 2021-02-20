@@ -233,6 +233,8 @@ MainWin::~MainWin() {
 #ifdef USEOPENGL
 	delete(vtx_shd);
 	delete(frg_shd);
+	for(int i = 0; i < 4; i++)
+		deleteTexture(texids[i]);
 #endif
 }
 
@@ -953,6 +955,7 @@ void MainWin::xkey_press(int xkey) {
 				emit s_debug(comp);
 				break;
 			case XCUT_MENU:
+				fillUserMenu();
 				userMenu->popup(pos() + QPoint(20,20));
 				userMenu->setFocus();
 				break;
@@ -1096,6 +1099,7 @@ void MainWin::mousePressEvent(QMouseEvent *ev){
 			if (grabMice) {
 				comp->mouse->rmb = 1;
 			} else {
+				fillUserMenu();
 				userMenu->popup(QPoint(ev->globalX(),ev->globalY()));
 				userMenu->setFocus();
 			}
@@ -1437,13 +1441,19 @@ void MainWin::fillUserMenu() {
 	}
 	// fill shader menu
 	shdMenu->clear();
-	shdMenu->addAction("none")->setData("");
+	act = shdMenu->addAction("none");
+	act->setData("");
+	act->setCheckable(true);
+	if (conf.vid.shader.empty()) act->setChecked(true);
 #ifdef USEOPENGL
 	if (shd_support) {
 		QDir dir(conf.path.shdDir.c_str());
 		QFileInfoList lst = dir.entryInfoList(QStringList() << "*.txt", QDir::Files, QDir::Name);
 		foreach(QFileInfo inf, lst) {
-			shdMenu->addAction(inf.fileName())->setData(inf.fileName());
+			act = shdMenu->addAction(inf.fileName());
+			act->setData(inf.fileName());
+			act->setCheckable(true);
+			act->setChecked(inf.fileName() == conf.vid.shader.c_str());
 		}
 	}
 #endif
