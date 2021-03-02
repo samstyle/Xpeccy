@@ -48,10 +48,11 @@ typedef struct {
 	unsigned firq:1;	// frame irq
 	unsigned dirq:1;	// dmc irq
 
-	int wper;		// wave tick = CPU/16
+	int wper;		// wave tick = CPU/2 (:8 duty cycles per period)
 	int wcnt;
 	int wstp;
-	int wdiv;
+	int wdiv;		// frame counter period
+	int fcnt;		// frame counter ticks counter
 	int tstp;
 
 	apuChannel ch0;		// square 0

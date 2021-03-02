@@ -1,5 +1,4 @@
-#ifndef X_FLOPPY_H
-#define	X_FLOPPY_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -7,11 +6,9 @@ extern "C" {
 
 //#include <stdint.h>
 
-#define TRACKLEN 6250
+#define TRACKLEN 6500 // 6250
 // disk type
 #define DISK_TYPE_TRD	1
-// get
-#define	FLP_DISKTYPE	10
 
 // error
 enum {
@@ -87,6 +84,4 @@ unsigned short getCrc(unsigned char*, int);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

@@ -24,6 +24,7 @@
 
 #if defined(__WIN32)
 #include <windows.h>
+#include <conio.h>
 #endif
 
 void help() {
@@ -252,7 +253,6 @@ int main(int ac,char** av) {
 		app.setStyle(QStyleFactory::create("Fusion"));
 	}
 #endif
-
 	if (!hlp) {
 		mwin.updateWindow();
 		mwin.checkState();
@@ -270,6 +270,7 @@ int main(int ac,char** av) {
 	conf.running = 0;
 	sndClose();
 #if defined(__WIN32)
+	getch();
 	FreeConsole();
 #endif
 	return 0;

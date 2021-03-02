@@ -235,15 +235,17 @@ void flpFillFields(Floppy* flp,int tr, int flag) {
 				}
 			}
 		} else {
-			switch (flp->data[tr].byte[i]) {
-				case 0xfe:			// head
+			switch (flp->data[tr].byte[i] & 0xfe) {
+				case 0xfe:			// fe/ff : IDAM, head
 					cpos = bpos;
 					fld = 0x01;
 					bcnt = 4;
 					scn = flp->data[tr].byte[i+3];
 					sct = flp->data[tr].byte[i+4];
 					break;
-				case 0xfb:			// data
+				// case 0xfc:			// fc/fd : IAM, index marker
+				//	break
+				case 0xfa:			// fa/fb : DAM, data
 					cpos = bpos;
 					fld = 0x02;
 					bcnt = (128 << (sct & 3));
@@ -252,7 +254,7 @@ void flpFillFields(Floppy* flp,int tr, int flag) {
 						scn = 0;
 					}
 					break;
-				case 0xf8:			// deleted data
+				case 0xf8:			// f8/f9 : DDAM, deleted data
 					cpos = bpos;
 					fld = 0x03;
 					bcnt = (128 << (sct & 3));

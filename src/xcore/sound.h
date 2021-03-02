@@ -9,7 +9,6 @@
 	#include <fcntl.h>
 #endif
 
-#include "sound.h"
 #include "xcore.h"
 
 enum xSoundOutput {
@@ -44,4 +43,5 @@ int snd_wav_open(const char*);
 void snd_wav_close();
 void snd_wav_write();
 
+std::string sndGetName();
 void sndDebug();

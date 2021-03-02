@@ -596,9 +596,7 @@ void SetupWin::apply() {
 		conf.vid.shader = std::string(ui.cbShader->currentText().toLocal8Bit().data());
 	}
 // sound
-	std::string nname = getRFText(ui.outbox);
 	conf.snd.enabled = ui.senbox->isChecked() ? 1 : 0;
-	conf.snd.rate = getRFIData(ui.ratbox);
 
 	conf.snd.vol.master = ui.sbMasterVol->value();
 	conf.snd.vol.beep = ui.sbBeepVol->value();
@@ -608,7 +606,13 @@ void SetupWin::apply() {
 	conf.snd.vol.sdrv = ui.sbSdrvVol->value();
 	conf.snd.vol.saa = ui.sbSAAVol->value();
 
-	setOutput(nname.c_str());
+	std::string nname = getRFText(ui.outbox);
+	int rate = getRFIData(ui.ratbox);
+	if ((rate != conf.snd.rate) || (nname != sndGetName())) {
+		conf.snd.rate = rate;
+		setOutput(nname.c_str());
+	}
+
 	comp->ts->chipA->frq = ui.chip1freq->value();
 	comp->ts->chipB->frq = ui.chip2freq->value();
 	comp->ts->chipC->frq = ui.chip3freq->value();

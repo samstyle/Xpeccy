@@ -499,7 +499,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.nesScrType->addItem("BG scr 2", NES_SCR_2);
 	ui.nesScrType->addItem("BG scr 3", NES_SCR_3);
 	ui.nesScrType->addItem("All in 1", NES_SCR_ALL);
-	// ui.nesScrType->addItem("Tiles", NES_SCR_TILES);
+	ui.nesScrType->addItem("Tiles", NES_SCR_TILES);
 
 	ui.nesBGTileset->addItem("Tiles #0000", NES_TILE_0000);
 	ui.nesBGTileset->addItem("Tiles #1000", NES_TILE_1000);
@@ -1158,16 +1158,11 @@ void dbgNesConvertColors(Video* vid, unsigned char* buf, QImage& img, int trn) {
 QImage dbgNesScreenImg(Video* vid, unsigned short adr, unsigned short tadr) {
 	QImage img(256, 240, QImage::Format_RGB888);
 	img.fill(Qt::black);
-	//int x;
-	//unsigned char rendline[256];
 	unsigned char scrmap[256 * 240];
 	memset(scrmap, 0x00, 256 * 240);
 	if (adr != 0) {
 		for(int y = 0; y < 240; y++) {
 			ppuRenderBGLine(vid, scrmap + (y << 8), adr, 0, tadr);
-			//for (x = 0; x < 256; x++) {
-			//	scrmap[(y << 8) + x] = rendline[(x + vid->finex) & 0xff];
-			//}
 			adr = ppuYinc(adr);
 		}
 	}
@@ -1176,7 +1171,7 @@ QImage dbgNesScreenImg(Video* vid, unsigned short adr, unsigned short tadr) {
 }
 
 QImage dbgNesSpriteImg(Video* vid, unsigned short tadr) {
-	QImage img(256, 240, QImage::Format_RGBA8888);
+	QImage img(256, 240, QImage::Format_ARGB32);
 	img.fill(Qt::transparent);
 	unsigned char scrmap[256 * 240];
 	memset(scrmap, 0x00, 256 * 240);
@@ -1199,8 +1194,8 @@ QImage dbgNesTilesImg(Video* vid, unsigned short tadr) {
 	for (y = 0; y < 256; y += 8) {
 		for (x = 0; x < 256; x += 8) {
 			for (lin = 0; lin < 8; lin++) {
-				bt = vid->ram[adr + lin];
-				bt |= (vid->ram[adr + lin + 8] << 8);
+				bt = nes_ppu_ext_rd(adr + lin, conf.prof.cur->zx) & 0xff;
+				bt |= (nes_ppu_ext_rd(adr + lin + 8, conf.prof.cur->zx) << 8) & 0xff00;
 				for (bit = 0; bit < 8; bit++) {
 					col = ((bt >> 7) & 1) | ((bt >> 14) & 2);
 					scrmap[oadr + (lin << 8) + bit] = col;

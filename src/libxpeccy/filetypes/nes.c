@@ -23,7 +23,7 @@ enum {
 	NES_HD_20
 };
 
-static char nesPal[] = "PAL";
+static char nesVPal[] = "PAL";
 static char nesNtsc[] = "NTSC";
 static char nesDendy[] = "Dendy";
 
@@ -122,7 +122,7 @@ int loadNes(Computer* comp, const char* name, int drv) {
 			if (comp->hw->init) comp->hw->init(comp);
 
 			switch(mode) {
-				case NES_PAL: comp->msg = nesPal; break;
+				case NES_PAL: comp->msg = nesVPal; break;
 				case NES_NTSC: comp->msg = nesNtsc; break;
 				case NES_DENDY: comp->msg = nesDendy; break;
 			}

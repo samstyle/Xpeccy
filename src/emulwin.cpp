@@ -446,7 +446,7 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 // satelites
 		updateSatellites();
 #if defined(__WIN32) && STICKY_KEY
-		if (isActiveWindow()) {
+		if (!conf.emu.pause) {		// if not paused (!)
 			int state;
 			QKeyEvent* ev;
 			// events: nativeScanCode = 0, nativeVirtualKey = XKEY_*

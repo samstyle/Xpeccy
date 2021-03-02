@@ -269,6 +269,7 @@ void nes_keyp(Computer*, keyEntry);
 void nes_keyr(Computer*, keyEntry);
 sndPair nes_vol(Computer*, sndVolume*);
 int nes_apu_ext_rd(int, void*);
+int nes_ppu_ext_rd(int, void*);
 
 // c64
 void c64_init(Computer*);

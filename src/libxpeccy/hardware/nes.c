@@ -286,7 +286,7 @@ void nes_init(Computer* comp) {
 			comp->nesapu->wdiv = 3729;
 			break;
 	}
-	comp->nesapu->wper = perNoTurbo << 1;				// 1 APU tick = 2 CPU ticks
+	comp->nesapu->wper = perNoTurbo << 1;				// 1 APU tick = 2 CPU ticks	x2(Fcpu div) x8(duty)
 	comp->cpu->nod = 1;	// no daa in cpu
 }
 
