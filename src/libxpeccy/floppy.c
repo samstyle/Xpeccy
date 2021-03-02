@@ -236,11 +236,9 @@ void flpFillFields(Floppy* flp,int tr, int flag) {
 			}
 		} else {					// TODO: find A1 here, then skip until !A1, this byte will be marker
 			if (flp->data[tr].byte[i] == 0xa1) {
-				do {
-					i++;
-					bpos++;
-				} while ((i < TRACKLEN) && (flp->data[tr].byte[i] == 0xa1));
-				if (i < TRACKLEN) {
+				fld = 0x0f;
+			} else {
+				if (fld == 0x0f) {
 					switch (flp->data[tr].byte[i] & 0xfe) {
 						case 0xfe:			// fe/ff : IDAM, head
 							cpos = bpos;
@@ -268,6 +266,9 @@ void flpFillFields(Floppy* flp,int tr, int flag) {
 								flp->data[tr].map[scn] = i + 1;
 								scn = 0;
 							}
+							break;
+						default:
+							fld = 0;
 							break;
 
 					}
