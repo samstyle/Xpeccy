@@ -22,6 +22,7 @@
 #include "dbg_memfill.h"
 #include "dbg_finder.h"
 #include "dbg_brkpoints.h"
+#include "dbg_diskdump.h"
 
 #include "ui_dumpdial.h"
 #include "ui_openDump.h"

@@ -150,6 +150,7 @@ set(MOCFILES
 	./src/xgui/debuga/dbg_dump.h
 	./src/xgui/debuga/dbg_disasm.h
 	./src/xgui/debuga/dbg_brkpoints.h
+	./src/xgui/debuga/dbg_diskdump.h
 	./src/watcher.h
 	./src/xgui/options/setupwin.h
 	./src/xgui/options/padbinder.h

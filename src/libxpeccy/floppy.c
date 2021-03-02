@@ -234,36 +234,44 @@ void flpFillFields(Floppy* flp,int tr, int flag) {
 					fld = 0;
 				}
 			}
-		} else {
-			switch (flp->data[tr].byte[i] & 0xfe) {
-				case 0xfe:			// fe/ff : IDAM, head
-					cpos = bpos;
-					fld = 0x01;
-					bcnt = 4;
-					scn = flp->data[tr].byte[i+3];
-					sct = flp->data[tr].byte[i+4];
-					break;
-				// case 0xfc:			// fc/fd : IAM, index marker
-				//	break
-				case 0xfa:			// fa/fb : DAM, data
-					cpos = bpos;
-					fld = 0x02;
-					bcnt = (128 << (sct & 3));
-					if (scn > 0) {
-						flp->data[tr].map[scn] = i + 1;
-						scn = 0;
-					}
-					break;
-				case 0xf8:			// f8/f9 : DDAM, deleted data
-					cpos = bpos;
-					fld = 0x03;
-					bcnt = (128 << (sct & 3));
-					if (scn > 0) {
-						flp->data[tr].map[scn] = i + 1;
-						scn = 0;
-					}
-					break;
+		} else {					// TODO: find A1 here, then skip until !A1, this byte will be marker
+			if (flp->data[tr].byte[i] == 0xa1) {
+				do {
+					i++;
+					bpos++;
+				} while ((i < TRACKLEN) && (flp->data[tr].byte[i] == 0xa1));
+				if (i < TRACKLEN) {
+					switch (flp->data[tr].byte[i] & 0xfe) {
+						case 0xfe:			// fe/ff : IDAM, head
+							cpos = bpos;
+							fld = 0x01;
+							bcnt = 4;
+							scn = flp->data[tr].byte[i+3];
+							sct = flp->data[tr].byte[i+4];
+							break;
+						// case 0xfc:			// fc/fd : IAM, index marker
+						//	break
+						case 0xfa:			// fa/fb : DAM, data
+							cpos = bpos;
+							fld = 0x02;
+							bcnt = (128 << (sct & 3));
+							if (scn > 0) {
+								flp->data[tr].map[scn] = i + 1;
+								scn = 0;
+							}
+							break;
+						case 0xf8:			// f8/f9 : DDAM, deleted data
+							cpos = bpos;
+							fld = 0x03;
+							bcnt = (128 << (sct & 3));
+							if (scn > 0) {
+								flp->data[tr].map[scn] = i + 1;
+								scn = 0;
+							}
+							break;
 
+					}
+				}
 			}
 		}
 		bpos++;

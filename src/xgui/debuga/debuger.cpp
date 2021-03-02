@@ -72,7 +72,7 @@ void DebugWin::chaPal() {
 	cot = conf.pal["dbg.header.txt"];
 	QString str = QString("background-color:%0;color:%1").arg(col.name()).arg(cot.name());
 	ui.labHeadCpu->setStyleSheet(str);
-	ui.labHeadDump->setStyleSheet(str);
+	//ui.labHeadDump->setStyleSheet(str);
 	ui.labHeadDisasm->setStyleSheet(str);
 	ui.labHeadMem->setStyleSheet(str);
 	ui.labHeadRay->setStyleSheet(str);
@@ -441,6 +441,10 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.sbDumpPage, SIGNAL(valueChanged(int)), this, SLOT(chDumpView()));
 
 	ui.cbDumpView->setCurrentIndex(0);
+
+	ui.tabDiskDump->setColumnWidth(0, 100);
+	connect(ui.cbDrive, SIGNAL(currentIndexChanged(int)), ui.tabDiskDump, SLOT(setDrive(int)));
+	connect(ui.sbTrack, SIGNAL(valueChanged(int)), ui.tabDiskDump, SLOT(setTrack(int)));
 
 // registers
 	connect(ui.editReg00, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
@@ -1839,7 +1843,8 @@ void DebugWin::dumpChadr(QModelIndex idx) {
 	}
 	if (ui.dumpTable->mode != XVIEW_CPU)
 		adr &= 0x3fff;
-	ui.labHeadDump->setText(QString("Dump : %0").arg(gethexword(adr & 0xffff)));
+	//ui.labHeadDump->setText(QString("Dump : %0").arg(gethexword(adr & 0xffff)));
+	ui.tabsDump->setTabText(0, gethexword(adr & 0xffff));
 }
 
 // maping
