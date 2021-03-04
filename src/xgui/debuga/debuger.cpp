@@ -1310,11 +1310,12 @@ void DebugWin::chLayout() {
 	}
 }
 
-void DebugWin::regClick(QMouseEvent* ev) {
-	xLabel* lab = (xLabel*)sender();
+void DebugWin::regClick(QMouseEvent* ev) {	  
+	xLabel* lab = qobject_cast<xLabel*>(sender());
+	if ( lab == NULL ) return;	
 	int id = lab->id;
-	if (id < 0) return;
-	if (id > 15) return;
+	// Checking id is in range [0..15]
+	if ( !( (id-15)*(id-0) <= 0) ) return;
 	CPU* cpu = comp->cpu;
 	xRegBunch bunch = cpuGetRegs(cpu);
 	xRegister reg = bunch.regs[id];
