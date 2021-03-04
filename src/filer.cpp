@@ -22,11 +22,11 @@ typedef struct {
 } xFileTypeInfo;
 
 typedef struct {
-	int id;
 	const char* defext;
-	int drv;
 	const char* name;
 	xFileTypeInfo* fti;
+	int id;
+	int drv;
 	int child[32];
 } xFileGroupInfo;
 
