@@ -43,8 +43,8 @@ void xMemFiller::mwr(int adr, int val) {
 }
 
 void xMemFiller::fill() {
-	QStringList strl = ui.leBytes->text().split(":",QString::SkipEmptyParts);
-	QStringList strm = ui.leMask->text().split(":",QString::SkipEmptyParts);
+	QStringList strl = ui.leBytes->text().split(":",X_SkipEmptyParts);
+	QStringList strm = ui.leMask->text().split(":",X_SkipEmptyParts);
 	int psiz = strl.size();		// pattern size
 	if (psiz == 0) return;
 	unsigned char pat[8];		// pattern bytes

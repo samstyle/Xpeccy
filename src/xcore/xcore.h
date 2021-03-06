@@ -20,6 +20,20 @@
 
 #define USEMUTEX 0
 
+#if QT_VERSION >= QT_VERSION_CHECK(5,0,0)
+#define yDelta angleDelta().y()
+#else
+#define yDelta delta()
+#endif
+
+#if QT_VERSION >= QT_VERSION_CHECK(5,14,0)
+#define X_SkipEmptyParts Qt::SkipEmptyParts
+#define X_KeepEmptyParts Qt::KeepEmptyParts
+#else
+#define X_SkipEmptyParts QString::SkipEmptyParts
+#define X_KeepEmptyParts QString::KeepEmptyParts
+#endif
+
 // common
 
 std::string getTimeString(int);

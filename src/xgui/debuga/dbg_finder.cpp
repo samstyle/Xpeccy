@@ -33,7 +33,7 @@ void xMemFinder::onTextEdit() {
 void xMemFinder::onBytesEdit() {
 	QString str;
 	int ch;
-	QStringList tlst = ui.leBytes->text().split(":",QString::SkipEmptyParts);
+	QStringList tlst = ui.leBytes->text().split(":",X_SkipEmptyParts);
 	QString sbt;
 	while (!tlst.isEmpty()) {
 		sbt = tlst.takeFirst();
@@ -49,8 +49,8 @@ void xMemFinder::onBytesEdit() {
 
 void xMemFinder::doFind() {
 	ui.labResult->setText("");
-	QStringList strl = ui.leBytes->text().split(":",QString::SkipEmptyParts);
-	QStringList strm = ui.leMask->text().split(":",QString::SkipEmptyParts);
+	QStringList strl = ui.leBytes->text().split(":",X_SkipEmptyParts);
+	QStringList strm = ui.leMask->text().split(":",X_SkipEmptyParts);
 	int psiz = strl.size();
 	if (psiz == 0) return;
 	unsigned char pat[8];

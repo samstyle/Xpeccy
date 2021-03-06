@@ -129,11 +129,11 @@ void DebugWin::start(Computer* c) {
 	}
 	updateScreen();
 
-	int wd = (ui.dasmTable->height() - 2) / ui.dasmTable->rows();
-	ui.dasmTable->verticalHeader()->setDefaultSectionSize(wd);
+//	int wd = (ui.dasmTable->height() - 2) / ui.dasmTable->rows();
+//	ui.dasmTable->verticalHeader()->setDefaultSectionSize(wd);
 
-	wd = (ui.dumpTable->height() - 2) / ui.dumpTable->rows();
-	ui.dumpTable->verticalHeader()->setDefaultSectionSize(wd);
+//	wd = (ui.dumpTable->height() - 2) / ui.dumpTable->rows();
+//	ui.dumpTable->verticalHeader()->setDefaultSectionSize(wd);
 
 	if (memViewer->vis) {
 		memViewer->move(memViewer->winPos);
@@ -490,7 +490,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.tabsPanel, SIGNAL(currentChanged(int)), this, SLOT(fillAll()));
 
 	// setFixedSize(size());
-	setFixedHeight(size().height());
+	// setFixedHeight(size().height());
 	block = 0;
 	// ui.dasmTable->setAdr(0);
 	// ui.dumpTable->setAdr(0);
@@ -1311,7 +1311,7 @@ void DebugWin::chLayout() {
 }
 
 void DebugWin::regClick(QMouseEvent* ev) {
-	xLabel* lab = (xLabel*)sender();
+	xLabel* lab = qobject_cast<xLabel*>(sender());
 	int id = lab->id;
 	if (id < 0) return;
 	if (id > 15) return;
@@ -1517,217 +1517,6 @@ void DebugWin::dbgLLab() {
 	fillDisasm();
 }
 void DebugWin::dbgSLab() {saveLabels(NULL);}
-
-/*
-void DebugWin::loadLabels(QString path) {
-	if (path.isEmpty())
-		path = QFileDialog::getOpenFileName(this, "Load SJASM labels");
-	if (path.isEmpty())
-		return;
-	conf.labels.clear();
-	QString line;
-	QString name;
-	QStringList arr;
-	QFile file(path);
-	xAdr xadr;
-	if (file.open(QFile::ReadOnly)) {
-		while(!file.atEnd()) {
-			line = file.readLine();
-			arr = line.split(QRegExp("[: \r\n]"),QString::SkipEmptyParts);
-			if (arr.size() > 2) {
-				xadr.type = MEM_RAM;
-				xadr.bank = arr.at(0).toInt(NULL,16);
-				xadr.adr = arr.at(1).toInt(NULL,16) & 0x3fff;
-				xadr.abs = (xadr.bank << 14) | xadr.adr;
-				name = arr.at(2);
-				switch (xadr.bank) {
-					case 0xff:
-						xadr.type = MEM_ROM;
-						xadr.bank = -1;
-						break;
-					case 0x05:
-						xadr.adr |= 0x4000;
-						break;
-					case 0x02:
-						xadr.adr |= 0x8000;
-						break;
-					default:
-						xadr.bank = -1;
-						xadr.adr |= 0xc000;
-						break;
-				}
-				conf.labels[name] = xadr;
-			}
-		}
-	} else {
-		shitHappens("Can't open file");
-	}
-}
-
-void DebugWin::saveLabels() {
-	QString path = QFileDialog::getSaveFileName(this, "save SJASM labels");
-	if (path.isEmpty()) return;
-	QStringList keys;
-	QString key;
-	xAdr xadr;
-	QString line;
-	QFile file(path);
-	if (file.open(QFile::WriteOnly)) {
-		keys = conf.labels.keys();
-		foreach(key, keys) {
-			xadr = conf.labels[key];
-			line = (xadr.type == MEM_RAM) ? gethexbyte(xadr.bank) : "FF";
-			line.append(QString(":%0 %1\n").arg(gethexword(xadr.adr & 0x3fff)).arg(key));
-			file.write(line.toUtf8());
-		}
-		file.close();
-	} else {
-		shitHappens("Can't open file for writing");
-	}
-}
-*/
-
-/*
-QString findLabel(int adr, int type, int bank) {
-	QString lab;
-	if (!conf.dbg.labels)
-		return lab;
-	QString key;
-	xAdr xadr;
-	QStringList keys = conf.labels.keys();
-	foreach(key, keys) {
-		xadr = conf.labels[key];
-		if (!((xadr.adr ^ adr) & 0x3fff) \
-				&& ((type < 0) || (xadr.type < 0) || (type == xadr.type))\
-				&& ((bank < 0) || (xadr.bank < 0) || (bank == xadr.bank))) {
-			lab = key;
-			break;
-		}
-	}
-	return lab;
-}
-*/
-
-// map
-
-/*
-
-void fwritepack(QDataStream& strm, unsigned char* data, int size) {
-	QByteArray pack = qCompress(data, size);
-	strm << pack;
-}
-
-void freadpack(QDataStream& strm, unsigned char* data, int maxsize) {
-	QByteArray pack;
-	strm >> pack;
-	QByteArray unpk = qUncompress(pack);
-	int size = unpk.size();
-	if (size > maxsize) size = maxsize;
-	memcpy(data, unpk.data(), size);
-}
-
-void strmLabels(QDataStream& strm) {
-	QStringList keys = conf.labels.keys();
-	QString key;
-	xAdr xadr;
-	foreach(key, keys) {			// labels list
-		xadr = conf.labels[key];
-		strm << xadr.type;
-		strm << xadr.bank;
-		strm << xadr.adr;
-		strm << key;
-	}
-	strm << 0x00 << 0x00 << 0x00;		// end of labels list
-	strm << QString();
-}
-
-void strdLabels(QDataStream& strm) {
-	xAdr xadr;
-	QString key;
-	conf.labels.clear();
-	do {
-		strm >> xadr.type;
-		strm >> xadr.bank;
-		strm >> xadr.adr;
-		strm >> key;
-		if (!key.isEmpty()) {
-			conf.labels[key] = xadr;
-		}
-	} while (!key.isEmpty());
-}
-
-#define XDBGVER 0x00
-
-void DebugWin::saveMap() {
-	QString path = QFileDialog::getSaveFileName(this, "Save deBUGa project","","deBUGa project (*.xdbg)");
-	if (path.isEmpty()) return;
-	if (!path.endsWith(".xdbg",Qt::CaseInsensitive))
-		path.append(".xdbg");
-	QFile file(path);
-	if (file.open(QFile::WriteOnly)) {
-		QDataStream strm(&file);
-#if 1
-		strm << QString("XDBG");		// [new] signature
-		strm << XDBGVER;			// version
-		strmLabels(strm);
-		int bit = 3;				// b0:ram cells, b1:rom cells, b2:slt cells
-		if (comp->slot->brkMap)
-			bit |= 4;
-		strm << bit;
-		fwritepack(strm, comp->brkRamMap, 0x400000);
-		fwritepack(strm, comp->brkRomMap, 0x80000);
-		if (bit & 4)
-			fwritepack(strm, comp->slot->brkMap, comp->slot->memMask + 1);
-#else
-
-		strm << QString("deBUGa");		// signature
-		strmLabels(strm);
-		fwritepack(strm, comp->brkRamMap, 0x400000);
-		fwritepack(strm, comp->brkRomMap, 0x80000);
-#endif
-		file.close();
-	}
-}
-
-void DebugWin::loadMap() {
-	QString path = QFileDialog::getOpenFileName(this, "Open deBUGa project","","deBUGa project (*.xdbg)");
-	if (path.isEmpty()) return;
-	QFile file(path);
-	QString key;
-	int bt;
-	if (file.open(QFile::ReadOnly)) {
-		QDataStream strm(&file);
-		strm >> key;
-		if (key == QString("deBUGa")) {		// old data
-			strdLabels(strm);
-			freadpack(strm, comp->brkRamMap, 0x400000);
-			freadpack(strm, comp->brkRomMap, 0x400000);
-		} else if (key == QString("XDBG")) {	// new data
-			strm >> bt;
-			if (bt > XDBGVER) {
-				shitHappens("Version mismatch");
-			} else {
-				strdLabels(strm);
-				strm >> bt;
-				memset(comp->brkRamMap, 0x00, 0x400000);
-				memset(comp->brkRomMap, 0x00, 0x80000);
-				if (comp->slot->brkMap) memset(comp->slot->brkMap, 0x00, comp->slot->memMask + 1);
-				if (bt & 1)
-					freadpack(strm, comp->brkRamMap, 0x400000);
-				if (bt & 2)
-					freadpack(strm, comp->brkRomMap, 0x80000);
-				if ((bt & 4) && comp->slot->brkMap)
-					freadpack(strm, comp->slot->brkMap, comp->slot->memMask + 1);
-			}
-		} else {
-			shitHappens("Wrong signature");
-		}
-		file.close();
-		brkInstallAll();
-		fillAll();
-	}
-}
-*/
 
 // disasm table
 
@@ -2216,9 +2005,13 @@ void DebugWin::editBrk() {
 	brkManager->edit(brk);
 }
 
+bool qmidx_greater(const QModelIndex idx1, const QModelIndex idx2) {
+	return (idx1.row() > idx2.row());
+}
+
 void DebugWin::delBrk() {
 	QModelIndexList idxl = ui.bpList->selectionModel()->selectedRows();
-	std::sort(idxl.begin(), idxl.end(), qGreater<QModelIndex>());
+	std::sort(idxl.begin(), idxl.end(), qmidx_greater); // qGreater<QModelIndex>());
 	QModelIndex idx;
 	xBrkPoint brk;
 	foreach(idx, idxl) {
@@ -2342,7 +2135,7 @@ void DebugWin::openBrk() {
 			if (!line.startsWith(";")) {
 				b0 = true;
 				b1 = true;
-				list = line.split(":", QString::KeepEmptyParts);
+				list = line.split(":", X_KeepEmptyParts);
 				while(list.size() < 4)
 					list.append(QString());
 				brk.fetch = list.at(3).contains("F") ? 1 : 0;

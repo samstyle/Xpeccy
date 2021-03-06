@@ -25,7 +25,7 @@ int loadLabels(const char* fn) {
 				line = file.readLine();
 				if (line.startsWith(":"))
 					line.prepend("FF");
-				arr = line.split(QRegExp("[: \r\n]"),QString::SkipEmptyParts);
+				arr = line.split(QRegExp("[: \r\n]"),X_SkipEmptyParts);
 				if (arr.size() > 2) {
 					xadr.type = MEM_RAM;
 					xadr.bank = arr.at(0).toInt(NULL,16);

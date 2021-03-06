@@ -76,7 +76,7 @@ int main(int ac,char** av) {
 	printf("Using Qt ver %s\n",qVersion());
 
 // this works since Qt5.6 (must be set before QCoreApplication is created)
-	#if QT_VERSION >= 0x050600
+	#if QT_VERSION >= QT_VERSION_CHECK(5,6,0)
 		QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 		QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 	#endif

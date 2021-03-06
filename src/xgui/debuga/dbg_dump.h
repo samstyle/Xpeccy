@@ -1,11 +1,11 @@
-#ifndef X_DBG_DUMP_H
-#define X_DBG_DUMP_H
+#pragma once
 
 #include <QTableView>
 #include <QAbstractTableModel>
 #include <QKeyEvent>
 #include <QWheelEvent>
 #include <QMouseEvent>
+#include <QHeaderView>
 
 #include "libxpeccy/spectrum.h"
 
@@ -36,6 +36,7 @@ class xDumpModel : public QAbstractTableModel {
 		int dmpadr;
 		void setComp(Computer**);
 		void setMode(int, int);
+		void setRows(int);
 		int rowCount(const QModelIndex& = QModelIndex()) const;
 		int columnCount(const QModelIndex& = QModelIndex()) const;
 		Qt::ItemFlags flags(const QModelIndex&) const;
@@ -54,6 +55,7 @@ class xDumpModel : public QAbstractTableModel {
 		int mode;
 		int view;
 		int page;
+		int row_count;
 		int mrd(int) const;
 		void mwr(int, unsigned char);
 };
@@ -78,11 +80,11 @@ class xDumpTable:public QTableView {
 	private:
 		xDumpModel* model;
 		int markAdr;
+		int row_count;
 		void keyPressEvent(QKeyEvent*);
 		void mousePressEvent(QMouseEvent*);
 		void mouseMoveEvent(QMouseEvent*);
 		void mouseReleaseEvent(QMouseEvent*);
 		void wheelEvent(QWheelEvent*);
+		void resizeEvent(QResizeEvent*);
 };
-
-#endif

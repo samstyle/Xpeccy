@@ -30,7 +30,7 @@ MemViewer::MemViewer(QWidget* p):QDialog(p) {
 
 void MemViewer::wheelEvent(QWheelEvent* ev) {
 	int adr = ui.adrHex->getValue();
-	if (ev->delta() < 0) {
+	if (ev->yDelta < 0) {
 		adr += (ui.sbWidth->value() << 3);
 	} else {
 		adr -= (ui.sbWidth->value() << 3);

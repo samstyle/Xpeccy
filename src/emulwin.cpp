@@ -28,7 +28,7 @@
 
 #define STICKY_KEY 1
 
-#if QT_VERSION >= 0x050e00
+#if QT_VERSION >= QT_VERSION_CHECK(5,14,0)
 #include <QScreen>
 #define SCREENSIZE screen()->size()
 #else
@@ -197,7 +197,9 @@ MainWin::MainWin() {
 	secid = startTimer(200);
 
 	connect(&frm_tmr, SIGNAL(timeout()), this, SLOT(frame_timer()));
+#if QT_VERSION >= QT_VERSION_CHECK(5,0,0)
 	frm_tmr.setTimerType(Qt::PreciseTimer);
+#endif
 	frm_tmr.start(20);
 
 	connect(userMenu,SIGNAL(aboutToShow()),SLOT(menuShow()));
@@ -1152,9 +1154,9 @@ void MainWin::wheelEvent(QWheelEvent* ev) {
 	}
 	if (grabMice) {
 		if (comp->mouse->hasWheel)
-			mousePress(comp->mouse, (ev->angleDelta().y() < 0) ? XM_WHEELDN : XM_WHEELUP, 0);
+			mousePress(comp->mouse, (ev->yDelta < 0) ? XM_WHEELDN : XM_WHEELUP, 0);
 	} else {
-		if (ev->angleDelta().y() < 0) {
+		if (ev->yDelta < 0) {
 			conf.snd.vol.master -= 5;
 			if (conf.snd.vol.master < 0)
 				conf.snd.vol.master = 0;
@@ -1170,18 +1172,26 @@ void MainWin::wheelEvent(QWheelEvent* ev) {
 static int dumove = 0;
 
 void MainWin::mouseMoveEvent(QMouseEvent *ev) {
-	QSize rct;
 	if (!grabMice || conf.emu.pause) return;
 	if (dumove) {			// it was dummy move to center of screen
 		dumove = 0;
 	} else {
-		rct = SCREENSIZE;
+#if 1
+		QPoint dpos = pos() + QPoint(width()/2, height()/2);
+		comp->mouse->xpos += ev->globalX() - dpos.x();
+		comp->mouse->ypos -= ev->globalY() - dpos.y();
+		dumove = 1;
+		cursor().setPos(dpos);
+		// qDebug() << cursor().pos();
+#else
+		QSize rct = SCREENSIZE;
 		rct.setWidth(rct.width() / 2);
 		rct.setHeight(rct.height() / 2);
 		comp->mouse->xpos += ev->globalX() - rct.width();
 		comp->mouse->ypos -= ev->globalY() - rct.height();
 		dumove = 1;
 		cursor().setPos(rct.width(), rct.height());
+#endif
 	}
 }
 
@@ -1544,7 +1554,9 @@ void MainWin::chLayout(QAction* act) {
 }
 
 void MainWin::umOpen(QAction* act) {
+	pause(true, PR_FILE);
 	load_file(comp, NULL, act->data().toInt(), -1);
+	pause(false, PR_FILE);
 }
 
 // socket

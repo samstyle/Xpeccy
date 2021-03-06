@@ -499,9 +499,9 @@ void initFileDialog(QWidget* par) {
 	filer = new QFileDialog(par);
 	filer->setWindowIcon(QIcon(":/images/logo.png"));
 	filer->setWindowModality(Qt::ApplicationModal);
-	filer->setNameFilterDetailsVisible(true);
-	filer->setConfirmOverwrite(true);
-	filer->setOption(QFileDialog::DontUseNativeDialog, 1);
+	filer->setOption(QFileDialog::HideNameFilterDetails, false);
+	filer->setOption(QFileDialog::DontConfirmOverwrite, false);
+	filer->setOption(QFileDialog::DontUseNativeDialog, true);
 }
 
 int saveChangedDisk(Computer* comp,int id) {

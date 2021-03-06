@@ -964,7 +964,7 @@
         <number>17</number>
        </attribute>
        <attribute name="verticalHeaderDefaultSectionSize">
-        <number>17</number>
+        <number>20</number>
        </attribute>
       </widget>
      </item>
@@ -1046,7 +1046,7 @@
            <property name="minimumSize">
             <size>
              <width>380</width>
-             <height>250</height>
+             <height>0</height>
             </size>
            </property>
            <property name="font">
@@ -1103,10 +1103,10 @@
             <number>17</number>
            </attribute>
            <attribute name="verticalHeaderDefaultSectionSize">
-            <number>17</number>
+            <number>20</number>
            </attribute>
            <attribute name="verticalHeaderStretchLastSection">
-            <bool>true</bool>
+            <bool>false</bool>
            </attribute>
           </widget>
          </item>
@@ -3191,11 +3191,11 @@
  </resources>
  <connections/>
  <buttongroups>
+  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
-  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

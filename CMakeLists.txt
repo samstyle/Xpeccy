@@ -1,12 +1,19 @@
 cmake_minimum_required(VERSION 2.8.11)
 
+#compiler settings
+
+#set(CMAKE_CXX_STANDARD 11)
+#set(CMAKE_CXX_STANDARD_REQUIRED ON)
+#set(CMAKE_CXX_EXTENSIONS OFF)
+#set(CMAKE_C_COMPILER gcc)
+#set(CMAKE_CXX_COMPILER g++)
+
+# common
+
 set(PROJECT_NAME "xpeccy")
 project(${PROJECT_NAME})
 
 file(STRINGS "Release" XVER)
-
-#set(CMAKE_C_COMPILER gcc)
-#set(CMAKE_CXX_COMPILER g++)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
@@ -119,7 +126,7 @@ set(INCLUDIRS
 	./src/libxpeccy/sound
 	./src/libxpeccy/video
 	./src/libxpeccy/filetypes
-	)
+)
 
 # sources
 file(GLOB_RECURSE SOURCES

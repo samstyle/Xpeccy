@@ -26,6 +26,7 @@ extern unsigned short adr_of_reg(CPU* cpu, bool* flag, QString nam);
 xDisasmModel::xDisasmModel(QObject* p):QAbstractTableModel(p) {
 	cptr = NULL;
 	disasmAdr = 0;
+	row_count = 25;
 }
 
 int xDisasmModel::columnCount(const QModelIndex&) const {
@@ -33,7 +34,20 @@ int xDisasmModel::columnCount(const QModelIndex&) const {
 }
 
 int xDisasmModel::rowCount(const QModelIndex&) const {
-	return 25;
+	return row_count;
+}
+
+void xDisasmModel::setRows(int r) {
+	if (r < row_count) {
+		emit beginRemoveRows(QModelIndex(), r, row_count);
+		row_count = r;
+		emit endRemoveRows();
+	} else if (r > row_count) {
+		emit beginInsertRows(QModelIndex(), row_count, r);
+		row_count = r;
+		emit endInsertRows();
+		fill();
+	}
 }
 
 QVariant xDisasmModel::data(const QModelIndex& idx, int role) const {
@@ -667,12 +681,25 @@ xDisasmTable::xDisasmTable(QWidget* p):QTableView(p) {
 void xDisasmTable::resizeEvent(QResizeEvent* ev) {
 	int wid = ev->size().width();
 	QFontMetrics qfm(font());
+#if QT_VERSION >= QT_VERSION_CHECK(5,11,0)
+	int adw = qfm.horizontalAdvance("000:00:0000") + 10;
+	int btw = qfm.horizontalAdvance("0000000000") + 10;
+#else
 	int adw = qfm.width("000:00:0000") + 10;
 	int btw = qfm.width("0000000000") + 10;
+#endif
 	setColumnWidth(0, adw);
 	setColumnWidth(1, btw);
 	setColumnWidth(2, wid - adw - btw - 50);
 	setColumnWidth(3, 50);
+
+	int h = ev->size().height();
+	int rh = verticalHeader()->defaultSectionSize();
+	int rc = h / rh;
+	// if (h % rh != 0) rc++;
+	model->setRows(rc);
+	updContent();
+
 }
 
 QVariant xDisasmTable::getData(int row, int col, int role) {
@@ -839,8 +866,9 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			adr = model->dasm[idx.row()].oadr;
 			if (adr < 0) break;
 			history.append(model->disasmAdr);
-			model->disasmAdr = adr & 0xffff;
+			model->setData(model->index(idx.row(), 0), gethexword(adr & 0xffff).prepend("0x"), Qt::EditRole);
 			updContent();
+			setCurrentIndex(idx);
 			break;
 		case XCUT_RETFROM:
 			if (history.size() < 1) break;
@@ -938,9 +966,9 @@ void xDisasmTable::scrolUp(Qt::KeyboardModifiers mod) {
 }
 
 void xDisasmTable::wheelEvent(QWheelEvent* ev) {
-	if (ev->angleDelta().y() < 0) {
+	if (ev->yDelta < 0) {
 		scrolDn(ev->modifiers());
-	} else if (ev->angleDelta().y() > 0) {
+	} else if (ev->yDelta > 0) {
 		scrolUp(ev->modifiers());
 	}
 }

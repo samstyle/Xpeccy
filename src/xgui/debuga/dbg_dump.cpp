@@ -111,6 +111,7 @@ xDumpModel::xDumpModel(QObject* par):QAbstractTableModel(par) {
 	mode = XVIEW_CPU;
 	page = 0;
 	dmpadr = 0;
+	row_count = 11;
 }
 
 void xDumpModel::setComp(Computer** ptr) {
@@ -128,8 +129,20 @@ void xDumpModel::setView(int t) {
 	update();
 }
 
+void xDumpModel::setRows(int r) {
+	if (r < row_count) {
+		emit beginRemoveRows(QModelIndex(), r, row_count);
+		row_count = r;
+		emit endRemoveRows();
+	} else if (r > row_count) {
+		emit beginInsertRows(QModelIndex(), row_count, r);
+		row_count = r;
+		emit endInsertRows();
+	}
+}
+
 int xDumpModel::rowCount(const QModelIndex&) const {
-	return 11;
+	return row_count;
 }
 
 int xDumpModel::columnCount(const QModelIndex&) const {
@@ -373,6 +386,15 @@ int xDumpTable::getAdr() {
 	return model->dmpadr;
 }
 
+void xDumpTable::resizeEvent(QResizeEvent* ev) {
+	int h = ev->size().height();
+	if (h < 1) return;
+	int rh = verticalHeader()->defaultSectionSize();
+	int rc = h / rh;
+	model->setRows(rc);
+	update();
+}
+
 void xDumpTable::keyPressEvent(QKeyEvent* ev) {
 	QModelIndex idx = currentIndex();
 	switch(ev->key()) {
@@ -492,10 +514,10 @@ void xDumpTable::mouseMoveEvent(QMouseEvent* ev) {
 }
 
 void xDumpTable::wheelEvent(QWheelEvent* ev) {
-	if (ev->angleDelta().y() < 0) {
+	if (ev->yDelta < 0) {
 		model->dmpadr += 8;
 		emit rqRefill();
-	} else if (ev->angleDelta().y() > 0) {
+	} else if (ev->yDelta > 0) {
 		model->dmpadr -= 8;
 		emit rqRefill();
 	}
