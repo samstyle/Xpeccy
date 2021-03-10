@@ -1,5 +1,4 @@
-#ifndef X_FDC_H
-#define X_FDC_H
+#pragma once
 
 #include <stdlib.h>
 #include "floppy.h"
@@ -116,5 +115,3 @@ int difIn(DiskIF*, int, int*, int);
 void difSetHW(DiskIF*, int);
 
 void add_crc_16(FDC*, unsigned char);
-
-#endif

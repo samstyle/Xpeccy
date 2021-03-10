@@ -1,5 +1,4 @@
-#ifndef _LIBXPECCY_HARDWARE
-#define _LIBXPECCY_HARDWARE
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -309,6 +308,4 @@ sndPair spc_vol(Computer*, sndVolume*);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

@@ -6,6 +6,7 @@ extern "C" {
 
 #include <stddef.h>
 
+#include "vidcommon.h"
 #include "../memory.h"
 
 typedef struct Video Video;

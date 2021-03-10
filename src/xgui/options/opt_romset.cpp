@@ -94,11 +94,11 @@ QVariant xRomsetModel::data(const QModelIndex& idx, int role) const {
 			switch(col) {
 				case 0:
 					if (row < rlsz) {
-						res = trUtf8("ROM");
+						res = "ROM";
 					} else if (row == rlsz) {
-						res = trUtf8("GS");
+						res = "GS";
 					} else {
-						res = trUtf8("Font");
+						res = "Font";
 					}
 					break;
 				case 1:

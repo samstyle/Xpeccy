@@ -1,9 +1,8 @@
-#ifndef X_OPT_DISKCAT_H
-#define X_OPT_DISKCAT_H
+#pragma once
 
 #include <QAbstractTableModel>
 #include <QTableView>
-#include "filetypes/filetypes.h"
+#include "../../libxpeccy/filetypes/filetypes.h"
 
 class xDiskCatModel : public QAbstractTableModel {
 	Q_OBJECT
@@ -28,5 +27,3 @@ class xDiskCatTable : public QTableView {
 	private:
 		xDiskCatModel* model;
 };
-
-#endif

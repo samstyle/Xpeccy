@@ -1,5 +1,4 @@
-#ifndef _DBG_FINDER_H
-#define _DBG_FINDER_H
+#pragma once
 
 #include <QDialog>
 #include "../xgui.h"
@@ -21,5 +20,3 @@ class xMemFinder : public QDialog {
 		void onTextEdit();
 		void doFind();
 };
-
-#endif

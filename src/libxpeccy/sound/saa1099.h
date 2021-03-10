@@ -1,5 +1,4 @@
-#ifndef SAA1099_H
-#define SAA1099_H
+#pragma once
 
 #include "sndcommon.h"
 
@@ -71,5 +70,3 @@ void saaSync(saaChip*, int);
 sndPair saaGetVolume(saaChip*);
 // void saaFlush(saaChip*);
 sndPair saaVolume(saaChip*);
-
-#endif

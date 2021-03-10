@@ -1,5 +1,4 @@
-#ifndef X_SNDCOMMON_H
-#define X_SNDCOMMON_H
+#pragma once
 
 typedef  struct {
 	int master;
@@ -33,5 +32,3 @@ void bcDestroy(bitChan*);
 void bcSync(bitChan*, int);
 
 sndPair mixer(sndPair, sndPair);
-
-#endif

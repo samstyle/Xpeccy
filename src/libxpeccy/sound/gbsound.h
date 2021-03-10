@@ -1,5 +1,4 @@
-#ifndef _GBSOUND_H
-#define _GBSOUND_H
+#pragma once
 
 #include "sndcommon.h"
 
@@ -56,5 +55,3 @@ gbSound* gbsCreate();
 void gbsDestroy(gbSound*);
 void gbsSync(gbSound*, int);
 sndPair gbsVolume(gbSound*);
-
-#endif

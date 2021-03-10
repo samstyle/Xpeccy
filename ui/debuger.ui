@@ -6,13 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>918</width>
-    <height>689</height>
+    <width>885</width>
+    <height>652</height>
    </rect>
   </property>
   <property name="font">
    <font>
     <family>DejaVu Sans Mono</family>
+    <pointsize>9</pointsize>
    </font>
   </property>
   <property name="windowTitle">
@@ -22,7 +23,10 @@
    <iconset resource="../xpeccy.qrc">
     <normaloff>:/images/bug.png</normaloff>:/images/bug.png</iconset>
   </property>
-  <layout class="QGridLayout" name="gridLayout_7" columnstretch="0,10,2,0">
+  <property name="modal">
+   <bool>true</bool>
+  </property>
+  <layout class="QGridLayout" name="gridLayout_7" columnstretch="0,10,2,1">
    <item row="0" column="0">
     <layout class="QVBoxLayout" name="verticalLayout_9" stretch="0,1">
      <item>
@@ -37,6 +41,12 @@
      </item>
      <item>
       <layout class="QFormLayout" name="formLayout">
+       <property name="horizontalSpacing">
+        <number>0</number>
+       </property>
+       <property name="verticalSpacing">
+        <number>2</number>
+       </property>
        <item row="0" column="0">
         <widget class="xLabel" name="labReg00">
          <property name="text">
@@ -318,35 +328,35 @@
          </property>
         </widget>
        </item>
-       <item row="16" column="0">
+       <item row="17" column="0">
         <widget class="QLabel" name="label_8">
          <property name="text">
           <string>IFF1</string>
          </property>
         </widget>
        </item>
-       <item row="16" column="1">
+       <item row="17" column="1">
         <widget class="QCheckBox" name="flagIFF1">
          <property name="text">
           <string/>
          </property>
         </widget>
        </item>
-       <item row="17" column="0">
+       <item row="18" column="0">
         <widget class="QLabel" name="label_11">
          <property name="text">
           <string>IFF2</string>
          </property>
         </widget>
        </item>
-       <item row="17" column="1">
+       <item row="18" column="1">
         <widget class="QCheckBox" name="flagIFF2">
          <property name="text">
           <string/>
          </property>
         </widget>
        </item>
-       <item row="18" column="0">
+       <item row="20" column="0">
         <widget class="QLabel" name="labF7">
          <property name="text">
           <string>S</string>
@@ -356,7 +366,7 @@
          </property>
         </widget>
        </item>
-       <item row="18" column="1">
+       <item row="20" column="1">
         <widget class="QCheckBox" name="cbF7">
          <property name="maximumSize">
           <size>
@@ -372,7 +382,7 @@
          </attribute>
         </widget>
        </item>
-       <item row="19" column="0">
+       <item row="21" column="0">
         <widget class="QLabel" name="labF6">
          <property name="text">
           <string>Z</string>
@@ -382,7 +392,7 @@
          </property>
         </widget>
        </item>
-       <item row="19" column="1">
+       <item row="21" column="1">
         <widget class="QCheckBox" name="cbF6">
          <property name="maximumSize">
           <size>
@@ -398,7 +408,7 @@
          </attribute>
         </widget>
        </item>
-       <item row="20" column="0">
+       <item row="22" column="0">
         <widget class="QLabel" name="labF5">
          <property name="text">
           <string>5</string>
@@ -408,7 +418,7 @@
          </property>
         </widget>
        </item>
-       <item row="20" column="1">
+       <item row="22" column="1">
         <widget class="QCheckBox" name="cbF5">
          <property name="maximumSize">
           <size>
@@ -424,7 +434,7 @@
          </attribute>
         </widget>
        </item>
-       <item row="21" column="0">
+       <item row="23" column="0">
         <widget class="QLabel" name="labF4">
          <property name="text">
           <string>H</string>
@@ -434,7 +444,7 @@
          </property>
         </widget>
        </item>
-       <item row="21" column="1">
+       <item row="23" column="1">
         <widget class="QCheckBox" name="cbF4">
          <property name="maximumSize">
           <size>
@@ -450,7 +460,7 @@
          </attribute>
         </widget>
        </item>
-       <item row="22" column="0">
+       <item row="24" column="0">
         <widget class="QLabel" name="labF3">
          <property name="text">
           <string>3</string>
@@ -460,7 +470,7 @@
          </property>
         </widget>
        </item>
-       <item row="22" column="1">
+       <item row="24" column="1">
         <widget class="QCheckBox" name="cbF3">
          <property name="maximumSize">
           <size>
@@ -476,7 +486,7 @@
          </attribute>
         </widget>
        </item>
-       <item row="23" column="0">
+       <item row="25" column="0">
         <widget class="QLabel" name="labF2">
          <property name="text">
           <string>P</string>
@@ -486,7 +496,7 @@
          </property>
         </widget>
        </item>
-       <item row="23" column="1">
+       <item row="25" column="1">
         <widget class="QCheckBox" name="cbF2">
          <property name="maximumSize">
           <size>
@@ -502,7 +512,7 @@
          </attribute>
         </widget>
        </item>
-       <item row="24" column="0">
+       <item row="26" column="0">
         <widget class="QLabel" name="labF1">
          <property name="text">
           <string>N</string>
@@ -512,7 +522,7 @@
          </property>
         </widget>
        </item>
-       <item row="24" column="1">
+       <item row="26" column="1">
         <widget class="QCheckBox" name="cbF1">
          <property name="maximumSize">
           <size>
@@ -528,7 +538,7 @@
          </attribute>
         </widget>
        </item>
-       <item row="25" column="0">
+       <item row="27" column="0">
         <widget class="QLabel" name="labF0">
          <property name="text">
           <string>C</string>
@@ -538,7 +548,7 @@
          </property>
         </widget>
        </item>
-       <item row="25" column="1">
+       <item row="27" column="1">
         <widget class="QCheckBox" name="cbF0">
          <property name="maximumSize">
           <size>
@@ -553,6 +563,19 @@
           <string notr="true">flagGroup</string>
          </attribute>
         </widget>
+       </item>
+       <item row="19" column="1">
+        <spacer name="verticalSpacer_12">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
        </item>
       </layout>
      </item>
@@ -871,6 +894,20 @@
         </spacer>
        </item>
        <item>
+        <widget class="QToolButton" name="tbRefresh">
+         <property name="toolTip">
+          <string>Reload snapshot &amp; labels</string>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="../xpeccy.qrc">
+           <normaloff>:/images/refresh.png</normaloff>:/images/refresh.png</iconset>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QToolButton" name="tbSaveDasm">
          <property name="text">
           <string>...</string>
@@ -889,26 +926,22 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_5">
        <item>
-        <widget class="QToolButton" name="tbRefresh">
-         <property name="toolTip">
-          <string>Reload snapshot &amp; labels</string>
+        <spacer name="horizontalSpacer_7">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
          </property>
-         <property name="text">
-          <string/>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
          </property>
-         <property name="icon">
-          <iconset resource="../xpeccy.qrc">
-           <normaloff>:/images/refresh.png</normaloff>:/images/refresh.png</iconset>
-         </property>
-        </widget>
+        </spacer>
        </item>
        <item>
         <widget class="QLabel" name="labTcount">
          <property name="text">
-          <string/>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          <string>0</string>
          </property>
         </widget>
        </item>
@@ -916,6 +949,12 @@
      </item>
      <item>
       <widget class="xDisasmTable" name="dasmTable">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <property name="minimumSize">
         <size>
          <width>350</width>
@@ -925,6 +964,7 @@
        <property name="font">
         <font>
          <family>DejaVu Sans Mono</family>
+         <pointsize>9</pointsize>
         </font>
        </property>
        <property name="contextMenuPolicy">
@@ -971,7 +1011,10 @@
     </layout>
    </item>
    <item row="0" column="2">
-    <layout class="QVBoxLayout" name="verticalLayout_4" stretch="0,0">
+    <layout class="QVBoxLayout" name="verticalLayout_4" stretch="10,0">
+     <property name="spacing">
+      <number>2</number>
+     </property>
      <item>
       <widget class="QTabWidget" name="tabsDump">
        <property name="currentIndex">
@@ -1048,11 +1091,6 @@
              <width>380</width>
              <height>0</height>
             </size>
-           </property>
-           <property name="font">
-            <font>
-             <family>DejaVu Sans Mono</family>
-            </font>
            </property>
            <property name="contextMenuPolicy">
             <enum>Qt::CustomContextMenu</enum>
@@ -1236,6 +1274,15 @@
        </property>
        <property name="currentIndex">
         <number>0</number>
+       </property>
+       <property name="documentMode">
+        <bool>true</bool>
+       </property>
+       <property name="movable">
+        <bool>true</bool>
+       </property>
+       <property name="tabBarAutoHide">
+        <bool>false</bool>
        </property>
        <widget class="QWidget" name="scrTab">
         <attribute name="icon">
@@ -2731,49 +2778,68 @@
         </attribute>
         <layout class="QHBoxLayout" name="horizontalLayout_9">
          <item>
-          <widget class="QLabel" name="labMemMap">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
+          <layout class="QVBoxLayout" name="verticalLayout_14">
+           <property name="rightMargin">
+            <number>3</number>
            </property>
-           <property name="minimumSize">
-            <size>
-             <width>256</width>
-             <height>256</height>
-            </size>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
+           <item>
+            <widget class="QLabel" name="labMemMap">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>192</width>
+               <height>192</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>192</width>
+               <height>192</height>
+              </size>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_13">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
          </item>
          <item>
           <widget class="QWidget" name="widBank" native="true">
            <layout class="QGridLayout" name="gridLayout_10">
-            <item row="0" column="0">
-             <widget class="QLabel" name="label_28">
+            <property name="horizontalSpacing">
+             <number>3</number>
+            </property>
+            <property name="verticalSpacing">
+             <number>2</number>
+            </property>
+            <item row="6" column="0">
+             <widget class="QLabel" name="label_60">
               <property name="text">
-               <string>0000</string>
+               <string>c000</string>
               </property>
              </widget>
-            </item>
-            <item row="1" column="1">
-             <widget class="xHexSpin" name="numBank0"/>
-            </item>
-            <item row="7" column="1">
-             <widget class="xHexSpin" name="numBank3"/>
-            </item>
-            <item row="2" column="0">
-             <widget class="QLabel" name="label_48">
-              <property name="text">
-               <string>4000</string>
-              </property>
-             </widget>
-            </item>
-            <item row="5" column="1">
-             <widget class="xHexSpin" name="numBank2"/>
             </item>
             <item row="9" column="1">
              <spacer name="verticalSpacer_11">
@@ -2791,15 +2857,29 @@
             <item row="6" column="1">
              <widget class="QComboBox" name="cbBank3"/>
             </item>
-            <item row="6" column="0">
-             <widget class="QLabel" name="label_60">
-              <property name="text">
-               <string>c000</string>
+            <item row="2" column="1">
+             <widget class="QComboBox" name="cbBank1"/>
+            </item>
+            <item row="0" column="1">
+             <widget class="QComboBox" name="cbBank0">
+              <property name="frame">
+               <bool>true</bool>
               </property>
              </widget>
             </item>
-            <item row="3" column="1">
-             <widget class="xHexSpin" name="numBank1"/>
+            <item row="8" column="1">
+             <widget class="QPushButton" name="pbRestMemMap">
+              <property name="text">
+               <string>Restore</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="label_48">
+              <property name="text">
+               <string>4000</string>
+              </property>
+             </widget>
             </item>
             <item row="4" column="0">
              <widget class="QLabel" name="label_55">
@@ -2808,21 +2888,27 @@
               </property>
              </widget>
             </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_28">
+              <property name="text">
+               <string>0000</string>
+              </property>
+             </widget>
+            </item>
             <item row="4" column="1">
              <widget class="QComboBox" name="cbBank2"/>
             </item>
-            <item row="2" column="1">
-             <widget class="QComboBox" name="cbBank1"/>
+            <item row="0" column="2">
+             <widget class="xHexSpin" name="numBank0"/>
             </item>
-            <item row="0" column="1">
-             <widget class="QComboBox" name="cbBank0"/>
+            <item row="2" column="2">
+             <widget class="xHexSpin" name="numBank1"/>
             </item>
-            <item row="8" column="1">
-             <widget class="QPushButton" name="pbRestMemMap">
-              <property name="text">
-               <string>Restore</string>
-              </property>
-             </widget>
+            <item row="4" column="2">
+             <widget class="xHexSpin" name="numBank2"/>
+            </item>
+            <item row="6" column="2">
+             <widget class="xHexSpin" name="numBank3"/>
             </item>
            </layout>
           </widget>

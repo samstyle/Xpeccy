@@ -7,7 +7,7 @@
 
 #include "xcore.h"
 #include "vscalers.h"
-#include "xgui.h"
+#include "../xgui/xgui.h"
 #include "sound.h"
 
 #ifdef _WIN32
@@ -44,7 +44,7 @@ xConfig conf;
 void conf_init(char* wpath) {
     conf.scrShot.dir = std::string(getenv(ENVHOME));
     conf.port = 30000;
-#if __linux || __APPLE__
+#if defined(__linux) || defined(__APPLE__) || defined(__BSD)
 	conf.path.confDir = std::string(getenv(ENVHOME)) + "/.config";
 	mkdir(conf.path.confDir.c_str(), 0777);
 	conf.path.confDir += "/samstyle";
@@ -59,7 +59,7 @@ void conf_init(char* wpath) {
 	mkdir(conf.path.shdDir.c_str() ,0777);
 	conf.path.confFile = conf.path.confDir + "/config.conf";
 	conf.path.boot = conf.path.confDir + "/boot.$B";
-#elif __WIN32
+#elif defined(__WIN32)
 	conf.path.confDir = std::string(wpath);
 	size_t pos = conf.path.confDir.find_last_of(SLSH);
 	if (pos != std::string::npos) {

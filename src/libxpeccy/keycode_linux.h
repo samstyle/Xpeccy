@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef __linux
+#if defined(__linux) || defined(__BSD)
 
 #define ENDKEY		0
 

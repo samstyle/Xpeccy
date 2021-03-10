@@ -64,9 +64,9 @@ xProfile* addProfile(std::string nm, std::string fp) {
 	nprof->zx = compCreate();
 	std::string fname;
 	fname = conf.path.prfDir + SLASH + nprof->name;
-#if __linux || __APPLE__
+#if defined(__linux) || defined(__APPLE__) || defined(__BSD)
 	mkdir(fname.c_str(), 0777);
-#elif __WIN32
+#elif defined(__WIN32)
 	mkdir(fname.c_str());
 #endif
 	prf_load_cmos(nprof, conf.path.prfDir + SLASH + nprof->name + SLASH + nprof->name + ".cmos");
@@ -311,9 +311,9 @@ int prf_load_conf(xProfile* prf, std::string cfname, int flag) {
 		if (flag) printf("Damn! I can't open config file");
 		return PLOAD_OF;
 	}
-#ifdef __win32
+#if defined(__WIN32)
 	prf->lastDir = ".";
-#elif __linux || __APPLE
+#elif defined(__linux) || defined(__APPLE__) || defined(__BSD)
 	prf->lastDir = std::string(getenv("HOME"));
 #endif
 
@@ -561,9 +561,9 @@ int prfSave(std::string nm) {
 
 	std::string cfname;
 	cfname = conf.path.prfDir + SLASH + prf->name;
-#if __linux || __APPLE__
+#if defined(__linux) || defined(__APPLE__) || defined(__BSD)
 	mkdir(cfname.c_str(), 0777);
-#elif __WIN32
+#elif defined(__WIN32)
 	mkdir(cfname.c_str());
 #endif
 	cfname = cfname + SLASH + prf->file;

@@ -37,8 +37,6 @@ static sndPair smpBuf[128] = {{0,0}};
 
 // output
 
-#include "hardware.h"
-
 #define USEKIH 0
 
 // return 1 when buffer is full

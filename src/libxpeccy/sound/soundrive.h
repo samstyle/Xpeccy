@@ -1,9 +1,8 @@
-#ifndef	XSOUNDRIVE
-#define	XSOUNDRIVE
-// soundrive/covox type
+#pragma once
 
 #include "sndcommon.h"
 
+// soundrive/covox type
 enum {
 	SDRV_NONE = 0,
 	SDRV_COVOX,	// 1 channel only
@@ -26,5 +25,3 @@ SDrive* sdrvCreate(int);
 void sdrvDestroy(SDrive*);
 int sdrvWrite(SDrive*, int, int);
 sndPair sdrvVolume(SDrive*);
-
-#endif

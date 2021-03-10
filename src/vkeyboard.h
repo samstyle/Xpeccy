@@ -1,5 +1,4 @@
-#ifndef _VKEYBOARD_H
-#define _VKEYBOARD_H
+#pragma once
 
 #include <QWidget>
 #include <QDialog>
@@ -29,5 +28,3 @@ class keyWindow : public QDialog {
 		void keyPressEvent(QKeyEvent*);
 		void keyReleaseEvent(QKeyEvent*);
 };
-
-#endif

@@ -8,11 +8,11 @@
 #include "../spectrum.h"
 
 
-#if __linux || __APPLE__
+#if defined(__linux) || defined(__APPLE__) || defined(__BSD)
 	#define ENVHOME "HOME"
 	#define SLASH "/"
 	#define SLSH '/'
-#elif _WIN32
+#elif defined(_WIN32)
 	#define ENVHOME "HOMEPATH"
 	#define SLASH "\\"
 	#define SLSH '\\'

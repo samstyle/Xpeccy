@@ -1,7 +1,6 @@
-#ifndef _Z80_NOP_H
-#define _Z80_NOP_H
+#pragma once
 
-// typedef struct CPU CPU;
+#include "../cpu.h"
 
 void npr00(CPU*);
 void npr01(CPU*);
@@ -259,5 +258,3 @@ void nprFC(CPU*);
 void nprFD(CPU*);
 void nprFE(CPU*);
 void nprFF(CPU*);
-
-#endif

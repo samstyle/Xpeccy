@@ -1,5 +1,4 @@
-#ifndef _DBG_MEMFILL_H
-#define _DBG_MEMFILL_H
+#pragma once
 
 #include <QDialog>
 #include "ui_filler.h"
@@ -21,5 +20,3 @@ class xMemFiller : public QDialog {
 		void metChange();
 		void fill();
 };
-
-#endif

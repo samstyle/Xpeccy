@@ -4,7 +4,7 @@
 #include <vector>
 #include <map>
 
-#ifdef __linux
+#if defined(__linux) || defined(__BSD)
 #include <linux/limits.h>
 #endif
 
@@ -15,10 +15,10 @@
 #include <QColor>
 #include <QMap>
 
-#include "spectrum.h"
-#include "filetypes.h"
+#include "../libxpeccy/spectrum.h"
+#include "../libxpeccy/filetypes/filetypes.h"
 
-#define USEMUTEX 0
+#define USEMUTEX 1
 
 #if QT_VERSION >= QT_VERSION_CHECK(5,0,0)
 #define yDelta angleDelta().y()

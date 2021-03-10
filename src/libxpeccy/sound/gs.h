@@ -1,5 +1,4 @@
-#ifndef X_GSOUND
-#define X_GSOUND
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -7,8 +6,8 @@ extern "C" {
 
 #include "sndcommon.h"
 
-#include "cpu.h"
-#include "memory.h"
+#include "../cpu/cpu.h"
+#include "../memory.h"
 
 // gs stereo
 enum {
@@ -59,6 +58,4 @@ int gsRead(GSound*, int, int*);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

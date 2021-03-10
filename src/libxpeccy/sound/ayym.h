@@ -1,5 +1,4 @@
-#ifndef X_AYYM_H
-#define X_AYYM_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -131,6 +130,4 @@ sndPair tsGetVolume(TSound*);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

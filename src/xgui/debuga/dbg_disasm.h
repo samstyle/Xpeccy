@@ -1,5 +1,4 @@
-#ifndef X_DBG_DISASM_H
-#define X_DBG_DISASM_H
+#pragma once
 
 #include <QTableView>
 #include <QAbstractTableModel>
@@ -86,5 +85,3 @@ class xDisasmTable : public QTableView {
 };
 
 QList<dasmData> getDisasm(Computer*, unsigned short&);
-
-#endif

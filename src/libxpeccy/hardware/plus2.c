@@ -38,11 +38,21 @@ int p2InFF(Computer* comp, int port) {
 	return (comp->vid->vbrd || comp->vid->hbrd) ? 0xff : comp->vid->atrbyte & 0xff;
 }
 
+int p2_dos_rd(Computer* comp, int port) {
+	int res = -1;
+	difIn(comp->dif, port, &res, 0);
+	return res;
+}
+
 // out
 
 void p2Out1FFD(Computer* comp, int port, int val) {
 	comp->p1FFD = val & 0xff;
 	pl2MapMem(comp);
+}
+
+void p2_dos_wr(Computer* comp, int port, int val) {
+	difOut(comp->dif, port, val, 0);
 }
 
 void p2Out7FFD(Computer* comp, int port, int val) {
@@ -57,6 +67,7 @@ static xPort p2PortMap[] = {
 	{0x0003,0x00fe,2,2,2,xInFE,	xOutFE},
 	{0xc002,0x7ffd,2,2,2,NULL,	p2Out7FFD},
 	{0xf002,0x1ffd,2,2,2,NULL,	p2Out1FFD},
+	{0xe002,0x2ffd,2,2,2,p2_dos_rd,	p2_dos_wr},	// 2ffd/3ffd
 	{0xc002,0xbffd,2,2,2,NULL,	xOutBFFD},
 	{0xc002,0xfffd,2,2,2,xInFFFD,	xOutFFFD},
 	{0x0000,0x0000,2,2,2,p2InFF,	NULL}

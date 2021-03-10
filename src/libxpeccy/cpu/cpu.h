@@ -1,5 +1,8 @@
-#ifndef X_CPU_H
-#define X_CPU_H
+#pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef unsigned char xbyte;
 typedef unsigned short xword;
@@ -214,4 +217,6 @@ xAsmScan scanAsmTab(const char*, opCode*);
 xRegBunch cpuGetRegs(CPU*);
 void cpuSetRegs(CPU*, xRegBunch);
 
+#ifdef __cplusplus
+}
 #endif

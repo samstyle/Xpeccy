@@ -12,9 +12,9 @@
 
 #include <SDL.h>
 
-#include "xcore.h"
-#include "xgui.h"
-#include "spectrum.h"
+#include "xcore/xcore.h"
+#include "xgui/xgui.h"
+#include "libxpeccy/spectrum.h"
 #include "watcher.h"
 #include "vkeyboard.h"
 #include "ethread.h"

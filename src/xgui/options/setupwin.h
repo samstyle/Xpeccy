@@ -7,7 +7,7 @@
 #include <QKeySequence>
 #include <QAbstractTableModel>
 
-#include "xcore.h"
+#include "../../xcore/xcore.h"
 #include "padbinder.h"
 #include "opt_romset.h"
 #include "opt_diskcat.h"

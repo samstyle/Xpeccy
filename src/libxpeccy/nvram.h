@@ -1,5 +1,8 @@
-#ifndef _NVRAM_H
-#define _NVRAM_H
+#pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 enum {
 	NV_IDLE	= 0,
@@ -31,4 +34,6 @@ void nvDestroy(nvRam*);
 void nvWr(nvRam*,int,int,int);	// sda,sdc,wp
 int nvRd(nvRam*);
 
+#ifdef __cplusplus
+}
 #endif

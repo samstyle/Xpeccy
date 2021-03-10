@@ -1,5 +1,5 @@
 #include "dbg_dump.h"
-#include "../xcore/xcore.h"
+#include "../../xcore/xcore.h"
 
 #include <QDebug>
 

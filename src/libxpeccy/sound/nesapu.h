@@ -1,5 +1,4 @@
-#ifndef X_NESAPU_H
-#define X_NESAPU_H
+#pragma once
 
 #include "sndcommon.h"
 
@@ -75,7 +74,3 @@ void apuSync(nesAPU*, int);
 sndPair apuVolume(nesAPU*);
 
 void apuWrite(nesAPU*, int, int);
-
-// void apuToneDuty(apuChannel*);
-
-#endif

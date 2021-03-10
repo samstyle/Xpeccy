@@ -1,5 +1,4 @@
-#ifndef _WATCHER_H
-#define _WATCHER_H
+#pragma once
 
 #include "libxpeccy/spectrum.h"
 #include "xgui/xgui.h"
@@ -74,5 +73,3 @@ class xWatcher : public QDialog {
 		void dialChanged();
 		void setLabel(QString);
 };
-
-#endif

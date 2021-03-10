@@ -1,5 +1,4 @@
-#ifndef X_SDCARD_H
-#define X_SDCARD_H
+#pragma once
 
 #include <stdio.h>
 
@@ -81,5 +80,3 @@ void sdcSetCapacity(SDCard*,int);
 
 void sdcOpenFile(SDCard*);
 void sdcCloseFile(SDCard*);
-
-#endif

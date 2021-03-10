@@ -1,5 +1,4 @@
-#ifndef _PACKERS_H
-#define _PACKERS_H
+#pragma once
 
 #define	PAK_HRS	1
 #define	PAK_MLZ	2
@@ -85,5 +84,3 @@ public:
 
 WORD dehrust(BYTE*, BYTE*);
 WORD demegalz(BYTE*, BYTE*);
-
-#endif

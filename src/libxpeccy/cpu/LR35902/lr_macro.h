@@ -1,5 +1,4 @@
-#ifndef _LR_MACRO_H
-#define _LR_MACRO_H
+#pragma once
 
 extern unsigned char FLHaddTab[8];
 extern unsigned char FLHsubTab[8];
@@ -113,5 +112,3 @@ extern unsigned char FLHsubTab[8];
 // bit
 
 #define BITL(bit,val) {cpu->f = (cpu->f & FLC) | FLH | ((val & (0x01 << bit)) ? 0 : FLZ);}
-
-#endif

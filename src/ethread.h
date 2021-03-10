@@ -1,5 +1,4 @@
-#ifndef X_ETHREAD_H
-#define X_ETHREAD_H
+#pragma once
 
 #include <QThread>
 #include <QMutex>
@@ -25,5 +24,3 @@ class xThread : public QThread {
 		void tap_catch_load(Computer*);
 		void tap_catch_save(Computer*);
 };
-
-#endif

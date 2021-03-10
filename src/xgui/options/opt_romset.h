@@ -1,10 +1,9 @@
-#ifndef X_OPT_ROMSET_H
-#define X_OPT_ROMSET_H
+#pragma once
 
 #include <QAbstractTableModel>
 #include <QDialog>
 
-#include "xcore.h"
+#include "../../xcore/xcore.h"
 
 #include "ui_rsedit.h"
 
@@ -33,5 +32,3 @@ class xRomsetEditor : public QDialog {
 	private slots:
 		void store();
 };
-
-#endif

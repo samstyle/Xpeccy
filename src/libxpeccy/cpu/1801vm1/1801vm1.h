@@ -1,5 +1,4 @@
-#ifndef X_PDP11_H
-#define X_PDP11_H
+#pragma once
 
 enum {
 	PDP11_REG0 = 1,
@@ -44,5 +43,3 @@ xAsmScan pdp11_asm(const char*, char*);
 
 void pdp11_get_regs(CPU*, xRegBunch*);
 void pdp11_set_regs(CPU*, xRegBunch);
-
-#endif

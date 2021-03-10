@@ -12,13 +12,13 @@
 #include "debuger.h"
 #include "dbg_sprscan.h"
 #include "filer.h"
-#include "xgui.h"
+#include "../xgui.h"
 
-static QColor colPC(32,200,32);	// pc
-static QColor colBRK(200,128,128);	// breakpoint
-static QColor colBG0(255,255,255);	// background
-static QColor colBG1(230,230,230);	// background alternative
-static QColor colSEL(128,255,128);	// background selected
+//static QColor colPC(32,200,32);	// pc
+//static QColor colBRK(200,128,128);	// breakpoint
+//static QColor colBG0(255,255,255);	// background
+//static QColor colBG1(230,230,230);	// background alternative
+//static QColor colSEL(128,255,128);	// background selected
 
 int blockStart = -1;
 int blockEnd = -1;
@@ -129,12 +129,6 @@ void DebugWin::start(Computer* c) {
 	}
 	updateScreen();
 
-//	int wd = (ui.dasmTable->height() - 2) / ui.dasmTable->rows();
-//	ui.dasmTable->verticalHeader()->setDefaultSectionSize(wd);
-
-//	wd = (ui.dumpTable->height() - 2) / ui.dumpTable->rows();
-//	ui.dumpTable->verticalHeader()->setDefaultSectionSize(wd);
-
 	if (memViewer->vis) {
 		memViewer->move(memViewer->winPos);
 		memViewer->show();
@@ -165,8 +159,6 @@ void DebugWin::stop() {
 void DebugWin::onPrfChange(xProfile* prf) {
 	if (!prf) prf = conf.prof.cur;
 	if (!prf) return;
-	//if (!isHidden())
-	//	rest_mem_map();
 	comp = prf->zx;
 	save_mem_map();
 	ui.tabsPanel->clear();
@@ -175,9 +167,9 @@ void DebugWin::onPrfChange(xProfile* prf) {
 	p.first = QIcon(":/images/stop.png");
 	p.second = ui.brkTab;
 	lst.append(p);
-	p.first = QIcon(":/images/memory.png");
-	p.second = ui.memTab;
-	lst.append(p);
+//	p.first = QIcon(":/images/memory.png");
+//	p.second = ui.memTab;
+//	lst.append(p);
 	while(lst.size() > 0) {
 		ui.tabsPanel->addTab(lst.first().second, lst.first().first, "");
 		lst.removeFirst();
@@ -238,6 +230,10 @@ QWidget* xItemDelegate::createEditor(QWidget* par, const QStyleOptionViewItem&, 
 DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	int i;
 
+#ifdef __WIN32
+	setModal(false);
+#endif
+
 	setFont(QFont("://DejaVuSansMono.ttf",10));
 	ui.setupUi(this);
 
@@ -253,6 +249,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	p.first = QIcon(":/images/speaker2.png"); p.second = ui.ayTab; lst.append(p);
 	p.first = QIcon(":/images/tape.png"); p.second = ui.tapeTab; lst.append(p);
 	p.first = QIcon(":/images/floppy.png"); p.second = ui.fdcTab; lst.append(p);
+	p.first = QIcon(":/images/memory.png"); p.second = ui.memTab; lst.append(p);
 	tablist[HWG_ZX] = lst;
 	lst.clear();
 	p.first = QIcon(":/images/nespad.png"); p.second = ui.nesTab; lst.append(p);
@@ -469,7 +466,6 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.flagGroup,SIGNAL(buttonClicked(int)),this,SLOT(setFlags()));
 // infoslots
 	scrImg = QImage(256, 192, QImage::Format_RGB888);
-	// ui.scrLabel->setFixedSize(256,192);
 	connect(ui.sbScrBank,SIGNAL(valueChanged(int)),this,SLOT(updateScreen()));
 	connect(ui.leScrAdr,SIGNAL(textChanged(QString)),this,SLOT(updateScreen()));
 	connect(ui.cbScrAtr,SIGNAL(stateChanged(int)),this,SLOT(updateScreen()));
@@ -489,11 +485,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 	connect(ui.tabsPanel, SIGNAL(currentChanged(int)), this, SLOT(fillAll()));
 
-	// setFixedSize(size());
-	// setFixedHeight(size().height());
 	block = 0;
-	// ui.dasmTable->setAdr(0);
-	// ui.dumpTable->setAdr(0);
 	tCount = 0;
 	trace = 0;
 // nes tab
@@ -990,7 +982,7 @@ bool DebugWin::fillAll() {
 	// memory
 	if (ui.tabsPanel->currentWidget() == ui.memTab) {
 		ui.widBank->setVisible(comp->hw->grp == HWG_ZX);
-		QPixmap img(256, 256);
+		QPixmap img(256, 192);
 		QPainter pnt;
 		img.fill(Qt::black);
 		pnt.begin(&img);
@@ -1006,14 +998,14 @@ bool DebugWin::fillAll() {
 					case MEM_SLOT: col = Qt::darkCyan; break;
 					default: col = Qt::darkGray; break;
 				}
-				pnt.fillRect(x << 4, y << 4, 15, 15, col);
+				pnt.fillRect(x * 12, y * 12, 11, 11, col);
 				pg++;
 			}
 		}
 		pnt.setPen(Qt::yellow);
-		pnt.drawLine(0, 63, 256, 63);
-		pnt.drawLine(0, 127, 256, 127);
-		pnt.drawLine(0, 191, 256, 191);
+		pnt.drawLine(0, 47, 256, 47);
+		pnt.drawLine(0, 95, 256, 95);
+		pnt.drawLine(0, 143, 256, 143);
 		pnt.end();
 		ui.labMemMap->setPixmap(img);
 		block = 1;

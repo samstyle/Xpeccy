@@ -1,6 +1,6 @@
 #include "dbg_disasm.h"
 #include "dbg_dump.h"
-#include "../xcore/xcore.h"
+#include "../../xcore/xcore.h"
 
 #include <QDebug>
 #include <QFont>

@@ -79,6 +79,13 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	install(FILES images/xpeccy.png DESTINATION share/icons)
 	install(FILES Xpeccy.desktop DESTINATION share/applications)
 
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "/BSD$/")
+
+	set(INC_PATHS pkg/include include)
+	set(LIB_PATHS lib lib64 pkg/lib local/lib64)
+
+	add_definitions("__BSD")
+
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 	set(INC_PATHS local/include include)
@@ -116,16 +123,6 @@ endif()
 set(INCLUDIRS
 	${CMAKE_BINARY_DIR}
 	./src
-	./src/xcore
-	./src/xgui
-	./src/xgui/debuga
-	./src/xgui/options
-	./src/libxpeccy
-	./src/libxpeccy/cpu
-	./src/libxpeccy/hardware
-	./src/libxpeccy/sound
-	./src/libxpeccy/video
-	./src/libxpeccy/filetypes
 )
 
 # sources
@@ -269,6 +266,8 @@ endif(ZLIB_FOUND)
 # other
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS})
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "/BSD$/")
 	add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS})
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${HEADERS} ${UIHEADERS} ${RESOURCES} ${MOCHEADERS} ${BUNDLE_ICON_PATH})

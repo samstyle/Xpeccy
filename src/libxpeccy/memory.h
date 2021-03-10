@@ -1,5 +1,4 @@
-#ifndef X_MEMORY_H
-#define X_MEMORY_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -81,6 +80,4 @@ void mem_set_path(Memory*, const char*);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

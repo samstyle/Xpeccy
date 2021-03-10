@@ -1,5 +1,4 @@
-#ifndef X_DBG_BREAKS_H
-#define X_DBG_BREAKS_H
+#pragma once
 
 #include <QAbstractTableModel>
 #include <QModelIndex>
@@ -59,5 +58,3 @@ class xBrkManager : public QDialog {
 	signals:
 		void completed(xBrkPoint, xBrkPoint);
 };
-
-#endif

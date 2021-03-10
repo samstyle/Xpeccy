@@ -1,5 +1,5 @@
 #include "dbg_diskdump.h"
-#include "../xcore/xcore.h"
+#include "../../xcore/xcore.h"
 
 xDiskDump::xDiskDump(QWidget*) {
 	mod = new xDiskDumpModel();

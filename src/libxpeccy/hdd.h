@@ -1,5 +1,4 @@
-#ifndef X_HDD
-#define X_HDD
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -153,6 +152,4 @@ ATAPassport ideGetPassport(IDE*,int);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

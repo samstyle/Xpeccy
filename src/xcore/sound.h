@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 
-#if __linux
+#if defined(__linux) || defined(__BSD)
 	#include <sys/ioctl.h>
 	#include <sys/soundcard.h>
 	#include <fcntl.h>

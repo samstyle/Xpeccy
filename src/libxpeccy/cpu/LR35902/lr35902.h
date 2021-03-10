@@ -1,5 +1,4 @@
-#ifndef _LR35902_H
-#define _LR35902_H
+#pragma once
 
 #define FLZ 0x80
 #define FLN 0x40
@@ -7,7 +6,6 @@
 #define FLC 0x10
 
 #include "../cpu.h"
-// typedef struct CPU CPU;
 
 enum {
 	LR_REG_PC = 1,
@@ -20,12 +18,9 @@ enum {
 
 void lr_reset(CPU*);
 int lr_exec(CPU*);
-// int lr_int(CPU*);
 
 xAsmScan lr_asm(const char*, char*);
 xMnem lr_mnem(CPU*, unsigned short, cbdmr, void*);
 
 void lr_get_regs(CPU*, xRegBunch*);
 void lr_set_regs(CPU*, xRegBunch);
-
-#endif

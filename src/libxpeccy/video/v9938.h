@@ -1,7 +1,6 @@
-#ifndef X_V9938_H
-#define X_V9938_H
+#pragma once
 
-#include "vidcommon.h"
+#include "video.h"
 
 #define VDP_IE1	0x10		// R0.4 = hint enable
 #define VDP_IE0 0x20		// R1.5 = vint enable
@@ -28,4 +27,3 @@ void vdp_line(Video*);
 void vdp_linex(Video*);
 void vdpHBlk(Video*);
 void vdpVBlk(Video*);
-#endif

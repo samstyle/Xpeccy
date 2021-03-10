@@ -3,8 +3,7 @@
 #include <QFile>
 #include <QFileDialog>
 
-#include "xcore.h"
-#include "xgui.h"
+#include "../../xcore/xcore.h"
 #include "dbg_sprscan.h"
 
 MemViewer::MemViewer(QWidget* p):QDialog(p) {

@@ -1,5 +1,4 @@
-#ifndef _6502_MACRO_H
-#define _6502_MACRO_H
+#pragma once
 
 #define MFLAGZN(_op) \
 	cpu->f = (cpu->f & ~(MFN | MFZ)) | ((_op & 0x80) ? MFN : 0) | (_op ? 0 : MFZ);
@@ -95,5 +94,3 @@
 	cpu->tmpw >>= 1;\
 	_op = cpu->ltw;\
 	MFLAGZN(_op);
-
-#endif

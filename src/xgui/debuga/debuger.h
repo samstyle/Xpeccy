@@ -12,7 +12,7 @@
 #include <QTableWidget>
 #include <QRegExpValidator>
 
-#include "xgui.h"
+#include "../xgui.h"
 
 #include "dbg_dump.h"
 #include "dbg_disasm.h"

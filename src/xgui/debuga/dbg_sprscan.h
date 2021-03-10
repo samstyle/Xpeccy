@@ -1,12 +1,11 @@
-#ifndef _DBG_SPRSCAN_H
-#define _DBG_SPRSCAN_H
+#pragma once
 
 #include <QDialog>
 #include <QWheelEvent>
 
-#include "xgui.h"
+#include "../xgui.h"
 #include "ui_memviewer.h"
-#include "libxpeccy/spectrum.h"
+#include "../../libxpeccy/spectrum.h"
 
 class MemViewer : public QDialog {
 	Q_OBJECT
@@ -27,5 +26,3 @@ class MemViewer : public QDialog {
 	protected:
 		void wheelEvent(QWheelEvent*);
 };
-
-#endif

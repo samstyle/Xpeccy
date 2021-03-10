@@ -1,5 +1,4 @@
-#ifndef X_I8080_H
-#define X_I8080_H
+#pragma once
 
 #include "../cpu.h"
 
@@ -31,5 +30,3 @@ xAsmScan i8080_asm(const char*, char*);
 xMnem i8080_mnem(CPU*, unsigned short, cbdmr, void*);
 void i8080_get_regs(CPU*, xRegBunch*);
 void i8080_set_regs(CPU*, xRegBunch);
-
-#endif

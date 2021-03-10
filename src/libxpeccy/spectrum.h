@@ -285,7 +285,7 @@ typedef struct {
 	int resbank;			// rompart active after reset
 } Computer;
 
-#include "hardware.h"
+#include "hardware/hardware.h"
 
 Computer* compCreate();
 void compDestroy(Computer*);

@@ -1,5 +1,4 @@
-#ifndef _6502_H
-#define _6502_H
+#pragma once
 
 #include "../cpu.h"
 
@@ -34,5 +33,3 @@ xAsmScan m6502_asm(const char*, char*);
 
 void m6502_get_regs(CPU*, xRegBunch*);
 void m6502_set_regs(CPU*, xRegBunch);
-
-#endif

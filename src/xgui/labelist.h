@@ -1,5 +1,4 @@
-#ifndef X_LABELIST_H
-#define X_LABELIST_H
+#pragma once
 
 #include <QAbstractListModel>
 #include <QDialog>
@@ -32,5 +31,3 @@ class xLabeList : public QDialog {
 		Ui::LabList ui;
 		xLabelistModel* mod;
 };
-
-#endif

@@ -808,7 +808,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				keyid = shortcut_check(SCG_MAIN, QKeySequence(ev->key() | ev->modifiers()));
 		}
 		if (keyid < 0) {
-#if defined(__linux)
+#if defined(__linux) || defined(__BSD)
 			keyid = ev->nativeScanCode();
 #elif defined(__WIN32)
 			keyid = ev->nativeScanCode();
@@ -1055,7 +1055,7 @@ void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 	if (comp->debug) {
 		ev->ignore();
 	} else {
-#if defined(__linux)
+#if defined(__linux) || defined(__BSD)
 		keyid = ev->nativeScanCode();
 #elif defined(__WIN32)
 		keyid = ev->nativeScanCode();

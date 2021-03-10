@@ -1,5 +1,4 @@
-#ifndef X_TAPECAT_H
-#define X_TAPECAT_H
+#pragma once
 
 #include <QAbstractTableModel>
 #include <QTableView>
@@ -30,5 +29,3 @@ class xTapeCatTable : public QTableView {
 	private:
 		xTapeCatModel* model;
 };
-
-#endif

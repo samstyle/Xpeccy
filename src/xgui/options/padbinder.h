@@ -1,12 +1,11 @@
-#ifndef X_PADBINDER_H
-#define X_PADBINDER_H
+#pragma once
 
 #include <QAbstractItemModel>
 #include <QDialog>
 #include <QKeyEvent>
 #include <QTimer>
 
-#include "xcore.h"
+#include "../../xcore/xcore.h"
 #include "ui_padbinder.h"
 
 class xPadMapModel : public QAbstractItemModel {
@@ -48,5 +47,3 @@ class xPadBinder : public QDialog {
 		void setKeyButtonText();
 		void keyPressEvent(QKeyEvent*);
 };
-
-#endif
