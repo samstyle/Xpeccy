@@ -84,7 +84,7 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "/BSD$/")
 	set(INC_PATHS pkg/include include)
 	set(LIB_PATHS lib lib64 pkg/lib local/lib64)
 
-	add_definitions("__BSD")
+	add_definitions("-D__BSD")
 
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
