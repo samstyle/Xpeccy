@@ -480,6 +480,11 @@ void MainWin::focusOutEvent(QFocusEvent*) {
 	emit s_keywin_rall(comp->keyb);
 }
 
+void MainWin::focusInEvent(QFocusEvent*) {
+	if (conf.emu.pause & PR_DEBUG)
+		emit s_debug(comp);
+}
+
 void MainWin::moveEvent(QMoveEvent* ev) {
 	conf.xpos = pos().x();
 	conf.ypos = pos().y();

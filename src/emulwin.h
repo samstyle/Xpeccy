@@ -158,6 +158,7 @@ class MainWin : public QWidget {
 		void mouseMoveEvent(QMouseEvent*);
 		void wheelEvent(QWheelEvent*);
 		void focusOutEvent(QFocusEvent*);
+		void focusInEvent(QFocusEvent*);
 		void timerEvent(QTimerEvent*);
 		void moveEvent(QMoveEvent*);
 

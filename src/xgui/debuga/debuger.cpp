@@ -230,12 +230,12 @@ QWidget* xItemDelegate::createEditor(QWidget* par, const QStyleOptionViewItem&, 
 DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	int i;
 
-#ifdef __WIN32
-	setModal(false);
-#endif
-
 	setFont(QFont("://DejaVuSansMono.ttf",10));
 	ui.setupUi(this);
+
+#if defined(__WIN32)
+	setModal(false);
+#endif
 
 	dumpwin = new QDialog(this);
 

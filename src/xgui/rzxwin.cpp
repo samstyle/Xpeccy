@@ -27,9 +27,11 @@ void RZXWin::setProgress(int val, int max) {
 // slots
 
 void RZXWin::upd(Computer* comp) {
+#ifdef HAVEZLIB
 	if (comp->rzx.play && isVisible()) {
 		setProgress(comp->rzx.fCurrent, comp->rzx.fTotal);
 	}
+#endif
 }
 
 void RZXWin::playPause() {
