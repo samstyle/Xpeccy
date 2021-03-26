@@ -38,10 +38,12 @@ int p2InFF(Computer* comp, int port) {
 	return (comp->vid->vbrd || comp->vid->hbrd) ? 0xff : comp->vid->atrbyte & 0xff;
 }
 
+// no upd765 in +2
 int p2_dos_rd(Computer* comp, int port) {
-	int res = -1;
-	difIn(comp->dif, port, &res, 0);
-	return res;
+	return -1;
+//	int res = -1;
+//	difIn(comp->dif, port, &res, 0);
+//	return res;
 }
 
 // out
@@ -52,7 +54,7 @@ void p2Out1FFD(Computer* comp, int port, int val) {
 }
 
 void p2_dos_wr(Computer* comp, int port, int val) {
-	difOut(comp->dif, port, val, 0);
+//	difOut(comp->dif, port, val, 0);
 }
 
 void p2Out7FFD(Computer* comp, int port, int val) {

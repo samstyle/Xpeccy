@@ -2,12 +2,12 @@
 
 // convert <size> bytes (by 3) on <ptr> from color-RGB to gray-RGB
 void scrGray(unsigned char* ptr, int size) {
-	int gray;
+	unsigned char gray;
 	while (size > 0) {
-		gray = qGray(*ptr, *(ptr+1), *(ptr+2));
-		*(ptr++) = gray & 0xff;
-		*(ptr++) = gray & 0xff;
-		*(ptr++) = gray & 0xff;
+		gray = qGray(*ptr, *(ptr+1), *(ptr+2)) & 0xff;
+		*(ptr++) = gray;
+		*(ptr++) = gray;
+		*(ptr++) = gray;
 		size -= 3;
 	}
 }
