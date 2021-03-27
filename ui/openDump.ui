@@ -3,7 +3,7 @@
  <class>oDumpDial</class>
  <widget class="QDialog" name="oDumpDial">
   <property name="windowModality">
-   <enum>Qt::ApplicationModal</enum>
+   <enum>Qt::WindowModal</enum>
   </property>
   <property name="geometry">
    <rect>
@@ -19,9 +19,6 @@
   <property name="windowIcon">
    <iconset>
     <normaloff>:/images/logo.png</normaloff>:/images/logo.png</iconset>
-  </property>
-  <property name="modal">
-   <bool>true</bool>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -184,7 +181,7 @@
   <customwidget>
    <class>xHexSpin</class>
    <extends>QLineEdit</extends>
-   <header>stdlib.h</header>
+   <header location="global">stdlib.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>

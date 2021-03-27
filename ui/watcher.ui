@@ -435,19 +435,19 @@
          <property name="gridStyle">
           <enum>Qt::DotLine</enum>
          </property>
-         <attribute name="horizontalHeaderDefaultSectionSize">
+         <attribute name="horizontalHeaderMinimumSectionSize">
           <number>100</number>
          </attribute>
-         <attribute name="horizontalHeaderMinimumSectionSize">
+         <attribute name="horizontalHeaderDefaultSectionSize">
           <number>100</number>
          </attribute>
          <attribute name="horizontalHeaderStretchLastSection">
           <bool>true</bool>
          </attribute>
-         <attribute name="verticalHeaderDefaultSectionSize">
+         <attribute name="verticalHeaderMinimumSectionSize">
           <number>17</number>
          </attribute>
-         <attribute name="verticalHeaderMinimumSectionSize">
+         <attribute name="verticalHeaderDefaultSectionSize">
           <number>17</number>
          </attribute>
         </widget>

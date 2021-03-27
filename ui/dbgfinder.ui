@@ -9,15 +9,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>236</width>
-    <height>123</height>
+    <width>289</width>
+    <height>126</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Memory finder</string>
-  </property>
-  <property name="modal">
-   <bool>true</bool>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

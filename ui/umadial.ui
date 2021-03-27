@@ -2,19 +2,22 @@
 <ui version="4.0">
  <class>UmaDial</class>
  <widget class="QDialog" name="UmaDial">
+  <property name="windowModality">
+   <enum>Qt::WindowModal</enum>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>302</width>
-    <height>95</height>
+    <height>98</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Add to user menu</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../xpeccy.qrc">
+   <iconset>
     <normaloff>:/images/logo.png</normaloff>:/images/logo.png</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">

@@ -105,6 +105,10 @@ void DebugWin::remapMem() {
 }
 
 void DebugWin::start(Computer* c) {
+	if (isVisible()) {
+		activateWindow();
+		return;
+	}
 	blockStart = -1;
 	blockEnd = -1;
 	save_mem_map();
@@ -591,6 +595,8 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	cellMenu->addAction(ui.actTraceHere);
 	cellMenu->addAction(ui.actShowLabels);
 	// NOTE: actions already connected to slots by main menu. no need to double it here
+
+	resize(minimumSize());
 }
 
 DebugWin::~DebugWin() {

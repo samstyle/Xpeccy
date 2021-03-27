@@ -3,7 +3,7 @@
  <class>PadBinder</class>
  <widget class="QDialog" name="PadBinder">
   <property name="windowModality">
-   <enum>Qt::ApplicationModal</enum>
+   <enum>Qt::WindowModal</enum>
   </property>
   <property name="geometry">
    <rect>
@@ -25,9 +25,6 @@
   <property name="windowIcon">
    <iconset resource="../xpeccy.qrc">
     <normaloff>:/images/gamepad.png</normaloff>:/images/gamepad.png</iconset>
-  </property>
-  <property name="modal">
-   <bool>true</bool>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

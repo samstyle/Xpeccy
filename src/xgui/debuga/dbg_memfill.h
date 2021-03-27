@@ -1,6 +1,8 @@
 #pragma once
 
 #include <QDialog>
+
+#include "../../xgui/xgui.h"
 #include "ui_filler.h"
 #include "libxpeccy/memory.h"
 

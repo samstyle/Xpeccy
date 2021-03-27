@@ -13,7 +13,6 @@
   <property name="font">
    <font>
     <family>DejaVu Sans Mono</family>
-    <pointsize>9</pointsize>
    </font>
   </property>
   <property name="windowTitle">
@@ -961,12 +960,6 @@
          <height>0</height>
         </size>
        </property>
-       <property name="font">
-        <font>
-         <family>DejaVu Sans Mono</family>
-         <pointsize>9</pointsize>
-        </font>
-       </property>
        <property name="contextMenuPolicy">
         <enum>Qt::CustomContextMenu</enum>
        </property>
@@ -1280,9 +1273,6 @@
        </property>
        <property name="movable">
         <bool>true</bool>
-       </property>
-       <property name="tabBarAutoHide">
-        <bool>false</bool>
        </property>
        <widget class="QWidget" name="scrTab">
         <attribute name="icon">

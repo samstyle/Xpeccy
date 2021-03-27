@@ -3,21 +3,18 @@
  <class>Filler</class>
  <widget class="QDialog" name="Filler">
   <property name="windowModality">
-   <enum>Qt::ApplicationModal</enum>
+   <enum>Qt::WindowModal</enum>
   </property>
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>245</width>
+    <width>290</width>
     <height>157</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Memory filler</string>
-  </property>
-  <property name="modal">
-   <bool>true</bool>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -183,7 +180,7 @@
   <customwidget>
    <class>xHexSpin</class>
    <extends>QLineEdit</extends>
-   <header location="global">xgui/xgui.h</header>
+   <header location="global">stdlib.h</header>
   </customwidget>
  </customwidgets>
  <resources>
