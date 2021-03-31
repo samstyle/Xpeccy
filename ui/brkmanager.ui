@@ -68,11 +68,28 @@
    <item row="3" column="1">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
+      <widget class="QLabel" name="label_7">
+       <property name="text">
+        <string>from</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="xHexSpin" name="brkAdrHex">
        <property name="inputMask">
         <string>HHHH</string>
        </property>
       </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_6">
+       <property name="text">
+        <string>to</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="xHexSpin" name="brkAdrEnd"/>
      </item>
     </layout>
    </item>

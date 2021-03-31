@@ -27,12 +27,13 @@ class xHexSpin : public QLineEdit {
 		xHexSpin(QWidget* = NULL);
 		void setValue(int);
 		int getValue();
-		void setMin(int);
-		void setMax(int);
 		void setXFlag(int);
 		void setBase(int);
 	signals:
 		void valueChanged(int);
+	public slots:
+		void setMin(int);
+		void setMax(int);
 	private slots:
 		void onChange(int);
 		void onTextChange(QString);

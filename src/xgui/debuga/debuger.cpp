@@ -236,11 +236,6 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 	setFont(QFont("://DejaVuSansMono.ttf",10));
 	ui.setupUi(this);
-
-#if defined(__WIN32)
-	setModal(false);
-#endif
-
 	dumpwin = new QDialog(this);
 
 	tabMode = HW_NULL;
@@ -1704,6 +1699,7 @@ void DebugWin::doBreakPoint(unsigned short adr) {
 	ui.actWrite->setChecked(flag & MEM_BRK_WR);
 }
 
+// TODO: breakpoints on block
 void DebugWin::chaCellProperty(QAction* act) {
 	int data = act->data().toInt();
 	int adr = getAdr();
@@ -1738,6 +1734,7 @@ void DebugWin::chaCellProperty(QAction* act) {
 					brkSet(BRK_MEMCELL, bt | MEM_BRK_ROM, fadr, -1);
 					break;
 				default:
+					// TODO: brkSet mask = end adr for BRK_CPUADR
 					brkSet(BRK_CPUADR, bt, adr, -1);
 					break;
 			}
@@ -2076,7 +2073,11 @@ void DebugWin::saveBrk(QString path) {
 					case BRK_CPUADR:
 						nm = "CPU";
 						ar1 = gethexword(brk.adr & 0xffff);
-						ar2.clear();
+						if (brk.eadr > brk.adr) {
+							ar2 = gethexword(brk.eadr & 0xffff);
+						} else {
+							ar2.clear();
+						}
 						break;
 					case BRK_MEMRAM:
 						nm = "RAM";
@@ -2147,6 +2148,13 @@ void DebugWin::openBrk() {
 				} else if (list.at(0) == "CPU") {
 					brk.type = BRK_CPUADR;
 					brk.adr = list.at(1).toInt(&b0, 16) & 0xffff;
+					if (list.at(2).isEmpty()) {
+						brk.eadr = brk.adr;
+					} else {
+						brk.eadr = list.at(2).toInt(&b0, 16) & 0xffff;
+						if (brk.eadr < brk.adr)
+							brk.eadr = brk.adr;
+					}
 				} else if (list.at(0) == "ROM") {
 					brk.type = BRK_MEMROM;
 					brk.adr = (list.at(1).toInt(&b0, 16) & 0xff) << 14;

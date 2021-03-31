@@ -19,6 +19,8 @@ keyWindow::keyWindow(QWidget* p):QDialog(p) {
 	xent.zxKey.key1 = 0;
 	xent.zxKey.key2 = 0;
 	QPixmap pxm(":/images/keymap.png");
+	setModal(false);
+	setWindowModality(Qt::NonModal);
 	setFixedSize(pxm.size());
 	setWindowIcon(QIcon(":/images/keyboard.png"));
 	setWindowTitle("ZX Keyboard");

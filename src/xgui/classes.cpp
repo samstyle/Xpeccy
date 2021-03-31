@@ -193,9 +193,9 @@ void xHexSpin::keyPressEvent(QKeyEvent* ev) {
 }
 
 void xHexSpin::wheelEvent(QWheelEvent* ev) {
-	if (ev->yDelta < 0) {
+	if (ev->yDelta > 0) {
 		setValue(minMaxCorrect(value + 1, min, max));
-	} else if (ev->yDelta > 0) {
+	} else if (ev->yDelta < 0) {
 		setValue(minMaxCorrect(value - 1, min, max));
 	}
 	ev->accept();

@@ -187,26 +187,34 @@ xBrkManager::xBrkManager(QWidget* p):QDialog(p) {
 	ui.brkType->addItem("SLT cell", BRK_MEMSLT);
 	ui.brkType->addItem("IRQ", BRK_IRQ);
 
+	ui.brkAdrEnd->setMin(0x0000);
+	ui.brkAdrEnd->setMax(0xffff);
+
 	connect(ui.brkType, SIGNAL(currentIndexChanged(int)), this, SLOT(chaType(int)));
+	connect(ui.brkAdrHex, SIGNAL(valueChanged(int)), ui.brkAdrEnd, SLOT(setMin(int)));
 	connect(ui.pbOK, SIGNAL(clicked()), this, SLOT(confirm()));
 }
 
-void xBrkManager::chaType(int t) {
+void xBrkManager::chaType(int i) {
+	int t = ui.brkType->itemData(i).toInt();
 	switch (t) {
 		case BRK_IOPORT:
 			ui.brkFetch->setEnabled(false);
 			ui.brkBank->setEnabled(false);
 			ui.brkMaskHex->setEnabled(true);
+			ui.brkAdrEnd->setEnabled(false);
 			break;
 		case BRK_CPUADR:
 			ui.brkFetch->setEnabled(true);
 			ui.brkBank->setEnabled(false);
 			ui.brkMaskHex->setEnabled(false);
+			ui.brkAdrEnd->setEnabled(true);
 			break;
 		default:
 			ui.brkFetch->setEnabled(true);
 			ui.brkBank->setEnabled(true);
 			ui.brkMaskHex->setEnabled(false);
+			ui.brkAdrEnd->setEnabled(false);
 			break;
 	}
 }
@@ -219,7 +227,7 @@ void xBrkManager::edit(xBrkPoint* sbrk) {
 		obrk.type = BRK_MEMRAM;
 		obrk.adr = 0;
 		obrk.mask = 0;
-		obrk.size = 1;
+		obrk.eadr = 0;
 		obrk.off = 0;
 		obrk.fetch = 1;
 		obrk.read = 0;
@@ -233,18 +241,28 @@ void xBrkManager::edit(xBrkPoint* sbrk) {
 	switch(obrk.type) {
 		case BRK_IOPORT:
 			ui.brkBank->setValue(0);
+			ui.brkBank->setEnabled(false);
 			ui.brkAdrHex->setValue(obrk.adr);
 			ui.brkMaskHex->setValue(obrk.mask);
+			ui.brkMaskHex->setEnabled(true);
+			ui.brkAdrEnd->setEnabled(false);
 			break;
 		case BRK_CPUADR:
 			ui.brkBank->setValue(0);
+			ui.brkBank->setEnabled(false);
 			ui.brkAdrHex->setValue(obrk.adr);
+			ui.brkAdrEnd->setValue(obrk.eadr);
 			ui.brkMaskHex->setText("FFFF");
+			ui.brkMaskHex->setEnabled(false);
+			ui.brkAdrEnd->setEnabled(true);
 			break;
 		default:
 			ui.brkBank->setValue(obrk.adr >> 14);
+			ui.brkBank->setEnabled(true);
 			ui.brkAdrHex->setValue(obrk.adr & 0x3fff);
 			ui.brkMaskHex->setText("FFFF");
+			ui.brkMaskHex->setEnabled(false);
+			ui.brkAdrEnd->setEnabled(true);
 			break;
 	}
 	chaType(obrk.type);
@@ -254,18 +272,22 @@ void xBrkManager::edit(xBrkPoint* sbrk) {
 void xBrkManager::confirm() {
 	xBrkPoint brk;
 	brk.off = 0;
-	brk.size = 1;
 	brk.type = ui.brkType->itemData(ui.brkType->currentIndex()).toInt();
 	brk.fetch = ui.brkFetch->isChecked() ? 1 : 0;
 	brk.read = ui.brkRead->isChecked() ? 1 : 0;
 	brk.write = ui.brkWrite->isChecked() ? 1 : 0;
 	switch (brk.type) {
 		case BRK_CPUADR:
+			brk.adr = ui.brkAdrHex->getValue();
+			brk.eadr = ui.brkAdrEnd->getValue();
+			break;
 		case BRK_IOPORT:
 			brk.adr = ui.brkAdrHex->getValue();
+			brk.eadr = brk.adr;
 			break;
 		default:
 			brk.adr = (ui.brkBank->value() << 14) | (ui.brkAdrHex->getValue() & 0x3fff);
+			brk.eadr = brk.adr;
 			break;
 	}
 	brk.mask = ui.brkMaskHex->getValue();

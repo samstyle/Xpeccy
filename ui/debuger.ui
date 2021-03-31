@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>885</width>
-    <height>652</height>
+    <width>892</width>
+    <height>654</height>
    </rect>
   </property>
   <property name="font">
@@ -21,9 +21,6 @@
   <property name="windowIcon">
    <iconset resource="../xpeccy.qrc">
     <normaloff>:/images/bug.png</normaloff>:/images/bug.png</iconset>
-  </property>
-  <property name="modal">
-   <bool>true</bool>
   </property>
   <layout class="QGridLayout" name="gridLayout_7" columnstretch="0,10,2,1">
    <item row="0" column="0">

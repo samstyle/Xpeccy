@@ -12,11 +12,16 @@ xbpIndex brkFind(xBrkPoint brk) {
 	xBrkPoint* tbrk;
 	int i;
 	int max = conf.prof.cur->brkList.size();
-	for (i = 0; i < max; i++) {
+	for (i = 0; (i < max) && !res.ptr; i++) {
 		tbrk = &conf.prof.cur->brkList[i];
 		if ((tbrk->type == brk.type) && (tbrk->adr == brk.adr)) {
 			if (brk.type == BRK_IOPORT) {
 				if (tbrk->mask == brk.mask) {
+					res.ptr = tbrk;
+					res.idx = i;
+				}
+			} else if (brk.type == BRK_CPUADR) {
+				if (tbrk->eadr == brk.eadr) {
 					res.ptr = tbrk;
 					res.idx = i;
 				}
@@ -25,7 +30,7 @@ xbpIndex brkFind(xBrkPoint brk) {
 				res.idx = i;
 			}
 		}
-		if (res.ptr) break;
+//		if (res.ptr) break;
 	}
 	return res;
 }
@@ -55,7 +60,7 @@ xBrkPoint brkCreate(int type, int flag, int adr, int mask) {
 		brk.adr = adr & 0xffff;
 	}
 	brk.off = 0;
-	brk.size = 1;
+	brk.eadr = brk.adr;
 	brk.fetch = (flag & MEM_BRK_FETCH) ? 1 : 0;
 	brk.read = (flag & MEM_BRK_RD) ? 1 : 0;
 	brk.write = (flag & MEM_BRK_WR) ? 1 : 0;
@@ -66,8 +71,15 @@ xBrkPoint brkCreate(int type, int flag, int adr, int mask) {
 
 void brkInstall(xBrkPoint brk, int del) {
 	unsigned char* ptr = NULL;
-	unsigned char msk;
 	Computer* comp = conf.prof.cur->zx;
+	unsigned char msk = 0;
+	int cnt = 1;
+	if (!brk.off) {
+		if (brk.temp) msk |= MEM_BRK_TFETCH;
+		if (brk.fetch) msk |= MEM_BRK_FETCH;
+		if (brk.read) msk |= MEM_BRK_RD;
+		if (brk.write) msk |= MEM_BRK_WR;
+	}
 	switch(brk.type) {
 		case BRK_IOPORT:
 			for (int adr = 0; adr < 0x10000; adr++) {
@@ -80,7 +92,10 @@ void brkInstall(xBrkPoint brk, int del) {
 				}
 			}
 			break;
-		case BRK_CPUADR: ptr = comp->brkAdrMap + (brk.adr & 0xffff); break;
+		case BRK_CPUADR:
+			ptr = comp->brkAdrMap + (brk.adr & 0xffff);
+			cnt = brk.eadr - brk.adr + 1;
+			break;
 		case BRK_MEMRAM: ptr = comp->brkRamMap + (brk.adr & 0x3fffff); break;
 		case BRK_MEMROM: ptr = comp->brkRomMap + (brk.adr & 0x7ffff); break;
 		case BRK_MEMSLT:
@@ -92,15 +107,12 @@ void brkInstall(xBrkPoint brk, int del) {
 			break;
 	}
 	if (!ptr) return;
-	msk = 0;
-	if (!brk.off) {
-		if (brk.temp) msk |= MEM_BRK_TFETCH;
-		if (brk.fetch) msk |= MEM_BRK_FETCH;
-		if (brk.read) msk |= MEM_BRK_RD;
-		if (brk.write) msk |= MEM_BRK_WR;
+	while (cnt > 0) {
+		*ptr &= 0xf0;
+		*ptr |= (msk & 0x0f);
+		ptr++;
+		cnt--;
 	}
-	*ptr &= 0xf0;
-	*ptr |= (msk & 0x0f);
 	if (!del || brk.fetch || brk.read || brk.write || brk.temp) return;
 	brkDelete(brk);
 }

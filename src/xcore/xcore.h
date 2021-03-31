@@ -104,8 +104,8 @@ typedef struct {
 	unsigned write:1;
 	unsigned temp:1;
 	int type;
-	int adr;
-	int size;	// size of block
+	int adr;	// (start) adr (mem)
+	int eadr;	// end adr
 	int mask;	// io: if (port & mask == adr & mask)
 } xBrkPoint;
 
