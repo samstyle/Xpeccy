@@ -21,6 +21,9 @@ QString brkGetString(xBrkPoint brk) {
 	switch(brk.type) {
 		case BRK_CPUADR:
 			res = QString("CPU:%0").arg(gethexword(brk.adr));
+			if (brk.eadr > brk.adr) {
+				res.append(QString("-%0").arg(gethexword(brk.eadr)));
+			}
 			break;
 		case BRK_IOPORT:
 			res = QString("IO:%0 mask %1").arg(gethexword(brk.adr)).arg(gethexword(brk.mask));
@@ -156,7 +159,8 @@ void xBreakTable::onCellClick(QModelIndex idx) {
 		case 2: brk->read ^= 1; break;
 		case 3: brk->write ^= 1; break;
 	}
-	brkInstall(prf->brkList[row], 0);
+	// brkInstall(prf->brkList[row], 0);
+	brkInstallAll();
 	model->updateCell(row, col);
 	emit rqDasmDump();
 }
@@ -241,31 +245,22 @@ void xBrkManager::edit(xBrkPoint* sbrk) {
 	switch(obrk.type) {
 		case BRK_IOPORT:
 			ui.brkBank->setValue(0);
-			ui.brkBank->setEnabled(false);
 			ui.brkAdrHex->setValue(obrk.adr);
 			ui.brkMaskHex->setValue(obrk.mask);
-			ui.brkMaskHex->setEnabled(true);
-			ui.brkAdrEnd->setEnabled(false);
 			break;
 		case BRK_CPUADR:
 			ui.brkBank->setValue(0);
-			ui.brkBank->setEnabled(false);
 			ui.brkAdrHex->setValue(obrk.adr);
 			ui.brkAdrEnd->setValue(obrk.eadr);
 			ui.brkMaskHex->setText("FFFF");
-			ui.brkMaskHex->setEnabled(false);
-			ui.brkAdrEnd->setEnabled(true);
 			break;
 		default:
 			ui.brkBank->setValue(obrk.adr >> 14);
-			ui.brkBank->setEnabled(true);
 			ui.brkAdrHex->setValue(obrk.adr & 0x3fff);
 			ui.brkMaskHex->setText("FFFF");
-			ui.brkMaskHex->setEnabled(false);
-			ui.brkAdrEnd->setEnabled(true);
 			break;
 	}
-	chaType(obrk.type);
+	chaType(ui.brkType->currentIndex());
 	show();
 }
 

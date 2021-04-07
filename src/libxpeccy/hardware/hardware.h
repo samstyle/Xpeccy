@@ -150,6 +150,7 @@ void hw_dum_iwr(Computer*, int, int, int);
 sndPair hw_dum_vol(Computer*, sndVolume*);
 
 // zx48
+void zx48_reset(Computer*);
 void zx_init(Computer*);
 void speMapMem(Computer*);
 void speOut(Computer*, int, int, int);

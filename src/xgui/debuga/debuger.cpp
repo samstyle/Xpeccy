@@ -418,8 +418,8 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 // dump table
 
-	ui.cbCodePage->addItem("WIN", XCP_1251);
-	ui.cbCodePage->addItem("DOS", XCP_866);
+	ui.cbCodePage->addItem("WIN1251", XCP_1251);
+	ui.cbCodePage->addItem("CP866", XCP_866);
 	ui.cbCodePage->addItem("KOI8R", XCP_KOI8R);
 
 	ui.cbDumpView->addItem("CPU", XVIEW_CPU);
@@ -1718,7 +1718,8 @@ void DebugWin::chaCellProperty(QAction* act) {
 	if (end < bgn)
 		end += 0x10000;
 	adr = bgn;
-	while (adr <= end) {
+	int proc = 1;
+	while ((adr <= end) && proc) {
 		if (data & MEM_BRK_ANY) {
 			bt = 0;
 			if (ui.actFetch->isChecked()) bt |= MEM_BRK_FETCH;
@@ -1734,11 +1735,10 @@ void DebugWin::chaCellProperty(QAction* act) {
 					brkSet(BRK_MEMCELL, bt | MEM_BRK_ROM, fadr, -1);
 					break;
 				default:
-					// TODO: brkSet mask = end adr for BRK_CPUADR
-					brkSet(BRK_CPUADR, bt, adr, -1);
+					brkSet(BRK_CPUADR, bt, bgn, end);
+					proc = 0;			// stop processing
 					break;
 			}
-			ui.bpList->update();
 		} else {
 			ptr = getBrkPtr(comp, adr);
 			*ptr &= 0x0f;
@@ -1755,6 +1755,7 @@ void DebugWin::chaCellProperty(QAction* act) {
 		}
 		adr++;
 	}
+	ui.bpList->update();
 	fillDisasm();
 	fillDump();
 //	fillBrkTable();
@@ -2073,10 +2074,10 @@ void DebugWin::saveBrk(QString path) {
 					case BRK_CPUADR:
 						nm = "CPU";
 						ar1 = gethexword(brk.adr & 0xffff);
+						ar2.clear();
 						if (brk.eadr > brk.adr) {
-							ar2 = gethexword(brk.eadr & 0xffff);
-						} else {
-							ar2.clear();
+							ar1.append("-");
+							ar1.append(gethexword(brk.eadr & 0xffff));
 						}
 						break;
 					case BRK_MEMRAM:
@@ -2124,6 +2125,7 @@ void DebugWin::openBrk() {
 	if (path.isEmpty()) return;
 	QFile file(path);
 	QString line;
+	QStringList splt;
 	QStringList list;
 	xBrkPoint brk;
 	bool b0,b1;
@@ -2147,11 +2149,16 @@ void DebugWin::openBrk() {
 					brk.mask = list.at(2).toInt(&b1, 16) & 0xffff;
 				} else if (list.at(0) == "CPU") {
 					brk.type = BRK_CPUADR;
+					if (list.at(1).contains("-")) {		// 1234-ABCD
+						splt = list.at(1).split(QLatin1Char('-'), X_SkipEmptyParts);
+						list[1] = splt.first();
+						list[2] = splt.last();
+					}
 					brk.adr = list.at(1).toInt(&b0, 16) & 0xffff;
 					if (list.at(2).isEmpty()) {
 						brk.eadr = brk.adr;
 					} else {
-						brk.eadr = list.at(2).toInt(&b0, 16) & 0xffff;
+						brk.eadr = list.at(2).toInt(&b1, 16) & 0xffff;
 						if (brk.eadr < brk.adr)
 							brk.eadr = brk.adr;
 					}

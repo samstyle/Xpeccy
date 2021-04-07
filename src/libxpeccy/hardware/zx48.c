@@ -4,6 +4,7 @@
 
 void zx48_reset(Computer* comp) {
 	comp->mem->ramMask = MEM_128K - 1;	// to acces pages 2,5
+	comp->rom = 1;				// to switch to trdos
 	speReset(comp);
 }
 

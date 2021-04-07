@@ -17,7 +17,7 @@ HardWare hwTab[] = {
 		zx_init,hw_dum_map, hw_dum_iwr, hw_dum_ird, hw_dum_mrd, hw_dum_mwr, NULL, NULL, NULL, NULL, hw_dum_vol
 	},{
 		HW_ZX48,HWG_ZX,"ZX48K","ZX 48K",16,MEM_64K | MEM_16K,1.0,NULL,
-		zx_init,speMapMem,speOut,speIn,stdMRd,stdMWr,speReset,zx_sync,zx_keyp,zx_keyr,zx_vol
+		zx_init,speMapMem,speOut,speIn,stdMRd,stdMWr,zx48_reset,zx_sync,zx_keyp,zx_keyr,zx_vol
 	},{
 		HW_PENT,HWG_ZX,"Pentagon","Pentagon",16,MEM_128K | MEM_512K,1.0,NULL,
 		zx_init,penMapMem,penOut,penIn,stdMRd,stdMWr,speReset,zx_sync,zx_keyp,zx_keyr,zx_vol

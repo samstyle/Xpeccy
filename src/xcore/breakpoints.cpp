@@ -55,12 +55,25 @@ xBrkPoint brkCreate(int type, int flag, int adr, int mask) {
 			default: brk.type = BRK_MEMEXT; break;
 		}
 		brk.adr = adr;
+		brk.eadr = brk.adr;
+	} else if (type == BRK_CPUADR) {
+		brk.type = type;
+		brk.adr = adr & 0xffff;
+		if (mask > adr) {
+			brk.eadr = mask & 0xffff;
+		} else if (mask >= 0) {
+			brk.adr = mask & 0xffff;
+			brk.eadr = adr & 0xffff;
+		} else {
+			brk.eadr = brk.adr;
+		}
+		mask = -1;
 	} else {
 		brk.type = type;
 		brk.adr = adr & 0xffff;
+		brk.eadr = brk.adr;
 	}
 	brk.off = 0;
-	brk.eadr = brk.adr;
 	brk.fetch = (flag & MEM_BRK_FETCH) ? 1 : 0;
 	brk.read = (flag & MEM_BRK_RD) ? 1 : 0;
 	brk.write = (flag & MEM_BRK_WR) ? 1 : 0;
@@ -127,7 +140,8 @@ void brkAdd(xBrkPoint brk) {
 	} else {
 		conf.prof.cur->brkList.push_back(brk);
 	}
-	brkInstall(brk, 0);
+	// brkInstall(brk, 0);
+	brkInstallAll();
 }
 
 void brkSet(int type, int flag, int adr, int mask) {
@@ -143,21 +157,26 @@ void brkXor(int type, int flag, int adr, int mask, int del) {
 		idx.ptr->read ^= brk.read;
 		idx.ptr->write ^= brk.write;
 		brk = *idx.ptr;
+		if (del && !brk.fetch && !brk.read && !brk.write && !brk.temp) {
+			conf.prof.cur->brkList.erase(conf.prof.cur->brkList.begin() + idx.idx);
+		}
 	} else {
 		conf.prof.cur->brkList.push_back(brk);
 	}
-	brkInstall(brk, del);
+	brkInstallAll();
+	// brkInstall(brk, del);		// delete if inactive
 }
 
 void brkDelete(xBrkPoint dbrk) {
 	int idx = brkFind(dbrk).idx;
 	if (idx < 0) return;
 	if (idx >= (int)conf.prof.cur->brkList.size()) return;
-	xBrkPoint brk = conf.prof.cur->brkList[idx];
-	brk.off = 1;
-	brk.fetch = 1;
-	brkInstall(brk, 0);
+//	xBrkPoint brk = conf.prof.cur->brkList[idx];
+//	brk.off = 1;
+//	brk.fetch = 1;
+//	brkInstall(brk, 0);
 	conf.prof.cur->brkList.erase(conf.prof.cur->brkList.begin() + idx);
+	brkInstallAll();
 }
 
 void clearMap(unsigned char* ptr, int siz) {
