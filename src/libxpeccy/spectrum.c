@@ -137,6 +137,7 @@ int iord(int port, void* ptr) {
 
 void iowr(int port, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
+// store adr & data, real writing will be later
 	comp->padr = port;
 	comp->pval = val;
 // brk
@@ -492,8 +493,6 @@ int compExec(Computer* comp) {
 // out @ last tick
 	vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
 	if (comp->padr) {
-//		tapSync(comp->tape,comp->tapCount);
-//		comp->tapCount = 0;
 		bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
 		if (ula_wr(comp->vid->ula, comp->padr, comp->pval)) {
 			if (comp->vid->ula->palchan) {

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>892</width>
+    <width>987</width>
     <height>654</height>
    </rect>
   </property>
@@ -24,7 +24,7 @@
   </property>
   <layout class="QGridLayout" name="gridLayout_7" columnstretch="0,10,2,1">
    <item row="0" column="0">
-    <layout class="QVBoxLayout" name="verticalLayout_9" stretch="0,1">
+    <layout class="QVBoxLayout" name="verticalLayout_9">
      <item>
       <widget class="QLabel" name="labHeadCpu">
        <property name="text">
@@ -52,6 +52,12 @@
        </item>
        <item row="0" column="1">
         <widget class="xHexSpin" name="editReg00">
+         <property name="maximumSize">
+          <size>
+           <width>60</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <property name="frame">
           <bool>false</bool>
          </property>
@@ -69,6 +75,12 @@
        </item>
        <item row="1" column="1">
         <widget class="xHexSpin" name="editReg01">
+         <property name="maximumSize">
+          <size>
+           <width>60</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <property name="maxLength">
           <number>32767</number>
          </property>
@@ -89,6 +101,12 @@
        </item>
        <item row="2" column="1">
         <widget class="xHexSpin" name="editReg02">
+         <property name="maximumSize">
+          <size>
+           <width>60</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <property name="maxLength">
           <number>32767</number>
          </property>
@@ -109,6 +127,12 @@
        </item>
        <item row="3" column="1">
         <widget class="xHexSpin" name="editReg03">
+         <property name="maximumSize">
+          <size>
+           <width>60</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <property name="frame">
           <bool>false</bool>
          </property>
@@ -126,6 +150,12 @@
        </item>
        <item row="4" column="1">
         <widget class="xHexSpin" name="editReg04">
+         <property name="maximumSize">
+          <size>
+           <width>60</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <property name="frame">
           <bool>false</bool>
          </property>
@@ -143,6 +173,12 @@
        </item>
        <item row="5" column="1">
         <widget class="xHexSpin" name="editReg05">
+         <property name="maximumSize">
+          <size>
+           <width>60</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <property name="frame">
           <bool>false</bool>
          </property>
@@ -160,6 +196,12 @@
        </item>
        <item row="6" column="1">
         <widget class="xHexSpin" name="editReg06">
+         <property name="maximumSize">
+          <size>
+           <width>60</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <property name="frame">
           <bool>false</bool>
          </property>
@@ -177,6 +219,12 @@
        </item>
        <item row="7" column="1">
         <widget class="xHexSpin" name="editReg07">
+         <property name="maximumSize">
+          <size>
+           <width>60</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <property name="frame">
           <bool>false</bool>
          </property>
@@ -194,6 +242,12 @@
        </item>
        <item row="8" column="1">
         <widget class="xHexSpin" name="editReg08">
+         <property name="maximumSize">
+          <size>
+           <width>60</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <property name="frame">
           <bool>false</bool>
          </property>
@@ -211,6 +265,12 @@
        </item>
        <item row="9" column="1">
         <widget class="xHexSpin" name="editReg09">
+         <property name="maximumSize">
+          <size>
+           <width>60</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <property name="frame">
           <bool>false</bool>
          </property>
@@ -228,6 +288,12 @@
        </item>
        <item row="10" column="1">
         <widget class="xHexSpin" name="editReg10">
+         <property name="maximumSize">
+          <size>
+           <width>60</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <property name="frame">
           <bool>false</bool>
          </property>
@@ -245,6 +311,12 @@
        </item>
        <item row="11" column="1">
         <widget class="xHexSpin" name="editReg11">
+         <property name="maximumSize">
+          <size>
+           <width>60</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <property name="frame">
           <bool>false</bool>
          </property>
@@ -262,6 +334,12 @@
        </item>
        <item row="12" column="1">
         <widget class="xHexSpin" name="editReg12">
+         <property name="maximumSize">
+          <size>
+           <width>60</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <property name="frame">
           <bool>false</bool>
          </property>
@@ -279,6 +357,12 @@
        </item>
        <item row="13" column="1">
         <widget class="xHexSpin" name="editReg13">
+         <property name="maximumSize">
+          <size>
+           <width>60</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <property name="frame">
           <bool>false</bool>
          </property>
@@ -296,6 +380,12 @@
        </item>
        <item row="14" column="1">
         <widget class="xHexSpin" name="editReg14">
+         <property name="maximumSize">
+          <size>
+           <width>60</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <property name="frame">
           <bool>false</bool>
          </property>
@@ -313,6 +403,12 @@
        </item>
        <item row="15" column="1">
         <widget class="QSpinBox" name="boxIM">
+         <property name="maximumSize">
+          <size>
+           <width>60</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <property name="frame">
           <bool>false</bool>
          </property>
@@ -3264,11 +3360,11 @@
  </resources>
  <connections/>
  <buttongroups>
-  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
+  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

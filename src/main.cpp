@@ -91,8 +91,6 @@ int main(int ac,char** av) {
 	conf_init(av[0]);
 	shortcut_init();
 
-	QFontDatabase::addApplicationFont("://DejaVuSansMono.ttf");
-
 	MainWin mwin;
 	xThread ethread;
 	DebugWin dbgw(&mwin);
@@ -101,6 +99,11 @@ int main(int ac,char** av) {
 	RZXWin rzxw(&mwin);
 	xWatcher wutw(&mwin);
 	keyWindow keyw(&mwin);
+
+	int id = QFontDatabase::addApplicationFont(":/DejaVuSansMono.ttf");
+	if (id > -1) {
+		dbgw.setFont(QFont(QFontDatabase::applicationFontFamilies(id).first(), 10));
+	}
 
 	loadConfig();
 	mwin.loadShader();
@@ -273,5 +276,6 @@ int main(int ac,char** av) {
 	getch();
 	FreeConsole();
 #endif
+	printf("exit\n");
 	return 0;
 }

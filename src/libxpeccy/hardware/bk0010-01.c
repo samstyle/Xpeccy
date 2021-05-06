@@ -168,7 +168,7 @@ int bk_dbg_rd(Computer* comp, int adr) {
 	comp->wdata = 0xffff;
 	printf("%.4X : rd %.4X\n",comp->cpu->pc, adr);
 	assert(0);
-	return 1;
+	return -1;
 }
 
 void bk_dbg_wr(Computer* comp, int adr, int val) {

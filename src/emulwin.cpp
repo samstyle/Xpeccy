@@ -1223,8 +1223,15 @@ void MainWin::dropEvent(QDropEvent* ev) {
 
 
 void MainWin::closeEvent(QCloseEvent* ev) {
-	std::string fname;
 	pause(true,PR_EXIT);
+	if (conf.confexit) {
+		if (!areSure("Quit?")) {
+			ev->ignore();
+			pause(false, PR_EXIT);
+			return;
+		}
+	}
+	std::string fname;
 	foreach(xProfile* prf, conf.prof.list) {
 		prfSave(prf->name);
 	}

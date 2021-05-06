@@ -7,8 +7,10 @@ How to compile
 
 Options are:
 
--DQT4BUILD=1 or 0 if you want Qt4 or Qt5 build
--DSDL1BUILD=1 or 0 if you want SDL1.2 or SDL2 build
+-DQT4BUILD=1 or 0(default) - use Qt4 build (Qt5 otherwise)
+-DSDL1BUILD=1 or 0(defailt) - use SDL1.2 (SDL2 otherwise)
+-DUSEOPENGL=1(default) or 0 - use QtOpenGL widget to draw
+-DUSEQTNETWORK=1 or 0(default) - use QtNetwork. experimental.
 
 If something going wrong, fix it - install Qt and sdl libraries and headers
 Optionally you can install zlib libs and headers for more functional

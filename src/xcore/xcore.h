@@ -343,6 +343,7 @@ struct xConfig {
 	unsigned storePaths:1;		// store tape/disk paths
 	unsigned defProfile:1;		// start @ default profile
 	unsigned boot:1;		// add boot to trdos floppies
+	unsigned confexit:1;		// confirm on exit
 	double brdsize;			// 0.0 - 1.0 : border size
 	int xpos;			// window position
 	int ypos;

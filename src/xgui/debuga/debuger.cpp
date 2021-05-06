@@ -144,7 +144,6 @@ void DebugWin::start(Computer* c) {
 
 void DebugWin::stop() {
 	// rest_mem_map();
-	compExec(comp);		// to prevent double breakpoint catch
 	comp->debug = 0;
 	comp->vid->debug = 0;
 	comp->maping = ui.actMaping->isChecked() ? 1 : 0;
@@ -157,6 +156,7 @@ void DebugWin::stop() {
 
 	memViewer->hide();
 	hide();
+	compExec(comp);		// to prevent double breakpoint catch
 	emit closed();
 }
 
@@ -234,7 +234,6 @@ QWidget* xItemDelegate::createEditor(QWidget* par, const QStyleOptionViewItem&, 
 DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	int i;
 
-	setFont(QFont("://DejaVuSansMono.ttf",10));
 	ui.setupUi(this);
 	dumpwin = new QDialog(this);
 

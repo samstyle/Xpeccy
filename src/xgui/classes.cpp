@@ -110,8 +110,6 @@ void xHexSpin::setValue(int nval) {
 		emit valueChanged(nval);
 		onChange(value);
 	}
-//	if (objectName() == "editReg00")
-//		qDebug() << pal.color(QPalette::Base) << pal.color(QPalette::Text);
 	setPalette(pal);
 }
 

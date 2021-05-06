@@ -100,6 +100,7 @@ void saveConfig() {
 	fprintf(cfile, "savepaths = %s\n", YESNO(conf.storePaths));
 	fprintf(cfile, "fdcturbo = %s\n", YESNO(fdcFlag & FDC_FAST));
 	fprintf(cfile, "addboot = %s\n", YESNO(conf.boot));
+	fprintf(cfile, "exit.confirm = %s\n",YESNO(conf.confexit));
 	fprintf(cfile, "port = %i\n", conf.port);
 	fprintf(cfile, "winpos = %i,%i\n",conf.xpos,conf.ypos);
 
@@ -453,6 +454,7 @@ void loadConfig() {
 						}
 					}
 					if (pnam == "addboot") conf.boot = str2bool(pval.c_str()) ? 1 : 0;
+					if (pnam == "exit.confirm") conf.confexit = str2bool(pval.c_str()) ? 1 : 0;
 					break;
 				case SECT_TAPE:
 					if (pnam=="autoplay") conf.tape.autostart = str2bool(pval) ? 1 : 0;
