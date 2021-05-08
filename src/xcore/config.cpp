@@ -77,7 +77,7 @@ void conf_init(char* wpath) {
 	mkdir(conf.path.shdDir.c_str());
 #endif
 	conf.scrShot.format = "png";
-	vLayout vlay = {{448,320},{74,48},{64,32},{256,192},{0,0},64};
+	vLayout vlay = {{448,320},{72,64},{64,16},{256,192},{0,0},64};
 	addLayout("default", vlay);
 	conf.running = 0;
 	conf.boot = 1;

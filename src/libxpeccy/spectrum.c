@@ -10,6 +10,8 @@ static int res2;
 int res3 = 0;	// tick in op, wich has last OUT/MWR (and vidSync)
 int res4 = 0;	// save last res3 (vidSync on OUT/MWR process do res3-res4 ticks)
 
+#define RUNTIME_IO 1
+
 // ...
 
 int vid_mrd_cb(int adr, void* ptr) {
@@ -491,7 +493,7 @@ int compExec(Computer* comp) {
 	if (comp->evenM1 && (res2 & 1))
 		res2++;
 // out @ last tick
-	vidSync(comp->vid,(res2 - res4) * comp->nsPerTick);
+	vidSync(comp->vid,(res2 - res4 - 1) * comp->nsPerTick);			// 2T
 	if (comp->padr) {
 		bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
 		if (ula_wr(comp->vid->ula, comp->padr, comp->pval)) {
@@ -504,6 +506,7 @@ int compExec(Computer* comp) {
 			comp->hw->out(comp, comp->padr, comp->pval, bdiz);
 		comp->padr = 0;
 	}
+	vidSync(comp->vid, comp->nsPerTick);					// 1T
 // execution completed : get eated time & translate signals
 	nsTime = comp->vid->time;
 	comp->tickCount += res2;

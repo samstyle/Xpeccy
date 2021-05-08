@@ -54,6 +54,15 @@ void fill_romset_list(QComboBox* box) {
 	box->setCurrentIndex(box->findText(txt));
 }
 
+void fill_layout_list(QComboBox* box, QString nm = QString()) {
+	QString txt = box->currentText();
+	box->clear();
+	foreach(xLayout ly, conf.layList) {
+		box->addItem(QString::fromLocal8Bit(ly.name.c_str()));
+	}
+	box->setCurrentIndex(box->findText(nm.isEmpty() ? txt : nm));
+}
+
 void fill_shader_list(QComboBox* box) {
 	QDir dir(conf.path.shdDir.c_str());
 	QFileInfoList lst = dir.entryInfoList(QStringList() << "*.txt", QDir::Files, QDir::Name);
@@ -715,11 +724,13 @@ void SetupWin::reject() {
 
 void SetupWin::layNameCheck(QString nam) {
 	layUi.okButton->setEnabled(!layUi.layName->text().isEmpty());
+/*
 	for (int i = 0; i < conf.layList.size(); i++) {
 		if ((QString(conf.layList[i].name.c_str()) == nam) && (eidx != i)) {
 			layUi.okButton->setEnabled(false);
 		}
 	}
+*/
 }
 
 void SetupWin::editLayout() {
@@ -734,7 +745,7 @@ void SetupWin::editLayout() {
 	layUi.intLenBox->setValue(nlay.lay.intSize);
 	layUi.sbScrW->setValue(nlay.lay.scr.x);
 	layUi.sbScrH->setValue(nlay.lay.scr.y);
-	layUi.okButton->setEnabled(false);
+	layUi.okButton->setDisabled(eidx == 0);
 	layUi.layWidget->setDisabled(eidx == 0);
 	layUi.layName->setText(nlay.name.c_str());
 	layeditor->show();
@@ -793,8 +804,11 @@ void SetupWin::layEditorChanged() {
 }
 
 void SetupWin::layEditorOK() {
-	std::string name = std::string(layUi.layName->text().toLocal8Bit().data());
+	QString nm = layUi.layName->text();
+	std::string name = std::string(nm.toLocal8Bit().data());
+	xLayout* exlay = findLayout(name);
 	vLayout vlay;
+	int ok = 1;
 	vlay.full.x = layUi.lineBox->value();
 	vlay.full.y = layUi.rowsBox->value();
 	vlay.bord.x = layUi.brdLBox->value();
@@ -806,17 +820,38 @@ void SetupWin::layEditorOK() {
 	vlay.intSize = layUi.intLenBox->value();
 	vlay.scr.x = layUi.sbScrW->value();
 	vlay.scr.y = layUi.sbScrH->value();
-	if (eidx < 0) {
-		addLayout(name, vlay);
-		ui.geombox->addItem(QString::fromLocal8Bit(nlay.name.c_str()));
-		ui.geombox->setCurrentIndex(ui.geombox->count() - 1);
-	} else {
-		if (conf.layList[eidx].name != nlay.name)
-			prfChangeLayName(conf.layList[eidx].name, nlay.name);
-		conf.layList[eidx].lay = vlay;
-		ui.geombox->setItemText(eidx, nlay.name.c_str());
+	if (eidx < 0) {						// new layout
+		if (nm == "default") {				// protected
+			showInfo("'default' layout cannot be changed");
+			ok = 0;
+		} else if (exlay == NULL) {			// new name
+			addLayout(name, vlay);
+			fill_layout_list(ui.geombox, nm);
+		} else {					// existing name
+			ok = areSure("Replace existing layout?");
+			if (ok) exlay->lay = vlay;
+		}
+	} else if (eidx > 0) {					// ==0 is 'default', not editable
+		std::string onm = conf.layList[eidx].name;
+		if (onm != name) {				// name changed
+			if (exlay == NULL) {			// no existing layout with new name
+				prfChangeLayName(conf.layList[eidx].name, nlay.name);
+				conf.layList[eidx].lay = vlay;
+				fill_layout_list(ui.geombox, nm);
+			} else {
+				ok = areSure("Replace existing layout?");
+				if (ok) {
+					prfChangeLayName(conf.layList[eidx].name, nlay.name);
+					exlay->lay = vlay;		// replace new-name layout
+					rmLayout(onm);
+					fill_layout_list(ui.geombox, nm);
+				}
+			}
+		} else {					// name doesn't changed, replace old layout
+			conf.layList[eidx] = nlay;
+		}
 	}
-	layeditor->hide();
+	if (ok) layeditor->hide();
 }
 
 // ROMSETS
@@ -836,7 +871,7 @@ static xRomPreset presets[] = {
 	{HW_PLUS2, "", "", {{"plus2a.rom",0,0,0},{"",0,0,0}}},
 	{HW_PLUS3, "", "", {{"plus3-41.rom",0,0,0},{"",0,0,0}}},
 	{HW_ATM2, "gs105a.rom", "SGEN.ROM", {{"xbios135.rom",0,0,0},{"",0,0,0}}},
-	{HW_PENTEVO, "gs105a.rom", "", {{"zxevo.rom",0,0,0},{"",0,0,0}}},
+	{HW_PENTEVO, "gs105a.rom", "SGEN.ROM", {{"zxevo.rom",0,0,0},{"",0,0,0}}},
 	{HW_TSLAB, "gs105a.rom", "", {{"ts-bios.rom",0,0,0},{"",0,0,0}}},
 	{HW_PROFI, "gs105a.rom", "", {{"PROFI-P.ROM",0,0,0},{"",0,0,0}}},
 	{HW_PHOENIX, "gs105a.rom", "", {{"zxm_bios_5_03.rom",0,0,0},{"",0,0,0}}},
@@ -960,26 +995,6 @@ void SetupWin::setRom(xRomFile f) {
 	}
 	rsmodel->update(&conf.rsList[idx]);
 }
-
-/*
-void SetupWin::editrset() {
-	eidx = ui.rsetbox->currentIndex();
-	if (eidx < 0) return;
-	rseditor->edit(eidx);
-}
-
-void SetupWin::rscomplete(int idx, QString nam) {
-// idx < 0: new romset with name NAM created
-// idx >= 0: romset IDX edited, NAM = new name
-	if (idx < 0) {
-		ui.rsetbox->addItem(nam);
-		ui.rsetbox->setCurrentIndex(ui.rsetbox->count() - 1);
-	} else {
-		ui.rsetbox->setItemText(idx, nam);
-		buildrsetlist();
-	}
-}
-*/
 
 // lists
 

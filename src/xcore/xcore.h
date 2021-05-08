@@ -302,6 +302,7 @@ typedef struct {
 } xLayout;
 
 bool addLayout(std::string, vLayout);
+void rmLayout(std::string);
 xLayout* findLayout(std::string);
 
 // joystick
