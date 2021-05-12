@@ -2,6 +2,8 @@
 
 #include "../cpu.h"
 
+void z80_iowr(CPU* cpu, int adr, int data);
+
 void npr00(CPU*);
 void npr01(CPU*);
 void npr02(CPU*);

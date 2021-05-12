@@ -139,9 +139,16 @@ int iord(int port, void* ptr) {
 
 void iowr(int port, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
+#if RUNTIME_IO
+	bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
+	vidSync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
+	comp->hw->out(comp, port, val, bdiz);
+	res4 = comp->cpu->t;
+#else
 // store adr & data, real writing will be later
 	comp->padr = port;
 	comp->pval = val;
+#endif
 // brk
 	if (comp->brkIOMap[port] & MEM_BRK_WR)
 		comp->brk = 1;
@@ -492,8 +499,16 @@ int compExec(Computer* comp) {
 // scorpion WAIT: add 1T to odd-T command
 	if (comp->evenM1 && (res2 & 1))
 		res2++;
-// out @ last tick
-	vidSync(comp->vid,(res2 - res4 - 1) * comp->nsPerTick);			// 2T
+#if RUNTIME_IO
+	if (res2 > res4) {
+		if (res2 > res4 + 1)
+			vidSync(comp->vid, (res2 - res4 - 1) * comp->nsPerTick);
+		comp->cpu->ack = comp->vid->intFRAME ? 1 : 0;
+		vidSync(comp->vid, comp->nsPerTick);
+	}
+#else
+	// out @ last tick
+	vidSync(comp->vid,(res2 - res4 - 1) * comp->nsPerTick);			// 3T
 	if (comp->padr) {
 		bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
 		if (ula_wr(comp->vid->ula, comp->padr, comp->pval)) {
@@ -506,7 +521,10 @@ int compExec(Computer* comp) {
 			comp->hw->out(comp, comp->padr, comp->pval, bdiz);
 		comp->padr = 0;
 	}
+	// TODO: zx - if INT is inactive at last tick, don't acknowledge it at the end of cycle
+	comp->cpu->ack = comp->vid->intFRAME ? 1 : 0;
 	vidSync(comp->vid, comp->nsPerTick);					// 1T
+#endif
 // execution completed : get eated time & translate signals
 	nsTime = comp->vid->time;
 	comp->tickCount += res2;

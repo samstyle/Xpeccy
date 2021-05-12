@@ -77,6 +77,9 @@ void conf_init(char* wpath) {
 	mkdir(conf.path.shdDir.c_str());
 #endif
 	conf.scrShot.format = "png";
+// Pentagon geometry:
+// rows: 16Vblk + (16 invis + 48 vis) top border + 192 screen + 48 bottom border = 320 rows
+// cols: 64Hblk + 72 left border + 256 screen + 56 right border = 448 dots (224T)
 	vLayout vlay = {{448,320},{72,64},{64,16},{256,192},{0,0},64};
 	addLayout("default", vlay);
 	conf.running = 0;

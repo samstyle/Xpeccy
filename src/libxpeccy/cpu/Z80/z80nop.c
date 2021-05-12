@@ -7,6 +7,12 @@ extern opCode edTab[256];
 extern opCode ddTab[256];
 extern opCode fdTab[256];
 
+void z80_iowr(CPU* cpu, int adr, int data) {
+	cpu->t += 2;
+	cpu->iwr(adr, data, cpu->data);
+	cpu->t += 2;
+}
+
 // 00	nop		4
 void npr00(CPU* cpu) {}
 
@@ -637,7 +643,7 @@ void nprD2(CPU* cpu) {
 void nprD3(CPU* cpu) {
 	cpu->lptr = MEMRD(cpu->pc++,3);
 	cpu->hptr = cpu->a;
-	IOWR(cpu->mptr,cpu->a,4);
+	z80_iowr(cpu, cpu->mptr, cpu->a);
 	cpu->lptr++;
 }
 

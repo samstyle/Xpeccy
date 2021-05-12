@@ -121,6 +121,7 @@ struct CPU {
 	unsigned resPV:1;		// Z80: reset PV flag on INT
 	unsigned noint:1;		// Z80: don't handle INT after EI
 	unsigned wait:1;		// Z80: WAIT signal
+	unsigned ack:1;			// Z80: acknowledge INT after execution (prevent last-1T INT)
 	unsigned lock:1;		// LR35902: CPU locked
 	unsigned stop:1;		// LR35902: CPU stoped, unlock on keypress
 	unsigned speed:1;		// LR35902: double speed mode (TODO)
@@ -131,8 +132,8 @@ struct CPU {
 
 	int type;			// cpu type id
 
-	unsigned char intrq;		// interrupts request. 8 bits = 8 INT types, 1 = requested
-	unsigned char inten;		// interrupts enabled mask
+	int intrq;			// interrupts request. each bit for each INT type, 1 = requested
+	int inten;			// interrupts enabled mask
 	unsigned short intvec;
 
 	PAIR(pc,hpc,lpc);

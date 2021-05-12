@@ -45,8 +45,9 @@ std::string getRFText(QComboBox* box) {
 	return std::string(res.toLocal8Bit().data());
 }
 
-void fill_romset_list(QComboBox* box) {
-	QString txt = box->currentText();
+void fill_romset_list(QComboBox* box, QString txt = QString()) {
+	if (txt.isEmpty())
+		txt = box->currentText();
 	box->clear();
 	foreach(xRomset rs, conf.rsList) {
 		box->addItem(QString::fromLocal8Bit(rs.name.c_str()));
@@ -54,13 +55,14 @@ void fill_romset_list(QComboBox* box) {
 	box->setCurrentIndex(box->findText(txt));
 }
 
-void fill_layout_list(QComboBox* box, QString nm = QString()) {
-	QString txt = box->currentText();
+void fill_layout_list(QComboBox* box, QString txt = QString()) {
+	if (txt.isEmpty())
+		txt = box->currentText();
 	box->clear();
 	foreach(xLayout ly, conf.layList) {
 		box->addItem(QString::fromLocal8Bit(ly.name.c_str()));
 	}
-	box->setCurrentIndex(box->findText(nm.isEmpty() ? txt : nm));
+	box->setCurrentIndex(box->findText(txt));
 }
 
 void fill_shader_list(QComboBox* box) {
@@ -927,8 +929,7 @@ void SetupWin::addNewRomset() {
 	r.fntFile.clear();
 	r.roms.clear();
 	if (addRomset(r)) {
-		fill_romset_list(ui.rsetbox);
-		ui.rsetbox->setCurrentIndex(ui.rsetbox->findText(nam));
+		fill_romset_list(ui.rsetbox, nam);
 	} else {
 		shitHappens("Can't create romset with such name");
 	}

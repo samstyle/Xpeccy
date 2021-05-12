@@ -13,7 +13,7 @@ void ed40(CPU* cpu) {
 // 41	out (c),b	4 4out		mptr = (a<<8) | ((port + 1) & 0xff)
 void ed41(CPU* cpu) {
 	cpu->mptr = cpu->bc;
-	IOWR(cpu->mptr++,cpu->b,4);
+	z80_iowr(cpu, cpu->mptr++, cpu->b);
 //	cpu->hptr = cpu->a;
 }
 
@@ -63,7 +63,7 @@ void ed48(CPU* cpu) {
 // 49	out (c),c	4 4out		mptr = (a<<8) | ((port + 1) & 0xff)
 void ed49(CPU* cpu) {
 	cpu->mptr = cpu->bc;
-	IOWR(cpu->mptr++,cpu->c,4);
+	z80_iowr(cpu, cpu->mptr++, cpu->c);
 //	cpu->hptr = cpu->a;
 }
 
@@ -102,7 +102,7 @@ void ed50(CPU* cpu) {
 // 51	out (c),d	4 4out	mptr = (a<<8) | ((port+1) & ff)
 void ed51(CPU* cpu) {
 	cpu->mptr = cpu->bc;
-	IOWR(cpu->mptr++,cpu->d,4);
+	z80_iowr(cpu, cpu->mptr++, cpu->d);
 //	cpu->hptr = cpu->a;
 }
 
@@ -141,7 +141,7 @@ void ed58(CPU* cpu) {
 // 59	out (c),e	4 4out		mptr = ((port+1) & ff) | (a << 8)
 void ed59(CPU* cpu) {
 	cpu->mptr = cpu->bc;
-	IOWR(cpu->mptr++,cpu->e,4);
+	z80_iowr(cpu, cpu->mptr++, cpu->e);
 //	cpu->hptr = cpu->a;
 }
 
@@ -180,7 +180,8 @@ void ed60(CPU* cpu) {
 // 61	out (c),h	4 4out		mptr = ((port + 1) & FF) | (a << 8)
 void ed61(CPU* cpu) {
 	cpu->mptr = cpu->bc;
-	IOWR(cpu->mptr++,cpu->h,4);
+	z80_iowr(cpu, cpu->mptr++, cpu->h);
+//	cpu->hptr = a;
 }
 
 // 62	sbc hl,hl	11
@@ -208,7 +209,7 @@ void ed68(CPU* cpu) {
 // 69	out (c),l	4 4out		mptr = ((port+1)&FF)|(a<<8)
 void ed69(CPU* cpu) {
 	cpu->mptr = cpu->bc;
-	IOWR(cpu->mptr++,cpu->l,4);
+	z80_iowr(cpu, cpu->mptr++, cpu->l);
 //	cpu->hptr = cpu->a;
 }
 
@@ -237,7 +238,7 @@ void ed70(CPU* cpu) {
 // 71	out (c),0	4 4out		mptr = ((port+1)&FF)|(a<<8)
 void ed71(CPU* cpu) {
 	cpu->mptr = cpu->bc;
-	IOWR(cpu->mptr++,0,4);
+	z80_iowr(cpu, cpu->mptr++, 0);
 //	cpu->hptr = cpu->a;
 }
 
@@ -264,7 +265,7 @@ void ed78(CPU* cpu) {
 // 79	out (c),a	4 4out		mptr = ((port+1)&FF)|(a<<8)
 void ed79(CPU* cpu) {
 	cpu->mptr = cpu->bc;
-	IOWR(cpu->mptr++,cpu->a,4);
+	z80_iowr(cpu, cpu->mptr++, cpu->a);
 //	cpu->hptr = cpu->a;
 }
 
@@ -322,7 +323,7 @@ void edA3(CPU* cpu) {
 	cpu->tmp = MEMRD(cpu->hl,3);
 	cpu->b--;
 	cpu->mptr = cpu->bc + 1;
-	IOWR(cpu->bc,cpu->tmp,4);
+	z80_iowr(cpu, cpu->bc, cpu->tmp);
 	cpu->hl++;
 	cpu->f = (cpu->tmp & 0x80 ? Z80_FN : 0 ) | (cpu->b & (Z80_FS | Z80_F5 | Z80_F3)) | (cpu->b ? 0 : Z80_FZ);
 
@@ -372,7 +373,7 @@ void edAB(CPU* cpu) {
 	cpu->tmp = MEMRD(cpu->hl,3);
 	cpu->b--;
 	cpu->mptr = cpu->bc - 1;
-	IOWR(cpu->bc,cpu->tmp,4);
+	z80_iowr(cpu, cpu->bc, cpu->tmp);
 	cpu->hl--;
 	cpu->f = (cpu->tmp & 0x80 ? Z80_FN : 0 ) | (cpu->b & (Z80_FS | Z80_F5 | Z80_F3)) | (cpu->b ? 0 : Z80_FZ);
 

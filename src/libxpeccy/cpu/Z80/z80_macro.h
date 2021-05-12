@@ -11,7 +11,6 @@ extern const unsigned char FVsubTab[8];
 #define	MEMRD(adr,tk) cpu->mrd(adr,0,cpu->data);cpu->t+=tk;
 #define	MEMWR(adr,val,tk) cpu->mwr(adr,val,cpu->data);cpu->t+=tk;
 #define	IORD(port,tk) cpu->ird(port,cpu->data);cpu->t+=tk;
-#define IOWR(port,val,tk) cpu->iwr(port,val,cpu->data);cpu->t+=tk;
 
 // ariphmetic
 #define INC(val) {\
