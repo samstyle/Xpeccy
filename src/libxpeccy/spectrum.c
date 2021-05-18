@@ -12,13 +12,14 @@ int res4 = 0;	// save last res3 (vidSync on OUT/MWR process do res3-res4 ticks)
 
 #define RUNTIME_IO 1
 
-// ...
+// video callbacks
 
 int vid_mrd_cb(int adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	return comp->mem->ramData[adr & comp->mem->ramMask];
 }
 
+/*
 void zxMemRW(Computer* comp, int adr) {
 	MemPage* mptr = &comp->mem->map[(adr >> 8) & 0xff];
 	if (comp->contMem && (mptr->type == MEM_RAM) && (mptr->num & 0x40)) {	// 16K pages 1,3,5,7 (48K model)
@@ -34,6 +35,7 @@ void zxMemRW(Computer* comp, int adr) {
 		res4 = res3;
 	}
 }
+*/
 
 int memrd(int adr, int m1, void* ptr) {
 	Computer* comp = (Computer*)ptr;
@@ -528,14 +530,18 @@ int compExec(Computer* comp) {
 // execution completed : get eated time & translate signals
 	nsTime = comp->vid->time;
 	comp->tickCount += res2;
+	// TODO: reset frmtCount @ INT strobe, but not @ end of opcode
 	if (comp->vid->intFRAME) {
 		if (!comp->intStrobe) {
+			comp->frmtCount += comp->vid->intTime / comp->nsPerTick;		// ticks from command start to INT
 			comp->intStrobe = 1;
-			comp->fCount = comp->frmtCount;
+			comp->fCount = comp->frmtCount;			// fix ticks @ frame
 			if (!comp->halt) {
-				comp->hCount = comp->fCount;
+				comp->hCount = comp->fCount;		// if not HALT-ed
 			}
-			comp->frmtCount = 0;
+			comp->frmtCount = (nsTime - comp->vid->intTime) / comp->nsPerTick;	// ticks from INT to command end
+		} else {
+			comp->frmtCount += res2;
 		}
 	} else {
 		comp->frmtCount += res2;

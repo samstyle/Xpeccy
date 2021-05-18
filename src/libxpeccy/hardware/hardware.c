@@ -100,26 +100,39 @@ HardWare* findHardware(const char* name) {
 	return hw;
 }
 
-static int mbt;
-
 // mem
 
+static MemPage* pg;
+extern int res4;
+
+void zx_cont_mem(Computer* comp) {
+	if ((pg->type == MEM_RAM) && (pg->num & 0x40)) {
+		vidSync(comp->vid, comp->nsPerTick * (comp->cpu->t - res4));
+		res4 = comp->cpu->t;
+		vidWait(comp->vid);
+	}
+}
+
 int stdMRd(Computer* comp, int adr, int m1) {
+	pg = &comp->mem->map[(adr >> 8) & 0xff];
 	if (m1 && (comp->dif->type == DIF_BDI)) {
-		mbt = comp->mem->map[(adr >> 8) & 0xff].type;
-		if (comp->dos && (mbt == MEM_RAM)) {
+		if (comp->dos && (pg->type == MEM_RAM)) {
 			comp->dos = 0;
 			comp->hw->mapMem(comp);
 		}
-		if (!comp->dos && ((adr & 0x3f00) == 0x3d00) && comp->rom && (mbt == MEM_ROM)) {
+		if (!comp->dos && ((adr & 0x3f00) == 0x3d00) && comp->rom && (pg->type == MEM_ROM)) {
 			comp->dos = 1;
 			comp->hw->mapMem(comp);
 		}
 	}
+	if (comp->contMem)
+		zx_cont_mem(comp);
 	return memRd(comp->mem, adr & 0xffff) & 0xff;
 }
 
 void stdMWr(Computer *comp, int adr, int val) {
+	if (comp->contMem)
+		zx_cont_mem(comp);
 	memWr(comp->mem,adr,val);
 }
 

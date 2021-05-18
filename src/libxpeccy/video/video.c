@@ -828,8 +828,10 @@ void vidSync(Video* vid, int ns) {
 		}
 		// generate int
 		// TODO: ray.xb(yb) used here only
-		if (vid->intFRAME) vid->intFRAME--;
-		if ((vid->ray.yb == vid->intp.y) && (vid->ray.xb == vid->intp.x)) {
+		if (vid->intFRAME) {
+			vid->intFRAME--;
+		} else if ((vid->ray.yb == vid->intp.y) && (vid->ray.xb == vid->intp.x)) {
+			vid->intTime = vid->time;
 			vid->intFRAME = vid->intsize;
 		}
 		if (vid->busy > 0) vid->busy--;

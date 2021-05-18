@@ -89,6 +89,7 @@ void vid_dot_half(Video*, unsigned char);
 typedef int(*vcbmrd)(int, void*);
 typedef void(*vcbmwr)(int, int, void*);
 typedef void(*cbvid)(Video*);
+typedef void(*vcbptr)(void*);
 
 struct Video {
 	unsigned nogfx:1;	// tsl : nogfx flag
@@ -116,6 +117,7 @@ struct Video {
 	int nsDraw;
 	int time;		// +nsPerDot each dot
 	int busy;		// (cycles) to emulate busy period
+	int intTime;
 
 	int flash;
 	int curscr;
