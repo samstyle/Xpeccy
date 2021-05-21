@@ -269,6 +269,7 @@ QVariant xWatchModel::data(const QModelIndex& idx, int role) const {
 	QString bytz;
 	int i;
 	switch (role) {
+		/*
 		case Qt::BackgroundColorRole:
 			if (row == currow) {
 				res = QColor(32,200,32);
@@ -276,6 +277,7 @@ QVariant xWatchModel::data(const QModelIndex& idx, int role) const {
 				res = QColor(255,255,255);
 			}
 			break;
+		*/
 		case Qt::DisplayRole:
 			xAdr xadr = list[row];
 			int adr;

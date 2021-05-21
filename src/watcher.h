@@ -36,7 +36,7 @@ class xWatchModel : public QAbstractItemModel {
 		void addItem(xAdr);
 		void updItem(int, xAdr);
 		void delItem(int);
-		int currow;
+//		int currow;
 	private:
 		QList<xAdr> list;
 		QModelIndex index(int, int, const QModelIndex& = QModelIndex()) const;

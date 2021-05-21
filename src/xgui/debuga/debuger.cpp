@@ -737,8 +737,8 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			idx = ui.dasmTable->currentIndex();
 			i = ui.dasmTable->getData(idx.row(), 0, Qt::UserRole).toInt();
 			ptr = getBrkPtr(comp, i & 0xffff);
-			*ptr |= MEM_BRK_TFETCH;
 			stop();
+			*ptr |= MEM_BRK_TFETCH;
 			break;
 		case XCUT_RESET:
 			rzxStop(comp);
