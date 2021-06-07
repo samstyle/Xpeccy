@@ -31,6 +31,7 @@ int zx_rd_ff(int adr, void* ptr) {
 void zx_wr_null(int adr, int val, void* ptr) {}
 
 void speMapMem(Computer* comp) {
+	comp->mem->ramMask = MEM_128K - 1;
 	if (comp->slot->data) {
 		memSetBank(comp->mem,0x00,MEM_SLOT, 0, MEM_16K, zx_slt_rd, zx_slt_wr, comp);
 	} else {

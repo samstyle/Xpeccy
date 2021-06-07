@@ -111,7 +111,7 @@ int bkLoadToTape(Computer* comp, const char* name, int drv) {
 		bk_write_word(&blk, crc & 0xffff);	// crc
 		bk_write_pilot(&blk, 256);	// final pilot (256 bytes)
 
-		tapAddBlock(comp->tape, blk);
+		tap_add_block(comp->tape, blk);
 		blkClear(&blk);
 		fclose(file);
 	}

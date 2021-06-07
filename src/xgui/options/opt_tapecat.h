@@ -10,15 +10,16 @@ class xTapeCatModel : public QAbstractTableModel {
 	public:
 		xTapeCatModel(QObject* p = NULL);
 		void fill(Tape*);
+		int rowCount(const QModelIndex& = QModelIndex()) const;
+		int columnCount(const QModelIndex& = QModelIndex()) const;
+		void update();
 	private:
 		int rcnt;
 		int rcur;
 		TapeBlockInfo* inf;
-		int rowCount(const QModelIndex& = QModelIndex()) const;
-		int columnCount(const QModelIndex& = QModelIndex()) const;
 		QVariant data(const QModelIndex&, int) const;
 		QVariant headerData(int, Qt::Orientation, int) const;
-		void update();
+		QModelIndex index(int row, int col, const QModelIndex &parent = QModelIndex()) const;
 };
 
 class xTapeCatTable : public QTableView {

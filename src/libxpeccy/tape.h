@@ -58,6 +58,7 @@ typedef struct {
 	int pdur;
 	int dataPos;
 	int sigCount;
+	int time;
 	TapeSignal* data;
 } TapeBlock;
 
@@ -101,7 +102,7 @@ int tapGetBlocksInfo(Tape*,TapeBlockInfo*, int);
 int tapGetBlockData(Tape*,int,unsigned char*,int);
 int tapGetBlockTime(Tape*,int,int);
 
-void tapAddBlock(Tape*,TapeBlock);
+void tap_add_block(Tape*,TapeBlock);
 void tapDelBlock(Tape*,int);
 void tapSwapBlocks(Tape*,int,int);
 

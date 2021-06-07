@@ -148,6 +148,7 @@ int xIn1F(Computer* comp, int port) {
 }
 
 int xInFE(Computer* comp, int port) {
+	comp->keyb->port &= (port >> 8);
 	unsigned char res = kbdRead(comp->keyb, port) | 0xa0;		// set bits 7,5
 	if (comp->tape->volPlay & 0x80)
 		res |= 0x40;

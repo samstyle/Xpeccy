@@ -371,13 +371,14 @@ unsigned char waitsTab_B[16] = {1,1,0,0,7,7,6,6,5,5,4,4,3,3,2,2};	// +2A,+3
 static int contTabA[] = {12,12,10,10,8,8,6,6,4,4,2,2,0,0,0,0};		// 48K 128K +2 (bank 1,3,5,7)
 // static int contTabB[] = {2,1,0,0,14,13,12,11,10,9,8,7,6,5,4,3};	// +2A +3 (bank 4,5,6,7)
 
-void vidWait(Video* vid) {
-	if (vid->ray.y < vid->bord.y) return;		// above screen
-	if (vid->ray.y >= (vid->bord.y + vid->scrn.y)) return;	// below screen
-	xscr = vid->ray.x - vid->bord.x; // + 2;
-	if (xscr < 0) return;
-	if (xscr > (vid->scrn.x - 2)) return;
-	vidSync(vid, contTabA[xscr & 0x0f] * vid->nsPerDot);
+int vidGetWait(Video* vid) {
+	if (vid->ray.y < vid->bord.y) return 0;		// above screen
+	if (vid->ray.y >= (vid->bord.y + vid->scrn.y)) return 0;	// below screen
+	xscr = vid->ray.x - vid->bord.x + 2;		// 1T before screen
+	if (xscr < 0) return 0;
+	if (xscr > vid->scrn.x) return 0;		// stop 1T before right border
+	return contTabA[xscr & 0x0f];
+	// vidSync(vid, contTabA[xscr & 0x0f] * vid->nsPerDot);
 }
 
 void vidSetFont(Video* vid, char* src) {

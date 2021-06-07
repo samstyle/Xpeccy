@@ -2,6 +2,7 @@
 #include "xcore/xcore.h"
 #include "xgui/xgui.h"
 
+#include <QDebug>
 #include <QFileDialog>
 
 static QFileDialog* filer;
@@ -88,7 +89,7 @@ static xFileGroupInfo fg_tab[] = {
 	{FG_DISK_B, ".trd", 1, "Disk B", NULL, {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_HOBETA, 0}},
 	{FG_DISK_C, ".trd", 2, "Disk C", NULL, {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_HOBETA, 0}},
 	{FG_DISK_D, ".trd", 3, "Disk D", NULL, {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_DSK, FL_HOBETA, 0}},
-	{FG_RAW, "", 0, "Raw file to disk A", &ft_raw, {FL_RAW, 0}},
+	{FG_RAW, "", 0, "Raw file to disk", &ft_raw, {FL_RAW, 0}},
 	{FG_IF2_ROM, "", 0, "IF2 ROM", NULL, {FL_IF2_ROM, 0}},
 	{FG_RZX, "", -1, "RZX playback", NULL, {FL_RZX, 0}},
 	{FG_GAMEBOY, "", -1, "GB cartrige", NULL, {FL_GB, FL_GBC, 0}},
@@ -118,6 +119,10 @@ static xFileHWInfo fh_tab[] = {
 	{FH_DISKS, {FG_DISK_A, FG_DISK_B, FG_DISK_C, FG_DISK_D, 0}},
 	{FH_SLOTS, {FG_GAMEBOY, FG_NES, FG_MSX, 0}},
 	{FH_SPCLST, {FG_RKSMEM, FG_RKSTAP, 0}},
+	{FH_DRIVE_A, {FG_DISK_A, FG_RAW, 0}},
+	{FH_DRIVE_B, {FG_DISK_B, FG_RAW, 0}},
+	{FH_DRIVE_C, {FG_DISK_C, FG_RAW, 0}},
+	{FH_DRIVE_D, {FG_DISK_D, FG_RAW, 0}},
 	{0, {0}}
 };
 
@@ -347,6 +352,9 @@ void disk_boot(Computer* comp, int drv, int id) {
 
 int load_file(Computer* comp, const char* name, int id, int drv) {
 	QString path = QString::fromLocal8Bit(name);
+	path = QFileInfo(path).canonicalFilePath();
+	if (path.isEmpty() && name) return ERR_CANT_OPEN;
+	// qDebug() << path;
 	QString flt;
 	QString ext;
 	xFileTypeInfo* inf;
@@ -379,20 +387,11 @@ int load_file(Computer* comp, const char* name, int id, int drv) {
 		}
 	}
 	if (path.isEmpty()) return err;
-#if 1
 	if (grp->fti != NULL) {
-		inf = grp->fti;
+		inf = grp->fti;						// hardcoded file type (by group)
 	} else {
 		inf = file_find_hw_ext(comp->hw->id, path);		// detect file type by extension
 	}
-#else
-	switch(grp->id) {
-		case FG_RAW: inf = &ft_raw; break;
-		case FG_BKRAW: inf = &ft_bktap; break;
-		case FG_RKSMEM: inf = &ft_rksmem; break;
-		default: inf = file_find_hw_ext(comp->hw->id, path); break;		// detect file type by extension
-	}
-#endif
 	if (drv < 0) drv = 0;
 	if (inf) {
 		if (inf->load) {

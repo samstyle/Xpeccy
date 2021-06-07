@@ -726,6 +726,7 @@ unsigned short xDisasmTable::getAdr() {
 }
 
 void xDisasmTable::setAdr(int adr) {
+	history.append(model->disasmAdr);
 	model->disasmAdr = adr & 0xffff;
 	updContent();
 }

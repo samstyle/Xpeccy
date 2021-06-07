@@ -79,7 +79,7 @@ int loadRKStap(Computer* comp, const char* name, int drv) {
 		ch = fgetc(file);
 		rks_add_byte(&blk, ch);
 		fclose(file);
-		tapAddBlock(comp->tape, blk);
+		tap_add_block(comp->tape, blk);
 	} else {
 		err = ERR_CANT_OPEN;
 	}

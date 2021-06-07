@@ -99,7 +99,7 @@ int loadCAS(Computer* comp, const char* name, int drv) {
 						cas_add_pilot(&blk, 0x1e00);
 						cas_add_data(&blk, file, 16);
 						blkAddPause(&blk, 1e6);
-						tapAddBlock(comp->tape, blk);
+						tap_add_block(comp->tape, blk);
 						blkClear(&blk);
 						cas_align(file);
 						if (cas_sgn_chk(file)) {
@@ -110,7 +110,7 @@ int loadCAS(Computer* comp, const char* name, int drv) {
 							res = ERR_CAS_SIGN;
 						}
 						blkAddPause(&blk, 2e6);
-						tapAddBlock(comp->tape, blk);
+						tap_add_block(comp->tape, blk);
 						blkClear(&blk);
 						break;
 					case 0xd0:
@@ -118,7 +118,7 @@ int loadCAS(Computer* comp, const char* name, int drv) {
 						cas_add_pilot(&blk, 0x1e00);
 						cas_add_data(&blk, file, 16);
 						blkAddPause(&blk, 1e6);
-						tapAddBlock(comp->tape, blk);
+						tap_add_block(comp->tape, blk);
 						blkClear(&blk);
 						cas_align(file);
 						if (cas_sgn_chk(file)) {
@@ -128,7 +128,7 @@ int loadCAS(Computer* comp, const char* name, int drv) {
 							cas_add_pilot(&blk, 0x780);
 							cas_add_data(&blk, file, eadr - sadr + 7);
 							blkAddPause(&blk, 2e6);
-							tapAddBlock(comp->tape, blk);
+							tap_add_block(comp->tape, blk);
 							blkClear(&blk);
 						} else {
 							res = ERR_CAS_SIGN;
@@ -139,7 +139,7 @@ int loadCAS(Computer* comp, const char* name, int drv) {
 						cas_add_pilot(&blk, 0x1e00);
 						cas_add_data(&blk, file, 16);
 						blkAddPause(&blk, 1e6);
-						tapAddBlock(comp->tape, blk);
+						tap_add_block(comp->tape, blk);
 						blkClear(&blk);
 						cas_align(file);
 						data = 0x20;
@@ -148,7 +148,7 @@ int loadCAS(Computer* comp, const char* name, int drv) {
 								cas_add_pilot(&blk, 0x780);
 								cas_add_data(&blk, file, 0x100);
 								blkAddPause(&blk, 1e6);
-								tapAddBlock(comp->tape, blk);
+								tap_add_block(comp->tape, blk);
 								blkClear(&blk);
 							} else {
 								res = ERR_CAS_SIGN;

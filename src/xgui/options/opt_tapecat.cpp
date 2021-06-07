@@ -58,6 +58,10 @@ QVariant xTapeCatModel::headerData(int sec, Qt::Orientation ori, int role) const
 	return res;
 }
 
+QModelIndex xTapeCatModel::index(int row, int col, const QModelIndex&) const {
+	return createIndex(row, col, (void*)this);
+}
+
 QVariant xTapeCatModel::data(const QModelIndex& idx, int role) const {
 	QVariant res;
 	if (!idx.isValid()) return res;
@@ -104,8 +108,8 @@ xTapeCatTable::xTapeCatTable(QWidget* p):QTableView(p) {
 
 // tape player window will reset scroll on update
 void xTapeCatTable::fill(Tape* tape) {
-	int row = currentIndex().row();
+//	int row = currentIndex().row();
 	model->fill(tape);
-	selectRow(row);
+//	selectRow(row);
 	setEnabled(tape->blkCount > 0);
 }

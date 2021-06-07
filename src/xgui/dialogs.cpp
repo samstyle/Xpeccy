@@ -9,7 +9,7 @@ void shitHappens(const char* msg) {
 }
 
 bool areSure(const char* msg) {
-	QMessageBox mbx(QMessageBox::Question,"R U Sure?",QDialog::trUtf8(msg),QMessageBox::Yes | QMessageBox::No);
+	QMessageBox mbx(QMessageBox::Question,"Yes? No? What?",QDialog::trUtf8(msg),QMessageBox::Yes | QMessageBox::No);
 	int res = mbx.exec();
 	return (res == QMessageBox::Yes);
 }

@@ -104,12 +104,18 @@ HardWare* findHardware(const char* name) {
 
 static MemPage* pg;
 extern int res4;
+static int wns;
 
 void zx_cont_mem(Computer* comp) {
 	if ((pg->type == MEM_RAM) && (pg->num & 0x40)) {
-		vidSync(comp->vid, comp->nsPerTick * (comp->cpu->t - res4));
+		vidSync(comp->vid, comp->nsPerTick * (comp->cpu->t - res4));	// before
 		res4 = comp->cpu->t;
-		vidWait(comp->vid);
+		wns = vidGetWait(comp->vid) * comp->vid->nsPerDot;
+		if (wns > 0) {
+			comp->cpu->t += wns / comp->nsPerTick + (wns % comp->nsPerTick ? 1 : 0);	// in normal mode t += vidGetWait(comp->vid) / 2
+			vidSync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
+			res4 = comp->cpu->t;
+		}
 	}
 }
 

@@ -75,7 +75,7 @@ void xThread::tap_catch_save(Computer* comp) {
 		buf[de + 1] = crc;
 
 		TapeBlock blk = tapDataToBlock((char*)buf, de + 2, NULL);
-		tapAddBlock(comp->tape, blk);
+		tap_add_block(comp->tape, blk);
 		blkClear(&blk);
 		free(buf);
 		comp->cpu->pc = 0x053e;

@@ -171,12 +171,21 @@ void brkDelete(xBrkPoint dbrk) {
 	int idx = brkFind(dbrk).idx;
 	if (idx < 0) return;
 	if (idx >= (int)conf.prof.cur->brkList.size()) return;
-//	xBrkPoint brk = conf.prof.cur->brkList[idx];
-//	brk.off = 1;
-//	brk.fetch = 1;
-//	brkInstall(brk, 0);
 	conf.prof.cur->brkList.erase(conf.prof.cur->brkList.begin() + idx);
 	brkInstallAll();
+}
+
+void brk_clear_tmp(Computer* comp) {
+	int i;
+	for (i = 0; i < MEM_4M; i++) {
+		comp->brkRamMap[i] &= ~MEM_BRK_TFETCH;
+	}
+	for (i = 0; i < MEM_512K; i++) {
+		comp->brkRomMap[i] &= ~MEM_BRK_TFETCH;
+	}
+	for (i = 0; i < MEM_64K; i++) {
+		comp->brkAdrMap[i] &= ~MEM_BRK_TFETCH;
+	}
 }
 
 void clearMap(unsigned char* ptr, int siz) {

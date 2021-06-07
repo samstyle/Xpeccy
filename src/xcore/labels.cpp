@@ -15,9 +15,7 @@ int loadLabels(const char* fn) {
 	xAdr xadr;
 	if (path.isEmpty())
 		path = QFileDialog::getOpenFileName(NULL, "Load SJASM labels",QString(),QString(),nullptr,QFileDialog::DontUseNativeDialog);
-	if (path.isEmpty()) {
-		res = 0;			// no file specified
-	} else {
+	if (!path.isEmpty()) {
 		conf.labels.clear();
 		file.setFileName(path);
 		if (file.open(QFile::ReadOnly)) {

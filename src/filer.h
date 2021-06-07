@@ -76,7 +76,11 @@ enum {
 	FH_BK,
 	FH_SPCLST,
 	FH_DISKS,
-	FH_SLOTS
+	FH_SLOTS,
+	FH_DRIVE_A,
+	FH_DRIVE_B,
+	FH_DRIVE_C,
+	FH_DRIVE_D
 };
 
 void initFileDialog(QWidget*);

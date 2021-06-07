@@ -2,6 +2,7 @@
 #include <QInputDialog>
 #include <QColorDialog>
 #include <QFileDialog>
+#include <QMessageBox>
 #include <QVector3D>
 #include <QPainter>
 #include <QDebug>
@@ -832,13 +833,15 @@ void SetupWin::layEditorOK() {
 		} else {					// existing name
 			ok = areSure("Replace existing layout?");
 			if (ok) exlay->lay = vlay;
+			fill_layout_list(ui.geombox, nm);
 		}
 	} else if (eidx > 0) {					// ==0 is 'default', not editable
 		std::string onm = conf.layList[eidx].name;
 		if (onm != name) {				// name changed
 			if (exlay == NULL) {			// no existing layout with new name
-				prfChangeLayName(conf.layList[eidx].name, nlay.name);
+				conf.layList[eidx].name = name;
 				conf.layList[eidx].lay = vlay;
+				prfChangeLayName(conf.layList[eidx].name, nlay.name);
 				fill_layout_list(ui.geombox, nm);
 			} else {
 				ok = areSure("Replace existing layout?");
@@ -850,7 +853,7 @@ void SetupWin::layEditorOK() {
 				}
 			}
 		} else {					// name doesn't changed, replace old layout
-			conf.layList[eidx] = nlay;
+			conf.layList[eidx].lay = vlay;
 		}
 	}
 	if (ok) layeditor->hide();
@@ -1257,11 +1260,15 @@ void SetupWin::copyToDisk() {
 	}
 	Floppy* flp = comp->dif->fdc->flop[dsk];
 	if (!flp->insert) {
-		newdisk(dsk);
+		newdisk(dsk, 0);
 		diskFormat(flp);
 	} else if (diskGetType(flp) != DISK_TYPE_TRD) {
-		shitHappens("Not TR-DOS disk inserted");
-		return;
+		if (areSure("Not TRDOS disk. Format?<br>All data will be lost")) {
+			diskFormat(flp);
+		} else {
+			// shitHappens("As you wish...");
+			return;
+		}
 	}
 	inf = tapGetBlockInfo(comp->tape,dataBlock,TFRM_ZX);
 	dt = (unsigned char*)malloc(inf.size+2);		// +2 = +mark +crc
@@ -1299,6 +1306,7 @@ void SetupWin::fillDiskCat() {
 	TRFile ct[128];
 	QList<TRFile> cat;
 	int catSize = 0;
+	ui.disklist->setEnabled(flp->insert);
 	if (flp->insert && (diskGetType(flp) == DISK_TYPE_TRD)) {
 		catSize = diskGetTRCatalog(flp, ct);
 		for(int i = 0; i < catSize; i++) {
@@ -1332,25 +1340,28 @@ void SetupWin::updvolumes() {
 
 // disk
 
-void SetupWin::newdisk(int idx) {
+void SetupWin::newdisk(int idx, int ask) {
 	Floppy *flp = comp->dif->fdc->flop[idx];
 	if (saveChangedDisk(comp,idx & 3) != ERR_OK) return;
 	diskClear(flp);
 	flp_set_path(flp, NULL);
 	flp->insert = 1;
 	flp->changed = 1;
+	if (ask && areSure("Format for TRDOS?")) {
+		diskFormat(flp);
+	}
 	updatedisknams();
 }
 
-void SetupWin::newa() {newdisk(0);}
-void SetupWin::newb() {newdisk(1);}
-void SetupWin::newc() {newdisk(2);}
-void SetupWin::newd() {newdisk(3);}
+void SetupWin::newa() {newdisk(0,1);}
+void SetupWin::newb() {newdisk(1,1);}
+void SetupWin::newc() {newdisk(2,1);}
+void SetupWin::newd() {newdisk(3,1);}
 
-void SetupWin::loada() {load_file(comp, NULL, FG_DISK_A, 0); updatedisknams();}
-void SetupWin::loadb() {load_file(comp, NULL, FG_DISK_B, 1); updatedisknams();}
-void SetupWin::loadc() {load_file(comp, NULL, FG_DISK_C, 2); updatedisknams();}
-void SetupWin::loadd() {load_file(comp, NULL, FG_DISK_D, 3); updatedisknams();}
+void SetupWin::loada() {load_file(comp, NULL, FH_DRIVE_A, 0); updatedisknams();}
+void SetupWin::loadb() {load_file(comp, NULL, FH_DRIVE_B, 1); updatedisknams();}
+void SetupWin::loadc() {load_file(comp, NULL, FH_DRIVE_C, 2); updatedisknams();}
+void SetupWin::loadd() {load_file(comp, NULL, FH_DRIVE_D, 3); updatedisknams();}
 
 void SetupWin::savea() {Floppy* flp = comp->dif->fdc->flop[0]; if (flp->insert) save_file(comp, flp->path, FG_DISK_A, 0);}
 void SetupWin::saveb() {Floppy* flp = comp->dif->fdc->flop[1]; if (flp->insert) save_file(comp, flp->path, FG_DISK_B, 1);}

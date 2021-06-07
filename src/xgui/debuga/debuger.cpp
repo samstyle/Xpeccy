@@ -125,6 +125,8 @@ void DebugWin::start(Computer* c) {
 		onPrfChange(conf.prof.cur);		// update tabs
 	}
 
+	brk_clear_tmp(comp);		// clear temp breakpoints
+
 	chaPal();
 	show();
 	if (!fillAll()) {

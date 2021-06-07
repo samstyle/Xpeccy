@@ -31,7 +31,7 @@ void tzxBlock10(FILE* file, Tape* tape) {
 	fread(buf, len, 1, file);
 	tape->tmpBlock = tapDataToBlock(buf, len, sigLens);
 	blkAddPause(&tape->tmpBlock, pause);
-	tapAddBlock(tape, tape->tmpBlock);
+	tap_add_block(tape, tape->tmpBlock);
 	blkClear(&tape->tmpBlock);
 }
 
@@ -60,7 +60,7 @@ void tzxBlock11(FILE* file, Tape* tape) {
 		data <<= 1;
 	}
 	blkAddPause(&tape->tmpBlock, pause);
-	tapAddBlock(tape, tape->tmpBlock);
+	tap_add_block(tape, tape->tmpBlock);
 	blkClear(&tape->tmpBlock);
 	free(buf);
 }
@@ -112,7 +112,7 @@ void tzxBlock14(FILE* file, Tape* tape) {
 	}
 	if (pause > 1e5) {		// .1 sec will be block separator
 		blkAddPause(&tape->tmpBlock, pause);
-		tapAddBlock(tape, tape->tmpBlock);
+		tap_add_block(tape, tape->tmpBlock);
 		blkClear(&tape->tmpBlock);
 	}
 	tape->isData = 0;
@@ -337,7 +337,7 @@ int loadTZX(Computer* comp, const char* name, int drv) {
 			tzxBlockTab[i].callback(file, tape);
 		}
 		if (comp->tape->tmpBlock.sigCount > 0)
-			tapAddBlock(comp->tape, comp->tape->tmpBlock);
+			tap_add_block(comp->tape, comp->tape->tmpBlock);
 		tape_set_path(tape, name);
 	}
 	fclose(file);

@@ -115,6 +115,7 @@ void brkAdd(xBrkPoint);
 void brkInstall(xBrkPoint, int);
 void brkDelete(xBrkPoint);
 void brkInstallAll();
+void brk_clear_tmp(Computer*);
 
 // profiles
 

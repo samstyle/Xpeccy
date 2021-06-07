@@ -172,7 +172,7 @@ TapeBlockInfo tapGetBlockInfo(Tape* tap, int blk, int type) {
 			break;
 	}
 	inf.size = tapGetBlockSize(block, type);
-	inf.time = tapGetBlockTime(tap,blk,-1);
+	inf.time = block->time; // tapGetBlockTime(tap,blk,-1);
 	inf.curtime = (tap->block == blk) ? tapGetBlockTime(tap,blk,tap->pos) : -1;
 	inf.breakPoint = block->breakPoint;
 	return inf;
@@ -306,7 +306,7 @@ void tapStoreBlock(Tape* tap) {
 		}
 	}
 #endif
-	tapAddBlock(tap,tap->tmpBlock);
+	tap_add_block(tap,tap->tmpBlock);
 	blkClear(tblk);
 	tap->wait = 1;
 }
@@ -506,19 +506,23 @@ void tapAddFile(Tape* tap, const char* nm, int tp, unsigned short st, unsigned s
 			hdbuf[15] = as & 0xff; hdbuf[16] = ((as & 0xff00) >> 8);
 		}
 		block = makeTapeBlock(hdbuf,17,1);
-		tapAddBlock(tap,block);
+		tap_add_block(tap,block);
 		blkClear(&block);
 	}
 	block = makeTapeBlock(ptr,ln,0);
-	tapAddBlock(tap,block);
+	tap_add_block(tap,block);
 	blkClear(&block);
 }
 
-void tapAddBlock(Tape* tap, TapeBlock block) {
+void tap_add_block(Tape* tap, TapeBlock block) {
 	if (block.sigCount == 0) return;
 	TapeBlock blk = block;
 	blk.data = malloc(blk.sigCount * sizeof(TapeSignal));
 	memcpy(blk.data, block.data, blk.sigCount * sizeof(TapeSignal));
+
+	blk.time = 0;
+	for (int i = 0; i < blk.sigCount; i++)
+		blk.time += blk.data[i].size;		// total time (msk)
 
 	tap->blkCount++;
 	tap->blkData = (TapeBlock*)realloc(tap->blkData,tap->blkCount * sizeof(TapeBlock));

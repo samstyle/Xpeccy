@@ -480,8 +480,6 @@ void loadConfig() {
 	vid_set_fullscreen(conf.vid.fullScreen);
 	vid_set_ratio(conf.vid.keepRatio);
 	foreach(xRomset rs, rsListist) addRomset(rs);
-	// uint i;
-	// for (i=0; i<rsListist.size(); i++) addRomset(rsListist[i]);
 	prfLoadAll();
 	setOutput(soutnam.c_str());
 	if (conf.defProfile) {
