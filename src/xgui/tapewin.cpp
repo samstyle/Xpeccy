@@ -87,7 +87,7 @@ void TapeWin::doRewind() {
 
 void TapeWin::doLoad() {
 	conf.emu.pause |= PR_FILE;
-	load_file(conf.prof.cur->zx, "", FG_TAPE, -1);
+	load_file(conf.prof.cur->zx, nullptr, FG_TAPE, -1);
 	ui.tapeList->fill(conf.prof.cur->zx->tape);
 	conf.emu.pause &= ~PR_FILE;
 }

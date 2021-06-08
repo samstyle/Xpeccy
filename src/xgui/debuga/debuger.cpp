@@ -1319,7 +1319,7 @@ void DebugWin::regClick(QMouseEvent* ev) {
 			fillDump();
 			break;
 		case Qt::LeftButton:
-			ui.dasmTable->setAdr(val);
+			ui.dasmTable->setAdr(val, 1);
 			// fillDisasm();
 			break;
 		default:

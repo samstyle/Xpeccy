@@ -362,6 +362,22 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>layName</tabstop>
+  <tabstop>lineBox</tabstop>
+  <tabstop>rowsBox</tabstop>
+  <tabstop>sbScrW</tabstop>
+  <tabstop>sbScrH</tabstop>
+  <tabstop>brdLBox</tabstop>
+  <tabstop>brdUBox</tabstop>
+  <tabstop>intRowBox</tabstop>
+  <tabstop>intPosBox</tabstop>
+  <tabstop>intLenBox</tabstop>
+  <tabstop>vsyncBox</tabstop>
+  <tabstop>hsyncBox</tabstop>
+  <tabstop>okButton</tabstop>
+  <tabstop>cnButton</tabstop>
+ </tabstops>
  <resources>
   <include location="../xpeccy.qrc"/>
  </resources>

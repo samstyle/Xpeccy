@@ -137,6 +137,7 @@ int stdMRd(Computer* comp, int adr, int m1) {
 }
 
 void stdMWr(Computer *comp, int adr, int val) {
+	pg = &comp->mem->map[(adr >> 8) & 0xff];
 	if (comp->contMem)
 		zx_cont_mem(comp);
 	memWr(comp->mem,adr,val);

@@ -105,6 +105,7 @@
 #define XKEY_NMINUS	74
 #define XKEY_NPLUS	78
 #define XKEY_NENTER	284
+#define XKEY_NDOT	83
 #define XKEY_N7		71
 #define XKEY_N8		72
 #define XKEY_N9		73

@@ -66,7 +66,7 @@ class xDisasmTable : public QTableView {
 	public slots:
 		int updContent();
 		void t_update(int, int);
-		void setAdr(int);
+		void setAdr(int, int = 0);
 	private:
 		int markAdr;
 		xDisasmModel* model;

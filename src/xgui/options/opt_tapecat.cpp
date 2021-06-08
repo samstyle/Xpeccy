@@ -11,7 +11,7 @@ xTapeCatModel::xTapeCatModel(QObject* p):QAbstractTableModel(p) {
 }
 
 int xTapeCatModel::rowCount(const QModelIndex&) const {
-	return  rcnt;
+	return rcnt;
 }
 
 int xTapeCatModel::columnCount(const QModelIndex&) const {
@@ -19,11 +19,18 @@ int xTapeCatModel::columnCount(const QModelIndex&) const {
 }
 
 void xTapeCatModel::fill(Tape* tap) {
-	emit beginResetModel();
+	if (rcnt < tap->blkCount) {
+		beginInsertRows(QModelIndex(), 0, tap->blkCount - rcnt - 1);
+		endInsertRows();
+	} else if (rcnt > tap->blkCount) {
+		beginRemoveRows(QModelIndex(), 0, rcnt - tap->blkCount - 1);
+		endRemoveRows();
+	}
 	rcnt = tap->blkCount;
 	rcur = tap->block;
-	int fsz = rcnt * sizeof(TapeBlockInfo);
-	inf = (TapeBlockInfo*)realloc(inf, fsz);
+	// int fsz = rcnt * sizeof(TapeBlockInfo);
+	if (inf) delete(inf);
+	inf = new TapeBlockInfo[rcnt]; // (TapeBlockInfo*)realloc(inf, fsz);
 	if (rcnt == 0) {
 		inf = NULL;
 	} else {
@@ -35,12 +42,18 @@ void xTapeCatModel::fill(Tape* tap) {
 				tapGetBlocksInfo(tap, inf, TFRM_BK);
 				break;
 			default:
-				memset(inf, 0, fsz);
+				for (int i = 0; i < rcnt; i++) {
+					inf[i].type = -1;
+					inf[i].name[0] = 0;
+					inf[i].size = 0;
+					inf[i].time = 0;
+					inf[i].curtime = 0;
+				}
 				break;
 		}
-
 	}
-	emit endResetModel();
+	update();
+//	emit endResetModel();
 }
 
 void xTapeCatModel::update() {
@@ -83,7 +96,7 @@ QVariant xTapeCatModel::data(const QModelIndex& idx, int role) const {
 			break;
 		case Qt::DisplayRole:
 			switch(col) {
-				case 2: res = QString(getTimeString(inf[row].time).c_str());
+				case 2: res = QString(getTimeString(inf[row].time / 1e6).c_str());
 					break;
 				case 3: if (row == rcur)
 						res = QString(getTimeString(inf[row].curtime).c_str());
