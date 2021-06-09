@@ -339,7 +339,7 @@ void file_errors(int err) {
 }
 
 static int disk_id[] = {FG_DISK_A, FG_DISK_B, FG_DISK_C, FG_DISK_D};
-static int boot_ft[] = {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, 0};
+static int boot_ft[] = {FL_SCL, FL_TRD, FL_TD0, FL_FDI, FL_UDI, FL_HOBETA, 0};
 
 void disk_boot(Computer* comp, int drv, int id) {
 	if (!conf.boot) return;
