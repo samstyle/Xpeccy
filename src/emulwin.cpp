@@ -760,6 +760,7 @@ void MainWin::drawIcons(QPainter& pnt) {
 // joystick
 	if (comp->joy->used && conf.led.joy) {
 		pnt.drawImage(3, 30, QImage(":/images/joystick.png"));
+		comp->joy->used = 0;
 	}
 // mouse
 	if (comp->mouse->used && conf.led.mouse) {

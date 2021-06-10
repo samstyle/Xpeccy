@@ -33,26 +33,28 @@ int loadRaw(Computer* comp, const char* name, int drv) {
 		if (diskGetType(flp) != DISK_TYPE_TRD) {
 			err = ERR_NOTRD;
 		} else {
-			char fpath[FILENAME_MAX];
-			char fnam[FILENAME_MAX];
-			char fext[FILENAME_MAX];
-			memset(fnam,' ',FILENAME_MAX);
-			memset(fext,' ',FILENAME_MAX);
-			char* ptr = strrchr(name, SLSH);
+			char fpath[1024];
+			char fnam[1024];
+			char fext[1024];
+			memset(fnam,' ',1024);
+			memset(fext,' ',1024);
+			char* ptr = strrchr(name, '/');		// slash here
 			if (ptr) {
 				strcpy(fpath, ptr + 1);
 			} else {
 				strcpy(fpath, name);
 			}
-			ptr = strrchr(name, '.');
+			ptr = strrchr(fpath, '\\');		// slash there
+			if (ptr) strcpy(fpath, ptr + 1);
+			printf("%s\n",fpath);
+			ptr = strrchr(fpath, '.');
 			if (ptr) {
-				memcpy(fnam, fpath, ptr - name);			// it doesn't put 0x00 at end, so unused fillnam will be filled with ' '
+				memcpy(fnam, fpath, ptr - fpath);			// it doesn't put 0x00 at end, so unused fillnam will be filled with ' '
 				memcpy(fext, ptr + 1, strlen(ptr + 1));
 			} else {
-				memcpy(fnam, name, strlen(name));
+				memcpy(fnam, fpath, strlen(fpath));
 				fext[0] = 0x00;
 			}
-			// printf("%s\n%s\n",fnam,fext);
 			TRFile nfle;
 			int num = 0;
 			int flen;
