@@ -82,6 +82,7 @@ void memwr(int adr, int val, void* ptr) {
 
 static int bdiz;
 
+/*
 inline void zxIORW(Computer* comp, int port) {
 	if (comp->contIO) {
 		if ((port & 0xc000) == 0x4000) {
@@ -108,6 +109,7 @@ inline void zxIORW(Computer* comp, int port) {
 		res4 += 3;
 	}
 }
+*/
 
 int iord(int port, void* ptr) {
 	Computer* comp = (Computer*)ptr;

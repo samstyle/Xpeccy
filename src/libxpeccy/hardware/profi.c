@@ -117,7 +117,7 @@ static xPort prfPortMap[] = {
 
 	// !DOS !ROM CPM
 	{0x00ff,0x00df,0,1,1,prfInDS,	prfOutDS},	// cmos DATA
-	{0x00ff,0x00ff,0,1,1,NULL,	prfOutAS},	// cmos ADR
+	{0x00ff,0x00bf,0,1,1,NULL,	prfOutAS},	// cmos ADR
 	{0x009f,0x008f,0,1,1,dummyIn,	dummyOut},	// 8f,af,cf,ef (BB51/3)
 
 	// !DOS !ROM CPM

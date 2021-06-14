@@ -187,6 +187,7 @@ void null_close() {
 #include <QDebug>
 
 void sdlPlayAudio(void*, Uint8* stream, int len) {
+//	printf("len = %i\n",len);
 	int dist = posf - posp;
 	while (dist < 0) dist += 0x4000;
 	while (dist > 0x3fff) dist -= 0x4000;

@@ -381,7 +381,7 @@ int load_file(Computer* comp, const char* name, int id, int drv) {
 				path = filer->selectedFiles().first();
 				flt = filer->selectedNameFilter();
 				grp = file_detect_grp(flt);
-				drv = grp->drv;
+				if (drv < 0) drv = grp->drv;
 				conf.prof.cur->lastDir = std::string(QFileInfo(path).dir().absolutePath().toLocal8Bit().data());
 			}
 		}

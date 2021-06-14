@@ -145,11 +145,11 @@ void DebugWin::start(Computer* c) {
 }
 
 void DebugWin::stop() {
-	// rest_mem_map();
-	comp->debug = 0;
+	tCount = comp->tickCount;	// before compExec to add current opcode T
+	compExec(comp);			// to prevent double breakpoint catch
+	comp->debug = 0;		// back to normal work, turn breakpoints on
 	comp->vid->debug = 0;
 	comp->maping = ui.actMaping->isChecked() ? 1 : 0;
-	tCount = comp->tickCount;
 	winPos = pos();
 	stopTrace();
 
@@ -158,7 +158,6 @@ void DebugWin::stop() {
 
 	memViewer->hide();
 	hide();
-	compExec(comp);		// to prevent double breakpoint catch
 	emit closed();
 }
 
@@ -2133,7 +2132,7 @@ void DebugWin::openBrk() {
 	if (file.open(QFile::ReadOnly)) {
 		conf.prof.cur->brkList.clear();
 		while(!file.atEnd()) {
-			line = trUtf8(file.readLine());
+			line = tr(file.readLine());
 			if (!line.startsWith(";")) {
 				b0 = true;
 				b1 = true;

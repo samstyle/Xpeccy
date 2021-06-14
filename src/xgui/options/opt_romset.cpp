@@ -77,8 +77,6 @@ QVariant xRomsetModel::headerData(int sect, Qt::Orientation ori, int role) const
 	return res;
 }
 
-//const QString xrsNamX[] = {"Page0","Page1","Page2","Page3","File","GS","Font"};
-
 QVariant xRomsetModel::data(const QModelIndex& idx, int role) const {
 	QVariant res;
 	QFileInfo inf;
@@ -103,11 +101,11 @@ QVariant xRomsetModel::data(const QModelIndex& idx, int role) const {
 					break;
 				case 1:
 					if (row < rlsz) {
-						res = trUtf8(rset->roms[row].name.c_str());
+						res = QString(rset->roms[row].name.c_str());
 					} else if (row == rlsz) {
-						res = trUtf8(rset->gsFile.c_str());
+						res = QString(rset->gsFile.c_str());
 					} else {
-						res = trUtf8(rset->fntFile.c_str());
+						res = QString(rset->fntFile.c_str());
 					}
 					break;
 				case 2:
@@ -120,7 +118,7 @@ QVariant xRomsetModel::data(const QModelIndex& idx, int role) const {
 						res = rset->roms[row].fsize;
 					} else {
 						buf = conf.path.romDir + SLASH + rset->roms[row].name;
-						inf.setFile(trUtf8(buf.c_str()));
+						inf.setFile(tr(buf.c_str()));
 						res = QString("( %0 )").arg(inf.size() >> 10);
 					}
 					break;

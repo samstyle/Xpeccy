@@ -125,7 +125,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	i = 0;
 	while (hwTab[i].name) {
 		if (hwTab[i].id != HW_NULL) {
-			ui.machbox->addItem(trUtf8(hwTab[i].optName),QString::fromLocal8Bit(hwTab[i].name));
+			ui.machbox->addItem(hwTab[i].optName,QString::fromLocal8Bit(hwTab[i].name));
 		} else {
 			ui.machbox->insertSeparator(i);
 		}
@@ -133,7 +133,7 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	}
 	i = 0;
 	while (cpuTab[i].type != CPU_NONE) {
-		ui.cbCpu->addItem(trUtf8(cpuTab[i].name), cpuTab[i].type);
+		ui.cbCpu->addItem(cpuTab[i].name, cpuTab[i].type);
 		i++;
 	}
 	ui.resbox->addItem("BASIC 48",RES_48);
@@ -178,6 +178,11 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.sdrvBox->addItem("Covox only",SDRV_COVOX);
 	ui.sdrvBox->addItem("Soundrive 1.05 mode 1",SDRV_105_1);
 	ui.sdrvBox->addItem("Soundrive 1.05 mode 2",SDRV_105_2);
+
+	QRegExpValidator* vld = new QRegExpValidator(QRegExp("^[0-9]\\.\\d{0,6}$"));
+	ui.psg1frq->setValidator(vld);
+	ui.psg2frq->setValidator(vld);
+	ui.psg3frq->setValidator(vld);
 // bdi
 // WTF? QtDesigner doesn't save this properties
 	ui.disklist->horizontalHeader()->setVisible(true);
@@ -449,9 +454,12 @@ void SetupWin::start(xProfile* p) {
 	ui.stereo1box->setCurrentIndex(ui.stereo1box->findData(QVariant(comp->ts->chipA->stereo)));
 	ui.stereo2box->setCurrentIndex(ui.stereo2box->findData(QVariant(comp->ts->chipB->stereo)));
 	ui.stereo3box->setCurrentIndex(ui.stereo3box->findData(QVariant(comp->ts->chipC->stereo)));
-	ui.chip1freq->setValue(comp->ts->chipA->frq);
-	ui.chip2freq->setValue(comp->ts->chipB->frq);
-	ui.chip3freq->setValue(comp->ts->chipC->frq);
+	ui.psg1frq->setCurrentText(QString::number(comp->ts->chipA->frq));
+	ui.psg2frq->setCurrentText(QString::number(comp->ts->chipB->frq));
+	ui.psg3frq->setCurrentText(QString::number(comp->ts->chipC->frq));
+//	ui.chip1freq->setValue(comp->ts->chipA->frq);
+//	ui.chip2freq->setValue(comp->ts->chipB->frq);
+//	ui.chip3freq->setValue(comp->ts->chipC->frq);
 	ui.tsbox->setCurrentIndex(ui.tsbox->findData(QVariant(comp->ts->type)));
 // input
 	buildkeylist();
@@ -532,7 +540,7 @@ void SetupWin::start(xProfile* p) {
 	buildtapelist();
 // input
 	buildpadlist();
-	setRFIndex(ui.cbPadMap, trUtf8(conf.prof.cur->jmapName.c_str()));
+	setRFIndex(ui.cbPadMap, conf.prof.cur->jmapName.c_str());
 // tools
 	ui.sbPort->setValue(conf.port);
 	ui.cbConfexit->setChecked(conf.confexit);
@@ -626,9 +634,12 @@ void SetupWin::apply() {
 		setOutput(nname.c_str());
 	}
 
-	comp->ts->chipA->frq = ui.chip1freq->value();
-	comp->ts->chipB->frq = ui.chip2freq->value();
-	comp->ts->chipC->frq = ui.chip3freq->value();
+	comp->ts->chipA->frq = ui.psg1frq->currentText().toDouble();
+	comp->ts->chipB->frq = ui.psg2frq->currentText().toDouble();
+	comp->ts->chipC->frq = ui.psg3frq->currentText().toDouble();
+//	comp->ts->chipA->frq = ui.chip1freq->value();
+//	comp->ts->chipB->frq = ui.chip2freq->value();
+//	comp->ts->chipC->frq = ui.chip3freq->value();
 	chip_set_type(comp->ts->chipA, getRFIData(ui.schip1box));
 	chip_set_type(comp->ts->chipB, getRFIData(ui.schip2box));
 	chip_set_type(comp->ts->chipC, getRFIData(ui.schip3box));
