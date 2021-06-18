@@ -13,6 +13,7 @@
 #include <QRegExpValidator>
 
 #include "../xgui.h"
+#include "../labelist.h"
 
 #include "dbg_dump.h"
 #include "dbg_disasm.h"
@@ -111,6 +112,7 @@ class DebugWin : public QDialog {
 		xMemFinder* memFinder;
 		MemViewer* memViewer;
 		xBrkManager* brkManager;
+		xLabeList* labswin;
 
 		QMenu* cellMenu;
 		unsigned short bpAdr;
@@ -151,6 +153,7 @@ class DebugWin : public QDialog {
 
 		void dbgLLab();
 		void dbgSLab();
+		void jumpToLabel(QString);
 
 		void mapClear();
 		void mapAuto();

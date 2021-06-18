@@ -84,5 +84,6 @@
         <file>images/button-k.png</file>
         <file>images/wav.png</file>
         <file>images/shader.png</file>
+        <file>images/filter.png</file>
     </qresource>
 </RCC>

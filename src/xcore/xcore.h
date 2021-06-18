@@ -424,6 +424,9 @@ struct xConfig {
 		unsigned segment:1;
 		unsigned hideadr:1;
 		unsigned romwr:1;
+		int dbsize;
+		int dwsize;
+		int dmsize;
 	} dbg;
 };
 

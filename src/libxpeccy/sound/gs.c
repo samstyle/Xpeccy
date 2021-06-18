@@ -182,7 +182,7 @@ void gsSync(GSound* gs, int ns) {
 
 int gsCheck(GSound* gs, int adr) {
 	if (!gs->enable) return 0;
-	if (adr & 0x0044) return 0;
+	if ((adr & 0xf7) != 0xb3) return 0;	// b3 is for register selection
 	return 1;
 }
 

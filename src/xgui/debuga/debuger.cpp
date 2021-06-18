@@ -237,6 +237,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 	ui.setupUi(this);
 	dumpwin = new QDialog(this);
+	labswin = new xLabeList(this);
 
 	tabMode = HW_NULL;
 
@@ -362,6 +363,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.tbTool->addAction(ui.actSprScan);
 	ui.tbTool->addAction(ui.actShowKeys);
 	ui.tbTool->addAction(ui.actWutcha);
+	ui.tbTool->addAction(ui.actLabelsList);
 
 	ui.tbDbgOpt->addAction(ui.actShowLabels);
 	ui.tbDbgOpt->addAction(ui.actHideAddr);
@@ -397,6 +399,9 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.actSprScan,SIGNAL(triggered(bool)),this,SLOT(doMemView()));
 	connect(ui.actShowKeys,SIGNAL(triggered(bool)),this,SIGNAL(wannaKeys()));
 	connect(ui.actWutcha,SIGNAL(triggered(bool)),this,SIGNAL(wannaWutch()));
+
+	connect(ui.actLabelsList, SIGNAL(triggered(bool)), labswin, SLOT(show()));
+	connect(labswin, SIGNAL(labSelected(QString)), this, SLOT(jumpToLabel(QString)));
 
 	connect(ui.actShowLabels,SIGNAL(toggled(bool)),this,SLOT(setShowLabels(bool)));
 	connect(ui.actHideAddr,SIGNAL(toggled(bool)),this,SLOT(fillDisasm()));
@@ -587,6 +592,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	viewMenu->addAction(ui.actViewWord);
 	viewMenu->addAction(ui.actViewAddr);
 	cellMenu->addSeparator();
+	cellMenu->addAction(ui.actLabelsList);
 	cellMenu->addAction(ui.actTraceHere);
 	cellMenu->addAction(ui.actShowLabels);
 	// NOTE: actions already connected to slots by main menu. no need to double it here
@@ -1511,6 +1517,11 @@ void DebugWin::dbgLLab() {
 }
 void DebugWin::dbgSLab() {saveLabels(NULL);}
 
+void DebugWin::jumpToLabel(QString lab) {
+	if (conf.labels.contains(lab))
+		ui.dasmTable->setAdr(conf.labels[lab].adr, 1);
+}
+
 // disasm table
 
 int rdbyte(int adr, void* ptr) {
@@ -1525,47 +1536,6 @@ int rdbyte(int adr, void* ptr) {
 			if (!comp->slot) break;
 			if (!comp->slot->data) break;
 			res = sltRead(comp->slot, SLT_PRG, adr & 0xffff); break;
-			// res = comp->slot->data[fadr & comp->slot->memMask]; break;
-	}
-	return res;
-}
-
-int getCommandSize(Computer* comp, unsigned short adr) {
-	int type = getBrk(comp, adr) & 0xf0;
-	unsigned char fl;
-	unsigned char bt;
-	char buf[256];
-	xMnem mn;
-	int res;
-	switch (type) {
-		case DBG_VIEW_BYTE:
-			res = 1;
-			break;
-		case DBG_VIEW_ADDR:
-		case DBG_VIEW_WORD:
-			res = 2;
-			break;
-		case DBG_VIEW_TEXT:
-			fl = getBrk(comp, adr);
-			bt = rdbyte(adr, comp);
-			res = 0;
-			while (((fl & 0xc0) == DBG_VIEW_TEXT) && (bt > 31) && (bt < 128) && (res < 250)) {
-				res++;
-				adr++;
-				bt = rdbyte(adr & 0xffff, comp);
-				fl = getBrk(comp, adr & 0xffff);
-			}
-			if (res == 0)
-				res++;
-			break;
-		case DBG_VIEW_CODE:
-		case DBG_VIEW_EXEC:
-			mn = cpuDisasm(comp->cpu, adr, buf, rdbyte, comp);
-			res = mn.len;
-			break;
-		default:
-			res = 1;
-			break;
 	}
 	return res;
 }
@@ -1985,6 +1955,7 @@ void DebugWin::updateScreen() {
 	pnt.drawImage(10,10,scrImg);
 	pnt.end();
 	ui.scrLabel->setPixmap(xpxm);
+	ui.labCurScr->setText(QString::number(comp->vid->curscr, 16).rightJustified(2, '0'));
 }
 
 // breakpoints

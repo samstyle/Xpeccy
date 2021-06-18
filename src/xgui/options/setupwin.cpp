@@ -554,6 +554,10 @@ void SetupWin::start(xProfile* p) {
 	ui.cbMessage->setChecked(conf.led.message);
 	ui.cbFpsLed->setChecked(conf.led.fps);
 	ui.cbHaltLed->setChecked(conf.led.halt);
+// debuga
+	ui.sbDbSize->setValue(conf.dbg.dbsize);
+	ui.sbDwSize->setValue(conf.dbg.dwsize);
+	ui.sbTextSize->setValue(conf.dbg.dmsize);
 // palette
 	setToolButtonColor(ui.tbDbgWinCol, "dbg.window","");
 	setToolButtonColor(ui.tbDbgTxtCol, "dbg.text","");
@@ -722,6 +726,10 @@ void SetupWin::apply() {
 	conf.led.message = ui.cbMessage->isChecked() ? 1 : 0;
 	conf.led.fps = ui.cbFpsLed->isChecked() ? 1 : 0;
 	conf.led.halt = ui.cbHaltLed->isChecked() ? 1 : 0;
+// debuga
+	conf.dbg.dbsize = ui.sbDbSize->value();
+	conf.dbg.dwsize = ui.sbDwSize->value();
+	conf.dbg.dmsize = ui.sbTextSize->value();
 // profiles
 	conf.defProfile = ui.defstart->isChecked() ? 1 : 0;
 

@@ -144,12 +144,12 @@ void stdMWr(Computer *comp, int adr, int val) {
 }
 
 // io
+// TODO: contended io here or in spectrum.c? Z80: add 4T after io cycle?
 
 int hwIn(xPort* ptab, Computer* comp, int port, int dos) {
 	int res = 0xff;
 	int idx = 0;
 	xPort* itm;
-	// while (ptab[idx].mask != 0) {
 	do {
 		itm = &ptab[idx];
 		if (((port & itm->mask) == (itm->value & itm->mask)) &&\
@@ -160,7 +160,6 @@ int hwIn(xPort* ptab, Computer* comp, int port, int dos) {
 			res = itm->in(comp, port);
 			break;
 		}
-	//	if (itm->mask == 0) break;
 		idx++;
 	} while (itm->mask != 0);
 	return res;
@@ -169,7 +168,6 @@ int hwIn(xPort* ptab, Computer* comp, int port, int dos) {
 void hwOut(xPort* ptab, Computer* comp, int port, int val, int dos) {
 	int idx = 0;
 	xPort* itm;
-	//while (ptab[idx].mask != 0) {
 	do {
 		itm = &ptab[idx];
 		if (((port & itm->mask) == (itm->value & itm->mask)) &&\
@@ -178,9 +176,7 @@ void hwOut(xPort* ptab, Computer* comp, int port, int val, int dos) {
 				((itm->rom & 2) || (itm->rom == comp->rom)) &&\
 				((itm->cpm & 2) || (itm->cpm == comp->cpm))) {
 			itm->out(comp, port, val);
-//			break;		// write to every matched port
 		}
-//		if (itm->mask == 0) break;
 		idx++;
 	} while (itm->mask != 0);
 }

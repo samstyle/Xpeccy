@@ -34,6 +34,7 @@ enum {
 	SECT_LEDS,
 	SECT_INPUT,
 	SECT_SDC,
+	SECT_DEBUGA,
 	SECT_PALETTE,
 	SECT_KEYS,
 };
@@ -184,6 +185,11 @@ void saveConfig() {
 	fprintf(cfile, "fps = %s\n", YESNO(conf.led.fps));
 	fprintf(cfile, "halt = %s\n", YESNO(conf.led.halt));
 
+	fprintf(cfile, "\n[DEBUGA]\n\n");
+	fprintf(cfile, "dbsize = %i\n", conf.dbg.dbsize);
+	fprintf(cfile, "dwsize = %i\n", conf.dbg.dwsize);
+	fprintf(cfile, "dmsize = %i\n", conf.dbg.dmsize);
+
 	fprintf(cfile, "\n[PALETTE]\n\n");
 	QStringList lst = conf.pal.keys();
 	QString nam;
@@ -264,6 +270,9 @@ void loadConfig() {
 	shortcut_init();
 	conf.xpos = -1;
 	conf.ypos = -1;
+	conf.dbg.dbsize = 8;
+	conf.dbg.dwsize = 4;
+	conf.dbg.dmsize = 127;
 // init volumes
 	conf.snd.vol.master = 100;
 	conf.snd.vol.beep = 100;
@@ -300,6 +309,7 @@ void loadConfig() {
 			if (pnam=="[TAPE]") section = SECT_TAPE;
 			if (pnam=="[LEDS]") section = SECT_LEDS;
 			if (pnam=="[INPUT]") section = SECT_INPUT;
+			if (pnam=="[DEBUGA]") section = SECT_DEBUGA;
 			if (pnam=="[PALETTE]") section = SECT_PALETTE;
 			if (pnam=="[KEYS]") section = SECT_KEYS;
 		} else {
@@ -311,6 +321,11 @@ void loadConfig() {
 					col = QColor(pval.c_str());
 					if (col.isValid())
 						conf.pal[QString(pnam.c_str())] = col;
+					break;
+				case SECT_DEBUGA:
+					if (pnam == "dbsize") conf.dbg.dbsize = atoi(pval.c_str());
+					if (pnam == "dwsize") conf.dbg.dwsize = atoi(pval.c_str());
+					if (pnam == "dmsize") conf.dbg.dmsize = atoi(pval.c_str());
 					break;
 				case SECT_BOOKMARK:
 					addBookmark(pnam,pval);

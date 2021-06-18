@@ -3349,266 +3349,343 @@
            <widget class="QWidget" name="tab_12">
             <attribute name="icon">
              <iconset resource="../xpeccy.qrc">
-              <normaloff>:/images/palette.png</normaloff>:/images/palette.png</iconset>
+              <normaloff>:/images/bug.png</normaloff>:/images/bug.png</iconset>
             </attribute>
             <attribute name="title">
-             <string>Palette</string>
+             <string>deBUGa</string>
             </attribute>
-            <layout class="QGridLayout" name="gridLayout_16">
-             <item row="0" column="0">
-              <widget class="QGroupBox" name="groupBox_7">
-               <property name="title">
-                <string>DeBUGa</string>
-               </property>
-               <layout class="QGridLayout" name="gridLayout_15">
-                <item row="4" column="0">
-                 <widget class="QLabel" name="label_45">
-                  <property name="text">
-                   <string>Input</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="9" column="0">
-                 <widget class="QLabel" name="label_48">
-                  <property name="text">
-                   <string>PC</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="0">
-                 <widget class="QLabel" name="label_40">
-                  <property name="text">
-                   <string>Header</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="0">
-                 <widget class="QLabel" name="label_36">
-                  <property name="text">
-                   <string>Main</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="1">
-                 <widget class="QToolButton" name="tbDbgWinCol">
-                  <property name="contextMenuPolicy">
-                   <enum>Qt::CustomContextMenu</enum>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="2">
-                 <widget class="QToolButton" name="tbDbgTxtCol">
-                  <property name="contextMenuPolicy">
-                   <enum>Qt::CustomContextMenu</enum>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="6" column="0">
-                 <widget class="QLabel" name="label_47">
-                  <property name="text">
-                   <string>Table</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="2">
-                 <widget class="QLabel" name="label_44">
-                  <property name="text">
-                   <string>TXT</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="2">
-                 <widget class="QToolButton" name="tbDbgHeadFG">
-                  <property name="contextMenuPolicy">
-                   <enum>Qt::CustomContextMenu</enum>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="1">
-                 <widget class="QLabel" name="label_43">
-                  <property name="text">
-                   <string>BGR</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="1">
-                 <widget class="QToolButton" name="tbDbgHeadBG">
-                  <property name="contextMenuPolicy">
-                   <enum>Qt::CustomContextMenu</enum>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="6" column="1">
-                 <widget class="QToolButton" name="tbDbgTableBG">
-                  <property name="contextMenuPolicy">
-                   <enum>Qt::CustomContextMenu</enum>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="6" column="2">
-                 <widget class="QToolButton" name="tbDbgTableFG">
-                  <property name="contextMenuPolicy">
-                   <enum>Qt::CustomContextMenu</enum>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="10" column="0">
-                 <widget class="QLabel" name="label_49">
-                  <property name="text">
-                   <string>Select</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="11" column="0">
-                 <widget class="QLabel" name="label_50">
-                  <property name="text">
-                   <string>Break</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="4" column="1">
-                 <widget class="QToolButton" name="tbDbgInputBG">
-                  <property name="contextMenuPolicy">
-                   <enum>Qt::CustomContextMenu</enum>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="4" column="2">
-                 <widget class="QToolButton" name="tbDbgInputFG">
-                  <property name="contextMenuPolicy">
-                   <enum>Qt::CustomContextMenu</enum>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="5" column="0">
-                 <widget class="QLabel" name="label_46">
-                  <property name="text">
-                   <string>Changed</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="5" column="1">
-                 <widget class="QToolButton" name="tbDbgChaBG">
-                  <property name="contextMenuPolicy">
-                   <enum>Qt::CustomContextMenu</enum>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="5" column="2">
-                 <widget class="QToolButton" name="tbDbgChaFG">
-                  <property name="contextMenuPolicy">
-                   <enum>Qt::CustomContextMenu</enum>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="9" column="1">
-                 <widget class="QToolButton" name="tbDbgPcBG">
-                  <property name="contextMenuPolicy">
-                   <enum>Qt::CustomContextMenu</enum>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="9" column="2">
-                 <widget class="QToolButton" name="tbDbgPcFG">
-                  <property name="contextMenuPolicy">
-                   <enum>Qt::CustomContextMenu</enum>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="10" column="1">
-                 <widget class="QToolButton" name="tbDbgSelBG">
-                  <property name="contextMenuPolicy">
-                   <enum>Qt::CustomContextMenu</enum>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="10" column="2">
-                 <widget class="QToolButton" name="tbDbgSelFG">
-                  <property name="contextMenuPolicy">
-                   <enum>Qt::CustomContextMenu</enum>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item row="11" column="2">
-                 <widget class="QToolButton" name="tbDbgBrkFG">
-                  <property name="contextMenuPolicy">
-                   <enum>Qt::CustomContextMenu</enum>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </widget>
+            <layout class="QHBoxLayout" name="horizontalLayout_37" stretch="10,0">
+             <item>
+              <layout class="QVBoxLayout" name="verticalLayout_46">
+               <item>
+                <widget class="QGroupBox" name="groupBox_13">
+                 <property name="title">
+                  <string>View</string>
+                 </property>
+                 <layout class="QGridLayout" name="gridLayout_16" columnstretch="0,10">
+                  <item row="0" column="1">
+                   <widget class="QSpinBox" name="sbDbSize">
+                    <property name="minimum">
+                     <number>1</number>
+                    </property>
+                    <property name="maximum">
+                     <number>16</number>
+                    </property>
+                    <property name="value">
+                     <number>8</number>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="0">
+                   <widget class="QLabel" name="label_61">
+                    <property name="text">
+                     <string>DB in row</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="2" column="0">
+                   <widget class="QLabel" name="label_62">
+                    <property name="text">
+                     <string>Max text length</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="0">
+                   <widget class="QLabel" name="label_63">
+                    <property name="text">
+                     <string>DW in row</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="1">
+                   <widget class="QSpinBox" name="sbDwSize">
+                    <property name="minimum">
+                     <number>1</number>
+                    </property>
+                    <property name="maximum">
+                     <number>16</number>
+                    </property>
+                    <property name="value">
+                     <number>4</number>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="2" column="1">
+                   <widget class="QSpinBox" name="sbTextSize">
+                    <property name="minimum">
+                     <number>1</number>
+                    </property>
+                    <property name="maximum">
+                     <number>128</number>
+                    </property>
+                    <property name="value">
+                     <number>16</number>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <spacer name="verticalSpacer_2">
+                 <property name="orientation">
+                  <enum>Qt::Vertical</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>20</width>
+                   <height>40</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
              </item>
-             <item row="0" column="1">
-              <spacer name="horizontalSpacer_7">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item row="1" column="0">
-              <spacer name="verticalSpacer_12">
-               <property name="orientation">
-                <enum>Qt::Vertical</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>20</width>
-                 <height>40</height>
-                </size>
-               </property>
-              </spacer>
+             <item>
+              <layout class="QVBoxLayout" name="verticalLayout_45">
+               <item>
+                <widget class="QGroupBox" name="groupBox_7">
+                 <property name="title">
+                  <string>Palette</string>
+                 </property>
+                 <layout class="QGridLayout" name="gridLayout_15">
+                  <item row="4" column="0">
+                   <widget class="QLabel" name="label_45">
+                    <property name="text">
+                     <string>Input</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="9" column="0">
+                   <widget class="QLabel" name="label_48">
+                    <property name="text">
+                     <string>PC</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="2" column="0">
+                   <widget class="QLabel" name="label_40">
+                    <property name="text">
+                     <string>Header</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="0">
+                   <widget class="QLabel" name="label_36">
+                    <property name="text">
+                     <string>Main</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="1">
+                   <widget class="QToolButton" name="tbDbgWinCol">
+                    <property name="contextMenuPolicy">
+                     <enum>Qt::CustomContextMenu</enum>
+                    </property>
+                    <property name="text">
+                     <string/>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="2">
+                   <widget class="QToolButton" name="tbDbgTxtCol">
+                    <property name="contextMenuPolicy">
+                     <enum>Qt::CustomContextMenu</enum>
+                    </property>
+                    <property name="text">
+                     <string/>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="6" column="0">
+                   <widget class="QLabel" name="label_47">
+                    <property name="text">
+                     <string>Table</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="2">
+                   <widget class="QLabel" name="label_44">
+                    <property name="text">
+                     <string>TXT</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="2" column="2">
+                   <widget class="QToolButton" name="tbDbgHeadFG">
+                    <property name="contextMenuPolicy">
+                     <enum>Qt::CustomContextMenu</enum>
+                    </property>
+                    <property name="text">
+                     <string/>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="1">
+                   <widget class="QLabel" name="label_43">
+                    <property name="text">
+                     <string>BGR</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="2" column="1">
+                   <widget class="QToolButton" name="tbDbgHeadBG">
+                    <property name="contextMenuPolicy">
+                     <enum>Qt::CustomContextMenu</enum>
+                    </property>
+                    <property name="text">
+                     <string/>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="6" column="1">
+                   <widget class="QToolButton" name="tbDbgTableBG">
+                    <property name="contextMenuPolicy">
+                     <enum>Qt::CustomContextMenu</enum>
+                    </property>
+                    <property name="text">
+                     <string/>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="6" column="2">
+                   <widget class="QToolButton" name="tbDbgTableFG">
+                    <property name="contextMenuPolicy">
+                     <enum>Qt::CustomContextMenu</enum>
+                    </property>
+                    <property name="text">
+                     <string/>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="10" column="0">
+                   <widget class="QLabel" name="label_49">
+                    <property name="text">
+                     <string>Select</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="11" column="0">
+                   <widget class="QLabel" name="label_50">
+                    <property name="text">
+                     <string>Break</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="4" column="1">
+                   <widget class="QToolButton" name="tbDbgInputBG">
+                    <property name="contextMenuPolicy">
+                     <enum>Qt::CustomContextMenu</enum>
+                    </property>
+                    <property name="text">
+                     <string/>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="4" column="2">
+                   <widget class="QToolButton" name="tbDbgInputFG">
+                    <property name="contextMenuPolicy">
+                     <enum>Qt::CustomContextMenu</enum>
+                    </property>
+                    <property name="text">
+                     <string/>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="5" column="0">
+                   <widget class="QLabel" name="label_46">
+                    <property name="text">
+                     <string>Changed</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="5" column="1">
+                   <widget class="QToolButton" name="tbDbgChaBG">
+                    <property name="contextMenuPolicy">
+                     <enum>Qt::CustomContextMenu</enum>
+                    </property>
+                    <property name="text">
+                     <string/>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="5" column="2">
+                   <widget class="QToolButton" name="tbDbgChaFG">
+                    <property name="contextMenuPolicy">
+                     <enum>Qt::CustomContextMenu</enum>
+                    </property>
+                    <property name="text">
+                     <string/>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="9" column="1">
+                   <widget class="QToolButton" name="tbDbgPcBG">
+                    <property name="contextMenuPolicy">
+                     <enum>Qt::CustomContextMenu</enum>
+                    </property>
+                    <property name="text">
+                     <string/>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="9" column="2">
+                   <widget class="QToolButton" name="tbDbgPcFG">
+                    <property name="contextMenuPolicy">
+                     <enum>Qt::CustomContextMenu</enum>
+                    </property>
+                    <property name="text">
+                     <string/>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="10" column="1">
+                   <widget class="QToolButton" name="tbDbgSelBG">
+                    <property name="contextMenuPolicy">
+                     <enum>Qt::CustomContextMenu</enum>
+                    </property>
+                    <property name="text">
+                     <string/>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="10" column="2">
+                   <widget class="QToolButton" name="tbDbgSelFG">
+                    <property name="contextMenuPolicy">
+                     <enum>Qt::CustomContextMenu</enum>
+                    </property>
+                    <property name="text">
+                     <string/>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="11" column="2">
+                   <widget class="QToolButton" name="tbDbgBrkFG">
+                    <property name="contextMenuPolicy">
+                     <enum>Qt::CustomContextMenu</enum>
+                    </property>
+                    <property name="text">
+                     <string/>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <spacer name="verticalSpacer_12">
+                 <property name="orientation">
+                  <enum>Qt::Vertical</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>20</width>
+                   <height>40</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
              </item>
             </layout>
            </widget>

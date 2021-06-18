@@ -18,17 +18,39 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QLineEdit" name="name"/>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string/>
+       </property>
+       <property name="pixmap">
+        <pixmap resource="../xpeccy.qrc">:/images/filter.png</pixmap>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="name"/>
+     </item>
+    </layout>
    </item>
    <item>
     <widget class="QListView" name="list">
      <property name="editTriggers">
       <set>QAbstractItemView::NoEditTriggers</set>
      </property>
+     <property name="alternatingRowColors">
+      <bool>true</bool>
+     </property>
+     <property name="selectionBehavior">
+      <enum>QAbstractItemView::SelectColumns</enum>
+     </property>
     </widget>
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../xpeccy.qrc"/>
+ </resources>
  <connections/>
 </ui>

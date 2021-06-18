@@ -133,6 +133,7 @@ int zx_dev_wr(Computer* comp, int adr, int val, int dos) {
 	if (!dos && saaWrite(comp->saa, adr, val)) return 1;
 	if (!dos && sdrvWrite(comp->sdrv, adr, val)) return 1;
 	if (ideOut(comp->ide, adr, val, dos)) return 1;
+	if (ula_wr(comp->vid->ula, adr, val)) return 1;
 	return 0;
 }
 

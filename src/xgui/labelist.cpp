@@ -24,9 +24,14 @@ QStringList filter(QStringList lst, QString f) {
 }
 
 void xLabelistModel::reset(QString f) {
-	list = filter(conf.labels.keys(), f);
+	list = conf.labels.keys().filter(f, Qt::CaseInsensitive);
+	// list = filter(conf.labels.keys(), f);
 	list.sort();
 	emit dataChanged(index(0,0), index(0, list.size() - 1));
+}
+
+QModelIndex xLabelistModel::index(int row, int col, const QModelIndex&) const {
+	return createIndex(row, col, nullptr);
 }
 
 QVariant xLabelistModel::data(const QModelIndex& idx, int role) const {

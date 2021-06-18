@@ -15,6 +15,7 @@ class xLabelistModel : public QAbstractListModel {
 	protected:
 		int rowCount(const QModelIndex& = QModelIndex()) const;
 		QVariant data(const QModelIndex&, int) const;
+		QModelIndex index(int, int, const QModelIndex& = QModelIndex()) const;
 };
 
 class xLabeList : public QDialog {
