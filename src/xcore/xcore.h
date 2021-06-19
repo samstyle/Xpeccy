@@ -13,6 +13,7 @@
 #include <QKeySequence>
 #include <QString>
 #include <QColor>
+#include <QFont>
 #include <QMap>
 
 #include "../libxpeccy/spectrum.h"
@@ -424,6 +425,7 @@ struct xConfig {
 		unsigned segment:1;
 		unsigned hideadr:1;
 		unsigned romwr:1;
+		QFont font;
 		int dbsize;
 		int dwsize;
 		int dmsize;

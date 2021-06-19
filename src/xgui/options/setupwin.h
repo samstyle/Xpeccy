@@ -51,6 +51,8 @@ class SetupWin : public QDialog {
 		xLayout nlay;
 		void editLayout();
 
+		QFont dbgfnt;
+
 		int bindidx;
 		int umidx;
 		void buildtapelist();
@@ -61,6 +63,7 @@ class SetupWin : public QDialog {
 
 	signals:
 		void closed();
+		void s_apply();
 		void s_prf_change(std::string);
 	private slots:
 		void reject();
@@ -125,6 +128,7 @@ class SetupWin : public QDialog {
 		void layNameCheck(QString);
 
 		void selectColor();
+		void selectDbgFont();
 		void triggerColor();
 };
 

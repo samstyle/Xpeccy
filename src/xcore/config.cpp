@@ -189,6 +189,7 @@ void saveConfig() {
 	fprintf(cfile, "dbsize = %i\n", conf.dbg.dbsize);
 	fprintf(cfile, "dwsize = %i\n", conf.dbg.dwsize);
 	fprintf(cfile, "dmsize = %i\n", conf.dbg.dmsize);
+	fprintf(cfile, "font = %s\n", conf.dbg.font.toString().toUtf8().data());
 
 	fprintf(cfile, "\n[PALETTE]\n\n");
 	QStringList lst = conf.pal.keys();
@@ -273,6 +274,11 @@ void loadConfig() {
 	conf.dbg.dbsize = 8;
 	conf.dbg.dwsize = 4;
 	conf.dbg.dmsize = 127;
+#if defined(__WIN32)
+	conf.dbg.font = QFont("Consolas", 10);
+#else
+	conf.dbg.font = QFont("DejaVu Sans Mono", 10);		// default
+#endif
 // init volumes
 	conf.snd.vol.master = 100;
 	conf.snd.vol.beep = 100;
@@ -326,6 +332,7 @@ void loadConfig() {
 					if (pnam == "dbsize") conf.dbg.dbsize = atoi(pval.c_str());
 					if (pnam == "dwsize") conf.dbg.dwsize = atoi(pval.c_str());
 					if (pnam == "dmsize") conf.dbg.dmsize = atoi(pval.c_str());
+					if (pnam == "font") conf.dbg.font.fromString(QString(pval.c_str()));
 					break;
 				case SECT_BOOKMARK:
 					addBookmark(pnam,pval);

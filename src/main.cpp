@@ -100,12 +100,14 @@ int main(int ac,char** av) {
 	xWatcher wutw(&mwin);
 	keyWindow keyw(&mwin);
 
-	int id = QFontDatabase::addApplicationFont(":/DejaVuSansMono.ttf");
-	if (id > -1) {
-		dbgw.setFont(QFont(QFontDatabase::applicationFontFamilies(id).first(), 10));
-	}
+//	int id = QFontDatabase::addApplicationFont(":/DejaVuSansMono.ttf");
+//	if (id > -1) {
+//		dbgw.setFont(QFont(QFontDatabase::applicationFontFamilies(id).first(), 10));
+//	}
 
 	loadConfig();
+	dbgw.setFont(conf.dbg.font);
+
 	mwin.loadShader();
 	mwin.fillUserMenu();
 
@@ -128,7 +130,7 @@ int main(int ac,char** av) {
 
 	app.connect(&mwin, SIGNAL(s_options(xProfile*)), &optw, SLOT(start(xProfile*)));
 	app.connect(&optw, SIGNAL(closed()), &mwin, SLOT(optApply()));
-	app.connect(&optw, SIGNAL(closed()), &dbgw, SLOT(chaPal()));
+	app.connect(&optw, SIGNAL(s_apply()), &dbgw, SLOT(chaPal()));
 	app.connect(&optw, SIGNAL(s_prf_change(std::string)), &mwin, SLOT(setProfile(std::string)));
 
 	app.connect(&mwin, SIGNAL(s_tape_upd(Tape*)), &tapw, SLOT(upd(Tape*)));

@@ -1466,7 +1466,7 @@
              <item row="0" column="0">
               <widget class="QLabel" name="label_71">
                <property name="text">
-                <string>Current</string>
+                <string>VidPage</string>
                </property>
               </widget>
              </item>
@@ -3383,11 +3383,11 @@
  </resources>
  <connections/>
  <buttongroups>
+  <buttongroup name="gbModeGroup"/>
   <buttongroup name="flagGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
-  <buttongroup name="gbModeGroup"/>
  </buttongroups>
 </ui>

@@ -85,5 +85,6 @@
         <file>images/wav.png</file>
         <file>images/shader.png</file>
         <file>images/filter.png</file>
+        <file>images/font.png</file>
     </qresource>
 </RCC>

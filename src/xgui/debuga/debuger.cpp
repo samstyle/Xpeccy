@@ -79,6 +79,8 @@ void DebugWin::chaPal() {
 	ui.labHeadStack->setStyleSheet(str);
 	ui.labHeadSignal->setStyleSheet(str);
 
+	setFont(conf.dbg.font);
+
 	fillAll();
 }
 
@@ -1234,6 +1236,10 @@ void DebugWin::drawNes() {
 		case NES_SCR_3: adr = 0x2c00; break;
 	}
 	tadr = getRFIData(ui.nesBGTileset) & 0xffff;
+//	int px = (comp->vid->sc.x << 3) | (comp->vid->finex & 7);
+//	if (comp->vid->nt & 1) px += 256;
+//	int py = (comp->vid->sc.y << 3) | (comp->vid->finey & 7);
+//	if (comp->vid->nt & 2) py += 240;
 	pic = QPixmap(256, 240);
 	pic.fill(Qt::black);
 	QPainter pnt(&pic);
@@ -1243,6 +1249,12 @@ void DebugWin::drawNes() {
 			pnt.drawImage(128, 0, dbgNesScreenImg(comp->vid, 0x2400, tadr).scaled(128, 120));
 			pnt.drawImage(0, 120, dbgNesScreenImg(comp->vid, 0x2800, tadr).scaled(128, 120));
 			pnt.drawImage(128, 120, dbgNesScreenImg(comp->vid, 0x2c00, tadr).scaled(128, 120));
+//			pnt.setPen(qRgba(0, 0, 0, 128));
+//			pnt.setBrush(Qt::NoBrush);
+//			pnt.drawRect(px / 2, py / 2, 128, 120);
+//			pnt.drawRect(px / 2 - 256, py / 2, 128, 120);
+//			pnt.drawRect(px / 2, py / 2 - 128, 128, 120);
+//			pnt.drawRect(px / 2 - 256, py / 2 - 128, 128, 120);
 			break;
 		case NES_SCR_TILES:
 			pnt.drawImage(0, 0, dbgNesTilesImg(comp->vid, tadr));

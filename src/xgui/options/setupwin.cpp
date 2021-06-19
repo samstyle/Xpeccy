@@ -1,6 +1,7 @@
 #include <QStandardItemModel>
 #include <QInputDialog>
 #include <QColorDialog>
+#include <QFontDialog>
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QVector3D>
@@ -349,6 +350,8 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	connect(uia.umasptb,SIGNAL(released()),this,SLOT(umaselp()));
 	connect(uia.umaok,SIGNAL(released()),this,SLOT(umaconf()));
 	connect(uia.umacn,SIGNAL(released()),umadial,SLOT(hide()));
+// debuga
+	connect(ui.tbDbgFont,SIGNAL(released()),this,SLOT(selectDbgFont()));
 // palette
 	QToolButton* tbarr[] = {
 		ui.tbDbgChaBG, ui.tbDbgChaFG, ui.tbDbgHeadBG, ui.tbDbgHeadFG,
@@ -558,6 +561,9 @@ void SetupWin::start(xProfile* p) {
 	ui.sbDbSize->setValue(conf.dbg.dbsize);
 	ui.sbDwSize->setValue(conf.dbg.dwsize);
 	ui.sbTextSize->setValue(conf.dbg.dmsize);
+	dbgfnt = conf.dbg.font;
+	ui.leDbgFont->setText(QString("%0, %1 pt").arg(dbgfnt.family()).arg(dbgfnt.pointSize()));
+	ui.leDbgFont->setFont(dbgfnt);
 // palette
 	setToolButtonColor(ui.tbDbgWinCol, "dbg.window","");
 	setToolButtonColor(ui.tbDbgTxtCol, "dbg.text","");
@@ -730,8 +736,11 @@ void SetupWin::apply() {
 	conf.dbg.dbsize = ui.sbDbSize->value();
 	conf.dbg.dwsize = ui.sbDwSize->value();
 	conf.dbg.dmsize = ui.sbTextSize->value();
+	conf.dbg.font = dbgfnt;
 // profiles
 	conf.defProfile = ui.defstart->isChecked() ? 1 : 0;
+
+	emit s_apply();
 
 	saveConfig();
 	prfSave("");
@@ -1723,7 +1732,16 @@ void SetupWin::rmProfile() {
 	buildproflist();
 }
 
-// palette
+// debuga
+
+void SetupWin::selectDbgFont() {
+	bool ok;
+	dbgfnt = QFontDialog::getFont(&ok, dbgfnt, this, "Select font", QFontDialog::DontUseNativeDialog);
+	ui.leDbgFont->setText(QString("%0, %1 pt").arg(dbgfnt.family()).arg(dbgfnt.pointSize()));
+	ui.leDbgFont->setFont(dbgfnt);
+}
+
+// debuga palette
 
 void SetupWin::selectColor() {
 	QToolButton* obj = (QToolButton*)sender();

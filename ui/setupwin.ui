@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>545</width>
+    <width>572</width>
     <height>475</height>
    </rect>
   </property>
@@ -3425,6 +3425,35 @@
                   </item>
                  </layout>
                 </widget>
+               </item>
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_38">
+                 <item>
+                  <widget class="QLabel" name="label_64">
+                   <property name="text">
+                    <string>Font</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLineEdit" name="leDbgFont">
+                   <property name="readOnly">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QToolButton" name="tbDbgFont">
+                   <property name="text">
+                    <string>...</string>
+                   </property>
+                   <property name="icon">
+                    <iconset resource="../xpeccy.qrc">
+                     <normaloff>:/images/font.png</normaloff>:/images/font.png</iconset>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
                </item>
                <item>
                 <spacer name="verticalSpacer_2">
