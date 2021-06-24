@@ -9,7 +9,7 @@
 // internal MEMRQ
 int gsmemrd(int adr, int m1, void* ptr) {
 	GSound* gs = (GSound*)ptr;
-	unsigned char res = memRd(gs->mem, adr & 0xffff);
+	unsigned char res = memRd(gs->mem, adr & 0xffff) & 0xff;
 	switch (adr & 0xe300) {
 		case 0x6000:
 			gs->ch1 = res;
@@ -108,7 +108,9 @@ int gsintrq(void* ptr) {
 GSound* gsCreate() {
 	GSound* res = (GSound*)malloc(sizeof(GSound));
 	memset(res,0x00,sizeof(GSound));
-	res->cpu = cpuCreate(CPU_Z80, &gsmemrd, &gsmemwr, &gsiord, &gsiowr, &gsintrq, (void*)res);
+	res->cpu = cpuCreate(CPU_Z80, &gsmemrd, &gsmemwr, &gsiord, &gsiowr, &gsintrq, res);
+	res->cpu->inten = 0;
+	res->cpu->ack = 1;
 	res->mem = memCreate();
 	memSetSize(res->mem, MEM_2M, MEM_32K);
 	memSetBank(res->mem, 0x00, MEM_ROM, 0, MEM_16K, NULL, NULL, NULL);
@@ -152,7 +154,7 @@ void gsFlush(GSound* gs) {
 		gs->cnt += res;
 		if (gs->cnt > 320) {	// 12MHz CLK, 37.5KHz INT -> int in each 320 ticks
 			gs->cnt -= 320;
-			gs->cpu->intrq |= 1;
+			gs->cpu->intrq |= Z80_INT;
 		}
 	}
 }
@@ -173,7 +175,7 @@ void gsSync(GSound* gs, int ns) {
 		gs->cnt += res;
 		if (gs->cnt > 320) {	// 12MHz CLK, 37.5KHz INT -> int in each 320 ticks
 			gs->cnt -= 320;
-			gs->cpu->intrq |= 1;
+			gs->cpu->intrq |= Z80_INT;
 		}
 	}
 }
@@ -182,7 +184,7 @@ void gsSync(GSound* gs, int ns) {
 
 int gsCheck(GSound* gs, int adr) {
 	if (!gs->enable) return 0;
-	if ((adr & 0xf7) != 0xb3) return 0;	// b3 is for register selection
+	if ((adr & 0xf7) != 0xb3) return 0;	// bit3 is for register selection
 	return 1;
 }
 

@@ -7,8 +7,7 @@
 
 static int nsTime;
 static int res2;
-int res3 = 0;	// tick in op, wich has last OUT/MWR (and vidSync)
-int res4 = 0;	// save last res3 (vidSync on OUT/MWR process do res3-res4 ticks)
+int res4 = 0;		// save last T synced with video (last is res2-res4
 
 #define RUNTIME_IO 1
 
@@ -115,9 +114,8 @@ int iord(int port, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	unsigned char res = 0xff;
 // TODO: zx only
-	res3 = comp->cpu->t + 3;
-	vidSync(comp->vid,(res3 - res4) * comp->nsPerTick);
-	res4 = res3;
+	vidSync(comp->vid,(comp->cpu->t + 3 - res4) * comp->nsPerTick);
+	res4 = comp->cpu->t + 3;
 // play rzx
 #ifdef HAVEZLIB
 	if (comp->rzx.play) {
@@ -146,8 +144,8 @@ void iowr(int port, int val, void* ptr) {
 #if RUNTIME_IO
 	bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
 	vidSync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
-	comp->hw->out(comp, port, val, bdiz);
 	res4 = comp->cpu->t;
+	comp->hw->out(comp, port, val, bdiz);
 #else
 // store adr & data, real writing will be later
 	comp->padr = port;

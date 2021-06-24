@@ -272,6 +272,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 			fread(prf->zx->gs->mem->romData, MEM_32K, 1, file);
 			fclose(file);
 		} else {
+			printf("Can't load gs rom '%s' (profile %s)\n", fpath.c_str(), prf->name.c_str());
 			memset((char*)prf->zx->gs->mem->romData, 0xff, MEM_32K);
 		}
 // load ATM2 font data
