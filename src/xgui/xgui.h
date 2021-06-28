@@ -29,6 +29,7 @@ class xHexSpin : public QLineEdit {
 		int getValue();
 		void setXFlag(int);
 		void setBase(int);
+		void updatePal();
 	signals:
 		void valueChanged(int);
 	public slots:
@@ -38,6 +39,7 @@ class xHexSpin : public QLineEdit {
 		void onChange(int);
 		void onTextChange(QString);
 	private:
+		unsigned changed:1;
 		int hsflag;
 		int base;
 		int value;

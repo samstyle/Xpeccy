@@ -14,14 +14,10 @@
 #include "filer.h"
 #include "../xgui.h"
 
-//static QColor colPC(32,200,32);	// pc
-//static QColor colBRK(200,128,128);	// breakpoint
-//static QColor colBG0(255,255,255);	// background
-//static QColor colBG1(230,230,230);	// background alternative
-//static QColor colSEL(128,255,128);	// background selected
-
 int blockStart = -1;
 int blockEnd = -1;
+
+int tmpcnt = 0;
 
 int getRFIData(QComboBox*);
 void setRFIndex(QComboBox* box, QVariant data);
@@ -80,8 +76,10 @@ void DebugWin::chaPal() {
 	ui.labHeadSignal->setStyleSheet(str);
 
 	setFont(conf.dbg.font);
-
-	fillAll();
+	for (int i = 0; i < 16; i++) {
+		if (dbgRegEdit[i])
+			dbgRegEdit[i]->updatePal();
+	}
 }
 
 void DebugWin::save_mem_map() {
@@ -129,7 +127,7 @@ void DebugWin::start(Computer* c) {
 
 	brk_clear_tmp(comp);		// clear temp breakpoints
 
-	chaPal();
+	chaPal();		// this will call fillAll
 	show();
 	if (!fillAll()) {
 		ui.dasmTable->setAdr(comp->cpu->pc);
@@ -1421,7 +1419,6 @@ void DebugWin::fillFlags() {
 }
 
 void DebugWin::fillCPU() {
-	block = 1;
 	CPU* cpu = comp->cpu;
 	xRegBunch bunch = cpuGetRegs(cpu);
 	int i = 0;
@@ -1452,7 +1449,6 @@ void DebugWin::fillCPU() {
 	ui.flagIFF1->setChecked(cpu->iff1);
 	ui.flagIFF2->setChecked(cpu->iff2);
 	fillFlags();
-	block = 0;
 	fillStack();
 }
 

@@ -10,6 +10,7 @@ QString gethexbyte(uchar);
 xHexSpin::xHexSpin(QWidget* p):QLineEdit(p) {
 	setMinimumWidth(60);
 	setAutoFillBackground(true);
+	setUpdatesEnabled(true);
 	vldtr.setRegExp(QRegExp(""));
 	min = 0x0000;
 	max = 0xffff;
@@ -92,25 +93,29 @@ void xHexSpin::setMax(int v) {
 	if (value > max) setValue(max);
 }
 
-void xHexSpin::setValue(int nval) {
-	nval = minMaxCorrect(nval, min, max);
+void xHexSpin::updatePal() {
 	QPalette pal;
-	if ((value == nval) && !(hsflag & XHS_UPD)) {
+	if (changed) {
+		pal.setColor(QPalette::Base, conf.pal["dbg.changed.bg"].isValid() ? conf.pal["dbg.changed.bg"] : pal.toolTipBase().color());
+		pal.setColor(QPalette::Text, conf.pal["dbg.changed.txt"].isValid() ? conf.pal["dbg.changed.txt"] : pal.toolTipText().color());
+	} else {
 		pal.setColor(QPalette::Base, conf.pal["dbg.input.bg"].isValid() ? conf.pal["dbg.input.bg"] : pal.base().color());
 		pal.setColor(QPalette::Text, conf.pal["dbg.input.txt"].isValid() ? conf.pal["dbg.input.txt"] : pal.text().color());
+	}
+	setPalette(pal);
+}
+
+void xHexSpin::setValue(int nval) {
+	nval = minMaxCorrect(nval, min, max);
+	if ((value == nval) && !(hsflag & XHS_UPD)) {
+		changed = 0;
 	} else {
 		value = nval;
-		if (hsflag & XHS_BGR) {
-			pal.setColor(QPalette::Base, conf.pal["dbg.changed.bg"].isValid() ? conf.pal["dbg.changed.bg"] : pal.toolTipBase().color());
-			pal.setColor(QPalette::Text, conf.pal["dbg.changed.txt"].isValid() ? conf.pal["dbg.changed.txt"] : pal.toolTipText().color());
-		} else {
-			pal.setColor(QPalette::Base, conf.pal["dbg.input.bg"].isValid() ? conf.pal["dbg.input.bg"] : pal.base().color());
-			pal.setColor(QPalette::Text, conf.pal["dbg.input.txt"].isValid() ? conf.pal["dbg.input.txt"] : pal.text().color());
-		}
+		changed = (hsflag & XHS_BGR) ? 1 : 0;
 		emit valueChanged(nval);
 		onChange(value);
 	}
-	setPalette(pal);
+	updatePal();
 }
 
 void xHexSpin::onChange(int val) {
