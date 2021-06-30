@@ -342,6 +342,19 @@ xRegBunch cpuGetRegs(CPU* cpu) {
 	return bunch;
 }
 
+int cpuGetReg(CPU* cpu, const char* name) {
+	xRegBunch bunch = cpuGetRegs(cpu);
+	int res = -1;
+	for (int i = 0; (i < 32) && (res == -1); i++) {
+		if (bunch.regs[i].id != REG_NONE) {
+			if (!strcmp(name, bunch.regs[i].name)) {
+				res = bunch.regs[i].value;
+			}
+		}
+	}
+	return -1;
+}
+
 void cpuSetRegs(CPU* cpu, xRegBunch bunch) {
 	cpu->setregs(cpu, bunch);
 	// cpu->r7 = cpu->r & 0x80;

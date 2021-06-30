@@ -159,21 +159,18 @@ typedef struct {
 } Joystick;
 
 typedef struct {
-	unsigned char key1;
-	unsigned char key2;
-} xKey;
-
-typedef struct {
 	unsigned char cpmCode;
 	unsigned char rowScan;
 } atmKey;
 
+#define KEYSEQ_MAXLEN 8
+
 typedef struct {
 	const char* name;
 	signed int key;		// XKEY_*
-	xKey zxKey;
-	xKey extKey;
-	xKey msxKey;
+	unsigned char zxKey[KEYSEQ_MAXLEN];
+	unsigned char extKey[KEYSEQ_MAXLEN];
+	unsigned char msxKey[KEYSEQ_MAXLEN];
 	atmKey atmCode;
 	int keyCode;		// 0xXXYYZZ = ZZ,YY,XX in buffer ([ZZ],[YY],0xf0,XX if released)
 } keyEntry;
@@ -195,8 +192,8 @@ unsigned char kbdRead(Keyboard*, int);
 unsigned char keyReadCode(Keyboard*);
 void xt_press(Keyboard*, int);
 void xt_release(Keyboard*, int);
-void kbd_press(Keyboard* kbd, keyScan* tab, int* mtrx, xKey xk);
-void kbd_release(Keyboard* kbd, keyScan* tab, int* mtrx, xKey xk);
+void kbd_press(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk);
+void kbd_release(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk);
 
 Mouse* mouseCreate();
 void mouseDestroy(Mouse*);

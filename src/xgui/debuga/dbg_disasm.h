@@ -37,6 +37,7 @@ class xDisasmModel : public QAbstractTableModel {
 		Qt::ItemFlags flags(const QModelIndex&) const;
 		QVariant data(const QModelIndex&, int) const;
 		bool setData(const QModelIndex&, const QVariant&, int);
+		void update_data();
 		Computer** cptr;
 		QList<dasmData> dasm;
 		unsigned short disasmAdr;
@@ -65,6 +66,7 @@ class xDisasmTable : public QTableView {
 		void rqRefillAll();
 	public slots:
 		int updContent();
+		void update();
 		void t_update(int, int);
 		void setAdr(int, int = 0);
 	private:

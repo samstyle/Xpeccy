@@ -144,12 +144,12 @@ const char* getKeyNameById(int id) {
 	return keyMap[idx].name;
 }
 
-void setKey(const char* key,const char key1, const char key2) {
+void setKey(const char* kname, const char* kstr) {
 	int idx = 0;
 	while (keyMap[idx].key != ENDKEY) {
-		if (!strcmp(key, keyMap[idx].name)) {
-			keyMap[idx].zxKey.key1 = key1;
-			keyMap[idx].zxKey.key2 = key2;
+		if (!strcmp(kname, keyMap[idx].name)) {
+			memset(keyMap[idx].zxKey, 0, 8);
+			strncpy((char*)keyMap[idx].zxKey, kstr, 7);
 //			printf("%s -> %c %c\n", keyMap[idx].name, key1, key2);
 		}
 		idx++;
@@ -184,19 +184,21 @@ void loadKeys() {
 	std::pair<std::string,std::string> spl;
 	std::string line;
 	std::vector<std::string> vec;
-	char key1;
-	char key2;
+	char keys[8];
+	int rlen;
 	while (!file.eof()) {
 		file.getline(buf,1023);
 		line = std::string(buf);
 		vec = splitstr(line,"\t");
+		memset(keys, 0, 8);
+		rlen = 0;
 		if (vec.size() > 0) {
-			while (vec.size() < 3)
-				vec.push_back("");
-			key1 = (vec[1].size() > 0) ? vec[1].at(0) : 0;
-			key2 = (vec[2].size() > 0) ? vec[2].at(0) : 0;
-//			printf("%s %c %c\n", vec[0].c_str(), key1, key2);
-			setKey(vec[0].c_str(),key1,key2);
+			for(unsigned int i = 1; (rlen < KEYSEQ_MAXLEN) && (i < vec.size()); i++) {
+				rlen += vec[i].size();
+				if (rlen < KEYSEQ_MAXLEN)
+					strcat(keys, vec[i].c_str());
+			}
+			setKey(vec[0].c_str(), keys);
 		}
 	}
 }

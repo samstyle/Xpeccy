@@ -239,7 +239,7 @@ enum {
 };
 
 void loadKeys();
-void setKey(const char*,const char,const char);
+void setKey(const char*, const char*);
 keyEntry getKeyEntry(int);
 int getKeyIdByName(const char*);
 const char* getKeyNameById(int);

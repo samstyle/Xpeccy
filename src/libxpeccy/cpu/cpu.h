@@ -26,7 +26,7 @@ typedef struct {
 	int id;
 	int byte;
 	const char* name;
-	unsigned short value;
+	int value;
 } xRegister;
 
 typedef struct {
@@ -198,8 +198,8 @@ typedef struct {
 	int (*exec)(CPU*);			// exec opcode, return T
 	xAsmScan (*asmbl)(const char*, char*);	// compile mnemonic
 	xMnem (*mnem)(CPU*, unsigned short, cbdmr, void*);
-	void(*getregs)(CPU*,xRegBunch*);	// get cpu registers: name,id,value
-	void(*setregs)(CPU*,xRegBunch);		// set cpu registers
+	void (*getregs)(CPU*,xRegBunch*);	// get cpu registers: name,id,value
+	void (*setregs)(CPU*,xRegBunch);		// set cpu registers
 } cpuCore;
 
 CPU* cpuCreate(int,cbmr,cbmw,cbir,cbiw,cbirq,void*);
@@ -217,6 +217,7 @@ xAsmScan scanAsmTab(const char*, opCode*);
 
 xRegBunch cpuGetRegs(CPU*);
 void cpuSetRegs(CPU*, xRegBunch);
+int cpuGetReg(CPU*, const char*);
 
 #ifdef __cplusplus
 }

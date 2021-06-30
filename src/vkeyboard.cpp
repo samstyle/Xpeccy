@@ -16,8 +16,7 @@ static unsigned char kwMap[4][10] = {
 keyWindow::keyWindow(QWidget* p):QDialog(p) {
 	kb = NULL;
 	xent.key = ENDKEY;
-	xent.zxKey.key1 = 0;
-	xent.zxKey.key2 = 0;
+	memset(xent.zxKey, 0, 8);
 	QPixmap pxm(":/images/keymap.png");
 	setModal(false);
 	setWindowModality(Qt::NonModal);
@@ -75,7 +74,8 @@ void keyWindow::mousePressEvent(QMouseEvent* ev) {
 	int col;
 	row = ev->y() * 4 / height();
 	col = ev->x() * 10 / width();
-	xent.zxKey.key1 = kwMap[row][col];
+	xent.zxKey[0] = kwMap[row][col];
+	xent.zxKey[1] = 0;
 	switch(ev->button()) {
 		case Qt::LeftButton:
 			kbdPress(kb, xent);
@@ -87,7 +87,7 @@ void keyWindow::mousePressEvent(QMouseEvent* ev) {
 			break;
 		case Qt::MiddleButton:
 			kbdReleaseAll(kb);
-			xent.zxKey.key1 = 0;
+			xent.zxKey[0] = 0;
 			update();
 			break;
 		default:

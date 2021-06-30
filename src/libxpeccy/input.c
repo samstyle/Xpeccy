@@ -85,7 +85,7 @@ void kbdSetMode(Keyboard* kbd, int mode) {
 
 // key press/release/trigger
 
-void kbd_press_key(Keyboard* kbd, keyScan* tab, int* mtrx, char ch) {
+void kbd_press_key(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char ch) {
 	if (!ch) return;
 //	printf("kbd_press_key %c\n", ch);
 	keyScan key = findKey(tab, ch & 0x7f);
@@ -103,9 +103,12 @@ void kbd_press_key(Keyboard* kbd, keyScan* tab, int* mtrx, char ch) {
 	}
 }
 
-void kbd_press(Keyboard* kbd, keyScan* tab, int* mtrx, xKey xk) {
-	kbd_press_key(kbd, tab, mtrx, xk.key1);
-	kbd_press_key(kbd, tab, mtrx, xk.key2);
+void kbd_press(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk) {
+	int pos = 0;
+	while (xk[pos] != 0x00) {
+		kbd_press_key(kbd, tab, mtrx, xk[pos]);
+		pos++;
+	}
 }
 
 void kbdPress(Keyboard* kbd, keyEntry ent) {
@@ -120,40 +123,10 @@ void kbdPress(Keyboard* kbd, keyEntry ent) {
 		case KBD_MSX:
 			kbd_press(kbd, msxKeyTab, kbd->msxMap, ent.msxKey);
 			break;
-/*
-		case KBD_ATM2:
-			switch(ent.key) {
-				case XKEY_LSHIFT: kbd->flag1 |= KFL_SHIFT; break;
-				case XKEY_RSHIFT: kbd->flag2 |= KFL_RSHIFT; break;
-				case XKEY_RCTRL:
-				case XKEY_LCTRL: kbd->flag1 |= KFL_CTRL; break;
-				case XKEY_RALT:
-				case XKEY_LALT: kbd->flag1 |= KFL_ALT; break;
-				case XKEY_CAPS: kbd->flag1 ^= KFL_CAPS; break;
-			}
-			switch (kbd->submode) {
-				case kbdZX:
-					kbd_press(kbd, keyTab, kbd->map, ent.zxKey);
-					//kbd->keycode = ent.atmCode.rowScan;
-					//kbd->lastkey = kbd->keycode;
-					//kbd->map[((ent.atmCode.rowScan >> 4) & 7) ^ 7] &= ~(1 << ((ent.atmCode.rowScan & 7) - 1));
-					//if (ent.atmCode.rowScan & 0x80) kbd->map[0] &= ~2;	// sym.shift
-					//if (ent.atmCode.rowScan & 0x08) kbd->map[7] &= ~1;	// cap.shift
-					break;
-				case kbdCODE:
-				case kbdCPM:
-					kbd->keycode = ent.atmCode.cpmCode;
-					kbd->lastkey = kbd->keycode;
-					break;
-				case kbdDIRECT:
-					break;
-			}
-			break;
-*/
 	}
 }
 
-void kbd_release_key(Keyboard* kbd, keyScan* tab, int* mtrx, char ch) {
+void kbd_release_key(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char ch) {
 //	if (ch) printf("kbd_release_key %c\n", ch);
 	keyScan key = findKey(tab, ch & 0x7f);
 	key.row &= 0x0f;
@@ -168,9 +141,12 @@ void kbd_release_key(Keyboard* kbd, keyScan* tab, int* mtrx, char ch) {
 	}
 }
 
-void kbd_release(Keyboard* kbd, keyScan* tab, int* mtrx, xKey xk) {
-	kbd_release_key(kbd, tab, mtrx, xk.key1);
-	kbd_release_key(kbd, tab, mtrx, xk.key2);
+void kbd_release(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk) {
+	int pos = 0;
+	while (xk[pos] != 0x00) {
+		kbd_release_key(kbd, tab, mtrx, xk[pos]);
+		pos++;
+	}
 }
 
 void kbdRelease(Keyboard* kbd, keyEntry ent) {
@@ -185,33 +161,6 @@ void kbdRelease(Keyboard* kbd, keyEntry ent) {
 		case KBD_MSX:
 			kbd_release(kbd, msxKeyTab, kbd->msxMap, ent.msxKey);
 			break;
-/*
-		case KBD_ATM2:
-			switch(ent.key) {
-				case XKEY_LSHIFT: kbd->flag1 &= ~KFL_SHIFT; break;
-				case XKEY_RSHIFT: kbd->flag2 &= ~KFL_RSHIFT; break;
-				case XKEY_RCTRL:
-				case XKEY_LCTRL: kbd->flag1 &= ~KFL_CTRL; break;
-				case XKEY_RALT:
-				case XKEY_LALT: kbd->flag1 &= ~KFL_ALT; break;
-			}
-			switch (kbd->submode) {
-				case kbdZX:
-					kbd_release(kbd, keyTab, kbd->map, ent.zxKey);
-					//kbd->keycode = 0;
-					//kbd->map[((ent.atmCode.rowScan >> 4) & 7) ^ 7] |= (1 << ((ent.atmCode.rowScan & 7) - 1));
-					//if (ent.atmCode.rowScan & 0x80) kbd->map[0] |= 2;	// sym.shift
-					//if (ent.atmCode.rowScan & 0x08) kbd->map[7] |= 1;	// cap.shift
-					break;
-				case kbdCODE:
-				case kbdCPM:
-					kbd->keycode = 0;
-					break;
-				case kbdDIRECT:
-					break;
-			}
-			break;
-*/
 	}
 }
 
@@ -232,13 +181,16 @@ void kbdReleaseAll(Keyboard* kbd) {
 	kbd->flag = 0;
 }
 
-void kbd_trigger(keyScan* tab, int* mtrx, xKey xk) {
-	keyScan key = findKey(tab, xk.key1 & 0x7f);
-	if (xk.key1 & 0x80) key.mask |= 0x20;
-	mtrx[key.row] ^= key.mask;
-	key = findKey(tab, xk.key2 & 0x7f);
-	if (xk.key2 & 0x80) key.mask |= 0x20;
-	mtrx[key.row] ^= key.mask;
+void kbd_trigger(keyScan* tab, int* mtrx, char* xk) {
+	keyScan key;
+	int pos = 0;
+	while (xk[pos] != 0x00) {
+		key = findKey(tab, xk[pos] & 0x7f);
+		if (xk[pos] & 0x80)
+			key.mask |= 0x20;
+		mtrx[key.row] ^= key.mask;
+		pos++;
+	}
 }
 
 void kbdTrigger(Keyboard* kbd, keyEntry ent) {

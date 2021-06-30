@@ -5,13 +5,18 @@
 
 #include <QApplication>
 #include <QDesktopWidget>
+#include <QScreen>
 
 void vid_upd_scale() {
 	QSize scrsz;
 	int dwid;
 	int dhei;
 	if (conf.vid.fullScreen) {
+#if QT_VERSION >= QT_VERSION_CHECK(5,14,0)
+		scrsz = QApplication::screens().first()->size();
+#else
 		scrsz = QApplication::desktop()->screenGeometry().size();
+#endif
 		dwid = scrsz.width(); // QApplication::desktop()->screenGeometry().width();
 		dhei = scrsz.height(); // QApplication::desktop()->screenGeometry().height();
 		xstep = dwid * 0x100 / conf.prof.cur->zx->vid->vsze.x;

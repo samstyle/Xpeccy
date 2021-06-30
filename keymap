@@ -15,8 +15,9 @@ C	z	x	c	v	b	n	m	S	#20 = ' '
 
 [Keymap file]
 
-PCkey	ZXkey1	ZXKey2
+PCkey	Up-to-7-zx-keys (in one string or tab-separated)
 
-example:
+example (only such type of lines must be in *.map file):
 
-CAPS	C	2
+CAPS	C2
+HOME	CSj

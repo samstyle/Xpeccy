@@ -15,6 +15,11 @@ void xDiskDump::setTrack(int tr) {
 		mod->setTrack(tr);
 }
 
+void xDiskDump::update() {
+	mod->update();
+	QTableView::update();
+}
+
 // model
 
 void xDiskDumpModel::setDrive(int dr) {
@@ -33,6 +38,14 @@ int xDiskDumpModel::rowCount(const QModelIndex&) const {
 
 int xDiskDumpModel::columnCount(const QModelIndex&) const {
 	return 9;
+}
+
+void xDiskDumpModel::update() {
+	emit dataChanged(index(0,0), index(rowCount() - 1, columnCount() - 1));
+}
+
+QModelIndex xDiskDumpModel::index(int row, int col, const QModelIndex& par) const {
+	return createIndex(row, col, nullptr);
 }
 
 QVariant xDiskDumpModel::data(const QModelIndex& idx, int role) const {

@@ -458,6 +458,10 @@ int xDisasmModel::fill() {
 	return res;
 }
 
+void xDisasmModel::update_data() {
+	emit dataChanged(index(0, 0), index(rowCount() - 1, columnCount() - 1));
+}
+
 int xDisasmModel::update() {
 	if (cptr == NULL) return 0;
 	if (*cptr == NULL) return 0;
@@ -471,7 +475,7 @@ int xDisasmModel::update() {
 			}
 		}
 	}
-	emit dataChanged(index(0, 0), index(rowCount() - 1, columnCount() - 1));
+	update_data();
 	return res;
 }
 
@@ -778,6 +782,11 @@ int xDisasmTable::updContent() {
 		}
 	}
 	return res;
+}
+
+void xDisasmTable::update() {
+	model->update_data();
+	QTableView::update();
 }
 
 void xDisasmTable::t_update(int oadr, int nadr) {
