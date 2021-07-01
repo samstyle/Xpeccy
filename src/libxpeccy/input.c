@@ -181,7 +181,7 @@ void kbdReleaseAll(Keyboard* kbd) {
 	kbd->flag = 0;
 }
 
-void kbd_trigger(keyScan* tab, int* mtrx, char* xk) {
+void kbd_trigger(keyScan* tab, int* mtrx, unsigned char* xk) {
 	keyScan key;
 	int pos = 0;
 	while (xk[pos] != 0x00) {

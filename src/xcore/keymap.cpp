@@ -10,114 +10,114 @@
 static keyEntry keyMap[256];			// current keymap (init at start from keyMapInit[]
 
 static keyEntry keyMapInit[] = {
-	{"1",XKEY_1,{'1',0},{0,0},{'1',0},{'1',0x31},0x16},
-	{"2",XKEY_2,{'2',0},{0,0},{'2',0},{'2',0x32},0x1e},
-	{"3",XKEY_3,{'3',0},{0,0},{'3',0},{'3',0x33},0x26},
-	{"4",XKEY_4,{'4',0},{0,0},{'4',0},{'4',0x34},0x25},
-	{"5",XKEY_5,{'5',0},{0,0},{'5',0},{'5',0x35},0x2e},
-	{"6",XKEY_6,{'6',0},{0,0},{'6',0},{'6',0x45},0x36},
-	{"7",XKEY_7,{'7',0},{0,0},{'7',0},{'7',0x44},0x3d},
-	{"8",XKEY_8,{'8',0},{0,0},{'8',0},{'8',0x43},0x3e},
-	{"9",XKEY_9,{'9',0},{0,0},{'9',0},{'9',0x42},0x46},
-	{"0",XKEY_0,{'0',0},{0,0},{'0',0},{'0',0x41},0x45},
-	{"Q",XKEY_Q,{'q',0},{0,0},{'q',0},{'Q',0x21},0x15},
-	{"W",XKEY_W,{'w',0},{0,0},{'w',0},{'W',0x22},0x1d},
-	{"E",XKEY_E,{'e',0},{0,0},{'e',0},{'E',0x23},0x24},
-	{"R",XKEY_R,{'r',0},{0,0},{'r',0},{'R',0x24},0x2d},
-	{"T",XKEY_T,{'t',0},{0,0},{'t',0},{'T',0x25},0x2c},
-	{"Y",XKEY_Y,{'y',0},{0,0},{'y',0},{'Y',0x55},0x35},
-	{"U",XKEY_U,{'u',0},{0,0},{'u',0},{'U',0x54},0x3c},
-	{"I",XKEY_I,{'i',0},{0,0},{'i',0},{'I',0x53},0x43},
-	{"O",XKEY_O,{'o',0},{0,0},{'o',0},{'O',0x52},0x44},
-	{"P",XKEY_P,{'p',0},{0,0},{'p',0},{'P',0x51},0x4d},
-	{"A",XKEY_A,{'a',0},{0,0},{'a',0},{'A',0x11},0x1c},
-	{"S",XKEY_S,{'s',0},{0,0},{'s',0},{'S',0x12},0x1b},
-	{"D",XKEY_D,{'d',0},{0,0},{'d',0},{'D',0x13},0x23},
-	{"F",XKEY_F,{'f',0},{0,0},{'f',0},{'F',0x14},0x2b},
-	{"G",XKEY_G,{'g',0},{0,0},{'g',0},{'G',0x15},0x34},
-	{"H",XKEY_H,{'h',0},{0,0},{'h',0},{'H',0x65},0x33},
-	{"J",XKEY_J,{'j',0},{0,0},{'j',0},{'J',0x64},0x3b},
-	{"K",XKEY_K,{'k',0},{0,0},{'k',0},{'K',0x63},0x42},
-	{"L",XKEY_L,{'l',0},{0,0},{'l',0},{'L',0x62},0x4b},
-	{"ENT",XKEY_ENTER,{'E',0},{0,0},{'E',0},{0x0d,0x61},0x5a},
-	{"LS",XKEY_LSHIFT,{'C',0},{0,0},{MSXK_SHIFT,0},{0,0x08},0x12},
-	{"Z",XKEY_Z,{'z',0},{0,0},{'z',0},{'Z',0x02},0x1a},
-	{"X",XKEY_X,{'x',0},{0,0},{'x',0},{'X',0x03},0x22},
-	{"C",XKEY_C,{'c',0},{0,0},{'c',0},{'C',0x04},0x21},
-	{"V",XKEY_V,{'v',0},{0,0},{'v',0},{'V',0x05},0x2a},
-	{"B",XKEY_B,{'b',0},{0,0},{'b',0},{'B',0x75},0x32},
-	{"N",XKEY_N,{'n',0},{0,0},{'n',0},{'N',0x74},0x31},
-	{"M",XKEY_M,{'m',0},{0,0},{'m',0},{'M',0x73},0x3a},
-	{"LC",XKEY_LCTRL,{'S',0},{0,0},{MSXK_CTRL,0},{0,0x80},0x14},
-	{"SPC",XKEY_SPACE,{' ',0},{0,0},{' ',0},{0x20,0x71},0x29},
+	{"1",XKEY_1,{'1',0},{0,0},{'1',0},{'1',0x31},0x16,0},
+	{"2",XKEY_2,{'2',0},{0,0},{'2',0},{'2',0x32},0x1e,0},
+	{"3",XKEY_3,{'3',0},{0,0},{'3',0},{'3',0x33},0x26,0},
+	{"4",XKEY_4,{'4',0},{0,0},{'4',0},{'4',0x34},0x25,0},
+	{"5",XKEY_5,{'5',0},{0,0},{'5',0},{'5',0x35},0x2e,0},
+	{"6",XKEY_6,{'6',0},{0,0},{'6',0},{'6',0x45},0x36,0},
+	{"7",XKEY_7,{'7',0},{0,0},{'7',0},{'7',0x44},0x3d,0},
+	{"8",XKEY_8,{'8',0},{0,0},{'8',0},{'8',0x43},0x3e,0},
+	{"9",XKEY_9,{'9',0},{0,0},{'9',0},{'9',0x42},0x46,0},
+	{"0",XKEY_0,{'0',0},{0,0},{'0',0},{'0',0x41},0x45,0},
+	{"Q",XKEY_Q,{'q',0},{0,0},{'q',0},{'Q',0x21},0x15,0},
+	{"W",XKEY_W,{'w',0},{0,0},{'w',0},{'W',0x22},0x1d,0},
+	{"E",XKEY_E,{'e',0},{0,0},{'e',0},{'E',0x23},0x24,0},
+	{"R",XKEY_R,{'r',0},{0,0},{'r',0},{'R',0x24},0x2d,0},
+	{"T",XKEY_T,{'t',0},{0,0},{'t',0},{'T',0x25},0x2c,0},
+	{"Y",XKEY_Y,{'y',0},{0,0},{'y',0},{'Y',0x55},0x35,0},
+	{"U",XKEY_U,{'u',0},{0,0},{'u',0},{'U',0x54},0x3c,0},
+	{"I",XKEY_I,{'i',0},{0,0},{'i',0},{'I',0x53},0x43,0},
+	{"O",XKEY_O,{'o',0},{0,0},{'o',0},{'O',0x52},0x44,0},
+	{"P",XKEY_P,{'p',0},{0,0},{'p',0},{'P',0x51},0x4d,0},
+	{"A",XKEY_A,{'a',0},{0,0},{'a',0},{'A',0x11},0x1c,0},
+	{"S",XKEY_S,{'s',0},{0,0},{'s',0},{'S',0x12},0x1b,0},
+	{"D",XKEY_D,{'d',0},{0,0},{'d',0},{'D',0x13},0x23,0},
+	{"F",XKEY_F,{'f',0},{0,0},{'f',0},{'F',0x14},0x2b,0},
+	{"G",XKEY_G,{'g',0},{0,0},{'g',0},{'G',0x15},0x34,0},
+	{"H",XKEY_H,{'h',0},{0,0},{'h',0},{'H',0x65},0x33,0},
+	{"J",XKEY_J,{'j',0},{0,0},{'j',0},{'J',0x64},0x3b,0},
+	{"K",XKEY_K,{'k',0},{0,0},{'k',0},{'K',0x63},0x42,0},
+	{"L",XKEY_L,{'l',0},{0,0},{'l',0},{'L',0x62},0x4b,0},
+	{"ENT",XKEY_ENTER,{'E',0},{0,0},{'E',0},{0x0d,0x61},0x5a,0},
+	{"LS",XKEY_LSHIFT,{'C',0},{0,0},{MSXK_SHIFT,0},{0,0x08},0x12,0},
+	{"Z",XKEY_Z,{'z',0},{0,0},{'z',0},{'Z',0x02},0x1a,0},
+	{"X",XKEY_X,{'x',0},{0,0},{'x',0},{'X',0x03},0x22,0},
+	{"C",XKEY_C,{'c',0},{0,0},{'c',0},{'C',0x04},0x21,0},
+	{"V",XKEY_V,{'v',0},{0,0},{'v',0},{'V',0x05},0x2a,0},
+	{"B",XKEY_B,{'b',0},{0,0},{'b',0},{'B',0x75},0x32,0},
+	{"N",XKEY_N,{'n',0},{0,0},{'n',0},{'N',0x74},0x31,0},
+	{"M",XKEY_M,{'m',0},{0,0},{'m',0},{'M',0x73},0x3a,0},
+	{"LC",XKEY_LCTRL,{'S',0},{0,0},{MSXK_CTRL,0},{0,0x80},0x14,0},
+	{"SPC",XKEY_SPACE,{' ',0},{0,0},{' ',0},{0x20,0x71},0x29,0},
 
-	{"RS",XKEY_RSHIFT,{0,0},{0,0},{0,0},{0,0},0},
-	{"RC",XKEY_RCTRL,{0,0},{0,0},{0,0},{0,0},0},
+	{"RS",XKEY_RSHIFT,{0,0},{0,0},{0,0},{0,0},0,0},
+	{"RC",XKEY_RCTRL,{0,0},{0,0},{0,0},{0,0},0,0},
 
-	{"LEFT",XKEY_LEFT,{'C','5'},{'C','5'},{MSXK_LEFT,0},{0x72,0x3d},0x6be0},
-	{"RIGHT",XKEY_RIGHT,{'C','8'},{'C','8'},{MSXK_RIGHT,0},{0x73,0x4b},0x74e0},
-	{"DOWN",XKEY_DOWN,{'C','6'},{'C','6'},{MSXK_DOWN,0},{0x71,0x4d},0x72e0},
-	{"UP",XKEY_UP,{'C','7'},{'C','7'},{MSXK_UP,0},{0x70,0x4c},0x75e0},
+	{"LEFT",XKEY_LEFT,{'C','5'},{'C','5'},{MSXK_LEFT,0},{0x72,0x3d},0x6be0,0},
+	{"RIGHT",XKEY_RIGHT,{'C','8'},{'C','8'},{MSXK_RIGHT,0},{0x73,0x4b},0x74e0,0},
+	{"DOWN",XKEY_DOWN,{'C','6'},{'C','6'},{MSXK_DOWN,0},{0x71,0x4d},0x72e0,0},
+	{"UP",XKEY_UP,{'C','7'},{'C','7'},{MSXK_UP,0},{0x70,0x4c},0x75e0,0},
 
-	{"BSP",XKEY_BSP,{'C','0'},{'C','0'},{MSXK_BSP,0},{0x08,0x49},0x66},
-	{"CAPS",XKEY_CAPS,{'C','2'},{'C','2'},{MSXK_CAP,0},{0,0x3a},0x58},
-	{"TAB",XKEY_TAB,{'C',' '},{'C','i'},{MSXK_TAB,0},{0x09,0x3b},0x0d},
-	{"[",XKEY_LBRACK,{'S','8'},{'S','y'},{'[',0},{'[',0xd5},0x54},
-	{"]",XKEY_RBRACK,{'S','9'},{'S','u'},{']',0},{']',0xd4},0x5b},
-	{"`",XKEY_TILDA,{'C','S'},{'S','x'},{'`',0},{0x60,0x91},0x0e},
-	{"\\",XKEY_SLASH,{'S','C'},{0,0},{'\\',0},{0x2f,0x92},0x5d},
+	{"BSP",XKEY_BSP,{'C','0'},{'C','0'},{MSXK_BSP,0},{0x08,0x49},0x66,0},
+	{"CAPS",XKEY_CAPS,{'C','2'},{'C','2'},{MSXK_CAP,0},{0,0x3a},0x58,0},
+	{"TAB",XKEY_TAB,{'C',' '},{'C','i'},{MSXK_TAB,0},{0x09,0x3b},0x0d,0},
+	{"[",XKEY_LBRACK,{'S','8'},{'S','y'},{'[',0},{'[',0xd5},0x54,0},
+	{"]",XKEY_RBRACK,{'S','9'},{'S','u'},{']',0},{']',0xd4},0x5b,0},
+	{"`",XKEY_TILDA,{'C','S'},{'S','x'},{'`',0},{0x60,0x91},0x0e,0},
+	{"\\",XKEY_SLASH,{'S','C'},{0,0},{'\\',0},{0x2f,0x92},0x5d,0},
 
-	{"PGDN",XKEY_PGUP,{'C','3'},{'m'|0x80,0},{MSXK_CODE,0},{0x75,0x49},0x7de0},
-	{"PGUP",XKEY_PGDN,{'C','4'},{'n'|0x80,0},{MSXK_SEL,0},{0x74,0x51},0x7ae0},
+	{"PGDN",XKEY_PGDN,{'C','3'},{'m'|0x80,0},{MSXK_CODE,0},{0x75,0x49},0x7de0,0},
+	{"PGUP",XKEY_PGUP,{'C','4'},{'n'|0x80,0},{MSXK_SEL,0},{0x74,0x51},0x7ae0,0},
 
-	{"DEL",XKEY_DEL,{'C','9'},{'p'|0x80,0},{MSXK_DEL,0},{0x79,0x49},0x71e0},
-	{"INS",XKEY_INS,{0,0},{'o'|0x80,0},{0,MSXK_INS},{0x78,0x84},0x70e0},
-	{"HOME",XKEY_HOME,{'S','q'},{'k'|0x80,0},{MSXK_HOME,0},{0x76,0},0x6ce0},
-	{"END",XKEY_END,{'S','e'},{'l'|0x80,0},{MSXK_STOP,0},{0x77,0},0x69e0},
+	{"DEL",XKEY_DEL,{'C','9'},{'p'|0x80,0},{MSXK_DEL,0},{0x79,0x49},0x71e0,0},
+	{"INS",XKEY_INS,{0,0},{'o'|0x80,0},{0,MSXK_INS},{0x78,0x84},0x70e0,0},
+	{"HOME",XKEY_HOME,{'S','q'},{'k'|0x80,0},{MSXK_HOME,0},{0x76,0},0x6ce0,0},
+	{"END",XKEY_END,{'S','e'},{'l'|0x80,0},{MSXK_STOP,0},{0x77,0},0x69e0,0},
 
-	{";",XKEY_DOTCOM,{'S','o'},{'S','o'},{';',0},{0x3b,0xd2},0x4c},
-	{"\"",XKEY_APOS,{'S','p'},{'S','p'},{0X27,0},{0x27,0xd1},0x52},
-	{"-",XKEY_MINUS,{'S','j'},{'S','j'},{'-',0},{0x2d,0xe4},0x4e},
-	{"+",XKEY_EQUAL,{'S','k'},{'S','k'},{'+',0},{0x3d,0xe2},0x00},
-	{",",XKEY_COMMA,{'S','n'},{'S','n'},{',',0},{0x2c,0xf4},0x41},
-	{".",XKEY_PERIOD,{'S','m'},{'S','m'},{'.',0},{0x2e,0xf3},0x49},
-	{"/",XKEY_BSLASH,{'S','c'},{'S','c'},{'/',0},{0x5c,0x85},0x4a},
+	{";",XKEY_DOTCOM,{'S','o'},{'S','o'},{';',0},{0x3b,0xd2},0x4c,0},
+	{"\"",XKEY_APOS,{'S','p'},{'S','p'},{0X27,0},{0x27,0xd1},0x52,0},
+	{"-",XKEY_MINUS,{'S','j'},{'S','j'},{'-',0},{0x2d,0xe4},0x4e,0},
+	{"+",XKEY_EQUAL,{'S','k'},{'S','k'},{'+',0},{0x3d,0xe2},0x00,0},
+	{",",XKEY_COMMA,{'S','n'},{'S','n'},{',',0},{0x2c,0xf4},0x41,0},
+	{".",XKEY_PERIOD,{'S','m'},{'S','m'},{'.',0},{0x2e,0xf3},0x49,0},
+	{"/",XKEY_BSLASH,{'S','c'},{'S','c'},{'/',0},{0x5c,0x85},0x4a,0},
 
-	{"ESC",XKEY_ESC,{0,0},{'C','1'},{0,MSXK_ESC},{0x1b,0x39},0x76},
-	{"F1",XKEY_F1,{0,0},{'a'|0x80,0},{0,MSXK_F1},{0x61,0xb1},0x05},
-	{"F2",XKEY_F2,{0,0},{'b'|0x80,0},{0,MSXK_F2},{0x62,0xb2},0x06},
-	{"F3",XKEY_F3,{0,0},{'c'|0x80,0},{0,MSXK_F3},{0x63,0xb3},0x04},
-	{"F4",XKEY_F4,{0,0},{'d'|0x80,0},{0,MSXK_F4},{0x64,0xb4},0x0C},
-	{"F5",XKEY_F5,{0,0},{'e'|0x80,0},{0,MSXK_F5},{0x65,0xb5},0x03},
-	{"F6",XKEY_F6,{0,0},{'f'|0x80,0},{0,0},{0x66,0xc5},0x0B},
-	{"F7",XKEY_F7,{0,0},{'g'|0x80,0},{0,0},{0x67,0xc4},0x83},
-	{"F8",XKEY_F8,{0,0},{'h'|0x80,0},{0,0},{0x68,0xc3},0x0A},
-	{"F9",XKEY_F9,{0,0},{'i'|0x80,0},{0,0},{0x69,0xc2},0x01},
-	{"F10",XKEY_F10,{0,0},{'j'|0x80,0},{0,0},{0x6a,0xc1},0x09},
-	{"F11",XKEY_F11,{0,0},{'S','q'},{0,0},{0x6b,0},0x78},
+	{"ESC",XKEY_ESC,{0,0},{'C','1'},{0,MSXK_ESC},{0x1b,0x39},0x76,0},
+	{"F1",XKEY_F1,{0,0},{'a'|0x80,0},{0,MSXK_F1},{0x61,0xb1},0x05,0},
+	{"F2",XKEY_F2,{0,0},{'b'|0x80,0},{0,MSXK_F2},{0x62,0xb2},0x06,0},
+	{"F3",XKEY_F3,{0,0},{'c'|0x80,0},{0,MSXK_F3},{0x63,0xb3},0x04,0},
+	{"F4",XKEY_F4,{0,0},{'d'|0x80,0},{0,MSXK_F4},{0x64,0xb4},0x0C,0},
+	{"F5",XKEY_F5,{0,0},{'e'|0x80,0},{0,MSXK_F5},{0x65,0xb5},0x03,0},
+	{"F6",XKEY_F6,{0,0},{'f'|0x80,0},{0,0},{0x66,0xc5},0x0B,0},
+	{"F7",XKEY_F7,{0,0},{'g'|0x80,0},{0,0},{0x67,0xc4},0x83,0},
+	{"F8",XKEY_F8,{0,0},{'h'|0x80,0},{0,0},{0x68,0xc3},0x0A,0},
+	{"F9",XKEY_F9,{0,0},{'i'|0x80,0},{0,0},{0x69,0xc2},0x01,0},
+	{"F10",XKEY_F10,{0,0},{'j'|0x80,0},{0,0},{0x6a,0xc1},0x09,0},
+	{"F11",XKEY_F11,{0,0},{'S','q'},{0,0},{0x6b,0},0x78,0},
 
-	{"LA",XKEY_LALT,{0,0},{0,0},{0,0},{0,0},0x11},
-	{"RA",XKEY_RALT,{0,0},{0,0},{MSXK_GRAPH,0},{0,0},0x11e0},
+	{"LA",XKEY_LALT,{0,0},{0,0},{0,0},{0,0},0x11,0},
+	{"RA",XKEY_RALT,{0,0},{0,0},{MSXK_GRAPH,0},{0,0},0x11e0,0},
 
-	{"NLOCK", XKEY_NUMLCK,{0,0},{0,0},{0,0},{0,0},0x00},
-	{"NSLASH", XKEY_NSLASH,{0,0},{0,0},{0,0},{0,0},0x00},
-	{"NMUL", XKEY_NMUL,{0,0},{0,0},{0,0},{0,0},0x00},
-	{"NMINUS", XKEY_NMINUS,{0,0},{0,0},{0,0},{0,0},0x00},
-	{"NPLUS", XKEY_NPLUS,{0,0},{0,0},{0,0},{0,0},0x00},
-	{"NENT", XKEY_NENTER,{0,0},{0,0},{0,0},{0,0},0x00},
-	{"NDOT", XKEY_NDOT,{0,0},{0,0},{0,0},{0,0},0x00},
-	{"N0", XKEY_N0,{0,0},{0,0},{0,0},{0,0},0x00},
-	{"N1", XKEY_N1,{0,0},{0,0},{0,0},{0,0},0x00},
-	{"N2", XKEY_N2,{0,0},{0,0},{0,0},{0,0},0x00},
-	{"N3", XKEY_N3,{0,0},{0,0},{0,0},{0,0},0x00},
-	{"N4", XKEY_N4,{0,0},{0,0},{0,0},{0,0},0x00},
-	{"N5", XKEY_N5,{0,0},{0,0},{0,0},{0,0},0x00},
-	{"N6", XKEY_N6,{0,0},{0,0},{0,0},{0,0},0x00},
-	{"N7", XKEY_N7,{0,0},{0,0},{0,0},{0,0},0x00},
-	{"N8", XKEY_N8,{0,0},{0,0},{0,0},{0,0},0x00},
-	{"N9", XKEY_N9,{0,0},{0,0},{0,0},{0,0},0x00},
+	{"NLOCK", XKEY_NUMLCK,{0,0},{0,0},{0,0},{0,0},0x00,0},
+	{"NSLASH", XKEY_NSLASH,{0,0},{0,0},{0,0},{0,0},0x00,0},
+	{"NMUL", XKEY_NMUL,{0,0},{0,0},{0,0},{0,0},0x00,0},
+	{"NMINUS", XKEY_NMINUS,{0,0},{0,0},{0,0},{0,0},0x00,0},
+	{"NPLUS", XKEY_NPLUS,{0,0},{0,0},{0,0},{0,0},0x00,0},
+	{"NENT", XKEY_NENTER,{0,0},{0,0},{0,0},{0,0},0x00,0},
+	{"NDOT", XKEY_NDOT,{0,0},{0,0},{0,0},{0,0},0x00,0},
+	{"N0", XKEY_N0,{0,0},{0,0},{0,0},{0,0},0x00,0},
+	{"N1", XKEY_N1,{0,0},{0,0},{0,0},{0,0},0x00,0},
+	{"N2", XKEY_N2,{0,0},{0,0},{0,0},{0,0},0x00,0},
+	{"N3", XKEY_N3,{0,0},{0,0},{0,0},{0,0},0x00,0},
+	{"N4", XKEY_N4,{0,0},{0,0},{0,0},{0,0},0x00,0},
+	{"N5", XKEY_N5,{0,0},{0,0},{0,0},{0,0},0x00,0},
+	{"N6", XKEY_N6,{0,0},{0,0},{0,0},{0,0},0x00,0},
+	{"N7", XKEY_N7,{0,0},{0,0},{0,0},{0,0},0x00,0},
+	{"N8", XKEY_N8,{0,0},{0,0},{0,0},{0,0},0x00,0},
+	{"N9", XKEY_N9,{0,0},{0,0},{0,0},{0,0},0x00,0},
 
-	{"",ENDKEY,{0,0},{0,0},{0,0},{0,0},0x00}
+	{"",ENDKEY,{0,0},{0,0},{0,0},{0,0},0x00,0}
 };
 
 keyEntry getKeyEntry(signed int qkey) {
@@ -146,10 +146,39 @@ const char* getKeyNameById(int id) {
 
 void setKey(const char* kname, const char* kstr) {
 	int idx = 0;
+	int pos,kpos;
 	while (keyMap[idx].key != ENDKEY) {
 		if (!strcmp(kname, keyMap[idx].name)) {
-			memset(keyMap[idx].zxKey, 0, 8);
-			strncpy((char*)keyMap[idx].zxKey, kstr, 7);
+			memset(keyMap[idx].zxKey, 0, KEYSEQ_MAXLEN);
+			pos = 0;
+			kpos = 0;
+			while (pos < KEYSEQ_MAXLEN-1) {
+				switch(kstr[kpos]) {
+					case 0x00:
+						pos = KEYSEQ_MAXLEN;
+						break;
+					case 'J':
+						kpos++;
+						switch (kstr[kpos]) {
+							case 'U': keyMap[idx].joyMask = XJ_UP; break;
+							case 'D': keyMap[idx].joyMask = XJ_DOWN; break;
+							case 'R': keyMap[idx].joyMask = XJ_RIGHT; break;
+							case 'L': keyMap[idx].joyMask = XJ_LEFT; break;
+							case 'F': keyMap[idx].joyMask = XJ_FIRE; break;
+							case '2': keyMap[idx].joyMask = XJ_BUT2; break;
+							case '3': keyMap[idx].joyMask = XJ_BUT3; break;
+							case '4': keyMap[idx].joyMask = XJ_BUT4; break;
+						}
+						kpos++;
+						break;
+					default:
+						keyMap[idx].zxKey[pos] = kstr[kpos];
+						pos++;
+						kpos++;
+						break;
+				}
+			}
+			strncpy((char*)keyMap[idx].zxKey, kstr, KEYSEQ_MAXLEN - 1);
 //			printf("%s -> %c %c\n", keyMap[idx].name, key1, key2);
 		}
 		idx++;
@@ -181,11 +210,12 @@ void loadKeys() {
 		}
 	}
 	char buf[1024];
-	std::pair<std::string,std::string> spl;
+//	std::pair<std::string,std::string> spl;
 	std::string line;
 	std::vector<std::string> vec;
 	char keys[8];
 	int rlen;
+	unsigned int i;
 	while (!file.eof()) {
 		file.getline(buf,1023);
 		line = std::string(buf);
@@ -193,7 +223,7 @@ void loadKeys() {
 		memset(keys, 0, 8);
 		rlen = 0;
 		if (vec.size() > 0) {
-			for(unsigned int i = 1; (rlen < KEYSEQ_MAXLEN) && (i < vec.size()); i++) {
+			for(i = 1; (rlen < KEYSEQ_MAXLEN) && (i < vec.size()); i++) {
 				rlen += vec[i].size();
 				if (rlen < KEYSEQ_MAXLEN)
 					strcat(keys, vec[i].c_str());

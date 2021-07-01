@@ -352,7 +352,7 @@ int cpuGetReg(CPU* cpu, const char* name) {
 			}
 		}
 	}
-	return -1;
+	return res;
 }
 
 void cpuSetRegs(CPU* cpu, xRegBunch bunch) {

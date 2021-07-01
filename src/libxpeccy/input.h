@@ -91,7 +91,6 @@ enum {
 #define	MSXK_DOWN	0x1e
 #define	MSXK_RIGHT	0x1f
 
-
 typedef struct {
 	unsigned used:1;
 	unsigned enable:1;
@@ -163,7 +162,7 @@ typedef struct {
 	unsigned char rowScan;
 } atmKey;
 
-#define KEYSEQ_MAXLEN 8
+#define KEYSEQ_MAXLEN 16
 
 typedef struct {
 	const char* name;
@@ -173,6 +172,7 @@ typedef struct {
 	unsigned char msxKey[KEYSEQ_MAXLEN];
 	atmKey atmCode;
 	int keyCode;		// 0xXXYYZZ = ZZ,YY,XX in buffer ([ZZ],[YY],0xf0,XX if released)
+	int joyMask;
 } keyEntry;
 
 typedef struct {

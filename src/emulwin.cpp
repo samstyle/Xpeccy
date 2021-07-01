@@ -867,9 +867,10 @@ void MainWin::xkey_press(int xkey) {
 	QString path;
 	if (pckAct->isChecked()) {
 		xt_press(comp->keyb, kent.keyCode);
-		if (comp->hw->keyp) {
+		if (comp->hw->keyp)
 			comp->hw->keyp(comp, kent);
-		}
+		if (kent.joyMask)
+			joyPress(comp->joy, kent.joyMask);
 		if (xkey == XKEY_F12) {
 			compReset(comp,RES_DEFAULT);
 			emit s_rzx_stop();
@@ -1063,9 +1064,10 @@ void MainWin::xkey_press(int xkey) {
 			default:
 				// printf("%s %c %c\n", kent.name, kent.zxKey.key1, kent.zxKey.key2);
 				xt_press(comp->keyb, kent.keyCode);
-				if (comp->hw->keyp) {
+				if (comp->hw->keyp)
 					comp->hw->keyp(comp, kent);
-				}
+				if (kent.joyMask)
+					joyPress(comp->joy, kent.joyMask);
 				break;
 		}
 	}
@@ -1108,6 +1110,8 @@ void MainWin::xkey_release(int keyid) {
 	xt_release(comp->keyb, kent.keyCode);
 	if (comp->hw->keyr)
 		comp->hw->keyr(comp, kent);
+	if (kent.joyMask)
+		joyRelease(comp->joy, kent.joyMask);
 	emit s_keywin_upd(comp->keyb);
 }
 
