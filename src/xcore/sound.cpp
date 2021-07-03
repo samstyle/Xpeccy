@@ -35,6 +35,10 @@ static int sb_pos = 0;
 static int sp_pos = 0;
 static sndPair smpBuf[128] = {{0,0}};
 
+#if defined(HAVESDL2)
+static SDL_AudioDeviceID sdldevid;
+#endif
+
 // output
 
 #define USEKIH 0
@@ -221,16 +225,26 @@ int sdlopen() {
 	asp.freq = conf.snd.rate;
 	asp.format = AUDIO_S16LSB;
 	asp.channels = conf.snd.chans;
-	asp.samples = conf.snd.rate / 50 * conf.snd.chans;
+	asp.samples = conf.snd.rate / 50;
 	asp.callback = &sdlPlayAudio;
 	asp.userdata = NULL;
-	if (SDL_OpenAudio(&asp, &dsp) != 0) {
+#if defined(HAVESDL2)
+	sdldevid = SDL_OpenAudioDevice(NULL, 0, &asp, &dsp, 0);
+	if (sdldevid == 0) {
+#else
+	res = SDL_OpenAudio(&asp, &dsp);
+	if (res != 0) {
+#endif
 		printf("SDL audio device opening...failed (%s)\n", SDL_GetError());
 		res = 0;
 	} else {
 		printf("SDL audio device opening...success: %i %i (%i / %i)\n",dsp.freq, dsp.samples,dsp.format,AUDIO_S16LSB);
 		sndChunks = dsp.samples * DISCRATE;
+#if defined(HAVESDL2)
+		SDL_PauseAudioDevice(sdldevid, 0);
+#else
 		SDL_PauseAudio(0);
+#endif
 		res = 1;
 	}
 	posp = 0x0004;
@@ -243,8 +257,11 @@ void sdlplay() {
 }
 
 void sdlclose() {
-//	SDL_PauseAudio(1);
+#if defined(HAVESDL2)
+	SDL_CloseAudioDevice(sdldevid);
+#else
 	SDL_CloseAudio();
+#endif
 }
 
 // init

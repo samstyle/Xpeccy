@@ -1584,6 +1584,7 @@ void SetupWin::addBinding() {
 	jent.dev = JMAP_JOY;
 	jent.key = ENDKEY;
 	jent.dir = XJ_NONE;
+	jent.rpt = 0;
 	padial->start(jent);
 }
 
