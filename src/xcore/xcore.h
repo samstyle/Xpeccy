@@ -243,7 +243,7 @@ void setKey(const char*, const char*);
 keyEntry getKeyEntry(int);
 int getKeyIdByName(const char*);
 const char* getKeyNameById(int);
-int qKey2id(int);
+int qKey2id(int, Qt::KeyboardModifiers = Qt::NoModifier);
 int key2qid(int);
 
 typedef struct {

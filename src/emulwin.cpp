@@ -849,7 +849,7 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 				keyid = 0;
 			}
 #else
-			keyid = qKey2id(ev->key());
+			keyid = qKey2id(ev->key(), ev->modifiers());
 #endif
 		}
 //		printf("press: %i\n", keyid);

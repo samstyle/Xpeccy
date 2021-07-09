@@ -64,6 +64,7 @@ class xDisasmTable : public QTableView {
 	signals:
 		void rqRefill();
 		void rqRefillAll();
+		void s_adrch(int);
 	public slots:
 		int updContent();
 		void update();

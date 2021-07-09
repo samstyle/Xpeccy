@@ -184,15 +184,6 @@ typedef struct {
 
 	int padr;
 	int pval;
-/*
-	struct {				// msx ppi, specialist 580vv55
-		ppiChan a;
-		ppiChan b;
-		ppiChan ch;
-		ppiChan cl;
-		unsigned char ctrl;
-	} ppi;
-*/
 	PPI* ppi;
 	struct {
 		unsigned char evoBF;		// PentEvo rw ports

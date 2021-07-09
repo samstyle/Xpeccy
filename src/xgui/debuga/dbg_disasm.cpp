@@ -755,8 +755,11 @@ unsigned short xDisasmTable::getAdr() {
 void xDisasmTable::setAdr(int adr, int hist) {
 	if (hist)
 		history.append(model->disasmAdr);
+	int oadr = model->disasmAdr & 0xffff;
 	model->disasmAdr = adr & 0xffff;
 	updContent();
+	if (oadr != model->disasmAdr)
+		emit s_adrch(model->disasmAdr);
 }
 
 int xDisasmTable::updContent() {
@@ -800,6 +803,8 @@ void xDisasmTable::t_update(int oadr, int nadr) {
 			r = rows();
 		}
 	}
+	if (oadr != nadr)
+		emit s_adrch(nadr);
 }
 
 void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
@@ -832,16 +837,19 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 				model->disasmAdr = getPrevAdr(*cptr, model->disasmAdr);
 			}
 			updContent();
+			emit s_adrch(model->disasmAdr);
 			break;
 		case Qt::Key_PageDown:
 			model->disasmAdr = getData(rows() - 1, 0, Qt::UserRole).toInt() & 0xffff;
 			updContent();
+			emit s_adrch(model->disasmAdr);
 			break;
 		case XCUT_TOPC:
 			if (mode != XVIEW_CPU) break;
 			if (!cptr) break;
 			model->disasmAdr = (*cptr)->cpu->pc;
 			updContent();
+			emit s_adrch(model->disasmAdr);
 			break;
 		case XCUT_SETPC:
 			if (mode != XVIEW_CPU) break;
@@ -903,11 +911,13 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			model->setData(model->index(idx.row(), 0), gethexword(adr & 0xffff).prepend("0x"), Qt::EditRole);
 			updContent();
 			setCurrentIndex(idx);
+			emit s_adrch(model->disasmAdr);
 			break;
 		case XCUT_RETFROM:
 			if (history.size() < 1) break;
 			model->disasmAdr = history.takeLast();
 			updContent();
+			emit s_adrch(model->disasmAdr);
 			break;
 		case Qt::Key_Return:
 			if (state() == QAbstractItemView::EditingState) break;
@@ -983,11 +993,16 @@ void xDisasmTable::scrolDn(Qt::KeyboardModifiers mod) {
 	if (mod & Qt::ControlModifier) {
 		model->disasmAdr++;
 	} else {
-		while (model->disasmAdr == model->dasm[i].adr)
+		while ((model->disasmAdr == model->dasm[i].adr) && (i < model->dasm.size()))
 			i++;
-		model->disasmAdr = model->dasm[i].adr;
+		if (i < model->dasm.size()) {
+			model->disasmAdr = model->dasm[i].adr;
+		} else {
+			model->disasmAdr++;
+		}
 	}
 	updContent();
+	emit s_adrch(model->disasmAdr);
 }
 
 void xDisasmTable::scrolUp(Qt::KeyboardModifiers mod) {
@@ -997,6 +1012,7 @@ void xDisasmTable::scrolUp(Qt::KeyboardModifiers mod) {
 		model->disasmAdr = getPrevAdr(*cptr, model->disasmAdr);
 	}
 	updContent();
+	emit s_adrch(model->disasmAdr);
 }
 
 void xDisasmTable::wheelEvent(QWheelEvent* ev) {

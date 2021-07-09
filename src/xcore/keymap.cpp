@@ -178,7 +178,7 @@ void setKey(const char* kname, const char* kstr) {
 						break;
 				}
 			}
-			strncpy((char*)keyMap[idx].zxKey, kstr, KEYSEQ_MAXLEN - 1);
+//			strncpy((char*)keyMap[idx].zxKey, kstr, KEYSEQ_MAXLEN - 1);
 //			printf("%s -> %c %c\n", keyMap[idx].name, key1, key2);
 		}
 		idx++;
@@ -356,12 +356,33 @@ static keyTrans ktTab[] = {
 	{Qt::Key_unknown, Qt::Key_unknown, ENDKEY}
 };
 
-int qKey2id(int qkey) {
+static keyTrans numPadTab[] = {
+	{Qt::Key_0, Qt::Key_Insert, XKEY_N0},
+	{Qt::Key_1, Qt::Key_End, XKEY_N1},
+	{Qt::Key_2, Qt::Key_Down, XKEY_N2},
+	{Qt::Key_3, Qt::Key_PageDown, XKEY_N3},
+	{Qt::Key_4, Qt::Key_Left, XKEY_N4},
+	{Qt::Key_5, Qt::Key_5, XKEY_N5},
+	{Qt::Key_6, Qt::Key_Right, XKEY_N6},
+	{Qt::Key_7, Qt::Key_Home, XKEY_N7},
+	{Qt::Key_8, Qt::Key_Up, XKEY_N8},
+	{Qt::Key_9, Qt::Key_PageUp, XKEY_N9},
+	{Qt::Key_Period, Qt::Key_Delete, XKEY_NDOT},
+	{Qt::Key_Slash, Qt::Key_Slash, XKEY_NSLASH},
+	{Qt::Key_Asterisk, Qt::Key_Asterisk, XKEY_NMUL},
+	{Qt::Key_Minus, Qt::Key_Minus, XKEY_NMINUS},
+	{Qt::Key_Plus, Qt::Key_Plus, XKEY_NPLUS},
+	{Qt::Key_Enter, Qt::Key_Return, XKEY_NENTER},
+	{Qt::Key_unknown, Qt::Key_unknown, ENDKEY}
+};
+
+int qKey2id(int qkey, Qt::KeyboardModifiers mod) {
 	int idx = 0;
-	while ((ktTab[idx].keyLat != qkey) && (ktTab[idx].keyRus != qkey) && (ktTab[idx].keyLat != Qt::Key_unknown)) {
+	keyTrans* tab = (mod & Qt::KeypadModifier) ? numPadTab : ktTab;
+	while ((tab[idx].keyLat != qkey) && (tab[idx].keyRus != qkey) && (tab[idx].keyLat != Qt::Key_unknown)) {
 		idx++;
 	}
-	return ktTab[idx].keyId;
+	return tab[idx].keyId;
 }
 
 int key2qid(int key) {

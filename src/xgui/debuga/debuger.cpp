@@ -387,6 +387,9 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.dasmTable,SIGNAL(rqRefill()),ui.bpList,SLOT(update()));
 	connect(ui.dasmTable,SIGNAL(rqRefillAll()),this,SLOT(fillAll()));
 
+	connect(ui.dasmTable,SIGNAL(s_adrch(int)),ui.dasmScroll,SLOT(setValue(int)));
+	connect(ui.dasmScroll,SIGNAL(valueChanged(int)),ui.dasmTable,SLOT(setAdr(int)));
+
 	connect(ui.dumpTable,SIGNAL(rqRefill()),this,SLOT(fillDump()));
 	connect(ui.dumpTable,SIGNAL(rqRefill()),this,SLOT(fillDisasm()));
 	connect(ui.dumpTable,SIGNAL(rqRefill()),ui.bpList,SLOT(update()));

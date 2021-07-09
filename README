@@ -26,3 +26,6 @@ Linux and MacOSX users can make a deb/rpm/dmg package:
 By default there is only ZX Spectrum 48K romset w/o TRDOS.
 
 PS: DON'T try to build it under Windows. I'm serious.
+
+Documentation (russian) is available here:
+https://docs.google.com/document/d/1fmDePHvjT6i1LM_Ex78GnX4j00tKSBrx-5p11tVWfKE
