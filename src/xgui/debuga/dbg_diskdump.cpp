@@ -37,7 +37,7 @@ int xDiskDumpModel::rowCount(const QModelIndex&) const {
 }
 
 int xDiskDumpModel::columnCount(const QModelIndex&) const {
-	return 9;
+	return 10;
 }
 
 void xDiskDumpModel::update() {
@@ -55,11 +55,15 @@ QVariant xDiskDumpModel::data(const QModelIndex& idx, int role) const {
 	if (row >= rowCount() || (row < 0)) return res;
 	if (col >= columnCount() || (col < 0)) return res;
 	int offset = (row << 3) | ((col - 1) & 7);
+	int adr = offset & ~7;
+	unsigned char ch;
+	int pos;
 	char buf[256];
 	Floppy* flp = conf.prof.cur->zx->dif->fdc->flop[drv];
 	switch (role) {
 		case Qt::BackgroundColorRole:
 			if (col == 0) break;
+			if (col > 8) break;
 			if (offset >= TRACKLEN) break;
 			if (!flp->insert) break;
 			switch(flp->data[trk].field[offset]) {
@@ -78,6 +82,20 @@ QVariant xDiskDumpModel::data(const QModelIndex& idx, int role) const {
 		case Qt::DisplayRole:
 			if (col == 0) {
 				sprintf(buf, "%.2X:%.4X", trk, offset & ~7);
+			} else if (col == 9) {
+				pos = 0;
+				while (pos < 8) {
+					if (adr < TRACKLEN) {
+						ch = flp->data[trk].byte[adr];
+						if ((ch < 32) || (ch > 127))
+							ch = '.';
+					} else {
+						ch = '.';
+					}
+					buf[pos++] = ch;
+					adr++;
+				}
+				buf[pos] = 0;
 			} else if (offset < TRACKLEN) {
 				if (flp->insert) {
 					sprintf(buf, "%.2X", flp->data[trk].byte[offset]);

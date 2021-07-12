@@ -12,9 +12,10 @@ static vLayout nesPALLay = {{341,312},{0,0},{85,72},{256,240},{0,0},64};
 // NTSC	89342 dots/f	60fps	5360520 dot/sec	186.55 ns/dot
 // PAL	106392 dots/f	50fps	5319600 dot/sec	188 ns/dot
 // ~185 ns/dot	PAL:x3.2=592ns/tick	NTSC:x3=555ns/tick
-// ~190 ns/dot	PAL:608 ns/tick		NTSC:570ns/tick
+// ~190 ns/dot	PAL:608 ns/tick		NTSC:570ns/tick (570.837)
 // NTSC:base/14915
 // PAL:base/12430
+// NTSC: 113.5T/line
 
 // PPU reads byte (except palette)
 int nes_ppu_ext_rd(int adr, void* ptr) {
@@ -234,14 +235,14 @@ void nesSync(Computer* comp, int ns) {
 extern int res4;
 
 int nesMemRd(Computer* comp, int adr, int m1) {
-	vidSync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
-	res4 = comp->cpu->t;
+//	vidSync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
+//	res4 = comp->cpu->t;
 	return memRd(comp->mem, adr);
 }
 
 void nesMemWr(Computer* comp, int adr, int val) {
-	vidSync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
-	res4 = comp->cpu->t;
+//	vidSync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
+//	res4 = comp->cpu->t;
 	memWr(comp->mem, adr, val);
 }
 

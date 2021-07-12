@@ -121,7 +121,7 @@ struct CPU {
 	unsigned resPV:1;		// Z80: reset PV flag on INT
 	unsigned noint:1;		// Z80: don't handle INT after EI
 	unsigned wait:1;		// Z80: WAIT signal
-	unsigned ack:1;			// Z80: acknowledge INT after execution (prevent last-1T INT)
+//	unsigned ack:1;			// Z80: acknowledge INT after execution (prevent last-1T INT)
 	unsigned lock:1;		// LR35902: CPU locked
 	unsigned stop:1;		// LR35902: CPU stoped, unlock on keypress
 	unsigned speed:1;		// LR35902: double speed mode (TODO)
@@ -136,6 +136,7 @@ struct CPU {
 	int inten;			// interrupts enabled mask
 	unsigned short intvec;
 
+// z80, lr35902, i8080, 6502 registers
 	PAIR(pc,hpc,lpc);
 	PAIR(sp,hsp,lsp);
 	PAIR(ix,hx,lx);
@@ -158,12 +159,31 @@ struct CPU {
 	PAIR(de_,d_,e_);
 	PAIR(hl_,h_,l_);
 
+// 80286 registers
+	PAIR(ax,ah,al);
+	PAIR(dx,dh,dl);
+	PAIR(cx,ch,cl);
+	PAIR(bx,bh,bl);
+	unsigned short bp;
+	unsigned short si;
+	unsigned short di;
+	// unsigned short sp;	// use sp above
+	unsigned short cs;
+	unsigned short ds;
+	unsigned short ss;
+	unsigned short es;
+	unsigned short flag;
+	// unsigned short ip;	// use pc for this
+	unsigned short msw;
+
+// pdp registers
 	unsigned mcir:3;
 	unsigned vsel:4;
 	unsigned short pflag;		// pdp11 flag
 	unsigned short preg[8];		// pdp11 registers
 	xTimer timer;
 
+// external callbacks
 	cbmr mrd;
 	cbmw mwr;
 	cbir ird;
@@ -171,11 +191,13 @@ struct CPU {
 	cbirq irq;
 	void* data;
 
+// opcode
 	PAIR(com, hcom, lcom);
 	opCode* tab;
 	opCode* opTab;
 	opCode* op;
 
+// polymorph callbacks (depends on type)
 	void (*reset)(CPU*);
 	int (*exec)(CPU*);
 	xAsmScan (*asmbl)(const char*, char*);
@@ -183,6 +205,7 @@ struct CPU {
 	void (*getregs)(CPU*, xRegBunch*);
 	void (*setregs)(CPU*, xRegBunch);
 
+// temp
 	int t;
 	unsigned char tmp;
 	unsigned char tmpb;

@@ -3,6 +3,8 @@
 #include "6502.h"
 #include "6502_macro.h"
 
+// there is no T increment for fetch/rd/wr operations cuz full opcode T is already added in 'exec', before execution
+
 // cpu->mptr = address on misc addressing types
 // cpu->tmp = operand
 // IMM : next byte

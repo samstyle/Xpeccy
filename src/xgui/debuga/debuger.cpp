@@ -449,7 +449,8 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 	ui.cbDumpView->setCurrentIndex(0);
 
-	ui.tabDiskDump->setColumnWidth(0, 100);
+	ui.tabDiskDump->setColumnWidth(0, 70);
+	ui.tabDiskDump->horizontalHeader()->setStretchLastSection(true);
 	connect(ui.cbDrive, SIGNAL(currentIndexChanged(int)), ui.tabDiskDump, SLOT(setDrive(int)));
 	connect(ui.sbTrack, SIGNAL(valueChanged(int)), ui.tabDiskDump, SLOT(setTrack(int)));
 

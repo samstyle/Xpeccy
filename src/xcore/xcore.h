@@ -19,7 +19,9 @@
 #include "../libxpeccy/spectrum.h"
 #include "../libxpeccy/filetypes/filetypes.h"
 
+#ifndef USEMUTEX
 #define USEMUTEX 0
+#endif
 
 #if QT_VERSION >= QT_VERSION_CHECK(5,0,0)
 #define yDelta angleDelta().y()

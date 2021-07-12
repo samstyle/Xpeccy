@@ -9,7 +9,9 @@ static int nsTime;
 static int res2;
 int res4 = 0;		// save last T synced with video (last is res2-res4
 
+#ifndef RUNTIME_IO
 #define RUNTIME_IO 1
+#endif
 
 // video callbacks
 
@@ -17,24 +19,6 @@ int vid_mrd_cb(int adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	return comp->mem->ramData[adr & comp->mem->ramMask];
 }
-
-/*
-void zxMemRW(Computer* comp, int adr) {
-	MemPage* mptr = &comp->mem->map[(adr >> 8) & 0xff];
-	if (comp->contMem && (mptr->type == MEM_RAM) && (mptr->num & 0x40)) {	// 16K pages 1,3,5,7 (48K model)
-		res3 = comp->cpu->t;						// until RD/WR cycle
-		vidSync(comp->vid, comp->nsPerTick * (res3 - res4));
-		res4 = res3;
-		vidWait(comp->vid);						// contended WAIT
-		vidSync(comp->vid, comp->nsPerTick * 3);			// 3T rd/wr cycle
-		res4 += 3;
-	} else {
-		res3 = comp->cpu->t + 3;
-		vidSync(comp->vid, comp->nsPerTick * (res3 - res4));
-		res4 = res3;
-	}
-}
-*/
 
 int memrd(int adr, int m1, void* ptr) {
 	Computer* comp = (Computer*)ptr;
@@ -110,12 +94,32 @@ inline void zxIORW(Computer* comp, int port) {
 }
 */
 
+static unsigned char ula_levs[8] = {0x00, 0x24, 0x49, 0x6d, 0x92, 0xb6, 0xdb, 0xff};
+
+void zxSetUlaPalete(Computer* comp) {
+	int i;
+	int col;
+	xColor xc;
+	for (i = 0; i < 64; i++) {
+		col = (comp->vid->ula->pal[i] << 1) & 7;	// blue
+		if (col & 2) col |= 1;
+		xc.b = ula_levs[col];
+		col = (comp->vid->ula->pal[i] >> 2) & 7;	// red
+		xc.r = ula_levs[col];
+		col = (comp->vid->ula->pal[i] >> 5) & 7;	// green
+		xc.g = ula_levs[col];
+		comp->vid->pal[i] = xc;
+	}
+}
+
 int iord(int port, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	unsigned char res = 0xff;
 // TODO: zx only
-	vidSync(comp->vid,(comp->cpu->t + 3 - res4) * comp->nsPerTick);
-	res4 = comp->cpu->t + 3;
+	if (comp->hw->grp == HWG_ZX) {
+		vidSync(comp->vid,(comp->cpu->t + 3 - res4) * comp->nsPerTick);
+		res4 = comp->cpu->t + 3;
+	}
 // play rzx
 #ifdef HAVEZLIB
 	if (comp->rzx.play) {
@@ -143,9 +147,15 @@ void iowr(int port, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 #if RUNTIME_IO
 	bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
-	vidSync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
-	res4 = comp->cpu->t;
+	if (comp->hw->grp == HWG_ZX) {
+		vidSync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
+		res4 = comp->cpu->t;
+	}
 	comp->hw->out(comp, port, val, bdiz);
+	if (comp->vid->ula->palchan) {
+		zxSetUlaPalete(comp);
+		comp->vid->ula->palchan = 0;
+	}
 #else
 // store adr & data, real writing will be later
 	comp->padr = port;
@@ -216,24 +226,6 @@ void rzxStop(Computer* zx) {
 	zx->rzx.fCount = 0;
 	zx->rzx.frm.size = 0;
 #endif
-}
-
-static unsigned char ula_levs[8] = {0x00, 0x24, 0x49, 0x6d, 0x92, 0xb6, 0xdb, 0xff};
-
-void zxSetUlaPalete(Computer* comp) {
-	int i;
-	int col;
-	xColor xc;
-	for (i = 0; i < 64; i++) {
-		col = (comp->vid->ula->pal[i] << 1) & 7;	// blue
-		if (col & 2) col |= 1;
-		xc.b = ula_levs[col];
-		col = (comp->vid->ula->pal[i] >> 2) & 7;	// red
-		xc.r = ula_levs[col];
-		col = (comp->vid->ula->pal[i] >> 5) & 7;	// green
-		xc.g = ula_levs[col];
-		comp->vid->pal[i] = xc;
-	}
 }
 
 Computer* compCreate() {
@@ -503,25 +495,27 @@ int compExec(Computer* comp) {
 		res2++;
 #if RUNTIME_IO
 	if (res2 > res4) {
-		if (res2 > res4 + 1)
-			vidSync(comp->vid, (res2 - res4 - 1) * comp->nsPerTick);
-		comp->cpu->ack = comp->vid->intFRAME ? 1 : 0;
-		vidSync(comp->vid, comp->nsPerTick);
+		if (comp->hw->grp == HWG_ZX) {
+			if (res2 > res4 + 1)
+				vidSync(comp->vid, (res2 - res4 - 1) * comp->nsPerTick);
+			// comp->cpu->ack = comp->vid->intFRAME ? 1 : 0;
+			vidSync(comp->vid, comp->nsPerTick);
+		} else {
+			vidSync(comp->vid, (res2 - res4) * comp->nsPerTick);
+		}
 	}
 #else
 	// out @ last tick
 	vidSync(comp->vid,(res2 - res4 - 1) * comp->nsPerTick);			// 3T
 	if (comp->padr) {
 		bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
-		if (ula_wr(comp->vid->ula, comp->padr, comp->pval)) {
-			if (comp->vid->ula->palchan) {
-				zxSetUlaPalete(comp);
-				comp->vid->ula->palchan = 0;
-			}
-		}
 		if (comp->hw->out)
 			comp->hw->out(comp, comp->padr, comp->pval, bdiz);
 		comp->padr = 0;
+		if (comp->vid->ula->palchan) {
+			zxSetUlaPalete(comp);
+			comp->vid->ula->palchan = 0;
+		}
 	}
 	// TODO: zx - if INT is inactive at last tick, don't acknowledge it at the end of cycle
 	comp->cpu->ack = comp->vid->intFRAME ? 1 : 0;
