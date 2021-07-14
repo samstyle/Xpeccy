@@ -121,7 +121,7 @@ struct CPU {
 	unsigned resPV:1;		// Z80: reset PV flag on INT
 	unsigned noint:1;		// Z80: don't handle INT after EI
 	unsigned wait:1;		// Z80: WAIT signal
-//	unsigned ack:1;			// Z80: acknowledge INT after execution (prevent last-1T INT)
+	unsigned ack:1;			// Z80: acknowledge INT after execution (prevent last-1T INT)
 	unsigned lock:1;		// LR35902: CPU locked
 	unsigned stop:1;		// LR35902: CPU stoped, unlock on keypress
 	unsigned speed:1;		// LR35902: double speed mode (TODO)

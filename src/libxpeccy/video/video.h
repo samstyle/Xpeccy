@@ -170,11 +170,12 @@ struct Video {
 	vCoord scrsize;		// << tsconf.xSize, tsconf.ySize, v9938::wid
 	vCoord sc;		// screen scroll registers
 	// nes
-	unsigned ppu_vb;	// set at vbs line, reset at vbrline or reading reg2
+	unsigned ntsc:1;	// set if ntsc, prerender line is 1 dot shorter each other frame
+	unsigned ppu_vb:1;	// set at vbs line, reset at vbrline or reading reg2
 	int vadr;		// nes videomem access addr
 	unsigned short tadr;	// nes tmp vadr
-	int vbsline;
-	int vbrline;
+	int vbsline;		// 1st line of VBlank
+	int vbrline;		// prerender line (usually last line of frame)
 	unsigned char oamadr;
 	// gbc
 	unsigned lcdon:1;

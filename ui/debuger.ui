@@ -1018,6 +1018,13 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_5">
        <item>
+        <widget class="QCheckBox" name="cbAccT">
+         <property name="text">
+          <string>Accumulate T</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <spacer name="horizontalSpacer_7">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>

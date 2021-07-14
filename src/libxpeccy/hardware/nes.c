@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-static vLayout nesNTSCLay = {{341,262},{1,1},{85,22},{256,240},{0,0},64};
+static vLayout nesNTSCLay = {{341,262},{0,0},{85,22},{256,240},{0,0},64};
 static vLayout nesPALLay = {{341,312},{0,0},{85,72},{256,240},{0,0},64};
 
 // NOTE: NES is fukkeen trash. why did i start this?
@@ -15,7 +15,6 @@ static vLayout nesPALLay = {{341,312},{0,0},{85,72},{256,240},{0,0},64};
 // ~190 ns/dot	PAL:608 ns/tick		NTSC:570ns/tick (570.837)
 // NTSC:base/14915
 // PAL:base/12430
-// NTSC: 113.5T/line
 
 // PPU reads byte (except palette)
 int nes_ppu_ext_rd(int adr, void* ptr) {
@@ -246,47 +245,57 @@ void nesMemWr(Computer* comp, int adr, int val) {
 	memWr(comp->mem, adr, val);
 }
 
-// base frq (21.477MHz | 26.602MHz)
-// cpu frq (base:12 | base:16)
-// ppu frq (base:4 | base:5)
+// base frq (21.477MHz | 26.602MHz)	46,5614378172ns		37,5911585595ns
+// cpu frq (base:12 | base:16)		46*12 = 552ns/T (555)	37*16 = 592ns/T
+// ppu frq (base:4 | base:5)		46*4 = 184ns/dot (185)	37*5 = 185ns/dot
 // apu frame (60Hz | 50Hz)
 // apu frq = cpu / 2
 // smallest wave period = cpu / 16
+// TODO: NTSC: (pre-render line (261) is one dot shorter in every other frame). frame avg = 341*261+340.5
 
 void nes_init(Computer* comp) {
 	int perNoTurbo;
+	comp->vid->ntsc = 0;
 	switch(comp->nes.type) {
 		case NES_PAL:
 			comp->fps = 50;
 			comp->cpuFrq = 1.66;
-			perNoTurbo = 1e3 / comp->cpuFrq;		// ~601
+			//perNoTurbo = 1e3 / comp->cpuFrq;		// ~601
+			perNoTurbo = 592;		// 1.6(891)MHz
 			vidSetLayout(comp->vid, &nesPALLay);
-			comp->vid->vbsline = 241;
+			comp->vid->vbsline = 240;
 			comp->vid->vbrline = 311;
 			vidUpdateTimings(comp->vid, perNoTurbo / 3.2);		// 16 ticks = 5 dots
+			//vidUpdateTimings(comp->vid, 185);
 			comp->nesapu->wdiv = 3107;		// 5/6 = 3107? or 166/179 = 3458
 			break;
 		case NES_NTSC:
 			comp->fps = 60;
 			comp->cpuFrq = 1.79;
-			perNoTurbo = 1e3 / comp->cpuFrq;		// ~559
+			//perNoTurbo = 1e3 / comp->cpuFrq;		// ~559
+			perNoTurbo = 555;		// 1.8(018) MHz
 			vidSetLayout(comp->vid, &nesNTSCLay);
 			comp->vid->vbsline = 241;
 			comp->vid->vbrline = 261;
 			vidUpdateTimings(comp->vid, perNoTurbo / 3);		// 15 ticks = 5 dots
+			//vidUpdateTimings(comp->vid, 185);
 			comp->nesapu->wdiv = 3729;
+			comp->vid->ntsc = 1;
 			break;
 		default:							// dendy
 			comp->fps = 59;
 			comp->cpuFrq = 1.77;
-			perNoTurbo = 1e3 / comp->cpuFrq;
+			//perNoTurbo = 1e3 / comp->cpuFrq;
+			perNoTurbo = 555;
 			vidSetLayout(comp->vid, &nesPALLay);
 			comp->vid->vbsline = 291;
 			comp->vid->vbrline = 311;
 			vidUpdateTimings(comp->vid, perNoTurbo / 3);
+			//vidUpdateTimings(comp->vid, 185);
 			comp->nesapu->wdiv = 3729;
 			break;
 	}
+	comp->nsPerTick = perNoTurbo;
 	comp->nesapu->wper = perNoTurbo << 1;				// 1 APU tick = 2 CPU ticks	x2(Fcpu div) x8(duty)
 	comp->cpu->nod = 1;	// no daa in cpu
 }

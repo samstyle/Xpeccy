@@ -498,7 +498,7 @@ int compExec(Computer* comp) {
 		if (comp->hw->grp == HWG_ZX) {
 			if (res2 > res4 + 1)
 				vidSync(comp->vid, (res2 - res4 - 1) * comp->nsPerTick);
-			// comp->cpu->ack = comp->vid->intFRAME ? 1 : 0;
+			comp->cpu->ack = comp->vid->intFRAME ? 1 : 0;
 			vidSync(comp->vid, comp->nsPerTick);
 		} else {
 			vidSync(comp->vid, (res2 - res4) * comp->nsPerTick);
@@ -542,6 +542,7 @@ int compExec(Computer* comp) {
 		if (comp->intStrobe)
 			comp->intStrobe = 0;
 	}
+
 	if (comp->cpu->halt && !comp->halt) {
 		comp->halt = 1;
 		comp->hCount = comp->frmtCount;

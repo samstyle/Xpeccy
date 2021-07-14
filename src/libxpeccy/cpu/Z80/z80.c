@@ -34,7 +34,7 @@ int z80_int(CPU* cpu) {
 	int res = 0;
 	if (cpu->wait) return res;
 	if (cpu->intrq & Z80_INT) {		// int
-		if (cpu->iff1 && !cpu->noint/* && cpu->ack*/) {
+		if (cpu->iff1 && !cpu->noint && cpu->ack) {
 			cpu->iff1 = 0;
 			cpu->iff2 = 0;
 			if (cpu->halt) {

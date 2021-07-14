@@ -110,7 +110,7 @@ GSound* gsCreate() {
 	memset(res,0x00,sizeof(GSound));
 	res->cpu = cpuCreate(CPU_Z80, &gsmemrd, &gsmemwr, &gsiord, &gsiowr, &gsintrq, res);
 	res->cpu->inten = 0;
-//	res->cpu->ack = 1;
+	res->cpu->ack = 1;
 	res->mem = memCreate();
 	memSetSize(res->mem, MEM_2M, MEM_32K);
 	memSetBank(res->mem, 0x00, MEM_ROM, 0, MEM_16K, NULL, NULL, NULL);

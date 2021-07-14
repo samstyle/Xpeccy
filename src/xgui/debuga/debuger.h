@@ -143,9 +143,8 @@ class DebugWin : public QDialog {
 		void chDumpView();
 		void setDasmMode();
 		void setDumpCP();
+		void resetTCount();
 
-//		void loadMap();
-//		void saveMap();
 		void saveDasm();
 		void remapMem();
 		void save_mem_map();

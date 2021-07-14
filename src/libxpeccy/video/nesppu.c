@@ -271,11 +271,14 @@ void ppuLine(Video* vid) {
 
 	// NES NTSC: 241/261; NES PAL:241/311; Dendy: 291/311
 	if (vid->ray.y == vid->vbsline) {
-		//vid->ppu_vb = 1;
+		vid->ppu_vb = 1;
 	} else if (vid->ray.y == vid->vbrline) {
-		//vid->ppu_vb = 0;
+		vid->ppu_vb = 0;
 		vid->sp0hit = 0;
 		vid->spover = 0;
+		// if NTSC, x++ @ every other frame
+		if ((vid->fcnt & 1) && vid->ntsc)
+			vidSync(vid, vid->nsPerDot);
 	}
 
 	if (vid->ray.y > 239) return;		// 239? vid->vbsline?
@@ -308,10 +311,10 @@ int ppuRead(Video* vid, int reg) {
 	switch (reg & 7) {
 		case 2:
 			res = vid->reg[2] & 0x1f;		// bits previously written to register
-			if (vid->vbstrb) res |= 0x80;		// clear this bit at reading
+			if (vid->ppu_vb) res |= 0x80;		// clear this bit at reading
 			if (vid->sp0hit) res |= 0x40;
 			if (vid->spover) res |= 0x20;
-			vid->vbstrb = 0;
+			vid->ppu_vb = 0;
 			vid->latch = 0;
 			break;
 		case 4:

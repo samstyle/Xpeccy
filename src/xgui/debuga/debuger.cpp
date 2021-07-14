@@ -148,7 +148,8 @@ void DebugWin::start(Computer* c) {
 }
 
 void DebugWin::stop() {
-	tCount = comp->tickCount;	// before compExec to add current opcode T
+	if (!ui.cbAccT->isChecked())
+		tCount = comp->tickCount;	// before compExec to add current opcode T
 	compExec(comp);			// to prevent double breakpoint catch
 	comp->debug = 0;		// back to normal work, turn breakpoints on
 	comp->vid->debug = 0;
@@ -162,6 +163,13 @@ void DebugWin::stop() {
 	memViewer->hide();
 	hide();
 	emit closed();
+}
+
+void DebugWin::resetTCount() {
+	if (ui.cbAccT->isChecked()) {
+		tCount = comp->tickCount;
+		ui.labTcount->setText(QString("%0 / %1").arg(comp->tickCount - tCount).arg(comp->frmtCount));
+	}
 }
 
 void DebugWin::onPrfChange(xProfile* prf) {
@@ -377,6 +385,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 // connections
 	connect(this,SIGNAL(needStep()),this,SLOT(doStep()));
+	connect(ui.cbAccT, SIGNAL(toggled(bool)), this, SLOT(resetTCount()));
 
 	connect(ui.actMapingClear,SIGNAL(triggered()),this,SLOT(mapClear()));
 
@@ -652,7 +661,8 @@ void DebugWin::setDasmMode() {
 static QFile logfile;
 
 void DebugWin::doStep() {
-		tCount = comp->tickCount;
+		if (!ui.cbAccT->isChecked())
+			tCount = comp->tickCount;
 		compExec(comp);
 		if (!fillAll()) {
 			ui.dasmTable->setAdr(comp->cpu->pc);
