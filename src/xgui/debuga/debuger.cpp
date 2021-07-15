@@ -1436,6 +1436,7 @@ void DebugWin::fillFlags() {
 }
 
 void DebugWin::fillCPU() {
+	block = 1;
 	CPU* cpu = comp->cpu;
 	xRegBunch bunch = cpuGetRegs(cpu);
 	int i = 0;
@@ -1467,6 +1468,7 @@ void DebugWin::fillCPU() {
 	ui.flagIFF2->setChecked(cpu->iff2);
 	fillFlags();
 	fillStack();
+	block = 0;
 }
 
 void DebugWin::setFlags() {
