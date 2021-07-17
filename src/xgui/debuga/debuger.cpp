@@ -1045,6 +1045,7 @@ bool DebugWin::fillAll() {
 		}
 		block = 0;
 	}
+	ui.tabDiskDump->update();
 
 	setSignal(ui.labDOS, comp->dos);
 	setSignal(ui.labROM, comp->rom);

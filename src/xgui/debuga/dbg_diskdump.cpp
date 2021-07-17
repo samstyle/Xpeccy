@@ -60,6 +60,7 @@ QVariant xDiskDumpModel::data(const QModelIndex& idx, int role) const {
 	int pos;
 	char buf[256];
 	Floppy* flp = conf.prof.cur->zx->dif->fdc->flop[drv];
+	QFont fnt;
 	switch (role) {
 		case Qt::BackgroundColorRole:
 			if (col == 0) break;
@@ -78,6 +79,14 @@ QVariant xDiskDumpModel::data(const QModelIndex& idx, int role) const {
 					res = QColor(255, 220, 255);
 					break;
 			}
+			break;
+		case Qt::FontRole:
+			if (col == 0) break;
+			if (col > 8) break;
+			if (trk != ((flp->trk << 1) | (conf.prof.cur->zx->dif->fdc->side ? 1 : 0))) break;
+			if (offset != flp->pos) break;
+			fnt.setBold(true);
+			res = fnt;
 			break;
 		case Qt::DisplayRole:
 			if (col == 0) {

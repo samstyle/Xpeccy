@@ -23,6 +23,14 @@
 #define USEMUTEX 0
 #endif
 
+#define NEW_SMP_METHOD 1
+// TODO: new smp method
+// init: smpNeed = 0
+// each sdl_sound_callback smpNeed += (samples needed = bytes/4)
+// each sample in buffer: smpNeed--
+// if (smpNeed == 0) conf.snd.fill = 0 (end of emulation cycle)
+// after emulation cycle: wait for smpNeed!=0 (instead of sleepy)
+
 #if QT_VERSION >= QT_VERSION_CHECK(5,0,0)
 #define yDelta angleDelta().y()
 #else
@@ -380,6 +388,7 @@ struct xConfig {
 		unsigned enabled:1;
 		unsigned wavout:1;	// output to wav, rate 44100
 		unsigned fill:1;	// 1 while snd buffer not filled, 0 at end of snd buffer
+		int need;		// samples needed to be filled in buf
 		int rate;
 		int chans;
 		sndVolume vol;

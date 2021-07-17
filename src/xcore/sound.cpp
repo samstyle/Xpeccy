@@ -88,6 +88,8 @@ int sndSync(Computer* comp) {
 					sndLev.left = 0;
 					sndLev.right = 0;
 				}
+				if (conf.snd.need > 0)
+					conf.snd.need--;
 
 				sbuf[posf & 0x3fff] = sndLev.left & 0xff;
 				posf++;
@@ -101,7 +103,11 @@ int sndSync(Computer* comp) {
 			smpCount++;
 		}
 	}
+#if NEW_SMP_METHOD
+	if (conf.snd.need > 0) return 0;
+#else
 	if (smpCount < sndChunks) return 0;
+#endif
 	conf.snd.fill = 0;
 	smpCount = 0;
 	return 1;
@@ -192,6 +198,8 @@ void null_close() {
 
 void sdlPlayAudio(void*, Uint8* stream, int len) {
 //	printf("len = %i\n",len);
+	if (!conf.emu.fast && !conf.emu.pause)
+		conf.snd.need += len/4;
 	int dist = posf - posp;
 	while (dist < 0) dist += 0x4000;
 	while (dist > 0x3fff) dist -= 0x4000;
@@ -213,6 +221,8 @@ void sdlPlayAudio(void*, Uint8* stream, int len) {
 	}
 #if USEMUTEX
 	qwc.wakeAll();
+#elif NEW_SMP_METHOD
+	sleepy = conf.snd.need ? 0 : 1;
 #else
 	sleepy = 0;
 #endif
@@ -228,6 +238,7 @@ int sdlopen() {
 	asp.samples = conf.snd.rate / 50;
 	asp.callback = &sdlPlayAudio;
 	asp.userdata = NULL;
+	conf.snd.need = 0;
 #if defined(HAVESDL2)
 	sdldevid = SDL_OpenAudioDevice(NULL, 0, &asp, &dsp, 0);
 	if (sdldevid == 0) {
@@ -248,7 +259,8 @@ int sdlopen() {
 		res = 1;
 	}
 	posp = 0x0004;
-	posf = 0x1000;
+	posf = posp;
+	//posf = 0x1000;
 	memset(sbuf, 0x00, 0x4000);
 	return res;
 }
