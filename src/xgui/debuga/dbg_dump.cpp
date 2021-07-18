@@ -249,9 +249,11 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 		case Qt::DisplayRole:
 			switch(col) {
 				case 0:
-					if ((mode == XVIEW_RAM) || (mode == XVIEW_ROM))
+					if ((mode == XVIEW_RAM) || (mode == XVIEW_ROM)) {
 						adr &= 0x3fff;
-					str = QString::number(adr, (*cptr)->hw->base).toUpper().rightJustified(((*cptr)->hw->base == 16) ? 4 : 6, '0');
+						str = QString::number(page, (*cptr)->hw->base).toUpper().rightJustified(2, '0').append(":");
+					}
+					str.append(QString::number(adr, (*cptr)->hw->base).toUpper().rightJustified(((*cptr)->hw->base == 16) ? 4 : 6, '0'));
 					res = str;
 					break;
 				case 9:
@@ -343,6 +345,7 @@ void xDumpTable::setComp(Computer** ptr) {
 void xDumpTable::setMode(int md, int pg) {
 	mode = md;
 	model->setMode(md, pg);
+
 	emit rqRefill();
 }
 
@@ -379,7 +382,11 @@ void xDumpTable::update() {
 }
 
 void xDumpTable::setAdr(int adr) {
-	model->dmpadr = adr;
+	if (model->dmpadr != adr) {
+		model->dmpadr = adr;
+		emit s_adrch(adr);
+		update();
+	}
 }
 
 int xDumpTable::getAdr() {
@@ -401,26 +408,33 @@ void xDumpTable::keyPressEvent(QKeyEvent* ev) {
 		case Qt::Key_Up:
 			if (idx.row() > 0) {
 				QTableView::keyPressEvent(ev);
+				emit s_adrch(model->dmpadr);
 			} else {
-				model->dmpadr -= 8;
-				emit rqRefill();
+				setAdr(model->dmpadr - 8);
+				// emit rqRefill();
 			}
 			break;
 		case Qt::Key_Down:
 			if (idx.row() < model->rowCount() - 1) {
 				QTableView::keyPressEvent(ev);
+				emit s_adrch(model->dmpadr);
 			} else {
-				model->dmpadr += 8;
-				emit rqRefill();
+				setAdr(model->dmpadr + 8);
+				// emit rqRefill();
 			}
 			break;
+		case Qt::Key_Left:
+		case Qt::Key_Right:
+			QTableView::keyPressEvent(ev);
+			emit s_adrch(model->dmpadr);
+			break;
 		case Qt::Key_PageUp:
-			model->dmpadr = (model->dmpadr - (rows() * 8)) & 0xffff;
-			update();
+			setAdr((model->dmpadr - (rows() * 8)) & 0xffff);
+			// update();
 			break;
 		case Qt::Key_PageDown:
-			model->dmpadr = (model->dmpadr + (rows() * 8)) & 0xffff;
-			update();
+			setAdr((model->dmpadr + (rows() * 8)) & 0xffff);
+			// update();
 			break;
 		case Qt::Key_Return:
 			if (state() == QAbstractItemView::EditingState) break;
@@ -515,10 +529,10 @@ void xDumpTable::mouseMoveEvent(QMouseEvent* ev) {
 
 void xDumpTable::wheelEvent(QWheelEvent* ev) {
 	if (ev->yDelta < 0) {
-		model->dmpadr += 8;
+		setAdr(model->dmpadr + 8);
 		emit rqRefill();
 	} else if (ev->yDelta > 0) {
-		model->dmpadr -= 8;
+		setAdr(model->dmpadr - 8);
 		emit rqRefill();
 	}
 }

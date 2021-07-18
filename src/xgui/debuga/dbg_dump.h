@@ -71,11 +71,13 @@ class xDumpTable:public QTableView {
 		void setMode(int, int);
 		void setView(int);
 		void update();
-		void setAdr(int);
 		int getAdr();
 		int mode;
 		int view;
+	public slots:
+		void setAdr(int);
 	signals:
+		void s_adrch(int);
 		void rqRefill();
 	private:
 		xDumpModel* model;

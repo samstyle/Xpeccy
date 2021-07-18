@@ -167,7 +167,7 @@ class DebugWin : public QDialog {
 		void setCPU();
 		void setFlags();
 		void updateScreen();
-		void dumpChadr(QModelIndex);
+		void dumpChadr(int);
 
 		void addBrk();
 		void editBrk();

@@ -24,7 +24,6 @@
 #endif
 
 #define NEW_SMP_METHOD 1
-// TODO: new smp method
 // init: smpNeed = 0
 // each sdl_sound_callback smpNeed += (samples needed = bytes/4)
 // each sample in buffer: smpNeed--

@@ -264,6 +264,9 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	tablist[HWG_ZX] = lst;
 	lst.clear();
 	p.first = QIcon(":/images/nespad.png"); p.second = ui.nesTab; lst.append(p);
+#if ISDEBUG
+	p.first = QIcon(":/images/speaker2.png"); p.second = ui.nesApuTab; lst.append(p);
+#endif
 	tablist[HWG_NES] = lst;
 	lst.clear();
 	p.first = QIcon(":/images/gameboy.png"); p.second = ui.gbTab; lst.append(p);
@@ -403,7 +406,11 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.dumpTable,SIGNAL(rqRefill()),this,SLOT(fillDisasm()));
 	connect(ui.dumpTable,SIGNAL(rqRefill()),ui.bpList,SLOT(update()));
 	connect(ui.dumpTable,SIGNAL(rqRefill()),this,SLOT(updateScreen()));
-	connect(ui.dumpTable->selectionModel(), SIGNAL(currentChanged(QModelIndex, QModelIndex)), this, SLOT(dumpChadr(QModelIndex)));
+	// connect(ui.dumpTable->selectionModel(), SIGNAL(currentChanged(QModelIndex, QModelIndex)), this, SLOT(dumpChadr(QModelIndex)));
+
+	connect(ui.dumpTable, SIGNAL(s_adrch(int)), ui.dumpScroll, SLOT(setValue(int)));
+	connect(ui.dumpTable, SIGNAL(s_adrch(int)), this, SLOT(dumpChadr(int)));
+	connect(ui.dumpScroll, SIGNAL(valueChanged(int)), ui.dumpTable, SLOT(setAdr(int)));
 
 	connect(ui.bpList,SIGNAL(rqDisasm(int)),ui.dasmTable,SLOT(setAdr(int)));
 	connect(ui.bpList,SIGNAL(rqDasmDump()),this,SLOT(fillDisasm()));
@@ -649,6 +656,10 @@ void DebugWin::chDumpView() {
 	int page = ui.sbDumpPage->value();
 	ui.sbDumpPage->setDisabled(mode == XVIEW_CPU);
 	ui.dumpTable->setMode(mode, page);
+	switch(mode) {
+		case XVIEW_CPU: ui.dumpScroll->setMaximum(0xffff); break;
+		default: ui.dumpScroll->setMaximum(0x3fff);
+	}
 }
 
 void DebugWin::setDasmMode() {
@@ -1611,19 +1622,19 @@ void DebugWin::fillDump() {
 	block = 1;
 	ui.dumpTable->update();
 	fillStack();
-	dumpChadr(ui.dumpTable->selectionModel()->currentIndex());
+	dumpChadr(ui.dumpTable->getAdr());
 	block = 0;
 }
 
-void DebugWin::dumpChadr(QModelIndex idx) {
+void DebugWin::dumpChadr(int adr) {
+	QModelIndex idx = ui.dumpTable->selectionModel()->currentIndex();
 	int col = idx.column();
-	int adr = ui.dumpTable->getAdr() + (idx.row() << 3);
+	adr += idx.row() << 3;
 	if ((col > 0) && (col < 9)) {
-		 adr += (idx.column() - 1);
+		 adr += (col - 1);
 	}
 	if (ui.dumpTable->mode != XVIEW_CPU)
 		adr &= 0x3fff;
-	//ui.labHeadDump->setText(QString("Dump : %0").arg(gethexword(adr & 0xffff)));
 	ui.tabsDump->setTabText(0, gethexword(adr & 0xffff));
 }
 
