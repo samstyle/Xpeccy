@@ -382,6 +382,7 @@ void xDumpTable::update() {
 }
 
 void xDumpTable::setAdr(int adr) {
+	adr &= 0xffff;
 	if (model->dmpadr != adr) {
 		model->dmpadr = adr;
 		emit s_adrch(adr);
@@ -411,7 +412,6 @@ void xDumpTable::keyPressEvent(QKeyEvent* ev) {
 				emit s_adrch(model->dmpadr);
 			} else {
 				setAdr(model->dmpadr - 8);
-				// emit rqRefill();
 			}
 			break;
 		case Qt::Key_Down:
@@ -420,7 +420,6 @@ void xDumpTable::keyPressEvent(QKeyEvent* ev) {
 				emit s_adrch(model->dmpadr);
 			} else {
 				setAdr(model->dmpadr + 8);
-				// emit rqRefill();
 			}
 			break;
 		case Qt::Key_Left:
