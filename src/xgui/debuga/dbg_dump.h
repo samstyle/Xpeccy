@@ -47,6 +47,7 @@ class xDumpModel : public QAbstractTableModel {
 		void updateRow(int);
 		void updateColumn(int);
 	signals:
+		void s_adrch(int);
 		void rqRefill();
 	public slots:
 		void update();

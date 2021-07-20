@@ -601,8 +601,8 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 					row -= getDisasm(*cptr, zadr).size();
 				}
 				disasmAdr = idx & 0xffff;
+				emit s_adrch(oadr, nladr);
 			}
-			emit s_adrch(oadr, nladr);
 			break;
 		case 1:	// bytes
 			str = val.toString();

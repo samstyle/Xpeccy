@@ -306,6 +306,7 @@ bool xDumpModel::setData(const QModelIndex& idx, const QVariant& val, int role) 
 		if (fadr >= 0) {
 			dmpadr = (fadr - (row << 3)) & 0xffff;
 			update();
+			emit s_adrch(dmpadr);
 			emit rqRefill();
 		}
 	} else if (col < 9) {
@@ -335,6 +336,7 @@ xDumpTable::xDumpTable(QWidget* p):QTableView(p) {
 	setModel(model);
 
 	connect(model, SIGNAL(rqRefill()), this, SIGNAL(rqRefill()));
+	connect(model, SIGNAL(s_adrch(int)), this, SIGNAL(s_adrch(int)));
 }
 
 void xDumpTable::setComp(Computer** ptr) {
