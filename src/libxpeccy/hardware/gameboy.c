@@ -829,7 +829,8 @@ void gbReset(Computer* comp) {
 			case 0x1c:
 			case 0x1d:
 			case 0x1e:
-				slot->memMap[0] = 0;
+				slot->memMap[0] = 1;
+				slot->memMap[1] = 0;
 				sltSetMaper(slot, MAPER_GB, MAP_GB_MBC5);		// mbc5
 				break;
 			default:

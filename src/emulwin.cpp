@@ -827,9 +827,9 @@ void MainWin::keyPressEvent(QKeyEvent *ev) {
 	} else {
 		int keyid = -1;
 		if (!pckAct->isChecked()) {
-			keyid = shortcut_check(SCG_MAIN, QKeySequence(ev->key()));
-			if (keyid != XCUT_RESET)
-				keyid = shortcut_check(SCG_MAIN, QKeySequence(ev->key() | ev->modifiers()));
+			keyid = shortcut_check(SCG_MAIN, QKeySequence(ev->key() | ev->modifiers()));
+			if (keyid < 0)
+				keyid = shortcut_check(SCG_MAIN, QKeySequence(ev->key()));
 		}
 		if (keyid < 0) {
 #if defined(__linux) || defined(__BSD)

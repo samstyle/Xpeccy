@@ -212,7 +212,7 @@ void slt_gb_mbc5_wr(xCartridge* slot, int mt, int adr, int radr, int val) {
 			break;
 		case 0x2000:
 			slot->memMap[0] &= 0x100;
-			slot->memMap[0] |= val;
+			slot->memMap[0] |= (val & 0xff);
 			break;
 		case 0x3000:
 			slot->memMap[0] &= 0xff;
@@ -226,7 +226,7 @@ void slt_gb_mbc5_wr(xCartridge* slot, int mt, int adr, int radr, int val) {
 		case 0xb000:
 			if (!slot->ramen) break;
 			adr = (slot->memMap[1] << 13) | (adr & 0x1fff);
-			slot->ram[adr & 0x7fff] = val;
+			slot->ram[adr & 0x1ffff] = val;
 			break;
 	}
 }

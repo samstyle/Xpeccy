@@ -120,7 +120,7 @@ struct xCartridge {
 	int memMask;
 	int chrMask;
 	int ramMask;
-	unsigned char ram[0x8000];	// onboard ram (32K max)
+	unsigned char ram[0x20000];	// onboard ram (16 x 8K max)
 	xCardCallback* core;
 	unsigned char* data;		// onboard rom (malloc) = nes prg-rom
 	unsigned char* brkMap;

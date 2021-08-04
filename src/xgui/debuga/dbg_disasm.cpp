@@ -569,12 +569,12 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 	char buf[256];
 	unsigned char* ptr;
 	int idx = -1;
-	int nladr = -1;
+	//int nladr = -1;
 	unsigned short zadr;
 	unsigned short oadr = disasmAdr;
 	int len;
 	QString str;
-	QStringList lst;
+	//QStringList lst;
 	xAdr xadr;
 	int adr = dasm[row].adr;
 	switch(col) {
@@ -594,14 +594,14 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 				idx = asmAddr(*cptr, val, xadr);
 			}
 			if (idx >= 0) {
-				nladr = idx;		// address to select after
+				//nladr = idx;		// address to select after
 				while (row > 0) {
 					idx = getPrevAdr(*cptr, idx & 0xffff);
 					zadr = idx & 0xffff;
 					row -= getDisasm(*cptr, zadr).size();
 				}
 				disasmAdr = idx & 0xffff;
-				emit s_adrch(oadr, nladr);
+				emit s_adrch(oadr, disasmAdr);
 			}
 			break;
 		case 1:	// bytes
@@ -788,8 +788,10 @@ int xDisasmTable::updContent() {
 }
 
 void xDisasmTable::update() {
+	//QModelIndex idx = currentIndex();
 	model->update_data();
-	QTableView::update();
+	//QTableView::update();
+	//setCurrentIndex(idx);
 }
 
 void xDisasmTable::t_update(int oadr, int nadr) {

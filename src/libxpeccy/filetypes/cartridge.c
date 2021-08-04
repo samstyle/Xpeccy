@@ -48,10 +48,10 @@ int loadSlot(Computer* comp, const char* name, int drv) {
 		for (tsiz = 0; tsiz < 4; tsiz++) {
 			slot->memMap[tsiz] = 0;
 		}
-		if (comp->hw->grp == HWG_MSX) {
-			detectType(slot);
-		} else {
-			sltSetMaper(slot, MAPER_MSX, MAP_MSX_NOMAPPER);
+		switch(comp->hw->grp) {
+			case HWG_MSX: detectType(slot); break;
+			case HWG_GB: sltSetMaper(slot, MAPER_GB, MAP_GB_NOMAP); break;	// it will be set on reset
+			default: sltSetMaper(slot, MAPER_MSX, MAP_MSX_NOMAPPER); break;
 		}
 		fclose(file);
 		char rname[FILENAME_MAX];
