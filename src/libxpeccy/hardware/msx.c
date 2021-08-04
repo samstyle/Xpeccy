@@ -192,6 +192,7 @@ void msx_sync(Computer* comp, int ns) {
 	if (irq && !(comp->cpu->intrq & Z80_INT)) {			// 0->1 : TESTED 20ms
 		comp->cpu->intrq |= Z80_INT;
 		comp->intVector = 0xff;
+		comp->cpu->ack = 1;
 	} else if (!irq && (comp->cpu->intrq & Z80_INT)) {		// 1->0 : clear
 		comp->cpu->intrq &= ~Z80_INT;
 	}

@@ -221,6 +221,8 @@ int bkLoadToTape(Computer*,const char*,int);
 
 int loadSlot(Computer*,const char*, int);
 int loadNes(Computer*, const char*, int);
+int loadGB(Computer*, const char*, int);
+int loadMSX(Computer*, const char*, int);
 
 #ifdef __cplusplus
 }

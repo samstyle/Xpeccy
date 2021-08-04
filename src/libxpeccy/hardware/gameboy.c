@@ -798,8 +798,9 @@ void gbReset(Computer* comp) {
 	slot->memMap[0] = 1;	// rom bank
 	slot->memMap[1] = 0;	// ram bank
 	slot->ramen = 0;
-	slot->ramMask = 0x7fff;
+	slot->ramMask = 0x1ffff;
 	slot->ramod = 0;
+/*
 	if (slot->data) {
 		unsigned char type = slot->data[0x147];		// slot type
 		printf("Cartrige type %.2X\n",type);
@@ -829,8 +830,8 @@ void gbReset(Computer* comp) {
 			case 0x1c:
 			case 0x1d:
 			case 0x1e:
-				slot->memMap[0] = 1;
-				slot->memMap[1] = 0;
+				//slot->memMap[0] = 1;
+				//slot->memMap[1] = 0;
 				sltSetMaper(slot, MAPER_GB, MAP_GB_MBC5);		// mbc5
 				break;
 			default:
@@ -839,4 +840,5 @@ void gbReset(Computer* comp) {
 		}
 
 	}
+*/
 }

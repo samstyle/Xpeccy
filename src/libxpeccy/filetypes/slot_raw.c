@@ -1,30 +1,5 @@
 #include "filetypes.h"
 
-void detectType(xCartridge* slot) {
-	int test, radr, adr;
-	sltSetMaper(slot, MAPER_MSX, slot->mapType);
-	if (slot->memMask < 0x8000) {
-		sltSetMaper(slot, MAPER_MSX, MAP_MSX_NOMAPPER);		// 16/32K : no mapper
-	} else {
-		for (adr = 0; adr < 0x4000; adr++) {
-			radr = adr & slot->memMask;
-			test = slot->data[radr++] << 16;
-			test |= slot->data[radr++] << 8;
-			test |= slot->data[radr];
-			if ((test == 0x320050) || (test == 0x3200b0)) {
-				sltSetMaper(slot, MAPER_MSX, MAP_MSX_KONAMI5);
-				break;
-			} else if ((test == 0x320068) || (test == 0x320078)) {
-				sltSetMaper(slot, MAPER_MSX, MAP_MSX_ASCII8);
-				break;
-			} else if (test == 0x3200a0) {
-				sltSetMaper(slot, MAPER_MSX, MAP_MSX_KONAMI4);
-				break;
-			}
-		}
-	}
-}
-
 int loadSlot(Computer* comp, const char* name, int drv) {
 	xCartridge* slot = comp->slot;
 	FILE* file = fopen(name, "rb");
@@ -48,21 +23,23 @@ int loadSlot(Computer* comp, const char* name, int drv) {
 		for (tsiz = 0; tsiz < 4; tsiz++) {
 			slot->memMap[tsiz] = 0;
 		}
+/*
 		switch(comp->hw->grp) {
 			case HWG_MSX: detectType(slot); break;
 			case HWG_GB: sltSetMaper(slot, MAPER_GB, MAP_GB_NOMAP); break;	// it will be set on reset
 			default: sltSetMaper(slot, MAPER_MSX, MAP_MSX_NOMAPPER); break;
 		}
+*/
 		fclose(file);
 		char rname[FILENAME_MAX];
 		strcpy(rname, name);
 		strcat(rname, ".ram");
 		file = fopen(rname, "rb");
 		if (file) {
-			fread(slot->ram, 0x8000, 1, file);
+			fread(slot->ram, 0x20000, 1, file);
 			fclose(file);
 		} else {
-			memset(slot->ram, 0x00, 0x8000);
+			memset(slot->ram, 0x00, 0x20000);
 		}
 		err = ERR_OK;
 		compReset(comp, RES_DEFAULT);
