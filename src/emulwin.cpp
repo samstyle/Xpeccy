@@ -1421,6 +1421,7 @@ void MainWin::initUserMenu() {
 	bookmarkMenu = userMenu->addMenu(QIcon(":/images/star.png"),"Bookmarks");
 	profileMenu = userMenu->addMenu(QIcon(":/images/profile.png"),"Profiles");
 	layoutMenu = userMenu->addMenu(QIcon(":/images/display.png"),"Layout");
+	keyMenu = userMenu->addMenu(QIcon(":/images/keyboardzx.png"), "Keymap...");
 	resMenu = userMenu->addMenu(QIcon(":/images/shutdown.png"),"Reset...");
 	shdMenu = userMenu->addMenu(QIcon(":/images/shader.png"), "Shaders");
 
@@ -1441,6 +1442,7 @@ void MainWin::initUserMenu() {
 	connect(resMenu,SIGNAL(triggered(QAction*)),this,SLOT(reset(QAction*)));
 	connect(fileMenu,SIGNAL(triggered(QAction*)),this,SLOT(umOpen(QAction*)));
 	connect(shdMenu,SIGNAL(triggered(QAction*)),this,SLOT(shdSelected(QAction*)));
+	connect(keyMenu,SIGNAL(triggered(QAction*)),this,SLOT(keySelected(QAction*)));
 
 	fileMenu->addAction(QIcon(":/images/memory.png"),"Snapshot")->setData(FG_SNAPSHOT);
 	fileMenu->addAction(QIcon(":/images/tape.png"),"Tape")->setData(FG_TAPE);
@@ -1483,6 +1485,25 @@ void MainWin::fillUserMenu() {
 	layoutMenu->clear();
 	foreach(xLayout lay, conf.layList) {
 		layoutMenu->addAction(lay.name.c_str())->setData(lay.name.c_str());
+	}
+	// fill keymaps menu
+	keyMenu->clear();
+	act = keyMenu->addAction("Default");
+	act->setData("");
+	act->setCheckable(true);
+	if (conf.prof.cur) {
+		if (conf.prof.cur->kmapName.empty()) act->setChecked(true);
+		QDir dir(conf.path.confDir.c_str());
+		QStringList lst = dir.entryList(QStringList() << "*.map",QDir::Files,QDir::Name);
+		dir.setPath(dir.path().append("/keymaps/"));
+		lst.append(dir.entryList(QStringList() << "*.map",QDir::Files,QDir::Name));
+		lst.sort();
+		foreach(QString str, lst) {
+			act = keyMenu->addAction(str);
+			act->setData(str);
+			act->setCheckable(true);
+			act->setChecked(conf.prof.cur->kmapName == std::string(str.toUtf8().data()));
+		}
 	}
 	// fill shader menu
 	shdMenu->clear();
@@ -1592,6 +1613,16 @@ void MainWin::umOpen(QAction* act) {
 	pause(true, PR_FILE);
 	load_file(comp, NULL, act->data().toInt(), -1);
 	pause(false, PR_FILE);
+}
+
+void MainWin::keySelected(QAction* act) {
+	QString str = act->data().toString();
+	if (str.isEmpty()) {
+		conf.prof.cur->kmapName.clear();
+	} else {
+		conf.prof.cur->kmapName = std::string(str.toUtf8().data());
+	}
+	loadKeys();
 }
 
 // socket

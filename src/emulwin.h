@@ -85,6 +85,7 @@ class MainWin : public QWidget {
 		void bookmarkSelected(QAction*);
 		void profileSelected(QAction*);
 		void shdSelected(QAction*);
+		void keySelected(QAction*);
 		void reset(QAction*);
 		void chLayout(QAction*);
 		void umOpen(QAction*);
@@ -137,6 +138,7 @@ class MainWin : public QWidget {
 		QMenu* resMenu;
 		QMenu* fileMenu;
 		QMenu* shdMenu;
+		QMenu* keyMenu;
 #ifdef ISDEBUG
 		QMenu* dbgMenu;
 #endif
