@@ -67,8 +67,8 @@ static keyEntry keyMapInit[] = {
 	{"`",XKEY_TILDA,{'C','S'},{'S','x'},{'`',0},{0x60,0x91},0x0e,0},
 	{"\\",XKEY_SLASH,{'S','C'},{0,0},{'\\',0},{0x2f,0x92},0x5d,0},
 
-	{"PGDN",XKEY_PGDN,{'C','3'},{'n'|0x80,0},{MSXK_SEL,0},{0x75,0x51},0x7ae0,0},
-	{"PGUP",XKEY_PGUP,{'C','4'},{'m'|0x80,0},{MSXK_CODE,0},{0x74,0x49},0x7de0,0},
+	{"PGUP",XKEY_PGUP,{'C','3'},{'m'|0x80,0},{MSXK_CODE,0},{0x75,0x49},0x7de0},
+	{"PGDN",XKEY_PGDN,{'C','4'},{'n'|0x80,0},{MSXK_SEL,0},{0x74,0x51},0x7ae0},
 
 	{"DEL",XKEY_DEL,{'C','9'},{'p'|0x80,0},{MSXK_DEL,0},{0x79,0x49},0x71e0,0},
 	{"INS",XKEY_INS,{0,0},{'o'|0x80,0},{0,MSXK_INS},{0x78,0x84},0x70e0,0},

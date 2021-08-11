@@ -166,6 +166,7 @@ Uint32 sdl_timer_callback(Uint32 iv, void* ptr) {
 	qwc.wakeAll();
 #else
 	sleepy = 0;
+	conf.snd.need += conf.snd.rate / 50;
 #endif
 	return iv;
 }
