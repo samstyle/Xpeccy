@@ -5,20 +5,9 @@
 extern const unsigned char sz53pTab[0x100];
 
 static int iop_add_h[8] = {0, 0, IFL_A, 0, IFL_A, 0, IFL_A, IFL_A};
-// static int iop_sub_h[8] = {0, IFL_A, IFL_A, IFL_A, 0, 0, 0, IFL_A};
 static int iop_sub_h[8] = {IFL_A, 0, 0, 0, IFL_A, IFL_A, IFL_A, 0};
 
 // common
-
-int iop_parity(unsigned char val) {
-	int parity = 1;
-	while (val) {
-		if (val & 1)
-			parity = !parity;
-		val >>= 1;
-	}
-	return parity;
-}
 
 unsigned char iop_inr(CPU* cpu, unsigned char val) {
 	val++;
@@ -26,7 +15,7 @@ unsigned char iop_inr(CPU* cpu, unsigned char val) {
 	if (val & 0x80) cpu->f |= IFL_S;
 	if (val == 0) cpu->f |= IFL_Z;
 	if ((val & 0x0f) == 0) cpu->f |= IFL_A;
-	if (iop_parity(val)) cpu->f |= IFL_P;
+	if (parity(val)) cpu->f |= IFL_P;
 	return val;
 }
 
@@ -36,7 +25,7 @@ unsigned char iop_dcr(CPU* cpu, unsigned char val) {
 	if (val & 0x80) cpu->f |= IFL_S;
 	if (val == 0) cpu->f |= IFL_Z;
 	if ((val & 0x0f) != 0x0f) cpu->f |= IFL_A;	// A flag is inverted (1:no b4-carry, 0:b4-carry)
-	if (iop_parity(val)) cpu->f |= IFL_P;
+	if (parity(val)) cpu->f |= IFL_P;
 	return val;
 }
 
@@ -46,7 +35,7 @@ unsigned char iop_add(CPU* cpu, unsigned char val, unsigned char add) {
 	if (cpu->ltw & 0x80) cpu->f |= IFL_S;
 	if (cpu->ltw == 0) cpu->f |= IFL_Z;
 	cpu->f |= iop_add_h[((val & 8) >> 1) | ((add & 8) >> 2) | ((cpu->ltw & 8) >> 3)];
-	if (iop_parity(cpu->ltw)) cpu->f |= IFL_P;
+	if (parity(cpu->ltw)) cpu->f |= IFL_P;
 	if (cpu->htw != 0) cpu->f |= IFL_C;
 	return cpu->ltw;
 }
@@ -57,7 +46,7 @@ unsigned char iop_adc(CPU* cpu, unsigned char val, unsigned char add) {
 	if (cpu->ltw & 0x80) cpu->f |= IFL_S;
 	if (cpu->ltw == 0) cpu->f |= IFL_Z;
 	cpu->f |= iop_add_h[((val & 8) >> 1) | ((add & 8) >> 2) | ((cpu->ltw & 8) >> 3)];
-	if (iop_parity(cpu->ltw)) cpu->f |= IFL_P;
+	if (parity(cpu->ltw)) cpu->f |= IFL_P;
 	if (cpu->htw != 0) cpu->f |= IFL_C;
 	return cpu->ltw;
 }
@@ -68,7 +57,7 @@ unsigned char iop_sub(CPU* cpu, unsigned char val, unsigned char sub) {
 	if (cpu->ltw & 0x80) cpu->f |= IFL_S;
 	if (cpu->ltw == 0) cpu->f |= IFL_Z;
 	cpu->f |= iop_sub_h[((val & 8) >> 1) | ((sub & 8) >> 2) | ((cpu->ltw & 8) >> 3)];
-	if (iop_parity(cpu->ltw)) cpu->f |= IFL_P;
+	if (parity(cpu->ltw)) cpu->f |= IFL_P;
 	if (cpu->htw != 0) cpu->f |= IFL_C;
 	return cpu->ltw;
 }
@@ -79,7 +68,7 @@ unsigned char iop_sbb(CPU* cpu, unsigned char val, unsigned char sub) {
 	if (cpu->ltw & 0x80) cpu->f |= IFL_S;
 	if (cpu->ltw == 0) cpu->f |= IFL_Z;
 	cpu->f |= iop_sub_h[((val & 8) >> 1) | ((sub & 8) >> 2) | ((cpu->ltw & 8) >> 3)];
-	if (iop_parity(cpu->ltw)) cpu->f |= IFL_P;
+	if (parity(cpu->ltw)) cpu->f |= IFL_P;
 	if (cpu->htw != 0) cpu->f |= IFL_C;
 	return cpu->ltw;
 }
@@ -90,7 +79,7 @@ unsigned char iop_ana(CPU* cpu, unsigned char val, unsigned char arg) {
 	val &= arg;
 	if (val & 0x80) cpu->f |= IFL_S;
 	if (val == 0) cpu->f |= IFL_Z;
-	if (iop_parity(val)) cpu->f |= IFL_P;
+	if (parity(val)) cpu->f |= IFL_P;
 	return  val;
 }
 
@@ -99,7 +88,7 @@ unsigned char iop_xra(CPU* cpu, unsigned char val, unsigned char arg) {
 	cpu->f = 0;
 	if (val & 0x80) cpu->f |= IFL_S;
 	if (val == 0) cpu->f |= IFL_Z;
-	if (iop_parity(val)) cpu->f |= IFL_P;
+	if (parity(val)) cpu->f |= IFL_P;
 	return val;
 }
 
@@ -108,7 +97,7 @@ unsigned char iop_ora(CPU* cpu, unsigned char val, unsigned char arg) {
 	cpu->f = 0;
 	if (val & 0x80) cpu->f |= IFL_S;
 	if (val == 0) cpu->f |= IFL_Z;
-	if (iop_parity(val)) cpu->f |= IFL_P;
+	if (parity(val)) cpu->f |= IFL_P;
 	return val;
 }
 

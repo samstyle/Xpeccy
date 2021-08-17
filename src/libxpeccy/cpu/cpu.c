@@ -4,6 +4,20 @@
 #include "cpu.h"
 #include <stdio.h>
 
+// common
+
+int parity(int val) {
+	int parity = 1;
+	while (val) {
+		if (val & 1)
+			parity = !parity;
+		val >>= 1;
+	}
+	return parity;
+}
+
+// no-proc
+
 const char nomnem[] = "undef";
 
 void nil_reset(CPU* cpu) {}
@@ -67,7 +81,7 @@ void cpuSetType(CPU* cpu, int type) {
 	cpu->exec = core->exec;
 	cpu->asmbl = core->asmbl;
 	cpu->mnem = core->mnem;
-	cpu->tab = core->tab;
+	// cpu->tab = core->tab;
 	cpu->getregs = core->getregs;
 	cpu->setregs = core->setregs;
 }
@@ -184,6 +198,7 @@ xMnem cpuDisasm(CPU* cpu, unsigned short adr, char* buf, cbdmr mrd, void* data) 
 						// *buf++ = '#';
 						buf += sprintf(buf, "%o", dtw);
 						break;
+
 				}
 			} else {
 				*(buf++) = *(src++);

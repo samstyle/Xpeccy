@@ -23,7 +23,7 @@ typedef struct {
 	int id;
 	const char* name;
 	int (*open)();
-	void (*play)();
+//	void (*play)();
 	void (*close)();
 } OutSys;
 

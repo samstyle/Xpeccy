@@ -175,6 +175,10 @@ struct CPU {
 	unsigned short flag;
 	// unsigned short ip;	// use pc for this
 	unsigned short msw;
+	unsigned char mod;	// 80286: mod byte (EA/reg)
+	struct{PAIR(seg,segh,segl); PAIR(adr,adrh,adrl);} ea;		// effective address (segment:address)
+	int mode;		// real/protected mode
+	int seg;		// segment override. -1 if default
 
 // pdp registers
 	unsigned mcir:3;
@@ -193,7 +197,7 @@ struct CPU {
 
 // opcode
 	PAIR(com, hcom, lcom);
-	opCode* tab;
+	// opCode* tab;
 	opCode* opTab;
 	opCode* op;
 
@@ -210,6 +214,7 @@ struct CPU {
 	unsigned char tmp;
 	unsigned char tmpb;
 	PAIR(tmpw,htw,ltw);
+	PAIR(twrd,hwr,lwr);
 	int tmpi;
 };
 
@@ -241,6 +246,8 @@ xAsmScan scanAsmTab(const char*, opCode*);
 xRegBunch cpuGetRegs(CPU*);
 void cpuSetRegs(CPU*, xRegBunch);
 int cpuGetReg(CPU*, const char*);
+
+int parity(int);
 
 #ifdef __cplusplus
 }

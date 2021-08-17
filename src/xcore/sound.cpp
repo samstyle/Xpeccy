@@ -188,7 +188,7 @@ int null_open() {
 	return 1;
 }
 
-void null_play() {}
+// void null_play() {}
 void null_close() {
 	SDL_RemoveTimer(tid);
 }
@@ -266,8 +266,7 @@ int sdlopen() {
 	return res;
 }
 
-void sdlplay() {
-}
+// void sdlplay() {}
 
 void sdlclose() {
 #if defined(HAVESDL2)
@@ -280,11 +279,11 @@ void sdlclose() {
 // init
 
 OutSys sndTab[] = {
-	{xOutputNone,"NULL",&null_open,&null_play,&null_close},
+	{xOutputNone,"NULL",&null_open,/*&null_play,*/&null_close},
 #if defined(HAVESDL1) || defined(HAVESDL2)
-	{xOutputSDL,"SDL",&sdlopen,&sdlplay,&sdlclose},
+	{xOutputSDL,"SDL",&sdlopen,/*&sdlplay,*/&sdlclose},
 #endif
-	{0,NULL,NULL,NULL,NULL}
+	{0,NULL,NULL,/*NULL,*/NULL}
 };
 
 OutSys* findOutSys(const char* name) {

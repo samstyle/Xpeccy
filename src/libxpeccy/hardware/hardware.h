@@ -31,6 +31,7 @@ enum {
 	HW_BK0010,	// BK0010
 	HW_BK0011M,	// BK0011m
 	HW_SPCLST,	// PC Specialist
+	HW_IBM_PC
 };
 
 // hw group
@@ -42,7 +43,8 @@ enum {
 	HWG_NES,
 	HWG_COMMODORE,
 	HWG_BK,
-	HWG_SPCLST
+	HWG_SPCLST,
+	HWG_PC
 };
 
 enum {
@@ -306,6 +308,13 @@ void spc_sync(Computer*, int);
 void spc_keyp(Computer*, keyEntry);
 void spc_keyr(Computer*, keyEntry);
 sndPair spc_vol(Computer*, sndVolume*);
+
+// ibm pc/at
+void ibm_init(Computer*);
+void ibm_mem_map(Computer*);
+void ibm_reset(Computer*);
+int ibm_mrd(Computer*, int, int);
+void ibm_mwr(Computer*, int, int);
 
 #ifdef __cplusplus
 }
