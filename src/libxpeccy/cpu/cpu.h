@@ -178,6 +178,7 @@ struct CPU {
 	unsigned char mod;	// 80286: mod byte (EA/reg)
 	struct{PAIR(seg,segh,segl); PAIR(adr,adrh,adrl);} ea;		// effective address (segment:address)
 	int mode;		// real/protected mode
+	int rep;		// repeat condition id
 	int seg;		// segment override. -1 if default
 
 // pdp registers
@@ -197,7 +198,6 @@ struct CPU {
 
 // opcode
 	PAIR(com, hcom, lcom);
-	// opCode* tab;
 	opCode* opTab;
 	opCode* op;
 
@@ -210,7 +210,8 @@ struct CPU {
 	void (*setregs)(CPU*, xRegBunch);
 
 // temp
-	int t;
+	int t;			// ticks counter
+	unsigned short oldpc;
 	unsigned char tmp;
 	unsigned char tmpb;
 	PAIR(tmpw,htw,ltw);

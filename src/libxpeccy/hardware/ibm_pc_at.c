@@ -48,3 +48,11 @@ void ibm_mwr(Computer* comp, int adr, int val) {
 		comp->mem->ramData[adr & comp->mem->ramMask] = val & 0xff;
 	}
 }
+
+int ibm_iord(Computer* comp, int adr, int nonsence) {
+	return -1;
+}
+
+void ibm_iowr(Computer* comp, int adr, int val, int nonsense) {
+
+}

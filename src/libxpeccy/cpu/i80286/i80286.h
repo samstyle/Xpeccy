@@ -16,5 +16,11 @@ enum {
 	I286_MOD_PROT
 };
 
+enum {
+	I286_REP_NONE = 0,
+	I286_REPNZ,
+	I286_REPZ,
+};
+
 void i80286_reset(CPU*);
 int i80286_exec(CPU*);

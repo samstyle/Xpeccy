@@ -315,6 +315,8 @@ void ibm_mem_map(Computer*);
 void ibm_reset(Computer*);
 int ibm_mrd(Computer*, int, int);
 void ibm_mwr(Computer*, int, int);
+int ibm_iord(Computer*, int, int);
+void ibm_iowr(Computer*, int, int, int);
 
 #ifdef __cplusplus
 }
