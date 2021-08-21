@@ -93,6 +93,7 @@ static char* i8080_flags = "SZ5A3P1C";
 
 void i8080_get_regs(CPU* cpu, xRegBunch* bunch) {
 	int idx = 0;
+	PAIR(w,h,l)rx;
 	while(i8080RegTab[idx].id != REG_NONE) {
 		bunch->regs[idx].id = i8080RegTab[idx].id;
 		bunch->regs[idx].name = i8080RegTab[idx].name;
@@ -100,7 +101,10 @@ void i8080_get_regs(CPU* cpu, xRegBunch* bunch) {
 		switch(i8080RegTab[idx].id) {
 			case I8080_REG_PC: bunch->regs[idx].value = cpu->pc; break;
 			case I8080_REG_SP: bunch->regs[idx].value = cpu->sp; break;
-			case I8080_REG_AF: bunch->regs[idx].value = cpu->af; break;
+			case I8080_REG_AF: rx.h = cpu->a;
+					rx.l = cpu->f & 0xff;
+					bunch->regs[idx].value = rx.w;
+					break;
 			case I8080_REG_BC: bunch->regs[idx].value = cpu->bc; break;
 			case I8080_REG_DE: bunch->regs[idx].value = cpu->de; break;
 			case I8080_REG_HL: bunch->regs[idx].value = cpu->hl; break;
@@ -114,11 +118,15 @@ void i8080_get_regs(CPU* cpu, xRegBunch* bunch) {
 
 void i8080_set_regs(CPU* cpu, xRegBunch bunch) {
 	int idx;
+	PAIR(w,h,l)rx;
 	for (idx = 0; idx < 32; idx++) {
 		switch(bunch.regs[idx].id) {
 			case I8080_REG_PC: cpu->pc = bunch.regs[idx].value; break;
 			case I8080_REG_SP: cpu->sp = bunch.regs[idx].value; break;
-			case I8080_REG_AF: cpu->af = bunch.regs[idx].value; break;
+			case I8080_REG_AF: rx.w = bunch.regs[idx].value;
+					cpu->a = rx.h;
+					cpu->f = rx.l;
+					break;
 			case I8080_REG_BC: cpu->bc = bunch.regs[idx].value; break;
 			case I8080_REG_DE: cpu->de = bunch.regs[idx].value; break;
 			case I8080_REG_HL: cpu->hl = bunch.regs[idx].value; break;

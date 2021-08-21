@@ -7,6 +7,7 @@ extern "C" {
 #include <stdio.h>
 
 #include "nvram.h"
+#include "cmos.h"
 
 // IDE interface type
 enum {
@@ -117,11 +118,13 @@ typedef struct {
 	ATAPassport pass;
 } ATADev;
 
+/*
 typedef struct {
 	int mode;		// mode for F0..FF reading
 	unsigned char adr;
 	unsigned char data[256];
 } CMOS;
+*/
 
 typedef struct {
 	int type;
@@ -148,7 +151,6 @@ void ideCloseFiles(IDE*);
 
 void ideSetImage(IDE*,int,const char*);
 ATAPassport ideGetPassport(IDE*,int);
-// void ideSetPassport(IDE*,int,ATAPassport);
 
 #ifdef __cplusplus
 }

@@ -113,11 +113,13 @@ int loadZ80_f(Computer* comp, FILE* file) {
 	fread((char*)&hd, sizeof(z80v1Header), 1, file);
 	if (hd.flag12 == 0xff) hd.flag12 = 0x01;	// Because of compatibility, if byte 12 is 255, it has to be regarded as being 1.
 
-	comp->cpu->af = (hd.a << 8) | hd.f;
+	comp->cpu->a = hd.a;
+	comp->cpu->f = hd.f;
 	comp->cpu->bc = (hd.b << 8) | hd.c;
 	comp->cpu->de = (hd.d << 8) | hd.e;
 	comp->cpu->hl = (hd.h << 8) | hd.l;
-	comp->cpu->af_ = (hd._a << 8) | hd._f;
+	comp->cpu->a_ = hd._a;
+	comp->cpu->f_ = hd._f;
 	comp->cpu->bc_ = (hd._b << 8) | hd._c;
 	comp->cpu->de_ = (hd._d << 8) | hd._e;
 	comp->cpu->hl_ = (hd._h << 8) | hd._l;

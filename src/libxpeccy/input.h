@@ -120,6 +120,11 @@ typedef struct {
 } xKeyMtrx;
 
 typedef struct {
+	int pos;
+	unsigned char data[16];
+} xKeyBuf;
+
+typedef struct {
 	unsigned reset:1;		// RES signal to CPU
 	unsigned used:1;
 	unsigned caps:1;
@@ -146,8 +151,9 @@ typedef struct {
 	int extMap[8];	// Profi XT-keyboard extend
 	int msxMap[16];	// MSX keys map
 	// pc keyboard keybuffer
-	unsigned char kbdBuf[16];	// PS/2 key buffer
-	int kBufPos;
+	xKeyBuf kbuf;
+//	unsigned char kbdBuf[16];	// PS/2 key buffer
+//	int kBufPos;
 } Keyboard;
 
 typedef struct {

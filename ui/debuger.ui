@@ -630,7 +630,7 @@
         </widget>
        </item>
        <item row="15" column="0">
-        <widget class="QLabel" name="label_10">
+        <widget class="QLabel" name="labIMM">
          <property name="text">
           <string>IM</string>
          </property>
@@ -656,7 +656,7 @@
         </widget>
        </item>
        <item row="17" column="0">
-        <widget class="QLabel" name="label_8">
+        <widget class="QLabel" name="labIFF1">
          <property name="text">
           <string>IFF1</string>
          </property>
@@ -670,7 +670,7 @@
         </widget>
        </item>
        <item row="18" column="0">
-        <widget class="QLabel" name="label_11">
+        <widget class="QLabel" name="labIFF2">
          <property name="text">
           <string>IFF2</string>
          </property>

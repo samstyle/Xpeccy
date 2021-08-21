@@ -45,31 +45,36 @@ int xDumpModel::mrd(int adr) const {
 	MemPage* pg;
 	int fadr;
 	int res = 0xff;
-	switch(mode) {
-		case XVIEW_CPU:
-			pg = &comp->mem->map[(adr >> 8) & 0xffff];
-			fadr = (pg->num << 8) | (adr & 0xff);
-			switch (pg->type) {
-				case MEM_ROM: res = comp->mem->romData[fadr & comp->mem->romMask]; break;
-				case MEM_RAM: res = comp->mem->ramData[fadr & comp->mem->ramMask]; break;
-				case MEM_SLOT: res = memRd(comp->mem, adr & 0xffff);
-					break;
-			}
-			//res = memRd(comp->mem, adr & 0xffff);
-			res |= getBrk(comp, adr & 0xffff) << 8;
-			break;
-		case XVIEW_RAM:
-			adr &= 0x3fff;
-			adr |= (page << 14);
-			res = comp->mem->ramData[adr & 0x3fffff];
-			res |= comp->brkRamMap[adr & 0x3fffff] << 8;
-			break;
-		case XVIEW_ROM:
-			adr &= 0x3fff;
-			adr |= (page << 14);
-			res = comp->mem->romData[adr & 0x7ffff];
-			res |= comp->brkRomMap[adr & 0x7ffff] << 8;
-			break;
+	if (comp->hw->grp == HWG_PC) {
+		res = comp->hw->mrd(comp, (comp->cpu->ds << 4) + (adr & 0xffff), 0) & 0xff;
+		res |= (comp->brkAdrMap[adr & 0xffff] << 8);
+	} else {
+		switch(mode) {
+			case XVIEW_CPU:
+				pg = &comp->mem->map[(adr >> 8) & 0xffff];
+				fadr = (pg->num << 8) | (adr & 0xff);
+				switch (pg->type) {
+					case MEM_ROM: res = comp->mem->romData[fadr & comp->mem->romMask]; break;
+					case MEM_RAM: res = comp->mem->ramData[fadr & comp->mem->ramMask]; break;
+					case MEM_SLOT: res = memRd(comp->mem, adr & 0xffff);
+						break;
+				}
+				//res = memRd(comp->mem, adr & 0xffff);
+				res |= getBrk(comp, adr & 0xffff) << 8;
+				break;
+			case XVIEW_RAM:
+				adr &= 0x3fff;
+				adr |= (page << 14);
+				res = comp->mem->ramData[adr & 0x3fffff];
+				res |= comp->brkRamMap[adr & 0x3fffff] << 8;
+				break;
+			case XVIEW_ROM:
+				adr &= 0x3fff;
+				adr |= (page << 14);
+				res = comp->mem->romData[adr & 0x7ffff];
+				res |= comp->brkRomMap[adr & 0x7ffff] << 8;
+				break;
+		}
 	}
 	return res;
 }
@@ -78,31 +83,35 @@ void xDumpModel::mwr(int adr, unsigned char bt) {
 	Computer* comp = *cptr;
 	MemPage* pg;
 	int fadr;
-	switch(mode) {
-		case XVIEW_CPU:
-			pg = &comp->mem->map[(adr >> 8) & 0xffff];
-			fadr = (pg->num << 8) | (adr & 0xff);
-			switch (pg->type) {
-				case MEM_ROM:
-					if (conf.dbg.romwr)
-						comp->mem->romData[fadr & comp->mem->romMask] = bt;
-					break;
-				case MEM_RAM:
-					comp->mem->ramData[fadr & comp->mem->ramMask] = bt;
-					break;
-				case MEM_SLOT:
-					break;
-			}
-			break;
-		case XVIEW_RAM:
-			adr &= 0x3fff;
-			adr |= (page << 14);
-			comp->mem->ramData[adr & comp->mem->ramMask] = bt;
-			break;
-		case XVIEW_ROM:
-			if (conf.dbg.romwr)
-				comp->mem->romData[((adr & 0x3fff) | (page << 14)) & comp->mem->romMask] = bt;
-			break;
+	if (comp->hw->grp == HWG_PC) {
+		comp->hw->mwr(comp, (comp->cpu->ds << 4) + (adr & 0xffff), bt);
+	} else {
+		switch(mode) {
+			case XVIEW_CPU:
+				pg = &comp->mem->map[(adr >> 8) & 0xffff];
+				fadr = (pg->num << 8) | (adr & 0xff);
+				switch (pg->type) {
+					case MEM_ROM:
+						if (conf.dbg.romwr)
+							comp->mem->romData[fadr & comp->mem->romMask] = bt;
+						break;
+					case MEM_RAM:
+						comp->mem->ramData[fadr & comp->mem->ramMask] = bt;
+						break;
+					case MEM_SLOT:
+						break;
+				}
+				break;
+			case XVIEW_RAM:
+				adr &= 0x3fff;
+				adr |= (page << 14);
+				comp->mem->ramData[adr & comp->mem->ramMask] = bt;
+				break;
+			case XVIEW_ROM:
+				if (conf.dbg.romwr)
+					comp->mem->romData[((adr & 0x3fff) | (page << 14)) & comp->mem->romMask] = bt;
+				break;
+		}
 	}
 }
 
@@ -249,12 +258,16 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 		case Qt::DisplayRole:
 			switch(col) {
 				case 0:
-					if ((mode == XVIEW_RAM) || (mode == XVIEW_ROM)) {
-						adr &= 0x3fff;
-						str = QString::number(page, (*cptr)->hw->base).toUpper().rightJustified(2, '0').append(":");
+					if ((*cptr)->hw->grp == HWG_PC) {
+						res = QString("DS:%0").arg(gethexword(adr & 0xffff));
+					} else {
+						if ((mode == XVIEW_RAM) || (mode == XVIEW_ROM)) {
+							adr &= 0x3fff;
+							str = QString::number(page, (*cptr)->hw->base).toUpper().rightJustified(2, '0').append(":");
+						}
+						str.append(QString::number(adr, (*cptr)->hw->base).toUpper().rightJustified(((*cptr)->hw->base == 16) ? 4 : 6, '0'));
+						res = str;
 					}
-					str.append(QString::number(adr, (*cptr)->hw->base).toUpper().rightJustified(((*cptr)->hw->base == 16) ? 4 : 6, '0'));
-					res = str;
 					break;
 				case 9:
 					for(int i = 0; i < 8; i++)

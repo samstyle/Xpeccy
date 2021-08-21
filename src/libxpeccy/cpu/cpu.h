@@ -22,6 +22,12 @@ typedef struct {
 #define REG_EMPTY -1
 #define REG_MPTR -2
 
+enum {
+	REG_BIT = 1,
+	REG_BYTE,
+	REG_WORD
+};
+
 typedef struct {
 	int id;
 	int byte;
@@ -68,6 +74,8 @@ typedef PAIR(w,h,l) xpair;
 #define OF_MBYTE	(1<<3)		// operand is byte from memory
 #define OF_MWORD	(1<<4)		// operand is word from memory
 #define OF_MEMADR	(1<<5)		// operand contains memory address (nn)
+#define OF_WORD		(1<<6)		// i286:use words for mod byte
+#define OF_PRT		(1<<7)		// i286:protect mode only
 
 typedef struct CPU CPU;
 typedef struct opCode opCode;
@@ -99,16 +107,25 @@ typedef struct {
 	char arg[8][256];
 } xAsmScan;
 
+typedef struct {
+	int idx;
+	unsigned char flag;		// flag
+	unsigned base:24;		// segment base addr
+	unsigned short limit;		// segment size in bytes
+} xDTptr;			// aka segment table descriptor
+
 #include "Z80/z80.h"
 #include "LR35902/lr35902.h"
 #include "MOS6502/6502.h"
 #include "1801vm1/1801vm1.h"
 #include "i8080/i8080.h"
+#include "i80286/i80286.h"
 
 enum {
 	CPU_NONE = 0,		// dummy
 	CPU_Z80,		// ZX, MSX
 	CPU_I8080,
+	CPU_I80286,
 	CPU_LR35902,		// GB, GBC
 	CPU_6502,		// NES, Commodore
 	CPU_VM1			// BK
@@ -149,12 +166,14 @@ struct CPU {
 	unsigned char iff2;
 	unsigned char imode;		// Z80:int mode
 
-	PAIR(af,a,f);
+	unsigned char a;
+	unsigned short f;
 	PAIR(bc,b,c);
 	PAIR(de,d,e);
 	PAIR(hl,h,l);
 
-	PAIR(af_,a_,f_);
+	unsigned char a_;
+	unsigned short f_;
 	PAIR(bc_,b_,c_);
 	PAIR(de_,d_,e_);
 	PAIR(hl_,h_,l_);
@@ -172,14 +191,19 @@ struct CPU {
 	unsigned short ds;
 	unsigned short ss;
 	unsigned short es;
-	unsigned short flag;
-	// unsigned short ip;	// use pc for this
+	// unsigned short flag;	// use f above
+	// unsigned short ip;	// use pc above
 	unsigned short msw;
+	xDTptr gdtr;		// gdt (40 bits:base,limit)
+	xDTptr idtr;		// idt (40 bits:base,limit)
+	xDTptr ldtr;		// ldt (56 bits:idx,base,limit)
+	xDTptr tsdr;		// task register (56 bits:idx,base,limit)
+	xDTptr tmpdr;
 	unsigned char mod;	// 80286: mod byte (EA/reg)
-	struct{PAIR(seg,segh,segl); PAIR(adr,adrh,adrl);} ea;		// effective address (segment:address)
-	int mode;		// real/protected mode
-	int rep;		// repeat condition id
-	int seg;		// segment override. -1 if default
+	struct{PAIR(seg,segh,segl); PAIR(adr,adrh,adrl);} ea;		// 80286: effective address (segment:address)
+	int mode;		// 80286: real/protected mode
+	int rep;		// 80286: repeat condition id
+	int seg;		// 80286: segment override. -1 if default
 
 // pdp registers
 	unsigned mcir:3;
@@ -228,7 +252,7 @@ typedef struct {
 	xAsmScan (*asmbl)(const char*, char*);	// compile mnemonic
 	xMnem (*mnem)(CPU*, unsigned short, cbdmr, void*);
 	void (*getregs)(CPU*,xRegBunch*);	// get cpu registers: name,id,value
-	void (*setregs)(CPU*,xRegBunch);		// set cpu registers
+	void (*setregs)(CPU*,xRegBunch);	// set cpu registers
 } cpuCore;
 
 CPU* cpuCreate(int,cbmr,cbmw,cbir,cbiw,cbirq,void*);

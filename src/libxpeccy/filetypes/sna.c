@@ -28,11 +28,13 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 	comp->cpu->hl_ = (hd._h << 8) | hd._l;
 	comp->cpu->de_ = (hd._d << 8) | hd._e;
 	comp->cpu->bc_ = (hd._b << 8) | hd._c;
-	comp->cpu->af_ = (hd._a << 8) | hd._f;
+	comp->cpu->a_ = hd._a;
+	comp->cpu->f_ = hd._f;
 	comp->cpu->hl = (hd.h << 8) | hd.l;
 	comp->cpu->de = (hd.d << 8) | hd.e;
 	comp->cpu->bc = (hd.b << 8) | hd.c;
-	comp->cpu->af = (hd.a << 8) | hd.f;
+	comp->cpu->a = hd.a;
+	comp->cpu->f = hd.f;
 	comp->cpu->ix = (hd.hx << 8) | hd.lx;
 	comp->cpu->iy = (hd.hy << 8) | hd.ly;
 	comp->cpu->sp = (hd.hsp << 8) | hd.lsp;

@@ -41,7 +41,7 @@ void xThread::tap_catch_load(Computer* comp) {
 		TapeBlockInfo inf = tapGetBlockInfo(comp->tape,blk,TFRM_ZX);
 		unsigned char* blkData = (unsigned char*)malloc(inf.size + 2);
 		tapGetBlockData(comp->tape,blk,blkData, inf.size + 2);
-		if (inf.size == de) {
+		if (inf.size >= de) {
 			for (int i = 0; i < de; i++) {
 				memWr(comp->mem,ix,blkData[i + 1]);
 				ix++;
@@ -82,7 +82,8 @@ void xThread::tap_catch_save(Computer* comp) {
 		comp->cpu->bc = 0x000e;
 		comp->cpu->de = 0xffff;
 		comp->cpu->hl = 0x0000;
-		comp->cpu->af = 0x0051;
+		comp->cpu->a = 0x00;
+		comp->cpu->f = 0x51;
 	} else if (conf.tape.autostart) {
 		emit tapeSignal(TW_STATE, TWS_REC);
 	}

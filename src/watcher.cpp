@@ -67,11 +67,11 @@ void xWatcher::fillFields(Computer* comp) {
 	if (!isVisible()) return;
 	if (comp == NULL) return;
 	model->comp = comp;
-	ui.wchAF->setText(gethexword(comp->cpu->af));
+	ui.wchAF->setText(gethexword((comp->cpu->a << 8) | (comp->cpu->f & 0xff)));
 	ui.wchBC->setText(gethexword(comp->cpu->bc));
 	ui.wchDE->setText(gethexword(comp->cpu->de));
 	ui.wchHL->setText(gethexword(comp->cpu->hl));
-	ui.wchAFa->setText(gethexword(comp->cpu->af_));
+	ui.wchAFa->setText(gethexword((comp->cpu->a_ << 8) | (comp->cpu->f_ & 0xffff)));
 	ui.wchBCa->setText(gethexword(comp->cpu->bc_));
 	ui.wchDEa->setText(gethexword(comp->cpu->de_));
 	ui.wchHLa->setText(gethexword(comp->cpu->hl_));

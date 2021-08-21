@@ -313,10 +313,14 @@ sndPair spc_vol(Computer*, sndVolume*);
 void ibm_init(Computer*);
 void ibm_mem_map(Computer*);
 void ibm_reset(Computer*);
+void ibm_sync(Computer*, int);
 int ibm_mrd(Computer*, int, int);
 void ibm_mwr(Computer*, int, int);
 int ibm_iord(Computer*, int, int);
 void ibm_iowr(Computer*, int, int, int);
+void ibm_keyp(Computer*, keyEntry);
+void ibm_keyr(Computer*, keyEntry);
+sndPair ibm_vol(Computer*, sndVolume*);
 
 #ifdef __cplusplus
 }

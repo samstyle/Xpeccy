@@ -9,7 +9,9 @@ extern opCode lrcbTab[256];
 
 void lr_reset(CPU* cpu) {
 	cpu->pc = 0;
-	cpu->af = cpu->bc = cpu->de = cpu->hl = 0xffff;
+	cpu->bc = cpu->de = cpu->hl = 0xffff;
+	cpu->a = 0xff;
+	cpu->f = 0xff;
 	cpu->sp = 0xffff;
 	cpu->lock = 0;
 	cpu->iff1 = 0;
@@ -20,7 +22,9 @@ void lr_reset(CPU* cpu) {
 	cpu->inten = 0;
 	// not necessary
 	cpu->imode = 0;
-	cpu->af_ = cpu->bc_ = cpu->de_ = cpu->hl_ = 0xffff;
+	cpu->bc_ = cpu->de_ = cpu->hl_ = 0xffff;
+	cpu->a_ = 0xff;
+	cpu->f_ = 0xff;
 	cpu->ix = cpu->iy = 0xffff;
 	cpu->i = cpu->r = 0xff;
 	cpu->r7 = 0x80;
@@ -180,6 +184,7 @@ static char* lrFlags = "ZNHC----";
 
 void lr_get_regs(CPU* cpu, xRegBunch* bunch) {
 	int idx = 0;
+	PAIR(w,h,l)rx;
 	while(lrRegTab[idx].id != REG_NONE) {
 		bunch->regs[idx].id = lrRegTab[idx].id;
 		bunch->regs[idx].name = lrRegTab[idx].name;
@@ -187,7 +192,10 @@ void lr_get_regs(CPU* cpu, xRegBunch* bunch) {
 		switch(lrRegTab[idx].id) {
 			case LR_REG_PC: bunch->regs[idx].value = cpu->pc; break;
 			case LR_REG_SP: bunch->regs[idx].value = cpu->sp; break;
-			case LR_REG_AF: bunch->regs[idx].value = cpu->af; break;
+			case LR_REG_AF: rx.h = cpu->a;
+					rx.l = cpu->f & 0xff;
+					bunch->regs[idx].value = rx.w;
+					break;
 			case LR_REG_BC: bunch->regs[idx].value = cpu->bc; break;
 			case LR_REG_DE: bunch->regs[idx].value = cpu->de; break;
 			case LR_REG_HL: bunch->regs[idx].value = cpu->hl; break;
@@ -201,11 +209,15 @@ void lr_get_regs(CPU* cpu, xRegBunch* bunch) {
 
 void lr_set_regs(CPU* cpu, xRegBunch bunch) {
 	int idx;
+	PAIR(w,h,l)rx;
 	for (idx = 0; idx < 32; idx++) {
 		switch(bunch.regs[idx].id) {
 			case LR_REG_PC: cpu->pc = bunch.regs[idx].value; break;
 			case LR_REG_SP: cpu->sp = bunch.regs[idx].value; break;
-			case LR_REG_AF: cpu->af = bunch.regs[idx].value; break;
+			case LR_REG_AF: rx.w = bunch.regs[idx].value;
+					cpu->a = rx.h;
+					cpu->f = rx.l;
+					break;
 			case LR_REG_BC: cpu->bc = bunch.regs[idx].value; break;
 			case LR_REG_DE: cpu->de = bunch.regs[idx].value; break;
 			case LR_REG_HL: cpu->hl = bunch.regs[idx].value; break;

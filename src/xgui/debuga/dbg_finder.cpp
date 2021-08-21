@@ -81,7 +81,7 @@ void xMemFinder::doFind() {
 		} else {
 			idx = 0;
 		}
-        shift++;
+		shift++;
 	}
 	if (found) {
 		adr = adr + shift - psiz;

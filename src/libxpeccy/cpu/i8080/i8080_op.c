@@ -919,7 +919,9 @@ void iop_ee(CPU* cpu) {
 void iop_f0(CPU* cpu) {if (!(cpu->f & IFL_S)) cpu->pc = iop_pop(cpu);}
 // f1: pop psw
 void iop_f1(CPU* cpu) {
-	cpu->af = iop_pop(cpu);
+	cpu->tmpw = iop_pop(cpu);
+	cpu->a = cpu->htw;
+	cpu->f = cpu->ltw;
 }
 // f2: jp nn
 void iop_f2(CPU* cpu) {
@@ -946,7 +948,12 @@ void iop_f4(CPU* cpu) {
 	}
 }
 // f5: push psw
-void iop_f5(CPU* cpu) {iop_push(cpu, cpu->af);}
+void iop_f5(CPU* cpu) {
+	cpu->htw = cpu->a;
+	cpu->ltw = cpu->f & 0xff;;
+	iop_push(cpu, cpu->tmpw);
+}
+
 // f6: ori n
 void iop_f6(CPU* cpu) {
 	cpu->t += 3;

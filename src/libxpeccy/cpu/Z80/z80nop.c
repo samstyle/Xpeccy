@@ -57,7 +57,8 @@ void npr07(CPU* cpu) {
 
 // 08	ex af,af'	4
 void npr08(CPU* cpu) {
-	SWAP(cpu->af,cpu->af_);
+	cpu->ltw = cpu->a; cpu->a = cpu->a_; cpu->a_ = cpu->ltw;
+	cpu->tmpw = cpu->f; cpu->f = cpu->f_; cpu->f_ = cpu->tmpw;
 }
 
 // 09	add hl,bc	11		mptr = hl+1 before adding
@@ -867,7 +868,7 @@ void nprF4(CPU* cpu) {
 
 // f5	push af		5 3wr 3wr
 void nprF5(CPU* cpu) {
-	PUSH(cpu->a,cpu->f);
+	PUSH(cpu->a,cpu->f & 0xff);
 }
 
 // f6	or n		4 3rd

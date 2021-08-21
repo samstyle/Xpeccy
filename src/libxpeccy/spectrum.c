@@ -241,6 +241,7 @@ Computer* compCreate() {
 
 // input
 	comp->keyb = keyCreate();
+	comp->cmos.kbuf = &comp->keyb->kbuf;
 	comp->joy = joyCreate();
 	comp->mouse = mouseCreate();
 	comp->ppi = ppi_create();
@@ -577,43 +578,16 @@ int compExec(Computer* comp) {
 
 // cmos
 
-int toBCD(int val) {
-	int rrt = val % 10;
-	rrt |= ((val/10) << 4);
-	return rrt;
-}
-
-#include <time.h>
-
 unsigned char cmsRd(Computer* comp) {
-	int res = 0x00;
-
-	time_t rtime;
-	time(&rtime);
-	struct tm* ctime = localtime(&rtime);
-	switch (comp->cmos.adr) {
-		case 0x00: res = toBCD(ctime->tm_sec); break;
-		case 0x02: res = toBCD(ctime->tm_min); break;
-		case 0x04: res = toBCD(ctime->tm_hour); break;
-		case 0x06: res = toBCD(ctime->tm_wday); break;
-		case 0x07: res = toBCD(ctime->tm_mday); break;
-		case 0x08: res = toBCD(ctime->tm_mon); break;
-		case 0x09: res = toBCD(ctime->tm_year % 100); break;
-		case 0x0a: res = 0x00; break;
-		case 0x0b: res = 0x02; break;
-		case 0x0c: res = 0x00; break;
-		case 0x0d: res = 0x80; break;
-		default:
-			if (comp->cmos.adr < 0xf0) {
-				res = comp->cmos.data[comp->cmos.adr];
-			} else {
-				switch(comp->cmos.mode) {
-					case 0: res = comp->evo.bcVer[comp->cmos.adr & 0x0f]; break;
-					case 1: res = comp->evo.blVer[comp->cmos.adr & 0x0f]; break;
-					case 2: res = keyReadCode(comp->keyb); break;		// read PC keyboard keycode
-				}
-			}
-			break;
+	unsigned char res = 0xff;
+	if (comp->cmos.adr >= 0xf0) {
+		switch(comp->cmos.mode) {
+			case 0: res = comp->evo.bcVer[comp->cmos.adr & 0x0f]; break;
+			case 1: res = comp->evo.blVer[comp->cmos.adr & 0x0f]; break;
+			case 2: res = keyReadCode(comp->keyb); break;		// read PC keyboard keycode
+		}
+	} else {
+		res = cmos_rd(&comp->cmos, CMOS_DATA);
 	}
 	return res & 0xff;
 }
@@ -621,7 +595,7 @@ unsigned char cmsRd(Computer* comp) {
 void cmsWr(Computer* comp, int val) {
 	switch (comp->cmos.adr) {
 		case 0x0c:
-			if (val & 1) comp->keyb->kBufPos = 0;		// reset PC-keyboard buffer
+			if (val & 1) comp->keyb->kbuf.pos = 0;		// reset PC-keyboard buffer
 			break;
 		default:
 			comp->cmos.data[comp->cmos.adr] = val & 0xff;

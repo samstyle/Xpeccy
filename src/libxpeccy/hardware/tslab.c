@@ -148,7 +148,11 @@ int tsIn1F(Computer* comp, int port) {
 }
 
 int tsInBFF7(Computer* comp, int port) {
-	return (comp->pEFF7 & 0x80) ? cmsRd(comp) : 0xff;
+	int res = 0xff;
+	if (comp->pEFF7 & 0x80) {
+		res = cmsRd(comp);
+	}
+	return res;
 }
 
 int tsInFFnd(Computer* comp, int port) {

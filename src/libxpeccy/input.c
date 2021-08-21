@@ -177,7 +177,7 @@ void kbdReleaseAll(Keyboard* kbd) {
 	}
 	kbd->keycode = 0;
 	kbd->lastkey = 0;
-	kbd->kBufPos = 0;
+	kbd->kbuf.pos = 0;
 	kbd->flag = 0;
 }
 
@@ -212,30 +212,30 @@ void kbdTrigger(Keyboard* kbd, keyEntry ent) {
 // at/xt keyboard buffer
 
 void xt_press(Keyboard* kbd, int code) {
-	while (code && (kbd->kBufPos < 16)) {
-		kbd->kbdBuf[kbd->kBufPos++] = code & 0xff;
+	while (code && (kbd->kbuf.pos < 16)) {
+		kbd->kbuf.data[kbd->kbuf.pos++] = code & 0xff;
 		code >>= 8;
 	}
 }
 
 void xt_release(Keyboard* kbd, int code) {
-	while (code && (kbd->kBufPos < 16)) {
+	while (code && (kbd->kbuf.pos < 16)) {
 		if (code < 0x100)
-			kbd->kbdBuf[kbd->kBufPos++] = 0xf0;
-		kbd->kbdBuf[kbd->kBufPos++] = (code & 0xff);
+			kbd->kbuf.data[kbd->kbuf.pos++] = 0xf0;
+		kbd->kbuf.data[kbd->kbuf.pos++] = (code & 0xff);
 		code >>= 8;
 	}
 }
 
 // at/xt buffer reading
 unsigned char keyReadCode(Keyboard* keyb) {
-	if (keyb->kBufPos < 1) return 0x00;		// empty
-	if (keyb->kBufPos > 14) return 0xff;		// overfill
-	unsigned char res = keyb->kbdBuf[0];		// read code
+	if (keyb->kbuf.pos < 1) return 0x00;		// empty
+	if (keyb->kbuf.pos > 14) return 0xff;		// overfill
+	unsigned char res = keyb->kbuf.data[0];		// read code
 	for (int i = 0; i < 15; i++) {
-		keyb->kbdBuf[i] = keyb->kbdBuf[i + 1];
+		keyb->kbuf.data[i] = keyb->kbuf.data[i + 1];
 	}
-	keyb->kBufPos--;
+	keyb->kbuf.pos--;
 	return res;
 }
 

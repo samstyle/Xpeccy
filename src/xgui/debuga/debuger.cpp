@@ -214,6 +214,12 @@ void DebugWin::onPrfChange(xProfile* prf) {
 			ui.dumpTable->setView(XVIEW_DEF);
 			break;
 	}
+	bool z80like = (comp->cpu->type == CPU_Z80);
+	z80like |= (comp->cpu->type == CPU_LR35902);
+	z80like |= (comp->cpu->type == CPU_I8080);
+	ui.labIMM->setVisible(z80like); ui.boxIM->setVisible(z80like);
+	ui.labIFF1->setVisible(z80like); ui.flagIFF1->setVisible(z80like);
+	ui.labIFF2->setVisible(z80like); ui.flagIFF2->setVisible(z80like);
 	fillAll();
 }
 

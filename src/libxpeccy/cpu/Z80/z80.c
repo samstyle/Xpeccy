@@ -19,8 +19,12 @@ void z80_reset(CPU* cpu) {
 	cpu->iff1 = 0;
 	cpu->iff2 = 0;
 	cpu->imode = 0;
-	cpu->af = cpu->bc = cpu->de = cpu->hl = 0xffff;
-	cpu->af_ = cpu->bc_ = cpu->de_ = cpu->hl_ = 0xffff;
+	cpu->bc = cpu->de = cpu->hl = 0xffff;
+	cpu->a = 0xff;
+	cpu->f = 0xff;
+	cpu->bc_ = cpu->de_ = cpu->hl_ = 0xffff;
+	cpu->a_ = 0xff;
+	cpu->f_ = 0xff;
 	cpu->ix = cpu->iy = 0xffff;
 	cpu->sp = 0xffff;
 	cpu->i = cpu->r = cpu->r7 = 0;
@@ -278,6 +282,7 @@ static char* z80Flags = "SZ5H3PNC";
 
 void z80_get_regs(CPU* cpu, xRegBunch* bunch) {
 	int idx = 0;
+	PAIR(w,h,l)rx;
 	while(z80RegTab[idx].id != REG_NONE) {
 		bunch->regs[idx].id = z80RegTab[idx].id;
 		bunch->regs[idx].name = z80RegTab[idx].name;
@@ -285,11 +290,17 @@ void z80_get_regs(CPU* cpu, xRegBunch* bunch) {
 		switch(z80RegTab[idx].id) {
 			case Z80_REG_PC: bunch->regs[idx].value = cpu->pc; break;
 			case Z80_REG_SP: bunch->regs[idx].value = cpu->sp; break;
-			case Z80_REG_AF: bunch->regs[idx].value = cpu->af; break;
+			case Z80_REG_AF: rx.h = cpu->a;
+					rx.l = cpu->f & 0xff;
+					bunch->regs[idx].value = rx.w;
+					break;
 			case Z80_REG_BC: bunch->regs[idx].value = cpu->bc; break;
 			case Z80_REG_DE: bunch->regs[idx].value = cpu->de; break;
 			case Z80_REG_HL: bunch->regs[idx].value = cpu->hl; break;
-			case Z80_REG_AFA: bunch->regs[idx].value = cpu->af_; break;
+			case Z80_REG_AFA: rx.h = cpu->a_;
+					rx.l = cpu->f_;
+					bunch->regs[idx].value = rx.w;
+					break;
 			case Z80_REG_BCA: bunch->regs[idx].value = cpu->bc_; break;
 			case Z80_REG_DEA: bunch->regs[idx].value = cpu->de_; break;
 			case Z80_REG_HLA: bunch->regs[idx].value = cpu->hl_; break;
@@ -308,15 +319,22 @@ void z80_get_regs(CPU* cpu, xRegBunch* bunch) {
 
 void z80_set_regs(CPU* cpu, xRegBunch bunch) {
 	int idx;
+	PAIR(w,h,l)rx;
 	for (idx = 0; idx < 32; idx++) {
 		switch(bunch.regs[idx].id) {
 			case Z80_REG_PC: cpu->pc = bunch.regs[idx].value; break;
 			case Z80_REG_SP: cpu->sp = bunch.regs[idx].value; break;
-			case Z80_REG_AF: cpu->af = bunch.regs[idx].value; break;
+			case Z80_REG_AF: rx.w = bunch.regs[idx].value;
+					cpu->a = rx.h;
+					cpu->f = rx.l;
+					break;
 			case Z80_REG_BC: cpu->bc = bunch.regs[idx].value; break;
 			case Z80_REG_DE: cpu->de = bunch.regs[idx].value; break;
 			case Z80_REG_HL: cpu->hl = bunch.regs[idx].value; break;
-			case Z80_REG_AFA: cpu->af_ = bunch.regs[idx].value; break;
+			case Z80_REG_AFA: rx.w = bunch.regs[idx].value;
+					cpu->a_ = rx.h;
+					cpu->f_ = rx.l;
+					break;
 			case Z80_REG_BCA: cpu->bc_ = bunch.regs[idx].value; break;
 			case Z80_REG_DEA: cpu->de_ = bunch.regs[idx].value; break;
 			case Z80_REG_HLA: cpu->hl_ = bunch.regs[idx].value; break;

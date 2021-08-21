@@ -300,6 +300,8 @@ message(STATUS "Xpeccy version : ${XVER}")
 message(STATUS "OS : ${CMAKE_SYSTEM_NAME}")
 message(STATUS "Qt version : ${QT_VER}")
 message(STATUS "SDL version : ${SDL_VER}")
+message(STATUS "C++ flags : ${CMAKE_CXX_FLAGS}")
+message(STATUS "C flags : ${CMAKE_C_FLAGS}")
 
 if (${USEQTNETWORK})
 	message(STATUS "Network: yes")

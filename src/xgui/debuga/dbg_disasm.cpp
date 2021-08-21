@@ -145,24 +145,28 @@ int dasmrd(int adr, void* ptr) {
 	unsigned char res = 0xff;
 	int fadr;
 	MemPage* pg;
-	switch (mode) {
-		case XVIEW_CPU:
-			pg = &comp->mem->map[adr >> 8];
-			fadr = (pg->num << 8) | (adr & 0xff);
-			switch (pg->type) {
-				case MEM_ROM: res = comp->mem->romData[fadr & comp->mem->romMask]; break;
-				case MEM_RAM: res = comp->mem->ramData[fadr & comp->mem->ramMask]; break;
-				case MEM_SLOT: res = memRd(comp->mem, adr & 0xffff);
-					break;
-			}
-//			res = memRd(comp->mem, adr);
-			break;
-		case XVIEW_RAM:
-			res = comp->mem->ramData[((adr & 0x3fff) | (page << 14)) & comp->mem->ramMask];
-			break;
-		case XVIEW_ROM:
-			res = comp->mem->romData[((adr & 0x3fff) | (page << 14)) & comp->mem->romMask];
-			break;
+	if (comp->hw->grp == HWG_PC) {
+		res = comp->hw->mrd(comp, (comp->cpu->cs << 4) + (adr & 0xffff), 0) & 0xff;
+	} else {
+		switch (mode) {
+			case XVIEW_CPU:
+				pg = &comp->mem->map[adr >> 8];
+				fadr = (pg->num << 8) | (adr & 0xff);
+				switch (pg->type) {
+					case MEM_ROM: res = comp->mem->romData[fadr & comp->mem->romMask]; break;
+					case MEM_RAM: res = comp->mem->ramData[fadr & comp->mem->ramMask]; break;
+					case MEM_SLOT: res = memRd(comp->mem, adr & 0xffff);
+						break;
+				}
+				//			res = memRd(comp->mem, adr);
+				break;
+			case XVIEW_RAM:
+				res = comp->mem->ramData[((adr & 0x3fff) | (page << 14)) & comp->mem->ramMask];
+				break;
+			case XVIEW_ROM:
+				res = comp->mem->romData[((adr & 0x3fff) | (page << 14)) & comp->mem->romMask];
+				break;
+		}
 	}
 	return res;
 }
@@ -395,7 +399,9 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 		list.append(drow);
 	}
 	drow.islab = 0;			// next line is addr
-	if (conf.dbg.segment || (mode != XVIEW_CPU)) {
+	if (comp->hw->grp == HWG_PC) {
+		drow.aname = QString("CS:%0").arg(gethexword(adr));
+	} else if (conf.dbg.segment || (mode != XVIEW_CPU)) {
 		switch(xadr.type) {
 			case MEM_RAM: drow.aname = "RAM:"; break;
 			case MEM_ROM: drow.aname = "ROM:"; break;

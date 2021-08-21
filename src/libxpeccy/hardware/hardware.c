@@ -82,6 +82,11 @@ HardWare hwTab[] = {
 //	},{
 		HW_SPCLST,HWG_SPCLST,"Specualist","Specialist",16,MEM_64K,1.0,&spclstLay,
 		spc_init,spc_mem_map,NULL,NULL,spc_mrd,spc_mwr,spc_reset,spc_sync,spc_keyp,spc_keyr,spc_vol
+#if USEIBM
+	},{
+		HW_IBM_PC,HWG_PC,"IBM PC","IBM PC",16,MEM_1M,1.0,NULL,
+		ibm_init,ibm_mem_map,ibm_iowr,ibm_iord,ibm_mrd,ibm_mwr,ibm_reset,ibm_sync,ibm_keyp,ibm_keyr,ibm_vol
+#endif
 	},{
 		HW_NULL,HWG_NULL,NULL,NULL,16,0,1.0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL		// eot
 	}

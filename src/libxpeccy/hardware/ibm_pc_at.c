@@ -50,9 +50,29 @@ void ibm_mwr(Computer* comp, int adr, int val) {
 }
 
 int ibm_iord(Computer* comp, int adr, int nonsence) {
+	printf("in %.4X\n",adr);
 	return -1;
 }
 
 void ibm_iowr(Computer* comp, int adr, int val, int nonsense) {
+	printf("out %.4X\n",adr);
+}
 
+void ibm_sync(Computer* comp, int ns) {
+
+}
+
+void ibm_keyp(Computer* comp, keyEntry kent) {
+
+}
+
+void ibm_keyr(Computer* comp, keyEntry kent) {
+
+}
+
+sndPair ibm_vol(Computer* comp, sndVolume* vol) {
+	sndPair res;
+	res.left = 0;
+	res.right = 0;
+	return res;
 }
