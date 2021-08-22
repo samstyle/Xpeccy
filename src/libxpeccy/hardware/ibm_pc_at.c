@@ -20,6 +20,7 @@ int ibm_mrd(Computer* comp, int adr, int m1) {
 	if (adr < 0xa0000) {
 		res = comp->mem->ramData[adr & comp->mem->ramMask];		// ram up to 640K
 	} else if (adr < 0xc0000) {
+		printf("video mem rd %.6X\n",adr);
 		// videomem
 	} else if (adr < 0xd0000) {
 		// ext.bios
@@ -37,6 +38,7 @@ void ibm_mwr(Computer* comp, int adr, int val) {
 	if (adr < 0xa0000) {
 		comp->mem->ramData[adr & comp->mem->ramMask] = val & 0xff;
 	} else if (adr < 0xc0000) {
+		printf("video mem wr %.6X,%.2X\n",adr,val);
 		// video mem
 	} else if (adr < 0xd0000) {
 		// ext.bios
@@ -49,13 +51,64 @@ void ibm_mwr(Computer* comp, int adr, int val) {
 	}
 }
 
+// in/out
+
+/*
+0064	r	KB controller read status (ISA, EISA)
+		 bit 7 = 1 parity error on transmission from keyboard
+		 bit 6 = 1 receive timeout
+		 bit 5 = 1 transmit timeout
+		 bit 4 = 0 keyboard inhibit
+		 bit 3 = 1 data in input register is command
+			 0 data in input register is data
+		 bit 2	 system flag status: 0=power up or reset  1=selftest OK
+		 bit 1 = 1 input buffer full (input 60/64 has data for 8042)
+		 bit 0 = 1 output buffer full (output 60 has data for system)
+*/
+
+int ibm_in64(Computer* comp, int adr) {
+	return 4;
+}
+
+// cmos
+
+/*
+0070	w	CMOS RAM index register port (ISA, EISA)
+		 bit 7	 = 1  NMI disabled
+			 = 0  NMI enabled
+		 bit 6-0      CMOS RAM index (64 bytes, sometimes 128 bytes)
+
+		any write to 0070 should be followed by an action to 0071
+		or the RTC wil be left in an unknown state.
+
+0071	r/w	CMOS RAM data port (ISA, EISA)
+*/
+void ibm_out70(Computer* comp, int adr, int val) {
+	comp->cmos.adr = val & 0x7f;
+}
+
+void ibm_out71(Computer* comp, int adr, int val) {
+	cmsWr(comp, val);
+}
+
+int ibm_in71(Computer* comp, int adr) {
+	return cmsRd(comp);
+}
+
+static xPort ibmPortMap[] = {
+	{0xffff,0x0064,2,2,2,ibm_in64,	NULL},
+	{0xffff,0x0070,2,2,2,NULL,	ibm_out70},
+	{0xffff,0x0071,2,2,2,ibm_in71,	ibm_out71},
+	{0x0000,0x0000,2,2,2,NULL,	NULL}
+};
+
 int ibm_iord(Computer* comp, int adr, int nonsence) {
-	printf("in %.4X\n",adr);
-	return -1;
+//	printf("in %.4X\n",adr);
+	return hwIn(ibmPortMap, comp, adr, 0);
 }
 
 void ibm_iowr(Computer* comp, int adr, int val, int nonsense) {
-	printf("out %.4X\n",adr);
+//	printf("out %.4X\n",adr);
 }
 
 void ibm_sync(Computer* comp, int ns) {
