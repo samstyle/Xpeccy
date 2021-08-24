@@ -108,11 +108,11 @@ typedef struct {
 } xAsmScan;
 
 typedef struct {
-	int idx;
-	unsigned char flag;		// flag
+	unsigned short idx;		// 'visible' value
+	unsigned char flag;		// acess flag
 	unsigned base:24;		// segment base addr
 	unsigned short limit;		// segment size in bytes
-} xDTptr;			// aka segment table descriptor
+} xSegPtr;				// aka segment table descriptor
 
 #include "Z80/z80.h"
 #include "LR35902/lr35902.h"
@@ -187,28 +187,34 @@ struct CPU {
 	unsigned short si;
 	unsigned short di;
 	// unsigned short sp;	// use sp above
-	unsigned short cs;
-	unsigned short ds;
-	unsigned short ss;
-	unsigned short es;
+	//unsigned short cs;
+	//unsigned short ds;
+	//unsigned short ss;
+	//unsigned short es;
 	// unsigned short flag;	// use f above
 	// unsigned short ip;	// use pc above
 	unsigned short msw;
-	xDTptr gdtr;		// gdt (40 bits:base,limit)
-	xDTptr idtr;		// idt (40 bits:base,limit)
-	xDTptr ldtr;		// ldt (56 bits:idx,base,limit)
-	xDTptr tsdr;		// task register (56 bits:idx,base,limit)
-	xDTptr tmpdr;
+	// hidden registers
+	xSegPtr cs;		// cs value,flag,base,limit
+	xSegPtr ss;		// ss value,flag,base,limit
+	xSegPtr ds;		// es value,flag,base,limit
+	xSegPtr es;		// es value,flag,base,limit
+	xSegPtr gdtr;		// gdt (40 bits:base,limit)
+	xSegPtr idtr;		// idt (40 bits:base,limit)
+	xSegPtr ldtr;		// ldt (56 bits:idx,base,limit)
+	xSegPtr tsdr;		// task register (56 bits:idx,base,limit)
+	xSegPtr seg;		// operating segment (for EA and 'replace segment' prefixes)
+	xSegPtr tmpdr;
 	unsigned char mod;	// 80286: mod byte (EA/reg)
-	struct{PAIR(seg,segh,segl); PAIR(adr,adrh,adrl);} ea;		// 80286: effective address (segment:address)
+	//struct{PAIR(seg,segh,segl); PAIR(adr,adrh,adrl);} ea;		// 80286: effective address (segment:address)
+	struct {xSegPtr seg; PAIR(adr,adrh,adrl);} ea;
 	int mode;		// 80286: real/protected mode
 	int rep;		// 80286: repeat condition id
-	int seg;		// 80286: segment override. -1 if default
 
 // pdp registers
 	unsigned mcir:3;
 	unsigned vsel:4;
-	unsigned short pflag;		// pdp11 flag
+//	unsigned short pflag;		// pdp11 flag = f
 	unsigned short preg[8];		// pdp11 registers
 	xTimer timer;
 

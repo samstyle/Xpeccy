@@ -146,7 +146,7 @@ int dasmrd(int adr, void* ptr) {
 	int fadr;
 	MemPage* pg;
 	if (comp->hw->grp == HWG_PC) {
-		res = comp->hw->mrd(comp, (comp->cpu->cs << 4) + (adr & 0xffff), 0) & 0xff;
+		res = i286_mrd(comp->cpu, comp->cpu->cs, adr & 0xffff);
 	} else {
 		switch (mode) {
 			case XVIEW_CPU:
@@ -172,6 +172,7 @@ int dasmrd(int adr, void* ptr) {
 }
 
 void dasmwr(Computer* comp, int adr, int bt) {
+	if (comp->hw->grp == HW_IBM_PC) return;
 	int fadr;
 	MemPage* pg;
 	switch(mode) {

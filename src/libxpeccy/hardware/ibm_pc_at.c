@@ -54,16 +54,24 @@ void ibm_mwr(Computer* comp, int adr, int val) {
 // in/out
 
 /*
-0064	r	KB controller read status (ISA, EISA)
-		 bit 7 = 1 parity error on transmission from keyboard
-		 bit 6 = 1 receive timeout
-		 bit 5 = 1 transmit timeout
-		 bit 4 = 0 keyboard inhibit
-		 bit 3 = 1 data in input register is command
-			 0 data in input register is data
-		 bit 2	 system flag status: 0=power up or reset  1=selftest OK
-		 bit 1 = 1 input buffer full (input 60/64 has data for 8042)
-		 bit 0 = 1 output buffer full (output 60 has data for system)
+	040-05F  8253 or 8254 Programmable Interval Timer (PIT, see ~8253~)
+	040 8253 channel 0, counter divisor
+	041 8253 channel 1, RAM refresh counter
+	042 8253 channel 2, Cassette and speaker functions
+	043 8253 mode control  (see 8253)
+	044 8254 PS/2 extended timer
+	047 8254 Channel 3 control byte
+
+	060-067  8255 Programmable Peripheral Interface  (PC,XT, PCjr)
+	060 8255 Port A keyboard input/output buffer (output PCjr)
+	061 8255 Port B output
+	062 8255 Port C input
+	063 8255 Command/Mode control register
+OR
+	060-06F  8042 Keyboard Controller  (AT,PS/2)
+	060 8042 Keyboard input/output buffer register
+	061 8042 system control port (for compatability with 8255)
+	064 8042 Keyboard command/status register
 */
 
 int ibm_in64(Computer* comp, int adr) {

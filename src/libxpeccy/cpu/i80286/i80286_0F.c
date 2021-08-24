@@ -1,5 +1,7 @@
 #include "i80286.h"
 
+extern xSegPtr i286_cash_seg(CPU*, unsigned short);
+
 // unrecognized opcode
 void i286_0Fxx(CPU* cpu) {
 	i286_interrupt(cpu, 6);
@@ -15,8 +17,8 @@ void i286_0F001(CPU* cpu) {
 	i286_wr_ea(cpu, cpu->tsdr.idx, 1);
 }
 
-xDTptr i286_get_dsc(CPU* cpu, int sel) {
-	xDTptr dt;
+xSegPtr i286_get_dsc(CPU* cpu, int sel) {
+	xSegPtr dt;
 	if (sel & ~0xffff) {
 		sel &= 0xffff;
 		cpu->tmpi = cpu->idtr.base;

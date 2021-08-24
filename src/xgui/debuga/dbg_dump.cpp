@@ -46,8 +46,8 @@ int xDumpModel::mrd(int adr) const {
 	int fadr;
 	int res = 0xff;
 	if (comp->hw->grp == HWG_PC) {
-		res = comp->hw->mrd(comp, (comp->cpu->ds << 4) + (adr & 0xffff), 0) & 0xff;
-		res |= (comp->brkAdrMap[adr & 0xffff] << 8);
+		res = i286_mrd(comp->cpu, comp->cpu->ds, adr & 0xffff);
+		// res |= (comp->brkAdrMap[adr & 0xffff] << 8);
 	} else {
 		switch(mode) {
 			case XVIEW_CPU:
@@ -84,7 +84,7 @@ void xDumpModel::mwr(int adr, unsigned char bt) {
 	MemPage* pg;
 	int fadr;
 	if (comp->hw->grp == HWG_PC) {
-		comp->hw->mwr(comp, (comp->cpu->ds << 4) + (adr & 0xffff), bt);
+		i286_mwr(comp->cpu, comp->cpu->ds, adr & 0xffff, bt);
 	} else {
 		switch(mode) {
 			case XVIEW_CPU:
