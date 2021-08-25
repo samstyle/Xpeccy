@@ -77,7 +77,7 @@ void i286_0F004(CPU* cpu) {
 	if (cpu->tmpdr.idx < 0) return;		// index out of bounds
 	if (!(cpu->tmpdr.flag & 0x80)) return;	// not present
 	if (!(cpu->tmpdr.flag & 0x10)) return;	// special system segment
-	if ((cpu->tmpw & 3) > ((cpu->tmpdr & 0x60) >> 5)) return;	// dpl < rpl
+	if ((cpu->tmpw & 3) > ((cpu->tmpdr.flag & 0x60) >> 5)) return;	// dpl < rpl
 	if ((cpu->tmpdr.flag & 0x08) && !(cpu->tmpdr.flag & 2)) return;	// code segment, not readable
 	cpu->f |= I286_FZ;
 }
@@ -89,9 +89,9 @@ void i286_0F005(CPU* cpu) {
 	if (cpu->tmpdr.idx < 0) return;		// index out of bounds
 	if (!(cpu->tmpdr.flag & 0x80)) return;	// not present
 	if (!(cpu->tmpdr.flag & 0x10)) return;	// special system segment
-	if ((cpu->tmpw & 3) > ((cpu->tmpdr & 0x60) >> 5)) return;	// dpl < rpl
-	if (cpu->tmpdr & 0x08) return;		// code segment is not writeable
-	if (!(cpu->tmpdr & 2)) return;		// not writeable
+	if ((cpu->tmpw & 3) > ((cpu->tmpdr.flag & 0x60) >> 5)) return;	// dpl < rpl
+	if (cpu->tmpdr.flag & 0x08) return;		// code segment is not writeable
+	if (!(cpu->tmpdr.flag & 2)) return;		// not writeable
 	cpu->f |= I286_FZ;
 }
 
