@@ -1,5 +1,12 @@
 #include "i80286.h"
 
+// segment descriptor flag
+// b7:		1 if segment presented in memory / 0 - invalid
+// b5,6		priv.level. max(caller,request) must be not greater
+// b4		1 if it's code/data segment / 0 if special
+// b1,2,3	type
+// b0		accessed. set this flag if there is using of segment
+
 extern xSegPtr i286_cash_seg(CPU*, unsigned short);
 
 // unrecognized opcode
@@ -47,7 +54,7 @@ xSegPtr i286_get_dsc(CPU* cpu, int sel) {
 void i286_0F002(CPU* cpu) {
 	cpu->tmpdr = i286_get_dsc(cpu, cpu->tmpw & ~4);	// GDT table only
 	if (cpu->tmpdr.idx < 0) {
-		// TODO
+		i286_interrupt(cpu, 11);
 	} else {
 		cpu->ldtr = cpu->tmpdr;
 	}
@@ -57,7 +64,7 @@ void i286_0F002(CPU* cpu) {
 void i286_0F003(CPU* cpu) {
 	cpu->tmpdr = i286_get_dsc(cpu, cpu->tmpw);
 	if (cpu->tmpdr.idx < 0) {
-		// TODO
+		i286_interrupt(cpu, 11);
 	} else {
 		cpu->tsdr = cpu->tmpdr;
 	}
@@ -66,13 +73,26 @@ void i286_0F003(CPU* cpu) {
 // 0f 00 /4 verr ew (prt mode oly)	verify segment to read
 void i286_0F004(CPU* cpu) {
 	cpu->tmpdr = i286_get_dsc(cpu, cpu->tmpw);
-	// TODO: check
+	cpu->f &= ~I286_FZ;
+	if (cpu->tmpdr.idx < 0) return;		// index out of bounds
+	if (!(cpu->tmpdr.flag & 0x80)) return;	// not present
+	if (!(cpu->tmpdr.flag & 0x10)) return;	// special system segment
+	if ((cpu->tmpw & 3) > ((cpu->tmpdr & 0x60) >> 5)) return;	// dpl < rpl
+	if ((cpu->tmpdr.flag & 0x08) && !(cpu->tmpdr.flag & 2)) return;	// code segment, not readable
+	cpu->f |= I286_FZ;
 }
 
 // 0f 00 /5 verw ew (prt mode only)	verify segment to write
 void i286_0F005(CPU* cpu) {
 	cpu->tmpdr = i286_get_dsc(cpu, cpu->tmpw);
-	// TODO: check cpu->tmpdr
+	cpu->f &= ~I286_FZ;
+	if (cpu->tmpdr.idx < 0) return;		// index out of bounds
+	if (!(cpu->tmpdr.flag & 0x80)) return;	// not present
+	if (!(cpu->tmpdr.flag & 0x10)) return;	// special system segment
+	if ((cpu->tmpw & 3) > ((cpu->tmpdr & 0x60) >> 5)) return;	// dpl < rpl
+	if (cpu->tmpdr & 0x08) return;		// code segment is not writeable
+	if (!(cpu->tmpdr & 2)) return;		// not writeable
+	cpu->f |= I286_FZ;
 }
 
 cbcpu i286_0f00_tab[8] = {
@@ -93,7 +113,7 @@ void i286_0F00(CPU* cpu) {
 void i286_0F010(CPU* cpu) {
 	cpu->tmpdr = i286_get_dsc(cpu, cpu->tmpw & ~4);
 	if (cpu->tmpdr.idx < 0) {
-		// index out of bounds
+		i286_interrupt(cpu, 10);
 	} else {
 		i286_mwr(cpu, cpu->ea.seg, cpu->ea.adr++, cpu->tmpdr.limit & 0xff);
 		i286_mwr(cpu, cpu->ea.seg, cpu->ea.adr++, (cpu->tmpdr.limit >> 8) & 0xff);
@@ -107,7 +127,7 @@ void i286_0F010(CPU* cpu) {
 void i286_0F011(CPU* cpu) {
 	cpu->tmpdr = i286_get_dsc(cpu, cpu->tmpw | 0xff0000);
 	if (cpu->tmpdr.idx < 0) {
-		// index out of bounds
+		i286_interrupt(cpu, 10);
 	} else {
 		i286_mwr(cpu, cpu->ea.seg, cpu->ea.adr++, cpu->tmpdr.limit & 0xff);
 		i286_mwr(cpu, cpu->ea.seg, cpu->ea.adr++, (cpu->tmpdr.limit >> 8) & 0xff);
@@ -155,6 +175,8 @@ void i286_0F014(CPU* cpu) {
 // 0f 01 /5 lmsw ew	msw = [ea]
 void i286_0F015(CPU* cpu) {
 	cpu->msw = cpu->tmpw;
+	if (cpu->msw & I286_FPE)
+		cpu->mode = I286_MOD_PROT;
 }
 
 cbcpu i286_0f01_tab[8] = {

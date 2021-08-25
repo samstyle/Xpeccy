@@ -17,10 +17,6 @@ void i286_reset(CPU* cpu) {
 	cpu->ds = i286_cash_seg(cpu, 0x0000);
 	cpu->es = i286_cash_seg(cpu, 0x0000);
 	cpu->idtr = i286_cash_seg(cpu, 0x0000);
-//	cpu->cs = 0xf000;
-//	cpu->ds = 0x0000;
-//	cpu->ss = 0x0000;
-//	cpu->es = 0x0000;
 }
 
 int i286_exec(CPU* cpu) {

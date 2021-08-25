@@ -108,7 +108,7 @@ typedef struct {
 } xAsmScan;
 
 typedef struct {
-	unsigned short idx;		// 'visible' value
+	int idx;			// 'visible' value
 	unsigned char flag;		// acess flag
 	unsigned base:24;		// segment base addr
 	unsigned short limit;		// segment size in bytes
@@ -187,10 +187,6 @@ struct CPU {
 	unsigned short si;
 	unsigned short di;
 	// unsigned short sp;	// use sp above
-	//unsigned short cs;
-	//unsigned short ds;
-	//unsigned short ss;
-	//unsigned short es;
 	// unsigned short flag;	// use f above
 	// unsigned short ip;	// use pc above
 	unsigned short msw;
@@ -206,7 +202,6 @@ struct CPU {
 	xSegPtr seg;		// operating segment (for EA and 'replace segment' prefixes)
 	xSegPtr tmpdr;
 	unsigned char mod;	// 80286: mod byte (EA/reg)
-	//struct{PAIR(seg,segh,segl); PAIR(adr,adrh,adrl);} ea;		// 80286: effective address (segment:address)
 	struct {xSegPtr seg; PAIR(adr,adrh,adrl);} ea;
 	int mode;		// 80286: real/protected mode
 	int rep;		// 80286: repeat condition id
