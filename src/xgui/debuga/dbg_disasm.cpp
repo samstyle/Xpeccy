@@ -145,7 +145,7 @@ int dasmrd(int adr, void* ptr) {
 	unsigned char res = 0xff;
 	int fadr;
 	MemPage* pg;
-	if (comp->hw->grp == HWG_PC) {
+	if (comp->cpu->type == CPU_I80286) {
 		res = i286_mrd(comp->cpu, comp->cpu->cs, adr & 0xffff);
 	} else {
 		switch (mode) {
@@ -172,7 +172,7 @@ int dasmrd(int adr, void* ptr) {
 }
 
 void dasmwr(Computer* comp, int adr, int bt) {
-	if (comp->hw->grp == HW_IBM_PC) return;
+	if (comp->cpu->type == CPU_I80286) return;
 	int fadr;
 	MemPage* pg;
 	switch(mode) {
@@ -400,7 +400,7 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 		list.append(drow);
 	}
 	drow.islab = 0;			// next line is addr
-	if (comp->hw->grp == HWG_PC) {
+	if (comp->cpu->type == CPU_I80286) {
 		drow.aname = QString("CS:%0").arg(gethexword(adr));
 	} else if (conf.dbg.segment || (mode != XVIEW_CPU)) {
 		switch(xadr.type) {

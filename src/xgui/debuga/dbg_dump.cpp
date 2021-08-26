@@ -45,7 +45,7 @@ int xDumpModel::mrd(int adr) const {
 	MemPage* pg;
 	int fadr;
 	int res = 0xff;
-	if (comp->hw->grp == HWG_PC) {
+	if (comp->cpu->type == CPU_I80286) {
 		res = i286_mrd(comp->cpu, comp->cpu->ds, adr & 0xffff);
 		// res |= (comp->brkAdrMap[adr & 0xffff] << 8);
 	} else {
@@ -83,7 +83,7 @@ void xDumpModel::mwr(int adr, unsigned char bt) {
 	Computer* comp = *cptr;
 	MemPage* pg;
 	int fadr;
-	if (comp->hw->grp == HWG_PC) {
+	if (comp->cpu->type == CPU_I80286) {
 		i286_mwr(comp->cpu, comp->cpu->ds, adr & 0xffff, bt);
 	} else {
 		switch(mode) {
@@ -258,7 +258,7 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 		case Qt::DisplayRole:
 			switch(col) {
 				case 0:
-					if ((*cptr)->hw->grp == HWG_PC) {
+					if ((*cptr)->cpu->type == CPU_I80286) {
 						res = QString("DS:%0").arg(gethexword(adr & 0xffff));
 					} else {
 						if ((mode == XVIEW_RAM) || (mode == XVIEW_ROM)) {

@@ -54,7 +54,7 @@ xSegPtr i286_cash_seg(CPU* cpu, unsigned short val) {
 	xSegPtr p;
 	p.idx = val;
 	if (cpu->mode == I286_MOD_REAL) {
-		// TODO: set access flags
+		p.flag = 0xf2;		// present, dpl=3, segment, data, writeable
 		p.base = val << 4;
 		p.limit = 0xffff;
 	} else {
@@ -312,7 +312,7 @@ unsigned short i286_add16(CPU* cpu, unsigned short p1, unsigned short p2, int rf
 void i286_op00(CPU* cpu) {
 	i286_rd_ea(cpu, 0);
 	cpu->tmpw = i286_add8(cpu, cpu->ltw, cpu->lwr, 1);
-	i286_wr_ea(cpu, cpu->tmpw, 0);
+	i286_wr_ea(cpu, cpu->ltw, 0);
 }
 
 // 01,mod: add ew,rw	EA.word += reg.word

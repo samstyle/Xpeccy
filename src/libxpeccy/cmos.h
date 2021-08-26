@@ -7,10 +7,14 @@ enum {
 	CMOS_DATA
 };
 
+#define CMOS_NMI 1
+
 typedef struct {
 	unsigned char adr;
 	int mode;
 	unsigned char data[256];
+	int inten;
+	int intrq;
 	xKeyBuf* kbuf;		// pointer to pc keyboard buffer
 } CMOS;
 

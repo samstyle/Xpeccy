@@ -4,6 +4,7 @@
 #include "i80286.h"
 
 extern opCode i80286_tab[256];
+extern opCode i286_0f_tab[256];
 
 extern xSegPtr i286_cash_seg(CPU*, unsigned short);
 
@@ -28,7 +29,7 @@ int i286_exec(CPU* cpu) {
 	cpu->oldpc = cpu->pc;
 	do {
 		cpu->t++;
-		cpu->com = i286_mrd(cpu, cpu->cs, cpu->pc); // cpu->mrd((cpu->cs << 4) + cpu->pc, 1, cpu->data);
+		cpu->com = i286_mrd(cpu, cpu->cs, cpu->pc);
 		cpu->pc++;
 		cpu->op = &cpu->opTab[cpu->com & 0xff];
 		cpu->op->exec(cpu);
@@ -64,7 +65,7 @@ xMnem i286_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 		adr++;
 		op = &tab[com];
 		if ((tab == i80286_tab) && (com == 0x0f)) {
-			// tab = i80286_0f_tab;
+			tab = i286_0f_tab;
 		}
 		mn.flag = op->flag;
 		mn.len++;
@@ -84,20 +85,20 @@ xMnem i286_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 				case '1':
 					rx.l = i286_mrd(cpu, cpu->cs, adr);
 					adr++;
-					dptr += sprintf(dptr, "%.2X", rx.l);
+					dptr += sprintf(dptr, "#%.2X", rx.l);
 					break;
 				case '2':
 					rx.l = i286_mrd(cpu, cpu->cs, adr);
 					adr++;
 					rx.h = i286_mrd(cpu, cpu->cs, adr);
 					adr++;
-					dptr += sprintf(dptr, "%.4X", rx.w);
+					dptr += sprintf(dptr, "#%.4X", rx.w);
 					break;
 				case '3':
 					rx.l = i286_mrd(cpu, cpu->cs, adr);;
 					adr++;
 					rx.w = adr + (signed char)rx.l;
-					dptr += sprintf(dptr, "short %.4X", rx.w);
+					dptr += sprintf(dptr, "short #%.4X", rx.w);
 					break;
 				case 'n':
 					rx.l = i286_mrd(cpu, cpu->cs, adr);
@@ -105,7 +106,7 @@ xMnem i286_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 					rx.h = i286_mrd(cpu, cpu->cs, adr);
 					adr++;
 					rx.w += adr;
-					dptr += sprintf(dptr, "near %.4X", rx.w);
+					dptr += sprintf(dptr, "near #%.4X", rx.w);
 					break;
 				case '4':
 				case 'p':
@@ -117,7 +118,7 @@ xMnem i286_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 					adr++;
 					seg.h = i286_mrd(cpu, cpu->cs, adr);
 					adr++;
-					dptr += sprintf(dptr, "%.4X::%.4X", seg.w, rx.w);
+					dptr += sprintf(dptr, "#%.4X::%.4X", seg.w, rx.w);
 					break;
 				case 'r': if (!mod) {mod = 1; mb = i286_mrd(cpu, cpu->cs, adr); adr++;}
 					if (op->flag & OF_WORD) {	// word
@@ -152,9 +153,9 @@ xMnem i286_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 						dptr += sprintf(dptr, "%s", str_ea[mb & 7]);
 						if (disp.w) {
 							if (disp.w & 0x8000) {
-								dptr += sprintf(dptr, "-%X", (-disp.w) & 0x7fff);
+								dptr += sprintf(dptr, "-#%X", (-disp.w) & 0x7fff);
 							} else {
-								dptr += sprintf(dptr ,"+%X", disp.w);
+								dptr += sprintf(dptr ,"+#%X", disp.w);
 							}
 						}
 						*(dptr++) = ']';

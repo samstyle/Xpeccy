@@ -61,21 +61,37 @@ void ibm_mwr(Computer* comp, int adr, int val) {
 	043 8253 mode control  (see 8253)
 	044 8254 PS/2 extended timer
 	047 8254 Channel 3 control byte
+*/
 
-	060-067  8255 Programmable Peripheral Interface  (PC,XT, PCjr)
-	060 8255 Port A keyboard input/output buffer (output PCjr)
-	061 8255 Port B output
-	062 8255 Port C input
-	063 8255 Command/Mode control register
-OR
+int ibm_inPIT(Computer* comp, int adr) {
+	int res = -1;
+	switch(adr & 0x1f) {
+		default: break;
+	}
+	return res;
+}
+
+void ibm_outPIT(Computer* comp, int adr, int val) {
+
+}
+
+/*
 	060-06F  8042 Keyboard Controller  (AT,PS/2)
 	060 8042 Keyboard input/output buffer register
 	061 8042 system control port (for compatability with 8255)
 	064 8042 Keyboard command/status register
 */
 
-int ibm_in64(Computer* comp, int adr) {
-	return 4;
+int ibm_inKbd(Computer* comp, int adr) {
+	int res = -1;
+	switch(adr & 0x0f) {
+		default: break;
+	}
+	return res;
+}
+
+void ibm_outKbd(Computer* comp, int adr, int val) {
+
 }
 
 // cmos
@@ -92,20 +108,21 @@ int ibm_in64(Computer* comp, int adr) {
 0071	r/w	CMOS RAM data port (ISA, EISA)
 */
 void ibm_out70(Computer* comp, int adr, int val) {
-	comp->cmos.adr = val & 0x7f;
+	cmos_wr(&comp->cmos, CMOS_ADR, val);
 }
 
 void ibm_out71(Computer* comp, int adr, int val) {
-	cmsWr(comp, val);
+	cmos_wr(&comp->cmos, CMOS_DATA, val);
 }
 
 int ibm_in71(Computer* comp, int adr) {
-	return cmsRd(comp);
+	return cmos_rd(&comp->cmos, CMOS_DATA);
 }
 
 static xPort ibmPortMap[] = {
-	{0xffff,0x0064,2,2,2,ibm_in64,	NULL},
-	{0xffff,0x0070,2,2,2,NULL,	ibm_out70},
+	{0xffe0,0x0040,2,2,2,ibm_inPIT,	ibm_outPIT},	// programmable interval timer
+	{0xfff0,0x0060,2,2,2,ibm_inKbd,	ibm_outKbd},	// 8042: ps/2 keyboard/mouse controller
+	{0xffff,0x0070,2,2,2,NULL,	ibm_out70},	// cmos
 	{0xffff,0x0071,2,2,2,ibm_in71,	ibm_out71},
 	{0x0000,0x0000,2,2,2,NULL,	NULL}
 };
