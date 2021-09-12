@@ -104,8 +104,8 @@ typedef struct {
 	void (*out)(Computer*, int, int);
 } xPort;
 
-int hwIn(xPort*, Computer*, int, int);
-void hwOut(xPort*, Computer*, int, int, int);
+int hwIn(xPort* ptab, Computer* comp, int port, int dos);
+void hwOut(xPort* ptab, Computer* comp, int port, int val, int dos);
 
 typedef struct HardWare HardWare;
 extern HardWare hwTab[];

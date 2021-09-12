@@ -152,6 +152,7 @@ struct CPU {
 	int intrq;			// interrupts request. each bit for each INT type, 1 = requested
 	int inten;			// interrupts enabled mask
 	unsigned short intvec;
+	int errcod;			// 80286: interrupt error code (-1 if not present)
 
 // z80, lr35902, i8080, 6502 registers
 	PAIR(pc,hpc,lpc);
@@ -190,7 +191,7 @@ struct CPU {
 	// unsigned short flag;	// use f above
 	// unsigned short ip;	// use pc above
 	unsigned short msw;
-	// hidden registers
+	// segment registers (+hidden parts)
 	xSegPtr cs;		// cs value,flag,base,limit
 	xSegPtr ss;		// ss value,flag,base,limit
 	xSegPtr ds;		// es value,flag,base,limit

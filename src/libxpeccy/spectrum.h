@@ -15,6 +15,7 @@ extern "C" {
 #include "sdcard.h"
 #include "cartridge.h"
 #include "ppi.h"
+#include "pit.h"
 
 #include "sound/ayym.h"
 #include "sound/gs.h"
@@ -56,6 +57,7 @@ typedef struct {
 	unsigned char page;
 } memEntry;
 
+// CIA (c64)
 typedef struct {
 	int ns;
 	unsigned char tenth;	// 1/10 sec (each 1e8 ns)
@@ -116,6 +118,7 @@ typedef struct {
 	unsigned char intVector;
 
 	char* msg;			// message ptr for displaying outside
+	int resbank;			// rompart active after reset
 
 	struct HardWare *hw;
 	CPU* cpu;
@@ -125,6 +128,7 @@ typedef struct {
 	Keyboard* keyb;
 	Joystick* joy;
 	Mouse* mouse;
+	ps2Ctrl* ps2ctrl;
 
 	Tape* tape;
 	DiskIF* dif;
@@ -204,13 +208,11 @@ typedef struct {
 		int flag;
 		unsigned short tsMapAdr;	// adr for altera mapping
 		unsigned char Page0;
-//		unsigned char p00af;		// ports to be updated from next line
 		unsigned char p01af;
 		unsigned char p02af;
 		unsigned char p03af;
 		unsigned char p04af;
 		unsigned char p05af;
-//		unsigned char p07af;
 		unsigned char p21af;
 		unsigned char pwr_up;		// 1 on 1st run, 0 after reading 00AF
 		unsigned char vdos;
@@ -220,8 +222,6 @@ typedef struct {
 	} profi;
 	struct {
 		unsigned char keyLine;		// selected keyboard line
-		// unsigned char pA8;		// port A8
-		// unsigned char pAA;		// port AA
 		unsigned char mFFFF;		// mem FFFF : mapper secondary slot
 		unsigned char pF5;
 		unsigned char pslot[4];
@@ -255,11 +255,11 @@ typedef struct {
 
 		int vbank;		// video bank (0,1)
 		int wbank;		// ram bank (d000..dfff)
-		int rbank;		// slot ram bank (a000..bfff)
-		unsigned bgpal[0x3f];
-		unsigned sppal[0x3f];
+		// int rbank;		// slot ram bank (a000..bfff)
+		// unsigned bgpal[0x3f];
+		// unsigned sppal[0x3f];
 		unsigned char iram[256];	// internal ram (FF80..FFFE)
-		unsigned short iomap[128];
+		unsigned char iomap[128];
 	} gb;
 	struct {
 		unsigned char reg00;
@@ -273,7 +273,7 @@ typedef struct {
 		c64cia cia2;
 	} c64;
 	CMOS cmos;
-	int resbank;			// rompart active after reset
+	PIT pit;
 } Computer;
 
 #include "hardware/hardware.h"

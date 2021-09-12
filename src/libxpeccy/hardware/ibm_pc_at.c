@@ -4,7 +4,9 @@ void ibm_init(Computer* comp) {}
 
 void ibm_mem_map(Computer* comp) {}	// no hw memory mapping, it's work of cpu
 
-void ibm_reset(Computer* comp) {}
+void ibm_reset(Computer* comp) {
+	pit_reset(&comp->pit);
+}
 
 // ibm pc/at
 // 00000..9FFFF : ram
@@ -59,20 +61,16 @@ void ibm_mwr(Computer* comp, int adr, int val) {
 	041 8253 channel 1, RAM refresh counter
 	042 8253 channel 2, Cassette and speaker functions
 	043 8253 mode control  (see 8253)
-	044 8254 PS/2 extended timer
+not us	044 8254 PS/2 extended timer
 	047 8254 Channel 3 control byte
 */
 
 int ibm_inPIT(Computer* comp, int adr) {
-	int res = -1;
-	switch(adr & 0x1f) {
-		default: break;
-	}
-	return res;
+	return pit_rd(&comp->pit, adr);
 }
 
 void ibm_outPIT(Computer* comp, int adr, int val) {
-
+	pit_wr(&comp->pit,adr,val);
 }
 
 /*
@@ -84,9 +82,6 @@ void ibm_outPIT(Computer* comp, int adr, int val) {
 
 int ibm_inKbd(Computer* comp, int adr) {
 	int res = -1;
-	switch(adr & 0x0f) {
-		default: break;
-	}
 	return res;
 }
 
@@ -134,10 +129,19 @@ int ibm_iord(Computer* comp, int adr, int nonsence) {
 
 void ibm_iowr(Computer* comp, int adr, int val, int nonsense) {
 //	printf("out %.4X\n",adr);
+	hwOut(ibmPortMap, comp, adr, val, 0);
 }
 
 void ibm_sync(Computer* comp, int ns) {
-
+	pit_sync(&comp->pit, ns);
+	if (!comp->pit.ch0.lout && comp->pit.ch0.out) {
+		comp->pit.ch0.lout = comp->pit.ch0.out;
+		// INT0
+	}
+	if (!comp->pit.ch0.lout && comp->pit.ch0.out) {
+		comp->pit.ch2.lout = comp->pit.ch2.out;
+		// beeper
+	}
 }
 
 void ibm_keyp(Computer* comp, keyEntry kent) {

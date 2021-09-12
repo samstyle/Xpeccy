@@ -245,6 +245,7 @@ Computer* compCreate() {
 	comp->joy = joyCreate();
 	comp->mouse = mouseCreate();
 	comp->ppi = ppi_create();
+	comp->ps2ctrl = ps2_create(comp->keyb, comp->mouse);
 // storage
 	comp->tape = tapCreate();
 	comp->dif = difCreate(DIF_NONE);

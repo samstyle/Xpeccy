@@ -19,6 +19,10 @@
 #define I286_FEM 0x0004 // allow int7 on esc
 #define I286_FTS 0x0008 // task switch: next instruction will cause int7
 
+#define I286_INT	(1<<0)
+#define I286_NMI	(1<<1)
+#define I286_BLK_NMI	(1<<16)
+
 enum {
 	I286_MOD_REAL = 0,
 	I286_MOD_PROT
@@ -45,12 +49,6 @@ enum {
 	I286_DS,
 	I286_ES
 };
-
-typedef struct {
-	unsigned short limit;
-	unsigned base:24;
-	unsigned char flag;
-} xSegmDescr;
 
 void i286_interrupt(CPU*, int);
 void i286_rd_ea(CPU*, int);

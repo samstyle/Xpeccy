@@ -9,7 +9,7 @@
 // real.addr = descr.base(24 bit)+offset(adr)
 // flag:
 // [7:P][6,5:DPL][4:1][3:1][2:C][1:R][0:A]	code; R:segment can be readed (not only imm adr)
-// [7:P][6,5:DPL][4:1][3:0][2:D][1:W][0:A]	data
+// [7:P][6,5:DPL][4:1][3:0][2:D][1:W][0:A]	data; W:segment is writeable
 // [7:P][6,5:DPL][4:0][3-0:TYPE]		system
 // rd/wr with segment P=0 -> interrupt
 
@@ -52,22 +52,25 @@ unsigned short i286_rd_immw(CPU* cpu) {
 
 xSegPtr i286_cash_seg(CPU* cpu, unsigned short val) {
 	xSegPtr p;
+	PAIR(w,h,l)off;
+	int adr;
+	unsigned short tmp;
 	p.idx = val;
 	if (cpu->mode == I286_MOD_REAL) {
 		p.flag = 0xf2;		// present, dpl=3, segment, data, writeable
 		p.base = val << 4;
 		p.limit = 0xffff;
 	} else {
-		cpu->tmpi = (val & 4) ? cpu->ldtr.base : cpu->gdtr.base;
-		cpu->tmpi += val & 0xfff8;
-		cpu->ltw = cpu->mrd(cpu->tmpi++, 0, cpu->data);
-		cpu->htw = cpu->mrd(cpu->tmpi++, 0, cpu->data);
-		p.limit = cpu->tmpw;
-		cpu->ltw = cpu->mrd(cpu->tmpi++, 0, cpu->data);
-		cpu->htw = cpu->mrd(cpu->tmpi++, 0, cpu->data);
-		cpu->tmp = cpu->mrd(cpu->tmpi++, 0, cpu->data);
-		p.base = (cpu->tmp << 16) | cpu->tmpw;
-		p.flag = cpu->mrd(cpu->tmpi, 0, cpu->data);
+		adr = (val & 4) ? cpu->ldtr.base : cpu->gdtr.base;
+		adr += val & 0xfff8;
+		off.l = cpu->mrd(adr++, 0, cpu->data);
+		off.h = cpu->mrd(adr++, 0, cpu->data);
+		p.limit = off.w;
+		off.l = cpu->mrd(adr++, 0, cpu->data);
+		off.h = cpu->mrd(adr++, 0, cpu->data);
+		tmp = cpu->mrd(adr++, 0, cpu->data);
+		p.base = (tmp << 16) | off.w;
+		p.flag = cpu->mrd(adr, 0, cpu->data);
 	}
 	return p;
 }
@@ -93,17 +96,8 @@ unsigned short i286_pop(CPU* cpu) {
 // INT n
 
 void i286_interrupt(CPU* cpu, int n) {
-	i286_push(cpu, cpu->f);
-	i286_push(cpu, cpu->pc);
-	i286_push(cpu, cpu->cs.idx);
-	cpu->f &= ~(I286_FI | I286_FT);
-	cpu->tmpi = n << 2;
-	cpu->ltw = i286_mrd(cpu, cpu->idtr, cpu->tmpi++);	// tmpw
-	cpu->htw = i286_mrd(cpu, cpu->idtr, cpu->tmpi++);
-	cpu->lwr = i286_mrd(cpu, cpu->idtr, cpu->tmpi++);	// twrd
-	cpu->hwr = i286_mrd(cpu, cpu->idtr, cpu->tmpi);
-	cpu->cs = i286_cash_seg(cpu, cpu->tmpw);	// TODO: or opposite?
-	cpu->pc = cpu->twrd;
+	cpu->intrq |= I286_INT;
+	cpu->intvec = n;
 }
 
 // mod r/m
@@ -2047,6 +2041,7 @@ void i286_opCF(CPU* cpu) {
 	cpu->tmpw = i286_pop(cpu);
 	cpu->cs = i286_cash_seg(cpu, cpu->tmpw);
 	cpu->f = i286_pop(cpu);
+	cpu->inten &= ~I286_BLK_NMI;		// nmi on
 }
 
 // d0,mod: rot/shift ea.byte 1 time

@@ -213,6 +213,35 @@ void joyPress(Joystick*, int);
 void joyRelease(Joystick*, int);
 unsigned char joyInput(Joystick*);
 
+// 8042 ps/2 controller
+
+#define PS2_DATA	0
+#define PS2_COM		1
+#define	PS2_STATUS	PS2_COM
+
+#define PS2S_OBF	1
+#define PS2S_IBF	(1<<1)
+#define PS2S_SYS	(1<<2)		// 0@reset, set by software
+#define PS2S_COM	(1<<3)		// 1:last wr was com, 0:data
+#define PS2S_KBD	(1<<4)		// 0:keyboard locked
+
+typedef struct {
+	unsigned wpar:1;		// waiting for command argument to be written to data
+	unsigned char ibuf;		// input buffer
+	unsigned char obuf;		// output buffer
+	unsigned char config;
+	unsigned char status;
+	unsigned char com;
+	Keyboard* kbd;			// 1st ps/2 device
+	Mouse* mouse;			// 2nd ps/2 device
+	unsigned char ram[0x20];
+} ps2Ctrl;
+
+ps2Ctrl* ps2_create(Keyboard*, Mouse*);
+void ps2_destroy(ps2Ctrl*);
+int ps2_rd(ps2Ctrl*, int adr);
+void ps2_wr(ps2Ctrl*, int adr, int val);
+
 #ifdef __cplusplus
 }
 #endif

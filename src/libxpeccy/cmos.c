@@ -35,6 +35,9 @@ int toBCD(int val) {
 	return rrt;
 }
 
+static int last_time = 0;
+static int cur_time = 0;
+
 unsigned char cmos_rd(CMOS* cms, int port) {
 	int res = 0xff;
 	time_t rtime;
@@ -42,6 +45,7 @@ unsigned char cmos_rd(CMOS* cms, int port) {
 	if (port == CMOS_DATA) {
 		time(&rtime);
 		ctime = localtime(&rtime);
+		cur_time = (ctime->tm_hour << 16) + (ctime->tm_min << 8) + ctime->tm_sec;
 		switch (cms->adr) {
 			case 0x00: res = toBCD(ctime->tm_sec); break;
 			case 0x02: res = toBCD(ctime->tm_min); break;
@@ -50,7 +54,7 @@ unsigned char cmos_rd(CMOS* cms, int port) {
 			case 0x07: res = toBCD(ctime->tm_mday); break;
 			case 0x08: res = toBCD(ctime->tm_mon); break;
 			case 0x09: res = toBCD(ctime->tm_year % 100); break;
-			case 0x0a: res = 0x00; break;
+			case 0x0a: res = (cur_time == last_time) ? 0x00 : 0x80; last_time = cur_time; break;	// let it be
 			case 0x0b: res = 0x02; break;	// TODO: bin/12h bits
 			case 0x0c: res = 0x00; break;
 			case 0x0d: res = 0x80; break;
