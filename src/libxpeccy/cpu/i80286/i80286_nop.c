@@ -78,18 +78,16 @@ xSegPtr i286_cash_seg(CPU* cpu, unsigned short val) {
 // stack
 
 void i286_push(CPU* cpu, unsigned short w) {
-	cpu->sp--;
-	i286_mwr(cpu, cpu->ss, cpu->sp, (w >> 8) & 0xff);
-	cpu->sp--;
+	cpu->sp -= 2;
 	i286_mwr(cpu, cpu->ss, cpu->sp, w & 0xff);
+	i286_mwr(cpu, cpu->ss, cpu->sp + 1, (w >> 8) & 0xff);
 }
 
 unsigned short i286_pop(CPU* cpu) {
 	PAIR(w,h,l) rx;
 	rx.l = i286_mrd(cpu, cpu->ss, cpu->sp);
-	cpu->sp++;
-	rx.h = i286_mrd(cpu, cpu->ss, cpu->sp);
-	cpu->sp++;
+	rx.h = i286_mrd(cpu, cpu->ss, cpu->sp + 1);
+	cpu->sp += 2;
 	return rx.w;
 }
 
@@ -1207,7 +1205,8 @@ void i286_op6D(CPU* cpu) {
 
 // 6e: outs dx,byte: out (dx),[ds:si]
 void i286_op6E(CPU* cpu) {
-	cpu->tmp = i286_mrd(cpu, cpu->ds, cpu->si);
+	if (cpu->seg.idx < 0) cpu->seg = cpu->ds;
+	cpu->tmp = i286_mrd(cpu, cpu->seg, cpu->si);
 	i286_iwr(cpu, cpu->dx, cpu->tmp);
 	cpu->si += (cpu->f & I286_FD) ? -1 : 1;
 	if (cpu->rep == I286_REPZ) {
@@ -1222,8 +1221,9 @@ void i286_op6F(CPU* cpu) {
 	if (cpu->si == 0xffff) {
 		i286_interrupt(cpu, 13);
 	} else {
-		cpu->ltw = i286_mrd(cpu, cpu->ds, cpu->si);
-		cpu->htw = i286_mrd(cpu, cpu->ds, cpu->si + 1);
+		if (cpu->seg.idx < 0) cpu->seg = cpu->ds;
+		cpu->ltw = i286_mrd(cpu, cpu->seg, cpu->si);
+		cpu->htw = i286_mrd(cpu, cpu->seg, cpu->si + 1);
 		i286_iwr(cpu, cpu->dx, cpu->ltw);
 		i286_iwr(cpu, cpu->dx, cpu->htw);
 		cpu->si += (cpu->f & I286_FD) ? -2 : 2;
@@ -1531,27 +1531,30 @@ void i286_op9F(CPU* cpu) {
 	cpu->ah = (cpu->f & 0xff);
 }
 
-// a0,iw: mov al,[iw]
+// a0,iw: mov al,[*ds:iw]
 void i286_opA0(CPU* cpu) {
+	if (cpu->seg.idx < 0) cpu->seg = cpu->ds;
 	cpu->tmpw = i286_rd_immw(cpu);
-	cpu->al = i286_mrd(cpu, cpu->ds, cpu->tmpw);
+	cpu->al = i286_mrd(cpu, cpu->seg, cpu->tmpw);
 }
 
-// a1,iw: mov ax,[iw]
+// a1,iw: mov ax,[*ds:iw]
 void i286_opA1(CPU* cpu) {
 	cpu->tmpw = i286_rd_immw(cpu);
 	if (cpu->tmpw == 0xffff) {
 		i286_interrupt(cpu, 13);
 	} else {
-		cpu->al = i286_mrd(cpu, cpu->ds, cpu->tmpw);
-		cpu->ah = i286_mrd(cpu, cpu->ds, cpu->tmpw + 1);
+		if (cpu->seg.idx < 0) cpu->seg = cpu->ds;
+		cpu->al = i286_mrd(cpu, cpu->seg, cpu->tmpw);
+		cpu->ah = i286_mrd(cpu, cpu->seg, cpu->tmpw + 1);
 	}
 }
 
 // a2,xb: mov [iw],al
 void i286_opA2(CPU* cpu) {
+	if (cpu->seg.idx < 0) cpu->seg = cpu->ds;
 	cpu->tmpw = i286_rd_immw(cpu);
-	i286_mwr(cpu, cpu->ds, cpu->tmpw, cpu->al);
+	i286_mwr(cpu, cpu->seg, cpu->tmpw, cpu->al);
 }
 
 // a3,xw: mov [iw],ax
@@ -1560,14 +1563,16 @@ void i286_opA3(CPU* cpu) {
 	if (cpu->tmpw == 0xffff) {
 		i286_interrupt(cpu, 13);
 	} else {
-		i286_mwr(cpu, cpu->ds, cpu->tmpw, cpu->al);
-		i286_mwr(cpu, cpu->ds, cpu->tmpw + 1, cpu->ah);
+		if (cpu->seg.idx < 0) cpu->seg = cpu->ds;
+		i286_mwr(cpu, cpu->seg, cpu->tmpw, cpu->al);
+		i286_mwr(cpu, cpu->seg, cpu->tmpw + 1, cpu->ah);
 	}
 }
 
-// a4: movsb: [ds:si]->[es:di], si,di ++ or --
+// a4: movsb: [*ds:si]->[es:di], si,di ++ or --
 void i286_opA4(CPU* cpu) {
-	cpu->tmp = i286_mrd(cpu, cpu->ds, cpu->si);
+	if (cpu->seg.idx < 0) cpu->seg = cpu->ds;
+	cpu->tmp = i286_mrd(cpu, cpu->seg, cpu->si);
 	i286_mwr(cpu, cpu->es, cpu->di, cpu->tmp);
 	if (cpu->f & I286_FD) {
 		cpu->si--;
@@ -1588,8 +1593,9 @@ void i286_opA5(CPU* cpu) {
 	if ((cpu->si == 0xffff) || (cpu->di == 0xffff)) {
 		i286_interrupt(cpu, 13);
 	} else {
-		cpu->ltw = i286_mrd(cpu, cpu->ds, cpu->si);
-		cpu->htw = i286_mrd(cpu, cpu->ds, cpu->si + 1);
+		if (cpu->seg.idx < 0) cpu->seg = cpu->ds;
+		cpu->ltw = i286_mrd(cpu, cpu->seg, cpu->si);
+		cpu->htw = i286_mrd(cpu, cpu->seg, cpu->si + 1);
 		i286_mwr(cpu, cpu->es, cpu->di, cpu->ltw);
 		i286_mwr(cpu, cpu->es, cpu->di + 1, cpu->htw);
 		if (cpu->f & I286_FD) {
@@ -1616,9 +1622,10 @@ int i286_check_rep(CPU* cpu) {
 	return res;
 }
 
-// a6: cmpsb: cmp [ds:si]-[es:di], adv si,di
+// a6: cmpsb: cmp [*ds:si]-[es:di], adv si,di
 void i286_opA6(CPU* cpu) {
-	cpu->ltw = i286_mrd(cpu, cpu->ds, cpu->si);
+	if (cpu->seg.idx < 0) cpu->seg = cpu->ds;
+	cpu->ltw = i286_mrd(cpu, cpu->seg, cpu->si);
 	cpu->lwr = i286_mrd(cpu, cpu->es, cpu->di);
 	cpu->htw = i286_sub8(cpu, cpu->ltw, cpu->lwr, 1);
 	if (cpu->f & I286_FD) {
@@ -1637,8 +1644,9 @@ void i286_opA7(CPU* cpu) {
 	if ((cpu->si == 0xffff) || (cpu->di == 0xffff)) {
 		i286_interrupt(cpu, 13);
 	} else {
-		cpu->ltw = i286_mrd(cpu, cpu->ds, cpu->si);
-		cpu->htw = i286_mrd(cpu, cpu->ds, cpu->si + 1);
+		if (cpu->seg.idx < 0) cpu->seg = cpu->ds;
+		cpu->ltw = i286_mrd(cpu, cpu->seg, cpu->si);
+		cpu->htw = i286_mrd(cpu, cpu->seg, cpu->si + 1);
 		cpu->lwr = i286_mrd(cpu, cpu->es, cpu->di);
 		cpu->hwr = i286_mrd(cpu, cpu->es, cpu->di + 1);
 		cpu->tmpw = i286_sub16(cpu, cpu->tmpw, cpu->twrd, 1);
@@ -1666,9 +1674,9 @@ void i286_opA9(CPU* cpu) {
 	cpu->twrd = i286_and16(cpu, cpu->ax, cpu->tmpw);
 }
 
-// aa: stob  al->[ds:di], adv di
+// aa: stosb  al->[es:di], adv di
 void i286_opAA(CPU* cpu) {
-	i286_mwr(cpu, cpu->ds, cpu->di, cpu->al);
+	i286_mwr(cpu, cpu->es, cpu->di, cpu->al);
 	cpu->di += (cpu->f & I286_FD) ? -1 : 1;
 	if (cpu->rep == I286_REPZ) {
 		cpu->cx--;
@@ -1677,13 +1685,13 @@ void i286_opAA(CPU* cpu) {
 	}
 }
 
-// ab: stow: ax->[ds:di], adv di
+// ab: stosw: ax->[ds:di], adv di
 void i286_opAB(CPU* cpu) {
 	if (cpu->di == 0xffff) {
 		i286_interrupt(cpu, 13);
 	} else {
-		i286_mwr(cpu, cpu->ds, cpu->di, cpu->al);
-		i286_mwr(cpu, cpu->ds, cpu->di + 1, cpu->ah);
+		i286_mwr(cpu, cpu->es, cpu->di, cpu->al);
+		i286_mwr(cpu, cpu->es, cpu->di + 1, cpu->ah);
 	}
 	cpu->di += (cpu->f & I286_FD) ? -2 : 2;
 	if (cpu->rep == I286_REPZ) {
@@ -1693,19 +1701,21 @@ void i286_opAB(CPU* cpu) {
 	}
 }
 
-// ac: ldosb: [ds:si]->al, adv si
+// ac: lodsb: [*ds:si]->al, adv si
 void i286_opAC(CPU* cpu) {
-	cpu->al = i286_mrd(cpu, cpu->ds, cpu->si);
+	if (cpu->seg.idx < 0) cpu->seg = cpu->ds;
+	cpu->al = i286_mrd(cpu, cpu->seg, cpu->si);
 	cpu->si += (cpu->f & I286_FD) ? -1 : 1;
 }
 
-// ad: ldosw [ds:si]->ax, adv si
-void i286_opAD(CPU* cpu) {
+// ad: lodsw [*ds:si]->ax, adv si
+void i286_opAD(CPU* cpu) {					// TODO: segment override prefix
 	if (cpu->si == 0xffff) {
 		i286_interrupt(cpu, 13);
 	} else {
-		cpu->al = i286_mrd(cpu, cpu->ds, cpu->si);
-		cpu->ah = i286_mrd(cpu, cpu->ds, cpu->si + 1);
+		if (cpu->seg.idx < 0) cpu->seg = cpu->ds;
+		cpu->al = i286_mrd(cpu, cpu->seg, cpu->si);
+		cpu->ah = i286_mrd(cpu, cpu->seg, cpu->si + 1);
 		cpu->si += (cpu->f & I286_FD) ? -2 : 2;
 	}
 }
@@ -1985,7 +1995,7 @@ void i286_opC8(CPU* cpu) {
 	if (cpu->tmpb > 0) {
 		while(--cpu->tmpb) {
 			cpu->bp -= 2;
-			cpu->lwr = i286_mrd(cpu, cpu->ds, cpu->bp);		// +1T
+			cpu->lwr = i286_mrd(cpu, cpu->ds, cpu->bp);		// +1T		TODO: segment override?
 			cpu->hwr = i286_mrd(cpu, cpu->ds, cpu->bp + 1);		// +1T
 			i286_push(cpu, cpu->twrd);				// +2T
 		}
@@ -2605,7 +2615,7 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_op80, 0, ":A :e,:1"},	// :A = mod:N (add,or,adc,sbb,and,sub,xor,cmp)
 	{OF_WORD, 1, i286_op81, 0, ":A word :e,:2"},
 	{0, 1, i286_op82, 0, ":A :e,:1"},
-	{OF_WORD, 1, i286_op83, 0, ":A word :e,:2"},
+	{OF_WORD, 1, i286_op83, 0, ":A word :e,:1"},
 	{0, 1, i286_op84, 0, "test :e,:r"},
 	{OF_WORD, 1, i286_op85, 0, "test :e,:r"},
 	{0, 1, i286_op86, 0, "xchg :e,:r"},

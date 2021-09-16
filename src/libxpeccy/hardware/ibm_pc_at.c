@@ -1,7 +1,5 @@
 #include "hardware.h"
 
-void ibm_init(Computer* comp) {}
-
 void ibm_mem_map(Computer* comp) {}	// no hw memory mapping, it's work of cpu
 
 void ibm_reset(Computer* comp) {
@@ -22,7 +20,7 @@ int ibm_mrd(Computer* comp, int adr, int m1) {
 	if (adr < 0xa0000) {
 		res = comp->mem->ramData[adr & comp->mem->ramMask];		// ram up to 640K
 	} else if (adr < 0xc0000) {
-		printf("video mem rd %.6X\n",adr);
+		// printf("video mem rd %.6X\n",adr);
 		// videomem
 	} else if (adr < 0xd0000) {
 		// ext.bios
@@ -40,7 +38,7 @@ void ibm_mwr(Computer* comp, int adr, int val) {
 	if (adr < 0xa0000) {
 		comp->mem->ramData[adr & comp->mem->ramMask] = val & 0xff;
 	} else if (adr < 0xc0000) {
-		printf("video mem wr %.6X,%.2X\n",adr,val);
+		// printf("video mem wr %.6X,%.2X\n",adr,val);
 		// video mem
 	} else if (adr < 0xd0000) {
 		// ext.bios
@@ -74,19 +72,33 @@ void ibm_outPIT(Computer* comp, int adr, int val) {
 }
 
 /*
-	060-06F  8042 Keyboard Controller  (AT,PS/2)
-	060 8042 Keyboard input/output buffer register
-	061 8042 system control port (for compatability with 8255)
-	064 8042 Keyboard command/status register
+XT keyboard
+060-067  8255 Programmable Peripheral Interface  (PC,XT, PCjr)
+060 8255 Port A keyboard input/output buffer (output PCjr)
+	rd only: read kbd scancode (scancode table 1)
+061 8255 Port B rd/wr, buffered register
+	mode	bit1: beeper
+		bit7: 1:block kbd. 1->0 will clear kbd buf
+062 8255 Port C input (no connection?)
+063 8255 Command/Mode control register
 */
 
 int ibm_inKbd(Computer* comp, int adr) {
 	int res = -1;
+	switch (adr & 0x0f) {
+		case 0: res = keyReadCode(comp->keyb); break;
+		case 1: res = comp->reg[0x61]; break;
+	}
 	return res;
 }
 
 void ibm_outKbd(Computer* comp, int adr, int val) {
-
+	switch(adr & 0x0f) {
+		case 0: break;
+		case 1:	comp->reg[0x61] = val & 0xff;
+			comp->beep->lev = (val & 2) ? 1 : 0;
+			break;
+	}
 }
 
 // cmos
@@ -132,7 +144,11 @@ void ibm_iowr(Computer* comp, int adr, int val, int nonsense) {
 	hwOut(ibmPortMap, comp, adr, val, 0);
 }
 
+void ibm_init(Computer* comp) {
+}
+
 void ibm_sync(Computer* comp, int ns) {
+	bcSync(comp->beep, ns);
 	pit_sync(&comp->pit, ns);
 	if (!comp->pit.ch0.lout && comp->pit.ch0.out) {
 		comp->pit.ch0.lout = comp->pit.ch0.out;
@@ -144,17 +160,16 @@ void ibm_sync(Computer* comp, int ns) {
 	}
 }
 
+// key press/release = INT1 ?
 void ibm_keyp(Computer* comp, keyEntry kent) {
-
 }
 
 void ibm_keyr(Computer* comp, keyEntry kent) {
-
 }
 
 sndPair ibm_vol(Computer* comp, sndVolume* vol) {
 	sndPair res;
-	res.left = 0;
-	res.right = 0;
+	res.left = comp->beep->val * vol->beep / 4;
+	res.right = res.left;
 	return res;
 }

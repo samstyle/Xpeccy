@@ -3,10 +3,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+int ppi_no_rd(void* p) {return -1;}
+void ppi_no_wr(int v, void* p) {}
+
 PPI* ppi_create() {
 	PPI* ppi = (PPI*)malloc(sizeof(PPI));
 	if (ppi) {
 		memset(ppi, 0x00, sizeof(PPI));
+		ppi_set_cb(ppi, NULL, ppi_no_rd, ppi_no_wr, ppi_no_rd, ppi_no_wr, ppi_no_rd, ppi_no_wr, ppi_no_rd, ppi_no_wr);
 		ppi_reset(ppi);
 	}
 	return ppi;

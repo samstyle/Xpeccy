@@ -128,7 +128,6 @@ typedef struct {
 	Keyboard* keyb;
 	Joystick* joy;
 	Mouse* mouse;
-	ps2Ctrl* ps2ctrl;
 
 	Tape* tape;
 	DiskIF* dif;
