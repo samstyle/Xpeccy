@@ -115,11 +115,11 @@ void i286_0F010(CPU* cpu) {
 	if (cpu->tmpdr.idx < 0) {
 		i286_interrupt(cpu, 10);
 	} else {
-		i286_mwr(cpu, cpu->ea.seg, cpu->ea.adr++, cpu->tmpdr.limit & 0xff);
-		i286_mwr(cpu, cpu->ea.seg, cpu->ea.adr++, (cpu->tmpdr.limit >> 8) & 0xff);
-		i286_mwr(cpu, cpu->ea.seg, cpu->ea.adr++, cpu->tmpdr.base & 0xff);
-		i286_mwr(cpu, cpu->ea.seg, cpu->ea.adr++, (cpu->tmpdr.base >> 8) & 0xff);
-		i286_mwr(cpu, cpu->ea.seg, cpu->ea.adr, (cpu->tmpdr.base >> 16) & 0xff);
+		i286_mwr(cpu, cpu->ea.seg, 1, cpu->ea.adr++, cpu->tmpdr.limit & 0xff);
+		i286_mwr(cpu, cpu->ea.seg, 1, cpu->ea.adr++, (cpu->tmpdr.limit >> 8) & 0xff);
+		i286_mwr(cpu, cpu->ea.seg, 1, cpu->ea.adr++, cpu->tmpdr.base & 0xff);
+		i286_mwr(cpu, cpu->ea.seg, 1, cpu->ea.adr++, (cpu->tmpdr.base >> 8) & 0xff);
+		i286_mwr(cpu, cpu->ea.seg, 1, cpu->ea.adr, (cpu->tmpdr.base >> 16) & 0xff);
 	}
 }
 
@@ -129,20 +129,20 @@ void i286_0F011(CPU* cpu) {
 	if (cpu->tmpdr.idx < 0) {
 		i286_interrupt(cpu, 10);
 	} else {
-		i286_mwr(cpu, cpu->ea.seg, cpu->ea.adr++, cpu->tmpdr.limit & 0xff);
-		i286_mwr(cpu, cpu->ea.seg, cpu->ea.adr++, (cpu->tmpdr.limit >> 8) & 0xff);
-		i286_mwr(cpu, cpu->ea.seg, cpu->ea.adr++, cpu->tmpdr.base & 0xff);
-		i286_mwr(cpu, cpu->ea.seg, cpu->ea.adr++, (cpu->tmpdr.base >> 8) & 0xff);
-		i286_mwr(cpu, cpu->ea.seg, cpu->ea.adr, (cpu->tmpdr.base >> 16) & 0xff);
+		i286_mwr(cpu, cpu->ea.seg, 1, cpu->ea.adr++, cpu->tmpdr.limit & 0xff);
+		i286_mwr(cpu, cpu->ea.seg, 1, cpu->ea.adr++, (cpu->tmpdr.limit >> 8) & 0xff);
+		i286_mwr(cpu, cpu->ea.seg, 1, cpu->ea.adr++, cpu->tmpdr.base & 0xff);
+		i286_mwr(cpu, cpu->ea.seg, 1, cpu->ea.adr++, (cpu->tmpdr.base >> 8) & 0xff);
+		i286_mwr(cpu, cpu->ea.seg, 1, cpu->ea.adr, (cpu->tmpdr.base >> 16) & 0xff);
 	}
 }
 
 void i286_rd_ea40(CPU* cpu) {
-	cpu->ltw = i286_mrd(cpu, cpu->ea.seg, cpu->ea.adr++);
-	cpu->htw = i286_mrd(cpu, cpu->ea.seg, cpu->ea.adr++);
-	cpu->lwr = i286_mrd(cpu, cpu->ea.seg, cpu->ea.adr++);
-	cpu->hwr = i286_mrd(cpu, cpu->ea.seg, cpu->ea.adr++);
-	cpu->tmp = i286_mrd(cpu, cpu->ea.seg, cpu->ea.adr);
+	cpu->ltw = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr++);
+	cpu->htw = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr++);
+	cpu->lwr = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr++);
+	cpu->hwr = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr++);
+	cpu->tmp = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr);
 }
 
 // 0f 01 /2 lgdt eq	set gdtr (40 bit)

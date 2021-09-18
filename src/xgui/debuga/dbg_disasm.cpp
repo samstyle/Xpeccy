@@ -146,7 +146,7 @@ int dasmrd(int adr, void* ptr) {
 	int fadr;
 	MemPage* pg;
 	if (comp->cpu->type == CPU_I80286) {
-		res = i286_mrd(comp->cpu, comp->cpu->cs, adr & 0xffff);
+		res = i286_mrd(comp->cpu, comp->cpu->cs, 0, adr & 0xffff);
 	} else {
 		switch (mode) {
 			case XVIEW_CPU:

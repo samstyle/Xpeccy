@@ -54,8 +54,8 @@ void i286_interrupt(CPU*, int);
 void i286_rd_ea(CPU*, int);
 void i286_wr_ea(CPU*, int, int);
 void i286_set_reg(CPU*, int, int);
-unsigned char i286_mrd(CPU*, xSegPtr, unsigned short);
-void i286_mwr(CPU*, xSegPtr, unsigned short, int);
+unsigned char i286_mrd(CPU*, xSegPtr, int, unsigned short);
+void i286_mwr(CPU*, xSegPtr, int, unsigned short, int);
 
 void i286_reset(CPU*);
 int i286_exec(CPU*);
