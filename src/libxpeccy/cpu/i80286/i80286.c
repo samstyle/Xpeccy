@@ -30,12 +30,14 @@ void i286_int_real(CPU* cpu) {
 	i286_push(cpu, cpu->cs.idx);
 	cpu->f &= ~(I286_FI | I286_FT);
 	cpu->tmpi = (cpu->intvec & 0xff) << 2;
-	cpu->ltw = i286_mrd(cpu, cpu->idtr, 0, cpu->tmpi++);	// tmpw (adr)
-	cpu->htw = i286_mrd(cpu, cpu->idtr, 0, cpu->tmpi++);
-	cpu->lwr = i286_mrd(cpu, cpu->idtr, 0, cpu->tmpi++);	// twrd (seg)
-	cpu->hwr = i286_mrd(cpu, cpu->idtr, 0, cpu->tmpi);
-	cpu->cs = i286_cash_seg(cpu, cpu->twrd);
-	cpu->pc = cpu->tmpw;
+	PAIR(w,h,l)seg;
+	PAIR(w,h,l)off;
+	off.l = i286_mrd(cpu, cpu->idtr, 0, cpu->tmpi++);	// adr
+	off.h = i286_mrd(cpu, cpu->idtr, 0, cpu->tmpi++);
+	seg.l = i286_mrd(cpu, cpu->idtr, 0, cpu->tmpi++);	// seg
+	seg.h = i286_mrd(cpu, cpu->idtr, 0, cpu->tmpi);
+	cpu->cs = i286_cash_seg(cpu, seg.w);
+	cpu->pc = off.w;
 }
 
 // PRT mode: descriptors @ IDTR segment
@@ -60,21 +62,22 @@ void i286_int_prt(CPU* cpu) {
 		PAIR(w,h,l)seg;
 		PAIR(w,h,l)off;
 		int adr = cpu->idtr.base + (cpu->intvec & 0xfff8);
-		off.l = cpu->mrd(adr, 0, cpu->data);	// tmpw: offset
+		off.l = cpu->mrd(adr, 0, cpu->data);	// offset
 		off.w = cpu->mrd(adr+1, 0, cpu->data);
-		seg.l = cpu->mrd(adr+2, 0, cpu->data);	// twrd: segment
+		seg.l = cpu->mrd(adr+2, 0, cpu->data);	// segment
 		seg.h = cpu->mrd(adr+3, 0, cpu->data);
-		unsigned short fl = cpu->tmp = cpu->mrd(adr+5, 0, cpu->data);	// flags
+		unsigned char fl = cpu->mrd(adr+5, 0, cpu->data);	// flags
 		cpu->tmpdr = i286_cash_seg(cpu, seg.w);
 		if ((cpu->tmpdr.flag & 0x60) < (fl & 0x60)) {	// check priv
 			cpu->intrq |= I286_INT;
 			cpu->intvec = 13;
 		} else {					// do interrupt
 			i286_push(cpu, cpu->f);
+			if (!(fl & 1)) cpu->f &= I286_FI;
 			i286_push(cpu, cpu->pc);
 			i286_push(cpu, cpu->cs.idx);
 			i286_push(cpu, cpu->errcod & 0xffff);
-			cpu->cs = cpu->tmpdr;
+			cpu->cs = i286_cash_seg(cpu, seg.w);
 			cpu->pc = off.w;
 		}
 		cpu->t = 1;

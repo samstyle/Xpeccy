@@ -210,8 +210,12 @@ void kbdTrigger(Keyboard* kbd, keyEntry ent) {
 }
 
 // at/xt keyboard buffer
+// example:
+// 0xE0, 0x72 (code 0x72e0) = cursor down pressed
+// 0xE0, 0xF0, 0x72 (code 72e0) = cursor down released
 
 void xt_press(Keyboard* kbd, int code) {
+	kbd->outbuf = code;
 	while (code && (kbd->kbuf.pos < 16)) {
 		kbd->kbuf.data[kbd->kbuf.pos++] = code & 0xff;
 		code >>= 8;
@@ -219,12 +223,32 @@ void xt_press(Keyboard* kbd, int code) {
 }
 
 void xt_release(Keyboard* kbd, int code) {
+	kbd->outbuf = 0;
+	// insert F0 before each byte with bit7=0
+	do {
+		if (!(code & 0x80)) {		// b7 = 0
+			kbd->outbuf >>= 8;	// insert f0
+			kbd->outbuf |= 0xf0000000;
+		}
+		kbd->outbuf >>= 8;
+		kbd->outbuf |= ((code & 0xff) << 24);
+		code >>= 8;
+	} while (code);
+	while (kbd->outbuf && !(kbd->outbuf & 0xff)) {
+		kbd->outbuf >>= 8;
+	}
 	while (code && (kbd->kbuf.pos < 16)) {
-		if (code < 0x100)
+		if (code < 0x100)				// TODO: not like this
 			kbd->kbuf.data[kbd->kbuf.pos++] = 0xf0;
 		kbd->kbuf.data[kbd->kbuf.pos++] = (code & 0xff);
 		code >>= 8;
 	}
+}
+
+int xt_read(Keyboard* kbd) {
+	int res = kbd->outbuf & 0xff;
+	kbd->outbuf >>= 8;
+	return res;
 }
 
 // at/xt buffer reading
@@ -238,11 +262,6 @@ unsigned char keyReadCode(Keyboard* keyb) {
 	keyb->kbuf.pos--;
 	return res;
 }
-
-#include <time.h>
-
-//static unsigned char kmodTab[4] = {kbdZX, kbdCODE, kbdCPM, kbdDIRECT};
-//static unsigned char kmodVer[4] = {6,0,1,0};
 
 unsigned char kbdScanZX(Keyboard* kbd, int port) {
 	unsigned char res = 0x3f;
@@ -268,11 +287,6 @@ unsigned char kbdScanProfi(Keyboard* kbd, int port) {
 
 unsigned char kbdRead(Keyboard* kbd, int port) {
 	unsigned char res = 0xff;
-//	int hi;
-
-//	time_t rtime;
-//	time(&rtime);
-//	struct tm* ctime = localtime(&rtime);
 
 	switch (kbd->mode) {
 		case KBD_SPECTRUM:
@@ -284,96 +298,6 @@ unsigned char kbdRead(Keyboard* kbd, int port) {
 		case KBD_MSX:			// port = row register
 			res = kbd->msxMap[port & 0x0f];
 			break;
-/*
-		case KBD_ATM2:
-			hi = (port >> 14) & 3;
-			if (kbd->wcom) {
-				kbd->com = (port >> 8) & 0x3f;
-				kbd->wcom = 0;
-				switch(kbd->com) {
-					case 0x01: res = kmodVer[hi]; break;
-					case 0x07: kbd->kBufPos = 0; break;
-					case 0x09:
-						switch(hi) {
-							case 0:
-								res = kbd->keycode;
-								kbd->keycode = 0;
-								break;
-							case 1: res = kbd->lastkey; break;
-							case 2: res = kbd->flag1; break;
-							case 3: res = kbd->flag2; break;
-						}
-						break;
-					case 0x0a: kbd->flag1 |= KFL_RUS; break;
-					case 0x0b: kbd->flag1 &= ~KFL_RUS; break;
-					case 0x0c: break;			// TODO: pause
-					case 0x0d:
-						kbd->reset = 1;
-						break;
-					case 0x10:
-						switch(hi) {
-							case 0: res = ctime->tm_sec & 0xff; break;
-							case 1: res = ctime->tm_min & 0xff; break;
-							case 2: res = ctime->tm_hour & 0xff; break;
-						}
-						break;
-					case 0x12:
-						switch(hi) {
-							case 0: res = ctime->tm_mday & 0xff; break;
-							case 1: res = ctime->tm_mon & 0xff; break;
-							case 2: res = ctime->tm_year & 0xff; break;
-						}
-						//printf("%i = %i\n",hi,res);
-						break;
-					case 0x16: break;
-					case 0x17: break;
-					case 0x11:				// set time
-					case 0x13:				// set date
-					case 0x14:				// set P1 bits
-					case 0x15:				// res P1 bits
-					case 0x08:				// set mode
-						kbd->warg = 1;
-						break;
-					default: res = 0xff; break;
-				}
-			} else if (kbd->warg) {
-				kbd->arg = (port >> 8) & 0xff;
-				kbd->warg = 0;
-				switch (kbd->com) {
-					case 0x08:
-						kbd->submode = kmodTab[kbd->arg & 3];
-						break;
-				}
-			} else if ((port & 0xff00) == 0x5500) {
-				kbd->wcom = 1;
-				kbd->warg = 0;
-				res = 0xaa;
-			} else {
-				switch(kbd->submode) {
-					case kbdZX:
-						res = kbdScanZX(kbd, port);
-						break;
-					case kbdCODE:
-						res = kbd->keycode;
-						kbd->keycode = 0;
-						break;
-					case kbdCPM:
-						switch(hi) {
-							case 0: res = kbd->keycode;
-								kbd->keycode = 0;
-								break;
-							case 1: res = kbd->flag2;
-								break;
-							case 2: res = kbd->flag1;
-								break;
-						}
-						break;
-					case kbdDIRECT:
-						break;
-				}
-			}
-			break;
-*/
 	}
 	return res;
 }

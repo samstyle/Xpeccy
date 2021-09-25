@@ -1,15 +1,19 @@
 #include <stddef.h>
+#include <stdio.h>
 
 #include "pit.h"
 
+void pit_ch_reset(pitChan* ch) {
+	ch->wgat = 1;
+	ch->gate = 1;
+	ch->out = 1;
+	ch->lout = 1;
+}
+
 void pit_reset(PIT* pit) {
-	// stop all timers
-	pit->ch0.wgat = 1;
-	pit->ch1.wgat = 1;
-	pit->ch2.wgat = 1;
-	pit->ch0.gate = 1;
-	pit->ch1.gate = 1;
-	pit->ch2.gate = 1;
+	pit_ch_reset(&pit->ch0);
+	pit_ch_reset(&pit->ch1);
+	pit_ch_reset(&pit->ch2);
 }
 
 int pit_ch_rd(pitChan* ch) {
@@ -147,6 +151,15 @@ void pch_gt_m5(pitChan* ch, int gt) {
 	ch->gate = gt;
 }
 
+// mode0: wait for divider, then start (once)
+// mode1: wait for divider, then gate 0->1, then start (once)
+// mode2: wait for divider, out=1, on cnt 2->1 short out 1-0-1, reload counter. gate=0 will stop counter, out=1; gate 0->1 reload and start counter
+// mode3: wait for divider, div&=~1, then start (const, 2 decrements every time), out is changing every cnt==0. gate=0 stops counter, gate=1 reload it and starts
+// mode4: wait for divider, then start (const, w/o reloading). reloading divider (full) will reload counter, gate 0->1 will reload value too
+// mode5: wait for divider, then gate 0->1, then start in mode4. gate=0 stops
+// mode6 = mode2
+// mode7 = mode3
+
 pchCore pit_mode_tab[8] = {
 	{pch_wr_m0, pch_tm_m0, pch_gt_m0},	// m0
 	{NULL, pch_tm_m1, pch_gt_m1},		// m1
@@ -163,8 +176,12 @@ void pch_set_mod(pitChan* ch, int mod) {
 	ch->cb = &pit_mode_tab[ch->opmod];
 }
 
+// 43,01.01.010.0b(0x54) : ch1,acmod=1,opmod=2,bcd=0
+// 41,00010010b(0x12) : period
+
 void pit_wr(PIT* pit, int adr, int val) {
 	pitChan* ch;
+	printf("pit_wr %.2X %.2X\n",adr,val);
 	switch(adr & 7) {
 		case 0: pit_ch_wr(&pit->ch0, val); break;
 		case 1: pit_ch_wr(&pit->ch1, val); break;
@@ -185,16 +202,6 @@ void pit_wr(PIT* pit, int adr, int val) {
 					ch->clat = ch->cnt;
 					ch->latch = 3;
 				}
-				// mode0: wait for divider, then start (once)
-				// mode1: wait for divider, then gate 0->1, then start (once)
-				// mode2: wait for divider, out=1, on cnt 2->1 short out 1-0-1, reload counter. gate=0 will stop counter, out=1; gate 0->1 reload and start counter
-				// mode3: wait for divider, div&=~1, then start (const, 2 decrements every time), out is changing every cnt==0. gate=0 stops counter, gate=1 reload it and starts
-				// mode4: wait for divider, then start (const, w/o reloading). reloading divider (full) will reload counter, gate 0->1 will reload value too
-				// mode5: wait for divider, then gate 0->1, then start in mode4. gate=0 stops
-				// mode6 = mode2
-				// mode7 = mode3
-
-				//ch->opmod = (val & 0x0e) >> 1;
 				pch_set_mod(ch, (val >> 1) & 7);
 				ch->out = (ch->opmod == 0) ? 0 : 1;
 				ch->wdiv = 1;

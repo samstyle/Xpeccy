@@ -151,6 +151,8 @@ typedef struct {
 	int extMap[8];	// Profi XT-keyboard extend
 	int msxMap[16];	// MSX keys map
 	// pc keyboard keybuffer
+	int outbuf;		// 0 = empty, else key scancode
+	int inbuf;		// 0 = free, else com/data
 	xKeyBuf kbuf;
 //	unsigned char kbdBuf[16];	// PS/2 key buffer
 //	int kBufPos;
@@ -177,8 +179,7 @@ typedef struct {
 	unsigned char extKey[KEYSEQ_MAXLEN];
 	unsigned char msxKey[KEYSEQ_MAXLEN];
 	atmKey atmCode;
-	int keyCode;		// 0xXXYYZZ = ZZ,YY,XX in buffer ([ZZ],[YY],0xf0,XX if released). scantab 2 (AT)
-//	int xtcode;		// 0xXX: keycode b7=0:press, b7=1:release, b0-6 code. scantab 1 (XT)
+	int keyCode;		// 0xXXYYZZ = ZZ,YY,XX in buffer ([ZZ],[YY],0xf0,XX if released). set 2
 	int joyMask;
 } keyEntry;
 
@@ -199,6 +200,7 @@ unsigned char kbdRead(Keyboard*, int);
 unsigned char keyReadCode(Keyboard*);
 void xt_press(Keyboard*, int);
 void xt_release(Keyboard*, int);
+int xt_read(Keyboard*);
 void kbd_press(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk);
 void kbd_release(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk);
 

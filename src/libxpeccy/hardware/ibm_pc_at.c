@@ -81,13 +81,20 @@ XT keyboard
 		bit7: 1:block kbd. 1->0 will clear kbd buf
 062 8255 Port C input (no connection?)
 063 8255 Command/Mode control register
+
+064	rd	bit0: output buffer full (rd 60)
+		bit1: input buffer full (wr 60)
+		bit2: 0:powerup or reset / 1:selftest ok
 */
 
 int ibm_inKbd(Computer* comp, int adr) {
 	int res = -1;
 	switch (adr & 0x0f) {
-		case 0: res = keyReadCode(comp->keyb); break;
+		case 0: res = xt_read(comp->keyb); break;		// read code
 		case 1: res = comp->reg[0x61]; break;
+//		case 4: if (!comp->keyb->outbuf) res &= ~1;
+//			if (!comp->keyb->inbuf) res &= ~2;
+//			break;
 	}
 	return res;
 }
@@ -96,7 +103,8 @@ void ibm_outKbd(Computer* comp, int adr, int val) {
 	switch(adr & 0x0f) {
 		case 0: break;
 		case 1:	comp->reg[0x61] = val & 0xff;
-			comp->beep->lev = (val & 2) ? 1 : 0;
+			// comp->beep->lev = (val & 2) ? 1 : 0;
+			if (!(val & 0x80)) comp->keyb->outbuf = 0;
 			break;
 	}
 }
@@ -156,8 +164,9 @@ void ibm_sync(Computer* comp, int ns) {
 	}
 	if (!comp->pit.ch0.lout && comp->pit.ch0.out) {
 		comp->pit.ch2.lout = comp->pit.ch2.out;
-		// beeper
+		// speaker
 	}
+	comp->beep->lev = (comp->reg[0x61] & 2) ? comp->pit.ch2.out : 0;
 }
 
 // key press/release = INT1 ?
