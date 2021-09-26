@@ -22,15 +22,16 @@ typedef struct {
 #define REG_EMPTY -1
 #define REG_MPTR -2
 
-enum {
-	REG_BIT = 1,
-	REG_BYTE,
-	REG_WORD
-};
+#define REG_WORD 0
+#define REG_BYTE 1
+#define REG_BIT 2
+#define REG_24 3
+#define REG_TMASK 0x0f
+#define REG_RO 0x80
 
 typedef struct {
 	int id;
-	int byte;
+	int type;
 	const char* name;
 	int value;
 } xRegister;
@@ -43,7 +44,7 @@ typedef struct {
 typedef struct {
 	int id;
 	const char* name;
-	int byte;
+	int type;
 } xRegDsc;
 
 // memrq rd

@@ -74,11 +74,9 @@ void DebugWin::chaPal() {
 	ui.labHeadRay->setStyleSheet(str);
 	ui.labHeadStack->setStyleSheet(str);
 	ui.labHeadSignal->setStyleSheet(str);
-
 	setFont(conf.dbg.font);
-	for (int i = 0; i < 16; i++) {
-		if (dbgRegEdit[i])
-			dbgRegEdit[i]->updatePal();
+	foreach(xHexSpin* xhs, dbgRegEdit) {
+		xhs->updatePal();
 	}
 	ui.dasmTable->update();
 	ui.dumpTable->update();
@@ -193,10 +191,8 @@ void DebugWin::onPrfChange(xProfile* prf) {
 	ui.tabsPanel->setPalette(QPalette());
 	tabMode = prf->zx->hw->grp;
 	// set input line base
-	for (int i = 0; i < 16; i++) {
-		if (dbgRegEdit[i] != NULL) {
-			dbgRegEdit[i]->setBase(conf.prof.cur->zx->hw->base);
-		}
+	foreach(xHexSpin* xhs, dbgRegEdit) {
+		xhs->setBase(conf.prof.cur->zx->hw->base);
 	}
 	switch(conf.prof.cur->zx->hw->base) {
 		case 8:
@@ -293,27 +289,22 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	p.first = QIcon(":/images/tape.png"); p.second = ui.tapeTab; lst.append(p);
 	tablist[HWG_SPCLST] = lst;
 
-	xLabel* arrl[16] = {
-		ui.labReg00, ui.labReg01, ui.labReg02, ui.labReg03, ui.labReg04,
-		ui.labReg05, ui.labReg06, ui.labReg07, ui.labReg08, ui.labReg09,
-		ui.labReg10, ui.labReg11, ui.labReg12, ui.labReg13, ui.labReg14,
-		NULL
-	};
-
-	xHexSpin* arre[16] = {
-		ui.editReg00, ui.editReg01, ui.editReg02, ui.editReg03, ui.editReg04,
-		ui.editReg05, ui.editReg06, ui.editReg07, ui.editReg08, ui.editReg09,
-		ui.editReg10, ui.editReg11, ui.editReg12, ui.editReg13, ui.editReg14,
-		NULL
-	};
-	for (i = 0; i < 16; i++) {
-		dbgRegLabs[i] = arrl[i];
-		dbgRegEdit[i] = arre[i];
-		if (arrl[i]) {
-			arrl[i]->id = i;
-			connect(arrl[i], SIGNAL(clicked(QMouseEvent*)), this, SLOT(regClick(QMouseEvent*)));
-			dbgRegEdit[i]->setXFlag(XHS_BGR | XHS_DEC | XHS_FILL);
-		}
+	xLabel* lab;
+	xHexSpin* xhs;
+	for(i = 0; i < 20; i++) {		// set max registers here
+		lab = new xLabel;
+		xhs = new xHexSpin;
+		lab->id = i;
+		xhs->setXFlag(XHS_BGR | XHS_DEC | XHS_FILL);
+		lab->setVisible(false);
+		xhs->setVisible(false);
+		xhs->setFrame(false);
+		xhs->setAlignment(Qt::AlignCenter);
+		dbgRegLabs.append(lab);
+		dbgRegEdit.append(xhs);
+		ui.formRegs->insertRow(i, lab, xhs);
+		connect(lab, SIGNAL(clicked(QMouseEvent*)), this, SLOT(regClick(QMouseEvent*)));
+		connect(xhs, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
 	}
 
 	ui.dumpTable->setComp(&comp);
@@ -412,7 +403,6 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.dumpTable,SIGNAL(rqRefill()),this,SLOT(fillDisasm()));
 	connect(ui.dumpTable,SIGNAL(rqRefill()),ui.bpList,SLOT(update()));
 	connect(ui.dumpTable,SIGNAL(rqRefill()),this,SLOT(updateScreen()));
-	// connect(ui.dumpTable->selectionModel(), SIGNAL(currentChanged(QModelIndex, QModelIndex)), this, SLOT(dumpChadr(QModelIndex)));
 
 	connect(ui.dumpTable, SIGNAL(s_adrch(int)), ui.dumpScroll, SLOT(setValue(int)));
 	connect(ui.dumpTable, SIGNAL(s_adrch(int)), this, SLOT(dumpChadr(int)));
@@ -477,22 +467,6 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.sbTrack, SIGNAL(valueChanged(int)), ui.tabDiskDump, SLOT(setTrack(int)));
 
 // registers
-	connect(ui.editReg00, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editReg01, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editReg02, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editReg03, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editReg04, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editReg05, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editReg06, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editReg07, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editReg08, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editReg09, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editReg10, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editReg11, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editReg12, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editReg13, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-	connect(ui.editReg14, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
-
 	connect(ui.boxIM,SIGNAL(valueChanged(int)),this,SLOT(setCPU()));
 	connect(ui.flagIFF1,SIGNAL(stateChanged(int)),this,SLOT(setCPU()));
 	connect(ui.flagIFF2,SIGNAL(stateChanged(int)),this,SLOT(setCPU()));
@@ -1458,24 +1432,26 @@ void DebugWin::fillCPU() {
 	CPU* cpu = comp->cpu;
 	xRegBunch bunch = cpuGetRegs(cpu);
 	int i = 0;
-	while(dbgRegLabs[i] != NULL) {
+	while(i < dbgRegLabs.size()) {
 		switch (bunch.regs[i].id) {
 			case REG_EMPTY:
 			case REG_NONE:
-				dbgRegLabs[i]->clear();
+				dbgRegLabs[i]->setVisible(false);
 				dbgRegEdit[i]->setVisible(false);
 				// dbgRegEdit[i]->clear();
 				break;
 			default:
 				dbgRegLabs[i]->setText(bunch.regs[i].name);
 				dbgRegEdit[i]->setProperty("regid", bunch.regs[i].id);
-				if (bunch.regs[i].byte) {
-					dbgRegEdit[i]->setMax(0xff);
-				} else {
-					dbgRegEdit[i]->setMax(0xffff);
+				switch (bunch.regs[i].type & REG_TMASK) {
+					case REG_BYTE: dbgRegEdit[i]->setMax(0xff); break;
+					case REG_24: dbgRegEdit[i]->setMax(0xffffff); break;
+					default: dbgRegEdit[i]->setMax(0xffff); break;
 				}
+				dbgRegEdit[i]->setReadOnly(bunch.regs[i].type & REG_RO);
 				dbgRegEdit[i]->setValue(bunch.regs[i].value);
 				dbgRegEdit[i]->setVisible(true);
+				dbgRegLabs[i]->setVisible(true);
 				break;
 		}
 		i++;
@@ -1509,17 +1485,15 @@ void DebugWin::setCPU() {
 	if (block) return;
 	CPU* cpu = comp->cpu;
 	int i = 0;
-	int idx = 0;
 	xRegBunch bunch;
-	while (dbgRegEdit[idx] != NULL) {
-		if (dbgRegEdit[idx]->isEnabled()) {
-			bunch.regs[i].id = dbgRegEdit[idx]->property("regid").toInt();
-			bunch.regs[i].value = dbgRegEdit[idx]->getValue() & 0xffff;
+	foreach(xHexSpin* xhs, dbgRegEdit) {
+		if (xhs->isEnabled()) {
+			bunch.regs[i].id = xhs->property("regid").toInt();
+			bunch.regs[i].value = xhs->getValue() & 0xffff;
 			i++;
 		} else {
 			bunch.regs[i].id = REG_NONE;
 		}
-		idx++;
 	}
 	cpuSetRegs(cpu, bunch);
 	cpu->imode = ui.boxIM->value() & 0xff;

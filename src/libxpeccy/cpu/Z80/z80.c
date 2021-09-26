@@ -256,24 +256,24 @@ xAsmScan z80_asm(const char* cbuf, char* buf) {
 // registers
 
 static xRegDsc z80RegTab[] = {
-	{Z80_REG_PC, "PC", 0},
-	{Z80_REG_AF, "AF", 0},
-	{Z80_REG_BC, "BC", 0},
-	{Z80_REG_DE, "DE", 0},
-	{Z80_REG_HL, "HL", 0},
+	{Z80_REG_PC, "PC", REG_WORD},
+	{Z80_REG_AF, "AF", REG_WORD},
+	{Z80_REG_BC, "BC", REG_WORD},
+	{Z80_REG_DE, "DE", REG_WORD},
+	{Z80_REG_HL, "HL", REG_WORD},
 
-	{Z80_REG_SP, "SP", 0},
-	{Z80_REG_AFA, "AF'", 0},
-	{Z80_REG_BCA, "BC'", 0},
-	{Z80_REG_DEA, "DE'", 0},
-	{Z80_REG_HLA, "HL'", 0},
+	{Z80_REG_SP, "SP", REG_WORD},
+	{Z80_REG_AFA, "AF'", REG_WORD},
+	{Z80_REG_BCA, "BC'", REG_WORD},
+	{Z80_REG_DEA, "DE'", REG_WORD},
+	{Z80_REG_HLA, "HL'", REG_WORD},
 
-	{Z80_REG_IX, "IX", 0},
-	{Z80_REG_IY, "IY", 0},
-	{Z80_REG_I, "I", 1},
-	{Z80_REG_R, "R", 1},
+	{Z80_REG_IX, "IX", REG_WORD},
+	{Z80_REG_IY, "IY", REG_WORD},
+	{Z80_REG_I, "I", REG_BYTE},
+	{Z80_REG_R, "R", REG_BYTE},
 #ifdef ISDEBUG
-	{REG_MPTR, "WZ", 0},
+	{REG_MPTR, "WZ", REG_WORD},
 #endif
 	{REG_NONE, "", 0}
 };
@@ -286,7 +286,7 @@ void z80_get_regs(CPU* cpu, xRegBunch* bunch) {
 	while(z80RegTab[idx].id != REG_NONE) {
 		bunch->regs[idx].id = z80RegTab[idx].id;
 		bunch->regs[idx].name = z80RegTab[idx].name;
-		bunch->regs[idx].byte = z80RegTab[idx].byte;
+		bunch->regs[idx].type = z80RegTab[idx].type;
 		switch(z80RegTab[idx].id) {
 			case Z80_REG_PC: bunch->regs[idx].value = cpu->pc; break;
 			case Z80_REG_SP: bunch->regs[idx].value = cpu->sp; break;

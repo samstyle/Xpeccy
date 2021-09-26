@@ -1378,15 +1378,15 @@ int pdp11_exec(CPU* cpu) {
 // registers
 
 static xRegDsc pdp11RegTab[] = {
-	{PDP11_REG0, "R0", 0},
-	{PDP11_REG1, "R1", 0},
-	{PDP11_REG2, "R2", 0},
-	{PDP11_REG3, "R3", 0},
-	{PDP11_REG4, "R4", 0},
-	{PDP11_REG5, "R5", 0},
-	{PDP11_REG6, "SP", 0},
-	{PDP11_REG7, "PC", 0},
-	{PDP11_REGF, "PSW", 0},
+	{PDP11_REG0, "R0", REG_WORD},
+	{PDP11_REG1, "R1", REG_WORD},
+	{PDP11_REG2, "R2", REG_WORD},
+	{PDP11_REG3, "R3", REG_WORD},
+	{PDP11_REG4, "R4", REG_WORD},
+	{PDP11_REG5, "R5", REG_WORD},
+	{PDP11_REG6, "SP", REG_WORD},
+	{PDP11_REG7, "PC", REG_WORD},
+	{PDP11_REGF, "PSW", REG_WORD},
 	{REG_NONE, "", 0}
 };
 
@@ -1414,7 +1414,7 @@ void pdp11_get_regs(CPU* cpu, xRegBunch* bunch) {
 	while (pdp11RegTab[idx].id != REG_NONE) {
 		bunch->regs[idx].id = pdp11RegTab[idx].id;
 		bunch->regs[idx].name = pdp11RegTab[idx].name;
-		bunch->regs[idx].byte = pdp11RegTab[idx].byte;
+		bunch->regs[idx].type = pdp11RegTab[idx].type;
 		bunch->regs[idx].value = pdp_get_reg(cpu, pdp11RegTab[idx].id);
 		idx++;
 	}

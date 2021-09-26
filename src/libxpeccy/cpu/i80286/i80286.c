@@ -138,7 +138,7 @@ const char* str_rot[8] = {"rol","ror","rcl","rcr","sal","shr","*rot/6","sar"};
 const char* str_opX[8] = {"test","*test","not","neg","mul","imul","div","idiv"};
 const char* str_opE[8] = {"inc","dec","call","callf","jmp","jmpf","push","ff /7"};
 const char* str_opQ[8] = {"sldt","str","lldt","ltr","verr","verw","0f00 /6","0f00 /7"};
-const char* str_opW[8] = {"sgdt","sidt","lgdt","lidt","smsw","lmsw","0f01 /6","0f01 /7"};
+const char* str_opW[8] = {"sgdt","sidt","lgdt","lidt","smsw","0f01 /5","lmsw","0f01 /7"};
 
 xMnem i286_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 	xMnem mn;
@@ -308,19 +308,22 @@ xMnem i286_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 // asm
 
 static xRegDsc i286RegTab[] = {
-	{I286_CS, "CS", 0},
-	{I286_IP, "IP", 0},
-	{I286_SS, "SS", 0},
-	{I286_SP, "SP", 0},
-	{I286_BP, "BP", 0},
-	{I286_DS, "DS", 0},
-	{I286_ES, "ES", 0},
-	{I286_SI, "SI", 0},
-	{I286_DI, "DI", 0},
-	{I286_AX, "AX", 0},
-	{I286_CX, "CX", 0},
-	{I286_DX, "DX", 0},
-	{I286_BX, "BX", 0},
+	{I286_IP, "IP", REG_WORD},
+	{I286_SP, "SP", REG_WORD},
+	{I286_BP, "BP", REG_WORD},
+	{I286_SI, "SI", REG_WORD},
+	{I286_DI, "DI", REG_WORD},
+	{I286_AX, "AX", REG_WORD},
+	{I286_CX, "CX", REG_WORD},
+	{I286_DX, "DX", REG_WORD},
+	{I286_BX, "BX", REG_WORD},
+	{I286_CS, "CS", REG_WORD},
+	{I286_SS, "SS", REG_WORD},
+	{I286_DS, "DS", REG_WORD},
+	{I286_ES, "ES", REG_WORD},
+	{I286_MSW, "MSW", REG_RO|REG_WORD},
+	{I286_GDT, "GDT", REG_RO|REG_24},
+	{I286_IDT, "IDT", REG_RO|REG_24},
 	{REG_NONE, "", 0}
 };
 
@@ -334,25 +337,31 @@ char* i286_flags = "SZ-A-P-C";
 
 void i286_get_regs(CPU* cpu, xRegBunch* bnch) {
 	int idx = 0;
+	int val;
 	while (i286RegTab[idx].id != REG_NONE) {
 		bnch->regs[idx].id = i286RegTab[idx].id;
 		bnch->regs[idx].name = i286RegTab[idx].name;
-		bnch->regs[idx].byte = i286RegTab[idx].byte;
+		bnch->regs[idx].type = i286RegTab[idx].type;
+		val = -1;
 		switch (i286RegTab[idx].id) {
-			case I286_CS: bnch->regs[idx].value = cpu->cs.idx; break;
-			case I286_IP: bnch->regs[idx].value = cpu->pc; break;
-			case I286_SS: bnch->regs[idx].value = cpu->ss.idx; break;
-			case I286_SP: bnch->regs[idx].value = cpu->sp; break;
-			case I286_BP: bnch->regs[idx].value = cpu->bp; break;
-			case I286_DS: bnch->regs[idx].value = cpu->ds.idx; break;
-			case I286_ES: bnch->regs[idx].value = cpu->es.idx; break;
-			case I286_SI: bnch->regs[idx].value = cpu->si; break;
-			case I286_DI: bnch->regs[idx].value = cpu->di; break;
-			case I286_AX: bnch->regs[idx].value = cpu->ax; break;
-			case I286_CX: bnch->regs[idx].value = cpu->cx; break;
-			case I286_DX: bnch->regs[idx].value = cpu->dx; break;
-			case I286_BX: bnch->regs[idx].value = cpu->bx; break;
+			case I286_IP: val = cpu->pc; break;
+			case I286_SP: val = cpu->sp; break;
+			case I286_BP: val = cpu->bp; break;
+			case I286_SI: val = cpu->si; break;
+			case I286_DI: val = cpu->di; break;
+			case I286_AX: val = cpu->ax; break;
+			case I286_CX: val = cpu->cx; break;
+			case I286_DX: val = cpu->dx; break;
+			case I286_BX: val = cpu->bx; break;
+			case I286_CS: val = cpu->cs.idx; break;
+			case I286_SS: val = cpu->ss.idx; break;
+			case I286_DS: val = cpu->ds.idx; break;
+			case I286_ES: val = cpu->es.idx; break;
+			case I286_MSW: val = cpu->msw; break;
+			case I286_GDT: val = cpu->gdtr.base; break;
+			case I286_IDT: val = cpu->idtr.base; break;
 		}
+		bnch->regs[idx].value = val;
 		idx++;
 	}
 	bnch->regs[idx].id = REG_NONE;
@@ -361,21 +370,23 @@ void i286_get_regs(CPU* cpu, xRegBunch* bnch) {
 
 void i286_set_regs(CPU* cpu, xRegBunch bnch) {
 	int idx = 0;
+	int val;
 	while (bnch.regs[idx].id != REG_NONE) {
+		val = bnch.regs[idx].value;
 		switch(bnch.regs[idx].id) {
-			case I286_CS: cpu->cs = i286_cash_seg(cpu, bnch.regs[idx].value); break;
-			case I286_IP: cpu->pc = bnch.regs[idx].value; break;
-			case I286_SS: cpu->ss = i286_cash_seg(cpu, bnch.regs[idx].value); break;
-			case I286_SP: cpu->sp = bnch.regs[idx].value; break;
-			case I286_BP: cpu->bp = bnch.regs[idx].value; break;
-			case I286_DS: cpu->ds = i286_cash_seg(cpu, bnch.regs[idx].value); break;
-			case I286_ES: cpu->es = i286_cash_seg(cpu, bnch.regs[idx].value); break;
-			case I286_SI: cpu->si = bnch.regs[idx].value; break;
-			case I286_DI: cpu->di = bnch.regs[idx].value; break;
-			case I286_AX: cpu->ax = bnch.regs[idx].value; break;
-			case I286_CX: cpu->cx = bnch.regs[idx].value; break;
-			case I286_DX: cpu->dx = bnch.regs[idx].value; break;
-			case I286_BX: cpu->bx = bnch.regs[idx].value; break;
+			case I286_IP: cpu->pc = val; break;
+			case I286_SP: cpu->sp = val; break;
+			case I286_BP: cpu->bp = val; break;
+			case I286_SI: cpu->si = val; break;
+			case I286_DI: cpu->di = val; break;
+			case I286_AX: cpu->ax = val; break;
+			case I286_CX: cpu->cx = val; break;
+			case I286_DX: cpu->dx = val; break;
+			case I286_BX: cpu->bx = val; break;
+			case I286_CS: cpu->cs = i286_cash_seg(cpu, val); break;
+			case I286_SS: cpu->ss = i286_cash_seg(cpu, val); break;
+			case I286_DS: cpu->ds = i286_cash_seg(cpu, val); break;
+			case I286_ES: cpu->es = i286_cash_seg(cpu, val); break;
 		}
 		idx++;
 	}

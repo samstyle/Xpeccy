@@ -171,12 +171,12 @@ xMnem lr_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 // registers
 
 static xRegDsc lrRegTab[] = {
-	{LR_REG_PC, "PC", 0},
-	{LR_REG_AF, "AF", 0},
-	{LR_REG_BC, "BC", 0},
-	{LR_REG_DE, "DE", 0},
-	{LR_REG_HL, "HL", 0},
-	{LR_REG_SP, "SP", 0},
+	{LR_REG_PC, "PC", REG_WORD},
+	{LR_REG_AF, "AF", REG_WORD},
+	{LR_REG_BC, "BC", REG_WORD},
+	{LR_REG_DE, "DE", REG_WORD},
+	{LR_REG_HL, "HL", REG_WORD},
+	{LR_REG_SP, "SP", REG_WORD},
 	{REG_NONE, "", 0}
 };
 
@@ -188,7 +188,7 @@ void lr_get_regs(CPU* cpu, xRegBunch* bunch) {
 	while(lrRegTab[idx].id != REG_NONE) {
 		bunch->regs[idx].id = lrRegTab[idx].id;
 		bunch->regs[idx].name = lrRegTab[idx].name;
-		bunch->regs[idx].byte = lrRegTab[idx].byte;
+		bunch->regs[idx].type = lrRegTab[idx].type;
 		switch(lrRegTab[idx].id) {
 			case LR_REG_PC: bunch->regs[idx].value = cpu->pc; break;
 			case LR_REG_SP: bunch->regs[idx].value = cpu->sp; break;

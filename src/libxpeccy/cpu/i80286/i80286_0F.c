@@ -172,8 +172,8 @@ void i286_0F014(CPU* cpu) {
 	i286_wr_ea(cpu, cpu->msw, 1);
 }
 
-// 0f 01 /5 lmsw ew	msw = [ea]
-void i286_0F015(CPU* cpu) {
+// 0f 01 /6 lmsw ew	msw = [ea]
+void i286_0F016(CPU* cpu) {
 	cpu->msw = cpu->tmpw;
 	if (cpu->msw & I286_FPE)
 		cpu->mode = I286_MOD_PROT;
@@ -181,7 +181,7 @@ void i286_0F015(CPU* cpu) {
 
 cbcpu i286_0f01_tab[8] = {
 	i286_0F010,i286_0F011,i286_0F012,i286_0F013,
-	i286_0F014,i286_0F015,i286_0Fxx,i286_0Fxx
+	i286_0F014,i286_0Fxx,i286_0F016,i286_0Fxx
 };
 
 void i286_0F01(CPU* cpu) {
@@ -235,7 +235,7 @@ void i286_0F06(CPU* cpu) {
 
 opCode i286_0f_tab[256] = {
 	{OF_PRT, 1, i286_0F00, 0, ":Q :e"},			// sldt,str,lldt,ltr,verr,verw,?,? ew
-	{0, 1, i286_0F01, 0, ":W :e"},				// sgdt,sidt,lgdt,lidt,smsw,lmsw,?,? ew
+	{0, 1, i286_0F01, 0, ":W :e"},				// sgdt,sidt,lgdt,lidt,smsw,?,lmsw,? ew
 	{OF_PRT | OF_WORD, 1, i286_0F02, 0, "lar :r,:e"},	// lar rw,ew
 	{OF_PRT | OF_WORD, 1, i286_0F03, 0, "lsl :r,:e"},	// lsl rw,ew
 	{0, 1, i286_0Fxx, 0, "undef"},

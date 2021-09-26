@@ -152,6 +152,7 @@ void xHexSpin::onTextChange(QString txt) {
 }
 
 void xHexSpin::keyPressEvent(QKeyEvent* ev) {
+	if (isReadOnly()) return;
 	QString txt;
 	int pos;
 	switch(ev->key()) {
@@ -196,6 +197,7 @@ void xHexSpin::keyPressEvent(QKeyEvent* ev) {
 }
 
 void xHexSpin::wheelEvent(QWheelEvent* ev) {
+	if (isReadOnly()) return;
 	if (ev->yDelta > 0) {
 		setValue(minMaxCorrect(value + 1, min, max));
 	} else if (ev->yDelta < 0) {

@@ -271,7 +271,7 @@
       </widget>
      </item>
      <item>
-      <layout class="QFormLayout" name="formLayout">
+      <layout class="QFormLayout" name="formRegs">
        <property name="horizontalSpacing">
         <number>0</number>
        </property>
@@ -279,364 +279,13 @@
         <number>2</number>
        </property>
        <item row="0" column="0">
-        <widget class="xLabel" name="labReg00">
-         <property name="text">
-          <string>0</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="xHexSpin" name="editReg00">
-         <property name="maximumSize">
-          <size>
-           <width>60</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="xLabel" name="labReg01">
-         <property name="text">
-          <string>1</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="xHexSpin" name="editReg01">
-         <property name="maximumSize">
-          <size>
-           <width>60</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="maxLength">
-          <number>32767</number>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="xLabel" name="labReg02">
-         <property name="text">
-          <string>2</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="xHexSpin" name="editReg02">
-         <property name="maximumSize">
-          <size>
-           <width>60</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="maxLength">
-          <number>32767</number>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="xLabel" name="labReg03">
-         <property name="text">
-          <string>3</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <widget class="xHexSpin" name="editReg03">
-         <property name="maximumSize">
-          <size>
-           <width>60</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="0">
-        <widget class="xLabel" name="labReg04">
-         <property name="text">
-          <string>4</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="xHexSpin" name="editReg04">
-         <property name="maximumSize">
-          <size>
-           <width>60</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
-        <widget class="xLabel" name="labReg05">
-         <property name="text">
-          <string>5</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="1">
-        <widget class="xHexSpin" name="editReg05">
-         <property name="maximumSize">
-          <size>
-           <width>60</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="0">
-        <widget class="xLabel" name="labReg06">
-         <property name="text">
-          <string>6</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="1">
-        <widget class="xHexSpin" name="editReg06">
-         <property name="maximumSize">
-          <size>
-           <width>60</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="0">
-        <widget class="xLabel" name="labReg07">
-         <property name="text">
-          <string>7</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="1">
-        <widget class="xHexSpin" name="editReg07">
-         <property name="maximumSize">
-          <size>
-           <width>60</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="0">
-        <widget class="xLabel" name="labReg08">
-         <property name="text">
-          <string>8</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="1">
-        <widget class="xHexSpin" name="editReg08">
-         <property name="maximumSize">
-          <size>
-           <width>60</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="0">
-        <widget class="xLabel" name="labReg09">
-         <property name="text">
-          <string>9</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="1">
-        <widget class="xHexSpin" name="editReg09">
-         <property name="maximumSize">
-          <size>
-           <width>60</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="0">
-        <widget class="xLabel" name="labReg10">
-         <property name="text">
-          <string>10</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="1">
-        <widget class="xHexSpin" name="editReg10">
-         <property name="maximumSize">
-          <size>
-           <width>60</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="0">
-        <widget class="xLabel" name="labReg11">
-         <property name="text">
-          <string>11</string>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="1">
-        <widget class="xHexSpin" name="editReg11">
-         <property name="maximumSize">
-          <size>
-           <width>60</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="0">
-        <widget class="xLabel" name="labReg12">
-         <property name="text">
-          <string>12</string>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="1">
-        <widget class="xHexSpin" name="editReg12">
-         <property name="maximumSize">
-          <size>
-           <width>60</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="13" column="0">
-        <widget class="xLabel" name="labReg13">
-         <property name="text">
-          <string>13</string>
-         </property>
-        </widget>
-       </item>
-       <item row="13" column="1">
-        <widget class="xHexSpin" name="editReg13">
-         <property name="maximumSize">
-          <size>
-           <width>60</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="14" column="0">
-        <widget class="xLabel" name="labReg14">
-         <property name="text">
-          <string>14</string>
-         </property>
-        </widget>
-       </item>
-       <item row="14" column="1">
-        <widget class="xHexSpin" name="editReg14">
-         <property name="maximumSize">
-          <size>
-           <width>60</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="frame">
-          <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="15" column="0">
         <widget class="QLabel" name="labIMM">
          <property name="text">
           <string>IM</string>
          </property>
         </widget>
        </item>
-       <item row="15" column="1">
+       <item row="0" column="1">
         <widget class="QSpinBox" name="boxIM">
          <property name="maximumSize">
           <size>
@@ -655,35 +304,48 @@
          </property>
         </widget>
        </item>
-       <item row="17" column="0">
+       <item row="2" column="0">
         <widget class="QLabel" name="labIFF1">
          <property name="text">
           <string>IFF1</string>
          </property>
         </widget>
        </item>
-       <item row="17" column="1">
+       <item row="2" column="1">
         <widget class="QCheckBox" name="flagIFF1">
          <property name="text">
           <string/>
          </property>
         </widget>
        </item>
-       <item row="18" column="0">
+       <item row="3" column="0">
         <widget class="QLabel" name="labIFF2">
          <property name="text">
           <string>IFF2</string>
          </property>
         </widget>
        </item>
-       <item row="18" column="1">
+       <item row="3" column="1">
         <widget class="QCheckBox" name="flagIFF2">
          <property name="text">
           <string/>
          </property>
         </widget>
        </item>
-       <item row="20" column="0">
+       <item row="4" column="1">
+        <spacer name="verticalSpacer_12">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="5" column="0">
         <widget class="QLabel" name="labF7">
          <property name="text">
           <string>S</string>
@@ -693,7 +355,7 @@
          </property>
         </widget>
        </item>
-       <item row="20" column="1">
+       <item row="5" column="1">
         <widget class="QCheckBox" name="cbF7">
          <property name="maximumSize">
           <size>
@@ -709,7 +371,7 @@
          </attribute>
         </widget>
        </item>
-       <item row="21" column="0">
+       <item row="6" column="0">
         <widget class="QLabel" name="labF6">
          <property name="text">
           <string>Z</string>
@@ -719,7 +381,7 @@
          </property>
         </widget>
        </item>
-       <item row="21" column="1">
+       <item row="6" column="1">
         <widget class="QCheckBox" name="cbF6">
          <property name="maximumSize">
           <size>
@@ -735,7 +397,7 @@
          </attribute>
         </widget>
        </item>
-       <item row="22" column="0">
+       <item row="7" column="0">
         <widget class="QLabel" name="labF5">
          <property name="text">
           <string>5</string>
@@ -745,7 +407,7 @@
          </property>
         </widget>
        </item>
-       <item row="22" column="1">
+       <item row="7" column="1">
         <widget class="QCheckBox" name="cbF5">
          <property name="maximumSize">
           <size>
@@ -761,7 +423,7 @@
          </attribute>
         </widget>
        </item>
-       <item row="23" column="0">
+       <item row="8" column="0">
         <widget class="QLabel" name="labF4">
          <property name="text">
           <string>H</string>
@@ -771,7 +433,7 @@
          </property>
         </widget>
        </item>
-       <item row="23" column="1">
+       <item row="8" column="1">
         <widget class="QCheckBox" name="cbF4">
          <property name="maximumSize">
           <size>
@@ -787,7 +449,7 @@
          </attribute>
         </widget>
        </item>
-       <item row="24" column="0">
+       <item row="9" column="0">
         <widget class="QLabel" name="labF3">
          <property name="text">
           <string>3</string>
@@ -797,7 +459,7 @@
          </property>
         </widget>
        </item>
-       <item row="24" column="1">
+       <item row="9" column="1">
         <widget class="QCheckBox" name="cbF3">
          <property name="maximumSize">
           <size>
@@ -813,7 +475,7 @@
          </attribute>
         </widget>
        </item>
-       <item row="25" column="0">
+       <item row="10" column="0">
         <widget class="QLabel" name="labF2">
          <property name="text">
           <string>P</string>
@@ -823,7 +485,7 @@
          </property>
         </widget>
        </item>
-       <item row="25" column="1">
+       <item row="10" column="1">
         <widget class="QCheckBox" name="cbF2">
          <property name="maximumSize">
           <size>
@@ -839,7 +501,7 @@
          </attribute>
         </widget>
        </item>
-       <item row="26" column="0">
+       <item row="11" column="0">
         <widget class="QLabel" name="labF1">
          <property name="text">
           <string>N</string>
@@ -849,7 +511,7 @@
          </property>
         </widget>
        </item>
-       <item row="26" column="1">
+       <item row="11" column="1">
         <widget class="QCheckBox" name="cbF1">
          <property name="maximumSize">
           <size>
@@ -865,7 +527,7 @@
          </attribute>
         </widget>
        </item>
-       <item row="27" column="0">
+       <item row="12" column="0">
         <widget class="QLabel" name="labF0">
          <property name="text">
           <string>C</string>
@@ -875,7 +537,7 @@
          </property>
         </widget>
        </item>
-       <item row="27" column="1">
+       <item row="12" column="1">
         <widget class="QCheckBox" name="cbF0">
          <property name="maximumSize">
           <size>
@@ -890,19 +552,6 @@
           <string notr="true">flagGroup</string>
          </attribute>
         </widget>
-       </item>
-       <item row="19" column="1">
-        <spacer name="verticalSpacer_12">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
        </item>
       </layout>
      </item>
@@ -3720,11 +3369,6 @@
   <customwidget>
    <class>xHexSpin</class>
    <extends>QLineEdit</extends>
-   <header location="global">stdlib.h</header>
-  </customwidget>
-  <customwidget>
-   <class>xLabel</class>
-   <extends>QLabel</extends>
    <header location="global">stdlib.h</header>
   </customwidget>
   <customwidget>

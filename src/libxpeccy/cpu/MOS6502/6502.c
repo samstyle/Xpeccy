@@ -107,12 +107,12 @@ xAsmScan m6502_asm(const char* cbuf, char* buf) {
 }
 
 static xRegDsc m6502RegTab[] = {
-	{M6502_REG_PC, "PC", 0},
-	{M6502_REG_A, "A", 1},
-	{M6502_REG_X, "X", 1},
-	{M6502_REG_Y, "Y", 1},
-	{M6502_REG_S, "S", 1},
-	{M6502_REG_F, "P", 1},
+	{M6502_REG_PC, "PC", REG_WORD},
+	{M6502_REG_A, "A", REG_BYTE},
+	{M6502_REG_X, "X", REG_BYTE},
+	{M6502_REG_Y, "Y", REG_BYTE},
+	{M6502_REG_S, "S", REG_BYTE},
+	{M6502_REG_F, "P", REG_BYTE},
 	{REG_NONE, "", 0}
 };
 
@@ -123,7 +123,7 @@ void m6502_get_regs(CPU* cpu, xRegBunch* bunch) {
 	while(m6502RegTab[idx].id != REG_NONE) {
 		bunch->regs[idx].id = m6502RegTab[idx].id;
 		bunch->regs[idx].name = m6502RegTab[idx].name;
-		bunch->regs[idx].byte = m6502RegTab[idx].byte;
+		bunch->regs[idx].type = m6502RegTab[idx].type;
 		switch(m6502RegTab[idx].id) {
 			case M6502_REG_PC: bunch->regs[idx].value = cpu->pc; break;
 			case M6502_REG_S: bunch->regs[idx].value = cpu->lsp; break;

@@ -47,7 +47,11 @@ enum {
 	I286_CS,
 	I286_SS,
 	I286_DS,
-	I286_ES
+	I286_ES,
+	I286_MSW,
+	I286_GDT,
+	I286_LDT,
+	I286_IDT
 };
 
 void i286_interrupt(CPU*, int);

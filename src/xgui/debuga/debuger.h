@@ -95,8 +95,8 @@ class DebugWin : public QDialog {
 		Computer* comp;
 		long tCount;
 
-		xLabel* dbgRegLabs[16];
-		xHexSpin* dbgRegEdit[16];
+		QList<xLabel*> dbgRegLabs;
+		QList<xHexSpin*> dbgRegEdit;
 
 		MemPage mem_map[256];
 

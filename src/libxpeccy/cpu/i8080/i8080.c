@@ -80,12 +80,12 @@ xMnem i8080_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 }
 
 static xRegDsc i8080RegTab[] = {
-	{I8080_REG_PC, "PC", 0},
-	{I8080_REG_AF, "AF", 0},
-	{I8080_REG_BC, "BC", 0},
-	{I8080_REG_DE, "DE", 0},
-	{I8080_REG_HL, "HL", 0},
-	{I8080_REG_SP, "SP", 0},
+	{I8080_REG_PC, "PC", REG_WORD},
+	{I8080_REG_AF, "AF", REG_WORD},
+	{I8080_REG_BC, "BC", REG_WORD},
+	{I8080_REG_DE, "DE", REG_WORD},
+	{I8080_REG_HL, "HL", REG_WORD},
+	{I8080_REG_SP, "SP", REG_WORD},
 	{REG_NONE, "", 0}
 };
 
@@ -97,7 +97,7 @@ void i8080_get_regs(CPU* cpu, xRegBunch* bunch) {
 	while(i8080RegTab[idx].id != REG_NONE) {
 		bunch->regs[idx].id = i8080RegTab[idx].id;
 		bunch->regs[idx].name = i8080RegTab[idx].name;
-		bunch->regs[idx].byte = i8080RegTab[idx].byte;
+		bunch->regs[idx].type = i8080RegTab[idx].type;
 		switch(i8080RegTab[idx].id) {
 			case I8080_REG_PC: bunch->regs[idx].value = cpu->pc; break;
 			case I8080_REG_SP: bunch->regs[idx].value = cpu->sp; break;

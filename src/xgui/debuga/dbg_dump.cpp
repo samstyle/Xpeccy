@@ -46,7 +46,8 @@ int xDumpModel::mrd(int adr) const {
 	int fadr;
 	int res = 0xff;
 	if (comp->cpu->type == CPU_I80286) {
-		res = i286_mrd(comp->cpu, comp->cpu->ds, 0, adr & 0xffff);
+		res = comp->hw->mrd(comp, comp->cpu->ds.base + (adr & 0xffff), 0);
+		// res = i286_mrd(comp->cpu, comp->cpu->ds, 0, adr & 0xffff);
 		// res |= (comp->brkAdrMap[adr & 0xffff] << 8);
 	} else {
 		switch(mode) {

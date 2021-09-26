@@ -92,9 +92,9 @@ int ibm_inKbd(Computer* comp, int adr) {
 	switch (adr & 0x0f) {
 		case 0: res = xt_read(comp->keyb); break;		// read code
 		case 1: res = comp->reg[0x61]; break;
-//		case 4: if (!comp->keyb->outbuf) res &= ~1;
-//			if (!comp->keyb->inbuf) res &= ~2;
-//			break;
+		case 4: if (!comp->keyb->outbuf) res &= ~1;
+			if (!comp->keyb->inbuf) res &= ~2;
+			break;
 	}
 	return res;
 }
