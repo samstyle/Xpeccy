@@ -117,7 +117,7 @@ class DebugWin : public QDialog {
 		QMenu* cellMenu;
 		unsigned short bpAdr;
 		void doBreakPoint(unsigned short);
-		int getAdr();
+		unsigned int getAdr();
 
 		xItemDelegate* xid_none;
 		xItemDelegate* xid_byte;

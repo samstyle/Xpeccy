@@ -9,8 +9,8 @@
 extern QColor colBRK;
 extern QColor colSEL;
 
-extern int blockStart;
-extern int blockEnd;
+extern unsigned int blockStart;
+extern unsigned int blockEnd;
 
 QString gethexbyte(unsigned char);
 QString gethexword(int);
@@ -46,22 +46,19 @@ int xDumpModel::mrd(int adr) const {
 	int fadr;
 	int res = 0xff;
 	if (comp->cpu->type == CPU_I80286) {
-		res = comp->hw->mrd(comp, comp->cpu->ds.base + (adr & 0xffff), 0);
-		// res = i286_mrd(comp->cpu, comp->cpu->ds, 0, adr & 0xffff);
-		// res |= (comp->brkAdrMap[adr & 0xffff] << 8);
+		res = comp->hw->mrd(comp, adr, 0);
 	} else {
 		switch(mode) {
 			case XVIEW_CPU:
-				pg = &comp->mem->map[(adr >> 8) & 0xffff];
+				pg = &comp->mem->map[(adr >> 8) & 0xff];
 				fadr = (pg->num << 8) | (adr & 0xff);
 				switch (pg->type) {
 					case MEM_ROM: res = comp->mem->romData[fadr & comp->mem->romMask]; break;
 					case MEM_RAM: res = comp->mem->ramData[fadr & comp->mem->ramMask]; break;
-					case MEM_SLOT: res = memRd(comp->mem, adr & 0xffff);
+					case MEM_SLOT: res = memRd(comp->mem, adr % maxadr);
 						break;
 				}
-				//res = memRd(comp->mem, adr & 0xffff);
-				res |= getBrk(comp, adr & 0xffff) << 8;
+				res |= getBrk(comp, adr % maxadr) << 8;
 				break;
 			case XVIEW_RAM:
 				adr &= 0x3fff;
@@ -85,11 +82,11 @@ void xDumpModel::mwr(int adr, unsigned char bt) {
 	MemPage* pg;
 	int fadr;
 	if (comp->cpu->type == CPU_I80286) {
-		i286_mwr(comp->cpu, comp->cpu->ds, 0, adr & 0xffff, bt);
+		comp->hw->mwr(comp, adr, bt);
 	} else {
 		switch(mode) {
 			case XVIEW_CPU:
-				pg = &comp->mem->map[(adr >> 8) & 0xffff];
+				pg = &comp->mem->map[(adr >> 8) & 0xff];
 				fadr = (pg->num << 8) | (adr & 0xff);
 				switch (pg->type) {
 					case MEM_ROM:
@@ -121,6 +118,7 @@ xDumpModel::xDumpModel(QObject* par):QAbstractTableModel(par) {
 	mode = XVIEW_CPU;
 	page = 0;
 	dmpadr = 0;
+	maxadr = MEM_64K;
 	row_count = 11;
 }
 
@@ -185,8 +183,8 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 	if (row >= rowCount()) return res;
 	if (col < 0) return res;
 	if (col >= columnCount()) return res;
-	unsigned short adr = (dmpadr + (row << 3)) & 0xffff;
-	unsigned short cadr = (adr + col - 1) & 0xffff;
+	unsigned int adr = (dmpadr + (row << 3)) % maxadr;
+	unsigned int cadr = (adr + col - 1) % maxadr;
 	unsigned short wrd;
 	int flg = mrd(cadr) >> 8;
 	QByteArray arr;
@@ -246,7 +244,7 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 					switch(view) {
 						case XVIEW_OCTWRD:
 							wrd = mrd(cadr) & 0xff;
-							wrd += (mrd((cadr + 1) & 0xffff) << 8) & 0xff00;
+							wrd += (mrd((cadr + 1) % maxadr) << 8) & 0xff00;
 							res = QString::number(wrd, 8).rightJustified(6,'0');
 							break;
 						default:
@@ -260,7 +258,8 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 			switch(col) {
 				case 0:
 					if ((*cptr)->cpu->type == CPU_I80286) {
-						res = QString("DS:%0").arg(gethexword(adr & 0xffff));
+						res = QString::number(adr % maxadr, 16).toUpper().rightJustified(6 , '0');
+						// res = QString("DS:%0").arg(gethexword(adr & 0xffff));
 					} else {
 						if ((mode == XVIEW_RAM) || (mode == XVIEW_ROM)) {
 							adr &= 0x3fff;
@@ -272,14 +271,14 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 					break;
 				case 9:
 					for(int i = 0; i < 8; i++)
-						arr.append(mrd((adr + i) & 0xffff) & 0xff);
+						arr.append(mrd((adr + i) % maxadr) & 0xff);
 					res = getDumpString(arr, codePage);
 					break;
 				default:
 					switch (view) {
 						case XVIEW_OCTWRD:
 							wrd = mrd(cadr) & 0xff;
-							wrd += (mrd((cadr + 1) & 0xffff) << 8) & 0xff00;
+							wrd += (mrd((cadr + 1) % maxadr) << 8) & 0xff00;
 							res = QString::number(wrd, 8).rightJustified(6,'0');
 							break;
 						default:
@@ -311,20 +310,20 @@ bool xDumpModel::setData(const QModelIndex& idx, const QVariant& val, int role) 
 	if ((row < 0) || (row >= rowCount())) return false;
 	if ((col < 0) || (col >= columnCount())) return false;
 	int fadr;
-	unsigned short adr = (dmpadr + (row << 3)) & 0xffff;
-	unsigned short nadr;
+	int adr = (dmpadr + (row << 3)) % maxadr;
+	int nadr;
 	unsigned char bt;
 	QString str = val.toString();
 	if (col == 0) {
 		fadr = str_to_adr(*cptr, str);
 		if (fadr >= 0) {
-			dmpadr = (fadr - (row << 3)) & 0xffff;
+			dmpadr = (fadr - (row << 3)) % maxadr;
 			update();
 			emit s_adrch(dmpadr);
 			emit rqRefill();
 		}
 	} else if (col < 9) {
-		nadr = (adr + col - 1) & 0xffff;
+		nadr = (adr + col - 1) % maxadr;
 		switch(view) {
 			case XVIEW_OCTWRD:
 				fadr = str.toInt(NULL, 8) & 0xffff;
@@ -397,11 +396,18 @@ void xDumpTable::update() {
 	QTableView::update();
 }
 
+void xDumpTable::setLimit(unsigned int lim) {
+	if (model->maxadr != lim) {
+		model->dmpadr %= lim;
+		model->maxadr = lim;
+		update();
+	}
+}
+
 void xDumpTable::setAdr(int adr) {
-	adr &= 0xffff;
 	if (model->dmpadr != adr) {
-		model->dmpadr = adr;
-		emit s_adrch(adr);
+		model->dmpadr = adr % model->maxadr;
+		emit s_adrch(model->dmpadr);
 		update();
 	}
 }
@@ -444,11 +450,11 @@ void xDumpTable::keyPressEvent(QKeyEvent* ev) {
 			emit s_adrch(model->dmpadr);
 			break;
 		case Qt::Key_PageUp:
-			setAdr((model->dmpadr - (rows() * 8)) & 0xffff);
+			setAdr(model->dmpadr - (rows() * 8));
 			// update();
 			break;
 		case Qt::Key_PageDown:
-			setAdr((model->dmpadr + (rows() * 8)) & 0xffff);
+			setAdr(model->dmpadr + (rows() * 8));
 			// update();
 			break;
 		case Qt::Key_Return:
@@ -479,7 +485,7 @@ void xDumpTable::mousePressEvent(QMouseEvent* ev) {
 	} else {
 		adr = model->dmpadr + (row << 3) + col - 1;
 	}
-	adr &= 0xffff;
+	adr %= model->maxadr;
 	switch(ev->button()) {
 		case Qt::LeftButton:
 			if (ev->modifiers() & Qt::ControlModifier) {
@@ -520,13 +526,13 @@ void xDumpTable::mouseMoveEvent(QMouseEvent* ev) {
 	int col = idx.column();
 	if ((row < 0) || (row >= model->rowCount())) return;
 	if ((col < 0) || (col >= model->columnCount())) return;
-	int adr;
+	unsigned int adr;
 	if ((col == 0) || (col > 8)) {
 		adr = model->dmpadr + (row << 3);
 	} else {
 		adr = model->dmpadr + (row << 3) + col - 1;
 	}
-	adr &= 0xffff;
+	adr %= model->maxadr;
 	if ((ev->modifiers() == Qt::NoModifier) && (ev->buttons() & Qt::LeftButton) && (adr != blockStart) && (adr != blockEnd) && (adr != markAdr)) {
 		if ((col == 0) || (col > 8))
 			adr += 7;

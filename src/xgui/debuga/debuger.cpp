@@ -14,8 +14,8 @@
 #include "filer.h"
 #include "../xgui.h"
 
-int blockStart = -1;
-int blockEnd = -1;
+unsigned int blockStart = UINT_MAX;
+unsigned int blockEnd = UINT_MAX;
 
 int tmpcnt = 0;
 
@@ -194,6 +194,9 @@ void DebugWin::onPrfChange(xProfile* prf) {
 	foreach(xHexSpin* xhs, dbgRegEdit) {
 		xhs->setBase(conf.prof.cur->zx->hw->base);
 	}
+	unsigned int lim = (comp->hw->id == HW_IBM_PC) ? MEM_4M : MEM_64K;
+	ui.dumpTable->setLimit(lim);
+	ui.dumpScroll->setMaximum(lim - 1);
 	switch(conf.prof.cur->zx->hw->base) {
 		case 8:
 			ui.dumpTable->setItemDelegateForColumn(1, xid_octw);
@@ -404,7 +407,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.dumpTable,SIGNAL(rqRefill()),ui.bpList,SLOT(update()));
 	connect(ui.dumpTable,SIGNAL(rqRefill()),this,SLOT(updateScreen()));
 
-	connect(ui.dumpTable, SIGNAL(s_adrch(int)), ui.dumpScroll, SLOT(setValue(int)));
+	// connect(ui.dumpTable, SIGNAL(s_adrch(int)), ui.dumpScroll, SLOT(setValue(int)));
 	connect(ui.dumpTable, SIGNAL(s_adrch(int)), this, SLOT(dumpChadr(int)));
 	connect(ui.dumpScroll, SIGNAL(valueChanged(int)), ui.dumpTable, SLOT(setAdr(int)));
 
@@ -449,7 +452,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.cbDumpView->addItem("RAM", XVIEW_RAM);
 	ui.cbDumpView->addItem("ROM", XVIEW_ROM);
 
-	ui.dumpTable->setColumnWidth(0,60);
+	ui.dumpTable->setColumnWidth(0,70);
 	ui.dumpTable->setItemDelegate(xid_byte);
 	ui.dumpTable->setItemDelegateForColumn(0, xid_labl);
 	ui.dumpTable->setItemDelegateForColumn(9, xid_none);
@@ -637,7 +640,7 @@ void DebugWin::chDumpView() {
 	ui.sbDumpPage->setDisabled(mode == XVIEW_CPU);
 	ui.dumpTable->setMode(mode, page);
 	switch(mode) {
-		case XVIEW_CPU: ui.dumpScroll->setMaximum(0xffff); break;
+		case XVIEW_CPU: ui.dumpScroll->setMaximum((comp->hw->id == HW_IBM_PC) ? MEM_4M - 1 : MEM_64K - 1); break;
 		default: ui.dumpScroll->setMaximum(0x3fff);
 	}
 }
@@ -1332,19 +1335,15 @@ void DebugWin::regClick(QMouseEvent* ev) {
 	xLabel* lab = qobject_cast<xLabel*>(sender());
 	int id = lab->id;
 	if (id < 0) return;
-	if (id > 15) return;
-	CPU* cpu = comp->cpu;
-	xRegBunch bunch = cpuGetRegs(cpu);
+	xRegBunch bunch = cpuGetRegs(comp->cpu);
 	xRegister reg = bunch.regs[id];
-	unsigned short val = reg.value;
 	switch (ev->button()) {
 		case Qt::RightButton:
-			ui.dumpTable->setAdr(val);
-			fillDump();
+			ui.dumpTable->setAdr((reg.type & REG_SEG) ? reg.base : reg.value);
+			// fillDump();
 			break;
 		case Qt::LeftButton:
-			ui.dasmTable->setAdr(val, 1);
-			// fillDisasm();
+			ui.dasmTable->setAdr(reg.value, 1);
 			break;
 		default:
 			break;
@@ -1545,16 +1544,21 @@ void DebugWin::jumpToLabel(QString lab) {
 
 int rdbyte(int adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	MemPage* pg = &comp->mem->map[(adr >> 8) & 0xff];
-	int res = 0xff;
-	int fadr = (pg->num << 8) | (adr & 0xff);
-	switch (pg->type) {
-		case MEM_RAM: res = comp->mem->ramData[fadr & comp->mem->ramMask]; break;
-		case MEM_ROM: res = comp->mem->romData[fadr & comp->mem->romMask]; break;
-		case MEM_SLOT:
-			if (!comp->slot) break;
-			if (!comp->slot->data) break;
-			res = sltRead(comp->slot, SLT_PRG, adr & 0xffff); break;
+	int res;
+	if (comp->hw->id == HW_IBM_PC) {
+		res = comp->hw->mrd(comp, adr, 0);
+	} else {
+		MemPage* pg = &comp->mem->map[(adr >> 8) & 0xff];
+		res = 0xff;
+		int fadr = (pg->num << 8) | (adr & 0xff);
+		switch (pg->type) {
+			case MEM_RAM: res = comp->mem->ramData[fadr & comp->mem->ramMask]; break;
+			case MEM_ROM: res = comp->mem->romData[fadr & comp->mem->romMask]; break;
+			case MEM_SLOT:
+				if (!comp->slot) break;
+				if (!comp->slot->data) break;
+				res = sltRead(comp->slot, SLT_PRG, adr & 0xffff); break;
+		}
 	}
 	return res;
 }
@@ -1607,6 +1611,7 @@ void DebugWin::fillDump() {
 }
 
 void DebugWin::dumpChadr(int adr) {
+	ui.dumpScroll->setValue(adr);
 	QModelIndex idx = ui.dumpTable->selectionModel()->currentIndex();
 	int col = idx.column();
 	adr += idx.row() << 3;
@@ -1615,7 +1620,7 @@ void DebugWin::dumpChadr(int adr) {
 	}
 	if (ui.dumpTable->mode != XVIEW_CPU)
 		adr &= 0x3fff;
-	ui.tabsDump->setTabText(0, gethexword(adr & 0xffff));
+	ui.tabsDump->setTabText(0, QString::number(adr, 16).right(6).toUpper());
 }
 
 // maping
@@ -1640,6 +1645,9 @@ void DebugWin::mapAuto() {
 
 void DebugWin::fillStack() {
 	int adr = comp->cpu->sp;
+	if (comp->cpu->type == CPU_I80286) {
+		adr += comp->cpu->ss.base;
+	}
 	QString str;
 	for (int i = 0; i < 4; i++) {
 		str.append(gethexbyte(rdbyte(adr+1, comp)));
@@ -1654,8 +1662,8 @@ void DebugWin::fillStack() {
 
 // breakpoint
 
-int DebugWin::getAdr() {
-	int adr = -1;
+unsigned int DebugWin::getAdr() {
+	int adr;
 	int col;
 	QModelIndex idx;
 	if (ui.dumpTable->hasFocus()) {
@@ -1691,8 +1699,8 @@ void DebugWin::doBreakPoint(unsigned short adr) {
 // TODO: breakpoints on block
 void DebugWin::chaCellProperty(QAction* act) {
 	int data = act->data().toInt();
-	int adr = getAdr();
-	int bgn, end;
+	unsigned int adr = getAdr();
+	unsigned int bgn, end;
 	unsigned char bt;
 	int fadr;
 	unsigned char* ptr;

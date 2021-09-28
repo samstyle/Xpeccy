@@ -13,6 +13,9 @@
 // [7:P][6,5:DPL][4:0][3-0:TYPE]		system
 // rd/wr with segment P=0 -> interrupt
 
+void i286_int_real(CPU*);
+void i286_int_prt(CPU*);
+
 unsigned char i286_mrd(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr) {
 	if (rpl && (cpu->seg.idx >= 0)) seg = cpu->seg;
 	cpu->t++;
@@ -59,7 +62,7 @@ xSegPtr i286_cash_seg(CPU* cpu, unsigned short val) {
 	unsigned short tmp;
 	p.idx = val;
 	if (cpu->mode == I286_MOD_REAL) {
-		p.flag = 0xf2;		// present, dpl=3, segment, data, writeable
+		p.flag = 0x92;		// present, dpl=0, segment, data, writeable
 		p.base = val << 4;
 		p.limit = 0xffff;
 	} else {
@@ -96,8 +99,12 @@ unsigned short i286_pop(CPU* cpu) {
 // INT n
 
 void i286_interrupt(CPU* cpu, int n) {
-	cpu->intrq |= I286_INT;
 	cpu->intvec = n;
+	if (cpu->mode == I286_MOD_REAL) {
+		i286_int_real(cpu);
+	} else {
+		i286_int_prt(cpu);
+	}
 }
 
 // mod r/m
@@ -2024,19 +2031,28 @@ void i286_opCB(CPU* cpu) {
 
 // cc: int 3
 void i286_opCC(CPU* cpu) {
-	i286_interrupt(cpu, 3);
+	cpu->intvec = 3;
+	if (cpu->mode == I286_MOD_REAL) {
+		i286_int_real(cpu);
+	} else {
+		i286_int_prt(cpu);
+	}
 }
 
 // cd,ib: int ib
 void i286_opCD(CPU* cpu) {
-	cpu->tmpb = i286_rd_imm(cpu);
-	i286_interrupt(cpu, cpu->tmpb);
+	cpu->intvec = i286_rd_imm(cpu);
+	if (cpu->mode == I286_MOD_REAL) {
+		i286_int_real(cpu);
+	} else {
+		i286_int_prt(cpu);
+	}
 }
 
 // ce: into	int 4 if FO=1
 void i286_opCE(CPU* cpu) {
 	if (cpu->f & I286_FO)
-		i286_interrupt(cpu, 4);
+		i286_interrupt(cpu, I286_INT_OF);
 }
 
 // cf: iret	pop pc,cs,flag
@@ -2080,12 +2096,14 @@ void i286_opD3(CPU* cpu) {
 	i286_wr_ea(cpu, cpu->tmpw, 1);
 }
 
-// d4 0a: aam
+// d4 0a: aam ib
 void i286_opD4(CPU* cpu) {
 	cpu->tmpb = i286_rd_imm(cpu);
-	if (cpu->tmpb == 0x0a) {
-		cpu->ah = cpu->al / 10;
-		cpu->al = cpu->al % 10;
+	if (cpu->tmpb == 0) {
+		i286_interrupt(cpu, I286_INT_DE);
+	} else {
+		cpu->ah = cpu->al / cpu->tmpb;
+		cpu->al = cpu->al % cpu->tmpb;
 		cpu->f &= ~(I286_FS | I286_FZ | I286_FP);
 		if (cpu->ah & 0x80) cpu->f |= I286_FS;
 		if (!cpu->ax) cpu->f |= I286_FZ;
@@ -2093,17 +2111,15 @@ void i286_opD4(CPU* cpu) {
 	}
 }
 
-// d5 0a: aad
+// d5 0a: aad ib
 void i286_opD5(CPU* cpu) {
 	cpu->tmpb = i286_rd_imm(cpu);
-	if (cpu->tmpb == 0x0a) {
-		cpu->al = cpu->ah * 10 + cpu->al;
-		cpu->ah = 0;
-		cpu->f &= ~(I286_FS | I286_FZ | I286_FP);
-		if (cpu->al & 0x80) cpu->f |= I286_FS;
-		if (!cpu->al) cpu->f |= I286_FZ;
-		if (parity(cpu->al)) cpu->f |= I286_FP;
-	}
+	cpu->al = cpu->ah * cpu->tmpb + cpu->al;
+	cpu->ah = 0;
+	cpu->f &= ~(I286_FS | I286_FZ | I286_FP);
+	if (cpu->al & 0x80) cpu->f |= I286_FS;
+	if (!cpu->al) cpu->f |= I286_FZ;
+	if (parity(cpu->al)) cpu->f |= I286_FP;
 }
 
 // d6:
@@ -2295,7 +2311,7 @@ void i286_opF65(CPU* cpu) {		// imul eb
 
 void i286_opF66(CPU* cpu) {		// div eb
 	if (cpu->ltw == 0) {				// div by zero
-		i286_interrupt(cpu, 0);
+		i286_interrupt(cpu, I286_INT_DE);
 	} else {
 		// TODO: int0 if quo>0xff
 		cpu->tmpw = cpu->ax / cpu->ltw;
@@ -2307,7 +2323,7 @@ void i286_opF66(CPU* cpu) {		// div eb
 
 void i286_opF67(CPU* cpu) {		// idiv eb
 	if (cpu->ltw == 0) {
-		i286_interrupt(cpu, 0);
+		i286_interrupt(cpu, I286_INT_DE);
 	} else {
 		// TODO: int0 if quo>0xff
 		cpu->tmpw = (signed short)cpu->ax / (signed char)cpu->ltw;
@@ -2698,8 +2714,8 @@ opCode i80286_tab[256] = {
 	{OF_WORD, 1, i286_opD1, 0, ":R word :e,1"},
 	{0, 1, i286_opD2, 0, ":R :e,cl"},
 	{OF_WORD, 1, i286_opD3, 0, ":R word :e,cl"},
-	{0, 1, i286_opD4, 0, "aam"},
-	{0, 1, i286_opD5, 0, "aad"},
+	{0, 1, i286_opD4, 0, "aam :1"},
+	{0, 1, i286_opD5, 0, "aad :1"},
 	{0, 1, i286_opD6, 0, "? salc"},
 	{0, 1, i286_opD7, 0, "xlatb"},
 	{0, 1, i286_opD8, 0, "* x87"},

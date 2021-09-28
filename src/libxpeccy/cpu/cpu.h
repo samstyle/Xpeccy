@@ -27,13 +27,15 @@ typedef struct {
 #define REG_BIT 2
 #define REG_24 3
 #define REG_TMASK 0x0f
-#define REG_RO 0x80
+#define REG_RO 0x100	// protect from changes in debuga
+#define REG_SEG 0x200	// register is segment
 
 typedef struct {
 	int id;
 	int type;
 	const char* name;
-	int value;
+	int value;	// register value (selector)
+	int base;	// base address for segment register
 } xRegister;
 
 typedef struct {

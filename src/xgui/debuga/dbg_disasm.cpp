@@ -7,8 +7,8 @@
 #include <QPainter>
 #include <QHeaderView>
 
-extern int blockStart;
-extern int blockEnd;
+extern unsigned int blockStart;
+extern unsigned int blockEnd;
 
 extern QColor colPC;
 extern QColor colBRK;
@@ -984,7 +984,7 @@ void xDisasmTable::mouseMoveEvent(QMouseEvent* ev) {
 	if (mode != XVIEW_CPU) return;
 	int row = rowAt(ev->pos().y());
 	if ((row < 0) || (row >= model->rowCount())) return;
-	int adr = model->data(model->index(row, 0), Qt::UserRole).toInt();	// item(row,0)->data(Qt::UserRole).toInt();
+	unsigned int adr = model->data(model->index(row, 0), Qt::UserRole).toInt();	// item(row,0)->data(Qt::UserRole).toInt();
 	if ((ev->modifiers() == Qt::NoModifier) && (ev->buttons() & Qt::LeftButton) && (adr != blockStart) && (adr != blockEnd) && (markAdr >= 0)) {
 		if (adr < blockStart) {
 			blockStart = adr;

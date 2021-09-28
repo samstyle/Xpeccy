@@ -32,7 +32,7 @@ xSegPtr i286_get_dsc(CPU* cpu, int sel) {
 		cpu->twrd = cpu->idtr.limit;
 	} else {
 		cpu->tmpi = (sel & 4) ? cpu->ldtr.base : cpu->gdtr.base;
-		cpu->twrd = (sel & 4) ? cpu->ldtr.limit : cpu->ldtr.limit;
+		cpu->twrd = (sel & 4) ? cpu->ldtr.limit : cpu->gdtr.limit;
 	}
 	if (sel > cpu->twrd) {
 		dt.idx = -1;		// index out of bounds
@@ -175,8 +175,7 @@ void i286_0F014(CPU* cpu) {
 // 0f 01 /6 lmsw ew	msw = [ea]
 void i286_0F016(CPU* cpu) {
 	cpu->msw = cpu->tmpw;
-	if (cpu->msw & I286_FPE)
-		cpu->mode = I286_MOD_PROT;
+	cpu->mode = (cpu->msw & I286_FPE) ? I286_MOD_PROT : I286_MOD_REAL;
 }
 
 cbcpu i286_0f01_tab[8] = {

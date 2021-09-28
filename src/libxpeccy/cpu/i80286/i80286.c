@@ -58,7 +58,7 @@ void i286_int_prt(CPU* cpu) {
 		cpu->intrq |= I286_INT;
 		cpu->intvec = 13;
 		cpu->t = 1;
-	} else if ((cpu->f & I286_FI) || !(cpu->intvec & 1)) {
+	} else if (cpu->f & I286_FI) {
 		PAIR(w,h,l)seg;
 		PAIR(w,h,l)off;
 		int adr = cpu->idtr.base + (cpu->intvec & 0xfff8);
@@ -151,7 +151,7 @@ xMnem i286_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 	int sadr = adr;
 	unsigned char com;
 	do {
-		com = i286_mrd(cpu, cpu->cs, 0, adr);
+		com = cpu->mrd(cpu->cs.base + adr, 0, cpu->data);
 		adr++;
 		op = &tab[com];
 		if (tab == i80286_tab) {
@@ -177,54 +177,54 @@ xMnem i286_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 			ptr++;
 			switch(*ptr) {
 				case '1':
-					rx.l = i286_mrd(cpu, cpu->cs, 0, adr);
+					rx.l = cpu->mrd(cpu->cs.base + adr, 0, cpu->data);
 					adr++;
 					dptr += sprintf(dptr, "#%.2X", rx.l);
 					break;
 				case '2':
-					rx.l = i286_mrd(cpu, cpu->cs, 0, adr);
+					rx.l = cpu->mrd(cpu->cs.base + adr, 0, cpu->data);
 					adr++;
-					rx.h = i286_mrd(cpu, cpu->cs, 0, adr);
+					rx.h = cpu->mrd(cpu->cs.base + adr, 0, cpu->data);
 					adr++;
 					dptr += sprintf(dptr, "#%.4X", rx.w);
 					break;
 				case '3':
-					rx.l = i286_mrd(cpu, cpu->cs, 0, adr);;
+					rx.l = cpu->mrd(cpu->cs.base + adr, 0, cpu->data);
 					adr++;
 					rx.w = adr + (signed char)rx.l;
 					dptr += sprintf(dptr, "short #%.4X", rx.w);
 					break;
 				case 'n':
-					rx.l = i286_mrd(cpu, cpu->cs, 0, adr);
+					rx.l = cpu->mrd(cpu->cs.base + adr, 0, cpu->data);
 					adr++;
-					rx.h = i286_mrd(cpu, cpu->cs, 0, adr);
+					rx.h = cpu->mrd(cpu->cs.base + adr, 0, cpu->data);
 					adr++;
 					rx.w += adr;
 					dptr += sprintf(dptr, "near #%.4X", rx.w);
 					break;
 				case '4':
 				case 'p':
-					rx.l = i286_mrd(cpu, cpu->cs, 0, adr);
+					rx.l = cpu->mrd(cpu->cs.base + adr, 0, cpu->data);
 					adr++;
-					rx.h = i286_mrd(cpu, cpu->cs, 0, adr);
+					rx.h = cpu->mrd(cpu->cs.base + adr, 0, cpu->data);
 					adr++;
-					seg.l = i286_mrd(cpu, cpu->cs, 0, adr);
+					seg.l = cpu->mrd(cpu->cs.base + adr, 0, cpu->data);
 					adr++;
-					seg.h = i286_mrd(cpu, cpu->cs, 0, adr);
+					seg.h = cpu->mrd(cpu->cs.base + adr, 0, cpu->data);
 					adr++;
 					dptr += sprintf(dptr, "#%.4X::%.4X", seg.w, rx.w);
 					break;
-				case 'r': if (!mod) {mod = 1; mb = i286_mrd(cpu, cpu->cs, 0, adr); adr++;}
+				case 'r': if (!mod) {mod = 1; mb = cpu->mrd(cpu->cs.base + adr, 0, cpu->data); adr++;}
 					if (op->flag & OF_WORD) {	// word
 						dptr += sprintf(dptr, "%s", str_regw[(mb >> 3) & 7]);
 					} else {
 						dptr += sprintf(dptr, "%s", str_regb[(mb >> 3) & 7]);
 					}
 					break;
-				case 's': if (!mod) {mod = 1; mb = i286_mrd(cpu, cpu->cs, 0, adr); adr++;}
+				case 's': if (!mod) {mod = 1; mb = cpu->mrd(cpu->cs.base + adr, 0, cpu->data); adr++;}
 					dptr += sprintf(dptr, "%s", str_regs[(mb >> 3) & 3]);
 					break;
-				case 'e': if (!mod) {mod = 1; mb = i286_mrd(cpu, cpu->cs, 0, adr); adr++;}
+				case 'e': if (!mod) {mod = 1; mb = cpu->mrd(cpu->cs.base + adr, 0, cpu->data); adr++;}
 					if ((mb & 0xc0) == 0xc0) {		// reg
 						if (op->flag & OF_WORD) {
 							dptr += sprintf(dptr, "%s", str_regw[mb & 7]);
@@ -234,13 +234,13 @@ xMnem i286_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 					} else {
 						disp.w = 0;
 						if ((mb & 0xc0) == 0x40) {
-							disp.l = i286_mrd(cpu, cpu->cs, 0, adr);
+							disp.l = cpu->mrd(cpu->cs.base + adr, 0, cpu->data);
 							disp.h = (disp.l & 0x80) ? 0xff : 0x00;
 							adr++;
 						} else if ((mb & 0xc0) == 0x80) {
-							disp.l = i286_mrd(cpu, cpu->cs, 0, adr);
+							disp.l = cpu->mrd(cpu->cs.base + adr, 0, cpu->data);
 							adr++;
-							disp.h = i286_mrd(cpu, cpu->cs, 0, adr);
+							disp.h = cpu->mrd(cpu->cs.base + adr, 0, cpu->data);
 							adr++;
 						}
 						*(dptr++) = '[';
@@ -266,25 +266,25 @@ xMnem i286_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 						dptr += sprintf(dptr, "REP ");
 					}
 					break;
-				case 'A': if (!mod) {mod = 1; mb = i286_mrd(cpu, cpu->cs, 0, adr); adr++;}
+				case 'A': if (!mod) {mod = 1; mb = cpu->mrd(cpu->cs.base + adr, 0, cpu->data); adr++;}
 					dptr += sprintf(dptr, "%s", str_alu[(mb >> 3) & 7]);
 					break;
-				case 'R': if (!mod) {mod = 1; mb = i286_mrd(cpu, cpu->cs, 0, adr); adr++;}
+				case 'R': if (!mod) {mod = 1; mb = cpu->mrd(cpu->cs.base + adr, 0, cpu->data); adr++;}
 					dptr += sprintf(dptr, "%s", str_rot[(mb >> 3) & 7]);
 					break;
-				case 'X': if (!mod) {mod = 1; mb = i286_mrd(cpu, cpu->cs, 0, adr); adr++;}
+				case 'X': if (!mod) {mod = 1; mb = cpu->mrd(cpu->cs.base + adr, 0, cpu->data); adr++;}
 					if (!(mb & 0x30)) {	// test :e,:1 <- add ,:1 to command
 						strcat(ptr, ",:1");
 					}
 					dptr += sprintf(dptr, "%s", str_opX[(mb >> 3) & 7]);
 					break;
-				case 'E': if (!mod) {mod = 1; mb = i286_mrd(cpu, cpu->cs, 0, adr); adr++;}
+				case 'E': if (!mod) {mod = 1; mb = cpu->mrd(cpu->cs.base + adr, 0, cpu->data); adr++;}
 					dptr += sprintf(dptr, "%s", str_opE[(mb >> 3) & 7]);
 					break;
-				case 'Q': if (!mod) {mod = 1; mb = i286_mrd(cpu, cpu->cs, 0, adr); adr++;}
+				case 'Q': if (!mod) {mod = 1; mb = cpu->mrd(cpu->cs.base + adr, 0, cpu->data); adr++;}
 					dptr += sprintf(dptr, "%s", str_opQ[(mb >> 3) & 7]);
 					break;
-				case 'W': if (!mod) {mod = 1; mb = i286_mrd(cpu, cpu->cs, 0, adr); adr++;}
+				case 'W': if (!mod) {mod = 1; mb = cpu->mrd(cpu->cs.base + adr, 0, cpu->data); adr++;}
 					dptr += sprintf(dptr, "%s", str_opW[(mb >> 3) & 7]);
 					break;
 				default:
@@ -317,10 +317,10 @@ static xRegDsc i286RegTab[] = {
 	{I286_CX, "CX", REG_WORD},
 	{I286_DX, "DX", REG_WORD},
 	{I286_BX, "BX", REG_WORD},
-	{I286_CS, "CS", REG_WORD},
-	{I286_SS, "SS", REG_WORD},
-	{I286_DS, "DS", REG_WORD},
-	{I286_ES, "ES", REG_WORD},
+	{I286_CS, "CS", REG_WORD|REG_SEG},
+	{I286_SS, "SS", REG_WORD|REG_SEG},
+	{I286_DS, "DS", REG_WORD|REG_SEG},
+	{I286_ES, "ES", REG_WORD|REG_SEG},
 	{I286_MSW, "MSW", REG_RO|REG_WORD},
 	{I286_GDT, "GDT", REG_RO|REG_24},
 	{I286_IDT, "IDT", REG_RO|REG_24},
@@ -337,12 +337,13 @@ char* i286_flags = "SZ-A-P-C";
 
 void i286_get_regs(CPU* cpu, xRegBunch* bnch) {
 	int idx = 0;
-	int val;
+	int val, bas;
 	while (i286RegTab[idx].id != REG_NONE) {
 		bnch->regs[idx].id = i286RegTab[idx].id;
 		bnch->regs[idx].name = i286RegTab[idx].name;
 		bnch->regs[idx].type = i286RegTab[idx].type;
 		val = -1;
+		bas = 0;
 		switch (i286RegTab[idx].id) {
 			case I286_IP: val = cpu->pc; break;
 			case I286_SP: val = cpu->sp; break;
@@ -353,15 +354,16 @@ void i286_get_regs(CPU* cpu, xRegBunch* bnch) {
 			case I286_CX: val = cpu->cx; break;
 			case I286_DX: val = cpu->dx; break;
 			case I286_BX: val = cpu->bx; break;
-			case I286_CS: val = cpu->cs.idx; break;
-			case I286_SS: val = cpu->ss.idx; break;
-			case I286_DS: val = cpu->ds.idx; break;
-			case I286_ES: val = cpu->es.idx; break;
+			case I286_CS: val = cpu->cs.idx; bas = cpu->cs.base; break;
+			case I286_SS: val = cpu->ss.idx; bas = cpu->ss.base; break;
+			case I286_DS: val = cpu->ds.idx; bas = cpu->ds.base; break;
+			case I286_ES: val = cpu->es.idx; bas = cpu->es.base; break;
 			case I286_MSW: val = cpu->msw; break;
 			case I286_GDT: val = cpu->gdtr.base; break;
 			case I286_IDT: val = cpu->idtr.base; break;
 		}
 		bnch->regs[idx].value = val;
+		bnch->regs[idx].base = bas;
 		idx++;
 	}
 	bnch->regs[idx].id = REG_NONE;

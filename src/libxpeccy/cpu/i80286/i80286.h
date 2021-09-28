@@ -23,6 +23,23 @@
 #define I286_NMI	(1<<1)
 #define I286_BLK_NMI	(1<<16)
 
+// INT numbers
+#define I286_INT_DE	0
+#define I286_INT_DB	1
+#define I286_INT_NMI	2
+#define I286_INT_BP	3
+#define I286_INT_OF	4
+#define I286_INT_BR	5
+#define I286_INT_UD	6
+#define I286_INT_NM	7
+#define I286_INT_DF	8
+#define I286_INT_SL	9	// segment limit
+#define I286_INT_TS	10
+#define I286_INT_NP	11
+#define I286_INT_SS	12
+#define I286_INT_GP	13
+#define I286_INT_MF	16
+
 enum {
 	I286_MOD_REAL = 0,
 	I286_MOD_PROT

@@ -33,7 +33,8 @@ class xDumpModel : public QAbstractTableModel {
 	public:
 		xDumpModel(QObject* = NULL);
 		int codePage;
-		int dmpadr;
+		unsigned int dmpadr;
+		unsigned int maxadr;
 		void setComp(Computer**);
 		void setMode(int, int);
 		void setRows(int);
@@ -77,12 +78,13 @@ class xDumpTable:public QTableView {
 		int view;
 	public slots:
 		void setAdr(int);
+		void setLimit(unsigned int);
 	signals:
 		void s_adrch(int);
 		void rqRefill();
 	private:
 		xDumpModel* model;
-		int markAdr;
+		unsigned int markAdr;
 		int row_count;
 		void keyPressEvent(QKeyEvent*);
 		void mousePressEvent(QMouseEvent*);
