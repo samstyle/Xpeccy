@@ -1373,7 +1373,7 @@ void i286_op87(CPU* cpu) {
 // 88,mod: mov eb,rb
 void i286_op88(CPU* cpu) {
 	i286_rd_ea(cpu, 0);
-	i286_wr_ea(cpu, cpu->ltw, 0);
+	i286_wr_ea(cpu, cpu->lwr, 0);
 }
 
 // 89,mod: mov ew,rw
@@ -1590,7 +1590,7 @@ void i286_opA4(CPU* cpu) {
 	}
 }
 
-// a5: movsw (movsb for word)
+// a5: movsw [*ds:si]->[es:di] by word, si,di +/-= 2
 void i286_opA5(CPU* cpu) {
 	if ((cpu->si == 0xffff) || (cpu->di == 0xffff)) {
 		i286_interrupt(cpu, 13);
@@ -2014,12 +2014,12 @@ void i286_opC9(CPU* cpu) {
 
 // ca,iw: retf iw	pop adr,seg,iw bytes	15/25/55T
 void i286_opCA(CPU* cpu) {
-	cpu->tmpw = i286_rd_immw(cpu);
+	cpu->twrd = i286_rd_immw(cpu);
 	cpu->pc = i286_pop(cpu);
 	cpu->tmpw = i286_pop(cpu);
 	cpu->cs = i286_cash_seg(cpu, cpu->tmpw);
-	cpu->sp += cpu->tmpw;
-	cpu->t += cpu->tmpw;
+	cpu->sp += cpu->twrd;
+	cpu->t += cpu->twrd;
 }
 
 // cb: retf	pop adr,seg

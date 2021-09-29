@@ -140,7 +140,7 @@ const char* str_opE[8] = {"inc","dec","call","callf","jmp","jmpf","push","ff /7"
 const char* str_opQ[8] = {"sldt","str","lldt","ltr","verr","verw","0f00 /6","0f00 /7"};
 const char* str_opW[8] = {"sgdt","sidt","lgdt","lidt","smsw","0f01 /5","lmsw","0f01 /7"};
 
-xMnem i286_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
+xMnem i286_mnem(CPU* cpu, unsigned short sadr, cbdmr mrd, void* data) {
 	xMnem mn;
 	mn.cond = 0;
 	mn.met = 0;
@@ -148,7 +148,7 @@ xMnem i286_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 	int rep = I286_REP_NONE;
 	opCode* tab = i80286_tab;
 	opCode* op;
-	int sadr = adr;
+	int adr = sadr;
 	unsigned char com;
 	do {
 		com = cpu->mrd(cpu->cs.base + adr, 0, cpu->data);

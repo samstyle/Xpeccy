@@ -1339,8 +1339,19 @@ void DebugWin::regClick(QMouseEvent* ev) {
 	xRegister reg = bunch.regs[id];
 	switch (ev->button()) {
 		case Qt::RightButton:
-			ui.dumpTable->setAdr((reg.type & REG_SEG) ? reg.base : reg.value);
-			// fillDump();
+			if (reg.type & REG_SEG) {
+				ui.dumpTable->setAdr(reg.base);
+			} else if (comp->cpu->type == CPU_I80286) {
+				switch(reg.id) {
+					case I286_IP: id = comp->cpu->cs.base; break;
+					case I286_SP: id = comp->cpu->ss.base; break;
+					case I286_BP: id = comp->cpu->ss.base; break;
+					default: id = comp->cpu->ds.base; break;
+				}
+				ui.dumpTable->setAdr(id + reg.value - 8);
+			} else {
+				ui.dumpTable->setAdr(reg.value - 8);
+			}
 			break;
 		case Qt::LeftButton:
 			ui.dasmTable->setAdr(reg.value, 1);

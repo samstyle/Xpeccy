@@ -173,6 +173,12 @@ void xDumpModel::updateColumn(int col) {
 	emit dataChanged(index(0, col), index(rowCount() - 1, col));
 }
 
+int check_seg(int adr, xSegPtr seg) {
+	if (adr < seg.base) return 0;
+	if (adr - seg.base > seg.limit) return 0;
+	return 1;
+}
+
 QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 	QVariant res;
 	QString str;
@@ -235,7 +241,7 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 							res = QString::number(adr, 8).rightJustified(6, '0');
 							break;
 						default:
-							res = gethexword(adr);
+							res = QString::number(adr, 16).toUpper();
 							break;
 					}
 					break;
@@ -258,7 +264,22 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 			switch(col) {
 				case 0:
 					if ((*cptr)->cpu->type == CPU_I80286) {
-						res = QString::number(adr % maxadr, 16).toUpper().rightJustified(6 , '0');
+						adr %= maxadr;
+						if (check_seg(adr, (*cptr)->cpu->cs)) {
+							adr -= (*cptr)->cpu->cs.base;
+							res = QString("CS:").append(gethexword(adr & 0xffff));
+						} else if (check_seg(adr, (*cptr)->cpu->ss)) {
+							adr -= (*cptr)->cpu->ss.base;
+							res = QString("SS:").append(gethexword(adr & 0xffff));
+						} else if (check_seg(adr, (*cptr)->cpu->ds)) {
+							adr -= (*cptr)->cpu->ds.base;
+							res = QString("DS:").append(gethexword(adr & 0xffff));
+						} else if (check_seg(adr, (*cptr)->cpu->es)) {
+							adr -= (*cptr)->cpu->es.base;
+							res = QString("ES:").append(gethexword(adr & 0xffff));
+						} else {
+							res = QString::number(adr % maxadr, 16).toUpper().rightJustified(6 , '0');
+						}
 						// res = QString("DS:%0").arg(gethexword(adr & 0xffff));
 					} else {
 						if ((mode == XVIEW_RAM) || (mode == XVIEW_ROM)) {
