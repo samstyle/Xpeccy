@@ -330,7 +330,7 @@ void evoOut(Computer* comp, int port, int val, int dos) {
 	if (comp->evo.evoBF & 0x01) dos = 1;	// force open ports
 	if (!(comp->prt2 & 0x80)) dos = 1;
 	zx_dev_wr(comp, port, val, dos);
-	hwOut(evoPortMap, comp, port, val, dos);
+	hwOut(evoPortMap, comp, port, val, dos, 1);
 }
 
 int evoIn(Computer* comp, int port, int dos) {

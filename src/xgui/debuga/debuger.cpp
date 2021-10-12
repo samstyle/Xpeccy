@@ -291,17 +291,20 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	lst.clear();
 	p.first = QIcon(":/images/tape.png"); p.second = ui.tapeTab; lst.append(p);
 	tablist[HWG_SPCLST] = lst;
-
+// create registers group
 	xLabel* lab;
 	xHexSpin* xhs;
+	QLabel* qlb;
+	QCheckBox* qcb;
 	for(i = 0; i < 20; i++) {		// set max registers here
 		lab = new xLabel;
-		xhs = new xHexSpin;
 		lab->id = i;
-		xhs->setXFlag(XHS_BGR | XHS_DEC | XHS_FILL);
 		lab->setVisible(false);
+		xhs = new xHexSpin;
+		xhs->setXFlag(XHS_BGR | XHS_DEC | XHS_FILL);
 		xhs->setVisible(false);
 		xhs->setFrame(false);
+		xhs->setFixedWidth(60);
 		xhs->setAlignment(Qt::AlignCenter);
 		dbgRegLabs.append(lab);
 		dbgRegEdit.append(xhs);
@@ -309,6 +312,21 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 		connect(lab, SIGNAL(clicked(QMouseEvent*)), this, SLOT(regClick(QMouseEvent*)));
 		connect(xhs, SIGNAL(textChanged(QString)), this, SLOT(setCPU()));
 	}
+// create flags group (for cpu->f, 16 bit max)
+	flagrp = new QButtonGroup;
+	flagrp->setExclusive(false);
+	for(i = 0; i < 16; i++) {
+		qlb = new QLabel;
+		qcb = new QCheckBox;
+		qlb->setVisible(false);
+		qcb->setVisible(false);
+		dbgFlagLabs.append(qlb);
+		dbgFlagBox.append(qcb);
+		flagrp->addButton(qcb);
+		ui.flagsGrid->addWidget(qlb, ((15 - i) & 0x0c) >> 1, (15 - i) & 3);
+		ui.flagsGrid->addWidget(qcb, (((15 - i) & 0x0c) >> 1) + 1, (15 - i) & 3);
+	}
+	connect(flagrp, SIGNAL(buttonClicked(QAbstractButton*)),this,SLOT(setFlags()));
 
 	ui.dumpTable->setComp(&comp);
 	ui.dasmTable->setComp(&comp);
@@ -473,7 +491,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.boxIM,SIGNAL(valueChanged(int)),this,SLOT(setCPU()));
 	connect(ui.flagIFF1,SIGNAL(stateChanged(int)),this,SLOT(setCPU()));
 	connect(ui.flagIFF2,SIGNAL(stateChanged(int)),this,SLOT(setCPU()));
-	connect(ui.flagGroup,SIGNAL(buttonClicked(int)),this,SLOT(setFlags()));
+//	connect(ui.flagGroup,SIGNAL(buttonClicked(int)),this,SLOT(setFlags()));
 // infoslots
 	scrImg = QImage(256, 192, QImage::Format_RGB888);
 	connect(ui.sbScrBank,SIGNAL(valueChanged(int)),this,SLOT(updateScreen()));
@@ -622,6 +640,7 @@ void DebugWin::setShowLabels(bool f) {
 void DebugWin::setShowSegment(bool f) {
 	conf.dbg.segment = f ? 1 : 0;
 	fillDisasm();
+	fillDump();
 }
 
 void DebugWin::setRomWriteable(bool f) {
@@ -1304,6 +1323,7 @@ void DebugWin::drawNes() {
 
 // ...
 
+/*
 void DebugWin::setFlagNames(const char name[8]) {
 	ui.labF7->setText(QString(name[0]));
 	ui.labF6->setText(QString(name[1]));
@@ -1314,6 +1334,7 @@ void DebugWin::setFlagNames(const char name[8]) {
 	ui.labF1->setText(QString(name[6]));
 	ui.labF0->setText(QString(name[7]));
 }
+*/
 
 void DebugWin::chLayout() {
 	switch (comp->cpu->type) {
@@ -1361,32 +1382,6 @@ void DebugWin::regClick(QMouseEvent* ev) {
 	}
 }
 
-// rzx
-
-/*
-void dbgSetRzxIO(QLabel* lab, Computer* comp, int pos) {
-#ifdef HAVEZLIB
-	if (pos < comp->rzx.frm.size) {
-		lab->setText(gethexbyte(comp->rzx.frm.data[pos]));
-	} else {
-		lab->setText("--");
-	}
-#endif
-}
-
-void DebugWin::fillRZX() {
-	ui.rzxFrm->setText(QString::number(comp->rzx.frame).append(" / ").append(QString::number(comp->rzx.size)));
-	ui.rzxFetch->setText(QString::number(comp->rzx.fetches));
-	ui.rzxFSize->setText(QString::number(comp->rzx.data[comp->rzx.frame].frmSize));
-	int pos = comp->rzx.pos;
-	dbgSetRzxIO(ui.rzxIO1, comp, pos++);
-	dbgSetRzxIO(ui.rzxIO2, comp, pos++);
-	dbgSetRzxIO(ui.rzxIO3, comp, pos++);
-	dbgSetRzxIO(ui.rzxIO4, comp, pos++);
-	dbgSetRzxIO(ui.rzxIO5, comp, pos);
-}
-*/
-
 // fdc
 
 void DebugWin::fillFDC() {
@@ -1414,46 +1409,43 @@ void DebugWin::fillFDC() {
 	ui.flpMotL->setText(comp->dif->fdc->flp->motor ? "1" : "0");
 }
 
-// z80 regs section
+// CPU
 
-void setCBFlag(QCheckBox* cb, int state) {
-	if ((cb->isChecked() && !state) || (!cb->isChecked() && state)) {
-		cb->setBackgroundRole(QPalette::Highlight);
-	} else {
-		cb->setBackgroundRole(QPalette::NoRole);
+void DebugWin::fillFlags(const char* fnam) {
+	if (fnam == NULL)
+		fnam = cpuGetRegs(comp->cpu).flags;
+	int flgcnt = strlen(fnam);
+	QString allflags = QString(fnam).rightJustified(16, '-');
+	for (int i = 0; i < 16; i++) {
+		if (i < flgcnt) {
+			dbgFlagBox[i]->setVisible(true);
+			dbgFlagLabs[i]->setVisible(true);
+			dbgFlagLabs[i]->setText(allflags.at(15 - i));
+			dbgFlagBox[i]->setChecked(comp->cpu->f & (1 << i));
+		} else {
+			dbgFlagBox[i]->setVisible(false);
+			dbgFlagLabs[i]->setVisible(false);
+		}
 	}
-	cb->setChecked(state);
-}
-
-void DebugWin::fillFlags() {
-	unsigned char flg = comp->cpu->f;
-	setCBFlag(ui.cbF7, flg & 0x80);
-	setCBFlag(ui.cbF6, flg & 0x40);
-	setCBFlag(ui.cbF5, flg & 0x20);
-	setCBFlag(ui.cbF4, flg & 0x10);
-	setCBFlag(ui.cbF3, flg & 0x08);
-	setCBFlag(ui.cbF2, flg & 0x04);
-	setCBFlag(ui.cbF1, flg & 0x02);
-	setCBFlag(ui.cbF0, flg & 0x01);
 }
 
 void DebugWin::fillCPU() {
 	block = 1;
 	CPU* cpu = comp->cpu;
 	xRegBunch bunch = cpuGetRegs(cpu);
-	int i = 0;
-	while(i < dbgRegLabs.size()) {
+	int i;
+	for (i = 0; i < dbgRegLabs.size(); i++) {
 		switch (bunch.regs[i].id) {
 			case REG_EMPTY:
 			case REG_NONE:
 				dbgRegLabs[i]->setVisible(false);
 				dbgRegEdit[i]->setVisible(false);
-				// dbgRegEdit[i]->clear();
 				break;
 			default:
 				dbgRegLabs[i]->setText(bunch.regs[i].name);
 				dbgRegEdit[i]->setProperty("regid", bunch.regs[i].id);
 				switch (bunch.regs[i].type & REG_TMASK) {
+					case REG_BIT: dbgRegEdit[i]->setMax(1); break;
 					case REG_BYTE: dbgRegEdit[i]->setMax(0xff); break;
 					case REG_24: dbgRegEdit[i]->setMax(0xffffff); break;
 					default: dbgRegEdit[i]->setMax(0xffff); break;
@@ -1464,31 +1456,25 @@ void DebugWin::fillCPU() {
 				dbgRegLabs[i]->setVisible(true);
 				break;
 		}
-		i++;
 	}
-	setFlagNames(bunch.flags);
+	fillFlags(bunch.flags);
 	ui.boxIM->setValue(cpu->imode);
 	ui.flagIFF1->setChecked(cpu->iff1);
 	ui.flagIFF2->setChecked(cpu->iff2);
-	fillFlags();
 	fillStack();
 	block = 0;
 }
 
+// called only from connection. checkboxes to cpu->f
 void DebugWin::setFlags() {
 	if (block) return;
-	unsigned char f = 0;
-	if (ui.cbF7->isChecked()) f |= 0x80;
-	if (ui.cbF6->isChecked()) f |= 0x40;
-	if (ui.cbF5->isChecked()) f |= 0x20;
-	if (ui.cbF4->isChecked()) f |= 0x10;
-	if (ui.cbF3->isChecked()) f |= 0x08;
-	if (ui.cbF2->isChecked()) f |= 0x04;
-	if (ui.cbF1->isChecked()) f |= 0x02;
-	if (ui.cbF0->isChecked()) f |= 0x01;
+	unsigned short f = 0;
+	for (int i = 0; i < 16; i++) {
+		if (dbgFlagBox[i]->isVisible() && dbgFlagBox[i]->isChecked())
+			f |= (1 << i);
+	}
 	comp->cpu->f = f;
 	fillCPU();
-	fillDisasm();
 }
 
 void DebugWin::setCPU() {
@@ -1509,7 +1495,7 @@ void DebugWin::setCPU() {
 	cpu->imode = ui.boxIM->value() & 0xff;
 	cpu->iff1 = ui.flagIFF1->isChecked() ? 1 : 0;
 	cpu->iff2 = ui.flagIFF2->isChecked() ? 1 : 0;
-	fillFlags();
+	fillFlags(NULL);
 	fillStack();
 	fillDisasm();
 }
@@ -1629,8 +1615,11 @@ void DebugWin::dumpChadr(int adr) {
 	if ((col > 0) && (col < 9)) {
 		 adr += (col - 1);
 	}
-	if (ui.dumpTable->mode != XVIEW_CPU)
+	if (ui.dumpTable->mode != XVIEW_CPU) {
 		adr &= 0x3fff;
+	} else {
+		adr %= ui.dumpTable->limit();
+	}
 	ui.tabsDump->setTabText(0, QString::number(adr, 16).right(6).toUpper());
 }
 

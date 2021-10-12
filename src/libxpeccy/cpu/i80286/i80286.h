@@ -12,6 +12,7 @@
 #define I286_FI 0x0200	// interrupt
 #define I286_FD	0x0400	// direction
 #define I286_FO 0x0800	// overflow
+#define I286_FIP 0x3000	// 2bits: IOPL
 #define I286_FN	0x4000	// nested flag
 // msw
 #define I286_FPE 0x0001	// protected mode
@@ -49,6 +50,10 @@ enum {
 	I286_REP_NONE = 0,
 	I286_REPNZ,
 	I286_REPZ,
+	I286_SEG_ES,
+	I286_SEG_CS,
+	I286_SEG_SS,
+	I286_SEG_DS
 };
 
 enum {

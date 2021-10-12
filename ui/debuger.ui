@@ -332,227 +332,26 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="1">
-        <spacer name="verticalSpacer_12">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="labF7">
-         <property name="text">
-          <string>S</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="1">
-        <widget class="QCheckBox" name="cbF7">
-         <property name="maximumSize">
-          <size>
-           <width>15</width>
-           <height>15</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
-        </widget>
-       </item>
-       <item row="6" column="0">
-        <widget class="QLabel" name="labF6">
-         <property name="text">
-          <string>Z</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="1">
-        <widget class="QCheckBox" name="cbF6">
-         <property name="maximumSize">
-          <size>
-           <width>15</width>
-           <height>15</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
-        </widget>
-       </item>
-       <item row="7" column="0">
-        <widget class="QLabel" name="labF5">
-         <property name="text">
-          <string>5</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="1">
-        <widget class="QCheckBox" name="cbF5">
-         <property name="maximumSize">
-          <size>
-           <width>15</width>
-           <height>15</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
-        </widget>
-       </item>
-       <item row="8" column="0">
-        <widget class="QLabel" name="labF4">
-         <property name="text">
-          <string>H</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="1">
-        <widget class="QCheckBox" name="cbF4">
-         <property name="maximumSize">
-          <size>
-           <width>15</width>
-           <height>15</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
-        </widget>
-       </item>
-       <item row="9" column="0">
-        <widget class="QLabel" name="labF3">
-         <property name="text">
-          <string>3</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="1">
-        <widget class="QCheckBox" name="cbF3">
-         <property name="maximumSize">
-          <size>
-           <width>15</width>
-           <height>15</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
-        </widget>
-       </item>
-       <item row="10" column="0">
-        <widget class="QLabel" name="labF2">
-         <property name="text">
-          <string>P</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="1">
-        <widget class="QCheckBox" name="cbF2">
-         <property name="maximumSize">
-          <size>
-           <width>15</width>
-           <height>15</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
-        </widget>
-       </item>
-       <item row="11" column="0">
-        <widget class="QLabel" name="labF1">
-         <property name="text">
-          <string>N</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="1">
-        <widget class="QCheckBox" name="cbF1">
-         <property name="maximumSize">
-          <size>
-           <width>15</width>
-           <height>15</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
-        </widget>
-       </item>
-       <item row="12" column="0">
-        <widget class="QLabel" name="labF0">
-         <property name="text">
-          <string>C</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="1">
-        <widget class="QCheckBox" name="cbF0">
-         <property name="maximumSize">
-          <size>
-           <width>15</width>
-           <height>15</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <attribute name="buttonGroup">
-          <string notr="true">flagGroup</string>
-         </attribute>
-        </widget>
-       </item>
+      </layout>
+     </item>
+     <item>
+      <spacer name="verticalSpacer_12">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>40</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <layout class="QGridLayout" name="flagsGrid">
+       <property name="spacing">
+        <number>2</number>
+       </property>
       </layout>
      </item>
     </layout>
@@ -3430,10 +3229,5 @@
  <connections/>
  <buttongroups>
   <buttongroup name="gbModeGroup"/>
-  <buttongroup name="flagGroup">
-   <property name="exclusive">
-    <bool>false</bool>
-   </property>
-  </buttongroup>
  </buttongroups>
 </ui>

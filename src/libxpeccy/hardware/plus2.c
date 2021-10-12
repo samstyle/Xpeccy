@@ -77,7 +77,7 @@ static xPort p2PortMap[] = {
 
 void pl2Out(Computer* comp, int port, int val, int dos) {
 	zx_dev_wr(comp, port, val, dos);
-	hwOut(p2PortMap, comp, port, val, 0);
+	hwOut(p2PortMap, comp, port, val, 0, 1);
 }
 
 int pl2In(Computer* comp, int port, int dos) {

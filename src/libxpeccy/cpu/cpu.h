@@ -18,17 +18,17 @@ typedef struct {
 	const char* mnem;
 } xMnem;
 
-#define REG_NONE 0
-#define REG_EMPTY -1
-#define REG_MPTR -2
+#define REG_NONE	0
+#define REG_EMPTY	-1
+#define REG_MPTR	-2
 
-#define REG_WORD 0
-#define REG_BYTE 1
-#define REG_BIT 2
-#define REG_24 3
-#define REG_TMASK 0x0f
-#define REG_RO 0x100	// protect from changes in debuga
-#define REG_SEG 0x200	// register is segment
+#define REG_BIT		1
+#define REG_BYTE	8
+#define REG_WORD	16
+#define REG_24		24
+#define REG_TMASK	0xff
+#define REG_RO		0x100	// protect from changes in debuga
+#define REG_SEG		0x200	// register is segment
 
 typedef struct {
 	int id;
@@ -207,14 +207,13 @@ struct CPU {
 	xSegPtr tmpdr;
 	unsigned char mod;	// 80286: mod byte (EA/reg)
 	struct {xSegPtr seg; PAIR(adr,adrh,adrl);} ea;
-	int mode;		// 80286: real/protected mode
 	int rep;		// 80286: repeat condition id
 
 // pdp registers
 	unsigned mcir:3;
 	unsigned vsel:4;
 //	unsigned short pflag;		// pdp11 flag = f
-	unsigned short preg[8];		// pdp11 registers
+	unsigned short preg[8];		// pdp11 registers (preg[7] -> pc)
 	xTimer timer;
 
 // external callbacks

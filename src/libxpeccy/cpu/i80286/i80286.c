@@ -12,7 +12,6 @@ void i286_reset(CPU* cpu) {
 	cpu->f = 0x0002;
 	cpu->msw = 0xfff0;
 	cpu->pc = 0xfff0;	// ip
-	cpu->mode = I286_MOD_REAL;
 	cpu->cs = i286_cash_seg(cpu, 0xf000);
 	cpu->ss = i286_cash_seg(cpu, 0x0000);
 	cpu->ds = i286_cash_seg(cpu, 0x0000);
@@ -87,7 +86,7 @@ void i286_int_prt(CPU* cpu) {
 void i286_int_ack(CPU* cpu) {
 	if (cpu->intrq & I286_INT) {
 		cpu->intrq &= ~I286_INT;
-		if (cpu->mode == I286_MOD_REAL) {
+		if (cpu->msw & I286_FPE) {
 			i286_int_real(cpu);
 		} else {
 			i286_int_prt(cpu);
@@ -96,7 +95,7 @@ void i286_int_ack(CPU* cpu) {
 		cpu->inten |= I286_BLK_NMI;				// NMI is blocking until RETI, but next NMI will be remembered until then
 		cpu->intrq &= ~I286_NMI;
 		cpu->intvec = 2;
-		if (cpu->mode == I286_MOD_REAL) {
+		if (cpu->msw & I286_FPE) {
 			i286_int_real(cpu);
 		} else {
 			i286_int_prt(cpu);
@@ -146,6 +145,7 @@ xMnem i286_mnem(CPU* cpu, unsigned short sadr, cbdmr mrd, void* data) {
 	mn.met = 0;
 	mn.mem = 0;
 	int rep = I286_REP_NONE;
+	int rseg = -1;
 	opCode* tab = i80286_tab;
 	opCode* op;
 	int adr = sadr;
@@ -157,6 +157,10 @@ xMnem i286_mnem(CPU* cpu, unsigned short sadr, cbdmr mrd, void* data) {
 		if (tab == i80286_tab) {
 			switch (com) {
 				case 0x0f: tab = i286_0f_tab; break;
+				case 0x26: rseg = 0; break;
+				case 0x2e: rseg = 1; break;
+				case 0x36: rseg = 2; break;
+				case 0x3e: rseg = 3; break;
 				case 0xf2: rep = I286_REPNZ; break;
 				case 0xf3: rep = I286_REPZ; break;
 			}
@@ -244,7 +248,20 @@ xMnem i286_mnem(CPU* cpu, unsigned short sadr, cbdmr mrd, void* data) {
 							adr++;
 						}
 						*(dptr++) = '[';
-						dptr += sprintf(dptr, "%s", str_ea[mb & 7]);	// TODO: do something to show segment override
+						if (rseg >= 0) {
+							dptr += sprintf(dptr, "%s::", str_regs[rseg & 3]);
+						}
+						// TODO: [seg:disp+reg] not [seg:reg+-disp]
+						if ((mb & 0xc7) == 0x06) {	// immw
+							disp.l = cpu->mrd(cpu->cs.base + adr, 0, cpu->data);
+							adr++;
+							disp.h = cpu->mrd(cpu->cs.base + adr, 0, cpu->data);
+							adr++;
+							dptr += sprintf(dptr, "#%.4X", disp.w);
+							disp.w = 0;
+						} else {			// reg.based
+							dptr += sprintf(dptr, "%s", str_ea[mb & 7]);	// TODO: do something to show segment override
+						}
 						if (disp.w) {
 							if (disp.w & 0x8000) {
 								dptr += sprintf(dptr, "-#%X", (-disp.w) & 0x7fff);
@@ -322,6 +339,7 @@ static xRegDsc i286RegTab[] = {
 	{I286_DS, "DS", REG_WORD|REG_SEG},
 	{I286_ES, "ES", REG_WORD|REG_SEG},
 	{I286_MSW, "MSW", REG_RO|REG_WORD},
+	{I286_LDT, "LDT", REG_RO|REG_WORD|REG_SEG},
 	{I286_GDT, "GDT", REG_RO|REG_24},
 	{I286_IDT, "IDT", REG_RO|REG_24},
 	{REG_NONE, "", 0}
@@ -333,7 +351,7 @@ xAsmScan i286_asm(const char* mnm, char* buf) {
 	return res;
 }
 
-char* i286_flags = "SZ-A-P-C";
+char* i286_flags = "-N**ODITSZ-A-P-C";
 
 void i286_get_regs(CPU* cpu, xRegBunch* bnch) {
 	int idx = 0;
@@ -360,6 +378,7 @@ void i286_get_regs(CPU* cpu, xRegBunch* bnch) {
 			case I286_ES: val = cpu->es.idx; bas = cpu->es.base; break;
 			case I286_MSW: val = cpu->msw; break;
 			case I286_GDT: val = cpu->gdtr.base; break;
+			case I286_LDT: val = cpu->ldtr.idx; break;
 			case I286_IDT: val = cpu->idtr.base; break;
 		}
 		bnch->regs[idx].value = val;

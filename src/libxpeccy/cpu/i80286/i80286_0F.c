@@ -101,7 +101,7 @@ cbcpu i286_0f00_tab[8] = {
 };
 
 void i286_0F00(CPU* cpu) {
-	if (cpu->mode == I286_MOD_REAL) {
+	if (!(cpu->msw & I286_FPE)) {
 		i286_interrupt(cpu, 6);
 	} else {
 		i286_rd_ea(cpu, 1);
@@ -175,7 +175,6 @@ void i286_0F014(CPU* cpu) {
 // 0f 01 /6 lmsw ew	msw = [ea]
 void i286_0F016(CPU* cpu) {
 	cpu->msw = cpu->tmpw;
-	cpu->mode = (cpu->msw & I286_FPE) ? I286_MOD_PROT : I286_MOD_REAL;
 }
 
 cbcpu i286_0f01_tab[8] = {
@@ -190,7 +189,7 @@ void i286_0F01(CPU* cpu) {
 
 // 0F 02 /r : lar rw,ew		rw = (seg.descriptor flags << 8)
 void i286_0F02(CPU* cpu) {
-	if (cpu->mode == I286_MOD_REAL) {
+	if (!(cpu->msw & I286_FPE)) {
 		i286_interrupt(cpu, 6);		// not present in real mode
 	} else {
 		i286_rd_ea(cpu, 1);
@@ -210,7 +209,7 @@ void i286_0F02(CPU* cpu) {
 
 // 0F 03 /r : lsl rw,ew		rw = seg.descriptor limit
 void i286_0F03(CPU* cpu) {
-	if (cpu->mode == I286_MOD_REAL) {
+	if (!(cpu->msw & I286_FPE)) {
 		i286_interrupt(cpu, 6);		// not present in treal mode
 	} else {
 		i286_rd_ea(cpu, 1);

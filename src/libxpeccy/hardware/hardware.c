@@ -170,8 +170,9 @@ int hwIn(xPort* ptab, Computer* comp, int port, int dos) {
 	return res;
 }
 
-void hwOut(xPort* ptab, Computer* comp, int port, int val, int dos) {
+void hwOut(xPort* ptab, Computer* comp, int port, int val, int dos, int mult) {
 	int idx = 0;
+	int catch = 0;
 	xPort* itm;
 	do {
 		itm = &ptab[idx];
@@ -181,7 +182,8 @@ void hwOut(xPort* ptab, Computer* comp, int port, int val, int dos) {
 				((itm->rom & 2) || (itm->rom == comp->rom)) &&\
 				((itm->cpm & 2) || (itm->cpm == comp->cpm))) {
 			itm->out(comp, port, val);
+			catch |= !mult;
 		}
 		idx++;
-	} while (itm->mask != 0);
+	} while ((itm->mask != 0) && !catch);
 }

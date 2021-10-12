@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 2.8.12)
 
 #compiler settings
 
@@ -263,6 +263,12 @@ if(ZLIB_FOUND)
 	set(CPACK_RPM_PACKAGE_DEPENDS "${CPACK_RPM_PACKAGE_DEPENDS}, zlib >= 1.2")
 endif(ZLIB_FOUND)
 
+# flags
+
+if(${IBM})
+	add_definitions(-DUSEIBM=1)
+endif()
+
 # other
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -300,8 +306,6 @@ message(STATUS "Xpeccy version : ${XVER}")
 message(STATUS "OS : ${CMAKE_SYSTEM_NAME}")
 message(STATUS "Qt version : ${QT_VER}")
 message(STATUS "SDL version : ${SDL_VER}")
-message(STATUS "C++ flags : ${CMAKE_CXX_FLAGS}")
-message(STATUS "C flags : ${CMAKE_C_FLAGS}")
 
 if (${USEQTNETWORK})
 	message(STATUS "Network: yes")

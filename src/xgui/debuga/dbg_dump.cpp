@@ -265,7 +265,9 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 				case 0:
 					if ((*cptr)->cpu->type == CPU_I80286) {
 						adr %= maxadr;
-						if (check_seg(adr, (*cptr)->cpu->cs)) {
+						if (!conf.dbg.segment) {
+							res = QString::number(adr, 16).toUpper().rightJustified(6 , '0');
+						} else if (check_seg(adr, (*cptr)->cpu->cs)) {
 							adr -= (*cptr)->cpu->cs.base;
 							res = QString("CS:").append(gethexword(adr & 0xffff));
 						} else if (check_seg(adr, (*cptr)->cpu->ss)) {
@@ -278,7 +280,7 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 							adr -= (*cptr)->cpu->es.base;
 							res = QString("ES:").append(gethexword(adr & 0xffff));
 						} else {
-							res = QString::number(adr % maxadr, 16).toUpper().rightJustified(6 , '0');
+							res = QString::number(adr, 16).toUpper().rightJustified(6 , '0');
 						}
 						// res = QString("DS:%0").arg(gethexword(adr & 0xffff));
 					} else {
@@ -425,8 +427,12 @@ void xDumpTable::setLimit(unsigned int lim) {
 	}
 }
 
+unsigned int xDumpTable::limit() {
+	return model->maxadr;
+}
+
 void xDumpTable::setAdr(int adr) {
-	if (model->dmpadr != adr) {
+	if (model->dmpadr != (unsigned int)adr) {
 		model->dmpadr = adr % model->maxadr;
 		emit s_adrch(model->dmpadr);
 		update();

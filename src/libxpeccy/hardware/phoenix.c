@@ -71,7 +71,7 @@ void phxOut(Computer* comp, int port, int val, int dos) {
 	if (comp->pEFF7 & 0x80) dos = 1;
 	if (difOut(comp->dif, port, val, dos)) return;
 	zx_dev_wr(comp, port, val, dos);
-	hwOut(phxPortMap, comp, port, val, dos);
+	hwOut(phxPortMap, comp, port, val, dos, 1);
 }
 
 int phxIn(Computer* comp, int port, int dos) {

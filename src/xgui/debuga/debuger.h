@@ -98,6 +98,10 @@ class DebugWin : public QDialog {
 		QList<xLabel*> dbgRegLabs;
 		QList<xHexSpin*> dbgRegEdit;
 
+		QList<QLabel*> dbgFlagLabs;
+		QList<QCheckBox*> dbgFlagBox;
+		QButtonGroup* flagrp;
+
 		MemPage mem_map[256];
 
 		QDialog* dumpwin;
@@ -126,7 +130,7 @@ class DebugWin : public QDialog {
 		xItemDelegate* xid_dump;
 
 		void fillCPU();
-		void fillFlags();
+		void fillFlags(const char*);
 		void fillMem();
 		void fillStack();
 		void fillFDC();

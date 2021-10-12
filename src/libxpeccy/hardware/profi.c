@@ -143,7 +143,7 @@ static xPort prfPortMap[] = {
 
 void prfOut(Computer* comp, int port, int val, int dos) {
 	zx_dev_wr(comp, port, val, dos);
-	hwOut(prfPortMap, comp, port, val, dos);
+	hwOut(prfPortMap, comp, port, val, dos, 1);
 }
 
 int prfIn(Computer* comp, int port, int dos) {

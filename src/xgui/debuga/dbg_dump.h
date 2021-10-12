@@ -74,6 +74,7 @@ class xDumpTable:public QTableView {
 		void setView(int);
 		void update();
 		int getAdr();
+		unsigned int limit();
 		int mode;
 		int view;
 	public slots:

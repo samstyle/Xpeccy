@@ -40,7 +40,7 @@ static xPort penPortMap[] = {
 void penOut(Computer* comp, int port, int val, int dos) {
 	difOut(comp->dif, port, val, dos);
 	zx_dev_wr(comp, port, val, dos);
-	hwOut(penPortMap, comp, port, val, dos);
+	hwOut(penPortMap, comp, port, val, dos, 1);
 }
 
 int penIn(Computer* comp, int port, int dos) {

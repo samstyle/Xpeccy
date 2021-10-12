@@ -45,7 +45,7 @@ static xPort p3PortMap[] = {
 void pl3Out(Computer* comp, int port, int val, int dos) {
 //	difOut(comp->dif, port, val, 0);
 	zx_dev_wr(comp, port, val, dos);
-	hwOut(p3PortMap, comp, port, val, 0);
+	hwOut(p3PortMap, comp, port, val, 0, 1);
 }
 
 int pl3In(Computer* comp, int port, int dos) {

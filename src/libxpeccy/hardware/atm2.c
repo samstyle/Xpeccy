@@ -236,7 +236,7 @@ void atm2Out(Computer* comp, int port, int val, int dos) {
 	if (~comp->p77hi & 2) dos = 1;
 	zx_dev_wr(comp, port, val, dos);
 	difOut(comp->dif, port, val, dos);
-	hwOut(atm2PortMap, comp, port, val, dos);
+	hwOut(atm2PortMap, comp, port, val, dos, 1);
 }
 
 int atm2In(Computer* comp, int port, int dos) {

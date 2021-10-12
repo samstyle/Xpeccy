@@ -72,7 +72,7 @@ static xPort spePortMap[] = {
 void speOut(Computer* comp, int port, int val, int dos) {
 	difOut(comp->dif, port, val, dos);
 	zx_dev_wr(comp, port, val, dos);
-	hwOut(spePortMap, comp, port, val, dos);
+	hwOut(spePortMap, comp, port, val, dos, 1);
 }
 
 int speIn(Computer* comp, int port, int dos) {

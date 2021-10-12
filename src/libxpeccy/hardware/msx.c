@@ -184,7 +184,7 @@ int msxIn(Computer* comp, int port, int dos) {
 }
 
 void msxOut(Computer* comp, int port, int val, int dos) {
-	hwOut(msxPortMap,comp, port, val, dos);
+	hwOut(msxPortMap,comp, port, val, dos, 1);
 }
 
 void msx_sync(Computer* comp, int ns) {

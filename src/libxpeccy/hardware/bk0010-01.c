@@ -204,27 +204,11 @@ int bk_io_rd(int adr, void* ptr) {
 //	odd adr : is high byte, add stored low byte, write whole word
 void bk_io_wr(int adr, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-#if 1
 	if (comp->cpu->nod & 1)		// LSB
 		comp->iomap[(adr & ~1) & 0xffff] = val & 0xff;
 	if (comp->cpu->nod & 2)		// MSB
 		comp->iomap[(adr | 1) & 0xffff] = (val >> 1) & 0xff;
-	hwOut(bk_io_tab, comp, adr & ~1, val, 0);
-#else
-	comp->iomap[adr] = val;
-	if (comp->cpu->nod) {	// write byte
-		comp->wdata = (comp->iomap[adr & ~1] | (comp->iomap[adr | 1] << 8)) & 0xffff;
-		hwOut(bk_io_tab, comp, adr & ~1, 0, 0);
-	} else {
-		if (adr & 1) {
-			comp->wdata &= 0xff;
-			comp->wdata |= (val << 8);
-			hwOut(bk_io_tab, comp, adr & ~1, 0, 0);		// all data in comp->wdata
-		} else {
-			comp->wdata = val & 0xff;
-		}
-	}
-#endif
+	hwOut(bk_io_tab, comp, adr & ~1, val, 0, 1);
 }
 
 int bk_ram_rd(int adr, void* ptr) {

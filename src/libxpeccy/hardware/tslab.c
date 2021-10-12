@@ -544,7 +544,7 @@ static xPort tsPortMap[] = {
 
 void tslOut(Computer* comp, int port, int val, int dos) {
 	zx_dev_wr(comp, port, val, dos);
-	hwOut(tsPortMap, comp, port, val, dos);
+	hwOut(tsPortMap, comp, port, val, dos, 1);
 }
 
 int tslIn(Computer* comp, int port, int dos) {

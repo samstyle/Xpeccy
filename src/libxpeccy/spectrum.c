@@ -272,9 +272,11 @@ Computer* compCreate() {
 #ifdef HAVEZLIB
 	comp->rzx.file = NULL;
 #endif
+	comp->mpic.master = 1;
+	comp->spic.master = 0;
 	compSetHardware(comp, "Dummy");
 	gsReset(comp->gs);
-	comp->cmos.data[17] = 0xaa;
+	comp->cmos.data[17] = 0xaa;	// 0a?
 	comp->frqMul = 1;
 	compSetBaseFrq(comp, 3.5);
 	return comp;

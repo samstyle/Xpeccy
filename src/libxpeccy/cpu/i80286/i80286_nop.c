@@ -59,23 +59,23 @@ xSegPtr i286_cash_seg(CPU* cpu, unsigned short val) {
 	xSegPtr p;
 	PAIR(w,h,l)off;
 	int adr;
-	unsigned short tmp;
+	unsigned char tmp;
 	p.idx = val;
-	if (cpu->mode == I286_MOD_REAL) {
-		p.flag = 0x92;		// present, dpl=0, segment, data, writeable
-		p.base = val << 4;
-		p.limit = 0xffff;
-	} else {
+	if (cpu->msw & I286_FPE) {
 		adr = (val & 4) ? cpu->ldtr.base : cpu->gdtr.base;
 		adr += val & 0xfff8;
-		off.l = cpu->mrd(adr++, 0, cpu->data);
+		off.l = cpu->mrd(adr++, 0, cpu->data);	// limit:16
 		off.h = cpu->mrd(adr++, 0, cpu->data);
 		p.limit = off.w;
-		off.l = cpu->mrd(adr++, 0, cpu->data);
+		off.l = cpu->mrd(adr++, 0, cpu->data);	// base:24
 		off.h = cpu->mrd(adr++, 0, cpu->data);
 		tmp = cpu->mrd(adr++, 0, cpu->data);
 		p.base = (tmp << 16) | off.w;
-		p.flag = cpu->mrd(adr, 0, cpu->data);
+		p.flag = cpu->mrd(adr, 0, cpu->data);	// flags:8
+	} else {
+		p.flag = 0xf2;		// present, dpl=3, segment, data, writeable
+		p.base = val << 4;
+		p.limit = 0xffff;
 	}
 	return p;
 }
@@ -100,11 +100,20 @@ unsigned short i286_pop(CPU* cpu) {
 
 void i286_interrupt(CPU* cpu, int n) {
 	cpu->intvec = n;
-	if (cpu->mode == I286_MOD_REAL) {
-		i286_int_real(cpu);
-	} else {
+	if (cpu->msw & I286_FPE) {
 		i286_int_prt(cpu);
+	} else {
+		i286_int_real(cpu);
 	}
+}
+
+// protected mode checks
+
+int i286_check_iopl(CPU* cpu) {		// CPL <= IOPL
+	if (!(cpu->msw & I286_FPE)) return 1;	// real mode
+	int iopl = (cpu->f >> 12) & 3;
+	int cpl = (cpu->cs.flag >> 5) & 3;
+	return (cpl <= iopl) ? 1 : 0;
 }
 
 // mod r/m
@@ -229,7 +238,7 @@ void i286_rd_ea(CPU* cpu, int wrd) {
 					cpu->ea.adr = cpu->bp + cpu->tmpw;
 					cpu->ea.seg = cpu->ss;
 				} else {
-					cpu->ea.adr = cpu->tmpw;
+					cpu->ea.adr = i286_rd_immw(cpu);		// adr = immw
 					cpu->ea.seg = cpu->ds;
 				}
 				break;
@@ -1264,10 +1273,10 @@ void i286_op73(CPU* cpu) {i286_jr(cpu, !(cpu->f & I286_FC));}
 void i286_op74(CPU* cpu) {i286_jr(cpu, cpu->f & I286_FZ);}
 // 75: jnz cb (aka jne)
 void i286_op75(CPU* cpu) {i286_jr(cpu, !(cpu->f & I286_FZ));}
-// 76: jba cb (aka jna): CF=1 && Z=1
-void i286_op76(CPU* cpu) {i286_jr(cpu, (cpu->f & I286_FC) && (cpu->f & I286_FZ));}
-// 77: jnba cb (aka ja): CF=0 && Z=0
-void i286_op77(CPU* cpu) {i286_jr(cpu, !((cpu->f & I286_FC) || (cpu->f & I286_FZ)));}
+// 76: jbe cb (aka jna): CF=1 || Z=1
+void i286_op76(CPU* cpu) {i286_jr(cpu, (cpu->f & I286_FC) || (cpu->f & I286_FZ));}
+// 77: ja cb (aka jnbe): CF=0 && Z=0
+void i286_op77(CPU* cpu) {i286_jr(cpu, !(cpu->f & I286_FC) && !(cpu->f & I286_FZ));}
 // 78: js cb
 void i286_op78(CPU* cpu) {i286_jr(cpu, cpu->f & I286_FS);}
 // 79: jns cb
@@ -1420,7 +1429,7 @@ void i286_op8D(CPU* cpu) {
 void i286_op8E(CPU* cpu) {
 	i286_rd_ea(cpu, 1);
 	switch((cpu->mod & 0x38) >> 3) {
-		case 0: cpu->es = i286_cash_seg(cpu, cpu->tmpw); break;
+		case 0:	cpu->es = i286_cash_seg(cpu, cpu->tmpw); break;
 		case 1: break;
 		case 2: cpu->ss = i286_cash_seg(cpu, cpu->tmpw); break;
 		case 3: cpu->ds = i286_cash_seg(cpu, cpu->tmpw); break;
@@ -2031,22 +2040,13 @@ void i286_opCB(CPU* cpu) {
 
 // cc: int 3
 void i286_opCC(CPU* cpu) {
-	cpu->intvec = 3;
-	if (cpu->mode == I286_MOD_REAL) {
-		i286_int_real(cpu);
-	} else {
-		i286_int_prt(cpu);
-	}
+	i286_interrupt(cpu, 3);
 }
 
 // cd,ib: int ib
 void i286_opCD(CPU* cpu) {
-	cpu->intvec = i286_rd_imm(cpu);
-	if (cpu->mode == I286_MOD_REAL) {
-		i286_int_real(cpu);
-	} else {
-		i286_int_prt(cpu);
-	}
+	cpu->tmp = i286_rd_imm(cpu);
+	i286_interrupt(cpu, cpu->tmp);
 }
 
 // ce: into	int 4 if FO=1
@@ -2418,12 +2418,22 @@ void i286_opF9(CPU* cpu) {
 
 // fa: cli
 void i286_opFA(CPU* cpu) {
-	cpu->f &= ~I286_FI;
+	if (i286_check_iopl(cpu)) {
+		cpu->f &= ~I286_FI;
+	} else {
+		cpu->errcod = 0;
+		i286_interrupt(cpu, I286_INT_GP);
+	}
 }
 
 // fb: sti
 void i286_opFB(CPU* cpu) {
-	cpu->f |= I286_FI;
+	if (i286_check_iopl(cpu)) {
+		cpu->f |= I286_FI;
+	} else {
+		cpu->errcod = 0;
+		i286_interrupt(cpu, I286_INT_GP);
+	}
 }
 
 // fc: cld
@@ -2499,7 +2509,7 @@ void i286_opFF(CPU* cpu) {
 // :X - test|*test|not|neg|mul|imul|div|idiv
 // :E - inc|dec|call|callf|jmp|jmpf|push|/7
 // :Q - sldt|str|lldt|ltr|verr|verw|/6|/7
-// :W - sgdt|sidt|lgdt|lidt|smsw|lmsw|/6|/7
+// :W - sgdt|sidt|lgdt|lidt|smsw|/5|lmsw|/7
 
 opCode i80286_tab[256] = {
 	{0, 1, i286_op00, 0, "add :e,:r"},
@@ -2610,30 +2620,30 @@ opCode i80286_tab[256] = {
 	{OF_WORD, 1, i286_op69, 0, "imul :r,:e,:2"},
 	{0, 1, i286_op6A, 0, "push :1"},
 	{OF_WORD, 1, i286_op6B, 0, "imul :r,:e,:1"},
-	{0, 1, i286_op6C, 0, ":Linsb"},
-	{0, 1, i286_op6D, 0, ":Linsw"},
-	{0, 1, i286_op6E, 0, ":Loutsb"},
-	{0, 1, i286_op6F, 0, ":Loutsw"},
+	{OF_SKIPABLE, 1, i286_op6C, 0, ":Linsb"},
+	{OF_SKIPABLE, 1, i286_op6D, 0, ":Linsw"},
+	{OF_SKIPABLE, 1, i286_op6E, 0, ":Loutsb"},
+	{OF_SKIPABLE, 1, i286_op6F, 0, ":Loutsw"},
 	{0, 1, i286_op70, 0, "jo :3"},
 	{0, 1, i286_op71, 0, "jno :3"},
-	{0, 1, i286_op72, 0, "jnae :3"},
-	{0, 1, i286_op73, 0, "jnb :3"},
+	{0, 1, i286_op72, 0, "jb :3"},		// jc, jnae
+	{0, 1, i286_op73, 0, "jnb :3"},		// jnc, jae
 	{0, 1, i286_op74, 0, "jz :3"},
 	{0, 1, i286_op75, 0, "jnz :3"},
-	{0, 1, i286_op76, 0, "jbe :3"},
-	{0, 1, i286_op77, 0, "jnbe :3"},
+	{0, 1, i286_op76, 0, "jbe :3"},		// jna
+	{0, 1, i286_op77, 0, "jnbe :3"},	// ja
 	{0, 1, i286_op78, 0, "js :3"},
 	{0, 1, i286_op79, 0, "jns :3"},
 	{0, 1, i286_op7A, 0, "jpe :3"},
 	{0, 1, i286_op7B, 0, "jpo :3"},
-	{0, 1, i286_op7C, 0, "jnge :3"},
+	{0, 1, i286_op7C, 0, "jl :3"},
 	{0, 1, i286_op7D, 0, "jnl :3"},
-	{0, 1, i286_op7E, 0, "jle :3"},
-	{0, 1, i286_op7F, 0, "jg :3"},
+	{0, 1, i286_op7E, 0, "jle :3"},		// jng
+	{0, 1, i286_op7F, 0, "jnle :3"},	// jg
 	{0, 1, i286_op80, 0, ":A :e,:1"},	// :A = mod:N (add,or,adc,sbb,and,sub,xor,cmp)
-	{OF_WORD, 1, i286_op81, 0, ":A word :e,:2"},
+	{OF_WORD, 1, i286_op81, 0, ":A :e,:2"},
 	{0, 1, i286_op82, 0, ":A :e,:1"},
-	{OF_WORD, 1, i286_op83, 0, ":A word :e,:1"},
+	{OF_WORD, 1, i286_op83, 0, ":A :e,:1"},
 	{0, 1, i286_op84, 0, "test :e,:r"},
 	{OF_WORD, 1, i286_op85, 0, "test :e,:r"},
 	{0, 1, i286_op86, 0, "xchg :e,:r"},
@@ -2641,7 +2651,7 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_op88, 0, "mov :e,:r"},
 	{OF_WORD, 1, i286_op89, 0, "mov :e,:r"},
 	{0, 1, i286_op8A, 0, "mov :r,:e"},
-	{OF_WORD, 1, i286_op8B, 0, "mov word :r,:e"},
+	{OF_WORD, 1, i286_op8B, 0, "mov :r,:e"},
 	{OF_WORD, 1, i286_op8C, 0, "mov :e,:s"},	// :s segment register from mod:N
 	{OF_WORD, 1, i286_op8D, 0, "lea :r,:e"},
 	{OF_WORD, 1, i286_op8E, 0, "mov :s,:e"},
@@ -2656,7 +2666,7 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_op97, 0, "xchg ax,di"},
 	{0, 1, i286_op98, 0, "cbw"},
 	{0, 1, i286_op99, 0, "cwd"},
-	{0, 1, i286_op9A, 0, "callf :p"},
+	{OF_SKIPABLE, 1, i286_op9A, 0, "callf :p"},
 	{0, 1, i286_op9B, 0, "wait"},
 	{0, 1, i286_op9C, 0, "pushf"},
 	{0, 1, i286_op9D, 0, "popf"},
@@ -2666,18 +2676,18 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_opA1, 0, "mov ax,[:2]"},
 	{0, 1, i286_opA2, 0, "mov [:2],al"},
 	{0, 1, i286_opA3, 0, "mov [:2],ax"},
-	{0, 1, i286_opA4, 0, ":Lmovsb"},
-	{0, 1, i286_opA5, 0, ":Lmovsw"},
-	{0, 1, i286_opA6, 0, ":Lcmpsb"},
-	{0, 1, i286_opA7, 0, ":Lcmpsw"},
+	{OF_SKIPABLE, 1, i286_opA4, 0, ":Lmovsb"},
+	{OF_SKIPABLE, 1, i286_opA5, 0, ":Lmovsw"},
+	{OF_SKIPABLE, 1, i286_opA6, 0, ":Lcmpsb"},
+	{OF_SKIPABLE, 1, i286_opA7, 0, ":Lcmpsw"},
 	{0, 1, i286_opA8, 0, "test al,:1"},
 	{0, 1, i286_opA9, 0, "test ax,:2"},
-	{0, 1, i286_opAA, 0, ":Lstosb"},
-	{0, 1, i286_opAB, 0, ":Lstosw"},
+	{OF_SKIPABLE, 1, i286_opAA, 0, ":Lstosb"},
+	{OF_SKIPABLE, 1, i286_opAB, 0, ":Lstosw"},
 	{0, 1, i286_opAC, 0, "lodsb"},
 	{0, 1, i286_opAD, 0, "lodsw"},
-	{0, 1, i286_opAE, 0, ":Lscasb"},
-	{0, 1, i286_opAF, 0, ":Lscasw"},
+	{OF_SKIPABLE, 1, i286_opAE, 0, ":Lscasb"},
+	{OF_SKIPABLE, 1, i286_opAF, 0, ":Lscasw"},
 	{0, 1, i286_opB0, 0, "mov al,:1"},
 	{0, 1, i286_opB1, 0, "mov cl,:1"},
 	{0, 1, i286_opB2, 0, "mov dl,:1"},
@@ -2695,7 +2705,7 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_opBE, 0, "mov si,:2"},
 	{0, 1, i286_opBF, 0, "mov di,:2"},
 	{0, 1, i286_opC0, 0, ":R :e,:1"},	// :R rotate group (rol,ror,rcl,rcr,sal,shr,*rot6,sar)
-	{OF_WORD, 1, i286_opC1, 0, ":R word :e,:2"},
+	{OF_WORD, 1, i286_opC1, 0, ":R :e,:2"},
 	{0, 1, i286_opC2, 0, "ret :2"},
 	{0, 1, i286_opC3, 0, "ret"},
 	{OF_WORD, 1, i286_opC4, 0, "les :r,:e"},
@@ -2711,9 +2721,9 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_opCE, 0, "into"},
 	{0, 1, i286_opCF, 0, "iret"},
 	{0, 1, i286_opD0, 0, ":R :e,1"},
-	{OF_WORD, 1, i286_opD1, 0, ":R word :e,1"},
+	{OF_WORD, 1, i286_opD1, 0, ":R :e,1"},
 	{0, 1, i286_opD2, 0, ":R :e,cl"},
-	{OF_WORD, 1, i286_opD3, 0, ":R word :e,cl"},
+	{OF_WORD, 1, i286_opD3, 0, ":R :e,cl"},
 	{0, 1, i286_opD4, 0, "aam :1"},
 	{0, 1, i286_opD5, 0, "aad :1"},
 	{0, 1, i286_opD6, 0, "? salc"},
@@ -2734,7 +2744,7 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_opE5, 0, "in ax,:1"},
 	{0, 1, i286_opE6, 0, "out :1,al"},
 	{0, 1, i286_opE7, 0, "out :1,ax"},
-	{0, 1, i286_opE8, 0, "call :n"},		// :n = near, 2byte offset
+	{OF_SKIPABLE, 1, i286_opE8, 0, "call :n"},		// :n = near, 2byte offset
 	{0, 1, i286_opE9, 0, "jmp :n"},			// jmp near
 	{0, 1, i286_opEA, 0, "jmpf :p"},		// jmp far
 	{0, 1, i286_opEB, 0, "jmp :3"},			// jmp short
@@ -2749,7 +2759,7 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_opF4, 0, "hlt"},
 	{0, 1, i286_opF5, 0, "cmc"},
 	{0, 1, i286_opF6, 0, ":X :e"},		// test,test,not,neg,mul,imul,div,idiv
-	{OF_WORD, 1, i286_opF7, 0, ":X word :e"},
+	{OF_WORD, 1, i286_opF7, 0, ":X :e"},
 	{0, 1, i286_opF8, 0, "clc"},
 	{0, 1, i286_opF9, 0, "stc"},
 	{0, 1, i286_opFA, 0, "cli"},
@@ -2757,5 +2767,5 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_opFC, 0, "cld"},
 	{0, 1, i286_opFD, 0, "std"},
 	{0, 1, i286_opFE, 0, ":E :e"},		// inc,dec,...
-	{OF_WORD, 1, i286_opFF, 0, ":E word :e"},	// inc,dec,not,neg,call,callf,jmp,jmpf,push,???
+	{OF_WORD|OF_SKIPABLE, 1, i286_opFF, 0, ":E :e"},	// inc,dec,not,neg,call,callf,jmp,jmpf,push,???
 };

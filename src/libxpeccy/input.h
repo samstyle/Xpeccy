@@ -151,11 +151,10 @@ typedef struct {
 	int extMap[8];	// Profi XT-keyboard extend
 	int msxMap[16];	// MSX keys map
 	// pc keyboard keybuffer
+	unsigned char mem[0x20]; // internal memory. rd [0] = command, wr [0] = config
 	int outbuf;		// 0 = empty, else key scancode
 	int inbuf;		// 0 = free, else com/data
 	xKeyBuf kbuf;
-//	unsigned char kbdBuf[16];	// PS/2 key buffer
-//	int kBufPos;
 } Keyboard;
 
 typedef struct {

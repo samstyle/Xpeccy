@@ -16,6 +16,7 @@ extern "C" {
 #include "cartridge.h"
 #include "ppi.h"
 #include "pit.h"
+#include "pic.h"
 
 #include "sound/ayym.h"
 #include "sound/gs.h"
@@ -272,7 +273,13 @@ typedef struct {
 		c64cia cia2;
 	} c64;
 	CMOS cmos;
+// ibm
 	PIT pit;
+	PIC mpic;		// master pic
+	PIC spic;		// slave pic
+	struct {
+		unsigned char mem[0x20];	// [0] = last kbd command
+	} i8042;		// ps/2 controller
 } Computer;
 
 #include "hardware/hardware.h"
