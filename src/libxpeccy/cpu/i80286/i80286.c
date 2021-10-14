@@ -132,6 +132,7 @@ const char* str_regb[8] = {"al","cl","dl","bl","ah","ch","dh","bh"};
 const char* str_regw[8] = {"ax","cx","dx","bx","sp","bp","si","di"};
 const char* str_regs[4] = {"es","cs","ss","ds"};
 const char* str_ea[8] = {"bx+si","bx+di","bp+si","bp+di","si","di","bp","bx"};
+int seg_ea[8] = {3,3,2,2,3,3,2,3};
 const char* str_alu[8] = {"add","or","adc","sbb","and","sub","xor","cmp"};
 const char* str_rot[8] = {"rol","ror","rcl","rcr","sal","shr","*rot/6","sar"};
 const char* str_opX[8] = {"test","*test","not","neg","mul","imul","div","idiv"};
@@ -157,10 +158,10 @@ xMnem i286_mnem(CPU* cpu, unsigned short sadr, cbdmr mrd, void* data) {
 		if (tab == i80286_tab) {
 			switch (com) {
 				case 0x0f: tab = i286_0f_tab; break;
-				case 0x26: rseg = 0; break;
-				case 0x2e: rseg = 1; break;
-				case 0x36: rseg = 2; break;
-				case 0x3e: rseg = 3; break;
+				case 0x26: rseg = 0; break;		// es
+				case 0x2e: rseg = 1; break;		// cs
+				case 0x36: rseg = 2; break;		// ss
+				case 0x3e: rseg = 3; break;		// ds
 				case 0xf2: rep = I286_REPNZ; break;
 				case 0xf3: rep = I286_REPZ; break;
 			}
@@ -248,20 +249,23 @@ xMnem i286_mnem(CPU* cpu, unsigned short sadr, cbdmr mrd, void* data) {
 							adr++;
 						}
 						*(dptr++) = '[';
-						if (rseg >= 0) {
-							dptr += sprintf(dptr, "%s::", str_regs[rseg & 3]);
-						}
-						// TODO: [seg:disp+reg] not [seg:reg+-disp]
-						if ((mb & 0xc7) == 0x06) {	// immw
+						if (rseg < 0)
+							rseg = seg_ea[mb & 7];	// default segment if not overriden
+						dptr += sprintf(dptr, "%s::", str_regs[rseg & 3]);
+						if ((mb & 0xc7) == 0x06) {	// immw, [seg:disp]
 							disp.l = cpu->mrd(cpu->cs.base + adr, 0, cpu->data);
 							adr++;
 							disp.h = cpu->mrd(cpu->cs.base + adr, 0, cpu->data);
 							adr++;
 							dptr += sprintf(dptr, "#%.4X", disp.w);
-							disp.w = 0;
+							// disp.w = 0;
 						} else {			// reg.based
+							if (disp.w)		// if disp!=0
+								dptr += sprintf(dptr, "#%.4X+", disp.w);
 							dptr += sprintf(dptr, "%s", str_ea[mb & 7]);	// TODO: do something to show segment override
+
 						}
+/*
 						if (disp.w) {
 							if (disp.w & 0x8000) {
 								dptr += sprintf(dptr, "-#%X", (-disp.w) & 0x7fff);
@@ -269,6 +273,7 @@ xMnem i286_mnem(CPU* cpu, unsigned short sadr, cbdmr mrd, void* data) {
 								dptr += sprintf(dptr ,"+#%X", disp.w);
 							}
 						}
+*/
 						*(dptr++) = ']';
 					}
 					break;
@@ -290,8 +295,8 @@ xMnem i286_mnem(CPU* cpu, unsigned short sadr, cbdmr mrd, void* data) {
 					dptr += sprintf(dptr, "%s", str_rot[(mb >> 3) & 7]);
 					break;
 				case 'X': if (!mod) {mod = 1; mb = cpu->mrd(cpu->cs.base + adr, 0, cpu->data); adr++;}
-					if (!(mb & 0x30)) {	// test :e,:1 <- add ,:1 to command
-						strcat(ptr, ",:1");
+					if (!(mb & 0x30)) {	// test :e,:2 <- add ,:2 to command
+						strcat(ptr, ",:2");
 					}
 					dptr += sprintf(dptr, "%s", str_opX[(mb >> 3) & 7]);
 					break;
@@ -303,6 +308,10 @@ xMnem i286_mnem(CPU* cpu, unsigned short sadr, cbdmr mrd, void* data) {
 					break;
 				case 'W': if (!mod) {mod = 1; mb = cpu->mrd(cpu->cs.base + adr, 0, cpu->data); adr++;}
 					dptr += sprintf(dptr, "%s", str_opW[(mb >> 3) & 7]);
+					break;
+				case ':':
+					*(dptr++) = ':';	// "::" will be replaced by ":" in cpuDisasm
+					*(dptr++) = ':';
 					break;
 				default:
 					*dptr = *ptr;
