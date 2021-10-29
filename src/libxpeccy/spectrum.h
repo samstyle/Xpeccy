@@ -17,6 +17,7 @@ extern "C" {
 #include "ppi.h"
 #include "pit.h"
 #include "pic.h"
+#include "ps2ctrl.h"
 
 #include "sound/ayym.h"
 #include "sound/gs.h"
@@ -277,9 +278,7 @@ typedef struct {
 	PIT pit;
 	PIC mpic;		// master pic
 	PIC spic;		// slave pic
-	struct {
-		unsigned char mem[0x20];	// [0] = last kbd command
-	} i8042;		// ps/2 controller
+	PS2Ctrl* ps2c;
 } Computer;
 
 #include "hardware/hardware.h"

@@ -245,6 +245,7 @@ Computer* compCreate() {
 	comp->joy = joyCreate();
 	comp->mouse = mouseCreate();
 	comp->ppi = ppi_create();
+	comp->ps2c = ps2c_create(comp->keyb, comp->mouse);
 // storage
 	comp->tape = tapCreate();
 	comp->dif = difCreate(DIF_NONE);
@@ -302,6 +303,7 @@ void compDestroy(Computer* comp) {
 	apuDestroy(comp->nesapu);
 	sltDestroy(comp->slot);
 	ppi_destroy(comp->ppi);
+	ps2c_destroy(comp->ps2c);
 	free(comp);
 }
 
@@ -320,6 +322,7 @@ void compReset(Computer* comp,int res) {
 
 	// kbdReleaseAll(comp->keyb);
 	kbdSetMode(comp->keyb, KBD_SPECTRUM);
+	ps2c_reset(comp->ps2c);
 
 	vidReset(comp->vid);
 	comp->ext = 0;

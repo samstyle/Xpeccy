@@ -3,7 +3,9 @@
 void phxMapMem(Computer* comp) {
 	memSetBank(comp->mem, 0x40, MEM_RAM, 5, MEM_16K, NULL, NULL, NULL);
 	memSetBank(comp->mem, 0x80, MEM_RAM, 2, MEM_16K, NULL, NULL, NULL);
-	int bank = (comp->p7FFD & 7) | ((comp->p1FFD & 0xd0) << 1) | ((comp->p7FFD & 0x80) << 3);
+	// bank = 1f.6,1f.7,7f.7,1f.4,7f.2,7f.1,7f.0 - real
+	// bank = 1f.7,1f.6,7f.7,1f.4,7f.2,7f.1,7f.0 - emul, little bit different from real
+	int bank = (comp->p7FFD & 7) | ((comp->p1FFD & 0xd0) >> 1) | ((comp->p7FFD & 0x80) >> 3);
 	memSetBank(comp->mem, 0xc0, MEM_RAM, bank, MEM_16K, NULL, NULL, NULL);
 	if (comp->p1FFD & 1) {
 		memSetBank(comp->mem, 0x00, MEM_RAM, 0, MEM_16K, NULL, NULL, NULL);

@@ -108,18 +108,45 @@ XT keyboard
 int ibm_inKbd(Computer* comp, int adr) {
 	int res = -1;
 	switch (adr & 0x0f) {
+#if 1
+		case 0:
+			res = ps2c_rd(comp->ps2c, PS2_RDATA);
+			break;
+		case 1:
+			res = comp->reg[0x61];
+			break;
+		case 4:
+			res = ps2c_rd(comp->ps2c, PS2_RSTATUS);
+			break;
+#else
 		case 0: res = xt_read(comp->keyb); break;		// read code
 		case 1: res = comp->reg[0x61]; break;
 		case 4: if (!comp->keyb->outbuf) res &= ~1;
 			if (!comp->keyb->inbuf) res &= ~2;
 			if (!(comp->keyb->mem[0] & 4)) res &= ~4;	// system flag
 			break;
+#endif
 	}
 	return res;
 }
 
 void ibm_outKbd(Computer* comp, int adr, int val) {
 	switch(adr & 0x0f) {
+#if 1
+		case 0:
+			ps2c_wr(comp->ps2c, PS2_RDATA, val);
+			break;
+		case 1:
+			comp->reg[0x61] = val & 0xff;
+			if (!(val & 0x80))
+				comp->keyb->outbuf = 0;
+			break;
+		case 4:
+			ps2c_wr(comp->ps2c, PS2_RCMD, val);
+			if (comp->ps2c->reset)
+				compReset(comp, RES_DEFAULT);
+			break;
+#else
 		case 0:
 			if (comp->keyb->row < 0) break;
 			if ((comp->keyb->row & 0xe0) == 0x60) {
@@ -169,8 +196,9 @@ void ibm_outKbd(Computer* comp, int adr, int val) {
 					}
 					break;
 			}
-			comp->keyb->com = val & 0xff;
+			// comp->keyb->com = val & 0xff;
 			break;
+#endif
 	}
 }
 
@@ -254,7 +282,7 @@ void ibm_sync(Computer* comp, int ns) {
 		comp->pit.ch2.lout = comp->pit.ch2.out;
 		// speaker
 	}
-	comp->beep->lev = (comp->reg[0x61] & 2) ? comp->pit.ch2.out : 0;
+	comp->beep->lev = (comp->reg[0x61] & 2) ? comp->pit.ch2.out : 1;
 	// pic
 	if (comp->spic.oint)		// slave pic int -> master pic int2
 		pic_int(&comp->mpic, 2);
