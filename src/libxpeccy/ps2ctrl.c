@@ -65,10 +65,11 @@ int ps2c_rd(PS2Ctrl* ctrl, int adr) {
 	int res = -1;
 	switch (adr) {
 		case PS2_RDATA:
-			// res = xt_read(ctrl->kbd);
-			if (ctrl->status & 1) {
-				res = ctrl->outbuf;
-				ctrl->status &= ~1;
+			if (ctrl->outbuf) {
+				res = ctrl->outbuf & 0xff;
+				ctrl->outbuf >>= 8;
+				if (!ctrl->outbuf)
+					ctrl->status &= ~1;
 			}
 			break;
 		case PS2_RSTATUS:
@@ -79,9 +80,20 @@ int ps2c_rd(PS2Ctrl* ctrl, int adr) {
 }
 
 void ps2c_wr_ob(PS2Ctrl* ctrl, int val) {
+	if (!(ctrl->status & 1)) {		// if buffer free
+		ctrl->outbuf = val;
+		ctrl->status &= ~0x21;
+		ctrl->status |= 0x01;
+		if (ctrl->ram[0] & 1)
+			ctrl->intk = 1;
+	}
+}
+
+void ps2c_wr_ob2(PS2Ctrl* ctrl, int val) {
 	ctrl->outbuf = val;
-	ctrl->status &= ~0x21;
-	ctrl->status |= 0x01;
+	ctrl->status |= 0x21;
+	if (ctrl->ram[0] & 2)
+		ctrl->intm = 1;
 }
 
 void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
@@ -106,8 +118,7 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 						ps2c_wr_ob(ctrl, val);
 						break;
 					case 0xd3:
-						ps2c_wr_ob(ctrl, val);
-						ctrl->status |= 0x20;
+						ps2c_wr_ob2(ctrl, val);
 						break;
 					case 0xd4:		// send to mouse
 						break;

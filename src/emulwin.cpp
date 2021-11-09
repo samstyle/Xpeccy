@@ -412,8 +412,8 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 				}
 			}
 		}
-// process sdl event (gamepad)
-		if (conf.joy.joy && !conf.emu.pause) {
+// process sdl events (gamepad)
+		if (conf.joy.joy && !conf.emu.pause && isActiveWindow()) {
 			SDL_Event ev;
 			SDL_JoystickUpdate();
 			while(SDL_PollEvent(&ev)) {
@@ -448,7 +448,7 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 // satelites
 		updateSatellites();
 #if defined(__WIN32) && STICKY_KEY
-		if (!conf.emu.pause) {		// if not paused (!)
+		if (!conf.emu.pause && isActiveWindow()) {		// if not paused (!)
 			int state;
 			QKeyEvent* ev;
 			// events: nativeScanCode = 0, nativeVirtualKey = XKEY_*

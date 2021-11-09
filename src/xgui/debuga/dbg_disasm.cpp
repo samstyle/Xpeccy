@@ -146,7 +146,7 @@ int dasmrd(int adr, void* ptr) {
 	int fadr;
 	MemPage* pg;
 	if (comp->cpu->type == CPU_I80286) {
-		res = comp->hw->mrd(comp, comp->cpu->cs.base + (adr & 0xffff), 0);
+		res = comp->hw->mrd(comp, comp->cpu->cs.base + (adr & 0xffff), 0) & 0xff;
 		// res = i286_mrd(comp->cpu, comp->cpu->cs, 0, adr & 0xffff);
 	} else {
 		switch (mode) {
@@ -238,7 +238,7 @@ int dasmByte(Computer* comp, int adr, dasmData& drow) {
 	drow.command = QString("DB #%0").arg(gethexbyte(dasmrd(adr & 0xffff, comp)));
 	adr++;
 	unsigned char fl = getBrk(comp, adr);
-	while ((len < conf.dbg.dbsize) && (fl == DBG_VIEW_BYTE)) {
+	while ((len < conf.dbg.dbsize) && (fl == DBG_VIEW_BYTE) && findLabel(adr,-1,-1).isEmpty()) {
 		drow.command.append(QString(",#%0").arg(gethexbyte(dasmrd(adr & 0xffff, comp))));
 		len++;
 		adr++;

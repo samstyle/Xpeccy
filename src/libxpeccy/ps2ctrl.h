@@ -7,7 +7,9 @@
 #define PS2_RSTATUS	PS2_RCMD
 
 typedef struct {
-	unsigned reset:1;
+	unsigned reset:1;	// system reset requested
+	unsigned intk:1;	// dev1(kbd) interrupt
+	unsigned intm:1;	// dev2(mouse) interrupt
 	Keyboard* kbd;
 	Mouse* mouse;
 	unsigned char ram[0x20];
@@ -25,3 +27,4 @@ void ps2c_destroy(PS2Ctrl*);
 void ps2c_reset(PS2Ctrl*);
 int ps2c_rd(PS2Ctrl*, int);
 void ps2c_wr(PS2Ctrl*, int, int);
+void ps2c_wr_ob(PS2Ctrl*, int);

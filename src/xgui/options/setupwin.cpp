@@ -601,6 +601,7 @@ void SetupWin::apply() {
 	compSetTurbo(comp, ui.sbMult->value());
 	comp->evenM1 = ui.scrpwait->isChecked() ? 1 : 0;
 	if (comp->hw != oldmac) compReset(comp,RES_DEFAULT);
+	if (comp->hw->id == HW_ZX48) comp->mem->ramMask = MEM_128K - 1;		// TODO: find a better way
 // video
 	conf.vid.fullScreen = ui.cbFullscreen->isChecked() ? 1 : 0;
 	conf.vid.keepRatio = ui.cbKeepRatio->isChecked() ? 1 : 0;
@@ -647,9 +648,6 @@ void SetupWin::apply() {
 	comp->ts->chipA->frq = ui.psg1frq->currentText().toDouble();
 	comp->ts->chipB->frq = ui.psg2frq->currentText().toDouble();
 	comp->ts->chipC->frq = ui.psg3frq->currentText().toDouble();
-//	comp->ts->chipA->frq = ui.chip1freq->value();
-//	comp->ts->chipB->frq = ui.chip2freq->value();
-//	comp->ts->chipC->frq = ui.chip3freq->value();
 	chip_set_type(comp->ts->chipA, getRFIData(ui.schip1box));
 	chip_set_type(comp->ts->chipB, getRFIData(ui.schip2box));
 	chip_set_type(comp->ts->chipC, getRFIData(ui.schip3box));

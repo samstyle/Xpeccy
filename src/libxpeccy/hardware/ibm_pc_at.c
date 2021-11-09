@@ -272,17 +272,27 @@ void ibm_init(Computer* comp) {
 
 void ibm_sync(Computer* comp, int ns) {
 	bcSync(comp->beep, ns);
+	// ps/2 controller
+	if (comp->ps2c->intk) {
+		comp->ps2c->intk = 0;
+		pic_int(&comp->mpic, 1);	// int1:keyboard interrypt
+	}
+	if (comp->ps2c->intm) {
+		comp->ps2c->intm = 0;
+		pic_int(&comp->spic, 4);	// int12:mouse interrupt (int4 on slave pic)
+	}
+
 	// pit
 	pit_sync(&comp->pit, ns);
-	if (!comp->pit.ch0.lout && comp->pit.ch0.out) {
-		comp->pit.ch0.lout = comp->pit.ch0.out;
-		pic_int(&comp->mpic, 0);	// INT0 master pic
+	// ch0 connected to int0
+	if (!comp->pit.ch0.lout && comp->pit.ch0.out) {		// 0->1
+		pic_int(&comp->mpic, 0);	// int0 master pic
 	}
-	if (!comp->pit.ch2.lout && comp->pit.ch2.out) {
-		comp->pit.ch2.lout = comp->pit.ch2.out;
-		// speaker
-	}
+	comp->pit.ch0.lout = comp->pit.ch0.out;
+	// ch2 connected to speaker
+	comp->pit.ch2.lout = comp->pit.ch2.out;
 	comp->beep->lev = (comp->reg[0x61] & 2) ? comp->pit.ch2.out : 1;
+
 	// pic
 	if (comp->spic.oint)		// slave pic int -> master pic int2
 		pic_int(&comp->mpic, 2);
@@ -294,13 +304,15 @@ void ibm_sync(Computer* comp, int ns) {
 	}
 }
 
-// key press/release = INT1 ?
+// key press/release
 void ibm_keyp(Computer* comp, keyEntry kent) {
-	pic_int(&comp->mpic, 1);
+	ps2c_wr_ob(comp->ps2c, comp->keyb->outbuf);
+	comp->keyb->outbuf = 0;
 }
 
 void ibm_keyr(Computer* comp, keyEntry kent) {
-	pic_int(&comp->mpic, 1);
+	ps2c_wr_ob(comp->ps2c, comp->keyb->outbuf);
+	comp->keyb->outbuf = 0;
 }
 
 sndPair ibm_vol(Computer* comp, sndVolume* vol) {
