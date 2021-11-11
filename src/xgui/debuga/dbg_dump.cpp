@@ -120,15 +120,20 @@ xDumpModel::xDumpModel(QObject* par):QAbstractTableModel(par) {
 	dmpadr = 0;
 	maxadr = MEM_64K;
 	row_count = 11;
+	pgbase = 0;
+	pgsize = MEM_64K;
 }
 
 void xDumpModel::setComp(Computer** ptr) {
 	cptr = ptr;
 }
 
-void xDumpModel::setMode(int md, int pg) {
+void xDumpModel::setMode(int md, int pgn, int pgb, int pgs) {
 	mode = md;
-	page = pg;
+	if (pgn > 0) page = pgn;
+	pgbase = (pgb > 0) ? pgb : 0xc000;
+	pgsize = (pgs > 0) ? pgs : MEM_16K;
+	maxadr = pgsize;
 	update();
 }
 
@@ -285,7 +290,8 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 						// res = QString("DS:%0").arg(gethexword(adr & 0xffff));
 					} else {
 						if ((mode == XVIEW_RAM) || (mode == XVIEW_ROM)) {
-							adr &= 0x3fff;
+							adr %= pgsize;
+							adr += pgbase;
 							str = QString::number(page, (*cptr)->hw->base).toUpper().rightJustified(2, '0').append(":");
 						}
 						str.append(QString::number(adr, (*cptr)->hw->base).toUpper().rightJustified(((*cptr)->hw->base == 16) ? 4 : 6, '0'));
@@ -380,10 +386,9 @@ void xDumpTable::setComp(Computer** ptr) {
 	model->setComp(ptr);
 }
 
-void xDumpTable::setMode(int md, int pg) {
+void xDumpTable::setMode(int md, int pgn, int pgb, int pgs) {
 	mode = md;
-	model->setMode(md, pg);
-
+	model->setMode(md, pgn, pgb, pgs);
 	emit rqRefill();
 }
 

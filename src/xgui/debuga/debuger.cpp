@@ -181,9 +181,6 @@ void DebugWin::onPrfChange(xProfile* prf) {
 	p.first = QIcon(":/images/stop.png");
 	p.second = ui.brkTab;
 	lst.append(p);
-//	p.first = QIcon(":/images/memory.png");
-//	p.second = ui.memTab;
-//	lst.append(p);
 	while(lst.size() > 0) {
 		ui.tabsPanel->addTab(lst.first().second, lst.first().first, "");
 		lst.removeFirst();
@@ -197,7 +194,7 @@ void DebugWin::onPrfChange(xProfile* prf) {
 	unsigned int lim = (comp->hw->id == HW_IBM_PC) ? MEM_4M : MEM_64K;
 	ui.dumpTable->setLimit(lim);
 	ui.dumpScroll->setMaximum(lim - 1);
-	switch(conf.prof.cur->zx->hw->base) {
+	switch(comp->hw->base) {
 		case 8:
 			ui.dumpTable->setItemDelegateForColumn(1, xid_octw);
 			ui.dumpTable->setItemDelegateForColumn(3, xid_octw);
@@ -219,6 +216,12 @@ void DebugWin::onPrfChange(xProfile* prf) {
 	ui.labIMM->setVisible(z80like); ui.boxIM->setVisible(z80like);
 	ui.labIFF1->setVisible(z80like); ui.flagIFF1->setVisible(z80like);
 	ui.labIFF2->setVisible(z80like); ui.flagIFF2->setVisible(z80like);
+	if (comp->hw->id == HW_IBM_PC) {
+		ui.cbDumpView->setCurrentIndex(0);
+		ui.cbDumpView->setEnabled(false);
+	} else {
+		ui.cbDumpView->setEnabled(true);
+	}
 	fillAll();
 }
 
@@ -470,15 +473,30 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.cbDumpView->addItem("RAM", XVIEW_RAM);
 	ui.cbDumpView->addItem("ROM", XVIEW_ROM);
 
+	ui.leDumpPageBase->setMin(0);
+	ui.leDumpPageBase->setMax(0xffff);
+	ui.cbDumpPageSize->addItem("256", MEM_256);
+	ui.cbDumpPageSize->addItem("512", MEM_512);
+	ui.cbDumpPageSize->addItem("1KB", MEM_1K);
+	ui.cbDumpPageSize->addItem("2KB", MEM_2K);
+	ui.cbDumpPageSize->addItem("4KB", MEM_4K);
+	ui.cbDumpPageSize->addItem("8KB", MEM_8K);
+	ui.cbDumpPageSize->addItem("16KB", MEM_16K);
+	ui.cbDumpPageSize->addItem("32KB", MEM_32K);
+	ui.cbDumpPageSize->addItem("64KB", MEM_64K);
+
 	ui.dumpTable->setColumnWidth(0,70);
 	ui.dumpTable->setItemDelegate(xid_byte);
 	ui.dumpTable->setItemDelegateForColumn(0, xid_labl);
 	ui.dumpTable->setItemDelegateForColumn(9, xid_none);
+	ui.cbDumpPageSize->setCurrentIndex(6);	// 16K
 
 	connect(ui.dumpTable,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(putBreakPoint()));
 	connect(ui.cbCodePage, SIGNAL(currentIndexChanged(int)), this, SLOT(setDumpCP()));
 	connect(ui.cbDumpView, SIGNAL(currentIndexChanged(int)), this, SLOT(chDumpView()));
 	connect(ui.sbDumpPage, SIGNAL(valueChanged(int)), this, SLOT(chDumpView()));
+	connect(ui.leDumpPageBase, SIGNAL(valueChanged(int)), this, SLOT(chDumpView()));
+	connect(ui.cbDumpPageSize, SIGNAL(currentIndexChanged(int)), this, SLOT(chDumpView()));
 
 	ui.cbDumpView->setCurrentIndex(0);
 
@@ -511,7 +529,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.sbTileset, SIGNAL(valueChanged(int)), this, SLOT(fillGBoy()));
 	connect(ui.sbTilemap, SIGNAL(valueChanged(int)), this, SLOT(fillGBoy()));
 
-	connect(ui.tabsPanel, SIGNAL(currentChanged(int)), this, SLOT(fillAll()));
+	connect(ui.tabsPanel, SIGNAL(currentChanged(int)), this, SLOT(fillTabs()));
 
 	block = 0;
 	tCount = 0;
@@ -594,7 +612,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(memFinder, SIGNAL(patFound(int)), this, SLOT(onFound(int)));
 
 	memFiller = new xMemFiller(this);
-	connect(memFiller, SIGNAL(rqRefill()),this,SLOT(fillAll()));
+	connect(memFiller, SIGNAL(rqRefill()),this,SLOT(fillNotCPU()));
 
 	brkManager = new xBrkManager(this);
 	connect(brkManager, SIGNAL(completed(xBrkPoint, xBrkPoint)), this, SLOT(confirmBrk(xBrkPoint, xBrkPoint)));
@@ -654,21 +672,19 @@ void DebugWin::setDumpCP() {
 }
 
 void DebugWin::chDumpView() {
-	int mode = getRFIData(ui.cbDumpView);
-	int page = ui.sbDumpPage->value();
-	ui.sbDumpPage->setDisabled(mode == XVIEW_CPU);
-	ui.dumpTable->setMode(mode, page);
-	switch(mode) {
-		case XVIEW_CPU: ui.dumpScroll->setMaximum((comp->hw->id == HW_IBM_PC) ? MEM_4M - 1 : MEM_64K - 1); break;
-		default: ui.dumpScroll->setMaximum(0x3fff);
+	int mode,page,pbase,psize;
+	mode = getRFIData(ui.cbDumpView);
+	page = ui.sbDumpPage->value();
+	pbase = ui.leDumpPageBase->getValue();
+	if (mode == XVIEW_CPU) {
+		psize = (comp->hw->id == HW_IBM_PC) ? MEM_4M : MEM_64K;
+	} else {
+		psize = getRFIData(ui.cbDumpPageSize);
 	}
-}
-
-void DebugWin::setDasmMode() {
-//	int mode = getRFIData(ui.cbDasmMode);
-//	int page = ui.sbDasmPage->value();
-//	ui.sbDasmPage->setDisabled(mode == XVIEW_CPU);
-//	ui.dasmTable->setMode(mode, page);
+	ui.widDumpPage->setDisabled(mode == XVIEW_CPU);
+	ui.dumpTable->setMode(mode, page, pbase, psize);
+	ui.dumpScroll->setMaximum(psize-1);
+	ui.dumpTable->setLimit(psize);
 }
 
 static QFile logfile;
@@ -979,11 +995,8 @@ void DebugWin::fillTape() {
 	ui.labTapeDiag->setPixmap(pxm);
 }
 
-bool DebugWin::fillAll() {
-	ui.labTcount->setText(QString("%0 / %1").arg(comp->tickCount - tCount).arg(comp->frmtCount));
-	fillCPU();
+void DebugWin::fillTabs() {
 	fillMem();
-	fillDump();
 	fillFDC();
 	fillGBoy();
 	drawNes();
@@ -1058,15 +1071,25 @@ bool DebugWin::fillAll() {
 		}
 		block = 0;
 	}
-	ui.tabDiskDump->update();
+}
 
+bool DebugWin::fillNotCPU() {
+	ui.labTcount->setText(QString("%0 / %1").arg(comp->tickCount - tCount).arg(comp->frmtCount));
+	fillTabs();
+	ui.tabDiskDump->update();
 	setSignal(ui.labDOS, comp->dos);
 	setSignal(ui.labROM, comp->rom);
 	setSignal(ui.labCPM, comp->cpm);
 	setSignal(ui.labINT, comp->cpu->intrq & comp->cpu->inten);
 	if (memViewer->isVisible())
 		memViewer->fillImage();
+	fillDump();
 	return fillDisasm();
+}
+
+bool DebugWin::fillAll() {
+	fillCPU();
+	return fillNotCPU();
 }
 
 // gameboy

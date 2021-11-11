@@ -75,6 +75,8 @@ class DebugWin : public QDialog {
 	public slots:
 		void start(Computer*);
 		bool fillAll();
+		bool fillNotCPU();
+		void fillTabs();
 		void onPrfChange(xProfile*);
 		void chaPal();
 		void doStep();
@@ -145,7 +147,6 @@ class DebugWin : public QDialog {
 		void setShowSegment(bool);
 		void setRomWriteable(bool);
 		void chDumpView();
-		void setDasmMode();
 		void setDumpCP();
 		void resetTCount();
 

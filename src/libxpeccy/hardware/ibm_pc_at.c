@@ -89,26 +89,11 @@ void ibm_outPIT(Computer* comp, int adr, int val) {
 	pit_wr(&comp->pit,adr,val);
 }
 
-/*
-XT keyboard
-060-067  8255 Programmable Peripheral Interface  (PC,XT, PCjr)
-060 8255 Port A keyboard input/output buffer (output PCjr)
-	rd only: read kbd scancode (scancode table 1)
-061 8255 Port B rd/wr, buffered register
-	mode	bit1: beeper
-		bit7: 1:block kbd. 1->0 will clear kbd buf
-062 8255 Port C input (no connection?)
-063 8255 Command/Mode control register
-
-064	rd	bit0: output buffer full (rd 60)
-		bit1: input buffer full (wr 60)
-		bit2: 0:powerup or reset / 1:selftest ok
-*/
+// ps/2 controller
 
 int ibm_inKbd(Computer* comp, int adr) {
 	int res = -1;
 	switch (adr & 0x0f) {
-#if 1
 		case 0:
 			res = ps2c_rd(comp->ps2c, PS2_RDATA);
 			break;
@@ -118,21 +103,12 @@ int ibm_inKbd(Computer* comp, int adr) {
 		case 4:
 			res = ps2c_rd(comp->ps2c, PS2_RSTATUS);
 			break;
-#else
-		case 0: res = xt_read(comp->keyb); break;		// read code
-		case 1: res = comp->reg[0x61]; break;
-		case 4: if (!comp->keyb->outbuf) res &= ~1;
-			if (!comp->keyb->inbuf) res &= ~2;
-			if (!(comp->keyb->mem[0] & 4)) res &= ~4;	// system flag
-			break;
-#endif
 	}
 	return res;
 }
 
 void ibm_outKbd(Computer* comp, int adr, int val) {
 	switch(adr & 0x0f) {
-#if 1
 		case 0:
 			ps2c_wr(comp->ps2c, PS2_RDATA, val);
 			break;
@@ -146,61 +122,18 @@ void ibm_outKbd(Computer* comp, int adr, int val) {
 			if (comp->ps2c->reset)
 				compReset(comp, RES_DEFAULT);
 			break;
-#else
-		case 0:
-			if (comp->keyb->row < 0) break;
-			if ((comp->keyb->row & 0xe0) == 0x60) {
-				comp->keyb->mem[comp->keyb->row & 0x1f] = val & 0xff;
-			}
-			comp->keyb->row = -1;
-			break;
-		case 1:	comp->reg[0x61] = val & 0xff;
-			// comp->beep->lev = (val & 2) ? 1 : 0;
-			if (!(val & 0x80)) comp->keyb->outbuf = 0;
-			break;
-		case 4:
-			switch (val & 0xe0) {
-				case 0x00: break;			// 00..1F nothing?
-				case 0x20:				// 20..3F read byte from internal ram of ps/2 controller
-					comp->keyb->outbuf = comp->keyb->mem[val & 0x1f];
-					break;
-				case 0x40: break;
-				case 0x60:
-					comp->keyb->row = val;		// 60..7F: address to write through 60h
-					break;
-				case 0x80: break;
-				case 0xa0:
-					switch(val) {
-						case 0xaa:		// run selftest. write 55h to data port
-							comp->keyb->outbuf = 0x55;
-							break;
-						case 0xad:		// disable kbd
-							comp->keyb->mem[0] |= 0x10;
-							break;
-						case 0xae:		// enable kbd
-							comp->keyb->mem[0] &= ~0x10;
-							break;
-					}
-
-					break;
-				case 0xc0: break;
-				case 0xe0:
-					if ((val & 0xf0) == 0xf0) {	// Fx commands
-						if (!(val & 1)) {
-							compReset(comp, RES_DEFAULT);	// bit0 connected to reset
-							printf("reset\n");
-							assert(0);
-						}
-					} else {			// Ex commands
-
-					}
-					break;
-			}
-			// comp->keyb->com = val & 0xff;
-			break;
-#endif
 	}
 }
+
+// dma1
+// 000-007	bar/car & bwcr/cwr, b1,2=channel nr, b0?bwcr:bar
+// 87,83,81,82	par of ch0-3
+// 08-0f	controller port (b0-2)
+
+// dma2
+// 0c0-0ce	bar/car && bwcr/cwr, b2,3=channel, b0=0, b1?bwcr:bar
+// xx,8a,89,8b	par of ch4-7
+// d0-de	controller port (b1-3), b0=0
 
 // cmos
 

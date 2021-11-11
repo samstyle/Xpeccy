@@ -36,7 +36,7 @@ class xDumpModel : public QAbstractTableModel {
 		unsigned int dmpadr;
 		unsigned int maxadr;
 		void setComp(Computer**);
-		void setMode(int, int);
+		void setMode(int, int, int, int);
 		void setRows(int);
 		int rowCount(const QModelIndex& = QModelIndex()) const;
 		int columnCount(const QModelIndex& = QModelIndex()) const;
@@ -57,6 +57,8 @@ class xDumpModel : public QAbstractTableModel {
 		int mode;
 		int view;
 		int page;
+		int pgbase;
+		int pgsize;
 		int row_count;
 		int mrd(int) const;
 		void mwr(int, unsigned char);
@@ -70,7 +72,7 @@ class xDumpTable:public QTableView {
 		void setComp(Computer**);
 		int rows();
 		void setCodePage(int);
-		void setMode(int, int);
+		void setMode(int, int, int, int);
 		void setView(int);
 		void update();
 		int getAdr();

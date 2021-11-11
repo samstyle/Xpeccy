@@ -18,6 +18,7 @@ extern "C" {
 #include "pit.h"
 #include "pic.h"
 #include "ps2ctrl.h"
+#include "i8237_dma.h"
 
 #include "sound/ayym.h"
 #include "sound/gs.h"
@@ -279,6 +280,8 @@ typedef struct {
 	PIC mpic;		// master pic
 	PIC spic;		// slave pic
 	PS2Ctrl* ps2c;
+	i8237DMA* mdma;		// master dma
+	i8237DMA* sdma;		// slave dma
 } Computer;
 
 #include "hardware/hardware.h"

@@ -602,22 +602,47 @@
             </widget>
            </item>
            <item>
-            <widget class="QSpinBox" name="sbDumpPage">
+            <widget class="QWidget" name="widDumpPage" native="true">
              <property name="enabled">
               <bool>false</bool>
              </property>
-             <property name="maximumSize">
-              <size>
-               <width>16777215</width>
-               <height>16</height>
-              </size>
-             </property>
-             <property name="frame">
-              <bool>false</bool>
-             </property>
-             <property name="maximum">
-              <number>255</number>
-             </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_13">
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <widget class="QSpinBox" name="sbDumpPage">
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>16</height>
+                 </size>
+                </property>
+                <property name="frame">
+                 <bool>false</bool>
+                </property>
+                <property name="prefix">
+                 <string>Pg </string>
+                </property>
+                <property name="maximum">
+                 <number>255</number>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="xHexSpin" name="leDumpPageBase">
+                <property name="text">
+                 <string>C000</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="cbDumpPageSize"/>
+              </item>
+             </layout>
             </widget>
            </item>
            <item>
@@ -857,7 +882,7 @@
         <bool>true</bool>
        </property>
        <property name="currentIndex">
-        <number>7</number>
+        <number>0</number>
        </property>
        <property name="documentMode">
         <bool>true</bool>

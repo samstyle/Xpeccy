@@ -358,6 +358,13 @@ static keyTrans ktTab[] = {
 };
 
 static keyTrans numPadTab[] = {
+#ifdef __APPLE__
+// why the f-ck arrow keys have numpad modifier in macosx?
+	{Qt::Key_Left, Qt::Key_Left, XKEY_LEFT},
+	{Qt::Key_Right, Qt::Key_Right, XKEY_RIGHT},
+	{Qt::Key_Up, Qt::Key_Up, XKEY_UP},
+	{Qt::Key_Down, Qt::Key_Down, XKEY_DOWN},
+#endif
 	{Qt::Key_0, Qt::Key_Insert, XKEY_N0},
 	{Qt::Key_1, Qt::Key_End, XKEY_N1},
 	{Qt::Key_2, Qt::Key_Down, XKEY_N2},
