@@ -621,7 +621,7 @@ void vidDrawEvoText(Video* vid) {
 // profi 512x240
 
 void vidProfiScr(Video* vid) {
-	yscr = vid->ray.y - vid->bord.y; // + 24;
+	yscr = vid->ray.y - vid->bord.y + 24;	// (240-192)/2 = 24
 	if ((yscr < 0) || (yscr > 239)) {
 		vidPutDot(&vid->ray, vid->pal, vid->brdcol);
 	} else {

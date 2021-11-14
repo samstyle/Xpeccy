@@ -266,8 +266,8 @@ Computer* compCreate() {
 	comp->beep = bcCreate();
 	comp->nesapu = apuCreate(nes_apu_ext_rd, comp);
 // ibm
-	comp->mdma = dma_create(comp);
-	comp->sdma = dma_create(comp);
+	comp->dma8 = dma_create(comp, 0);
+	comp->dma16 = dma_create(comp, 1);
 // baseconf
 	memcpy(comp->evo.blVer,blnm,16);
 	memcpy(comp->evo.bcVer,bcnm,16);
@@ -308,8 +308,8 @@ void compDestroy(Computer* comp) {
 	sltDestroy(comp->slot);
 	ppi_destroy(comp->ppi);
 	ps2c_destroy(comp->ps2c);
-	dma_destroy(comp->mdma);
-	dma_destroy(comp->sdma);
+	dma_destroy(comp->dma8);
+	dma_destroy(comp->dma16);
 	free(comp);
 }
 

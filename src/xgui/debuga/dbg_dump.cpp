@@ -130,9 +130,9 @@ void xDumpModel::setComp(Computer** ptr) {
 
 void xDumpModel::setMode(int md, int pgn, int pgb, int pgs) {
 	mode = md;
-	if (pgn > 0) page = pgn;
-	pgbase = (pgb > 0) ? pgb : 0xc000;
-	pgsize = (pgs > 0) ? pgs : MEM_16K;
+	if (pgn >= 0) page = pgn;
+	pgbase = (pgb >= 0) ? pgb : 0xc000;
+	pgsize = (pgs >= 0) ? pgs : MEM_16K;
 	maxadr = pgsize;
 	update();
 }
