@@ -336,13 +336,15 @@ void compReset(Computer* comp,int res) {
 	comp->p1FFD = 0;
 	comp->pEFF7 = 0;
 
-	difReset(comp->dif);	//	bdiReset(comp->bdi);
+	difReset(comp->dif);
 	if (comp->gs->reset)
 		gsReset(comp->gs);
 	tsReset(comp->ts);
 	ideReset(comp->ide);
 	saaReset(comp->saa);
 	sdcReset(comp->sdc);
+	dma_reset(comp->dma8);
+	dma_reset(comp->dma16);
 	if (comp->hw->reset)
 		comp->hw->reset(comp);
 	comp->hw->mapMem(comp);

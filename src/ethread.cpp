@@ -15,6 +15,11 @@ QWaitCondition qwc;
 int sleepy = 1;
 #endif
 
+#define LOG_OUTPUT 0
+#if LOG_OUTPUT
+static FILE* file = nullptr;
+#endif
+
 // unsigned char* blkData = NULL;
 
 xThread::xThread() {
@@ -139,12 +144,24 @@ void xThread::emuCycle(Computer* comp) {
 			// printf("s_frame\n");
 			emit s_frame();
 		}
+#if LOG_OUTPUT
+		if (comp->hw->id == HW_IBM_PC) {
+			if (comp->cpu->pc == 0xac2b) {
+				fprintf(file, "cx=%.4X di=%.4X -> ",comp->cpu->cx, comp->cpu->di);
+			} else if (comp->cpu->pc == 0xac3b) {
+				fprintf(file, "%.4X\n", comp->cpu->di);
+			}
+		}
+#endif
 	} while (!comp->brk && conf.snd.fill && !finish && !conf.emu.pause);
 	comp->nmiRequest = 0;
 }
 
 void xThread::run() {
 	Computer* comp;
+#if LOG_OUTPUT
+	file = fopen("/home/sam/cpu.log","wb");
+#endif
 	do {
 #if !USEMUTEX
 		sleepy = 1;
@@ -179,5 +196,8 @@ void xThread::run() {
 			usleep(10);
 #endif
 	} while (!finish);
+#if LOG_OUTPUT
+	fclose(file);
+#endif
 	exit(0);
 }

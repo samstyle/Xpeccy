@@ -257,9 +257,6 @@ typedef struct {
 
 		int vbank;		// video bank (0,1)
 		int wbank;		// ram bank (d000..dfff)
-		// int rbank;		// slot ram bank (a000..bfff)
-		// unsigned bgpal[0x3f];
-		// unsigned sppal[0x3f];
 		unsigned char iram[256];	// internal ram (FF80..FFFE)
 		unsigned char iomap[128];
 	} gb;

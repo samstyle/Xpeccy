@@ -13,6 +13,8 @@
 // [7:P][6,5:DPL][4:0][3-0:TYPE]		system
 // rd/wr with segment P=0 -> interrupt
 
+// NOTE: x86 parity counts on LSB
+
 void i286_int_real(CPU*);
 void i286_int_prt(CPU*);
 
@@ -311,7 +313,7 @@ unsigned short i286_add16(CPU* cpu, unsigned short p1, unsigned short p2, int rf
 	if (res & 0x8000) cpu->f |= I286_FS;
 	if (!(res & 0xffff)) cpu->f |= I286_FZ;
 	if ((p1 & 0xfff) + (p2 & 0xfff) > 0xfff) cpu->f |= I286_FA;
-	if (parity(res & 0xffff)) cpu->f |= I286_FP;
+	if (parity(res & 0xff)) cpu->f |= I286_FP;
 	if (res > 0xffff) cpu->f |= I286_FC;
 	return res & 0xffff;
 }
@@ -374,7 +376,7 @@ unsigned char i286_or8(CPU* cpu, unsigned char p1, unsigned char p2) {
 	cpu->f &= ~(I286_FO | I286_FS | I286_FZ | I286_FP | I286_FC);
 	if (res & 0x80) cpu->f |= I286_FS;
 	if (!res) cpu->f |= I286_FZ;
-	if (parity(res)) cpu->f |= I286_FP;
+	if (parity(res & 0xff)) cpu->f |= I286_FP;
 	return res;
 }
 
@@ -383,7 +385,7 @@ unsigned short i286_or16(CPU* cpu, unsigned short p1, unsigned short p2) {
 	cpu->f &= ~(I286_FO | I286_FS | I286_FZ | I286_FP | I286_FC);
 	if (res & 0x8000) cpu->f |= I286_FS;
 	if (!res) cpu->f |= I286_FZ;
-	if (parity(res)) cpu->f |= I286_FP;
+	if (parity(res & 0xff)) cpu->f |= I286_FP;
 	return res;
 }
 
@@ -532,7 +534,7 @@ unsigned short i286_sub16(CPU* cpu, unsigned short p1, unsigned short p2, int rf
 	if (i286_sub_FO[cpu->tmp & 7]) cpu->f |= I286_FO;
 	if (res & 0x8000) cpu->f |= I286_FS;
 	if (!(res & 0xffff)) cpu->f |= I286_FZ;
-	if (parity(res & 0xffff)) cpu->f |= I286_FP;
+	if (parity(res & 0xff)) cpu->f |= I286_FP;
 	if (p2 > p1) cpu->f |= I286_FC;
 	if ((p1 & 0x0fff) < (p2 & 0x0fff)) cpu->f |= I286_FA;
 	return res & 0xffff;
@@ -608,7 +610,7 @@ unsigned char i286_and8(CPU* cpu, unsigned char p1, unsigned char p2) {
 	p1 &= p2;
 	if (p1 & 0x80) cpu->f |= I286_FS;
 	if (!p1) cpu->f |= I286_FZ;
-	if (parity(p1)) cpu->f |= I286_FP;
+	if (parity(p1 & 0xff)) cpu->f |= I286_FP;
 	return p1;
 }
 
@@ -617,7 +619,7 @@ unsigned short i286_and16(CPU* cpu, unsigned short p1, unsigned short p2) {
 	p1 &= p2;
 	if (p1 & 0x8000) cpu->f |= I286_FS;
 	if (!p1) cpu->f |= I286_FZ;
-	if (parity(p1)) cpu->f |= I286_FP;
+	if (parity(p1 & 0xff)) cpu->f |= I286_FP;
 	return p1;
 }
 
@@ -683,7 +685,7 @@ void i286_op27(CPU* cpu) {
 	cpu->f &= ~(I286_FS | I286_FZ | I286_FP);
 	if (cpu->al & 0x80) cpu->f |= I286_FS;
 	if (!cpu->al) cpu->f |= I286_FZ;
-	if (parity(cpu->al)) cpu->f |= I286_FP;
+	if (parity(cpu->al & 0xff)) cpu->f |= I286_FP;
 }
 
 // 28,mod: sub eb,rb
@@ -748,7 +750,7 @@ void i286_op2F(CPU* cpu) {
 	cpu->f &= ~(I286_FS | I286_FZ | I286_FP);
 	if (cpu->al & 0x80) cpu->f |= I286_FS;
 	if (!cpu->al) cpu->f |= I286_FZ;
-	if (parity(cpu->al)) cpu->f |= I286_FP;
+	if (parity(cpu->al & 0xff)) cpu->f |= I286_FP;
 }
 
 // xor
@@ -758,7 +760,7 @@ unsigned char i286_xor8(CPU* cpu, unsigned char p1, unsigned char p2) {
 	cpu->f &= ~(I286_FO | I286_FS | I286_FZ | I286_FP | I286_FC);
 	if (p1 & 0x80) cpu->f |= I286_FS;
 	if (!p1) cpu->f |= I286_FZ;
-	if (parity(p1)) cpu->f |= I286_FP;
+	if (parity(p1 & 0xff)) cpu->f |= I286_FP;
 	return p1;
 }
 
@@ -767,7 +769,7 @@ unsigned short i286_xor16(CPU* cpu, unsigned short p1, unsigned short p2) {
 	cpu->f &= ~(I286_FO | I286_FS | I286_FZ | I286_FP | I286_FC);
 	if (p1 & 0x8000) cpu->f |= I286_FS;
 	if (!p1) cpu->f |= I286_FZ;
-	if (parity(p1)) cpu->f |= I286_FP;
+	if (parity(p1 & 0xff)) cpu->f |= I286_FP;
 	return p1;
 }
 
@@ -891,7 +893,7 @@ unsigned char i286_inc8(CPU* cpu, unsigned char r) {
 	if (r & 0x80) cpu->f |= I286_FS;
 	if (!r) cpu->f |= I286_FZ;
 	if ((r & 15) == 0) cpu->f |= I286_FA;	// ? 0fff
-	if (parity(r)) cpu->f |= I286_FP;
+	if (parity(r & 0xff)) cpu->f |= I286_FP;
 	return r;
 }
 
@@ -902,7 +904,7 @@ unsigned short i286_inc16(CPU* cpu, unsigned short r) {
 	if (r & 0x8000) cpu->f |= I286_FS;
 	if (!r) cpu->f |= I286_FZ;
 	if ((r & 15) == 0) cpu->f |= I286_FA;	// ? 0fff
-	if (parity(r)) cpu->f |= I286_FP;
+	if (parity(r & 0xff)) cpu->f |= I286_FP;
 	return r;
 }
 
@@ -955,7 +957,7 @@ unsigned char i286_dec8(CPU* cpu, unsigned char r) {
 	if (r & 0x80) cpu->f |= I286_FS;
 	if (!r) cpu->f |= I286_FZ;
 	if ((r & 15) == 15) cpu->f |= I286_FA;
-	if (parity(r)) cpu->f |= I286_FP;
+	if (parity(r & 0xff)) cpu->f |= I286_FP;
 	return r;
 }
 
@@ -966,7 +968,7 @@ unsigned short i286_dec16(CPU* cpu, unsigned short r) {
 	if (r & 0x8000) cpu->f |= I286_FS;
 	if (!r) cpu->f |= I286_FZ;
 	if ((r & 15) == 15) cpu->f |= I286_FA;
-	if (parity(r)) cpu->f |= I286_FP;
+	if (parity(r & 0xff)) cpu->f |= I286_FP;
 	return r;
 }
 
@@ -1831,7 +1833,8 @@ unsigned char i286_rcr8(CPU* cpu, unsigned char p) {
 	cpu->tmp = (cpu->f & I286_FC);
 	cpu->f &= (I286_FC | I286_FO);
 	if (p & 1) cpu->f |= I286_FC;
-	p = (p >> 1) | (cpu->tmp ? 0x80 : 0);
+	p >>= 1;
+	if (cpu->tmp) p |= 0x80;
 	if (!(p & 0x80) != !(p & 0x40)) cpu->f |= I286_FO;
 	return p;
 }
@@ -1840,7 +1843,8 @@ unsigned short i286_rcr16(CPU* cpu, unsigned short p) {
 	cpu->tmp = (cpu->f & I286_FC);
 	cpu->f &= (I286_FC | I286_FO);
 	if (p & 1) cpu->f |= I286_FC;
-	p = (p >> 1) | (cpu->tmp ? 0x8000 : 0);
+	p >>= 1;
+	if (cpu->tmp) p |= 0x8000;
 	if (!(p & 0x8000) != !(p & 0x4000)) cpu->f |= I286_FO;
 	return p;
 }
@@ -2107,7 +2111,7 @@ void i286_opD4(CPU* cpu) {
 		cpu->f &= ~(I286_FS | I286_FZ | I286_FP);
 		if (cpu->ah & 0x80) cpu->f |= I286_FS;
 		if (!cpu->ax) cpu->f |= I286_FZ;
-		if (parity(cpu->ax)) cpu->f |= I286_FP;
+		if (parity(cpu->ax & 0xff)) cpu->f |= I286_FP;
 	}
 }
 
@@ -2119,7 +2123,7 @@ void i286_opD5(CPU* cpu) {
 	cpu->f &= ~(I286_FS | I286_FZ | I286_FP);
 	if (cpu->al & 0x80) cpu->f |= I286_FS;
 	if (!cpu->al) cpu->f |= I286_FZ;
-	if (parity(cpu->al)) cpu->f |= I286_FP;
+	if (parity(cpu->al & 0xff)) cpu->f |= I286_FP;
 }
 
 // d6:
@@ -2710,7 +2714,7 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_opC3, 0, "ret"},
 	{OF_WORD, 1, i286_opC4, 0, "les :r,:e"},
 	{OF_WORD, 1, i286_opC5, 0, "led :r,:e"},
-	{0, 1, i286_opC6, 0, "mov :e, :1"},
+	{0, 1, i286_opC6, 0, "mov :e,:1"},
 	{OF_WORD, 1, i286_opC7, 0, "mov :e,:2"},
 	{0, 1, i286_opC8, 0, "enter :2,:1"},
 	{0, 1, i286_opC9, 0, "leave"},

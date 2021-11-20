@@ -295,8 +295,8 @@ xMnem i286_mnem(CPU* cpu, unsigned short sadr, cbdmr mrd, void* data) {
 					dptr += sprintf(dptr, "%s", str_rot[(mb >> 3) & 7]);
 					break;
 				case 'X': if (!mod) {mod = 1; mb = cpu->mrd(cpu->cs.base + adr, 0, cpu->data); adr++;}
-					if (!(mb & 0x30)) {	// test :e,:2 <- add ,:2 to command
-						strcat(ptr, ",:2");
+					if (!(mb & 0x30)) {	// test :e,:1 <- add ,:1 to command
+						strcat(ptr, ",:1");
 					}
 					dptr += sprintf(dptr, "%s", str_opX[(mb >> 3) & 7]);
 					break;
