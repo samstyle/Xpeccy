@@ -8,9 +8,8 @@ extern opCode ddTab[256];
 extern opCode fdTab[256];
 
 void z80_iowr(CPU* cpu, int adr, int data) {
-	cpu->t += 3;
 	cpu->iwr(adr, data, cpu->data);
-	cpu->t += 1;
+	cpu->t += 4;
 }
 
 // 00	nop		4

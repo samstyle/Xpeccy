@@ -115,12 +115,13 @@ void zx_cont_mem(Computer* comp) {
 	if ((pg->type == MEM_RAM) && (pg->num & 0x40)) {
 		vidSync(comp->vid, comp->nsPerTick * (comp->cpu->t - res4));	// before
 		res4 = comp->cpu->t;
-		wns = vidGetWait(comp->vid) * comp->vid->nsPerDot;
-		if (wns > 0) {
-			comp->cpu->t += wns / comp->nsPerTick + (wns % comp->nsPerTick ? 1 : 0);	// in normal mode t += vidGetWait(comp->vid) / 2
-			vidSync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
-			res4 = comp->cpu->t;
+		wns = vid_wait(comp->vid);
+		while (wns > 0) {
+			comp->cpu->t++;
+			wns -= comp->nsPerTick;
 		}
+		vidSync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
+		res4 = comp->cpu->t;
 	}
 }
 

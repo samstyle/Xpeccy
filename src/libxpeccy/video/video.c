@@ -368,17 +368,20 @@ unsigned char waitsTab_A[16] = {5,5,4,4,3,3,2,2,1,1,0,0,0,0,6,6};	// 48K
 unsigned char waitsTab_B[16] = {1,1,0,0,7,7,6,6,5,5,4,4,3,3,2,2};	// +2A,+3
 */
 
-static int contTabA[] = {12,12,10,10,8,8,6,6,4,4,2,2,0,0,0,0};		// 48K 128K +2 (bank 1,3,5,7)
+// NOTE: waiting cycle starts 8 dots before screen?
+// 4dots pre-wait, 2dots ula read pixels, 2dots ula read attr, (output starts here), 2 dots ula read next pixels, 2 dots ula read next atr, 4 no-wait dots
+// ^ repeat 16 times each 16 dots
+
+static int contTabA[] = {12,11,10,9,8,7,6,5,4,3,2,1,0,0,0,0};		// 48K 128K +2 (bank 1,3,5,7)
 // static int contTabB[] = {2,1,0,0,14,13,12,11,10,9,8,7,6,5,4,3};	// +2A +3 (bank 4,5,6,7)
 
-int vidGetWait(Video* vid) {
-	if (vid->ray.y < vid->bord.y) return 0;		// above screen
-	if (vid->ray.y >= (vid->bord.y + vid->scrn.y)) return 0;	// below screen
-	xscr = vid->ray.x - vid->bord.x + 2;		// 1T before screen
+int vid_wait(Video* vid) {
+	if (vid->ray.y < vid->bord.y) return 0;
+	if (vid->ray.y >= (vid->bord.y + vid->scrn.y)) return 0;
+	xscr = vid->ray.x - vid->bord.x + 8;
 	if (xscr < 0) return 0;
-	if (xscr > vid->scrn.x) return 0;		// stop 1T before right border
-	return contTabA[xscr & 0x0f];
-	// vidSync(vid, contTabA[xscr & 0x0f] * vid->nsPerDot);
+	if (xscr >= vid->scrn.x) return 0;
+	return contTabA[xscr & 0x0f] * vid->nsPerDot;
 }
 
 void vidSetFont(Video* vid, char* src) {

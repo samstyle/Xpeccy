@@ -303,7 +303,8 @@ void vidDestroy(Video*);
 void vidReset(Video*);
 void vidSync(Video*,int);
 void vidSetMode(Video*,int);
-int vidGetWait(Video*);
+
+int vid_wait(Video*);
 void vidDarkTail(Video*);
 
 void vidSetLayout(Video*, vLayout*);

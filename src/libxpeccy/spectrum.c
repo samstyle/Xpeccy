@@ -66,7 +66,7 @@ void memwr(int adr, int val, void* ptr) {
 static int bdiz;
 
 /*
-inline void zxIORW(Computer* comp, int port) {
+void zxIORW(Computer* comp, int port) {
 	if (comp->contIO) {
 		if ((port & 0xc000) == 0x4000) {
 			if (port & 0x0001) {			// C:1 C:1 C:1 C:1
@@ -94,6 +94,51 @@ inline void zxIORW(Computer* comp, int port) {
 }
 */
 
+void zx_cont_delay(Computer* comp) {
+	int wns = vid_wait(comp->vid);	// video is already at end of wait cycle
+	int tns = 0;
+	while (wns > 0) {
+		comp->cpu->t++;
+		wns -= comp->nsPerTick;
+		tns += comp->nsPerTick;
+	}
+	vidSync(comp->vid, tns);
+	res4 = comp->cpu->t;
+}
+
+void zx_free_ticks(Computer* comp, int t) {
+	comp->cpu->t += t;
+	vidSync(comp->vid, t * comp->nsPerTick);
+	res4 = comp->cpu->t;
+}
+
+void zx_cont_io(Computer* comp, int port) {
+	if ((port & 0xc000) == 0x4000) {
+		if (port & 1) {			// C:1 C:1 C:1 C:1
+			zx_cont_delay(comp);
+			zx_free_ticks(comp, 1);
+			zx_cont_delay(comp);
+			zx_free_ticks(comp, 1);
+			zx_cont_delay(comp);
+			zx_free_ticks(comp, 1);
+			zx_cont_delay(comp);
+			zx_free_ticks(comp, 1);
+		} else {			// C:1 C:3
+			zx_cont_delay(comp);
+			zx_free_ticks(comp, 1);
+			zx_cont_delay(comp);
+			zx_free_ticks(comp, 3);
+		}
+	} else if (port & 1) {			// N:1
+		zx_free_ticks(comp, 4);
+	} else {				// N:1 C:3
+		zx_free_ticks(comp, 1);
+		zx_cont_delay(comp);
+		zx_free_ticks(comp, 3);
+	}
+	comp->cpu->t -= 4;
+}
+
 static unsigned char ula_levs[8] = {0x00, 0x24, 0x49, 0x6d, 0x92, 0xb6, 0xdb, 0xff};
 
 void zxSetUlaPalete(Computer* comp) {
@@ -117,8 +162,12 @@ int iord(int port, void* ptr) {
 	unsigned char res = 0xff;
 // TODO: zx only
 	if (comp->hw->grp == HWG_ZX) {
-		vidSync(comp->vid,(comp->cpu->t + 3 - res4) * comp->nsPerTick);
-		res4 = comp->cpu->t + 3;
+		if (comp->contIO && 0) {
+			zx_cont_io(comp, port);
+		} else {
+			vidSync(comp->vid,(comp->cpu->t + 3 - res4) * comp->nsPerTick);
+			res4 = comp->cpu->t + 3;
+		}
 	}
 // play rzx
 #ifdef HAVEZLIB
@@ -148,10 +197,16 @@ void iowr(int port, int val, void* ptr) {
 #if RUNTIME_IO
 	bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
 	if (comp->hw->grp == HWG_ZX) {
+		// sync video to current T
 		vidSync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
 		res4 = comp->cpu->t;
+		comp->hw->out(comp, port, val, bdiz);
+		if (comp->contIO) {
+			zx_cont_io(comp, port);
+		}
+	} else {
+		comp->hw->out(comp, port, val, bdiz);
 	}
-	comp->hw->out(comp, port, val, bdiz);
 	if (comp->vid->ula->palchan) {
 		zxSetUlaPalete(comp);
 		comp->vid->ula->palchan = 0;
