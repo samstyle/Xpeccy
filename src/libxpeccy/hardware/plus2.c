@@ -75,14 +75,14 @@ static xPort p2PortMap[] = {
 	{0x0000,0x0000,2,2,2,p2InFF,	NULL}
 };
 
-void pl2Out(Computer* comp, int port, int val, int dos) {
-	zx_dev_wr(comp, port, val, dos);
-	hwOut(p2PortMap, comp, port, val, 0, 1);
+void pl2Out(Computer* comp, int port, int val) {
+	zx_dev_wr(comp, port, val);
+	hwOut(p2PortMap, comp, port, val, 1);
 }
 
-int pl2In(Computer* comp, int port, int dos) {
+int pl2In(Computer* comp, int port) {
 	int res = -1;
-	if (zx_dev_rd(comp, port, &res, dos)) return res;
-	res = hwIn(p2PortMap, comp, port, 0);
+	if (zx_dev_rd(comp, port, &res)) return res;
+	res = hwIn(p2PortMap, comp, port);
 	return  res;
 }

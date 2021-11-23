@@ -63,37 +63,6 @@ void memwr(int adr, int val, void* ptr) {
 	comp->hw->mwr(comp,adr,val);
 }
 
-static int bdiz;
-
-/*
-void zxIORW(Computer* comp, int port) {
-	if (comp->contIO) {
-		if ((port & 0xc000) == 0x4000) {
-			if (port & 0x0001) {			// C:1 C:1 C:1 C:1
-				vidWait(comp->vid); vidSync(comp->vid, comp->nsPerTick);
-				vidWait(comp->vid); vidSync(comp->vid, comp->nsPerTick);
-				vidWait(comp->vid); vidSync(comp->vid, comp->nsPerTick);
-				vidWait(comp->vid); vidSync(comp->vid, comp->nsPerTick);
-			} else {				// C:1 C:3
-				vidWait(comp->vid); vidSync(comp->vid, comp->nsPerTick);
-				vidWait(comp->vid); vidSync(comp->vid, 3 * comp->nsPerTick);
-			}
-		} else {
-			if (port & 0x0001) {			// N:4
-				vidSync(comp->vid, 4 * comp->nsPerTick);
-			} else {				// N:1 C:3
-				vidSync(comp->vid, comp->nsPerTick);
-				vidWait(comp->vid); vidSync(comp->vid, 3 * comp->nsPerTick);
-			}
-		}
-		res4 += 4;
-	} else {
-		vidSync(comp->vid, 3 * comp->nsPerTick);
-		res4 += 3;
-	}
-}
-*/
-
 void zx_cont_delay(Computer* comp) {
 	int wns = vid_wait(comp->vid);	// video is already at end of wait cycle
 	int tns = 0;
@@ -112,11 +81,19 @@ void zx_free_ticks(Computer* comp, int t) {
 	res4 = comp->cpu->t;
 }
 
-void zx_cont_io(Computer* comp, int port) {
+// Contention on T1
+void zx_cont_t1(Computer* comp, int port) {
+	if ((port & 0xc000) == 0x4000)
+		zx_cont_delay(comp);
+	zx_free_ticks(comp, 1);
+}
+
+// Contention on T2-T4
+void zx_cont_tn(Computer* comp, int port) {
 	if ((port & 0xc000) == 0x4000) {
 		if (port & 1) {			// C:1 C:1 C:1 C:1
-			zx_cont_delay(comp);
-			zx_free_ticks(comp, 1);
+//			zx_cont_delay(comp);
+//			zx_free_ticks(comp, 1);
 			zx_cont_delay(comp);
 			zx_free_ticks(comp, 1);
 			zx_cont_delay(comp);
@@ -124,19 +101,18 @@ void zx_cont_io(Computer* comp, int port) {
 			zx_cont_delay(comp);
 			zx_free_ticks(comp, 1);
 		} else {			// C:1 C:3
-			zx_cont_delay(comp);
-			zx_free_ticks(comp, 1);
+//			zx_cont_delay(comp);
+//			zx_free_ticks(comp, 1);
 			zx_cont_delay(comp);
 			zx_free_ticks(comp, 3);
 		}
-	} else if (port & 1) {			// N:1
-		zx_free_ticks(comp, 4);
+	} else if (port & 1) {			// N:4
+		zx_free_ticks(comp, 4-1);
 	} else {				// N:1 C:3
-		zx_free_ticks(comp, 1);
+//		zx_free_ticks(comp, 1);
 		zx_cont_delay(comp);
 		zx_free_ticks(comp, 3);
 	}
-	comp->cpu->t -= 4;
 }
 
 static unsigned char ula_levs[8] = {0x00, 0x24, 0x49, 0x6d, 0x92, 0xb6, 0xdb, 0xff};
@@ -163,7 +139,8 @@ int iord(int port, void* ptr) {
 // TODO: zx only
 	if (comp->hw->grp == HWG_ZX) {
 		if (comp->contIO && 0) {
-			zx_cont_io(comp, port);
+			zx_cont_t1(comp, port);
+			zx_cont_tn(comp, port);
 		} else {
 			vidSync(comp->vid,(comp->cpu->t + 3 - res4) * comp->nsPerTick);
 			res4 = comp->cpu->t + 3;
@@ -184,28 +161,34 @@ int iord(int port, void* ptr) {
 		}
 	}
 #endif
-	bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
+	comp->bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
 // brk
 	if (comp->brkIOMap[port] & MEM_BRK_RD)
 		comp->brk = 1;
 
-	return comp->hw->in ? comp->hw->in(comp, port, bdiz) : 0xff;
+	return comp->hw->in ? comp->hw->in(comp, port) : 0xff;
 }
 
 void iowr(int port, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 #if RUNTIME_IO
-	bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
+	comp->bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
 	if (comp->hw->grp == HWG_ZX) {
 		// sync video to current T
 		vidSync(comp->vid, (comp->cpu->t - res4) * comp->nsPerTick);
 		res4 = comp->cpu->t;
-		comp->hw->out(comp, port, val, bdiz);
 		if (comp->contIO) {
-			zx_cont_io(comp, port);
+			zx_cont_t1(comp, port);
+			comp->hw->out(comp, port, val);
+			zx_cont_tn(comp, port);
+			comp->cpu->t -= 4;
+		} else {
+			vidSync(comp->vid, comp->nsPerTick);
+			res4++;
+			comp->hw->out(comp, port, val);
 		}
 	} else {
-		comp->hw->out(comp, port, val, bdiz);
+		comp->hw->out(comp, port, val);
 	}
 	if (comp->vid->ula->palchan) {
 		zxSetUlaPalete(comp);
@@ -577,9 +560,9 @@ int compExec(Computer* comp) {
 	// out @ last tick
 	vidSync(comp->vid,(res2 - res4 - 1) * comp->nsPerTick);			// 3T
 	if (comp->padr) {
-		bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
+		comp->bdiz = (comp->dos && (comp->dif->type == DIF_BDI)) ? 1 : 0;
 		if (comp->hw->out)
-			comp->hw->out(comp, comp->padr, comp->pval, bdiz);
+			comp->hw->out(comp, comp->padr, comp->pval);
 		comp->padr = 0;
 		if (comp->vid->ula->palchan) {
 			zxSetUlaPalete(comp);

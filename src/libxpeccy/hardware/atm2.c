@@ -232,19 +232,19 @@ static xPort atm2PortMap[] = {
 	{0x0000,0x0000,2,2,2,atm2InFF,	NULL}
 };
 
-void atm2Out(Computer* comp, int port, int val, int dos) {
-	if (~comp->p77hi & 2) dos = 1;
-	zx_dev_wr(comp, port, val, dos);
-	difOut(comp->dif, port, val, dos);
-	hwOut(atm2PortMap, comp, port, val, dos, 1);
+void atm2Out(Computer* comp, int port, int val) {
+	if (~comp->p77hi & 2) comp->bdiz = 1;
+	zx_dev_wr(comp, port, val);
+	difOut(comp->dif, port, val, comp->bdiz);
+	hwOut(atm2PortMap, comp, port, val, 1);
 }
 
-int atm2In(Computer* comp, int port, int dos) {
+int atm2In(Computer* comp, int port) {
 	int res = -1;
-	if (~comp->p77hi & 2) dos = 1;
-	if (zx_dev_rd(comp, port, &res, dos)) return res;
-	if (difIn(comp->dif, port, &res, dos)) return res;
-	res = hwIn(atm2PortMap, comp, port, dos);
+	if (~comp->p77hi & 2) comp->bdiz = 1;
+	if (zx_dev_rd(comp, port, &res)) return res;
+	if (difIn(comp->dif, port, &res, comp->bdiz)) return res;
+	res = hwIn(atm2PortMap, comp, port);
 	return res;
 }
 

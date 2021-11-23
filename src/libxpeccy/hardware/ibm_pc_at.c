@@ -189,14 +189,14 @@ static xPort ibmPortMap[] = {
 	{0x0000,0x0000,2,2,2,ibm_inDBG,	ibm_outDBG}
 };
 
-int ibm_iord(Computer* comp, int adr, int nonsence) {
+int ibm_iord(Computer* comp, int adr) {
 //	printf("in %.4X\n",adr);
-	return hwIn(ibmPortMap, comp, adr, 0);
+	return hwIn(ibmPortMap, comp, adr);
 }
 
-void ibm_iowr(Computer* comp, int adr, int val, int nonsense) {
+void ibm_iowr(Computer* comp, int adr, int val) {
 //	printf("out %.4X\n",adr);
-	hwOut(ibmPortMap, comp, adr, val, 0, 0);
+	hwOut(ibmPortMap, comp, adr, val, 0);
 }
 
 void ibm_init(Computer* comp) {

@@ -12,11 +12,11 @@ void hw_dum_mwr(Computer* comp, int adr, int val) {
 
 }
 
-int hw_dum_ird(Computer* comp, int adr, int dos) {
+int hw_dum_ird(Computer* comp, int adr) {
 	return 0xff;
 }
 
-void hw_dum_iwr(Computer* comp, int adr, int val, int dos) {
+void hw_dum_iwr(Computer* comp, int adr, int val) {
 
 }
 

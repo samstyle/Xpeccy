@@ -428,7 +428,6 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.dumpTable,SIGNAL(rqRefill()),ui.bpList,SLOT(update()));
 	connect(ui.dumpTable,SIGNAL(rqRefill()),this,SLOT(updateScreen()));
 
-	// connect(ui.dumpTable, SIGNAL(s_adrch(int)), ui.dumpScroll, SLOT(setValue(int)));
 	connect(ui.dumpTable, SIGNAL(s_adrch(int)), this, SLOT(dumpChadr(int)));
 	connect(ui.dumpScroll, SIGNAL(valueChanged(int)), ui.dumpTable, SLOT(setAdr(int)));
 
@@ -1643,7 +1642,7 @@ void DebugWin::dumpChadr(int adr) {
 	} else {
 		adr %= ui.dumpTable->limit();
 	}
-	ui.tabsDump->setTabText(0, QString::number(adr, 16).right(6).toUpper());
+	ui.tabsDump->setTabText(0, QString::number(adr, 16).right(6).toUpper().rightJustified(6,'0'));
 }
 
 // maping

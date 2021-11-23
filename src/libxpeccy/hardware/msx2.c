@@ -255,12 +255,12 @@ static xPort msx2ioTab[] = {
 	{0x00,0x00,2,2,2,NULL,		NULL}
 };
 
-void msx2Out(Computer* comp, int port, int val, int dos) {
+void msx2Out(Computer* comp, int port, int val) {
 //	printf("msx2 out %.4X,%.2X\n",port,val);
-	hwOut(msx2ioTab, comp, port, val, dos, 1);
+	hwOut(msx2ioTab, comp, port, val, 1);
 }
 
-int msx2In(Computer* comp, int port, int dos) {
+int msx2In(Computer* comp, int port) {
 //	printf("msx2 in %.4X\n",port);
-	return hwIn(msx2ioTab, comp, port, dos);
+	return hwIn(msx2ioTab, comp, port);
 }

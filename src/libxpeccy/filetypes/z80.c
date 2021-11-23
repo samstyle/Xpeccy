@@ -147,7 +147,8 @@ int loadZ80_f(Computer* comp, FILE* file) {
 		comp->cpu->pc = twrd;
 		lst = fgetc(file);			// 34: HW mode
 		tmp = fgetc(file);			// 35: 7FFD last out
-		comp->hw->out(comp, 0x7ffd, tmp, 0);
+		comp->bdiz = 0;
+		comp->hw->out(comp, 0x7ffd, tmp);
 		tmp = fgetc(file);			// 36: skip (IF1)
 		tmp = fgetc(file);			// 37: skip (flags) TODO
 		reg = fgetc(file);			// 38: last out to fffd
@@ -156,7 +157,8 @@ int loadZ80_f(Computer* comp, FILE* file) {
 			tsOut(comp->ts, 0xfffd, tmp2);
 			tsOut(comp->ts, 0xbffd, tmp);
 		}
-		comp->hw->out(comp, 0xfffd, reg, 0);
+		comp->bdiz = 0;
+		comp->hw->out(comp, 0xfffd, reg);
 
 		if (adr > 23) {
 printf(".z80 version 3\n");

@@ -326,18 +326,18 @@ static xPort evoPortMap[] = {
 	{0x0000,0x0000,2,2,2,evoInFF,	NULL}
 };
 
-void evoOut(Computer* comp, int port, int val, int dos) {
-	if (comp->evo.evoBF & 0x01) dos = 1;	// force open ports
-	if (!(comp->prt2 & 0x80)) dos = 1;
-	zx_dev_wr(comp, port, val, dos);
-	hwOut(evoPortMap, comp, port, val, dos, 1);
+void evoOut(Computer* comp, int port, int val) {
+	if (comp->evo.evoBF & 0x01) comp->bdiz = 1;	// force open ports
+	if (!(comp->prt2 & 0x80)) comp->bdiz = 1;
+	zx_dev_wr(comp, port, val);
+	hwOut(evoPortMap, comp, port, val, 1);
 }
 
-int evoIn(Computer* comp, int port, int dos) {
+int evoIn(Computer* comp, int port) {
 	int res = -1;
-	if (comp->evo.evoBF & 1) dos = 1;	// open ports
-	if (!(comp->prt2 & 0x80)) dos = 1;
-	if (zx_dev_rd(comp, port, &res, dos)) return res;
-	res = hwIn(evoPortMap, comp, port, dos);
+	if (comp->evo.evoBF & 1) comp->bdiz = 1;	// open ports
+	if (!(comp->prt2 & 0x80)) comp->bdiz = 1;
+	if (zx_dev_rd(comp, port, &res)) return res;
+	res = hwIn(evoPortMap, comp, port);
 	return res;
 }

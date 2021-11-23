@@ -141,15 +141,15 @@ static xPort prfPortMap[] = {
 	{0x0000,0x0000,2,2,2,NULL,	NULL}
 };
 
-void prfOut(Computer* comp, int port, int val, int dos) {
-	zx_dev_wr(comp, port, val, dos);
-	hwOut(prfPortMap, comp, port, val, dos, 1);
+void prfOut(Computer* comp, int port, int val) {
+	zx_dev_wr(comp, port, val);
+	hwOut(prfPortMap, comp, port, val, 1);
 }
 
-int prfIn(Computer* comp, int port, int dos) {
+int prfIn(Computer* comp, int port) {
 	int res = -1;
-	if (zx_dev_rd(comp, port, &res, dos)) return res;
-	res = hwIn(prfPortMap, comp, port, dos);
+	if (zx_dev_rd(comp, port, &res)) return res;
+	res = hwIn(prfPortMap, comp, port);
 	return res;
 }
 

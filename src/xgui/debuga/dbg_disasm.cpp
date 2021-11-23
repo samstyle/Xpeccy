@@ -785,21 +785,19 @@ int xDisasmTable::updContent() {
 	}
 	// prevent case if current cell is invisible (eated by span)
 	QModelIndex idx = currentIndex();
+	int r = idx.row();
 	if (idx.isValid()) {
-		if (model->dasm[idx.row()].islab) {
-			if ((idx.row() == 0) || (idx.row() == rows() - 1)) {
-				setCurrentIndex(model->index(idx.row(), 0));
-			}
+		if (model->dasm[r].islab) {
+			// if ((r == 0) || (r == rows() - 1)) {
+				setCurrentIndex(model->index(r, 0));
+			//}
 		}
 	}
 	return res;
 }
 
 void xDisasmTable::update() {
-	//QModelIndex idx = currentIndex();
 	model->update_data();
-	//QTableView::update();
-	//setCurrentIndex(idx);
 }
 
 void xDisasmTable::t_update(int oadr, int nadr) {
@@ -807,12 +805,14 @@ void xDisasmTable::t_update(int oadr, int nadr) {
 		history.append(oadr);
 	}
 	updContent();
+/*
 	for(int r = 0; r < rows(); r++) {
 		if (model->dasm[r].adr == (nadr & 0xffff)) {
 			setCurrentIndex(model->index(r, 0));
 			r = rows();
 		}
 	}
+*/
 	if (oadr != nadr)
 		emit s_adrch(nadr);
 }

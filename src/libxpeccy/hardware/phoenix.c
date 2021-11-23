@@ -69,17 +69,17 @@ static xPort phxPortMap[] = {
 	{0x0000,0x0000,2,2,2,phxInFF,	NULL}
 };
 
-void phxOut(Computer* comp, int port, int val, int dos) {
-	if (comp->pEFF7 & 0x80) dos = 1;
-	if (difOut(comp->dif, port, val, dos)) return;
-	zx_dev_wr(comp, port, val, dos);
-	hwOut(phxPortMap, comp, port, val, dos, 1);
+void phxOut(Computer* comp, int port, int val) {
+	if (comp->pEFF7 & 0x80) comp->bdiz = 1;
+	if (difOut(comp->dif, port, val, comp->bdiz)) return;
+	zx_dev_wr(comp, port, val);
+	hwOut(phxPortMap, comp, port, val, 1);
 }
 
-int phxIn(Computer* comp, int port, int dos) {
-	if (comp->pEFF7 & 0x80) dos = 1;
+int phxIn(Computer* comp, int port) {
+	if (comp->pEFF7 & 0x80) comp->bdiz = 1;
 	int res = -1;
-	if (difIn(comp->dif, port, &res, dos)) return res;
-	if (zx_dev_rd(comp, port, &res, dos)) return res;
-	return hwIn(phxPortMap, comp, port, dos);
+	if (difIn(comp->dif, port, &res, comp->bdiz)) return res;
+	if (zx_dev_rd(comp, port, &res)) return res;
+	return hwIn(phxPortMap, comp, port);
 }

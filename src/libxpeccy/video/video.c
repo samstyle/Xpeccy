@@ -359,18 +359,22 @@ void vidGetScreen(Video* vid, unsigned char* dst, int bank, int shift, int flag)
 	}
 }
 
-/*
-waits for 128K, +2
-	--wwwwww wwwwww-- : 16-dots cycle, start on border 8 dots before screen
-waits for +2a, +3
-	ww--wwww wwwwwwww : same
-unsigned char waitsTab_A[16] = {5,5,4,4,3,3,2,2,1,1,0,0,0,0,6,6};	// 48K
-unsigned char waitsTab_B[16] = {1,1,0,0,7,7,6,6,5,5,4,4,3,3,2,2};	// +2A,+3
-*/
+// ula 5c/6c horizontal timings:
+// 0	255	screen
+// 256	319	right border (64)
+// 320	415	HBlank (96)
+// 416	447	left border (32)
+// int @ 64 lines above screen
+
+// ula vertical timings
+// 0	191	screen
+// 192	247	bottom border (56)
+// 248	255	VBlank (8)
+// 256	311	top border (56)
 
 // NOTE: waiting cycle starts 8 dots before screen?
-// 4dots pre-wait, 2dots ula read pixels, 2dots ula read attr, (output starts here), 2 dots ula read next pixels, 2 dots ula read next atr, 4 no-wait dots
-// ^ repeat 16 times each 16 dots
+// (T14336 here), 4dots pre-wait, 2dots ula read pixels, 2dots ula read attr, (T14340:output starts here), 2 dots ula read next pixels, 2 dots ula read next atr, 4 no-wait dots
+// ^ repeat 16 times each 16 dots in each of 192 screen rows
 
 static int contTabA[] = {12,11,10,9,8,7,6,5,4,3,2,1,0,0,0,0};		// 48K 128K +2 (bank 1,3,5,7)
 // static int contTabB[] = {2,1,0,0,14,13,12,11,10,9,8,7,6,5,4,3};	// +2A +3 (bank 4,5,6,7)

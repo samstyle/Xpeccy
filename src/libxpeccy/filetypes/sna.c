@@ -77,8 +77,9 @@ int loadSNA_f(Computer* comp, FILE* file, size_t fileSize) {
 	} else {
 		comp->cpu->pc = fgetw(file);
 		tmp = fgetc(file);		// byte out to 7ffd. b0..2 current page
+		comp->bdiz = 0;
 		if (comp->hw->out)
-			comp->hw->out(comp,0x7ffd,tmp,0);
+			comp->hw->out(comp,0x7ffd,tmp);
 		tmp2 = fgetc(file);
 		comp->dos = (tmp2 & 1) ? 1 : 0;
 		for (tmp2 = 0; tmp2 < 8; tmp2++) {

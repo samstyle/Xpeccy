@@ -194,7 +194,7 @@ static xPort bk_io_tab[] = {
 int bk_io_rd(int adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	adr &= ~1;
-	hwIn(bk_io_tab, comp, adr, 0);
+	hwIn(bk_io_tab, comp, adr);
 	return comp->wdata;
 }
 
@@ -208,7 +208,7 @@ void bk_io_wr(int adr, int val, void* ptr) {
 		comp->iomap[(adr & ~1) & 0xffff] = val & 0xff;
 	if (comp->cpu->nod & 2)		// MSB
 		comp->iomap[(adr | 1) & 0xffff] = (val >> 1) & 0xff;
-	hwOut(bk_io_tab, comp, adr & ~1, val, 0, 1);
+	hwOut(bk_io_tab, comp, adr & ~1, val, 1);
 }
 
 int bk_ram_rd(int adr, void* ptr) {
@@ -335,7 +335,7 @@ int bk_mrd(Computer* comp, int adr, int m1) {
 }
 
 // only for sending control signals (like INIT)
-void bk_iowr(Computer* comp, int adr, int val, int dos) {
+void bk_iowr(Computer* comp, int adr, int val) {
 	switch (val) {
 		case PDP11_INIT:
 			comp->keyb->flag = 0;

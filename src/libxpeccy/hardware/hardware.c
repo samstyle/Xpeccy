@@ -152,7 +152,7 @@ void stdMWr(Computer *comp, int adr, int val) {
 // io
 // TODO: contended io here or in spectrum.c? Z80: add 4T after io cycle?
 
-int hwIn(xPort* ptab, Computer* comp, int port, int dos) {
+int hwIn(xPort* ptab, Computer* comp, int port) {
 	int res = 0xff;
 	int idx = 0;
 	xPort* itm;
@@ -160,7 +160,7 @@ int hwIn(xPort* ptab, Computer* comp, int port, int dos) {
 		itm = &ptab[idx];
 		if (((port & itm->mask) == (itm->value & itm->mask)) &&\
 				(itm->in != NULL) &&\
-				((itm->dos & 2) || (itm->dos == dos)) &&\
+				((itm->dos & 2) || (itm->dos == comp->bdiz)) &&\
 				((itm->rom & 2) || (itm->rom == comp->rom)) &&\
 				((itm->cpm & 2) || (itm->cpm == comp->cpm))) {
 			res = itm->in(comp, port);
@@ -171,7 +171,7 @@ int hwIn(xPort* ptab, Computer* comp, int port, int dos) {
 	return res;
 }
 
-void hwOut(xPort* ptab, Computer* comp, int port, int val, int dos, int mult) {
+void hwOut(xPort* ptab, Computer* comp, int port, int val, int mult) {
 	int idx = 0;
 	int catch = 0;
 	xPort* itm;
@@ -179,7 +179,7 @@ void hwOut(xPort* ptab, Computer* comp, int port, int val, int dos, int mult) {
 		itm = &ptab[idx];
 		if (((port & itm->mask) == (itm->value & itm->mask)) &&\
 				(itm->out != NULL) &&\
-				((itm->dos & 2) || (itm->dos == dos)) &&\
+				((itm->dos & 2) || (itm->dos == comp->bdiz)) &&\
 				((itm->rom & 2) || (itm->rom == comp->rom)) &&\
 				((itm->cpm & 2) || (itm->cpm == comp->cpm))) {
 			itm->out(comp, port, val);

@@ -179,12 +179,12 @@ static xPort msxPortMap[] = {
 	{0x00,0x00,2,2,2,dummyIn,dummyOut},
 };
 
-int msxIn(Computer* comp, int port, int dos) {
-	return hwIn(msxPortMap, comp, port, dos);
+int msxIn(Computer* comp, int port) {
+	return hwIn(msxPortMap, comp, port);
 }
 
-void msxOut(Computer* comp, int port, int val, int dos) {
-	hwOut(msxPortMap,comp, port, val, dos, 1);
+void msxOut(Computer* comp, int port, int val) {
+	hwOut(msxPortMap,comp, port, val, 1);
 }
 
 void msx_sync(Computer* comp, int ns) {

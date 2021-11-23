@@ -70,16 +70,16 @@ static xPort p1mPortMap[] = {
 	{0x0000,0x0000,2,2,2,p1mInFF,	NULL}
 };
 
-void p1mOut(Computer* comp, int port, int val, int dos) {
-	zx_dev_wr(comp, port, val, dos);
-	difOut(comp->dif, port, val, dos);
-	hwOut(p1mPortMap, comp, port, val, dos, 1);
+void p1mOut(Computer* comp, int port, int val) {
+	zx_dev_wr(comp, port, val);
+	difOut(comp->dif, port, val, comp->bdiz);
+	hwOut(p1mPortMap, comp, port, val, 1);
 }
 
-int p1mIn(Computer* comp, int port, int dos) {
+int p1mIn(Computer* comp, int port) {
 	int res = -1;
-	if (difIn(comp->dif, port, &res, dos)) return res;
-	if (zx_dev_rd(comp, port, &res, dos)) return res;
-	res = hwIn(p1mPortMap, comp, port, dos);
+	if (difIn(comp->dif, port, &res, comp->bdiz)) return res;
+	if (zx_dev_rd(comp, port, &res)) return res;
+	res = hwIn(p1mPortMap, comp, port);
 	return res;
 }

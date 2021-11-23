@@ -69,17 +69,17 @@ static xPort spePortMap[] = {
 	{0x0000,0x0000,2,2,2,NULL,	NULL}
 };
 
-void speOut(Computer* comp, int port, int val, int dos) {
-	difOut(comp->dif, port, val, dos);
-	zx_dev_wr(comp, port, val, dos);
-	hwOut(spePortMap, comp, port, val, dos, 1);
+void speOut(Computer* comp, int port, int val) {
+	difOut(comp->dif, port, val, comp->bdiz);
+	zx_dev_wr(comp, port, val);
+	hwOut(spePortMap, comp, port, val, 1);
 }
 
-int speIn(Computer* comp, int port, int dos) {
+int speIn(Computer* comp, int port) {
 	int res;
-	if (difIn(comp->dif, port, &res, dos)) return res;
-	if (zx_dev_rd(comp, port, &res, dos)) return res;
-	return hwIn(spePortMap, comp, port, dos);
+	if (difIn(comp->dif, port, &res, comp->bdiz)) return res;
+	if (zx_dev_rd(comp, port, &res)) return res;
+	return hwIn(spePortMap, comp, port);
 }
 
 // keyboard (for future use)

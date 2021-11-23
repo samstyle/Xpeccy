@@ -64,9 +64,9 @@ typedef int(*cbHwMrd)(Computer*, int, int);
 // memory write
 typedef void(*cbHwMwr)(Computer*, int, int);
 // io read; TODO:remove last argument (bdi activity)
-typedef int(*cbHwIrd)(Computer*, int, int);
+typedef int(*cbHwIrd)(Computer*, int);
 // io write
-typedef void(*cbHwIwr)(Computer*, int, int, int);
+typedef void(*cbHwIwr)(Computer*, int, int);
 // key press/release
 typedef void(*cbHwKey)(Computer*, keyEntry);
 // get volume
@@ -104,8 +104,8 @@ typedef struct {
 	void (*out)(Computer*, int, int);
 } xPort;
 
-int hwIn(xPort* ptab, Computer* comp, int port, int dos);
-void hwOut(xPort* ptab, Computer* comp, int port, int val, int dos, int mult);
+int hwIn(xPort* ptab, Computer* comp, int port);
+void hwOut(xPort* ptab, Computer* comp, int port, int val, int mult);
 
 typedef struct HardWare HardWare;
 extern HardWare hwTab[];
@@ -128,8 +128,8 @@ void dummyOut(Computer*, int, int);
 
 // common IO
 
-int zx_dev_wr(Computer*, int, int, int);
-int zx_dev_rd(Computer*, int, int*, int);
+int zx_dev_wr(Computer*, int, int);
+int zx_dev_rd(Computer*, int, int*);
 
 void xOutFE(Computer*, int, int);
 void xOutBFFD(Computer*, int, int);
@@ -147,50 +147,50 @@ int xInFFDF(Computer*, int);
 void hw_dum_map(Computer*);
 int hw_dum_mrd(Computer*, int, int);
 void hw_dum_mwr(Computer*, int, int);
-int hw_dum_ird(Computer*, int, int);
-void hw_dum_iwr(Computer*, int, int, int);
+int hw_dum_ird(Computer*, int);
+void hw_dum_iwr(Computer*, int, int);
 sndPair hw_dum_vol(Computer*, sndVolume*);
 
 // zx48
 void zx48_reset(Computer*);
 void zx_init(Computer*);
 void speMapMem(Computer*);
-void speOut(Computer*, int, int, int);
-int speIn(Computer*, int, int);
+void speOut(Computer*, int, int);
+int speIn(Computer*, int);
 void speReset(Computer*);
 void zx_keyp(Computer*, keyEntry);
 void zx_keyr(Computer*, keyEntry);
 
 // pentagon
 void penMapMem(Computer*);
-void penOut(Computer*, int, int, int);
-int penIn(Computer*, int, int);
+void penOut(Computer*, int, int);
+int penIn(Computer*, int);
 
 // p1024sl
 void p1mMapMem(Computer*);
-void p1mOut(Computer*, int, int, int);
-int p1mIn(Computer*, int, int);
+void p1mOut(Computer*, int, int);
+int p1mIn(Computer*, int);
 
 // scorpion
 void scoMapMem(Computer*);
-void scoOut(Computer*, int, int,int);
-int scoIn(Computer*, int, int);
+void scoOut(Computer*, int, int);
+int scoIn(Computer*, int);
 int scoMRd(Computer*, int, int);
 
 // plus 2
 void pl2MapMem(Computer*);
-void pl2Out(Computer*, int, int, int);
-int pl2In(Computer*, int, int);
+void pl2Out(Computer*, int, int);
+int pl2In(Computer*, int);
 
 // plus 3
-void pl3Out(Computer*, int, int, int);
-int pl3In(Computer*, int, int);
+void pl3Out(Computer*, int, int);
+int pl3In(Computer*, int);
 void plusRes(Computer*);
 
 // atm 2
 void atm2MapMem(Computer*);
-void atm2Out(Computer*, int, int, int);
-int atm2In(Computer*, int, int);
+void atm2Out(Computer*, int, int);
+int atm2In(Computer*, int);
 void atm2Reset(Computer*);
 void atm2_keyp(Computer*, keyEntry);
 void atm2_keyr(Computer*, keyEntry);
@@ -198,24 +198,24 @@ void atm2_sync(Computer*, int);
 
 // Evo baseconf
 void evoMapMem(Computer*);
-void evoOut(Computer*, int, int, int);
-int evoIn(Computer*, int, int);
+void evoOut(Computer*, int, int);
+int evoIn(Computer*, int);
 int evoMRd(Computer*, int, int);
 void evoMWr(Computer*, int, int);
 void evoReset(Computer*);
 
 // Evo tsconf
 void tslMapMem(Computer*);
-void tslOut(Computer*, int, int, int);
-int tslIn(Computer*, int, int);
+void tslOut(Computer*, int, int);
+int tslIn(Computer*, int);
 int tslMRd(Computer*, int, int);
 void tslMWr(Computer*, int, int);
 void tslReset(Computer*);
 
 // Profi
 void prfMapMem(Computer*);
-void prfOut(Computer*, int, int, int);
-int prfIn(Computer*, int, int);
+void prfOut(Computer*, int, int);
+int prfIn(Computer*, int);
 void prfReset(Computer*);
 int prfMRd(Computer*, int, int);
 void prf_keyp(Computer*, keyEntry);
@@ -223,15 +223,15 @@ void prf_keyr(Computer*, keyEntry);
 
 // ZXM Phoenix
 void phxMapMem(Computer*);
-void phxOut(Computer*, int, int, int);
-int phxIn(Computer*, int, int);
+void phxOut(Computer*, int, int);
+int phxIn(Computer*, int);
 void phxReset(Computer*);
 
 // msx
 void msx_init(Computer*);
 void msxMapMem(Computer*);
-void msxOut(Computer*, int, int, int);
-int msxIn(Computer*, int, int);
+void msxOut(Computer*, int, int);
+int msxIn(Computer*, int);
 void msxReset(Computer*);
 int msxMRd(Computer*, int, int);
 void msxMWr(Computer*, int, int);
@@ -243,8 +243,8 @@ sndPair msx_vol(Computer*, sndVolume*);
 // msx2
 void msx2_init(Computer*);
 void msx2mapper(Computer*);
-void msx2Out(Computer*, int, int, int);
-int msx2In(Computer*, int, int);
+void msx2Out(Computer*, int, int);
+int msx2In(Computer*, int);
 void msx2Reset(Computer*);
 int msx2mrd(Computer*, int, int);
 void msx2mwr(Computer*, int, int);
@@ -291,7 +291,7 @@ void bk_mem_map(Computer*);
 void bk_reset(Computer*);
 void bk_mwr(Computer*, int, int);
 int bk_mrd(Computer* comp, int, int);
-void bk_iowr(Computer*, int, int, int);
+void bk_iowr(Computer*, int, int);
 void bk_sync(Computer*, int);
 void bk_keyp(Computer*, keyEntry);
 void bk_keyr(Computer*, keyEntry);
@@ -316,8 +316,8 @@ void ibm_reset(Computer*);
 void ibm_sync(Computer*, int);
 int ibm_mrd(Computer*, int, int);
 void ibm_mwr(Computer*, int, int);
-int ibm_iord(Computer*, int, int);
-void ibm_iowr(Computer*, int, int, int);
+int ibm_iord(Computer*, int);
+void ibm_iowr(Computer*, int, int);
 void ibm_keyp(Computer*, keyEntry);
 void ibm_keyr(Computer*, keyEntry);
 sndPair ibm_vol(Computer*, sndVolume*);
