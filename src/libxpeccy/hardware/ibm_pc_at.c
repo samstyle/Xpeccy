@@ -1,4 +1,5 @@
 #include "hardware.h"
+#include "../video/vga.h"
 
 void ibm_mem_map(Computer* comp) {}	// no hw memory mapping
 
@@ -166,6 +167,62 @@ void ibm_out80(Computer* comp, int adr, int val) {
 	printf("POST %.2X\n",val & 0xff);
 }
 
+// mda/cga/ega/vga
+
+// 3d0..3d7 = 3b0..3b7 (b0:selects regnum/regval)
+
+void ibm_out3b4(Computer* comp, int adr, int val) {
+	vga_wr(comp->vid, VGA_REGNUM, val);
+}
+
+void ibm_out3b5(Computer* comp, int adr, int val) {
+	vga_wr(comp->vid, VGA_REGVAL, val);
+}
+
+/*
+03D8	r/w	CGA mode control register  (except PCjr)
+		 bit 7-6      not used
+		 bit 5	 = 1  blink enabled
+		 bit 4	 = 1  640*200 graphics mode
+		 bit 3	 = 1  video enabled
+		 bit 2	 = 1  monochrome signal
+		 bit 1	 = 0  text mode
+			 = 1  320*200 graphics mode
+		 bit 0	 = 0  40*25 text mode
+			 = 1  80*25 text mode
+
+03D9	r/w	CGA palette register
+		 bit 7-6      not used
+		 bit 5	 = 0 active color set: red, green brown
+			 = 1 active color set: cyan, magenta, white
+		 bit 4	     intense colors in graphics, background colors text
+		 bit 3	     intense border in 40*25, intense background in
+			     320*200, intense foreground in 640*200
+		 bit 2	     red border in 40*25, red background in 320*200,
+			     red foreground in 640*200
+		 bit 1	     green border in 40*25, green background in
+			     320*200, green foreground in 640*200
+		 bit 0	     blue border in 40*25, blue background in 320*200,
+			     blue foreground in 640*200
+
+03DA	r	CGA status register	EGA/VGA: input status 1 register
+		 bit 7-4     not used
+		 bit 3 = 1   in vertical retrace
+		 bit 2 = 1   light pen switch is off
+		 bit 1 = 1   positive edge from light pen has set trigger
+		 bit 0 = 0   do not use memory
+		       = 1   memory access without interfering with display
+*/
+
+void ibm_out3b8(Computer* comp, int adr, int val) {
+	vga_wr(comp->vid, VGA_MODE, val);
+}
+
+// ega/vga: 3ba = 3da = input status 1 register; mda = crt status
+int ibm_in3ba(Computer* comp, int adr) {
+	return vga_rd(comp->vid, VGA_STAT1);
+}
+
 // undef
 
 int ibm_inDBG(Computer* comp, int adr) {
@@ -180,12 +237,18 @@ void ibm_outDBG(Computer* comp, int adr, int val) {
 }
 
 static xPort ibmPortMap[] = {
-	{0xff62,0x0020,2,2,2,ibm_inPIC,	ibm_outPIC},	// 20,21:master pic, a0,a1:slave pic	s01x xx00. s-slave
-	{0xffe0,0x0040,2,2,2,ibm_inPIT,	ibm_outPIT},	// programmable interval timer
-	{0xfff0,0x0060,2,2,2,ibm_inKbd,	ibm_outKbd},	// 8042: ps/2 keyboard/mouse controller
-	{0xffff,0x0070,2,2,2,NULL,	ibm_out70},	// cmos
-	{0xffff,0x0071,2,2,2,ibm_in71,	ibm_out71},
-	{0xffff,0x0080,2,2,2,NULL,	ibm_out80},	// post code
+	{0x0362,0x0020,2,2,2,ibm_inPIC,	ibm_outPIC},	// 20,21:master pic, a0,a1:slave pic	s01x xx00. s-slave
+	{0x03e0,0x0040,2,2,2,ibm_inPIT,	ibm_outPIT},	// programmable interval timer
+	{0x03f0,0x0060,2,2,2,ibm_inKbd,	ibm_outKbd},	// 8042: ps/2 keyboard/mouse controller
+	{0x03ff,0x0070,2,2,2,NULL,	ibm_out70},	// cmos
+	{0x03ff,0x0071,2,2,2,ibm_in71,	ibm_out71},
+	{0x03ff,0x0080,2,2,2,NULL,	ibm_out80},	// post code
+	{0x03f9,0x03b4,2,2,2,NULL,	ibm_out3b4},	// vga
+	{0x03f9,0x03b5,2,2,2,NULL,	ibm_out3b5},
+	{0x03ff,0x03b8,2,2,2,NULL,	ibm_out3b8},
+	{0x03ff,0x03d8,2,2,2,NULL,	ibm_out3b8},
+	{0x03ff,0x03ba,2,2,2,ibm_in3ba,	NULL},		// status reg 1
+	{0x03ff,0x03da,2,2,2,ibm_in3ba, NULL},
 	{0x0000,0x0000,2,2,2,ibm_inDBG,	ibm_outDBG}
 };
 

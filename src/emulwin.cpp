@@ -235,8 +235,8 @@ MainWin::~MainWin() {
 #ifdef USEOPENGL
 	delete(vtx_shd);
 	delete(frg_shd);
-	for(int i = 0; i < 4; i++)
-		deleteTexture(texids[i]);
+//	for(int i = 0; i < 4; i++)
+//		deleteTexture(texids[i]);
 #endif
 }
 

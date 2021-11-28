@@ -1967,8 +1967,10 @@ void i286_opC3(CPU* cpu) {
 
 // c4,mod: les rw,ed
 void i286_opC4(CPU* cpu) {
-	i286_rd_ea(cpu, 1);	// tmpw = offset (to register)
-	cpu->lwr = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr + 2);		// twrd = segment (es)
+	i286_rd_ea(cpu, 1);
+	cpu->ltw = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr + 0);		// address
+	cpu->htw = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr + 1);
+	cpu->lwr = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr + 2);		// segment
 	cpu->hwr = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr + 3);
 	cpu->es = i286_cash_seg(cpu, cpu->twrd);
 	i286_set_reg(cpu, cpu->tmpw, 1);
@@ -1977,7 +1979,9 @@ void i286_opC4(CPU* cpu) {
 // c5,mod: lds rw,ed (same c4 with ds)
 void i286_opC5(CPU* cpu) {
 	i286_rd_ea(cpu, 1);
-	cpu->lwr = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr + 2);
+	cpu->ltw = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr + 0);		// address
+	cpu->htw = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr + 1);
+	cpu->lwr = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr + 2);		// segment
 	cpu->hwr = i286_mrd(cpu, cpu->ea.seg, 1, cpu->ea.adr + 3);
 	cpu->ds = i286_cash_seg(cpu, cpu->twrd);
 	i286_set_reg(cpu, cpu->tmpw, 1);
@@ -2025,17 +2029,17 @@ void i286_opC9(CPU* cpu) {
 	cpu->bp = i286_pop(cpu);
 }
 
-// ca,iw: retf iw	pop adr,seg,iw bytes	15/25/55T
+// ca,iw: retf iw	pop ip,cs,iw bytes	15/25/55T
 void i286_opCA(CPU* cpu) {
-	cpu->twrd = i286_rd_immw(cpu);
 	cpu->pc = i286_pop(cpu);
 	cpu->tmpw = i286_pop(cpu);
 	cpu->cs = i286_cash_seg(cpu, cpu->tmpw);
+	cpu->twrd = i286_rd_immw(cpu);
 	cpu->sp += cpu->twrd;
 	cpu->t += cpu->twrd;
 }
 
-// cb: retf	pop adr,seg
+// cb: retf	pop ip,cs
 void i286_opCB(CPU* cpu) {
 	cpu->pc = i286_pop(cpu);
 	cpu->tmpw = i286_pop(cpu);
@@ -2059,11 +2063,11 @@ void i286_opCE(CPU* cpu) {
 		i286_interrupt(cpu, I286_INT_OF);
 }
 
-// cf: iret	pop pc,cs,flag
+// cf: iret	pop cs,pc,flag
 void i286_opCF(CPU* cpu) {
-	cpu->pc = i286_pop(cpu);
 	cpu->tmpw = i286_pop(cpu);
 	cpu->cs = i286_cash_seg(cpu, cpu->tmpw);
+	cpu->pc = i286_pop(cpu);
 	cpu->f = i286_pop(cpu);
 	cpu->inten &= ~I286_BLK_NMI;		// nmi on
 }
@@ -2624,10 +2628,10 @@ opCode i80286_tab[256] = {
 	{OF_WORD, 1, i286_op69, 0, "imul :r,:e,:2"},
 	{0, 1, i286_op6A, 0, "push :1"},
 	{OF_WORD, 1, i286_op6B, 0, "imul :r,:e,:1"},
-	{OF_SKIPABLE, 1, i286_op6C, 0, ":Linsb"},
-	{OF_SKIPABLE, 1, i286_op6D, 0, ":Linsw"},
-	{OF_SKIPABLE, 1, i286_op6E, 0, ":Loutsb"},
-	{OF_SKIPABLE, 1, i286_op6F, 0, ":Loutsw"},
+	{OF_SKIPABLE, 1, i286_op6C, 0, ":Linsb [es::di]"},
+	{OF_SKIPABLE, 1, i286_op6D, 0, ":Linsw [es::di]"},
+	{OF_SKIPABLE, 1, i286_op6E, 0, ":Loutsb [:D::si]"},
+	{OF_SKIPABLE, 1, i286_op6F, 0, ":Loutsw [:D::si]"},
 	{0, 1, i286_op70, 0, "jo :3"},
 	{0, 1, i286_op71, 0, "jno :3"},
 	{0, 1, i286_op72, 0, "jb :3"},		// jc, jnae
@@ -2680,18 +2684,18 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_opA1, 0, "mov ax,[ds:::2]"},
 	{0, 1, i286_opA2, 0, "mov [ds:::2],al"},
 	{0, 1, i286_opA3, 0, "mov [ds:::2],ax"},
-	{OF_SKIPABLE, 1, i286_opA4, 0, ":Lmovsb"},
-	{OF_SKIPABLE, 1, i286_opA5, 0, ":Lmovsw"},
-	{OF_SKIPABLE, 1, i286_opA6, 0, ":Lcmpsb"},
-	{OF_SKIPABLE, 1, i286_opA7, 0, ":Lcmpsw"},
+	{OF_SKIPABLE, 1, i286_opA4, 0, ":Lmovsb [:D::si],[es::di]"},
+	{OF_SKIPABLE, 1, i286_opA5, 0, ":Lmovsw [:D::si],[es::di]"},
+	{OF_SKIPABLE, 1, i286_opA6, 0, ":Lcmpsb [:D::si],[es::di]"},
+	{OF_SKIPABLE, 1, i286_opA7, 0, ":Lcmpsw [:D::si],[es::di]"},
 	{0, 1, i286_opA8, 0, "test al,:1"},
 	{0, 1, i286_opA9, 0, "test ax,:2"},
-	{OF_SKIPABLE, 1, i286_opAA, 0, ":Lstosb"},
-	{OF_SKIPABLE, 1, i286_opAB, 0, ":Lstosw"},
-	{0, 1, i286_opAC, 0, "lodsb"},
-	{0, 1, i286_opAD, 0, "lodsw"},
-	{OF_SKIPABLE, 1, i286_opAE, 0, ":Lscasb"},
-	{OF_SKIPABLE, 1, i286_opAF, 0, ":Lscasw"},
+	{OF_SKIPABLE, 1, i286_opAA, 0, ":Lstosb [es::di],al"},
+	{OF_SKIPABLE, 1, i286_opAB, 0, ":Lstosw [es::di],ax"},
+	{0, 1, i286_opAC, 0, "lodsb [:D::si],al"},
+	{0, 1, i286_opAD, 0, "lodsw [:D::si],ax"},
+	{OF_SKIPABLE, 1, i286_opAE, 0, ":Lscasb al,[es::di]"},
+	{OF_SKIPABLE, 1, i286_opAF, 0, ":Lscasw ax,[es::di]"},
 	{0, 1, i286_opB0, 0, "mov al,:1"},
 	{0, 1, i286_opB1, 0, "mov cl,:1"},
 	{0, 1, i286_opB2, 0, "mov dl,:1"},
@@ -2720,9 +2724,9 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_opC9, 0, "leave"},
 	{0, 1, i286_opCA, 0, "retf :2"},
 	{0, 1, i286_opCB, 0, "retf"},
-	{0, 1, i286_opCC, 0, "int 3"},
-	{0, 1, i286_opCD, 0, "int :1"},
-	{0, 1, i286_opCE, 0, "into"},
+	{OF_SKIPABLE, 1, i286_opCC, 0, "int 3"},
+	{OF_SKIPABLE, 1, i286_opCD, 0, "int :1"},
+	{OF_SKIPABLE, 1, i286_opCE, 0, "into"},
 	{0, 1, i286_opCF, 0, "iret"},
 	{0, 1, i286_opD0, 0, ":R :e,1"},
 	{OF_WORD, 1, i286_opD1, 0, ":R :e,1"},
