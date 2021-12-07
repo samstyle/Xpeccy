@@ -194,6 +194,7 @@ void DebugWin::onPrfChange(xProfile* prf) {
 	unsigned int lim = (comp->hw->id == HW_IBM_PC) ? MEM_4M : MEM_64K;
 	ui.dumpTable->setLimit(lim);
 	ui.dumpScroll->setMaximum(lim - 1);
+	ui.tabVidMem->setVMem(conf.prof.cur->zx->vid->ram);
 	switch(comp->hw->base) {
 		case 8:
 			ui.dumpTable->setItemDelegateForColumn(1, xid_octw);

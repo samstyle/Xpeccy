@@ -248,5 +248,6 @@ printf(".z80 version 1\n");
 		}
 	}
 	tsReset(comp->ts);
+	vid_reset_ray(comp->vid);
 	return err;
 }

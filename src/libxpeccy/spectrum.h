@@ -14,9 +14,9 @@ extern "C" {
 #include "hdd.h"
 #include "sdcard.h"
 #include "cartridge.h"
-#include "ppi.h"
-#include "pit.h"
-#include "pic.h"
+#include "i8255_ppi.h"
+#include "i8253_pit.h"
+#include "i8259_pic.h"
 #include "ps2ctrl.h"
 #include "i8237_dma.h"
 

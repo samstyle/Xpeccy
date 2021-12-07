@@ -103,8 +103,10 @@ int loadSNA(Computer* comp, const char* name, int drv) {
 	rewind(file);
 	int res = loadSNA_f(comp, file, fileSize);
 	fclose(file);
-	if (res == ERR_OK)
+	if (res == ERR_OK) {
 		mem_set_path(comp->mem, name);
+		vid_reset_ray(comp->vid);
+	}
 	return res;
 }
 

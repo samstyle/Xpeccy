@@ -21,19 +21,18 @@ void ibm_reset(Computer* comp) {
 
 int ibm_mrd(Computer* comp, int adr, int m1) {
 	int res = -1;
-	if (adr < 0xa0000) {
-		res = comp->mem->ramData[adr & comp->mem->ramMask];		// ram up to 640K
-	} else if (adr < 0xc0000) {
-		// printf("video mem rd %.6X\n",adr);
-		// videomem
-	} else if (adr < 0xd0000) {
+	if (adr < 0xa0000) {							// ram: 00000..9FFFF (640K)
+		res = comp->mem->ramData[adr & comp->mem->ramMask];
+	} else if (adr < 0xc0000) {						// video mem: A0000..BFFFF (256K)
+		res = comp->vid->ram[adr & (MEM_256K - 1)];
+	} else if (adr < 0xd0000) {						// ext bios (video?)
 		// ext.bios
-	} else if (adr < 0xe0000) {
-		res = comp->mem->ramData[adr & comp->mem->ramMask];		// ram pages ?
-	} else if (adr < 0x100000) {
+	} else if (adr < 0xe0000) {						// ram pages ?
+		res = comp->mem->ramData[adr & comp->mem->ramMask];
+	} else if (adr < 0x100000) {						// bios: E0000..100000
 		res = comp->mem->romData[adr & comp->mem->romMask];
-	} else {
-		res = comp->mem->ramData[adr & comp->mem->ramMask];		// ram 640K+
+	} else {								// ram 640K+
+		res = comp->mem->ramData[adr & comp->mem->ramMask];
 	}
 	return res;
 }
@@ -42,8 +41,7 @@ void ibm_mwr(Computer* comp, int adr, int val) {
 	if (adr < 0xa0000) {
 		comp->mem->ramData[adr & comp->mem->ramMask] = val & 0xff;
 	} else if (adr < 0xc0000) {
-		// printf("video mem wr %.6X,%.2X\n",adr,val);
-		// video mem
+		comp->vid->ram[adr & (MEM_256K - 1)] = val & 0xff;
 	} else if (adr < 0xd0000) {
 		// ext.bios
 	} else if (adr < 0xe0000) {
@@ -92,6 +90,36 @@ void ibm_outPIT(Computer* comp, int adr, int val) {
 
 // ps/2 controller
 
+/*
+----------------------------------------------------------------------------
+Port 61H: PS/2 System Control Port B
+----------------------------------------------------------------------------
+
+Write operations:
+
+   Bit   Function
+
+    7    Reset system timer 0 output latch (IRQ0)
+    6    Reserved
+    5    Reserved
+    4    Reserved
+    3    Enable channel check
+    2    Enable parity check
+    1    Speaker data enable
+    0    System timer 2 gate to speaker
+
+Read operations:
+
+    7    1 = Parity check occurred
+    6    1 = Channel check occurred
+    5    System timer 2 output
+    4    Toggles with each refresh request
+    3    Enable channel check result
+    2    Enable parity check result
+    1    Speaker data enable result
+    0    System timer 2 gate to speaker result
+*/
+
 int ibm_inKbd(Computer* comp, int adr) {
 	int res = -1;
 	switch (adr & 0x0f) {
@@ -99,7 +127,9 @@ int ibm_inKbd(Computer* comp, int adr) {
 			res = ps2c_rd(comp->ps2c, PS2_RDATA);
 			break;
 		case 1:
-			res = comp->reg[0x61];
+			comp->reg[0x61] ^= 0x10;		// Toggles with each refresh request (?)
+			res = comp->reg[0x61] & 0x1f;		// b0..3 is copied
+			if (comp->pit.ch2.out) res |= 0x20;	// b6: timer2 output
 			break;
 		case 4:
 			res = ps2c_rd(comp->ps2c, PS2_RSTATUS);
@@ -115,8 +145,10 @@ void ibm_outKbd(Computer* comp, int adr, int val) {
 			break;
 		case 1:
 			comp->reg[0x61] = val & 0xff;
-			if (!(val & 0x80))
-				comp->keyb->outbuf = 0;
+			if (val & 0x80) {
+//				comp->keyb->outbuf = 0;
+				comp->pit.ch0.out = 0;
+			}
 			break;
 		case 4:
 			ps2c_wr(comp->ps2c, PS2_RCMD, val);
@@ -243,11 +275,13 @@ static xPort ibmPortMap[] = {
 	{0x03ff,0x0070,2,2,2,NULL,	ibm_out70},	// cmos
 	{0x03ff,0x0071,2,2,2,ibm_in71,	ibm_out71},
 	{0x03ff,0x0080,2,2,2,NULL,	ibm_out80},	// post code
-	{0x03f9,0x03b4,2,2,2,NULL,	ibm_out3b4},	// vga
+	{0x03f9,0x03b4,2,2,2,NULL,	ibm_out3b4},	// vga registers
+	{0x03f9,0x03d4,2,2,2,NULL,	ibm_out3b4},	// 3d0..3d7 = 3b0..3b7
 	{0x03f9,0x03b5,2,2,2,NULL,	ibm_out3b5},
-	{0x03ff,0x03b8,2,2,2,NULL,	ibm_out3b8},
+	{0x03f9,0x03d5,2,2,2,NULL,	ibm_out3b5},
+	{0x03ff,0x03b8,2,2,2,NULL,	ibm_out3b8},	// video mode (3b8/3d8)
 	{0x03ff,0x03d8,2,2,2,NULL,	ibm_out3b8},
-	{0x03ff,0x03ba,2,2,2,ibm_in3ba,	NULL},		// status reg 1
+	{0x03ff,0x03ba,2,2,2,ibm_in3ba,	NULL},		// status reg 1 (3ba/3da)
 	{0x03ff,0x03da,2,2,2,ibm_in3ba, NULL},
 	{0x0000,0x0000,2,2,2,ibm_inDBG,	ibm_outDBG}
 };

@@ -8,6 +8,7 @@
 #include "video.h"
 
 #define SCRBUF_SIZE	3700*2050*3
+#define DRAWING_F	0
 
 int bytesPerLine = 768;
 int greyScale = 0;
@@ -35,8 +36,19 @@ static xColor xcol;
 
 typedef void(*cbdot)(Video*, unsigned char);
 
+int vid_visible(Video* vid) {
+	if (vid->ray.y < vid->lcut.y) return 0;
+	if (vid->ray.y >= vid->rcut.y) return 0;
+	if (vid->ray.x < vid->lcut.x) return 0;
+	if (vid->ray.x >= vid->rcut.x) return 0;
+	return 1;
+}
+
 // colored
 void vid_dot_col(Video* vid, unsigned char col) {
+#if DRAWING_F
+	if (!vid_visible(vid)) return;
+#endif
 	xcol = vid->pal[col];
 	*(vid->ray.ptr++) = xcol.r;
 	*(vid->ray.ptr++) = xcol.g;
@@ -45,6 +57,9 @@ void vid_dot_col(Video* vid, unsigned char col) {
 
 // b/w
 void vid_dot_bw(Video* vid, unsigned char col) {
+#if DRAWING_F
+	if (!vid_visible(vid)) return;
+#endif
 	xcol = vid->pal[col];
 	pcol = (xcol.b * 30 + xcol.r * 76 + xcol.g * 148) >> 8;
 	*(vid->ray.ptr++) = pcol;
@@ -60,6 +75,9 @@ static int xpos = 0;
 static int ypos = 0;
 
 void vid_dot_full(Video* vid, unsigned char col) {
+#if DRAWING_F
+	if (!vid_visible(vid)) return;
+#endif
 	xpos += xstep;
 	while (xpos > 0xff) {
 		xpos -= 0x100;
@@ -68,6 +86,9 @@ void vid_dot_full(Video* vid, unsigned char col) {
 }
 
 void vid_dot_half(Video* vid, unsigned char col) {
+#if DRAWING_F
+	if (!vid_visible(vid)) return;
+#endif
 	xpos += xstep / 2;
 	while (xpos > 0xff) {
 		xpos -= 0x100;
@@ -224,6 +245,18 @@ void vidReset(Video* vid) {
 //	vidSetMode(vid, VID_NORMAL);
 }
 
+// move ray to 1 dot before INT
+void vid_reset_ray(Video* vid) {
+	vid->ray.x = vid->intp.x - 1;
+	vid->ray.y = vid->intp.y;
+	if (vid->ray.x < 0) {
+		vid->ray.x += vid->full.x;
+		vid->ray.y--;
+		if (vid->ray.y < 0)
+			vid->ray.y += vid->full.y;
+	}
+}
+
 // new layout:
 // [ bord ][ scr ][ ? ][ blank ]
 // [ <--------- full --------> ]
@@ -272,6 +305,7 @@ static unsigned char ink = 0;
 static unsigned char pap = 0;
 static unsigned char scrbyte = 0;
 static unsigned char nxtbyte = 0;
+static unsigned char nxtatr = 0;
 
 void vidDarkTail(Video* vid) {
 	if (vid->tail) return;				// no filling while current fill is active (till end of frame)
@@ -425,6 +459,64 @@ void vidDrawNormal(Video* vid) {
 				scrbyte = nxtbyte;
 				adr = 0x1800 | ((vid->idx & 0x1f00) >> 3) | (vid->idx & 0x1f);
 				vid->atrbyte = vid->mrd(MADR(vid->curscr, adr), vid->data);
+				if (vid->idx < 0x1b00) vid->idx++;
+				if (vid->ula->active) {
+					ink = ((vid->atrbyte & 0xc0) >> 2) | (vid->atrbyte & 7);
+					pap = ((vid->atrbyte & 0xc0) >> 2) | ((vid->atrbyte & 0x38) >> 3) | 8;
+				} else {
+					if ((vid->atrbyte & 0x80) && vid->flash) scrbyte ^= 0xff;
+					ink = (vid->atrbyte & 0x07) | ((vid->atrbyte & 0x40) >> 3);
+					pap = (vid->atrbyte & 0x78) >> 3;
+				}
+			}
+			col = (scrbyte & 0x80) ? ink : pap;
+			scrbyte <<= 1;
+		}
+	}
+	vidPutDot(&vid->ray, vid->pal, col);
+}
+
+// this mode default for ZX48K ULA (defferent moments of pix/atr read)
+void ula_dot(Video* vid) {
+	if (vid->vbrd) {
+		col = vid->brdcol;
+		if (vid->ula->active) col |= 8;
+		vid->atrbyte = 0xff;
+	} else {
+		xscr = vid->ray.x - vid->bord.x;
+		yscr = vid->ray.y - vid->bord.y;
+		switch(xscr & 15) {
+			case 12:
+				adr = (vid->idx & 0x181f) | ((vid->idx & 0x700) >> 3) | ((vid->idx & 0xe0) << 3);
+				nxtbyte = vid->mrd(MADR(vid->curscr, adr), vid->data);
+				break;		// 4dots before each even box: box pix
+			case 14:
+				adr = 0x1800 | ((vid->idx & 0x1f00) >> 3) | (vid->idx & 0x1f);
+				nxtatr = vid->mrd(MADR(vid->curscr, adr), vid->data);
+				break;		// 2dots before each even box: box atr
+			case 0:
+				scrbyte = nxtbyte;
+				vid->atrbyte = nxtatr;
+				vid->idx++;		// lame (idx is still not updated, but we need address of next box)
+				adr = (vid->idx & 0x181f) | ((vid->idx & 0x700) >> 3) | ((vid->idx & 0xe0) << 3);
+				nxtbyte = vid->mrd(MADR(vid->curscr, adr), vid->data);
+				vid->idx--;
+				break;		// start of even box: next (odd) box pix
+			case 1:
+				adr = 0x1800 | ((vid->idx & 0x1f00) >> 3) | (vid->idx & 0x1f);
+				nxtatr = vid->mrd(MADR(vid->curscr, adr), vid->data);
+				break;		// 2nd dot of even box: next (odd) box atr
+			case 8:
+				scrbyte = nxtbyte;
+				vid->atrbyte = nxtatr;
+				break;		// odd box start
+		}
+		if (vid->hbrd) {
+			col = vid->brdcol;
+			if (vid->ula->active) col |= 8;
+			vid->atrbyte = 0xff;
+		} else {
+			if ((xscr & 7) == 0) {
 				if (vid->idx < 0x1b00) vid->idx++;
 				if (vid->ula->active) {
 					ink = ((vid->atrbyte & 0xc0) >> 2) | (vid->atrbyte & 7);
@@ -707,6 +799,7 @@ typedef struct {
 // id,(@on),(@every_visible_dot),(@HBlank),(@LineStart),(@VBlank)
 static xVideoMode vidModeTab[] = {
 	{VID_NORMAL, NULL, vidDrawNormal, NULL, NULL, NULL},
+	{VID_ULA_SCR, NULL, ula_dot, NULL, NULL, NULL},
 	{VID_ALCO, NULL, vidDrawAlco, NULL, NULL, NULL},
 	{VID_HWMC, NULL, vidDrawHwmc, NULL, NULL, NULL},
 	{VID_ATM_EGA, NULL, vidDrawATMega, NULL, NULL, NULL},
@@ -760,90 +853,98 @@ void vidSetMode(Video* vid, int mode) {
 		vidModeTab[i].init(vid);
 }
 
+
+void vid_tick(Video* vid) {
+	if ((vid->ray.x & vid->brdstep) == 0)
+		vid->brdcol = vid->nextbrd;
+
+#if DRAWING_F
+	if (vid->cbDot)
+		vid->cbDot(vid);
+#else
+	// if ray is on visible screen & video has drawing callback...
+	if ((vid->ray.y >= vid->lcut.y) && (vid->ray.y < vid->rcut.y) \
+		&& (vid->ray.x >= vid->lcut.x) && (vid->ray.x < vid->rcut.x) \
+		&& vid->cbDot) {
+			vid->cbDot(vid);		// put dot callback
+	}
+#endif
+	// if debug, fill all line
+	if (vid->debug)
+		vid_line_fill(vid);
+	// move ray to next dot, update counters
+	vid->ray.x++;
+	vid->ray.xb++;
+	vid->ray.xs++;
+	if (vid->ray.x >= vid->full.x) {			// new line
+		vid->hblank = 0;
+		vid->hbstrb = 0;
+		vid->ray.x = 0;
+		vid->ray.xs = -vid->bord.x;
+		vid->ray.ys++;
+		vid->lcnt++;
+		if (vid->cbLine) vid->cbLine(vid);
+	}
+	if (vid->ray.x == vid->vend.x) {			// hblank start
+		if ((vid->ray.y >= vid->lcut.y) && (vid->ray.y < vid->rcut.y))
+			vid_line(vid);
+		vid->hblank = 1;
+		vid->hbstrb = 1;
+		vid->ray.y++;
+		vid->ray.xb = 0;
+		vid->ray.yb++;
+		if (vid->ray.y >= vid->full.y) {		// new frame
+			vid_frame(vid);
+			vid->lcnt = 0;
+			vid->vblank = 0;
+			vid->vbstrb = 0;
+			vid->ray.y = 0;
+			vid->tsconf.scrLine = 0;
+			vid->fcnt++;
+			vid->flash = (vid->fcnt & 0x10) ? 1 : 0;
+			if (vid->cbFrame) vid->cbFrame(vid);
+			vid->tail = 0;
+			if (vid->debug)
+				vid_dark_all();
+		}
+		if (vid->ray.y == vid->vend.y) {		// vblank start
+			vid->vblank = 1;
+			vid->vbstrb = 1;
+			vid->ray.yb = 0;
+			vid->idx = 0;
+		}
+		if (vid->ray.y == vid->send.y) {	// screen end V
+			vid->vbrd = 1;
+		}
+		if (vid->ray.y == vid->bord.y) {	// screen start V
+			vid->vbrd = 0;
+			vid->ray.ys = -1;		// will be 0 at start of next line, but during HBlank is -1
+		}
+		if (vid->cbHBlank) vid->cbHBlank(vid);
+	}
+	if (vid->ray.x == vid->send.x) {		// screen end H
+		vid->hbrd = 1;
+	} else if (vid->ray.x == vid->bord.x) {		// screen start H
+		vid->hbrd = 0;
+	}
+	// generate int
+	if (vid->intFRAME) {
+		vid->intFRAME--;
+	} else if ((vid->ray.yb == vid->intp.y) && (vid->ray.xb == vid->intp.x)) {
+		vid->intTime = vid->time;
+		vid->intFRAME = vid->intsize;
+	}
+	if (vid->busy > 0) vid->busy--;
+	if (vid->inth > 0) vid->inth--;
+	if (vid->intf > 0) vid->intf--;
+}
+
 void vidSync(Video* vid, int ns) {
 	vid->nsDraw += ns;
-	vid->time += ns;
 	while (vid->nsDraw >= vid->nsPerDot) {
-
 		vid->nsDraw -= vid->nsPerDot;
-
-		if ((vid->ray.x & vid->brdstep) == 0)
-			vid->brdcol = vid->nextbrd;
-
-		// if ray is on visible screen & video has drawing callback...
-		if ((vid->ray.y >= vid->lcut.y) && (vid->ray.y < vid->rcut.y) \
-			&& (vid->ray.x >= vid->lcut.x) && (vid->ray.x < vid->rcut.x) \
-			&& vid->cbDot) {
-				vid->cbDot(vid);		// put dot callback
-		}
-		// if debug, fill all line
-		if (vid->debug)
-			vid_line_fill(vid);
-		// move ray to next dot, update counters
-		vid->ray.x++;
-		vid->ray.xb++;
-		vid->ray.xs++;
-		if (vid->ray.x >= vid->full.x) {			// new line
-			vid->hblank = 0;
-			vid->hbstrb = 0;
-			vid->ray.x = 0;
-			vid->ray.xs = -vid->bord.x;
-			vid->ray.ys++;
-			vid->lcnt++;
-			if (vid->cbLine) vid->cbLine(vid);
-		}
-		if (vid->ray.x == vid->vend.x) {			// hblank start
-			if ((vid->ray.y >= vid->lcut.y) && (vid->ray.y < vid->rcut.y))
-				vid_line(vid);
-			vid->hblank = 1;
-			vid->hbstrb = 1;
-			vid->ray.y++;
-			vid->ray.xb = 0;
-			vid->ray.yb++;
-			if (vid->ray.y >= vid->full.y) {		// new frame
-				vid_frame(vid);
-				vid->lcnt = 0;
-				vid->vblank = 0;
-				vid->vbstrb = 0;
-				vid->ray.y = 0;
-				vid->tsconf.scrLine = 0;
-				vid->fcnt++;
-				vid->flash = (vid->fcnt & 0x10) ? 1 : 0;
-				if (vid->cbFrame) vid->cbFrame(vid);
-				vid->tail = 0;
-				if (vid->debug)
-					vid_dark_all();
-			}
-			if (vid->ray.y == vid->vend.y) {		// vblank start
-				vid->vblank = 1;
-				vid->vbstrb = 1;
-				vid->ray.yb = 0;
-				vid->idx = 0;
-			}
-			if (vid->ray.y == vid->send.y) {		// screen end V
-				vid->vbrd = 1;
-			}
-			if (vid->ray.y == vid->bord.y) {	// screen start V
-				vid->vbrd = 0;
-				vid->ray.ys = -1;		// will be 0 at start of next line, but during HBlank is -1
-			}
-			if (vid->cbHBlank) vid->cbHBlank(vid);
-		}
-		if (vid->ray.x == vid->send.x) {		// screen end H
-			vid->hbrd = 1;
-		} else if (vid->ray.x == vid->bord.x) {	// screen start H
-			vid->hbrd = 0;
-		}
-		// generate int
-		// TODO: ray.xb(yb) used here only
-		if (vid->intFRAME) {
-			vid->intFRAME--;
-		} else if ((vid->ray.yb == vid->intp.y) && (vid->ray.xb == vid->intp.x)) {
-			vid->intTime = vid->time;
-			vid->intFRAME = vid->intsize;
-		}
-		if (vid->busy > 0) vid->busy--;
-		if (vid->inth > 0) vid->inth--;
-		if (vid->intf > 0) vid->intf--;
+		vid->time += vid->nsPerDot;
+		vid_tick(vid);
 	}
 }
+

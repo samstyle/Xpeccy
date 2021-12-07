@@ -1,7 +1,7 @@
 // https://wiki.osdev.org/PIC
 // http://www.brokenthorn.com/Resources/OSDevPic.html
 
-#include "pic.h"
+#include "i8259_pic.h"
 
 void pic_reset(PIC* pic) {
 	pic->imr = 0xff;

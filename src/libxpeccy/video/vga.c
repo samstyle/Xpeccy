@@ -1,3 +1,5 @@
+// modes: https://osdev.fandom.com/ru/wiki/VGA_режимы
+
 #include "vga.h"
 
 #include <stdio.h>
@@ -76,13 +78,16 @@ void vga_wr(Video* vid, int port, int val) {
 		case VGA_MODE:
 			vid->reg[0xff] = val & 0xff;
 			// b4:gfx 640x200 or 320x200; b2:gfx(1) or text(0); b1:text 80x25
-			switch ((val & 3) | ((val & 0x10) >> 2)) {
-				case 0:	case 4: break;		// text 40x25
-				case 1: case 5: break;		// text 80x25
-				case 2: case 3: break;		// gfx 320x200
-				case 6: case 7: break;		// gfx 640x200
+			printf("VGA mode %.2X\n",val & 0x13);
+			switch (val & 0x13) {
+				case 0x00: case 0x10:
+					vidSetMode(vid, VID_VGA_T40);
+					break;		// text 40x25
+				case 0x01: case 0x11: break;		// text 80x25
+				case 0x02: case 0x03: break;		// gfx 320x200
+				case 0x12: case 0x13: break;		// gfx 640x200
 			}
-			vid_set_grey(val & 0x04);	// b2:monochrome
+			if (val & 0x04) {}		// b2:monochrome
 			if (val & 0x08) {}		// b3:video enabled
 			if (val & 0x20) {}		// b5:blink enabled
 			break;

@@ -2135,10 +2135,10 @@ void i286_opD6(CPU* cpu) {
 	i286_interrupt(cpu, 6);
 }
 
-// d7: xlatb	al = [ds:bx+al]
+// d7: xlatb	al = [ds:bx+al]		// segment replacement must work
 void i286_opD7(CPU* cpu) {
 	cpu->tmpw = cpu->bx + cpu->al;
-	cpu->al = i286_mrd(cpu, cpu->ds, 0, cpu->tmpw);
+	cpu->al = i286_mrd(cpu, cpu->ds, 1, cpu->tmpw);
 }
 
 // d8: for 80287
@@ -2735,7 +2735,7 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_opD4, 0, "aam :1"},
 	{0, 1, i286_opD5, 0, "aad :1"},
 	{0, 1, i286_opD6, 0, "? salc"},
-	{0, 1, i286_opD7, 0, "xlatb"},
+	{0, 1, i286_opD7, 0, "xlatb al,[:D::bx+al]"},
 	{0, 1, i286_opD8, 0, "* x87"},
 	{0, 1, i286_opD9, 0, "* x87"},
 	{0, 1, i286_opDA, 0, "* x87"},

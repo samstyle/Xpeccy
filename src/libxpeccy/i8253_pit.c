@@ -1,7 +1,9 @@
+// Programmable Interval Timer (PIT) i8253
+
 #include <stddef.h>
 #include <stdio.h>
 
-#include "pit.h"
+#include "i8253_pit.h"
 
 void pit_ch_reset(pitChan* ch) {
 	ch->wgat = 1;
@@ -181,7 +183,7 @@ void pch_set_mod(pitChan* ch, int mod) {
 
 void pit_wr(PIT* pit, int adr, int val) {
 	pitChan* ch;
-	printf("pit_wr %.2X %.2X\n",adr,val);
+//	printf("pit_wr %.2X %.2X\n",adr,val);
 	switch(adr & 7) {
 		case 0: pit_ch_wr(&pit->ch0, val); break;
 		case 1: pit_ch_wr(&pit->ch1, val); break;

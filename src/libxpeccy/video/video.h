@@ -21,6 +21,7 @@ enum {
 	VID_UNKNOWN = -1,
 // spectrum
 	VID_NORMAL = 0,
+	VID_ULA_SCR,
 	VID_ALCO,
 	VID_ATM_EGA,
 	VID_ATM_TEXT,
@@ -58,6 +59,11 @@ enum {
 	VID_BK_COL,
 // specialist
 	VID_SPCLST,
+// vga
+	VID_VGA_T40,
+	VID_VGA_T80,
+	VID_VGA_G320,
+	VID_VGA_G640
 };
 
 extern int bufSize;
@@ -303,6 +309,7 @@ void vidDestroy(Video*);
 void vidReset(Video*);
 void vidSync(Video*,int);
 void vidSetMode(Video*,int);
+void vid_reset_ray(Video*);
 
 int vid_wait(Video*);
 void vidDarkTail(Video*);
