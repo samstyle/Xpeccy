@@ -97,6 +97,7 @@ int saveLabels(const char* fn) {
 	return res;
 }
 
+// TODO: make it faster
 QString findLabel(int adr, int type, int bank) {
 	QString lab;
 	if (!conf.dbg.labels)

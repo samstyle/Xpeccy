@@ -8,7 +8,7 @@
 #include "video.h"
 
 #define SCRBUF_SIZE	3700*2050*3
-#define DRAWING_F	0
+#define DRAWING_F	1
 
 int bytesPerLine = 768;
 int greyScale = 0;
@@ -422,9 +422,11 @@ int vid_wait(Video* vid) {
 	return contTabA[xscr & 0x0f] * vid->nsPerDot;
 }
 
-void vidSetFont(Video* vid, char* src) {
-	memcpy(vid->font,src,0x800);
+/*
+void vidSetFont(Video* vid, char* src, int size) {
+	memcpy(vid->font,src,(size < 0x2000) ? size : 0x2000);
 }
+*/
 
 void vid_set_grey(int f) {
 	greyScale = f;
@@ -785,6 +787,13 @@ void bk_col_dot(Video*);
 void spc_dot(Video*);
 void spcv_ini(Video*);
 
+// vga
+
+void vga_t40_frm(Video*);
+void vga_t40_line(Video*);
+void vga_t40_dot(Video*);
+void vga_t80_dot(Video*);
+
 // weiter
 
 typedef struct {
@@ -835,6 +844,9 @@ static xVideoMode vidModeTab[] = {
 	{VID_BK_COL, NULL, bk_col_dot, NULL, NULL, NULL},
 
 	{VID_SPCLST, spcv_ini, spc_dot, NULL, NULL, NULL},
+
+	{VID_VGA_T40, NULL, vga_t40_dot, NULL, vga_t40_line, vga_t40_frm},
+	{VID_VGA_T80, NULL, vga_t80_dot, NULL, vga_t40_line, vga_t40_frm},
 
 	{VID_UNKNOWN, NULL, vidDrawBorder, NULL, NULL, NULL}
 };

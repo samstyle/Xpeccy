@@ -10,6 +10,7 @@ static vLayout spclstLay = {{384+16,256+8},{0,0},{16,8},{384,256},{0,0},0};
 static vLayout nesPALLay = {{342,312},{0,0},{85,72},{256,240},{0,0},64};
 static vLayout v9938Lay = {{342,313},{16,13},{57,80},{256,192},{0,0},64};
 static vLayout cmdrLay = {{504,312},{42,42},{100,28},{320,200},{0,0},64};
+static vLayout ibmLay = {{400,262},{0,0},{80,12},{320,240},{0,0},1};
 
 HardWare hwTab[] = {
 	{
@@ -84,7 +85,7 @@ HardWare hwTab[] = {
 		spc_init,spc_mem_map,NULL,NULL,spc_mrd,spc_mwr,spc_reset,spc_sync,spc_keyp,spc_keyr,spc_vol
 #if USEIBM
 	},{
-		HW_IBM_PC,HWG_PC,"IBM PC","IBM PC",16,MEM_1M,1.0,NULL,
+		HW_IBM_PC,HWG_PC,"IBM PC","IBM PC",16,MEM_1M,1.0,&ibmLay,
 		ibm_init,ibm_mem_map,ibm_iowr,ibm_iord,ibm_mrd,ibm_mwr,ibm_reset,ibm_sync,ibm_keyp,ibm_keyr,ibm_vol
 #endif
 	},{

@@ -10,12 +10,6 @@
 extern unsigned int blockStart;
 extern unsigned int blockEnd;
 
-extern QColor colPC;
-extern QColor colBRK;
-extern QColor colSEL;
-
-QString findLabel(int, int, int);
-
 static int mode = XVIEW_CPU;
 static int page = 0;
 
@@ -392,6 +386,9 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 	}
 	drow.isbrk = (drow.flag & MEM_BRK_ANY) ? 1 : 0;
 
+	// TODO: add marker/comment line if any @ this addr
+
+	// add label line if any
 	if (conf.dbg.labels) {		// if show labels
 		lab = findLabel(xadr.adr, xadr.type, xadr.bank);
 	}

@@ -283,13 +283,18 @@ struct Video {
 		unsigned char sfile[0x200];	// sprites
 		int dmabytes;
 	} tsconf;
+	struct {
+		int line;			// chars line
+		int chline;			// line inside char
+		int chsize;			// char height (0-31)
+	} vga;
 
-	unsigned char line[0x200];		// buffer for render sprites & tiles
+	unsigned char line[0x400];		// buffer for render sprites & tiles
 	unsigned char linb[0x200];		// buffer for rendered bitplane
-	unsigned char font[0x800];		// ATM/C64 text mode font
+	unsigned char font[0x2000];		// ATM/C64/VGA text mode font (8K for VGA font)
 
-	unsigned char sprxspr;	// c64 spr-spr collisions
-	unsigned char sprxbgr;	// c64 spr-bgr collisions
+	unsigned char sprxspr;			// c64 spr-spr collisions
+	unsigned char sprxbgr;			// c64 spr-bgr collisions
 	unsigned char vbank;			// vicII bank (from CIA2)
 	unsigned char sbank;			// screen offset (reg#18 b1..3)
 	unsigned char cbank;			// char data offset (reg#18 b4..7)
@@ -319,7 +324,7 @@ void vidSetBorder(Video*, double);
 void vidUpdateLayout(Video*);
 void vidUpdateTimings(Video*, int);
 
-void vidSetFont(Video*,char*);
+//void vidSetFont(Video*,char*,int);
 void vidGetScreen(Video*, unsigned char*, int, int, int);
 
 void vid_set_grey(int);

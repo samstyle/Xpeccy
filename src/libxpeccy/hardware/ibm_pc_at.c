@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "hardware.h"
 #include "../video/vga.h"
 
@@ -8,6 +10,8 @@ void ibm_reset(Computer* comp) {
 	pic_reset(&comp->mpic);
 	pic_reset(&comp->spic);
 	comp->keyb->row = -1;
+
+	memcpy(comp->vid->ram + 0x20000, comp->vid->font, 0x2000);	// copy default font
 }
 
 // ibm pc/at
@@ -23,8 +27,9 @@ int ibm_mrd(Computer* comp, int adr, int m1) {
 	int res = -1;
 	if (adr < 0xa0000) {							// ram: 00000..9FFFF (640K)
 		res = comp->mem->ramData[adr & comp->mem->ramMask];
-	} else if (adr < 0xc0000) {						// video mem: A0000..BFFFF (256K)
-		res = comp->vid->ram[adr & (MEM_256K - 1)];
+	} else if (adr < 0xc0000) {						// video mem: A0000..BFFFF (128K)
+		res = vga_mrd(comp->vid, adr);
+		// res = comp->vid->ram[adr & (MEM_128K - 1)];
 	} else if (adr < 0xd0000) {						// ext bios (video?)
 		// ext.bios
 	} else if (adr < 0xe0000) {						// ram pages ?
@@ -41,7 +46,8 @@ void ibm_mwr(Computer* comp, int adr, int val) {
 	if (adr < 0xa0000) {
 		comp->mem->ramData[adr & comp->mem->ramMask] = val & 0xff;
 	} else if (adr < 0xc0000) {
-		comp->vid->ram[adr & (MEM_256K - 1)] = val & 0xff;
+		vga_mwr(comp->vid, adr, val);
+		//comp->vid->ram[adr & (MEM_128K - 1)] = val & 0xff;
 	} else if (adr < 0xd0000) {
 		// ext.bios
 	} else if (adr < 0xe0000) {
@@ -204,11 +210,19 @@ void ibm_out80(Computer* comp, int adr, int val) {
 // 3d0..3d7 = 3b0..3b7 (b0:selects regnum/regval)
 
 void ibm_out3b4(Computer* comp, int adr, int val) {
-	vga_wr(comp->vid, VGA_REGNUM, val);
+	vga_wr(comp->vid, VGA_CRTRN, val);
 }
 
 void ibm_out3b5(Computer* comp, int adr, int val) {
-	vga_wr(comp->vid, VGA_REGVAL, val);
+	vga_wr(comp->vid, VGA_CRTRD, val);
+}
+
+void ibm_out3c4(Computer* comp, int adr, int val) {
+	vga_wr(comp->vid, VGA_SEQRN, val);
+}
+
+void ibm_out3c5(Computer* comp, int adr, int val) {
+	vga_wr(comp->vid, VGA_SEQRD, val);
 }
 
 /*
@@ -281,6 +295,8 @@ static xPort ibmPortMap[] = {
 	{0x03f9,0x03d5,2,2,2,NULL,	ibm_out3b5},
 	{0x03ff,0x03b8,2,2,2,NULL,	ibm_out3b8},	// video mode (3b8/3d8)
 	{0x03ff,0x03d8,2,2,2,NULL,	ibm_out3b8},
+	{0x03f9,0x03c4,2,2,2,NULL,	ibm_out3c4},
+	{0x03f9,0x03c5,2,2,2,NULL,	ibm_out3c5},
 	{0x03ff,0x03ba,2,2,2,ibm_in3ba,	NULL},		// status reg 1 (3ba/3da)
 	{0x03ff,0x03da,2,2,2,ibm_in3ba, NULL},
 	{0x0000,0x0000,2,2,2,ibm_inDBG,	ibm_outDBG}

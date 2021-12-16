@@ -363,6 +363,8 @@ struct xConfig {
 	QList<xLayout> layList;
 	QList<xBookmark> bookmarkList;
 	QMap<QString, xAdr> labels;
+	QMap<int, QString> markers;
+	QMap<int, QString> comments;
 	QMap<QString, QColor> pal;
 	QString labpath;
 	unsigned short port;

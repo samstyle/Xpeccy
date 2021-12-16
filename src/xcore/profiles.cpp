@@ -280,7 +280,7 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 			fpath = conf.path.romDir + SLASH + rset->fntFile;
 			file = fopen(fpath.c_str(), "rb");
 			if (file) {
-				fread(prf->zx->vid->font, MEM_2K, 1, file);
+				fread(prf->zx->vid->font, MEM_8K, 1, file);
 				fclose(file);
 			}
 		}
