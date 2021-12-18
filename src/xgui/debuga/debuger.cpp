@@ -1392,9 +1392,9 @@ void DebugWin::regClick(QMouseEvent* ev) {
 					case I286_BP: id = comp->cpu->ss.base; break;
 					default: id = comp->cpu->ds.base; break;
 				}
-				ui.dumpTable->setAdr(id + reg.value - 8);
+				ui.dumpTable->setAdr(id + reg.value);
 			} else {
-				ui.dumpTable->setAdr(reg.value - 8);
+				ui.dumpTable->setAdr(reg.value);
 			}
 			break;
 		case Qt::LeftButton:

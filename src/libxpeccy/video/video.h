@@ -284,6 +284,7 @@ struct Video {
 		int dmabytes;
 	} tsconf;
 	struct {
+		unsigned trg:1;
 		int line;			// chars line
 		int chline;			// line inside char
 		int chsize;			// char height (0-31)

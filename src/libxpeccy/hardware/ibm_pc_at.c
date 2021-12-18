@@ -35,7 +35,7 @@ int ibm_mrd(Computer* comp, int adr, int m1) {
 	} else if (adr < 0xe0000) {						// ram pages ?
 		res = comp->mem->ramData[adr & comp->mem->ramMask];
 	} else if (adr < 0x100000) {						// bios: E0000..100000
-		res = comp->mem->romData[adr & comp->mem->romMask];
+		res = comp->mem->romData[adr & comp->mem->romMask & 0xffff];
 	} else {								// ram 640K+
 		res = comp->mem->ramData[adr & comp->mem->ramMask];
 	}
@@ -202,7 +202,7 @@ int ibm_in71(Computer* comp, int adr) {
 // post code
 
 void ibm_out80(Computer* comp, int adr, int val) {
-	printf("POST %.2X\n",val & 0xff);
+	printf("%4X:%.4X\tPOST %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,val & 0xff);
 }
 
 // mda/cga/ega/vga

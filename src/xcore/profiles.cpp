@@ -262,6 +262,8 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 					fread(prf->zx->mem->romData + roff, fsze, 1, file);
 				}
 				fclose(file);
+			} else {
+				printf("Can't load rom file '%s'\n",fpath.c_str());
 			}
 		}
 		memSetSize(prf->zx->mem, -1, romsz);

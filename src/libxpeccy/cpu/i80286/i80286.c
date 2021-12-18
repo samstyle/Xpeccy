@@ -25,8 +25,8 @@ extern void i286_push(CPU*, unsigned short);
 
 void i286_int_real(CPU* cpu) {
 	i286_push(cpu, cpu->f);
-	i286_push(cpu, cpu->pc);
 	i286_push(cpu, cpu->cs.idx);
+	i286_push(cpu, cpu->pc);
 	cpu->f &= ~(I286_FI | I286_FT);
 	cpu->tmpi = (cpu->intvec & 0xff) << 2;
 	PAIR(w,h,l)seg;
@@ -73,8 +73,8 @@ void i286_int_prt(CPU* cpu) {
 		} else {					// do interrupt
 			i286_push(cpu, cpu->f);
 			if (!(fl & 1)) cpu->f &= I286_FI;
-			i286_push(cpu, cpu->pc);
 			i286_push(cpu, cpu->cs.idx);
+			i286_push(cpu, cpu->pc);
 			i286_push(cpu, cpu->errcod & 0xffff);
 			cpu->cs = i286_cash_seg(cpu, seg.w);
 			cpu->pc = off.w;
@@ -265,15 +265,6 @@ xMnem i286_mnem(CPU* cpu, unsigned short sadr, cbdmr mrd, void* data) {
 							dptr += sprintf(dptr, "%s", str_ea[mb & 7]);	// TODO: do something to show segment override
 
 						}
-/*
-						if (disp.w) {
-							if (disp.w & 0x8000) {
-								dptr += sprintf(dptr, "-#%X", (-disp.w) & 0x7fff);
-							} else {
-								dptr += sprintf(dptr ,"+#%X", disp.w);
-							}
-						}
-*/
 						*(dptr++) = ']';
 					}
 					break;
@@ -299,8 +290,14 @@ xMnem i286_mnem(CPU* cpu, unsigned short sadr, cbdmr mrd, void* data) {
 					dptr += sprintf(dptr, "%s", str_rot[(mb >> 3) & 7]);
 					break;
 				case 'X': if (!mod) {mod = 1; mb = cpu->mrd(cpu->cs.base + adr, 0, cpu->data); adr++;}
-					if (!(mb & 0x30)) {	// test :e,:1 <- add ,:1 to command
+					if (!(mb & 0x30)) {		// f6 /0 and f6 /1 : test :e,:1
 						strcat(ptr, ",:1");
+					}
+					dptr += sprintf(dptr, "%s", str_opX[(mb >> 3) & 7]);
+					break;
+				case 'Y': if (!mod) {mod = 1; mb = cpu->mrd(cpu->cs.base + adr, 0, cpu->data); adr++;}
+					if (!(mb & 0x30)) {		// f7 /0 and f6 /1 : test :e,:2
+						strcat(ptr, ",:2");
 					}
 					dptr += sprintf(dptr, "%s", str_opX[(mb >> 3) & 7]);
 					break;

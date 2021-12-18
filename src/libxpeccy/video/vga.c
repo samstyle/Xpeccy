@@ -23,6 +23,8 @@ int vga_rd(Video* vid, int port) {
 			res = 4;
 			if (vid->vblank)
 				res |= 8;
+			if (vid->vga.trg) res |= 1;	// just triggering, TODO: make it more real
+			vid->vga.trg ^= 1;
 			break;
 		case VGA_MODE:
 			res = vid->reg[0xff];
@@ -169,9 +171,6 @@ void vga_t40_line(Video* vid) {
 		vid->tadr = vid->idx * 16;			// offset of 1st char byte in plane 2 (allways 32 bytes/char in font plane)
 		vid->tadr += vid->vga.chline;			// +line in char
 		vid->idx = vid->ram[0x20000 + vid->tadr];	// pixels
-		if (vid->debug) {
-			printf("char @ %X = %.2X\n",vid->tadr,vid->idx);
-		}
 		for (i = 0; i < 8; i++) {
 			if (vid->idx & 0x01) {
 				vid->line[vid->xpos++] = vid->atrbyte & 0x0f;		// b0..3:foreground

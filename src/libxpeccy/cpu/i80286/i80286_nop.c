@@ -2063,11 +2063,11 @@ void i286_opCE(CPU* cpu) {
 		i286_interrupt(cpu, I286_INT_OF);
 }
 
-// cf: iret	pop cs,pc,flag
+// cf: iret	pop ip,cs,flag
 void i286_opCF(CPU* cpu) {
+	cpu->pc = i286_pop(cpu);
 	cpu->tmpw = i286_pop(cpu);
 	cpu->cs = i286_cash_seg(cpu, cpu->tmpw);
-	cpu->pc = i286_pop(cpu);
 	cpu->f = i286_pop(cpu);
 	cpu->inten &= ~I286_BLK_NMI;		// nmi on
 }
@@ -2767,7 +2767,7 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_opF4, 0, "hlt"},
 	{0, 1, i286_opF5, 0, "cmc"},
 	{0, 1, i286_opF6, 0, ":X :e"},		// test,test,not,neg,mul,imul,div,idiv
-	{OF_WORD, 1, i286_opF7, 0, ":X :e"},
+	{OF_WORD, 1, i286_opF7, 0, ":Y :e"},
 	{0, 1, i286_opF8, 0, "clc"},
 	{0, 1, i286_opF9, 0, "stc"},
 	{0, 1, i286_opFA, 0, "cli"},
