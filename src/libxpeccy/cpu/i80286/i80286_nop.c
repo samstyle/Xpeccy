@@ -2031,10 +2031,10 @@ void i286_opC9(CPU* cpu) {
 
 // ca,iw: retf iw	pop ip,cs,iw bytes	15/25/55T
 void i286_opCA(CPU* cpu) {
+	cpu->twrd = i286_rd_immw(cpu);
 	cpu->pc = i286_pop(cpu);
 	cpu->tmpw = i286_pop(cpu);
 	cpu->cs = i286_cash_seg(cpu, cpu->tmpw);
-	cpu->twrd = i286_rd_immw(cpu);
 	cpu->sp += cpu->twrd;
 	cpu->t += cpu->twrd;
 }

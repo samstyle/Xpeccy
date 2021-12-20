@@ -14,11 +14,11 @@ enum {
 };
 
 // vid->reg (registers)
-#define	VGA_CRN	0x7f	// crt register num
+#define	VGA_CRB	0x80	// crt register num
 #define VGA_CRC	0x18	// crt registers count-1
-#define VGA_SRN 0x9f	// syncronisator registers
+#define VGA_SRB 0xA0	// syncronisator registers
 #define VGA_SRC 0x05
-#define VGA_GRN 0xaf	// graphic registers (3ce/3cf)
+#define VGA_GRB 0xb0	// graphic registers (3ce/3cf)
 #define VGA_GRC 0x08
 
 int vga_rd(Video*, int);

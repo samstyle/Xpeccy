@@ -17,6 +17,8 @@ int xVMemDumpModel::columnCount(const QModelIndex&) const {
 
 QVariant xVMemDumpModel::data(const QModelIndex& idx, int role) const {
 	QVariant res;
+	QString str;
+	int i;
 	int row = idx.row();
 	int col = idx.column();
 	int radr = row << 3;
@@ -28,7 +30,14 @@ QVariant xVMemDumpModel::data(const QModelIndex& idx, int role) const {
 					res = QString::number(radr, 16).rightJustified(5, '0').toUpper();
 					break;
 				case 9:
-					// ascii
+					for (i = 0; i < 8; i++) {
+						if (vmem[radr + i] < 32) {
+							str.append(".");
+						} else {
+							str.append(vmem[radr + i]);
+						}
+					}
+					res = str;
 					break;
 				default:
 					if (vmem == nullptr) break;

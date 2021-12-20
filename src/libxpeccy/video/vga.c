@@ -5,9 +5,17 @@
 
 #include "vga.h"
 
-#define CRT_IDX		vid->reg[VGA_CRN]
-#define CRT_REG(_n)	vid->reg[VGA_CRN + (_n) + 1]
+#define CRT_IDX		vid->vga.crt_idx
+#define CRT_REG(_n)	vid->reg[VGA_CRB + (_n)]
 #define CRT_CUR_REG	CRT_REG(CRT_IDX)
+
+#define SEQ_IDX		vid->vga.seq_idx
+#define SEQ_REG(_n)	vid->reg[VGA_SRB + (_n)]
+#define SEQ_CUR_REG	SEQ_REG(SEQ_IDX)
+
+#define GRF_IDX		vid->vga.grf_idx
+#define GRF_REG(_n)	vid->reg[VGA_GRB + (_n)]
+#define GRF_CUR_REG	GRF_REG(GRF_IDX)
 
 int vga_rd(Video* vid, int port) {
 	int res = -1;
@@ -47,22 +55,22 @@ void vga_wr(Video* vid, int port, int val) {
 			break;
 		// sequencer registers (3c4/3c5)
 		case VGA_SEQRN:
-			vid->reg[VGA_SRN] = val & 0xff;
+			SEQ_IDX = val & 0xff;
 			break;
 		case VGA_SEQRD:
-			printf("VGA SEQ: reg[%.2X] = %.2X\n", vid->reg[VGA_SRN], val & 0xff);
-			if (vid->reg[VGA_SRN] <= VGA_SRC) {
-				vid->reg[VGA_SRN + vid->reg[VGA_SRN] + 1] = val & 0xff;
+			printf("VGA SEQ: reg[%.2X] = %.2X\n", SEQ_IDX, val & 0xff);
+			if (SEQ_IDX <= VGA_SRC) {
+				SEQ_CUR_REG = val & 0xff;
 			}
 			break;
 		// vga registers (3ce/3cf)
 		case VGA_GRFRN:
-			vid->reg[VGA_GRN] = val & 0xff;
+			GRF_IDX = val & 0xff;
 			break;
 		case VGA_GRFRD:
-			printf("VGA GRF: reg[%.2X] = %.2X\n", vid->reg[VGA_GRN], val & 0xff);
-			if (vid->reg[VGA_GRN] <= VGA_GRC) {
-				vid->reg[VGA_GRN + vid->reg[VGA_GRN] + 1] = val & 0xff;
+			printf("VGA GRF: reg[%.2X] = %.2X\n", GRF_IDX, val & 0xff);
+			if (GRF_IDX <= VGA_GRC) {
+				GRF_CUR_REG = val & 0xff;
 			}
 			break;
 		case VGA_MODE:
@@ -102,7 +110,7 @@ void vga_wr(Video* vid, int port, int val) {
 
 int vga_adr(Video* vid, int exadr) {
 	int adr = -1;
-	switch(vid->reg[VGA_GRN+6+1] & 0x0c) {
+	switch(GRF_REG(6) & 0x0c) {
 		case 0: adr = exadr; break;
 		case 1: if (exadr < MEM_64K) adr = exadr; break;
 		case 2: if ((exadr >= 0xb0000) && (exadr < 0xb8000)) adr = exadr; break;
@@ -172,12 +180,12 @@ void vga_t40_line(Video* vid) {
 		vid->tadr += vid->vga.chline;			// +line in char
 		vid->idx = vid->ram[0x20000 + vid->tadr];	// pixels
 		for (i = 0; i < 8; i++) {
-			if (vid->idx & 0x01) {
+			if (vid->idx & 0x80) {
 				vid->line[vid->xpos++] = vid->atrbyte & 0x0f;		// b0..3:foreground
 			} else {
 				vid->line[vid->xpos++] = (vid->atrbyte >> 4) & 0x0f;	// b4..7:background
 			}
-			vid->idx >>= 1;
+			vid->idx <<= 1;
 		}
 	}
 	vid->vga.chline++;
