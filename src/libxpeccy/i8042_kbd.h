@@ -14,11 +14,12 @@ typedef struct {
 	Mouse* mouse;
 	unsigned char ram[0x20];
 	int cmd;	// last command for data port writing
+	int data;
 	int status;
-	int inbuf;	// controller input buffer (cpu wr)
-	int outbuf;	// controller output buffer (cpu rd)
-	int inport;	// controller input port
-	int outport;	// controller output port
+	int inbuf;		// controller input buffer (cpu wr)
+	unsigned int outbuf;	// controller output buffer (cpu rd)
+	int inport;		// controller input port
+	int outport;		// controller output port
 } PS2Ctrl;
 
 PS2Ctrl* ps2c_create(Keyboard*, Mouse*);

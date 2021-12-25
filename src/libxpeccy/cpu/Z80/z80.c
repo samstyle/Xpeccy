@@ -128,6 +128,7 @@ static unsigned char z80_cnd[4] = {Z80_FZ, Z80_FC, Z80_FP, Z80_FS};
 
 xMnem z80_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 	xMnem mn;
+	mn.oadr = -1;
 	opCode* opt = npTab;
 	opCode* opc;
 	unsigned char op;

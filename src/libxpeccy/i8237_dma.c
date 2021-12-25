@@ -35,6 +35,34 @@ void dma_reset(i8237DMA* dma) {
 	dma_ch_res(&dma->ch[3]);
 }
 
+void dma_set_chan(i8237DMA* dma, int ch, cbdmard cr, cbdmawr cw) {
+	if (ch < 0) return;
+	if (ch > 3) return;
+	dma->ch[ch].rd = cr;
+	dma->ch[ch].wr = cw;
+}
+
+void dma_transfer(i8237DMA* dma) {
+	int i;
+	int b;
+	DMAChan* ch;
+	for(i = 0; i < 4; i++) {
+		ch = &dma->ch[i];
+		if (!ch->masked && (ch->cwr > 0)) {
+			b = ch->rd ? ch->rd((ch->par << 16) | ch->car, dma->ptr) : 0xff;
+			if (ch->wr)
+				ch->wr((ch->par << 16) | ch->car, b, dma->ptr);
+			if (ch->mode & 0x10) {
+				ch->car--;
+			} else {
+				ch->car++;
+			}
+			ch->cwr--;
+			// TODO: if (ch->cwr == 0) ...
+		}
+	}
+}
+
 int dma_wr_reg(i8237DMA* dma, int oldval, int val) {
 	if (dma->wrd) {
 		oldval = val & 0xffff;

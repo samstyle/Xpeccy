@@ -78,6 +78,7 @@ static unsigned char m6502_cond[4] = {MFN, MFV, MFC, MFZ};
 
 xMnem m6502_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 	xMnem mn;
+	mn.oadr = -1;
 	unsigned char op = mrd(adr++,data);
 	mn.met = 0;
 	mn.len = 1;

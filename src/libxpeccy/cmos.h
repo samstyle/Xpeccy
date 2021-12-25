@@ -10,7 +10,7 @@ enum {
 #define CMOS_NMI 1
 
 typedef struct {
-	unsigned char adr;
+	unsigned adr:7;
 	int mode;
 	unsigned char data[256];
 	int inten;

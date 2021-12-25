@@ -45,6 +45,7 @@ xAsmScan i8080_asm(const char* cbuf, char* buf) {
 
 xMnem i8080_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 	xMnem mn;
+	mn.oadr = -1;
 	opCode* opt = i8080_tab;
 	opCode* opc;
 	unsigned char op;

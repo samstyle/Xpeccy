@@ -145,6 +145,7 @@ xMnem i286_mnem(CPU* cpu, unsigned short sadr, cbdmr mrd, void* data) {
 	mn.cond = 0;
 	mn.met = 0;
 	mn.mem = 0;
+	mn.oadr = -1;
 	int rep = I286_REP_NONE;
 	int rseg = -1;
 	opCode* tab = i80286_tab;
@@ -192,12 +193,14 @@ xMnem i286_mnem(CPU* cpu, unsigned short sadr, cbdmr mrd, void* data) {
 					rx.h = cpu->mrd(cpu->cs.base + adr, 0, cpu->data);
 					adr++;
 					dptr += sprintf(dptr, "#%.4X", rx.w);
+					mn.oadr = rx.w;
 					break;
 				case '3':
 					rx.l = cpu->mrd(cpu->cs.base + adr, 0, cpu->data);
 					adr++;
 					rx.w = adr + (signed char)rx.l;
 					dptr += sprintf(dptr, "short #%.4X", rx.w);
+					mn.oadr = rx.w;
 					break;
 				case 'n':
 					rx.l = cpu->mrd(cpu->cs.base + adr, 0, cpu->data);
@@ -206,6 +209,7 @@ xMnem i286_mnem(CPU* cpu, unsigned short sadr, cbdmr mrd, void* data) {
 					adr++;
 					rx.w += adr;
 					dptr += sprintf(dptr, "near #%.4X", rx.w);
+					mn.oadr = rx.w;
 					break;
 				case '4':
 				case 'p':
@@ -218,6 +222,7 @@ xMnem i286_mnem(CPU* cpu, unsigned short sadr, cbdmr mrd, void* data) {
 					seg.h = cpu->mrd(cpu->cs.base + adr, 0, cpu->data);
 					adr++;
 					dptr += sprintf(dptr, "#%.4X::%.4X", seg.w, rx.w);
+					mn.oadr = rx.w;
 					break;
 				case 'r': if (!mod) {mod = 1; mb = cpu->mrd(cpu->cs.base + adr, 0, cpu->data); adr++;}
 					if (op->flag & OF_WORD) {	// word

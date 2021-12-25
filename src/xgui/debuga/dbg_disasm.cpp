@@ -201,8 +201,11 @@ void placeLabel(Computer* comp, dasmData& drow) {
 	QString lab;
 	QString num;
 	xMnem mn;
+	xAdr xadr;
 	while (work && (shift < 8)) {
-		lab = findLabel(drow.oadr - shift, -1, -1);
+		xadr = memGetXAdr(comp->mem, drow.oadr - shift);
+		// lab = findLabel(drow.oadr - shift, -1, -1);
+		lab = find_label(xadr);
 		if (lab.isEmpty()) {
 			if (drow.oflag & OF_MEMADR) {
 				shift++;
@@ -232,7 +235,8 @@ int dasmByte(Computer* comp, int adr, dasmData& drow) {
 	drow.command = QString("DB #%0").arg(gethexbyte(dasmrd(adr & 0xffff, comp)));
 	adr++;
 	unsigned char fl = getBrk(comp, adr);
-	while ((len < conf.dbg.dbsize) && (fl == DBG_VIEW_BYTE) && findLabel(adr,-1,-1).isEmpty()) {
+	xAdr xadr = memGetXAdr(comp->mem, adr);
+	while ((len < conf.dbg.dbsize) && (fl == DBG_VIEW_BYTE) /*&& findLabel(adr,-1,-1).isEmpty()*/ && find_label(xadr).isEmpty()) {
 		drow.command.append(QString(",#%0").arg(gethexbyte(dasmrd(adr & 0xffff, comp))));
 		len++;
 		adr++;
@@ -263,7 +267,9 @@ int dasmAddr(Computer* comp, unsigned short adr, dasmData& drow) {
 	int len = 2;
 	int word = dasmrd(adr, comp);
 	word |= (dasmrd(adr + 1, comp) << 8);
-	QString lab = findLabel(word & 0xffff, -1, -1);
+	xAdr xadr = memGetXAdr(comp->mem, adr);
+	//QString lab = findLabel(word & 0xffff, -1, -1);
+	QString lab = find_label(xadr);
 	if (lab.isEmpty()) {
 		lab = gethexword(word).prepend("#");
 	}
@@ -390,7 +396,8 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 
 	// add label line if any
 	if (conf.dbg.labels) {		// if show labels
-		lab = findLabel(xadr.adr, xadr.type, xadr.bank);
+		//lab = findLabel(xadr.adr, xadr.type, xadr.bank);
+		lab = find_label(xadr);
 	}
 	if (!lab.isEmpty()) {		// place label line if it exists
 		drow.islab = 1;
@@ -427,7 +434,9 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 	while (clen > 1) {
 		oadr++;
 		clen--;
-		lab = findLabel(oadr, -1, -1);
+		xadr = memGetXAdr(comp->mem, oadr);
+		lab = find_label(xadr);
+		//lab = findLabel(oadr, -1, -1);
 		if (!lab.isEmpty()) {
 			drow.islab = 1;
 			drow.isequ = 1;
@@ -553,10 +562,12 @@ int asmAddr(Computer* comp, QVariant val, xAdr xadr) {
 	}
 	if (adr < 0) {
 		if ((str.at(0).isLetter() || (str.at(0) == '_')) && !str.contains('$') && !str.contains(' ')) {
-			lab = findLabel(xadr.adr, xadr.type, xadr.bank);		// current address label
-			if (!lab.isEmpty())						// remove current label
-				conf.labels.remove(lab);
-			conf.labels[str] = xadr;					// add new label
+			lab = find_label(xadr);
+			// lab = findLabel(xadr.adr, xadr.type, xadr.bank);		// current address label
+			if (!lab.isEmpty()) {						// remove current label
+				del_label(lab);
+			}
+			add_label(xadr, str);						// add new label
 		}
 	}
 	return adr;
@@ -586,16 +597,19 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 		case 0:
 			str = val.toString();
 			if (str.isEmpty()) {
-				str = findLabel(adr, -1, -1);
+				xadr = memGetXAdr((*cptr)->mem, adr);
+				str = find_label(xadr);
+				//str = findLabel(adr, -1, -1);		// LABEL
 				if (!str.isEmpty()) {
-					conf.labels.remove(str);
+					del_label(str);
+					//conf.labels.remove(str);
 				}
-			} else if (str.startsWith(".")) {
+			} else if (str.startsWith(".")) {		// .REG
 				idx = adr_of_reg((*cptr)->cpu, &flag, str.mid(1));
 				if (!flag)
 					idx = -1;
-			} else {
-				xadr = memGetXAdr((*cptr)->mem, dasm[row].adr);
+			} else {					// hex
+				xadr = memGetXAdr((*cptr)->mem, adr);
 				idx = asmAddr(*cptr, val, xadr);
 			}
 			if (idx >= 0) {

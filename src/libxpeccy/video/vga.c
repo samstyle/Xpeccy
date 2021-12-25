@@ -48,7 +48,7 @@ void vga_wr(Video* vid, int port, int val) {
 			CRT_IDX = val & 0xff;
 			break;
 		case VGA_CRTRD:
-			printf("VGA CRT: reg[%.2X] = %.2X\n", CRT_IDX, val & 0xff);
+			// printf("VGA CRT: reg[%.2X] = %.2X\n", CRT_IDX, val & 0xff);
 			if (CRT_IDX <= VGA_CRC) {
 				CRT_CUR_REG = val & 0xff;
 			}
@@ -189,7 +189,7 @@ void vga_t40_line(Video* vid) {
 		}
 	}
 	vid->vga.chline++;
-	if (vid->vga.chline > CRT_REG(9)) {		// char height register
+	if (vid->vga.chline > 8) { //CRT_REG(9)) {		// char height register
 		vid->vga.line++;
 		vid->vga.chline = 0;
 	}

@@ -1590,6 +1590,7 @@ char* put_addressation(char* dst, unsigned short type) {
 
 xMnem pdp11_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* dat) {
 	xMnem res;
+	res.oadr = -1;
 	res.len = 2;
 	int idx = 0;
 	unsigned short dtw;

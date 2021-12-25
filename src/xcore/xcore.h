@@ -85,6 +85,10 @@ typedef struct {
 
 // labels
 
+void add_label(xAdr, QString);
+void del_label(QString);
+QString find_label(xAdr);
+
 int loadLabels(const char*);
 int saveLabels(const char*);
 QString findLabel(int, int, int);
@@ -362,9 +366,12 @@ struct xConfig {
 	QList<xRomset> rsList;
 	QList<xLayout> layList;
 	QList<xBookmark> bookmarkList;
+	struct {
+		QMap<int,QString> ram;		// on rom cell: phys.adr,name
+		// QMap<int,QString> rom;
+		QMap<int,QString> cpu;		// on cpu adr
+	} labmap;
 	QMap<QString, xAdr> labels;
-	QMap<int, QString> markers;
-	QMap<int, QString> comments;
 	QMap<QString, QColor> pal;
 	QString labpath;
 	unsigned short port;

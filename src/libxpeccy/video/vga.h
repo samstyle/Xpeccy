@@ -14,8 +14,8 @@ enum {
 };
 
 // vid->reg (registers)
-#define	VGA_CRB	0x80	// crt register num
-#define VGA_CRC	0x18	// crt registers count-1
+#define	VGA_CRB	0x80	// crt registers
+#define VGA_CRC	0x18	// count
 #define VGA_SRB 0xA0	// syncronisator registers
 #define VGA_SRC 0x05
 #define VGA_GRB 0xb0	// graphic registers (3ce/3cf)

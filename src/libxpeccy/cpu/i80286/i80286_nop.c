@@ -2142,28 +2142,52 @@ void i286_opD7(CPU* cpu) {
 }
 
 // d8: for 80287
-void i286_opD8(CPU* cpu) {}
+void i286_opD8(CPU* cpu) {
+	cpu->pc++;
+	i286_interrupt(cpu, I286_INT_NM);
+}
 
 // d9: 80287
-void i286_opD9(CPU* cpu) {}
+void i286_opD9(CPU* cpu) {
+	cpu->pc++;
+	i286_interrupt(cpu, I286_INT_NM);
+}
 
 // da: 80287
-void i286_opDA(CPU* cpu) {}
+void i286_opDA(CPU* cpu) {
+	cpu->pc++;
+	i286_interrupt(cpu, I286_INT_NM);
+}
 
 // db: 80287
-void i286_opDB(CPU* cpu) {}
+void i286_opDB(CPU* cpu) {
+	cpu->pc++;
+	i286_interrupt(cpu, I286_INT_NM);
+}
 
 // dc: 80287
-void i286_opDC(CPU* cpu) {}
+void i286_opDC(CPU* cpu) {
+	cpu->pc++;
+	i286_interrupt(cpu, I286_INT_NM);
+}
 
 // dd: 80287
-void i286_opDD(CPU* cpu) {}
+void i286_opDD(CPU* cpu) {
+	cpu->pc++;
+	i286_interrupt(cpu, I286_INT_NM);
+}
 
 // de: 80287
-void i286_opDE(CPU* cpu) {}
+void i286_opDE(CPU* cpu) {
+	cpu->pc++;
+	i286_interrupt(cpu, I286_INT_NM);
+}
 
 // df: 80287
-void i286_opDF(CPU* cpu) {}
+void i286_opDF(CPU* cpu) {
+	cpu->pc++;
+	i286_interrupt(cpu, I286_INT_NM);
+}
 
 // e0,cb: loopnz cb:	cx--,jump short if (cx!=0)&&(fz=0)
 void i286_opE0(CPU* cpu) {

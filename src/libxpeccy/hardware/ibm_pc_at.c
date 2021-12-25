@@ -141,6 +141,7 @@ int ibm_inKbd(Computer* comp, int adr) {
 			res = ps2c_rd(comp->ps2c, PS2_RSTATUS);
 			break;
 	}
+	//printf("%.4X:%.4X kbd in %.3X = %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,adr,res);
 	return res;
 }
 
@@ -162,6 +163,7 @@ void ibm_outKbd(Computer* comp, int adr, int val) {
 				compReset(comp, RES_DEFAULT);
 			break;
 	}
+	//printf("%.4X:%.4X kbd out %.3X, %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,adr,val);
 }
 
 // dma1
@@ -304,11 +306,13 @@ static xPort ibmPortMap[] = {
 
 int ibm_iord(Computer* comp, int adr) {
 //	printf("in %.4X\n",adr);
+//	comp->brk = 1;
 	return hwIn(ibmPortMap, comp, adr);
 }
 
 void ibm_iowr(Computer* comp, int adr, int val) {
 //	printf("out %.4X\n",adr);
+//	comp->brk = 1;
 	hwOut(ibmPortMap, comp, adr, val, 0);
 }
 
@@ -321,7 +325,7 @@ void ibm_sync(Computer* comp, int ns) {
 	// ps/2 controller
 	if (comp->ps2c->intk) {
 		comp->ps2c->intk = 0;
-		pic_int(&comp->mpic, 1);	// int1:keyboard interrypt
+		pic_int(&comp->mpic, 1);	// int1:keyboard interrupt
 	}
 	if (comp->ps2c->intm) {
 		comp->ps2c->intm = 0;

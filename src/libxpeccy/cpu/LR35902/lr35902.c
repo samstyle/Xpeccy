@@ -117,6 +117,7 @@ xMnem lr_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
 		if (opc->flag & OF_PREFIX) opt = opc->tab;
 	} while (opc->flag & OF_PREFIX);
 	xMnem mn;
+	mn.oadr = -1;
 	mn.mop = 0;
 	mn.len = res;
 	mn.mnem = opc->mnem;

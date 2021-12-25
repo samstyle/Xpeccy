@@ -5,6 +5,28 @@
 
 #include <QDebug>
 
+void del_label(QString name) {
+	if (!conf.labels.contains(name)) return;
+	xAdr xadr = conf.labels[name];
+	conf.labels.remove(name);
+	switch(xadr.type) {
+		case MEM_RAM: conf.labmap.ram.remove(xadr.abs); break;
+		// case MEM_ROM: conf.labmap.rom.remove(xadr.abs); break;
+		default: conf.labmap.cpu.remove(xadr.adr); break;
+	}
+}
+
+void add_label(xAdr xadr, QString name) {
+	if (conf.labels.contains(name))
+		del_label(name);
+	conf.labels[name] = xadr;
+	switch (xadr.type) {
+		case MEM_RAM: conf.labmap.ram[xadr.abs] = name; break;
+		//case MEM_ROM: conf.labmap.rom[xadr.abs] = name; break;
+		default: conf.labmap.cpu[xadr.adr] = name; break;
+	}
+}
+
 int loadLabels(const char* fn) {
 	int res = 1;
 	QString path(fn);
@@ -17,6 +39,8 @@ int loadLabels(const char* fn) {
 		path = QFileDialog::getOpenFileName(NULL, "Load SJASM labels",QString(),QString(),nullptr,QFileDialog::DontUseNativeDialog);
 	if (!path.isEmpty()) {
 		conf.labels.clear();
+		conf.labmap.cpu.clear();
+		conf.labmap.ram.clear();
 		file.setFileName(path);
 		if (file.open(QFile::ReadOnly)) {
 			while(!file.atEnd()) {
@@ -56,7 +80,8 @@ int loadLabels(const char* fn) {
 					}
 					if (xadr.bank > 0)
 						xadr.bank = xadr.abs >> 8;
-					conf.labels[name] = xadr;
+					add_label(xadr, name);
+					//
 				}
 			}
 			conf.labpath = path;
@@ -112,6 +137,20 @@ QString findLabel(int adr, int type, int bank) {
 				&& ((bank < 0) || (xadr.bank < 0) || (bank == xadr.bank))) {
 			lab = key;
 			break;
+		}
+	}
+	return lab;
+}
+
+QString find_label(xAdr xadr) {
+	QString lab;
+	if (conf.dbg.labels) {
+		switch(xadr.type) {
+			case MEM_RAM: lab = conf.labmap.ram[xadr.abs]; break;
+			// case MEM_ROM: lab = conf.labmap.rom[xadr.abs]; break;
+			default: lab = conf.labmap.ram[xadr.abs];
+				if (lab.isEmpty()) lab = conf.labmap.cpu[xadr.adr];
+				break;
 		}
 	}
 	return lab;

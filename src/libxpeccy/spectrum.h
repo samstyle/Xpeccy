@@ -17,7 +17,7 @@ extern "C" {
 #include "i8255_ppi.h"
 #include "i8253_pit.h"
 #include "i8259_pic.h"
-#include "ps2ctrl.h"
+#include "i8042_kbd.h"
 #include "i8237_dma.h"
 
 #include "sound/ayym.h"

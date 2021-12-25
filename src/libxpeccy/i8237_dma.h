@@ -22,6 +22,9 @@
 #define	DMA_PRG		1	// programming
 #define	DMA_TRF		2	// transfer
 
+typedef int(*cbdmard)(int, void*);
+typedef void(*cbdmawr)(int, int, void*);
+
 typedef struct {
 	unsigned masked:1;	// don't process if 1
 	unsigned short bar;	// base address
@@ -30,8 +33,8 @@ typedef struct {
 	unsigned short bwr;	// base counter
 	unsigned short cwr;	// current counter
 	unsigned char mode;	// b2,3=00:verify mem,01:mem2io,10:verify mem,11:io2mem; b4=1:adr decrement; b6:16bit
-	int(*rd)(int, void*);
-	void(*wr)(int, int, void*);
+	cbdmard rd;
+	cbdmawr wr;
 } DMAChan;
 
 typedef struct {
@@ -45,6 +48,7 @@ typedef struct {
 i8237DMA* dma_create(void*, int);
 void dma_destroy(i8237DMA*);
 void dma_reset(i8237DMA*);
+void dma_set_chan(i8237DMA*, int, cbdmard, cbdmawr);
 
 void dma_wr(i8237DMA*, int reg, int ch, int val);
 int dma_rd(i8237DMA*, int reg, int ch);
