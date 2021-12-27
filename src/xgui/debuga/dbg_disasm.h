@@ -15,6 +15,7 @@ typedef struct {
 	unsigned issel:1;		// address inside selection
 	unsigned isbrk:1;		// breakpoint here
 	unsigned islab:1;		// address have label
+	unsigned iscom:1;		// address have comment
 	unsigned isequ:1;		// this is equ
 	unsigned short adr;		// command addr
 	int oadr;			// word operand like nn : jp nn; ld hl,(nn)

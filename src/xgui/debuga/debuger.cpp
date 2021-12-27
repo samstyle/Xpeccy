@@ -4,6 +4,7 @@
 
 #include <QIcon>
 #include <QDebug>
+#include <QBuffer>
 #include <QPainter>
 #include <QFileDialog>
 #include <QTemporaryFile>
@@ -381,11 +382,11 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 	ui.tbSaveDasm->addAction(ui.actDisasm);
 	ui.tbSaveDasm->addAction(ui.actLoadDump);
-//	ui.tbSaveDasm->addAction(ui.actLoadMap);
-	ui.tbSaveDasm->addAction(ui.actLoadLabels);
 	ui.tbSaveDasm->addAction(ui.actSaveDump);
-//	ui.tbSaveDasm->addAction(ui.actSaveMap);
+	ui.tbSaveDasm->addAction(ui.actLoadLabels);
 	ui.tbSaveDasm->addAction(ui.actSaveLabels);
+	ui.tbSaveDasm->addAction(ui.actLoadMap);
+	ui.tbSaveDasm->addAction(ui.actSaveMap);
 
 	ui.tbTrace->addAction(ui.actTrace);
 	ui.tbTrace->addAction(ui.actTraceHere);
@@ -458,8 +459,8 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.actSaveDump, SIGNAL(triggered(bool)),dumpwin,SLOT(show()));
 	connect(ui.actLoadLabels, SIGNAL(triggered(bool)),this,SLOT(dbgLLab()));
 	connect(ui.actSaveLabels, SIGNAL(triggered(bool)),this,SLOT(dbgSLab()));
-//	connect(ui.actLoadMap, SIGNAL(triggered(bool)),this,SLOT(loadMap()));
-//	connect(ui.actSaveMap, SIGNAL(triggered(bool)),this,SLOT(saveMap()));
+	connect(ui.actLoadMap, SIGNAL(triggered(bool)),this,SLOT(loadMap()));
+	connect(ui.actSaveMap, SIGNAL(triggered(bool)),this,SLOT(saveMap()));
 	connect(ui.actDisasm, SIGNAL(triggered(bool)),this,SLOT(saveDasm()));
 	connect(ui.tbRefresh, SIGNAL(released()), this, SLOT(reload()));
 
@@ -1543,6 +1544,177 @@ void DebugWin::fillMem() {
 	ui.labPG1->setText(getPageName(comp->mem->map[0x40]));
 	ui.labPG2->setText(getPageName(comp->mem->map[0x80]));
 	ui.labPG3->setText(getPageName(comp->mem->map[0xc0]));
+}
+
+int qfgeti(QFile& f) {
+	char c;
+	int v;
+	f.getChar(&c);
+	v = c & 0xff;
+	f.getChar(&c);
+	v |= (c & 0xff) << 8;
+	f.getChar(&c);
+	v |= (c & 0xff) << 16;
+	f.getChar(&c);
+	v |= (c & 0xff) << 24;
+	return v;
+}
+
+void DebugWin::loadMap() {
+	QFile file;
+	char buf[8];
+	int len;
+	QByteArray arr;
+	QBuffer qb;
+	char line[1024];
+	QString str;
+	QStringList lst;
+	xAdr xadr;
+	QString path = QFileDialog::getOpenFileName(this, "Open the universe", "", "Xpeccy memory map (*.xmap)",nullptr,QFileDialog::DontUseNativeDialog);
+	if (path.isEmpty()) return;
+	file.setFileName(path);
+	if (file.open(QFile::ReadOnly)) {
+		file.read(buf, 8);
+		if (memcmp(buf, "XMEMMAP ", 8)) {
+			shitHappens("File signature mismatching");
+		} else {
+			while(!file.atEnd()) {
+				file.read(buf, 8);
+				len = qfgeti(file);
+				if (!memcmp(buf, "ramflags", 8)) {
+					if (len <= MEM_4M) {
+						file.read((char*)comp->brkRamMap, len);
+					} else {
+						file.read((char*)comp->brkRamMap, MEM_4M);
+						file.skip(len - MEM_4M);
+					}
+				} else if (!memcmp(buf, "romflags", 8)) {
+					if (len <= MEM_512K) {
+						file.read((char*)comp->brkRomMap, len);
+					} else {
+						file.read((char*)comp->brkRomMap, MEM_512K);
+						file.skip(len - MEM_512K);
+					}
+				} else if (!memcmp(buf, "labels  ", 8)) {
+					clear_labels();
+					arr = file.read(len);
+					qb.setData(arr);
+					qb.open(QIODevice::ReadOnly);
+					while(!qb.atEnd()) {
+						memset(line, 0, 1024);
+						qb.readLine(line, 1024);
+						str = QString(line).trimmed();
+						lst = str.split(":", X_SkipEmptyParts);
+						if (lst.size() > 2) {
+							str = lst.at(0);
+							if (str == "RAM") {
+								xadr.type = MEM_RAM;
+							} else if (str == "ROM") {
+								xadr.type = MEM_ROM;
+							} else if (str == "CPU") {
+								xadr.type = MEM_EXT;
+							} else {
+								xadr.type = -1;
+							}
+							if (xadr.type >= 0) {
+								xadr.abs = lst.at(1).toInt(nullptr, 16);
+								xadr.adr = xadr.abs & 0xffff;
+								xadr.bank = xadr.abs >> 8;
+								add_label(xadr, lst.at(2));
+							}
+						}
+					}
+					qb.close();
+				} else if (!memcmp(buf, "comments", 8)) {
+					conf.dbg.comments.clear();
+					arr = file.read(len);
+					qb.setData(arr);
+					qb.open(QIODevice::ReadOnly);
+					while(!qb.atEnd()) {
+						memset(line, 0, 1024);
+						qb.readLine(line, 1024);
+						str = QString(line).trimmed();
+						lst = str.split(":", X_SkipEmptyParts);
+						if (lst.size() > 1) {
+							xadr.abs = lst.at(0).toInt(nullptr, 16);
+							str = lst.at(1);
+							if (!str.isEmpty()) {
+								conf.dbg.comments[xadr.abs] = str;
+							}
+						}
+					}
+					qb.close();
+				} else {
+					file.skip(len);
+				}
+			}
+		}
+		brkInstallAll();
+		fillAll();
+	} else {
+		shitHappens("Can't open this file for reading");
+	}
+}
+
+void qfputi(QFile& f, int v) {
+	f.putChar(v & 0xff);
+	f.putChar((v >> 8) & 0xff);
+	f.putChar((v >> 16) & 0xff);
+	f.putChar((v >> 24) & 0xff);
+}
+
+void DebugWin::saveMap() {
+	//shitHappens("Not working yet");
+	QFile file;
+	QString path = QFileDialog::getSaveFileName(this, "Save the universe", "", "Xpeccy memory map (*.xmap)",nullptr,QFileDialog::DontUseNativeDialog);
+	if (path.isEmpty()) return;
+	if (!path.endsWith(".xmap",Qt::CaseInsensitive))
+		path.append(".xmap");
+	QByteArray arr;
+	int adr;
+	xAdr xadr;
+	QString str;
+	QString lab;
+	if (!path.isEmpty()) {
+		file.setFileName(path);
+		if (file.open(QFile::WriteOnly)) {
+			file.write("XMEMMAP ", 8);
+			file.write("ramflags", 8);
+			qfputi(file, comp->mem->ramSize);
+			file.write((char*)comp->brkRamMap, comp->mem->ramSize);
+			file.write("romflags", 8);
+			qfputi(file, comp->mem->romSize);
+			file.write((char*)comp->brkRomMap, comp->mem->romSize);
+			file.write("labels  ", 8);
+			foreach(lab, conf.labels.keys()) {
+				xadr = conf.labels[lab];
+				switch(xadr.type) {
+					case MEM_RAM: str = "RAM:"; adr = xadr.abs; break;
+					case MEM_ROM: str = "ROM:"; adr = xadr.abs; break;
+					default: str = "CPU:"; adr = xadr.adr; break;
+				}
+				str.append(QString::number(adr, 16).rightJustified(8, '0'));
+				str.append(":").append(lab);
+				arr.append(str.toLocal8Bit());
+				arr.append((char)0x0a);
+			}
+			qfputi(file, arr.size());
+			file.write(arr.data(), arr.size());
+			arr.clear();
+			file.write("comments", 8);
+			foreach(adr, conf.dbg.comments.keys()) {
+				lab = conf.dbg.comments[adr];
+				str = QString::number(adr, 16).rightJustified(8, '0');
+				str.append(":").append(lab);
+				arr.append(str.toLocal8Bit());
+				arr.append((char)0x0a);
+			}
+			qfputi(file, arr.size());
+			file.write(arr.data(), arr.size());
+		} else {
+			shitHappens("Can't open this file for writing");
+		}
+	}
 }
 
 // labels

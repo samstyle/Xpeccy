@@ -5,6 +5,13 @@
 
 #include <QDebug>
 
+void clear_labels() {
+	conf.labels.clear();
+	conf.labmap.ram.clear();
+	conf.labmap.rom.clear();
+	conf.labmap.cpu.clear();
+}
+
 void del_label(QString name) {
 	if (!conf.labels.contains(name)) return;
 	xAdr xadr = conf.labels[name];
@@ -25,6 +32,20 @@ void add_label(xAdr xadr, QString name) {
 		//case MEM_ROM: conf.labmap.rom[xadr.abs] = name; break;
 		default: conf.labmap.cpu[xadr.adr] = name; break;
 	}
+}
+
+QString find_label(xAdr xadr) {
+	QString lab;
+	if (conf.dbg.labels) {
+		switch(xadr.type) {
+			case MEM_RAM: lab = conf.labmap.ram[xadr.abs]; break;
+			// case MEM_ROM: lab = conf.labmap.rom[xadr.abs]; break;
+			default: lab = conf.labmap.ram[xadr.abs];
+				if (lab.isEmpty()) lab = conf.labmap.cpu[xadr.adr];
+				break;
+		}
+	}
+	return lab;
 }
 
 int loadLabels(const char* fn) {
@@ -120,49 +141,4 @@ int saveLabels(const char* fn) {
 		}
 	}
 	return res;
-}
-
-// TODO: make it faster
-QString findLabel(int adr, int type, int bank) {
-	QString lab;
-	if (!conf.dbg.labels)
-		return lab;
-	QString key;
-	xAdr xadr;
-	QStringList keys = conf.labels.keys();
-	foreach(key, keys) {
-		xadr = conf.labels[key];
-		if ((xadr.adr == adr) \
-				&& ((type < 0) || (xadr.type < 0) || (type == xadr.type))\
-				&& ((bank < 0) || (xadr.bank < 0) || (bank == xadr.bank))) {
-			lab = key;
-			break;
-		}
-	}
-	return lab;
-}
-
-QString find_label(xAdr xadr) {
-	QString lab;
-	if (conf.dbg.labels) {
-		switch(xadr.type) {
-			case MEM_RAM: lab = conf.labmap.ram[xadr.abs]; break;
-			// case MEM_ROM: lab = conf.labmap.rom[xadr.abs]; break;
-			default: lab = conf.labmap.ram[xadr.abs];
-				if (lab.isEmpty()) lab = conf.labmap.cpu[xadr.adr];
-				break;
-		}
-	}
-	return lab;
-}
-
-xAdr getLabel(const char* n) {
-	QString name(n);
-	xAdr adr;
-	if (conf.labels.contains(name)) {
-		adr = conf.labels[name];
-	} else {
-		adr.abs = -1;		// not found
-	}
-	return adr;
 }

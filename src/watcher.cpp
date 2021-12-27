@@ -308,7 +308,7 @@ QVariant xWatchModel::data(const QModelIndex& idx, int role) const {
 				switch(xadr.abs) {
 					case wchAbsolute:
 						adr = xadr.adr;
-						adrs = findLabel(xadr.adr, -1, -1);
+						adrs = find_label(xadr);
 						if (adrs.isEmpty()) {
 							adrs = gethexword(adr);
 						}

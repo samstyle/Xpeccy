@@ -69,7 +69,7 @@ QVariant xDisasmModel::data(const QModelIndex& idx, int role) const {
 			}
 			break;
 		case Qt::FontRole:
-			if ((col == 0) && dasm[row].islab) {
+			if ((col == 0) && dasm[row].islab && !dasm[row].iscom) {
 				font = QFont();
 				font.setBold(true);
 				res = font;
@@ -79,6 +79,8 @@ QVariant xDisasmModel::data(const QModelIndex& idx, int role) const {
 			if (dasm[row].isbrk) {
 				clr = conf.pal["dbg.brk.txt"];
 			} else if ((col == 0) && !dasm[row].islab && conf.dbg.hideadr) {
+				clr = QColor(Qt::gray);
+			} else if ((col == 0) && dasm[row].islab && dasm[row].iscom) {
 				clr = QColor(Qt::gray);
 			} else if (dasm[row].ispc && !dasm[row].islab) {
 				clr = conf.pal["dbg.pc.txt"];
@@ -153,7 +155,6 @@ int dasmrd(int adr, void* ptr) {
 					case MEM_SLOT: res = memRd(comp->mem, adr & 0xffff);
 						break;
 				}
-				//			res = memRd(comp->mem, adr);
 				break;
 			case XVIEW_RAM:
 				res = comp->mem->ramData[((adr & 0x3fff) | (page << 14)) & comp->mem->ramMask];
@@ -356,6 +357,7 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 	drow.ispc = 0;
 	drow.issel = 0;
 	drow.islab = 0;
+	drow.iscom = 0;
 	drow.isequ = 0;
 	drow.info.clear();
 	drow.icon.clear();
@@ -384,7 +386,16 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 			drow.ispc = ((xadr.type == pct) && (abs == xadr.abs)) ? 1 : 0;
 			break;
 		default:
-			xadr = memGetXAdr(comp->mem, adr);
+			if (comp->hw->grp == HWG_PC) {
+				xadr.type = MEM_RAM;
+				xadr.adr = adr;
+				xadr.abs = adr;
+				if (comp->cpu->type == CPU_I80286)
+					xadr.abs += comp->cpu->cs.base;
+				xadr.bank = xadr.abs >> 14;
+			} else {
+				xadr = memGetXAdr(comp->mem, adr);
+			}
 			drow.flag = getBrk(comp, drow.adr);
 			drow.ispc = (adr == comp->cpu->pc) ? 1 : 0;
 			drow.issel = ((adr >= blockStart) && (adr <= blockEnd)) ? 1 : 0;
@@ -392,8 +403,19 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 	}
 	drow.isbrk = (drow.flag & MEM_BRK_ANY) ? 1 : 0;
 
-	// TODO: add marker/comment line if any @ this addr
-
+	// comments
+	if (conf.dbg.comments.contains(xadr.abs)) {
+		lab = conf.dbg.comments[xadr.abs];
+		if (!lab.isEmpty()) {
+			drow.islab = 1;
+			drow.iscom = 1;
+			drow.aname = lab;
+			drow.aname.prepend("; ");
+			list.append(drow);
+			drow.iscom = 0;
+			lab.clear();
+		}
+	}
 	// add label line if any
 	if (conf.dbg.labels) {		// if show labels
 		//lab = findLabel(xadr.adr, xadr.type, xadr.bank);
@@ -590,30 +612,50 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 	unsigned short oadr = disasmAdr;
 	int len;
 	QString str;
-	//QStringList lst;
-	xAdr xadr;
 	int adr = dasm[row].adr;
+	xAdr xadr;
+	if ((*cptr)->hw->grp == HWG_PC) {
+		xadr.type = MEM_RAM;
+		xadr.adr = adr;
+		xadr.abs = adr;
+		if ((*cptr)->cpu->type == CPU_I80286)
+			xadr.abs += (*cptr)->cpu->cs.base;
+		xadr.bank = xadr.abs >> 14;
+	} else {
+		 xadr = memGetXAdr((*cptr)->mem, adr);
+	}
 	switch(col) {
 		case 0:
 			str = val.toString();
-			if (str.isEmpty()) {
-				xadr = memGetXAdr((*cptr)->mem, adr);
-				str = find_label(xadr);
-				//str = findLabel(adr, -1, -1);		// LABEL
-				if (!str.isEmpty()) {
-					del_label(str);
-					//conf.labels.remove(str);
+			if (str.isEmpty()) {				// empty string = delete label/comment
+				if (dasm[row].islab) {
+					if (dasm[row].iscom) {		// comment
+						conf.dbg.comments.remove(xadr.abs);
+					} else {			// label
+						str = find_label(xadr);
+						if (!str.isEmpty()) {
+							del_label(str);
+						}
+					}
+					emit s_adrch(oadr, disasmAdr);
 				}
+			} else if (str.startsWith(";")) {		// ; comment
+				str.remove(";");
+				str = str.trimmed();
+				if (str.isEmpty()) {
+					conf.dbg.comments.remove(xadr.abs);
+				} else {
+					conf.dbg.comments[xadr.abs] = str;
+				}
+				emit s_adrch(oadr, disasmAdr);
 			} else if (str.startsWith(".")) {		// .REG
 				idx = adr_of_reg((*cptr)->cpu, &flag, str.mid(1));
 				if (!flag)
 					idx = -1;
 			} else {					// hex
-				xadr = memGetXAdr((*cptr)->mem, adr);
 				idx = asmAddr(*cptr, val, xadr);
 			}
 			if (idx >= 0) {
-				//nladr = idx;		// address to select after
 				while (row > 0) {
 					idx = getPrevAdr(*cptr, idx & 0xffff);
 					zadr = idx & 0xffff;

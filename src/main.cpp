@@ -208,11 +208,13 @@ int main(int ac,char** av) {
 				loadDUMP(mwin.comp, av[i], adr);
 				i++;
 			} else if (!strcmp(parg,"--bp")) {
-				xadr = getLabel(av[i]);
-				if (xadr.abs < 0) {
-					brkSet(BRK_CPUADR, MEM_BRK_FETCH, strtol(av[i],NULL,0) & 0xffff, -1);
+				if (conf.labels.contains(av[i])) {
+					xadr = conf.labels[av[i]];
+					if (xadr.adr >= 0) {
+						brkSet(BRK_CPUADR, MEM_BRK_FETCH, xadr.adr & 0xffff, -1);
+					}
 				} else {
-					brkSet(BRK_CPUADR, MEM_BRK_FETCH, xadr.adr & 0xffff, -1);
+					brkSet(BRK_CPUADR, MEM_BRK_FETCH, strtol(av[i],NULL,0) & 0xffff, -1);
 				}
 				i++;
 			} else if (!strcmp(parg,"-l") || !strcmp(parg,"--labels")) {

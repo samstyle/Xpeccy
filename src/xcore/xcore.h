@@ -88,11 +88,10 @@ typedef struct {
 void add_label(xAdr, QString);
 void del_label(QString);
 QString find_label(xAdr);
+void clear_labels();
 
 int loadLabels(const char*);
 int saveLabels(const char*);
-QString findLabel(int, int, int);
-xAdr getLabel(const char*);
 
 // brk points
 
@@ -367,8 +366,8 @@ struct xConfig {
 	QList<xLayout> layList;
 	QList<xBookmark> bookmarkList;
 	struct {
-		QMap<int,QString> ram;		// on rom cell: phys.adr,name
-		// QMap<int,QString> rom;
+		QMap<int,QString> ram;		// on mem cell: phys.adr,name
+		QMap<int,QString> rom;
 		QMap<int,QString> cpu;		// on cpu adr
 	} labmap;
 	QMap<QString, xAdr> labels;
@@ -448,6 +447,7 @@ struct xConfig {
 		int dbsize;
 		int dwsize;
 		int dmsize;
+		QMap<int, QString> comments;
 	} dbg;
 };
 

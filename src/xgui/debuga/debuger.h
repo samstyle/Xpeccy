@@ -160,6 +160,8 @@ class DebugWin : public QDialog {
 		void dbgSLab();
 		void jumpToLabel(QString);
 
+		void saveMap();
+		void loadMap();
 		void mapClear();
 		void mapAuto();
 

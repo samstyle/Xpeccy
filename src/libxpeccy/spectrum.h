@@ -184,10 +184,10 @@ typedef struct {
 	unsigned char iomap[0x10000];
 	unsigned short wdata;
 	memEntry memMap[16];			// memory map for ATM2, PentEvo
-	unsigned char brkRamMap[0x400000];	// ram brk/type : b0..3:brk flags, b4..7:type
-	unsigned char brkRomMap[0x80000];	// rom brk/type : b0..3:brk flags, b4..7:type
-	unsigned char brkAdrMap[0x10000];	// adr brk
-	unsigned char brkIOMap[0x10000];	// io brk
+	unsigned char brkRamMap[MEM_4M];	// ram brk/type : b0..3:brk flags, b4..7:type
+	unsigned char brkRomMap[MEM_512K];	// rom brk/type : b0..3:brk flags, b4..7:type
+	unsigned char brkAdrMap[MEM_64K];	// adr brk
+	unsigned char brkIOMap[MEM_64K];	// io brk
 
 	int padr;
 	int pval;
