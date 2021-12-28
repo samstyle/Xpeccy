@@ -5,32 +5,34 @@
 
 #include <QDebug>
 
+// labels
+
 void clear_labels() {
-	conf.labels.clear();
-	conf.labmap.ram.clear();
-	conf.labmap.rom.clear();
-	conf.labmap.cpu.clear();
+	conf.prof.cur->labels.clear();
+	conf.prof.cur->labmap.ram.clear();
+	conf.prof.cur->labmap.rom.clear();
+	conf.prof.cur->labmap.cpu.clear();
 }
 
 void del_label(QString name) {
-	if (!conf.labels.contains(name)) return;
-	xAdr xadr = conf.labels[name];
-	conf.labels.remove(name);
+	if (!conf.prof.cur->labels.contains(name)) return;
+	xAdr xadr = conf.prof.cur->labels[name];
+	conf.prof.cur->labels.remove(name);
 	switch(xadr.type) {
-		case MEM_RAM: conf.labmap.ram.remove(xadr.abs); break;
-		// case MEM_ROM: conf.labmap.rom.remove(xadr.abs); break;
-		default: conf.labmap.cpu.remove(xadr.adr); break;
+		case MEM_RAM: conf.prof.cur->labmap.ram.remove(xadr.abs); break;
+		// case MEM_ROM: conf.prof.cur->labmap.rom.remove(xadr.abs); break;
+		default: conf.prof.cur->labmap.cpu.remove(xadr.adr); break;
 	}
 }
 
 void add_label(xAdr xadr, QString name) {
-	if (conf.labels.contains(name))
+	if (conf.prof.cur->labels.contains(name))
 		del_label(name);
-	conf.labels[name] = xadr;
+	conf.prof.cur->labels[name] = xadr;
 	switch (xadr.type) {
-		case MEM_RAM: conf.labmap.ram[xadr.abs] = name; break;
-		//case MEM_ROM: conf.labmap.rom[xadr.abs] = name; break;
-		default: conf.labmap.cpu[xadr.adr] = name; break;
+		case MEM_RAM: conf.prof.cur->labmap.ram[xadr.abs] = name; break;
+		//case MEM_ROM: conf.prof.cur->labmap.rom[xadr.abs] = name; break;
+		default: conf.prof.cur->labmap.cpu[xadr.adr] = name; break;
 	}
 }
 
@@ -38,10 +40,10 @@ QString find_label(xAdr xadr) {
 	QString lab;
 	if (conf.dbg.labels) {
 		switch(xadr.type) {
-			case MEM_RAM: lab = conf.labmap.ram[xadr.abs]; break;
+			case MEM_RAM: lab = conf.prof.cur->labmap.ram[xadr.abs]; break;
 			// case MEM_ROM: lab = conf.labmap.rom[xadr.abs]; break;
-			default: lab = conf.labmap.ram[xadr.abs];
-				if (lab.isEmpty()) lab = conf.labmap.cpu[xadr.adr];
+			default: lab = conf.prof.cur->labmap.ram[xadr.abs];
+				if (lab.isEmpty()) lab = conf.prof.cur->labmap.cpu[xadr.adr];
 				break;
 		}
 	}
@@ -59,9 +61,7 @@ int loadLabels(const char* fn) {
 	if (path.isEmpty())
 		path = QFileDialog::getOpenFileName(NULL, "Load SJASM labels",QString(),QString(),nullptr,QFileDialog::DontUseNativeDialog);
 	if (!path.isEmpty()) {
-		conf.labels.clear();
-		conf.labmap.cpu.clear();
-		conf.labmap.ram.clear();
+		clear_labels();
 		file.setFileName(path);
 		if (file.open(QFile::ReadOnly)) {
 			while(!file.atEnd()) {
@@ -128,9 +128,9 @@ int saveLabels(const char* fn) {
 	} else {
 		file.setFileName(path);
 		if (file.open(QFile::WriteOnly)) {
-			keys = conf.labels.keys();
+			keys = conf.prof.cur->labels.keys();
 			foreach(key, keys) {
-				xadr = conf.labels[key];
+				xadr = conf.prof.cur->labels[key];
 				line = (xadr.type == MEM_RAM) ? gethexbyte(xadr.abs >> 14) : "FF";
 				line.append(QString(":%0 %1\n").arg(gethexword(xadr.abs & 0x3fff), key));
 				file.write(line.toUtf8());
@@ -141,4 +141,42 @@ int saveLabels(const char* fn) {
 		}
 	}
 	return res;
+}
+
+// comments
+
+void add_comment(xAdr xadr, QString str) {
+	switch(xadr.type) {
+		case MEM_RAM: conf.prof.cur->comments.ram[xadr.abs] = str; break;
+		case MEM_ROM: conf.prof.cur->comments.rom[xadr.abs] = str; break;
+	}
+}
+
+void del_comment(xAdr xadr) {
+	switch(xadr.type) {
+		case MEM_RAM: conf.prof.cur->comments.ram.remove(xadr.abs); break;
+		case MEM_ROM: conf.prof.cur->comments.rom.remove(xadr.abs); break;
+	}
+}
+
+QString find_comment(xAdr xadr) {
+	QString str;
+	switch(xadr.type) {
+		case MEM_RAM:
+			if (conf.prof.cur->comments.ram.contains(xadr.abs)) {
+				str = conf.prof.cur->comments.ram[xadr.abs];
+			}
+			break;
+		case MEM_ROM:
+			if (conf.prof.cur->comments.rom.contains(xadr.abs)) {
+				str = conf.prof.cur->comments.rom[xadr.abs];
+			}
+			break;
+	}
+	return str;
+}
+
+void clear_comments() {
+	conf.prof.cur->comments.ram.clear();
+	conf.prof.cur->comments.rom.clear();
 }

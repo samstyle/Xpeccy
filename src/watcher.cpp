@@ -42,8 +42,8 @@ xWatcher::xWatcher(QWidget* p):QDialog(p) {
 }
 
 void xWatcher::setLabel(QString str) {
-	if (conf.labels.contains(str)) {
-		xAdr xadr = conf.labels[str];
+	if (conf.prof.cur->labels.contains(str)) {
+		xAdr xadr = conf.prof.cur->labels[str];
 		nui.leAdrHex->setValue(xadr.adr);
 	}
 }

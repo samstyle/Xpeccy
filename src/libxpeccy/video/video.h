@@ -117,6 +117,9 @@ struct Video {
 	unsigned hbrd:1;	// border.H
 	unsigned vbrd:1;	// border.V
 
+	unsigned hvis:1;
+	unsigned vvis:1;
+
 	int nsPerFrame;
 	int nsPerLine;
 	int nsPerDot;

@@ -44,11 +44,6 @@ xConfig conf;
 
 void conf_init(char* wpath) {
 	conf.scrShot.dir = std::string(getenv(ENVHOME));
-	conf.dbg.comments.clear();
-	conf.labels.clear();
-	conf.labmap.ram.clear();
-	conf.labmap.rom.clear();
-	conf.labmap.cpu.clear();
 	conf.port = 30000;
 #if defined(__linux) || defined(__APPLE__) || defined(__BSD)
 	conf.path.confDir = std::string(getenv(ENVHOME)) + "/.config";

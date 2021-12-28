@@ -47,7 +47,7 @@ int vid_visible(Video* vid) {
 // colored
 void vid_dot_col(Video* vid, unsigned char col) {
 #if DRAWING_F
-	if (!vid_visible(vid)) return;
+	if (!vid->hvis || !vid->vvis) return;
 #endif
 	xcol = vid->pal[col];
 	*(vid->ray.ptr++) = xcol.r;
@@ -58,7 +58,7 @@ void vid_dot_col(Video* vid, unsigned char col) {
 // b/w
 void vid_dot_bw(Video* vid, unsigned char col) {
 #if DRAWING_F
-	if (!vid_visible(vid)) return;
+	if (!vid->hvis || !vid->vvis) return;
 #endif
 	xcol = vid->pal[col];
 	pcol = (xcol.b * 30 + xcol.r * 76 + xcol.g * 148) >> 8;
@@ -925,6 +925,11 @@ void vid_tick(Video* vid) {
 			vid->ray.yb = 0;
 			vid->idx = 0;
 		}
+		if (vid->ray.y == vid->lcut.y) {	// window visibility
+			vid->vvis = 1;
+		} else if (vid->ray.y == vid->rcut.y) {
+			vid->vvis = 0;
+		}
 		if (vid->ray.y == vid->send.y) {	// screen end V
 			vid->vbrd = 1;
 		}
@@ -933,6 +938,11 @@ void vid_tick(Video* vid) {
 			vid->ray.ys = -1;		// will be 0 at start of next line, but during HBlank is -1
 		}
 		if (vid->cbHBlank) vid->cbHBlank(vid);
+	}
+	if (vid->ray.x == vid->lcut.x) {		// window visibility
+		vid->hvis = 1;
+	} else if (vid->ray.x == vid->rcut.x) {
+		vid->hvis = 0;
 	}
 	if (vid->ray.x == vid->send.x) {		// screen end H
 		vid->hbrd = 1;

@@ -404,17 +404,15 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 	drow.isbrk = (drow.flag & MEM_BRK_ANY) ? 1 : 0;
 
 	// comments
-	if (conf.dbg.comments.contains(xadr.abs)) {
-		lab = conf.dbg.comments[xadr.abs];
-		if (!lab.isEmpty()) {
-			drow.islab = 1;
-			drow.iscom = 1;
-			drow.aname = lab;
-			drow.aname.prepend("; ");
-			list.append(drow);
-			drow.iscom = 0;
-			lab.clear();
-		}
+	lab = find_comment(xadr);
+	if (!lab.isEmpty()) {
+		drow.islab = 1;
+		drow.iscom = 1;
+		drow.aname = lab;
+		drow.aname.prepend("; ");
+		list.append(drow);
+		drow.iscom = 0;
+		lab.clear();
 	}
 	// add label line if any
 	if (conf.dbg.labels) {		// if show labels
@@ -562,8 +560,8 @@ int str_to_adr(Computer* comp, QString str) {
 		adr = str.toInt(&flag, 16);
 	} else if (str.startsWith("0x")) {			// 0xnnnn : hex adr
 		adr = str.toInt(&flag, 16);
-	} else if (conf.labels.contains(str)) {			// NAME : label name
-		adr = conf.labels[str].adr;
+	} else if (conf.prof.cur->labels.contains(str)) {	// NAME : label name
+		adr = conf.prof.cur->labels[str].adr;
 		flag = true;
 	} else {						// other : adr in base of comp hardware (16 | 8)
 		adr = str.toInt(&flag, comp->hw->base);
@@ -630,7 +628,7 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 			if (str.isEmpty()) {				// empty string = delete label/comment
 				if (dasm[row].islab) {
 					if (dasm[row].iscom) {		// comment
-						conf.dbg.comments.remove(xadr.abs);
+						del_comment(xadr);
 					} else {			// label
 						str = find_label(xadr);
 						if (!str.isEmpty()) {
@@ -643,9 +641,11 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 				str.remove(";");
 				str = str.trimmed();
 				if (str.isEmpty()) {
-					conf.dbg.comments.remove(xadr.abs);
+					del_comment(xadr);
+					//conf.dbg.comments.remove(xadr.abs);
 				} else {
-					conf.dbg.comments[xadr.abs] = str;
+					add_comment(xadr, str);
+					//conf.dbg.comments[xadr.abs] = str;
 				}
 				emit s_adrch(oadr, disasmAdr);
 			} else if (str.startsWith(".")) {		// .REG
@@ -709,8 +709,8 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 				}
 			} else if (str.startsWith("dw ", Qt::CaseInsensitive)) {	// word/addr
 				str = str.mid(3);
-				if (conf.labels.contains(str)) {				// check label
-					idx = conf.labels[str].adr;
+				if (conf.prof.cur->labels.contains(str)) {				// check label
+					idx = conf.prof.cur->labels[str].adr;
 					*ptr &= 0x0f;
 					*ptr |= DBG_VIEW_ADDR;
 					ptr++;

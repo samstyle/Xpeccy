@@ -93,6 +93,13 @@ void clear_labels();
 int loadLabels(const char*);
 int saveLabels(const char*);
 
+// comments
+
+void add_comment(xAdr, QString);
+void del_comment(xAdr);
+QString find_comment(xAdr);
+void clear_comments();
+
 // brk points
 
 #define DELBREAKS 0		// delete breakpoint on FRW=000
@@ -143,6 +150,16 @@ typedef struct {
 	std::string lastDir;
 	std::vector<xBrkPoint> brkList;
 	Computer* zx;
+	struct {
+		QMap<int, QString> ram;
+		QMap<int, QString> rom;
+	} comments;
+	struct {
+		QMap<int, QString> ram;
+		QMap<int, QString> rom;
+		QMap<int, QString> cpu;
+	} labmap;
+	QMap<QString,xAdr> labels;
 } xProfile;
 
 #define	DELP_ERR	-1
@@ -365,12 +382,14 @@ struct xConfig {
 	QList<xRomset> rsList;
 	QList<xLayout> layList;
 	QList<xBookmark> bookmarkList;
+/*
 	struct {
 		QMap<int,QString> ram;		// on mem cell: phys.adr,name
 		QMap<int,QString> rom;
 		QMap<int,QString> cpu;		// on cpu adr
 	} labmap;
 	QMap<QString, xAdr> labels;
+*/
 	QMap<QString, QColor> pal;
 	QString labpath;
 	unsigned short port;
@@ -447,7 +466,7 @@ struct xConfig {
 		int dbsize;
 		int dwsize;
 		int dmsize;
-		QMap<int, QString> comments;
+		// QMap<int, QString> comments;
 	} dbg;
 };
 

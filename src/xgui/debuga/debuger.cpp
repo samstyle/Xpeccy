@@ -1603,7 +1603,7 @@ void DebugWin::loadMap() {
 					while(!qb.atEnd()) {
 						memset(line, 0, 1024);
 						qb.readLine(line, 1024);
-						str = QString(line).trimmed();
+						str = QString::fromUtf8(line).trimmed();
 						lst = str.split(":", X_SkipEmptyParts);
 						if (lst.size() > 2) {
 							str = lst.at(0);
@@ -1626,20 +1626,29 @@ void DebugWin::loadMap() {
 					}
 					qb.close();
 				} else if (!memcmp(buf, "comments", 8)) {
-					conf.dbg.comments.clear();
+					clear_comments();
 					arr = file.read(len);
 					qb.setData(arr);
 					qb.open(QIODevice::ReadOnly);
 					while(!qb.atEnd()) {
 						memset(line, 0, 1024);
 						qb.readLine(line, 1024);
-						str = QString(line).trimmed();
+						str = QString::fromUtf8(line).trimmed();
 						lst = str.split(":", X_SkipEmptyParts);
-						if (lst.size() > 1) {
-							xadr.abs = lst.at(0).toInt(nullptr, 16);
-							str = lst.at(1);
+						if (lst.size() > 2) {
+							str = lst.at(0);
+							if (str == "RAM") {
+								xadr.type = MEM_RAM;
+							} else if (str == "ROM") {
+								xadr.type = MEM_ROM;
+							} else {
+								xadr.type = MEM_EXT;
+							}
+							xadr.abs = lst.at(1).toInt(nullptr, 16);
+							str = lst.at(2);
 							if (!str.isEmpty()) {
-								conf.dbg.comments[xadr.abs] = str;
+								add_comment(xadr, str);
+								// conf.dbg.comments[xadr.abs] = str;
 							}
 						}
 					}
@@ -1663,6 +1672,20 @@ void qfputi(QFile& f, int v) {
 	f.putChar((v >> 24) & 0xff);
 }
 
+void xputcomments(QByteArray& arr, QMap<int, QString>& map, QString prefix) {
+	int adr;
+	QString str;
+	foreach(adr, map.keys()) {
+		str = prefix;
+		str.append(":");
+		str.append(QString::number(adr, 16).rightJustified(8, '0'));
+		str.append(":");
+		str.append(map[adr]);
+		arr.append(str.toUtf8());
+		arr.append((char)0x0a);
+	}
+}
+
 void DebugWin::saveMap() {
 	//shitHappens("Not working yet");
 	QFile file;
@@ -1678,16 +1701,20 @@ void DebugWin::saveMap() {
 	if (!path.isEmpty()) {
 		file.setFileName(path);
 		if (file.open(QFile::WriteOnly)) {
+			// signature
 			file.write("XMEMMAP ", 8);
+			// ram map
 			file.write("ramflags", 8);
 			qfputi(file, comp->mem->ramSize);
 			file.write((char*)comp->brkRamMap, comp->mem->ramSize);
+			// rom map
 			file.write("romflags", 8);
 			qfputi(file, comp->mem->romSize);
 			file.write((char*)comp->brkRomMap, comp->mem->romSize);
+			// labels
 			file.write("labels  ", 8);
-			foreach(lab, conf.labels.keys()) {
-				xadr = conf.labels[lab];
+			foreach(lab, conf.prof.cur->labels.keys()) {
+				xadr = conf.prof.cur->labels[lab];
 				switch(xadr.type) {
 					case MEM_RAM: str = "RAM:"; adr = xadr.abs; break;
 					case MEM_ROM: str = "ROM:"; adr = xadr.abs; break;
@@ -1695,20 +1722,16 @@ void DebugWin::saveMap() {
 				}
 				str.append(QString::number(adr, 16).rightJustified(8, '0'));
 				str.append(":").append(lab);
-				arr.append(str.toLocal8Bit());
+				arr.append(str.toUtf8());
 				arr.append((char)0x0a);
 			}
 			qfputi(file, arr.size());
 			file.write(arr.data(), arr.size());
 			arr.clear();
+			// comments
 			file.write("comments", 8);
-			foreach(adr, conf.dbg.comments.keys()) {
-				lab = conf.dbg.comments[adr];
-				str = QString::number(adr, 16).rightJustified(8, '0');
-				str.append(":").append(lab);
-				arr.append(str.toLocal8Bit());
-				arr.append((char)0x0a);
-			}
+			xputcomments(arr, conf.prof.cur->comments.ram, "RAM");
+			xputcomments(arr, conf.prof.cur->comments.rom, "ROM");
 			qfputi(file, arr.size());
 			file.write(arr.data(), arr.size());
 		} else {
@@ -1728,8 +1751,8 @@ void DebugWin::dbgLLab() {
 void DebugWin::dbgSLab() {saveLabels(NULL);}
 
 void DebugWin::jumpToLabel(QString lab) {
-	if (conf.labels.contains(lab))
-		ui.dasmTable->setAdr(conf.labels[lab].adr, 1);
+	if (conf.prof.cur->labels.contains(lab))
+		ui.dasmTable->setAdr(conf.prof.cur->labels[lab].adr, 1);
 }
 
 // disasm table
