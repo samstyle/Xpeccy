@@ -85,7 +85,7 @@ HardWare hwTab[] = {
 		spc_init,spc_mem_map,NULL,NULL,spc_mrd,spc_mwr,spc_reset,spc_sync,spc_keyp,spc_keyr,spc_vol
 #if USEIBM
 	},{
-		HW_IBM_PC,HWG_PC,"IBM PC","IBM PC",16,MEM_1M,1.0,&ibmLay,
+		HW_IBM_PC,HWG_PC,"IBM PC","IBM PC",16,MEM_1M | MEM_2M,1.0,&ibmLay,
 		ibm_init,ibm_mem_map,ibm_iowr,ibm_iord,ibm_mrd,ibm_mwr,ibm_reset,ibm_sync,ibm_keyp,ibm_keyr,ibm_vol
 #endif
 	},{
@@ -127,7 +127,7 @@ void zx_cont_mem(Computer* comp) {
 }
 
 int stdMRd(Computer* comp, int adr, int m1) {
-	pg = &comp->mem->map[(adr >> 8) & 0xff];
+	pg = mem_get_page(comp->mem, adr);	// = &comp->mem->map[(adr >> 8) & 0xff];
 	if (m1 && (comp->dif->type == DIF_BDI)) {
 		if (comp->dos && (pg->type == MEM_RAM)) {
 			comp->dos = 0;
@@ -144,7 +144,7 @@ int stdMRd(Computer* comp, int adr, int m1) {
 }
 
 void stdMWr(Computer *comp, int adr, int val) {
-	pg = &comp->mem->map[(adr >> 8) & 0xff];
+	pg = mem_get_page(comp->mem, adr);	// = &comp->mem->map[(adr >> 8) & 0xff];
 	if (comp->contMem)
 		zx_cont_mem(comp);
 	memWr(comp->mem,adr,val);

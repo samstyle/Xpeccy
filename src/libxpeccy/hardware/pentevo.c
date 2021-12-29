@@ -25,7 +25,7 @@ void evoSetVideoMode(Computer* comp) {
 
 int evoMRd(Computer* comp, int adr, int m1) {
 	if (m1 && (comp->dif->type == DIF_BDI)) {
-		if (comp->dos && (comp->mem->map[(adr >> 8) & 0xff].type == MEM_RAM) && (comp->prt2 & 0x40)) {
+		if (comp->dos && (mem_get_page(comp->mem, adr)->type == MEM_RAM) && (comp->prt2 & 0x40)) {
 			comp->dos = 0;
 			if (comp->rom) comp->hw->mapMem(comp);
 		}

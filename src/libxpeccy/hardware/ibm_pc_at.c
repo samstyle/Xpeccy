@@ -3,17 +3,6 @@
 #include "hardware.h"
 #include "../video/vga.h"
 
-void ibm_mem_map(Computer* comp) {}	// no hw memory mapping
-
-void ibm_reset(Computer* comp) {
-	pit_reset(&comp->pit);
-	pic_reset(&comp->mpic);
-	pic_reset(&comp->spic);
-	comp->keyb->row = -1;
-
-	memcpy(comp->vid->ram + 0x20000, comp->vid->font, 0x2000);	// copy default font
-}
-
 // ibm pc/at
 // 00000..9FFFF : ram
 // A0000..BFFFF : video
@@ -23,38 +12,50 @@ void ibm_reset(Computer* comp) {
 // F0000..FFFFF : bios
 // 100000+	: ram
 
+// ram
+int ibm_ram_rd(int adr, void* p) {
+	Computer* comp = (Computer*)p;
+	return (adr < comp->mem->ramSize) ? comp->mem->ramData[adr] : 0xff;
+}
+
+void ibm_ram_wr(int adr, int val, void* p) {
+	Computer* comp = (Computer*)p;
+	if (adr < comp->mem->ramSize)
+		comp->mem->ramData[adr] = val;
+}
+
+// a0000..bffff = videomem
+int ibm_vga_rd(int adr, void* p) {
+	return vga_mrd(((Computer*)p)->vid, adr);
+}
+
+void ibm_vga_wr(int adr, int val, void* p) {
+	vga_mwr(((Computer*)p)->vid, adr, val);
+}
+
+// c0000..cffff adapter bios
+int ibm_dum_rd(int adr, void* p) {return -1;}
+void ibm_dum_wr(int adr, int val, void* p) {}
+
+// e0000..fffff bios
+int ibm_bios_rd(int adr, void* p) {
+	Computer* comp = (Computer*)p;
+	return comp->mem->romData[adr & comp->mem->romMask & 0x1ffff];
+}
+
+void ibm_mem_map(Computer* comp) {
+	memSetBank(comp->mem, 0x00, MEM_RAM, 0, MEM_64K, ibm_ram_rd, ibm_ram_wr, comp);		// all is ram (up to 16M), except:
+	memSetBank(comp->mem, 0x0a, MEM_EXT, 0, 0x200, ibm_vga_rd, ibm_vga_wr, comp);		// a0000..bffff video
+	memSetBank(comp->mem, 0x0c, MEM_EXT, 0, 0x100, ibm_dum_rd, ibm_dum_wr, comp);		// c0000..cffff adapter bios
+	memSetBank(comp->mem, 0x0e, MEM_ROM, 0, 0x200, ibm_bios_rd, ibm_dum_wr, comp);		// e0000..fffff bios
+}
+
 int ibm_mrd(Computer* comp, int adr, int m1) {
-	int res = -1;
-	if (adr < 0xa0000) {							// ram: 00000..9FFFF (640K)
-		res = (adr < comp->mem->ramSize) ? comp->mem->ramData[adr] : 0xff;
-	} else if (adr < 0xc0000) {						// video mem: A0000..BFFFF (128K)
-		res = vga_mrd(comp->vid, adr);
-	} else if (adr < 0xd0000) {						// ext bios (video?)
-		// ext.bios
-	} else if (adr < 0xe0000) {						// ram pages ?
-		res = (adr < comp->mem->ramSize) ? comp->mem->ramData[adr] : 0xff;
-	} else if (adr < 0x100000) {						// bios: E0000..100000
-		res = comp->mem->romData[adr & comp->mem->romMask & 0xffff];
-	} else {								// ram 640K+
-		res = (adr < comp->mem->ramSize) ? comp->mem->ramData[adr] : 0xff;
-	}
-	return res;
+	return memRd(comp->mem, adr);
 }
 
 void ibm_mwr(Computer* comp, int adr, int val) {
-	if (adr < 0xa0000) {
-		if (adr < comp->mem->ramSize) comp->mem->ramData[adr] = val & 0xff;
-	} else if (adr < 0xc0000) {
-		vga_mwr(comp->vid, adr, val);
-	} else if (adr < 0xd0000) {
-		// ext.bios
-	} else if (adr < 0xe0000) {
-		if (adr < comp->mem->ramSize) comp->mem->ramData[adr] = val & 0xff;
-	} else if (adr < 0x100000) {
-		// bios
-	} else {
-		if (adr < comp->mem->ramSize) comp->mem->ramData[adr] = val & 0xff;
-	}
+	memWr(comp->mem, adr, val);
 }
 
 // in/out
@@ -205,6 +206,20 @@ void ibm_out80(Computer* comp, int adr, int val) {
 	printf("%4X:%.4X\tPOST %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,val & 0xff);
 }
 
+// hdc (hdd controllers)
+// 170..177	secondary hdc
+// 1f0..1f7	primary hdc
+
+int ibm_in1fx(Computer* comp, int adr) {
+	return ataRd(comp->ide->curDev, adr & 7);
+}
+
+void ibm_out1fx(Computer* comp, int adr, int val) {
+	if ((adr & 7) == 6)
+		comp->ide->curDev = (val & 0x10) ? comp->ide->slave : comp->ide->master;
+	ataWr(comp->ide->curDev, adr & 7, val);
+}
+
 // mda/cga/ega/vga
 
 // 3d0..3d7 = 3b0..3b7 (b0:selects regnum/regval)
@@ -289,6 +304,8 @@ static xPort ibmPortMap[] = {
 	{0x03ff,0x0070,2,2,2,NULL,	ibm_out70},	// cmos
 	{0x03ff,0x0071,2,2,2,ibm_in71,	ibm_out71},
 	{0x03ff,0x0080,2,2,2,NULL,	ibm_out80},	// post code
+//	{0x03f8,0x0170,2,2,2,ibm_in17x,	ibm_out17x},	// secondary ide
+	{0x03f8,0x01f0,2,2,2,ibm_in1fx,	ibm_out1fx},	// primary ide
 	{0x03f9,0x03b4,2,2,2,NULL,	ibm_out3b4},	// vga registers
 	{0x03f9,0x03d4,2,2,2,NULL,	ibm_out3b4},	// 3d0..3d7 = 3b0..3b7
 	{0x03f9,0x03b5,2,2,2,NULL,	ibm_out3b5},
@@ -314,9 +331,20 @@ void ibm_iowr(Computer* comp, int adr, int val) {
 	hwOut(ibmPortMap, comp, adr, val, 0);
 }
 
+void ibm_reset(Computer* comp) {
+	pit_reset(&comp->pit);
+	pic_reset(&comp->mpic);
+	pic_reset(&comp->spic);
+	comp->keyb->row = -1;
+
+	memcpy(comp->vid->ram + 0x20000, comp->vid->font, 0x2000);	// copy default font
+	ibm_mem_map(comp);
+}
+
 void ibm_init(Computer* comp) {
-	comp->keyb->mem[0] = 0x00;	// kbd config
+	comp->keyb->mem[0] = 0x00;		// kbd config
 	comp->vid->nsPerDot = 160;
+	mem_set_map_page(comp->mem, MEM_64K);	// 256x64K = 16M
 }
 
 void ibm_sync(Computer* comp, int ns) {

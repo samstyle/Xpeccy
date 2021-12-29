@@ -27,8 +27,8 @@ int xMemFiller::mrd(int adr) {
 }
 
 void xMemFiller::mwr(int adr, int val) {
-	MemPage* pg = &mem->map[(adr >> 8) & 0xff];
-	int fadr = (pg->num << 8) | (adr & 0xff);
+	MemPage* pg = mem_get_page(mem, adr);	// = &mem->map[(adr >> 8) & 0xff];
+	int fadr = mem_get_phys_adr(mem, adr);	// = pg->num << 8) | (adr & 0xff);
 	switch(pg->type) {
 		case MEM_RAM:
 			mem->ramData[fadr & mem->ramMask] = val & 0xff;

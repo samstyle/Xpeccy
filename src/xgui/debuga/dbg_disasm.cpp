@@ -147,8 +147,8 @@ int dasmrd(int adr, void* ptr) {
 	} else {
 		switch (mode) {
 			case XVIEW_CPU:
-				pg = &comp->mem->map[adr >> 8];
-				fadr = (pg->num << 8) | (adr & 0xff);
+				pg = mem_get_page(comp->mem, adr);	// = &comp->mem->map[adr >> 8];
+				fadr = mem_get_phys_adr(comp->mem, adr);
 				switch (pg->type) {
 					case MEM_ROM: res = comp->mem->romData[fadr & comp->mem->romMask]; break;
 					case MEM_RAM: res = comp->mem->ramData[fadr & comp->mem->ramMask]; break;
@@ -173,8 +173,8 @@ void dasmwr(Computer* comp, int adr, int bt) {
 	MemPage* pg;
 	switch(mode) {
 		case XVIEW_CPU:
-			pg = &comp->mem->map[(adr >> 8) & 0xffff];
-			fadr = (pg->num << 8) | (adr & 0xff);
+			pg = mem_get_page(comp->mem, adr);		// = &comp->mem->map[(adr >> 8) & 0xff];
+			fadr = mem_get_phys_adr(comp->mem, adr);	// pg->num << 8) | (adr & 0xff);
 			switch (pg->type) {
 				// no writings to slot
 				case MEM_ROM:
@@ -204,7 +204,7 @@ void placeLabel(Computer* comp, dasmData& drow) {
 	xMnem mn;
 	xAdr xadr;
 	while (work && (shift < 8)) {
-		xadr = memGetXAdr(comp->mem, drow.oadr - shift);
+		xadr = mem_get_xadr(comp->mem, drow.oadr - shift);
 		// lab = findLabel(drow.oadr - shift, -1, -1);
 		lab = find_label(xadr);
 		if (lab.isEmpty()) {
@@ -236,7 +236,7 @@ int dasmByte(Computer* comp, int adr, dasmData& drow) {
 	drow.command = QString("DB #%0").arg(gethexbyte(dasmrd(adr & 0xffff, comp)));
 	adr++;
 	unsigned char fl = getBrk(comp, adr);
-	xAdr xadr = memGetXAdr(comp->mem, adr);
+	xAdr xadr = mem_get_xadr(comp->mem, adr);
 	while ((len < conf.dbg.dbsize) && (fl == DBG_VIEW_BYTE) /*&& findLabel(adr,-1,-1).isEmpty()*/ && find_label(xadr).isEmpty()) {
 		drow.command.append(QString(",#%0").arg(gethexbyte(dasmrd(adr & 0xffff, comp))));
 		len++;
@@ -268,7 +268,7 @@ int dasmAddr(Computer* comp, unsigned short adr, dasmData& drow) {
 	int len = 2;
 	int word = dasmrd(adr, comp);
 	word |= (dasmrd(adr + 1, comp) << 8);
-	xAdr xadr = memGetXAdr(comp->mem, adr);
+	xAdr xadr = mem_get_xadr(comp->mem, adr);
 	//QString lab = findLabel(word & 0xffff, -1, -1);
 	QString lab = find_label(xadr);
 	if (lab.isEmpty()) {
@@ -365,7 +365,7 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 //	int wid;
 	// 0:adr
 	QString lab;
-	xAdr xadr = memGetXAdr(comp->mem, comp->cpu->pc);
+	xAdr xadr = mem_get_xadr(comp->mem, comp->cpu->pc);
 	int abs = xadr.abs;
 	int pct = xadr.type;
 	switch (mode) {
@@ -394,7 +394,7 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 					xadr.abs += comp->cpu->cs.base;
 				xadr.bank = xadr.abs >> 14;
 			} else {
-				xadr = memGetXAdr(comp->mem, adr);
+				xadr = mem_get_xadr(comp->mem, adr);
 			}
 			drow.flag = getBrk(comp, drow.adr);
 			drow.ispc = (adr == comp->cpu->pc) ? 1 : 0;
@@ -454,7 +454,7 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 	while (clen > 1) {
 		oadr++;
 		clen--;
-		xadr = memGetXAdr(comp->mem, oadr);
+		xadr = mem_get_xadr(comp->mem, oadr);
 		lab = find_label(xadr);
 		//lab = findLabel(oadr, -1, -1);
 		if (!lab.isEmpty()) {
@@ -620,7 +620,7 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 			xadr.abs += (*cptr)->cpu->cs.base;
 		xadr.bank = xadr.abs >> 14;
 	} else {
-		 xadr = memGetXAdr((*cptr)->mem, adr);
+		 xadr = mem_get_xadr((*cptr)->mem, adr);
 	}
 	switch(col) {
 		case 0:
@@ -879,6 +879,8 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 	xAdr xadr;
 	int key = shortcut_check(SCG_DISASM, QKeySequence(ev->key() | ev->modifiers()));
 	if (key < 0)
+		key = shortcut_check(SCG_DISASM, QKeySequence(ev->key()));
+	if (key < 0)
 		key = ev->key();
 	switch (key) {
 		case Qt::Key_Up:
@@ -947,7 +949,7 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 					break;
 				default:
 					bpr = BRK_MEMCELL;
-					xadr = memGetXAdr(conf.prof.cur->zx->mem, adr & 0xffff);
+					xadr = mem_get_xadr(conf.prof.cur->zx->mem, adr & 0xffff);
 					switch(xadr.type) {
 						case MEM_RAM: bpt = MEM_BRK_RAM; break;
 						case MEM_ROM: bpt = MEM_BRK_ROM; break;
@@ -956,6 +958,7 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 					adr = xadr.abs;
 					break;
 			}
+			// modifiers doesn't work with new hotkeys (hotkey not detected)
 			if (ev->modifiers() & Qt::AltModifier) {
 				bpt |= MEM_BRK_RD;
 			} else if (ev->modifiers() & Qt::ControlModifier) {

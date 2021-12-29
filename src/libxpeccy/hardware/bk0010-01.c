@@ -215,7 +215,7 @@ int bk_ram_rd(int adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	int res;
 	adr &= ~1;
-	int fadr = (comp->mem->map[(adr >> 8) & 0xff].num << 8) | (adr & 0xff);
+	int fadr = mem_get_phys_adr(comp->mem, adr);	// = (comp->mem->map[(adr >> 8) & 0xff].num << 8) | (adr & 0xff);
 	comp->cpu->t += 3;
 	res = comp->mem->ramData[fadr & comp->mem->ramMask] & 0xff;
 	fadr++;
@@ -226,7 +226,7 @@ int bk_ram_rd(int adr, void* ptr) {
 void bk_ram_wr(int adr, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	comp->cpu->t += 2;
-	int fadr = (comp->mem->map[(adr >> 8) & 0xff].num << 8) | (adr & 0xff);
+	int fadr = mem_get_phys_adr(comp->mem, adr);	// = comp->mem->map[(adr >> 8) & 0xff].num << 8) | (adr & 0xff);
 	if (comp->cpu->nod & 1)
 		comp->mem->ramData[(fadr & ~1) & comp->mem->ramMask] = val & 0xff;
 	if (comp->cpu->nod & 2)
@@ -237,7 +237,7 @@ int bk_rom_rd(int adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	int res;
 	adr &= ~1;
-	int fadr = (comp->mem->map[(adr >> 8) & 0xff].num << 8) | (adr & 0xff);
+	int fadr = mem_get_phys_adr(comp->mem, adr);	// = comp->mem->map[(adr >> 8) & 0xff].num << 8) | (adr & 0xff);
 	comp->cpu->t += 2;
 	res = comp->mem->romData[fadr & comp->mem->romMask] & 0xff;
 	fadr++;

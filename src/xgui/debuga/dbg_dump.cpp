@@ -50,8 +50,8 @@ int xDumpModel::mrd(int adr) const {
 	} else {
 		switch(mode) {
 			case XVIEW_CPU:
-				pg = &comp->mem->map[(adr >> 8) & 0xff];
-				fadr = (pg->num << 8) | (adr & 0xff);
+				pg = mem_get_page(comp->mem, adr);	// = &comp->mem->map[(adr >> 8) & 0xff];
+				fadr = mem_get_phys_adr(comp->mem, adr);	// = pg->num << 8) | (adr & 0xff);
 				switch (pg->type) {
 					case MEM_ROM: res = comp->mem->romData[fadr & comp->mem->romMask]; break;
 					case MEM_RAM: res = comp->mem->ramData[fadr & comp->mem->ramMask]; break;
@@ -86,8 +86,8 @@ void xDumpModel::mwr(int adr, unsigned char bt) {
 	} else {
 		switch(mode) {
 			case XVIEW_CPU:
-				pg = &comp->mem->map[(adr >> 8) & 0xff];
-				fadr = (pg->num << 8) | (adr & 0xff);
+				pg = mem_get_page(comp->mem, adr);	// = &comp->mem->map[(adr >> 8) & 0xff];
+				fadr = mem_get_phys_adr(comp->mem, adr);	// = pg->num << 8) | (adr & 0xff);
 				switch (pg->type) {
 					case MEM_ROM:
 						if (conf.dbg.romwr)

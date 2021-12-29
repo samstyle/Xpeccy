@@ -152,6 +152,9 @@ void ideCloseFiles(IDE*);
 void ideSetImage(IDE*,int,const char*);
 ATAPassport ideGetPassport(IDE*,int);
 
+unsigned short ataRd(ATADev*, int);
+void ataWr(ATADev*, int, unsigned short);
+
 #ifdef __cplusplus
 }
 #endif

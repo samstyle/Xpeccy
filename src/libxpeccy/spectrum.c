@@ -673,7 +673,7 @@ void cmsWr(Computer* comp, int val) {
 static unsigned char dumBrk = 0x00;
 
 unsigned char* getBrkPtr(Computer* comp, unsigned short madr) {
-	xAdr xadr = memGetXAdr(comp->mem, madr);
+	xAdr xadr = mem_get_xadr(comp->mem, madr);
 	unsigned char* ptr = NULL;
 	switch (xadr.type) {
 		case MEM_RAM: ptr = comp->brkRamMap + (xadr.abs & 0x3fffff); break;

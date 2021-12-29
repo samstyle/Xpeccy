@@ -43,21 +43,24 @@ typedef int(*extmrd)(int, void*);
 typedef void(*extmwr)(int, int, void*);
 
 typedef struct {
-	int type;			// type of page data
-	int num;			// 16K page number
+	int type;			// type of page (ram/rom/slt/io/ext...)
+	int num;			// page number
 	void* data;			// ptr for rd/wr func
 	extmrd rd;			// external rd (for type MEM_EXT)
 	extmwr wr;			// external wr (for type MEM_EXT)
 } MemPage;
 
 typedef struct {
-	MemPage map[256];			// 4 x 16K | 256 x 256
+	MemPage map[256];			// 256 x 256 | 256 x 64K
 	unsigned char ramData[0x400000];	// 4M
 	unsigned char romData[0x80000];		// 512K
 	int ramSize;
 	int ramMask;
 	int romSize;
 	int romMask;
+	int pgsize;	// size of page in bytes
+	int pgmask;	// number of LSBits in address = page offset (FF or FFFF)
+	int pgshift;	// = log2(page size), 8 for 256-pages, 16 for 64K-pages
 	char* snapath;
 } Memory;
 
@@ -70,13 +73,15 @@ void memWr(Memory*, int, int);
 void memSetSize(Memory*, int, int);
 void memSetBank(Memory* mem, int page, int type, int bank, int siz, extmrd rd, extmwr wr, void* data);
 
-// void memGetData(Memory*,int,int,int,char*);
 void memPutData(Memory*,int,int,int,char*);
 
-xAdr memGetXAdr(Memory*, unsigned short);
+xAdr mem_get_xadr(Memory*, int);
 int memFindAdr(Memory*, int, int);
 
 void mem_set_path(Memory*, const char*);
+void mem_set_map_page(Memory*, int);
+int mem_get_phys_adr(Memory*, int);
+MemPage* mem_get_page(Memory*, int);
 
 #ifdef __cplusplus
 }

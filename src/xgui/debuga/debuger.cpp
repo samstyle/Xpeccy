@@ -1705,8 +1705,8 @@ void DebugWin::saveMap() {
 			file.write("XMEMMAP ", 8);
 			// ram map
 			file.write("ramflags", 8);
-			qfputi(file, comp->mem->ramSize);
-			file.write((char*)comp->brkRamMap, comp->mem->ramSize);
+			qfputi(file, comp->mem->ramMask + 1);				// to aviod zx48k with 64K ram and 128K mask
+			file.write((char*)comp->brkRamMap, comp->mem->ramMask + 1);
 			// rom map
 			file.write("romflags", 8);
 			qfputi(file, comp->mem->romSize);
@@ -1759,13 +1759,12 @@ void DebugWin::jumpToLabel(QString lab) {
 
 int rdbyte(int adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	int res;
+	int res = -1;
 	if (comp->hw->id == HW_IBM_PC) {
 		res = comp->hw->mrd(comp, adr, 0);
 	} else {
-		MemPage* pg = &comp->mem->map[(adr >> 8) & 0xff];
-		res = 0xff;
-		int fadr = (pg->num << 8) | (adr & 0xff);
+		MemPage* pg = mem_get_page(comp->mem, adr);	// = &comp->mem->map[(adr >> 8) & 0xff];
+		int fadr = mem_get_phys_adr(comp->mem, adr);	// = pg->num << 8) | (adr & 0xff);
 		switch (pg->type) {
 			case MEM_RAM: res = comp->mem->ramData[fadr & comp->mem->ramMask]; break;
 			case MEM_ROM: res = comp->mem->romData[fadr & comp->mem->romMask]; break;
@@ -1804,9 +1803,15 @@ void DebugWin::saveDasm() {
 				if (drow.isequ) {
 					strm << drow.aname << ":";
 				} else if (drow.islab) {
-					strm << drow.aname << ":\n";
+					if (drow.iscom) {
+						strm << drow.aname;
+					} else {
+						strm << drow.aname << ":";
+					}
+				} else {
+					strm << "\t" << drow.command;
 				}
-				strm << "\t" << drow.command << "\n";
+				strm << "\n";
 			}
 		}
 		file.close();
@@ -2111,8 +2116,8 @@ void DebugWin::doMemView() {
 // open dump
 
 void dbg_mem_wr(Computer* comp, int adr, unsigned char bt) {
-	MemPage* pg = &comp->mem->map[(adr >> 8) & 0xff];
-	int fadr = (pg->num << 8) | (adr & 0xff);
+	MemPage* pg = mem_get_page(comp->mem, adr);	// = &comp->mem->map[(adr >> 8) & 0xff];
+	int fadr = mem_get_phys_adr(comp->mem, adr);	// = pg->num << 8) | (adr & 0xff);
 	switch (pg->type) {
 		case MEM_RAM:
 			comp->mem->ramData[fadr & comp->mem->ramMask] = bt;

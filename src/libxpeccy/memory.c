@@ -12,6 +12,7 @@ Memory* memCreate() {
 	memSetBank(mem, 0x40, MEM_RAM, 5, MEM_16K, NULL, NULL, NULL);
 	memSetBank(mem, 0x80, MEM_RAM, 2, MEM_16K, NULL, NULL, NULL);
 	memSetBank(mem, 0xc0, MEM_RAM, 0, MEM_16K, NULL, NULL, NULL);
+	mem_set_map_page(mem, MEM_256);
 	mem->snapath = NULL;
 	return mem;
 }
@@ -40,6 +41,18 @@ int toLimits(int src, int min, int max) {
 	return src;
 }
 
+void mem_set_map_page(Memory* mem, int sz) {
+	sz = toLimits(sz, MEM_256, MEM_64K);
+	sz = getNearPower(sz);
+	mem->pgsize = sz;
+	mem->pgshift = 8;
+	mem->pgmask = sz - 1;
+	while (sz > MEM_256) {
+		mem->pgshift++;
+		sz >>= 1;
+	}
+}
+
 void memSetSize(Memory* mem, int ramSz, int romSz) {
 //	printf("setMemSize %i %i\n",ramSz,romSz);
 	if (ramSz > 0) {
@@ -58,18 +71,19 @@ void memSetSize(Memory* mem, int ramSz, int romSz) {
 
 int memRd(Memory* mem, int adr) {
 	int res = -1;
-	MemPage* ptr = &mem->map[(adr >> 8) & 0xff];
+	MemPage* ptr = &mem->map[(adr >> mem->pgshift) & 0xff];
 	if (ptr->rd)
 		res = ptr->rd(adr, ptr->data);
 	return res;
 }
 
 void memWr(Memory* mem, int adr, int val) {
-	MemPage* ptr = &mem->map[(adr >> 8) & 0xff];
+	MemPage* ptr = &mem->map[(adr >> mem->pgshift) & 0xff];
 	if (ptr->wr)
 		ptr->wr(adr, val, ptr->data);
 }
 
+// TODO: remove memstdrd/wr, let every hw set standard callbacks by itself
 int memStdRd(int adr, void* data) {
 	unsigned char* ptr = (unsigned char*)data;
 	return ptr[adr & 0xff];
@@ -106,9 +120,9 @@ void memSetBank(Memory* mem, int page, int type, int bank, int siz, extmrd rd, e
 		if (data) {
 			pg.data = data;
 		} else if (type == MEM_RAM) {
-			pg.data = mem->ramData + ((pg.num << 8) & mem->ramMask);
+			pg.data = mem->ramData + ((pg.num << mem->pgshift) & mem->ramMask);
 		} else if (type == MEM_ROM) {
-			pg.data = mem->romData + ((pg.num << 8) & mem->romMask);
+			pg.data = mem->romData + ((pg.num << mem->pgshift) & mem->romMask);
 		} else {
 			pg.data = NULL;
 		}
@@ -119,16 +133,9 @@ void memSetBank(Memory* mem, int page, int type, int bank, int siz, extmrd rd, e
 	}
 }
 
-// get page data
-/*
-void memGetData(Memory* mem, int type, int sz, int page, char* dst) {
-	if (type == MEM_RAM) {
-		memcpy(dst, mem->ramData + ((page * sz) & mem->ramMask), sz);
-	} else if (type == MEM_ROM) {
-		memcpy(dst, mem->romData + ((page * sz) & mem->romMask), sz);
-	}
+MemPage* mem_get_page(Memory* mem, int adr) {
+	return &mem->map[(adr >> mem->pgshift) & 0xff];
 }
-*/
 
 // set page data
 void memPutData(Memory* mem, int type, int page, int sz, char* src) {
@@ -140,22 +147,27 @@ void memPutData(Memory* mem, int type, int page, int sz, char* src) {
 }
 
 // get cell full address
-xAdr memGetXAdr(Memory* mem, unsigned short adr) {
+xAdr mem_get_xadr(Memory* mem, int adr) {
 	xAdr xadr;
-	MemPage* ptr = &mem->map[(adr >> 8) & 0xff];
+	MemPage* ptr = mem_get_page(mem, adr);	// = &mem->map[(adr >> mem->pgshift) & 0xff];
 	xadr.type = ptr->type;				// page type
-	xadr.bank = ptr->num;				// 256 page number
+	xadr.bank = ptr->num;				// 256(64K) page number
 	xadr.adr = adr;					// cpu adr
-	xadr.abs = (ptr->num << 8) | (adr & 0xff);	// absolute addr
+	xadr.abs = (ptr->num << mem->pgshift) | (adr & mem->pgmask);	// absolute addr
 	return xadr;
+}
+
+int mem_get_phys_adr(Memory* mem, int adr) {
+	MemPage* pg = mem_get_page(mem, adr);	// = &mem->map[(adr >> mem->pgshift) & 0xff];
+	return (pg->num << mem->pgshift) | (adr & mem->pgmask);
 }
 
 int memFindAdr(Memory* mem, int type, int fadr) {
 	int i;
 	int adr = -1;
 	for (i = 0; i < 256; i++) {
-		if ((mem->map[i].type == type) && (mem->map[i].num == (fadr >> 8))) {
-			adr = (i << 8) | (fadr & 0xff);
+		if ((mem->map[i].type == type) && (mem->map[i].num == (fadr >> mem->pgshift))) {
+			adr = (i << mem->pgshift) | (fadr & mem->pgmask);
 			break;
 		}
 	}

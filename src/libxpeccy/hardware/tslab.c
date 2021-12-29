@@ -276,8 +276,8 @@ void tsOut11AF(Computer* comp, int port, int val) {memSetBank(comp->mem,0x40,MEM
 void tsOut12AF(Computer* comp, int port, int val) {memSetBank(comp->mem,0x80,MEM_RAM,val, MEM_16K,NULL,NULL,NULL);}
 void tsOut13AF(Computer* comp, int port, int val) {memSetBank(comp->mem,0xc0,MEM_RAM,val, MEM_16K,NULL,NULL,NULL);}
 
-int tsIn12AF(Computer* comp, int port) {return comp->mem->map[2].num;}
-int tsIn13AF(Computer* comp, int port) {return comp->mem->map[3].num;}
+int tsIn12AF(Computer* comp, int port) {return comp->mem->map[0x80].num >> 6;}
+int tsIn13AF(Computer* comp, int port) {return comp->mem->map[0xc0].num >> 6;}
 
 void tsOut15AF(Computer* comp, int port, int val) {
 	comp->tsconf.flag = val & 0x10;		// FM_EN
