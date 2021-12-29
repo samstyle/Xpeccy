@@ -1831,7 +1831,7 @@ unsigned short i286_rcl16(CPU* cpu, unsigned short p) {
 // rcr: CF->b7..b0->CF
 unsigned char i286_rcr8(CPU* cpu, unsigned char p) {
 	cpu->tmp = (cpu->f & I286_FC);
-	cpu->f &= (I286_FC | I286_FO);
+	cpu->f &= ~(I286_FC | I286_FO);
 	if (p & 1) cpu->f |= I286_FC;
 	p >>= 1;
 	if (cpu->tmp) p |= 0x80;
@@ -1841,7 +1841,7 @@ unsigned char i286_rcr8(CPU* cpu, unsigned char p) {
 
 unsigned short i286_rcr16(CPU* cpu, unsigned short p) {
 	cpu->tmp = (cpu->f & I286_FC);
-	cpu->f &= (I286_FC | I286_FO);
+	cpu->f &= ~(I286_FC | I286_FO);
 	if (p & 1) cpu->f |= I286_FC;
 	p >>= 1;
 	if (cpu->tmp) p |= 0x8000;

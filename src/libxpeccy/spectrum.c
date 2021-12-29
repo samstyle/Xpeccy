@@ -27,8 +27,12 @@ int memrd(int adr, int m1, void* ptr) {
 		comp->rzx.frm.fetches--;
 	}
 #endif
-	// zxMemRW(comp,adr);
-	unsigned char* fptr = getBrkPtr(comp, adr & 0xffff);
+	unsigned char* fptr;
+	if (comp->hw->id == HW_IBM_PC) {
+		fptr = comp->brkRamMap + (adr & 0x3fffff);
+	} else {
+		fptr = getBrkPtr(comp, adr & 0xffff);
+	}
 	unsigned char flag = *fptr;
 	if (comp->maping) {
 		if ((comp->cpu->pc-1) == adr) {		// cuz pc is already incremented
@@ -40,16 +44,21 @@ int memrd(int adr, int m1, void* ptr) {
 			*fptr = flag;
 		}
 	}
-	if ((flag | comp->brkAdrMap[adr]) & MEM_BRK_RD) {
+	if (comp->hw->id != HW_IBM_PC)
+		flag |= comp->brkAdrMap[adr & 0xffff];
+	if (flag & MEM_BRK_RD)
 		comp->brk = 1;
-	}
 	return comp->hw->mrd(comp,adr,m1);
 }
 
 void memwr(int adr, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
-	//zxMemRW(comp,adr);
-	unsigned char* fptr = getBrkPtr(comp, adr & 0xffff);
+	unsigned char* fptr;
+	if (comp->hw->id == HW_IBM_PC) {
+		fptr = comp->brkRamMap + (adr & 0x3fffff);
+	} else {
+		fptr = getBrkPtr(comp, adr & 0xffff);
+	}
 	unsigned char flag = *fptr;
 	if (comp->maping) {
 		if (!(flag & 0xf0)) {
@@ -57,9 +66,10 @@ void memwr(int adr, int val, void* ptr) {
 			*fptr = flag;
 		}
 	}
-	if ((flag | comp->brkAdrMap[adr]) & MEM_BRK_WR) {
+	if (comp->hw->id != HW_IBM_PC)
+		flag |= comp->brkAdrMap[adr & 0xffff];
+	if (flag & MEM_BRK_WR)
 		comp->brk = 1;
-	}
 	comp->hw->mwr(comp,adr,val);
 }
 

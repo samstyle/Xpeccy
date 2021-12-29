@@ -26,36 +26,34 @@ void ibm_reset(Computer* comp) {
 int ibm_mrd(Computer* comp, int adr, int m1) {
 	int res = -1;
 	if (adr < 0xa0000) {							// ram: 00000..9FFFF (640K)
-		res = comp->mem->ramData[adr & comp->mem->ramMask];
+		res = (adr < comp->mem->ramSize) ? comp->mem->ramData[adr] : 0xff;
 	} else if (adr < 0xc0000) {						// video mem: A0000..BFFFF (128K)
 		res = vga_mrd(comp->vid, adr);
-		// res = comp->vid->ram[adr & (MEM_128K - 1)];
 	} else if (adr < 0xd0000) {						// ext bios (video?)
 		// ext.bios
 	} else if (adr < 0xe0000) {						// ram pages ?
-		res = comp->mem->ramData[adr & comp->mem->ramMask];
+		res = (adr < comp->mem->ramSize) ? comp->mem->ramData[adr] : 0xff;
 	} else if (adr < 0x100000) {						// bios: E0000..100000
 		res = comp->mem->romData[adr & comp->mem->romMask & 0xffff];
 	} else {								// ram 640K+
-		res = comp->mem->ramData[adr & comp->mem->ramMask];
+		res = (adr < comp->mem->ramSize) ? comp->mem->ramData[adr] : 0xff;
 	}
 	return res;
 }
 
 void ibm_mwr(Computer* comp, int adr, int val) {
 	if (adr < 0xa0000) {
-		comp->mem->ramData[adr & comp->mem->ramMask] = val & 0xff;
+		if (adr < comp->mem->ramSize) comp->mem->ramData[adr] = val & 0xff;
 	} else if (adr < 0xc0000) {
 		vga_mwr(comp->vid, adr, val);
-		//comp->vid->ram[adr & (MEM_128K - 1)] = val & 0xff;
 	} else if (adr < 0xd0000) {
 		// ext.bios
 	} else if (adr < 0xe0000) {
-		comp->mem->ramData[adr & comp->mem->ramMask] = val & 0xff;
+		if (adr < comp->mem->ramSize) comp->mem->ramData[adr] = val & 0xff;
 	} else if (adr < 0x100000) {
 		// bios
 	} else {
-		comp->mem->ramData[adr & comp->mem->ramMask] = val & 0xff;
+		if (adr < comp->mem->ramSize) comp->mem->ramData[adr] = val & 0xff;
 	}
 }
 
@@ -318,6 +316,7 @@ void ibm_iowr(Computer* comp, int adr, int val) {
 
 void ibm_init(Computer* comp) {
 	comp->keyb->mem[0] = 0x00;	// kbd config
+	comp->vid->nsPerDot = 160;
 }
 
 void ibm_sync(Computer* comp, int ns) {
