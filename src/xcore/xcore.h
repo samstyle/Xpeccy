@@ -366,6 +366,11 @@ typedef struct {
 
 void mapJoystick(Computer*, int, int, int);
 
+// xmap
+
+void load_xmap(QString);
+void save_xmap(QString);
+
 // config
 
 #define	YESNO(cnd) ((cnd) ? "yes" : "no")
@@ -382,14 +387,6 @@ struct xConfig {
 	QList<xRomset> rsList;
 	QList<xLayout> layList;
 	QList<xBookmark> bookmarkList;
-/*
-	struct {
-		QMap<int,QString> ram;		// on mem cell: phys.adr,name
-		QMap<int,QString> rom;
-		QMap<int,QString> cpu;		// on cpu adr
-	} labmap;
-	QMap<QString, xAdr> labels;
-*/
 	QMap<QString, QColor> pal;
 	QString labpath;
 	unsigned short port;
@@ -448,7 +445,6 @@ struct xConfig {
 		unsigned halt:1;
 	} led;
 	struct {
-		// char lastDir[PATH_MAX];
 		std::string confDir;
 		std::string confFile;
 		std::string romDir;
@@ -466,7 +462,6 @@ struct xConfig {
 		int dbsize;
 		int dwsize;
 		int dmsize;
-		// QMap<int, QString> comments;
 	} dbg;
 };
 

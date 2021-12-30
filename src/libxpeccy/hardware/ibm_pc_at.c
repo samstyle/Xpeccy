@@ -284,7 +284,12 @@ int ibm_in3ba(Computer* comp, int adr) {
 	return vga_rd(comp->vid, VGA_STAT1);
 }
 
+// fdc (i8272a)
+
 // undef
+
+int ibm_dumird(Computer* comp, int adr) {return -1;}
+void ibm_dumiwr(Computer* comp, int adr, int val) {}
 
 int ibm_inDBG(Computer* comp, int adr) {
 	printf("ibm %.4X: in %.4X\n",comp->cpu->oldpc, adr & 0xffff);
@@ -304,7 +309,7 @@ static xPort ibmPortMap[] = {
 	{0x03ff,0x0070,2,2,2,NULL,	ibm_out70},	// cmos
 	{0x03ff,0x0071,2,2,2,ibm_in71,	ibm_out71},
 	{0x03ff,0x0080,2,2,2,NULL,	ibm_out80},	// post code
-//	{0x03f8,0x0170,2,2,2,ibm_in17x,	ibm_out17x},	// secondary ide
+	{0x03f8,0x0170,2,2,2,ibm_dumird,ibm_dumiwr},	// secondary ide
 	{0x03f8,0x01f0,2,2,2,ibm_in1fx,	ibm_out1fx},	// primary ide
 	{0x03f9,0x03b4,2,2,2,NULL,	ibm_out3b4},	// vga registers
 	{0x03f9,0x03d4,2,2,2,NULL,	ibm_out3b4},	// 3d0..3d7 = 3b0..3b7
@@ -316,6 +321,8 @@ static xPort ibmPortMap[] = {
 	{0x03f9,0x03c5,2,2,2,NULL,	ibm_out3c5},
 	{0x03ff,0x03ba,2,2,2,ibm_in3ba,	NULL},		// status reg 1 (3ba/3da)
 	{0x03ff,0x03da,2,2,2,ibm_in3ba, NULL},
+//	{0x03f8,0x03f0,2,2,2,NULL,	NULL},		// 1st fdd controller
+//	{0x03f8,0x0370,2,2,2,NULL,	NULL},		// 2nd fdd controller
 	{0x0000,0x0000,2,2,2,ibm_inDBG,	ibm_outDBG}
 };
 
@@ -344,7 +351,6 @@ void ibm_reset(Computer* comp) {
 void ibm_init(Computer* comp) {
 	comp->keyb->mem[0] = 0x00;		// kbd config
 	comp->vid->nsPerDot = 160;
-	mem_set_map_page(comp->mem, MEM_64K);	// 256x64K = 16M
 }
 
 void ibm_sync(Computer* comp, int ns) {

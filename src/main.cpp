@@ -47,6 +47,7 @@ void help() {
 	printf("--bp NAME\t\tset fetch brakepoint to label NAME (see -l key)\n");
 	printf("--disk X\t\tselect drive to loading file (0..3 | a..d | A..D)\n");
 	printf("--style\t\t\tMacOSX only: use native qt style, else 'fusion' will be forced\n");
+	printf("--xmap FILE\t\tLoad *.xmap file\n");
 }
 
 // for f*cking apple users
@@ -246,6 +247,9 @@ int main(int ac,char** av) {
 						case '3': case 'd': case 'D': drv = 3; break;
 					}
 				}
+				i++;
+			} else if (!strcmp(parg, "--xmap")) {
+				load_xmap(av[i]);
 				i++;
 			} else if (strlen(parg) > 0) {
 				load_file(mwin.comp, parg, FG_ALL, drv);

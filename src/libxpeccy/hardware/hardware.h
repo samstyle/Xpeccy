@@ -81,6 +81,7 @@ struct HardWare {
 	int mask;		// mem size bits (see memory.h)
 	double xscale;		// pixel ratio (x:y)
 	vLayout* lay;		// fixed layout ptr. if NULL, use from config
+	int pgsz;		// mem map page size
 	cbhwcomp init;		// init (call on setting comp hardware)
 	cbhwcomp mapMem;	// map memory
 	cbHwIwr out;		// io wr

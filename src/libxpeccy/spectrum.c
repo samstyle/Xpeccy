@@ -523,6 +523,7 @@ int compSetHardware(Computer* comp, const char* name) {
 	comp->hw = hw;
 	comp->cpu->nod = 0;
 	comp->vid->mrd = vid_mrd_cb;
+	mem_set_map_page(comp->mem, hw->pgsz);
 	// compUpdateTimings(comp);
 	compSetBaseFrq(comp, 0);	// recalculations
 	return 1;

@@ -2658,8 +2658,8 @@ opCode i80286_tab[256] = {
 	{OF_SKIPABLE, 1, i286_op6F, 0, ":Loutsw [:D::si]"},
 	{0, 1, i286_op70, 0, "jo :3"},
 	{0, 1, i286_op71, 0, "jno :3"},
-	{0, 1, i286_op72, 0, "jb :3"},		// jc, jnae
-	{0, 1, i286_op73, 0, "jnb :3"},		// jnc, jae
+	{0, 1, i286_op72, 0, "jc :3"},		// jb, jnae
+	{0, 1, i286_op73, 0, "jnc :3"},		// jnb, jae
 	{0, 1, i286_op74, 0, "jz :3"},
 	{0, 1, i286_op75, 0, "jnz :3"},
 	{0, 1, i286_op76, 0, "jbe :3"},		// jna
