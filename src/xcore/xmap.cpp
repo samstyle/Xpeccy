@@ -43,14 +43,23 @@ void load_xmap(QString path) {
 						file.read((char*)comp->brkRamMap, len);
 					} else {
 						file.read((char*)comp->brkRamMap, MEM_4M);
-						file.skip(len - MEM_4M);
+						file.seek(file.pos() + len - MEM_4M);
 					}
 				} else if (!memcmp(buf, "romflags", 8)) {
 					if (len <= MEM_512K) {
 						file.read((char*)comp->brkRomMap, len);
 					} else {
 						file.read((char*)comp->brkRomMap, MEM_512K);
-						file.skip(len - MEM_512K);
+						file.seek(file.pos() + len - MEM_512K);
+					}
+				} else if (!memcmp(buf, "sltflags", 8)) {
+					if (comp->slot->brkMap) {
+						if (len <= comp->slot->memMask) {
+							file.read((char*)comp->slot->brkMap, len);
+						} else {
+							file.read((char*)comp->slot->brkMap, comp->slot->memMask + 1);
+							file.seek(file.pos() + len - comp->slot->memMask - 1);
+						}
 					}
 				} else if (!memcmp(buf, "labels  ", 8)) {
 					clear_labels();
@@ -111,9 +120,11 @@ void load_xmap(QString path) {
 					}
 					qb.close();
 				} else {
-					file.skip(len);
+					file.seek(file.pos() + len);
+					//file.skip(len);
 				}
 			}
+			brkInstallAll();
 		}
 	} else {
 		shitHappens("Can't open this file for reading");
@@ -162,6 +173,14 @@ void save_xmap(QString path) {
 			file.write("romflags", 8);
 			qfputi(file, comp->mem->romSize);
 			file.write((char*)comp->brkRomMap, comp->mem->romSize);
+			// cartrige map
+			file.write("sltflags", 8);
+			if (comp->slot->brkMap) {
+				qfputi(file, comp->slot->memMask + 1);
+				file.write((char*)comp->slot->brkMap, comp->slot->memMask + 1);
+			} else {
+				qfputi(file, 0);
+			}
 			// labels
 			file.write("labels  ", 8);
 			foreach(lab, conf.prof.cur->labels.keys()) {

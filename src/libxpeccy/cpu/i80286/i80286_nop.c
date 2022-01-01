@@ -400,7 +400,7 @@ void i286_op08(CPU* cpu) {
 void i286_op09(CPU* cpu) {
 	i286_rd_ea(cpu, 1);
 	cpu->tmpw = i286_or16(cpu, cpu->tmpw, cpu->twrd);
-	i286_wr_ea(cpu, cpu->ltw, 1);
+	i286_wr_ea(cpu, cpu->tmpw, 1);
 }
 
 // 0a,mod: or rb,eb
@@ -414,7 +414,7 @@ void i286_op0A(CPU* cpu) {
 void i286_op0B(CPU* cpu) {
 	i286_rd_ea(cpu, 1);
 	cpu->tmpw = i286_or16(cpu, cpu->tmpw, cpu->twrd);
-	i286_set_reg(cpu, cpu->ltw, 1);
+	i286_set_reg(cpu, cpu->tmpw, 1);
 }
 
 // 0c,db: or al,db
@@ -448,7 +448,7 @@ void i286_op10(CPU* cpu) {
 	cpu->tmpw = i286_add8(cpu, cpu->ltw, cpu->lwr, 1);
 	if (cpu->tmpb)
 		cpu->tmpw = i286_add8(cpu, cpu->ltw, 1, 0);	// add 1 and not reset flags
-	i286_wr_ea(cpu, cpu->tmpw, 0);
+	i286_wr_ea(cpu, cpu->ltw, 0);
 }
 
 // 11,mod: adc ew,rw
@@ -468,7 +468,7 @@ void i286_op12(CPU* cpu) {
 	cpu->tmpw = i286_add8(cpu, cpu->ltw, cpu->lwr, 1);
 	if (cpu->tmpb)
 		cpu->tmpw = i286_add8(cpu, cpu->ltw, 1, 0);	// add 1 and not reset flags
-	i286_set_reg(cpu, cpu->tmpw, 0);
+	i286_set_reg(cpu, cpu->ltw, 0);
 }
 
 // 13,mod: adc rw,ew
@@ -2423,6 +2423,7 @@ void i286_opF77(CPU* cpu) {		// idiv ew
 		i286_interrupt(cpu, 0);
 	} else {
 		// TODO: int0 if quo>0xffff
+		cpu->tmpi = (cpu->dx << 16) | cpu->ax;
 		cpu->ax = (signed int)cpu->tmpi / (signed short)cpu->tmpw;
 		cpu->dx = (signed int)cpu->tmpi % (signed short)cpu->tmpw;
 	}
@@ -2737,7 +2738,7 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_opBE, 0, "mov si,:2"},
 	{0, 1, i286_opBF, 0, "mov di,:2"},
 	{0, 1, i286_opC0, 0, ":R :e,:1"},	// :R rotate group (rol,ror,rcl,rcr,sal,shr,*rot6,sar)
-	{OF_WORD, 1, i286_opC1, 0, ":R :e,:2"},
+	{OF_WORD, 1, i286_opC1, 0, ":R :e,:1"},
 	{0, 1, i286_opC2, 0, "ret :2"},
 	{0, 1, i286_opC3, 0, "ret"},
 	{OF_WORD, 1, i286_opC4, 0, "les :r,:e"},

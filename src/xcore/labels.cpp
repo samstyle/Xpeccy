@@ -20,7 +20,7 @@ void del_label(QString name) {
 	conf.prof.cur->labels.remove(name);
 	switch(xadr.type) {
 		case MEM_RAM: conf.prof.cur->labmap.ram.remove(xadr.abs); break;
-		// case MEM_ROM: conf.prof.cur->labmap.rom.remove(xadr.abs); break;
+		case MEM_ROM: conf.prof.cur->labmap.rom.remove(xadr.abs); break;
 		default: conf.prof.cur->labmap.cpu.remove(xadr.adr); break;
 	}
 }
@@ -31,7 +31,7 @@ void add_label(xAdr xadr, QString name) {
 	conf.prof.cur->labels[name] = xadr;
 	switch (xadr.type) {
 		case MEM_RAM: conf.prof.cur->labmap.ram[xadr.abs] = name; break;
-		//case MEM_ROM: conf.prof.cur->labmap.rom[xadr.abs] = name; break;
+		case MEM_ROM: conf.prof.cur->labmap.rom[xadr.abs] = name; break;
 		default: conf.prof.cur->labmap.cpu[xadr.adr] = name; break;
 	}
 }
@@ -40,10 +40,22 @@ QString find_label(xAdr xadr) {
 	QString lab;
 	if (conf.dbg.labels) {
 		switch(xadr.type) {
-			case MEM_RAM: lab = conf.prof.cur->labmap.ram[xadr.abs]; break;
-			// case MEM_ROM: lab = conf.labmap.rom[xadr.abs]; break;
-			default: lab = conf.prof.cur->labmap.ram[xadr.abs];
-				if (lab.isEmpty()) lab = conf.prof.cur->labmap.cpu[xadr.adr];
+			case MEM_RAM:
+				if (conf.prof.cur->labmap.ram.contains(xadr.abs))
+					lab = conf.prof.cur->labmap.ram[xadr.abs];
+				break;
+			case MEM_ROM:
+				if (conf.prof.cur->labmap.rom.contains(xadr.abs))
+					lab = conf.prof.cur->labmap.rom[xadr.abs];
+				break;
+			default:
+				if (conf.prof.cur->labmap.ram.contains(xadr.abs)) {
+					lab = conf.prof.cur->labmap.ram[xadr.abs];
+				} else if (conf.prof.cur->labmap.rom.contains(xadr.abs)) {
+					lab = conf.prof.cur->labmap.rom[xadr.abs];
+				} else if (conf.prof.cur->labmap.cpu.contains(xadr.adr)) {
+					lab = conf.prof.cur->labmap.cpu[xadr.adr];
+				}
 				break;
 		}
 	}

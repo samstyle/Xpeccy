@@ -646,7 +646,7 @@ unsigned char cmsRd(Computer* comp) {
 		switch(comp->cmos.mode) {
 			case 0: res = comp->evo.bcVer[comp->cmos.adr & 0x0f]; break;
 			case 1: res = comp->evo.blVer[comp->cmos.adr & 0x0f]; break;
-			case 2: res = keyReadCode(comp->keyb); break;		// read PC keyboard keycode
+			case 2: res = xt_read(comp->keyb); break; //keyReadCode(comp->keyb); break;		// read PC keyboard keycode
 		}
 	} else {
 		res = cmos_rd(&comp->cmos, CMOS_DATA);
@@ -657,7 +657,10 @@ unsigned char cmsRd(Computer* comp) {
 void cmsWr(Computer* comp, int val) {
 	switch (comp->cmos.adr) {
 		case 0x0c:
-			if (val & 1) comp->keyb->kbuf.pos = 0;		// reset PC-keyboard buffer
+			if (val & 1) {
+				comp->keyb->outbuf = 0;
+				comp->keyb->kbuf.pos = 0;		// reset PC-keyboard buffer
+			}
 			break;
 		default:
 			comp->cmos.data[comp->cmos.adr] = val & 0xff;

@@ -204,8 +204,11 @@ void placeLabel(Computer* comp, dasmData& drow) {
 	xMnem mn;
 	xAdr xadr;
 	while (work && (shift < 8)) {
-		xadr = mem_get_xadr(comp->mem, drow.oadr - shift);
-		// lab = findLabel(drow.oadr - shift, -1, -1);
+		if (comp->cpu->type == CPU_I80286) {
+			xadr = mem_get_xadr(comp->mem, drow.oadr - shift + comp->cpu->cs.base);
+		} else {
+			xadr = mem_get_xadr(comp->mem, drow.oadr - shift);
+		}
 		lab = find_label(xadr);
 		if (lab.isEmpty()) {
 			if (drow.oflag & OF_MEMADR) {
@@ -386,13 +389,8 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 			drow.ispc = ((xadr.type == pct) && (abs == xadr.abs)) ? 1 : 0;
 			break;
 		default:
-			if (comp->hw->grp == HWG_PC) {
-				xadr.type = MEM_RAM;
-				xadr.adr = adr;
-				xadr.abs = adr;
-				if (comp->cpu->type == CPU_I80286)
-					xadr.abs += comp->cpu->cs.base;
-				xadr.bank = xadr.abs >> 14;
+			if (comp->cpu->type == CPU_I80286) {
+				xadr = mem_get_xadr(comp->mem, adr + comp->cpu->cs.base);
 			} else {
 				xadr = mem_get_xadr(comp->mem, adr);
 			}
@@ -612,15 +610,10 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 	QString str;
 	int adr = dasm[row].adr;
 	xAdr xadr;
-	if ((*cptr)->hw->grp == HWG_PC) {
-		xadr.type = MEM_RAM;
-		xadr.adr = adr;
-		xadr.abs = adr;
-		if ((*cptr)->cpu->type == CPU_I80286)
-			xadr.abs += (*cptr)->cpu->cs.base;
-		xadr.bank = xadr.abs >> 14;
+	if ((*cptr)->cpu->type == CPU_I80286) {
+		xadr = mem_get_xadr((*cptr)->mem, adr + (*cptr)->cpu->cs.base);
 	} else {
-		 xadr = mem_get_xadr((*cptr)->mem, adr);
+		xadr = mem_get_xadr((*cptr)->mem, adr);
 	}
 	switch(col) {
 		case 0:
@@ -635,25 +628,24 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 							del_label(str);
 						}
 					}
-					emit s_adrch(oadr, disasmAdr);
 				}
+				//emit s_adrch(oadr, disasmAdr);
 			} else if (str.startsWith(";")) {		// ; comment
 				str.remove(";");
 				str = str.trimmed();
 				if (str.isEmpty()) {
 					del_comment(xadr);
-					//conf.dbg.comments.remove(xadr.abs);
 				} else {
 					add_comment(xadr, str);
-					//conf.dbg.comments[xadr.abs] = str;
 				}
-				emit s_adrch(oadr, disasmAdr);
+				//emit s_adrch(oadr, disasmAdr);
 			} else if (str.startsWith(".")) {		// .REG
 				idx = adr_of_reg((*cptr)->cpu, &flag, str.mid(1));
 				if (!flag)
 					idx = -1;
-			} else {					// hex
+			} else {					// hex/label
 				idx = asmAddr(*cptr, val, xadr);
+				//emit s_adrch(oadr, disasmAdr);
 			}
 			if (idx >= 0) {
 				while (row > 0) {
@@ -662,8 +654,9 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 					row -= getDisasm(*cptr, zadr).size();
 				}
 				disasmAdr = idx & 0xffff;
-				emit s_adrch(oadr, disasmAdr);
+				//emit s_adrch(oadr, disasmAdr);
 			}
+			emit s_adrch(oadr, disasmAdr);
 			break;
 		case 1:	// bytes
 			str = val.toString();

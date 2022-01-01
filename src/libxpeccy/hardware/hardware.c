@@ -85,7 +85,7 @@ HardWare hwTab[] = {
 		spc_init,spc_mem_map,NULL,NULL,spc_mrd,spc_mwr,spc_reset,spc_sync,spc_keyp,spc_keyr,spc_vol
 #if USEIBM
 	},{
-		HW_IBM_PC,HWG_PC,"IBM PC","IBM PC",16,MEM_1M | MEM_2M,1.0,&ibmLay,MEM_64K,
+		HW_IBM_PC,HWG_PC,"IBM PC","IBM PC",16,MEM_1M | MEM_2M | MEM_4M,1.0,&ibmLay,MEM_64K,
 		ibm_init,ibm_mem_map,ibm_iowr,ibm_iord,ibm_mrd,ibm_mwr,ibm_reset,ibm_sync,ibm_keyp,ibm_keyr,ibm_vol
 #endif
 	},{

@@ -189,7 +189,7 @@ void ibm_outKbd(Computer* comp, int adr, int val) {
 0071	r/w	CMOS RAM data port (ISA, EISA)
 */
 void ibm_out70(Computer* comp, int adr, int val) {
-	cmos_wr(&comp->cmos, CMOS_ADR, val);
+	cmos_wr(&comp->cmos, CMOS_ADR, val & 0x7f);
 }
 
 void ibm_out71(Computer* comp, int adr, int val) {
