@@ -47,7 +47,7 @@ int vid_visible(Video* vid) {
 	return 1;
 }
 
-#ifdef INLINE_VDOT
+#if INLINE_VDOT
 
 inline void vid_dot_full(Video* vid, unsigned char idx) {
 	if (vid->hvis && vid->vvis) {
