@@ -4,6 +4,8 @@
 extern "C" {
 #endif
 
+#define INLINE_VDOT	1
+
 #include <stddef.h>
 
 #include "vidcommon.h"
@@ -83,8 +85,11 @@ extern int rigSkip;
 extern int topSkip;
 extern int botSkip;
 
+#if INLINE_VDOT
+void vid_dot_full(Video*, unsigned char);
+void vid_dot_half(Video*, unsigned char);
+#elif USEOPENGL
 extern void(*vid_dot)(Video*, unsigned char);
-#ifdef USEOPENGL
 #define vid_dot_full(_v, _c) vid_dot(_v, _c); vid_dot(_v, _c)
 #define vid_dot_half(_v, _c) vid_dot(_v, _c)
 #else

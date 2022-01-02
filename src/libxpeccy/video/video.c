@@ -34,6 +34,9 @@ static unsigned char* pptr = pscr;
 static unsigned char pcol;
 static xColor xcol;
 
+static int xpos = 0;
+static int ypos = 0;
+
 typedef void(*cbdot)(Video*, unsigned char);
 
 int vid_visible(Video* vid) {
@@ -43,6 +46,61 @@ int vid_visible(Video* vid) {
 	if (vid->ray.x >= vid->rcut.x) return 0;
 	return 1;
 }
+
+#ifdef INLINE_VDOT
+
+inline void vid_dot_full(Video* vid, unsigned char idx) {
+	if (vid->hvis && vid->vvis) {
+		xcol = vid->pal[idx];
+		if (greyScale) {
+			xcol.r = (xcol.b * 30 + xcol.r * 76 + xcol.g * 148) >> 8;
+			xcol.g = xcol.r;
+			xcol.b = xcol.r;
+		}
+#ifdef USEOPENGL
+		*(vid->ray.ptr++) = xcol.r;
+		*(vid->ray.ptr++) = xcol.g;
+		*(vid->ray.ptr++) = xcol.b;
+		*(vid->ray.ptr++) = xcol.r;
+		*(vid->ray.ptr++) = xcol.g;
+		*(vid->ray.ptr++) = xcol.b;
+#else
+		xpos += xstep;
+		while (xpos > 0xff) {
+			xpos -= 0x100;
+			*(vid->ray.ptr++) = xcol.r;
+			*(vid->ray.ptr++) = xcol.g;
+			*(vid->ray.ptr++) = xcol.b;
+		}
+#endif
+	}
+}
+
+inline void vid_dot_half(Video* vid, unsigned char idx) {
+	if (vid->hvis && vid->vvis) {
+		xcol = vid->pal[idx];
+		if (greyScale) {
+			xcol.r = (xcol.b * 30 + xcol.r * 76 + xcol.g * 148) >> 8;
+			xcol.g = xcol.r;
+			xcol.b = xcol.r;
+		}
+#ifdef USEOPENGL
+		*(vid->ray.ptr++) = xcol.r;
+		*(vid->ray.ptr++) = xcol.g;
+		*(vid->ray.ptr++) = xcol.b;
+#else
+		xpos += xstep/2;
+		while (xpos > 0xff) {
+			xpos -= 0x100;
+			*(vid->ray.ptr++) = xcol.r;
+			*(vid->ray.ptr++) = xcol.g;
+			*(vid->ray.ptr++) = xcol.b;
+		}
+#endif
+	}
+}
+
+#else
 
 // colored
 void vid_dot_col(Video* vid, unsigned char col) {
@@ -69,11 +127,11 @@ void vid_dot_bw(Video* vid, unsigned char col) {
 
 void(*vid_dot)(Video*, unsigned char) = vid_dot_col;
 
+#endif
+
 #ifndef USEOPENGL
 
-static int xpos = 0;
-static int ypos = 0;
-
+#if !INLINE_VDOT
 void vid_dot_full(Video* vid, unsigned char col) {
 #if DRAWING_F
 	if (!vid_visible(vid)) return;
@@ -95,6 +153,7 @@ void vid_dot_half(Video* vid, unsigned char col) {
 		vid_dot(vid, col);
 	}
 }
+#endif
 
 #endif
 
@@ -430,7 +489,9 @@ void vidSetFont(Video* vid, char* src, int size) {
 
 void vid_set_grey(int f) {
 	greyScale = f;
+#if !INLINE_VDOT
 	vid_dot = f ? vid_dot_bw : vid_dot_col;
+#endif
 }
 
 // video drawing

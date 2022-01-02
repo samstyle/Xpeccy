@@ -271,13 +271,20 @@ int dasmAddr(Computer* comp, unsigned short adr, dasmData& drow) {
 	int len = 2;
 	int word = dasmrd(adr, comp);
 	word |= (dasmrd(adr + 1, comp) << 8);
-	xAdr xadr = mem_get_xadr(comp->mem, adr);
-	//QString lab = findLabel(word & 0xffff, -1, -1);
+/*
+	xAdr xadr;
+	if (comp->cpu->type == CPU_I80286) {
+		xadr = mem_get_xadr(comp->mem, word + comp->cpu->cs.base);
+	} else {
+		xadr = mem_get_xadr(comp->mem, word);
+	}
 	QString lab = find_label(xadr);
 	if (lab.isEmpty()) {
 		lab = gethexword(word).prepend("#");
 	}
-	drow.command = QString("DW %0").arg(lab);
+*/
+	drow.oadr = word;
+	drow.command = QString("DW #%0").arg(gethexword(word));
 	placeLabel(comp, drow);
 	return len;
 }
@@ -414,7 +421,6 @@ QList<dasmData> getDisasm(Computer* comp, unsigned short& adr) {
 	}
 	// add label line if any
 	if (conf.dbg.labels) {		// if show labels
-		//lab = findLabel(xadr.adr, xadr.type, xadr.bank);
 		lab = find_label(xadr);
 	}
 	if (!lab.isEmpty()) {		// place label line if it exists
