@@ -178,12 +178,9 @@ void pch_set_mod(pitChan* ch, int mod) {
 	ch->cb = &pit_mode_tab[ch->opmod];
 }
 
-// 43,01.01.010.0b(0x54) : ch1,acmod=1,opmod=2,bcd=0
-// 41,00010010b(0x12) : period
-
 void pit_wr(PIT* pit, int adr, int val) {
 	pitChan* ch;
-//	printf("pit_wr %.2X %.2X\n",adr,val);
+	printf("pit_wr %.2X %.2X\n",adr,val);
 	switch(adr & 7) {
 		case 0: pit_ch_wr(&pit->ch0, val); break;
 		case 1: pit_ch_wr(&pit->ch1, val); break;

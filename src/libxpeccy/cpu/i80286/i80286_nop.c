@@ -660,7 +660,7 @@ void i286_op24(CPU* cpu) {
 // 25,dw: and ax,dw
 void i286_op25(CPU* cpu) {
 	cpu->twrd = i286_rd_immw(cpu);
-	cpu->ax = i286_and16(cpu, cpu->ax, cpu->tmpw);
+	cpu->ax = i286_and16(cpu, cpu->ax, cpu->twrd);
 }
 
 // 26: ES segment override prefix
@@ -2346,8 +2346,8 @@ void i286_opF66(CPU* cpu) {		// div eb
 		i286_interrupt(cpu, I286_INT_DE);
 	} else {
 		// TODO: int0 if quo>0xff
-		cpu->tmpw = cpu->ax / cpu->ltw;
 		cpu->twrd = cpu->ax % cpu->ltw;
+		cpu->tmpw = cpu->ax / cpu->ltw;		// i'm dumb. setting tmpw will change ltw
 		cpu->al = cpu->ltw;
 		cpu->ah = cpu->lwr;
 	}

@@ -119,7 +119,7 @@ int atm2inFE(Computer* comp, int port) {
 		comp->keyb->wcom = 0;
 		switch(comp->keyb->com) {
 			case 0x01: res = kmodVer[hi]; break;
-			case 0x07: comp->keyb->kbuf.pos = 0; break;
+			case 0x07: comp->keyb->outbuf = 0; break;	 // comp->keyb->kbuf.pos = 0; break;
 			case 0x00:
 			case 0x09:
 				switch(hi) {

@@ -1,6 +1,8 @@
 // https://wiki.osdev.org/PIC
 // http://www.brokenthorn.com/Resources/OSDevPic.html
 
+#include <stdio.h>
+
 #include "i8259_pic.h"
 
 void pic_reset(PIC* pic) {
@@ -12,36 +14,23 @@ void pic_reset(PIC* pic) {
 
 void pic_int(PIC* pic, int num) {
 	int mask = (1 << (num & 7));
-	pic->irr |= mask;
-	mask &= ~pic->imr;
-	mask &= ~pic->isr;
+	// pic->irr |= mask;
+	mask &= ~pic->imr;		// 1=masked
+	mask &= ~pic->isr;		// 1=this int is not ended
 	if (!mask) return;
-	unsigned char msk = 0x01;			// TODO: priority
-	pic->vec = pic->icw2 & 0xf8;
-	for (int i = 0; i < 8; i++) {
-		if (pic->isr & msk) {
-			pic->oint = 0;
-			i = 8;
-		} else if ((pic->isr & msk) && !(pic->imr & msk)) {
-			// on INTA set isr bit, reset pic->oint
-			if (pic->master && (pic->icw3 & msk))
-				pic->vec = -1;		// it means vector is given by slave controller
-			pic->mask = msk;
-			pic->oint = 1;
-			i = 8;
-		} else {
-			pic->vec++;
-			if (!(pic->vec & 7)) pic->vec = 0;
-			msk <<= 1;
-			if (!msk)
-				msk = 0x01;
-		}
+	pic->mask = mask;		// fix mask
+	//pic->isr |= mask;		// set isr bit
+	pic->oint = 1;			// send INT
+	if (pic->master && (pic->icw3 & mask)) {		// if this input is slave pic, get vector from there
+		pic->vec = -1;
+	} else {					// else calc vector
+		pic->vec = (pic->icw2 & 0xf8) | (num & 7);
 	}
 }
 
 // return vector for int with hightst priority with bits irr=1 imr=0 & isr=0
 int pic_ack(PIC* pic) {
-	pic->isr |= pic->mask;	// not set on AEOI mode
+	//pic->isr |= pic->mask;	// not set on AEOI mode
 	pic->oint = 0;
 	return pic->vec;
 }

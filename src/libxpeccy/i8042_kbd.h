@@ -27,5 +27,6 @@ void ps2c_destroy(PS2Ctrl*);
 
 void ps2c_reset(PS2Ctrl*);
 int ps2c_rd(PS2Ctrl*, int);
+void ps2c_rd_kbd(PS2Ctrl*);
 void ps2c_wr(PS2Ctrl*, int, int);
 void ps2c_wr_ob(PS2Ctrl*, int);

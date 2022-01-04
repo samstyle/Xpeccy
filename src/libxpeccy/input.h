@@ -48,6 +48,12 @@ enum {
 	kbdDIRECT
 };
 
+// xt/at mode
+enum {
+	KBD_XT = 1,
+	KBD_AT
+};
+
 #define KFL_SHIFT	(1)
 #define KFL_CTRL	(1<<1)
 #define KFL_ALT		(1<<2)
@@ -150,11 +156,10 @@ typedef struct {
 	int map[8];			// ZX keyboard half-row bits (0-5)
 	int extMap[8];	// Profi XT-keyboard extend
 	int msxMap[16];	// MSX keys map
-	// pc keyboard keybuffer
-	unsigned char mem[0x20]; // internal memory. rd [0] = command, wr [0] = config
-	int outbuf;		// 0 = empty, else key scancode
-	int inbuf;		// 0 = free, else com/data
-	xKeyBuf kbuf;
+	// pc keyboard
+	unsigned lock:1;	// ps/2 keyboard disabled
+	int pcmode;		// xt/at
+	unsigned int outbuf;	// 0 = empty, else key scancode
 } Keyboard;
 
 typedef struct {
@@ -178,7 +183,8 @@ typedef struct {
 	unsigned char extKey[KEYSEQ_MAXLEN];
 	unsigned char msxKey[KEYSEQ_MAXLEN];
 	atmKey atmCode;
-	int keyCode;		// 0xXXYYZZ = ZZ,YY,XX in buffer ([ZZ],[YY],0xf0,XX if released). set 2
+	int atCode;		// 0xXXYYZZ = ZZ,YY,XX in buffer ([ZZ],[YY],0xf0,XX if released). set 2
+	int xtCode;		// set 1
 	int joyMask;
 } keyEntry;
 
@@ -196,9 +202,9 @@ void kbdRelease(Keyboard*, keyEntry);
 void kbdTrigger(Keyboard*, keyEntry);
 void kbdReleaseAll(Keyboard*);
 unsigned char kbdRead(Keyboard*, int);
-unsigned char keyReadCode(Keyboard*);
-void xt_press(Keyboard*, int);
-void xt_release(Keyboard*, int);
+//unsigned char keyReadCode(Keyboard*);
+void xt_press(Keyboard*, keyEntry);
+void xt_release(Keyboard*, keyEntry);
 int xt_read(Keyboard*);
 void kbd_press(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk);
 void kbd_release(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk);

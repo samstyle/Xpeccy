@@ -72,6 +72,7 @@ keyScan findKey(keyScan* tab, char key) {
 Keyboard* keyCreate() {
 	Keyboard* keyb = (Keyboard*)malloc(sizeof(Keyboard));
 	memset(keyb, 0x00, sizeof(Keyboard));
+	keyb->pcmode = KBD_AT;
 	return keyb;
 }
 
@@ -177,7 +178,7 @@ void kbdReleaseAll(Keyboard* kbd) {
 	}
 	kbd->keycode = 0;
 	kbd->lastkey = 0;
-	kbd->kbuf.pos = 0;
+	kbd->outbuf = 0;	//kbd->kbuf.pos = 0;
 	kbd->flag = 0;
 }
 
@@ -214,52 +215,52 @@ void kbdTrigger(Keyboard* kbd, keyEntry ent) {
 // 0xE0, 0x72 (code 0x72e0) = cursor down pressed
 // 0xE0, 0xF0, 0x72 (code 72e0) = cursor down released
 
-void xt_press(Keyboard* kbd, int code) {
-	kbd->outbuf = code;
-	while (code && (kbd->kbuf.pos < 16)) {
-		kbd->kbuf.data[kbd->kbuf.pos++] = code & 0xff;
-		code >>= 8;
+void xt_press(Keyboard* kbd, keyEntry kent) {
+	if (kbd->lock) return;
+	switch(kbd->pcmode) {
+		case KBD_AT: kbd->outbuf = kent.atCode; break;
+		case KBD_XT: kbd->outbuf = kent.xtCode; break;
 	}
 }
 
-void xt_release(Keyboard* kbd, int code) {
-	kbd->outbuf = 0;
-	// insert F0 before each byte with bit7=0
-	do {
-		if (!(code & 0x80)) {		// b7 = 0
-			kbd->outbuf >>= 8;	// insert f0
-			kbd->outbuf |= 0xf0000000;
-		}
-		kbd->outbuf >>= 8;
-		kbd->outbuf |= ((code & 0xff) << 24);
-		code >>= 8;
-	} while (code);
-	while (kbd->outbuf && !(kbd->outbuf & 0xff)) {
-		kbd->outbuf >>= 8;
-	}
-	while (code && (kbd->kbuf.pos < 16)) {
-		if (code < 0x100)				// TODO: not like this
-			kbd->kbuf.data[kbd->kbuf.pos++] = 0xf0;
-		kbd->kbuf.data[kbd->kbuf.pos++] = (code & 0xff);
-		code >>= 8;
+void xt_release(Keyboard* kbd, keyEntry kent) {
+	if (kbd->lock) return;
+	int code;
+	int msk;
+	switch (kbd->pcmode) {
+		case KBD_AT:			// insert F0 before each byte with bit7=0
+			kbd->outbuf = 0;
+			code = kent.atCode;
+			while (code) {
+				if (!(code & 0x80)) {		// b7 = 0
+					kbd->outbuf >>= 8;	// insert f0
+					kbd->outbuf |= 0xf0000000;
+				}
+				kbd->outbuf >>= 8;
+				kbd->outbuf |= ((code & 0xff) << 24);
+				code >>= 8;
+			};
+			while (kbd->outbuf && !(kbd->outbuf & 0xff)) {
+				kbd->outbuf >>= 8;
+			}
+			break;
+		case KBD_XT:			// set every b7
+			kbd->outbuf = kent.xtCode;
+			code = kent.xtCode;
+			msk = 0x80;
+			while (code) {
+				if (code & 0x7f)
+					kbd->outbuf |= msk;
+				code >>= 8;
+				msk <<= 8;
+			}
+			break;
 	}
 }
 
 int xt_read(Keyboard* kbd) {
 	int res = kbd->outbuf & 0xff;
 	kbd->outbuf >>= 8;
-	return res;
-}
-
-// at/xt buffer reading
-unsigned char keyReadCode(Keyboard* keyb) {
-	if (keyb->kbuf.pos < 1) return 0x00;		// empty
-	if (keyb->kbuf.pos > 14) return 0xff;		// overfill
-	unsigned char res = keyb->kbuf.data[0];		// read code
-	for (int i = 0; i < 15; i++) {
-		keyb->kbuf.data[i] = keyb->kbuf.data[i + 1];
-	}
-	keyb->kbuf.pos--;
 	return res;
 }
 

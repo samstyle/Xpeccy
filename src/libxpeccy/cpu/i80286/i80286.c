@@ -87,18 +87,18 @@ void i286_int_ack(CPU* cpu) {
 	if (cpu->intrq & I286_INT) {
 		cpu->intrq &= ~I286_INT;
 		if (cpu->msw & I286_FPE) {
-			i286_int_real(cpu);
-		} else {
 			i286_int_prt(cpu);
+		} else {
+			i286_int_real(cpu);
 		}
 	} else if ((cpu->intrq & I286_NMI) && !(cpu->inten & I286_BLK_NMI)) {
 		cpu->inten |= I286_BLK_NMI;				// NMI is blocking until RETI, but next NMI will be remembered until then
 		cpu->intrq &= ~I286_NMI;
 		cpu->intvec = 2;
 		if (cpu->msw & I286_FPE) {
-			i286_int_real(cpu);
-		} else {
 			i286_int_prt(cpu);
+		} else {
+			i286_int_real(cpu);
 		}
 	}
 }

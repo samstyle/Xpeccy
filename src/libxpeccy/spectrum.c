@@ -293,7 +293,7 @@ Computer* compCreate() {
 
 // input
 	comp->keyb = keyCreate();
-	comp->cmos.kbuf = &comp->keyb->kbuf;
+	// comp->cmos.kbuf = &comp->keyb->kbuf;
 	comp->joy = joyCreate();
 	comp->mouse = mouseCreate();
 	comp->ppi = ppi_create();
@@ -659,7 +659,7 @@ void cmsWr(Computer* comp, int val) {
 		case 0x0c:
 			if (val & 1) {
 				comp->keyb->outbuf = 0;
-				comp->keyb->kbuf.pos = 0;		// reset PC-keyboard buffer
+				comp->keyb->outbuf = 0; // comp->keyb->kbuf.pos = 0;		// reset PC-keyboard buffer
 			}
 			break;
 		default:

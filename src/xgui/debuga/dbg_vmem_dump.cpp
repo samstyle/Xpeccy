@@ -52,6 +52,46 @@ QVariant xVMemDumpModel::data(const QModelIndex& idx, int role) const {
 				default: res = Qt::AlignCenter; break;
 			}
 			break;
+		case Qt::EditRole:
+			if (col == 0) {
+				res = QString::number(radr, 16).rightJustified(5, '0').toUpper();
+			} else if ((col < 9) && vmem) {
+				res = QString::number(vmem[adr], 16).rightJustified(2, '0').toUpper();
+			}
+			break;
+	}
+	return res;
+}
+
+bool xVMemDumpModel::setData(const QModelIndex& idx, const QVariant& val, int role) {
+	bool res = false;
+	if (role != Qt::EditRole) return res;
+	if (!idx.isValid()) return res;
+	int row = idx.row();
+	int col = idx.column();
+	int b;
+	int adr;
+	if (col == 0) {
+		adr = val.toString().toInt(&res, 16) & (MEM_256K - 1);
+		if (res)
+			emit adr_ch(index(adr >> 3, 0));
+	} else if (col < 9) {
+		adr = ((row << 3) | (col - 1)) & (MEM_256K - 1);
+		if (vmem) {
+			b = val.toString().toInt(&res, 16) & 0xff;
+			if (res) {
+				vmem[adr] = b;
+				emit dataChanged(idx, idx);
+			}
+		}
+	}
+	return res;
+}
+
+Qt::ItemFlags xVMemDumpModel::flags(const QModelIndex& idx) const {
+	Qt::ItemFlags res = QAbstractItemModel::flags(idx);
+	if (idx.column() < 9) {
+		res |= Qt::ItemIsEditable;
 	}
 	return res;
 }
@@ -72,6 +112,7 @@ void xVMemDumpModel::setVMem(unsigned char* ptr) {
 
 xVMemDump::xVMemDump(QWidget *p):QTableView(p) {
 	mod = new xVMemDumpModel(nullptr);
+	connect(mod, SIGNAL(adr_ch(QModelIndex)), this, SLOT(jumpToIdx(QModelIndex)));
 }
 
 void xVMemDump::update() {
@@ -82,4 +123,9 @@ void xVMemDump::setVMem(unsigned char* ptr) {
 	mod->setVMem(ptr);
 	setModel(mod);
 	setColumnWidth(0, 70);
+}
+
+void xVMemDump::jumpToIdx(QModelIndex idx) {
+	setCurrentIndex(idx);
+	scrollTo(idx, QAbstractItemView::PositionAtCenter);
 }

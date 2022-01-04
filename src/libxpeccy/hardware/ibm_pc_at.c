@@ -349,7 +349,7 @@ void ibm_reset(Computer* comp) {
 }
 
 void ibm_init(Computer* comp) {
-	comp->keyb->mem[0] = 0x00;		// kbd config
+	comp->ps2c->ram[0] = 0x00;		// kbd config
 	comp->vid->nsPerDot = 160;
 }
 
@@ -362,7 +362,7 @@ void ibm_sync(Computer* comp, int ns) {
 	}
 	if (comp->ps2c->intm) {
 		comp->ps2c->intm = 0;
-		pic_int(&comp->spic, 4);	// int12:mouse interrupt (int4 on slave pic)
+		//pic_int(&comp->spic, 4);	// int12:mouse interrupt (int4 on slave pic)
 	}
 
 	// pit
@@ -389,13 +389,19 @@ void ibm_sync(Computer* comp, int ns) {
 
 // key press/release
 void ibm_keyp(Computer* comp, keyEntry kent) {
-	ps2c_wr_ob(comp->ps2c, comp->keyb->outbuf);
-	comp->keyb->outbuf = 0;
+	ps2c_rd_kbd(comp->ps2c);
+//	if (!comp->keyb->lock) {
+//		ps2c_wr_ob(comp->ps2c, comp->keyb->outbuf);
+//	}
+//	comp->keyb->outbuf = 0;
 }
 
 void ibm_keyr(Computer* comp, keyEntry kent) {
-	ps2c_wr_ob(comp->ps2c, comp->keyb->outbuf);
-	comp->keyb->outbuf = 0;
+	ps2c_rd_kbd(comp->ps2c);
+//	if (!comp->keyb->lock) {
+//		ps2c_wr_ob(comp->ps2c, comp->keyb->outbuf);
+//	}
+//	comp->keyb->outbuf = 0;
 }
 
 sndPair ibm_vol(Computer* comp, sndVolume* vol) {

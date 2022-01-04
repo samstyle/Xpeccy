@@ -193,8 +193,9 @@ MainWin::MainWin() {
 	initUserMenu();
 	setFocus();
 
-	timid = startTimer(20);
-	secid = startTimer(200);
+	timid = startTimer(20);		// 1/50 sec
+	secid = startTimer(200);	// 1/5 sec
+	cmsid = startTimer(1000);	// 1 sec
 
 	connect(&frm_tmr, SIGNAL(timeout()), this, SLOT(frame_timer()));
 #if QT_VERSION >= QT_VERSION_CHECK(5,0,0)
@@ -365,8 +366,7 @@ static struct {
 #endif
 
 void MainWin::timerEvent(QTimerEvent* ev) {
-// fps (200 ms)
-	if (ev->timerId() == secid) {		// 0.2 sec timer
+	if (ev->timerId() == secid) {		// 0.2 sec timer, fps counter
 		// printf("0.2 sec timer event\n");
 		if (!conf.emu.pause) {
 			// printf("%i (%i)\n", comp->vid->fcnt, fpsmem.first());
@@ -376,7 +376,9 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 				fpsmem.removeFirst();
 			// printf("%i\n", conf.vid.curfps);
 		}
-	} else {
+	} else if (ev->timerId() == cmsid) {	// 1-sec: cmos interrupt
+		// TODO: do
+	} else if (ev->timerId() == timid) {
 // updater
 		if (conf.prof.changed) {
 			comp = conf.prof.cur->zx;
@@ -866,7 +868,7 @@ void MainWin::xkey_press(int xkey) {
 	QSize wsz;
 	QString path;
 	if (pckAct->isChecked()) {
-		xt_press(comp->keyb, kent.keyCode);
+		xt_press(comp->keyb, kent);
 		if (comp->hw->keyp)
 			comp->hw->keyp(comp, kent);
 		if (kent.joyMask)
@@ -1063,7 +1065,7 @@ void MainWin::xkey_press(int xkey) {
 				break;
 			default:
 				// printf("%s %c %c\n", kent.name, kent.zxKey.key1, kent.zxKey.key2);
-				xt_press(comp->keyb, kent.keyCode);
+				xt_press(comp->keyb, kent);
 				if (comp->hw->keyp)
 					comp->hw->keyp(comp, kent);
 				if (kent.joyMask)
@@ -1107,7 +1109,7 @@ void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 
 void MainWin::xkey_release(int keyid) {
 	keyEntry kent = getKeyEntry(keyid);
-	xt_release(comp->keyb, kent.keyCode);
+	xt_release(comp->keyb, kent);
 	if (comp->hw->keyr)
 		comp->hw->keyr(comp, kent);
 	if (kent.joyMask)

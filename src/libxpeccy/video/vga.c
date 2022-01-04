@@ -189,7 +189,7 @@ void vga_t40_line(Video* vid) {
 		}
 	}
 	vid->vga.chline++;
-	if (vid->vga.chline > 8) { //CRT_REG(9)) {		// char height register
+	if (vid->vga.chline > CRT_REG(9)) { //CRT_REG(9)) {		// char height register
 		vid->vga.line++;
 		vid->vga.chline = 0;
 	}

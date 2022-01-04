@@ -15,7 +15,7 @@ typedef struct {
 	unsigned char data[256];
 	int inten;
 	int intrq;
-	xKeyBuf* kbuf;		// pointer to pc keyboard buffer
+//	xKeyBuf* kbuf;		// pointer to pc keyboard buffer
 } CMOS;
 
 unsigned char cmos_rd(CMOS*, int);

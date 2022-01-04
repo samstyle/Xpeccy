@@ -104,6 +104,7 @@ class MainWin : public QWidget {
 		QIcon icon;
 		int timid;
 		int secid;
+		int cmsid;
 
 		QTimer frm_tmr;
 		int frm_ns;
