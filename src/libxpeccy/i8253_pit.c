@@ -6,6 +6,7 @@
 #include "i8253_pit.h"
 
 void pit_ch_reset(pitChan* ch) {
+	ch->wdiv = 1;
 	ch->wgat = 1;
 	ch->gate = 1;
 	ch->out = 1;
@@ -20,23 +21,29 @@ void pit_reset(PIT* pit) {
 
 int pit_ch_rd(pitChan* ch) {
 	int res = -1;
-	unsigned short v = ch->latch ? ch->clat : ch->cnt;
-	switch(ch->acmod) {
-		case 1: res = v;
-			ch->latch &= ~1;
-			break;		// low byte
-		case 2: res = (v >> 8);
-			ch->latch &= ~2;
-			break;		// hi byte
-		case 3: if (ch->half) {
-				res = v >> 8;
-				ch->latch &= ~2;
-			} else {
-				res = v;
-				ch->latch &= ~1;
-			}
-			ch->half ^= 1;
-			break;
+	if (ch->latch > 0) {
+		ch->latch--;
+		res = ch->clat & 0xff;
+		ch->clat >>= 8;
+	} else {
+		switch(ch->acmod) {
+			case 1:			// lsb
+				res = ch->cnt & 0xff;
+				ch->half = 0;
+				break;
+			case 2:			// msb
+				res = (ch->cnt >> 8) & 0xff;
+				ch->half = 0;
+				break;
+			case 3:			// lsb,msb
+				if (ch->half) {
+					res = (ch->cnt >> 8) & 0xff;
+				} else {
+					res = ch->cnt & 0xff;
+				}
+				ch->half ^= 1;
+				break;
+		}
 	}
 	return res & 0xff;
 }
@@ -178,6 +185,29 @@ void pch_set_mod(pitChan* ch, int mod) {
 	ch->cb = &pit_mode_tab[ch->opmod];
 }
 
+void pch_fix(pitChan* ch, int flag) {
+	ch->clat = 0;
+	ch->latch = 0;
+	if (!(flag & 0x20)) {		// fix counter
+		if (ch->acmod & 2) {	// msb
+			ch->latch++;
+			ch->clat |= (ch->cnt >> 8) & 0xff;
+		}
+		if (ch->acmod & 1) {	// lsb
+			ch->latch++;
+			ch->clat <<= 8;
+			ch->clat |= ch->cnt & 0xff;
+		}
+	}
+	if (!(flag & 0x10)) {		// state
+		ch->clat <<= 8;
+		ch->latch++;
+		ch->clat = ch->state & 0x3f;
+		if (ch->out) ch->clat |= 0x80;
+		if (ch->wdiv) ch->clat |= 0x40;
+	}
+}
+
 void pit_wr(PIT* pit, int adr, int val) {
 	pitChan* ch;
 	printf("pit_wr %.2X %.2X\n",adr,val);
@@ -191,32 +221,36 @@ void pit_wr(PIT* pit, int adr, int val) {
 				case 0x00: ch = &pit->ch0; break;
 				case 0x40: ch = &pit->ch1; break;
 				case 0x80: ch = &pit->ch2; break;
-				case 0xc0:	// 'read back' command;
+				case 0xc0:
+					if (val & 2) pch_fix(&pit->ch0, val);
+					if (val & 4) pch_fix(&pit->ch1, val);
+					if (val & 8) pch_fix(&pit->ch2, val);
 					break;
 			}
 			if (ch != NULL) {
+				ch->state = val & 0x3f;
 				if (val & 0x30) {
 					ch->acmod = (val & 0x30) >> 4;
-				} else {		// latch
-					ch->clat = ch->cnt;
-					ch->latch = 3;
+				} else {		// latch counter
+					pch_fix(ch, 0x10);
 				}
 				pch_set_mod(ch, (val >> 1) & 7);
 				ch->out = (ch->opmod == 0) ? 0 : 1;
 				ch->wdiv = 1;
 				ch->wgat = 0;
+				ch->bcd = val & 1;
 			}
-			pit->bcd = val & 1;
 			break;
 	}
 }
 
 // mod0: if out=0, send signal and set out=1; if out=1 do nothing. out=0 on command/mode wr or divider reloading. counter will continue
 // mod1: =mod0
-void pit_ch_tick(pitChan* ch, int bcd) {
+void pit_ch_tick(pitChan* ch) {
 	if (ch->wdiv || ch->wgat) return;	// wait divider or wait gate = stop counter
 	ch->cnt--;
-	if (bcd) {
+	if ((ch->opmod == 3) && ch->cnt) ch->cnt--;		// 2 times in mode 3
+	if (ch->bcd) {
 		// correct to bcd
 		if ((ch->cnt & 0x000f) > 0x0009) ch->cnt -= 0x0006;
 		if ((ch->cnt & 0x00f0) > 0x0090) ch->cnt -= 0x0060;
@@ -233,8 +267,8 @@ void pit_sync(PIT* pit, int ns) {
 	pit->ns -= ns;
 	while (pit->ns < 0) {
 		pit->ns += 838;		// 838ns, ~1.1933MHz
-		pit_ch_tick(&pit->ch0, pit->bcd);
-		pit_ch_tick(&pit->ch1, pit->bcd);
-		pit_ch_tick(&pit->ch2, pit->bcd);
+		pit_ch_tick(&pit->ch0);
+		pit_ch_tick(&pit->ch1);
+		pit_ch_tick(&pit->ch2);
 	}
 }

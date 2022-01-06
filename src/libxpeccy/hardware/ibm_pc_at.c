@@ -158,8 +158,10 @@ void ibm_outKbd(Computer* comp, int adr, int val) {
 			break;
 		case 4:
 			ps2c_wr(comp->ps2c, PS2_RCMD, val);
-			if (comp->ps2c->reset)
-				compReset(comp, RES_DEFAULT);
+			if (comp->ps2c->reset) {
+				comp->ps2c->reset = 0;
+				comp->cpu->reset(comp->cpu);		// cpu only, not all computer
+			}
 			break;
 	}
 	//printf("%.4X:%.4X kbd out %.3X, %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,adr,val);
@@ -338,13 +340,23 @@ void ibm_iowr(Computer* comp, int adr, int val) {
 	hwOut(ibmPortMap, comp, adr, val, 0);
 }
 
+static const xColor ega_pal[16] = {{0x00,0x00,0x00},{0x00,0x00,0xaa},{0x00,0xaa,0x00},{0x00,0xaa,0xaa},\
+		      {0xaa,0x00,0x00},{0xaa,0x00,0xaa},{0xaa,0x55,0x00},{0xaa,0xaa,0xaa},\
+		      {0x55,0x55,0x55},{0x55,0x55,0xff},{0x55,0xff,0x55},{0x55,0xff,0xff},\
+		      {0xff,0x55,0x55},{0xff,0x55,0xff},{0xff,0xff,0x55},{0xff,0xff,0xff}\
+		     };
+
 void ibm_reset(Computer* comp) {
 	pit_reset(&comp->pit);
 	pic_reset(&comp->mpic);
 	pic_reset(&comp->spic);
-	comp->keyb->row = -1;
+	comp->keyb->outbuf = 0;
 
 	memcpy(comp->vid->ram + 0x20000, comp->vid->font, 0x2000);	// copy default font
+	for(int i = 0; i < 16; i++) {
+		comp->vid->pal[i] = ega_pal[i];
+	}
+
 	ibm_mem_map(comp);
 }
 
@@ -358,18 +370,17 @@ void ibm_sync(Computer* comp, int ns) {
 	// ps/2 controller
 	if (comp->ps2c->intk) {
 		comp->ps2c->intk = 0;
-		pic_int(&comp->mpic, 1);	// int1:keyboard interrupt
+		pic_int(&comp->mpic, 1);	// input 1 master pic:keyboard interrupt
 	}
 	if (comp->ps2c->intm) {
 		comp->ps2c->intm = 0;
-		//pic_int(&comp->spic, 4);	// int12:mouse interrupt (int4 on slave pic)
+		//pic_int(&comp->spic, 4);	// input 4 slave pic: mouse interrupt
 	}
-
 	// pit
 	pit_sync(&comp->pit, ns);
 	// ch0 connected to int0
 	if (!comp->pit.ch0.lout && comp->pit.ch0.out) {		// 0->1
-		pic_int(&comp->mpic, 0);	// int0 master pic
+		pic_int(&comp->mpic, 0);	// input 0 master pic (int 8)
 	}
 	comp->pit.ch0.lout = comp->pit.ch0.out;
 	// ch2 connected to speaker
@@ -390,18 +401,10 @@ void ibm_sync(Computer* comp, int ns) {
 // key press/release
 void ibm_keyp(Computer* comp, keyEntry kent) {
 	ps2c_rd_kbd(comp->ps2c);
-//	if (!comp->keyb->lock) {
-//		ps2c_wr_ob(comp->ps2c, comp->keyb->outbuf);
-//	}
-//	comp->keyb->outbuf = 0;
 }
 
 void ibm_keyr(Computer* comp, keyEntry kent) {
 	ps2c_rd_kbd(comp->ps2c);
-//	if (!comp->keyb->lock) {
-//		ps2c_wr_ob(comp->ps2c, comp->keyb->outbuf);
-//	}
-//	comp->keyb->outbuf = 0;
 }
 
 sndPair ibm_vol(Computer* comp, sndVolume* vol) {

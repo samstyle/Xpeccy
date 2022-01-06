@@ -13,6 +13,7 @@ typedef struct {
 } pchCore;
 
 struct pitChan {
+	unsigned bcd:1;
 	unsigned out:1;		// output pin
 	unsigned lout:1;	// prev.output (!lout && out)->signal
 	unsigned gate:1;	// 1 if waiting external signal to start (ch2)
@@ -21,15 +22,17 @@ struct pitChan {
 	unsigned wgat:1;	// wait for gate input 0->1
 	unsigned acmod:2;	// bit4,5
 	unsigned opmod:3;	// bit1-3
-	unsigned latch:2;	// bytes of counter latched in clat b1:hi, b0:lo (00 = read cnt instead)
+	unsigned latch:2;	// bytes of counter latched in clat (0=read cnt, 1=state, 2=state+[hi|lo]byte, 3=state+word
+	unsigned char state;	// mode setted through port 43
 	unsigned short div;	// divider (ticks)
 	unsigned short cnt;	// current counter
-	unsigned short clat;	// latched counter
+	int clat;		// latched state/counter
 	pchCore* cb;
+	int resp;
+	int resp_cnt;
 };
 
 typedef struct {
-	unsigned bcd:1;
 	pitChan ch0;
 	pitChan ch1;
 	pitChan ch2;

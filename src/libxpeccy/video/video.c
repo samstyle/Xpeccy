@@ -31,11 +31,14 @@ int botSkip = 0;
 
 unsigned char pscr[SCRBUF_SIZE];		// previous screen (raw)
 static unsigned char* pptr = pscr;
-static unsigned char pcol;
 static xColor xcol;
 
+#ifndef USEOPENGL
 static int xpos = 0;
 static int ypos = 0;
+#elif !DRAWING_F
+static unsigned char pcol;
+#endif
 
 typedef void(*cbdot)(Video*, unsigned char);
 

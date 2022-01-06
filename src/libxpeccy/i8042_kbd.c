@@ -88,33 +88,26 @@ int ps2c_rd(PS2Ctrl* ctrl, int adr) {
 void ps2c_rd_kbd(PS2Ctrl* ctrl) {
 	if (ctrl->kbd->lock) return;		// kbd disabled
 	if (ctrl->ram[0] & 0x10) return;	// 1st device disabled
-	ctrl->outbuf = ctrl->kbd->outbuf;
 	// TODO: if (mem[0] & 0x40) convert scancode2 to scancode1
+	ps2c_wr_ob(ctrl, ctrl->kbd->outbuf);
+	//ctrl->outbuf = ctrl->kbd->outbuf;
+	//ctrl->status &= ~0x21;
+	//ctrl->status |= 0x01;
 	ctrl->kbd->outbuf = 0;
-	ctrl->status &= ~0x21;
-	ctrl->status |= 0x01;
 	if (ctrl->ram[0] & 1)
 		ctrl->intk = 1;
 	// printf("i8042 get scancode %X\n", ctrl->outbuf);
 }
 
 void ps2c_wr_ob(PS2Ctrl* ctrl, int val) {
-	if (!(ctrl->status & 1)) {
-		ctrl->outbuf = val;
-		ctrl->status &= ~0x21;
-		ctrl->status |= 0x01;
-		if (ctrl->ram[0] & 1)
-			ctrl->intk = 1;
-	}
+	ctrl->outbuf = val;
+	ctrl->status &= ~0x21;
+	ctrl->status |= 0x01;
 }
 
 void ps2c_wr_ob2(PS2Ctrl* ctrl, int val) {
-	if (!(ctrl->status & 1)) {
-		ctrl->outbuf = val;
-		ctrl->status |= 0x21;
-		if (ctrl->ram[0] & 2)
-			ctrl->intm = 1;
-	}
+	ctrl->outbuf = val;
+	ctrl->status |= 0x21;
 }
 
 void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {

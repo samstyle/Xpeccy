@@ -1064,6 +1064,23 @@
          </item>
         </layout>
        </widget>
+       <widget class="QWidget" name="pitTab">
+        <attribute name="title">
+         <string>PIT</string>
+        </attribute>
+        <layout class="QVBoxLayout" name="verticalLayout_17">
+         <item>
+          <widget class="QTableView" name="tabPit">
+           <property name="gridStyle">
+            <enum>Qt::DotLine</enum>
+           </property>
+           <attribute name="verticalHeaderDefaultSectionSize">
+            <number>17</number>
+           </attribute>
+          </widget>
+         </item>
+        </layout>
+       </widget>
        <widget class="QWidget" name="ayTab">
         <attribute name="icon">
          <iconset resource="../xpeccy.qrc">

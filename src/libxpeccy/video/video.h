@@ -299,6 +299,7 @@ struct Video {
 		int line;			// chars line
 		int chline;			// line inside char
 		int chsize;			// char height (0-31)
+		int cadr;			// cursor address
 	} vga;
 
 	unsigned char line[0x400];		// buffer for render sprites & tiles

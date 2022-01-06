@@ -52,6 +52,7 @@ void vga_wr(Video* vid, int port, int val) {
 			if (CRT_IDX <= VGA_CRC) {
 				CRT_CUR_REG = val & 0xff;
 			}
+			vid->vga.cadr = ((CRT_REG(0x0e) << 15) | (CRT_REG(0x0f))) + ((CRT_REG(0x0b) >> 5) & 3);	// cursor address
 			break;
 		// sequencer registers (3c4/3c5)
 		case VGA_SEQRN:
@@ -175,18 +176,26 @@ void vga_t40_line(Video* vid) {
 		// char / atr taken right way (checked)
 		vid->idx = vid->ram[vid->vadr];			// char (plane 0)
 		vid->atrbyte = vid->ram[vid->vadr + 0x10000];	// attr	(plane 1)
-		vid->vadr++;
 		vid->tadr = vid->idx * 16;			// offset of 1st char byte in plane 2 (allways 32 bytes/char in font plane)
 		vid->tadr += vid->vga.chline;			// +line in char
 		vid->idx = vid->ram[0x20000 + vid->tadr];	// pixels
+		if ((vid->vadr == vid->vga.cadr) && !(CRT_REG(0x0a) & 0x20)) {		// cursor position, cursor enabled
+			if ((vid->vga.chline >= (CRT_REG(0x0a) & 0x1f)) \
+				&& (vid->vga.chline <= (CRT_REG(0x0b) & 0x1f))) {	// cursor start/end
+				vid->idx ^= 0xff;
+			}
+		}
+		if ((vid->atrbyte & 0x80) && vid->flash)	// blinking (b7 attribute)
+			vid->idx ^= 0xff;
 		for (i = 0; i < 8; i++) {
 			if (vid->idx & 0x80) {
 				vid->line[vid->xpos++] = vid->atrbyte & 0x0f;		// b0..3:foreground
 			} else {
-				vid->line[vid->xpos++] = (vid->atrbyte >> 4) & 0x0f;	// b4..7:background
+				vid->line[vid->xpos++] = (vid->atrbyte >> 4) & 0x07;	// b4..6:background
 			}
 			vid->idx <<= 1;
 		}
+		vid->vadr++;
 	}
 	vid->vga.chline++;
 	if (vid->vga.chline > CRT_REG(9)) { //CRT_REG(9)) {		// char height register

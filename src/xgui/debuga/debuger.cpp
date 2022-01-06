@@ -296,6 +296,9 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	lst.clear();
 	p.first = QIcon(":/images/tape.png"); p.second = ui.tapeTab; lst.append(p);
 	tablist[HWG_SPCLST] = lst;
+	lst.clear();
+	p.first = QIcon(); p.second = ui.tabPit; lst.append(p);
+	tablist[HWG_PC] = lst;
 // create registers group
 	xLabel* lab;
 	xHexSpin* xhs;
@@ -575,6 +578,8 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.numBank2, SIGNAL(valueChanged(int)), this, SLOT(remapMem()));
 	connect(ui.numBank3, SIGNAL(valueChanged(int)), this, SLOT(remapMem()));
 	connect(ui.pbRestMemMap, SIGNAL(clicked()), this, SLOT(rest_mem_map()));
+// pit tab
+	ui.tabPit->setModel(new xPitModel());
 
 // subwindows
 	dui.setupUi(dumpwin);
@@ -1072,6 +1077,8 @@ void DebugWin::fillTabs() {
 		}
 		block = 0;
 	}
+	// pit
+	emit ui.tabPit->model()->dataChanged(ui.tabPit->model()->index(0,0), ui.tabPit->model()->index(5,3));
 }
 
 bool DebugWin::fillNotCPU() {
