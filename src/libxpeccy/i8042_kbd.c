@@ -90,9 +90,6 @@ void ps2c_rd_kbd(PS2Ctrl* ctrl) {
 	if (ctrl->ram[0] & 0x10) return;	// 1st device disabled
 	// TODO: if (mem[0] & 0x40) convert scancode2 to scancode1
 	ps2c_wr_ob(ctrl, ctrl->kbd->outbuf);
-	//ctrl->outbuf = ctrl->kbd->outbuf;
-	//ctrl->status &= ~0x21;
-	//ctrl->status |= 0x01;
 	ctrl->kbd->outbuf = 0;
 	if (ctrl->ram[0] & 1)
 		ctrl->intk = 1;
@@ -153,13 +150,6 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 					val &= ~0x40;
 				}
 				ctrl->ram[ctrl->cmd & 0x1f] = val & 0xff;
-				//if (ctrl->cmd == 0x60) {
-					//if (val & 0x10) {
-					//	ctrl->inbuf &= 0x7f;
-					//} else {
-					//	ctrl->inbuf |= 0x80;
-					//}
-				//}
 			} else {
 				switch (ctrl->cmd) {
 					case 0xd1:		// write to output port

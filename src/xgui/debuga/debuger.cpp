@@ -298,6 +298,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	tablist[HWG_SPCLST] = lst;
 	lst.clear();
 	p.first = QIcon(); p.second = ui.tabPit; lst.append(p);
+	p.first = QIcon(); p.second = ui.vgaregTab; lst.append(p);
 	tablist[HWG_PC] = lst;
 // create registers group
 	xLabel* lab;
@@ -580,7 +581,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.pbRestMemMap, SIGNAL(clicked()), this, SLOT(rest_mem_map()));
 // pit tab
 	ui.tabPit->setModel(new xPitModel());
-
+	ui.tabVgaReg->setModel(new xVgaRegModel());
 // subwindows
 	dui.setupUi(dumpwin);
 	dui.tbSave->addAction(dui.aSaveBin);
@@ -1078,7 +1079,8 @@ void DebugWin::fillTabs() {
 		block = 0;
 	}
 	// pit
-	emit ui.tabPit->model()->dataChanged(ui.tabPit->model()->index(0,0), ui.tabPit->model()->index(5,3));
+	emit ui.tabPit->model()->dataChanged(ui.tabPit->model()->index(0,0), ui.tabPit->model()->index(10,3));
+	emit ui.tabVgaReg->model()->dataChanged(ui.tabVgaReg->model()->index(0,0),ui.tabVgaReg->model()->index(32,3));
 }
 
 bool DebugWin::fillNotCPU() {

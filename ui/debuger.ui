@@ -926,7 +926,7 @@
         <bool>true</bool>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>2</number>
        </property>
        <property name="documentMode">
         <bool>true</bool>
@@ -1071,6 +1071,26 @@
         <layout class="QVBoxLayout" name="verticalLayout_17">
          <item>
           <widget class="QTableView" name="tabPit">
+           <property name="gridStyle">
+            <enum>Qt::DotLine</enum>
+           </property>
+           <attribute name="verticalHeaderDefaultSectionSize">
+            <number>17</number>
+           </attribute>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="vgaregTab">
+        <attribute name="title">
+         <string>VGA</string>
+        </attribute>
+        <layout class="QVBoxLayout" name="verticalLayout_18">
+         <item>
+          <widget class="QTableView" name="tabVgaReg">
+           <property name="editTriggers">
+            <set>QAbstractItemView::NoEditTriggers</set>
+           </property>
            <property name="gridStyle">
             <enum>Qt::DotLine</enum>
            </property>

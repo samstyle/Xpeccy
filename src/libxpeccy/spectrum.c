@@ -316,6 +316,7 @@ Computer* compCreate() {
 // ibm
 	comp->dma8 = dma_create(comp, 0);
 	comp->dma16 = dma_create(comp, 1);
+	pit_reset(&comp->pit);
 // baseconf
 	memcpy(comp->evo.blVer,blnm,16);
 	memcpy(comp->evo.bcVer,bcnm,16);

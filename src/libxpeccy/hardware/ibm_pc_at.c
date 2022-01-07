@@ -160,7 +160,7 @@ void ibm_outKbd(Computer* comp, int adr, int val) {
 			ps2c_wr(comp->ps2c, PS2_RCMD, val);
 			if (comp->ps2c->reset) {
 				comp->ps2c->reset = 0;
-				comp->cpu->reset(comp->cpu);		// cpu only, not all computer
+				compReset(comp, RES_DEFAULT);
 			}
 			break;
 	}
@@ -340,23 +340,34 @@ void ibm_iowr(Computer* comp, int adr, int val) {
 	hwOut(ibmPortMap, comp, adr, val, 0);
 }
 
+/*
 static const xColor ega_pal[16] = {{0x00,0x00,0x00},{0x00,0x00,0xaa},{0x00,0xaa,0x00},{0x00,0xaa,0xaa},\
 		      {0xaa,0x00,0x00},{0xaa,0x00,0xaa},{0xaa,0x55,0x00},{0xaa,0xaa,0xaa},\
 		      {0x55,0x55,0x55},{0x55,0x55,0xff},{0x55,0xff,0x55},{0x55,0xff,0xff},\
 		      {0xff,0x55,0x55},{0xff,0x55,0xff},{0xff,0xff,0x55},{0xff,0xff,0xff}\
 		     };
+*/
+
+static const int ega_def_idx[16] = {0,1,2,3,4,5,20,7,56,57,58,59,60,61,62,63};
 
 void ibm_reset(Computer* comp) {
-	pit_reset(&comp->pit);
+//	pit_reset(&comp->pit);		// pit don't have reset input (!)
 	pic_reset(&comp->mpic);
 	pic_reset(&comp->spic);
 	comp->keyb->outbuf = 0;
 
 	memcpy(comp->vid->ram + 0x20000, comp->vid->font, 0x2000);	// copy default font
-	for(int i = 0; i < 16; i++) {
-		comp->vid->pal[i] = ega_pal[i];
+	int i;
+	xColor xcol;
+	for (i = 0; i < 0x40; i++) {
+		xcol.r = 0x55 * (((i >> 1) & 2) + ((i >> 5) & 1));
+		xcol.g = 0x55 * ((i & 2) + ((i >> 4) & 1));
+		xcol.b = 0x55 * (((i << 1) & 2) + ((i >> 3) & 1));
+		comp->vid->pal[i + 0x80] = xcol;
 	}
-
+	for (i = 0; i < 16; i++) {
+		comp->vid->pal[i] = comp->vid->pal[ega_def_idx[i] + 0x80];
+	}
 	ibm_mem_map(comp);
 }
 

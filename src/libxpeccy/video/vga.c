@@ -5,10 +5,6 @@
 
 #include "vga.h"
 
-#define CRT_IDX		vid->vga.crt_idx
-#define CRT_REG(_n)	vid->reg[VGA_CRB + (_n)]
-#define CRT_CUR_REG	CRT_REG(CRT_IDX)
-
 #define SEQ_IDX		vid->vga.seq_idx
 #define SEQ_REG(_n)	vid->reg[VGA_SRB + (_n)]
 #define SEQ_CUR_REG	SEQ_REG(SEQ_IDX)
@@ -77,7 +73,7 @@ void vga_wr(Video* vid, int port, int val) {
 		case VGA_MODE:
 			vid->reg[0xff] = val & 0xff;
 			// b4:gfx 640x200 or 320x200; b2:gfx(1) or text(0); b1:text 80x25
-			printf("VGA mode %.2X\n",val & 0x13);
+			// printf("VGA mode %.2X\n",val & 0x13);
 			switch (val & 0x13) {
 				case 0x00: case 0x10:
 					vidSetMode(vid, VID_VGA_T40);
@@ -163,15 +159,15 @@ int vga_mrd(Video* vid, int adr) {
 
 void vga_t40_frm(Video* vid) {
 	vid->vga.line = 0;
-	vid->vga.chline = 0;
+	vid->vga.chline = CRT_REG(0x08) & 0x1f;
 }
 
 void vga_t40_line(Video* vid) {
 	int i,t;
-	memset(vid->line, 0, 0x400);
+	memset(vid->line, CRT_REG(0x11), 0x400);
 	vid->xpos = 0;
-	vid->vadr = 0;					// b8000
-	vid->vadr += vid->vga.line * CRT_REG(1);	// CRT_R1 chars in line
+	vid->vadr = (CRT_REG(0x0c) << 8) | (CRT_REG(0x0d));	// C,D: start address registers
+	vid->vadr += vid->vga.line * CRT_REG(1);		// CRT_R1 chars in line
 	for (t = 0; t < CRT_REG(1); t++) {
 		// char / atr taken right way (checked)
 		vid->idx = vid->ram[vid->vadr];			// char (plane 0)
@@ -180,7 +176,7 @@ void vga_t40_line(Video* vid) {
 		vid->tadr += vid->vga.chline;			// +line in char
 		vid->idx = vid->ram[0x20000 + vid->tadr];	// pixels
 		if ((vid->vadr == vid->vga.cadr) && !(CRT_REG(0x0a) & 0x20)) {		// cursor position, cursor enabled
-			if ((vid->vga.chline >= (CRT_REG(0x0a) & 0x1f)) \
+			if ((vid->vga.chline > (CRT_REG(0x0a) & 0x1f)) \
 				&& (vid->vga.chline <= (CRT_REG(0x0b) & 0x1f))) {	// cursor start/end
 				vid->idx ^= 0xff;
 			}
@@ -198,7 +194,7 @@ void vga_t40_line(Video* vid) {
 		vid->vadr++;
 	}
 	vid->vga.chline++;
-	if (vid->vga.chline > CRT_REG(9)) { //CRT_REG(9)) {		// char height register
+	if (vid->vga.chline > CRT_REG(9)) {			// char height register
 		vid->vga.line++;
 		vid->vga.chline = 0;
 	}
@@ -215,6 +211,76 @@ void vga_t80_dot(Video* vid) {
 	vid_dot_half(vid, vid->line[(vid->ray.x << 1) + 1]);
 }
 
+// res = HResolution (320 or 640)
+void vga_4bpp(Video* vid, int res) {
+	memset(vid->line, CRT_REG(0x11), 0x400);
+	int pos = 0;
+	int i,k,mask;
+	unsigned char col,b0,b1,b2,b3;
+	vid->vadr = (vid->ray.y >> 1) * 0x50;
+	if (vid->ray.y & 1)
+		vid->vadr |= 0x2000;
+	for (i = 0; i < res/8; i++) {
+		b0 = vid->ram[vid->vadr];
+		b1 = vid->ram[vid->vadr + 0x10000];
+		b2 = vid->ram[vid->vadr + 0x20000];
+		b3 = vid->ram[vid->vadr + 0x30000];
+		vid->vadr++;
+		mask = 0x80;
+		for (k = 0; k < 8; k++) {
+			col = 0;
+			if (b3 & mask) col |= 8;
+			if (b2 & mask) col |= 4;
+			if (b1 & mask) col |= 2;
+			if (b0 & mask) col |= 1;
+			vid->line[pos++] = col;
+			mask >>= 1;
+		}
+	}
+}
+
 // G320
 
+void vga320_2bpp_line(Video* vid) {
+	memset(vid->line, CRT_REG(0x11), 0x400);
+	int pos = 0;
+	int i;
+	unsigned char bt;
+	vid->vadr = (vid->ray.y >> 1) * 0x50;
+	if (vid->ray.y & 1)
+		vid->vadr |= 0x2000;
+	for (i = 0; i < 320/4; i++) {
+		bt = vid->ram[vid->vadr++];	// 4 pix/byte
+		vid->line[pos++] = (bt >> 6) & 3;
+		vid->line[pos++] = (bt >> 4) & 3;
+		vid->line[pos++] = (bt >> 2) & 3;
+		vid->line[pos++] = bt & 3;
+	}
+}
+
+void vga320_4bpp_line(Video* vid) {
+	vga_4bpp(vid, 320);
+}
+
 // G640
+
+void vga640_1bpp_line(Video* vid) {
+	memset(vid->line, CRT_REG(0x11), 0x400);
+	int pos = 0;
+	int i,k;
+	unsigned char bt;
+	vid->vadr = (vid->ray.y >> 1) * 0x50;
+	if (vid->ray.y & 1)
+		vid->vadr |= 0x2000;
+	for (i = 0; i < 640/8; i++) {
+		bt = vid->ram[vid->vadr++];
+		for (k = 0; k < 8; k++) {
+			vid->line[pos++] = (bt & 0x80) ? 0x0f : 0x00;
+			bt <<= 1;
+		}
+	}
+}
+
+void vga640_4bpp_line(Video* vid) {
+	vga_4bpp(vid, 640);
+}
