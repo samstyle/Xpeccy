@@ -16,6 +16,11 @@ QString formbufword(int num) {
 	return res;
 }
 
+QString gethex6(int num) {
+	QString res = formbufword(num & 0xffffff);
+	return res.rightJustified(6, '0');
+}
+
 QString gethexword(int num) {
 	QString res = formbufword(num & 0xffff);
 	return res.rightJustified(4, '0');

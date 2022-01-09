@@ -50,6 +50,12 @@ enum {
 	DBG_EVENT_STEP = QEvent::User
 };
 
+typedef struct {
+	QIcon icon;
+	QString name;
+	QWidget* wid;
+} tabDSC;
+
 class xItemDelegate : public QItemDelegate {
 	public:
 		xItemDelegate(int);
@@ -95,7 +101,7 @@ class DebugWin : public QDialog {
 		QPoint winPos;
 		QImage scrImg;
 
-		QMap<int, QList<QPair<QIcon, QWidget*> > > tablist;
+		QMap<int, QList<tabDSC> > tablist;
 
 		Computer* comp;
 		long tCount;
@@ -126,7 +132,7 @@ class DebugWin : public QDialog {
 		QMenu* cellMenu;
 		unsigned short bpAdr;
 		void doBreakPoint(unsigned short);
-		unsigned int getAdr();
+		int getAdr();
 
 		xItemDelegate* xid_none;
 		xItemDelegate* xid_byte;

@@ -41,8 +41,8 @@ int toBCD(int val) {
 	return rrt;
 }
 
-static int last_time = 0;
-static int cur_time = 0;
+// static int last_time = 0;
+// static int cur_time = 0;
 
 int rtc_read(CMOS* cms) {
 	int res = -1;
@@ -50,7 +50,7 @@ int rtc_read(CMOS* cms) {
 	struct tm* ctime;
 	time(&rtime);
 	ctime = localtime(&rtime);
-	cur_time = (ctime->tm_hour << 16) + (ctime->tm_min << 8) + ctime->tm_sec;
+//	int cur_time = (ctime->tm_hour << 16) + (ctime->tm_min << 8) + ctime->tm_sec;
 	switch (cms->adr) {
 		case 0x00: res = toBCD(ctime->tm_sec); break;
 		case 0x02: res = toBCD(ctime->tm_min); break;

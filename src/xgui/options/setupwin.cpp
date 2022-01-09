@@ -185,11 +185,11 @@ SetupWin::SetupWin(QWidget* par):QDialog(par) {
 	ui.psg2frq->setValidator(vld);
 	ui.psg3frq->setValidator(vld);
 // bdi
-// WTF? QtDesigner doesn't save this properties
 	ui.disklist->horizontalHeader()->setVisible(true);
 	ui.diskTypeBox->addItem("None",DIF_NONE);
 	ui.diskTypeBox->addItem("Beta disk (VG93)",DIF_BDI);
 	ui.diskTypeBox->addItem("+3 DOS (uPD765)",DIF_P3DOS);
+	ui.diskTypeBox->addItem("PC FDC (i8272)", DIF_PC);
 	ui.diskTypeBox->addItem("SMK512 (VP1-128)",DIF_SMK512);
 	ui.disklist->addAction(ui.actCopyToTape);
 	ui.disklist->addAction(ui.actSaveHobeta);

@@ -10,12 +10,14 @@ enum {
 	FDC_VG93,
 	FDC_UPD765,
 	FDC_VP1_128,
+	FDC_I8272
 };
 
 enum {
 	DIF_NONE = 0,
 	DIF_BDI,
 	DIF_P3DOS,
+	DIF_PC,
 	DIF_SMK512,
 	DIF_END	= -1
 };
@@ -63,6 +65,7 @@ struct FDC {
 	unsigned char tmp;
 	unsigned short wdata;
 	unsigned short tdata;
+	int trksize;		// 3125 for SD, 6250 for DD, 12500 for HD
 	Floppy* flop[4];
 	Floppy* flp;		// current floppy ptr
 	unsigned short crc;	// calculated crc

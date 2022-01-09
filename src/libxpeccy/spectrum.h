@@ -304,9 +304,9 @@ void cmsWr(Computer*, int);
 
 void rzxStop(Computer*);
 
-unsigned char* getBrkPtr(Computer*, unsigned short);
-unsigned char getBrk(Computer*, unsigned short);
-void setBrk(Computer*, unsigned short, unsigned char);
+unsigned char* getBrkPtr(Computer*, int);
+unsigned char getBrk(Computer*, int);
+void setBrk(Computer*, int, unsigned char);
 
 #ifdef __cplusplus
 }

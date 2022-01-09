@@ -7,7 +7,7 @@
 #include <QMouseEvent>
 #include <QHeaderView>
 
-#include "libxpeccy/spectrum.h"
+#include "../../xcore/xcore.h"
 
 enum {
 	XCP_1251 = 1,
@@ -35,7 +35,6 @@ class xDumpModel : public QAbstractTableModel {
 		int codePage;
 		unsigned int dmpadr;
 		unsigned int maxadr;
-		void setComp(Computer**);
 		void setMode(int, int, int, int);
 		void setRows(int);
 		int rowCount(const QModelIndex& = QModelIndex()) const;
@@ -53,7 +52,6 @@ class xDumpModel : public QAbstractTableModel {
 	public slots:
 		void update();
 	private:
-		Computer** cptr;
 		int mode;
 		int view;
 		int page;
@@ -68,8 +66,6 @@ class xDumpTable:public QTableView {
 	Q_OBJECT
 	public:
 		xDumpTable(QWidget* = NULL);
-		Computer** cptr;
-		void setComp(Computer**);
 		int rows();
 		void setCodePage(int);
 		void setMode(int, int, int, int);

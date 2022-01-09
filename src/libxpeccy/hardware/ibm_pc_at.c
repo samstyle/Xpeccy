@@ -288,6 +288,20 @@ int ibm_in3ba(Computer* comp, int adr) {
 
 // fdc (i8272a)
 
+// 3f4/3f5 -> fdc
+
+int ibm_fdc_rd(Computer* comp, int adr) {
+	int res = -1;
+	difIn(comp->dif, adr, &res, 0);
+	printf("in %.3X = %.2X\n",adr,res);
+	return res;
+}
+
+void ibm_fdc_wr(Computer* comp, int adr, int val) {
+	printf("out %.3X, %.2X\n",adr,val);
+	difOut(comp->dif, adr, val, 0);
+}
+
 // undef
 
 int ibm_dumird(Computer* comp, int adr) {return -1;}
@@ -323,7 +337,7 @@ static xPort ibmPortMap[] = {
 	{0x03f9,0x03c5,2,2,2,NULL,	ibm_out3c5},
 	{0x03ff,0x03ba,2,2,2,ibm_in3ba,	NULL},		// status reg 1 (3ba/3da)
 	{0x03ff,0x03da,2,2,2,ibm_in3ba, NULL},
-//	{0x03f8,0x03f0,2,2,2,NULL,	NULL},		// 1st fdd controller
+	{0x03f8,0x03f0,2,2,2,ibm_fdc_rd,ibm_fdc_wr},	// 1st fdd controller
 //	{0x03f8,0x0370,2,2,2,NULL,	NULL},		// 2nd fdd controller
 	{0x0000,0x0000,2,2,2,ibm_inDBG,	ibm_outDBG}
 };

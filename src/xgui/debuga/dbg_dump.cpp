@@ -41,7 +41,7 @@ QString getDumpString(QByteArray bts, int cp) {
 }
 
 int xDumpModel::mrd(int adr) const {
-	Computer* comp = *cptr;
+	Computer* comp = conf.prof.cur->zx;
 	MemPage* pg;
 	int fadr;
 	int res = 0xff;
@@ -78,7 +78,7 @@ int xDumpModel::mrd(int adr) const {
 }
 
 void xDumpModel::mwr(int adr, unsigned char bt) {
-	Computer* comp = *cptr;
+	Computer* comp = conf.prof.cur->zx;
 	MemPage* pg;
 	int fadr;
 	if (comp->cpu->type == CPU_I80286) {
@@ -124,9 +124,11 @@ xDumpModel::xDumpModel(QObject* par):QAbstractTableModel(par) {
 	pgsize = MEM_64K;
 }
 
+/*
 void xDumpModel::setComp(Computer** ptr) {
 	cptr = ptr;
 }
+*/
 
 void xDumpModel::setMode(int md, int pgn, int pgb, int pgs) {
 	mode = md;
@@ -268,21 +270,21 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 		case Qt::DisplayRole:
 			switch(col) {
 				case 0:
-					if ((*cptr)->cpu->type == CPU_I80286) {
+					if (conf.prof.cur->zx->cpu->type == CPU_I80286) {
 						adr %= maxadr;
 						if (!conf.dbg.segment) {
 							res = QString::number(adr, 16).toUpper().rightJustified(6 , '0');
-						} else if (check_seg(adr, (*cptr)->cpu->cs)) {
-							adr -= (*cptr)->cpu->cs.base;
+						} else if (check_seg(adr, conf.prof.cur->zx->cpu->cs)) {
+							adr -= conf.prof.cur->zx->cpu->cs.base;
 							res = QString("CS:").append(gethexword(adr & 0xffff));
-						} else if (check_seg(adr, (*cptr)->cpu->ss)) {
-							adr -= (*cptr)->cpu->ss.base;
+						} else if (check_seg(adr, conf.prof.cur->zx->cpu->ss)) {
+							adr -= conf.prof.cur->zx->cpu->ss.base;
 							res = QString("SS:").append(gethexword(adr & 0xffff));
-						} else if (check_seg(adr, (*cptr)->cpu->ds)) {
-							adr -= (*cptr)->cpu->ds.base;
+						} else if (check_seg(adr, conf.prof.cur->zx->cpu->ds)) {
+							adr -= conf.prof.cur->zx->cpu->ds.base;
 							res = QString("DS:").append(gethexword(adr & 0xffff));
-						} else if (check_seg(adr, (*cptr)->cpu->es)) {
-							adr -= (*cptr)->cpu->es.base;
+						} else if (check_seg(adr, conf.prof.cur->zx->cpu->es)) {
+							adr -= conf.prof.cur->zx->cpu->es.base;
 							res = QString("ES:").append(gethexword(adr & 0xffff));
 						} else {
 							res = QString::number(adr, 16).toUpper().rightJustified(6 , '0');
@@ -292,9 +294,9 @@ QVariant xDumpModel::data(const QModelIndex& idx, int role) const {
 						if ((mode == XVIEW_RAM) || (mode == XVIEW_ROM)) {
 							adr %= pgsize;
 							adr += pgbase;
-							str = QString::number(page, (*cptr)->hw->base).toUpper().rightJustified(2, '0').append(":");
+							str = QString::number(page, conf.prof.cur->zx->hw->base).toUpper().rightJustified(2, '0').append(":");
 						}
-						str.append(QString::number(adr, (*cptr)->hw->base).toUpper().rightJustified(((*cptr)->hw->base == 16) ? 4 : 6, '0'));
+						str.append(QString::number(adr, conf.prof.cur->zx->hw->base).toUpper().rightJustified((conf.prof.cur->zx->hw->base == 16) ? 4 : 6, '0'));
 						res = str;
 					}
 					break;
@@ -344,7 +346,7 @@ bool xDumpModel::setData(const QModelIndex& idx, const QVariant& val, int role) 
 	unsigned char bt;
 	QString str = val.toString();
 	if (col == 0) {
-		fadr = str_to_adr(*cptr, str);
+		fadr = str_to_adr(conf.prof.cur->zx, str);
 		if (fadr >= 0) {
 			dmpadr = (fadr - (row << 3)) % maxadr;
 			update();
@@ -381,10 +383,12 @@ xDumpTable::xDumpTable(QWidget* p):QTableView(p) {
 	connect(model, SIGNAL(s_adrch(int)), this, SIGNAL(s_adrch(int)));
 }
 
+/*
 void xDumpTable::setComp(Computer** ptr) {
 	cptr = ptr;
 	model->setComp(ptr);
 }
+*/
 
 void xDumpTable::setMode(int md, int pgn, int pgb, int pgs) {
 	mode = md;

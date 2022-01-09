@@ -142,7 +142,7 @@ long dsk_save_track(Floppy* flp, int trk, int side, FILE* file) {
 	side &= 1;
 	memset(&tinf, 0, sizeof(TrackInfBlock));
 	// scan track & collect sectors info & data
-	for (pos = 0; (pos < TRACKLEN) && (sec < 29); pos++) {
+	for (pos = 0; (pos < TRKLEN_DD) && (sec < 29); pos++) {
 		if (flp->data[rtrk].field[pos] == 1) {			// sector info
 			sdata[sec].trk = flp->data[rtrk].byte[pos++];	// C
 			sdata[sec].head = flp->data[rtrk].byte[pos++];	// H

@@ -34,19 +34,19 @@ void loadUDITrack(Floppy* flp, FILE* file, unsigned char tr, int sd) {
 	unsigned char type = fgetc(file);
 	unsigned int len;
 //	int i;
-	unsigned char trackBuf[TRACKLEN];
+	unsigned char trackBuf[TRKLEN_DD];
 	if (type != 0x00) {
 		printf("TRK %i: unknown format %.2X\n",rt,type);
 		len = freadLen(file,4);					// field len
 		fseek(file, len, SEEK_CUR);				// skip unknown field
 	} else {
 		len = freadLen(file,2);					// track size
-		memset(trackBuf, 0x4e, TRACKLEN);
+		memset(trackBuf, 0x4e, TRKLEN_DD);
 #if 1
-		if (len > TRACKLEN) {
-			fread((char*)trackBuf, TRACKLEN, 1, file);	// read only TRACKLEN bytes
-			fseek(file, len - TRACKLEN, SEEK_CUR);		// and skip others
-			flpPutTrack(flp, rt, trackBuf, TRACKLEN);
+		if (len > TRKLEN_DD) {
+			fread((char*)trackBuf, TRKLEN_DD, 1, file);	// read only TRACKLEN bytes
+			fseek(file, len - TRKLEN_DD, SEEK_CUR);		// and skip others
+			flpPutTrack(flp, rt, trackBuf, TRKLEN_DD);
 		} else {
 			fread((char*)trackBuf, len, 1, file);
 			flpPutTrack(flp, rt, trackBuf, len);
@@ -72,11 +72,11 @@ void loadUDITrack(Floppy* flp, FILE* file, unsigned char tr, int sd) {
 void getUDIBitField(Floppy* flp, unsigned char tr, unsigned char* buf) {
 	int i;
 	int msk=0x01;
-	unsigned char fieldBuf[TRACKLEN];
-	unsigned char trackBuf[TRACKLEN];
+	unsigned char fieldBuf[TRKLEN_DD];
+	unsigned char trackBuf[TRKLEN_DD];
 	flpGetTrack(flp,tr,trackBuf);
 	flpGetTrackFields(flp,tr,fieldBuf);
-	for (i = 0; i < TRACKLEN; i++) {
+	for (i = 0; i < TRKLEN_DD; i++) {
 		if (msk == 0x100) {
 			msk = 0x01;
 			*(++buf)=0x00;
@@ -137,10 +137,10 @@ int saveUDI(Computer* comp, const char* name, int drv) {
 	*(dptr++) = 0x00;
 	for (i = 0; i < (flp->trk80 ? 160 : 80); i++) {
 		*(dptr++) = 0x00;		// MFM
-		*(dptr++) = (TRACKLEN & 0xff);	// track len
-		*(dptr++) = ((TRACKLEN & 0xff00) >> 8);
+		*(dptr++) = (TRKLEN_DD & 0xff);	// track len
+		*(dptr++) = ((TRKLEN_DD & 0xff00) >> 8);
 		flpGetTrack(flp,i,dptr); // memcpy((char*)dptr,(char*)flp->data[i].byte,TRACKLEN);	// track image
-		dptr += TRACKLEN;
+		dptr += TRKLEN_DD;
 		getUDIBitField(flp,i,dptr);
 		dptr += 782;			// 6250 / 8 + 1
 		if (!flp->doubleSide) i++;		// if single-side skip

@@ -158,6 +158,7 @@ int saveLabels(const char* fn) {
 // comments
 
 void add_comment(xAdr xadr, QString str) {
+	// printf("%s:%i\txadr{%i,%X,%X}\n",__FUNCTION__,__LINE__,xadr.type,xadr.adr,xadr.abs);
 	switch(xadr.type) {
 		case MEM_RAM: conf.prof.cur->comments.ram[xadr.abs] = str; break;
 		case MEM_ROM: conf.prof.cur->comments.rom[xadr.abs] = str; break;

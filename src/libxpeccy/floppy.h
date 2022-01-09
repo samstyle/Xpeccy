@@ -6,7 +6,8 @@ extern "C" {
 
 //#include <stdint.h>
 
-#define TRACKLEN 6500 // 6250
+#define TRKLEN_DD	6250
+#define TRKLEN_HD	12500
 // disk type
 #define DISK_TYPE_TRD	1
 
@@ -45,13 +46,12 @@ typedef struct {
 
 	int id;
 	unsigned char trk;
-//	unsigned char rtrk;
 	unsigned char field;
 	int pos;
 	char* path;
 	struct {
-		unsigned char byte[TRACKLEN];
-		unsigned char field[TRACKLEN];
+		unsigned char byte[TRKLEN_HD];
+		unsigned char field[TRKLEN_HD];
 		int map[256];		// position of sector n = 1+
 	} data[256];
 } Floppy;

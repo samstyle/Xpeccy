@@ -17,13 +17,13 @@ typedef struct {
 	unsigned islab:1;		// address have label
 	unsigned iscom:1;		// address have comment
 	unsigned isequ:1;		// this is equ
-	unsigned short adr;		// command addr
+	int adr;			// command addr (cpu)
 	int oadr;			// word operand like nn : jp nn; ld hl,(nn)
 	int flag;			// address cell flags
 	int oflag;			// opcode flag
 	QString aname;			// label/segment/address
 	QString bytes;			// all bytes inside command
-	QString command;		// command with replace addr->label
+	QString command;		// command with replaced addr->label
 	QString info;			// memory argument if any
 	QString icon;			// icon path if any
 } dasmData;
@@ -39,7 +39,7 @@ class xDisasmModel : public QAbstractTableModel {
 		QVariant data(const QModelIndex&, int) const;
 		bool setData(const QModelIndex&, const QVariant&, int);
 		void update_data();
-		Computer** cptr;
+//		Computer** cptr;
 		QList<dasmData> dasm;
 		unsigned short disasmAdr;
 	signals:
@@ -58,7 +58,6 @@ class xDisasmTable : public QTableView {
 		xDisasmTable(QWidget* = NULL);
 		QVariant getData(int, int, int);
 		int rows();
-		void setComp(Computer**);
 		void setMode(int, int);
 		int getMode(int);
 		unsigned short getAdr();
@@ -74,7 +73,7 @@ class xDisasmTable : public QTableView {
 	private:
 		int markAdr;
 		xDisasmModel* model;
-		Computer** cptr;
+//		Computer** cptr;
 		QList<unsigned short> history;
 
 		void scrolUp(Qt::KeyboardModifiers = Qt::NoModifier);
@@ -88,4 +87,4 @@ class xDisasmTable : public QTableView {
 		void resizeEvent(QResizeEvent*);
 };
 
-QList<dasmData> getDisasm(Computer*, unsigned short&);
+QList<dasmData> getDisasm(Computer*, int&);

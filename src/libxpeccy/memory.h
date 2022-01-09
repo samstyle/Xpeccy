@@ -61,6 +61,7 @@ typedef struct {
 	int pgsize;	// size of page in bytes
 	int pgmask;	// number of LSBits in address = page offset (FF or FFFF)
 	int pgshift;	// = log2(page size), 8 for 256-pages, 16 for 64K-pages
+	int busmask;	// cpu addr bus mask
 	char* snapath;
 } Memory;
 
@@ -79,7 +80,7 @@ xAdr mem_get_xadr(Memory*, int);
 int memFindAdr(Memory*, int, int);
 
 void mem_set_path(Memory*, const char*);
-void mem_set_map_page(Memory*, int);
+void mem_set_bus(Memory*, int);
 int mem_get_phys_adr(Memory*, int);
 MemPage* mem_get_page(Memory*, int);
 

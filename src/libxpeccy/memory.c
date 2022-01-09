@@ -12,7 +12,7 @@ Memory* memCreate() {
 	memSetBank(mem, 0x40, MEM_RAM, 5, MEM_16K, NULL, NULL, NULL);
 	memSetBank(mem, 0x80, MEM_RAM, 2, MEM_16K, NULL, NULL, NULL);
 	memSetBank(mem, 0xc0, MEM_RAM, 0, MEM_16K, NULL, NULL, NULL);
-	mem_set_map_page(mem, MEM_256);
+	mem_set_bus(mem, 16);
 	mem->snapath = NULL;
 	return mem;
 }
@@ -41,9 +41,10 @@ int toLimits(int src, int min, int max) {
 	return src;
 }
 
-void mem_set_map_page(Memory* mem, int sz) {
-	sz = toLimits(sz, MEM_256, MEM_64K);
-	sz = getNearPower(sz);
+void mem_set_bus(Memory* mem, int bw) {
+	bw = toLimits(bw, 8, 24);
+	mem->busmask = (1 << bw) - 1;		// FFFF for 16, FFFFFF for 24...
+	int sz = 1 << (bw - 8);			// memory map contains 256 pages
 	mem->pgsize = sz;
 	mem->pgshift = 8;
 	mem->pgmask = sz - 1;
@@ -148,6 +149,7 @@ void memPutData(Memory* mem, int type, int page, int sz, char* src) {
 
 // get cell full address
 xAdr mem_get_xadr(Memory* mem, int adr) {
+	adr &= mem->busmask;
 	xAdr xadr;
 	MemPage* ptr = mem_get_page(mem, adr);	// = &mem->map[(adr >> mem->pgshift) & 0xff];
 	xadr.type = ptr->type;				// page type

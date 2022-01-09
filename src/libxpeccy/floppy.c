@@ -66,7 +66,7 @@ int flpNext(Floppy* flp, int fdcSide) {
 	if (flp->doubleSide && fdcSide) rtrk++;
 	if (flp->insert) {
 		flp->pos++;
-		if (flp->pos >= TRACKLEN) {
+		if (flp->pos >= TRKLEN_DD) {
 			flp->pos = 0;
 			res = 1;
 		}
@@ -117,14 +117,14 @@ int flp_format_trk_buf(int trk, int spt, int slen, char* data, unsigned char* bu
 	} else {
 		ptr = buf;
 		slen = t;
-		spc = (TRACKLEN - 20) / spt;
+		spc = (TRKLEN_DD - 20) / spt;
 		spc -= (72 + slen);		// space 3 size
 		if (spc < 10) {
 			res = 0;
 		} else {
 			hd = trk & 1;
 			tr = trk >> 1;
-			memset(ptr, 0x4e, TRACKLEN);
+			memset(ptr, 0x4e, TRKLEN_DD);
 			ptr += 12;
 			memcpy(ptr, trk_mark, 4); ptr += 4;
 			for (sc = 1; sc <= spt; sc++) {
@@ -179,7 +179,7 @@ void flpPrev(Floppy* flp, int fdcSide) {
 		if (flp->pos > 0) {
 			flp->pos--;
 		} else {
-			flp->pos = TRACKLEN - 1;
+			flp->pos = TRKLEN_DD - 1;
 		}
 		flp->field = flp->data[rtrk].field[flp->pos] & 0x0f;
 	} else {
@@ -188,8 +188,8 @@ void flpPrev(Floppy* flp, int fdcSide) {
 }
 
 void flpClearTrack(Floppy* flp,int tr) {
-	memset(flp->data[tr].byte, 0, TRACKLEN);
-	memset(flp->data[tr].field, 0, TRACKLEN);
+	memset(flp->data[tr].byte, 0, TRKLEN_DD);
+	memset(flp->data[tr].field, 0, TRKLEN_DD);
 }
 
 void flpClearDisk(Floppy* flp) {
@@ -209,7 +209,7 @@ void flpFillFields(Floppy* flp,int tr, int flag) {
 	for (i = 0; i < 256; i++) {
 		flp->data[tr].map[i] = 0;
 	}
-	for (i = 0; i < TRACKLEN; i++) {
+	for (i = 0; i < TRKLEN_DD; i++) {
 		flp->data[tr].field[i] = fld;
 		fld &= 0x0f;		// reset flags
 		if (flag & 1) {
@@ -288,11 +288,11 @@ int flpEject(Floppy* flp) {
 
 
 void flpGetTrack(Floppy* flp,int tr,unsigned char* dst) {
-	memcpy(dst,flp->data[tr].byte,TRACKLEN);
+	memcpy(dst,flp->data[tr].byte,TRKLEN_DD);
 }
 
 void flpGetTrackFields(Floppy* flp,int tr,unsigned char* dst) {
-	memcpy(dst,flp->data[tr].field,TRACKLEN);
+	memcpy(dst,flp->data[tr].field,TRKLEN_DD);
 }
 
 void flpPutTrack(Floppy* flp,int tr,unsigned char* src,int len) {

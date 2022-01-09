@@ -28,14 +28,10 @@ int memrd(int adr, int m1, void* ptr) {
 	}
 #endif
 	unsigned char* fptr;
-	if (comp->hw->id == HW_IBM_PC) {
-		fptr = comp->brkRamMap + (adr & 0x3fffff);
-	} else {
-		fptr = getBrkPtr(comp, adr & 0xffff);
-	}
+	fptr = getBrkPtr(comp, adr);
 	unsigned char flag = *fptr;
 	if (comp->maping) {
-		if ((comp->cpu->pc-1) == adr) {		// cuz pc is already incremented
+		if ((comp->cpu->pc-1+comp->cpu->cs.base) == adr) {
 			flag &= 0x0f;
 			flag |= DBG_VIEW_EXEC;
 			*fptr = flag;
@@ -54,11 +50,7 @@ int memrd(int adr, int m1, void* ptr) {
 void memwr(int adr, int val, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	unsigned char* fptr;
-	if (comp->hw->id == HW_IBM_PC) {
-		fptr = comp->brkRamMap + (adr & 0x3fffff);
-	} else {
-		fptr = getBrkPtr(comp, adr & 0xffff);
-	}
+	fptr = getBrkPtr(comp, adr);
 	unsigned char flag = *fptr;
 	if (comp->maping) {
 		if (!(flag & 0xf0)) {
@@ -397,6 +389,7 @@ void compReset(Computer* comp,int res) {
 	if (comp->hw->reset)
 		comp->hw->reset(comp);
 	comp->hw->mapMem(comp);
+	comp->cpu->cs.base = 0;		// 0 for all except i80286
 	comp->cpu->reset(comp->cpu);
 }
 
@@ -524,8 +517,7 @@ int compSetHardware(Computer* comp, const char* name) {
 	comp->hw = hw;
 	comp->cpu->nod = 0;
 	comp->vid->mrd = vid_mrd_cb;
-	mem_set_map_page(comp->mem, hw->pgsz);
-	// compUpdateTimings(comp);
+	mem_set_bus(comp->mem, hw->adrbus);
 	compSetBaseFrq(comp, 0);	// recalculations
 	return 1;
 }
@@ -536,11 +528,11 @@ int compExec(Computer* comp) {
 	comp->vid->time = 0;
 // breakpoints
 	if (!comp->debug) {
-		unsigned char brk = getBrk(comp, comp->cpu->pc);
+		unsigned char *ptr = getBrkPtr(comp, comp->cpu->pc + comp->cpu->cs.base);
+		unsigned char brk = *ptr;
 		if (brk & (MEM_BRK_FETCH | MEM_BRK_TFETCH)) {
 			comp->brk = 1;
 			if (brk & MEM_BRK_TFETCH) {
-				unsigned char *ptr = getBrkPtr(comp, comp->cpu->pc);
 				*ptr &= ~MEM_BRK_TFETCH;
 			}
 			return 0;
@@ -677,12 +669,12 @@ void cmsWr(Computer* comp, int val) {
 
 static unsigned char dumBrk = 0x00;
 
-unsigned char* getBrkPtr(Computer* comp, unsigned short madr) {
+unsigned char* getBrkPtr(Computer* comp, int madr) {
 	xAdr xadr = mem_get_xadr(comp->mem, madr);
 	unsigned char* ptr = NULL;
 	switch (xadr.type) {
-		case MEM_RAM: ptr = comp->brkRamMap + (xadr.abs & 0x3fffff); break;
-		case MEM_ROM: ptr = comp->brkRomMap + (xadr.abs & 0x7ffff); break;
+		case MEM_RAM: ptr = comp->brkRamMap + (xadr.abs & comp->mem->ramMask); break;
+		case MEM_ROM: ptr = comp->brkRomMap + (xadr.abs & comp->mem->romMask); break;
 		case MEM_SLOT:
 			if (comp->slot->brkMap)
 				ptr = comp->slot->brkMap + (xadr.abs & comp->slot->memMask);
@@ -695,15 +687,15 @@ unsigned char* getBrkPtr(Computer* comp, unsigned short madr) {
 	return ptr;
 }
 
-void setBrk(Computer* comp, unsigned short adr, unsigned char val) {
+void setBrk(Computer* comp, int adr, unsigned char val) {
 	unsigned char* ptr = getBrkPtr(comp, adr);
 	if (ptr == NULL) return;
 	*ptr = (*ptr & 0xf0) | (val & 0x0f);
 }
 
-unsigned char getBrk(Computer* comp, unsigned short adr) {
+unsigned char getBrk(Computer* comp, int adr) {
 	unsigned char* ptr = getBrkPtr(comp, adr);
 	unsigned char res = ptr ? *ptr : 0x00;
-	res |= (comp->brkAdrMap[adr] & 0x0f);
+	res |= (comp->brkAdrMap[adr & 0xffff] & 0x0f);
 	return res;
 }

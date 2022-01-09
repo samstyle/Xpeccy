@@ -29,16 +29,16 @@ QString brkGetString(xBrkPoint brk) {
 			res = QString("IO:%0 mask %1").arg(gethexword(brk.adr)).arg(gethexword(brk.mask));
 			break;
 		case BRK_MEMRAM:
-			res = QString("RAM:%0:%1").arg(gethexbyte(brk.adr >> 14)).arg(gethexword(brk.adr & 0x3fff));
+			res = QString("RAM:%0 [%1:%2]").arg(gethex6(brk.adr)).arg(gethexbyte(brk.adr >> 14)).arg(gethexword(brk.adr & 0x3fff));
 			break;
 		case BRK_MEMROM:
-			res = QString("ROM:%0:%1").arg(gethexbyte(brk.adr >> 14)).arg(gethexword(brk.adr & 0x3fff));
+			res = QString("ROM:%0 [%1:%2]").arg(gethex6(brk.adr)).arg(gethexbyte(brk.adr >> 14)).arg(gethexword(brk.adr & 0x3fff));
 			break;
 		case BRK_MEMSLT:
-			res = QString("SLT:%0:%1").arg(gethexbyte(brk.adr >> 14)).arg(gethexword(brk.adr & 0x3fff));
+			res = QString("SLT:%0 [%1:%2]").arg(gethex6(brk.adr)).arg(gethexbyte(brk.adr >> 14)).arg(gethexword(brk.adr & 0x3fff));
 			break;
 		case BRK_MEMEXT:
-			res = QString("EXT:%0:%1").arg(gethexbyte(brk.adr >> 14)).arg(gethexword(brk.adr & 0x3fff));
+			res = QString("EXT:%0 [%1:%2]").arg(gethex6(brk.adr)).arg(gethexbyte(brk.adr >> 14)).arg(gethexword(brk.adr & 0x3fff));
 			break;
 		case BRK_IRQ:
 			res = QString("IRQ");

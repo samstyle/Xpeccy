@@ -134,6 +134,58 @@ void pdosReset(DiskIF* dif) {
 	uReset(dif->fdc);
 }
 
+// pc (i8275 = upd765)
+
+int dpcIn(DiskIF* dif, int port, int* res, int dos) {
+	switch (port & 7) {
+		case 0:
+			*res = 0;
+			if (!dif->fdc->flp->trk == 0) *res |= 0x10;
+			if (dif->fdc->side) *res |= 0x08;
+			if (!dif->fdc->flp->index) *res |= 0x04;
+			if (!dif->fdc->flp->protect) *res |= 0x02;
+			if (dif->fdc->dir) *res |= 0x01;
+			break;
+		case 4:
+		case 5: *res = uRead(dif->fdc, port & 1);
+			break;
+	}
+	return 1;
+}
+
+int dpcOut(DiskIF* dif, int port, int val, int dos) {
+	switch (port & 7) {
+		case 2:
+			// p2:
+			// b4..7 = motor drive 0..3
+			// b3 = dma enable
+			// b2 = 0:fdc reset
+			// b0,1 = drive select
+			dif->fdc->flop[0]->motor = (val & 0x10) ? 0 : 1;
+			dif->fdc->flop[1]->motor = (val & 0x20) ? 0 : 1;
+			dif->fdc->flop[2]->motor = (val & 0x40) ? 0 : 1;
+			dif->fdc->flop[3]->motor = (val & 0x80) ? 0 : 1;
+			dif->fdc->flp = dif->fdc->flop[val & 3];
+			if (!(val & 4)) uReset(dif->fdc);
+			break;
+		case 4:
+		case 5: uWrite(dif->fdc, port & 1, val);
+			break;
+		case 6:
+			/*03F6	r/w	FIXED disk controller data register
+				 bit 7-4    reserved
+				 bit 3 = 0  reduce write current
+					 1  head select 3 enable
+				 bit 2 = 1  disk reset enable
+					 0  disk reset disable
+				 bit 1 = 0  disk initialization enable
+					 1  disk initialization disable
+				 bit 0	    reserved*/
+			break;
+	}
+	return 1;
+}
+
 // bk
 
 void vp1_reset(FDC*);
@@ -160,7 +212,8 @@ int bkdOut(DiskIF* dif, int port, int val, int dos) {
 static DiskHW dhwTab[] = {
 	{DIF_NONE,&dumReset,&dumIn,&dumOut,&dumSync},
 	{DIF_BDI,&bdiReset,&bdiIn,&bdiOut,&dhwSync},
-	{DIF_P3DOS,&pdosReset,&pdosIn,&pdosOut,&dhwSync},
+	{DIF_P3DOS,&pdosReset,&pdosIn,&pdosOut,&dhwSync},	// upd765 (+3dos)
+	{DIF_PC,&pdosReset,&dpcIn,&dpcOut,&dhwSync},		// i8275 = upd765
 	{DIF_SMK512,&bkdReset,&bkdIn,&bkdOut,&dhwSync},
 	{DIF_END,NULL,NULL,NULL,NULL}
 };

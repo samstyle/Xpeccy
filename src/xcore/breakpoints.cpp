@@ -190,17 +190,18 @@ void brk_clear_tmp(Computer* comp) {
 
 void clearMap(unsigned char* ptr, int siz) {
 	while (siz > 0) {
+		*ptr &= 0xf0;
+		ptr++;
 		siz--;
-		ptr[siz] &= 0xf0;
 	}
 }
 
 void brkInstallAll() {
 	Computer* comp = conf.prof.cur->zx;
-	memset(comp->brkAdrMap, 0x00, 0x10000);
-	memset(comp->brkIOMap, 0x00, 0x10000);
-	clearMap(comp->brkRamMap, 0x400000);
-	clearMap(comp->brkRomMap, 0x80000);
+	memset(comp->brkAdrMap, 0x00, MEM_64K);
+	memset(comp->brkIOMap, 0x00, MEM_64K);
+	clearMap(comp->brkRamMap, MEM_4M);
+	clearMap(comp->brkRomMap, MEM_512K);
 	if (comp->slot->brkMap)
 		clearMap(comp->slot->brkMap, comp->slot->memMask + 1);
 	foreach(xBrkPoint brk, conf.prof.cur->brkList) {

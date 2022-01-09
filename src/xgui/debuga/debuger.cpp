@@ -15,14 +15,14 @@
 #include "filer.h"
 #include "../xgui.h"
 
-unsigned int blockStart = UINT_MAX;
-unsigned int blockEnd = UINT_MAX;
+int blockStart = -1;
+int blockEnd = -1;
 
 int tmpcnt = 0;
 
 int getRFIData(QComboBox*);
 void setRFIndex(QComboBox* box, QVariant data);
-int dasmSome(Computer*, unsigned short, dasmData&);
+int dasmSome(Computer*, int, dasmData&);
 
 // trace type
 enum {
@@ -177,13 +177,13 @@ void DebugWin::onPrfChange(xProfile* prf) {
 	comp = prf->zx;
 	save_mem_map();
 	ui.tabsPanel->clear();
-	QList<QPair<QIcon, QWidget*> > lst = tablist[prf->zx->hw->grp];
-	QPair<QIcon, QWidget*> p;
-	p.first = QIcon(":/images/stop.png");
-	p.second = ui.brkTab;
+	QList<tabDSC> lst = tablist[prf->zx->hw->grp];
+	tabDSC p;
+	p.icon = QIcon(":/images/stop.png");
+	p.wid = ui.brkTab;
 	lst.append(p);
 	while(lst.size() > 0) {
-		ui.tabsPanel->addTab(lst.first().second, lst.first().first, "");
+		ui.tabsPanel->addTab(lst.first().wid, lst.first().icon, lst.first().name);
 		lst.removeFirst();
 	}
 	ui.tabsPanel->setPalette(QPalette());
@@ -262,43 +262,44 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 
 	tabMode = HW_NULL;
 
-	QList<QPair<QIcon, QWidget*> > lst;
-	QPair<QIcon, QWidget*> p;
+	QList<tabDSC> lst;
+	tabDSC p;
 	tablist.clear();
 
-	p.first = QIcon(":/images/display.png"); p.second = ui.scrTab; lst.append(p);
-	p.first = QIcon(":/images/speaker2.png"); p.second = ui.ayTab; lst.append(p);
-	p.first = QIcon(":/images/tape.png"); p.second = ui.tapeTab; lst.append(p);
-	p.first = QIcon(":/images/floppy.png"); p.second = ui.fdcTab; lst.append(p);
-	p.first = QIcon(":/images/memory.png"); p.second = ui.memTab; lst.append(p);
+	p.icon = QIcon(":/images/display.png"); p.wid = ui.scrTab; lst.append(p);
+	p.icon = QIcon(":/images/speaker2.png"); p.wid = ui.ayTab; lst.append(p);
+	p.icon = QIcon(":/images/tape.png"); p.wid = ui.tapeTab; lst.append(p);
+	p.icon = QIcon(":/images/floppy.png"); p.wid = ui.fdcTab; lst.append(p);
+	p.icon = QIcon(":/images/memory.png"); p.wid = ui.memTab; lst.append(p);
 	tablist[HWG_ZX] = lst;
 	lst.clear();
-	p.first = QIcon(":/images/nespad.png"); p.second = ui.nesTab; lst.append(p);
+	p.icon = QIcon(":/images/nespad.png"); p.wid = ui.nesTab; lst.append(p);
 #if ISDEBUG
-	p.first = QIcon(":/images/speaker2.png"); p.second = ui.nesApuTab; lst.append(p);
+	p.icon = QIcon(":/images/speaker2.png"); p.wid = ui.nesApuTab; lst.append(p);
 #endif
 	tablist[HWG_NES] = lst;
 	lst.clear();
-	p.first = QIcon(":/images/gameboy.png"); p.second = ui.gbTab; lst.append(p);
+	p.icon = QIcon(":/images/gameboy.png"); p.wid = ui.gbTab; lst.append(p);
 	tablist[HWG_GB] = lst;
 	lst.clear();
-	p.first = QIcon(":/images/tape.png"); p.second = ui.tapeTab; lst.append(p);
-	p.first = QIcon(":/images/floppy.png"); p.second = ui.fdcTab; lst.append(p);
+	p.icon = QIcon(":/images/tape.png"); p.wid = ui.tapeTab; lst.append(p);
+	p.icon = QIcon(":/images/floppy.png"); p.wid = ui.fdcTab; lst.append(p);
 	tablist[HWG_BK] = lst;
 	lst.clear();
-	p.first = QIcon(":/images/commodore.png"); p.second = ui.ciaTab; lst.append(p);
-	p.first = QIcon(":/images/tape.png"); p.second = ui.tapeTab; lst.append(p);
+	p.icon = QIcon(":/images/commodore.png"); p.wid = ui.ciaTab; lst.append(p);
+	p.icon = QIcon(":/images/tape.png"); p.wid = ui.tapeTab; lst.append(p);
 	tablist[HWG_COMMODORE] = lst;
 	lst.clear();
-	p.first = QIcon(":/images/speaker2.png"); p.second = ui.ayTab; lst.append(p);
-	p.first = QIcon(":/images/tape.png"); p.second = ui.tapeTab; lst.append(p);
+	p.icon = QIcon(":/images/speaker2.png"); p.wid = ui.ayTab; lst.append(p);
+	p.icon = QIcon(":/images/tape.png"); p.wid = ui.tapeTab; lst.append(p);
 	tablist[HWG_MSX] = lst;
 	lst.clear();
-	p.first = QIcon(":/images/tape.png"); p.second = ui.tapeTab; lst.append(p);
+	p.icon = QIcon(":/images/tape.png"); p.wid = ui.tapeTab; lst.append(p);
 	tablist[HWG_SPCLST] = lst;
 	lst.clear();
-	p.first = QIcon(); p.second = ui.tabPit; lst.append(p);
-	p.first = QIcon(); p.second = ui.vgaregTab; lst.append(p);
+	p.icon = QIcon(); p.name = "PIT"; p.wid = ui.tabPit; lst.append(p);
+	p.icon = QIcon(); p.name = "VGA"; p.wid = ui.vgaregTab; lst.append(p);
+	p.icon = QIcon(":/images/floppy.png"); p.name = ""; p.wid = ui.fdcTab; lst.append(p);
 	tablist[HWG_PC] = lst;
 // create registers group
 	xLabel* lab;
@@ -336,9 +337,6 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 		ui.flagsGrid->addWidget(qcb, (((15 - i) & 0x0c) >> 1) + 1, (15 - i) & 3);
 	}
 	connect(flagrp, SIGNAL(buttonClicked(QAbstractButton*)),this,SLOT(setFlags()));
-
-	ui.dumpTable->setComp(&comp);
-	ui.dasmTable->setComp(&comp);
 
 	conf.dbg.labels = 1;
 	conf.dbg.segment = 0;
@@ -779,9 +777,9 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			}
 			break;
 		case XCUT_STEPOVER:
-			len = dasmSome(comp, comp->cpu->pc, drow);
+			len = dasmSome(comp, comp->cpu->pc + comp->cpu->cs.base, drow);
 			if (drow.oflag & OF_SKIPABLE) {
-				ptr = getBrkPtr(comp, (comp->cpu->pc + len) & 0xffff);
+				ptr = getBrkPtr(comp, (comp->cpu->pc + comp->cpu->cs.base + len) & 0xffff);
 				*ptr |= MEM_BRK_TFETCH;
 				stop();
 			} else {
@@ -796,7 +794,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			if (!ui.dasmTable->hasFocus()) break;
 			idx = ui.dasmTable->currentIndex();
 			i = ui.dasmTable->getData(idx.row(), 0, Qt::UserRole).toInt();
-			ptr = getBrkPtr(comp, i & 0xffff);
+			ptr = getBrkPtr(comp, i);
 			stop();
 			*ptr |= MEM_BRK_TFETCH;
 			break;
@@ -1592,9 +1590,9 @@ void DebugWin::jumpToLabel(QString lab) {
 int rdbyte(int adr, void* ptr) {
 	Computer* comp = (Computer*)ptr;
 	int res = -1;
-	if (comp->hw->id == HW_IBM_PC) {
-		res = comp->hw->mrd(comp, adr, 0);
-	} else {
+//	if (comp->hw->id == HW_IBM_PC) {
+//		res = comp->hw->mrd(comp, adr, 0);
+//	} else {
 		MemPage* pg = mem_get_page(comp->mem, adr);	// = &comp->mem->map[(adr >> 8) & 0xff];
 		int fadr = mem_get_phys_adr(comp->mem, adr);	// = pg->num << 8) | (adr & 0xff);
 		switch (pg->type) {
@@ -1605,7 +1603,7 @@ int rdbyte(int adr, void* ptr) {
 				if (!comp->slot->data) break;
 				res = sltRead(comp->slot, SLT_PRG, adr & 0xffff); break;
 		}
-	}
+//	}
 	return res;
 }
 
@@ -1622,8 +1620,8 @@ void DebugWin::saveDasm() {
 	QList<dasmData> list;
 	if (file.open(QFile::WriteOnly)) {
 		QTextStream strm(&file);
-		unsigned short adr = (blockStart < 0) ? 0 : (blockStart & 0xffff);
-		unsigned short end = (blockEnd < 0) ? 0 : (blockEnd & 0xffff);
+		int adr = (blockStart < 0) ? 0 : (blockStart & 0xffff);
+		int end = (blockEnd < 0) ? 0 : (blockEnd & 0xffff);
 		int work = 1;
 		strm << "; Created by Xpeccy deBUGa\n\n";
 		strm << "\tORG 0x" << gethexword(adr) << "\n\n";
@@ -1717,20 +1715,25 @@ void DebugWin::fillStack() {
 
 // breakpoint
 
-unsigned int DebugWin::getAdr() {
+int DebugWin::getAdr() {
 	int adr;
 	int col;
 	QModelIndex idx;
 	if (ui.dumpTable->hasFocus()) {
 		idx = ui.dumpTable->currentIndex();
 		col = idx.column();
-		adr = (ui.dumpTable->getAdr() + (idx.row() << 3)) & 0xffff;
+		adr = (ui.dumpTable->getAdr() + (idx.row() << 3));
 		if ((col > 0) && (col < 9)) {
 			adr += idx.column() - 1;
 		}
+		if (comp->cpu->type == CPU_I80286) {
+			adr &= (MEM_4M - 1);
+		} else {
+			adr &= (MEM_64K - 1);
+		}
 	} else {
 		idx = ui.dasmTable->currentIndex();
-		adr = ui.dasmTable->getData(idx.row(), 0, Qt::UserRole).toInt();
+		adr = ui.dasmTable->getData(idx.row(), 0, Qt::UserRole).toInt();		// already +cs.base
 	}
 	return adr;
 }
@@ -1753,45 +1756,68 @@ void DebugWin::doBreakPoint(unsigned short adr) {
 
 // TODO: breakpoints on block
 void DebugWin::chaCellProperty(QAction* act) {
-	int data = act->data().toInt();
-	unsigned int adr = getAdr();
-	unsigned int bgn, end;
+	int data = act->data().toInt();		// flag to change. b4..7 = type, b0..3 = brk
+	int adr = getAdr();
+	int bgn, end;
 	unsigned char bt;
 	int fadr;
 	unsigned char* ptr;
 	if ((adr < blockStart) || (adr > blockEnd)) {	// pointer outside block : process 1 cell
 		bgn = adr;
 		end = adr;
-	} else {									// pointer inside block : process all block
+	} else {								// pointer inside block : process all block
 		bgn = blockStart;
 		end = blockEnd;
 	}
-	// eadr = end & 0xffff; getDisasm(comp, eadr); end = (eadr-1) & 0xffff;		// move end to last byte of block
-	if (end < bgn)
+	if (end < bgn) {
 		end += 0x10000;
-	adr = bgn;
+	}
 	int proc = 1;
-	while ((adr <= end) && proc) {
+	bt = 0;
+	xAdr xadr;
+	if (ui.actFetch->isChecked()) bt |= MEM_BRK_FETCH;
+	if (ui.actRead->isChecked()) bt |= MEM_BRK_RD;
+	if (ui.actWrite->isChecked()) bt |= MEM_BRK_WR;
+	adr = bgn;
+	while ((adr <= end) && proc) {			// set breakpoint
 		if (data & MEM_BRK_ANY) {
-			bt = 0;
-			if (ui.actFetch->isChecked()) bt |= MEM_BRK_FETCH;
-			if (ui.actRead->isChecked()) bt |= MEM_BRK_RD;
-			if (ui.actWrite->isChecked()) bt |= MEM_BRK_WR;
-			switch (getRFIData(ui.cbDumpView)) {
-				case XVIEW_RAM:
-					fadr = (adr & 0x3fff) | (ui.sbDumpPage->value() << 14);
-					brkSet(BRK_MEMCELL, bt | MEM_BRK_RAM, fadr, -1);
-					break;
-				case XVIEW_ROM:
-					fadr = (adr & 0x3fff) | (ui.sbDumpPage->value() << 14);
-					brkSet(BRK_MEMCELL, bt | MEM_BRK_ROM, fadr, -1);
-					break;
-				default:
-					brkSet(BRK_CPUADR, bt, bgn, end);
-					proc = 0;			// stop processing
-					break;
+			if (ui.dasmTable->hasFocus()) {
+				switch (getRFIData(ui.cbDumpView)) {
+					case XVIEW_RAM:
+						fadr = (adr & 0x3fff) | (ui.sbDumpPage->value() << 14);
+						brkSet(BRK_MEMCELL, bt | MEM_BRK_RAM, fadr, -1);
+						break;
+					case XVIEW_ROM:
+						fadr = (adr & 0x3fff) | (ui.sbDumpPage->value() << 14);
+						brkSet(BRK_MEMCELL, bt | MEM_BRK_ROM, fadr, -1);
+						break;
+					default:
+						xadr = mem_get_xadr(comp->mem, adr);
+						if (xadr.type == MEM_ROM) {
+							bt |= MEM_BRK_ROM;
+						} else if (xadr.type == MEM_RAM) {
+							bt |= MEM_BRK_RAM;
+						} else {
+							bt |= MEM_BRK_SLT;
+						}
+						brkSet(BRK_MEMCELL, bt, xadr.abs, -1);
+						//proc = 0;			// stop processing
+						break;
+				}
+			} else {
+				xadr = mem_get_xadr(comp->mem, adr);
+				if (xadr.type == MEM_ROM) {
+					bt |= MEM_BRK_ROM;
+				} else if (xadr.type == MEM_RAM) {
+					bt |= MEM_BRK_RAM;
+				} else {
+					bt |= MEM_BRK_SLT;
+				}
+				brkSet(BRK_MEMCELL, bt, xadr.abs, -1);
+//				brkSet(BRK_CPUADR, bt, bgn, end);
+//				proc = 0;
 			}
-		} else {
+		} else {				// set cell type
 			ptr = getBrkPtr(comp, adr);
 			*ptr &= 0x0f;
 			if ((data & 0xf0) == DBG_VIEW_TEXT) {

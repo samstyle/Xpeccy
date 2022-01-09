@@ -64,6 +64,7 @@ QString gethexshift(char);
 QString getdecshift(char);
 QString gethexbyte(int);
 QString gethexword(int);
+QString gethex6(int);
 
 typedef struct {
 	unsigned b:1;
