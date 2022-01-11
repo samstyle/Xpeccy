@@ -929,11 +929,17 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 				bpr = BRK_MEMCELL;
 				xadr = mem_get_xadr(conf.prof.cur->zx->mem, adr);
 				switch(xadr.type) {
-					case MEM_RAM: bpt = MEM_BRK_RAM; break;
-					case MEM_ROM: bpt = MEM_BRK_ROM; break;
-					default: bpt = MEM_BRK_SLT; break;
+					case MEM_RAM: bpt = MEM_BRK_RAM;
+						adr = xadr.abs & conf.prof.cur->zx->mem->ramMask;
+						break;
+					case MEM_ROM: bpt = MEM_BRK_ROM;
+						adr = xadr.abs & conf.prof.cur->zx->mem->romMask;
+						break;
+					default: bpt = MEM_BRK_SLT;
+						adr = xadr.abs;
+						break;
 				}
-				adr = xadr.abs;
+				// adr = xadr.abs;
 			}
 			// modifiers doesn't work with new hotkeys (hotkey not detected)
 			if (ev->modifiers() & Qt::AltModifier) {

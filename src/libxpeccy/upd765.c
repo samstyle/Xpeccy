@@ -25,7 +25,7 @@ int seekADR(FDC*);	// from VG93: wait & read ADR mark in fdc->buf
 // wait until all args is done
 void uwargs(FDC* fdc) {
 	if (fdc->comCnt == 0) {
-		fdc->irq = 1;		// exec
+		// fdc->irq = 1;		// exec
 		fdc->pos++;
 	}
 	fdc->wait = 1;
@@ -42,6 +42,7 @@ void unothing(FDC* fdc) {
 void ustp(FDC* fdc) {
 	fdc->idle = 1;
 	fdc->irq = 0;
+	// printf("irq = 0\n");
 	fdc->pos++;
 	fdc->drq = 1;
 	fdc->dir = (fdc->resCnt > 0) ? 1 : 0;
@@ -87,6 +88,7 @@ int uGetByte(FDC* fdc) {
 static fdcCall utermTab[] = {&ustp, &unothing};
 
 void uTerm(FDC* fdc) {
+	// printf("uTerm\n");
 	fdc->plan = utermTab;
 	fdc->pos = 0;
 	fdc->wait = 0;
@@ -604,7 +606,7 @@ void uwrdat02(FDC* fdc) {
 		fdc->wait = BYTEDELAY;
 		// todo : data length
 		fdc->cnt = 128 << (fdc->buf[3] & 7);
-		printf("cnt = %i\n", fdc->cnt);
+		// printf("cnt = %i\n", fdc->cnt);
 		fdc->pos++;
 	} else {
 		fdc->wait += turbo ? TRBBYTE : BYTEDELAY;
@@ -780,7 +782,7 @@ void uWrite(FDC* fdc, int adr, unsigned char val) {
 	if (!(adr & 1)) return;			// wr data only
 	// printf("wr : %.2X\n", val);
 	if (fdc->idle) {			// 1st byte, command
-		DBGOUT("updCom %.2X\n",val);
+		// printf("updCom %.2X\n",val);
 		fdc->com = val;
 		int idx = 0;
 		while ((uComTab[idx].mask & val) != uComTab[idx].val)
@@ -790,8 +792,9 @@ void uWrite(FDC* fdc, int adr, unsigned char val) {
 		fdc->pos = 0;
 		fdc->comPos = 0;
 		fdc->idle = 0;
-		fdc->drq = 1;	// wait for args
-		fdc->dir = 0;	//	from cpu
+		if (fdc->comCnt > 0)
+			fdc->drq = 1;	// wait for args
+		fdc->dir = 0;		// from cpu
 		fdc->wait = 0;
 		if (fdc->com != 0x08) {
 			fdc->sr0 = 0x00;
@@ -799,7 +802,7 @@ void uWrite(FDC* fdc, int adr, unsigned char val) {
 			fdc->sr2 = 0x00;
 		}
 	} else if (fdc->comCnt > 0) {		// command
-		DBGOUT("arg %.2X\n",val);
+		// printf("arg %.2X\n",val);
 		fdc->comBuf[fdc->comPos] = val;
 		fdc->comPos++;
 		fdc->comCnt--;
@@ -837,7 +840,10 @@ unsigned char uRead(FDC* fdc, int adr) {
 		if (fdc->idle) {
 			res = 0x80 | ((fdc->resCnt > 0) ? 0x40 : 0x00);
 		} else {
-			res = (fdc->state & 0x1f) | (fdc->drq << 7) | (fdc->dir << 6) | (fdc->irq << 5);
+			res = (fdc->state & 0x1f) | (fdc->drq << 7) | (fdc->dir << 6);
+			if (fdc->irq && !fdc->dma)		// only in non-dma mode
+				res |= 0x20;
+			//printf("msr = %.2X, irq=%i, dma=%i\n",res,fdc->irq,fdc->dma);
 		}
 	}
 	// printf("rd %i = %.2X\n",adr & 1, res);

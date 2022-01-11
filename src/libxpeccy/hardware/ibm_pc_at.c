@@ -298,7 +298,7 @@ int ibm_fdc_rd(Computer* comp, int adr) {
 }
 
 void ibm_fdc_wr(Computer* comp, int adr, int val) {
-	printf("out %.3X, %.2X\n",adr,val);
+	printf("%.4X:%.4X\tout %.3X, %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,adr,val);
 	difOut(comp->dif, adr, val, 0);
 }
 
@@ -421,6 +421,12 @@ void ibm_sync(Computer* comp, int ns) {
 		comp->cpu->intrq |= I286_INT;
 		comp->cpu->intvec = v & 0xffff;
 	}
+	// fdc
+	difSync(comp->dif, ns);
+//	if (comp->dif->intrq) {		// fdc -> master pic int6
+//		comp->dif->intrq = 0;
+//		pic_int(&comp->mpic, 6);
+//	}
 }
 
 // key press/release

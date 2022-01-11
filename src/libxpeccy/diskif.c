@@ -37,6 +37,9 @@ void fdcSync(FDC* fdc, int ns) {
 
 void dhwSync(DiskIF* dif, int ns) {
 	fdcSync(dif->fdc, ns);
+//	if (dif->inten && !dif->fdc->idle && dif->fdc->drq && !dif->fdc->dma) {		// fdc in non-dma mode requests data
+//		dif->intrq = 1;
+//	}
 }
 
 // BDI (VG93)
@@ -131,6 +134,7 @@ int pdosOut(DiskIF* dif, int port, int val, int dos) {
 }
 
 void pdosReset(DiskIF* dif) {
+	dif->inten = 0;
 	uReset(dif->fdc);
 }
 
@@ -154,6 +158,7 @@ int dpcIn(DiskIF* dif, int port, int* res, int dos) {
 }
 
 int dpcOut(DiskIF* dif, int port, int val, int dos) {
+	printf("i8275: out %.3X %.2X\n",port,val);
 	switch (port & 7) {
 		case 2:
 			// p2:
@@ -167,6 +172,7 @@ int dpcOut(DiskIF* dif, int port, int val, int dos) {
 			dif->fdc->flop[3]->motor = (val & 0x80) ? 0 : 1;
 			dif->fdc->flp = dif->fdc->flop[val & 3];
 			if (!(val & 4)) uReset(dif->fdc);
+			dif->inten = (val & 8) ? 1 : 0;
 			break;
 		case 4:
 		case 5: uWrite(dif->fdc, port & 1, val);

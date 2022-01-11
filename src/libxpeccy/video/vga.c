@@ -21,14 +21,14 @@ int vga_rd(Video* vid, int port) {
 				res = CRT_CUR_REG;
 			}
 		case VGA_STAT1:
-			// b0:videomem is busy
-			// b2:light pen off
-			// b3:vblank
+			// b0:videomem is busy (!(vblank||hblank)
+			// b3:vsync
 			res = 4;
-			if (vid->vblank)
+			if (vid->vblank)	// not vblank, btw
 				res |= 8;
-			if (vid->vga.trg) res |= 1;	// just triggering, TODO: make it more real
-			vid->vga.trg ^= 1;
+			if (!(vid->vbank || vid->hblank))
+				res |= 1;
+			vid->vga.atrig = 0;
 			break;
 		case VGA_MODE:
 			res = vid->reg[0xff];
@@ -139,7 +139,14 @@ int vga_mrd(Video* vid, int adr) {
 	adr = vga_adr(vid, adr);
 	if (adr < 0) return -1;
 	if (adr < 0xb0000) {		// write to plane directly
+		for(res = 0; res < 4; res++)
+			vid->vga.latch[res] = vid->ram[(adr & 0xffff) | (res << 16)];
 		// TODO: check read mode & plane
+		if (GRF_REG(0x05) & 8) {
+			// color compare mode
+		} else {
+			res = vid->vga.latch[GRF_REG(0x04) & 3];
+		}
 	} else if (adr & 1) {		// text mode: attribute (plane 1)
 		res = vid->ram[0x10000 + ((adr >> 1) & 0x3fff)];
 	} else {			// text mode: char (plane 0)

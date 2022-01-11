@@ -20,10 +20,12 @@ enum {
 #define VGA_SRC 0x05
 #define VGA_GRB 0xb0	// graphic registers (3ce/3cf)
 #define VGA_GRC 0x08
+#define VGA_ATB 0xc0	// atribute registers
+#define VGA_ATC 0x14
 
 #define CRT_IDX		vid->vga.crt_idx
 #define CRT_REG(_n)	vid->reg[VGA_CRB + (_n)]
-#define CRT_CUR_REG	vid->reg[VGA_CRB + vid->vga.crt_idx]
+#define CRT_CUR_REG	CRT_REG(CRT_IDX)
 
 int vga_rd(Video*, int);
 void vga_wr(Video*, int, int);

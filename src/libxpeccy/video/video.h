@@ -293,6 +293,7 @@ struct Video {
 	} tsconf;
 	struct {
 		unsigned trg:1;			// vmem busy flag
+		unsigned atrig:1;		// 3c0 flip-flop
 		int crt_idx;			// registers indexes
 		int seq_idx;
 		int grf_idx;
@@ -300,6 +301,7 @@ struct Video {
 		int chline;			// line inside char
 		int chsize;			// char height (0-31)
 		int cadr;			// cursor address
+		unsigned char latch[4];
 	} vga;
 
 	unsigned char line[0x400];		// buffer for render sprites & tiles

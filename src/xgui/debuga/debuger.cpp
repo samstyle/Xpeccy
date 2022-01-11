@@ -779,7 +779,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 		case XCUT_STEPOVER:
 			len = dasmSome(comp, comp->cpu->pc + comp->cpu->cs.base, drow);
 			if (drow.oflag & OF_SKIPABLE) {
-				ptr = getBrkPtr(comp, (comp->cpu->pc + comp->cpu->cs.base + len) & 0xffff);
+				ptr = getBrkPtr(comp, comp->cpu->pc + comp->cpu->cs.base + len);
 				*ptr |= MEM_BRK_TFETCH;
 				stop();
 			} else {

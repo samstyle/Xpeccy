@@ -98,6 +98,8 @@ struct FDC {
 typedef struct DiskHW DiskHW;
 
 struct DiskIF {
+	unsigned inten:1;
+	unsigned intrq:1;
 	int type;
 	DiskHW* hw;
 	FDC* fdc;
