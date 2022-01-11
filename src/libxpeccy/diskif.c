@@ -37,9 +37,11 @@ void fdcSync(FDC* fdc, int ns) {
 
 void dhwSync(DiskIF* dif, int ns) {
 	fdcSync(dif->fdc, ns);
-//	if (dif->inten && !dif->fdc->idle && dif->fdc->drq && !dif->fdc->dma) {		// fdc in non-dma mode requests data
-//		dif->intrq = 1;
-//	}
+	if ((dif->fdc->intr & dif->inten) ^ dif->lirq) {
+		if (!dif->lirq)
+			dif->intrq = 1;
+		dif->lirq = dif->inten;
+	}
 }
 
 // BDI (VG93)
@@ -143,6 +145,11 @@ void pdosReset(DiskIF* dif) {
 int dpcIn(DiskIF* dif, int port, int* res, int dos) {
 	switch (port & 7) {
 		case 0:
+			// b4:trk 0
+			// b3:side
+			// b2:index
+			// b1:wr protect
+			// b0:step dir
 			*res = 0;
 			if (!dif->fdc->flp->trk == 0) *res |= 0x10;
 			if (dif->fdc->side) *res |= 0x08;
@@ -150,8 +157,25 @@ int dpcIn(DiskIF* dif, int port, int* res, int dos) {
 			if (!dif->fdc->flp->protect) *res |= 0x02;
 			if (dif->fdc->dir) *res |= 0x01;
 			break;
+		case 1:
+			// b5:drive (0:a, 1:b)
+			// b4:wr
+			// b3:rd
+			// b2:write enable
+			// b1:drv 1 motor enable
+			// b0:drv 0 motor enable
+			*res = 0;
+			if (dif->fdc->flp->id & 1) *res |= 0x20;
+			if (dif->fdc->flop[1]->motor) *res |= 2;
+			if (dif->fdc->flop[0]->motor) *res |= 1;
+			break;
 		case 4:
 		case 5: *res = uRead(dif->fdc, port & 1);
+			break;
+		case 7:
+			// b0: HD
+			// b7: disk changed
+			*res = 0x01;
 			break;
 	}
 	return 1;
@@ -161,9 +185,8 @@ int dpcOut(DiskIF* dif, int port, int val, int dos) {
 	printf("i8275: out %.3X %.2X\n",port,val);
 	switch (port & 7) {
 		case 2:
-			// p2:
 			// b4..7 = motor drive 0..3
-			// b3 = dma enable
+			// b3 = enable int/dma
 			// b2 = 0:fdc reset
 			// b0,1 = drive select
 			dif->fdc->flop[0]->motor = (val & 0x10) ? 0 : 1;

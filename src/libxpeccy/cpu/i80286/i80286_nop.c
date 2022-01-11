@@ -1540,8 +1540,10 @@ void i286_op9D(CPU* cpu) {
 
 // 9e: sahf
 void i286_op9E(CPU* cpu) {
-	cpu->f &= (I286_FS | I286_FZ | I286_FA | I286_FP | I286_FC);
-	cpu->f |= (cpu->ah & (I286_FS | I286_FZ | I286_FA | I286_FP | I286_FC));
+	cpu->f &= ~0xff;
+	cpu->f |= cpu->ah;
+//	cpu->f &= (I286_FS | I286_FZ | I286_FA | I286_FP | I286_FC);
+//	cpu->f |= (cpu->ah & (I286_FS | I286_FZ | I286_FA | I286_FP | I286_FC));
 }
 
 // 9f: lahf

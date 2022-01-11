@@ -40,18 +40,24 @@ void unothing(FDC* fdc) {
 }
 
 void ustp(FDC* fdc) {
-	fdc->idle = 1;
+	// fdc->idle = 1;
 	fdc->irq = 0;
-	// printf("irq = 0\n");
 	fdc->pos++;
-	fdc->drq = 1;
-	fdc->dir = (fdc->resCnt > 0) ? 1 : 0;
+	if (fdc->resCnt > 0) {
+		fdc->drq = 1;
+		fdc->dir = 1;
+	} else {
+		fdc->dir = 0;
+		fdc->drq = 0;
+		fdc->idle = 1;
+	}
 }
 
 void uResp(FDC* fdc, int len) {
 	fdc->resPos = 0;
 	fdc->resCnt = len;
 	fdc->dir = 1;
+	fdc->intr = 1;
 }
 
 void uSetDrive(FDC* fdc) {
@@ -142,7 +148,6 @@ void ucalib00(FDC* fdc) {
 	fdc->wait += turbo ? TRBSRT : fdc->srt;
 	fdc->state |= (1 << drv);	// set "flp is in seek mode"
 	fdc->pos++;
-	fdc->intr = 1;
 }
 
 void ucalib01(FDC* fdc) {
@@ -150,6 +155,7 @@ void ucalib01(FDC* fdc) {
 		fdc->sr0 &= 0x0f;
 		fdc->sr0 |= 0x20;	// SR0:0010xxxx
 		fdc->state &= 0xf0;
+		fdc->intr = 1;		// interrupt @ end of recalibrate/seek command
 		fdc->pos++;
 	} else if (fdc->cnt > 0) {
 		flpStep(fdc->flp, FLP_BACK);
@@ -159,6 +165,7 @@ void ucalib01(FDC* fdc) {
 		fdc->sr0 &= 0x0f;
 		fdc->sr0 |= 0x70;	// SR0:0111xxxxx
 		fdc->state &= 0xf0;
+		fdc->intr = 1;
 		fdc->pos++;
 	}
 }
@@ -177,7 +184,7 @@ void usint00(FDC* fdc) {
 	fdc->resBuf[0] = fdc->sr0;
 	fdc->resBuf[1] = fdc->flp->trk;
 	uResp(fdc, 2);
-	fdc->intr = 0;
+	fdc->intr = 0;			// no int on response
 	fdc->pos++;
 }
 
@@ -191,7 +198,6 @@ void useek00(FDC* fdc) {
 	fdc->trk = fdc->flp->trk;
 	fdc->wait += turbo ? TRBSRT : fdc->srt;
 	fdc->pos++;
-	fdc->intr = 1;
 }
 
 void useek01(FDC* fdc) {
@@ -212,6 +218,7 @@ void useek01(FDC* fdc) {
 
 void useek02(FDC* fdc) {
 	fdc->trk = fdc->flp->trk;
+	fdc->intr = 1;			// end of seek com
 	fdc->pos++;
 }
 
@@ -230,7 +237,7 @@ void urdaRS(FDC* fdc) {
 	fdc->resBuf[6] = fdc->buf[3];	// N
 	uResp(fdc, 7);
 	fdc->pos++;
-	fdc->intr = 1;
+//	fdc->intr = 1;
 }
 
 void urda00(FDC* fdc) {
@@ -275,7 +282,7 @@ void ureadRS(FDC* fdc) {
 	fdc->resBuf[6] = fdc->buf[3];
 	uResp(fdc, 7);
 	fdc->pos++;
-	fdc->intr = 1;
+//	fdc->intr = 1;
 }
 
 // wait ADR
@@ -340,6 +347,8 @@ void uread03(FDC* fdc) {
 void uread04(FDC* fdc) {
 	if (!uGetByte(fdc)) return;
 	fdc->data = fdc->tmp;
+	if (!fdc->dma)
+		fdc->intr = 1;
 	fdc->cnt--;
 	if (fdc->cnt < 1) {
 		fdc->pos++;
@@ -409,7 +418,7 @@ void urdtrkRS(FDC* fdc) {
 	fdc->resBuf[6] = fdc->buf[3];
 	uResp(fdc, 7);
 	fdc->pos++;
-	fdc->intr = 1;
+//	fdc->intr = 1;
 }
 
 void urdtrk00(FDC* fdc) {
@@ -631,10 +640,13 @@ void uwrdat03(FDC* fdc) {
 		flpNext(fdc->flp, fdc->side);
 		fdc->wait += BYTEDELAY;
 		fdc->cnt--;
-		if (fdc->cnt < 1)
+		if (fdc->cnt < 1) {
 			fdc->pos++;
-		else
+		} else {
 			fdc->drq = 1;
+			if (!fdc->dma)
+				fdc->intr = 1;
+		}
 	}
 }
 
@@ -752,6 +764,7 @@ void uinv00(FDC* fdc) {
 	fdc->sr0 = 0x80;
 	fdc->resBuf[0] = fdc->sr0;
 	uResp(fdc, 1);
+	fdc->intr = 0;		// no interrupt
 	fdc->pos++;
 }
 
@@ -781,8 +794,9 @@ static uCom uComTab[] = {
 void uWrite(FDC* fdc, int adr, unsigned char val) {
 	if (!(adr & 1)) return;			// wr data only
 	// printf("wr : %.2X\n", val);
-	if (fdc->idle) {			// 1st byte, command
-		// printf("updCom %.2X\n",val);
+	fdc->intr = 0;			// reset interrupt
+	if (fdc->idle) {			// 1st byte, command (!
+		printf("updCom %.2X\n",val);
 		fdc->com = val;
 		int idx = 0;
 		while ((uComTab[idx].mask & val) != uComTab[idx].val)
@@ -801,7 +815,7 @@ void uWrite(FDC* fdc, int adr, unsigned char val) {
 			fdc->sr1 = 0x00;
 			fdc->sr2 = 0x00;
 		}
-	} else if (fdc->comCnt > 0) {		// command
+	} else if (fdc->comCnt > 0) {		// arguments
 		// printf("arg %.2X\n",val);
 		fdc->comBuf[fdc->comPos] = val;
 		fdc->comPos++;
@@ -814,11 +828,14 @@ void uWrite(FDC* fdc, int adr, unsigned char val) {
 		DBGOUT("data %.2X\n",val);
 		fdc->data = val;
 		fdc->drq = 0;
+	} else if (val == 0x08) {
+		printf("sense drive status\n");
 	}
 }
 
 unsigned char uRead(FDC* fdc, int adr) {
 	unsigned char res = 0xff;
+	fdc->intr = 0;		// reset interrupt
 	if (adr & 1) {					// 1: data
 		if (fdc->drq && fdc->dir) {
 			if (fdc->irq) {			// execution
@@ -829,8 +846,10 @@ unsigned char uRead(FDC* fdc, int adr) {
 				res = fdc->resBuf[fdc->resPos];
 				fdc->resPos++;
 				fdc->resCnt--;
-				if (fdc->resCnt == 0)
+				if (fdc->resCnt == 0) {
 					fdc->dir = 0;
+					fdc->idle = 1;
+				}
 				DBGOUT("resp : %.2X\n",res);
 			} else {			// other
 				res = 0xff;

@@ -926,7 +926,7 @@
         <bool>true</bool>
        </property>
        <property name="currentIndex">
-        <number>2</number>
+        <number>5</number>
        </property>
        <property name="documentMode">
         <bool>true</bool>
@@ -1865,6 +1865,48 @@
           <widget class="QLabel" name="flpCRC">
            <property name="text">
             <string>00</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="2">
+          <widget class="QLabel" name="label_8">
+           <property name="text">
+            <string>INT</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="2">
+          <widget class="QLabel" name="label_10">
+           <property name="text">
+            <string>DMA</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="3">
+          <widget class="QLabel" name="flpInt">
+           <property name="text">
+            <string>0</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="3">
+          <widget class="QLabel" name="flpDma">
+           <property name="text">
+            <string>0</string>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="2">
+          <widget class="QLabel" name="label_11">
+           <property name="text">
+            <string>IE</string>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="3">
+          <widget class="QLabel" name="flpIntEn">
+           <property name="text">
+            <string>0</string>
            </property>
           </widget>
          </item>

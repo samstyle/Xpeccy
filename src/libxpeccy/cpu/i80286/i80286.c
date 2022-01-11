@@ -84,7 +84,7 @@ void i286_int_prt(CPU* cpu) {
 }
 
 void i286_int_ack(CPU* cpu) {
-	if (cpu->intrq & I286_INT) {
+	if (cpu->f & I286_FI) {
 		cpu->intrq &= ~I286_INT;
 		if (cpu->msw & I286_FPE) {
 			i286_int_prt(cpu);

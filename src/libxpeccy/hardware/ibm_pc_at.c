@@ -423,10 +423,10 @@ void ibm_sync(Computer* comp, int ns) {
 	}
 	// fdc
 	difSync(comp->dif, ns);
-//	if (comp->dif->intrq) {		// fdc -> master pic int6
-//		comp->dif->intrq = 0;
-//		pic_int(&comp->mpic, 6);
-//	}
+	if (comp->dif->intrq) {		// fdc -> master pic int6
+		comp->dif->intrq = 0;
+		pic_int(&comp->mpic, 6);
+	}
 }
 
 // key press/release
