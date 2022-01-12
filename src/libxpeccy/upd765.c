@@ -177,12 +177,12 @@ static fdcCall uCalib[] = {&uwargs,&ucalib00,&ucalib01,&uTerm};
 
 void usint00(FDC* fdc) {
 	fdc->state &= 0xf0;		// clear b0..3 of main status register
-	if (!fdc->intr) {		// invalid command if no interrupt pending
-		fdc->sr0 &= 0x3f;
-		fdc->sr0 |= 0x80;
-	}
+//	if (!fdc->intr) {		// invalid command if no interrupt pending (how is it possible, when write new command resets interrupt line)
+//		fdc->sr0 &= 0x3f;
+//		fdc->sr0 |= 0x80;
+//	}
 	fdc->resBuf[0] = fdc->sr0;
-	fdc->resBuf[1] = fdc->flp->trk;
+	fdc->resBuf[1] = fdc->trk;
 	uResp(fdc, 2);
 	fdc->intr = 0;			// no int on response
 	fdc->pos++;
@@ -195,9 +195,10 @@ static fdcCall uSenseInt[] = {&uwargs,&usint00,&uTerm};
 
 void useek00(FDC* fdc) {
 	uSetDrive(fdc);
-	fdc->trk = fdc->flp->trk;
+	// fdc->trk = fdc->flp->trk;		// wait, oh shi...
 	fdc->wait += turbo ? TRBSRT : fdc->srt;
 	fdc->pos++;
+	fdc->state |= (1 << fdc->comBuf[0] & 3);	// set "flp is in seek mode"
 }
 
 void useek01(FDC* fdc) {
@@ -217,8 +218,14 @@ void useek01(FDC* fdc) {
 }
 
 void useek02(FDC* fdc) {
-	fdc->trk = fdc->flp->trk;
+	// fdc->trk = fdc->flp->trk;
 	fdc->intr = 1;			// end of seek com
+	fdc->state &= 0xf0;		// seek mode off
+	fdc->sr0 &= 0x1f;		// b7,6=00:success
+	fdc->sr0 |= 0x20;		// seek end
+	if (fdc->trk != fdc->flp->trk) {
+		fdc->sr0 |= 0x40;	// b7,6=01:abnornal termination
+	}
 	fdc->pos++;
 }
 
@@ -795,7 +802,7 @@ void uWrite(FDC* fdc, int adr, unsigned char val) {
 	if (!(adr & 1)) return;			// wr data only
 	// printf("wr : %.2X\n", val);
 	fdc->intr = 0;			// reset interrupt
-	if (fdc->idle) {			// 1st byte, command (!
+	if (fdc->idle) {			// 1st byte, command
 		printf("updCom %.2X\n",val);
 		fdc->com = val;
 		int idx = 0;
@@ -828,7 +835,7 @@ void uWrite(FDC* fdc, int adr, unsigned char val) {
 		DBGOUT("data %.2X\n",val);
 		fdc->data = val;
 		fdc->drq = 0;
-	} else if (val == 0x08) {
+	} else if (val == 0x04) {
 		printf("sense drive status\n");
 	}
 }
@@ -843,6 +850,7 @@ unsigned char uRead(FDC* fdc, int adr) {
 				fdc->drq = 0;
 				//DBGOUT("%.2X ",res);
 			} else if (fdc->resCnt > 0) {	// result
+				fdc->intr = 0;		// reset interrupt @ reading [TODO: on 1st byte of result]
 				res = fdc->resBuf[fdc->resPos];
 				fdc->resPos++;
 				fdc->resCnt--;

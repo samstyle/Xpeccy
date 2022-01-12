@@ -37,11 +37,6 @@ void fdcSync(FDC* fdc, int ns) {
 
 void dhwSync(DiskIF* dif, int ns) {
 	fdcSync(dif->fdc, ns);
-	if ((dif->fdc->intr & dif->inten) ^ dif->lirq) {
-		if (!dif->lirq)
-			dif->intrq = 1;
-		dif->lirq = dif->inten;
-	}
 }
 
 // BDI (VG93)
@@ -137,7 +132,18 @@ int pdosOut(DiskIF* dif, int port, int val, int dos) {
 
 void pdosReset(DiskIF* dif) {
 	dif->inten = 0;
+	dif->intrq = 0;
+	dif->lirq = 0;
 	uReset(dif->fdc);
+}
+
+void pdosSync(DiskIF* dif, int ns) {
+	dhwSync(dif, ns);
+	if ((dif->fdc->intr & dif->inten) ^ dif->lirq) {
+		if (!dif->lirq)
+			dif->intrq = 1;
+		dif->lirq = dif->fdc->intr;
+	}
 }
 
 // pc (i8275 = upd765)
@@ -241,8 +247,8 @@ int bkdOut(DiskIF* dif, int port, int val, int dos) {
 static DiskHW dhwTab[] = {
 	{DIF_NONE,&dumReset,&dumIn,&dumOut,&dumSync},
 	{DIF_BDI,&bdiReset,&bdiIn,&bdiOut,&dhwSync},
-	{DIF_P3DOS,&pdosReset,&pdosIn,&pdosOut,&dhwSync},	// upd765 (+3dos)
-	{DIF_PC,&pdosReset,&dpcIn,&dpcOut,&dhwSync},		// i8275 = upd765
+	{DIF_P3DOS,&pdosReset,&pdosIn,&pdosOut,&pdosSync},	// upd765 (+3dos)
+	{DIF_PC,&pdosReset,&dpcIn,&dpcOut,&pdosSync},		// i8275 = upd765
 	{DIF_SMK512,&bkdReset,&bkdIn,&bkdOut,&dhwSync},
 	{DIF_END,NULL,NULL,NULL,NULL}
 };

@@ -23,12 +23,12 @@ void i286_reset(CPU* cpu) {
 
 extern void i286_push(CPU*, unsigned short);
 
-void i286_int_real(CPU* cpu) {
+void i286_int_real(CPU* cpu, int vec) {
 	i286_push(cpu, cpu->f);
 	i286_push(cpu, cpu->cs.idx);
 	i286_push(cpu, cpu->pc);
 	cpu->f &= ~(I286_FI | I286_FT);
-	cpu->tmpi = (cpu->intvec & 0xff) << 2;
+	cpu->tmpi = (vec & 0xff) << 2;
 	PAIR(w,h,l)seg;
 	PAIR(w,h,l)off;
 	off.l = i286_mrd(cpu, cpu->idtr, 0, cpu->tmpi++);	// adr
@@ -52,15 +52,14 @@ void i286_int_real(CPU* cpu) {
 //	bit0: 1 for trap, 0 for interrupt
 // +6,7 unused
 
-void i286_int_prt(CPU* cpu) {
-	if (cpu->idtr.limit < (cpu->intvec & 0xfff8)) {		// check idtr limit
-		cpu->intrq |= I286_INT;
-		cpu->intvec = 13;
+void i286_int_prt(CPU* cpu, int vec) {
+	if (cpu->idtr.limit < (vec & 0xfff8)) {		// check idtr limit
+		i286_int_prt(cpu, 13);
 		cpu->t = 1;
 	} else if (cpu->f & I286_FI) {
 		PAIR(w,h,l)seg;
 		PAIR(w,h,l)off;
-		int adr = cpu->idtr.base + (cpu->intvec & 0xfff8);
+		int adr = cpu->idtr.base + (vec & 0xfff8);
 		off.l = cpu->mrd(adr, 0, cpu->data);	// offset
 		off.w = cpu->mrd(adr+1, 0, cpu->data);
 		seg.l = cpu->mrd(adr+2, 0, cpu->data);	// segment
@@ -68,8 +67,7 @@ void i286_int_prt(CPU* cpu) {
 		unsigned char fl = cpu->mrd(adr+5, 0, cpu->data);	// flags
 		cpu->tmpdr = i286_cash_seg(cpu, seg.w);
 		if ((cpu->tmpdr.flag & 0x60) < (fl & 0x60)) {	// check priv
-			cpu->intrq |= I286_INT;
-			cpu->intvec = 13;
+			i286_int_prt(cpu, 13);
 		} else {					// do interrupt
 			i286_push(cpu, cpu->f);
 			if (!(fl & 1)) cpu->f &= I286_FI;
@@ -83,23 +81,23 @@ void i286_int_prt(CPU* cpu) {
 	}
 }
 
-void i286_int_ack(CPU* cpu) {
+void i286_interrupt(CPU* cpu, int vec) {
+	if (cpu->msw & I286_FPE) {
+		i286_int_prt(cpu, vec);
+	} else {
+		i286_int_real(cpu, vec);
+	}
+}
+
+// external INT
+void i286_ext_int(CPU* cpu) {
 	if (cpu->f & I286_FI) {
 		cpu->intrq &= ~I286_INT;
-		if (cpu->msw & I286_FPE) {
-			i286_int_prt(cpu);
-		} else {
-			i286_int_real(cpu);
-		}
+		i286_interrupt(cpu, cpu->intvec);
 	} else if ((cpu->intrq & I286_NMI) && !(cpu->inten & I286_BLK_NMI)) {
 		cpu->inten |= I286_BLK_NMI;				// NMI is blocking until RETI, but next NMI will be remembered until then
 		cpu->intrq &= ~I286_NMI;
-		cpu->intvec = 2;
-		if (cpu->msw & I286_FPE) {
-			i286_int_prt(cpu);
-		} else {
-			i286_int_real(cpu);
-		}
+		i286_interrupt(cpu, 2);
 	}
 }
 
@@ -111,7 +109,7 @@ int i286_exec(CPU* cpu) {
 	cpu->rep = I286_REP_NONE;
 	cpu->oldpc = cpu->pc;
 	if (cpu->intrq)
-		i286_int_ack(cpu);
+		i286_ext_int(cpu);
 	if (cpu->t == 0) {
 		cpu->t++;
 		do {

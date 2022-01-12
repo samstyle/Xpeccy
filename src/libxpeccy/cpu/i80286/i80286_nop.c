@@ -15,8 +15,7 @@
 
 // NOTE: x86 parity counts on LSB
 
-void i286_int_real(CPU*);
-void i286_int_prt(CPU*);
+void i286_int(CPU*, int);
 
 unsigned char i286_mrd(CPU* cpu, xSegPtr seg, int rpl, unsigned short adr) {
 	if (rpl && (cpu->seg.idx >= 0)) seg = cpu->seg;
@@ -96,17 +95,6 @@ unsigned short i286_pop(CPU* cpu) {
 	rx.h = i286_mrd(cpu, cpu->ss, 0, cpu->sp + 1);
 	cpu->sp += 2;
 	return rx.w;
-}
-
-// INT n
-
-void i286_interrupt(CPU* cpu, int n) {
-	cpu->intvec = n;
-	if (cpu->msw & I286_FPE) {
-		i286_int_prt(cpu);
-	} else {
-		i286_int_real(cpu);
-	}
 }
 
 // protected mode checks

@@ -152,7 +152,7 @@ void ibm_outKbd(Computer* comp, int adr, int val) {
 		case 1:
 			comp->reg[0x61] = val & 0xff;
 			if (val & 0x80) {
-//				comp->keyb->outbuf = 0;
+				comp->keyb->outbuf = 0;
 				comp->pit.ch0.out = 0;
 			}
 			break;
@@ -325,7 +325,7 @@ static xPort ibmPortMap[] = {
 	{0x03ff,0x0070,2,2,2,NULL,	ibm_out70},	// cmos
 	{0x03ff,0x0071,2,2,2,ibm_in71,	ibm_out71},
 	{0x03ff,0x0080,2,2,2,NULL,	ibm_out80},	// post code
-	{0x03f8,0x0170,2,2,2,ibm_dumird,ibm_dumiwr},	// secondary ide
+//	{0x03f8,0x0170,2,2,2,ibm_dumird,ibm_dumiwr},	// secondary ide
 	{0x03f8,0x01f0,2,2,2,ibm_in1fx,	ibm_out1fx},	// primary ide
 	{0x03f9,0x03b4,2,2,2,NULL,	ibm_out3b4},	// vga registers
 	{0x03f9,0x03d4,2,2,2,NULL,	ibm_out3b4},	// 3d0..3d7 = 3b0..3b7
@@ -412,6 +412,13 @@ void ibm_sync(Computer* comp, int ns) {
 	comp->pit.ch2.lout = comp->pit.ch2.out;
 	comp->beep->lev = (comp->reg[0x61] & 2) ? comp->pit.ch2.out : 1;
 
+	// fdc
+	difSync(comp->dif, ns);
+	if (comp->dif->intrq) {		// fdc -> master pic int6
+		comp->dif->intrq = 0;
+		pic_int(&comp->mpic, 6);
+	}
+
 	// pic
 	if (comp->spic.oint)		// slave pic int -> master pic int2
 		pic_int(&comp->mpic, 2);
@@ -420,12 +427,6 @@ void ibm_sync(Computer* comp, int ns) {
 		if (v < 0) v = pic_ack(&comp->spic);
 		comp->cpu->intrq |= I286_INT;
 		comp->cpu->intvec = v & 0xffff;
-	}
-	// fdc
-	difSync(comp->dif, ns);
-	if (comp->dif->intrq) {		// fdc -> master pic int6
-		comp->dif->intrq = 0;
-		pic_int(&comp->mpic, 6);
 	}
 }
 
