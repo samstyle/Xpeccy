@@ -43,13 +43,13 @@ xAsmScan i8080_asm(const char* cbuf, char* buf) {
 	return res;
 }
 
-xMnem i8080_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
+xMnem i8080_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 	xMnem mn;
 	mn.oadr = -1;
 	opCode* opt = i8080_tab;
 	opCode* opc;
 	unsigned char op;
-	// unsigned char e = 0;
+	unsigned short adr = qadr & 0xffff;
 	unsigned short madr = 0;
 	mn.len = 0;
 	// get opcode

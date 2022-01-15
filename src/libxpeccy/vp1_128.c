@@ -22,7 +22,7 @@ void vpseek(FDC* fdc) {
 		fdc->pos = 1;
 	}
 	flpNext(fdc->flp, fdc->side);
-	fdc->wait += BYTEDELAY;
+	fdc->wait += fdc->bytedelay;
 }
 
 void vpread(FDC* fdc) {
@@ -38,12 +38,12 @@ void vpread(FDC* fdc) {
 		fdc->drq = 1;
 	}
 	flpNext(fdc->flp, fdc->side);	// move to next byte
-	fdc->wait += BYTEDELAY;		// set 32mks delay
+	fdc->wait += fdc->bytedelay;		// set 32mks delay
 }
 
 void vpwrite(FDC* fdc) {
 		flpNext(fdc->flp, fdc->side);
-		fdc->wait += BYTEDELAY;
+		fdc->wait += fdc->bytedelay;
 }
 
 static fdcCall vpSpin[] = {vpseek, vpread, vpwrite, NULL};
@@ -108,7 +108,7 @@ void vp1_wr(FDC* fdc, int port, unsigned short val) {
 		if (fdc->flp->motor) {
 			fdc->plan = vpSpin;
 			fdc->pos = 0;
-			fdc->wait = BYTEDELAY;
+			fdc->wait = fdc->bytedelay;
 		} else {
 			fdc->plan = NULL;
 		}

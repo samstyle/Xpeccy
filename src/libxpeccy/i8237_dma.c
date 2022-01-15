@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 i8237DMA* dma_create(void* p, int w) {
 	i8237DMA* dma = (i8237DMA*)malloc(sizeof(i8237DMA));
@@ -35,31 +36,71 @@ void dma_reset(i8237DMA* dma) {
 	dma_ch_res(&dma->ch[3]);
 }
 
-void dma_set_chan(i8237DMA* dma, int ch, cbdmard cr, cbdmawr cw) {
+// set callbacks to read/wr device for one channel
+void dma_set_chan(i8237DMA* dma, int ch, cbdmadrd cr, cbdmadwr cw) {
 	if (ch < 0) return;
 	if (ch > 3) return;
 	dma->ch[ch].rd = cr;
 	dma->ch[ch].wr = cw;
 }
 
-void dma_transfer(i8237DMA* dma) {
-	int i;
-	int b;
-	DMAChan* ch;
-	for(i = 0; i < 4; i++) {
-		ch = &dma->ch[i];
-		if (!ch->masked && (ch->cwr > 0)) {
-			b = ch->rd ? ch->rd((ch->par << 16) | ch->car, dma->ptr) : 0xff;
-			if (ch->wr)
-				ch->wr((ch->par << 16) | ch->car, b, dma->ptr);
-			if (ch->mode & 0x10) {
-				ch->car--;
-			} else {
-				ch->car++;
-			}
-			ch->cwr--;
-			// TODO: if (ch->cwr == 0) ...
+// set callbacks for read/wr memory for all channels
+void dma_set_cb(i8237DMA* dma, cbdmamrd cr, cbdmamwr cw) {
+	for(int i = 0; i < 4; i++) {
+		dma->ch[i].mrd = cr;
+		dma->ch[i].mwr = cw;
+	}
+}
+
+void dma_ch_count(DMAChan* ch) {
+	ch->car += (ch->mode & 0x20) ? -1 : 1;
+	ch->cwr--;
+	if (ch->cwr == 0xffff) {	// counter is 1 less than bytes must be sended
+		ch->masked = 1;
+		if (ch->mode & 0x10) {	// auto restore
+			ch->car = ch->bar;
+			ch->cwr = ch->bwr;
 		}
+	}
+}
+
+void dma_ch_transfer(DMAChan* ch, void* ptr) {
+	if (ch->masked) return;			// channel masked, no transfer
+	int flag = 0;
+	int b;
+	switch((ch->mode >> 2) & 3) {
+		case 0:		// verify. just read from dev, not write to mem?
+			b = ch->rd ? ch->rd(ptr, &flag) : 0xff;
+			break;
+		case 1:		// dev->mem
+			b = ch->rd ? ch->rd(ptr, &flag) : 0xff;
+			if (flag && ch->mwr)
+				ch->mwr((ch->par << 16) | ch->car, b, ptr);
+			break;
+		case 2:		// mem->dev
+			b = ch->mrd ? ch->mrd((ch->par << 16) | ch->car, ptr) : 0xff;	// TODO: check dev is ready first?
+			if (ch->wr)
+				ch->wr(b, ptr, &flag);
+			break;
+		case 3:		// not allowed
+			break;
+	}
+	if (flag)		// if transfer is successful
+		dma_ch_count(ch);
+}
+
+void dma_transfer(i8237DMA* dma) {
+	dma_ch_transfer(&dma->ch[0], dma->ptr);
+	dma_ch_transfer(&dma->ch[1], dma->ptr);
+	dma_ch_transfer(&dma->ch[2], dma->ptr);
+	dma_ch_transfer(&dma->ch[3], dma->ptr);
+}
+
+void dma_sync(i8237DMA* dma, int ns) {
+	dma->ns += ns;
+	while (dma->ns > 0) {
+		dma->ns -= 200;		// 5MHz ~ 200ns/tick
+		dma_transfer(dma);
 	}
 }
 
@@ -82,7 +123,7 @@ void dma_wr(i8237DMA* dma, int reg, int ch, int val) {
 			break;
 		case DMA_RR:
 			break;
-		case CMA_CMR:		// channel mask register
+		case DMA_CMR:		// channel mask register
 			dma->ch[val & 3].masked = (val & 4) ? 1 : 0;
 			break;
 		case DMA_MR:		// mode reigster
@@ -108,9 +149,11 @@ void dma_wr(i8237DMA* dma, int reg, int ch, int val) {
 			break;
 		case DMA_CH_BAR:
 			dma->ch[ch].bar = dma_wr_reg(dma, dma->ch[ch].bar, val) & 0xffff;
+			if (dma->wrd || !dma->btr) dma->ch[ch].car = dma->ch[ch].bar;
 			break;
 		case DMA_CH_BWCR:
 			dma->ch[ch].bwr = dma_wr_reg(dma, dma->ch[ch].bwr, val) & 0xffff;
+			if (dma->wrd || !dma->btr) dma->ch[ch].cwr = dma->ch[ch].bwr;
 			break;
 		case DMA_CH_PAR:
 			dma->ch[ch].par = val & (dma->wrd ? 0xff : 0x0f);

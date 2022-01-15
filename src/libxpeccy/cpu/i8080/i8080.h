@@ -27,6 +27,6 @@ extern opCode i8080_tab[256];
 void i8080_reset(CPU*);
 int i8080_exec(CPU*);
 xAsmScan i8080_asm(const char*, char*);
-xMnem i8080_mnem(CPU*, unsigned short, cbdmr, void*);
+xMnem i8080_mnem(CPU*, int, cbdmr, void*);
 void i8080_get_regs(CPU*, xRegBunch*);
 void i8080_set_regs(CPU*, xRegBunch);

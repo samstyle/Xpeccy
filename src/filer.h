@@ -38,6 +38,8 @@ enum {
 	FL_BKIMG,
 	FL_BKBKD,
 	FL_RKS,
+	FL_IMA,
+	FL_PCIMG
 };
 
 enum {
@@ -65,6 +67,7 @@ enum {
 	FG_BKDISK,
 	FG_RKSMEM,
 	FG_RKSTAP,
+	FG_PCDISK
 };
 
 enum {
@@ -75,6 +78,7 @@ enum {
 	FH_CMD,
 	FH_BK,
 	FH_SPCLST,
+	FH_PC,
 	FH_DISKS,
 	FH_SLOTS,
 	FH_DRIVE_A,

@@ -5,14 +5,6 @@
 
 #include "vga.h"
 
-#define SEQ_IDX		vid->vga.seq_idx
-#define SEQ_REG(_n)	vid->reg[VGA_SRB + (_n)]
-#define SEQ_CUR_REG	SEQ_REG(SEQ_IDX)
-
-#define GRF_IDX		vid->vga.grf_idx
-#define GRF_REG(_n)	vid->reg[VGA_GRB + (_n)]
-#define GRF_CUR_REG	GRF_REG(GRF_IDX)
-
 int vga_rd(Video* vid, int port) {
 	int res = -1;
 	switch (port) {
@@ -166,7 +158,7 @@ int vga_mrd(Video* vid, int adr) {
 
 void vga_t40_frm(Video* vid) {
 	vid->vga.line = 0;
-	vid->vga.chline = CRT_REG(0x08) & 0x1f;
+	vid->vga.chline = 0;	// CRT_REG(0x08) & 0x1f;
 }
 
 void vga_t40_line(Video* vid) {
@@ -183,7 +175,7 @@ void vga_t40_line(Video* vid) {
 		vid->tadr += vid->vga.chline;			// +line in char
 		vid->idx = vid->ram[0x20000 + vid->tadr];	// pixels
 		if ((vid->vadr == vid->vga.cadr) && !(CRT_REG(0x0a) & 0x20)) {		// cursor position, cursor enabled
-			if ((vid->vga.chline > (CRT_REG(0x0a) & 0x1f)) \
+			if ((vid->vga.chline >= (CRT_REG(0x0a) & 0x1f)) \
 				&& (vid->vga.chline <= (CRT_REG(0x0b) & 0x1f))) {	// cursor start/end
 				vid->idx ^= 0xff;
 			}

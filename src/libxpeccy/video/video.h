@@ -297,6 +297,7 @@ struct Video {
 		int crt_idx;			// registers indexes
 		int seq_idx;
 		int grf_idx;
+		int atr_idx;
 		int line;			// chars line
 		int chline;			// line inside char
 		int chsize;			// char height (0-31)

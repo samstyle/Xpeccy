@@ -27,6 +27,18 @@ enum {
 #define CRT_REG(_n)	vid->reg[VGA_CRB + (_n)]
 #define CRT_CUR_REG	CRT_REG(CRT_IDX)
 
+#define SEQ_IDX		vid->vga.seq_idx
+#define SEQ_REG(_n)	vid->reg[VGA_SRB + (_n)]
+#define SEQ_CUR_REG	SEQ_REG(SEQ_IDX)
+
+#define GRF_IDX		vid->vga.grf_idx
+#define GRF_REG(_n)	vid->reg[VGA_GRB + (_n)]
+#define GRF_CUR_REG	GRF_REG(GRF_IDX)
+
+#define ATR_IDX		vid->vga.atr_idx
+#define ATR_REG(_n)	vid->reg[VGA_ATB + (_n)]
+#define ATR_CUR_REG	ATR_REG(ATR_IDX)
+
 int vga_rd(Video*, int);
 void vga_wr(Video*, int, int);
 

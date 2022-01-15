@@ -104,11 +104,12 @@ xAsmScan lr_asm(const char* cbuf, char* buf) {
 
 static unsigned char lr_cnd[4] = {Z80_FZ, Z80_FC, Z80_FP, Z80_FS};
 
-xMnem lr_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
+xMnem lr_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 	int res = 0;
 	opCode* opt = lrTab;
 	opCode* opc;
 	unsigned char op;
+	unsigned short adr = qadr & 0xffff;
 	unsigned short madr;
 	do {
 		op = mrd(adr++,data);

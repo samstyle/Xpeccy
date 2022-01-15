@@ -28,7 +28,7 @@ void m6502_reset(CPU*);
 int m6502_exec(CPU*);
 int m6502_int(CPU*);
 
-xMnem m6502_mnem(CPU*, unsigned short, cbdmr, void*);
+xMnem m6502_mnem(CPU*, int, cbdmr, void*);
 xAsmScan m6502_asm(const char*, char*);
 
 void m6502_get_regs(CPU*, xRegBunch*);

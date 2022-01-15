@@ -176,7 +176,7 @@ void xBreakTable::onDoubleClick(QModelIndex idx) {
 		case BRK_MEMROM: adr = memFindAdr(conf.prof.cur->zx->mem, MEM_ROM, bp.adr); break;
 	}
 	if (adr < 0) return;
-	emit rqDisasm(adr & 0xffff);
+	emit rqDisasm(adr);
 }
 
 // Dialog

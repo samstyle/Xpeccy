@@ -76,10 +76,11 @@ int m6502_exec(CPU* cpu) {
 
 static unsigned char m6502_cond[4] = {MFN, MFV, MFC, MFZ};
 
-xMnem m6502_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
+xMnem m6502_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 	xMnem mn;
 	mn.oadr = -1;
-	unsigned char op = mrd(adr++,data);
+	unsigned short adr = qadr & 0xffff;
+	unsigned char op = mrd(adr++, data);
 	mn.met = 0;
 	mn.len = 1;
 	mn.mnem = mosTab[op].mnem;

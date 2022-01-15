@@ -132,7 +132,7 @@ void DebugWin::start(Computer* c) {
 	chaPal();		// this will call fillAll
 	show();
 	if (!fillAll()) {
-		ui.dasmTable->setAdr(comp->cpu->pc);
+		ui.dasmTable->setAdr(comp->cpu->pc + comp->cpu->cs.base);
 		// fillDisasm();
 	}
 	updateScreen();
@@ -299,6 +299,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	lst.clear();
 	p.icon = QIcon(); p.name = "PIT"; p.wid = ui.tabPit; lst.append(p);
 	p.icon = QIcon(); p.name = "VGA"; p.wid = ui.vgaregTab; lst.append(p);
+	p.icon = QIcon(); p.name = "DMA"; p.wid = ui.tabDMA; lst.append(p);
 	p.icon = QIcon(":/images/floppy.png"); p.name = ""; p.wid = ui.fdcTab; lst.append(p);
 	tablist[HWG_PC] = lst;
 // create registers group
@@ -577,9 +578,10 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	connect(ui.numBank2, SIGNAL(valueChanged(int)), this, SLOT(remapMem()));
 	connect(ui.numBank3, SIGNAL(valueChanged(int)), this, SLOT(remapMem()));
 	connect(ui.pbRestMemMap, SIGNAL(clicked()), this, SLOT(rest_mem_map()));
-// pit tab
+// ibm tab
 	ui.tabPit->setModel(new xPitModel());
 	ui.tabVgaReg->setModel(new xVgaRegModel());
+	ui.tableDMA->setModel(new xDmaTableModel());
 // subwindows
 	dui.setupUi(dumpwin);
 	dui.tbSave->addAction(dui.aSaveBin);
@@ -699,7 +701,7 @@ void DebugWin::doStep() {
 			tCount = comp->tickCount;
 		compExec(comp);
 		if (!fillAll()) {
-			ui.dasmTable->setAdr(comp->cpu->pc);
+			ui.dasmTable->setAdr(comp->cpu->pc + comp->cpu->cs.base);
 			//fillDisasm();
 		}
 }
@@ -735,7 +737,7 @@ void DebugWin::stopTrace() {
 void DebugWin::reload() {
 	if (comp->mem->snapath) {
 		load_file(comp, comp->mem->snapath, FG_SNAPSHOT, 0);
-		ui.dasmTable->setAdr(comp->cpu->pc);
+		ui.dasmTable->setAdr(comp->cpu->pc + comp->cpu->cs.base);
 		fillAll();
 	}
 	if (!conf.labpath.isEmpty())
@@ -761,7 +763,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			break;
 		case XCUT_LOAD:
 			load_file(comp, NULL, FG_ALL, -1);
-			ui.dasmTable->setAdr(comp->cpu->pc);
+			ui.dasmTable->setAdr(comp->cpu->pc + comp->cpu->cs.base);
 			//fillAll();
 			activateWindow();
 			break;
@@ -802,7 +804,7 @@ void DebugWin::keyPressEvent(QKeyEvent* ev) {
 			rzxStop(comp);
 			compReset(comp, RES_DEFAULT);
 			if (!fillAll()) {
-				ui.dasmTable->setAdr(comp->cpu->pc);
+				ui.dasmTable->setAdr(comp->cpu->pc + comp->cpu->cs.base);
 				//fillDisasm();
 			}
 			break;
@@ -1079,6 +1081,7 @@ void DebugWin::fillTabs() {
 	// pit
 	emit ui.tabPit->model()->dataChanged(ui.tabPit->model()->index(0,0), ui.tabPit->model()->index(10,3));
 	emit ui.tabVgaReg->model()->dataChanged(ui.tabVgaReg->model()->index(0,0),ui.tabVgaReg->model()->index(32,3));
+	((xDmaTableModel*)(ui.tableDMA->model()))->update();
 }
 
 bool DebugWin::fillNotCPU() {
@@ -1383,30 +1386,36 @@ void DebugWin::chLayout() {
 	}
 }
 
+int dbg_get_reg_adr(CPU* cpu, xRegister reg) {
+	int adr;
+	if (reg.type & REG_SEG) {
+		adr = reg.base;
+	} else if (cpu->type == CPU_I80286) {
+		switch(reg.id) {
+			case I286_IP: adr = cpu->cs.base; break;
+			case I286_SP: adr = cpu->ss.base; break;
+			case I286_BP: adr = cpu->ss.base; break;
+			default: adr = cpu->ds.base; break;
+		}
+		adr += reg.value;
+	} else {
+		adr = reg.value;
+	}
+	return adr;
+}
+
 void DebugWin::regClick(QMouseEvent* ev) {
 	xLabel* lab = qobject_cast<xLabel*>(sender());
 	int id = lab->id;
 	if (id < 0) return;
 	xRegBunch bunch = cpuGetRegs(comp->cpu);
-	xRegister reg = bunch.regs[id];
+	int adr = dbg_get_reg_adr(comp->cpu, bunch.regs[id]);
 	switch (ev->button()) {
 		case Qt::RightButton:
-			if (reg.type & REG_SEG) {
-				ui.dumpTable->setAdr(reg.base);
-			} else if (comp->cpu->type == CPU_I80286) {
-				switch(reg.id) {
-					case I286_IP: id = comp->cpu->cs.base; break;
-					case I286_SP: id = comp->cpu->ss.base; break;
-					case I286_BP: id = comp->cpu->ss.base; break;
-					default: id = comp->cpu->ds.base; break;
-				}
-				ui.dumpTable->setAdr(id + reg.value);
-			} else {
-				ui.dumpTable->setAdr(reg.value);
-			}
+			ui.dumpTable->setAdr(adr);
 			break;
 		case Qt::LeftButton:
-			ui.dasmTable->setAdr(reg.value, 1);
+			ui.dasmTable->setAdr(adr, 1);
 			break;
 		default:
 			break;
@@ -1955,7 +1964,7 @@ void DebugWin::doFind() {
 }
 
 void DebugWin::onFound(int adr) {
-	ui.dasmTable->setAdr(adr & 0xffff);
+	ui.dasmTable->setAdr(adr);
 	// fillDisasm();
 }
 
@@ -2117,7 +2126,7 @@ void DebugWin::goToBrk(QModelIndex idx) {
 	int mtype = MEM_EXT;
 	switch(brk.type) {
 		case BRK_CPUADR:
-			adr = brk.adr & 0xffff;
+			adr = brk.adr;
 			break;
 		default:
 			switch(brk.type) {
@@ -2129,7 +2138,7 @@ void DebugWin::goToBrk(QModelIndex idx) {
 			break;
 	}
 	if (adr < 0) return;
-	ui.dasmTable->setAdr(adr & 0xffff);
+	ui.dasmTable->setAdr(adr);
 	// fillDisasm();
 }
 

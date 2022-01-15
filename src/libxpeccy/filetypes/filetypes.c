@@ -80,7 +80,7 @@ void loadBoot(Computer* comp, const char* path, int drv) {
 
 void diskClear(Floppy* flp) {
 	for (int i = 0; i < 168; i++) {
-		memset(flp->data[i].byte, 0, TRKLEN_DD);
+		memset(flp->data[i].byte, 0, flp->trklen);
 		flpFillFields(flp, i, 0);
 	}
 }
@@ -134,15 +134,16 @@ void diskFormTrack(Floppy* flp, int tr, Sector* sdata, int scount) {
 	for (i = 0; i < scount; i++) {
 		dsz += (128 << sdata[i].sz);
 	}
-	dsz = (TRKLEN_DD - dsz) / scount - 72;
+	dsz = (flp->trklen - dsz) / scount - 72;
 	if (dsz < 10) return;
+	memset(ppos, 0x4e, flp->trklen);
 	memset(ppos, 0x00, 12); ppos += 12;		// 12	space
 	*(ppos++) = 0xc2;				// 	track mark
 	*(ppos++) = 0xc2;
 	*(ppos++) = 0xc2;
 	*(ppos++) = 0xfc;
 	for (sc = 0; sc < scount; sc++) {
-		memset(ppos, 0x4e, 10); ppos += 10;		// 10	sync (GAP1)
+		/*memset(ppos, 0x4e, 10);*/ ppos += 10;		// 10	sync (GAP1)
 		memset(ppos, 0x00, 12); ppos += 12;		// 12	space
 		*(ppos++) = 0xa1;				//	address mark
 		*(ppos++) = 0xa1;
@@ -153,7 +154,7 @@ void diskFormTrack(Floppy* flp, int tr, Sector* sdata, int scount) {
 		*(ppos++) = sdata[sc].sec;
 		*(ppos++) = sdata[sc].sz;
 		*(ppos++) = 0xf7; *(ppos++) = 0xf7;
-		memset(ppos, 0x4e, 22); ppos += 22;		// 22	sync (GAP2)
+		/*memset(ppos, 0x4e, 22);*/ ppos += 22;		// 22	sync (GAP2)
 		memset(ppos, 0x00, 12); ppos += 12;		// 12	space
 		*(ppos++) = 0xa1;				//	data mark
 		*(ppos++) = 0xa1;
@@ -162,9 +163,9 @@ void diskFormTrack(Floppy* flp, int tr, Sector* sdata, int scount) {
 		ln = (128 << (sdata[sc].sz & 3));		//	data
 		memcpy(ppos, sdata[sc].data, ln); ppos += ln;
 		*(ppos++) = 0xf7; *(ppos++) = 0xf7;
-		memset(ppos, 0x4e, dsz); ppos += dsz;		// 60	sync (GAP3)
+		/*memset(ppos, 0x4e, dsz);*/ ppos += dsz;		// 60	sync (GAP3)
 	}
-	while ((ppos - flp->data[tr].byte) < TRKLEN_DD) *(ppos++) = 0x4e;		// last sync (GAP4)
+	// while ((ppos - flp->data[tr].byte) < flp->trklen) *(ppos++) = 0x4e;		// last sync (GAP4)
 	flpFillFields(flp,tr,1);
 }
 

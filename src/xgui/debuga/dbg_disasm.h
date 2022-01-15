@@ -17,7 +17,7 @@ typedef struct {
 	unsigned islab:1;		// address have label
 	unsigned iscom:1;		// address have comment
 	unsigned isequ:1;		// this is equ
-	int adr;			// command addr (cpu)
+	int adr;			// command addr (bus/cpu)
 	int oadr;			// word operand like nn : jp nn; ld hl,(nn)
 	int flag;			// address cell flags
 	int oflag;			// opcode flag
@@ -39,9 +39,9 @@ class xDisasmModel : public QAbstractTableModel {
 		QVariant data(const QModelIndex&, int) const;
 		bool setData(const QModelIndex&, const QVariant&, int);
 		void update_data();
-//		Computer** cptr;
 		QList<dasmData> dasm;
-		unsigned short disasmAdr;
+		int asmadr;			// full memory address
+		// unsigned short disasmAdr;
 	signals:
 		void rqRefill();
 		void s_adrch(int, int);
@@ -60,7 +60,7 @@ class xDisasmTable : public QTableView {
 		int rows();
 		void setMode(int, int);
 		int getMode(int);
-		unsigned short getAdr();
+		int getAdr();
 	signals:
 		void rqRefill();
 		void rqRefillAll();
@@ -73,8 +73,7 @@ class xDisasmTable : public QTableView {
 	private:
 		int markAdr;
 		xDisasmModel* model;
-//		Computer** cptr;
-		QList<unsigned short> history;
+		QList<int> history;
 
 		void scrolUp(Qt::KeyboardModifiers = Qt::NoModifier);
 		void scrolDn(Qt::KeyboardModifiers = Qt::NoModifier);

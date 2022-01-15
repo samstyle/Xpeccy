@@ -1588,12 +1588,13 @@ char* put_addressation(char* dst, unsigned short type) {
 	return dst;
 }
 
-xMnem pdp11_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* dat) {
+xMnem pdp11_mnem(CPU* cpu, int qadr, cbdmr mrd, void* dat) {
 	xMnem res;
 	res.oadr = -1;
 	res.len = 2;
 	int idx = 0;
 	unsigned short dtw;
+	unsigned short adr = qadr & 0xffff;
 	unsigned short com = mrd(adr++, dat);
 	com |= (mrd(adr++, dat) << 8);
 	while ((pdp11_dasm_tab[idx].mask != 0) && ((com & pdp11_dasm_tab[idx].mask) != pdp11_dasm_tab[idx].code))

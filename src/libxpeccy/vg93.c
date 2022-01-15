@@ -39,7 +39,7 @@ void wrCRC(FDC* fdc) {
 // wait ADR
 // return: 0 : not ADR, 1 : ADR, 2 : IDX
 int waitADR(FDC* fdc) {
-	fdc->wait += turbo ? TURBOBYTE : BYTEDELAY;
+	fdc->wait += turbo ? TURBOBYTE : fdc->bytedelay;
 	if (flpNext(fdc->flp, fdc->side)) return 2;	// 2:IDX
 	if (fdc->flp->field != 1) return 0;		// 0:not ADR
 	return 1;
@@ -58,7 +58,7 @@ int seekADR(FDC* fdc) {
 		flpNext(fdc->flp, fdc->side);
 	}
 	rdFCRC(fdc);
-	fdc->wait += turbo ? 1 : (6 * BYTEDELAY);	// delay : 6 byte reading
+	fdc->wait += turbo ? 1 : (6 * fdc->bytedelay);	// delay : 6 byte reading
 	return 1;					// 1:ADR
 }
 
@@ -67,7 +67,7 @@ int vgSendByte(FDC* fdc) {
 	int res = 0;
 	if (turbo) {
 		if (fdc->drq) {
-			if (fdc->tns > BYTEDELAY) {
+			if (fdc->tns > fdc->bytedelay) {
 				fdc->state |= 0x04;
 				flpNext(fdc->flp, fdc->side);
 				fdc->tns = 0;
@@ -90,7 +90,7 @@ int vgSendByte(FDC* fdc) {
 		flpWr(fdc->flp, fdc->side, fdc->data);
 		flpNext(fdc->flp, fdc->side);
 		fdc->drq = 1;
-		fdc->wait += BYTEDELAY;
+		fdc->wait += fdc->bytedelay;
 		fdc->tns = 0;
 		res = 1;
 	}
@@ -102,7 +102,7 @@ int vgGetByte(FDC* fdc) {
 	int res = 0;
 	if (turbo) {
 		if (fdc->drq) {
-			if (fdc->tns > BYTEDELAY) {
+			if (fdc->tns > fdc->bytedelay) {
 				fdc->state |= 0x04;
 				flpNext(fdc->flp, fdc->side);
 				fdc->tns = 0;
@@ -123,7 +123,7 @@ int vgGetByte(FDC* fdc) {
 		fdc->data = flpRd(fdc->flp, fdc->side);
 		flpNext(fdc->flp, fdc->side);
 		fdc->drq = 1;
-		fdc->wait += BYTEDELAY;
+		fdc->wait += fdc->bytedelay;
 		fdc->tns = 0;
 		res = 1;
 	}
@@ -132,11 +132,11 @@ int vgGetByte(FDC* fdc) {
 
 // wait fdc->cnt ms & spin flop if motor is on
 void vgwait(FDC* fdc) {
-	fdc->cnt -= BYTEDELAY;
+	fdc->cnt -= fdc->bytedelay;
 	if (fdc->cnt < 0) {
 		fdc->pos++;
 	} else {
-		fdc->wait += BYTEDELAY;
+		fdc->wait += fdc->bytedelay;
 		if (fdc->flp->motor)
 			flpNext(fdc->flp, fdc->side);
 	}
@@ -157,7 +157,7 @@ void vgstp00(FDC* fdc) {
 }
 
 void vgstp01(FDC* fdc) {
-	fdc->wait = turbo ? TURBOBYTE : BYTEDELAY;
+	fdc->wait = turbo ? TURBOBYTE : fdc->bytedelay;
 	if (flpNext(fdc->flp, fdc->side)) {	// turn floppy to next byte, check IDX
 		fdc->cnt--;
 		if (fdc->cnt < 1) {		// check 15 IDX pulses
@@ -269,11 +269,11 @@ void vgseek01(FDC* fdc) {
 	} else if (fdc->trk < fdc->data) {
 		flpStep(fdc->flp, FLP_FORWARD);
 		fdc->trk++;
-		fdc->wait += turbo ? TURBOBYTE : BYTEDELAY;
+		fdc->wait += turbo ? TURBOBYTE : fdc->bytedelay;
 	} else {
 		flpStep(fdc->flp, FLP_BACK);
 		fdc->trk--;
-		fdc->wait += turbo ? TURBOBYTE : BYTEDELAY;
+		fdc->wait += turbo ? TURBOBYTE : fdc->bytedelay;
 	}
 }
 
@@ -359,7 +359,7 @@ void vgrds02(FDC* fdc) {
 	if (fdc->cnt > 0) {
 		fdc->tmp = flpRd(fdc->flp, fdc->side);
 		flpNext(fdc->flp, fdc->side);
-		fdc->wait += turbo ? TURBOBYTE : BYTEDELAY;
+		fdc->wait += turbo ? TURBOBYTE : fdc->bytedelay;
 		if ((fdc->flp->field == 2) || (fdc->flp->field == 3)) {
 			fdc->buf[4] = fdc->tmp;
 			fdc->pos++;
@@ -380,7 +380,7 @@ void vgrds03(FDC* fdc) {
 	fdc->cnt = (0x80 << (fdc->buf[3] & 3));		// sector size (128,256,512,1024)
 	fdc->drq = 0;
 	fdc->dir = 1;					// dir: FDC to CPU
-	fdc->wait = BYTEDELAY;
+	fdc->wait = fdc->bytedelay;
 	fdc->pos++;
 	fdc->tns = 0;
 //	printf("vgrds03: %i.%i.%i\n",fdc->trk,fdc->sec,fdc->cnt);
@@ -392,7 +392,7 @@ void vgrds04(FDC* fdc) {
 	add_crc_16(fdc, fdc->data);
 	fdc->cnt--;
 	if (fdc->cnt < 1) {
-		fdc->wait = BYTEDELAY;
+		fdc->wait = fdc->bytedelay;
 		fdc->pos++;
 	}
 }
@@ -400,7 +400,7 @@ void vgrds04(FDC* fdc) {
 // end: read, compare CRC, check multisector, stop
 void vgrds05(FDC* fdc) {
 	rdFCRC(fdc);
-	fdc->wait += turbo ? 1 : (2 * BYTEDELAY);
+	fdc->wait += turbo ? 1 : (2 * fdc->bytedelay);
 	if (fdc->crc != fdc->fcrc) {
 		// printf("crc error\n");
 		fdc->state |= 0x08;
@@ -441,7 +441,7 @@ void vgwrs01(FDC* fdc) {
 	flpWr(fdc->flp, fdc->side, fdc->tmp);
 	flpNext(fdc->flp, fdc->side);
 	fdc->cnt = 0x80 << (fdc->buf[3] & 3);	// sector size
-	fdc->wait = BYTEDELAY;
+	fdc->wait = fdc->bytedelay;
 	fdc->tns = 0;
 	fdc->pos++;
 }
@@ -459,7 +459,7 @@ void vgwrs02(FDC* fdc) {
 // write crc, check multisector, end
 void vgwrs03(FDC* fdc) {
 	wrCRC(fdc);
-	fdc->wait += turbo ? 1 : (2 * BYTEDELAY);
+	fdc->wait += turbo ? 1 : (2 * fdc->bytedelay);
 	if (fdc->com & 0x10) {
 		fdc->sec++;
 		fdc->pos = 2;
@@ -489,7 +489,7 @@ void vgrda00(FDC* fdc) {
 		fdc->cnt = 6;					// send 6 bytes FDC->CPU
 		fdc->drq = 0;
 		fdc->dir = 1;
-		fdc->wait = BYTEDELAY;
+		fdc->wait = fdc->bytedelay;
 		fdc->pos++;
 	}
 }
@@ -500,7 +500,7 @@ void vgrda01(FDC* fdc) {
 	fdc->cnt--;
 	switch (fdc->cnt) {
 		case 0: fdc->fcrc |= (fdc->data & 0xff);
-			fdc->wait = BYTEDELAY;
+			fdc->wait = fdc->bytedelay;
 			fdc->pos++;
 			break;
 		case 1: fdc->fcrc = (fdc->data << 8) & 0xff00;
@@ -519,7 +519,7 @@ static fdcCall vgRdAdr[] = {&vgrds00,&vgrda00,&vgrda01,&vgchk02,&vgstp};
 
 // wait IDX
 void vgrdt00(FDC* fdc) {
-	fdc->wait += turbo ? TURBOBYTE : BYTEDELAY;
+	fdc->wait += turbo ? TURBOBYTE : fdc->bytedelay;
 	if (flpNext(fdc->flp, fdc->side)) {
 		fdc->drq = 0;
 		fdc->dir = 1;
@@ -537,10 +537,10 @@ static fdcCall vgRdTrk[] = {&vgrds00,&vgrdt00,&vgrdt01,&vgstp};
 // write track
 
 void vgwrt00(FDC* fdc) {
-	fdc->wait += turbo ? TURBOBYTE : BYTEDELAY;
+	fdc->wait += turbo ? TURBOBYTE : fdc->bytedelay;
 	if (flpNext(fdc->flp, fdc->side)) {
 		fdc->pos++;
-		fdc->wait = BYTEDELAY;
+		fdc->wait = fdc->bytedelay;
 	}
 }
 

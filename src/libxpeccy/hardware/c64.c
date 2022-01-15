@@ -495,6 +495,7 @@ void cia_sync(c64cia* cia, int ns, int nspt) {
 
 void c64_init(Computer* comp) {
 	vidUpdateTimings(comp->vid, comp->nsPerTick >> 3);
+	fdc_set_hd(comp->dif->fdc, 0);
 	comp->vid->mrd = c64_vic_mrd;
 }
 

@@ -62,6 +62,7 @@ void zx_init(Computer* comp) {
 	comp->nsPerTick &= ~1;		// make even
 	comp->fps = 50;
 	vidUpdateTimings(comp->vid, comp->nsPerTick >> 1);
+	fdc_set_hd(comp->dif->fdc, 0);
 }
 
 // zx keypress/release

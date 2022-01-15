@@ -7,7 +7,7 @@ extern "C" {
 //#include <stdint.h>
 
 #define TRKLEN_DD	6250
-#define TRKLEN_HD	12500
+#define TRKLEN_HD	17700
 // disk type
 #define DISK_TYPE_TRD	1
 
@@ -48,6 +48,7 @@ typedef struct {
 	unsigned char trk;
 	unsigned char field;
 	int pos;
+	int trklen;		// 12500 HD, 6250 DD
 	char* path;
 	struct {
 		unsigned char byte[TRKLEN_HD];
@@ -60,6 +61,7 @@ Floppy* flpCreate(int);
 void flpDestroy(Floppy*);
 
 void flp_set_path(Floppy*, const char*);
+void flp_set_hd(Floppy*, int);
 
 int flpEject(Floppy*);
 unsigned char flpRd(Floppy*, int);
@@ -69,7 +71,7 @@ void flpPrev(Floppy*,int);
 void flpStep(Floppy*,int);
 
 int flp_format_trk(Floppy* flp, int trk, int spt, int slen, char* data);
-int flp_format_trk_buf(int trk, int spt, int slen, char* data, unsigned char* buf);
+// int flp_format_trk_buf(int trk, int spt, int slen, int trklen, char* data, unsigned char* buf);
 
 void flpFillFields(Floppy*,int,int);
 

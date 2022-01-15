@@ -39,6 +39,15 @@ void dhwSync(DiskIF* dif, int ns) {
 	fdcSync(dif->fdc, ns);
 }
 
+void fdc_set_hd(FDC* fdc, int hd) {
+	fdc->hd = hd ? 1 : 0;
+	fdc->bytedelay = hd ? 16000 : 32000;
+	flp_set_hd(fdc->flop[0], hd);
+	flp_set_hd(fdc->flop[1], hd);
+	flp_set_hd(fdc->flop[2], hd);
+	flp_set_hd(fdc->flop[3], hd);
+}
+
 // BDI (VG93)
 
 void vgReset(FDC*);
@@ -188,18 +197,16 @@ int dpcIn(DiskIF* dif, int port, int* res, int dos) {
 }
 
 int dpcOut(DiskIF* dif, int port, int val, int dos) {
-	printf("i8275: out %.3X %.2X\n",port,val);
+	// printf("i8275: out %.3X %.2X\n",port,val);
 	switch (port & 7) {
 		case 2:
-			// b4..7 = motor drive 0..3
+			// b4..7 = motor drive 0..3 (if 1, motor on when drive selected)
 			// b3 = enable int/dma
 			// b2 = 0:fdc reset
 			// b0,1 = drive select
-			dif->fdc->flop[0]->motor = (val & 0x10) ? 0 : 1;
-			dif->fdc->flop[1]->motor = (val & 0x20) ? 0 : 1;
-			dif->fdc->flop[2]->motor = (val & 0x40) ? 0 : 1;
-			dif->fdc->flop[3]->motor = (val & 0x80) ? 0 : 1;
 			dif->fdc->flp = dif->fdc->flop[val & 3];
+			if (val & (0x10 << (val & 3)))
+				dif->fdc->flp->motor = 1;
 			if (!(val & 4)) uReset(dif->fdc);
 			dif->inten = (val & 8) ? 1 : 0;
 			break;
@@ -216,6 +223,13 @@ int dpcOut(DiskIF* dif, int port, int val, int dos) {
 				 bit 1 = 0  disk initialization enable
 					 1  disk initialization disable
 				 bit 0	    reserved*/
+			break;
+		case 7:
+			// b0,1 = transfer rate: 00:500Kbit/s, 01:reserved,10:250Kbit/s, 11:reserved
+			switch(val & 3) {
+				case 0: dif->fdc->bytedelay = 16000; break;	// ns/byte
+				case 2: dif->fdc->bytedelay = 32000; break;
+			}
 			break;
 	}
 	return 1;
@@ -284,6 +298,7 @@ DiskIF* difCreate(int type) {
 	dif->fdc->flop[2] = flpCreate(2);
 	dif->fdc->flop[3] = flpCreate(3);
 	dif->fdc->flp = dif->fdc->flop[0];
+	fdc_set_hd(dif->fdc, 0);
 	difSetHW(dif, type);
 	return dif;
 }

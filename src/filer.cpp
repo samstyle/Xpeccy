@@ -65,6 +65,8 @@ static xFileTypeInfo ft_tab[] = {
 	{FL_BKIMG, 0, ".img", "*.img", loadBkIMG, NULL, "BK disk image"},
 //	{FL_BKBKD, 0, ".bkd", "*.bkd", loadBkIMG, NULL, "BK disk image"},
 	{FL_RKS, 0, ".rks", "*.rks", loadRKSmem, NULL, "RKS to memory"},
+	{FL_IMA, 1, ".ima", "*.ima", load_ima, NULL, "1.44 FDD image"},
+	{FL_PCIMG, 1, ".img", "*.img", load_ima, NULL, "1.44 FDD image"},
 #ifdef HAVEZLIB
 	{FL_RZX, 0, ".rzx", "*.rzx", loadRZX, NULL, "RZX playback"},
 #endif
@@ -101,6 +103,7 @@ static xFileGroupInfo fg_tab[] = {
 	{FG_BKDATA, "", -1, "BK bin data to mem", NULL, {FL_BKBIN, 0}},
 	{FG_BKTAPE, ".wav", -1, "BK tape", NULL, {FL_WAV, 0}},
 	{FG_BKRAW, "", -1, "BK raw file to tape", &ft_bktap,  {FL_BKRAWTAP, 0}},
+	{FG_PCDISK, "", 0, "FDD image", NULL, {FL_IMA, FL_PCIMG, 0}},
 	// {FG_BKDISK, "", 0, "BK disk image", NULL, {FL_BKIMG, FL_BKBKD, FL_UDI, 0}},
 	{FG_RKSTAP, "", -1, "RKS to tape", &ft_rkstap, {FL_RKS, 0}},
 	{FG_RKSMEM, "", -1, "RKS to memory", NULL, {FL_RKS, 0}},
@@ -119,6 +122,7 @@ static xFileHWInfo fh_tab[] = {
 	{FH_DISKS, {FG_DISK_A, FG_DISK_B, FG_DISK_C, FG_DISK_D, 0}},
 	{FH_SLOTS, {FG_GAMEBOY, FG_NES, FG_MSX, 0}},
 	{FH_SPCLST, {FG_RKSMEM, FG_RKSTAP, 0}},
+	{FH_PC, {FG_PCDISK, 0}},
 	{FH_DRIVE_A, {FG_DISK_A, FG_RAW, 0}},
 	{FH_DRIVE_B, {FG_DISK_B, FG_RAW, 0}},
 	{FH_DRIVE_C, {FG_DISK_C, FG_RAW, 0}},
@@ -134,6 +138,7 @@ static xFileHWInfo hw_tab[] = {
 	{FH_CMD, {HW_C64, 0}},
 	{FH_BK, {HW_BK0010, HW_BK0011M, 0}},
 	{FH_SPCLST, {HW_SPCLST, 0}},
+	{FH_PC, {HW_IBM_PC, 0}},
 	{0, {0}}
 };
 

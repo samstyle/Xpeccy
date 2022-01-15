@@ -27,6 +27,7 @@
 #include "dbg_vmem_dump.h"
 #include "dbg_pit.h"
 #include "dbg_vga_regs.h"
+#include "dbg_dma.h"
 
 #include "ui_dumpdial.h"
 #include "ui_openDump.h"

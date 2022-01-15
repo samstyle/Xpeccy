@@ -36,7 +36,7 @@ void unothing(FDC* fdc) {
 	if (fdc->flp->motor) {
 		flpNext(fdc->flp, fdc->side);
 	}
-	fdc->wait += turbo ? TRBBYTE : BYTEDELAY;
+	fdc->wait += turbo ? TRBBYTE : fdc->bytedelay;
 }
 
 void ustp(FDC* fdc) {
@@ -74,18 +74,18 @@ int uGetByte(FDC* fdc) {
 		if (!fdc->drq) {
 			fdc->tmp = flpRd(fdc->flp, fdc->side);
 			flpNext(fdc->flp, fdc->side);
-			fdc->drq = 1;
+			// fdc->drq = 1;
 			res = 1;
 		}
-		fdc->wait = 1;
+		fdc->wait = TRBBYTE;
 	} else {
 		if (fdc->drq) {
 			fdc->sr1 |= 0x10;		// data lost
 		}
 		fdc->tmp = flpRd(fdc->flp, fdc->side);
 		flpNext(fdc->flp, fdc->side);
-		fdc->drq = 1;
-		fdc->wait += turbo ? TRBBYTE : BYTEDELAY;
+		// fdc->drq = 1;
+		fdc->wait += turbo ? TRBBYTE : fdc->bytedelay;
 		res = 1;
 	}
 	return res;
@@ -177,14 +177,10 @@ static fdcCall uCalib[] = {&uwargs,&ucalib00,&ucalib01,&uTerm};
 
 void usint00(FDC* fdc) {
 	fdc->state &= 0xf0;		// clear b0..3 of main status register
-//	if (!fdc->intr) {		// invalid command if no interrupt pending (how is it possible, when write new command resets interrupt line)
-//		fdc->sr0 &= 0x3f;
-//		fdc->sr0 |= 0x80;
-//	}
 	fdc->resBuf[0] = fdc->sr0;
 	fdc->resBuf[1] = fdc->trk;
 	uResp(fdc, 2);
-	fdc->intr = 0;			// no int on response
+	fdc->intr = 0;			// no int on response/reset interrupt
 	fdc->pos++;
 }
 
@@ -313,7 +309,7 @@ void uread01(FDC* fdc) {
 int ureadCHK(FDC* fdc, int rt, int wt) {
 	fdc->tmp = flpRd(fdc->flp, fdc->side);
 	flpNext(fdc->flp, fdc->side);
-	fdc->wait += turbo ? TRBBYTE : BYTEDELAY;
+	fdc->wait += turbo ? TRBBYTE : fdc->bytedelay;
 	if (fdc->flp->field == rt) return 1;
 	if ((fdc->flp->field == wt) && (~fdc->com & F_COM_SK)) {	// wrong data field type, skip off: set b4,sr2, read sector & terminate execution
 		fdc->sr2 |= 0x40;
@@ -347,19 +343,20 @@ void uread03(FDC* fdc) {
 	fdc->state |= 0x10;		// wr/rd operation
 	fdc->drq = 0;
 	fdc->dir = 1;
-	fdc->wait = turbo ? TRBBYTE : BYTEDELAY;
+	fdc->wait = turbo ? TRBBYTE : fdc->bytedelay;
 	fdc->pos++;
 }
 
 void uread04(FDC* fdc) {
 	if (!uGetByte(fdc)) return;
 	fdc->data = fdc->tmp;
+	fdc->drq = 1;
 	if (!fdc->dma)
 		fdc->intr = 1;
 	fdc->cnt--;
 	if (fdc->cnt < 1) {
 		fdc->pos++;
-		fdc->wait = turbo ? TRBBYTE : BYTEDELAY;
+		fdc->wait = turbo ? TRBBYTE : fdc->bytedelay;
 	}
 }
 
@@ -388,12 +385,13 @@ static fdcCall uReadD01[] = {&uread01,&uread02,&uread03,&uread04,&uread05,&uread
 
 void uread00(FDC* fdc) {
 	uSetDrive(fdc);
-	if (fdc->com & F_COM_MT) {		// multitrack: start from sec 1 on side 0
-		fdc->side = 0;
-		fdc->sec = 1;
-	} else {
+// NOTE: multitrack means select hd1 after hd0 is done, not to read hd0 from start
+//	if (fdc->com & F_COM_MT) {		// multitrack: start from sec 1 on side 0
+//		fdc->side = 0;
+//		fdc->sec = 1;
+//	} else {
 		fdc->sec = fdc->comBuf[3];	// R, sec.num
-	}
+//	}
 	if (!fdc->flp->insert) {
 		fdc->sr0 |= 0x48;	// not ready
 		ureadRS(fdc);		// prepare resp
@@ -518,13 +516,14 @@ void uscan01(FDC* fdc) {
 	fdc->cnt = 0x80 << (fdc->buf[3] & 3);
 	fdc->drq = 0;
 	fdc->dir = 1;
-	fdc->wait = turbo ? TRBBYTE : BYTEDELAY;
+	fdc->wait = turbo ? TRBBYTE : fdc->bytedelay;
 	fdc->pos++;
 }
 
 // compare whole sector
 void uscan02(FDC* fdc) {
 	if (!uGetByte(fdc)) return;
+	fdc->drq = 1;
 	if (fdc->tmp != fdc->data)
 		fdc->sr2 &= ~0x08;	// tmp!=data : SH=0 for all
 	switch(fdc->com & 0x0c) {
@@ -532,11 +531,11 @@ void uscan02(FDC* fdc) {
 			if (fdc->tmp != fdc->data)
 				fdc->sr2 |= 0x04;	// SN=1 : not meet
 			break;
-		case 0x80:
+		case 0x08:
 			if (fdc->tmp > fdc->data)
 				fdc->sr2 |= 0x04;
 			break;
-		case 0xc0:
+		case 0x0c:
 			if (fdc->tmp < fdc->data)
 				fdc->sr2 |= 0x04;
 			break;
@@ -544,7 +543,7 @@ void uscan02(FDC* fdc) {
 	fdc->cnt--;
 	if (fdc->cnt < 1) {
 		fdc->pos++;
-		fdc->wait = turbo ? TRBBYTE : BYTEDELAY;
+		fdc->wait = turbo ? TRBBYTE : fdc->bytedelay;
 	}
 }
 
@@ -619,13 +618,13 @@ void uwrdat02(FDC* fdc) {
 		flpWr(fdc->flp, fdc->side, mark);
 		add_crc_16(fdc, mark);
 		flpNext(fdc->flp, fdc->side);
-		fdc->wait = BYTEDELAY;
+		fdc->wait = fdc->bytedelay;
 		// todo : data length
 		fdc->cnt = 128 << (fdc->buf[3] & 7);
 		// printf("cnt = %i\n", fdc->cnt);
 		fdc->pos++;
 	} else {
-		fdc->wait += turbo ? TRBBYTE : BYTEDELAY;
+		fdc->wait += turbo ? TRBBYTE : fdc->bytedelay;
 		fdc->cnt--;
 		if (fdc->cnt < 1) {
 			fdc->sr0 |= 0x40;		// error
@@ -645,7 +644,7 @@ void uwrdat03(FDC* fdc) {
 	} else {
 		flpWr(fdc->flp, fdc->side, fdc->data);
 		flpNext(fdc->flp, fdc->side);
-		fdc->wait += BYTEDELAY;
+		fdc->wait += fdc->bytedelay;
 		fdc->cnt--;
 		if (fdc->cnt < 1) {
 			fdc->pos++;
@@ -660,10 +659,10 @@ void uwrdat03(FDC* fdc) {
 void uwrdat04(FDC* fdc) {
 	flpWr(fdc->flp, fdc->side, (fdc->crc >> 8) & 0xff);
 	flpNext(fdc->flp, fdc->side);
-	fdc->wait += BYTEDELAY;
+	fdc->wait += fdc->bytedelay;
 	flpWr(fdc->flp, fdc->side, fdc->crc & 0xff);
 	flpNext(fdc->flp, fdc->side);
-	fdc->wait += BYTEDELAY;
+	fdc->wait += fdc->bytedelay;
 	fdc->pos++;
 }
 
@@ -703,7 +702,7 @@ void utrkfrm00(FDC* fdc) {
 		fdc->sr0 |= 0x48;		// not ready
 		ureadRS(fdc);
 		uTerm(fdc);
-	} else if (fdc->flp->protect || 0) {	// TRICK : force NW flag (write protect), termination
+	} else if (fdc->flp->protect) {
 		fdc->sr0 |= 0x40;
 		fdc->sr1 |= F_SR1_NW;
 		ureadRS(fdc);
@@ -715,13 +714,15 @@ void utrkfrm00(FDC* fdc) {
 
 void utrkfrm01(FDC* fdc) {		// wait for index
 	flpNext(fdc->flp, fdc->side);
-	fdc->wait += BYTEDELAY;
+	fdc->wait += turbo ? TRBBYTE : fdc->bytedelay;
 	if (fdc->flp->index) {
 		DBGOUT("index\n");
 		fdc->cnt = 0;
 		fdc->scnt = 0;
 		fdc->dir = 0;
-		fdc->drq = 1;						// waiting for 1st C
+		fdc->drq = 1;		// waiting for 1st C
+		if (!fdc->dma)
+			fdc->intr = 1;	// generate interrupt
 		fdc->pos++;
 	}
 }
@@ -729,38 +730,50 @@ void utrkfrm01(FDC* fdc) {		// wait for index
 void diskFormTrack(Floppy* flp, int tr, Sector* sdata, int scount);
 
 void utrkfrm02(FDC* fdc) {		// recieve cnt (4 * spt) bytes from cpu = sectors header data
-	if (fdc->drq) {
-		fdc->sr1 |= F_SR1_OR;		// overrun
-		fdc->sr0 |= 0x40;		// error
-	}
-	fdc->buf[fdc->cnt & 3] = fdc->data;
-	fdc->cnt++;
-	fdc->wait += BYTEDELAY;
-	fdc->drq = 1;			// want next byte
-	if (fdc->cnt >= 4) {
-		fdc->cnt = 0;
-		fdc->slst[fdc->scnt].trk = fdc->buf[0];		// C cylinder
-		fdc->slst[fdc->scnt].head = fdc->buf[1];	// H head
-		fdc->slst[fdc->scnt].sec = fdc->buf[2];		// R sec.num
-		fdc->slst[fdc->scnt].sz = fdc->buf[3];	// N sec.size
-		fdc->slst[fdc->scnt].crc = -1;
-		fdc->slst[fdc->scnt].type = 0xfb;
-		memset(fdc->slst[fdc->scnt].data, fdc->comBuf[4], 4096);
-		fdc->scnt++;
-		if (fdc->scnt >= fdc->comBuf[2]) {	// sectors/track
-			diskFormTrack(fdc->flp, (fdc->trk << 1) | fdc->side, fdc->slst, fdc->comBuf[2]);
-			fdc->pos++;
-			fdc->drq = 0;
+	if (!fdc->drq) {		// byte recieved
+		fdc->buf[fdc->cnt & 3] = fdc->data;
+		fdc->cnt++;
+		fdc->drq = 1;			// want next byte
+		if (fdc->cnt >= 4) {		// if all 4 bytes is recieved, register new sector
+			fdc->cnt = 0;
+			fdc->slst[fdc->scnt].trk = fdc->buf[0];		// C cylinder
+			fdc->slst[fdc->scnt].head = fdc->buf[1];	// H head
+			fdc->slst[fdc->scnt].sec = fdc->buf[2];		// R sec.num
+			fdc->slst[fdc->scnt].sz = fdc->buf[3];		// N sec.size
+			fdc->slst[fdc->scnt].crc = -1;			// to be calculated
+			fdc->slst[fdc->scnt].type = 0xfb;		// type: normal
+			memset(fdc->slst[fdc->scnt].data, fdc->comBuf[4], 4096);	// fill sector data
+			fdc->scnt++;					// next sector
+			if (fdc->scnt >= fdc->comBuf[2]) {		// sectors/track
+				diskFormTrack(fdc->flp, (fdc->trk << 1) | fdc->side, fdc->slst, fdc->comBuf[2]);
+				fdc->drq = 0;				// all data completed, no more bytes needed
+				fdc->pos++;
+			} else {
+				fdc->drq = 1;
+				if (!fdc->dma)
+					fdc->intr = 1;
+			}
+		} else {
+			fdc->drq = 1;		// else request new byte
+			if (!fdc->dma)
+				fdc->intr = 1;
 		}
 	}
+	fdc->wait += fdc->bytedelay;
 }
 
 void utrkfrm03(FDC* fdc) {		// emulate whole track writing
+#if 0
+	// immediate next step
+	fdc->pos++;
+#else
+	// wait for next index
 	if (flpNext(fdc->flp, fdc->side)) {
 		fdc->pos++;
 	} else {
-		fdc->wait += BYTEDELAY;
+		fdc->wait += fdc->bytedelay;
 	}
+#endif
 }
 
 static fdcCall uFormat[] = {&uwargs,&utrkfrm00,&utrkfrm01,&utrkfrm02,&utrkfrm03,&ureadRS,&uTerm};
@@ -784,9 +797,9 @@ static uCom uComTab[] = {
 	{0x1f, 0x0c, 8, uRdData},	// xxx01100 read deleted data
 	{0x3f, 0x05, 8, uWrData},	// xx000101 write data
 	{0x3f, 0x09, 8, uWrData},	// xx001001 write deleted data
-	{0x9f, 0x02, 8, uRdTrk},	// 0xx00010 read track		TODO:check
+	{0x1f, 0x02, 8, uRdTrk},	// -xx00010 read track		TODO:check
 	{0xbf, 0x0a, 1, uReadID},	// 0x001010 read ID
-	{0xbf, 0x0d, 5, uFormat},	// 0x001101 format track
+	{0x3f, 0x0d, 5, uFormat},	// -x001101 format track	ibm send CD for format trk
 	{0x1f, 0x11, 8, uScan},		// xxx10001 scan equal		TODO:check scan commands
 	{0x1f, 0x19, 8, uScan},		// xxx11001 scan low or equal
 	{0x1f, 0x1d, 8, uScan},		// xxx11101 scan high or equal
@@ -803,7 +816,7 @@ void uWrite(FDC* fdc, int adr, unsigned char val) {
 	// printf("wr : %.2X\n", val);
 	fdc->intr = 0;			// reset interrupt
 	if (fdc->idle) {			// 1st byte, command
-		printf("updCom %.2X\n",val);
+		// printf("updCom %.2X\n",val);
 		fdc->com = val;
 		int idx = 0;
 		while ((uComTab[idx].mask & val) != uComTab[idx].val)
@@ -815,7 +828,7 @@ void uWrite(FDC* fdc, int adr, unsigned char val) {
 		fdc->idle = 0;
 		if (fdc->comCnt > 0)
 			fdc->drq = 1;	// wait for args
-		fdc->dir = 0;		// from cpu
+		fdc->dir = 0;		// cpu->fdc
 		fdc->wait = 0;
 		if (fdc->com != 0x08) {
 			fdc->sr0 = 0x00;
@@ -844,18 +857,18 @@ unsigned char uRead(FDC* fdc, int adr) {
 	unsigned char res = 0xff;
 	fdc->intr = 0;		// reset interrupt
 	if (adr & 1) {					// 1: data
-		if (fdc->drq && fdc->dir) {
-			if (fdc->irq) {			// execution
+		if (fdc->drq && fdc->dir) {		// data fdc->cpu
+			if (fdc->irq) {			// execution: transfer data
 				res = fdc->data;
 				fdc->drq = 0;
 				//DBGOUT("%.2X ",res);
-			} else if (fdc->resCnt > 0) {	// result
+			} else if (fdc->resCnt > 0) {	// result phase
 				fdc->intr = 0;		// reset interrupt @ reading [TODO: on 1st byte of result]
 				res = fdc->resBuf[fdc->resPos];
 				fdc->resPos++;
 				fdc->resCnt--;
-				if (fdc->resCnt == 0) {
-					fdc->dir = 0;
+				if (fdc->resCnt == 0) {	// result phase completed
+					fdc->dir = 0;	// cpu->fdc, waiting for command
 					fdc->idle = 1;
 				}
 				DBGOUT("resp : %.2X\n",res);
@@ -892,5 +905,7 @@ void uReset(FDC* fdc) {
 	fdc->hut = 0;
 	fdc->resCnt = 0;
 	fdc->resPos = 0;
-	fdc->intr = 0;
+	// TODO:check this
+	fdc->intr = 1;		// ibm bios want interrupt after reset
+	fdc->sr0 = 0xc0;	// and b7,6=11 in sr0
 }

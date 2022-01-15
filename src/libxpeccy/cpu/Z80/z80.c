@@ -126,13 +126,14 @@ int z80_exec(CPU* cpu) {
 
 static unsigned char z80_cnd[4] = {Z80_FZ, Z80_FC, Z80_FP, Z80_FS};
 
-xMnem z80_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
+xMnem z80_mnem(CPU* cpu, int qadr, cbdmr mrd, void* data) {
 	xMnem mn;
 	mn.oadr = -1;
 	opCode* opt = npTab;
 	opCode* opc;
 	unsigned char op;
 	unsigned char e = 0;
+	unsigned short adr = qadr & 0xffff;
 	unsigned short madr = 0;
 	mn.len = 0;
 	do {

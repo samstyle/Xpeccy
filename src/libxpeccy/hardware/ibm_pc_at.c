@@ -132,7 +132,7 @@ int ibm_inKbd(Computer* comp, int adr) {
 			res = ps2c_rd(comp->ps2c, PS2_RDATA);
 			break;
 		case 1:
-			comp->reg[0x61] ^= 0x10;		// Toggles with each refresh request (?)
+			// comp->reg[0x61] ^= 0x10;		// Toggles with each refresh request (?)
 			res = comp->reg[0x61] & 0x1f;		// b0..3 is copied
 			if (comp->pit.ch2.out) res |= 0x20;	// b6: timer2 output
 			break;
@@ -288,18 +288,76 @@ int ibm_in3ba(Computer* comp, int adr) {
 
 // fdc (i8272a)
 
-// 3f4/3f5 -> fdc
+// 3f1-3f7 -> fdc
 
 int ibm_fdc_rd(Computer* comp, int adr) {
 	int res = -1;
 	difIn(comp->dif, adr, &res, 0);
-	printf("in %.3X = %.2X\n",adr,res);
+	// printf("%.4X:%.4X\tin %.3X = %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,adr,res);
 	return res;
 }
 
 void ibm_fdc_wr(Computer* comp, int adr, int val) {
-	printf("%.4X:%.4X\tout %.3X, %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,adr,val);
+	// printf("%.4X:%.4X\tout %.3X, %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,adr,val);
 	difOut(comp->dif, adr, val, 0);
+}
+
+// dma
+
+int ibm_inDMA(Computer* comp, int adr) {
+	printf("DMA: rd %.3X\n",adr);
+	return -1;
+}
+
+void ibm_outDMA(Computer* comp, int adr, int val) {
+	switch(adr) {
+		case 0x00: dma_wr(comp->dma8, DMA_CH_BAR, 0, val); break;	// base address
+		case 0x01: dma_wr(comp->dma8, DMA_CH_BWCR, 0, val); break;	// word count
+		case 0x02: dma_wr(comp->dma8, DMA_CH_BAR, 1, val); break;
+		case 0x03: dma_wr(comp->dma8, DMA_CH_BWCR, 1, val); break;
+		case 0x04: dma_wr(comp->dma8, DMA_CH_BAR, 2, val); break;
+		case 0x05: dma_wr(comp->dma8, DMA_CH_BWCR, 2, val); break;
+		case 0x06: dma_wr(comp->dma8, DMA_CH_BAR, 3, val); break;
+		case 0x07: dma_wr(comp->dma8, DMA_CH_BWCR, 3, val); break;
+		case 0x08: dma_wr(comp->dma8, DMA_CR, -1, val); break;		// command register
+		case 0x09: dma_wr(comp->dma8, DMA_RR, -1, val); break;		// request register
+		case 0x0a: dma_wr(comp->dma8, DMA_CMR, -1, val); break;		// channel mask register
+		case 0x0b: dma_wr(comp->dma8, DMA_MR, -1, val); break;		// mode register
+		case 0x0c: dma_wr(comp->dma8, DMA_BTR, -1, val); break;		// byte trigger reset
+		case 0x0d: dma_wr(comp->dma8, DMA_RES, -1, val); break;		// master clear
+		case 0x0e: dma_wr(comp->dma8, DMA_MRES, -1, val); break;	// clear mask register
+		case 0x0f: dma_wr(comp->dma8, DMA_WAMR, -1, val); break;	// write mask register
+		case 0x81: dma_wr(comp->dma8, DMA_CH_PAR, 2, val & 0x0f); break;// page address registers
+		case 0x82: dma_wr(comp->dma8, DMA_CH_PAR, 3, val & 0x0f); break;
+		case 0x83: dma_wr(comp->dma8, DMA_CH_PAR, 1, val & 0x0f); break;
+		case 0x87: dma_wr(comp->dma8, DMA_CH_PAR, 0, val & 0x0f); break;
+	}
+}
+
+int ibm_dma_mrd(int adr, void* ptr) {
+	return ibm_mrd((Computer*)ptr, adr, 0);
+}
+
+void ibm_dma_mwr(int adr, int val, void* ptr) {
+	ibm_mwr((Computer*)ptr, adr, val);
+}
+
+int ibm_dma_flp_rd(void* ptr, int* f) {
+	DiskIF* dif = ((Computer*)ptr)->dif;
+	int res = -1;
+	*f = 0;
+	if (dif->fdc->dma && dif->fdc->irq && dif->fdc->drq && dif->fdc->dir) {		// dma,execution,data request, to cpu;
+		*f = difIn(dif, 5, &res, 0);
+	}
+	return res;
+}
+
+void ibm_dma_flp_wr(int val, void* ptr, int* f) {
+	DiskIF* dif = ((Computer*)ptr)->dif;
+	*f = 0;
+	if (dif->fdc->dma && dif->fdc->irq && dif->fdc->drq && !dif->fdc->dir) {	// dma,execution,data request, from cpu;
+		*f = difOut(dif, 5, val, 0);
+	}
 }
 
 // undef
@@ -319,12 +377,17 @@ void ibm_outDBG(Computer* comp, int adr, int val) {
 }
 
 static xPort ibmPortMap[] = {
+	{0x03f0,0x0000,2,2,2,ibm_inDMA, ibm_outDMA},	// dma1 000..00f
 	{0x0362,0x0020,2,2,2,ibm_inPIC,	ibm_outPIC},	// 20,21:master pic, a0,a1:slave pic	s01x xx00. s-slave
 	{0x03e0,0x0040,2,2,2,ibm_inPIT,	ibm_outPIT},	// programmable interval timer
-	{0x03f0,0x0060,2,2,2,ibm_inKbd,	ibm_outKbd},	// 8042: ps/2 keyboard/mouse controller
+	{0x03f0,0x0060,2,2,2,ibm_inKbd,	ibm_outKbd},	// 8042: keyboard/mouse controller
 	{0x03ff,0x0070,2,2,2,NULL,	ibm_out70},	// cmos
 	{0x03ff,0x0071,2,2,2,ibm_in71,	ibm_out71},
 	{0x03ff,0x0080,2,2,2,NULL,	ibm_out80},	// post code
+	{0x03ff,0x0081,2,2,2,ibm_inDMA, ibm_outDMA},	// dma pages
+	{0x03ff,0x0082,2,2,2,ibm_inDMA, ibm_outDMA},
+	{0x03ff,0x0083,2,2,2,ibm_inDMA, ibm_outDMA},
+	{0x03ff,0x0087,2,2,2,ibm_inDMA, ibm_outDMA},
 //	{0x03f8,0x0170,2,2,2,ibm_dumird,ibm_dumiwr},	// secondary ide
 	{0x03f8,0x01f0,2,2,2,ibm_in1fx,	ibm_out1fx},	// primary ide
 	{0x03f9,0x03b4,2,2,2,NULL,	ibm_out3b4},	// vga registers
@@ -388,10 +451,15 @@ void ibm_reset(Computer* comp) {
 void ibm_init(Computer* comp) {
 	comp->ps2c->ram[0] = 0x00;		// kbd config
 	comp->vid->nsPerDot = 160;
+	fdc_set_hd(comp->dif->fdc, 1);
+	dma_set_cb(comp->dma8, ibm_dma_mrd, ibm_dma_mwr);		// mrd/mwr callbacks
+	dma_set_chan(comp->dma8, 2, ibm_dma_flp_rd, ibm_dma_flp_wr);	// ch2: fdc
 }
 
 void ibm_sync(Computer* comp, int ns) {
 	bcSync(comp->beep, ns);
+	// dma
+	dma_sync(comp->dma8, ns);
 	// ps/2 controller
 	if (comp->ps2c->intk) {
 		comp->ps2c->intk = 0;
@@ -408,6 +476,11 @@ void ibm_sync(Computer* comp, int ns) {
 		pic_int(&comp->mpic, 0);	// input 0 master pic (int 8)
 	}
 	comp->pit.ch0.lout = comp->pit.ch0.out;
+	// ch1 mem refresh
+	if (!comp->pit.ch1.lout && comp->pit.ch1.out) {
+		comp->reg[0x61] ^= 0x10;
+	}
+	comp->pit.ch1.lout = comp->pit.ch1.out;
 	// ch2 connected to speaker
 	comp->pit.ch2.lout = comp->pit.ch2.out;
 	comp->beep->lev = (comp->reg[0x61] & 2) ? comp->pit.ch2.out : 1;

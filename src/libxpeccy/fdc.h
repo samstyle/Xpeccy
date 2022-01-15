@@ -28,7 +28,6 @@ enum {
 #define FDC_SEC		0x5f
 #define FDC_DATA	0x7f
 
-#define BYTEDELAY 32000		// 300 turns/min = 5 turns/sec = 31250 bytes/sec = 32mks/byte
 #define TURBOBYTE 500		// same for turbo
 #define turbo (fdcFlag & FDC_FAST)
 
@@ -57,6 +56,7 @@ struct FDC {
 	unsigned mfm:1;
 	unsigned idle:1;
 	unsigned crchi:1;
+	unsigned hd:1;		// HD mode (trklen 12500, bytedelay 16000)
 	unsigned char trk;	// registers
 	unsigned char sec;
 	unsigned char data;
@@ -65,7 +65,7 @@ struct FDC {
 	unsigned char tmp;
 	unsigned short wdata;
 	unsigned short tdata;
-	int trksize;		// 3125 for SD, 6250 for DD, 12500 for HD
+	int bytedelay;
 	Floppy* flop[4];
 	Floppy* flp;		// current floppy ptr
 	unsigned short crc;	// calculated crc
@@ -94,6 +94,8 @@ struct FDC {
 	Sector slst[64];
 	int scnt;
 };
+
+void fdc_set_hd(FDC*, int);
 
 typedef struct DiskHW DiskHW;
 

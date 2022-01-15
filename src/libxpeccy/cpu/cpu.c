@@ -29,7 +29,7 @@ xAsmScan nil_asm(const char* com, char* buf) {
 	res.match = 0;
 	return res;
 }
-xMnem nil_mnem(CPU* cpu, unsigned short adr, cbdmr mrd, void* data) {
+xMnem nil_mnem(CPU* cpu, int adr, cbdmr mrd, void* data) {
 	xMnem res;
 	res.len = 1;
 	res.mnem = nomnem;
@@ -111,7 +111,7 @@ void cpuDestroy(CPU* cpu) {
 static const char halfByte[] = "0123456789ABCDEF";
 static char tmpbuf[1024];
 
-xMnem cpuDisasm(CPU* cpu, unsigned short adr, char* buf, cbdmr mrd, void* data) {
+xMnem cpuDisasm(CPU* cpu, int adr, char* buf, cbdmr mrd, void* data) {
 	xMnem mn;
 //	opCode* opt = cpu->tab;
 	unsigned char op;

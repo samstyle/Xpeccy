@@ -13,13 +13,13 @@ extern int blockEnd;
 static int mode = XVIEW_CPU;
 static int page = 0;
 
-extern unsigned short adr_of_reg(CPU* cpu, bool* flag, QString nam);
+extern int adr_of_reg(CPU* cpu, bool* flag, QString nam);
 
 // MODEL
 
 xDisasmModel::xDisasmModel(QObject* p):QAbstractTableModel(p) {
 //	cptr = NULL;
-	disasmAdr = 0;
+	asmadr = 0;
 	row_count = 25;
 }
 
@@ -142,7 +142,7 @@ int dasmrd(int adr, void* ptr) {
 	int fadr;
 	MemPage* pg;
 	if (comp->cpu->type == CPU_I80286) {
-		res = comp->hw->mrd(comp, comp->cpu->cs.base + (adr & 0xffff), 0) & 0xff;
+		res = comp->hw->mrd(comp, adr, 0) & 0xff;
 	} else {
 		switch (mode) {
 			case XVIEW_CPU:
@@ -151,7 +151,7 @@ int dasmrd(int adr, void* ptr) {
 				switch (pg->type) {
 					case MEM_ROM: res = comp->mem->romData[fadr & comp->mem->romMask]; break;
 					case MEM_RAM: res = comp->mem->ramData[fadr & comp->mem->ramMask]; break;
-					case MEM_SLOT: res = memRd(comp->mem, adr & 0xffff);
+					case MEM_SLOT: res = memRd(comp->mem, adr);
 						break;
 				}
 				break;
@@ -342,6 +342,7 @@ int dasmCode(Computer* comp, int adr, dasmData& drow) {
 	return mnm.len;
 }
 
+// adr is bus value
 int dasmSome(Computer* comp, int adr, dasmData& drow) {
 	int clen = 0;
 	drow.adr = adr;
@@ -375,10 +376,11 @@ QList<dasmData> getDisasm(Computer* comp, int& adr) {
 	drow.info.clear();
 	drow.icon.clear();
 	int clen = 0;
+	int offset;
 //	int wid;
 	// 0:adr
 	QString lab;
-	xadr = mem_get_xadr(comp->mem, comp->cpu->pc);
+	xadr = mem_get_xadr(comp->mem, comp->cpu->pc + comp->cpu->cs.base);
 	int abs = xadr.abs;		// remember pc cell
 	int pct = xadr.type;
 	switch (mode) {
@@ -401,7 +403,7 @@ QList<dasmData> getDisasm(Computer* comp, int& adr) {
 		default:
 			xadr = mem_get_xadr(comp->mem, adr);
 			drow.flag = getBrk(comp, xadr.adr);
-			drow.ispc = (xadr.adr == comp->cpu->pc + comp->cpu->cs.base) ? 1 : 0;
+			drow.ispc = ((xadr.type == pct) && (abs == xadr.abs)) ? 1 : 0; // (xadr.adr == comp->cpu->pc + comp->cpu->cs.base) ? 1 : 0;
 			drow.issel = ((adr >= blockStart) && (adr <= blockEnd)) ? 1 : 0;
 			break;
 	}
@@ -429,7 +431,12 @@ QList<dasmData> getDisasm(Computer* comp, int& adr) {
 	}
 	drow.islab = 0;			// next line is addr
 	if (comp->cpu->type == CPU_I80286) {
-		drow.aname = QString("CS:%0").arg(gethexword(adr));
+		offset = adr - comp->cpu->cs.base;
+		if ((offset < 0) || (offset > comp->cpu->cs.limit)) {
+			drow.aname = QString::number(adr, comp->hw->base).toUpper().rightJustified(6, '0');
+		} else {
+			drow.aname = QString("CS:%0").arg(gethexword(offset));
+		}
 	} else if (conf.dbg.segment || (mode != XVIEW_CPU)) {
 		switch(xadr.type) {
 			case MEM_RAM: drow.aname = "RAM:"; break;
@@ -477,7 +484,7 @@ int xDisasmModel::fill() {
 	dasmData drow;
 	QList<dasmData> list;
 	int row;
-	int adr = (disasmAdr & 0xffff) + conf.prof.cur->zx->cpu->cs.base;
+	int adr = asmadr;		// (disasmAdr & 0xffff) + conf.prof.cur->zx->cpu->cs.base;
 	int res = 0;
 //	QString lab;
 	dasm.clear();
@@ -524,11 +531,11 @@ Qt::ItemFlags xDisasmModel::flags(const QModelIndex& idx) const {
 	return res;
 }
 
-unsigned short getPrevAdr(Computer* comp, unsigned short adr) {
+int getPrevAdr(Computer* comp, int adr) {
 	dasmData drow;
 	int i;
 	for(i = 16; i > 0; i--) {
-		if (dasmSome(comp, (adr - i) & 0xffff, drow) == i) {
+		if (dasmSome(comp, adr - i, drow) == i) {
 			adr = adr - i;
 			break;
 		}
@@ -538,19 +545,21 @@ unsigned short getPrevAdr(Computer* comp, unsigned short adr) {
 	return adr;
 }
 
-unsigned short adr_of_reg(CPU* cpu, bool* flag, QString nam) {
+int adr_of_reg(CPU* cpu, bool* flag, QString nam) {
 	xRegBunch bch = cpuGetRegs(cpu);
 	int i = 0;
+	int res;
 	nam = nam.toUpper();
 	while ((bch.regs[i].id != REG_NONE) && (QString(bch.regs[i].name).toUpper() != nam))
 		i++;
 	if (bch.regs[i].id == REG_NONE) {
 		*flag = false;
-		return 0;
+		res = 0;
 	} else {
 		*flag = true;
-		return bch.regs[i].value;
+		res = bch.regs[i].value;
 	}
+	return res;
 }
 
 int str_to_adr(Computer* comp, QString str) {
@@ -609,9 +618,11 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 	unsigned char* ptr;
 	int idx = -1;
 	int zadr;
-	int oadr = disasmAdr;
+	int oadr = asmadr;	// disasmAdr;
 	int len;
+	int seg,off;
 	QString str;
+	QStringList lst;
 	int adr = dasm[row].adr;
 	Computer* comp = conf.prof.cur->zx;
 	xAdr xadr = mem_get_xadr(comp->mem, adr);
@@ -639,24 +650,42 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 					add_comment(xadr, str);
 				}
 				//emit s_adrch(oadr, disasmAdr);
-			} else if (str.startsWith(".")) {		// .REG
-				idx = adr_of_reg(comp->cpu, &flag, str.mid(1));
-				if (!flag)
-					idx = -1;
+			} else if (str.startsWith(".") || str.contains(":")) {		// .REG || seg:offset
+				if (str.startsWith("."))
+					str = str.mid(1);
+				if (str.contains(":")) {		// seg:offset
+					lst = str.split(":",X_SkipEmptyParts);
+					if (lst.size() == 2) {
+						off = lst[1].toInt(&flag,16);
+						if (flag) {
+							seg = lst[0].toInt(&flag,16);
+							if (flag) {
+								idx = (seg << 4) + off;
+							} else {
+								seg = adr_of_reg(comp->cpu, &flag, lst[0]);
+								if (flag) {
+									idx = (seg << 4) + off;
+								}
+							}
+						}
+					}
+				} else {				// .reg
+					idx = adr_of_reg(comp->cpu, &flag, str);
+					if (!flag)
+						idx = -1;
+				}
 			} else {					// hex/label
 				idx = asmAddr(comp, val, xadr);
-				//emit s_adrch(oadr, disasmAdr);
 			}
 			if (idx >= 0) {
 				while (row > 0) {
-					idx = getPrevAdr(comp, idx & 0xffff);
-					zadr = idx & 0xffff;
+					idx = getPrevAdr(comp, idx);
+					zadr = (idx & 0xffff) + comp->cpu->cs.base;
 					row -= getDisasm(comp, zadr).size();
 				}
-				disasmAdr = idx & 0xffff;
-				//emit s_adrch(oadr, disasmAdr);
+				asmadr = idx;	// (idx - comp->cpu->cs.base) & 0xffff;
 			}
-			emit s_adrch(oadr, disasmAdr);
+			emit s_adrch(oadr, asmadr);
 			break;
 		case 1:	// bytes
 			str = val.toString();
@@ -804,18 +833,18 @@ void xDisasmTable::setMode(int md, int pg) {
 	updContent();
 }
 
-unsigned short xDisasmTable::getAdr() {
-	return model->disasmAdr;
+int xDisasmTable::getAdr() {
+	return model->asmadr;	// disasmAdr;
 }
 
 void xDisasmTable::setAdr(int adr, int hist) {
 	if (hist)
-		history.append(model->disasmAdr);
-	int oadr = model->disasmAdr & 0xffff;
-	model->disasmAdr = adr & 0xffff;
+		history.append(model->asmadr);
+	int oadr = model->asmadr;
+	model->asmadr = adr;
 	updContent();
-	if (oadr != model->disasmAdr)
-		emit s_adrch(model->disasmAdr);
+	if (oadr != model->asmadr)
+		emit s_adrch(model->asmadr);
 }
 
 int xDisasmTable::updContent() {
@@ -894,28 +923,29 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			break;
 		case Qt::Key_PageUp:
 			for (i = 0; i < rows() - 1; i++) {
-				model->disasmAdr = getPrevAdr(conf.prof.cur->zx, model->disasmAdr);
+				model->asmadr = getPrevAdr(conf.prof.cur->zx, model->asmadr);
 			}
 			updContent();
-			emit s_adrch(model->disasmAdr);
+			emit s_adrch(model->asmadr);
 			break;
 		case Qt::Key_PageDown:
-			model->disasmAdr = getData(rows() - 1, 0, Qt::UserRole).toInt() & 0xffff;
+			model->asmadr = getData(rows() - 1, 0, Qt::UserRole).toInt();
 			updContent();
-			emit s_adrch(model->disasmAdr);
+			emit s_adrch(model->asmadr);
 			break;
 		case XCUT_TOPC:
 			if (mode != XVIEW_CPU) break;
 			if (!conf.prof.cur->zx) break;
-			model->disasmAdr = conf.prof.cur->zx->cpu->pc;
-			updContent();
-			emit s_adrch(model->disasmAdr);
+			setAdr(conf.prof.cur->zx->cpu->pc + conf.prof.cur->zx->cpu->cs.base, 0);
 			break;
 		case XCUT_SETPC:
 			if (mode != XVIEW_CPU) break;
 			if (!conf.prof.cur->zx) break;
-			conf.prof.cur->zx->cpu->pc = getData(idx.row(), 0, Qt::UserRole).toInt() & 0xffff;
-			emit rqRefillAll();
+			i = getData(idx.row(), 0, Qt::UserRole).toInt() - conf.prof.cur->zx->cpu->cs.base;
+			if ((i >= 0) && (i <= conf.prof.cur->zx->cpu->cs.limit)) {
+				conf.prof.cur->zx->cpu->pc = i;
+				emit rqRefillAll();
+			}
 			break;
 		case XCUT_SAVE:
 			ev->ignore();
@@ -956,17 +986,17 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			if (!idx.isValid()) break;
 			adr = model->dasm[idx.row()].oadr;
 			if (adr < 0) break;
-			history.append(model->disasmAdr);
-			model->setData(model->index(idx.row(), 0), gethexword(adr & 0xffff).prepend("0x"), Qt::EditRole);
+			history.append(model->asmadr);
+			model->setData(model->index(idx.row(), 0), gethexword((adr & 0xffff) + conf.prof.cur->zx->cpu->cs.base).prepend("0x"), Qt::EditRole);
 			updContent();
 			setCurrentIndex(idx);
-			emit s_adrch(model->disasmAdr);
+			emit s_adrch(model->asmadr);
 			break;
 		case XCUT_RETFROM:
 			if (history.size() < 1) break;
-			model->disasmAdr = history.takeLast();
+			model->asmadr = history.takeLast();
 			updContent();
-			emit s_adrch(model->disasmAdr);
+			emit s_adrch(model->asmadr);
 			break;
 		case Qt::Key_Return:
 			if (state() == QAbstractItemView::EditingState) break;
@@ -1039,30 +1069,37 @@ void xDisasmTable::mouseMoveEvent(QMouseEvent* ev) {
 
 void xDisasmTable::scrolDn(Qt::KeyboardModifiers mod) {
 	int i = 1;
+	int topadr = model->dasm[0].adr;
+	int adr;
+	dasmData d;
 	if (mod & Qt::ControlModifier) {
-		model->disasmAdr++;
+		adr = model->asmadr + 1;
 	} else {
 		// TODO: comparing disasmAdr (16 bit) with dasm[i].adr (24 bit)
-		while (((model->disasmAdr + conf.prof.cur->zx->cpu->cs.base) == model->dasm[i].adr) && (i < model->dasm.size()))
+		while ((topadr == model->dasm[i].adr) && (i < model->dasm.size()))
 			i++;
 		if (i < model->dasm.size()) {
-			model->disasmAdr = model->dasm[i].adr - conf.prof.cur->zx->cpu->cs.base;
+			adr = model->dasm[i].adr;
 		} else {
-			model->disasmAdr++;
+			adr = model->asmadr + dasmSome(conf.prof.cur->zx, model->asmadr, d);
+			// model->asmadr++;
 		}
 	}
-	updContent();
-	emit s_adrch(model->disasmAdr);
+	setAdr(adr, 0);
+//	updContent();
+//	emit s_adrch(model->asmadr);
 }
 
 void xDisasmTable::scrolUp(Qt::KeyboardModifiers mod) {
+	int adr;
 	if (mod & Qt::ControlModifier) {
-		model->disasmAdr--;
+		adr = model->asmadr - 1;
 	} else {
-		model->disasmAdr = getPrevAdr(conf.prof.cur->zx, model->disasmAdr);
+		adr = getPrevAdr(conf.prof.cur->zx, model->asmadr);
 	}
-	updContent();
-	emit s_adrch(model->disasmAdr);
+	setAdr(adr, 0);
+//	updContent();
+//	emit s_adrch(model->asmadr);
 }
 
 void xDisasmTable::wheelEvent(QWheelEvent* ev) {

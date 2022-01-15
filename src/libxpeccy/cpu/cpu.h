@@ -233,7 +233,7 @@ struct CPU {
 	void (*reset)(CPU*);
 	int (*exec)(CPU*);
 	xAsmScan (*asmbl)(const char*, char*);
-	xMnem (*mnem)(CPU*, unsigned short, cbdmr, void*);
+	xMnem (*mnem)(CPU*, int, cbdmr, void*);
 	void (*getregs)(CPU*, xRegBunch*);
 	void (*setregs)(CPU*, xRegBunch);
 
@@ -254,7 +254,7 @@ typedef struct {
 	void (*reset)(CPU*);			// reset
 	int (*exec)(CPU*);			// exec opcode, return T
 	xAsmScan (*asmbl)(const char*, char*);	// compile mnemonic
-	xMnem (*mnem)(CPU*, unsigned short, cbdmr, void*);
+	xMnem (*mnem)(CPU*, int, cbdmr, void*);
 	void (*getregs)(CPU*,xRegBunch*);	// get cpu registers: name,id,value
 	void (*setregs)(CPU*,xRegBunch);	// set cpu registers
 } cpuCore;
@@ -268,7 +268,7 @@ const char* getCoreName(int);
 
 extern cpuCore cpuTab[];
 
-xMnem cpuDisasm(CPU*, unsigned short, char*, cbdmr, void*);
+xMnem cpuDisasm(CPU*, int, char*, cbdmr, void*);
 int cpuAsm(CPU*, const char*, char*, unsigned short);
 xAsmScan scanAsmTab(const char*, opCode*);
 

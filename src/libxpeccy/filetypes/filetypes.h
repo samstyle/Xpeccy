@@ -172,6 +172,8 @@ int loadC64prg(Computer*, const char*, int);
 
 int loadRKSmem(Computer*, const char*, int);
 
+int load_ima(Computer*, const char*, int);
+
 // tape
 
 int loadTAP(Computer*,const char*, int);

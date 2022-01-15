@@ -20,7 +20,7 @@ void lr_reset(CPU*);
 int lr_exec(CPU*);
 
 xAsmScan lr_asm(const char*, char*);
-xMnem lr_mnem(CPU*, unsigned short, cbdmr, void*);
+xMnem lr_mnem(CPU*, int, cbdmr, void*);
 
 void lr_get_regs(CPU*, xRegBunch*);
 void lr_set_regs(CPU*, xRegBunch);
