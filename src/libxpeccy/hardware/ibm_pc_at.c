@@ -501,6 +501,11 @@ void ibm_sync(Computer* comp, int ns) {
 		comp->cpu->intrq |= I286_INT;
 		comp->cpu->intvec = v & 0xffff;
 	}
+	// debugging
+	if (comp->dif->fdc->brk) {
+		comp->dif->fdc->brk = 0;
+		comp->brk = 1;
+	}
 }
 
 // key press/release

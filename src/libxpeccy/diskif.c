@@ -285,6 +285,7 @@ void difSetHW(DiskIF* dif, int type) {
 	if (!dif->hw)
 		dif->hw = findDHW(DIF_NONE);
 	dif->type = dif->hw->id;
+	dif->fdc->upd = (dif->hw->id == DIF_P3DOS) ? 1 : 0;	// difference between upd765 & i8275
 }
 
 DiskIF* difCreate(int type) {

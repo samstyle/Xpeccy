@@ -17,7 +17,7 @@
 #define DBGOUT(args...)
 #endif
 
-#define TRBBYTE 15000	// 15mks min
+#define TRBBYTE 1000
 #define TRBSRT 1
 
 int seekADR(FDC*);	// from VG93: wait & read ADR mark in fdc->buf
@@ -25,7 +25,7 @@ int seekADR(FDC*);	// from VG93: wait & read ADR mark in fdc->buf
 // wait until all args is done
 void uwargs(FDC* fdc) {
 	if (fdc->comCnt == 0) {
-		// fdc->irq = 1;		// exec
+		fdc->irq = 1;		// enter exec phase (idle=0, irq=1)
 		fdc->pos++;
 	}
 	fdc->wait = 1;
@@ -41,7 +41,7 @@ void unothing(FDC* fdc) {
 
 void ustp(FDC* fdc) {
 	// fdc->idle = 1;
-	fdc->irq = 0;
+	fdc->irq = 0;		// enter result phase (idle=0,irq=0)
 	fdc->pos++;
 	if (fdc->resCnt > 0) {
 		fdc->drq = 1;
@@ -71,21 +71,31 @@ void uSetDrive(FDC* fdc) {
 int uGetByte(FDC* fdc) {
 	int res = 0;
 	if (turbo) {
-		if (!fdc->drq) {
+		if (fdc->drq) {
+			if (fdc->tns > fdc->bytedelay) {
+				// prev.data lost
+				fdc->sr1 |= 0x10;
+				// and get next byte
+				fdc->tmp = flpRd(fdc->flp, fdc->side);
+				flpNext(fdc->flp, fdc->side);
+				fdc->tns = 0;
+				res = 1;
+			}
+		} else {			// data is ready
 			fdc->tmp = flpRd(fdc->flp, fdc->side);
 			flpNext(fdc->flp, fdc->side);
-			// fdc->drq = 1;
+			fdc->tns = 0;
 			res = 1;
 		}
-		fdc->wait = TRBBYTE;
+		fdc->wait = 1;
 	} else {
 		if (fdc->drq) {
 			fdc->sr1 |= 0x10;		// data lost
 		}
 		fdc->tmp = flpRd(fdc->flp, fdc->side);
 		flpNext(fdc->flp, fdc->side);
-		// fdc->drq = 1;
 		fdc->wait += turbo ? TRBBYTE : fdc->bytedelay;
+		fdc->tns = 0;
 		res = 1;
 	}
 	return res;
@@ -156,6 +166,7 @@ void ucalib01(FDC* fdc) {
 		fdc->sr0 |= 0x20;	// SR0:0010xxxx
 		fdc->state &= 0xf0;
 		fdc->intr = 1;		// interrupt @ end of recalibrate/seek command
+		fdc->seekend = 1;
 		fdc->pos++;
 	} else if (fdc->cnt > 0) {
 		flpStep(fdc->flp, FLP_BACK);
@@ -166,25 +177,12 @@ void ucalib01(FDC* fdc) {
 		fdc->sr0 |= 0x70;	// SR0:0111xxxxx
 		fdc->state &= 0xf0;
 		fdc->intr = 1;
+		fdc->seekend = 1;
 		fdc->pos++;
 	}
 }
 
 static fdcCall uCalib[] = {&uwargs,&ucalib00,&ucalib01,&uTerm};
-
-// 00001000 R [ST0],[PCN]
-// sense interrupt status
-
-void usint00(FDC* fdc) {
-	fdc->state &= 0xf0;		// clear b0..3 of main status register
-	fdc->resBuf[0] = fdc->sr0;
-	fdc->resBuf[1] = fdc->trk;
-	uResp(fdc, 2);
-	fdc->intr = 0;			// no int on response/reset interrupt
-	fdc->pos++;
-}
-
-static fdcCall uSenseInt[] = {&uwargs,&usint00,&uTerm};
 
 // 00001111 [xxxxx.H.DRV:2,NCN]
 // seek
@@ -216,6 +214,7 @@ void useek01(FDC* fdc) {
 void useek02(FDC* fdc) {
 	// fdc->trk = fdc->flp->trk;
 	fdc->intr = 1;			// end of seek com
+	fdc->seekend = 1;
 	fdc->state &= 0xf0;		// seek mode off
 	fdc->sr0 &= 0x1f;		// b7,6=00:success
 	fdc->sr0 |= 0x20;		// seek end
@@ -343,8 +342,11 @@ void uread03(FDC* fdc) {
 	fdc->state |= 0x10;		// wr/rd operation
 	fdc->drq = 0;
 	fdc->dir = 1;
+	fdc->tns = 0;
 	fdc->wait = turbo ? TRBBYTE : fdc->bytedelay;
 	fdc->pos++;
+	// fdc->brk = 1;
+	// printf("combuf: %.2X",fdc->com); for (int i = 0; i < 8; i++) {printf(" %.2X",fdc->comBuf[i]);} printf("\n");
 }
 
 void uread04(FDC* fdc) {
@@ -386,12 +388,7 @@ static fdcCall uReadD01[] = {&uread01,&uread02,&uread03,&uread04,&uread05,&uread
 void uread00(FDC* fdc) {
 	uSetDrive(fdc);
 // NOTE: multitrack means select hd1 after hd0 is done, not to read hd0 from start
-//	if (fdc->com & F_COM_MT) {		// multitrack: start from sec 1 on side 0
-//		fdc->side = 0;
-//		fdc->sec = 1;
-//	} else {
-		fdc->sec = fdc->comBuf[3];	// R, sec.num
-//	}
+	fdc->sec = fdc->comBuf[3];	// R, sec.num
 	if (!fdc->flp->insert) {
 		fdc->sr0 |= 0x48;	// not ready
 		ureadRS(fdc);		// prepare resp
@@ -575,7 +572,7 @@ void uwrdat00(FDC* fdc) {
 		fdc->sr0 |= 0x48;		// not ready
 		ureadRS(fdc);
 		uTerm(fdc);
-	} else if (fdc->flp->protect || 0) {	// trick: force 'write protect' error
+	} else if (fdc->flp->protect)	{
 		fdc->sr1 |= F_SR1_NW;
 		fdc->sr0 |= 0x40;
 		ureadRS(fdc);
@@ -588,9 +585,10 @@ void uwrdat00(FDC* fdc) {
 	}
 }
 
+// wait sector header
 void uwrdat01(FDC* fdc) {
 	int res = seekADR(fdc);
-	if (res == 2) {
+	if (res == 2) {				// index
 		fdc->cnt--;
 		if (fdc->cnt < 1) {
 			fdc->sr0 |= 0x40;	// error
@@ -598,14 +596,15 @@ void uwrdat01(FDC* fdc) {
 			ureadRS(fdc);
 			uTerm(fdc);
 		}
-	} else if (res == 1) {
-		if (fdc->sec == fdc->buf[2]) {
+	} else if (res == 1) {			// found
+		if (fdc->sec == fdc->buf[2]) {	// same sector
 			fdc->cnt = 52;
 			fdc->pos++;
 		}
 	}
 }
 
+// wait sector data
 void uwrdat02(FDC* fdc) {
 	flpNext(fdc->flp, fdc->side);
 	if ((fdc->flp->field == 2) || (fdc->flp->field == 3)) {		// data filed (excluding A1 A1 A1 F8(FB))
@@ -622,6 +621,7 @@ void uwrdat02(FDC* fdc) {
 		// todo : data length
 		fdc->cnt = 128 << (fdc->buf[3] & 7);
 		// printf("cnt = %i\n", fdc->cnt);
+		fdc->tns = 0;
 		fdc->pos++;
 	} else {
 		fdc->wait += turbo ? TRBBYTE : fdc->bytedelay;
@@ -635,27 +635,26 @@ void uwrdat02(FDC* fdc) {
 	}
 }
 
+// write data
+
 void uwrdat03(FDC* fdc) {
-	if (fdc->drq) {				// data lost
-		fdc->sr1 |= F_SR1_OR;		// overrun
-		fdc->sr0 |= 0x40;		// error
-		ureadRS(fdc);
-		uTerm(fdc);
+	if (fdc->drq) {				// still wait byte from cpu
+		fdc->sr1 |= F_SR1_OR;		// overrun. don't terminate command
+	}
+	flpWr(fdc->flp, fdc->side, fdc->data);
+	flpNext(fdc->flp, fdc->side);
+	fdc->wait += fdc->bytedelay;
+	fdc->cnt--;
+	if (fdc->cnt < 1) {
+		fdc->pos++;
 	} else {
-		flpWr(fdc->flp, fdc->side, fdc->data);
-		flpNext(fdc->flp, fdc->side);
-		fdc->wait += fdc->bytedelay;
-		fdc->cnt--;
-		if (fdc->cnt < 1) {
-			fdc->pos++;
-		} else {
-			fdc->drq = 1;
-			if (!fdc->dma)
-				fdc->intr = 1;
-		}
+		fdc->drq = 1;		// request next byte
+		if (!fdc->dma)
+			fdc->intr = 1;
 	}
 }
 
+// write crc
 void uwrdat04(FDC* fdc) {
 	flpWr(fdc->flp, fdc->side, (fdc->crc >> 8) & 0xff);
 	flpNext(fdc->flp, fdc->side);
@@ -666,6 +665,7 @@ void uwrdat04(FDC* fdc) {
 	fdc->pos++;
 }
 
+// check eot/mt
 void uwrdat05(FDC* fdc) {
 	fdc->sec++;
 	if (fdc->sec > fdc->comBuf[5]) {		// check EOT
@@ -790,6 +790,27 @@ void uinv00(FDC* fdc) {
 
 static fdcCall uInvalid[] = {&uwargs,&uinv00,&uTerm};
 
+// 00001000 R [ST0],[PCN]
+// sense interrupt status
+
+// Idea: this com works properly only after seek/recalibrate coms?
+void usint00(FDC* fdc) {
+	if (!fdc->seekend && fdc->upd) {
+		fdc->plan = uInvalid;
+		fdc->pos = 0;
+	} else {
+		fdc->state &= 0xf0;		// clear b0..3 of main status register
+		fdc->resBuf[0] = fdc->sr0;
+		fdc->resBuf[1] = fdc->trk;
+		uResp(fdc, 2);
+		fdc->intr = 0;			// no int on response/reset interrupt
+		fdc->seekend = 0;
+		fdc->pos++;
+	}
+}
+
+static fdcCall uSenseInt[] = {&uwargs,&usint00,&uTerm};
+
 // common
 
 static uCom uComTab[] = {
@@ -811,6 +832,11 @@ static uCom uComTab[] = {
 	{0x00, 0x00, 0, uInvalid}	// -------- invalid op
 };
 
+// 1)'sense interrupt status' com must be sent after 'seek' and 'recalibrate'
+// otherwise, fdc will consider next com as invalid
+// 2)issuing 'sense interrupt status' com without interrupt pending is treated as invalid com
+// 3)'seek' and 'recalibrate' doesn't have result phase, 'sense interrupt status' must be used to effectively terminate them
+
 void uWrite(FDC* fdc, int adr, unsigned char val) {
 	if (!(adr & 1)) return;			// wr data only
 	// printf("wr : %.2X\n", val);
@@ -830,7 +856,8 @@ void uWrite(FDC* fdc, int adr, unsigned char val) {
 			fdc->drq = 1;	// wait for args
 		fdc->dir = 0;		// cpu->fdc
 		fdc->wait = 0;
-		if (fdc->com != 0x08) {
+		if (fdc->com != 0x08) {	// sense interrupt status
+			fdc->seekend = 0;
 			fdc->sr0 = 0x00;
 			fdc->sr1 = 0x00;
 			fdc->sr2 = 0x00;
@@ -855,7 +882,7 @@ void uWrite(FDC* fdc, int adr, unsigned char val) {
 
 unsigned char uRead(FDC* fdc, int adr) {
 	unsigned char res = 0xff;
-	fdc->intr = 0;		// reset interrupt
+	fdc->intr = 0;					// reset interrupt
 	if (adr & 1) {					// 1: data
 		if (fdc->drq && fdc->dir) {		// data fdc->cpu
 			if (fdc->irq) {			// execution: transfer data

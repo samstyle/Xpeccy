@@ -1675,36 +1675,23 @@ void i286_opA9(CPU* cpu) {
 }
 
 // aa: stosb  al->[es:di], adv di
-void i286_opAA(CPU* cpu) {
-	if (cpu->rep == I286_REPZ) {
-		if (cpu->cx) {
-			i286_mwr(cpu, cpu->es, 0, cpu->di, cpu->al);
-			cpu->di += (cpu->f & I286_FD) ? -1 : 1;
-			cpu->cx--;
-			if (cpu->cx) cpu->pc = cpu->oldpc;
-		}
-	} else {
-		i286_mwr(cpu, cpu->es, 0, cpu->di, cpu->al);
-		cpu->di += (cpu->f & I286_FD) ? -1 : 1;
-	}
+void i286_aa_cb(CPU* cpu) {
+	i286_mwr(cpu, cpu->es, 0, cpu->di, cpu->al);
+	cpu->di += (cpu->f & I286_FD) ? -1 : 1;
 }
+void i286_opAA(CPU* cpu) {i286_rep(cpu, i286_aa_cb);}
 
 // ab: stosw: ax->[es:di], adv di
+void i286_ab_cb(CPU* cpu) {
+	i286_mwr(cpu, cpu->es, 0, cpu->di, cpu->al);
+	i286_mwr(cpu, cpu->es, 0, cpu->di + 1, cpu->ah);
+	cpu->di += (cpu->f & I286_FD) ? -2 : 2;
+}
 void i286_opAB(CPU* cpu) {
 	if (cpu->di == 0xffff) {
 		i286_interrupt(cpu, 13);
-	} else if (cpu->rep == I286_REPZ) {
-		if (cpu->cx) {
-			i286_mwr(cpu, cpu->es, 0, cpu->di, cpu->al);
-			i286_mwr(cpu, cpu->es, 0, cpu->di + 1, cpu->ah);
-			cpu->di += (cpu->f & I286_FD) ? -2 : 2;
-			cpu->cx--;
-			if (cpu->cx) cpu->pc = cpu->oldpc;
-		}
 	} else {
-		i286_mwr(cpu, cpu->es, 0, cpu->di, cpu->al);
-		i286_mwr(cpu, cpu->es, 0, cpu->di + 1, cpu->ah);
-		cpu->di += (cpu->f & I286_FD) ? -2 : 2;
+		i286_rep(cpu, i286_ab_cb);
 	}
 }
 
