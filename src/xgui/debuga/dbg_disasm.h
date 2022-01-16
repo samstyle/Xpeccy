@@ -41,7 +41,6 @@ class xDisasmModel : public QAbstractTableModel {
 		void update_data();
 		QList<dasmData> dasm;
 		int asmadr;			// full memory address
-		// unsigned short disasmAdr;
 	signals:
 		void rqRefill();
 		void s_adrch(int, int);

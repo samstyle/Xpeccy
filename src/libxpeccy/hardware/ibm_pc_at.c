@@ -360,6 +360,40 @@ void ibm_dma_flp_wr(int val, void* ptr, int* f) {
 	}
 }
 
+int ibm_dma_hdd_rd(void* ptr, int* f) {
+	IDE* ide = ((Computer*)ptr)->ide;
+	ATADev* dev = ide->curDev;
+	int res = -1;
+	*f = 0;
+	if ((dev->reg.state & HDF_DRQ) && (dev->buf.mode == HDB_READ) && dev->dma) {
+		if (ide->hiTrig) {
+			res = ide->bus & 0xff;
+		} else {
+			ide->bus = ataRd(dev, HDD_DATA);
+			res = (ide->bus >> 8) & 0xff;
+		}
+		ide->hiTrig = !ide->hiTrig;
+		*f = 1;
+	}
+	return res;
+}
+
+void ibm_dma_hdd_wr(int val, void* ptr, int* f) {
+	IDE* ide = ((Computer*)ptr)->ide;
+	ATADev* dev = ide->curDev;
+	*f = 0;
+	if ((dev->reg.state & HDF_DRQ) && (dev->buf.mode == HDB_WRITE) && dev->dma) {
+		if (ide->hiTrig) {
+			ide->bus &= 0xff00;
+			ide->bus |= (val & 0xff);
+			ataWr(dev, HDD_DATA, ide->bus);
+		} else {
+			ide->bus &= 0x00ff;
+			ide->bus |= (val << 8) & 0xff00;
+		}
+	}
+}
+
 // undef
 
 int ibm_dumird(Computer* comp, int adr) {return -1;}
@@ -454,6 +488,7 @@ void ibm_init(Computer* comp) {
 	fdc_set_hd(comp->dif->fdc, 1);
 	dma_set_cb(comp->dma8, ibm_dma_mrd, ibm_dma_mwr);		// mrd/mwr callbacks
 	dma_set_chan(comp->dma8, 2, ibm_dma_flp_rd, ibm_dma_flp_wr);	// ch2: fdc
+	dma_set_chan(comp->dma8, 3, ibm_dma_hdd_rd, ibm_dma_hdd_wr);	// ch3: hdd
 }
 
 void ibm_sync(Computer* comp, int ns) {
@@ -491,7 +526,9 @@ void ibm_sync(Computer* comp, int ns) {
 		comp->dif->intrq = 0;
 		pic_int(&comp->mpic, 6);
 	}
-
+	// hdd
+	// int14 (slave int6): primary hdd
+	// int15 (slave int7): secondary hdd
 	// pic
 	if (comp->spic.oint)		// slave pic int -> master pic int2
 		pic_int(&comp->mpic, 2);

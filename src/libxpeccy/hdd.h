@@ -95,6 +95,7 @@ typedef struct {
 	unsigned sleep:1;
 	unsigned hasLBA:1;
 	unsigned hasDMA:1;
+	unsigned dma:1;		// rd/wr in dma mode
 
 	int type;		// none / ata / atapi
 	int lba;

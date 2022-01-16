@@ -171,7 +171,7 @@ void vga_t40_line(Video* vid) {
 		// char / atr taken right way (checked)
 		vid->idx = vid->ram[vid->vadr];			// char (plane 0)
 		vid->atrbyte = vid->ram[vid->vadr + 0x10000];	// attr	(plane 1)
-		vid->tadr = vid->idx * 16;			// offset of 1st char byte in plane 2 (allways 32 bytes/char in font plane)
+		vid->tadr = vid->idx * 32;			// offset of 1st char byte in plane 2 (allways 32 bytes/char in font plane)
 		vid->tadr += vid->vga.chline;			// +line in char
 		vid->idx = vid->ram[0x20000 + vid->tadr];	// pixels
 		if ((vid->vadr == vid->vga.cadr) && !(CRT_REG(0x0a) & 0x20)) {		// cursor position, cursor enabled

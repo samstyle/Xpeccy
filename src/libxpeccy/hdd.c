@@ -153,6 +153,7 @@ void ataExec(ATADev* dev, unsigned char cm) {
 #ifdef ISDEBUG
 	printf("ATA exec %.2X\n",cm);
 #endif
+		dev->dma = 0;
 		switch (cm) {
 			case 0x00:			// NOP
 				break;
@@ -239,11 +240,20 @@ void ataExec(ATADev* dev, unsigned char cm) {
 				break;
 			case 0xc8:			// read DMA (w/retry)
 			case 0xc9:			// read DMA (w/o retry)
-				ataAbort(dev);
+				ataReadSector(dev);		// put sector in buffer
+				dev->buf.pos = 0;
+				dev->buf.mode = HDB_READ;
+				dev->reg.state |= HDF_DRQ;
+				dev->dma = 1;
+				// ataAbort(dev);
 				break;
 			case 0xca:			// write DMA (w/retry)
 			case 0xcb:			// write DMA (w/o retry)
-				ataAbort(dev);
+				dev->buf.pos = 0;
+				dev->buf.mode = HDB_WRITE;
+				dev->reg.state |= HDF_DRQ;
+				dev->dma = 1;
+				// ataAbort(dev);
 				break;
 			case 0xdb:			// acknowledge media chge
 				dev->reg.state |= HDF_ERR;	// NOTE: HDD isn't removable, return abort error
@@ -263,7 +273,7 @@ void ataExec(ATADev* dev, unsigned char cm) {
 				dev->reg.state |= HDF_DRQ;
 				break;
 			case 0xe8:
-				dev->buf.pos = 0;		// write buffer
+				dev->buf.pos = 0;	// write buffer
 				dev->buf.mode = HDB_WRITE;
 				dev->reg.state |= HDF_DRQ;
 				break;

@@ -167,12 +167,13 @@ int dasmrd(int adr, void* ptr) {
 }
 
 void dasmwr(Computer* comp, int adr, int bt) {
-	if (comp->cpu->type == CPU_I80286) return;
+	adr &= comp->mem->busmask;
+//	if (comp->cpu->type == CPU_I80286) return;
 	int fadr;
 	MemPage* pg;
-	if (comp->cpu->type == CPU_I80286) {
-		comp->hw->mwr(comp, comp->cpu->cs.base + (adr & 0xffff), bt);
-	} else {
+//	if (comp->cpu->type == CPU_I80286) {
+//		comp->hw->mwr(comp, adr, bt);
+//	} else {
 		switch(mode) {
 			case XVIEW_CPU:
 				pg = mem_get_page(comp->mem, adr);		// = &comp->mem->map[(adr >> 8) & 0xff];
@@ -196,7 +197,7 @@ void dasmwr(Computer* comp, int adr, int bt) {
 					comp->mem->romData[((adr & 0x3fff) | (page << 14)) & comp->mem->romMask] = bt & 0xff;
 				break;
 		}
-	}
+//	}
 }
 
 void placeLabel(Computer* comp, dasmData& drow) {
@@ -207,11 +208,7 @@ void placeLabel(Computer* comp, dasmData& drow) {
 	xMnem mn;
 	xAdr xadr;
 	while (work && (shift < 8)) {
-		if (comp->cpu->type == CPU_I80286) {
-			xadr = mem_get_xadr(comp->mem, drow.oadr - shift + comp->cpu->cs.base);
-		} else {
-			xadr = mem_get_xadr(comp->mem, drow.oadr - shift);
-		}
+		xadr = mem_get_xadr(comp->mem, drow.oadr - shift + comp->cpu->cs.base);
 		lab = find_label(xadr);
 		if (lab.isEmpty()) {
 			if (drow.oflag & OF_MEMADR) {
@@ -222,7 +219,7 @@ void placeLabel(Computer* comp, dasmData& drow) {
 		} else {
 			mn.len = 8;					// default seek range
 			if ((drow.flag & 0xf0) == DBG_VIEW_CODE) {	// for code - size of opcode only
-				mn = cpuDisasm(comp->cpu, (drow.oadr - shift) & 0xffff, NULL, dasmrd, comp);
+				mn = cpuDisasm(comp->cpu, (drow.oadr - shift + comp->cpu->cs.base), NULL, dasmrd, comp);
 			}
 			if (shift < mn.len) {
 				num = gethexword(drow.oadr).prepend("#").toUpper();
@@ -239,12 +236,12 @@ void placeLabel(Computer* comp, dasmData& drow) {
 
 int dasmByte(Computer* comp, int adr, dasmData& drow) {
 	int len = 1;
-	drow.command = QString("DB #%0").arg(gethexbyte(dasmrd(adr & 0xffff, comp)));
+	drow.command = QString("DB #%0").arg(gethexbyte(dasmrd(adr, comp)));
 	adr++;
 	unsigned char fl = getBrk(comp, adr);
 	xAdr xadr = mem_get_xadr(comp->mem, adr);
 	while ((len < conf.dbg.dbsize) && (fl == DBG_VIEW_BYTE) /*&& findLabel(adr,-1,-1).isEmpty()*/ && find_label(xadr).isEmpty()) {
-		drow.command.append(QString(",#%0").arg(gethexbyte(dasmrd(adr & 0xffff, comp))));
+		drow.command.append(QString(",#%0").arg(gethexbyte(dasmrd(adr, comp))));
 		len++;
 		adr++;
 		fl = getBrk(comp, adr);
@@ -486,7 +483,6 @@ int xDisasmModel::fill() {
 	int row;
 	int adr = asmadr;		// (disasmAdr & 0xffff) + conf.prof.cur->zx->cpu->cs.base;
 	int res = 0;
-//	QString lab;
 	dasm.clear();
 	for(row = 0; row < rowCount(); row++) {
 		list = getDisasm(conf.prof.cur->zx, adr);
@@ -507,11 +503,10 @@ void xDisasmModel::update_data() {
 }
 
 int xDisasmModel::update() {
-//	if (cptr == NULL) return 0;
-//	if (*cptr == NULL) return 0;
 	int res = fill();
 	int i;
-	xMnem mnm = cpuDisasm(conf.prof.cur->zx->cpu, conf.prof.cur->zx->cpu->pc, NULL, dasmrd, conf.prof.cur->zx);
+	Computer* comp = conf.prof.cur->zx;
+	xMnem mnm = cpuDisasm(comp->cpu, comp->cpu->pc + comp->cpu->cs.base, NULL, dasmrd, conf.prof.cur->zx);
 	if (mnm.cond && mnm.met) {
 		for (i = 0; i < dasm.size(); i++) {
 			if ((dasm[i].adr == mnm.oadr) && (mnm.oadr != conf.prof.cur->zx->cpu->pc)) {
@@ -565,8 +560,30 @@ int adr_of_reg(CPU* cpu, bool* flag, QString nam) {
 int str_to_adr(Computer* comp, QString str) {
 	bool flag = true;
 	int adr = -1;
+	QStringList lst;
+	int off;
+	int seg;
 	if (str.startsWith(".")) {			// .REG : name of CPU register
 		adr = adr_of_reg(comp->cpu, &flag, str.mid(1));
+	} else if (str.contains(":")) {			// seg:adr (for real mode)
+		lst = str.split(":",X_SkipEmptyParts);
+		if (lst.size() == 2) {
+			off = lst[1].toInt(&flag,16);
+			if (!flag) {
+				off = adr_of_reg(comp->cpu, &flag, lst[1]);
+			}
+			if (flag) {
+				seg = lst[0].toInt(&flag,16);
+				if (flag) {
+					adr = (seg << 4) + off;
+				} else {
+					seg = adr_of_reg(comp->cpu, &flag, lst[0]);
+					if (flag) {
+						adr = (seg << 4) + off;
+					}
+				}
+			}
+		}
 	} else if (str.startsWith("#")) {			// #nnnn : hex adr
 		str.replace(0, 1, "0x");
 		adr = str.toInt(&flag, 16);
@@ -617,12 +634,11 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 	char buf[256];
 	unsigned char* ptr;
 	int idx = -1;
-	int zadr;
 	int oadr = asmadr;	// disasmAdr;
 	int len;
-	int seg,off;
+//	int seg,off;
 	QString str;
-	QStringList lst;
+//	QStringList lst;
 	int adr = dasm[row].adr;
 	Computer* comp = conf.prof.cur->zx;
 	xAdr xadr = mem_get_xadr(comp->mem, adr);
@@ -640,7 +656,6 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 						}
 					}
 				}
-				//emit s_adrch(oadr, disasmAdr);
 			} else if (str.startsWith(";")) {		// ; comment
 				str.remove(";");
 				str = str.trimmed();
@@ -649,39 +664,26 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 				} else {
 					add_comment(xadr, str);
 				}
-				//emit s_adrch(oadr, disasmAdr);
 			} else if (str.startsWith(".") || str.contains(":")) {		// .REG || seg:offset
+				idx = str_to_adr(comp, str);
+				/*
 				if (str.startsWith("."))
 					str = str.mid(1);
 				if (str.contains(":")) {		// seg:offset
-					lst = str.split(":",X_SkipEmptyParts);
-					if (lst.size() == 2) {
-						off = lst[1].toInt(&flag,16);
-						if (flag) {
-							seg = lst[0].toInt(&flag,16);
-							if (flag) {
-								idx = (seg << 4) + off;
-							} else {
-								seg = adr_of_reg(comp->cpu, &flag, lst[0]);
-								if (flag) {
-									idx = (seg << 4) + off;
-								}
-							}
-						}
-					}
+					idx = str_to_adr(comp, str);
 				} else {				// .reg
 					idx = adr_of_reg(comp->cpu, &flag, str);
 					if (!flag)
 						idx = -1;
 				}
+				*/
 			} else {					// hex/label
 				idx = asmAddr(comp, val, xadr);
 			}
 			if (idx >= 0) {
 				while (row > 0) {
 					idx = getPrevAdr(comp, idx);
-					zadr = (idx & 0xffff) + comp->cpu->cs.base;
-					row -= getDisasm(comp, zadr).size();
+					row -= getDisasm(comp, idx).size();
 				}
 				asmadr = idx;	// (idx - comp->cpu->cs.base) & 0xffff;
 			}
@@ -768,7 +770,7 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 			}
 			idx = 0;
 			while (idx < len) {
-				dasmwr(comp, (adr + idx) & 0xffff, buf[idx]);
+				dasmwr(comp, adr + idx, buf[idx]);
 				idx++;
 			}
 			emit rqRefill();
@@ -820,13 +822,6 @@ int xDisasmTable::rows() {
 	return model->rowCount();
 }
 
-/*
-void xDisasmTable::setComp(Computer** comp) {
-	cptr = comp;
-	model->cptr = comp;
-}
-*/
-
 void xDisasmTable::setMode(int md, int pg) {
 	mode = md;
 	page = pg;
@@ -834,7 +829,7 @@ void xDisasmTable::setMode(int md, int pg) {
 }
 
 int xDisasmTable::getAdr() {
-	return model->asmadr;	// disasmAdr;
+	return model->asmadr;
 }
 
 void xDisasmTable::setAdr(int adr, int hist) {
