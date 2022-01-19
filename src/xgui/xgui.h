@@ -30,6 +30,7 @@ class xHexSpin : public QLineEdit {
 		void setXFlag(int);
 		void setBase(int);
 		void updatePal();
+		int getMax();
 	signals:
 		void valueChanged(int);
 	public slots:

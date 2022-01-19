@@ -72,8 +72,8 @@ void xMemFinder::doFind() {
 	idx = 0;
 	int found = 0;
 	unsigned char bt;
-	while (!found && (shift < 0x10000)) {
-		bt = memRd(mem, (adr + shift) & 0xffff);
+	while (!found && (shift <= mem->busmask + 1)) {
+		bt = memRd(mem, adr + shift);
 		if ((bt & msk[idx]) == (pat[idx] & msk[idx])) {
 			idx++;
 			if (idx >= psiz)
@@ -85,7 +85,7 @@ void xMemFinder::doFind() {
 	}
 	if (found) {
 		adr = adr + shift - psiz;
-		ui.labResult->setText(QString("Found @ %0").arg(gethexword(adr)));
+		ui.labResult->setText(QString("Found @ %0").arg(QString::number(adr,16).toUpper().rightJustified(6,'0')));
 		emit patFound(adr);
 	} else {
 		ui.labResult->setText("Not found");

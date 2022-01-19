@@ -4,6 +4,7 @@
 
 class xDiskDumpModel : public QAbstractTableModel {
 	public:
+		xDiskDumpModel(QObject* = NULL);
 		int rowCount(const QModelIndex& = QModelIndex()) const;
 		int columnCount(const QModelIndex& = QModelIndex()) const;
 		QVariant data(const QModelIndex&, int) const;
@@ -13,6 +14,7 @@ class xDiskDumpModel : public QAbstractTableModel {
 	private:
 		int drv;
 		int trk;
+		int rcnt;
 		QModelIndex index(int row, int col, const QModelIndex& = QModelIndex()) const;
 };
 

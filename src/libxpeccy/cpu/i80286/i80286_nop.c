@@ -1186,7 +1186,7 @@ void i286_rep(CPU* cpu, cbcpu foo) {
 		if (cpu->cx) {
 			foo(cpu);
 			cpu->cx--;
-			if (cpu->cx)
+			if (cpu->cx)			// don't do last dummy cycle (cx=0)
 				cpu->pc = cpu->oldpc;
 		}
 	} else {
@@ -1290,11 +1290,13 @@ void i286_op80(CPU* cpu) {
 	switch((cpu->mod >> 3) & 7) {
 		case 0: cpu->tmpb = i286_add8(cpu, cpu->ltw, cpu->tmpb, 1); break;		// add
 		case 1: cpu->tmpb = i286_or8(cpu, cpu->ltw, cpu->tmpb); break;			// or
-		case 2: cpu->tmpb = i286_add8(cpu, cpu->ltw, cpu->tmpb, 1);			// adc
-			if (cpu->f & I286_FC) cpu->tmpb = i286_add8(cpu, cpu->tmpb, 1, 0);
+		case 2: cpu->tmpf = cpu->f & I286_FC;
+			cpu->tmpb = i286_add8(cpu, cpu->ltw, cpu->tmpb, 1);			// adc
+			if (cpu->tmpf) cpu->tmpb = i286_add8(cpu, cpu->tmpb, 1, 0);
 			break;
-		case 3: cpu->tmpb = i286_sub8(cpu, cpu->ltw, cpu->tmpb, 1);			// sbb
-			if (cpu->f & I286_FC) cpu->tmpb = i286_sub8(cpu, cpu->tmpb, 1, 0);
+		case 3: cpu->tmpf = cpu->f & I286_FC;
+			cpu->tmpb = i286_sub8(cpu, cpu->ltw, cpu->tmpb, 1);			// sbb
+			if (cpu->tmpf) cpu->tmpb = i286_sub8(cpu, cpu->tmpb, 1, 0);
 			break;
 		case 4: cpu->tmpb = i286_and8(cpu, cpu->ltw, cpu->tmpb); break;			// and
 		case 5:										// sub
@@ -1309,11 +1311,13 @@ void i286_alu16(CPU* cpu) {
 	switch((cpu->mod >> 3) & 7) {
 		case 0: cpu->twrd = i286_add16(cpu, cpu->tmpw, cpu->twrd, 1); break;
 		case 1: cpu->twrd = i286_or16(cpu, cpu->tmpw, cpu->twrd); break;
-		case 2: cpu->twrd = i286_add16(cpu, cpu->tmpw, cpu->twrd, 1);
-			if (cpu->f & I286_FC) cpu->twrd = i286_add16(cpu, cpu->twrd, 1, 0);
+		case 2: cpu->tmpf = cpu->f & I286_FC;
+			cpu->twrd = i286_add16(cpu, cpu->tmpw, cpu->twrd, 1);
+			if (cpu->tmpf) cpu->twrd = i286_add16(cpu, cpu->twrd, 1, 0);
 			break;
-		case 3: cpu->twrd = i286_sub16(cpu, cpu->tmpw, cpu->twrd, 1);
-			if (cpu->f & I286_FC) cpu->twrd = i286_sub16(cpu, cpu->twrd, 1, 0);
+		case 3: cpu->tmpf = cpu->f & I286_FC;
+			cpu->twrd = i286_sub16(cpu, cpu->tmpw, cpu->twrd, 1);
+			if (cpu->tmpf) cpu->twrd = i286_sub16(cpu, cpu->twrd, 1, 0);
 			break;
 		case 4: cpu->twrd = i286_and16(cpu, cpu->tmpw, cpu->twrd); break;
 		case 5:
@@ -1575,7 +1579,6 @@ void i286_opA3(CPU* cpu) {
 }
 
 // a4: movsb: [*ds:si]->[es:di], si,di ++ or --
-
 void i286_a4_cb(CPU* cpu) {
 	cpu->tmp = i286_mrd(cpu, cpu->ds, 1, cpu->si);
 	i286_mwr(cpu, cpu->es, 0, cpu->di, cpu->tmp);
@@ -1611,21 +1614,23 @@ void i286_opA5(CPU* cpu) {
 	}
 }
 
-// todo: check cmpsb/cmpsw/scasb/scasw for right rep check
-
-int i286_check_rep(CPU* cpu) {
-	int res = 0;
-	cpu->cx--;
-	if (!cpu->cx) return 0;
-	switch(cpu->rep) {
-		case I286_REPNZ: res = !(cpu->f & I286_FZ); break;
-		case I286_REPZ: res = (cpu->f & I286_FZ); break;
+// check condition for repz/repnz for cmps/scas opcodes
+void i286_rep_fz(CPU* cpu, cbcpu foo) {
+	if (cpu->rep == I286_REP_NONE) {
+		foo(cpu);
+	} else if (cpu->cx) {
+		cpu->cx--;
+		foo(cpu);
+		if ((cpu->rep == I286_REPZ) && (cpu->f & I286_FZ) && cpu->cx) {
+			cpu->pc = cpu->oldpc;
+		} else if ((cpu->rep == I286_REPNZ) && !(cpu->f & I286_FZ) && cpu->cx) {
+			cpu->pc = cpu->oldpc;
+		}
 	}
-	return res;
 }
 
 // a6: cmpsb: cmp [*ds:si]-[es:di], adv si,di
-void i286_opA6(CPU* cpu) {
+void i286_a6_cb(CPU* cpu) {
 	cpu->ltw = i286_mrd(cpu, cpu->ds, 1, cpu->si);
 	cpu->lwr = i286_mrd(cpu, cpu->es, 0, cpu->di);
 	cpu->htw = i286_sub8(cpu, cpu->ltw, cpu->lwr, 1);
@@ -1636,29 +1641,31 @@ void i286_opA6(CPU* cpu) {
 		cpu->si++;
 		cpu->di++;
 	}
-	if (i286_check_rep(cpu))
-		cpu->pc = cpu->oldpc;
+}
+void i286_opA6(CPU* cpu) {
+	i286_rep_fz(cpu, i286_a6_cb);
 }
 
 // a7: cmpsw
+void i286_a7_cb(CPU* cpu) {
+	cpu->ltw = i286_mrd(cpu, cpu->ds, 1, cpu->si);
+	cpu->htw = i286_mrd(cpu, cpu->ds, 1, cpu->si + 1);
+	cpu->lwr = i286_mrd(cpu, cpu->es, 0, cpu->di);
+	cpu->hwr = i286_mrd(cpu, cpu->es, 0, cpu->di + 1);
+	cpu->tmpw = i286_sub16(cpu, cpu->tmpw, cpu->twrd, 1);
+	if (cpu->f & I286_FD) {
+		cpu->si -= 2;
+		cpu->di -= 2;
+	} else {
+		cpu->si += 2;
+		cpu->di += 2;
+	}
+}
 void i286_opA7(CPU* cpu) {
 	if ((cpu->si == 0xffff) || (cpu->di == 0xffff)) {
 		i286_interrupt(cpu, 13);
 	} else {
-		cpu->ltw = i286_mrd(cpu, cpu->ds, 1, cpu->si);
-		cpu->htw = i286_mrd(cpu, cpu->ds, 1, cpu->si + 1);
-		cpu->lwr = i286_mrd(cpu, cpu->es, 0, cpu->di);
-		cpu->hwr = i286_mrd(cpu, cpu->es, 0, cpu->di + 1);
-		cpu->tmpw = i286_sub16(cpu, cpu->tmpw, cpu->twrd, 1);
-		if (cpu->f & I286_FD) {
-			cpu->si -= 2;
-			cpu->di -= 2;
-		} else {
-			cpu->si += 2;
-			cpu->di += 2;
-		}
-		if (i286_check_rep(cpu))
-			cpu->pc = cpu->oldpc;
+		i286_rep_fz(cpu, i286_a7_cb);
 	}
 }
 
@@ -1713,25 +1720,27 @@ void i286_opAD(CPU* cpu) {
 }
 
 // ae: scasb	cmp al,[es:di]
-void i286_opAE(CPU* cpu) {
+void i286_ae_cb(CPU* cpu) {
 	cpu->ltw = i286_mrd(cpu, cpu->es, 0, cpu->di);
 	cpu->lwr = i286_sub8(cpu, cpu->al, cpu->ltw, 1);
 	cpu->di += (cpu->f & I286_FD) ? -1 : 1;
-	if (i286_check_rep(cpu))
-		cpu->pc = cpu->oldpc;
+}
+void i286_opAE(CPU* cpu) {
+	i286_rep_fz(cpu, i286_ae_cb);
 }
 
 // af: scasw	cmp ax,[es:di]
+void i286_af_cb(CPU* cpu) {
+	cpu->ltw = i286_mrd(cpu, cpu->es, 0, cpu->di);
+	cpu->htw = i286_mrd(cpu, cpu->es, 0, cpu->di + 1);
+	cpu->twrd = i286_sub16(cpu, cpu->ax, cpu->tmpw, 1);
+	cpu->di += (cpu->f & I286_FD) ? -2 : 2;
+}
 void i286_opAF(CPU* cpu) {
 	if (cpu->di == 0xffff) {
 		i286_interrupt(cpu, 13);
 	} else {
-		cpu->ltw = i286_mrd(cpu, cpu->es, 0, cpu->di);
-		cpu->htw = i286_mrd(cpu, cpu->es, 0, cpu->di + 1);
-		cpu->twrd = i286_sub16(cpu, cpu->ax, cpu->tmpw, 1);
-		cpu->di += (cpu->f & I286_FD) ? -2 : 2;
-		if (i286_check_rep(cpu))
-			cpu->pc = cpu->oldpc;
+		i286_rep_fz(cpu, i286_af_cb);
 	}
 }
 
@@ -1901,14 +1910,15 @@ unsigned short i286_sar16(CPU* cpu, unsigned short p) {
 typedef unsigned char(*cb286rot8)(CPU*, unsigned char);
 typedef unsigned short(*cb286rot16)(CPU*, unsigned short);
 
+// shr (/4) = sal (/6)
 static cb286rot8 i286_rot8_tab[8] = {
 	i286_rol8, i286_ror8, i286_rcl8, i286_rcr8,
-	i286_sal8, i286_shr8, 0, i286_sar8
+	i286_sal8, i286_shr8, i286_sal8, i286_sar8
 };
 
 static cb286rot16 i286_rot16_tab[8] = {
 	i286_rol16, i286_ror16, i286_rcl16, i286_rcr16,
-	i286_sal16, i286_shr16, 0, i286_sar16
+	i286_sal16, i286_shr16, i286_sal16, i286_sar16
 };
 
 void i286_rotsh8(CPU* cpu) {
@@ -2715,10 +2725,10 @@ opCode i80286_tab[256] = {
 	{OF_SKIPABLE, 1, i286_opA7, 0, ":Lcmpsw [:D::si],[es::di]"},
 	{0, 1, i286_opA8, 0, "test al,:1"},
 	{0, 1, i286_opA9, 0, "test ax,:2"},
-	{OF_SKIPABLE, 1, i286_opAA, 0, ":Lstosb [es::di],al"},
+	{OF_SKIPABLE, 1, i286_opAA, 0, ":Lstosb [es::di],al"},		// TODO (all rep-opcodes): not skipable w/o rep
 	{OF_SKIPABLE, 1, i286_opAB, 0, ":Lstosw [es::di],ax"},
-	{0, 1, i286_opAC, 0, "lodsb [:D::si],al"},
-	{0, 1, i286_opAD, 0, "lodsw [:D::si],ax"},
+	{0, 1, i286_opAC, 0, "lodsb al,[:D::si]"},
+	{0, 1, i286_opAD, 0, "lodsw ax,[:D::si]"},
 	{OF_SKIPABLE, 1, i286_opAE, 0, ":Lscasb al,[es::di]"},
 	{OF_SKIPABLE, 1, i286_opAF, 0, ":Lscasw ax,[es::di]"},
 	{0, 1, i286_opB0, 0, "mov al,:1"},

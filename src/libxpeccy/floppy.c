@@ -217,7 +217,7 @@ void flpFillFields(Floppy* flp,int tr, int flag) {
 		flp->data[tr].field[i] = fld;
 		fld &= 0x0f;		// reset flags
 		if (flag & 1) {
-			if (fld == 0) {
+			if ((fld == 0) || (fld == 0x0f)) {
 					if ((*bpos) == 0xf5) *bpos = 0xa1;
 					if ((*bpos) == 0xf6) *bpos = 0xc2;
 			}

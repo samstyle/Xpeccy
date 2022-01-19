@@ -129,6 +129,7 @@ void DebugWin::start(Computer* c) {
 
 	brk_clear_tmp(comp);		// clear temp breakpoints
 
+	ui.tabDiskDump->setDrive(ui.cbDrive->currentIndex());
 	chaPal();		// this will call fillAll
 	show();
 	if (!fillAll()) {
@@ -196,6 +197,13 @@ void DebugWin::onPrfChange(xProfile* prf) {
 	ui.dumpTable->setLimit(lim);
 	ui.dumpScroll->setMaximum(lim - 1);
 	ui.dasmScroll->setMaximum(lim - 1);
+
+	dui.leStart->setMax(lim - 1);
+	//dui.leEnd->setMax(lim - 1);		// TODO:why segfault
+	dui.leLen->setMax(lim);
+
+	ui.tabDiskDump->setDrive(ui.cbDrive->currentIndex());
+
 	ui.tabVidMem->setVMem(conf.prof.cur->zx->vid->ram);
 	switch(comp->hw->base) {
 		case 8:
@@ -213,6 +221,7 @@ void DebugWin::onPrfChange(xProfile* prf) {
 			ui.dumpTable->setView(XVIEW_DEF);
 			break;
 	}
+	// TODO: move imm/iff1/iff2 in registers
 	bool z80like = (comp->cpu->type == CPU_Z80);
 	z80like |= (comp->cpu->type == CPU_LR35902);
 	z80like |= (comp->cpu->type == CPU_I8080);
@@ -220,7 +229,7 @@ void DebugWin::onPrfChange(xProfile* prf) {
 	ui.labIFF1->setVisible(z80like); ui.flagIFF1->setVisible(z80like);
 	ui.labIFF2->setVisible(z80like); ui.flagIFF2->setVisible(z80like);
 	if (comp->hw->id == HW_IBM_PC) {
-		ui.cbDumpView->setCurrentIndex(0);
+		ui.cbDumpView->setCurrentIndex(0);		// cpu only
 		ui.cbDumpView->setEnabled(false);
 	} else {
 		ui.cbDumpView->setEnabled(true);
@@ -592,11 +601,11 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	dui.tbSave->addAction(dui.aSaveToC);
 	dui.tbSave->addAction(dui.aSaveToD);
 	dui.leStart->setMin(0);
-	dui.leStart->setMax(0xffff);
+	dui.leStart->setMax(0xffffff);
 	dui.leEnd->setMin(0);
-	dui.leEnd->setMax(0xffff);
+	dui.leEnd->setMax(0xffffff);
 	dui.leLen->setMin(1);
-	dui.leLen->setMax(0x10000);
+	dui.leLen->setMax(0x1000000);
 
 	connect(dui.aSaveBin,SIGNAL(triggered()),this,SLOT(saveDumpBin()));
 	connect(dui.aSaveHobeta,SIGNAL(triggered()),this,SLOT(saveDumpHobeta()));
@@ -1872,11 +1881,12 @@ void DebugWin::dmpLimChanged() {
 void DebugWin::dmpLenChanged() {
 	int start = dui.leStart->getValue();
 	int len = dui.leLen->getValue();
-	if (start + len > 0x10000) {
-		len = 0x10000 - start;
+	int end = dui.leEnd->getMax();
+	if (start + len >= end) {
+		len = end - start;
 		dui.leLen->setValue(len);
 	}
-	int end = start + len - 1;
+	end = start + len - 1;
 	start = dui.leLen->cursorPosition();
 	dui.leEnd->setValue(end);
 	dui.leLen->setCursorPosition(start);
@@ -1965,8 +1975,8 @@ void DebugWin::doFind() {
 }
 
 void DebugWin::onFound(int adr) {
-	ui.dasmTable->setAdr(adr);
-	// fillDisasm();
+	//ui.dasmTable->setAdr(adr);
+	ui.dumpTable->setAdr(adr);
 }
 
 // memfiller
@@ -2038,9 +2048,12 @@ void DebugWin::dmpStartOpen() {
 	int start = oui.leStart->getValue();
 	int len = oui.leLen->getValue();
 	int pos = oui.leStart->cursorPosition();
-	if (start + len > 0xffff)
-		start = 0x10000 - len;
-	int end = start + len - 1;
+	int end = oui.leEnd->getMax();
+	if (start + len > end) {
+		start = end - len + 1;
+	} else {
+		end = start + len - 1;
+	}
 	oui.leStart->setValue(start);
 	oui.leEnd->setValue(end);
 	oui.leStart->setCursorPosition(pos);

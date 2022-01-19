@@ -628,6 +628,11 @@ int compExec(Computer* comp) {
 		comp->vid->newFrame = 0;
 		comp->frmStrobe = 1;
 	}
+// breaks
+	if (comp->cpu->brk) {
+		comp->cpu->brk = 0;
+		comp->brk = 1;
+	}
 // return ns eated @ this step
 	return nsTime;
 }

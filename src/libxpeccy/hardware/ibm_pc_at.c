@@ -400,13 +400,13 @@ int ibm_dumird(Computer* comp, int adr) {return -1;}
 void ibm_dumiwr(Computer* comp, int adr, int val) {}
 
 int ibm_inDBG(Computer* comp, int adr) {
-	printf("ibm %.4X: in %.4X\n",comp->cpu->oldpc, adr & 0xffff);
+	printf("ibm %.4X:%.4X: in %.4X\n",comp->cpu->cs.idx,comp->cpu->oldpc, adr & 0xffff);
 	assert(0);
 	return -1;
 }
 
 void ibm_outDBG(Computer* comp, int adr, int val) {
-	printf("ibm %.4X: out %.4X,%.2X\n",comp->cpu->oldpc, adr & 0xffff, val & 0xff);
+	printf("ibm %.4X:%.4X: out %.4X,%.2X\n",comp->cpu->cs.idx,comp->cpu->oldpc, adr & 0xffff, val & 0xff);
 	assert(0);
 }
 

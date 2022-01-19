@@ -93,6 +93,10 @@ void xHexSpin::setMax(int v) {
 	if (value > max) setValue(max);
 }
 
+int xHexSpin::getMax() {
+	return max;
+}
+
 void xHexSpin::updatePal() {
 	QPalette pal;
 	if (changed) {

@@ -11,7 +11,7 @@ void xDiskDump::setDrive(int drv) {
 }
 
 void xDiskDump::setTrack(int tr) {
-	if (tr < 166)
+	if (tr < 172)
 		mod->setTrack(tr);
 }
 
@@ -22,8 +22,23 @@ void xDiskDump::update() {
 
 // model
 
+xDiskDumpModel::xDiskDumpModel(QObject* p):QAbstractTableModel(p) {
+	rcnt = 0;
+}
+
 void xDiskDumpModel::setDrive(int dr) {
 	drv = dr & 3;
+	Floppy* flp = conf.prof.cur->zx->dif->fdc->flop[drv];
+	int new_rcnt = (flp->trklen / 8) + ((flp->trklen & 7) ? 1 : 0);
+	if (new_rcnt < rcnt) {
+		emit beginRemoveRows(QModelIndex(), new_rcnt, rcnt - new_rcnt);
+		rcnt = new_rcnt;
+		emit endRemoveRows();
+	} else if (new_rcnt > rcnt) {
+		emit beginInsertRows(QModelIndex(), rcnt, new_rcnt - rcnt);
+		rcnt = new_rcnt;
+		emit endInsertRows();
+	}
 	emit dataChanged(index(0, 0), index(rowCount(), columnCount()));
 }
 
@@ -33,14 +48,7 @@ void xDiskDumpModel::setTrack(int tr) {
 }
 
 int xDiskDumpModel::rowCount(const QModelIndex&) const {
-	int res = 0;
-	if (conf.prof.cur) {
-		if (conf.prof.cur->zx) {
-			Floppy* flp = conf.prof.cur->zx->dif->fdc->flop[drv];
-			res = (flp->trklen / 8) + ((flp->trklen & 7) ? 1 : 0);
-		}
-	}
-	return res;
+	return rcnt;
 }
 
 int xDiskDumpModel::columnCount(const QModelIndex&) const {

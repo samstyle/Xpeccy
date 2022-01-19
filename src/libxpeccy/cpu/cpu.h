@@ -149,6 +149,7 @@ struct CPU {
 	unsigned dihalt:1;		// LR35902: HALT when DI: repeat next opcode
 	unsigned sta:1;			// MOS6502: don't add 1T on (ABSX,ABSY,INDY)
 	unsigned nod:2;			// MOS6502: ignore flag D in ADC/SBC; PDP11: write flags
+	unsigned brk:1;			// to debugger
 
 	int type;			// cpu type id
 
@@ -245,6 +246,7 @@ struct CPU {
 	PAIR(tmpw,htw,ltw);
 	PAIR(twrd,hwr,lwr);
 	int tmpi;
+	int tmpf;
 };
 
 typedef struct {
