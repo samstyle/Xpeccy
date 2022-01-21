@@ -171,7 +171,7 @@ void xBreakTable::onDoubleClick(QModelIndex idx) {
 	xBrkPoint bp = conf.prof.cur->brkList[row];
 	int adr = -1;
 	switch(bp.type) {
-		case BRK_CPUADR: adr = bp.adr & 0xffff; break;
+		case BRK_CPUADR: adr = bp.adr; break;
 		case BRK_MEMRAM: adr = memFindAdr(conf.prof.cur->zx->mem, MEM_RAM, bp.adr); break;
 		case BRK_MEMROM: adr = memFindAdr(conf.prof.cur->zx->mem, MEM_ROM, bp.adr); break;
 	}

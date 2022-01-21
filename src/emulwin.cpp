@@ -165,6 +165,7 @@ MainWin::MainWin() {
 	scrInterval = 0;
 	grabMice = 0;
 	block = 0;
+	relskip = 0;
 
 	msgTimer = 0;
 	msg.clear();
@@ -1078,32 +1079,44 @@ void MainWin::xkey_press(int xkey) {
 
 void MainWin::keyReleaseEvent(QKeyEvent *ev) {
 	if (ev->isAutoRepeat()) return;
-//	qDebug() << "keyReleaseEvent" << ev->text() << ev->nativeScanCode();
-	int keyid;
-	if (comp->debug) {
-		ev->ignore();
+	if (relskip) {
+		relskip = 0;
 	} else {
-#if defined(__linux) || defined(__BSD)
-		keyid = ev->nativeScanCode();
-#elif defined(__WIN32)
-		keyid = ev->nativeScanCode();
-#if STICKY_KEY
-		if (keyid == 0) {
-			keyid = ev->nativeVirtualKey();
-		} else if ((ev->key() == Qt::Key_Shift) || (ev->key() == Qt::Key_Control) || (ev->key() == Qt::Key_Alt)) {
-			keyid = 0;
-		}
-#endif
-		if (key_press_map[keyid] == 0) {
-			keyid = 0;
+//		qDebug() << "keyReleaseEvent" << ev->text() << ev->nativeScanCode();
+		int keyid;
+		if (comp->debug) {
+			ev->ignore();
 		} else {
-			key_press_map[keyid] = 0;
-		}
-#else
-		keyid = qKey2id(ev->key());
+			keyid = -1;
+			if (!pckAct->isChecked()) {
+				keyid = shortcut_check(SCG_MAIN, QKeySequence(ev->key() | ev->modifiers()));
+				if (keyid < 0)
+					keyid = shortcut_check(SCG_MAIN, QKeySequence(ev->key()));
+			}
+			if (keyid < 0) {	// not hotkeys
+#if defined(__linux) || defined(__BSD)
+				keyid = ev->nativeScanCode();
+#elif defined(__WIN32)
+				keyid = ev->nativeScanCode();
+#if STICKY_KEY
+				if (keyid == 0) {
+					keyid = ev->nativeVirtualKey();
+				} else if ((ev->key() == Qt::Key_Shift) || (ev->key() == Qt::Key_Control) || (ev->key() == Qt::Key_Alt)) {
+					keyid = 0;
+				}
 #endif
-//		printf("release: %i\n", keyid);
-		xkey_release(keyid);
+				if (key_press_map[keyid] == 0) {
+					keyid = 0;
+				} else {
+					key_press_map[keyid] = 0;
+				}
+#else
+				keyid = qKey2id(ev->key());
+#endif
+				//		printf("release: %i\n", keyid);
+				xkey_release(keyid);
+			}
+		}
 	}
 }
 
@@ -1256,7 +1269,7 @@ void MainWin::closeEvent(QCloseEvent* ev) {
 			return;
 		}
 	}
-	std::string fname;
+//	std::string fname;
 	foreach(xProfile* prf, conf.prof.list) {
 		prfSave(prf->name);
 	}
@@ -1535,6 +1548,7 @@ void MainWin::doOptions() {
 }
 
 void MainWin::optApply() {
+	relskip = 1;
 	comp = conf.prof.cur->zx;
 	fillUserMenu();
 	updateWindow();

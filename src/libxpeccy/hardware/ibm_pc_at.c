@@ -211,15 +211,24 @@ void ibm_out80(Computer* comp, int adr, int val) {
 // hdc (hdd controllers)
 // 170..177	secondary hdc
 // 1f0..1f7	primary hdc
+// 3f6		primary hdc ctrl/astat register
 
 int ibm_in1fx(Computer* comp, int adr) {
 	return ataRd(comp->ide->curDev, adr & 7);
+}
+
+int ibm_in3f6(Computer* comp, int adr) {
+	return ataRd(comp->ide->curDev, HDD_ASTATE);
 }
 
 void ibm_out1fx(Computer* comp, int adr, int val) {
 	if ((adr & 7) == 6)
 		comp->ide->curDev = (val & 0x10) ? comp->ide->slave : comp->ide->master;
 	ataWr(comp->ide->curDev, adr & 7, val);
+}
+
+void ibm_out3f6(Computer* comp, int adr, int val) {
+	ataWr(comp->ide->curDev, HDD_CTRL, val);
 }
 
 // mda/cga/ega/vga
@@ -424,6 +433,7 @@ static xPort ibmPortMap[] = {
 	{0x03ff,0x0087,2,2,2,ibm_inDMA, ibm_outDMA},
 //	{0x03f8,0x0170,2,2,2,ibm_dumird,ibm_dumiwr},	// secondary ide
 	{0x03f8,0x01f0,2,2,2,ibm_in1fx,	ibm_out1fx},	// primary ide
+	{0x03ff,0x03f6,2,2,2,ibm_in3f6,	ibm_out3f6},
 	{0x03f9,0x03b4,2,2,2,NULL,	ibm_out3b4},	// vga registers
 	{0x03f9,0x03d4,2,2,2,NULL,	ibm_out3b4},	// 3d0..3d7 = 3b0..3b7
 	{0x03f9,0x03b5,2,2,2,NULL,	ibm_out3b5},
@@ -451,21 +461,13 @@ void ibm_iowr(Computer* comp, int adr, int val) {
 	hwOut(ibmPortMap, comp, adr, val, 0);
 }
 
-/*
-static const xColor ega_pal[16] = {{0x00,0x00,0x00},{0x00,0x00,0xaa},{0x00,0xaa,0x00},{0x00,0xaa,0xaa},\
-		      {0xaa,0x00,0x00},{0xaa,0x00,0xaa},{0xaa,0x55,0x00},{0xaa,0xaa,0xaa},\
-		      {0x55,0x55,0x55},{0x55,0x55,0xff},{0x55,0xff,0x55},{0x55,0xff,0xff},\
-		      {0xff,0x55,0x55},{0xff,0x55,0xff},{0xff,0xff,0x55},{0xff,0xff,0xff}\
-		     };
-*/
-
 static const int ega_def_idx[16] = {0,1,2,3,4,5,20,7,56,57,58,59,60,61,62,63};
 
 void ibm_reset(Computer* comp) {
 //	pit_reset(&comp->pit);		// pit don't have reset input (!)
 	pic_reset(&comp->mpic);
 	pic_reset(&comp->spic);
-	comp->keyb->outbuf = 0;
+	ps2c_reset(comp->ps2c);
 
 	memcpy(comp->vid->ram + 0x20000, comp->vid->font, 0x2000);	// copy default font
 	int i;
@@ -483,7 +485,6 @@ void ibm_reset(Computer* comp) {
 }
 
 void ibm_init(Computer* comp) {
-	comp->ps2c->ram[0] = 0x00;		// kbd config
 	comp->vid->nsPerDot = 160;
 	fdc_set_hd(comp->dif->fdc, 1);
 	dma_set_cb(comp->dma8, ibm_dma_mrd, ibm_dma_mwr);		// mrd/mwr callbacks
@@ -527,8 +528,13 @@ void ibm_sync(Computer* comp, int ns) {
 		pic_int(&comp->mpic, 6);
 	}
 	// hdd
-	// int14 (slave int6): primary hdd
-	// int15 (slave int7): secondary hdd
+	// int14 (slave int6): primary hdc
+	if (comp->ide->master->intrq || comp->ide->slave->intrq) {
+		comp->ide->master->intrq = 0;
+		comp->ide->slave->intrq = 0;
+		pic_int(&comp->spic, 6);
+	}
+	// int15 (slave int7): secondary hdc
 	// pic
 	if (comp->spic.oint)		// slave pic int -> master pic int2
 		pic_int(&comp->mpic, 2);

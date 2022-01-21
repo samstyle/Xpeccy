@@ -396,90 +396,6 @@ void compReset(Computer* comp,int res) {
 
 // cpu freq
 
-//void compUpdateTimings(Computer* comp) {
-//	int perNoTurbo = 1e3 / comp->cpuFrq;		// ns for full cpu tick
-//	if (perNoTurbo & 1) perNoTurbo++;
-//	int type = comp->hw ? comp->hw->id : HW_NULL;
-//	switch (type) {
-//		case HW_MSX:
-//		case HW_MSX2:
-//			comp->fps = 60;
-//			vidUpdateTimings(comp->vid, perNoTurbo * 2 / 3);
-//			break;
-//		case HW_GBC:
-//			comp->fps = 50;
-//			comp->gbsnd->wav.period = perNoTurbo << 5;			// 128KHz period for wave generator = cpu.frq / 32
-//			comp->gb.timer.div.per = (perNoTurbo / comp->frqMul) * 256;	// 16KHz timer divider tick. this timer depends on turbo speed
-//			vidUpdateTimings(comp->vid, perNoTurbo << 1);
-//			break;
-//		case HW_C64:
-//			vidUpdateTimings(comp->vid, perNoTurbo >> 3);
-//			break;
-//		case HW_BK0010:
-//		case HW_BK0011M:
-//			vidUpdateTimings(comp->vid, 302);
-//			comp->vid->lockLayout = 0;
-//			vidSetLayout(comp->vid, bkLay);
-//			comp->vid->lockLayout = 1;
-//			break;
-//		case HW_NES:
-			// base frq (21.477MHz | 26.602MHz)
-			// cpu frq (base:12 | base:16)
-			// ppu frq (base:4 | base:5)
-			// apu frame (60Hz | 50Hz)
-			// apu frq = cpu / 2
-			// smallest wave period = cpu / 16
-/*
-			switch(comp->nes.type) {
-				case NES_PAL:
-					comp->fps = 50;
-					perNoTurbo = 1e3 / 1.66;		// ~601
-					comp_set_layout(comp, &nesPALLay);
-					comp->vid->vbsline = 241;
-					comp->vid->vbrline = 311;
-					vidUpdateTimings(comp->vid, perNoTurbo / 3.2);		// 16 ticks = 5 dots
-					comp->nesapu->wdiv = 3107;		// 5/6 = 3107? or 166/179 = 3458
-					break;
-				case NES_NTSC:
-					comp->fps = 60;
-					perNoTurbo = 1e3 / 1.79;		// ~559
-					comp_set_layout(comp, &nesNTSCLay);
-					comp->vid->vbsline = 241;
-					comp->vid->vbrline = 261;
-					vidUpdateTimings(comp->vid, perNoTurbo / 3);		// 15 ticks = 5 dots
-					comp->nesapu->wdiv = 3729;
-					break;
-				default:							// dendy
-					comp->fps = 59;
-					perNoTurbo = 1e3 / 1.77;
-					comp_set_layout(comp, &nesPALLay);
-					comp->vid->vbsline = 291;
-					comp->vid->vbrline = 311;
-					vidUpdateTimings(comp->vid, perNoTurbo / 3);
-					comp->nesapu->wdiv = 3729;
-					break;
-			}
-			comp->nesapu->wper = perNoTurbo << 1;				// 1 APU tick = 2 CPU ticks
-			break;
-*/
-//		case HW_SPCLST:
-//			comp->vid->lockLayout = 0;
-//			vidSetLayout(comp->vid, spclstLay);
-//			comp->vid->lockLayout = 1;
-//			vidSetMode(comp->vid, VID_SPCLST);
-//			vidUpdateTimings(comp->vid, perNoTurbo >> 2);			// CPU:2MHz, dots:8MHz
-//			break;
-//		default:
-//			comp->fps = 50;
-//			vidUpdateTimings(comp->vid, perNoTurbo >> 1);
-//			break;
-//	}
-//	comp->nsPerTick = perNoTurbo / comp->frqMul;
-//#ifdef ISDEBUG
-	// printf("%f x %i : %i ns\n",comp->cpuFrq,comp->frqMul,comp->nsPerTick);
-//#endif
-//}
-
 void comp_update_timings(Computer* comp) {
 	comp->nsPerTick = 1e3 / comp->cpuFrq;
 	if (comp->hw->init)
@@ -503,6 +419,11 @@ void comp_set_layout(Computer* comp, vLayout* lay) {
 	if (comp->hw->lay)
 		lay = comp->hw->lay;
 	vidSetLayout(comp->vid, lay);
+}
+
+void comp_kbd_release(Computer* comp) {
+	kbdReleaseAll(comp->keyb);
+	ps2c_clear(comp->ps2c);
 }
 
 // hardware

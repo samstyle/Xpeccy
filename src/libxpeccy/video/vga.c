@@ -40,7 +40,7 @@ void vga_wr(Video* vid, int port, int val) {
 			if (CRT_IDX <= VGA_CRC) {
 				CRT_CUR_REG = val & 0xff;
 			}
-			vid->vga.cadr = ((CRT_REG(0x0e) << 15) | (CRT_REG(0x0f))) + ((CRT_REG(0x0b) >> 5) & 3);	// cursor address
+			vid->vga.cadr = ((CRT_REG(0x0e) << 8) | (CRT_REG(0x0f))) + ((CRT_REG(0x0b) >> 5) & 3);	// cursor address
 			break;
 		// sequencer registers (3c4/3c5)
 		case VGA_SEQRN:
@@ -175,7 +175,7 @@ void vga_t40_line(Video* vid) {
 		vid->tadr += vid->vga.chline;			// +line in char
 		vid->idx = vid->ram[0x20000 + vid->tadr];	// pixels
 		if ((vid->vadr == vid->vga.cadr) && !(CRT_REG(0x0a) & 0x20)) {		// cursor position, cursor enabled
-			if ((vid->vga.chline >= (CRT_REG(0x0a) & 0x1f)) \
+			if ((vid->vga.chline > (CRT_REG(0x0a) & 0x1f)) \
 				&& (vid->vga.chline <= (CRT_REG(0x0b) & 0x1f))) {	// cursor start/end
 				vid->idx ^= 0xff;
 			}

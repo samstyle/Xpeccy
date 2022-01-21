@@ -462,9 +462,6 @@ void SetupWin::start(xProfile* p) {
 	ui.psg1frq->setCurrentText(QString::number(comp->ts->chipA->frq));
 	ui.psg2frq->setCurrentText(QString::number(comp->ts->chipB->frq));
 	ui.psg3frq->setCurrentText(QString::number(comp->ts->chipC->frq));
-//	ui.chip1freq->setValue(comp->ts->chipA->frq);
-//	ui.chip2freq->setValue(comp->ts->chipB->frq);
-//	ui.chip3freq->setValue(comp->ts->chipC->frq);
 	ui.tsbox->setCurrentIndex(ui.tsbox->findData(QVariant(comp->ts->type)));
 // input
 	buildkeylist();
@@ -593,8 +590,11 @@ void SetupWin::start(xProfile* p) {
 void SetupWin::apply() {
 // machine
 	HardWare *oldmac = comp->hw;
-	prof->hwName = std::string(getRFSData(ui.machbox).toUtf8().data());
-	compSetHardware(prof->zx,prof->hwName.c_str());
+	std::string new_hwname = std::string(getRFSData(ui.machbox).toUtf8().data());
+	if (prof->hwName != new_hwname) {
+		prof->hwName = new_hwname;
+		compSetHardware(prof->zx,prof->hwName.c_str());
+	}
 	prof->rsName = getRFText(ui.rsetbox);
 	prfSetRomset(prof, prof->rsName);
 	comp->resbank = getRFIData(ui.resbox);

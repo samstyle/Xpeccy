@@ -121,7 +121,7 @@ static keyEntry keyMapInit[] = {
 	{"",ENDKEY,{0,0},{0,0},{0,0},{0,0},0x00,0x00,0}
 };
 
-keyEntry getKeyEntry(signed int qkey) {
+keyEntry getKeyEntry(int qkey) {
 	int idx = 0;
 	while ((keyMap[idx].key != ENDKEY) && (keyMap[idx].key != qkey)) {
 		idx++;

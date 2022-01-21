@@ -221,6 +221,7 @@ void xt_press(Keyboard* kbd, keyEntry kent) {
 		case KBD_AT: kbd->outbuf = kent.atCode; break;
 		case KBD_XT: kbd->outbuf = kent.xtCode; break;
 	}
+	// printf("key press %X\n",kbd->outbuf);
 }
 
 void xt_release(Keyboard* kbd, keyEntry kent) {

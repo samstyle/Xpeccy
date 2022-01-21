@@ -1180,17 +1180,18 @@ void i286_op6B(CPU* cpu) {
 }
 
 // rep opcode template
+// note: repz/repnz both working as rep
 
 void i286_rep(CPU* cpu, cbcpu foo) {
-	if (cpu->rep == I286_REPZ) {
+	if (cpu->rep == I286_REP_NONE) {
+		foo(cpu);
+	} else {
 		if (cpu->cx) {
 			foo(cpu);
 			cpu->cx--;
 			if (cpu->cx)			// don't do last dummy cycle (cx=0)
 				cpu->pc = cpu->oldpc;
 		}
-	} else {
-		foo(cpu);
 	}
 }
 

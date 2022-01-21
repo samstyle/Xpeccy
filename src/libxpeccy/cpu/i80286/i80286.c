@@ -254,7 +254,7 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 						}
 						*(dptr++) = '[';
 						if (rseg < 0)
-							rseg = ((mb & 7)==6) ? 3 : seg_ea[mb & 7];	// default segment if not overriden
+							rseg = ((mb & 7)==6) ? ((mb & 0xc0) ? 2 : 3) : seg_ea[mb & 7];	// default segment if not overriden
 						dptr += sprintf(dptr, "%s::", str_regs[rseg & 3]);
 						if ((mb & 0xc7) == 0x06) {	// immw, [seg:disp]
 							disp.l = cpu->mrd(adr, 0, cpu->data);
@@ -277,13 +277,13 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 					dptr += sprintf(dptr, "%s", str_regs[rseg & 3]);
 					break;
 				case 'L':
-					if ((com & 0xf6) == 0xa6) {
+					if ((com & 0xf6) == 0xa6) {		// a6/a7/ae/af
 						if (rep == I286_REPZ) {
 							dptr += sprintf(dptr, "REPZ ");
 						} else if (rep == I286_REPNZ) {
 							dptr += sprintf(dptr, "REPNZ ");
 						}
-					} else if (rep == I286_REPZ) {
+					} else if (rep != I286_REP_NONE) {
 						dptr += sprintf(dptr, "REP ");
 					}
 					break;

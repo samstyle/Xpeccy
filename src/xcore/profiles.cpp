@@ -158,7 +158,7 @@ bool prfSetCurrent(std::string nm) {
 	ideOpenFiles(nprf->zx->ide);
 	sdcOpenFile(nprf->zx->sdc);
 	prfSetLayout(nprf, nprf->layName);
-	kbdReleaseAll(nprf->zx->keyb);
+	comp_kbd_release(nprf->zx);
 	mouseReleaseAll(nprf->zx->mouse);
 	padLoadConfig(nprf->jmapName);
 	loadKeys();

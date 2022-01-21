@@ -11,7 +11,7 @@ void atm2Reset(Computer* comp) {
 	comp->keyb->wcom = 0;
 	comp->keyb->warg = 0;
 	comp->z_i = 1;
-	kbdReleaseAll(comp->keyb);
+	comp_kbd_release(comp);
 }
 
 void atmSetBank(Computer* comp, int bank, memEntry me) {

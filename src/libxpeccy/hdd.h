@@ -46,6 +46,7 @@ enum {
 #define	HDD_STATE	0x07		// in
 #define	HDD_COM		HDD_STATE	// out
 #define HDD_ASTATE	0x16
+#define HDD_CTRL	HDD_ASTATE
 #define HDD_ADDR	0x17
 // state flags
 #define	HDF_BSY		(1 << 7)
@@ -96,6 +97,8 @@ typedef struct {
 	unsigned hasLBA:1;
 	unsigned hasDMA:1;
 	unsigned dma:1;		// rd/wr in dma mode
+	unsigned inten:1;	// interrupt enabled
+	unsigned intrq:1;	// interrupt pending
 
 	int type;		// none / ata / atapi
 	int lba;

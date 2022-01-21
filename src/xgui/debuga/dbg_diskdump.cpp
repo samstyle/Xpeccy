@@ -24,6 +24,8 @@ void xDiskDump::update() {
 
 xDiskDumpModel::xDiskDumpModel(QObject* p):QAbstractTableModel(p) {
 	rcnt = 0;
+	drv = 0;
+	trk = 0;
 }
 
 void xDiskDumpModel::setDrive(int dr) {

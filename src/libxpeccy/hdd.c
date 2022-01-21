@@ -4,6 +4,16 @@
 
 #include "hdd.h"
 
+/* ABOUNT INTRQ:
+On PIO transfers, INTRQ is asserted at the beginning of each data block to be
+transferred. A data block is typically a single sector, except when declared
+otherwise by use of the Set Multiple command. An exception occurs on Format
+Track, Write Sector(s), Write Buffer and Write Long commands - INTRQ shall not
+be asserted at the beginning of the first data block to be transferred.
+On DMA transfers, INTRQ is asserted only once, after the command has
+completed.
+*/
+
 // overall
 
 void copyStringToBuffer(unsigned char* dst, const char* src, int len) {
@@ -46,7 +56,7 @@ void ataDestroy(ATADev* ata) {
 
 void ataReset(ATADev* ata) {
 	ata->reg.state = HDF_DRDY | HDF_DSC;
-	ata->reg.err = 0x00;
+	ata->reg.err = 0x01;		// err contains 01 after reset (it means no errors detected)
 	ata->reg.count = 0x01;
 	ata->reg.sec = 0x01;
 	ata->reg.cyl = 0x0000;
@@ -150,9 +160,7 @@ void ataExec(ATADev* dev, unsigned char cm) {
 	dev->reg.err = 0x00;
 	switch (dev->type) {
 	case IDE_ATA:
-#ifdef ISDEBUG
-	printf("ATA exec %.2X\n",cm);
-#endif
+	// printf("ATA exec %.2X (CHS=%X:%X:%X, count=%X)\n",cm,dev->reg.cyl,dev->reg.head & 0x0f, dev->reg.sec, dev->reg.count);
 		dev->dma = 0;
 		switch (cm) {
 			case 0x00:			// NOP
@@ -165,6 +173,8 @@ void ataExec(ATADev* dev, unsigned char cm) {
 				dev->buf.pos = 0;
 				dev->buf.mode = HDB_READ;
 				dev->reg.state |= HDF_DRQ;
+				if (dev->inten)
+					dev->intrq = 1;		// non-dma transfer: INT on each sector in buffer
 				break;
 			case 0x22:			// read long (w/retry) TODO: read sector & ECC
 			case 0x23:			// read long (w/o retry)
@@ -185,9 +195,12 @@ void ataExec(ATADev* dev, unsigned char cm) {
 			case 0x41:			// verify sectors (w/o retry)
 				do {
 					ataReadSector(dev);
-					if (dev->reg.state & HDF_BSY) break;
 					dev->reg.count--;
+					if (dev->reg.count)
+						ataNextSector(dev);
 				} while (dev->reg.count != 0);
+				if (dev->inten)
+					dev->intrq = 1;		// generate int after all sectors verified
 				break;
 			case 0x50:			// format track; TODO: cyl = track; count = spt; drq=1; wait for buffer write, ignore(?) buffer; format track;
 				break;
@@ -349,6 +362,8 @@ unsigned short ataRd(ATADev* dev,int prt) {
 						} else {
 							ataNextSector(dev);
 							ataReadSector(dev);
+							if (!dev->dma && dev->inten)
+								dev->intrq = 1;
 						}
 					} else {
 						dev->buf.mode = HDB_IDLE;
@@ -376,8 +391,12 @@ unsigned short ataRd(ATADev* dev,int prt) {
 			res = dev->reg.err;
 			break;
 		case HDD_STATE:
+			res = dev->reg.state;
+			dev->intrq = 0;		// host reading the status register = INT cleared
+			break;
 		case HDD_ASTATE:
 			res = dev->reg.state;
+			// this register doesn't reset interrupt line
 			break;
 		default:
 			printf("HDD in: port %.3X isn't emulated\n",prt);
@@ -397,6 +416,8 @@ void ataWr(ATADev* dev, int prt, unsigned short val) {
 					dev->buf.pos = 0;
 					if ((dev->reg.com & 0xf0) == 0x30) {
 						ataWriteSector(dev);
+						if (!dev->dma && dev->inten)			// sector is writed, INT
+							dev->intrq = 1;
 						dev->reg.count--;
 						if (dev->reg.count == 0) {
 							dev->buf.mode = HDB_IDLE;
@@ -431,9 +452,16 @@ void ataWr(ATADev* dev, int prt, unsigned short val) {
 		case HDD_COM:
 			dev->reg.com = val & 0xff;
 			ataExec(dev,dev->reg.com);
+			if (dev->inten)
+				dev->intrq = 1;		// host writing the command register = INT
 			break;
-		case HDD_ASTATE:
-			if (val & 0x04) ataReset(dev);
+		case HDD_CTRL:
+			dev->inten = (val & 2) ? 0 : 1;
+			if (val & 0x04) {
+				ataReset(dev);
+				if (dev->inten)
+					dev->intrq = 1;	// INT on soft reset
+			}
 			break;
 		case HDD_FEAT:
 			break;
