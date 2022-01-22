@@ -2152,6 +2152,13 @@ void i286_opD7(CPU* cpu) {
 	cpu->al = i286_mrd(cpu, cpu->ds, 1, cpu->tmpw);
 }
 
+// 80287 template (dummy)
+
+void i286_fpu(CPU* cpu) {
+	i286_rd_ea(cpu, 1);
+	i286_interrupt(cpu, I286_INT_NM);
+}
+
 // d8: for 80287
 void i286_opD8(CPU* cpu) {
 	cpu->pc++;
@@ -2772,14 +2779,14 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_opD5, 0, "aad :1"},
 	{0, 1, i286_opD6, 0, "? salc"},
 	{0, 1, i286_opD7, 0, "xlatb al,[:D::bx+al]"},
-	{0, 1, i286_opD8, 0, "* x87"},
-	{0, 1, i286_opD9, 0, "* x87"},
-	{0, 1, i286_opDA, 0, "* x87"},
-	{0, 1, i286_opDB, 0, "* x87"},
-	{0, 1, i286_opDC, 0, "* x87"},
-	{0, 1, i286_opDD, 0, "* x87"},
-	{0, 1, i286_opDE, 0, "* x87"},
-	{0, 1, i286_opDF, 0, "* x87"},
+	{0, 1, i286_fpu, 0, "* x87"},
+	{0, 1, i286_fpu, 0, "* x87"},
+	{0, 1, i286_fpu, 0, "* x87"},
+	{0, 1, i286_fpu, 0, "* x87"},
+	{0, 1, i286_fpu, 0, "* x87"},
+	{0, 1, i286_fpu, 0, "* x87"},
+	{0, 1, i286_fpu, 0, "* x87"},
+	{0, 1, i286_fpu, 0, "* x87"},
 	{0, 1, i286_opE0, 0, "loopnz :3"},
 	{0, 1, i286_opE1, 0, "loopz :3"},
 	{0, 1, i286_opE2, 0, "loop :3"},

@@ -214,7 +214,9 @@ void ibm_out80(Computer* comp, int adr, int val) {
 // 3f6		primary hdc ctrl/astat register
 
 int ibm_in1fx(Computer* comp, int adr) {
-	return ataRd(comp->ide->curDev, adr & 7);
+	int res = ataRd(comp->ide->curDev, adr & 7);
+	// printf("%.4X:%.4X ata rd %.3X = %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,adr,res);
+	return res;
 }
 
 int ibm_in3f6(Computer* comp, int adr) {
@@ -222,6 +224,7 @@ int ibm_in3f6(Computer* comp, int adr) {
 }
 
 void ibm_out1fx(Computer* comp, int adr, int val) {
+	// printf("%.4X:%.4X ata wr %.3X, %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,adr,val);
 	if ((adr & 7) == 6)
 		comp->ide->curDev = (val & 0x10) ? comp->ide->slave : comp->ide->master;
 	ataWr(comp->ide->curDev, adr & 7, val);
@@ -241,6 +244,10 @@ void ibm_out3b4(Computer* comp, int adr, int val) {
 
 void ibm_out3b5(Computer* comp, int adr, int val) {
 	vga_wr(comp->vid, VGA_CRTRD, val);
+}
+
+void ibm_out3c0(Computer* comp, int adr, int val) {
+	vga_wr(comp->vid, VGA_ATREG, val);
 }
 
 void ibm_out3c4(Computer* comp, int adr, int val) {
@@ -434,13 +441,14 @@ static xPort ibmPortMap[] = {
 //	{0x03f8,0x0170,2,2,2,ibm_dumird,ibm_dumiwr},	// secondary ide
 	{0x03f8,0x01f0,2,2,2,ibm_in1fx,	ibm_out1fx},	// primary ide
 	{0x03ff,0x03f6,2,2,2,ibm_in3f6,	ibm_out3f6},
-	{0x03f9,0x03b4,2,2,2,NULL,	ibm_out3b4},	// vga registers
+	{0x03f9,0x03b4,2,2,2,NULL,	ibm_out3b4},	// crt registers
 	{0x03f9,0x03d4,2,2,2,NULL,	ibm_out3b4},	// 3d0..3d7 = 3b0..3b7
 	{0x03f9,0x03b5,2,2,2,NULL,	ibm_out3b5},
 	{0x03f9,0x03d5,2,2,2,NULL,	ibm_out3b5},
 	{0x03ff,0x03b8,2,2,2,NULL,	ibm_out3b8},	// video mode (3b8/3d8)
 	{0x03ff,0x03d8,2,2,2,NULL,	ibm_out3b8},
-	{0x03f9,0x03c4,2,2,2,NULL,	ibm_out3c4},
+	{0x03ff,0x03c0,2,2,2,NULL,	ibm_out3c0},	// 3c0: atr.reg idx/data
+	{0x03f9,0x03c4,2,2,2,NULL,	ibm_out3c4},	// seq.registers
 	{0x03f9,0x03c5,2,2,2,NULL,	ibm_out3c5},
 	{0x03ff,0x03ba,2,2,2,ibm_in3ba,	NULL},		// status reg 1 (3ba/3da)
 	{0x03ff,0x03da,2,2,2,ibm_in3ba, NULL},

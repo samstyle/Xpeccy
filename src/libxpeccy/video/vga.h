@@ -9,6 +9,7 @@ enum {
 	VGA_SEQRD,
 	VGA_GRFRN,		// graphic mode
 	VGA_GRFRD,
+	VGA_ATREG,		// atribute idx/data
 	VGA_MODE,
 	VGA_STAT1
 };

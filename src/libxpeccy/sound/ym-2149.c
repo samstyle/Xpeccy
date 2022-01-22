@@ -41,7 +41,7 @@ extern sndPair ay_mix_stereo(int, int, int, int);
 int ym_chan_vol(aymChip* ay, aymChan* ch) {
 	int vol;
 #if 1
-	if ((ch->tdis || ch->lev) && (ch->ndis || ay->chanN.lev)) {
+	if (((ch->tdis || ch->lev) && (ch->ndis || ay->chanN.lev)) || (ch->per < 0x50)) {
 #else
 	if (((ch->lev && ch->!tdis) || (!ch->ndis && ay->chanN.lev)) || (ch->tdis && ch->ndis)) {
 #endif
@@ -49,7 +49,9 @@ int ym_chan_vol(aymChip* ay, aymChan* ch) {
 	} else {
 		vol = 0;
 	}
-	return ayDACvol[vol & 0x1f];						// YM:5-bit DAC volume
+	vol = ayDACvol[vol & 0x1f];						// YM:5-bit DAC volume
+	if (ch->per < 0x50) vol >>= 1;
+	return vol;
 }
 
 sndPair ym_vol(aymChip* chip) {

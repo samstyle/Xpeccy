@@ -213,15 +213,17 @@ sndPair ay_mix_stereo(int volA, int volB, int volC, int id) {
 int ay_chan_vol(aymChip* ay, aymChan* ch) {
 	int vol;
 #if 1
-	if ((ch->tdis || ch->lev) && (ch->ndis || ay->chanN.lev)) {
+	if (((ch->tdis || ch->lev) && (ch->ndis || ay->chanN.lev)) || (ch->per < 0x50)) {	// tone 0..5 is beyond 20KHz
 #else
-	if (((ch->lev && ch->!tdis) || (!ch->ndis && ay->chanN.lev)) || (ch->tdis && ch->ndis)) {
+	if (((ch->lev && !ch->tdis) || (!ch->ndis && ay->chanN.lev)) || (ch->tdis && ch->ndis)) {
 #endif
 		 vol = ch->een ? ay->chanE.vol : ch->vol;
 	 } else {
 		 vol = 0;
 	 }
-	return ayDACvol[vol | 1];						// AY:4-bit DAC volume
+	vol = ayDACvol[vol | 1];						// AY:4-bit DAC volume
+	if (ch->per < 0x50) vol >>= 1;
+	return vol;
 }
 
 sndPair ay_vol(aymChip* chip) {

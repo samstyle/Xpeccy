@@ -62,6 +62,23 @@ void vga_wr(Video* vid, int port, int val) {
 				GRF_CUR_REG = val & 0xff;
 			}
 			break;
+		// atribute registers (3c0)
+		case VGA_ATREG:
+			if (vid->vga.atrig) {	// data
+				if (ATR_IDX < 0x10) {			// pal
+					xColor xcol;
+					xcol.r = 0x55 * (((val >> 1) & 2) + ((val >> 5) & 1));
+					xcol.g = 0x55 * ((val & 2) + ((val >> 4) & 1));
+					xcol.b = 0x55 * (((val << 1) & 2) + ((val >> 3) & 1));
+					vid->pal[ATR_IDX] = xcol;
+				} else if (ATR_IDX <= VGA_ATC) {	// registers
+					ATR_CUR_REG = val & 0xff;
+				}
+			} else {		// index
+				ATR_IDX = val & 0xff;
+			}
+			vid->vga.atrig = !vid->vga.atrig;
+			break;
 		case VGA_MODE:
 			vid->reg[0xff] = val & 0xff;
 			// b4:gfx 640x200 or 320x200; b2:gfx(1) or text(0); b1:text 80x25
@@ -82,7 +99,7 @@ void vga_wr(Video* vid, int port, int val) {
 			}
 			if (val & 0x04) {}		// b2:monochrome
 			if (val & 0x08) {}		// b3:video enabled
-			if (val & 0x20) {}		// b5:blink enabled
+			vid->vga.blinken = (val & 0x20) ? 1 : 0;
 			break;
 	}
 }
@@ -180,7 +197,7 @@ void vga_t40_line(Video* vid) {
 				vid->idx ^= 0xff;
 			}
 		}
-		if ((vid->atrbyte & 0x80) && vid->flash)	// blinking (b7 attribute)
+		if ((vid->atrbyte & 0x80) && vid->flash && vid->vga.blinken)	// blinking (b7 attribute)
 			vid->idx ^= 0xff;
 		for (i = 0; i < 8; i++) {
 			if (vid->idx & 0x80) {

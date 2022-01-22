@@ -292,8 +292,8 @@ struct Video {
 		int dmabytes;
 	} tsconf;
 	struct {
-		unsigned trg:1;			// vmem busy flag
 		unsigned atrig:1;		// 3c0 flip-flop
+		unsigned blinken:1;		// blink enabled
 		int crt_idx;			// registers indexes
 		int seq_idx;
 		int grf_idx;
