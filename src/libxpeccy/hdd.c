@@ -511,11 +511,11 @@ void ideSetImage(IDE *ide, int wut, const char *name) {
 		if (dev->file) {
 			fseek(dev->file, 0, SEEK_END);
 			long fsz = ftell(dev->file);
-			long rsz = 16*256*512;			// 1 cylinder size (16 heads, 256 sectors, 512 bytes/sec)
-			while (rsz < fsz)			// in bytes (next 2^n from file size)
-				rsz <<= 1;
-			dev->maxlba = (rsz >> 9);		// in 512byte units
-			dev->pass.cyls = (dev->maxlba / dev->pass.hds / dev->pass.spt);
+			long rsz = 16*63*512;			// 1 cylinder size (16 heads, 63 sectors, 512 bytes/sec)
+			dev->maxlba = (fsz / rsz) + ((fsz % rsz) ? rsz : 0);		// in 512byte units
+			dev->pass.hds = 16;
+			dev->pass.spt = 63;
+			dev->pass.cyls = (dev->maxlba / 16 / 63);
 			rewind(dev->file);
 		} else {
 			free(dev->image);
