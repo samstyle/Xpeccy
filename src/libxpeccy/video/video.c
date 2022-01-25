@@ -853,10 +853,10 @@ void spcv_ini(Video*);
 
 // vga
 
-void vga_t40_frm(Video*);
-void vga_t40_line(Video*);
-void vga_t40_dot(Video*);
-void vga_t80_dot(Video*);
+void cga_t40_frm(Video*);
+void cga_t40_line(Video*);
+void cga_t40_dot(Video*);
+void cga_t80_dot(Video*);
 
 // weiter
 
@@ -909,8 +909,8 @@ static xVideoMode vidModeTab[] = {
 
 	{VID_SPCLST, spcv_ini, spc_dot, NULL, NULL, NULL},
 
-	{VID_VGA_T40, NULL, vga_t40_dot, NULL, vga_t40_line, vga_t40_frm},
-	{VID_VGA_T80, NULL, vga_t80_dot, NULL, vga_t40_line, vga_t40_frm},
+	{VGA_TXT_L, NULL, cga_t40_dot, NULL, cga_t40_line, cga_t40_frm},
+	{VGA_TXT_H, NULL, cga_t80_dot, NULL, cga_t40_line, cga_t40_frm},
 
 	{VID_UNKNOWN, NULL, vidDrawBorder, NULL, NULL, NULL}
 };
@@ -928,7 +928,6 @@ void vidSetMode(Video* vid, int mode) {
 	if (vidModeTab[i].init)
 		vidModeTab[i].init(vid);
 }
-
 
 void vid_tick(Video* vid) {
 	if ((vid->ray.x & vid->brdstep) == 0)

@@ -2,17 +2,15 @@
 
 #include "video.h"
 
-enum {
-	VGA_CRTRN = 0,		// crt registers
-	VGA_CRTRD,
-	VGA_SEQRN,		// sync registers
-	VGA_SEQRD,
-	VGA_GRFRN,		// graphic mode
-	VGA_GRFRD,
-	VGA_ATREG,		// atribute idx/data
-	VGA_MODE,
-	VGA_STAT1
-};
+#define	VGA_CRTRN	0x3d4		// crt registers
+#define	VGA_CRTRD	0x3d5
+#define	VGA_SEQRN	0x3c4		// sync registers
+#define	VGA_SEQRD	0x3c5
+#define	VGA_GRFRN	0x3ce		// graphic mode
+#define	VGA_GRFRD	0x3cf
+#define	VGA_ATREG	0x3c0		// atribute idx/data
+#define	VGA_MODE	0x3d8
+#define VGA_STAT1	0x3da
 
 // vid->reg (registers)
 #define	VGA_CRB	0x80	// crt registers
@@ -40,6 +38,7 @@ enum {
 #define ATR_REG(_n)	vid->reg[VGA_ATB + (_n)]
 #define ATR_CUR_REG	ATR_REG(ATR_IDX)
 
+void vga_reset(Video*);
 int vga_rd(Video*, int);
 void vga_wr(Video*, int, int);
 

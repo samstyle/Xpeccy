@@ -295,6 +295,7 @@ void uread01(FDC* fdc) {
 		if (fdc->cnt < 1) {
 			fdc->sr0 |= 0x40;	// error
 			fdc->sr1 |= 0x04;	// no data
+			ureadRS(fdc);
 			uTerm(fdc);
 		}
 	} else if (res == 1) {

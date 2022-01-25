@@ -1,6 +1,11 @@
 #include "ayym.h"
 
-extern int ayDACvol[32];
+// extern int ayDACvol[32];
+
+int ymDACvol[32] = {0x0000,0x0000,0x003B,0x0074,0x00A4,0x00CA,0x00FB,0x0134,
+                    0x0184,0x01E0,0x0244,0x028D,0x030C,0x03AD,0x044C,0x04E8,
+                    0x05D4,0x06FD,0x0838,0x0965,0x0B28,0x0D5F,0x0F91,0x11D7,
+                    0x1540,0x1988,0x1DCC,0x2211,0x2874,0x3040,0x3828,0x3FFF};
 
 // ym_reset = ay_reset
 
@@ -40,17 +45,13 @@ extern sndPair ay_mix_stereo(int, int, int, int);
 
 int ym_chan_vol(aymChip* ay, aymChan* ch) {
 	int vol;
-#if 1
-	if (((ch->tdis || ch->lev) && (ch->ndis || ay->chanN.lev)) || (ch->per < 0x50)) {
-#else
-	if (((ch->lev && ch->!tdis) || (!ch->ndis && ay->chanN.lev)) || (ch->tdis && ch->ndis)) {
-#endif
-		vol = ch->een ? ay->chanE.vol : ch->vol;
+	if ((ch->tdis || ch->lev) && (ch->ndis || ay->chanN.lev)) {
+		vol = ch->een ? ay->chanE.vol : (!ch->tdis && (ch->per < 0x60)) ? 0 : ch->vol;
 	} else {
 		vol = 0;
 	}
-	vol = ayDACvol[vol & 0x1f];						// YM:5-bit DAC volume
-	if (ch->per < 0x50) vol >>= 1;
+	vol = ymDACvol[vol & 0x1f];						// YM:5-bit DAC volume
+//	if (ch->per < 0x60) vol >>= 1;
 	return vol;
 }
 

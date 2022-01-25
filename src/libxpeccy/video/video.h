@@ -61,11 +61,15 @@ enum {
 	VID_BK_COL,
 // specialist
 	VID_SPCLST,
-// vga
-	VID_VGA_T40,
-	VID_VGA_T80,
-	VID_VGA_G320,
-	VID_VGA_G640
+// cga/ega/vga
+	VID_CGA_T40,
+	VID_CGA_T80,
+	VID_CGA_G320,
+	VID_CGA_G640,
+	VGA_TXT_L,	// txt 40
+	VGA_TXT_H,	// txt 80
+	VGA_GRF_L,	// grf 320
+	VGA_GRF_H,	// grf 640
 };
 
 extern int bufSize;
@@ -143,6 +147,7 @@ struct Video {
 
 	unsigned char inten;	// interrupts enable (8 bits = 8 signals)
 	unsigned char intrq;	// interrupt output signals (8 bits)
+	unsigned char intbf;	// buffered int (last int signals)
 
 	unsigned char paln;	// high bits = palete number
 	xColor pal[256];	// palete. 256 colors rgb888

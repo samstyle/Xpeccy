@@ -167,29 +167,8 @@ void ibm_outKbd(Computer* comp, int adr, int val) {
 	//printf("%.4X:%.4X kbd out %.3X, %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,adr,val);
 }
 
-// dma1
-// 000-007	bar/car & bwcr/cwr, b1,2=channel nr, b0?bwcr:bar
-// 87,83,81,82	par of ch0-3
-// 08-0f	controller port (b0-2)
-
-// dma2
-// 0c0-0ce	bar/car && bwcr/cwr, b2,3=channel, b0=0, b1?bwcr:bar
-// xx,8a,89,8b	par of ch4-7
-// d0-de	controller port (b1-3), b0=0
-
 // cmos
 
-/*
-0070	w	CMOS RAM index register port (ISA, EISA)
-		 bit 7	 = 1  NMI disabled
-			 = 0  NMI enabled
-		 bit 6-0      CMOS RAM index (64 bytes, sometimes 128 bytes)
-
-		any write to 0070 should be followed by an action to 0071
-		or the RTC wil be left in an unknown state.
-
-0071	r/w	CMOS RAM data port (ISA, EISA)
-*/
 void ibm_out70(Computer* comp, int adr, int val) {
 	cmos_wr(&comp->cmos, CMOS_ADR, val & 0x7f);
 }
@@ -236,73 +215,22 @@ void ibm_out3f6(Computer* comp, int adr, int val) {
 
 // mda/cga/ega/vga
 
-// 3d0..3d7 = 3b0..3b7 (b0:selects regnum/regval)
-
-void ibm_out3b4(Computer* comp, int adr, int val) {
-	vga_wr(comp->vid, VGA_CRTRN, val);
+void ibm_outVGA(Computer* comp, int adr, int val) {
+//	if (((adr & 0x3f8) == 0x3b0) && (comp->vid->reg[0x42] & 1)) return;
+//	if (((adr & 0x3f8) == 0x3d0) && !(comp->vid->reg[0x42] & 1)) return;
+//	printf("VGA wr %.3X,%.2X\n",adr,val);
+	vga_wr(comp->vid, adr & 0x3ff, val);
 }
 
-void ibm_out3b5(Computer* comp, int adr, int val) {
-	vga_wr(comp->vid, VGA_CRTRD, val);
+int ibm_inVGA(Computer* comp, int adr) {
+//	if (((adr & 0x3f8) == 0x3b0) && (comp->vid->reg[0x42] & 1)) return -1;
+//	if (((adr & 0x3f8) == 0x3d0) && !(comp->vid->reg[0x42] & 1)) return -1;
+	int res = vga_rd(comp->vid, adr & 0x3ff);
+//	printf("VGA in %.3X = %.2X\n",adr,res);
+	return res;
 }
 
-void ibm_out3c0(Computer* comp, int adr, int val) {
-	vga_wr(comp->vid, VGA_ATREG, val);
-}
-
-void ibm_out3c4(Computer* comp, int adr, int val) {
-	vga_wr(comp->vid, VGA_SEQRN, val);
-}
-
-void ibm_out3c5(Computer* comp, int adr, int val) {
-	vga_wr(comp->vid, VGA_SEQRD, val);
-}
-
-/*
-03D8	r/w	CGA mode control register  (except PCjr)
-		 bit 7-6      not used
-		 bit 5	 = 1  blink enabled
-		 bit 4	 = 1  640*200 graphics mode
-		 bit 3	 = 1  video enabled
-		 bit 2	 = 1  monochrome signal
-		 bit 1	 = 0  text mode
-			 = 1  320*200 graphics mode
-		 bit 0	 = 0  40*25 text mode
-			 = 1  80*25 text mode
-
-03D9	r/w	CGA palette register
-		 bit 7-6      not used
-		 bit 5	 = 0 active color set: red, green brown
-			 = 1 active color set: cyan, magenta, white
-		 bit 4	     intense colors in graphics, background colors text
-		 bit 3	     intense border in 40*25, intense background in
-			     320*200, intense foreground in 640*200
-		 bit 2	     red border in 40*25, red background in 320*200,
-			     red foreground in 640*200
-		 bit 1	     green border in 40*25, green background in
-			     320*200, green foreground in 640*200
-		 bit 0	     blue border in 40*25, blue background in 320*200,
-			     blue foreground in 640*200
-
-03DA	r	CGA status register	EGA/VGA: input status 1 register
-		 bit 7-4     not used
-		 bit 3 = 1   in vertical retrace
-		 bit 2 = 1   light pen switch is off
-		 bit 1 = 1   positive edge from light pen has set trigger
-		 bit 0 = 0   do not use memory
-		       = 1   memory access without interfering with display
-*/
-
-void ibm_out3b8(Computer* comp, int adr, int val) {
-	vga_wr(comp->vid, VGA_MODE, val);
-}
-
-// ega/vga: 3ba = 3da = input status 1 register; mda = crt status
-int ibm_in3ba(Computer* comp, int adr) {
-	return vga_rd(comp->vid, VGA_STAT1);
-}
-
-// fdc (i8272a)
+// fdc (i8272/nec765)
 
 // 3f1-3f7 -> fdc
 
@@ -314,11 +242,19 @@ int ibm_fdc_rd(Computer* comp, int adr) {
 }
 
 void ibm_fdc_wr(Computer* comp, int adr, int val) {
-	// printf("%.4X:%.4X\tout %.3X, %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,adr,val);
+//	if (adr == 0x3f5) printf("%.4X:%.4X\tout %.3X, %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,adr,val);
 	difOut(comp->dif, adr, val, 0);
 }
 
-// dma
+// dma1
+// 000-007	bar/car & bwcr/cwr, b1,2=channel nr, b0?bwcr:bar
+// 87,83,81,82	par of ch0-3
+// 08-0f	controller port (b0-2)
+
+// dma2
+// 0c0-0ce	bar/car && bwcr/cwr, b2,3=channel, b0=0, b1?bwcr:bar
+// xx,8a,89,8b	par of ch4-7
+// d0-de	controller port (b1-3), b0=0
 
 int ibm_inDMA(Computer* comp, int adr) {
 	printf("DMA: rd %.3X\n",adr);
@@ -433,25 +369,27 @@ static xPort ibmPortMap[] = {
 	{0x03f0,0x0060,2,2,2,ibm_inKbd,	ibm_outKbd},	// 8042: keyboard/mouse controller
 	{0x03ff,0x0070,2,2,2,NULL,	ibm_out70},	// cmos
 	{0x03ff,0x0071,2,2,2,ibm_in71,	ibm_out71},
+
 	{0x03ff,0x0080,2,2,2,NULL,	ibm_out80},	// post code
+	{0x03ff,0x0300,2,2,2,NULL,	ibm_out80},	// post code (award bios)
+
 	{0x03ff,0x0081,2,2,2,ibm_inDMA, ibm_outDMA},	// dma pages
 	{0x03ff,0x0082,2,2,2,ibm_inDMA, ibm_outDMA},
 	{0x03ff,0x0083,2,2,2,ibm_inDMA, ibm_outDMA},
 	{0x03ff,0x0087,2,2,2,ibm_inDMA, ibm_outDMA},
+
 //	{0x03f8,0x0170,2,2,2,ibm_dumird,ibm_dumiwr},	// secondary ide
 	{0x03f8,0x01f0,2,2,2,ibm_in1fx,	ibm_out1fx},	// primary ide
-	{0x03ff,0x03f6,2,2,2,ibm_in3f6,	ibm_out3f6},
-	{0x03f9,0x03b4,2,2,2,NULL,	ibm_out3b4},	// crt registers
-	{0x03f9,0x03d4,2,2,2,NULL,	ibm_out3b4},	// 3d0..3d7 = 3b0..3b7
-	{0x03f9,0x03b5,2,2,2,NULL,	ibm_out3b5},
-	{0x03f9,0x03d5,2,2,2,NULL,	ibm_out3b5},
-	{0x03ff,0x03b8,2,2,2,NULL,	ibm_out3b8},	// video mode (3b8/3d8)
-	{0x03ff,0x03d8,2,2,2,NULL,	ibm_out3b8},
-	{0x03ff,0x03c0,2,2,2,NULL,	ibm_out3c0},	// 3c0: atr.reg idx/data
-	{0x03f9,0x03c4,2,2,2,NULL,	ibm_out3c4},	// seq.registers
-	{0x03f9,0x03c5,2,2,2,NULL,	ibm_out3c5},
-	{0x03ff,0x03ba,2,2,2,ibm_in3ba,	NULL},		// status reg 1 (3ba/3da)
-	{0x03ff,0x03da,2,2,2,ibm_in3ba, NULL},
+	{0x03ff,0x03f6,2,2,2,ibm_in3f6,	ibm_out3f6},	// primary ide ctrl port
+
+	{0x03f0,0x03b0,2,2,2,ibm_inVGA,	ibm_outVGA},
+	{0x03f0,0x03d0,2,2,2,ibm_inVGA,	ibm_outVGA},	// 3d0..3d7 = 3b0..3b7 = CRT regs. TODO: 3c2.bit0 = 1:3dx, 0:3bx (3ba/3da)
+//	{0x03ff,0x03d8,2,2,2,NULL,	ibm_outVGA},	// TODO: don't used by EGA/VGA
+//	{0x03ff,0x03b8,2,2,2,NULL,	ibm_outVGA},
+	{0x03f0,0x03c0,2,2,2,NULL,	ibm_outVGA},	// 3c0-3cf: EGA/VGA registers (ATR,GRF,SEQ)
+//	{0x03ff,0x03ba,2,2,2,ibm_inVGA,	ibm_outVGA},	// status reg 1 / feature (3ba)
+//	{0x03ff,0x03da,2,2,2,ibm_inVGA, ibm_outVGA},	// status reg 1 / feature (3da)
+
 	{0x03f8,0x03f0,2,2,2,ibm_fdc_rd,ibm_fdc_wr},	// 1st fdd controller
 //	{0x03f8,0x0370,2,2,2,NULL,	NULL},		// 2nd fdd controller
 	{0x0000,0x0000,2,2,2,ibm_inDBG,	ibm_outDBG}
@@ -476,6 +414,7 @@ void ibm_reset(Computer* comp) {
 	pic_reset(&comp->mpic);
 	pic_reset(&comp->spic);
 	ps2c_reset(comp->ps2c);
+	vga_reset(comp->vid);
 
 	memcpy(comp->vid->ram + 0x20000, comp->vid->font, 0x2000);	// copy default font
 	int i;
@@ -536,13 +475,22 @@ void ibm_sync(Computer* comp, int ns) {
 		pic_int(&comp->mpic, 6);
 	}
 	// hdd
-	// int14 (slave int6): primary hdc
+	// slave int6: primary hdc
 	if (comp->ide->master->intrq || comp->ide->slave->intrq) {
 		comp->ide->master->intrq = 0;
 		comp->ide->slave->intrq = 0;
 		pic_int(&comp->spic, 6);
 	}
-	// int15 (slave int7): secondary hdc
+	// slave int7: secondary hdc
+	// slave int1: [cga] vertical retrace
+	if ((comp->vid->intbf ^ comp->vid->intrq) & 1) {
+		if (!(comp->vid->intbf & 1)) {
+			pic_int(&comp->spic, 1);
+			comp->vid->intbf |= 1;
+		} else {
+			comp->vid->intbf &= ~1;
+		}
+	}
 	// pic
 	if (comp->spic.oint)		// slave pic int -> master pic int2
 		pic_int(&comp->mpic, 2);
@@ -551,11 +499,6 @@ void ibm_sync(Computer* comp, int ns) {
 		if (v < 0) v = pic_ack(&comp->spic);
 		comp->cpu->intrq |= I286_INT;
 		comp->cpu->intvec = v & 0xffff;
-	}
-	// debugging
-	if (comp->dif->fdc->brk) {
-		comp->dif->fdc->brk = 0;
-		comp->brk = 1;
 	}
 }
 

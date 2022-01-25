@@ -87,7 +87,8 @@ int ps2c_rd(PS2Ctrl* ctrl, int adr) {
 			break;
 		case PS2_RSTATUS:
 			res = ctrl->status | 0x10;		// b4 = keyboard lock off
-			res &= ~0x03;				// set b0,1 manually
+			ctrl->status &= ~2;
+			res &= ~0x01;				// set b0[,1] manually
 			if (ctrl->outbuf & 0xff)
 				res |= 0x01;
 			break;
@@ -119,6 +120,7 @@ void ps2c_wr_ob2(PS2Ctrl* ctrl, int val) {
 
 void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 	ctrl->inbuf = val;
+	ctrl->status |= 2;
 	switch (adr) {
 		case PS2_RDATA:
 			//printf("PS/2 controller wr data %.2X\n",val);

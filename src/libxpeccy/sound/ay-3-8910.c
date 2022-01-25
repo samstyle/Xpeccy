@@ -4,7 +4,12 @@
 
 extern void aymResetChan(aymChan* ch);
 static const int ay_val_mask[16] = {0xff,0x0f,0xff,0x0f,0xff,0x0f,0x1f,0xff,0x1f,0x1f,0x1f,0xff,0xff,0x0f,0xff,0xff};
-extern int ayDACvol[32];
+// extern int ayDACvol[32];
+
+static int ayDACvol[32] = {0x0000,0x0000,0x00D0,0x00D0,0x0130,0x0130,0x01BC,0x01BC,
+                    0x0291,0x0291,0x03C4,0x03C4,0x0544,0x0544,0x089F,0x089F,
+                    0x0A27,0x0A27,0x1053,0x1053,0x16C8,0x16C8,0x1C96,0x1C96,
+                    0x2417,0x2417,0x2D54,0x2D54,0x35E8,0x35E8,0x3FFF,0x3FFF};
 
 void ay_reset(aymChip* chip) {
 	memset(chip->reg, 0x00, 256);
@@ -212,17 +217,14 @@ sndPair ay_mix_stereo(int volA, int volB, int volC, int id) {
 
 int ay_chan_vol(aymChip* ay, aymChan* ch) {
 	int vol;
-#if 1
-	if (((ch->tdis || ch->lev) && (ch->ndis || ay->chanN.lev)) || (ch->per < 0x50)) {	// tone 0..5 is beyond 20KHz
-#else
-	if (((ch->lev && !ch->tdis) || (!ch->ndis && ay->chanN.lev)) || (ch->tdis && ch->ndis)) {
-#endif
-		 vol = ch->een ? ay->chanE.vol : ch->vol;
+	// tone 0..5 is beyond 20KHz
+	if ((ch->tdis || ch->lev) && (ch->ndis || ay->chanN.lev)) {
+		vol = ch->een ? ay->chanE.vol : (!ch->tdis && (ch->per < 0x60)) ? 0 : ch->vol;
 	 } else {
-		 vol = 0;
+		vol = 0;
 	 }
-	vol = ayDACvol[vol | 1];						// AY:4-bit DAC volume
-	if (ch->per < 0x50) vol >>= 1;
+	vol = ayDACvol[vol];						// AY:4-bit DAC volume
+//	if (ch->per < 0x60) vol >>= 1;
 	return vol;
 }
 

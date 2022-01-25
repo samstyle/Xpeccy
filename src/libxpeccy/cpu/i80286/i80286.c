@@ -17,6 +17,7 @@ void i286_reset(CPU* cpu) {
 	cpu->ds = i286_cash_seg(cpu, 0x0000);
 	cpu->es = i286_cash_seg(cpu, 0x0000);
 	cpu->idtr = i286_cash_seg(cpu, 0x0000);
+	cpu->intrq = 0;
 }
 
 // REAL mode:
