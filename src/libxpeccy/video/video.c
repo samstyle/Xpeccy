@@ -352,6 +352,13 @@ void vidSetLayout(Video* vid, vLayout* lay) {
 	vidUpdateLayout(vid);
 }
 
+// set visible area height
+void vid_set_height(Video* vid, int h) {
+	if (vid->vsze.y == h) return;
+	vid->vsze.y = h;
+	vid->upd = 1;
+}
+
 void vidSetBorder(Video* vid, double brd) {
 	if (brd < 0.0) brd = 0.0;
 	else if (brd > 1.0) brd = 1.0;
@@ -855,6 +862,8 @@ void spcv_ini(Video*);
 
 void cga_t40_frm(Video*);
 void cga_t40_line(Video*);
+void cga320_2bpp_line(Video*);
+void cga640_1bpp_line(Video*);
 void cga_t40_dot(Video*);
 void cga_t80_dot(Video*);
 
@@ -911,6 +920,8 @@ static xVideoMode vidModeTab[] = {
 
 	{VGA_TXT_L, NULL, cga_t40_dot, NULL, cga_t40_line, cga_t40_frm},
 	{VGA_TXT_H, NULL, cga_t80_dot, NULL, cga_t40_line, cga_t40_frm},
+	{VGA_GRF_L, NULL, cga_t40_dot, NULL, cga320_2bpp_line, cga_t40_frm},
+	{VGA_GRF_H, NULL, cga_t80_dot, NULL, cga640_1bpp_line, cga_t40_frm},
 
 	{VID_UNKNOWN, NULL, vidDrawBorder, NULL, NULL, NULL}
 };

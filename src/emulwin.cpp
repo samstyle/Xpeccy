@@ -71,7 +71,7 @@ void MainWin::updateHead() {
 
 void MainWin::updateWindow() {
 	block = 1;
-	vidSetBorder(comp->vid, conf.brdsize);		// to call vidUpdateLayout???
+	// vidSetBorder(comp->vid, conf.brdsize);		// to call vidUpdateLayout???
 	int szw;
 	int szh;
 	QSize wsz;
@@ -376,6 +376,10 @@ void MainWin::timerEvent(QTimerEvent* ev) {
 			while(fpsmem.size() > 5)
 				fpsmem.removeFirst();
 			// printf("%i\n", conf.vid.curfps);
+		}
+		if (comp->vid->upd) {
+			comp->vid->upd = 0;
+			updateWindow();
 		}
 	} else if (ev->timerId() == cmsid) {	// 1-sec: cmos interrupt
 		// TODO: do

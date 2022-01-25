@@ -76,6 +76,9 @@ void vga_wr(Video* vid, int port, int val) {
 					if (!(val & 0x10)) vid->intrq = 0;
 					vid->inten = (val & 0x20) ? 0 : 1;
 				}
+#if CGA_MODE
+				vid_set_height(vid, CRT_REG(6) * ((CRT_REG(9) & 0x1f) + 1));
+#endif
 			}
 			vid->vga.cadr = ((CRT_REG(0x0e) << 8) | (CRT_REG(0x0f))) + ((CRT_REG(0x0b) >> 5) & 3);	// cursor address
 			break;
@@ -132,7 +135,7 @@ void vga_wr(Video* vid, int port, int val) {
 #if CGA_MODE
 		case 0x3d8:
 			vid->reg[0xff] = val & 0xff;
-			// cga	b0	0:text 40, 1:test 80
+			// cga	b0	0:text 40, 1:text 80
 			//	b1	1:for grf 320 0:for others
 			//	b2
 			//	b3	enable display
@@ -327,8 +330,11 @@ void cga_t40_frm(Video* vid) {
 }
 
 void cga_t40_line(Video* vid) {
-	int i,t;
 	memset(vid->line, CRT_REG(0x11), 0x400);
+#if CGA_MODE
+	if (vid->ray.y >= CRT_REG(6) * ((CRT_REG(9) & 0x1f) + 1)) return;
+#endif
+	int i,t;
 	vid->xpos = 0;
 	vid->vadr = (CRT_REG(0x0c) << 8) | (CRT_REG(0x0d));	// C,D: start address registers
 	vid->vadr += vid->vga.line * CRT_REG(1);		// CRT_R1 chars in line
@@ -407,20 +413,35 @@ void vga_4bpp(Video* vid, int res) {
 
 // G320
 
-void vga320_2bpp_line(Video* vid) {
+unsigned char cga_to_ega(unsigned char c) {
+	c &= 3;
+	if (!c) return c;
+	return (c << 1) | 1;
+}
+
+void cga320_2bpp_line(Video* vid) {
 	memset(vid->line, CRT_REG(0x11), 0x400);
+#if CGA_MODE
+	if (vid->ray.y >= CRT_REG(6) * ((CRT_REG(9) & 0x1f) + 1)) return;
+#endif
 	int pos = 0;
 	int i;
 	unsigned char bt;
-	vid->vadr = (vid->ray.y >> 1) * 0x50;
+	vid->vadr = (vid->ray.y >> 1) * CRT_REG(1) * 2;		// crt_reg(1) * 8 / 4 = line width (bytes)
+	vid->vadr += (CRT_REG(0x0c) << 8) | (CRT_REG(0x0d));	// start address
 	if (vid->ray.y & 1)
 		vid->vadr |= 0x2000;
-	for (i = 0; i < 320/4; i++) {
-		bt = vid->ram[vid->vadr++];	// 4 pix/byte
-		vid->line[pos++] = (bt >> 6) & 3;
-		vid->line[pos++] = (bt >> 4) & 3;
-		vid->line[pos++] = (bt >> 2) & 3;
-		vid->line[pos++] = bt & 3;
+	for (i = 0; i < CRT_REG(1) * 2; i++) {
+		if (vid->vadr & 1) {
+			bt = vid->ram[(vid->vadr >> 1) + 0x10000];
+		} else {
+			bt = vid->ram[vid->vadr >> 1];
+		}
+		vid->vadr++;
+		vid->line[pos++] = cga_to_ega(bt >> 6);
+		vid->line[pos++] = cga_to_ega(bt >> 4);
+		vid->line[pos++] = cga_to_ega(bt >> 2);
+		vid->line[pos++] = cga_to_ega(bt);
 	}
 }
 
@@ -430,18 +451,27 @@ void vga320_4bpp_line(Video* vid) {
 
 // G640
 
-void vga640_1bpp_line(Video* vid) {
+void cga640_1bpp_line(Video* vid) {
 	memset(vid->line, CRT_REG(0x11), 0x400);
+#if CGA_MODE
+	if (vid->ray.y >= CRT_REG(6) * ((CRT_REG(9) & 0x1f) + 1)) return;
+#endif
 	int pos = 0;
 	int i,k;
 	unsigned char bt;
-	vid->vadr = (vid->ray.y >> 1) * 0x50;
+	vid->vadr = (vid->ray.y >> 1) * CRT_REG(1) * 2;		// crt_reg(1) * 8 / 4 = line width (bytes)
+	vid->vadr += (CRT_REG(0x0c) << 8) | (CRT_REG(0x0d));	// start address
 	if (vid->ray.y & 1)
 		vid->vadr |= 0x2000;
-	for (i = 0; i < 640/8; i++) {
-		bt = vid->ram[vid->vadr++];
+	for (i = 0; i < CRT_REG(1) * 2; i++) {
+		if (vid->vadr & 1) {
+			bt = vid->ram[(vid->vadr >> 1) + 0x10000];
+		} else {
+			bt = vid->ram[vid->vadr >> 1];
+		}
+		vid->vadr++;
 		for (k = 0; k < 8; k++) {
-			vid->line[pos++] = (bt & 0x80) ? 0x0f : 0x00;
+			vid->line[pos++] = (bt & 0x80) ? 7 : 0;
 			bt <<= 1;
 		}
 	}

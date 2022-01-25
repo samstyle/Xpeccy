@@ -114,6 +114,7 @@ struct Video {
 	unsigned intDMA:1;	// for TSConf
 	unsigned noScreen:1;
 	unsigned debug:1;
+	unsigned upd:1;
 	unsigned tail:1;
 	unsigned cutscr:1;
 	unsigned irq:1;
@@ -341,6 +342,7 @@ int vid_wait(Video*);
 void vidDarkTail(Video*);
 
 void vidSetLayout(Video*, vLayout*);
+void vid_set_height(Video*, int);
 void vidSetBorder(Video*, double);
 void vidUpdateLayout(Video*);
 void vidUpdateTimings(Video*, int);
