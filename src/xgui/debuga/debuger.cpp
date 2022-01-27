@@ -592,6 +592,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.tabPit->setModel(new xPitModel());
 	ui.tabVgaReg->setModel(new xVgaRegModel());
 	ui.tableDMA->setModel(new xDmaTableModel());
+	ui.tabCmos->setModel(new xCmosDumpModel());
 // subwindows
 	dui.setupUi(dumpwin);
 	dui.tbSave->addAction(dui.aSaveBin);
@@ -1092,6 +1093,7 @@ void DebugWin::fillTabs() {
 	emit ui.tabPit->model()->dataChanged(ui.tabPit->model()->index(0,0), ui.tabPit->model()->index(10,3));
 	emit ui.tabVgaReg->model()->dataChanged(ui.tabVgaReg->model()->index(0,0),ui.tabVgaReg->model()->index(32,3));
 	((xDmaTableModel*)(ui.tableDMA->model()))->update();
+	emit ui.tabCmos->model()->dataChanged(ui.tabCmos->model()->index(0,0), ui.tabCmos->model()->index(9,9));
 }
 
 bool DebugWin::fillNotCPU() {

@@ -25,6 +25,7 @@
 #include "dbg_brkpoints.h"
 #include "dbg_diskdump.h"
 #include "dbg_vmem_dump.h"
+#include "dbg_cmos_dump.h"
 #include "dbg_pit.h"
 #include "dbg_vga_regs.h"
 #include "dbg_dma.h"

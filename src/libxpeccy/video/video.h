@@ -121,8 +121,10 @@ struct Video {
 
 	unsigned hblank:1;	// HBlank signal
 	unsigned hbstrb:1;	// HBlank strobe 0->1
+	unsigned hsync:1;	// HSync (pc)
 	unsigned vblank:1;	// VBlank signal
 	unsigned vbstrb:1;	// VBlank strobe 0->1
+	unsigned vsync:1;	// VSync (pc)
 
 	unsigned hbrd:1;	// border.H
 	unsigned vbrd:1;	// border.V

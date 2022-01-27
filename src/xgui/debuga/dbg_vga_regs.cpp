@@ -5,7 +5,7 @@
 xVgaRegModel::xVgaRegModel(QObject* p):QAbstractTableModel(p) {}
 
 int xVgaRegModel::rowCount(const QModelIndex&) const {
-	return 0x18;
+	return 0x19;
 }
 
 int xVgaRegModel::columnCount(const QModelIndex&) const {
@@ -35,19 +35,19 @@ QVariant xVgaRegModel::data(const QModelIndex& idx, int role) const {
 		case Qt::DisplayRole:
 			switch(col) {
 				case 0:
-					if (row < VGA_CRB)
+					if (row <= VGA_CRB)
 						res = gethexbyte(conf.prof.cur->zx->CRT_REG(row));
 					break;
 				case 1:
-					if (row < VGA_SRC)
+					if (row <= VGA_SRC)
 						res = gethexbyte(conf.prof.cur->zx->SEQ_REG(row));
 					break;
 				case 2:
-					if (row < VGA_GRC)
+					if (row <= VGA_GRC)
 						res = gethexbyte(conf.prof.cur->zx->GRF_REG(row));
 					break;
 				case 3:
-					if (row < VGA_ATC)
+					if (row <= VGA_ATC)
 						res = gethexbyte(conf.prof.cur->zx->ATR_REG(row));
 					break;
 			}

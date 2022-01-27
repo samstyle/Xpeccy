@@ -666,26 +666,16 @@ bool xDisasmModel::setData(const QModelIndex& cidx, const QVariant& val, int rol
 				}
 			} else if (str.startsWith(".") || str.contains(":")) {		// .REG || seg:offset
 				idx = str_to_adr(comp, str);
-				/*
-				if (str.startsWith("."))
-					str = str.mid(1);
-				if (str.contains(":")) {		// seg:offset
-					idx = str_to_adr(comp, str);
-				} else {				// .reg
-					idx = adr_of_reg(comp->cpu, &flag, str);
-					if (!flag)
-						idx = -1;
-				}
-				*/
-			} else {					// hex/label
+			} else {							// hex/label
 				idx = asmAddr(comp, val, xadr);
 			}
 			if (idx >= 0) {
 				while (row > 0) {
 					idx = getPrevAdr(comp, idx);
-					row -= getDisasm(comp, idx).size();
+					asmadr = idx;
+					row -= getDisasm(comp, asmadr).size();		// getDisasm will change 'adr' argument, so it must be not 'idx'
 				}
-				asmadr = idx;	// (idx - comp->cpu->cs.base) & 0xffff;
+				asmadr = idx;
 			}
 			emit s_adrch(oadr, asmadr);
 			break;
@@ -982,7 +972,7 @@ void xDisasmTable::keyPressEvent(QKeyEvent* ev) {
 			adr = model->dasm[idx.row()].oadr;
 			if (adr < 0) break;
 			history.append(model->asmadr);
-			model->setData(model->index(idx.row(), 0), gethexword((adr & 0xffff) + conf.prof.cur->zx->cpu->cs.base).prepend("0x"), Qt::EditRole);
+			model->setData(model->index(idx.row(), 0), QString::number(adr, 16).prepend("0x"), Qt::EditRole);
 			updContent();
 			setCurrentIndex(idx);
 			emit s_adrch(model->asmadr);

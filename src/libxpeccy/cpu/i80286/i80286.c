@@ -192,7 +192,7 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 					rx.h = cpu->mrd(adr, 0, cpu->data);
 					adr++;
 					dptr += sprintf(dptr, "#%.4X", rx.w);
-					mn.oadr = rx.w;
+					mn.oadr = rx.w + cpu->cs.base;
 					break;
 				case '3':
 					rx.l = cpu->mrd(adr, 0, cpu->data);
@@ -200,7 +200,7 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 					rx.h = (rx.l & 0x80) ? 0xff : 0x00;
 					rx.w += adr - cpu->cs.base;
 					dptr += sprintf(dptr, "short #%.4X", rx.w);
-					mn.oadr = rx.w;
+					mn.oadr = rx.w + cpu->cs.base;
 					break;
 				case 'n':
 					rx.l = cpu->mrd(adr, 0, cpu->data);
@@ -209,7 +209,7 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 					adr++;
 					rx.w += (adr - cpu->cs.base);
 					dptr += sprintf(dptr, "near #%.4X", rx.w);
-					mn.oadr = rx.w;
+					mn.oadr = rx.w + cpu->cs.base;
 					break;
 				case '4':
 				case 'p':

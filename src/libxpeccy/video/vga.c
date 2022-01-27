@@ -8,8 +8,11 @@
 #define CGA_MODE 1
 
 void vga_reset(Video* vid) {
-	GRF_REG(8) = 0xff;
-	SEQ_REG(2) = 0xff;
+//	GRF_REG(6) = 0x08;
+//	GRF_REG(8) = 0xff;
+//	SEQ_REG(2) = 0xff;
+//	vid->reg[0x42] = 0;
+	vidSetMode(vid, VGA_TXT_H);
 }
 
 void vga_upd_mode(Video* vid) {
@@ -27,8 +30,15 @@ void vga_upd_mode(Video* vid) {
 	}
 }
 
+// 3c2 (r42) b0 = 0:select 3bx, 1:select 3dx
 int vga_rd(Video* vid, int port) {
 	int res = -1;
+#if !CGA_MODE
+	if (((port & 0x3f8) == 0x3b0) && (vid->reg[0x42] & 1)) return res;
+	if ((port == 0x3ba) && (vid->reg[0x42] & 1)) return res;
+	if (((port & 0x3f8) == 0x3d0) && !(vid->reg[0x42] & 1)) return res;
+	if ((port == 0x3da) && !(vid->reg[0x42] & 1)) return res;
+#endif
 	switch (port) {
 		// ISR 0
 		// b0-3 unused
@@ -37,30 +47,42 @@ int vga_rd(Video* vid, int port) {
 		// b7: CRT interrrupt (set @ start of vblank)
 		case 0x3c2:
 			res = 0;
-			if (0b0111 & (1 << ((vid->reg[0x42] >> 2) & 3))) res |= 4;	// switch sense
+			if (0b0111 & (1 << ((vid->reg[0x42] >> 2) & 3))) res |= 0x10;	// switch sense
 			if (vid->intrq) res |= 0x80;
+			break;
+		case 0x3d5:		// CRT registers C.. may be readed
+			if ((CRT_IDX >= 0x0c) && (CRT_IDX <= VGA_CRC))
+				res = CRT_CUR_REG;
 			break;
 		// ISR 1
 		// b0:videomem is busy (!(vblank||hblank)
 		// b1:[EGA]light pen trigger set (=0)
 		// b2:[EGA]light pen switch open (=0)
 		// b3:vertical retrace
-		// b4,5: =ATR_REG(0x12) b4,5 ?
+		// b4,5: color bits outed to 3C0: ATR_REG(0x12) b5,4 = 00:BR, 01:rg, 10:bG, 11:--
 		// b6,7: reserved
 		case 0x3ba:
 		case 0x3da:
 			res = 0;
-			if (vid->vblank)	// not vblank, btw
+			if (vid->vblank)		// not vblank, btw
 				res |= 8;
 			if (!(vid->vbank || vid->hblank))
 				res |= 1;
 			vid->vga.atrig = 0;
 			break;
 	}
+	// printf("vga rd %.3X = %.2X\n",port,res);
 	return res;
 }
 
 void vga_wr(Video* vid, int port, int val) {
+#if !CGA_MODE
+	if (((port & 0x3f8) == 0x3b0) && (vid->reg[0x42] & 1)) return;
+	if ((port == 0x3ba) && (vid->reg[0x42] & 1)) return;
+	if (((port & 0x3f8) == 0x3d0) && !(vid->reg[0x42] & 1)) return;
+	if ((port == 0x3da) && !(vid->reg[0x42] & 1)) return;
+#endif
+//	if ((port & 0x3f0) == 0x3c0) printf ("vga wr %.3X,%.2X\n",port,val);
 	switch (port) {
 		// crt registers (3d4/3d5)
 		case 0x3b4:
@@ -188,16 +210,16 @@ int vga_adr(Video* vid, int exadr) {
 	}
 #else
 	switch(GRF_REG(6) & 0x0c) {
-		case 0: adr = exadr & 0x1ffff; break;
-		case 1: if (exadr < MEM_64K) adr = exadr; break;
-		case 2:
+		case 0x00: adr = exadr & 0x1ffff; break;
+		case 0x04: if (exadr < MEM_64K) adr = exadr; break;
+		case 0x08:
 			if (exadr < 0xb0000) break;
 			if (exadr > 0xb7fff) break;
 			adr = ((exadr & 0x7fff) >> 1) | VGA_DIRECT;
 			if (exadr & 1)
 				adr += MEM_64K;
 			break;
-		case 3: if (exadr < 0xb8000) break;
+		case 0x0c: if (exadr < 0xb8000) break;
 			adr = ((exadr & 0x7fff) >> 1) | VGA_DIRECT;
 			if (exadr & 1)
 				adr += MEM_64K;
@@ -324,6 +346,17 @@ int vga_mrd(Video* vid, int adr) {
 // :: if line==CRT_R12h {HBlank=1}
 // :: else if line==CRT_R06h {frame_end}
 
+void vga_check_vsync(Video* vid) {
+#if CGA_MODE
+	int vs_start = CRT_REG(7);
+#else
+	int vs_start = (CRT_REG(0x10) | ((CRT_REG(7) & 4) << 6));
+#endif
+	int vs_end = vs_start + (CRT_REG(0x11) & 0x0f);
+	if (vid->ray.y == vs_start) vid->vsync = 1;
+	else if (vid->ray.y == vs_end) vid->vsync = 0;
+}
+
 void cga_t40_frm(Video* vid) {
 	vid->vga.line = 0;
 	vid->vga.chline = 0;	// CRT_REG(0x08) & 0x1f;
@@ -370,6 +403,7 @@ void cga_t40_line(Video* vid) {
 	}
 	if ((vid->ray.y == vid->blank.y) && (vid->inten & 1))
 		vid->intrq = 1;
+	vga_check_vsync(vid);
 }
 
 void cga_t40_dot(Video* vid) {
@@ -443,10 +477,12 @@ void cga320_2bpp_line(Video* vid) {
 		vid->line[pos++] = cga_to_ega(bt >> 2);
 		vid->line[pos++] = cga_to_ega(bt);
 	}
+	vga_check_vsync(vid);
 }
 
 void vga320_4bpp_line(Video* vid) {
 	vga_4bpp(vid, 320);
+	vga_check_vsync(vid);
 }
 
 // G640
@@ -475,8 +511,10 @@ void cga640_1bpp_line(Video* vid) {
 			bt <<= 1;
 		}
 	}
+	vga_check_vsync(vid);
 }
 
 void vga640_4bpp_line(Video* vid) {
 	vga_4bpp(vid, 640);
+	vga_check_vsync(vid);
 }

@@ -382,13 +382,9 @@ static xPort ibmPortMap[] = {
 	{0x03f8,0x01f0,2,2,2,ibm_in1fx,	ibm_out1fx},	// primary ide
 	{0x03ff,0x03f6,2,2,2,ibm_in3f6,	ibm_out3f6},	// primary ide ctrl port
 
-	{0x03f0,0x03b0,2,2,2,ibm_inVGA,	ibm_outVGA},
-	{0x03f0,0x03d0,2,2,2,ibm_inVGA,	ibm_outVGA},	// 3d0..3d7 = 3b0..3b7 = CRT regs. TODO: 3c2.bit0 = 1:3dx, 0:3bx (3ba/3da)
-//	{0x03ff,0x03d8,2,2,2,NULL,	ibm_outVGA},	// TODO: don't used by EGA/VGA
-//	{0x03ff,0x03b8,2,2,2,NULL,	ibm_outVGA},
-	{0x03f0,0x03c0,2,2,2,NULL,	ibm_outVGA},	// 3c0-3cf: EGA/VGA registers (ATR,GRF,SEQ)
-//	{0x03ff,0x03ba,2,2,2,ibm_inVGA,	ibm_outVGA},	// status reg 1 / feature (3ba)
-//	{0x03ff,0x03da,2,2,2,ibm_inVGA, ibm_outVGA},	// status reg 1 / feature (3da)
+	{0x03f0,0x03b0,2,2,2,ibm_inVGA,	ibm_outVGA},	// 3b0..3ba: MDA registers (CRT)
+	{0x03f0,0x03d0,2,2,2,ibm_inVGA,	ibm_outVGA},	// 3d0..3da: CGA registers (CRT). TODO: 3c2.bit0 = 1:3dx, 0:3bx (3ba/3da)
+	{0x03f0,0x03c0,2,2,2,ibm_inVGA,	ibm_outVGA},	// 3c0-3cf: EGA/VGA registers (ATR,GRF,SEQ)
 
 	{0x03f8,0x03f0,2,2,2,ibm_fdc_rd,ibm_fdc_wr},	// 1st fdd controller
 //	{0x03f8,0x0370,2,2,2,NULL,	NULL},		// 2nd fdd controller
@@ -416,17 +412,18 @@ void ibm_reset(Computer* comp) {
 	ps2c_reset(comp->ps2c);
 	vga_reset(comp->vid);
 
-	memcpy(comp->vid->ram + 0x20000, comp->vid->font, 0x2000);	// copy default font
+	// copy default font to L2
+	memcpy(comp->vid->ram + 0x20000, comp->vid->font, 0x2000);
+	// set default palette
 	int i;
+	int c;
 	xColor xcol;
-	for (i = 0; i < 0x40; i++) {
-		xcol.r = 0x55 * (((i >> 1) & 2) + ((i >> 5) & 1));
-		xcol.g = 0x55 * ((i & 2) + ((i >> 4) & 1));
-		xcol.b = 0x55 * (((i << 1) & 2) + ((i >> 3) & 1));
-		comp->vid->pal[i + 0x80] = xcol;
-	}
-	for (i = 0; i < 16; i++) {
-		comp->vid->pal[i] = comp->vid->pal[ega_def_idx[i] + 0x80];
+	for (i = 0; i < 0x10; i++) {
+		c = ega_def_idx[i];
+		xcol.r = 0x55 * (((c >> 1) & 2) + ((c >> 5) & 1));
+		xcol.g = 0x55 * ((c & 2) + ((c >> 4) & 1));
+		xcol.b = 0x55 * (((c << 1) & 2) + ((c >> 3) & 1));
+		comp->vid->pal[i] = xcol;
 	}
 	ibm_mem_map(comp);
 }
