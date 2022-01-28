@@ -45,32 +45,46 @@ xbpIndex brkFind(xBrkPoint brk) {
 // adr		0000..FFFF for BRK_CPUADR
 //		full memory address for BRK_MEMCELL
 // mask		address mask for BRK_IOADR
+//		end address for BRK_MEMCELL/BRK_CPUADR (-1 if single address)
 xBrkPoint brkCreate(int type, int flag, int adr, int mask) {
 	xBrkPoint brk;
+	int adrmask = -1;
 	if (type == BRK_MEMCELL) {
 		switch(flag  & MEM_BRK_TMASK) {
-			case MEM_BRK_ROM: brk.type = BRK_MEMROM; break;
-			case MEM_BRK_RAM: brk.type = BRK_MEMRAM; break;
-			case MEM_BRK_SLT: brk.type = BRK_MEMSLT; break;
+			case MEM_BRK_ROM: brk.type = BRK_MEMROM; adrmask = conf.prof.cur->zx->mem->romMask; break;
+			case MEM_BRK_RAM: brk.type = BRK_MEMRAM; adrmask = conf.prof.cur->zx->mem->ramMask; break;
+			case MEM_BRK_SLT: brk.type = BRK_MEMSLT; adrmask = conf.prof.cur->zx->slot->memMask; break;
 			default: brk.type = BRK_MEMEXT; break;
 		}
+		adr &= adrmask;
+		if (mask > 0) mask &= adrmask;
 		brk.adr = adr;
-		brk.eadr = brk.adr;
-	} else if (type == BRK_CPUADR) {
-		brk.type = type;
-		brk.adr = adr & 0xffff;
 		if (mask > adr) {
-			brk.eadr = mask & 0xffff;
+			brk.eadr = mask;
 		} else if (mask >= 0) {
-			brk.adr = mask & 0xffff;
-			brk.eadr = adr & 0xffff;
+			brk.adr = mask;
+			brk.eadr = adr;
+		} else {
+			brk.eadr = brk.adr;
+		}
+		mask = -1;
+	} else if (type == BRK_CPUADR) {
+		brk.type = BRK_CPUADR;
+		adr &= 0xffff;		// mem->busmask
+		if (mask > 0) mask &= 0xffff;
+		brk.adr = adr;
+		if (mask > adr) {
+			brk.eadr = mask;
+		} else if (mask >= 0) {
+			brk.adr = mask;
+			brk.eadr = adr;
 		} else {
 			brk.eadr = brk.adr;
 		}
 		mask = -1;
 	} else {
 		brk.type = type;
-		brk.adr = adr & 0xffff;
+		brk.adr = adr;
 		brk.eadr = brk.adr;
 	}
 	brk.off = 0;
@@ -109,8 +123,14 @@ void brkInstall(xBrkPoint brk, int del) {
 			ptr = comp->brkAdrMap + (brk.adr & 0xffff);
 			cnt = brk.eadr - brk.adr + 1;
 			break;
-		case BRK_MEMRAM: ptr = comp->brkRamMap + (brk.adr & 0x3fffff); break;
-		case BRK_MEMROM: ptr = comp->brkRomMap + (brk.adr & 0x7ffff); break;
+		case BRK_MEMRAM:
+			ptr = comp->brkRamMap + (brk.adr & 0x3fffff);
+			cnt = brk.eadr - brk.adr + 1;
+			break;
+		case BRK_MEMROM:
+			ptr = comp->brkRomMap + (brk.adr & 0x7ffff);
+			cnt = brk.eadr - brk.adr + 1;
+			break;
 		case BRK_MEMSLT:
 			if (!comp->slot->brkMap) break;
 			ptr = comp->slot->brkMap + (brk.adr & comp->slot->memMask);

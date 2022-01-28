@@ -557,6 +557,7 @@ void xDumpTable::mouseReleaseEvent(QMouseEvent* ev) {
 
 void xDumpTable::mouseMoveEvent(QMouseEvent* ev) {
 	QTableView::mouseMoveEvent(ev);
+	if (mode != XVIEW_CPU) return;
 	QModelIndex idx = indexAt(ev->pos());
 	int row = idx.row();
 	int col = idx.column();

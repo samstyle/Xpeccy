@@ -1750,11 +1750,7 @@ int DebugWin::getAdr() {
 		if ((col > 0) && (col < 9)) {
 			adr += idx.column() - 1;
 		}
-		if (comp->cpu->type == CPU_I80286) {
-			adr &= (MEM_4M - 1);
-		} else {
-			adr &= (MEM_64K - 1);
-		}
+		adr &= comp->mem->busmask;
 	} else {
 		idx = ui.dasmTable->currentIndex();
 		adr = ui.dasmTable->getData(idx.row(), 0, Qt::UserRole).toInt();		// already +cs.base
@@ -1794,54 +1790,44 @@ void DebugWin::chaCellProperty(QAction* act) {
 		end = blockEnd;
 	}
 	if (end < bgn) {
-		end += 0x10000;
+		fadr = bgn;
+		bgn = end;
+		end = fadr;
 	}
-	int proc = 1;
+//	int proc = 1;
 	bt = 0;
 	xAdr xadr;
+	xAdr xend;
 	if (ui.actFetch->isChecked()) bt |= MEM_BRK_FETCH;
 	if (ui.actRead->isChecked()) bt |= MEM_BRK_RD;
 	if (ui.actWrite->isChecked()) bt |= MEM_BRK_WR;
 	adr = bgn;
-	while ((adr <= end) && proc) {			// set breakpoint
-		if (data & MEM_BRK_ANY) {
-			if (ui.dasmTable->hasFocus()) {
-				switch (getRFIData(ui.cbDumpView)) {
-					case XVIEW_RAM:
-						fadr = (adr & 0x3fff) | (ui.sbDumpPage->value() << 14);
-						brkSet(BRK_MEMCELL, bt | MEM_BRK_RAM, fadr, -1);
-						break;
-					case XVIEW_ROM:
-						fadr = (adr & 0x3fff) | (ui.sbDumpPage->value() << 14);
-						brkSet(BRK_MEMCELL, bt | MEM_BRK_ROM, fadr, -1);
-						break;
-					default:
-						xadr = mem_get_xadr(comp->mem, adr);
-						if (xadr.type == MEM_ROM) {
-							bt |= MEM_BRK_ROM;
-						} else if (xadr.type == MEM_RAM) {
-							bt |= MEM_BRK_RAM;
-						} else {
-							bt |= MEM_BRK_SLT;
-						}
-						brkSet(BRK_MEMCELL, bt, xadr.abs, -1);
-						//proc = 0;			// stop processing
-						break;
-				}
+	if (data & MEM_BRK_ANY) {				// if set breakpoint
+		if (ui.dasmTable->hasFocus()) {			// from disasm table
+			xadr = mem_get_xadr(comp->mem, bgn);
+			xend = mem_get_xadr(comp->mem, end);
+			if (xadr.type == MEM_ROM) {
+				bt |= MEM_BRK_ROM;
+			} else if (xadr.type == MEM_RAM) {
+				bt |= MEM_BRK_RAM;
 			} else {
-				xadr = mem_get_xadr(comp->mem, adr);
-				if (xadr.type == MEM_ROM) {
-					bt |= MEM_BRK_ROM;
-				} else if (xadr.type == MEM_RAM) {
-					bt |= MEM_BRK_RAM;
-				} else {
-					bt |= MEM_BRK_SLT;
-				}
-				brkSet(BRK_MEMCELL, bt, xadr.abs, -1);
-//				brkSet(BRK_CPUADR, bt, bgn, end);
-//				proc = 0;
+				bt |= MEM_BRK_SLT;
 			}
-		} else {				// set cell type
+			brkSet(BRK_MEMCELL, bt, xadr.abs, xend.abs);
+		} else if (ui.dumpTable->hasFocus()) {		// from dump table
+			int fadr = getRFIData(ui.cbDumpView);
+			switch(fadr) {	// XVIEW_RAM/ROM/CPU
+				case XVIEW_CPU:
+					brkSet(BRK_CPUADR, bt, bgn, end);
+					break;
+				case XVIEW_ROM:
+				case XVIEW_RAM: bt |= (fadr == XVIEW_ROM) ? MEM_BRK_ROM : MEM_BRK_RAM;
+					brkSet(BRK_MEMCELL, bt, bgn, end);
+					break;
+			}
+		}
+	} else {						// change cell type
+		while (adr <= end) {
 			ptr = getBrkPtr(comp, adr);
 			*ptr &= 0x0f;
 			if ((data & 0xf0) == DBG_VIEW_TEXT) {
@@ -1854,8 +1840,8 @@ void DebugWin::chaCellProperty(QAction* act) {
 			} else {
 				*ptr |= (data & 0xf0);
 			}
+			adr++;
 		}
-		adr++;
 	}
 	ui.bpList->update();
 	fillDisasm();
