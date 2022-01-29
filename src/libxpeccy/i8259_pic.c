@@ -12,32 +12,37 @@ void pic_reset(PIC* pic) {
 	pic->oint = 0;
 }
 
-void pic_int(PIC* pic, int num) {
+int pic_int(PIC* pic, int num) {
+	if (pic->isr != 0) return 0;		//  don't process many ints at once
 	int mask = (1 << (num & 7));
-	// pic->irr |= mask;
-	mask &= ~pic->imr;		// 1=masked
-	mask &= ~pic->isr;		// 1=this int is not ended
-	if (!mask) return;
+	mask &= ~pic->imr;		// 0=masked
+	mask &= ~pic->isr;		// 0=this int is not ended
+	if (!mask) return 0;
+	pic->num = num & 7;
 	pic->mask = mask;		// fix mask
-	//pic->isr |= mask;		// set isr bit
+//	pic->irr |= mask;		// input accepted
+	pic->isr |= mask;		// set isr bit (remains 1 until eoi)
 	pic->oint = 1;			// send INT
 	if (pic->master && (pic->icw3 & mask)) {		// if this input is slave pic, get vector from there
 		pic->vec = -1;
 	} else {					// else calc vector
 		pic->vec = (pic->icw2 & 0xf8) | (num & 7);
 	}
+	return 1;
+}
+
+void pic_eoi(PIC* pic, int num) {
+	pic->isr &= ~(1 << (num & 7));
+	pic->irr &= ~(1 << (num & 7));
 }
 
 // return vector for int with hightst priority with bits irr=1 imr=0 & isr=0
 int pic_ack(PIC* pic) {
-	//pic->isr |= pic->mask;	// not set on AEOI mode
+	if (pic->icw4 & 2) {		// automatic eoi
+		pic_eoi(pic, pic->num);
+	}
 	pic->oint = 0;
 	return pic->vec;
-}
-
-void pic_eoi(PIC* pic) {
-	pic->isr &= ~pic->mask;
-	pic->irr &= ~pic->mask;
 }
 
 // rd/wr
@@ -70,8 +75,24 @@ void pic_wr(PIC* pic, int adr, int data) {
 		if (data & 0x10) {		// init
 			pic->icw1 = data & 0xff;
 			pic->mode = PIC_ICW2;
-		} else if (data & 0x08) {	// ocw
-
+		} else if (data & 0x08) {	// ocw3 (example: 0b = 00001011)
+			pic->ocw3 = data & 0xff;
+			if (data & 0x40) {
+				pic->smm = (data & 0x20) ? 1 : 0;
+			}
+			if (data & 2) {				// read isr/irr on next rd pulse
+				pic->srd = 1;
+				pic->sdt = (data & 1) ? pic->isr : pic->irr;
+			}
+		} else {			// ocw2 (example: 20)
+			pic->ocw2 = data & 0xff;
+			if (data & 0x20) {			// eoi
+				if (data & 0x40) {		// specific eoi - reset specific isr bit
+					pic_eoi(pic, data & 7);
+				} else {			// non-specific eoi (TODO: reset isr bit with highest priority)
+					pic_eoi(pic, pic->num & 7);	// eoi
+				}
+			}
 		}
 	}
 }
@@ -79,8 +100,14 @@ void pic_wr(PIC* pic, int adr, int data) {
 int pic_rd(PIC* pic, int adr) {
 	int res = -1;
 	if (adr & 1) {	// rd data
-		if (pic->mode == PIC_OCWX)
-			res = pic->imr;
+		if (pic->mode == PIC_OCWX) {
+			if (pic->srd) {
+				pic->srd = 0;
+				res = pic->sdt;
+			} else {
+				res = pic->imr;
+			}
+		}
 	} else {	// rd command
 	}
 	return res;

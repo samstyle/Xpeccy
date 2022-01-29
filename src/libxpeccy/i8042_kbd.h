@@ -13,6 +13,7 @@ typedef struct {
 	Keyboard* kbd;
 	Mouse* mouse;
 	unsigned char ram[0x20];
+	int delay;
 	int cmd;	// last command for data port writing
 	int data;
 	int status;
@@ -24,10 +25,11 @@ typedef struct {
 
 PS2Ctrl* ps2c_create(Keyboard*, Mouse*);
 void ps2c_destroy(PS2Ctrl*);
-
+void ps2c_sync(PS2Ctrl*, int);
 void ps2c_reset(PS2Ctrl*);
 void ps2c_clear(PS2Ctrl*);
 int ps2c_rd(PS2Ctrl*, int);
 void ps2c_rd_kbd(PS2Ctrl*);
+void ps2c_rd_mouse(PS2Ctrl*);
 void ps2c_wr(PS2Ctrl*, int, int);
 void ps2c_wr_ob(PS2Ctrl*, int);

@@ -102,16 +102,21 @@ typedef struct {
 	unsigned enable:1;
 	unsigned hasWheel:1;
 	unsigned swapButtons:1;
+	unsigned intrq:1;
 
 	unsigned lmb:1;
 	unsigned rmb:1;
 	unsigned mmb:1;
 	unsigned char wheel;
 
-	unsigned char xpos;
-	unsigned char ypos;
+	int xpos;
+	int ypos;
+	int xdelta;
+	int ydelta;
 	int autox;
 	int autoy;
+
+	int outbuf;
 } Mouse;
 
 typedef struct {
@@ -159,7 +164,7 @@ typedef struct {
 	// pc keyboard
 	unsigned lock:1;	// ps/2 keyboard disabled
 	int pcmode;		// xt/at
-	unsigned int outbuf;	// 0 = empty, else key scancode
+	int outbuf;		// 0 = empty, else key scancode
 } Keyboard;
 
 typedef struct {
@@ -183,7 +188,7 @@ typedef struct {
 	unsigned char extKey[KEYSEQ_MAXLEN];
 	unsigned char msxKey[KEYSEQ_MAXLEN];
 	atmKey atmCode;
-	int atCode;		// 0xXXYYZZ = ZZ,YY,XX in buffer ([ZZ],[YY],0xf0,XX if released). set 2
+	int atCode;		// 0xXXYYZZ = ZZ,YY,XX in buffer
 	int xtCode;		// set 1
 	int joyMask;
 } keyEntry;
@@ -214,6 +219,7 @@ void mouseDestroy(Mouse*);
 void mousePress(Mouse*, int, int);
 void mouseRelease(Mouse*, int);
 void mouseReleaseAll(Mouse*);
+void mouse_interrupt(Mouse*);
 
 Joystick* joyCreate();
 void joyDestroy(Joystick*);

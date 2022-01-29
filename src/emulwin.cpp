@@ -1141,12 +1141,15 @@ void MainWin::mousePressEvent(QMouseEvent *ev){
 	}
 	switch (ev->button()) {
 		case Qt::LeftButton:
-			if (grabMice)
+			if (grabMice) {
 				comp->mouse->lmb = 1;
+				mouse_interrupt(comp->mouse);
+			}
 			break;
 		case Qt::RightButton:
 			if (grabMice) {
 				comp->mouse->rmb = 1;
+				mouse_interrupt(comp->mouse);
 			} else {
 				fillUserMenu();
 				userMenu->popup(QPoint(ev->globalX(),ev->globalY()));
@@ -1167,6 +1170,7 @@ void MainWin::mouseReleaseEvent(QMouseEvent *ev) {
 		case Qt::LeftButton:
 			if (grabMice) {
 				comp->mouse->lmb = 0;
+				mouse_interrupt(comp->mouse);
 #ifdef __APPLE__
 			} else if (comp->mouse->enable) {
 				grabMice = 1;
@@ -1176,8 +1180,10 @@ void MainWin::mouseReleaseEvent(QMouseEvent *ev) {
 			}
 			break;
 		case Qt::RightButton:
-			if (grabMice)
+			if (grabMice) {
 				comp->mouse->rmb = 0;
+				mouse_interrupt(comp->mouse);
+			}
 			break;
 		case Qt::MidButton:
 			grabMice = !grabMice;
@@ -1225,8 +1231,11 @@ void MainWin::mouseMoveEvent(QMouseEvent *ev) {
 	} else {
 #if 1
 		QPoint dpos = pos() + QPoint(width()/2, height()/2);
-		comp->mouse->xpos += ev->globalX() - dpos.x();
-		comp->mouse->ypos -= ev->globalY() - dpos.y();
+		comp->mouse->xdelta = ev->globalX() - dpos.x();
+		comp->mouse->ydelta = dpos.y() - ev->globalY();		// revert sign
+		comp->mouse->xpos += comp->mouse->xdelta;
+		comp->mouse->ypos += comp->mouse->ydelta;
+		mouse_interrupt(comp->mouse);
 		dumove = 1;
 		cursor().setPos(dpos);
 		// qDebug() << cursor().pos();

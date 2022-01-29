@@ -2723,10 +2723,10 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_op9D, 0, "popf"},
 	{0, 1, i286_op9E, 0, "sahf"},
 	{0, 1, i286_op9F, 0, "lahf"},
-	{0, 1, i286_opA0, 0, "mov al,[ds:::2]"},
-	{0, 1, i286_opA1, 0, "mov ax,[ds:::2]"},
-	{0, 1, i286_opA2, 0, "mov [ds:::2],al"},
-	{0, 1, i286_opA3, 0, "mov [ds:::2],ax"},
+	{0, 1, i286_opA0, 0, "mov al,[:D:::2]"},
+	{0, 1, i286_opA1, 0, "mov ax,[:D:::2]"},
+	{0, 1, i286_opA2, 0, "mov [:D:::2],al"},
+	{0, 1, i286_opA3, 0, "mov [:D:::2],ax"},
 	{OF_SKIPABLE, 1, i286_opA4, 0, ":Lmovsb [:D::si],[es::di]"},
 	{OF_SKIPABLE, 1, i286_opA5, 0, ":Lmovsw [:D::si],[es::di]"},
 	{OF_SKIPABLE, 1, i286_opA6, 0, ":Lcmpsb [:D::si],[es::di]"},
@@ -2818,5 +2818,5 @@ opCode i80286_tab[256] = {
 	{0, 1, i286_opFC, 0, "cld"},
 	{0, 1, i286_opFD, 0, "std"},
 	{0, 1, i286_opFE, 0, ":E :e"},		// inc,dec,...
-	{OF_WORD|OF_SKIPABLE, 1, i286_opFF, 0, ":E :e"},	// inc,dec,not,neg,call,callf,jmp,jmpf,push,???
+	{OF_WORD|OF_SKIPABLE, 1, i286_opFF, 0, ":E :e"},	// incw,decw,not,neg,call,callf,jmp,jmpf,push,???
 };

@@ -224,6 +224,7 @@ void brkInstallAll() {
 	clearMap(comp->brkRomMap, MEM_512K);
 	if (comp->slot->brkMap)
 		clearMap(comp->slot->brkMap, comp->slot->memMask + 1);
+	comp->brkirq = 0;
 	foreach(xBrkPoint brk, conf.prof.cur->brkList) {
 		brkInstall(brk, 0);
 	}

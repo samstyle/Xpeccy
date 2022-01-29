@@ -14,6 +14,7 @@ PS2Ctrl* ps2c_create(Keyboard* kp, Mouse* mp) {
 		ctrl->mouse = mp;
 		ctrl->cmd = -1;
 		ctrl->status = 0;
+		ctrl->delay = 0;
 	}
 	return ctrl;
 }
@@ -28,6 +29,7 @@ void ps2c_reset(PS2Ctrl* ctrl) {
 	ctrl->outbuf = 0;
 	ctrl->status &= ~0x03;
 	ctrl->ram[0] = 0x00;
+	ctrl->delay = 0;
 }
 
 void ps2c_clear(PS2Ctrl* ctrl) {
@@ -70,20 +72,14 @@ void ps2c_clear(PS2Ctrl* ctrl) {
 // b1: mouse data line status
 // b7: kbd enabled
 
+// DONE: ~1ms delay between data bytes from device
+// TODO: xt/at keyboard autorepeat
+
 int ps2c_rd(PS2Ctrl* ctrl, int adr) {
 	int res = -1;
 	switch (adr) {
 		case PS2_RDATA:
-			if (ctrl->outbuf & 0xff) {
-				res = ctrl->outbuf & 0xff;
-				ctrl->outbuf >>= 8;
-				if (ctrl->outbuf == 0) {					// buffer is empty
-					ctrl->status &= ~1;
-				} else if ((ctrl->ram[0] & 1) && !(ctrl->status & 0x20)) {	// kbd interrupt if enabled
-					ctrl->intk = 1;
-				}
-				// printf("i8042 rd data %.2X\n",res);
-			}
+			res = ctrl->outbuf & 0xff;
 			break;
 		case PS2_RSTATUS:
 			res = ctrl->status | 0x10;		// b4 = keyboard lock off
@@ -96,17 +92,6 @@ int ps2c_rd(PS2Ctrl* ctrl, int adr) {
 	return res;
 }
 
-void ps2c_rd_kbd(PS2Ctrl* ctrl) {
-	if (ctrl->kbd->lock) return;		// kbd disabled
-	if (ctrl->ram[0] & 0x10) return;	// 1st device disabled
-	// TODO: if (mem[0] & 0x40) convert scancode2 to scancode1
-	ps2c_wr_ob(ctrl, ctrl->kbd->outbuf);
-	ctrl->kbd->outbuf = 0;
-	if (ctrl->ram[0] & 1)
-		ctrl->intk = 1;
-	// printf("i8042 get scancode %X\n", ctrl->outbuf);
-}
-
 void ps2c_wr_ob(PS2Ctrl* ctrl, int val) {
 	ctrl->outbuf = val;
 	ctrl->status &= ~0x21;
@@ -116,6 +101,29 @@ void ps2c_wr_ob(PS2Ctrl* ctrl, int val) {
 void ps2c_wr_ob2(PS2Ctrl* ctrl, int val) {
 	ctrl->outbuf = val;
 	ctrl->status |= 0x21;
+}
+
+void ps2c_rd_kbd(PS2Ctrl* ctrl) {
+	if (ctrl->kbd->lock) return;		// kbd disabled
+	if (ctrl->ram[0] & 0x10) return;	// 1st device disabled
+	// TODO: if (mem[0] & 0x40) convert scancode2 to scancode1
+	ps2c_wr_ob(ctrl, ctrl->kbd->outbuf);
+	ctrl->kbd->outbuf = 0;
+	if ((ctrl->ram[0] & 1) && (ctrl->outbuf & 0xff)) {
+		ctrl->intk = 1;
+		ctrl->delay = 1e6;
+	}
+//	printf("i8042 get scancode %X\n", ctrl->outbuf);
+}
+
+void ps2c_rd_mouse(PS2Ctrl* ctrl) {
+	if (ctrl->ram[0] & 0x20) return;	// 2nd device disabled
+	ps2c_wr_ob2(ctrl, ctrl->mouse->outbuf);
+	ctrl->mouse->outbuf = 0;
+	if ((ctrl->ram[0] & 2) && (ctrl->outbuf & 0xff)) {
+		ctrl->intm = 1;
+		ctrl->delay = 1e6;
+	}
 }
 
 void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
@@ -295,5 +303,19 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 					break;
 			}
 			break;
+	}
+}
+
+void ps2c_sync(PS2Ctrl* ctrl, int ns) {
+	if (ctrl->delay == 0) return;
+	ctrl->delay -= ns;
+	if (ctrl->delay > 0) return;
+	ctrl->delay = 0;
+	ctrl->outbuf >>= 8;						// shift to another byte
+	if (ctrl->outbuf & 0xff) {					// if there is another byte
+		if ((ctrl->ram[0] & 1) && !(ctrl->status & 0x20)) {	// if device and interrupt enabled
+			ctrl->intk = 1;					// set interrupt
+			ctrl->delay = 1e6;				// and wait for next
+		}
 	}
 }

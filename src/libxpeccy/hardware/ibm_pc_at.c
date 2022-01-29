@@ -441,13 +441,18 @@ void ibm_sync(Computer* comp, int ns) {
 	// dma
 	dma_sync(comp->dma8, ns);
 	// ps/2 controller
+	ps2c_sync(comp->ps2c, ns);
 	if (comp->ps2c->intk) {
-		comp->ps2c->intk = 0;
-		pic_int(&comp->mpic, 1);	// input 1 master pic:keyboard interrupt
+		if (pic_int(&comp->mpic, 1))	// input 1 master pic:keyboard interrupt
+			comp->ps2c->intk = 0;
+	}
+	if (comp->ps2c->mouse->intrq) {
+		comp->ps2c->mouse->intrq = 0;
+		ps2c_rd_mouse(comp->ps2c);
 	}
 	if (comp->ps2c->intm) {
-		comp->ps2c->intm = 0;
-		//pic_int(&comp->spic, 4);	// input 4 slave pic: mouse interrupt
+		if (pic_int(&comp->spic, 4))	// input 4 slave pic: mouse interrupt
+			comp->ps2c->intm = 0;
 	}
 	// pit
 	pit_sync(&comp->pit, ns);
@@ -468,18 +473,20 @@ void ibm_sync(Computer* comp, int ns) {
 	// fdc
 	difSync(comp->dif, ns);
 	if (comp->dif->intrq) {		// fdc -> master pic int6
-		comp->dif->intrq = 0;
-		pic_int(&comp->mpic, 6);
+		if (pic_int(&comp->mpic, 6))
+			comp->dif->intrq = 0;
 	}
 	// hdd
 	// slave int6: primary hdc
 	if (comp->ide->master->intrq || comp->ide->slave->intrq) {
-		comp->ide->master->intrq = 0;
-		comp->ide->slave->intrq = 0;
-		pic_int(&comp->spic, 6);
+		if (pic_int(&comp->spic, 6)) {
+			comp->ide->master->intrq = 0;
+			comp->ide->slave->intrq = 0;
+		}
 	}
 	// slave int7: secondary hdc
 	// slave int1: [cga] vertical retrace
+	/*
 	if ((comp->vid->intbf ^ comp->vid->intrq) & 1) {
 		if (!(comp->vid->intbf & 1)) {
 			pic_int(&comp->spic, 1);
@@ -488,6 +495,7 @@ void ibm_sync(Computer* comp, int ns) {
 			comp->vid->intbf &= ~1;
 		}
 	}
+	*/
 	// pic
 	if (comp->spic.oint)		// slave pic int -> master pic int2
 		pic_int(&comp->mpic, 2);

@@ -383,3 +383,29 @@ void mouseRelease(Mouse* mou, int wut) {
 		case XM_RIGHT: mou->autox = 0; break;
 	}
 }
+
+// interrupt packet:
+// byte1:	b7:Y overflow
+//		b6:X overflow
+//		b5:Y delta sign
+//		b4:X delta sign
+//		b3: 1
+//		b2: mmb
+//		b1: rmb
+//		b0: lmb
+// byte2	abs X delta
+// byte3	abs Y delta
+
+void mouse_interrupt(Mouse* mouse) {
+	mouse->outbuf = abs(mouse->ydelta) & 0xff;
+	mouse->outbuf |= ((abs(mouse->xdelta) & 0xff) << 8);
+	if (mouse->lmb) mouse->outbuf |= (1 << 16);
+	if (mouse->rmb) mouse->outbuf |= (1 << 17);
+	// b18: mmb
+	mouse->outbuf |= (1 << 19);
+	if (mouse->xdelta < 0) mouse->outbuf |= (1 << 20);
+	if (mouse->ydelta < 0) mouse->outbuf |= (1 << 21);
+	mouse->xdelta = 0;
+	mouse->ydelta = 0;
+	mouse->intrq = 1;
+}

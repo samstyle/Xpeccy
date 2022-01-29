@@ -308,6 +308,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	tablist[HWG_SPCLST] = lst;
 	lst.clear();
 	p.icon = QIcon(); p.name = "PIT"; p.wid = ui.tabPit; lst.append(p);
+	p.icon = QIcon(); p.name = "PIC"; p.wid = ui.tabPIC; lst.append(p);
 	p.icon = QIcon(); p.name = "VGA"; p.wid = ui.vgaregTab; lst.append(p);
 	p.icon = QIcon(); p.name = "DMA"; p.wid = ui.tabDMA; lst.append(p);
 	p.icon = QIcon(":/images/floppy.png"); p.name = ""; p.wid = ui.fdcTab; lst.append(p);
@@ -593,6 +594,7 @@ DebugWin::DebugWin(QWidget* par):QDialog(par) {
 	ui.tabVgaReg->setModel(new xVgaRegModel());
 	ui.tableDMA->setModel(new xDmaTableModel());
 	ui.tabCmos->setModel(new xCmosDumpModel());
+	ui.tablePIC->setModel(new xPicModel());
 // subwindows
 	dui.setupUi(dumpwin);
 	dui.tbSave->addAction(dui.aSaveBin);
@@ -1013,6 +1015,11 @@ void DebugWin::fillTape() {
 	ui.labTapeDiag->setPixmap(pxm);
 }
 
+void update_table(QTableView* tab) {
+	QAbstractItemModel* mod = tab->model();
+	emit mod->dataChanged(mod->index(0,0), mod->index(mod->rowCount(), mod->columnCount()));
+}
+
 void DebugWin::fillTabs() {
 	fillMem();
 	fillFDC();
@@ -1090,10 +1097,11 @@ void DebugWin::fillTabs() {
 		block = 0;
 	}
 	// pit
-	emit ui.tabPit->model()->dataChanged(ui.tabPit->model()->index(0,0), ui.tabPit->model()->index(10,3));
-	emit ui.tabVgaReg->model()->dataChanged(ui.tabVgaReg->model()->index(0,0),ui.tabVgaReg->model()->index(32,3));
-	((xDmaTableModel*)(ui.tableDMA->model()))->update();
-	emit ui.tabCmos->model()->dataChanged(ui.tabCmos->model()->index(0,0), ui.tabCmos->model()->index(9,9));
+	if (ui.tabWidget->currentWidget() == ui.pitTab) update_table(ui.tabPit);
+	if (ui.tabWidget->currentWidget() == ui.vgaregTab) update_table(ui.tabVgaReg);
+	if (ui.tabWidget->currentWidget() == ui.tabDMA) update_table(ui.tableDMA);
+	if (ui.tabsDump->currentWidget() == ui.CmosTab) update_table(ui.tabCmos);
+	if (ui.tabWidget->currentWidget() == ui.tabPIC) update_table(ui.tablePIC);
 }
 
 bool DebugWin::fillNotCPU() {

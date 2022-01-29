@@ -355,7 +355,9 @@ void vidSetLayout(Video* vid, vLayout* lay) {
 // set visible area height
 void vid_set_height(Video* vid, int h) {
 	if (vid->vsze.y == h) return;
-	vid->vsze.y = h;
+	vid->scrn.y = h;
+	vid->blank.y = vid->full.y - h;
+	vidUpdateLayout(vid);
 	vid->upd = 1;
 }
 
