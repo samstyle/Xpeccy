@@ -1096,12 +1096,12 @@ void DebugWin::fillTabs() {
 		}
 		block = 0;
 	}
-	// pit
-	if (ui.tabWidget->currentWidget() == ui.pitTab) update_table(ui.tabPit);
-	if (ui.tabWidget->currentWidget() == ui.vgaregTab) update_table(ui.tabVgaReg);
-	if (ui.tabWidget->currentWidget() == ui.tabDMA) update_table(ui.tableDMA);
-	if (ui.tabsDump->currentWidget() == ui.CmosTab) update_table(ui.tabCmos);
-	if (ui.tabWidget->currentWidget() == ui.tabPIC) update_table(ui.tablePIC);
+	// update tables
+	update_table(ui.tabPit);
+	update_table(ui.tabVgaReg);
+	update_table(ui.tableDMA);
+	update_table(ui.tabCmos);
+	update_table(ui.tablePIC);
 }
 
 bool DebugWin::fillNotCPU() {

@@ -274,6 +274,7 @@ typedef struct {
 	} c64;
 	CMOS cmos;
 // ibm
+	unsigned char post;
 	PIT pit;
 	PIC mpic;		// master pic
 	PIC spic;		// slave pic

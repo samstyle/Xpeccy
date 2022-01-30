@@ -80,6 +80,8 @@ int ps2c_rd(PS2Ctrl* ctrl, int adr) {
 	switch (adr) {
 		case PS2_RDATA:
 			res = ctrl->outbuf & 0xff;
+			ctrl->outbuf = 0;
+			// printf("i8042 rd data = %.2X\n",res);
 			break;
 		case PS2_RSTATUS:
 			res = ctrl->status | 0x10;		// b4 = keyboard lock off
@@ -103,17 +105,22 @@ void ps2c_wr_ob2(PS2Ctrl* ctrl, int val) {
 	ctrl->status |= 0x21;
 }
 
+// read 1 byte from kbd to outbuf and generate intk if need
 void ps2c_rd_kbd(PS2Ctrl* ctrl) {
-	if (ctrl->kbd->lock) return;		// kbd disabled
+	// if (ctrl->kbd->lock) return;		// kbd disabled
 	if (ctrl->ram[0] & 0x10) return;	// 1st device disabled
 	// TODO: if (mem[0] & 0x40) convert scancode2 to scancode1
-	ps2c_wr_ob(ctrl, ctrl->kbd->outbuf);
-	ctrl->kbd->outbuf = 0;
-	if ((ctrl->ram[0] & 1) && (ctrl->outbuf & 0xff)) {
-		ctrl->intk = 1;
+	if (ctrl->kbd->outbuf & 0xff) {
+		ps2c_wr_ob(ctrl, ctrl->kbd->outbuf & 0xff);
+		ctrl->kbd->outbuf >>= 8;
+//		if (ctrl->ram[0] & 1) {
+			ctrl->intk = 1;
+//		}
 		ctrl->delay = 1e6;
+		//printf("i8042 get scancode %X (remains %X)\n", ctrl->outbuf,ctrl->kbd->outbuf);
+	} else {
+		ctrl->outbuf = 0;
 	}
-//	printf("i8042 get scancode %X\n", ctrl->outbuf);
 }
 
 void ps2c_rd_mouse(PS2Ctrl* ctrl) {
@@ -135,7 +142,7 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 			ctrl->status |= 8;
 			if (ctrl->cmd < 0) {
 				// send byte(s) to keyboard
-				// printf("kbd wr %.2X\n",val);
+				// printf("i8042 kbd wr %.2X\n",val);
 				switch(val) {
 					case 0xed: ctrl->cmd = val | 0x100; break;	// leds
 					case 0xee: ps2c_wr_ob(ctrl, 0xee); break;	// echo
@@ -171,11 +178,13 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 				}
 				ctrl->ram[ctrl->cmd & 0x1f] = val & 0xff;
 			} else {
+				// printf("i8042 arg wr %.2X\n",val);
 				switch (ctrl->cmd) {
 					case 0xd1:		// write to output port
 						ctrl->outport = val;
 						// printf("i8042 outport = %.2X\n",val);
 						if (!(val & 1)) ctrl->reset = 1;
+						// b1:a20 gate. if 0 here [or port 92 bit 1 = 0], a20+ is disabled (always 0)
 						break;
 					case 0xd2:
 						ps2c_wr_ob(ctrl, val);
@@ -206,7 +215,7 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 			ctrl->cmd = -1;
 			break;
 		case PS2_RCMD:
-			//printf("PS/2 controller cmd %.2X\n",val);
+			// printf("i8042 cmd %.2X\n",val);
 			ctrl->status &= ~8;
 			switch (val & 0xe0) {
 				case 0x00: break;			// 00..1F nothing?
@@ -221,7 +230,7 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 				case 0xa0:
 					switch(val) {
 						case 0xa1:		// read controller version
-							ps2c_wr_ob(ctrl, 0x00);
+							ps2c_wr_ob(ctrl, 0xFF);
 							break;
 						case 0xa4:
 							ps2c_wr_ob(ctrl, 0xf1);		// f1:no password protect, fa:password protect presented
@@ -277,7 +286,7 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 						case 0xd0:		// read controller output port
 							ps2c_wr_ob(ctrl, ctrl->outport);
 							break;
-						case 0xd1:		// write next byte controller output port
+						case 0xd1:		// write next byte to controller output port
 						case 0xd2:		// write next byte to 1st ps/2 output buffer (like it was readed from device)
 						case 0xd3:		// write next byte to 2nd ps/2 output buffer
 						case 0xd4:		// write next byte to 2nd ps/2 input buffer (send command to mouse)
@@ -311,11 +320,5 @@ void ps2c_sync(PS2Ctrl* ctrl, int ns) {
 	ctrl->delay -= ns;
 	if (ctrl->delay > 0) return;
 	ctrl->delay = 0;
-	ctrl->outbuf >>= 8;						// shift to another byte
-	if (ctrl->outbuf & 0xff) {					// if there is another byte
-		if ((ctrl->ram[0] & 1) && !(ctrl->status & 0x20)) {	// if device and interrupt enabled
-			ctrl->intk = 1;					// set interrupt
-			ctrl->delay = 1e6;				// and wait for next
-		}
-	}
+	ps2c_rd_kbd(ctrl);
 }

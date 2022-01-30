@@ -40,7 +40,7 @@ void ibm_dum_wr(int adr, int val, void* p) {}
 // e0000..fffff bios
 int ibm_bios_rd(int adr, void* p) {
 	Computer* comp = (Computer*)p;
-	return comp->mem->romData[adr & comp->mem->romMask & 0x1ffff];
+	return comp->mem->romData[adr & comp->mem->romMask];
 }
 
 void ibm_mem_map(Computer* comp) {
@@ -51,10 +51,14 @@ void ibm_mem_map(Computer* comp) {
 }
 
 int ibm_mrd(Computer* comp, int adr, int m1) {
+	if (!(comp->ps2c->outport & 2))
+		adr &= ((1 << 20) - 1);
 	return memRd(comp->mem, adr);
 }
 
 void ibm_mwr(Computer* comp, int adr, int val) {
+	if (!(comp->ps2c->outport & 2))
+		adr &= ((1 << 20) - 1);
 	memWr(comp->mem, adr, val);
 }
 
@@ -134,7 +138,7 @@ int ibm_inKbd(Computer* comp, int adr) {
 		case 1:
 			// comp->reg[0x61] ^= 0x10;		// Toggles with each refresh request (?)
 			res = comp->reg[0x61] & 0x1f;		// b0..3 is copied
-			if (comp->pit.ch2.out) res |= 0x20;	// b6: timer2 output
+			if (comp->pit.ch2.out && (res & 8)) res |= 0x20;	// b6: timer2 output
 			break;
 		case 4:
 			res = ps2c_rd(comp->ps2c, PS2_RSTATUS);
@@ -175,16 +179,45 @@ void ibm_out70(Computer* comp, int adr, int val) {
 
 void ibm_out71(Computer* comp, int adr, int val) {
 	cmos_wr(&comp->cmos, CMOS_DATA, val);
+//	if ((comp->cmos.adr == 0x0e) && (val & 0x20) && (comp->cpu->bp & 0x400)) {
+//		printf("%.4X:%.4X configuration error\n",comp->cpu->cs.idx,comp->cpu->pc);
+//		comp->brk = 1;
+//	}
 }
 
 int ibm_in71(Computer* comp, int adr) {
 	return cmos_rd(&comp->cmos, CMOS_DATA);
 }
 
+// chipset
+
+void ibm_outCHP(Computer* comp, int adr, int val) {
+	if (adr & 1) {
+		comp->prt2 = comp->reg[comp->p7FFD];
+		comp->reg[comp->p7FFD] = val & 0xff;
+		if ((comp->p7FFD == 0x87) && !(comp->prt2 & 1) && (val & 1)) {
+			compReset(comp, RES_DEFAULT);
+		}
+	} else {
+		comp->p7FFD = val & 0xff;	// index
+	}
+}
+
+int ibm_inCHP(Computer* comp, int adr) {
+	int res = -1;
+	if (adr & 1) {
+		res = comp->reg[comp->p7FFD] & 0xff;
+	}
+	return res;
+}
+
 // post code
 
 void ibm_out80(Computer* comp, int adr, int val) {
-	printf("%4X:%.4X\tPOST %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,val & 0xff);
+	if (comp->post != (val & 0xff)) {
+		printf("%4X:%.4X\tPOST %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,val & 0xff);
+		comp->post = val & 0xff;
+	}
 }
 
 // hdc (hdd controllers)
@@ -194,7 +227,7 @@ void ibm_out80(Computer* comp, int adr, int val) {
 
 int ibm_in1fx(Computer* comp, int adr) {
 	int res = ataRd(comp->ide->curDev, adr & 7);
-	// printf("%.4X:%.4X ata rd %.3X = %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,adr,res);
+	// if ((adr & 7) == 7) printf("%.4X:%.4X ata rd %.3X = %.2X\n",comp->cpu->cs.idx,comp->cpu->pc,adr,res);
 	return res;
 }
 
@@ -365,6 +398,7 @@ void ibm_outDBG(Computer* comp, int adr, int val) {
 static xPort ibmPortMap[] = {
 	{0x03f0,0x0000,2,2,2,ibm_inDMA, ibm_outDMA},	// dma1 000..00f
 	{0x0362,0x0020,2,2,2,ibm_inPIC,	ibm_outPIC},	// 20,21:master pic, a0,a1:slave pic	s01x xx00. s-slave
+	{0x03fe,0x0022,2,2,2,ibm_inCHP,	ibm_outCHP},	// 22,23: chipset registers
 	{0x03e0,0x0040,2,2,2,ibm_inPIT,	ibm_outPIT},	// programmable interval timer
 	{0x03f0,0x0060,2,2,2,ibm_inKbd,	ibm_outKbd},	// 8042: keyboard/mouse controller
 	{0x03ff,0x0070,2,2,2,NULL,	ibm_out70},	// cmos

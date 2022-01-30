@@ -11,13 +11,13 @@ void vga_reset(Video* vid) {
 //	GRF_REG(6) = 0x08;
 //	GRF_REG(8) = 0xff;
 //	SEQ_REG(2) = 0xff;
-//	vid->reg[0x42] = 0;
+//	vid->reg[0x42] = 1;
 	vidSetMode(vid, VGA_TXT_H);
 }
 
 void vga_upd_mode(Video* vid) {
 	// reg[0x42] bit 2,3 = hres (00:320, 01:640), bit 6,7=vres(00:200,01:350,10:400,11:480 lines)
-	// ATR_REG[0x10] bit0: 1:gfx, 0:text
+	// GRF_REG[0x06] bit0: 1:gfx, 0:text
 	int mod = (vid->reg[0x42] & 0x0c) | (GRF_REG(6) & 1);
 	printf("mod = %X\n",mod);
 	switch(mod) {
@@ -50,28 +50,28 @@ int vga_rd(Video* vid, int port) {
 			if (0b0111 & (1 << ((vid->reg[0x42] >> 2) & 3))) res |= 0x10;	// switch sense
 			if (vid->intrq) res |= 0x80;
 			break;
+		case 0x3b5:
 		case 0x3d5:		// CRT registers C.. may be readed
 			if ((CRT_IDX >= 0x0c) && (CRT_IDX <= VGA_CRC))
 				res = CRT_CUR_REG;
 			break;
 		// ISR 1
-		// b0:videomem is busy (!(vblank||hblank)
+		// b0:videomem is free (vblank||hblank)
 		// b1:[EGA]light pen trigger set (=0)
 		// b2:[EGA]light pen switch open (=0)
 		// b3:vertical retrace
 		// b4,5: color bits outed to 3C0: ATR_REG(0x12) b5,4 = 00:BR, 01:rg, 10:bG, 11:--
 		// b6,7: reserved
-		case 0x3ba:
 		case 0x3da:
 			res = 0;
 			if (vid->vblank)		// not vblank, btw
 				res |= 8;
-			if (!(vid->vbank || vid->hblank))
+			if (vid->vbank || vid->hblank)
 				res |= 1;
 			vid->vga.atrig = 0;
 			break;
 	}
-	// printf("vga rd %.3X = %.2X\n",port,res);
+	//printf("vga rd %.3X = %.2X\n",port,res);
 	return res;
 }
 
@@ -82,7 +82,7 @@ void vga_wr(Video* vid, int port, int val) {
 	if (((port & 0x3f8) == 0x3d0) && !(vid->reg[0x42] & 1)) return;
 	if ((port == 0x3da) && !(vid->reg[0x42] & 1)) return;
 #endif
-//	if ((port & 0x3f0) == 0x3c0) printf ("vga wr %.3X,%.2X\n",port,val);
+	if ((port & 0x3f0) == 0x3c0) printf ("vga wr %.3X,%.2X\n",port,val);
 	switch (port) {
 		// crt registers (3d4/3d5)
 		case 0x3b4:
@@ -154,9 +154,8 @@ void vga_wr(Video* vid, int port, int val) {
 			vga_upd_mode(vid);
 			break;
 		// no such register in EGA/VGA, modes is in other registers, this is CGA register
-#if CGA_MODE
+//#if CGA_MODE
 		case 0x3d8:
-			vid->reg[0xff] = val & 0xff;
 			// cga	b0	0:text 40, 1:text 80
 			//	b1	1:for grf 320 0:for others
 			//	b2
@@ -164,6 +163,7 @@ void vga_wr(Video* vid, int port, int val) {
 			//	b4	1:for grf 640 0:for others
 			//	b5	blink disabled (b7 = bg intensivity)
 			// printf("VGA mode %.2X\n",val & 0x13);
+			vid->reg[0xff] = val & 0xff;
 			switch (val & 0x13) {
 				case 0x00: case 0x10:
 					vidSetMode(vid, VGA_TXT_L);
@@ -182,7 +182,20 @@ void vga_wr(Video* vid, int port, int val) {
 			if (val & 0x08) {}		// b3:video enabled
 			vid->vga.blinken = (val & 0x20) ? 1 : 0;
 			break;
-#endif
+		case 0x3d9: // cga palette register
+			// b5: 0: blk,red,grn,brown; 1:blk,cyan,magenta,white
+			// b4: grf:intense colors; txt:bgcolor colors text
+			// b3: txt:intense border color; grf: intense bg in 320x200, intense fg in 640x200
+			// b0..2: BGR color for... txt:border, grf320:background(blk), grf640:foreground
+			vid->reg[0x59] = val & 0xff;
+			break;
+		case 0x3ba:
+		case 0x3da:		// [EGA] feature control regiser
+			// b0,1: fc0,fc1 to feature device
+			vid->reg[0x5a] = val & 0xff;
+			printf("3xa write %.2X\n",val);
+			break;
+//#endif
 	}
 }
 
@@ -447,10 +460,18 @@ void vga_4bpp(Video* vid, int res) {
 
 // G320
 
-unsigned char cga_to_ega(unsigned char c) {
+static unsigned char cga_set_0[4] = {0, 4, 2, 6};
+static unsigned char cga_set_1[4] = {0, 3, 5, 7};
+
+unsigned char cga_to_ega(Video* vid, unsigned char c) {
 	c &= 3;
-	if (!c) return c;
-	return (c << 1) | 1;
+	c = (vid->reg[0x59] & 0x20) ? cga_set_1[c] : cga_set_0[c];
+	if (c == 0) {
+		c = vid->reg[0x59] & 7;		// background color (320x200)
+		if (vid->reg[0x59] & 8) c |= 8;
+	}
+	if (vid->reg[0x59] & 0x10) c |= 8;
+	return c;
 }
 
 void cga320_2bpp_line(Video* vid) {
@@ -472,10 +493,10 @@ void cga320_2bpp_line(Video* vid) {
 			bt = vid->ram[vid->vadr >> 1];
 		}
 		vid->vadr++;
-		vid->line[pos++] = cga_to_ega(bt >> 6);
-		vid->line[pos++] = cga_to_ega(bt >> 4);
-		vid->line[pos++] = cga_to_ega(bt >> 2);
-		vid->line[pos++] = cga_to_ega(bt);
+		vid->line[pos++] = cga_to_ega(vid, bt >> 6);
+		vid->line[pos++] = cga_to_ega(vid, bt >> 4);
+		vid->line[pos++] = cga_to_ega(vid, bt >> 2);
+		vid->line[pos++] = cga_to_ega(vid, bt);
 	}
 	vga_check_vsync(vid);
 }

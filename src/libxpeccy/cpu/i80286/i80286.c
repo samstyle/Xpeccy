@@ -135,7 +135,8 @@ int seg_ea[8] = {3,3,2,2,3,3,2,3};
 const char* str_alu[8] = {"add","or","adc","sbb","and","sub","xor","cmp"};
 const char* str_rot[8] = {"rol","ror","rcl","rcr","shl","shr","sal","sar"};
 const char* str_opX[8] = {"test","*test","not","neg","mul","imul","div","idiv"};
-const char* str_opE[8] = {"incw","decw","call","callf","jmp","jmpf","push","ff /7"};
+const char* str_opE[8] = {"inc","dec","call","callf","jmp","jmpf","push","fe /7"};
+const char* str_opF[8] = {"incw","decw","call","callf","jmp","jmpf","push","ff /7"};
 const char* str_opQ[8] = {"sldt","str","lldt","ltr","verr","verw","0f00 /6","0f00 /7"};
 const char* str_opW[8] = {"sgdt","sidt","lgdt","lidt","smsw","0f01 /5","lmsw","0f01 /7"};
 
@@ -308,6 +309,9 @@ xMnem i286_mnem(CPU* cpu, int sadr, cbdmr mrd, void* data) {
 					break;
 				case 'E': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->data); adr++;}
 					dptr += sprintf(dptr, "%s", str_opE[(mb >> 3) & 7]);
+					break;
+				case 'F': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->data); adr++;}
+					dptr += sprintf(dptr, "%s", str_opF[(mb >> 3) & 7]);
 					break;
 				case 'Q': if (!mod) {mod = 1; mb = cpu->mrd(adr, 0, cpu->data); adr++;}
 					dptr += sprintf(dptr, "%s", str_opQ[(mb >> 3) & 7]);
