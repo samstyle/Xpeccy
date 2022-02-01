@@ -154,6 +154,8 @@ void saveConfig() {
 			fprintf(cfile, "gs = %s\n", rms.gsFile.c_str());
 		if (!rms.fntFile.empty())
 			fprintf(cfile, "font = %s\n", rms.fntFile.c_str());
+		if (!rms.vBiosFile.empty())
+			fprintf(cfile, "vga = %s\n", rms.vBiosFile.c_str());
 	}
 
 	fprintf(cfile, "\n[SOUND]\n\n");
@@ -266,6 +268,7 @@ void loadConfig() {
 	int fprt;
 	newrs.fntFile.clear();
 	newrs.gsFile.clear();
+	newrs.vBiosFile.clear();
 	newrs.roms.clear();
 	conf.pal.clear();
 	shortcut_init();
@@ -450,6 +453,7 @@ void loadConfig() {
 						}
 						if (pnam=="gs") rsListist.back().gsFile=fnam;
 						if (pnam=="font") rsListist.back().fntFile=fnam;
+						if (pnam=="vga") rsListist.back().vBiosFile=fnam;
 					}
 					break;
 				case SECT_SOUND:

@@ -17,7 +17,7 @@ xRomsetEditor::xRomsetEditor(QWidget* par):QDialog(par) {
 void xRomsetEditor::edit(xRomFile f) {
 	xrf = f;
 	QDir rdir(QString(conf.path.romDir.c_str()));
-	QStringList rlst = rdir.entryList(QStringList() << "*.rom", QDir::Files, QDir::Name);
+	QStringList rlst = rdir.entryList(QStringList() << "*.rom" << "*.bin", QDir::Files, QDir::Name);
 	QString str;
 	ui.cbFile->clear();
 	foreach(str, rlst) {
@@ -59,7 +59,7 @@ int xRomsetModel::columnCount(const QModelIndex& idx) const {
 
 int xRomsetModel::rowCount(const QModelIndex& idx) const {
 	if (idx.isValid()) return 0;
-	return rset->roms.size() + 2;
+	return rset->roms.size() + 3;
 }
 
 
@@ -95,8 +95,10 @@ QVariant xRomsetModel::data(const QModelIndex& idx, int role) const {
 						res = "ROM";
 					} else if (row == rlsz) {
 						res = "GS";
-					} else {
+					} else if (row == rlsz+1){
 						res = "Font";
+					} else {
+						res = "VGA";
 					}
 					break;
 				case 1:
@@ -104,8 +106,10 @@ QVariant xRomsetModel::data(const QModelIndex& idx, int role) const {
 						res = QString(rset->roms[row].name.c_str());
 					} else if (row == rlsz) {
 						res = QString(rset->gsFile.c_str());
-					} else {
+					} else if (row == rlsz+1) {
 						res = QString(rset->fntFile.c_str());
+					} else {
+						res = QString(rset->vBiosFile.c_str());
 					}
 					break;
 				case 2:

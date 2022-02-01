@@ -180,6 +180,9 @@ bool prfSetLayout(xProfile* prf, std::string nm) {
 	prf->layName = nm;
 	comp_set_layout(prf->zx, &lay->lay);
 	vidSetBorder(prf->zx->vid, conf.brdsize);
+	if ((prf->zx->vid->res.x > 0) && (prf->zx->vid->res.y > 0)) {
+		vid_set_resolution(prf->zx->vid, prf->zx->vid->res.x, prf->zx->vid->res.y);
+	}
 	return true;
 }
 
@@ -284,6 +287,18 @@ void prfSetRomset(xProfile* prf, std::string rnm) {
 			if (file) {
 				fread(prf->zx->vid->font, MEM_8K, 1, file);
 				fclose(file);
+			}
+		}
+// load ega/vga bios (64K max)
+		memset(prf->zx->vid->bios, 0xff, MEM_64K);
+		prf->zx->vid->vga.cga = 1;
+		if (!rset->vBiosFile.empty()) {
+			fpath = conf.path.romDir + SLASH + rset->vBiosFile;
+			file = fopen(fpath.c_str(), "rb");
+			if (file) {
+				fread(prf->zx->vid->bios, MEM_64K, 1, file);
+				fclose(file);
+				prf->zx->vid->vga.cga = 0;
 			}
 		}
 	}

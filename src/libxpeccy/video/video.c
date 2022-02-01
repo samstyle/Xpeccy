@@ -255,6 +255,8 @@ Video* vidCreate(vcbmrd cb, void* dptr) {
 	vid->mrd = cb;
 	vid->data = dptr;
 	vid->nsPerDot = 150;
+	vid->res.x = -1;
+	vid->res.y = -1;
 	vidSetMode(vid, VID_UNKNOWN);
 	vLayout vlay = {{448,320},{74,48},{64,32},{256,192},{0,0},64};
 	vidSetLayout(vid, &vlay);
@@ -294,6 +296,7 @@ void vidUpdateTimings(Video* vid, int nspd) {
 #endif
 }
 
+// TODO: for zx only?
 void vidReset(Video* vid) {
 	int i;
 	for (i = 0; i<16; i++) {
@@ -352,11 +355,16 @@ void vidSetLayout(Video* vid, vLayout* lay) {
 	vidUpdateLayout(vid);
 }
 
-// set visible area height
-void vid_set_height(Video* vid, int h) {
-	if (vid->vsze.y == h) return;
-	vid->scrn.y = h;
+// set visible area size
+void vid_set_resolution(Video* vid, int w, int h) {
+	if ((vid->vsze.y == h) && (vid->vsze.x == w)) return;
+	if ((vid->vsze.x <= 0) || (vid->vsze.y <= 0)) return;
+	printf("vid_set_resolution %i x %i\n",w,h);
+	vid->res.x = w;
+	vid->res.y = h;
+	vid->scrn = vid->res;
 	vid->blank.y = vid->full.y - h;
+	vid->blank.x = vid->full.x - w;
 	vidUpdateLayout(vid);
 	vid->upd = 1;
 }
@@ -866,6 +874,8 @@ void cga_t40_frm(Video*);
 void cga_t40_line(Video*);
 void cga320_2bpp_line(Video*);
 void cga640_1bpp_line(Video*);
+void vga320_4bpp_line(Video*);
+void vga640_4bpp_line(Video*);
 void cga_t40_dot(Video*);
 void cga_t80_dot(Video*);
 
@@ -920,10 +930,12 @@ static xVideoMode vidModeTab[] = {
 
 	{VID_SPCLST, spcv_ini, spc_dot, NULL, NULL, NULL},
 
-	{VGA_TXT_L, NULL, cga_t40_dot, NULL, cga_t40_line, cga_t40_frm},
-	{VGA_TXT_H, NULL, cga_t80_dot, NULL, cga_t40_line, cga_t40_frm},
-	{VGA_GRF_L, NULL, cga_t40_dot, NULL, cga320_2bpp_line, cga_t40_frm},
-	{VGA_GRF_H, NULL, cga_t80_dot, NULL, cga640_1bpp_line, cga_t40_frm},
+	{CGA_TXT_L, NULL, cga_t40_dot, NULL, cga_t40_line, cga_t40_frm},
+	{CGA_TXT_H, NULL, cga_t80_dot, NULL, cga_t40_line, cga_t40_frm},
+	{CGA_GRF_L, NULL, cga_t40_dot, NULL, cga320_2bpp_line, cga_t40_frm},
+	{CGA_GRF_H, NULL, cga_t80_dot, NULL, cga640_1bpp_line, cga_t40_frm},
+	{VGA_GRF_L, NULL, cga_t40_dot, NULL, vga320_4bpp_line, cga_t40_frm},
+	{VGA_GRF_H, NULL, cga_t40_dot, NULL, vga640_4bpp_line, cga_t40_frm},
 
 	{VID_UNKNOWN, NULL, vidDrawBorder, NULL, NULL, NULL}
 };

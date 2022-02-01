@@ -319,6 +319,7 @@ typedef struct {
 	std::string name;
 	std::string gsFile;
 	std::string fntFile;
+	std::string vBiosFile;
 	QList<xRomFile> roms;
 } xRomset;
 

@@ -934,6 +934,7 @@ void SetupWin::romPreset() {
 	xRomset rs = conf.rsList[idx];
 	rs.gsFile = presets[i].gsf;
 	rs.fntFile = presets[i].fnf;
+	rs.vBiosFile.clear();
 	rs.roms.clear();
 	int dx = 0;
 	while (presets[i].lst[dx].name != "") {
@@ -985,12 +986,15 @@ void SetupWin::delRom() {
 	QModelIndexList qmil = ui.tvRomset->selectionModel()->selectedRows();
 	int row = (qmil.size() > 0) ? qmil.first().row() : -1;
 	if ((idx < 0) || (row < 0)) return;
-	if (row < conf.rsList[idx].roms.size()) {
+	int sz = conf.rsList[idx].roms.size();
+	if (row < sz) {
 		conf.rsList[idx].roms.erase(conf.rsList[idx].roms.begin() + row);
-	} else if (row == conf.rsList[idx].roms.size()) {
+	} else if (row == sz) {
 		conf.rsList[idx].gsFile.clear();
-	} else {
+	} else if (row == sz+1) {
 		conf.rsList[idx].fntFile.clear();
+	} else {
+		conf.rsList[idx].vBiosFile.clear();
 	}
 	rsmodel->update(&conf.rsList[idx]);
 }
@@ -1004,12 +1008,15 @@ void SetupWin::editRom() {
 	f.foffset = 0;
 	f.fsize = 0;
 	f.roffset = 0;
-	if (row < conf.rsList[idx].roms.size()) {
+	int sz = conf.rsList[idx].roms.size();
+	if (row < sz) {
 		f = conf.rsList[idx].roms[row];
-	} else if (row == conf.rsList[idx].roms.size()) {
+	} else if (row == sz) {
 		f.name = conf.rsList[idx].gsFile;
-	} else {
+	} else if (row == sz+1) {
 		f.name = conf.rsList[idx].fntFile;
+	} else {
+		f.name = conf.rsList[idx].vBiosFile;
 	}
 	eidx = row;
 	rseditor->edit(f);
@@ -1018,14 +1025,17 @@ void SetupWin::editRom() {
 void SetupWin::setRom(xRomFile f) {
 	int idx = ui.rsetbox->currentIndex();
 	if (idx < 0) return;
+	int sz = conf.rsList[idx].roms.size();
 	if (eidx < 0) {
 		conf.rsList[idx].roms.push_back(f);
-	} else if (eidx < conf.rsList[idx].roms.size()) {
+	} else if (eidx < sz) {
 		conf.rsList[idx].roms[eidx] = f;
-	} else if (eidx == conf.rsList[idx].roms.size()) {
+	} else if (eidx == sz) {
 		conf.rsList[idx].gsFile = f.name;
-	} else {
+	} else if (eidx == sz+1) {
 		conf.rsList[idx].fntFile = f.name;
+	} else {
+		conf.rsList[idx].vBiosFile = f.name;
 	}
 	rsmodel->update(&conf.rsList[idx]);
 }

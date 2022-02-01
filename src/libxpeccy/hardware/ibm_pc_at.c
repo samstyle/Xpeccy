@@ -34,7 +34,10 @@ void ibm_vga_wr(int adr, int val, void* p) {
 }
 
 // c0000..cffff adapter bios
-int ibm_dum_rd(int adr, void* p) {return -1;}
+int ibm_ext_rd(int adr, void* p) {
+	return ((Computer*)p)->vid->bios[adr & 0xffff];
+}
+
 void ibm_dum_wr(int adr, int val, void* p) {}
 
 // e0000..fffff bios
@@ -43,10 +46,14 @@ int ibm_bios_rd(int adr, void* p) {
 	return comp->mem->romData[adr & comp->mem->romMask];
 }
 
+// size unit = 256
+// 64K = 16M
+// 0x100 = 64K
+// 0x200 = 128K
 void ibm_mem_map(Computer* comp) {
 	memSetBank(comp->mem, 0x00, MEM_RAM, 0, MEM_64K, ibm_ram_rd, ibm_ram_wr, comp);		// all is ram (up to 16M), except:
 	memSetBank(comp->mem, 0x0a, MEM_EXT, 0, 0x200, ibm_vga_rd, ibm_vga_wr, comp);		// a0000..bffff video
-	memSetBank(comp->mem, 0x0c, MEM_EXT, 0, 0x100, ibm_dum_rd, ibm_dum_wr, comp);		// c0000..cffff adapter bios
+	memSetBank(comp->mem, 0x0c, MEM_RAM, 0x0c, 0x100, ibm_ext_rd, ibm_dum_wr, comp);		// c0000..cffff adapter bios
 	memSetBank(comp->mem, 0x0e, MEM_ROM, 0, 0x200, ibm_bios_rd, ibm_dum_wr, comp);		// e0000..fffff bios
 }
 
@@ -437,33 +444,17 @@ void ibm_iowr(Computer* comp, int adr, int val) {
 	hwOut(ibmPortMap, comp, adr, val, 0);
 }
 
-static const int ega_def_idx[16] = {0,1,2,3,4,5,20,7,56,57,58,59,60,61,62,63};
-
 void ibm_reset(Computer* comp) {
 //	pit_reset(&comp->pit);		// pit don't have reset input (!)
 	pic_reset(&comp->mpic);
 	pic_reset(&comp->spic);
 	ps2c_reset(comp->ps2c);
 	vga_reset(comp->vid);
-
-	// copy default font to L2
-	memcpy(comp->vid->ram + 0x20000, comp->vid->font, 0x2000);
-	// set default palette
-	int i;
-	int c;
-	xColor xcol;
-	for (i = 0; i < 0x10; i++) {
-		c = ega_def_idx[i];
-		xcol.r = 0x55 * (((c >> 1) & 2) + ((c >> 5) & 1));
-		xcol.g = 0x55 * ((c & 2) + ((c >> 4) & 1));
-		xcol.b = 0x55 * (((c << 1) & 2) + ((c >> 3) & 1));
-		comp->vid->pal[i] = xcol;
-	}
 	ibm_mem_map(comp);
 }
 
 void ibm_init(Computer* comp) {
-	comp->vid->nsPerDot = 160;
+	comp->vid->nsPerDot = 1e9/60/comp->vid->full.x/comp->vid->full.y;
 	fdc_set_hd(comp->dif->fdc, 1);
 	dma_set_cb(comp->dma8, ibm_dma_mrd, ibm_dma_mwr);		// mrd/mwr callbacks
 	dma_set_chan(comp->dma8, 2, ibm_dma_flp_rd, ibm_dma_flp_wr);	// ch2: fdc

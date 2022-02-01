@@ -66,10 +66,12 @@ enum {
 	VID_CGA_T80,
 	VID_CGA_G320,
 	VID_CGA_G640,
-	VGA_TXT_L,	// txt 40
-	VGA_TXT_H,	// txt 80
-	VGA_GRF_L,	// grf 320
-	VGA_GRF_H,	// grf 640
+	CGA_TXT_L,	// txt 40
+	CGA_TXT_H,	// txt 80
+	CGA_GRF_L,	// grf 320 2bpp (cga)
+	CGA_GRF_H,	// grf 640 1bpp (cga)
+	VGA_GRF_L,	// grf 320 4bpp (ega)
+	VGA_GRF_H,	// grf 640 4bpp (ega)
 };
 
 extern int bufSize;
@@ -183,6 +185,7 @@ struct Video {
 	vCoord vsze;		// visible area size (cutted)
 	vCoord intp;		// intp.y = gbc lyc = 9938 iLine
 	int intsize;
+	vCoord res;		// current resolution (-1 = from layout)
 
 	int idx;
 
@@ -302,6 +305,7 @@ struct Video {
 	struct {
 		unsigned atrig:1;		// 3c0 flip-flop
 		unsigned blinken:1;		// blink enabled
+		unsigned cga:1;			// 1 if there is no ega/vga bios
 		int crt_idx;			// registers indexes
 		int seq_idx;
 		int grf_idx;
@@ -313,7 +317,7 @@ struct Video {
 		unsigned char latch[4];
 	} vga;
 
-	unsigned char line[0x400];		// buffer for render sprites & tiles
+	unsigned char line[0x500];		// buffer for render sprites & tiles
 	unsigned char linb[0x200];		// buffer for rendered bitplane
 	unsigned char font[0x2000];		// ATM/C64/VGA text mode font (8K for VGA font)
 
@@ -324,6 +328,7 @@ struct Video {
 	unsigned char cbank;			// char data offset (reg#18 b4..7)
 	unsigned char colram[0x1000];		// vicII color ram
 
+	unsigned char bios[MEM_64K];			// ega/vga bios
 	unsigned char ram[MEM_256K];			// video memory
 	unsigned char oam[MEM_256];			// nes oam memory
 	unsigned char reg[256];				// max 256 registers
@@ -344,7 +349,7 @@ int vid_wait(Video*);
 void vidDarkTail(Video*);
 
 void vidSetLayout(Video*, vLayout*);
-void vid_set_height(Video*, int);
+void vid_set_resolution(Video*, int, int);
 void vidSetBorder(Video*, double);
 void vidUpdateLayout(Video*);
 void vidUpdateTimings(Video*, int);
