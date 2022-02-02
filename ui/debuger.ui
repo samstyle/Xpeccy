@@ -579,7 +579,7 @@
      <item>
       <widget class="QTabWidget" name="tabsDump">
        <property name="currentIndex">
-        <number>0</number>
+        <number>3</number>
        </property>
        <widget class="QWidget" name="tabDump">
         <attribute name="title">
@@ -925,9 +925,6 @@
         <layout class="QVBoxLayout" name="verticalLayout_20">
          <item>
           <widget class="QTableView" name="tabCmos">
-           <property name="editTriggers">
-            <set>QAbstractItemView::NoEditTriggers</set>
-           </property>
            <property name="alternatingRowColors">
             <bool>true</bool>
            </property>

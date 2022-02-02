@@ -20,6 +20,7 @@ void vga_reset(Video* vid) {
 		xcol.b = 0x55 * (((i << 1) & 2) + ((i >> 3) & 1));
 		vid->pal[i] = xcol;
 	}
+	vid->pal[6]=vid->pal[0x14];		// FIXME: ORLY?
 	if (vid->vga.cga) {
 		memcpy(vid->ram + 0x20000, vid->font, 0x2000);	// copy default font
 		for (i = 0; i < 0x10; i++) {			// set default palette
@@ -457,8 +458,10 @@ void vga_4bpp(Video* vid, int res) {
 	int i,k,mask;
 	unsigned char col,b0,b1,b2,b3;
 	vid->vadr = (vid->ray.y) * (res / 8);
-//	if (vid->ray.y & 1)
-//		vid->vadr += 0x8000;
+	if (!(CRT_REG(0x17) & 1)) {		// odd lines at +8Kb
+		vid->vadr &= ~(1 << 13);
+		if (vid->ray.y & 1) vid->vadr |= (1 << 13);
+	}
 	for (i = 0; i < res/8; i++) {
 		b0 = vid->ram[vid->vadr];
 		b1 = vid->ram[vid->vadr + 0x10000];
@@ -533,11 +536,11 @@ void cga640_1bpp_line(Video* vid) {
 	int pos = 0;
 	int i,k;
 	unsigned char bt;
-	vid->vadr = (vid->ray.y >> 1) * (CRT_REG(1)+1)/* * 2*/;		// crt_reg(1) * 8 / 4 = line width (bytes)
+	vid->vadr = (vid->ray.y >> 1) * CRT_REG(1) * 2;		// crt_reg(1) * 8 / 4 = line width (bytes)
 	vid->vadr += (CRT_REG(0x0c) << 8) | (CRT_REG(0x0d));	// start address
 	//if (vid->ray.y & 1)
 	//	vid->vadr |= 0x2000;
-	for (i = 0; i <= CRT_REG(1)/* * 2*/; i++) {
+	for (i = 0; i <= CRT_REG(1) * 2; i++) {
 #if 1
 		bt = vid->ram[vid->vadr & (MEM_256K-1)];
 #else

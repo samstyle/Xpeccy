@@ -52,9 +52,15 @@ class xBrkManager : public QDialog {
 	private:
 		Ui::BrkManager ui;
 		xBrkPoint obrk;
+		void setElements(int);
 	private slots:
 		void confirm();
 		void chaType(int);
+		void bnkChanged(int);
+		void startOffChanged(int);
+		void startAbsChanged(int);
+		void endOffChanged(int);
+		void endAbsChanged(int);
 	signals:
 		void completed(xBrkPoint, xBrkPoint);
 };

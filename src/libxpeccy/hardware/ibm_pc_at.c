@@ -58,14 +58,14 @@ void ibm_mem_map(Computer* comp) {
 }
 
 int ibm_mrd(Computer* comp, int adr, int m1) {
-	if (!(comp->ps2c->outport & 2))
-		adr &= ((1 << 20) - 1);
+	if (!comp->a20gate || !(comp->ps2c->outport & 1))
+		adr &= ~(1 << 20);
 	return memRd(comp->mem, adr);
 }
 
 void ibm_mwr(Computer* comp, int adr, int val) {
-	if (!(comp->ps2c->outport & 2))
-		adr &= ((1 << 20) - 1);
+	if (!comp->a20gate || !(comp->ps2c->outport & 1))
+		adr &= ~(1 << 20);
 	memWr(comp->mem, adr, val);
 }
 
@@ -270,6 +270,20 @@ int ibm_inVGA(Computer* comp, int adr) {
 	return res;
 }
 
+void ibm_outPOS(Computer* comp, int adr, int val) {
+	switch(adr & 7) {
+		case 2:				// port 92
+			// b1: a20 gate (0:on, 1:off)
+			comp->a20gate = (val & 2) ? 1 : 0;
+			break;
+	}
+}
+
+int ibm_inPOS(Computer* comp, int adr) {
+	return -1;
+}
+
+
 // fdc (i8272/nec765)
 
 // 3f1-3f7 -> fdc
@@ -419,6 +433,8 @@ static xPort ibmPortMap[] = {
 	{0x03ff,0x0083,2,2,2,ibm_inDMA, ibm_outDMA},
 	{0x03ff,0x0087,2,2,2,ibm_inDMA, ibm_outDMA},
 
+	{0x03f8,0x0090,2,2,2,ibm_inPOS, ibm_outPOS},	// 090..097 POS
+
 //	{0x03f8,0x0170,2,2,2,ibm_dumird,ibm_dumiwr},	// secondary ide
 	{0x03f8,0x01f0,2,2,2,ibm_in1fx,	ibm_out1fx},	// primary ide
 	{0x03ff,0x03f6,2,2,2,ibm_in3f6,	ibm_out3f6},	// primary ide ctrl port
@@ -450,6 +466,7 @@ void ibm_reset(Computer* comp) {
 	pic_reset(&comp->spic);
 	ps2c_reset(comp->ps2c);
 	vga_reset(comp->vid);
+	comp->a20gate = 1;
 	ibm_mem_map(comp);
 }
 

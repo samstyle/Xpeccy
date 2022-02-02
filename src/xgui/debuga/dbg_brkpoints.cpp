@@ -201,32 +201,141 @@ xBrkManager::xBrkManager(QWidget* p):QDialog(p) {
 
 	ui.brkAdrEnd->setMin(0x0000);
 	ui.brkAdrEnd->setMax(0xffff);
+	ui.leStartOffset->setMin(0);
+	ui.leStartOffset->setMax(0x3fff);
+	ui.leEndOffset->setMin(0);
+	ui.leEndOffset->setMax(0x3fff);
+
+	connect(ui.brkBank, SIGNAL(valueChanged(int)), this, SLOT(bnkChanged(int)));
+	connect(ui.leStartOffset,SIGNAL(valueChanged(int)),this,SLOT(startOffChanged(int)));
+	connect(ui.brkAdrHex,SIGNAL(valueChanged(int)),this,SLOT(startAbsChanged(int)));
+	connect(ui.leEndOffset,SIGNAL(valueChanged(int)),this,SLOT(endOffChanged(int)));
+	connect(ui.brkAdrEnd,SIGNAL(valueChanged(int)),this,SLOT(endAbsChanged(int)));
 
 	connect(ui.brkType, SIGNAL(currentIndexChanged(int)), this, SLOT(chaType(int)));
-	connect(ui.brkAdrHex, SIGNAL(valueChanged(int)), ui.brkAdrEnd, SLOT(setMin(int)));
+//	connect(ui.brkAdrHex, SIGNAL(valueChanged(int)), ui.brkAdrEnd, SLOT(setMin(int)));
 	connect(ui.pbOK, SIGNAL(clicked()), this, SLOT(confirm()));
+}
+
+void xBrkManager::bnkChanged(int v) {
+	ui.brkAdrHex->blockSignals(true);
+	ui.brkAdrEnd->blockSignals(true);
+	ui.brkAdrHex->setValue((v << 14) | (ui.leStartOffset->getValue() & 0x3fff));
+	ui.brkAdrEnd->setMin((v << 14) | (ui.leStartOffset->getValue() & 0x3fff));
+	ui.brkAdrEnd->setValue((v << 14) | (ui.leEndOffset->getValue() & 0x3fff));
+	ui.brkAdrHex->blockSignals(false);
+	ui.brkAdrEnd->blockSignals(false);
+}
+
+void xBrkManager::startOffChanged(int v) {
+	ui.brkAdrHex->blockSignals(true);
+	v = (ui.brkBank->value() << 14) | (v & 0x3fff);
+	ui.brkAdrHex->setValue(v);
+	ui.brkAdrEnd->setMin(v);
+	ui.brkAdrEnd->setValue(v);
+	ui.brkAdrHex->blockSignals(false);
+}
+
+void xBrkManager::startAbsChanged(int v) {
+	ui.brkBank->blockSignals(true);
+	ui.leStartOffset->blockSignals(true);
+	ui.brkBank->setValue(v >> 14);
+	ui.leStartOffset->setValue(v & 0x3fff);
+	ui.brkBank->blockSignals(false);
+	ui.leStartOffset->blockSignals(false);
+	ui.brkAdrEnd->setMin(v);
+	ui.brkAdrEnd->setValue(v);
+}
+
+void xBrkManager::endOffChanged(int v) {
+	ui.brkAdrEnd->blockSignals(true);
+	ui.brkAdrEnd->setValue((ui.brkBank->value() << 14) | (v & 0x3fff));
+	ui.brkAdrEnd->blockSignals(false);
+}
+
+void xBrkManager::endAbsChanged(int v) {
+	ui.leEndOffset->blockSignals(true);
+	ui.leEndOffset->setValue(v & 0x3fff);
+	ui.leEndOffset->blockSignals(true);
+}
+
+#define EL_FE 256
+#define EL_RD 128
+#define EL_WR 64
+#define EL_BNK 32
+#define EL_SOF 16
+#define EL_SAD 8
+#define EL_EOF 4
+#define EL_EAD 2
+#define EL_MSK 1
+
+void xBrkManager::setElements(int mask) {
+	ui.brkFetch->setVisible(mask & EL_FE);
+	ui.brkRead->setVisible(mask & EL_RD);
+	ui.brkWrite->setVisible(mask & EL_WR);
+	ui.brkBank->setVisible(mask & EL_BNK);
+	ui.leStartOffset->setVisible(mask & EL_SOF);
+	ui.brkAdrHex->setVisible(mask & EL_SAD);
+	ui.leEndOffset->setVisible(mask & EL_EOF);
+	ui.brkAdrEnd->setVisible(mask & EL_EAD);
+	ui.brkMaskHex->setVisible(mask & EL_MSK);
 }
 
 void xBrkManager::chaType(int i) {
 	int t = ui.brkType->itemData(i).toInt();
 	switch (t) {
+		case BRK_IRQ:
+			setElements(0);
+			/*
+			ui.brkFetch->setVisible(false);
+			ui.brkRead->setVisible(false);
+			ui.brkWrite->setVisible(false);
+			ui.brkBank->setVisible(false);
+			ui.leStartOffset->setVisible(false);
+			ui.brkAdrHex->setVisible(false);
+			ui.brkMaskHex->setVisible(false);
+			ui.leEndOffset->setVisible(false);
+			ui.brkAdrEnd->setVisible(false);
+			*/
+			break;
 		case BRK_IOPORT:
-			ui.brkFetch->setEnabled(false);
-			ui.brkBank->setEnabled(false);
-			ui.brkMaskHex->setEnabled(true);
-			ui.brkAdrEnd->setEnabled(false);
+			setElements(EL_RD | EL_WR | EL_SAD | EL_MSK);
+			/*
+			ui.brkFetch->setVisible(false);
+			ui.brkRead->setVisible(true);
+			ui.brkWrite->setVisible(true);
+			ui.brkBank->setVisible(false);
+			ui.brkMaskHex->setVisible(true);
+			ui.leEndOffset->setVisible(false);
+			ui.brkAdrEnd->setVisible(false);
+			*/
 			break;
 		case BRK_CPUADR:
-			ui.brkFetch->setEnabled(true);
-			ui.brkBank->setEnabled(false);
-			ui.brkMaskHex->setEnabled(false);
-			ui.brkAdrEnd->setEnabled(true);
+			setElements(EL_FE | EL_RD | EL_WR | EL_SAD | EL_EAD);
+			/*
+			ui.brkFetch->setVisible(true);
+			ui.brkRead->setVisible(true);
+			ui.brkWrite->setVisible(true);
+			ui.brkBank->setVisible(false);
+			ui.leStartOffset->setVisible(false);
+			ui.brkAdrHex->setVisible(true);
+			ui.leEndOffset->setVisible(false);
+			ui.brkAdrEnd->setVisible(true);
+			ui.brkMaskHex->setVisible(false);
+			*/
 			break;
 		default:
-			ui.brkFetch->setEnabled(true);
-			ui.brkBank->setEnabled(true);
-			ui.brkMaskHex->setEnabled(false);
-			ui.brkAdrEnd->setEnabled(false);
+			setElements(EL_FE | EL_RD | EL_WR | EL_BNK | EL_SOF | EL_SAD | EL_EOF | EL_EAD);
+			/*
+			ui.brkFetch->setVisible(true);
+			ui.brkRead->setVisible(true);
+			ui.brkWrite->setVisible(true);
+			ui.brkBank->setVisible(true);
+			ui.leStartOffset->setVisible(true);
+			ui.leEndOffset->setVisible(true);
+			ui.brkAdrEnd->setVisible(true);
+			ui.brkMaskHex->setVisible(false);
+			*/
 			break;
 	}
 }
@@ -244,12 +353,14 @@ void xBrkManager::edit(xBrkPoint* sbrk) {
 		obrk.fetch = 1;
 		obrk.read = 0;
 		obrk.write = 0;
-		obrk.off = 1;
+		obrk.off = 0;
 	}
 	ui.brkType->setCurrentIndex(ui.brkType->findData(obrk.type));
 	ui.brkFetch->setChecked(obrk.fetch);
 	ui.brkRead->setChecked(obrk.read);
 	ui.brkWrite->setChecked(obrk.write);
+	ui.brkAdrHex->setMax(conf.prof.cur->zx->mem->busmask);
+	ui.brkAdrEnd->setMax(conf.prof.cur->zx->mem->busmask);
 	switch(obrk.type) {
 		case BRK_IOPORT:
 			ui.brkBank->setValue(0);
@@ -264,7 +375,8 @@ void xBrkManager::edit(xBrkPoint* sbrk) {
 			break;
 		default:
 			ui.brkBank->setValue(obrk.adr >> 14);
-			ui.brkAdrHex->setValue(obrk.adr & 0x3fff);
+			ui.brkAdrHex->setValue(obrk.adr);	// &0x3fff ?
+			ui.brkAdrEnd->setValue(obrk.eadr);
 			ui.brkMaskHex->setText("FFFF");
 			break;
 	}
@@ -289,11 +401,14 @@ void xBrkManager::confirm() {
 			brk.eadr = brk.adr;
 			break;
 		default:
-			brk.adr = (ui.brkBank->value() << 14) | (ui.brkAdrHex->getValue() & 0x3fff);
-			brk.eadr = brk.adr;
+			//brk.adr = (ui.brkBank->value() << 14) | (ui.brkAdrHex->getValue() & 0x3fff);
+			//brk.eadr = brk.adr;
+			brk.adr = ui.brkAdrHex->getValue();
+			brk.eadr = ui.brkAdrEnd->getValue();
 			break;
 	}
 	brk.mask = ui.brkMaskHex->getValue();
 	emit completed(obrk, brk);
 	hide();
 }
+

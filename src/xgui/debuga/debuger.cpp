@@ -1826,7 +1826,14 @@ void DebugWin::chaCellProperty(QAction* act) {
 			int fadr = getRFIData(ui.cbDumpView);
 			switch(fadr) {	// XVIEW_RAM/ROM/CPU
 				case XVIEW_CPU:
-					brkSet(BRK_CPUADR, bt, bgn, end);
+					xadr = mem_get_xadr(comp->mem, bgn);
+					xend = mem_get_xadr(comp->mem, end);
+					switch (xadr.type) {
+						case MEM_ROM: bt |= MEM_BRK_ROM; break;
+						case MEM_RAM: bt |= MEM_BRK_RAM; break;
+						default: bt |= MEM_BRK_SLT; break;
+					}
+					brkSet(BRK_MEMCELL, bt, xadr.abs, xend.abs);
 					break;
 				case XVIEW_ROM:
 				case XVIEW_RAM: bt |= (fadr == XVIEW_ROM) ? MEM_BRK_ROM : MEM_BRK_RAM;

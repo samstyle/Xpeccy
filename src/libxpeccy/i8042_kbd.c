@@ -27,6 +27,7 @@ void ps2c_reset(PS2Ctrl* ctrl) {
 	ctrl->cmd = -1;
 	ctrl->reset = 0;
 	ctrl->outbuf = 0;
+	ctrl->outport = 2;
 	ctrl->status &= ~0x03;
 	ctrl->ram[0] = 0x00;
 	ctrl->delay = 0;

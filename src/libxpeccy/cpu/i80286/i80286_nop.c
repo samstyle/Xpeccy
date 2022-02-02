@@ -1495,9 +1495,10 @@ void i286_op9C(CPU* cpu) {
 	i286_push(cpu, cpu->f);
 }
 
-// 9d: popf
+// 9d: popf (low 8 bits only on 80286)
 void i286_op9D(CPU* cpu) {
-	cpu->f = i286_pop(cpu);
+	cpu->tmpw = i286_pop(cpu);
+	cpu->f = (cpu->f & ~0xff) | cpu->ltw;
 }
 
 // 9e: sahf

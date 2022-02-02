@@ -18,10 +18,35 @@ QVariant xCmosDumpModel::data(const QModelIndex& idx, int role) const {
 	int col = idx.column();
 	switch(role) {
 		case Qt::DisplayRole:
+		case Qt::EditRole:
 			res = QString::number(conf.prof.cur->zx->cmos.data[(row << 3) + col] & 0xff, 16).toUpper().rightJustified(2,'0');
 			break;
 	}
 	return res;
+}
+
+bool xCmosDumpModel::setData(const QModelIndex& idx, const QVariant& val, int role) {
+	int row = idx.row();
+	int col = idx.column();
+	int adr = (row << 3) + col;
+	if (adr > 0xff) return false;
+	bool flag;
+	int d;
+	switch(role) {
+		case Qt::EditRole:
+			d = val.toString().toInt(&flag,16) & 0xff;
+			if (flag) {
+				conf.prof.cur->zx->cmos.data[adr] = d;
+			}
+			break;
+	}
+	return true;
+}
+
+Qt::ItemFlags xCmosDumpModel::flags(const QModelIndex& idx) const {
+	Qt::ItemFlags f = QAbstractTableModel::flags(idx);
+	f |= Qt::ItemIsEditable;
+	return f;
 }
 
 QVariant xCmosDumpModel::headerData(int sect, Qt::Orientation ori, int role) const {
