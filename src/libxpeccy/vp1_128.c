@@ -75,7 +75,7 @@ unsigned short vp1_rd(FDC* fdc, int port) {
 		if (fdc->flp->protect) res |= 4;
 		if (fdc->drq) res |= 0x80;
 		if (fdc->crchi) res |= 0x4000;
-		if (fdc->flp->index && fdc->flp->insert && fdc->flp->motor)
+		if (fdc->flp->index && fdc->flp->insert && fdc->flp->door && fdc->flp->motor)
 			res |= 0x8000;
 	}
 	return res;

@@ -273,12 +273,19 @@ void xBrkManager::setElements(int mask) {
 	ui.brkFetch->setVisible(mask & EL_FE);
 	ui.brkRead->setVisible(mask & EL_RD);
 	ui.brkWrite->setVisible(mask & EL_WR);
+	ui.labFlags->setVisible(mask & (EL_FE | EL_RD | EL_WR));
 	ui.brkBank->setVisible(mask & EL_BNK);
+	ui.labBank->setVisible(mask & EL_BNK);
 	ui.leStartOffset->setVisible(mask & EL_SOF);
+	ui.labStartOff->setVisible(mask & EL_SOF);
 	ui.brkAdrHex->setVisible(mask & EL_SAD);
+	ui.labStartAbs->setVisible(mask & EL_SAD);
 	ui.leEndOffset->setVisible(mask & EL_EOF);
+	ui.labEndOff->setVisible(mask & EL_EOF);
 	ui.brkAdrEnd->setVisible(mask & EL_EAD);
+	ui.labEndAbs->setVisible(mask & EL_EAD);
 	ui.brkMaskHex->setVisible(mask & EL_MSK);
+	ui.labMask->setVisible(mask & EL_MSK);
 }
 
 void xBrkManager::chaType(int i) {
@@ -286,56 +293,15 @@ void xBrkManager::chaType(int i) {
 	switch (t) {
 		case BRK_IRQ:
 			setElements(0);
-			/*
-			ui.brkFetch->setVisible(false);
-			ui.brkRead->setVisible(false);
-			ui.brkWrite->setVisible(false);
-			ui.brkBank->setVisible(false);
-			ui.leStartOffset->setVisible(false);
-			ui.brkAdrHex->setVisible(false);
-			ui.brkMaskHex->setVisible(false);
-			ui.leEndOffset->setVisible(false);
-			ui.brkAdrEnd->setVisible(false);
-			*/
 			break;
 		case BRK_IOPORT:
 			setElements(EL_RD | EL_WR | EL_SAD | EL_MSK);
-			/*
-			ui.brkFetch->setVisible(false);
-			ui.brkRead->setVisible(true);
-			ui.brkWrite->setVisible(true);
-			ui.brkBank->setVisible(false);
-			ui.brkMaskHex->setVisible(true);
-			ui.leEndOffset->setVisible(false);
-			ui.brkAdrEnd->setVisible(false);
-			*/
 			break;
 		case BRK_CPUADR:
 			setElements(EL_FE | EL_RD | EL_WR | EL_SAD | EL_EAD);
-			/*
-			ui.brkFetch->setVisible(true);
-			ui.brkRead->setVisible(true);
-			ui.brkWrite->setVisible(true);
-			ui.brkBank->setVisible(false);
-			ui.leStartOffset->setVisible(false);
-			ui.brkAdrHex->setVisible(true);
-			ui.leEndOffset->setVisible(false);
-			ui.brkAdrEnd->setVisible(true);
-			ui.brkMaskHex->setVisible(false);
-			*/
 			break;
 		default:
 			setElements(EL_FE | EL_RD | EL_WR | EL_BNK | EL_SOF | EL_SAD | EL_EOF | EL_EAD);
-			/*
-			ui.brkFetch->setVisible(true);
-			ui.brkRead->setVisible(true);
-			ui.brkWrite->setVisible(true);
-			ui.brkBank->setVisible(true);
-			ui.leStartOffset->setVisible(true);
-			ui.leEndOffset->setVisible(true);
-			ui.brkAdrEnd->setVisible(true);
-			ui.brkMaskHex->setVisible(false);
-			*/
 			break;
 	}
 }

@@ -124,6 +124,7 @@ int loadDSK(Computer* comp, const char *name, int drv) {
 		//flp->doubleSide = (sidcnt > 1) ? 1 : 0;
 		//flp->trk80 = (trkcnt > 42) ? 1 : 0;
 		flp->insert = 1;
+		flp->door = 0;
 		flp->changed = 0;
 	}
 	fclose(file);

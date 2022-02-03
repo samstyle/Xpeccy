@@ -37,6 +37,7 @@ typedef struct {
 	unsigned motor:1;	// fdd motor is on
 	unsigned virt:1;	// fdd is virtual
 	unsigned insert:1;	// disk inserted
+	unsigned door:1;	// door closed (auto close some time after insert)
 	unsigned protect:1;	// disk is write protected
 	unsigned changed:1;	// disk is changed
 	unsigned index:1;	// disk index impulse

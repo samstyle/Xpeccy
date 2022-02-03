@@ -136,7 +136,7 @@ typedef struct {
 void udrvst00(FDC* fdc) {
 	uSetDrive(fdc);
 	fdc->sr3 = (fdc->flp->protect ? 0x40 : 0x00) |
-		   (fdc->flp->insert ? 0x20 : 0x00) |
+		   ((fdc->flp->insert && fdc->flp->door) ? 0x20 : 0x00) |
 		   ((fdc->flp->trk == 0) ? 0x10 : 0x00) |
 		   (fdc->flp->doubleSide ? 0x08 : 0x00) |
 		   (fdc->comBuf[0] & 7);
@@ -244,7 +244,7 @@ void urdaRS(FDC* fdc) {
 
 void urda00(FDC* fdc) {
 	uSetDrive(fdc);
-	if (!fdc->flp->insert) {
+	if (!(fdc->flp->insert && fdc->flp->door)) {
 		fdc->sr0 |= 0x48;
 		urdaRS(fdc);
 		uTerm(fdc);
@@ -390,7 +390,7 @@ void uread00(FDC* fdc) {
 	uSetDrive(fdc);
 // NOTE: multitrack means select hd1 after hd0 is done, not to read hd0 from start
 	fdc->sec = fdc->comBuf[3];	// R, sec.num
-	if (!fdc->flp->insert) {
+	if (!(fdc->flp->insert && fdc->flp->door)) {
 		fdc->sr0 |= 0x48;	// not ready
 		ureadRS(fdc);		// prepare resp
 		uTerm(fdc);		// terminate
@@ -427,7 +427,7 @@ void urdtrkRS(FDC* fdc) {
 void urdtrk00(FDC* fdc) {
 	uSetDrive(fdc);
 	fdc->sec = fdc->comBuf[3];		// R, sec.num
-	if (!fdc->flp->insert) {
+	if (!(fdc->flp->insert && fdc->flp->door)) {
 		fdc->sr0 |= 0x48;	// not ready
 		urdtrkRS(fdc);		// prepare resp
 		uTerm(fdc);		// terminate
@@ -569,7 +569,7 @@ static fdcCall uScan[] = {&uwargs, &uread00, &uread01, &uscan00, &uscan01, &usca
 void uwrdat00(FDC* fdc) {
 	uSetDrive(fdc);
 	fdc->sec = fdc->comBuf[3];		// R, sec.num
-	if (!fdc->flp->insert) {
+	if (!(fdc->flp->insert & fdc->flp->door)) {
 		fdc->sr0 |= 0x48;		// not ready
 		ureadRS(fdc);
 		uTerm(fdc);
@@ -699,7 +699,7 @@ static fdcCall uWrData[] = {&uwargs,&uwrdat00,&uwrdat01,&uwrdat02,&uwrdat03,&uwr
 
 void utrkfrm00(FDC* fdc) {
 	uSetDrive(fdc);
-	if (!fdc->flp->insert) {
+	if (!(fdc->flp->insert && fdc->flp->door)) {
 		fdc->sr0 |= 0x48;		// not ready
 		ureadRS(fdc);
 		uTerm(fdc);

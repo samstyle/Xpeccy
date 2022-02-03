@@ -1464,7 +1464,7 @@ void DebugWin::fillFDC() {
 	ui.flpIntEn->setText(comp->dif->inten ? "1" : "0");
 
 	ui.flpCurL->setText(QString('A' + comp->dif->fdc->flp->id));
-	ui.flpRdyL->setText(comp->dif->fdc->flp->insert ? "1" : "0");
+	ui.flpRdyL->setText((comp->dif->fdc->flp->insert && comp->dif->fdc->flp->door) ? "1" : "0");
 	ui.flpTrkL->setText(gethexbyte(comp->dif->fdc->flp->trk));
 	ui.flpPosL->setText(gethexword(comp->dif->fdc->flp->pos));
 	ui.flpIdxL->setText(comp->dif->fdc->flp->index ? "1" : "0");
@@ -1962,6 +1962,7 @@ void DebugWin::saveDumpToDisk(int idx) {
 	if (!flp->insert) {
 		diskFormat(flp);
 		flp->insert = 1;
+		flp->door = 0;
 	}
 	TRFile dsc = diskMakeDescriptor(name.toStdString().c_str(), 'C', start, len);
 	if (diskCreateFile(flp, dsc, (unsigned char*)data.data(), data.size()) == ERR_OK)

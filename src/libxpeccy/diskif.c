@@ -148,6 +148,10 @@ void pdosReset(DiskIF* dif) {
 
 void pdosSync(DiskIF* dif, int ns) {
 	dhwSync(dif, ns);
+	if (dif->fdc->flp->insert && !dif->fdc->flp->door) {
+		dif->fdc->flp->door = 1;
+		dif->fdc->intr = 1;
+	}
 	if ((dif->fdc->intr & dif->inten) ^ dif->lirq) {
 		if (!dif->lirq)
 			dif->intrq = 1;

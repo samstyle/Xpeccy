@@ -579,7 +579,7 @@
      <item>
       <widget class="QTabWidget" name="tabsDump">
        <property name="currentIndex">
-        <number>3</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="tabDump">
         <attribute name="title">
@@ -3384,13 +3384,13 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>xDisasmTable</class>
-   <extends>QTableView</extends>
+   <class>xHexSpin</class>
+   <extends>QLineEdit</extends>
    <header location="global">stdlib.h</header>
   </customwidget>
   <customwidget>
-   <class>xHexSpin</class>
-   <extends>QLineEdit</extends>
+   <class>xDisasmTable</class>
+   <extends>QTableView</extends>
    <header location="global">stdlib.h</header>
   </customwidget>
   <customwidget>

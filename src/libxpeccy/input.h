@@ -136,6 +136,25 @@ typedef struct {
 } xKeyBuf;
 
 typedef struct {
+	unsigned char cpmCode;
+	unsigned char rowScan;
+} atmKey;
+
+#define KEYSEQ_MAXLEN 16
+
+typedef struct {
+	const char* name;
+	signed int key;		// XKEY_*
+	unsigned char zxKey[KEYSEQ_MAXLEN];
+	unsigned char extKey[KEYSEQ_MAXLEN];
+	unsigned char msxKey[KEYSEQ_MAXLEN];
+	atmKey atmCode;
+	int atCode;		// 0xXXYYZZ = ZZ,YY,XX in buffer
+	int xtCode;		// set 1
+	int joyMask;
+} keyEntry;
+
+typedef struct {
 	unsigned reset:1;		// RES signal to CPU
 	unsigned used:1;
 	unsigned caps:1;
@@ -164,7 +183,11 @@ typedef struct {
 	// pc keyboard
 	unsigned lock:1;	// ps/2 keyboard disabled
 	int pcmode;		// xt/at
-	int outbuf;		// 0 = empty, else key scancode
+	unsigned long outbuf;	// 0 = empty, else key scancode
+	keyEntry kent;
+	int per;
+	int kdel;		// pc:delay after 1st pres
+	int kper;		// pc:autorepeat period
 } Keyboard;
 
 typedef struct {
@@ -173,25 +196,6 @@ typedef struct {
 	int type;
 	unsigned char state;
 } Joystick;
-
-typedef struct {
-	unsigned char cpmCode;
-	unsigned char rowScan;
-} atmKey;
-
-#define KEYSEQ_MAXLEN 16
-
-typedef struct {
-	const char* name;
-	signed int key;		// XKEY_*
-	unsigned char zxKey[KEYSEQ_MAXLEN];
-	unsigned char extKey[KEYSEQ_MAXLEN];
-	unsigned char msxKey[KEYSEQ_MAXLEN];
-	atmKey atmCode;
-	int atCode;		// 0xXXYYZZ = ZZ,YY,XX in buffer
-	int xtCode;		// set 1
-	int joyMask;
-} keyEntry;
 
 typedef struct {
 	char key;
@@ -207,12 +211,12 @@ void kbdRelease(Keyboard*, keyEntry);
 void kbdTrigger(Keyboard*, keyEntry);
 void kbdReleaseAll(Keyboard*);
 unsigned char kbdRead(Keyboard*, int);
-//unsigned char keyReadCode(Keyboard*);
+void kbd_press(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk);
+void kbd_release(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk);
 void xt_press(Keyboard*, keyEntry);
 void xt_release(Keyboard*, keyEntry);
 int xt_read(Keyboard*);
-void kbd_press(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk);
-void kbd_release(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk);
+void xt_sync(Keyboard*, int);
 
 Mouse* mouseCreate();
 void mouseDestroy(Mouse*);

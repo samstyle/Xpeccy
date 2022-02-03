@@ -208,6 +208,8 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 						}
 						break;
 					case 0x1f3:
+						ctrl->kbd->kdel = (((val >> 5) & 3) + 1) * 250e6;	// 1st delay - 250,500,750,1000ms
+						ctrl->kbd->kper = (33 + 7 * (val & 0x1f)) * 1e6;	// repeat period: 33 to 250 ms
 						ps2c_wr_ob(ctrl, 0xfa);
 						break;
 				}
@@ -317,6 +319,9 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 }
 
 void ps2c_sync(PS2Ctrl* ctrl, int ns) {
+	xt_sync(ctrl->kbd, ns);
+	if ((ctrl->kbd->outbuf & 0xff) && (ctrl->delay == 0))
+		ctrl->delay = 1e6;
 	if (ctrl->delay == 0) return;
 	ctrl->delay -= ns;
 	if (ctrl->delay > 0) return;

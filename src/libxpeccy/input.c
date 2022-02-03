@@ -73,6 +73,8 @@ Keyboard* keyCreate() {
 	Keyboard* keyb = (Keyboard*)malloc(sizeof(Keyboard));
 	memset(keyb, 0x00, sizeof(Keyboard));
 	keyb->pcmode = KBD_AT;
+	keyb->kdel = 5e8;
+	keyb->kper = 5e7;
 	return keyb;
 }
 
@@ -180,6 +182,8 @@ void kbdReleaseAll(Keyboard* kbd) {
 	kbd->lastkey = 0;
 	kbd->outbuf = 0;	//kbd->kbuf.pos = 0;
 	kbd->flag = 0;
+	kbd->kent.atCode = 0;
+	kbd->kent.xtCode = 0;
 }
 
 void kbd_trigger(keyScan* tab, int* mtrx, unsigned char* xk) {
@@ -211,9 +215,25 @@ void kbdTrigger(Keyboard* kbd, keyEntry ent) {
 }
 
 // at/xt keyboard buffer
-// example:
+// example (at code):
 // 0xE0, 0x72 (code 0x72e0) = cursor down pressed
 // 0xE0, 0xF0, 0x72 (code 72e0) = cursor down released
+
+void xt_sync(Keyboard* kbd, int ns) {
+	if (kbd->per == 0) return;
+	kbd->per -= ns;
+	if (kbd->per > 0) return;
+	xt_press(kbd, kbd->kent);
+	unsigned long buf = kbd->outbuf;
+	xt_release(kbd, kbd->kent);		// generate 'release'
+	unsigned long msk = 0xff;
+	while ((kbd->outbuf & msk) && msk) {
+		buf <<= 8;
+		msk <<= 8;
+	}
+	kbd->outbuf |= buf;			// add 'press' to current code
+	kbd->per = kbd->kper;
+}
 
 void xt_press(Keyboard* kbd, keyEntry kent) {
 	if (kbd->lock) return;
@@ -221,6 +241,8 @@ void xt_press(Keyboard* kbd, keyEntry kent) {
 		case KBD_AT: kbd->outbuf = kent.atCode; break;
 		case KBD_XT: kbd->outbuf = kent.xtCode; break;
 	}
+	kbd->kent = kent;
+	kbd->per = kbd->kdel;
 	// printf("key press %X\n",kbd->outbuf);
 }
 
@@ -257,6 +279,7 @@ void xt_release(Keyboard* kbd, keyEntry kent) {
 			}
 			break;
 	}
+	kbd->per = 0;
 }
 
 int xt_read(Keyboard* kbd) {

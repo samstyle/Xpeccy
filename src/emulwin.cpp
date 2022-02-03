@@ -978,6 +978,10 @@ void MainWin::xkey_press(int xkey) {
 					setMessage(" release mouse ");
 				}
 				break;
+			case XCUT_GRABKBD:
+				pckAct->setChecked(true);
+				setMessage(" grab keyboard ");
+				break;
 			case XCUT_PAUSE:
 				conf.emu.pause ^= PR_PAUSE;
 				pause(true,0);

@@ -149,6 +149,7 @@ void vga_wr(Video* vid, int port, int val) {
 				ATR_IDX = val & 0xff;
 			}
 			vid->vga.atrig = !vid->vga.atrig;
+			vid->vga.blinken = (ATR_REG(0x10) & 8) ? 1 : 0;
 			break;
 		case 0x3c2:
 			// b0: 0 for 3b?, 1 for 3d? ports access
@@ -414,13 +415,16 @@ void cga_t40_line(Video* vid) {
 				vid->idx ^= 0xff;
 			}
 		}
-		if ((vid->atrbyte & 0x80) && vid->flash && vid->vga.blinken)	// blinking (b7 attribute)
-			vid->idx ^= 0xff;
+		if (vid->vga.blinken) {
+			if ((vid->atrbyte & 0x80) && vid->flash)
+				vid->idx ^= 0xff;
+			vid->atrbyte &= 0x7f;
+		}
 		for (i = 0; i < 8; i++) {
 			if (vid->idx & 0x80) {
 				vid->line[vid->xpos++] = ATR_REG(vid->atrbyte & 0x0f);		// b0..3:foreground
 			} else {
-				vid->line[vid->xpos++] = ATR_REG((vid->atrbyte >> 4) & 0x07);	// b4..6:background
+				vid->line[vid->xpos++] = ATR_REG((vid->atrbyte >> 4) & 0x0f);	// b4..7:background (b7=0 if blink enabled)
 			}
 			vid->idx <<= 1;
 		}

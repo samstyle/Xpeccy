@@ -53,7 +53,7 @@ static keyEntry keyMapInit[] = {
 	{"SPC",XKEY_SPACE,{' ',0},{0,0},{' ',0},{0x20,0x71},0x29,0x39,0},
 
 	{"RS",XKEY_RSHIFT,{0,0},{0,0},{0,0},{0,0},0x59,0x36,0},
-	{"RC",XKEY_RCTRL,{0,0},{0,0},{0,0},{0,0},0x14e0,0/*0x1de0*/,0},
+	{"RC",XKEY_RCTRL,{0,0},{0,0},{0,0},{0,0},0x14e0,0x1de0,0},
 
 	{"LEFT",XKEY_LEFT,{'C','5'},{'C','5'},{MSXK_LEFT,0},{0x72,0x3d},0x6be0,0x4be0,0},
 	{"RIGHT",XKEY_RIGHT,{'C','8'},{'C','8'},{MSXK_RIGHT,0},{0x73,0x4b},0x74e0,0x4de0,0},
@@ -98,7 +98,7 @@ static keyEntry keyMapInit[] = {
 	{"F11",XKEY_F11,{0,0},{'S','q'},{0,0},{0x6b,0},0x78,0x57,0},
 
 	{"LA",XKEY_LALT,{0,0},{0,0},{0,0},{0,0},0x11,0x38,0},
-	{"RA",XKEY_RALT,{0,0},{0,0},{MSXK_GRAPH,0},{0,0},0x11e0,0/*0x38e0*/,0},
+	{"RA",XKEY_RALT,{0,0},{0,0},{MSXK_GRAPH,0},{0,0},0x11e0,0x38e0,0},
 
 	{"NLOCK", XKEY_NUMLCK,{0,0},{0,0},{0,0},{0,0},0x77,0x45,0},
 	{"NSLASH", XKEY_NSLASH,{0,0},{0,0},{0,0},{0,0},0x4ae0,0x35e0,0},
@@ -412,6 +412,7 @@ static xShortcut short_tab[] = {
 	{SCG_MAIN | SCG_DEBUGA, XCUT_LOAD, "key.load", "Open", QKeySequence(), QKeySequence(Qt::Key_F3)},
 	{SCG_MAIN, XCUT_FASTSAVE, "key.fastsave", "Fast saving", QKeySequence(), QKeySequence(Qt::Key_F9)},
 	{SCG_MAIN, XCUT_MOUSE, "key.mouse.grab", "Grab mouse", QKeySequence(), QKeySequence(Qt::ALT + Qt::Key_M)},
+	{SCG_MAIN, XCUT_GRABKBD, "key.keyboard.grab","Grab keyboard", QKeySequence(), QKeySequence(Qt::ALT + Qt::Key_G)},
 	{SCG_MAIN | SCG_DEBUGA, XCUT_KEYBOARD, "key.keywin", "Show keyboard", QKeySequence(), QKeySequence(Qt::ALT + Qt::Key_K)},
 	{SCG_MAIN, XCUT_TAPWIN, "key.tapewin", "Show tape player", QKeySequence(), QKeySequence()},
 	{SCG_MAIN, XCUT_RZXWIN, "key.rzxwin", "Show rzx player", QKeySequence(), QKeySequence()},

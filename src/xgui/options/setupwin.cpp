@@ -1386,6 +1386,7 @@ void SetupWin::newdisk(int idx, int ask) {
 	diskClear(flp);
 	flp_set_path(flp, NULL);
 	flp->insert = 1;
+	flp->door = 0;
 	flp->changed = 1;
 	if (ask && areSure("Format for TRDOS?")) {
 		diskFormat(flp);

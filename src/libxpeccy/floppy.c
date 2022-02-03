@@ -39,7 +39,7 @@ void flpWr(Floppy* flp, int hd, unsigned char val) {
 	flp->wr = 1;
 	hd &= 1;
 	if (hd & !flp->doubleSide) return;	// saving on HD1 for SS Floppy
-	if (flp->insert) {
+	if (flp->insert && flp->door) {
 		flp->changed = 1;
 		flp->data[(flp->trk << 1) | hd].byte[flp->pos] = val;
 	}
@@ -48,7 +48,7 @@ void flpWr(Floppy* flp, int hd, unsigned char val) {
 unsigned char flpRd(Floppy* flp, int hd) {
 	flp->rd = 1;
 	hd &= 1;
-	if (!flp->insert) return 0xff;
+	if (!(flp->insert && flp->door)) return 0xff;
 	if (hd && !flp->doubleSide) return 0xff;
 	return flp->data[(flp->trk << 1) | hd].byte[flp->pos];
 }
@@ -68,7 +68,7 @@ int flpNext(Floppy* flp, int fdcSide) {
 	int res = 0;
 	int rtrk = (flp->trk << 1);
 	if (flp->doubleSide && fdcSide) rtrk++;
-	if (flp->insert) {
+	if (flp->insert && flp->door) {
 		flp->pos++;
 		if (flp->pos >= flp->trklen) {
 			flp->pos = 0;
@@ -179,7 +179,7 @@ int flp_format_trk(Floppy* flp, int trk, int spt, int slen, char* data) {
 void flpPrev(Floppy* flp, int fdcSide) {
 	int rtrk = (flp->trk << 1);
 	if (flp->doubleSide && fdcSide) rtrk++;
-	if (flp->insert) {
+	if (flp->insert && flp->door) {
 		if (flp->pos > 0) {
 			flp->pos--;
 		} else {
@@ -286,6 +286,7 @@ void flpFillFields(Floppy* flp,int tr, int flag) {
 int flpEject(Floppy* flp) {
 	flp_set_path(flp, NULL);
 	flp->insert = 0;
+	flp->door = 0;
 	flp->changed = 0;
 	return 1;
 }

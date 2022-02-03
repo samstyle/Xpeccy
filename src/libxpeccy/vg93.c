@@ -148,7 +148,7 @@ void vgstp00(FDC* fdc) {
 //	printf("stop\n");
 	fdc->irq = 1;
 	fdc->idle = 1;
-	if (!fdc->flp->motor || !fdc->flp->insert) {
+	if (!fdc->flp->motor || !(fdc->flp->insert && fdc->flp->door)) {
 		fdc->plan = NULL;
 	} else {
 		fdc->cnt = 15;
@@ -181,7 +181,7 @@ void vgstp(FDC* fdc) {
 void vgchk00(FDC* fdc) {
 	if ((fdc->com & 0x0c) != 0x0c) {	// if (h=0 || v=0), stops
 		vgstp(fdc);
-	} else if (!fdc->flp->insert) {		// if no disk, seek error, stop
+	} else if (!(fdc->flp->insert && fdc->flp->door)) {		// if no disk, seek error, stop
 		fdc->state |= 0x10;
 		vgstp(fdc);
 	} else {
@@ -320,7 +320,7 @@ void vgrds00(FDC* fdc) {
 //	if ((fdc->com & 0xe1) == 0x80) printf("RDSec(%.2X)...T:%.2X S:%.2X H:%i (FT:%.2X)\n",fdc->com, fdc->trk, fdc->sec, fdc->side, fdc->flp->trk);
 	//printf("fdc com %.2X\n",fdc->com);
 	fdc->fmode = 1;
-	if (!fdc->flp->insert) {
+	if (!(fdc->flp->insert && fdc->flp->door)) {
 		vgstp(fdc);
 	} else {
 		fdc->flp->motor = 1;
@@ -629,14 +629,14 @@ unsigned char vgRead(FDC* fdc, int adr) {
 		case FDC_COM:
 			//fdc->state &= ~0x08;		// debug: reset crc error
 			fdc->state &= 0x7e;
-			if (!fdc->flp->insert) fdc->state |= 0x80;
+			if (!(fdc->flp->insert && fdc->flp->door)) fdc->state |= 0x80;
 			if (!fdc->idle) fdc->state |= 0x01;
 			if (fdc->fmode == 0) {
 				fdc->state &= 0x99;
 				if (fdc->flp->protect) fdc->state |= 0x40;
 				if (fdc->flp->motor) fdc->state |= 0x20;
 				if (fdc->flp->trk == 0) fdc->state |= 0x04;
-				if (fdc->flp->insert && fdc->flp->motor && fdc->flp->index) fdc->state |= 0x02;
+				if (fdc->flp->insert && fdc->flp->door && fdc->flp->motor && fdc->flp->index) fdc->state |= 0x02;
 			} else if (fdc->fmode == 1) {
 				fdc->state &= 0xfd;
 				if (fdc->drq) fdc->state |= 0x02;

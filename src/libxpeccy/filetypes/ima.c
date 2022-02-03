@@ -16,6 +16,7 @@ int load_ima(Computer* comp, const char* path, int drv) {
 		fclose(file);
 		flp_set_path(flp, path);
 		flp->insert = 1;
+		flp->door = 0;
 		flp->changed = 0;
 	} else {
 		res = ERR_CANT_OPEN;

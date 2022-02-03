@@ -84,6 +84,7 @@ int loadFDI(Computer* comp, const char* name, int drv) {
 		}
 		flp->protect = hd.wp ? 1 : 0;
 		flp->insert = 1;
+		flp->door = 0;
 		flp->changed = 0;
 		flp_set_path(flp, name);
 	}

@@ -29,6 +29,7 @@ int loadRaw(Computer* comp, const char* name, int drv) {
 		if (!flp->insert) {
 			diskFormat(flp);
 			flp->insert = 1;
+			flp->door = 0;
 		}
 		if (diskGetType(flp) != DISK_TYPE_TRD) {
 			err = ERR_NOTRD;
