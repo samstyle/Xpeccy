@@ -131,7 +131,7 @@ void zxSetUlaPalete(Computer* comp) {
 		xc.r = ula_levs[col];
 		col = (comp->vid->ula->pal[i] >> 5) & 7;	// green
 		xc.g = ula_levs[col];
-		comp->vid->pal[i] = xc;
+		vid_set_col(comp->vid, i, xc);
 	}
 }
 

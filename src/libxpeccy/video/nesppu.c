@@ -53,7 +53,7 @@ void ppuFillPal(Video* vid, int tint) {
 		if (tint & 0x20) {
 			if (vid->ntsc) xcol.r >>= 1; else xcol.g >>= 1;
 		}
-		vid->pal[i] = xcol;
+		vid_set_col(vid, i, xcol);
 	}
 }
 
@@ -248,7 +248,7 @@ void ppuDraw(Video* vid) {
 	if ((col & 3) == 0) col = 0;				// universal color 0
 	col = vid->ram[0x3f00 | (col & 0x3f)];			// pal index -> col index
 	if (vid->greyscale) col &= 0x30;			// greyscale
-	vidPutDot(&vid->ray, nesPal, col);
+	vid_dot_full(vid, col);
 }
 
 // @ start of HBlank

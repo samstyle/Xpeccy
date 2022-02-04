@@ -124,7 +124,7 @@ void vidC64TDraw(Video* vid) {
 			scrbyte <<= 1;
 		}
 	}
-	vidPutDot(&vid->ray, vid->pal, col & 0x0f);
+	vid_dot_full(vid, col & 0x0f);
 }
 
 // multicolor text
@@ -193,7 +193,7 @@ void vidC64TMDraw(Video* vid) {
 			}
 		}
 	}
-	vidPutDot(&vid->ray, vid->pal, col & 0x0f);
+	vid_dot_full(vid, col & 0x0f);
 }
 
 // bitmap
@@ -222,7 +222,7 @@ void vidC64BDraw(Video* vid) {
 	} else {
 		col = vid->reg[0x20];
 	}
-	vidPutDot(&vid->ray, vid->pal, col & 0x0f);
+	vid_dot_full(vid, col & 0x0f);
 }
 
 // multicolor bitmap
@@ -264,7 +264,7 @@ void vidC64BMDraw(Video* vid) {
 	} else {
 		col = vid->reg[0x20];
 	}
-	vidPutDot(&vid->ray, vid->pal, col & 0x0f);
+	vid_dot_full(vid, col & 0x0f);
 }
 
 void vidC64Fram(Video* vid) {

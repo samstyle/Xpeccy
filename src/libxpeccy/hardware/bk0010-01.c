@@ -311,9 +311,8 @@ static xColor bk_pal[0x40] = {
 
 void bk_reset(Computer* comp) {
 	memSetSize(comp->mem, MEM_32K, MEM_32K);
-//	memset(comp->mem->ramData, 0x00, MEM_256);
 	for (int i = 0; i < 0x40; i++) {
-		comp->vid->pal[i] = bk_pal[i];
+		vid_set_col(comp->vid, i, bk_pal[i]);
 	}
 	comp->reg[0] = 1;
 	comp->reg[1] = 0x80;

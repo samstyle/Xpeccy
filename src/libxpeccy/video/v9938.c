@@ -287,7 +287,7 @@ void vdpText1(Video* vid) {
 		col = (scrbyte & 0x80) ? ink : pap;
 		scrbyte <<= 1;
 	}
-	vidPutDot(&vid->ray, vid->pal, col);
+	vid_dot_full(vid, col);
 }
 
 // v9918 G1
@@ -310,7 +310,7 @@ void vdpGra1(Video* vid) {
 		scrbyte <<= 1;
 
 	}
-	vidPutDot(&vid->ray, vid->pal, col);
+	vid_dot_full(vid, col);
 }
 
 // v9918 G2 (256 x 192)
@@ -332,7 +332,7 @@ void vdpGra2(Video* vid) {
 			col = (scrbyte & 0x80) ? ink : pap;
 		scrbyte <<= 1;
 	}
-	vidPutDot(&vid->ray, vid->pal, col);
+	vid_dot_full(vid, col);
 }
 
 // v9918 MC (multicolor)
@@ -352,7 +352,7 @@ void vdpMultcol(Video* vid) {
 		if (vid->line[vid->ray.xs & 0x1ff])
 			col = vid->line[vid->ray.xs & 0x1ff];
 	}
-	vidPutDot(&vid->ray, vid->pal, col);
+	vid_dot_full(vid, col);
 }
 
 // v9938 G4 (256x212 4bpp)
@@ -372,7 +372,7 @@ void vdpGra4(Video* vid) {
 		if (vid->line[vid->ray.xs & 0x1ff])
 			col = vid->line[vid->ray.xs & 0x1ff];
 	}
-	vidPutDot(&vid->ray, vid->pal, col);
+	vid_dot_full(vid, col);
 }
 
 void vdpG4pset(Video* vid, int x, int y, unsigned char col) {
@@ -400,7 +400,7 @@ unsigned char vdpG4col(Video* vid, int x, int y) {
 
 void vdpGra5(Video* vid) {
 	if (vid->vbrd || vid->hbrd || !(vid->reg[1] & 0x40)) {
-		vidPutDot(&vid->ray, vid->pal, vid->reg[7] & 3);
+		vid_dot_full(vid, vid->reg[7] & 3);
 	} else {
 		yscr = (vid->ray.ys + vid->reg[0x17]) & 0xff;
 		if (vid->ray.xs & 1) {
@@ -408,10 +408,10 @@ void vdpGra5(Video* vid) {
 			col = vid->ram[adr];
 		}
 		if (vid->line[vid->ray.xs & 0x1ff]) {
-			vidPutDot(&vid->ray, vid->pal, vid->line[vid->ray.xs & 0x1ff]);
+			vid_dot_full(vid, vid->line[vid->ray.xs & 0x1ff]);
 		} else {
-			vidSingleDot(&vid->ray, vid->pal, (col & 0xc0) >> 6);
-			vidSingleDot(&vid->ray, vid->pal, (col & 0x30) >> 4);
+			vid_dot_half(vid, (col & 0xc0) >> 6);
+			vid_dot_half(vid, (col & 0x30) >> 4);
 		}
 		col <<= 4;
 	}
@@ -441,16 +441,16 @@ unsigned char vdpG5col(Video* vid, int x, int y) {
 
 void vdpGra6(Video* vid) {
 	if (vid->vbrd || vid->hbrd || !(vid->reg[1] & 0x40)) {
-		vidPutDot(&vid->ray, vid->pal, vid->reg[7]);
+		vid_dot_full(vid, vid->reg[7]);
 	} else {
 		yscr = (vid->ray.ys + vid->reg[0x17]) & 0xff;
 		adr = (vid->BGMap & ~0xffff) | vid->ray.xs | (yscr << 8);
 		col = vid->ram[adr];
 		if (vid->line[vid->ray.xs & 0x1ff]) {
-			vidPutDot(&vid->ray, vid->pal, vid->line[vid->ray.xs & 0x1ff]);
+			vid_dot_full(vid, vid->line[vid->ray.xs & 0x1ff]);
 		} else {
-			vidSingleDot(&vid->ray, vid->pal, (col & 0xf0) >> 4);
-			vidSingleDot(&vid->ray, vid->pal, col & 0x0f);
+			vid_dot_half(vid, (col & 0xf0) >> 4);
+			vid_dot_half(vid, col & 0x0f);
 		}
 	}
 }
@@ -477,6 +477,8 @@ unsigned char vdpG6col(Video* vid, int x, int y) {
 // v9938 G6 (256x212 8bpp)
 // note:sprites color is different
 
+static xColor txc;
+
 void vdpGra7(Video* vid) {
 	if (vid->vbrd || vid->hbrd || !(vid->reg[1] & 0x40)) {
 		col = vid->reg[7];
@@ -489,12 +491,13 @@ void vdpGra7(Video* vid) {
 		} else {
 			col = vid->ram[adr & vid->memMask];
 		}
-		vid->pal[0xff].r = (col << 3) & 0xe0;
-		vid->pal[0xff].g = col & 0xe0;
-		vid->pal[0xff].b = (col << 6) & 0xe0;
+		txc.r = (col << 3) & 0xe0;
+		txc.g = col & 0xe0;
+		txc.b = (col << 6) & 0xe0;
+		vid_set_col(vid, 0xff, txc);
 		col = 0xff;
 	}
-	vidPutDot(&vid->ray, vid->pal, col);
+	vid_dot_full(vid, col);
 }
 
 void vdpG7pset(Video* vid, int x, int y, unsigned char col) {
@@ -514,7 +517,7 @@ void vdpBreak(Video* vid) {
 }
 
 void vdpDummy(Video* vid) {
-	vidPutDot(&vid->ray, vid->pal, 0);
+	vid_dot_full(vid, 0);
 }
 
 // tab
@@ -561,8 +564,10 @@ void vdpReset(Video* vid) {
 	memset(vid->sr, 0x00, 16);
 	memset(vid->ram, 0x00, MEM_128K);
 	vdpSetMode(vid, VDP_TEXT1);
-	for (int i = 0; i < 16; i++)
-		vid->pal[i] = msxPalete[i];
+	for (int i = 0; i < 16; i++) {
+		vid_set_col(vid, i, msxPalete[i]);
+		//vid->pal[i] = msxPalete[i];
+	}
 	vid->memMask = MEM_128K - 1;
 	vid->BGColors = 0;
 	vid->BGMap = 0;
@@ -1032,6 +1037,8 @@ unsigned char vdpRead(Video* vid, int port) {
 	return res;
 }
 
+static xColor txc;
+
 void vdpWrite(Video* vid, int port, unsigned char val) {
 	int num;
 	switch (port & 3) {
@@ -1055,15 +1062,17 @@ void vdpWrite(Video* vid, int port, unsigned char val) {
 			break;
 		case 2:
 			num = vid->reg[16] & 15;
+			txc = vid_get_col(vid, num);
 			if (vid->palhi) {
-				vid->pal[num].g = m2lev[val & 7];
+				txc.g = m2lev[val & 7];
+				vid_set_col(vid, num, txc);
 				vid->reg[16] = (num + 1) & 15;
-				vid->palhi = 0;
 			} else {
-				vid->pal[num].b = m2lev[val & 7];
-				vid->pal[num].r = m2lev[(val >> 4) & 7];
-				vid->palhi = 1;
+				txc.b = m2lev[val & 7];
+				txc.r = m2lev[(val >> 4) & 7];
+				vid_set_col(vid, num, txc);
 			}
+			vid->palhi = !vid->palhi;
 			break;
 		case 3:
 			num = vid->reg[17] & 0x3f;

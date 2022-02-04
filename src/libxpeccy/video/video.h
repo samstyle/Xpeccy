@@ -155,7 +155,8 @@ struct Video {
 	unsigned char intbf;	// buffered int (last int signals)
 
 	unsigned char paln;	// high bits = palete number
-	xColor pal[256];	// palete. 256 colors rgb888
+	//xColor pal[256];	// palete. 256 colors rgb888
+	int pal[256];		// ABGR inside int, R = LSB, A = 0
 
 	int vmode;
 	cbvid cbDot;		// call every dot
@@ -198,6 +199,7 @@ struct Video {
 	unsigned ntsc:1;	// set if ntsc, prerender line is 1 dot shorter each other frame
 	unsigned ppu_vb:1;	// set at vbs line, reset at vbrline or reading reg2
 	int vadr;		// nes videomem access addr
+	int fadr;
 	unsigned short tadr;	// nes tmp vadr
 	int vbsline;		// 1st line of VBlank
 	int vbrline;		// prerender line (usually last line of frame)
@@ -354,10 +356,11 @@ void vidSetBorder(Video*, double);
 void vidUpdateLayout(Video*);
 void vidUpdateTimings(Video*, int);
 
-//void vidSetFont(Video*,char*,int);
 void vidGetScreen(Video*, unsigned char*, int, int, int);
 
 void vid_set_grey(int);
+xColor vid_get_col(Video*, int);
+void vid_set_col(Video*, int, xColor);
 
 void tslUpdatePorts(Video*);
 

@@ -66,17 +66,14 @@ static const unsigned char tsl5bLevs[32] = {
 
 void tslUpdatePal(Computer* comp) {
 	int col;
+	xColor xcol;
 	for (int i = 0; i < 256; i++) {
 		col = (comp->vid->tsconf.cram[(i << 1) + 1] << 8) | (comp->vid->tsconf.cram[i << 1]);
-		if (col & 0x8000) {
-			comp->vid->pal[i].r = tsl5bLevs[(col >> 10) & 0x1f];
-			comp->vid->pal[i].g = tsl5bLevs[(col >> 5) & 0x1f];
-			comp->vid->pal[i].b = tsl5bLevs[col  & 0x1f];
-		} else {
-			comp->vid->pal[i].r = tslCoLevs[(col >> 10) & 0x1f];
-			comp->vid->pal[i].g = tslCoLevs[(col >> 5) & 0x1f];
-			comp->vid->pal[i].b = tslCoLevs[col  & 0x1f];
-		}
+		const unsigned char* tab = (col & 0x8000) ? tsl5bLevs : tslCoLevs;
+		xcol.r = tab[(col >> 10) & 0x1f];
+		xcol.g = tab[(col >> 5) & 0x1f];
+		xcol.b = tab[col  & 0x1f];
+		vid_set_col(comp->vid, i, xcol);
 	}
 }
 

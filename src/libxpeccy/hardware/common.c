@@ -120,10 +120,12 @@ sndPair zx_vol(Computer* comp, sndVolume* sv) {
 
 void zx_set_pal(Computer* comp) {
 	int i;
+	xColor xcol;
 	for (i = 0; i < 16; i++) {
-		comp->vid->pal[i].b = (i & 1) ? ((i & 8) ? 0xff : 0xaa) : 0x00;
-		comp->vid->pal[i].r = (i & 2) ? ((i & 8) ? 0xff : 0xaa) : 0x00;
-		comp->vid->pal[i].g = (i & 4) ? ((i & 8) ? 0xff : 0xaa) : 0x00;
+		xcol.b = (i & 1) ? ((i & 8) ? 0xff : 0xaa) : 0x00;
+		xcol.r = (i & 2) ? ((i & 8) ? 0xff : 0xaa) : 0x00;
+		xcol.g = (i & 4) ? ((i & 8) ? 0xff : 0xaa) : 0x00;
+		vid_set_col(comp->vid, i, xcol);
 	}
 }
 

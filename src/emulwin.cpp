@@ -88,10 +88,10 @@ void MainWin::updateWindow() {
 	}
 	setFixedSize(szw, szh);
 	vid_set_zoom(conf.vid.scale);
-	lineBytes = szw * 3;
+	lineBytes = szw * 4;
 	frameBytes = szh * lineBytes;
 #ifdef USEOPENGL
-	bytesPerLine = (lefSkip + comp->vid->vsze.x * 6 + rigSkip) & ~3;		// texture width must be 4-dots aligned
+	bytesPerLine = (lefSkip + comp->vid->vsze.x * 8 + rigSkip) & ~3;		// texture width must be 4-dots aligned
 	bufSize = bytesPerLine * comp->vid->vsze.y;
 #else
 	bytesPerLine = lineBytes;
@@ -582,7 +582,7 @@ void MainWin::frame_timer() {
 #ifdef USEOPENGL
 	if (conf.emu.fast || conf.emu.pause) {
 		glBindTexture(GL_TEXTURE_2D, texids[curtex]);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bytesPerLine / 3, comp->vid->vsze.y, 0, GL_RGB, GL_UNSIGNED_BYTE, comp->debug ? scrimg : bufimg);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bytesPerLine / 4, comp->vid->vsze.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, comp->debug ? scrimg : bufimg);
 		queue.clear();
 		queue.append(texids[curtex]);
 	}
@@ -600,7 +600,7 @@ void MainWin::d_frame() {
 	if (queue.size() > 3)
 		queue.takeFirst();
 	glBindTexture(GL_TEXTURE_2D, texids[curtex]);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bytesPerLine / 3, comp->vid->vsze.y, 0, GL_RGB, GL_UNSIGNED_BYTE, comp->debug ? scrimg : bufimg);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bytesPerLine / 4, comp->vid->vsze.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, comp->debug ? scrimg : bufimg);
 	curtex++;
 #endif
 }
@@ -620,9 +620,9 @@ void MainWin::paintEvent(QPaintEvent*) {
 	QPainter pnt(this);
 	if (prg.isLinked() && shd_support) {
 		prg.bind();
-		prg.setUniformValue("rubyInputSize",GLfloat(bytesPerLine/3.0), GLfloat(conf.prof.cur->zx->vid->vsze.y));
+		prg.setUniformValue("rubyInputSize",GLfloat(bytesPerLine/4.0), GLfloat(conf.prof.cur->zx->vid->vsze.y));
 		prg.setUniformValue("rubyOutputSize",GLfloat(width()), GLfloat(height()));
-		prg.setUniformValue("rubyTextureSize",GLfloat(bytesPerLine/3.0), GLfloat(conf.prof.cur->zx->vid->vsze.y));
+		prg.setUniformValue("rubyTextureSize",GLfloat(bytesPerLine/4.0), GLfloat(conf.prof.cur->zx->vid->vsze.y));
 	}
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
@@ -649,7 +649,7 @@ void MainWin::paintEvent(QPaintEvent*) {
 	glFlush();
 #else
 	QPainter pnt(this);
-	pnt.drawImage(0,0, QImage(comp->debug ? scrimg : bufimg, width(), height(), QImage::Format_RGB888));
+	pnt.drawImage(0,0, QImage(comp->debug ? scrimg : bufimg, width(), height(), QImage::Format_RGBA8888));
 	drawIcons(pnt);
 	pnt.end();
 #endif
@@ -1347,10 +1347,10 @@ void MainWin::screenShot() {
 	std::string fnam(fnams.toUtf8().data());
 	std::ofstream file;
 #if USEOPENGL
-	QImage img(bufimg, bytesPerLine / 3, comp->vid->vsze.y, QImage::Format_RGB888);
+	QImage img(bufimg, bytesPerLine / 4, comp->vid->vsze.y, QImage::Format_RGBA8888);
 	img = img.scaled(width(), height());
 #else
-	QImage img(bufimg, width(), height(), QImage::Format_RGB888);
+	QImage img(bufimg, width(), height(), QImage::Format_RGBA8888);
 #endif
 	int x,y,dx,dy;
 	char* sptr = (char*)(comp->mem->ramData + (comp->vid->curscr << 14));
@@ -1715,13 +1715,15 @@ void MainWin::saveVRAM() {
 	QString path = QFileDialog::getSaveFileName(this,"Save VRAM");
 	if (path.isEmpty()) return;
 	QFile file(path);
+	xColor xcol;
 	if (file.open(QFile::WriteOnly)) {
 		file.write((char*)comp->vid->ram, 0x20000);
 		file.write((char*)comp->vid->reg, 64);
 		for (int i = 0; i < 16; i++) {
-			file.putChar(comp->vid->pal[i].r);
-			file.putChar(comp->vid->pal[i].g);
-			file.putChar(comp->vid->pal[i].b);
+			xcol = vid_get_col(comp->vid, i);
+			file.putChar(xcol.r);
+			file.putChar(xcol.g);
+			file.putChar(xcol.b);
 		}
 
 		file.close();

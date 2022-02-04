@@ -108,16 +108,14 @@ void ps2c_wr_ob2(PS2Ctrl* ctrl, int val) {
 
 // read 1 byte from kbd to outbuf and generate intk if need
 void ps2c_rd_kbd(PS2Ctrl* ctrl) {
-	// if (ctrl->kbd->lock) return;		// kbd disabled
-	if (ctrl->ram[0] & 0x10) return;	// 1st device disabled
-	// TODO: if (mem[0] & 0x40) convert scancode2 to scancode1
 	if (ctrl->kbd->outbuf & 0xff) {
-		ps2c_wr_ob(ctrl, ctrl->kbd->outbuf & 0xff);
+		if (!ctrl->kbd->lock && !(ctrl->ram[0] & 0x10)) {
+			ps2c_wr_ob(ctrl, ctrl->kbd->outbuf & 0xff);
+		}
 		ctrl->kbd->outbuf >>= 8;
 //		if (ctrl->ram[0] & 1) {
 			ctrl->intk = 1;
 //		}
-		ctrl->delay = 1e6;
 		//printf("i8042 get scancode %X (remains %X)\n", ctrl->outbuf,ctrl->kbd->outbuf);
 	} else {
 		ctrl->outbuf = 0;

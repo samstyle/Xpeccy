@@ -53,7 +53,8 @@ void gbcvDraw(Video* vid) {
 			col = vid->sbline[vid->ray.x];
 		}
 	}
-	vidPutDot(&vid->ray, vid->pal, col);
+	vid_dot_full(vid, col);
+	// vidPutDot(&vid->ray, vid->pal, col);
 	if (vid->ray.y < vid->scrn.y) {		// on visible screen
 		if (vid->ray.x == 0) {			// visible line start : mode 2
 			vid->gbcmode = 2;
@@ -237,6 +238,6 @@ void gbcvReset(Video* vid) {
 	memset(vid->ram, 0x00, 0x4000);
 	memset(vid->oam, 0x00, 0x100);
 	for (int i = 0; i < 4; i++) {
-		vid->pal[i] = iniCol[i];
+		vid_set_col(vid, i, iniCol[i]);
 	}
 }

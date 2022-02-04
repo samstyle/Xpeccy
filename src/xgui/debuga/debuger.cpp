@@ -1194,7 +1194,8 @@ QImage getGBPal(Video* gbv) {
 	pnt.begin(&img);
 	for (y = 0; y < 16; y++) {
 		for (x = 0; x < 4; x++) {
-			col = gbv->pal[idx++];
+			col = vid_get_col(gbv, idx);
+			idx++;
 			pnt.fillRect((x << 6) + 1, (y << 4) + 1, 62, 14, QColor(col.r, col.g, col.b));
 			if (idx == 32) idx += 32;
 		}

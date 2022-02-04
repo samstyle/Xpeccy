@@ -7,7 +7,11 @@
 
 #include "video.h"
 
-#define SCRBUF_SIZE	3700*2050*3
+#if USEOPENGL
+#define SCRBUF_SIZE	2048*768*4
+#else
+#define SCRBUF_SIZE	3700*2050*4
+#endif
 #define DRAWING_F	1
 
 int bytesPerLine = 768;
@@ -52,28 +56,28 @@ int vid_visible(Video* vid) {
 
 #if INLINE_VDOT
 
+static int outcol;
+
 inline void vid_dot_full(Video* vid, unsigned char idx) {
 	if (vid->hvis && vid->vvis) {
-		xcol = vid->pal[idx];
+		xcol = vid_get_col(vid, idx);
 		if (greyScale) {
 			xcol.r = (xcol.b * 30 + xcol.r * 76 + xcol.g * 148) >> 8;
 			xcol.g = xcol.r;
 			xcol.b = xcol.r;
 		}
+		outcol = xcol.r | (xcol.g << 8) | (xcol.b << 16) | (0xff << 24);
 #ifdef USEOPENGL
-		*(vid->ray.ptr++) = xcol.r;
-		*(vid->ray.ptr++) = xcol.g;
-		*(vid->ray.ptr++) = xcol.b;
-		*(vid->ray.ptr++) = xcol.r;
-		*(vid->ray.ptr++) = xcol.g;
-		*(vid->ray.ptr++) = xcol.b;
+		*(int32_t*)(vid->ray.ptr) = outcol;
+		vid->ray.ptr += 4;
+		*(int32_t*)(vid->ray.ptr) = outcol;
+		vid->ray.ptr += 4;
 #else
 		xpos += xstep;
 		while (xpos > 0xff) {
 			xpos -= 0x100;
-			*(vid->ray.ptr++) = xcol.r;
-			*(vid->ray.ptr++) = xcol.g;
-			*(vid->ray.ptr++) = xcol.b;
+			*(int32_t*)(vid->ray.ptr) = outcol;
+			vid->ray.ptr += 4;
 		}
 #endif
 	}
@@ -81,23 +85,22 @@ inline void vid_dot_full(Video* vid, unsigned char idx) {
 
 inline void vid_dot_half(Video* vid, unsigned char idx) {
 	if (vid->hvis && vid->vvis) {
-		xcol = vid->pal[idx];
+		xcol = vid_get_col(vid, idx);
 		if (greyScale) {
 			xcol.r = (xcol.b * 30 + xcol.r * 76 + xcol.g * 148) >> 8;
 			xcol.g = xcol.r;
 			xcol.b = xcol.r;
 		}
+		outcol = xcol.r | (xcol.g << 8) | (xcol.b << 16) | (0xff << 24);
 #ifdef USEOPENGL
-		*(vid->ray.ptr++) = xcol.r;
-		*(vid->ray.ptr++) = xcol.g;
-		*(vid->ray.ptr++) = xcol.b;
+		*(int32_t*)(vid->ray.ptr) = outcol;
+		vid->ray.ptr += 4;
 #else
 		xpos += xstep/2;
 		while (xpos > 0xff) {
 			xpos -= 0x100;
-			*(vid->ray.ptr++) = xcol.r;
-			*(vid->ray.ptr++) = xcol.g;
-			*(vid->ray.ptr++) = xcol.b;
+			*(int32_t*)(vid->ray.ptr) = outcol;
+			vid->ray.ptr += 4;
 		}
 #endif
 	}
@@ -300,9 +303,10 @@ void vidUpdateTimings(Video* vid, int nspd) {
 void vidReset(Video* vid) {
 	int i;
 	for (i = 0; i<16; i++) {
-		vid->pal[i].b = (i & 1) ? ((i & 8) ? 0xff : 0xa0) : 0x00;
-		vid->pal[i].r = (i & 2) ? ((i & 8) ? 0xff : 0xa0) : 0x00;
-		vid->pal[i].g = (i & 4) ? ((i & 8) ? 0xff : 0xa0) : 0x00;
+		xcol.b = (i & 1) ? ((i & 8) ? 0xff : 0xa0) : 0x00;
+		xcol.r = (i & 2) ? ((i & 8) ? 0xff : 0xa0) : 0x00;
+		xcol.g = (i & 4) ? ((i & 8) ? 0xff : 0xa0) : 0x00;
+		vid_set_col(vid, i, xcol);
 	}
 	vid->ula->active = 0;
 	vid->curscr = 5;
@@ -514,10 +518,25 @@ void vid_set_grey(int f) {
 #endif
 }
 
+// palette
+
+xColor vid_get_col(Video* vid, int i) {
+	xColor xcol;
+	i = vid->pal[i & 0xff];
+	xcol.r = i & 0xff;
+	xcol.g = (i >> 8) & 0xff;
+	xcol.b = (i >> 16) & 0xff;
+	return xcol;
+}
+
+void vid_set_col(Video* vid, int i, xColor xcol) {
+	vid->pal[i & 0xff] = xcol.r | (xcol.g << 8) | (xcol.b << 16) | (0xff << 24);
+}
+
 // video drawing
 
 void vidDrawBorder(Video* vid) {
-	vidPutDot(&vid->ray, vid->pal, vid->brdcol);
+	vid_dot_full(vid, vid->brdcol);
 }
 
 // common 256 x 192
@@ -556,7 +575,7 @@ void vidDrawNormal(Video* vid) {
 			scrbyte <<= 1;
 		}
 	}
-	vidPutDot(&vid->ray, vid->pal, col);
+	vid_dot_full(vid, col);
 }
 
 // this mode default for ZX48K ULA (defferent moments of pix/atr read)
@@ -614,7 +633,7 @@ void ula_dot(Video* vid) {
 			scrbyte <<= 1;
 		}
 	}
-	vidPutDot(&vid->ray, vid->pal, col);
+	vid_dot_full(vid, col);
 }
 
 // alco 16col
@@ -652,7 +671,7 @@ void vidDrawAlco(Video* vid) {
 			}
 //		}
 	}
-	vidPutDot(&vid->ray, vid->pal, col);
+	vid_dot_full(vid, col);
 }
 
 // hardware multicolor
@@ -681,7 +700,7 @@ void vidDrawHwmc(Video* vid) {
 			scrbyte <<= 1;
 		}
 	}
-	vidPutDot(&vid->ray, vid->pal, col);
+	vid_dot_full(vid, col);
 }
 
 // atm ega
@@ -714,14 +733,14 @@ void vidDrawATMega(Video* vid) {
 				break;
 		}
 	}
-	vidPutDot(&vid->ray, vid->pal, col);
+	vid_dot_full(vid, col);
 }
 
 // atm text
 
 void vidDrawByteDD(Video* vid) {		// draw byte $scrbyte with colors $ink,$pap at double-density mode
 	for (int i = 0x80; i > 0; i >>= 1) {
-		vidSingleDot(&vid->ray, vid->pal, (scrbyte & i) ? ink : pap);
+		vid_dot_half(vid, (scrbyte & i) ? ink : pap);
 	}
 }
 
@@ -735,7 +754,7 @@ void vidDrawATMtext(Video* vid) {
 	yscr = vid->ray.y - 76 + 32;
 	xscr = vid->ray.x - 96 + 64;
 	if ((yscr < 0) || (yscr > 199) || (xscr < 0) || (xscr > 319)) {
-		vidPutDot(&vid->ray, vid->pal, vid->brdcol);
+		vid_dot_full(vid, vid->brdcol);
 	} else {
 		adr = 0x1c0 + ((yscr & 0xf8) << 3) + (xscr >> 3);
 		if ((xscr & 3) == 0) {
@@ -757,7 +776,7 @@ void vidDrawATMhwmc(Video* vid) {
 	yscr = vid->ray.y - 76 + 32;
 	xscr = vid->ray.x - 96 + 64;
 	if ((yscr < 0) || (yscr > 199) || (xscr < 0) || (xscr > 319)) {
-		vidPutDot(&vid->ray, vid->pal, vid->brdcol);
+		vid_dot_full(vid, vid->brdcol);
 	} else {
 		//xscr = vid->ray.x - 96;
 		//yscr = vid->ray.y - 76;
@@ -783,7 +802,7 @@ void vidDrawEvoText(Video* vid) {
 	yscr = vid->ray.y - 76;
 	xscr = vid->ray.x - 96;
 	if ((yscr < 0) || (yscr > 199) || (xscr < 0) || (xscr > 319)) {
-		vidPutDot(&vid->ray, vid->pal, vid->brdcol);
+		vid_dot_full(vid, vid->brdcol);
 	} else {
 		if ((xscr & 3) == 0) {
 			adr = 0x1c0 + ((yscr & 0xf8) << 3) + (xscr >> 3);
@@ -805,11 +824,11 @@ void vidDrawEvoText(Video* vid) {
 void vidProfiScr(Video* vid) {
 	yscr = vid->ray.y - vid->bord.y + 24;	// (240-192)/2 = 24
 	if ((yscr < 0) || (yscr > 239)) {
-		vidPutDot(&vid->ray, vid->pal, vid->brdcol);
+		vid_dot_full(vid, vid->brdcol);
 	} else {
 		xscr = vid->ray.x - vid->bord.x;
 		if ((xscr < 0) || (xscr > 255)) {
-			vidPutDot(&vid->ray, vid->pal, vid->brdcol);
+			vid_dot_full(vid, vid->brdcol);
 		} else {
 			if ((xscr & 3) == 0) {
 				//adr = scrAdrs[vid->idx & 0x1fff] & 0x1fff;

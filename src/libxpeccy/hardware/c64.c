@@ -330,10 +330,12 @@ void c64_reset(Computer* comp) {
 	comp->c64.reg00 = 0x2f;
 	comp->c64.reg01 = 0x37;
 	int i;
+	xColor xcol;
 	for (i = 0; i < 16; i++) {
 		comp->c64.cia1.reg[i] = 0x00;
 		comp->c64.cia2.reg[i] = 0x00;
-		comp->vid->pal[i] = c64_palette[i];
+		xcol = c64_palette[i];
+		vid_set_col(comp->vid, i, xcol);
 	}
 	memset(comp->vid->reg, 0x00, 256);
 	c64_maper(comp);

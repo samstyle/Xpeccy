@@ -300,7 +300,8 @@ void vidDrawTSLNormal(Video* vid) {
 		}
 	}
 	scanExtLine(vid);
-	vidPutDot(&vid->ray, vid->pal, col);
+	vid_dot_full(vid, col);
+	//vidPutDot(&vid->ray, vid->pal, col);
 }
 
 // tsconf extend mode (out pre-rendered bitmap/TSU layers)
@@ -308,7 +309,8 @@ void vidDrawTSLNormal(Video* vid) {
 void vidDrawTSLExt(Video* vid) {
 	col = vid->brdcol;
 	scanExtLine(vid);
-	vidPutDot(&vid->ray, vid->pal, col);
+	vid_dot_full(vid, col);
+	// vidPutDot(&vid->ray, vid->pal, col);
 }
 
 // tsconf text
@@ -317,7 +319,8 @@ void vidDrawTSLText(Video* vid) {
 	xscr = vid->ray.x - vid->tsconf.xPos;
 	yscr = vid->ray.y - vid->tsconf.yPos;
 	if ((xscr < 0) || (xscr >= vid->scrsize.x) || (yscr < 0) || (yscr >= vid->scrsize.y)) {
-		vidPutDot(&vid->ray, vid->pal, vid->brdcol);
+		vid_dot_full(vid, vid->brdcol);
+		//vidPutDot(&vid->ray, vid->pal, vid->brdcol);
 	} else {
 		if ((xscr & 3) == 0) {
 			xscr += vid->tsconf.xOffset;
@@ -333,10 +336,13 @@ void vidDrawTSLText(Video* vid) {
 //			vidDrawByteDD(vid);
 		}
 		if (vid->line[xscr] & 0x0f) {							// put not-transparent tiles/sprites pixel
-			vidPutDot(&vid->ray, vid->pal, vid->line[xscr]);
+			vid_dot_full(vid, vid->line[xscr]);
+			//vidPutDot(&vid->ray, vid->pal, vid->line[xscr]);
 		} else {
-			vidSingleDot(&vid->ray, vid->pal, (scrbyte & 0x80) ? ink : pap);
-			vidSingleDot(&vid->ray, vid->pal, (scrbyte & 0x40) ? ink : pap);
+			//vidSingleDot(&vid->ray, vid->pal, (scrbyte & 0x80) ? ink : pap);
+			//vidSingleDot(&vid->ray, vid->pal, (scrbyte & 0x40) ? ink : pap);
+			vid_dot_half(vid, (scrbyte & 0x80) ? ink : pap);
+			vid_dot_half(vid, (scrbyte & 0x40) ? ink : pap);
 		}
 		scrbyte <<= 2;
 	}

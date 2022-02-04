@@ -81,11 +81,11 @@ int gbIORd(Computer* comp, int port) {
 }
 
 extern xColor iniCol[4];
-void setGrayScale(xColor pal[256], int base, unsigned char val) {
-	pal[base] = iniCol[val & 3];
-	pal[base + 1] = iniCol[(val >> 2) & 3];
-	pal[base + 2] = iniCol[(val >> 4) & 3];
-	pal[base + 3] = iniCol[(val >> 6) & 3];
+void setGrayScale(Video* vid, int base, unsigned char val) {
+	vid_set_col(vid, base, iniCol[val & 3]);
+	vid_set_col(vid, base + 1, iniCol[(val >> 2) & 3]);
+	vid_set_col(vid, base + 2, iniCol[(val >> 4) & 3]);
+	vid_set_col(vid, base + 3, iniCol[(val >> 6) & 3]);
 }
 
 void gbSetTone(gbsChan* gbch, int frq, int form) {
@@ -199,15 +199,15 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 			break;
 		case 0x47:							// palete for bg/win
 			if (comp->vid->gbmode)
-				setGrayScale(comp->vid->pal, 0, val);
+				setGrayScale(comp->vid, 0, val);
 			break;
 		case 0x48:
 			if (comp->vid->gbmode)
-				setGrayScale(comp->vid->pal, 0x40, val);	// object pal 0
+				setGrayScale(comp->vid, 0x40, val);	// object pal 0
 			break;
 		case 0x49:
 			if (comp->vid->gbmode)
-				setGrayScale(comp->vid->pal, 0x44, val);	// object pal 1
+				setGrayScale(comp->vid, 0x44, val);	// object pal 1
 			break;
 		case 0x4a:
 			comp->vid->win.y = val;
@@ -411,7 +411,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 		case 0x69:				// gbc lo/hi palete value
 			per = comp->gb.iomap[0x68];
 			frq = ((per & 0x3e) >> 1);	// color idx
-			col = comp->vid->pal[frq];		// current color;
+			col = vid_get_col(comp->vid, frq);
 			if (per & 1) {			// B/g
 				col.b = ((val & 0x7c) << 1) & 0xff;
 				col.g = ((col.g & 0x3f) | ((val & 3) << 6)) & 0xff;
@@ -419,7 +419,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 				col.r = ((val & 0x1f) << 3) & 0xff;
 				col.g = (col.g & 0xc0) | ((val & 0xe0) >> 2);
 			}
-			comp->vid->pal[frq] = col;
+			vid_set_col(comp->vid, frq, col);
 			if (per & 0x80) {
 				comp->gb.iomap[0x68] = (per & 0xc0) | ((per + 1) & 0x3f);
 			}
@@ -429,7 +429,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 		case 0x6b:
 			per= comp->gb.iomap[0x6a];
 			frq = 0x40 | ((per & 0x3e) >> 1);
-			col = comp->vid->pal[frq];
+			col = vid_get_col(comp->vid, frq);
 			if (per & 1) {
 				col.b = ((val & 0x7c) << 1) & 0xff;
 				col.g = ((col.g & 0x3f) | ((val & 3) << 6)) & 0xff;
@@ -437,7 +437,7 @@ void gbIOWr(Computer* comp, unsigned short port, unsigned char val) {
 				col.r = ((val & 0x1f) << 3) & 0xff;
 				col.g = (col.g & 0xc0) | ((val & 0xe0) >> 2);
 			}
-			comp->vid->pal[frq] = col;
+			vid_set_col(comp->vid, frq, col);
 			if (per & 0x80) {
 				comp->gb.iomap[0x6a] = (per & 0xc0) | ((per + 1) & 0x3f);
 			}

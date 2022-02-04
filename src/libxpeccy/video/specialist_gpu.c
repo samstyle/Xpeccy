@@ -7,8 +7,8 @@ static unsigned char col;
 void spcv_ini(Video* vid) {
 	xColor blk = {0,0,0};
 	xColor wht = {255,255,255};
-	vid->pal[0] = blk;
-	vid->pal[1] = wht;
+	vid_set_col(vid, 0, blk);
+	vid_set_col(vid, 1, wht);
 }
 
 void spc_dot(Video* vid) {
