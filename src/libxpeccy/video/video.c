@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
@@ -54,19 +53,11 @@ int vid_visible(Video* vid) {
 	return 1;
 }
 
-#if INLINE_VDOT
-
-static int outcol;
+static int32_t outcol;
 
 inline void vid_dot_full(Video* vid, unsigned char idx) {
 	if (vid->hvis && vid->vvis) {
-		xcol = vid_get_col(vid, idx);
-		if (greyScale) {
-			xcol.r = (xcol.b * 30 + xcol.r * 76 + xcol.g * 148) >> 8;
-			xcol.g = xcol.r;
-			xcol.b = xcol.r;
-		}
-		outcol = xcol.r | (xcol.g << 8) | (xcol.b << 16) | (0xff << 24);
+		outcol = greyScale ? vid->gpal[idx] : vid->pal[idx];
 #ifdef USEOPENGL
 		*(int32_t*)(vid->ray.ptr) = outcol;
 		vid->ray.ptr += 4;
@@ -85,13 +76,7 @@ inline void vid_dot_full(Video* vid, unsigned char idx) {
 
 inline void vid_dot_half(Video* vid, unsigned char idx) {
 	if (vid->hvis && vid->vvis) {
-		xcol = vid_get_col(vid, idx);
-		if (greyScale) {
-			xcol.r = (xcol.b * 30 + xcol.r * 76 + xcol.g * 148) >> 8;
-			xcol.g = xcol.r;
-			xcol.b = xcol.r;
-		}
-		outcol = xcol.r | (xcol.g << 8) | (xcol.b << 16) | (0xff << 24);
+		outcol = greyScale ? vid->gpal[idx] : vid->pal[idx];
 #ifdef USEOPENGL
 		*(int32_t*)(vid->ray.ptr) = outcol;
 		vid->ray.ptr += 4;
@@ -105,63 +90,6 @@ inline void vid_dot_half(Video* vid, unsigned char idx) {
 #endif
 	}
 }
-
-#else
-
-// colored
-void vid_dot_col(Video* vid, unsigned char col) {
-#if DRAWING_F
-	if (!vid->hvis || !vid->vvis) return;
-#endif
-	xcol = vid->pal[col];
-	*(vid->ray.ptr++) = xcol.r;
-	*(vid->ray.ptr++) = xcol.g;
-	*(vid->ray.ptr++) = xcol.b;
-}
-
-// b/w
-void vid_dot_bw(Video* vid, unsigned char col) {
-#if DRAWING_F
-	if (!vid->hvis || !vid->vvis) return;
-#endif
-	xcol = vid->pal[col];
-	pcol = (xcol.b * 30 + xcol.r * 76 + xcol.g * 148) >> 8;
-	*(vid->ray.ptr++) = pcol;
-	*(vid->ray.ptr++) = pcol;
-	*(vid->ray.ptr++) = pcol;
-}
-
-void(*vid_dot)(Video*, unsigned char) = vid_dot_col;
-
-#endif
-
-#ifndef USEOPENGL
-
-#if !INLINE_VDOT
-void vid_dot_full(Video* vid, unsigned char col) {
-#if DRAWING_F
-	if (!vid_visible(vid)) return;
-#endif
-	xpos += xstep;
-	while (xpos > 0xff) {
-		xpos -= 0x100;
-		vid_dot(vid, col);
-	}
-}
-
-void vid_dot_half(Video* vid, unsigned char col) {
-#if DRAWING_F
-	if (!vid_visible(vid)) return;
-#endif
-	xpos += xstep / 2;
-	while (xpos > 0xff) {
-		xpos -= 0x100;
-		vid_dot(vid, col);
-	}
-}
-#endif
-
-#endif
 
 void vid_line(Video* vid) {
 	if (rigSkip > 0)
@@ -505,17 +433,8 @@ int vid_wait(Video* vid) {
 	return contTabA[xscr & 0x0f] * vid->nsPerDot;
 }
 
-/*
-void vidSetFont(Video* vid, char* src, int size) {
-	memcpy(vid->font,src,(size < 0x2000) ? size : 0x2000);
-}
-*/
-
 void vid_set_grey(int f) {
 	greyScale = f;
-#if !INLINE_VDOT
-	vid_dot = f ? vid_dot_bw : vid_dot_col;
-#endif
 }
 
 // palette
@@ -531,6 +450,8 @@ xColor vid_get_col(Video* vid, int i) {
 
 void vid_set_col(Video* vid, int i, xColor xcol) {
 	vid->pal[i & 0xff] = xcol.r | (xcol.g << 8) | (xcol.b << 16) | (0xff << 24);
+	outcol = (xcol.b * 30 + xcol.r * 76 + xcol.g * 148) >> 8;
+	vid->gpal[i & 0xff] = outcol | (outcol << 8) | (outcol << 16) | (0xff << 24);
 }
 
 // video drawing

@@ -880,6 +880,37 @@
         </attribute>
         <layout class="QVBoxLayout" name="verticalLayout_16">
          <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_14">
+           <item>
+            <widget class="QToolButton" name="tbSaveVRam">
+             <property name="toolTip">
+              <string>Save</string>
+             </property>
+             <property name="text">
+              <string>...</string>
+             </property>
+             <property name="icon">
+              <iconset resource="../xpeccy.qrc">
+               <normaloff>:/images/floppy.png</normaloff>:/images/floppy.png</iconset>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_8">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+         <item>
           <widget class="xVMemDump" name="tabVidMem">
            <property name="horizontalScrollBarPolicy">
             <enum>Qt::ScrollBarAlwaysOff</enum>
@@ -938,7 +969,7 @@
             <bool>false</bool>
            </attribute>
            <attribute name="horizontalHeaderDefaultSectionSize">
-            <number>45</number>
+            <number>40</number>
            </attribute>
            <attribute name="verticalHeaderDefaultSectionSize">
             <number>17</number>

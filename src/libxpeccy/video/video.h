@@ -4,14 +4,15 @@
 extern "C" {
 #endif
 
-#define INLINE_VDOT	1
-
 #include <stddef.h>
 
 #include "vidcommon.h"
 #include "../memory.h"
 
 typedef struct Video Video;
+
+#include <stdlib.h>
+#include <stdint.h>
 
 #include "ulaplus.h"
 #include "v9938.h"
@@ -91,17 +92,8 @@ extern int rigSkip;
 extern int topSkip;
 extern int botSkip;
 
-#if INLINE_VDOT
 void vid_dot_full(Video*, unsigned char);
 void vid_dot_half(Video*, unsigned char);
-#elif USEOPENGL
-extern void(*vid_dot)(Video*, unsigned char);
-#define vid_dot_full(_v, _c) vid_dot(_v, _c); vid_dot(_v, _c)
-#define vid_dot_half(_v, _c) vid_dot(_v, _c)
-#else
-void vid_dot_full(Video*, unsigned char);
-void vid_dot_half(Video*, unsigned char);
-#endif
 
 typedef int(*vcbmrd)(int, void*);
 typedef void(*vcbmwr)(int, int, void*);
@@ -155,8 +147,8 @@ struct Video {
 	unsigned char intbf;	// buffered int (last int signals)
 
 	unsigned char paln;	// high bits = palete number
-	//xColor pal[256];	// palete. 256 colors rgb888
-	int pal[256];		// ABGR inside int, R = LSB, A = 0
+	uint32_t pal[256];	// ABGR inside int, R = LSB, A = FF
+	uint32_t gpal[256];	// greyscale copy of pal
 
 	int vmode;
 	cbvid cbDot;		// call every dot

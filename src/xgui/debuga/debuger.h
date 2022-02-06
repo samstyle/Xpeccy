@@ -223,6 +223,7 @@ class DebugWin : public QDialog {
 		void saveDumpToB();
 		void saveDumpToC();
 		void saveDumpToD();
+		void saveVRam();
 	protected:
 		void keyPressEvent(QKeyEvent*);
 		void keyReleaseEvent(QKeyEvent*);
