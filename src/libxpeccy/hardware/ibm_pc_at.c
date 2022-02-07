@@ -163,7 +163,7 @@ void ibm_outKbd(Computer* comp, int adr, int val) {
 		case 1:
 			comp->reg[0x61] = val & 0xff;
 			if (val & 0x80) {
-				comp->keyb->outbuf = 0;
+				// comp->keyb->outbuf = 0;
 				comp->pit.ch0.out = 0;
 			}
 			break;
@@ -549,13 +549,16 @@ void ibm_sync(Computer* comp, int ns) {
 	}
 }
 
-// key press/release
+// key press/release (at/xt code is already in kbd->outbuf)
+// warning: calling from gui thread
 void ibm_keyp(Computer* comp, keyEntry kent) {
-	ps2c_rd_kbd(comp->ps2c);
+	comp->ps2c->delay = 1;
+	//ps2c_rd_kbd(comp->ps2c);		// TODO:here?
 }
 
 void ibm_keyr(Computer* comp, keyEntry kent) {
-	ps2c_rd_kbd(comp->ps2c);
+	comp->ps2c->delay = 1;
+	//ps2c_rd_kbd(comp->ps2c);
 }
 
 sndPair ibm_vol(Computer* comp, sndVolume* vol) {

@@ -579,7 +579,6 @@ void cmsWr(Computer* comp, int val) {
 		case 0x0c:
 			if (val & 1) {
 				comp->keyb->outbuf = 0;
-				comp->keyb->outbuf = 0; // comp->keyb->kbuf.pos = 0;		// reset PC-keyboard buffer
 			}
 			break;
 		default:

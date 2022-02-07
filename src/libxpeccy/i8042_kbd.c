@@ -4,6 +4,8 @@
 
 #include "i8042_kbd.h"
 
+#define KBD_DELAY 1e6
+
 // PS/2 controller
 
 PS2Ctrl* ps2c_create(Keyboard* kp, Mouse* mp) {
@@ -81,8 +83,8 @@ int ps2c_rd(PS2Ctrl* ctrl, int adr) {
 	switch (adr) {
 		case PS2_RDATA:
 			res = ctrl->outbuf & 0xff;
-			ctrl->outbuf = 0;
-			// printf("i8042 rd data = %.2X\n",res);
+			ctrl->outbuf >>= 8;
+			//printf("i8042 read code %.2X\n",res);
 			break;
 		case PS2_RSTATUS:
 			res = ctrl->status | 0x10;		// b4 = keyboard lock off
@@ -113,9 +115,10 @@ void ps2c_rd_kbd(PS2Ctrl* ctrl) {
 			ps2c_wr_ob(ctrl, ctrl->kbd->outbuf & 0xff);
 		}
 		ctrl->kbd->outbuf >>= 8;
-//		if (ctrl->ram[0] & 1) {
+		if (ctrl->ram[0] & 1) {
 			ctrl->intk = 1;
-//		}
+		}
+		ctrl->delay = KBD_DELAY;
 		//printf("i8042 get scancode %X (remains %X)\n", ctrl->outbuf,ctrl->kbd->outbuf);
 	} else {
 		ctrl->outbuf = 0;
@@ -128,7 +131,7 @@ void ps2c_rd_mouse(PS2Ctrl* ctrl) {
 	ctrl->mouse->outbuf = 0;
 	if ((ctrl->ram[0] & 2) && (ctrl->outbuf & 0xff)) {
 		ctrl->intm = 1;
-		ctrl->delay = 1e6;
+		ctrl->delay = KBD_DELAY;
 	}
 }
 
@@ -317,12 +320,14 @@ void ps2c_wr(PS2Ctrl* ctrl, int adr, int val) {
 }
 
 void ps2c_sync(PS2Ctrl* ctrl, int ns) {
-	xt_sync(ctrl->kbd, ns);
-	if ((ctrl->kbd->outbuf & 0xff) && (ctrl->delay == 0))
-		ctrl->delay = 1e6;
-	if (ctrl->delay == 0) return;
-	ctrl->delay -= ns;
-	if (ctrl->delay > 0) return;
-	ctrl->delay = 0;
-	ps2c_rd_kbd(ctrl);
+	ctrl->delay += xt_sync(ctrl->kbd, ns);
+	if (ctrl->delay > 0) {
+		ctrl->delay -= ns;
+		if (ctrl->delay < 0) {
+			ctrl->delay = 0;
+			if (ctrl->kbd->outbuf & 0xff) {
+				ps2c_rd_kbd(ctrl);
+			}
+		}
+	}
 }

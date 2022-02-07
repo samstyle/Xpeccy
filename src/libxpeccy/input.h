@@ -216,7 +216,7 @@ void kbd_release(Keyboard* kbd, keyScan* tab, int* mtrx, unsigned char* xk);
 void xt_press(Keyboard*, keyEntry);
 void xt_release(Keyboard*, keyEntry);
 int xt_read(Keyboard*);
-void xt_sync(Keyboard*, int);
+int xt_sync(Keyboard*, int);
 
 Mouse* mouseCreate();
 void mouseDestroy(Mouse*);

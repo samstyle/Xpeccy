@@ -185,6 +185,7 @@ void kbdReleaseAll(Keyboard* kbd) {
 	if (kbd->per > 0) {
 		xt_release(kbd, kbd->kent);
 	}
+	kbd->per = 0;
 }
 
 void kbd_trigger(keyScan* tab, int* mtrx, unsigned char* xk) {
@@ -220,66 +221,69 @@ void kbdTrigger(Keyboard* kbd, keyEntry ent) {
 // 0xE0, 0x72 (code 0x72e0) = cursor down pressed
 // 0xE0, 0xF0, 0x72 (code 72e0) = cursor down released
 
-void xt_sync(Keyboard* kbd, int ns) {
-	if (kbd->per == 0) return;
-	kbd->per -= ns;
-	if (kbd->per > 0) return;
-	xt_press(kbd, kbd->kent);
-	unsigned long buf = kbd->outbuf;
-	xt_release(kbd, kbd->kent);		// generate 'release'
+unsigned long add_msb(unsigned long code, unsigned long bt) {
 	unsigned long msk = 0xff;
-	while ((kbd->outbuf & msk) && msk) {
-		buf <<= 8;
+	while (code & msk) {
+		bt <<= 8;
 		msk <<= 8;
 	}
-	kbd->outbuf |= buf;			// add 'press' to current code
+	code |= bt;
+	return code;
+}
+
+unsigned long xt_get_code(Keyboard* kbd, keyEntry kent, int rel) {
+	unsigned long res = 0;
+	int code;
+	if (rel) {
+		switch(kbd->pcmode) {
+			case KBD_AT:			// insert F0 before each byte with bit7=0
+				code = kent.atCode;
+				while(code) {
+					if (!(code & 0x80))
+						res = add_msb(res, 0xf0);
+					res = add_msb(res, code & 0xff);
+					code >>= 8;
+				}
+				break;
+			case KBD_XT:			// set every b7
+				code = kent.xtCode;
+				while(code) {
+					res = add_msb(res, (code & 0xff) | 0x80);
+					code >>= 8;
+				}
+				break;
+		}
+	} else {		// press
+		switch(kbd->pcmode) {
+			case KBD_AT: res = kent.atCode; break;
+			case KBD_XT: res = kent.xtCode; break;
+		}
+	}
+	return res;
+}
+
+int xt_sync(Keyboard* kbd, int ns) {
+	if (kbd->per == 0) return 0;
+	kbd->per -= ns;
+	if (kbd->per > 0) return 0;
+	unsigned long relcode = xt_get_code(kbd, kbd->kent, 1);	// release
+	unsigned long prscode = xt_get_code(kbd, kbd->kent, 0); // press
+	kbd->outbuf = add_msb(kbd->outbuf, relcode);
+	kbd->outbuf = add_msb(kbd->outbuf, prscode);
 	kbd->per = kbd->kper;
+	return 1;
 }
 
 void xt_press(Keyboard* kbd, keyEntry kent) {
 	if (kbd->lock) return;
-	switch(kbd->pcmode) {
-		case KBD_AT: kbd->outbuf = kent.atCode; break;
-		case KBD_XT: kbd->outbuf = kent.xtCode; break;
-	}
+	kbd->outbuf = add_msb(kbd->outbuf, xt_get_code(kbd, kent, 0));
 	kbd->kent = kent;
 	kbd->per = kbd->kdel;
-	// printf("key press %X\n",kbd->outbuf);
 }
 
 void xt_release(Keyboard* kbd, keyEntry kent) {
 	if (kbd->lock) return;
-	int code;
-	int msk;
-	switch (kbd->pcmode) {
-		case KBD_AT:			// insert F0 before each byte with bit7=0
-			kbd->outbuf = 0;
-			code = kent.atCode;
-			while (code) {
-				if (!(code & 0x80)) {		// b7 = 0
-					kbd->outbuf >>= 8;	// insert f0
-					kbd->outbuf |= 0xf0000000;
-				}
-				kbd->outbuf >>= 8;
-				kbd->outbuf |= ((code & 0xff) << 24);
-				code >>= 8;
-			};
-			while (kbd->outbuf && !(kbd->outbuf & 0xff)) {
-				kbd->outbuf >>= 8;
-			}
-			break;
-		case KBD_XT:			// set every b7
-			kbd->outbuf = kent.xtCode;
-			code = kent.xtCode;
-			msk = 0x80;
-			while (code) {
-				if (code & 0x7f)
-					kbd->outbuf |= msk;
-				code >>= 8;
-				msk <<= 8;
-			}
-			break;
-	}
+	kbd->outbuf = add_msb(kbd->outbuf, xt_get_code(kbd, kent, 1));
 	kbd->per = 0;
 }
 

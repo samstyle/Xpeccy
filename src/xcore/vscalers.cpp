@@ -32,12 +32,12 @@ void vid_upd_scale() {
 			xstep *= conf.prof.cur->zx->hw->xscale;
 			// calculate black spaces
 			// TODO: recalculate for OpenGL
-			lefSkip = (dwid - (conf.prof.cur->zx->vid->vsze.x * xstep / 256)) / 2 * 3;
+			lefSkip = (dwid - (conf.prof.cur->zx->vid->vsze.x * xstep / 256)) / 2 * 4;
 			topSkip = (dhei - (conf.prof.cur->zx->vid->vsze.y * ystep / 256)) / 2;
 #ifdef USEOPENGL
-			lefSkip = lefSkip / 3;
+			lefSkip = lefSkip / 4;
 			lefSkip = lefSkip * conf.prof.cur->zx->vid->vsze.x / dwid;
-			lefSkip = lefSkip * 6;
+			lefSkip = lefSkip * 8;
 #endif
 			rigSkip = lefSkip;
 			botSkip = topSkip;
