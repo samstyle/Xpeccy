@@ -58,7 +58,7 @@ typedef int(*cbir)(int, void*);
 // iorq wr
 typedef void(*cbiw)(int, int, void*);
 // iorq int : interrupt vector request
-typedef int(*cbirq)(void*);
+typedef int(*cbiack)(void*);
 // memrd external
 typedef int(*cbdmr)(int, void*);
 
@@ -222,7 +222,7 @@ struct CPU {
 	cbmw mwr;
 	cbir ird;
 	cbiw iwr;
-	cbirq irq;
+	cbiack irq;
 	void* data;
 
 // opcode
@@ -261,7 +261,7 @@ typedef struct {
 	void (*setregs)(CPU*,xRegBunch);	// set cpu registers
 } cpuCore;
 
-CPU* cpuCreate(int,cbmr,cbmw,cbir,cbiw,cbirq,void*);
+CPU* cpuCreate(int,cbmr,cbmw,cbir,cbiw,cbiack,void*);
 void cpuDestroy(CPU*);
 void cpuSetType(CPU*, int);
 

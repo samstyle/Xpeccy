@@ -42,19 +42,49 @@ void zx_sync(Computer* comp, int ns) {
 		comp->hw->mapMem(comp);
 	}
 	// int
-	if (comp->vid->intFRAME) {
-		comp->intVector = 0xff;
-		comp->cpu->intrq |= Z80_INT;
-	} else if (comp->vid->intLINE) {
-		comp->intVector = 0xfd;
-		comp->cpu->intrq |= Z80_INT;
-		comp->vid->intLINE = 0;
-	} else if (comp->vid->intDMA) {
-		comp->intVector = 0xfb;
-		comp->cpu->intrq |= Z80_INT;
-		comp->vid->intDMA = 0;
-	} else if (comp->cpu->intrq & Z80_INT) {
-		comp->cpu->intrq &= ~Z80_INT;
+//	if (comp->vid->intFRAME) {
+//		comp->intVector = 0xff;
+//		comp->cpu->intrq |= Z80_INT;
+//	} else if (comp->vid->intLINE) {
+//		comp->intVector = 0xfd;
+//		comp->cpu->intrq |= Z80_INT;
+//		comp->vid->intLINE = 0;
+//	} else if (comp->vid->intDMA) {
+//		comp->intVector = 0xfb;
+//		comp->cpu->intrq |= Z80_INT;
+//		comp->vid->intDMA = 0;
+//	} else if (comp->cpu->intrq & Z80_INT) {
+//		comp->cpu->intrq &= ~Z80_INT;
+//	}
+}
+
+void zx_irq(Computer* comp, int t) {
+	switch(t) {
+		case IRQ_VID_INT:			// frame int start
+			comp->intVector = 0xff;
+			comp->cpu->intrq |= Z80_INT;
+			break;
+		case IRQ_VID_INT_E:			// frame int end
+			if (comp->vid->intLINE) {
+				zx_irq(comp, IRQ_VID_LINE);
+			} else if (comp->vid->intDMA) {
+				zx_irq(comp, IRQ_DMA);
+			} else {
+				comp->cpu->intrq &= ~Z80_INT;
+			}
+			break;
+		case IRQ_VID_LINE:			// line int (tsconf)
+			if (comp->vid->intFRAME) break;
+			comp->vid->intLINE = 0;
+			comp->intVector = 0xfd;
+			comp->cpu->intrq |= Z80_INT;
+			break;
+		case IRQ_DMA:				// dma int (tsconf)
+			if (comp->vid->intFRAME) break;
+			comp->vid->intDMA = 0;
+			comp->intVector = 0xfb;
+			comp->cpu->intrq |= Z80_INT;
+			break;
 	}
 }
 

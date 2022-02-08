@@ -210,6 +210,11 @@ int intrq(void* ptr) {
 	return ((Computer*)ptr)->intVector & 0xff;
 }
 
+void comp_irq(int t, void* ptr) {
+	Computer* comp = (Computer*)ptr;
+	if (comp->hw->irq) comp->hw->irq(comp, t);
+}
+
 // new (for future use)
 
 int comp_rom_rd(Computer* comp, int adr) {
@@ -280,7 +285,7 @@ Computer* compCreate() {
 
 	comp->cpu = cpuCreate(CPU_Z80,memrd,memwr,iord,iowr,intrq,comp);
 	comp->mem = memCreate();
-	comp->vid = vidCreate(vid_mrd_cb, comp);
+	comp->vid = vidCreate(vid_mrd_cb, comp_irq, comp);
 	vidSetMode(comp->vid, VID_NORMAL);
 
 // input

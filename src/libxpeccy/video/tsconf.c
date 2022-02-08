@@ -255,8 +255,10 @@ void tslUpdatePorts(Video* vid) {
 void vidTSline(Video* vid) {
 	int res = vidTSRender(vid);		// dots eaten by rendering
 	vid->intp.x = vid->tsconf.hsint + res;
-	if (vid->inten & 2)
+	if (vid->inten & 2) {
 		vid->intLINE = 1;
+		vid->xirq(IRQ_VID_LINE, vid->data);
+	}
 	tslUpdatePorts(vid);
 }
 

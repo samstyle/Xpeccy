@@ -184,6 +184,7 @@ void xThread::run() {
 				comp->brk = 0;
 				emit dbgRequest();
 			}
+			comp->dif->fdc->flp->door = comp->dif->fdc->flp->insert;
 		}
 #if USEMUTEX
 		if (!conf.emu.fast && !finish) {

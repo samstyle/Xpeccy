@@ -7,7 +7,7 @@ extern "C" {
 #include <stddef.h>
 
 #include "vidcommon.h"
-#include "../memory.h"
+#include "../defines.h"
 
 typedef struct Video Video;
 
@@ -111,7 +111,7 @@ struct Video {
 	unsigned upd:1;
 	unsigned tail:1;
 	unsigned cutscr:1;
-	unsigned irq:1;
+	unsigned irq:1;		// C64 vic-ii ints (TODO: remove)
 
 	unsigned hblank:1;	// HBlank signal
 	unsigned hbstrb:1;	// HBlank strobe 0->1
@@ -158,6 +158,7 @@ struct Video {
 
 	vcbmrd mrd;		// external memory reading
 	vcbmwr mwr;		// external memory writing
+	cbirq xirq;		// interrupt
 	void* data;
 
 	int fcnt;
@@ -331,7 +332,7 @@ struct Video {
 
 };
 
-Video* vidCreate(vcbmrd, void*);
+Video* vidCreate(vcbmrd, cbirq, void*);
 void vidDestroy(Video*);
 
 void vidReset(Video*);

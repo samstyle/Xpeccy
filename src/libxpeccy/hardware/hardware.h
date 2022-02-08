@@ -67,6 +67,8 @@ typedef void(*cbHwMwr)(Computer*, int, int);
 typedef int(*cbHwIrd)(Computer*, int);
 // io write
 typedef void(*cbHwIwr)(Computer*, int, int);
+// int request
+typedef void(*cbHwIrq)(Computer*, int);
 // key press/release
 typedef void(*cbHwKey)(Computer*, keyEntry);
 // get volume
@@ -88,6 +90,7 @@ struct HardWare {
 	cbHwIrd in;		// io rd
 	cbHwMrd mrd;		// mem rd
 	cbHwMwr mwr;		// mem wr
+	cbHwIrq irq;		// int rq
 	cbhwcomp reset;		// reset
 	cbHwSnc sync;		// sync time
 	cbHwKey keyp;		// key press
@@ -131,6 +134,7 @@ void dummyOut(Computer*, int, int);
 
 int zx_dev_wr(Computer*, int, int);
 int zx_dev_rd(Computer*, int, int*);
+void zx_irq(Computer*, int);
 
 void xOutFE(Computer*, int, int);
 void xOutBFFD(Computer*, int, int);

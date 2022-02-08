@@ -180,10 +180,11 @@ void vid_frame(Video* vid) {
 	vid->newFrame = 1;
 }
 
-Video* vidCreate(vcbmrd cb, void* dptr) {
+Video* vidCreate(vcbmrd cb, cbirq ci, void* dptr) {
 	Video* vid = (Video*)malloc(sizeof(Video));
 	memset(vid,0x00,sizeof(Video));
 	vid->mrd = cb;
+	vid->xirq = ci;
 	vid->data = dptr;
 	vid->nsPerDot = 150;
 	vid->res.x = -1;
@@ -980,9 +981,12 @@ void vid_tick(Video* vid) {
 	// generate int
 	if (vid->intFRAME) {
 		vid->intFRAME--;
+		if (!vid->intFRAME)
+			vid->xirq(IRQ_VID_INT_E, vid->data);
 	} else if ((vid->ray.yb == vid->intp.y) && (vid->ray.xb == vid->intp.x)) {
 		vid->intTime = vid->time;
 		vid->intFRAME = vid->intsize;
+		vid->xirq(IRQ_VID_INT, vid->data);
 	}
 	if (vid->busy > 0) vid->busy--;
 	if (vid->inth > 0) vid->inth--;

@@ -552,13 +552,11 @@ void ibm_sync(Computer* comp, int ns) {
 // key press/release (at/xt code is already in kbd->outbuf)
 // warning: calling from gui thread
 void ibm_keyp(Computer* comp, keyEntry kent) {
-	comp->ps2c->delay = 1;
-	//ps2c_rd_kbd(comp->ps2c);		// TODO:here?
+	comp->ps2c->delay += 1;
 }
 
 void ibm_keyr(Computer* comp, keyEntry kent) {
-	comp->ps2c->delay = 1;
-	//ps2c_rd_kbd(comp->ps2c);
+	comp->ps2c->delay += 1;
 }
 
 sndPair ibm_vol(Computer* comp, sndVolume* vol) {

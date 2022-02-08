@@ -471,7 +471,7 @@ void cga_t80_dot(Video* vid) {
 
 // res = HResolution (320 or 640)
 // SEQ(1).bit2: if 1, data from 2 planes as 16-bit stream, result - 2 streams by 16 bits; 0 - separate 4 streams by 8 bits (all planes)
-// GRF(5).bit5: if 1, 2 bits from stream forms one color; 0 - 1 bit per color
+// GRF(5).bit5: if 1, 2 bits from stream forms one color; 0 - 1 bit per color/ega
 // GRF(17h).bit0: 0:vadr.b13=ray.y.bit0
 // GRF(17h).bit1: 0:vadr.b14=ray.y.bit1
 // GRF(17h).bit2: 1:inc line counter each 2nd line, 0:each line
@@ -562,6 +562,16 @@ void vga_4bpp(Video* vid, int res) {
 		vid->vga.line += (vid->ray.y & 1);
 	} else {
 		vid->vga.line++;
+	}
+	// correct colors for cga mode, but not for all games...
+	if (GRF_REG(5) & 0x10) {
+		for(pos = 0; pos < res; pos++) {
+			if (vid->line[pos] & 0x20) {		// cga modes: r,b = g
+				vid->line[pos] |= 0x38;
+			} else {
+				vid->line[pos] &= ~0x38;
+			}
+		}
 	}
 }
 
